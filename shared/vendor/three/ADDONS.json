@@ -1,0 +1,10 @@
+{
+  "$comment": "three.js addons (paths under examples/jsm/) copied into addons/ by npm run vendor:three. Files they import are added automatically.",
+  "addons": [
+    "controls/OrbitControls.js",
+    "environments/RoomEnvironment.js",
+    "exporters/GLTFExporter.js",
+    "geometries/RoundedBoxGeometry.js",
+    "loaders/GLTFLoader.js"
+  ]
+}

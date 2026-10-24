@@ -1,0 +1,13 @@
+#!/bin/sh
+# Runs before every commit (a few seconds): `npm run check` on the figures you changed, then Biome on the staged
+# files. Installed by `npm run setup` (git config core.hooksPath .githooks). Skip once with `git commit --no-verify`.
+node scripts/check/index.mjs --staged || {
+  echo "\n✗ Fix the errors above (npm run check -- --fix fixes formatting), then commit again." >&2
+  exit 1
+}
+if [ -x node_modules/.bin/biome ]; then
+  node_modules/.bin/biome check --staged --no-errors-on-unmatched --files-ignore-unknown=true || {
+    echo "\n✗ Formatting or lint problems: run npm run format, then git add and commit again." >&2
+    exit 1
+  }
+fi
