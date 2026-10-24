@@ -69,6 +69,7 @@ export async function packageAsset(id, { zip = true } = {}) {
   const stamp = {
     id,
     title: manifest.title,
+    book: manifest.book || null,
     page: manifest.page ?? null,
     topic: manifest.topic || '',
     placement: manifest.placement || '',

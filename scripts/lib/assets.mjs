@@ -2,28 +2,20 @@
 import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { ROOT, ASSETS_DIR, SHARED_DIR, DIST_DIR, TEMPLATES_DIR, THUMBS_DIR, ID_RE, assetDir } from './paths.mjs';
+import { writeFileAtomic, walkFiles } from './fsutil.mjs';
+import { formatManifest } from './manifest/index.mjs';
+import { readStatus, STATUSES } from './status.mjs';
+import { loadBooks, findBook, chapterOf, bookRef, bookIndex } from './books.mjs';
 import { reviewCounts } from './reviews.mjs';
 
-export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
-export const ASSETS_DIR = path.join(ROOT, 'assets');
-export const SHARED_DIR = path.join(ROOT, 'shared');
-export const DIST_DIR = path.join(ROOT, 'dist');
-export const TEMPLATES_DIR = path.join(ROOT, 'templates');
-
-export const ID_RE = /^[a-z0-9][a-z0-9-]{0,63}$/;
-export const STATUSES = ['idea', 'in-progress', 'review', 'changes', 'approved'];
+export { ROOT, ASSETS_DIR, SHARED_DIR, DIST_DIR, TEMPLATES_DIR, THUMBS_DIR, ID_RE, STATUSES, assetDir, walkFiles, writeFileAtomic };
 
 // Files that belong to our workflow, not to the deliverable.
-export const DEV_ONLY_FILES = new Set(['NOTES.md']);
+export const DEV_ONLY_FILES = new Set(['NOTES.md', 'status.json', 'thumbnail.png']);
 // reviews: reviewer feedback (in git, never packaged). exports: GLBs and pictures made in the studio
 // (not in git). reference: book-page screenshots for the developer. tests: figure-specific tests.
 export const DEV_ONLY_DIRS = new Set(['reviews', 'exports', 'reference', 'tests']);
-
-export function assetDir(id) {
-  if (!ID_RE.test(id)) throw new Error(`Invalid asset id "${id}"`);
-  return path.join(ASSETS_DIR, id);
-}
 
 export async function readManifest(id) {
   const raw = await fsp.readFile(path.join(assetDir(id), 'asset.json'), 'utf8');
@@ -31,23 +23,11 @@ export async function readManifest(id) {
 }
 
 export async function writeManifest(id, manifest) {
-  await writeFileAtomic(path.join(assetDir(id), 'asset.json'), JSON.stringify(manifest, null, 2) + '\n');
-}
-
-/** Write to a temporary file next to the target, then rename: readers never see half a file. */
-export async function writeFileAtomic(file, data) {
-  const tmp = `${file}.${process.pid}.${Date.now()}.tmp`;
-  try {
-    await fsp.writeFile(tmp, data);
-    await fsp.rename(tmp, file);
-  } catch (err) {
-    await fsp.rm(tmp, { force: true });
-    throw err;
-  }
+  await writeFileAtomic(path.join(assetDir(id), 'asset.json'), formatManifest(manifest));
 }
 
 export function entryUrl(id, manifest) {
-  if (manifest.type === 'model') {
+  if (manifest.type === 'model' && /\.(glb|gltf)$/i.test(manifest.entry || 'model.glb')) {
     const src = `/assets/${id}/${manifest.entry || 'model.glb'}`;
     return `/shared/viewer/index.html?src=${encodeURIComponent(src)}`;
   }
@@ -62,8 +42,7 @@ async function newestMtime(dir) {
       const p = path.join(d, ent.name);
       if (ent.isDirectory()) {
         if (d !== dir || !DEV_ONLY_DIRS.has(ent.name)) await walk(p);
-      }
-      else if (!DEV_ONLY_FILES.has(ent.name) && ent.name !== 'thumbnail.png') {
+      } else if (!DEV_ONLY_FILES.has(ent.name)) {
         newest = Math.max(newest, (await fsp.stat(p)).mtimeMs);
       }
     }
@@ -72,19 +51,34 @@ async function newestMtime(dir) {
   return newest;
 }
 
+/** The studio's thumbnail for a figure: a local capture (not in git), or an old committed thumbnail.png. */
+export function thumbnailFile(id) {
+  const cached = path.join(THUMBS_DIR, `${id}.png`);
+  if (fs.existsSync(cached)) return cached;
+  const legacy = path.join(assetDir(id), 'thumbnail.png');
+  return fs.existsSync(legacy) ? legacy : null;
+}
+
 export async function assetSummary(id) {
   const dir = assetDir(id);
   const manifest = await readManifest(id);
-  const thumb = path.join(dir, 'thumbnail.png');
+  const thumb = thumbnailFile(id);
+  const thumbStat = thumb ? await fsp.stat(thumb) : null;
   const notes = path.join(dir, 'NOTES.md');
-  const thumbStat = fs.existsSync(thumb) ? await fsp.stat(thumb) : null;
   const notesText = fs.existsSync(notes) ? await fsp.readFile(notes, 'utf8') : '';
+  const status = fs.existsSync(path.join(dir, 'status.json')) ? (await readStatus(id)).status : manifest.status || 'idea';
+  const book = manifest.book ? findBook(manifest.book) : null;
+  const chapter = chapterOf(book, manifest.topic);
   return {
     ...manifest,
     id,
+    status,
     url: `/assets/${id}/`,
     entryUrl: entryUrl(id, manifest),
-    thumbnail: thumbStat ? `/assets/${id}/thumbnail.png?v=${Math.round(thumbStat.mtimeMs)}` : null,
+    ref: bookRef(manifest),
+    bookTitle: book?.title || null,
+    chapter: chapter ? { number: chapter.number, title: chapter.title } : null,
+    thumbnail: thumbStat ? `/api/assets/${id}/thumbnail?v=${Math.round(thumbStat.mtimeMs)}` : null,
     notesLength: notesText.trim().length,
     reviews: await reviewCounts(id),
     updatedAt: await newestMtime(dir),
@@ -103,27 +97,22 @@ export async function listAssets() {
       out.push({ id: ent.name, title: ent.name, error: String(err.message || err) });
     }
   }
-  return out.sort(bookOrder);
+  const books = loadBooks();
+  return out.sort((a, b) => bookOrder(a, b, books));
 }
 
-/** Book order: page, then topic (1.6 before 1.10), then `order`, then id. Assets without a page go last. */
-export function bookOrder(a, b) {
+/**
+ * Book order: book (as listed in books.json), then page, then topic (1.6 before 1.10), then `order`, then id.
+ * Figures without a page go last within their book.
+ */
+export function bookOrder(a, b, books = loadBooks()) {
+  const bi = (x) => (x.book ? bookIndex(x.book, books) : books.length + 1);
   const page = (x) => (Number.isFinite(+x.page) && x.page !== '' && x.page != null ? +x.page : Infinity);
   const topic = (x) => String(x.topic || '').split('.').map((n) => +n || 0);
+  if (bi(a) !== bi(b)) return bi(a) - bi(b);
   if (page(a) !== page(b)) return page(a) - page(b);
   const ta = topic(a);
   const tb = topic(b);
   for (let i = 0; i < Math.max(ta.length, tb.length); i++) if ((ta[i] || 0) !== (tb[i] || 0)) return (ta[i] || 0) - (tb[i] || 0);
   return (a.order ?? 999) - (b.order ?? 999) || a.id.localeCompare(b.id);
-}
-
-export async function walkFiles(dir, base = dir) {
-  const files = [];
-  for (const ent of await fsp.readdir(dir, { withFileTypes: true })) {
-    if (ent.name.startsWith('.')) continue;
-    const p = path.join(dir, ent.name);
-    if (ent.isDirectory()) files.push(...(await walkFiles(p, base)));
-    else files.push(path.relative(base, p));
-  }
-  return files.sort();
 }

@@ -99,6 +99,7 @@
       <section class="tab-panel" data-panel="info">
         <div class="field book-field">
           <label>Where it goes in the book</label>
+          <label class="book-pick">Book <select id="bookInput"></select></label>
           <div class="book-row">
             <label>Page <input id="pageInput" type="text" inputmode="numeric" placeholder="20" autocomplete="off" /></label>
             <label>Topic <input id="topicInput" type="text" placeholder="1.6" autocomplete="off" /></label>
@@ -211,10 +212,7 @@
           <option value="model">Static model (GLB)</option>
         </select>
       </label>
-      <div class="row gap">
-        <label>Subject <input name="subject" placeholder="Physics" /></label>
-        <label>Chapter <input name="chapter" placeholder="Ray optics" /></label>
-      </div>
+      <label>Book <select name="book"></select></label>
       <div class="row gap">
         <label>Book page <input name="page" inputmode="numeric" placeholder="20" /></label>
         <label>Topic <input name="topic" placeholder="1.6" /></label>

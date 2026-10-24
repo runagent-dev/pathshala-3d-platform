@@ -1,17 +1,16 @@
 {
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
   "id": "{{id}}",
   "title": "{{title}}",
   "type": "model",
   "entry": "model.glb",
-  "status": "idea",
   "version": "0.1.0",
-  "subject": "{{subject}}",
-  "chapter": "{{chapter}}",
+  "book": "physics-9-10",
   "page": null,
   "topic": "",
   "placement": "",
-  "grade": "",
-  "tags": [],
+  "maintainers": [],
   "description": "Static 3D model (GLB). Drop the file in this folder as model.glb.",
-  "updated": "{{date}}"
+  "tags": []
 }

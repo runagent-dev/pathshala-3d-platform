@@ -304,3 +304,5 @@ textarea:focus, input:focus { border-color: var(--accent-2); }
   .frame-size { display: none; }
   .param select, .param input:not([type='checkbox']) { width: 140px; }
 }
+.book-pick { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--text-2); margin-bottom: 8px; }
+.book-pick select { flex: 1; min-width: 0; }

@@ -1,0 +1,157 @@
+// The asset.json contract, written once as JSON Schema. The studio, the checker and the scaffolder validate
+// against it (schema.mjs runs the subset of JSON Schema used here), and `npm run generate` writes it to
+// schemas/asset.schema.json so editors can autocomplete asset.json through its "$schema" line.
+// Rules that need the folder or the book list (id = folder name, book exists, entry file exists, …) are in
+// validate.mjs.
+
+export const SCHEMA_VERSION = 2;
+
+const SLUG = '^[a-z0-9][a-z0-9-]{0,63}$';
+const NAME = '^[a-z][a-z0-9-]*$';
+const SLUG_HINT = 'lowercase letters, digits and dashes, like screw-gauge';
+// semver 2.0.0 (https://semver.org), without build metadata
+const SEMVER = '^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(-[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?$';
+
+const step = {
+  type: 'object',
+  description: 'A bridge command sent to the figure, e.g. { "command": "set", "payload": { "value": 5.2 } }.',
+  required: ['command'],
+  additionalProperties: false,
+  properties: {
+    command: { type: 'string', pattern: NAME },
+    payload: { type: 'object' },
+  },
+};
+
+const urlParams = {
+  type: 'object',
+  description: 'URL parameters to load the figure with, e.g. { "coach": "0" }.',
+  additionalProperties: { type: 'string' },
+};
+
+export const MANIFEST_SCHEMA = {
+  $schema: 'https://json-schema.org/draft/2020-12/schema',
+  title: 'Pathshala 3D figure (asset.json)',
+  description: 'One figure for a Pathshala book. See docs/manifest.md.',
+  type: 'object',
+  required: ['schemaVersion', 'id', 'title', 'type', 'entry', 'version', 'book'],
+  additionalProperties: false,
+  properties: {
+    $schema: { type: 'string' },
+    schemaVersion: { const: SCHEMA_VERSION },
+    id: { type: 'string', pattern: SLUG, patternHint: SLUG_HINT, description: 'Stable English slug, the same as the folder name. Never changes.' },
+    title: { type: 'string', minLength: 1, maxLength: 120, description: 'Name shown in the studio, e.g. "Screw gauge (স্ক্রু-গেইজ)".' },
+    type: {
+      enum: ['interactive', 'animation', 'model'],
+      description: 'interactive: the student acts; animation: plays by itself (students may tap to jump); model: a static GLB.',
+    },
+    entry: { type: 'string', pattern: '^[\\w][\\w./-]*$', description: 'The file to open, relative to the folder (index.html, model.glb).' },
+    version: { type: 'string', pattern: SEMVER, patternHint: 'like 1.2.3', description: 'Semantic version: patch for fixes, minor for features, major for breaking changes.' },
+    book: { type: 'string', pattern: SLUG, patternHint: SLUG_HINT, description: 'A book id from books/books.json.' },
+    page: { type: ['integer', 'null'], minimum: 1, maximum: 2000, description: 'Printed page number in the book.' },
+    topic: { type: 'string', pattern: '^(\\d+(\\.\\d+)*)?$', patternHint: 'numbers joined by dots, like 1.6.1', description: 'Topic (section) number in the book, e.g. "1.6.1".' },
+    placement: { type: 'string', maxLength: 1000, description: 'Where exactly it goes on the page, for the book developer.' },
+    order: { type: 'integer', minimum: 0, description: 'Order among figures on the same page.' },
+    maintainers: {
+      type: 'array',
+      description: 'GitHub usernames of the people who look after this figure (without @).',
+      items: { type: 'string', pattern: '^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$' },
+      uniqueItems: true,
+    },
+    units: { enum: ['mm', 'cm', 'm'], description: 'Unit of the 3D scene; GLB exports are scaled to metres.' },
+    description: { type: 'string', maxLength: 4000 },
+    tags: { type: 'array', items: { type: 'string', minLength: 1, maxLength: 40 }, uniqueItems: true },
+    params: { type: 'array', description: 'URL parameters the figure reads (shown in the studio).', items: { $ref: '#/$defs/param' } },
+    commands: { type: 'array', description: 'Example bridge commands (shown in the studio).', items: { $ref: '#/$defs/command' } },
+    events: { type: 'array', description: 'Bridge events the figure emits.', items: { type: 'string', pattern: NAME }, uniqueItems: true },
+    export: { $ref: '#/$defs/export' },
+    packageExclude: { type: 'array', description: 'Files (relative paths) left out of the zip.', items: { type: 'string' } },
+  },
+  $defs: {
+    param: {
+      type: 'object',
+      required: ['name', 'type'],
+      additionalProperties: false,
+      properties: {
+        name: { type: 'string', pattern: '^[A-Za-z][A-Za-z0-9_]*$' },
+        label: { type: 'string' },
+        type: { enum: ['select', 'boolean', 'number', 'text'] },
+        options: {
+          type: 'array',
+          minItems: 1,
+          items: { oneOf: [{ type: 'string' }, { type: 'array', items: { type: 'string' }, minItems: 2, maxItems: 2 }] },
+          description: 'For select: values, or [value, label] pairs.',
+        },
+        default: { type: ['string', 'number', 'boolean'] },
+        placeholder: { type: 'string' },
+        help: { type: 'string' },
+      },
+    },
+    command: {
+      type: 'object',
+      required: ['name'],
+      additionalProperties: false,
+      properties: { name: { type: 'string', pattern: NAME }, payload: { type: 'object' } },
+    },
+    step,
+    pose: {
+      type: 'object',
+      required: ['name'],
+      additionalProperties: false,
+      properties: {
+        name: { type: 'string', pattern: NAME, description: 'Used in the file name: <id>-<name>.glb ("default" gives <id>.glb).' },
+        params: urlParams,
+        setup: { type: 'array', items: { $ref: '#/$defs/step' } },
+      },
+    },
+    export: {
+      type: 'object',
+      description: 'How the exporter makes pictures, GLB and video of this figure. See docs/exports.md.',
+      additionalProperties: false,
+      properties: {
+        poster: {
+          type: 'object',
+          description: 'The state shown in the poster images.',
+          additionalProperties: false,
+          properties: { params: urlParams, setup: { type: 'array', items: { $ref: '#/$defs/step' } } },
+        },
+        glb: {
+          description: 'GLB files to export (one per pose), or { "skip": "why there is no GLB" }.',
+          oneOf: [
+            { type: 'array', minItems: 1, items: { $ref: '#/$defs/pose' } },
+            { type: 'object', required: ['skip'], additionalProperties: false, properties: { skip: { type: 'string', minLength: 10 } } },
+          ],
+        },
+        video: {
+          type: 'object',
+          required: ['kind', 'seconds'],
+          additionalProperties: false,
+          properties: {
+            kind: { enum: ['timeline', 'script', 'turntable'], description: 'timeline: play the animation; script: run commands at set times; turntable: orbit.' },
+            seconds: { type: 'number', minimum: 1, maximum: 600 },
+            fps: { enum: [24, 25, 30, 60] },
+            params: urlParams,
+            setup: { type: 'array', items: { $ref: '#/$defs/step' } },
+            script: {
+              type: 'array',
+              items: {
+                type: 'object',
+                required: ['at', 'command'],
+                additionalProperties: false,
+                properties: { at: { type: 'number', minimum: 0 }, command: { type: 'string', pattern: NAME }, payload: { type: 'object' } },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+};
+
+/** Key order for asset.json files (unknown keys keep their place at the end). */
+export const KEY_ORDER = [
+  '$schema', 'schemaVersion', 'id', 'title', 'type', 'entry', 'version',
+  'book', 'page', 'topic', 'placement', 'order', 'maintainers', 'units',
+  'description', 'tags', 'params', 'commands', 'events', 'export', 'packageExclude',
+];
+export const PARAM_KEY_ORDER = ['name', 'label', 'type', 'options', 'default', 'placeholder', 'help'];

@@ -10,9 +10,12 @@ import fsp from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import {
-  ROOT, ASSETS_DIR, SHARED_DIR, ID_RE, STATUSES,
-  listAssets, assetSummary, assetDir, readManifest, writeManifest,
+  ROOT, ASSETS_DIR, SHARED_DIR, THUMBS_DIR, ID_RE, STATUSES,
+  listAssets, assetSummary, assetDir, readManifest, writeManifest, thumbnailFile, writeFileAtomic,
 } from './lib/assets.mjs';
+import { validateManifest } from './lib/manifest/index.mjs';
+import { writeStatus } from './lib/status.mjs';
+import { loadBooks } from './lib/books.mjs';
 import { packageAsset } from './lib/package.mjs';
 import { scaffoldAsset } from './lib/scaffold.mjs';
 import { AUTH_FILE, loadCredentials, createBasicAuth } from './lib/auth.mjs';
@@ -76,7 +79,7 @@ function broadcast(event, data) {
   for (const res of sseClients) res.write(msg);
 }
 
-const META_FILES = new Set(['asset.json', 'NOTES.md', 'thumbnail.png']);
+const META_FILES = new Set(['asset.json', 'NOTES.md', 'status.json', 'thumbnail.png']);
 const queued = new Map();
 let flushTimer = null;
 function queue(key, event, data) {
@@ -93,7 +96,7 @@ function watch(dir, scope) {
   fs.watch(dir, { recursive: true }, (_type, file) => {
     if (!file) return;
     const rel = file.split(path.sep).join('/');
-    if (rel.split('/').some((p) => p.startsWith('.')) || rel.endsWith('~')) return;
+    if (rel.split('/').some((p) => p.startsWith('.')) || rel.endsWith('~') || rel.endsWith('.tmp')) return; // .tmp: atomic writes
     if (scope === 'assets') {
       const [id, ...rest] = rel.split('/');
       if (!ID_RE.test(id)) return;
@@ -131,6 +134,15 @@ async function readBody(req, limit = 60 * 1024 * 1024) {
   return Buffer.concat(chunks);
 }
 
+async function readJson(req, limit) {
+  const text = (await readBody(req, limit)).toString('utf8');
+  try {
+    return JSON.parse(text || '{}');
+  } catch {
+    throw Object.assign(new Error('The request body is not valid JSON'), { status: 400 });
+  }
+}
+
 function decodeImage(buf, contentType) {
   if ((contentType || '').startsWith('image/')) return buf;
   const m = /^data:image\/\w+;base64,(.+)$/s.exec(buf.toString('utf8'));
@@ -138,14 +150,15 @@ function decodeImage(buf, contentType) {
   return Buffer.from(m[1], 'base64');
 }
 
-const EDITABLE_FIELDS = ['title', 'status', 'description', 'subject', 'chapter', 'page', 'topic', 'placement', 'grade', 'tags', 'order', 'version'];
+// What the studio may change in asset.json. Status is not here: it lives in status.json (PUT …/status).
+const EDITABLE_FIELDS = ['title', 'description', 'book', 'page', 'topic', 'placement', 'order', 'tags', 'version', 'maintainers', 'units'];
 
 // ── API ────────────────────────────────────────────────────────────────────────
 // Reviewers may read assets and read/add reviews; everything else is for the owner.
 function reviewerMay(req, resource, id, sub, rest) {
-  if (resource === 'me') return true;
+  if (resource === 'me' || (resource === 'books' && req.method === 'GET')) return true;
   if (resource !== 'assets') return false;
-  if (req.method === 'GET' && (!sub || sub === 'reviews')) return true;
+  if (req.method === 'GET' && (!sub || sub === 'reviews' || sub === 'thumbnail')) return true;
   return sub === 'reviews' && req.method === 'POST' && rest.length === 0;
 }
 
@@ -156,12 +169,13 @@ async function api(req, res, url) {
     return json(res, 403, { error: 'Reviewers can look at the figures and add reviews, but not change them.' });
   }
   if (resource === 'me') return json(res, 200, { role: req.role });
+  if (resource === 'books' && req.method === 'GET') return json(res, 200, { books: loadBooks() });
   if (resource !== 'assets') return json(res, 404, { error: 'Not found' });
 
   if (!id) {
-    if (req.method === 'GET') return json(res, 200, { assets: await listAssets(), statuses: STATUSES });
+    if (req.method === 'GET') return json(res, 200, { assets: await listAssets(), statuses: STATUSES, books: loadBooks() });
     if (req.method === 'POST') {
-      const body = JSON.parse((await readBody(req)).toString('utf8') || '{}');
+      const body = await readJson(req, 64 * 1024);
       const r = await scaffoldAsset(body);
       return json(res, 201, await assetSummary(r.id));
     }
@@ -180,26 +194,33 @@ async function api(req, res, url) {
       });
     }
     if (req.method === 'PATCH') {
-      const patch = JSON.parse((await readBody(req)).toString('utf8') || '{}');
-      const manifest = await readManifest(id);
-      for (const k of EDITABLE_FIELDS) if (k in patch) manifest[k] = patch[k];
-      if (manifest.status && !STATUSES.includes(manifest.status)) return json(res, 400, { error: 'Bad status' });
-      manifest.updated = new Date().toISOString().slice(0, 10);
+      const patch = await readJson(req, 64 * 1024);
+      const unknown = Object.keys(patch).filter((k) => !EDITABLE_FIELDS.includes(k));
+      if (unknown.length) return json(res, 400, { error: `These fields can't be changed here: ${unknown.join(', ')}` });
+      const manifest = { ...(await readManifest(id)), ...patch };
+      for (const [k, v] of Object.entries(patch)) if (v === undefined) delete manifest[k];
+      const { errors } = validateManifest(manifest, { folder: id, books: loadBooks(), dir });
+      if (errors.length) return json(res, 400, { error: errors.map((e) => `${e.path}: ${e.message}`).join('; '), problems: errors });
       await writeManifest(id, manifest);
       return json(res, 200, await assetSummary(id));
     }
+  }
+
+  if (sub === 'status' && req.method === 'PUT') {
+    const { status } = await readJson(req, 4 * 1024);
+    const manifest = await readManifest(id);
+    await writeStatus(id, status, { by: req.role, version: manifest.version || null });
+    return json(res, 200, await assetSummary(id));
   }
 
   if (sub === 'reviews') {
     const [rid] = rest;
     if (!rid && req.method === 'GET') return json(res, 200, { reviews: await readReviews(id) });
     if (!rid && req.method === 'POST') {
-      const body = JSON.parse((await readBody(req, 8 * 1024 * 1024)).toString('utf8') || '{}');
-      return json(res, 201, await addReview(id, body));
+      return json(res, 201, await addReview(id, await readJson(req, 8 * 1024 * 1024)));
     }
     if (rid && req.method === 'PATCH') {
-      const body = JSON.parse((await readBody(req, 64 * 1024)).toString('utf8') || '{}');
-      return json(res, 200, await updateReview(id, rid, body));
+      return json(res, 200, await updateReview(id, rid, await readJson(req, 64 * 1024)));
     }
     if (rid && req.method === 'DELETE') return json(res, 200, await deleteReview(id, rid));
   }
@@ -213,9 +234,18 @@ async function api(req, res, url) {
     }
   }
 
+  // Thumbnails are the studio's own captures, kept in .cache/thumbs/ (not in git).
+  if (sub === 'thumbnail' && req.method === 'GET') {
+    const file = thumbnailFile(id);
+    if (!file) return json(res, 404, { error: 'No thumbnail yet' });
+    return send(res, 200, await fsp.readFile(file), { 'Content-Type': 'image/png' });
+  }
   if (sub === 'thumbnail' && req.method === 'PUT') {
-    const png = decodeImage(await readBody(req), req.headers['content-type']);
-    await fsp.writeFile(path.join(dir, 'thumbnail.png'), png);
+    const png = decodeImage(await readBody(req, 8 * 1024 * 1024), req.headers['content-type']);
+    if (png.subarray(0, 8).toString('hex') !== '89504e470d0a1a0a') return json(res, 400, { error: 'A thumbnail must be a PNG' });
+    await fsp.mkdir(THUMBS_DIR, { recursive: true });
+    await writeFileAtomic(path.join(THUMBS_DIR, `${id}.png`), png);
+    queue(`meta:${id}`, 'meta', { id });
     return json(res, 200, { ok: true, bytes: png.length });
   }
 
@@ -241,7 +271,7 @@ async function serveStatic(req, res, url) {
   if (pathname === '/') return send(res, 302, '', { Location: '/dashboard/' });
   const file = path.normalize(path.join(ROOT, pathname));
   if (!file.startsWith(ROOT + path.sep) && file !== ROOT) return send(res, 403, 'Forbidden');
-  if (path.relative(ROOT, file).split(path.sep).some((p) => p.startsWith('.') || p === 'node_modules' || p === 'scripts')) {
+  if (path.relative(ROOT, file).split(path.sep).some((p) => p.startsWith('.') || p === 'node_modules' || p === 'scripts' || p === 'data')) {
     return send(res, 404, 'Not found');
   }
   if (req.role === 'reviewer' && path.basename(file) === 'NOTES.md') return send(res, 404, 'Not found'); // the owner's own notes
@@ -285,7 +315,7 @@ async function handler(req, res) {
     if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, 'Method not allowed');
     return await serveStatic(req, res, url);
   } catch (err) {
-    console.error(err);
+    if (!err.status || err.status >= 500) console.error(err); // 4xx are the client's mistake, answered below
     if (!res.headersSent) json(res, err.status || 500, { error: String(err.message || err) });
     else res.end();
   }

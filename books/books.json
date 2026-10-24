@@ -1,0 +1,15 @@
+{
+  "books": [
+    {
+      "id": "physics-9-10",
+      "title": { "bn": "পদার্থবিজ্ঞান", "en": "Physics" },
+      "subject": "physics",
+      "classes": [9, 10],
+      "curriculum": "NCTB",
+      "edition": null,
+      "chapters": [
+        { "number": 1, "title": { "bn": "ভৌত রাশি ও পরিমাপ", "en": "Physical quantities and measurement" } }
+      ]
+    }
+  ]
+}

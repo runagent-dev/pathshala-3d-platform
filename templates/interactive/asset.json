@@ -1,24 +1,27 @@
 {
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
   "id": "{{id}}",
   "title": "{{title}}",
   "type": "interactive",
   "entry": "index.html",
-  "status": "idea",
   "version": "0.1.0",
-  "subject": "{{subject}}",
-  "chapter": "{{chapter}}",
+  "book": "physics-9-10",
   "page": null,
   "topic": "",
   "placement": "",
-  "grade": "",
-  "tags": [],
+  "maintainers": [],
   "description": "",
-  "updated": "{{date}}",
+  "tags": [],
   "params": [
-    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "dark", "transparent"], "default": "light" }
+    {
+      "name": "bg",
+      "label": "Background",
+      "type": "select",
+      "options": ["light", "dark", "transparent"],
+      "default": "light"
+    }
   ],
-  "commands": [
-    { "name": "capture", "payload": { "width": 800, "height": 500 } }
-  ],
+  "commands": [{ "name": "capture", "payload": { "width": 800, "height": 500 } }],
   "events": ["ready"]
 }

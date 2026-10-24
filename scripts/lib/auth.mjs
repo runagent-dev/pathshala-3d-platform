@@ -4,7 +4,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { ROOT } from './assets.mjs';
+import { ROOT } from './paths.mjs';
 
 export const AUTH_FILE = path.join(ROOT, '.studio-auth.json'); // git-ignored; dotfiles are never served
 

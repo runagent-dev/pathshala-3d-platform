@@ -2,7 +2,7 @@
 import fsp from 'node:fs/promises';
 import path from 'node:path';
 import zlib from 'node:zlib';
-import { walkFiles } from './assets.mjs';
+import { walkFiles } from './fsutil.mjs';
 
 const CRC_TABLE = (() => {
   const t = new Uint32Array(256);

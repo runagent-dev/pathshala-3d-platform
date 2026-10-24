@@ -106,6 +106,8 @@ async function loadAssets() {
   const data = await api('assets');
   state.assets = data.assets;
   state.statuses = data.statuses;
+  state.books = data.books || [];
+  renderBookOptions();
   renderFilters();
   renderList();
 }
@@ -143,7 +145,7 @@ function visibleAssets() {
       if (!a.reviews?.open) return false;
     } else if (state.filter.startsWith('type:') ? a.type !== state.filter.slice(5) : state.filter !== 'all' && a.status !== state.filter) return false;
     if (!q) return true;
-    return [a.id, a.title, a.subject, a.chapter, bookRef(a), a.page != null ? `p${a.page}` : '', ...(a.tags || [])].join(' ').toLowerCase().includes(q);
+    return [a.id, a.title, a.book, a.chapter?.title?.bn, a.chapter?.title?.en, bookRef(a), a.page != null ? `p${a.page}` : '', ...(a.tags || [])].join(' ').toLowerCase().includes(q);
   });
 }
 
@@ -303,7 +305,7 @@ function selectTab(tab) {
 }
 
 // ── info tab ──────────────────────────────────────────────────────────────────
-function renderInfo() {
+function renderInfo({ force = false } = {}) {
   const a = state.current;
   $('#statusPicker').innerHTML = state.statuses
     .map((s) => `<button class="pill ${a.status === s ? 'on' : ''}" data-s="${s}" data-status="${s}">${STATUS_LABEL[s] || s}</button>`)
@@ -311,29 +313,53 @@ function renderInfo() {
   const rows = [
     ['Folder', `assets/${a.id}/`],
     ['Type', typeOf(a).long],
-    ['Subject', a.subject],
-    ['Chapter', a.chapter],
-    ['Grade', a.grade],
+    ['Chapter', a.chapter ? `${a.chapter.number}. ${a.chapter.title.bn}${a.chapter.title.en ? ` (${a.chapter.title.en})` : ''}` : ''],
     ['Version', a.version],
-    ['Updated', a.updated],
+    ['Edited', a.updatedAt ? timeAgo(a.updatedAt) : ''],
+    ['Maintainers', (a.maintainers || []).map((m) => `@${m}`).join(', ')],
     ['Tags', (a.tags || []).join(', ')],
   ].filter(([, v]) => v);
   $('#infoKv').innerHTML = rows.map(([k, v]) => `<div class="k">${k}</div><div class="v">${escapeHtml(v)}</div>`).join('');
   const desc = $('#descInput');
   if (document.activeElement !== desc) desc.value = a.description || '';
-  const fill = (sel, v) => document.activeElement !== $(sel) && ($(sel).value = v ?? '');
+  const fill = (sel, v) => (force || document.activeElement !== $(sel)) && ($(sel).value = v ?? '');
+  fill('#bookInput', a.book);
   fill('#pageInput', a.page);
   fill('#topicInput', a.topic);
   fill('#placementInput', a.placement);
   $('#readme').innerHTML = a.readme ? renderMarkdown(a.readme) : '<p class="hint">No README.md yet.</p>';
 }
 
+/** The book picker lists books/books.json (one book for now; more later). */
+function renderBookOptions() {
+  const opts = state.books.map((b) => `<option value="${escapeHtml(b.id)}">${escapeHtml(b.title.bn)} · ${escapeHtml(b.title.en)} (${escapeHtml(b.id)})</option>`).join('');
+  $('#bookInput').innerHTML = opts;
+  newField('book').innerHTML = opts;
+}
+
+/** Saves fields of asset.json. On a refused change (the server validates), says why and shows the saved value again. */
 async function patchCurrent(patch) {
-  const updated = await api(`assets/${state.current.id}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(patch),
-  });
+  let updated;
+  try {
+    updated = await api(`assets/${state.current.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(patch),
+    });
+  } catch (err) {
+    toast(`Not saved: ${err.message}`, 5000);
+    renderInfo({ force: true }); // put the saved values back, even in the field being edited
+
+    throw err;
+  }
+  applyUpdate(updated);
+}
+
+async function setStatus(status) {
+  applyUpdate(await api(`assets/${state.current.id}/status`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) }));
+}
+
+function applyUpdate(updated) {
   Object.assign(state.current, updated);
   const i = state.assets.findIndex((x) => x.id === updated.id);
   if (i >= 0) state.assets[i] = { ...state.assets[i], ...updated };
@@ -682,6 +708,7 @@ $('#feedbackBtn').addEventListener('click', () => {
 function applyRole() {
   document.body.classList.toggle('role-reviewer', !isOwner());
   for (const sel of ['#descInput', '#pageInput', '#topicInput', '#placementInput']) $(sel).readOnly = !isOwner();
+  $('#bookInput').disabled = !isOwner();
   if (isOwner()) return;
   document.documentElement.lang = 'bn';
   document.title = 'পাঠশালা ৩D · মতামত';
@@ -777,15 +804,18 @@ $('#panelBtn').addEventListener('click', () => {
 $$('.tabs button').forEach((b) => b.addEventListener('click', () => selectTab(b.dataset.tab)));
 $('#statusPicker').addEventListener('click', (e) => {
   const b = e.target.closest('[data-status]');
-  if (b && state.current) patchCurrent({ status: b.dataset.status }).then(() => toast(`Status → ${STATUS_LABEL[b.dataset.status]}`));
+  if (b && state.current) setStatus(b.dataset.status).then(() => toast(`Status → ${STATUS_LABEL[b.dataset.status]}`), (err) => toast(err.message, 5000));
 });
-$('#descInput').addEventListener('change', (e) => state.current && patchCurrent({ description: e.target.value }));
+// Each field saves on change; a refused value is reported by patchCurrent (the catch only stops the chain).
+const saveField = (patch, done) => state.current && patchCurrent(patch).then(done, () => {});
+$('#descInput').addEventListener('change', (e) => saveField({ description: e.target.value }));
+$('#bookInput').addEventListener('change', (e) => saveField({ book: e.target.value }, () => (renderHandoff(), toast('Book saved'))));
 $('#pageInput').addEventListener('change', (e) => {
   const v = e.target.value.trim();
-  if (state.current) patchCurrent({ page: v === '' ? null : Number(v) || v }).then(() => (renderHandoff(), toast('Page saved')));
+  saveField({ page: v === '' ? null : /^\d+$/.test(v) ? Number(v) : v }, () => (renderHandoff(), toast('Page saved')));
 });
-$('#topicInput').addEventListener('change', (e) => state.current && patchCurrent({ topic: e.target.value.trim() }).then(() => (renderHandoff(), toast('Topic saved'))));
-$('#placementInput').addEventListener('change', (e) => state.current && patchCurrent({ placement: e.target.value.trim() }).then(renderHandoff));
+$('#topicInput').addEventListener('change', (e) => saveField({ topic: e.target.value.trim() }, () => (renderHandoff(), toast('Topic saved'))));
+$('#placementInput').addEventListener('change', (e) => saveField({ placement: e.target.value.trim() }, renderHandoff));
 $('#paramForm').addEventListener('input', onParamInput);
 $('#paramForm').addEventListener('change', onParamInput);
 $('#paramReset').addEventListener('click', () => {
@@ -847,6 +877,7 @@ $('#newForm').addEventListener('submit', async (e) => {
   if (e.submitter?.value !== 'create') return;
   e.preventDefault();
   const body = Object.fromEntries(new FormData(e.target));
+  body.page = body.page?.trim() ? (/^\d+$/.test(body.page.trim()) ? Number(body.page.trim()) : body.page) : null;
   try {
     const created = await api('assets', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     $('#newDialog').close();

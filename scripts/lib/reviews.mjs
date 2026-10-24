@@ -6,7 +6,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
-import { assetDir } from './assets.mjs';
+import { assetDir } from './paths.mjs';
 
 const dirOf = (id) => path.join(assetDir(id), 'reviews');
 const fileOf = (id) => path.join(dirOf(id), 'reviews.json');
