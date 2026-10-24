@@ -16,6 +16,7 @@ data/
 
 # local tool settings
 .claude/settings.local.json
+.claude/worktrees/
 .DS_Store
 *.tmp
 
