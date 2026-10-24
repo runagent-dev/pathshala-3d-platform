@@ -12,7 +12,7 @@ body.bg-transparent { background: transparent; }
 .pvc .c-g { color: var(--c-g); }
 .pvc .c-m { color: var(--c-m); }
 
-.bal-extra { margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--ink-2); }
+.bal-extra { margin: 0; min-height: 3em; font-size: 13.5px; line-height: 1.5; color: var(--ink-2); } /* 2 lines: the 3D view keeps its size */
 .bal-acts { display: flex; flex-wrap: wrap; gap: 6px; }
 .bal-acts .pvc-btn { height: 36px; padding: 0 12px; font-size: 14.5px; }
 @container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
