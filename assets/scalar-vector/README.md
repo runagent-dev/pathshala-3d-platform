@@ -2,10 +2,11 @@
 
 **Where it goes in the book:** Book page 38, topic 2.3: স্কেলার ও ভেক্টর রাশি. Next to চিত্র ২.০৩ (vectors A, B, C, D), or in place of it.
 
-Interactive 3D figure for the Pathshala book: the arrows A, B, C, D of চিত্র ২.০৩ as pieces on graph paper. The
-student moves an arrow (the vector stays the same), turns or stretches it by its head (দিক, মান), and lines two up
-tail to tail to see whether they are the same vector; then a five-question test. `?compare=A,B` (or `A,C`, `C,D`)
-opens it with one of the caption's pairs already lined up.
+Interactive 3D figure for the Pathshala book: the arrows A, B, C, D of চিত্র ২.০৩ as pieces on graph paper, beside a
+thermometer reading 37° C. The student moves an arrow (the vector stays the same), turns or stretches it by its head
+(দিক, মান), and lines two up tail to tail to see whether they are the same vector; moving or turning the thermometer
+changes nothing (a scalar). Then a five-question test. `?compare=A,B` (or `A,C`, `C,D`) opens it with one of the
+caption's pairs already lined up.
 
 ## Embed
 
@@ -31,7 +32,7 @@ To listen to it or control it from the book page, use the helper shipped in the 
 |---|---|---|---|
 | `lang` | Language | `bn` বাংলা · `en` English | `bn` |
 | `compare` | Start with a pair lined up | (empty) none · `A,B` A and B · `A,C` A and C · `C,D` C and D |  |
-| `select` | Chosen arrow | `A` · `B` · `C` · `D` | `A` |
+| `select` | Chosen arrow | `A` A · `B` B · `C` C · `D` D · `T` thermometer | `A` |
 | `view` | View | `front` · `3d` | `front` |
 | `mode` | Start in | `explore` learn · `quiz` test | `explore` |
 | `coach` | First-use pointers | `1` · `0` | `1` |

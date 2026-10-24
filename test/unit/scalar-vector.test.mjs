@@ -18,7 +18,7 @@ describe('scalar-vector: মান and দিক of an arrow', () => {
     assert.equal(v.norm360(360), 0);
     assert.equal(v.norm360(405), 45);
   });
-  it('snaps a dragged head to whole units and 15° steps, within 1–7 units', () => {
+  it('snaps a dragged head to whole units and the eight compass directions, within 1–7 units', () => {
     assert.deepEqual(v.snapPolar(3.1, 3.9), { length: 5, angle: 45 });
     assert.deepEqual(v.snapPolar(0.1, 0.1), { length: 1, angle: 45 });
     assert.deepEqual(v.snapPolar(20, 0), { length: 7, angle: 0 });
@@ -59,19 +59,28 @@ describe('scalar-vector: the same vector (চিত্র ২.০৩)', () => {
     assert.equal(r.opposite, true);
   });
   it('0° and 360° are the same দিক', () => assert.equal(v.sameDirection({ angle: 0 }, { angle: 360 }), true));
+  it('A and B point উত্তর-পূর্ব, C and D উত্তর-পশ্চিম, as in the book', () => {
+    assert.equal(v.compass(A.angle), 'ne');
+    assert.equal(v.compass(C.angle), 'nw');
+  });
   it('the book layout keeps every arrow on the paper and the three pairs fit tail to tail', () => {
     for (const x of [A, B, C, D]) assert.equal(v.fits(x.tail, x.length, x.angle), true);
     assert.deepEqual(v.commonTail(A, B), A.tail);
     assert.deepEqual(v.commonTail(A, C), A.tail);
     assert.deepEqual(v.commonTail(C, D), C.tail);
   });
-  it('the book arrows lie apart', () => {
+  it('the book arrows lie apart, clear of the compass rose and the thermometer', () => {
     const list = [A, B, C, D];
-    for (let i = 0; i < list.length; i++)
+    const [t1, t2] = v.thermoEnds(v.THERMO);
+    for (let i = 0; i < list.length; i++) {
+      const h = v.headOf(list[i]);
+      assert.ok(v.segmentDistance(list[i].tail, h, [v.ROSE.x, v.ROSE.y], [v.ROSE.x, v.ROSE.y]) >= v.ROSE.r + 0.5);
+      assert.ok(v.segmentDistance(list[i].tail, h, t1, t2) >= 1.4);
       for (let j = i + 1; j < list.length; j++) {
-        const d = v.segmentDistance(list[i].tail, v.headOf(list[i]), list[j].tail, v.headOf(list[j]));
-        assert.ok(d >= 1.4, `${i}–${j}: ${d}`);
+        const d = v.segmentDistance(list[i].tail, h, list[j].tail, v.headOf(list[j]));
+        assert.ok(d >= 2, `${i}–${j}: ${d}`);
       }
+    }
   });
 });
 
@@ -96,6 +105,23 @@ describe('scalar-vector: moving arrows on the paper', () => {
     assert.deepEqual(v.landing([3.4, 2.3], { length: 5, angle: 60 }, others), { tail: [3, 2], dockedOn: 'A' });
     assert.deepEqual(v.landing([5.4, 2.6], { length: 5, angle: 60 }, others), { tail: [5, 3], dockedOn: null });
     assert.deepEqual(v.landing([11.2, 8.8], { length: 5, angle: 60 }, others), { tail: [9, 5], dockedOn: null });
+  });
+  it('lines a pair up away from the other arrows when it can', () => {
+    const u = { tail: [1, 2], length: 4, angle: 45 };
+    const w = { tail: [9, 2], length: 4, angle: 135 };
+    const free = v.commonTail(u, w);
+    const blocked = v.commonTail(u, w, { avoid: [[free, [free[0] + 3, free[1] + 3]]] });
+    assert.notDeepEqual(blocked, free);
+    for (const x of [u, w]) assert.ok(v.segmentDistance(blocked, v.headOf({ ...x, tail: blocked }), free, [free[0] + 3, free[1] + 3]) >= 0.9);
+  });
+  it('keeps the whole thermometer on the paper', () => {
+    assert.deepEqual(v.thermoEnds({ at: [5, 5], angle: 0 }, 2), [
+      [3, 5],
+      [7, 5],
+    ]);
+    assert.deepEqual(v.fitThermo([0, 0], 0, 1.8), [2.3, 0.5]);
+    assert.deepEqual(v.fitThermo([6, 9.9], 90, 1.8), [6, 7.7]);
+    assert.deepEqual(v.fitThermo(v.THERMO.at, v.THERMO.angle), v.THERMO.at);
   });
   it('finds one tail for two arrows that both fit', () => {
     const u = { tail: [1, 2], length: 5, angle: 60 };

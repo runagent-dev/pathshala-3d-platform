@@ -1,11 +1,12 @@
 // The 3D pieces of the figure, procedural three.js in millimetres: a sheet of graph paper (1 cm squares, a compass
 // rose in one corner) on a wooden drawing board, arrow pieces lying on it like cut-outs (a shaft with a light mark
-// at every unit, so the মান can be counted, and a round tail), and the helpers drawn on the paper: the দিক arc, the
-// ring of every place a head of the same মান could be, a house and a flag for the "where is the school?" question.
+// at every unit, so the মান can be counted, and a round tail), a clinical thermometer reading 37° C (a scalar
+// beside the vectors), and the helpers drawn on the paper: the দিক arc, the ring of every place a head of the same
+// মান could be, a house and a flag for the "where is the school?" question.
 // Paper coordinates are squares from the grid's bottom-left corner, x to পূর্ব (east), y to উত্তর (north).
 import * as THREE from 'three';
 import { FONT, textMesh } from '@shared/student/materials.js';
-import { PAPER, ROSE } from './reading.js';
+import { PAPER, ROSE, TEMPERATURE } from './reading.js';
 
 export const UNIT = 10; // mm per square
 const EDGE = 0.4; // squares of plain paper round the grid
@@ -19,6 +20,7 @@ export const COLORS = {
   mag: '#1c6fd9', // মান
   dir: '#d9480f', // দিক
   highlight: '#ffe27a',
+  match: '#8fdca8',
   grid: '#9fc4e6',
   gridFine: '#dce9f6',
 };
@@ -289,9 +291,10 @@ export function createArrow(name) {
   const marks = new THREE.InstancedMesh(P.mark, markMat, 8);
   marks.name = 'UnitMarks';
   marks.count = 0;
-  const strip = new THREE.Mesh(P.strip, P.highlight);
-  const endA = new THREE.Mesh(P.end, P.highlight);
-  const endB = new THREE.Mesh(P.end, P.highlight);
+  const mark = P.highlight.clone(); // its own, so it can flash green when two arrows match
+  const strip = new THREE.Mesh(P.strip, mark);
+  const endA = new THREE.Mesh(P.end, mark);
+  const endB = new THREE.Mesh(P.end, mark);
   endB.rotation.y = Math.PI;
   const highlight = new THREE.Group();
   highlight.add(strip, endA, endB);
@@ -315,7 +318,7 @@ export function createArrow(name) {
   root.add(label);
 
   const m4 = new THREE.Matrix4();
-  const state = { tail: [0, 0], length: 1, angle: 0, lift: 0, side: 1, shape: '' };
+  const state = { tail: [0, 0], length: 1, angle: 0, lift: 0, spot: { k: 0.5, side: 1, off: 1.05 }, shape: '' };
   const v = new THREE.Vector3();
 
   function layout() {
@@ -344,21 +347,24 @@ export function createArrow(name) {
       endB.position.x = L + 1;
       hitBody.scale.set(Math.max(4, L - ARROW.headL), 1, 11);
       hitBody.position.set(Math.max(4, L - ARROW.headL) / 2, 3, 0);
-      hitHead.scale.setScalar(8.5);
-      hitHead.position.set(L - ARROW.headL * 0.45, 3, 0);
+      // a short arrow keeps a body to drag: its head target shrinks with it
+      hitHead.scale.setScalar(Math.min(8.5, L * 0.32));
+      hitHead.position.set(L - Math.min(ARROW.headL * 0.45, L * 0.25), 3, 0);
     }
-    // the name beside the middle of the arrow, upright on the paper
-    const at = spot(state.side);
+    // the name beside the arrow, upright on the paper
+    const at = spot(state.spot);
     toWorld(at[0], at[1], lift + 0.3, v);
     label.position.copy(v);
   }
-  /** Where the name goes on one side of the arrow (1: left of it, -1: right), in paper coordinates. */
-  function spot(side) {
+  /**
+   * Where the name goes, in paper coordinates: at fraction k along the arrow, on its left (side 1) or right (-1),
+   * `off` squares from it.
+   */
+  function spot({ k = 0.5, side = 1, off = 1.05 }) {
     const { tail: tl, length, angle } = state;
     const a = (angle * Math.PI) / 180;
-    const mid = [tl[0] + (Math.cos(a) * length) / 2, tl[1] + (Math.sin(a) * length) / 2];
-    const off = 1.05 * side;
-    return [mid[0] - Math.sin(a) * off, mid[1] + Math.cos(a) * off];
+    const at = [tl[0] + Math.cos(a) * length * k, tl[1] + Math.sin(a) * length * k];
+    return [at[0] - Math.sin(a) * off * side, at[1] + Math.cos(a) * off * side];
   }
 
   return {
@@ -379,17 +385,23 @@ export function createArrow(name) {
       state.lift = mm;
       layout();
     },
-    setLabelSide(side) {
-      if (state.side === side) return;
-      state.side = side;
+    /** Put the name at a spot ({ k, side, off }, see spot()). */
+    setLabelSpot(sp) {
+      const c = state.spot;
+      if (c.k === sp.k && c.side === sp.side && c.off === sp.off) return;
+      state.spot = { ...sp };
       layout();
     },
-    /** Where the label sits (or would sit on that side), in paper coordinates, to keep it clear of others. */
-    labelAt(side = state.side) {
-      return spot(side);
+    /** Where the label sits (or would sit at that spot), in paper coordinates, to keep it clear of others. */
+    labelAt(sp = state.spot) {
+      return spot(sp);
     },
     setSelected(on) {
       highlight.visible = on;
+    },
+    /** The highlighter's colour: green for a moment when the arrow matches another exactly, else yellow. */
+    setMatch(on) {
+      mark.color.set(on ? COLORS.match : COLORS.highlight);
     },
     setLabelVisible(on) {
       label.visible = on;
@@ -410,34 +422,51 @@ export function createArrow(name) {
 
 // ── helpers drawn on the paper (not exported) ───────────────────────────────────
 
-/** The দিক: a dashed line to পূর্ব from the tail, an arc from it to the arrow, and the angle. */
-export function createAngleMark() {
+/** How far a ray from a paper point at angle th (radians) goes before it leaves the sheet, in squares. */
+function reach(p, th) {
+  const dx = Math.cos(th);
+  const dy = Math.sin(th);
+  let r = Infinity;
+  if (dx > 1e-6) r = Math.min(r, (PAPER.w + EDGE - p[0]) / dx);
+  if (dx < -1e-6) r = Math.min(r, (-EDGE - p[0]) / dx);
+  if (dy > 1e-6) r = Math.min(r, (PAPER.h + EDGE - p[1]) / dy);
+  if (dy < -1e-6) r = Math.min(r, (-EDGE - p[1]) / dy);
+  return r;
+}
+
+/**
+ * The দিক: a dashed line to পূর্ব from the tail, an arc from it round to the arrow, and the angle written inside
+ * the arc. Arc and line shrink near the edge so they stay on the paper. `faint`: a smaller, lighter one, for the
+ * other arrow of a lined-up pair.
+ */
+export function createAngleMark({ radius = 12.5, faint = false } = {}) {
   const root = new THREE.Group();
   root.name = 'AngleMark';
   root.userData.noExport = true;
-  const mat = new THREE.MeshBasicMaterial({ color: COLORS.dir, toneMapped: false, transparent: true, depthWrite: false });
-  const dashes = new THREE.Group();
+  const mat = new THREE.MeshBasicMaterial({ color: COLORS.dir, toneMapped: false, transparent: true, opacity: faint ? 0.6 : 1, depthWrite: false });
+  const dashes = [];
   for (let k = 0; k < 5; k++) {
     const d = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 0.8), mat);
     d.rotation.x = -Math.PI / 2;
     d.position.set(4 + k * 3.6, 0, 0);
-    dashes.add(d);
+    dashes.push(d);
+    root.add(d);
   }
   let arc = null;
   let text = null;
   let drawn = '';
   let textAt = null;
-  const R = 12.5;
-  root.add(dashes);
+  let R = radius;
   root.renderOrder = 3;
   function rebuild(angle, label) {
-    drawn = `${angle}|${label}`;
+    drawn = `${angle}|${label}|${R}`;
     if (arc) {
       root.remove(arc);
       arc.geometry.dispose();
     }
     const span = Math.max(0.001, (angle * Math.PI) / 180);
-    arc = new THREE.Mesh(new THREE.RingGeometry(R - 0.55, R + 0.55, Math.max(4, Math.ceil(angle / 6)), 1, 0, span), mat);
+    const w = faint ? 0.42 : 0.55;
+    arc = new THREE.Mesh(new THREE.RingGeometry(R - w, R + w, Math.max(4, Math.ceil(angle / 6)), 1, 0, span), mat);
     arc.rotation.x = -Math.PI / 2;
     arc.renderOrder = 3;
     root.add(arc);
@@ -446,39 +475,44 @@ export function createAngleMark() {
       text.geometry.dispose();
       text.material.dispose();
     }
-    text = textMesh(label, 5.2, { color: COLORS.dir, weight: 700 });
+    text = textMesh(label, faint ? 4.8 : 5.2, { color: COLORS.dir, weight: 700, opacity: faint ? 0.85 : 1 });
     text.rotation.x = -Math.PI / 2;
     root.add(text);
   }
-  /** The angle goes where it has most room near the arc (`room(p)`: free squares round a paper point). */
+  /** The angle goes where it has most room inside the arc (`room(p)`: free squares round a paper point). */
   function placeText(tail, angle, room) {
     const span = (angle * Math.PI) / 180;
-    const r = (R + 7) / UNIT;
+    const spots = angle > 0 ? [0.5, 0.35, 0.65, 0.22, 0.78].map((f, i) => [span * f, i * 0.06]) : [[0.32, 0]];
     let best = null;
-    for (const [a, pref] of [
-      [span * 0.5, 0],
-      [span * 0.35, 0.1],
-      [span * 0.65, 0.1],
-      [span * 0.2, 0.2],
-      [span * 0.8, 0.2],
-      [-0.4, 0.3],
-    ]) {
-      const p = [tail[0] + Math.cos(a) * r, tail[1] + Math.sin(a) * r];
-      const score = (room ? room(p) : 1) - pref;
-      if (!best || score > best.score) best = { score, a };
-    }
-    text.position.set(Math.cos(best.a) * (R + 7), 0.1, -Math.sin(best.a) * (R + 7));
-    textAt = [tail[0] + (Math.cos(best.a) * (R + 7)) / UNIT, tail[1] + (Math.sin(best.a) * (R + 7)) / UNIT];
+    for (const out of [6.5, 10.5])
+      for (const [a, pref] of spots) {
+        const r = (R + out) / UNIT;
+        const p = [tail[0] + Math.cos(a) * r, tail[1] + Math.sin(a) * r];
+        const score = (room ? room(p) : 1) - pref - (out > 7 ? 0.15 : 0);
+        if (!best || score > best.score) best = { score, a, out };
+      }
+    const d = R + best.out;
+    text.position.set(Math.cos(best.a) * d, 0.1, -Math.sin(best.a) * d);
+    textAt = [tail[0] + (Math.cos(best.a) * d) / UNIT, tail[1] + (Math.sin(best.a) * d) / UNIT];
   }
   return {
     root,
     set(tail, angle, label, room) {
-      toWorld(tail[0], tail[1], 0.25, root.position);
-      if (drawn !== `${angle}|${label}`) rebuild(angle, label);
+      toWorld(tail[0], tail[1], faint ? 0.2 : 0.25, root.position);
+      // stay on the paper: the arc no further out than the sheet allows in any direction it sweeps
+      let free = Infinity;
+      for (let th = 0; th <= angle + 1e-6; th += 15) free = Math.min(free, reach(tail, (th * Math.PI) / 180));
+      R = Math.round(THREE.MathUtils.clamp((free - 0.35) * UNIT, radius * 0.5, radius) * 2) / 2;
+      const line = THREE.MathUtils.clamp((reach(tail, 0) - 0.2) * UNIT, 6, 20.6);
+      dashes.forEach((d, k) => (d.visible = 4 + k * 3.6 + 1.1 <= line));
+      if (drawn !== `${angle}|${label}|${R}`) rebuild(angle, label);
       placeText(tail, angle, room);
     },
     setVisible(on) {
       root.visible = on;
+    },
+    get visible() {
+      return root.visible;
     },
     /** Where the angle is written, in paper coordinates (null when hidden): names keep clear of it. */
     textAt: () => (root.visible ? textAt : null),
@@ -521,12 +555,15 @@ export function createGhost() {
       head.position.x = L - ARROW.headL;
       toWorld(from.tail[0], from.tail[1], 0.15, a);
       toWorld(to[0], to[1], 0.15, b);
-      const n = Math.min(40, Math.floor(a.distanceTo(b) / 3.2));
-      for (let k = 1; k < n; k++) {
-        m4.makeTranslation(a.x + ((b.x - a.x) * k) / n, a.y, a.z + ((b.z - a.z) * k) / n);
+      // the dots stop short of the new tail, leaving room there for the দিক arcs and their angles
+      const len = a.distanceTo(b) || 1;
+      const n = Math.min(40, Math.max(0, Math.floor((len - 2.2 * UNIT) / 3.2)));
+      for (let k = 1; k <= n; k++) {
+        const f = (3.2 * k) / len;
+        m4.makeTranslation(a.x + (b.x - a.x) * f, a.y, a.z + (b.z - a.z) * f);
         dots.setMatrixAt(k - 1, m4);
       }
-      dots.count = Math.max(0, n - 1);
+      dots.count = n;
       dots.instanceMatrix.needsUpdate = true;
     },
   };
@@ -596,22 +633,29 @@ export function createPlaces() {
   root.name = 'Places';
   root.userData.noExport = true;
   const house = new THREE.Group();
-  const walls = new THREE.Mesh(new THREE.BoxGeometry(7, 5, 6), new THREE.MeshStandardMaterial({ color: 0xf1e3c8, roughness: 0.8 }));
-  walls.position.y = 2.5;
+  const walls = new THREE.Mesh(new THREE.BoxGeometry(10, 6, 8), new THREE.MeshStandardMaterial({ color: 0xf3e6c9, roughness: 0.8 }));
+  walls.position.y = 3;
   const roofShape = new THREE.Shape();
-  roofShape.moveTo(-4.6, 0);
-  roofShape.lineTo(0, 3.6);
-  roofShape.lineTo(4.6, 0);
+  roofShape.moveTo(-5.4, 0);
+  roofShape.lineTo(0, 4.4);
+  roofShape.lineTo(5.4, 0);
   roofShape.closePath();
+  // the ridge runs east–west, so the slope facing the student is lit and the other one is in shade
   const roof = new THREE.Mesh(
-    new THREE.ExtrudeGeometry(roofShape, { depth: 7, bevelEnabled: false }).translate(0, 0, -3.5),
+    new THREE.ExtrudeGeometry(roofShape, { depth: 11.4, bevelEnabled: false }).translate(0, 0, -5.7),
     new THREE.MeshStandardMaterial({ color: 0xb5482c, roughness: 0.7 }),
   );
-  roof.position.y = 5;
+  roof.position.y = 6;
   roof.rotation.y = Math.PI / 2;
-  const door = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 2.8), new THREE.MeshStandardMaterial({ color: 0x6b4a2b }));
-  door.position.set(0, 1.4, 3.01);
-  house.add(walls, roof, door);
+  const wood = new THREE.MeshStandardMaterial({ color: 0x6b4a2b, roughness: 0.8 });
+  const glass = new THREE.MeshStandardMaterial({ color: 0x9cc3e6, roughness: 0.3 });
+  const door = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 3.6), wood);
+  door.position.set(0, 1.8, 4.01);
+  const win1 = new THREE.Mesh(new THREE.PlaneGeometry(2, 1.8), glass);
+  win1.position.set(-3, 3.4, 4.01);
+  const win2 = win1.clone();
+  win2.position.x = 3;
+  house.add(walls, roof, door, win1, win2);
   for (const m of [walls, roof]) m.castShadow = true;
 
   // the flag stands exactly on the school's place; its cloth leans back a little so it reads from above
@@ -648,5 +692,139 @@ export function createPlaces() {
       flag.visible = Boolean(at);
       if (at) toWorld(at[0], at[1], 0, flag.position);
     },
+  };
+}
+
+/** The printed scale of the thermometer: 35–42 °C, a long mark every degree and a short one every half. */
+function scaleTexture(num) {
+  const c = canvas(560, 72);
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, 560, 72);
+  ctx.strokeStyle = '#1d2733';
+  ctx.fillStyle = '#1d2733';
+  ctx.lineWidth = 3;
+  ctx.font = `700 30px ${FONT}`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  for (let k = 0; k <= 14; k++) {
+    const x = 20 + (k / 14) * 520;
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, k % 2 ? 14 : 24);
+    ctx.stroke();
+    if (k % 2 === 0) ctx.fillText(num(35 + k / 2), x, 62);
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 8;
+  return tex;
+}
+
+/**
+ * A clinical thermometer lying on the paper, reading 37° C. It can be moved and turned like the arrows, but
+ * nothing about it changes: a temperature has a মান and no দিক. set({ at, angle }) in paper coordinates
+ * (its middle) and degrees; its reading is also written beside it, upright.
+ */
+export function createThermometer({ num, label }) {
+  const P = sharedParts();
+  const root = new THREE.Group();
+  root.name = 'Thermometer';
+  const piece = new THREE.Group(); // at the middle, turned; x runs from the bulb to the cap
+  root.add(piece);
+  const glass = new THREE.MeshPhysicalMaterial({
+    name: 'Glass',
+    color: 0xf4f8fb,
+    roughness: 0.1,
+    metalness: 0,
+    clearcoat: 1,
+    transparent: true,
+    opacity: 0.38,
+    depthWrite: false,
+  });
+  const tube = new THREE.Mesh(new THREE.CylinderGeometry(2.3, 2.3, 30, 24, 1, true).rotateZ(Math.PI / 2).translate(1.5, 2.3, 0), glass);
+  tube.name = 'Glass';
+  const cap = new THREE.Mesh(
+    new THREE.SphereGeometry(2.3, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2).rotateZ(-Math.PI / 2).translate(16.5, 2.3, 0),
+    glass,
+  );
+  const strip = new THREE.Mesh(new THREE.PlaneGeometry(27, 3.4), new THREE.MeshBasicMaterial({ map: scaleTexture(num), toneMapped: false }));
+  strip.name = 'Scale';
+  strip.rotation.x = -Math.PI / 2;
+  strip.position.set(1.5, 1.1, 0);
+  // the red liquid: 35° is at x = -11, 42° at x = 14 (the scale's ends), so 37° at -11 + 25 × 2/7
+  const red = new THREE.MeshStandardMaterial({ name: 'Liquid', color: 0xd9342b, roughness: 0.35 });
+  const top = -11 + (25 * (TEMPERATURE - 35)) / 7;
+  const column = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, top + 13.6, 12).rotateZ(Math.PI / 2), red);
+  column.position.set((top - 13.6) / 2, 2.3, 0);
+  const bulb = new THREE.Mesh(new THREE.SphereGeometry(2.8, 24, 16), red);
+  bulb.name = 'Bulb';
+  bulb.position.set(-15.6, 2.8, 0);
+  const mark = P.highlight.clone();
+  const hl = new THREE.Group();
+  const s1 = new THREE.Mesh(P.strip, mark);
+  s1.scale.x = 38;
+  s1.position.x = -19;
+  const e1 = new THREE.Mesh(P.end, mark);
+  e1.position.x = -19;
+  const e2 = new THREE.Mesh(P.end, mark);
+  e2.rotation.y = Math.PI;
+  e2.position.x = 19;
+  hl.add(s1, e1, e2);
+  hl.position.y = 0.06;
+  hl.visible = false;
+  hl.userData.noExport = true;
+  const hit = new THREE.Mesh(new THREE.BoxGeometry(40, 9, 11), P.hitMat);
+  hit.position.y = 3;
+  hit.userData = { thermo: true, noExport: true };
+  piece.add(hl, strip, column, bulb, tube, cap, hit);
+  for (const m of [bulb, column]) m.castShadow = true;
+  const text = textMesh(label, 5.2, { color: COLORS.ink, weight: 700 });
+  text.name = 'Reading';
+  text.rotation.x = -Math.PI / 2;
+  root.add(text);
+
+  const state = { at: [0, 0], angle: 0, lift: 0, side: 1 };
+  const v = new THREE.Vector3();
+  function spot(side) {
+    const a = (state.angle * Math.PI) / 180;
+    return [state.at[0] - Math.sin(a) * 0.95 * side, state.at[1] + Math.cos(a) * 0.95 * side];
+  }
+  function layout() {
+    toWorld(state.at[0], state.at[1], state.lift, piece.position);
+    piece.rotation.y = (state.angle * Math.PI) / 180;
+    const p = spot(state.side);
+    toWorld(p[0], p[1], state.lift + 0.3, v);
+    text.position.copy(v);
+  }
+  return {
+    root,
+    hits: [hit],
+    get state() {
+      return state;
+    },
+    set({ at, angle, lift }) {
+      if (at) state.at = [at[0], at[1]];
+      if (angle != null) state.angle = angle;
+      if (lift != null) state.lift = lift;
+      layout();
+    },
+    labelAt: (side = state.side) => spot(side),
+    setLabelSide(side) {
+      if (state.side === side) return;
+      state.side = side;
+      layout();
+    },
+    setSelected(on) {
+      hl.visible = on;
+    },
+    setVisible(on) {
+      root.visible = on;
+    },
+    get visible() {
+      return root.visible;
+    },
+    /** The middle of the glass in the scene, for pointers. */
+    point: (out = new THREE.Vector3()) => toWorld(state.at[0], state.at[1], 4, out),
   };
 }
