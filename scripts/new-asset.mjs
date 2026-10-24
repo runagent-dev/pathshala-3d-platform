@@ -4,8 +4,6 @@
 //   npm run new -- --slug screw-gauge --title "Screw gauge (স্ক্রু-গেইজ)" --page 21 --topic 1.6.1 [--type interactive|animation|model] [--book physics-9-10]
 //   npm run new -- screw-gauge "Screw gauge" --page 21 --topic 1.6.1        (same, shorter)
 import { execFileSync } from 'node:child_process';
-import fs from 'node:fs';
-import path from 'node:path';
 import { scaffoldAsset } from './lib/scaffold.mjs';
 import { DEFAULT_BOOK } from './lib/books.mjs';
 
@@ -43,16 +41,6 @@ try {
 try {
   const r = await scaffoldAsset(opts);
   console.log(`✓ Created ${r.dir}`);
-  // the new figure's README tables and CODEOWNERS line
-  const { generatedFiles } = await import('./generate.mjs');
-  for (const g of generatedFiles()) fs.writeFileSync(g.file, g.content);
-  const { applySections, readmeSections } = await import('./docs.mjs');
-  const readme = path.join(r.dir, 'README.md');
-  if (fs.existsSync(readme))
-    fs.writeFileSync(
-      readme,
-      applySections(fs.readFileSync(readme, 'utf8'), readmeSections(JSON.parse(fs.readFileSync(path.join(r.dir, 'asset.json'), 'utf8')))),
-    );
   console.log(`  Next: npm run dev, open http://127.0.0.1:4800/dashboard/#/${r.id}, then npm run verify -- ${r.id}`);
   if (!opts.maintainers) console.log('  Tip: run `git config --global github.user <your-github-name>` so new figures list you as maintainer.');
 } catch (err) {

@@ -37,6 +37,7 @@ import { listExports } from './lib/exports.mjs';
 import { MIN_FREE_BYTES, releaseProblem } from './lib/release.mjs';
 import { freeBytes } from './lib/fsutil.mjs';
 import { EXPORTS_DIR } from './lib/paths.mjs';
+import { commitUpload, receiveFile } from './lib/uploads.mjs';
 
 const PORT = Number(process.env.PORT || 4800);
 const PUBLIC = process.argv.includes('--public') || process.env.PUBLIC === '1';
@@ -168,6 +169,18 @@ async function api(req, res, url) {
   }
   if (resource === 'me') return json(res, 200, { role: req.role });
   if (resource === 'books' && req.method === 'GET') return json(res, 200, { books: loadBooks() });
+  // Uploads: the browser converts the files to one GLB, sends each file as a raw body, then commits the upload.
+  if (resource === 'uploads') {
+    if (!exportsReady()) return json(res, 503, { error: 'Uploads need the dev tools on this server: run npm ci' });
+    const [uploadId, name] = [id, sub];
+    if (req.method === 'PUT' && name && name !== 'commit')
+      return json(res, 200, await receiveFile(uploadId, decodeURIComponent(name), await readBody(req, 60 * 1024 * 1024)));
+    if (req.method === 'POST' && name === 'commit') {
+      const r = await commitUpload(uploadId, await readJson(req, 64 * 1024), { by: req.role });
+      return json(res, 201, { ...r, asset: await assetSummary(r.id) });
+    }
+    return json(res, 405, { error: 'Method not allowed' });
+  }
   if (resource === 'jobs') {
     const job = id ? jobs.get(id) : null;
     if (!id && req.method === 'GET') return json(res, 200, { jobs: jobs.list({ limit: 50 }) });

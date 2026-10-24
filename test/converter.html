@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Model converter</title>
+  <!-- Used by `npm run import` and the tests: runs shared/lib/import/convert.js in the browser, like the studio. -->
+  <script type="importmap">
+    { "imports": { "three": "../shared/vendor/three/three.module.min.js", "three/addons/": "../shared/vendor/three/addons/", "@shared/": "../shared/lib/" } }
+  </script>
+  <style>html, body { margin: 0; background: #fff; } #view { position: fixed; inset: 0; }</style>
+</head>
+<body>
+  <div id="view"></div>
+  <script type="module">
+    import * as THREE from 'three';
+    import { convertModel } from '../shared/lib/import/convert.js';
+    import { createStage } from '../shared/lib/stage.js';
+
+    const fromBase64 = (b64) => Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)).buffer;
+    const toBase64 = (buf) => {
+      let s = '';
+      const bytes = new Uint8Array(buf);
+      for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+      return btoa(s);
+    };
+    const stage = createStage(document.getElementById('view'), { fov: 35, environment: 'studio-light' });
+
+    /** files: [{ name, base64 }] → { glb (base64), thumbnail (PNG data URL), stats, warnings } */
+    window.convert = async (files, options) => {
+      const r = await convertModel(files.map((f) => ({ name: f.name, data: fromBase64(f.base64) })), options);
+      stage.scene.add(r.scene);
+      const box = new THREE.Box3().setFromObject(r.scene);
+      const center = box.getCenter(new THREE.Vector3());
+      const d = (box.getSize(new THREE.Vector3()).length() / 2 / Math.sin(THREE.MathUtils.degToRad(17.5))) * 1.1;
+      Object.assign(stage.camera, { near: d / 100, far: d * 100 }).updateProjectionMatrix();
+      stage.camera.position.copy(center).add(new THREE.Vector3(0.6, 0.45, 1).normalize().multiplyScalar(d));
+      stage.controls.target.copy(center);
+      stage.controls.update();
+      return { glb: toBase64(r.glb), thumbnail: stage.capture({ width: 800, height: 500 }), stats: r.stats, warnings: r.warnings };
+    };
+    window.converterReady = true;
+  </script>
+</body>
+</html>

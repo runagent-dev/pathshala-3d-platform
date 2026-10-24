@@ -14,7 +14,8 @@ const FIGURE_TESTS = ONLY.length ? ONLY.map((id) => `assets/${id}/tests/**/*.spe
 export default defineConfig({
   // The contract and layout tests for every figure, plus each figure's own tests in assets/<id>/tests/.
   testDir: '.',
-  testMatch: ['test/figures/**/*.spec.mjs', ...FIGURE_TESTS],
+  // test/browser (the model converter) is skipped when FIGURES picks figures (verify, CI per figure).
+  testMatch: ['test/figures/**/*.spec.mjs', ...(ONLY.length ? [] : ['test/browser/**/*.spec.mjs']), ...FIGURE_TESTS],
   timeout: 180_000,
   expect: { timeout: 15_000 },
   fullyParallel: true,

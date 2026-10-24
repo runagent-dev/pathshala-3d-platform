@@ -34,15 +34,27 @@ export function figurePath(id, params = {}) {
  * returns { errors: [...], external: [...], failed: [...] } which fills in as the page runs.
  */
 export async function preparePage(page, { virtualTime = true } = {}) {
-  const log = { errors: [], external: [], failed: [] };
+  const hard = [];
+  const aborted = new Map(); // url → reason; a load the browser aborted is fine if the same file also loaded
+  const finished = new Set();
+  const log = {
+    errors: [],
+    external: [],
+    get failed() {
+      return [...hard, ...[...aborted].filter(([url]) => !finished.has(url)).map(([url, why]) => `${url} (${why})`)];
+    },
+  };
   if (virtualTime) await page.addInitScript({ content: VIRTUAL_TIME });
   page.on('pageerror', (err) => log.errors.push(`page error: ${err.message}`));
   page.on('console', (msg) => {
     if (msg.type() === 'error') log.errors.push(`console: ${msg.text()}`);
   });
+  page.on('requestfinished', (req) => finished.add(req.url()));
   page.on('requestfailed', (req) => {
     const reason = req.failure()?.errorText || '';
-    if (!/ERR_ABORTED|net::ERR_FAILED/.test(reason) || !log.external.includes(req.url())) log.failed.push(`${req.url()} (${reason})`);
+    if (log.external.includes(req.url())) return; // blocked on purpose, reported as external
+    if (/ERR_ABORTED/.test(reason)) aborted.set(req.url(), reason);
+    else hard.push(`${req.url()} (${reason})`);
   });
   await page.route('**/*', (route) => {
     const url = new URL(route.request().url());

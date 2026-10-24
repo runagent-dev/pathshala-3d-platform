@@ -1,10 +1,18 @@
 {
-  "$comment": "three.js addons (paths under examples/jsm/) copied into addons/ by npm run vendor:three. Files they import are added automatically.",
+  "$comment": "three.js addons (paths under examples/jsm/) copied into addons/ by npm run vendor:three. Files they import are added automatically; 'files' are copied as they are (loaded at run time). Figures use the first group; the studio's model import uses the loaders.",
   "addons": [
     "controls/OrbitControls.js",
     "environments/RoomEnvironment.js",
     "exporters/GLTFExporter.js",
     "geometries/RoundedBoxGeometry.js",
-    "loaders/GLTFLoader.js"
-  ]
+    "utils/BufferGeometryUtils.js",
+    "loaders/GLTFLoader.js",
+    "loaders/DRACOLoader.js",
+    "libs/meshopt_decoder.module.js",
+    "loaders/OBJLoader.js",
+    "loaders/MTLLoader.js",
+    "loaders/STLLoader.js",
+    "loaders/FBXLoader.js"
+  ],
+  "files": ["libs/draco/gltf/draco_wasm_wrapper.js", "libs/draco/gltf/draco_decoder.wasm", "libs/draco/README.md"]
 }

@@ -20,6 +20,15 @@ export default {
     for (const rel of REQUIRED[manifest?.type] || REQUIRED.interactive) {
       if (!fs.existsSync(path.join(dir, rel))) out.push({ level: 'error', file: rel, message: 'missing (every figure has it; see templates/)' });
     }
+    if (manifest?.type === 'model') {
+      const file = path.join(dir, 'source.json');
+      let source = null;
+      try {
+        source = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : null;
+      } catch {}
+      if (!source?.license || !source?.credit)
+        out.push({ level: 'warning', file: 'source.json', message: 'say where the model came from: source.json with "license" and "credit"' });
+    }
     let total = 0;
     for (const rel of await walkFiles(dir)) {
       const size = fs.statSync(path.join(dir, rel)).size;

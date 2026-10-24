@@ -1008,6 +1008,24 @@ $('#exportCancel').addEventListener('click', () =>
   api(`jobs/${$('#exportJob').dataset.job}`, { method: 'DELETE' }).catch((err) => toast(err.message)),
 );
 
+// New 3D model (upload): the dialog's code and three.js load only when it opens.
+$('#uploadBtn').addEventListener('click', async () => {
+  try {
+    const { openUpload } = await import('./upload.js');
+    openUpload({
+      books: state.books,
+      api,
+      onSaved: async (r) => {
+        await loadAssets();
+        selectAsset(r.id);
+        toast(`Saved assets/${r.id}/ (${r.glb.triangles.toLocaleString()} triangles, ${(r.glb.bytes / 1024).toFixed(0)} KB)`, 5000);
+      },
+    });
+  } catch (err) {
+    toast(`Could not open the upload: ${err.message}`, 6000);
+  }
+});
+
 // New asset dialog
 $('#newAssetBtn').addEventListener('click', () => {
   $('#newError').textContent = '';

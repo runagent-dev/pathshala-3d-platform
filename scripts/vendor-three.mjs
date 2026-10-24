@@ -6,7 +6,7 @@
 //   npm run vendor:three -- --check   only compare (exit 1 if the vendored files differ from the package)
 //
 // shared/vendor/three/ADDONS.json lists the addons figures and the studio use (paths under examples/jsm/); the
-// files those addons import are added automatically. To upgrade three: bump "three" in package.json (and
+// files those addons import are added automatically, and "files" lists files loaded at run time (Draco decoder). To upgrade three: bump "three" in package.json (and
 // @types/three), npm install, npm run vendor:three, then run the visual comparison across all figures.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -33,7 +33,14 @@ export function plan() {
     ['LICENSE', path.join(PKG, 'LICENSE')],
   ]);
   const jsm = path.join(PKG, 'examples', 'jsm');
-  const queue = [...JSON.parse(fs.readFileSync(ADDONS_FILE, 'utf8')).addons];
+  const list = JSON.parse(fs.readFileSync(ADDONS_FILE, 'utf8'));
+  // "files": copied as they are (loaded at run time, not imported, e.g. the Draco decoder)
+  for (const rel of list.files || []) {
+    const src = path.join(jsm, rel);
+    if (!fs.existsSync(src)) fail(`file ${rel} is not in three@${version} (examples/jsm/${rel})`);
+    files.set(`addons/${rel}`, src);
+  }
+  const queue = [...list.addons];
   while (queue.length) {
     const rel = queue.shift();
     const key = `addons/${rel}`;

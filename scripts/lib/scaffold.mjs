@@ -2,11 +2,13 @@
 import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
-import { ID_RE, ASSETS_DIR, TEMPLATES_DIR } from './paths.mjs';
+import { ID_RE, ASSETS_DIR, TEMPLATES_DIR, REAL_ASSETS } from './paths.mjs';
 import { walkFiles } from './fsutil.mjs';
 import { formatManifest, validateManifest, describe } from './manifest/index.mjs';
 import { formatStatus, statusRecord } from './status.mjs';
 import { loadBooks, DEFAULT_BOOK, bookRef } from './books.mjs';
+import { applySections, readmeSections } from '../docs.mjs';
+import { generatedFiles } from '../generate.mjs';
 
 const TYPES = ['interactive', 'animation', 'model'];
 const fail = (message) => Object.assign(new Error(message), { status: 400 });
@@ -61,12 +63,19 @@ export async function scaffoldAsset({
     formatStatus({ status: 'idea', history: [statusRecord('idea', { by: 'scaffold', version: manifest.version })] }),
   );
 
-  // Where it goes in the book, at the top of the README, so the developer can find the spot.
+  // The README: where it goes in the book (at the top, so the developer finds the spot) and the tables made from
+  // asset.json. Then the files generated from all figures (CODEOWNERS).
   const readme = path.join(dest, 'README.md');
-  if (ref && fs.existsSync(readme)) {
-    const text = await fsp.readFile(readme, 'utf8');
-    if (!text.includes('**Where it goes in the book:**')) {
-      await fsp.writeFile(readme, text.replace(/^(# .*\n)/, `$1\n**Where it goes in the book:** ${manifest.placement}\n`));
+  if (fs.existsSync(readme)) {
+    let text = await fsp.readFile(readme, 'utf8');
+    if (ref && !text.includes('**Where it goes in the book:**'))
+      text = text.replace(/^(# .*\n)/, `$1\n**Where it goes in the book:** ${manifest.placement}\n`);
+    await fsp.writeFile(readme, applySections(text, readmeSections(manifest)));
+  }
+  if (REAL_ASSETS) {
+    for (const g of generatedFiles()) {
+      await fsp.mkdir(path.dirname(g.file), { recursive: true });
+      await fsp.writeFile(g.file, g.content);
     }
   }
   return { id, dir: dest };

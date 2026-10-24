@@ -35,6 +35,9 @@
         <button class="btn ghost wide owner-only" id="newAssetBtn">
           <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg> New asset
         </button>
+        <button class="btn ghost wide owner-only" id="uploadBtn">
+          <svg viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M5 20h14" /></svg> New 3D model (upload)
+        </button>
       </footer>
     </aside>
 
@@ -208,11 +211,54 @@
     <div class="scrim" id="scrim" hidden></div>
   </div>
 
+  <dialog id="uploadDialog" class="dialog wide">
+    <form method="dialog" id="uploadForm">
+      <h2>New 3D model</h2>
+      <p class="hint">GLB or glTF (with its .bin and textures), OBJ (with .mtl and textures), STL, FBX (version 7 or newer), or one .zip of
+        them. It is converted here, in metres and Y up, then checked on the server and saved as a model figure.</p>
+      <label class="drop" id="uploadDrop">
+        <input type="file" id="uploadFiles" multiple accept=".glb,.gltf,.bin,.obj,.mtl,.stl,.fbx,.zip,.png,.jpg,.jpeg,.webp,.tga,.bmp,.ktx2" />
+        <span>Choose the files, or drop them here</span>
+      </label>
+      <div class="row gap">
+        <label>Units in the file
+          <select name="units"><option value="m">metres</option><option value="cm">centimetres</option><option value="mm">millimetres</option><option value="in">inches</option></select>
+        </label>
+        <label>Up axis <select name="up"><option value="y">Y up</option><option value="z">Z up</option></select></label>
+      </div>
+      <div class="upload-preview" id="uploadPreview" hidden><div class="upload-canvas" id="uploadCanvas"></div><p class="hint" id="uploadStats"></p></div>
+      <ul class="upload-warnings" id="uploadWarnings"></ul>
+      <label>Title <input name="title" required placeholder="Human heart (মানুষের হৃৎপিণ্ড)" /></label>
+      <label>Folder id <input name="id" required pattern="[a-z0-9][a-z0-9\-]*" placeholder="human-heart" /></label>
+      <label>Book <select name="book"></select></label>
+      <div class="row gap">
+        <label>Book page <input name="page" inputmode="numeric" placeholder="112" /></label>
+        <label>Topic <input name="topic" placeholder="6.3" /></label>
+      </div>
+      <label>Where on the page <input name="placement" placeholder="Next to Figure 6.4, or in place of it" /></label>
+      <div class="row gap">
+        <label>Made by (credit) <input name="credit" required placeholder="Name, or the site it came from" /></label>
+        <label>Licence
+          <select name="license">
+            <option value="CC0-1.0">CC0 (public domain)</option><option value="CC-BY-4.0">CC BY 4.0</option><option value="CC-BY-SA-4.0">CC BY-SA 4.0</option>
+            <option value="own-work">Our own work</option><option value="other">Other (say in Notes)</option>
+          </select>
+        </label>
+      </div>
+      <label>Source link <input name="url" type="url" placeholder="https://…" /></label>
+      <p class="error" id="uploadError"></p>
+      <div class="row end gap">
+        <button class="btn ghost" value="cancel" formnovalidate>Cancel</button>
+        <button class="btn primary" value="save" id="uploadSave" disabled>Save model</button>
+      </div>
+    </form>
+  </dialog>
+
   <dialog id="newDialog" class="dialog">
     <form method="dialog" id="newForm">
       <h2>New asset</h2>
       <label>Title <input name="title" required placeholder="Convex lens ray diagram" /></label>
-      <label>Folder id <input name="id" required pattern="[a-z0-9][a-z0-9-]*" placeholder="convex-lens" /></label>
+      <label>Folder id <input name="id" required pattern="[a-z0-9][a-z0-9\-]*" placeholder="convex-lens" /></label>
       <label>Type
         <select name="type">
           <option value="interactive">Interactive (three.js)</option>
@@ -234,6 +280,10 @@
   </dialog>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <!-- three.js for the model upload (loaded only when that dialog opens) -->
+  <script type="importmap">
+    { "imports": { "three": "../shared/vendor/three/three.module.min.js", "three/addons/": "../shared/vendor/three/addons/", "@shared/": "../shared/lib/" } }
+  </script>
   <script type="module" src="./dashboard.js"></script>
 </body>
 </html>
