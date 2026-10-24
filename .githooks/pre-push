@@ -1,6 +1,9 @@
 #!/bin/sh
 # Runs before every push (well under a minute): unit tests and type checks. Browser tests run in CI and with
 # `npm run verify`. Skip once with `git push --no-verify`.
+# Git gives hooks GIT_DIR and friends; the tests make throwaway repositories, which must not inherit them (from a
+# worktree they would commit into this repository).
+unset $(git rev-parse --local-env-vars)
 npm run -s test:unit || exit 1
 if [ -x node_modules/.bin/tsc ]; then
   npm run -s types || exit 1

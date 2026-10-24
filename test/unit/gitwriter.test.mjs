@@ -8,6 +8,9 @@ import { describe, it } from 'node:test';
 import { createGitWriter } from '../../scripts/lib/gitwriter.mjs';
 import { tempDir } from '../helpers.mjs';
 
+// Run from a git hook, GIT_DIR and friends would point these throwaway repositories at the real one.
+for (const name of Object.keys(process.env)) if (name.startsWith('GIT_')) delete process.env[name];
+
 const git = (cwd, ...args) => execFileSync('git', ['-c', 'user.name=T', '-c', 'user.email=t@t', ...args], { cwd, encoding: 'utf8' }).trim();
 function repos() {
   const top = tempDir();
