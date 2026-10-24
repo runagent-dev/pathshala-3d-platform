@@ -4,6 +4,7 @@ import { describe, it } from 'node:test';
 import { ease } from '@shared/tween.js';
 import * as caliper from '../../assets/vernier-caliper/src/reading.js';
 import * as gauge from '../../assets/screw-gauge/src/reading.js';
+import * as stopwatch from '../../assets/stopwatch/src/reading.js';
 import { bookRef, chapterOf, findBook, loadBooks, validateBooks } from '../../scripts/lib/books.mjs';
 
 describe('screw gauge reading (book p21: pitch 1 mm, 100 parts)', () => {
@@ -34,6 +35,18 @@ describe('vernier caliper reading', () => {
     const m = caliper.measure(19.6, 0.02, -0.04);
     assert.equal(m.observed, 19.56);
     assert.equal(m.corrected, 19.6);
+  });
+});
+
+describe('stopwatch reading (book p23: least count 0.01 s)', () => {
+  it('splits minutes, seconds and hundredths', () => {
+    assert.deepEqual(stopwatch.format(191.12), { main: '3:11', small: '12', text: '3:11.12', min: 3, sec: 11.12, whole: 11, cs: 12, value: 191.12 });
+  });
+  it('cuts, not rounds, to 0.01 s', () => assert.equal(stopwatch.split(5.999).value, 5.99));
+  it('is minutes × 60 + seconds', () => assert.equal(stopwatch.toSeconds(3, 11.12), 191.12));
+  it('stays between 0 and 59:59.99', () => {
+    assert.equal(stopwatch.split(-2).value, 0);
+    assert.equal(stopwatch.format(9999).text, '59:59.99');
   });
 });
 
