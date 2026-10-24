@@ -1,0 +1,95 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "stopwatch",
+  "title": "Stopwatch (থামা ঘড়ি)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 23,
+  "topic": "1.6.3",
+  "placement": "Book page 23, topic 1.6.3: থামা ঘড়ি (Stop Watch). Next to Figure 1.10 (চিত্র ১.১০, stopwatch), or in place of that photo.",
+  "maintainers": ["RadeenXALNW"],
+  "units": "mm",
+  "description": "Interactive 3D stopwatch (থামা ঘড়ি) as in the book's Figure 1.10 (page 23, 1.6.3). Press the start/stop button (on the watch or in the panel) to start and stop it, reset it, and read minutes:seconds with the hundredths smaller; the panel turns the reading into seconds (minutes × 60 + seconds; least count 0.01 s). The lamp game: a lamp lights for a few seconds and the student times it by hand, then sees the difference (reaction time, much bigger than the least count). Test tab: 5 questions (read the display in seconds, the time between two readings, how a time looks on the display, the least count). Phone-first, Bangla.",
+  "tags": ["measurement", "time", "stopwatch", "least-count", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "time",
+      "label": "Reading at the start (stopped)",
+      "type": "number",
+      "default": "0",
+      "placeholder": "seconds",
+      "help": "e.g. 191.12 shows 3:11 12"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "First-use pointers", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "time": 191.12 } },
+    { "name": "set", "payload": { "running": true } },
+    { "name": "set", "payload": { "running": false } },
+    { "name": "set", "payload": { "round": { "delay": 1, "on": 3 } } },
+    { "name": "set", "payload": { "lamp": false } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": [
+    "ready",
+    "change",
+    "start",
+    "stop",
+    "reset",
+    "lamp",
+    "view",
+    "practice-start",
+    "practice-result",
+    "practice-end"
+  ],
+  "export": {
+    "poster": { "params": { "coach": "0", "time": "191.12" } },
+    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "time": 191.12, "animate": false } }] }],
+    "video": {
+      "kind": "script",
+      "seconds": 18,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 0.6, "command": "set", "payload": { "running": true } },
+        { "at": 4.32, "command": "set", "payload": { "running": false } },
+        { "at": 6.5, "command": "set", "payload": { "time": 0 } },
+        { "at": 7, "command": "set", "payload": { "round": { "delay": 1.2, "on": 3.4 } } },
+        { "at": 8.45, "command": "set", "payload": { "running": true } },
+        { "at": 11.83, "command": "set", "payload": { "running": false } }
+      ]
+    }
+  }
+}

@@ -1,0 +1,30 @@
+/* Stopwatch: the page, and the colours of the terms (minutes, seconds, total seconds). The student view itself is
+   ../../shared/lib/student/student.css (linked first). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.pvc { --c-min: #1c6fd9; --c-sec: #d9480f; --c-tot: #6741d9; }
+.pvc-t.min { --c: var(--c-min); }
+.pvc-t.sec { --c: var(--c-sec); }
+.pvc-t.tot { --c: var(--c-tot); }
+.pvc .c-min { color: var(--c-min); }
+.pvc .c-sec { color: var(--c-sec); }
+.pvc .c-tot { color: var(--c-tot); }
+
+.sw-sum i { white-space: nowrap; }
+.sw-sum .pvc-t.min { min-width: 2.2em; }
+/* quick taps (start, stop) must never zoom the page on a phone */
+.sw button { touch-action: manipulation; }
+.sw-extra { margin: 0; min-height: 4.5em; font-size: 13.5px; line-height: 1.5; color: var(--ink-2); } /* 3 lines: the 3D view keeps its size */
+.sw-extra b { color: var(--ink); }
+.sw-acts { display: flex; flex-wrap: wrap; gap: 6px; }
+.sw-acts .pvc-btn { height: 36px; padding: 0 12px; font-size: 14.5px; }
+.sw-acts [data-act='startstop'] { min-width: 92px; }
+.sw-disp { font-weight: 700; letter-spacing: 0.02em; }
+.sw-disp small, .pvc-opt .sw-disp small { font-size: 0.8em; margin-left: 0.2em; color: inherit; font-weight: 700; }
+@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
+  .sw-extra { font-size: 12.5px; }
+  .sw-sum { gap: 4px; }
+  .sw-sum i, .sw-sum .pvc-t b { font-size: 19px; }
+}
