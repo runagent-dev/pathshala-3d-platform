@@ -5,6 +5,8 @@ name: CI
 on:
   push:
     branches: [main]
+    # the studio pushes reviews, status and notes on its own: nothing to check when only those change
+    paths-ignore: ['assets/*/reviews/**', 'assets/*/status.json', 'assets/*/NOTES.md']
   pull_request:
 
 concurrency:
