@@ -1,0 +1,266 @@
+/* Student view, shared by every figure: tokens, buttons, the stage (magnifier, pointers, labels, hint)
+   and the শেখো / পরীক্ষা panel. Each figure adds its own colours for the terms of its sum (.pvc-t.<name>).
+   Scoped under .pvc ("Pathshala view components"), so a figure can live inside any page. */
+.pvc {
+  --page: #ffffff;
+  --panel: #ffffff;
+  --soft: #f4f6f8;
+  --soft-2: #eaeef2;
+  --line: #d9dee4;
+  --line-2: #c3cad3;
+  --ink: #1d2733;
+  --ink-2: #4b5766;
+  --ink-3: #7a8594;
+  --accent: #1f5fae;
+  --accent-soft: #e8f0fb;
+  --warn: #d9480f;
+  --ok: #12924f;
+  --bad: #c92a2a;
+  --font: 'Noto Sans Bengali', 'Segoe UI', Roboto, Arial, sans-serif;
+
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
+  color: var(--ink);
+  background: var(--page);
+  font: 400 15px/1.5 var(--font);
+  container-type: size;
+  container-name: pvc;
+  outline: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.pvc[data-theme='dark'] {
+  --page: #11161d;
+  --panel: #161c25;
+  --soft: #1b222c;
+  --soft-2: #232b36;
+  --line: #2a333f;
+  --line-2: #394453;
+  --ink: #e8edf3;
+  --ink-2: #b3bdca;
+  --ink-3: #828e9e;
+  --accent: #6aa9f0;
+  --accent-soft: #1c2a3d;
+  --warn: #ff8a4c;
+  --ok: #3cc887;
+  --bad: #ff7070;
+}
+.pvc[data-theme='transparent'] { --page: transparent; }
+.pvc * { box-sizing: border-box; }
+.pvc button, .pvc input { font: inherit; color: inherit; }
+.pvc button { cursor: pointer; }
+.pvc svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.pvc svg .fill { fill: currentColor; stroke: none; }
+.pvc [hidden] { display: none !important; }
+
+/* ── buttons: segmented, tool, plain, icon ── */
+.pvc-tool {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 34px; padding: 0 11px;
+  border-radius: 6px; border: 1px solid var(--line); background: var(--panel);
+  color: var(--ink-2); font-size: 14.5px; font-weight: 500; white-space: nowrap;
+}
+.pvc-tool:hover { border-color: var(--line-2); color: var(--ink); }
+.pvc-tool.on { color: var(--accent); background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+.pvc-tool.icon-only { padding: 0 8px; }
+.pvc-tool.open { border-color: var(--line-2); background: var(--soft); }
+.pvc-tool .ic-lock { display: inline-flex; }
+.pvc-seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--panel); }
+.pvc-seg button { border: 0; background: transparent; height: 32px; padding: 0 12px; color: var(--ink-2); font-size: 14.5px; font-weight: 500; }
+.pvc-seg button + button { border-left: 1px solid var(--line); }
+.pvc-seg button:hover { background: var(--soft); }
+.pvc-seg button.on { background: var(--accent); color: #fff; }
+.pvc-seg.small button { height: 28px; padding: 0 10px; font-size: 14px; }
+.pvc-seg .sh { display: none; }
+
+/* ── stage ── */
+.pvc-stage { position: relative; min-height: 0; overflow: hidden; }
+.pvc-canvas { position: absolute; inset: 0; touch-action: none; }
+.pvc-anno-layer, .pvc-lens-layer { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.pvc-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 34px; padding: 0 13px; border-radius: 6px; border: 1px solid var(--line-2); background: var(--panel); font-size: 14.5px; font-weight: 500; white-space: nowrap; }
+.pvc-btn:hover { background: var(--soft); }
+.pvc-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.pvc-btn.primary:hover { background: color-mix(in srgb, var(--accent) 88%, #000); }
+.pvc-btn.small { height: 30px; font-size: 14px; }
+.pvc-btn:disabled { opacity: 0.4; cursor: default; }
+.pvc-btn svg { width: 16px; height: 16px; }
+.pvc-icon { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 5px; border: 0; background: transparent; color: var(--ink-3); }
+.pvc-icon:hover { color: var(--ink); background: var(--soft); }
+.pvc-icon.small { width: 24px; height: 24px; }
+.pvc-icon.small svg { width: 16px; height: 16px; }
+.pvc-link { border: 0; background: none; color: var(--ink-3); text-decoration: underline; text-underline-offset: 3px; padding: 0; font-size: 14px; }
+.pvc-link:hover { color: var(--ink); }
+
+/* ── hint ── */
+.pvc-hint { position: absolute; left: 50%; top: 12px; transform: translate(-50%, -4px); width: max-content; display: flex; align-items: center; gap: 10px; padding: 6px 8px 6px 14px; border-radius: 6px; max-width: min(620px, calc(100% - 24px)); background: #fffbea; border: 1px solid #ecd892; color: #4a3b00; opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s; z-index: 6; font-size: 15px; }
+.pvc[data-theme='dark'] .pvc-hint { background: #2b2614; border-color: #5b4d1f; color: #f3e3a6; }
+.pvc-hint.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+.pvc-hint:not(:has(.pvc-hint-act:not([hidden]))) { padding-right: 14px; }
+.pvc-hint-act { border: 1px solid #c9a227; background: #fff; color: #6b5300; border-radius: 5px; padding: 2px 10px; font-weight: 600; font-size: 14px; white-space: nowrap; }
+
+/* ── magnifier ── */
+.pvc-lens { position: absolute; left: 0; top: 0; display: none; pointer-events: none; will-change: transform; touch-action: none; /* a finger drag moves the glass; the browser must not take it over to scroll */ }
+.pvc-lens.on { display: block; }
+.pvc-lens-ring { position: absolute; inset: 0; width: 100% !important; height: 100% !important; overflow: visible; filter: drop-shadow(0 3px 6px rgba(20, 30, 45, 0.25)); }
+.pvc-lens-ring .rim { fill: none; stroke: #3d4752; stroke-width: 2.6; }
+.pvc-lens-ring .rim-inner { fill: none; stroke: rgba(255, 255, 255, 0.9); stroke-width: 1; }
+.pvc-lens-ring .rim-hit { fill: none; stroke: transparent; stroke-width: 12; pointer-events: stroke; cursor: move; }
+.pvc-lens-handle { position: absolute; width: 12px; height: 50px; left: calc(50% + 35.4% - 6px); top: calc(50% + 35.4% - 3px); transform-origin: 50% 0; transform: rotate(-45deg); border-radius: 4px; background: #3d4752; pointer-events: auto; cursor: move; }
+.pvc-lens-zoom, .pvc-lens-pin { position: absolute; pointer-events: auto; border: 1px solid var(--line-2); background: var(--panel); color: var(--ink-2); border-radius: 4px; font-size: 12.5px; font-weight: 600; line-height: 1.4; }
+.pvc-lens-zoom { left: 50%; top: -12px; transform: translateX(-50%); padding: 0 7px; }
+.pvc-lens-pin { right: 5%; top: 5%; width: 22px; height: 22px; display: grid; place-items: center; padding: 0; border-radius: 50%; }
+.pvc-lens-pin::before { content: ''; width: 8px; height: 8px; border-radius: 50%; border: 2px solid currentColor; }
+.pvc-lens-pin.on { color: var(--warn); border-color: var(--warn); }
+.pvc-lens-pin.on::before { background: currentColor; }
+.pvc-lens.dragging .pvc-lens-ring .rim { stroke: var(--accent); }
+/* a bigger grab area round the handle than the handle you see; bigger still for fingers */
+.pvc-lens-handle::before { content: ''; position: absolute; inset: -8px -10px; }
+@media (pointer: coarse) {
+  .pvc-lens-handle::before { inset: -14px -18px -10px; }
+  .pvc-lens-ring .rim-hit { stroke-width: 18; }
+}
+
+/* ── first-use pointers (student view) ── */
+.pvc-coach-layer { position: absolute; inset: 0; z-index: 4; pointer-events: none; overflow: hidden; }
+.pvc-coach, .pvc-coach-label { position: absolute; left: 0; top: 0; opacity: 0; transition: opacity 0.3s; will-change: transform; }
+.pvc-coach.in, .pvc-coach-label.in { opacity: 1; }
+/* the element sits on the spot; the fingertip of the hand is drawn exactly there */
+.pvc-coach-hand { position: absolute; left: -11px; top: -2px; width: 30px; height: 35px; transform-origin: 11px 2px; animation: pvc-press 1.5s ease-in-out infinite; }
+.pvc .pvc-coach-hand svg { width: 100%; height: 100%; fill: #fff; stroke: #1d2733; stroke-width: 1.3; filter: drop-shadow(0 2px 3px rgba(20, 30, 45, 0.3)); }
+.pvc-coach-ring { position: absolute; left: -15px; top: -15px; width: 30px; height: 30px; border-radius: 50%; border: 2.5px solid var(--accent); animation: pvc-ring 1.5s ease-out infinite; }
+.pvc-coach-label { padding: 4px 11px; border-radius: 6px; background: var(--accent); color: #fff; font-size: 14.5px; font-weight: 600; line-height: 1.5; white-space: nowrap; box-shadow: 0 2px 6px rgba(20, 30, 45, 0.2); }
+@keyframes pvc-press { 0%, 100% { transform: none; } 45% { transform: translate(1px, 3px) scale(0.92); } }
+@keyframes pvc-ring { 0% { transform: scale(0.35); opacity: 0.95; } 70%, 100% { transform: scale(1.5); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .pvc-coach-hand, .pvc-coach-ring { animation: none; } }
+
+/* ── labels on the 3D model ── */
+.pvc-anno-lines { position: absolute; inset: 0; width: 100% !important; height: 100% !important; overflow: visible; }
+.pvc-anno-lines line { stroke: #5b6672; stroke-width: 1; }
+.pvc-anno-lines circle { fill: #1d2733; stroke: #fff; stroke-width: 1.2; }
+.pvc[data-theme='dark'] .pvc-anno-lines line { stroke: #9aa6b4; }
+.pvc[data-theme='dark'] .pvc-anno-lines circle { fill: #e8edf3; stroke: #11161d; }
+.pvc-anno-lines .k-callout { stroke-width: 1.5; }
+.pvc-anno { position: absolute; left: 0; top: 0; white-space: nowrap; padding: 2px 9px; border-radius: 4px; background: var(--panel); border: 1px solid var(--line-2); font-size: 14px; font-weight: 500; color: var(--ink); opacity: 0; transition: opacity 0.25s; will-change: transform; }
+.pvc-anno.in { opacity: 1; }
+.pvc-anno-callout { --c: var(--accent); color: var(--c); border-color: var(--c); font-weight: 600; font-size: 14.5px; }
+
+/* ── student view: the figure on top, one panel with "learn" and "test" ── */
+.pvc[data-ui='simple'] { display: block; }
+.pvc-shell { height: 100%; display: grid; grid-template-rows: minmax(0, 1fr) auto; }
+.pvc-corner { position: absolute; top: 10px; right: 10px; z-index: 5; display: flex; gap: 6px; }
+.pvc-corner .pvc-seg { box-shadow: 0 1px 2px rgba(20, 30, 45, 0.06); }
+.pvc-corner .pvc-seg button { height: 36px; padding: 0 14px; font-size: 15px; }
+.pvc-corner .pvc-tool { height: 38px; width: 38px; padding: 0; justify-content: center; }
+.pvc-stage[data-ui='simple'] .pvc-hint { top: auto; bottom: 10px; transform: translate(-50%, 4px); }
+.pvc-stage[data-ui='simple'] .pvc-hint.show { transform: translate(-50%, 0); }
+.pvc[data-ui='simple'] .pvc-lens-zoom, .pvc[data-ui='simple'] .pvc-lens-pin { display: none; }
+
+.pvc-panel { container: pvc-panel / inline-size; min-height: 0; display: flex; flex-direction: column; gap: 10px; padding: 10px 16px calc(12px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--line); background: var(--panel); }
+.pvc-tabs { display: grid; grid-template-columns: 1fr 1fr; width: 100%; max-width: 360px; border: 1px solid var(--line-2); border-radius: 8px; overflow: hidden; flex: none; }
+.pvc-tabs button { height: 40px; border: 0; background: var(--panel); color: var(--ink-2); font-size: 16px; font-weight: 600; }
+.pvc-tabs button + button { border-left: 1px solid var(--line-2); }
+.pvc-tabs button:hover { background: var(--soft); }
+.pvc-tabs button.on { background: var(--accent); color: #fff; }
+/* Both sheets share one grid cell, so switching tabs never changes the panel height (and never jolts the 3D view). */
+.pvc-sheets { display: grid; min-height: 0; }
+.pvc-sheets > section { grid-area: 1 / 1; min-width: 0; }
+.pvc[data-mode='quiz'] .pvc-learn, .pvc:not([data-mode='quiz']) .pvc-quiz { visibility: hidden; }
+
+.pvc-learn { display: flex; flex-direction: column; justify-content: space-between; gap: 8px; }
+.pvc-learn-main { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 24px; }
+.pvc-result { display: flex; align-items: baseline; gap: 8px; }
+.pvc-result .k { font-size: 15px; font-weight: 500; color: var(--ink-2); }
+.pvc-result .v { font-size: 34px; font-weight: 700; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.pvc-result .u { font-size: 17px; font-weight: 500; color: var(--ink-2); }
+.pvc-sum, .pvc-ze-part { display: flex; align-items: flex-start; gap: 6px; }
+.pvc-sum i { font-style: normal; font-size: 21px; line-height: 1.35; color: var(--ink-3); }
+.pvc-t { display: flex; flex-direction: column; align-items: center; min-width: 3.2em; text-align: center; }
+.pvc-t b { font-size: 21px; font-weight: 700; line-height: 1.35; color: var(--c); font-variant-numeric: tabular-nums; }
+.pvc-t small { max-width: 6.6em; font-size: 12px; line-height: 1.3; color: var(--ink-3); }
+.pvc-learn:not(.has-ze) .pvc-ze-part { display: none; }
+.pvc-learn-foot { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 12px; }
+.pvc-learn-foot .pvc-btn { height: 38px; font-size: 15px; }
+.pvc-learn-foot .pvc-btn svg { color: var(--accent); }
+.pvc-status { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--ink-3); }
+.pvc-status i { width: 7px; height: 7px; border-radius: 50%; background: var(--line-2); flex: none; }
+.pvc-status[data-tone='contact'] { color: var(--ok); }
+.pvc-status[data-tone='contact'] i { background: var(--ok); }
+.pvc-status[data-tone='locked'] { color: var(--warn); }
+.pvc-status[data-tone='locked'] i { background: var(--warn); }
+
+.pvc-quiz { display: grid; }
+.pvc-q-ask, .pvc-q-done { grid-area: 1 / 1; min-width: 0; }
+.pvc-quiz:not(.is-done) .pvc-q-done, .pvc-quiz.is-done .pvc-q-ask { visibility: hidden; }
+.pvc-q-ask { display: flex; flex-direction: column; gap: 8px; }
+.pvc-q-head { display: flex; align-items: center; gap: 12px; min-height: 36px; font-size: 14px; color: var(--ink-3); }
+.pvc-q-head .pvc-btn { margin-left: auto; height: 36px; font-size: 15.5px; }
+.pvc-q-head .pvc-btn.is-off { visibility: hidden; }
+.pvc-q-head > span { white-space: nowrap; }
+.pvc-q-score { color: var(--ok); font-weight: 600; }
+.pvc-q-text { margin: 0; font-size: 17px; font-weight: 600; line-height: 1.4; }
+.pvc-q-options { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.pvc-opt { display: flex; align-items: center; justify-content: center; gap: 5px; height: 48px; padding: 0 6px; border-radius: 8px; border: 1.5px solid var(--line-2); background: var(--panel); font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.pvc-opt small { font-size: 14px; font-weight: 500; color: var(--ink-3); }
+.pvc-opt:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-soft); }
+.pvc-opt:disabled { cursor: default; }
+.pvc-opt:empty { border-style: dashed; background: var(--soft); }
+.pvc-opt.right { border-color: var(--ok); background: color-mix(in srgb, var(--ok) 11%, var(--panel)); color: var(--ok); }
+.pvc-opt.wrong { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 9%, var(--panel)); color: var(--bad); }
+.pvc-opt.right small, .pvc-opt.wrong small { color: inherit; }
+.pvc-q-feedback { margin: 0; min-height: 1.45em; font-size: 15px; line-height: 1.45; color: var(--ink-2); }
+.pvc-q-feedback .lead { font-weight: 700; }
+.pvc-q-feedback[data-tone='ok'] .lead { color: var(--ok); }
+.pvc-q-feedback[data-tone='bad'] .lead { color: var(--bad); }
+.pvc-q-feedback b { font-weight: 600; color: var(--ink); }
+.pvc-q-done { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.pvc-q-result { margin: 0; font-size: 24px; font-weight: 700; }
+.pvc-q-praise { margin: 0; font-size: 16px; color: var(--ink-2); }
+.pvc-q-done .pvc-btn { height: 42px; margin-top: 8px; font-size: 16px; }
+
+/* wide frames (book page, desktop): tabs beside the sheet to keep the panel low */
+@container pvc (min-width: 720px) {
+  .pvc-panel { display: grid; grid-template-columns: 120px minmax(0, 1fr); align-items: start; gap: 18px; padding-top: 12px; }
+  .pvc-tabs { grid-template-columns: 1fr; }
+  .pvc-tabs button + button { border-left: 0; border-top: 1px solid var(--line-2); }
+}
+/* phones and narrow columns */
+@container pvc (max-width: 560px) {
+  .pvc-panel { padding: 8px 12px calc(10px + env(safe-area-inset-bottom, 0px)); gap: 8px; }
+  .pvc-tabs { max-width: none; }
+  .pvc-q-options { grid-template-columns: 1fr 1fr; }
+  .pvc-result .v { font-size: 30px; }
+  .pvc-corner { top: 8px; right: 8px; }
+  .pvc-corner .pvc-seg button { padding: 0 11px; font-size: 14.5px; }
+}
+/* phone embeds that are not very tall: give the 3D view a little more room */
+@container pvc (max-width: 560px) and (max-height: 600px) {
+  .pvc-panel, .pvc-q-ask { gap: 6px; }
+  .pvc-tabs button { height: 36px; }
+  .pvc-opt { height: 42px; font-size: 18px; }
+  .pvc-q-text { font-size: 16px; }
+  .pvc-q-head { min-height: 34px; }
+  .pvc-q-head .pvc-btn { height: 34px; }
+}
+/* a narrow side panel: drop the running score (it is shown at the end) */
+@container pvc-panel (max-width: 290px) {
+  .pvc-q-score { display: none; }
+  .pvc-q-head .pvc-btn { padding: 0 10px; font-size: 14.5px; }
+}
+/* short and wide (phone held sideways, small embeds): the panel moves beside the caliper */
+@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
+  .pvc-shell { grid-template-rows: minmax(0, 1fr); grid-template-columns: minmax(0, 1fr) clamp(260px, 36%, 330px); }
+  .pvc-panel { display: flex; align-items: stretch; border-top: 0; border-left: 1px solid var(--line); overflow-y: auto; padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px)); gap: 8px; }
+  .pvc-tabs { grid-template-columns: 1fr 1fr; max-width: none; }
+  .pvc-tabs button + button { border-top: 0; border-left: 1px solid var(--line-2); }
+  .pvc-tabs button { height: 36px; }
+  .pvc-q-options { grid-template-columns: 1fr 1fr; }
+  .pvc-opt { height: 42px; font-size: 18px; }
+  .pvc-q-text { font-size: 16px; }
+  .pvc-result .v { font-size: 28px; }
+}
+

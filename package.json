@@ -1,0 +1,17 @@
+{
+  "name": "pathshala-3d",
+  "version": "0.1.0",
+  "private": true,
+  "description": "3D and interactive figures for the Pathshala interactive books. One self-contained folder per asset.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "dev:public": "node scripts/dev.mjs --public",
+    "package": "node scripts/package.mjs",
+    "package:all": "node scripts/package.mjs --all",
+    "new": "node scripts/new-asset.mjs"
+  }
+}

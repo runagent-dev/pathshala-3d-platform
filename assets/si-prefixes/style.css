@@ -1,0 +1,112 @@
+/* "How big is it?" — plain textbook styling on a white page. Scoped under .hb. */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.hb {
+  --ink: #1d2733;
+  --ink-2: #4b5766;
+  --ink-3: #7a8594;
+  --line: #d9dee4;
+  --line-2: #c3cad3;
+  --accent: #1f5fae;
+  --accent-soft: #e5eefa;
+  --pin: #c92a2a;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #fff;
+  color: var(--ink);
+  font: 400 15px/1.5 'Noto Sans Bengali', 'Segoe UI', Roboto, Arial, sans-serif;
+  container: hb / size;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.hb * { box-sizing: border-box; }
+.hb [hidden] { display: none !important; }
+.hb-canvas { position: absolute; inset: 0; }
+.hb-pins { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 1; }
+
+/* play / pause and where we are going */
+.hb-top { position: absolute; left: 12px; right: 12px; top: 10px; z-index: 3; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; pointer-events: none; }
+.hb-top > * { pointer-events: auto; }
+.hb-play { width: 36px; height: 36px; padding: 0; border-radius: 50%; border: 1px solid var(--line-2); background: #fff; cursor: pointer; display: grid; place-items: center; box-shadow: 0 1px 2px rgba(20, 30, 45, 0.06); }
+.hb-play:hover { border-color: var(--accent); }
+.hb-play::before { content: ''; width: 10px; height: 12px; border-left: 3.5px solid var(--ink); border-right: 3.5px solid var(--ink); box-sizing: border-box; }
+.hb-play.paused::before { width: 0; height: 0; border: 0; border-left: 11px solid var(--accent); border-top: 7px solid transparent; border-bottom: 7px solid transparent; margin-left: 3px; }
+.hb-journey { pointer-events: none !important; font-size: 16px; font-weight: 600; color: var(--ink); text-shadow: 0 0 6px #fff, 0 0 2px #fff; }
+
+/* Table 1.05, with the current prefix marked */
+.hb-ladder { position: absolute; right: 12px; top: 12px; z-index: 2; width: 168px; padding: 8px 8px 8px; border: 1px solid var(--line); border-radius: 8px; background: rgba(255, 255, 255, 0.94); }
+.hb-ladder-title { font-size: 12px; color: var(--ink-3); margin: 0 4px 4px; line-height: 1.3; }
+.hb-ladder-title small { display: block; margin-top: 1px; color: var(--accent); font-size: 11.5px; }
+.hb-ladder ol { list-style: none; margin: 0; padding: 0; }
+.hb-ladder li { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr 26px 44px; align-items: center; height: 21px; padding: 0 6px; font-size: 13.5px; color: var(--ink-2); }
+.hb-ladder li .s { text-align: center; color: var(--ink-3); }
+.hb-ladder li[data-stop] { cursor: pointer; border-radius: 4px; }
+.hb-ladder li[data-stop]:hover { background: #eef3fa; }
+.hb-ladder li:not([data-stop]) { opacity: 0.45; } /* no object at this prefix */
+.hb-ladder li .e { text-align: right; font-size: 12.5px; color: var(--ink-3); }
+.hb-ladder li.base { color: var(--ink-3); font-style: normal; }
+.hb-ladder li.on { color: var(--accent); font-weight: 700; }
+.hb-ladder li.on .s, .hb-ladder li.on .e { color: var(--accent); }
+.hb-ladder-marker { position: absolute; left: 8px; right: 8px; top: 0; z-index: 0; border-radius: 4px; background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); }
+
+/* caption and scale bar along the bottom */
+.hb-bottom { position: absolute; left: 12px; right: 196px; bottom: 12px; z-index: 2; display: flex; align-items: flex-end; gap: 16px; pointer-events: none; }
+.hb[data-ladder='off'] .hb-bottom { right: 12px; }
+.hb-caption { min-width: 0; max-width: 480px; padding: 8px 14px 10px; border: 1px solid var(--line); border-radius: 8px; background: rgba(255, 255, 255, 0.95); transition: opacity 0.15s linear; }
+.hb-chip { display: inline-flex; align-items: baseline; gap: 6px; padding: 0 9px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: 13px; line-height: 1.6; }
+.hb-chip b { font-size: 14px; font-weight: 700; }
+.hb-name { margin-top: 2px; font-size: 19px; font-weight: 700; line-height: 1.3; }
+.hb-size { font-size: 15.5px; line-height: 1.45; }
+.hb-sci { font-size: 14px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.hb-note { margin-top: 2px; font-size: 12.5px; color: var(--ink-3); line-height: 1.4; }
+.hb-scale { flex: none; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; padding-bottom: 4px; font-size: 13px; font-weight: 500; color: var(--ink-2); white-space: nowrap; text-shadow: 0 0 4px #fff; }
+.hb-scale i { display: block; height: 8px; min-width: 2px; border: 2px solid var(--ink); border-top: 0; }
+
+/* the stops as buttons (shown on phones and short frames, where Table 1.05 is hidden) */
+.hb-strip { display: none; flex: 1 1 240px; min-width: 0; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.hb-strip::-webkit-scrollbar { display: none; }
+.hb-strip-track { display: flex; gap: 6px; width: max-content; padding: 2px 1px; }
+.hb-strip button { flex: none; display: flex; flex-direction: column; align-items: center; min-width: 62px; padding: 3px 9px 4px; border: 1px solid var(--line-2); border-radius: 8px; background: #fff; cursor: pointer; line-height: 1.25; font: inherit; color: inherit; }
+.hb-strip b { font-size: 14px; font-weight: 700; }
+.hb-strip small { font-size: 11.5px; color: var(--ink-3); white-space: nowrap; }
+.hb-strip button.on { border-color: var(--accent); background: var(--accent-soft); }
+.hb-strip button.on b { color: var(--accent); }
+
+/* a dot and a label pinned to a place in the picture */
+.hb-pin { position: absolute; left: 0; top: 0; opacity: 0; transition: opacity 0.3s; will-change: transform; }
+.hb-pin.on { opacity: 1; }
+.hb-pin i { position: absolute; left: -6px; top: -6px; width: 12px; height: 12px; border-radius: 50%; border: 2.5px solid var(--pin); background: #fff; box-shadow: 0 0 0 4px rgba(201, 42, 42, 0.18); }
+.hb-pin.go i, .hb-pin.go span { pointer-events: auto; cursor: pointer; }
+.hb-pin.go span:hover { background: #fff5f5; }
+.hb-pin span { position: absolute; left: 0; top: 0; white-space: nowrap; padding: 1px 8px; border-radius: 5px; border: 1px solid var(--pin); background: #fff; color: var(--pin); font-size: 13.5px; font-weight: 600; }
+
+/* ── responsive (the frame the book gives us, not the screen) ── */
+@container hb (max-height: 560px) {
+  .hb-ladder li { height: 19px; font-size: 12.5px; }
+  .hb-ladder li .e { font-size: 11.5px; }
+}
+@container hb (max-width: 660px), (max-height: 450px) {
+  .hb-ladder { display: none; }
+  .hb-bottom { right: 12px; }
+  .hb-strip { display: block; }
+}
+@container hb (max-width: 560px) {
+  .hb-top { left: 10px; top: 8px; }
+  .hb-journey { font-size: 15px; }
+  .hb-bottom { left: 8px; right: 8px; bottom: 8px; flex-direction: column; align-items: stretch; gap: 6px; }
+  .hb-scale { order: -1; padding-left: 4px; }
+  .hb-caption { max-width: none; padding: 7px 12px 9px; }
+  .hb-name { font-size: 17px; }
+  .hb-size { font-size: 14.5px; }
+}
+@container hb (max-height: 450px) {
+  .hb-caption { padding: 5px 12px 7px; }
+  .hb-name { font-size: 16px; }
+  .hb-size, .hb-sci { font-size: 13.5px; }
+  .hb-note { display: none; }
+}

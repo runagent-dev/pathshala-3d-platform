@@ -1,0 +1,17 @@
+{
+  "id": "{{id}}",
+  "title": "{{title}}",
+  "type": "model",
+  "entry": "model.glb",
+  "status": "idea",
+  "version": "0.1.0",
+  "subject": "{{subject}}",
+  "chapter": "{{chapter}}",
+  "page": null,
+  "topic": "",
+  "placement": "",
+  "grade": "",
+  "tags": [],
+  "description": "Static 3D model (GLB). Drop the file in this folder as model.glb.",
+  "updated": "{{date}}"
+}

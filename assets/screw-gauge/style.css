@@ -1,0 +1,19 @@
+/* Screw gauge: the page, and its colours for L, C and the least count. The student view itself is
+   ../../shared/lib/student/student.css (linked first). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.pvc { --c-lin: #1c6fd9; --c-cir: #d9480f; --c-lc: #6741d9; }
+.pvc-t.lin { --c: var(--c-lin); }
+.pvc-t.cir { --c: var(--c-cir); }
+.pvc-t.lc { --c: var(--c-lc); }
+.pvc .c-lin { color: var(--c-lin); }
+.pvc .c-cir { color: var(--c-cir); }
+.pvc .c-lc { color: var(--c-lc); }
+
+/* the book's sentence: least count = pitch ÷ parts of the circular scale */
+.pvc-learn-extra { margin: 0; font-size: 13px; line-height: 1.45; color: var(--ink-2); }
+@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
+  .pvc-learn-extra { font-size: 12.5px; }
+}

@@ -1,0 +1,20 @@
+# build and export outputs (rebuilt from git; never committed)
+dist/
+exports/
+.cache/
+test-results/
+playwright-report/
+
+# dependencies
+node_modules/
+
+# server-only state: users, sessions, jobs, original uploads
+data/
+.studio-auth.json
+.env
+.env.*
+
+# local tool settings
+.claude/settings.local.json
+.DS_Store
+*.tmp

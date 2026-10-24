@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pathshala 3D Studio</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23ffffff'/%3E%3Cpath d='M8 21l8-12 8 12z' fill='none' stroke='%231f5fae' stroke-width='2.5' stroke-linejoin='round'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="../shared/fonts/noto-sans-bengali.css" />
+  <link rel="stylesheet" href="./dashboard.css" />
+</head>
+<body>
+  <div class="shell" id="shell">
+    <!-- Sidebar: asset library -->
+    <aside class="sidebar">
+      <header class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32"><path d="M8 22l8-13 8 13z" /><path d="M12 22l4-6.5 4 6.5" /></svg>
+        </div>
+        <div>
+          <div class="brand-name">Pathshala 3D</div>
+          <div class="brand-sub">Studio</div>
+        </div>
+        <span class="live-dot" id="liveDot" title="Live reload connected" data-bn-title="সংযুক্ত"></span>
+      </header>
+
+      <div class="search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>
+        <input id="search" type="search" placeholder="Search assets" data-bn-placeholder="খুঁজুন" autocomplete="off" />
+      </div>
+      <div class="filters" id="filters"></div>
+
+      <ul class="asset-list" id="assetList" aria-label="Assets"></ul>
+
+      <footer class="sidebar-foot">
+        <button class="btn ghost wide owner-only" id="newAssetBtn">
+          <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg> New asset
+        </button>
+      </footer>
+    </aside>
+
+    <!-- Main: preview -->
+    <main class="main">
+      <div class="toolbar" id="toolbar">
+        <button class="icon-btn menu-btn" id="menuBtn" title="Assets" aria-label="Assets"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" /></svg></button>
+        <div class="tb-title">
+          <h1 id="assetTitle">No asset selected</h1>
+          <div class="tb-meta" id="assetMeta"></div>
+        </div>
+        <div class="tb-group">
+          <label class="select">
+            <span data-bn="ফ্রেম">Frame</span>
+            <select id="deviceSelect">
+              <option value="fill" data-bn="পুরো জায়গা">Fill</option>
+              <option value="1024x640" data-bn="বইয়ের দুই পাতা · ১০২৪×৬৪০">Book spread · 1024×640</option>
+              <option value="800x500" data-bn="বইয়ের কলাম · ৮০০×৫০০">Book column · 800×500</option>
+              <option value="640x400" data-bn="ছোট জায়গা · ৬৪০×৪০০">Small embed · 640×400</option>
+              <option value="1180x820" data-bn="আইপ্যাড আড়াআড়ি · ১১৮০×৮২০">iPad landscape · 1180×820</option>
+              <option value="820x1180" data-bn="আইপ্যাড খাড়া · ৮২০×১১৮০">iPad portrait · 820×1180</option>
+              <option value="844x390" data-bn="ফোন আড়াআড়ি · ৮৪৪×৩৯০">Phone landscape · 844×390</option>
+              <option value="390x844" data-bn="ফোন খাড়া · ৩৯০×৮৪৪">Phone portrait · 390×844</option>
+            </select>
+          </label>
+          <div class="seg owner-only" id="bgSeg" role="group" aria-label="Preview background">
+            <button data-bg="checker" title="Checkerboard">▦</button>
+            <button data-bg="dark" title="Dark">●</button>
+            <button data-bg="light" title="Light">○</button>
+          </div>
+          <button class="btn small primary reviewer-only" id="feedbackBtn" title="এই ফিগার নিয়ে মতামত দিন"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z" /></svg><span>মতামত দিন</span></button>
+          <button class="icon-btn" id="reloadBtn" title="Reload (R)" data-bn-title="আবার চালু করুন"><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7" /><path d="M20 4v7h-7" /></svg></button>
+          <a class="icon-btn" id="openBtn" target="_blank" rel="noopener" title="Open in new tab" data-bn-title="নতুন ট্যাবে খুলুন"><svg viewBox="0 0 24 24"><path d="M14 4h6v6" /><path d="M20 4l-9 9" /><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" /></svg></a>
+          <button class="icon-btn" id="panelBtn" title="Toggle side panel (P)" data-bn-title="পাশের প্যানেল"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M15 4v16" /></svg></button>
+        </div>
+      </div>
+
+      <div class="preview" id="preview">
+        <div class="frame-wrap" id="frameWrap">
+          <iframe id="frame" title="Asset preview" allow="fullscreen; xr-spatial-tracking"></iframe>
+          <div class="frame-size" id="frameSize"></div>
+        </div>
+        <div class="empty" id="empty">
+          <p data-bn="বাঁ দিক থেকে একটি ফিগার বেছে নিন।">Pick an asset on the left.</p>
+        </div>
+        <div class="reload-flash" id="reloadFlash" data-bn="আবার চালু হয়েছে">Reloaded</div>
+      </div>
+    </main>
+
+    <!-- Inspector -->
+    <aside class="inspector" id="inspector">
+      <nav class="tabs" role="tablist">
+        <button role="tab" data-tab="info" class="owner-only" aria-selected="true">Info</button>
+        <button role="tab" data-tab="reviews" lang="bn">মতামত <span class="badge" id="reviewsBadge" hidden></span></button>
+        <button role="tab" data-tab="params" class="owner-only">Params</button>
+        <button role="tab" data-tab="notes" class="owner-only">Notes <span class="badge" id="notesBadge" hidden></span></button>
+        <button role="tab" data-tab="events" class="owner-only">Events <span class="badge" id="eventsBadge" hidden></span></button>
+        <button role="tab" data-tab="handoff" class="owner-only">Handoff</button>
+        <button class="icon-btn inspector-close" id="inspectorClose" title="Close" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" /></svg></button>
+      </nav>
+
+      <section class="tab-panel" data-panel="info">
+        <div class="field book-field">
+          <label>Where it goes in the book</label>
+          <div class="book-row">
+            <label>Page <input id="pageInput" type="text" inputmode="numeric" placeholder="20" autocomplete="off" /></label>
+            <label>Topic <input id="topicInput" type="text" placeholder="1.6" autocomplete="off" /></label>
+          </div>
+          <textarea id="placementInput" rows="3" placeholder="Which picture or paragraph it goes with, e.g. in place of the printed slide-calipers picture"></textarea>
+        </div>
+        <div class="field">
+          <label>Status</label>
+          <div class="status-picker" id="statusPicker"></div>
+        </div>
+        <div class="kv" id="infoKv"></div>
+        <div class="field">
+          <label for="descInput">Description</label>
+          <textarea id="descInput" rows="4" placeholder="What this figure teaches…"></textarea>
+        </div>
+        <details class="readme" id="readmeBox">
+          <summary>README</summary>
+          <div class="md" id="readme"></div>
+        </details>
+      </section>
+
+      <section class="tab-panel" data-panel="reviews" lang="bn" hidden>
+        <form class="review-form" id="reviewForm" autocomplete="off">
+          <label class="review-label">আপনার নাম
+            <input type="text" id="reviewAuthor" maxlength="60" required placeholder="যেমন: রহিম, পদার্থবিজ্ঞানের শিক্ষক" />
+          </label>
+          <textarea id="reviewText" rows="5" maxlength="4000" required placeholder="কী বদলানো দরকার? কোথায় (কোন ধাপ বা বস্তু, ফোনে না কম্পিউটারে), কী ভুল দেখাচ্ছে, আর কী হওয়া উচিত ছিল, লিখুন।"></textarea>
+          <label class="review-check"><input type="checkbox" id="reviewShot" checked /> এখনকার ত্রিমাত্রিক ছবিটিও যোগ করুন</label>
+          <div class="row between">
+            <span class="hint" id="reviewHint">আপনার মতামত দলের কাছে জমা থাকবে। উত্তর এখানেই দেখতে পাবেন।</span>
+            <button class="btn primary" type="submit" id="reviewSend">মতামত পাঠান</button>
+          </div>
+        </form>
+        <div class="review-filter" id="reviewFilter"></div>
+        <ol class="review-list" id="reviewList"></ol>
+      </section>
+
+      <section class="tab-panel" data-panel="params" hidden>
+        <p class="hint">Try the URL options this asset supports. The book page passes these the same way.</p>
+        <div id="paramForm" class="param-form"></div>
+        <div class="field">
+          <label>URL</label>
+          <code class="url-box" id="paramUrl"></code>
+        </div>
+        <div class="row gap">
+          <button class="btn" id="paramReset">Reset to defaults</button>
+          <button class="btn ghost" id="paramCopy">Copy URL</button>
+        </div>
+      </section>
+
+      <section class="tab-panel" data-panel="notes" hidden>
+        <p class="hint">Saved to <code id="notesPath">NOTES.md</code> in the asset folder, so the next working session can pick it up.</p>
+        <textarea id="notes" class="notes" spellcheck="true" placeholder="- Make the jaws darker&#10;- Add a coin to measure"></textarea>
+        <div class="save-state" id="notesState">&nbsp;</div>
+      </section>
+
+      <section class="tab-panel" data-panel="events" hidden>
+        <div class="row between">
+          <p class="hint">Messages from the asset (what the book will receive).</p>
+          <button class="btn small ghost" id="clearEvents">Clear</button>
+        </div>
+        <ol class="event-log" id="eventLog"></ol>
+        <div class="send-box">
+          <label>Send a command</label>
+          <div class="row gap">
+            <select id="cmdSelect"></select>
+            <button class="btn small" id="cmdSend">Send</button>
+          </div>
+          <textarea id="cmdPayload" rows="4" spellcheck="false">{}</textarea>
+        </div>
+      </section>
+
+      <section class="tab-panel" data-panel="handoff" hidden>
+        <div class="card">
+          <h3>Package for the book</h3>
+          <p class="hint">Copies the asset with its shared code into <code>dist/</code> and zips it. Notes stay here.</p>
+          <button class="btn primary wide" id="packageBtn">Build zip</button>
+          <div id="packageResult" class="result"></div>
+        </div>
+        <div class="card">
+          <h3>Thumbnail</h3>
+          <img id="thumbPreview" class="thumb-preview" alt="" />
+          <button class="btn wide" id="captureBtn">Capture from preview</button>
+        </div>
+        <div class="card" id="glbCard">
+          <h3>Export static GLB</h3>
+          <p class="hint">Saves the current 3D state as a non-interactive .glb in <code>exports/</code>.</p>
+          <button class="btn wide" id="glbBtn">Export GLB</button>
+          <div id="glbResult" class="result"></div>
+        </div>
+        <div class="card">
+          <h3>Embed snippet</h3>
+          <pre class="snippet" id="snippet"></pre>
+          <button class="btn small ghost" id="copySnippet">Copy</button>
+        </div>
+      </section>
+    </aside>
+    <div class="scrim" id="scrim" hidden></div>
+  </div>
+
+  <dialog id="newDialog" class="dialog">
+    <form method="dialog" id="newForm">
+      <h2>New asset</h2>
+      <label>Title <input name="title" required placeholder="Convex lens ray diagram" /></label>
+      <label>Folder id <input name="id" required pattern="[a-z0-9][a-z0-9-]*" placeholder="convex-lens" /></label>
+      <label>Type
+        <select name="type">
+          <option value="interactive">Interactive (three.js)</option>
+          <option value="animation">Animation (plays by itself)</option>
+          <option value="model">Static model (GLB)</option>
+        </select>
+      </label>
+      <div class="row gap">
+        <label>Subject <input name="subject" placeholder="Physics" /></label>
+        <label>Chapter <input name="chapter" placeholder="Ray optics" /></label>
+      </div>
+      <div class="row gap">
+        <label>Book page <input name="page" inputmode="numeric" placeholder="20" /></label>
+        <label>Topic <input name="topic" placeholder="1.6" /></label>
+      </div>
+      <p class="error" id="newError"></p>
+      <div class="row end gap">
+        <button class="btn ghost" value="cancel" formnovalidate>Cancel</button>
+        <button class="btn primary" value="create">Create</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="./dashboard.js"></script>
+</body>
+</html>
