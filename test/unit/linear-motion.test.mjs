@@ -101,16 +101,21 @@ describe('linear motion: strobe pictures and the straight-line check', () => {
 });
 
 describe('linear motion: the test’s four paths', () => {
-  it('start at the striker along the push; only the first one is straight', () => {
+  it('all start at the striker; only "straight" goes along the push in a straight line', () => {
     const p = m.STRIKER.start;
-    const paths = m.candidatePaths(p, 20, 0.4);
-    const d = m.dirFromAngle(20);
+    const paths = m.candidatePaths(p, 25, 0.4);
+    const heading = (pts, i) => m.angleOf({ x: pts[i + 1].x - pts[i].x, z: pts[i + 1].z - pts[i].z });
     for (const [name, pts] of Object.entries(paths)) {
       assert.deepEqual(pts[0], { x: p.x, z: p.z });
-      const first = { x: pts[1].x - p.x, z: pts[1].z - p.z };
-      const len = Math.hypot(first.x, first.z);
-      assert.ok((first.x * d.x + first.z * d.z) / len > 0.99, `${name} leaves along the push`);
-      assert.equal(m.isStraight(pts), name === 'straight', name);
+      const len = pts.slice(1).reduce((sum, q, i) => sum + Math.hypot(q.x - pts[i].x, q.z - pts[i].z), 0);
+      close(len, 0.4, 1e-9);
+      if (name !== 'ahead') close(heading(pts, 0), 25, 1); // they leave along the push
     }
+    assert.ok(m.isStraight(paths.straight) && m.isStraight(paths.ahead));
+    assert.ok(!m.isStraight(paths.turn) && !m.isStraight(paths.curve));
+    close(heading(paths.straight, 30), 25, 1e-9);
+    close(heading(paths.ahead, 30), 0, 1e-9); // straight, but the wrong way
+    close(heading(paths.turn, 39), 0, 2); // ends going straight ahead
+    assert.ok(heading(paths.curve, 39) > 60); // ends curving further out
   });
 });

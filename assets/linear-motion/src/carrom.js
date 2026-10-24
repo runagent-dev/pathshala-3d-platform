@@ -103,6 +103,7 @@ function surfaceTexture(aniso) {
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
   t.anisotropy = aniso;
+  t.userData.mimeType = 'image/jpeg'; // in the GLB: plywood has no transparency, and a JPEG is a fraction of a PNG
   return t;
 }
 
@@ -146,6 +147,7 @@ export function createCarrom({ materials: M }) {
   const frameMat = M.wood.clone();
   frameMat.name = 'Frame';
   frameMat.color = new THREE.Color(0x6b3a1c);
+  if (frameMat.map) frameMat.map.userData.mimeType = 'image/jpeg';
   frameMat.roughness = 0.38;
   const base = new THREE.Mesh(new THREE.BoxGeometry(2 * half + 0.01, BOARD.surface - 0.002, 2 * half + 0.01), frameMat);
   base.position.y = (BOARD.surface - 0.002) / 2;

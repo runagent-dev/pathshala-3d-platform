@@ -60,7 +60,7 @@ Events: `ready`, `change`, `example`, `start`, `done`, `view`, `practice-start`,
 ## State (`get`)
 
 `{ example, phase, path, linear, striker: { x, z }, ball: { x, y, onHolder }, runs: { push, drop, throw }, view, mode }`:
-`example` is `push` | `drop` | `throw`; `phase` is `ready` | `aiming` | `moving` | `done`; `path` is `straight` |
+`example` is `push` | `drop` | `throw`; `phase` is `ready` | `aiming` | `moving` | `landed` | `done`; `path` is `straight` |
 `curved` once the straight line is drawn. Each run gives `{ state, linear, deviation (m from the straight line),
 duration (s, real time), distance (m), pictures, step (s between pictures) }`, plus `angle` (degrees from straight
 ahead, + to the right) and `strength` (0–1) for a push. The ball is shown 4 times slower than real time.

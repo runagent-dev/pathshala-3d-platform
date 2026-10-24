@@ -4,7 +4,7 @@
 // green, gap purple, push orange (the same as in style.css).
 import * as THREE from 'three';
 
-export const COLORS = { path: '#1c6fd9', line: '#12924f', gap: '#6741d9', push: '#d9480f', option: '#3f4954' };
+export const COLORS = { path: '#1c6fd9', rim: '#0d3f86', line: '#12924f', gap: '#6741d9', push: '#d9480f', option: '#3f4954', faded: '#9aa3ad' };
 
 const DASH = 0.018; // dash and gap of the straight line
 const GAP = 0.012;
@@ -29,20 +29,45 @@ function segmentMatrix(a, b, out) {
 
 /**
  * The marks of one motion. ghostGeometry: the object's shape, centred (each picture is placed at the object's
- * centre). Call set(path) once per motion, then show(t) as it moves and line(k) to draw the straight line.
+ * centre, with a darker outline so it reads on the light board). lineLift raises the straight line above the
+ * path (on top of a flat object's pictures). Call set(path) once per motion, then show(t) as it moves and line(k)
+ * to draw the straight line; faded(true) greys it all (another example's marks, kept for comparison).
  */
-export function createTrace({ name, ghostGeometry, maxGhosts = 16, maxDots = 220, dotRadius = 0.0026, lineRadius = 0.0024, color = COLORS.path }) {
+export function createTrace({
+  name,
+  ghostGeometry,
+  maxGhosts = 16,
+  maxDots = 220,
+  dotRadius = 0.0026,
+  lineRadius = 0.0034,
+  lineLift = 0,
+  color = COLORS.path,
+}) {
   const group = new THREE.Group();
   group.name = name;
 
+  // faint pictures with a darker edge (it darkens where the surface turns away from the eye), so they read on the
+  // light board and against each other; still a standard material, so the GLB keeps them
+  const rim = { rimColor: { value: new THREE.Color(COLORS.rim) }, rimStrength: { value: 1 } };
   const ghostMat = new THREE.MeshStandardMaterial({
     name: `${name}Picture`,
     color,
     roughness: 0.5,
     transparent: true,
-    opacity: 0.3,
+    opacity: 0.4,
     depthWrite: false,
   });
+  ghostMat.onBeforeCompile = (shader) => {
+    Object.assign(shader.uniforms, rim);
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform vec3 rimColor;\nuniform float rimStrength;')
+      .replace(
+        '#include <opaque_fragment>',
+        `#include <opaque_fragment>
+        float edge = rimStrength * pow(1.0 - clamp(abs(dot(normal, normalize(vViewPosition))), 0.0, 1.0), 1.6);
+        gl_FragColor = vec4(mix(gl_FragColor.rgb, rimColor, edge), mix(gl_FragColor.a, 0.92, edge));`,
+      );
+  };
   const ghosts = Array.from({ length: maxGhosts }, () => {
     const m = new THREE.Mesh(ghostGeometry, ghostMat);
     m.visible = false;
@@ -117,7 +142,9 @@ export function createTrace({ name, ghostGeometry, maxGhosts = 16, maxDots = 220
       if (len < 1e-6) return;
       tmpD.divideScalar(len);
       lineA.copy(path.start).addScaledVector(tmpD, -OVERHANG);
+      lineA.y += lineLift;
       lineB.copy(path.end).addScaledVector(tmpD, OVERHANG);
+      lineB.y += lineLift;
       const total = len + 2 * OVERHANG;
       const upto = total * Math.min(1, k);
       let n = 0;
@@ -149,6 +176,15 @@ export function createTrace({ name, ghostGeometry, maxGhosts = 16, maxDots = 220
       }
       gap.count = 3;
       gap.instanceMatrix.needsUpdate = true;
+    },
+    /** Greyed and faint (true) or in the meaning colours (false). */
+    faded(on) {
+      ghostMat.color.set(on ? COLORS.faded : color);
+      ghostMat.opacity = on ? 0.2 : 0.4;
+      rim.rimColor.value.set(on ? COLORS.faded : COLORS.rim);
+      rim.rimStrength.value = on ? 0.5 : 1;
+      dotMat.color.set(on ? COLORS.faded : color);
+      lineMat.color.set(on ? COLORS.faded : COLORS.line);
     },
     get path() {
       return path;

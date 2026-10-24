@@ -99,7 +99,9 @@ export function createStand({ materials: M }) {
   root.add(hingePin);
   const door = new THREE.Group(); // pivots on the hinge; rotation.z < 0 swings it down
   door.position.set(HINGE_X, doorY, 0);
-  const plate = new THREE.Mesh(new RoundedBoxGeometry(0.085, 0.005, 0.07, 2, 0.0015), M.satin);
+  const plateMat = M.satin.clone();
+  plateMat.name = 'DoorPlate';
+  const plate = new THREE.Mesh(new RoundedBoxGeometry(0.085, 0.005, 0.07, 2, 0.0015), plateMat);
   plate.position.set(0.0425, -0.0025, 0);
   const seat = new THREE.Mesh(new THREE.TorusGeometry(0.014, 0.0022, 6, 28), iron);
   seat.rotation.x = Math.PI / 2;

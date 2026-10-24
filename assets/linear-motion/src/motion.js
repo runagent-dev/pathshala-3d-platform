@@ -145,29 +145,30 @@ export function isStraight(points, tol = 0.002) {
 // ── the test: four paths a pushed striker might take ──────────────────────────
 
 /**
- * Four candidate paths from p for a push at `angle` (degrees), each `len` m long and starting along the push:
- * straight (the right one), curving left, curving right, and straight then turning. Points every ~1 cm as { x, z }.
- * Curves bend by `bend` degrees over their length.
+ * Four paths from p for a push at `angle` (degrees), each `len` m long, as points about every centimetre { x, z }:
+ *   straight: along the push (the right one);
+ *   ahead:    straight ahead along the board, as if the push's direction did not matter;
+ *   turn:     along the push at first, then turning to go straight ahead;
+ *   curve:    along the push at first, curving further out by `bend` degrees.
  */
-export function candidatePaths(p, angle, len, { bend = 50, n = 40 } = {}) {
-  const arc = (turn, from = 0) =>
-    Array.from({ length: n + 1 }, (_, i) => i / n).reduce(
-      (pts, f, i) => {
-        if (i === 0) return pts;
-        const prev = pts[pts.length - 1];
-        const k = Math.max(0, (f - from) / (1 - from)); // no turning before `from`
-        const a = angle + turn * k;
-        const d = dirFromAngle(a);
-        pts.push({ x: prev.x + (d.x * len) / n, z: prev.z + (d.z * len) / n });
-        return pts;
-      },
-      [{ x: p.x, z: p.z }],
-    );
-  const side = angle >= 0 ? -1 : 1; // the dog-leg turns toward the middle of the board
+export function candidatePaths(p, angle, len, { bend = 45, n = 40 } = {}) {
+  // the heading goes from `from` to `to` (degrees), turning evenly after the fraction `after` of the length
+  const path = (from, to, after = 0) => {
+    const pts = [{ x: p.x, z: p.z }];
+    for (let i = 1; i <= n; i++) {
+      const f = (i - 0.5) / n;
+      const k = Math.max(0, (f - after) / (1 - after));
+      const d = dirFromAngle(from + (to - from) * k);
+      const prev = pts[pts.length - 1];
+      pts.push({ x: prev.x + (d.x * len) / n, z: prev.z + (d.z * len) / n });
+    }
+    return pts;
+  };
+  const out = angle >= 0 ? 1 : -1; // the side the push leans to
   return {
-    straight: arc(0),
-    left: arc(-bend),
-    right: arc(bend),
-    turn: arc(side * 2 * bend, 0.55),
+    straight: path(angle, angle),
+    ahead: path(0, 0),
+    turn: path(angle, 0, 0.35),
+    curve: path(angle, angle + out * bend),
   };
 }

@@ -31,6 +31,7 @@ import {
   isStraight,
   maxDeviation,
   pushFrom,
+  roomAlong,
   round,
   slideAt,
   strobeTimes,
@@ -51,13 +52,14 @@ export const DEFAULTS = {
 const EXAMPLES = ['push', 'drop', 'throw'];
 const AIM_FULL = 0.2; // m of finger drag on the board for a full-strength push
 const AIM_MIN = 0.015; // a shorter drag is not a push
-// how each example is looked at (from the target toward the camera), and what must be in the frame
-const VIEW_DIRS = {
-  push: { front: new THREE.Vector3(0, 1.3, 1), '3d': new THREE.Vector3(0.8, 1.05, 0.95) },
-  fall: { front: new THREE.Vector3(0, 0.42, 1), '3d': new THREE.Vector3(0.62, 0.55, 0.9) },
-};
+// how each example is looked at: the front view's elevation follows the stage's shape (degrees, portrait … wide: a
+// wide, short stage looks lower, so the board fills more of its height); the rotate view starts from the side
+const ELEVATION = { push: [52, 38], fall: [23, 15] };
+const VIEW_3D = { push: new THREE.Vector3(0.8, 1.05, 0.95), fall: new THREE.Vector3(0.62, 0.55, 0.9) };
+// what must be in the frame (a short stage lets the far rail run into the margin)
 const BOXES = {
   push: new THREE.Box3(new THREE.Vector3(-0.445, 0, -0.445), new THREE.Vector3(0.445, 0.04, 0.445)),
+  pushShort: new THREE.Box3(new THREE.Vector3(-0.41, 0, -0.39), new THREE.Vector3(0.41, 0.04, 0.445)),
   fall: new THREE.Box3(new THREE.Vector3(-0.47, 0, -0.3), new THREE.Vector3(0.445, BOARD.surface + BALL.height + 0.08, 0.445)),
 };
 const CHIP_ICONS = {
@@ -82,12 +84,12 @@ export function createApp(root, options = {}) {
             (ex) => `<button role="radio" data-ex="${ex}">${CHIP_ICONS[ex]}<span>${t(`ex_${ex}`)}</span></button>`,
           ).join('')}</div>
           <div class="lm-verdict" data-state="rule" aria-live="polite">
-            <span class="lm-path"><small>${t('path_label')}</small><b></b></span><i class="lm-to">→</i><span class="lm-kind"><b></b><em aria-hidden="true"></em></span>
+            <span class="lm-path"><small>${t('path_label')}</small><b></b></span><span class="lm-res"><i class="lm-to">→</i><span class="lm-kind"><b></b><em aria-hidden="true"></em></span></span>
           </div>
           <p class="lm-extra"></p>
           <div class="pvc-learn-foot lm-acts">
             <button class="pvc-btn primary" data-act="go">${ICONS.play}<span></span></button>
-            <button class="pvc-btn" data-act="again">${ICONS.reset}<span>${t('act_again')}</span></button>
+            <button class="pvc-btn" data-act="clear">${ICONS.reset}<span>${t('act_clear')}</span></button>
           </div>`,
   });
   const slowBadge = document.createElement('div');
@@ -116,7 +118,7 @@ export function createApp(root, options = {}) {
   const strikerGhost = carrom.ghostGeometry;
   const ballGhost = new THREE.SphereGeometry(BALL.r, 20, 14);
   const traces = {
-    push: createTrace({ name: 'PushTrace', ghostGeometry: strikerGhost, maxGhosts: 16 }),
+    push: createTrace({ name: 'PushTrace', ghostGeometry: strikerGhost, maxGhosts: 16, lineLift: STRIKER.h + 0.002 }),
     drop: createTrace({ name: 'DropTrace', ghostGeometry: ballGhost, maxGhosts: 12 }),
     throw: createTrace({ name: 'ThrowTrace', ghostGeometry: ballGhost, maxGhosts: 12 }),
   };
@@ -294,7 +296,7 @@ export function createApp(root, options = {}) {
     const run = s.runs[s.example];
     return {
       example: s.example,
-      phase: s.aim ? 'aiming' : !run ? 'ready' : run.state === 'judged' ? 'done' : 'moving',
+      phase: s.aim ? 'aiming' : !run ? 'ready' : run.state === 'judged' ? 'done' : run.state, // 'moving' | 'landed'
       path: run?.state === 'judged' ? (run.linear ? 'straight' : 'curved') : null,
       linear: run?.state === 'judged' ? run.linear : null,
       striker: { x: round(striker.position.x, 3), z: round(striker.position.z, 3) },
@@ -382,8 +384,9 @@ export function createApp(root, options = {}) {
       // the door swings down at once, faster than the ball falls (the ball is let go); a throw also gets the plunger's push
       tweener.animate({ key: 'door', duration: 0.22, ease: ease.outCubic, onUpdate: (k) => stand.setDoor(k) });
       if (kind === 'throw') {
-        tweener.animate({ key: 'plunger', duration: 0.07, ease: ease.outCubic, onUpdate: (k) => stand.setPlunger(k) });
-        tweener.animate({ key: 'plunger-back', delay: 0.9, duration: 0.4, onUpdate: (k) => stand.setPlunger(1 - k) });
+        // the plunger keeps pace with the slowed-down ball (in real time its push lasts about 0.07 s)
+        tweener.animate({ key: 'plunger', duration: 0.07 * run.slow, ease: ease.outCubic, onUpdate: (k) => stand.setPlunger(k) });
+        tweener.animate({ key: 'plunger-back', delay: 1, duration: 0.4, onUpdate: (k) => stand.setPlunger(1 - k) });
         showThrowArrow(0.7);
       }
     }
@@ -475,6 +478,8 @@ export function createApp(root, options = {}) {
   async function go(kind = s.example, { angle, strength, from, animate = true, judge = true, quiet = false, aimed = false } = {}) {
     if (s.locked && !quiet) return lockedNudge();
     const my = ++goToken;
+    // still wanted after a wait? (not overtaken, not cancelled, and the student's own action not now inside the test)
+    const wanted = () => my === goToken && (quiet || !s.locked);
     if (!quiet) coach?.objectUsed();
     for (const k of EXAMPLES)
       if (s.runs[k]?.state === 'moving' && (k === kind || (k !== 'push' && kind !== 'push'))) land(s.runs[k], { animate: false });
@@ -482,9 +487,17 @@ export function createApp(root, options = {}) {
     if (kind === 'push') {
       const pick = angle == null ? randomPush() : { angle, strength: strength ?? 0.8 };
       if (from === 'start' || angle == null) clearRun('push');
+      // a push straight into the nearby frame would not move it: first bring it where there is room that way
+      const dir = dirFromAngle(pick.angle);
+      if (roomAlong(striker.position, dir) < STRIKER.minDist) {
+        forget('push');
+        const start = roomAlong(STRIKER.start, dir) >= STRIKER.minDist ? STRIKER.start : { x: 0, z: 0 };
+        striker.position.set(start.x, strikerY, start.z);
+        if (!quiet) showHint(t('hint_room'), { duration: 3500 });
+      }
       const p = { x: striker.position.x, z: striker.position.z };
       if (animate && !aimed) await showAim(pick.angle, pick.strength, 0.35); // the push shows for a moment, then it lets go
-      if (my !== goToken) return null;
+      if (!wanted()) return null;
       run = startRun('push', { ...pick, from: p }, { judge, animate });
       if (animate) setTimeout(() => my === goToken && hideAim(), 220);
       else hideAim();
@@ -493,23 +506,37 @@ export function createApp(root, options = {}) {
       if (s.ballFrom != null) {
         await ballHome({ animate });
         if (animate) await wait(250);
-        if (my !== goToken) return null;
+        if (!wanted()) return null;
       }
       run = startRun(kind, {}, { judge, animate });
     }
     if (!quiet) coach?.objectReleased();
     return run;
   }
+  /** Calls off a push or a drop still winding up (its arrow, or the ball going back on its holder). */
+  function cancelPending() {
+    goToken++;
+    if (s.aim && !drag) hideAim();
+  }
 
   /** The push arrow from the striker: grows to its length over `duration` s (0: at once). */
-  function showAim(angle, strength, duration = 0) {
+  const aimFrom = new THREE.Vector3();
+  /** beside: the label goes beside the striker, away from the arrow (the test draws paths where the tip is). */
+  function showAim(angle, strength, duration = 0, { beside = false } = {}) {
     s.aim = { angle, strength };
     const d = dirFromAngle(angle);
     const dir = new THREE.Vector3(d.x, 0, d.z);
-    const from = new THREE.Vector3(striker.position.x, BOARD.surface + STRIKER.h + 0.006, striker.position.z).addScaledVector(dir, STRIKER.r + 0.004);
+    const from = aimFrom.set(striker.position.x, BOARD.surface + STRIKER.h + 0.006, striker.position.z).addScaledVector(dir, STRIKER.r + 0.004);
     const len = (k) => 0.035 + 0.15 * strength * k;
     if (!anno.has('push'))
-      anno.add('push', { text: t('label_push'), point: () => aimArrow.tip, dx: 0, dy: -30, kind: 'callout', color: COLORS.push });
+      anno.add('push', {
+        text: t('label_push'),
+        point: () => (beside ? aimFrom : aimArrow.tip),
+        dx: beside ? (d.x < 0 ? 44 : -44) : 0,
+        dy: beside ? 16 : -30,
+        kind: 'callout',
+        color: COLORS.push,
+      });
     if (!duration) {
       aimArrow.set(from, dir, len(1));
       stage.invalidate();
@@ -535,10 +562,13 @@ export function createApp(root, options = {}) {
 
   /** The plunger's push on the ball, as an arrow for a moment. */
   let throwArrowTimer = 0;
+  const throwTail = new THREE.Vector3();
   function showThrowArrow(seconds) {
+    // at the ball's height, just in front of the plunger, pointing at the ball
     const tip = stand.plungerTip;
-    throwArrow.set(new THREE.Vector3(tip.x - 0.075, tip.y + BALL.r + 0.02, tip.z), new THREE.Vector3(1, 0, 0), 0.08);
-    anno.add('throw-push', { text: t('label_push'), point: () => throwArrow.tip, dx: -6, dy: -28, kind: 'callout', color: COLORS.push });
+    throwTail.set(tip.x - 0.085, tip.y, tip.z + BALL.r + 0.012);
+    throwArrow.set(throwTail, new THREE.Vector3(1, 0, 0), 0.08);
+    anno.add('throw-push', { text: t('label_push'), point: () => throwTail, dx: -6, dy: 24, kind: 'callout', color: COLORS.push });
     clearTimeout(throwArrowTimer);
     throwArrowTimer = setTimeout(() => {
       throwArrow.hide();
@@ -557,8 +587,33 @@ export function createApp(root, options = {}) {
     for (const id of ['surface', 'line', 'gap']) anno.remove(id);
   }
   /** The labels of the current example: the flat surface before a push, the straight line (and gap) after. */
+  /** The gap's label, right of the bracket (dx > 0) or left of it. */
+  function addGapLabel(dx) {
+    const run = s.runs.throw;
+    anno.add('gap', {
+      text: `<span class="lm-gap">${t('label_gap', { cm: Math.round(run.deviation * 100) })}</span>`,
+      point: () => labelPoints.gap,
+      dx,
+      dy: -10,
+      kind: 'callout',
+      color: COLORS.gap,
+    });
+  }
+  // on small stages the gap's label can land under the slow-motion note: then it goes left of the bracket
+  let gapLeft = false;
+  stage.onAfterRender(() => {
+    if (gapLeft || flying || slowBadge.hidden || !anno.has('gap')) return;
+    const label = ui.annoLayer.querySelector('.lm-gap')?.parentElement?.getBoundingClientRect();
+    const note = slowBadge.getBoundingClientRect();
+    if (!label?.width) return;
+    if (label.right > note.left && label.left < note.right && label.bottom > note.top && label.top < note.bottom) {
+      gapLeft = true;
+      addGapLabel(-54);
+    }
+  });
   function showLabels() {
     removeLabels();
+    gapLeft = false;
     const run = s.runs[s.example];
     if (!run) {
       if (s.example === 'push' && s.mode !== 'quiz')
@@ -581,14 +636,7 @@ export function createApp(root, options = {}) {
       labelPoints.line.lerpVectors(run.start, run.end, 0.93);
       anno.add('line', { text: t('label_line'), point: () => labelPoints.line, dx: 50, dy: 14, kind: 'callout', color: COLORS.line });
       labelPoints.gap.lerpVectors(run.far, run.foot, 0.5);
-      anno.add('gap', {
-        text: t('label_gap', { cm: Math.round(run.deviation * 100) }),
-        point: () => labelPoints.gap,
-        dx: 54,
-        dy: -10,
-        kind: 'callout',
-        color: COLORS.gap,
-      });
+      addGapLabel(54);
     }
   }
 
@@ -627,13 +675,19 @@ export function createApp(root, options = {}) {
   /** Switches the example: the camera goes to it; a motion still running jumps to its end. */
   async function setExample(ex, { animate = true } = {}) {
     if (!EXAMPLES.includes(ex)) return;
+    cancelPending();
     for (const kind of EXAMPLES) if (s.runs[kind]?.state === 'moving') land(s.runs[kind], { animate: false });
     if (s.aim) hideAim();
     const changed = ex !== s.example;
     s.example = ex;
-    // the stand and the ball (and what they left) belong to the two falls; the push needs only the board
+    // each example shows its own marks; the stand and the ball belong to the two falls. The throw keeps the drop's
+    // marks, greyed, for comparison (same ball, same height: straight vs curved)
     const fall = ex !== 'push';
-    for (const g of [stand.root, ball.root, traces.drop.group, traces.throw.group]) g.visible = fall;
+    stand.root.visible = ball.root.visible = fall;
+    traces.push.group.visible = ex === 'push';
+    traces.drop.group.visible = fall;
+    traces.throw.group.visible = ex === 'throw';
+    traces.drop.faded(ex === 'throw');
     // the ball goes back on its holder unless it lies where this example's motion left it
     if (ex !== 'push' && s.ballFrom !== null && s.ballFrom !== ex) ballHome({ animate });
     showLabels();
@@ -652,14 +706,22 @@ export function createApp(root, options = {}) {
   }
 
   // ── camera ──────────────────────────────────────────────────────────────────
+  function viewDir(k, view) {
+    if (view === '3d') return VIEW_3D[k];
+    const wide = Math.min(1, Math.max(0, (stage.width / Math.max(1, stage.height) - 0.95) / 0.75)); // 0 portrait … 1 wide
+    const [tall, flat] = ELEVATION[k];
+    const e = THREE.MathUtils.degToRad(tall + (flat - tall) * wide);
+    return new THREE.Vector3(0, Math.sin(e), Math.cos(e));
+  }
   function viewPose(view = s.view, ex = s.example) {
     const k = sceneOf(ex);
-    const fit = (margin) => fitPose({ box: BOXES[k], dir: VIEW_DIRS[k][view], camera, width: stage.width, height: stage.height, margin });
+    const box = k === 'push' && stage.height < 340 ? BOXES.pushShort : BOXES[k];
+    const fit = (margin) => fitPose({ box, dir: viewDir(k, view), camera, width: stage.width, height: stage.height, margin });
     // the fall's tall parts (the stand, the ball's path) are on the left: the corner buttons on the right leave them be
     if (k === 'fall' && view === 'front') return fit({ top: 22, bottom: 16, side: 12 });
     // little room on top, unless the corner buttons would then cover the object (narrow frames)
     const loose = fit({ top: 16, bottom: 16, side: 12 });
-    return underCorner(loose, BOXES[k]) ? fit() : loose;
+    return underCorner(loose, box) ? fit() : loose;
   }
   const probe = new THREE.PerspectiveCamera();
   const probePoint = new THREE.Vector3();
@@ -682,6 +744,7 @@ export function createApp(root, options = {}) {
         }
     return false;
   }
+  let flying = false; // the camera is on its way (labels are not where they will be)
   function flyTo({ position, target }, duration = 0.8) {
     const p0 = camera.position.clone();
     const t0 = controls.target.clone();
@@ -693,7 +756,8 @@ export function createApp(root, options = {}) {
       stage.invalidate();
       return Promise.resolve(true);
     }
-    return tweener.animate({
+    flying = true;
+    const flight = tweener.animate({
       key: 'camera',
       duration,
       onUpdate: (k) => {
@@ -703,6 +767,11 @@ export function createApp(root, options = {}) {
         stage.invalidate();
       },
     }).finished;
+    flight.then(() => {
+      flying = false;
+      stage.invalidate();
+    });
+    return flight;
   }
   function setView(view, { animate = true } = {}) {
     s.view = view === '3d' ? '3d' : 'front';
@@ -762,6 +831,7 @@ export function createApp(root, options = {}) {
       if (s.runs.push?.state === 'moving') return;
       const start = boardPoint(p);
       if (!start) return;
+      cancelPending();
       drag = { id: e.pointerId, start: start.clone(), angle: 0, strength: 0 };
       try {
         ui.canvasHost.setPointerCapture(e.pointerId); // the drag goes on outside the canvas
@@ -883,7 +953,7 @@ export function createApp(root, options = {}) {
       return { ax: a.x, ay: a.y, x: a.x + ((a.x - b.x) / len) * 24, y: a.y + ((a.y - b.y) / len) * 24 };
     });
     const GAP = 38;
-    for (let round = 0; round < 40; round++)
+    for (let pass = 0; pass < 40; pass++)
       for (let i = 0; i < spots.length; i++)
         for (let j = i + 1; j < spots.length; j++) {
           const p = spots[i];
@@ -907,6 +977,7 @@ export function createApp(root, options = {}) {
     stage.invalidate();
   }
   function clearAll() {
+    cancelPending();
     for (const kind of EXAMPLES) clearRun(kind);
     ballHome();
     hideAim();
@@ -945,10 +1016,10 @@ export function createApp(root, options = {}) {
       },
       async prepare(i, alive, say) {
         const kind = kinds[i % kinds.length];
-        clearOptions();
+        clearAll(); // no marks from an earlier question
+        refresh();
         if (kind === 'watch') {
           const ex = pickOne(EXAMPLES);
-          clearRun(ex);
           await setExample(ex);
           if (!alive()) return null;
           say(t('q_look'));
@@ -962,13 +1033,12 @@ export function createApp(root, options = {}) {
           return { text: t('q_watch'), ...textChoices(WATCH[ex], kind, { example: ex }) };
         }
         if (kind === 'predict') {
-          clearRun('push');
           await setExample('push');
           if (!alive()) return null;
-          const angle = (Math.random() < 0.5 ? -1 : 1) * Math.round(12 + Math.random() * 20);
+          const angle = (Math.random() < 0.5 ? -1 : 1) * Math.round(20 + Math.random() * 14);
           const push = pushFrom(STRIKER.start, angle, 0.75);
           const paths = candidatePaths(STRIKER.start, angle, push.dist);
-          const order = shuffle(['straight', 'left', 'right', 'turn']);
+          const order = shuffle(['straight', 'ahead', 'turn', 'curve']);
           const lim = BOARD.half - STRIKER.r;
           const ends = order.map((name, j) => {
             const pts = [];
@@ -984,7 +1054,7 @@ export function createApp(root, options = {}) {
           labelOffsets(ends).forEach(({ dx, dy }, j) => {
             anno.add(`opt${j}`, { text: letters[j], point: () => ends[j].end, dx, dy, kind: 'callout', color: COLORS.option });
           });
-          showAim(angle, 0.75);
+          showAim(angle, 0.75, 0, { beside: true });
           question = { kind, angle, order, expected: order.indexOf('straight') };
           return {
             text: t('q_predict'),
@@ -997,17 +1067,15 @@ export function createApp(root, options = {}) {
         }
         if (kind === 'spacing') {
           const ex = pickOne(['drop', 'push']);
-          clearRun(ex);
           await setExample(ex);
           if (!alive()) return null;
-          const run = await go(ex, {
-            angle: Math.round(-15 + Math.random() * 30),
-            strength: 0.95,
-            from: 'start',
-            animate: false,
-            judge: false,
-            quiet: true,
-          });
+          say(t('q_look'));
+          await wait(300);
+          if (!alive()) return null;
+          // it plays, so the student sees which way it goes
+          const run = await go(ex, { angle: Math.round(-15 + Math.random() * 30), strength: 0.95, from: 'start', judge: false, quiet: true });
+          await run?.landed;
+          if (!alive()) return null;
           question = { kind, ex, run };
           return { text: t('q_spacing'), ...textChoices(SPACING[ex], kind, { example: ex }) };
         }
@@ -1140,7 +1208,8 @@ export function createApp(root, options = {}) {
       case 'go':
         go(s.example, { from: 'start' });
         break;
-      case 'again':
+      case 'clear':
+        cancelPending();
         clearRun(s.example);
         showLabels();
         refresh();
@@ -1163,12 +1232,19 @@ export function createApp(root, options = {}) {
     if (target.closest('input, textarea, select') || e.metaKey || e.ctrlKey || e.altKey) return;
     const k = e.key;
     const arrows = { ArrowUp: 0, ArrowRight: 90, ArrowDown: 180, ArrowLeft: -90 };
+    const sceneKey = ['1', '2', '3', 'r', 'R'].includes(k) || k in arrows || ((k === ' ' || k === 'Enter') && !target.closest('button'));
+    if (sceneKey && s.mode === 'quiz') {
+      // in the test the scene runs by itself; only the view keys work
+      if (quiz.active && !quiz.revealed) lockedNudge();
+      return;
+    }
     if (['1', '2', '3'].includes(k)) setExample(EXAMPLES[Number(k) - 1]);
     else if ((k === ' ' || k === 'Enter') && !target.closest('button')) go(s.example, { from: 'start' });
     else if (k in arrows) {
       if (s.example === 'push') keyPush(arrows[k]);
       else go(s.example);
     } else if (k === 'r' || k === 'R') {
+      cancelPending();
       clearRun(s.example);
       showLabels();
       refresh();
@@ -1235,7 +1311,7 @@ export function createApp(root, options = {}) {
     /** The board, the striker, the stand, the ball and any marks the motions left (the stand even in the push). */
     exportRoot() {
       const copy = world.clone(true);
-      for (const name of ['Stand', 'CricketBall', 'DropTrace', 'ThrowTrace']) {
+      for (const name of ['Stand', 'CricketBall', 'PushTrace', 'DropTrace', 'ThrowTrace']) {
         const ob = copy.getObjectByName(name);
         if (ob) ob.visible = true;
       }
