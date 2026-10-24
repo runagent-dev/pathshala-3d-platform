@@ -1,0 +1,61 @@
+/* Translational motion: the page, and the panel's distances (one colour per painted point; the colours are set
+   from src/app.js, the same as in the 3D view). The student view itself is ../../shared/lib/student/student.css
+   (linked first). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.pvc-t.front { --c: var(--c-front); }
+.pvc-t.door { --c: var(--c-door); }
+.pvc-t.roof { --c: var(--c-roof); }
+.pvc-t.back { --c: var(--c-back); }
+.pvc-t.wheel { --c: var(--c-wheel); }
+
+.tm-main { flex-direction: column; align-items: stretch; gap: 2px; }
+.tm-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 26px; }
+.tm-cap { font-size: 13.5px; color: var(--ink-2); }
+.tm-verdict { display: inline-flex; font-size: 14.5px; font-weight: 700; white-space: nowrap; }
+.tm-verdict > span { display: none; align-items: center; gap: 4px; padding: 1px 9px 1px 6px; border-radius: 5px; }
+.tm-verdict svg { width: 15px; height: 15px; stroke-width: 2.4; }
+.tm-verdict[data-state='yes'] .tm-yes { display: inline-flex; color: var(--ok); background: color-mix(in srgb, var(--ok) 11%, var(--panel)); }
+.tm-verdict[data-state='no'] .tm-no { display: inline-flex; color: var(--bad); background: color-mix(in srgb, var(--bad) 9%, var(--panel)); }
+.tm-sum { gap: 3px; align-items: flex-start; }
+.tm-sum .pvc-t { min-width: 2.7em; }
+.tm-sum .pvc-t small { max-width: 5.6em; }
+.tm-sum i, .tm-wheel-part i { font-style: normal; font-size: 21px; line-height: 1.35; color: var(--ink-3); }
+.tm-wheel-part { display: flex; align-items: flex-start; gap: 3px; margin-left: 4px; padding-left: 6px; border-left: 1px dashed var(--line-2); }
+/* the longest text is 3 lines on a phone: the line keeps that height, so the 3D view keeps its size */
+.tm-extra { margin: 0; min-height: 4.5em; font-size: 13.5px; line-height: 1.5; color: var(--ink-2); }
+.tm-foot { justify-content: flex-start; gap: 8px; }
+.tm-foot .pvc-btn { height: 40px; padding: 0 14px; font-size: 15.5px; }
+.tm-foot [data-act='drive'] { min-width: 132px; }
+/* the path choice on the 3D view, top left (the view buttons are top right) */
+.tm-path { position: absolute; top: 10px; left: 10px; z-index: 5; box-shadow: 0 1px 2px rgba(20, 30, 45, 0.06); }
+.tm-path button { height: 36px; padding: 0 14px; font-size: 15px; }
+@container pvc (max-width: 560px) {
+  .tm-path { top: 8px; left: 8px; }
+  .tm-path button { padding: 0 12px; font-size: 14.5px; }
+}
+.tm-ic { display: inline-flex; font-style: normal; }
+.pvc-learn-foot .tm-ic svg { color: #fff; }
+.tm-swatch { width: 12px; height: 12px; border-radius: 50%; background: var(--c-wheel); border: 2px solid #fff; box-shadow: 0 0 0 1px var(--c-wheel); }
+.tm-wheel-btn.on { border-color: var(--c-wheel); color: var(--c-wheel); background: color-mix(in srgb, var(--c-wheel) 8%, var(--panel)); }
+/* the test's word answers: up to two short lines in a choice */
+.tm-opt { font-size: 14.5px; font-weight: 600; line-height: 1.25; white-space: normal; text-align: center; }
+/* questions and worked answers are at most two lines on a phone: the test keeps one height, so the 3D view does
+   not jump when an answer is shown */
+.tm .pvc-q-text { min-height: 2.8em; }
+.tm .pvc-q-feedback { min-height: 2.9em; }
+/* the path choice belongs to শেখো; the test sets up its own scenes */
+.tm[data-mode='quiz'] .tm-path { visibility: hidden; }
+
+@container pvc (max-width: 560px) {
+  .tm-sum .pvc-t b, .tm-sum i, .tm-wheel-part i { font-size: 19px; }
+}
+@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
+  .tm-extra { font-size: 12.5px; }
+  .tm-sum .pvc-t b, .tm-sum i, .tm-wheel-part i { font-size: 18px; }
+  .tm-sum .pvc-t { min-width: 2.4em; }
+  .tm-cap { font-size: 12.5px; }
+  .tm-opt { font-size: 13.5px; }
+}
