@@ -12,7 +12,7 @@ export const CAR = {
   height: 1.475,
   wheelR: 1 / Math.PI, // 0.318 m: one turn of a wheel moves the car exactly 2 m
   rearAxle: 0.78, // from the rear bumper
-  wheelbase: 2.5,
+  wheelbase: 2.4, // a small family car (the front overhang leaves room for the bumper's point)
   track: 1.48, // between the wheel centres, left to right
 };
 export const TURN_R = 5; // m: radius of the rear axle's path round the bend (a real car's tight turn)
@@ -20,20 +20,25 @@ export const PATHS = ['straight', 'turn'];
 /** How far the rear axle goes: 4 m straight (two turns of a wheel), a quarter circle round the bend. */
 export const D_MAX = { straight: 4, turn: (TURN_R * Math.PI) / 2 };
 
-/** The painted points on the body, in car coordinates (on the right side, the roof). */
-export const DOT_KEYS = ['front', 'door', 'roof', 'back'];
+/**
+ * The painted points, in car coordinates: three on the right side and one on the roof, at four clearly different
+ * heights (0.49, 0.72, 1.15, 1.475 m), so no two trails ever run close together. Their x (0.2, 1.8, 2.4, 3.8 m) read
+ * easily on the metre marks, which start where the rear bumper starts.
+ */
+export const DOT_KEYS = ['front', 'window', 'roof', 'back'];
 export const DOTS = {
-  front: [3.82, 0.47, 0.865], // front bumper, right side
-  door: [2.62, 0.74, 0.865], // right front door, under the handle
-  roof: [1.75, 1.475, 0], // middle of the roof
-  back: [0.17, 0.62, 0.865], // rear bumper, right side
+  front: [3.8, 0.49, 0.865], // front bumper, right side
+  window: [2.4, 1.15, 0.754], // right front window (the glass is set in from the body's side)
+  roof: [1.8, 1.475, 0], // middle of the roof
+  back: [0.2, 0.72, 0.865], // rear corner, right side, by the tail lamp
 };
 /** Which way each point's surface faces (car coordinates), to draw its sticker and lift its trail off the paint. */
-export const DOT_NORMALS = { front: [0, 0, 1], door: [0, 0, 1], roof: [0, 1, 0], back: [0, 0, 1] };
+export const DOT_NORMALS = { front: [0, 0, 1], window: [0, 0, 1], roof: [0, 1, 0], back: [0, 0, 1] };
 
-/** The point on the front right tyre: its hub, how far out from the wheel's middle plane, its radius, and its
- *  starting angle from the top, turning the way the wheel rolls (π: at the bottom, touching the road). */
-export const WHEEL_DOT = { hub: [CAR.rearAxle + CAR.wheelbase, CAR.wheelR, CAR.track / 2], out: 0.105, rho: 0.27, start: Math.PI };
+/** The point on the front right tyre: its hub, how far out from the wheel's middle plane, its radius (the tread's
+ *  edge, so its path is a true cycloid that touches the road), and its starting angle from the top, turning the
+ *  way the wheel rolls (π: at the bottom, on the road). */
+export const WHEEL_DOT = { hub: [CAR.rearAxle + CAR.wheelbase, CAR.wheelR, CAR.track / 2], out: 0.09, rho: CAR.wheelR, start: Math.PI };
 
 export const clampD = (path, d) => Math.min(D_MAX[path] ?? D_MAX.straight, Math.max(0, Number(d) || 0));
 

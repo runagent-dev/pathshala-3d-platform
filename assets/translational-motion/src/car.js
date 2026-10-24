@@ -19,8 +19,8 @@ function rbox(w, h, d, segments, radius) {
 const R = CAR.wheelR;
 const ARCH = R + 0.06; // the arch clears the tyre
 const FRONT_AXLE = CAR.rearAxle + CAR.wheelbase;
-export const DOT_R = 0.11; // m, radius of a painted point
-export const WHEEL_DOT_R = 0.055;
+export const DOT_R = 0.15; // m, radius of a painted point (with its white rim 0.19 m): big enough on a phone
+export const WHEEL_DOT_R = 0.09;
 
 function bodyProfile() {
   const s = new THREE.Shape();
@@ -101,7 +101,7 @@ function tyreGeometry() {
 
 /**
  * @param {{ materials: any, colors: Record<string, string>, ghost?: THREE.Material }} opts
- *   colors: { body, front, door, roof, back, wheel } (CSS colours of the painted points); ghost: build the
+ *   colors: { body, front, window, roof, back, wheel } (CSS colours of the painted points); ghost: build the
  *   outline of the start position in this one material, without points or lights.
  */
 export function createCar({ materials: M, colors, ghost = null }) {
@@ -176,7 +176,7 @@ export function createCar({ materials: M, colors, ghost = null }) {
     add(rbox(0.06, 0.07, 1.5, 2, 0.025), trim, 'BumperLipRear').position.set(0.015, 0.34, 0);
     const seam = new THREE.MeshBasicMaterial({ name: 'Seam', color: 0x59626e });
     for (const z of [-0.861, 0.861]) {
-      for (const x of [1.22, 2.0, 2.86]) add(new THREE.BoxGeometry(0.012, 0.6, 0.004), seam, 'DoorSeam').position.set(x, 0.63, z);
+      for (const x of [1.2, 1.98, 2.74]) add(new THREE.BoxGeometry(0.012, 0.6, 0.004), seam, 'DoorSeam').position.set(x, 0.63, z);
       for (const x of [1.72, 2.5]) add(rbox(0.16, 0.035, 0.03, 2, 0.012), trim, 'Handle').position.set(x, 0.86, Math.sign(z) * 0.868);
     }
   }
@@ -219,15 +219,21 @@ export function createCar({ materials: M, colors, ghost = null }) {
 
   // ── painted points (stickers): a coloured disc with a white rim ─────────────
   const dots = {};
-  const sticker = (radius, color, name) => {
+  const white = new THREE.MeshBasicMaterial({ name: 'PointRim', color: 0xffffff, toneMapped: false });
+  const sticker = (radius, color, name, onTop = false) => {
     const g = new THREE.Group();
     g.name = name;
-    const ring = new THREE.Mesh(new THREE.CircleGeometry(radius * 1.28, 32), new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false }));
+    const ring = new THREE.Mesh(new THREE.CircleGeometry(radius * 1.28, 32), onTop ? white.clone() : white);
     const disc = new THREE.Mesh(
       new THREE.CircleGeometry(radius, 32),
-      new THREE.MeshBasicMaterial({ color, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }),
+      new THREE.MeshBasicMaterial({ name, color, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }),
     );
     disc.position.z = 0.002;
+    if (onTop) {
+      ring.material.depthTest = disc.material.depthTest = false;
+      ring.renderOrder = 6;
+      disc.renderOrder = 7;
+    }
     g.add(ring, disc);
     return g;
   };
@@ -241,27 +247,32 @@ export function createCar({ materials: M, colors, ghost = null }) {
       model.add(g);
       dots[key] = g;
     }
-    // the point on the front right tyre's outer face, at the bottom (touching the road) when the wheel has not turned
-    const w = sticker(WHEEL_DOT_R, colors.wheel, 'Point_wheel');
-    w.position.set(WHEEL_DOT.rho * Math.sin(WHEEL_DOT.start), WHEEL_DOT.rho * Math.cos(WHEEL_DOT.start), WHEEL_DOT.out + 0.002);
+    // The point on the front right tyre sits on the tread's edge (so it really touches the road). A flat disc there
+    // would hang off the tyre, so its marker turns to face the camera (faceCamera) and is drawn over the road,
+    // like its trail.
+    const w = sticker(WHEEL_DOT_R, colors.wheel, 'Point_wheel', true);
+    w.position.set(WHEEL_DOT.rho * Math.sin(WHEEL_DOT.start), WHEEL_DOT.rho * Math.cos(WHEEL_DOT.start), WHEEL_DOT.out);
     wheels.fr.spin.add(w);
     dots.wheel = w;
   }
-
-  const meshes = [];
-  root.traverse((m) => m instanceof THREE.Mesh && meshes.push(m));
+  const q = new THREE.Quaternion();
 
   return {
     root,
     model,
-    wheels,
     dots,
-    meshes,
     /** Turn each wheel by its angle (radians, the way it rolls forward) and steer the front ones. */
     setWheels(turns, steering) {
       for (const key of Object.keys(wheels)) wheels[key].spin.rotation.z = -turns[key];
       wheels.fl.hub.rotation.y = steering.left;
       wheels.fr.hub.rotation.y = steering.right;
+    },
+    /** Turns the tyre point's marker to face the camera (before each frame). */
+    faceCamera(camera) {
+      const w = dots.wheel;
+      if (!w?.visible) return;
+      w.parent.getWorldQuaternion(q).invert();
+      w.quaternion.copy(q).multiply(camera.quaternion);
     },
   };
 }

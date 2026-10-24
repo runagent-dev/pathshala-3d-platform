@@ -54,8 +54,8 @@ export function createRoad(path) {
   const g = new THREE.Group();
   g.name = `Road_${path}`;
   const pts = centreLine(path);
-  const asphalt = new THREE.MeshStandardMaterial({ name: 'Road', color: 0xe6e9ed, roughness: 1, metalness: 0 });
-  const edge = new THREE.MeshBasicMaterial({ name: 'RoadEdge', color: 0xb8c0ca });
+  const asphalt = new THREE.MeshStandardMaterial({ name: 'Road', color: 0xdde1e6, roughness: 1, metalness: 0 });
+  const edge = new THREE.MeshBasicMaterial({ name: 'RoadEdge', color: 0xa9b2bd });
   const road = new THREE.Mesh(band(pts, ROAD_W, 0, 0), asphalt);
   road.receiveShadow = true;
   g.add(road);
@@ -69,11 +69,12 @@ export function createRoad(path) {
  * has a short upright peg (it reads as a ruler's mark from any side); the numbers face the camera and sit just
  * under their pegs on the screen (face(camera) before each frame), the unit under the last number.
  */
-export function createRuler({ digits, unit, max = 8 }) {
+export const RULER = { z: ROAD_W / 2 - 0.32, max: 8, below: 0.4, digit: 0.5, unitBelow: 0.48, unit: 0.36 };
+export function createRuler({ digits, unit }) {
+  const { max, z: z0 } = RULER;
   const g = new THREE.Group();
   g.name = 'MetreMarks';
   const ink = new THREE.MeshBasicMaterial({ name: 'Marks', color: 0x6b7683 });
-  const z0 = ROAD_W / 2 - 0.32;
   const PEG = 0.16;
   const pegGeo = new THREE.BoxGeometry(0.035, PEG, 0.035);
   pegGeo.translate(0, PEG / 2, 0);
@@ -90,13 +91,13 @@ export function createRuler({ digits, unit, max = 8 }) {
     const peg = new THREE.Mesh(pegGeo, ink);
     peg.position.set(i, 0, z0);
     g.add(peg);
-    text(digits(String(i)), 0.34, 600);
+    text(digits(String(i)), RULER.digit, 600);
   }
   const line = new THREE.Mesh(new THREE.PlaneGeometry(max + 0.035, 0.035), ink);
   line.rotation.x = -Math.PI / 2;
   line.position.set(max / 2, 0.004, z0);
   g.add(line);
-  const u = text(unit, 0.26, 500);
+  const u = text(unit, RULER.unit, 500);
   const down = new THREE.Vector3();
   const base = new THREE.Vector3();
   return {
@@ -105,10 +106,10 @@ export function createRuler({ digits, unit, max = 8 }) {
       down.set(0, -1, 0).applyQuaternion(camera.quaternion); // the screen's "down", in the world
       for (let i = 0; i <= max; i++) {
         labels[i].quaternion.copy(camera.quaternion);
-        labels[i].position.copy(base.set(i, 0, z0)).addScaledVector(down, 0.3);
+        labels[i].position.copy(base.set(i, 0, z0)).addScaledVector(down, RULER.below);
       }
       u.quaternion.copy(camera.quaternion);
-      u.position.copy(labels[max].position).addScaledVector(down, 0.34);
+      u.position.copy(labels[max].position).addScaledVector(down, RULER.unitBelow);
     },
   };
 }
@@ -175,12 +176,8 @@ export function createTrail(points, { radius = 0.035, radial = 8, material }) {
   mesh.userData.noExport = true;
   return {
     mesh,
-    segments: n,
     show(count) {
       geo.setDrawRange(0, Math.max(0, Math.min(n, Math.floor(count))) * radial * 6);
-    },
-    dispose() {
-      geo.dispose();
     },
   };
 }
