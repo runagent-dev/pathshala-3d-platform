@@ -325,3 +325,5 @@ textarea:focus, input:focus { border-color: var(--accent-2); }
 .upload-warnings { margin: 0; padding-left: 18px; color: #8a5a00; font-size: 12.5px; }
 .upload-warnings:empty { display: none; }
 .dialog.wide { max-height: calc(100dvh - 24px); overflow: auto; }
+.account { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12.5px; color: var(--text-2); padding: 0 2px 6px; }
+.git-banner { background: #fff4e5; border-bottom: 1px solid #f0c27a; color: #6b4300; font-size: 13px; padding: 8px 14px; }

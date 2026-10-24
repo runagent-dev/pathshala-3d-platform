@@ -19,7 +19,7 @@ import { MIN_FREE_BYTES } from '../release.mjs';
 import { packageAsset } from '../package.mjs';
 import { gitInfo } from '../git.mjs';
 import { bookRef } from '../books.mjs';
-import { ROOT, SHARED_DIR } from '../paths.mjs';
+import { ROOT, SHARED_DIR, assetDir as readFigureDir } from '../paths.mjs';
 import { serveStatic } from '../static-server.mjs';
 import { CHROMIUM_ARGS, inspectPng, openFigure, preparePage, readFigureManifest } from './driver.mjs';
 import { glbInfo, optimizeGlb, validateGlb } from './glb.mjs';
@@ -302,7 +302,7 @@ export async function exportFigure(id, { out, formats = DEFAULT_FORMATS, officia
     const buf = fs.readFileSync(path.join(out, f.name));
     Object.assign(f, { bytes: buf.length, sha256: sha256(buf) });
   }
-  const git = gitInfo([`assets/${id}`, 'shared']);
+  const git = gitInfo([path.relative(ROOT, readFigureDir(id)), 'shared']);
   const record = {
     id,
     title: manifest.title,

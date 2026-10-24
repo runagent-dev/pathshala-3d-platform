@@ -15,9 +15,11 @@
 
 ## This server
 
-- The studio runs as `npm run dev:public` (all addresses, Basic auth; logins in `.studio-auth.json`, log in
-  `/tmp/pathshala-dev.log`). Restart:
+- The studio runs as `npm run dev:public` (all addresses; accounts in `data/users.json`, moved from
+  `.studio-auth.json` on first start; log in `/tmp/pathshala-dev.log`). Restart:
   `setsid nohup node scripts/dev.mjs --public > /tmp/pathshala-dev.log 2>&1 < /dev/null &`.
-  Requests from 127.0.0.1 skip the login, so headless checks work without credentials.
+  Requests from 127.0.0.1 skip the login, so headless checks work without credentials. Studio edits (reviews,
+  status, notes, uploads) are committed to git automatically in this mode: expect "review(…)"/"chore(…)" commits.
+  The target setup is `npm run studio` under systemd (docs/ops/runbook.md).
 - Use another port for your own test servers (e.g. `PORT=4810 node scripts/dev.mjs`); the browser tests start one on
   4820. Never stop the owner's server on 4800 by pattern-matching process names.

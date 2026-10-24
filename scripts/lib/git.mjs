@@ -17,6 +17,16 @@ export function gitInfo(paths = []) {
   }
 }
 
+/** Is the file committed (tracked) in this checkout? Ignored and new files are not. */
+export function isTracked(file) {
+  try {
+    git(['ls-files', '--error-unmatch', '--', file]);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** Files changed compared with `base` (committed, staged and unstaged), relative to the repo root. */
 export function changedFiles(base = 'HEAD') {
   try {

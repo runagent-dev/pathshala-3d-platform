@@ -3,7 +3,7 @@
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { gitInfo } from './git.mjs';
+import { gitInfo, isTracked } from './git.mjs';
 import { assetDir, ROOT } from './paths.mjs';
 import { readStatus } from './status.mjs';
 
@@ -21,11 +21,13 @@ function tagExists(tag) {
 
 /** Why `id` can't be released now (approved status, committed files, a new version), or null. */
 export async function releaseProblem(id) {
-  const manifest = JSON.parse(fs.readFileSync(path.join(assetDir(id), 'asset.json'), 'utf8'));
+  const dir = assetDir(id);
+  const manifest = JSON.parse(fs.readFileSync(path.join(dir, 'asset.json'), 'utf8'));
   const { status } = await readStatus(id);
   if (status !== 'approved') return `${id} is "${status}"; only approved figures are released`;
-  const info = gitInfo([`assets/${id}`, 'shared']);
+  const info = gitInfo([path.relative(ROOT, dir), 'shared']); // the figure's own folder, wherever it is
   if (!info) return 'not a git checkout';
+  if (!isTracked(path.relative(ROOT, path.join(dir, 'asset.json')))) return `${id} is not committed yet: a release is built from a commit`;
   if (info.dirty) return `${id} or shared/ has uncommitted changes: commit them first (a release is built from a commit)`;
   if (tagExists(releaseTag(id, manifest.version))) return `${releaseTag(id, manifest.version)} already exists: bump the version for a new release`;
   return null;

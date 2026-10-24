@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="bn">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pathshala 3D Studio · প্রবেশ</title>
+  <link rel="stylesheet" href="/shared/fonts/noto-sans-bengali.css" />
+  <style>
+    :root { --ink: #1d2430; --ink-2: #5b6575; --line: #d9dee6; --accent: #1f5fae; --bad: #b42318; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; background: #f5f7fa; color: var(--ink); font: 16px/1.5 "Noto Sans Bengali", system-ui, sans-serif; }
+    main { max-width: 380px; margin: 12vh auto 24px; padding: 0 16px; }
+    .card { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 24px; display: grid; gap: 14px; }
+    h1 { margin: 0; font-size: 20px; }
+    p { margin: 0; color: var(--ink-2); font-size: 14px; }
+    label { display: grid; gap: 4px; font-size: 14px; color: var(--ink-2); }
+    input { font: inherit; padding: 9px 11px; border: 1px solid var(--line); border-radius: 7px; color: var(--ink); }
+    input:focus { outline: 2px solid color-mix(in srgb, var(--accent) 40%, transparent); border-color: var(--accent); }
+    button { font: inherit; font-weight: 600; padding: 10px; border: 0; border-radius: 7px; background: var(--accent); color: #fff; cursor: pointer; }
+    button:disabled { opacity: 0.6; cursor: default; }
+    .error { color: var(--bad); min-height: 1.5em; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <main>
+    <form class="card" id="login">
+      <h1>Pathshala 3D Studio</h1>
+      <p>প্রবেশ করুন · Log in</p>
+      <label>নাম · Username <input name="username" autocomplete="username" autocapitalize="none" required /></label>
+      <label>পাসওয়ার্ড · Password <input name="password" type="password" autocomplete="current-password" required /></label>
+      <p class="error" role="alert"></p>
+      <button>প্রবেশ · Log in</button>
+    </form>
+    <form class="card" id="invite" hidden>
+      <h1>Pathshala 3D Studio</h1>
+      <p>স্বাগতম, <b class="who"></b>! নিজের পাসওয়ার্ড ঠিক করুন · Welcome! Choose your password.</p>
+      <label>পাসওয়ার্ড (অন্তত ১০ অক্ষর) · Password (10+ characters) <input name="password" type="password" autocomplete="new-password" minlength="10" required /></label>
+      <label>আবার লিখুন · Again <input name="again" type="password" autocomplete="new-password" minlength="10" required /></label>
+      <p class="error" role="alert"></p>
+      <button>পাসওয়ার্ড রাখুন · Save password</button>
+    </form>
+  </main>
+  <script>
+    const next = new URLSearchParams(location.search).get('next');
+    const go = () => location.replace(next && next.startsWith('/') && !next.startsWith('//') ? next : '/dashboard/');
+    const post = (path, body) =>
+      fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(async (r) => {
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(data.error || r.statusText);
+        return data;
+      });
+    function wire(form, submit) {
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = form.querySelector('button');
+        btn.disabled = true;
+        form.querySelector('.error').textContent = '';
+        try {
+          await submit(Object.fromEntries(new FormData(form)));
+          go();
+        } catch (err) {
+          form.querySelector('.error').textContent = err.message;
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    }
+    const invite = /^#invite=([^.]+)\.(.+)$/.exec(location.hash);
+    if (invite) {
+      const username = decodeURIComponent(invite[1]);
+      document.getElementById('login').hidden = true;
+      const form = document.getElementById('invite');
+      form.hidden = false;
+      form.querySelector('.who').textContent = username;
+      wire(form, (v) => {
+        if (v.password !== v.again) throw new Error('দুটি পাসওয়ার্ড মেলেনি · The two passwords differ');
+        return post('/api/invite', { username, token: invite[2], password: v.password }).then(() => history.replaceState(null, '', location.pathname));
+      });
+    } else wire(document.getElementById('login'), (v) => post('/api/login', v));
+  </script>
+</body>
+</html>

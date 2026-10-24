@@ -15,6 +15,18 @@ export async function writeFileAtomic(file, data) {
   }
 }
 
+/** writeFileAtomic, synchronously: for small files that are read back at once (accounts, sessions). */
+export function writeFileAtomicSync(file, data, { mode = 0o644 } = {}) {
+  const tmp = `${file}.${process.pid}.${Date.now()}.tmp`;
+  try {
+    fs.writeFileSync(tmp, data, { mode });
+    fs.renameSync(tmp, file);
+  } catch (err) {
+    fs.rmSync(tmp, { force: true });
+    throw err;
+  }
+}
+
 /** Free bytes on the disk that holds `dir`. */
 export function freeBytes(dir) {
   const s = fs.statfsSync(dir);

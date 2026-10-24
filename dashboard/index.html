@@ -32,6 +32,10 @@
       <ul class="asset-list" id="assetList" aria-label="Assets"></ul>
 
       <footer class="sidebar-foot">
+        <div class="account" id="account" hidden>
+          <span id="accountName"></span>
+          <button class="btn small ghost" id="logoutBtn" data-bn="বের হন">Log out</button>
+        </div>
         <button class="btn ghost wide owner-only" id="newAssetBtn">
           <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg> New asset
         </button>
@@ -43,6 +47,7 @@
 
     <!-- Main: preview -->
     <main class="main">
+      <div class="git-banner" id="gitBanner" role="alert" hidden></div>
       <div class="toolbar" id="toolbar">
         <button class="icon-btn menu-btn" id="menuBtn" title="Assets" aria-label="Assets"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" /></svg></button>
         <div class="tb-title">
@@ -77,7 +82,8 @@
 
       <div class="preview" id="preview">
         <div class="frame-wrap" id="frameWrap">
-          <iframe id="frame" title="Asset preview" allow="fullscreen; xr-spatial-tracking"></iframe>
+          <!-- sandboxed: figure code gets no cookies and cannot call the studio API with the viewer's rights -->
+          <iframe id="frame" title="Asset preview" sandbox="allow-scripts allow-popups" allow="fullscreen; xr-spatial-tracking"></iframe>
           <div class="frame-size" id="frameSize"></div>
         </div>
         <div class="empty" id="empty">

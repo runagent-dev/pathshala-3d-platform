@@ -1,0 +1,32 @@
+# The Pathshala 3D studio as a service. Install (as root):
+#   cp deploy/systemd/pathshala-studio.service /etc/systemd/system/
+#   systemctl daemon-reload && systemctl enable --now pathshala-studio
+# See docs/ops/runbook.md for the whole setup (user, folders, TLS, backups).
+[Unit]
+Description=Pathshala 3D studio
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pathshala
+Group=pathshala
+WorkingDirectory=/srv/pathshala/repo
+EnvironmentFile=/etc/pathshala/studio.env
+ExecStart=/usr/bin/node scripts/studio.mjs
+# The studio exits after pulling new server code (and after `npm ci` when the lockfile changed): start it again.
+Restart=always
+RestartSec=3
+# Exports run in child processes under nice; keep the studio a good neighbour on a shared machine.
+CPUQuota=200%
+MemoryMax=3G
+# Hardening: it only writes its checkout and its data.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/srv/pathshala
+UMask=0027
+
+[Install]
+WantedBy=multi-user.target

@@ -78,7 +78,9 @@ const state = {
   reviewFilter: store.get('reviewFilter', 'open'),
 };
 const OWNER_TABS = new Set(['info', 'params', 'notes', 'events', 'handoff']); // reviewers see only মতামত
-const isOwner = () => state.role === 'owner';
+// Roles: admin and contributor make figures (the "owner" UI); reviewers only look and comment (Bangla UI).
+const isOwner = () => state.role === 'admin' || state.role === 'contributor';
+const isAdmin = () => state.role === 'admin';
 
 const frame = $('#frame');
 const conn = connectAsset(frame, { timeout: 20000 });
@@ -86,6 +88,10 @@ const conn = connectAsset(frame, { timeout: 20000 });
 // ── API ───────────────────────────────────────────────────────────────────────
 async function api(path, opts = {}) {
   const res = await fetch(`/api/${path}`, opts);
+  if (res.status === 401) {
+    location.href = `/login/?next=${encodeURIComponent(location.pathname + location.hash)}`; // the session ended
+    throw new Error('Please log in');
+  }
   const type = res.headers.get('content-type') || '';
   const body = type.includes('json') ? await res.json() : await res.text();
   if (!res.ok) throw new Error(body?.error || res.statusText);
@@ -700,14 +706,16 @@ $('#reviewList').addEventListener('click', async (e) => {
 });
 
 $('#reviewAuthor').value = store.get('reviewer', '');
+// With an account, a review carries the account's name; the name field is only for an open local studio.
+const withAccount = () => state.me?.login !== 'none';
 $('#reviewForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const a = state.current;
   if (!a) return;
-  const author = $('#reviewAuthor').value.trim();
+  const author = withAccount() ? state.me.user.name : $('#reviewAuthor').value.trim();
   const text = $('#reviewText').value.trim();
   if (!author || !text) return;
-  store.set('reviewer', author);
+  if (!withAccount()) store.set('reviewer', author);
   const send = $('#reviewSend');
   send.disabled = true;
   send.textContent = 'পাঠানো হচ্ছে…';
@@ -759,6 +767,15 @@ function applyRole() {
   document.body.classList.toggle('role-reviewer', !isOwner());
   for (const sel of ['#descInput', '#pageInput', '#topicInput', '#placementInput']) $(sel).readOnly = !isOwner();
   $('#bookInput').disabled = !isOwner();
+  $('#releaseBtn').hidden = !isAdmin();
+  if (withAccount()) {
+    $('#reviewAuthor').closest('label').hidden = true;
+    $('#reviewAuthor').required = false;
+    $('#account').hidden = false;
+    $('#accountName').textContent =
+      `${state.me.user.name} · ${tr(state.role, { admin: 'অ্যাডমিন', contributor: 'নির্মাতা', reviewer: 'রিভিউকারী' }[state.role])}`;
+  }
+  renderGitBanner(state.me?.git);
   if (isOwner()) return;
   document.documentElement.lang = 'bn';
   document.title = 'পাঠশালা ৩D · মতামত';
@@ -1085,6 +1102,7 @@ function connectLive() {
     if (d.scope === 'asset') loadAssets().then(() => state.current && renderHeader());
   });
   es.addEventListener('job', (e) => onJob(JSON.parse(e.data)));
+  es.addEventListener('git', (e) => renderGitBanner(JSON.parse(e.data)));
   es.addEventListener('meta', async (e) => {
     const d = JSON.parse(e.data);
     await loadAssets();
@@ -1101,8 +1119,22 @@ function connectLive() {
   });
 }
 
+/** A warning for makers when studio edits could not be committed or synced (data/ or git needs a person). */
+function renderGitBanner(git) {
+  const box = $('#gitBanner');
+  const problem = isOwner() && git && (git.rescue || git.lastError);
+  box.hidden = !problem;
+  if (problem) box.textContent = `Git: ${git.lastError || `studio commits were saved on ${git.rescue.branch}`}`;
+}
+
+$('#logoutBtn').addEventListener('click', async () => {
+  await fetch('/api/logout', { method: 'POST' });
+  location.href = '/login/';
+});
+
 // ── boot ──────────────────────────────────────────────────────────────────────
-state.role = (await api('me').catch(() => ({ role: 'owner' }))).role;
+state.me = await api('me');
+state.role = state.me.role;
 applyBg();
 applyInspector();
 applyDevice();

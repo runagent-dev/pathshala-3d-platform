@@ -1,0 +1,10 @@
+# Nightly backup of the studio's state (data/, releases, a bundle of the git history). Timer: pathshala-backup.timer.
+[Unit]
+Description=Pathshala 3D studio backup
+
+[Service]
+Type=oneshot
+User=pathshala
+EnvironmentFile=/etc/pathshala/studio.env
+EnvironmentFile=-/etc/pathshala/backup.env
+ExecStart=/srv/pathshala/repo/deploy/backup/backup.sh

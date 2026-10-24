@@ -38,6 +38,23 @@ studio logins and sessions, export outputs, original upload files, caches (`.cac
 - The visual comparison renders the base commit (a git worktree) and the change on the same machine: no reference
   pictures in git, no differences from fonts or GPUs between machines.
 
+## The studio server
+
+`scripts/studio/`: `server.mjs` puts together `auth.mjs` (session cookie after /login/, HTTP Basic for scripts,
+an Origin check on changes, a lock-out after 20 wrong passwords), `accounts.mjs` (data/users.json with scrypt
+hashes, invites, sessions), `policy.mjs` (one table of what admin, contributor and reviewer may do, checked by
+`router.mjs` before any handler), `routes/` (figures, reviews, exports and jobs, uploads, system), `static.mjs`
+and `live.mjs` (server-sent events). Figures are previewed in a sandboxed iframe: their code gets an opaque origin,
+so no cookies and no API access; figure files are therefore public, except notes, status, reviews, references and
+tests. `scripts/lib/gitwriter.mjs` commits every studio change as its author and pulls and pushes in the background;
+a pull that cannot be rebased leaves the studio's commits on a pushed `studio/rescue-…` branch.
+
+| Mode | Command | Login | Studio edits |
+|---|---|---|---|
+| dev | `npm run dev` | none (private addresses only) | not committed |
+| dev, public | `npm run dev:public` | everyone but this machine | committed (pulled and pushed if there is a remote) |
+| production | `npm run studio` (systemd, behind HTTPS) | everyone | committed, pulled and pushed |
+
 ## Checks, from fastest to slowest
 
 | When | What |

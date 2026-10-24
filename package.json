@@ -29,7 +29,9 @@
     "docs": "node scripts/docs.mjs",
     "find": "node scripts/find.mjs",
     "export": "node scripts/export.mjs",
-    "import": "node scripts/import.mjs"
+    "import": "node scripts/import.mjs",
+    "studio": "node scripts/studio.mjs",
+    "user": "node scripts/user.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",

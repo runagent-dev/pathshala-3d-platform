@@ -22,17 +22,21 @@ notes and reviews, captures thumbnails, exports a static GLB and builds the hand
 
 ## The studio on a server
 
-From another computer, tunnel the port (`ssh -L 4800:127.0.0.1:4800 root@<server>`), or open it on the server's
-own address behind a username and password:
+The proper setup is `npm run studio` as a service behind HTTPS: see [docs/ops/runbook.md](docs/ops/runbook.md).
+For a quick look, tunnel the port (`ssh -L 4800:127.0.0.1:4800 root@<server>`), or open it on every address:
 
 ```bash
 npm run dev:public
 ```
 
-This listens on every address (port 4800 must be open in the firewall). The login is created on first run, printed
-at startup and kept in `.studio-auth.json` (git-ignored, never served). Set `STUDIO_USER` / `STUDIO_PASS` to choose
-your own, or delete the file to get a new password. Requests from the server itself skip the login. It is plain
-HTTP, so don't reuse an important password.
+Everyone logs in with their own account (`npm run user -- add <name> --role reviewer|contributor|admin` prints an
+invite link; accounts live in `data/users.json`, git-ignored, never served). The first start creates an admin and
+prints its password once (logins from an old `.studio-auth.json` are moved over). Requests from the server itself
+skip the login. Plain HTTP: use the production setup for real passwords. Changes made in the studio (reviews,
+status, notes, uploads) are committed to git as the person who made them.
+
+The preview runs each figure in a sandboxed frame (no cookies, no access to the studio's API), so figure files are
+served to anyone (only the deliverable files: notes, reviews and status need a login).
 
 On a phone the preview fills the screen; ☰ opens the figure list and the panel button opens Info / Params / Notes /
 Events / Handoff. To see one figure the way a student will, open `/assets/<id>/` directly.
