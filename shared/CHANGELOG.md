@@ -5,6 +5,15 @@ student kit). Every zip records it in `PACKAGE.json` as `kit`. Bump it with each
 patch for fixes, minor for additions, major when a figure has to change to keep working. Run the visual comparison
 across all figures before merging a kit change (`npm run test:visual`).
 
+## 1.1.1 (2026-10-24)
+
+Fixes for phones; nothing changes for existing figures (visual comparison: identical):
+- `stage.js`: draws again at once when the stage is resized. Before, the canvas stayed blank until the next
+  frame: a white flash when a phone turned, or when the panel under the 3D view changed height.
+- `student.css`: the student view's buttons get `touch-action: manipulation`, so quick taps (start, stop, next)
+  never zoom the page on a phone.
+- Tested in `test/browser/phone.spec.mjs`.
+
 ## 1.1.0 (2026-10-24)
 
 Added, nothing changed for existing figures (visual comparison: identical):
