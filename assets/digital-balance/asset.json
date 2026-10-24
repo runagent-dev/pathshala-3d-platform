@@ -1,0 +1,94 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "digital-balance",
+  "title": "Digital balance (ডিজিটাল ব্যালান্স)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 23,
+  "topic": "1.6.2",
+  "placement": "Book page 23, topic 1.6.2: ব্যালান্স (ভর মাপার যন্ত্র). Next to Figure 1.09 (চিত্র ১.০৯, digital balance), or in place of that photo.",
+  "maintainers": ["RadeenXALNW"],
+  "units": "mm",
+  "description": "Interactive 3D digital balance as in the book's Figure 1.09 (page 23, 1.6.2). Tap an egg, a mango, a coin, a 100 g brass weight or a bowl to put it on the pan; the display settles on the mass (least count 0.1 g, up to 1000 g). Tare (শূন্য করো) with the bowl, switch grams and kilograms, and look inside at the load cell: the balance measures the weight W and shows the mass m = W ÷ g. Test tab: 5 questions (grams from a kilogram reading, tare with a bowl, mass from a weight). Phone-first, Bangla.",
+  "tags": ["measurement", "balance", "mass", "weight", "tare", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "things",
+      "label": "On the pan at the start",
+      "type": "text",
+      "default": "",
+      "placeholder": "e.g. bowl,egg",
+      "help": "egg, mango, coin, weight, bowl"
+    },
+    {
+      "name": "unit",
+      "label": "Unit",
+      "type": "select",
+      "options": [["g", "grams"], ["kg", "kilograms"]],
+      "default": "g"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "First-use pointers", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "things": ["egg"] } },
+    { "name": "set", "payload": { "things": ["bowl"], "tare": true } },
+    { "name": "set", "payload": { "unit": "kg" } },
+    { "name": "set", "payload": { "xray": true } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "thing", "tare", "unit", "view", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": { "params": { "coach": "0", "things": "mango" } },
+    "glb": [
+      { "name": "default" },
+      { "name": "mango", "setup": [{ "command": "set", "payload": { "things": ["mango"], "animate": false } }] }
+    ],
+    "video": {
+      "kind": "script",
+      "seconds": 16,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 0.5, "command": "set", "payload": { "things": ["egg"] } },
+        { "at": 3, "command": "set", "payload": { "things": ["egg", "weight"] } },
+        { "at": 5.5, "command": "set", "payload": { "unit": "kg" } },
+        { "at": 7.5, "command": "set", "payload": { "things": ["bowl"], "unit": "g" } },
+        { "at": 9.5, "command": "set", "payload": { "tare": true } },
+        { "at": 10.5, "command": "set", "payload": { "things": ["bowl", "mango"] } },
+        { "at": 13, "command": "set", "payload": { "xray": true } }
+      ]
+    }
+  }
+}

@@ -1,0 +1,20 @@
+/* Digital balance: the page, and the colours of the terms (weight, g, mass). The student view itself is
+   ../../shared/lib/student/student.css (linked first). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.pvc { --c-w: #d9342b; --c-g: #6741d9; --c-m: #1c6fd9; }
+.pvc-t.w { --c: var(--c-w); }
+.pvc-t.g { --c: var(--c-g); }
+.pvc-t.m { --c: var(--c-m); }
+.pvc .c-w { color: var(--c-w); }
+.pvc .c-g { color: var(--c-g); }
+.pvc .c-m { color: var(--c-m); }
+
+.bal-extra { margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--ink-2); }
+.bal-acts { display: flex; flex-wrap: wrap; gap: 6px; }
+.bal-acts .pvc-btn { height: 36px; padding: 0 12px; font-size: 14.5px; }
+@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
+  .bal-extra { font-size: 12.5px; }
+}

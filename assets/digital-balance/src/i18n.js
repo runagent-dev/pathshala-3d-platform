@@ -1,0 +1,161 @@
+// Every string the balance shows, in Bangla (as the book, page 23: ব্যালান্স, ভর, ওজন) and English.
+
+export const STRINGS = {
+  bn: {
+    title: 'ডিজিটাল ব্যালান্স',
+    view: 'দেখার ধরন',
+    view_front_short: 'সামনে',
+    view_rotate: 'ঘুরিয়ে দেখো',
+    fullscreen: 'পূর্ণ পর্দা',
+    tab_learn: 'শেখো',
+    tab_quiz: 'পরীক্ষা',
+    reading: 'পাঠ',
+    unit_g: 'গ্রাম',
+    unit_kg: 'কেজি',
+    unit_n: 'নিউটন',
+
+    w_long: 'ওজন (নিউটন)',
+    g_long: 'g (মি/সে²)',
+    m_long: 'ভর (কেজি)',
+    idea: 'ভর সরাসরি মাপা যায় না: ব্যালান্স পাল্লার ওপর ওজন মেপে ভর দেখায়।',
+    conv: '{kg} কেজি = {g} গ্রাম (১ কেজি = ১০০০ গ্রাম)',
+    net_line: 'শূন্য করা {tare} গ্রাম বাদ দিয়ে দেখায়: {total} − {tare} = {net} গ্রাম',
+
+    act_tare: 'শূন্য করো',
+    act_unit: 'একক: {unit}',
+    act_xray: 'ভেতরে দেখো',
+    act_xray_off: 'বাইরে দেখো',
+    lcd_net: 'নিট',
+    lcd_stable: 'স্থির',
+    label_tare: 'শূন্য',
+    label_unit: 'একক',
+    label_power: 'চালু',
+    brand: 'পাঠশালা',
+    spec: 'সর্বোচ্চ ১০০০ গ্রাম · ন্যূনাঙ্ক ০.১ গ্রাম',
+    weight_label: 'ওজন W',
+    cell_label: 'লোড সেল',
+
+    status_empty: 'পাল্লা খালি: একটি জিনিসে চাপ দাও',
+    status_settling: 'মাপছে…',
+    status_stable: 'স্থির পাঠ',
+    status_net: 'নিট পাঠ (শূন্য করা হয়েছে)',
+    status_locked: 'পরীক্ষার জন্য আটকানো',
+    hint_tare: 'পাল্লার ওপরের ভর বাদ দেওয়া হলো। এখন যা যোগ করবে শুধু তার ভর দেখাবে।',
+    hint_tare_zero: 'পাল্লা খালি: পাঠ আবার শূন্য থেকে।',
+    hint_unit: '১ কেজি = ১০০০ গ্রাম',
+    hint_xray: 'ভেতরে লোড সেল: পাল্লার ওজনে সামান্য বাঁকে, সেখান থেকে ওজন মেপে ভর দেখায়।',
+    hint_full: 'পাল্লায় একসাথে তিনটির বেশি জিনিস রাখা যাবে না।',
+
+    thing_egg: 'ডিম',
+    thing_mango: 'আম',
+    thing_coin: 'কয়েন',
+    thing_weight: 'বাটখারা',
+    thing_bowl: 'বাটি',
+    weight_mark: '১০০ গ্রাম',
+
+    coach_tap: 'চাপ দিলে পাল্লায় উঠবে',
+    coach_lens: 'বিবর্ধক সরাতে এখানে ধরে টানো',
+
+    q_count: 'প্রশ্ন {i} / {n}',
+    q_score: 'সঠিক: {right}',
+    q_kg: 'ব্যালান্স কেজিতে দেখাচ্ছে। পাল্লার জিনিসের ভর কত গ্রাম?',
+    q_tare: '{bowl} গ্রামের বাটি রেখে শূন্য করা হলো, তারপর {thing} রাখা হলো। বাটিসহ মোট ভর কত?',
+    q_weight: 'পাল্লায় {w} নিউটন ওজন পড়ছে (g = ৯.৮ মি/সে²)। ব্যালান্স কত গ্রাম দেখাবে?',
+    q_hint: 'পাঠ পড়ে, হিসাব করে সঠিক উত্তরটি বেছে নাও।',
+    q_right: 'ঠিক হয়েছে!',
+    q_wrong: 'হয়নি। সঠিক উত্তর',
+    q_next: 'পরের প্রশ্ন',
+    q_finish: 'ফলাফল দেখো',
+    q_result: '{total}টির মধ্যে {right}টি সঠিক',
+    q_great: 'দারুণ! সবগুলো সঠিক।',
+    q_good: 'ভালো হয়েছে!',
+    q_try: 'আরেকবার চেষ্টা করো।',
+    q_again: 'আবার পরীক্ষা দাও',
+    q_locked: 'পরীক্ষার সময় পাল্লা আটকানো থাকে। পাঠ পড়ে উত্তর বেছে নাও।',
+  },
+  en: {
+    title: 'Digital balance',
+    view: 'View',
+    view_front_short: 'Front',
+    view_rotate: 'Rotate',
+    fullscreen: 'Full screen',
+    tab_learn: 'Learn',
+    tab_quiz: 'Test',
+    reading: 'Reading',
+    unit_g: 'g',
+    unit_kg: 'kg',
+    unit_n: 'N',
+    w_long: 'weight (N)',
+    g_long: 'g (m/s²)',
+    m_long: 'mass (kg)',
+    idea: 'Mass cannot be measured directly: the balance measures the weight on its pan and shows the mass.',
+    conv: '{kg} kg = {g} g (1 kg = 1000 g)',
+    net_line: 'Tared {tare} g is taken off: {total} − {tare} = {net} g',
+    act_tare: 'Tare',
+    act_unit: 'Unit: {unit}',
+    act_xray: 'Look inside',
+    act_xray_off: 'Outside',
+    lcd_net: 'NET',
+    lcd_stable: 'STABLE',
+    label_tare: 'TARE',
+    label_unit: 'UNIT',
+    label_power: 'ON',
+    brand: 'Pathshala',
+    spec: 'Max 1000 g · d = 0.1 g',
+    weight_label: 'weight W',
+    cell_label: 'load cell',
+    status_empty: 'The pan is empty: tap something',
+    status_settling: 'Measuring…',
+    status_stable: 'Stable reading',
+    status_net: 'Net reading (tared)',
+    status_locked: 'Locked for the test',
+    hint_tare: 'What is on the pan is taken off. Now it shows only what you add.',
+    hint_tare_zero: 'The pan is empty: back to zero.',
+    hint_unit: '1 kg = 1000 g',
+    hint_xray: 'Inside, a load cell bends a tiny bit under the weight; the balance measures that weight and shows the mass.',
+    hint_full: 'At most three things fit on the pan.',
+    thing_egg: 'egg',
+    thing_mango: 'mango',
+    thing_coin: 'coin',
+    thing_weight: 'brass weight',
+    thing_bowl: 'bowl',
+    weight_mark: '100 g',
+    coach_tap: 'Tap to put it on the pan',
+    coach_lens: 'Drag here to move the magnifier',
+    q_count: 'Question {i} of {n}',
+    q_score: 'Correct: {right}',
+    q_kg: 'The balance shows kilograms. What is the mass on the pan in grams?',
+    q_tare: 'A {bowl} g bowl was put on and tared, then the {thing} was added. What is the total mass with the bowl?',
+    q_weight: 'A weight of {w} N presses on the pan (g = 9.8 m/s²). What will the balance show, in grams?',
+    q_hint: 'Read the display, work it out, then pick an answer.',
+    q_right: 'Correct!',
+    q_wrong: 'Not quite. The answer is',
+    q_next: 'Next question',
+    q_finish: 'See result',
+    q_result: '{right} of {total} correct',
+    q_great: 'Excellent, all correct!',
+    q_good: 'Well done!',
+    q_try: 'Have another go.',
+    q_again: 'Try again',
+    q_locked: 'The pan stays locked during the test. Read the display and pick an answer.',
+  },
+};
+
+const BN_DIGITS = '০১২৩৪৫৬৭৮৯';
+export const toBanglaDigits = (s) => String(s).replace(/[0-9]/g, (d) => BN_DIGITS[d]);
+
+/** t(key, vars) with t.num and t.lang. Missing Bangla falls back to English, a missing key shows the key. */
+export function createI18n(lang = 'bn', { numerals = null } = {}) {
+  const code = STRINGS[lang] ? lang : 'bn';
+  const dict = { ...STRINGS.en, ...STRINGS[code] };
+  const bangla = (numerals || (code === 'bn' ? 'bn' : 'latin')) === 'bn';
+  const num = (x) => (bangla ? toBanglaDigits(x) : String(x));
+  function t(key, vars) {
+    let s = dict[key] ?? key;
+    if (vars) s = s.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? num(vars[k]) : m));
+    return s;
+  }
+  t.num = num;
+  t.lang = code;
+  return t;
+}
