@@ -693,12 +693,16 @@ function applyRole() {
 }
 
 // ── markdown (tiny, enough for READMEs) ───────────────────────────────────────
+// Links may only be web links or relative paths: README and NOTES come from contributors, and a
+// `javascript:` or `data:` link would run in the studio with the viewer's rights.
+const safeHref = (href) => /^(https?:\/\/|\/|\.{0,2}\/|#)/i.test(href) || /^[\w.-]+(\/[\w.-]*)*([?#].*)?$/.test(href);
+
 function renderMarkdown(src) {
   const inline = (s) =>
     escapeHtml(s)
       .replace(/`([^`]+)`/g, '<code>$1</code>')
       .replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')
-      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (m, text, href) => (safeHref(href) ? `<a href="${href}" target="_blank" rel="noopener">${text}</a>` : text));
   const out = [];
   const lines = src.split('\n');
   for (let i = 0; i < lines.length; i++) {
