@@ -86,9 +86,14 @@ export async function runChecks({ ids = allFigures(), profile = 'default', repo 
       }
     }
   }
-  if (repo)
-    for (const rule of rules.filter((r) => r.scope === 'repo'))
-      for (const r of await rule.run({ books, profile })) results.push({ scope: 'repo', rule: rule.name, ...r });
+  if (repo) {
+    for (const rule of rules.filter((r) => r.scope === 'repo')) {
+      for (const r of await rule.run({ books, profile })) {
+        if (fix && r.fix) r.fix();
+        else results.push({ scope: 'repo', rule: rule.name, ...r, fix: undefined });
+      }
+    }
+  }
   return results;
 }
 

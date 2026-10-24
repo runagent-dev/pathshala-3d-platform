@@ -24,7 +24,10 @@
     "package": "node scripts/package.mjs",
     "package:all": "node scripts/package.mjs --all",
     "vendor:three": "node scripts/vendor-three.mjs",
-    "test:templates": "node scripts/test-templates.mjs"
+    "test:templates": "node scripts/test-templates.mjs",
+    "verify": "node scripts/verify.mjs",
+    "docs": "node scripts/docs.mjs",
+    "find": "node scripts/find.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",

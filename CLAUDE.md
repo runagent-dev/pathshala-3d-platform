@@ -1,17 +1,23 @@
-# Pathshala 3D: working notes
+# Pathshala 3D: notes for Claude Code
 
-3D/interactive figures for Bangla interactive books. See README.md for layout and commands.
+@AGENTS.md
 
-- Start of a session: read `assets/<id>/NOTES.md` for the asset you're touching (the user's notes), and `assets/<id>/reviews/reviews.json` (feedback from invited reviewers; `status: "open"` items are to do, pictures next to it). After acting on a review, set its `status` to `"done"` and add a short `reply` (what changed, which version); reviewers see the reply in the studio.
-- Dev server: `npm run dev` (port 4800, zero deps). Pages under `/assets/` live-reload on save.
-- On this server it runs as `npm run dev:public` (all addresses, Basic auth; login in `.studio-auth.json`, log in `/tmp/pathshala-dev.log`). Restart: `setsid nohup node scripts/dev.mjs --public > /tmp/pathshala-dev.log 2>&1 < /dev/null &`. Requests from 127.0.0.1 skip the login, so headless checks work without credentials.
-- Each asset must stay self-contained: shared code only via the import map (`three`, `three/addons/`, `@shared/`) or `../../shared/` links in HTML. The packager rewrites `../../shared/` → `./shared/`.
-- Audience: students who today get only a printed picture. Keep each figure simple: the 3D object, the one idea to read off it, and a short test (tap answers, not typing). No toolbars full of options; extras go behind `?ui=full`.
-- Three kinds of asset: `interactive` (student acts, e.g. vernier-caliper), `animation` (plays by itself; students may tap to jump to a part, e.g. si-prefixes), `model` (static GLB). "Non-interactive" usually means `animation`, not GLB, when there is text or a sequence to show.
-- Every figure must work on phones, portrait and landscape. Check 390×700, 390×520, 844×390, 640×400, 800×500 and 1280×800 before handing over.
-- User preferences for the books: white background, all UI text in Bangla (NCTB terminology), plain textbook-style UI. Avoid glassy/dark/neon "generated-looking" UI.
-- Font: Noto Sans Bengali (bundled in `shared/fonts/`). Hind Siliguri was rejected because its Bangla digits (especially ১) looked unrecognizable. Check the digits ০–৯ whenever a font changes.
-- Ask for (or record) the book page and topic of each new figure: `page`, `topic`, `placement` in `asset.json`, plus the line at the top of its README.
-- New interactive figures build on `shared/lib/student/` (see vernier-caliper and screw-gauge): `buildStudentShell` + `learnSheet` for the layout, `createQuiz` with hooks for the test, `createCoach` with the figure's grab spots for pointers, the magnifier, materials and `student.css`. Keep only figure-specific code in the asset.
-- Put user-facing strings in the asset's i18n file, never inline. Bangla numerals via `t.num()`.
-- Verify visually with headless Chromium (Playwright browsers in ~/.cache/ms-playwright). Software rendering is slow (~1 fps with shadows); add `?shadow=0` for functional checks.
+## Claude-specific
+
+- Project skills (in `.claude/skills/`): `/new-figure` (a figure for a page and topic), `/fix-reviews` (act on open
+  reviews), `/verify-figure` (run verify and look at the pictures), `/import-model` (a GLB/OBJ/STL/FBX as a model
+  figure), `/kit-change` (changing `shared/lib/` safely).
+- After every Edit/Write in a figure, a hook runs the fast checks for that figure and shows you what is wrong. Fix
+  it before moving on.
+- Look at the pictures `npm run verify` writes to `test-results/<id>/` with the Read tool: phone portrait
+  (390x700) and landscape (844x390) first. Software rendering is slow; use `?shadow=0` for quick looks.
+- Ask the user for the book page, topic and a screenshot if you don't have them; don't guess page numbers.
+
+## This server
+
+- The studio runs as `npm run dev:public` (all addresses, Basic auth; logins in `.studio-auth.json`, log in
+  `/tmp/pathshala-dev.log`). Restart:
+  `setsid nohup node scripts/dev.mjs --public > /tmp/pathshala-dev.log 2>&1 < /dev/null &`.
+  Requests from 127.0.0.1 skip the login, so headless checks work without credentials.
+- Use another port for your own test servers (e.g. `PORT=4810 node scripts/dev.mjs`); the browser tests start one on
+  4820. Never stop the owner's server on 4800 by pattern-matching process names.

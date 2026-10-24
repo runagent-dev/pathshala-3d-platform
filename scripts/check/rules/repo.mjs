@@ -34,8 +34,17 @@ export default {
   scope: 'repo',
   async run() {
     const out = [];
-    for (const g of staleFiles())
-      out.push({ level: 'error', file: path.relative(ROOT, g.file), message: `out of date (made from ${g.source}): run \`npm run generate\`` });
+    for (const g of staleFiles()) {
+      out.push({
+        level: 'error',
+        file: path.relative(ROOT, g.file),
+        message: `out of date (made from ${g.source}): run \`npm run generate\``,
+        fix: () => {
+          fs.mkdirSync(path.dirname(g.file), { recursive: true });
+          fs.writeFileSync(g.file, g.content);
+        },
+      });
+    }
     try {
       loadBooks();
     } catch (err) {

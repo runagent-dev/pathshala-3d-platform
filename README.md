@@ -1,104 +1,77 @@
 # Pathshala 3D
 
-3D and interactive figures for the Pathshala interactive books. Each figure lives in its own folder under
-`assets/` and is packaged as a self-contained zip that another developer drops into the book.
+3D and interactive figures for the Pathshala interactive books (Bangla, NCTB), starting with Physics 9–10. Each
+figure lives in its own folder under `assets/` and is handed to the book developers as a self-contained zip, a GLB
+model, pictures and a video.
 
-## Run the studio (dashboard)
+- **Contributing** (people and AI agents): [AGENTS.md](AGENTS.md) has the workflow and the rules,
+  [CONTRIBUTING.md](CONTRIBUTING.md) the setup. References: [docs/](docs/) (figure guide, the shared kit, the
+  manifest, the bridge protocol, architecture, decisions).
+- **Figures so far:** `npm run find`.
+
+## Quick start
 
 ```bash
-npm run dev
+npm run setup     # once: dev tools, git hooks, Chromium for the tests
+npm run dev       # the studio on http://127.0.0.1:4800 (works even without npm run setup)
 ```
 
-Opens on `http://127.0.0.1:4800` (plus this machine's Tailscale address, if it has one). No `npm install` needed:
-there are no dependencies. From another computer, tunnel the port:
+The studio lists every figure in book order, previews it in book-sized frames (phones, the book column, iPad),
+reloads it whenever a file changes, lets you try its URL options, shows the messages it sends to the book, keeps
+notes and reviews, captures thumbnails, exports a static GLB and builds the handoff zip.
 
-```bash
-ssh -L 4800:127.0.0.1:4800 root@<server>
-```
+## The studio on a server
 
-Or open it on the server's own address, behind a username and password:
+From another computer, tunnel the port (`ssh -L 4800:127.0.0.1:4800 root@<server>`), or open it on the server's
+own address behind a username and password:
 
 ```bash
 npm run dev:public
 ```
 
-This listens on every address of the machine (port 4800 must be open in the firewall). The login is created on first run,
-printed at startup and kept in `.studio-auth.json` (git-ignored, never served). Set `STUDIO_USER` / `STUDIO_PASS` to choose
-your own, or delete the file to get a new password. Requests from the server itself skip the login. It is plain HTTP, so
-don't reuse an important password.
+This listens on every address (port 4800 must be open in the firewall). The login is created on first run, printed
+at startup and kept in `.studio-auth.json` (git-ignored, never served). Set `STUDIO_USER` / `STUDIO_PASS` to choose
+your own, or delete the file to get a new password. Requests from the server itself skip the login. It is plain
+HTTP, so don't reuse an important password.
 
-On a phone the preview fills the screen; ☰ opens the asset list and the panel button opens Info / Params / Notes /
-Events / Handoff. To see just one figure the way a student will, open `/assets/<id>/` directly.
-
-The studio lists every asset, previews it in book-sized frames, reloads it whenever a file changes, lets you try its URL
-options, shows the messages it sends to the book, keeps review notes in `NOTES.md`, captures thumbnails, exports a
-static GLB, and builds the handoff zip.
+On a phone the preview fills the screen; ☰ opens the figure list and the panel button opens Info / Params / Notes /
+Events / Handoff. To see one figure the way a student will, open `/assets/<id>/` directly.
 
 ## Reviews
 
 Invite people to review the figures: give them the studio address and the **reviewer login** (printed when
 `npm run dev:public` starts, stored in `.studio-auth.json` under `reviewer`). Reviewers see the studio in Bangla: the
-figure list, frame sizes (ফোন খাড়া, বইয়ের কলাম …) and the **মতামত** tab, opened by the **মতামত দিন** button. They write
-their feedback there. Each review keeps their
-name, the text, the frame size and the figure's state at that moment, and optionally a picture of the 3D view. They
-can't change status, notes or anything else; the server refuses it.
+figure list, frame sizes (ফোন খাড়া, বইয়ের কলাম …) and the **মতামত** tab, opened by the **মতামত দিন** button.
+Each review keeps their name, the text, the frame size and the figure's state at that moment, and optionally a
+picture of the 3D view. They can't change status, notes or anything else; the server refuses it.
 
 With your own login, the Reviews tab lets you mark a review done, reply (reviewers see the reply) or delete it. The
 list shows "N open" next to figures with open reviews, and the "Open reviews" filter lists just those.
 
-Reviews live in `assets/<id>/reviews/` (`reviews.json` plus pictures) and are never put in the handoff zip.
+Reviews live in `assets/<id>/reviews/`, one `<rid>.json` per review plus its picture (so reviews never conflict in
+git), and are never put in the handoff zip.
+
+## Handoff
+
+```bash
+npm run package -- vernier-caliper     # dist/vernier-caliper/ and dist/vernier-caliper-v0.3.2.zip
+npm run package:all
+```
+
+Inside, `../../shared/` paths become `./shared/` and exactly the shared files the figure uses are copied in (with
+three.js's licence and the font's), so the folder runs on its own from any static server, offline. The same commit
+always gives the same zip, byte for byte. `PACKAGE.json` says where the figure goes in the book, its version, the
+kit and three.js versions and the commit. The book side talks to a figure through `shared/lib/host.js`
+(see [docs/bridge-protocol.md](docs/bridge-protocol.md)).
 
 ## Layout
 
 ```
-assets/<id>/          one folder per figure (what gets handed off)
-  asset.json          manifest v2: title, type, book/page/topic, URL params, commands, events, export (schemas/asset.schema.json)
-  index.html          entry page (iframe target)            ← interactive and animation assets
-  model.glb           the model                             ← static "model" assets
-  README.md           integration notes for the book developer
-  NOTES.md            your notes (dev only, not packaged)
-  status.json         idea → … → approved, with history; written by the studio (dev only, not packaged)
-  reviews/            reviewers' feedback + pictures (dev only, not packaged)
-books/books.json      the books figures belong to (physics-9-10)
-schemas/              JSON Schema for asset.json, generated by `npm run generate`
-shared/
-  vendor/three/       three.js r185 + the addons we use
-  lib/                stage (renderer, studio lighting, render-on-demand), bridge/host (postMessage), tween
-  lib/student/        the student view every figure shares: layout + শেখো/পরীক্ষা panel (shell.js, student.css),
-                      multiple-choice test (quiz.js), first-use pointers (coach.js), magnifier, materials, sounds, icons
-  fonts/              Noto Sans Bengali (Bangla, OFL), self-hosted for offline use
-  viewer/             generic GLB viewer used by the studio for "model" assets
-dashboard/            the studio UI
-scripts/              dev server, packager, scaffolder, migrations (Node, no dependencies)
-templates/            starting points for new assets
-dist/                 packaged output (git-ignored)
-.cache/               studio thumbnails and other local caches (git-ignored)
+assets/<id>/        one figure (see AGENTS.md)           books/       books.json: the books figures belong to
+shared/lib/         the kit figures share                templates/   interactive, animation, model
+shared/vendor/      three.js r185 (npm run vendor:three) dashboard/   the studio UI
+scripts/            studio server, checker, packager, verify, exporter and other tools
+test/               unit tests, browser tests, harness   docs/        references and decisions
+schemas/            JSON Schema for asset.json (generated)
+dist/ .cache/ test-results/ playwright-report/          outputs and caches (git-ignored)
 ```
-
-## Common tasks
-
-```bash
-npm run new -- --slug convex-lens --title "Convex lens" --page 112 --topic 6.3
-npm run new -- --slug human-heart --title "Human heart" --type model
-npm run new -- --slug water-cycle --title "Water cycle" --type animation   # plays by itself, like si-prefixes
-npm run generate                                  # rewrite generated files (schemas/asset.schema.json)
-npm run package -- vernier-caliper
-npm run package:all
-```
-
-`npm run package -- <id>` writes `dist/<id>/` and `dist/<id>-v<version>.zip`. Inside, `../../shared/` paths are
-rewritten to `./shared/` and the shared code is copied in, so the folder runs on its own from any static server.
-
-## Conventions
-
-- Every asset records where it goes in the book: `book`, `page`, `topic` and a `placement` note in `asset.json`
-  (editable in the studio's Info tab, typed in by hand from the printed book). The studio checks them against
-  `schemas/asset.schema.json` and refuses bad values. The studio lists assets in book order, and the handoff zip carries them in `PACKAGE.json`
-  and at the top of the README, so the book developer can find the spot.
-- Asset ids: lowercase, dashes (`vernier-caliper`). Units in 3D scenes: millimetres for instruments, otherwise note it in the README.
-- Assets import `three`, `three/addons/…` and `@shared/…` through the import map in `index.html`. Never use CDN URLs: the book must work offline.
-- Every interactive asset uses `shared/lib/bridge.js`: answers `ping`, emits `ready`, supports `capture`, and lists its params, commands and events in `asset.json`.
-- Keep figures simple for students (3D + the key idea + a short tap-to-answer test) and make them work on phones, portrait and landscape.
-- Default look for the books: white page, Bangla text (Noto Sans Bengali; not Hind Siliguri, its digits read badly), plain textbook styling.
-- Status flow: `idea` → `in-progress` → `review` → `changes` → `approved`, kept in `status.json` (set in the studio).
-- Studio thumbnails are local captures in `.cache/thumbs/`, not committed.

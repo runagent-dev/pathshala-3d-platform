@@ -56,13 +56,20 @@ export async function preparePage(page, { virtualTime = true } = {}) {
 /**
  * Opens a figure and waits until it is ready (fonts loaded, `ready` emitted). With `harness` (default) the figure
  * runs in an iframe of test/harness.html, so bridge commands work (`call`); without, it is the page itself (for
- * layout checks). Returns { frame, ready, advance(ms, frameMs), call(type, payload) }.
+ * layout checks). `path` opens another copy of the page instead (the packaged zip, served from its own folder).
+ * Returns { frame, ready, advance(ms, frameMs), call(type, payload) }.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {string} id
+ * @param {{ base?: string, path?: string, params?: Record<string, string>, harness?: boolean, readyWithin?: number, frameMs?: number }} [options]
  */
-export async function openFigure(page, id, { base = '', params = {}, harness = true, readyWithin = 20000, frameMs = 50 } = {}) {
-  const src = figurePath(id, { ...TEST_PARAMS, ...params });
+export async function openFigure(page, id, { base = '', path, params = {}, harness = true, readyWithin = 20000, frameMs = 50 } = {}) {
+  // `path` opens another copy of the page (e.g. the packaged zip served from its own folder)
+  const query = new URLSearchParams({ ...TEST_PARAMS, ...params }).toString();
+  const src = path ? `${path}?${query}` : figurePath(id, { ...TEST_PARAMS, ...params });
   if (harness) await page.goto(`${base}/test/harness.html?src=${encodeURIComponent(src)}`);
   else await page.goto(`${base}${src}`);
-  const frame = harness ? await waitForFrame(page, `/assets/${id}/`) : page.mainFrame();
+  const frame = harness ? await waitForFrame(page, path ? path.split('?')[0] : `/assets/${id}/`) : page.mainFrame();
   await frame.waitForFunction(() => window.__vt && document.readyState === 'complete', null, { polling: 100 });
   await frame.evaluate(() => document.fonts.ready.then(() => undefined));
 

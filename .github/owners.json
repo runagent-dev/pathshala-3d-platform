@@ -1,0 +1,4 @@
+{
+  "$comment": "GitHub usernames of the platform owners: they own shared/, scripts/, templates/, books/, status.json and review every pull request. CODEOWNERS is generated from this file and the figures' maintainers (npm run generate).",
+  "owners": []
+}

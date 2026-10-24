@@ -1,0 +1,13 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule: { interval: weekly }
+    groups:
+      tooling: { patterns: ['*'], exclude-patterns: ['three', '@types/three'] }
+    ignore:
+      - dependency-name: three # upgrading three means re-vendoring and a visual comparison: do it on purpose
+      - dependency-name: '@types/three'
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: monthly }
