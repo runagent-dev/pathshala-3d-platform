@@ -40,7 +40,10 @@ export function migrate(m, { id } = {}) {
 
 function targets() {
   const list = [];
-  for (const [base, kind] of [[ASSETS_DIR, 'asset'], [TEMPLATES_DIR, 'template']]) {
+  for (const [base, kind] of [
+    [ASSETS_DIR, 'asset'],
+    [TEMPLATES_DIR, 'template'],
+  ]) {
     if (!fs.existsSync(base)) continue;
     for (const name of fs.readdirSync(base).sort()) {
       const file = path.join(base, name, 'asset.json');
@@ -63,7 +66,9 @@ function run() {
     if (next !== before) {
       changes++;
       const removed = DROPPED.filter((k) => k in old);
-      console.log(`${WRITE ? '✓' : '→'} ${rel}: schema ${old.schemaVersion || 1} → ${SCHEMA_VERSION}${removed.length ? ` (dropped ${removed.join(', ')})` : ''}`);
+      console.log(
+        `${WRITE ? '✓' : '→'} ${rel}: schema ${old.schemaVersion || 1} → ${SCHEMA_VERSION}${removed.length ? ` (dropped ${removed.join(', ')})` : ''}`,
+      );
       if (WRITE) fs.writeFileSync(t.file, next);
     }
     if (needsStatus) {

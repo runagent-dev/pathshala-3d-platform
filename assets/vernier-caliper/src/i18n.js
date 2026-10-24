@@ -82,11 +82,13 @@ export const STRINGS = {
     done: 'Done',
     close: 'Close',
     t1_title: 'Meet the vernier caliper',
-    t1_body: 'It measures lengths to a fraction of a millimetre. The big jaws grip objects, the small jaws measure holes, and the rod at the end measures depth.',
+    t1_body:
+      'It measures lengths to a fraction of a millimetre. The big jaws grip objects, the small jaws measure holes, and the rod at the end measures depth.',
     t2_title: 'The main scale',
     t2_body: 'Each small division on the beam is <b>1 mm</b>. The numbers mark centimetres: 1 is 10 mm, 2 is 20 mm, and so on.',
     t3_title: 'The vernier scale',
-    t3_body: 'The sliding scale has <b>{n} divisions</b> that together span <b>{n1} mm</b> of the main scale. So one vernier division is {vsd} mm, a tiny bit shorter than 1 mm.',
+    t3_body:
+      'The sliding scale has <b>{n} divisions</b> that together span <b>{n1} mm</b> of the main scale. So one vernier division is {vsd} mm, a tiny bit shorter than 1 mm.',
     t4_title: 'Least count',
     t4_body: 'That tiny difference is the smallest length the caliper can show:<br><b>LC = 1 MSD − 1 VSD = 1 − {vsd} = {lc} mm</b>',
     t5_title: 'Hold the object',
@@ -94,7 +96,8 @@ export const STRINGS = {
     t6_title: 'Main scale reading (MSR)',
     t6_body: 'Find the <b class="c-zero">vernier zero</b>. The main-scale mark just before it is <b class="c-msr">{msr} mm</b>. That is the MSR.',
     t7_title: 'Vernier scale reading (VSR)',
-    t7_body: 'Look along the vernier for the one line that sits <b>exactly</b> in line with a main-scale line. Here it is line <b class="c-vsr">{vsr}</b>.',
+    t7_body:
+      'Look along the vernier for the one line that sits <b>exactly</b> in line with a main-scale line. Here it is line <b class="c-vsr">{vsr}</b>.',
     t8_title: 'Total reading',
     t8_body: 'Reading = MSR + VSR × LC<br><b>= {msr} + {vsr} × {lc} = {value} mm</b>',
     t9_title: 'Correct the zero error',
@@ -229,7 +232,8 @@ STRINGS.bn = {
   done: 'শেষ',
   close: 'বন্ধ করো',
   t1_title: 'স্লাইড ক্যালিপার্স চিনে নাও',
-  t1_body: 'এটি দিয়ে মিলিমিটারের ভগ্নাংশ পর্যন্ত দৈর্ঘ্য মাপা যায়। বাইরের চোয়াল দিয়ে বস্তু চেপে ধরা হয়, ভেতরের চোয়াল দিয়ে নলের ভেতরের ব্যাস, আর শেষ প্রান্তের দণ্ড দিয়ে গভীরতা মাপা হয়।',
+  t1_body:
+    'এটি দিয়ে মিলিমিটারের ভগ্নাংশ পর্যন্ত দৈর্ঘ্য মাপা যায়। বাইরের চোয়াল দিয়ে বস্তু চেপে ধরা হয়, ভেতরের চোয়াল দিয়ে নলের ভেতরের ব্যাস, আর শেষ প্রান্তের দণ্ড দিয়ে গভীরতা মাপা হয়।',
   t2_title: 'প্রধান স্কেল',
   t2_body: 'প্রধান স্কেলের প্রতিটি ছোট ঘর <b>১ মিমি</b>। সংখ্যাগুলো সেন্টিমিটার বোঝায়: ১ মানে ১০ মিমি, ২ মানে ২০ মিমি।',
   t3_title: 'ভার্নিয়ার স্কেল',
@@ -239,9 +243,11 @@ STRINGS.bn = {
   t5_title: 'বস্তুটি চেপে ধরো',
   t5_body: 'চোয়াল দুটি দিয়ে {object} আলতো করে চেপে ধরো। তারপর স্ক্রু আটকে দাও, যাতে পাঠ সরে না যায়।',
   t6_title: 'প্রধান স্কেল পাঠ (M)',
-  t6_body: '<b class="c-zero">ভার্নিয়ারের শূন্য দাগ</b> খুঁজে বের করো। এর ঠিক আগের প্রধান স্কেলের দাগটি <b class="c-msr">{msr} মিমি</b>। এটাই প্রধান স্কেল পাঠ, M = {msr} মিমি।',
+  t6_body:
+    '<b class="c-zero">ভার্নিয়ারের শূন্য দাগ</b> খুঁজে বের করো। এর ঠিক আগের প্রধান স্কেলের দাগটি <b class="c-msr">{msr} মিমি</b>। এটাই প্রধান স্কেল পাঠ, M = {msr} মিমি।',
   t7_title: 'ভার্নিয়ার সমপাতন (V)',
-  t7_body: 'ভার্নিয়ারের যে দাগটি প্রধান স্কেলের কোনো দাগের সঙ্গে <b>ঠিক এক সরলরেখায়</b> মিলে যায়, সেটি খোঁজো। এখানে সেটি <b class="c-vsr">{vsr} নম্বর দাগ</b>। তাই V = {vsr}।',
+  t7_body:
+    'ভার্নিয়ারের যে দাগটি প্রধান স্কেলের কোনো দাগের সঙ্গে <b>ঠিক এক সরলরেখায়</b> মিলে যায়, সেটি খোঁজো। এখানে সেটি <b class="c-vsr">{vsr} নম্বর দাগ</b>। তাই V = {vsr}।',
   t8_title: 'মোট পাঠ',
   t8_body: 'L = M + V × VC<br><b>= {msr} + {vsr} × {lc} = {value} মিমি</b>',
   t9_title: 'যান্ত্রিক ত্রুটি সংশোধন',
@@ -301,7 +307,15 @@ STRINGS.bn = {
   eng_brand: 'পাঠশালা',
   eng_range: '০–১৫০ মিমি',
 };
-Object.assign(STRINGS.en, { c_1mm: '1 mm', c_1cm: '1 cm = 10 mm', c_vsd: '{n} VSD', c_msd: '{n} mm', c_gap: '{lc} mm', c_msr: 'MSR = {msr} mm', c_vsr: 'VSR = {vsr}' });
+Object.assign(STRINGS.en, {
+  c_1mm: '1 mm',
+  c_1cm: '1 cm = 10 mm',
+  c_vsd: '{n} VSD',
+  c_msd: '{n} mm',
+  c_gap: '{lc} mm',
+  c_msr: 'MSR = {msr} mm',
+  c_vsr: 'VSR = {vsr}',
+});
 STRINGS.en.view_front_short = 'Front';
 STRINGS.en.unit_mm = 'mm';
 STRINGS.en.unit_cm = 'cm';

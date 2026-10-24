@@ -28,7 +28,7 @@ export function createAudio(enabled = true) {
     const len = Math.ceil(c.sampleRate * dur);
     const buf = c.createBuffer(1, len, c.sampleRate);
     const data = buf.getChannelData(0);
-    for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
+    for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / len) ** 3;
     const src = c.createBufferSource();
     src.buffer = buf;
     const bp = c.createBiquadFilter();

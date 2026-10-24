@@ -26,7 +26,8 @@ export function createStudioEnvironment({ key = 1, front = 1, light = false } = 
         horizon: { value: light ? new THREE.Color(0.52, 0.54, 0.57) : new THREE.Color(0.16, 0.17, 0.19) },
         bottom: { value: light ? new THREE.Color(0.2, 0.21, 0.23) : new THREE.Color(0.025, 0.027, 0.03) },
       },
-      vertexShader: 'varying vec3 vDir; void main(){ vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+      vertexShader:
+        'varying vec3 vDir; void main(){ vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
       fragmentShader: `uniform vec3 top; uniform vec3 horizon; uniform vec3 bottom; varying vec3 vDir;
         void main(){ float y = vDir.y; vec3 c = y > 0.0 ? mix(horizon, top, smoothstep(0.0, 0.8, y)) : mix(horizon, bottom, smoothstep(0.0, 0.35, -y));
         gl_FragColor = vec4(c, 1.0); }`,

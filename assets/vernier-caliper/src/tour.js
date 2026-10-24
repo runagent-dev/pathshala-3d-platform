@@ -27,7 +27,8 @@ export function createTour(ctx) {
   let lastBody = '';
 
   const n = () => caliper.divisions;
-  const callout = (id, text, point, dx, dy, color) => annotations.add(id, { text, point, dx, dy, kind: 'callout', color: color ? css(color) : undefined });
+  const callout = (id, text, point, dx, dy, color) =>
+    annotations.add(id, { text, point, dx, dy, kind: 'callout', color: color ? css(color) : undefined });
 
   function vars(r) {
     const N = r.n;
@@ -67,7 +68,13 @@ export function createTour(ctx) {
       },
       {
         id: 'vernier',
-        highlight: () => ({ zero: true, vernierExtra: [n()], vernierExtraColor: HIGHLIGHT.zero, mainExtra: [0, n() - 1], mainExtraColor: HIGHLIGHT.msr }),
+        highlight: () => ({
+          zero: true,
+          vernierExtra: [n()],
+          vernierExtraColor: HIGHLIGHT.zero,
+          mainExtra: [0, n() - 1],
+          mainExtraColor: HIGHLIGHT.msr,
+        }),
         enter: async (tk) => {
           if (s.locked) ctx.setLocked(false, { sound: false });
           if (s.specimen) await ctx.setSpecimen(null);
@@ -75,14 +82,27 @@ export function createTour(ctx) {
           await ctx.animateGap(0, 0.7);
           if (tk !== token) return;
           const N = n();
-          callout('t-vsd', t('c_vsd', { n: N }), () => V(s.zeroError + ((N - 1) * (N - 1)) / N / 2, DIM.scaleY - 4.5, DIM.plateZ), 0, 54, HIGHLIGHT.zero);
+          callout(
+            't-vsd',
+            t('c_vsd', { n: N }),
+            () => V(s.zeroError + ((N - 1) * (N - 1)) / N / 2, DIM.scaleY - 4.5, DIM.plateZ),
+            0,
+            54,
+            HIGHLIGHT.zero,
+          );
           callout('t-msd', t('c_msd', { n: N - 1 }), () => V((N - 1) / 2, DIM.scaleY + 4.6, DIM.beamHalfT), 0, -50, HIGHLIGHT.msr);
           return ctx.focusOn(V((N - 1) / 2, 7, 2.5), THREE.MathUtils.clamp((N + 10) * 2.7, 55, 200), { dir: new THREE.Vector3(0, 0, 1) });
         },
       },
       {
         id: 'lc',
-        highlight: () => ({ zero: true, mainExtra: [1], vernierExtra: [1], mainExtraColor: HIGHLIGHT.coincide, vernierExtraColor: HIGHLIGHT.coincide }),
+        highlight: () => ({
+          zero: true,
+          mainExtra: [1],
+          vernierExtra: [1],
+          mainExtraColor: HIGHLIGHT.coincide,
+          vernierExtraColor: HIGHLIGHT.coincide,
+        }),
         enter: () => {
           callout('t-gap', t('c_gap', { lc: s.lc }), () => V(s.zeroError + 1 - s.lc / 2, DIM.scaleY, DIM.bevelTop[1]), 0, -64, HIGHLIGHT.coincide);
           return ctx.focusOn(V(1 + s.zeroError, 7, 2.3), 30, { dir: new THREE.Vector3(0, 0, 1) });
@@ -107,7 +127,14 @@ export function createTour(ctx) {
         enter: () => {
           const r = ctx.reading();
           callout('t-zero', t('vernier_zero'), () => caliper.points.vernierZero().add(V(0, -3.6, 1.2)), -30, 56, HIGHLIGHT.zero);
-          callout('t-msr', t('c_msr', { msr: ctx.reading().msr }), () => V(ctx.reading().msr, DIM.scaleY + 3.5, DIM.beamHalfT), -20, -58, HIGHLIGHT.msr);
+          callout(
+            't-msr',
+            t('c_msr', { msr: ctx.reading().msr }),
+            () => V(ctx.reading().msr, DIM.scaleY + 3.5, DIM.beamHalfT),
+            -20,
+            -58,
+            HIGHLIGHT.msr,
+          );
           return ctx.focusOn(V(r.observed, 7, 2.3), 70, { dir: new THREE.Vector3(0, 0, 1) });
         },
       },
@@ -135,7 +162,14 @@ export function createTour(ctx) {
           if (tk !== token) return;
           ctx.audio.pop();
           ctx.refresh();
-          callout('t-vsr', t('c_vsr', { vsr: ctx.reading().vsr }), () => V(ctx.reading().coincideMain, DIM.scaleY + 4.6, DIM.beamHalfT), 16, -56, HIGHLIGHT.coincide);
+          callout(
+            't-vsr',
+            t('c_vsr', { vsr: ctx.reading().vsr }),
+            () => V(ctx.reading().coincideMain, DIM.scaleY + 4.6, DIM.beamHalfT),
+            16,
+            -56,
+            HIGHLIGHT.coincide,
+          );
         },
       },
       {

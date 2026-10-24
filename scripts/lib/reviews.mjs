@@ -16,7 +16,10 @@ const fail = (status, message) => Object.assign(new Error(message), { status });
 const queues = new Map();
 function serial(id, fn) {
   const next = (queues.get(id) || Promise.resolve()).then(fn, fn);
-  queues.set(id, next.catch(() => {}));
+  queues.set(
+    id,
+    next.catch(() => {}),
+  );
   return next;
 }
 
@@ -34,7 +37,7 @@ export async function readReviews(id) {
 async function writeReviews(id, list) {
   await fsp.mkdir(dirOf(id), { recursive: true });
   const tmp = `${fileOf(id)}.tmp`;
-  await fsp.writeFile(tmp, JSON.stringify(list, null, 2) + '\n');
+  await fsp.writeFile(tmp, `${JSON.stringify(list, null, 2)}\n`);
   await fsp.rename(tmp, fileOf(id));
 }
 
@@ -43,7 +46,11 @@ export async function reviewCounts(id) {
   return { open: list.filter((r) => r.status !== 'done').length, total: list.length };
 }
 
-const clean = (s, max) => String(s ?? '').replace(/\r\n?/g, '\n').trim().slice(0, max);
+const clean = (s, max) =>
+  String(s ?? '')
+    .replace(/\r\n?/g, '\n')
+    .trim()
+    .slice(0, max);
 
 /** Small JSON only (frame size, URL params, the figure's state). */
 function cleanContext(ctx) {
@@ -71,7 +78,15 @@ export function addReview(id, { author, text, image, context } = {}) {
       await fsp.mkdir(dirOf(id), { recursive: true });
       await fsp.writeFile(path.join(assetDir(id), picture), buf);
     }
-    const review = { id: rid, author: name, text: body, createdAt: new Date().toISOString(), status: 'open', image: picture, context: cleanContext(context) };
+    const review = {
+      id: rid,
+      author: name,
+      text: body,
+      createdAt: new Date().toISOString(),
+      status: 'open',
+      image: picture,
+      context: cleanContext(context),
+    };
     const list = await readReviews(id);
     list.push(review);
     await writeReviews(id, list);

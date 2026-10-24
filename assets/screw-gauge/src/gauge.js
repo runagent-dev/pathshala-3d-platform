@@ -55,7 +55,14 @@ export function createGauge({ materials: M, text = {} }) {
   s.lineTo(6, -42);
   s.quadraticCurveTo(-17, -42, -17, -19);
   s.closePath();
-  const frameGeo = new THREE.ExtrudeGeometry(s, { depth: DIM.frameZ * 2 - 1.2, bevelEnabled: true, bevelThickness: 0.6, bevelSize: 0.6, bevelSegments: 3, curveSegments: 24 });
+  const frameGeo = new THREE.ExtrudeGeometry(s, {
+    depth: DIM.frameZ * 2 - 1.2,
+    bevelEnabled: true,
+    bevelThickness: 0.6,
+    bevelSize: 0.6,
+    bevelSegments: 3,
+    curveSegments: 24,
+  });
   const frame = new THREE.Mesh(frameGeo, enamel);
   frame.position.z = -DIM.frameZ + 0.6;
   frame.name = 'Frame';

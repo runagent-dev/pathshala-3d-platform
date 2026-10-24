@@ -13,7 +13,7 @@ function canvas(w, h) {
 
 function rand(seed) {
   let s = seed >>> 0;
-  return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
+  return () => (s = (s * 1664525 + 1013904223) >>> 0) / 4294967296;
 }
 
 /** Long horizontal streaks, tileable: drives roughness + bump for a brushed-steel finish. */

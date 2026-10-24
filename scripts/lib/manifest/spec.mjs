@@ -46,10 +46,20 @@ export const MANIFEST_SCHEMA = {
       description: 'interactive: the student acts; animation: plays by itself (students may tap to jump); model: a static GLB.',
     },
     entry: { type: 'string', pattern: '^[\\w][\\w./-]*$', description: 'The file to open, relative to the folder (index.html, model.glb).' },
-    version: { type: 'string', pattern: SEMVER, patternHint: 'like 1.2.3', description: 'Semantic version: patch for fixes, minor for features, major for breaking changes.' },
+    version: {
+      type: 'string',
+      pattern: SEMVER,
+      patternHint: 'like 1.2.3',
+      description: 'Semantic version: patch for fixes, minor for features, major for breaking changes.',
+    },
     book: { type: 'string', pattern: SLUG, patternHint: SLUG_HINT, description: 'A book id from books/books.json.' },
     page: { type: ['integer', 'null'], minimum: 1, maximum: 2000, description: 'Printed page number in the book.' },
-    topic: { type: 'string', pattern: '^(\\d+(\\.\\d+)*)?$', patternHint: 'numbers joined by dots, like 1.6.1', description: 'Topic (section) number in the book, e.g. "1.6.1".' },
+    topic: {
+      type: 'string',
+      pattern: '^(\\d+(\\.\\d+)*)?$',
+      patternHint: 'numbers joined by dots, like 1.6.1',
+      description: 'Topic (section) number in the book, e.g. "1.6.1".',
+    },
     placement: { type: 'string', maxLength: 1000, description: 'Where exactly it goes on the page, for the book developer.' },
     order: { type: 'integer', minimum: 0, description: 'Order among figures on the same page.' },
     maintainers: {
@@ -127,7 +137,10 @@ export const MANIFEST_SCHEMA = {
           required: ['kind', 'seconds'],
           additionalProperties: false,
           properties: {
-            kind: { enum: ['timeline', 'script', 'turntable'], description: 'timeline: play the animation; script: run commands at set times; turntable: orbit.' },
+            kind: {
+              enum: ['timeline', 'script', 'turntable'],
+              description: 'timeline: play the animation; script: run commands at set times; turntable: orbit.',
+            },
             seconds: { type: 'number', minimum: 1, maximum: 600 },
             fps: { enum: [24, 25, 30, 60] },
             params: urlParams,
@@ -150,8 +163,26 @@ export const MANIFEST_SCHEMA = {
 
 /** Key order for asset.json files (unknown keys keep their place at the end). */
 export const KEY_ORDER = [
-  '$schema', 'schemaVersion', 'id', 'title', 'type', 'entry', 'version',
-  'book', 'page', 'topic', 'placement', 'order', 'maintainers', 'units',
-  'description', 'tags', 'params', 'commands', 'events', 'export', 'packageExclude',
+  '$schema',
+  'schemaVersion',
+  'id',
+  'title',
+  'type',
+  'entry',
+  'version',
+  'book',
+  'page',
+  'topic',
+  'placement',
+  'order',
+  'maintainers',
+  'units',
+  'description',
+  'tags',
+  'params',
+  'commands',
+  'events',
+  'export',
+  'packageExclude',
 ];
 export const PARAM_KEY_ORDER = ['name', 'label', 'type', 'options', 'default', 'placeholder', 'help'];

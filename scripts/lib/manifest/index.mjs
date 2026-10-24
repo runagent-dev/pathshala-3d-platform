@@ -45,7 +45,8 @@ export function validateManifest(manifest, { folder, books, dir, profile = 'defa
     } else if (p.options) {
       err(`${at}.options`, `only a select has options (this is "${p.type}")`);
     }
-    if (p.type === 'boolean' && p.default != null && !['0', '1', true, false].includes(p.default)) err(`${at}.default`, 'a boolean default is "0" or "1"');
+    if (p.type === 'boolean' && p.default != null && !['0', '1', true, false].includes(p.default))
+      err(`${at}.default`, 'a boolean default is "0" or "1"');
     if (p.type === 'number' && p.default != null && p.default !== '' && !Number.isFinite(Number(p.default))) err(`${at}.default`, 'must be a number');
   });
 
@@ -62,10 +63,11 @@ export function validateManifest(manifest, { folder, books, dir, profile = 'defa
     const v = ex.video;
     if (v?.kind === 'script' && !v.script?.length) err('export.video.script', 'a "script" video needs a script');
     if (v?.kind === 'timeline' && manifest.type !== 'animation') warn('export.video.kind', '"timeline" is meant for animations');
-    if (v?.script) for (let i = 1; i < v.script.length; i++) {
-      if (v.script[i].at < v.script[i - 1].at) err(`export.video.script[${i}].at`, 'steps must be in time order');
-      if (v.script[i].at > v.seconds) err(`export.video.script[${i}].at`, `is after the end of the video (${v.seconds} s)`);
-    }
+    if (v?.script)
+      for (let i = 1; i < v.script.length; i++) {
+        if (v.script[i].at < v.script[i - 1].at) err(`export.video.script[${i}].at`, 'steps must be in time order');
+        if (v.script[i].at > v.seconds) err(`export.video.script[${i}].at`, `is after the end of the video (${v.seconds} s)`);
+      }
   }
 
   // what a figure needs before it is approved
@@ -94,7 +96,7 @@ export function orderManifest(manifest) {
 }
 
 /** The canonical text of an asset.json. */
-export const formatManifest = (manifest) => stringifyJson(orderManifest(manifest)) + '\n';
+export const formatManifest = (manifest) => `${stringifyJson(orderManifest(manifest))}\n`;
 
 /**
  * JSON with 2-space indent where every array or object that fits on one line (within `width`) is written on
@@ -113,7 +115,7 @@ export function stringifyJson(value, width = 120) {
     if (v === null || typeof v !== 'object') return JSON.stringify(v);
     const flat = inline(v);
     if (!top && indent.length + prefixLen + flat.length <= width) return flat;
-    const inner = indent + '  ';
+    const inner = `${indent}  `;
     if (Array.isArray(v)) {
       if (!v.length) return '[]';
       return `[\n${v.map((x) => inner + write(x, inner, 0, false)).join(',\n')}\n${indent}]`;

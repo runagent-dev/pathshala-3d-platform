@@ -108,7 +108,10 @@ export async function listAssets() {
 export function bookOrder(a, b, books = loadBooks()) {
   const bi = (x) => (x.book ? bookIndex(x.book, books) : books.length + 1);
   const page = (x) => (Number.isFinite(+x.page) && x.page !== '' && x.page != null ? +x.page : Infinity);
-  const topic = (x) => String(x.topic || '').split('.').map((n) => +n || 0);
+  const topic = (x) =>
+    String(x.topic || '')
+      .split('.')
+      .map((n) => +n || 0);
   if (bi(a) !== bi(b)) return bi(a) - bi(b);
   if (page(a) !== page(b)) return page(a) - page(b);
   const ta = topic(a);

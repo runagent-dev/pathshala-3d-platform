@@ -50,7 +50,22 @@ function longZoom(t, n) {
 }
 const lerp = (a, b, u) => a + (b - a) * u;
 const SCALE_UNITS = [18, 15, 12, 9, 6, 3, 0, -2, -3, -6, -9, -12, -15, -18]; // units the scale bar may use
-const UNIT_KEY = { 18: 'E', 15: 'P', 12: 'T', 9: 'G', 6: 'M', 3: 'k', 0: 'base', '-2': 'c', '-3': 'm', '-6': 'µ', '-9': 'n', '-12': 'p', '-15': 'f', '-18': 'a' };
+const UNIT_KEY = {
+  18: 'E',
+  15: 'P',
+  12: 'T',
+  9: 'G',
+  6: 'M',
+  3: 'k',
+  0: 'base',
+  '-2': 'c',
+  '-3': 'm',
+  '-6': 'µ',
+  '-9': 'n',
+  '-12': 'p',
+  '-15': 'f',
+  '-18': 'a',
+};
 const sup = (n) => String(n).replace(/[-0-9]/g, (c) => '⁻⁰¹²³⁴⁵⁶⁷⁸⁹'['-0123456789'.indexOf(c)]);
 
 export function createPrefixApp(root, userOptions = {}) {
@@ -68,7 +83,8 @@ export function createPrefixApp(root, userOptions = {}) {
       <button class="hb-play" type="button" aria-label="${t('pause')}" title="${t('pause')}"></button>
       <span class="hb-journey">${t('title')}</span>
       <nav class="hb-strip" aria-label="${t('choose')}"><div class="hb-strip-track">${STOPS.map(
-        (s) => `<button type="button" data-go="${s.id}"><b>${s.prefix === 'base' ? t('base_name') : t(`p_${s.prefix}`)}</b><small>${t(`${s.id}_short`)}</small></button>`,
+        (s) =>
+          `<button type="button" data-go="${s.id}"><b>${s.prefix === 'base' ? t('base_name') : t(`p_${s.prefix}`)}</b><small>${t(`${s.id}_short`)}</small></button>`,
       ).join('')}</div></nav>
     </div>
     <aside class="hb-ladder" aria-label="${t('table')}">
@@ -209,10 +225,21 @@ export function createPrefixApp(root, userOptions = {}) {
       const Wb = frameWidth(b);
       const orders = Math.abs(Math.log10(Wb / from.W));
       const u = orders > 6 ? longZoom(tt, orders) : ease(tt);
-      const W = from.W * Math.pow(Wb / from.W, u);
+      const W = from.W * (Wb / from.W) ** u;
       const f = Math.abs(Wb - from.W) < 1e-30 ? u : (W - from.W) / (Wb - from.W);
       if (tt < 1) {
-        return { W, camX: from.camX + (b.x - from.camX) * f, pitch: lerp(from.pitch, b.pitch, u), focus: null, caption: 0, row: lerp(from.row, rowOf[b.prefix], u), journey: null, goingTo: b, prev: null, seg: null };
+        return {
+          W,
+          camX: from.camX + (b.x - from.camX) * f,
+          pitch: lerp(from.pitch, b.pitch, u),
+          focus: null,
+          caption: 0,
+          row: lerp(from.row, rowOf[b.prefix], u),
+          journey: null,
+          goingTo: b,
+          prev: null,
+          seg: null,
+        };
       }
       time = flight.seg.start + 0.4;
       flight = null;
@@ -222,7 +249,17 @@ export function createPrefixApp(root, userOptions = {}) {
     if (seg.type === 'hold') {
       const s = byId[seg.id];
       const fade = Math.min(1, local / 0.35, (seg.dur - local) / 0.35);
-      return { W: frameWidth(s), camX: s.x, pitch: s.pitch, focus: s, caption: Math.max(0, fade), row: rowOf[s.prefix], journey: null, prev: null, seg };
+      return {
+        W: frameWidth(s),
+        camX: s.x,
+        pitch: s.pitch,
+        focus: s,
+        caption: Math.max(0, fade),
+        row: rowOf[s.prefix],
+        journey: null,
+        prev: null,
+        seg,
+      };
     }
     const a = byId[seg.from];
     const b = byId[seg.to];
@@ -231,10 +268,20 @@ export function createPrefixApp(root, userOptions = {}) {
     const orders = Math.abs(Math.log10(Wb / Wa));
     const tt = Math.min(1, local / seg.dur);
     const u = orders > 6 && seg.journey !== 'journey_home' ? longZoom(tt, orders) : ease(tt);
-    const W = Wa * Math.pow(Wb / Wa, u);
+    const W = Wa * (Wb / Wa) ** u;
     // Pan in proportion to the zoom, so the screen moves evenly (pan while big, then zoom).
     const f = Math.abs(Wb - Wa) < 1e-30 ? u : (W - Wa) / (Wb - Wa);
-    return { W, camX: a.x + (b.x - a.x) * f, pitch: lerp(a.pitch, b.pitch, u), focus: null, caption: 0, row: lerp(rowOf[a.prefix], rowOf[b.prefix], u), journey: seg.journey, prev: a, seg };
+    return {
+      W,
+      camX: a.x + (b.x - a.x) * f,
+      pitch: lerp(a.pitch, b.pitch, u),
+      focus: null,
+      caption: 0,
+      row: lerp(rowOf[a.prefix], rowOf[b.prefix], u),
+      journey: seg.journey,
+      prev: a,
+      seg,
+    };
   }
 
   // ── per-frame update ────────────────────────────────────────────────────────
@@ -300,7 +347,8 @@ export function createPrefixApp(root, userOptions = {}) {
       lastChip = current;
       for (const c of el.chips) c.classList.toggle('on', c.dataset.go === current);
       const chip = el.chips.find((c) => c.dataset.go === current);
-      if (chip && el.strip.offsetParent) el.strip.scrollTo({ left: chip.offsetLeft - (el.strip.clientWidth - chip.offsetWidth) / 2, behavior: 'smooth' });
+      if (chip && el.strip.offsetParent)
+        el.strip.scrollTo({ left: chip.offsetLeft - (el.strip.clientWidth - chip.offsetWidth) / 2, behavior: 'smooth' });
     }
     // ladder: highlight the nearest row; slide the marker
     const near = Math.round(v.row);
@@ -352,7 +400,7 @@ export function createPrefixApp(root, userOptions = {}) {
       const span = p.lastChild;
       const w = span.offsetWidth;
       const h = span.offsetHeight;
-      let lx = Math.min(Math.max(x - w / 2, 6), stage.width - w - 6);
+      const lx = Math.min(Math.max(x - w / 2, 6), stage.width - w - 6);
       let ly = y - h - 12;
       for (let guard = 0; guard < 4; guard++) {
         const hit = placed.find((r) => lx < r.x + r.w + 4 && lx + w + 4 > r.x && ly < r.y + r.h + 3 && ly + h + 3 > r.y);
@@ -452,7 +500,13 @@ export function createPrefixApp(root, userOptions = {}) {
       return true;
     }
     const orders = Math.abs(Math.log10(frameWidth(b) / state.W));
-    flight = { from: { W: state.W, camX: state.camX, pitch: state.pitch, row: state.row }, to: b, seg, start: clock, dur: Math.min(3.2, Math.max(1.1, 1 + 0.3 * orders)) };
+    flight = {
+      from: { W: state.W, camX: state.camX, pitch: state.pitch, row: state.row },
+      to: b,
+      seg,
+      start: clock,
+      dur: Math.min(3.2, Math.max(1.1, 1 + 0.3 * orders)),
+    };
     return true;
   }
   el.ladder.addEventListener('click', (e) => {
@@ -478,7 +532,10 @@ export function createPrefixApp(root, userOptions = {}) {
     ndc.set(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
     ray.setFromCamera(ndc, camera);
     const visible = stops.filter((s) => s.group.visible);
-    for (const h of ray.intersectObjects(visible.map((s) => s.group), true)) {
+    for (const h of ray.intersectObjects(
+      visible.map((s) => s.group),
+      true,
+    )) {
       for (let ob = h.object; ob; ob = ob.parent) {
         const s = visible.find((v) => v.group === ob);
         if (s) return s;
@@ -550,7 +607,13 @@ export function createPrefixApp(root, userOptions = {}) {
     seek(seconds) {
       time = Math.max(0, +seconds || 0);
     },
-    getState: () => ({ time: +time.toFixed(2), duration: +total.toFixed(2), playing, stop: state?.focus?.id || null, flyingTo: flight?.to.id || null }),
+    getState: () => ({
+      time: +time.toFixed(2),
+      duration: +total.toFixed(2),
+      playing,
+      stop: state?.focus?.id || null,
+      flyingTo: flight?.to.id || null,
+    }),
     on(type, fn) {
       if (!listeners.has(type)) listeners.set(type, new Set());
       listeners.get(type).add(fn);

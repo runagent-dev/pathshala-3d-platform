@@ -277,7 +277,10 @@ export function createVernierApp(root, userOptions = {}) {
     dockEls.zeU.textContent = U;
     ui.read.classList.toggle('has-ze', !!s.zeroError);
     const total = `${N(format(r.observed, s.lc, u))}`;
-    const lines = [`<div class="w-f">${t('formula')}</div>`, `<div>= <b class="c-msr">${msrText}</b> + <b class="c-vsr">${N(r.vsr)}</b> × <b class="c-lc">${lcText}</b></div>`];
+    const lines = [
+      `<div class="w-f">${t('formula')}</div>`,
+      `<div>= <b class="c-msr">${msrText}</b> + <b class="c-vsr">${N(r.vsr)}</b> × <b class="c-lc">${lcText}</b></div>`,
+    ];
     if (s.zeroError) {
       lines.push(`<div>= ${total} ${U}</div>`);
       lines.push(`<div class="w-f">${t('formula_ze')}</div>`);
@@ -372,7 +375,12 @@ export function createVernierApp(root, userOptions = {}) {
     showHint(t(s.mode === 'quiz' ? 'q_locked' : 'hint_locked'), { duration: 3200 });
     audio.error();
     const a = caliper.state.lockAngle;
-    tweener.animate({ key: 'lock', duration: 0.4, ease: ease.linear, onUpdate: (_k, p) => caliper.setLockAngle(a + Math.sin(p * Math.PI * 4) * 0.12 * (1 - p)) });
+    tweener.animate({
+      key: 'lock',
+      duration: 0.4,
+      ease: ease.linear,
+      onUpdate: (_k, p) => caliper.setLockAngle(a + Math.sin(p * Math.PI * 4) * 0.12 * (1 - p)),
+    });
   }
 
   // ── camera ───────────────────────────────────────────────────────────────────
@@ -380,7 +388,7 @@ export function createVernierApp(root, userOptions = {}) {
     let x0 = DIM.beamStart - 3;
     let x1 = Math.max(DIM.beamEnd + 3, DIM.beamEnd + s.gap + 2);
     let y0 = DIM.jawTip - 3;
-    let y1 = 39;
+    const y1 = 39;
     if (s.specimen?.mode === 'depth') x1 = Math.max(x1, DIM.beamEnd + s.specimen.size + 13);
     // In tall or small frames (phones, side columns) frame the jaws and the scales being read, not the whole beam.
     else if (camera.aspect < 1.25 || stage.width < 560) {
@@ -720,7 +728,14 @@ export function createVernierApp(root, userOptions = {}) {
     if (s.locked) setLocked(false);
 
     // Make room first, so the object never intersects the jaws.
-    const prep = def.mode === 'outside' ? (s.gap < sz + 6 ? Math.min(DIM.maxGap, sz + 12) : null) : s.gap > sz - 3 ? Math.max(0, def.mode === 'depth' ? 0 : sz - 9) : null;
+    const prep =
+      def.mode === 'outside'
+        ? s.gap < sz + 6
+          ? Math.min(DIM.maxGap, sz + 12)
+          : null
+        : s.gap > sz - 3
+          ? Math.max(0, def.mode === 'depth' ? 0 : sz - 9)
+          : null;
     if (prep != null) {
       if (animate) await animateGap(prep, 0.55);
       else setGap(prep);
@@ -844,7 +859,16 @@ export function createVernierApp(root, userOptions = {}) {
     syncUI();
   }
 
-  const settings = () => ({ lc: s.lc, zeroError: s.zeroError, unit: s.unit, view: s.view, guides: s.guides, magnifier: s.magnifier, labels: s.labels, locked: s.locked });
+  const settings = () => ({
+    lc: s.lc,
+    zeroError: s.zeroError,
+    unit: s.unit,
+    view: s.view,
+    guides: s.guides,
+    magnifier: s.magnifier,
+    labels: s.labels,
+    locked: s.locked,
+  });
 
   // ── hint toast ───────────────────────────────────────────────────────────────
   let hintTimer = 0;
@@ -1166,7 +1190,8 @@ export function createVernierApp(root, userOptions = {}) {
       if (p.hideReading != null) setHidden(p.hideReading);
       if (p.sound != null) setSound(p.sound);
       if (p.view) setView(p.view, { animate });
-      if (p.specimen !== undefined) await setSpecimen(p.specimen === 'none' ? null : p.specimen, { size: p.size, animate, autoContact: p.value == null, hint: false });
+      if (p.specimen !== undefined)
+        await setSpecimen(p.specimen === 'none' ? null : p.specimen, { size: p.size, animate, autoContact: p.value == null, hint: false });
       if (p.value != null) {
         if (s.locked && p.locked !== false) setLocked(false, { sound: false });
         if (animate) await animateGap(THREE.MathUtils.clamp(+p.value, ...limits()), 0.7);

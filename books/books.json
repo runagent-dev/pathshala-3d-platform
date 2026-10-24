@@ -7,9 +7,7 @@
       "classes": [9, 10],
       "curriculum": "NCTB",
       "edition": null,
-      "chapters": [
-        { "number": 1, "title": { "bn": "ভৌত রাশি ও পরিমাপ", "en": "Physical quantities and measurement" } }
-      ]
+      "chapters": [{ "number": 1, "title": { "bn": "ভৌত রাশি ও পরিমাপ", "en": "Physical quantities and measurement" } }]
     }
   ]
 }

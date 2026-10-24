@@ -15,7 +15,16 @@ const fail = (message) => Object.assign(new Error(message), { status: 400 });
  * scaffoldAsset({ id, title, type, book, page, topic, placement, maintainers }) → { id, dir }
  * The figure starts as an "idea". Throws (status 400) on bad input; nothing is written then.
  */
-export async function scaffoldAsset({ id, title, type = 'interactive', book = DEFAULT_BOOK, page = null, topic = '', placement = '', maintainers = [] } = {}) {
+export async function scaffoldAsset({
+  id,
+  title,
+  type = 'interactive',
+  book = DEFAULT_BOOK,
+  page = null,
+  topic = '',
+  placement = '',
+  maintainers = [],
+} = {}) {
   if (!ID_RE.test(id || '')) throw fail('Id must be lowercase letters, numbers and dashes (e.g. "convex-lens").');
   if (!TYPES.includes(type)) throw fail(`Unknown type "${type}" (use ${TYPES.join(', ')})`);
   const templateDir = path.join(TEMPLATES_DIR, type === 'animation' && !fs.existsSync(path.join(TEMPLATES_DIR, 'animation')) ? 'interactive' : type);
@@ -44,7 +53,10 @@ export async function scaffoldAsset({ id, title, type = 'interactive', book = DE
     else await fsp.writeFile(to, buf);
   }
   await fsp.writeFile(path.join(dest, 'asset.json'), formatManifest(manifest));
-  await fsp.writeFile(path.join(dest, 'status.json'), formatStatus({ status: 'idea', history: [statusRecord('idea', { by: 'scaffold', version: manifest.version })] }));
+  await fsp.writeFile(
+    path.join(dest, 'status.json'),
+    formatStatus({ status: 'idea', history: [statusRecord('idea', { by: 'scaffold', version: manifest.version })] }),
+  );
 
   // Where it goes in the book, at the top of the README, so the developer can find the spot.
   const readme = path.join(dest, 'README.md');

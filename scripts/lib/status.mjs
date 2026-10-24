@@ -23,7 +23,7 @@ export function statusRecord(status, { by = 'studio', version = null, at = new D
   return { status, by, at, version };
 }
 
-export const formatStatus = (data) => JSON.stringify(data, null, 2) + '\n';
+export const formatStatus = (data) => `${JSON.stringify(data, null, 2)}\n`;
 
 /** Sets the status and appends it to the history. */
 export async function writeStatus(id, status, meta = {}) {

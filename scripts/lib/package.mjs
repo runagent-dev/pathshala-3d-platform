@@ -24,8 +24,8 @@ async function copyTree(src, dst, filter = () => true) {
 
 function rewriteSharedPaths(text, depth) {
   // A file `depth` folders below the asset root reached shared/ via ../ x (depth + 2).
-  const from = '../'.repeat(depth + 2) + 'shared/';
-  const to = depth === 0 ? './shared/' : '../'.repeat(depth) + 'shared/';
+  const from = `${'../'.repeat(depth + 2)}shared/`;
+  const to = depth === 0 ? './shared/' : `${'../'.repeat(depth)}shared/`;
   return text.split(from).join(to);
 }
 
@@ -81,7 +81,7 @@ export async function packageAsset(id, { zip = true } = {}) {
       ? (await fsp.readFile(path.join(SHARED_DIR, 'vendor/three/VERSION'), 'utf8')).trim()
       : undefined,
   };
-  await fsp.writeFile(path.join(out, 'PACKAGE.json'), JSON.stringify(stamp, null, 2) + '\n');
+  await fsp.writeFile(path.join(out, 'PACKAGE.json'), `${JSON.stringify(stamp, null, 2)}\n`);
 
   let zipFile = null;
   let bytes = 0;

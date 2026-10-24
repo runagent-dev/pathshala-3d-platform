@@ -10,8 +10,19 @@ import fsp from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import {
-  ROOT, ASSETS_DIR, SHARED_DIR, THUMBS_DIR, ID_RE, STATUSES,
-  listAssets, assetSummary, assetDir, readManifest, writeManifest, thumbnailFile, writeFileAtomic,
+  ROOT,
+  ASSETS_DIR,
+  SHARED_DIR,
+  THUMBS_DIR,
+  ID_RE,
+  STATUSES,
+  listAssets,
+  assetSummary,
+  assetDir,
+  readManifest,
+  writeManifest,
+  thumbnailFile,
+  writeFileAtomic,
 } from './lib/assets.mjs';
 import { validateManifest } from './lib/manifest/index.mjs';
 import { writeStatus } from './lib/status.mjs';
@@ -101,7 +112,8 @@ function watch(dir, scope) {
       const [id, ...rest] = rel.split('/');
       if (!ID_RE.test(id)) return;
       const name = rest.join('/');
-      if (!name || META_FILES.has(name) || name.startsWith('reviews/')) queue(`meta:${id}`, 'meta', { id }); // never reloads the preview
+      if (!name || META_FILES.has(name) || name.startsWith('reviews/'))
+        queue(`meta:${id}`, 'meta', { id }); // never reloads the preview
       else if (!name.startsWith('exports/')) queue(`reload:${id}`, 'reload', { scope: 'asset', id, file: name });
     } else {
       queue(`reload:${scope}`, 'reload', { scope, file: rel });
@@ -155,7 +167,7 @@ const EDITABLE_FIELDS = ['title', 'description', 'book', 'page', 'topic', 'place
 
 // ── API ────────────────────────────────────────────────────────────────────────
 // Reviewers may read assets and read/add reviews; everything else is for the owner.
-function reviewerMay(req, resource, id, sub, rest) {
+function reviewerMay(req, resource, _id, sub, rest) {
   if (resource === 'me' || (resource === 'books' && req.method === 'GET')) return true;
   if (resource !== 'assets') return false;
   if (req.method === 'GET' && (!sub || sub === 'reviews' || sub === 'thumbnail')) return true;
@@ -267,11 +279,16 @@ async function api(req, res, url) {
 
 // ── static ─────────────────────────────────────────────────────────────────────
 async function serveStatic(req, res, url) {
-  let pathname = decodeURIComponent(url.pathname);
+  const pathname = decodeURIComponent(url.pathname);
   if (pathname === '/') return send(res, 302, '', { Location: '/dashboard/' });
   const file = path.normalize(path.join(ROOT, pathname));
   if (!file.startsWith(ROOT + path.sep) && file !== ROOT) return send(res, 403, 'Forbidden');
-  if (path.relative(ROOT, file).split(path.sep).some((p) => p.startsWith('.') || p === 'node_modules' || p === 'scripts' || p === 'data')) {
+  if (
+    path
+      .relative(ROOT, file)
+      .split(path.sep)
+      .some((p) => p.startsWith('.') || p === 'node_modules' || p === 'scripts' || p === 'data')
+  ) {
     return send(res, 404, 'Not found');
   }
   if (req.role === 'reviewer' && path.basename(file) === 'NOTES.md') return send(res, 404, 'Not found'); // the owner's own notes
@@ -279,7 +296,7 @@ async function serveStatic(req, res, url) {
   let target = file;
   let stat = await fsp.stat(target).catch(() => null);
   if (stat?.isDirectory()) {
-    if (!pathname.endsWith('/')) return send(res, 301, '', { Location: pathname + '/' + url.search });
+    if (!pathname.endsWith('/')) return send(res, 301, '', { Location: `${pathname}/${url.search}` });
     target = path.join(target, 'index.html');
     stat = await fsp.stat(target).catch(() => null);
   }
@@ -325,7 +342,9 @@ async function handler(req, res) {
 function displayAddresses(host) {
   if (host !== '0.0.0.0') return [host];
   const lan = /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/;
-  const all = Object.values(os.networkInterfaces()).flat().filter((a) => a?.family === 'IPv4' && !lan.test(a.address));
+  const all = Object.values(os.networkInterfaces())
+    .flat()
+    .filter((a) => a?.family === 'IPv4' && !lan.test(a.address));
   return all.map((a) => a.address).sort((a, b) => a.startsWith('127.') - b.startsWith('127.'));
 }
 
@@ -340,5 +359,6 @@ for (const host of HOSTS) {
 if (credentials) {
   const where = { env: 'STUDIO_USER / STUDIO_PASS', file: path.relative(ROOT, AUTH_FILE), new: `${path.relative(ROOT, AUTH_FILE)} (new)` };
   console.log(`  Login: ${credentials.user} / ${credentials.pass}   [${where[credentials.source]}; not needed from this machine]`);
-  if (credentials.reviewer) console.log(`  Reviewer login: ${credentials.reviewer.user} / ${credentials.reviewer.pass}   (can look and add reviews only)`);
+  if (credentials.reviewer)
+    console.log(`  Reviewer login: ${credentials.reviewer.user} / ${credentials.reviewer.pass}   (can look and add reviews only)`);
 }

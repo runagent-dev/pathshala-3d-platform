@@ -146,7 +146,19 @@ export function createScrewGaugeApp(root, userOptions = {}) {
   el.lc.textContent = N(String(LC));
 
   function snapshot(r = reading()) {
-    return { value: r.value, L: r.L, C: r.C, lc: LC, pitch: PITCH, unit: 'mm', gap: +s.gap.toFixed(4), contact: s.contact, locked: s.locked, object: s.object ? { kind: s.object.kind, size: s.object.size } : null, mode: s.mode };
+    return {
+      value: r.value,
+      L: r.L,
+      C: r.C,
+      lc: LC,
+      pitch: PITCH,
+      unit: 'mm',
+      gap: +s.gap.toFixed(4),
+      contact: s.contact,
+      locked: s.locked,
+      object: s.object ? { kind: s.object.kind, size: s.object.size } : null,
+      mode: s.mode,
+    };
   }
 
   let lastKey = '';
@@ -158,10 +170,13 @@ export function createScrewGaugeApp(root, userOptions = {}) {
     if (key === lastKey) return;
     lastKey = key;
     clearTimeout(emitTimer);
-    emitTimer = setTimeout(() => {
-      lastEmit = performance.now();
-      emit('change', snapshot());
-    }, Math.max(0, 100 - (performance.now() - lastEmit)));
+    emitTimer = setTimeout(
+      () => {
+        lastEmit = performance.now();
+        emit('change', snapshot());
+      },
+      Math.max(0, 100 - (performance.now() - lastEmit)),
+    );
   }
 
   function status() {
@@ -237,7 +252,13 @@ export function createScrewGaugeApp(root, userOptions = {}) {
     audio.contact();
     if (navigator.userActivation?.hasBeenActive) navigator.vibrate?.(12);
     const ob = s.object;
-    tweener.animate({ key: 'glow', duration: 0.7, ease: ease.linear, onUpdate: (_k, p) => ob?.setGlow(Math.sin(Math.PI * Math.min(1, p * 1.2))), onComplete: () => ob?.setGlow(0) });
+    tweener.animate({
+      key: 'glow',
+      duration: 0.7,
+      ease: ease.linear,
+      onUpdate: (_k, p) => ob?.setGlow(Math.sin(Math.PI * Math.min(1, p * 1.2))),
+      onComplete: () => ob?.setGlow(0),
+    });
     if (s.mode === 'explore') showHint(t('hint_contact'), { duration: 3200 });
   }
 
@@ -404,7 +425,7 @@ export function createScrewGaugeApp(root, userOptions = {}) {
       root.focus({ preventScroll: true });
       coach?.interrupt();
       if (drag || (e.pointerType === 'mouse' && e.button !== 0)) return;
-      let p = canvasPoint(e);
+      const p = canvasPoint(e);
       let hit = pick(p);
       if (!hit && e.pointerType !== 'mouse') {
         const q = nearby(p);
@@ -662,7 +683,17 @@ export function createScrewGaugeApp(root, userOptions = {}) {
     const v = new THREE.Vector3();
     const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     // On the thimble first; on phones the magnifier covers it, so then on the ratchet knob (it turns the screw too).
-    const SPOTS = [[12, 3], [16, 3], [8, 3.5], [12, -3], [20, 2.5], [6, -3], [35, 2.5, 5], [35, -2.5, 5], [33, 0, 5]];
+    const SPOTS = [
+      [12, 3],
+      [16, 3],
+      [8, 3.5],
+      [12, -3],
+      [20, 2.5],
+      [6, -3],
+      [35, 2.5, 5],
+      [35, -2.5, 5],
+      [33, 0, 5],
+    ];
     coach = createCoach({
       stage,
       layer: ui.coachLayer,

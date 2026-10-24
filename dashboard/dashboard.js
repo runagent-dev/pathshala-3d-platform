@@ -30,7 +30,16 @@ const typeOf = (a) => TYPES[a.type] || TYPES.interactive;
 // Bangla: the Reviews tab always; for reviewers, everything they see.
 const STATUS_BN = { idea: 'ভাবনা', 'in-progress': 'কাজ চলছে', review: 'রিভিউ চলছে', changes: 'সংশোধন দরকার', approved: 'অনুমোদিত' };
 const TYPE_BN = { interactive: 'ইন্টারঅ্যাকটিভ', animation: 'অ্যানিমেশন', model: 'স্থির মডেল' };
-const FRAME_BN = { fill: 'পুরো জায়গা', '1024x640': 'বইয়ের দুই পাতা', '800x500': 'বইয়ের কলাম', '640x400': 'ছোট জায়গা', '1180x820': 'আইপ্যাড আড়াআড়ি', '820x1180': 'আইপ্যাড খাড়া', '844x390': 'ফোন আড়াআড়ি', '390x844': 'ফোন খাড়া' };
+const FRAME_BN = {
+  fill: 'পুরো জায়গা',
+  '1024x640': 'বইয়ের দুই পাতা',
+  '800x500': 'বইয়ের কলাম',
+  '640x400': 'ছোট জায়গা',
+  '1180x820': 'আইপ্যাড আড়াআড়ি',
+  '820x1180': 'আইপ্যাড খাড়া',
+  '844x390': 'ফোন আড়াআড়ি',
+  '390x844': 'ফোন খাড়া',
+};
 const bnDigits = (x) => String(x).replace(/[0-9]/g, (d) => '০১২৩৪৫৬৭৮৯'[d]);
 const agoBn = (ms) => {
   if (!ms) return '';
@@ -124,7 +133,10 @@ function renderFilters() {
   const types = Object.keys(TYPES).filter((k) => counts[`type:${k}`]);
   if (types.length > 1) items.push(...types.map((k) => [`type:${k}`, tr(TYPES[k].short, TYPE_BN[k])]));
   $('#filters').innerHTML = items
-    .map(([k, label]) => `<button class="chip ${state.filter === k ? 'on' : ''}" data-f="${k}">${label} <span>${tr(counts[k] || 0, bnDigits(counts[k] || 0))}</span></button>`)
+    .map(
+      ([k, label]) =>
+        `<button class="chip ${state.filter === k ? 'on' : ''}" data-f="${k}">${label} <span>${tr(counts[k] || 0, bnDigits(counts[k] || 0))}</span></button>`,
+    )
     .join('');
 }
 
@@ -143,9 +155,13 @@ function visibleAssets() {
   return state.assets.filter((a) => {
     if (state.filter === 'reviews') {
       if (!a.reviews?.open) return false;
-    } else if (state.filter.startsWith('type:') ? a.type !== state.filter.slice(5) : state.filter !== 'all' && a.status !== state.filter) return false;
+    } else if (state.filter.startsWith('type:') ? a.type !== state.filter.slice(5) : state.filter !== 'all' && a.status !== state.filter)
+      return false;
     if (!q) return true;
-    return [a.id, a.title, a.book, a.chapter?.title?.bn, a.chapter?.title?.en, bookRef(a), a.page != null ? `p${a.page}` : '', ...(a.tags || [])].join(' ').toLowerCase().includes(q);
+    return [a.id, a.title, a.book, a.chapter?.title?.bn, a.chapter?.title?.en, bookRef(a), a.page != null ? `p${a.page}` : '', ...(a.tags || [])]
+      .join(' ')
+      .toLowerCase()
+      .includes(q);
   });
 }
 
@@ -262,7 +278,8 @@ function applyDevice() {
   const wrap = $('#frameWrap');
   const sizeLabel = $('#frameSize');
   $('#deviceSelect').value = state.device;
-  if (state.device === 'fill' || phone.matches) { // on a phone the phone is the frame
+  if (state.device === 'fill' || phone.matches) {
+    // on a phone the phone is the frame
     wrap.classList.remove('sized');
     wrap.style.transform = '';
     sizeLabel.textContent = '';
@@ -332,7 +349,9 @@ function renderInfo({ force = false } = {}) {
 
 /** The book picker lists books/books.json (one book for now; more later). */
 function renderBookOptions() {
-  const opts = state.books.map((b) => `<option value="${escapeHtml(b.id)}">${escapeHtml(b.title.bn)} · ${escapeHtml(b.title.en)} (${escapeHtml(b.id)})</option>`).join('');
+  const opts = state.books
+    .map((b) => `<option value="${escapeHtml(b.id)}">${escapeHtml(b.title.bn)} · ${escapeHtml(b.title.en)} (${escapeHtml(b.id)})</option>`)
+    .join('');
   $('#bookInput').innerHTML = opts;
   newField('book').innerHTML = opts;
 }
@@ -356,7 +375,13 @@ async function patchCurrent(patch) {
 }
 
 async function setStatus(status) {
-  applyUpdate(await api(`assets/${state.current.id}/status`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) }));
+  applyUpdate(
+    await api(`assets/${state.current.id}/status`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    }),
+  );
 }
 
 function applyUpdate(updated) {
@@ -422,7 +447,9 @@ async function loadNotes() {
 }
 
 function updateNotesBadge() {
-  const lines = $('#notes').value.split('\n').filter((l) => /^\s*[-*]\s+\S/.test(l)).length;
+  const lines = $('#notes')
+    .value.split('\n')
+    .filter((l) => /^\s*[-*]\s+\S/.test(l)).length;
   const b = $('#notesBadge');
   b.hidden = !lines;
   b.textContent = lines;
@@ -505,7 +532,12 @@ function renderCommands() {
     logEvent(c.name, payload, 'out');
     try {
       const result = await conn.call(c.name, payload);
-      const shown = typeof result === 'string' && result.length > 300 ? `${result.slice(0, 120)}… (${result.length} chars)` : result instanceof ArrayBuffer ? `ArrayBuffer(${result.byteLength})` : result;
+      const shown =
+        typeof result === 'string' && result.length > 300
+          ? `${result.slice(0, 120)}… (${result.length} chars)`
+          : result instanceof ArrayBuffer
+            ? `ArrayBuffer(${result.byteLength})`
+            : result;
       logEvent(`${c.name}:result`, shown);
     } catch (err) {
       logEvent(`${c.name}:error`, err.message);
@@ -524,7 +556,10 @@ function renderHandoff() {
   $('#packageResult').innerHTML = '';
   $('#glbResult').innerHTML = '';
   const entry = a.type === 'model' ? a.entry || 'model.glb' : a.entry || 'index.html';
-  const params = (a.params || []).slice(0, 2).map((p) => `${p.name}=${p.default}`).join('&');
+  const params = (a.params || [])
+    .slice(0, 2)
+    .map((p) => `${p.name}=${p.default}`)
+    .join('&');
   const where = a.placement || bookRef(a, true); // tells the book developer where this goes
   $('#snippet').textContent =
     (where ? `<!-- ${where} -->\n` : '') +
@@ -589,10 +624,17 @@ function renderReviews() {
 
 function reviewCard(r) {
   const ctx = r.context || {};
-  const where = [ctx.frame ? `${frameLabel(ctx.frame)}${ctx.frame === 'fill' && ctx.size ? ` ${bnDigits(ctx.size)}` : ''}` : '', ctx.state?.stop ? `ধাপ: ${ctx.state.stop}` : '', ctx.state?.specimen?.kind ? `বস্তু: ${ctx.state.specimen.kind}` : '', ctx.state?.mode && ctx.state.mode !== 'explore' ? `মোড: ${ctx.state.mode}` : '']
+  const where = [
+    ctx.frame ? `${frameLabel(ctx.frame)}${ctx.frame === 'fill' && ctx.size ? ` ${bnDigits(ctx.size)}` : ''}` : '',
+    ctx.state?.stop ? `ধাপ: ${ctx.state.stop}` : '',
+    ctx.state?.specimen?.kind ? `বস্তু: ${ctx.state.specimen.kind}` : '',
+    ctx.state?.mode && ctx.state.mode !== 'explore' ? `মোড: ${ctx.state.mode}` : '',
+  ]
     .filter(Boolean)
     .join(' · ');
-  const img = r.image ? `<a href="/assets/${state.current.id}/${r.image}" target="_blank" rel="noopener"><img class="review-shot" src="/assets/${state.current.id}/${r.image}" alt="রিভিউকারী যা দেখেছেন" loading="lazy" /></a>` : '';
+  const img = r.image
+    ? `<a href="/assets/${state.current.id}/${r.image}" target="_blank" rel="noopener"><img class="review-shot" src="/assets/${state.current.id}/${r.image}" alt="রিভিউকারী যা দেখেছেন" loading="lazy" /></a>`
+    : '';
   const reply = r.reply ? `<div class="review-reply"><small>উত্তর · ${agoBn(Date.parse(r.repliedAt))}</small>${escapeHtml(r.reply)}</div>` : '';
   const actions = isOwner()
     ? `<div class="review-actions">
@@ -639,7 +681,10 @@ $('#reviewList').addEventListener('click', async (e) => {
     } else if (b.dataset.ra === 'reply') {
       const box = card.querySelector('.review-actions');
       if (!box.querySelector('textarea')) {
-        box.insertAdjacentHTML('afterbegin', `<textarea rows="3" placeholder="রিভিউকারীকে উত্তর: কী বদলেছেন, বা কেন বদলাননি">${escapeHtml(r.reply || '')}</textarea>`);
+        box.insertAdjacentHTML(
+          'afterbegin',
+          `<textarea rows="3" placeholder="রিভিউকারীকে উত্তর: কী বদলেছেন, বা কেন বদলাননি">${escapeHtml(r.reply || '')}</textarea>`,
+        );
         b.textContent = 'উত্তর সংরক্ষণ করুন';
         box.querySelector('textarea').focus();
         return;
@@ -680,7 +725,11 @@ $('#reviewForm').addEventListener('submit', async (e) => {
     } catch {}
   }
   try {
-    await api(`assets/${a.id}/reviews`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ author, text, image, context }) });
+    await api(`assets/${a.id}/reviews`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ author, text, image, context }),
+    });
     $('#reviewText').value = '';
     state.reviewFilter = state.reviewFilter === 'done' ? 'open' : state.reviewFilter;
     toast('ধন্যবাদ, আপনার মতামত জমা হয়েছে');
@@ -729,7 +778,9 @@ function renderMarkdown(src) {
     escapeHtml(s)
       .replace(/`([^`]+)`/g, '<code>$1</code>')
       .replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')
-      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (m, text, href) => (safeHref(href) ? `<a href="${href}" target="_blank" rel="noopener">${text}</a>` : text));
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_m, text, href) =>
+        safeHref(href) ? `<a href="${href}" target="_blank" rel="noopener">${text}</a>` : text,
+      );
   const out = [];
   const lines = src.split('\n');
   for (let i = 0; i < lines.length; i++) {
@@ -750,9 +801,22 @@ function renderMarkdown(src) {
       const rows = [];
       while (i < lines.length && lines[i].startsWith('|')) rows.push(lines[i++]);
       i--;
-      const cells = (r) => r.replace(/^\||\|$/g, '').split('|').map((c) => c.trim());
+      const cells = (r) =>
+        r
+          .replace(/^\||\|$/g, '')
+          .split('|')
+          .map((c) => c.trim());
       const body = rows.filter((r) => !/^\|[\s:|-]+\|$/.test(r));
-      out.push(`<table>${body.map((r, ri) => `<tr>${cells(r).map((c) => (ri === 0 ? `<th>${inline(c)}</th>` : `<td>${inline(c)}</td>`)).join('')}</tr>`).join('')}</table>`);
+      out.push(
+        `<table>${body
+          .map(
+            (r, ri) =>
+              `<tr>${cells(r)
+                .map((c) => (ri === 0 ? `<th>${inline(c)}</th>` : `<td>${inline(c)}</td>`))
+                .join('')}</tr>`,
+          )
+          .join('')}</table>`,
+      );
     } else if (line.trim()) {
       out.push(`<p>${inline(line)}</p>`);
     }
@@ -804,7 +868,11 @@ $('#panelBtn').addEventListener('click', () => {
 $$('.tabs button').forEach((b) => b.addEventListener('click', () => selectTab(b.dataset.tab)));
 $('#statusPicker').addEventListener('click', (e) => {
   const b = e.target.closest('[data-status]');
-  if (b && state.current) setStatus(b.dataset.status).then(() => toast(`Status → ${STATUS_LABEL[b.dataset.status]}`), (err) => toast(err.message, 5000));
+  if (b && state.current)
+    setStatus(b.dataset.status).then(
+      () => toast(`Status → ${STATUS_LABEL[b.dataset.status]}`),
+      (err) => toast(err.message, 5000),
+    );
 });
 // Each field saves on change; a refused value is reported by patchCurrent (the catch only stops the chain).
 const saveField = (patch, done) => state.current && patchCurrent(patch).then(done, () => {});
@@ -836,7 +904,8 @@ $('#packageBtn').addEventListener('click', async (e) => {
   btn.textContent = 'Building…';
   try {
     const r = await api(`assets/${state.current.id}/package`, { method: 'POST' });
-    $('#packageResult').innerHTML = `✓ ${r.files} files · ${(r.bytes / 1024).toFixed(0)} KB<br><a href="${r.zipUrl}" download>Download ${r.zipUrl.split('/').pop()}</a><br><span class="hint">Folder: dist/${r.id}/</span>`;
+    $('#packageResult').innerHTML =
+      `✓ ${r.files} files · ${(r.bytes / 1024).toFixed(0)} KB<br><a href="${r.zipUrl}" download>Download ${r.zipUrl.split('/').pop()}</a><br><span class="hint">Folder: dist/${r.id}/</span>`;
   } catch (err) {
     $('#packageResult').textContent = `✗ ${err.message}`;
   } finally {
@@ -852,7 +921,8 @@ $('#glbBtn').addEventListener('click', async (e) => {
     const buf = await conn.call('export-glb');
     const name = `${state.current.id}.glb`;
     const r = await api(`assets/${state.current.id}/exports/${name}`, { method: 'PUT', headers: { 'Content-Type': 'model/gltf-binary' }, body: buf });
-    $('#glbResult').innerHTML = `✓ ${(r.bytes / 1024).toFixed(0)} KB · <a href="${r.url}" download>${name}</a> · <a href="/shared/viewer/index.html?src=${encodeURIComponent(r.url)}" target="_blank">view</a>`;
+    $('#glbResult').innerHTML =
+      `✓ ${(r.bytes / 1024).toFixed(0)} KB · <a href="${r.url}" download>${name}</a> · <a href="/shared/viewer/index.html?src=${encodeURIComponent(r.url)}" target="_blank">view</a>`;
   } catch (err) {
     $('#glbResult').textContent = `✗ ${err.message}`;
   } finally {
@@ -870,7 +940,12 @@ $('#newAssetBtn').addEventListener('click', () => {
 const newField = (name) => $('#newForm').elements.namedItem(name);
 newField('title').addEventListener('input', (e) => {
   const idInput = newField('id');
-  if (!idInput.dataset.touched) idInput.value = e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 64);
+  if (!idInput.dataset.touched)
+    idInput.value = e.target.value
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+      .slice(0, 64);
 });
 newField('id').addEventListener('input', (e) => (e.target.dataset.touched = '1'));
 $('#newForm').addEventListener('submit', async (e) => {

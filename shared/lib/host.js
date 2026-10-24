@@ -17,7 +17,7 @@ export function connectAsset(iframe, { timeout = 10000 } = {}) {
   function onMessage(event) {
     if (event.source !== iframe.contentWindow) return;
     const msg = event.data;
-    if (!msg || msg.pathshala !== 1 || typeof msg.type !== 'string') return;
+    if (msg?.pathshala !== 1 || typeof msg.type !== 'string') return;
     if (msg.type.endsWith(':result') && pending.has(msg.id)) {
       const p = pending.get(msg.id);
       pending.delete(msg.id);

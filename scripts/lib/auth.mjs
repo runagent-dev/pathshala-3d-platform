@@ -32,7 +32,7 @@ export function loadCredentials() {
     saved.reviewer = { user: 'review', pass: generatePassword() };
     changed = true;
   }
-  if (changed) fs.writeFileSync(AUTH_FILE, JSON.stringify(saved, null, 2) + '\n', { mode: 0o600 });
+  if (changed) fs.writeFileSync(AUTH_FILE, `${JSON.stringify(saved, null, 2)}\n`, { mode: 0o600 });
   const env = process.env;
   const owner = env.STUDIO_USER && env.STUDIO_PASS ? { user: env.STUDIO_USER, pass: env.STUDIO_PASS } : { user: saved.user, pass: saved.pass };
   const reviewer = env.STUDIO_REVIEW_USER && env.STUDIO_REVIEW_PASS ? { user: env.STUDIO_REVIEW_USER, pass: env.STUDIO_REVIEW_PASS } : saved.reviewer;
@@ -67,7 +67,11 @@ export function createBasicAuth({ user, pass, reviewer }, { maxFailures = 20, wi
     const header = req.headers.authorization || '';
     if (header.startsWith('Basic ')) {
       const given = digest(Buffer.from(header.slice(6), 'base64').toString('utf8'));
-      const role = crypto.timingSafeEqual(given, expected) ? 'owner' : expectedReviewer && crypto.timingSafeEqual(given, expectedReviewer) ? 'reviewer' : null;
+      const role = crypto.timingSafeEqual(given, expected)
+        ? 'owner'
+        : expectedReviewer && crypto.timingSafeEqual(given, expectedReviewer)
+          ? 'reviewer'
+          : null;
       if (role) {
         failures.delete(ip);
         return role;

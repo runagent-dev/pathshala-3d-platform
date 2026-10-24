@@ -1,14 +1,14 @@
 /** Tiny frame-driven animation helper. Call tick(dt) from the stage loop; it returns true while busy. */
 export const ease = {
   linear: (t) => t,
-  inOutCubic: (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2),
-  outCubic: (t) => 1 - Math.pow(1 - t, 3),
-  outQuint: (t) => 1 - Math.pow(1 - t, 5),
+  inOutCubic: (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2),
+  outCubic: (t) => 1 - (1 - t) ** 3,
+  outQuint: (t) => 1 - (1 - t) ** 5,
   inOutSine: (t) => -(Math.cos(Math.PI * t) - 1) / 2,
   outBack: (t) => {
     const c1 = 1.4;
     const c3 = c1 + 1;
-    return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+    return 1 + c3 * (t - 1) ** 3 + c1 * (t - 1) ** 2;
   },
 };
 

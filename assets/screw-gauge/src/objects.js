@@ -44,11 +44,23 @@ export function createObject(kind, size, M) {
     group.add(ball);
   } else {
     // a glass plate standing between the faces (thickness along the axis)
-    const mat = new THREE.MeshPhysicalMaterial({ color: 0xdff3ff, metalness: 0, roughness: 0.05, transmission: 0.6, thickness: size, transparent: true, opacity: 0.55, depthWrite: false });
+    const mat = new THREE.MeshPhysicalMaterial({
+      color: 0xdff3ff,
+      metalness: 0,
+      roughness: 0.05,
+      transmission: 0.6,
+      thickness: size,
+      transparent: true,
+      opacity: 0.55,
+      depthWrite: false,
+    });
     mats.push(mat);
     const plate = new THREE.Mesh(new THREE.BoxGeometry(size, 22, 16), mat);
     plate.position.set(size / 2, -6, 0);
-    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(plate.geometry), new THREE.LineBasicMaterial({ color: 0x7fb6d6, transparent: true, opacity: 0.8 }));
+    const edges = new THREE.LineSegments(
+      new THREE.EdgesGeometry(plate.geometry),
+      new THREE.LineBasicMaterial({ color: 0x7fb6d6, transparent: true, opacity: 0.8 }),
+    );
     edges.position.copy(plate.position);
     mats.push(edges.material);
     group.add(plate, edges);

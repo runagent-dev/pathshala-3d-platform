@@ -26,12 +26,23 @@ function radialTexture(stops, size = 128) {
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
 }
-const DOT = radialTexture([[0, 'rgba(255,255,255,1)'], [0.85, 'rgba(255,255,255,1)'], [1, 'rgba(255,255,255,0)']], 64);
+const DOT = radialTexture(
+  [
+    [0, 'rgba(255,255,255,1)'],
+    [0.85, 'rgba(255,255,255,1)'],
+    [1, 'rgba(255,255,255,0)'],
+  ],
+  64,
+);
 
 function glow(color, scale, strength = 0.55) {
   const c = new THREE.Color(color);
   const rgb = `${Math.round(c.r * 255)},${Math.round(c.g * 255)},${Math.round(c.b * 255)}`;
-  const tex = radialTexture([[0, `rgba(${rgb},${strength})`], [0.35, `rgba(${rgb},${strength * 0.45})`], [1, `rgba(${rgb},0)`]]);
+  const tex = radialTexture([
+    [0, `rgba(${rgb},${strength})`],
+    [0.35, `rgba(${rgb},${strength * 0.45})`],
+    [1, `rgba(${rgb},0)`],
+  ]);
   const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthWrite: false, transparent: true }));
   s.scale.setScalar(scale);
   return s;
@@ -80,7 +91,12 @@ function atom() {
   group.add(cloud);
   const core = new THREE.Group();
   const cg = new THREE.SphereGeometry(0.028, 24, 16);
-  [['#e8590c', 0.018, 0, 0], ['#adb5bd', -0.016, 0.012, 0.01], ['#e8590c', -0.004, -0.018, -0.012], ['#adb5bd', 0.006, 0.014, -0.02]].forEach(([c, x, y, z]) => core.add(mesh(cg, std(c, { roughness: 0.35 }), x, y, z)));
+  [
+    ['#e8590c', 0.018, 0, 0],
+    ['#adb5bd', -0.016, 0.012, 0.01],
+    ['#e8590c', -0.004, -0.018, -0.012],
+    ['#adb5bd', 0.006, 0.014, -0.02],
+  ].forEach(([c, x, y, z]) => core.add(mesh(cg, std(c, { roughness: 0.35 }), x, y, z)));
   group.add(core);
   const ringMat = new THREE.MeshBasicMaterial({ color: '#5c7cfa', transparent: true, opacity: 0.55 });
   const eMat = std('#1c4fd9', { roughness: 0.3 });
@@ -130,7 +146,12 @@ function dna() {
   const b = strand(gap);
   helix.add(new THREE.Mesh(new THREE.TubeGeometry(a, 480, 0.012, 10), std('#1c6fd9', { roughness: 0.35 })));
   helix.add(new THREE.Mesh(new THREE.TubeGeometry(b, 480, 0.012, 10), std('#e8590c', { roughness: 0.35 })));
-  const pairs = [['#f59f00', '#12b886'], ['#12b886', '#f59f00'], ['#ae3ec9', '#fa5252'], ['#fa5252', '#ae3ec9']];
+  const pairs = [
+    ['#f59f00', '#12b886'],
+    ['#12b886', '#f59f00'],
+    ['#ae3ec9', '#fa5252'],
+    ['#fa5252', '#ae3ec9'],
+  ];
   const rung = new THREE.CylinderGeometry(0.0065, 0.0065, 1, 8);
   const n = turns * 10;
   for (let i = 0; i < n; i++) {
@@ -140,7 +161,10 @@ function dna() {
     pb.x = pa.x;
     const mid = pa.clone().lerp(pb, 0.5);
     const [ca, cb] = pairs[(i * 7) % 4];
-    for (const [from, col] of [[pa, ca], [pb, cb]]) {
+    for (const [from, col] of [
+      [pa, ca],
+      [pb, cb],
+    ]) {
       const m = new THREE.Mesh(rung, std(col, { roughness: 0.45 }));
       const len = from.distanceTo(mid);
       m.scale.y = len;
@@ -171,7 +195,13 @@ function rbc() {
   }
   const geo = new THREE.LatheGeometry(pts, 96);
   geo.computeVertexNormals();
-  const mat = new THREE.MeshPhysicalMaterial({ color: '#c92a2a', roughness: 0.42, sheen: 0.6, sheenColor: new THREE.Color('#ff8787'), clearcoat: 0.25 });
+  const mat = new THREE.MeshPhysicalMaterial({
+    color: '#c92a2a',
+    roughness: 0.42,
+    sheen: 0.6,
+    sheenColor: new THREE.Color('#ff8787'),
+    clearcoat: 0.25,
+  });
   const cells = [
     // the disc's axis is y, so rotation.x ≈ 0 is edge-on and ≈ π/2 faces us
     [-0.17, 0, 0, 1.2, 0, 0.12], // nearly face-on: the dimple
@@ -330,11 +360,17 @@ function quark() {
     const a = (i / 128) * Math.PI * 2;
     pts.push(V(Math.cos(a) * R, Math.sin(a) * R, 0));
   }
-  const ring = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineDashedMaterial({ color: '#868e96', dashSize: 0.03, gapSize: 0.02 }));
+  const ring = new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints(pts),
+    new THREE.LineDashedMaterial({ color: '#868e96', dashSize: 0.03, gapSize: 0.02 }),
+  );
   ring.computeLineDistances();
   group.add(ring);
   const q = new THREE.Group();
-  q.add(glow('#ff6b6b', 0.28, 0.55), mesh(new THREE.SphereGeometry(0.04, 24, 16), std('#e03131', { roughness: 0.3, emissive: new THREE.Color('#5c0a0a') })));
+  q.add(
+    glow('#ff6b6b', 0.28, 0.55),
+    mesh(new THREE.SphereGeometry(0.04, 24, 16), std('#e03131', { roughness: 0.3, emissive: new THREE.Color('#5c0a0a') })),
+  );
   group.add(q);
   // Drawn as a point because no size has ever been measured for it.
   return { group, tick: (t) => q.position.set(Math.sin(t * 1.3) * 0.04, Math.cos(t * 1.7) * 0.03, 0) };
@@ -366,7 +402,10 @@ function mango() {
   }
   geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
   geo.computeVertexNormals();
-  const fruit = new THREE.Mesh(geo, new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: 0.42, clearcoat: 0.35, clearcoatRoughness: 0.5 }));
+  const fruit = new THREE.Mesh(
+    geo,
+    new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: 0.42, clearcoat: 0.35, clearcoatRoughness: 0.5 }),
+  );
   group.add(fruit);
   const stem = mesh(new THREE.CylinderGeometry(0.008, 0.011, 0.07, 10), std('#6b4423', { roughness: 0.8 }), -0.385, 0.06, 0);
   stem.rotation.z = 0.7;
@@ -404,7 +443,8 @@ function bus() {
   }
   b.add(mesh(new THREE.BoxGeometry(0.04, 1.1, W - 0.3), glass, L / 2, 2.35, 0)); // windscreen
   b.add(mesh(new THREE.BoxGeometry(0.8, 1.9, 0.04), glass, L / 2 - 1.1, 1.85, W / 2)); // door
-  for (const side of [0.8, -0.8]) b.add(mesh(new THREE.BoxGeometry(0.05, 0.18, 0.35), std('#fff4c2', { emissive: new THREE.Color('#5c4a00') }), L / 2 + 0.01, 0.85, side));
+  for (const side of [0.8, -0.8])
+    b.add(mesh(new THREE.BoxGeometry(0.05, 0.18, 0.35), std('#fff4c2', { emissive: new THREE.Color('#5c4a00') }), L / 2 + 0.01, 0.85, side));
   const wheelGeo = new THREE.CylinderGeometry(0.5, 0.5, 0.32, 28);
   const hubGeo = new THREE.CylinderGeometry(0.22, 0.22, 0.34, 20);
   for (const x of [L / 2 - 2.2, -L / 2 + 2.6]) {
@@ -474,7 +514,13 @@ function field() {
   const group = new THREE.Group();
   const u = 1 / 125; // model units per metre (framing width 125 m)
   group.add(mesh(new THREE.BoxGeometry(115 * u, 3 * u, 78 * u), std('#c8a97e', { roughness: 0.9 }), 0, -1.5 * u, 0));
-  const top = mesh(new THREE.PlaneGeometry(115 * u, 78 * u), new THREE.MeshStandardMaterial({ map: fieldTexture(), roughness: 0.85 }), 0, 0.01 * u, 0);
+  const top = mesh(
+    new THREE.PlaneGeometry(115 * u, 78 * u),
+    new THREE.MeshStandardMaterial({ map: fieldTexture(), roughness: 0.85 }),
+    0,
+    0.01 * u,
+    0,
+  );
   top.rotation.x = -Math.PI / 2;
   group.add(top);
   const white = std('#ffffff', { roughness: 0.5 });
@@ -504,7 +550,10 @@ function bridge() {
   for (const s of [1, -1]) group.add(mesh(new THREE.BoxGeometry(bankW, 0.002, D), bank, s * (riverW / 2 + bankW / 2), 0.001, 0));
   group.add(mesh(new THREE.BoxGeometry(riverW, 0.001, D), std('#8ec5f5', { roughness: 0.35 }), 0, 0.0005, 0));
   // sand bars, as on the real river
-  for (const [x, zz, sx, sz] of [[-0.12, -0.16, 0.16, 0.05], [0.18, 0.15, 0.12, 0.04]]) {
+  for (const [x, zz, sx, sz] of [
+    [-0.12, -0.16, 0.16, 0.05],
+    [0.18, 0.15, 0.12, 0.04],
+  ]) {
     const bar = mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.0012, 40), std('#e9dcc0', { roughness: 0.95 }), x, 0.0011, zz);
     bar.scale.set(sx, 1, sz);
     group.add(bar);
@@ -522,10 +571,14 @@ function bridge() {
     const x = -len / 2 + (i / 82) * len;
     tpts.push(x, deckY + (i % 2 ? 0.006 : 0.0018), 0);
   }
-  const truss = new THREE.Line(new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(tpts, 3)), new THREE.LineBasicMaterial({ color: '#59636e' }));
+  const truss = new THREE.Line(
+    new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(tpts, 3)),
+    new THREE.LineBasicMaterial({ color: '#59636e' }),
+  );
   group.add(truss);
   const road = std('#868e96', { roughness: 0.8 });
-  for (const s of [1, -1]) group.add(mesh(new THREE.BoxGeometry(bankW + (riverW - len) / 2, 0.003, 0.006), road, s * (W / 2 - (bankW + (riverW - len) / 2) / 2), 0.0035, 0));
+  for (const s of [1, -1])
+    group.add(mesh(new THREE.BoxGeometry(bankW + (riverW - len) / 2, 0.003, 0.006), road, s * (W / 2 - (bankW + (riverW - len) / 2) / 2), 0.0035, 0));
   return { group };
 }
 
@@ -708,7 +761,7 @@ function star() {
   const pos = [];
   const col = [];
   let seed = 7;
-  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
   for (let i = 0; i < 90; i++) {
     pos.push((rnd() - 0.5) * 1.2, (rnd() - 0.5) * 0.4, (rnd() - 0.5) * 0.5);
     const g = 0.72 + rnd() * 0.15;
@@ -732,14 +785,14 @@ function galaxy() {
   const pos = [];
   const col = [];
   let seed = 11;
-  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
   const gauss = () => Math.sqrt(-2 * Math.log(rnd() + 1e-9)) * Math.cos(2 * Math.PI * rnd());
   const R = 0.463;
   const arm = (r, k) => k * (Math.PI / 2) + Math.log(r / 0.02) / 0.3;
   const c = (hex) => new THREE.Color(hex).toArray();
   const palette = { blue: c('#4c6ef5'), blue2: c('#748ffc'), violet: c('#7950f2'), pink: c('#e64980'), warm: c('#f08c00'), cream: c('#e8a33d') };
   for (let i = 0; i < 14000; i++) {
-    const r = 0.03 + (R - 0.03) * Math.pow(rnd(), 0.75);
+    const r = 0.03 + (R - 0.03) * rnd() ** 0.75;
     const a = arm(r, i % 4) + gauss() * (0.22 + 0.25 * (1 - r / R));
     pos.push(Math.cos(a) * r, gauss() * 0.006, Math.sin(a) * r);
     const roll = rnd();

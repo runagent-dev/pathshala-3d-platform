@@ -12,7 +12,8 @@ const flag = (name) => {
   const i = args.indexOf(`--${name}`);
   return i >= 0 ? args.splice(i, 2)[1] : undefined;
 };
-const usage = 'Usage: npm run new -- --slug <id> --title "<Title>" --page <n> --topic <1.6.1> [--type interactive|animation|model] [--book physics-9-10] [--placement "…"]';
+const usage =
+  'Usage: npm run new -- --slug <id> --title "<Title>" --page <n> --topic <1.6.1> [--type interactive|animation|model] [--book physics-9-10] [--placement "…"]';
 
 const opts = {
   id: flag('slug'),

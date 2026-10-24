@@ -52,7 +52,19 @@ const bridge = createBridge({
   },
 });
 
-for (const type of ['change', 'specimen', 'view', 'settings', 'dragstart', 'dragend', 'tour-step', 'tour-end', 'practice-start', 'practice-result', 'practice-end']) {
+for (const type of [
+  'change',
+  'specimen',
+  'view',
+  'settings',
+  'dragstart',
+  'dragend',
+  'tour-step',
+  'tour-end',
+  'practice-start',
+  'practice-result',
+  'practice-end',
+]) {
   app.on(type, (payload) => bridge.emit(type, payload));
 }
 app.ready.then(() => bridge.emit('ready', { asset: 'vernier-caliper', version: VERSION, state: app.getState() }));

@@ -372,7 +372,10 @@ export function createCaliper({ materials, lc = 0.1, zeroError = 0, text: textOp
   }
   // Main-scale glows lie on the beam face; vernier glows lie on the bevel like the ticks do.
   const placeOnBevel = (m, len) => {
-    m.position.set(0, DIM.bevelTop[0], DIM.bevelTop[1]).addScaledVector(bevelDir, len / 2).addScaledVector(bevelNormal, 0.03);
+    m.position
+      .set(0, DIM.bevelTop[0], DIM.bevelTop[1])
+      .addScaledVector(bevelDir, len / 2)
+      .addScaledVector(bevelNormal, 0.03);
     m.rotation.set(-BEVEL_ANGLE, 0, 0);
   };
   const glowCoincide = glowStrip(HIGHLIGHT.coincide, 5.4);

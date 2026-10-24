@@ -48,7 +48,8 @@ export function validateSchema(schema, value, root = schema, path = '') {
   }
 
   if (typeof value === 'string') {
-    if (s.minLength != null && value.length < s.minLength) fail(s.minLength === 1 ? 'must not be empty' : `must be at least ${s.minLength} characters`);
+    if (s.minLength != null && value.length < s.minLength)
+      fail(s.minLength === 1 ? 'must not be empty' : `must be at least ${s.minLength} characters`);
     if (s.maxLength != null && value.length > s.maxLength) fail(`must be at most ${s.maxLength} characters`);
     if (s.pattern && !new RegExp(s.pattern, 'u').test(value)) fail(`${show(value)} should be ${s.patternHint || `in the form ${s.pattern}`}`);
   }

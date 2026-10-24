@@ -122,7 +122,10 @@ export function createPractice(ctx) {
       const lc = N(u === 'cm' ? +(s.lc / 10).toFixed(4) : s.lc);
       const ze = current.zeroError ? ` − (${N(formatSigned(current.zeroError, s.lc, u))})` : '';
       const shown = current.zeroError ? r.corrected : r.observed;
-      setFeedback(`<b class="c-msr">${msr}</b> + <b class="c-vsr">${N(r.vsr)}</b> × <b class="c-lc">${lc}</b>${ze} = <b>${N(format(shown, s.lc, u))} ${t.unit(u)}</b>`, 'info');
+      setFeedback(
+        `<b class="c-msr">${msr}</b> + <b class="c-vsr">${N(r.vsr)}</b> × <b class="c-lc">${lc}</b>${ze} = <b>${N(format(shown, s.lc, u))} ${t.unit(u)}</b>`,
+        'info',
+      );
     }
   }
 

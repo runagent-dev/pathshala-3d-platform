@@ -6,10 +6,14 @@ export { ICONS };
 
 export const SPECIMEN_ICONS = {
   none: svg('<circle cx="12" cy="12" r="8"/><path d="M6.5 17.5l11-11"/>'),
-  sphere: svg('<circle cx="12" cy="13.5" r="7"/><path d="M12 6.5V4"/><circle cx="12" cy="2.8" r="1.2"/><path d="M8.5 11a4 4 0 0 1 3-2.6" class="hl"/>'),
+  sphere: svg(
+    '<circle cx="12" cy="13.5" r="7"/><path d="M12 6.5V4"/><circle cx="12" cy="2.8" r="1.2"/><path d="M8.5 11a4 4 0 0 1 3-2.6" class="hl"/>',
+  ),
   cylinder: svg('<ellipse cx="12" cy="5.5" rx="5.5" ry="2"/><path d="M6.5 5.5v13c0 1.1 2.5 2 5.5 2s5.5-.9 5.5-2v-13"/>'),
   block: svg('<path d="M4 8l8-4 8 4v8l-8 4-8-4z"/><path d="M4 8l8 4 8-4M12 12v8"/>'),
-  ring: svg('<ellipse cx="12" cy="12" rx="8.5" ry="4"/><ellipse cx="12" cy="12" rx="5.5" ry="2.4"/><path d="M3.5 12v3c0 2.2 3.8 4 8.5 4s8.5-1.8 8.5-4v-3"/>'),
+  ring: svg(
+    '<ellipse cx="12" cy="12" rx="8.5" ry="4"/><ellipse cx="12" cy="12" rx="5.5" ry="2.4"/><path d="M3.5 12v3c0 2.2 3.8 4 8.5 4s8.5-1.8 8.5-4v-3"/>',
+  ),
   bore: svg('<rect x="4" y="4" width="16" height="16" rx="1.5"/><path d="M4 10.5h9a1.5 1.5 0 0 1 0 3H4"/>'),
 };
 
@@ -95,7 +99,8 @@ export function buildUI(root, t, { ui = 'simple', kinds }) {
         <div class="pvc-pop pvc-tray" data-popover="specimens" hidden>
           ${['none', ...kinds]
             .map(
-              (k) => `<button class="pvc-sp" data-specimen="${k}">${SPECIMEN_ICONS[k]}<b>${t(`sp_${k}`)}</b><small>${k === 'none' ? '&nbsp;' : t(`mode_${modeOf[k]}`)}</small></button>`,
+              (k) =>
+                `<button class="pvc-sp" data-specimen="${k}">${SPECIMEN_ICONS[k]}<b>${t(`sp_${k}`)}</b><small>${k === 'none' ? '&nbsp;' : t(`mode_${modeOf[k]}`)}</small></button>`,
             )
             .join('')}
         </div>

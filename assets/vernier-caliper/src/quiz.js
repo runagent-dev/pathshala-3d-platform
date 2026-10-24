@@ -27,7 +27,10 @@ function randomSize(def, lc) {
 export function makeChoices(r, lc) {
   const correct = roundTo(r.observed, lc);
   const fine = r.vsr * lc;
-  const neighbours = [1, -1, 2, -2].map((d) => r.vsr + d).filter((v) => v >= 0 && v < r.n).map((v) => r.msr + v * lc);
+  const neighbours = [1, -1, 2, -2]
+    .map((d) => r.vsr + d)
+    .filter((v) => v >= 0 && v < r.n)
+    .map((v) => r.msr + v * lc);
   const mistakes = [
     r.msr + 1 + fine, // took the main-scale mark after the vernier zero
     pickOne(neighbours.slice(0, 2)) ?? neighbours[0], // read the line next to the one that coincides

@@ -16,7 +16,7 @@ export function generatedFiles() {
     {
       file: path.join(ROOT, 'schemas', 'asset.schema.json'),
       source: 'scripts/lib/manifest/spec.mjs',
-      content: JSON.stringify(MANIFEST_SCHEMA, null, 2) + '\n',
+      content: `${JSON.stringify(MANIFEST_SCHEMA, null, 2)}\n`,
     },
   ];
 }
