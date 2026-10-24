@@ -81,4 +81,19 @@ describe('git writer', () => {
     await w.flush();
     assert.equal(git(a, 'log', '-1', '--format=%s'), 'notes');
   });
+
+  it('neither commits nor pushes while the checkout is on another branch', async () => {
+    const { a, b } = repos();
+    const w = createGitWriter({ root: a });
+    git(a, 'switch', '-q', '-c', 'fig/x/work');
+    fs.writeFileSync(path.join(a, 'figure.js'), 'unmerged work\n');
+    git(a, 'add', '.');
+    git(a, 'commit', '-q', '-m', 'unmerged figure');
+    fs.writeFileSync(path.join(a, 'review.json'), '{}\n');
+    assert.equal(await w.commit({ paths: ['review.json'], message: 'review', user }), null);
+    await w.sync();
+    assert.match(w.status().lastError, /not "main"/);
+    git(b, 'pull', '-q');
+    assert.ok(!fs.existsSync(path.join(b, 'figure.js')), 'the branch was not pushed to main');
+  });
 });

@@ -35,6 +35,18 @@ export function createGitWriter({ root = ROOT, enabled = true, remote = 'origin'
     return /** @type {Promise<T>} */ (next);
   };
   const changed = () => onChange({ ...state });
+  /**
+   * Studio data belongs on `branch`. When someone has checked out another branch in the studio's checkout, the
+   * studio writes its files but neither commits nor pushes (it would put the data on that branch, and push that
+   * branch's unmerged work to `branch`).
+   */
+  async function onBranch() {
+    const head = await run(['rev-parse', '--abbrev-ref', 'HEAD']).catch(() => '');
+    if (head === branch) return true;
+    state.lastError = `the studio checkout is on "${head}", not "${branch}": studio changes are saved but not committed or synced until it is back on ${branch}`;
+    changed();
+    return false;
+  }
   const later = new Map();
   let timer = null;
 
@@ -58,6 +70,7 @@ export function createGitWriter({ root = ROOT, enabled = true, remote = 'origin'
     return enqueue(async () => {
       await ready;
       if (!state.enabled || !state.available || !paths.length) return null;
+      if (!(await onBranch())) return null;
       try {
         await run(['add', '-A', '--', ...paths]);
         const staged = await run(['diff', '--cached', '--name-only', '--', ...paths]);
@@ -114,6 +127,7 @@ export function createGitWriter({ root = ROOT, enabled = true, remote = 'origin'
     return enqueue(async () => {
       await ready;
       if (!state.enabled || !state.available || !state.remote) return [];
+      if (!(await onBranch())) return [];
       const upstream = `${state.remote}/${branch}`;
       try {
         await run(['fetch', '--quiet', state.remote, branch]);
