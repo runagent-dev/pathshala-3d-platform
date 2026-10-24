@@ -67,12 +67,15 @@ export function createMark(length) {
   };
 }
 
-/** The velocity arrow at the mark: shaft and head, pointed with set(); it lights up with each pass. */
-export function createArrow(thickness, color = COLORS.velocity) {
+/** A velocity arrow (shaft and head, pointed with set()): the particle's own, or a faint ghost left at the mark. */
+export function createArrow(thickness, { color = COLORS.velocity, ghost = false } = {}) {
   const root = new THREE.Group();
-  root.name = 'VelocityArrow';
+  root.name = ghost ? 'VelocityGhost' : 'VelocityArrow';
   root.userData.noExport = true;
-  const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.5, emissive: color, emissiveIntensity: 0.2 });
+  // the ghost: a faint copy left at the mark, which the particle's own arrow lands on one period later
+  const mat = ghost
+    ? new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.32, depthWrite: false })
+    : new THREE.MeshStandardMaterial({ color, roughness: 0.5, emissive: color, emissiveIntensity: 0.2 });
   const shaft = new THREE.Mesh(new THREE.CylinderGeometry(thickness, thickness, 1, 14), mat);
   const head = new THREE.Mesh(new THREE.ConeGeometry(thickness * 2.6, 1, 20), mat);
   root.add(shaft, head);
@@ -89,7 +92,8 @@ export function createArrow(thickness, color = COLORS.velocity) {
     tick(dt) {
       if (flash <= 0) return false;
       flash = Math.max(0, flash - dt * 2);
-      mat.emissiveIntensity = 0.2 + flash * 0.8;
+      if (ghost) mat.opacity = 0.32 + flash * 0.5;
+      else mat.emissiveIntensity = 0.2 + flash * 0.8;
       return true;
     },
     /** Point it from `from` along `vector` (world units); a very short arrow keeps a small head. */

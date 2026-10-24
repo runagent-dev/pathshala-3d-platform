@@ -1,5 +1,5 @@
 // Periodic motion through the bridge (book p37, topic 2.2): each example comes back to the mark after the same
-// time, so total ÷ count is its period (fan 0.2 s, comet 76 years, spring 1.2 s, heart 0.8 s); moving the mark
+// time, so total ÷ count is its period (fan 0.2 s, comet 76 years, spring 0.8 s, heart 0.8 s); moving the mark
 // starts the count again; pausing stops the clock; the test runs. Runs with `npm run test:figures` (dev only).
 import { expect, test } from '@playwright/test';
 import { openFigure, preparePage } from '../../../scripts/lib/export/driver.mjs';
@@ -18,18 +18,18 @@ test('periodic-motion: the same time between repetitions, for every example', as
   expect(fan.measured).toBeCloseTo(0.2, 6);
   for (const lap of fan.laps) expect(lap).toBeCloseTo(0.2, 6);
 
-  const comet = await fig.call('set', { example: 'comet', time: 160, animate: false });
+  const comet = await fig.call('set', { example: 'comet', time: 170, animate: false });
   expect(comet).toMatchObject({ example: 'comet', unit: 'yr', period: 76, count: 2, total: 152, measured: 76 });
 
   // a new mark: the count starts again, and the period is the same wherever the mark is
-  expect(await fig.call('set', { mark: 0.05 })).toMatchObject({ count: 0, mark: 0.05 });
+  expect(await fig.call('set', { mark: 0.3 })).toMatchObject({ count: 0, mark: 0.3 });
   const moved = await fig.call('set', { time: 300 });
   expect(moved.count).toBe(3);
   expect(moved.measured).toBeCloseTo(76, 6);
 
   const spring = await fig.call('set', { example: 'spring', time: 4, animate: false });
-  expect(spring).toMatchObject({ example: 'spring', count: 3 });
-  expect(spring.measured).toBeCloseTo(1.2, 6);
+  expect(spring).toMatchObject({ example: 'spring', count: 4 });
+  expect(spring.measured).toBeCloseTo(0.8, 6);
 
   const heart = await fig.call('set', { example: 'heart', time: 3, animate: false });
   expect(heart).toMatchObject({ example: 'heart', count: 3 });

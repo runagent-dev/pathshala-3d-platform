@@ -21,10 +21,12 @@ export const frac = (x) => x - Math.floor(x);
 export const EXAMPLES = {
   // a ceiling fan at full speed turns about 300 times a minute
   fan: { period: 0.2, unit: 's', scale: 10, phase0: 0.62, mark: 0 },
-  // about 76 years; the drawn orbit is less stretched than the real one (e = 0.967), so the motion can be seen
-  comet: { period: 76, unit: 'yr', scale: 0.1, phase0: 0.82, mark: 0.9, e: 0.86 },
-  // 200 g on a spring of 5.5 N/m: T = 2π √(m / k) ≈ 1.2 s; amplitude in metres
-  spring: { period: 1.2, unit: 's', scale: 1, phase0: 0.05, mark: 0.36, amp: 0.05 },
+  // about 76 years; the drawn orbit is less stretched than the real one (e = 0.967), so the motion can be seen;
+  // the mark starts near the Sun, where the comet is fastest
+  comet: { period: 76, unit: 'yr', scale: 0.1, phase0: 0.92, mark: 0.025, e: 0.86 },
+  // 500 g on a spring of 30.8 N/m: T = 2π √(m / k) = 0.8 s, and the spring hangs mg / k = gT² / 4π² ≈ 16 cm
+  // longer than its natural length (8 cm); amplitude 7.5 cm, in metres
+  spring: { period: 0.8, unit: 's', scale: 1, phase0: 0.05, mark: 0.3, amp: 0.075, mass: 0.5, k: 30.8 },
   // 75 beats a minute; the mark is the tall R wave of the ECG
   heart: { period: 0.8, unit: 's', scale: 1, phase0: 0.55, mark: 0.25 },
 };
@@ -73,25 +75,20 @@ export function passTimes(motion, t0, t1, mark) {
  */
 export function createCounter() {
   let start = null;
-  let last = null;
   let count = 0;
-  let laps = [];
+  let times = []; // the latest passes (the first one may have dropped off a long list)
   return {
     reset() {
-      start = last = null;
+      start = null;
       count = 0;
-      laps = [];
+      times = [];
     },
     /** The object passed the mark at time t. */
     pass(t) {
-      if (start === null) {
-        start = last = t;
-        return;
-      }
-      laps.push(t - last);
-      if (laps.length > 60) laps.shift();
-      last = t;
-      count++;
+      if (start === null) start = t;
+      else count++;
+      times.push(t);
+      if (times.length > 61) times.shift();
     },
     get started() {
       return start !== null;
@@ -101,14 +98,19 @@ export function createCounter() {
     },
     /** Time from the first pass to the latest one. */
     get total() {
-      return start === null ? 0 : last - start;
+      return start === null ? 0 : times[times.length - 1] - start;
     },
     /** total ÷ count, or null before the first repetition. */
     get period() {
-      return count ? (last - start) / count : null;
+      return count ? this.total / count : null;
     },
+    /** The time each repetition took (the latest ones). */
     get laps() {
-      return laps.slice();
+      return times.slice(1).map((v, i) => v - times[i]);
+    },
+    /** The times of the latest passes. */
+    get passes() {
+      return times.slice();
     },
     /** The stopwatch at time t: running from the first pass. */
     clock: (t) => (start === null ? 0 : t - start),
@@ -182,10 +184,16 @@ export function ecg(phase) {
 }
 
 const bump = (x, a, b) => (x <= a || x >= b ? 0 : Math.sin((Math.PI * (x - a)) / (b - a)) ** 2);
-/** How much the heart is squeezed (0…1): the atria after the P wave, the ventricles after the R wave. */
+/** A beat: up fast from `a` to its top at `top`, then slowly back to rest at `b` (0…1). */
+function thump(x, a, top, b) {
+  if (x <= a || x >= b) return 0;
+  if (x < top) return Math.sin(((x - a) / (top - a)) * (Math.PI / 2)) ** 2;
+  return Math.cos(((x - top) / (b - top)) * (Math.PI / 2)) ** 2;
+}
+/** How much the heart is squeezed (0…1): the atria after the P wave, the ventricles in a quick thump after the R wave. */
 export function heartSqueeze(phase) {
   const p = frac(phase);
-  return { atria: bump(p, 0.12, 0.27), ventricles: bump(p, 0.26, 0.6) };
+  return { atria: bump(p, 0.12, 0.26), ventricles: thump(p, 0.255, 0.31, 0.62) };
 }
 
 // ── numbers for the panel and the test ─────────────────────────────────────────
@@ -217,12 +225,15 @@ export function periodMistakes(total, n) {
   return out;
 }
 
-/** Wrong answers for "the heart beats `bpm` times a minute: the period in seconds?". */
+/**
+ * Wrong answers for "the heart beats `bpm` times a minute: the period in seconds?": dividing the other way,
+ * forgetting that a minute is 60 seconds (1 ÷ beats), taking the number of beats for the period.
+ */
 export function heartMistakes(bpm) {
   const right = 60 / bpm;
   const seen = new Set([fmtNum(right)]);
   const out = [];
-  for (const v of [bpm / 60, 1 / bpm, bpm / 100, 60 / (bpm - 1), bpm]) {
+  for (const v of [bpm / 60, 1 / bpm, bpm, 60 / (bpm - 1)]) {
     const key = fmtNum(v);
     if (seen.has(key)) continue;
     seen.add(key);

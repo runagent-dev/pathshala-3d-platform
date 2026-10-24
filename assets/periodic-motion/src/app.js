@@ -1,9 +1,10 @@
 // Periodic motion (book page 37, topic 2.2), student view. Four examples from the book: a fan blade (circular
 // path), Halley's comet (elliptical), a mass on a spring (straight line) and the heartbeat. A mark sits on the
-// path; every time the particle comes back to it, the count goes up and the time of that repetition is shown:
-// all equal, the period. The panel works it out like a student with a stopwatch: পর্যায়কাল = মোট সময় ÷
-// পুনরাবৃত্তি. The student moves the mark anywhere on the path (same period, and at that point the same velocity
-// every time round), switches examples, pauses, and takes a short test. Built on the shared student kit.
+// path; every time the particle comes back to it, the count goes up and the repetition is drawn as a bar on a
+// time strip: all bars equal, the period. The panel works it out like a student with a stopwatch: পর্যায়কাল =
+// মোট সময় ÷ পুনরাবৃত্তি. The particle carries its velocity arrow; at the mark a faint copy stays, and one period
+// later the arrow lands on it again (the same velocity at the same point). The student moves the mark anywhere
+// on the path, switches examples, pauses, and takes a short test. Built on the shared student kit.
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
 import { createTweener, ease } from '@shared/tween.js';
@@ -19,6 +20,7 @@ import { createFan } from './fan.js';
 import { createComet } from './comet.js';
 import { createSpring } from './spring.js';
 import { createHeart } from './heart.js';
+import { createLapStrip } from './lapstrip.js';
 import { createArrow, createMark } from './parts.js';
 import {
   EXAMPLE_IDS,
@@ -49,8 +51,9 @@ export const DEFAULTS = {
 };
 
 const CLOCK_ICON = svg('<circle cx="12" cy="13.5" r="7.5"/><path d="M12 13.5V9.5M10 3h4M12 3v2.5M18.2 6.8l1.3-1.3"/>');
-const TOP_BAND = 66; // px at the top of the view kept for the caption and the corner buttons
-const ALL_SHOWN = { tag: true, clock: true, note: true, mark: true, arrow: true, labels: true, laps: false };
+// what the 3D view shows: everything while learning; the test hides what would give the answer away, and the
+// fan switched off shows its strip of turns on the view
+const ALL_SHOWN = { tag: true, clock: true, note: true, mark: true, arrow: true, labels: true, strip3d: false };
 const BPM = (period) => Math.round(60 / period);
 
 export function createApp(root, options = {}) {
@@ -73,17 +76,27 @@ export function createApp(root, options = {}) {
             <div class="pvc-result"><span class="k">${t('reading')}</span><span class="v">–</span><span class="u"></span></div>
             <div class="pvc-sum pm-sum"><i>=</i>${term('tot', 'total_long')}<i>÷</i>${term('cnt', 'count_long')}</div>
           </div>
+          <div class="pm-strip-learn"></div>
           <p class="pvc-learn-extra pm-extra"></p>
           <div class="pvc-learn-foot">
             <span class="pvc-status"><i></i><span></span></span>
             <button class="pvc-btn" data-act="play"><span class="pm-ic"></span><span class="pm-lb"></span></button>
           </div>`,
   });
+  // on the 3D view: the shape of the path and the clock (top left), a note on time and scale (bottom left), and
+  // in the test about the fan switched off, the strip of its turns (bottom)
   const cap = document.createElement('div');
   cap.className = 'pm-cap';
   cap.setAttribute('aria-live', 'off');
-  cap.innerHTML = `<span class="pm-tag"></span><span class="pm-clock">${CLOCK_ICON}<b>0</b><small></small></span><span class="pm-note"></span>`;
-  ui.stage.append(cap);
+  cap.innerHTML = `<span class="pm-tag"></span><span class="pm-clock">${CLOCK_ICON}<span class="pm-clock-k">${t('clock')}</span><b>0</b><small></small></span>`;
+  const note = document.createElement('div');
+  note.className = 'pm-note';
+  const strip3d = document.createElement('div');
+  strip3d.className = 'pm-strip3d';
+  strip3d.hidden = true;
+  ui.stage.append(cap, note, strip3d);
+  const learnStrip = createLapStrip(ui.$('.pm-strip-learn'), '');
+  const stageStrip = createLapStrip(strip3d, '');
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 30, near: 0.01, far: 50, environment: 'studio-light' });
@@ -106,8 +119,9 @@ export function createApp(root, options = {}) {
     scene.add(ex.root);
     if (!ex.ownMark) {
       ex.mark = createMark(ex.markLength);
-      ex.arrow = createArrow(ex.arrowThickness);
-      ex.root.add(ex.mark.root, ex.arrow.root);
+      ex.arrow = createArrow(ex.arrowThickness); // rides with the particle
+      ex.ghost = createArrow(ex.arrowThickness, { ghost: true }); // stays at the mark
+      ex.root.add(ex.mark.root, ex.arrow.root, ex.ghost.root);
     } else ex.mark = ex.ownMark;
   }
 
@@ -139,6 +153,7 @@ export function createApp(root, options = {}) {
   }
 
   const counter = createCounter();
+  let coach = null; // first-use pointer (made further down)
   const s = {
     example: EXAMPLES[o.example] ? o.example : 'fan',
     motion: null,
@@ -189,6 +204,7 @@ export function createApp(root, options = {}) {
   const el = {
     value: $('.pvc-result .v'),
     unit: $('.pvc-result .u'),
+    totTerm: $('.pvc-t.tot'),
     tot: $('.pvc-t.tot b'),
     totLabel: $('.pvc-t.tot small'),
     cnt: $('.pvc-t.cnt b'),
@@ -201,21 +217,15 @@ export function createApp(root, options = {}) {
     clockBox: cap.querySelector('.pm-clock'),
     clock: cap.querySelector('.pm-clock b'),
     clockUnit: cap.querySelector('.pm-clock small'),
-    note: cap.querySelector('.pm-note'),
   };
 
-  /** The times of the latest repetitions, as the panel writes them: "…, 0.20, 0.20, 0.20". */
-  function lapsText(n = 3) {
-    const laps = counter.laps.slice(-n);
-    return `${counter.laps.length > n ? '…, ' : ''}${laps.map((v) => fmtTime(v, spec().unit)).join(', ')}`;
-  }
   function extraLine() {
     const id = s.example;
     if (!counter.started) return t(`intro_${id}`);
     if (!counter.count) return t(id === 'spring' ? 'started_spring' : id === 'heart' ? 'started_heart' : 'started');
-    if (id === 'comet') return t('laps_comet', { laps: lapsText() });
-    if (id === 'heart') return t('laps_heart', { laps: lapsText() });
-    return t('laps', { laps: lapsText(), unit: unitWord() });
+    if (id === 'comet') return t('laps_comet');
+    if (id === 'heart') return t('laps_heart');
+    return t('laps');
   }
 
   function refresh() {
@@ -246,10 +256,26 @@ export function createApp(root, options = {}) {
     el.tag.hidden = !s.show.tag;
     el.clockBox.hidden = !s.show.clock;
     el.clockUnit.textContent = unitWord();
-    el.note.textContent = s.show.laps ? `${t('laps_label')} ${N(lapsText(4))} ${unitWord()}` : t(`note_${s.example}`, { bpm: BPM(s.period) });
-    el.note.hidden = !s.show.note && !s.show.laps;
+    note.textContent = t(`note_${s.example}`, { k: 10, one: 1, y: 10, bpm: BPM(s.period) });
+    note.hidden = !s.show.note;
+    strip3d.hidden = !s.show.strip3d;
+    learnStrip.setLabel(t('strip_label', { unit: unitWord() }));
+    stageStrip.setLabel(t('strip_turns', { unit: unitWord() }));
     refreshClock();
     stage.invalidate();
+  }
+  /** The time strips: one bar per repetition, the running one growing at the right end. */
+  function updateStrips() {
+    const passes = counter.passes;
+    const text = (v) => T(v);
+    learnStrip.update({ passes, now: s.t, span: 4.6 * s.period, text });
+    if (s.show.strip3d) stageStrip.update({ passes, now: s.t, span: 7 * s.period, text });
+  }
+  /** মোট সময় takes the clock's reading at a pass: it lights up for a moment. */
+  function flashTotal() {
+    el.totTerm.classList.remove('flash');
+    void el.totTerm.offsetWidth; // restart the animation
+    el.totTerm.classList.add('flash');
   }
   let clockText = '';
   function refreshClock() {
@@ -268,12 +294,14 @@ export function createApp(root, options = {}) {
     return out;
   }
   const markWorld = () => cur().root.localToWorld(cur().markPose(s.mark).pos);
-  function arrowTipWorld() {
+  /** The tip of the ghost at the mark: the velocity the particle has there. */
+  function ghostTipWorld() {
     const ex = cur();
     const { pos, vel } = ex.markPose(s.mark);
     return ex.root.localToWorld(pos.addScaledVector(vel, ex.velocityScale));
   }
 
+  /** The mark across the path, and the ghost of the velocity there (once the particle has passed). */
   function placeMark() {
     const ex = cur();
     const { pos, across, vel } = ex.markPose(s.mark);
@@ -286,14 +314,25 @@ export function createApp(root, options = {}) {
       ex.mark.root.position.copy(pos);
       ex.mark.root.visible = s.show.mark;
     }
-    if (ex.arrow) {
-      ex.arrow.set(pos, vel.multiplyScalar(ex.velocityScale));
-      ex.arrow.root.visible = ex.arrow.root.visible && s.show.arrow && counter.started;
+    if (ex.ghost) {
+      ex.ghost.set(pos, vel.multiplyScalar(ex.velocityScale));
+      ex.ghost.root.visible = ex.ghost.root.visible && s.show.arrow && s.show.mark && counter.started;
     }
     stage.invalidate();
   }
+  /** The particle's own velocity arrow, riding with it (for the fan switched off, shorter as it slows). */
+  function placeArrow(phase) {
+    const ex = cur();
+    if (!ex.arrow) return;
+    const { pos, vel } = ex.markPose(phase);
+    const h = 1e-3 * s.period;
+    const t0 = Math.max(0, s.t - h);
+    const rate = ((s.motion.cycles(s.t + h) - s.motion.cycles(t0)) / (s.t + h - t0)) * s.period; // 1 when periodic
+    ex.arrow.set(pos, vel.multiplyScalar(ex.velocityScale * rate));
+    ex.arrow.root.visible = ex.arrow.root.visible && s.show.arrow;
+  }
 
-  /** Labels: the mark (with the count), the velocity arrow, the Sun, the ECG strip, each where it fits. */
+  /** Labels: the mark (with the count), the velocity at the mark, the Sun, the ECG strip, each where it fits. */
   const measure = document.createElement('canvas').getContext('2d');
   let markSpot = null; // where the mark's label went: { dx, dy }
   function markText() {
@@ -301,26 +340,29 @@ export function createApp(root, options = {}) {
     if (!counter.count) return t('mark_start');
     return t(s.example === 'heart' ? 'beat_n' : 'mark_n', { n: counter.count });
   }
-  /** Rectangles (stage pixels) a label must keep off: the caption and the corner buttons. */
+  /** Rectangles (stage pixels) a label must keep off: the caption, the corner buttons, the note. */
   function keepOff() {
     const sr = ui.stage.getBoundingClientRect();
-    return [cap, ui.corner].map((node) => {
-      const r = node.getBoundingClientRect();
-      return { l: r.left - sr.left - 4, t: r.top - sr.top - 4, r: r.right - sr.left + 4, b: r.bottom - sr.top + 4 };
-    });
+    return [cap, ui.corner, note, strip3d]
+      .filter((node) => !node.hidden)
+      .map((node) => {
+        const r = node.getBoundingClientRect();
+        return { l: r.left - sr.left - 4, t: r.top - sr.top - 4, r: r.right - sr.left + 4, b: r.bottom - sr.top + 4 };
+      });
   }
   const overlap = (a, b) => a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b;
   /**
-   * Try the directions in turn; the label goes to the first spot that is on screen and free. `along`: a direction
-   * on screen (the velocity arrow) the label's leader line must not run along.
+   * Try the directions in turn: the label goes to the first spot on screen that is free (of the caption, the
+   * buttons, the arrow and other labels), and clear of the path if one can be. `along`: a direction on screen the
+   * leader line must not run along. An optional label that finds no free spot is left out (null), not squeezed in.
    */
-  function fitLabel(point, text, kind, dirs, dist, taken, along = null) {
+  function fitLabel(point, text, kind, dirs, dist, taken, { along = null, optional = false, path = [] } = {}) {
     const a = toScreen(point(), {});
     measure.font = `${kind === 'callout' ? 600 : 500} ${kind === 'callout' ? 14.5 : 14}px ${FONT}`;
     const w = measure.measureText(text).width + 24;
     const h = 28;
-    let pick = null;
     const al = along && Math.hypot(...along) > 1 ? along.map((v) => v / Math.hypot(...along)) : null;
+    const spots = [];
     for (const [ux, uy, far = 1] of dirs) {
       const k = 1 / (Math.hypot(ux, uy) || 1);
       if (al && (ux * al[0] + uy * al[1]) * k > 0.5) continue;
@@ -330,20 +372,20 @@ export function createApp(root, options = {}) {
       const box = { l: a.x + dx - w * anchor, t: a.y + dy - h / 2 };
       box.r = box.l + w;
       box.b = box.t + h;
-      const inside = box.l >= 4 && box.t >= 4 && box.r <= stage.width - 4 && box.b <= stage.height - 4;
-      if (inside && !taken.some((r) => overlap(r, box))) {
-        pick = { dx, dy, box };
-        break;
-      }
-      if (!pick && inside) pick = { dx, dy, box: null };
+      if (box.l >= 4 && box.t >= 4 && box.r <= stage.width - 4 && box.b <= stage.height - 4) spots.push({ dx, dy, box });
     }
+    const free = (b) => !taken.some((r) => overlap(r, b));
+    const clear = (b) => !path.some((q) => q.x > b.l && q.x < b.r && q.y > b.t && q.y < b.b);
+    let pick = spots.find((sp) => free(sp.box) && clear(sp.box)) || spots.find((sp) => free(sp.box));
+    if (!pick && optional) return null;
     if (!pick) {
       const k = 1 / (Math.hypot(dirs[0][0], dirs[0][1]) || 1);
-      pick = { dx: dirs[0][0] * k * dist, dy: dirs[0][1] * k * dist * 0.8, box: null };
+      pick = spots[0] || { dx: dirs[0][0] * k * dist, dy: dirs[0][1] * k * dist * 0.8 };
     }
     if (pick.box) taken.push(pick.box);
     return pick;
   }
+  const around = (u) => [u, [-u[1], u[0]], [u[1], -u[0]], [u[0], u[1], 2.2], [-u[1], u[0], 2.2], [u[1], -u[0], 2.2], [-u[0], -u[1], 1.6]];
   function placeLabels() {
     annotations.clear();
     markSpot = null;
@@ -352,16 +394,18 @@ export function createApp(root, options = {}) {
     ex.root.updateMatrixWorld(true);
     camera.updateMatrixWorld(); // the camera may have moved since the last frame
     const taken = keepOff();
-    const arrowShown = s.show.arrow && counter.started && ex.arrow?.root.visible;
+    const path = ex.samples.filter((_, i) => i % 3 === 0).map((smp) => toScreen(v2.copy(smp.p).applyMatrix4(ex.root.matrixWorld), {}));
+    const ghostShown = Boolean(ex.ghost?.root.visible);
     let along = null;
-    if (arrowShown) {
+    if (ghostShown) {
       // no label on the arrow (or the mark) itself
       const a = toScreen(markWorld(), {});
-      const b = toScreen(arrowTipWorld(), {});
+      const b = toScreen(ghostTipWorld(), {});
       taken.push({ l: Math.min(a.x, b.x) - 10, t: Math.min(a.y, b.y) - 10, r: Math.max(a.x, b.x) + 10, b: Math.max(a.y, b.y) + 10 });
       along = [b.x - a.x, b.y - a.y];
     }
-    if (s.show.mark && !s.dragging) {
+    // the first-use hand and its words sit at the mark for a moment: its label waits
+    if (s.show.mark && !s.dragging && coach?.step !== 'object') {
       // away from the middle of the picture first, then to either side, then inside the path
       const m = toScreen(markWorld(), {});
       const c = toScreen(ex.root.localToWorld(ex.bounds.getCenter(v2)), {});
@@ -380,22 +424,15 @@ export function createApp(root, options = {}) {
               [0, -1],
             ]
           : [o, [ox - oy, oy + ox], [ox + oy, oy - ox], [-oy, ox], [oy, -ox], [-ox, -oy], [0, 1], [0, -1], [-1, 0], [1, 0]];
-      markSpot = fitLabel(markWorld, markText(), 'callout', dirs, 58, taken, along);
+      markSpot = fitLabel(markWorld, markText(), 'callout', dirs, 58, taken, { along, path });
       markLabel();
     }
-    if (arrowShown) {
+    // the less important labels only where they fit: the velocity at the mark, then the Sun
+    if (ghostShown) {
       const a = toScreen(markWorld(), {});
-      const b = toScreen(arrowTipWorld(), {});
-      const u = [b.x - a.x, b.y - a.y];
-      const spot = fitLabel(
-        arrowTipWorld,
-        t('velocity'),
-        'part',
-        [u, [-u[1], u[0]], [u[1], -u[0]], [u[0], u[1], 2.2], [-u[1], u[0], 2.2], [u[1], -u[0], 2.2]],
-        26,
-        taken,
-      );
-      annotations.add('vel', { text: t('velocity'), point: arrowTipWorld, dx: spot.dx, dy: spot.dy, kind: 'part' });
+      const b = toScreen(ghostTipWorld(), {});
+      const spot = fitLabel(ghostTipWorld, t('velocity_mark'), 'part', around([b.x - a.x, b.y - a.y]), 26, taken, { optional: true, path });
+      if (spot) annotations.add('vel', { text: t('velocity_mark'), point: ghostTipWorld, dx: spot.dx, dy: spot.dy, kind: 'part' });
     }
     if (s.example === 'comet') {
       const spot = fitLabel(
@@ -407,26 +444,31 @@ export function createApp(root, options = {}) {
           [-0.6, 0.8],
           [0.6, -0.8],
           [-0.6, -0.8],
+          [-1, 0],
         ],
         50,
         taken,
+        { optional: true, path },
       );
-      annotations.add('sun', { text: t('sun'), point: ex.sun, dx: spot.dx, dy: spot.dy, kind: 'part' });
+      if (spot) annotations.add('sun', { text: t('sun'), point: ex.sun, dx: spot.dx, dy: spot.dy, kind: 'part' });
     }
     if (s.example === 'heart') {
       const spot = fitLabel(
         ex.strip,
         t('ecg'),
         'part',
+        // above the strip, not over the heart
         [
+          [0.15, -1],
+          [0.7, -0.7],
+          [-0.15, -1],
           [-0.6, -0.8],
-          [-1, 0],
-          [0.6, -0.8],
         ],
         44,
         taken,
+        { optional: true },
       );
-      annotations.add('ecg', { text: t('ecg'), point: ex.strip, dx: spot.dx, dy: spot.dy, kind: 'part' });
+      if (spot) annotations.add('ecg', { text: t('ecg'), point: ex.strip, dx: spot.dx, dy: spot.dy, kind: 'part' });
     }
   }
   /** The mark's label, with the latest count (same spot as before). */
@@ -437,19 +479,22 @@ export function createApp(root, options = {}) {
 
   // ── the motion ──────────────────────────────────────────────────────────────
   function pose() {
-    cur().setPhase(frac(s.motion.cycles(s.t)));
+    const phase = frac(s.motion.cycles(s.t));
+    cur().setPhase(phase, s.t, s.period);
+    placeArrow(phase);
   }
   function onPass(tp, { silent = false } = {}) {
     const wasStarted = counter.started;
     counter.pass(tp);
     cur().mark.flash();
-    cur().arrow?.flash();
+    cur().ghost?.flash();
+    if (wasStarted && !silent) flashTotal();
     if (!silent) {
       if (s.example === 'heart') audio.contact();
       else audio.pop();
       emit('pass', { example: s.example, count: counter.count, time: roundTo(tp, 1e-6) });
     }
-    if (!wasStarted) placeMark(); // the arrow appears with the first pass
+    if (!wasStarted) placeMark(); // the ghost of the velocity appears with the first pass
     if (s.show.labels) {
       if (!wasStarted) placeLabels();
       else markLabel();
@@ -462,9 +507,14 @@ export function createApp(root, options = {}) {
     pose();
   }
   const progress = () => counter.count + (counter.started ? 0.5 : 0);
+  let coachStep = null;
   stage.addTicker((dt) => {
+    if ((coach?.step ?? null) !== coachStep) {
+      coachStep = coach?.step ?? null;
+      placeLabels(); // the mark's label comes back once the hand has gone
+    }
     const markBusy = Boolean(cur().mark.tick(dt));
-    const flashing = Boolean(cur().arrow?.tick(dt)) || markBusy;
+    const flashing = Boolean(cur().ghost?.tick(dt)) || markBusy;
     if (!s.playing) return flashing;
     const before = progress();
     advance(dt / spec().scale);
@@ -472,6 +522,7 @@ export function createApp(root, options = {}) {
       refresh();
       emitChange();
     } else refreshClock();
+    updateStrips();
     return true;
   });
 
@@ -485,10 +536,12 @@ export function createApp(root, options = {}) {
     placeMark();
     placeLabels();
     refresh();
+    updateStrips();
   }
 
   function setExample(id, { animate = true } = {}) {
     if (!EXAMPLES[id]) return;
+    cancelDrag();
     s.example = id;
     for (const ex of Object.values(examples)) ex.root.visible = ex.id === id;
     if (shadowFloor) shadowFloor.visible = cur().ground != null;
@@ -500,10 +553,11 @@ export function createApp(root, options = {}) {
     counter.reset();
     pose();
     placeMark();
+    refresh();
+    updateStrips();
     s.userMovedCamera = false;
     jumpCamera();
     placeLabels();
-    refresh();
     if (animate) {
       const r = cur().root;
       tweener.animate({
@@ -565,20 +619,26 @@ export function createApp(root, options = {}) {
     const tanV = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
     const tanH = tanV * camera.aspect;
     const H = Math.max(stage.height, 120);
-    const band = Math.min(TOP_BAND, H * 0.24);
-    const usable = (H - band - 10) / H;
+    // keep the picture off the caption and the buttons at the top, and the note or the strip at the bottom
+    const sr = ui.stage.getBoundingClientRect();
+    const edge = (node, side) => (node.hidden ? 0 : node.getBoundingClientRect()[side] - sr.top);
+    const top = Math.min(H * 0.34, Math.max(edge(cap, 'bottom'), edge(ui.corner, 'bottom')) + 6);
+    const lowest = Math.min(...[note, strip3d].filter((n) => !n.hidden).map((n) => edge(n, 'top')), H);
+    const bottom = Math.min(H * 0.25, H - lowest + 4);
+    const usable = (H - top - bottom) / H;
     let d = 0;
     for (const p of pts) {
       const z = p.dot(dir) - cz;
       d = Math.max(d, Math.abs(p.dot(right) - cx) / (tanH * 0.94) + z, Math.abs(p.dot(up) - cy) / (tanV * usable) + z);
     }
     d *= 1.02;
-    // move the picture down into the space under the caption and the buttons
+    // move the picture into the space between the top and bottom bands
     const perPx = (2 * d * tanV) / H;
-    const target = center.addScaledVector(up, ((band - 10) / 2) * perPx);
+    const target = center.addScaledVector(up, ((top - bottom) / 2) * perPx);
     return { target, position: target.clone().addScaledVector(dir, d), d };
   }
   function jumpCamera() {
+    cur().arrange?.(camera.aspect > 1.25); // the heart puts its ECG beside it on a wide view
     const p = viewPose(s.view);
     tweener.cancel('camera');
     camera.near = p.d * 0.02;
@@ -687,6 +747,7 @@ export function createApp(root, options = {}) {
   );
   ui.canvasHost.addEventListener('pointermove', (e) => {
     if (!drag || e.pointerId !== drag.id) return hover(e);
+    if (s.locked) return cancelDrag();
     const hit = nearestSample(canvasPoint(e));
     if (!hit) return;
     const phase = cur().phaseOfSample(hit.sample);
@@ -704,6 +765,17 @@ export function createApp(root, options = {}) {
     showHint(t('hint_new_mark'), { duration: 2600 });
     emit('dragend', { mark: s.mark });
     emitChange();
+  }
+  /** Drop a drag at once (the test starts, the example changes): no hint, no new count. */
+  function cancelDrag() {
+    if (!drag) return;
+    try {
+      ui.canvasHost.releasePointerCapture(drag.id);
+    } catch {
+      // already released
+    }
+    drag = null;
+    s.dragging = false;
   }
   ui.canvasHost.addEventListener('pointerup', endDrag);
   ui.canvasHost.addEventListener('pointercancel', endDrag);
@@ -787,15 +859,17 @@ export function createApp(root, options = {}) {
     return { choices: [0, 1, 2, 3], expected: list.indexOf(right), tolerance: 0.5, label: textLabel(list) };
   }
 
-  /** Set the scene for a question: an example, what it shows, and how it moves. */
+  /** Set the scene for a question: an example, what it shows, and how it moves; always seen from the front. */
   function scene3(id, { show = {}, mark, motion, period, time = 0 } = {}) {
-    setExample(id, { animate: false });
+    if (s.view !== 'front') setView('front', { animate: false }); // a circle seen at a slant looks like an ellipse
     s.show = { ...ALL_SHOWN, ...show };
+    setExample(id, { animate: false });
     if (period) s.period = period;
     if (motion) s.motion = motion;
     if (mark != null) s.mark = mark;
     s.playing = true;
     jumpTo(time);
+    jumpCamera();
   }
 
   const COMPUTE = [
@@ -814,7 +888,8 @@ export function createApp(root, options = {}) {
     questions: 5,
     hooks: {
       enter() {
-        saved = { example: s.example, mark: s.mark, playing: s.playing };
+        cancelDrag();
+        saved = { example: s.example, mark: s.mark, playing: s.playing, view: s.view };
         s.mode = 'quiz';
         s.locked = true;
         hideHint();
@@ -830,6 +905,7 @@ export function createApp(root, options = {}) {
           setExample(saved.example, { animate: false });
           setMark(saved.mark);
           setPlaying(saved.playing);
+          if (saved.view !== s.view) setView(saved.view, { animate: false });
         }
       },
       async prepare(i, _alive, say) {
@@ -883,10 +959,10 @@ export function createApp(root, options = {}) {
           const motion = slowingMotion(e.period, e.phase0, 1.5);
           // after the fifth pass of the mark: four turns, each slower than the one before
           const time = motion.timeAt(Math.ceil(e.phase0 - e.mark) + e.mark + 4) + 0.01;
-          scene3('fan', { motion, time, show: { clock: false, note: false, laps: true, arrow: false, labels: false } });
-          question = { kind, laps: counter.laps };
+          scene3('fan', { motion, time, show: { clock: false, note: false, arrow: false, labels: false, strip3d: true } });
+          question = { kind };
           say(t('q_slowing'));
-          const c = textChoices(t('s_no'), [t('s_circle'), t('s_same_path'), t('s_same_way')]);
+          const c = textChoices(t('s_no'), [t('s_not_stopped'), t('s_circle'), t('s_same_path')]);
           return { ...c, meta: { kind } };
         }
         if (kind === 'heart') {
@@ -894,7 +970,7 @@ export function createApp(root, options = {}) {
           const period = 60 / bpm;
           scene3('heart', { period, motion: linearMotion(period, EXAMPLES.heart.phase0), show: { clock: false, labels: false } });
           question = { kind, bpm, period };
-          say(t('q_heart', { bpm }));
+          say(t('q_heart', { bpm, one: 1 }));
           return {
             choices: shuffle([period, ...heartMistakes(bpm)]),
             expected: period,
@@ -919,7 +995,10 @@ export function createApp(root, options = {}) {
         if (q.kind === 'shape') return t(`w_shape_${q.id}`);
         if (q.kind === 'velocity') return t('w_velocity');
         if (q.kind === 'slowing') return t('w_slowing');
-        if (q.kind === 'heart') return t('w_heart', { bpm: q.bpm, T: fmtNum(q.period) });
+        if (q.kind === 'heart') {
+          const exact = Math.abs(roundTo(q.period, 0.01) - q.period) < 1e-9;
+          return t('w_heart', { bpm: q.bpm, T: fmtNum(q.period), one: 1, s60: 60, eq: exact ? '=' : '≈' });
+        }
         return t('w_which', { p: q.right });
       },
       done() {
@@ -930,7 +1009,6 @@ export function createApp(root, options = {}) {
   });
 
   // ── first-use pointer: on the mark ──────────────────────────────────────────
-  let coach = null;
   if (o.coach) {
     coach = createCoach({
       stage,

@@ -49,6 +49,7 @@ describe('periodic motion: counting repetitions', () => {
     close(c.period, 2);
     assert.equal(c.laps.length, 3);
     for (const lap of c.laps) close(lap, 2);
+    assert.deepEqual(c.passes, [0.76, 2.76, 4.76, 6.76]);
     c.reset();
     assert.equal(c.started, false);
     assert.equal(c.total, 0);
@@ -83,8 +84,11 @@ describe('periodic motion: the comet (Kepler)', () => {
 });
 
 describe('periodic motion: the spring and the heart', () => {
-  it('a spring of 200 g and 5.5 N/m has a period of about 1.2 s', () => {
-    close(2 * Math.PI * Math.sqrt(0.2 / 5.5), m.EXAMPLES.spring.period, 0.01);
+  it('500 g on a spring of 30.8 N/m: a period of 0.8 s, and the spring hangs about 16 cm longer', () => {
+    const { mass, k, period } = m.EXAMPLES.spring;
+    close(2 * Math.PI * Math.sqrt(mass / k), period, 0.005);
+    close((mass * 9.8) / k, (9.8 * period ** 2) / (4 * Math.PI ** 2), 0.002); // mg / k = gT² / 4π²
+    close((mass * 9.8) / k, 0.159, 0.002);
   });
   it('the mass is at the top at phase 0 and passes a height on its way down at the phase given', () => {
     const amp = 0.05;
@@ -103,6 +107,15 @@ describe('periodic motion: the spring and the heart', () => {
     close(m.ecg(0.37), m.ecg(1.37), 1e-12);
   });
   it('75 beats a minute is a period of 0.8 s', () => close(60 / 75, m.EXAMPLES.heart.period));
+  it('the ventricles squeeze quickly after the R wave and relax slowly; at rest before the P wave', () => {
+    const v = (p) => m.heartSqueeze(p).ventricles;
+    assert.equal(v(0.05), 0);
+    assert.equal(v(0.25), 0);
+    close(v(0.31), 1, 1e-9);
+    assert.ok(v(0.28) < v(0.34), 'the squeeze comes faster than it goes'); // 0.03 before the top vs 0.03 after
+    assert.equal(v(0.7), 0);
+    assert.ok(m.heartSqueeze(0.19).atria > 0.9);
+  });
 });
 
 describe('periodic motion: numbers and the test', () => {

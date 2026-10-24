@@ -26,30 +26,46 @@ function gradientSprite(stops, size = 128) {
   return sprite;
 }
 
-/** The tail: a flat fan of light, bright at the head and fading away, lying along +x from the origin. */
+/**
+ * The tail: a narrow stream of light, bright at the head and fading away, bending a little (a dust tail lags
+ * behind the comet's motion), with soft edges. It lies along +x from the origin and bends towards −y.
+ */
 function tailMesh() {
-  const W = 256;
-  const H = 64;
+  const W = 512;
+  const H = 128;
   const c = document.createElement('canvas');
   c.width = W;
   c.height = H;
   const g = c.getContext('2d');
-  const grad = g.createLinearGradient(0, 0, W, 0);
-  grad.addColorStop(0, 'rgba(66, 153, 225, 0.95)');
-  grad.addColorStop(0.35, 'rgba(116, 192, 252, 0.6)');
-  grad.addColorStop(1, 'rgba(165, 216, 255, 0)');
-  g.fillStyle = grad;
-  g.beginPath();
-  g.moveTo(0, H / 2 - 4);
-  g.quadraticCurveTo(W * 0.5, 2, W, 0);
-  g.lineTo(W, H);
-  g.quadraticCurveTo(W * 0.5, H - 2, 0, H / 2 + 4);
-  g.closePath();
-  g.fill();
+  // several wider and fainter copies on top of each other give the soft edge
+  for (let i = 0; i < 7; i++) {
+    const k = 1 - i / 7;
+    const grad = g.createLinearGradient(0, 0, W, 0);
+    grad.addColorStop(0, 'rgba(56, 142, 220, 0.32)');
+    grad.addColorStop(0.45, 'rgba(96, 178, 245, 0.18)');
+    grad.addColorStop(1, 'rgba(150, 205, 255, 0)');
+    g.fillStyle = grad;
+    g.beginPath();
+    const top = [];
+    const bottom = [];
+    for (let j = 0; j <= 32; j++) {
+      const u = j / 32;
+      const x = u * W;
+      const cy = H * 0.3 + H * 0.38 * u * u; // the bend
+      const hw = (3 + H * 0.2 * u ** 0.75) * (0.35 + 0.65 * k);
+      top.push([x, cy - hw]);
+      bottom.push([x, cy + hw]);
+    }
+    g.moveTo(...top[0]);
+    for (const p of top) g.lineTo(...p);
+    for (const p of bottom.reverse()) g.lineTo(...p);
+    g.closePath();
+    g.fill();
+  }
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
-  const geo = new THREE.PlaneGeometry(1, 0.26);
-  geo.translate(0.5, 0, 0);
+  const geo = new THREE.PlaneGeometry(1, 0.25);
+  geo.translate(0.5, -0.05, 0); // the head (30 % of the way down the picture) at the origin
   const mesh = new THREE.Mesh(
     geo,
     new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, side: THREE.DoubleSide, toneMapped: false }),
@@ -84,17 +100,19 @@ export function createComet() {
   comet.name = 'Comet';
   model.add(comet);
   const head = new THREE.Mesh(
-    new THREE.IcosahedronGeometry(0.017, 2),
-    new THREE.MeshStandardMaterial({ name: 'CometHead', color: 0x5c6670, roughness: 0.85, flatShading: true }),
+    new THREE.IcosahedronGeometry(0.028, 2),
+    new THREE.MeshStandardMaterial({ name: 'CometHead', color: 0x6c7781, roughness: 0.85, flatShading: true }),
   );
   head.scale.set(1.2, 0.9, 1);
   comet.add(head);
+  // the icy cloud round the head: bright in the middle, pale blue at the edge
   const coma = gradientSprite([
-    [0, 'rgba(214, 236, 255, 0.95)'],
-    [0.3, 'rgba(116, 192, 252, 0.55)'],
+    [0, 'rgba(255, 255, 255, 1)'],
+    [0.22, 'rgba(206, 234, 255, 0.9)'],
+    [0.5, 'rgba(116, 192, 252, 0.4)'],
     [1, 'rgba(116, 192, 252, 0)'],
   ]);
-  coma.scale.set(0.09, 0.09, 1);
+  coma.scale.set(0.16, 0.16, 1);
   comet.add(coma);
   const tail = tailMesh();
   tail.userData.noExport = true;
@@ -124,13 +142,15 @@ export function createComet() {
     setPhase(phase) {
       const o = orbitAt(phase, E, A);
       comet.position.set(o.x, o.y, 0);
-      // the tail points away from the Sun and is long only near it
+      // the tail points away from the Sun, is long only near it, and bends back from the way the comet moves
       away.set(o.x, o.y, 0).normalize();
-      tail.rotation.z = Math.atan2(away.y, away.x);
+      const angle = Math.atan2(away.y, away.x);
+      tail.rotation.z = angle;
       const near = (A * (1 - E)) / o.r; // 1 at perihelion
-      const len = 0.06 + 0.26 * near ** 1.2;
-      tail.scale.set(len, 0.55 + 0.6 * Math.min(1, near * 1.3), 1);
-      coma.scale.setScalar(0.07 + 0.04 * Math.min(1, near * 1.5));
+      const len = 0.05 + 0.4 * near ** 1.2;
+      const across = -Math.sin(angle) * o.vx + Math.cos(angle) * o.vy; // the velocity across the tail
+      tail.scale.set(len, (0.3 + 0.25 * near) * (across > 0 ? 1 : -1), 1);
+      coma.scale.setScalar(0.12 + 0.05 * Math.min(1, near * 1.5));
     },
     samples,
     phaseOfSample: (s) => s.phase,
@@ -143,14 +163,15 @@ export function createComet() {
     normal: new THREE.Vector3(0, 0, 1),
     particle: () => comet.getWorldPosition(new THREE.Vector3()),
     sun: () => sun.getWorldPosition(new THREE.Vector3()),
-    markLength: 0.085,
-    arrowThickness: 0.0052,
+    markLength: 0.09,
+    arrowThickness: 0.008,
     velocityScale: 0.02,
     views: {
       front: new THREE.Vector3(0, 0, 1),
       '3d': new THREE.Vector3(0.18, -0.62, 0.76).normalize(),
     },
-    bounds: new THREE.Box3(new THREE.Vector3(-A * (1 + E) - 0.012, -B - 0.012, -0.02), new THREE.Vector3(A * (1 - E) + 0.07, B + 0.012, 0.02)),
+    // the orbit, and room for the comet's cloud round it
+    bounds: new THREE.Box3(new THREE.Vector3(-A * (1 + E) - 0.03, -B - 0.05, -0.02), new THREE.Vector3(A * (1 - E) + 0.08, B + 0.05, 0.02)),
     ground: null,
   };
 }

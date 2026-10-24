@@ -1,6 +1,6 @@
 // A ceiling fan (ফ্যানের পাখা), in metres, seen from below as a student lying in bed sees it: the canopy at the
-// ceiling, the down-rod, the motor body that turns with three wooden blades (as on most ceiling fans in
-// Bangladesh), and a coloured sticker under the tip of one blade: the particle whose circular path we follow.
+// ceiling, the down-rod, the motor body that turns with three thin painted metal blades, and a coloured sticker
+// under the tip of one blade: the particle whose circular path we follow.
 // The fan hangs from +y; it turns anticlockwise as seen from below.
 import * as THREE from 'three';
 import { COLORS, dashedPath, particleGlow } from './parts.js';
@@ -9,7 +9,7 @@ import { TAU } from './motion.js';
 const TIP = 0.68; // m from the axis to the sticker
 const BLADE_Y = -0.056; // the blades' plane
 const PATH_Y = -0.071; // the path, just below the blades (nearer the student)
-export const FAN_SPAN = 0.74;
+const FAN_SPAN = 0.74;
 
 function lathe(points, segments = 64) {
   return new THREE.LatheGeometry(
@@ -21,8 +21,8 @@ function lathe(points, segments = 64) {
 function bladeGeometry() {
   // a long rounded blade, wider at the tip, in its own plane (x along the blade, y across)
   const L = 0.56;
-  const w0 = 0.05;
-  const w1 = 0.062;
+  const w0 = 0.042;
+  const w1 = 0.06;
   const s = new THREE.Shape();
   s.moveTo(0, -w0);
   s.lineTo(L - 0.05, -w1);
@@ -32,14 +32,14 @@ function bladeGeometry() {
   s.lineTo(0, w0);
   s.closePath();
   const geo = new THREE.ExtrudeGeometry(s, {
-    depth: 0.005,
+    depth: 0.0016,
     bevelEnabled: true,
-    bevelThickness: 0.001,
-    bevelSize: 0.0015,
+    bevelThickness: 0.0006,
+    bevelSize: 0.0008,
     bevelSegments: 2,
     curveSegments: 8,
   });
-  geo.translate(0, 0, -0.0025);
+  geo.translate(0, 0, -0.0008);
   return geo;
 }
 
@@ -47,16 +47,14 @@ export function createFan(M) {
   const root = new THREE.Group();
   root.name = 'CeilingFan';
   const paint = new THREE.MeshPhysicalMaterial({ name: 'FanPaint', color: 0xf3efe6, roughness: 0.38, clearcoat: 0.6, clearcoatRoughness: 0.3 });
-  const woodMap = M.wood.map.clone();
-  woodMap.repeat.set(4, 4);
-  woodMap.needsUpdate = true;
-  const wood = new THREE.MeshPhysicalMaterial({
-    name: 'BladeWood',
-    map: woodMap,
-    color: 0xf0c49c,
-    roughness: 0.5,
-    clearcoat: 0.45,
-    clearcoatRoughness: 0.35,
+  const bladePaint = new THREE.MeshPhysicalMaterial({
+    name: 'BladePaint',
+    color: 0xa36a45,
+    metalness: 0.15,
+    roughness: 0.42,
+    clearcoat: 0.7,
+    clearcoatRoughness: 0.25,
+    side: THREE.DoubleSide,
   });
   const iron = new THREE.MeshPhysicalMaterial({ name: 'BladeIron', color: 0x8c939b, metalness: 0.9, roughness: 0.35 });
 
@@ -115,7 +113,7 @@ export function createFan(M) {
     const bracket = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.007, 0.032), iron);
     bracket.position.set(0.15, -0.049, 0);
     arm.add(bracket);
-    const blade = new THREE.Mesh(bladeGeo, wood);
+    const blade = new THREE.Mesh(bladeGeo, bladePaint);
     blade.name = `Blade${i + 1}`;
     blade.rotation.x = -Math.PI / 2 + THREE.MathUtils.degToRad(11); // lies flat, pitched 11°
     blade.position.set(0.17, BLADE_Y, 0);
