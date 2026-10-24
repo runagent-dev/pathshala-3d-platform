@@ -3,6 +3,10 @@
 // DOM, so they stay crisp and can be dragged.
 import * as THREE from 'three';
 
+/**
+ * @param {{ stage: any, layer: HTMLElement, clearColor?: number, onChange?: (state: any) => void, onDragStart?: () => void,
+ *           formatZoom?: (zoom: string) => string }} options  formatZoom gets the zoom already rounded, e.g. "3.2"
+ */
 export function createLoupe({ stage, layer, clearColor = 0xffffff, onChange, onDragStart, formatZoom = (z) => `${z}×` }) {
   const { renderer, scene, camera } = stage;
 

@@ -19,6 +19,9 @@ describe('stripJsComments', () => {
     const src = "const r = /['\"]/g; const s = /\\/\\//; const x = 'ok';";
     assert.equal(stripJsComments(src), src);
   });
+  it('keeps line numbers', () => {
+    assert.equal(stripJsComments('a;\n/* one\ntwo\nthree */\nb;').split('\n').length, 5);
+  });
   it('does not mistake division for a regular expression', () => {
     assert.equal(stripJsComments('const a = b / c; // comment').trim(), 'const a = b / c;');
   });

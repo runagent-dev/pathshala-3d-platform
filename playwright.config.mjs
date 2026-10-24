@@ -4,11 +4,17 @@ import { defineConfig } from '@playwright/test';
 import { CHROMIUM_ARGS } from './scripts/lib/export/driver.mjs';
 
 const PORT = Number(process.env.PATHSHALA_TEST_PORT || 4820);
+// FIGURES=a,b limits the figures' own tests (assets/<id>/tests/) as it limits the generated ones.
+const ONLY = (process.env.FIGURES || '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+const FIGURE_TESTS = ONLY.length ? ONLY.map((id) => `assets/${id}/tests/**/*.spec.mjs`) : ['assets/*/tests/**/*.spec.mjs'];
 
 export default defineConfig({
   // The contract and layout tests for every figure, plus each figure's own tests in assets/<id>/tests/.
   testDir: '.',
-  testMatch: ['test/figures/**/*.spec.mjs', 'assets/*/tests/**/*.spec.mjs'],
+  testMatch: ['test/figures/**/*.spec.mjs', ...FIGURE_TESTS],
   timeout: 180_000,
   expect: { timeout: 15_000 },
   fullyParallel: true,

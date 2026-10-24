@@ -1,0 +1,13 @@
+/* The page, and the colours of the terms in the reading. The student view itself is
+   ../../shared/lib/student/student.css (linked first). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.pvc { --c-cm: #1c6fd9; --c-mm: #d9480f; --c-lc: #6741d9; }
+.pvc-t.cm { --c: var(--c-cm); }
+.pvc-t.mm { --c: var(--c-mm); }
+.pvc-t.lc { --c: var(--c-lc); }
+.pvc .c-cm { color: var(--c-cm); }
+.pvc .c-mm { color: var(--c-mm); }
+.pvc .c-lc { color: var(--c-lc); }

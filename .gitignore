@@ -21,3 +21,6 @@ data/
 
 # temporary figure folders made by the tests
 /.tmp-test-*/
+
+# figures scaffolded from the templates by npm run test:templates
+/assets/zz-tmpl-*/

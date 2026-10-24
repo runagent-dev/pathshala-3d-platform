@@ -32,8 +32,9 @@ export function stripJsComments(src) {
     }
     if (c === '/' && d === '*') {
       const end = src.indexOf('*/', i + 2);
-      i = end < 0 ? n : end + 2;
-      out += ' ';
+      const stop = end < 0 ? n : end + 2;
+      out += ` ${'\n'.repeat((src.slice(i, stop).match(/\n/g) || []).length)}`; // keep line numbers
+      i = stop;
       continue;
     }
     if (c === "'" || c === '"' || c === '`') {

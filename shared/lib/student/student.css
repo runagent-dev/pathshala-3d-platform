@@ -264,3 +264,10 @@
   .pvc-result .v { font-size: 28px; }
 }
 
+
+/* ── model viewer (../model-viewer.js): a static GLB filling the frame ─────────── */
+.pvc-model { position: absolute; inset: 0; }
+.pvc-model .pvc-stage { position: absolute; inset: 0; }
+.pvc-model-msg { position: absolute; inset: 0; margin: 0; display: grid; place-items: center; padding: 24px; text-align: center; color: var(--ink-2); font-size: 15px; pointer-events: none; }
+.pvc-model .pvc-hint { top: auto; bottom: 12px; transform: translate(-50%, 4px); }
+.pvc-model .pvc-hint.show { transform: translate(-50%, 0); }

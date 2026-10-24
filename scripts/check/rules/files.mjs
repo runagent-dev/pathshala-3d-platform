@@ -7,7 +7,7 @@ import { DEV_ONLY_DIRS, DEV_ONLY_FILES } from '../../lib/assets.mjs';
 const REQUIRED = {
   interactive: ['index.html', 'src/main.js', 'src/i18n.js', 'README.md', 'NOTES.md'],
   animation: ['index.html', 'src/main.js', 'src/i18n.js', 'README.md', 'NOTES.md'],
-  model: ['README.md', 'NOTES.md'],
+  model: ['index.html', 'src/main.js', 'src/i18n.js', 'model.glb', 'README.md', 'NOTES.md'],
 };
 const MB = 1024 * 1024;
 export const BUDGETS = { figure: 8 * MB, file: 5 * MB, glb: 15 * MB, reference: 2 * MB, reviewImage: 1 * MB };

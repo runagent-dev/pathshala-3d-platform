@@ -10,7 +10,7 @@ import { figuresUnderTest } from './figures.mjs';
 const SKIP = new Set(['tour', 'practice', 'play']);
 
 for (const { id, manifest } of figuresUnderTest()) {
-  if (manifest.type === 'model') continue;
+  if (!/\.html?$/.test(manifest.entry || 'index.html')) continue; // a bare GLB has no page to test
   test(`${id}: bridge contract`, async ({ page }) => {
     await page.setViewportSize({ width: 1024, height: 640 });
     const log = await preparePage(page);

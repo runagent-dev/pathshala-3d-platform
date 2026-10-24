@@ -11,17 +11,29 @@
   "topic": "",
   "placement": "",
   "maintainers": [],
+  "units": "mm",
   "description": "",
   "tags": [],
   "params": [
-    {
-      "name": "bg",
-      "label": "Background",
-      "type": "select",
-      "options": ["light", "dark", "transparent"],
-      "default": "light"
-    }
+    { "name": "lang", "label": "Language", "type": "select", "options": [["bn", "বাংলা"], ["en", "English"]], "default": "bn" },
+    { "name": "value", "label": "Starting reading", "type": "number", "default": "23", "placeholder": "mm" },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    { "name": "mode", "label": "Start in", "type": "select", "options": [["explore", "learn"], ["quiz", "test"]], "default": "explore" },
+    { "name": "magnifier", "label": "Magnifier", "type": "boolean", "default": "1" },
+    { "name": "coach", "label": "First-use pointers", "type": "boolean", "default": "1" },
+    { "name": "numerals", "label": "Digits", "type": "select", "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]], "default": "" },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
   ],
-  "commands": [{ "name": "capture", "payload": { "width": 800, "height": 500 } }],
-  "events": ["ready"]
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "value": 47 } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "dragstart", "dragend", "practice-start", "practice-result", "practice-end"],
+  "export": { "poster": { "params": { "coach": "0" } }, "glb": [{ "name": "default" }] }
 }

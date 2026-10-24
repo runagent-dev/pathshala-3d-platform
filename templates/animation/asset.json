@@ -1,0 +1,40 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "{{id}}",
+  "title": "{{title}}",
+  "type": "animation",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": null,
+  "topic": "",
+  "placement": "",
+  "maintainers": [],
+  "units": "m",
+  "description": "",
+  "tags": [],
+  "params": [
+    { "name": "lang", "label": "Language", "type": "select", "options": [["bn", "বাংলা"], ["en", "English"]], "default": "bn" },
+    { "name": "autoplay", "label": "Play on load", "type": "boolean", "default": "1" },
+    { "name": "loop", "label": "Loop", "type": "boolean", "default": "1" },
+    { "name": "numerals", "label": "Digits", "type": "select", "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]], "default": "" },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "step": 2 } },
+    { "name": "seek", "payload": { "t": 4.5 } },
+    { "name": "duration", "payload": {} },
+    { "name": "play", "payload": {} },
+    { "name": "pause", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "step", "play", "pause"],
+  "export": {
+    "poster": { "params": { "autoplay": "0" }, "setup": [{ "command": "seek", "payload": { "t": 4 } }] },
+    "glb": [{ "name": "default" }],
+    "video": { "kind": "timeline", "seconds": 12, "fps": 30 }
+  }
+}

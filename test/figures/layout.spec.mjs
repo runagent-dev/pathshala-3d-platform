@@ -7,7 +7,7 @@ import { figuresUnderTest, VIEWPORTS } from './figures.mjs';
 const MIN_TAP = 24; // px, WCAG 2.5.8 (target size, minimum)
 
 for (const { id, manifest } of figuresUnderTest()) {
-  if (manifest.type === 'model') continue;
+  if (!/\.html?$/.test(manifest.entry || 'index.html')) continue; // a bare GLB has no page to test
   for (const vp of VIEWPORTS) {
     test(`${id}: layout ${vp.width}×${vp.height}`, async ({ page }) => {
       await page.setViewportSize(vp);

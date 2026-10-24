@@ -23,7 +23,8 @@
     "test:visual": "node scripts/visual.mjs",
     "package": "node scripts/package.mjs",
     "package:all": "node scripts/package.mjs --all",
-    "vendor:three": "node scripts/vendor-three.mjs"
+    "vendor:three": "node scripts/vendor-three.mjs",
+    "test:templates": "node scripts/test-templates.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",

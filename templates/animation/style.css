@@ -1,0 +1,18 @@
+/* The page and the animation's caption panel. Colours and type come from ../../shared/lib/student/student.css. */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.anim { position: absolute; inset: 0; display: grid; grid-template-rows: 1fr auto; container-type: size; }
+.anim .pvc-stage { position: relative; }
+.anim-panel { padding: 10px 14px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: var(--page); display: grid; gap: 8px; }
+.anim-caption { margin: 0; font-size: 16px; line-height: 1.45; min-height: 2.9em; color: var(--ink); }
+.anim-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.anim-steps { display: flex; gap: 6px; flex-wrap: wrap; }
+.anim-steps button { min-height: 36px; padding: 0 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--page); font-size: 15px; }
+.anim-steps button.on { color: var(--accent); background: var(--accent-soft); border-color: var(--accent); font-weight: 600; }
+.anim-play { min-width: 44px; min-height: 36px; justify-content: center; }
+.anim-time { margin-left: auto; font-size: 14px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+@container (max-height: 420px) {
+  .anim-caption { font-size: 14.5px; min-height: 0; }
+}

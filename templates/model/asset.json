@@ -4,13 +4,27 @@
   "id": "{{id}}",
   "title": "{{title}}",
   "type": "model",
-  "entry": "model.glb",
+  "entry": "index.html",
   "version": "0.1.0",
   "book": "physics-9-10",
   "page": null,
   "topic": "",
   "placement": "",
   "maintainers": [],
-  "description": "Static 3D model (GLB). Drop the file in this folder as model.glb.",
-  "tags": []
+  "units": "m",
+  "description": "",
+  "tags": [],
+  "params": [
+    { "name": "lang", "label": "Language", "type": "select", "options": [["bn", "বাংলা"], ["en", "English"]], "default": "bn" },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "view": "home" } },
+    { "name": "reset", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "view"],
+  "export": { "glb": [{ "name": "default" }], "video": { "kind": "turntable", "seconds": 8, "fps": 30 } }
 }

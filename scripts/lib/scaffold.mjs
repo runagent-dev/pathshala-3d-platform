@@ -30,7 +30,7 @@ export async function scaffoldAsset({
 } = {}) {
   if (!ID_RE.test(id || '')) throw fail('Id must be lowercase letters, numbers and dashes (e.g. "convex-lens").');
   if (!TYPES.includes(type)) throw fail(`Unknown type "${type}" (use ${TYPES.join(', ')})`);
-  const templateDir = path.join(TEMPLATES_DIR, type === 'animation' && !fs.existsSync(path.join(TEMPLATES_DIR, 'animation')) ? 'interactive' : type);
+  const templateDir = path.join(TEMPLATES_DIR, type);
   const dest = path.join(ASSETS_DIR, id);
   if (fs.existsSync(dest)) throw fail(`assets/${id} already exists`);
 
@@ -52,7 +52,7 @@ export async function scaffoldAsset({
     await fsp.mkdir(path.dirname(to), { recursive: true });
     const buf = await fsp.readFile(path.join(templateDir, rel));
     if (rel === 'asset.json') continue;
-    if (/\.(html|js|css|json|md)$/.test(rel)) await fsp.writeFile(to, fill(buf.toString('utf8')));
+    if (/\.(html|m?js|css|json|md)$/.test(rel)) await fsp.writeFile(to, fill(buf.toString('utf8')));
     else await fsp.writeFile(to, buf);
   }
   await fsp.writeFile(path.join(dest, 'asset.json'), formatManifest(manifest));

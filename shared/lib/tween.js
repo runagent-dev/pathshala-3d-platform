@@ -21,6 +21,10 @@ export function createTweener() {
    * `key` cancels any running tween with the same key (e.g. "camera").
    * Returns { cancel(), finished: Promise<boolean> } — resolves true if it ran to the end.
    */
+  /**
+   * @param {{ duration?: number, ease?: (t: number) => number, key?: string, delay?: number,
+   *           onUpdate?: (k: number, p: number) => void, onComplete?: () => void }} options
+   */
   function animate({ duration = 0.6, ease: fn = ease.inOutCubic, key, delay = 0, onUpdate, onComplete }) {
     const k = key ?? `__${++seq}`;
     active.get(k)?.cancel();
