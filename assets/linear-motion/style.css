@@ -1,0 +1,80 @@
+/* Linear motion: the page, the example chips, the verdict (path → kind of motion) and the colours that carry
+   meaning: path blue, straight line green, gap purple, push orange (the same as src/trace.js). The student view
+   itself is ../../shared/lib/student/student.css (linked first). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.lm { --c-path: #1c6fd9; --c-line: #12924f; --c-gap: #6741d9; --c-push: #d9480f; }
+
+/* the three examples */
+.lm-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.lm-chips button { display: inline-flex; align-items: center; gap: 5px; height: 36px; padding: 0 12px 0 9px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--panel); color: var(--ink-2); font-size: 14.5px; font-weight: 600; white-space: nowrap; }
+.lm-chips button:hover { background: var(--soft); }
+.lm-chips button.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+
+/* the verdict: path → kind of motion (before a motion: the book's rule) */
+.lm-verdict { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 8px; min-height: 1.4em; font-size: 18px; line-height: 1.4; }
+.lm-path { display: inline-flex; align-items: baseline; gap: 6px; }
+.lm-path small { font-size: 14px; font-weight: 500; color: var(--ink-3); }
+.lm-path b { font-weight: 700; color: var(--c-path); }
+.lm-to { font-style: normal; color: var(--ink-3); }
+.lm-kind b { font-weight: 700; }
+.lm-kind em { margin-left: 5px; font-style: normal; font-weight: 700; }
+.lm-verdict[data-state='rule'] .lm-path small { display: none; }
+.lm-verdict[data-state='rule'] .lm-path b { font-weight: 600; color: var(--ink); }
+.lm-verdict[data-state='rule'] .lm-kind b { color: var(--accent); }
+.lm-verdict[data-state='moving'] .lm-path b { color: var(--ink-3); }
+.lm-verdict[data-state='moving'] .lm-to, .lm-verdict[data-state='moving'] .lm-kind { visibility: hidden; }
+.lm-verdict[data-state='straight'] .lm-kind { color: var(--ok); }
+.lm-verdict[data-state='curved'] .lm-kind { color: var(--bad); }
+
+/* the book's sentence, then what the motion showed: three lines kept, so the 3D view keeps its size */
+.lm-extra { margin: 0; min-height: 4.5em; font-size: 13.5px; line-height: 1.5; color: var(--ink-2); }
+.lm-acts { justify-content: flex-start; }
+.lm-acts .pvc-btn { height: 38px; font-size: 15px; }
+.lm-acts .pvc-btn.primary svg { color: #fff; }
+.lm-acts [data-act='go'] { min-width: 124px; }
+
+/* on the stage: the ball is shown slowed down */
+.lm-slow { position: absolute; right: 10px; top: 56px; z-index: 5; max-width: calc(100% - 20px); padding: 3px 9px; border-radius: 6px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.92); font-size: 13px; line-height: 1.45; color: var(--ink-2); pointer-events: none; }
+
+/* test answers in words: a little smaller, two lines allowed */
+.lm .pvc-opt { font-size: 14.5px; line-height: 1.25; }
+.lm-opt { display: block; white-space: normal; text-align: center; }
+.lm .pvc-q-text { min-height: 2.8em; }
+.lm .pvc-q-feedback { min-height: 2.9em; font-size: 14px; }
+
+/* wide frames: the examples and the actions on one row */
+@container pvc (min-width: 720px) and (min-height: 461px) {
+  .lm .pvc-learn { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: 'chips acts' 'verdict verdict' 'extra extra'; align-content: start; gap: 6px 12px; }
+  .lm-chips { grid-area: chips; }
+  .lm-acts { grid-area: acts; }
+  .lm-verdict { grid-area: verdict; }
+  .lm-extra { grid-area: extra; min-height: 3em; }
+  .lm .pvc-q-text { min-height: 1.4em; } /* every question fits on one line here */
+}
+/* a narrow side panel: the chips without their pictures */
+@container pvc-panel (max-width: 290px) {
+  .lm-chips button svg { display: none; }
+}
+/* phones: a little tighter */
+@container pvc (max-width: 560px) {
+  .lm-chips button { padding: 0 10px 0 8px; font-size: 14px; }
+  .lm-verdict { font-size: 17px; }
+}
+@container pvc (max-width: 560px) and (max-height: 600px) {
+  .lm-extra { min-height: 3em; font-size: 13px; }
+  .lm-chips button { height: 34px; }
+  .lm-acts .pvc-btn { height: 36px; }
+}
+/* short and wide (phone held sideways): the panel is beside the scene */
+@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
+  .lm-chips { display: grid; grid-template-columns: auto auto auto; gap: 4px; }
+  .lm-chips button { justify-content: center; height: 34px; padding: 0 6px; gap: 3px; font-size: 13px; }
+  .lm-chips button svg { width: 15px; height: 15px; }
+  .lm-verdict { font-size: 16px; }
+  .lm-extra { min-height: 6em; font-size: 12.5px; }
+  .lm-acts .pvc-btn { height: 36px; }
+  .lm-acts [data-act='go'] { min-width: 0; }
+}

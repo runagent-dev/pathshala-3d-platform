@@ -1,0 +1,96 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "linear-motion",
+  "title": "Linear motion (সরলরৈখিক গতি)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 36,
+  "topic": "2.2",
+  "placement": "Book page 36, topic 2.2: সরলরৈখিক গতি (Linear Motion), next to that paragraph (the page has no picture for it).",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "Interactive 3D scene for সরলরৈখিক গতি (linear motion, page 36, 2.2): a carrom board and a cricket ball on a lab stand. The student pushes the striker on the flat board (drags out a push arrow and lets go, or taps ধাক্কা দাও), lets the ball go (ছেড়ে দাও) or throws it sideways (ছুড়ে দাও). Each motion leaves faint pictures every 0.1 s (striker) or 0.05 s (ball, shown 4 times slower) and a dotted path, then a dashed straight line is laid through its ends: the push and the free fall lie on it (সরলরৈখিক গতি, even though the striker slows down and the ball speeds up), the sideways throw curves up to 9 cm away from it (not linear). Test tab: 5 questions (is a motion just watched linear, with the right reason; which path a pushed striker takes; what the strobe spacing means; which everyday motion is or is not linear; the definition). Phone-first, Bangla.",
+  "tags": ["motion", "linear-motion", "straight-line", "free-fall", "carrom", "strobe", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "example",
+      "label": "Example at the start",
+      "type": "select",
+      "options": [["push", "push (striker)"], ["drop", "free fall"], ["throw", "sideways throw"]],
+      "default": "push"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "First-use pointers", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "example": "push", "angle": -15, "strength": 0.85 } },
+    { "name": "set", "payload": { "example": "drop", "run": true, "animate": false } },
+    { "name": "set", "payload": { "example": "throw", "run": true } },
+    { "name": "set", "payload": { "clear": true } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "example", "start", "done", "view", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": {
+      "params": { "coach": "0" },
+      "setup": [{ "command": "set", "payload": { "example": "push", "angle": -18, "strength": 0.9, "animate": false } }]
+    },
+    "glb": [
+      { "name": "default" },
+      {
+        "name": "paths",
+        "setup": [
+          { "command": "set", "payload": { "example": "push", "angle": -18, "strength": 0.9, "animate": false } },
+          { "command": "set", "payload": { "example": "drop", "run": true, "animate": false } }
+        ]
+      }
+    ],
+    "video": {
+      "kind": "script",
+      "seconds": 19,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 0.8, "command": "set", "payload": { "example": "push", "angle": -15, "strength": 0.85 } },
+        { "at": 4.6, "command": "set", "payload": { "example": "drop" } },
+        { "at": 5.8, "command": "set", "payload": { "run": true } },
+        { "at": 10.4, "command": "set", "payload": { "example": "throw" } },
+        { "at": 11.4, "command": "set", "payload": { "run": true } },
+        { "at": 15.6, "command": "set", "payload": { "view": "3d" } }
+      ]
+    }
+  }
+}
