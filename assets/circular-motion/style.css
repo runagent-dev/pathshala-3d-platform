@@ -1,0 +1,73 @@
+/* Circular motion: the page, and the colours of the quantities (the fixed point, the distance, the circular path),
+   the same in the 3D drawing, the book's sentence and the measurements. The student view itself is
+   ../../shared/lib/student/student.css (linked first). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.pvc { --c-ctr: #6741d9; --c-dist: #e8590c; --c-path: #1c6fd9; }
+.pvc .c-ctr { color: var(--c-ctr); }
+.pvc .c-dist { color: var(--c-dist); }
+.pvc .c-path { color: var(--c-path); }
+
+/* the examples */
+.cm-ex { align-self: flex-start; max-width: 100%; }
+.cm-ex button { height: 36px; padding: 0 13px; font-size: 15px; white-space: nowrap; }
+
+/* the book's sentence: two lines on a phone */
+.cm-idea { margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink-2); }
+.cm-idea b { font-weight: 700; color: var(--ink); }
+
+/* the measured distances (? = ? = ? = ? until measured) and the two buttons, side by side where there is room */
+.cm-row { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 8px 18px; }
+.cm-meas { display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; }
+.cm-meas-head { display: flex; align-items: baseline; justify-content: space-between; gap: 2px 10px; }
+.cm-meas .k { font-size: 13px; color: var(--ink-3); line-height: 1.4; white-space: nowrap; }
+.cm-meas .pvc-status { font-size: 13.5px; white-space: nowrap; }
+.cm-slots { display: flex; align-items: baseline; gap: 6px; }
+.cm-slots i { font-style: normal; font-size: 20px; color: var(--ink-3); }
+.cm-slot { min-width: 2.3em; padding: 0 4px; text-align: center; font-size: 22px; font-weight: 700; line-height: 1.3; font-variant-numeric: tabular-nums; color: var(--ink-3); border-bottom: 2px dashed var(--line-2); }
+.cm-slot.on { color: var(--c-dist); border-bottom-color: transparent; }
+/* four times the same number: the row lights up once */
+.cm-slots { border-radius: 6px; }
+.cm-slots.flash { animation: cm-flash 1.4s ease-out; }
+@keyframes cm-flash { 0%, 30% { background: color-mix(in srgb, var(--ok) 18%, transparent); } 100% { background: transparent; } }
+@media (prefers-reduced-motion: reduce) { .cm-slots.flash { animation: none; } }
+
+.cm-acts { display: flex; gap: 6px; margin-left: auto; }
+.cm-acts .pvc-btn { height: 38px; padding: 0 12px; font-size: 15px; }
+.cm-acts .pvc-btn:not(.primary) svg { color: var(--accent); }
+.cm-acts .ic { display: inline-flex; }
+.cm-acts [data-act='play'] { min-width: 92px; }
+
+/* how the picture is stylised, in the top left corner of the 3D view */
+.cm-note { position: absolute; left: 12px; top: 12px; z-index: 3; max-width: calc(100% - 250px); font-size: 12.5px; line-height: 1.35; color: var(--ink-3); pointer-events: none; }
+
+/* the test: letters and short phrases as answers */
+.cm .pvc-opt .cm-txt { font-size: 14.5px; line-height: 1.25; white-space: normal; font-weight: 600; }
+.cm .pvc-opt .cm-letter { font-size: 22px; font-weight: 700; }
+.cm .pvc-q-text { min-height: 2.8em; }
+.cm .pvc-q-feedback { min-height: 2.9em; }
+.cm .pvc-anno-callout { font-size: 14px; padding: 1px 8px; }
+.cm .pvc-anno small { font-size: 0.86em; font-weight: 500; }
+/* a small 3D view (a short phone): smaller labels, so they do not cover the example */
+.cm.cm-compact .pvc-anno, .cm.cm-compact .pvc-anno-callout { font-size: 12.5px; padding: 0 6px; }
+.cm.cm-compact .cm-note { font-size: 11.5px; }
+
+@container pvc (max-width: 560px) {
+  .cm-ex { align-self: stretch; display: grid; grid-template-columns: auto auto auto; }
+  .cm-ex button { padding: 0 8px; font-size: 14.5px; }
+  .cm-idea { font-size: 13.5px; }
+  .cm-note { max-width: calc(100% - 236px); font-size: 12px; }
+}
+@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
+  .cm-ex { align-self: stretch; display: grid; grid-template-columns: auto auto auto; }
+  .cm-ex button { height: 34px; padding: 0 6px; font-size: 13.5px; }
+  .cm-idea { font-size: 12.5px; line-height: 1.45; }
+  .cm-slots { gap: 4px; }
+  .cm-slots i { font-size: 17px; }
+  .cm-slot { font-size: 18px; min-width: 1.8em; padding: 0 2px; }
+  .cm-meas-head { flex-direction: column; align-items: flex-start; }
+  .cm-acts { margin-left: 0; }
+  .cm .pvc-q-feedback { font-size: 13.5px; }
+}

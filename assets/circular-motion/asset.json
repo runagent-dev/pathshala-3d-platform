@@ -1,0 +1,121 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "circular-motion",
+  "title": "Circular motion (ঘূর্ণন গতি)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 36,
+  "topic": "2.2",
+  "placement": "Book page 36, topic 2.2: ঘূর্ণন গতি (Circular Motion), next to that paragraph (the page has no picture for it).",
+  "order": 2,
+  "maintainers": ["RadeenXALNW"],
+  "units": "cm",
+  "description": "Interactive 3D figure for circular motion (ঘূর্ণন গতি), book page 36, topic 2.2. The book's three examples turn by themselves: a ceiling fan seen from below (বৈদ্যুতিক পাখা), the second hand of a wall clock (ঘড়ির কাঁটা) and the Moon going round the Earth (চাঁদ, with no string: কোনো দড়ি নেই). Each shows the fixed point (নির্দিষ্ট বিন্দু), a dashed line to the moving point with its distance, and the circular path (বৃত্তাকার পথ) it traces. The student touches the moving point (or drags it round) to measure its distance; four measurements at different places give the same number (70 cm, 12 cm, 3.84 lakh km): the distance is always the same. Speeds, and for the Moon sizes and distance, are stylised and say so. Test tab: 5 questions (find the fixed point among four, the distance after half a turn, what does not change, which everyday motion is circular, the Moon). Phone-first, Bangla.",
+  "tags": ["motion", "circular-motion", "rotation", "fan", "clock", "moon", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "example",
+      "label": "Example",
+      "type": "select",
+      "options": [["fan", "fan (পাখা)"], ["clock", "clock hand (ঘড়ির কাঁটা)"], ["moon", "Moon (চাঁদ)"]],
+      "default": "fan"
+    },
+    { "name": "play", "label": "Turning at the start", "type": "boolean", "default": "1" },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "First-use pointers", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "example": "clock" } },
+    { "name": "set", "payload": { "playing": false, "angle": 45 } },
+    { "name": "set", "payload": { "measure": true } },
+    { "name": "set", "payload": { "marks": [0, 90, 180, 270], "trail": 1 } },
+    { "name": "set", "payload": { "example": "moon", "playing": true } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": [
+    "ready",
+    "change",
+    "example",
+    "measure",
+    "view",
+    "dragstart",
+    "dragend",
+    "practice-start",
+    "practice-result",
+    "practice-end"
+  ],
+  "export": {
+    "poster": {
+      "params": { "coach": "0", "play": "0" },
+      "setup": [
+        {
+          "command": "set",
+          "payload": { "example": "fan", "angle": 25, "trail": 1, "marks": [-150, -55, 90, 25], "animate": false }
+        }
+      ]
+    },
+    "glb": [
+      {
+        "name": "default",
+        "setup": [{ "command": "set", "payload": { "example": "fan", "playing": false, "animate": false } }]
+      },
+      {
+        "name": "clock",
+        "setup": [{ "command": "set", "payload": { "example": "clock", "playing": false, "animate": false } }]
+      },
+      {
+        "name": "moon",
+        "setup": [{ "command": "set", "payload": { "example": "moon", "playing": false, "animate": false } }]
+      }
+    ],
+    "video": {
+      "kind": "script",
+      "seconds": 20,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 1.2, "command": "set", "payload": { "measure": true } },
+        { "at": 2.7, "command": "set", "payload": { "measure": true } },
+        { "at": 4.2, "command": "set", "payload": { "measure": true } },
+        { "at": 5.6, "command": "set", "payload": { "measure": true } },
+        { "at": 7.5, "command": "set", "payload": { "example": "clock" } },
+        { "at": 9.5, "command": "set", "payload": { "measure": true } },
+        { "at": 11.5, "command": "set", "payload": { "measure": true } },
+        { "at": 13, "command": "set", "payload": { "example": "moon" } },
+        { "at": 15, "command": "set", "payload": { "measure": true } },
+        { "at": 17.5, "command": "set", "payload": { "measure": true } }
+      ]
+    }
+  }
+}
