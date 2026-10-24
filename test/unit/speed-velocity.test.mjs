@@ -36,8 +36,12 @@ describe('the whirling stone (r = 1 m, 4 m/s)', () => {
     close(a.ve + b.ve, 0, 1e-12);
     close(a.vn + b.vn, 0, 1e-12);
   });
-  it('hangs below the hand as a conical pendulum: tan = g r / v²', () => {
-    close(m.DROOP, (9.8 * 1) / 16, 1e-12);
+  it('hangs below the hand as a conical pendulum: tan = g r / v², so it goes round g r² / v² lower', () => {
+    close(m.DROOP / m.STONE.r, (9.8 * m.STONE.r) / m.STONE.v ** 2, 1e-12);
+    close(m.DROOP, (9.8 * m.STONE.r ** 2) / m.STONE.v ** 2, 1e-12);
+    // the rope's pull: up part balances the weight, the level part keeps it on the circle (m v² / r)
+    const angle = Math.atan2(m.DROOP, m.STONE.r);
+    close(Math.tan(angle) * (m.STONE.v ** 2 / m.STONE.r), 9.8, 1e-9);
     close(m.HEIGHT, m.STONE.hand - m.DROOP, 1e-12);
     close(m.ROPE, Math.hypot(1, m.DROOP), 1e-12);
   });

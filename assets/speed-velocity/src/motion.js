@@ -20,11 +20,14 @@ export const STONE = {
   v: 4, // m/s, its দ্রুতি
   hand: 1.95, // m, height of the hand above the ground
   size: 0.085, // m, radius of the stone (drawn a little big, so it shows on a phone)
-  slide: 8, // m/s², how fast it slows down sliding on the grass after it lands
+  slide: 12, // m/s², how fast it slows down on the grass after it lands (it bounces and rolls a little)
   slow: 3, // the picture runs 3 times slower than real time
 };
-/** The rope hangs below the hand: tan(angle) = g r / v² (the stone goes round lower than the hand). */
-export const DROOP = (G * STONE.r) / STONE.v ** 2;
+/**
+ * The rope hangs below the hand (a conical pendulum): tan(angle below the level) = g r / v², so the stone goes
+ * round r · tan = g r² / v² lower than the hand.
+ */
+export const DROOP = (G * STONE.r ** 2) / STONE.v ** 2;
 export const HEIGHT = STONE.hand - DROOP; // m, height of the circle
 export const ROPE = Math.hypot(STONE.r, DROOP); // m, length of the rope
 export const PERIOD = (2 * Math.PI * STONE.r) / STONE.v; // s for one turn

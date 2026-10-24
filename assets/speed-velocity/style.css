@@ -1,35 +1,51 @@
 /* Speed and velocity: the page, the colours of the quantities (দূরত্ব and দ্রুতি blue, সরণ and বেগ orange, সময়
-   purple: the same as the 3D) and the two rows of the panel. The student view itself is
-   ../../shared/lib/student/student.css (linked first). */
+   purple: the same as the 3D) and the two rows of the panel, written as fractions as the book does. The student
+   view itself is ../../shared/lib/student/student.css (linked first). */
 html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
 #app { position: fixed; inset: 0; }
 body.bg-transparent { background: transparent; }
 
 .pvc { --c-dist: #1c6fd9; --c-disp: #d9480f; --c-time: #6741d9; }
-.pvc-t.dist { --c: var(--c-dist); }
-.pvc-t.disp { --c: var(--c-disp); }
-.pvc-t.time { --c: var(--c-time); }
+.pvc-t.dist, .sv-res.dist { --c: var(--c-dist); }
+.pvc-t.disp, .sv-res.disp { --c: var(--c-disp); }
 .pvc .c-dist { color: var(--c-dist); }
 .pvc .c-disp { color: var(--c-disp); }
-.pvc .c-time { color: var(--c-time); }
 
-/* two rows: দ্রুতি = দূরত্ব ÷ সময় = …, বেগ = … (the same height in both examples, so the 3D view keeps its size) */
+/* the learn sheet: the two rows and the sentence at the top, the buttons at the bottom */
+.sv .pvc-learn { justify-content: flex-start; gap: 6px; }
+.sv .sv-foot { margin-top: auto; flex-wrap: nowrap; }
+
+/* a row: name (and what it is made of) = fraction = result (and its direction) */
 .sv-rows { display: flex; flex-direction: column; gap: 4px; }
-.sv-row { align-items: flex-start; gap: 5px; flex-wrap: nowrap; min-width: 0; }
-.sv-row .sv-k { font-size: 16px; font-weight: 700; line-height: 1.75; white-space: nowrap; min-width: 4.6em; }
-.sv-row i { font-size: 19px; line-height: 1.45; }
-.sv-row .pvc-t { min-width: 0; }
-.sv-row .pvc-t b { font-size: 19px; line-height: 1.45; white-space: nowrap; display: inline-flex; align-items: center; gap: 2px; }
-.sv-row .pvc-t small { max-width: 9em; white-space: nowrap; }
-.sv-row .pvc-t.res b { min-width: 3.4em; justify-content: center; }
-.sv-row .sv-dirt { margin-left: 8px; }
-.sv-u { font-size: 0.68em; font-weight: 600; margin-left: 0.18em; opacity: 0.85; }
-.sv-dir { width: 1.05em !important; height: 1.05em !important; stroke-width: 2.6 !important; margin-right: 3px; transition: none; }
+.sv-row { display: flex; align-items: center; gap: 6px; min-height: 52px; min-width: 0; }
+.sv-row > i { font-style: normal; font-size: 19px; line-height: 1; color: var(--ink-3); }
+.sv-k { display: flex; flex-direction: column; min-width: 5.6em; }
+.sv-row:first-child .sv-k b { color: var(--c-dist); }
+.sv-row:last-child .sv-k b { color: var(--c-disp); }
+.sv-k b { font-size: 16px; font-weight: 700; line-height: 1.3; white-space: nowrap; }
+.sv-k small, .sv-res small { font-size: 11.5px; line-height: 1.3; color: var(--ink-3); white-space: nowrap; }
+.sv-frac { display: inline-flex; flex-direction: column; align-items: center; min-width: 4.4em; font-size: 18px; font-weight: 700; line-height: 1.25; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sv-num { align-self: stretch; text-align: center; padding: 0 4px 1px; border-bottom: 1.6px solid var(--ink-2); }
+.sv-den { padding: 1px 4px 0; }
+.sv-num.dist { color: var(--c-dist); }
+.sv-num.disp { color: var(--c-disp); }
+.sv-den.time { color: var(--c-time); }
+.sv-res { display: flex; flex-direction: column; align-items: flex-start; min-width: 4.8em; }
+.sv-res b { font-size: 20px; font-weight: 700; line-height: 1.35; color: var(--c); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sv-res small { display: inline-flex; align-items: center; gap: 2px; }
+.sv-row .pvc-t { min-width: 0; align-items: flex-start; }
+.sv-row .pvc-t b { font-size: 20px; line-height: 1.35; white-space: nowrap; display: inline-flex; align-items: center; gap: 2px; }
+.sv-row .pvc-t small { max-width: none; white-space: nowrap; }
+.sv-row .sv-dirt { margin-left: 10px; }
 .sv-dirt b { min-width: 7.6em; justify-content: flex-start; }
-.pvc[data-scene='road'] .sv-row .pvc-t b { min-width: 3.6em; justify-content: center; }
+.sv-u { font-size: 0.68em; font-weight: 600; margin-left: 0.18em; opacity: 0.85; }
+.sv-dir { width: 1.05em !important; height: 1.05em !important; stroke-width: 2.6 !important; margin-right: 3px; }
+.sv-dir.small { width: 12px !important; height: 12px !important; margin-right: 1px; color: var(--c-disp); }
+/* after letting go of the rope: the numbers are those of that moment (the row names say so) */
+.sv-past .sv-frac, .sv-past .sv-res b, .sv-past .pvc-t b { opacity: 0.72; }
+.sv-past .sv-k small { color: var(--c-disp); font-weight: 600; }
 
-.sv-extra { margin: 0; min-height: 3em; font-size: 13.5px; line-height: 1.5; color: var(--ink-2); } /* 2 lines: the 3D view keeps its size */
-.sv-foot { flex-wrap: nowrap; }
+.sv-extra { margin: 2px 0 0; min-height: 4.5em; font-size: 13.5px; line-height: 1.5; color: var(--ink-2); } /* 3 lines: the 3D view keeps its size */
 .sv-scenes button { height: 38px; padding: 0 14px; font-size: 15px; font-weight: 600; }
 .sv-act { min-width: 8.6em; }
 
@@ -45,31 +61,36 @@ body.bg-transparent { background: transparent; }
 
 /* phones and narrow columns */
 @container pvc (max-width: 420px) {
-  .sv-row .sv-k { font-size: 15px; min-width: 0; }
-  .sv-row .pvc-t b, .sv-row i { font-size: 17px; }
-  .sv-row .pvc-t small { font-size: 11.5px; }
+  .sv-k b { font-size: 15px; }
+  .sv-frac { font-size: 18px; }
+  .sv-res b, .sv-row .pvc-t b { font-size: 19px; }
+  .sv-row { min-height: 56px; }
 }
 /* phone embeds that are not very tall: a little smaller, so the 3D view keeps more room */
 @container pvc (max-width: 560px) and (max-height: 600px) {
-  .sv .pvc-q-text { font-size: 15px; min-height: 2.75em; }
+  .sv .pvc-q-text { font-size: 15px; min-height: 2.8em; }
   .sv .pvc-q-feedback { font-size: 13.5px; }
   .sv .pvc-opt { height: 40px; }
   .sv-rows { gap: 0; }
-  .sv-extra { font-size: 12.5px; }
+  .sv-row { min-height: 46px; }
+  .sv-frac { font-size: 15.5px; }
+  .sv-res b, .sv-row .pvc-t b { font-size: 17px; }
+  .sv-extra { font-size: 12.5px; min-height: 3em; }
 }
-/* a narrow panel beside the picture */
-@container pvc-panel (max-width: 290px) {
-  .sv-row { gap: 3px; }
-  .sv-row .pvc-t b, .sv-row i { font-size: 15px; }
-  .sv-row .pvc-t.res b, .pvc[data-scene='road'] .sv-row .pvc-t b { min-width: 0; }
-  .sv-dirt b { min-width: 0; }
-}
-/* short and wide (phone held sideways): the panel is a narrow column beside the picture */
+/* short and wide (phone held sideways): a wider panel beside the picture, so each row stays on one line */
 @container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
+  .sv .pvc-shell { grid-template-columns: minmax(0, 1fr) clamp(280px, 40%, 350px); }
   .sv-rows { gap: 2px; }
-  .sv-row { flex-wrap: wrap; row-gap: 0; }
-  .sv-row .sv-k { flex-basis: 100%; line-height: 1.35; font-size: 14.5px; }
-  .sv-row .pvc-t b, .sv-row i { font-size: 16.5px; }
-  .sv-extra { font-size: 12.5px; min-height: 4.5em; }
-  .sv-foot { flex-wrap: wrap; }
+  .sv-row { gap: 4px; min-height: 46px; }
+  .sv-k { min-width: 0; }
+  .sv-k b { font-size: 14.5px; }
+  .sv-frac { font-size: 15.5px; min-width: 0; }
+  .sv-res { min-width: 0; }
+  .sv-res b, .sv-row .pvc-t b { font-size: 16.5px; }
+  .sv-row > i { font-size: 16px; }
+  .sv-dirt b { min-width: 0; }
+  .sv-row .sv-dirt { margin-left: 4px; }
+  .sv-k small { white-space: normal; max-width: 6.5em; }
+  .sv-extra { font-size: 12.5px; min-height: 5.6em; }
+  .sv .sv-foot { flex-wrap: wrap; }
 }

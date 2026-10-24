@@ -186,6 +186,30 @@ export function createSling({ t, colors }) {
   kept.root.visible = false;
   kept.root.userData.noExport = true;
   root.add(kept.root);
+  // a short fading trail just behind the stone: which way it is going round (for the test, when it is held still)
+  const TRAIL = 6;
+  const trail = new THREE.InstancedMesh(
+    new THREE.SphereGeometry(0.045, 10, 8),
+    new THREE.MeshBasicMaterial({ color: colors.path, toneMapped: false, transparent: true, opacity: 0.8, depthWrite: false }),
+    TRAIL,
+  );
+  trail.visible = false;
+  trail.userData.noExport = true;
+  trail.frustumCulled = false;
+  root.add(trail);
+  const trailMatrix = new THREE.Matrix4();
+  const trailScale = new THREE.Vector3();
+  const trailQuat = new THREE.Quaternion();
+  function placeTrail(deg) {
+    for (let k = 0; k < TRAIL; k++) {
+      const s = stoneAt(deg - 9 * (k + 1.4));
+      trailScale.setScalar(1 - k * 0.14);
+      trailMatrix.compose(at(s.e, s.n, HEIGHT), trailQuat, trailScale);
+      trail.setMatrixAt(k, trailMatrix);
+    }
+    trail.instanceMatrix.needsUpdate = true;
+  }
+
   const DOTS = 48;
   const dots = new THREE.InstancedMesh(
     new THREE.SphereGeometry(0.026, 8, 6),
@@ -310,6 +334,8 @@ export function createSling({ t, colors }) {
   root.add(handHit, stoneHit);
 
   const hand = at(0, 0, STONE.hand);
+  const pondAt = at(POND_CENTRE.e, POND_CENTRE.n);
+  const compassAt = at(COMPASS.e, COMPASS.n);
   const tmp = new THREE.Vector3();
   const dir = new THREE.Vector3();
 
@@ -347,7 +373,7 @@ export function createSling({ t, colors }) {
      * The stone going round at angle θ (deg); `turned` = degrees turned since it started (for the faint copies);
      * arrow: show its বেগ.
      */
-    setWhirl(deg, { turned = 0, arrow = true, traces = true } = {}) {
+    setWhirl(deg, { turned = 0, arrow = true, traces = true, trail: withTrail = false } = {}) {
       const s = stoneAt(deg);
       const p = at(s.e, s.n, HEIGHT);
       stone.position.copy(p);
@@ -360,6 +386,8 @@ export function createSling({ t, colors }) {
       velocity.root.visible = arrow;
       kept.root.visible = false;
       dots.count = 0;
+      trail.visible = withTrail;
+      if (withTrail) placeTrail(deg);
       placeShadow(s.e, s.n, HEIGHT, stoneShadow.userData.blob !== false);
       for (const g of ghosts) {
         // degrees since the stone last passed this copy's angle (none before it first gets there)
@@ -389,6 +417,7 @@ export function createSling({ t, colors }) {
       rope.scale.set(1, tmp.distanceTo(p), 1);
       rope.visible = f.phase !== 'gone' && f.phase !== 'sink';
       velocity.root.visible = false;
+      trail.visible = false;
       const s0 = stoneAt(deg);
       kept.set(at(s0.e, s0.n, HEIGHT), at(s0.ve, s0.vn), V_LENGTH);
       kept.root.visible = true;
@@ -419,18 +448,24 @@ export function createSling({ t, colors }) {
     points: {
       hand: () => hand.clone(),
       stone: () => stone.position.clone(),
-      /** Where the বেগ label goes: beyond the arrow's tip; after letting go, beside it (the way it went stays clear). */
+      /**
+       * Where the বেগ label goes: beyond the arrow's tip; after letting go, beside the arrow (so the way the stone
+       * went stays clear), on the side away from the pond and the compass.
+       */
       arrowTip: () => {
         const a = kept.root.visible ? kept.root : velocity.root;
         const d = new THREE.Vector3(0, 1, 0).applyQuaternion(a.quaternion);
         if (!kept.root.visible) return a.position.clone().addScaledVector(d, V_LENGTH + 0.22);
-        const out = a.position.clone().setY(0).normalize(); // away from the student
-        return a.position
-          .clone()
-          .addScaledVector(d, V_LENGTH * 0.5)
-          .addScaledVector(out, 0.55);
+        const mid = a.position.clone().addScaledVector(d, V_LENGTH * 0.5);
+        const side = new THREE.Vector3(-d.z, 0, d.x).normalize().multiplyScalar(0.55);
+        const clear = (p) =>
+          Math.min(Math.hypot(p.x - pondAt.x, p.z - pondAt.z) - POND.radius * 1.25, Math.hypot(p.x - compassAt.x, p.z - compassAt.z) - 0.75);
+        const one = mid.clone().add(side);
+        const other = mid.clone().sub(side);
+        return clear(one) >= clear(other) ? one : other;
       },
-      pond: () => at(POND_CENTRE.e, POND_CENTRE.n + POND.radius * 0.15, 0),
+      // a little to the far side of the pond, away from where the বেগ label passes
+      pond: () => at(POND_CENTRE.e + 0.18, POND_CENTRE.n + 0.28, 0),
     },
   };
 }

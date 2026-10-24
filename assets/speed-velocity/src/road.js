@@ -1,6 +1,6 @@
 // The winding road of চিত্র ২.০৪ as a small 3D map (1 km of road = 1 unit; the cyclist and the road are drawn
-// much bigger than they would be, so they show): km posts 0 to 7, the road travelled so far (দূরত্ব) and a
-// straight arrow from A to the cyclist (সরণ).
+// much bigger than they would be, so they show): km posts 0 to 6, the road travelled so far (দূরত্ব) and a
+// straight arrow from A to the cyclist (সরণ). Past C (6 km) the road fades out: only A to B matters here.
 // Map coordinates (e = east, n = north, km) become three.js x = e, z = −n, y = height.
 import * as THREE from 'three';
 import { textMesh } from '@shared/student/materials.js';
@@ -13,9 +13,10 @@ const at = (e, n, h = 0) => new THREE.Vector3(e, h, -n);
 const ROAD_W = 0.07; // map units: the road is drawn about 70 m wide
 const TRAIL_W = 0.042;
 export const CYCLIST_SCALE = 0.125; // the 1.8 m cyclist is drawn 220 m long
+const FADE = [5.7, 6.9]; // km: the road fades out between these
 
-/** A flat strip along the points (map coordinates), `w` wide, `h` above the ground. */
-function ribbon(points, w, h) {
+/** A flat strip along the points (map coordinates), `w` wide, `h` above the ground; alpha(i) gives vertex alpha. */
+function ribbon(points, w, h, alpha = null) {
   const n = points.length;
   const pos = new Float32Array(n * 2 * 3);
   const index = [];
@@ -34,6 +35,11 @@ function ribbon(points, w, h) {
   }
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  if (alpha) {
+    const c = new Float32Array(n * 2 * 4);
+    for (let i = 0; i < n; i++) c.set([1, 1, 1, alpha(i), 1, 1, 1, alpha(i)], i * 8);
+    g.setAttribute('color', new THREE.BufferAttribute(c, 4));
+  }
   g.setIndex(index);
   g.computeVertexNormals();
   return g;
@@ -106,12 +112,27 @@ export function createRoad({ N, colors }) {
   root.name = 'RoadMap';
   const pts = ROAD.samples;
 
+  // the road to where it starts to fade, then the fading end (vertex alpha)
   const asphalt = new THREE.MeshStandardMaterial({ name: 'Road', color: 0xb9bec5, roughness: 0.9 });
   const edgeMat = new THREE.MeshStandardMaterial({ name: 'RoadEdge', color: 0x8d949c, roughness: 0.9 });
-  const edge = new THREE.Mesh(ribbon(pts, ROAD_W + 0.014, 0.003), edgeMat);
-  const road = new THREE.Mesh(ribbon(pts, ROAD_W, 0.005), asphalt);
+  const cut = Math.round(FADE[0] / ROAD.stepKm);
+  const end = Math.round(FADE[1] / ROAD.stepKm);
+  const main = pts.slice(0, cut + 1);
+  const tail = pts.slice(cut, end + 1);
+  const fade = (i) => Math.max(0, 1 - i / (tail.length - 1)) ** 1.5;
+  const fading = (m) => {
+    const f = m.clone();
+    Object.assign(f, { vertexColors: true, transparent: true, depthWrite: false });
+    return f;
+  };
+  const road = new THREE.Mesh(ribbon(main, ROAD_W, 0.005), asphalt);
   road.name = 'Road';
-  root.add(edge, road);
+  root.add(
+    new THREE.Mesh(ribbon(main, ROAD_W + 0.014, 0.003), edgeMat),
+    road,
+    new THREE.Mesh(ribbon(tail, ROAD_W + 0.014, 0.003, fade), fading(edgeMat)),
+    new THREE.Mesh(ribbon(tail, ROAD_W, 0.005, fade), fading(asphalt)),
+  );
 
   // the road travelled so far: a full-length strip, of which only the part behind the cyclist is drawn
   const toB = Math.round(ROAD.B.km / ROAD.stepKm);
@@ -133,7 +154,10 @@ export function createRoad({ N, colors }) {
   // km posts with their numbers, on the outer side of the road (as in the book)
   const postMat = new THREE.MeshStandardMaterial({ name: 'Post', color: 0xf4f5f6, roughness: 0.6 });
   const nearest = (e, n) => pts.reduce((m, p) => Math.min(m, Math.hypot(p[0] - e, p[1] - n)), Infinity);
-  for (let k = 0; k <= Math.floor(ROAD.lengthKm); k++) {
+  const kmPosts = new THREE.Group();
+  kmPosts.name = 'KmPosts';
+  root.add(kmPosts);
+  for (let k = 0; k <= Math.floor(FADE[0] + 0.5); k++) {
     const p = roadAt(k);
     const a = ((p.heading + 90) * Math.PI) / 180;
     const side = [1, -1]
@@ -144,7 +168,7 @@ export function createRoad({ N, colors }) {
     const label = textMesh(N(k), 0.12, { color: colors.label, weight: 700 });
     label.rotation.x = -Math.PI / 2;
     label.position.copy(at(side.e, side.n, 0.006));
-    root.add(post, label);
+    kmPosts.add(post, label);
   }
 
   const displacement = createArrow({ color: colors.displacement, radius: 0.014, head: 0.09, headRadius: 0.036, name: 'Displacement' });
@@ -162,11 +186,13 @@ export function createRoad({ N, colors }) {
   return {
     root,
     cyclist,
-    trail,
-    displacement,
     hits: [cyclistHit],
+    /** The km posts and their numbers (hidden for a question whose numbers are not the road's). */
+    showKm(on) {
+      kmPosts.visible = on;
+    },
     /** The cyclist `km` along the road: the travelled road (দূরত্ব) and the arrow from A (সরণ). */
-    setRide(km, { arrow = true, trailOn = true } = {}) {
+    setRide(km) {
       const p = roadAt(km);
       cyclist.position.copy(at(p.e, p.n, 0.01));
       cyclist.rotation.y = (p.heading * Math.PI) / 180;
@@ -185,10 +211,10 @@ export function createRoad({ N, colors }) {
       }
       pos.needsUpdate = true;
       trailGeo.setDrawRange(0, (i < toB ? i + 1 : i) * 6);
-      trail.visible = trailOn && km > 0.001;
+      trail.visible = km > 0.001;
       tmp.copy(at(p.e, p.n, 0.03)).sub(A);
       displacement.set(A, tmp, tmp.length());
-      displacement.root.visible = arrow && tmp.length() > 0.02;
+      displacement.root.visible = tmp.length() > 0.02;
     },
     points: {
       A: () => at(0, 0, 0.02),

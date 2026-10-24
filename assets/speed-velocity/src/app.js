@@ -1,10 +1,12 @@
 // Speed and velocity (book pages 40–41, topic 2.5), student view. Two examples, switched by two chips:
 //  - পাথর: a student whirls a stone on a rope. Its দ্রুতি stays 4 m/s, but its বেগ (the arrow, along the circle)
-//    keeps turning, so the বেগ keeps changing. Let go of the rope (tap the hand or the button) and the stone flies
+//    keeps turning, so the বেগ keeps changing. Let go of the rope (touch the hand or the button) and the stone flies
 //    straight on along the বেগ it had at that moment, along the tangent: land it in the pond.
 //  - সাইকেল: the book's example on the road of চিত্র ২.০৪: A to B in 20 minutes, 4 km along the road but 2 km in a
-//    straight line, so গড় দ্রুতি = 12 km/h and গড় বেগ = 6 km/h towards B, worked out live as the cycle goes.
-// Then a short test. Built on the shared student kit (@shared/student/…); the physics is in motion.js.
+//    straight line, so গড় দ্রুতি = 4 km ÷ 1/3 h = 12 km/h and গড় বেগ = 2 km ÷ 1/3 h = 6 km/h towards B, worked out
+//    live as the cycle goes.
+// The panel writes both as fractions, as the book does (v = 100 m / 20 s = 5 m/s). Then a short test. Built on the
+// shared student kit (@shared/student/…); the physics is in motion.js.
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
 import { createTweener } from '@shared/tween.js';
@@ -64,15 +66,19 @@ const RIDE_SCREEN = 8; // s on screen for the 20 minutes from A to B
 const DEG_PER_MS = (OMEGA * 180) / Math.PI / STONE.slow / 1000; // how fast the stone goes round on screen
 const CIRCUMFERENCE = 2 * Math.PI * STONE.r;
 const HOURS = { 10: '1/6', 20: '1/3', 40: '2/3' }; // minutes as a fraction of an hour, for the worked sums
+const STRAIGHT = 0.97; // on the road's first, nearly straight stretch: displacement ÷ distance above this
+const DOUBLE_TAP = 450; // ms after letting go in which a second tap does not whirl a new stone
 
-// where the camera looks from (towards the camera from the middle of the scene): north stays at the top
+// where the camera looks from (towards the camera from the middle of the scene): north stays at the top. The stone
+// is seen from above but tilted, so the student stands up and the stone's height and fall show.
 const VIEWS = {
-  stone: { front: new THREE.Vector3(0, 1, 0.2).normalize(), '3d': new THREE.Vector3(0.5, 0.6, 1).normalize() },
+  stone: { front: new THREE.Vector3(0, 1, 0.6).normalize(), '3d': new THREE.Vector3(0.5, 0.6, 1).normalize() },
   road: { front: new THREE.Vector3(0, 1, 0.45).normalize(), '3d': new THREE.Vector3(0.55, 0.75, 1).normalize() },
 };
 const ROAD_SHOWN = 5.2; // km of road the picture shows in full (A to B, and on a little)
 const at = (e, n, h = 0) => new THREE.Vector3(e, h, -n);
-const DIR_ICON = '<svg class="sv-dir" viewBox="-12 -12 24 24" aria-hidden="true"><path d="M-8 0H7M2 -5.5L8 0L2 5.5"/></svg>';
+const arrowIcon = (cls, heading) =>
+  `<svg class="${cls}" viewBox="-12 -12 24 24" aria-hidden="true" style="transform:rotate(${-Math.round(heading)}deg)"><path d="M-8 0H7M2 -5.5L8 0L2 5.5"/></svg>`;
 
 export function createApp(root, options = {}) {
   const o = { ...DEFAULTS, ...options };
@@ -89,8 +95,8 @@ export function createApp(root, options = {}) {
   const ui = buildStudentShell(root, t, {
     learn: `
           <div class="sv-rows">
-            <div class="pvc-sum sv-row" data-row="sp"></div>
-            <div class="pvc-sum sv-row" data-row="ve"></div>
+            <div class="sv-row" data-row="sp"></div>
+            <div class="sv-row" data-row="ve"></div>
           </div>
           <p class="pvc-learn-extra sv-extra"></p>
           <div class="pvc-learn-foot sv-foot">
@@ -180,21 +186,34 @@ export function createApp(root, options = {}) {
     mode: 'explore',
     locked: false,
     userMovedCamera: false,
+    zoomedOut: false, // the camera moved back to show where a thrown stone landed
+    extra: [], // more things the picture must show (the arrows of a test question)
     // the stone: 'whirl' (going round), 'still' (held at one angle, for the test), 'flying', 'done' (landed)
-    stone: { phase: 'whirl', base: 0, since: 0, turned0: 0, angle: 0, turned: 0, arrow: true, traces: true, rel: null },
+    stone: { phase: 'whirl', base: 0, since: 0, turned0: 0, angle: 0, turned: 0, arrow: true, traces: true, trail: false, rel: null },
     // the cycle: km from A, and while it rides: from km0 at time `since`
-    road: { km: 0, playing: false, km0: 0, since: 0, labels: true },
+    road: { km: 0, playing: false, km0: 0, since: 0, labels: true, toldDrag: false },
   };
 
   // ── the stone ───────────────────────────────────────────────────────────────
   function whirlFrom(deg, { turned = deg } = {}) {
     const st = s.stone;
-    Object.assign(st, { phase: 'whirl', base: wrap(deg), since: now(), turned0: turned, rel: null, arrow: true, traces: true });
+    Object.assign(st, { phase: 'whirl', base: wrap(deg), since: now(), turned0: turned, rel: null, arrow: true, traces: true, trail: false });
     tickStone();
   }
-  function holdAt(deg, { arrow = true, traces = false } = {}) {
+  function holdAt(deg, { arrow = true, trail = false } = {}) {
     const st = s.stone;
-    Object.assign(st, { phase: 'still', base: wrap(deg), angle: wrap(deg), since: now(), turned0: 0, turned: 0, rel: null, arrow, traces });
+    Object.assign(st, {
+      phase: 'still',
+      base: wrap(deg),
+      angle: wrap(deg),
+      since: now(),
+      turned0: 0,
+      turned: 0,
+      rel: null,
+      arrow,
+      traces: false,
+      trail,
+    });
     tickStone();
   }
   /** Let go of the rope now (or at angle `deg`). instant: jump to where it lands. */
@@ -212,16 +231,24 @@ export function createApp(root, options = {}) {
     }
     coach?.objectUsed();
     emit('release', { angle: +angle.toFixed(1), heading: +thr.heading.toFixed(1), direction: dirOf(thr.heading) });
-    if (!s.userMovedCamera) flyTo(poseFor('stone', s.view), 0.9);
     tickStone();
+    // the camera moves back only if the place where the stone ends up would be out of the picture
+    if (!s.userMovedCamera && !inView(at(thr.rest.e, thr.rest.n), s.mode === 'quiz' ? 10 : hintRoom())) {
+      s.zoomedOut = true;
+      flyTo(poseFor('stone', s.view), 0.9);
+    }
     refresh();
     emitChange();
   }
-  function whirlAgain() {
-    whirlFrom(s.stone.angle);
+  /** A new stone in the hand, going round (not in the moment right after letting go: that is a double tap). */
+  function whirlAgain({ force = false } = {}) {
+    const st = s.stone;
+    if (!force && st.phase === 'flying' && now() - st.rel.at < DOUBLE_TAP) return;
+    whirlFrom(st.angle);
     if (s.mode !== 'quiz') velLabel(true);
     hideHint();
-    if (!s.userMovedCamera) flyTo(poseFor('stone', s.view), 0.9);
+    if (s.zoomedOut && !s.userMovedCamera) flyTo(poseFor('stone', s.view), 0.9);
+    s.zoomedOut = false;
     refresh();
     emitChange();
   }
@@ -236,7 +263,7 @@ export function createApp(root, options = {}) {
         st.angle = wrap(st.base + d);
         st.turned = st.turned0 + d;
       }
-      sling.setWhirl(st.angle, { turned: st.turned, arrow: st.arrow, traces: st.traces });
+      sling.setWhirl(st.angle, { turned: st.turned, arrow: st.arrow, traces: st.traces, trail: st.trail });
       sling.setRipples(-1);
       const dir = dirOf(st.angle + 90);
       if (dir !== lastDir) {
@@ -274,7 +301,6 @@ export function createApp(root, options = {}) {
     rd.km0 = rd.km;
     rd.since = now();
     tickRoad();
-    roadLabels();
     refresh();
     emitChange();
   }
@@ -284,38 +310,54 @@ export function createApp(root, options = {}) {
       rd.km = Math.min(RIDE.km, rd.km0 + (RIDE.km * (now() - rd.since)) / (RIDE_SCREEN * 1000));
       if (rd.km >= RIDE.km) {
         rd.playing = false;
-        roadLabels();
-        if (s.mode !== 'quiz') audio.success();
+        if (s.mode !== 'quiz') {
+          audio.success();
+          if (!rd.toldDrag) {
+            rd.toldDrag = true;
+            showHint(t('hint_drag'), { duration: 4000 });
+          }
+        }
         emit('arrive', { minutes: RIDE.minutes });
         emitChange();
       }
       refresh();
     }
     road.setRide(rd.km);
+    roadLabels();
     return rd.playing;
   }
+  /** A, B, and the দূরত্ব and সরণ labels (with their values at B; the সরণ label waits until its arrow is long). */
   function roadLabels() {
     if (s.scene !== 'road' || !s.road.labels) {
       for (const id of ['A', 'B', 'dist', 'disp']) annotations.remove(id);
       return;
     }
-    const atB = s.road.km >= RIDE.km - 1e-6;
-    const key = `${atB}|${s.road.labels}`;
+    const r = rideAt(s.road.km);
+    const atB = r.km >= RIDE.km - 1e-6;
+    const longArrow = r.displacement > 0.45;
+    const key = `${atB}|${longArrow}`;
     if (annotations.has('A') && roadLabels.key === key) return;
     roadLabels.key = key;
     annotations.add('A', { text: 'A', point: road.points.A, dx: -32, dy: 16, kind: 'part' });
     annotations.add('B', { text: 'B', point: road.points.B, dx: 0, dy: -34, kind: 'part' });
-    const d = atB ? t('lbl_distance_v', { d: fmt(RIDE.km) }) : t('lbl_distance');
-    const sv = atB ? t('lbl_displacement_v', { s: fmt(ROAD.B.straight) }) : t('lbl_displacement');
     annotations.add('dist', {
-      text: d,
+      text: atB ? t('lbl_distance_v', { d: fmt(RIDE.km) }) : t('lbl_distance'),
       point: () => road.points.trailMid(Math.max(0.4, s.road.km)),
       dx: 46,
       dy: 14,
       kind: 'callout',
       color: COLORS.distance,
     });
-    annotations.add('disp', { text: sv, point: road.points.arrowMid, dx: -30, dy: -30, kind: 'callout', color: COLORS.displacement });
+    if (longArrow)
+      annotations.add('disp', {
+        text: atB ? t('lbl_displacement_v', { s: fmt(ROAD.B.straight) }) : t('lbl_displacement'),
+        point: road.points.arrowMid,
+        dx: -30,
+        dy: -30,
+        kind: 'callout',
+        color: COLORS.displacement,
+      });
+    else annotations.remove('disp');
   }
 
   stage.addTicker(() => (s.scene === 'stone' ? tickStone() : tickRoad()));
@@ -326,13 +368,26 @@ export function createApp(root, options = {}) {
       annotations.add('vel', { text: t('lbl_velocity'), point: sling.points.arrowTip, dx: 0, dy: 0, kind: 'callout', color: COLORS.velocity });
     else annotations.remove('vel');
   }
+  /** The pond's label: the goal of the game while learning, just its name in the test. */
+  function pondLabel() {
+    if (s.scene !== 'stone') return;
+    annotations.add('pond', { text: t(s.mode === 'quiz' ? 'lbl_pond' : 'lbl_pond_goal'), point: sling.points.pond, dx: 0, dy: 0, kind: 'part' });
+  }
   function setScene(name, { animate = true, start = true } = {}) {
-    s.scene = name === 'road' ? 'road' : 'stone';
+    const next = name === 'road' ? 'road' : 'stone';
+    // what is left behind stops: a flying stone lands, the cycle stops
+    if (next !== 'stone' && s.stone.phase === 'flying') {
+      s.stone.phase = 'done';
+      s.stone.rel.landed = true;
+    }
+    if (next !== 'road') s.road.playing = false;
+    s.scene = next;
     sling.root.visible = s.scene === 'stone';
     road.root.visible = s.scene === 'road';
     annotations.clear();
     roadLabels.key = '';
     hideHint();
+    s.zoomedOut = false;
     if (s.scene === 'stone') {
       if (start) {
         // as if it had been going round for a while: the faint copies of the last turn are there from the start
@@ -340,7 +395,7 @@ export function createApp(root, options = {}) {
         whirlFrom(from, { turned: from + 360 });
       }
       velLabel(s.mode !== 'quiz');
-      annotations.add('pond', { text: t('lbl_pond'), point: sling.points.pond, dx: 0, dy: 0, kind: 'part' });
+      pondLabel();
     } else if (start) rideTo(0, { play: true });
     s.userMovedCamera = false;
     note.textContent = s.scene === 'stone' ? t('note_slow', { k: STONE.slow }) : t('note_fast', { m: RIDE.minutes, s: RIDE_SCREEN });
@@ -365,36 +420,42 @@ export function createApp(root, options = {}) {
     coach?.objectUsed();
   }
 
-  // ── the panel ───────────────────────────────────────────────────────────────
+  // ── the panel: two rows written as fractions, as the book does ──────────────
   const $ = ui.$;
   const el = {
+    rows: $('.sv-rows'),
     sp: $('[data-row="sp"]'),
     ve: $('[data-row="ve"]'),
     extra: $('.sv-extra'),
     act: $('[data-act="main"] span'),
   };
-  const term = (k, cls, label) => `<span class="pvc-t ${cls}" data-t="${k}"><b></b><small>${label ? t(label) : ''}</small></span>`;
+  const EQ = '<i>=</i>';
+  const name = (key) => `<span class="sv-k"><b>${t(key)}</b><small data-v="cap-${key}"></small></span>`;
+  const frac = (top, topCls, bottom) =>
+    `<span class="sv-frac"><span class="sv-num ${topCls}" data-v="${top}"></span><span class="sv-den time" data-v="${bottom}"></span></span>`;
+  const result = (k, cls) => `<span class="sv-res ${cls}"><b data-v="${k}"></b><small data-v="${k}-c"></small></span>`;
+  const term = (k, cls, label) => `<span class="pvc-t ${cls}"><b data-v="${k}"></b><small>${t(label)}</small></span>`;
   let rowsScene = '';
   const cells = {};
   function buildRows() {
     if (rowsScene === s.scene) return;
     rowsScene = s.scene;
     if (s.scene === 'stone') {
-      el.sp.innerHTML = `<span class="sv-k c-dist">${t('speed')}</span><i>=</i>${term('d', 'dist', 'turn_distance')}<i>÷</i>${term('t', 'time', 'turn_time')}<i>=</i>${term('sp', 'dist res', '')}`;
-      el.ve.innerHTML = `<span class="sv-k c-disp">${t('velocity')}</span><i>=</i>${term('vm', 'disp res', 'magnitude')}${term('vd', 'disp sv-dirt', 'direction')}`;
+      el.sp.innerHTML = `${name('speed')}${EQ}${frac('d', 'dist', 't')}${EQ}${result('sp', 'dist')}`;
+      el.ve.innerHTML = `${name('velocity')}${EQ}${term('vm', 'disp', 'magnitude')}${term('vd', 'disp sv-dirt', 'direction')}`;
     } else {
-      el.sp.innerHTML = `<span class="sv-k c-dist">${t('avg_speed')}</span><i>=</i>${term('d', 'dist', 'total_distance')}<i>÷</i>${term('t', 'time', 'total_time')}<i>=</i>${term('sp', 'dist res', '')}`;
-      el.ve.innerHTML = `<span class="sv-k c-disp">${t('avg_velocity')}</span><i>=</i>${term('s', 'disp', 'displacement')}<i>÷</i>${term('t2', 'time', 'time')}<i>=</i>${term('vm', 'disp res', '')}`;
+      el.sp.innerHTML = `${name('avg_speed')}${EQ}${frac('d', 'dist', 't')}${EQ}${result('sp', 'dist')}`;
+      el.ve.innerHTML = `${name('avg_velocity')}${EQ}${frac('s', 'disp', 't2')}${EQ}${result('vm', 'disp')}`;
     }
     for (const k of Object.keys(cells)) delete cells[k];
-    for (const b of root.querySelectorAll('.sv-row [data-t]')) cells[b.dataset.t] = { b: b.querySelector('b'), html: null };
+    for (const node of el.rows.querySelectorAll('[data-v]')) cells[node.dataset.v] = { node, html: null };
     for (const k of Object.keys(shown)) delete shown[k];
   }
   function put(k, html) {
     const c = cells[k];
     if (c && c.html !== html) {
       c.html = html;
-      c.b.innerHTML = html;
+      c.node.innerHTML = html;
     }
   }
   const shown = {};
@@ -409,8 +470,8 @@ export function createApp(root, options = {}) {
     if (s.scene !== 'stone') return;
     const st = s.stone;
     const heading = st.rel ? st.rel.thr.heading : st.angle + 90;
-    put('vd', `${DIR_ICON}<span>${dirWord(heading)}</span>`);
-    const icon = cells.vd?.b.querySelector('.sv-dir');
+    put('vd', `${arrowIcon('sv-dir', 0)}<span>${dirWord(heading)}</span>`);
+    const icon = cells.vd?.node.querySelector('.sv-dir');
     if (icon) icon.style.transform = `rotate(${-heading}deg)`;
   }
 
@@ -418,29 +479,45 @@ export function createApp(root, options = {}) {
     buildRows();
     const st = s.stone;
     if (s.scene === 'stone') {
+      const past = Boolean(st.rel); // after letting go the numbers are those of the moment it was let go
+      el.rows.classList.toggle('sv-past', past);
+      put('cap-speed', t(past ? 'cap_turning' : 'cap_speed'));
+      put('cap-velocity', t(past ? 'cap_released' : 'cap_vector'));
       put('d', `${N(fmt(CIRCUMFERENCE, 2))}${U('u_m')}`);
       put('t', `${N(fmt(PERIOD, 2))}${U('u_s')}`);
       put('sp', `${N(fmt(STONE.v))}${U('u_ms')}`);
+      put('sp-c', t('no_direction'));
       put('vm', `${N(fmt(STONE.v))}${U('u_ms')}`);
       refreshDirection();
-      text('extra', el.extra, st.rel ? t('flew_stone') : t('idea_stone', { v: fmt(STONE.v) }));
+      text('extra', el.extra, past ? t('flew_stone') : t('idea_stone', { c: fmt(CIRCUMFERENCE, 2), p: fmt(PERIOD, 2), v: fmt(STONE.v) }));
       text('act', el.act, t(st.phase === 'whirl' || st.phase === 'still' ? 'act_release' : 'act_whirl'));
     } else {
+      el.rows.classList.remove('sv-past');
       const r = rideAt(s.road.km);
       const end = r.km >= RIDE.km - 1e-6;
       const km = (x) => `${N(end ? fmt(x, 2) : fixed(x, 2))}${U('u_km')}`;
-      const min = `${N(end ? fmt(r.minutes, 1) : fixed(r.minutes, 1))}${U('u_min')}`;
+      // time in hours, so km ÷ h gives km/h (at B the book's 20 minutes, 1/3 hour)
+      const hours = `${N(end ? HOURS[RIDE.minutes] : fixed(r.minutes / 60, 2))}${U('u_h')}`;
       const speed = (x) => (x == null ? '–' : `${N(end ? fmt(x, 1) : fixed(x, 1))}${U('u_kmh')}`);
+      put('cap-avg_speed', t('cap_speed'));
+      put('cap-avg_velocity', t('cap_velocity'));
       put('d', km(r.distance));
-      put('t', min);
-      put('t2', min);
+      put('t', hours);
+      put('t2', hours);
       put('s', km(end ? ROAD.B.straight : r.displacement));
       put('sp', speed(r.avgSpeed));
+      put('sp-c', t('no_direction'));
       put('vm', speed(end ? kmh(ROAD.B.straight, RIDE.minutes) : r.avgVelocity));
+      put('vm-c', r.km > 0.02 ? `${arrowIcon('sv-dir small', r.heading)}${t('towards', { d: dirWord(r.heading) })}` : '');
+      const straight = r.km > 0.05 && r.displacement / r.distance > STRAIGHT;
       text(
         'extra',
         el.extra,
-        end ? t('done_road', { d: fmt(RIDE.km), s: fmt(ROAD.B.straight), m: RIDE.minutes, h: HOURS[RIDE.minutes] }) : t('idea_road'),
+        end
+          ? t('done_road', { d: fmt(RIDE.km), s: fmt(ROAD.B.straight), m: RIDE.minutes, h: HOURS[RIDE.minutes] })
+          : straight
+            ? t('straight_road')
+            : t('idea_road', { m: fixed(r.minutes, 1), h: fixed(r.minutes / 60, 2) }),
       );
       text('act', el.act, t(s.road.playing ? 'act_pause' : end ? 'act_replay' : 'act_play'));
     }
@@ -475,6 +552,7 @@ export function createApp(root, options = {}) {
         displacement: +r.displacement.toFixed(3),
         avgSpeed: r.avgSpeed == null ? null : +r.avgSpeed.toFixed(2),
         avgVelocity: r.avgVelocity == null ? null : +r.avgVelocity.toFixed(2),
+        direction: r.km > 0 ? dirOf(r.heading) : null,
         playing: s.road.playing,
       },
     };
@@ -490,9 +568,12 @@ export function createApp(root, options = {}) {
 
   // ── camera ──────────────────────────────────────────────────────────────────
   const WORLD_UP = new THREE.Vector3(0, 1, 0);
-  /** Points that must be in the picture (three.js coordinates). */
+  /**
+   * What must be in the picture: points (three.js coordinates), some with a label box around them on the screen
+   * ({ p, box: [left, top, right, bottom] } in px from the point).
+   */
   function contentOf(name) {
-    const pts = [];
+    const pts = [...s.extra];
     if (name === 'road') {
       // the road from A to a little past B, with room for the km numbers and the labels beside it
       for (let km = 0; km <= ROAD_SHOWN; km += 0.1) {
@@ -505,7 +586,8 @@ export function createApp(root, options = {}) {
         ])
           pts.push(at(p.e + de, p.n + dn, 0), at(p.e + de, p.n + dn, 0.15));
       }
-      pts.push(at(ROAD.B.at[0], ROAD.B.at[1] + 0.4, 0)); // the label B above it
+      // the labels A (left of it) and B (above it), as roadLabels() places them
+      pts.push({ p: at(0, 0, 0.02), box: [-64, 0, 0, 32] }, { p: at(ROAD.B.at[0], ROAD.B.at[1], 0.02), box: [-16, -50, 16, 0] });
       return pts;
     }
     for (let k = 0; k < 24; k++) {
@@ -523,7 +605,7 @@ export function createApp(root, options = {}) {
     ])
       pts.push(at(COMPASS.e + de, COMPASS.n + dn, 0));
     const rel = s.stone.rel;
-    if (rel) {
+    if (rel && s.zoomedOut) {
       // after letting go: where the stone ends up must show too
       for (const [de, dn] of [
         [-0.35, -0.35],
@@ -543,15 +625,24 @@ export function createApp(root, options = {}) {
     if (!r.width) return null;
     return { left: r.left - c.left - pad, right: r.right - c.left + pad, top: r.top - c.top - pad, bottom: r.bottom - c.top + pad };
   }
+  /** Room to keep at the bottom of the picture for the hint line (after letting go the hint says where it went). */
+  const hintRoom = () => Math.min(64, Math.max(stage.height, 120) * 0.16);
+  /** Is this point in the picture now, `bottom` px clear of the lower edge? */
+  function inView(p, bottom = 10) {
+    const q = p.clone().project(camera);
+    const x = (q.x * 0.5 + 0.5) * stage.width;
+    const y = (-q.y * 0.5 + 0.5) * stage.height;
+    return q.z < 1 && x > 20 && x < stage.width - 20 && y > 20 && y < stage.height - bottom;
+  }
   /**
    * A camera pose that shows the whole scene as big as it can, for this frame's shape: nothing under the buttons
    * at the top right or the note at the top left (the picture may move down a little to make room).
    */
   function poseFor(name, view) {
-    const pts = contentOf(name);
+    const pts = contentOf(name).map((c) => (c.isVector3 ? { p: c, box: null } : c));
     const lo = new THREE.Vector3(Infinity, Infinity, Infinity);
     const hi = new THREE.Vector3(-Infinity, -Infinity, -Infinity);
-    for (const p of pts) {
+    for (const { p } of pts) {
       lo.min(p);
       hi.max(p);
     }
@@ -560,9 +651,9 @@ export function createApp(root, options = {}) {
     const back = VIEWS[name][view].clone();
     const right = new THREE.Vector3().crossVectors(WORLD_UP, back).normalize();
     const up = new THREE.Vector3().crossVectors(back, right);
-    const local = pts.map((p) => {
+    const local = pts.map(({ p, box }) => {
       const q = p.clone().sub(target);
-      return { x: q.dot(right), y: q.dot(up), z: q.dot(back) };
+      return { x: q.dot(right), y: q.dot(up), z: q.dot(back), box };
     });
     const W = stage.width;
     const H = Math.max(stage.height, 120);
@@ -570,15 +661,21 @@ export function createApp(root, options = {}) {
     const tv = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
     const th = tv * camera.aspect;
     const M = 10; // px from the edges
-    const bottom = name === 'stone' && s.stone.rel ? Math.min(64, H * 0.16) : M; // after letting go: room for the hint
+    const bottom = name === 'stone' && s.zoomedOut && s.mode !== 'quiz' ? hintRoom() : M;
+    const clear = (px, py) => {
+      if (px < M || px > W - M || py < M || py > H - bottom) return false;
+      return !boxes.some((r) => px > r.left && px < r.right && py > r.top && py < r.bottom);
+    };
     const fits = (d, shift) =>
-      local.every(({ x, y, z }) => {
+      local.every(({ x, y, z, box }) => {
         const depth = d - z;
         if (depth < 0.2) return false;
         const px = W / 2 + (x / (depth * th)) * (W / 2);
         const py = H / 2 - (y / (depth * tv)) * (H / 2) + shift;
-        if (px < M || px > W - M || py < M || py > H - bottom) return false;
-        return !boxes.some((r) => px > r.left && px < r.right && py > r.top && py < r.bottom);
+        if (!box) return clear(px, py);
+        return (
+          clear(px + box[0], py + box[1]) && clear(px + box[2], py + box[1]) && clear(px + box[0], py + box[3]) && clear(px + box[2], py + box[3])
+        );
       });
     let best = null;
     for (let shift = 0; shift <= 64; shift += 4) {
@@ -677,14 +774,15 @@ export function createApp(root, options = {}) {
           ui.canvasHost.setPointerCapture(e.pointerId); // keep the drag when the finger leaves the cycle
         } catch {}
         s.road.playing = false;
+        s.road.toldDrag = true;
+        hideHint();
         coach?.objectUsed();
-        showHint(t('hint_drag'), { duration: 2200 });
         dragTo(e);
         return;
       }
       // like letting go of a real rope, it happens as the finger goes down
       if (s.stone.phase === 'whirl') release();
-      else if (s.stone.phase === 'done') whirlAgain();
+      else if (s.stone.phase === 'done' || s.stone.phase === 'flying') whirlAgain();
     },
     true,
   );
@@ -752,7 +850,7 @@ export function createApp(root, options = {}) {
   const pickOne = (list) => list[Math.floor(Math.random() * list.length)];
   const letters = t('letters').split(',');
   const value = (unit) => (v) => `${N(fmt(v, 2))}<small>${t(unit)}</small>`;
-  // book-style numbers: a path D m long, a displacement d m, in t s
+  // book-style numbers: a distance D m travelled, a displacement d m, in t s
   const WALKS = [
     [100, 50, 20],
     [120, 60, 30],
@@ -773,16 +871,20 @@ export function createApp(root, options = {}) {
     sling.ring.material.color.set(COLORS.path);
     for (const id of ['c0', 'c1', 'c2', 'c3', 'p1', 'p2', 'se']) annotations.remove(id);
     s.road.labels = true;
+    s.extra = [];
+    road.showKm(true);
   }
-  function stoneQuestion(deg, { arrow }) {
+  function stoneQuestion(deg, { arrow, trail = false }) {
     if (s.scene !== 'stone') setScene('stone', { start: false });
-    holdAt(deg, { arrow, traces: false });
+    holdAt(deg, { arrow, trail });
     annotations.remove('vel');
+    s.zoomedOut = false;
     if (!s.userMovedCamera) flyTo(poseFor('stone', s.view), 0.8);
   }
   function roadQuestion({ labels }) {
     if (s.scene !== 'road') setScene('road', { start: false });
-    s.road.labels = labels !== false;
+    road.showKm(labels !== 'plain');
+    s.road.labels = true;
     roadLabels.key = '';
     rideTo(RIDE.km);
     if (labels === 'plain') {
@@ -831,6 +933,7 @@ export function createApp(root, options = {}) {
         s.mode = 'quiz';
         hideHint();
         kinds = shuffle(['fly', 'same', 'calc', 'road', 'turn']);
+        pondLabel();
         syncUI();
       },
       leave() {
@@ -845,18 +948,23 @@ export function createApp(root, options = {}) {
         s.locked = true;
         const kind = kinds[i % kinds.length];
         if (kind === 'fly') {
-          // the stone held somewhere on the circle; four arrows: along the tangent (both ways), outwards, inwards
-          const deg = pickOne([20, 65, 110, 155, 200, 245, 290, 335]);
-          stoneQuestion(deg, { arrow: false });
-          const from = sling.points.stone();
-          const heads = [deg + 90, deg, deg + 180, deg - 90]; // the first is right
+          // the stone held somewhere on the circle, a short trail behind it; four arrows: along the tangent (right),
+          // straight outwards, half-way between, and backwards along the tangent
+          const deg = pickOne([110, 155, 200, 245, 290]); // not facing the pond, where the arrows would crowd it
+          const held = stoneAt(deg);
+          const from = at(held.e, held.n, HEIGHT);
+          const heads = [deg + 90, deg, deg + 45, deg - 90]; // the first is right
           const order = shuffle([0, 1, 2, 3]); // letter j shows heads[order[j]]
-          order.forEach((h, j) => {
+          const tips = order.map((h) => {
             const dir = at(Math.cos((heads[h] * Math.PI) / 180), Math.sin((heads[h] * Math.PI) / 180));
+            return { dir, tip: from.clone().addScaledVector(dir, 0.97) };
+          });
+          s.extra = tips.map(({ tip }) => ({ p: tip, box: [-18, -16, 18, 16] }));
+          stoneQuestion(deg, { arrow: false, trail: true });
+          tips.forEach(({ dir, tip }, j) => {
             const a = sling.choiceArrows[j];
-            a.set(from, dir, h === 2 ? 0.5 : 0.78);
+            a.set(from, dir, 0.78);
             a.root.visible = true;
-            const tip = from.clone().addScaledVector(dir, h === 2 ? 0.62 : 0.95);
             annotations.add(`c${j}`, { text: letters[j], point: () => tip, dx: 0, dy: 0, kind: 'callout', color: COLORS.choice });
           });
           const expected = order.indexOf(0);
@@ -892,7 +1000,8 @@ export function createApp(root, options = {}) {
           roadQuestion({ labels: 'plain' });
           say(t(speed ? 'q_calc_speed' : 'q_calc_vel', { t: tt, D, d }));
           const right = (speed ? D : d) / tt;
-          const wrong = speed ? [d / tt, tt / D, D * tt] : [D / tt, tt / d, d * tt];
+          // the usual slips: the other length, the division upside down, the two lengths added
+          const wrong = speed ? [d / tt, tt / D, (D + d) / tt] : [D / tt, tt / d, (D + d) / tt];
           question = { kind, D, d, t: tt, speed, right };
           return {
             choices: numericChoices(right, wrong),
@@ -1008,7 +1117,7 @@ export function createApp(root, options = {}) {
     if (!b || !root.contains(b)) return;
     audio.unlock();
     if (b.dataset.view) setView(b.dataset.view);
-    if (b.dataset.scene && b.dataset.scene !== s.scene) setScene(b.dataset.scene);
+    if (b.dataset.scene && b.dataset.scene !== s.scene && s.mode !== 'quiz') setScene(b.dataset.scene);
     if (b.dataset.mode === 'quiz' && s.mode !== 'quiz') quiz.start();
     if (b.dataset.mode === 'explore') quiz.stop();
     if (b.dataset.q != null) quiz.choose(Number(b.dataset.q));
@@ -1038,10 +1147,11 @@ export function createApp(root, options = {}) {
     const target = /** @type {Element} */ (e.target);
     if (target.closest('input, textarea, select') || e.metaKey || e.ctrlKey || e.altKey) return;
     const k = e.key.toLowerCase();
+    const learning = s.mode !== 'quiz'; // in the test the picture belongs to the question
     if ((k === ' ' || k === 'enter') && !target.closest('button')) mainAction();
-    else if (k === '1') setScene('stone');
-    else if (k === '2') setScene('road');
-    else if ((k === 'arrowright' || k === 'arrowleft') && s.scene === 'road' && !s.locked)
+    else if (k === '1' && learning) setScene('stone');
+    else if (k === '2' && learning) setScene('road');
+    else if ((k === 'arrowright' || k === 'arrowleft') && s.scene === 'road' && learning)
       rideTo(Math.round((s.road.km + (k === 'arrowright' ? 0.1 : -0.1)) * 1000) / 1000);
     else if (k === 'f') setView('front');
     else if (k === 'v') setView('3d');
@@ -1056,11 +1166,7 @@ export function createApp(root, options = {}) {
   syncUI();
   const ready = (async () => {
     if (o.mode === 'quiz') quiz.start();
-    else {
-      coach?.start(1400);
-      if (s.scene === 'stone' && o.coach)
-        setTimeout(() => s.mode === 'explore' && s.stone.phase === 'whirl' && showHint(t('hint_aim'), { duration: 4500 }), 5200);
-    }
+    else coach?.start(1400);
   })();
 
   return {
@@ -1085,9 +1191,10 @@ export function createApp(root, options = {}) {
         if (s.scene !== 'stone') setScene('stone', { animate });
         whirlFrom(Number(p.angle), { turned: Number(p.angle) + 360 });
         velLabel(s.mode !== 'quiz');
-        if (!s.userMovedCamera) flyTo(poseFor('stone', s.view), animate ? 0.6 : 0);
+        if (s.zoomedOut && !s.userMovedCamera) flyTo(poseFor('stone', s.view), animate ? 0.6 : 0);
+        s.zoomedOut = false;
       }
-      if (p.whirl === true && s.scene === 'stone') whirlAgain();
+      if (p.whirl === true && s.scene === 'stone') whirlAgain({ force: true });
       if (p.whirl === false && s.stone.phase === 'whirl') {
         s.stone.phase = 'still';
         tickStone();
@@ -1111,7 +1218,7 @@ export function createApp(root, options = {}) {
       s.stone.phase = 'whirl';
       s.stone.angle = 0;
       setScene('stone', { animate: false });
-      whirlFrom(0);
+      whirlFrom(0, { turned: 360 });
       await setView('front');
     },
     startPractice: () => quiz.start(),
