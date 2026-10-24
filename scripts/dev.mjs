@@ -31,6 +31,7 @@ import { packageAsset } from './lib/package.mjs';
 import { scaffoldAsset } from './lib/scaffold.mjs';
 import { AUTH_FILE, loadCredentials, createBasicAuth } from './lib/auth.mjs';
 import { readReviews, addReview, updateReview, deleteReview } from './lib/reviews.mjs';
+import { MIME } from './lib/mime.mjs';
 
 const PORT = Number(process.env.PORT || 4800);
 const PUBLIC = process.argv.includes('--public') || process.env.PUBLIC === '1';
@@ -52,36 +53,6 @@ const HOSTS = process.env.HOST ? process.env.HOST.split(',').map((h) => h.trim()
 const isPrivateHost = (h) => h === 'localhost' || h === '::1' || h.startsWith('127.') || TAILSCALE_RE.test(h);
 const credentials = PUBLIC || !HOSTS.every(isPrivateHost) ? loadCredentials() : null;
 const checkAuth = credentials ? createBasicAuth(credentials) : null;
-
-const MIME = {
-  '.html': 'text/html; charset=utf-8',
-  '.js': 'text/javascript; charset=utf-8',
-  '.mjs': 'text/javascript; charset=utf-8',
-  '.css': 'text/css; charset=utf-8',
-  '.json': 'application/json; charset=utf-8',
-  '.md': 'text/markdown; charset=utf-8',
-  '.txt': 'text/plain; charset=utf-8',
-  '.svg': 'image/svg+xml',
-  '.png': 'image/png',
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.webp': 'image/webp',
-  '.gif': 'image/gif',
-  '.ico': 'image/x-icon',
-  '.glb': 'model/gltf-binary',
-  '.gltf': 'model/gltf+json',
-  '.bin': 'application/octet-stream',
-  '.hdr': 'application/octet-stream',
-  '.ktx2': 'image/ktx2',
-  '.wasm': 'application/wasm',
-  '.woff2': 'font/woff2',
-  '.woff': 'font/woff',
-  '.mp3': 'audio/mpeg',
-  '.wav': 'audio/wav',
-  '.ogg': 'audio/ogg',
-  '.mp4': 'video/mp4',
-  '.zip': 'application/zip',
-};
 
 // ── live reload ────────────────────────────────────────────────────────────────
 const sseClients = new Set();

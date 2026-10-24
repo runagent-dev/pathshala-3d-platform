@@ -7,7 +7,11 @@ export const DIVISIONS = 100; // parts on the circular scale
 export const LC = PITCH / DIVISIONS; // 0.01 mm
 export const RANGE = 25; // mm
 
-export const roundTo = (x, step) => Math.round(x / step) * step;
+/** Rounds to a multiple of `step`, without binary leftovers (6.35, not 6.3500000000000005). */
+export const roundTo = (x, step) => {
+  const decimals = Math.max(0, Math.ceil(-Math.log10(step) - 1e-9));
+  return +(Math.round(x / step) * step).toFixed(decimals);
+};
 
 /** L, C and the reading for a gap (mm) between the anvil and the spindle. */
 export function read(gap) {

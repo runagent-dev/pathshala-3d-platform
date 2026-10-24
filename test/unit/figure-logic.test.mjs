@@ -68,3 +68,12 @@ describe('books registry', () => {
     assert.equal(bookRef({ book: 'physics-9-10', topic: '', page: null }), 'physics-9-10');
   });
 });
+
+describe('screw gauge roundTo', () => {
+  it('leaves no binary leftovers', () => {
+    assert.equal(gauge.roundTo(6.35, gauge.LC), 6.35);
+    assert.equal(gauge.roundTo(635 * 0.01, gauge.LC), 6.35);
+    assert.equal(gauge.roundTo(0.3, 0.1), 0.3);
+    assert.equal(gauge.roundTo(7, 1), 7);
+  });
+});

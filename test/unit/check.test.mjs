@@ -32,7 +32,7 @@ describe('check rules', () => {
   });
 
   it('contract: the bridge must use the folder name and the manifest version', async () => {
-    const errors = await broken('bad-bridge', (dir) => edit(dir, 'src/app.js', (s) => s.replace("VERSION = '0.1.0'", "VERSION = '0.0.9'")));
+    const errors = await broken('bad-bridge', (dir) => edit(dir, 'src/app.js', (s) => s.replace(/VERSION = '[^']+'/, "VERSION = '0.0.9'")));
     assert.deepEqual(rules(errors), ['contract']);
     assert.ok(errors.some((e) => e.message.includes('the bridge says asset "screw-gauge"')));
     assert.ok(errors.some((e) => e.message.includes('VERSION is "0.0.9"')));
