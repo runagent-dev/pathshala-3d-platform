@@ -34,6 +34,8 @@
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
 }
+/* quick taps on a button (start, stop, next) must never zoom the page on a phone */
+.pvc button { touch-action: manipulation; }
 .pvc[data-theme='dark'] {
   --page: #11161d;
   --panel: #161c25;

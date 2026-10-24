@@ -107,7 +107,14 @@ export function createStage(container, options = {}) {
     for (const fn of resizers) fn(width, height);
     dirty = true;
   }
-  const ro = new ResizeObserver(resize);
+  // setSize clears the canvas, so draw again at once: waiting for the next frame shows one blank frame (a white
+  // flash on a phone when it turns, or when the panel under the view changes height)
+  const ro = new ResizeObserver(() => {
+    resize();
+    if (!running) return;
+    dirty = false;
+    render();
+  });
   ro.observe(container);
   resize();
 
