@@ -25,7 +25,7 @@ export const DEFAULTS = {
 /** Wait (briefly) for the Bangla webfont. */
 export function loadFonts(timeout = 2500) {
   if (!document.fonts?.load) return Promise.resolve();
-  const loads = ['400', '600', '700'].map((w) => document.fonts.load(`${w} 16px "Noto Sans Bengali"`, 'অআ০১২'));
+  const loads = ['400', '600', '700'].map((w) => document.fonts.load(`${w} 16px "Noto Sans Bengali"`, 'অআ০১২')); // check:allow-bangla font sample, not shown
   return Promise.race([Promise.all(loads), new Promise((r) => setTimeout(r, timeout))]).catch(() => {});
 }
 

@@ -27,7 +27,7 @@ export const VERSION = '0.3.2';
 /** Wait (briefly) for the Bangla webfont, so the numbers engraved on the scales are drawn with it. */
 export function loadFonts(timeout = 2500) {
   if (!document.fonts?.load) return Promise.resolve();
-  const loads = ['400', '500', '600', '700'].map((w) => document.fonts.load(`${w} 24px "Noto Sans Bengali"`, 'অআ০১২৩ab12'));
+  const loads = ['400', '500', '600', '700'].map((w) => document.fonts.load(`${w} 24px "Noto Sans Bengali"`, 'অআ০১২৩ab12')); // check:allow-bangla font sample, not shown
   return Promise.race([Promise.all(loads), new Promise((r) => setTimeout(r, timeout))]).catch(() => {});
 }
 

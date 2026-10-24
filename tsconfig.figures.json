@@ -1,0 +1,7 @@
+{
+  // Figures opt in to type checking file by file: put `// @ts-check` on the first line of a file in src/.
+  // three and @shared resolve like the figures' import map. `npm run types` runs all configs.
+  "extends": "./tsconfig.web.json",
+  "compilerOptions": { "checkJs": false },
+  "include": ["assets/*/src/**/*.js"]
+}

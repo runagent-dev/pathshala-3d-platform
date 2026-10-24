@@ -3,7 +3,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
-export const ASSETS_DIR = path.join(ROOT, 'assets');
+// PATHSHALA_ASSETS_DIR points the tools at another folder of figures (tests use a temporary one).
+export const ASSETS_DIR = process.env.PATHSHALA_ASSETS_DIR ? path.resolve(process.env.PATHSHALA_ASSETS_DIR) : path.join(ROOT, 'assets');
 export const SHARED_DIR = path.join(ROOT, 'shared');
 export const DIST_DIR = path.join(ROOT, 'dist');
 export const TEMPLATES_DIR = path.join(ROOT, 'templates');

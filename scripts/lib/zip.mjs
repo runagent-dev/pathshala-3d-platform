@@ -21,14 +21,24 @@ function crc32(buf) {
   return (c ^ 0xffffffff) >>> 0;
 }
 
+// In UTC, so the same input gives the same bytes in every time zone.
 function dosDateTime(date) {
-  const time = (date.getHours() << 11) | (date.getMinutes() << 5) | (date.getSeconds() >> 1);
-  const day = ((date.getFullYear() - 1980) << 9) | ((date.getMonth() + 1) << 5) | date.getDate();
+  const d = date.getTime() < Date.UTC(1980, 0, 1) ? new Date(Date.UTC(1980, 0, 1)) : date;
+  const time = (d.getUTCHours() << 11) | (d.getUTCMinutes() << 5) | (d.getUTCSeconds() >> 1);
+  const day = ((d.getUTCFullYear() - 1980) << 9) | ((d.getUTCMonth() + 1) << 5) | d.getUTCDate();
   return { time, day };
 }
 
-/** Zip every file under `dir` into `outFile`, placed inside a top-level folder `rootName`. */
-export async function zipDirectory(dir, outFile, rootName) {
+/**
+ * Zip every file under `dir` into `outFile`, placed inside a top-level folder `rootName`. Files go in sorted order;
+ * pass `mtime` to give every entry the same date (reproducible zips), else each file's own modification time.
+ *
+ * @param {string} dir
+ * @param {string} outFile
+ * @param {string} rootName
+ * @param {{ mtime?: Date }} [options]
+ */
+export async function zipDirectory(dir, outFile, rootName, { mtime } = {}) {
   const files = await walkFiles(dir);
   const parts = [];
   const central = [];
@@ -37,14 +47,14 @@ export async function zipDirectory(dir, outFile, rootName) {
   for (const rel of files) {
     const abs = path.join(dir, rel);
     const data = await fsp.readFile(abs);
-    const stat = await fsp.stat(abs);
+    const date = mtime || (await fsp.stat(abs)).mtime;
     const name = Buffer.from(`${rootName}/${rel.split(path.sep).join('/')}`, 'utf8');
     const crc = crc32(data);
     const deflated = zlib.deflateRawSync(data, { level: 9 });
     const store = deflated.length >= data.length;
     const body = store ? data : deflated;
     const method = store ? 0 : 8;
-    const { time, day } = dosDateTime(stat.mtime);
+    const { time, day } = dosDateTime(date);
 
     const local = Buffer.alloc(30);
     local.writeUInt32LE(0x04034b50, 0);

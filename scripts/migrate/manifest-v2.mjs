@@ -26,7 +26,13 @@ const EXPORT = {
 };
 const DROPPED = ['subject', 'chapter', 'grade', 'updated', 'status'];
 
+/**
+ * @param {Record<string, any>} m a v1 (or v2) manifest
+ * @param {{ id?: string }} [options]
+ * @returns {Record<string, any>}
+ */
 export function migrate(m, { id } = {}) {
+  /** @type {Record<string, any>} */
   const out = { $schema: SCHEMA_REF, ...m, schemaVersion: SCHEMA_VERSION };
   if (!out.book) out.book = DEFAULT_BOOK;
   if (!Array.isArray(out.maintainers)) out.maintainers = [];

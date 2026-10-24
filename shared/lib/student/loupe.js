@@ -141,7 +141,7 @@ export function createLoupe({ stage, layer, clearColor = 0xffffff, onChange, onD
   // Drag the lens by its rim or handle.
   let drag = null;
   el.addEventListener('pointerdown', (e) => {
-    if (!e.target.closest('.rim-hit, .pvc-lens-handle')) return;
+    if (!(/** @type {Element} */ (e.target).closest('.rim-hit, .pvc-lens-handle'))) return;
     e.stopPropagation();
     e.preventDefault();
     drag = { id: e.pointerId, ox: e.clientX - state.x, oy: e.clientY - state.y };

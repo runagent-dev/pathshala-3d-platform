@@ -48,7 +48,7 @@ export function createAnnotations({ stage, layer }) {
     layer.appendChild(el);
     const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
     const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    dot.setAttribute('r', kind === 'part' ? 3 : 4);
+    dot.setAttribute('r', kind === 'part' ? '3' : '4');
     line.classList.add(`k-${kind}`);
     dot.classList.add(`k-${kind}`);
     if (color) {

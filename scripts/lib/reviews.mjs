@@ -1,16 +1,25 @@
-// Reviewer feedback for each asset, kept next to it in assets/<id>/reviews/:
-//   reviews.json   [{ id, author, text, createdAt, status: 'open'|'done', image?, context?, reply?, repliedAt? }]
-//   <id>.png|jpg   optional picture of what the reviewer was looking at
+// Reviewer feedback for each asset, kept next to it in assets/<id>/reviews/, one file per review so reviews
+// written at the same time (or on different machines) never conflict in git:
+//   <rid>.json            { id, author, text, createdAt, status: 'open'|'done', image?, context?, reply?, repliedAt?, updatedAt? }
+//   <rid>.webp|png|jpg    optional picture of what the reviewer was looking at
+// An older reviews.json (one array) is still read; a review in it moves to its own file when it is changed.
 // Dev only: the packager never ships the reviews/ folder.
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
 import { assetDir } from './paths.mjs';
+import { writeFileAtomic } from './fsutil.mjs';
+
+const RID_RE = /^[a-z0-9]{6,32}$/;
+const LEGACY = 'reviews.json';
+const MAX_IMAGE = 1024 * 1024; // the studio sends a WebP of at most 1280 px, well under this
+const IMAGE_TYPES = { png: 'png', jpeg: 'jpg', webp: 'webp' };
 
 const dirOf = (id) => path.join(assetDir(id), 'reviews');
-const fileOf = (id) => path.join(dirOf(id), 'reviews.json');
+const fileOf = (id, rid) => path.join(dirOf(id), `${rid}.json`);
 const fail = (status, message) => Object.assign(new Error(message), { status });
+const format = (review) => `${JSON.stringify(review, null, 2)}\n`;
 
 // One write at a time per asset, so two reviewers sending at once don't overwrite each other.
 const queues = new Map();
@@ -23,22 +32,38 @@ function serial(id, fn) {
   return next;
 }
 
-export async function readReviews(id) {
-  const file = fileOf(id);
-  if (!fs.existsSync(file)) return [];
+async function readJson(file, fallback) {
   try {
-    const list = JSON.parse(await fsp.readFile(file, 'utf8'));
-    return Array.isArray(list) ? list : [];
+    return JSON.parse(await fsp.readFile(file, 'utf8'));
   } catch {
-    return [];
+    return fallback;
   }
 }
 
-async function writeReviews(id, list) {
-  await fsp.mkdir(dirOf(id), { recursive: true });
-  const tmp = `${fileOf(id)}.tmp`;
-  await fsp.writeFile(tmp, `${JSON.stringify(list, null, 2)}\n`);
-  await fsp.rename(tmp, fileOf(id));
+async function readLegacy(id) {
+  const list = await readJson(path.join(dirOf(id), LEGACY), []);
+  return Array.isArray(list) ? list.filter((r) => r && RID_RE.test(r.id || '')) : [];
+}
+
+async function writeLegacy(id, list) {
+  const file = path.join(dirOf(id), LEGACY);
+  if (list.length) await writeFileAtomic(file, `${JSON.stringify(list, null, 2)}\n`);
+  else await fsp.rm(file, { force: true });
+}
+
+/** All reviews of an asset, oldest first. */
+export async function readReviews(id) {
+  const dir = dirOf(id);
+  if (!fs.existsSync(dir)) return [];
+  const byId = new Map();
+  for (const r of await readLegacy(id)) byId.set(r.id, r);
+  for (const name of await fsp.readdir(dir)) {
+    const rid = name.replace(/\.json$/, '');
+    if (name === LEGACY || !name.endsWith('.json') || !RID_RE.test(rid)) continue;
+    const r = await readJson(path.join(dir, name), null);
+    if (r && r.id === rid) byId.set(rid, r);
+  }
+  return [...byId.values()].sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)) || a.id.localeCompare(b.id));
 }
 
 export async function reviewCounts(id) {
@@ -61,6 +86,10 @@ function cleanContext(ctx) {
   return { frame, params, note: 'state left out (too large)' };
 }
 
+/**
+ * @param {string} id
+ * @param {{ author?: string, text?: string, image?: string | null, context?: object | null }} [review]
+ */
 export function addReview(id, { author, text, image, context } = {}) {
   return serial(id, async () => {
     const name = clean(author, 60);
@@ -68,14 +97,14 @@ export function addReview(id, { author, text, image, context } = {}) {
     if (!name) throw fail(400, 'Please give your name');
     if (!body) throw fail(400, 'Please write your feedback');
     const rid = `${Date.now().toString(36)}${crypto.randomBytes(3).toString('hex')}`;
+    await fsp.mkdir(dirOf(id), { recursive: true });
     let picture = null;
     if (image) {
-      const m = /^data:image\/(png|jpeg);base64,([A-Za-z0-9+/=]+)$/.exec(String(image));
-      if (!m) throw fail(400, 'The picture must be a PNG or JPEG');
+      const m = /^data:image\/(png|jpeg|webp);base64,([A-Za-z0-9+/=]+)$/.exec(String(image));
+      if (!m) throw fail(400, 'The picture must be a PNG, JPEG or WebP');
       const buf = Buffer.from(m[2], 'base64');
-      if (buf.length > 4 * 1024 * 1024) throw fail(413, 'The picture is too large (max 4 MB)');
-      picture = `reviews/${rid}.${m[1] === 'jpeg' ? 'jpg' : 'png'}`;
-      await fsp.mkdir(dirOf(id), { recursive: true });
+      if (buf.length > MAX_IMAGE) throw fail(413, 'The picture is too large (max 1 MB)');
+      picture = `reviews/${rid}.${IMAGE_TYPES[m[1]]}`;
       await fsp.writeFile(path.join(assetDir(id), picture), buf);
     }
     const review = {
@@ -87,18 +116,35 @@ export function addReview(id, { author, text, image, context } = {}) {
       image: picture,
       context: cleanContext(context),
     };
-    const list = await readReviews(id);
-    list.push(review);
-    await writeReviews(id, list);
+    await writeFileAtomic(fileOf(id, rid), format(review));
     return review;
   });
 }
 
+/** Finds a review; one still in the old reviews.json is moved to its own file first. */
+async function take(id, rid) {
+  if (!RID_RE.test(rid || '')) throw fail(404, 'No such review');
+  const own = await readJson(fileOf(id, rid), null);
+  if (own) return own;
+  const legacy = await readLegacy(id);
+  const r = legacy.find((x) => x.id === rid);
+  if (!r) throw fail(404, 'No such review');
+  await writeFileAtomic(fileOf(id, rid), format(r));
+  await writeLegacy(
+    id,
+    legacy.filter((x) => x.id !== rid),
+  );
+  return r;
+}
+
+/**
+ * @param {string} id
+ * @param {string} rid
+ * @param {{ status?: 'open' | 'done', reply?: string }} [change]
+ */
 export function updateReview(id, rid, { status, reply } = {}) {
   return serial(id, async () => {
-    const list = await readReviews(id);
-    const r = list.find((x) => x.id === rid);
-    if (!r) throw fail(404, 'No such review');
+    const r = await take(id, rid);
     if (status !== undefined) {
       if (!['open', 'done'].includes(status)) throw fail(400, 'Status must be open or done');
       r.status = status;
@@ -108,19 +154,16 @@ export function updateReview(id, rid, { status, reply } = {}) {
       r.repliedAt = r.reply ? new Date().toISOString() : undefined;
     }
     r.updatedAt = new Date().toISOString();
-    await writeReviews(id, list);
+    await writeFileAtomic(fileOf(id, rid), format(r));
     return r;
   });
 }
 
 export function deleteReview(id, rid) {
   return serial(id, async () => {
-    const list = await readReviews(id);
-    const i = list.findIndex((x) => x.id === rid);
-    if (i < 0) throw fail(404, 'No such review');
-    const [r] = list.splice(i, 1);
-    if (r.image) await fsp.rm(path.join(assetDir(id), r.image), { force: true });
-    await writeReviews(id, list);
-    return { ok: true };
+    const r = await take(id, rid);
+    await fsp.rm(fileOf(id, rid), { force: true });
+    if (r.image && /^reviews\/[a-z0-9]+\.(png|jpg|webp)$/.test(r.image)) await fsp.rm(path.join(assetDir(id), r.image), { force: true });
+    return { ok: true, id: rid };
   });
 }

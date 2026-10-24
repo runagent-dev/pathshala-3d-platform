@@ -9,7 +9,7 @@ export function createAudio(enabled = true) {
     if (!on) return null;
     try {
       if (!ctx) {
-        ctx = new (window.AudioContext || window.webkitAudioContext)();
+        ctx = new (window.AudioContext || /** @type {any} */ (window).webkitAudioContext)();
         master = ctx.createGain();
         master.gain.value = 0.5;
         master.connect(ctx.destination);

@@ -345,7 +345,7 @@ function displayAddresses(host) {
   const all = Object.values(os.networkInterfaces())
     .flat()
     .filter((a) => a?.family === 'IPv4' && !lan.test(a.address));
-  return all.map((a) => a.address).sort((a, b) => a.startsWith('127.') - b.startsWith('127.'));
+  return all.map((a) => a.address).sort((a, b) => Number(a.startsWith('127.')) - Number(b.startsWith('127.')));
 }
 
 for (const host of HOSTS) {

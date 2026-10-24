@@ -52,8 +52,8 @@ const agoBn = (ms) => {
 const SERVER_ERRORS_BN = {
   'Please give your name': 'আপনার নাম লিখুন',
   'Please write your feedback': 'আপনার মতামত লিখুন',
-  'The picture must be a PNG or JPEG': 'ছবিটি যোগ করা গেল না',
-  'The picture is too large (max 4 MB)': 'ছবিটি খুব বড়',
+  'The picture must be a PNG, JPEG or WebP': 'ছবিটি যোগ করা গেল না',
+  'The picture is too large (max 1 MB)': 'ছবিটি খুব বড়',
 };
 const bnError = (msg) => SERVER_ERRORS_BN[msg] || 'পাঠানো গেল না, আবার চেষ্টা করুন';
 const bnUI = () => state.role === 'reviewer';
@@ -92,12 +92,17 @@ async function api(path, opts = {}) {
   return body;
 }
 
+const timers = {}; // pending timeouts by name (toast, reload flash, param reload)
+function later(name, fn, ms) {
+  clearTimeout(timers[name]);
+  timers[name] = setTimeout(fn, ms);
+}
+
 function toast(text, ms = 2200) {
   const el = $('#toast');
   el.textContent = text;
   el.classList.add('show');
-  clearTimeout(toast.t);
-  toast.t = setTimeout(() => el.classList.remove('show'), ms);
+  later('toast', () => el.classList.remove('show'), ms);
 }
 
 const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -240,8 +245,7 @@ function reloadFrame(flash = false) {
   if (flash) {
     const el = $('#reloadFlash');
     el.classList.add('show');
-    clearTimeout(reloadFrame.t);
-    reloadFrame.t = setTimeout(() => el.classList.remove('show'), 1200);
+    later('reloadFlash', () => el.classList.remove('show'), 1200);
   }
 }
 
@@ -431,8 +435,7 @@ function onParamInput(e) {
   values[el.dataset.param] = el.type === 'checkbox' ? (el.checked ? '1' : '0') : el.value;
   store.set(`params:${a.id}`, values);
   $('#paramUrl').textContent = buildUrl(a);
-  clearTimeout(onParamInput.t);
-  onParamInput.t = setTimeout(loadFrame, el.tagName === 'INPUT' && el.type !== 'checkbox' ? 500 : 0);
+  later('params', loadFrame, el.tagName === 'INPUT' && el.type !== 'checkbox' ? 500 : 0);
 }
 
 // ── notes tab ─────────────────────────────────────────────────────────────────
@@ -721,7 +724,7 @@ $('#reviewForm').addEventListener('submit', async (e) => {
   let image = null;
   if ($('#reviewShot').checked && (a.commands || []).some((c) => c.name === 'capture')) {
     try {
-      image = await withTimeout(conn.call('capture', { width: 960, height: 600 }), 5000);
+      image = await toWebp(await withTimeout(conn.call('capture', { width: 960, height: 600 }), 5000));
     } catch {}
   }
   try {
@@ -766,6 +769,20 @@ function applyRole() {
   for (const el of $$('[data-bn-title]')) el.title = el.dataset.bnTitle;
   if (OWNER_TABS.has(state.tab)) selectTab('reviews');
   if (state.reviewFilter === 'open') state.reviewFilter = 'all';
+}
+
+/** Re-encodes a captured PNG as WebP (much smaller; reviews are kept in git). Falls back to the PNG. */
+async function toWebp(dataUrl, quality = 0.85) {
+  const img = new Image();
+  img.src = dataUrl;
+  await img.decode();
+  const canvas = document.createElement('canvas');
+  const scale = Math.min(1, 1280 / img.naturalWidth);
+  canvas.width = Math.round(img.naturalWidth * scale);
+  canvas.height = Math.round(img.naturalHeight * scale);
+  canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+  const webp = canvas.toDataURL('image/webp', quality);
+  return webp.startsWith('data:image/webp') ? webp : dataUrl;
 }
 
 // ── markdown (tiny, enough for READMEs) ───────────────────────────────────────
@@ -951,8 +968,10 @@ newField('id').addEventListener('input', (e) => (e.target.dataset.touched = '1')
 $('#newForm').addEventListener('submit', async (e) => {
   if (e.submitter?.value !== 'create') return;
   e.preventDefault();
+  /** @type {Record<string, any>} */
   const body = Object.fromEntries(new FormData(e.target));
-  body.page = body.page?.trim() ? (/^\d+$/.test(body.page.trim()) ? Number(body.page.trim()) : body.page) : null;
+  const page = String(body.page || '').trim();
+  body.page = page ? (/^\d+$/.test(page) ? Number(page) : page) : null;
   try {
     const created = await api('assets', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     $('#newDialog').close();
@@ -965,7 +984,7 @@ $('#newForm').addEventListener('submit', async (e) => {
 });
 
 document.addEventListener('keydown', (e) => {
-  if (e.target.closest('input, textarea, select, [contenteditable]') || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (/** @type {Element} */ (e.target).closest('input, textarea, select, [contenteditable]') || e.metaKey || e.ctrlKey || e.altKey) return;
   if (e.key === 'Escape') setDrawer(null);
   if (e.key === 'r') reloadFrame(true);
   if (e.key === 'p') $('#panelBtn').click();

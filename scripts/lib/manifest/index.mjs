@@ -8,6 +8,8 @@ import { validateSchema } from './schema.mjs';
 export { MANIFEST_SCHEMA, SCHEMA_VERSION };
 export const SCHEMA_REF = '../../schemas/asset.schema.json';
 
+/** @typedef {{ path: string, message: string }} Problem */
+
 /**
  * Checks a manifest. Context (all optional):
  *   folder   the folder name (the id must equal it)
@@ -15,6 +17,10 @@ export const SCHEMA_REF = '../../schemas/asset.schema.json';
  *   dir      the figure folder (the entry file must exist)
  *   profile  'default' | 'release' (release turns warnings into errors: used before approval)
  * Returns { errors, warnings } as lists of { path, message }.
+ *
+ * @param {any} manifest
+ * @param {{ folder?: string, books?: Array<{ id: string }>, dir?: string, profile?: 'default' | 'release' }} [context]
+ * @returns {{ errors: Problem[], warnings: Problem[] }}
  */
 export function validateManifest(manifest, { folder, books, dir, profile = 'default' } = {}) {
   const errors = validateSchema(MANIFEST_SCHEMA, manifest);

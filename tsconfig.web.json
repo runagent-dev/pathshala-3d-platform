@@ -1,0 +1,19 @@
+{
+  // Type-checks the browser side that everyone shares: the kit, the studio dashboard and the templates.
+  // Figures are in tsconfig.figures.json (opt-in per file). `npm run types` runs all configs.
+  "compilerOptions": {
+    "target": "es2023",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "lib": ["es2023", "dom", "dom.iterable"],
+    "types": [],
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "strict": false,
+    "skipLibCheck": true,
+    "paths": { "@shared/*": ["./shared/lib/*"] }
+  },
+  "include": ["shared/lib/**/*.js", "dashboard/**/*.js", "templates/**/*.js"],
+  "exclude": ["node_modules", "shared/vendor"]
+}

@@ -39,7 +39,7 @@ export function createStudioEnvironment({ key = 1, front = 1, light = false } = 
       new THREE.PlaneGeometry(w, h),
       new THREE.MeshBasicMaterial({ color: new THREE.Color(1, 1, 1).multiplyScalar(intensity), side: THREE.DoubleSide }),
     );
-    m.position.set(...pos);
+    m.position.fromArray(pos);
     m.lookAt(0, 0, 0);
     scene.add(m);
   };

@@ -14,6 +14,9 @@ const fail = (message) => Object.assign(new Error(message), { status: 400 });
 /**
  * scaffoldAsset({ id, title, type, book, page, topic, placement, maintainers }) → { id, dir }
  * The figure starts as an "idea". Throws (status 400) on bad input; nothing is written then.
+ *
+ * @param {{ id?: string, title?: string, type?: string, book?: string, page?: number | string | null, topic?: string,
+ *           placement?: string, maintainers?: string[] }} [options]
  */
 export async function scaffoldAsset({
   id,
