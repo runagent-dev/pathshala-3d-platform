@@ -143,5 +143,7 @@ export function stopAt(km, tolerance = 0.02) {
 const decimals = (step) => Math.max(0, -Math.floor(Math.log10(step) + 1e-9));
 /** x rounded to a multiple of step, without binary leftovers (roundTo(0.1 + 0.2, 0.1) is 0.3). */
 export const roundTo = (x, step) => +(Math.round(x / step) * step).toFixed(decimals(step));
-/** km as text with d decimals (4 → "4.00"); never negative. */
+/** km as text with d decimals (4 → "4.00"); never negative. For readings that change all the time. */
 export const fmtKm = (km, d = 2) => roundTo(Math.max(0, km), 10 ** -d).toFixed(d);
+/** km as in a sentence, to the hundredth without trailing zeros (4 → "4", 1.3109 → "1.31", 2.5 → "2.5"). */
+export const fmtShort = (km) => String(roundTo(Math.max(0, km), 0.01));

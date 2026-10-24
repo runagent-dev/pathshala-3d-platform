@@ -29,11 +29,18 @@ from A to B, the সরণ is only 2 km; back at A it is zero, however far you r
 - The student drags the cyclist along the road (the coach's hand shows it), taps a place on the road or a post to
   ride there, or uses the buttons B-তে যাও, C-তে যাও, A-তে ফেরো, নতুন যাত্রা. Arrow keys ride ±0.1 km
   (Shift ±1 km); b, c, a ride to B, C, A; n starts a new trip; f/v change the view.
-- দূরত্ব (blue): the trail on the road, out on one side and back on the other (Bangladesh keeps left), so a round
-  trip shows twice; it counts every metre ridden. সরণ (orange): a flat arrow from A to the cyclist. Each has its
-  value on the map and in the panel (the সরণ card also gives the direction, as one of eight compass directions,
-  with a small needle). The panel's line says what to notice at B, at C and back at A.
-- Test (৫ questions, tap answers, the scene rides first): how to state the displacement at B or C (size and
+- দূরত্ব (blue): the trail on the road, out on one side and back on the other (Bangladesh keeps left); a piece
+  ridden a second time the same way gets a second stripe further out, so the trail keeps showing how much was
+  ridden. সরণ (orange): a flat arrow from A to the cyclist. Their values sit beside them on the map (the distance
+  beside the rider like a trip meter, the displacement beside its arrow), placed every frame where they cover
+  nothing (src/values.js); a value with no free place is left out, the panel always has it. The panel's distance
+  card splits the distance at each turn-round ("যাওয়া ৬ + ফেরা ৬"); the সরণ card gives the direction (one of
+  eight compass points, with a small needle). The panel's line says what to notice at B, at C and back at A
+  ("C পর্যন্ত ৬ কিমি গিয়ে ৬ কিমি ফিরে এসেছ: দূরত্ব ৬ + ৬ = ১২ কিমি, কিন্তু সরণ শূন্য…"). Sentences and map
+  values drop trailing zeros (৪, ২, ১.৩১); the live cards keep two decimals.
+- A 1 km scale bar lies on the tile by the compass, so the arrow's length can be checked by eye.
+- The first-use hand's little show moves only the model: nothing is measured until the student rides.
+- Test (৫ questions, tap answers, the scene rides first at the usual pace, and the route is named in words): how to state the displacement at B or C (size and
   direction vs. just a number, the road's 4 km); the direction of the displacement at km 4 or 5, against the way
   the cycle is riding there; the distance of an out-and-back ride (A → k1 → k2); the displacement after a round
   trip (zero); which is always true (displacement ≤ distance).

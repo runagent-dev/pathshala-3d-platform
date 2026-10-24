@@ -200,12 +200,5 @@ export function createCyclist() {
   hit.userData.noExport = true;
   bike.add(hit);
 
-  const headPoint = new THREE.Vector3();
-  return {
-    root,
-    hit,
-    roll,
-    /** Scene point just above the rider's head (labels hang there). */
-    top: () => headPoint.set(0, 1.85 * SCALE, 0).applyMatrix4(root.matrixWorld),
-  };
+  return { root, hit, roll };
 }

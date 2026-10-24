@@ -75,15 +75,16 @@ function rand(seed) {
 const HOMES = [
   { x: -0.56, n: -0.42, pond: [0.17, 0.12] },
   { x: -0.62, n: 0.5, pond: [0.12, -0.18] },
-  { x: 1.5, n: -0.62, pond: [-0.2, 0.1] },
+  { x: 1.52, n: -0.4, pond: [0.18, -0.12] },
   { x: 0.3, n: 2.32, pond: [0.2, -0.08] },
   { x: 1.28, n: 2.28, pond: [-0.06, 0.2] },
   { x: 1.92, n: 1.95, pond: null },
   { x: -0.2, n: 2.6, pond: null },
   { x: 1.95, n: -0.12, pond: null },
 ];
-/** The compass stands in the south-east corner, where nothing else is. km. */
-const COMPASS_AT = { x: 1.93, n: -0.72 };
+/** The compass and the scale bar lie in the south-east corner, where nothing else is. km. */
+const COMPASS_AT = { x: 2.0, n: -0.6 };
+const SCALE_BAR = { x0: 0.85, x1: 1.85, n: -0.84 };
 
 /**
  * Where each kilometre post stands: beside the road, on the outside, away from the ground the arrow sweeps (the
@@ -215,6 +216,20 @@ function groundTexture(renderer, homes, ponds) {
   g.arc(...P(0, 0), 0.1 * sx, 0, Math.PI * 2);
   g.fillStyle = '#d6cba3';
   g.fill();
+
+  // the scale bar: 1 km in four black and white quarters (its label "১ কিমি" stands above it)
+  const [bx0, by] = P(SCALE_BAR.x0, SCALE_BAR.n);
+  const [bx1] = P(SCALE_BAR.x1, SCALE_BAR.n);
+  const bh = 0.032 * sx;
+  g.fillStyle = 'rgba(255, 255, 255, 0.85)';
+  g.fillRect(bx0 - 4, by - bh / 2 - 4, bx1 - bx0 + 8, bh + 8);
+  for (let q = 0; q < 4; q++) {
+    g.fillStyle = q % 2 ? '#ffffff' : '#2b3138';
+    g.fillRect(bx0 + ((bx1 - bx0) * q) / 4, by - bh / 2, (bx1 - bx0) / 4, bh);
+  }
+  g.strokeStyle = '#2b3138';
+  g.lineWidth = 1.5;
+  g.strokeRect(bx0, by - bh / 2, bx1 - bx0, bh);
 
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
@@ -488,28 +503,40 @@ function createLabels() {
   };
   /**
    * A label beside the road point `road`, on the side where `side` lies (the post), clear of the road: a number
-   * plate, with a letter disc on top for A, B and C. Without `side` (the compass) it stands just above `road`.
-   * km: the place it names (a tap on it rides there).
+   * plate, with a letter disc on top for A, B and C. km: the place it names (a tap on it rides there).
+   * kind 'note' (the scale bar's "১ কিমি") and 'north' (the compass's উ) look different from the posts' plates: no
+   * frame, grey text; they stand just above `road` and name no place.
    */
-  function add({ text, letter = null, road, side = null, km = null, dark = false }) {
+  function add({ text, letter = null, road, side = null, km = null, kind = 'post' }) {
     const holder = new THREE.Group();
     const order = 20 + items.length * 6; // each label's layers together, so overlapping labels never interleave
-    const em = 14;
-    const num = textMesh(text, em, { color: '#1d2733', weight: 700 });
+    const post = kind === 'post';
+    const em = post ? 14 : 12.5;
+    const num = textMesh(text, em, { color: post ? '#1d2733' : '#3d4752', weight: post ? 700 : 600 });
     num.geometry.computeBoundingBox();
     const box = num.geometry.boundingBox;
-    const pw = Math.max(22, box.max.x - box.min.x - 0.16 * em + 11); // the glyphs' width (textMesh pads 0.16 em)
-    const h = letter ? 24 + 3 + 33 : 24;
-    const w = letter ? Math.max(pw + 3, 33) : pw + 3;
+    const glyphs = box.max.x - box.min.x - 0.16 * em; // the glyphs' width (textMesh pads 0.16 em)
+    const pw = kind === 'north' ? 20 : Math.max(22, glyphs + (post ? 11 : 10));
+    const ph = post ? 24 : 20;
+    const h = letter ? ph + 3 + 33 : ph;
+    const w = letter ? Math.max(pw + 3, 33) : post ? pw + 3 : pw;
     const y0 = -h / 2; // the plate at the bottom, the letter above it
-    const border = flat(rounded(pw + 3, 24, 6), dark ? '#1d2733' : '#5b6672', order);
-    border.position.y = y0;
-    const plate = flat(rounded(pw, 21, 5), '#ffffff', order + 1);
-    plate.position.y = y0 + 1.5;
-    num.position.y = y0 + 12.3;
+    if (post) {
+      const border = flat(rounded(pw + 3, 24, 6), '#5b6672', order);
+      border.position.y = y0;
+      const plate = flat(rounded(pw, 21, 5), '#ffffff', order + 1);
+      plate.position.y = y0 + 1.5;
+      holder.add(border, plate);
+    } else {
+      const plate = flat(kind === 'north' ? new THREE.CircleGeometry(10, 24).translate(0, 10, 0) : rounded(pw, ph, 10), '#ffffff', order + 1);
+      plate.material.opacity = 0.92;
+      plate.position.y = y0;
+      holder.add(plate);
+    }
+    num.position.y = y0 + ph / 2 + 0.3;
     num.material.depthTest = false;
     num.renderOrder = order + 2;
-    holder.add(border, plate, num);
+    holder.add(num);
     if (letter) {
       const cy = y0 + 27 + 16.5;
       const ring = flat(new THREE.CircleGeometry(16.5, 32), '#ffffff', order + 3);
@@ -521,11 +548,13 @@ function createLabels() {
       glyph.renderOrder = order + 5;
       holder.add(ring, disc, glyph);
     }
-    holder.userData = { road: road.clone(), side: side?.clone() ?? null, w, h, km };
+    holder.userData = { road: road.clone(), side: side?.clone() ?? null, w, h, km, rect: { x0: 0, y0: 0, x1: 0, y1: 0 } };
     group.add(holder);
     items.push(holder);
+    rects.push(holder.userData.rect);
     return holder;
   }
+  const rects = []; // where each label is on the screen, px (filled by update)
 
   const a = new THREE.Vector3();
   const b = new THREE.Vector3();
@@ -534,7 +563,8 @@ function createLabels() {
   /**
    * Every frame: face the camera, keep the size in pixels (times `size`: smaller on small screens), and sit beside
    * the road on the post's side, far enough that the plate never covers the road. `keepClear` ({ x0, y0, x1, y1 }
-   * in pixels: the cyclist) pushes a label further out while it would cover it.
+   * in pixels: the cyclist) pushes a label further out while it would cover it. Returns where the labels are, as
+   * rectangles in pixels (for the values on the map to keep clear of them).
    */
   function update(camera, width, height, size = 1, keepClear = null) {
     const k = (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2)) / Math.max(1, height);
@@ -573,7 +603,13 @@ function createLabels() {
         .addScaledVector(up, -dy * d * wpp);
       it.quaternion.copy(camera.quaternion);
       it.scale.setScalar(wpp * size);
+      const r = it.userData.rect;
+      r.x0 = a.x + dx * d - w / 2;
+      r.x1 = r.x0 + w;
+      r.y0 = a.y + dy * d - h / 2;
+      r.y1 = r.y0 + h;
     }
+    return rects;
   }
   return { group, add, update };
 }
@@ -618,7 +654,7 @@ function compass(labels, t) {
   };
   group.add(disc, ring, needle('#1d2733', 1), needle('#aab3bd', -1));
   for (const m of group.children) m.receiveShadow = true;
-  labels.add({ text: t('north_short'), road: toScene(COMPASS_AT.x, COMPASS_AT.n + 0.064, ROAD_Y + 2), dark: true });
+  labels.add({ text: t('north_short'), road: toScene(COMPASS_AT.x, COMPASS_AT.n + 0.064, ROAD_Y + 2), kind: 'north' });
   return group;
 }
 
@@ -638,7 +674,10 @@ export function createCountryside({ renderer, t, N }) {
     turn: (i * 0.7) % 1.2,
   }));
   const spots = postSpots();
-  const village = placeVillage(ponds, [...spots, { x: COMPASS_AT.x, n: COMPASS_AT.n }]);
+  // nothing grows on the posts, the compass or the scale bar
+  const clear = [...spots, { x: COMPASS_AT.x, n: COMPASS_AT.n }];
+  for (let x = SCALE_BAR.x0; x <= SCALE_BAR.x1 + 1e-9; x += 0.1) clear.push({ x, n: SCALE_BAR.n }, { x, n: SCALE_BAR.n + 0.08 });
+  const village = placeVillage(ponds, clear);
 
   // the tile: fields on top, soil on the sides
   const w = (BOARD.x1 - BOARD.x0) * KM;
@@ -678,6 +717,7 @@ export function createCountryside({ renderer, t, N }) {
   }
   root.add(postGroup);
   root.add(compass(labels, t));
+  labels.add({ text: t('scale_km', { n: 1 }), road: toScene((SCALE_BAR.x0 + SCALE_BAR.x1) / 2, SCALE_BAR.n + 0.025, ROAD_Y), kind: 'note' });
   root.add(labels.group);
 
   // a generous invisible strip over the road: a tap anywhere on it sends the cyclist there

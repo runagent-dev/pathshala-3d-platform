@@ -105,4 +105,11 @@ describe('numbers', () => {
     assert.equal(road.fmtKm(-0.001), '0.00');
     assert.equal(road.fmtKm(6, 0), '6');
   });
+  it('writes km as in a sentence, without trailing zeros', () => {
+    assert.equal(road.fmtShort(4), '4');
+    assert.equal(road.fmtShort(2.000117), '2');
+    assert.equal(road.fmtShort(1.31086), '1.31');
+    assert.equal(road.fmtShort(2.5), '2.5');
+    assert.equal(road.fmtShort(-0.001), '0');
+  });
 });

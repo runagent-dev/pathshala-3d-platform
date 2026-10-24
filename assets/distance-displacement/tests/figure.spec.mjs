@@ -26,7 +26,10 @@ test('distance-displacement: ride to B, to C and back to A', async ({ page }) =>
 
   // back to A along the road: the distance keeps growing, the displacement is zero
   await fig.call('set', { ride: 'A' });
-  expect(await fig.call('get')).toMatchObject({ km: 0, trip: 12, at: 'A', displacement: { km: 0, bearing: null } });
+  expect(await fig.call('get')).toMatchObject({ km: 0, trip: 12, legs: [6, 6], at: 'A', displacement: { km: 0, bearing: null } });
+  // the panel says why it is 12 km: 6 out and 6 back (no trailing zeros in sentences)
+  await expect(fig.frame.locator('.dd-card.dist .s')).toHaveText('যাওয়া ৬ + ফেরা ৬');
+  await expect(fig.frame.locator('.dd-extra')).toContainText('দূরত্ব ৬ + ৬ = ১২ কিমি');
 
   // a new trip through stops: out to km 5, back to km 3 → 7 km ridden
   await fig.call('set', { route: [5, 3], animate: false });
@@ -49,14 +52,17 @@ test('distance-displacement: ride to B, to C and back to A', async ({ page }) =>
 
   // the test: five questions, each answered
   const results = [];
-  await fig.frame.evaluate(() => window.figure.on('practice-result', (r) => (window.__results = [...(window.__results || []), r])));
+  await fig.frame.evaluate(() => {
+    const w = /** @type {any} */ (window);
+    w.figure.on('practice-result', (r) => (w.__results = [...(w.__results || []), r]));
+  });
   await fig.call('practice');
   for (let i = 0; i < 5; i++) {
-    await fig.advance(4500); // the scene rides first, then the choices appear
+    await fig.advance(8000); // the scene rides first (up to about 6 s), then the choices appear
     await fig.frame.locator('.pvc-opt[data-q="0"]').click();
     await fig.frame.locator('[data-act="q-next"]').click();
   }
-  results.push(...(await fig.frame.evaluate(() => window.__results)));
+  results.push(...(await fig.frame.evaluate(() => /** @type {any} */ (window).__results)));
   expect(results).toHaveLength(5);
   expect(new Set(results.map((r) => r.kind)).size).toBe(5);
   await expect(fig.frame.locator('.pvc-q-result')).toContainText('৫');
