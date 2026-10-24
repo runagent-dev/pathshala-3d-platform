@@ -68,6 +68,7 @@ export function createClock({ t }) {
 
   // the hands, in the plane of the face (local +z into the wall: the nearer hand has the more negative z)
   const plane = new THREE.Group();
+  plane.name = 'HandsPlane';
   plane.quaternion.setFromRotationMatrix(
     new THREE.Matrix4().makeBasis(new THREE.Vector3(-1, 0, 0), new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, -1)),
   );
@@ -124,11 +125,13 @@ export function createClock({ t }) {
     spin,
     r: CLOCK.r,
     lift: -1.1, // the path is drawn just in front of the hands
+    hub: 1.4, // the pin and the hands' roots round the fixed point
     fit: { radius: CLOCK.frame + 0.6, depth: 2 },
     views: { front: new THREE.Vector3(0, 0.1, 1).normalize(), '3d': new THREE.Vector3(0.62, 0.3, 0.72).normalize() },
     grab: [hit],
     lights: [lamp],
     shadowReceiver: wall,
+    shadowSize: (CLOCK.frame + 0.6) * 1.5,
     /** The second hand at `deg` (clockwise from 12); the minute and hour hands follow as on a real clock. */
     setAngle(a) {
       const h = clockHands(CLOCK.start + a / 6);

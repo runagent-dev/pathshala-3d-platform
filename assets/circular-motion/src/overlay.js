@@ -60,11 +60,12 @@ function ink(color, { top = true, opacity = 1 } = {}) {
 }
 
 /**
- * @param {{ r: number, lift?: number, pointSize?: number }} o  r: the circle's radius; lift: how far towards the
- *   viewer the path is drawn (in the plane's z), so the model never covers it in the front view; pointSize: the
- *   moving point's radius as a part of r (small for the Moon, which is itself the moving thing)
+ * @param {{ r: number, lift?: number, pointSize?: number, guide?: boolean }} o  r: the circle's radius; lift: how
+ *   far towards the viewer the path is drawn (in the plane's z), so the model never covers it in the front view;
+ *   pointSize: the moving point's radius as a part of r (small for the Moon, which is itself the moving thing);
+ *   guide: the whole circle drawn faintly under the traced path
  */
-export function createOverlay({ r, lift = 0, pointSize = 0.047 }) {
+export function createOverlay({ r, lift = 0, pointSize = 0.047, guide = false }) {
   const root = new THREE.Group();
   root.name = 'Overlay';
   root.userData.noExport = true;
@@ -76,6 +77,11 @@ export function createOverlay({ r, lift = 0, pointSize = 0.047 }) {
   pathMesh.renderOrder = 4;
   pathMesh.geometry.setDrawRange(0, 0);
   root.add(pathMesh);
+  const guideMesh = new THREE.Mesh(new THREE.TorusGeometry(r, r * 0.006, 6, 180), ink(COLORS.path, { top: false, opacity: 0.3 }));
+  guideMesh.position.z = lift;
+  guideMesh.renderOrder = 3;
+  guideMesh.visible = guide;
+  root.add(guideMesh);
 
   // the moving radius: a dashed line, the moving point at its end
   const radius = new THREE.Group();
@@ -183,6 +189,7 @@ export function createOverlay({ r, lift = 0, pointSize = 0.047 }) {
     /** Hide parts of the drawing (a test question that asks for what they would give away). */
     setVisible({ path: showPath = true, radius: showRadius = true, center: showCenter = true, marks: showMarks = true } = {}) {
       pathMesh.visible = showPath;
+      guideMesh.visible = guide && showPath;
       radius.visible = showRadius;
       center.visible = showCenter;
       marksShown = showMarks;

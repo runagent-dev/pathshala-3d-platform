@@ -77,11 +77,15 @@ describe('circular motion: distances and the test', () => {
     close(cm.chord(70, 180), 140);
     close(cm.chord(70, 360), 0, 1e-9);
   });
-  it('wrong answers for half a turn: the distance from the start first, all different from r', () => {
-    assert.deepEqual(cm.distanceMistakes('fan', 0.5), [140, 35, 0]);
-    assert.deepEqual(cm.distanceMistakes('clock', 1), [0, 6, 24]);
-    const moon = cm.distanceMistakes('moon', 0.5);
-    assert.deepEqual(moon, [7.69, 1.92, 0]);
+  it('the path walked along the circle: πr for half a turn', () => {
+    close(cm.arc(70, 180), Math.PI * 70);
+    close(cm.arc(12, 360), 2 * Math.PI * 12);
+  });
+  it('wrong answers from real mistakes: from the start, the path walked, half or double', () => {
+    assert.deepEqual(cm.distanceMistakes('fan', 0.5), [140, 220, 35]);
+    assert.deepEqual(cm.distanceMistakes('fan', 1), [0, 440, 140]);
+    assert.deepEqual(cm.distanceMistakes('clock', 0.5), [24, 38, 6]);
+    assert.deepEqual(cm.distanceMistakes('clock', 1), [0, 75, 24]);
     for (const id of cm.EXAMPLE_IDS)
       for (const f of [0.5, 1]) {
         const w = cm.distanceMistakes(id, f);

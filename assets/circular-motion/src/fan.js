@@ -35,19 +35,23 @@ export function createFan({ materials: M }) {
   root.name = 'CeilingFan';
   // the plane of the blades: local x = world x, local y = world z, local z = world −y (down)
   const plane = new THREE.Group();
+  plane.name = 'BladePlane';
   plane.quaternion.setFromRotationMatrix(
     new THREE.Matrix4().makeBasis(new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, -1, 0)),
   );
   root.add(plane);
 
-  const body = new THREE.MeshPhysicalMaterial({ name: 'FanBody', color: 0x6e4631, roughness: 0.36, clearcoat: 0.55, clearcoatRoughness: 0.3 });
+  const body = new THREE.MeshPhysicalMaterial({ name: 'FanBody', color: 0x7d5038, roughness: 0.32, clearcoat: 0.7, clearcoatRoughness: 0.2 });
+  // glossy cream paint, as on the metal blades of the fans sold in Bangladesh
   const paint = new THREE.MeshPhysicalMaterial({
     name: 'Blade',
-    color: 0xe7dfcd,
-    roughness: 0.42,
-    clearcoat: 0.3,
+    color: 0xf7f2e6,
+    roughness: 0.26,
+    clearcoat: 0.8,
+    clearcoatRoughness: 0.15,
     side: THREE.DoubleSide,
   });
+  const steel = new THREE.MeshPhysicalMaterial({ name: 'BladeIron', color: 0xd9dde3, metalness: 1, roughness: 0.28 });
 
   // ── what does not turn: canopy, down-rod, the motor's top cover ──
   const canopy = new THREE.Mesh(lathe([0.9, -35.5, 3.6, -36.6, 5.8, -39, 6.4, -41.4, 6.4, -FAN.ceiling]), body);
@@ -57,9 +61,7 @@ export function createFan({ materials: M }) {
   rod.position.z = -22.5;
   const top = new THREE.Mesh(lathe([1.3, -9.6, 4.6, -9.2, 8.6, -7.4, 10.7, -5, 11.3, -3.1]), body);
   top.name = 'MotorTop';
-  const ring = new THREE.Mesh(new THREE.TorusGeometry(11.35, 0.5, 12, 72), M.chrome);
-  ring.position.z = -2.75;
-  plane.add(canopy, rod, top, ring);
+  plane.add(canopy, rod, top);
 
   // ── what turns: the motor's shell, three blade irons and three blades ──
   const spin = new THREE.Group();
@@ -67,11 +69,15 @@ export function createFan({ materials: M }) {
   plane.add(spin);
   const shell = new THREE.Mesh(lathe([11.35, -2.4, 11.6, -0.8, 11.3, 1.6, 10.1, 3.6, 7.6, 5, 4, 5.7, 0, 5.9]), body);
   shell.name = 'MotorShell';
-  const cap = new THREE.Mesh(new THREE.SphereGeometry(2.4, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2).rotateX(Math.PI / 2), M.chrome);
+  // the chrome trim and the cap that shine on the underside of the motor (what we see from the bed)
+  const trim = new THREE.Mesh(new THREE.TorusGeometry(10.15, 0.6, 12, 72), M.chrome);
+  trim.name = 'Trim';
+  trim.position.z = 3.6;
+  const cap = new THREE.Mesh(new THREE.SphereGeometry(4.2, 32, 12, 0, Math.PI * 2, 0, Math.PI / 2).rotateX(Math.PI / 2), M.chrome);
   cap.name = 'Cap';
-  cap.scale.z = 0.45;
-  cap.position.z = 5.6;
-  spin.add(shell, cap);
+  cap.scale.z = 0.5;
+  cap.position.z = 5.5;
+  spin.add(shell, trim, cap);
 
   const bladeGeo = new THREE.ExtrudeGeometry(bladeShape(), { depth: 0.35, bevelEnabled: false, curveSegments: 10 });
   bladeGeo.translate(0, 0, -0.175);
@@ -79,12 +85,13 @@ export function createFan({ materials: M }) {
   const blades = [];
   for (let k = 0; k < 3; k++) {
     const arm = new THREE.Group();
+    arm.name = `BladeArm${k + 1}`;
     arm.rotation.z = THREE.MathUtils.degToRad(k * 120);
     const blade = new THREE.Mesh(bladeGeo, paint);
     blade.name = `Blade${k + 1}`;
     blade.position.z = 1;
     blade.rotation.y = THREE.MathUtils.degToRad(-10); // the pitch that pushes the air down
-    const iron = new THREE.Mesh(ironGeo, M.satin);
+    const iron = new THREE.Mesh(ironGeo, steel);
     iron.name = `BladeIron${k + 1}`;
     iron.position.set(0, 17.5, 0.35);
     arm.add(blade, iron);
@@ -92,23 +99,30 @@ export function createFan({ materials: M }) {
     blades.push(blade);
   }
 
-  // a generous invisible target around the blades, so a finger finds the fan on a phone
+  // a generous invisible target over the blades (not the motor), so a finger finds the fan on a phone
   const hit = new THREE.Mesh(
-    new THREE.CylinderGeometry(FAN.tip + 6, FAN.tip + 6, 14, 48).rotateX(Math.PI / 2),
-    new THREE.MeshBasicMaterial({ visible: false }),
+    new THREE.RingGeometry(FAN.r * 0.3, FAN.tip + 6, 48, 1),
+    new THREE.MeshBasicMaterial({ visible: false, side: THREE.DoubleSide }),
   );
   hit.userData.noExport = true;
   hit.position.z = 1;
   spin.add(hit);
 
-  // light from the room below, on the side of the fan we look at (not exported). No ceiling shadow: seen from
-  // below it would hide behind the fan anyway
+  // light from a lamp low on the left of the room, and the white ceiling catching the blades' soft shadow beside
+  // them (with soft shadows on; neither is exported)
   const lamp = new THREE.DirectionalLight(0xffffff, 1.4);
-  lamp.position.set(90, -420, 170);
+  lamp.position.set(-130, -420, 30);
   lamp.target.position.set(0, FAN.ceiling, 0);
   lamp.userData.noExport = true;
   lamp.target.userData.noExport = true;
   root.add(lamp, lamp.target);
+  const ceiling = new THREE.Mesh(new THREE.CircleGeometry(150, 64), new THREE.ShadowMaterial({ opacity: 0.07 }));
+  ceiling.name = 'CeilingShadow';
+  ceiling.position.z = -FAN.ceiling - 0.2;
+  ceiling.receiveShadow = true;
+  ceiling.userData.noExport = true;
+  ceiling.visible = false;
+  plane.add(ceiling);
 
   // a point of a part, in the world (written into `out`, so labels that follow it every frame allocate nothing)
   const local =
@@ -123,11 +137,14 @@ export function createFan({ materials: M }) {
     spin,
     r: FAN.r,
     lift: 3, // the path is drawn just below the blades
+    hub: 11.6, // the motor round the fixed point: its label goes just outside
     fit: { radius: FAN.tip + 4, depth: 10 },
     views: { front: new THREE.Vector3(0, -0.96, 0.28).normalize(), '3d': new THREE.Vector3(0.58, -0.5, 0.64).normalize() },
     grab: [hit],
     lights: [lamp],
-    shadowReceiver: null,
+    shadowReceiver: ceiling,
+    shadowSize: 190, // the light's shadow box: the whole ceiling disc
+    shadowBlur: 22, // a fan's shadow on the ceiling is very soft
     setAngle(deg) {
       spin.rotation.z = THREE.MathUtils.degToRad(deg);
     },

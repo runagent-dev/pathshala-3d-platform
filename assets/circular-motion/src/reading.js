@@ -17,7 +17,6 @@ export const EXAMPLES = {
   moon: { r: 60, value: 3.844, unit: 'unit_lakh_km', decimals: 2, period: 12 },
 };
 export const EXAMPLE_IDS = /** @type {const} */ (['fan', 'clock', 'moon']);
-export const CLOCK_SPEEDUP = 60 / EXAMPLES.clock.period; // the second hand goes round in 10 s, not 60 s
 
 const RAD = Math.PI / 180;
 export const roundTo = (x, step) => +(Math.round(x / step) * step).toFixed(6);
@@ -75,10 +74,14 @@ export function realDistance(example, sceneDistance) {
 /** Written with the example's decimals: "70", "3.84" (and plain "0" for nothing). */
 export const fmt = (example, value) => (Number(value) === 0 ? '0' : Number(value).toFixed(EXAMPLES[example].decimals));
 
+/** The length of the path walked along the circle in `deg` of turning (πr for half a turn). */
+export const arc = (r, deg) => (Math.PI * r * Math.abs(deg)) / 180;
+
 /**
- * The test's wrong answers for "how far from the centre after `fraction` of a turn": the distance from the start
- * (2r after half a turn, 0 after a whole one), half or double the radius, the diameter. Three, all different from
- * r and from each other, in the example's decimals.
+ * The test's wrong answers for "how far from the fixed point after `fraction` of a turn", from real mistakes:
+ * the distance from the start (2r after half a turn, 0 after a whole one), the length of path walked along the
+ * circle (πr, 2πr), and half the radius (half a turn) or the diameter (a whole one). Three, all different from r
+ * and from each other, in the example's decimals.
  */
 export function distanceMistakes(example, fraction) {
   const r = EXAMPLES[example].value;
@@ -86,7 +89,8 @@ export function distanceMistakes(example, fraction) {
   const key = (v) => v.toFixed(d);
   const seen = new Set([key(r)]);
   const out = [];
-  for (const v of [chord(r, fraction * 360), r / 2, 2 * r, 0, 3 * r]) {
+  const deg = fraction * 360;
+  for (const v of [chord(r, deg), arc(r, deg), fraction < 1 ? r / 2 : 2 * r, 3 * r]) {
     const k = key(roundTo(v, 10 ** -d));
     if (seen.has(k)) continue;
     seen.add(k);

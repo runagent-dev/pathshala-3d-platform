@@ -6,13 +6,14 @@
 import * as THREE from 'three';
 import { earthTexture, moonTexture } from './globe.js';
 
-export const MOON = { r: 60, earth: 13, moon: 5.6, tilt: 23.4 };
+export const MOON = { r: 60, earth: 19.5, moon: 7.2, tilt: 23.4 };
 
 export function createMoon({ renderer }) {
   const root = new THREE.Group();
   root.name = 'EarthAndMoon';
   // the orbit's plane: local x = world x, local y = world −z, local z = world y (up)
   const plane = new THREE.Group();
+  plane.name = 'OrbitPlane';
   plane.quaternion.setFromRotationMatrix(
     new THREE.Matrix4().makeBasis(new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 0, -1), new THREE.Vector3(0, 1, 0)),
   );
@@ -21,6 +22,7 @@ export function createMoon({ renderer }) {
 
   // the Earth: its axis tilted away from the viewer, Asia (and Bangladesh) turned towards them
   const earthTilt = new THREE.Group();
+  earthTilt.name = 'EarthAxis';
   earthTilt.rotation.x = THREE.MathUtils.degToRad(-MOON.tilt);
   const earth = new THREE.Mesh(
     new THREE.SphereGeometry(MOON.earth, 72, 48),
@@ -48,7 +50,7 @@ export function createMoon({ renderer }) {
   spin.add(moon);
 
   // a generous invisible target around the Moon, so a finger finds it on a phone
-  const hit = new THREE.Mesh(new THREE.SphereGeometry(MOON.moon * 2.6, 16, 12), new THREE.MeshBasicMaterial({ visible: false }));
+  const hit = new THREE.Mesh(new THREE.SphereGeometry(MOON.moon * 2, 16, 12), new THREE.MeshBasicMaterial({ visible: false }));
   hit.userData.noExport = true;
   hit.position.copy(moon.position);
   spin.add(hit);
@@ -73,6 +75,9 @@ export function createMoon({ renderer }) {
     r: MOON.r,
     lift: 0,
     pointSize: 0.02, // the Moon itself is the moving thing: only a small dot at its centre
+    endSize: MOON.moon, // what the labels keep clear of at the moving end
+    hub: MOON.earth, // the Earth round the fixed point
+    guide: true, // the whole orbit drawn faintly from the start: in empty space the circle has nothing else to show it
     fit: { radius: MOON.r + MOON.moon + 2, depth: 14 },
     views: { front: new THREE.Vector3(0, 0.96, 0.28).normalize(), '3d': new THREE.Vector3(0.52, 0.5, 0.69).normalize() },
     grab: [hit],
