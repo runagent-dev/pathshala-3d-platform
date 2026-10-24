@@ -5,7 +5,7 @@
   "title": "SI prefixes: how big is it? (কোনটা কত বড়?)",
   "type": "animation",
   "entry": "index.html",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "book": "physics-9-10",
   "page": 17,
   "topic": "1.5.2",
@@ -67,5 +67,12 @@
     { "name": "goto", "payload": { "id": "earth" } },
     { "name": "capture", "payload": { "width": 800, "height": 500 } }
   ],
-  "events": ["ready", "stop", "play", "pause", "choose"]
+  "events": ["ready", "stop", "play", "pause", "choose"],
+  "export": {
+    "poster": { "params": { "autoplay": "0", "start": "earth" } },
+    "glb": {
+      "skip": "Every object is drawn at its true size, from 10⁻¹⁸ m to 10²⁴ m; one GLB cannot hold that range. Use the video and the pictures."
+    },
+    "video": { "kind": "timeline", "seconds": 98, "fps": 30, "params": { "loop": "0" } }
+  }
 }

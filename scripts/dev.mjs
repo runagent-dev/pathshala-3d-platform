@@ -32,6 +32,11 @@ import { scaffoldAsset } from './lib/scaffold.mjs';
 import { AUTH_FILE, loadCredentials, createBasicAuth } from './lib/auth.mjs';
 import { readReviews, addReview, updateReview, deleteReview } from './lib/reviews.mjs';
 import { MIME } from './lib/mime.mjs';
+import { createJobs } from './lib/jobs.mjs';
+import { listExports } from './lib/exports.mjs';
+import { MIN_FREE_BYTES, releaseProblem } from './lib/release.mjs';
+import { freeBytes } from './lib/fsutil.mjs';
+import { EXPORTS_DIR } from './lib/paths.mjs';
 
 const PORT = Number(process.env.PORT || 4800);
 const PUBLIC = process.argv.includes('--public') || process.env.PUBLIC === '1';
@@ -95,6 +100,16 @@ watch(ASSETS_DIR, 'assets');
 watch(SHARED_DIR, 'shared');
 watch(path.join(ROOT, 'dashboard'), 'dashboard');
 
+// Export jobs run one at a time in child processes; their progress goes out as "job" events.
+// Exports need the dev tools (Playwright, glTF tools): without `npm ci` the studio still runs, exports say why not.
+const exportsReady = () => fs.existsSync(path.join(ROOT, 'node_modules', '@playwright', 'test'));
+const jobs = createJobs({
+  onChange: (job) => broadcast('job', job),
+  figureExists: (id) => ID_RE.test(id) && fs.existsSync(path.join(ASSETS_DIR, id, 'asset.json')),
+  freeBytes: () => freeBytes(ROOT),
+  minFree: MIN_FREE_BYTES,
+});
+
 // Injected into asset pages opened directly (outside the dashboard) so they reload on save too.
 const RELOAD_SNIPPET = `<script>(()=>{if(window.top!==window)return;const es=new EventSource('/__dev/events');
 es.addEventListener('reload',e=>{const d=JSON.parse(e.data);if(d.scope==='shared'||location.pathname.startsWith('/assets/'+d.id+'/'))location.reload();});})();</script>`;
@@ -153,6 +168,13 @@ async function api(req, res, url) {
   }
   if (resource === 'me') return json(res, 200, { role: req.role });
   if (resource === 'books' && req.method === 'GET') return json(res, 200, { books: loadBooks() });
+  if (resource === 'jobs') {
+    const job = id ? jobs.get(id) : null;
+    if (!id && req.method === 'GET') return json(res, 200, { jobs: jobs.list({ limit: 50 }) });
+    if (!job) return json(res, 404, { error: 'No such job' });
+    if (req.method === 'GET') return json(res, 200, job);
+    if (req.method === 'DELETE') return json(res, 200, jobs.cancel(id));
+  }
   if (resource !== 'assets') return json(res, 404, { error: 'Not found' });
 
   if (!id) {
@@ -232,13 +254,20 @@ async function api(req, res, url) {
     return json(res, 200, { ok: true, bytes: png.length });
   }
 
-  if (sub === 'exports' && req.method === 'PUT') {
-    const name = rest.join('/');
-    if (!/^[\w.-]+\.(glb|gltf|png|jpg|json)$/.test(name)) return json(res, 400, { error: 'Bad file name' });
-    await fsp.mkdir(path.join(dir, 'exports'), { recursive: true });
-    const buf = await readBody(req);
-    await fsp.writeFile(path.join(dir, 'exports', name), buf);
-    return json(res, 200, { ok: true, url: `/assets/${id}/exports/${name}`, bytes: buf.length });
+  // Exports: what exists (preview, releases), recent jobs, and queueing a new export (`official` = a release).
+  if (sub === 'exports' && req.method === 'GET') {
+    const manifest = await readManifest(id);
+    return json(res, 200, { ready: exportsReady(), ...listExports(id, manifest.book), jobs: jobs.list({ figure: id, limit: 5 }) });
+  }
+  if (sub === 'exports' && req.method === 'POST') {
+    if (!exportsReady())
+      return json(res, 503, { error: 'Exports need the dev tools on this server: run npm ci (and npx playwright install chromium)' });
+    const { formats, official = false } = await readJson(req, 4 * 1024);
+    if (official) {
+      const problem = await releaseProblem(id);
+      if (problem) return json(res, 409, { error: problem });
+    }
+    return json(res, 202, jobs.add({ figure: id, formats, official, by: req.role }));
   }
 
   if (sub === 'package' && req.method === 'POST') {
@@ -263,11 +292,22 @@ async function serveStatic(req, res, url) {
     return send(res, 404, 'Not found');
   }
   if (req.role === 'reviewer' && path.basename(file) === 'NOTES.md') return send(res, 404, 'Not found'); // the owner's own notes
+  if (pathname.startsWith('/exports/')) {
+    if (req.role === 'reviewer') return send(res, 404, 'Not found');
+    const exported = path.normalize(path.join(EXPORTS_DIR, pathname.slice('/exports/'.length)));
+    if (!exported.startsWith(EXPORTS_DIR + path.sep)) return send(res, 403, 'Forbidden');
+    return sendFile(res, exported, pathname);
+  }
 
+  return sendFile(res, file, pathname, url.search);
+}
+
+/** A file (or a folder's index.html); figure pages get the live-reload snippet. */
+async function sendFile(res, file, pathname, search = '') {
   let target = file;
   let stat = await fsp.stat(target).catch(() => null);
   if (stat?.isDirectory()) {
-    if (!pathname.endsWith('/')) return send(res, 301, '', { Location: `${pathname}/${url.search}` });
+    if (!pathname.endsWith('/')) return send(res, 301, '', { Location: `${pathname}/${search}` });
     target = path.join(target, 'index.html');
     stat = await fsp.stat(target).catch(() => null);
   }

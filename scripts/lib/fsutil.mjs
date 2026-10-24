@@ -1,4 +1,5 @@
 // File helpers shared by the studio and the scripts.
+import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
 
@@ -12,6 +13,12 @@ export async function writeFileAtomic(file, data) {
     await fsp.rm(tmp, { force: true });
     throw err;
   }
+}
+
+/** Free bytes on the disk that holds `dir`. */
+export function freeBytes(dir) {
+  const s = fs.statfsSync(dir);
+  return s.bavail * s.bsize;
 }
 
 /** Sorted relative paths of every file below `dir` (dot-files and dot-folders skipped). */

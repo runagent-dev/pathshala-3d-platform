@@ -5,7 +5,7 @@
 //   app.on('change', (reading) => …);
 //   app.set({ value: 31.4, specimen: 'sphere' });
 import * as THREE from 'three';
-import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+import { exportGLB as exportFigureGLB } from '@shared/export-glb.js';
 import { createStage } from '@shared/stage.js';
 import { createTweener, ease } from '@shared/tween.js';
 import { createMaterials } from '@shared/student/materials.js';
@@ -22,7 +22,7 @@ import { createQuiz, QUIZ_KINDS } from './quiz.js';
 import { createCoach } from './coach.js';
 import { measure, format, formatSigned, roundTo, LEAST_COUNTS } from './reading.js';
 
-export const VERSION = '0.3.2';
+export const VERSION = '0.3.3';
 
 /** Wait (briefly) for the Bangla webfont, so the numbers engraved on the scales are drawn with it. */
 export function loadFonts(timeout = 2500) {
@@ -1070,19 +1070,14 @@ export function createVernierApp(root, userOptions = {}) {
     animateGap(o.value, 0.6);
   }
 
-  async function exportGLB() {
-    const hidden = [];
-    caliper.root.traverse((ob) => {
-      if (ob.userData.keep && ob.visible) {
-        ob.visible = false;
-        hidden.push(ob);
-      }
+  /** The caliper as a GLB, in metres; marks kept only for the screen (userData.keep) are left out. */
+  function exportGLB() {
+    return exportFigureGLB(caliper.root, {
+      units: 'mm',
+      name: 'vernier-caliper',
+      skip: (ob) => ob.userData.keep,
+      extras: { pathshala: { id: 'vernier-caliper', version: VERSION } },
     });
-    try {
-      return await new GLTFExporter().parseAsync(caliper.root, { binary: true, onlyVisible: true, maxTextureSize: 2048 });
-    } finally {
-      for (const ob of hidden) ob.visible = true;
-    }
   }
 
   // ── tour + practice (need the internals above) ───────────────────────────────

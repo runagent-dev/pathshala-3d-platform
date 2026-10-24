@@ -102,6 +102,7 @@ These are checked where possible (`npm run check`, the browser tests); the rest 
 | `npm run docs` | Rewrites README sections from `asset.json` |
 | `npm run find -- p21` | Figures on a page, in a topic, or by name |
 | `npm run package -- <id>` | The handoff zip in `dist/` (byte-identical for the same commit) |
+| `npm run export -- <id>` | Zip, pictures, GLB (and video with `--formats all`) → `exports/`; `--official` releases (docs/exports.md) |
 | `npm run generate` | Rewrites generated files |
 
 ## Definition of done

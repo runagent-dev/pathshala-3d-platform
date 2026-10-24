@@ -555,10 +555,8 @@ function renderHandoff() {
   renderCommands();
   $('#thumbPreview').src = a.thumbnail || '';
   $('#thumbPreview').style.visibility = a.thumbnail ? 'visible' : 'hidden';
-  $('#glbCard').hidden = !(a.commands || []).some((c) => c.name === 'export-glb');
-  $('#packageResult').innerHTML = '';
-  $('#glbResult').innerHTML = '';
-  const entry = a.type === 'model' ? a.entry || 'model.glb' : a.entry || 'index.html';
+  if (isOwner()) loadExports();
+  const entry = a.entry || (a.type === 'model' ? 'model.glb' : 'index.html');
   const params = (a.params || [])
     .slice(0, 2)
     .map((p) => `${p.name}=${p.default}`)
@@ -566,7 +564,7 @@ function renderHandoff() {
   const where = a.placement || bookRef(a, true); // tells the book developer where this goes
   $('#snippet').textContent =
     (where ? `<!-- ${where} -->\n` : '') +
-    (a.type === 'model'
+    (/\.(glb|gltf)$/.test(entry)
       ? `<!-- Static model: ${a.id}/${entry} -->\n<model-viewer src="${a.id}/${entry}" camera-controls auto-rotate style="width:100%;aspect-ratio:16/10"></model-viewer>`
       : `<iframe\n  src="${a.id}/${entry}${params ? `?${params}` : ''}"\n  style="width:100%;aspect-ratio:16/10;border:0"\n  allow="fullscreen"\n  loading="lazy"></iframe>\n\n<script type="module">\n  import { connectAsset } from './${a.id}/shared/lib/host.js';\n  const asset = connectAsset(document.querySelector('iframe'));\n  await asset.ready;\n  asset.on('change', (e) => console.log(e));\n</script>`);
 }
@@ -915,37 +913,100 @@ $('#notes').addEventListener('input', onNotesInput);
 $('#clearEvents').addEventListener('click', clearEvents);
 $('#copySnippet').addEventListener('click', () => navigator.clipboard?.writeText($('#snippet').textContent).then(() => toast('Snippet copied')));
 
-$('#packageBtn').addEventListener('click', async (e) => {
-  const btn = e.currentTarget;
-  btn.disabled = true;
-  btn.textContent = 'Building…';
-  try {
-    const r = await api(`assets/${state.current.id}/package`, { method: 'POST' });
-    $('#packageResult').innerHTML =
-      `✓ ${r.files} files · ${(r.bytes / 1024).toFixed(0)} KB<br><a href="${r.zipUrl}" download>Download ${r.zipUrl.split('/').pop()}</a><br><span class="hint">Folder: dist/${r.id}/</span>`;
-  } catch (err) {
-    $('#packageResult').textContent = `✗ ${err.message}`;
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Build zip';
-  }
-});
 $('#captureBtn').addEventListener('click', () => captureThumbnail().catch((err) => toast(`Capture failed: ${err.message}`)));
-$('#glbBtn').addEventListener('click', async (e) => {
-  const btn = e.currentTarget;
-  btn.disabled = true;
+// ── exports (zip, pictures, GLB, video), run as jobs on the server ───────────
+const STEP_LABEL = { zip: 'zip', images: 'pictures', glb: 'GLB', video: 'video' };
+const kb = (n) => (n >= 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
+
+async function loadExports() {
+  const id = state.current?.id;
+  if (!id) return;
+  let data;
   try {
-    const buf = await conn.call('export-glb');
-    const name = `${state.current.id}.glb`;
-    const r = await api(`assets/${state.current.id}/exports/${name}`, { method: 'PUT', headers: { 'Content-Type': 'model/gltf-binary' }, body: buf });
-    $('#glbResult').innerHTML =
-      `✓ ${(r.bytes / 1024).toFixed(0)} KB · <a href="${r.url}" download>${name}</a> · <a href="/shared/viewer/index.html?src=${encodeURIComponent(r.url)}" target="_blank">view</a>`;
+    data = await api(`assets/${id}/exports`);
   } catch (err) {
-    $('#glbResult').textContent = `✗ ${err.message}`;
-  } finally {
-    btn.disabled = false;
+    $('#exportFiles').textContent = err.message;
+    return;
   }
+  if (id !== state.current?.id) return;
+  $('#exportBtn').disabled = $('#releaseBtn').disabled = !data.ready;
+  const active = data.jobs.find((j) => j.status === 'queued' || j.status === 'running');
+  renderJob(active || null);
+  const files = (record) =>
+    `<ul>${record.files.map((f) => `<li><a href="${escapeHtml(f.url)}" download>${escapeHtml(f.name)}</a> <span>${kb(f.bytes)}</span></li>`).join('')}</ul>`;
+  const stamp = (r) =>
+    `v${escapeHtml(r.version)} · ${escapeHtml(timeAgo(Date.parse(r.exportedAt)))}${r.commit ? ` · ${escapeHtml(r.commit.slice(0, 7))}` : ''}${r.uncommitted ? ' · <b>uncommitted changes</b>' : ''}`;
+  $('#exportFiles').innerHTML = [
+    !data.ready ? '<p class="hint">Exports need the dev tools on this server (npm ci).</p>' : '',
+    data.preview
+      ? `<div class="export-set"><b>Latest preview</b> <span class="hint">${stamp(data.preview)}</span>${files(data.preview)}</div>`
+      : '<p class="hint">Nothing exported yet.</p>',
+    ...data.releases.map((r) => `<div class="export-set"><b>Release</b> <span class="hint">${stamp(r)}</span>${files(r)}</div>`),
+  ].join('');
+}
+
+function renderJob(job) {
+  const box = $('#exportJob');
+  box.hidden = !job || !['queued', 'running'].includes(job.status);
+  if (box.hidden) return;
+  box.dataset.job = job.id;
+  const p = job.progress;
+  const pct = p?.total ? Math.round((p.done / p.total) * 100) : 0;
+  box.querySelector('i').style.width = `${pct}%`;
+  box.querySelector('.export-job-text').textContent =
+    job.status === 'queued'
+      ? 'Queued…'
+      : p
+        ? `${job.official ? 'Release' : 'Export'}: ${STEP_LABEL[p.step] || p.step} ${p.done}/${p.total}`
+        : 'Starting…';
+}
+
+function onJob(job) {
+  if (job.figure !== state.current?.id || !isOwner()) return;
+  renderJob(job);
+  if (job.status === 'done') {
+    toast(`${job.official ? 'Released' : 'Exported'} ${job.figure}`);
+    loadExports();
+  } else if (job.status === 'failed') {
+    toast(`Export failed: ${job.error}`, 8000);
+    loadExports();
+  } else if (job.status === 'cancelled') loadExports();
+}
+
+async function startExport({ official = false } = {}) {
+  const formats = official ? ['zip', 'images', 'glb', 'video'] : $$('#exportFormats input:checked').map((i) => i.value);
+  if (!formats.length) return toast('Choose at least one format');
+  try {
+    renderJob(
+      await api(`assets/${state.current.id}/exports`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ formats, official }),
+      }),
+    );
+  } catch (err) {
+    toast(err.message, 8000);
+  }
+}
+$('#exportBtn').addEventListener('click', () => startExport());
+$('#releaseBtn').addEventListener('click', (e) => {
+  const b = e.currentTarget;
+  if (b.dataset.confirm !== '1') {
+    b.dataset.confirm = '1';
+    b.textContent = `Release v${state.current.version}?`;
+    setTimeout(() => {
+      b.dataset.confirm = '';
+      b.textContent = 'Release';
+    }, 4000);
+    return;
+  }
+  b.dataset.confirm = '';
+  b.textContent = 'Release';
+  startExport({ official: true });
 });
+$('#exportCancel').addEventListener('click', () =>
+  api(`jobs/${$('#exportJob').dataset.job}`, { method: 'DELETE' }).catch((err) => toast(err.message)),
+);
 
 // New asset dialog
 $('#newAssetBtn').addEventListener('click', () => {
@@ -1005,6 +1066,7 @@ function connectLive() {
     if (d.scope === 'shared' || d.id === state.current?.id) reloadFrame(true);
     if (d.scope === 'asset') loadAssets().then(() => state.current && renderHeader());
   });
+  es.addEventListener('job', (e) => onJob(JSON.parse(e.data)));
   es.addEventListener('meta', async (e) => {
     const d = JSON.parse(e.data);
     await loadAssets();

@@ -1,5 +1,6 @@
 // Standalone / iframe entry: reads URL params, mounts the screw gauge, connects it to the book via postMessage.
 import { createBridge } from '@shared/bridge.js';
+import { exportGLB } from '@shared/export-glb.js';
 import { createScrewGaugeApp, loadFonts, VERSION, DEFAULTS } from './app.js';
 
 const q = new URLSearchParams(location.search);
@@ -38,7 +39,9 @@ const bridge = createBridge({
     set: (payload) => app.set(payload),
     reset: () => app.reset().then(() => app.getState()),
     practice: () => app.startPractice().then(() => true),
-    capture: ({ width, height } = {}) => app.capture({ width, height }),
+    capture: ({ width, height, background } = {}) => app.capture({ width, height, background }),
+    'export-glb': () =>
+      exportGLB(app.exportRoot(), { units: 'mm', name: 'screw-gauge', extras: { pathshala: { id: 'screw-gauge', version: VERSION } } }),
   },
 });
 for (const type of ['change', 'object', 'view', 'dragstart', 'dragend', 'practice-start', 'practice-result', 'practice-end']) {

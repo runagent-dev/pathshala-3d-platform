@@ -47,7 +47,7 @@ const bridge = createBridge({
     reset: () => app.reset().then(() => app.getState()),
     tour: () => app.startTour(),
     practice: (payload) => app.startPractice(payload).then(() => true),
-    capture: ({ width, height } = {}) => app.capture({ width, height }),
+    capture: ({ width, height, background } = {}) => app.capture({ width, height, background }),
     'export-glb': () => app.exportGLB(),
   },
 });

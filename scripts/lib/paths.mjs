@@ -9,6 +9,9 @@ export const SHARED_DIR = path.join(ROOT, 'shared');
 export const DIST_DIR = path.join(ROOT, 'dist');
 export const TEMPLATES_DIR = path.join(ROOT, 'templates');
 export const CACHE_DIR = path.join(ROOT, '.cache');
+// Outside git: studio state (users, sessions, jobs, original uploads) and export outputs. Both can be moved.
+export const DATA_DIR = process.env.PATHSHALA_DATA_DIR ? path.resolve(process.env.PATHSHALA_DATA_DIR) : path.join(ROOT, 'data');
+export const EXPORTS_DIR = process.env.PATHSHALA_EXPORTS_DIR ? path.resolve(process.env.PATHSHALA_EXPORTS_DIR) : path.join(ROOT, 'exports');
 export const THUMBS_DIR = path.join(CACHE_DIR, 'thumbs');
 
 export const ID_RE = /^[a-z0-9][a-z0-9-]{0,63}$/;

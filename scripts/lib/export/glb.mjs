@@ -1,10 +1,12 @@
 // Checking and cleaning GLB files in Node (tooling tier: needs `npm ci`). Used by verify, the exporter and uploads.
-import { NodeIO } from '@gltf-transform/core';
+import { Logger, NodeIO } from '@gltf-transform/core';
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
 import { dedup, getBounds, prune, weld } from '@gltf-transform/functions';
 import validator from 'gltf-validator';
 
-const io = () => new NodeIO().registerExtensions(ALL_EXTENSIONS);
+// Quiet: extensions gltf-transform doesn't know (e.g. EXT_materials_bump, optional) are dropped without a fuss.
+const quiet = new Logger(Logger.Verbosity.ERROR);
+const io = () => new NodeIO().setLogger(quiet).registerExtensions(ALL_EXTENSIONS);
 
 /** Khronos glTF-Validator report: { errors, warnings, messages: [{ code, message, pointer, severity }] }. */
 export async function validateGlb(bytes) {
@@ -44,6 +46,7 @@ export async function glbInfo(bytes) {
 /** Removes duplicates and unused data, merges identical vertices. Same look, smaller file. */
 export async function optimizeGlb(bytes) {
   const doc = await io().readBinary(new Uint8Array(bytes));
+  doc.setLogger(quiet);
   await doc.transform(dedup(), prune(), weld());
   return io().writeBinary(doc);
 }

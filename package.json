@@ -27,7 +27,8 @@
     "test:templates": "node scripts/test-templates.mjs",
     "verify": "node scripts/verify.mjs",
     "docs": "node scripts/docs.mjs",
-    "find": "node scripts/find.mjs"
+    "find": "node scripts/find.mjs",
+    "export": "node scripts/export.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",

@@ -17,7 +17,7 @@ import { createGauge, DIM } from './gauge.js';
 import { OBJECTS, OBJECT_KINDS, createObject, randomSize } from './objects.js';
 import { read, format, roundTo, LC, PITCH, DIVISIONS, RANGE } from './reading.js';
 
-export const VERSION = '0.1.1';
+export const VERSION = '0.2.0';
 
 /** Wait (briefly) for the Bangla webfont, so the numbers on the scales are drawn with it. */
 export function loadFonts(timeout = 2500) {
@@ -842,6 +842,8 @@ export function createScrewGaugeApp(root, userOptions = {}) {
     startPractice: () => quiz.start(),
     stopPractice: () => quiz.stop(),
     capture: (opts) => stage.capture(opts),
+    /** The gauge (with the object between its faces, if any) for GLB export. */
+    exportRoot: () => gauge.root,
     dispose() {
       tweener.cancel();
       loupe.dispose();

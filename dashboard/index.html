@@ -173,22 +173,30 @@
       </section>
 
       <section class="tab-panel" data-panel="handoff" hidden>
-        <div class="card">
-          <h3>Package for the book</h3>
-          <p class="hint">Copies the asset with its shared code into <code>dist/</code> and zips it. Notes stay here.</p>
-          <button class="btn primary wide" id="packageBtn">Build zip</button>
-          <div id="packageResult" class="result"></div>
+        <div class="card" id="exportCard">
+          <h3>Exports for the book</h3>
+          <p class="hint">Made from the files on this server in a browser with a fixed clock, so the same version always gives the same files.</p>
+          <div class="export-formats" id="exportFormats">
+            <label><input type="checkbox" value="zip" checked /> Zip</label>
+            <label><input type="checkbox" value="images" checked /> Pictures</label>
+            <label><input type="checkbox" value="glb" checked /> GLB</label>
+            <label><input type="checkbox" value="video" /> Video <span class="hint">(slow)</span></label>
+          </div>
+          <div class="row gap">
+            <button class="btn primary" id="exportBtn">Export preview</button>
+            <button class="btn" id="releaseBtn" title="Approved figures only: exports every format from the committed files and tags the version">Release</button>
+          </div>
+          <div class="export-job" id="exportJob" hidden>
+            <div class="export-bar"><i></i></div>
+            <span class="export-job-text"></span>
+            <button class="btn small ghost" id="exportCancel">Cancel</button>
+          </div>
+          <div id="exportFiles" class="export-files"></div>
         </div>
         <div class="card">
           <h3>Thumbnail</h3>
           <img id="thumbPreview" class="thumb-preview" alt="" />
           <button class="btn wide" id="captureBtn">Capture from preview</button>
-        </div>
-        <div class="card" id="glbCard">
-          <h3>Export static GLB</h3>
-          <p class="hint">Saves the current 3D state as a non-interactive .glb in <code>exports/</code>.</p>
-          <button class="btn wide" id="glbBtn">Export GLB</button>
-          <div id="glbResult" class="result"></div>
         </div>
         <div class="card">
           <h3>Embed snippet</h3>

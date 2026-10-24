@@ -5,7 +5,7 @@
   "title": "Screw gauge (স্ক্রু-গেইজ)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "book": "physics-9-10",
   "page": 21,
   "topic": "1.6.1",
@@ -66,7 +66,8 @@
     { "name": "set", "payload": { "object": "ball", "size": 6.35 } },
     { "name": "reset", "payload": {} },
     { "name": "practice", "payload": {} },
-    { "name": "capture", "payload": { "width": 800, "height": 500 } }
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
   ],
   "events": [
     "ready",
@@ -78,5 +79,30 @@
     "practice-start",
     "practice-result",
     "practice-end"
-  ]
+  ],
+  "export": {
+    "poster": {
+      "params": { "coach": "0" },
+      "setup": [{ "command": "set", "payload": { "object": "ball", "size": 6.35, "animate": false } }]
+    },
+    "glb": [
+      { "name": "default" },
+      {
+        "name": "wire",
+        "setup": [{ "command": "set", "payload": { "object": "wire", "size": 1.24, "animate": false } }]
+      }
+    ],
+    "video": {
+      "kind": "script",
+      "seconds": 14,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 0.5, "command": "set", "payload": { "value": 7.36 } },
+        { "at": 3, "command": "set", "payload": { "object": "wire", "size": 1.24 } },
+        { "at": 8, "command": "set", "payload": { "view": "3d" } },
+        { "at": 11.5, "command": "set", "payload": { "view": "front" } }
+      ]
+    }
+  }
 }

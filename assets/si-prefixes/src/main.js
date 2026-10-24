@@ -32,7 +32,7 @@ const bridge = createBridge({
     play: () => (app.play(), app.getState()),
     pause: () => (app.pause(), app.getState()),
     goto: ({ id, animate } = {}) => app.goTo(id, { animate: animate !== false }),
-    capture: ({ width, height } = {}) => app.capture({ width, height }),
+    capture: ({ width, height, background } = {}) => app.capture({ width, height, background }),
   },
 });
 for (const type of ['stop', 'choose', 'play', 'pause']) app.on(type, (payload) => bridge.emit(type, payload));
