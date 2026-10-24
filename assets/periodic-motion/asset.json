@@ -1,0 +1,130 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "periodic-motion",
+  "title": "Periodic motion (পর্যায়বৃত্ত গতি)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 37,
+  "topic": "2.2",
+  "placement": "Book page 37, topic 2.2: পর্যায়বৃত্ত গতি (Periodic Motion), next to that paragraph (the page has no picture for it).",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "Interactive 3D figure for periodic motion (পর্যায়বৃত্ত গতি), book page 37, topic 2.2. The book's four examples: a ceiling fan's blade tip (circular path), Halley's comet round the Sun (elliptical, fast near the Sun and slow far away), a mass bouncing on a spring (straight line) and the heartbeat with an ECG strip. A mark sits on the path; each time the particle comes back to it the count goes up and the time of that repetition is shown: all equal, the period (পর্যায়কাল). The panel works it out as with a stopwatch: পর্যায়কাল = মোট সময় ÷ পুনরাবৃত্তি. The student drags the mark anywhere on the path (the same period, and at that point the same velocity every time round, shown by an arrow), switches examples and pauses. Honest time scales (fan slowed 10×, comet 10 years a second, not to scale). Test: 5 tap questions (period from a count, the path's shape, the velocity one period later, a fan slowing down after it is switched off, the heartbeat or which motion is periodic). Phone-first, Bangla.",
+  "tags": ["motion", "periodic-motion", "period", "fan", "comet", "spring", "heartbeat", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "example",
+      "label": "Example at the start",
+      "type": "select",
+      "options": [
+        ["fan", "fan blade (circular)"],
+        ["comet", "Halley's comet (elliptical)"],
+        ["spring", "spring (straight line)"],
+        ["heart", "heartbeat"]
+      ],
+      "default": "fan"
+    },
+    {
+      "name": "time",
+      "label": "Start this far into the motion",
+      "type": "number",
+      "default": "0",
+      "placeholder": "s (years for the comet)",
+      "help": "in the example's unit, repetitions on the way counted; comet 157 shows two of 76 years"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "First-use pointers", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "example": "comet" } },
+    { "name": "set", "payload": { "mark": 0.1 } },
+    { "name": "set", "payload": { "time": 160 } },
+    { "name": "set", "payload": { "playing": false } },
+    { "name": "set", "payload": { "example": "spring", "animate": false } },
+    { "name": "set", "payload": { "example": "heart", "time": 3 } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": [
+    "ready",
+    "change",
+    "pass",
+    "example",
+    "dragstart",
+    "dragend",
+    "view",
+    "practice-start",
+    "practice-result",
+    "practice-end"
+  ],
+  "export": {
+    "poster": { "params": { "coach": "0", "example": "comet", "time": "157" } },
+    "glb": [
+      {
+        "name": "default",
+        "setup": [{ "command": "set", "payload": { "example": "fan", "time": 0, "playing": false, "animate": false } }]
+      },
+      {
+        "name": "comet",
+        "setup": [
+          { "command": "set", "payload": { "example": "comet", "time": 0, "playing": false, "animate": false } }
+        ]
+      },
+      {
+        "name": "spring",
+        "setup": [
+          { "command": "set", "payload": { "example": "spring", "time": 0, "playing": false, "animate": false } }
+        ]
+      },
+      {
+        "name": "heart",
+        "setup": [
+          { "command": "set", "payload": { "example": "heart", "time": 0, "playing": false, "animate": false } }
+        ]
+      }
+    ],
+    "video": {
+      "kind": "script",
+      "seconds": 20,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 0.2, "command": "set", "payload": { "example": "fan" } },
+        { "at": 5.6, "command": "set", "payload": { "example": "comet" } },
+        { "at": 14.6, "command": "set", "payload": { "example": "spring" } },
+        { "at": 17.4, "command": "set", "payload": { "example": "heart" } }
+      ]
+    }
+  }
+}
