@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { SPRING, springStretch } from './motion.js';
 
-export const TOP = 0.74; // m: where the spring hangs from the arm
+export const TOP = 0.82; // m: where the spring hangs from the arm
 const ROD_X = -0.2;
 const COIL_R = 0.018;
 const TURNS = 20;
@@ -92,11 +92,14 @@ export function createSpringStand({ materials: M }) {
     grip(out = new THREE.Vector3()) {
       return out.set(0.02, mass.position.y - 0.045, 0.05);
     },
-    /** The points the camera keeps in view: the base, the top of the rod, and room for the labels either side. */
+    /**
+     * The points the camera keeps in view: from the arm at the top to the mass at its lowest, with room for the
+     * labels either side; the base of the stand and the top of the rod run off the edges.
+     */
     fit: [
-      ...[-0.25, 0.11].flatMap((x) => [-0.11, 0.11].map((z) => new THREE.Vector3(x, 0, z))),
-      new THREE.Vector3(ROD_X, TOP + 0.1, 0),
-      new THREE.Vector3(-0.44, EQUILIBRIUM, 0),
+      new THREE.Vector3(0, TOP + 0.035, 0),
+      new THREE.Vector3(0, EQUILIBRIUM - SPRING.maxA - 0.11, 0),
+      new THREE.Vector3(-0.42, EQUILIBRIUM, 0),
       new THREE.Vector3(0.38, EQUILIBRIUM, 0),
     ],
   };

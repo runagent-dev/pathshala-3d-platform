@@ -8,7 +8,10 @@ import * as shm from '../../assets/simple-harmonic-motion/src/motion.js';
 const close = (a, b, eps = 1e-9) => assert.ok(Math.abs(a - b) <= eps, `${a} ≉ ${b}`);
 
 describe('simple harmonic motion: periods', () => {
-  it('swing: T = 2π √(L / g) for L = 1.5 m', () => close(shm.period('swing'), 2 * Math.PI * Math.sqrt(1.5 / 9.8)));
+  it('swing: T = 2π √(L / g), L = 1.5 m to the centre of mass (the ropes are 1.7 m)', () => {
+    close(shm.period('swing'), 2 * Math.PI * Math.sqrt(1.5 / 9.8));
+    assert.equal(shm.SWING.R, 1.7);
+  });
   it('spring: T = 2π √(m / k) = 1.2566 s for 2 kg on 50 N/m', () => close(shm.period('spring'), (2 * Math.PI) / 5));
   it('the spring stretches m g / k to its equilibrium point', () => close(shm.springStretch(), 0.392));
   it('the small-swing period is within 1.3 % of the real one up to 25°', () => {
@@ -76,12 +79,12 @@ describe('simple harmonic motion: places and dots', () => {
     for (let i = 1; i < 4; i++) assert.ok(gaps[i] > gaps[i - 1]);
     close(shm.strobeStep('spring'), shm.period('spring') / 16);
   });
-  it('amplitudes: the swing 8°…25° along its arc, the spring 4.5…9 cm', () => {
+  it('amplitudes: the swing 8°…25° along the arc of the seat, the spring 6…15 cm', () => {
     const [lo, hi] = shm.amplitudeRange('swing');
     close(shm.degOf(lo), 8);
     close(shm.degOf(hi), 25);
-    assert.deepEqual(shm.amplitudeRange('spring'), [0.045, 0.09]);
-    close(shm.arcOf(18), (1.5 * 18 * Math.PI) / 180);
+    assert.deepEqual(shm.amplitudeRange('spring'), [0.06, 0.15]);
+    close(shm.arcOf(18), (1.7 * 18 * Math.PI) / 180); // along the seat's arc
   });
   it('the period from a half journey: 2h, and the usual mistakes', () => {
     assert.deepEqual(shm.periodChoices(1.5), { right: 3, wrong: [1.5, 0.75, 6] });

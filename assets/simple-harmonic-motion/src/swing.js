@@ -1,17 +1,19 @@
 // The swing (দোলনা) of the book's চিত্র ২.০২, in metres: a bamboo frame (two crossed pairs of poles holding a top
 // pole, tied with rope, as swings are often made in Bangladesh), two ropes and a wooden plank seat with a girl
 // sitting on it. The ropes, the seat and the girl hang from the top pole and swing in the x–y plane about it (the
-// z axis through PIVOT); setAngle(θ) turns them (θ > 0 swings toward +x). The ground is y = 0.
+// z axis through PIVOT); setAngle(θ) turns them (θ > 0 swings toward +x), setPlait(lean) lets her plait trail.
+// The legs of the frame splay wide, so that seen from the side none of them ever passes in front of the girl at
+// 25°. The ground is y = 0.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { SWING } from './motion.js';
 
-const L = SWING.L; // m: from the middle of the top pole to the middle of the seat
+const L = SWING.R; // m: from the middle of the top pole to the middle of the seat (the ropes)
 export const PIVOT = new THREE.Vector3(0, L + 0.5, 0); // the seat hangs 0.5 m above the ground
 const ROPE_Z = 0.21; // the two ropes, either side of the seat
 const FRAME_Z = 0.95; // the two crossed pairs of poles
-const FOOT_X = 1.15; // the poles reach the ground this far in front of and behind the top pole
+const FOOT_X = 2.0; // the poles reach the ground this far in front of and behind the top pole
 const POLE_R = 0.038;
 const TOP_R = 0.044;
 const NODE_GAP = 0.36; // bamboo: a node (ring) every 36 cm
@@ -72,12 +74,21 @@ function createGirl() {
   const head = new THREE.Mesh(new THREE.SphereGeometry(0.088, 28, 18), skin);
   head.position.set(-0.075, 0.49, 0);
   g.add(head);
-  // hair: a cap over the top and back of the head (tilted back, so the face shows), and a plait flying behind
-  const cap = new THREE.Mesh(new THREE.SphereGeometry(0.094, 28, 14, 0, Math.PI * 2, 0, Math.PI * 0.6), hair);
-  cap.position.set(-0.082, 0.497, 0);
-  cap.rotation.z = 0.62;
+  // hair: a cap over the top and the back of the head down to the nape (tilted back, so the face shows), and a
+  // plait hanging down her back from a hinge at the nape (it trails a little as she swings: setPlait)
+  const cap = new THREE.Mesh(new THREE.SphereGeometry(0.095, 28, 16, 0, Math.PI * 2, 0, Math.PI * 0.7), hair);
+  cap.position.set(-0.083, 0.495, 0);
+  cap.rotation.z = 0.95;
   g.add(cap);
-  g.add(limb(v3(-0.16, 0.5, 0), v3(-0.27, 0.43, 0), 0.03, hair));
+  const plait = new THREE.Group();
+  plait.name = 'Plait';
+  plait.position.set(-0.155, 0.44, 0);
+  plait.add(limb(v3(0, 0, 0), v3(-0.012, -0.2, 0), 0.027, hair));
+  const ribbon = new THREE.Mesh(new THREE.SphereGeometry(0.022, 12, 8), mat('Ribbon', 0xd6336c, 0.6));
+  ribbon.position.set(-0.013, -0.215, 0);
+  plait.add(ribbon);
+  g.add(plait);
+  g.userData.plait = plait;
   for (const z of [-0.032, 0.032]) {
     const eye = new THREE.Mesh(new THREE.SphereGeometry(0.009, 10, 8), hair);
     eye.position.set(0.006, 0.5, z);
@@ -184,38 +195,46 @@ export function createSwing({ materials: M }) {
   const girl = createGirl();
   girl.position.y = -L + 0.018;
   arm.add(girl);
+  const plait = girl.userData.plait;
 
   // a big invisible box round the seat and the girl: what a finger grabs
-  const hit = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.05, 0.62), new THREE.MeshBasicMaterial({ visible: false }));
-  hit.position.set(0.08, -L + 0.3, 0);
+  const hit = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.05, 0.62), new THREE.MeshBasicMaterial({ visible: false }));
+  hit.position.set(0.1, -L + 0.3, 0);
   hit.userData.noExport = true;
-  arm.add(hit);
+  // and one along the ropes: pulling a rope swings it too
+  const ropeHit = new THREE.Mesh(new THREE.BoxGeometry(0.2, L - 0.5, 0.62), hit.material);
+  ropeHit.position.y = -0.2 - (L - 0.5) / 2;
+  ropeHit.userData.noExport = true;
+  arm.add(hit, ropeHit);
 
   return {
     root,
     arm,
-    hits: [hit],
+    hits: [hit, ropeHit],
     /** Turn what swings to angle θ (radians from straight down; > 0 toward +x). */
     setAngle(theta) {
       arm.rotation.z = theta;
+    },
+    /** How far the plait trails behind her (radians; > 0 swings its tip backward, away from her back). */
+    setPlait(lean) {
+      plait.rotation.z = -0.15 - lean;
     },
     /** The point at angle θ on the circle of radius r round the pivot (r = L: the middle of the seat). */
     pointAt(theta, r = L, out = new THREE.Vector3()) {
       return out.set(PIVOT.x + r * Math.sin(theta), PIVOT.y - r * Math.cos(theta), 0);
     },
-    /** Where a finger grabs it: the seat, a little in front of the girl's knees. */
+    /**
+     * Where the first-use hand points: the near rope, high up, where it hardly moves; its label then falls in the
+     * open space under the top pole, clear of the girl and of the labels on the path.
+     */
     grip(out = new THREE.Vector3()) {
-      return arm.localToWorld(out.set(0.12, -L + 0.06, 0.2));
+      return arm.localToWorld(out.set(0, -0.45, ROPE_Z));
     },
     /**
-     * The points the camera keeps in view: the ends of the top pole and the tips of the crossed poles, and the feet
-     * (taken nearer the middle than they are, so a narrow phone screen may crop the near feet a little rather than
-     * shrink the swing).
+     * The points the camera keeps in view: the top pole (seen end-on), the swing out at either end with room for
+     * the end labels, and the space under the seat for the speed arrow and the সাম্যবিন্দু label. The legs of the
+     * frame run off the edges.
      */
-    fit: [
-      ...[-1, 1].flatMap((sx) => [-1, 1].map((sz) => v3(sx * (FOOT_X + 0.05), 0, sz * 0.5))),
-      ...[-1, 1].map((sz) => v3(0, PIVOT.y + TOP_R, sz * (FRAME_Z + 0.18))),
-      ...[-1, 1].flatMap((sx) => [-1, 1].map((sz) => v3(sx * 0.1, cross + 0.19, sz * FRAME_Z))),
-    ],
+    fit: [v3(0, PIVOT.y + TOP_R + 0.01, -0.5), v3(0, PIVOT.y + TOP_R + 0.01, 0.5), v3(-1.3, 0.62, 0), v3(1.3, 0.62, 0), v3(0, 0, 0)],
   };
 }

@@ -2,14 +2,16 @@
 // from rest at one end (t = 0), the displacement from the equilibrium point (সাম্যবিন্দু) is x = x0 cos(ωt), the
 // velocity v = −x0 ω sin(ωt), so the speed is zero at the ends and greatest (|x0| ω) at the equilibrium point,
 // and the period (পর্যায়কাল) is T = 2π / ω.
-//   swing (দোলনা): a pendulum of length L, ω = √(g / L). True for small swings: up to 25° the real period is at
-//     most 1.3 % longer (the unit test checks it), so the figure keeps the swing within 25°.
+//   swing (দোলনা): a pendulum, ω = √(g / L) with L from the top pole to the centre of mass of the girl and the
+//     seat (1.5 m; the ropes are 1.7 m to the seat, and a seated child's centre of mass is about 0.2 m above it).
+//     True for small swings: up to 25° the real period is at most 1.3 % longer (the unit test checks it), so the
+//     figure keeps the swing within 25°.
 //   spring (স্প্রিং): a mass m on a spring of stiffness k, ω = √(k / m), exactly.
-// Distances are metres along the path (for the swing: the arc the seat travels), times seconds.
+// Distances are metres along the path (for the swing: the arc the seat travels, radius R), times seconds.
 
 export const G = 9.8; // m/s²
-export const SWING = { L: 1.5, minDeg: 8, maxDeg: 25, startDeg: 18 };
-export const SPRING = { m: 2, k: 50, rest: 0.1, minA: 0.045, maxA: 0.09, startA: 0.075 };
+export const SWING = { L: 1.5, R: 1.7, minDeg: 8, maxDeg: 25, startDeg: 24 };
+export const SPRING = { m: 2, k: 50, rest: 0.1, minA: 0.06, maxA: 0.15, startA: 0.12 };
 export const EXAMPLES = ['swing', 'spring'];
 export const STROBE = 16; // the dots on the path: where it is every T/16 (9 places from end to end)
 
@@ -21,9 +23,9 @@ const RAD = Math.PI / 180;
 export const omega = (example) => (example === 'spring' ? Math.sqrt(SPRING.k / SPRING.m) : Math.sqrt(G / SWING.L));
 export const period = (example) => (2 * Math.PI) / omega(example);
 
-/** The swing's amplitude along its arc (m) from its angle (degrees), and back. */
-export const arcOf = (deg) => SWING.L * deg * RAD;
-export const degOf = (arc) => arc / SWING.L / RAD;
+/** The swing's amplitude along the seat's arc (m) from its angle (degrees), and back. */
+export const arcOf = (deg) => SWING.R * deg * RAD;
+export const degOf = (arc) => arc / SWING.R / RAD;
 
 /** The smallest and largest amplitude the student can give (m along the path). */
 export function amplitudeRange(example) {

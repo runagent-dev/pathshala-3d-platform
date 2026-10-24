@@ -17,13 +17,13 @@ test('simple-harmonic-motion: speed zero at the ends, greatest at the equilibriu
   let s = await fig.call('set', { angle: -20, playing: false });
   expect(s).toMatchObject({ side: -1, place: 'end', speed: 0, phase: 0 });
   expect(s.angle).toBeCloseTo(20, 1);
-  expect(s.x).toBeCloseTo(-0.524, 3);
+  expect(s.x).toBeCloseTo(-0.593, 3); // 20° along the seat's arc (ropes 1.7 m)
 
   // a quarter period later: the equilibrium point, at the greatest speed (A ω)
   s = await fig.call('set', { phase: 0.25 });
   expect(s).toMatchObject({ place: 'middle', going: 'out' });
   expect(s.speed).toBeCloseTo(s.maxSpeed, 3);
-  expect(s.maxSpeed).toBeCloseTo(0.524 * Math.sqrt(9.8 / 1.5), 2);
+  expect(s.maxSpeed).toBeCloseTo(0.593 * Math.sqrt(9.8 / 1.5), 2); // ω from L = 1.5 m to the centre of mass
 
   // playing for one period (2.458 s) brings it back to the same end
   await fig.call('set', { time: 0, playing: true });
@@ -58,7 +58,11 @@ test('simple-harmonic-motion: the test asks five different questions and marks t
   const log = await preparePage(page);
   const fig = await openFigure(page, 'simple-harmonic-motion');
   const results = [];
-  await fig.frame.evaluate(() => window.figure.on('practice-result', (r) => (window.__results ||= []).push(r)));
+  // in the figure's page, the app is window.figure (see @shared/figure.js)
+  await fig.frame.evaluate(() => {
+    const w = /** @type {any} */ (window);
+    w.figure.on('practice-result', (r) => (w.__results ||= []).push(r));
+  });
   await fig.call('practice');
   for (let i = 0; i < 5; i++) {
     await fig.advance(1000);
@@ -66,7 +70,7 @@ test('simple-harmonic-motion: the test asks five different questions and marks t
     await fig.advance(300);
     await fig.frame.locator('[data-act="q-next"]').click();
   }
-  results.push(...(await fig.frame.evaluate(() => window.__results)));
+  results.push(...(await fig.frame.evaluate(() => /** @type {any} */ (window).__results)));
   expect(results).toHaveLength(5);
   expect(new Set(results.map((r) => r.kind)).size).toBe(5);
   for (const r of results) expect(r.correct).toBe(Math.abs(r.answer - r.expected) < (r.kind === 'time' ? 0.005 : 0.5));
