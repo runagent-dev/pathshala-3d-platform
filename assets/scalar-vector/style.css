@@ -1,0 +1,62 @@
+/* Scalar and vector: the page, and the colours of the two parts of a vector (মান blue, দিক orange, as on the
+   paper). The student view itself is ../../shared/lib/student/student.css (linked first). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.pvc { --c-mag: #1c6fd9; --c-dir: #d9480f; }
+.pvc-t.mag { --c: var(--c-mag); }
+.pvc-t.dir { --c: var(--c-dir); }
+.pvc .c-mag { color: var(--c-mag); }
+.pvc .c-dir { color: var(--c-dir); }
+
+/* a vector's name, bold as the book prints it; written by hand it gets a small arrow on top */
+.sv-v { font-weight: 700; font-family: 'Noto Sans Bengali', Georgia, serif; }
+.sv-arrowed { position: relative; display: inline-block; font-weight: 600; padding-top: 0.3em; line-height: 1; }
+.sv-arrowed::before { content: ''; position: absolute; left: 0.05em; right: 0.2em; top: 0.08em; border-top: 1.6px solid currentColor; }
+.sv-arrowed::after { content: ''; position: absolute; right: 0.05em; top: -0.08em; border: 0.2em solid transparent; border-left: 0.32em solid currentColor; border-right: 0; }
+.sv-ok, .sv-no { display: inline-block; vertical-align: -0.2em; }
+.pvc svg.sv-ok, .pvc svg.sv-no { width: 1.15em; height: 1.15em; stroke-width: 2.6; }
+.pvc svg.sv-ok { color: var(--ok); }
+.pvc svg.sv-no { color: var(--bad); }
+
+/* the chosen arrow: its name, then মান and দিক */
+.sv-main { flex-wrap: nowrap; gap: 4px 18px; }
+.sv-name { display: flex; flex-direction: column; align-items: center; min-width: 2.6em; }
+.sv-name .sv-v { font-size: 30px; line-height: 1.15; color: var(--ink); }
+.sv-name small { font-size: 12px; line-height: 1.3; color: var(--ink-3); }
+.sv-sum { gap: 18px; }
+.sv-sum .pvc-t { min-width: 4.6em; }
+.sv-sum .pvc-t small { max-width: 9em; white-space: nowrap; }
+.sv-sum .pvc-t b .u { font-size: 14px; font-weight: 600; }
+
+.sv-extra { margin: 0; min-height: 4.5em; font-size: 13.5px; line-height: 1.5; color: var(--ink-2); } /* 3 lines: the 3D view keeps its size */
+.sv-extra .sv-v { color: var(--ink); }
+.sv-foot { justify-content: flex-start; gap: 6px 10px; }
+.sv-foot-k { font-size: 14px; color: var(--ink-3); white-space: nowrap; }
+.sv-acts { display: flex; flex-wrap: wrap; gap: 6px; }
+.sv-acts .pvc-btn { height: 38px; padding: 0 12px; font-size: 15px; gap: 5px; }
+.sv-acts .pvc-btn.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.sv-acts .sv-home { width: 40px; padding: 0; }
+.sv-acts .sv-home svg { color: var(--ink-2); }
+
+/* test answers that are words, not numbers */
+.pvc-opt .sv-o { font-size: 15px; line-height: 1.25; font-weight: 600; text-align: center; }
+.pvc-opt .sv-v { font-size: 22px; }
+.pvc-q-text { min-height: 2.8em; } /* two lines each for the question and the worked answer: the panel keeps */
+.pvc-q-feedback { min-height: 2.9em; } /* its height from question to question, and the 3D view its size */
+
+@container pvc (max-width: 560px) {
+  .sv-main { gap: 4px 12px; }
+  .sv-sum { gap: 12px; }
+}
+@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
+  .sv-extra { font-size: 12.5px; min-height: 6em; } /* 4 narrower lines beside the 3D */
+  .sv-main { gap: 4px 10px; }
+  .sv-sum { gap: 8px; }
+  .sv-name .sv-v { font-size: 26px; }
+  .sv-sum .pvc-t b { font-size: 19px; }
+  .sv-acts .pvc-btn { height: 36px; padding: 0 10px; font-size: 14.5px; }
+  .pvc-opt .sv-o { font-size: 13.5px; }
+  .pvc-q-text { min-height: 4.2em; }
+}
