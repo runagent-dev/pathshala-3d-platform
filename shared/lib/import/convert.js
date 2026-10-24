@@ -115,7 +115,7 @@ async function load(files, { onMissing }) {
     const geometry = new STLLoader(manager).parse(main.data);
     // many STL files write 0 0 0 for every normal: then work them out from the triangles
     const n = geometry.attributes.normal?.array;
-    if (!n || !n.some((v) => v !== 0)) geometry.computeVertexNormals();
+    if (!n?.some((v) => v !== 0)) geometry.computeVertexNormals();
     const material = new THREE.MeshStandardMaterial({
       name: 'STL',
       color: geometry.attributes.color ? 0xffffff : 0xb8bec7,
