@@ -16,7 +16,9 @@ export const STATUSES = ['idea', 'in-progress', 'review', 'changes', 'approved']
 
 // Files that belong to our workflow, not to the deliverable.
 export const DEV_ONLY_FILES = new Set(['NOTES.md']);
-export const DEV_ONLY_DIRS = new Set(['reviews']); // reviewer feedback: stays in the repo, never packaged
+// reviews: reviewer feedback (in git, never packaged). exports: GLBs and pictures made in the studio
+// (not in git). reference: book-page screenshots for the developer. tests: figure-specific tests.
+export const DEV_ONLY_DIRS = new Set(['reviews', 'exports', 'reference', 'tests']);
 
 export function assetDir(id) {
   if (!ID_RE.test(id)) throw new Error(`Invalid asset id "${id}"`);
@@ -29,8 +31,19 @@ export async function readManifest(id) {
 }
 
 export async function writeManifest(id, manifest) {
-  const file = path.join(assetDir(id), 'asset.json');
-  await fsp.writeFile(file, JSON.stringify(manifest, null, 2) + '\n');
+  await writeFileAtomic(path.join(assetDir(id), 'asset.json'), JSON.stringify(manifest, null, 2) + '\n');
+}
+
+/** Write to a temporary file next to the target, then rename: readers never see half a file. */
+export async function writeFileAtomic(file, data) {
+  const tmp = `${file}.${process.pid}.${Date.now()}.tmp`;
+  try {
+    await fsp.writeFile(tmp, data);
+    await fsp.rename(tmp, file);
+  } catch (err) {
+    await fsp.rm(tmp, { force: true });
+    throw err;
+  }
 }
 
 export function entryUrl(id, manifest) {
