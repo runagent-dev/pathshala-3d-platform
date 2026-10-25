@@ -87,9 +87,14 @@ describe('check rules', () => {
   });
 
   it('release profile fails on warnings', async () => {
-    const errors = await broken('release', (dir) => edit(dir, 'src/main.js', (s) => s.replaceAll("'screw-gauge'", "'release'")), {
-      profile: 'release',
-    });
+    const errors = await broken(
+      'release',
+      (dir) => {
+        edit(dir, 'src/main.js', (s) => s.replaceAll("'screw-gauge'", "'release'"));
+        edit(dir, 'asset.json', (s) => s.replace(/"maintainers": \[[^\]]*\]/, '"maintainers": []')); // a warning, an error here
+      },
+      { profile: 'release' },
+    );
     assert.ok(errors.some((e) => e.message.startsWith('maintainers')));
   });
 });
