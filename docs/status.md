@@ -2,7 +2,7 @@
 
 Snapshot of 2026-10-25. Update it whenever a batch lands (the `/figure-batch` skill's last step).
 
-## On `main`: 22 figures (Physics 9–10)
+## On `main`: 23 figures (Physics 9–10)
 
 | Page | Topic | Figure | Title |
 |---|---|---|---|
@@ -23,6 +23,7 @@ Snapshot of 2026-10-25. Update it whenever a batch lands (the `/figure-batch` sk
 | 64 | 3.1.1 | `inertia` | জড়তা |
 | 67 | 3.1.2 | `contact-noncontact-force` | বল: স্পর্শ ও অস্পর্শ বল |
 | 68 | 3.2.1 | `gravitational-force` | মহাকর্ষ বল |
+| 68 | 3.2.2 | `electromagnetic-force` | তড়িৎ চৌম্বক বল |
 | 68 | 3.2.3 | `weak-nuclear-force` | দুর্বল নিউক্লীয় বল |
 | 69 | 3.2.4 | `strong-nuclear-force` | সবল নিউক্লীয় বল |
 
@@ -32,24 +33,8 @@ touch-tested (see `docs/agents/`). The ones from page 36 on are at studio status
 
 ## In progress
 
-- **`electromagnetic-force`** (page 68, topic 3.2.2, `order: 2`). Built (`d0d4e87`), reviewed ("needs real work"),
-  round 2 running in `/root/pathshala-3d/.claude/worktrees/agent-a5924df388944f292` on branch
-  `fig/electromagnetic-force/first-version` (dev port 4857, test port 4837). When its PR exists and its pictures look
-  right, merge it with `docs/agents/merge-prs.sh <pr>:agent-a5924df388944f292`. If the builder agent is gone,
-  finish round 2 in that worktree yourself. The review asked for:
-  - the lift visible: after the bits cling, raise the comb to ~45–55 mm so they hang in the air; a lower, closer
-    paper camera (~12–15°), comb's left end off the edge; Earth arrow ≥ 35 px (W_ARROW ~26 mm); same pose for
-    `place: paper`, the poster, the GLB and the questions;
-  - the 10³⁶ sentence: "…সেই টানকে হারিয়ে দিল। বই বলছে, তড়িৎ চৌম্বক বল মাধ্যাকর্ষণ বলের চেয়ে {p} গুণ শক্তিশালী।"
-    and a `why_strength` that says it is for two particles like protons, not this comb; no 2.5 : 1 arrows there;
-  - one source of truth for "the comb won" and the < / > comparison (the featured bit lifts first);
-  - the four-forces heading exactly as in `docs/book-notes.md`, no "· পাল্লা", visible at every size;
-  - magnet arrows at the coil–magnet gap, shrinking along the whole track (never zero), label beside them;
-  - "তড়িৎ আর চুম্বকের বল আসলে একই বল" in the switch-on sentence; an honest "never zero" range sentence plus a
-    note that the coil is drawn stronger than a real one; a visible circuit loop with moving current marks only
-    when the switch is on; magnet letters only on the front; a range question that uses the picture; the listed
-    wording fixes (q_strength, q_dry, opt_rise_mass, no "আধান" give-away, "খুবই অল্প" charge); a recognisable
-    student (face profile); 14–15 px landscape text; labels avoid the hanging bits.
+Nothing: the batch for pages 43–69 (ten figures) is merged. `images/` (untracked, in the studio checkout) still
+holds those ten pages; they are all done. New pages come as new images there.
 
 ## Open pull requests (not merged)
 
