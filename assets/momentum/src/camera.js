@@ -8,11 +8,12 @@ export const screenU = (y, z, elev) => y * Math.cos(elev) - z * Math.sin(elev);
 
 /**
  * The front view's distance and height: the strip of screen heights [uMin, uMax] must fit between `margin.top`
- * pixels (the corner buttons, and room for the label over the highest arrow) and `margin.bottom` pixels, with at
- * least `minSpan` metres of road across, `margin.side` pixels in from each side.
+ * pixels (the corner buttons, and room for the label over the highest arrow) and `margin.bottom` pixels (room for
+ * the labels under the lowest body), with at least `minSpan` metres of road across, `margin.side` pixels in from
+ * each side.
  * Returns { d, uc, span }: camera distance, the screen height of the view's centre, the metres of road across.
  */
-export function frontFit({ camera, width, height, uMin, uMax, minSpan, margin = { top: 76, bottom: 10, side: 8 } }) {
+export function frontFit({ camera, width, height, uMin, uMax, minSpan, margin = { top: 72, bottom: 44, side: 8 } }) {
   const tanV = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
   const aspect = width / Math.max(1, height);
   const usableH = Math.max(0.3, 1 - (margin.top + margin.bottom) / height);
@@ -37,10 +38,4 @@ export function spherePose({ camera, width, height, centre, radius, dir }) {
   const hfov = 2 * Math.atan(Math.tan(vfov / 2) * (width / Math.max(1, height)));
   const d = radius / Math.sin(Math.min(vfov, hfov) / 2);
   return { target: centre.clone(), position: centre.clone().addScaledVector(dir.clone().normalize(), d) };
-}
-
-/** min(a, b) with the corner rounded over k (both inputs and the result in the same units). */
-export function smoothMin(a, b, k) {
-  if (k <= 0) return Math.min(a, b);
-  return (a + b - Math.sqrt((a - b) * (a - b) + k * k)) / 2;
 }

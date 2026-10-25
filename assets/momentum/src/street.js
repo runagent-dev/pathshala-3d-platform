@@ -5,8 +5,8 @@
 // footpaths the ground is near-white, like the page. Long enough for every run (x from -70 m to +70 m).
 import * as THREE from 'three';
 
-export const LANES = { far: -3.3, near: 3.5 };
-export const ROAD = { half: 4.8, length: 140, kerb: 0.16 };
+export const LANES = { far: -4.2, near: 4.4 };
+export const ROAD = { half: 6.2, length: 140, kerb: 0.16 };
 
 const canvas = (w, h) => {
   const c = document.createElement('canvas');
@@ -48,7 +48,7 @@ export function createStreet() {
     }
     const zpx = (z) => (z + ROAD.half) * ppm; // canvas row of a z (the plane's v runs with z after the rotation)
     ctx.fillStyle = '#f1f1ec';
-    for (const z of [-1.6, 1.6]) ctx.fillRect(0, zpx(z) - 4, 3 * ppm, 8); // lane dashes
+    for (const z of [-2.07, 2.07]) ctx.fillRect(0, zpx(z) - 4, 3 * ppm, 8); // lane dashes
     for (const z of [-ROAD.half + 0.22, ROAD.half - 0.22]) ctx.fillRect(0, zpx(z) - 4, c.width, 7); // edge lines
     const road = new THREE.Mesh(
       new THREE.PlaneGeometry(L, W),

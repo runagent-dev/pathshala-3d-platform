@@ -23,8 +23,12 @@ test('momentum: p = m v for both, 125 times, a vector', async ({ page }) => {
   expect(await fig.call('get')).toMatchObject({ dir: 'left', v: -4, truck: { p: -40000 }, bike: { p: -320 } });
   // the panel shows the same numbers, in Bangla digits
   const frame = page.frames().find((f) => f.url().includes('/assets/momentum/'));
-  await expect(frame.locator('[data-row="far"] [data-v="p"]')).toHaveText('−৪০ ০০০');
+  await expect(frame.locator('[data-row="far"] [data-v="p"]')).toHaveText('−৪০,০০০');
   await expect(frame.locator('[data-row="near"] [data-v="v"]')).toHaveText('−৪');
+  // after the crash the table says it is the momentum they hit with
+  await expect(frame.locator('.mo-cap')).not.toHaveClass(/\bon\b/);
+  await fig.call('set', { at: 99 });
+  await expect(frame.locator('.mo-cap')).toHaveClass(/\bon\b/);
   expect(log.errors).toEqual([]);
 });
 
@@ -42,8 +46,8 @@ test('momentum: the run ends with the truck’s car shoved metres, the bicycle�
   expect(end.moved.bike).toBeLessThan(0.03);
   expect(end.dent.truck).toBeGreaterThan(3 * end.dent.bike);
   // a jump to a moment shows it paused
-  await fig.call('set', { at: 1 });
-  expect(await fig.call('get')).toMatchObject({ phase: 'moving', playing: false, t: 1 });
+  await fig.call('set', { at: 0.8 });
+  expect(await fig.call('get')).toMatchObject({ phase: 'moving', playing: false, t: 0.8 });
   expect(log.errors).toEqual([]);
 });
 

@@ -10,6 +10,7 @@ import {
   compare,
   crashPlan,
   doubleChoices,
+  fmt,
   GAP,
   group,
   MASS,
@@ -19,7 +20,6 @@ import {
   SCALE,
   SPEED,
   signChoices,
-  signed,
 } from '../../assets/momentum/src/physics.js';
 
 describe('momentum: p = m v', () => {
@@ -41,25 +41,26 @@ describe('momentum: p = m v', () => {
 });
 
 describe('momentum: numbers as they are shown', () => {
-  test('groups of three with a narrow space, U+2212 for minus', () => {
-    assert.equal(group(50000), '50 000');
-    assert.equal(group(-10000), '−10 000');
-    assert.equal(group(4000), '4000');
+  test('commas from 1,000 up, U+2212 for minus', () => {
+    assert.equal(group(50000), '50,000');
+    assert.equal(group(-10000), '−10,000');
+    assert.equal(group(4000), '4,000');
     assert.equal(group(400), '400');
+    assert.equal(group(80000), '80,000');
+    assert.equal(fmt(2500), '2,500');
+    assert.equal(fmt(11.43), '11.4');
   });
-  test('plain and signed numbers', () => {
+  test('plain numbers', () => {
     assert.equal(plain(0.4), '0.4');
     assert.equal(plain(-5), '−5');
     assert.equal(plain(2.0), '2');
-    assert.equal(signed(5), '+5');
-    assert.equal(signed(-5), '−5');
   });
-  test('distances said "about"', () => {
-    assert.deepEqual(about(1.99), { value: 2, unit: 'm' });
-    assert.deepEqual(about(5.09), { value: 5.1, unit: 'm' });
-    assert.deepEqual(about(0.32), { value: 32, unit: 'cm' });
-    assert.deepEqual(about(0.013), { value: 1, unit: 'cm' });
-    assert.deepEqual(about(0.001), { value: 1, unit: 'cm' });
+  test('distances said "about", never rounded up past what happened', () => {
+    assert.deepEqual(about(1.99), { value: 2, unit: 'm', less: false });
+    assert.deepEqual(about(5.09), { value: 5.1, unit: 'm', less: false });
+    assert.deepEqual(about(0.32), { value: 32, unit: 'cm', less: false });
+    assert.deepEqual(about(0.013), { value: 1, unit: 'cm', less: false });
+    assert.deepEqual(about(0.002), { value: 1, unit: 'cm', less: true });
   });
 });
 
@@ -70,6 +71,8 @@ describe('momentum: the crash', () => {
     assert.ok(truck.s2 > 1.8 && truck.s2 < 2.2, `truck pushes ${truck.s2}`);
     assert.ok(bike.s2 > 0.005 && bike.s2 < 0.03, `bicycle pushes ${bike.s2}`);
     assert.ok(truck.crush > 3 * bike.crush, 'the truck dents it much more');
+    assert.ok(truck.crush > CRASH.crumpled, 'at 5 m/s the truck crumples the car');
+    assert.ok(crashPlan('truck', 1).crush < CRASH.crumpled, 'at 1 m/s it only dents it');
     assert.ok(bike.v1 < 0, 'the bicycle bounces back a little');
     assert.equal(truck.tHit, GAP / 5);
   });
@@ -107,17 +110,22 @@ describe('momentum: the crash', () => {
 });
 
 describe('momentum: the test', () => {
-  test('calc: m × v, and the mistakes are all different from it', () => {
-    const c = calcChoices(MASS.truck, 4);
+  test('calc: m × v, and the three mistakes are all different numbers', () => {
+    const c = calcChoices(MASS.truck, 2);
     assert.deepEqual(
-      c.map((x) => [x.value, x.unit]),
-      [
-        [40000, 'p'],
-        [2500, 'p'],
-        [10004, 'p'],
-        [40000, 'force'],
-      ],
+      c.map((x) => x.value),
+      [20000, 5000, 10002, 40000],
     );
+    for (const [m, v] of [
+      [MASS.truck, 2],
+      [MASS.car, 5],
+      [MASS.runner, 5],
+      [MASS.bike, 7],
+    ]) {
+      const values = calcChoices(m, v).map((x) => x.value);
+      assert.equal(new Set(values).size, 4, `${m} kg at ${v} m/s`);
+      assert.ok(Math.max(...values) < 100000, 'no lakh comma needed');
+    }
   });
   test('double: 2p right; 4p, p, p/2 wrong', () => {
     assert.deepEqual(

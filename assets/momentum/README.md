@@ -29,7 +29,7 @@ To listen to it or control it from the book page, use the helper shipped in the 
 | `lang` | Language | `bn` বাংলা · `en` English | `bn` |
 | `speed` | Velocity (m/s) (the same for the truck and the bicycle) | number | `5` |
 | `dir` | Direction | `right` to the right (+) · `left` to the left (−) | `right` |
-| `at` | Moment of the run (shown paused, e.g. 1 (just before the crash at 5 m/s); past the end shows the result) | number |  |
+| `at` | Moment of the run (shown paused, e.g. 0.8 (just before the crash at 5 m/s); past the end shows the result) | number |  |
 | `view` | View | `front` · `3d` | `front` |
 | `mode` | Start in | `explore` learn · `quiz` test | `explore` |
 | `coach` | First-use pointers | `1` · `0` | `1` |

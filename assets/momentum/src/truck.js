@@ -1,7 +1,8 @@
 // A loaded Bangladeshi goods truck, in real metres: a mustard-yellow flat-front cab with a red band, a painted
 // visor and the tall wooden "crown" that hangs over the cab roof, a wooden cargo body with a khaki tarp over the
 // load, dual rear wheels with red hubs. Origin on the ground under the front bumper, +x forward, +y up.
-// roll(m) turns the wheels for the road covered; setPitch(rad) dips the nose when it brakes.
+// roll(m) turns the wheels for the road covered; setPitch(rad) dips the nose and setBrake(on) lights the brake lamps
+// when it brakes.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
@@ -171,7 +172,7 @@ export function createTruck({ name = 'Truck' } = {}) {
   // mudguards and tail lamps
   for (const s of [-1, 1]) {
     add(new THREE.BoxGeometry(1.25, 0.06, 0.62), M.dark, TRUCK.rear, 1.03, s * 0.98, body, 'Mudguard');
-    add(new THREE.BoxGeometry(0.05, 0.12, 0.22), M.red, -6.79, 0.98, s * 1.02, body, 'TailLamp');
+    add(new THREE.BoxGeometry(0.05, 0.18, 0.3), M.red, -6.79, 0.98, s * 0.98, body, 'TailLamp');
   }
   // a fuel tank under the deck
   const tank = add(new THREE.CylinderGeometry(0.24, 0.24, 0.9, 16), M.chrome, -2.85, 0.72, 0.86, body, 'FuelTank');
@@ -217,6 +218,11 @@ export function createTruck({ name = 'Truck' } = {}) {
     setPitch(a) {
       body.rotation.z = -a;
       body.position.y = -a * 3.4;
+    },
+    /** The brake lights at the back glow while the driver brakes. */
+    setBrake(on) {
+      M.red.emissiveIntensity = on ? 2.4 : 0.4;
+      M.red.emissive.set(on ? '#ff2a1a' : '#a01e18');
     },
   };
 }

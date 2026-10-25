@@ -9,12 +9,12 @@
 // car skids to rest on its locked tyres and the vehicle brakes. Distances along the lane: 0 is the parked car's
 // end that is hit; the vehicle comes from negative values.
 //
-// Numbers (realistic, rounded): a loaded truck about 10 000 kg, a bicycle with its rider 80 kg, the small car
-// 1 000 kg, a runner 60 kg.
+// Numbers (realistic, rounded): a loaded truck about 10,000 kg, a bicycle with its rider 80 kg, the small car
+// 1,000 kg, a runner 60 kg.
 
 export const MASS = { truck: 10000, bike: 80, car: 1000, runner: 60 };
 /** m between the vehicles' fronts and the parked cars at the start of a run (the same for every speed). */
-export const GAP = 6;
+export const GAP = 5;
 /** The speeds the student can choose (m/s, whole numbers): 5 m/s is 18 km/h. */
 export const SPEED = { min: 1, max: 8, start: 5 };
 /** Arrow lengths in metres: per m/s for velocity, per kg m/s for momentum (both p arrows on one scale). */
@@ -23,10 +23,11 @@ export const G = 9.8;
 export const CRASH = {
   e: 0.15, // restitution: a car crash keeps little of its energy
   skid: 0.7 * G, // the parked car's locked tyres on asphalt
-  brake: { truck: 5.5, bike: 3, car: 6, runner: 4 }, // ms⁻² after the impact (the driver or rider stops)
+  brake: { truck: 5.5, bike: 3, car: 6, runner: 4 }, // m/s² after the impact (the driver or rider brakes)
   stiffness: 4e5, // N/m of the car's crumple zone
   share: { truck: 0.9, bike: 0.5, car: 0.6, runner: 0.3 }, // part of the lost energy that dents the car
   maxCrush: 0.45, // m
+  crumpled: 0.1, // m: a smaller dent is a dent (টোল), a deeper one a crumpled end (দুমড়ে)
 };
 
 /** p = m v (kg m/s), signed like v. */
@@ -39,13 +40,13 @@ export function roundTo(x, step) {
 }
 
 /**
- * Digits of a whole number in groups of three, with a narrow no-break space (SI style: 50 000), and the minus sign
- * U+2212 for negative numbers. Numbers below 10 000 stay in one group (4 000), as is usual.
+ * Digits of a whole number with commas from 1,000 up, as printed in Bangladesh (the figure's numbers stay under
+ * 1,00,000, so the lakh comma never comes up), and the minus sign U+2212 for negative numbers.
  */
 export function group(n) {
   const neg = n < 0;
   const s = String(Math.round(Math.abs(n)));
-  const out = s.length <= 4 ? s : s.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  const out = s.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   return neg ? `−${out}` : out;
 }
 
@@ -55,20 +56,19 @@ export function plain(x, digits = 2) {
   return v < 0 ? `−${Math.abs(v)}` : String(v === 0 ? 0 : v);
 }
 
-/** A number as the panel shows it: whole numbers in groups (50 000), others with one decimal (11.4). */
+/** A number as the panel shows it: whole numbers with commas (50,000), others with one decimal (11.4). */
 export const fmt = (x) => (Math.abs(x - Math.round(x)) < 1e-9 ? group(x) : plain(x, 1));
 
-/** A signed number with its sign written out: +5 → "+5", -5 → "−5", 0 → "0". */
-export const signed = (x, digits = 2) => (x > 0 ? `+${plain(x, digits)}` : plain(x, digits));
-
 /**
- * A distance said "about" (প্রায়): whole centimetres below a metre, else metres with at most one decimal.
- * → { value, unit: 'cm' | 'm' }
+ * A distance said "about" (প্রায়): whole centimetres below a metre, else metres with at most one decimal. Under
+ * half a centimetre it is "less than 1 cm" (less: true), never rounded up to look bigger.
+ * → { value, unit: 'cm' | 'm', less }
  */
 export function about(d) {
   const a = Math.abs(d);
-  if (a < 0.995) return { value: Math.max(1, Math.round(a * 100)), unit: 'cm' };
-  return { value: roundTo(a, a < 9.95 ? 0.1 : 1), unit: 'm' };
+  if (a < 0.005) return { value: 1, unit: 'cm', less: true };
+  if (a < 0.995) return { value: Math.round(a * 100), unit: 'cm', less: false };
+  return { value: roundTo(a, a < 9.95 ? 0.1 : 1), unit: 'm', less: false };
 }
 
 /**
@@ -133,35 +133,35 @@ export const clearance = (plan, t) => {
 };
 
 // ── the test's choices: the right one and three from the usual mistakes ────────────────────────────────────────
-// Each choice: { value (kg m/s), unit: 'p' | 'force', mistake: null | key }. The app shuffles and labels them.
+// Each choice: { value (kg m/s), mistake: null | key }. The app shuffles and labels them.
 
-/** "p of this body?": m × v (right), m ÷ v, m + v, and m × v with the unit of force (kg m/s²). */
+/** "p of this body?": m × v (right), m ÷ v, m + v, and m × v² (as if the velocity counted twice); all different. */
 export function calcChoices(m, v) {
   return [
-    { value: m * v, unit: 'p', mistake: null },
-    { value: roundTo(m / v, 0.1), unit: 'p', mistake: 'divide' },
-    { value: m + v, unit: 'p', mistake: 'add' },
-    { value: m * v, unit: 'force', mistake: 'unit' },
+    { value: m * v, mistake: null },
+    { value: roundTo(m / v, 0.1), mistake: 'divide' },
+    { value: m + v, mistake: 'add' },
+    { value: m * v * v, mistake: 'square' },
   ];
 }
 
 /** "v doubles: p becomes?": 2p (right), 4p (as if p grew with v²), p (as if only m counted), p/2. */
 export function doubleChoices(p) {
   return [
-    { value: 2 * p, unit: 'p', mistake: null },
-    { value: 4 * p, unit: 'p', mistake: 'square' },
-    { value: p, unit: 'p', mistake: 'same' },
-    { value: p / 2, unit: 'p', mistake: 'half' },
+    { value: 2 * p, mistake: null },
+    { value: 4 * p, mistake: 'square' },
+    { value: p, mistake: 'same' },
+    { value: p / 2, mistake: 'half' },
   ];
 }
 
 /** "moving left at speed w (positive), p = ?": −m w (right), +m w (sign dropped), −m ÷ w, +m ÷ w. */
 export function signChoices(m, w) {
   return [
-    { value: -m * w, unit: 'p', mistake: null },
-    { value: m * w, unit: 'p', mistake: 'sign' },
-    { value: -roundTo(m / w, 0.1), unit: 'p', mistake: 'divide' },
-    { value: roundTo(m / w, 0.1), unit: 'p', mistake: 'both' },
+    { value: -m * w, mistake: null },
+    { value: m * w, mistake: 'sign' },
+    { value: -roundTo(m / w, 0.1), mistake: 'divide' },
+    { value: roundTo(m / w, 0.1), mistake: 'both' },
   ];
 }
 

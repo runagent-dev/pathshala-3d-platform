@@ -16,12 +16,13 @@ import { ICONS } from '@shared/student/icons.js';
 import { createQuiz } from '@shared/student/quiz.js';
 import { buildStudentShell } from '@shared/student/shell.js';
 import { createTweener, ease } from '@shared/tween.js';
-import { frontFit, frontPose, screenU, smoothMin, spherePose } from './camera.js';
+import { frontFit, frontPose, screenU, spherePose } from './camera.js';
 import { CAR, createCar } from './car.js';
 import { createI18n } from './i18n.js';
 import { BIKE, createCyclist, createRunner } from './people.js';
 import {
   about,
+  CRASH,
   calcChoices,
   compare,
   crashPlan,
@@ -54,10 +55,11 @@ export const DEFAULTS = {
   sound: true,
 };
 
-const ELEV = THREE.MathUtils.degToRad(30); // the front view looks down on the road from 30° above
+const ELEV = THREE.MathUtils.degToRad(33); // the front view looks down on the road from 33° above
 const FOV = { front: 8, '3d': 26 };
-const COLOR = { v: '#1c6fd9', p: '#2f9e44' };
-const W_MIN = 11.5; // m of road the front view always shows across (portrait phones)
+// arrows in the chapter's colours; the p⃗ words in a darker green that reads well as small text (as the sister figure)
+const COLOR = { v: '#1c6fd9', p: '#2f9e44', pText: '#237a35' };
+const W_MIN = 14; // m of road the front view always shows across: the vehicles and the parked cars, on a phone
 const DOUBLE_TAP = 400; // ms: a second tap this soon does not undo the first
 const LANE_IDS = ['far', 'near'];
 const BODY = {
@@ -66,20 +68,25 @@ const BODY = {
   car: { len: CAR.length, top: CAR.height, half: CAR.width / 2, tag: 'tag_car', who: 'who_car', name: 'name_car' },
   runner: { len: 0.9, top: 1.68, half: 0.25, tag: 'tag_runner', who: 'who_runner', name: 'name_runner' },
 };
-// arrows ride above a body, high enough to clear its roof as seen from 30° above: p⃗ first, v⃗ over it
+// arrows ride above a body, high enough to clear its roof as seen from 30° above: p⃗ first, v⃗ over it, far enough
+// apart that each keeps its own label at its own height
 for (const b of Object.values(BODY)) {
-  b.py = Math.max(b.top + 0.38, b.top + b.half * Math.tan(ELEV) + 0.22);
-  b.vy = b.py + 0.55;
+  b.py = Math.max(b.top + 0.6, b.top + b.half * Math.tan(ELEV) + 0.22);
+  b.vy = b.py + 0.65;
 }
+// the small bodies of the near lane carry theirs higher, in the middle of the empty band between the lanes on the
+// screen, where their labels have room above and below
+BODY.bike.py = 2.9;
+BODY.bike.vy = 3.55;
+BODY.runner.py = 2.7;
+BODY.runner.vy = 3.35;
 const FLIP_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h15M15 4l4 4-4 4"/><path d="M20 16H5M9 12l-4 4 4 4"/></svg>`;
-const ARROW_R = `<svg class="mo-ar" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13.5 6.5L19 12l-5.5 5.5"/></svg>`;
-const ARROW_L = `<svg class="mo-ar" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12H5M10.5 6.5L5 12l5.5 5.5"/></svg>`;
 
 export function createApp(root, options = {}) {
   const o = { ...DEFAULTS, ...options };
   const t = createI18n(o.lang, { numerals: o.numerals });
   const N = t.num;
-  const F = (x) => N(fmt(x)); // a number for the student: grouped digits, the language's numerals
+  const F = (x) => N(fmt(x)); // a number for the student: commas from 1,000 up, the language's numerals
   const now = () => performance.now();
 
   root.classList.add('pvc', 'mo');
@@ -93,7 +100,7 @@ export function createApp(root, options = {}) {
     learnAlign: 'start',
     learn: `
           <div class="mo-top">
-            <p class="mo-idea">${t('idea')}</p>
+            <p class="mo-idea"><span>${t('idea')}</span><span class="mo-formula">${t('formula')}</span></p>
             <div class="mo-step" role="group" aria-label="${t('speed')}">
               <button class="pvc-btn" data-act="slower" aria-label="${t('speed_down')}">${ICONS.minus}</button>
               <b class="mo-step-v" aria-live="polite"></b>
@@ -101,7 +108,7 @@ export function createApp(root, options = {}) {
             </div>
           </div>
           <table class="mo-tab">
-            <thead><tr><td></td><th class="c-p">${t('col_p')}<small>${t('u_p')}</small></th><td></td><th class="c-m">${t('col_m')}<small>${t('u_m')}</small></th><td></td><th class="c-v">${t('col_v')}<small>${t('u_v')}</small></th></tr></thead>
+            <thead><tr><td class="mo-cap"><span>${t('at_hit')}</span></td><th class="c-p">${t('col_p')}<small>${t('u_p')}</small></th><td></td><th class="c-m">${t('col_m')}<small>${t('u_m')}</small></th><td></td><th class="c-v">${t('col_v')}<small>${t('u_v')}</small></th></tr></thead>
             <tbody>${row('far', 'name_truck')}${row('near', 'name_bike')}</tbody>
           </table>
           <p class="mo-say"></p>
@@ -110,7 +117,7 @@ export function createApp(root, options = {}) {
               <button class="pvc-btn" data-act="flip">${FLIP_ICON}<span>${t('act_flip')}</span></button>
               <button class="pvc-btn primary" data-act="play">${ICONS.play}<span></span></button>
             </div>
-            <p class="mo-box"><span>${t('box_unit')}</span><span>${t('box_dim')}</span></p>
+            <p class="mo-box"><span>${t('box_unit')}</span><span class="mo-dot" aria-hidden="true">·</span><span>${t('box_dim')}</span></p>
           </div>`,
   });
   const $ = ui.$;
@@ -119,6 +126,7 @@ export function createApp(root, options = {}) {
     slower: $('[data-act="slower"]'),
     faster: $('[data-act="faster"]'),
     say: $('.mo-say'),
+    cap: $('.mo-cap'),
     play: $('[data-act="play"]'),
     playLabel: $('[data-act="play"] span'),
     rows: Object.fromEntries(
@@ -133,7 +141,7 @@ export function createApp(root, options = {}) {
   controls.enableZoom = false;
   controls.enableRotate = false;
   controls.minDistance = 8;
-  controls.maxDistance = 90;
+  controls.maxDistance = 2000; // the front view's long lens stands far back (about 100 m); the 3D view sets its own limit
   controls.maxPolarAngle = THREE.MathUtils.degToRad(84);
   const world = new THREE.Group();
   world.name = 'Momentum';
@@ -180,7 +188,9 @@ export function createApp(root, options = {}) {
       a.root.userData.noExport = true;
       group.add(a.root);
     }
-    return { id, z, group, parked, arrows, bodies: {}, cur: null, show: null, edge: false };
+    // persp: in the front view this lane's arrows are drawn longer or shorter by its depth, so that equal vectors
+    // in the two lanes are equally long on the screen (1 in the 3D view)
+    return { id, z, group, parked, arrows, bodies: {}, cur: null, show: null, edge: false, persp: 1 };
   }
   const lanes = { far: makeLane('far'), near: makeLane('near') };
 
@@ -244,7 +254,7 @@ export function createApp(root, options = {}) {
     const dir = tmpD.set(Math.sign(c.v) || c.facing, 0, 0);
     for (const k of ['v', 'p']) {
       const a = lane.arrows[k];
-      const len = k === 'v' ? Math.abs(c.v) * SCALE.v : Math.abs(momentum(c.m, c.v)) * SCALE.p;
+      const len = (k === 'v' ? Math.abs(c.v) * SCALE.v : Math.abs(momentum(c.m, c.v)) * SCALE.p) * lane.persp;
       if (!show[k] || fade <= 0.01 || len < 1e-6) {
         a.hide();
         continue;
@@ -267,7 +277,7 @@ export function createApp(root, options = {}) {
     const g = new THREE.Group();
     g.name = 'MovedMark';
     g.userData.noExport = true;
-    const m = new THREE.MeshBasicMaterial({ color: '#39424e' });
+    const m = new THREE.MeshBasicMaterial({ color: '#4a4f55' });
     const line = new THREE.Mesh(new THREE.BoxGeometry(1, 0.02, 0.05), m);
     const ticks = [0, 1].map(() => new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.02, 0.5), m));
     g.add(line, ...ticks);
@@ -275,12 +285,17 @@ export function createApp(root, options = {}) {
     world.add(g);
     return {
       group: g,
+      mid: new THREE.Vector3(),
+      ends: [new THREE.Vector3(), new THREE.Vector3()],
       set(x0, x1, z) {
-        g.visible = Math.abs(x1 - x0) > 0.12;
+        g.visible = Math.abs(x1 - x0) > 0.03;
         line.scale.x = Math.abs(x1 - x0);
         line.position.set((x0 + x1) / 2, 0.02, z);
         ticks[0].position.set(x0, 0.02, z);
         ticks[1].position.set(x1, 0.02, z);
+        this.mid.set((x0 + x1) / 2, 0.02, z);
+        this.ends[0].set(x0, 0.02, z);
+        this.ends[1].set(x1, 0.02, z);
       },
       hide() {
         g.visible = false;
@@ -350,13 +365,17 @@ export function createApp(root, options = {}) {
               THREE.MathUtils.smoothstep(since, 0, 0.12) *
               (1 - THREE.MathUtils.smoothstep(since, plan.tSplit - plan.tHit + plan.t1, plan.tSplit - plan.tHit + plan.t1 + 0.35))
             : 0,
-        fade: since < 0 ? 1 : Math.max(0, 1 - since / 0.25),
+        // the arrows fade out at the impact, and are gone by the time everything is at rest (at 1 m/s that is soon)
+        fade: since < 0 ? 1 : Math.max(0, 1 - since / Math.min(0.25, plan.tEnd - plan.tHit - 0.02)),
       };
       applyLane(lane);
+      // the truck's driver brakes from the impact on, and keeps the brake on once it has stopped
+      if (kind === 'truck') bodyOf(lane, 'truck').model.setBrake(since >= 0);
       placeParked(lane, { x: sx(st.car), facing: s.dir, crush: st.crush });
       if (id === 'far') {
         const done = time >= plan.tEnd - 1e-6;
-        if (done) moveMark.set(sx(0), sx(st.car), lane.z + 1.55);
+        if (done)
+          moveMark.set(sx(0), sx(st.car), -0.9); // in the middle of the empty band between the lanes
         else moveMark.hide();
       }
     }
@@ -365,13 +384,18 @@ export function createApp(root, options = {}) {
 
   // ── the panel ───────────────────────────────────────────────────────────────
   const ratio = MASS.truck / MASS.bike;
+  /** A distance as the student reads it: "প্রায় ২ m", "৩২ cm", or "১ cm-এর কম" (never rounded up). */
+  function distance(x) {
+    const a = about(x);
+    return t(a.less ? 'd_less' : a.unit === 'm' ? 'd_m' : 'd_cm', { d: a.value });
+  }
   function sayLine() {
     if (s.phase === 'done') {
-      const d = (x) => {
-        const a = about(x);
-        return t(a.unit === 'm' ? 'd_m' : 'd_cm', { d: a.value });
-      };
-      return t('say_crash', { a: d(s.plans.far.s2), b: d(s.plans.near.s2) });
+      const far = s.plans.far;
+      const near = s.plans.near;
+      const car = t(far.crush > CRASH.crumpled ? 'crash_crumpled' : 'crash_dented', { a: distance(far.s2) });
+      const bike = t(about(near.s2).less ? 'crash_bike_less' : 'crash_bike', { b: distance(near.s2) });
+      return `${car} ${bike}`;
     }
     return t(s.dir < 0 ? 'say_left' : 'say_same', { r: ratio });
   }
@@ -386,7 +410,9 @@ export function createApp(root, options = {}) {
       el.rows[id].m.textContent = F(m);
       el.rows[id].v.textContent = N(plain(v));
     }
-    el.say.textContent = sayLine();
+    el.say.innerHTML = sayLine();
+    // from the impact on the vehicles slow down and stop: the table is the momentum they hit with
+    el.cap.classList.toggle('on', s.scene === 'run' && (s.phase === 'crash' || s.phase === 'done'));
     el.playLabel.textContent = t(s.phase === 'done' ? 'act_again' : s.playing ? 'act_moving' : 'act_play');
     el.play.classList.toggle('is-busy', s.playing);
     stage.invalidate();
@@ -434,6 +460,7 @@ export function createApp(root, options = {}) {
   let frameNo = 0;
   stage.onBeforeRender(() => frameNo++);
   const corner = new THREE.Vector3();
+  const PARKED_BOX = new THREE.Box3(new THREE.Vector3(0, 0, -CAR.width / 2), new THREE.Vector3(CAR.length, CAR.height, CAR.width / 2));
   function sceneBoxes() {
     if (boxFrame === frameNo) return boxCache;
     boxFrame = frameNo;
@@ -450,11 +477,9 @@ export function createApp(root, options = {}) {
           bottom: Math.max(p0.y, p1.y) + 6,
         });
       }
-      const bodies = [
-        ...Object.values(lane.bodies)
-          .filter((b) => b.wrap.visible)
-          .map((b) => [b.wrap, b.box]),
-      ];
+      const bodies = Object.values(lane.bodies)
+        .filter((b) => b.wrap.visible)
+        .map((b) => [b.wrap, b.box]);
       if (lane.parked.root.visible) bodies.push([lane.parked.root, PARKED_BOX]);
       for (const [obj, box] of bodies) {
         obj.updateMatrixWorld();
@@ -472,7 +497,14 @@ export function createApp(root, options = {}) {
     }
     return boxCache;
   }
-  const PARKED_BOX = new THREE.Box3(new THREE.Vector3(0, 0, -CAR.width / 2), new THREE.Vector3(CAR.length, CAR.height, CAR.width / 2));
+  /** The dimension line's box (labels keep off it, except its own). */
+  function markBox() {
+    if (!moveMark.group.visible) return null;
+    const a = toScreen(moveMark.ends[0]);
+    const b = toScreen(moveMark.ends[1]);
+    return { left: Math.min(a.x, b.x) - 4, right: Math.max(a.x, b.x) + 4, top: Math.min(a.y, b.y) - 9, bottom: Math.max(a.y, b.y) + 9 };
+  }
+  const avoidScene = [() => sceneBoxes(), () => markBox()];
 
   /** Where the p arrow leaves the screen (its tip is off it): the point on the shaft 12 px in from the edge. */
   const edgePoint = new THREE.Vector3();
@@ -495,76 +527,109 @@ export function createApp(root, options = {}) {
     const q = toScreen(p);
     return q.x < 6 || q.x > stage.width - 6;
   };
+  /** Screen pixels per metre along the road at a lane (for spots beside a body). */
+  const pxA = new THREE.Vector3();
+  const pxB = new THREE.Vector3();
+  function pxPerM(lane) {
+    pxA.set(controls.target.x, 0, lane.z);
+    pxB.set(controls.target.x + 1, 0, lane.z);
+    return Math.abs(toScreen(pxB).x - toScreen(pxA).x) || 20;
+  }
+  // a wide view has room for the edge label's second line ("…১২৫ গুণ লম্বা"); a phone has it in the panel's line
+  const wideView = () => stage.width >= 700 && stage.height >= 450;
 
-  // v⃗ goes up and p⃗ down from their heads (the p⃗ arrow is just under the v⃗ one), ahead of the body
+  // v⃗'s label sits at the arrow's tail (behind it), p⃗'s at its head (ahead of it): each at its own arrow's
+  // height, so the two never stack; over the empty middle lane, never on a body or a parked car
   const SPOTS = {
     vR: [
-      { dx: 10, dy: -12 },
-      { dx: 10, dy: 0 },
-      { dx: 10, dy: -26 },
-      { dx: -10, dy: -24 },
+      { dx: -8, dy: 0 },
+      { dx: 0, dy: -20 },
+      { dx: -8, dy: -20 },
+      { dx: 40, dy: -20 },
     ],
     vL: [
-      { dx: -10, dy: -12 },
-      { dx: -10, dy: 0 },
-      { dx: -10, dy: -26 },
-      { dx: 10, dy: -24 },
+      { dx: 8, dy: 0 },
+      { dx: 0, dy: -20 },
+      { dx: 8, dy: -20 },
+      { dx: -40, dy: -20 },
+      { dx: -90, dy: -20 },
     ],
     pR: [
-      { dx: 10, dy: 12 },
-      { dx: 10, dy: 0 },
-      { dx: 10, dy: 26 },
-      { dx: -10, dy: 24 },
+      { dx: 8, dy: 0 },
+      { dx: 8, dy: -6 },
+      { dx: 8, dy: 16 },
+      { dx: 8, dy: -16 },
     ],
     pL: [
-      { dx: -10, dy: 12 },
-      { dx: -10, dy: 0 },
-      { dx: -10, dy: 26 },
-      { dx: 10, dy: 24 },
+      { dx: -8, dy: 0 },
+      { dx: -8, dy: -6 },
+      { dx: -8, dy: 16 },
+      { dx: -8, dy: -16 },
     ],
-    edgeR: [
-      { dx: -4, dy: 30 },
-      { dx: -4, dy: -32 },
-      { dx: -4, dy: 54 },
-    ],
-    edgeL: [
-      { dx: 4, dy: 30 },
-      { dx: 4, dy: -32 },
-      { dx: 4, dy: 54 },
-    ],
-    below: [
-      { dx: 0, dy: 34 },
-      { dx: 30, dy: 30 },
-      { dx: -30, dy: 30 },
-      { dx: 0, dy: 52 },
-    ],
-    roof: [
-      { dx: 0, dy: -26 },
-      { dx: -50, dy: -22 },
-      { dx: 50, dy: -22 },
-      { dx: -90, dy: -6 },
-      { dx: 90, dy: -6 },
-      { dx: 0, dy: -46 },
+    dim: [
+      { dx: 0, dy: 16 },
+      { dx: 0, dy: -16 },
+      { dx: 0, dy: 0 }, // on the line itself, as on a drawing
     ],
   };
-  const avoidScene = [() => sceneBoxes()];
+  /**
+   * A small view (under 17 px per metre) has no room round the arrows for labels with their numbers: there they
+   * carry just the symbols v⃗ and p⃗ (the numbers are in the panel's table, next to the view). The test always
+   * shows the numbers, which its questions need.
+   */
+  const compact = () => s.mode !== 'quiz' && s.scene === 'run' && pxPerM(lanes.near) < 17;
+  /** The edge label's spots: above the arrow at the screen's edge (one line), or two lines in a wide view. */
+  const edgeSpots = (right) => {
+    const dy = wideView() ? 26 : 17;
+    const k = right ? -1 : 1;
+    // at the edge, over or under the arrow; else further along it, clear of the corner buttons
+    return [
+      { dx: 4 * k, dy: -dy },
+      { dx: 4 * k, dy },
+      { dx: 120 * k, dy: -dy },
+      { dx: 220 * k, dy: -dy },
+      { dx: 120 * k, dy },
+    ];
+  };
+  const pSpots = (lane, right) => (lane.edge ? edgeSpots(right) : right ? SPOTS.pR : SPOTS.pL);
+  /** Under a body; else beside it at half its height, or over its roof, when there is no room under it. */
+  function besideSpots(lane, len, top) {
+    const k = pxPerM(lane);
+    const side = (len / 2) * k + 10;
+    const up = -(top * Math.cos(ELEV) * k) / 2;
+    const roof = -(top * Math.cos(ELEV) * k) - 22;
+    return [
+      { dx: 0, dy: 25 },
+      { dx: -side / 2, dy: 25 },
+      { dx: side / 2, dy: 25 },
+      { dx: side, dy: up },
+      { dx: -side, dy: up },
+      { dx: side, dy: 26 },
+      { dx: -side, dy: 26 },
+      { dx: 0, dy: roof },
+      { dx: 0, dy: 50 },
+    ];
+  }
 
   /** The words of a lane's p label: normal, or at the screen's edge when the arrow runs off it. */
   function pText(lane) {
     const c = lane.cur;
-    const main = t('lab_p', { p: group(momentum(c.m, c.v)) });
+    if (compact() && !lane.edge) return t('lab_p_sym');
+    const main = compact() ? t('lab_p_sym') : t('lab_p', { p: group(momentum(c.m, c.v)) });
     if (!lane.edge) return main;
     const other = lanes[lane.id === 'far' ? 'near' : 'far'];
-    const both = other.cur && other.show?.p && other.cur.kind === 'bike' && c.kind === 'truck';
+    const both = wideView() && other.cur && other.show?.p && other.cur.kind === 'bike' && c.kind === 'truck';
     const long = both ? t('lab_p_long', { r: Math.round(Math.abs(momentum(c.m, c.v) / momentum(other.cur.m, other.cur.v))) }) : '';
-    const arrow = c.v < 0 ? ARROW_L : ARROW_R;
+    const arrow = `<span class="mo-ar${c.v < 0 ? ' left' : ''}">${ICONS.arrowR}</span>`;
     const head = c.v < 0 ? `${arrow}${main}` : `${main}${arrow}`;
     return `<span class="mo-edge">${head}</span>${long ? `<small>${long}</small>` : ''}`;
   }
 
+  const tmpTag = { far: new THREE.Vector3(), near: new THREE.Vector3() };
   /**
    * Labels for what each lane shows now (called when the scene changes, not every frame): the arrows' labels
-   * first, then the mass tags, which give way (hide) when there is no room left for them.
+   * first, then the mass tags. In the run the tags give way (hide) when there is no room; in the test they always
+   * show, because the questions need the masses.
    */
   function syncLabels() {
     let added = false;
@@ -574,60 +639,72 @@ export function createApp(root, options = {}) {
       const show = lane.show;
       const id = lane.id;
       const right = c && (Math.sign(c.v) || c.facing) > 0;
-      // v⃗ beside its arrow's head
+      // v⃗ behind its arrow's tail when p⃗'s label is ahead of it; ahead of its own head when p⃗ is hidden (a test)
       if (show?.v && before(lane)) {
-        const text = show.speedOnly ? t('lab_speed', { v: plain(Math.abs(c.v)) }) : t('lab_v', { v: plain(c.v) });
-        const point = () => lane.arrows.v.tip;
-        const spots = right ? SPOTS.vR : SPOTS.vL;
+        const text = show.speedOnly ? t('lab_speed', { v: plain(Math.abs(c.v)) }) : compact() ? t('lab_v_sym') : t('lab_v', { v: plain(c.v) });
+        const tail = Boolean(show.p);
+        const point = () => (tail ? lane.arrows.v.root.position : lane.arrows.v.tip);
+        const spots = tail ? (right ? SPOTS.vR : SPOTS.vL) : right ? SPOTS.pR : SPOTS.pL;
         if (!anno.has(`v-${id}`)) {
           anno.add(`v-${id}`, { text, point, kind: 'callout', color: COLOR.v, spots, avoid: avoidScene });
           added = true;
         } else anno.update(`v-${id}`, { text, point, spots });
       } else anno.remove(`v-${id}`);
-      // p⃗ beside its arrow's head, or at the screen's edge
+      // p⃗ ahead of its arrow's head, or over the arrow at the screen's edge
       if (show?.p && before(lane)) {
         const point = () => (lane.edge ? arrowAtEdge(lane.arrows.p) : lane.arrows.p.tip);
-        const spots = lane.edge ? (right ? SPOTS.edgeR : SPOTS.edgeL) : right ? SPOTS.pR : SPOTS.pL;
+        const spots = pSpots(lane, right);
         if (!anno.has(`p-${id}`)) {
-          anno.add(`p-${id}`, { text: pText(lane), point, kind: 'callout', color: COLOR.p, spots, avoid: avoidScene });
+          anno.add(`p-${id}`, { text: pText(lane), point, kind: 'callout', color: COLOR.pText, spots, avoid: avoidScene });
           added = true;
         } else anno.update(`p-${id}`, { text: pText(lane), point, spots });
       } else anno.remove(`p-${id}`);
     }
-    // the mass tags under the bodies, placed after the arrows' labels
     for (const lane of Object.values(lanes)) {
       const id = `tag-${lane.id}`;
-      if (added || !(lane.show?.tag && before(lane))) anno.remove(id);
-      if (!(lane.show?.tag && before(lane))) continue;
+      const on = Boolean(lane.show?.tag && before(lane));
+      if (added || !on) anno.remove(id);
+      if (!on) continue;
       const b = bodyOf(lane, lane.cur.kind);
       const text = t(b.info.tag, { m: group(lane.cur.m) });
-      const point = () => b.wrap.localToWorld(tmpTag.set(-b.info.len * 0.5, 0, b.info.half));
-      if (!anno.has(id)) anno.add(id, { text, point, kind: 'part', spots: SPOTS.below, avoid: avoidScene, optional: true });
-      else anno.update(id, { text, point });
+      // the middle of the body's near side, on the road, whichever way it faces
+      const point = () => tmpTag[lane.id].set(lane.cur.x - (lane.cur.facing * b.info.len) / 2, 0, lane.z + b.info.half);
+      const spots = besideSpots(lane, b.info.len, b.info.top);
+      const optional = s.mode !== 'quiz';
+      if (!anno.has(id)) anno.add(id, { text, point, kind: 'part', spots, avoid: avoidScene, optional });
+      else anno.update(id, { text, point, spots, optional });
     }
     syncMoved();
     stage.invalidate();
   }
-  const tmpTag = new THREE.Vector3();
 
-  /** After the crash: how far each car was pushed. */
+  /**
+   * After the crash: the truck's car carries its shove on the dimension line ("প্রায় ২ m"); the bicycle's car says
+   * how little it moved, beside itself.
+   */
+  const tmpMoved = { far: new THREE.Vector3(), near: new THREE.Vector3() };
   function syncMoved() {
     const done = s.scene === 'run' && s.phase === 'done';
+    const line = done && moveMark.group.visible;
+    if (line) {
+      const text = t('lab_dim', { d: distance(s.plans.far.s2) });
+      if (!anno.has('dim')) anno.add('dim', { text, point: () => moveMark.mid, kind: 'part', spots: SPOTS.dim, avoid: [() => sceneBoxes()] });
+      else anno.update('dim', { text });
+    } else anno.remove('dim');
     for (const lane of Object.values(lanes)) {
       const id = `moved-${lane.id}`;
-      if (!done) {
+      if (!done || (lane.id === 'far' && line)) {
         anno.remove(id);
         continue;
       }
-      const a = about(s.plans[lane.id].s2);
-      const text = t('lab_moved', { d: t(a.unit === 'm' ? 'd_m' : 'd_cm', { d: a.value }) });
-      // over the car's roof: the arrows are gone by now, so the space over each lane is free
-      const point = () => lane.parked.root.localToWorld(tmpMoved[lane.id].set(CAR.length * 0.5, CAR.height, 0));
-      if (!anno.has(id)) anno.add(id, { text, point, kind: 'part', spots: SPOTS.roof, avoid: avoidScene });
-      else anno.update(id, { text, point });
+      const d = s.plans[lane.id].s2;
+      const text = t(about(d).less ? 'lab_moved_less' : 'lab_moved', { d: distance(d) });
+      const point = () => lane.parked.root.localToWorld(tmpMoved[lane.id].set(CAR.length * 0.5, 0, s.dir * (CAR.width / 2)));
+      const spots = besideSpots(lane, CAR.length, CAR.height);
+      if (!anno.has(id)) anno.add(id, { text, point, kind: 'part', spots, avoid: avoidScene });
+      else anno.update(id, { text, point, spots });
     }
   }
-  const tmpMoved = { far: new THREE.Vector3(), near: new THREE.Vector3() };
 
   // the p label switches to its edge form while the arrow's tip is off the screen
   stage.onBeforeRender(() => {
@@ -638,7 +715,7 @@ export function createApp(root, options = {}) {
       lane.edge = edge;
       if (anno.has(`p-${lane.id}`)) {
         const right = (Math.sign(lane.cur?.v) || 1) > 0;
-        anno.update(`p-${lane.id}`, { text: pText(lane), spots: edge ? (right ? SPOTS.edgeR : SPOTS.edgeL) : right ? SPOTS.pR : SPOTS.pL });
+        anno.update(`p-${lane.id}`, { text: pText(lane), spots: pSpots(lane, right) });
       }
     }
   });
@@ -730,17 +807,22 @@ export function createApp(root, options = {}) {
   }
 
   // ── camera ──────────────────────────────────────────────────────────────────
-  /** The strip of screen heights the front view must show for these lanes (labels need the margins). */
+  /** The kinds of body a lane shows in the front view's framing. */
+  const kindsIn = (id) => (s.scene === 'run' ? [id === 'far' ? 'truck' : 'bike'] : [lanes[id].cur?.kind].filter(Boolean));
+  /**
+   * The strip of screen heights the front view must show for these lanes: up to the label over the highest arrow
+   * (the top margin), down to room under the lowest body for its mass tag or result.
+   */
   function uRange(ids) {
     let uMin = Infinity;
     let uMax = -Infinity;
     for (const id of ids) {
       const z = LANES[id];
-      const kinds = s.scene === 'run' ? [id === 'far' ? 'truck' : 'bike'] : [lanes[id].cur?.kind].filter(Boolean);
-      for (const k of kinds) {
+      for (const k of kindsIn(id)) {
         const b = BODY[k];
+        const half = s.scene === 'run' ? Math.max(b.half, CAR.width / 2) : b.half;
         uMax = Math.max(uMax, screenU(b.vy + 0.25, z, ELEV));
-        uMin = Math.min(uMin, screenU(0, z + Math.max(b.half, CAR.width / 2) + 0.35, ELEV));
+        uMin = Math.min(uMin, screenU(0, z + half + 0.2, ELEV));
       }
     }
     return { uMin, uMax };
@@ -749,23 +831,41 @@ export function createApp(root, options = {}) {
     const ids = s.scene === 'run' ? LANE_IDS : s.frame?.lanes || LANE_IDS;
     const { uMin, uMax } = uRange(ids);
     const minSpan = s.scene === 'run' ? W_MIN : Math.max(7, (s.frame?.x1 ?? 4) - (s.frame?.x0 ?? -4));
-    s.fit = frontFit({ camera, width: stage.width, height: stage.height, uMin, uMax, minSpan });
+    // room for the corner buttons and the labels over the top arrow (always), and for the labels under the lowest
+    // body (less in a short view, so the scene is not too small: there they go beside it)
+    const h = stage.height;
+    const margin = { top: 64, bottom: Math.min(38, 0.14 * h), side: 8 };
+    s.fit = frontFit({ camera, width: stage.width, height: h, uMin, uMax, minSpan, margin });
+    // the long lens is not quite flat: a lane further back looks a little smaller, so its arrows are drawn longer by
+    // as much (and the near lane's shorter), and equal vectors are equally long on the screen
+    const n = { y: Math.sin(ELEV), z: Math.cos(ELEV) };
+    const T = { y: s.fit.uc * Math.cos(ELEV), z: -s.fit.uc * Math.sin(ELEV) };
+    for (const id of LANE_IDS) {
+      const k = kindsIn(id)[0];
+      const y = k ? (BODY[k].py + BODY[k].vy) / 2 : 2;
+      const along = (y - T.y) * n.y + (LANES[id] - T.z) * n.z;
+      lanes[id].persp = s.view === 'front' ? (s.fit.d - along) / s.fit.d : 1;
+      if (lanes[id].cur) applyLane(lanes[id]);
+    }
     return s.fit;
   }
-  /** The x the front view centres on: in the run it follows the truck, so the subject stays big on a phone. */
+  /**
+   * The x the front view centres on. In the run the camera stands still until the impact, with the parked cars in
+   * view (and the truck's back, if it fits): the student sees both vehicles drive up to the cars. After the impact it
+   * moves along just far enough to keep the shoved car in view.
+   */
   function frontX(time = runTime()) {
     if (s.scene !== 'run') return ((s.frame?.x0 ?? -4) + (s.frame?.x1 ?? 4)) / 2;
     const W = s.fit.span;
     const pf = s.plans.far;
-    const lo = -GAP - TRUCK.length - 0.6 + W / 2; // the truck's back in view at the start
-    const hi = pf.s2 + CAR.length + 0.9 - W / 2; // the shoved car's front in view at the end
-    let c;
-    if (hi <= lo) c = (lo + hi) / 2;
-    else {
-      const rear = runAt(pf, time).front - TRUCK.length;
-      c = smoothMin(hi, Math.max(lo, rear - 0.6 + W / 2), Math.min(0.9, (hi - lo) / 2));
-    }
-    return sx(c);
+    const left = -GAP - TRUCK.length - 0.6; // the truck's back at the start
+    const right = CAR.length + 0.7; // the parked cars' far end
+    const end = pf.s2 + CAR.length + 0.9; // the shoved car's front, at rest
+    if (W >= end - left) return sx((left + end) / 2); // all of it fits: the camera never moves
+    const start = W >= right - left ? left + W / 2 : right - W / 2;
+    const stop = Math.max(start, Math.min(end - W / 2, W / 2 - 1)); // keeps the bicycle's car in view too
+    const k = THREE.MathUtils.smoothstep(time - pf.tHit, 0, Math.max(0.6, pf.tSplit - pf.tHit + pf.t2 + 0.2));
+    return sx(start + (stop - start) * k);
   }
   function frontView() {
     if (!s.fit) computeFit();
@@ -815,6 +915,7 @@ export function createApp(root, options = {}) {
     s.view = view === '3d' ? '3d' : 'front';
     controls.enableRotate = s.view === '3d';
     controls.enableZoom = s.view === '3d';
+    controls.maxDistance = 2000; // the 3D view's own limit comes once the camera is there
     s.userMovedCamera = false;
     syncUI();
     emit('view', { view: s.view });
@@ -822,9 +923,16 @@ export function createApp(root, options = {}) {
       camera.fov = FOV.front;
       camera.updateProjectionMatrix();
       computeFit();
-    }
+    } else
+      for (const lane of Object.values(lanes)) {
+        lane.persp = 1; // turning round, the arrows are drawn at their true lengths
+        if (lane.cur) applyLane(lane);
+      }
     const pose = viewPose(s.view);
-    return flyTo(pose, animate ? 0.8 : 0, FOV[s.view]);
+    return flyTo(pose, animate ? 0.8 : 0, FOV[s.view]).then((done) => {
+      if (s.view === '3d') controls.maxDistance = 70;
+      return done;
+    });
   }
   controls.addEventListener('start', () => {
     s.userMovedCamera = true;
@@ -835,6 +943,10 @@ export function createApp(root, options = {}) {
       computeFit();
       if (!tweener.busy) placeFront();
     } else if (!s.userMovedCamera && !tweener.busy) flyTo(viewPose('3d'), 0, FOV['3d']);
+    // then the labels: spots beside a body depend on its size on the screen, the edge label's lines and the short
+    // labels on the view's size
+    for (const lane of Object.values(lanes)) lane.edge = false;
+    syncLabels();
   });
 
   // ── touching the scene: a tap on the truck or the bicycle plays the run ────
@@ -927,6 +1039,7 @@ export function createApp(root, options = {}) {
     s.view = 'front';
     controls.enableRotate = false;
     controls.enableZoom = false;
+    controls.maxDistance = 2000;
     s.userMovedCamera = false;
     syncUI();
     camera.fov = FOV.front;
@@ -955,15 +1068,14 @@ export function createApp(root, options = {}) {
     return list;
   };
   const pickOne = (list) => list[Math.floor(Math.random() * list.length)];
-  const unitOf = (u) => (u === 'force' ? 'kg m/s²' : t('u_p'));
-  const numLabel = (c) => `${F(c.value)}<small>${unitOf(c.unit)}</small>`;
+  const numLabel = (c) => `${F(c.value)}<small>${t('u_p')}</small>`;
   const wordLabel = (text) => `<span class="mo-opt">${text}</span>`;
 
   // each kind's numbers are its own, so no question's picture or answer gives away another's
   const VARIANTS = {
     damage: [3, 6],
     calc: [
-      { kind: 'truck', v: 4 },
+      { kind: 'truck', v: 2 },
       { kind: 'car', v: 5 },
       { kind: 'runner', v: 5 },
       { kind: 'bike', v: 7 },
@@ -974,7 +1086,7 @@ export function createApp(root, options = {}) {
     ],
     sign: [
       { kind: 'car', v: 4 },
-      { kind: 'truck', v: 2 },
+      { kind: 'truck', v: 4 },
       { kind: 'runner', v: 6 },
     ],
     compare: [
@@ -1016,8 +1128,8 @@ export function createApp(root, options = {}) {
       const list = shuffle([
         { text: t('ch_damage_right'), mistake: null },
         { text: t('ch_damage_same'), mistake: 'mis_damage_same' },
-        { text: t('ch_damage_fast'), mistake: 'mis_damage_fast' },
-        { text: t('ch_damage_light'), mistake: 'mis_damage_light' },
+        { text: t('ch_damage_heavy'), mistake: 'mis_damage_heavy' },
+        { text: t('ch_damage_only'), mistake: 'mis_damage_only' },
       ]);
       question = { kind, u, list };
       return {
@@ -1086,7 +1198,14 @@ export function createApp(root, options = {}) {
     const q = question;
     const my = qToken;
     const mistake = correct ? null : q.list[picked.index]?.mistake;
-    const wrong = mistake ? t(mistake.startsWith('mis_') ? mistake : `mis_${mistake}`) : '';
+    const key = !mistake
+      ? ''
+      : mistake.startsWith('mis_')
+        ? mistake
+        : q.kind === 'calc' && mistake === 'square'
+          ? 'mis_calc_square'
+          : `mis_${mistake}`;
+    const wrong = key ? t(key, { pb: q.u ? group(MASS.bike * q.u) : '', r: ratio, one: 1 }) : '';
     if (q.kind === 'damage') {
       // the answer plays the crash, with the momentum shown
       lanes.far.show.p = true;
@@ -1151,7 +1270,11 @@ export function createApp(root, options = {}) {
       enter() {
         s.learn = { speed: s.speed, dir: s.dir };
         s.mode = 'quiz';
-        s.playing = false;
+        // a run still going stops where it is (and says so) until the first question sets its own picture
+        if (s.playing) {
+          s.t = runTime();
+          s.playing = false;
+        }
         hideHint();
         // the five kinds in a new order each time
         kinds = shuffle(['damage', 'calc', 'compare', 'double', 'sign']);

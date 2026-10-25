@@ -13,7 +13,7 @@
   "order": 1,
   "maintainers": ["RadeenXALNW"],
   "units": "m",
-  "description": "Momentum (ভরবেগ, page 71, 3.4) as the book's thought experiment, run by the student: a loaded truck (10 000 kg) and a bicycle with its rider (80 kg) go at the same velocity along a town street, each toward a parked small car. Over each a blue arrow shows its velocity v (the same length for both) and a green arrow its momentum p = m v, both p arrows on one scale: the bicycle's is short, the truck's, 125 times as long, runs off the screen, with a label at the edge saying so. The panel writes p = m v with the numbers for both (kg m/s) and the book's box (unit kg m/s, dimension [p] = MLT⁻¹). A tap on the truck (or চালাও) plays the run in real time: the truck crumples its car and shoves it about 2 m, the bicycle moves its car about a centimetre. The student changes the velocity (1–8 m/s: both factors matter) and the direction (to the left is negative: the arrows turn, the numbers get a minus). Test tab: 5 questions on their own pictures (which does more damage and why, p of a body read off the picture, a slow heavy body against a fast light one, the velocity doubled, the sign of p moving left). Phone-first, Bangla.",
+  "description": "Momentum (ভরবেগ, page 71, 3.4) as the book's thought experiment, run by the student: a loaded truck (10,000 kg) and a bicycle with its rider (80 kg) go at the same velocity along a town street toward two parked small cars, which are in view from the start. Over each a blue arrow shows its velocity v (equally long on the screen for both) and a green arrow its momentum p = m v, both p arrows on one scale: the bicycle's is short, the truck's, 125 times as long, runs off the screen, with its label at the edge. The panel shows p = m v with the numbers for both (kg m/s, Bangladeshi commas) and the book's box (unit kg m/s, dimension [p] = MLT⁻¹). A tap on the truck (or চালাও) plays the run in real time: the truck crumples its car and shoves it about 2 m (brake lights on), the bicycle moves its car about a centimetre; from then on the table says it is the momentum at the moment of the hit. The velocity stepper (1–8 m/s) and উল্টো দিকে show both factors and the vector (to the left is negative). Test tab: 5 questions on their own pictures with every mass on screen (which does more damage and why, p of a body read off the picture, a slow heavy body against a fast light one, the velocity doubled, the sign of p moving left). Phone-first, Bangla.",
   "tags": ["momentum", "mass", "velocity", "vector", "collision", "force", "bangla"],
   "params": [
     {
@@ -44,7 +44,7 @@
       "type": "number",
       "default": "",
       "placeholder": "s after the start",
-      "help": "shown paused, e.g. 1 (just before the crash at 5 m/s); past the end shows the result"
+      "help": "shown paused, e.g. 0.8 (just before the crash at 5 m/s); past the end shows the result"
     },
     { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
     {
@@ -71,7 +71,7 @@
     { "name": "set", "payload": { "speed": 8 } },
     { "name": "set", "payload": { "dir": "left" } },
     { "name": "set", "payload": { "play": true } },
-    { "name": "set", "payload": { "at": 1 } },
+    { "name": "set", "payload": { "at": 0.8 } },
     { "name": "set", "payload": { "at": 99 } },
     { "name": "set", "payload": { "view": "3d" } },
     { "name": "reset", "payload": {} },
@@ -81,7 +81,7 @@
   ],
   "events": ["ready", "change", "play", "crash", "rest", "view", "practice-start", "practice-result", "practice-end"],
   "export": {
-    "poster": { "params": { "coach": "0", "at": "1" } },
+    "poster": { "params": { "coach": "0", "at": "0.8" } },
     "glb": [
       { "name": "default", "setup": [{ "command": "set", "payload": { "at": 0, "animate": false } }] },
       { "name": "crash", "setup": [{ "command": "set", "payload": { "at": 99, "animate": false } }] }

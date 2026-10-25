@@ -172,9 +172,12 @@ export function createCar({ name = 'SmallCar', color = '#c8423a' } = {}) {
     const span = 0.35 + 2.2 * c;
     const fold = Math.min(0.09, 0.4 * c);
     const bulge = 0.08 * Math.min(1, c / 0.2);
+    // a deep dent knocks the rear bumper loose: one end hangs down
+    const hang = 0.24 * THREE.MathUtils.smoothstep(c, 0.08, 0.25);
     for (const { mesh, base } of parts) {
       const p = mesh.geometry.attributes.position;
       const a = p.array;
+      const bumper = mesh.name === 'RearBumper';
       for (let i = 0; i < p.count; i++) {
         const x = base[i * 3];
         const y = base[i * 3 + 1];
@@ -190,7 +193,12 @@ export function createCar({ name = 'SmallCar', color = '#c8423a' } = {}) {
         const wave = Math.sin(x * 15 + y * 9 + z * 3);
         a[i * 3] = x + c * k;
         // the panels fold (up and down, in and out), the hatch buckles up, the bumper sags
-        a[i * 3 + 1] = y + (y > 0.32 ? fold * wave * w : 0) + (y > 0.8 ? 0.45 * c * k : 0) - (y < 0.5 ? 0.25 * c * k : 0);
+        a[i * 3 + 1] =
+          y +
+          (y > 0.32 ? fold * wave * w : 0) +
+          (y > 0.8 ? 0.45 * c * k : 0) -
+          (y < 0.5 ? 0.25 * c * k : 0) -
+          (bumper ? (hang * (z + CAR.width / 2)) / CAR.width : 0);
         a[i * 3 + 2] = z * (1 + bulge * w) + Math.sign(z) * fold * 0.7 * Math.cos(x * 13 + y * 7) * w;
       }
       p.needsUpdate = true;
