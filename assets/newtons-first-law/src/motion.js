@@ -9,7 +9,9 @@ export const G = 9.8; // m/s²
 export const V0 = 3; // m/s: the book's speed as it leaves the launcher (the same push every time)
 export const PUSH = { stroke: 0.3, time: 0.2 }; // m and s the paddle pushes the book along the plate (from rest to V0)
 export const PUSH_ACC = (2 * PUSH.stroke) / PUSH.time ** 2; // 15 m/s², steady during the push
-export const BOOK = { length: 0.25, width: 0.18, thick: 0.026 }; // a class 9–10 textbook, lying flat (m)
+// a class 9–10 textbook lying flat (m), sliding short side first so its cover reads upright from the side: length is
+// along the floor (x, the motion), width across it (z)
+export const BOOK = { length: 0.19, width: 0.26, thick: 0.025 };
 export const STEP = 0.05; // s between the marks the book leaves on the floor
 
 /** The floors, smoothest last. μ: kinetic friction of a paper-covered book on it (approximate). */

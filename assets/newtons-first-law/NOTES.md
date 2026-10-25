@@ -21,37 +21,68 @@ for ever; the things we push stop only because forces like friction and air resi
 অনন্তকাল, বেগ, অতিক্রান্ত দূরত্ব (shortened to দূরত্ব in the readout). Our own words: মাদুর, কাঠের মেঝে, বরফ,
 "ঘর্ষণ নেই" (the imagined floor), ধাক্কা (the push), দেয়াল (the test's curved wall), পথ ক–ঘ, দাগ (the dots).
 
+## Changes in 0.2.0: the clean panel and a real book (the owner's feedback, 2026-10-25)
+The owner found the part under the picture of most figures too boxy and a bit overwhelming, and asked: keep the
+content, but make it cleaner, and wherever the student should touch something (in the picture or in the panel) give
+a distinctive button that can be seen. For this figure: explain a bit more, and make the book a proper, recognisable
+book (it read as a green slab). The owner approved the sketch "one action, one result, one rule" (kit 1.3.0:
+`cleanSheet`, `createAction`), and this figure is the first one built on it:
+- **The floors are one row of words** (মাদুর · কাঠ · বরফ · ঘর্ষণ নেই), the chosen one underlined; once a floor is
+  tried its stop distance sits under its word ("১.৩১ মি"; ঘর্ষণ নেই: "থামে না", honestly: it never stops). No boxes,
+  no "?" for floors not tried.
+- **One big action**: an accent pill "১ বইটিতে ধাক্কা দাও ☝". The same numbered badge sits in a dashed ring round
+  the book on the 3D view and pulses gently; a tap on the button, on the badge or on the book (or the launcher, Space,
+  Enter, →) is the same push. The ring hides while the book moves and during the test; it replaces the first-use
+  hand. Once a floor has been tried (the book stopped, or with no friction ran past every stop), the action offers
+  the next floor not tried yet, in the row's order: "২ কাঠের মেঝেতে ধাক্কা দাও", "৩ বরফে ধাক্কা দাও", "৪ ঘর্ষণহীন
+  তলে ধাক্কা দাও" (one tap chooses that floor and pushes); the badge's number is the floor's place in the row. When
+  every floor is tried it is "আবার ধাক্কা দাও". The `coach` parameter now only says whether the ring pulses.
+- **One result line**, the number large and in its colour: at rest "বইটি স্থির: বেগ ০ মি/সে"; moving "বেগ ২.৪১ মি/সে,
+  দূরত্ব ০.৬২ মি" (blue, like the velocity arrow); stopped "মাদুরে বইটি ১.৩১ মি গিয়ে থামল" (in the floor's stop-line
+  colour); with no friction, past the ice "থামছে না: বেগ ৩.০০ মি/সে, দূরত্ব …". The old boxed বেগ / দূরত্ব readouts
+  are gone (their numbers are in this line).
+- **One rule that grows** with what the student has found: before any push "বল প্রয়োগ না করলে স্থির বস্তু স্থির
+  থাকে: বইটি নিজে থেকে নড়ে না।"; sliding "ঘর্ষণ বেগের বিপরীত দিকে কাজ করে, তাই বেগ কমছে।"; after the first floor
+  "মাদুরের ঘর্ষণ বইটিকে তাড়াতাড়ি থামাল।" (wood and ice have their own); after a second floor a comparison with the
+  floor tried before ("কাঠের মেঝেতে ঘর্ষণ মাদুরের চেয়ে কম, তাই বইটি আরও দূরে গেল। ঘর্ষণ যত কম, বই তত দূরে যায়।
+  ঘর্ষণ একেবারে না থাকলে কী হবে?"); with no friction "সামনে-পেছনে কোনো বল নেই, তাই বেগ বদলাচ্ছে না।", and once it
+  has run past every floor's stop, the book's law word for word: "নিউটনের প্রথম সূত্র: বল প্রয়োগ না করলে স্থির বস্তু
+  স্থির থাকবে এবং সমবেগে চলতে থাকা বস্তু সমবেগে চলতে থাকবে।" From then on a stop on a floor quotes the book's
+  paragraph: "ঘর্ষণ, বাতাসের বাধা, এ ধরনের বল বেগের বিপরীত দিকে কাজ করে বলে চলমান একটি বস্তু থেমে যায়।"
+- **শুরুতে ফেরাও** is a quiet icon (with its words where the panel is wide), never a second big button.
+- **The book** is now a hardcover class 9–10 physics textbook: a printed cover (canvas texture in Noto Sans
+  Bengali: "পদার্থবিজ্ঞান", "নবম-দশম শ্রেণি", an atom in a white disc, a red line and a green band at the foot, on
+  blue), boards standing 3 mm proud of a cream page block with page lines on its three open edges, rounded outer
+  corners, a rounded spine with the title. It slides short side first (19 × 26 × 2.5 cm), spine against the paddle,
+  so the cover reads upright in the side view. The physics is unchanged (distances are measured at its front edge).
+
 ## How it works
-- **Galileo's and Newton's thought experiment, run by the student.** A physics textbook (green cover,
-  "পদার্থবিজ্ঞান") waits on a launcher: a smooth steel plate with rails, a wooden paddle pushed by a coil spring.
+- **Galileo's and Newton's thought experiment, run by the student.** A class 9–10 physics textbook waits on a
+  launcher: a smooth steel plate with rails, a wooden paddle pushed by a coil spring.
   The spring is always squeezed to the same red notch and held by two red latch pins: "the same push" is visible.
-  A tap on the book or the launcher (or ধাক্কা দাও, Space, →) drops the pins: the paddle pushes the book for 0.2 s
+  A tap on the book or the launcher (or the big button, Space, →) drops the pins: the paddle pushes the book for 0.2 s
   (0.3 m) and stops at the plate's end, so the book always leaves at the same 3 m/s, its whole length already on
   the floor (front edge at the tape's 0); from then on only the floor acts on it. The orange ধাক্কা arrow (the
   longest force arrow, 0.34 m: the push, 15 m/s², is the biggest force; not to the friction arrows' scale) shows
-  only while the paddle touches the book. The panel says "প্রতিবার একই ধাক্কা: ৩ মি/সে বেগে ছাড়া পায়" at rest
-  and while sliding.
+  only while the paddle touches the book.
 - **The side view** shows about 0.8 m of floor at the book's line on a phone (up to 1.2 m on wide frames), looking
-  down as steeply as the frame allows, so the book is about a third of the width (120 px at 390×700, 290 px at
-  1280×800). At rest the paddle is just inside the left edge (the plate behind it runs off). The book crosses to two
+  down as steeply as the frame allows, so the book is about a quarter of the width (measured in the 0.2.0 report). At rest the paddle is just inside the left edge (the plate behind it runs off). The book crosses to two
   thirds of the width before the camera follows it, which leaves room for both arrows.
-- **Four floors** (chips, keys 1–4): মাদুর (jute mat, μ ≈ 0.35), কাঠ (varnished wood, μ ≈ 0.18), বরফ (ice,
+- **Four floors** (the row of words, keys 1–4): মাদুর (jute mat, μ ≈ 0.35), কাঠ (varnished wood, μ ≈ 0.18), বরফ (ice,
   μ ≈ 0.05), ঘর্ষণ নেই (an imagined floor drawn like graph paper, with a note on the stage "কাল্পনিক তল: ঘর্ষণ ও
-  বাতাসের বাধা নেই"). Chips not tried yet show "?". With friction the book slows evenly (a = μg) and stops after
+  বাতাসের বাধা নেই"). With friction the book slows evenly (a = μg) and stops after
   v²/(2μg): **1.31 m, 2.55 m, 9.18 m**, in 0.87 s, 1.70 s, 6.12 s. A dashed line in the floor's colour marks each
   stop, labelled "মাদুর ১.৩১ মি", "কাঠ ২.৫৫ মি", "বরফ ৯.১৮ মি".
 - **The view down the lane** (the comparison seen at once): 0.9 s after a stop the camera pulls back behind the
   launcher and looks down the lane: every stop line with its label, the book on its own line, the tape. With no
-  friction, once the book passes the ice's stop (and is still at 3.00 m/s; the chip then says থামে না) the view
+  friction, once the book passes the ice's stop (and is still at 3.00 m/s; its word then says থামে না) the view
   looks down the lane for 1.6 s, with a "বই" tag on the small book far beyond every line, and then goes back beside
   it, following it for ever. A push, a floor, শুরুতে ফেরাও or the view buttons bring the side view back.
 - **What the student reads off**: the blue বেগ arrow (length ∝ speed) shrinking or staying the same; the crimson
   ঘর্ষণ arrow at the floor behind the book, pointing against the velocity, its length ∝ μ (tiny on ice, none on
   the imagined floor); the dots it leaves every 0.05 s, captioned "দাগ: প্রতি ০.০৫ সেকেন্ডে" (closer and closer as it
-  slows, evenly spaced without friction); the readouts বেগ and দূরত্ব (from the release point, where the yellow
-  tape starts); and one line in the panel that leads with the book's words (rest: "বল প্রয়োগ না করলে স্থির বস্তু
-  স্থির থাকে।"; sliding: "ছেড়ে দেওয়ার পর সামনের দিকে কোনো বল নেই।"; stopped on ice: "…ঘর্ষণ একেবারে না থাকলে কী
-  হবে?"; no friction: "সমবেগে চলতে থাকা বস্তু সমবেগে চলতে থাকে।").
+  slows, evenly spaced without friction); the result line (বেগ and দূরত্ব from the release point, where the yellow
+  tape starts, then where it stopped); and the rule line, which leads with the book's words (above).
 - Real time throughout (no slow motion): the mat stop (0.87 s) is quick on purpose; the arrows and the dots stay
   readable in the stopped picture and the view down the lane.
 - Without friction we write "সামনে-পেছনে কোনো বল নেই" (no force forward or back), not "no force at all": weight and

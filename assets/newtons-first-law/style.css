@@ -1,42 +1,18 @@
-/* Newton's first law: the page, the floor chips, the two readouts, the line that says what is happening, and the
-   colours that carry meaning: বেগ blue, ঘর্ষণ crimson, ধাক্কা orange (the same as src/arrows.js); each floor has its
-   own colour for the dashed line where the book stopped (src/floor.js). The student view itself is
-   ../../shared/lib/student/student.css. */
+/* Newton's first law: the page, the colours that carry meaning (বেগ blue, ঘর্ষণ crimson, ধাক্কা orange, the same as
+   src/arrows.js; each floor's colour for the dashed line where the book stopped, src/floor.js), the honest note on the
+   stage and the test's answers in words. The panel is the kit's clean sheet (one action, one result, one rule:
+   ../../shared/lib/student/student.css, .pvc-examples, .pvc-act, .pvc-outcome, .pvc-rule). */
 html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
 #app { position: fixed; inset: 0; }
 body.bg-transparent { background: transparent; }
 
 .nf { --c-vel: #1c6fd9; --c-none: #6e59c9; }
 
-/* the four floors */
-.nf-chips { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
-.nf-chips button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 54px; padding: 3px 4px; border-radius: 8px; border: 1px solid var(--line-2); background: var(--panel); color: var(--ink-2); line-height: 1.25; }
-.nf-chips button:hover { background: var(--soft); }
-.nf-chips button.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
-.nf-chip-top { display: inline-flex; align-items: center; gap: 5px; font-size: 14.5px; font-weight: 600; white-space: nowrap; }
-.nf-res { font-size: 13.5px; font-weight: 600; color: var(--ink-3); white-space: nowrap; font-variant-numeric: tabular-nums; }
-.nf-chips button.on .nf-res { color: var(--accent); }
-.nf-sw { width: 13px; height: 13px; border-radius: 3px; border: 1px solid rgba(0, 0, 0, 0.18); flex: none; }
-.nf-sw.mat { background: repeating-linear-gradient(90deg, #c49a5c 0 3px, #a87c44 3px 6px), #b98a4b; background-blend-mode: multiply; }
-.nf-sw.wood { background: repeating-linear-gradient(0deg, #c48c58 0 4px, #9a6233 4px 5px); }
-.nf-sw.ice { background: linear-gradient(135deg, #f2fbff, #bfe3f2); }
-.nf-sw.none { background: repeating-linear-gradient(0deg, transparent 0 3px, #c9c2ea 3px 4px), repeating-linear-gradient(90deg, #f4f3fb 0 3px, #c9c2ea 3px 4px); }
-
-/* the readouts: velocity (blue, like its arrow) and the distance from the release point */
-.nf-read { display: flex; align-items: baseline; gap: 4px 22px; flex-wrap: wrap; }
-.nf-q { display: inline-flex; align-items: baseline; gap: 6px; }
-.nf-q small { font-size: 15px; font-weight: 500; color: var(--ink-2); }
-.nf-q b { font-size: 30px; font-weight: 700; line-height: 1.15; font-variant-numeric: tabular-nums; }
-.nf-q.vel b { color: var(--c-vel); }
-
-/* what is happening, in the book's words: room for the longest kept, so the 3D view never changes size */
-.nf-say { margin: 0; min-height: 4.5em; font-size: 15px; line-height: 1.5; color: var(--ink-2); }
-.nf-say b { color: var(--ink); font-weight: 700; }
-.nf-acts { justify-content: flex-start; }
-.nf-acts .pvc-btn { height: 44px; font-size: 16px; }
-.nf-acts .pvc-btn.primary svg { color: #fff; }
-.nf-acts [data-act='push'] { min-width: 150px; }
-.nf button { touch-action: manipulation; }
+/* the result line: its number in the colour of what it is (the velocity arrow's blue, the floor's stop line) */
+.nf .pvc-outcome[data-k='speed'] b { color: var(--c-vel); }
+.nf .pvc-outcome[data-k='mat'] b { color: #9c6b2f; }
+.nf .pvc-outcome[data-k='wood'] b { color: #b06a1e; }
+.nf .pvc-outcome[data-k='ice'] b { color: #1c8fb0; }
 
 /* on the stage: the honest note about the imagined floor, top left (the buttons are top right) */
 .nf-badge { position: absolute; left: 10px; top: 10px; z-index: 5; max-width: calc(100% - 240px); padding: 4px 9px; border-radius: 6px; border: 1px solid color-mix(in srgb, var(--c-none) 45%, var(--line)); background: rgba(255, 255, 255, 0.94); color: var(--c-none); font-size: 13px; font-weight: 600; line-height: 1.4; pointer-events: none; }
@@ -54,50 +30,32 @@ body.bg-transparent { background: transparent; }
 .nf .pvc-q-text { min-height: 2.8em; font-size: 16px; }
 .nf .pvc-q-feedback { min-height: 4.35em; font-size: 14px; }
 
-/* wide frames: chips and actions on one row, the line under them */
+/* wide frames (tabs beside the sheet): the lines one under the other, close together; on very wide frames the words
+   and the action side by side */
 @container pvc (min-width: 720px) and (min-height: 461px) {
-  .nf .pvc-learn { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: 'chips read' 'say say' 'acts acts'; align-content: start; gap: 8px 18px; }
-  .nf-chips { grid-area: chips; max-width: 520px; }
-  .nf-read { grid-area: read; align-self: center; }
-  .nf-say { grid-area: say; min-height: 3em; font-size: 15px; }
-  .nf-acts { grid-area: acts; }
+  .nf .pvc-learn { justify-content: flex-start; gap: 8px; }
+  .nf .pvc-examples { max-width: 520px; }
+  .nf .pvc-rule { --pvc-rule-lines: 2; }
   .nf .pvc-q-text { min-height: 1.45em; }
   .nf .pvc-q-feedback { min-height: 2.9em; }
 }
-/* phones */
-@container pvc (max-width: 560px) {
-  .nf-chip-top { font-size: 14px; gap: 4px; }
-  .nf-q b { font-size: 28px; }
+@container pvc (min-width: 1000px) and (min-height: 461px) {
+  .nf .pvc-learn { display: grid; grid-template-columns: minmax(0, 480px) minmax(0, 1fr); grid-template-areas: 'ex act' 'out out' 'rule rule'; align-content: start; align-items: center; gap: 8px 32px; }
+  .nf .pvc-examples { grid-area: ex; }
+  .nf .pvc-act-row { grid-area: act; }
+  .nf .pvc-outcome { grid-area: out; }
+  .nf .pvc-rule { grid-area: rule; }
 }
 @container pvc (max-width: 560px) and (max-height: 600px) {
-  .nf-chips button { min-height: 40px; }
-  .nf-chip-top { font-size: 13.5px; }
-  .nf-res { font-size: 12px; }
-  .nf-q b { font-size: 21px; }
-  .nf-say { font-size: 13px; }
-  .nf-acts .pvc-btn { height: 36px; font-size: 14.5px; }
   .nf .pvc-q-text { font-size: 15px; }
   .nf .pvc-opt { font-size: 13.5px; }
   .nf .pvc-q-feedback { font-size: 13px; }
 }
 /* short and wide (phone held sideways): the panel is beside the scene */
 @container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
-  .nf-chips { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; }
-  .nf-chips button { min-height: 0; height: 40px; padding: 0 6px; gap: 0; }
-  .nf-chip-top { font-size: 14px; }
-  .nf-res { font-size: 12.5px; line-height: 1.2; }
-  .nf-q b { font-size: 23px; }
-  .nf-q small { font-size: 14px; }
-  .nf-say { min-height: 7.25em; font-size: 14px; line-height: 1.45; }
-  .nf-acts { flex-wrap: nowrap; gap: 6px; }
-  .nf-acts .pvc-btn { height: 38px; font-size: 14.5px; padding: 0 9px; }
-  .nf-acts [data-act='push'] { min-width: 0; flex: 1; }
+  .nf .pvc-outcome { --pvc-outcome-lines: 2; font-size: 15px; line-height: 1.6; }
+  .nf .pvc-rule { --pvc-rule-lines: 4; font-size: 14px; line-height: 1.45; }
   .nf .pvc-q-text { font-size: 14.5px; }
   .nf .pvc-opt { font-size: 13.5px; height: 42px; }
   .nf .pvc-q-feedback { font-size: 13px; min-height: 5.8em; }
-}
-/* a narrow side panel: the buttons without their pictures, so the words fit */
-@container pvc-panel (max-width: 290px) {
-  .nf-acts .pvc-btn svg { display: none; }
-  .nf-acts .pvc-btn { padding: 0 8px; }
 }

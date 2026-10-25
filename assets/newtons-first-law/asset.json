@@ -5,7 +5,7 @@
   "title": "Newton's first law of motion (নিউটনের প্রথম গতি সূত্র)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "book": "physics-9-10",
   "page": 64,
   "topic": "3.1",
@@ -13,7 +13,7 @@
   "order": 1,
   "maintainers": ["RadeenXALNW"],
   "units": "m",
-  "description": "Newton's first law (নিউটনের প্রথম সূত্র, page 64, 3.1) as a thought experiment the student runs: a physics textbook waits on a launcher whose spring is always squeezed to the same red notch, so one tap gives the same push every time (the book leaves at 3 m/s) onto the floor chosen in the panel: a jute mat, a wooden floor, ice, or an imagined floor with no friction. Without a push it stays at rest. With friction it slows evenly and stops (1.31 m, 2.55 m, 9.18 m); then the view pulls back down the lane, where a dashed line labelled with each floor (\"মাদুর ১.৩১ মি\") shows every stop at once. With no friction the velocity readout stays at 3.00 m/s, the dots it leaves every 0.05 s stay evenly spaced, the camera follows it, and once it passes the ice's stop the view looks down the lane before following it on. Arrows show the velocity, friction against it, and the push only while the paddle touches the book. Test tab: 5 questions on clean scenes (what a pushed book does with no friction, which force acts while a book slows to a stop, predicting the ice or the mat from the other floors, which way a book goes when a curved wall ends, and stopping a gliding book or a book at rest on a frictionless floor). Phone-first, Bangla.",
+  "description": "Newton's first law (নিউটনের প্রথম সূত্র, page 64, 3.1) as a thought experiment the student runs: a class 9–10 physics textbook (a hardcover with a printed cover: পদার্থবিজ্ঞান, নবম-দশম শ্রেণি, an atom) waits on a launcher whose spring is always squeezed to the same red notch, so one tap gives the same push every time (the book leaves at 3 m/s) onto the floor chosen in a row of words: a jute mat, a wooden floor, ice, or an imagined floor with no friction. The panel is one action, one result, one rule: a big numbered button (\"১ বইটিতে ধাক্কা দাও\") whose same numbered badge rings the book on the 3D view (a tap on either pushes), one result line (\"মাদুরে বইটি ১.৩১ মি গিয়ে থামল\") and one rule that grows with what the student has found, from \"বল প্রয়োগ না করলে স্থির বস্তু স্থির থাকে\" through friction and a comparison of floors to the book's first law word for word. Without a push it stays at rest. With friction it slows evenly and stops (1.31 m, 2.55 m, 9.18 m); the view then pulls back down the lane, where a dashed line labelled with each floor shows every stop at once, and the button offers the next floor. With no friction the velocity stays 3.00 m/s, the dots it leaves every 0.05 s stay evenly spaced, and it never stops. Arrows show the velocity, friction against it, and the push only while the paddle touches the book. Test tab: 5 questions on clean scenes (what a pushed book does with no friction, which force acts while a book slows to a stop, predicting the ice or the mat from the other floors, which way a book goes when a curved wall ends, and stopping a gliding book or a book at rest on a frictionless floor). Phone-first, Bangla.",
   "tags": ["force", "newtons-laws", "inertia", "friction", "uniform-velocity", "bangla"],
   "params": [
     {
@@ -54,7 +54,7 @@
       "options": [["explore", "learn"], ["quiz", "test"]],
       "default": "explore"
     },
-    { "name": "coach", "label": "First-use pointers", "type": "boolean", "default": "1" },
+    { "name": "coach", "label": "The ring on the book pulses", "type": "boolean", "default": "1" },
     {
       "name": "numerals",
       "label": "Digits",

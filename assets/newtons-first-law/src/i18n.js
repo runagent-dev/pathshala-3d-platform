@@ -17,7 +17,6 @@ export const STRINGS = {
     book_title: 'পদার্থবিজ্ঞান',
     book_class: 'নবম-দশম শ্রেণি',
     u_m: 'মি',
-    u_ms: 'মি/সে',
 
     chip_mat: 'মাদুর',
     chip_wood: 'কাঠ',
@@ -26,15 +25,40 @@ export const STRINGS = {
     at_mat: 'মাদুরে',
     at_wood: 'কাঠের মেঝেতে',
     at_ice: 'বরফে',
+    of_mat: 'মাদুরের',
+    of_wood: 'কাঠের মেঝের',
+    of_ice: 'বরফের',
     res_m: '{d} মি',
     res_none: 'থামে না',
 
-    r_speed: 'বেগ',
-    r_dist: 'দূরত্ব',
-
-    act_push: 'ধাক্কা দাও',
+    // the action (the big button and the numbered ring on the book)
+    act_push: 'বইটিতে ধাক্কা দাও',
     act_again: 'আবার ধাক্কা দাও',
+    act_on_mat: 'মাদুরে ধাক্কা দাও',
+    act_on_wood: 'কাঠের মেঝেতে ধাক্কা দাও',
+    act_on_ice: 'বরফে ধাক্কা দাও',
+    act_on_none: 'ঘর্ষণহীন তলে ধাক্কা দাও',
     act_home: 'শুরুতে ফেরাও',
+
+    // the result line: the number that matters in <b>
+    out_rest: 'বইটি স্থির: বেগ <b>{v}</b> মি/সে',
+    out_move: 'বেগ <b>{v}</b> মি/সে, দূরত্ব {d} মি',
+    out_stop: '{at} বইটি <b>{d} মি</b> গিয়ে থামল',
+    out_none: 'থামছে না: বেগ <b>{v}</b> মি/সে, দূরত্ব {d} মি',
+
+    // the rule line: the book's words in <b>, growing with what the student has found out
+    rule_rest: '<b>বল প্রয়োগ না করলে স্থির বস্তু স্থির থাকে:</b> বইটি নিজে থেকে নড়ে না। ধাক্কা দিয়ে দেখো কী হয়।',
+    rule_rest_none: '<b>ঘর্ষণ না থাকলেও, বল প্রয়োগ না করলে স্থির বস্তু স্থির থাকে।</b> ধাক্কা দিলে কী হবে?',
+    rule_slide: 'ছেড়ে দেওয়ার পর সামনের দিকে কোনো বল নেই। <b>ঘর্ষণ বেগের বিপরীত দিকে কাজ করে</b>, তাই বেগ কমছে।',
+    rule_slide_none: 'ছেড়ে দেওয়ার পর সামনে-পেছনে কোনো বল নেই, <b>তাই বেগ বদলাচ্ছে না।</b>',
+    rule_stop_mat: '<b>মাদুরের ঘর্ষণ বইটিকে তাড়াতাড়ি থামাল।</b> ঘর্ষণ বেগের বিপরীত দিকে কাজ করে। মসৃণ মেঝেতে কী হবে?',
+    rule_stop_wood: '<b>কাঠের মেঝের ঘর্ষণ বইটিকে থামাল।</b> ঘর্ষণ বেগের বিপরীত দিকে কাজ করে। অন্য মেঝেতে কী হবে?',
+    rule_stop_ice: '<b>বরফে ঘর্ষণ খুব কম, কিন্তু শূন্য নয়:</b> তাই বইটি অনেক দূর গিয়ে তবে থামল।',
+    rule_less: '<b>{here} ঘর্ষণ {there} চেয়ে কম, তাই বইটি আরও দূরে গেল।</b> ঘর্ষণ যত কম, বই তত দূরে যায়।',
+    rule_more: '<b>{here} ঘর্ষণ {there} চেয়ে বেশি, তাই বইটি আগে থামল।</b> ঘর্ষণ যত কম, বই তত দূরে যায়।',
+    rule_what_if: 'ঘর্ষণ একেবারে না থাকলে কী হবে?',
+    rule_book_stop: '<b>ঘর্ষণ, বাতাসের বাধা, এ ধরনের বল বেগের বিপরীত দিকে কাজ করে বলে চলমান একটি বস্তু থেমে যায়।</b>',
+    rule_law: '<b>নিউটনের প্রথম সূত্র:</b> বল প্রয়োগ না করলে স্থির বস্তু স্থির থাকবে এবং সমবেগে চলতে থাকা বস্তু সমবেগে চলতে থাকবে।',
 
     l_velocity: 'বেগ',
     l_friction: 'ঘর্ষণ',
@@ -48,15 +72,6 @@ export const STRINGS = {
     badge_none: 'ঘর্ষণ ও বাতাসের বাধা নেই',
     badge_none_short: 'ঘর্ষণ নেই',
 
-    x_rest: '<b>বল প্রয়োগ না করলে স্থির বস্তু স্থির থাকে।</b> বইটি নিজে থেকে নড়বে না: ধাক্কা দাও। প্রতিবার একই ধাক্কা: {v} মি/সে বেগে ছাড়া পায়।',
-    x_rest_none: '<b>কল্পনা করো: ঘর্ষণ নেই, বাতাসের বাধাও নেই।</b> তবু বল প্রয়োগ না করলে স্থির বইটি স্থিরই থাকবে। ধাক্কা দাও।',
-    x_slide: '<b>ছেড়ে দেওয়ার পর সামনের দিকে কোনো বল নেই।</b> ঘর্ষণ বেগের বিপরীত দিকে কাজ করে, তাই বেগ কমে। প্রতিবার বইটি {v} মি/সে বেগে ছাড়া পায়।',
-    x_stop: '<b>{d} মিটার গিয়ে থেমেছে।</b> ঘর্ষণ বেগের বিপরীত দিকে কাজ করে বইটিকে থামিয়েছে। ঘর্ষণ যত কম, বই তত দূরে যায়।',
-    x_stop_ice: '<b>{d} মিটার গিয়ে থেমেছে।</b> বরফে ঘর্ষণ খুব কম, কিন্তু শূন্য নয়, তাই শেষে থামে। ঘর্ষণ একেবারে না থাকলে কী হবে?',
-    x_none: '<b>সমবেগে চলতে থাকা বস্তু সমবেগে চলতে থাকে।</b> ছেড়ে দেওয়ার পর সামনে-পেছনে কোনো বল নেই, তাই বেগ বদলায় না: বইটি সরলরেখায় সমদ্রুতিতে অনন্তকাল চলবে।',
-
-    coach_push: 'বইয়ে চাপ দাও',
-    coach_lens: 'এখানে ধরে টানো',
     hint_wait: 'ধাক্কা দেওয়া হয়ে গেছে: দেখো বইটি কী করে।',
 
     q_count: 'প্রশ্ন {i} / {n}',
@@ -153,7 +168,6 @@ export const STRINGS = {
     book_title: 'Physics',
     book_class: 'Classes 9–10',
     u_m: 'm',
-    u_ms: 'm/s',
 
     chip_mat: 'Mat',
     chip_wood: 'Wood',
@@ -162,15 +176,38 @@ export const STRINGS = {
     at_mat: 'On the mat',
     at_wood: 'On the wooden floor',
     at_ice: 'On ice',
+    of_mat: 'on the mat',
+    of_wood: 'on the wooden floor',
+    of_ice: 'on ice',
     res_m: '{d} m',
     res_none: 'never stops',
 
-    r_speed: 'Velocity',
-    r_dist: 'Distance',
-
-    act_push: 'Push',
+    act_push: 'Push the book',
     act_again: 'Push again',
+    act_on_mat: 'Push it on the mat',
+    act_on_wood: 'Push it on the wooden floor',
+    act_on_ice: 'Push it on ice',
+    act_on_none: 'Push it with no friction',
     act_home: 'Back to start',
+
+    out_rest: 'The book is at rest: velocity <b>{v}</b> m/s',
+    out_move: 'Velocity <b>{v}</b> m/s, distance {d} m',
+    out_stop: '{at} the book stopped after <b>{d} m</b>',
+    out_none: 'Not stopping: velocity <b>{v}</b> m/s, distance {d} m',
+
+    rule_rest: '<b>Without a force, a body at rest stays at rest:</b> the book does not move by itself. Push it and see.',
+    rule_rest_none: '<b>Even with no friction, a body at rest stays at rest without a force.</b> What will a push do?',
+    rule_slide: 'Once let go, no force pushes the book forward. <b>Friction acts against the velocity</b>, so the velocity falls.',
+    rule_slide_none: 'Once let go, no force acts forward or back, <b>so the velocity does not change.</b>',
+    rule_stop_mat: '<b>The mat’s friction stopped the book quickly.</b> Friction acts against the velocity. And on a smoother floor?',
+    rule_stop_wood: '<b>The wooden floor’s friction stopped the book.</b> Friction acts against the velocity. And on another floor?',
+    rule_stop_ice: '<b>On ice friction is very small, but not zero:</b> so the book went a long way, and then stopped.',
+    rule_less: '<b>{here} friction is less than {there}, so the book went farther.</b> The less friction, the farther the book goes.',
+    rule_more: '<b>{here} friction is more than {there}, so the book stopped sooner.</b> The less friction, the farther the book goes.',
+    rule_what_if: 'And with no friction at all?',
+    rule_book_stop: '<b>Friction, air resistance and forces like them act against the velocity, so a moving body stops.</b>',
+    rule_law:
+      '<b>Newton’s first law:</b> without a force, a body at rest stays at rest and a body moving with uniform velocity keeps moving with uniform velocity.',
 
     l_velocity: 'velocity',
     l_friction: 'friction',
@@ -184,19 +221,6 @@ export const STRINGS = {
     badge_none: 'no friction, no air resistance',
     badge_none_short: 'no friction',
 
-    x_rest:
-      '<b>Without a force, a body at rest stays at rest.</b> The book will not move by itself: push it. The same push every time: it leaves at {v} m/s.',
-    x_rest_none: '<b>Imagine: no friction, no air resistance.</b> Still, without a force the book at rest stays at rest. Push it.',
-    x_slide:
-      '<b>Once let go, no force pushes the book forward.</b> Friction acts against the velocity, so the velocity falls. It always leaves at {v} m/s.',
-    x_stop: '<b>It stopped after {d} metres.</b> Friction, acting against the velocity, stopped the book. The less friction, the farther it goes.',
-    x_stop_ice:
-      '<b>It stopped after {d} metres.</b> On ice friction is very small, but not zero, so it stops in the end. What if there were no friction at all?',
-    x_none:
-      '<b>A body moving with uniform velocity keeps moving with uniform velocity.</b> Once let go, no force acts forward or back, so the velocity does not change: the book goes on in a straight line at the same speed for ever.',
-
-    coach_push: 'Tap the book',
-    coach_lens: 'Drag here',
     hint_wait: 'The push is done: watch what the book does.',
 
     q_count: 'Question {i} / {n}',

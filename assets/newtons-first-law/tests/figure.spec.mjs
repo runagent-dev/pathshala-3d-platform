@@ -1,7 +1,9 @@
 // Newton's first law through the bridge (book p64, topic 3.1): a book at rest stays at rest; the same push sends it
 // 1.31 m on the mat, 2.55 m on wood, 9.18 m on ice, each slowing evenly (then the view looks down the lane); with no
-// friction its velocity stays 3 m/s
-// for as long as we watch; the test starts and an answer is marked; reset brings everything back.
+// friction its velocity stays 3 m/s for as long as we watch. The clean panel: the distance under each floor's word,
+// the result line, the rule growing up to the book's first law, the big numbered button offering the next floor (and
+// its ring on the book, hidden while it moves and in the test). Every test question sets up its own scene; reset
+// brings everything back.
 // Runs with `npm run test:figures` (dev-only folder, never packaged).
 import { expect, test } from '@playwright/test';
 import { openFigure, preparePage } from '../../../scripts/lib/export/driver.mjs';
@@ -31,6 +33,22 @@ test('newtons-first-law: friction stops the book, without friction it keeps its 
   // a moment later the view pulls back down the lane, every stop in sight
   await fig.advance(1500);
   expect((await fig.call('get')).camera).toBe('overview');
+  // the panel: the distance under মাদুর, the result line, the rule about the mat's friction; the big button (and the
+  // numbered ring on the book) now offer the next floor, ২ কাঠের মেঝেতে
+  const text = (sel) => fig.frame.locator(sel).first().textContent();
+  expect(await text('[data-example="mat"] .pvc-ex-res')).toBe('১.৩১ মি');
+  expect(await text('.pvc-outcome')).toBe('মাদুরে বইটি ১.৩১ মি গিয়ে থামল');
+  expect(await text('.pvc-rule')).toContain('মাদুরের ঘর্ষণ বইটিকে তাড়াতাড়ি থামাল');
+  expect((await fig.call('get')).next).toEqual({ surface: 'wood', step: 2 });
+  expect(await text('.pvc-act-badge')).toBe('২');
+  expect(await fig.frame.locator('.pvc-act-marker.in').count()).toBe(1);
+  await fig.frame.locator('.pvc-act').click();
+  await fig.advance(1500); // the view flies back to the start (0.9 s), then the push
+  expect(await fig.call('get')).toMatchObject({ surface: 'wood', phase: 'slide' });
+  expect(await fig.frame.locator('.pvc-act-marker.in').count()).toBe(0); // no ring while it moves
+  await fig.advance(3000);
+  expect(await fig.call('get')).toMatchObject({ phase: 'stopped', results: { wood: 2.55 } });
+  expect(await text('.pvc-rule')).toContain('কাঠের মেঝেতে ঘর্ষণ মাদুরের চেয়ে কম');
 
   // wood and ice go farther (jumping to the end)
   await fig.call('set', { surface: 'wood', push: true, animate: false });
@@ -52,18 +70,51 @@ test('newtons-first-law: friction stops the book, without friction it keeps its 
   expect(a).toMatchObject({ surface: 'none', phase: 'slide', speed: 3 });
   expect(b).toMatchObject({ phase: 'slide', speed: 3, results: { none: 'never' } });
   expect(b.distance - a.distance).toBeCloseTo(12, 1);
+  // having seen it never stop, the rule is the book's first law, word for word
+  expect(await text('.pvc-rule')).toBe('নিউটনের প্রথম সূত্র: বল প্রয়োগ না করলে স্থির বস্তু স্থির থাকবে এবং সমবেগে চলতে থাকা বস্তু সমবেগে চলতে থাকবে।');
+  expect(await text('[data-example="none"] .pvc-ex-res')).toBe('থামে না');
 
   // back to the start: at rest again
   await fig.call('set', { home: true, animate: false });
   expect(await fig.call('get')).toMatchObject({ phase: 'rest', speed: 0, distance: 0 });
 
-  // the test starts, an answer is marked
+  // the test: the ring on the book hides; every question sets up its own scene
   await fig.call('practice');
-  await fig.advance(6000);
-  expect((await fig.call('get')).mode).toBe('quiz');
-  await fig.frame.locator('.pvc-opt[data-q="0"]').click();
-  await fig.advance(300);
-  expect(['ok', 'bad']).toContain(await fig.frame.locator('.pvc-q-feedback').getAttribute('data-tone'));
+  const scenes = [];
+  for (let q = 0; q < 5; q++) {
+    for (let k = 0; k < 80 && !(await fig.frame.locator('.pvc-opt[data-q="0"]').count()); k++) await fig.advance(250);
+    const ask = await text('.pvc-q-text');
+    const st = await fig.call('get');
+    expect(st.mode).toBe('quiz');
+    expect(await fig.frame.locator('.pvc-act-marker').evaluate((el) => getComputedStyle(el).visibility)).toBe('hidden');
+    if (ask.includes('বাতাসের বাধা নেই এমন')) {
+      scenes.push('predict');
+      expect(st).toMatchObject({ surface: 'none', phase: 'rest' });
+    } else if (ask.includes('থেমে গেল')) {
+      scenes.push('whystop');
+      expect(st.phase).toBe('stopped');
+      expect(['mat', 'wood']).toContain(st.surface);
+    } else if (ask.includes('একই ধাক্কায়')) {
+      scenes.push('farther');
+      expect(Object.values(st.results).filter((r) => r != null)).toHaveLength(2);
+    } else if (ask.includes('বাঁকা দেয়াল')) {
+      scenes.push('curve');
+      expect(st.surface).toBe('none');
+    } else if (ask.includes('সমবেগে চলছে')) {
+      scenes.push('stopit');
+      expect(st).toMatchObject({ surface: 'none', phase: 'slide', speed: 3 });
+    } else {
+      scenes.push('rest');
+      expect(ask).toContain('স্থির পড়ে আছে');
+      expect(st).toMatchObject({ surface: 'none', phase: 'rest' });
+    }
+    await fig.frame.locator('.pvc-opt[data-q="0"]').click();
+    await fig.advance(300);
+    expect(['ok', 'bad']).toContain(await fig.frame.locator('.pvc-q-feedback').getAttribute('data-tone'));
+    await fig.frame.locator('[data-act="q-next"]').click();
+    await fig.advance(300);
+  }
+  expect(new Set(scenes).size).toBe(5); // five kinds, one each
 
   await fig.call('reset');
   await fig.advance(1200);

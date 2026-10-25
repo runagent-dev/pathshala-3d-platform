@@ -6,16 +6,19 @@
 // the speed stays 3.00 m/s, the marks it leaves every 0.05 s stay evenly spaced, the camera follows it, and once it
 // is past the ice's stop the view pulls back and watches it go on for ever. Arrows show the velocity (blue),
 // friction against it (crimson) and the push (orange, only while the paddle touches the book). Then a short test.
+// The panel is the kit's clean sheet (one action, one result, one rule): the floors as one row of words (the stop
+// distance under each once found), one big numbered action whose same numbered badge rings the book (tap either),
+// one result line, and one rule that grows with what the student has found, up to the book's first law.
 // Built on the shared student kit (@shared/student/…).
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
 import { createTweener, ease } from '@shared/tween.js';
 import { createMaterials } from '@shared/student/materials.js';
 import { createAudio } from '@shared/student/audio.js';
-import { buildStudentShell } from '@shared/student/shell.js';
-import { createCoach } from '@shared/student/coach.js';
+import { bindCleanSheet, buildStudentShell, cleanSheet } from '@shared/student/shell.js';
+import { createAction } from '@shared/student/action.js';
 import { createQuiz } from '@shared/student/quiz.js';
-import { ICONS, svg } from '@shared/student/icons.js';
+import { ICONS } from '@shared/student/icons.js';
 import { createI18n } from './i18n.js';
 import { createBook } from './book.js';
 import { createLauncher } from './launcher.js';
@@ -48,7 +51,7 @@ export const DEFAULTS = {
   tried: '', // floors already tried, e.g. 'mat,wood' (their stop lines and distances show)
   view: 'front', // 'front' | '3d'
   mode: 'explore', // 'explore' | 'quiz'
-  coach: true,
+  coach: true, // the numbered ring on the book pulses (false: it stays still)
   numerals: null,
   lang: 'bn',
   bg: 'light',
@@ -63,7 +66,7 @@ const PUSH_ARROW = 0.34; // m: the push (15 m/s²) is the biggest force, so the 
 const BRAKE_ACC = 4; // m/s²: the steady force that stops the book in one test question
 const PASS_ICE = stopDistance(SURFACES.ice.mu) + 0.4; // m: past the ice's stop, the view pulls back
 const DOUBLE_TAP = 450; // ms: a second push request this soon after one is ignored
-const LANE_LEFT = -0.63; // the side view starts here (the paddle just inside the left edge, the plate behind it off screen)
+const LANE_LEFT = -PUSH.stroke - BOOK.length - 0.12; // the side view starts here (room for the ring left of the paddle)
 const FOLLOW_SHARE = 0.66; // once followed, the book's front stays this far across the view (room for both arrows)
 const ELEVATION = [58, 18]; // degrees: the side view looks down as steeply as the frame allows, within these
 const VIEW_3D = new THREE.Vector3(-0.62, 0.62, 0.82).normalize();
@@ -72,7 +75,6 @@ const OVERVIEW_DIRS = [new THREE.Vector3(-1, 0.95, 0.5).normalize(), new THREE.V
 const ENDLESS_LOOK = 1.6; // s the view down the lane lasts with no friction, before it goes back beside the book
 // the curved-wall question, seen from above: the wall's end and the four paths (the run-in starts off screen)
 const CURVE_BOX = new THREE.Box3(new THREE.Vector3(-0.36, 0, -0.3), new THREE.Vector3(1.4, 0.05, 0.98));
-const PUSH_ICON = svg('<rect x="13.5" y="6.5" width="7" height="11" rx="1.2"/><path d="M3 12h7.5M7.5 8.8 10.7 12l-3.2 3.2"/>');
 
 export function createApp(root, options = {}) {
   const o = { ...DEFAULTS, ...options };
@@ -88,21 +90,13 @@ export function createApp(root, options = {}) {
   root.lang = t.lang;
   root.tabIndex = 0;
   const ui = buildStudentShell(root, t, {
-    learn: `
-          <div class="nf-chips" role="radiogroup" aria-label="${t('surfaces')}">${SURFACE_IDS.map(
-            (id) =>
-              `<button role="radio" data-surface="${id}"><span class="nf-chip-top"><i class="nf-sw ${id}" aria-hidden="true"></i><span>${t(`chip_${id}`)}</span></span><small class="nf-res"></small></button>`,
-          ).join('')}</div>
-          <div class="nf-read" aria-live="off">
-            <span class="nf-q vel"><small>${t('r_speed')}</small><b data-v="speed">0</b><small>${t('u_ms')}</small></span>
-            <span class="nf-q dist"><small>${t('r_dist')}</small><b data-v="dist">0</b><small>${t('u_m')}</small></span>
-          </div>
-          <p class="nf-say"></p>
-          <div class="pvc-learn-foot nf-acts">
-            <button class="pvc-btn primary" data-act="push">${PUSH_ICON}<span></span></button>
-            <button class="pvc-btn" data-act="home">${ICONS.reset}<span>${t('act_home')}</span></button>
-          </div>`,
+    learn: cleanSheet(t, {
+      examples: { label: 'surfaces', results: true, items: SURFACE_IDS.map((id) => ({ id, label: `chip_${id}` })) },
+      quiet: [{ act: 'home', label: 'act_home', icon: ICONS.reset }],
+      lines: { outcome: 1, rule: 3 },
+    }),
   });
+  const sheet = bindCleanSheet(ui.learn);
   const badge = document.createElement('div');
   badge.className = 'nf-badge';
   badge.hidden = true;
@@ -132,7 +126,7 @@ export function createApp(root, options = {}) {
   marks.mesh.userData.noExport = true;
 
   // the book's hit box: bigger than the book, so a finger finds it
-  const bookHit = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.12, 0.36), new THREE.MeshBasicMaterial({ visible: false }));
+  const bookHit = new THREE.Mesh(new THREE.BoxGeometry(BOOK.length + 0.17, 0.12, BOOK.width + 0.1), new THREE.MeshBasicMaterial({ visible: false }));
   bookHit.position.set(-BOOK.length / 2, 0.05, 0);
   bookHit.userData.noExport = true;
   book.root.add(bookHit);
@@ -223,6 +217,8 @@ export function createApp(root, options = {}) {
     sun.target.position.set(x, 0, 0);
   }
 
+  /** @type {ReturnType<typeof createAction> | null} */
+  let action = null; // the big button and its ring on the book (made with the panel, below)
   const listeners = new Map();
   function emit(type, payload) {
     for (const fn of listeners.get(type) || []) fn(payload);
@@ -399,10 +395,7 @@ export function createApp(root, options = {}) {
     if (s.locked && !quiet) return lockedNudge();
     if (!quiet && now() - lastPush < DOUBLE_TAP) return; // a double tap must not undo the first push
     lastPush = now();
-    if (!quiet) {
-      coach?.objectUsed();
-      hintOff();
-    }
+    if (!quiet) hintOff();
     const my = ++token;
     const glide = animate && at == null;
     if (s.run || s.follow > 0.001 || s.cam !== 'side' || s.restAt != null) {
@@ -412,7 +405,6 @@ export function createApp(root, options = {}) {
     }
     if (s.locked && !quiet) return;
     startRun({ quiet, at: at ?? (animate ? null : endTime()) });
-    if (!quiet) coach?.objectReleased();
   }
   /** Where a push without animation lands: friction floors at their stop, the floor with no friction 3 s on. */
   const endTime = () => (SURFACES[s.surface].mu > 0 ? stopTime(SURFACES[s.surface].mu) + 0.01 : 3);
@@ -431,6 +423,10 @@ export function createApp(root, options = {}) {
           const d = round(stopDistance(run.mu), 2);
           s.results[run.surface] = d;
           stops[run.surface]?.place(d);
+          if (s.mode === 'explore') {
+            if (seen.includes(run.surface)) seen.splice(seen.indexOf(run.surface), 1);
+            seen.push(run.surface);
+          }
           emit('stop', { surface: run.surface, distance: d });
           if (s.mode === 'explore') pullBackSoon(run);
         }
@@ -568,12 +564,19 @@ export function createApp(root, options = {}) {
       labels.set(`pin-${id}`, {
         text: t('pin', { name: t(`chip_${id}`), d: plain(s.results[id]) }),
         point: pinPoint[id],
+        // above its line first; beside or below it when the corner buttons or the book are in the way (the far end
+        // of the view down the lane is up by the buttons)
         spots: [
           [0, -8],
           [0, -24],
           [6, -6],
           [-6, -6],
           [0, 8],
+          [-12, 0],
+          [12, 0],
+          [-10, 14],
+          [10, 14],
+          [0, 28],
         ],
         priority: side ? 1 : 6,
         color: SURFACE_COLORS[id],
@@ -614,48 +617,80 @@ export function createApp(root, options = {}) {
     if (b) blockersList.push(b);
     let i = 1;
     for (const a of Object.values(arrows)) if (a.visible && screenBox(a.root, boxes[i])) blockersList.push(boxes[i++]);
+    // the numbered badge on the book (it keeps clear of the labels too, and keeps its place while that holds)
+    const badgeBox = action?.box();
+    if (badgeBox) blockersList.push({ l: badgeBox.left, t: badgeBox.top, r: badgeBox.right, b: badgeBox.bottom });
     return blockersList.slice();
   }
 
-  // ── the panel ───────────────────────────────────────────────────────────────
-  const $ = ui.$;
-  const el = {
-    chips: ui.$$('[data-surface]'),
-    speed: $('[data-v="speed"]'),
-    dist: $('[data-v="dist"]'),
-    say: $('.nf-say'),
-    pushLabel: $('[data-act="push"] span'),
-  };
+  // ── the panel: one action, one result, one rule ─────────────────────────────
+  const outcomeEl = ui.$('.pvc-outcome');
+  /** Floors in the order their stops were seen (for the comparison in the rule). */
+  const seen = [];
+  const stepOf = (id) => SURFACE_IDS.indexOf(id) + 1;
+  const moving = (st) => st.phase === 'push' || st.phase === 'slide' || st.phase === 'brake';
 
-  function sayKey(st) {
-    if (!s.run) return [s.surface === 'none' ? 'x_rest_none' : 'x_rest', { v: V0 }];
-    // one line for the whole motion (the push lasts 0.2 s: a line of its own would only flash)
-    if (st.phase === 'push' || st.phase === 'slide') return [s.run.mu > 0 ? 'x_slide' : 'x_none', { v: V0 }];
-    if (st.phase === 'brake' || s.run.brake) return ['x_rest', { v: V0 }];
-    return [s.run.surface === 'ice' ? 'x_stop_ice' : 'x_stop', { d: plain(stopDistance(s.run.mu)) }];
+  /**
+   * What the big button (and a tap on the book) does now: push on this floor; or, once the book has stopped (or,
+   * with no friction, has passed every floor's stop), push on the next floor not tried yet, in the row's order. Its
+   * badge number is that floor's place in the row (মাদুর ১ … ঘর্ষণ নেই ৪).
+   */
+  function plan(st = state()) {
+    const run = s.run;
+    if (!run) return { surface: s.surface, label: 'act_push' };
+    const over = st.phase === 'stopped' || (run.mu === 0 && s.results.none != null);
+    const next = over ? SURFACE_IDS.find((id) => s.results[id] == null && id !== run.surface) : null;
+    return next ? { surface: next, label: `act_on_${next}` } : { surface: s.surface, label: 'act_again' };
   }
-  let lastSay = '';
+
+  /** The result line: [key, vars, kind] (kind colours the number: the velocity's blue or the floor's colour). */
+  function outcomeKey(st) {
+    const run = s.run;
+    if (!run) return ['out_rest', { v: 0 }, 'rest'];
+    if (st.phase === 'stopped' && !run.brake) return ['out_stop', { at: t(`at_${run.surface}`), d: plain(stopDistance(run.mu)) }, run.surface];
+    const vars = { v: two(st.v), d: two(Math.max(0, st.x)) };
+    return [run.mu === 0 && s.results.none != null ? 'out_none' : 'out_move', vars, 'speed'];
+  }
+
+  /** The rule: the book's words, growing with what the student has found (before, a floor, a comparison, the law). */
+  function ruleHtml(st) {
+    const law = s.results.none != null;
+    const run = s.run;
+    if (!run) return t(law ? 'rule_law' : s.surface === 'none' ? 'rule_rest_none' : 'rule_rest');
+    if (run.mu === 0) return t(law ? 'rule_law' : 'rule_slide_none');
+    if (st.phase !== 'stopped') return t('rule_slide');
+    if (law) return t('rule_book_stop');
+    const here = run.surface;
+    // compare with the floor tried just before (else with the known floor whose friction is nearest)
+    const near = (a, b) => Math.abs(SURFACES[a].mu - SURFACES[here].mu) - Math.abs(SURFACES[b].mu - SURFACES[here].mu);
+    const other =
+      [...seen].reverse().find((id) => id !== here && s.results[id] != null) ??
+      FRICTION_IDS.filter((id) => id !== here && s.results[id] != null).sort(near)[0];
+    if (!other) return t(`rule_stop_${here}`);
+    const less = SURFACES[here].mu < SURFACES[other].mu;
+    const vars = { here: t(`at_${here}`), there: t(`of_${other}`) };
+    return `${t(less ? 'rule_less' : 'rule_more', vars)}${less ? ` ${t('rule_what_if')}` : ''}`;
+  }
+
   let lastNote = '';
+  let lastKind = '';
   function refresh() {
     const st = state();
-    el.speed.textContent = two(st.v);
-    el.dist.textContent = two(Math.max(0, s.restAt == null ? st.x : 0));
-    const [key, vars] = sayKey(st);
-    const html = t(key, vars);
-    if (html !== lastSay) {
-      el.say.innerHTML = html;
-      lastSay = html;
-    }
-    el.pushLabel.textContent = t(!s.run ? 'act_push' : 'act_again');
-    for (const c of el.chips) {
-      const id = c.dataset.surface;
-      const on = id === s.surface;
-      c.classList.toggle('on', on);
-      c.setAttribute('aria-checked', String(on));
+    sheet.choose(s.surface);
+    for (const id of SURFACE_IDS) {
       const r = s.results[id];
-      const res = r == null ? '?' : Number.isFinite(r) ? t('res_m', { d: plain(r) }) : t('res_none');
-      const small = c.querySelector('.nf-res');
-      if (small.textContent !== res) small.textContent = res;
+      sheet.result(id, r == null ? '' : Number.isFinite(r) ? t('res_m', { d: plain(r) }) : t('res_none'));
+    }
+    const [key, vars, kind] = outcomeKey(st);
+    sheet.outcome(t(key, vars));
+    if (kind !== lastKind) outcomeEl.dataset.k = lastKind = kind;
+    sheet.rule(ruleHtml(st));
+    if (action) {
+      const p = plan(st);
+      action.set({ step: stepOf(p.surface), label: p.label });
+      // the ring shows on the book while it waits (at the start or at its stop), never while it moves
+      if (s.scene === 'lane' && !moving(st) && !(s.run?.mu === 0 && st.phase !== 'stopped')) action.show('run');
+      else action.hide('run');
     }
     labelsFor();
     const none = (s.scene === 'lane' && s.surface === 'none') || s.scene === 'curve';
@@ -671,6 +706,7 @@ export function createApp(root, options = {}) {
 
   function snapshot() {
     const st = state();
+    const p = plan(st);
     const res = Object.fromEntries(
       SURFACE_IDS.map((id) => [id, s.results[id] == null ? null : Number.isFinite(s.results[id]) ? s.results[id] : 'never']),
     );
@@ -685,6 +721,7 @@ export function createApp(root, options = {}) {
       camera: s.cam, // 'side' | 'overview'
       view: s.view,
       mode: s.mode,
+      next: { surface: p.surface, step: stepOf(p.surface) }, // what the big button does now: push on that floor
     };
   }
 
@@ -697,19 +734,53 @@ export function createApp(root, options = {}) {
     emit('change', snap);
   }
 
-  /** A new floor: anything moving is called off and the book waits at the start. */
-  async function setSurface(id, { animate = true, quiet = false } = {}) {
-    if (!SURFACE_IDS.includes(id)) return;
-    if (s.locked && !quiet) return lockedNudge();
+  /** The floor under the book from now on (its look, the row of words, the event). */
+  function chooseSurface(id) {
     const changed = id !== s.surface;
     s.surface = id;
     floor.setSurface(id);
     refresh();
     if (changed) emit('surface', { surface: id });
+  }
+
+  /** A new floor: anything moving is called off and the book waits at the start. */
+  async function setSurface(id, { animate = true, quiet = false } = {}) {
+    if (!SURFACE_IDS.includes(id)) return;
+    if (s.locked && !quiet) return lockedNudge();
+    chooseSurface(id);
     await goHome({ animate });
     refresh();
     emitChange();
   }
+
+  /** The action: the big button, its badge on the view, a tap on the book or the launcher, Space/Enter/→. */
+  function doAction() {
+    if (s.locked) return lockedNudge();
+    const p = plan();
+    if (p.surface !== s.surface) {
+      if (now() - lastPush < DOUBLE_TAP) return; // a double tap must not skip a floor
+      chooseSurface(p.surface); // the push takes the book back to the start first
+    }
+    push();
+  }
+
+  // the big button in the panel and the numbered ring on the book (taps on the ring go through to the book)
+  action = createAction({
+    stage,
+    layer: ui.coachLayer,
+    host: ui.$('.pvc-act-slot'),
+    t,
+    step: 1,
+    label: 'act_push',
+    target: () => (s.scene === 'lane' ? book.body : null),
+    pad: 8,
+    avoid: [ui.corner, ui.hint, badge, () => [...ui.annoLayer.querySelectorAll('.nf-label.in')]],
+    pulse: o.coach,
+    onAct: () => {
+      audio.unlock();
+      doAction();
+    },
+  });
 
   // ── camera ──────────────────────────────────────────────────────────────────
   /** 0 for a portrait stage … 1 for a wide one. */
@@ -872,7 +943,6 @@ export function createApp(root, options = {}) {
     'pointerdown',
     (e) => {
       audio.unlock();
-      coach?.interrupt();
       const what = pick(canvasPoint(e));
       if (!what) return; // the camera controls take it
       e.stopPropagation();
@@ -883,7 +953,7 @@ export function createApp(root, options = {}) {
         if (now() - lastPush > DOUBLE_TAP) showHint(t('hint_wait'), { duration: 2600 });
         return;
       }
-      push(); // it acts as the finger goes down
+      doAction(); // it acts as the finger goes down: the same as the big button
     },
     true,
   );
@@ -1074,6 +1144,7 @@ export function createApp(root, options = {}) {
     emit,
     audio,
     questions: 5,
+    action,
     hooks: {
       enter() {
         learnSaved = { surface: s.surface, results: { ...s.results } };
@@ -1272,55 +1343,6 @@ export function createApp(root, options = {}) {
     },
   });
 
-  // ── first-use pointer: on the book ──────────────────────────────────────────
-  let coach = null;
-  if (o.coach) {
-    const v = new THREE.Vector3();
-    coach = createCoach({
-      stage,
-      layer: ui.coachLayer,
-      t,
-      loupe: null,
-      tweener,
-      avoid: [ui.corner, ui.hint, badge],
-      object: {
-        label: 'coach_push',
-        candidates: () => {
-          const out = [];
-          for (const dx of [-BOOK.length / 2, -BOOK.length * 0.3, -BOOK.length * 0.7]) {
-            v.set(book.root.position.x + dx, BOOK.thick, 0.02).project(camera);
-            out.push({ x: (v.x * 0.5 + 0.5) * stage.width, y: (-v.y * 0.5 + 0.5) * stage.height });
-          }
-          return out;
-        },
-        grabbable: (p) => pick(p) != null && !s.run,
-        // the paddle squeezes the spring a little more and lets it back, twice (no push: that is the student's)
-        async demo(alive) {
-          for (let i = 0; i < 2 && alive() && !s.run; i++) {
-            const done = await tweener.animate({
-              key: 'coach-paddle',
-              duration: 0.8,
-              ease: ease.inOutSine,
-              onUpdate: (k) => {
-                if (!alive() || s.run) return;
-                launcher.setPaddle(launcher.restBack - 0.035 * Math.sin(Math.PI * k));
-                stage.invalidate();
-              },
-            }).finished;
-            if (!done || !alive()) break;
-            await wait(450);
-          }
-          if (!s.run) launcher.setPaddle(launcher.restBack);
-        },
-        cancel: () => {
-          tweener.cancel('coach-paddle');
-          if (!s.run) launcher.setPaddle(launcher.restBack);
-          stage.invalidate();
-        },
-      },
-    });
-  }
-
   // ── buttons, keys ───────────────────────────────────────────────────────────
   function syncUI() {
     for (const b of ui.$$('[data-view]')) b.classList.toggle('on', b.dataset.view === s.view);
@@ -1332,7 +1354,6 @@ export function createApp(root, options = {}) {
     }
     ui.learn.inert = s.mode === 'quiz';
     ui.quiz.inert = s.mode !== 'quiz';
-    coach?.setMode(s.mode);
   }
   const fullscreenBtn = ui.$('[data-act="fullscreen"]');
   if (fullscreenBtn && !document.fullscreenEnabled) fullscreenBtn.hidden = true;
@@ -1341,7 +1362,7 @@ export function createApp(root, options = {}) {
     if (!b || !root.contains(b)) return;
     audio.unlock();
     if (b.dataset.view) setView(b.dataset.view);
-    if (b.dataset.surface) setSurface(b.dataset.surface);
+    if (b.dataset.example) setSurface(b.dataset.example);
     if (b.dataset.mode === 'quiz' && s.mode !== 'quiz') quiz.start();
     if (b.dataset.mode === 'explore') quiz.stop();
     if (b.dataset.q != null) {
@@ -1354,9 +1375,6 @@ export function createApp(root, options = {}) {
         break;
       case 'q-again':
         quiz.start();
-        break;
-      case 'push':
-        push();
         break;
       case 'home':
         if (s.locked) lockedNudge();
@@ -1379,7 +1397,7 @@ export function createApp(root, options = {}) {
       return;
     }
     if (['1', '2', '3', '4'].includes(k)) setSurface(SURFACE_IDS[Number(k) - 1]);
-    else if (k === 'ArrowRight' || ((k === ' ' || k === 'Enter') && !onButton)) push();
+    else if (k === 'ArrowRight' || ((k === ' ' || k === 'Enter') && !onButton)) doAction();
     else if (k === 'r' || k === 'R' || k === 'Home') goHome();
     else if (k === 'f' || k === 'F') setView('front');
     else if (k === 'v' || k === 'V') setView('3d');
@@ -1414,7 +1432,6 @@ export function createApp(root, options = {}) {
   }
   const ready = (async () => {
     if (o.mode === 'quiz') quiz.start();
-    else if (at == null) coach?.start();
   })();
 
   return {
