@@ -42,6 +42,14 @@ yourself against every point below before you report. (Batch 1, pages 36–41: `
     view: animate it as folds, clip to the plot, give it time (≈2 s after a 1 s hold), and let a tap replay it.
 
 ## The panel and layout
+**The owner's rule (2026-10-25): one action, one result, one rule.** Looking at the chapter-2 figures in the studio,
+the owner found the part under the picture too boxy and a bit overwhelming: chips in boxes, readouts in cards, rows of
+small boxed buttons, paragraphs. Use the kit's clean sheet (`cleanSheet` + `createAction`, kit 1.3.0): the examples
+as one row of words; one big numbered action button whose same numbered badge pulses on the 3D part (a tap on either
+does it, so the student always knows what to touch); one result line with the number that matters, large; one rule in
+the book's words that grows as the student finds things out (before, after the first try, after comparing, the law).
+Secondary actions are quiet icons. `assets/newtons-first-law/` shows it.
+
 12. **Steady layout:** the 3D view must keep exactly the same size in every state and every test question. Any
     panel line whose text changes gets a `min-height` for its longest version; the test's question and
     worked-answer lines get reserved heights. Measure every string in its box at every size with a script.

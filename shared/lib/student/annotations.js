@@ -210,5 +210,12 @@ export function createAnnotations({ stage, layer, avoid = [] }) {
       const b = items.get(id)?.box;
       return b ? { left: b.left, top: b.top, right: b.right, bottom: b.bottom } : null;
     },
+    /** The boxes of every label shown now (canvas pixels), e.g. for createAction's `avoid`. */
+    boxes() {
+      const out = [];
+      for (const it of items.values())
+        if (it.box && it.a?.ok && !it.hidden) out.push({ left: it.box.left, top: it.box.top, right: it.box.right, bottom: it.box.bottom });
+      return out;
+    },
   };
 }

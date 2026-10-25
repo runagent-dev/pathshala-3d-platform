@@ -14,6 +14,7 @@
 //
 // lines (optional): room kept for that many lines of question and of worked answer, so a longer one never
 // makes the sheet taller (and the 3D view smaller). Without it the sheet fits its words, as before.
+// action (optional, ./action.js): its marker on the 3D view hides while the test runs (hide('quiz') / show('quiz')).
 //
 // Strings (from the figure's i18n): q_count, q_score, q_hint, q_right, q_wrong, q_next, q_finish,
 // q_result, q_great, q_good, q_try. Events: practice-start, practice-result, practice-end.
@@ -31,9 +32,10 @@ function linesOf(n, lineHeight) {
 
 /**
  * @param {{ ui: any, t: any, emit: (type: string, data?: any) => void, audio?: any, questions?: number,
- *           lines?: { text?: number, feedback?: number }, hooks: any }} options
+ *           lines?: { text?: number, feedback?: number }, hooks: any,
+ *           action?: { hide: (reason?: string) => void, show: (reason?: string) => void } }} options
  */
-export function createQuiz({ ui, t, emit, audio, questions = 5, lines, hooks }) {
+export function createQuiz({ ui, t, emit, audio, questions = 5, lines, hooks, action }) {
   const el = {
     ask: ui.$('.pvc-q-ask'),
     count: ui.$('.pvc-q-count'),
@@ -146,6 +148,7 @@ export function createQuiz({ ui, t, emit, audio, questions = 5, lines, hooks }) 
     right = 0;
     if (!active) {
       active = true;
+      action?.hide('quiz');
       hooks.enter?.();
     }
     emit('practice-start', { questions });
@@ -158,6 +161,7 @@ export function createQuiz({ ui, t, emit, audio, questions = 5, lines, hooks }) 
     active = false;
     if (asked > 0 && asked < questions) emit('practice-end', { right, total: asked, finished: false });
     current = null;
+    action?.show('quiz');
     hooks.leave?.();
   }
 

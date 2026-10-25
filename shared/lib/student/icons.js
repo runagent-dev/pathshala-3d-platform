@@ -28,4 +28,9 @@ export const ICONS = {
   check: svg('<path d="M5 12.5l4.5 4.5L19 7.5"/>'),
   // the bundled Noto Sans Bengali has no ✓ ✗ → glyphs: use check, close and arrowR in the student's text
   arrowR: svg('<path d="M4 12h15M13.5 6.5L19 12l-5.5 5.5"/>'),
+  // a hand pressing with one finger (filled, the coach's hand): the action button's "touch here"
+  hand: svg(
+    '<path class="fill" d="M9 1.6c1.1 0 2 .9 2 2v8.1l.7-.1c1-.2 2 .5 2.2 1.5l.1.4.5-.1c1-.2 2 .5 2.2 1.5l.1.4.4-.1c1.1-.2 2.1.6 2.3 1.6l.6 3.4c.4 2.5-.4 5-2.2 6.8l-.4.4H8.6l-4.7-6.1c-.7-.9-.6-2.3.3-3.1.9-.8 2.3-.7 3.1.2l.7.8V3.6c0-1.1.9-2 2-2z"/>',
+    '0 0 24 28',
+  ),
 };

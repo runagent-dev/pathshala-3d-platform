@@ -1,6 +1,7 @@
 // The student view: the 3D figure on top (layers for labels, the magnifier and pointers, a hint line, and the
 // "front / rotate" + fullscreen buttons), and one panel below it (beside it on short, wide frames) with two
-// tabs: শেখো (the reading written as a named sum) and পরীক্ষা (the test, run by ./quiz.js).
+// tabs: শেখো (the reading written as a named sum, or the clean sheet: one action, one result, one rule) and পরীক্ষা
+// (the test, run by ./quiz.js).
 // Styles: ./student.css. Strings come from the figure: view, view_front_short, view_rotate, fullscreen,
 // tab_learn, tab_quiz, reading, q_again (plus the quiz and pointer strings).
 import { ICONS } from './icons.js';
@@ -22,6 +23,83 @@ export function learnSheet(t, { terms, extra = '', button = true }) {
             <span class="pvc-status"><i></i><span></span></span>
             ${button ? `<button class="pvc-btn" data-act="object">${ICONS.measure}<span></span></button>` : ''}
           </div>`;
+}
+
+/**
+ * The clean শেখো sheet (kit 1.3.0: one action, one result, one rule), in this order:
+ *   - one row of example words (a text segmented control: the chosen word underlined; with `results: true` a small
+ *     result can sit under each word once it is known, and room is kept for it);
+ *   - the action row: `.pvc-act-slot`, where createAction (./action.js) puts its big button, then quiet secondary
+ *     buttons (`quiet`: an icon and words; only the icon in a narrow panel);
+ *   - one result line (`.pvc-outcome`: the key number in <b>, drawn larger);
+ *   - one rule line (`.pvc-rule`: the rule in the book's words, explained plainly).
+ * `lines` keeps room for that many lines of result and rule, so the sheet keeps its height when they change (a figure
+ * can set `--pvc-outcome-lines` / `--pvc-rule-lines` for one layout in its own CSS). Write it with bindCleanSheet.
+ * @param {(key: string, vars?: object) => string} t
+ * @param {{ examples?: { label?: string, items: Array<{ id: string, label: string }>, results?: boolean },
+ *           quiet?: Array<{ act: string, label: string, icon?: string }>,
+ *           lines?: { outcome?: number, rule?: number } }} [options]
+ */
+export function cleanSheet(t, { examples, quiet = [], lines = {} } = {}) {
+  const words = examples
+    ? `<div class="pvc-examples" role="radiogroup"${examples.label ? ` aria-label="${t(examples.label)}"` : ''}${examples.results ? ' data-results' : ''}>${examples.items
+        .map(
+          ({ id, label }) =>
+            `<button type="button" role="radio" aria-checked="false" data-example="${id}"><span class="pvc-ex-word">${t(label)}</span><small class="pvc-ex-res"></small></button>`,
+        )
+        .join('')}</div>`
+    : '';
+  const extra = quiet
+    .map(
+      ({ act, label, icon = '' }) =>
+        `<button type="button" class="pvc-quiet" data-act="${act}" aria-label="${t(label)}" title="${t(label)}">${icon}<span>${t(label)}</span></button>`,
+    )
+    .join('');
+  // the default room is set on the line itself; a figure's CSS overrides it per layout with --pvc-<line>-lines
+  const room = (name, n) => (n > 0 ? ` style="--pvc-${name}-room: ${n}"` : '');
+  return `
+          ${words}
+          <div class="pvc-act-row"><div class="pvc-act-slot"></div>${extra}</div>
+          <p class="pvc-outcome"${room('outcome', lines.outcome)}></p>
+          <p class="pvc-rule"${room('rule', lines.rule)}></p>`;
+}
+
+/**
+ * Writes a sheet made by cleanSheet: which example is chosen, the small result under a word, the result line and
+ * the rule line (each written only when it changes, so it can be called every frame).
+ * @param {Element} learn the শেখো sheet (`ui.learn`)
+ */
+export function bindCleanSheet(learn) {
+  const words = /** @type {HTMLElement[]} */ ([...learn.querySelectorAll('[data-example]')]);
+  const outcome = learn.querySelector('.pvc-outcome');
+  const rule = learn.querySelector('.pvc-rule');
+  const last = { outcome: null, rule: null };
+  const write = (el, key, html) => {
+    if (!el || last[key] === html) return;
+    el.innerHTML = html;
+    last[key] = html;
+  };
+  return {
+    /** The example words' buttons (each has data-example="<id>"). */
+    words,
+    /** Underline one example (aria-checked follows). */
+    choose(id) {
+      for (const b of words) {
+        const on = b.dataset.example === id;
+        b.setAttribute('aria-checked', String(on));
+        b.classList.toggle('on', on);
+      }
+    },
+    /** The small result under an example's word ('' for none yet). */
+    result(id, text = '') {
+      const small = words.find((b) => b.dataset.example === id)?.querySelector('.pvc-ex-res');
+      if (small && small.textContent !== text) small.textContent = text;
+    },
+    /** The result line (HTML; the key number in <b>). */
+    outcome: (html) => write(outcome, 'outcome', html),
+    /** The rule line (HTML; the book's words in <b>). */
+    rule: (html) => write(rule, 'rule', html),
+  };
 }
 
 /**
