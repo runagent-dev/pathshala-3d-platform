@@ -1,0 +1,99 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "weak-nuclear-force",
+  "title": "Weak nuclear force (দুর্বল নিউক্লীয় বল)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 68,
+  "topic": "3.2.3",
+  "placement": "Book page 68, topic 3.2.3: দুর্বল নিউক্লীয় বল (Weak Nuclear Force), next to that paragraph.",
+  "order": 3,
+  "maintainers": ["RadeenXALNW"],
+  "units": "mm",
+  "description": "Interactive 3D figure for the weak nuclear force (দুর্বল নিউক্লীয় বল), book page 68, topic 3.2.3. A radioactive nucleus (তেজস্ক্রিয় নিউক্লিয়াস: 6 protons, 8 neutrons, like carbon-14): the student taps it (or presses β রশ্মি দেখো) and sees, slowed down a great deal, the weak force act at a point inside one neutron, the neutron turn into a proton, and an electron, the beta (β) ray, shoot out in a straight line; the panel counts protons 6 → 7 and neutrons 8 → 7. A zoom with three stops shows how short the force's reach is: the whole atom (about 10⁻¹⁰ m, held by the electromagnetic force), the nucleus, and a thousand times closer inside that neutron, the weak force's reach, a sphere of 10⁻¹⁸ m; a scale bar follows the zoom. The panel keeps the four fundamental forces in order, weakest first, with their ranges, and the book's sentence on strength (weaker than the electromagnetic force by about a trillion times, far stronger than gravity). Test tab: 5 questions (which force causes the β ray, what the β ray is or how many protons are left, the force's range or a comparison with gravity, its strength among the four forces, where it acts). The scene is drawn in femtometres; the GLB (the nucleus) comes out with 1 fm as 1 mm, 10¹² times life size. Phone-first, Bangla.",
+  "tags": ["force", "fundamental-forces", "weak-nuclear-force", "radioactivity", "beta-ray", "nucleus", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "stop",
+      "label": "Zoom",
+      "type": "select",
+      "options": [
+        ["atom", "atom (পরমাণু)"],
+        ["nucleus", "nucleus (নিউক্লিয়াস)"],
+        ["reach", "weak force range (10⁻¹⁸ m)"]
+      ],
+      "default": "nucleus"
+    },
+    {
+      "name": "beta",
+      "label": "β emission stopped at",
+      "type": "number",
+      "default": "",
+      "placeholder": "0 to 1",
+      "help": "Show the β emission stopped at this point (0 start, 1 end), e.g. 0.42 for pictures; empty: not started"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "First-use pointers", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "beta": true } },
+    { "name": "set", "payload": { "beta": 0.42, "animate": false } },
+    { "name": "set", "payload": { "stop": "reach" } },
+    { "name": "set", "payload": { "stop": "atom", "animate": false } },
+    { "name": "set", "payload": { "beta": false, "stop": "nucleus" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "beta", "stop", "view", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": { "params": { "coach": "0", "beta": "0.42" } },
+    "glb": [
+      {
+        "name": "default",
+        "setup": [{ "command": "set", "payload": { "beta": false, "stop": "nucleus", "animate": false } }]
+      }
+    ],
+    "video": {
+      "kind": "script",
+      "seconds": 20,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 0.6, "command": "set", "payload": { "beta": true } },
+        { "at": 4.8, "command": "set", "payload": { "stop": "reach" } },
+        { "at": 8.6, "command": "set", "payload": { "stop": "atom" } },
+        { "at": 13.4, "command": "set", "payload": { "stop": "nucleus" } },
+        { "at": 16, "command": "set", "payload": { "beta": true } }
+      ]
+    }
+  }
+}
