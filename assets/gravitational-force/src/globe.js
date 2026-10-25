@@ -2,12 +2,14 @@
 // right edge and 90° W on the left) with people standing on its edge, each pulled towards the Earth's centre
 // (মাধ্যাকর্ষণ বল: a violet arrow from the person's middle, then a dashed line on to the centre). The people stand
 // on the circle through both poles along 90° E / 90° W, the edge of the globe in the front view, so they are
-// always seen side-on; a person's place on it is an angle θ from the North Pole (see ./physics.js).
+// always seen side-on; a person's place on it is an angle θ from the North Pole (see ./physics.js). A dropped apple
+// leaves faint copies of itself at equal moments of its fall (like a stroboscope photo), so the still picture shows
+// four falls, all towards the centre.
 import * as THREE from 'three';
 import { createArrow, createDashes, createDot } from './draw.js';
 import { earthTexture } from './maps.js';
 import { appleMaterials, createPerson } from './people.js';
-import { PEOPLE, placeAt, rimPoint } from './physics.js';
+import { FALL_MOMENTS, PEOPLE, placeAt, rimPoint } from './physics.js';
 
 export const R = 20; // cm: a desk globe
 export const H = 8; // cm: the people, drawn very much bigger than real
@@ -47,6 +49,26 @@ export function createGlobe({ renderer, map: sharedMap }) {
   }
   const centre = createDot(0.55, '#1d2733');
   root.add(centre);
+  // the faint copies of the falling apples (a drawing, not exported)
+  const ghostMat = new THREE.MeshStandardMaterial({
+    name: 'AppleGhost',
+    color: '#e03131',
+    roughness: 0.6,
+    transparent: true,
+    opacity: 0.32,
+    depthWrite: false,
+  });
+  for (const id of ids) {
+    const r = people[id].person.appleR;
+    people[id].ghosts = FALL_MOMENTS.map(() => {
+      const m = new THREE.Mesh(new THREE.SphereGeometry(r * 0.92, 18, 12), ghostMat);
+      m.visible = false;
+      m.userData.noExport = true;
+      m.renderOrder = 5;
+      root.add(m);
+      return m;
+    });
+  }
 
   const v = new THREE.Vector3();
   const dir = new THREE.Vector3();
@@ -83,12 +105,16 @@ export function createGlobe({ renderer, map: sharedMap }) {
     const ground = R + person.lift + person.appleR * 0.86;
     return { start: wHand.clone(), dir: wHand.clone().normalize().negate(), drop: r0 - ground };
   }
-  /** Put the apple of `id` k of the way down its fall (0 = in the hand, 1 = on the ground), straight towards the centre. */
+  /**
+   * Put the apple of `id` k of the way down its fall (0 = in the hand, 1 = on the ground), straight towards the
+   * centre; the copies it has passed stay where it was at those moments.
+   */
   function setFall(id, k) {
     const p = people[id];
     const { person } = p;
     if (k <= 0) {
       person.apple.position.copy(person.appleRest);
+      for (const gh of p.ghosts) gh.visible = false;
       return;
     }
     const f = fallPath(id);
@@ -96,6 +122,10 @@ export function createGlobe({ renderer, map: sharedMap }) {
     root.localToWorld(wNow);
     person.body.worldToLocal(wNow);
     person.apple.position.copy(wNow);
+    p.ghosts.forEach((gh, i) => {
+      gh.visible = k >= FALL_MOMENTS[i];
+      gh.position.copy(f.start).addScaledVector(f.dir, f.drop * FALL_MOMENTS[i]);
+    });
   }
 
   return {

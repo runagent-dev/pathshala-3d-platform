@@ -19,11 +19,13 @@ test('gravitational-force: down is towards the centre, the pull reaches any dist
   await fig.call('set', { angle: 310, animate: false });
   expect((await fig.call('get')).place).toBe('usa');
 
-  // the apples fall (about half a second), lie on the ground, then come back to the hands
+  // the apples fall (0.45 s, shown twice as slow) and lie on the ground until something changes
   await fig.call('set', { drop: true });
-  expect((await fig.call('get')).dropping).toBe(true);
-  await fig.advance(4000);
-  expect((await fig.call('get')).dropping).toBe(false);
+  expect(await fig.call('get')).toMatchObject({ dropping: true, dropped: false });
+  await fig.advance(2000);
+  expect(await fig.call('get')).toMatchObject({ dropping: false, dropped: true });
+  await fig.call('set', { angle: 300, animate: false });
+  expect(await fig.call('get')).toMatchObject({ dropping: false, dropped: false });
 
   // two 200 g apples: about 6.7 × 10⁻¹¹ N at 20 cm, a quarter of that at 40 cm; the distance stays between 20 and 40 cm
   await fig.call('set', { stop: 'apples', animate: false });
@@ -48,11 +50,16 @@ test('gravitational-force: down is towards the centre, the pull reaches any dist
   expect(moon.orbit).toBeGreaterThan(170);
   expect(moon.orbit).toBeLessThan(195);
 
-  // take the pull away: the Moon leaves its circle; after a while the pull comes back by itself
+  // take the pull away: the Moon leaves its circle in a straight line and flies out of the picture (in a few
+  // seconds, not at once: the camera goes back), and stays gone until the pull is given back
   await fig.call('set', { nopull: true });
-  expect((await fig.call('get')).nopull).toBe(true);
-  await fig.advance(5000);
-  expect((await fig.call('get')).nopull).toBe(false);
+  expect(await fig.call('get')).toMatchObject({ nopull: true, flewOff: false });
+  await fig.advance(1500);
+  expect((await fig.call('get')).flewOff).toBe(false);
+  await fig.advance(6000);
+  expect(await fig.call('get')).toMatchObject({ nopull: true, flewOff: true });
+  await fig.call('set', { nopull: false });
+  expect(await fig.call('get')).toMatchObject({ nopull: false, flewOff: false });
 
   // the keys: arrows move you round the Earth, 5° a press
   await fig.call('set', { stop: 'earth', angle: 66.5, animate: false });

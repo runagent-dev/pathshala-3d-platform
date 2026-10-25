@@ -6,17 +6,18 @@ Interactive 3D figure for the Pathshala book. Five stops, from the smallest dist
 pull (মহাকর্ষ বল, two equal violet arrows on each pair): two apples on a table (the student drags one away and sees the
 pull, about 10⁻¹¹ N, shrink but never vanish), people standing all round the Earth (the student drags themself round
 and drops the apples: down is towards the Earth's centre, মাধ্যাকর্ষণ বল), the Moon round the Earth and the Earth
-round the Sun (a button takes the pull away: the body flies off in a straight line), and our Sun in the galaxy (the
+round the Sun (a button takes the pull away: the camera goes back and the body flies off in a straight line), and our Sun in the galaxy (the
 range is infinite). A strip shows the four fundamental forces weakest to strongest. Then a five-question test.
 
 Notes for the book developer:
 - The scene is in centimetres; the GLB exports (`gravitational-force.glb` the Earth with the people, `-apples`,
   `-moon`, `-sun`) are in metres. The globe is a 40 cm desk globe with people drawn much bigger; the apples are real
   size; the Moon, the Sun and the galaxy are a stylised model, not to scale (the figure says so).
-- `get` returns `{ stop, angle, place, boat, gap, pull, orbit, playing, nopull, dropping, view, mode }`: `angle` is
+- `get` returns `{ stop, angle, place, boat, gap, pull, orbit, playing, nopull, flewOff, dropping, dropped, view, mode }`: `angle` is
   where the student stands on the Earth's edge (degrees from the North Pole, clockwise in the front view; 66.5 is
   Bangladesh), `place` names it (`bangladesh`, `pacific`, …; `boat` at sea), `gap` is the apples' distance in cm and
-  `pull` the pull between them in newtons.
+  `pull` the pull between them in newtons; `flewOff` says the body without its pull has left the picture (it waits
+  for `set({ nopull: false })`).
 
 ## Embed
 

@@ -55,6 +55,7 @@ export function createTable({ materials }) {
   const b = new THREE.Vector3();
   const xAxis = new THREE.Vector3(1, 0, 0);
   const minus = new THREE.Vector3(-1, 0, 0);
+  let arrowLen = ARROW_AT_START;
   return {
     root,
     left,
@@ -66,6 +67,7 @@ export function createTable({ materials }) {
       right.position.x = x;
       hit.position.copy(right.position);
       const len = ARROW_AT_START * (GAP.start / gap) ** 2;
+      arrowLen = len;
       onLeft.set(a.set(LEFT_X + R, y, 0), xAxis, len);
       onRight.set(a.set(x - R, y, 0), minus, len);
       dim.set(a.set(LEFT_X, 0.15, LINE_Z), b.set(x, 0.15, LINE_Z));
@@ -80,8 +82,8 @@ export function createTable({ materials }) {
       left: (out = new THREE.Vector3()) => left.getWorldPosition(out),
       /** The middle of the dimension line (its label goes just in front of it). */
       dimMid: (out = new THREE.Vector3()) => root.localToWorld(out.set(LEFT_X + (right.position.x - LEFT_X) / 2, 0.15, LINE_Z)),
-      /** Above the middle between the apples (the arrows' label). */
-      between: (out = new THREE.Vector3()) => root.localToWorld(out.set(LEFT_X + (right.position.x - LEFT_X) / 2, y + R * 0.2, 0)),
+      /** The middle of the arrow on the right apple (the arrows' label goes beside it), and that apple's radius. */
+      rightArrow: (out = new THREE.Vector3()) => root.localToWorld(out.set(right.position.x - R - arrowLen / 2, y, 0)),
     },
     /** The x range the right apple moves in, and the height of things, for framing the camera. */
     extent: { x0: LEFT_X - R - 1, x1: LEFT_X + GAP.max + R + 1, top: 2 * R + 1.5, front: LINE_Z + 2.5, back: -R - 1 },

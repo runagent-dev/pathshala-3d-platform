@@ -33,7 +33,7 @@ body.bg-transparent { background: transparent; }
 .gf-forces-k { font-size: 12px; line-height: 1.35; color: var(--ink-3); }
 .gf-ladder { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
 .gf-f { --c: var(--ink-3); display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 0; padding: 2px 4px; border-radius: 6px; border: 1.5px solid color-mix(in srgb, var(--c) 45%, var(--line)); text-align: center; line-height: 1.25; }
-.gf-f b { max-width: 100%; font-size: 12.5px; font-weight: 700; color: var(--c); overflow-wrap: anywhere; hyphens: auto; }
+.gf-f b { max-width: 100%; font-size: 12.5px; font-weight: 700; color: var(--c); hyphens: manual; }
 .gf-f small { font-size: 11.5px; color: var(--ink-3); }
 .gf-f.grav { --c: var(--c-g); }
 .gf-f.weak { --c: var(--c-weak); }
@@ -43,7 +43,7 @@ body.bg-transparent { background: transparent; }
 .gf-f.on b, .gf-f.on small { color: #fff; }
 
 /* how the picture is stylised, in the top left corner of the 3D view */
-.gf-note { position: absolute; left: 8px; top: 10px; z-index: 3; max-width: calc(100% - 228px); padding: 1px 4px; border-radius: 4px; background: color-mix(in srgb, var(--page) 82%, transparent); font-size: 12.5px; line-height: 1.35; color: var(--ink-2); pointer-events: none; text-wrap: balance; }
+.gf-note { position: absolute; left: 8px; top: 10px; z-index: 3; max-width: calc(100% - 252px); padding: 1px 4px; border-radius: 4px; background: color-mix(in srgb, var(--page) 82%, transparent); font-size: 12.5px; line-height: 1.35; color: var(--ink-2); pointer-events: none; text-wrap: balance; }
 /* the picture moved left of the corner buttons (short frames): the note goes under the buttons */
 .gf.gf-note-right .gf-note { left: auto; right: 6px; top: 52px; max-width: 172px; text-align: right; }
 
@@ -71,7 +71,7 @@ body.bg-transparent { background: transparent; }
   .gf-stops { align-self: stretch; grid-template-columns: repeat(5, minmax(0, 1fr)); }
   .gf-stops button { height: 38px; padding: 0 4px; font-size: 15px; }
   .gf-idea { font-size: 15.5px; min-height: 6em; }
-  .gf-fact { font-size: 13.5px; }
+  .gf-fact { font-size: 13.5px; min-height: 4.35em; } /* three lines: the apples' pull and the Earth's comparison */
   .gf-note { max-width: calc(100% - 226px); font-size: 12px; }
   .gf .pvc-opt .gf-opt { font-size: 14px; }
 }
@@ -81,18 +81,24 @@ body.bg-transparent { background: transparent; }
   .gf-idea { font-size: 13px; line-height: 1.45; min-height: 4.35em; }
   .gf-row { min-height: 2.6em; }
   .gf-act { height: 34px; padding: 0 12px; font-size: 14.5px; }
-  .gf-forces-k { display: none; }
-  .gf .pvc-q-feedback { font-size: 14px; min-height: 4.35em; }
+  .gf-forces { display: none; } /* the 3D view needs the room more */
+  .gf-fact { min-height: 4.35em; }
+  /* the test sets the panel's height here: a tighter test gives the 3D view about 20 px more */
+  .gf .pvc-q-feedback { font-size: 13px; line-height: 1.35; min-height: 4.05em; }
+  .gf .pvc-q-text { font-size: 15px; line-height: 1.3; min-height: 2.6em; }
+  .gf .pvc-q-ask { gap: 5px; }
+  .gf .pvc-opt { height: 40px; }
+  .gf .pvc-opt .gf-opt { font-size: 13.5px; }
 }
 /* the panel beside the 3D view (a phone held sideways, short embeds) */
 @container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
   .gf-stops { align-self: stretch; grid-template-columns: repeat(5, auto); }
   .gf-stops button { height: 34px; padding: 0 3px; font-size: 12.5px; }
-  .gf-idea { font-size: 13px; line-height: 1.45; min-height: 7.25em; }
+  .gf-idea { font-size: 14px; line-height: 1.45; min-height: 7.25em; }
   .gf-row { flex-wrap: wrap; min-height: 0; }
-  .gf-fact { font-size: 12.5px; min-height: 2.9em; flex-basis: 100%; }
+  .gf-fact { font-size: 13px; min-height: 2.9em; flex-basis: 100%; } /* beside the 3D view: its height never moves it */
   .gf-act { height: 34px; }
-  .gf-forces-k { font-size: 11.5px; }
+  .gf-forces-k { display: none; } /* the coloured pills say it; the side panel needs the room */
   .gf-ladder { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .gf .pvc-q-feedback { font-size: 13.5px; min-height: 5.8em; }
   .gf .pvc-opt .gf-opt { font-size: 13.5px; }

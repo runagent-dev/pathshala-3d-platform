@@ -120,7 +120,7 @@ export function createPerson({ H, clothes, apple: appleM, name = 'Person' }) {
   const handL = new THREE.Mesh(new THREE.SphereGeometry(H * 0.055, 10, 8), M.skin);
   handL.position.set(-H * 0.21, H * 0.35, 0);
   const shoulder = new THREE.Vector3(H * 0.17, H * 0.63, 0);
-  const handAt = new THREE.Vector3(H * 0.43, H * 0.56, H * 0.06);
+  const handAt = new THREE.Vector3(H * 0.42, H * 0.78, H * 0.06); // held up and out: a long fall to watch
   const armR = capsule(H * 0.052, shoulder.distanceTo(handAt) - H * 0.05, M.top);
   armR.position.copy(shoulder).add(handAt).multiplyScalar(0.5);
   armR.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), handAt.clone().sub(shoulder).normalize());
@@ -153,9 +153,9 @@ export function createPerson({ H, clothes, apple: appleM, name = 'Person' }) {
   }
 
   // the apple, resting in the right hand (it is moved in world space when it falls)
-  const appleR = H * 0.095;
+  const appleR = H * 0.16; // drawn as big as the head, so its fall reads on a phone
   const apple = createApple(appleR, appleM);
-  const appleRest = handAt.clone().add(new THREE.Vector3(H * 0.01, appleR * 0.9, H * 0.02));
+  const appleRest = handAt.clone().add(new THREE.Vector3(H * 0.02, appleR * 0.85, H * 0.03));
   apple.position.copy(appleRest);
   body.add(apple);
 

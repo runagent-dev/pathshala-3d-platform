@@ -129,3 +129,69 @@ describe('gravitational force: without the pull, a straight line', () => {
     assert.equal(gf.turned(2.5, 10), 90);
   });
 });
+
+describe('gravitational force: how small the apples’ pull is', () => {
+  it('the Earth pulls a 200 g apple with about 2 N', () => {
+    close(gf.appleWeight(), 1.96);
+  });
+  it('that is about 2,900 crore times the two apples’ pull at 20 cm, 12,000 crore at 40 cm', () => {
+    assert.equal(gf.earthPullTimesCrore(20), 2900);
+    assert.equal(gf.earthPullTimesCrore(40), 12000);
+  });
+});
+
+describe('gravitational force: people never stand on top of each other', () => {
+  it('a person steps aside when you come within 14°, to the side away from you', () => {
+    assert.equal(gf.stepAside(0, 5), 351);
+    assert.equal(gf.stepAside(0, 355), 9);
+    assert.equal(gf.stepAside(180, 180), 166);
+    assert.equal(gf.stepAside(0, 20), 0, 'further away they stand at their own place');
+  });
+  it('wherever you are, you are at least 14° apart', () => {
+    for (const base of [0, 180, 246.5])
+      for (let you = 0; you < 360; you += 0.5) assert.ok(gf.angleBetween(gf.stepAside(base, you), you) >= 14 - 1e-9);
+  });
+});
+
+describe('gravitational force: a fall at equal moments', () => {
+  it('a quarter, a half and three quarters of the time: 1/16, 1/4 and 9/16 of the way (faster and faster)', () => {
+    gf.FALL_MOMENTS.forEach((k, i) => close(k, ((i + 1) / 4) ** 2));
+    const gaps = [gf.FALL_MOMENTS[0], gf.FALL_MOMENTS[1] - gf.FALL_MOMENTS[0], gf.FALL_MOMENTS[2] - gf.FALL_MOMENTS[1]];
+    assert.ok(gaps[0] < gaps[1] && gaps[1] < gaps[2]);
+  });
+});
+
+describe('gravitational force: the test', () => {
+  it('asks one question of each kind, the range last, in a new order each time', async () => {
+    const { createQuestions } = await import('../../assets/gravitational-force/src/questions.js');
+    const api = { t: (k) => k, sup: (n) => `10^${n}`, sciHtml: () => '', setup() {}, showPulls() {}, drop() {}, startFree() {} };
+    const qs = createQuestions(api);
+    const orders = new Set();
+    for (let i = 0; i < 40; i++) {
+      const o = qs.order();
+      assert.equal(o.length, 5);
+      assert.equal(new Set(o).size, 5);
+      assert.equal(o[4], 'range');
+      orders.add(o.join());
+    }
+    assert.ok(orders.size > 3);
+  });
+  it('the right answer is never the longest choice', async () => {
+    const { STRINGS } = await import('../../assets/gravitational-force/src/i18n.js');
+    const bn = STRINGS.bn;
+    const sets = [
+      ['np_straight', 'np_out', 'np_round', 'np_fall'],
+      ['o_earth_g', 'o_moon_own', 'o_none', 'o_earth_mag'],
+      ['o_sun_g', 'o_earth_own', 'o_none', 'o_sun_mag'],
+      ['n_earth_us', 'n_sun_earth', 'n_two_apples', 'n_magnet'],
+      ['w_yes', 'w_upside', 'w_up', 'w_none'],
+      ['p_yes_weak', 'p_no_big', 'p_no_earth', 'p_yes_move'],
+      ['d_less', 'd_zero', 'd_same', 'd_more'],
+    ];
+    for (const [right, ...wrong] of sets)
+      assert.ok(
+        wrong.some((k) => bn[k].length >= bn[right].length),
+        `${right} is the longest`,
+      );
+  });
+});
