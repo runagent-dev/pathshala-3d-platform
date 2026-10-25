@@ -6,9 +6,9 @@
 // leaves every 0.1 s, and the lines where it stopped.
 import * as THREE from 'three';
 import { textMesh } from '@shared/student/materials.js';
-import { BOOK, STEP } from './motion.js';
+import { BOOK } from './motion.js';
 
-export const FLOOR = { width: 0.7, thick: 0.03, start: -BOOK.length };
+export const FLOOR = { width: 0.5, thick: 0.03, start: -BOOK.length };
 export const SURFACE_COLORS = { mat: '#9c6b2f', wood: '#b06a1e', ice: '#1c8fb0', none: '#6e59c9' };
 const TAPE = { z0: FLOOR.width / 2 + 0.01, width: 0.1 };
 
@@ -247,15 +247,13 @@ export function createFloor(surfaces) {
       x1 = to;
       apply();
     },
-    get extent() {
-      return [x0, x1];
-    },
   };
 }
 
 /**
  * The measuring tape beside the floor, from 0 m on: a tick every 10 cm (longer at 50 cm), the metres numbered
- * ("১ মি"). Ticks and numbers are made only near the camera (show(from, to)), so it can run on for ever.
+ * ("১ মি"). Ticks and numbers are made only where the camera looks (show(from, to)), so it can run on for ever; a
+ * long stretch (the view down the lane) gets a tick every 50 cm or metre and a number every metre or five.
  */
 export function createTape({ t }) {
   const group = new THREE.Group();
@@ -264,7 +262,7 @@ export function createTape({ t }) {
   const strip = new THREE.Mesh(new THREE.BoxGeometry(1, 0.002, TAPE.width), tapeMat);
   group.add(strip);
   const ink = new THREE.MeshBasicMaterial({ name: 'TapeInk', color: '#2b2b2b', toneMapped: false });
-  const MAX = 120;
+  const MAX = 160;
   const ticks = new THREE.InstancedMesh(new THREE.BoxGeometry(0.0022, 0.0006, 1), ink, MAX);
   ticks.count = 0;
   ticks.frustumCulled = false;
@@ -294,16 +292,20 @@ export function createTape({ t }) {
     return g;
   }
 
-  let shown = [Number.NaN, Number.NaN];
+  let shown = '';
   function show(from, to) {
     const a = Math.max(0, Math.floor(from * 10) / 10);
     const b = Math.max(a, Math.ceil(to * 10) / 10);
-    if (a === shown[0] && b === shown[1]) return;
-    shown = [a, b];
-    strip.scale.x = Math.max(0.001, b - a + 0.1);
+    const span = b - a;
+    const tick = span > 40 ? 10 : span > 12 ? 5 : 1; // in tenths of a metre
+    const every = span > 25 ? 5 : 1; // metres between numbers
+    const key = `${a}|${b}|${tick}`;
+    if (key === shown) return;
+    shown = key;
+    strip.scale.x = Math.max(0.001, span + 0.1);
     strip.position.set((a + b) / 2, 0.001, zEdge + TAPE.width / 2);
     let n = 0;
-    for (let i = Math.round(a * 10); i <= Math.round(b * 10) && n < MAX; i++) {
+    for (let i = Math.ceil((a * 10) / tick) * tick; i <= Math.round(b * 10) && n < MAX; i += tick) {
       const len = i % 10 === 0 ? 0.04 : i % 5 === 0 ? 0.028 : 0.016;
       m.makeScale(1, 1, len).setPosition(i / 10, 0.0024, zEdge + len / 2);
       ticks.setMatrixAt(n++, m);
@@ -311,13 +313,13 @@ export function createTape({ t }) {
     ticks.count = n;
     ticks.instanceMatrix.needsUpdate = true;
     for (const [k, g] of numbers)
-      if (k < a - 0.5 || k > b + 0.5) {
+      if (k < a - 0.5 || k > b + 0.5 || k % every) {
         group.remove(g);
         for (const p of g.children) p.geometry.dispose();
         numbers.delete(k);
       }
     for (let k = Math.ceil(a); k <= Math.floor(b); k++) {
-      if (numbers.has(k)) continue;
+      if (numbers.has(k) || k % every) continue;
       const g = numberMesh(k);
       g.position.set(k + 0.012, 0.0026, zEdge + 0.068);
       group.add(g);
@@ -327,27 +329,32 @@ export function createTape({ t }) {
   return { group, show };
 }
 
-/** The marks the book leaves every STEP s (small dark dots along the middle of the floor). */
-export function createMarks(max = 120) {
-  const mat = new THREE.MeshBasicMaterial({ name: 'Marks', color: '#34404e', toneMapped: false });
-  const geo = new THREE.CylinderGeometry(0.0085, 0.0085, 0.001, 16);
+/**
+ * The marks the book leaves every STEP s (small dark dots along the middle of the floor, under the book's middle):
+ * add(x) one more; only the last `max` are kept (a ring), so a book that never stops can go on leaving them.
+ */
+export function createMarks(max = 400) {
+  const mat = new THREE.MeshBasicMaterial({ name: 'Marks', color: '#2f3b4a', toneMapped: false });
+  const geo = new THREE.CylinderGeometry(0.0065, 0.0065, 0.001, 14);
   const mesh = new THREE.InstancedMesh(geo, mat, max);
   mesh.name = 'Marks';
   mesh.count = 0;
   mesh.frustumCulled = false;
   const m = new THREE.Matrix4();
+  let added = 0;
   return {
     mesh,
-    step: STEP,
-    max,
-    /** xs: positions (m) of the marks to show; only the last `max` are kept. */
-    set(xs, z = 0) {
-      const list = xs.length > max ? xs.slice(xs.length - max) : xs;
-      list.forEach((x, i) => mesh.setMatrixAt(i, m.makeTranslation(x, 0.0012, z)));
-      mesh.count = list.length;
+    get added() {
+      return added;
+    },
+    add(x) {
+      mesh.setMatrixAt(added % max, m.makeTranslation(x, 0.0012, 0));
+      added++;
+      mesh.count = Math.min(added, max);
       mesh.instanceMatrix.needsUpdate = true;
     },
     clear() {
+      added = 0;
       mesh.count = 0;
     },
   };

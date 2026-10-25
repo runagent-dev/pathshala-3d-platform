@@ -1,13 +1,12 @@
 /* Newton's first law: the page, the floor chips, the two readouts, the line that says what is happening, and the
    colours that carry meaning: বেগ blue, ঘর্ষণ crimson, ধাক্কা orange (the same as src/arrows.js); each floor has its
-   own colour for its stop post (src/floor.js). The student view itself is ../../shared/lib/student/student.css. */
+   own colour for the dashed line where the book stopped (src/floor.js). The student view itself is
+   ../../shared/lib/student/student.css. */
 html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
 #app { position: fixed; inset: 0; }
 body.bg-transparent { background: transparent; }
 
-.nf { --c-vel: #1c6fd9; --c-fric: #c2255c; --c-push: #e8590c; --c-none: #6e59c9; }
-.nf .c-vel { color: var(--c-vel); }
-.nf .c-fric { color: var(--c-fric); }
+.nf { --c-vel: #1c6fd9; --c-none: #6e59c9; }
 
 /* the four floors */
 .nf-chips { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
@@ -43,6 +42,8 @@ body.bg-transparent { background: transparent; }
 .nf-badge { position: absolute; left: 10px; top: 10px; z-index: 5; max-width: calc(100% - 240px); padding: 4px 9px; border-radius: 6px; border: 1px solid color-mix(in srgb, var(--c-none) 45%, var(--line)); background: rgba(255, 255, 255, 0.94); color: var(--c-none); font-size: 13px; font-weight: 600; line-height: 1.4; pointer-events: none; }
 .nf-badge b, .nf-badge span { white-space: nowrap; font-weight: 600; }
 .nf-badge b { font-weight: 700; }
+/* in the test the locked hint sits at the top of the view, clear of the scene's answers (paths, letters) */
+.nf[data-mode='quiz'] .pvc-stage[data-ui='simple'] .pvc-hint { top: 54px; bottom: auto; }
 /* labels come and go with what they name, at once (a fading ধাক্কা label would outlive the push) */
 .nf-label { --c: var(--accent); font-size: 14px; font-weight: 700; padding: 1px 7px; transition: none; }
 .nf .pvc-anno-part.nf-label { color: var(--c); border-color: color-mix(in srgb, var(--c) 50%, var(--line)); }
@@ -83,17 +84,17 @@ body.bg-transparent { background: transparent; }
 @container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
   .nf-chips { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; }
   .nf-chips button { min-height: 0; height: 40px; padding: 0 6px; gap: 0; }
-  .nf-chip-top { font-size: 13.5px; }
-  .nf-res { font-size: 12px; line-height: 1.2; }
-  .nf-q b { font-size: 21px; }
-  .nf-q small { font-size: 13px; }
-  .nf-say { min-height: 6em; font-size: 13px; line-height: 1.45; }
+  .nf-chip-top { font-size: 14px; }
+  .nf-res { font-size: 12.5px; line-height: 1.2; }
+  .nf-q b { font-size: 23px; }
+  .nf-q small { font-size: 14px; }
+  .nf-say { min-height: 7.25em; font-size: 14px; line-height: 1.45; }
   .nf-acts { flex-wrap: nowrap; gap: 6px; }
-  .nf-acts .pvc-btn { height: 36px; font-size: 14px; padding: 0 9px; }
+  .nf-acts .pvc-btn { height: 38px; font-size: 14.5px; padding: 0 9px; }
   .nf-acts [data-act='push'] { min-width: 0; flex: 1; }
   .nf .pvc-q-text { font-size: 14.5px; }
-  .nf .pvc-opt { font-size: 13px; height: 40px; }
-  .nf .pvc-q-feedback { font-size: 12.5px; min-height: 5.8em; }
+  .nf .pvc-opt { font-size: 13.5px; height: 42px; }
+  .nf .pvc-q-feedback { font-size: 13px; min-height: 5.8em; }
 }
 /* a narrow side panel: the buttons without their pictures, so the words fit */
 @container pvc-panel (max-width: 290px) {

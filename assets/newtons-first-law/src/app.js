@@ -1,10 +1,12 @@
 // Newton's first law (book page 64, topic 3.1), student view: a physics textbook waits on a launcher. One tap gives
-// it the same push every time (it leaves the launcher at 3 m/s) onto the floor chosen in the panel: a jute mat, a
-// wooden floor, ice, or an imagined floor with no friction. With friction it slows evenly and stops, farther on
-// smoother floors (a dashed line marks each stop, the chips keep the distances); with no friction its velocity never
-// changes: the speed stays 3.00 m/s, the marks it leaves every 0.1 s stay evenly spaced, and the camera follows it
-// for ever. Arrows show the velocity (blue), friction against it (crimson) and the push (orange, only while the
-// paddle touches the book). Then a short test. Built on the shared student kit (@shared/student/…).
+// it the same push every time (a spring squeezed to the same notch; it leaves at 3 m/s) onto the floor chosen in the
+// panel: a jute mat, a wooden floor, ice, or an imagined floor with no friction. With friction it slows evenly and
+// stops, farther on smoother floors; then the camera pulls back to look down the lane from behind the launcher, so
+// every floor's stop (a dashed line, "মাদুর ১.৩১ মি") is seen at once. With no friction its velocity never changes:
+// the speed stays 3.00 m/s, the marks it leaves every 0.05 s stay evenly spaced, the camera follows it, and once it
+// is past the ice's stop the view pulls back and watches it go on for ever. Arrows show the velocity (blue),
+// friction against it (crimson) and the push (orange, only while the paddle touches the book). Then a short test.
+// Built on the shared student kit (@shared/student/…).
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
 import { createTweener, ease } from '@shared/tween.js';
@@ -24,13 +26,16 @@ import { fitPose } from './camera.js';
 import {
   BOOK,
   CURVE,
+  G,
   PUSH,
+  STEP,
   SURFACE_IDS,
   SURFACES,
+  V0,
+  brakeAt,
   candidatePaths,
   curveAt,
   curveEnd,
-  markTimes,
   round,
   runAt,
   stopDistance,
@@ -40,7 +45,7 @@ import {
 export const DEFAULTS = {
   surface: 'mat', // 'mat' | 'wood' | 'ice' | 'none'
   at: '', // s after the release: start with the book already pushed (for pictures)
-  tried: '', // floors already tried, e.g. 'mat,wood' (their stop marks and distances show)
+  tried: '', // floors already tried, e.g. 'mat,wood' (their stop lines and distances show)
   view: 'front', // 'front' | '3d'
   mode: 'explore', // 'explore' | 'quiz'
   coach: true,
@@ -51,17 +56,22 @@ export const DEFAULTS = {
   sound: true,
 };
 
+const FRICTION_IDS = ['mat', 'wood', 'ice'];
 const VEL_SCALE = 0.08; // m of arrow per m/s
-const FRICTION_SCALE = 0.7; // m of arrow per unit of μ (friction = μ × weight)
-const FOLLOW_AT = -0.04; // the camera starts following once the book's front passes this x (room behind for the mat's friction arrow)
+const FORCE_SCALE = 0.7 / G; // m of arrow per m/s² of the force it gives the book (the mat's friction: 0.245 m)
+const PUSH_ARROW = 0.34; // m: the push (15 m/s²) is the biggest force, so the longest arrow (not to the same scale)
+const BRAKE_ACC = 4; // m/s²: the steady force that stops the book in one test question
+const PASS_ICE = stopDistance(SURFACES.ice.mu) + 0.4; // m: past the ice's stop, the view pulls back
 const DOUBLE_TAP = 450; // ms: a second push request this soon after one is ignored
-// the side view: portrait frames look down more (the floor fills more of the height), wide frames look lower
-const ELEVATION = [52, 26]; // degrees, portrait … wide
-const YAW = 0; // degrees: straight from the side, so the floor runs level across the view
+const LANE_LEFT = -0.63; // the side view starts here (the paddle just inside the left edge, the plate behind it off screen)
+const FOLLOW_SHARE = 0.66; // once followed, the book's front stays this far across the view (room for both arrows)
+const ELEVATION = [58, 18]; // degrees: the side view looks down as steeply as the frame allows, within these
 const VIEW_3D = new THREE.Vector3(-0.62, 0.62, 0.82).normalize();
-// what the side view must show at the start: the paddle, the book, the floor's start and the tape
-const HOME_BOX = new THREE.Box3(new THREE.Vector3(-0.54, 0, -0.36), new THREE.Vector3(0.3, 0.06, 0.46));
-const CURVE_BOX = new THREE.Box3(new THREE.Vector3(-0.85, 0, -0.62), new THREE.Vector3(0.98, 0.05, 0.7));
+// down the lane from behind the launcher (portrait frames), more from the side on wide ones (the lane fills the width)
+const OVERVIEW_DIRS = [new THREE.Vector3(-1, 0.95, 0.5).normalize(), new THREE.Vector3(-0.42, 0.8, 1).normalize()];
+const ENDLESS_LOOK = 1.6; // s the view down the lane lasts with no friction, before it goes back beside the book
+// the curved-wall question, seen from above: the wall's end and the four paths (the run-in starts off screen)
+const CURVE_BOX = new THREE.Box3(new THREE.Vector3(-0.36, 0, -0.3), new THREE.Vector3(1.4, 0.05, 0.98));
 const PUSH_ICON = svg('<rect x="13.5" y="6.5" width="7" height="11" rx="1.2"/><path d="M3 12h7.5M7.5 8.8 10.7 12l-3.2 3.2"/>');
 
 export function createApp(root, options = {}) {
@@ -70,6 +80,7 @@ export function createApp(root, options = {}) {
   const N = t.num;
   const two = (x) => N(x.toFixed(2)); // live readouts: fixed decimals
   const plain = (x) => String(+x.toFixed(2)); // numbers in sentences: no trailing zeros
+  const about = (x) => String(+x.toFixed(1)); // "প্রায়" numbers: one decimal
 
   root.classList.add('pvc', 'nf');
   root.dataset.theme = o.bg;
@@ -98,10 +109,10 @@ export function createApp(root, options = {}) {
   ui.stage.append(badge);
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
-  const stage = createStage(ui.canvasHost, { fov: 30, near: 0.02, far: 80, environment: 'studio-light' });
+  const stage = createStage(ui.canvasHost, { fov: 24, near: 0.02, far: 150, environment: 'studio-light' });
   const { camera, controls, scene } = stage;
   controls.minDistance = 0.4;
-  controls.maxDistance = 6;
+  controls.maxDistance = 80; // the view down the lane stands far back
   controls.enablePan = false;
   controls.enableRotate = false;
   const M = createMaterials(stage.renderer);
@@ -115,7 +126,7 @@ export function createApp(root, options = {}) {
   const launcher = createLauncher({ materials: M });
   const book = createBook({ t });
   const marks = createMarks();
-  const stops = Object.fromEntries(['mat', 'wood', 'ice'].map((id) => [id, createStopMark(SURFACE_COLORS[id])]));
+  const stops = Object.fromEntries(FRICTION_IDS.map((id) => [id, createStopMark(SURFACE_COLORS[id])]));
   world.add(floor.mesh, tape.group, launcher.root, book.root, marks.mesh);
   for (const m of Object.values(stops)) world.add(m.group);
   marks.mesh.userData.noExport = true;
@@ -133,36 +144,36 @@ export function createApp(root, options = {}) {
   };
   for (const a of Object.values(arrows)) world.add(a.root);
 
-  // the test's curved-wall scene: a wide imagined floor, a quarter-circle wall, four candidate paths
+  // the test's curved-wall scene: a wide imagined floor, a quarter-circle wall, four candidate paths, a trail
   const curve = new THREE.Group();
   curve.name = 'CurveScene';
   curve.visible = false;
   curve.userData.noExport = true;
   const gridMat = surfaces.none.top.clone();
   gridMat.map = surfaces.none.top.map.clone();
-  gridMat.map.repeat.set(2.4 / 0.5, 2.4 / 0.5);
+  gridMat.map.repeat.set(8 / 0.5, 8 / 0.5);
   gridMat.map.needsUpdate = true;
-  const gridFloor = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 2.4), gridMat);
+  const gridFloor = new THREE.Mesh(new THREE.PlaneGeometry(8, 8), gridMat);
   gridFloor.rotation.x = -Math.PI / 2;
-  gridFloor.position.set(0.05, -0.0005, 0.05);
+  gridFloor.position.set(0.5, -0.0005, 0.3);
   curve.add(gridFloor);
   const wall = (() => {
     const inner = CURVE.r + BOOK.width / 2 + 0.004;
     const outer = inner + 0.022;
-    const s = new THREE.Shape();
+    const sh = new THREE.Shape();
     const n = 40;
     const a0 = -0.08;
     const a1 = Math.PI / 2;
     for (let i = 0; i <= n; i++) {
       const a = a0 + ((a1 - a0) * i) / n;
       const p = [outer * Math.sin(a), -outer * Math.cos(a)];
-      i ? s.lineTo(p[0], p[1]) : s.moveTo(p[0], p[1]);
+      i ? sh.lineTo(p[0], p[1]) : sh.moveTo(p[0], p[1]);
     }
     for (let i = n; i >= 0; i--) {
       const a = a0 + ((a1 - a0) * i) / n;
-      s.lineTo(inner * Math.sin(a), -inner * Math.cos(a));
+      sh.lineTo(inner * Math.sin(a), -inner * Math.cos(a));
     }
-    const g = new THREE.ExtrudeGeometry(s, { depth: 0.05, bevelEnabled: false, curveSegments: 1 });
+    const g = new THREE.ExtrudeGeometry(sh, { depth: 0.05, bevelEnabled: false, curveSegments: 1 });
     g.rotateX(Math.PI / 2);
     g.translate(0, 0.05, 0);
     const mesh = new THREE.Mesh(g, M.wood);
@@ -170,9 +181,10 @@ export function createApp(root, options = {}) {
     return mesh;
   })();
   curve.add(wall);
-  const wallMid = new THREE.Vector3((CURVE.r + 0.12) * Math.sin(Math.PI / 4), 0.05, -(CURVE.r + 0.12) * Math.cos(Math.PI / 4));
+  const wallMid = new THREE.Vector3((CURVE.r + 0.12) * Math.sin(Math.PI / 3), 0.05, -(CURVE.r + 0.12) * Math.cos(Math.PI / 3));
   const options4 = Array.from({ length: 4 }, () => createDottedPath());
-  for (const p of options4) curve.add(p.mesh);
+  const trail = createDottedPath({ color: '#98a3b3', max: 120, radius: 0.0048 });
+  for (const p of [...options4, trail]) curve.add(p.mesh);
   world.add(curve);
 
   const tweener = createTweener();
@@ -219,13 +231,15 @@ export function createApp(root, options = {}) {
   const s = {
     surface: SURFACE_IDS.includes(o.surface) ? o.surface : 'mat',
     view: o.view === '3d' ? '3d' : 'front',
+    cam: 'side', // 'side' (beside the book, following it) | 'overview' (down the lane, every stop in view)
     mode: 'explore',
     locked: false,
     scene: 'lane', // 'lane' | 'curve' (a test question)
-    run: null, // { surface, mu, t0, state: 'push' | 'slide' | 'stopped', stopped: Promise }
+    run: null, // { surface, mu, t0, state, brake: { since, x } | null, stopped: Promise, quiet }
+    restAt: null, // where the book waits when it is not on the launcher (a test question), else null
     results: { mat: null, wood: null, ice: null, none: null }, // stop distance (m), or Infinity (never stops)
-    follow: 0, // m the camera has moved along with the book
-    forces: true, // the arrows show (the test hides them until the answer)
+    follow: 0, // m the side view has moved along with the book
+    forces: true, // the force arrows show (the test hides them until the answer; the velocity always shows)
     userMovedCamera: false,
   };
   const now = () => performance.now();
@@ -236,56 +250,81 @@ export function createApp(root, options = {}) {
   let token = 0; // bumped by anything that calls off what is pending (new push, floor, test, reset)
   let lastPush = Number.NEGATIVE_INFINITY;
 
-  /** The book, the paddle and the arrows at the run's time (s since the paddle started), or at rest. */
+  /** The run at t s after the paddle started: the push, the slide, a test's steady stopping force, the stop. */
+  function runState(run, t) {
+    const st = runAt(t, run.mu);
+    if (!run.brake || st.since < run.brake.since) return st;
+    const b = brakeAt(st.since - run.brake.since, V0, BRAKE_ACC);
+    return { phase: b.moving ? 'brake' : 'stopped', x: run.brake.x + b.dx, v: b.v, since: st.since };
+  }
+  /** s after the release when the run comes to rest (Infinity: never). */
+  const endSince = (run) => (run.brake ? run.brake.since + V0 / BRAKE_ACC : stopTime(run.mu));
   function state() {
     const run = s.run;
-    if (!run) return { phase: 'rest', x: restX, v: 0, since: null };
-    return runAt(Math.max(0, (now() - run.t0) / 1000), run.mu);
+    if (!run) return { phase: 'rest', x: s.restAt ?? restX, v: 0, since: null };
+    return runState(run, Math.max(0, (now() - run.t0) / 1000));
   }
 
   const tmpA = new THREE.Vector3();
-  const tmpB = new THREE.Vector3();
   const XP = new THREE.Vector3(1, 0, 0);
   const XN = new THREE.Vector3(-1, 0, 0);
   function placeLane(st) {
     book.root.position.set(st.x, 0, 0);
     book.root.rotation.set(0, 0, 0);
-    launcher.setPaddle(st.phase === 'push' ? st.x - BOOK.length : paddleX());
-    const show = s.forces && s.scene === 'lane';
+    launcher.setPaddle(st.phase === 'push' ? st.x - BOOK.length : paddleBack ? launcher.restBack : launcher.stopBack);
+    const lane = s.scene === 'lane';
+    const forces = s.forces && lane;
     // velocity: from the front edge, at half the book's height
-    if (show && st.v > 0.005) arrows.velocity.set(tmpA.set(st.x + 0.004, BOOK.thick * 0.55, 0), XP, st.v * VEL_SCALE);
+    if (lane && st.v > 0.005) arrows.velocity.set(tmpA.set(st.x + 0.004, BOOK.thick * 0.55, 0), XP, st.v * VEL_SCALE);
     else arrows.velocity.hide();
     // friction: at the floor, from the back edge, backward, while it slides on a floor with friction
     const mu = SURFACES[s.run?.surface ?? s.surface].mu;
-    if (show && st.phase === 'slide' && mu > 0) arrows.friction.set(tmpB.set(st.x - BOOK.length - 0.004, 0.009, 0), XN, mu * FRICTION_SCALE);
+    if (forces && st.phase === 'slide' && mu > 0) arrows.friction.set(tmpA.set(st.x - BOOK.length - 0.004, 0.012, 0.045), XN, mu * G * FORCE_SCALE);
     else arrows.friction.hide();
-    // the push: above the paddle, onto the book's back, only while the paddle touches it
-    if (show && st.phase === 'push') arrows.push.set(tmpA.set(st.x - BOOK.length - 0.13, BOOK.thick + 0.03, 0), XP, 0.16);
+    // the push: from the paddle forward over the book, only while the paddle touches it; the test's stopping force:
+    // over the book, backward
+    if (forces && st.phase === 'push') arrows.push.set(tmpA.set(st.x - BOOK.length - 0.06, BOOK.thick + 0.045, 0), XP, PUSH_ARROW);
+    else if (forces && st.phase === 'brake') arrows.push.set(tmpA.set(st.x + 0.03, BOOK.thick + 0.045, 0), XN, BRAKE_ACC * FORCE_SCALE);
     else arrows.push.hide();
-    // the marks every 0.1 s, under the middle of the book (the last few hundred: older ones are far behind)
-    if (st.since != null && st.since >= 0) {
-      const mu2 = s.run.mu;
-      marks.set(markTimes(st.since, mu2, undefined, marks.max).map((tt) => runAt(tt + PUSH.time, mu2).x - BOOK.length / 2));
-    } else marks.clear();
-    // the camera follows the book once it is well on its way (and stays when it stops)
-    if (s.run) setFollow(Math.max(s.follow, st.x - FOLLOW_AT));
+    syncMarks(st);
+    // the side view follows the book once it is well across (and stays when it stops)
+    if (s.run && s.cam === 'side') setFollow(Math.max(s.follow, st.x - followAt()));
+    else if (s.cam === 'overview') setFollow(s.follow);
+  }
+
+  /** The marks the book leaves every STEP s, added as it gets there (none before the release). */
+  function syncMarks(st) {
+    const run = s.run;
+    if (!run || st.since == null || st.since < 0) {
+      if (marks.added) marks.clear();
+      return;
+    }
+    const end = Math.min(st.since, endSince(run));
+    while (marks.added * STEP <= end + 1e-9) marks.add(runState(run, marks.added * STEP + PUSH.time).x - BOOK.length / 2);
   }
 
   // the paddle's place when the book is not being pushed: at its stops after a push, else in its notch
   let paddleBack = true;
-  const paddleX = () => (paddleBack ? launcher.restBack : launcher.stopBack);
 
+  /** The side view has moved f m along the lane; the floor and the tape run on ahead of what the camera sees. */
   function setFollow(f) {
     const d = f - s.follow;
-    if (Math.abs(d) > 1e-9) {
+    if (Math.abs(d) > 1e-9 && s.cam === 'side') {
       camera.position.x += d;
       controls.target.x += d;
       controls.update();
-      s.follow = f;
     }
-    floor.setExtent(FLOOR.start, Math.max(4, f + 6));
-    tape.show(Math.max(0, f - 1.6), f + 4.5);
-    placeSun(f);
+    s.follow = f;
+    if (s.cam === 'overview') {
+      const x = state().x;
+      floor.setExtent(FLOOR.start, Math.max(14, x + 30));
+      tape.show(0, Math.min(30, Math.max(13, x + 3)));
+      placeSun(x);
+    } else {
+      floor.setExtent(FLOOR.start, Math.max(4, f + 6));
+      tape.show(Math.max(0, f - 1.6), f + 4.5);
+      placeSun(f);
+    }
     stage.invalidate();
   }
 
@@ -293,27 +332,50 @@ export function createApp(root, options = {}) {
     const mu = SURFACES[s.surface].mu;
     const t0 = at == null ? now() : now() - (PUSH.time + at) * 1000;
     let stopped;
-    s.run = { surface: s.surface, mu, t0, state: 'push', stopped: new Promise((r) => (stopped = r)), resolve: () => stopped(true), quiet };
+    s.run = {
+      surface: s.surface,
+      mu,
+      t0,
+      state: 'push',
+      brake: null,
+      stopped: new Promise((r) => (stopped = r)),
+      resolve: () => stopped(true),
+      quiet,
+    };
     paddleBack = false;
+    launcher.setLatch(false);
+    marks.clear();
     if (!quiet) audio.pop();
     emit('push', { surface: s.surface });
     tick(true);
   }
 
   /**
-   * Back to the start: the book waits on the plate again, the paddle in its notch, the camera flies back. Resolves
-   * true if nothing else came first. own: false when push() calls it (push keeps its own token).
+   * Back to the start: the book waits on the plate again, the paddle in its notch, the camera flies back beside it.
+   * Resolves true if nothing else came first. own: false when push() calls it (push keeps its own token).
    */
   async function goHome({ animate = true, own = true } = {}) {
     const my = own ? ++token : token;
     if (s.run) s.run.resolve();
     s.run = null;
+    s.restAt = null;
     marks.clear();
-    const from = s.follow;
     paddleBack = true;
+    launcher.setLatch(true);
+    tweener.cancel('overview');
+    const wasOverview = s.cam === 'overview';
+    const from = s.follow;
+    s.cam = 'side';
     placeLane(state());
     refresh();
     emitChange();
+    if (wasOverview) {
+      s.follow = 0;
+      setFollow(0);
+      controls.enableRotate = s.view === '3d' && s.scene === 'lane';
+      const done = await flyTo(viewPose(), animate ? 0.9 : 0);
+      return done !== false && my === token;
+    }
     if (!animate || from < 0.01) {
       tweener.cancel('follow');
       setFollow(0);
@@ -343,7 +405,7 @@ export function createApp(root, options = {}) {
     }
     const my = ++token;
     const glide = animate && at == null;
-    if (s.run || s.follow > 0.001) {
+    if (s.run || s.follow > 0.001 || s.cam !== 'side' || s.restAt != null) {
       if (!(await goHome({ animate: glide, own: false }))) return;
       if (glide) await wait(120);
       if (my !== token) return; // overtaken while going back
@@ -365,33 +427,63 @@ export function createApp(root, options = {}) {
     if (st.phase !== run.state) {
       run.state = st.phase;
       if (st.phase === 'stopped') {
-        const d = round(stopDistance(run.mu), 2);
-        s.results[run.surface] = d;
-        stops[run.surface]?.place(d);
+        if (!run.brake) {
+          const d = round(stopDistance(run.mu), 2);
+          s.results[run.surface] = d;
+          stops[run.surface]?.place(d);
+          emit('stop', { surface: run.surface, distance: d });
+          if (s.mode === 'explore') pullBackSoon(run);
+        }
         if (!run.quiet) audio.contact();
         run.resolve();
-        emit('stop', { surface: run.surface, distance: d });
       }
       emitChange();
     }
-    if (run.mu === 0 && st.since > 2 && s.results.none == null) {
-      s.results.none = Number.POSITIVE_INFINITY; // it has outrun every floor with friction: it never stops
-      emitChange();
+    if (run.mu === 0 && !run.brake && st.x > PASS_ICE) {
+      if (s.results.none == null) {
+        s.results.none = Number.POSITIVE_INFINITY; // past the ice's stop and still at 3 m/s: it never stops
+        emitChange();
+      }
+      if (!run.pulledBack && s.mode === 'explore' && s.cam === 'side') {
+        // a look down the lane: it has passed every floor's stop and is still at 3 m/s; then back beside it
+        run.pulledBack = true;
+        const my = token;
+        showOverview({ duration: 1 }).then((done) => {
+          if (!done) return;
+          setTimeout(() => {
+            if (my === token && s.run === run && s.cam === 'overview') setView(s.view, { duration: 1 });
+          }, ENDLESS_LOOK * 1000);
+        });
+      }
     }
     refresh();
     return st.phase !== 'stopped';
   }
   stage.addTicker(() => tick());
 
+  /** A moment after a stop the view pulls back down the lane (unless the student has done something else). */
+  function pullBackSoon(run) {
+    const my = token;
+    setTimeout(() => {
+      if (my === token && s.run === run && s.mode === 'explore' && s.cam === 'side' && !s.userMovedCamera) showOverview();
+    }, 900);
+  }
+
   // ── labels on the scene ─────────────────────────────────────────────────────
-  const pinPoint = Object.fromEntries(['mat', 'wood', 'ice'].map((id) => [id, () => stops[id].top]));
+  const pinPoint = Object.fromEntries(FRICTION_IDS.map((id) => [id, () => stops[id].top]));
   // each arrow's label beside its middle or its tip (whichever has room), never on the arrow
   const velPoints = [() => arrows.velocity.mid, () => arrows.velocity.end];
   const fricPoints = [() => arrows.friction.end, () => arrows.friction.mid];
   const pushPoints = [() => arrows.push.mid];
+  const trailPoint = new THREE.Vector3();
+  // the dots' caption: on the floor behind the book, nearer the viewer than the arrows (clear of the book)
+  const marksPoints = [() => trailPoint.set(book.root.position.x - BOOK.length - 0.08, 0, 0.17)];
+  const bookPoint = new THREE.Vector3();
+  const bookPoints = [() => bookPoint.set(book.root.position.x - BOOK.length / 2, BOOK.thick, 0)];
   function labelsFor() {
     if (s.scene !== 'lane') return;
-    if (arrows.velocity.visible)
+    const side = s.cam === 'side';
+    if (arrows.velocity.visible && side)
       labels.set('vel', {
         text: t('l_velocity'),
         point: velPoints,
@@ -406,7 +498,7 @@ export function createApp(root, options = {}) {
         leader: false,
       });
     else labels.hide('vel');
-    if (arrows.friction.visible)
+    if (arrows.friction.visible && side)
       labels.set('fric', {
         text: t('l_friction'),
         point: fricPoints,
@@ -422,9 +514,9 @@ export function createApp(root, options = {}) {
         leader: false,
       });
     else labels.hide('fric');
-    if (arrows.push.visible)
+    if (arrows.push.visible && side)
       labels.set('push', {
-        text: t('l_push'),
+        text: t(state().phase === 'brake' ? 'l_force' : 'l_push'),
         point: pushPoints,
         spots: [
           [0, -10],
@@ -436,21 +528,54 @@ export function createApp(root, options = {}) {
         leader: false,
       });
     else labels.hide('push');
-    for (const id of ['mat', 'wood', 'ice']) {
+    // what the dots are, under the trail behind the book, while it leaves them
+    if (side && marks.added >= 4 && s.run && s.mode === 'explore')
+      labels.set('marks', {
+        text: t('l_marks', { s: STEP }),
+        point: marksPoints,
+        spots: [
+          [0, 0],
+          [-6, 0],
+          [6, 0],
+        ],
+        priority: 0,
+        color: '#4b5766',
+        kind: 'part',
+        leader: false,
+      });
+    else labels.hide('marks');
+    // seen from far behind, the gliding book is small: say where it is (a stopped one sits on its labelled line)
+    if (!side && s.run?.mu === 0)
+      labels.set('book', {
+        text: t('l_book'),
+        point: bookPoints,
+        spots: [
+          [10, -10],
+          [-10, -10],
+          [10, 10],
+          [-10, 10],
+        ],
+        priority: 7,
+        color: '#2f7a43',
+        leader: true,
+      });
+    else labels.hide('book');
+    for (const id of FRICTION_IDS) {
       if (s.results[id] == null || !stops[id].group.visible) {
         labels.hide(`pin-${id}`);
         continue;
       }
       labels.set(`pin-${id}`, {
-        text: t(`chip_${id}`),
+        text: t('pin', { name: t(`chip_${id}`), d: plain(s.results[id]) }),
         point: pinPoint[id],
         spots: [
           [0, -8],
           [0, -24],
           [6, -6],
           [-6, -6],
+          [0, 8],
         ],
-        priority: 1,
+        priority: side ? 1 : 6,
         color: SURFACE_COLORS[id],
         leader: true,
       });
@@ -460,21 +585,36 @@ export function createApp(root, options = {}) {
   /** The book and its arrows: boxes on the screen that no label may cover (read after the frame is drawn). */
   const corners = Array.from({ length: 8 }, () => new THREE.Vector3());
   const tmpBox = new THREE.Box3();
-  function screenBox(obj) {
+  const blockersList = [];
+  function screenBox(obj, out) {
     tmpBox.setFromObject(obj);
     if (tmpBox.isEmpty()) return null;
     let i = 0;
     for (const x of [tmpBox.min.x, tmpBox.max.x])
       for (const y of [tmpBox.min.y, tmpBox.max.y]) for (const z of [tmpBox.min.z, tmpBox.max.z]) corners[i++].set(x, y, z).project(camera);
-    const xs = corners.map((c) => (c.x * 0.5 + 0.5) * stage.width);
-    const ys = corners.map((c) => (-c.y * 0.5 + 0.5) * stage.height);
-    return { l: Math.min(...xs), t: Math.min(...ys), r: Math.max(...xs), b: Math.max(...ys) };
+    out.l = Number.POSITIVE_INFINITY;
+    out.t = Number.POSITIVE_INFINITY;
+    out.r = Number.NEGATIVE_INFINITY;
+    out.b = Number.NEGATIVE_INFINITY;
+    for (const c of corners) {
+      const x = (c.x * 0.5 + 0.5) * stage.width;
+      const y = (-c.y * 0.5 + 0.5) * stage.height;
+      out.l = Math.min(out.l, x);
+      out.r = Math.max(out.r, x);
+      out.t = Math.min(out.t, y);
+      out.b = Math.max(out.b, y);
+    }
+    return out;
   }
   const bookShape = book.root.children[0];
+  const boxes = Array.from({ length: 4 }, () => ({ l: 0, t: 0, r: 0, b: 0 }));
   function sceneBlockers() {
-    const list = [screenBox(bookShape)];
-    for (const a of Object.values(arrows)) if (a.visible) list.push(screenBox(a.root));
-    return list.filter(Boolean);
+    blockersList.length = 0;
+    const b = screenBox(bookShape, boxes[0]);
+    if (b) blockersList.push(b);
+    let i = 1;
+    for (const a of Object.values(arrows)) if (a.visible && screenBox(a.root, boxes[i])) blockersList.push(boxes[i++]);
+    return blockersList.slice();
   }
 
   // ── the panel ───────────────────────────────────────────────────────────────
@@ -488,31 +628,32 @@ export function createApp(root, options = {}) {
   };
 
   function sayKey(st) {
-    if (!s.run) return s.surface === 'none' ? ['x_rest_none'] : ['x_rest'];
+    if (!s.run) return [s.surface === 'none' ? 'x_rest_none' : 'x_rest', { v: V0 }];
     // one line for the whole motion (the push lasts 0.2 s: a line of its own would only flash)
-    if (st.phase === 'push' || st.phase === 'slide') return [s.run.mu > 0 ? 'x_slide' : 'x_none'];
+    if (st.phase === 'push' || st.phase === 'slide') return [s.run.mu > 0 ? 'x_slide' : 'x_none', { v: V0 }];
+    if (st.phase === 'brake' || s.run.brake) return ['x_rest', { v: V0 }];
     return [s.run.surface === 'ice' ? 'x_stop_ice' : 'x_stop', { d: plain(stopDistance(s.run.mu)) }];
   }
   let lastSay = '';
+  let lastNote = '';
   function refresh() {
     const st = state();
     el.speed.textContent = two(st.v);
-    el.dist.textContent = two(Math.max(0, st.x));
+    el.dist.textContent = two(Math.max(0, s.restAt == null ? st.x : 0));
     const [key, vars] = sayKey(st);
     const html = t(key, vars);
     if (html !== lastSay) {
       el.say.innerHTML = html;
       lastSay = html;
     }
-    const home = !s.run;
-    el.pushLabel.textContent = t(home ? 'act_push' : 'act_again');
+    el.pushLabel.textContent = t(!s.run ? 'act_push' : 'act_again');
     for (const c of el.chips) {
       const id = c.dataset.surface;
       const on = id === s.surface;
       c.classList.toggle('on', on);
       c.setAttribute('aria-checked', String(on));
       const r = s.results[id];
-      const res = r == null ? '–' : Number.isFinite(r) ? t('res_m', { d: plain(r) }) : t('res_none');
+      const res = r == null ? '?' : Number.isFinite(r) ? t('res_m', { d: plain(r) }) : t('res_none');
       const small = c.querySelector('.nf-res');
       if (small.textContent !== res) small.textContent = res;
     }
@@ -521,7 +662,10 @@ export function createApp(root, options = {}) {
     badge.hidden = !none;
     // the honest note, in two pieces that wrap between them on a narrow stage
     const note = `<b>${t('badge_head')}</b> <span>${t(stage.width < 470 ? 'badge_none_short' : 'badge_none')}</span>`;
-    if (none && badge.innerHTML !== note) badge.innerHTML = note;
+    if (none && note !== lastNote) {
+      badge.innerHTML = note;
+      lastNote = note;
+    }
     stage.invalidate();
   }
 
@@ -532,12 +676,13 @@ export function createApp(root, options = {}) {
     );
     return {
       surface: s.surface,
-      phase: st.phase, // 'rest' | 'push' | 'slide' | 'stopped'
+      phase: st.phase, // 'rest' | 'push' | 'slide' | 'brake' (a test question) | 'stopped'
       speed: round(st.v, 2), // m/s
       distance: round(Math.max(0, st.x), 2), // m from the release point (the book's front edge)
       time: st.since == null ? null : round(Math.max(0, st.since), 2), // s since the release
       friction: SURFACES[s.run?.surface ?? s.surface].mu, // μ of the floor it is on
       results: res, // where it stopped on each floor tried (m), 'never' for the floor with no friction
+      camera: s.cam, // 'side' | 'overview'
       view: s.view,
       mode: s.mode,
     };
@@ -546,7 +691,7 @@ export function createApp(root, options = {}) {
   let lastEmitted = '';
   function emitChange() {
     const snap = snapshot();
-    const key = JSON.stringify([snap.surface, snap.phase, snap.results, snap.mode]);
+    const key = JSON.stringify([snap.surface, snap.phase, snap.results, snap.mode, snap.camera]);
     if (key === lastEmitted) return;
     lastEmitted = key;
     emit('change', snap);
@@ -569,60 +714,86 @@ export function createApp(root, options = {}) {
   // ── camera ──────────────────────────────────────────────────────────────────
   /** 0 for a portrait stage … 1 for a wide one. */
   const wideness = () => Math.min(1, Math.max(0, (stage.width / Math.max(1, stage.height) - 0.95) / 0.85));
+  /** How much floor the side view shows: the book and both its arrows, a little more on wide frames. */
+  const laneWidth = () => 0.81 + 0.39 * wideness();
+  /** Where the book's front stays once the side view follows it (x before following). */
+  const followAt = () => LANE_LEFT + FOLLOW_SHARE * laneWidth();
   /** The side view from `deg` degrees above the floor. */
   function sideDir(deg) {
     const e = THREE.MathUtils.degToRad(deg);
-    const y = THREE.MathUtils.degToRad(YAW);
-    return new THREE.Vector3(Math.sin(y) * Math.cos(e), Math.sin(e), Math.cos(y) * Math.cos(e));
+    return new THREE.Vector3(0, Math.sin(e), Math.cos(e));
   }
   const probe = new THREE.PerspectiveCamera();
-  const probePoint = new THREE.Vector3();
-  /** How much of the stage's height the box takes, seen from a pose (0…1). */
-  function heightShare(pose, box) {
+  // the side view lets the far edge of the floor run under the corner buttons (nothing there to read); the view from
+  // above keeps clear of them (the paths' letters)
+  const SIDE_MARGIN = { top: 22, bottom: 8, side: 6 };
+  const TOP_MARGIN = { top: 54, bottom: 10, side: 8 };
+  const fit = (box, dir, margin = SIDE_MARGIN) => fitPose({ box, dir, camera, width: stage.width, height: stage.height, margin });
+  const sideBox = new THREE.Box3();
+  const pA = new THREE.Vector3();
+  const pB = new THREE.Vector3();
+  /** Metres of the book's line (z = 0) seen across the whole view from a pose. */
+  function widthAtBook(pose) {
     probe.copy(camera);
     probe.position.copy(pose.position);
     probe.lookAt(pose.target);
     probe.updateMatrixWorld();
-    let lo = Number.POSITIVE_INFINITY;
-    let hi = Number.NEGATIVE_INFINITY;
-    for (const x of [box.min.x, box.max.x])
-      for (const y of [box.min.y, box.max.y])
-        for (const z of [box.min.z, box.max.z]) {
-          probePoint.set(x, y, z).project(probe);
-          lo = Math.min(lo, probePoint.y);
-          hi = Math.max(hi, probePoint.y);
-        }
-    return (hi - lo) / 2;
+    pA.set(pose.target.x, 0, 0).project(probe);
+    pB.set(pose.target.x + 1, 0, 0).project(probe);
+    return 2 / Math.max(1e-6, pB.x - pA.x);
   }
-  const homeBox = new THREE.Box3();
-  function viewPose(view = s.view) {
-    // a wide stage (wide in pixels too) shows more of the floor ahead; the book stays as big, the height limits it
-    homeBox.copy(HOME_BOX);
-    homeBox.max.x += 0.5 * wideness() * Math.min(1, Math.max(0, (stage.width - 480) / 420));
-    const box = s.scene === 'curve' ? CURVE_BOX : homeBox;
-    const fit = (dir) => fitPose({ box, dir, camera, width: stage.width, height: stage.height, margin: { top: 54, bottom: 10, side: 8 } });
-    let pose;
-    if (s.scene === 'curve') pose = fit(new THREE.Vector3(0, 1, 0.02).normalize());
-    else if (view === '3d') pose = fit(VIEW_3D);
-    else {
-      // portrait frames look down more, wide ones lower; but a wide frame with height to spare looks down more
-      // again until the floor fills half of it (a low view would leave the floor a thin strip there)
-      for (let e = ELEVATION[0] + (ELEVATION[1] - ELEVATION[0]) * wideness(); ; e += 4) {
-        pose = fit(sideDir(e));
-        if (e >= ELEVATION[0] || heightShare(pose, box) >= 0.5) break;
+  /**
+   * The side view at the start of the lane: laneWidth() of floor across the view at the book's line (the nearer tape
+   * looks wider and runs off the sides), looking down as steeply as the frame's height allows.
+   */
+  function sidePose() {
+    const want = laneWidth();
+    const c = LANE_LEFT + want / 2;
+    let pose = null;
+    for (let e = ELEVATION[0]; e >= ELEVATION[1]; e -= 2) {
+      let w = want;
+      for (let i = 0; i < 4; i++) {
+        sideBox.min.set(c - w / 2, 0, -FLOOR.width / 2 - 0.01);
+        sideBox.max.set(c + w / 2, 0.06, FLOOR.width / 2 + 0.11);
+        pose = fit(sideBox, sideDir(e));
+        w *= want / widthAtBook(pose);
       }
-    }
-    if (s.scene === 'lane') {
-      pose.position.x += s.follow;
-      pose.target.x += s.follow;
+      if (widthAtBook(pose) <= want * 1.03) break;
     }
     return pose;
   }
-  function flyTo({ position, target }, duration = 0.8) {
+  const overviewBox = new THREE.Box3();
+  /**
+   * Down the lane from behind the launcher: the start, every stop line and the book. With no friction the frame
+   * reaches far enough (18 m) to keep the gliding book in sight while the view lasts.
+   */
+  function overviewPose() {
+    let far = s.run?.mu === 0 ? 18 : 3;
+    for (const id of FRICTION_IDS) if (s.results[id] != null) far = Math.max(far, s.results[id]);
+    far = Math.max(far, state().x);
+    overviewBox.min.set(-0.7, 0, -FLOOR.width / 2);
+    overviewBox.max.set(far + 0.8, 0.1, FLOOR.width / 2 + 0.11);
+    const dir = new THREE.Vector3().lerpVectors(OVERVIEW_DIRS[0], OVERVIEW_DIRS[1], wideness()).normalize();
+    return fit(overviewBox, dir, TOP_MARGIN);
+  }
+  function viewPose(view = s.view) {
+    if (s.scene === 'curve') return fit(CURVE_BOX, new THREE.Vector3(0, 1, 0.02).normalize(), TOP_MARGIN);
+    if (s.cam === 'overview') return overviewPose();
+    const pose = view === '3d' ? fit(sideBoxFor3d(), VIEW_3D) : sidePose();
+    pose.position.x += s.follow;
+    pose.target.x += s.follow;
+    return pose;
+  }
+  function sideBoxFor3d() {
+    sideBox.min.set(LANE_LEFT, 0, -FLOOR.width / 2);
+    sideBox.max.set(LANE_LEFT + laneWidth(), 0.06, FLOOR.width / 2 + 0.11);
+    return sideBox;
+  }
+  function flyTo({ position, target }, duration = 0.8, key = 'camera') {
     const p0 = camera.position.clone();
     const t0 = controls.target.clone();
     if (!duration) {
-      tweener.cancel('camera');
+      tweener.cancel(key);
       camera.position.copy(position);
       controls.target.copy(target);
       controls.update();
@@ -632,10 +803,11 @@ export function createApp(root, options = {}) {
     // the follow may move the camera meanwhile: fly relative to it
     const f0 = s.follow;
     return tweener.animate({
-      key: 'camera',
+      key,
       duration,
+      ease: ease.inOutCubic,
       onUpdate: (k) => {
-        const df = s.follow - f0;
+        const df = s.cam === 'side' ? s.follow - f0 : 0;
         camera.position.lerpVectors(p0, position, k).x += df;
         controls.target.lerpVectors(t0, target, k).x += df;
         controls.update();
@@ -643,20 +815,40 @@ export function createApp(root, options = {}) {
       },
     }).finished;
   }
-  function setView(view, { animate = true } = {}) {
+  /** Pull back to look down the lane: every stop seen at once (not in the test). */
+  function showOverview({ animate = true, duration = 1.4 } = {}) {
+    if (s.scene !== 'lane') return Promise.resolve(false);
+    s.cam = 'overview';
+    controls.enableRotate = false;
+    setFollow(s.follow);
+    refresh();
+    emitChange();
+    emit('view', { view: s.view, camera: 'overview' });
+    return flyTo(overviewPose(), animate ? duration : 0, 'overview');
+  }
+  function setView(view, { animate = true, duration = 0.8 } = {}) {
     s.view = view === '3d' ? '3d' : 'front';
+    if (s.cam === 'overview') {
+      // back beside the book, wherever it is now
+      s.cam = 'side';
+      tweener.cancel('overview');
+      s.follow = Math.max(0, state().x - followAt());
+      setFollow(s.follow);
+    }
     controls.enableRotate = s.view === '3d' && s.scene === 'lane';
     s.userMovedCamera = false;
     syncUI();
-    emit('view', { view: s.view });
-    return flyTo(viewPose(), animate ? 0.8 : 0);
+    refresh();
+    emitChange();
+    emit('view', { view: s.view, camera: 'side' });
+    return flyTo(viewPose(), animate ? duration : 0);
   }
   controls.addEventListener('start', () => {
     s.userMovedCamera = true;
     tweener.cancel('camera');
   });
   stage.onResize(() => {
-    if (!s.userMovedCamera) flyTo(viewPose(), 0);
+    if (!s.userMovedCamera) flyTo(viewPose(), 0, s.cam === 'overview' ? 'overview' : 'camera');
     refresh();
   });
 
@@ -673,7 +865,7 @@ export function createApp(root, options = {}) {
     ndc.set((p.x / stage.width) * 2 - 1, -(p.y / stage.height) * 2 + 1);
     raycaster.setFromCamera(ndc, camera);
     if (raycaster.intersectObject(bookHit, false).length) return 'book';
-    if (raycaster.intersectObject(launcher.hit, false).length) return 'launcher';
+    if (launcher.root.visible && raycaster.intersectObject(launcher.hit, false).length) return 'launcher';
     return null;
   }
   ui.canvasHost.addEventListener(
@@ -720,7 +912,8 @@ export function createApp(root, options = {}) {
     ui.hint.classList.remove('show');
   }
   function lockedNudge() {
-    showHint(t('q_locked'), { duration: 3000 });
+    // in the test the hint sits at the top of the view (style.css), clear of the paths and their letters
+    showHint(t('q_locked'), { duration: 2400 });
     audio.error();
   }
 
@@ -729,13 +922,11 @@ export function createApp(root, options = {}) {
     s.scene = next;
     const lane = next === 'lane';
     for (const obj of [floor.mesh, tape.group, launcher.root, marks.mesh]) obj.visible = lane;
-    for (const id of ['mat', 'wood', 'ice']) stops[id].group.visible = lane && s.results[id] != null;
+    for (const id of FRICTION_IDS) stops[id].group.visible = lane && s.results[id] != null;
     curve.visible = !lane;
     if (!lane) {
       for (const a of Object.values(arrows)) a.hide();
-      labels.clear('vel');
-      labels.clear('fric');
-      labels.clear('push');
+      for (const id of ['vel', 'fric', 'push', 'marks', 'clock', 'book']) labels.remove(id);
       labels.clear('pin-');
     } else {
       labels.clear('opt');
@@ -746,20 +937,27 @@ export function createApp(root, options = {}) {
     flyTo(viewPose(), 0);
     refresh();
   }
-  /** The book on the curved-wall run, dist m along it (its centre on the path, its length along the heading). */
-  function placeCurve(dist, path = curveAt) {
-    const { x, z, heading } = path(dist);
+  const trailPoints = [];
+  /**
+   * The book on the curved-wall run, dist m along it (its centre on the path, its length along the heading; past the
+   * wall's end the run goes straight on), with a faint trail of where its middle has been.
+   */
+  function placeCurve(dist) {
+    const { x, z, heading } = curveAt(dist);
     book.root.rotation.set(0, -heading, 0);
     book.root.position.set(x + (Math.cos(heading) * BOOK.length) / 2, 0, z + (Math.sin(heading) * BOOK.length) / 2);
+    trailPoints.length = 0;
+    for (let d = 0; d <= dist - BOOK.length / 2; d += 0.02) trailPoints.push(curveAt(d));
+    trail.set(trailPoints, 0.002, 0.028);
     stage.invalidate();
   }
   /** Moves the book along the run from a to b metres at the curve's speed (resolves false if called off). */
-  function rideCurve(a, b, path = curveAt) {
+  function rideCurve(a, b) {
     return tweener.animate({
       key: 'curve',
       duration: Math.abs(b - a) / CURVE.speed,
       ease: ease.linear,
-      onUpdate: (k) => placeCurve(a + (b - a) * k, path),
+      onUpdate: (k) => placeCurve(a + (b - a) * k),
     }).finished;
   }
 
@@ -786,16 +984,28 @@ export function createApp(root, options = {}) {
     };
   }
   const item = (key, vars) => ({ key, text: t(key, vars) });
+  /** The five kinds in a random order, the two on the floor without friction never one after the other. */
+  function questionOrder() {
+    const kinds = ['predict', 'whystop', 'farther', 'curve', pickOne(['stopit', 'rest'])];
+    for (let i = 0; i < 50; i++) {
+      shuffle(kinds);
+      const a = kinds.indexOf('predict');
+      const b = kinds.findIndex((k) => k === 'stopit' || k === 'rest');
+      if (Math.abs(a - b) > 1) break;
+    }
+    return kinds;
+  }
 
   let learnSaved = null;
   let kinds = [];
   let question = null;
   let picked = -1;
 
-  /** A clean scene for a question: nothing moving, no marks, no labels left from before. */
+  /** A clean scene for a question: nothing moving, no marks, no labels left from before, the side view. */
   async function cleanScene(surface = 'none') {
     ++token;
     tweener.cancel('curve');
+    tweener.cancel('clock');
     if (s.run) s.run.resolve();
     s.run = null;
     for (const id of SURFACE_IDS) s.results[id] = null;
@@ -804,9 +1014,12 @@ export function createApp(root, options = {}) {
       p.clear();
       p.material.opacity = 1;
     }
+    trail.clear();
     labels.clear('opt');
     labels.clear('pin-');
     labels.remove('wall');
+    labels.remove('clock');
+    launcher.root.visible = true;
     s.forces = false;
     if (s.scene !== 'lane') setScene('lane');
     s.surface = surface;
@@ -814,6 +1027,45 @@ export function createApp(root, options = {}) {
     await goHome({ animate: false });
     if (s.view !== 'front') setView('front', { animate: false });
     refresh();
+  }
+
+  /** The book alone in the middle of the floor with no friction (the launcher out of sight). */
+  function restScene() {
+    s.restAt = 1.6;
+    launcher.root.visible = false;
+    s.follow = s.restAt - BOOK.length / 2 - (LANE_LEFT + laneWidth() / 2);
+    flyTo(viewPose(), 0);
+    setFollow(s.follow);
+    placeLane(state());
+    refresh();
+  }
+  const clockPoint = [() => tmpClock.set(book.root.position.x - BOOK.length / 2, BOOK.thick, 0)];
+  const tmpClock = new THREE.Vector3();
+  /** Time visibly passes: "১ সেকেন্ড পরেও এখানেই" … up to 5 s, and the book does not move. */
+  function runClock() {
+    let shownS = -1;
+    return tweener.animate({
+      key: 'clock',
+      duration: 5,
+      ease: ease.linear,
+      onUpdate: (k) => {
+        const sec = Math.min(5, Math.floor(k * 5 + 1e-6) + 1);
+        if (sec === shownS) return;
+        shownS = sec;
+        labels.set('clock', {
+          text: t('l_clock', { s: sec }),
+          point: clockPoint,
+          spots: [
+            [0, -22],
+            [0, -40],
+            [0, 26],
+          ],
+          priority: 6,
+          color: COLORS.velocity,
+          leader: true,
+        });
+      },
+    }).finished;
   }
 
   const quiz = createQuiz({
@@ -828,7 +1080,7 @@ export function createApp(root, options = {}) {
         s.mode = 'quiz';
         s.locked = true;
         hintOff();
-        kinds = shuffle(['predict', 'whystop', 'farther', 'curve', pickOne(['space', 'rest'])]);
+        kinds = questionOrder();
         syncUI();
       },
       leave() {
@@ -836,13 +1088,16 @@ export function createApp(root, options = {}) {
         s.locked = false;
         ++token;
         tweener.cancel('curve');
+        tweener.cancel('clock');
+        labels.remove('clock');
         if (s.scene !== 'lane') setScene('lane');
         s.forces = true;
+        launcher.root.visible = true;
         if (s.run) s.run.resolve();
         s.run = null;
         const saved = learnSaved || { surface: 'mat', results: { mat: null, wood: null, ice: null, none: null } };
         s.results = { ...saved.results };
-        for (const id of ['mat', 'wood', 'ice']) {
+        for (const id of FRICTION_IDS) {
           stops[id].group.visible = false;
           if (s.results[id] != null) stops[id].place(s.results[id]);
         }
@@ -862,6 +1117,20 @@ export function createApp(root, options = {}) {
           question = { kind };
           return { text: t('q_predict'), ...textChoices([item('c_keep'), item('c_slow'), item('c_stop_push'), item('c_faster')], kind) };
         }
+        if (kind === 'rest') {
+          await cleanScene('none');
+          restScene();
+          question = { kind };
+          return { text: t('q_rest'), ...textChoices([item('r_stay'), item('r_slide'), item('r_start'), item('r_steady')], kind) };
+        }
+        if (kind === 'stopit') {
+          await cleanScene('none');
+          if (!alive()) return null;
+          // it is already gliding along at 3 m/s when the question comes
+          await push({ quiet: true, animate: false, at: 0.6 });
+          question = { kind };
+          return { text: t('q_stopit'), ...textChoices([item('s_back'), item('s_nothing'), item('s_along'), item('s_remove')], kind) };
+        }
         if (kind === 'whystop') {
           const surface = pickOne(['mat', 'wood']);
           await cleanScene(surface);
@@ -877,7 +1146,7 @@ export function createApp(root, options = {}) {
           question = { kind, surface };
           return {
             text: t('q_whystop', { at: t(`at_${surface}`) }),
-            ...textChoices([item('w_friction'), item('w_used'), item('w_natural'), item('w_heavy')], kind, { surface }),
+            ...textChoices([item('w_back'), item('w_fading'), item('w_none'), item('w_both')], kind, { surface }),
           };
         }
         if (kind === 'farther') {
@@ -894,109 +1163,107 @@ export function createApp(root, options = {}) {
             target === 'ice'
               ? [item('f_more', v), item('f_never'), item('f_same', v), item('f_less_a', v)]
               : [item('f_less', v), item('f_same', v), item('f_more_c', v), item('f_still')];
-          question = { kind, target, v: { ...v, d: plain(d(target)) } };
+          question = { kind, target, v: { ...v, d: about(d(target)) } };
           refresh();
           return { text: t(target === 'ice' ? 'q_ice' : 'q_mat', v), ...textChoices(items, kind, { surface: target }) };
         }
-        if (kind === 'curve') {
-          await cleanScene('none');
-          setScene('curve');
-          placeCurve(0);
-          labels.set('wall', {
-            text: t('l_wall'),
-            point: () => wallMid,
+        // the curved wall, seen from above
+        await cleanScene('none');
+        setScene('curve');
+        placeCurve(0);
+        labels.set('wall', {
+          text: t('l_wall'),
+          point: () => wallMid,
+          spots: [
+            [10, -6],
+            [12, 0],
+            [0, -14],
+          ],
+          priority: 2,
+          color: '#7a4a1f',
+          kind: 'part',
+          leader: false,
+        });
+        if (!alive()) return null;
+        say(t('q_look'));
+        await wait(300);
+        if (!alive()) return null;
+        if (!(await rideCurve(0, curveEnd())) || !alive()) return null;
+        // the four paths from where the wall ends, lettered in a random order
+        const paths = candidatePaths();
+        const order = shuffle(['straight', 'circle', 'spiral', 'outward']);
+        order.forEach((name, j) => {
+          options4[j].set(paths[name]);
+          const pts = paths[name];
+          const end = pts[pts.length - 1];
+          const before = pts[pts.length - 6];
+          const dir = new THREE.Vector3(end.x - before.x, 0, end.z - before.z).normalize();
+          const at = new THREE.Vector3(end.x, 0.004, end.z).addScaledVector(dir, 0.035);
+          labels.set(`opt${j}`, {
+            text: letters[j],
+            point: () => at,
             spots: [
-              [10, -10],
+              [0, 0],
+              [0, 14],
               [12, 0],
+              [-12, 0],
               [0, -14],
             ],
-            priority: 2,
-            color: '#7a4a1f',
-            kind: 'part',
+            priority: 6,
+            color: COLORS.option,
             leader: false,
           });
-          if (!alive()) return null;
-          say(t('q_look'));
-          await wait(300);
-          if (!alive()) return null;
-          if (!(await rideCurve(0, curveEnd())) || !alive()) return null;
-          // the four paths from where the wall ends, lettered in a random order
-          const paths = candidatePaths();
-          const order = shuffle(['straight', 'circle', 'spiral', 'outward']);
-          order.forEach((name, j) => {
-            options4[j].set(paths[name]);
-            const pts = paths[name];
-            const end = pts[pts.length - 1];
-            const before = pts[pts.length - 6];
-            const dir = new THREE.Vector3(end.x - before.x, 0, end.z - before.z).normalize();
-            const at = new THREE.Vector3(end.x, 0.004, end.z).addScaledVector(dir, 0.03);
-            labels.set(`opt${j}`, {
-              text: letters[j],
-              point: () => at,
-              spots: [
-                [0, 0],
-                [0, 14],
-                [12, 0],
-                [-12, 0],
-                [0, -14],
-              ],
-              priority: 6,
-              color: COLORS.option,
-              leader: false,
-            });
-          });
-          question = { kind, order, expected: order.indexOf('straight') };
-          return {
-            text: t('q_curve'),
-            choices: [0, 1, 2, 3],
-            expected: question.expected,
-            tolerance: 0.5,
-            label: (j) => `<span class="nf-opt">${t('opt_path', { k: letters[j] })}</span>`,
-            meta: { kind, answer: letters[question.expected] },
-          };
-        }
-        if (kind === 'space') {
-          await cleanScene('none');
-          question = { kind };
-          return { text: t('q_space'), ...textChoices([item('p_keep'), item('p_slow'), item('p_stop'), item('p_turn')], kind) };
-        }
-        await cleanScene('none');
-        question = { kind: 'rest' };
-        return { text: t('q_rest'), ...textChoices([item('r_stay'), item('r_slide'), item('r_start'), item('r_steady')], 'rest') };
+        });
+        question = { kind: 'curve', order, expected: order.indexOf('straight') };
+        return {
+          text: t('q_curve'),
+          choices: [0, 1, 2, 3],
+          expected: question.expected,
+          tolerance: 0.5,
+          label: (j) => `<span class="nf-opt">${t('opt_path', { k: letters[j] })}</span>`,
+          meta: { kind: 'curve', answer: letters[question.expected] },
+        };
       },
       reveal(q, correct) {
         const k = question.kind;
-        const wrongKey = !correct && q.list ? q.list[picked]?.key : null;
+        const wrongKey = correct ? null : q.list ? q.list[picked]?.key : k === 'curve' ? question.order[picked] : null;
         const note = (map) => (wrongKey && map[wrongKey] ? ` ${t(map[wrongKey])}` : '');
         if (k === 'predict') {
           s.forces = true;
           push({ quiet: true });
           return t('why_predict') + note({ c_slow: 'not_slow', c_stop_push: 'not_stop_push', c_faster: 'not_faster' });
         }
+        if (k === 'rest') {
+          runClock();
+          return t('why_rest') + note({ r_slide: 'not_move', r_start: 'not_move', r_steady: 'not_steady' });
+        }
+        if (k === 'stopit') {
+          // a steady force against the velocity, from now on: the book slows to rest
+          const st = state();
+          if (s.run && st.phase === 'slide') s.run.brake = { since: st.since, x: st.x };
+          s.forces = true;
+          return t('why_stopit') + note({ s_nothing: 'not_nothing', s_along: 'not_along', s_remove: 'not_remove' });
+        }
         if (k === 'whystop') {
           s.forces = true;
           push({ quiet: true }); // again, now with the forces drawn
-          return t('why_whystop') + note({ w_used: 'not_used', w_natural: 'not_natural', w_heavy: 'not_heavy' });
+          return t('why_whystop') + note({ w_fading: 'not_fading', w_none: 'not_none', w_both: 'not_both' });
         }
         if (k === 'farther') {
           s.forces = true;
           push({ quiet: true });
           const v = question.v;
           return question.target === 'ice'
-            ? t('why_ice', v) + note({ f_never: 'not_never', f_same: 'not_same' })
-            : t('why_mat', v) + note({ f_same: 'not_same' });
+            ? t('why_ice', v) + note({ f_never: 'not_never', f_same: 'not_same', f_less_a: 'not_less_a' })
+            : t('why_mat', v) + note({ f_same: 'not_same', f_more_c: 'not_more_c', f_still: 'not_still' });
         }
-        if (k === 'curve') {
-          options4.forEach((p, j) => {
-            p.material.opacity = j === question.expected ? 1 : 0.18;
-          });
-          for (let j = 0; j < 4; j++) if (j !== question.expected) labels.remove(`opt${j}`);
-          const straight = (d) => ({ x: CURVE.r, z: d - curveEnd(), heading: Math.PI / 2 });
-          rideCurve(curveEnd(), curveEnd() + 1.6, straight);
-          return t('why_curve', { k: letters[question.expected] });
-        }
-        if (k === 'space') return t('why_space');
-        return t('why_rest') + note({ r_slide: 'not_move', r_start: 'not_move', r_steady: 'not_move' });
+        // the curved wall: the wrong paths fade, the book slides on along the right one
+        options4.forEach((p, j) => {
+          p.material.opacity = j === question.expected ? 1 : 0.18;
+        });
+        for (let j = 0; j < 4; j++) if (j !== question.expected) labels.remove(`opt${j}`);
+        rideCurve(curveEnd(), curveEnd() + 1.3);
+        return t('why_curve', { k: letters[question.expected] }) + note({ circle: 'not_circle', spiral: 'not_spiral', outward: 'not_outward' });
       },
       done() {
         s.locked = false;
@@ -1027,16 +1294,16 @@ export function createApp(root, options = {}) {
           return out;
         },
         grabbable: (p) => pick(p) != null && !s.run,
-        // the paddle draws back a little and returns, twice (no push: that is the student's)
+        // the paddle squeezes the spring a little more and lets it back, twice (no push: that is the student's)
         async demo(alive) {
           for (let i = 0; i < 2 && alive() && !s.run; i++) {
             const done = await tweener.animate({
               key: 'coach-paddle',
-              duration: 0.7,
+              duration: 0.8,
               ease: ease.inOutSine,
               onUpdate: (k) => {
                 if (!alive() || s.run) return;
-                launcher.setPaddle(launcher.restBack - 0.018 * Math.sin(Math.PI * k));
+                launcher.setPaddle(launcher.restBack - 0.035 * Math.sin(Math.PI * k));
                 stage.invalidate();
               },
             }).finished;
@@ -1124,19 +1391,27 @@ export function createApp(root, options = {}) {
   // ── start ───────────────────────────────────────────────────────────────────
   floor.setSurface(s.surface);
   setFollow(0);
-  for (const id of String(o.tried || '')
-    .split(',')
-    .map((x) => x.trim())
-    .filter((x) => SURFACE_IDS.includes(x))) {
-    s.results[id] = id === 'none' ? Number.POSITIVE_INFINITY : round(stopDistance(SURFACES[id].mu), 2);
-    if (id !== 'none') stops[id].place(s.results[id]);
+  function markTried(list) {
+    for (const id of list.map((x) => String(x).trim()).filter((x) => SURFACE_IDS.includes(x))) {
+      s.results[id] = id === 'none' ? Number.POSITIVE_INFINITY : round(stopDistance(SURFACES[id].mu), 2);
+      if (id !== 'none') stops[id].place(s.results[id]);
+    }
   }
+  markTried(String(o.tried || '').split(','));
   placeLane(state());
   setView(s.view, { animate: false });
   syncUI();
   refresh();
   const at = o.at === '' || o.at == null ? null : Number(o.at);
-  if (at != null && Number.isFinite(at)) startRun({ quiet: true, at: Math.max(0, at) });
+  if (at != null && Number.isFinite(at)) {
+    startRun({ quiet: true, at: Math.max(0, at) });
+    // a picture of a run already past the ice's stop, or stopped: the view down the lane at once
+    const st = state();
+    if ((s.run.mu === 0 && st.x > PASS_ICE) || st.phase === 'stopped') {
+      s.run.pulledBack = true;
+      showOverview({ animate: false });
+    }
+  }
   const ready = (async () => {
     if (o.mode === 'quiz') quiz.start();
     else if (at == null) coach?.start();
@@ -1153,24 +1428,21 @@ export function createApp(root, options = {}) {
     /**
      * Change any of: surface ('mat' | 'wood' | 'ice' | 'none'), tried (floors whose stops show, e.g. ['mat',
      * 'wood']), home (true: the book back at the start), push (true: the same push as the button), at (s after the
-     * release: jump the run there), view; animate: false jumps (a push lands at its stop, or 3 s on with no
-     * friction).
+     * release: jump the run there), overview (true: look down the lane), view; animate: false jumps (a push lands at
+     * its stop, or 3 s on with no friction).
      */
     async set(p = {}) {
       const animate = p.animate !== false;
       if (p.view) await setView(p.view, { animate });
       if (p.surface) await setSurface(p.surface, { animate, quiet: true });
       if (p.tried) {
-        const list = Array.isArray(p.tried) ? p.tried : String(p.tried).split(',');
-        for (const id of list.map((x) => String(x).trim()).filter((x) => SURFACE_IDS.includes(x))) {
-          s.results[id] = id === 'none' ? Number.POSITIVE_INFINITY : round(stopDistance(SURFACES[id].mu), 2);
-          if (id !== 'none') stops[id].place(s.results[id]);
-        }
+        markTried(Array.isArray(p.tried) ? p.tried : String(p.tried).split(','));
         refresh();
       }
       if (p.home) await goHome({ animate });
       if (p.at != null) await push({ quiet: true, animate: false, at: Math.max(0, Number(p.at) || 0) });
       else if (p.push) await push({ quiet: true, animate });
+      if (p.overview) await showOverview({ animate });
       emitChange();
       return snapshot();
     },
@@ -1190,7 +1462,7 @@ export function createApp(root, options = {}) {
     },
     startPractice: () => quiz.start(),
     capture: (opts) => stage.capture(opts),
-    /** The launcher, the book where it is, the floor (4 m of it) and the tape: the real objects, in metres. */
+    /** The launcher, the book where it is, the floor (4 m past the release point) and the tape, in metres. */
     exportRoot() {
       const copy = new THREE.Group();
       copy.name = 'NewtonsFirstLaw';

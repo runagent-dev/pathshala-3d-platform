@@ -74,6 +74,16 @@ describe("newton's first law: no friction", () => {
   });
 });
 
+describe("newton's first law: stopping a moving book", () => {
+  it('a steady force against the motion slows it evenly to rest: v²/(2a) later', () => {
+    const end = m.brakeAt(10, 3, 4);
+    close(end.dx, 9 / 8);
+    close(end.v, 0);
+    assert.equal(end.moving, false);
+    close(m.brakeAt(0.375, 3, 4).v, 1.5);
+  });
+});
+
 describe("newton's first law: the test's curved wall", () => {
   it('runs straight in, round a quarter circle, and out along +z at the end of the wall', () => {
     const a = m.curveAt(0);
@@ -90,14 +100,15 @@ describe("newton's first law: the test's curved wall", () => {
     }
   });
   it('the right path goes straight on from the wall’s end; the wrong ones turn or fly outward', () => {
-    const paths = m.candidatePaths(0.6);
+    const paths = m.candidatePaths(0.9);
     const straight = paths.straight.at(-1);
     close(straight.x, m.CURVE.r);
-    close(straight.z, 0.6);
+    close(straight.z, 0.9);
     const circle = paths.circle.at(-1);
     close(Math.hypot(circle.x, circle.z), m.CURVE.r, 1e-12);
     const out = paths.outward.at(-1);
-    close(out.x - m.CURVE.r, out.z); // 45° away from the centre
+    close(Math.atan2(out.z, out.x - m.CURVE.r), (15 * Math.PI) / 180); // away from the centre, 15° off the radius
+    assert.ok(out.x - m.CURVE.r > 0.85); // mostly outward
     const spiral = paths.spiral.at(-1);
     assert.ok(spiral.x < straight.x && spiral.x > circle.x); // turning, but less than the circle
     // the four ends are well apart (their letters do not crowd)

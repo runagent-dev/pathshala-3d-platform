@@ -4,7 +4,7 @@
 // same as style.css).
 import * as THREE from 'three';
 
-export const COLORS = { velocity: '#1c6fd9', friction: '#c2255c', push: '#e8590c', option: '#3f4954', right: '#12924f' };
+export const COLORS = { velocity: '#1c6fd9', friction: '#c2255c', push: '#e8590c', option: '#3f4954' };
 const UP = new THREE.Vector3(0, 1, 0);
 
 export function createArrow({ color, radius = 0.006, head = 0.034, headRadius = 0.015, name = 'Arrow' }) {

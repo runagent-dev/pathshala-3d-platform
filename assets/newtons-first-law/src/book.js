@@ -93,9 +93,5 @@ export function createBook({ t }) {
   }
   body.add(title, sub, frame);
 
-  return {
-    root,
-    /** Points on the book in its own frame (for arrows and pointers). */
-    size: { L, W, H },
-  };
+  return { root };
 }

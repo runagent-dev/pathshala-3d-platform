@@ -115,12 +115,5 @@ export function createLabels({ stage, layer, avoid = () => [], blockers = () => 
     clear(prefix = '') {
       for (const id of [...items.keys()]) if (id.startsWith(prefix)) this.remove(id);
     },
-    has: (id) => items.has(id),
-    /** The box (page pixels) of a placed label, or null. */
-    rect(id) {
-      const it = items.get(id);
-      return it?.el.classList.contains('in') ? it.el.getBoundingClientRect() : null;
-    },
-    update,
   };
 }

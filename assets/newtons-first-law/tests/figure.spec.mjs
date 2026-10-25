@@ -1,5 +1,6 @@
 // Newton's first law through the bridge (book p64, topic 3.1): a book at rest stays at rest; the same push sends it
-// 1.31 m on the mat, 2.55 m on wood, 9.18 m on ice, each slowing evenly; with no friction its velocity stays 3 m/s
+// 1.31 m on the mat, 2.55 m on wood, 9.18 m on ice, each slowing evenly (then the view looks down the lane); with no
+// friction its velocity stays 3 m/s
 // for as long as we watch; the test starts and an answer is marked; reset brings everything back.
 // Runs with `npm run test:figures` (dev-only folder, never packaged).
 import { expect, test } from '@playwright/test';
@@ -27,6 +28,9 @@ test('newtons-first-law: friction stops the book, without friction it keeps its 
   expect(mid.speed).toBeLessThan(1.6);
   await fig.advance(1500);
   expect(await fig.call('get')).toMatchObject({ phase: 'stopped', speed: 0, distance: 1.31, results: { mat: 1.31 } });
+  // a moment later the view pulls back down the lane, every stop in sight
+  await fig.advance(1500);
+  expect((await fig.call('get')).camera).toBe('overview');
 
   // wood and ice go farther (jumping to the end)
   await fig.call('set', { surface: 'wood', push: true, animate: false });
@@ -68,6 +72,7 @@ test('newtons-first-law: friction stops the book, without friction it keeps its 
     phase: 'rest',
     mode: 'explore',
     view: 'front',
+    camera: 'side',
     results: { mat: null, wood: null, ice: null, none: null },
   });
   expect(log.errors).toEqual([]);

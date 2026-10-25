@@ -13,7 +13,7 @@
   "order": 1,
   "maintainers": ["RadeenXALNW"],
   "units": "m",
-  "description": "Newton's first law (নিউটনের প্রথম সূত্র, page 64, 3.1) as a thought experiment the student runs: a physics textbook waits on a launcher and one tap gives it the same push every time (it leaves at 3 m/s) onto the floor chosen in the panel: a jute mat, a wooden floor, ice, or an imagined floor with no friction. Without a push it stays at rest. With friction it slows evenly and stops (1.31 m, 2.55 m, 9.18 m; a post marks each stop and the chips keep the distances); with no friction the velocity readout stays at 3.00 m/s, the marks it leaves every 0.1 s stay evenly spaced, and the camera follows it for ever. Arrows show the velocity, friction against it, and the push only while the paddle touches the book. Test tab: 5 questions (what a pushed book does with no friction, why a book stops, predicting the ice or the mat from the other floors, which way a book goes when a curved wall ends, a spacecraft with its engines off or a book at rest on a frictionless floor). Phone-first, Bangla.",
+  "description": "Newton's first law (নিউটনের প্রথম সূত্র, page 64, 3.1) as a thought experiment the student runs: a physics textbook waits on a launcher whose spring is always squeezed to the same red notch, so one tap gives the same push every time (the book leaves at 3 m/s) onto the floor chosen in the panel: a jute mat, a wooden floor, ice, or an imagined floor with no friction. Without a push it stays at rest. With friction it slows evenly and stops (1.31 m, 2.55 m, 9.18 m); then the view pulls back down the lane, where a dashed line labelled with each floor (\"মাদুর ১.৩১ মি\") shows every stop at once. With no friction the velocity readout stays at 3.00 m/s, the dots it leaves every 0.05 s stay evenly spaced, the camera follows it, and once it passes the ice's stop the view looks down the lane before following it on. Arrows show the velocity, friction against it, and the push only while the paddle touches the book. Test tab: 5 questions on clean scenes (what a pushed book does with no friction, which force acts while a book slows to a stop, predicting the ice or the mat from the other floors, which way a book goes when a curved wall ends, and stopping a gliding book or a book at rest on a frictionless floor). Phone-first, Bangla.",
   "tags": ["force", "newtons-laws", "inertia", "friction", "uniform-velocity", "bangla"],
   "params": [
     {
@@ -74,6 +74,7 @@
     { "name": "set", "payload": { "at": 0.5 } },
     { "name": "set", "payload": { "tried": ["mat", "wood"] } },
     { "name": "set", "payload": { "home": true } },
+    { "name": "set", "payload": { "overview": true } },
     { "name": "set", "payload": { "view": "3d" } },
     { "name": "reset", "payload": {} },
     { "name": "practice", "payload": {} },
@@ -82,7 +83,7 @@
   ],
   "events": ["ready", "change", "push", "stop", "surface", "view", "practice-start", "practice-result", "practice-end"],
   "export": {
-    "poster": { "params": { "coach": "0", "surface": "none", "at": "1.35", "tried": "mat,wood,ice" } },
+    "poster": { "params": { "coach": "0", "surface": "none", "at": "3.6", "tried": "mat,wood,ice" } },
     "glb": [
       {
         "name": "default",
@@ -91,17 +92,15 @@
     ],
     "video": {
       "kind": "script",
-      "seconds": 20,
+      "seconds": 24,
       "fps": 30,
-      "params": { "coach": "0" },
+      "params": { "coach": "0", "surface": "wood", "tried": "mat" },
       "script": [
-        { "at": 0.8, "command": "set", "payload": { "push": true } },
-        { "at": 2.6, "command": "set", "payload": { "surface": "wood" } },
-        { "at": 3.4, "command": "set", "payload": { "push": true } },
-        { "at": 6, "command": "set", "payload": { "surface": "ice" } },
-        { "at": 6.8, "command": "set", "payload": { "push": true } },
-        { "at": 13.8, "command": "set", "payload": { "surface": "none" } },
-        { "at": 14.6, "command": "set", "payload": { "push": true } }
+        { "at": 0.6, "command": "set", "payload": { "push": true } },
+        { "at": 5.4, "command": "set", "payload": { "surface": "ice" } },
+        { "at": 6.4, "command": "set", "payload": { "push": true } },
+        { "at": 15.6, "command": "set", "payload": { "surface": "none" } },
+        { "at": 16.6, "command": "set", "payload": { "push": true } }
       ]
     }
   }
