@@ -46,7 +46,10 @@ speed is no ত্বরণ (a = (v − u)/t); and because বেগ has a direc
 - **বাঁক**: the same CNG on an open field of mown grass at a steady 2.5 m/s; **বাঁয়ে** and **ডানে** (held) turn it on a
   circle of 3 m (about the tightest a CNG can turn). The speedometer stays at ২.৫, but the বেগ arrow turns (and a
   compass in the panel shows its direction, with a compass word); while it turns, the circle it goes round is drawn
-  dashed with its middle marked (বাঁকের কেন্দ্র), a purple **ত্বরণ** arrow points at that middle (v²/r ≈ 2.1 ms⁻², no
+  dashed on the grass with its middle marked (বাঁকের কেন্দ্র: a dot on the ground and, on a thin stalk, a marker at the
+  arrows' height with a dashed radius out to the CNG, so the arrow lines up with the marker on screen in every view; a
+  level arrow over the roof would otherwise aim above a mark on the ground), a purple **ত্বরণ** arrow lies along that
+  radius and points at the marker (v²/r ≈ 2.1 ms⁻², no
   number shown: the book has no formula for it), and its track on the grass is purple; going straight, the track is
   grey and the label says ত্বরণ নেই. The camera looks half-way between the CNG and the middle of its turn, so both are
   in the picture. The labels there find a free spot every frame (past or beside the arrow tips, round the CNG), clear

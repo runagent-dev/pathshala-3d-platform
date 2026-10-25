@@ -215,6 +215,7 @@ export function createApp(root, options = {}) {
 
   // the bend: while the CNG turns, the circle it is going round (dashed) and the middle of it, where its ত্বরণ points
   const turnRing = new THREE.Group();
+  const turnSpoke = new THREE.Group(); // the dashed radius from the middle (raised) towards the CNG
   turnRing.name = 'TurnCircle';
   turnRing.userData.noExport = true;
   turnRing.visible = false;
@@ -239,7 +240,24 @@ export function createApp(root, options = {}) {
     const dot = new THREE.Mesh(new THREE.CircleGeometry(0.17, 24).rotateX(-Math.PI / 2), dashes.material.clone());
     dot.material.opacity = 1;
     dot.position.y = 0.04;
-    turnRing.add(dashes, halo, dot);
+    // the middle is also marked at the height of the arrows, on a thin stalk from the ground dot, with a dashed radius
+    // from the CNG to it at that height: the ত্বরণ arrow lies along that radius, so on the screen it points at the
+    // marker in every view (a level arrow over the roof would aim above a mark on the ground)
+    const solid = new THREE.MeshBasicMaterial({ color: COLORS.turn, toneMapped: false });
+    const faint = new THREE.MeshBasicMaterial({ color: COLORS.turn, transparent: true, opacity: 0.5, depthWrite: false, toneMapped: false });
+    const stalk = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, BEND_Y.a - 0.04, 8).translate(0, (BEND_Y.a + 0.04) / 2, 0), faint);
+    const marker = new THREE.Mesh(new THREE.SphereGeometry(0.13, 18, 12), solid);
+    marker.position.y = BEND_Y.a;
+    const rim = new THREE.Mesh(
+      new THREE.SphereGeometry(0.18, 18, 12),
+      new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.BackSide, toneMapped: false }),
+    );
+    rim.position.y = BEND_Y.a;
+    const nd = 9;
+    const radius = new THREE.InstancedMesh(new THREE.BoxGeometry(0.17, 0.035, 0.035), faint, nd);
+    for (let i = 0; i < nd; i++) radius.setMatrixAt(i, m.makeTranslation(0.3 + (i + 0.5) * ((TURN.r - 0.5) / nd), BEND_Y.a, 0));
+    turnSpoke.add(radius);
+    turnRing.add(dashes, halo, dot, stalk, rim, marker, turnSpoke);
   }
   scene.add(turnRing);
 
@@ -585,6 +603,7 @@ export function createApp(root, options = {}) {
     aArrow.root.scale.set(1.7, 1, 1.7);
     vArrow.set(tmpA.set(e, BEND_Y.v, -north), bend.v, TURN.v * V_SCALE_TURN);
     if (sgn) bend.a.set(vec.ae, 0, -vec.an).normalize();
+    turnSpoke.rotation.y = Math.atan2(bend.a.z, -bend.a.x); // the dashed radius runs from the middle out to the CNG
     // the ত্বরণ arrow starts over the side of the CNG that faces the middle of the turn, and points at it
     aArrow.set(tmpA.set(e, BEND_Y.a, -north).addScaledVector(bend.a, 0.45), bend.a, sgn ? TURN_ACCEL * A_SCALE_TURN : 0);
     aArrow.setColor(COLORS.turn);
@@ -668,8 +687,20 @@ export function createApp(root, options = {}) {
     const va = arrowPts(vArrow);
     const aa = arrowPts(aArrow);
     for (const x of [va, aa]) if (x.boxes) blocks.push(...x.boxes);
-    const cc = turnRing.visible ? toCanvas(bend.centre) : null;
-    if (cc) blocks.push({ l: cc.x - 12, t: cc.y - 12, r: cc.x + 12, b: cc.y + 12 });
+    // the middle of the turn: the raised marker, its stalk down to the ground dot, and the dashed radius to the CNG
+    const cc = turnRing.visible ? toCanvas(cornerTmp.copy(bend.centre).setY(BEND_Y.a)) : null;
+    if (cc) {
+      const ground = toCanvas(bend.centre);
+      const roof = toCanvas(cornerTmp.copy(cng.root.position).setY(BEND_Y.a));
+      blocks.push({ l: cc.x - 12, t: cc.y - 12, r: cc.x + 12, b: cc.y + 12 });
+      for (const end of [ground, roof])
+        if (end)
+          for (let i = 1; i <= 6; i++) {
+            const x = cc.x + ((end.x - cc.x) * i) / 6;
+            const y = cc.y + ((end.y - cc.y) * i) / 6;
+            blocks.push({ l: x - 5, t: y - 5, r: x + 5, b: y + 5 });
+          }
+    }
 
     const overlap = (p, q) => Math.max(0, Math.min(p.r, q.r) - Math.max(p.l, q.l)) * Math.max(0, Math.min(p.b, q.b) - Math.max(p.t, q.t));
     function choose(id, el, candidates, z, { hideIfNone = false } = {}) {
@@ -1591,7 +1622,6 @@ export function createApp(root, options = {}) {
     if (o.mode === 'quiz') quiz.start();
     else coach?.start(1400);
   })();
-
   return {
     ready,
     on(type, fn) {
