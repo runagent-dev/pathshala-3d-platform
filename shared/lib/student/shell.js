@@ -24,7 +24,14 @@ export function learnSheet(t, { terms, extra = '', button = true }) {
           </div>`;
 }
 
-export function buildStudentShell(root, t, { learn = '' } = {}) {
+/**
+ * The student view's frame. `learnAlign: 'start'` keeps the শেখো sheet's content together at the top; by default
+ * ('spread') its first and last rows go to the top and bottom of the panel, which the পরীক্ষা sheet may make taller.
+ * @param {HTMLElement} root
+ * @param {(key: string, vars?: object) => string} t
+ * @param {{ learn?: string, learnAlign?: 'spread' | 'start' }} [options]
+ */
+export function buildStudentShell(root, t, { learn = '', learnAlign = 'spread' } = {}) {
   root.innerHTML = `
   <div class="pvc-shell">
     <div class="pvc-stage" data-ui="simple">
@@ -48,7 +55,7 @@ export function buildStudentShell(root, t, { learn = '' } = {}) {
         <button role="tab" data-mode="quiz">${t('tab_quiz')}</button>
       </div>
       <div class="pvc-sheets">
-        <section class="pvc-learn" role="tabpanel">
+        <section class="pvc-learn" role="tabpanel"${learnAlign === 'start' ? ' data-align="start"' : ''}>
 ${learn}
         </section>
 

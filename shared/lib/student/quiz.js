@@ -2,19 +2,38 @@
 // answer, and a score at the end. The figure sets up each question (clamps an object, locks it, builds the
 // choices) and shows how the answer is read; this module runs the screen, the counting and the events.
 //
-//   createQuiz({ ui, t, emit, audio, questions: 5, hooks: {
+//   createQuiz({ ui, t, emit, audio, questions: 5, lines: { text: 2, feedback: 2 }, hooks: {
 //     enter(), leave(),                         // switch the figure into / out of test mode
 //     prepare(index, alive, say) → { text, choices, expected, tolerance, label(v), meta } | null
 //                                               // set up a question (say(text) shows it at once);
 //                                               // return null if alive() went false
-//     reveal(q, correct) → html                 // show how it is read; return the worked sum
+//     reveal(q, correct, picked) → html         // show how it is read; return the worked sum
+//                                               // (picked: { index, value } of the tapped choice)
 //     done(),                                   // after the last answer (unlock, …)
 //   }})
+//
+// lines (optional): room kept for that many lines of question and of worked answer, so a longer one never
+// makes the sheet taller (and the 3D view smaller). Without it the sheet fits its words, as before.
 //
 // Strings (from the figure's i18n): q_count, q_score, q_hint, q_right, q_wrong, q_next, q_finish,
 // q_result, q_great, q_good, q_try. Events: practice-start, practice-result, practice-end.
 
-export function createQuiz({ ui, t, emit, audio, questions = 5, hooks }) {
+/**
+ * The room for `n` lines (in the element's own line height where the browser knows `lh`, else in em at the
+ * kit's line height), or '' for none.
+ * @param {number | undefined} n
+ * @param {number} lineHeight
+ */
+function linesOf(n, lineHeight) {
+  if (!(n > 0)) return '';
+  return globalThis.CSS?.supports?.('height', '1lh') ? `${n}lh` : `${+(n * lineHeight).toFixed(3)}em`;
+}
+
+/**
+ * @param {{ ui: any, t: any, emit: (type: string, data?: any) => void, audio?: any, questions?: number,
+ *           lines?: { text?: number, feedback?: number }, hooks: any }} options
+ */
+export function createQuiz({ ui, t, emit, audio, questions = 5, lines, hooks }) {
   const el = {
     ask: ui.$('.pvc-q-ask'),
     count: ui.$('.pvc-q-count'),
@@ -35,6 +54,10 @@ export function createQuiz({ ui, t, emit, audio, questions = 5, hooks }) {
   let current = null;
   let answered = false;
   let token = 0;
+
+  // On the sheet, so a figure can still change it for one layout: `.pvc-q-text { --pvc-q-text-min: 1lh }`
+  const room = { '--pvc-q-text-min': linesOf(lines?.text, 1.4), '--pvc-q-feedback-min': linesOf(lines?.feedback, 1.45) };
+  for (const [name, value] of Object.entries(room)) if (value) ui.quiz.style.setProperty(name, value);
 
   function setFeedback(html, tone = '') {
     el.feedback.innerHTML = html;
@@ -88,7 +111,7 @@ export function createQuiz({ ui, t, emit, audio, questions = 5, hooks }) {
       if (isRight(q.choices[j])) b.classList.add('right');
       else if (j === i) b.classList.add('wrong');
     });
-    const work = hooks.reveal(q, correct);
+    const work = hooks.reveal(q, correct, { index: i, value: pick });
     setFeedback(`<span class="lead">${t(correct ? 'q_right' : 'q_wrong')}</span> ${work}`, correct ? 'ok' : 'bad');
     if (correct) audio?.success();
     else audio?.error();

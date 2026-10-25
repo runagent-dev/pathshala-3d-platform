@@ -5,6 +5,7 @@
 // The figure's own scene is not touched: a copy is exported. In the copy:
 //   - objects with userData.noExport (and anything `skip(object)` says) are left out, as are helpers and sprites;
 //   - instanced meshes (tick marks…) become ordinary meshes with vertex colours, which every glTF viewer reads;
+//   - thick lines (three's Line2 / LineSegments2) become plain glTF lines in their colour (glTF has no line width);
 //   - the whole model is scaled from `units` to metres (glTF's unit);
 //   - text drawn on canvases is embedded as PNG textures, node names are kept (so parts can be animated).
 // Returns an ArrayBuffer (binary glTF).
@@ -26,6 +27,7 @@ export async function exportGLB(
 ) {
   root.updateMatrixWorld(true);
   const copy = root.clone(true);
+  const lines = bakeThickLines(copy); // before the shader materials are dropped: LineMaterial is one
   const drop = [];
   copy.traverse((ob) => {
     if (ob === copy) return;
@@ -33,7 +35,7 @@ export async function exportGLB(
     if (ob.userData.noExport || skip(ob) || ob instanceof THREE.Sprite || ob.type.endsWith('Helper') || material?.isShaderMaterial) drop.push(ob);
   });
   for (const ob of drop) ob.removeFromParent();
-  const made = bakeInstances ? bakeInstancedMeshes(copy) : [];
+  const made = [...lines, ...(bakeInstances ? bakeInstancedMeshes(copy) : [])];
 
   const top = new THREE.Group();
   top.name = name;
@@ -46,6 +48,61 @@ export async function exportGLB(
     top.remove(copy);
     for (const g of made) g.dispose();
   }
+}
+
+/**
+ * Replaces each thick line (Line2, LineSegments2) under `root` by a LineSegments with the same segments and colour
+ * (and vertex colours if it has them). Returns the new geometries.
+ * @param {THREE.Object3D} root
+ */
+export function bakeThickLines(root) {
+  /** @type {any[]} */
+  const list = [];
+  root.traverse((ob) => /** @type {any} */ (ob).isLineSegments2 && list.push(ob));
+  const made = [];
+  for (const ob of list) {
+    const g = ob.geometry;
+    const start = g.attributes.instanceStart;
+    const end = g.attributes.instanceEnd;
+    const n = start ? Math.min(start.count, g.instanceCount ?? Infinity) : 0;
+    const parent = ob.parent;
+    if (!n || !parent) {
+      ob.removeFromParent();
+      continue;
+    }
+    const m = ob.material;
+    const colourStart = m.vertexColors && g.attributes.instanceColorStart;
+    const colourEnd = m.vertexColors && g.attributes.instanceColorEnd;
+    const pos = new Float32Array(n * 6);
+    const col = colourStart && colourEnd ? new Float32Array(n * 6) : null;
+    for (let i = 0; i < n; i++) {
+      pos.set([start.getX(i), start.getY(i), start.getZ(i), end.getX(i), end.getY(i), end.getZ(i)], i * 6);
+      if (col)
+        col.set([colourStart.getX(i), colourStart.getY(i), colourStart.getZ(i), colourEnd.getX(i), colourEnd.getY(i), colourEnd.getZ(i)], i * 6);
+    }
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    if (col) geometry.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    made.push(geometry);
+    const material = new THREE.LineBasicMaterial({
+      name: m.name,
+      color: m.color,
+      vertexColors: !!col,
+      opacity: m.opacity,
+      transparent: m.transparent,
+    });
+    const line = new THREE.LineSegments(geometry, material);
+    line.name = ob.name || 'Line';
+    line.visible = ob.visible;
+    line.position.copy(ob.position);
+    line.quaternion.copy(ob.quaternion);
+    line.scale.copy(ob.scale);
+    line.userData = { ...ob.userData };
+    parent.children.splice(parent.children.indexOf(ob), 1, line);
+    line.parent = parent;
+    ob.parent = null;
+  }
+  return made;
 }
 
 /** Replaces each InstancedMesh under `root` by one merged Mesh (instance colours become vertex colours). */

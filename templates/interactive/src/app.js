@@ -10,6 +10,7 @@ import { createAudio } from '@shared/student/audio.js';
 import { buildStudentShell, learnSheet } from '@shared/student/shell.js';
 import { createCoach } from '@shared/student/coach.js';
 import { createQuiz } from '@shared/student/quiz.js';
+import { capturePointer } from '@shared/student/pointer.js';
 import { createI18n } from './i18n.js';
 import { createRuler } from './ruler.js';
 import { LC, LENGTH, formatCm, read, roundTo } from './reading.js';
@@ -220,7 +221,7 @@ export function createApp(root, options = {}) {
       tweener.cancel('pos');
       s.dragging = true;
       loupe.setFrozen(true);
-      ui.canvasHost.setPointerCapture(e.pointerId);
+      capturePointer(ui.canvasHost, e.pointerId); // never throws for a synthetic or lifted pointer
       coach?.objectUsed();
       emit('dragstart', snapshot());
     },
@@ -272,6 +273,7 @@ export function createApp(root, options = {}) {
     emit,
     audio,
     questions: 5,
+    lines: { text: 2, feedback: 2 }, // room for the longest question and worked answer: the 3D view keeps its size
     hooks: {
       enter() {
         s.mode = 'quiz';
