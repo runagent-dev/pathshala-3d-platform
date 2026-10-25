@@ -1,0 +1,136 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "electromagnetic-force",
+  "title": "Electromagnetic force (তড়িৎ চৌম্বক বল)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 68,
+  "topic": "3.2.2",
+  "placement": "Book page 68, topic 3.2.2: তড়িৎ চৌম্বক বল বা বিদ্যুৎ চৌম্বকীয় বল (Electromagnetic Force), next to that paragraph.",
+  "order": 2,
+  "maintainers": ["RadeenXALNW"],
+  "units": "mm",
+  "description": "The electromagnetic force (তড়িৎ চৌম্বক বল, page 68, 3.2.2) in two examples. চিরুনি, the book's own experiment: the student drags a comb through a student's hair (or presses চুল আঁচড়াও); each stroke leaves a little charge on it (blue − discs on the comb, a five-step আধান meter, loose hairs stand up). Brought to bits of paper on the desk (কাগজের কাছে আনো: it flies there and comes down slowly, or drag it), the bits jump up and cling to it once the comb is close enough (farther with more charge). One bit carries two arrows: পুরো পৃথিবীর টান (down, মাধ্যাকর্ষণ বল, purple) and চিরুনির টান (up, তড়িৎ চৌম্বক বল, blue), growing as the comb comes closer; the panel compares them live (< or >) and, once the paper is lifted, says the book's sentence: the comb's tiny charge beats the whole Earth's pull, the force being 10^36 times as strong as gravity. A comb with no charge lifts nothing. চুম্বক: a coil of copper wire on a plastic tube with a cell and a knife switch, and a bar magnet (N red, S blue) on a little cart. Switch on and the coil becomes a magnet (N and S tags): electric and magnetic forces are one force. Unlike poles attract, like poles repel (turn the magnet round by tapping it, or drag it), with equal and opposite arrows that shrink with distance but never vanish (range infinite). The panel also shows the four fundamental forces in order, weakest to strongest, with তড়িৎ চৌম্বক highlighted and each one's range. Test: 5 tap questions (why the paper rises or what an uncharged comb does; like or unlike poles; the coil with the switch off; which force is stronger and by how much; the range), each with a worked answer and a note on the mistake. Phone-first, Bangla. GLB: the comb scene (student, comb, bits of paper on the desk) and the magnet scene (coil, cell, switch, bar magnet on its cart), life size: modelled in mm, exported in metres (no arrows or labels).",
+  "tags": [
+    "force",
+    "fundamental-forces",
+    "electromagnetic-force",
+    "static-electricity",
+    "comb",
+    "magnet",
+    "electromagnet",
+    "gravity",
+    "bangla"
+  ],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "scene",
+      "label": "Example",
+      "type": "select",
+      "options": [["comb", "comb and paper"], ["magnet", "coil and magnet"]],
+      "default": "comb"
+    },
+    {
+      "name": "charge",
+      "label": "Charge on the comb at the start (strokes)",
+      "type": "number",
+      "default": "0",
+      "placeholder": "0–5"
+    },
+    {
+      "name": "place",
+      "label": "Comb at the start",
+      "type": "select",
+      "options": [["hair", "in the hair"], ["paper", "over the paper"]],
+      "default": "hair"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "First-use pointers", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "scene": "comb" } },
+    { "name": "set", "payload": { "strokes": 3 } },
+    { "name": "set", "payload": { "charge": 4 } },
+    { "name": "set", "payload": { "place": "paper" } },
+    { "name": "set", "payload": { "place": "paper", "height": 30, "animate": false } },
+    { "name": "set", "payload": { "again": true } },
+    { "name": "set", "payload": { "scene": "magnet" } },
+    { "name": "set", "payload": { "on": true } },
+    { "name": "set", "payload": { "facing": "N" } },
+    { "name": "set", "payload": { "gap": 20 } },
+    { "name": "set", "payload": { "on": true, "facing": "S", "gap": 60, "animate": false } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": [
+    "ready",
+    "change",
+    "scene",
+    "charge",
+    "lift",
+    "switch",
+    "flip",
+    "snap",
+    "view",
+    "practice-start",
+    "practice-result",
+    "practice-end"
+  ],
+  "export": {
+    "poster": { "params": { "coach": "0", "charge": "4", "place": "paper" } },
+    "glb": [
+      {
+        "name": "default",
+        "setup": [{ "command": "set", "payload": { "charge": 4, "place": "paper", "height": 12, "animate": false } }]
+      },
+      {
+        "name": "magnets",
+        "setup": [{ "command": "set", "payload": { "on": true, "facing": "N", "gap": 30, "animate": false } }]
+      }
+    ],
+    "video": {
+      "kind": "script",
+      "seconds": 20,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 0.6, "command": "set", "payload": { "strokes": 4 } },
+        { "at": 3.2, "command": "set", "payload": { "place": "paper" } },
+        { "at": 9, "command": "set", "payload": { "scene": "magnet" } },
+        { "at": 10.5, "command": "set", "payload": { "on": true } },
+        { "at": 13.5, "command": "set", "payload": { "facing": "N" } },
+        { "at": 16.5, "command": "set", "payload": { "facing": "S" } }
+      ]
+    }
+  }
+}
