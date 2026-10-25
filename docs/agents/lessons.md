@@ -21,7 +21,8 @@ yourself against every point below before you report. (Batch 1, pages 36–41: `
 4. **Labels are placed in screen space and never collide** with each other, the arrow, the object, the corner
    buttons, the scale note, or the coach bubble. Project the anchors, measure the label boxes, try several
    candidate spots, and hide an unimportant label when nothing fits (the panel still has the number). Re-check
-   while things move and after every resize. Several figures have a `src/labels.js` placer to copy.
+   while things move and after every resize. The kit's `createAnnotations` does this since 1.2.0 (`spots`,
+   `avoid`, `optional`); older figures have their own `src/labels.js`.
 5. **A label never hides what it names.** Put it beside an arrow, not on it; outside a body, not on it; its leader
    dot on the body's rim, never on a sign ("+") that matters; short leader lines (40–50 px).
 6. **Perspective lies.** An arrow drawn at roof height does not visibly point at a marker on the ground in a tilted

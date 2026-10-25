@@ -25,9 +25,11 @@ work") and **`docs/book-notes.md`** (decisions shared across figures: units, ter
   second language. Every string in `src/i18n.js` (the checker refuses Bangla anywhere else). Numbers through
   `t.num()` so they show Bangla digits. Font: Noto Sans Bengali (bundled; never Hind Siliguri).
 - Build on the shared student kit (`shared/lib/student/`): `buildStudentShell` (custom learn panel HTML is fine),
-  `createQuiz` with hooks, `createCoach` (first-use pointer on the 3D object; `loupe: null` if no magnifier),
-  `createAnnotations` (labels pinned to 3D points), `createMaterials`, `textMesh`, `createAudio`, `createTweener`,
-  `createStage`. Keep only figure-specific code in the figure.
+  `createQuiz` with hooks (`lines` keeps the sheet's height steady), `createCoach` (first-use pointer on the 3D
+  object; `loupe: null` if no magnifier; `inset`, `labelAt`), `createAnnotations` (labels pinned to 3D points; give
+  them `spots` and `avoid` so they stay clear of each other, the corner buttons and the hint), `createArrow` (3D
+  vector arrows), `createMaterials`, `textMesh`, `createAudio`, `createTweener`, `createStage`. Kit 1.2.0 added
+  these for what earlier figures worked around (`docs/student-kit.md`). Keep only figure-specific code in the figure.
 
 ## Read before you start
 
@@ -40,8 +42,9 @@ work") and **`docs/book-notes.md`** (decisions shared across figures: units, ter
    - `assets/equations-of-motion/`: a follow camera on a fixed window, a 2D graph drawn over the stage with
      collision-checked labels, a scrubbable graph, a test that reads values off the picture.
    - `assets/falling-bodies/`, `assets/weak-nuclear-force/`, `assets/newtons-first-law/`, `assets/inertia/`:
-     honest stylisation notes, screen-space label placers (`src/labels.js`), camera fitting per side
-     (`src/camera.js`), cancellable runs with tokens, questions that set up their own scenes.
+     honest stylisation notes, screen-space label placers (`src/labels.js`, written before the kit's annotations
+     could avoid collisions: use `spots`/`avoid` instead), camera fitting per side (`src/camera.js`), cancellable
+     runs with tokens, questions that set up their own scenes.
    - `assets/digital-balance/`: things you tap to move, flights between places, an "inside" view with labels.
    - `assets/screw-gauge/`, `assets/vernier-caliper/`: dragging a part, magnifier, reading maths.
    - `assets/si-prefixes/`: an `animation` figure with stops (if part of your figure plays by itself).

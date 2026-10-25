@@ -17,7 +17,7 @@ import { createGauge, DIM } from './gauge.js';
 import { OBJECTS, OBJECT_KINDS, createObject, randomSize } from './objects.js';
 import { read, format, roundTo, LC, PITCH, DIVISIONS, RANGE } from './reading.js';
 
-export const VERSION = '0.2.0';
+export const VERSION = '0.2.1';
 
 /** Wait (briefly) for the Bangla webfont, so the numbers on the scales are drawn with it. */
 export function loadFonts(timeout = 2500) {

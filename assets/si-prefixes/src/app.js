@@ -10,7 +10,7 @@ import { createStage } from '@shared/stage.js';
 import { createI18n, STOPS, SEQUENCE, PREFIXES } from './i18n.js';
 import { buildObject } from './objects.js';
 
-export const VERSION = '0.3.1';
+export const VERSION = '0.3.2';
 
 export const DEFAULTS = {
   lang: 'bn',
