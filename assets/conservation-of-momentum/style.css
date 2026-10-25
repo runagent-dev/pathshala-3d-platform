@@ -1,0 +1,176 @@
+/* Conservation of momentum and energy: the page, the colours that carry meaning (বেগ blue as the arrows, ভরবেগ
+   green as the strip, গতিশক্তি amber; darker shades of the last two for text on white), the examples, the book's two
+   equations with the student's numbers, the player, and the notes on the picture. The student view itself is
+   ../../shared/lib/student/student.css (linked first). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.cm { --c-v: #1c6fd9; --c-p: #2f9e44; --c-p-text: #237a35; --c-k: #f59f00; --c-k-text: #b86e00; }
+.cm sub, .cm sup { font-size: 0.7em; line-height: 0; }
+.cm sub { vertical-align: -0.28em; }
+.cm sup { vertical-align: 0.5em; }
+
+/* the momentum strip and the flash are drawn on this canvas, over the 3D */
+.cm-overlay { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; }
+/* the honest note about time, top left (the buttons are top right) */
+.cm-note { position: absolute; left: 10px; top: 10px; z-index: 5; max-width: calc(100% - 226px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 3px 9px; border-radius: 6px; border: 1px solid var(--line-2); background: rgba(255, 255, 255, 0.94); color: var(--ink-2); font-size: 13px; font-weight: 600; line-height: 1.4; pointer-events: none; }
+.cm-note.hot { border-color: #e2c25a; background: #fff8dc; color: #6e5200; }
+/* the first-use words may sit over the note about time for a moment (on the tightest phones there is no other room) */
+.cm .pvc-coach-layer { z-index: 6; }
+/* the hint line sits at the top of the view: the momentum strip is at the bottom */
+.cm .pvc-stage[data-ui='simple'] .pvc-hint { top: 54px; bottom: auto; transform: translate(-50%, -4px); }
+.cm .pvc-stage[data-ui='simple'] .pvc-hint.show { transform: translate(-50%, 0); }
+/* labels on the picture: velocity in blue */
+.cm .pvc-anno { font-size: 14px; padding: 1px 7px; }
+.cm .pvc-anno-callout { font-size: 14px; font-weight: 700; }
+
+/* the examples: a little picture of the two balls and their arrows, and a name */
+.cm .pvc-learn { gap: 8px; }
+.cm-presets { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.cm-presets button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; min-width: 0; min-height: 48px; padding: 2px 2px 3px; border-radius: 8px; border: 1px solid var(--line-2); background: var(--panel); color: var(--ink-2); font-size: 13.5px; font-weight: 600; line-height: 1.25; white-space: nowrap; }
+.cm-presets button:hover { background: var(--soft); }
+.cm-presets button.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.cm-presets button > span { overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.pvc .cm-pic { width: 54px; height: 20px; flex: none; }
+
+/* the book's two equations: before | after, the numbers over their symbols */
+.cm-eqs { display: grid; grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr); column-gap: 3px; row-gap: 3px; align-items: start; padding: 4px 8px 5px; border-radius: 8px; background: var(--soft); }
+.cm-head, .cm-row { display: contents; }
+.cm-head span { font-size: 12px; font-weight: 600; line-height: 1.3; color: var(--ink-3); text-align: center; white-space: nowrap; }
+.cm-head .b { grid-column: 2 / 5; }
+.cm-head .a { grid-column: 6 / 9; }
+.cm-name { display: flex; flex-direction: column; justify-content: center; padding-right: 6px; min-height: 100%; }
+.cm-name b { font-size: 14px; font-weight: 700; line-height: 1.3; color: var(--c); white-space: nowrap; }
+.cm-name small { font-size: 11.5px; line-height: 1.2; color: var(--ink-3); white-space: nowrap; }
+.cm-term { display: flex; flex-direction: column; align-items: center; min-width: 0; }
+.cm-term b { font-size: 18px; font-weight: 700; line-height: 1.3; color: var(--c); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cm-term small { font-size: 12px; line-height: 1.25; color: var(--ink-3); white-space: nowrap; }
+.cm-row i { font-style: normal; font-size: 18px; line-height: 1.3; color: var(--ink-3); text-align: center; }
+.cm-row i.eq { color: var(--ink-2); font-weight: 700; padding: 0 2px; }
+.cm-row.p { --c: var(--c-p-text); }
+.cm-row.k { --c: var(--c-k-text); }
+.cm-eqs:not(.done) .cm-term:nth-of-type(n + 3) b { color: var(--ink-3); }
+.cm-assume { margin: -4px 0 0; padding: 0 8px; font-size: 12px; line-height: 1.35; color: var(--c-k-text); }
+
+/* what is happening, in the book's words: room for the longest, so the 3D view never changes size */
+.cm-say { margin: 0; min-height: calc(3 * 1.45em); font-size: 14px; line-height: 1.45; color: var(--ink-2); }
+.cm-say b { color: var(--ink); font-weight: 700; }
+
+/* the player: play / pause and the time of the run (the collision in yellow) */
+.cm-foot { display: flex; align-items: center; gap: 12px; margin-top: auto; }
+.cm .cm-play { flex: none; min-width: 9.2em; height: 42px; font-size: 15.5px; }
+.cm .cm-play .ic { display: inline-flex; }
+.cm .cm-play .ic svg { color: #fff; width: 18px; height: 18px; }
+.cm-scrub { flex: 1; min-width: 0; display: flex; align-items: center; }
+.cm-scrub input { --a: 40%; --b: 60%; --p: 0%; width: 100%; height: 40px; margin: 0; padding: 0; background: transparent; -webkit-appearance: none; appearance: none; cursor: pointer; touch-action: none; }
+.cm-scrub input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+.cm-scrub input::-webkit-slider-runnable-track { height: 10px; border-radius: 5px; border: 1px solid var(--line-2); background: linear-gradient(to right, transparent var(--a), #ffe27a var(--a), #ffe27a var(--b), transparent var(--b)), linear-gradient(to right, #a9c8ee var(--p), #eef1f4 var(--p)); }
+.cm-scrub input::-moz-range-track { height: 10px; border-radius: 5px; border: 1px solid var(--line-2); background: linear-gradient(to right, transparent var(--a), #ffe27a var(--a), #ffe27a var(--b), transparent var(--b)), linear-gradient(to right, #a9c8ee var(--p), #eef1f4 var(--p)); }
+.cm-scrub input::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 26px; height: 26px; margin-top: -9px; border-radius: 50%; border: 2.5px solid var(--accent); background: #fff; box-shadow: 0 1px 3px rgba(20, 30, 45, 0.25); }
+.cm-scrub input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; border: 2.5px solid var(--accent); background: #fff; box-shadow: 0 1px 3px rgba(20, 30, 45, 0.25); }
+
+/* the test: four answers in one row (numbers with their unit, or two short words) */
+.cm .pvc-q-options { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.cm .pvc-opt { padding: 0 4px; font-size: 18px; white-space: nowrap; }
+.cm .pvc-opt small { font-size: 11px; }
+.cm-opt { display: block; white-space: normal; font-size: 14px; line-height: 1.2; text-align: center; }
+.cm .pvc-q-text { font-size: 16px; }
+.cm .pvc-q-feedback { font-size: 14px; }
+
+/* phones */
+@container pvc (max-width: 560px) {
+  .cm-note { font-size: 12.5px; }
+  .cm-presets button { font-size: 13px; }
+  .cm .pvc-opt { font-size: 16.5px; }
+  .cm .pvc-opt small { font-size: 10.5px; }
+  .cm-opt { font-size: 13px; }
+}
+/* the narrowest: slimmer columns */
+@container pvc (max-width: 420px) {
+  .cm-eqs { padding: 3px 6px 4px; column-gap: 2px; }
+  .cm-name { padding-right: 3px; }
+  .cm-name b { font-size: 13px; }
+  .cm-term b { font-size: 16.5px; }
+  .cm-term small { font-size: 11px; }
+  .cm-row i { font-size: 16px; }
+  .cm-say { font-size: 13.5px; }
+  .cm .cm-play { min-width: 8.4em; }
+}
+/* phone embeds that are not very tall: a little smaller, so the 3D view keeps more room */
+@container pvc (max-width: 560px) and (max-height: 600px) {
+  .cm .pvc-learn { gap: 5px; }
+  .cm .pvc-anno, .cm .pvc-anno-callout { font-size: 12.5px; padding: 0 5px; }
+  .cm-presets button { min-height: 36px; flex-direction: row; gap: 3px; font-size: 12.5px; }
+  .pvc .cm-pic { width: 32px; height: 14px; }
+  .cm-presets button > span { display: none; }
+  .cm-head { display: none; }
+  .cm-term b { font-size: 15.5px; line-height: 1.25; }
+  .cm-term small { font-size: 10.5px; }
+  .cm-name b { font-size: 12.5px; }
+  .cm-name small { font-size: 10.5px; }
+  .cm-row i { font-size: 15px; line-height: 1.25; }
+  .cm-assume { font-size: 11px; margin-top: -2px; }
+  .cm-say { font-size: 12.5px; min-height: calc(3 * 1.4em); line-height: 1.4; }
+  .cm .cm-play { height: 36px; font-size: 14.5px; }
+  .cm-scrub input { height: 36px; }
+  .cm .pvc-q-text { font-size: 14.5px; }
+  .cm .pvc-q-feedback { font-size: 12.5px; }
+  .cm .pvc-opt { height: 40px; font-size: 15.5px; }
+  .cm-opt { font-size: 12.5px; }
+}
+/* short and wide (phone held sideways): the panel is beside the picture */
+@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
+  .cm .pvc-shell { grid-template-columns: minmax(0, 1fr) clamp(286px, 40%, 360px); }
+  .cm .pvc-learn { gap: 6px; }
+  .cm-presets { grid-template-columns: 1fr 1fr; gap: 4px; }
+  .cm-presets button { min-height: 0; height: 34px; flex-direction: row; gap: 4px; font-size: 12.5px; }
+  .pvc .cm-pic { width: 36px; height: 15px; }
+  .cm-head span { font-size: 11px; }
+  .cm-eqs { padding: 3px 6px; column-gap: 2px; row-gap: 1px; }
+  .cm-name { padding-right: 3px; }
+  .cm-name b { font-size: 12.5px; }
+  .cm-name small { font-size: 10.5px; }
+  .cm-term b { font-size: 15px; line-height: 1.25; }
+  .cm-term small { font-size: 10.5px; }
+  .cm-row i { font-size: 14.5px; line-height: 1.25; }
+  .cm-assume { font-size: 11px; margin-top: -2px; padding: 0 4px; }
+  .cm-say { font-size: 12.5px; line-height: 1.4; min-height: calc(4 * 1.4em); }
+  .cm-foot { gap: 8px; }
+  .cm .cm-play { min-width: 0; height: 36px; font-size: 14.5px; padding: 0 10px; }
+  .cm-scrub input { height: 36px; }
+  .cm .pvc-q-options { grid-template-columns: 1fr 1fr; }
+  .cm .pvc-q-text { font-size: 14px; }
+  .cm .pvc-q-feedback { font-size: 12.5px; }
+  .cm .pvc-opt { height: 40px; font-size: 16px; }
+}
+/* wide frames (book page, desktop): the examples and the equations on the left, the sentence beside them, the player under all */
+@container pvc (min-width: 720px) and (min-height: 461px) {
+  .cm .pvc-learn { display: grid; grid-template-columns: minmax(0, 400px) minmax(0, 1fr); grid-template-areas: 'presets say' 'eqs say' 'assume assume' 'foot foot'; gap: 6px 22px; align-content: start; }
+  .cm-presets { grid-area: presets; }
+  .cm-eqs { grid-area: eqs; }
+  .cm-assume { grid-area: assume; margin: 0; }
+  .cm-say { grid-area: say; min-height: 0; font-size: 14.5px; }
+  .cm-foot { grid-area: foot; max-width: 760px; }
+}
+/* 16:10 book frames (800×500) and other wide frames that are not tall: the panel beside the picture too, as on a
+   phone held sideways, so the track keeps the whole width it needs (the kit does this only up to 460 px high) */
+@container pvc (min-height: 461px) and (max-height: 620px) and (min-aspect-ratio: 3/2) {
+  .cm .pvc-shell { grid-template-rows: minmax(0, 1fr); grid-template-columns: minmax(0, 1fr) clamp(300px, 38%, 380px); }
+  .cm .pvc-panel { display: flex; flex-direction: column; align-items: stretch; gap: 10px; border-top: 0; border-left: 1px solid var(--line); overflow-y: auto; padding: 12px 14px calc(12px + env(safe-area-inset-bottom, 0px)); }
+  .cm .pvc-tabs { grid-template-columns: 1fr 1fr; max-width: none; }
+  .cm .pvc-tabs button + button { border-top: 0; border-left: 1px solid var(--line-2); }
+  .cm .pvc-learn { display: flex; flex-direction: column; gap: 8px; }
+  .cm-presets { grid-template-columns: 1fr 1fr; gap: 6px; }
+  .cm-presets button { min-height: 0; height: 40px; flex-direction: row; gap: 6px; }
+  .pvc .cm-pic { width: 40px; height: 16px; }
+  .cm-say { min-height: calc(4 * 1.45em); font-size: 14px; }
+  .cm-foot { max-width: none; }
+  .cm .pvc-q-options { grid-template-columns: 1fr 1fr; }
+}
+/* phones: the turned view adds little to a straight track, and its buttons would sit over the labels: only full
+   screen stays in the corner */
+@container pvc (max-width: 560px) {
+  .cm .pvc-corner .pvc-seg { display: none; }
+  .cm-note { max-width: calc(100% - 70px); }
+}
