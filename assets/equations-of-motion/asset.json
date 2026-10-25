@@ -1,0 +1,120 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "equations-of-motion",
+  "title": "Equations of motion (গতির সমীকরণ)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 45,
+  "topic": "2.7",
+  "placement": "Book pages 45–46, topic 2.7: গতির সমীকরণ (Equations of Motion). Next to the section text and its velocity–time graph with V = (u+v)/2.",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "The equations of motion (গতির সমীকরণ, pages 45–46, 2.7) with a commuter train on a straight double-track railway. The student sets its আদি বেগ u, ত্বরণ a (negative to brake; a braking train stops, it never goes backwards) and the time t with three steppers, and runs it in real time. The বেগ–সময় graph draws the straight line v = u + at while the area under it fills in 1-second strips, the same colours as the distance bar under the train: the area is the distance, and in equal seconds the distances are not equal. On the other track a see-through train runs the whole time at the average velocity V = (u + v)/2 and arrives at the same place at the same moment; at the end the triangle above V turns half round into the gap below it, so the trapezium becomes the rectangle V × t: s = Vt. The panel writes v = u + at, V = (u + v)/2, s = Vt, s = ut + ½at² and v² = u² + 2as with the student's numbers. Drag the train to see any moment. Test: 5 tap questions (the final velocity, the distance by the formula or from the graph's area, the average velocity or the velocity at half time, no acceleration, braking to a stop with v² = u² + 2as or v = u + at). Phone-first, Bangla. GLB: the railway and the two trains, in metres.",
+  "tags": [
+    "motion",
+    "equations-of-motion",
+    "uniform-acceleration",
+    "velocity-time-graph",
+    "average-velocity",
+    "train",
+    "bangla"
+  ],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "u",
+      "label": "Initial velocity u",
+      "type": "number",
+      "default": "4",
+      "placeholder": "m/s",
+      "help": "0 to 15 m/s, whole numbers"
+    },
+    {
+      "name": "a",
+      "label": "Acceleration a",
+      "type": "number",
+      "default": "1",
+      "placeholder": "m/s²",
+      "help": "−1.5 to 1.5 m/s² in steps of 0.5; negative brakes"
+    },
+    { "name": "t", "label": "Time t", "type": "number", "default": "6", "placeholder": "s", "help": "1 to 10 s" },
+    {
+      "name": "time",
+      "label": "Moment shown at the start",
+      "type": "number",
+      "default": "0",
+      "placeholder": "s",
+      "help": "0 is the start; t (or more) is the end of the run"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "First-use pointers", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "u": 4, "a": 1, "t": 6 } },
+    { "name": "set", "payload": { "playing": true } },
+    { "name": "set", "payload": { "playing": false } },
+    { "name": "set", "payload": { "time": 3 } },
+    { "name": "set", "payload": { "time": "end" } },
+    { "name": "set", "payload": { "u": 12, "a": -1.5, "t": 8, "time": 0 } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": [
+    "ready",
+    "change",
+    "plan",
+    "run",
+    "arrive",
+    "view",
+    "dragstart",
+    "dragend",
+    "practice-start",
+    "practice-result",
+    "practice-end"
+  ],
+  "export": {
+    "poster": { "params": { "coach": "0", "time": "6" } },
+    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "time": 6, "animate": false } }] }],
+    "video": {
+      "kind": "script",
+      "seconds": 19,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 0.6, "command": "set", "payload": { "playing": true } },
+        { "at": 9.2, "command": "set", "payload": { "u": 12, "a": -1.5, "t": 6, "time": 0 } },
+        { "at": 9.8, "command": "set", "payload": { "playing": true } }
+      ]
+    }
+  }
+}

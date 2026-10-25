@@ -1,0 +1,104 @@
+/* Equations of motion: the page, the colours of the quantities (বেগ orange, গড় বেগ raspberry, দূরত্ব blue, সময়
+   purple, ত্বরণ green: the same as on the picture), the three steppers and the equations in the panel. The
+   student view itself is ../../shared/lib/student/student.css (linked first). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.pvc { --c-v: #d9480f; --c-V: #c2255c; --c-s: #1c6fd9; --c-t: #6741d9; --c-a: #2b8a3e; }
+.eom .q-v { color: var(--c-v); }
+.eom .q-V { color: var(--c-V); }
+.eom .q-s { color: var(--c-s); }
+.eom .q-t { color: var(--c-t); }
+.eom .q-a { color: var(--c-a); }
+.eom i { font-style: italic; }
+
+/* the graph and the railway's labels are drawn on this canvas, over the 3D */
+.eom-overlay { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; }
+
+/* the learn sheet: the steppers, the equations, then the sentence and the run button */
+.eom .pvc-learn { justify-content: flex-start; gap: 7px; }
+.eom-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.eom-step { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.k-u { --c: var(--c-v); }
+.k-a { --c: var(--c-a); }
+.k-t { --c: var(--c-t); }
+.eom-name { font-size: 12.5px; line-height: 1.35; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.eom-name b { color: var(--c); font-size: 15px; font-style: italic; margin-right: 1px; }
+.eom-name small { color: var(--ink-3); font-size: 11.5px; }
+.eom-ctl { display: flex; align-items: stretch; height: 40px; border: 1px solid var(--line-2); border-radius: 8px; overflow: hidden; background: var(--panel); }
+.eom-pm { flex: none; width: 40px; border: 0; padding: 0; background: var(--soft); display: grid; place-items: center; color: var(--ink); }
+.eom-pm:hover { background: var(--soft-2); }
+.eom-pm svg { width: 18px; height: 18px; stroke-width: 2.4; }
+.eom-pm.off { color: var(--ink-3); opacity: 0.45; }
+.eom-val { flex: 1; min-width: 0; display: grid; place-items: center; font-size: 19px; font-weight: 700; color: var(--c); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.eom-eqs { display: grid; grid-template-columns: max-content max-content minmax(0, 1fr); column-gap: 10px; padding: 5px 10px; border-radius: 8px; background: var(--soft); font-size: 14.5px; line-height: 1.5; }
+.eom-eq { display: contents; }
+.eom-eq > span { white-space: nowrap; }
+.eom-eq .f { font-weight: 600; }
+.eom-eq .n { color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.eom-eq .r b { font-weight: 700; }
+.eom-eq small { font-size: 0.82em; color: var(--ink-3); margin-left: 1px; }
+.eom-eq .ok { display: inline-flex; vertical-align: -3px; }
+.eom-eq .ok svg { width: 16px; height: 16px; color: var(--ok); stroke-width: 2.4; }
+
+.eom .eom-foot { flex-wrap: nowrap; margin-top: auto; align-items: center; }
+.eom-say { flex: 1; min-width: 0; margin: 0; min-height: 2.9em; font-size: 13.5px; line-height: 1.45; color: var(--ink-2); } /* 2 lines: the 3D view keeps its size */
+.eom .eom-run { flex: none; min-width: 8em; height: 40px; font-size: 15.5px; }
+.eom .pvc-learn-foot .eom-run svg { color: #fff; }
+
+/* the test: room for two lines of question and three of worked answer, so the 3D view keeps its size; the
+   answers are short numbers, so all four fit in one row */
+.eom .pvc-q-text { min-height: 2.8em; }
+.eom .pvc-q-feedback { min-height: 4.35em; }
+.eom .pvc-q-options { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.eom .pvc-opt { padding: 0 4px; font-size: 18px; white-space: nowrap; }
+.eom .pvc-opt small { font-size: 12.5px; }
+
+/* phones and narrow columns */
+@container pvc (max-width: 420px) {
+  .eom-eqs { font-size: 13.5px; column-gap: 8px; padding: 4px 8px; }
+  .eom-steps { gap: 6px; }
+  .eom-name { font-size: 12px; }
+  .eom-name small { display: none; }
+}
+/* phone embeds that are not very tall: a little smaller, so the 3D view keeps more room */
+@container pvc (max-width: 560px) and (max-height: 600px) {
+  .eom .pvc-learn { gap: 5px; }
+  .eom-ctl { height: 36px; }
+  .eom-val { font-size: 17px; }
+  .eom-eqs { font-size: 12.5px; line-height: 1.38; }
+  .eom-say { font-size: 12.5px; }
+  .eom .eom-run { height: 36px; }
+  .eom .pvc-q-text { font-size: 15px; }
+  .eom .pvc-q-feedback { font-size: 13px; }
+  .eom .pvc-opt { height: 40px; }
+}
+/* short and wide (phone held sideways): the panel beside the picture, the steppers one under the other */
+@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
+  .eom .pvc-shell { grid-template-columns: minmax(0, 1fr) clamp(280px, 38%, 340px); }
+  .eom .pvc-learn { gap: 5px; }
+  .eom-steps { grid-template-columns: 1fr; gap: 4px; }
+  .eom-step { flex-direction: row; align-items: center; justify-content: space-between; gap: 8px; }
+  .eom-name small { display: inline; }
+  .eom-ctl { height: 36px; width: 140px; flex: none; }
+  .eom-val { font-size: 17px; }
+  .eom-eqs { font-size: 12.5px; line-height: 1.38; column-gap: 7px; padding: 3px 8px; }
+  .eom .eom-foot { flex-wrap: wrap; gap: 4px; }
+  .eom-say { flex-basis: 100%; min-height: 4.2em; font-size: 12.5px; }
+  .eom .eom-run { height: 36px; min-width: 7em; margin-left: auto; }
+  .eom .pvc-q-feedback { font-size: 13px; }
+  .eom .pvc-opt { font-size: 16px; height: 42px; }
+  .eom .pvc-opt small { font-size: 11.5px; }
+}
+
+/* wide frames (book page, desktop): the steppers in a column beside the equations */
+@container pvc (min-width: 720px) and (min-height: 461px) {
+  .eom .pvc-learn { display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); grid-template-rows: auto auto; gap: 8px 16px; align-content: start; }
+  .eom-steps { grid-template-columns: 1fr; gap: 5px; }
+  .eom-step { flex-direction: row; align-items: center; justify-content: space-between; gap: 10px; }
+  .eom-ctl { width: 140px; flex: none; height: 38px; }
+  .eom-eqs { align-self: start; max-width: 460px; }
+  .eom .eom-foot { grid-column: 1 / -1; }
+}
