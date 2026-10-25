@@ -1,0 +1,120 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "equations-of-motion",
+  "title": "Equations of motion (গতির সমীকরণ)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 45,
+  "topic": "2.7",
+  "placement": "Book pages 45–46, topic 2.7: গতির সমীকরণ (Equations of Motion). Next to the section text and its velocity–time graph with V = (u+v)/2.",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "The equations of motion (গতির সমীকরণ, pages 45–46, 2.7) with a commuter train on a straight double-track railway. The student sets its আদি বেগ u (m/s), ত্বরণ a (ms⁻², negative to brake: a braking train stops, it never goes backwards) and the time t with three steppers, and runs it in real time. The camera follows the train on a 40 m stretch of track, so it stays big and the posts stream past faster and faster. Under it a trip bar from 0 to the whole distance fills in 1-second segments (each second's distance written on it), and the বেগ–সময় গ্রাফ draws v = u + at while the area under it fills in the same 1-second strips: the area is the distance, and equal seconds give unequal distances. On the other track an imagined see-through train runs the whole time at the average velocity V = (u + v)/2 and arrives at the same place at the same moment; at the end the triangle above V folds into the gap below it (two flips inside the graph), so the trapezium becomes the rectangle V × t: s = Vt. The panel writes v = u + at, V = (u + v)/2, s = Vt, s = ut + ½at² and v² = u² + 2as with the student's numbers and the book's names. Touching or dragging the graph or the bar shows any moment (to 0.1 s); a touch on the triangle or on the s = Vt row folds it again. Test: 5 tap questions (the final velocity or the distance by formula, the distance as the area under the graph, the average velocity or the velocity at half time read off the graph, the next second's distance after the first, and no acceleration or braking to a stop with v² = u² + 2as or v = u + at), wrong choices from real mistakes, each worked answer naming the mistake and replaying the run. Phone-first, Bangla. GLB: a short stretch of the railway (−25 to 60 m) and the two trains, in metres.",
+  "tags": [
+    "motion",
+    "equations-of-motion",
+    "uniform-acceleration",
+    "velocity-time-graph",
+    "average-velocity",
+    "train",
+    "bangla"
+  ],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "u",
+      "label": "Initial velocity u",
+      "type": "number",
+      "default": "4",
+      "placeholder": "m/s",
+      "help": "0 to 15 m/s, whole numbers"
+    },
+    {
+      "name": "a",
+      "label": "Acceleration a",
+      "type": "number",
+      "default": "1",
+      "placeholder": "ms⁻²",
+      "help": "−1.5 to 1.5 ms⁻² in steps of 0.5; negative brakes"
+    },
+    { "name": "t", "label": "Time t", "type": "number", "default": "6", "placeholder": "s", "help": "1 to 10 s" },
+    {
+      "name": "time",
+      "label": "Moment shown at the start",
+      "type": "number",
+      "default": "0",
+      "placeholder": "s",
+      "help": "0 is the start; t (or more) is the end of the run"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "First-use pointers", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "u": 4, "a": 1, "t": 6 } },
+    { "name": "set", "payload": { "playing": true } },
+    { "name": "set", "payload": { "playing": false } },
+    { "name": "set", "payload": { "time": 3 } },
+    { "name": "set", "payload": { "time": "end" } },
+    { "name": "set", "payload": { "u": 12, "a": -1.5, "t": 8, "time": 0 } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": [
+    "ready",
+    "change",
+    "plan",
+    "run",
+    "arrive",
+    "view",
+    "dragstart",
+    "dragend",
+    "practice-start",
+    "practice-result",
+    "practice-end"
+  ],
+  "export": {
+    "poster": { "params": { "coach": "0", "time": "6" } },
+    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "time": 6, "animate": false } }] }],
+    "video": {
+      "kind": "script",
+      "seconds": 19,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 0.6, "command": "set", "payload": { "playing": true } },
+        { "at": 9.2, "command": "set", "payload": { "u": 12, "a": -1.5, "t": 6, "time": 0 } },
+        { "at": 9.8, "command": "set", "payload": { "playing": true } }
+      ]
+    }
+  }
+}
