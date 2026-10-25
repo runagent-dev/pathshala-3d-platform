@@ -138,6 +138,19 @@ describe('gravitational force: how small the apples’ pull is', () => {
     assert.equal(gf.earthPullTimesCrore(20), 2900);
     assert.equal(gf.earthPullTimesCrore(40), 12000);
   });
+  it('says the number as people do: "২ হাজার ৯০০ কোটি", "১২ হাজার কোটি"; in English 29 and 120 billion', async () => {
+    assert.deepEqual(gf.croreParts(2900), { thousand: 2, rest: 900 });
+    assert.deepEqual(gf.croreParts(12000), { thousand: 12, rest: 0 });
+    assert.deepEqual(gf.croreParts(950), { thousand: 0, rest: 950 });
+    assert.equal(gf.croreToBillion(2900), 29);
+    assert.equal(gf.croreToBillion(12000), 120);
+    const { createI18n } = await import('../../assets/gravitational-force/src/i18n.js');
+    const t = createI18n('bn');
+    const { thousand, rest } = gf.croreParts(gf.earthPullTimesCrore(20));
+    assert.equal(t('times_thousand_crore', { a: thousand, b: rest }), '২ হাজার ৯০০ কোটি');
+    assert.equal(t('times_thousand_crore_even', { a: gf.croreParts(gf.earthPullTimesCrore(40)).thousand }), '১২ হাজার কোটি');
+    assert.equal(createI18n('en')('times_billion', { a: gf.croreToBillion(gf.earthPullTimesCrore(40)) }), '120 billion');
+  });
 });
 
 describe('gravitational force: people never stand on top of each other', () => {

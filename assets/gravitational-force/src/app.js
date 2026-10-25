@@ -31,6 +31,8 @@ import {
   appleWeight,
   applePull,
   clamp,
+  croreParts,
+  croreToBillion,
   earthPullTimesCrore,
   orbitPoint,
   placeAt,
@@ -232,7 +234,7 @@ export function createApp(root, options = {}) {
         // the pull now; then how to move the apple (until it has been moved), or how much stronger the Earth pulls
         const pull = t('fact_apples', { d: Math.round(s.gap), f: sciHtml(scientific(applePull(s.gap))) });
         const more = s.appleMoved
-          ? t('fact_apple_earth', { w: Math.round(appleWeight()), k: earthPullTimesCrore(s.gap).toLocaleString('en-IN') })
+          ? t('fact_apple_earth', { w: Math.round(appleWeight()), k: timesInWords(earthPullTimesCrore(s.gap)) })
           : t('fact_drag_apple', { m: FACTS.apple.mass * 1000 });
         return `${pull}<br>${more}`;
       }
@@ -246,6 +248,13 @@ export function createApp(root, options = {}) {
       default:
         return t('fact_galaxy', { d: FACTS.galaxy.thousandLy, n: FACTS.galaxy.croreYears });
     }
+  }
+  /** A big number of times, as people say it: "২ হাজার ৯০০ কোটি", "১২ হাজার কোটি"; in English "120 billion". */
+  function timesInWords(crore) {
+    if (t.lang === 'en') return t('times_billion', { a: croreToBillion(crore) });
+    const { thousand, rest } = croreParts(crore);
+    if (!thousand) return t('times_crore', { a: rest });
+    return rest ? t('times_thousand_crore', { a: thousand, b: rest }) : t('times_thousand_crore_even', { a: thousand });
   }
   function setNote() {
     const key = { apples: 'note_apples', earth: 'note_earth', galaxy: 'note_galaxy' }[s.stop] ?? 'note_space';

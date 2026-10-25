@@ -58,6 +58,14 @@ export function earthPullTimesCrore(cm) {
 }
 
 /**
+ * A number of crore split the way it is said in Bangla: 2900 → { thousand: 2, rest: 900 } ("২ হাজার ৯০০ কোটি"),
+ * 12000 → { thousand: 12, rest: 0 } ("১২ হাজার কোটি"); and the same number in billions for English (1 billion =
+ * 100 crore): 12000 crore → 120 billion.
+ */
+export const croreParts = (crore) => ({ thousand: Math.floor(crore / 1000), rest: crore % 1000 });
+export const croreToBillion = (crore) => crore / 100;
+
+/**
  * A positive number as a × 10^n with one decimal in a (1.0 ≤ a < 10): { a: '1.2', n: -10 }. Rounding up to 10.0
  * moves to the next power (9.97e-11 → 1.0 × 10⁻¹⁰).
  */
