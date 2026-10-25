@@ -26,7 +26,7 @@ export function createLabels({ stage, layer, keepOff = () => [] }) {
    * the anchor is at the fraction (ax, ay) of the label's box (0.5, 0.5: its middle; 0, 0.5: its left edge).
    * avoid(): more boxes ({ l, t, r, b } in px) this label must not cover. priority: lower goes first.
    */
-  function set(id, { text, point, spots, kind = 'part', color = null, optional = false, priority = 5, avoid = null }) {
+  function set(id, { text, point, spots, kind = 'part', color = null, optional = false, priority = 5, avoid = null, leader = true }) {
     let it = items.get(id);
     const fresh = !it || it.text !== text;
     if (!it) {
@@ -50,7 +50,7 @@ export function createLabels({ stage, layer, keepOff = () => [] }) {
       it.el.style.setProperty('--c', color);
       it.line.style.stroke = color;
     }
-    Object.assign(it, { point, spots, optional, priority, avoid });
+    Object.assign(it, { point, spots, optional, priority, avoid, leader });
     if (fresh) stage.invalidate(); // setting the same label again (every frame, as it moves) draws nothing new by itself
   }
 
@@ -66,14 +66,11 @@ export function createLabels({ stage, layer, keepOff = () => [] }) {
     for (const id of [...items.keys()]) remove(id);
   }
 
-  /** Where each label is now (stage px), for tests of overlaps: { id: { l, t, r, b } | null }. */
-  const placed = {};
-
   function layout() {
     svg.setAttribute('viewBox', `0 0 ${stage.width} ${stage.height}`);
     const taken = keepOff();
     const list = [...items.entries()].sort((a, b) => a[1].priority - b[1].priority);
-    for (const [id, it] of list) {
+    for (const [, it] of list) {
       const a = project(it.point());
       if (!it.w) {
         it.w = it.el.offsetWidth;
@@ -95,7 +92,6 @@ export function createLabels({ stage, layer, keepOff = () => [] }) {
       if (pick < 0 && (it.optional || !a.ok)) {
         it.el.style.visibility = it.line.style.visibility = 'hidden';
         it.spot = -1;
-        placed[id] = null;
         continue;
       }
       if (pick < 0)
@@ -113,13 +109,12 @@ export function createLabels({ stage, layer, keepOff = () => [] }) {
       box.t += dy;
       box.b += dy;
       taken.push({ l: box.l - 3, t: box.t - 3, r: box.r + 3, b: box.b + 3 });
-      placed[id] = box;
       it.el.style.transform = `translate(${box.l}px, ${box.t}px)`;
       it.el.style.visibility = 'visible';
       // leader line from the point to the nearest edge of the label, when they are apart
       const nx = Math.min(Math.max(a.x, box.l), box.r);
       const ny = Math.min(Math.max(a.y, box.t), box.b);
-      const far = Math.hypot(nx - a.x, ny - a.y) > 6;
+      const far = it.leader && Math.hypot(nx - a.x, ny - a.y) > 6;
       it.line.style.visibility = far ? 'visible' : 'hidden';
       if (far) {
         it.line.setAttribute('x1', a.x);
@@ -131,5 +126,5 @@ export function createLabels({ stage, layer, keepOff = () => [] }) {
   }
   stage.onAfterRender(layout);
 
-  return { set, remove, clear, layout, placed, has: (id) => items.has(id) };
+  return { set, remove, clear };
 }

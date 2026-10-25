@@ -29,8 +29,13 @@ describe('the comb and the bits of paper', () => {
     close(p.teethDistance({ x: 64, y: 0, z: 0 }, comb), 30 * Math.hypot(1, 4 / 30), 1e-9);
     close(p.teethDistance({ x: 0, y: 0, z: 40 }, comb), 50);
   });
-  it('a bit of paper weighs about 0.00008 N', () => {
-    close(p.paperWeight(), 7.84e-5, 1e-9);
+  it('comes down inside its reach (so the bits jump), right down with no charge, then lifts them above it', () => {
+    assert.equal(p.stopHeight(0), 12);
+    for (let q = 1; q <= p.COMB.levels; q++) {
+      assert.ok(p.stopHeight(q) < p.reach(q), `charge ${q}: stops at ${p.stopHeight(q)} mm, inside ${p.reach(q)} mm`);
+      assert.ok(p.stopHeight(q) >= 12);
+      assert.ok(p.LIFT_HEIGHT > p.reach(q), 'held up higher than it reaches: the bits are clearly in the air');
+    }
   });
 });
 
@@ -98,11 +103,12 @@ describe('the coil and the bar magnet', () => {
   });
 });
 
-describe('numbers in sentences', () => {
-  it('drops trailing zeros', () => {
-    assert.equal(p.fmt(4), '4');
-    assert.equal(p.fmt(4.5), '4.5');
-    assert.equal(p.fmt(41.2), '41.2');
-    assert.equal(p.fmt(0.00008, 5), '0.00008');
+describe('the force arrows on the coil and the magnet', () => {
+  it('shrink all along the track, from 38 mm at contact, but never vanish', () => {
+    close(p.magnetArrowLength(0), 38);
+    for (let gap = 0; gap < p.MAG.gapMax; gap += 5)
+      assert.ok(p.magnetArrowLength(gap + 5) < p.magnetArrowLength(gap) - 0.3, `shorter at ${gap + 5} mm`);
+    assert.ok(p.magnetArrowLength(p.MAG.gapMax) > 15, 'still well visible at the far end');
+    assert.ok(p.magnetArrowLength(1e6) > 8);
   });
 });

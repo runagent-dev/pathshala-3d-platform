@@ -37,6 +37,11 @@ test('electromagnetic-force: comb and paper, coil and magnet', async ({ page }) 
   s = await fig.call('get');
   expect(s.comb.lifted).toBeGreaterThan(5);
   expect(s.comb.wins).toBe(true);
+  // then it lifts them up into the air ("কাগজকে আকর্ষণ করে তুলে নাও")
+  await fig.advance(1500);
+  s = await fig.call('get');
+  expect(s.comb).toMatchObject({ height: 50, wins: true });
+  expect(s.comb.lifted).toBeGreaterThan(5);
 
   // held high, nothing jumps; lowered to its reach, it does
   await fig.call('set', { again: true, animate: false });
@@ -57,7 +62,7 @@ test('electromagnetic-force: comb and paper, coil and magnet', async ({ page }) 
   await fig.call('set', { facing: 'N' });
   await fig.advance(2500);
   s = await fig.call('get');
-  expect(s.magnet).toMatchObject({ facing: 'N', force: 'repel', gap: 70, moving: false });
+  expect(s.magnet).toMatchObject({ facing: 'N', force: 'repel', gap: 60, moving: false });
   // from the far end the pull still brings it back: the range is infinite
   s = await fig.call('set', { facing: 'S', animate: false });
   await fig.advance(3000);

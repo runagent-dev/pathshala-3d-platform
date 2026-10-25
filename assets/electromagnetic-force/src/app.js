@@ -1,11 +1,13 @@
 // Electromagnetic force (book page 68, topic 3.2.2), student view. Two examples, switched by two chips:
 //  - চিরুনি (the book's own experiment): drag the comb through the hair (or press the button) and it gets a little
-//    charge ("−" discs on it; loose hairs stand up). Bring it to the bits of paper on the desk: the bits jump up
-//    and cling to it. One bit carries two arrows: the pull of the whole Earth (down, মাধ্যাকর্ষণ বল) and the pull of
-//    the comb (up, তড়িৎ চৌম্বক বল), which grows as the comb comes closer and wins. A comb with no charge does nothing.
-//  - চুম্বক: a coil of wire with a cell and a switch, and a bar magnet on a little cart. Switch on: the coil becomes a
-//    magnet (electric and magnetic forces are one force); unlike poles attract, like poles repel (turn the magnet
-//    round, or drag it); far away the force is small but never zero (its range is infinite).
+//    charge ("−" discs on it; loose hairs stand up). Bring it to the bits of paper on the desk: it comes down, the
+//    bits jump up and cling to it, and it lifts them up into the air. One bit carries two arrows: the pull of the
+//    whole Earth (down, মাধ্যাকর্ষণ বল) and the pull of the comb (up, তড়িৎ চৌম্বক বল), which grows as the comb comes
+//    closer and wins. A comb with no charge does nothing.
+//  - চুম্বক: a cell, a switch and a coil of wire in a row, and a bar magnet on a little cart. Switch on: the current
+//    runs (chevrons along the wires) and the coil becomes a magnet (electric and magnetic forces are one force);
+//    unlike poles attract, like poles repel (turn the magnet round, or drag it); far away the force is small but
+//    never zero (its range is infinite).
 // The panel says the idea in the book's words, a live comparison (comb's pull vs the Earth's, or the poles and the
 // force), and the four fundamental forces with this one highlighted. Then a short test. Built on the shared student
 // kit (@shared/student/…); the physics is in physics.js, the models in comb-scene.js and magnet-scene.js.
@@ -21,8 +23,22 @@ import { createArrow } from './arrow.js';
 import { ARC, COMB_SIZE, FEATURED, HEAD, createCombScene, hairSlope, hairTop } from './comb-scene.js';
 import { createI18n } from './i18n.js';
 import { createLabels } from './labels.js';
-import { ARROW_Y, BAR, COIL, COIL_X, createMagnetScene, magnetX } from './magnet-scene.js';
-import { COMB, MAG, STRENGTH_EXP, facingPole, interaction, magnetPull, pullRatio, reach, settleCart, stepCart, teethDistance } from './physics.js';
+import { ARROW, COIL, createMagnetScene, magnetX } from './magnet-scene.js';
+import {
+  COMB,
+  LIFT_HEIGHT,
+  MAG,
+  STRENGTH_EXP,
+  facingPole,
+  interaction,
+  magnetArrowLength,
+  pullRatio,
+  reach,
+  settleCart,
+  stepCart,
+  stopHeight,
+  teethDistance,
+} from './physics.js';
 
 export const DEFAULTS = {
   scene: 'comb', // 'comb' | 'magnet'
@@ -39,17 +55,19 @@ export const DEFAULTS = {
 };
 
 // one colour per thing: the four forces as in the other three figures of 3.2 (তড়িৎ চৌম্বক blue, মহাকর্ষ purple),
-// the magnet's poles as painted (N red, S dark blue); style.css has the same
-const COLORS = { em: '#1c7ed6', grav: '#7048e8', north: '#e03131', south: '#1864ab' };
-const W_ARROW = 16; // mm of arrow for a bit of paper's weight (the Earth's pull)
-const MAX_RATIO = 2.5; // the comb's arrow is drawn at most this many times the weight's
-const PAPER_X = { min: 176, start: 199, max: 210 }; // where the comb's middle may be over the paper
-const PAPER_H = { min: 9, start: 80, max: 80 }; // height of its teeth above the desk (mm)
-const MAG_ARROW = 34; // mm of arrow for the pull when the magnet touches the coil (never shorter than 9 mm, to be seen)
+// the magnet's poles as painted (N red, S grey: not blue, which is the force's colour); style.css has the same
+const COLORS = { em: '#1c7ed6', grav: '#7048e8', north: '#e03131', south: '#5c6670' };
+const W_ARROW = 28; // mm of arrow for a bit of paper's weight (the Earth's pull)
+const MAX_RATIO = 2; // the comb's arrow is drawn at most this many times the weight's
+// where the comb's middle may be over the paper: its last teeth stay over the bit with the arrows, so that bit is the
+// first to jump (it hangs at the comb's end, its arrows clear of the comb)
+const PAPER_X = { min: 196, start: 200, max: 206 };
+const PAPER_H = { min: 9, start: 62, max: 70 }; // height of its teeth above the desk (mm)
 const START_GAP = 40; // mm between the coil and the magnet at the start
 const DOUBLE_TAP = 400; // ms in which a second tap on the main button is ignored
 const deg = THREE.MathUtils.degToRad;
-const ELEVATION = { hair: 12, paper: 30, magnet: 26 }; // how far above the front the camera looks from
+const ELEVATION = { hair: 12, paper: 14, magnet: 24 }; // how far above the front the camera looks from
+const COIL_X = (COIL.x0 + COIL.x1) / 2;
 
 export function createApp(root, options = {}) {
   const o = { ...DEFAULTS, ...options };
@@ -63,13 +81,13 @@ export function createApp(root, options = {}) {
   root.dataset.ui = 'simple';
   root.lang = t.lang;
   root.tabIndex = 0;
-  const force = (cls, name, range) => `<span class="ef-f ${cls}"><b>${t(name)}</b><small>${range}</small></span>`;
+  const force = (cls, name, range) => `<span class="ef-f ${cls}"><b>${t(name)}</b><small title="${t('range')}">${range}</small></span>`;
   const ui = buildStudentShell(root, t, {
     learn: `
           <p class="ef-idea" aria-live="polite"></p>
           <div class="ef-read"><div class="ef-read-main"></div><button class="pvc-btn ef-flip" data-act="flip" hidden>${t('act_flip')}</button></div>
           <div class="ef-forces" role="group" aria-label="${t('forces')}">
-            <span class="ef-forces-k">${t('forces')} <small>· ${t('range')}</small></span>
+            <span class="ef-forces-k">${t('forces')}</span>
             <div class="ef-ladder">
               ${force('grav', 'f_grav', t('infinite'))}${force('weak', 'f_weak', `${pow(-18)} ${t('unit_m')}`)}${force('em on', 'f_em', t('infinite'))}${force('strong', 'f_strong', `${pow(-15)} ${t('unit_m')}`)}
             </div>
@@ -98,12 +116,17 @@ export function createApp(root, options = {}) {
   const cs = createCombScene({ materials: M, colors: COLORS });
   const ms = createMagnetScene({ materials: M, colors: COLORS });
   scene.add(cs.root, ms.root);
-  const upArrow = createArrow({ color: COLORS.em, name: 'CombPull' });
-  const downArrow = createArrow({ color: COLORS.grav, name: 'EarthPull' });
-  const magArrow = createArrow({ color: COLORS.em, name: 'ForceOnMagnet' });
-  const coilArrow = createArrow({ color: COLORS.em, name: 'ForceOnCoil' });
+  const upArrow = createArrow({ color: COLORS.em, name: 'CombPull', radius: 1.6, head: 8, headRadius: 4.4 });
+  const downArrow = createArrow({ color: COLORS.grav, name: 'EarthPull', radius: 1.6, head: 8, headRadius: 4.4 });
+  const magArrow = createArrow({ color: COLORS.em, name: 'ForceOnMagnet', radius: 1.4, head: 7, headRadius: 4 });
+  const coilArrow = createArrow({ color: COLORS.em, name: 'ForceOnCoil', radius: 1.4, head: 7, headRadius: 4 });
   cs.root.add(upArrow.root, downArrow.root);
   ms.root.add(magArrow.root, coilArrow.root);
+  // honest about the coil: in the magnet example, a small note in the corner says its pull is drawn stronger
+  const note = document.createElement('div');
+  note.className = 'ef-note';
+  note.textContent = t('note_coil');
+  ui.stage.append(note);
 
   const shadows = o.shadow && o.bg !== 'transparent';
   let sun = null;
@@ -124,7 +147,7 @@ export function createApp(root, options = {}) {
   /** The sun's shadow covers the part of the desk in the picture. */
   function aimSun() {
     if (!sun) return;
-    const c = s.scene === 'comb' ? new THREE.Vector3(215, 0, 0) : new THREE.Vector3(10, 0, -20);
+    const c = s.scene === 'comb' ? new THREE.Vector3(230, 0, 0) : new THREE.Vector3(-30, 0, 0);
     sun.position.copy(c).add(new THREE.Vector3(60, 420, 260));
     sun.target.position.copy(c);
     Object.assign(sun.shadow.camera, { left: -190, right: 190, top: 190, bottom: -190, near: 200, far: 900 });
@@ -166,6 +189,7 @@ export function createApp(root, options = {}) {
     comb.position.set(x, y, 0);
     comb.rotation.set(0, 0, rot);
     comb.updateMatrixWorld(true);
+    if (s.comb.charge) frizz();
   }
   const e0 = new THREE.Vector3();
   const e1 = new THREE.Vector3();
@@ -180,10 +204,15 @@ export function createApp(root, options = {}) {
     return e0.addScaledVector(ab, k).distanceTo(p);
   }
 
+  const teethMid = new THREE.Vector3();
+  /** The charged hair's loose strands stand up, leaning towards the comb when it is near. */
+  function frizz() {
+    cs.setFrizz(s.comb.charge / COMB.levels, s.comb.charge ? comb.localToWorld(teethMid.set(0, 8, 0)) : null);
+  }
   function setCharge(q) {
     s.comb.charge = Math.min(Math.max(Math.round(q), 0), COMB.levels);
     cs.setCharge(s.comb.charge);
-    cs.setFrizz(s.comb.charge / COMB.levels);
+    frizz();
   }
   /** The comb moved along the hair to x: combing leaves charge on it (one level for about one pass), up to `cap`. */
   function rubTo(x, cap = COMB.levels) {
@@ -340,7 +369,7 @@ export function createApp(root, options = {}) {
   // ── the magnets ─────────────────────────────────────────────────────────────
   const mag = s.mag;
   const currentForce = () => (mag.flipping ? null : interaction(mag.on, facingPole(mag.orient)));
-  const FAR = 55; // mm: a pull that starts from this far shows the infinite range
+  const FAR = MAG.gapMax - 12; // mm: a pull that starts from this far shows the infinite range
   /** Remember whether this pull starts from far away (the panel then speaks of the range). */
   const noteStart = () => {
     mag.fromFar = currentForce() === 'attract' && mag.gap >= FAR;
@@ -351,7 +380,8 @@ export function createApp(root, options = {}) {
   const PX = new THREE.Vector3(1, 0, 0);
   const NX = new THREE.Vector3(-1, 0, 0);
   const magFrom = new THREE.Vector3();
-  const coilFrom = new THREE.Vector3(COIL_X, ARROW_Y, 0);
+  const coilFrom = new THREE.Vector3();
+  let currentShown = false;
   function tickMagnet(dt) {
     let moving = false;
     const kind = currentForce();
@@ -373,14 +403,28 @@ export function createApp(root, options = {}) {
         }
       }
     }
+    // the two forces, at the facing ends just above them: a pull points from each body towards the other (the
+    // arrows' tips meet at the gap), a push points away from the gap; they shrink with distance but never vanish
     const show = s.showArrows && s.scene === 'magnet' && Boolean(kind);
-    const len = show ? Math.max(9, (MAG_ARROW * magnetPull(mag.gap)) / MAG.pull) : 0;
-    const toward = kind === 'attract';
-    const movedMag = magArrow.set(magFrom.set(magnetX(mag.gap), ARROW_Y, 0), toward ? NX : PX, len);
-    const movedCoil = coilArrow.set(coilFrom, toward ? PX : NX, len);
+    const len = show ? magnetArrowLength(mag.gap) : 0;
+    const magEnd = COIL.x1 + mag.gap;
+    let movedMag;
+    let movedCoil;
+    if (kind === 'attract') {
+      movedMag = magArrow.set(magFrom.set(magEnd + len, ARROW.y, ARROW.z), NX, len);
+      movedCoil = coilArrow.set(coilFrom.set(COIL.x1 - len, ARROW.y, ARROW.z), PX, len);
+    } else {
+      movedMag = magArrow.set(magFrom.set(magEnd, ARROW.y, ARROW.z), PX, len);
+      movedCoil = coilArrow.set(coilFrom.set(COIL.x1, ARROW.y, ARROW.z), NX, len);
+    }
     if (movedMag || movedCoil) stage.invalidate();
     syncForceLabel(kind);
-    return moving || mag.flipping;
+    // the current runs along the wires while the switch is closed (only then is there anything to draw each frame)
+    const flowing = s.scene === 'magnet' && mag.on;
+    const stopped = currentShown && !flowing; // the chevrons just went: one more frame without them
+    if (flowing || stopped) ms.setCurrent(flowing, now() / 1000);
+    currentShown = flowing;
+    return moving || mag.flipping || flowing || stopped;
   }
   stage.addTicker((dt) => (s.scene === 'comb' ? tickComb() : tickMagnet(dt)));
 
@@ -470,7 +514,8 @@ export function createApp(root, options = {}) {
     const c = s.comb;
     if (c.place === 'hair') return t(c.charge === 0 ? 'idea_comb_0' : c.charge >= COMB.levels ? 'idea_comb_full' : 'idea_comb_some');
     if (c.charge === 0) return t('idea_paper_0');
-    return lifted() ? t('idea_paper_lifted', { p: pow(STRENGTH_EXP) }) : t('idea_paper_far');
+    // the same bit as the comparison below (it is the first to jump), so the two lines always agree
+    return featuredRatio() >= 1 ? t('idea_paper_lifted', { p: pow(STRENGTH_EXP) }) : t('idea_paper_far');
   }
   function magnetIdea() {
     const kind = currentForce();
@@ -484,8 +529,11 @@ export function createApp(root, options = {}) {
       const q = s.comb.charge;
       const pips = Array.from({ length: COMB.levels }, (_, i) => `<i class="${i < q ? 'on' : ''}"></i>`).join('');
       const wins = featuredRatio() >= 1;
+      // in the hair the comb is far from the paper: no comparison yet
+      const away = s.comb.place === 'hair';
+      const rel = away ? '–' : wins ? '&gt;' : '&lt;';
       return `<span class="ef-charge"><span class="k">${t('charge')}</span><span class="ef-pips" aria-label="${N(q)} / ${N(COMB.levels)}">${pips}</span></span>
-        <span class="ef-vs"><span class="ef-pull em">${t('pull_comb')}<small>${t('pull_comb_k')}</small></span><b class="ef-rel">${wins ? '&gt;' : '&lt;'}</b><span class="ef-pull grav">${t('pull_earth')}<small>${t('pull_earth_k')}</small></span></span>`;
+        <span class="ef-vs${away ? ' away' : ''}"><span class="ef-pull em">${t('pull_comb')}<small>${t('pull_comb_k')}</small></span><b class="ef-rel">${rel}</b><span class="ef-pull grav">${t('pull_earth')}<small>${t('pull_earth_k')}</small></span></span>`;
     }
     const kind = currentForce();
     const facing = facingPole(mag.orient);
@@ -548,8 +596,8 @@ export function createApp(root, options = {}) {
   /** Boxes (stage px) labels keep off: the corner buttons and the hint when it shows. */
   function keepOff() {
     const sr = ui.stage.getBoundingClientRect();
-    return [ui.corner, ui.hint]
-      .filter((n) => n.getBoundingClientRect().width && (n !== ui.hint || n.classList.contains('show')))
+    return [ui.corner, ui.hint, note]
+      .filter((n) => n.getBoundingClientRect().width && (n !== ui.hint || n.classList.contains('show')) && (n !== note || !note.hidden))
       .map((n) => {
         const r = n.getBoundingClientRect();
         return { l: r.left - sr.left - 6, t: r.top - sr.top - 6, r: r.right - sr.left + 6, b: r.bottom - sr.top + 6 };
@@ -581,8 +629,20 @@ export function createApp(root, options = {}) {
     const b = toScreen(arrow.tip());
     return { l: Math.min(a.x, b.x) - pad, t: Math.min(a.y, b.y) - pad, r: Math.max(a.x, b.x) + pad, b: Math.max(a.y, b.y) + pad };
   }
+  const edge = new THREE.Vector3();
+  /** The other bits of paper on the screen (px boxes): the arrows' labels keep off them. */
+  function bitBoxes() {
+    const out = [];
+    cs.bits.forEach((b, i) => {
+      if (i === FEATURED) return;
+      const c = toScreen(b.group.position);
+      const r = Math.abs(toScreen(edge.copy(b.group.position).setX(b.group.position.x + b.size / 2)).x - c.x) + 2;
+      out.push({ l: c.x - r, r: c.x + r, t: c.y - r, b: c.y + r });
+    });
+    return out;
+  }
   const featuredAt = () => cs.bits[FEATURED].group.position;
-  const PAPER_LABEL_AT = new THREE.Vector3(180, 0, 26);
+  const PAPER_LABEL_AT = new THREE.Vector3(214, 0, 26);
   const COIL_LABEL_AT = new THREE.Vector3(COIL_X, 2, 18);
   const cartLabelAt = new THREE.Vector3();
   const upMid = new THREE.Vector3();
@@ -590,6 +650,7 @@ export function createApp(root, options = {}) {
   const RIGHT = [
     [16, 0, 0, 0.5],
     [16, -14, 0, 0.5],
+    [16, -28, 0, 0.5],
     [16, 14, 0, 0.5],
     [-16, 0, 1, 0.5],
   ];
@@ -607,11 +668,12 @@ export function createApp(root, options = {}) {
         spots: [
           [16, 4, 0, 0.5],
           [16, 16, 0, 0.5],
+          [16, 30, 0, 0.5],
           [16, -8, 0, 0.5],
           [-16, 4, 1, 0.5],
         ],
-        priority: 2,
-        avoid: () => [combBox(), arrowBox(upArrow, featuredAt())].filter(Boolean),
+        priority: 1, // first: it has the least room (down by the bench); the comb's label then finds room above it
+        avoid: () => [combBox(), arrowBox(upArrow, featuredAt()), ...bitBoxes()].filter(Boolean),
       });
     } else labels.remove('down');
     if (showUp) {
@@ -624,34 +686,35 @@ export function createApp(root, options = {}) {
         color: COLORS.em,
         point: () => upMid,
         spots: RIGHT,
-        priority: 1,
-        avoid: () => [combBox(), arrowBox(downArrow, featuredAt())].filter(Boolean),
+        priority: 2,
+        avoid: () => [combBox(), arrowBox(downArrow, featuredAt()), ...bitBoxes()].filter(Boolean),
       });
     } else labels.remove('up');
   }
   const forceMid = new THREE.Vector3();
   function syncForceLabel(kind) {
     if (magArrow.root.visible && kind) {
-      forceMid.copy(magArrow.root.position).add(magArrow.tip()).multiplyScalar(0.5); // beside the force on the magnet
+      forceMid.set(COIL.x1 + mag.gap / 2, ARROW.y, ARROW.z); // right above the gap, where the two arrows meet or part
       labels.set('force', {
         text: t(kind),
         kind: 'callout',
         color: COLORS.em,
         point: () => forceMid,
         spots: [
-          [0, -12, 0.5, 1],
-          [0, -26, 0.5, 1],
-          [0, 14, 0.5, 0],
+          [0, -9, 0.5, 1],
+          [0, -24, 0.5, 1],
         ],
         priority: 1,
-        avoid: () => [arrowBox(magArrow, magArrow.root.position, 4), arrowBox(coilArrow, coilArrow.root.position, 4)].filter(Boolean),
+        leader: false,
+        avoid: () => [arrowBox(magArrow, magArrow.root.position, 3), arrowBox(coilArrow, coilArrow.root.position, 3)].filter(Boolean),
       });
     } else labels.remove('force');
   }
   /** The labels that belong to this scene and state (the arrows' and the force's follow by themselves). */
   function refreshLabels() {
     const quizzing = s.mode === 'quiz';
-    for (const id of ['charge', 'hair', 'paper', 'coil', 'switch', 'cell', 'magnet', 'poleS', 'poleN']) labels.remove(id);
+    for (const id of ['charge', 'hair', 'paper', 'coil', 'switch', 'cell', 'magnet', 'poleS', 'poleN', 'current']) labels.remove(id);
+    note.hidden = s.scene !== 'magnet';
     if (s.scene === 'comb') {
       labels.remove('force');
       if (s.comb.charge > 0 && !quizzing)
@@ -709,6 +772,21 @@ export function createApp(root, options = {}) {
       }
       if (quizzing) return;
       const part = (id, key, point, spots) => labels.set(id, { text: t(key), point, spots, optional: true, priority: 7 });
+      // while the switch is closed, the chevrons on the wires are named: the current
+      if (mag.on)
+        labels.set('current', {
+          text: t('current_on'),
+          kind: 'callout',
+          color: '#b26a00',
+          point: () => ms.points.cell,
+          spots: [
+            [0, -22, 0.5, 1],
+            [-14, -16, 1, 1],
+            [14, -16, 0, 1],
+          ],
+          optional: true,
+          priority: 5,
+        });
       part('coil', 'lbl_coil', () => COIL_LABEL_AT, [
         [0, mag.on ? 40 : 16, 0.5, 0],
         [-16, mag.on ? 40 : 14, 1, 0],
@@ -719,11 +797,11 @@ export function createApp(root, options = {}) {
         [16, 14, 0, 0],
       ]);
       if (!mag.everOn) {
-        part('switch', 'lbl_switch', ms.points.switch, [
+        part('switch', 'lbl_switch', () => ms.points.switch, [
           [0, -26, 0.5, 1],
           [22, -16, 0, 1],
         ]);
-        part('cell', 'lbl_cell', ms.points.cell, [
+        part('cell', 'lbl_cell', () => ms.points.cell, [
           [0, -30, 0.5, 1],
           [-20, -24, 1, 1],
         ]);
@@ -751,25 +829,36 @@ export function createApp(root, options = {}) {
       for (let x = HEAD.x - 80; x <= HEAD.x + 80; x += 20) pts.push(V(x, Math.max(HEAD.y + 50, hairTop(x))));
       const mid = hairPose((ARC.from + ARC.to) / 2);
       pts.push({ p: V(mid.x, mid.y + COMB_SIZE.top), box: [-80, -54, 80, 0] }); // room for the charge label
+      // on a wide picture there is room for the face too, so the student is a person, not only hair
+      if (stage.width > stage.height * 1.35) pts.push(...cs.points.face);
       return pts;
     }
     if (key === 'paper') {
-      for (const y of [PAPER_H.min, PAPER_H.max]) combAt({ x: PAPER_X.start, y, rot: 0 }); // moved sideways it may go a little off
+      // the comb's right half (its left end may run off the picture), from where it comes down to where it holds
+      // the bits up; the bit with the arrows, both arrows and their labels; the bits around it
+      const cx = PAPER_X.start;
+      for (const y of [stopHeight(COMB.levels) - 3, PAPER_H.start])
+        for (const x of [0, COMB_SIZE.end]) for (const yy of [0, COMB_SIZE.top]) pts.push(V(cx + x, y + yy));
       for (const b of cs.bits) {
         const p = b.home.position;
-        pts.push(V(p.x - b.size / 2, 0, p.z - b.size / 2), V(p.x + b.size / 2, 0, p.z + b.size / 2));
+        if (p.x > cx - 20) pts.push(V(p.x - b.size / 2, 0, p.z - b.size / 2), V(p.x + b.size / 2, 0, p.z + b.size / 2));
       }
       const f = cs.bits[FEATURED].home.position;
-      pts.push(V(f.x, -W_ARROW - 2, f.z)); // the weight's arrow under the bit
-      pts.push({ p: V(f.x, 0, f.z), box: [8, -24, 150, 34] }); // its labels beside it (16 px off, about 130 px wide)
+      pts.push(V(f.x, -W_ARROW - 3, f.z)); // the weight's arrow under the bit on the desk
+      const hung = V(cx + cs.bits[FEATURED].cling.x, LIFT_HEIGHT + cs.bits[FEATURED].cling.y);
+      pts.push(hung.clone().setY(hung.y + W_ARROW * MAX_RATIO + 2)); // the comb's arrow when the bit is held up
+      pts.push({ p: V(f.x, 0, f.z), box: [8, -24, 150, 34] }); // the labels beside the arrows (16 px off, ~130 px wide)
+      pts.push({ p: hung, box: [8, -40, 140, 20] });
       return pts;
     }
-    // the magnets: coil, cell and switch behind it, the track to the end block, the arrows and their label
-    pts.push(V(COIL.x0 - 4, 0, 22), V(COIL.x0 - 4, 2 * COIL.flange, -22), V(-120, 0, -86), V(-120, 34, -86), V(5, 30, -86));
-    pts.push(V(magnetX(MAG.gapMax) + BAR.len / 2 + 18, 0, 22), V(magnetX(MAG.gapMax) + BAR.len / 2 + 18, 24, -22));
-    pts.push(V(COIL_X - MAG_ARROW, ARROW_Y + 4), V(magnetX(MAG.gapMax) + 10, ARROW_Y + 4));
-    pts.push({ p: V((COIL_X + magnetX(START_GAP)) / 2, ARROW_Y), box: [-50, -44, 50, 0] });
-    pts.push({ p: V(COIL_X, 0, 20), box: [-70, 0, 70, 36] }, { p: V(magnetX(START_GAP), 0, 20), box: [-50, 0, 50, 36] });
+    // the magnets: the circuit in a row (cell, switch, coil), the track to the end block, the arrows and their label
+    const { left, right } = ms.extent;
+    pts.push(V(left, 0, 26), V(left, 22, -12), V(right, 0, 22), V(right, 24, -22));
+    pts.push(V(COIL.x0, 2 * COIL.flange, -20), V(COIL_X, 0, 32)); // the coil, the wire along the front
+    pts.push(V(COIL.x1 - 40, ARROW.y + 5, ARROW.z), V(COIL.x1 + MAG.gapMax + 40, ARROW.y + 5, ARROW.z)); // the arrows
+    pts.push({ p: V(COIL.x1 + START_GAP / 2, ARROW.y, ARROW.z), box: [-45, -40, 45, 0] }); // their label
+    pts.push({ p: V(COIL_X, 0, 20), box: [-70, 0, 70, 52] }, { p: V(magnetX(START_GAP), 0, 20), box: [-50, 0, 50, 36] });
+    pts.push({ p: ms.points.cell, box: [-50, -46, 50, 0] }); // the current's or the cell's label
     return pts;
   }
   function boxOf(node, pad = 6) {
@@ -798,7 +887,8 @@ export function createApp(root, options = {}) {
     });
     const W = stage.width;
     const H = Math.max(stage.height, 120);
-    const boxes = [boxOf(ui.corner)].filter(Boolean);
+    note.hidden = s.scene !== 'magnet';
+    const boxes = [boxOf(ui.corner), key === 'magnet' ? boxOf(note) : null].filter(Boolean);
     const tv = Math.tan(deg(camera.fov / 2));
     const th = tv * camera.aspect;
     const MARGIN = 14;
@@ -894,7 +984,11 @@ export function createApp(root, options = {}) {
       if (!ok || my !== run) return;
     }
   }
-  /** Fly the comb from the hair to over the paper, then lower it slowly (it stops when the student takes it). */
+  /**
+   * Fly the comb from the hair to over the paper, lower it slowly until the bits jump (a little inside its reach),
+   * then lift it up again with the bits hanging from it: "কাগজকে আকর্ষণ করে তুলে নাও". With no charge it comes
+   * right down and nothing happens. It stops as soon as the student takes the comb.
+   */
   async function bring({ descend = true } = {}) {
     if (s.comb.place !== 'hair') return;
     const my = ++run;
@@ -927,7 +1021,12 @@ export function createApp(root, options = {}) {
     refresh();
     refreshLabels();
     emitChange();
-    if (descend) await lower(PAPER_H.min + 3, 2.6, my);
+    if (!descend) return;
+    const q = s.comb.charge;
+    if (!(await lower(stopHeight(q), q ? 1.9 : 2.4, my)) || !q) return;
+    await wait(350);
+    if (my !== run) return;
+    await lower(LIFT_HEIGHT, 1.1, my); // up it goes, the bits with it
   }
   /** Lower (or raise) the comb over the paper to height h in some seconds. */
   async function lower(h, seconds, my = ++run) {
@@ -993,16 +1092,23 @@ export function createApp(root, options = {}) {
     refreshLabels();
     emitChange();
   }
-  /** The comb straight to a place (no animation): over the paper at height h, or back in the hair. */
-  function combAt(place, { h = PAPER_H.min + 3, cx = PAPER_X.start } = {}) {
+  /**
+   * The comb straight to a place (no animation): over the paper at height h, or, with no h, where bring() ends
+   * (charged: the bits lifted and held up in the air; no charge: right down over them); or back in the hair.
+   */
+  function combAt(place, { h = null, cx = PAPER_X.start } = {}) {
     ++run;
     tweener.cancel('comb');
     if (place === 'paper') {
       s.comb.place = s.comb.dest = 'paper';
       s.comb.cx = Math.min(Math.max(cx, PAPER_X.min), PAPER_X.max);
-      s.comb.h = Math.min(Math.max(h, PAPER_H.min), PAPER_H.max);
+      s.comb.h = Math.min(Math.max(h ?? stopHeight(s.comb.charge), PAPER_H.min), PAPER_H.max);
       placeComb(paperPose());
       settleBits();
+      if (h == null && s.comb.charge) {
+        s.comb.h = LIFT_HEIGHT;
+        placeComb(paperPose());
+      }
       tickComb();
     } else {
       dropBits({ instant: true });
@@ -1032,7 +1138,7 @@ export function createApp(root, options = {}) {
     ++run;
     tweener.cancel('comb');
     // a comb in flight lands where it was going
-    if (s.comb.place === 'travel') combAt(s.comb.dest, { h: s.comb.h });
+    if (s.comb.place === 'travel') combAt(s.comb.dest);
     mag.dragging = false;
     drag = null;
     s.scene = next;
@@ -1257,7 +1363,7 @@ export function createApp(root, options = {}) {
         const kind = kinds[i % kinds.length];
         question = { kind };
         if (kind === 'rise') {
-          combQuestion(4, PAPER_H.min + 4);
+          combQuestion(4);
           say(t('q_rise'));
           const c = wordChoices(['opt_rise_right', 'opt_rise_mass', 'opt_rise_nograv', 'opt_rise_air']);
           question = { kind, ...c };
@@ -1291,7 +1397,7 @@ export function createApp(root, options = {}) {
           return { ...c, meta: { kind } };
         }
         if (kind === 'strength') {
-          combQuestion(5, PAPER_H.min + 4);
+          combQuestion(5);
           say(t('q_strength'));
           const em = t('pull_comb_k');
           const grav = t('pull_earth_k');
@@ -1304,10 +1410,11 @@ export function createApp(root, options = {}) {
           question = { kind, ...c };
           return { ...c, meta: { kind } };
         }
-        // the range: the magnet far from the coil, with the switch on (its arrows show after the answer)
+        // the range, from the picture: the switch on, the magnet at the far end of the track (unlike poles facing);
+        // is the coil still pulling it? (its arrows show after the answer, and the magnet rolls in)
         magnetQuestion({ on: true, facing: 'S', gap: MAG.gapMax });
         say(t('q_range'));
-        const c = wordChoices([() => t('infinite'), 'opt_range_contact', () => `${pow(-15)} ${t('unit_m')}`, () => `${pow(-18)} ${t('unit_m')}`]);
+        const c = wordChoices(['opt_far_right', 'opt_far_zero', 'opt_far_touch', 'opt_far_more']);
         question = { kind, ...c };
         return { ...c, meta: { kind } };
       },
@@ -1323,7 +1430,7 @@ export function createApp(root, options = {}) {
         }
         if (q.kind === 'dry') {
           s.showArrows = true;
-          lower(PAPER_H.min + 3, 1.6, my); // down it comes: nothing jumps
+          lower(stopHeight(0), 1.6, my); // down it comes: nothing jumps
           return t('why_dry') + note('mis_dry');
         }
         if (q.kind === 'poles') {
@@ -1341,15 +1448,11 @@ export function createApp(root, options = {}) {
           });
           return t('why_off') + note('mis_off');
         }
-        if (q.kind === 'strength') {
-          s.showArrows = true;
-          return (
-            t('why_strength', { p: pow(STRENGTH_EXP), one: 1, n: STRENGTH_EXP }) + note('mis_str', { p: pow(STRENGTH_EXP), n: STRENGTH_EXP, ten: 10 })
-          );
-        }
+        // no arrows here: their 2 : 1 is this comb and this paper, not the 10^36 of the forces themselves
+        if (q.kind === 'strength') return t('why_strength', { p: pow(STRENGTH_EXP), one: 1, n: STRENGTH_EXP }); // long enough already: no note
         mag.hold = false;
         s.showArrows = true;
-        return t('why_range', { s: pow(-15), w: pow(-18) }) + note('mis_range');
+        return t('why_range') + note('mis_range');
       },
       done() {
         s.locked = false;
@@ -1567,7 +1670,7 @@ export function createApp(root, options = {}) {
         if (s.scene !== 'comb') setScene('comb', { animate });
         if (s.comb.place === 'hair' && animate && p.height == null) bring();
         else if (animate && s.comb.place === 'paper' && p.height != null) lower(Number(p.height), 1.2);
-        else combAt('paper', { h: p.height != null ? Number(p.height) : PAPER_H.min + 3 });
+        else combAt('paper', { h: p.height != null ? Number(p.height) : null });
       } else if (p.place === 'hair' && s.comb.place !== 'hair') {
         if (animate) again();
         else combAt('hair');

@@ -47,9 +47,16 @@ export function protonForceRatio() {
   return (k * e * e) / (G * mp * mp);
 }
 
-/** A bit of paper's weight: about 1 cm² of 80 g/m² paper, 8 mg, so W = m g ≈ 0.00008 N. */
-export const PAPER = { mass: 8e-6, g: 9.8 };
-export const paperWeight = () => PAPER.mass * PAPER.g;
+/** How high (mm) the comb holds the lifted bits up in the air, once they have jumped. */
+export const LIFT_HEIGHT = 50;
+
+/**
+ * How low (mm above the desk) the comb comes down over the paper before it is lifted again: a little inside its
+ * reach, so the bits under it (also those a little in front or behind) jump; with no charge, right down.
+ */
+export function stopHeight(q) {
+  return q > 0 ? Math.max(12, reach(q) - 14) : 12;
+}
 
 /** The distance (mm) from a point to the comb's row of teeth tips: a segment from (cx − half, h) to (cx + half, h). */
 export function teethDistance({ x, y, z = 0 }, { cx, h, half }) {
@@ -62,7 +69,7 @@ export function teethDistance({ x, y, z = 0 }, { cx, h, half }) {
 export const MAG = {
   coil: 70, // mm, length of the coil
   bar: 76, // mm, length of the bar magnet
-  gapMax: 70, // mm, the cart stops against the block at the end of the track
+  gapMax: 60, // mm, the cart stops against the block at the end of the track
   pull: 1600, // mm/s²: the cart's acceleration when the magnet touches the coil
   friction: 40, // mm/s²: how much the wheels' friction slows the cart (it stays put under a smaller pull)
 };
@@ -134,9 +141,11 @@ export function settleCart(gap, kind) {
   return { gap: st.gap, v: 0 };
 }
 
-// ── numbers for the panel ───────────────────────────────────────────────────
-
-/** A number without trailing zeros: 4, 4.5, 0.08. */
-export function fmt(x, digits = 2) {
-  return String(+Number(x).toFixed(digits));
+/**
+ * How long (mm) the force arrows are drawn at this gap: 8 + 30 × (F / F₀)^0.35, so they keep shrinking along the
+ * whole track as the force does, but never vanish (the force never reaches zero). Not to scale: a 1/r⁴ force drawn
+ * to scale would be invisible a few centimetres away.
+ */
+export function magnetArrowLength(gap) {
+  return 8 + 30 * (magnetPull(gap) / MAG.pull) ** 0.35;
 }
