@@ -1,0 +1,104 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "scalar-vector",
+  "title": "Scalar and vector quantities (স্কেলার ও ভেক্টর রাশি)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 38,
+  "topic": "2.3",
+  "placement": "Book page 38, topic 2.3: স্কেলার ও ভেক্টর রাশি. Next to চিত্র ২.০৩ (vectors A, B, C, D), or in place of it.",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "mm",
+  "description": "Interactive 3D version of the book's চিত্র ২.০৩ (page 38, 2.3): four arrow pieces A, B, C, D lie on graph paper with a compass rose, beside a thermometer reading 37° C. Drag an arrow by its body to move it (its মান and দিক stay the same: the same vector), drag its head to turn it to another compass direction (দিক) or stretch it (মান, counted by the marks on it, one per unit); the panel says what changed. Drop an arrow on another's tail to compare: only when মান and দিক are both equal are they the same vector, wherever they were drawn; both দিক arcs are drawn and the caption's verdicts are given in the book's words. Move or turn the thermometer and nothing changes: a temperature has a মান and no দিক (a scalar). Buttons line up the book's pairs A–B, A–C, C–D. Test tab: 5 questions (which arrow equals A, why two vectors differ, scalar, vector or not a quantity (or the hand-written notation), what makes '4 km from home' a position, reading an arrow's মান and দিক). Phone-first, Bangla.",
+  "tags": ["vector", "scalar", "magnitude", "direction", "temperature", "motion", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "compare",
+      "label": "Start with a pair lined up",
+      "type": "select",
+      "options": [["", "none"], ["A,B", "A and B"], ["A,C", "A and C"], ["C,D", "C and D"]],
+      "default": ""
+    },
+    {
+      "name": "select",
+      "label": "Chosen arrow",
+      "type": "select",
+      "options": [["A", "A"], ["B", "B"], ["C", "C"], ["D", "D"], ["T", "thermometer"]],
+      "default": "A"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "First-use pointers", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "compare": ["A", "B"] } },
+    { "name": "set", "payload": { "compare": ["A", "C"] } },
+    { "name": "set", "payload": { "compare": ["C", "D"] } },
+    { "name": "set", "payload": { "arrows": { "C": { "angle": 45 } }, "select": "C" } },
+    { "name": "set", "payload": { "select": "T", "thermometer": { "angle": 90 } } },
+    { "name": "set", "payload": { "home": true } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": [
+    "ready",
+    "change",
+    "select",
+    "compare",
+    "dragstart",
+    "dragend",
+    "view",
+    "practice-start",
+    "practice-result",
+    "practice-end"
+  ],
+  "export": {
+    "poster": { "params": { "coach": "0", "compare": "A,C" } },
+    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "home": true, "animate": false } }] }],
+    "video": {
+      "kind": "script",
+      "seconds": 21,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 1, "command": "set", "payload": { "compare": ["A", "B"] } },
+        { "at": 4.5, "command": "set", "payload": { "compare": ["A", "C"] } },
+        { "at": 8, "command": "set", "payload": { "compare": ["C", "D"] } },
+        { "at": 11.5, "command": "set", "payload": { "home": true } },
+        { "at": 12.8, "command": "set", "payload": { "arrows": { "C": { "angle": 45 } }, "select": "C" } },
+        { "at": 15, "command": "set", "payload": { "compare": ["A", "C"] } },
+        { "at": 18, "command": "set", "payload": { "select": "T", "thermometer": { "angle": 90 } } }
+      ]
+    }
+  }
+}
