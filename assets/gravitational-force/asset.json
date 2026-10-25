@@ -1,0 +1,131 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "gravitational-force",
+  "title": "Gravitational force (মহাকর্ষ বল)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 68,
+  "topic": "3.2.1",
+  "placement": "Book page 68, topic 3.2.1: মহাকর্ষ বল (Gravitational Force), next to that paragraph.",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "cm",
+  "description": "Interactive 3D figure for the gravitational force (মহাকর্ষ বল), book page 68, topic 3.2.1. Five stops, from the smallest distance to the largest, show the same pull, each pair with two equal violet arrows: two 200 g apples on a table (any two masses attract; the student drags one apple and sees the pull, about 6.7 × 10⁻¹¹ N at 20 cm, shrink with distance but never vanish); people standing all round a globe, the student among them in Bangladesh (the student drags themself round the Earth, on land or in a boat at sea, and drops the apples: মাধ্যাকর্ষণ বল always points to the Earth's centre, that is what \"down\" means and why we feel our weight); the Moon going round the Earth and the Earth going round the Sun (a button takes the pull away and the body flies off in a straight line, Newton's first law); and our Sun going round the centre of the galaxy (the range is infinite). A strip shows the four fundamental forces weakest to strongest with their ranges, this one highlighted. Sizes, distances and time are stylised and say so. Test tab: 5 questions (the direction of the pull on a person somewhere on the Earth, with arrows as answers; what keeps the Moon or the Earth going round, or where the Moon would go without the pull; মহাকর্ষ or মাধ্যাকর্ষণ, or why we feel weight; do two apples attract; the range, or the pull at twice the distance). Phone-first, Bangla.",
+  "tags": [
+    "force",
+    "gravitation",
+    "gravity",
+    "fundamental-forces",
+    "earth",
+    "moon",
+    "sun",
+    "galaxy",
+    "weight",
+    "bangla"
+  ],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "stop",
+      "label": "Start at",
+      "type": "select",
+      "options": [
+        ["apples", "two apples (আপেল)"],
+        ["earth", "people on the Earth (পৃথিবী)"],
+        ["moon", "Moon round the Earth (চাঁদ)"],
+        ["sun", "Earth round the Sun (সূর্য)"],
+        ["galaxy", "stars in a galaxy (গ্যালাক্সি)"]
+      ],
+      "default": "earth"
+    },
+    { "name": "play", "label": "Orbits turning", "type": "boolean", "default": "1" },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "First-use pointers", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "angle": 246.5 } },
+    { "name": "set", "payload": { "drop": true } },
+    { "name": "set", "payload": { "stop": "apples", "gap": 40 } },
+    { "name": "set", "payload": { "stop": "moon", "orbit": 90, "playing": false } },
+    { "name": "set", "payload": { "nopull": true } },
+    { "name": "set", "payload": { "stop": "galaxy" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": [
+    "ready",
+    "change",
+    "stop",
+    "view",
+    "drop",
+    "nopull",
+    "dragstart",
+    "dragend",
+    "practice-start",
+    "practice-result",
+    "practice-end"
+  ],
+  "export": {
+    "poster": { "params": { "coach": "0" } },
+    "glb": [
+      { "name": "default", "setup": [{ "command": "set", "payload": { "stop": "earth", "animate": false } }] },
+      { "name": "apples", "setup": [{ "command": "set", "payload": { "stop": "apples", "animate": false } }] },
+      {
+        "name": "moon",
+        "setup": [{ "command": "set", "payload": { "stop": "moon", "playing": false, "orbit": 35, "animate": false } }]
+      },
+      {
+        "name": "sun",
+        "setup": [{ "command": "set", "payload": { "stop": "sun", "playing": false, "orbit": 140, "animate": false } }]
+      }
+    ],
+    "video": {
+      "kind": "script",
+      "seconds": 20,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 1, "command": "set", "payload": { "angle": 120 } },
+        { "at": 2.4, "command": "set", "payload": { "angle": 200 } },
+        { "at": 3.8, "command": "set", "payload": { "angle": 310 } },
+        { "at": 5.2, "command": "set", "payload": { "drop": true } },
+        { "at": 8, "command": "set", "payload": { "stop": "apples" } },
+        { "at": 9, "command": "set", "payload": { "gap": 30 } },
+        { "at": 10, "command": "set", "payload": { "gap": 45 } },
+        { "at": 11.2, "command": "set", "payload": { "stop": "moon" } },
+        { "at": 13, "command": "set", "payload": { "nopull": true } },
+        { "at": 16, "command": "set", "payload": { "stop": "sun" } },
+        { "at": 18, "command": "set", "payload": { "stop": "galaxy" } }
+      ]
+    }
+  }
+}
