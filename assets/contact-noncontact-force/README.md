@@ -3,7 +3,7 @@
 **Where it goes in the book:** Book page 67, topic 3.1.2: বল (Force). Next to the paragraphs that define force and divide it into স্পর্শ and অস্পর্শ বল.
 
 Interactive 3D figure for the Pathshala book. The page's five examples of force, one at a time (a crane lifting a
-concrete block, a push on a trolley, friction stopping a sliding crate, a ball let go, a magnet pulling a nail):
+concrete block, a push on a trolley, friction stopping a sliding crate, a football let go, a magnet pulling a nail):
 the student plays each one, sees its force arrow and where it meets the body (a ring where something touches, a
 dashed bracket across an empty gap), and sorts it into স্পর্শ বল or অস্পর্শ বল. Then a five-question test.
 
@@ -11,7 +11,7 @@ Notes for the book developer:
 - The scene is in metres, everything real size; the GLB exports (`contact-noncontact-force.glb` the crane, then
   `-push`, `-friction`, `-fall`, `-magnet`) hold only the objects (no ground, arrows or labels).
 - `get` returns `{ example, scene, phase, time, speed, acting, touching, gap, kind, effect, waiting, sorted, view,
-  mode }`: `phase` is `rest` | `acting` | `paused` | `done`; `speed` is the real speed in m/s (the friction, ball
+  mode }`: `phase` is `rest` | `acting` | `paused` | `done`; `speed` is the real speed in m/s (the friction, football
   and magnet examples are shown 2, 3 and 10 times slower and say so); `gap` is in m (or `null`); `waiting` is true
   while the example is stopped at its telling moment for the student to sort; `sorted` maps example → `contact` |
   `noncontact`.

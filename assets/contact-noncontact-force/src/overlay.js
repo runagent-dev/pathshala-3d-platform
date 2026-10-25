@@ -24,10 +24,10 @@ export function createOverlay({ stage, layer, avoid = () => [] }) {
   layer.appendChild(svg);
   const ring = document.createElementNS(SVG, 'circle');
   ring.classList.add('cnf-ring');
-  ring.setAttribute('r', '15');
+  ring.setAttribute('r', '22'); // hollow and wider than the hand or hook it rings, so the touching stays visible
   const pulse = document.createElementNS(SVG, 'circle');
   pulse.classList.add('cnf-pulse');
-  pulse.setAttribute('r', '15');
+  pulse.setAttribute('r', '22');
   const edge = document.createElementNS(SVG, 'line');
   edge.classList.add('cnf-edge');
   const gap = document.createElementNS(SVG, 'line');
@@ -154,8 +154,8 @@ export function createOverlay({ stage, layer, avoid = () => [] }) {
           el.setAttribute('cy', p.y);
           show(el);
         }
-        obstacles.push({ x: p.x - 19, y: p.y - 19, w: 38, h: 38 });
-        mAnchor = { x: p.x, y: p.y, r: 17 };
+        obstacles.push({ x: p.x - 25, y: p.y - 25, w: 50, h: 50 });
+        mAnchor = { x: p.x, y: p.y, r: 23 };
       }
     } else if (m?.kind === 'edge') {
       const a = project(m.a);

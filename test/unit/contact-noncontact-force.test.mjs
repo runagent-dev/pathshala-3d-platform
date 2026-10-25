@@ -45,6 +45,39 @@ describe('force: the page’s five examples', () => {
       assert.ok(f.KEY[id] > 0 && f.KEY[id] < f.DURATION[id]);
     }
   });
+  it('every example ends at rest: speed 0 at the end of its action (also the magnet, whose times add to 2.3499…)', () => {
+    for (const id of f.EXAMPLE_IDS) {
+      assert.equal(f.actionAt(id, f.DURATION[id]).speed, 0, `${id} at its end`);
+      assert.equal(f.speedText(f.actionAt(id, f.DURATION[id]).speed), '0.0');
+    }
+    assert.equal(f.magnetAt(f.DURATION.magnet).speed, 0);
+  });
+  it('the panel waits for the body to move: crane taking up the slack, hands reaching, magnet brought near', () => {
+    assert.equal(f.moved('crane', f.actionAt('crane', 0.2)), false);
+    assert.equal(f.moved('push', f.actionAt('push', 0.3)), false);
+    assert.equal(f.moved('fall', f.actionAt('fall', 0.2)), false);
+    assert.equal(f.moved('magnet', f.actionAt('magnet', 0.8)), false);
+    assert.equal(f.moved('friction', f.actionAt('friction', 0)), true); // already sliding
+    for (const id of f.EXAMPLE_IDS) assert.equal(f.moved(id, f.actionAt(id, f.KEY[id])), true, `${id} moves by its telling moment`);
+    // the crane's pull is drawn once it lifts the block
+    assert.equal(f.craneAt(0.3).acting, false);
+    assert.equal(f.craneAt(f.CRANE.take).acting, true);
+  });
+  it('gravity pulls the football all the time: held, falling and lying on the floor', () => {
+    assert.ok(f.fallAt(0).acting && f.fallAt(0).held);
+    assert.ok(f.fallAt(f.KEY.fall).acting && !f.fallAt(f.KEY.fall).held);
+    assert.ok(f.fallAt(f.DURATION.fall).acting && f.fallAt(f.DURATION.fall).resting);
+    assert.equal(f.fallAt(f.KEY.fall).dir, 'down');
+  });
+  it('the magnet’s pull grows as the gap closes', () => {
+    let last = -1;
+    for (let t = f.MAGNET.slide + f.MAGNET.wait; t <= f.DURATION.magnet; t += 0.1) {
+      const k = f.magnetAt(t).strength;
+      assert.ok(k >= last && k <= 1);
+      last = k;
+    }
+    assert.equal(f.magnetAt(f.DURATION.magnet).strength, 1);
+  });
   it('rounds without binary leftovers and writes speeds with one decimal', () => {
     assert.equal(f.roundTo(0.1 + 0.2, 0.1), 0.3);
     assert.equal(f.roundTo(1.118, 0.01), 1.12);

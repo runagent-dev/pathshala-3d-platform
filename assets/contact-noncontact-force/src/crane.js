@@ -4,7 +4,7 @@
 // block's top where the ring is.
 import * as THREE from 'three';
 import { createArrow } from './arrow.js';
-import { V, box, canvasTexture, castShadows, groundPatch, hitBox, mat, tube, wheel } from './parts.js';
+import { V, blob, box, canvasTexture, castShadows, groundPatch, hitBox, mat, tube, wheel } from './parts.js';
 
 const BOOM_PIVOT = V(-0.45, 1.95, 0);
 const BOOM_ANGLE = THREE.MathUtils.degToRad(35);
@@ -112,6 +112,9 @@ export function createCraneScene({ colors }) {
   load.add(ring);
   box(0.16, 0.04, 0.12, hookSteel, 0, LOAD.h + 0.02, 0, load);
   load.position.x = CABLE_X;
+  const shade = blob(LOAD.w * 0.75, 0.42);
+  shade.scale.y = 0.8;
+  shade.position.set(CABLE_X, 0.004, 0);
 
   // ── ground: a site of packed earth ──
   const ground = groundPatch(13, 7.5, {
@@ -124,7 +127,7 @@ export function createCraneScene({ colors }) {
     },
   });
   ground.position.set(0.3, 0, 0);
-  root.add(ground);
+  root.add(ground, shade);
   castShadows(model);
 
   // big targets: the block (it moves with the block) and the truck
@@ -147,7 +150,10 @@ export function createCraneScene({ colors }) {
     cable.position.set(CABLE_X, (TIP.y - 0.18 + hookY + 0.62) / 2, 0);
     cable.scale.set(0.018, TIP.y - 0.18 - (hookY + 0.62), 0.018);
     arrow.setOpacity(arrowOn ? 1 : 0);
-    if (arrowOn) arrow.set(v.set(CABLE_X + 0.42, lift + LOAD.h + 0.02, 0.3), V(0, 1, 0), 1.05);
+    if (arrowOn) arrow.set(v.set(CABLE_X + 0.42, lift + LOAD.h + 0.02, 0.3), V(0, 1, 0), 0.8);
+    // a soft shadow under the block: its lift reads even without real shadows
+    shade.scale.setScalar(1 + lift * 0.25);
+    shade.material.opacity = Math.max(0.25, 1 - lift * 0.45);
   }
 
   return {
@@ -156,8 +162,9 @@ export function createCraneScene({ colors }) {
     model,
     hits,
     arrow,
-    // what the front view frames: the block's whole path, the hook, the pulley at the boom's tip
-    fit: { min: V(-0.3, -0.05, -0.5), max: V(CABLE_X + 1.0, TIP.y + 0.3, 0.5) },
+    // what the front view frames: the block's whole 1.3 m path, the hook block and the cable above it; the boom's
+    // tip and the truck's cab run off the top and the left (wide frames show more of the truck)
+    fit: { min: V(CABLE_X - 1.35, -0.05, -0.5), max: V(CABLE_X + 1.3, 3.45, 0.6) },
     views: { front: V(0.26, 0.16, 1).normalize(), '3d': V(0.85, 0.42, 0.78).normalize() },
     shadow: { center: V(0.4, 0, 0), r: 6 },
     update,

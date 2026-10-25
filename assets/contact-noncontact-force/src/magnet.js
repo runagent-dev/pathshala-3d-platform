@@ -1,12 +1,14 @@
-// চুম্বকের আকর্ষণ: a bar magnet (6 cm, N red, S blue) is brought to 3 cm from an iron nail (5 cm) lying on a
-// table. Nothing touches the nail, yet it starts to move and rushes, faster and faster, to the magnet's N pole.
-// Real size, metres (shown 10 times slower than real). The arrow lies just behind the nail, pointing at the magnet;
-// a dashed line in front of it shows the gap still open between the nail's tip and the magnet.
+// চুম্বকের আকর্ষণ: a hand brings a bar magnet (6 cm, N red, S blue) to 3 cm from an iron nail (5 cm) lying on a
+// table. The hand touches the magnet, nothing touches the nail, yet the nail starts to move and rushes, faster and
+// faster, to the magnet's N pole. Real size, metres (shown 10 times slower than real). The arrow lies just behind
+// the nail, pointing at the magnet, and grows as the gap closes (the pull is stronger nearer the magnet); a dashed
+// line in front of the nail shows the gap still open. The view is close on the nail, the gap and the N pole: the S
+// end and the hand run off the right edge on a phone.
 import * as THREE from 'three';
 import { textMesh } from '@shared/student/materials.js';
 import { createArrow } from './arrow.js';
 import { MAGNET } from './motion.js';
-import { V, box, castShadows, groundPatch, hitBox, mat } from './parts.js';
+import { V, box, castShadows, groundPatch, hitBox, mat, tube } from './parts.js';
 
 const NAIL = { len: 0.05, r: 0.0019, head: 0.0042 };
 const BAR = { len: 0.06, h: 0.01, d: 0.017 };
@@ -53,18 +55,49 @@ export function createMagnetScene({ colors }) {
     magnet.add(letter);
   }
 
-  // the table top
+  // the hand that brings it: the forefinger on top of the S end, the thumb on its near side, the rest of the hand
+  // just behind the end, the wrist going up and away (out of the picture on a phone)
+  const skin = mat('#b98057', { roughness: 0.65, name: 'Skin' });
+  const sleeve = mat('#f4f6f8', { roughness: 0.85, name: 'Shirt' });
+  const hand = new THREE.Group();
+  hand.name = 'Hand';
+  magnet.add(hand);
+  const finger = (r, len, a, b) => {
+    const m = new THREE.Mesh(new THREE.CapsuleGeometry(r, len, 4, 12), skin);
+    placeAlong(m, a, b);
+    hand.add(m);
+  };
+  const UPV = new THREE.Vector3(0, 1, 0);
+  const dirV = new THREE.Vector3();
+  function placeAlong(m, a, b) {
+    dirV.subVectors(b, a);
+    m.position.addVectors(a, b).multiplyScalar(0.5);
+    m.quaternion.setFromUnitVectors(UPV, dirV.normalize());
+  }
+  const E = BAR.len; // the S end
+  finger(0.0043, 0.02, V(E - 0.022, BAR.h + 0.0043, -0.001), V(E + 0.004, BAR.h + 0.007, -0.002)); // forefinger on top
+  finger(0.0047, 0.01, V(E - 0.009, BAR.h * 0.5, BAR.d / 2 + 0.0047), V(E + 0.004, BAR.h * 0.8, BAR.d / 2 + 0.004)); // thumb
+  finger(0.0044, 0.012, V(E + 0.004, BAR.h + 0.002, -0.008), V(E + 0.012, BAR.h + 0.008, -0.014)); // curled fingers
+  finger(0.0042, 0.011, V(E + 0.006, BAR.h + 0.001, -0.016), V(E + 0.013, BAR.h + 0.007, -0.021));
+  const palm = new THREE.Mesh(new THREE.SphereGeometry(0.016, 20, 14), skin);
+  palm.scale.set(1.05, 0.75, 1.15);
+  palm.position.set(E + 0.015, BAR.h + 0.013, -0.006);
+  hand.add(palm);
+  tube(V(E + 0.026, BAR.h + 0.022, -0.008), V(E + 0.08, BAR.h + 0.07, -0.04), 0.012, skin, hand);
+  tube(V(E + 0.076, BAR.h + 0.067, -0.038), V(E + 0.15, BAR.h + 0.13, -0.08), 0.019, sleeve, hand);
+
+  // the table top: plain and light, like the page
   const table = groundPatch(0.4, 0.26, {
-    color: '#d7b48a',
+    color: '#efe5d3',
     px: 512,
     draw: (ctx, w, h) => {
-      for (let i = 0; i < 70; i++) {
-        ctx.strokeStyle = `rgba(120,78,40,${0.06 + Math.random() * 0.1})`;
-        ctx.lineWidth = 1 + Math.random() * 2;
+      for (let i = 0; i < 14; i++) {
+        ctx.strokeStyle = `rgba(150,110,70,${0.04 + Math.random() * 0.04})`;
+        ctx.lineWidth = 2 + Math.random() * 3;
         ctx.beginPath();
         const y = Math.random() * h;
         ctx.moveTo(0, y);
-        ctx.bezierCurveTo(w * 0.33, y + 6, w * 0.66, y - 6, w, y + 3);
+        ctx.bezierCurveTo(w * 0.33, y + 5, w * 0.66, y - 5, w, y + 2);
         ctx.stroke();
       }
     },
@@ -89,8 +122,9 @@ export function createMagnetScene({ colors }) {
     nail.position.x = tip;
     magnet.position.set(face + wobble * 0.0015, 0, 0);
     arrow.setOpacity(arrowOn ? 1 : 0);
-    // just behind the nail (farther from the viewer), along it, pointing at the magnet
-    if (arrowOn) arrow.set(v.set(tip - 0.036, 0.003, -0.0085), V(1, 0, 0), 0.03);
+    // just behind the nail (farther from the viewer), along it, pointing at the magnet; longer as the gap closes
+    const len = 0.017 + 0.015 * (m.strength ?? 1);
+    if (arrowOn) arrow.set(v.set(tip - 0.006 - len, 0.003, -0.0085), V(1, 0, 0), len);
   }
 
   return {
@@ -99,8 +133,10 @@ export function createMagnetScene({ colors }) {
     model,
     hits,
     arrow,
-    // the nail's whole way and the magnet where it stops; brought in, the magnet comes from the right edge
-    fit: { min: V(-0.066, -0.003, -0.02), max: V(0.085, 0.012, 0.02) },
+    // close on the nail's whole way, the gap and the N pole; brought in, the magnet comes from the right edge
+    fit: { min: V(-0.066, -0.003, -0.02), max: V(0.055, 0.012, 0.02) },
+    // a wide view has room for the whole magnet and the hand that holds it
+    fitWide: { min: V(-0.07, -0.003, -0.02), max: V(0.13, 0.03, 0.02) },
     views: { front: V(0.08, 0.62, 1).normalize(), '3d': V(0.7, 0.75, 0.75).normalize() },
     shadow: { center: V(0.02, 0, 0), r: 0.14 },
     update,
@@ -109,8 +145,9 @@ export function createMagnetScene({ colors }) {
     bodies: () => [
       { min: V(tip - NAIL.len, 0, -NAIL.head), max: V(tip, 2 * NAIL.head, NAIL.head) },
       { min: V(face, 0, -BAR.d / 2), max: V(face + BAR.len, BAR.h, BAR.d / 2) },
+      { min: V(face + BAR.len - 0.02, 0, -0.04), max: V(face + BAR.len + 0.2, 0.15, 0.01) }, // the hand
     ],
-    actor: (out, k = 0) => (k < 2 ? out.set(face + BAR.len * [0.3, 0.6][k], BAR.h, BAR.d / 2) : out.set(tip - NAIL.len / 2, 0.004, 0)),
+    actor: (out, k = 0) => (k === 1 ? out.set(tip - NAIL.len / 2, 0.004, 0) : out.set(face + BAR.len * (k === 0 ? 0.2 : 0.45), BAR.h, BAR.d / 2)),
     wiggle(k) {
       wobble = Math.sin(k * Math.PI * 4) * (1 - k);
     },

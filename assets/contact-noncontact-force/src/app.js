@@ -14,7 +14,7 @@ import { createAudio } from '@shared/student/audio.js';
 import { buildStudentShell } from '@shared/student/shell.js';
 import { createCoach } from '@shared/student/coach.js';
 import { createQuiz } from '@shared/student/quiz.js';
-import { ICONS } from '@shared/student/icons.js';
+import { ICONS, svg } from '@shared/student/icons.js';
 import { createI18n } from './i18n.js';
 import { EXAMPLE_ICONS } from './icons.js';
 import { createOverlay } from './overlay.js';
@@ -37,6 +37,7 @@ import {
   KEY,
   KIND,
   KIND_CHOICES,
+  moved,
   SLOW,
   actionAt,
   drop,
@@ -63,6 +64,8 @@ export const DEFAULTS = {
 /** One colour per meaning: the force (its arrow and name), touching, not touching. */
 const COLORS = { force: '#e8590c', contact: '#1c6fd9', noncontact: '#7048e8' };
 const TOP_ROOM = 52; // px kept clear at the top of the view for the corner buttons and the note
+/** The direction of the velocity beside its readout (turned up, down or right by CSS). */
+const ARROW_ICON = svg('<path d="M4 12h15M13.5 6.5L19 12l-5.5 5.5"/>');
 
 export function createApp(root, options = {}) {
   const o = { ...DEFAULTS, ...options };
@@ -83,7 +86,7 @@ export function createApp(root, options = {}) {
           <p class="cnf-line" aria-live="polite"></p>
           <div class="cnf-foot">
             <button class="pvc-btn primary" data-act="play"><span class="ic"></span><span class="lb"></span></button>
-            <span class="cnf-speed"><span class="k">${t('speed')}</span><b>0</b><small>${t('unit_ms')}</small></span>
+            <span class="cnf-speed" role="status"><span class="k">${t('speed')}</span><i class="cnf-dir" aria-hidden="true">${ARROW_ICON}</i><b>0</b><small>${t('unit_ms')}</small></span>
             <span class="cnf-count"></span>
           </div>
           <div class="cnf-trays">
@@ -151,8 +154,8 @@ export function createApp(root, options = {}) {
     locked: false,
     userMovedCamera: false,
     poolTime: 0,
+    poolFrozen: false, // the test case's loop stopped at a telling moment (the comb's answer)
     quizShow: { arrow: true, label: true, marker: false, markerLabel: false },
-    token: 0,
   };
   const isPool = (id) => id in CASES;
   const cur = () => scenes[s.scene];
@@ -168,6 +171,8 @@ export function createApp(root, options = {}) {
     playIcon: $('[data-act="play"] .ic'),
     playLabel: $('[data-act="play"] .lb'),
     speed: $('.cnf-speed b'),
+    speedBox: $('.cnf-speed'),
+    dir: $('.cnf-dir'),
     count: $('.cnf-count'),
     trays: ui.$$('[data-sort]'),
   };
@@ -187,27 +192,34 @@ export function createApp(root, options = {}) {
     if (s.phase === 'rest') return t('lead', { book: t(`book_${id}`), text: t(`rest_${id}`) });
     if (atKey()) return s.feedback === 'wrong' ? `${t(`wrong_${id}`)} ${t('ask')}` : t('ask');
     const m = actionAt(id, s.time);
+    if (!moved(id, m)) return t(`pre_${id}`); // still being set up: the body has not moved yet
     const what = t(ended(id, m) ? `end_${id}` : `act_${id}`);
     const kind = s.sorted[id] || s.phase === 'done' ? ` ${t(`kind_${id}`)}` : '';
     return `${s.feedback === 'right' ? `<b class="cnf-ok">${t('right')}</b> ` : ''}${what}${kind}`;
   }
   const atKey = () => s.phase === 'paused' && !s.sorted[s.example] && Math.abs(s.time - KEY[s.example]) < 1e-6;
 
-  /** The velocity readout and the sentence (while it plays, only these change). */
+  /** The velocity readout (size and direction), the sentence and the lit part of the definition: what changes as it plays. */
   let lastLine = '';
-  function refreshSpeed() {
+  function refreshLive() {
     if (s.mode === 'quiz') return;
-    el.speed.textContent = N(speedText(actionAt(s.example, s.time).speed));
+    const id = s.example;
+    const m = actionAt(id, s.time);
+    const text = speedText(m.speed);
+    el.speed.textContent = N(text);
+    const still = Number(text) === 0;
+    el.dir.dataset.dir = still ? '' : m.dir;
+    el.speedBox.setAttribute('aria-label', `${t('speed')} ${N(text)} ${t('unit_ms')}${still ? '' : `, ${t(`dir_${m.dir}`)}`}`);
     const html = lineHtml();
     if (html !== lastLine) el.line.innerHTML = lastLine = html;
+    // the definition lights up only once the body really moves under the force
+    const lit = s.phase !== 'rest' && moved(id, m);
+    el.def.classList.toggle('on-start', lit && (EFFECT[id] === 'start' || EFFECT[id] === 'both'));
+    el.def.classList.toggle('on-change', lit && (EFFECT[id] === 'change' || EFFECT[id] === 'both'));
   }
   function refreshPanel() {
     if (s.mode === 'quiz') return;
-    const id = s.example;
-    refreshSpeed();
-    const lit = s.phase !== 'rest';
-    el.def.classList.toggle('on-start', lit && (EFFECT[id] === 'start' || EFFECT[id] === 'both'));
-    el.def.classList.toggle('on-change', lit && (EFFECT[id] === 'change' || EFFECT[id] === 'both'));
+    refreshLive();
     const again = s.phase === 'done';
     el.playIcon.innerHTML = again ? ICONS.reset : ICONS.play;
     el.playLabel.textContent = t(again ? 'act_again' : 'act_play');
@@ -244,9 +256,10 @@ export function createApp(root, options = {}) {
     if (isPool(s.scene)) {
       sc.update(s.poolTime, { arrowOn: s.quizShow.arrow });
     } else {
+      // the arrow whenever the force acts: also in the first picture when it already does (the sliding crate,
+      // the football's weight while the hands hold it)
       const m = motion();
-      const shown = s.phase !== 'rest' || (s.mode === 'quiz' && s.time > 0);
-      sc.update(m, { arrowOn: shown && m.acting && (s.mode !== 'quiz' || s.quizShow.arrow), moving: true });
+      sc.update(m, { arrowOn: m.acting && (s.mode !== 'quiz' || s.quizShow.arrow), moving: true });
     }
     stage.invalidate();
   }
@@ -275,7 +288,9 @@ export function createApp(root, options = {}) {
     const kind = isPool(id) ? CASES[id] : KIND[id];
     const labels = [];
     const quiz = s.mode === 'quiz';
-    if (!quiz || s.quizShow.label) labels.push({ id: 'force', html: t(`f_${id}`), tone: 'force', anchor: 'arrow', prefer: scenePrefer[id] });
+    // a test case's force is named only with the answer (its name would give the reason away)
+    const name = quiz && isPool(id) && !s.quizShow.markerLabel ? t('f_this') : t(`f_${id}`);
+    if (!quiz || s.quizShow.label) labels.push({ id: 'force', html: name, tone: 'force', anchor: 'arrow', prefer: scenePrefer[id] });
     const markerLabel = quiz ? s.quizShow.markerLabel : Boolean(s.sorted[id]);
     if (markerLabel)
       labels.push({
@@ -289,7 +304,7 @@ export function createApp(root, options = {}) {
   }
   // where each label would rather sit (the placer still moves it off anything it would cover)
   const scenePrefer = {
-    crane: ['right', 'up', 'ur', 'dr', 'left'],
+    crane: ['right', 'up', 'ur', 'dr'], // never left: there it would sit on the cable and the hook block
     push: ['up', 'ur', 'ul', 'down'],
     friction: ['down', 'dl', 'dr', 'left', 'up'],
     fall: ['left', 'ul', 'dl', 'right'],
@@ -368,7 +383,6 @@ export function createApp(root, options = {}) {
   /** Choose an example: it starts afresh, at rest. */
   function setExample(id, { animate = true } = {}) {
     if (!EXAMPLE_IDS.includes(id)) return;
-    s.token++;
     s.example = id;
     s.time = 0;
     s.phase = 'rest';
@@ -408,6 +422,7 @@ export function createApp(root, options = {}) {
   let lastSound = { bounces: 0, touching: false };
   stage.addTicker((dt) => {
     if (isPool(s.scene)) {
+      if (s.poolFrozen) return false;
       s.poolTime += dt;
       drawScene();
       return true;
@@ -422,6 +437,7 @@ export function createApp(root, options = {}) {
       s.playing = false;
       s.phase = 'paused';
       s.feedback = '';
+      hideHint(); // "watch until it stops" has done its job
       if (s.mode !== 'quiz') audio.tick();
     }
     if (next >= DURATION[id]) {
@@ -440,7 +456,7 @@ export function createApp(root, options = {}) {
       setLabels();
       refreshPanel();
       emitChange();
-    } else if (Math.floor(before * 8) !== Math.floor(s.time * 8)) refreshSpeed(); // the readout, 8 times a second
+    } else if (Math.floor(before * 8) !== Math.floor(s.time * 8)) refreshLive(); // the readout, 8 times a second
     return true;
   });
 
@@ -479,7 +495,7 @@ export function createApp(root, options = {}) {
   }
 
   function lockedNudge() {
-    showHint(t('q_locked'), { duration: 3000 });
+    showHint(t('q_locked'), { duration: 1800 }); // short: in the test it sits over the picture
     audio.error();
   }
 
@@ -492,7 +508,9 @@ export function createApp(root, options = {}) {
   function viewPose(view = s.view) {
     const sc = cur();
     const dir = sc.views[view];
-    const { min, max } = sc.fit;
+    // a big, wide view (book page, desktop) has room for more (the magnet's hand); a small phone keeps the close view
+    const wide = stage.width >= 600 && stage.width / Math.max(stage.height, 1) > 1.7;
+    const { min, max } = (wide && sc.fitWide) || sc.fit;
     centre.addVectors(min, max).multiplyScalar(0.5);
     basisX.crossVectors(new THREE.Vector3(0, 1, 0), dir).normalize();
     basisY.crossVectors(dir, basisX).normalize();
@@ -640,10 +658,11 @@ export function createApp(root, options = {}) {
   const textLabel = (keys) => (j) => `<span class="cnf-opt">${t(keys[j])}</span>`;
   let kinds = [];
   let question = null;
+  let lastPick = null; // the choice the student tapped (for a worked answer about that mistake)
+  const used = new Set(); // the book examples this test has shown
 
   /** A book example for a question: stopped at `time` (or playing from the start), its arrow and name shown. */
   function questionExample(id, { time = 0, playing = false } = {}) {
-    s.token++;
     s.quizShow = { arrow: true, label: true, marker: false, markerLabel: false };
     s.time = time;
     s.playing = playing;
@@ -652,10 +671,10 @@ export function createApp(root, options = {}) {
     showScene(id, { animate: false });
   }
   function questionCase(id) {
-    s.token++;
     s.playing = false;
     s.quizShow = { arrow: true, label: true, marker: false, markerLabel: false };
     s.poolTime = 0.6;
+    s.poolFrozen = false;
     showScene(id, { animate: false });
   }
 
@@ -671,7 +690,6 @@ export function createApp(root, options = {}) {
         s.locked = true;
         s.playing = false;
         hideHint();
-        kinds = shuffle(['kind_c', 'kind_n', 'effect', 'evidence', 'same']);
         syncUI();
       },
       leave() {
@@ -682,31 +700,34 @@ export function createApp(root, options = {}) {
         setExample(s.example, { animate: false });
       },
       prepare(i, _alive, say) {
+        if (i === 0) {
+          // a new round (also "take the test again"): a new order, every example free again
+          kinds = shuffle(['kind_c', 'kind_n', 'effect', 'evidence', 'same']);
+          used.clear();
+        }
         const kind = kinds[i % kinds.length];
+        lastPick = null;
+        // never the same example twice in one test (two questions on one frozen picture)
+        const fresh = (list) => pickOne(list.filter((x) => !used.has(x)));
         if (kind === 'kind_c' || kind === 'kind_n') {
           const id = kind === 'kind_c' ? pickOne(['rope', 'parachute']) : 'comb';
           questionCase(id);
           const keys = shuffle(KIND_CHOICES[id]);
           say(t(`q_kind_${id}`));
-          question = { kind, id };
-          return {
-            choices: [0, 1, 2, 3],
-            expected: keys.indexOf(KIND_CHOICES[id][0]),
-            tolerance: 0.5,
-            label: textLabel(keys),
-            meta: { kind, case: id },
-          };
+          question = { kind, id, keys, right: KIND_CHOICES[id][0] };
+          return { choices: [0, 1, 2, 3], expected: keys.indexOf(question.right), tolerance: 0.5, label: textLabel(keys), meta: { kind, case: id } };
         }
         if (kind === 'effect') {
           // caught in the middle of its action, stopped: the arrow shows which way the force acts
-          const id = pickOne(['friction', 'fall', 'magnet']);
+          const id = fresh(['friction', 'fall', 'magnet']);
+          used.add(id);
           questionExample(id, { time: KEY[id] });
           const keys = shuffle(EFFECT_CHOICES);
           say(t(`q_eff_${id}`));
-          question = { kind, id };
+          question = { kind, id, keys, right: EFFECT_RIGHT[id] };
           return {
             choices: [0, 1, 2, 3],
-            expected: keys.indexOf(EFFECT_RIGHT[id]),
+            expected: keys.indexOf(question.right),
             tolerance: 0.5,
             label: textLabel(keys),
             meta: { kind, example: id },
@@ -714,55 +735,57 @@ export function createApp(root, options = {}) {
         }
         if (kind === 'evidence') {
           // an example plays from the start (and then stays at its end)
-          const id = pickOne(['push', 'crane', 'friction']);
+          const id = fresh(['push', 'crane', 'friction']);
+          used.add(id);
           questionExample(id, { time: 0, playing: true });
           const keys = shuffle(EVIDENCE_CHOICES);
           say(t('q_ev'));
-          question = { kind, id };
+          question = { kind, id, keys, right: 'ev_change' };
           return { choices: [0, 1, 2, 3], expected: keys.indexOf('ev_change'), tolerance: 0.5, label: textLabel(keys), meta: { kind, example: id } };
         }
         // same kind as which of the book's examples? (a non-contact example, stopped with its gap open)
-        const id = pickOne(['magnet', 'fall']);
+        const id = fresh(['magnet', 'fall']);
+        used.add(id);
         questionExample(id, { time: KEY[id] });
-        const right = sameChoices(id);
-        const keys = shuffle(right.map((x) => `same_${x}`));
+        const list = sameChoices(id).map((x) => `same_${x}`);
+        const keys = shuffle(list);
         say(t(`q_same_${id}`));
-        question = { kind, id };
-        return {
-          choices: [0, 1, 2, 3],
-          expected: keys.indexOf(`same_${right[0]}`),
-          tolerance: 0.5,
-          label: textLabel(keys),
-          meta: { kind, example: id },
-        };
+        question = { kind, id, keys, right: list[0] };
+        return { choices: [0, 1, 2, 3], expected: keys.indexOf(list[0]), tolerance: 0.5, label: textLabel(keys), meta: { kind, example: id } };
       },
-      reveal() {
+      reveal(_q, correct) {
         const q = question;
+        // the worked answer leads with the answer and, after a wrong tap, speaks to that very mistake
+        const picked = correct || lastPick == null ? null : q.keys[lastPick];
+        s.quizShow = { arrow: true, label: true, marker: true, markerLabel: true };
         if (q.kind === 'kind_c' || q.kind === 'kind_n') {
-          s.quizShow = { arrow: true, label: true, marker: true, markerLabel: true };
+          if (q.id === 'comb') {
+            // stopped where one bit is on its way up and others still lie on the table: the gap stays to be seen
+            s.poolTime = 1.75;
+            s.poolFrozen = true;
+          }
           setLabels();
           drawScene();
-          return t(`why_${q.id}`);
+          return t(picked ? `miss_${picked}` : `why_${q.id}`);
         }
         if (q.kind === 'effect') {
           // it goes on to the end: the answer happens
-          s.quizShow = { arrow: true, label: true, marker: true, markerLabel: true };
           s.phase = 'acting';
           s.playing = true;
           setLabels();
           const vLand = Math.abs(drop(Math.sqrt((2 * FALL.h) / 9.8) - 1e-6, FALL.h).v);
-          return t(`why_eff_${q.id}`, { v0: FRICTION.v0, v: roundTo(vLand, 0.1) });
+          const vars = { v0: FRICTION.v0, v: roundTo(vLand, 0.1) };
+          return t(picked ? `miss_${picked}_${q.id}` : `why_eff_${q.id}`, vars);
         }
         if (q.kind === 'evidence') {
-          s.quizShow = { arrow: true, label: true, marker: true, markerLabel: true };
           setLabels();
-          return t('why_ev');
+          return t(picked ? `miss_${picked}` : 'why_ev');
         }
-        s.quizShow = { arrow: true, label: true, marker: true, markerLabel: true };
         s.phase = 'acting';
         s.playing = true;
         setLabels();
-        return t(`why_same_${q.id}`);
+        const right = t(q.right);
+        return picked ? t('miss_same', { right, picked: t(picked) }) : t('why_same', { right });
       },
       done() {
         s.locked = false;
@@ -844,7 +867,10 @@ export function createApp(root, options = {}) {
     if (b.dataset.sort && e.detail === 0) sort(b.dataset.sort); // the keyboard; a finger or the mouse sorted on pointerdown
     if (b.dataset.mode === 'quiz' && s.mode !== 'quiz') quiz.start();
     if (b.dataset.mode === 'explore') quiz.stop();
-    if (b.dataset.q != null) quiz.choose(Number(b.dataset.q));
+    if (b.dataset.q != null) {
+      lastPick = Number(b.dataset.q);
+      quiz.choose(lastPick);
+    }
     switch (b.dataset.act) {
       case 'q-next':
         quiz.next();
@@ -930,7 +956,6 @@ export function createApp(root, options = {}) {
   /** Jump the current example to 'rest', 'key' or 'end' (or a time in s), stopped. */
   function jump(at) {
     const id = s.example;
-    s.token++;
     s.playing = false;
     s.feedback = '';
     if (at === 'rest' || at === 0) {

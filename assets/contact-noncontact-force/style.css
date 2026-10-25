@@ -38,11 +38,17 @@ body.bg-transparent { background: transparent; }
 .cnf-line .cnf-ok { color: var(--ok); }
 
 .cnf-foot { display: flex; align-items: center; gap: 10px; }
-.cnf-foot .pvc-btn { height: 40px; min-width: 7.6em; font-size: 15.5px; }
+.cnf-foot .pvc-btn { height: 40px; min-width: 8.6em; font-size: 15.5px; } /* as wide as "watch again": the row never changes */
 .cnf-foot .pvc-btn .ic { display: inline-flex; }
 .cnf-foot .pvc-btn:disabled { opacity: 0.45; }
 .cnf-speed { display: inline-flex; align-items: baseline; gap: 5px; font-size: 14px; color: var(--ink-3); white-space: nowrap; }
 .cnf-speed b { min-width: 2.2em; text-align: right; font-size: 20px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+/* the velocity's direction beside its size (it always keeps its room, so nothing moves when it appears) */
+.cnf-dir { display: inline-flex; align-self: center; width: 18px; height: 18px; color: var(--ink); visibility: hidden; transition: transform 0.15s; }
+.cnf-dir svg { width: 18px; height: 18px; stroke-width: 2.4; }
+.cnf-dir[data-dir='right'], .cnf-dir[data-dir='up'], .cnf-dir[data-dir='down'] { visibility: visible; }
+.cnf-dir[data-dir='up'] { transform: rotate(-90deg); }
+.cnf-dir[data-dir='down'] { transform: rotate(90deg); }
 .cnf-count { margin-left: auto; font-size: 13.5px; color: var(--ink-3); white-space: nowrap; }
 .cnf-count.all { color: var(--ok); font-weight: 600; }
 
@@ -76,9 +82,9 @@ body.bg-transparent { background: transparent; }
 
 /* over the 3D: the marker (ring, edge, gap bracket), leader lines and the labels */
 .cnf-marks { position: absolute; inset: 0; width: 100% !important; height: 100% !important; overflow: visible; pointer-events: none; }
-.cnf-ring { fill: color-mix(in srgb, var(--c-contact) 14%, transparent); stroke: var(--c-contact); stroke-width: 3; }
-.cnf-pulse { fill: none; stroke: var(--c-contact); stroke-width: 2.5; transform-box: fill-box; transform-origin: center; animation: cnf-pulse 1.6s ease-out infinite; }
-@keyframes cnf-pulse { 0% { transform: scale(1); opacity: 0.85; } 100% { transform: scale(2); opacity: 0; } }
+.cnf-ring { fill: none; stroke: var(--c-contact); stroke-width: 2.2; }
+.cnf-pulse { fill: none; stroke: var(--c-contact); stroke-width: 1.6; transform-box: fill-box; transform-origin: center; animation: cnf-pulse 1.6s ease-out infinite; }
+@keyframes cnf-pulse { 0% { transform: scale(1); opacity: 0.85; } 100% { transform: scale(1.6); opacity: 0; } }
 .cnf-edge { stroke: var(--c-contact); stroke-width: 6; stroke-linecap: round; opacity: 0.85; }
 .cnf-gap { stroke: var(--c-noncontact); stroke-width: 2.6; stroke-dasharray: 5 4; }
 .cnf-cap { stroke: var(--c-noncontact); stroke-width: 2.6; stroke-linecap: round; }
@@ -103,7 +109,7 @@ body.bg-transparent { background: transparent; }
 /* a wide panel under the 3D view (book page, desktop): the play button and the boxes share one row, and two lines
    are enough for what happens (the 3D view gets the room). Not the narrow side panel of a phone held sideways. */
 @container pvc-panel (min-width: 600px) {
-  .cnf .pvc-learn { display: grid; grid-template-columns: 15.5em minmax(0, 1fr); grid-template-areas: 'ex ex' 'def def' 'line line' 'foot trays'; column-gap: 14px; row-gap: 6px; align-content: start; }
+  .cnf .pvc-learn { display: grid; grid-template-columns: 19.5em minmax(0, 1fr); grid-template-areas: 'ex ex' 'def def' 'line line' 'foot trays'; column-gap: 14px; row-gap: 6px; align-content: start; }
   .cnf-ex { grid-area: ex; }
   .cnf-def { grid-area: def; }
   .cnf-line { grid-area: line; min-height: 2.9em; }
@@ -141,17 +147,17 @@ body.bg-transparent { background: transparent; }
   .cnf-ex { gap: 4px; }
   .cnf-ex button { height: 42px; font-size: 11.5px; padding: 1px; }
   .cnf-ex button svg { width: 19px; height: 19px; }
-  .cnf-def { font-size: 12.5px; line-height: 1.4; }
-  .cnf-line { font-size: 13px; line-height: 1.4; min-height: 5.6em; }
+  .cnf-def { font-size: 13.5px; line-height: 1.4; }
+  .cnf-line { font-size: 14px; line-height: 1.4; min-height: 5.6em; }
   .cnf-foot { gap: 8px; }
-  .cnf-foot .pvc-btn { height: 36px; min-width: 6.4em; font-size: 14.5px; padding: 0 10px; }
+  .cnf-foot .pvc-btn { height: 36px; min-width: 8.6em; font-size: 14.5px; padding: 0 10px; }
   .cnf-speed b { font-size: 17px; }
   .cnf-count { display: none; }
   .cnf-tray { min-height: 50px; padding: 3px 8px 4px; }
   .cnf-tray b { font-size: 14px; }
   .cnf-items svg { width: 18px; height: 18px; }
   .cnf .pvc-opt { height: 50px; }
-  .cnf .pvc-opt .cnf-opt { font-size: 12.5px; }
-  .cnf .pvc-q-text { font-size: 14.5px; min-height: 4.2em; }
-  .cnf .pvc-q-feedback { font-size: 12.5px; min-height: 5.6em; }
+  .cnf .pvc-opt .cnf-opt { font-size: 13px; }
+  .cnf .pvc-q-text { font-size: 15px; min-height: 4.2em; }
+  .cnf .pvc-q-feedback { font-size: 13.5px; min-height: 5.6em; }
 }

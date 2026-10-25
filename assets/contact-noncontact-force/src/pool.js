@@ -245,24 +245,19 @@ export function createCombScene({ colors }) {
   // the hand holding the comb's end, coming in from the right
   const skin = mat('#b98057', { roughness: 0.7, name: 'Skin' });
   const sleeve = mat('#f4f6f8', { roughness: 0.85, name: 'Shirt' });
-  // fingers round the comb's end, the hand and wrist going up and out of the picture
-  const grip = COMB.len / 2 - 0.012;
-  for (let i = 0; i < 4; i++) {
-    const f = new THREE.Mesh(new THREE.CapsuleGeometry(0.0062, 0.012, 4, 8), skin);
-    f.position.set(grip + 0.004 - i * 0.0005, COMB.h * 0.12 + i * 0.0105, 0.009);
-    f.rotation.x = Math.PI / 2;
-    comb.add(f);
-  }
-  const thumb = new THREE.Mesh(new THREE.CapsuleGeometry(0.0065, 0.016, 4, 8), skin);
-  thumb.position.set(grip - 0.006, COMB.h * 0.5, -0.008);
-  thumb.rotation.z = 0.9;
+  // a hand holding the comb's end: a rounded fist round the spine, the thumb along its near side, the wrist going
+  // up and back out of the picture
+  const end = COMB.len / 2;
+  const fist = new THREE.Mesh(new THREE.SphereGeometry(0.017, 20, 14), skin);
+  fist.scale.set(1.15, 0.95, 1.05);
+  fist.position.set(end + 0.006, COMB.h * 0.42, -0.003);
+  comb.add(fist);
+  const thumb = new THREE.Mesh(new THREE.CapsuleGeometry(0.0055, 0.016, 4, 12), skin);
+  thumb.rotation.z = Math.PI / 2;
+  thumb.position.set(end - 0.011, COMB.h * 0.5, 0.0075);
   comb.add(thumb);
-  const palm = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.05, 0.022), skin);
-  palm.position.set(grip + 0.016, COMB.h * 0.42 + 0.012, 0.0);
-  palm.rotation.z = -0.35;
-  comb.add(palm);
-  tube(V(grip + 0.024, COMB.h * 0.42 + 0.03, 0), V(grip + 0.09, COMB.h * 0.42 + 0.13, -0.006), 0.014, skin, comb);
-  tube(V(grip + 0.085, COMB.h * 0.42 + 0.12, -0.006), V(grip + 0.16, COMB.h * 0.42 + 0.23, -0.012), 0.022, sleeve, comb);
+  tube(V(end + 0.012, COMB.h * 0.5 + 0.008, -0.006), V(end + 0.07, COMB.h * 0.5 + 0.075, -0.035), 0.012, skin, comb);
+  tube(V(end + 0.066, COMB.h * 0.5 + 0.07, -0.033), V(end + 0.14, COMB.h * 0.5 + 0.15, -0.07), 0.019, sleeve, comb);
 
   // bits of paper on the table
   const paper = new THREE.MeshStandardMaterial({ color: '#fbfbf8', roughness: 0.9, side: THREE.DoubleSide, name: 'Paper' });
@@ -284,11 +279,11 @@ export function createCombScene({ colors }) {
   });
 
   const table = groundPatch(0.3, 0.2, {
-    color: '#d7b48a',
+    color: '#d6b994', // a plain table top, dark enough for the white bits of paper to show
     draw: (ctx, w, h) => {
-      for (let i = 0; i < 60; i++) {
-        ctx.strokeStyle = `rgba(120,78,40,${0.06 + Math.random() * 0.1})`;
-        ctx.lineWidth = 1 + Math.random() * 2;
+      for (let i = 0; i < 12; i++) {
+        ctx.strokeStyle = `rgba(150,110,70,${0.04 + Math.random() * 0.04})`;
+        ctx.lineWidth = 2 + Math.random() * 3;
         ctx.beginPath();
         const y = Math.random() * h;
         ctx.moveTo(0, y);

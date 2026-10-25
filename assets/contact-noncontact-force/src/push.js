@@ -120,7 +120,7 @@ export function createPushScene({ colors }) {
     model,
     hits,
     arrow,
-    fit: { min: V(-1.45, -0.02, -0.4), max: V(1.95, 1.72, 0.4) },
+    fit: { min: V(-1.4, -0.02, -0.4), max: V(1.82, 1.7, 0.4) },
     views: { front: V(0.18, 0.2, 1).normalize(), '3d': V(0.75, 0.5, 0.8).normalize() },
     shadow: { center: V(0.2, 0, 0), r: 2.6 },
     update,

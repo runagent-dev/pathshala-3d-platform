@@ -122,7 +122,7 @@ export function createFallScene({ colors }) {
     shade.scale.setScalar(0.55 + 0.6 * k);
     shade.material.opacity = 0.35 + 0.65 * k;
     arrow.setOpacity(arrowOn ? 1 : 0);
-    if (arrowOn) arrow.set(v.set(HELD.x, y + R, HELD.z), V(0, -1, 0), 0.3);
+    if (arrowOn) arrow.set(v.set(HELD.x, y + R, HELD.z), V(0, -1, 0), 0.25);
   }
 
   return {
@@ -131,14 +131,18 @@ export function createFallScene({ colors }) {
     model,
     hits,
     arrow,
-    // room below the floor too: the weight arrow of the ball lying on the floor points into it
-    fit: { min: V(-0.78, -0.15, -0.3), max: V(0.3, 1.72, 0.4) },
+    // the football's whole way down and the hands (the head may go off the top), and room below the floor: the
+    // weight arrow of the football lying on the floor points into it
+    fit: { min: V(HELD.x - 0.4, -0.15, -0.25), max: V(0.2, 1.34, 0.45) },
     views: { front: V(0.12, 0.14, 1).normalize(), '3d': V(0.75, 0.42, 0.8).normalize() },
     shadow: { center: V(-0.1, 0, 0.1), r: 1.5 },
     update,
     /** The empty space between the falling ball and the floor (the Earth): to the left of the ball. */
     marker: (m) => (m.gap != null ? { kind: 'gap', a: V(HELD.x - R - 0.06, y, HELD.z), b: V(HELD.x - R - 0.06, 0, HELD.z) } : null),
-    bodies: () => [{ min: V(HELD.x - R, y, HELD.z - R), max: V(HELD.x + R, y + 2 * R, HELD.z + R) }],
+    bodies: () => [
+      { min: V(HELD.x - R, y, HELD.z - R), max: V(HELD.x + R, y + 2 * R, HELD.z + R) },
+      { min: V(HELD.x - 0.3, FALL.h + R - 0.07, HELD.z - 0.15), max: V(HELD.x + 0.3, FALL.h + R + 0.07, HELD.z + 0.15) }, // the hands
+    ],
     actor: (out, k = 0) => out.set(HELD.x, y + R * [1, 1.6, 0.5][k], HELD.z + R * [1, 0.7, 0.9][k]),
     wiggle(k) {
       bob = Math.sin(k * Math.PI * 4) * (1 - k);

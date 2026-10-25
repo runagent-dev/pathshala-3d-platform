@@ -113,7 +113,8 @@ export function dropDuration(h, e = 0.45, vRest = 0.3) {
  * s = d (τ/T)^p. → { s, v, gap }.
  */
 export function pull(tau, d, T, p = 2.5) {
-  const k = clamp01(tau / T);
+  let k = clamp01(tau / T);
+  if (k > 1 - 1e-9) k = 1; // arrived (no 0.9999999 left over from a sum of times): stuck, at rest
   return { s: d * k ** p, v: k > 0 && k < 1 ? (p * d * k ** (p - 1)) / T : 0, gap: d * (1 - k ** p) };
 }
 
@@ -125,7 +126,7 @@ export const CRANE = { take: 0.35, lift: trapezoid({ dist: 1.3, vmax: 0.5, accel
 export const PUSH = { lean: 0.5, accel: 1, vmax: 0.9, roll: 0.4, stop: 0.45 };
 export const FRICTION = { v0: 2, mu: 0.2 };
 export const FALL = { open: 0.3, h: 1.04, e: 0.45 };
-export const MAGNET = { far: 0.06, near: 0.03, slide: 0.9, wait: 0.25, T: 0.12 };
+export const MAGNET = { far: 0.05, near: 0.03, slide: 0.9, wait: 0.25, T: 0.12 };
 
 const pushTime = PUSH.vmax / PUSH.accel; // seconds of pushing
 const frictionReal = slide(0, FRICTION.v0, FRICTION.mu * G);
@@ -150,17 +151,28 @@ export const KEY = {
 
 export function craneAt(t) {
   const m = CRANE.lift.at(t - CRANE.take);
-  // the cable takes up the slack first: the pull begins a moment before the load moves
-  return { pos: m.s, speed: m.v, acting: t >= CRANE.take * 0.6, touching: true, gap: null, take: clamp01(t / CRANE.take) };
+  // the cable takes up the slack first; the pull is drawn once it lifts the block
+  return { pos: m.s, speed: m.v, acting: t >= CRANE.take, touching: true, gap: null, take: clamp01(t / CRANE.take), dir: 'up' };
 }
 
 export function pushAt(t) {
   const { lean, accel, vmax, roll, stop } = PUSH;
-  if (t < lean) return { pos: 0, person: 0, speed: 0, acting: false, touching: t >= lean * 0.75, gap: null, reach: easeInOut(t / lean), walking: 0 };
+  if (t < lean)
+    return {
+      pos: 0,
+      person: 0,
+      speed: 0,
+      acting: false,
+      touching: t >= lean * 0.75,
+      gap: null,
+      reach: easeInOut(t / lean),
+      walking: 0,
+      dir: 'right',
+    };
   if (t < lean + pushTime) {
     const u = t - lean;
     const s = 0.5 * accel * u * u;
-    return { pos: s, person: s, speed: accel * u, acting: true, touching: true, gap: null, reach: 1, walking: s };
+    return { pos: s, person: s, speed: accel * u, acting: true, touching: true, gap: null, reach: 1, walking: s, dir: 'right' };
   }
   // let go: the trolley rolls on, slowing a little; the student stops within `stop` s
   const s0 = 0.5 * accel * pushTime * pushTime;
@@ -178,12 +190,14 @@ export function pushAt(t) {
     gap: null,
     reach: 1 - easeInOut(u / 0.6),
     walking: person,
+    dir: 'right',
   };
 }
 
 export function frictionAt(t) {
   const m = slide(t / SLOW.friction, FRICTION.v0, FRICTION.mu * G);
-  return { pos: m.s, speed: m.v, acting: m.v > 0, touching: true, gap: null };
+  // friction acts whenever it slides, also in the first, still picture
+  return { pos: m.s, speed: m.v, acting: m.v > 0, touching: true, gap: null, dir: 'right' };
 }
 
 export function fallAt(t) {
@@ -195,12 +209,14 @@ export function fallAt(t) {
     y: m.y,
     speed: Math.abs(m.v),
     velocity: m.v,
-    acting: free, // gravity always pulls; the arrow shows once the hands have let go
+    acting: true, // gravity always pulls: while the hands hold the ball, in the air, on the floor
+    held: !free, // the hands still hold it up
     touching: false,
     gap: free && m.falling ? m.y : null, // the empty space under the ball on its way down
     open: easeInOut(open),
     resting: m.resting,
     bounces: m.bounces,
+    dir: m.v > 0 ? 'up' : 'down',
   };
 }
 
@@ -216,6 +232,8 @@ export function magnetAt(t) {
     touching: m.gap <= 1e-9,
     gap: moving && m.gap > 1e-9 ? m.gap : null,
     magnet: moving ? near : magnetGap, // the magnet's distance from the nail's starting tip (m)
+    strength: moving ? 1 - m.gap / near : 0, // 0 … 1: the pull grows as the gap closes
+    dir: 'right',
   };
 }
 
@@ -224,6 +242,15 @@ const AT = { crane: craneAt, push: pushAt, friction: frictionAt, fall: fallAt, m
 /** Example `id` at time t on screen (clamped to its action). */
 export function actionAt(id, t) {
   return AT[id](Math.min(Math.max(t, 0), DURATION[id]));
+}
+
+/**
+ * Has the body begun to move under the force yet? (Before that the panel says what is being set up, and the
+ * definition is not lit: the crane's cable still tightening, the hands reaching the carton or letting go of the
+ * ball, the magnet being brought near.) The crate slides from the start.
+ */
+export function moved(id, m) {
+  return id === 'friction' || m.pos > 1e-9;
 }
 
 /** The real speed in m/s with one decimal, for the panel. */
@@ -237,12 +264,12 @@ export const CASES = { rope: 'contact', parachute: 'contact', comb: 'noncontact'
 /**
  * Answer keys (i18n) for "what kind of force is this?", the right one first; the others are the usual mistakes:
  * the person does not touch the cart, air cannot be seen, the hand holds the comb, the paper ends up stuck to the
- * comb, a wrong reason, "no force".
+ * comb, the right kind for a wrong reason (the wheels, light paper), "no force".
  */
 export const KIND_CHOICES = {
   rope: ['k_rope_ok', 'k_rope_person', 'k_rope_wheels', 'k_rope_none'],
   parachute: ['k_para_ok', 'k_para_unseen', 'k_para_gravity', 'k_para_none'],
-  comb: ['k_comb_ok', 'k_comb_hand', 'k_comb_touch', 'k_comb_none'],
+  comb: ['k_comb_ok', 'k_comb_hand', 'k_comb_touch', 'k_comb_light'],
 };
 
 /** "What is the force doing?": the right effect for an example caught in the middle of its action. */
@@ -250,7 +277,7 @@ export const EFFECT_RIGHT = { friction: 'eff_slower', fall: 'eff_faster', magnet
 export const EFFECT_CHOICES = ['eff_faster', 'eff_slower', 'eff_same', 'eff_nothing'];
 
 /** "How can you be sure a force acts?": the first law's answer and the usual mistakes. */
-export const EVIDENCE_CHOICES = ['ev_change', 'ev_moving', 'ev_rest', 'ev_heavy'];
+export const EVIDENCE_CHOICES = ['ev_change', 'ev_moving', 'ev_rest', 'ev_fast'];
 
 /** "Which of the book's examples is the same kind as this one?" (for a non-contact example: the other one). */
 export function sameChoices(id) {
