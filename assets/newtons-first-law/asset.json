@@ -1,0 +1,108 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "newtons-first-law",
+  "title": "Newton's first law of motion (নিউটনের প্রথম গতি সূত্র)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 64,
+  "topic": "3.1",
+  "placement": "Book page 64, topic 3.1: জড়তা এবং বলের ধারণা: নিউটনের প্রথম গতি সূত্র. Next to the boxed law and the paragraph after it.",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "Newton's first law (নিউটনের প্রথম সূত্র, page 64, 3.1) as a thought experiment the student runs: a physics textbook waits on a launcher and one tap gives it the same push every time (it leaves at 3 m/s) onto the floor chosen in the panel: a jute mat, a wooden floor, ice, or an imagined floor with no friction. Without a push it stays at rest. With friction it slows evenly and stops (1.31 m, 2.55 m, 9.18 m; a post marks each stop and the chips keep the distances); with no friction the velocity readout stays at 3.00 m/s, the marks it leaves every 0.1 s stay evenly spaced, and the camera follows it for ever. Arrows show the velocity, friction against it, and the push only while the paddle touches the book. Test tab: 5 questions (what a pushed book does with no friction, why a book stops, predicting the ice or the mat from the other floors, which way a book goes when a curved wall ends, a spacecraft with its engines off or a book at rest on a frictionless floor). Phone-first, Bangla.",
+  "tags": ["force", "newtons-laws", "inertia", "friction", "uniform-velocity", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "surface",
+      "label": "Floor",
+      "type": "select",
+      "options": [["mat", "jute mat"], ["wood", "wooden floor"], ["ice", "ice"], ["none", "no friction"]],
+      "default": "mat"
+    },
+    {
+      "name": "at",
+      "label": "Start already pushed",
+      "type": "number",
+      "default": "",
+      "placeholder": "s after the release",
+      "help": "e.g. 0.5: the book is half a second past the launcher (empty: at rest on the launcher)"
+    },
+    {
+      "name": "tried",
+      "label": "Floors already tried",
+      "type": "text",
+      "default": "",
+      "placeholder": "mat,wood",
+      "help": "their stop posts and distances show"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "First-use pointers", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "surface": "wood" } },
+    { "name": "set", "payload": { "push": true } },
+    { "name": "set", "payload": { "surface": "none", "push": true } },
+    { "name": "set", "payload": { "at": 0.5 } },
+    { "name": "set", "payload": { "tried": ["mat", "wood"] } },
+    { "name": "set", "payload": { "home": true } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "push", "stop", "surface", "view", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": { "params": { "coach": "0", "surface": "none", "at": "1.35", "tried": "mat,wood,ice" } },
+    "glb": [
+      {
+        "name": "default",
+        "setup": [{ "command": "set", "payload": { "surface": "wood", "home": true, "animate": false } }]
+      }
+    ],
+    "video": {
+      "kind": "script",
+      "seconds": 20,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 0.8, "command": "set", "payload": { "push": true } },
+        { "at": 2.6, "command": "set", "payload": { "surface": "wood" } },
+        { "at": 3.4, "command": "set", "payload": { "push": true } },
+        { "at": 6, "command": "set", "payload": { "surface": "ice" } },
+        { "at": 6.8, "command": "set", "payload": { "push": true } },
+        { "at": 13.8, "command": "set", "payload": { "surface": "none" } },
+        { "at": 14.6, "command": "set", "payload": { "push": true } }
+      ]
+    }
+  }
+}
