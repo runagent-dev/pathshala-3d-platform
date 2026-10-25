@@ -2,6 +2,7 @@
 
 # No platform owners yet: add GitHub usernames to .github/owners.json, then run npm run generate.
 
+/assets/acceleration/ @RadeenXALNW
 /assets/circular-motion/ @RadeenXALNW
 /assets/digital-balance/ @RadeenXALNW
 /assets/distance-displacement/ @RadeenXALNW

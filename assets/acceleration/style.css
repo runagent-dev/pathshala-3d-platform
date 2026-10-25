@@ -1,0 +1,225 @@
+/* Acceleration: the page, the colours (বেগ blue; ধনাত্মক ত্বরণ purple, মন্দন orange, ত্বরণ নেই grey: the same as in the
+   3D), the learn sheet (examples, the বেগ–সময় graph or the compass, a = (v − u) ÷ t, one sentence) and what sits on
+   the picture (speedometer, pedals, the graph card of a test question). The student view itself is
+   ../../shared/lib/student/student.css (linked first). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.pvc { --c-v: #1c6fd9; --c-up: #7048e8; --c-down: #e8590c; --c-none: #868e96; }
+.ac [data-kind='up'] { --kc: var(--c-up); }
+.ac [data-kind='down'] { --kc: var(--c-down); }
+.ac [data-kind='none'] { --kc: var(--c-none); }
+.ac .c-v { color: var(--c-v); font-weight: 700; }
+
+/* the learn sheet: examples on top, then the graph (or compass), the sum, the sentence */
+.ac .pvc-learn {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: 'top' 'big' 'mid' 'say';
+  align-content: start;
+  gap: 6px;
+}
+.ac-top { grid-area: top; display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
+.ac-scenes button { height: 36px; padding: 0 13px; font-size: 15px; font-weight: 600; }
+.ac-restart { height: 36px; padding: 0 11px; font-size: 14.5px; }
+.ac-restart svg { color: var(--accent); }
+.ac-big { grid-area: big; height: 118px; }
+.ac-mid { grid-area: mid; }
+.ac-big, .ac-mid { display: grid; min-width: 0; }
+.ac-big > *, .ac-mid > * { grid-area: 1 / 1; min-width: 0; }
+.ac-big { grid-template-rows: minmax(0, 1fr); }
+.ac-big > * { height: 100%; min-height: 0; position: relative; }
+.ac-graph > svg, .ac-card-graph > svg { position: absolute; inset: 0; }
+/* the road's graph and sum, or the bend's compass and answer: one place each, so nothing moves */
+.ac:not([data-scene='turn']) [data-show='turn'], .ac[data-scene='turn'] [data-show='line'] { visibility: hidden; }
+
+/* the বেগ–সময় graph (and the compass and the speedometer): SVG drawings, not icons */
+.ac .ac-graph-svg, .ac .ac-compass-svg, .ac .ac-speedo-svg { width: 100%; height: 100%; display: block; fill: none; stroke: none; overflow: visible; }
+.ac-graph { cursor: pointer; touch-action: manipulation; }
+.ac .g-grid { stroke: #e4e8ed; stroke-width: 1; }
+.ac .g-axis { stroke: var(--ink-2); stroke-width: 1.4; fill: none; }
+.ac .g-num { fill: var(--ink-3); font-weight: 500; font-variant-numeric: tabular-nums; }
+.ac .g-name { fill: var(--ink-2); font-weight: 600; }
+.ac .g-band { opacity: 0.09; }
+.ac .g-band.on { opacity: 0.26; }
+.ac .g-line { stroke-width: 3; stroke-linecap: round; }
+.ac .g-letter { font-weight: 700; }
+.ac .g-dot { stroke: #fff; stroke-width: 1.6; }
+.ac .g-hint { fill: var(--ink-3); font-weight: 500; }
+
+/* the bend: compass and the two readings */
+.ac-dial { display: flex; align-items: center; gap: 14px; }
+.ac-compass { height: 100%; aspect-ratio: 1; flex: none; }
+.ac .c-ring { fill: #f7f9fb; stroke: var(--line-2); stroke-width: 1.2; }
+.ac .c-tick { stroke: var(--line-2); stroke-width: 1.4; }
+.ac .c-dir { fill: var(--ink-3); font-size: 10px; font-weight: 600; }
+.ac .c-vel line, .ac .c-acc line { stroke-width: 4.2; stroke-linecap: round; }
+.ac .c-vel path, .ac .c-acc path { stroke: none; }
+.ac .c-hub { fill: var(--ink); }
+.ac-reads { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.ac-read { display: flex; flex-direction: column; line-height: 1.3; }
+.ac-read > span { white-space: nowrap; }
+.ac-read .k { font-size: 13.5px; color: var(--ink-2); font-weight: 600; margin-right: 4px; }
+.ac-read b { font-size: 18px; font-weight: 700; white-space: nowrap; }
+.ac-read:first-child b { color: var(--c-v); }
+.ac-read small { font-size: 12.5px; color: var(--ink-3); font-weight: 600; }
+.ac-read small[data-on='true'] { color: var(--c-up); }
+
+/* the sum: [C] ত্বরণ a = (v − u) m/s ÷ t s = +2.0 ms⁻² (kind) */
+.ac-sum, .ac-acc { display: flex; align-items: center; gap: 6px; min-height: 52px; min-width: 0; }
+.ac-badge { display: grid; place-items: center; flex: none; min-width: 27px; height: 27px; padding: 0 4px; border-radius: 6px; background: var(--kc); color: #fff; font-size: 15px; font-weight: 700; }
+.ac-k { display: flex; flex-direction: column; line-height: 1.3; }
+.ac-k b { font-size: 15px; font-weight: 700; white-space: nowrap; }
+.ac-k small { font-size: 12px; color: var(--ink-3); white-space: nowrap; }
+.ac-sum > i, .ac-acc > i { font-style: normal; font-size: 19px; line-height: 1; color: var(--ink-3); }
+.ac-frac { display: inline-flex; flex-direction: column; align-items: center; font-size: 16.5px; font-weight: 600; line-height: 1.3; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ac-num { align-self: stretch; text-align: center; padding: 0 3px 1px; border-bottom: 1.6px solid var(--ink-2); }
+.ac-den { padding: 1px 3px 0; }
+.ac-u { font-size: 0.72em; font-weight: 600; color: var(--ink-3); }
+.ac-res { display: flex; flex-direction: column; line-height: 1.3; min-width: 0; }
+.ac-res b { font-size: 19px; font-weight: 700; color: var(--kc); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ac-res b .ac-u { color: inherit; opacity: 0.85; }
+.ac-res small { font-size: 12.5px; font-weight: 700; color: var(--kc); white-space: nowrap; }
+.ac-acc .ac-k b { font-size: 16px; }
+.ac-acc .ac-res b { font-size: 21px; }
+.ac-acc .ac-res small { font-weight: 600; }
+
+.ac-say { grid-area: say; margin: 0; min-height: 3em; font-size: 14px; line-height: 1.5; color: var(--ink-2); } /* 2 lines: the 3D view keeps its size */
+
+/* on the picture: the speedometer (top left) */
+.ac-speedo { position: absolute; left: 8px; top: 8px; z-index: 3; width: 98px; padding: 4px 5px 3px; border-radius: 8px; background: rgba(255, 255, 255, 0.92); border: 1px solid var(--line); pointer-events: none; text-align: center; }
+.ac-speedo .ac-speedo-svg { height: auto; }
+.ac .s-arc { stroke: var(--line-2); stroke-width: 3.2; fill: none; }
+.ac .s-val { stroke-width: 3.2; fill: none; stroke-linecap: round; }
+.ac .s-tick { stroke: var(--ink-3); stroke-width: 0.9; }
+.ac .s-tick.major { stroke: var(--ink-2); stroke-width: 1.6; }
+.ac .s-num { fill: var(--ink-2); font-size: 9px; font-weight: 600; }
+.ac .s-needle { stroke: var(--ink); stroke-width: 2.4; stroke-linecap: round; }
+.ac .s-hub { fill: var(--ink); }
+.ac-speedo-read { margin-top: 1px; font-size: 17px; font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; color: var(--c-v); }
+.ac-speedo-read span { margin-left: 3px; font-size: 11px; font-weight: 600; color: var(--ink-3); }
+.ac-speedo-name { font-size: 11.5px; line-height: 1.25; color: var(--ink-3); }
+
+/* the pedals: press and hold (they act as the finger goes down, and stop as it lifts) */
+.ac-pedals { position: absolute; left: 0; right: 0; bottom: 0; height: 0; z-index: 3; }
+.ac-pedal {
+  position: absolute;
+  bottom: 10px;
+  width: 94px;
+  height: 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  padding: 0 4px;
+  border-radius: 12px;
+  border: 1.5px solid var(--line-2);
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 2px 6px rgba(20, 30, 45, 0.12);
+  font-size: 14.5px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--ink);
+  touch-action: none;
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.ac-pedal[data-side='left'] { left: 10px; }
+.ac-pedal[data-side='right'] { right: 10px; }
+.ac-pedal span { white-space: nowrap; }
+.ac .ac-pedal svg { width: 26px; height: 26px; stroke-width: 2.3; color: var(--pc); }
+.ac-pedal[data-pedal='gas'], .ac-pedal[data-pedal='left'], .ac-pedal[data-pedal='right'] { --pc: var(--c-up); }
+.ac-pedal[data-pedal='brake'] { --pc: var(--c-down); }
+.ac-pedal:hover { border-color: var(--pc); }
+.ac-pedal.on { background: var(--pc); border-color: var(--pc); color: #fff; box-shadow: none; transform: translateY(2px); }
+.ac .ac-pedal.on svg { color: #fff; }
+.pvc[data-mode='quiz'] .ac-pedals { visibility: hidden; }
+
+/* a test question's graph, on a card over the picture (the buttons at the top right stay free) */
+.ac-card { position: absolute; left: 8px; right: 8px; top: 56px; bottom: 8px; z-index: 4; padding: 6px 8px 4px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+.ac-card-graph { position: relative; width: 100%; height: 100%; }
+
+/* the test: room for two lines of question and three of worked answer, so the 3D view keeps its size */
+.ac .pvc-q-text { min-height: 2.8em; }
+.ac .pvc-q-feedback { min-height: 4.35em; }
+.pvc-opt .ac-opt { font-size: 14px; line-height: 1.25; font-weight: 600; white-space: normal; text-align: center; }
+.pvc-opt small { margin-left: 2px; }
+
+/* phones and narrow columns */
+@container pvc (max-width: 420px) {
+  .ac-scenes button { padding: 0 11px; font-size: 14.5px; }
+  .ac-restart { padding: 0 9px; font-size: 14px; }
+  .ac-k b { font-size: 14px; }
+  .ac-frac { font-size: 15.5px; }
+  .ac-res b { font-size: 17.5px; }
+  .ac-res small { font-size: 12px; }
+  .ac-sum { gap: 4px; }
+  .ac-pedal { width: 86px; height: 60px; font-size: 14px; }
+}
+/* phone embeds that are not very tall: a little smaller, so the 3D view keeps more room */
+@container pvc (max-width: 560px) and (max-height: 600px) {
+  .ac .ac-big { height: 104px; }
+  .ac .pvc-learn { gap: 4px; }
+  .ac-scenes button, .ac-restart { height: 32px; }
+  .ac-sum, .ac-acc { min-height: 44px; }
+  .ac-say { font-size: 13px; }
+  .ac .pvc-q-text { font-size: 15px; min-height: 2.8em; }
+  .ac .pvc-q-feedback { font-size: 13.5px; min-height: 4.35em; }
+  .ac .pvc-opt { height: 40px; }
+  /* the speedometer as one line: দ্রুতি 4.8 m/s */
+  .ac-speedo { width: auto; display: flex; align-items: baseline; gap: 6px; padding: 4px 9px; }
+  .ac .ac-speedo .ac-speedo-svg { display: none; }
+  .ac-speedo-read { margin-top: 0; font-size: 15.5px; order: 2; }
+  .ac-speedo-name { order: 1; font-size: 13px; }
+  .ac-pedal { height: 50px; width: 84px; bottom: 8px; flex-direction: row; gap: 4px; }
+  .ac .ac-pedal svg { width: 20px; height: 20px; }
+  .ac-pedal span { white-space: normal; line-height: 1.15; }
+}
+/* short and wide (phone held sideways): a wider panel beside the picture */
+@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
+  .ac .pvc-shell { grid-template-columns: minmax(0, 1fr) clamp(290px, 40%, 360px); }
+  .ac .ac-big { height: 136px; }
+  .ac .pvc-learn { gap: 4px; }
+  .ac-scenes button, .ac-restart { height: 32px; font-size: 14px; }
+  .ac-scenes button { padding: 0 10px; }
+  .ac-restart { padding: 0 8px; }
+  .ac-sum, .ac-acc { min-height: 44px; gap: 4px; }
+  .ac-k b { font-size: 13.5px; }
+  .ac-k small { font-size: 11px; }
+  .ac-frac { font-size: 14.5px; }
+  .ac-res b { font-size: 16px; }
+  .ac-res small { font-size: 11.5px; }
+  .ac-badge { min-width: 24px; height: 24px; font-size: 14px; }
+  .ac-say { font-size: 13px; min-height: 4.5em; }
+  .ac .pvc-q-text { font-size: 15px; min-height: 2.8em; }
+  .ac .pvc-q-feedback { font-size: 13.5px; min-height: 4.35em; }
+  .ac-speedo { width: 84px; padding: 3px 4px 2px; }
+  .ac-speedo-read { font-size: 15px; }
+  .ac-speedo-name { display: none; }
+  .ac-pedal { height: 56px; width: 86px; }
+}
+/* a narrow side panel (small frames held sideways): the sum still on one line */
+@container pvc-panel (max-width: 300px) {
+  .ac-sum { gap: 3px; }
+  .ac-badge { min-width: 22px; height: 22px; font-size: 13px; padding: 0 3px; }
+  .ac-k b { font-size: 12.5px; }
+  .ac-k small { font-size: 10.5px; }
+  .ac-sum > i { font-size: 16px; }
+  .ac-frac { font-size: 13.5px; }
+  .ac-num, .ac-den { padding-left: 1px; padding-right: 1px; }
+  .ac-res b { font-size: 14.5px; }
+  .ac-res small { font-size: 11px; }
+}
+/* a wide panel (book page, desktop): the graph on the left, the rest beside it */
+@container pvc-panel (min-width: 660px) {
+  .ac .ac-big { height: 210px; }
+  .ac .pvc-learn {
+    grid-template-columns: minmax(0, 1fr) minmax(340px, 1.1fr);
+    grid-template-rows: auto auto 1fr;
+    grid-template-areas: 'big top' 'big mid' 'big say';
+    column-gap: 22px;
+  }
+}

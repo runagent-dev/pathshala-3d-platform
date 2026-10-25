@@ -1,0 +1,117 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "acceleration",
+  "title": "Acceleration (ত্বরণ)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 43,
+  "topic": "2.6",
+  "placement": "Book pages 43–44, topic 2.6: ত্বরণ (Acceleration). Next to the section text and চিত্র ২.০৬ (velocity–time graph), or in place of that graph.",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "Acceleration (ত্বরণ, pages 43–44, 2.6) with a CNG auto-rickshaw on a Bangladeshi road. On the straight road (সোজা রাস্তা) the student drives it with two pedals on the picture, press and hold: গতি বাড়াও (+2 ms⁻²) and ব্রেক (−3 ms⁻²); nothing pressed keeps the speed. Over the CNG the blue বেগ arrow grows and shrinks and the ত্বরণ arrow points forwards (ধনাত্মক ত্বরণ, purple), backwards (মন্দন, orange) or is gone (ত্বরণ নেই); a speedometer reads m/s. The panel draws the বেগ–সময় graph as it goes, each piece lettered A, B, C… and coloured by its kind, so the student makes the book's চিত্র ২.০৬ themselves, and works out a = (v − u) ÷ t live for the piece being driven, or for a piece touched on the graph. On the bend (বাঁক) the same CNG goes at a steady 4 m/s on an open field and the student turns it with বাঁয়ে and ডানে: the speedometer stays put, but the বেগ arrow (and a compass in the panel) turns, so there is a ত্বরণ, towards the middle of the turn, exactly while it turns. Real size and real time. Test: 5 tap questions (which piece of a book-style graph is মন্দন / ত্বরণ নেই / ধনাত্মক ত্বরণ, a from u, v, t with its unit, the sign when braking, which of two CNGs has the bigger acceleration, whether turning at a steady speed is acceleration). Phone-first, Bangla. GLB: the CNG auto-rickshaw at real size, in metres.",
+  "tags": ["motion", "acceleration", "deceleration", "velocity", "velocity-time graph", "vector", "cng", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "scene",
+      "label": "Example",
+      "type": "select",
+      "options": [["line", "straight road"], ["turn", "turning at a steady speed"]],
+      "default": "line"
+    },
+    {
+      "name": "trip",
+      "label": "Start with",
+      "type": "select",
+      "options": [
+        ["", "the CNG standing, an empty graph"],
+        ["book", "the book's graph driven (A, B, C, D), braking now"]
+      ],
+      "default": ""
+    },
+    {
+      "name": "view",
+      "label": "View",
+      "type": "select",
+      "options": [["front", "from the side / from above"], ["3d", "3d"]],
+      "default": "front"
+    },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "First-use pointers", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "pedal": "gas" } },
+    { "name": "set", "payload": { "pedal": "none" } },
+    { "name": "set", "payload": { "pedal": "brake" } },
+    { "name": "set", "payload": { "drive": [["gas", 5], ["none", 4], ["gas", 2.5], ["brake", 5]], "animate": false } },
+    { "name": "set", "payload": { "trip": "book" } },
+    { "name": "set", "payload": { "restart": true } },
+    { "name": "set", "payload": { "scene": "turn" } },
+    { "name": "set", "payload": { "pedal": "left" } },
+    { "name": "set", "payload": { "scene": "line" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": [
+    "ready",
+    "change",
+    "scene",
+    "pedal",
+    "start",
+    "done",
+    "view",
+    "practice-start",
+    "practice-result",
+    "practice-end"
+  ],
+  "export": {
+    "poster": { "params": { "coach": "0", "trip": "book" } },
+    "glb": [{ "name": "default" }],
+    "video": {
+      "kind": "script",
+      "seconds": 20,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 0.5, "command": "set", "payload": { "pedal": "gas" } },
+        { "at": 4.5, "command": "set", "payload": { "pedal": "none" } },
+        { "at": 7, "command": "set", "payload": { "pedal": "gas" } },
+        { "at": 9, "command": "set", "payload": { "pedal": "brake" } },
+        { "at": 12.5, "command": "set", "payload": { "pedal": "none" } },
+        { "at": 13.5, "command": "set", "payload": { "scene": "turn" } },
+        { "at": 15, "command": "set", "payload": { "pedal": "left" } },
+        { "at": 18.5, "command": "set", "payload": { "pedal": "none" } }
+      ]
+    }
+  }
+}
