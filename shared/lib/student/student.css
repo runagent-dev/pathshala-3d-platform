@@ -174,6 +174,8 @@
 .pvc[data-mode='quiz'] .pvc-learn, .pvc:not([data-mode='quiz']) .pvc-quiz { visibility: hidden; }
 
 .pvc-learn { display: flex; flex-direction: column; justify-content: space-between; gap: 8px; }
+/* buildStudentShell(…, { learnAlign: 'start' }): the content stays together at the top when the test sheet is taller */
+.pvc-learn[data-align='start'] { justify-content: flex-start; align-content: start; }
 .pvc-learn-main { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 24px; }
 .pvc-result { display: flex; align-items: baseline; gap: 8px; }
 .pvc-result .k { font-size: 15px; font-weight: 500; color: var(--ink-2); }
@@ -204,7 +206,8 @@
 .pvc-q-head .pvc-btn.is-off { visibility: hidden; }
 .pvc-q-head > span { white-space: nowrap; }
 .pvc-q-score { color: var(--ok); font-weight: 600; }
-.pvc-q-text { margin: 0; font-size: 17px; font-weight: 600; line-height: 1.4; }
+/* createQuiz({ lines }) sets --pvc-q-text-min / --pvc-q-feedback-min: room for that many lines of question and answer */
+.pvc-q-text { margin: 0; min-height: var(--pvc-q-text-min, auto); font-size: 17px; font-weight: 600; line-height: 1.4; }
 .pvc-q-options { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
 .pvc-opt { display: flex; align-items: center; justify-content: center; gap: 5px; height: 48px; padding: 0 6px; border-radius: 8px; border: 1.5px solid var(--line-2); background: var(--panel); font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .pvc-opt small { font-size: 14px; font-weight: 500; color: var(--ink-3); }
@@ -214,7 +217,7 @@
 .pvc-opt.right { border-color: var(--ok); background: color-mix(in srgb, var(--ok) 11%, var(--panel)); color: var(--ok); }
 .pvc-opt.wrong { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 9%, var(--panel)); color: var(--bad); }
 .pvc-opt.right small, .pvc-opt.wrong small { color: inherit; }
-.pvc-q-feedback { margin: 0; min-height: 1.45em; font-size: 15px; line-height: 1.45; color: var(--ink-2); }
+.pvc-q-feedback { margin: 0; min-height: var(--pvc-q-feedback-min, 1.45em); font-size: 15px; line-height: 1.45; color: var(--ink-2); }
 .pvc-q-feedback .lead { font-weight: 700; }
 .pvc-q-feedback[data-tone='ok'] .lead { color: var(--ok); }
 .pvc-q-feedback[data-tone='bad'] .lead { color: var(--bad); }

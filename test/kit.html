@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kit test page</title>
+  <!-- Used by test/browser/kit.spec.mjs: the student kit on its own, without a figure, so each part can be tried
+       by itself. Everything the tests need is on window.kit. -->
+  <link rel="stylesheet" href="../shared/fonts/noto-sans-bengali.css" />
+  <link rel="stylesheet" href="../shared/lib/student/student.css" />
+  <script type="importmap">
+    { "imports": { "three": "../shared/vendor/three/three.module.min.js", "three/addons/": "../shared/vendor/three/addons/", "@shared/": "../shared/lib/" } }
+  </script>
+  <style>html, body { margin: 0; height: 100%; background: #fff; } #app { position: fixed; inset: 0; }</style>
+</head>
+<body>
+  <div id="app" class="pvc" data-ui="simple"></div>
+  <script type="module">
+    import * as THREE from 'three';
+    import { Line2 } from 'three/addons/lines/Line2.js';
+    import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
+    import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
+    import { createArrow } from '@shared/arrow.js';
+    import { exportGLB } from '@shared/export-glb.js';
+    import { createStage } from '@shared/stage.js';
+    import { createTweener } from '@shared/tween.js';
+    import { createAnnotations } from '@shared/student/annotations.js';
+    import { createCoach } from '@shared/student/coach.js';
+    import { createLoupe } from '@shared/student/loupe.js';
+    import { capturePointer, releasePointer } from '@shared/student/pointer.js';
+    import { createQuiz } from '@shared/student/quiz.js';
+    import { buildStudentShell } from '@shared/student/shell.js';
+
+    window.kit = {
+      THREE,
+      Line2,
+      LineGeometry,
+      LineMaterial,
+      createArrow,
+      exportGLB,
+      createStage,
+      createTweener,
+      createAnnotations,
+      createCoach,
+      createLoupe,
+      capturePointer,
+      releasePointer,
+      createQuiz,
+      buildStudentShell,
+    };
+  </script>
+</body>
+</html>

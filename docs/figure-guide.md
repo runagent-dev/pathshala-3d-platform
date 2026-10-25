@@ -37,12 +37,17 @@ assets/<id>/
    `animateX(target)` built on `tweener.animate`. Pointer input: raycast against the movable part (through the
    magnifier too: `loupe.contains` + `loupe.toNDC` + `loupe.camera`), then convert pointer movement to model units
    with the part's direction on screen (`axisOnScreen` in the template). Accept a touch a few pixels off the part
-   on touch screens (see `nearby` in `screw-gauge`). Arrow keys step by one least count.
+   on touch screens (see `nearby` in `screw-gauge`). Take the pointer with `capturePointer` from
+   `@shared/student/pointer.js` (never `setPointerCapture` directly: it throws for synthetic pointers). Arrow keys step
+   by one least count.
 6. **Camera.** A `viewPose(view)` that fits the object in the frame for both fields of view (phones in portrait are
    narrow), `setView('front' | '3d')`, and re-fit on resize unless the student moved the camera.
 7. **The test.** `createQuiz` with hooks: `prepare` puts the part somewhere random (in whole least counts), locks it
-   and returns the right answer and three wrong ones from the usual mistakes; `reveal` writes the worked sum.
-8. **First-use pointers.** `createCoach` with spots on the movable part that a finger really grabs.
+   and returns the right answer and three wrong ones from the usual mistakes; `reveal(q, correct, picked)` writes the
+   worked sum (and can name the mistake behind `picked`). Give `lines: { text: 2, feedback: 2 }` (or what your
+   longest question and answer need) so the sheet keeps its height and the 3D view its size.
+8. **First-use pointers.** `createCoach` with spots on the movable part that a finger really grabs (`labelAt` if its
+   words would cover a label).
 9. **Buttons and keys** through one click handler on the root (`data-view`, `data-mode`, `data-q`, `data-act`).
 10. **Start and API.** Set the initial state, then return `{ ready, on, getState, set, reset, capture, exportRoot,
     startPractice }`. `getState` and `set` are what the book and the tests use: keep them plain JSON.
@@ -56,6 +61,10 @@ assets/<id>/
 - **Marks.** Draw scale marks with one `InstancedMesh` and colour the read mark with `setColorAt`; the GLB export
   bakes them into ordinary meshes.
 - **Text in 3D.** `textMesh(N(text), height)` draws with Noto Sans Bengali; `startFigure` waits for the font first.
+  The font has no ✓ ✗ →: use `ICONS.check`, `ICONS.close`, `ICONS.arrowR` in HTML.
+- **Vectors and paths.** `createArrow` (`@shared/arrow.js`) for vector arrows; three's `Line2` with
+  `LineMaterial({ worldUnits: true })` for thick lines and trails. Labels on the model: `createAnnotations`, with
+  `spots` + `avoid` so they keep clear of each other and of the buttons, and `setText` for words that change.
 - **Animations.** Build on `timeline.js`: `render(t)` must depend only on `t`, so seeking and video export are exact.
 - **Mobile.** Test the six sizes in the studio's frame menu; tap targets at least 24 px (36–44 px for main
   buttons); the panel moves beside the 3D on short, wide frames (handled by `student.css`).

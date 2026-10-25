@@ -5,6 +5,28 @@ student kit). Every zip records it in `PACKAGE.json` as `kit`. Bump it with each
 patch for fixes, minor for additions, major when a figure has to change to keep working. Run the visual comparison
 across all figures before merging a kit change (`npm run test:visual`).
 
+## 1.2.0 (2026-10-25)
+
+Added, for what the chapter-2 figures had to work round; nothing changes for existing figures (visual comparison:
+identical in all 13 figures). Tested in `test/browser/kit.spec.mjs` (on `test/kit.html`, the kit without a figure).
+- `quiz.js`: `createQuiz({ lines: { text, feedback } })` keeps room for that many lines of question and worked answer,
+  so the sheet (and the 3D view) keeps its size when a question wraps (`--pvc-q-text-min` / `--pvc-q-feedback-min`
+  in `student.css`). `reveal(q, correct, picked)` gets `{ index, value }` of the tapped choice.
+- `shell.js`: `buildStudentShell(…, { learnAlign: 'start' })` keeps the শেখো content at the top when the পরীক্ষা
+  sheet makes the panel taller.
+- `annotations.js`: `setText(id, html)` and `update(id, { dx, dy, text, point, color, spots, avoid, optional })`
+  change a label in place (no fade-in again); `spots` + `avoid` place a label clear of the other labels, of elements
+  (corner buttons, hint) and of boxes the figure gives (arrows); `box(id)`. `createAnnotations({ avoid })`.
+- `coach.js`: `object.label` may be a function (read while the hand shows); `object.labelAt` (side, list of sides or
+  function) and `object.labelAvoid` choose where the words go; `object.inset` replaces the fixed 16 px edges and the
+  48 px at the bottom.
+- `pointer.js` (new): `capturePointer` / `releasePointer`, which never throw for synthetic or lifted pointers. The
+  magnifier uses it (its drag no longer stops half way for a synthetic pointer).
+- `arrow.js` (new): `createArrow`, a 3D vector arrow (shaft and cone, meshes) with `set(from, dir, length)`.
+- three's thick lines (`lines/Line2.js`, `LineSegments2`, `LineGeometry`, `LineMaterial`) are vendored;
+  `export-glb.js` turns them into plain glTF lines instead of dropping them.
+- `icons.js`: `arrowR`. The bundled Noto Sans Bengali has no ✓ ✗ → (use `ICONS.check`, `close`, `arrowR`).
+
 ## 1.1.1 (2026-10-24)
 
 Fixes for phones; nothing changes for existing figures (visual comparison: identical):

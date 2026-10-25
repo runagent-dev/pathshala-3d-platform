@@ -2,6 +2,7 @@
 // of the main camera (setViewOffset), composited as a disc over the canvas. The ring + handle are
 // DOM, so they stay crisp and can be dragged.
 import * as THREE from 'three';
+import { capturePointer } from './pointer.js';
 
 /**
  * @param {{ stage: any, layer: HTMLElement, clearColor?: number, onChange?: (state: any) => void, onDragStart?: () => void,
@@ -149,7 +150,7 @@ export function createLoupe({ stage, layer, clearColor = 0xffffff, onChange, onD
     e.stopPropagation();
     e.preventDefault();
     drag = { id: e.pointerId, ox: e.clientX - state.x, oy: e.clientY - state.y };
-    el.setPointerCapture(e.pointerId);
+    capturePointer(el, e.pointerId);
     el.classList.add('dragging');
     state.follow = false;
     place();

@@ -26,4 +26,6 @@ export const ICONS = {
   minus: svg('<path d="M6 12h12"/>'),
   plus: svg('<path d="M12 6v12M6 12h12"/>'),
   check: svg('<path d="M5 12.5l4.5 4.5L19 7.5"/>'),
+  // the bundled Noto Sans Bengali has no ✓ ✗ → glyphs: use check, close and arrowR in the student's text
+  arrowR: svg('<path d="M4 12h15M13.5 6.5L19 12l-5.5 5.5"/>'),
 };
