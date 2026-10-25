@@ -6,7 +6,8 @@
 
 - Project skills (in `.claude/skills/`): `/new-figure` (a figure for a page and topic), `/fix-reviews` (act on open
   reviews), `/verify-figure` (run verify and look at the pictures), `/import-model` (a GLB/OBJ/STL/FBX as a model
-  figure), `/kit-change` (changing `shared/lib/` safely).
+  figure), `/kit-change` (changing `shared/lib/` safely), `/figure-batch` (many figures from page images with builder
+  and reviewer agents; see `docs/agents/README.md` and `docs/status.md`).
 - After every Edit/Write in a figure, a hook runs the fast checks for that figure and shows you what is wrong. Fix
   it before moving on.
 - Look at the pictures `npm run verify` writes to `test-results/<id>/` with the Read tool: phone portrait
