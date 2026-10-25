@@ -40,6 +40,12 @@ You get a **page number**, a **topic number** (e.g. 1.6.1) and usually a **scree
 6. Run `npm run verify -- <id>` until it is all green, then **look at the pictures** in `test-results/<id>/`.
 7. Commit on a branch `fig/<id>/<what>` and open a pull request (one figure per pull request).
 
+Before designing, read `docs/agents/lessons.md` (what reviews of the first eighteen figures found again and again)
+and `docs/book-notes.md` (units, terms and colours shared across figures). **Many figures at once** (a folder of
+page images named `P-<page>-T-<topic>.png`): one orchestrator, a builder agent and an independent reviewer agent per
+figure, a fix round, then pull requests merged in book order; the method and prompts are in `docs/agents/README.md`.
+What is done and what is open: `docs/status.md`.
+
 ## Rules
 
 These are checked where possible (`npm run check`, the browser tests); the rest is up to you and the reviewer.
