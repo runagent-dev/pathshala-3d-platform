@@ -13,7 +13,7 @@
   "order": 1,
   "maintainers": ["RadeenXALNW"],
   "units": "m",
-  "description": "The collision of চিত্র ৩.০৪ (page 72, 3.5.1) that the student plays: two balls, m₁ behind m₂, on a smooth straight track, each with a blue velocity arrow. The student picks an example (a heavy ball into a light one at rest, equal masses, a light ball into a heavy one, head-on) or drags an arrow to choose u₁ and u₂ (whole m/s, u₁ > u₂ so they meet), then plays the collision 10 times slower, or scrubs it: the balls approach, touch (a flash; that moment slowed much more, and the velocities change over smoothly) and move apart with v₁ and v₂ from the two conservation laws. Under the picture a momentum strip lays m₁'s and m₂'s momenta tip to tail, before and now, with the total as a dashed line: while they touch the parts trade but the row always ends on the line. The panel writes the book's two equations with the student's numbers (m₁u₁ + m₂u₂ = m₁v₁ + m₂v₂ in kg m/s, ½m₁u₁² + ½m₂u₂² = ½m₁v₁² + ½m₂v₂² in J), the after side as ? until the balls have collided, the book's assumption that only kinetic energy changes hands, why one equation is not enough, and the names ভরবেগের সংরক্ষণশীলতা and শক্তির সংরক্ষণশীলতা. Test tab: 5 questions on their own scenes (the total momentum before, v₂ from the momentum equation, the kinetic energy after, equal masses or a light ball into a heavy one predicted and then played, and what stays the same or why the momentum equation alone is not enough). Phone-first, Bangla.",
+  "description": "The collision of চিত্র ৩.০৪ (page 72, 3.5.1) that the student plays: two balls, m₁ behind m₂, on a smooth straight track, each with a blue velocity arrow and one tag on its outer side (its mass over its velocity, hung on a dashed stalk). The student picks an example (a heavy ball into a light one at rest, equal masses, a light ball into a heavy one, head-on) or drags an arrow to choose u₁ and u₂ (whole m/s, u₁ > u₂ so they meet, u₁ − u₂ ≤ 4 so the run fits the picture), then plays the collision 10 times slower, or scrubs it: the balls approach, touch (a flash; that moment slowed much more, and the velocities change over smoothly) and move apart with v₁ and v₂ from the two conservation laws. Under the picture a momentum strip lays m₁'s and m₂'s momenta tip to tail, before and now, with the total (সম্মিলিত ভরবেগ) as a dashed line and the sign cue (to the right is positive): while they touch the parts trade but the row always ends on the line. The panel writes the book's two equations with the student's numbers under the names of the two laws (ভরবেগের সংরক্ষণশীলতা বা নিত্যতা in kg m/s, শক্তির সংরক্ষণশীলতা in J), the after side as ? until the balls have collided, the book's assumption that only kinetic energy changes hands, and why one equation is not enough. Test tab: 5 questions on their own scenes (the total momentum before, v₂ from the momentum equation, which of four (v₁, v₂) pairs that all keep the momentum also keeps the kinetic energy, equal masses or a light ball into a heavy one predicted and then played, and what stays the same or the kinetic energy after). Phone-first, Bangla.",
   "tags": ["momentum", "collision", "conservation", "kinetic-energy", "elastic-collision", "force", "bangla"],
   "params": [
     {
@@ -41,7 +41,7 @@
       "type": "number",
       "default": "",
       "placeholder": "the example's",
-      "help": "whole numbers −3…3, more than u₂"
+      "help": "whole numbers −3…3, more than u₂, at most 4 more"
     },
     {
       "name": "u2",
@@ -49,7 +49,7 @@
       "type": "number",
       "default": "",
       "placeholder": "the example's",
-      "help": "whole numbers −3…3, less than u₁"
+      "help": "whole numbers −3…3, less than u₁, at most 4 less"
     },
     {
       "name": "at",

@@ -21,11 +21,16 @@ export const SLOW = 10;
 export const CONTACT = 1.6;
 /** At most this long (s, real time) before and after the contact. */
 export const T_CAP = 0.25;
-/** Length of a velocity arrow: metres per m/s. */
-export const ARROW = 0.07;
+/** Length of a velocity arrow: metres per m/s (½ m/s is still a visible arrow on a small phone). */
+export const ARROW = 0.1;
 /** The velocities the student can choose (m/s, whole numbers). */
 export const U_MIN = -3;
 export const U_MAX = 3;
+/**
+ * u₁ − u₂ at most this (m/s): then no velocity after the collision is faster than 5 m/s, so the arrows (0.5 m at
+ * most) and the run still fit the track in view.
+ */
+export const D_MAX = 4;
 /** The masses the bridge accepts (kg). */
 export const M_MIN = 0.5;
 export const M_MAX = 5;
@@ -61,25 +66,36 @@ export const v2FromMomentum = ({ m1, m2, u1, u2 }, v1) => clean((m1 * u1 + m2 * 
 export const collides = ({ u1, u2 }) => u1 > u2;
 
 /**
- * A setup made valid: whole-number velocities within U_MIN…U_MAX, masses within M_MIN…M_MAX, and u₁ > u₂ (they
- * must meet). `keep` says which velocity the student just set ('u1' | 'u2'): the other one gives way.
+ * A setup made valid: whole-number velocities within U_MIN…U_MAX, masses within M_MIN…M_MAX, u₁ > u₂ (they must
+ * meet) and u₁ − u₂ ≤ D_MAX. `keep` says which velocity the student just set ('u1' | 'u2'): the other one gives way.
  */
 export function normalize({ m1, m2, u1, u2 }, keep = 'u1') {
   const m = (x) => Math.min(M_MAX, Math.max(M_MIN, clean(Number(x) || 1, 3)));
   const u = (x) => Math.min(U_MAX, Math.max(U_MIN, Math.round(Number(x) || 0)));
   let a = u(u1);
   let b = u(u2);
-  if (a <= b) {
-    if (keep === 'u2') {
-      b = Math.max(U_MIN, b);
-      a = Math.min(U_MAX, b + 1);
-      if (a <= b) b = a - 1;
-    } else {
-      a = Math.max(U_MIN + 1, a);
-      b = a - 1;
-    }
+  if (keep === 'u2') {
+    if (a <= b) a = Math.min(U_MAX, b + 1);
+    if (a <= b) b = a - 1;
+    if (a - b > D_MAX) a = b + D_MAX;
+  } else {
+    if (a <= b) b = Math.max(U_MIN, a - 1);
+    if (a <= b) a = b + 1;
+    if (a - b > D_MAX) b = a - D_MAX;
   }
   return { m1: m(m1), m2: m(m2), u1: a, u2: b };
+}
+
+/** Every setup the student can reach: the examples' mass pairs and whole velocities with u₁ > u₂, u₁ − u₂ ≤ D_MAX. */
+export function reachableSetups() {
+  const out = [];
+  for (const [m1, m2] of [
+    [3, 1],
+    [2, 2],
+    [1, 3],
+  ])
+    for (let u1 = U_MIN; u1 <= U_MAX; u1++) for (let u2 = U_MIN; u2 < u1; u2++) if (u1 - u2 <= D_MAX) out.push({ m1, m2, u1, u2 });
+  return out;
 }
 
 /**

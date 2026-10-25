@@ -54,15 +54,16 @@ test('conservation-of-momentum: the total momentum never changes, the velocities
   await fig.call('set', { at: 'start' });
   await fig.advance(600);
   const box = await (await frame.frameElement()).boundingBox();
-  // the dot of u₁'s label sits on the middle of m₁'s arrow (the labels' dots: m₁, u₁, m₂, u₂)
+  // m₁'s tag hangs on the top of m₁'s stalk; its arrow starts on the same stalk, 6 px under the tag's lower edge
   const tipPx = await frame.evaluate(() => {
-    const dot = document.querySelectorAll('.pvc-anno-lines circle')[1];
-    return { x: Number(dot.getAttribute('cx')), y: Number(dot.getAttribute('cy')) };
+    const dot = document.querySelectorAll('.pvc-anno-lines circle')[0];
+    const tag = document.querySelectorAll('.pvc-anno')[0].getBoundingClientRect();
+    return { x: Number(dot.getAttribute('cx')) + 15, y: Number(dot.getAttribute('cy')) + tag.height / 2 + 6 };
   });
   await page.mouse.move(box.x + tipPx.x, box.y + tipPx.y);
   await page.mouse.down();
   await fig.advance(50);
-  await page.mouse.move(box.x + tipPx.x + 40, box.y + tipPx.y, { steps: 6 });
+  await page.mouse.move(box.x + tipPx.x + 70, box.y + tipPx.y, { steps: 6 });
   await fig.advance(50);
   await page.mouse.up();
   await fig.advance(800);

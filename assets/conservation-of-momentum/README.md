@@ -28,8 +28,8 @@ To listen to it or control it from the book page, use the helper shipped in the 
 |---|---|---|---|
 | `lang` | Language | `bn` বাংলা · `en` English | `bn` |
 | `preset` | Example | `heavy` heavy behind (3 kg, 1 kg) · `equal` equal masses · `light` light behind (1 kg, 3 kg) · `headon` head-on | `heavy` |
-| `u1` | u₁ (m/s) (whole numbers −3…3, more than u₂) | number |  |
-| `u2` | u₂ (m/s) (whole numbers −3…3, less than u₁) | number |  |
+| `u1` | u₁ (m/s) (whole numbers −3…3, more than u₂, at most 4 more) | number |  |
+| `u2` | u₂ (m/s) (whole numbers −3…3, less than u₁, at most 4 less) | number |  |
 | `at` | Moment of the run (touch, contact, after, end, or seconds of the run on screen) | text |  |
 | `view` | View | `front` · `3d` | `front` |
 | `mode` | Start in | `explore` learn · `quiz` test | `explore` |

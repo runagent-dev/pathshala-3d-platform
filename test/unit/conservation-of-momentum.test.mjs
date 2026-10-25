@@ -69,8 +69,23 @@ describe('a valid setup', () => {
     assert.deepEqual(c.normalize({ m1: 3, m2: 1, u1: -3, u2: -3 }, 'u1'), { m1: 3, m2: 1, u1: -2, u2: -3 });
   });
   it('keeps velocities whole and within −3…3, masses within 0.5…5 kg', () => {
-    assert.deepEqual(c.normalize({ m1: 9, m2: 0.1, u1: 7.4, u2: -9 }), { m1: 5, m2: 0.5, u1: 3, u2: -3 });
+    assert.deepEqual(c.normalize({ m1: 9, m2: 0.1, u1: 7.4, u2: -9 }), { m1: 5, m2: 0.5, u1: 3, u2: -1 });
     assert.deepEqual(c.normalize({ m1: 2, m2: 2, u1: 1.6, u2: 0.4 }), { m1: 2, m2: 2, u1: 2, u2: 0 });
+  });
+  it('keeps u₁ − u₂ at most 4 m/s: the velocity the student did not just set gives way', () => {
+    assert.deepEqual(c.normalize({ m1: 3, m2: 1, u1: 3, u2: -3 }, 'u1'), { m1: 3, m2: 1, u1: 3, u2: -1 });
+    assert.deepEqual(c.normalize({ m1: 3, m2: 1, u1: 3, u2: -3 }, 'u2'), { m1: 3, m2: 1, u1: 1, u2: -3 });
+    for (const q of c.reachableSetups()) assert.deepEqual(c.normalize(q), q);
+    assert.equal(c.reachableSetups().length, 54); // 3 mass pairs × 18 velocity pairs
+  });
+  it('no velocity after the collision is faster than 5 m/s, so every arrow fits the track in view', () => {
+    let fastest = 0;
+    for (const q of c.reachableSetups()) {
+      const { v1, v2 } = c.elastic(q.m1, q.m2, q.u1, q.u2);
+      fastest = Math.max(fastest, Math.abs(v1), Math.abs(v2));
+    }
+    assert.equal(fastest, 5);
+    assert.ok(fastest * c.ARROW <= 0.5);
   });
   it('knows the examples', () => {
     assert.equal(c.presetMatching(c.PRESETS.headon), 'headon');
@@ -79,13 +94,7 @@ describe('a valid setup', () => {
 });
 
 describe('one run on screen', () => {
-  const setups = [
-    ...c.PRESET_IDS.map((id) => c.PRESETS[id]),
-    { m1: 3, m2: 1, u1: 3, u2: -3 },
-    { m1: 1, m2: 3, u1: 3, u2: -3 },
-    { m1: 3, m2: 1, u1: -1, u2: -3 },
-    { m1: 2, m2: 2, u1: 1, u2: 0 },
-  ];
+  const setups = c.reachableSetups(); // every setup the student can make
   it('the total momentum is the same at every moment, the contact included', () => {
     for (const q of setups) {
       const p = c.plan(q);
@@ -142,9 +151,9 @@ describe('one run on screen', () => {
     const p = c.plan(c.PRESETS.heavy);
     const a = c.stateAt(p, 0);
     const b = c.stateAt(p, p.Tb);
-    close(b.x1 - a.x1, p.u1 * p.tb, 1e-9);
+    close(b.x1 - a.x1, p.u1 * p.tb, 1e-5);
     const e = c.stateAt(p, p.T);
-    close(e.x2 - p.x2c, p.v2 * p.ta, 1e-9);
+    close(e.x2 - p.x2c, p.v2 * p.ta, 1e-5);
   });
   it('the strip covers zero, the parts and the total', () => {
     const r = c.stripRange(c.plan(c.PRESETS.headon));

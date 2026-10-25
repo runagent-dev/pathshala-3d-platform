@@ -2,7 +2,8 @@
 // pictures): two rows, "before" and "now", each with the two momenta as green arrows laid tip to tail (m₁'s from
 // zero, m₂'s from where m₁'s ends), so the row ends at the total. A dashed line marks the total, which never moves:
 // while the balls touch, the parts trade (m₁'s shrinks, m₂'s grows) and the row still ends on the line. On the
-// right of each row its sum in numbers ("৪.৫ + ১.৫ = ৬"). Also the flash where the balls touch (as in চিত্র ৩.০৪).
+// right of each row its sum in numbers ("৪.৫ + ১.৫ = ৬"), and under zero the sign cue (to the right is positive).
+// Also the flash where the balls touch (as in চিত্র ৩.০৪).
 // Every word comes in from the figure (already translated); symbols are drawn with real subscripts.
 
 export const FONT = '"Noto Sans Bengali", "Segoe UI", Roboto, Arial, sans-serif';
@@ -94,11 +95,27 @@ function flatArrow(ctx, xa, xb, y, h, fill, stroke) {
 }
 
 /**
- * The strip's height for a stage of this size (px).
+ * The strip's height for a stage of this size (px): two rows always; under 300 px of stage without the title.
  * @param {number} W @param {number} H
  */
 export function stripHeight(W, H) {
-  return H < 300 ? 50 : W >= 700 && H >= 380 ? 98 : 86;
+  return H < 300 ? 54 : W >= 700 && H >= 380 ? 98 : 86;
+}
+
+/** A small arrow for the sign cue, from x0 to x1 at y. */
+function cueArrow(ctx, x0, x1, y, color) {
+  const d = Math.sign(x1 - x0);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.3;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(x0, y);
+  ctx.lineTo(x1, y);
+  ctx.moveTo(x1 - d * 3.2, y - 2.6);
+  ctx.lineTo(x1, y);
+  ctx.lineTo(x1 - d * 3.2, y + 2.6);
+  ctx.stroke();
 }
 
 /**
@@ -107,13 +124,13 @@ export function stripHeight(W, H) {
  *      rows: [{ label, parts: [p1, p2], sum, hide, sym: [Rich, Rich] }], hideTotal }
  *   sumSamples: texts as wide as a row's sum may get, so the arrows' part keeps its size while the sums change.
  *   rows[i].sum: the row's sum ("৬ + ০ = ৬"); hide: no arrows and "?" for the sum (a test asks for it).
- *   A low box (under 60 px) has room for the last row only, without the title.
+ *   Under zero the sign cue "− ← ০ → +" (to the right is positive). A low box (under 70 px) has no title.
  */
 export function drawStrip(ctx, box, d) {
-  const compact = box.h < 60;
-  const rows = compact ? d.rows.slice(-1) : d.rows;
+  const slim = box.h < 70;
+  const rows = d.rows;
   const fs = box.w >= 520 ? 13.5 : 12.5;
-  const pad = compact ? 6 : 8;
+  const pad = slim ? 5 : 8;
   ctx.save();
   // the card
   roundRect(ctx, box.x + 0.5, box.y + 0.5, box.w - 1, box.h - 1, 8);
@@ -123,13 +140,13 @@ export function drawStrip(ctx, box, d) {
   ctx.lineWidth = 1;
   ctx.stroke();
 
-  const titleH = compact ? 0 : 17;
-  const axisH = 13;
-  const rowsTop = box.y + pad - 2 + titleH;
+  const titleH = slim ? 0 : 17;
+  const axisH = slim ? 12 : 13;
+  const rowsTop = box.y + pad - (slim ? 1 : 2) + titleH;
   const rowH = (box.h - pad * 2 + 2 - titleH - axisH) / rows.length;
   ctx.textBaseline = 'middle';
   // the title (left) and the phase (right)
-  if (!compact) {
+  if (!slim) {
     ctx.font = `700 ${fs - 0.5}px ${FONT}`;
     ctx.fillStyle = COLORS.pDark;
     ctx.textAlign = 'left';
@@ -142,29 +159,31 @@ export function drawStrip(ctx, box, d) {
     }
   }
   // columns: row names | arrows | sums
-  ctx.font = `600 ${fs - 0.5}px ${FONT}`;
+  const rfs = slim ? fs - 1 : fs - 0.5;
+  ctx.font = `600 ${rfs}px ${FONT}`;
   const nameW = Math.max(...rows.map((r) => ctx.measureText(r.label).width)) + 8;
-  ctx.font = `700 ${fs}px ${FONT}`;
+  ctx.font = `700 ${slim ? fs - 0.5 : fs}px ${FONT}`;
   const sumW = Math.max(...d.sumSamples.map((s) => ctx.measureText(s).width)) + 6;
   const x0 = box.x + pad + nameW + 10;
   const x1 = box.x + box.w - pad - sumW - 14;
   const span = d.range.hi - d.range.lo;
   const X = (p) => x0 + ((p - d.range.lo) / span) * (x1 - x0);
-  const barH = compact ? 10 : 11;
+  const barH = slim ? 8 : 11;
 
   // zero: a line through the rows
   const yTop = rowsTop + 1;
   const yBot = rowsTop + rowH * rows.length - 1;
+  const xz = Math.round(X(0)) + 0.5;
   ctx.strokeStyle = '#aab3bd';
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.moveTo(Math.round(X(0)) + 0.5, yTop);
-  ctx.lineTo(Math.round(X(0)) + 0.5, yBot + 3);
+  ctx.moveTo(xz, yTop);
+  ctx.lineTo(xz, yBot + 3);
   ctx.stroke();
 
   for (const [i, row] of rows.entries()) {
     const y = rowsTop + rowH * (i + 0.5);
-    ctx.font = `600 ${fs - 0.5}px ${FONT}`;
+    ctx.font = `600 ${rfs}px ${FONT}`;
     ctx.fillStyle = COLORS.ink2;
     ctx.textAlign = 'left';
     ctx.fillText(row.label, box.x + pad + 2, y + 0.5);
@@ -173,15 +192,15 @@ export function drawStrip(ctx, box, d) {
       const xa = X(0);
       const xm = X(a);
       const xe = X(a + b);
-      // opposite signs: m₂'s arrow runs back over m₁'s, so the two go one above the other (tip to tail still)
-      const split = a * b < 0 && Math.abs(xe - xa) > 0.5;
-      const h = split ? Math.max(6, Math.min(barH - 2, rowH / 2 - 3)) : barH;
+      // opposite signs: m₂'s arrow runs back over m₁'s, so the two go one above the other (still tip to tail)
+      const split = a * b < 0;
+      const h = split ? Math.max(5, Math.min(barH - 2, rowH / 2 - 2.5)) : barH;
       const ya = split ? y - h / 2 - 1.5 : y;
       const yb = split ? y + h / 2 + 1.5 : y;
       flatArrow(ctx, xa, xm, ya, h, COLORS.p, COLORS.pDark);
       flatArrow(ctx, xm, xe, yb, h, COLORS.pLight, COLORS.pDark);
       // the names of the parts inside their arrows, where there is room
-      if (!split)
+      if (!split && !slim)
         for (const [j, [s, e]] of [
           [xa, xm],
           [xm, xe],
@@ -198,13 +217,13 @@ export function drawStrip(ctx, box, d) {
         }
     }
     // the sum, right-aligned
-    ctx.font = `700 ${fs}px ${FONT}`;
+    ctx.font = `700 ${slim ? fs - 0.5 : fs}px ${FONT}`;
     ctx.fillStyle = row.hide ? COLORS.ink3 : COLORS.pDark;
     ctx.textAlign = 'right';
     ctx.fillText(row.hide ? '?' : row.sum, box.x + box.w - pad - 2, y + 0.5);
   }
 
-  // the total's line (dashed, it never moves) and the labels under the rows: the total, and zero
+  // the total's line (dashed, it never moves)
   const xt = Math.round(X(d.total)) + 0.5;
   if (!d.hideTotal) {
     ctx.setLineDash([4, 3]);
@@ -216,24 +235,62 @@ export function drawStrip(ctx, box, d) {
     ctx.stroke();
     ctx.setLineDash([]);
   }
+
+  // under the rows: the sign cue round zero ("− ← ০ → +") and the total's name under its line, clear of each other
   const ya = yBot + axisH / 2 + 2;
-  ctx.font = `600 ${fs - 1.5}px ${FONT}`;
-  const zeroW = ctx.measureText(d.zeroText).width;
+  const afs = fs - (slim ? 2 : 1.5);
+  ctx.font = `600 ${afs}px ${FONT}`;
+  const zw = ctx.measureText(d.zeroText).width;
+  const sw = ctx.measureText('+').width;
+  const cue = { left: xz - zw / 2 - 18 - sw, right: xz + zw / 2 + 18 + sw };
   const totText = `${d.totalName} ${d.hideTotal ? '?' : d.totalValue}`;
-  ctx.font = `700 ${fs - 1.5}px ${FONT}`;
-  const totW = ctx.measureText(totText).width;
-  // the total's label centred under its line (at the right while it is asked for), inside the arrows' part
+  ctx.font = `700 ${afs}px ${FONT}`;
+  const tw = ctx.measureText(totText).width;
+  const minX = box.x + pad;
+  const maxX = box.x + box.w - pad;
   const tx = d.hideTotal ? x1 : xt;
-  const tl = Math.min(Math.max(tx - totW / 2, x0 - 6), x1 + 6 - totW);
+  const fits = (l) => l >= minX && l + tw <= maxX;
+  if (!d.hideTotal && Math.abs(xt - xz) < 2) {
+    // a total of zero: its name stands on zero, the signs on either side of it
+    const l = Math.min(Math.max(xz - tw / 2, minX), maxX - tw);
+    ctx.fillStyle = COLORS.pDark;
+    ctx.textAlign = 'left';
+    ctx.fillText(totText, l, ya);
+    ctx.font = `600 ${afs}px ${FONT}`;
+    ctx.fillStyle = COLORS.ink3;
+    ctx.textAlign = 'center';
+    if (l - 18 - sw >= minX) {
+      ctx.fillText('−', l - 16 - sw / 2, ya);
+      cueArrow(ctx, l - 3, l - 13, ya + 0.5, COLORS.ink3);
+    }
+    if (l + tw + 18 + sw <= maxX) {
+      ctx.fillText('+', l + tw + 16 + sw / 2, ya);
+      cueArrow(ctx, l + tw + 3, l + tw + 13, ya + 0.5, COLORS.ink3);
+    }
+    ctx.restore();
+    return;
+  }
+  const clear = (l, c) => l + tw < c.left - 4 || l > c.right + 4;
+  const tries = [tx - tw / 2, tx + 5, tx - 5 - tw];
+  let tl = tries.find((l) => fits(l) && clear(l, cue));
+  let full = true; // the cue with its arrows and signs, or only "০"
+  if (tl == null) {
+    full = false;
+    const small = { left: xz - zw / 2, right: xz + zw / 2 };
+    tl = tries.find((l) => fits(l) && clear(l, small)) ?? Math.min(Math.max(tx - tw / 2, minX), maxX - tw);
+  }
   ctx.fillStyle = d.hideTotal ? COLORS.ink3 : COLORS.pDark;
   ctx.textAlign = 'left';
   ctx.fillText(totText, tl, ya);
-  // zero's label only where it does not touch the total's
-  const zl = X(0) - zeroW / 2;
-  if (zl + zeroW < tl - 6 || zl > tl + totW + 6) {
-    ctx.font = `600 ${fs - 1.5}px ${FONT}`;
-    ctx.fillStyle = COLORS.ink3;
-    ctx.fillText(d.zeroText, zl, ya);
+  ctx.font = `600 ${afs}px ${FONT}`;
+  ctx.fillStyle = COLORS.ink3;
+  ctx.textAlign = 'center';
+  ctx.fillText(d.zeroText, xz, ya);
+  if (full) {
+    ctx.fillText('−', xz - zw / 2 - 16 - sw / 2, ya);
+    ctx.fillText('+', xz + zw / 2 + 16 + sw / 2, ya);
+    cueArrow(ctx, xz - zw / 2 - 3, xz - zw / 2 - 13, ya + 0.5, COLORS.ink3);
+    cueArrow(ctx, xz + zw / 2 + 3, xz + zw / 2 + 13, ya + 0.5, COLORS.ink3);
   }
   ctx.restore();
 }
