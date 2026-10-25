@@ -1,0 +1,120 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "strong-nuclear-force",
+  "title": "Strong nuclear force (সবল নিউক্লীয় বল)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 69,
+  "topic": "3.2.4",
+  "placement": "Book page 69, topic 3.2.4: সবল নিউক্লীয় বল (Strong Nuclear Force), next to that section and the paragraph on unifying the forces.",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "cm",
+  "description": "Interactive 3D nucleus for the book's সবল নিউক্লীয় বল (page 69, 3.2.4). A carbon-12 nucleus of protons (red, +) and neutrons (grey): the student pulls one proton out. Within about 10⁻¹⁵ m an orange arrow (the strong nuclear force) pulls it back far harder than the blue electric push of the other protons, and it snaps back when let go; a little farther the strong force is gone and the electric push sends it away. A distance scale in 10⁻¹⁵ m shows the reach in orange. Two more scenes show where nuclear energy comes from: a big nucleus splitting (ভাঙা) and two small nuclei joining (জোড়া দেওয়া), each giving off energy. The panel shows the four fundamental forces weakest to strongest and how the weak and electromagnetic forces became one (ইলেকট্রো উইক). Test tab: 5 questions (what holds the nucleus, what a let-go proton does, the book's numbers, splitting or joining, the three kinds of force). Symbolic picture, said so on screen. Phone-first, Bangla. Model units: 1 cm = 1 fm.",
+  "tags": [
+    "force",
+    "fundamental-forces",
+    "strong-nuclear-force",
+    "nucleus",
+    "proton",
+    "neutron",
+    "nuclear-energy",
+    "fission",
+    "fusion",
+    "bangla"
+  ],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "scene",
+      "label": "Scene",
+      "type": "select",
+      "options": [["pull", "pull a proton"], ["split", "split (ভাঙা)"], ["join", "join (জোড়া দেওয়া)"]],
+      "default": "pull"
+    },
+    {
+      "name": "pull",
+      "label": "Proton held out (fm)",
+      "type": "number",
+      "default": "0",
+      "placeholder": "0–2.5",
+      "help": "Hold the proton this many × 10⁻¹⁵ m out of the nucleus at the start, e.g. 0.6 (the poster)"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "First-use pointers", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "pull": 0.6 } },
+    { "name": "set", "payload": { "pull": 1.8 } },
+    { "name": "set", "payload": { "release": true } },
+    { "name": "set", "payload": { "scene": "split" } },
+    { "name": "set", "payload": { "scene": "join", "t": 4.4 } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": [
+    "ready",
+    "change",
+    "scene",
+    "release",
+    "done",
+    "view",
+    "dragstart",
+    "dragend",
+    "practice-start",
+    "practice-result",
+    "practice-end"
+  ],
+  "export": {
+    "poster": { "params": { "coach": "0", "pull": "0.6" } },
+    "glb": [{ "name": "default" }],
+    "video": {
+      "kind": "script",
+      "seconds": 20,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 0.6, "command": "set", "payload": { "pull": 0.3 } },
+        { "at": 1.2, "command": "set", "payload": { "pull": 0.6 } },
+        { "at": 1.9, "command": "set", "payload": { "pull": 0.9 } },
+        { "at": 3, "command": "set", "payload": { "release": true } },
+        { "at": 4.4, "command": "set", "payload": { "pull": 0.7 } },
+        { "at": 5.1, "command": "set", "payload": { "pull": 1.3 } },
+        { "at": 5.8, "command": "set", "payload": { "pull": 2 } },
+        { "at": 7, "command": "set", "payload": { "release": true } },
+        { "at": 9, "command": "set", "payload": { "scene": "split" } },
+        { "at": 15.2, "command": "set", "payload": { "scene": "join" } }
+      ]
+    }
+  }
+}
