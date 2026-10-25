@@ -42,7 +42,9 @@ import {
   tickTrip,
   tickTurn,
   tripAt,
+  turnCentre,
   turnStep,
+  turnVectors,
 } from './drive.js';
 import { createCompass, createGraph, createSpeedometer } from './gauges.js';
 import { createI18n } from './i18n.js';
@@ -61,11 +63,12 @@ export const DEFAULTS = {
   sound: true,
 };
 
-// one colour per meaning: বেগ blue; ধনাত্মক ত্বরণ purple, মন্দন orange, ত্বরণ নেই grey (style.css has the same)
+// one colour per meaning: বেগ blue; ধনাত্মক ত্বরণ purple, মন্দন orange, ত্বরণ নেই grey (style.css has the same).
+// Arrows, lines and bands use the colours; words use the darker shades of the same (readable on white).
 const COLORS = {
   velocity: '#1c6fd9',
   ghost: '#8db4ea', // the initial velocity u of a test question: a paler বেগ arrow
-  ghostInk: '#4a78b8',
+  ghostInk: '#3f6fb3',
   up: '#7048e8',
   down: '#e8590c',
   none: '#868e96',
@@ -73,13 +76,15 @@ const COLORS = {
   track: '#a9b1ba',
   ink: '#1d2733',
 };
+const TEXT = { velocity: '#1c63c4', up: '#6741d9', down: '#bf4508', none: '#5c6670', turn: '#6741d9' };
 const V_SCALE = 0.14; // m of arrow per m/s on the road (15 m/s: 2.1 m)
-const V_SCALE_TURN = 0.6; // on the bend (4 m/s: 2.4 m)
+const V_SCALE_TURN = 0.6; // on the bend (2.5 m/s: 1.5 m)
 const A_SCALE = 0.45; // m of arrow per ms⁻² (2 ms⁻²: 0.9 m)
+const A_SCALE_TURN = 0.75; // on the bend, seen from farther away (2.1 ms⁻²: 1.6 m)
 const V_Y = 2.05; // heights of the arrows above the road (the roof is at 1.71 m)
 const A_Y = 2.8;
-const SHOW_Y = { u: 2.05, v: 2.75, a: 3.45 }; // a test question's arrows: u, v, and the ত্বরণ shown with the answer
-const BEND_Y = { v: 1.95, a: 2.05 }; // on the bend (seen from above) both arrows lie just over the roof
+const SHOW_Y = { u: 2.05, gap: 0.7 }; // a test question's arrows: u, then v and the ত্বরণ (with the answer) above it
+const BEND_Y = { v: 1.95, a: 2.05 }; // on the bend both arrows lie just over the roof
 const BOOK_TRIP = [
   ['gas', 5],
   ['none', 4],
@@ -104,7 +109,8 @@ const look = (azDeg, elDeg) => {
 };
 const VIEWS = {
   line: { front: look(0, 12), '3d': look(38, 22) },
-  turn: { front: look(0, 52), '3d': look(-30, 34) },
+  // the bend: from above but tilted, north up (the camera does not turn with the CNG, so its arrows are seen turning)
+  turn: { front: look(0, 42), '3d': look(-35, 28) },
 };
 
 export function createApp(root, options = {}) {
@@ -139,12 +145,15 @@ export function createApp(root, options = {}) {
           </div>
           <div class="ac-mid">
             <div class="ac-sum" data-show="line">
-              <span class="ac-badge" data-v="letter"></span>
-              <span class="ac-k"><b>${t('acc_name')}</b><small>${t('acc_formula')}</small></span>
-              <i>=</i>
-              <span class="ac-frac"><span class="ac-num" data-v="num"></span><span class="ac-den" data-v="den"></span></span>
-              <i data-v="eq">=</i>
-              <span class="ac-res"><b data-v="a"></b><small data-v="kind"></small></span>
+              <div class="ac-sum-row">
+                <span class="ac-badge" data-v="letter"></span>
+                <span class="ac-k"><b>${t('acc_name')}</b></span>
+                <i>=</i>
+                <span class="ac-frac"><span class="ac-num" data-v="num"></span><span class="ac-den" data-v="den"></span></span>
+                <i data-v="eq">=</i>
+                <span class="ac-res"><b data-v="a"></b><small data-v="kind"></small></span>
+              </div>
+              <small class="ac-def">${t('acc_def')}</small>
             </div>
             <div class="ac-acc" data-show="turn">
               <span class="ac-k"><b>${t('lbl_acc')}</b></span>
@@ -204,6 +213,36 @@ export function createApp(root, options = {}) {
   scene.add(vArrow.root, aArrow.root, uArrow.root);
   uArrow.root.visible = false;
 
+  // the bend: while the CNG turns, the circle it is going round (dashed) and the middle of it, where its ত্বরণ points
+  const turnRing = new THREE.Group();
+  turnRing.name = 'TurnCircle';
+  turnRing.userData.noExport = true;
+  turnRing.visible = false;
+  {
+    const n = 44;
+    const dashes = new THREE.InstancedMesh(
+      new THREE.PlaneGeometry(((2 * Math.PI * TURN.r) / n) * 0.55, 0.08).rotateX(-Math.PI / 2),
+      new THREE.MeshBasicMaterial({ color: COLORS.turn, transparent: true, opacity: 0.6, depthWrite: false, toneMapped: false }),
+      n,
+    );
+    const m = new THREE.Matrix4();
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2;
+      m.makeRotationY(-a - Math.PI / 2).setPosition(TURN.r * Math.cos(a), 0.035, -TURN.r * Math.sin(a));
+      dashes.setMatrixAt(i, m);
+    }
+    const halo = new THREE.Mesh(
+      new THREE.CircleGeometry(0.26, 24).rotateX(-Math.PI / 2),
+      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.85, depthWrite: false, toneMapped: false }),
+    );
+    halo.position.y = 0.036;
+    const dot = new THREE.Mesh(new THREE.CircleGeometry(0.17, 24).rotateX(-Math.PI / 2), dashes.material.clone());
+    dot.material.opacity = 1;
+    dot.position.y = 0.04;
+    turnRing.add(dashes, halo, dot);
+  }
+  scene.add(turnRing);
+
   const shadows = o.shadow && o.bg !== 'transparent';
   let sun = null;
   if (shadows) {
@@ -229,13 +268,16 @@ export function createApp(root, options = {}) {
     mode: 'explore',
     locked: false,
     userMovedCamera: false,
-    holds: new Map(), // who holds which pedal: 'pointer:<id>' | 'key:<key>' | 'api' | 'quiz' → 'left' | 'right'
-    line: { trip: newTrip(), clock: 0, done: false, selected: -1, shownTick: -1 },
+    // who holds which pedal: 'pointer:<id>' | 'key:<key>' | 'api' (the bridge) | 'book' (the book's trip, braking
+    // until it stops) | 'quiz' → 'left' | 'right'
+    holds: new Map(),
+    line: { trip: newTrip(), clock: 0, done: false, after: 0, selected: -1, shownTick: -1 },
     turn: { st: newTurn(), prev: { e: 0, north: 0, h: 0 }, prevSteer: 0, clock: 0, ticks: 0 },
     flash: null, // a passing message: { key, vars, until }
     show: null, // a test question's still picture on the road: { x, v, u, twin, acc }
     plainTrack: false, // the test: the track is not coloured by turning
     labelsBeside: false, // short, wide pictures: the ত্বরণ label beside its arrow, not above it
+    showGap: SHOW_Y.gap, // m between a test question's arrows (more when the picture is small)
   };
   const anchor = new THREE.Vector3(); // what the camera follows
   const smooth = new THREE.Vector3(); // on the bend it follows a little behind
@@ -246,15 +288,19 @@ export function createApp(root, options = {}) {
   const pedal = () => (held('left') ? 'brake' : held('right') ? 'gas' : 'none');
   const steer = () => (held('left') === held('right') ? 'none' : held('left') ? 'left' : 'right');
 
+  const byStudent = (source) => source.startsWith('pointer:') || source.startsWith('key:');
   function press(source, side) {
     if (s.holds.get(source) === side) return;
     if (s.locked && source !== 'quiz') return lockedNudge();
-    s.holds.set(source, side);
-    if (source !== 'quiz' && source !== 'api') {
+    if (byStudent(source)) {
+      // the student's own finger or key takes over from anything the bridge or the book's trip was holding
+      s.holds.delete('api');
+      s.holds.delete('book');
       audio.unlock();
       audio.pop();
       coach?.objectUsed();
     }
+    s.holds.set(source, side);
     const L = s.line;
     if (s.scene === 'line') {
       L.selected = -1;
@@ -300,7 +346,7 @@ export function createApp(root, options = {}) {
   // ── the straight road ───────────────────────────────────────────────────────
   /** A new trip: standing at the start of the road. */
   function newDrive() {
-    s.line = { trip: newTrip(), clock: 0, done: false, selected: -1, shownTick: -1 };
+    s.line = { trip: newTrip(), clock: 0, done: false, after: 0, selected: -1, shownTick: -1 };
     s.flash = null;
   }
   /** Drive a script at once (the book's trip for the poster, the bridge's `drive`). */
@@ -333,14 +379,15 @@ export function createApp(root, options = {}) {
     if (i < 0) i = sts.length - 1;
     const st = sts[i];
     const end = Math.min(st.t1, Math.max(k, st.t0 + 1));
-    return { i, st: { ...st, t1: end, v: trip.vs[end] }, live: L.selected < 0 && i === sts.length - 1 && !L.done };
+    return { i, st: { ...st, t1: end, v: trip.vs[end] } };
   }
 
   function tickLine(dt) {
     const L = s.line;
     if (s.show) {
+      if (s.show.move) s.show.x += s.show.v * dt; // a test question's CNG cruising at a steady speed
       placeShow();
-      return false;
+      return Boolean(s.show.move);
     }
     const running = s.mode !== 'quiz' && !L.done;
     if (running && !L.trip.started && pedal() === 'gas') {
@@ -351,12 +398,25 @@ export function createApp(root, options = {}) {
     if (running && L.trip.started) {
       L.clock = Math.min(TRIP, L.clock + dt);
       while (L.trip.n < TICKS && L.trip.n * TICK <= L.clock + 1e-9) tickTrip(L.trip, pedal());
+      // the book's trip brakes only until the CNG stands
+      if (s.holds.has('book') && L.trip.vs[L.trip.n] === 0) {
+        s.holds.delete('book');
+        syncPedals();
+      }
       if (L.trip.n >= TICKS && L.clock >= TRIP - 1e-9) {
         L.done = true;
+        L.after = 0;
         releaseAll();
         audio.success();
         emit('done', snapshot().line);
       }
+    }
+    if (L.done) {
+      // the graph is full: the driver lets the pedals be and the CNG rolls on at its last speed
+      const vEnd = L.trip.vs[L.trip.n] / 10;
+      if (s.mode !== 'quiz') L.after += dt;
+      placeLine(L.trip.xs[L.trip.n] + vEnd * L.after, vEnd, 'none', vEnd);
+      return vEnd > 0 && s.mode !== 'quiz';
     }
     const p = tripAt(L.trip, L.clock);
     const { k, st } = lineNow();
@@ -377,6 +437,7 @@ export function createApp(root, options = {}) {
     cng.roll(x);
     cng.steer(0);
     street.follow(x);
+    turnRing.visible = false;
     anchor.set(x, 0, ROAD.lane);
     vArrow.root.scale.set(1, 1, 1);
     aArrow.root.scale.set(1, 1, 1);
@@ -393,6 +454,8 @@ export function createApp(root, options = {}) {
     speedo.set(v, `${N(fixed(vShown, 1))}`);
     moveSun();
   }
+  /** Heights of a test question's arrows (u, v, the ত্বরণ): far enough apart that their labels never touch. */
+  const showY = (which) => SHOW_Y.u + (which === 'u' ? 0 : which === 'v' ? 1 : 2) * s.showGap;
   /**
    * The labels of the two arrows, never on them: বেগ before the start of its arrow (none while standing: there is
    * no arrow); ত্বরণ / মন্দন above the middle of its arrow, or beside its tip in short, wide pictures.
@@ -406,23 +469,23 @@ export function createApp(root, options = {}) {
         dx: -8,
         dy: 0,
         kind: 'callout',
-        color: COLORS.velocity,
+        color: TEXT.velocity,
       }),
     );
     const showA = s.scene === 'line' && (s.mode !== 'quiz' || s.show?.acc);
-    const y = s.show?.u != null ? SHOW_Y.a : A_Y;
+    const y = s.show?.u != null ? showY('a') : A_Y;
     const beside = s.labelsBeside && s.show?.u == null;
     label('a', showA ? `line|${kind}|${beside}|${y}` : '', () => {
       if (kind === 'none')
         return annotations.add('a', {
           text: t('lbl_no_acc'),
-          point: () => labelPoint2.set(anchor.x, A_Y, anchor.z),
+          point: () => labelPoint2.set(anchor.x, y, anchor.z),
           dx: 0,
           dy: 0,
-          kind: 'callout',
-          color: COLORS.none,
+          kind: 'tag', // a label on its own, without a leader (there is no arrow to point at)
+          color: TEXT.none,
         });
-      const a = (kind === 'up' ? GAS : BRAKE) * A_SCALE;
+      const a = s.show?.a != null ? s.show.a * A_SCALE : (kind === 'up' ? GAS : BRAKE) * A_SCALE;
       const sign = Math.sign(a);
       annotations.add('a', {
         text: t(kind === 'up' ? 'lbl_acc' : 'lbl_dec'),
@@ -430,24 +493,31 @@ export function createApp(root, options = {}) {
         dx: beside ? 8 * sign : 0,
         dy: beside ? 0 : -20,
         kind: 'callout',
-        color: COLORS[kind],
+        color: TEXT[kind],
       });
     });
   }
   // each arrow label is made again only when what it says or where it sits changes (so it does not flicker)
-  const labelKeys = { v: '', a: '' };
+  const labelKeys = { v: '', a: '', c: '' };
+  const labelEls = {};
   function label(id, key, make) {
     if (labelKeys[id] === key) return;
     labelKeys[id] = key;
     annotations.remove(id);
-    if (key) make();
+    labelEls[id] = null;
+    if (key) {
+      make();
+      labelEls[id] = ui.annoLayer.lastElementChild; // the label just made (the kit adds it last)
+    }
   }
   /** Forget the arrow labels: they are made again on the next frame (after a change of scene, mode or question). */
   function relabel() {
     shownKind = '';
-    labelKeys.v = labelKeys.a = '';
-    annotations.remove('v');
-    annotations.remove('a');
+    for (const id of Object.keys(labelKeys)) {
+      labelKeys[id] = '';
+      labelEls[id] = null;
+      annotations.remove(id);
+    }
   }
   const EAST = new THREE.Vector3(1, 0, 0);
   const WEST = new THREE.Vector3(-1, 0, 0);
@@ -488,28 +558,36 @@ export function createApp(root, options = {}) {
     compass.set(p.h, T.prevSteer);
     return running;
   }
+  const bend = { v: new THREE.Vector3(1, 0, 0), a: new THREE.Vector3(0, 0, -1), centre: new THREE.Vector3(), turning: 0 };
   function placeBend(e, north, h, sgn, dt) {
     cng.root.position.set(e, 0, -north);
     cng.root.rotation.set(0, h, 0);
     cng.roll(TURN.v * (s.turn.ticks * TICK));
     cng.steer(sgn * 0.38);
     field.follow(e, -north);
-    // the camera follows a little behind, so the CNG is seen moving and turning
-    tmpA.set(e, 0, -north);
-    if (dt === null || smooth.distanceTo(tmpA) > 12) smooth.copy(tmpA);
-    else smooth.lerp(tmpA, 1 - Math.exp(-(dt || 0) / 0.3));
-    anchor.copy(smooth);
-    // seen from above the arrows sit just over the roof, both from its middle: বেগ along the way it goes, ত্বরণ
-    // towards the middle of the turn
-    bendDir.v.set(Math.cos(h), 0, -Math.sin(h));
-    vArrow.root.scale.set(1.9, 1, 1.9); // thicker: seen from above, from farther away
-    aArrow.root.scale.set(1.9, 1, 1.9);
-    vArrow.set(tmpA.set(e, BEND_Y.v, -north), bendDir.v, TURN.v * V_SCALE_TURN);
-    const toward = h + sgn * (Math.PI / 2);
-    bendDir.a.set(Math.cos(toward), 0, -Math.sin(toward));
-    aArrow.set(tmpA.set(e, BEND_Y.a, -north), bendDir.a, sgn ? TURN_ACCEL * A_SCALE : 0);
-    aArrow.setColor(COLORS.turn);
     const showAcc = s.mode !== 'quiz' || quiz.revealed;
+    // while it turns: the circle it goes round and its middle; the camera then looks half-way between the two, so
+    // the CNG, its arrows and the middle of the turn are all in the picture (and it follows a little behind)
+    const c = turnCentre(e, north, h, sgn);
+    bend.centre.set(c.e, 0, -c.north);
+    bend.turning = sgn;
+    turnRing.visible = Boolean(sgn) && showAcc;
+    turnRing.position.copy(bend.centre);
+    tmpA.set(e, 0, -north);
+    if (sgn) tmpA.lerp(bend.centre, 0.5);
+    if (dt === null || smooth.distanceTo(tmpA) > 12) smooth.copy(tmpA);
+    else smooth.lerp(tmpA, 1 - Math.exp(-(dt || 0) / 0.45));
+    anchor.copy(smooth);
+    // the arrows just over the roof, from its middle: বেগ along the way it goes, ত্বরণ towards the middle of the turn
+    const vec = turnVectors(h, sgn);
+    bend.v.set(vec.ve, 0, -vec.vn).normalize();
+    vArrow.root.scale.set(1.7, 1, 1.7); // thicker: the bend is seen from farther away
+    aArrow.root.scale.set(1.7, 1, 1.7);
+    vArrow.set(tmpA.set(e, BEND_Y.v, -north), bend.v, TURN.v * V_SCALE_TURN);
+    if (sgn) bend.a.set(vec.ae, 0, -vec.an).normalize();
+    // the ত্বরণ arrow starts over the side of the CNG that faces the middle of the turn, and points at it
+    aArrow.set(tmpA.set(e, BEND_Y.a, -north).addScaledVector(bend.a, 0.45), bend.a, sgn ? TURN_ACCEL * A_SCALE_TURN : 0);
+    aArrow.setColor(COLORS.turn);
     if (!showAcc) aArrow.root.visible = false;
     const kind = `${sgn ? 'turn' : 'straight'}|${showAcc}`;
     if (kind !== shownKind) {
@@ -519,45 +597,156 @@ export function createApp(root, options = {}) {
     speedo.set(TURN.v, N(fixed(TURN.v, 1)));
     moveSun();
   }
-  /** On the bend each label sits just past the tip of its arrow, in line with it, so it turns with it. */
+  /** The bend's labels: words without leaders, each put where it collides with nothing (see placeBendLabels). */
   function bendLabels(sgn, showAcc) {
-    label('v', 'bend', () =>
-      annotations.add('v', {
-        text: t('lbl_velocity'),
-        point: () => labelPoint.copy(vArrow.tip).addScaledVector(bendDir.v, 0.95),
-        dx: 0,
-        dy: 0,
-        kind: 'callout',
-        color: COLORS.velocity,
-      }),
-    );
+    const tag = (id, text, color, point) => annotations.add(id, { text, point, dx: 0, dy: 0, kind: 'tag', color });
+    label('v', 'bend', () => tag('v', t('lbl_velocity'), TEXT.velocity, () => bendSpots.v));
     label('a', showAcc ? `bend|${sgn ? 'turn' : 'straight'}` : '', () =>
-      sgn
-        ? annotations.add('a', {
-            text: t('lbl_acc'),
-            point: () => labelPoint2.copy(aArrow.tip).addScaledVector(bendDir.a, 1.0),
-            dx: 0,
-            dy: 0,
-            kind: 'callout',
-            color: COLORS.turn,
-          })
-        : // going straight: beside the CNG, on its right
-          annotations.add('a', {
-            text: t('lbl_no_acc'),
-            point: () =>
-              labelPoint2
-                .copy(cng.root.position)
-                .addScaledVector(tmpC.set(-bendDir.v.z, 0, bendDir.v.x), 2.3)
-                .setY(0.6),
-            dx: 0,
-            dy: 0,
-            kind: 'callout',
-            color: COLORS.none,
-          }),
+      tag('a', t(sgn ? 'lbl_acc' : 'lbl_no_acc'), sgn ? TEXT.turn : TEXT.none, () => bendSpots.a),
     );
+    label('c', showAcc && sgn ? 'bend' : '', () => tag('c', t('lbl_centre'), TEXT.turn, () => bendSpots.c));
   }
-  const bendDir = { v: new THREE.Vector3(1, 0, 0), a: new THREE.Vector3(0, 0, -1) };
-  const tmpC = new THREE.Vector3();
+  const bendSpots = { v: new THREE.Vector3(), a: new THREE.Vector3(), c: new THREE.Vector3() };
+  const lastSpot = {}; // the candidate each label took last frame
+  const HIDDEN = new THREE.Vector3(0, -1e6, 0); // a point no camera sees: the label is hidden (nothing fits)
+  const projected = new THREE.Vector3();
+  /** A point on the canvas (px) and its depth (NDC z), or null behind the camera. */
+  function toCanvas(p) {
+    projected.copy(p).project(camera);
+    if (projected.z > 1) return null;
+    return { x: (projected.x * 0.5 + 0.5) * stage.width, y: (-projected.y * 0.5 + 0.5) * stage.height, z: projected.z };
+  }
+  /** The canvas point (px) at a depth, back in 3D (for the label kit, which wants a 3D point). */
+  const fromCanvas = (x, y, z, out) => out.set((x / stage.width) * 2 - 1, -(y / stage.height) * 2 + 1, z).unproject(camera);
+  const CNG_BOX = [-1.42, 1.42].flatMap((x) => [0, 1.75].flatMap((y) => [-0.66, 0.66].map((z) => new THREE.Vector3(x, y, z))));
+  const cornerTmp = new THREE.Vector3();
+  /**
+   * Each frame on the bend: where its labels go. A label tries a few spots (past the tip of its arrow, beside the
+   * tip, beside the middle; around the CNG for ত্বরণ নেই; round the middle of the turn) and takes the first that
+   * stays inside the picture and clear of the corner buttons, the speedometer, the pedals, the CNG, both arrows and
+   * the other labels; when none does, the least covered one (ত্বরণ নেই and the middle's label are hidden instead).
+   */
+  function placeBendLabels() {
+    if (s.scene !== 'turn') return;
+    camera.updateMatrixWorld();
+    const W = stage.width;
+    const H = stage.height;
+    const c = stage.canvas.getBoundingClientRect();
+    const rectOf = (el, pad = 4) => {
+      if (!el || el.hidden || getComputedStyle(el).visibility === 'hidden') return null;
+      const r = el.getBoundingClientRect();
+      return r.width ? { l: r.left - c.left - pad, t: r.top - c.top - pad, r: r.right - c.left + pad, b: r.bottom - c.top + pad } : null;
+    };
+    const blocks = [rectOf(ui.corner), rectOf(speedoEl), rectOf(pedalBtn.left), rectOf(pedalBtn.right)].filter(Boolean);
+    // the CNG as the box round its projected corners
+    let box = null;
+    for (const k of CNG_BOX) {
+      const q = toCanvas(cornerTmp.copy(k).applyMatrix4(cng.root.matrixWorld));
+      if (!q) continue;
+      box = box
+        ? { l: Math.min(box.l, q.x), t: Math.min(box.t, q.y), r: Math.max(box.r, q.x), b: Math.max(box.b, q.y) }
+        : { l: q.x, t: q.y, r: q.x, b: q.y };
+    }
+    if (box) blocks.push(box);
+    // the arrows (and the middle of the turn) as short runs of small boxes
+    const arrowPts = (arrow) => {
+      if (!arrow.root.visible) return [];
+      const a = toCanvas(arrow.root.position);
+      const b = toCanvas(arrow.tip);
+      if (!a || !b) return [];
+      return {
+        a,
+        b,
+        boxes: Array.from({ length: 7 }, (_, i) => ({ x: a.x + ((b.x - a.x) * i) / 6, y: a.y + ((b.y - a.y) * i) / 6 })).map((p) => ({
+          l: p.x - 6,
+          t: p.y - 6,
+          r: p.x + 6,
+          b: p.y + 6,
+        })),
+      };
+    };
+    const va = arrowPts(vArrow);
+    const aa = arrowPts(aArrow);
+    for (const x of [va, aa]) if (x.boxes) blocks.push(...x.boxes);
+    const cc = turnRing.visible ? toCanvas(bend.centre) : null;
+    if (cc) blocks.push({ l: cc.x - 12, t: cc.y - 12, r: cc.x + 12, b: cc.y + 12 });
+
+    const overlap = (p, q) => Math.max(0, Math.min(p.r, q.r) - Math.max(p.l, q.l)) * Math.max(0, Math.min(p.b, q.b) - Math.max(p.t, q.t));
+    function choose(id, el, candidates, z, { hideIfNone = false } = {}) {
+      if (!el) return;
+      const hw = el.offsetWidth / 2 + 3;
+      const hh = el.offsetHeight / 2 + 3;
+      let best = null;
+      // the spot used last time goes first while it stays free, so a label does not hop between two free spots
+      const order = candidates.map((_, i) => i);
+      const last = lastSpot[id] ?? -1;
+      if (last > 0 && last < order.length) order.unshift(...order.splice(last, 1));
+      for (const i of order) {
+        const [x, y] = candidates[i];
+        const r = { l: x - hw, t: y - hh, r: x + hw, b: y + hh };
+        const outside = r.l < 6 || r.t < 6 || r.r > W - 6 || r.b > H - 6;
+        const cover = blocks.reduce((sum, q) => sum + overlap(r, q), 0) + (outside ? 1e6 : 0);
+        if (!best || cover < best.cover) best = { x, y, r, cover, i };
+        if (cover === 0) break;
+      }
+      lastSpot[id] = best?.i ?? -1;
+      if (!best || (hideIfNone && best.cover > 0)) return bendSpots[id].copy(HIDDEN);
+      blocks.push(best.r); // the next labels keep clear of this one
+      fromCanvas(best.x, best.y, z, bendSpots[id]);
+    }
+    /** Spots round an arrow: past its tip, beside the tip (both sides), beside its middle (both sides). */
+    const aroundArrow = (ar, el) => {
+      const dx = ar.b.x - ar.a.x;
+      const dy = ar.b.y - ar.a.y;
+      const len = Math.hypot(dx, dy) || 1;
+      const ux = dx / len;
+      const uy = dy / len;
+      const hw = el.offsetWidth / 2 + 6;
+      const hh = el.offsetHeight / 2 + 6;
+      const reach = (nx, ny) => Math.abs(nx) * hw + Math.abs(ny) * hh; // how far the box's centre must be along (nx, ny)
+      const mx = (ar.a.x + ar.b.x) / 2;
+      const my = (ar.a.y + ar.b.y) / 2;
+      const along = reach(ux, uy);
+      const side = reach(-uy, ux);
+      return [
+        [ar.b.x + ux * along, ar.b.y + uy * along],
+        [ar.b.x - uy * side, ar.b.y + ux * side],
+        [ar.b.x + uy * side, ar.b.y - ux * side],
+        [mx - uy * side, my + ux * side],
+        [mx + uy * side, my - ux * side],
+        [ar.b.x + ux * along - uy * side, ar.b.y + uy * along + ux * side],
+        [ar.b.x + ux * along + uy * side, ar.b.y + uy * along - ux * side],
+      ];
+    };
+    /** Spots round a box: right, left, below, above (with a little gap). */
+    const aroundBox = (b, el) => {
+      const hw = el.offsetWidth / 2 + 8;
+      const hh = el.offsetHeight / 2 + 8;
+      const cx = (b.l + b.r) / 2;
+      const cy = (b.t + b.b) / 2;
+      return [
+        [b.r + hw, cy],
+        [b.l - hw, cy],
+        [cx, b.b + hh],
+        [cx, b.t - hh],
+        [b.r + hw, b.b + hh],
+        [b.l - hw, b.b + hh],
+      ];
+    };
+    if (labelEls.v && va.a) choose('v', labelEls.v, aroundArrow(va, labelEls.v), va.b.z);
+    if (labelEls.a) {
+      if (bend.turning && aa.a) choose('a', labelEls.a, aroundArrow(aa, labelEls.a), aa.b.z);
+      else if (box) {
+        const z = toCanvas(cng.root.position)?.z ?? 0.5;
+        choose('a', labelEls.a, aroundBox(box, labelEls.a), z, { hideIfNone: true });
+      }
+    }
+    if (labelEls.c && cc) {
+      const r = { l: cc.x - 12, t: cc.y - 12, r: cc.x + 12, b: cc.y + 12 };
+      choose('c', labelEls.c, aroundBox(r, labelEls.c).slice(0, 4).reverse(), cc.z, { hideIfNone: true });
+    }
+  }
+  stage.onBeforeRender(placeBendLabels);
 
   function moveSun() {
     if (!sun) return;
@@ -597,8 +786,8 @@ export function createApp(root, options = {}) {
       sayEl.innerHTML = html;
     }
   };
-  const graph = createGraph($('.ac-graph'), { t, N, colors: COLORS });
-  const cardGraph = createGraph(card.querySelector('.ac-card-graph'), { t, N, colors: COLORS });
+  const graph = createGraph($('.ac-graph'), { t, N, colors: COLORS, text: TEXT });
+  const cardGraph = createGraph(card.querySelector('.ac-card-graph'), { t, N, colors: COLORS, text: TEXT });
   const compass = createCompass($('.ac-compass'), { t, colors: COLORS });
   const speedo = createSpeedometer(speedoEl, { t, N, colors: COLORS });
 
@@ -612,7 +801,9 @@ export function createApp(root, options = {}) {
     const L = s.line;
     const trip = L.trip;
     const { k } = lineNow();
-    graph.draw({ trip, upto: k, selected: L.selected, hint: t('graph_hint') });
+    // the time axis grows with the trip (0–10, 0–20, then 0–30 s), so short pieces are not crammed together
+    const time = L.done ? TRIP : k * TICK;
+    graph.draw({ trip, upto: k, selected: L.selected, hint: t('graph_hint'), tmax: time <= 10 ? 10 : time <= 20 ? 20 : TRIP });
     const sum = sumStretch();
     if (!sum) {
       // nothing driven yet: the formula itself, the numbers come with the first press
@@ -626,9 +817,8 @@ export function createApp(root, options = {}) {
       cells.letter.node.dataset.kind = 'none';
     } else {
       const v = stretchValues(sum.st);
-      const letters = lettersOf(trip.stretches);
-      const prior = letters.slice(0, sum.i).filter(Boolean).length;
-      const letter = letters[sum.i] || (sum.live ? String.fromCharCode(65 + prior) : '–');
+      // a piece gets its letter once it has lasted 1 s (as on the graph), and keeps it
+      const letter = lettersOf(trip.stretches)[sum.i] || '–';
       const ticks = sum.st.t1 - sum.st.t0;
       const exact = ((sum.st.v - sum.st.u) * 10) % ticks === 0;
       put('letter', letter);
@@ -733,10 +923,10 @@ export function createApp(root, options = {}) {
       }
       if (sh?.u != null) {
         // a test question: u and v with their labels before their arrows, the ত্বরণ arrow on top (after the answer)
-        const lbl = [-205, -14, 0, 14];
-        pts.push(P(-0.06, SHOW_Y.u, 0, lbl), P(-0.06, SHOW_Y.v, 0, lbl), P(VMAX * V_SCALE, SHOW_Y.v, 0));
-        pts.push(P(BRAKE * A_SCALE, SHOW_Y.a, 0), P(BRAKE * A_SCALE * 0.5, SHOW_Y.a + 0.13, 0, [-40, -46, 40, 0]));
-        pts.push(P(GAS * A_SCALE * 0.5, SHOW_Y.a + 0.13, 0, [-40, -46, 40, 0]));
+        const lbl = [-120, -14, 0, 14];
+        const a = (sh.a ?? 0) * A_SCALE;
+        pts.push(P(-0.06, showY('u'), 0, lbl), P(-0.06, showY('v'), 0, lbl), P(Math.max(sh.u, sh.v) * V_SCALE, showY('v'), 0));
+        pts.push(P(a, showY('a'), 0), P(a * 0.5, showY('a') + 0.13, 0, [-40, -46, 40, 0]));
         return pts;
       }
       const side = s.labelsBeside ? 4.2 : 3.3;
@@ -748,10 +938,11 @@ export function createApp(root, options = {}) {
       pts.push(P(BRAKE * A_SCALE, A_Y, 0), P(0, A_Y, 0, [-48, -14, 48, 14]));
       return pts;
     }
-    // the bend: a ring round the CNG (it runs a little ahead of the anchor) with its arrows and their labels
+    // the bend: a ring round the anchor (the CNG, or half-way to the middle of its turn), with room for the arrows
+    // and their labels; the labels find their own free spots each frame
     for (let k = 0; k < 16; k++) {
       const a = (k / 16) * Math.PI * 2;
-      pts.push(P(3.6 * Math.cos(a), 0, 3.6 * Math.sin(a)), P(3.6 * Math.cos(a), 2, 3.6 * Math.sin(a), [-28, -14, 28, 14]));
+      pts.push(P(3.1 * Math.cos(a), 0, 3.1 * Math.sin(a)), P(2.6 * Math.cos(a), 2, 2.6 * Math.sin(a), [-26, -13, 26, 13]));
     }
     return pts;
   }
@@ -765,6 +956,21 @@ export function createApp(root, options = {}) {
   }
   /** A camera pose (from the anchor) showing everything as big as it can, clear of the buttons and the speedometer. */
   function poseFor(name, view) {
+    if (name !== 'line' || s.show?.u == null) return fitPose(name, view);
+    // a test question with u and v: their arrows sit far enough apart that the labels keep at least 34 px between
+    // their middles, however small the picture (fit, measure the scale, fit again)
+    s.showGap = SHOW_Y.gap;
+    let pose = fitPose(name, view);
+    for (let i = 0; i < 2; i++) {
+      const pxPerM = Math.max(stage.height, 120) / 2 / (pose.distance * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)));
+      const gap = Math.max(SHOW_Y.gap, 34 / pxPerM);
+      if (Math.abs(gap - s.showGap) < 0.02) break;
+      s.showGap = gap;
+      pose = fitPose(name, view);
+    }
+    return pose;
+  }
+  function fitPose(name, view) {
     s.labelsBeside = stage.width > stage.height * 1.45; // short, wide pictures: labels beside the arrows
     const pts = contentOf(name);
     const lo = new THREE.Vector3(Infinity, Infinity, Infinity);
@@ -968,6 +1174,7 @@ export function createApp(root, options = {}) {
   const pickOne = (list) => list[Math.floor(Math.random() * list.length)];
   const letters4 = ['A', 'B', 'C', 'D'];
   const accHtml = (a, unit = 'u_acc') => `${N(fmt(a, 2).replace('-', '−'))}<small>${t(unit)}</small>`;
+  const minus = (x) => fmt(x, 2).replace('-', '−'); // a number for a sentence, with a real minus sign
   // book-style numbers: speeding up (u, v, t) and braking (u, v, t), all with real CNG speeds
   const SPEED_UPS = [
     [6, 14, 4],
@@ -983,12 +1190,25 @@ export function createApp(root, options = {}) {
     [14, 2, 4],
     [9, 3, 2],
   ];
+  // two CNGs from rest, (t, v) each: the quicker one ends slower but gains speed faster; the quicker one gains speed
+  // more slowly; or both the same (so neither "the faster one" nor "the quicker one" always wins)
   const PAIRS = [
-    [5, 10, 8, 12],
-    [4, 8, 10, 15],
-    [3, 9, 6, 12],
-    [2, 6, 5, 10],
-  ]; // (t, v) of the quicker CNG, then of the one that ends faster but gains speed more slowly
+    { kind: 'quick', a: [5, 10], b: [8, 12] },
+    { kind: 'quick', a: [4, 8], b: [10, 15] },
+    { kind: 'quick', a: [3, 9], b: [6, 12] },
+    { kind: 'slow', a: [2, 3], b: [5, 10] },
+    { kind: 'slow', a: [3, 4.5], b: [6, 12] },
+    { kind: 'slow', a: [2, 4], b: [4, 12] },
+    { kind: 'equal', a: [3, 6], b: [6, 12] },
+    { kind: 'equal', a: [2, 5], b: [4, 10] },
+    { kind: 'equal', a: [4, 6], b: [6, 9] },
+  ];
+  const STEADY = [
+    [12, 5],
+    [10, 4],
+    [8, 6],
+    [15, 5],
+  ]; // a CNG keeping v m/s for t s
 
   let kinds = [];
   let question = null;
@@ -999,31 +1219,31 @@ export function createApp(root, options = {}) {
     twin.root.visible = false;
     uArrow.root.visible = false;
     s.show = null;
+    s.showGap = SHOW_Y.gap;
     s.plainTrack = false;
     for (const id of ['qu', 'qv', 'c1', 'c2']) annotations.remove(id);
     relabel();
     releaseAll();
   }
-  /** A still picture on the road: the CNG at speed v, a faint arrow for u, perhaps a second CNG. */
+  /** A picture on the road for a question: the CNG at speed v, a faint arrow for u, perhaps a second CNG. */
   function showOnRoad(show) {
     if (s.scene !== 'line') setScene('line', { animate: false });
     s.show = { x: s.line.trip.xs[s.line.trip.n] || 0, ...show };
     relabel();
-    placeShow();
     if (!s.userMovedCamera) flyTo(poseFor('line', s.view), 0.6);
+    placeShow();
   }
   function placeShow() {
     const sh = s.show;
-    const kind = sh.acc ? (sh.v > sh.u ? 'up' : 'down') : 'none';
+    const kind = sh.acc && sh.a ? (sh.a > 0 ? 'up' : 'down') : 'none';
     placeLine(sh.x, sh.v, kind, sh.v);
-    if (!sh.acc) aArrow.root.visible = false;
+    if (!sh.acc || !sh.a) aArrow.root.visible = false;
     if (sh.u != null) {
-      // u (faint) just over the roof, v above it, and the ত্বরণ arrow on top once the answer is given
-      uArrow.set(tmpA.set(sh.x, SHOW_Y.u, ROAD.lane), EAST, sh.u * V_SCALE);
+      // u (faint) just over the roof, v above it, and the ত্বরণ arrow (its real length) on top once answered
+      uArrow.set(tmpA.set(sh.x, showY('u'), ROAD.lane), EAST, sh.u * V_SCALE);
       uArrow.root.visible = sh.u > 0;
-      vArrow.set(tmpA.set(sh.x, SHOW_Y.v, ROAD.lane), EAST, sh.v * V_SCALE);
-      const a = (sh.v - sh.u) / Math.abs(sh.v - sh.u || 1);
-      aArrow.set(tmpA.set(sh.x, SHOW_Y.a, ROAD.lane), a < 0 ? WEST : EAST, (a < 0 ? -BRAKE : GAS) * A_SCALE);
+      vArrow.set(tmpA.set(sh.x, showY('v'), ROAD.lane), EAST, sh.v * V_SCALE);
+      aArrow.set(tmpA.set(sh.x, showY('a'), ROAD.lane), sh.a < 0 ? WEST : EAST, Math.abs(sh.a) * A_SCALE);
       if (!sh.acc) aArrow.root.visible = false;
     }
     if (sh.twin) {
@@ -1033,6 +1253,11 @@ export function createApp(root, options = {}) {
       vArrow.root.visible = false;
       aArrow.root.visible = false;
     }
+  }
+  /** A label before the start of an arrow (as বেগ is while learning). */
+  function rowLabel(id, text, y, color) {
+    const p = new THREE.Vector3();
+    annotations.add(id, { text, point: () => p.set(anchor.x - 0.06, y(), anchor.z), dx: -8, dy: 0, kind: 'callout', color });
   }
 
   const quiz = createQuiz({
@@ -1047,7 +1272,7 @@ export function createApp(root, options = {}) {
         s.locked = true;
         hideHint();
         releaseAll();
-        kinds = shuffle(['graph', 'calc', 'brake', 'compare', 'bend']);
+        kinds = shuffle(['graph', 'change', 'steady', 'compare', 'bend']);
         syncUI();
       },
       leave() {
@@ -1070,102 +1295,108 @@ export function createApp(root, options = {}) {
           if (s.scene !== 'line') setScene('line', { animate: false });
           card.hidden = false;
           speedoEl.hidden = true;
-          cardGraph.draw({ trip: g.trip, plain: true, tmax: 20 });
+          cardGraph.draw({ trip: g.trip, plain: true, tmax: 20, test: true });
           sayQ(t(`q_graph_${target}`));
           question = { kind, g, target, expected };
           return { choices: [0, 1, 2, 3], expected, tolerance: 0.5, label: (j) => letters4[j], meta: { kind, target, stretches: g.kinds } };
         }
-        if (kind === 'calc' || kind === 'brake') {
-          const [u, v, tt] = pickOne(kind === 'calc' ? SPEED_UPS : BRAKINGS);
+        if (kind === 'change') {
+          // speeding up or braking (half the time each), from book-style numbers
+          const up = Math.random() < 0.5;
+          const [u, v, tt] = pickOne(up ? SPEED_UPS : BRAKINGS);
           const a = accel(u, v, tt);
-          showOnRoad({ u, v });
-          // the labels before the arrows (like বেগ while learning), so long numbers never run off the picture
-          const pu = new THREE.Vector3();
-          const pv = new THREE.Vector3();
-          annotations.add('qu', {
-            text: t('lbl_u', { u }),
-            point: () => pu.set(anchor.x - 0.06, SHOW_Y.u, anchor.z),
-            dx: -8,
-            dy: 0,
-            kind: 'callout',
-            color: COLORS.ghostInk,
-          });
-          annotations.add('qv', {
-            text: t('lbl_v', { v }),
-            point: () => pv.set(anchor.x - 0.06, SHOW_Y.v, anchor.z),
-            dx: -8,
-            dy: 0,
-            kind: 'callout',
-            color: COLORS.velocity,
-          });
-          sayQ(t(kind === 'calc' ? 'q_calc' : 'q_brake', { u, v, t: tt }));
-          // the usual slips: calc — the unit of velocity, v ÷ t (u left out), (v − u) × t; brake — the sign lost,
-          // the whole of u ÷ t (as if it stopped), v ÷ t
-          const opts =
-            kind === 'calc'
-              ? [
-                  { a, unit: 'u_acc', why: '' },
-                  { a, unit: 'u_ms', why: 'mis_unit' },
-                  { a: v / tt, unit: 'u_acc', why: 'mis_no_u' },
-                  { a: (v - u) * tt, unit: 'u_m', why: 'mis_times' },
-                ]
-              : [
-                  { a, unit: 'u_acc', why: '' },
-                  { a: -a, unit: 'u_acc', why: 'mis_sign' },
-                  { a: -u / tt, unit: 'u_acc', why: 'mis_u_only' },
-                  { a: v / tt, unit: 'u_acc', why: 'mis_v_only' },
-                ];
+          showOnRoad({ u, v, a });
+          rowLabel('qu', t('lbl_u', { u }), () => showY('u'), COLORS.ghostInk);
+          rowLabel('qv', t('lbl_v', { v }), () => showY('v'), TEXT.velocity);
+          sayQ(t(up ? 'q_calc' : 'q_brake', { u, v, t: tt }));
+          // the usual slips: speeding up — the unit of velocity, v ÷ t (u left out), (v − u) × t; braking — the sign
+          // lost, the whole of u ÷ t (as if it stopped), v ÷ t
+          const opts = up
+            ? [
+                { a, unit: 'u_acc', why: '' },
+                { a, unit: 'u_ms', why: 'mis_unit' },
+                { a: v / tt, unit: 'u_acc', why: 'mis_no_u' },
+                { a: (v - u) * tt, unit: 'u_m', why: 'mis_times' },
+              ]
+            : [
+                { a, unit: 'u_acc', why: '' },
+                { a: -a, unit: 'u_acc', why: 'mis_sign' },
+                { a: -u / tt, unit: 'u_acc', why: 'mis_u_only' },
+                { a: v / tt, unit: 'u_acc', why: 'mis_v_only' },
+              ];
           const order = shuffle([0, 1, 2, 3]);
-          question = { kind, u, v, t: tt, a, opts: order.map((j) => opts[j]) };
+          question = { kind, up, u, v, t: tt, a, opts: order.map((j) => opts[j]) };
           return {
             choices: [0, 1, 2, 3],
             expected: order.indexOf(0),
             tolerance: 0.5,
             label: (j) => accHtml(question.opts[j].a, question.opts[j].unit),
-            meta: { kind, u, v, t: tt, acceleration: a },
+            meta: { kind: up ? 'speed-up' : 'braking', u, v, t: tt, acceleration: a },
+          };
+        }
+        if (kind === 'steady') {
+          // cruising: the speedometer stays put, the velocity does not change, so a = 0 however fast it goes
+          const [v, tt] = pickOne(STEADY);
+          showOnRoad({ v, a: 0, move: true });
+          rowLabel('qv', t('lbl_steady', { v }), () => V_Y, TEXT.velocity);
+          sayQ(t('q_steady', { v, t: tt }));
+          const opts = [
+            { a: 0, unit: 'u_acc', why: '' },
+            { a: v, unit: 'u_acc', why: 'mis_steady_v' },
+            { a: v / tt, unit: 'u_acc', why: 'mis_steady_vt' },
+            { a: v * tt, unit: 'u_m', why: 'mis_times' },
+          ];
+          const order = shuffle([0, 1, 2, 3]);
+          question = { kind, v, t: tt, opts: order.map((j) => opts[j]) };
+          return {
+            choices: [0, 1, 2, 3],
+            expected: order.indexOf(0),
+            tolerance: 0.5,
+            label: (j) => accHtml(question.opts[j].a, question.opts[j].unit),
+            meta: { kind, v, t: tt, acceleration: 0 },
           };
         }
         if (kind === 'compare') {
-          const [t1, v1, t2, v2] = pickOne(PAIRS);
-          const quickFirst = Math.random() < 0.5; // which number the quicker CNG gets
-          const one = quickFirst ? { t: t1, v: v1 } : { t: t2, v: v2 };
-          const two = quickFirst ? { t: t2, v: v2 } : { t: t1, v: v1 };
+          const pair = pickOne(PAIRS);
+          const aFirst = Math.random() < 0.5; // which of the two is CNG 1
+          const [one, two] = (aFirst ? [pair.a, pair.b] : [pair.b, pair.a]).map(([tt, v]) => ({ t: tt, v, a: v / tt }));
           // one behind the other in the same lane; the labels in two rows (the first one's higher)
           speedoEl.hidden = true; // two CNGs: one speedometer would belong to neither
           showOnRoad({ v: one.v, twin: { dx: 4.6, v: two.v } });
           const p1 = new THREE.Vector3();
           const p2 = new THREE.Vector3();
           annotations.add('c1', {
-            text: t('lbl_cng', { n: 1, t: one.t, v: one.v, z: 0 }),
+            text: t('lbl_cng', { n: 1, t: one.t, v: one.v }),
             point: () => p1.set(cng.root.position.x, 1.75, ROAD.lane),
             dx: 0,
             dy: -62,
             kind: 'part',
           });
           annotations.add('c2', {
-            text: t('lbl_cng', { n: 2, t: two.t, v: two.v, z: 0 }),
+            text: t('lbl_cng', { n: 2, t: two.t, v: two.v }),
             point: () => p2.set(twin.root.position.x, 1.75, ROAD.lane),
             dx: 0,
             dy: -26,
             kind: 'part',
           });
           sayQ(t('q_compare'));
-          const winner = quickFirst ? 1 : 2;
+          const right = Math.abs(one.a - two.a) < 1e-9 ? 'equal' : one.a > two.a ? 'one' : 'two';
           const keys = shuffle(['one', 'two', 'equal', 'cant']);
-          question = { kind, one, two, winner, keys };
+          question = { kind, one, two, right, keys };
           const label = (j) => {
             const k = keys[j];
             const text = k === 'one' ? t('opt_cng', { n: 1 }) : k === 'two' ? t('opt_cng', { n: 2 }) : t(k === 'equal' ? 'opt_equal' : 'opt_cant');
             return `<span class="ac-opt">${text}</span>`;
           };
-          return { choices: [0, 1, 2, 3], expected: keys.indexOf(winner === 1 ? 'one' : 'two'), tolerance: 0.5, label, meta: { kind, one, two } };
+          return { choices: [0, 1, 2, 3], expected: keys.indexOf(right), tolerance: 0.5, label, meta: { kind, one, two, pair: pair.kind } };
         }
-        // the bend: going round at the same speed (the speedometer stays put); the ত্বরণ arrow is hidden until the answer
+        // the bend: going round at the same speed (the speedometer stays put); the ত্বরণ arrow, the circle and the
+        // coloured track are hidden until the answer
         setScene('turn', { animate: false });
         s.plainTrack = true;
         s.holds.set('quiz', 'left');
         relabel();
-        const keys = shuffle(['opt_bend_yes_dir', 'opt_bend_no_speed', 'opt_bend_no_vel', 'opt_bend_yes_speed']);
+        const keys = shuffle(['opt_bend_yes_dir', 'opt_bend_no_speed', 'opt_bend_no_dir', 'opt_bend_yes_speed']);
         sayQ(t('q_bend'));
         question = { kind, keys };
         return {
@@ -1180,44 +1411,54 @@ export function createApp(root, options = {}) {
         const Q = question;
         const picked = lastPick;
         if (Q.kind === 'graph') {
-          cardGraph.draw({ trip: Q.g.trip, tmax: 20 }); // now in colour: each kind its own
+          cardGraph.draw({ trip: Q.g.trip, tmax: 20, test: true }); // now in colour: each kind its own
           const st = stretchValues(Q.g.trip.stretches[Q.expected]);
           let why = t(`why_graph_${Q.target}`, { l: letters4[Q.expected], u: fmt(st.u, 1), v: fmt(st.v, 1) });
           if (!correct && picked >= 0 && Q.target !== 'none' && Q.g.kinds[picked] === 'none' && Q.g.trip.stretches[picked].u >= 100)
             why += t('why_graph_high');
           return why;
         }
-        if (Q.kind === 'calc' || Q.kind === 'brake') {
-          s.show.acc = true; // the ত্বরণ (or মন্দন) arrow appears with the answer
+        if (Q.kind === 'change' || Q.kind === 'steady') {
+          s.show.acc = true; // the ত্বরণ (or মন্দন) arrow, or the word ত্বরণ নেই, appears with the answer
           relabel();
           placeShow();
-          let why = t(Q.kind === 'calc' ? 'why_calc' : 'why_brake', { u: Q.u, v: Q.v, t: Q.t, a: fmt(Q.a, 2).replace('-', '−') });
+          const vars = Q.kind === 'change' ? { u: Q.u, v: Q.v, t: Q.t, d: minus(Q.v - Q.u), a: minus(Q.a) } : { u: Q.v, v: Q.v, t: Q.t, d: 0, a: 0 };
+          let why = t(Q.kind === 'steady' ? 'why_steady' : Q.up ? 'why_calc' : 'why_brake', vars);
           const mis = !correct && picked >= 0 ? Q.opts[picked].why : '';
           if (mis) why += t(mis, { d: Q.u - Q.v, u: Q.u });
           return why;
         }
         if (Q.kind === 'compare') {
-          const { one, two, winner } = Q;
+          const { one, two, right } = Q;
           let why = t('why_compare', {
-            w: winner,
+            w: right === 'equal' ? t('opt_equal') : t('opt_cng', { n: right === 'one' ? 1 : 2 }),
             n1: 1,
             n2: 2,
+            z: 0,
             v1: one.v,
             t1: one.t,
-            a1: fmt(one.v / one.t, 2),
+            a1: fmt(one.a, 2),
             v2: two.v,
             t2: two.t,
-            a2: fmt(two.v / two.t, 2),
+            a2: fmt(two.a, 2),
           });
           const k = picked >= 0 ? Q.keys[picked] : '';
-          if (!correct && (k === 'one' || k === 'two')) why += t('mis_final');
+          const pickedCng = k === 'one' ? one : k === 'two' ? two : null;
+          const other = k === 'one' ? two : one;
+          if (!correct && pickedCng) {
+            if (pickedCng.v > other.v) why += t('mis_final');
+            else if (pickedCng.t < other.t) why += t('mis_quick');
+            else why += t('mis_final');
+          }
+          if (!correct && k === 'equal') why += t('mis_equal');
           if (!correct && k === 'cant') why += t('mis_cant');
           return why;
         }
-        relabel(); // the ত্বরণ arrow shows now
+        relabel(); // the ত্বরণ arrow and the circle show now
         let why = t('why_bend', { v: fmt(TURN.v) });
         const k = picked >= 0 ? Q.keys[picked] : '';
-        if (!correct && (k === 'opt_bend_no_speed' || k === 'opt_bend_no_vel')) why += t('mis_bend_speed');
+        if (!correct && k === 'opt_bend_no_speed') why += t('mis_bend_speed');
+        if (!correct && k === 'opt_bend_no_dir') why += t('mis_bend_dir');
         if (!correct && k === 'opt_bend_yes_speed') why += t('mis_bend_up');
         return why;
       },
@@ -1233,9 +1474,12 @@ export function createApp(root, options = {}) {
   // ── first-use pointer: on the গতি বাড়াও pedal ──────────────────────────────
   let coach = null;
   if (o.coach) {
-    const spot = () => {
+    // spots on the upper part of the pedal, best first (the kit keeps a hand clear of the bottom 48 px)
+    const spots = () => {
       const r = boxOf(pedalBtn.right, 0);
-      return r ? { x: (r.left + r.right) / 2, y: r.top + 14 } : null;
+      if (!r) return [];
+      const x = (r.left + r.right) / 2;
+      return [r.top + 14, r.top + 0.25 * (r.bottom - r.top), r.top + 6, r.top + 3].map((y) => ({ x, y }));
     };
     coach = createCoach({
       stage,
@@ -1246,7 +1490,7 @@ export function createApp(root, options = {}) {
       avoid: [ui.corner, speedoEl],
       object: {
         label: 'coach_gas',
-        candidates: () => (s.scene === 'line' && s.mode !== 'quiz' && !s.line.trip.started ? [spot()] : []),
+        candidates: () => (s.scene === 'line' && s.mode !== 'quiz' && !s.line.trip.started ? spots() : []),
         grabbable: (p) => {
           const r = boxOf(pedalBtn.right, 0);
           return Boolean(r) && p.x > r.left && p.x < r.right && p.y > r.top && p.y < r.bottom;
@@ -1340,7 +1584,7 @@ export function createApp(root, options = {}) {
   labelPedals();
   setView(s.view, { animate: false });
   setScene(s.scene, { animate: false });
-  if (o.trip === 'book') s.holds.set('api', 'left'); // braking now, as at the end of the book's graph
+  if (o.trip === 'book') s.holds.set('book', 'left'); // braking now, as at the end of the book's graph (until it stops)
   syncPedals();
   syncUI();
   const ready = (async () => {
@@ -1371,7 +1615,7 @@ export function createApp(root, options = {}) {
         if (s.scene !== 'line') setScene('line', { animate });
         releaseAll();
         driveNow(p.trip === 'book' ? BOOK_TRIP : p.drive, { keep: Boolean(p.keep) && p.trip !== 'book' });
-        if (p.trip === 'book') s.holds.set('api', 'left');
+        if (p.trip === 'book') s.holds.set('book', 'left');
         relabel();
         syncPedals();
       }

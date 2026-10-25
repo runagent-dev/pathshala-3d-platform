@@ -300,9 +300,5 @@ export function createField({ colors }) {
       count = 0;
       geo.setDrawRange(0, 0);
     },
-    /** How much of the track is turning and straight (m), for the panel. */
-    get points() {
-      return points;
-    },
   };
 }

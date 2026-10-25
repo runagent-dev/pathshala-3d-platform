@@ -28,7 +28,7 @@ describe('the straight road: speeding up, steady, braking', () => {
     d.runTrip([['none', 3]], trip);
     close(trip.xs[80] - trip.xs[50], 10 * 3, 1e-9, 'steady');
   });
-  it('loses 3 m/s every second with the brake held (a = −3 ms⁻², মন্দন)', () => {
+  it('loses 2 m/s every second with the brake held (a = −2 ms⁻², মন্দন)', () => {
     const trip = d.runTrip([
       ['gas', 6],
       ['brake', 2],
@@ -36,8 +36,19 @@ describe('the straight road: speeding up, steady, braking', () => {
     const b = d.stretchValues(trip.stretches[1]);
     assert.equal(b.kind, 'down');
     assert.equal(b.u, 12);
-    assert.equal(b.v, 6);
-    assert.equal(b.a, -3);
+    assert.equal(b.v, 8);
+    assert.equal(b.a, -2);
+  });
+  it('stops exactly on a tick, whatever the speed: braking to rest still gives a = −2 ms⁻² exactly', () => {
+    for (const g of [0.3, 1.7, 3.1, 4.9]) {
+      const trip = d.runTrip([
+        ['gas', g],
+        ['brake', 6],
+      ]);
+      const b = d.stretchValues(trip.stretches[1]);
+      assert.equal(b.v, 0, `after ${g} s of gas`);
+      assert.equal(b.a, -2, `after ${g} s of gas`);
+    }
   });
   it('keeps the speed with nothing pressed (ত্বরণ নেই)', () => {
     const trip = d.runTrip([
@@ -57,10 +68,10 @@ describe('the straight road: speeding up, steady, braking', () => {
         ['none', 25],
       ],
     );
-    d.runTrip([['brake', 8]], trip);
+    d.runTrip([['brake', 8]], trip); // 15 m/s to rest in 7.5 s, then standing
     assert.equal(trip.vs[trip.n], 0);
     assert.deepEqual(trip.stretches.at(-1).kind, 'none'); // standing, the brake still held
-    assert.equal(d.stretchValues(trip.stretches.at(-2)).a, -3);
+    assert.equal(d.stretchValues(trip.stretches.at(-2)).a, -2);
   });
   it('gives a = (v − u) / t for every stretch, whatever its length (the rate does not depend on the time)', () => {
     for (const s of [1, 2.5, 4, 7.4]) {
@@ -117,24 +128,31 @@ describe('the straight road: speeding up, steady, braking', () => {
 
 describe('the bend: same speed, turning', () => {
   it('turns at v / r and has an acceleration v² / r towards the middle of the circle', () => {
-    close(d.OMEGA, 4 / 6);
-    close(d.TURN_ACCEL, 16 / 6);
+    close(d.OMEGA, 2.5 / 3);
+    close(d.TURN_ACCEL, 6.25 / 3);
     const a = d.turnVectors(0, 1); // heading east, turning left: the middle is to the north
-    close(a.ve, 4);
+    close(a.ve, 2.5);
     close(a.vn, 0);
     close(a.ae, 0, 1e-12);
-    close(a.an, 16 / 6);
+    close(a.an, 6.25 / 3);
     const b = d.turnVectors(0, -1); // turning right: to the south
-    close(b.an, -16 / 6);
+    close(b.an, -6.25 / 3);
+    // the middle of the turn is r to the left (or right) of the CNG, where the acceleration points
+    const m = d.turnCentre(0, 0, 0, 1);
+    close(m.e, 0, 1e-12);
+    close(m.north, d.TURN.r);
+    const m2 = d.turnCentre(2, 1, Math.PI / 2, -1); // heading north, turning right: the middle is to the east
+    close(m2.e, 2 + d.TURN.r);
+    close(m2.north, 1, 1e-12);
     const c = d.turnVectors(1.2, 0); // straight on: no acceleration
     assert.equal(c.ae, 0);
     assert.equal(c.an, 0);
   });
-  it('keeps the speed while turning: a whole circle of 6 m in 2πr / v', () => {
+  it('keeps the speed while turning: a whole circle of 3 m in 2πr / v', () => {
     const st = d.newTurn();
     const ticks = Math.round((2 * Math.PI * d.TURN.r) / d.TURN.v / d.TICK);
     for (let i = 0; i < ticks; i++) d.tickTurn(st, 'left');
-    close(Math.hypot(st.e, st.north), 0, 0.12, 'back where it started (94 ticks of 94.25)');
+    close(Math.hypot(st.e, st.north), 0, 0.15, 'back where it started (75 ticks of 75.4)');
     // the distance from the middle of the circle stays r at every step
     const s2 = d.newTurn();
     for (let i = 0; i < 30; i++) {
@@ -142,10 +160,10 @@ describe('the bend: same speed, turning', () => {
       close(Math.hypot(s2.e, s2.north - d.TURN.r), d.TURN.r, 1e-9);
     }
   });
-  it('goes straight with no steering, 0.4 m per tick', () => {
+  it('goes straight with no steering, 0.25 m per tick', () => {
     const st = d.newTurn();
     d.tickTurn(st, 'none');
-    close(st.e, 0.4);
+    close(st.e, 0.25);
     close(st.north, 0);
   });
   it('names the eight directions', () => {
@@ -165,7 +183,7 @@ describe('numbers', () => {
     assert.equal(d.fixed(8, 1), '8.0');
     assert.equal(d.fixed(-0.01, 1), '0.0');
     assert.equal(d.signed(2), '+2.0');
-    assert.equal(d.signed(-3), '−3.0');
+    assert.equal(d.signed(-2), '−2.0');
     assert.equal(d.signed(0), '0.0');
   });
 });

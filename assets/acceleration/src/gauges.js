@@ -10,7 +10,7 @@ const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
  * kind (plain: one ink colour, for the test, so colour never gives the answer away), a pale band under each piece,
  * the letters A, B, C… of the pieces of 1 s or more, and a dot where the CNG is now.
  */
-export function createGraph(el, { t, N, colors }) {
+export function createGraph(el, { t, N, colors, text = colors }) {
   const svg = document.createElementNS(NS, 'svg');
   svg.setAttribute('class', 'ac-graph-svg');
   svg.setAttribute('role', 'img');
@@ -31,7 +31,7 @@ export function createGraph(el, { t, N, colors }) {
   const X = (sec) => geom.x0 + (sec / tmax) * (geom.x1 - geom.x0);
   const Y = (v) => geom.y0 - (v / VMAX) * (geom.y0 - geom.y1);
 
-  /** opts: { trip, upto, selected, plain, hint, tmax (s on the time axis: 30 while driving, 20 for a test graph) } */
+  /** opts: { trip, upto, selected, plain, hint, tmax (s on the time axis: 10, 20 or 30), test (a finished test graph) } */
   function draw(opts = last) {
     if (!opts) return;
     last = opts;
@@ -58,6 +58,7 @@ export function createGraph(el, { t, N, colors }) {
     const sts = trip.stretches;
     const letters = lettersOf(sts);
     const nowTick = Math.min(upto, trip.n);
+    const placed = []; // letters drawn so far (x, y)
     sts.forEach((st, i) => {
       if (st.t0 >= nowTick) return;
       const t1 = Math.min(st.t1, nowTick);
@@ -75,21 +76,23 @@ export function createGraph(el, { t, N, colors }) {
         const ya = Y(trip.vs[st.t0] / 10);
         const yb = Y(v1 / 10);
         const len = Math.hypot(xb - xa, yb - ya) || 1;
-        let nx = (yb - ya) / len;
-        let ny = -(xb - xa) / len;
+        const nx = (yb - ya) / len;
+        const ny = -(xb - xa) / len;
         const r = f * 0.95;
-        let lx = (xa + xb) / 2 + nx * r;
-        let ly = (ya + yb) / 2 + ny * r;
-        if (ly - f * 0.5 < y1 || lx < x0 + f * 0.75 || lx > x1 - f * 0.4) {
-          nx = -nx;
-          ny = -ny;
-          lx = (xa + xb) / 2 + nx * r;
-          ly = (ya + yb) / 2 + ny * r;
-        }
-        out += `<text class="g-letter" x="${lx.toFixed(1)}" y="${(ly + f * 0.4).toFixed(1)}" text-anchor="middle" font-size="${f * 1.12}" fill="${c}">${letter}</text>`;
+        const spot = (k) => [(xa + xb) / 2 + k * nx * r, (ya + yb) / 2 + k * ny * r];
+        // the first side that stays in the plot and clear of the letters already drawn
+        const fits = ([lx, ly]) =>
+          ly - f * 0.5 >= y1 &&
+          ly + f * 0.5 <= y0 &&
+          lx >= x0 + f * 0.75 &&
+          lx <= x1 - f * 0.4 &&
+          !placed.some(([px, py]) => Math.abs(px - lx) < f * 1.05 && Math.abs(py - ly) < f * 1.15);
+        const [lx, ly] = [spot(1), spot(-1), spot(1.8), spot(-1.8)].find(fits) || spot(1);
+        placed.push([lx, ly]);
+        out += `<text class="g-letter" x="${lx.toFixed(1)}" y="${(ly + f * 0.4).toFixed(1)}" text-anchor="middle" font-size="${f * 1.12}" fill="${plain ? colors.ink : text[st.kind]}">${letter}</text>`;
       }
     });
-    if (opts.tmax) {
+    if (opts.test) {
       // a test graph: no "now" dot, it is a finished trip like the book's
     } else if (trip.started && nowTick > 0) {
       const cur = sts.find((st) => st.t0 < nowTick && st.t1 >= nowTick) || sts.at(-1);
@@ -100,13 +103,23 @@ export function createGraph(el, { t, N, colors }) {
     svg.innerHTML = out;
   }
 
-  /** The piece of the graph under a point (client x), or -1. */
+  /** The piece of the graph under a point (client x), or -1: the one it is in, or else the nearest within 12 px. */
   function pick(clientX, trip) {
     if (!geom) return -1;
-    const r = svg.getBoundingClientRect();
-    const sec = ((clientX - r.left - geom.x0) / (geom.x1 - geom.x0)) * tmax;
-    const tick = sec / TICK;
-    return trip.stretches.findIndex((st) => tick >= st.t0 - 2 && tick <= st.t1 + 2 && st.t0 < trip.n);
+    const x = clientX - svg.getBoundingClientRect().left;
+    let best = -1;
+    let bestGap = 12;
+    trip.stretches.forEach((st, i) => {
+      if (st.t0 >= trip.n) return;
+      const xa = X(st.t0 * TICK);
+      const xb = X(Math.min(st.t1, trip.n) * TICK);
+      const gap = x < xa ? xa - x : x > xb ? x - xb : -1;
+      if (gap < bestGap) {
+        bestGap = gap;
+        best = i;
+      }
+    });
+    return best;
   }
 
   new ResizeObserver(() => draw()).observe(el);
