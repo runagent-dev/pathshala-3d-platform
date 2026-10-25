@@ -1,16 +1,17 @@
-/* Weak nuclear force: the page, the colours (the weak force green as in all four force figures; protons red,
-   neutrons grey, electrons blue), the four-forces strip, the zoom stops, and what sits on the 3D view (the note on
-   how it is stylised, the scale bar, the inside of a neutron). The student view itself is
-   ../../shared/lib/student/student.css (linked first). */
+/* Weak nuclear force: the page, the colours (the weak force green as in all four force figures; protons, neutrons
+   and electrons as in the strong-nuclear-force figure, text in darker shades), the four-forces strip, the zoom
+   stops, and what sits on the 3D view (the note on how it is stylised, the scale bar, the inside of a neutron). The
+   student view itself is ../../shared/lib/student/student.css (linked first). */
 html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
 #app { position: fixed; inset: 0; }
 body.bg-transparent { background: transparent; }
 
-.pvc { --c-weak: #2b8a3e; --c-p: #c92a2a; --c-n: #495057; --c-e: #1864ab; }
+.pvc { --c-weak: #2b8a3e; --c-p: #a8273d; --c-n: #56606b; --c-e: #1864ab; }
 .pvc .c-weak { color: var(--c-weak); }
 .pvc .c-p { color: var(--c-p); }
 .pvc .c-n { color: var(--c-n); }
 .pvc .c-e { color: var(--c-e); }
+.pvc .wn-nw { white-space: nowrap; } /* "৬ → ৭" never breaks at the arrow */
 
 /* powers of ten: 10⁻¹⁸ m with Bangla digits in the exponent */
 .wn-pow { white-space: nowrap; }
@@ -22,28 +23,29 @@ body.bg-transparent { background: transparent; }
 
 /* the four fundamental forces, weakest first; the weak force filled in */
 .wn-forces { display: flex; flex-direction: column; gap: 4px; }
-.wn-forces-head { display: flex; align-items: baseline; gap: 8px; font-size: 12.5px; color: var(--ink-3); line-height: 1.3; }
-.wn-forces-head b { color: var(--ink); font-weight: 600; font-size: 13.5px; }
+.wn-forces-head { font-size: 13px; line-height: 1.35; }
+.wn-forces-head b { color: var(--ink); font-weight: 600; }
 .wn-ladder { display: flex; gap: 4px; margin: 0; padding: 0; list-style: none; }
 .wn-f { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2px 3px; border: 1.5px solid color-mix(in srgb, var(--c) 50%, var(--line)); border-radius: 6px; text-align: center; }
-.wn-f b { font-size: 12.5px; font-weight: 700; color: var(--c); line-height: 1.35; white-space: nowrap; }
+/* a long name may take two lines rather than overflow its box (English "Electromagnetic") */
+.wn-f b { font-size: 12.5px; font-weight: 700; color: var(--c); line-height: 1.3; overflow-wrap: anywhere; hyphens: manual; }
 .wn-f small { font-size: 12px; color: var(--ink-2); line-height: 1.35; white-space: nowrap; }
 .wn-f small .wn-pow sup { font-size: 0.8em; }
 .wn-f.on { flex-grow: 1.3; background: var(--c); border-color: var(--c); }
-/* a narrow panel (beside the view): two rows of two, still read weakest first */
 .wn-f.on b, .wn-f.on small { color: #fff; }
+/* a narrow panel (beside the view): two rows of two, still read weakest first */
 @container pvc-panel (max-width: 360px) {
   .wn-ladder { display: grid; grid-template-columns: 1fr 1fr; }
   .wn-f { padding: 1px 4px; }
   .wn-f b, .wn-f small { line-height: 1.25; }
-  .wn-forces-head { gap: 6px; }
 }
 .wn-strength { margin: 0; font-size: 13px; line-height: 1.45; color: var(--ink-2); }
 .wn-strength b { font-weight: 700; }
 
-/* the zoom's three stops and the β button */
+/* the zoom's three stops and the β button (the reach chip has a short name for small panels) */
 .wn-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
 .wn-stops button { height: 36px; padding: 0 10px; font-size: 14.5px; white-space: nowrap; }
+.wn-stops .wn-short { display: none; }
 .wn-foot [data-act='beta'] { height: 38px; min-width: 132px; font-size: 15px; }
 .wn-foot [data-act='beta'].is-busy { opacity: 0.55; }
 /* after the first β ray, the "range" stop glows a few times: there is more to see */
@@ -52,9 +54,12 @@ body.bg-transparent { background: transparent; }
 @media (prefers-reduced-motion: reduce) { .wn-stops button.wn-nudge { animation: none; } }
 
 /* on the 3D view */
-.wn-note { position: absolute; left: 12px; top: 12px; z-index: 3; max-width: calc(100% - 252px); font-size: 12.5px; line-height: 1.35; color: var(--ink-3); pointer-events: none; text-wrap: balance; }
+.wn-note { position: absolute; left: 10px; top: 10px; z-index: 3; max-width: calc(100% - 248px); padding: 1px 3px; border-radius: 4px; background: rgb(255 255 255 / 0.72); font-size: 12.5px; line-height: 1.35; color: var(--ink-3); pointer-events: none; text-wrap: balance; }
+/* the note and the scale stay readable when the zoom passes over the big balls */
+.wn-scale span { padding: 0 3px; border-radius: 3px; background: rgb(255 255 255 / 0.72); }
 .wn-scale { position: absolute; left: 14px; bottom: 10px; z-index: 3; display: flex; flex-direction: column; align-items: flex-start; gap: 0; pointer-events: none; font-size: 13px; line-height: 1.5; color: var(--ink-2); }
 .wn-scale i { display: block; height: 7px; border: 2px solid var(--ink); border-top: 0; }
+.wn-scale em { font-style: normal; color: var(--ink-3); }
 .wn-inside { position: absolute; inset: 0; opacity: 0; pointer-events: none; background: radial-gradient(circle at 50% 55%, #f1f3f5 0%, #e3e6ea 60%, #d3d8dd 100%); }
 .wn .pvc-anno-callout { font-size: 14px; padding: 1px 8px; line-height: 1.35; text-align: center; }
 .wn .wn-measure { visibility: hidden; transform: none; }
@@ -73,22 +78,29 @@ body.bg-transparent { background: transparent; }
   .wn-idea { font-size: 15.5px; min-height: 3em; }
   .wn-strength { font-size: 14px; }
 }
+/* phones in portrait: the β button fills its row */
 @container pvc (max-width: 560px) {
   .wn-idea { font-size: 13.5px; }
   .wn-note { max-width: calc(100% - 232px); font-size: 12px; }
   .wn-stops button { padding: 0 8px; font-size: 14px; }
+  .wn-foot [data-act='beta'] { flex: 1 0 auto; }
   .wn .pvc-opt .wn-txt { font-size: 13.5px; }
 }
+/* a short phone (390×520): the stops (reach as "পাল্লা") and the β button share one row */
 @container pvc (max-width: 560px) and (max-height: 600px) {
   .wn-idea { font-size: 13px; line-height: 1.45; min-height: 4.35em; }
   .wn-strength { font-size: 12.5px; line-height: 1.4; }
   .wn .pvc-learn, .wn-forces { gap: 4px; }
-  .wn-foot { gap: 6px; }
+  .wn-foot { gap: 6px; flex-wrap: nowrap; }
+  .wn-stops .wn-long { display: none; }
+  .wn-stops .wn-short { display: inline; }
+  .wn-foot [data-act='beta'] { min-width: 0; }
   .wn .pvc-q-feedback { font-size: 13px; }
 }
 /* short and wide: the panel is beside the view */
 @container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
   .wn-idea { font-size: 12.5px; line-height: 1.45; min-height: 5.8em; }
+  .wn-forces-head { font-size: 12.5px; }
   .wn-f b { font-size: 12px; }
   .wn-f small { font-size: 11.5px; }
   .wn-strength { font-size: 12px; }

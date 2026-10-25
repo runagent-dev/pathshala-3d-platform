@@ -37,6 +37,11 @@ export const NUCLEUS = { protons: 6, neutrons: 8 };
 export const STOPS = { atom: 64000, nucleus: 4.3, reach: 0.0017 };
 export const STOP_IDS = ['atom', 'nucleus', 'reach'];
 export const zoomOf = (stop) => Math.log10(STOPS[stop]); // the zoom is log10 of that radius
+/**
+ * The zoom for a stop in a view of this aspect (width / height): a short, wide view has room for the labels at
+ * the sides, so the nucleus is drawn bigger there.
+ */
+export const zoomFor = (stop, aspect = 1) => zoomOf(stop) + (stop === 'nucleus' && aspect > 2 ? Math.log10(0.8) : 0);
 
 export const clamp01 = (x) => Math.min(1, Math.max(0, x));
 export const smoothstep = (a, b, x) => {
@@ -48,7 +53,7 @@ export const smoothstep = (a, b, x) => {
  * How far the point looked at has moved from the nucleus's centre to the changing neutron (0…1), at zoom z.
  * On the way in it turns to the neutron while the neutron is still small, then dives into it.
  */
-export const focusWeight = (z) => smoothstep(zoomOf('nucleus'), -0.25, z);
+export const focusWeight = (z, zNucleus = zoomOf('nucleus')) => smoothstep(zNucleus, -0.25, z);
 
 /**
  * The scale bar: the longest power of ten (in metres) that fits in maxPx at pxPerFm pixels per femtometre.
@@ -63,22 +68,62 @@ export function scaleBar(pxPerFm, maxPx) {
 /** How many times a bigger thing is bigger than a smaller one, as a whole power of ten (10⁻¹⁵ vs 10⁻¹⁸ → 3). */
 export const powersBetween = (big, small) => Math.round(Math.log10(big / small));
 
+/**
+ * Seconds the zoom spends on each power of ten: slowly inside the neutron (the last thousand times, which the
+ * student must feel), quickly through the empty space between the atom and the nucleus.
+ */
+export const ZOOM_PACE = { inside: 1, outside: 0.34 };
+const INSIDE_BELOW = 0; // below this zoom (a view under 1 fm across the middle) the camera is going into the neutron
+
+/**
+ * The zoom's way from z0 to z1: { duration (s), at(k) } with k the share of the time (0…1) and at(k) the zoom then.
+ * Each power of ten takes its ZOOM_PACE, so the time goes where there is something to see.
+ */
+export function zoomPath(z0, z1) {
+  const n = 200;
+  const zs = [];
+  const ts = [0];
+  for (let i = 0; i <= n; i++) zs.push(z0 + ((z1 - z0) * i) / n);
+  for (let i = 1; i <= n; i++) {
+    const mid = (zs[i] + zs[i - 1]) / 2;
+    ts.push(ts[i - 1] + Math.abs(zs[i] - zs[i - 1]) * (mid < INSIDE_BELOW ? ZOOM_PACE.inside : ZOOM_PACE.outside));
+  }
+  const total = ts[n];
+  return {
+    duration: total + 0.5,
+    at(k) {
+      if (!(total > 0)) return z1;
+      const want = clamp01(k) * total;
+      let lo = 0;
+      let hi = n;
+      while (hi - lo > 1) {
+        const m = (lo + hi) >> 1;
+        if (ts[m] < want) lo = m;
+        else hi = m;
+      }
+      const f = ts[hi] === ts[lo] ? 0 : (want - ts[lo]) / (ts[hi] - ts[lo]);
+      return zs[lo] + (zs[hi] - zs[lo]) * f;
+    },
+  };
+}
+
 // ── the β emission (slowed down a great deal: in reality it is over in far less than a billionth of a second) ──
 /** Seconds from the start (as the figure shows it): the spark, the colour change, the electron's flight. */
 export const BETA = {
   duration: 3.4,
   spark: [0, 1.8], // the weak force acts at a point inside the neutron
-  change: [0.55, 1.15], // the neutron becomes a proton (grey → red)
+  change: [1, 1.35], // the neutron becomes a proton (grey → red, "+") as the electron ("−") is made: charge kept
   emit: 1, // the electron leaves the neutron
   fly: [1, 3], // and flies out in a straight line
-  distance: 16, // fm it travels in that time (it is out of the view by then)
+  distance: 6, // fm it travels in that time unless the figure says (it stops inside the view)
 };
 
 /**
- * Where the β emission is at time tSec: { phase, spark (0…1, bright in the middle), change (0…1), electron (fm
- * from where it was made, or null before), protons, neutrons, emitted }.
+ * Where the β emission is at time tSec: { phase, spark (0…1, bright in the middle), change (0…1), travel (0…1 of
+ * the flight), electron (fm from where it was made, or null before), protons, neutrons, emitted }. distance: how
+ * far (fm) the electron goes in the figure's time, so that it ends inside the view.
  */
-export function betaAt(tSec) {
+export function betaAt(tSec, distance = BETA.distance) {
   const t = Math.max(0, tSec);
   const [s0, s1] = BETA.spark;
   const [c0, c1] = BETA.change;
@@ -86,13 +131,14 @@ export function betaAt(tSec) {
   const spark = t >= s1 ? 0 : Math.sin(Math.PI * clamp01((t - s0) / (s1 - s0)));
   const change = smoothstep(c0, c1, t);
   const out = t >= BETA.emit;
-  const electron = out ? BETA.distance * clamp01((t - f0) / (f1 - f0)) : null; // steady speed: nothing pushes it on
+  const travel = out ? clamp01((t - f0) / (f1 - f0)) : 0; // steady speed: nothing pushes it on
   const phase = t >= BETA.duration ? 'done' : out ? 'fly' : 'change';
   return {
     phase,
     spark,
     change,
-    electron,
+    travel,
+    electron: out ? distance * travel : null,
     protons: NUCLEUS.protons + (out ? 1 : 0),
     neutrons: NUCLEUS.neutrons - (out ? 1 : 0),
     emitted: out ? 1 : 0,

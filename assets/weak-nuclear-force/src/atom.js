@@ -75,7 +75,8 @@ export function createAtom() {
     },
     /** World position of electron i. */
     electronWorld: (i, out) => electrons[i].mesh.getWorldPosition(out),
-    /** The middle of the size line (where its label goes). */
+    /** The middle of the size line (where its label goes), and its ends (side −1 left, 1 right). */
     sizeMid: (out) => root.localToWorld(out.set(0, y, 0)),
+    sizeEnd: (side, out) => root.localToWorld(out.set(side * ATOM_R, y, 0)),
   };
 }

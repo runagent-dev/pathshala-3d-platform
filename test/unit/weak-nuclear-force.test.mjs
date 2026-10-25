@@ -74,12 +74,21 @@ describe('weak nuclear force: the β emission', () => {
     assert.equal(b.protons + b.neutrons, 14, 'as many nucleons as before');
     assert.equal(b.protons - b.emitted, wn.NUCLEUS.protons, 'the total charge is the same');
   });
-  it('the electron flies out in a straight line at a steady speed', () => {
+  it('the electron flies out in a straight line at a steady speed, as far as the figure asks', () => {
     const [f0, f1] = wn.BETA.fly;
     const d1 = wn.betaAt(f0 + 0.5).electron;
     const d2 = wn.betaAt(f0 + 1).electron;
     close(d2, 2 * d1, 1e-9);
     close(wn.betaAt(f1).electron, wn.BETA.distance);
+    close(wn.betaAt(f1, 3.3).electron, 3.3); // the figure makes it stop inside the view
+    close(wn.betaAt(wn.BETA.duration + 5, 3.3).electron, 3.3, 1e-9); // and it stays there
+    assert.equal(wn.betaAt(f0 + 1, 3.3).travel, 0.5);
+  });
+  it('"+" and "−" appear together: the colour change starts when the electron is made', () => {
+    assert.equal(wn.BETA.change[0], wn.BETA.emit);
+    const before = wn.betaAt(wn.BETA.emit - 0.01);
+    assert.equal(before.change, 0);
+    assert.equal(before.electron, null);
   });
   it('the spark is brightest in the middle, gone at the end; the colour change is complete', () => {
     const [s0, s1] = wn.BETA.spark;
@@ -87,6 +96,39 @@ describe('weak nuclear force: the β emission', () => {
     assert.equal(wn.betaAt(s1 + 0.1).spark, 0);
     assert.equal(wn.betaAt(wn.BETA.change[1]).change, 1);
     assert.equal(wn.betaAt(wn.BETA.duration).phase, 'done');
+  });
+});
+
+describe('weak nuclear force: the zoom', () => {
+  it('goes from one stop to the other, never back', () => {
+    const z0 = wn.zoomOf('nucleus');
+    const z1 = wn.zoomOf('reach');
+    const path = wn.zoomPath(z0, z1);
+    close(path.at(0), z0, 1e-9);
+    close(path.at(1), z1, 1e-9);
+    let last = z0;
+    for (let k = 0.02; k <= 1; k += 0.02) {
+      const z = path.at(k);
+      assert.ok(z <= last + 1e-9, 'inward all the way');
+      last = z;
+    }
+  });
+  it('spends about a second on each power of ten inside the neutron, and hurries outside it', () => {
+    const path = wn.zoomPath(wn.zoomOf('nucleus'), wn.zoomOf('reach'));
+    const inside = -wn.zoomOf('reach'); // decades below a view of 1 fm
+    assert.ok(path.duration > inside * wn.ZOOM_PACE.inside, `${path.duration} s`);
+    // the share of the time spent inside the neutron is much bigger than its share of the zoom
+    let k = 0;
+    while (path.at(k) > 0) k += 0.001;
+    assert.ok(1 - k > 0.85, `inside the neutron for ${(1 - k).toFixed(2)} of the time`);
+    const out = wn.zoomPath(wn.zoomOf('atom'), wn.zoomOf('nucleus'));
+    assert.ok(out.duration < 2.5, `atom → nucleus in ${out.duration} s`);
+  });
+  it('draws the nucleus bigger in a short, wide view, and only the nucleus', () => {
+    assert.ok(wn.zoomFor('nucleus', 3) < wn.zoomFor('nucleus', 1));
+    assert.equal(wn.zoomFor('reach', 3), wn.zoomOf('reach'));
+    assert.equal(wn.zoomFor('atom', 3), wn.zoomOf('atom'));
+    assert.equal(wn.focusWeight(wn.zoomFor('nucleus', 3), wn.zoomFor('nucleus', 3)), 0);
   });
 });
 

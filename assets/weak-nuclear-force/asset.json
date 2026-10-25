@@ -12,8 +12,8 @@
   "placement": "Book page 68, topic 3.2.3: দুর্বল নিউক্লীয় বল (Weak Nuclear Force), next to that paragraph.",
   "order": 3,
   "maintainers": ["RadeenXALNW"],
-  "units": "mm",
-  "description": "Interactive 3D figure for the weak nuclear force (দুর্বল নিউক্লীয় বল), book page 68, topic 3.2.3. A radioactive nucleus (তেজস্ক্রিয় নিউক্লিয়াস: 6 protons, 8 neutrons, like carbon-14): the student taps it (or presses β রশ্মি দেখো) and sees, slowed down a great deal, the weak force act at a point inside one neutron, the neutron turn into a proton, and an electron, the beta (β) ray, shoot out in a straight line; the panel counts protons 6 → 7 and neutrons 8 → 7. A zoom with three stops shows how short the force's reach is: the whole atom (about 10⁻¹⁰ m, held by the electromagnetic force), the nucleus, and a thousand times closer inside that neutron, the weak force's reach, a sphere of 10⁻¹⁸ m; a scale bar follows the zoom. The panel keeps the four fundamental forces in order, weakest first, with their ranges, and the book's sentence on strength (weaker than the electromagnetic force by about a trillion times, far stronger than gravity). Test tab: 5 questions (which force causes the β ray, what the β ray is or how many protons are left, the force's range or a comparison with gravity, its strength among the four forces, where it acts). The scene is drawn in femtometres; the GLB (the nucleus) comes out with 1 fm as 1 mm, 10¹² times life size. Phone-first, Bangla.",
+  "units": "cm",
+  "description": "Interactive 3D figure for the weak nuclear force (দুর্বল নিউক্লীয় বল), book page 68, topic 3.2.3. A radioactive nucleus (তেজস্ক্রিয় নিউক্লিয়াস: 6 protons, 8 neutrons, like carbon-14): the student taps it (or presses β রশ্মি দেখো) and sees, slowed down a great deal, the weak force act at a point inside one neutron, the neutron turn into a proton (marked “নিউট্রন → প্রোটন”) as an electron, the beta (β) ray, shoots out in a straight line and stops inside the view; the panel counts protons 6 → 7 and neutrons 8 → 7. A zoom with three stops shows how short the force's reach is: the whole atom (about 10⁻¹⁰ m, held by the electromagnetic force), the nucleus, and, slowly, a thousand times closer inside that neutron, the weak force's reach, a sphere of 10⁻¹⁸ m (like a grain of sand beside a football); a scale bar follows the zoom and says what part of a neutron it is. The panel keeps the four fundamental forces in order, weakest first, with their ranges, and the book's sentence on strength (weaker than the electromagnetic force by about a trillion times, far stronger than gravity). Test tab: 5 questions (which force causes the β ray, always first; what the β ray is or how many protons are left; the force's range or a comparison with gravity; how many times smaller the reach is than a neutron; its strength among the four forces). The scene is drawn in femtometres; the GLB (the nucleus) is written with 1 fm as 1 cm (10¹³ times life size), as in strong-nuclear-force. Phone-first, Bangla.",
   "tags": ["force", "fundamental-forces", "weak-nuclear-force", "radioactivity", "beta-ray", "nucleus", "bangla"],
   "params": [
     {
@@ -84,15 +84,15 @@
     ],
     "video": {
       "kind": "script",
-      "seconds": 20,
+      "seconds": 22,
       "fps": 30,
       "params": { "coach": "0" },
       "script": [
         { "at": 0.6, "command": "set", "payload": { "beta": true } },
-        { "at": 4.8, "command": "set", "payload": { "stop": "reach" } },
-        { "at": 8.6, "command": "set", "payload": { "stop": "atom" } },
-        { "at": 13.4, "command": "set", "payload": { "stop": "nucleus" } },
-        { "at": 16, "command": "set", "payload": { "beta": true } }
+        { "at": 4.6, "command": "set", "payload": { "stop": "reach" } },
+        { "at": 9.2, "command": "set", "payload": { "stop": "atom" } },
+        { "at": 15, "command": "set", "payload": { "stop": "nucleus" } },
+        { "at": 17.6, "command": "set", "payload": { "beta": true } }
       ]
     }
   }

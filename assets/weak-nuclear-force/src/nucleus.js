@@ -2,12 +2,12 @@
 // "+") and 8 neutrons (grey) packed in a ball; one neutron at the front right is the one that changes. The β
 // electron (blue, with "−") and its straight track; the spark where the weak force acts inside the neutron; and
 // the weak force's reach (a sphere of radius 10⁻¹⁸ m) that the zoom shows inside that neutron.
-// Proton, neutron and electron colours are kept close to the other nuclear figures (si-prefixes, strong force).
+// Proton, neutron and electron colours are the same as in the strong-nuclear-force figure.
 import * as THREE from 'three';
 import { textMesh } from '@shared/student/materials.js';
 import { NUCLEON_R, NUCLEUS, REACH_R, packNucleons } from './physics.js';
 
-export const COLORS = { proton: 0xe03131, neutron: 0xadb5bd, electron: 0x1971c2, weak: 0x2b8a3e };
+export const COLORS = { proton: 0xd23a50, neutron: 0x9aa3ad, electron: 0x1971c2, weak: 0x2b8a3e };
 export const EXIT = new THREE.Vector3(1, 0.12, 0.34).normalize(); // the way the β electron leaves (to the right)
 
 const nucleonMat = (color) => new THREE.MeshPhysicalMaterial({ color, roughness: 0.38, metalness: 0, clearcoat: 0.5, clearcoatRoughness: 0.35 });
@@ -21,7 +21,10 @@ function sign(text, size) {
   return m;
 }
 
-/** The nucleus: { root, nucleons: [{ mesh, kind, sign }], changing, labelled: { p, n }, radius, setChange(k), hits }. */
+/**
+ * The nucleus: { root, nucleons: [{ mesh, kind, sign, pos }], changing, labelled: { p, n }, radius, centres, hits,
+ * setChange(k) }.
+ */
 export function createNucleus() {
   const root = new THREE.Group();
   root.name = 'Nucleus';
@@ -37,20 +40,14 @@ export function createNucleus() {
   const changing = best([0.85, 0.05, 0.62]); // front right: the electron leaves on this side
   const labelP = best([-0.55, 0.8, 0.45]); // upper left, well in sight: the proton the label names
   const labelN = best([-0.85, -0.25, 0.45]); // left, well in sight: the neutron the label names
-  // the rest, mixed: protons and neutrons in turn along the spiral the packing started from
-  const kinds = new Array(pts.length);
-  kinds[changing] = 'n';
+  // the other protons: four of the balls in front (so a student counting from the front sees five of the six) and
+  // one at the back; the rest are neutrons
+  const kinds = new Array(pts.length).fill('n');
   kinds[labelP] = 'p';
-  kinds[labelN] = 'n';
-  let p = NUCLEUS.protons - 1;
-  let n = NUCLEUS.neutrons - 2;
-  for (let i = 0; i < pts.length; i++) {
-    if (kinds[i]) continue;
-    const wantP = p > 0 && (n === 0 || p / (p + n) >= 0.42 || i % 2 === 0);
-    kinds[i] = wantP ? 'p' : 'n';
-    if (wantP) p--;
-    else n--;
-  }
+  const front = new THREE.Vector3(0, 0.1, 1).normalize();
+  const rest = pts.map((_, i) => i).filter((i) => !taken.has(i));
+  rest.sort((a, b) => pts[b].dot(front) - pts[a].dot(front));
+  for (const i of [...rest.slice(0, NUCLEUS.protons - 2), rest[rest.length - 1]]) kinds[i] = 'p';
 
   const geo = new THREE.SphereGeometry(NUCLEON_R, 40, 26);
   const proton = nucleonMat(COLORS.proton);
@@ -80,6 +77,7 @@ export function createNucleus() {
     changing,
     labelled: { p: labelP, n: labelN },
     radius: Math.max(...pts.map((v) => v.length())) + NUCLEON_R,
+    centres: pts,
     hits: nucleons.map((x) => x.mesh),
     /** The changing neutron becomes a proton: k = 0 grey, 1 red with its "+". */
     setChange(k) {
@@ -91,9 +89,14 @@ export function createNucleus() {
   };
 }
 
-/** Each sign sits on the side of its ball that faces the camera, upright on the screen. */
+/**
+ * Each sign sits on the side of its ball that faces the camera, upright on the screen. balls: the centres of the
+ * other balls (radius r); a sign is hidden when one of them covers it, so no half-hidden fragments of "+" show.
+ */
 const toCam = new THREE.Vector3();
-export function faceCamera(signs, parent, camera) {
+const seg = new THREE.Vector3();
+const rel = new THREE.Vector3();
+export function faceCamera(signs, parent, camera, balls = []) {
   parent.worldToLocal(toCam.copy(camera.position));
   for (const { sign: s, centre, r } of signs) {
     if (!s.visible) continue;
@@ -103,6 +106,19 @@ export function faceCamera(signs, parent, camera) {
       .setLength(r * 1.01)
       .add(centre);
     s.quaternion.copy(camera.quaternion);
+    // covered: the line from the camera to the sign passes close to another ball's centre
+    seg.copy(s.position).sub(toCam);
+    const len2 = seg.lengthSq();
+    for (const c of balls) {
+      if (c === centre) continue;
+      rel.copy(c).sub(toCam);
+      const k = rel.dot(seg) / len2;
+      if (k <= 0 || k >= 1) continue;
+      if (rel.addScaledVector(seg, -k).length() < r * 1.25) {
+        s.material.visible = false;
+        break;
+      }
+    }
   }
 }
 

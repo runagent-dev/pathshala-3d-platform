@@ -9,8 +9,8 @@ how short the force's range is; the panel keeps the four fundamental forces in o
 
 `set` takes `stop` (`atom` · `nucleus` · `reach`), `beta` (`true` plays the emission, `false` a fresh nucleus, a
 number 0–1 shows it stopped at that point), `view` and `animate: false`. `get` returns `{ stop, zoom, size, flying,
-beta (null · change · fly · done), protons, neutrons, electrons, scale (the scale bar's power of ten, metres), view,
-mode }`. The GLB is the nucleus, 10¹² times life size (1 fm written as 1 mm).
+beta (null · change · fly · done), protons, neutrons, electrons, flight (fm the electron flies: it stops inside the
+view), scale (the scale bar's power of ten, metres), view, mode }`. The GLB is the nucleus, 10¹³ times life size (1 fm written as 1 cm, as in strong-nuclear-force).
 
 ## Embed
 

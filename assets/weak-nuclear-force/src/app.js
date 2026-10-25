@@ -1,11 +1,11 @@
 // Weak nuclear force (book page 68, topic 3.2.3), student view. A radioactive nucleus (6 protons, 8 neutrons):
 // the student taps it (or presses "β রশ্মি দেখো") and sees the book's effect, slowed down a great deal: the weak
 // nuclear force acts at a point inside one neutron, the neutron becomes a proton, and an electron, the beta (β) ray,
-// shoots out in a straight line. A zoom with three stops shows how short the force's reach is: the whole atom
-// (about 10⁻¹⁰ m, where the electromagnetic force holds the electrons), the nucleus (protons and neutrons, about
-// 10⁻¹⁵ m each) and, a thousand times closer inside that neutron, the weak force's reach, a sphere of 10⁻¹⁸ m. A
-// scale bar follows the zoom. The panel keeps the four fundamental forces in order (weakest first) with the book's
-// sentence on strength. Then a short test. Built on the shared student kit (@shared/student/…).
+// shoots out in a straight line and stops inside the view. A zoom with three stops shows how short the force's reach
+// is: the whole atom (about 10⁻¹⁰ m, where the electromagnetic force holds the electrons), the nucleus (protons and
+// neutrons, about 10⁻¹⁵ m each) and, slowly, a thousand times closer inside that neutron, the weak force's reach, a
+// sphere of 10⁻¹⁸ m. A scale bar follows the zoom. The panel keeps the four fundamental forces in order (weakest
+// first) with the book's sentence on strength. Then a short test. Built on the shared student kit (@shared/student/…).
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
 import { createTweener, ease } from '@shared/tween.js';
@@ -17,7 +17,21 @@ import { createQuiz } from '@shared/student/quiz.js';
 import { createI18n } from './i18n.js';
 import { EXIT, createBeta, createNucleus, createReach, faceCamera } from './nucleus.js';
 import { createAtom } from './atom.js';
-import { BETA, FORCES, NUCLEON_R, NUCLEUS, REACH_R, STOPS, STOP_IDS, betaAt, focusWeight, scaleBar, smoothstep, zoomOf } from './physics.js';
+import {
+  BETA,
+  FORCES,
+  NUCLEON_R,
+  NUCLEUS,
+  REACH_R,
+  STOPS,
+  STOP_IDS,
+  betaAt,
+  focusWeight,
+  scaleBar,
+  smoothstep,
+  zoomFor,
+  zoomPath,
+} from './physics.js';
 
 export const DEFAULTS = {
   stop: 'nucleus', // 'atom' | 'nucleus' | 'reach'
@@ -35,9 +49,10 @@ const VIEW_DIRS = {
   front: new THREE.Vector3(0, 0.08, 1).normalize(),
   '3d': new THREE.Vector3(0.62, 0.4, 0.68).normalize(),
 };
+// label text in darker shades of the 3D colours (proton #d23a50, neutron #9aa3ad, electron #1971c2), for contrast
 const LABEL_COLOR = {
-  p: '#c92a2a',
-  n: '#495057',
+  p: '#a8273d',
+  n: '#56606b',
   weak: '#2b8a3e',
   beta: '#1864ab',
   e: '#1864ab',
@@ -45,7 +60,7 @@ const LABEL_COLOR = {
   reach: '#2b8a3e',
   r: '#1d2733',
 };
-const MIN_NUCLEUS_PX = 11; // the nucleus is drawn at least this big (radius): at the atom's scale it is far below a pixel
+const MIN_NUCLEUS_PX = 14; // the nucleus is drawn at least this big (radius): at the atom's scale it is far below a pixel
 const ELECTRON_PX = 4.5; // electrons in the atom: a dot this big (radius)
 const SPARK_PX = 50; // the spark where the weak force acts: a point this big on the screen
 const SIGN_PX = 9; // "+" and "−" only on balls at least this big (radius)
@@ -65,19 +80,22 @@ export function createApp(root, options = {}) {
   root.tabIndex = 0;
   const ladder = FORCES.map(
     (f) =>
-      `<li class="wn-f${f.id === 'weak' ? ' on' : ''}" style="--c:${f.color}"><b>${t(`f_${f.id}`)}</b><small>${f.range == null ? t('range_inf') : P(f.range)}</small></li>`,
+      `<li class="wn-f${f.id === 'weak' ? ' on' : ''}" style="--c:${f.color}"><b>${t(`f_${f.id}`)}</b><small>${f.range == null ? t('range_inf') : t('range_is', { r: P(f.range) })}</small></li>`,
   ).join('');
+  // the reach stop has a short name for small panels (where its chip shares a row with the β button)
+  const stopName = (id) =>
+    id === 'reach' ? `<span class="wn-long">${t('stop_reach')}</span><span class="wn-short">${t('stop_reach_short')}</span>` : t(`stop_${id}`);
   const ui = buildStudentShell(root, t, {
     learn: `
           <p class="wn-idea" aria-live="polite"></p>
           <div class="wn-forces">
-            <div class="wn-forces-head"><b>${t('forces_title')}</b><span>${t('forces_order')}</span></div>
+            <div class="wn-forces-head"><b>${t('forces_title')}</b></div>
             <ol class="wn-ladder">${ladder}</ol>
             <p class="wn-strength">${t('strength_book')}</p>
           </div>
           <div class="wn-foot">
             <div class="pvc-seg wn-stops" role="group" aria-label="${t('stops_label')}">
-              ${STOP_IDS.map((id) => `<button data-stop="${id}">${t(`stop_${id}`)}</button>`).join('')}
+              ${STOP_IDS.map((id) => `<button data-stop="${id}" aria-label="${t(`stop_${id}`)}">${stopName(id)}</button>`).join('')}
             </div>
             <button class="pvc-btn primary" data-act="beta"><span></span></button>
           </div>`,
@@ -135,11 +153,14 @@ export function createApp(root, options = {}) {
     for (const fn of listeners.get(type) || []) fn(payload);
   }
 
+  const aspect = () => stage.width / Math.max(1, stage.height);
+  const stopZoom = (stop) => zoomFor(stop, aspect()); // the nucleus is drawn bigger in short, wide views
   const s = {
     stop: STOPS[o.stop] ? o.stop : 'nucleus', // where the zoom is going (or is)
-    z: zoomOf(STOPS[o.stop] ? o.stop : 'nucleus'), // the zoom now: log10 of the radius in fm that fits in the view
+    z: zoomFor(STOPS[o.stop] ? o.stop : 'nucleus', aspect()), // the zoom now: log10 of the radius (fm) that fits
     flying: false,
     beta: null, // the β emission: { t0 } (running, from performance.now()) or { frozen: seconds }
+    flyDist: BETA.distance, // fm the electron flies: it stops inside the view (set from the view's size)
     neutral: false, // a test question asks which force it is: no green, no force label
     mystery: null, // a test question hides this: 'beta' (what the ray is) | 'reach' (how far the force acts)
     counts: false, // a test question shows the numbers of protons and neutrons on their labels
@@ -149,13 +170,16 @@ export function createApp(root, options = {}) {
     userMovedCamera: false,
     rotating: false,
     shownReach: false, // the student has looked at the reach (the chip stops glowing)
+    intro: false, // the first look at the atom, before the zoom goes in by itself
   };
   const now = () => performance.now();
   const betaTime = () => (s.beta ? (s.beta.frozen ?? (now() - s.beta.t0) / 1000) : null);
   const betaNow = () => {
     const tt = betaTime();
-    return tt == null ? null : betaAt(tt);
+    return tt == null ? null : betaAt(tt, s.flyDist);
   };
+  /** The spark is over: the force has done its work (its label gives way to "neutron → proton"). */
+  const sparkOver = () => (betaTime() ?? 0) >= BETA.spark[1];
 
   function snapshot() {
     const b = betaNow();
@@ -168,6 +192,7 @@ export function createApp(root, options = {}) {
       protons: b ? b.protons : NUCLEUS.protons,
       neutrons: b ? b.neutrons : NUCLEUS.neutrons,
       electrons: b ? b.emitted : 0,
+      flight: +s.flyDist.toFixed(2), // fm the electron flies in the figure (it stops inside the view)
       scale: bar.exp,
       view: s.view,
       mode: s.mode,
@@ -197,7 +222,7 @@ export function createApp(root, options = {}) {
     const b = betaNow();
     let k;
     let html;
-    if (s.stop === 'atom') [k, html] = ['atom', t('idea_atom', { atom: P(-10) })];
+    if (s.stop === 'atom') [k, html] = ['atom', t('idea_atom', { atom: P(-10), r: P(-18) })];
     else if (s.stop === 'reach') [k, html] = ['reach', t('idea_reach', { r: P(-18) })];
     else if (!b) [k, html] = ['nucleus', t('idea_nucleus')];
     else if (b.phase === 'change') [k, html] = ['change', t('idea_change')];
@@ -211,7 +236,7 @@ export function createApp(root, options = {}) {
       el.idea.innerHTML = html;
     }
     const running = Boolean(b && s.beta.t0 != null && b.phase !== 'done');
-    el.betaLabel.textContent = t(b && s.stop === 'nucleus' && !running ? 'act_again' : 'act_beta');
+    el.betaLabel.textContent = t(b && s.stop === 'nucleus' && b.phase === 'done' ? 'act_again' : 'act_beta');
     el.betaBtn.classList.toggle('is-busy', running);
     el.betaBtn.setAttribute('aria-disabled', String(running || s.locked));
     for (const btn of el.stops) {
@@ -241,7 +266,8 @@ export function createApp(root, options = {}) {
   const pxPerFm = () => stage.height / 2 / (camera.position.length() * tanHalf()) / 10 ** s.z;
   /** The camera is inside the changing neutron (its ball is then hidden and the haze shows). */
   const camFm = () => camera.position.length() * 10 ** s.z;
-  const insideNeutron = () => focusWeight(s.z) > 0.99 && camFm() < NUCLEON_R * 0.97;
+  const toNeutron = () => focusWeight(s.z, stopZoom('nucleus')); // 0 looking at the nucleus … 1 into the neutron
+  const insideNeutron = () => toNeutron() > 0.99 && camFm() < NUCLEON_R * 0.97;
   let bar = { exp: 0, px: 0 };
   let barKey = '';
   const birth = new THREE.Vector3();
@@ -249,7 +275,7 @@ export function createApp(root, options = {}) {
 
   function applyScene() {
     const R = 10 ** s.z;
-    focus.copy(D.pos).multiplyScalar(focusWeight(s.z));
+    focus.copy(D.pos).multiplyScalar(toNeutron());
     world.scale.setScalar(1 / R);
     world.position.copy(focus).multiplyScalar(-1 / R);
     const ppf = pxPerFm();
@@ -257,14 +283,14 @@ export function createApp(root, options = {}) {
     nucleusWrap.scale.setScalar(enlarge);
     const into = insideNeutron();
     nucleusWrap.visible = !into;
-    const haze = focusWeight(s.z) > 0.5 ? (1 - smoothstep(NUCLEON_R * 0.8, NUCLEON_R * 1.05, camFm())).toFixed(3) : '0';
+    const haze = toNeutron() > 0.5 ? (1 - smoothstep(NUCLEON_R * 0.8, NUCLEON_R * 1.05, camFm())).toFixed(3) : '0';
     if (haze !== inside.style.opacity) inside.style.opacity = haze;
     world.updateMatrixWorld(true);
 
     // signs on the balls, when they are big enough to read
     const bigEnough = NUCLEON_R * ppf * enlarge >= SIGN_PX;
     for (const x of signs) x.sign.material.visible = bigEnough;
-    faceCamera(signs, nucleus.root, camera);
+    faceCamera(signs, nucleus.root, camera, nucleus.centres);
 
     // the atom: fades out as the zoom goes into the nucleus
     const fade = smoothstep(2.3, 3.7, s.z);
@@ -280,12 +306,14 @@ export function createApp(root, options = {}) {
     // the scale bar: the longest power of ten that fits
     bar = scaleBar(ppf, Math.min(stage.width * 0.5, 240));
     const hide = s.mystery === 'reach' || (s.stop === 'atom' && !s.flying); // at the atom, its size line says it
-    const k = `${bar.exp}|${Math.round(bar.px)}|${hide}`;
+    // inside the neutron the bar also says what part of a neutron (about 10⁻¹⁵ m) it is: 10, 100, 1000 times smaller
+    const part = toNeutron() > 0.5 && bar.exp <= -16 && s.mystery !== 'times' ? 10 ** (-15 - bar.exp) : 0;
+    const k = `${bar.exp}|${Math.round(bar.px)}|${hide}|${part}`;
     if (k !== barKey) {
       barKey = k;
       scaleEl.hidden = hide || !(bar.px > 0);
       el.bar.style.width = `${Math.round(bar.px)}px`;
-      el.barText.innerHTML = P(bar.exp);
+      el.barText.innerHTML = part ? `${P(bar.exp)} <em>(${t('scale_of_neutron', { n: part })})</em>` : P(bar.exp);
     }
     setNote();
   }
@@ -303,9 +331,9 @@ export function createApp(root, options = {}) {
     beta.spark.scale.setScalar((size * (0.65 + 0.35 * b.spark)) / (ppf * enlarge));
     beta.spark.material.opacity = Math.min(1, b.spark * 1.8);
     birth.copy(D.pos).addScaledVector(EXIT, NUCLEON_R + 0.1);
-    const flying = b.electron != null && b.phase !== 'done';
-    beta.electron.visible = flying;
-    beta.minus.visible = flying && 0.34 * ppf * enlarge >= SIGN_PX * 0.6;
+    const out = b.electron != null; // it stays where its flight ended, inside the view, with its "−"
+    beta.electron.visible = out;
+    beta.minus.visible = out && 0.34 * ppf * enlarge >= SIGN_PX * 0.6;
     if (b.electron == null) return beta.setTrack(birth, null);
     ePos.copy(birth).addScaledVector(EXIT, b.electron);
     beta.electron.position.copy(ePos);
@@ -319,11 +347,11 @@ export function createApp(root, options = {}) {
     s.beta = null;
     lastPhase = null;
     nucleus.setChange(0);
-    annotations.remove('weak');
-    annotations.remove('beta');
+    for (const id of ['weak', 'new', 'beta']) removeLabel(id);
   }
   function playBeta() {
     clearBeta();
+    updateFlyDist();
     s.beta = { t0: now() };
     beta.setNeutral(s.neutral);
     coach?.objectUsed();
@@ -332,10 +360,47 @@ export function createApp(root, options = {}) {
   }
   function freezeBeta(k) {
     clearBeta();
+    updateFlyDist();
     s.beta = { frozen: Math.min(1, Math.max(0, k)) * BETA.duration };
     beta.setNeutral(s.neutral);
     refresh();
     emitChange();
+  }
+  const atNucleus = () => s.stop === 'nucleus' && !s.flying && Math.abs(s.z - stopZoom('nucleus')) < 1e-3;
+  /**
+   * How far (fm) the electron flies: about 85% of the way from where it is made to the edge of the view, so that it
+   * ends inside the picture at every size (worked out from the camera, at the nucleus).
+   */
+  function updateFlyDist() {
+    if (!atNucleus()) return;
+    applyScene();
+    camera.updateMatrixWorld();
+    const at = (d) => toScreen(nucleus.root.localToWorld(w0.copy(D.pos).addScaledVector(EXIT, NUCLEON_R + 0.1 + d)));
+    const a = at(0);
+    const e = at(1);
+    const len = Math.hypot(e.x - a.x, e.y - a.y);
+    if (!(len > 0.01)) return;
+    // the way out is a straight line on the screen too: how far along it is the edge (with a margin)?
+    const ux = (e.x - a.x) / len;
+    const uy = (e.y - a.y) / len;
+    const m = 16;
+    let edge = 1e4;
+    if (ux > 0) edge = Math.min(edge, (stage.width - m - a.x) / ux);
+    if (ux < 0) edge = Math.min(edge, (m - a.x) / ux);
+    if (uy > 0) edge = Math.min(edge, (stage.height - m - a.y) / uy);
+    if (uy < 0) edge = Math.min(edge, (m - a.y) / uy);
+    // the distance (fm) at which the electron is drawn 85% of the way there; it comes toward the camera a little,
+    // so it seems to speed up on the screen: find it on the drawn points, not from the first step
+    const want = 0.85 * Math.max(0, edge);
+    let lo = 0;
+    let hi = 16;
+    for (let i = 0; i < 30; i++) {
+      const mid = (lo + hi) / 2;
+      const p = at(mid);
+      if (p.z < 1 && Math.hypot(p.x - a.x, p.y - a.y) < want) lo = mid;
+      else hi = mid;
+    }
+    s.flyDist = Math.max(1.5, lo);
   }
   function onPhase(phase) {
     if (phase) emit('beta', { phase });
@@ -357,7 +422,14 @@ export function createApp(root, options = {}) {
       lastPhase = phase;
       onPhase(phase);
     }
-    if (b && b.electron != null && !annotations.has('beta')) maybeBetaLabel();
+    if (b && s.stop === 'nucleus' && !s.flying && !s.rotating) {
+      // when the spark is over, the force's name gives way to what it did: "neutron → proton" on the changed ball
+      if (sparkOver() && !annotations.has('new')) {
+        removeLabel('weak');
+        addNewLabel();
+      }
+      if (b.electron != null && !annotations.has('beta')) maybeBetaLabel();
+    }
     const running = Boolean(b && s.beta.t0 != null && phase !== 'done');
     return running; // keep drawing while it moves (the zoom and camera flights keep drawing through the tweener)
   });
@@ -369,8 +441,9 @@ export function createApp(root, options = {}) {
     if (!STOPS[stop]) return Promise.resolve(false);
     const my = ++flight;
     const z0 = s.z;
-    const z1 = zoomOf(stop);
+    const z1 = stopZoom(stop);
     s.stop = stop;
+    s.intro = false;
     if (stop === 'reach') {
       clearBeta(); // the zoom goes into a neutron that has not changed yet
       s.shownReach = true;
@@ -390,13 +463,15 @@ export function createApp(root, options = {}) {
     s.flying = true;
     refresh();
     emitChange();
+    // each power of ten takes its time: slowly through the last thousand times inside the neutron
+    const path = zoomPath(z0, z1);
     return tweener
       .animate({
         key: 'zoom',
-        duration: 0.8 + 0.33 * Math.abs(z1 - z0),
+        duration: path.duration,
         ease: ease.inOutSine,
         onUpdate: (k) => {
-          s.z = z0 + (z1 - z0) * k;
+          s.z = path.at(k);
           stage.invalidate();
         },
       })
@@ -409,6 +484,7 @@ export function createApp(root, options = {}) {
   }
   function arrive() {
     applyScene();
+    updateFlyDist();
     buildLabels();
     refresh();
     emitChange();
@@ -430,7 +506,7 @@ export function createApp(root, options = {}) {
     audio.unlock();
     const b = betaNow();
     if (b && s.beta.t0 != null && b.phase !== 'done') return showHint(t('hint_wait'), { duration: 1800 });
-    if (s.stop !== 'nucleus' || s.flying || Math.abs(s.z - zoomOf('nucleus')) > 1e-3) {
+    if (!atNucleus()) {
       // not at the nucleus yet (another stop, a zoom on its way, the first look at the atom): go there first
       const my = ++act;
       goStop('nucleus').then((ok) => ok && my === act && !s.locked && playBeta());
@@ -502,7 +578,10 @@ export function createApp(root, options = {}) {
     emit('view', { view: s.view });
     emitChange();
     return flyCam(viewPose(VIEW_DIRS[s.view]), animate ? 0.8 : 0).then((done) => {
-      if (done && !s.flying) buildLabels();
+      if (done && !s.flying) {
+        updateFlyDist(); // the electron's way on the screen has turned with the view
+        buildLabels();
+      }
       return done;
     });
   }
@@ -514,13 +593,20 @@ export function createApp(root, options = {}) {
   });
   controls.addEventListener('end', () => {
     s.rotating = false;
-    if (!s.flying) setTimeout(() => !s.rotating && !s.flying && buildLabels(), 350);
+    if (!s.flying)
+      setTimeout(() => {
+        if (s.rotating || s.flying) return;
+        updateFlyDist();
+        buildLabels();
+      }, 350);
   });
   stage.onResize(() => {
     // re-fit at once (a camera flight in progress ends where it was going; the zoom goes on by itself)
     const dir = s.userMovedCamera ? camera.position.clone().sub(controls.target).normalize() : VIEW_DIRS[s.view];
     flyCam(viewPose(dir), 0);
+    if (!s.flying && !s.intro) s.z = stopZoom(s.stop); // a new aspect may draw the nucleus bigger or smaller
     root.classList.toggle('wn-compact', stage.height < 300 || stage.width < 360);
+    updateFlyDist();
     requestAnimationFrame(() => !s.flying && !s.rotating && buildLabels());
   });
 
@@ -576,19 +662,28 @@ export function createApp(root, options = {}) {
     if (x + w - a.x < -4) return { dx: x + w - a.x, dy }; // its right edge, left of the anchor
     return { dx: Math.max(-4, Math.min(4, x + w / 2 - a.x)), dy }; // centred above or below it
   }
-  let placed = []; // label boxes placed so far (this layout)
+  const placed = new Map(); // label id → its box on the screen (this layout)
+  function removeLabel(id) {
+    annotations.remove(id);
+    placed.delete(id);
+  }
   function obstacles() {
     const rects = [ui.corner, note, scaleEl, ui.hint.classList.contains('show') ? ui.hint : null].map(rectOf).filter(Boolean);
     const circles = [];
     const segs = [];
     if (s.stop === 'nucleus' || s.stop === 'atom') circles.push(nucleusDisc());
     if (s.stop === 'nucleus') {
-      // the electron's way out, from the neutron to the edge of the view
+      // the electron's way out, from the neutron to where it stops
       const a = toScreen(nucleus.root.localToWorld(w0.copy(D.pos)));
-      const b = toScreen(nucleus.root.localToWorld(w0.copy(D.pos).addScaledVector(EXIT, BETA.distance)));
+      const b = toScreen(nucleus.root.localToWorld(w0.copy(D.pos).addScaledVector(EXIT, NUCLEON_R + s.flyDist)));
       segs.push({ a, b });
     }
     if (s.stop === 'reach') circles.push(reachDisc());
+    if (s.stop === 'atom')
+      for (let i = 0; i < atom.electrons.length; i++) {
+        const e = toScreen(atom.electronWorld(i, w0)); // the electron dots: a label never sits on one
+        circles.push({ x: e.x, y: e.y, r: ELECTRON_PX + 2 });
+      }
     return { rects, circles, segs };
   }
   function nucleusDisc() {
@@ -620,12 +715,12 @@ export function createApp(root, options = {}) {
       const y0 = disc.y + uy * out - h / 2;
       const box = { x: Math.min(Math.max(x0, 6), stage.width - w - 6), y: Math.min(Math.max(y0, 6), stage.height - h - 6), w, h };
       let cost = (Math.abs(box.x - x0) + Math.abs(box.y - y0)) * 3 + Math.abs(turn) * 0.4;
-      for (const r of [...obs.rects, ...placed]) cost += overlap(box, r);
+      for (const r of [...obs.rects, ...placed.values()]) cost += overlap(box, r);
       for (const c of obs.circles) cost += circleHit(box, c) * 40;
       for (const sg of obs.segs) cost += segmentHit(box, sg) * 60;
       if (!best || cost < best.cost) best = { box, cost };
     }
-    placed.push(best.box);
+    placed.set(id, best.box);
     const pt = new THREE.Vector3();
     let point = () => anchor(pt);
     let from = a;
@@ -648,10 +743,15 @@ export function createApp(root, options = {}) {
   }
   const narrow = () => stage.width < 520; // labels in two lines
   const nucleonAt = (i) => (out) => nucleus.root.localToWorld(out.copy(nucleus.nucleons[i].pos));
+  /** While the spark shows: the force's name, beyond the nucleus and below the electron's way out. */
   function addWeakLabel() {
-    if (s.neutral || annotations.has('weak')) return;
-    // on the point where it acts (the spark); the name beyond the nucleus, below the electron's way out
-    place('weak', t(narrow() ? 'label_weak_2' : 'label_weak'), nucleonAt(nucleus.changing), 32, LABEL_COLOR.weak, nucleusDisc(), 4);
+    if (s.neutral || annotations.has('weak') || sparkOver()) return;
+    place('weak', t(narrow() ? 'label_weak_2' : 'label_weak'), nucleonAt(nucleus.changing), 32, LABEL_COLOR.weak, nucleusDisc(), 4, NUCLEON_R);
+  }
+  /** After it: what the force did, on the ball that changed (now a proton). */
+  function addNewLabel() {
+    if (annotations.has('new')) return;
+    place('new', t(narrow() ? 'label_new_2' : 'label_new'), nucleonAt(nucleus.changing), 32, LABEL_COLOR.p, nucleusDisc(), 4, NUCLEON_R);
   }
   /**
    * The β ray's name rides beside its track once the electron is well out of the nucleus: above it, or below it
@@ -690,7 +790,8 @@ export function createApp(root, options = {}) {
     if (Math.sign(ny || 1) !== side) [nx, ny] = [-nx, -ny];
     const { w, h } = betaBox;
     const along = Math.min(Math.max(len * 0.55, w / 2 + 16), Math.max(len - w / 2, w / 2 + 16));
-    const off = (Math.abs(nx) * w + Math.abs(ny) * h) / 2 + 8;
+    const eR = 0.34 * pxPerFm() * nucleusWrap.scale.x; // the electron's radius on the screen: the label clears it
+    const off = (Math.abs(nx) * w + Math.abs(ny) * h) / 2 + 6 + eR;
     return unprojectAt(a.x + ux * along + nx * off, a.y + uy * along + ny * off, sA, out);
   }
   function betaLabelText() {
@@ -703,14 +804,14 @@ export function createApp(root, options = {}) {
     nucleus.root.localToWorld(sB.copy(D.pos).addScaledVector(EXIT, NUCLEON_R + 0.1 + b.electron));
     const a = toScreen(sA);
     const e = toScreen(sB);
-    if (Math.hypot(e.x - a.x, e.y - a.y) < 90 && b.phase !== 'done') return; // not yet out far enough
+    if (Math.hypot(e.x - a.x, e.y - a.y) < 60 && b.phase !== 'done') return; // not yet out far enough
     const text = betaLabelText();
     betaBox = boxSize(text);
     // the side of the track where it covers less (the force's name, the buttons, the note), above when equal
     const cost = (side) => {
       const c = toScreen(betaLabelPoint(w0, side));
       const bx = { x: c.x - betaBox.w / 2, y: c.y - betaBox.h / 2, w: betaBox.w, h: betaBox.h };
-      const others = [...placed, ...obstacles().rects];
+      const others = [...placed.values(), ...obstacles().rects];
       return others.reduce((sum, r) => sum + overlap(bx, r), 0) + (side === 1 ? 1 : 0);
     };
     betaSide = cost(-1) <= cost(1) ? -1 : 1;
@@ -720,7 +821,7 @@ export function createApp(root, options = {}) {
   /** All the labels for what is on the screen now. */
   function buildLabels() {
     annotations.clear();
-    placed = [];
+    placed.clear();
     if (s.flying || s.rotating) return;
     if (s.stop === 'nucleus') {
       const disc = nucleusDisc();
@@ -731,15 +832,21 @@ export function createApp(root, options = {}) {
         : [t('label_proton'), t('label_neutron')];
       place('p', pText, nucleonAt(nucleus.labelled.p), -125, LABEL_COLOR.p, disc, 10, NUCLEON_R);
       place('n', nText, nucleonAt(nucleus.labelled.n), 170, LABEL_COLOR.n, disc, 10, NUCLEON_R);
-      if (b) addWeakLabel();
+      if (b && sparkOver()) addNewLabel();
+      else if (b) addWeakLabel();
       if (b && b.electron != null) maybeBetaLabel();
     } else if (s.stop === 'atom') {
-      // the atom's size on a line under it, then the nucleus and one electron
+      // the atom's size: on its line, or under it when the label would cover most of the line and its arrows
       const size = t('label_atom_size', { s: P(-10) });
       const pt = new THREE.Vector3();
-      annotations.add('size', { text: size, point: () => atom.sizeMid(pt), dx: 0, dy: 0, kind: 'callout', color: LABEL_COLOR.nucleus });
-      placed.push(boxAt(atom.sizeMid(w0), size));
-      place('nucleus', t('label_nucleus'), (out) => nucleusWrap.getWorldPosition(out), 140, LABEL_COLOR.nucleus, nucleusDisc(), 22);
+      const box = boxAt(atom.sizeMid(w0), size);
+      const lineLen = Math.abs(toScreen(atom.sizeEnd(1, w0)).x - toScreen(atom.sizeEnd(-1, w1)).x);
+      const under = box.w > 0.7 * lineLen ? box.h / 2 + 6 : 0;
+      annotations.add('size', { text: size, point: () => atom.sizeMid(pt), dx: 0, dy: under, kind: 'callout', color: LABEL_COLOR.nucleus });
+      placed.set('size', { ...box, y: box.y + under });
+      // the nucleus's label with its dot on the edge, so the dot does not cover the little nucleus
+      const rim = nucleus.radius * nucleusWrap.scale.x * 1.25;
+      place('nucleus', t('label_nucleus'), (out) => nucleusWrap.getWorldPosition(out), 140, LABEL_COLOR.nucleus, nucleusDisc(), 16, rim);
       const e = toScreen(atom.electronWorld(4, w0));
       place('e', t('label_electron'), (out) => atom.electronWorld(4, out), -40, LABEL_COLOR.e, { x: e.x, y: e.y, r: ELECTRON_PX + 2 }, 18);
     } else {
@@ -860,6 +967,7 @@ export function createApp(root, options = {}) {
     w_proton: 'what_m_nucleon',
     w_neutron: 'what_m_nucleon',
     r_any: 'range_m_any',
+    r_15: 'range_m_strong',
     s_none: 'strong_m_none',
   };
   /** The scene of a question: where the zoom is, the nucleus fresh (or the β emission stopped at k), what is hidden. */
@@ -881,6 +989,11 @@ export function createApp(root, options = {}) {
   let kinds = [];
   let question = null;
   let lastPick = -1;
+  let qToken = 0; // the question on the screen: a reveal's late step checks it is still the same one
+  /** After the zoom has arrived (the promise setupQuestion gave), and if the question is still on: play it. */
+  function playWhenThere(q) {
+    q.arrived.then((ok) => ok && q.token === qToken && quiz.active && s.stop === 'nucleus' && playBeta());
+  }
   const quiz = createQuiz({
     ui,
     t,
@@ -894,10 +1007,16 @@ export function createApp(root, options = {}) {
         act++;
         hideHint();
         for (const b of el.stops) b.classList.remove('wn-nudge');
-        kinds = shuffle(['cause', pickOne(['what', 'count']), pickOne(['range', 'far']), pickOne(['strong', 'order']), 'where']);
+        // "which force?" first (later scenes name the force in green); the range's value, when it is asked, comes
+        // before the "how many times smaller" question, whose picture shows 10⁻¹⁸ m
+        const rest = shuffle([pickOne(['what', 'count']), pickOne(['range', 'far']), 'times', pickOne(['strong', 'order'])]);
+        const [iRange, iTimes] = [rest.indexOf('range'), rest.indexOf('times')];
+        if (iRange > iTimes && iTimes >= 0) [rest[iRange], rest[iTimes]] = [rest[iTimes], rest[iRange]];
+        kinds = ['cause', ...rest];
         syncUI();
       },
       leave() {
+        qToken++;
         s.mode = 'explore';
         s.locked = false;
         s.neutral = false;
@@ -912,7 +1031,8 @@ export function createApp(root, options = {}) {
       },
       prepare(i, alive, say) {
         const kind = kinds[i % kinds.length];
-        question = { kind };
+        const token = ++qToken;
+        question = { kind, token };
         lastPick = -1;
         const choiceOf = (keys, right) => ({
           choices: [0, 1, 2, 3],
@@ -927,24 +1047,24 @@ export function createApp(root, options = {}) {
           arrived.then((ok) => ok && alive() && playBeta());
           say(t('q_cause'));
           const keys = shuffle(['c_weak', 'c_strong', 'c_em', 'c_gravity']);
-          question = { kind, keys };
+          question = { kind, token, keys };
           return choiceOf(keys, 'c_weak');
         }
         if (kind === 'what') {
           // the ray has gone out; its label asks what it is
-          setupQuestion({ stop: 'nucleus', betaAt: 1, mystery: 'beta' });
+          const arrived = setupQuestion({ stop: 'nucleus', betaAt: 1, mystery: 'beta' });
           say(t('q_what'));
           const keys = shuffle(['w_electron', 'w_proton', 'w_neutron', 'w_light']);
-          question = { kind, keys };
+          question = { kind, token, keys, arrived };
           return choiceOf(keys, 'w_electron');
         }
         if (kind === 'count') {
           // the nucleus before, its labels with the numbers: think what changes
-          setupQuestion({ stop: 'nucleus', counts: true });
+          const arrived = setupQuestion({ stop: 'nucleus', counts: true });
           const p = NUCLEUS.protons;
           const n = NUCLEUS.neutrons;
           say(t('q_protons'));
-          question = { kind, p, n };
+          question = { kind, token, p, n, arrived };
           return {
             choices: shuffle([p + 1, p, p - 1, n]),
             expected: p + 1,
@@ -958,7 +1078,7 @@ export function createApp(root, options = {}) {
           setupQuestion({ stop: 'reach', mystery: 'reach' });
           say(t('q_range'));
           const opts = shuffle([-18, -15, -10, 'any']);
-          question = { kind, opts };
+          question = { kind, token, opts, keys: opts.map((x) => (x === 'any' ? 'r_any' : `r_${-x}`)) };
           return {
             choices: [0, 1, 2, 3],
             expected: opts.indexOf(-18),
@@ -967,26 +1087,35 @@ export function createApp(root, options = {}) {
             meta: { kind },
           };
         }
+        if (kind === 'times') {
+          // inside the neutron, the sphere and its 10⁻¹⁸ m are on the screen (the bar's "part of a neutron" is not):
+          // with the neutron's size from the question, three powers of ten
+          setupQuestion({ stop: 'reach', mystery: 'times' });
+          say(' ');
+          ui.$('.pvc-q-text').innerHTML = t('q_times', { r15: P(-15) }); // the kit writes plain text; this has a power
+          const opts = shuffle([10, 100, 1000, 1e6]);
+          question = { kind, token, opts };
+          return {
+            choices: opts,
+            expected: 1000,
+            tolerance: 0.5,
+            label: (x) => (x === 1e6 ? t('times_lakh', { n: 10 }) : t('times_n', { n: x })),
+            meta: { kind },
+          };
+        }
         if (kind === 'far') {
           setupQuestion({ stop: 'atom' });
           say(t('q_far'));
           const keys = shuffle(['far_gravity', 'far_weak', 'far_both', 'far_none']);
-          question = { kind, keys };
+          question = { kind, token, keys };
           return choiceOf(keys, 'far_gravity');
         }
-        if (kind === 'strong' || kind === 'order') {
-          setupQuestion({ stop: 'nucleus' });
-          say(t(kind === 'strong' ? 'q_strong' : 'q_order'));
-          const keys = shuffle(kind === 'strong' ? ['s_gravity', 's_em', 's_strong', 's_none'] : ['o_between', 'o_first', 'o_last', 'o_third']);
-          question = { kind, keys };
-          return choiceOf(keys, kind === 'strong' ? 's_gravity' : 'o_between');
-        }
-        // where: the whole atom on the screen (the other forces' places are in it, or far beyond it)
-        setupQuestion({ stop: 'atom' });
-        say(t('q_where'));
-        const keys = shuffle(['wh_nucleus', 'wh_earth', 'wh_comb', 'wh_atom']);
-        question = { kind, keys };
-        return choiceOf(keys, 'wh_nucleus');
+        // strength: stronger than which force, or where it goes among the four
+        setupQuestion({ stop: 'nucleus' });
+        say(t(kind === 'strong' ? 'q_strong' : 'q_order'));
+        const keys = shuffle(kind === 'strong' ? ['s_gravity', 's_em', 's_strong', 's_none'] : ['o_between', 'o_first', 'o_last', 'o_third']);
+        question = { kind, token, keys };
+        return choiceOf(keys, kind === 'strong' ? 's_gravity' : 'o_between');
       },
       reveal(shown, correct) {
         const q = question;
@@ -999,17 +1128,17 @@ export function createApp(root, options = {}) {
           beta.setNeutral(false);
           if (!s.flying) addWeakLabel();
           stage.invalidate();
-          return t('cause_why') + note_;
+          return note_ ? t('cause_answer') + note_ : t('cause_why'); // with a mistake to name, the answer alone leads
         }
         if (q.kind === 'what') {
+          // it plays again, named: the blue "−" electron leaves the nucleus (once the zoom is there)
           s.mystery = null;
-          annotations.remove('beta');
-          maybeBetaLabel();
+          playWhenThere(q);
           return t('what_why') + note_;
         }
         if (q.kind === 'count') {
-          // it happens: one neutron turns red
-          if (s.stop === 'nucleus' && !s.flying) playBeta();
+          // it happens: one neutron turns red and the numbers on the labels change (once the zoom is there)
+          playWhenThere(q);
           const said = shown.choices[lastPick];
           const why = said === q.n ? 'count_m_n' : said < q.p ? 'count_m_less' : 'count_m_same';
           const mistake = correct ? '' : ` ${t(why, { n: q.n })}`;
@@ -1020,14 +1149,18 @@ export function createApp(root, options = {}) {
           barKey = '';
           if (!s.flying) buildLabels();
           stage.invalidate();
-          const picked_ = q.opts[lastPick];
-          const extra = !correct && picked_ === 'any' ? ` ${t('range_m_any')}` : '';
-          return t('range_why', { r, r15: P(-15), r10: P(-10) }) + extra;
+          return t('range_why', { r, r15: P(-15), r10: P(-10) }) + (note_ ? ` ${t(MISTAKES[picked], { r15: P(-15) })}` : '');
+        }
+        if (q.kind === 'times') {
+          // now the scale bar also says it: a thousandth of a neutron
+          s.mystery = null;
+          barKey = '';
+          stage.invalidate();
+          return t('times_why', { k: 1000, ten: 10, r, r15: P(-15) });
         }
         if (q.kind === 'far') return t('far_why', { r });
         if (q.kind === 'strong') return t('strong_why') + note_;
-        if (q.kind === 'order') return t('order_why');
-        return t('where_why', { r });
+        return t('order_why');
       },
       done() {
         s.locked = false;
@@ -1146,19 +1279,18 @@ export function createApp(root, options = {}) {
   root.classList.toggle('wn-compact', stage.height < 300 || stage.width < 360);
   flyCam(viewPose(VIEW_DIRS[s.view]), 0);
   // the first time (with the pointers on) the zoom starts at the whole atom and goes into the nucleus
-  const intro = o.coach && o.mode !== 'quiz' && s.stop === 'nucleus' && o.beta == null;
-  if (intro) s.z = zoomOf('atom');
+  s.intro = o.coach && o.mode !== 'quiz' && s.stop === 'nucleus' && o.beta == null;
+  if (s.intro) s.z = stopZoom('atom');
   syncUI();
   if (o.beta != null && Number.isFinite(Number(o.beta)) && s.stop === 'nucleus') freezeBeta(Number(o.beta));
   applyScene();
-  if (!intro) buildLabels();
+  if (!s.intro) buildLabels();
   refresh();
   const ready = (async () => {
     if (o.mode === 'quiz') quiz.start();
-    else if (intro) {
+    else if (s.intro) {
       setTimeout(() => {
-        if (s.stop !== 'nucleus' || s.flying || s.mode !== 'explore' || s.z !== zoomOf('atom')) return;
-        s.z = zoomOf('atom');
+        if (!s.intro || s.stop !== 'nucleus' || s.flying || s.mode !== 'explore') return;
         goStop('nucleus');
       }, 700);
       coach?.start(3900);

@@ -19,6 +19,7 @@ export const STRINGS = {
     stop_atom: 'পরমাণু',
     stop_nucleus: 'নিউক্লিয়াস',
     stop_reach: 'দুর্বল বলের পাল্লা',
+    stop_reach_short: 'পাল্লা',
     act_beta: 'β রশ্মি দেখো',
     act_again: 'আবার দেখো',
 
@@ -27,18 +28,20 @@ export const STRINGS = {
       'তেজস্ক্রিয় নিউক্লিয়াস থেকে যে <b class="c-e">বিটা (β) রশ্মি বা ইলেকট্রন</b> বের হয়, সেটার কারণ <b class="c-weak">দুর্বল নিউক্লীয় বল</b>। নিউক্লিয়াসে চাপ দিয়ে দেখো।',
     idea_change: 'নিউক্লিয়াসের ভেতরে <b class="c-weak">দুর্বল নিউক্লীয় বল</b> কাজ করছে: একটি নিউট্রন বদলে যাচ্ছে…',
     idea_done:
-      '<b class="c-weak">দুর্বল নিউক্লীয় বলের</b> কারণে একটি নিউট্রন প্রোটন হয়ে গেল (প্রোটন <b class="c-p">{p0} → {p1}</b>, নিউট্রন <b class="c-n">{n0} → {n1}</b>), আর একটি <b class="c-e">ইলেকট্রন</b> বেরিয়ে এল: এটাই বিটা (β) রশ্মি।',
-    idea_atom: 'একটি পরমাণুর আকার প্রায় {atom}। ইলেকট্রনকে নিউক্লিয়াসের দিকে টানে তড়িৎ চৌম্বক বল: মহাকর্ষ আর তড়িৎ চৌম্বক বল যেকোনো দূরত্ব থেকে কাজ করতে পারে।',
-    idea_reach: '<b class="c-weak">দুর্বল নিউক্লীয় বল</b> কাজ করে খুবই অল্প দূরত্বে, মাত্র {r}: এই গোলকের বাইরে নয়। একটি নিউট্রন এর চেয়ে প্রায় হাজার গুণ বড়।',
+      '<b class="c-weak">দুর্বল নিউক্লীয় বলের</b> কারণে একটি নিউট্রন প্রোটন হয়ে গেল (প্রোটন <b class="c-p wn-nw">{p0} → {p1}</b>, নিউট্রন <b class="c-n wn-nw">{n0} → {n1}</b>), আর একটি <b class="c-e">ইলেকট্রন</b> বেরিয়ে এল: এটাই বিটা (β) রশ্মি।',
+    idea_atom:
+      'পরমাণুর মাপ প্রায় {atom}। ইলেকট্রনকে টানে তড়িৎ চৌম্বক বল, যা যেকোনো দূরত্ব থেকে কাজ করে; কিন্তু <b class="c-weak">দুর্বল নিউক্লীয় বলের</b> পাল্লা এর দশ কোটি ভাগের এক ভাগ ({r})।',
+    idea_reach:
+      '<b class="c-weak">দুর্বল নিউক্লীয় বল</b> কাজ করে মাত্র {r} দূরত্বে; এই গোলকের বাইরে এটি কাজ করে না। নিউট্রন একটি ফুটবলের সমান হলে এই পাল্লা হতো একটি বালুকণার মতো।',
 
-    // the four forces (forces.json: weakest first)
-    forces_title: 'চার মৌলিক বল ও পাল্লা',
-    forces_order: 'দুর্বল → সবল',
+    // the four forces (forces.json: weakest first; the heading as in the other three force figures)
+    forces_title: 'চার মৌলিক বল (সবচেয়ে দুর্বল → সবচেয়ে শক্তিশালী)',
     f_gravity: 'মহাকর্ষ',
     f_weak: 'দুর্বল নিউক্লীয়',
     f_em: 'তড়িৎ চৌম্বক',
     f_strong: 'সবল নিউক্লীয়',
-    range_inf: 'অসীম',
+    range_inf: 'পাল্লা অসীম',
+    range_is: 'পাল্লা {r}',
     strength_book: '<b class="c-weak">দুর্বল নিউক্লীয় বল</b> তড়িৎ চৌম্বক বল থেকে দুর্বল (প্রায় ট্রিলিয়ন গুণ), কিন্তু মোটেও মহাকর্ষ বলের মতো এত দুর্বল নয়।',
 
     // labels on the 3D
@@ -49,6 +52,8 @@ export const STRINGS = {
     label_beta: 'বিটা (β) রশ্মি বা ইলেকট্রন',
     label_beta_2: 'বিটা (β) রশ্মি<br>বা ইলেকট্রন',
     label_beta_q: 'বিটা (β) রশ্মি = ?',
+    label_new: 'নিউট্রন → প্রোটন',
+    label_new_2: 'নিউট্রন<br>→ প্রোটন',
     label_electron: 'ইলেকট্রন',
     label_nucleus: 'নিউক্লিয়াস',
     label_reach: 'দুর্বল নিউক্লীয় বলের পাল্লা',
@@ -60,6 +65,7 @@ export const STRINGS = {
     note_atom: 'ছবি প্রতীকী; নিউক্লিয়াস আর ইলেকট্রন বড় করে আঁকা',
     note_reach: 'একটি নিউট্রনের ভেতরে (ছবি প্রতীকী)',
     scale_label: 'মাপকাঠি',
+    scale_of_neutron: 'নিউট্রনের {n} ভাগের এক ভাগ',
 
     coach_tap: 'নিউক্লিয়াসে চাপ দাও',
     coach_lens: 'বিবর্ধক সরাতে এখানে ধরে টানো',
@@ -86,9 +92,10 @@ export const STRINGS = {
     c_em: 'তড়িৎ চৌম্বক বল',
     c_gravity: 'মহাকর্ষ বল',
     cause_why: '<b>দুর্বল নিউক্লীয় বল</b>: বিটা (β) রশ্মি বা ইলেকট্রন বের হওয়ার কারণ এই বল।',
-    cause_m_strong: 'সবল নিউক্লীয় বল নিউক্লিয়াসকে ধরে রাখে।',
-    cause_m_em: 'নিউট্রনকে প্রোটনে বদলায় দুর্বল নিউক্লীয় বল।',
-    cause_m_gravity: 'এত ছোট কণার মধ্যে মহাকর্ষ বল খুবই দুর্বল।',
+    cause_answer: '<b>দুর্বল নিউক্লীয় বল</b>।',
+    cause_m_strong: 'সবল নিউক্লীয় বল নিউক্লিয়াসকে ধরে রাখে; বিটা (β) রশ্মির কারণ দুর্বল নিউক্লীয় বল।',
+    cause_m_em: 'ইলেকট্রনের আধান আছে বলে তড়িৎ চৌম্বক বল মনে হতে পারে, কিন্তু নিউট্রনকে প্রোটনে বদলায় দুর্বল নিউক্লীয় বল।',
+    cause_m_gravity: 'এত ছোট কণার মধ্যে মহাকর্ষ বল খুবই দুর্বল; বিটা (β) রশ্মির কারণ দুর্বল নিউক্লীয় বল।',
 
     q_what: 'নিউক্লিয়াস থেকে বের হওয়া বিটা (β) রশ্মি আসলে কী?',
     w_electron: 'ইলেকট্রন',
@@ -103,7 +110,7 @@ export const STRINGS = {
     count_n: '{n}টি',
     label_proton_n: 'প্রোটন: {n}টি',
     label_neutron_n: 'নিউট্রন: {n}টি',
-    count_why: '<b>{p1}টি</b>: একটি নিউট্রন প্রোটন হয়ে যায় (নিউট্রন {n0} → {n1}), আর ইলেকট্রনটি বেরিয়ে যায়।',
+    count_why: '<b>{p1}টি</b>: একটি নিউট্রন প্রোটন হয়ে যায় (নিউট্রন <span class="wn-nw">{n0} → {n1}</span>), আর ইলেকট্রনটি বেরিয়ে যায়।',
     count_m_same: 'ইলেকট্রন বের হলে নিউক্লিয়াসও বদলায়।',
     count_m_less: 'কোনো প্রোটন বেরিয়ে যায় না।',
     count_m_n: '{n} ছিল নিউট্রনের সংখ্যা।',
@@ -112,6 +119,7 @@ export const STRINGS = {
     r_any: 'যেকোনো দূরত্ব',
     range_why: '<b>{r}</b>, খুবই অল্প দূরত্ব। {r15} প্রায় প্রোটন-নিউট্রনের মাপ, {r10} পরমাণুর।',
     range_m_any: 'অসীম পাল্লা মহাকর্ষ আর তড়িৎ চৌম্বক বলের।',
+    range_m_strong: '{r15} সবল নিউক্লীয় বলের পাল্লা।',
 
     q_far: 'মহাকর্ষ বল আর দুর্বল নিউক্লীয় বলের মধ্যে কোনটি অনেক দূর থেকেও কাজ করতে পারে?',
     far_gravity: 'মহাকর্ষ বল',
@@ -120,13 +128,13 @@ export const STRINGS = {
     far_none: 'কোনোটিই পারে না',
     far_why: '<b>মহাকর্ষ বল</b>: মহাকর্ষ আর তড়িৎ চৌম্বক বল যেকোনো দূরত্ব থেকে কাজ করতে পারে, কিন্তু দুর্বল নিউক্লীয় বল কাজ করে মাত্র {r} দূরত্বে।',
 
-    q_strong: 'নামে "দুর্বল" হলেও দুর্বল নিউক্লীয় বল কোন বলের চেয়ে অনেক বেশি শক্তিশালী?',
+    q_strong: 'নামে “দুর্বল” হলেও দুর্বল নিউক্লীয় বল কোন বলের চেয়ে অনেক বেশি শক্তিশালী?',
     s_gravity: 'মহাকর্ষ বল',
     s_em: 'তড়িৎ চৌম্বক বল',
     s_strong: 'সবল নিউক্লীয় বল',
     s_none: 'কোনো বলের চেয়েই নয়',
     strong_why: '<b>মহাকর্ষ বল</b>: দুর্বল নিউক্লীয় বল তড়িৎ চৌম্বক বল থেকে প্রায় ট্রিলিয়ন গুণ দুর্বল, কিন্তু মোটেও মহাকর্ষ বলের মতো এত দুর্বল নয়।',
-    strong_m_none: 'নাম "দুর্বল" হলেও এটা সবচেয়ে দুর্বল নয়।',
+    strong_m_none: 'নাম “দুর্বল” হলেও এটা সবচেয়ে দুর্বল নয়।',
 
     q_order: 'চারটি মৌলিক বলকে দুর্বল থেকে সবল ক্রমে সাজালে দুর্বল নিউক্লীয় বল কোথায় বসবে?',
     o_between: 'মহাকর্ষ বলের পরে, তড়িৎ চৌম্বক বলের আগে',
@@ -135,12 +143,10 @@ export const STRINGS = {
     o_third: 'তড়িৎ চৌম্বক বলের পরে, সবল নিউক্লীয় বলের আগে',
     order_why: '<b>মহাকর্ষ বলের পরে, তড়িৎ চৌম্বক বলের আগে</b>: দুর্বল থেকে সবল ক্রমে মহাকর্ষ, দুর্বল নিউক্লীয়, তড়িৎ চৌম্বক, সবল নিউক্লীয় বল।',
 
-    q_where: 'দুর্বল নিউক্লীয় বল কোথায় কাজ করে?',
-    wh_nucleus: 'নিউক্লিয়াসের ভেতরের কণাগুলোর মাঝে',
-    wh_earth: 'পৃথিবী আর চাঁদের মাঝে',
-    wh_comb: 'চিরুনি আর কাগজের টুকরোর মাঝে',
-    wh_atom: 'ইলেকট্রন আর নিউক্লিয়াসের মাঝে',
-    where_why: '<b>নিউক্লিয়াসের ভেতরের কণাগুলোর মাঝে</b>, মাত্র {r} দূরত্বে। পৃথিবী-চাঁদকে টানে মহাকর্ষ বল, বাকি দুটোতে তড়িৎ চৌম্বক বল।',
+    q_times: 'একটি নিউট্রনের মাপ প্রায় {r15}। দুর্বল নিউক্লীয় বলের পাল্লা এর চেয়ে কত গুণ ছোট?',
+    times_n: '{n} গুণ',
+    times_lakh: '{n} লক্ষ গুণ',
+    times_why: '<b>{k} গুণ</b>: {r15} থেকে {r} তিন ধাপ, প্রতি ধাপে {ten} গুণ ছোট ({ten} × {ten} × {ten} = {k})। নিউট্রন একটি ফুটবল হলে পাল্লাটি একটি বালুকণা।',
   },
   en: {
     title: 'Weak nuclear force',
@@ -156,6 +162,7 @@ export const STRINGS = {
     stop_atom: 'Atom',
     stop_nucleus: 'Nucleus',
     stop_reach: 'Weak force range',
+    stop_reach_short: 'Range',
     act_beta: 'Show the β ray',
     act_again: 'Show again',
 
@@ -163,19 +170,19 @@ export const STRINGS = {
       'The <b class="c-e">beta (β) ray, or electron,</b> that comes out of a radioactive nucleus is caused by the <b class="c-weak">weak nuclear force</b>. Tap the nucleus to see it.',
     idea_change: 'Inside the nucleus the <b class="c-weak">weak nuclear force</b> is acting: a neutron is changing…',
     idea_done:
-      'Because of the <b class="c-weak">weak nuclear force</b> a neutron became a proton (protons <b class="c-p">{p0} → {p1}</b>, neutrons <b class="c-n">{n0} → {n1}</b>), and an <b class="c-e">electron</b> came out: that is the beta (β) ray.',
+      'Because of the <b class="c-weak">weak nuclear force</b> a neutron became a proton (protons <b class="c-p wn-nw">{p0} → {p1}</b>, neutrons <b class="c-n wn-nw">{n0} → {n1}</b>), and an <b class="c-e">electron</b> came out: that is the beta (β) ray.',
     idea_atom:
-      'An atom is about {atom} across. The electromagnetic force pulls the electrons toward the nucleus: gravity and the electromagnetic force can act from any distance.',
+      'An atom is about {atom} across. The electromagnetic force pulls the electrons and acts from any distance; but the range of the <b class="c-weak">weak nuclear force</b> is a hundred millionth of this ({r}).',
     idea_reach:
-      'The <b class="c-weak">weak nuclear force</b> acts only over a very small distance, just {r}: not outside this sphere. A neutron is about a thousand times bigger.',
+      'The <b class="c-weak">weak nuclear force</b> acts only up to {r}; outside this sphere it does not act. If a neutron were the size of a football, this range would be like a grain of sand.',
 
-    forces_title: 'The four forces and their range',
-    forces_order: 'weak → strong',
+    forces_title: 'The four fundamental forces (weakest → strongest)',
     f_gravity: 'Gravity',
     f_weak: 'Weak nuclear',
-    f_em: 'Electromagnetic',
+    f_em: 'Electro\u00admagnetic', // may break as Electro-|magnetic in a narrow box
     f_strong: 'Strong nuclear',
-    range_inf: 'infinite',
+    range_inf: 'range infinite',
+    range_is: 'range {r}',
     strength_book:
       'The <b class="c-weak">weak nuclear force</b> is weaker than the electromagnetic force (about a trillion times), but not at all as weak as gravity.',
 
@@ -186,6 +193,8 @@ export const STRINGS = {
     label_beta: 'Beta (β) ray, an electron',
     label_beta_2: 'Beta (β) ray,<br>an electron',
     label_beta_q: 'Beta (β) ray = ?',
+    label_new: 'Neutron → proton',
+    label_new_2: 'Neutron<br>→ proton',
     label_electron: 'Electron',
     label_nucleus: 'Nucleus',
     label_reach: 'Range of the weak nuclear force',
@@ -197,6 +206,7 @@ export const STRINGS = {
     note_atom: 'Symbolic picture; nucleus and electrons drawn much bigger',
     note_reach: 'Inside a neutron (symbolic picture)',
     scale_label: 'Scale',
+    scale_of_neutron: 'one {n}th of a neutron',
 
     coach_tap: 'Tap the nucleus',
     coach_lens: 'Drag here to move the magnifier',
@@ -222,9 +232,10 @@ export const STRINGS = {
     c_em: 'Electromagnetic force',
     c_gravity: 'Gravity',
     cause_why: '<b>The weak nuclear force</b>: it is why the beta (β) ray, or electron, comes out.',
-    cause_m_strong: 'The strong nuclear force holds the nucleus together.',
-    cause_m_em: 'What turns the neutron into a proton is the weak nuclear force.',
-    cause_m_gravity: 'Between such tiny particles gravity is extremely weak.',
+    cause_answer: '<b>The weak nuclear force</b>.',
+    cause_m_strong: 'The strong nuclear force holds the nucleus together; the beta (β) ray comes from the weak nuclear force.',
+    cause_m_em: 'The electron has a charge, so it may look electromagnetic, but what turns the neutron into a proton is the weak nuclear force.',
+    cause_m_gravity: 'Between such tiny particles gravity is extremely weak; the beta (β) ray comes from the weak nuclear force.',
 
     q_what: 'What is the beta (β) ray that comes out of the nucleus?',
     w_electron: 'An electron',
@@ -239,7 +250,7 @@ export const STRINGS = {
     count_n: '{n}',
     label_proton_n: 'Protons: {n}',
     label_neutron_n: 'Neutrons: {n}',
-    count_why: '<b>{p1}</b>: a neutron becomes a proton (neutrons {n0} → {n1}), and the electron leaves.',
+    count_why: '<b>{p1}</b>: a neutron becomes a proton (neutrons <span class="wn-nw">{n0} → {n1}</span>), and the electron leaves.',
     count_m_same: 'When the electron comes out, the nucleus changes too.',
     count_m_less: 'No proton leaves.',
     count_m_n: '{n} was the number of neutrons.',
@@ -248,6 +259,7 @@ export const STRINGS = {
     r_any: 'Any distance',
     range_why: '<b>{r}</b>, a very small distance. {r15} is about the size of a proton or neutron, {r10} of an atom.',
     range_m_any: 'Gravity and the electromagnetic force have infinite range.',
+    range_m_strong: '{r15} is the range of the strong nuclear force.',
 
     q_far: 'Of gravity and the weak nuclear force, which can act from very far away?',
     far_gravity: 'Gravity',
@@ -256,14 +268,14 @@ export const STRINGS = {
     far_none: 'Neither can',
     far_why: '<b>Gravity</b>: gravity and the electromagnetic force can act from any distance, but the weak nuclear force acts only up to {r}.',
 
-    q_strong: 'It is called "weak", but which force is the weak nuclear force much stronger than?',
+    q_strong: 'It is called “weak”, but which force is the weak nuclear force much stronger than?',
     s_gravity: 'Gravity',
     s_em: 'Electromagnetic force',
     s_strong: 'Strong nuclear force',
     s_none: 'None of them',
     strong_why:
       '<b>Gravity</b>: the weak nuclear force is about a trillion times weaker than the electromagnetic force, but not at all as weak as gravity.',
-    strong_m_none: 'It is called "weak", but it is not the weakest.',
+    strong_m_none: 'It is called “weak”, but it is not the weakest.',
 
     q_order: 'If the four fundamental forces are put in order from weakest to strongest, where does the weak nuclear force go?',
     o_between: 'After gravity, before the electromagnetic force',
@@ -273,13 +285,11 @@ export const STRINGS = {
     order_why:
       '<b>After gravity, before the electromagnetic force</b>: from weakest to strongest, gravity, weak nuclear, electromagnetic, strong nuclear.',
 
-    q_where: 'Where does the weak nuclear force act?',
-    wh_nucleus: 'Between the particles inside the nucleus',
-    wh_earth: 'Between the Earth and the Moon',
-    wh_comb: 'Between a comb and bits of paper',
-    wh_atom: 'Between electrons and the nucleus',
-    where_why:
-      '<b>Between the particles inside the nucleus</b>, only up to {r}. Gravity pulls the Earth and the Moon; the electromagnetic force acts in the other two.',
+    q_times: 'A neutron is about {r15} across. How many times smaller is the range of the weak nuclear force?',
+    times_n: '{n} times',
+    times_lakh: '{n} lakh times',
+    times_why:
+      '<b>{k} times</b>: from {r15} to {r} is three steps, each {ten} times smaller ({ten} × {ten} × {ten} = {k}). If a neutron were a football, the range would be a grain of sand.',
   },
 };
 
