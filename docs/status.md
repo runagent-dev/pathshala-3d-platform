@@ -36,23 +36,28 @@ touch-tested (see `docs/agents/`). The ones from page 36 on are at studio status
 Nothing: the batch for pages 43–69 (ten figures) is merged. `images/` (untracked, in the studio checkout) still
 holds those ten pages; they are all done. New pages come as new images there.
 
+## Recently merged
+
+- **#18 kit 1.2.0** (`shared/CHANGELOG.md`): what the chapter-2 figures worked around is now in the kit: labels
+  placed clear of each other and of the corner buttons (`createAnnotations` `spots` + `avoid`), `createArrow`, the
+  quiz's `lines` (steady sheet height) and `reveal(q, correct, picked)`, the coach's `inset` / `labelAt`. New
+  figures use these instead of their own `src/labels.js`; the existing figures keep their copies for now. Visual
+  comparison over all 23 figures: identical apart from the two flaky ones below.
+- **#17 `fix(verify)`**: verify's pictures are in the poster state, setup commands included (as `npm run export`).
+  `npm run verify` passes for all 23 figures (`screw-gauge`, `si-prefixes` and `vernier-caliper` got their
+  `maintainers` at the same time).
+
 ## Open pull requests (not merged)
 
-- **#18 `feat(kit)`: kit 1.2.0** (what the chapter-2 figures worked around: arrows, annotations with collision
-  avoidance, coach, loupe, quiz reveal getting the picked index…). Needs a rebase on the new `main` and
-  `npm run test:visual` over all 23 figures (the ten new ones weren't in its comparison), then the owner's OK.
-- **#17 `fix(verify)`**: verify's pictures in the poster state including setup commands. Needs a rebase and a
-  verify run over the new figures before merging.
 - **#1–#4**: Dependabot updates (actions, tooling). Review and merge when convenient.
 
 ## Known issues
 
 - **CI "Visual comparison" flakes** on `speed-velocity` (up to ~160 px) and `periodic-motion` (15–76 px) in PRs that
-  don't touch them: those two figures aren't fully deterministic under the virtual clock. Every other check is
-  reliable. Fix in the figures (or the kit) in its own PR; until then read the log to see which figures differ.
-- **Kit gaps** many figures worked around (candidates for the kit): a screen-space label placer with collision
-  avoidance (`src/labels.js` in several figures), camera fitting with per-side margins (`src/camera.js`), the quiz's
-  `reveal` not receiving the picked index, the coach refusing spots within 48 px of the stage bottom.
+  don't touch them: those two figures aren't fully deterministic under the virtual clock (they differ even when
+  `main` is compared with itself). Every other check is reliable. Fix in the figures (or the kit) in its own PR;
+  until then read the log to see which figures differ.
+- **Kit gap left**: camera fitting with per-side margins (`src/camera.js` in several figures).
 - **Units** in `newtons-first-law`, `inertia`, `stopwatch`, `simple-harmonic-motion` are Bangla abbreviations
   (মি/সে); the kinematics figures use the book's symbols (see `docs/book-notes.md`). Owner to decide.
 
