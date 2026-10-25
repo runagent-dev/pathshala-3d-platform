@@ -1,0 +1,100 @@
+/* Inertia: the page, and the colours of the two parts compared: the lower body (or the card) in blue, the upper
+   body (or the coin) in orange, the same in the 3D arrows, the labels and the panel. The student view itself is
+   ../../shared/lib/student/student.css (linked first). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.pvc { --c-lower: #1c6fd9; --c-upper: #e8590c; }
+.pvc-t.lower { --c: var(--c-lower); }
+.pvc-t.upper { --c: var(--c-upper); }
+
+/* the learn sheet: the idea, the two speeds, what happens, the four events */
+.in .pvc-learn { gap: 8px; justify-content: flex-start; }
+.in-idea { margin: 0; font-size: 14.5px; line-height: 1.45; color: var(--ink); }
+.in-idea b { font-weight: 700; }
+.in-speeds { display: flex; align-items: center; gap: 4px 14px; }
+.in-k { max-width: 5.6em; font-size: 12.5px; line-height: 1.25; color: var(--ink-2); font-weight: 500; }
+.in-speeds .pvc-t { min-width: 4.4em; }
+.in-speeds .pvc-t b { font-size: 22px; line-height: 1.2; }
+.in-speeds .pvc-t small { max-width: none; font-size: 12.5px; color: var(--c); font-weight: 600; white-space: nowrap; }
+.in-u { font-size: 14px; color: var(--ink-2); align-self: center; margin-top: -14px; white-space: nowrap; }
+/* a narrow side panel: the name of the two speeds on its own line above them */
+@container pvc-panel (max-width: 300px) {
+  .in-speeds { flex-wrap: wrap; row-gap: 0; }
+  .in-k { flex-basis: 100%; max-width: none; }
+}
+/* what happens, or why: as tall as its longest version, so the 3D view keeps its size */
+.in-extra { margin: 0; min-height: 5.8em; font-size: 13.5px; line-height: 1.45; color: var(--ink-2); }
+.in-extra b { color: var(--ink); font-weight: 700; }
+.in-evs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: auto; }
+.in-ev.pvc-btn { height: 38px; padding: 0 8px; font-size: 14.5px; white-space: nowrap; }
+.in-ev.pvc-btn.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+
+/* top left of the view: play / pause / again, and the slow-motion note */
+.in-tl { position: absolute; left: 10px; top: 10px; z-index: 5; display: flex; align-items: center; gap: 8px; pointer-events: none; }
+.in-tl .pvc-tool { pointer-events: auto; height: 38px; width: 38px; padding: 0; justify-content: center; color: var(--accent); }
+.in-tl .pvc-tool svg { width: 20px; height: 20px; }
+/* a narrow view: the note goes under the button, clear of the view buttons on the right */
+.in .pvc-stage { container: in-stage / inline-size; }
+@container in-stage (max-width: 400px) {
+  .in-tl { flex-direction: column; align-items: flex-start; gap: 4px; }
+}
+.in-badge { padding: 3px 9px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line-2); color: var(--ink-2); font-size: 13px; font-weight: 500; white-space: nowrap; }
+
+/* labels on the scene: which part (coloured) and what it does */
+.in-tag { position: absolute; left: 0; top: 0; padding: 2px 8px 3px; border-radius: 5px; background: rgba(255, 255, 255, 0.94); border: 1.5px solid var(--c); font-size: 12.5px; line-height: 1.28; color: var(--ink); white-space: nowrap; will-change: transform; pointer-events: none; }
+.in-tag b { display: block; color: var(--c); font-weight: 700; font-size: 13px; }
+.in-tag-lines { position: absolute; inset: 0; width: 100% !important; height: 100% !important; overflow: visible; pointer-events: none; }
+.in-tag-lines line { stroke-width: 1.5; }
+
+/* the test: words as answers, up to two lines */
+.in .pvc-q-text { min-height: 2.8em; }
+.in .pvc-q-feedback { min-height: 4.35em; font-size: 14px; }
+.in .pvc-opt { height: 52px; padding: 0 6px; line-height: 1.2; }
+.in-opt { display: flex; flex-direction: column; align-items: center; font-size: 14.5px; font-weight: 600; line-height: 1.22; white-space: normal; text-align: center; }
+.in-opt b { font-weight: 700; }
+.in-opt small { font-size: 12px; font-weight: 500; color: inherit; opacity: 0.85; }
+
+/* wide frames: the words on the left, the events on the right, so the panel stays low and the 3D view big */
+@container pvc (min-width: 720px) and (min-height: 461px) {
+  .in .pvc-learn { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 26px; row-gap: 8px; align-content: start; }
+  .in-idea { grid-column: 1 / -1; font-size: 15.5px; }
+  .in-speeds { grid-column: 1; align-self: start; }
+  .in-extra { grid-column: 2; min-height: 4.35em; font-size: 14px; }
+  .in-evs { grid-column: 1 / -1; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 2px; }
+  .in-ev.pvc-btn { height: 40px; }
+  .in .pvc-q-text { min-height: 0; }
+  .in .pvc-q-options { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .in .pvc-q-feedback { min-height: 2.9em; }
+  .in-tag { font-size: 13.5px; }
+  .in-tag b { font-size: 14px; }
+}
+/* phones that are not very tall */
+@container pvc (max-width: 560px) and (max-height: 600px) {
+  .in .pvc-learn { gap: 5px; }
+  .in-idea { font-size: 13px; line-height: 1.38; }
+  .in-speeds .pvc-t b { font-size: 19px; }
+  .in-extra { min-height: 5.6em; font-size: 12.5px; line-height: 1.38; }
+  .in-ev.pvc-btn { height: 34px; font-size: 13.5px; }
+  .in .pvc-q-text { font-size: 15px; line-height: 1.35; }
+  .in .pvc-opt { height: 42px; }
+  .in-opt { font-size: 13px; line-height: 1.18; }
+  .in-opt small { font-size: 11.5px; }
+  .in .pvc-q-feedback { font-size: 12.5px; line-height: 1.36; }
+  .in-tl .pvc-tool { height: 34px; width: 34px; }
+  .in-badge { font-size: 12px; }
+}
+/* phone sideways: the panel is a narrow column beside the view */
+@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
+  .in .pvc-learn { gap: 6px; }
+  .in-idea { font-size: 13px; line-height: 1.38; }
+  .in-speeds { gap: 2px 10px; }
+  .in-speeds .pvc-t b { font-size: 19px; }
+  .in-extra { min-height: 7.1em; font-size: 12.5px; line-height: 1.38; }
+  .in-ev.pvc-btn { height: 34px; font-size: 13px; padding: 0 4px; }
+  .in .pvc-q-text { min-height: 0; font-size: 14.5px; }
+  .in .pvc-opt { height: 46px; }
+  .in-opt { font-size: 13px; }
+  .in .pvc-q-feedback { font-size: 12.5px; line-height: 1.36; min-height: 5.5em; }
+}

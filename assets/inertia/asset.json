@@ -1,0 +1,102 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "inertia",
+  "title": "Inertia (জড়তা)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 64,
+  "topic": "3.1.1",
+  "placement": "Book pages 64–65, topic 3.1.1: জড়তা (Inertia). Next to the paragraphs about a car starting suddenly and getting off a moving bus or train.",
+  "order": 2,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "Interactive 3D figure for inertia (জড়তা), book pages 64–65, topic 3.1.1. A Dhaka city bus, with its left side cut away, with a school student standing inside, holding nothing. The student chooses an event and watches it in slow motion (time 3x slower, said on the view): the bus starts suddenly (2.5 m/s² for 1 s): the feet go with the bus, the upper body stays where it was, he leans back (স্থিতি জড়তা); the bus brakes suddenly from 4.5 m/s (3 m/s²): the feet stop with the bus, the upper body runs on, he leans forward (গতি জড়তা); he steps off the bus moving at 3 m/s: in the air he keeps the bus's speed, on the road his feet stop and the upper body runs on, he tumbles forward onto his hands and knees (গতি জড়তা). A fourth event is the coin-and-card trick on a glass (time 10x slower): the flicked card shoots away, the coin stays and drops into the glass (স্থিতি জড়তা). A blue arrow on the feet (or the card) and an orange one on the chest (or the coin) show each part's speed along the road; the panel gives both speeds in m/s and the book's explanation; labels say what each part does. Physics: the standing body is an inverted pendulum about the ankles (I = 1.3 m L², L = 0.92 m) with muscle stiffness and damping, driven by the bus's acceleration; the fall keeps the angular momentum m v L = I ω; the coin feels friction (μ = 0.25) only while the card slides under it (a few hundredths of a second). The camera moves on at the speed everything had before the push, so the upper body is seen to stay while the feet are carried away. Test tab: 5 questions (why one leans back, which way one leans on starting or braking, inertia of rest or motion with its reason, which way one falls stepping off, the coin, a gentle start); after each answer the scene plays on and shows it. Phone-first, Bangla.",
+  "tags": ["force", "newtons-laws", "inertia", "inertia-of-rest", "inertia-of-motion", "bus", "coin-and-card", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "event",
+      "label": "Event",
+      "type": "select",
+      "options": [
+        ["start", "sudden start (হঠাৎ চলা শুরু)"],
+        ["brake", "sudden brake (হঠাৎ ব্রেক)"],
+        ["alight", "off a moving bus (চলন্ত বাস থেকে নামা)"],
+        ["coin", "coin and card (কয়েন ও কার্ড)"]
+      ],
+      "default": "start"
+    },
+    {
+      "name": "at",
+      "label": "Show this moment (s of event time, paused)",
+      "type": "number",
+      "default": "",
+      "placeholder": "e.g. 1.15"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "First-use pointers", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "event": "start", "t": 1.15 } },
+    { "name": "set", "payload": { "playing": true } },
+    { "name": "set", "payload": { "event": "brake", "t": 1.32 } },
+    { "name": "set", "payload": { "event": "alight", "t": 1.2 } },
+    { "name": "set", "payload": { "event": "coin", "t": 0.26 } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "event", "end", "view", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": {
+      "params": { "coach": "0", "event": "start", "at": "1.15" },
+      "setup": [{ "command": "set", "payload": { "event": "start", "t": 1.15, "animate": false } }]
+    },
+    "glb": [
+      {
+        "name": "default",
+        "setup": [{ "command": "set", "payload": { "event": "start", "t": 1.15, "animate": false } }]
+      },
+      { "name": "coin", "setup": [{ "command": "set", "payload": { "event": "coin", "t": 0.1, "animate": false } }] }
+    ],
+    "video": {
+      "kind": "script",
+      "seconds": 19,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 0.2, "command": "set", "payload": { "event": "start", "t": 0.2, "playing": true } },
+        { "at": 9.2, "command": "set", "payload": { "event": "alight", "t": 0.25, "playing": true } }
+      ]
+    }
+  }
+}
