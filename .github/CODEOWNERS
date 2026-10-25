@@ -3,4 +3,5 @@
 # No platform owners yet: add GitHub usernames to .github/owners.json, then run npm run generate.
 
 /assets/digital-balance/ @RadeenXALNW
+/assets/linear-motion/ @RadeenXALNW
 /assets/stopwatch/ @RadeenXALNW
