@@ -544,7 +544,10 @@ export function createApp(root, options = {}) {
     if (f.push) labelArrow('P', arrows.P, t('lbl_push', { v: val(f.weight) }), COLORS.pull);
     else anno.remove('P');
     // a resultant that is not zero only ever on a body that is moving (no "লব্ধি বল = …" on a body at rest)
-    labelArrow('R', arrows.R, moving ? t('sym_R') : t('lbl_R', { v: val(f.resultant) }), COLORS.resultant);
+    // the test's answered "which way" picture: the resultant lies on the highlighted letter's arrow, which names it
+    // (the worked answer gives its size): no label of its own to crowd the letter
+    if (q?.cands && q.revealed && s.frozen) anno.remove('R');
+    else labelArrow('R', arrows.R, moving ? t('sym_R') : t('lbl_R', { v: val(f.resultant) }), COLORS.resultant);
     // the "T = ?" of a test question: a callout on the cord
     if (q?.ask && !arrows.T.root.visible) {
       if (!anno.has('ask'))
@@ -1370,8 +1373,9 @@ export function createApp(root, options = {}) {
             refresh();
           })();
           const right = t('letters')[question.order.indexOf('along')];
+          const r = plain(pendulumForces(question.angle, 0).resultant);
           const miss = { down: 'miss_rel_down', string: 'miss_rel_string', level: 'miss_rel_level' }[question.order[picked.index]];
-          return answer(t('why_release', { k: right }), right, miss);
+          return answer(t('why_release', { k: right, r }), t('head_release', { k: right, r }), miss);
         }
         if (k === 'book') {
           s.show = { forces: 'all', numbers: true, zero: false, pair: true };

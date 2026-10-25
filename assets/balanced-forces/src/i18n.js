@@ -110,7 +110,8 @@ export const STRINGS = {
 
     q_release: 'বস্তুটিকে পাশে টেনে ছেড়ে দেওয়া হলো। ঠিক তখন সুতার টান আর ওজনের লব্ধি কোন দিকে?',
     letters: 'কখগঘ',
-    why_release: '<b>{k}</b>: লব্ধি সুতার সাথে সমকোণে, দোলার পথ বরাবর নিচের দিকে; তাই বস্তুটি মাঝের দিকে দুলতে শুরু করে।',
+    why_release: '<b>{k}</b>: লব্ধি ({r}\u00a0{u_N}) সুতার সাথে সমকোণে, দোলার পথ বরাবর নিচের দিকে; তাই বস্তুটি মাঝের দিকে দুলতে শুরু করে।',
+    head_release: '{k} (লব্ধি {r}\u00a0{u_N})',
     miss_rel_down: 'সোজা নিচে শুধু ওজন W; সুতার টান T-ও যোগ করলে লব্ধি সুতার সাথে সমকোণে, পথ বরাবর নিচের দিকে।',
     miss_rel_string: 'সুতা বরাবর শুধু টান T; ওজন W-ও যোগ করলে লব্ধি সুতার সাথে সমকোণে, পথ বরাবর নিচের দিকে।',
     miss_rel_level: 'একেবারে অনুভূমিক নয়: সুতা হেলে আছে, লব্ধি তার সাথে সমকোণে, তাই খানিকটা নিচের দিকেও।',
@@ -245,7 +246,8 @@ export const STRINGS = {
     q_release: 'The body is pulled aside and let go. Just then, which way does the resultant of the pull of the string and the weight point?',
     letters: 'ABCD',
     why_release:
-      '<b>{k}</b>: the resultant is at right angles to the string, along the path and downward; so the body starts to swing towards the middle.',
+      '<b>{k}</b>: the resultant ({r}\u00a0{u_N}) is at right angles to the string, along the path and downward; so the body starts to swing towards the middle.',
+    head_release: '{k} (resultant {r}\u00a0{u_N})',
     miss_rel_down: 'Straight down is the weight W alone; add the pull T and the resultant is at right angles to the string, along the path and down.',
     miss_rel_string:
       'Along the string is the pull T alone; add the weight W and the resultant is at right angles to the string, along the path and down.',
