@@ -326,41 +326,75 @@ export function createStreet() {
   for (let i = 0; i < joint.count; i++) joint.setMatrixAt(i, m.makeTranslation(X0 + i, 0.152, -4.25));
   root.add(joint);
 
-  // behind the bus: low shop fronts in pale colours, trees, lamp posts
+  // the road beside the bus, where a passenger steps down: tar seams across it, darker patches and drain covers,
+  // so one sees the ground stream past while the bus moves
+  const seamMat = mat('TarSeam', 0x6f7276, 0.95);
+  const seams = new THREE.InstancedMesh(new THREE.PlaneGeometry(0.035, 1.25).rotateX(-Math.PI / 2), seamMat, Math.ceil(len / 1.6));
+  for (let i = 0; i < seams.count; i++) seams.setMatrixAt(i, m.makeTranslation(X0 + i * 1.6 + 0.5 * ((i * 7) % 3), 0.004, -1.9));
+  root.add(seams);
+  const patchMat = mat('Patch', 0x9a9da1, 0.95);
+  const patches = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), patchMat, Math.ceil(len / 2.7));
+  const sc = new THREE.Matrix4();
+  for (let i = 0; i < patches.count; i++) {
+    const w = 0.5 + ((i * 37) % 5) * 0.12;
+    const d = 0.25 + ((i * 53) % 4) * 0.08;
+    m.makeTranslation(X0 + i * 2.7 + ((i * 11) % 7) * 0.15, 0.003, -1.55 - ((i * 29) % 5) * 0.16);
+    patches.setMatrixAt(i, m.multiply(sc.makeScale(w, 1, d)));
+  }
+  root.add(patches);
+  const drainMat = mat('DrainCover', 0x55595e, 0.6, 0.4);
+  const drainRim = mat('DrainRim', 0x3e4246, 0.6, 0.3);
+  for (let px = X0 + 3.6; px < X1; px += 5.5) {
+    const cover = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.27, 0.012, 24), drainMat);
+    cover.position.set(px, 0.006, -2.15);
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.025, 6, 24).rotateX(Math.PI / 2), drainRim);
+    rim.position.set(px, 0.008, -2.15);
+    root.add(cover, rim);
+  }
+
+  // behind the bus (seen through its windows): shop fronts with bright signboards, trees and dark lamp posts close
+  // together, so the street clearly slides by
   const palette = [0xe9dcc9, 0xd9e4dc, 0xe6d5d2, 0xdcdfe8, 0xeee3c4];
+  const signColors = [0xb23a48, 0x2f8f83, 0xd9a21b, 0x7a4fa3, 0x3f7f3a];
   const shopGeo = new THREE.BoxGeometry(1, 1, 1);
   const shopMats = palette.map((c, i) => mat(`Shop${i}`, c, 0.9));
-  const winMat = mat('ShopWindow', 0x9aa6b0, 0.4);
+  const signMats = signColors.map((c, i) => mat(`ShopSign${i}`, c, 0.6));
+  const winMat = mat('ShopWindow', 0x7f8b96, 0.4);
   let x = X0;
   let k = 0;
   while (x < X1) {
-    const w = 4.5 + ((k * 37) % 5) * 0.6;
+    const w = 3.2 + ((k * 37) % 5) * 0.5;
     const h = 3.6 + ((k * 53) % 4) * 0.9;
     const shop = new THREE.Mesh(shopGeo, shopMats[k % palette.length]);
     shop.scale.set(w - 0.2, h, 3);
     shop.position.set(x + w / 2, h / 2, 10.5);
-    root.add(shop);
-    const sign = new THREE.Mesh(shopGeo, winMat);
-    sign.scale.set(w - 1.2, 1.4, 0.05);
-    sign.position.set(x + w / 2, 1.3, 8.98);
-    root.add(sign);
+    const front = new THREE.Mesh(shopGeo, winMat);
+    front.scale.set(w - 1.0, 1.25, 0.05);
+    front.position.set(x + w / 2, 0.85, 8.98);
+    const sign = new THREE.Mesh(shopGeo, signMats[(k * 3) % signMats.length]);
+    sign.scale.set(w - 0.6, 0.55, 0.06);
+    sign.position.set(x + w / 2, 1.85, 8.97);
+    root.add(shop, front, sign);
     x += w;
     k++;
   }
-  const trunk = mat('Trunk', 0x8a6a4a, 0.9);
-  const leaves = mat('Leaves', 0x8fbf7f, 0.95);
-  const pole = mat('LampPost', 0x8e959c, 0.5, 0.5);
+  const trunk = mat('Trunk', 0x6b4f35, 0.9);
+  const leaves = mat('Leaves', 0x6fae5f, 0.95);
+  const pole = mat('LampPost', 0x4f5862, 0.5, 0.4);
   for (let px = X0 + 3; px < X1; px += 9) {
-    const tr = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.16, 2.6, 10), trunk);
+    const tr = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.17, 2.6, 10), trunk);
     tr.position.set(px, 1.3, 7.2);
     const crown = new THREE.Mesh(new THREE.SphereGeometry(1.5, 16, 12), leaves);
     crown.position.set(px, 3.6, 7.2);
     crown.scale.set(1, 0.85, 1);
-    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 6, 10), pole);
-    post.position.set(px + 4.5, 3, 6.2);
+    root.add(tr, crown);
+  }
+  for (let px = X0 + 1.5; px < X1; px += 4.5) {
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 6, 10), pole);
+    post.position.set(px, 3, 6.2);
     const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.2, 8).rotateX(Math.PI / 2), pole);
-    arm.position.set(px + 4.5, 5.9, 5.7);
-    root.add(tr, crown, post, arm);
+    arm.position.set(px, 5.9, 5.7);
+    root.add(post, arm);
   }
   return { root };
 }

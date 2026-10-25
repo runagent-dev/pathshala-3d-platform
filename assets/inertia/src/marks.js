@@ -50,9 +50,10 @@ export function createTags({ stage, layer, obstacles }) {
   const tags = new Map();
   const v = new THREE.Vector3();
 
-  function add(id, { color, prefer }) {
+  /** small: a one-line label; optional: left out when every spot would cover something. */
+  function add(id, { color, prefer, small = false, optional = false }) {
     const el = document.createElement('div');
-    el.className = 'in-tag';
+    el.className = small ? 'in-tag in-tag-small' : 'in-tag';
     el.style.setProperty('--c', color);
     el.hidden = true;
     layer.append(el);
@@ -62,7 +63,7 @@ export function createTags({ stage, layer, obstacles }) {
     dot.setAttribute('r', '3.5');
     dot.setAttribute('fill', color);
     svg.append(line, dot);
-    tags.set(id, { el, line, dot, prefer, html: '', anchor: null, last: -1, w: 0, h: 0, box: null });
+    tags.set(id, { el, line, dot, prefer, optional, html: '', anchor: null, last: -1, w: 0, h: 0, box: null });
   }
 
   /** Show tag `id` with this HTML at the 3D point anchor() (or hide it: html null). */
@@ -142,11 +143,15 @@ export function createTags({ stage, layer, obstacles }) {
       // keep it inside the view
       box.x = Math.min(Math.max(box.x, 4), W - box.w - 4);
       box.y = Math.min(Math.max(box.y, 4), H - box.h - 4);
+      // a label that may be left out is, when no spot is free (the panel and the other labels still say it)
+      // (it may touch the edge of an obstacle's box a little, never another label)
+      const crowded = it.optional && (placed.some((b) => overlap(box, b) > 0) || blocks.some((b) => overlap(box, b) > 0.12 * box.w * box.h));
+      const shown = ok && !crowded;
       it.last = best.name;
-      it.box = box;
-      placed.push(box);
+      it.box = shown ? box : null;
+      if (shown) placed.push(box);
       it.el.style.transform = `translate(${Math.round(box.x)}px, ${Math.round(box.y)}px)`;
-      it.el.style.visibility = ok ? 'visible' : 'hidden';
+      it.el.style.visibility = shown ? 'visible' : 'hidden';
       // the leader line: from the point to the nearest spot on the label's edge
       const ex = Math.min(Math.max(p.x, box.x), box.x + box.w);
       const ey = Math.min(Math.max(p.y, box.y), box.y + box.h);
@@ -156,7 +161,7 @@ export function createTags({ stage, layer, obstacles }) {
       it.line.setAttribute('y2', ey);
       it.dot.setAttribute('cx', p.x);
       it.dot.setAttribute('cy', p.y);
-      it.line.style.visibility = it.dot.style.visibility = ok ? 'visible' : 'hidden';
+      it.line.style.visibility = it.dot.style.visibility = shown ? 'visible' : 'hidden';
     }
   }
   stage.onAfterRender(update);

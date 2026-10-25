@@ -35,7 +35,7 @@ export const SEG = {
 export const HEIGHT = SEG.ankle + SEG.shin + SEG.thigh + SEG.torso + SEG.neck + 2 * SEG.head; // 1.635 m
 
 /** The balance model (see the top of the file). */
-export const BALANCE = { L: 0.92, shape: 1.3, wn: 2.8, zeta: 0.4 };
+export const BALANCE = { L: 0.92, shape: 1.3, wn: 2.8, zeta: 0.68 };
 const IL = BALANCE.shape * BALANCE.L; // I / (m L), m
 const K = G / IL + BALANCE.wn ** 2; // muscles: stiffer than gravity's tipping, so the body comes back upright
 const C = 2 * BALANCE.zeta * BALANCE.wn;
@@ -51,8 +51,9 @@ export const BUS = { floor: 0.75, step: 0.4, stand: 0.2, door: -3.9, standZ: -0.
  * and the poster freeze (s); act: when the labels say what each part does [from, to] (s).
  */
 export const EVENTS = {
-  start: { scene: 'bus', v0: 0, pushes: [{ at: 0.5, until: 1.5, a: 2.5, ramp: 0.08 }], duration: 3.1, slow: 3, inertia: 'rest' },
-  brake: { scene: 'bus', v0: 4.5, pushes: [{ at: 0.6, until: 99, a: -3, ramp: 0.08 }], duration: 3.6, slow: 3, inertia: 'motion' },
+  // start and brake: `duration` is the longest they may run; they end once he is upright again (endWhenUpright)
+  start: { scene: 'bus', v0: 0, pushes: [{ at: 0.5, until: 1.5, a: 2.5, ramp: 0.08 }], duration: 4, slow: 3, inertia: 'rest' },
+  brake: { scene: 'bus', v0: 4.5, pushes: [{ at: 0.6, until: 99, a: -3, ramp: 0.08 }], duration: 4.5, slow: 3, inertia: 'motion' },
   alight: { scene: 'bus', v0: 3, pushes: [], duration: 2.6, slow: 3, inertia: 'motion' },
   gentle: { scene: 'bus', v0: 0, pushes: [{ at: 0.5, until: 3.6, a: 0.45, ramp: 1.5 }], duration: 3.8, slow: 3, inertia: 'rest' },
   coin: { scene: 'coin', duration: 0.62, slow: 10, inertia: 'rest' },
@@ -93,8 +94,8 @@ export function pushAt(ev, t) {
 
 /** Angles (rad from straight up; > 0 leans forward, toward +x) and arm angles (rad from straight down; > 0 forward). */
 const STAND = { shin: 0, thigh: 0, torso: 0.03, head: 0, upperArm: 0.08, forearm: 0.22 };
-const CROUCH = { shin: 0.42, thigh: -0.5, torso: 0.2, head: 0.08, upperArm: -0.35, forearm: -0.1 };
-const LAND = { shin: 0.22, thigh: -0.26, torso: 0.1, head: 0.04, upperArm: 0.5, forearm: 0.8 };
+const CROUCH = { shin: 0.42, thigh: -0.5, torso: 0.06, head: 0.06, upperArm: -0.35, forearm: -0.1 };
+const LAND = { shin: 0.22, thigh: -0.26, torso: 0.06, head: 0.04, upperArm: 0.5, forearm: 0.8 };
 export const POSE_KEYS = Object.keys(STAND);
 
 const mix = (a, b, k) => {
@@ -146,6 +147,9 @@ export function reach(dx, dy, a = SEG.upperArm, b = SEG.forearm + SEG.hand * 0.6
   return { upperArm, forearm: Math.atan2(dx - ex, -(dy - ey)) };
 }
 
+/** How far the shoulders move forward per radian as the fall begins (m/rad): ω = v / this keeps their speed. */
+const SHOULDER_TURN = (skeleton(fallPose(0.01)).shoulder.x - skeleton(fallPose(0)).shoulder.x) / 0.01;
+
 /** On hands and knees (the end of the fall): shins on the road, thighs nearly upright, hands on the road. */
 const KNEEL = (() => {
   const p = { shin: 1.64, thigh: 0.4, torso: 1.4, head: 1.05, upperArm: 0, forearm: 0 };
@@ -155,7 +159,7 @@ const KNEEL = (() => {
 
 /**
  * Joint positions (x forward, y up) of a pose, from the ankle at (0, SEG.ankle): ankle, knee, hip, shoulder,
- * neck, head (centre), elbow, wrist, hand (centre), chest (the upper body's middle, where its arrow starts).
+ * neck, head (centre), elbow, wrist, hand (centre), chest (the middle of the trunk).
  */
 export function skeleton(p, out = {}) {
   const at = (from, len, ang, up = true) => ({ x: from.x + len * Math.sin(ang), y: from.y + (up ? 1 : -1) * len * Math.cos(ang) });
@@ -188,7 +192,7 @@ export function simulate(kind) {
 
 function simulateBus(kind, ev) {
   const n = Math.round(ev.duration / DT) + 1;
-  const cols = ['busX', 'busV', 'busA', 'theta', 'rootX', 'rootY', 'rootZ', 'phi', 'kneel', 'crouch', 'chestX', 'chestY', 'feetV', 'chestV', 'camX'];
+  const cols = ['busX', 'busV', 'busA', 'theta', 'rootX', 'rootY', 'rootZ', 'phi', 'kneel', 'upX', 'upY', 'headX', 'feetV', 'upV', 'camX'];
   const T = { kind, scene: 'bus', dt: DT, n, duration: ev.duration };
   for (const c of cols) T[c] = new Float64Array(n);
   T.poses = new Array(n);
@@ -249,16 +253,19 @@ function simulateBus(kind, ev) {
         rootZ = land.z;
         feetV = 0;
         if (handsT == null) {
-          // the feet stop; the body keeps its angular momentum about them: m v L = I ω
-          if (phiV === 0) phiV = ev.v0 / IL;
+          // the feet stop; the upper body runs on at the speed it had (the legs give a little, as legs do), so
+          // the body starts to turn forward about the feet at the rate that keeps the shoulders at that speed;
+          // gravity then tips it further. The pose is drawn for the angle reached so far (0 on the step it
+          // lands), then the angle moves on for the next step.
+          if (phiV === 0) phiV = ev.v0 / SHOULDER_TURN;
+          pose = fallPose(phi);
+          T.phi[i] = phi;
           const acc = (G / IL) * Math.sin(phi) - 0.6 * phiV;
           phiV += acc * DT;
           phi += phiV * DT;
-          if (phi >= HOP.handsAt) handsT = t;
-          pose = fallPose(phi);
-          T.phi[i] = phi;
+          if (phi >= HOP.handsAt) handsT = t + DT;
         }
-        if (handsT != null) {
+        if (handsT != null && t >= handsT - 1e-9) {
           // the hands are on the road: they stay where they landed while the knees come down
           const k = smooth((t - handsT) / HOP.kneel);
           const from = fallPose(HOP.handsAt);
@@ -276,24 +283,48 @@ function simulateBus(kind, ev) {
     T.rootY[i] = rootY;
     T.rootZ[i] = rootZ;
     T.feetV[i] = feetV;
+    // the upper body is followed at the shoulders (the head and shoulders are what "stays"); the head's place
+    // is kept too, for the mark of where it was when the bus started
     const j = skeleton(pose);
-    T.chestX[i] = rootX + j.chest.x;
-    T.chestY[i] = rootY + j.chest.y;
+    T.upX[i] = rootX + j.shoulder.x;
+    T.upY[i] = rootY + j.shoulder.y;
+    T.headX[i] = rootX + j.head.x;
     x += v * DT;
     v = Math.max(0, v + a * DT);
   }
   T.land = land;
   T.handsT = handsT;
-  // the upper body's speed along the road: from the chest's positions (central differences)
+  // the upper body's speed along the road: from the shoulders' positions (central differences)
   for (let i = 0; i < n; i++) {
     const a = Math.max(0, i - 2);
     const b = Math.min(n - 1, i + 2);
-    T.chestV[i] = b > a ? (T.chestX[b] - T.chestX[a]) / ((b - a) * DT) : 0;
+    T.upV[i] = b > a ? (T.upX[b] - T.upX[a]) / ((b - a) * DT) : 0;
   }
   T.act = actWindow(kind, T);
+  endWhenUpright(kind, T);
   T.key = keyMoment(kind, T);
+  if (kind === 'start') T.headMark = T.headX[Math.round(T.act[0] / DT)];
   followCamera(kind, T);
   return T;
+}
+
+/**
+ * A start or a brake ends once he stands upright again with his upper body moving with his feet (the arrays are
+ * cut there), so the last picture, the one looked at longest, shows a calm, upright passenger.
+ */
+function endWhenUpright(kind, T) {
+  if (kind !== 'start' && kind !== 'brake') return;
+  const from = Math.round(T.act[1] / DT);
+  for (let i = from; i < T.n; i++) {
+    if (Math.abs(T.theta[i]) < 0.02 && Math.abs(T.upV[i] - T.feetV[i]) < 0.06) {
+      const n = Math.min(T.n, i + Math.round(0.3 / DT));
+      for (const [k, col] of Object.entries(T)) if (col instanceof Float64Array && col.length === T.n) T[k] = col.subarray(0, n);
+      T.poses = T.poses.slice(0, n);
+      T.n = n;
+      T.duration = roundTo((n - 1) * DT, 1e-6);
+      return;
+    }
+  }
 }
 
 /**
@@ -334,32 +365,34 @@ function followCamera(kind, T) {
     }
 }
 
-/** When the labels say what each part does: from the push (or the landing) until the lean has turned. */
+/**
+ * When the labels say what each part does (and are true): from the push until the upper body has caught up with
+ * the feet (start: its speed reaches theirs; brake: it falls to theirs); stepping off, from the landing until his
+ * hands are on the road. Past that the body straightens up again.
+ */
 function actWindow(kind, T) {
   const ev = EVENTS[kind];
-  if (kind === 'alight') return [T.land.t, Math.min(ev.duration, T.handsT + HOP.kneel * 0.6)];
+  if (kind === 'alight') return [T.land.t, T.handsT];
   const from = ev.pushes[0].at;
-  // the lean is largest where θ turns: there the upper body has caught up with the feet
-  let peak = from;
-  let best = 0;
-  for (let i = 0; i < T.n; i++) {
-    const t = i * DT;
-    if (t < from) continue;
-    if (Math.abs(T.theta[i]) > best) {
-      best = Math.abs(T.theta[i]);
-      peak = t;
-    } else if (Math.abs(T.theta[i]) < best * 0.9) break;
-  }
-  return [from, kind === 'gentle' ? ev.pushes[0].until : peak + 0.15];
+  if (kind === 'gentle') return [from, ev.pushes[0].until];
+  const sign = kind === 'start' ? 1 : -1; // start: the upper body is slower than the feet; brake: faster
+  for (let i = Math.round((from + 0.15) / DT); i < T.n; i++) if (sign * (T.upV[i] - T.feetV[i]) >= 0) return [from, i * DT];
+  return [from, T.duration];
 }
 
 /** The moment that shows the idea best (the test and the poster freeze there). */
 function keyMoment(kind, T) {
-  if (kind === 'alight') return T.land.t + 0.13;
+  if (kind === 'alight') return roundTo(T.land.t + 0.1, 0.001);
   if (kind === 'gentle') return 2.0;
+  // the feet and the upper body differ most in speed (the feet carried away or stopped, the upper body still
+  // nearly as it was): the last moment the difference is within 5 % of its largest, so the lean already shows
   const [from, to] = T.act;
-  // the feet are well ahead (or behind) and the upper body has hardly followed: about 45 % into the lean
-  return roundTo(from + (to - 0.15 - from) * 0.55, 0.01);
+  const d = (i) => Math.abs(T.upV[i] - T.feetV[i]);
+  let best = 0;
+  for (let i = Math.round(from / DT); i < Math.round(to / DT); i++) best = Math.max(best, d(i));
+  let at = from;
+  for (let i = Math.round(from / DT); i < Math.round(to / DT); i++) if (d(i) >= 0.95 * best) at = i * DT;
+  return roundTo(at, 0.01);
 }
 
 function simulateCoin(ev) {
@@ -443,7 +476,7 @@ function simulateCoin(ev) {
 
 /**
  * The state of an event at time t (s, clamped to the event): the bus (busX, busV, busA), the passenger (rootX/Y/Z
- * where the ankles are, pose, theta), the two speeds the figure compares (feetV: the lower body, chestV: the upper
+ * where the ankles are, pose, theta), the two speeds the figure compares (feetV: the lower body, upV: the upper
  * body; for the coin: cardV and coinV), camX (where the camera looks), and phase ('before' | 'act' | 'after').
  */
 export function sampleAt(kind, t) {
@@ -488,7 +521,10 @@ export function sampleAt(kind, t) {
     camLift: lerp('camLift'),
     camZoom: lerp('camZoom'),
     lowerV: lerp('feetV'),
-    upperV: lerp('chestV'),
+    upperV: lerp('upV'),
+    upX: lerp('upX'),
+    upY: lerp('upY'),
+    headMark: T.headMark ?? null,
     landed: T.land != null && tt >= T.land.t,
     kneel: lerp('kneel'),
   };
@@ -507,5 +543,3 @@ export function peakLean(kind) {
   }
   return { theta: best, at };
 }
-
-export const toKmh = (v) => v * 3.6;

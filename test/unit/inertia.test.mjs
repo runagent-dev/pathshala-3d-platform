@@ -44,14 +44,35 @@ describe('inertia: the standing passenger', () => {
     assert.ok(deg(start.theta) > 10 && deg(start.theta) < 25, `a clear but not toppling lean back: ${deg(start.theta)}°`);
     assert.ok(deg(-brake.theta) > 10 && deg(-brake.theta) < 30, `a clear lean forward: ${deg(brake.theta)}°`);
   });
-  it('comes back upright once the bus moves steadily again', () => {
-    assert.ok(Math.abs(deg(m.sampleAt('start', 3.1).theta)) < 5);
-    assert.ok(Math.abs(deg(m.sampleAt('brake', 3.6).theta)) < 8);
+  it('a start or a brake ends with him upright again, his upper body moving with his feet', () => {
+    for (const kind of ['start', 'brake']) {
+      const end = m.sampleAt(kind, m.simulate(kind).duration);
+      assert.ok(Math.abs(deg(end.theta)) < 1.2, `${kind}: lean ${deg(end.theta)}°`);
+      assert.ok(Math.abs(end.upperV - end.lowerV) < 0.07, `${kind}: ${end.upperV} vs ${end.lowerV}`);
+    }
   });
-  it('at the start the upper body lags: the feet go with the bus, the chest is slower', () => {
+  it('while the labels speak (the act), they are true: at the start the upper body is slower than the feet, on braking faster', () => {
+    /** @type {Record<string, number>} start: the feet are faster than the upper body; brake: slower */
+    const signs = { start: 1, brake: -1 };
+    for (const [kind, sign] of Object.entries(signs)) {
+      const [from, to] = m.simulate(kind).act;
+      for (let t = from + 0.1; t < to; t += 0.02) {
+        const s = m.sampleAt(kind, t);
+        assert.ok(sign * (s.lowerV - s.upperV) > 0, `${kind} at ${t.toFixed(2)} s: feet ${s.lowerV}, upper body ${s.upperV}`);
+      }
+    }
+  });
+  it('the head stays at its mark on the road for the first moments of the start', () => {
+    const T = m.simulate('start');
+    for (let t = 0.5; t <= 0.8; t += 0.05) {
+      const s = m.sampleAt('start', t);
+      near(s.rootX + m.skeleton(s.pose).head.x, T.headMark, 0.012, `head at ${t.toFixed(2)} s`);
+    }
+  });
+  it('at the start the upper body lags: the feet go with the bus, the shoulders are much slower', () => {
     const s = m.sampleAt('start', m.simulate('start').key);
     near(s.lowerV, s.busV, 1e-9, 'the feet move with the bus');
-    assert.ok(s.upperV < 0.75 * s.lowerV, `chest ${s.upperV} vs feet ${s.lowerV}`);
+    assert.ok(s.upperV < 0.7 * s.lowerV, `shoulders ${s.upperV} vs feet ${s.lowerV}`);
     // and early on the head has hardly moved while the feet have gone well ahead
     const a = m.sampleAt('start', 0.5);
     const b = m.sampleAt('start', 1.0);
@@ -81,7 +102,14 @@ describe('inertia: stepping off a moving bus', () => {
   it('on the road the feet stop, the upper body is still running on (গতি জড়তা)', () => {
     const s = m.sampleAt('alight', T.land.t + 0.1);
     assert.equal(s.lowerV, 0);
-    assert.ok(s.upperV > 2, `chest ${s.upperV} m/s`);
+    assert.ok(s.upperV > 2, `shoulders ${s.upperV} m/s`);
+  });
+  it('the upper body is never faster than the bus was (no jump at the landing)', () => {
+    for (let i = 0; i < T.n; i++) assert.ok(T.upV[i] <= 3 + 0.1, `${T.upV[i]} m/s at ${(i * T.dt).toFixed(3)} s`);
+    // around the landing the upper body's speed changes smoothly (the hands meeting the road later stop it fast)
+    const a = Math.round((T.land.t - 0.1) / T.dt);
+    const b = Math.round((T.land.t + 0.1) / T.dt);
+    for (let i = a + 1; i < b; i++) assert.ok(Math.abs(T.upV[i] - T.upV[i - 1]) < 0.05, `a jump at ${(i * T.dt).toFixed(3)} s`);
   });
   it('tumbles forward onto hands and knees and stays there, the hands on the road', () => {
     const end = m.sampleAt('alight', m.EVENTS.alight.duration);

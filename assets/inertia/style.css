@@ -45,6 +45,7 @@ body.bg-transparent { background: transparent; }
 /* labels on the scene: which part (coloured) and what it does */
 .in-tag { position: absolute; left: 0; top: 0; padding: 2px 8px 3px; border-radius: 5px; background: rgba(255, 255, 255, 0.94); border: 1.5px solid var(--c); font-size: 12.5px; line-height: 1.28; color: var(--ink); white-space: nowrap; will-change: transform; pointer-events: none; }
 .in-tag b { display: block; color: var(--c); font-weight: 700; font-size: 13px; }
+.in-tag-small { padding: 1px 7px; border-style: dashed; color: var(--c); font-weight: 600; font-size: 12px; }
 .in-tag-lines { position: absolute; inset: 0; width: 100% !important; height: 100% !important; overflow: visible; pointer-events: none; }
 .in-tag-lines line { stroke-width: 1.5; }
 

@@ -67,8 +67,10 @@ test('inertia: the test has five answerable questions and locks the scene while 
   await page.setViewportSize({ width: 390, height: 700 });
   const log = await preparePage(page);
   const fig = await openFigure(page, 'inertia');
+  const canvasHeight = () => fig.frame.evaluate(() => document.querySelector('.pvc-canvas canvas').getBoundingClientRect().height);
   await fig.call('practice');
   await fig.advance(1500);
+  const h0 = await canvasHeight();
   const before = await fig.call('get');
   // keys that would change the event are ignored during a question
   await fig.frame.locator('.pvc-canvas').focus();
@@ -76,9 +78,11 @@ test('inertia: the test has five answerable questions and locks the scene while 
   await fig.advance(200);
   expect((await fig.call('get')).event).toBe(before.event);
   for (let i = 0; i < 5; i++) {
-    await fig.frame.locator('.pvc-opt[data-q="0"]').click();
+    // choices 1, 2, 3, 0, 1: mostly wrong answers, whose worked answer and mistake line are the longest
+    await fig.frame.locator(`.pvc-opt[data-q="${(i + 1) % 4}"]`).click();
     await fig.advance(600);
     await expect(fig.frame.locator('.pvc-q-feedback')).not.toHaveAttribute('data-tone', '');
+    expect(await canvasHeight(), `the 3D view keeps its size after answer ${i + 1}`).toBe(h0);
     await fig.frame.locator('[data-act="q-next"]').click();
     await fig.advance(1500);
   }

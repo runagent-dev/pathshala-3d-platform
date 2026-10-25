@@ -3,7 +3,7 @@
 // go with the bus, the upper body stays: he leans back, স্থিতি জড়তা), brakes suddenly (the feet stop, the upper
 // body runs on: he leans forward, গতি জড়তা), or he steps off the moving bus (the feet stop on the road, the upper
 // body runs on: he tumbles forward, গতি জড়তা); and the coin-and-card trick on a glass (স্থিতি জড়তা). A blue
-// arrow on the feet and an orange one on the chest show how fast each part moves along the road, the panel gives
+// arrow on the feet and an orange one at the shoulders show how fast each part moves along the road, the panel gives
 // the two speeds, and labels say what each part does. Then a short test. Built on the shared student kit.
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
@@ -39,7 +39,10 @@ const ARROW = { bus: { scale: 0.28, r: 0.036 }, coin: { scale: 0.05, r: 0.0022 }
 // the camera looks at the bus's left side from a little above (the doors are on the left in Bangladesh)
 const DIRS = {
   bus: { front: new THREE.Vector3(0, 0.13, -1).normalize(), '3d': new THREE.Vector3(0.55, 0.3, -0.78).normalize() },
-  coin: { front: new THREE.Vector3(0, 0.4, -1).normalize(), '3d': new THREE.Vector3(0.5, 0.5, -0.71).normalize() },
+  // stepping off: a little higher, so the road he lands on (and its seams streaming past) shows
+  alight: { front: new THREE.Vector3(0, 0.24, -1).normalize(), '3d': new THREE.Vector3(0.55, 0.36, -0.76).normalize() },
+  // the coin and card from higher up, so the card, the coin and the inside of the glass show
+  coin: { front: new THREE.Vector3(0, 0.6, -1).normalize(), '3d': new THREE.Vector3(0.5, 0.65, -0.62).normalize() },
 };
 const QUIZ_KINDS = ['start', 'brake', 'alight', 'coin', 'gentle'];
 
@@ -116,7 +119,7 @@ export function createApp(root, options = {}) {
     });
   }
 
-  // the two velocity arrows: the lower body (feet) or the card in blue, the upper body (chest) or the coin in orange
+  // the two velocity arrows: the lower body (feet) or the card in blue, the upper body (shoulders) or the coin in orange
   const arrows = {
     bus: { lower: createArrow(COLOR.lower, ARROW.bus.r), upper: createArrow(COLOR.upper, ARROW.bus.r) },
     coin: { lower: createArrow(COLOR.lower, ARROW.coin.r), upper: createArrow(COLOR.upper, ARROW.coin.r) },
@@ -140,6 +143,7 @@ export function createApp(root, options = {}) {
     phase: 'before',
   };
   const ev = () => EVENTS[s.event];
+  const dur = (kind = s.event) => simulate(kind).duration; // s (a start or a brake ends when he is upright)
   const sceneOf = (kind = s.event) => EVENTS[kind].scene;
   let sample = sampleAt(s.event, 0);
 
@@ -167,15 +171,17 @@ export function createApp(root, options = {}) {
       el.upperLab.textContent = t(coin ? 'part_coin' : 'part_upper');
       el.speedK.textContent = t(coin ? 'speed_k_coin' : 'speed_k_bus');
     }
-    // before the push: what is about to happen; from the push on: why it happens (it stays after the event)
+    // before the push: what is about to happen; while it happens: why; afterwards (start, brake), what happened and
+    // how he straightens up again (the upper body then moves faster, or slower, than the feet)
+    const after = s.phase === 'after' && t.has(`after_${s.event}`);
     const extra =
-      s.phase === 'before' && s.t < simulate(s.event).act[0]
+      s.phase === 'before'
         ? `${t(`set_${s.event}`)} ${s.playing ? t('watch') : t(`do_${s.event}`)}`
-        : t(`why_${s.event}`);
+        : t(after ? `after_${s.event}` : `why_${s.event}`);
     if (extra !== shown.extra) el.extra.innerHTML = shown.extra = extra;
   }
   function syncPlay() {
-    const end = s.t >= ev().duration - 1e-6;
+    const end = s.t >= dur() - 1e-6;
     const [icon, label] = s.playing ? [ICONS.pause, 'act_pause'] : end ? [ICONS.reset, 'act_replay'] : [ICONS.play, 'act_play'];
     playBtn.innerHTML = icon;
     playBtn.setAttribute('aria-label', t(label));
@@ -265,6 +271,25 @@ export function createApp(root, options = {}) {
   }
   tags.add('upper', { color: COLOR.upper, prefer: ['above-left', 'above', 'above-right', 'left', 'right'] });
   tags.add('lower', { color: COLOR.lower, prefer: ['below-left', 'below', 'left', 'below-right', 'right'] });
+  tags.add('mark', { color: COLOR.upper, prefer: ['right', 'below-right', 'far-right', 'above-right', 'below'], small: true, optional: true });
+
+  // the mark of where the head was when the bus started: a thin dashed orange line standing on the bus floor
+  const MARK_TOP = BUS.floor + 1.74; // a little above his head
+  const headMark = new THREE.Group();
+  headMark.name = 'HeadMark';
+  headMark.userData.noExport = true;
+  headMark.visible = false;
+  {
+    const dashMat = new THREE.MeshBasicMaterial({ color: COLOR.upper });
+    const dashGeo = new THREE.BoxGeometry(0.014, 0.07, 0.014);
+    for (let y = BUS.floor + 0.04; y < MARK_TOP; y += 0.12) {
+      const d = new THREE.Mesh(dashGeo, dashMat);
+      d.position.y = y + 0.035;
+      headMark.add(d);
+    }
+  }
+  scene.add(headMark);
+  const markTop = new THREE.Vector3();
   // what each part does; once the card has gone from under it, the coin falls straight down
   const tagHtml = (part, kind) => {
     const which = part === 'part_upper' || part === 'part_coin' ? 'upper' : 'lower';
@@ -278,7 +303,7 @@ export function createApp(root, options = {}) {
   const aim = (a, fallback, out) =>
     a.group.visible && a.length > 0.12 * (sceneOf() === 'coin' ? 0.05 : 1) ? a.pointAt(0.55, out) : out.copy(fallback);
   const feetPoint = new THREE.Vector3();
-  const chestPoint = new THREE.Vector3();
+  const upperPoint = new THREE.Vector3();
 
   // ── putting the scene in its state ──────────────────────────────────────────
   let lastT = 0;
@@ -300,12 +325,17 @@ export function createApp(root, options = {}) {
       const j = passenger.joints;
       const r = passenger.root.position;
       const z = r.z - 0.26; // the arrows run just in front of the body (nearer the camera), so it never hides them
-      const dl = Math.sign(sample.lowerV) || 1;
+      const dl = sample.lowerV < -0.05 ? -1 : 1;
       feetPoint.set(r.x + 0.06 + dl * 0.14, r.y + 0.05, z);
       A.lower.group.position.copy(feetPoint);
-      const du = Math.sign(sample.upperV) || 1;
-      chestPoint.set(r.x + j.chest.x + du * 0.16, r.y + j.chest.y, z);
-      A.upper.group.position.copy(chestPoint);
+      // the upper body's arrow starts at the shoulders (whose speed it shows), in front of or behind the trunk
+      const du = sample.upperV < -0.05 ? -1 : 1;
+      upperPoint.set(r.x + j.shoulder.x + du * 0.17, r.y + j.shoulder.y - 0.07, z);
+      A.upper.group.position.copy(upperPoint);
+      // where the head was when the bus started, marked on the road's frame: the head stays at the mark at first
+      const markOn = s.helpers && sample.headMark != null && sample.phase === 'act';
+      headMark.visible = markOn;
+      if (markOn) headMark.position.set(sample.headMark, 0, r.z + 0.12);
       const k = s.helpers ? ARROW.bus.scale : 0;
       A.lower.set(sample.lowerV, k);
       A.upper.set(sample.upperV, k);
@@ -319,8 +349,8 @@ export function createApp(root, options = {}) {
       const { card: C, coin: K } = TABLE;
       feetPoint.set(sample.cardX + C.w / 2 + 0.003, sample.cardY, -C.d / 2 - 0.004);
       A.lower.group.position.copy(feetPoint);
-      chestPoint.set(sample.coinX + K.r + 0.003, sample.coinY, -0.02);
-      A.upper.group.position.copy(chestPoint);
+      upperPoint.set(sample.coinX + K.r + 0.003, sample.coinY, -0.02);
+      A.upper.group.position.copy(upperPoint);
       const k = s.helpers ? ARROW.coin.scale : 0;
       A.lower.set(sample.lowerV, k);
       A.upper.set(sample.upperV, k);
@@ -334,9 +364,9 @@ export function createApp(root, options = {}) {
     // labels: while the event happens (the "act"), each part says what it does
     const phase = sample.phase;
     const showTags = s.helpers && phase === 'act';
-    const tagKind = kind;
-    tags.set('lower', showTags ? tagHtml(coin ? 'part_card' : 'part_lower', tagKind) : null, () => aim(A.lower, feetPoint, anchorLower));
-    tags.set('upper', showTags ? tagHtml(coin ? 'part_coin' : 'part_upper', tagKind) : null, () => aim(A.upper, chestPoint, anchorUpper));
+    tags.set('lower', showTags ? tagHtml(coin ? 'part_card' : 'part_lower', kind) : null, () => aim(A.lower, feetPoint, anchorLower));
+    tags.set('upper', showTags ? tagHtml(coin ? 'part_coin' : 'part_upper', kind) : null, () => aim(A.upper, upperPoint, anchorUpper));
+    tags.set('mark', headMark.visible ? t('mark_head') : null, () => markTop.set(headMark.position.x, BUS.floor + 0.12, headMark.position.z));
     if (s.playing) sounds(lastT, s.t);
     lastT = s.t;
     placeCamera();
@@ -369,8 +399,8 @@ export function createApp(root, options = {}) {
 
   stage.addTicker((dt) => {
     if (!s.playing) return false;
-    s.t = Math.min(ev().duration, s.t + dt / ev().slow);
-    if (s.t >= ev().duration) {
+    s.t = Math.min(dur(), s.t + dt / ev().slow);
+    if (s.t >= dur()) {
       s.playing = false;
       syncPlay();
       emit('end', { event: s.event });
@@ -386,13 +416,13 @@ export function createApp(root, options = {}) {
       event: s.event,
       scene: sceneOf(),
       t: Math.round(s.t * 1000) / 1000,
-      duration: ev().duration,
+      duration: dur(),
       playing: s.playing,
       phase: s.phase,
       slow: ev().slow,
       inertia: ev().inertia, // 'rest' (স্থিতি জড়তা) | 'motion' (গতি জড়তা)
       lowerSpeed: Math.round(sample.lowerV * 100) / 100, // m/s along the road (the feet, or the card)
-      upperSpeed: Math.round(sample.upperV * 100) / 100, // m/s along the road (the chest, or the coin)
+      upperSpeed: Math.round(sample.upperV * 100) / 100, // m/s along the road (the shoulders, or the coin)
       lean: sceneOf() === 'bus' ? Math.round(THREE.MathUtils.radToDeg(sample.theta || 0) * 10) / 10 : null, // ° (> 0 back)
       landed: Boolean(sample.landed),
       key: T.key,
@@ -407,7 +437,7 @@ export function createApp(root, options = {}) {
   // ── playing ─────────────────────────────────────────────────────────────────
   let lastPress = -1e9;
   function play() {
-    if (s.t >= ev().duration - 1e-6) s.t = 0;
+    if (s.t >= dur() - 1e-6) s.t = 0;
     s.playing = true;
     coach?.objectUsed();
     coach?.objectReleased();
@@ -436,7 +466,7 @@ export function createApp(root, options = {}) {
     const changed = kind !== s.event;
     const sceneChanged = sceneOf(kind) !== sceneOf();
     s.event = kind;
-    s.t = clamp(Number(at) || 0, 0, EVENTS[kind].duration);
+    s.t = clamp(Number(at) || 0, 0, dur(kind));
     lastT = s.t;
     s.playing = false;
     s.phase = '';
@@ -463,7 +493,7 @@ export function createApp(root, options = {}) {
   function step(dir) {
     if (s.playing) pause();
     coach?.objectUsed(); // the student moves through the event: the pointer has done its job
-    s.t = clamp(s.t + dir / 30, 0, ev().duration);
+    s.t = clamp(s.t + dir / 30, 0, dur());
     lastT = s.t;
     pose();
     syncPlay();
@@ -490,18 +520,20 @@ export function createApp(root, options = {}) {
   /** The points the view must hold (relative to focusX): the passenger with room for the arrows, or the glass. */
   function fitPoints() {
     if (sceneOf() === 'coin')
+      // the glass, the card on it (and room ahead for it to fly), the finger and the hand behind it
       return [
-        new THREE.Vector3(-0.1, -0.005, 0),
-        new THREE.Vector3(0.2, -0.005, 0),
-        new THREE.Vector3(-0.1, 0.145, 0),
-        new THREE.Vector3(0.2, 0.145, 0),
+        new THREE.Vector3(-0.19, 0, 0.035),
+        new THREE.Vector3(0.15, 0, 0.035),
+        new THREE.Vector3(-0.19, 0.125, -0.035),
+        new THREE.Vector3(0.15, 0.125, -0.035),
       ];
     const hw = 1.15;
-    // stepping off: from the road where he lands (nearer the camera) to above his head on the door step
+    // stepping off: from the road in front of where he lands (and the kerb) to above his head on the door step
     if (s.event === 'alight')
       return [
-        new THREE.Vector3(-hw, -0.02, BUS.landZ),
-        new THREE.Vector3(hw, -0.02, BUS.landZ),
+        new THREE.Vector3(-hw, 0, -2.25),
+        new THREE.Vector3(hw, 0, -2.25),
+        new THREE.Vector3(0, 0.17, -2.6),
         new THREE.Vector3(-hw, 2.15, BUS.stepZ),
         new THREE.Vector3(hw, 2.15, BUS.stepZ),
       ];
@@ -514,7 +546,7 @@ export function createApp(root, options = {}) {
     ];
   }
   function viewPose(view) {
-    const dir = DIRS[sceneOf()][view];
+    const dir = DIRS[s.event === 'alight' ? 'alight' : sceneOf()][view];
     const pts = fitPoints();
     const target = new THREE.Box3().setFromPoints(pts).getCenter(new THREE.Vector3());
     const right = new THREE.Vector3().crossVectors(UP, dir).normalize();
@@ -592,17 +624,17 @@ export function createApp(root, options = {}) {
       root.focus({ preventScroll: true });
       coach?.interrupt();
       if (e.pointerType === 'mouse' && e.button !== 0) return;
-      down = { x: e.clientX, y: e.clientY, id: e.pointerId, on: pick(canvasPoint(e)) };
+      down = { x: e.clientX, y: e.clientY, id: e.pointerId };
     },
     true,
   );
-  // a tap (not a turn of the view) on the scene plays or pauses the event
+  // a tap anywhere on the view (not a turn of it) plays or pauses the event: the bus may have driven out of sight
+  // and the boy may lie on the road, so the whole view is the target
   ui.canvasHost.addEventListener('pointerup', (e) => {
     if (!down || e.pointerId !== down.id) return;
     const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y);
-    const on = down.on;
     down = null;
-    if (moved > 10 || !on) return;
+    if (moved > 10) return;
     tapScene();
   });
   ui.canvasHost.addEventListener('pointercancel', () => (down = null));
@@ -649,7 +681,10 @@ export function createApp(root, options = {}) {
   let question = null;
   let picked = -1;
   let before = null; // the learn state before the test
-  /** A question with word choices: keys of the options, the right one first (they are shuffled here). */
+  /**
+   * A question with word choices: keys of the options, the right one first (they are shuffled here). meta.qid names
+   * its worked answer (w_<qid>) and the line for each wrong choice's mistake (m_<qid>_<choice>).
+   */
   function wordQuestion(text, keys, meta, label = (k) => t(k)) {
     const order = shuffle([...keys]);
     question = { ...meta, order, right: keys[0] };
@@ -685,6 +720,7 @@ export function createApp(root, options = {}) {
         selectEvent(before?.event ?? 'start');
       },
       prepare(i) {
+        if (i === 0) kinds = shuffle([...QUIZ_KINDS]); // a new order every round ("আবার পরীক্ষা দাও" too)
         const kind = kinds[i % kinds.length];
         s.locked = true;
         s.helpers = false;
@@ -693,41 +729,43 @@ export function createApp(root, options = {}) {
         if (kind === 'start') {
           if (Math.random() < 0.5) {
             selectEvent('start', { at: T.key });
-            return wordQuestion(t('q_start_why'), ['o_up_rest', 'o_bus_push', 'o_up_moving', 'o_air'], { kind, ask: 'why' });
+            return wordQuestion(t('q_start_why'), ['o_up_rest', 'o_bus_push', 'o_up_moving', 'o_air'], { kind, qid: 'start_why' });
           }
           selectEvent('start', { at: 0.2 });
-          return wordQuestion(t('q_start_dir'), ['o_back', 'o_fwd', 'o_side', 'o_none'], { kind, ask: 'direction' });
+          return wordQuestion(t('q_start_dir'), ['o_back', 'o_fwd', 'o_side', 'o_none'], { kind, qid: 'start_dir' });
         }
         if (kind === 'brake') {
           if (Math.random() < 0.5) {
             selectEvent('brake', { at: T.key });
-            // name × reason: each wrong choice mixes up one of the two
+            // the kind of inertia with its reason; the wrong choices are real mistakes: the other kind, the wrong
+            // part of the body, and a push
             const pairs = {
               mm: ['o_kind_motion', 'o_why_moving'],
-              rr: ['o_kind_rest', 'o_why_rest'],
-              mr: ['o_kind_motion', 'o_why_rest'],
-              rm: ['o_kind_rest', 'o_why_moving'],
+              rest: ['o_kind_rest', 'o_why_rest'],
+              feet: ['o_kind_motion', 'o_why_feet'],
+              push: ['o_kind_push', 'o_why_push'],
             };
             return wordQuestion(
               t('q_brake_type'),
-              ['mm', 'rr', 'mr', 'rm'],
-              { kind, ask: 'type' },
+              ['mm', 'rest', 'feet', 'push'],
+              { kind, qid: 'brake_type' },
               (k) => `<b>${t(pairs[k][0])}</b><small>${t(pairs[k][1])}</small>`,
             );
           }
           selectEvent('brake', { at: 0.3 });
-          return wordQuestion(t('q_brake_dir'), ['o_fwd', 'o_back', 'o_side', 'o_none'], { kind, ask: 'direction' });
+          return wordQuestion(t('q_brake_dir'), ['o_fwd', 'o_back', 'o_side', 'o_none'], { kind, qid: 'brake_dir' });
         }
         if (kind === 'alight') {
-          selectEvent('alight', { at: T.land.t });
-          return wordQuestion(t('q_alight'), ['o_fall_fwd', 'o_fall_back', 'o_fall_down', 'o_fall_bus'], { kind });
+          // in the air, a moment before his feet touch the road (nothing in the picture gives the answer away)
+          selectEvent('alight', { at: 0.8 });
+          return wordQuestion(t('q_alight'), ['o_fall_fwd', 'o_fall_back', 'o_fall_down', 'o_fall_bus'], { kind, qid: 'alight' });
         }
         if (kind === 'coin') {
           selectEvent('coin', { at: 0.12 });
-          return wordQuestion(t('q_coin'), ['o_coin_glass', 'o_coin_with', 'o_coin_back', 'o_coin_float'], { kind });
+          return wordQuestion(t('q_coin'), ['o_coin_glass', 'o_coin_with', 'o_coin_back', 'o_coin_float'], { kind, qid: 'coin' });
         }
         selectEvent('gentle', { at: 0.2 });
-        return wordQuestion(t('q_gentle'), ['o_g_little', 'o_g_more', 'o_g_same', 'o_g_fwd'], { kind });
+        return wordQuestion(t('q_gentle'), ['o_g_little', 'o_g_more', 'o_g_same', 'o_g_fwd'], { kind, qid: 'gentle' });
       },
       reveal(_q, correct) {
         // the scene now plays on with its arrows and labels: the answer, seen
@@ -736,14 +774,8 @@ export function createApp(root, options = {}) {
         play();
         const q = question;
         const tapped = q.order[picked];
-        const work =
-          q.kind === 'start'
-            ? t(q.ask === 'why' ? 'w_start_why' : 'w_start_dir')
-            : q.kind === 'brake'
-              ? t(q.ask === 'type' ? 'w_brake_type' : 'w_brake_dir')
-              : t(`w_${q.kind}`);
-        const mistake = !correct && tapped && t(`m_${tapped.slice(2)}`) !== `m_${tapped.slice(2)}` ? ` ${t(`m_${tapped.slice(2)}`)}` : '';
-        return work + mistake;
+        const mistake = !correct && tapped && t.has(`m_${q.qid}_${tapped}`) ? ` ${t(`m_${q.qid}_${tapped}`)}` : '';
+        return t(`w_${q.qid}`) + mistake;
       },
       done() {
         s.locked = false;
@@ -873,7 +905,7 @@ export function createApp(root, options = {}) {
       if (Number(p.t) > 0 || p.playing) coach?.objectUsed();
       if (p.event && EVENTS[p.event]) selectEvent(p.event, { at: p.t ?? 0, animate });
       else if (p.t != null) {
-        s.t = clamp(Number(p.t) || 0, 0, ev().duration);
+        s.t = clamp(Number(p.t) || 0, 0, dur());
         lastT = s.t;
         s.playing = false;
         pose();

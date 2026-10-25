@@ -6,18 +6,31 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { textMesh } from '@shared/student/materials.js';
 import { TABLE } from './motion.js';
 
-export function createTable({ materials: M, t }) {
+/** A light, cool tablecloth with a faint check (made here, no image file), so the card, the coin and the hand stand out. */
+function clothTexture() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 64;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#e6edf3';
+  ctx.fillRect(0, 0, 64, 64);
+  ctx.fillStyle = 'rgba(120, 150, 180, 0.16)';
+  ctx.fillRect(0, 0, 64, 10);
+  ctx.fillRect(0, 0, 10, 64);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(18, 10);
+  return tex;
+}
+
+export function createTable({ t }) {
   const { glass: G, card: C, coin: K } = TABLE;
   const root = new THREE.Group();
   root.name = 'CoinAndCard';
 
-  // the table top: a wooden board
-  const wood = M.wood.clone();
-  wood.name = 'TableWood';
-  wood.map = M.wood.map.clone();
-  wood.map.repeat.set(2.2, 1);
-  wood.map.needsUpdate = true;
-  const board = new THREE.Mesh(new RoundedBoxGeometry(0.9, 0.03, 0.5, 2, 0.006), wood);
+  // the table, under a light tablecloth
+  const cloth = new THREE.MeshStandardMaterial({ name: 'Tablecloth', map: clothTexture(), roughness: 0.95 });
+  const board = new THREE.Mesh(new RoundedBoxGeometry(0.9, 0.03, 0.5, 2, 0.006), cloth);
   board.name = 'Table';
   board.position.set(0.18, -0.015, 0.1);
   board.receiveShadow = true;
@@ -75,21 +88,29 @@ export function createTable({ materials: M, t }) {
   coin.add(five);
   root.add(coin);
 
-  // the finger that flicks the card, coming in from the right of the picture (the hand is out of sight)
-  const skin = new THREE.MeshStandardMaterial({ name: 'Skin', color: 0xb27b50, roughness: 0.6 });
+  // the hand that flicks the card, coming in from the right of the picture: a fist with the forefinger out, and a
+  // white shirt cuff (so it reads as a hand on the light cloth)
+  const skin = new THREE.MeshStandardMaterial({ name: 'Skin', color: 0xa86f47, roughness: 0.6 });
   const hand = new THREE.Group();
-  hand.name = 'Finger';
-  const finger = new THREE.Mesh(new THREE.CapsuleGeometry(0.0085, 0.13, 4, 12).rotateZ(Math.PI / 2), skin);
-  finger.position.x = -0.0735; // its tip at the group's origin
+  hand.name = 'Hand';
+  const finger = new THREE.Mesh(new THREE.CapsuleGeometry(0.0085, 0.036, 4, 12).rotateZ(Math.PI / 2), skin);
+  finger.position.x = -0.0265; // its tip at the group's origin
   const nail = new THREE.Mesh(
     new THREE.SphereGeometry(0.0075, 12, 8),
     new THREE.MeshStandardMaterial({ name: 'Nail', color: 0xe6bfa2, roughness: 0.35 }),
   );
   nail.scale.set(1.3, 0.45, 0.9);
   nail.position.set(-0.009, 0.0068, 0);
-  const knuckle = new THREE.Mesh(new THREE.SphereGeometry(0.0097, 12, 8), skin);
-  knuckle.position.set(-0.05, 0.0012, 0);
-  hand.add(finger, nail, knuckle);
+  const fist = new THREE.Mesh(new RoundedBoxGeometry(0.075, 0.045, 0.07, 3, 0.02), skin);
+  fist.position.set(-0.085, 0.004, 0.012);
+  const thumb = new THREE.Mesh(new THREE.CapsuleGeometry(0.009, 0.03, 4, 10).rotateZ(Math.PI / 2), skin);
+  thumb.position.set(-0.06, -0.006, -0.026);
+  const cuff = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.034, 0.036, 0.06, 20).rotateZ(Math.PI / 2),
+    new THREE.MeshStandardMaterial({ name: 'Cuff', color: 0xf4f6f8, roughness: 0.8 }),
+  );
+  cuff.position.set(-0.15, 0.006, 0.014);
+  hand.add(finger, nail, fist, thumb, cuff);
   root.add(hand);
 
   // a big invisible box round the glass and the card: a tap there flicks the card

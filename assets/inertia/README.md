@@ -7,14 +7,14 @@ standing inside. The student picks an event and watches it in slow motion: the b
 the bus, the upper body stays: he leans back, স্থিতি জড়তা), brakes suddenly (he leans forward, গতি জড়তা), or he steps
 off the moving bus (the feet stop on the road, the upper body runs on: he tumbles forward, গতি জড়তা); a fourth event
 is the coin-and-card trick on a glass (স্থিতি জড়তা). A blue arrow on the feet (the card) and an orange arrow on the
-chest (the coin) show each part's speed along the road (table); then a 5-question test. Units: metres (the GLB too).
+shoulders (the coin) show each part's speed along the road (table); a dashed mark shows where the head was when the bus started. A tap anywhere on the view plays or pauses; then a 5-question test. Units: metres (the GLB too).
 
 `get` returns `{ event ('start' | 'brake' | 'alight' | 'coin', or 'gentle' in the test), scene ('bus' | 'coin'), t (s
 of event time), duration, playing, phase ('before' | 'act' | 'after'), slow (times slower), inertia ('rest' | 'motion'),
-lowerSpeed, upperSpeed (m/s along the road: feet and chest, or card and coin), lean (degrees, > 0 back), landed, key (the
+lowerSpeed, upperSpeed (m/s along the road: feet and shoulders, or card and coin), lean (degrees, > 0 back), landed, key (the
 moment that shows it best), view, mode }`; `set` takes `event` (starts it from the beginning, or at `t`), `t` (shown
 paused), `playing`, `view`, and `animate: false` to jump. The URL parameters `event` and `at` show one moment, paused
-(the poster uses `event=start&at=1.15`).
+(the poster uses `event=start&at=1.05`).
 
 ## Embed
 
@@ -58,7 +58,7 @@ Every figure answers `ping` with `{ asset, version }`. Send commands with `figur
 | Command | Example payload |
 |---|---|
 | `get` | `{}` |
-| `set` | `{"event":"start","t":1.15}` |
+| `set` | `{"event":"start","t":1.05}` |
 | `reset` | `{}` |
 | `practice` | `{}` |
 | `capture` | `{"width":800,"height":500}` |
