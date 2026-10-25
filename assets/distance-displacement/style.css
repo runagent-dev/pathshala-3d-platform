@@ -1,0 +1,73 @@
+/* Distance and displacement: the page, the two quantities' colours (distance blue, displacement orange, as on the
+   map) and the panel's two readings. The student view itself is ../../shared/lib/student/student.css (linked
+   first). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.pvc { --c-dist: #1c6fd9; --c-disp: #e8590c; }
+.dd button { touch-action: manipulation; }
+
+/* the two values on the map (src/values.js places them; they look like the kit's callouts) */
+.dd .dd-tag { padding: 1px 8px; font-size: 14px; box-shadow: 0 1px 3px rgba(20, 30, 45, 0.18); transition: opacity 0.2s; }
+
+/* the two readings side by side: দূরত্ব (scalar) and সরণ (vector, with its direction) */
+.dd-read { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.dd-card { display: flex; flex-direction: column; min-width: 0; padding: 5px 10px 6px; border-radius: 8px; border: 1px solid var(--line); border-left: 4px solid var(--c); background: var(--panel); }
+.dd-card.dist { --c: var(--c-dist); }
+.dd-card.disp { --c: var(--c-disp); }
+.dd-card .k { font-size: 15px; font-weight: 700; line-height: 1.35; color: var(--c); white-space: nowrap; }
+.dd-card .k small { font-size: 12.5px; font-weight: 500; color: var(--ink-3); margin-left: 2px; }
+.dd-card .v { font-size: 15px; line-height: 1.2; color: var(--ink-2); white-space: nowrap; }
+.dd-card .v b { font-size: 27px; font-weight: 700; color: var(--c); font-variant-numeric: tabular-nums; }
+.dd-card .s { display: flex; align-items: center; gap: 4px; min-height: 1.5em; font-size: 13px; line-height: 1.5; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pvc svg.dd-needle { width: 15px; height: 15px; flex: none; fill: var(--c-disp); stroke: none; transition: transform 0.12s linear; }
+
+.dd-extra { margin: 0; min-height: 4.5em; font-size: 13.5px; line-height: 1.5; color: var(--ink-2); } /* 3 lines: the 3D view keeps its size */
+.dd-foot { justify-content: flex-start; gap: 6px; }
+.dd-foot .pvc-btn { height: 38px; padding: 0 12px; font-size: 14.5px; }
+.dd-foot .dd-new { margin-left: auto; }
+
+/* test: answers in words, two lines at most; the question and the worked answer keep their room (steady view) */
+.pvc-opt .dd-opt { font-size: 14px; font-weight: 600; line-height: 1.25; white-space: normal; text-align: center; }
+.pvc-q-text { min-height: 2.8em; }
+.pvc-q-feedback { min-height: 2.9em; }
+
+@container pvc (max-width: 400px) {
+  .dd-foot .pvc-btn { padding: 0 9px; font-size: 14px; }
+  .dd-card { padding: 4px 8px 5px; }
+  .dd-card .v b { font-size: 24px; }
+}
+/* wide (book page, desktop): each reading on one line, the questions fit one line */
+@container pvc (min-width: 700px) {
+  .dd-card { flex-direction: row; flex-wrap: wrap; align-items: baseline; column-gap: 12px; padding: 4px 12px 5px; }
+  .dd-card .s { flex-basis: 100%; }
+  .dd-extra { min-height: 3em; }
+  .pvc-q-text { min-height: 1.45em; }
+}
+/* phones that are not very tall: the values on the map a little smaller */
+@container pvc (max-height: 600px) {
+  .dd .dd-tag { font-size: 12.5px; padding: 0 6px; }
+}
+/* upright and short (390×520): the test sets the panel's height, so it is packed tighter to give the map room */
+@container pvc (max-height: 560px) and (max-width: 560px) {
+  .dd .pvc-tabs button { height: 34px; }
+  .dd .dd-tag { font-size: 11.5px; padding: 0 5px; }
+  .dd .pvc-q-head { min-height: 30px; }
+  .dd .pvc-q-head .pvc-btn { height: 32px; }
+  .dd .pvc-q-text { font-size: 15px; min-height: 2.75em; }
+  .dd .pvc-opt { height: 38px; }
+  .dd .pvc-q-feedback { font-size: 14px; line-height: 1.4; min-height: 2.8em; }
+}
+/* short and wide: the panel is a narrow column beside the map */
+@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
+  .dd-read { grid-template-columns: 1fr; gap: 5px; }
+  .dd-card { flex-direction: row; flex-wrap: wrap; align-items: baseline; column-gap: 8px; padding: 3px 8px; }
+  .dd-card .v b { font-size: 22px; }
+  .dd-card .s { flex-basis: 100%; min-height: 0; }
+  .dd-extra { font-size: 12.5px; min-height: 6em; }
+  .dd-foot { gap: 5px; }
+  .dd-foot .pvc-btn { height: 36px; padding: 0 9px; font-size: 14px; }
+  .dd-foot .dd-new { margin-left: 0; }
+  .pvc-q-text { min-height: 2.8em; }
+}

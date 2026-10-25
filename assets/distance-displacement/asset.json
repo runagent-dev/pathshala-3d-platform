@@ -1,0 +1,93 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "distance-displacement",
+  "title": "Distance and displacement (দূরত্ব ও সরণ)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 39,
+  "topic": "2.4",
+  "placement": "Book page 39, topic 2.4: দূরত্ব ও সরণ. Next to চিত্র ২.০৪ (the winding road), or in place of it.",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "Interactive 3D countryside with the winding road of the book's Figure 2.04 (page 39, topic 2.4), kilometre posts 0-7, the points A, B, C, a compass and a 1 km scale bar. The student drags a cyclist along the road (or taps the road, or rides to B, to C, back to A). A blue trail shows the distance travelled (দূরত্ব, a scalar: out on one side of the road, back on the other, a second stripe for a second pass) and a straight orange arrow from A shows the displacement (সরণ, a vector: size and direction); each has its value beside it on the map. The panel reads both and splits the distance into its legs: at B 4 km against 2 km north-east; at C 6 km against 1.31 km; back at A 6 + 6 = 12 km while the displacement is zero. The road and distances are to scale (the same road as the speed figure on page 41); houses, trees and the cyclist are drawn bigger than real. Test tab: 5 questions (how to state a displacement, its direction versus the way the cycle rides, the distance of an out-and-back ride, the displacement after a round trip, displacement never more than distance). Phone-first, Bangla.",
+  "tags": ["motion", "distance", "displacement", "scalar", "vector", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "km",
+      "label": "Cyclist at the start",
+      "type": "number",
+      "default": "0",
+      "placeholder": "km along the road",
+      "help": "as if it had ridden there from A: 4 is B, 6 is C"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "First-use pointers", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "km": 4, "animate": false } },
+    { "name": "set", "payload": { "ride": "B" } },
+    { "name": "set", "payload": { "ride": "A" } },
+    { "name": "set", "payload": { "route": [6, 0] } },
+    { "name": "set", "payload": { "newTrip": true } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": [
+    "ready",
+    "change",
+    "arrive",
+    "dragstart",
+    "dragend",
+    "view",
+    "practice-start",
+    "practice-result",
+    "practice-end"
+  ],
+  "export": {
+    "poster": { "params": { "coach": "0", "km": "4" } },
+    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "km": 4, "animate": false } }] }],
+    "video": {
+      "kind": "script",
+      "seconds": 14,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 0.8, "command": "set", "payload": { "ride": "B" } },
+        { "at": 5.2, "command": "set", "payload": { "ride": "C" } },
+        { "at": 8.6, "command": "set", "payload": { "ride": "A" } }
+      ]
+    }
+  }
+}
