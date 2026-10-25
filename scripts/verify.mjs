@@ -8,7 +8,8 @@
 //   4. browser tests: bridge contract, the six viewports, the figure's own tests
 //   5. the packaged zip runs on its own, with every request outside it blocked
 //   6. the GLB export is valid glTF (Khronos validator) and has a real size
-//   7. pictures: the poster (1600×1000) and each viewport
+//   7. pictures: the poster (1600×1000) and each viewport, in the poster's state (export.poster: URL parameters, then
+//      setup commands), as npm run export makes poster.png
 import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -143,7 +144,7 @@ async function main() {
 
     if (isPage) {
       await step('pictures: poster and the six viewports', async () => {
-        const params = manifest.export?.poster?.params || {};
+        const { params = {}, setup = [] } = manifest.export?.poster || {};
         const shots = [
           { name: 'poster', viewport: { width: 800, height: 500 }, scale: 2 },
           ...VIEWPORTS.map((v) => ({ name: `${v.width}x${v.height}`, viewport: v, scale: 1 })),
@@ -153,8 +154,10 @@ async function main() {
           const page = await ctx.newPage();
           try {
             await preparePage(page);
-            const fig = await openFigure(page, id, { base: repo.url, params, harness: false });
-            await fig.advance(1500);
+            // the setup commands go over the bridge, so then the figure runs in the harness (an iframe, as in the book)
+            const fig = await openFigure(page, id, { base: repo.url, params, harness: setup.length > 0 });
+            for (const cmd of setup) await fig.call(cmd.command, cmd.payload || {});
+            await fig.advance(1500); // let animations started by the setup finish
             const png = await page.screenshot();
             if (inspectPng(`data:image/png;base64,${png.toString('base64')}`, PNG).blank) throw new Error(`${s.name} is blank`);
             fs.writeFileSync(path.join(out, `${s.name}.png`), png);
