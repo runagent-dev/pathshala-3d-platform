@@ -26,13 +26,15 @@ export function createTags({ stage, layer, avoid = () => [], keep = () => [], so
   const area = (a, b) => Math.max(0, Math.min(a.r, b.r) - Math.max(a.l, b.l)) * Math.max(0, Math.min(a.b, b.b) - Math.max(a.t, b.t));
 
   /**
-   * id, { html, color, kind: 'force' | 'name', point: () => Vector3 | null, spots: [{ x, y, ax, ay }], priority }
-   * A spot puts the label's (ax, ay) corner (0 left/top … 1 right/bottom) at the point + (x, y) px.
+   * id, { html, color, kind: 'force' | 'name', point: () => Vector3 | null, spots: [{ x, y, ax, ay, pt? }], priority,
+   *       leader, leadFrom: 'point' | 'spot' }
+   * A spot puts the label's (ax, ay) corner (0 left/top … 1 right/bottom) at the point (or its own pt) + (x, y) px;
+   * the leader line starts at the tag's point, or at the chosen spot's own point (leadFrom: 'spot').
    */
-  function add(id, { html, color = '', kind = 'name', point, spots, priority = 0, leader = kind === 'name' }) {
+  function add(id, { html, color = '', kind = 'name', cls = '', point, spots, priority = 0, leader = kind === 'name', leadFrom = 'point' }) {
     remove(id);
     const el = document.createElement('div');
-    el.className = `snf-tag snf-tag-${kind}`;
+    el.className = `snf-tag snf-tag-${kind}${cls ? ` ${cls}` : ''}`;
     el.innerHTML = html;
     if (color) el.style.setProperty('--c', color);
     layer.appendChild(el);
@@ -44,7 +46,7 @@ export function createTags({ stage, layer, avoid = () => [], keep = () => [], so
       dot.style.fill = color;
     }
     svg.append(line, dot);
-    tags.set(id, { id, el, line, dot, point, spots, priority, leader, w: 0, h: 0, box: null, spot: -1 });
+    tags.set(id, { id, el, line, dot, point, spots, priority, leader, leadFrom, w: 0, h: 0, box: null, spot: -1 });
     order = [...tags.values()].sort((a, b) => b.priority - a.priority);
     stage.invalidate();
   }
@@ -87,7 +89,7 @@ export function createTags({ stage, layer, avoid = () => [], keep = () => [], so
         hide(tg);
         continue;
       }
-      const a = project(p);
+      let a = project(p);
       if (!a.ok) {
         hide(tg);
         continue;
@@ -107,7 +109,7 @@ export function createTags({ stage, layer, avoid = () => [], keep = () => [], so
         if (hard.some((h) => hit(box, h))) return;
         // the spot it had stays a little preferred, so a label does not flicker between spots as things move
         const score = i * 40 + softs.reduce((sum, sb) => sum + area(box, sb), 0) - (i === tg.spot ? 60 : 0);
-        if (!best || score < best.score) best = { box, score, i };
+        if (!best || score < best.score) best = { box, score, i, o };
       });
       if (!best) {
         hide(tg);
@@ -119,7 +121,8 @@ export function createTags({ stage, layer, avoid = () => [], keep = () => [], so
       hard.push({ l: box.l - 3, t: box.t - 3, r: box.r + 3, b: box.b + 3 });
       tg.el.style.transform = `translate(${Math.round(box.l)}px, ${Math.round(box.t)}px)`;
       tg.el.style.visibility = 'visible';
-      // leader: from the point to the nearest point of the box
+      // leader: from the point (or from the spot's own point) to the nearest point of the box
+      if (tg.leadFrom === 'spot') a = best.o;
       const nx = Math.min(Math.max(a.x, box.l), box.r);
       const ny = Math.min(Math.max(a.y, box.t), box.b);
       const far = Math.hypot(nx - a.x, ny - a.y) > 8;

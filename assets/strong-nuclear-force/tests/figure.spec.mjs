@@ -66,6 +66,9 @@ test('strong-nuclear-force: the test runs five questions', async ({ page }) => {
   await fig.call('practice');
   for (let i = 0; i < 5; i++) {
     await fig.advance(600);
+    // the distance scale shows only in the question about letting the proton go (it would answer the others)
+    if (i === 0) await expect(frame.locator('.snf-scale')).toBeHidden();
+    if (i === 1) await expect(frame.locator('.snf-scale')).toBeVisible();
     await frame.locator('.pvc-opt[data-q="0"]').click();
     await fig.advance(200);
     await expect(frame.locator('.pvc-q-feedback')).not.toHaveAttribute('data-tone', '');

@@ -17,7 +17,7 @@ import { createI18n } from './i18n.js';
 import { COLORS, createNucleonMaterials } from './models.js';
 import { buildJoinScene, buildPullScene, buildSplitScene } from './scenes.js';
 import { createTags } from './tags.js';
-import { MAX_PULL, R_NUCLEON, STEP, arrowLength, clamp, flightStep, fmt, forcesAt, roundTo } from './reading.js';
+import { MAX_PULL, R_NUCLEON, STEP, clamp, electricArrowLength, flightStep, fmt, forcesAt, roundTo, strongArrowLength } from './reading.js';
 
 export const DEFAULTS = {
   scene: 'pull', // 'pull' | 'split' | 'join'
@@ -48,6 +48,7 @@ export function createApp(root, options = {}) {
   const RANGE_HTML = `${pow('−15')} ${t('unit_m')}`;
   /** A distance in a sentence: no trailing zero ("0.7 × 10⁻¹⁵ m", "1 × 10⁻¹⁵ m"). */
   const distHtml = (d) => `${N(String(roundTo(d, STEP)))} × ${RANGE_HTML}`;
+  const ATOM_HTML = `${pow('−10')} ${t('unit_m')}`; // about the size of an atom
 
   root.classList.add('pvc', 'snf');
   root.dataset.theme = o.bg;
@@ -68,9 +69,9 @@ export function createApp(root, options = {}) {
           <div class="snf-forces" role="img" aria-label="${t('forces_aria')}">
             <span class="snf-ft">${t('forces_title')}</span>
             <span class="snf-fl">
-              <span class="f grav">${t('f_grav')}</span>
-              <span class="ew"><i class="lt">‹</i><span class="f weak">${t('f_weak')}</span><i class="lt">‹</i><span class="f em">${t('f_em')}</span><em>${t('f_ew')}</em></span>
-              <span class="st"><i class="lt">‹</i><span class="f strong on">${t('f_strong')}<small>${RANGE_HTML}</small></span></span>
+              <span class="grp gr"><span class="f grav">${t('f_grav')}</span><em>${t('k_grav')}</em></span>
+              <span class="grp ew"><i class="lt">‹</i><span class="f weak">${t('f_weak')}</span><i class="lt">‹</i><span class="f em">${t('f_em')}</span><em>${t('f_ew')}</em></span>
+              <span class="grp st"><i class="lt">‹</i><span class="f strong on">${t('f_strong')}<small>${RANGE_HTML}</small></span><em>${t('f_nuclear')}</em></span>
             </span>
           </div>`,
   });
@@ -78,7 +79,7 @@ export function createApp(root, options = {}) {
   // time is slowed down); the top of the view stays free for the scene
   const note = document.createElement('div');
   note.className = 'snf-note';
-  note.innerHTML = `<span class="snf-legend"><span><i class="dot p">+</i>${t('legend_proton')}</span><span><i class="dot n"></i>${t('legend_neutron')}</span></span><span class="txt"><span class="sym">${t('note_symbolic')}</span><span class="slow">${t('note_slow')}</span></span>`;
+  note.innerHTML = `<span class="snf-legend"><span><i class="dot p">+</i>${t('legend_proton')}</span><span><i class="dot n"></i>${t('legend_neutron')}</span></span><span class="txt"><span class="sym"></span><span class="slow"></span></span>`;
   ui.stage.append(note);
   const slowLine = note.querySelector('.slow');
   const symLine = note.querySelector('.sym');
@@ -90,8 +91,7 @@ export function createApp(root, options = {}) {
   controls.maxDistance = 160;
   controls.enablePan = false;
   const M = createNucleonMaterials();
-  const unitParts = [{ text: '× ' }, { text: N('10') }, { text: N('−15'), sup: true }, { text: ` ${t('unit_m')}` }];
-  const pull = buildPullScene(M, { digits: (n) => N(String(n)), unit: unitParts });
+  const pull = buildPullScene(M);
   const split = buildSplitScene(M);
   const join = buildJoinScene(M);
   const scenes = { pull, split, join };
@@ -116,6 +116,26 @@ export function createApp(root, options = {}) {
     }
     pull.proton.castShadow = pull.proton.receiveShadow = true;
   }
+  // the scale's numbers and unit: labels on the page (readable at every size), placed under the 3D ticks
+  const scaleEl = document.createElement('div');
+  scaleEl.className = 'snf-scale';
+  scaleEl.setAttribute('aria-hidden', 'true');
+  scaleEl.innerHTML = `${[0, 1, 2].map((n) => `<span class="n">${N(n)}</span>`).join('')}<span class="u">× ${RANGE_HTML}</span>`;
+  ui.annoLayer.append(scaleEl);
+  const numEls = [...scaleEl.querySelectorAll('.n')];
+  const unitEl = scaleEl.querySelector('.u');
+  const tmpS = new THREE.Vector3();
+  stage.onAfterRender(() => {
+    const show = s.scene === 'pull' && s.scaleShown;
+    scaleEl.hidden = !show;
+    if (!show) return;
+    numEls.forEach((el, n) => {
+      const q = toScreen(pull.tick(n, tmpS));
+      el.style.transform = `translate(${Math.round(q.x - el.offsetWidth / 2)}px, ${Math.round(q.y + 2)}px)`;
+    });
+    const u = toScreen(pull.unitAt(tmpS));
+    unitEl.style.transform = `translate(${Math.round(u.x - unitEl.offsetWidth)}px, ${Math.round(u.y + 20)}px)`;
+  });
   const tweener = createTweener();
   stage.addTicker((dt) => tweener.tick(dt));
   const audio = createAudio(o.sound);
@@ -141,7 +161,8 @@ export function createApp(root, options = {}) {
     dragging: false,
     demo: false, // the first-use pointer is moving it (the panel keeps its first line)
     forcesShown: true, // the arrows (hidden while a test question asks about them)
-    bandShown: true, // the orange reach on the scale
+    scaleShown: true, // the distance scale (hidden in test questions it would answer)
+    reachShown: true, // the orange shell of the strong force's reach
     // split / join
     t: 0,
     playing: false,
@@ -184,16 +205,23 @@ export function createApp(root, options = {}) {
     say: $('.snf-say'),
     again: $('[data-act="again"]'),
   };
+  const plus = '<i>+</i>';
+  const energyTerm = `<b class="c-energy">${t('eq_energy')}</b>`;
   const eqHtml = {
-    split: `<span>${t('eq_big')}</span><i>→</i><span>${t('eq_two_small')}</span><i>+</i><b class="c-energy">${t('eq_energy')}</b>`,
-    join: `<span>${t('eq_two_small')}</span><i>→</i><span>${t('eq_one')}</span><i>+</i><b class="c-energy">${t('eq_energy')}</b>`,
+    split: `<span>${t('eq_big')} ${plus} ${t('eq_neutron')} <i>→</i></span> <span>${t('eq_two_small')}</span> <span>${plus} ${t('eq_neutrons', { n: 3 })} ${plus} ${energyTerm}</span>`,
+    join: `<span>${t('eq_two_small')} <i>→</i></span> <span>${t('eq_new')}</span> <span>${plus} ${t('eq_neutron')} ${plus} ${energyTerm}</span>`,
   };
+  const NOTES = { pull: ['note_pull', 'note_slow'], split: ['note_split', 'note_split'], join: ['note_slow', 'note_slow'] };
   let sayKey = '';
   function sayLine() {
     if (s.scene === 'split') return s.t >= split.end ? 'say_split_done' : 'say_split_go';
     if (s.scene === 'join') return s.t >= join.end ? 'say_join_done' : 'say_join_go';
     if (s.demo) return 'say_idle';
-    if (s.phase === 'held') return s.d <= 0 ? 'say_idle' : forcesAt(s.d).inRange ? 'say_in' : 'say_out';
+    if (s.phase === 'held') {
+      const f = forcesAt(s.d);
+      if (f.d <= 0) return 'say_idle';
+      return f.inRange ? (f.d >= 0.8 ? 'say_edge' : 'say_in') : 'say_out';
+    }
     if (s.phase === 'returning' || s.phase === 'back') return 'say_back';
     if (s.phase === 'flying' || s.phase === 'gone') return 'say_away';
     return 'say_idle';
@@ -229,13 +257,15 @@ export function createApp(root, options = {}) {
   function showProton(d) {
     s.d = d;
     const f = forcesAt(d);
-    const arrows = s.forcesShown && d > 0.04 && s.phase !== 'seated' && s.phase !== 'back' && s.phase !== 'gone';
+    // no arrows while it sits in its place, nor while the first-use pointer shows how to pull (they are found)
+    const arrows = s.forcesShown && !s.demo && d > 0.04 && s.phase !== 'seated' && s.phase !== 'back' && s.phase !== 'gone';
     pull.proton.visible = s.phase !== 'gone';
     pull.setProton(d, {
-      strong: arrows ? arrowLength(f.strong) : 0,
-      electric: arrows ? arrowLength(f.electric) : 0,
+      strong: arrows ? strongArrowLength(f.d) : 0,
+      electric: arrows ? electricArrowLength(f.d) : 0,
     });
-    pull.scale.setBand(s.bandShown);
+    pull.rail.root.visible = s.scaleShown;
+    pull.reach.root.visible = s.reachShown;
     refresh();
   }
 
@@ -361,6 +391,8 @@ export function createApp(root, options = {}) {
     const changed = next !== s.scene;
     s.scene = next;
     for (const [k, sc] of Object.entries(scenes)) sc.root.visible = k === next;
+    symLine.textContent = t(NOTES[next][0]);
+    slowLine.textContent = t(NOTES[next][1]);
     s.phase = 'seated';
     s.d = 0;
     s.t = 0;
@@ -396,6 +428,7 @@ export function createApp(root, options = {}) {
     keep: keepBoxes,
     soft: softBoxes,
   });
+  const reachPoint = new THREE.Vector3();
   const above = (dy = 8) => ({ x: 0, y: -dy, ax: 0.5, ay: 1 });
   const below = (dy = 8) => ({ x: 0, y: dy, ax: 0.5, ay: 0 });
   function addTags() {
@@ -403,21 +436,23 @@ export function createApp(root, options = {}) {
     if (s.scene === 'pull') {
       const sa = pull.strongArrow;
       const ea = pull.electricArrow;
+      // the strong force's name above the proton, off the nucleus, with a short leader to its arrow
       tags.add('strong', {
         html: t('label_strong'),
         color: COLORS.strong,
         kind: 'force',
+        leader: true,
         priority: 3,
-        point: () => (sa.root.visible ? sa.mid : null),
-        // beside the arrow (above it first), centred on it or nearer its head
-        spots: [10, 26, 42].flatMap((dy) => [
-          above(dy),
-          below(dy),
-          ...[0.2, 0.05, 0.5].flatMap((ax) => [
-            { ...above(dy), pt: () => sa.tip, ax },
-            { ...below(dy), pt: () => sa.tip, ax },
+        point: () => (sa.root.visible ? pull.strongPoint() : null),
+        spots: [
+          ...[12, 34].flatMap((dy) => [
+            { x: -6, y: -dy, ax: 1, ay: 1, pt: pull.top },
+            { x: 0, y: -dy, ax: 0.62, ay: 1, pt: pull.top },
+            { x: 6, y: -dy, ax: 0.3, ay: 1, pt: pull.top },
           ]),
-        ]),
+          { ...above(14), pt: () => sa.tip, ax: 0.3 },
+          { ...below(14), pt: () => sa.tip, ax: 0.3 },
+        ],
       });
       tags.add('electric', {
         html: t('label_electric'),
@@ -425,7 +460,7 @@ export function createApp(root, options = {}) {
         kind: 'force',
         priority: 2,
         point: () => (ea.root.visible ? ea.mid : null),
-        // right of its tip, else above or below the tip (nearer first), shifted along the arrow if needed
+        // right of its tip, else above or below the tip, else above the proton
         spots: [
           { x: 10, y: 0, ax: 0, ay: 0.5, pt: () => ea.tip },
           ...[12, 28, 44].flatMap((dy) =>
@@ -434,7 +469,32 @@ export function createApp(root, options = {}) {
               { ...below(dy), pt: () => ea.tip, ax },
             ]),
           ),
+          ...[12, 34].map((dy) => ({ x: 6, y: -dy, ax: 0, ay: 1, pt: pull.top })),
+          ...[12, 34].map((dy) => ({ x: -6, y: -dy, ax: 1, ay: 1, pt: pull.top })),
         ],
+      });
+      // the reach: its name on the dashed line, where there is room
+      const rp = [28, 40, 18, 52, -30, -42].map((deg) => {
+        const v = new THREE.Vector3();
+        return { deg, at: () => pull.reach.pointAt(deg, v) };
+      });
+      tags.add('reach', {
+        html: t('label_reach'),
+        color: COLORS.strongInk,
+        priority: 1,
+        leadFrom: 'spot',
+        point: () => (s.reachShown ? pull.reach.pointAt(28, reachPoint) : null),
+        spots: rp.flatMap(({ deg, at }) =>
+          deg > 0
+            ? [
+                { x: 10, y: -10, ax: 0, ay: 1, pt: at },
+                { x: 0, y: -14, ax: 0.5, ay: 1, pt: at },
+              ]
+            : [
+                { x: 10, y: 10, ax: 0, ay: 0, pt: at },
+                { x: -10, y: 10, ax: 1, ay: 0, pt: at },
+              ],
+        ),
       });
       return;
     }
@@ -447,11 +507,13 @@ export function createApp(root, options = {}) {
       { x: 22, y: 6, ax: 0, ay: 0.5 },
     ];
     if (s.scene === 'split') {
+      // the slow neutron before it arrives; after the split, one of the three freed neutrons
+      const around = [26, 38].flatMap((r) => [above(r), below(r), { x: r, y: 0, ax: 0, ay: 0.5 }, { x: -r, y: 0, ax: 1, ay: 0.5 }]);
       tags.add('neutron', {
         html: t('label_neutron'),
         priority: 2,
-        point: () => (s.t < 1.6 && !s.still ? P.neutron : null),
-        spots: [above(26), below(26)],
+        point: () => (s.t < 1.5 ? (s.still ? null : P.neutron) : s.t >= 3.6 ? P.freed[0] : null),
+        spots: around,
       });
       tags.add('big', {
         html: t('label_big'),
@@ -459,8 +521,26 @@ export function createApp(root, options = {}) {
         point: () => (sc.state.phase === 'before' || sc.state.phase === 'wobble' ? P.big : null),
         spots: nameSpots,
       });
-      tags.add('small0', { html: t('label_small'), priority: 3, point: () => (s.t >= 3.3 ? P.pieces[0] : null), spots: nameSpots });
-      tags.add('small1', { html: t('label_small'), priority: 3, point: () => (s.t >= 3.3 ? P.pieces[1] : null), spots: nameSpots });
+      // each piece named above it, else below it
+      const pieceSpots = (j) => [
+        ...nameSpots,
+        ...[18, 34].map((dy) => ({ ...below(dy), pt: () => P.piecesLow[j] })),
+        { x: j ? -8 : 8, y: 0, ax: j ? 1 : 0, ay: 0.5, pt: () => P.piecesInner[j] }, // beside it, toward the middle
+      ];
+      tags.add('small0', {
+        html: t('label_small'),
+        priority: 3,
+        leadFrom: 'spot',
+        point: () => (s.t >= 3.3 ? P.pieces[0] : null),
+        spots: pieceSpots(0),
+      });
+      tags.add('small1', {
+        html: t('label_small'),
+        priority: 3,
+        leadFrom: 'spot',
+        point: () => (s.t >= 3.3 ? P.pieces[1] : null),
+        spots: pieceSpots(1),
+      });
     } else {
       tags.add('small0', { html: t('label_small'), priority: 3, point: () => (s.t < 1.6 ? P.small[0] : null), spots: nameSpots });
       tags.add('small1', { html: t('label_small'), priority: 3, point: () => (s.t < 1.6 ? P.small[1] : null), spots: nameSpots });
@@ -474,13 +554,21 @@ export function createApp(root, options = {}) {
         html: t('label_neutron'),
         priority: 1,
         point: () => (s.t >= 2.3 ? P.neutron : null),
-        spots: [{ x: 30, y: 0, ax: 0, ay: 0.5 }, above(28), below(28), { x: -30, y: 0, ax: 1, ay: 0.5 }],
+        spots: [28, 42].flatMap((r) => [
+          { x: r, y: 0, ax: 0, ay: 0.5 },
+          below(r),
+          { x: -r, y: 0, ax: 1, ay: 0.5 },
+          above(r),
+          { x: r * 0.75, y: r * 0.75, ax: 0, ay: 0 },
+          { x: -r * 0.75, y: r * 0.75, ax: 1, ay: 0 },
+        ]),
       });
     }
     tags.add('energy', {
       html: t('label_energy'),
       color: COLORS.energyInk,
-      priority: 2,
+      cls: 'snf-energy',
+      priority: 4, // the payoff: placed first
       point: () => (sc.burst.root.visible ? P.energy() : null),
       spots: [
         { x: 8, y: -6, ax: 0, ay: 1 },
@@ -533,16 +621,18 @@ export function createApp(root, options = {}) {
       const q = toScreen(a.tip);
       out.push({ l: Math.min(p.x, q.x) - 3, t: Math.min(p.y, q.y) - 9, r: Math.max(p.x, q.x) + 3, b: Math.max(p.y, q.y) + 9 });
     }
-    const s0 = toScreen(tmpA.set(pull.seat.x - 0.3, pull.scaleY + 0.35, pull.seat.z));
-    const s1 = toScreen(tmpA.set(pull.seat.x + pull.scale.unitEnd, pull.scaleY - 0.85, pull.seat.z));
-    out.push({ l: s0.x, t: s0.y, r: s1.x, b: s1.y });
+    if (s.scaleShown) {
+      const s0 = toScreen(pull.tick(0, tmpA));
+      const s1 = toScreen(pull.unitAt(tmpA));
+      out.push({ l: s0.x - 10, t: s0.y - 14, r: s1.x + 10, b: s0.y + 40 });
+    }
     return out;
   }
   const tmpA = new THREE.Vector3();
   function softBoxes() {
     if (s.scene !== 'pull') return [];
     const c = toScreen(tmpA.set(0, 0, 0));
-    const r = pxAt(tmpA, pull.radius);
+    const r = pxAt(tmpA, pull.surface);
     return [{ l: c.x - r, t: c.y - r, r: c.x + r, b: c.y + r }];
   }
 
@@ -781,7 +871,8 @@ export function createApp(root, options = {}) {
     if (s.scene !== 'pull') setScene('pull', { animate: false, start: false });
     s.run++;
     s.forcesShown = false;
-    s.bandShown = false;
+    s.scaleShown = false;
+    s.reachShown = false;
     seat();
   }
   const quiz = createQuiz({
@@ -800,14 +891,15 @@ export function createApp(root, options = {}) {
         s.dragging = false;
         s.demo = false;
         hideHint();
-        kinds = ['hold', 'release', pickOne(['strength', 'range']), 'energy', 'group'];
+        kinds = ['who', 'release', 'atom', 'energy', 'group'];
         syncUI();
       },
       leave() {
         s.mode = 'explore';
         s.locked = false;
         s.forcesShown = true;
-        s.bandShown = true;
+        s.scaleShown = true;
+        s.reachShown = true;
         s.still = false;
         syncUI();
         setScene(s.prevScene, { animate: false, start: true });
@@ -816,49 +908,31 @@ export function createApp(root, options = {}) {
         const kind = kinds[i % kinds.length];
         s.locked = true;
         picked = -1;
-        if (kind === 'hold') {
+        if (kind === 'who') {
           quietPull();
-          say(t('q_hold'));
-          const c = wordChoices(['opt_strong', 'opt_weak', 'opt_em', 'opt_grav']);
+          say(t('q_who'));
+          const c = wordChoices(['opt_who_all', 'opt_who_ep', 'opt_who_p', 'opt_who_n']);
           question = { kind, ...c };
           return { ...c, meta: { kind } };
         }
         if (kind === 'release') {
+          // clearly inside the reach or clearly outside it (the edge is only "about" 10⁻¹⁵ m)
           quietPull();
+          s.scaleShown = true;
           const inside = Math.random() < 0.5;
-          const d = inside ? pickOne([0.3, 0.5, 0.7, 0.9]) : pickOne([1.4, 1.7, 2, 2.3]);
+          const d = inside ? pickOne([0.2, 0.3, 0.4, 0.5, 0.6]) : pickOne([1.6, 1.8, 2, 2.2, 2.4]);
           hold(d);
           sayHtml(say, alive, t('q_release', { d: distHtml(d) }));
           const c = wordChoices(inside ? ['opt_back', 'opt_away', 'opt_stay', 'opt_break'] : ['opt_away', 'opt_back', 'opt_stay', 'opt_break']);
           question = { kind, d, inside, ...c };
           return { ...c, meta: { kind, distance: d } };
         }
-        if (kind === 'strength' || kind === 'range') {
+        if (kind === 'atom') {
           quietPull();
-          say(t(kind === 'strength' ? 'q_strength' : 'q_range'));
-          const opts =
-            kind === 'strength'
-              ? [
-                  { k: 'right', html: `${pow('41')} <small>${t('times')}</small>` },
-                  { k: '36', html: `${pow('36')} <small>${t('times')}</small>` },
-                  { k: '100', html: `${N('100')} <small>${t('times')}</small>` },
-                  { k: '15', html: `${pow('15')} <small>${t('times')}</small>` },
-                ]
-              : [
-                  { k: 'right', html: RANGE_HTML },
-                  { k: '18', html: `${pow('−18')} ${t('unit_m')}` },
-                  { k: 'inf', html: `<span class="snf-opt">${t('opt_infinite')}</span>` },
-                  { k: 'big', html: `${pow('15')} ${t('unit_m')}` },
-                ];
-          const list = shuffle(opts);
-          question = { kind, list };
-          return {
-            choices: [0, 1, 2, 3],
-            expected: list.findIndex((x) => x.k === 'right'),
-            tolerance: 0.5,
-            label: (j) => list[j].html,
-            meta: { kind },
-          };
+          sayHtml(say, alive, t('q_atom', { d: ATOM_HTML }));
+          const c = wordChoices(['opt_atom_em', 'opt_atom_strong', 'opt_atom_equal', 'opt_atom_none']);
+          question = { kind, ...c };
+          return { ...c, meta: { kind } };
         }
         if (kind === 'energy') {
           const big = Math.random() < 0.5;
@@ -867,7 +941,9 @@ export function createApp(root, options = {}) {
           s.still = true;
           seek(0);
           say(t(big ? 'q_energy_big' : 'q_energy_small'));
-          const c = wordChoices(big ? ['opt_split', 'opt_join', 'opt_burn', 'opt_current'] : ['opt_join', 'opt_split', 'opt_burn', 'opt_current']);
+          const c = wordChoices(
+            big ? ['opt_split', 'opt_join_more', 'opt_burn', 'opt_none_energy'] : ['opt_join', 'opt_split_more', 'opt_burn', 'opt_none_energy'],
+          );
           question = { kind, big, ...c };
           return { ...c, meta: { kind, nucleus: big ? 'big' : 'small' } };
         }
@@ -883,38 +959,33 @@ export function createApp(root, options = {}) {
         const chose = picked >= 0 ? (Q.list ? Q.list[picked] : null) : null;
         const why = (k, vars) => t(k, { p: RANGE_HTML, ...vars });
         const extra = (text) => (correct || !text ? '' : ` ${text}`);
-        if (Q.kind === 'hold') {
-          const m = { opt_weak: 'why_hold_weak', opt_em: 'why_hold_em', opt_grav: 'why_hold_grav' }[chose];
-          return why('why_hold') + extra(m && why(m));
+        if (Q.kind === 'who') {
+          const m = { opt_who_ep: 'why_who_ep', opt_who_p: 'why_who_p', opt_who_n: 'why_who_n' }[chose];
+          return why('why_who') + extra(m && why(m));
         }
         if (Q.kind === 'release') {
           // show what happens: the arrows, then let it go
           s.forcesShown = true;
-          s.bandShown = true;
+          s.reachShown = true;
           showProton(s.d);
           const my = s.run;
           setTimeout(() => my === s.run && quiz.active && release(), 700);
           const m = { opt_stay: 'why_release_stay', opt_break: 'why_release_break' }[chose];
           return why(Q.inside ? 'why_release_in' : 'why_release_out', { d: distHtml(Q.d) }) + extra(m && why(m));
         }
-        if (Q.kind === 'strength') {
-          const m = { 36: why('why_strength_36', { x: pow('36') }), 100: why('why_strength_100'), 15: why('why_strength_15') }[chose?.k];
-          return why('why_strength', { x: pow('41') }) + extra(m);
-        }
-        if (Q.kind === 'range') {
-          const m = {
-            18: why('why_range_18', { x: `${pow('−18')} ${t('unit_m')}` }),
-            inf: why('why_range_inf'),
-            big: why('why_range_big', { x: `${pow('15')} ${t('unit_m')}` }),
-          }[chose?.k];
-          return why('why_range') + extra(m);
+        if (Q.kind === 'atom') {
+          const m = { opt_atom_strong: 'why_atom_strong', opt_atom_equal: 'why_atom_equal', opt_atom_none: 'why_atom_none' }[chose];
+          return why('why_atom', { d: ATOM_HTML }) + extra(m && why(m));
         }
         if (Q.kind === 'energy') {
           const my = s.run;
           setTimeout(() => my === s.run && quiz.active && play(0), 500);
-          const m = { opt_join: 'why_energy_mixed', opt_split: 'why_energy_mixed', opt_burn: 'why_energy_burn', opt_current: 'why_energy_current' }[
-            chose
-          ];
+          const m = {
+            opt_join_more: 'why_energy_join_more',
+            opt_split_more: 'why_energy_split_more',
+            opt_burn: 'why_energy_burn',
+            opt_none_energy: 'why_energy_none',
+          }[chose];
           return why(Q.big ? 'why_energy_big' : 'why_energy_small') + extra(m && why(m));
         }
         const m = { opt_nuclear: 'why_group_nuclear', opt_grav: 'why_group_grav', opt_none: 'why_group_none' }[chose];
@@ -1098,7 +1169,8 @@ export function createApp(root, options = {}) {
     async reset() {
       quiz.stop();
       s.forcesShown = true;
-      s.bandShown = true;
+      s.scaleShown = true;
+      s.reachShown = true;
       setScene('pull', { animate: false, start: false });
       seat();
       await setView('front', { animate: false });

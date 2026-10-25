@@ -3,14 +3,15 @@
 **Where it goes in the book:** Book page 69, topic 3.2.4: সবল নিউক্লীয় বল (Strong Nuclear Force), next to that section and the paragraph on unifying the forces.
 
 Interactive 3D figure for the Pathshala book. A small nucleus of protons (red, +) and neutrons (grey): the student
-pulls one proton out. Within about 10⁻¹⁵ m the strong nuclear force (orange arrow) pulls it back far harder than
-the electric push of the other protons (blue arrow), and it snaps back when let go; a little farther the strong
-force is gone and the push sends it away. Two more scenes show where nuclear energy comes from: a big nucleus
-splitting (ভাঙা) and two small nuclei joining (জোড়া দেওয়া). The panel shows the four fundamental forces weakest to
-strongest and how two of them became one (ইলেকট্রো উইক); a 5-question test follows. The picture is symbolic (sizes,
-arrows and time are not to scale), and says so on screen. Model units: 1 cm in the GLB = 1 fm of the nucleus.
+pulls one proton out. A soft orange shell with a dashed edge about 10⁻¹⁵ m outside the nucleus shows the strong
+force's reach. Inside it the strong nuclear force (orange arrow) pulls the proton back far harder than the electric
+push of the other protons (blue arrow), and it snaps back when let go; outside it the strong force is gone and the
+push sends it away. Two more scenes show where nuclear energy comes from: a big nucleus split by a neutron (ভাঙা)
+and two small nuclei joining (জোড়া দেওয়া). The panel shows the four fundamental forces weakest to strongest and the
+book's three kinds (মহাকর্ষ, ইলেকট্রো উইক, নিউক্লিয়ার বল); a 5-question test follows. Arrow lengths, time and the
+split's particle count are symbolic, and the figure says so on screen. Model units: 1 cm in the GLB = 1 fm.
 
-State (`get`, the `change` event): `scene`, `distance` (× 10⁻¹⁵ m), `phase` (`seated`, `held`, `returning`, `back`,
+State (`get`, the `change` event): `scene`, `distance` (× 10⁻¹⁵ m, the gap between the proton and the nucleus), `phase` (`seated`, `held`, `returning`, `back`,
 `flying`, `gone`), `inRange`, `verdict` (`back` | `away`), `forces` (N, the model's), `arrows`, `energy` (split/join:
 `t`, `duration`, `playing`, `phase`). `set` takes `scene`, `pull` (hold the proton out), `release`, `t`, `play`,
 `view`, `animate`.

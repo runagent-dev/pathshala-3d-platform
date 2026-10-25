@@ -61,8 +61,20 @@ export function verdict(d) {
  */
 export function arrowLength(force) {
   if (!(force > 0)) return 0;
-  return clamp(0.55 + 0.75 * Math.log10(force / 40), 0.4, 2.6);
+  return clamp(0.5 + 0.68 * Math.log10(force / 40), 0.4, 2.35);
 }
+
+/**
+ * The orange arrow's length at d fm: the compressed length of the strong pull, shrinking visibly from 0.6 to
+ * 1 fm as the pull fades, but while the pull still wins (up to 1 fm) always a little longer than the blue arrow.
+ */
+export function strongArrowLength(d) {
+  const s = strongForce(d);
+  if (!(s > 0)) return 0;
+  const fading = arrowLength(s) * (1 - 0.62 * smooth(0.6, 1, d));
+  return verdict(d) === 'back' ? Math.max(arrowLength(electricForce(d)) + 0.12, fading) : fading;
+}
+export const electricArrowLength = (d) => arrowLength(electricForce(d));
 
 /** How a distance is written: one decimal, "0.6" (trailing zero kept: it is a live readout). */
 export const fmt = (d) => roundTo(d, STEP).toFixed(1);
@@ -77,7 +89,7 @@ export function forcesAt(d) {
 
 // ── letting go beyond the range: the proton is pushed away ───────────────────────────────────────────────────
 // Shown in slow motion (the real flight takes about 10⁻²¹ s): the acceleration has the shape of the Coulomb push.
-export const FLIGHT_A = 30; // fm/s² of the slow-motion picture at d = 0
+export const FLIGHT_A = 12; // fm/s² of the slow-motion picture at d = 0
 export function flightStep(d, v, dt) {
   const r0 = R_EFFECTIVE;
   const a = (FLIGHT_A * r0 * r0) / ((r0 + d) * (r0 + d));

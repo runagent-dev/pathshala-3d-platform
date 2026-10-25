@@ -2,8 +2,7 @@
 // exported as 1 cm): protons and neutrons as glossy balls (a proton carries a "+"), force arrows, the
 // distance scale under the pulled proton, and the calm burst of energy of a split or a join.
 import * as THREE from 'three';
-import { FONT } from '@shared/student/materials.js';
-import { MAX_PULL, R_NUCLEON, RANGE } from './reading.js';
+import { MAX_PULL, R_NUCLEON } from './reading.js';
 
 /** One colour per meaning (the four forces as in the other fundamental-force figures). */
 export const COLORS = {
@@ -14,6 +13,7 @@ export const COLORS = {
   energy: '#f59f00', // শক্তি
   ink: '#46505c',
   energyInk: '#b86200', // the word শক্তি (darker, to read on white)
+  strongInk: '#c4470a', // words in the strong force's colour
 };
 
 function canvas(w, h) {
@@ -185,116 +185,100 @@ export function createArrow(name, color) {
   };
 }
 
-// ── text drawn into the scene ────────────────────────────────────────────────────────────────────────────────
+// ── the distance scale: a rail from the nucleus's surface out along the pull ─────────────────────────────────
 /**
- * A line of text as a flat mesh, with parts that may be raised (powers of ten): parts = [{ text, sup }].
- * height = the em size in fm. align: 'left' | 'center' | 'right'.
+ * A thin scale from the nucleus's surface (its origin, the 0 mark) outward, with ticks every 0.5 fm and a small
+ * marker at the proton's near edge. Its numbers and unit are labels on the page (always readable), not 3D text.
  */
-export function richTextMesh(parts, height, { color = COLORS.ink, weight = 600, align = 'center' } = {}) {
-  const px = 128;
-  const ctx0 = canvas(8, 8).getContext('2d');
-  const fontOf = (sup) => `${weight} ${sup ? Math.round(px * 0.62) : px}px ${FONT}`;
-  let w = 0;
-  for (const p of parts) {
-    ctx0.font = fontOf(p.sup);
-    p.w = ctx0.measureText(p.text).width;
-    w += p.w;
-  }
-  const W = Math.ceil(w + px * 0.2);
-  const H = Math.ceil(px * 1.35);
-  const c = canvas(W, H);
-  const ctx = c.getContext('2d');
-  ctx.fillStyle = color;
-  ctx.textBaseline = 'alphabetic';
-  let x = px * 0.1;
-  const base = H * 0.72;
-  for (const p of parts) {
-    ctx.font = fontOf(p.sup);
-    ctx.fillText(p.text, x, p.sup ? base - px * 0.42 : base);
-    x += p.w;
-  }
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = 4;
-  const planeH = height * 1.35;
-  const planeW = (planeH * W) / H;
-  const geo = new THREE.PlaneGeometry(planeW, planeH);
-  if (align === 'left') geo.translate(planeW / 2 - height * 0.1, 0, 0);
-  if (align === 'right') geo.translate(-planeW / 2 + height * 0.1, 0, 0);
-  const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, toneMapped: false });
-  const mesh = new THREE.Mesh(geo, mat);
-  mesh.renderOrder = 3;
-  mesh.userData.width = planeW;
-  return mesh;
-}
-
-// ── the distance scale under the pulled proton ───────────────────────────────────────────────────────────────
-/**
- * A scale from the proton's place outwards: 0, 1, 2 (× 10⁻¹⁵ m), with the strong force's reach (0 to 1) in
- * orange, and a pointer that follows the proton. The group's origin is the 0 mark.
- *   digits: n → text in the language's digits; unit: [{ text, sup }] parts of "× 10⁻¹⁵ m"
- */
-export function createScale({ digits, unit }) {
+export function createRail() {
   const root = new THREE.Group();
   root.name = 'DistanceScale';
   root.userData.noExport = true;
   const ink = new THREE.MeshBasicMaterial({ color: COLORS.ink, toneMapped: false });
   const L = MAX_PULL + 0.12;
-  const line = new THREE.Mesh(new THREE.BoxGeometry(L + 0.04, 0.05, 0.02), ink);
-  line.position.x = L / 2 - 0.02;
+  const line = new THREE.Mesh(new THREE.BoxGeometry(L, 0.045, 0.02), ink);
+  line.position.x = L / 2;
   root.add(line);
-  const band = new THREE.Mesh(
-    new THREE.BoxGeometry(RANGE, 0.17, 0.01),
-    new THREE.MeshBasicMaterial({ color: COLORS.strong, toneMapped: false, transparent: true, opacity: 0.85 }),
-  );
-  band.position.set(RANGE / 2, 0, -0.012);
-  root.add(band);
   for (let k = 0; k <= Math.round(MAX_PULL * 2); k++) {
     const major = k % 2 === 0;
-    const tick = new THREE.Mesh(new THREE.BoxGeometry(0.04, major ? 0.32 : 0.2, 0.02), ink);
-    tick.position.set(k / 2, major ? -0.1 : -0.06, 0);
+    const tick = new THREE.Mesh(new THREE.BoxGeometry(0.04, major ? 0.3 : 0.18, 0.02), ink);
+    tick.position.set(k / 2, major ? -0.13 : -0.07, 0);
     root.add(tick);
-    if (major) {
-      const n = richTextMesh([{ text: digits(k / 2) }], 0.48);
-      n.position.set(k / 2, -0.58, 0);
-      root.add(n);
-    }
   }
-  const u = richTextMesh(unit, 0.42, { align: 'left' });
-  u.position.set(L + 0.22, -0.02, 0);
-  root.add(u);
-  const unitEnd = L + 0.22 + u.userData.width;
-
-  // the pointer: a small triangle on the scale and a dashed line up to the proton
-  const pointerMat = new THREE.MeshBasicMaterial({ color: '#1d2733', toneMapped: false });
-  const pointer = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.24, 3).rotateZ(Math.PI), pointerMat);
-  pointer.position.y = 0.2;
-  root.add(pointer);
-  const dashMat = new THREE.LineDashedMaterial({ color: '#7a8594', dashSize: 0.1, gapSize: 0.08, toneMapped: false });
-  const dashGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0.32, 0), new THREE.Vector3(0, 1, 0)]);
-  const dash = new THREE.Line(dashGeo, dashMat);
-  root.add(dash);
-  let top = 1;
+  // the reading: a small dark triangle at the proton's near edge, drawn over everything
+  const marker = new THREE.Mesh(
+    new THREE.ConeGeometry(0.13, 0.22, 3),
+    new THREE.MeshBasicMaterial({ color: '#1d2733', toneMapped: false, depthTest: false, transparent: true }),
+  );
+  marker.renderOrder = 15;
+  marker.position.y = 0.13;
+  root.add(marker);
   return {
     root,
-    band,
-    unitEnd,
-    /** Move the pointer to d (fm); the dashed line goes up to height `to` (in the scale's space). */
-    setPointer(d, to = top) {
-      top = to;
-      pointer.position.x = d;
-      dash.position.x = d;
-      dash.scale.y = 1;
-      const pos = dashGeo.attributes.position;
-      pos.setY(1, to);
-      pos.needsUpdate = true;
-      dash.computeLineDistances();
+    length: L,
+    setMarker(d) {
+      marker.visible = d >= -0.01 && d <= L + 0.01;
+      marker.position.x = Math.max(0, d);
     },
-    setBand(on) {
-      band.visible = on;
+  };
+}
+
+// ── the reach of the strong force: a soft orange shell and a dashed line about 1 fm outside the nucleus ──────────
+function haloTexture(inner) {
+  const S = 512;
+  const c = canvas(S, S);
+  const ctx = c.getContext('2d');
+  const g = ctx.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2);
+  // transparent inside the nucleus, pale orange from its surface, fading out past the dashed line
+  g.addColorStop(0, 'rgba(232, 89, 12, 0)');
+  g.addColorStop(Math.max(0, inner - 0.02), 'rgba(232, 89, 12, 0)');
+  g.addColorStop(inner, 'rgba(232, 89, 12, 0.2)');
+  g.addColorStop(0.86, 'rgba(232, 89, 12, 0.13)');
+  g.addColorStop(1, 'rgba(232, 89, 12, 0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, S, S);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+/** The reach round a nucleus of radius `r` (fm): a dashed circle at r + `reach`, and a soft shell; faces the viewer. */
+export function createReach(r, reach) {
+  const root = new THREE.Group();
+  root.name = 'StrongReach';
+  root.userData.noExport = true;
+  const R = r + reach;
+  const outer = R + 0.2 * reach; // the shell fades out a little past the line: "about" 10⁻¹⁵ m
+  const halo = new THREE.Mesh(
+    new THREE.PlaneGeometry(outer * 2, outer * 2),
+    new THREE.MeshBasicMaterial({ map: haloTexture(r / outer), transparent: true, depthWrite: false, toneMapped: false }),
+  );
+  halo.renderOrder = -1;
+  // the dashed edge: short arcs of a thin ring through the nucleus's middle, facing the viewer; the pulled proton
+  // hides the part behind it, nothing else covers it (no ball reaches past the nucleus's edge)
+  const dashMat = new THREE.MeshBasicMaterial({ color: COLORS.strong, toneMapped: false, side: THREE.DoubleSide });
+  const DASHES = 84;
+  const w = 0.03;
+  const dash = new THREE.Group();
+  for (let i = 0; i < DASHES; i++) {
+    const seg = new THREE.Mesh(new THREE.RingGeometry(R - w, R + w, 4, 1, (i / DASHES) * Math.PI * 2, (Math.PI * 2 * 0.58) / DASHES), dashMat);
+    dash.add(seg);
+  }
+  root.add(halo, dash);
+  return {
+    root,
+    radius: R,
+    /** A point on the dashed line at this angle (degrees, in the picture's plane), in world space. */
+    pointAt(deg, out = new THREE.Vector3()) {
+      const a = THREE.MathUtils.degToRad(deg);
+      out
+        .set(R * Math.cos(a), R * Math.sin(a), 0)
+        .applyQuaternion(root.quaternion)
+        .add(root.position);
+      return out;
     },
-    setPointerVisible(on) {
-      pointer.visible = dash.visible = on;
+    face(q) {
+      root.quaternion.copy(q);
     },
   };
 }
@@ -305,9 +289,10 @@ function glowTexture() {
   const c = canvas(S, S);
   const ctx = c.getContext('2d');
   const g = ctx.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2);
-  g.addColorStop(0, 'rgba(255, 214, 102, 0.95)');
-  g.addColorStop(0.35, 'rgba(255, 196, 64, 0.55)');
-  g.addColorStop(1, 'rgba(255, 190, 60, 0)');
+  g.addColorStop(0, 'rgba(255, 236, 153, 1)');
+  g.addColorStop(0.3, 'rgba(255, 204, 51, 0.75)');
+  g.addColorStop(0.65, 'rgba(255, 180, 40, 0.3)');
+  g.addColorStop(1, 'rgba(255, 170, 30, 0)');
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, S, S);
   const t = new THREE.CanvasTexture(c);
@@ -328,10 +313,10 @@ export function createEnergyBurst(name, { angles, from = 0.8, to = 3.2, length =
   const waves = 2.5;
   for (let i = 0; i <= 40; i++) {
     const x = (i / 40) * (length - 0.34);
-    pts.push(new THREE.Vector3(x, 0.11 * Math.sin((x / (length - 0.34)) * waves * Math.PI * 2), 0));
+    pts.push(new THREE.Vector3(x, 0.13 * Math.sin((x / (length - 0.34)) * waves * Math.PI * 2), 0));
   }
-  const tube = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 60, 0.055, 6);
-  const head = new THREE.ConeGeometry(0.17, 0.36, 14).rotateZ(-Math.PI / 2).translate(length - 0.16, 0, 0);
+  const tube = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 60, 0.095, 8);
+  const head = new THREE.ConeGeometry(0.26, 0.44, 16).rotateZ(-Math.PI / 2).translate(length - 0.2, 0, 0);
   const rays = angles.map((deg) => {
     const g = new THREE.Group();
     g.rotation.z = THREE.MathUtils.degToRad(deg);
@@ -359,8 +344,10 @@ export function createEnergyBurst(name, { angles, from = 0.8, to = 3.2, length =
       const r = from + (to - from) * k;
       for (const ray of rays) ray.position.x = r;
       mat.opacity = opacity;
-      glowMat.opacity = opacity * (1 - 0.55 * k);
-      glow.scale.setScalar(1.2 + 2.6 * k);
+      // a short bright flash as it is released, then a softer glow that stays
+      const flash = Math.max(0, 1 - k / 0.3);
+      glowMat.opacity = opacity * (0.6 + 0.4 * flash);
+      glow.scale.setScalar(1.6 + 2.4 * k + 1.6 * flash);
       const a = THREE.MathUtils.degToRad(angles[0]);
       label.set(Math.cos(a) * (r + length), Math.sin(a) * (r + length), 0);
       root.localToWorld(label);

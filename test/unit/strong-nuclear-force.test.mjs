@@ -70,6 +70,13 @@ describe('the arrows and the readout', () => {
     assert.ok(m.arrowLength(20000) / m.arrowLength(200) < 100);
     assert.equal(m.arrowLength(0), 0);
   });
+  it('the orange arrow shrinks as the pull fades, but stays longer than the blue one while the pull wins', () => {
+    assert.ok(m.strongArrowLength(0.6) > m.strongArrowLength(0.8));
+    assert.ok(m.strongArrowLength(0.8) > m.strongArrowLength(1));
+    for (const d of grid) if (d > 0 && d <= m.RANGE) assert.ok(m.strongArrowLength(d) > m.electricArrowLength(d), `at ${d} fm`);
+    assert.equal(m.strongArrowLength(1.1), 0);
+    assert.ok(Math.max(...grid.map((d) => m.strongArrowLength(d))) <= 2.35, 'never longer than the nucleus is wide');
+  });
   it('writes distances to 0.1 × 10⁻¹⁵ m', () => {
     assert.equal(m.fmt(0.64), '0.6');
     assert.equal(m.fmt(1), '1.0');
