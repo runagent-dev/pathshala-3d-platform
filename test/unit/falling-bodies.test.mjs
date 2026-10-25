@@ -89,10 +89,10 @@ describe('falling bodies: the flat paper flutters only in air', () => {
     assert.deepEqual(f.flutter(0.2), { x: 0, tilt: 0, yaw: 0 });
     assert.deepEqual(f.flutter(0, 1), { x: 0, tilt: 0, yaw: 0 });
   });
-  it('it sways at most 6 mm and rocks at most 0.5 rad, and lies flat when it lands', () => {
+  it('it sways at most 4 mm and rocks at most 0.5 rad, and lies flat when it lands', () => {
     for (let t = 0; t <= 0.6; t += 0.005) {
       const p = f.flutter(t, f.BODIES.paper.vt);
-      assert.ok(Math.abs(p.x) <= 0.006 + 1e-12 && Math.abs(p.tilt) <= 0.5 + 1e-12);
+      assert.ok(Math.abs(p.x) <= 0.004 + 1e-12 && Math.abs(p.tilt) <= 0.5 + 1e-12);
     }
     const land = f.landTime(f.BODIES.paper.vt);
     close(f.flutter(land, f.BODIES.paper.vt).tilt, 0, 1e-9);

@@ -4,10 +4,12 @@
 
 Interactive 3D figure for the Pathshala book: the book's own experiment. Two clear tubes of the same height, one
 with air and one emptied, each with a small stone and a piece of paper at rest at the same height. One red button
-lets all four fall at once (shown 8 times slower): in air the stone lands first and the paper flutters down far
+(on the release box on top of the scale) lets all four fall at once (shown 8 times slower): in air the stone lands first and the paper flutters down far
 behind; without air the stone and the paper land together. In the empty tube the bodies leave a faint picture every
 0.1 s with a line across the centimetre scale and a velocity arrow, and the panel's table shows v = gt and
-h = ½gt² (v ∝ t, h ∝ t²). The paper can be crumpled (the same mass, less air hindrance). Then a five-question test.
+h = ½gt², with the book's second and third laws (v ∝ t, h ∝ t²) and equations; after landing it states the first
+law. The paper can be crumpled, an extra test the book doesn't do (the same mass, less air hindrance). Then a
+five-question test. Units are the book's SI symbols (s, m/s, ms⁻², m, cm).
 Units: metres (the GLB is in metres, the tubes at real size).
 
 ## Embed

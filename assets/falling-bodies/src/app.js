@@ -16,7 +16,7 @@ import { createCoach } from '@shared/student/coach.js';
 import { createQuiz } from '@shared/student/quiz.js';
 import { ICONS, svg } from '@shared/student/icons.js';
 import { createI18n } from './i18n.js';
-import { ARROW, BASE, STONE, TOP, TUBE, Y0, createApparatus } from './apparatus.js';
+import { ARROW, BOX, TUBE, Y0, createApparatus } from './apparatus.js';
 import { createLabels } from './labels.js';
 import { fitPose } from './camera.js';
 import {
@@ -59,10 +59,11 @@ const SHUTTER = 0.03; // s for the shutters to fold away (faster than the bodies
 const SETTLE = 0.04; // s for a landed paper to lie flat
 const VIEW_3D = new THREE.Vector3(0.55, 0.3, 0.78).normalize();
 const FRONT_ELEVATION = THREE.MathUtils.degToRad(7);
-// what must be in the frame: both tubes, the base with its button, the speed arrows
-const BOX = new THREE.Box3(
-  new THREE.Vector3(-TUBE.x - TUBE.r - 0.008, -BASE.h, -0.1),
-  new THREE.Vector3(ARROW.x + 0.012, TOP + 0.035, BASE.d / 2 + 0.02),
+// what must be in the frame: the falls in both tubes (felt pads to the bodies on their shutters, the release box) and
+// the speed arrows; the wooden base below and the valve above may run off the edges, so the bodies are big on a phone
+const FRAME = new THREE.Box3(
+  new THREE.Vector3(-TUBE.x - TUBE.r - 0.008, 0, -TUBE.r - 0.008),
+  new THREE.Vector3(ARROW.x + 0.012, Y0 + 0.054, TUBE.r + 0.008),
 );
 const STEP_ICON = svg('<path d="M6 6l7 6-7 6z" class="fill"/><path d="M17 6v12" stroke-width="2.4"/>');
 
@@ -81,11 +82,13 @@ export function createApp(root, options = {}) {
   const ui = buildStudentShell(root, t, {
     learn: `
           <p class="fb-say" aria-live="polite"></p>
-          <div class="fb-table" role="table">
-            <span class="fb-k fb-t">${t('row_t')}</span>${cells('t')}<span class="fb-u">${t('u_s')}</span>
-            <span class="fb-k fb-v">${t('row_v')}</span>${cells('v')}<span class="fb-u">${t('u_ms')}<em>${t('law_v')}</em></span>
-            <span class="fb-k fb-h">${t('row_h')}</span>${cells('h')}<span class="fb-u">${t('u_cm')}<em>${t('law_h')}</em></span>
+          <div class="fb-table">
+            <span class="fb-k fb-t"><b>${t('row_t')}</b></span>${cells('t')}<span class="fb-u">${t('u_s')}</span>
+            <span class="fb-k fb-v"><b>${t('row_v')}</b><small>${t('eq_v')}</small></span>${cells('v')}<span class="fb-u">${t('u_ms')}<em>${t('law_v_short')}</em></span>
+            <span class="fb-k fb-h"><b>${t('row_h')}</b><small>${t('eq_h')}</small></span>${cells('h')}<span class="fb-u">${t('u_cm')}<em>${t('law_h_short')}</em></span>
           </div>
+          <p class="fb-laws"><span class="fb-v">${t('law_2')}</span><span class="fb-h">${t('law_3')}</span></p>
+          <p class="fb-eqs">${t('eqs', { z: 0 })}</p>
           <div class="pvc-learn-foot fb-acts">
             <button class="pvc-btn primary" data-act="go"><i class="fb-ic"></i><span></span></button>
             <button class="pvc-btn" data-act="step" aria-label="${t('act_step_long', { dt: STEP })}" title="${t('act_step_long', { dt: STEP })}">${STEP_ICON}<span>${t('act_step', { dt: STEP })}</span></button>
@@ -199,6 +202,7 @@ export function createApp(root, options = {}) {
     const ready = !s.released;
     labels.show('stone', ready);
     labels.show('paper', ready);
+    labels.show('vel', s.released && tau >= STEPS_T[0] - 1e-9);
     stage.invalidate();
   }
 
@@ -210,8 +214,27 @@ export function createApp(root, options = {}) {
       ui.corner.getBoundingClientRect(),
       slowNote.getBoundingClientRect(),
       ui.hint.classList.contains('show') ? ui.hint.getBoundingClientRect() : null,
+      boxRect(),
+      coachLabel()?.getBoundingClientRect(),
     ],
   });
+  /** The first-use pointer's bubble while it shows (labels keep out from under it). */
+  const coachLabel = () => {
+    const el = ui.coachLayer.querySelector('.pvc-coach-label');
+    return el?.classList.contains('in') ? el : null;
+  };
+  /** Where the release box is on the page (labels keep off it). */
+  function boxRect() {
+    const sr = stage.canvas.getBoundingClientRect();
+    let [x0, y0, x1, y1] = [Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY, Number.NEGATIVE_INFINITY];
+    for (const c of app.points.boxCorners()) {
+      c.project(camera);
+      const x = sr.left + (c.x * 0.5 + 0.5) * stage.width;
+      const y = sr.top + (-c.y * 0.5 + 0.5) * stage.height;
+      [x0, y0, x1, y1] = [Math.min(x0, x), Math.min(y0, y), Math.max(x1, x), Math.max(y1, y)];
+    }
+    return { left: x0, top: y0, right: x1, bottom: y1, width: x1 - x0, height: y1 - y0 };
+  }
   const lp = { air: new THREE.Vector3(), vac: new THREE.Vector3(), stone: new THREE.Vector3(), paper: new THREE.Vector3() };
   const stoneTarget = new THREE.Vector3();
   const paperTarget = new THREE.Vector3();
@@ -219,7 +242,7 @@ export function createApp(root, options = {}) {
     text: t('tube_air'),
     point: () => app.points.tubeFoot('air', lp.air),
     sides: ['below', 'below-l'],
-    gap: 6,
+    gap: 0,
     prio: 1,
     cls: 'fb-tube',
   });
@@ -227,35 +250,54 @@ export function createApp(root, options = {}) {
     text: t('tube_vac'),
     point: () => app.points.tubeFoot('vac', lp.vac),
     sides: ['below', 'below-r'],
-    gap: 6,
+    gap: 0,
     prio: 1,
     cls: 'fb-tube',
   });
-  // before a fall: the stone (left tube, from the left) and the paper (right tube, from the right)
+  // before a fall: the stone and the paper of the left tube, named just under them (where they will fall); on a small
+  // stage they are too close for two labels, then the paper is named in the right tube
+  const sp = new THREE.Vector3();
+  const paperTube = () => {
+    const x = (w) => (sp.copy(w).project(camera).x * 0.5 + 0.5) * stage.width;
+    return x(app.points.paper('air', paperTarget)) - x(app.points.stone('air', stoneTarget)) >= 36 ? 'air' : 'vac';
+  };
   labels.add('stone', {
     text: t('lbl_stone'),
-    point: () => lp.stone.set(-TUBE.x - TUBE.r - 0.01, Y0 + 0.012, 0),
-    target: () => app.points.stone('air', stoneTarget).setX(-TUBE.x + STONE.x - STONE.r * 0.6),
-    sides: ['left'],
-    gap: 10,
+    point: () => app.points.stone('air', lp.stone).setY(Y0 - 0.004),
+    target: () => app.points.stone('air', stoneTarget),
+    sides: ['below-l', 'below'],
+    gap: 12,
     prio: 2,
     leader: true,
   });
   labels.add('paper', {
     text: t('lbl_paper'),
-    point: () => lp.paper.set(TUBE.x + TUBE.r + 0.01, Y0 + 0.012, 0),
-    target: () => app.points.paper('vac', paperTarget),
-    sides: ['right'],
-    gap: 10,
+    point: () => app.points.paper(paperTube(), lp.paper).setY(Y0 - 0.004),
+    target: () => app.points.paper(paperTube(), paperTarget),
+    sides: ['below-r', 'below'],
+    gap: 12,
     prio: 2,
     leader: true,
+  });
+  // the speed arrows are named once, beside the longest one shown (they are not only told apart by colour)
+  const velPoint = new THREE.Vector3();
+  labels.add('vel', {
+    text: t('lbl_velocity'),
+    point: () => {
+      const i = Math.max(0, STEPS_T.filter((ti) => s.tau >= ti - 1e-9).length - 1);
+      return app.points.arrowTail(fallen(STEPS_T[i]), freeV(STEPS_T[i]), velPoint);
+    },
+    sides: ['right', 'right-up', 'above'],
+    gap: 6,
+    prio: 4,
+    cls: 'fb-vel',
   });
   STEPS_T.forEach((ti, i) => {
     const p = new THREE.Vector3();
     labels.add(`t${i}`, {
       text: t('lbl_time', { t: ti }),
       point: () => app.points.arrowFoot(fallen(ti), p),
-      sides: ['right'],
+      sides: ['right', 'right-up'],
       gap: 2,
       prio: 3,
       cls: 'fb-time',
@@ -284,7 +326,8 @@ export function createApp(root, options = {}) {
     const p = phase();
     const crumpled = s.paper === 'crumpled';
     if (p === 'ready') return t(crumpled ? 'say_ready_crumpled' : 'say_ready');
-    if (p === 'done') return t(crumpled ? 'say_done_crumpled' : 'say_done', { tv: fmt(T_VAC), ts: fmt(T_STONE), tp: fmt(tPaper()) });
+    if (p === 'done' || s.tau >= tPaper() - 1e-9)
+      return t(crumpled ? 'say_done_crumpled' : 'say_done', { tv: fmt(T_VAC), ts: fmt(T_STONE), tp: fmt(tPaper()) });
     if (s.tau >= T_VAC - 1e-9) return t('say_vac_down', { t: fmt(T_VAC) });
     if (p === 'paused' && s.tau > 0) return t(crumpled ? 'say_paused_crumpled' : 'say_paused', { t: fmt(s.tau) });
     return t('say_fall', { dt: STEP });
@@ -413,6 +456,7 @@ export function createApp(root, options = {}) {
   /** Back to the start: both shutters closed under the bodies. */
   function toStart() {
     token++;
+    app.hidePaper('vac', false);
     s.playing = false;
     s.released = false;
     s.tau = 0;
@@ -464,6 +508,7 @@ export function createApp(root, options = {}) {
   /** One step of 0.1 s (played slowed down); dir −1 jumps back one step. */
   function step(dir = 1) {
     if (s.locked) return lockedNudge();
+    token++; // a release still pending ("আবার ছেড়ে দাও" a moment ago) must not take over the step
     coach?.objectUsed();
     if (dir < 0) {
       const back = prevStep(s.tau);
@@ -506,15 +551,15 @@ export function createApp(root, options = {}) {
   }
   const probe = new THREE.PerspectiveCamera();
   const probePoint = new THREE.Vector3();
-  // what must stay clear of the corner buttons and the note: the bodies at the top of both tubes, and room for the
-  // paper's label right of the empty tube (the collars and the valve above them may pass under the buttons)
+  // what must stay clear of the corner buttons and the note: the bodies at the top of both tubes, the release box and
+  // the first time label (the collars and the valve above them may pass under the buttons)
   const CLEAR = [
-    ...[-TUBE.x - TUBE.r, -TUBE.x + TUBE.r, TUBE.x - TUBE.r, TUBE.x + TUBE.r].map((x) => ({
-      p: new THREE.Vector3(x, Y0 + 0.055, 0),
-      pad: 8,
+    ...[-TUBE.x - TUBE.r, -TUBE.x + TUBE.r, TUBE.x - TUBE.r, TUBE.x + TUBE.r, -BOX.w / 2, BOX.w / 2].map((x) => ({
+      p: new THREE.Vector3(x, Y0 + 0.054, 0),
+      pad: 5,
       wide: 0,
     })),
-    { p: new THREE.Vector3(TUBE.x + TUBE.r + 0.01, Y0 + 0.012, 0), pad: 20, wide: 72 },
+    { p: new THREE.Vector3(ARROW.x + 0.012, Y0 - fallen(STEP), 0), pad: 12, wide: 52 },
   ];
   function blocked(pose) {
     const sr = stage.canvas.getBoundingClientRect();
@@ -535,7 +580,7 @@ export function createApp(root, options = {}) {
   /** The closest pose that shows everything, with as little room on top as the corner buttons allow. */
   function viewPose(view = s.view) {
     const fit = (top) =>
-      fitPose({ box: BOX, dir: viewDir(view), camera, width: stage.width, height: stage.height, margin: { top, bottom: 36, side: 58 } });
+      fitPose({ box: FRAME, dir: viewDir(view), camera, width: stage.width, height: stage.height, margin: { top, bottom: 22, left: 10, right: 60 } });
     for (const top of [12, 20, 28, 36, 44]) {
       const pose = fit(top);
       if (!blocked(pose)) return pose;
@@ -579,6 +624,8 @@ export function createApp(root, options = {}) {
   // the note in the corner: shorter on a narrow stage, so it keeps clear of the left tube (before the camera fits)
   const noteText = () => {
     slowNote.textContent = t(stage.width < 480 ? 'slow_short' : 'slow', { k: SLOW });
+    // on the smallest stage the speed arrows are named by their symbol only (there is room for "v", not for "বেগ v")
+    labels.setText('vel', stage.width < 480 && stage.height < 300 ? 'v' : t('lbl_velocity'));
   };
   noteText();
   stage.onResize(noteText);
@@ -693,6 +740,7 @@ export function createApp(root, options = {}) {
   const ratioLabel = (r) => `<span class="fb-opt">${N(r.join(' : '))}</span>`;
 
   let kinds = [];
+  let pickedIndex = -1;
   let q = null; // the current question: { kind, …, picked note }
   /** Plays the scene of a question to `target` (s of fall), from where it is; for a worked answer. */
   function showPlay(target) {
@@ -712,12 +760,13 @@ export function createApp(root, options = {}) {
         hideHint();
         if (s.paper !== 'flat') setPaper('flat', { animate: false });
         toStart();
-        kinds = shuffle(['together', 'why', 'speed', 'height', pickOne(['ratio', 'mass'])]);
+        kinds = shuffle(['where', 'why', 'speed', 'height', pickOne(['ratio', 'mass'])]);
         syncUI();
       },
       leave() {
         s.mode = 'explore';
         s.locked = false;
+        hideHint();
         if (s.paper !== 'flat') setPaper('flat', { animate: false });
         toStart();
         syncUI();
@@ -726,11 +775,15 @@ export function createApp(root, options = {}) {
       async prepare(i, alive, say) {
         const kind = kinds[i % kinds.length];
         toStart(); // nothing left from an earlier question
-        if (kind === 'together') {
+        if (kind === 'where') {
+          // the empty tube 0.2 s into the fall, its paper hidden (and its pictures): where is the paper now?
+          app.hidePaper('vac', true);
+          jumpTo(STEPS_T[1]);
+          const h = round(freeH(STEPS_T[1]) * 100, 1);
           q = { kind };
-          const c = textChoices(['c_same', 'c_stone', 'c_stone_bit', 'c_float'], kind);
+          const c = textChoices(['c_same_line', 'c_behind', 'c_ahead', 'c_start'], kind);
           q.keys = c.keys;
-          return { text: t('q_together'), ...c };
+          return { text: t('q_where', { t: STEPS_T[1], h }), ...c };
         }
         if (kind === 'why') {
           // all four let go; it stops the moment the stone reaches the bottom in air
@@ -859,8 +912,8 @@ export function createApp(root, options = {}) {
             tt,
             [
               { v: tt / k, note: 'miss_mass' },
-              { v: tt * k, note: 'miss_mass' },
               { v: tt / 2, note: 'miss_mass' },
+              { v: tt - 0.5, note: 'miss_mass' },
             ],
             'u_s',
             kind,
@@ -869,13 +922,14 @@ export function createApp(root, options = {}) {
         };
       },
       reveal(question, correct) {
-        const picked = question.choices[Number(ui.$('.pvc-opt.wrong')?.dataset.q ?? -1)];
+        const picked = question.choices[pickedIndex];
         const extra = (note, vars = {}) => (!correct && note ? ` ${t(note, vars)}` : '');
-        if (q.kind === 'together') {
-          showPlay(tEnd());
+        if (q.kind === 'where') {
+          app.hidePaper('vac', false); // there it is, beside the stone
+          stage.invalidate();
           const key = q.keys?.[picked];
-          const notes = { c_stone: 'miss_stone', c_stone_bit: 'miss_stone_bit', c_float: 'miss_float' };
-          return t('why_together') + extra(notes[key]);
+          const notes = { c_behind: 'miss_behind', c_ahead: 'miss_ahead', c_start: 'miss_start' };
+          return t('why_where') + extra(notes[key]);
         }
         if (q.kind === 'why') {
           showPlay(tEnd());
@@ -924,6 +978,18 @@ export function createApp(root, options = {}) {
   if (o.coach) {
     const v = new THREE.Vector3();
     const v2 = new THREE.Vector3();
+    /** Would the coach take the red button (its rules: inside the view, not near the corner buttons or the note)? */
+    const buttonSpotOk = () => {
+      v.copy(app.points.button()).project(camera);
+      const x = (v.x * 0.5 + 0.5) * stage.width;
+      const y = (-v.y * 0.5 + 0.5) * stage.height;
+      if (x < 16 || x > stage.width - 16 || y < 16 || y > stage.height - 48) return false;
+      const sr = stage.canvas.getBoundingClientRect();
+      return ![ui.corner, slowNote].some((el) => {
+        const r = el.getBoundingClientRect();
+        return r.width && x > r.left - sr.left - 12 && x < r.right - sr.left + 12 && y > r.top - sr.top - 12 && y < r.bottom - sr.top + 12;
+      });
+    };
     coach = createCoach({
       stage,
       layer: ui.coachLayer,
@@ -932,8 +998,10 @@ export function createApp(root, options = {}) {
       tweener,
       avoid: [ui.corner, ui.hint, slowNote],
       object: {
-        label: 'coach_release',
-        // the red button; on a short stage it may be too near the bottom, then the stone on its shutter
+        // the red button; where it can't be pointed at (too near the corner buttons), the stone on its shutter
+        get label() {
+          return buttonSpotOk() ? 'coach_release' : 'coach_top';
+        },
         candidates: () =>
           [app.points.button(), app.points.stone('air', v2)].map((p) => {
             v.copy(p).project(camera);
@@ -981,7 +1049,10 @@ export function createApp(root, options = {}) {
     if (b.dataset.view) setView(b.dataset.view);
     if (b.dataset.mode === 'quiz' && s.mode !== 'quiz') quiz.start();
     if (b.dataset.mode === 'explore') quiz.stop();
-    if (b.dataset.q != null) quiz.choose(Number(b.dataset.q));
+    if (b.dataset.q != null) {
+      pickedIndex = Number(b.dataset.q); // the worked answer names the mistake of this pick
+      quiz.choose(pickedIndex);
+    }
     switch (b.dataset.act) {
       case 'q-next':
         quiz.next();

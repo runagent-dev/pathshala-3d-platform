@@ -13,14 +13,14 @@ export const H = Math.round(0.5 * G * (STEP * STEPS) ** 2 * 1e6) / 1e6; // 0.441
 export const SLOW = 8; // the fall is shown 8 times slower than real time (0.3 s → 2.4 s)
 
 /**
- * The bodies (terminal speed in air, m/s). Stone: a 5 cm pebble, about 150 g: vt ≈ 47 m/s. Paper: a 5.8 cm square of
- * exercise-book paper (80 g/m², about 0.27 g), falling flat: vt ≈ √(2mg / ρCA) ≈ 1 m/s (it flutters). Crumpled: the
- * same paper (the same mass) squeezed into a 2.5 cm ball: vt ≈ 3.9 m/s.
+ * The bodies (terminal speed in air, m/s). Stone: a 6 cm pebble, about 0.27 kg: vt ≈ 50 m/s. Paper: a 7 cm square of
+ * exercise-book paper (80 g/m², about 0.4 g), falling flat: vt ≈ √(2mg / ρCA) ≈ 1 m/s whatever its size (mass and
+ * area grow together; it flutters). Crumpled: the same paper (the same mass) squeezed into a 2.8 cm ball: vt ≈ 4.2 m/s.
  */
 export const BODIES = {
-  stone: { vt: 47 },
+  stone: { vt: 50 },
   paper: { vt: 1 },
-  crumpled: { vt: 3.9 },
+  crumpled: { vt: 4.2 },
 };
 
 /** Rounded without binary leftovers: round(0.1 + 0.2, 3) → 0.3. */
@@ -75,7 +75,7 @@ export function endTime(paper = 'paper') {
 }
 
 /**
- * How a flat paper flutters as it falls through air (none without air): a sideways sway x (m), a rocking tilt about
+ * How a flat paper flutters as it falls through air (none without air): a sideways sway x (m, up to 4 mm), a rocking tilt about
  * the line of sight (rad; it dips toward the way it swings, like a falling leaf) and a slow turn about the vertical
  * (rad). The flutter grows with speed, (v/vt)², and dies away in the last few centimetres so it lands flat.
  */
@@ -89,7 +89,7 @@ export function flutter(t, vt = Number.POSITIVE_INFINITY, h = H) {
   const a = k * near * near * (3 - 2 * near);
   const w = (2 * Math.PI) / 0.24; // one swing to and fro in 0.24 s
   return {
-    x: 0.006 * a * Math.sin(w * tt),
+    x: 0.004 * a * Math.sin(w * tt),
     tilt: -0.5 * a * Math.cos(w * tt),
     yaw: 0.9 * tt * k,
   };

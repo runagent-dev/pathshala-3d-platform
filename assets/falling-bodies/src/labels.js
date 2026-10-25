@@ -9,7 +9,7 @@ const PAD = 4; // px kept free round each label
 
 /**
  * stage: the kit's stage; layer: an absolutely placed element over the canvas; avoid: () => [DOMRect…] in page
- * pixels. add(id, { text, point: () => Vector3, sides: ['right' | 'left' | 'below' | 'below-l' | 'below-r' | 'above', …], gap, prio, leader, target, cls }): the label sits
+ * pixels. add(id, { text, point: () => Vector3, sides: ['right' | 'right-up' | 'left' | 'below' | 'below-l' | 'below-r' | 'above', …], gap, prio, leader, target, cls }): the label sits
  * beside `point`; its leader line (if wanted) runs to `target` (default: the point).
  */
 export function createLabels({ stage, layer, avoid = () => [] }) {
@@ -87,15 +87,17 @@ export function createLabels({ stage, layer, avoid = () => [] }) {
         const c =
           side === 'right'
             ? { x: ax + gap, y: ay - h / 2 }
-            : side === 'left'
-              ? { x: ax - gap - w, y: ay - h / 2 }
-              : side === 'below'
-                ? { x: ax - w / 2, y: ay + gap }
-                : side === 'below-l' // below, reaching out to the left of the point
-                  ? { x: ax + 14 - w, y: ay + gap }
-                  : side === 'below-r'
-                    ? { x: ax - 14, y: ay + gap }
-                    : { x: ax - w / 2, y: ay - gap - h };
+            : side === 'right-up' // beside the point, resting on it
+              ? { x: ax + gap, y: ay - h }
+              : side === 'left'
+                ? { x: ax - gap - w, y: ay - h / 2 }
+                : side === 'below'
+                  ? { x: ax - w / 2, y: ay + gap }
+                  : side === 'below-l' // below, reaching out to the left of the point
+                    ? { x: ax + 14 - w, y: ay + gap }
+                    : side === 'below-r'
+                      ? { x: ax - 14, y: ay + gap }
+                      : { x: ax - w / 2, y: ay - gap - h };
         c.w = w;
         c.h = h;
         if (c.x < 4 || c.y < 4 || c.x + w > W - 4 || c.y + h > Hh - 4) continue;

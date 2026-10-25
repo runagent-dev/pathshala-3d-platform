@@ -1,7 +1,7 @@
 // The apparatus, in metres (y up, x to the right, z toward the student): two clear tubes of the same height on a
 // wooden base. The left one is open at the top (বাতাস আছে); the right one is sealed, with a valve where the air
 // was pumped out (বাতাসহীন). In each, a small stone and a piece of exercise-book paper rest on a shutter at the same
-// height; the red button on the base opens both shutters at once. Between the tubes a centimetre scale counts the
+// height; the red button on the release box (on top of the scale) opens both shutters at once. Between the tubes a centimetre scale counts the
 // height fallen downward from the start (h, as the book writes it). Plus the marks of a fall: faint pictures of the
 // bodies every 0.1 s, a dashed line at each, and the speed arrows (বেগ). Colours carry meaning (style.css too).
 import * as THREE from 'three';
@@ -11,22 +11,25 @@ import { H, STEPS } from './fall.js';
 export const COLORS = { v: '#1c6fd9', h: '#d9480f', t: '#6741d9', ghost: '#7f8fa3', ghostEdge: '#4f5d6e' };
 
 /** Tube centres at ±x; glass outer and inner radius; the felt pad's top (the floor of a fall). */
-export const TUBE = { x: 0.135, r: 0.075, rIn: 0.071, floor: 0.024, foot: 0.016 };
+export const TUBE = { x: 0.145, r: 0.08, rIn: 0.076, floor: 0.024, foot: 0.016 };
 /** The release level: the bottoms of all bodies start here and fall H to the floor. */
 export const Y0 = TUBE.floor + H;
 export const TOP = Y0 + 0.056; // the tops of the tube collars
 /** Where the bodies sit in each tube (x from the tube's axis). The paper is held tilted toward the student. */
-export const STONE = { r: 0.025, x: -0.035 };
-export const PAPER = { w: 0.058, x: 0.033, tilt: THREE.MathUtils.degToRad(28), thick: 0.0008 };
+export const STONE = { r: 0.034, x: -0.039 };
+export const PAPER = { w: 0.07, x: 0.036, tilt: THREE.MathUtils.degToRad(28), thick: 0.0008 };
 PAPER.lift = (PAPER.w / 2) * Math.sin(PAPER.tilt) + PAPER.thick; // centre above its lowest point
-export const CRUMPLED = { r: 0.0125 };
+export const CRUMPLED = { r: 0.014 };
 /** A paper lying on the pad is not quite flat (one edge curls up a little), so it can still be seen from the front. */
 export const LANDED_TILT = THREE.MathUtils.degToRad(7);
 export const RULER = { w: 0.08 };
-/** Speed arrows stand right of the empty tube: k metres of arrow per m/s. */
-export const ARROW = { x: TUBE.x + TUBE.r + 0.028, k: 0.05 };
+/** Speed arrows stand right of the empty tube: k metres of arrow per m/s (not 0.05, which would make the first arrow
+ * exactly as long as the distance fallen by then, and read like one). */
+export const ARROW = { x: TUBE.x + TUBE.r + 0.026, k: 0.035 };
 export const BASE = { w: 0.56, h: 0.036, d: 0.2 };
-export const BUTTON = { x: 0, y: -BASE.h / 2, z: BASE.d / 2 };
+/** The release box sits on top of the scale, between the tubes, wired to both shutters; its red button faces the student. */
+export const BOX = { w: 0.064, h: 0.03, d: 0.034, y: Y0 + 0.018 };
+export const BUTTON = { x: 0, y: BOX.y + BOX.h / 2, z: BOX.d / 2 };
 
 function rand(seed) {
   let s = seed >>> 0;
@@ -162,14 +165,24 @@ export function createApparatus({ materials: M, t }) {
   base.name = 'Base';
   root.add(base);
 
-  // the release button on the front of the base, in a small dark housing
-  const housing = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.034, 0.01), dark);
-  housing.position.set(BUTTON.x, BUTTON.y, BUTTON.z + 0.005);
-  const button = new THREE.Mesh(new THREE.CylinderGeometry(0.0125, 0.0135, 0.012, 28).rotateX(Math.PI / 2), red);
+  // the release box on top of the scale, its wires to the two shutter bands, and its red button
+  const box = new THREE.Mesh(new THREE.BoxGeometry(BOX.w, BOX.h, BOX.d), dark);
+  box.name = 'ReleaseBox';
+  box.position.set(0, BOX.y + BOX.h / 2, 0);
+  const button = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.012, 0.01, 28).rotateX(Math.PI / 2), red);
   button.name = 'ReleaseButton';
-  const buttonRest = BUTTON.z + 0.016;
+  const buttonRest = BUTTON.z + 0.005;
   button.position.set(BUTTON.x, BUTTON.y, buttonRest);
-  root.add(housing, button);
+  root.add(box, button);
+  for (const side of [-1, 1]) {
+    const a = new THREE.Vector3(side * (BOX.w / 2), BOX.y + 0.008, -0.006);
+    const b = new THREE.Vector3(side * (TUBE.x - TUBE.r - 0.004), Y0 - 0.007, -0.006);
+    const wire = new THREE.Mesh(new THREE.CylinderGeometry(0.0016, 0.0016, a.distanceTo(b), 6), dark);
+    wire.name = 'ReleaseWire';
+    wire.position.copy(a).add(b).multiplyScalar(0.5);
+    wire.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize());
+    root.add(wire);
+  }
 
   // ── the tubes ─────────────────────────────────────────────────────────────
   const glassH = TOP - TUBE.foot - 0.014;
@@ -178,8 +191,9 @@ export function createApparatus({ materials: M, t }) {
     const g = new THREE.Group();
     g.name = sealed ? 'TubeWithoutAir' : 'TubeWithAir';
     g.position.x = side * TUBE.x;
-    const collar = (y0, h, r = TUBE.r + 0.007) => {
+    const collar = (y0, h, r = TUBE.r + 0.007, name = 'Collar') => {
       const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 48), M.steel);
+      m.name = name;
       m.position.y = y0 + h / 2;
       g.add(m);
       return m;
@@ -188,27 +202,33 @@ export function createApparatus({ materials: M, t }) {
     const tube = new THREE.Mesh(new THREE.CylinderGeometry(TUBE.r, TUBE.r, glassH, 56, 1, true), glass);
     tube.position.y = TUBE.foot + glassH / 2;
     tube.renderOrder = 3;
+    tube.name = 'Glass';
     g.add(tube);
     // thin bright rings where the glass meets the collars, so the clear tube reads on a white page
     for (const y of [TUBE.foot + 0.001, TOP - 0.015]) {
       const ring = new THREE.Mesh(new THREE.TorusGeometry(TUBE.r, 0.0012, 6, 56).rotateX(Math.PI / 2), rimGlass);
       ring.position.y = y;
+      ring.name = 'GlassRim';
       g.add(ring);
     }
     // a shutter band round the glass at the release level, and the top collar
-    collar(Y0 - 0.008, 0.012, TUBE.r + 0.004);
+    collar(Y0 - 0.012, 0.01, TUBE.r + 0.004, 'ShutterBand'); // just under the shutter, so the bodies sit clear of it
     collar(TOP - 0.014, 0.014);
     if (sealed) {
       const cap = new THREE.Mesh(new THREE.CylinderGeometry(TUBE.r + 0.007, TUBE.r + 0.007, 0.006, 48), M.steel);
       cap.position.y = TOP + 0.003;
+      cap.name = 'Cap';
       const valve = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.022, 16), M.brass);
       valve.position.set(0.03, TOP + 0.017, -0.02);
+      valve.name = 'Valve';
       const lever = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.004, 0.006), dark);
       lever.position.set(0.03, TOP + 0.03, -0.02);
+      lever.name = 'ValveLever';
       g.add(cap, valve, lever);
     }
     const pad = new THREE.Mesh(new THREE.CylinderGeometry(TUBE.rIn - 0.002, TUBE.rIn - 0.002, 0.012, 40), felt);
     pad.position.y = TUBE.floor - 0.006;
+    pad.name = 'FeltPad';
     g.add(pad);
     // the shutter: two half discs that fold into the wall when the button is pressed
     const leaves = [-1, 1].map((s) => {
@@ -224,7 +244,9 @@ export function createApparatus({ materials: M, t }) {
       geo.translate(-s * R, 0, 0); // the pivot is at the wall, so the leaf shrinks into it
       const pivot = new THREE.Group();
       pivot.position.set(s * R, Y0, 0);
-      pivot.add(new THREE.Mesh(geo, M.steel));
+      const leaf = new THREE.Mesh(geo, M.steel);
+      leaf.name = 'ShutterLeaf';
+      pivot.add(leaf);
       g.add(pivot);
       return pivot;
     });
@@ -236,19 +258,25 @@ export function createApparatus({ materials: M, t }) {
   /** 0: the shutters closed under the bodies; 1: folded away into the wall. */
   function setShutter(k) {
     const e = Math.min(1, Math.max(0, k));
-    for (const tb of Object.values(tubes)) for (const p of tb.leaves) p.scale.x = Math.max(0.001, 1 - e);
+    for (const tb of Object.values(tubes))
+      for (const p of tb.leaves) {
+        p.scale.x = Math.max(0.001, 1 - e);
+        p.visible = e < 1; // folded away: gone (a leaf squashed to nothing would still show as a thin line)
+      }
   }
 
   // ── the scale (centimetres, 0 at the start, counting down) ────────────────
   const ruler = new THREE.Group();
   ruler.name = 'Scale';
-  const rulerTop = Y0 + 0.028;
+  const rulerTop = BOX.y;
   const rulerBottom = TUBE.floor - 0.012;
   const board = new THREE.Mesh(new THREE.BoxGeometry(RULER.w, rulerTop - rulerBottom, 0.008), rulerFace);
   board.position.set(0, (rulerTop + rulerBottom) / 2, 0);
+  board.name = 'ScaleBoard';
   ruler.add(board);
   const frame = new THREE.Mesh(new THREE.BoxGeometry(RULER.w + 0.008, 0.012, 0.03), M.steel);
   frame.position.set(0, 0.006, 0);
+  frame.name = 'ScaleFoot';
   ruler.add(frame);
   const cm = Math.floor(H * 100 + 1e-6);
   const ticks = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 0.0006), rulerInk, cm + 1);
@@ -259,9 +287,10 @@ export function createApparatus({ materials: M, t }) {
     m4.compose(new THREE.Vector3(RULER.w / 2 - len / 2, Y0 - i / 100, 0.0043), new THREE.Quaternion(), new THREE.Vector3(len, th, 1));
     ticks.setMatrixAt(i, m4);
   }
+  ticks.name = 'ScaleTicks';
   ruler.add(ticks);
   for (let i = 0; i <= cm; i += 10) {
-    const label = textMesh(N(String(i)), 0.026, { weight: 700, align: 'left' });
+    const label = textMesh(N(String(i)), 0.03, { weight: 700, align: 'left' });
     label.position.set(-RULER.w / 2 + 0.005, Y0 - i / 100, 0.0045);
     ruler.add(label);
   }
@@ -310,6 +339,12 @@ export function createApparatus({ materials: M, t }) {
       g.flat.visible = kind !== 'crumpled';
       g.ball.visible = kind === 'crumpled';
     }
+  }
+
+  /** Hides one tube's paper and (empty tube) its pictures, or shows them again. */
+  function hidePaper(which, hidden) {
+    bodies[which].paper.visible = !hidden;
+    if (which === 'vac') for (const g of ghosts) g.paper.visible = !hidden;
   }
 
   const e = new THREE.Euler();
@@ -420,12 +455,12 @@ export function createApparatus({ materials: M, t }) {
   // ── things a finger can press (invisible, bigger than what you see) ───────
   const hitMat = new THREE.MeshBasicMaterial({ visible: false });
   const hits = [];
-  const hitButton = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.1, 0.12), hitMat);
-  hitButton.position.set(BUTTON.x, BUTTON.y + 0.01, BUTTON.z);
+  const hitButton = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.075, 0.08), hitMat);
+  hitButton.position.set(BUTTON.x, BUTTON.y, 0.01);
   hitButton.userData = { noExport: true, part: 'button' };
   hits.push(hitButton);
   for (const side of [-1, 1]) {
-    const hit = new THREE.Mesh(new THREE.BoxGeometry(TUBE.r * 2 + 0.04, 0.12, TUBE.r * 2 + 0.02), hitMat);
+    const hit = new THREE.Mesh(new THREE.BoxGeometry(TUBE.r * 2 + 0.02, 0.1, TUBE.r * 2 + 0.02), hitMat);
     hit.position.set(side * TUBE.x, Y0 + 0.03, 0);
     hit.userData = { noExport: true, part: 'holder' };
     hits.push(hit);
@@ -433,7 +468,7 @@ export function createApparatus({ materials: M, t }) {
   root.add(...hits);
 
   function pressButton(on) {
-    button.position.z = buttonRest - (on ? 0.006 : 0);
+    button.position.z = buttonRest - (on ? 0.005 : 0);
   }
 
   const v3 = new THREE.Vector3();
@@ -448,6 +483,7 @@ export function createApparatus({ materials: M, t }) {
     hits,
     setShutter,
     setPaper,
+    hidePaper,
     placeBodies,
     placeGhost,
     setLines,
@@ -456,11 +492,16 @@ export function createApparatus({ materials: M, t }) {
     pressButton,
     /** World points for labels and pointers. */
     points: {
-      button: () => v3.set(BUTTON.x, BUTTON.y, buttonRest + 0.006),
-      tubeFoot: (which, out) => out.set((which === 'air' ? -1 : 1) * TUBE.x, -BASE.h, BASE.d / 2),
+      button: () => v3.set(BUTTON.x, BUTTON.y, buttonRest + 0.005),
+      /** The corners of the release box, to keep labels off it. */
+      boxCorners: () => [-1, 1].flatMap((sx) => [-1, 1].map((sy) => new THREE.Vector3((sx * BOX.w) / 2, BOX.y + (sy > 0 ? BOX.h : 0), BOX.d / 2))),
+      /** Under a tube, on its foot collar just below the felt pad (the tube's name goes there). */
+      tubeFoot: (which, out) => out.set((which === 'air' ? -1 : 1) * TUBE.x, 0.013, TUBE.r + 0.008),
       stone: (which, out) => bodies[which].stone.getWorldPosition(out),
       paper: (which, out) => bodies[which].paper.getWorldPosition(out),
       arrowFoot: (d, out) => out.set(ARROW.x + 0.012, Y0 - d, 0),
+      /** The tail (top end) of the speed arrow that ends d below the start, for speed v (m/s). */
+      arrowTail: (d, v, out) => out.set(ARROW.x + 0.008, Y0 - d + ARROW.k * v, 0),
     },
   };
 }
