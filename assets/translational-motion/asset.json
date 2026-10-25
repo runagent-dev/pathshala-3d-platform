@@ -1,0 +1,103 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "translational-motion",
+  "title": "Translational motion (চলন গতি)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 36,
+  "topic": "2.2",
+  "placement": "Book page 36, topic 2.2: চলন গতি (Translational Motion), next to that paragraph (the page has no picture for it).",
+  "order": 3,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "Interactive 3D car (real size, metres) for চলন গতি (translational motion), book page 36, topic 2.2. Four painted, labelled points on the body (front bumper, rear corner, window, roof). The student drags the car or presses চালাও: each point leaves a trail with an arrowhead, and the panel shows how far each point went. Going straight, the four trails are equal and parallel (চলন গতি). Two contrasts from the book's sentence, as on/off buttons: a point on the rotating wheel (ঘূর্ণায়মান চাকা) traces a cycloid touching the road and travels 5.1 m while the body goes 4 m (one wheel turn = 2 m), and a car taking a bend is not translational (each point its own distance and direction). Test tab: 5 questions (a distance from two metre marks, which motion is translational with look-alike pairs, the wheel point's path, the bend, the whole definition), each worked answer naming the student's mistake. Phone-first, Bangla.",
+  "tags": ["motion", "translational-motion", "rigid-body", "car", "cycloid", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "path",
+      "label": "The car's path",
+      "type": "select",
+      "options": [["straight", "straight"], ["turn", "a bend"]],
+      "default": "straight"
+    },
+    {
+      "name": "distance",
+      "label": "Distance already driven",
+      "type": "number",
+      "default": "0",
+      "placeholder": "m",
+      "help": "0 to 4 m straight, 0 to 7.85 m round the bend"
+    },
+    { "name": "wheel", "label": "Show the point on the wheel", "type": "boolean", "default": "0" },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "First-use pointers", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "distance": 3, "animate": false } },
+    { "name": "set", "payload": { "playing": true } },
+    { "name": "set", "payload": { "playing": false } },
+    { "name": "set", "payload": { "wheel": true } },
+    { "name": "set", "payload": { "path": "turn", "distance": 7.85, "animate": false } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": [
+    "ready",
+    "change",
+    "drive",
+    "path",
+    "view",
+    "dragstart",
+    "dragend",
+    "practice-start",
+    "practice-result",
+    "practice-end"
+  ],
+  "export": {
+    "poster": { "params": { "coach": "0", "distance": "4" } },
+    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "distance": 0, "animate": false } }] }],
+    "video": {
+      "kind": "script",
+      "seconds": 18,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 0.6, "command": "set", "payload": { "playing": true } },
+        { "at": 5, "command": "set", "payload": { "distance": 0, "wheel": true, "animate": false } },
+        { "at": 5.5, "command": "set", "payload": { "playing": true } },
+        { "at": 10, "command": "set", "payload": { "path": "turn", "wheel": false, "animate": false } },
+        { "at": 10.5, "command": "set", "payload": { "playing": true } }
+      ]
+    }
+  }
+}
