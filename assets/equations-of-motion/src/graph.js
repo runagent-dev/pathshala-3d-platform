@@ -1,9 +1,11 @@
-// The বেগ–সময় graph of the run, drawn on the figure's 2D overlay canvas (so it is crisp at any size and part of
+// The বেগ–সময় গ্রাফ of the run, drawn on the figure's 2D overlay canvas (so it is crisp at any size and part of
 // `capture`): the velocity line from u to v, the area under it in 1-second strips (each strip is the distance of
-// that second, the same colours as the bar on the railway), the average velocity V as a dashed line, the
-// moment the line crosses it (half the time), and at the end of a run the triangle above V turning half round
-// into the gap below it: the trapezium becomes the rectangle V × t, so s = Vt.
-// Labels are placed one by one and skip a spot that would cover one already drawn.
+// that second, the same colours as the trip bar under the railway), the average velocity V as a dashed line, the
+// moment the line crosses it (half the time), and at the end of a run the triangle above V folding into the gap
+// below it, in two flips that stay inside the graph: the trapezium becomes the rectangle V × t, so s = Vt.
+// Labels are placed one by one and skip a spot that would cover one already drawn (or a line).
+
+export const FONT = '"Noto Sans Bengali", "Segoe UI", Roboto, Arial, sans-serif';
 
 /** A text label with a white halo; returns its box, or null if it would collide with `taken`. */
 export function placeLabel(
@@ -14,7 +16,7 @@ export function placeLabel(
   y,
   { align = 'left', base = 'middle', color = '#1d2733', size = 13, weight = 600, pad = 2, bounds = null, force = false } = {},
 ) {
-  ctx.font = `${weight} ${size}px "Noto Sans Bengali", "Segoe UI", Roboto, Arial, sans-serif`;
+  ctx.font = `${weight} ${size}px ${FONT}`;
   const w = ctx.measureText(text).width;
   const h = size * 1.25;
   const left = align === 'left' ? x : align === 'right' ? x - w : x - w / 2;
@@ -57,28 +59,77 @@ function arrowHead(ctx, x, y, dx, dy, size = 7) {
   ctx.fill();
 }
 
+const smooth = (k) => {
+  const x = Math.min(1, Math.max(0, k));
+  return x * x * (3 - 2 * x);
+};
+
+/**
+ * The triangle between the line and V on the side where the line is above V (graph units [t, v]), and the gap
+ * below V it folds into. a > 0: right of half time above V, the gap left of it; a < 0 the other way round.
+ */
+export function swapTriangles({ u, a, t, v, V }) {
+  const h = t / 2;
+  return a > 0
+    ? {
+        piece: [
+          [h, V],
+          [t, V],
+          [t, v],
+        ],
+        gap: [
+          [h, V],
+          [0, V],
+          [0, u],
+        ],
+      }
+    : {
+        piece: [
+          [0, u],
+          [0, V],
+          [h, V],
+        ],
+        gap: [
+          [h, V],
+          [t, V],
+          [t, v],
+        ],
+      };
+}
+
 /**
  * Draws the graph in rect R = { x, y, w, h } (CSS px). g: {
- *   u, a, t, v, V,             the plan (m/s, m/s², s)
+ *   u, a, t, v, V,             the plan (m/s, ms⁻², s)
  *   tau,                       how far the line has been drawn (s)
  *   axisT, axisV: { max, step } the axes
  *   show: { plan, line, area, strips, V, mid, uLabel, vLabel, sLabel, cursor, tMark },
- *   swap,                      0…1: the triangle above V turning into the gap below it
+ *   swap,                      0…1: the triangle above V folding into the gap below it (two flips)
  *   sText, cursorText: { t, v }  live texts (already in the right digits)
  *   text: { axisV, axisT, area, u, v, V, formulaV, tMark }  labels (already in the right digits)
+ *   card,                      the white area behind the graph
  *   N, colors, taken            digits function, colours, boxes already taken on the overlay (corner buttons…)
  * }
- * Returns the plot's frame, for tests of where things are.
+ * Returns the plot's frame (for touches on the graph).
  */
 export function drawGraph(ctx, R, g) {
   const C = g.colors;
   const taken = g.taken;
   const compact = R.h < 170 || R.w < 300;
   const fs = compact ? 11.5 : 12.5; // tick labels
-  const padL = compact ? 44 : 52;
-  const padR = compact ? 46 : 56;
+  const widthOf = (text, size, weight = 700) => {
+    ctx.font = `${weight} ${size}px ${FONT}`;
+    return text ? ctx.measureText(text).width : 0;
+  };
+  // room on the left for the widest y-axis label, on the right for t's title beside the arrow
+  const leftW = Math.max(
+    g.show.uLabel ? widthOf(g.text.u, fs + 0.5) : 0,
+    g.show.V ? widthOf(g.text.V, fs + 0.5) : 0,
+    widthOf(g.N(g.axisV.max), fs, 500),
+  );
+  const padL = Math.ceil(leftW + 14);
+  const padR = Math.ceil(Math.max(compact ? 40 : 48, widthOf(g.text.axisT, fs, 600) + 28));
   const padT = compact ? 18 : 26;
-  const padB = compact ? 26 : 34;
+  const padB = compact ? 22 : 30;
   const X0 = R.x + padL;
   const X1 = R.x + R.w - padR;
   const Y0 = R.y + R.h - padB;
@@ -90,6 +141,8 @@ export function drawGraph(ctx, R, g) {
   const vAt = (tt) => g.u + g.a * tt;
   const tau = Math.max(0, Math.min(g.tau, g.t));
   const bounds = { left: R.x, top: R.y, right: R.x + R.w, bottom: R.y + R.h };
+  const halfT = g.t / 2;
+  const done = tau >= g.t - 1e-9;
 
   // a white card: the 3D ground never shows behind the graph
   const card = g.card || R;
@@ -110,7 +163,11 @@ export function drawGraph(ctx, R, g) {
   }
   ctx.stroke();
 
-  // the area under the line up to tau: 1-second strips, or (while the triangle turns) one colour
+  // the axis titles first, at fixed spots outside the plot (nothing else may take them)
+  placeLabel(ctx, taken, g.text.axisV, X0 + 8, Y1 - (compact ? 10 : 13), { color: C.ink2, size: fs, weight: 600, force: true });
+  placeLabel(ctx, taken, g.text.axisT, X1 + 24, Y0, { color: C.ink2, size: fs, weight: 600, force: true });
+
+  // the area under the line up to tau: 1-second strips, or (while the triangle folds) one colour
   const swap = g.swap || 0;
   if (g.show.area && tau > 0) {
     if (swap > 0) {
@@ -142,44 +199,40 @@ export function drawGraph(ctx, R, g) {
     }
   }
 
-  // the triangle between the line and V on the side where the line is above V, turning about (t/2, V)
-  const halfT = g.t / 2;
+  // the fold: first across the half-time line (it stays between V and v), then down across V into the gap
   if (swap > 0 && g.show.area && Math.abs(g.a) > 1e-9) {
+    const { piece } = swapTriangles(g);
     const cx = xOf(halfT);
     const cy = yOf(g.V);
-    const tri =
-      g.a > 0
-        ? [
-            [halfT, g.V],
-            [g.t, g.V],
-            [g.t, g.v],
-          ]
-        : [
-            [0, g.u],
-            [0, g.V],
-            [halfT, g.V],
-          ];
+    const sx = Math.cos(Math.PI * smooth(swap / 0.45));
+    const sy = Math.cos(Math.PI * smooth((swap - 0.55) / 0.45));
+    const path = (pts, fx, fy) => {
+      ctx.beginPath();
+      pts.forEach(([tt, vv], i) => {
+        const x = cx + (xOf(tt) - cx) * fx;
+        const y = cy + (yOf(vv) - cy) * fy;
+        if (i) ctx.lineTo(x, y);
+        else ctx.moveTo(x, y);
+      });
+      ctx.closePath();
+    };
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(X0, Y1 - 2, X1 - X0, Y0 - Y1 + 2);
+    ctx.clip();
     // where it came from: a dashed outline
     ctx.setLineDash([4, 3]);
     ctx.strokeStyle = C.avg;
     ctx.lineWidth = 1.3;
-    ctx.beginPath();
-    tri.forEach(([tt, vv], i) => (i ? ctx.lineTo(xOf(tt), yOf(vv)) : ctx.moveTo(xOf(tt), yOf(vv))));
-    ctx.closePath();
+    path(piece, 1, 1);
     ctx.stroke();
     ctx.setLineDash([]);
-    // the moving triangle, in screen space rotated about the crossing point
-    const ang = Math.PI * swap;
-    ctx.save();
-    ctx.translate(cx, cy);
-    ctx.rotate(ang);
-    ctx.beginPath();
-    tri.forEach(([tt, vv], i) => (i ? ctx.lineTo(xOf(tt) - cx, yOf(vv) - cy) : ctx.moveTo(xOf(tt) - cx, yOf(vv) - cy)));
-    ctx.closePath();
-    ctx.fillStyle = C.moved; // the same area as before, only moved
+    // the moving piece, in its own colour
+    path(piece, sx, sy);
+    ctx.fillStyle = C.moved;
     ctx.fill();
     ctx.strokeStyle = C.avg;
-    ctx.lineWidth = 1.6;
+    ctx.lineWidth = 1.8;
     ctx.stroke();
     ctx.restore();
   }
@@ -196,11 +249,6 @@ export function drawGraph(ctx, R, g) {
   ctx.stroke();
   arrowHead(ctx, X1 + 16, Y0, 1, 0);
   arrowHead(ctx, X0, Y1 - 16, 0, -1);
-
-  // the labels that matter most go first, so the tick numbers give way to them
-  const labelBoxes = [];
-  const vLabelAt = (vv, text, color) =>
-    placeLabel(ctx, taken, text, X0 - 6, yOf(vv), { align: 'right', color, size: fs + 0.5, weight: 700, bounds, force: true });
 
   // the plan (faint, dotted) before the run draws it
   if (g.show.plan) {
@@ -267,7 +315,6 @@ export function drawGraph(ctx, R, g) {
   }
 
   // the end of the line: v
-  const done = tau >= g.t - 1e-9;
   if (g.show.line && done) {
     ctx.fillStyle = C.vel;
     ctx.beginPath();
@@ -275,7 +322,7 @@ export function drawGraph(ctx, R, g) {
     ctx.fill();
   }
 
-  // the moment shown: a dot on the line, a guide down to the time axis, the time and the velocity
+  // the moment shown: a dot on the line, a guide down to the time axis
   if (g.show.cursor && tau > 0 && !done) {
     const cx = xOf(tau);
     const cy = yOf(vAt(tau));
@@ -307,9 +354,12 @@ export function drawGraph(ctx, R, g) {
   };
   if (g.show.line && tau > 0) along(xOf(0), yOf(g.u), xOf(tau), yOf(vAt(tau)));
   if (g.show.V) along(xOf(0), yOf(g.V), xOf(g.t), yOf(g.V));
-  // y-axis: u and V (and v at the end of the line, to its right)
-  if (g.show.uLabel) labelBoxes.push(vLabelAt(g.u, g.text.u, C.vel));
-  if (g.show.V && Math.abs(g.V - g.u) * ((Y0 - Y1) / VM) > fs + 2) labelBoxes.push(vLabelAt(g.V, g.text.V, C.avg));
+  // y-axis: u and V, left of the axis (the left margin is as wide as they are)
+  const leftLabel = (vv, text, color) =>
+    placeLabel(ctx, taken, text, X0 - 6, yOf(vv), { align: 'right', color, size: fs + 0.5, weight: 700, force: true });
+  if (g.show.uLabel) leftLabel(g.u, g.text.u, C.vel);
+  if (g.show.V && Math.abs(g.V - g.u) * ((Y0 - Y1) / VM) > fs + 2) leftLabel(g.V, g.text.V, C.avg);
+  // v at the end of the line
   if (g.show.vLabel && done) {
     placeFirst(
       ctx,
@@ -317,9 +367,9 @@ export function drawGraph(ctx, R, g) {
       g.text.v,
       [
         [xOf(g.t) + 8, yOf(g.v), {}],
-        [xOf(g.t) + 8, yOf(g.v) - 14, {}],
-        [xOf(g.t) + 8, yOf(g.v) + 14, {}],
-        [xOf(g.t) - 8, yOf(g.v) - 14, { align: 'right' }],
+        [xOf(g.t) + 8, yOf(g.v) - 15, {}],
+        [xOf(g.t) - 8, yOf(g.v) - 15, { align: 'right' }],
+        [xOf(g.t) + 8, yOf(g.v) + 15, {}],
       ],
       { color: C.vel, size: fs + 0.5, weight: 700, bounds },
     );
@@ -343,11 +393,12 @@ export function drawGraph(ctx, R, g) {
         [xOf(tau) - 9, cy - 15, { align: 'right' }],
         [xOf(tau) + 9, cy - 15, {}],
         [xOf(tau) + 9, cy + 15, {}],
+        [xOf(tau) - 9, cy + 15, { align: 'right' }],
       ],
       { color: C.vel, size: fs, weight: 700, bounds },
     );
   }
-  // the time t marked on the axis (in the test, before the line is drawn)
+  // a time marked on the axis (in the test, before the line is drawn)
   if (g.show.tMark) {
     const x = xOf(g.tMarkAt ?? g.t);
     ctx.setLineDash([5, 4]);
@@ -371,29 +422,30 @@ export function drawGraph(ctx, R, g) {
   }
   // the area: what it means and how big it is
   if (g.show.area && g.show.sLabel && tau > 0 && g.sText) {
-    const tm = (swap > 0.5 ? g.t : tau) / 2;
-    const top = swap > 0.5 ? g.V : Math.min(vAt(tm), g.V || vAt(tm));
+    const whole = swap > 0.5;
+    const tm = (whole ? g.t : tau) / 2;
+    const top = whole ? g.V : Math.min(vAt(tm), g.V || vAt(tm));
     const hPx = Y0 - yOf(Math.max(0, top));
     const cx = xOf(tm);
-    if (hPx > 34 && xOf(swap > 0.5 ? g.t : tau) - X0 > 70) {
+    if (hPx > 34 && xOf(whole ? g.t : tau) - X0 > 70) {
       const cy = Y0 - Math.min(hPx * 0.45, hPx - 22);
       placeLabel(ctx, taken, g.text.area, cx, cy - 10, { align: 'center', color: C.distDark, size: fs - 0.5, weight: 600, bounds, pad: 0 });
       placeLabel(ctx, taken, g.sText, cx, cy + 9, { align: 'center', color: C.distDark, size: fs + 2, weight: 700, bounds, pad: 0 });
-    }
+    } else if (hPx > 16)
+      placeLabel(ctx, taken, g.sText, cx, Y0 - hPx / 2, { align: 'center', color: C.distDark, size: fs, weight: 700, bounds, pad: 0 });
   }
-  // V = (u+v)/2 beside the dashed line, as the book writes it
-  if (g.show.V && g.text.formulaV && !compact) {
+  // V = (u+v)/2 beside the dashed line, as the book's figure writes it: above or below the line, clear of it
+  if (g.show.V && g.text.formulaV) {
     const y = yOf(g.V);
     placeFirst(
       ctx,
       taken,
       g.text.formulaV,
       [
-        [xOf(g.t) + 8, y, {}],
-        [xOf(g.t) - 4, y - 11, { align: 'right' }],
-        [xOf(g.t) - 4, y + 11, { align: 'right' }],
-        [xOf(g.t * 0.25), y - 11, { align: 'center' }],
-        [xOf(g.t * 0.25), y + 11, { align: 'center' }],
+        [xOf(g.t) - 4, y - 15, { align: 'right' }],
+        [xOf(g.t) - 4, y + 15, { align: 'right' }],
+        [xOf(g.t * 0.25), y - 15, { align: 'center' }],
+        [xOf(g.t * 0.25), y + 15, { align: 'center' }],
       ],
       { color: C.avg, size: fs, weight: 700, bounds },
     );
@@ -406,33 +458,5 @@ export function drawGraph(ctx, R, g) {
   for (let k = 0; k <= T + 1e-9; k += every)
     placeLabel(ctx, taken, g.N(k), xOf(k), Y0 + 4, { align: 'center', base: 'top', color: C.ink3, size: fs, weight: 500, bounds });
 
-  // axis titles (after the numbers: t's title moves above the axis rather than hide the last second)
-  placeFirst(
-    ctx,
-    taken,
-    g.text.axisV,
-    [
-      [X0 + 10, Y1 - 12, {}],
-      [X0 + 10, Y1 - 4, {}],
-    ],
-    { color: C.ink2, size: fs, weight: 600, bounds },
-  );
-  placeFirst(
-    ctx,
-    taken,
-    g.text.axisT,
-    [
-      [X1 + 18, Y0 + 15, { align: 'right' }],
-      [X1 + 18, Y0 - 12, { align: 'right' }],
-      [X1 - 30, Y0 - 12, { align: 'right' }],
-    ],
-    {
-      color: C.ink2,
-      size: fs,
-      weight: 600,
-      bounds,
-    },
-  );
-
-  return { X0, X1, Y0, Y1, xOf, yOf };
+  return { X0, X1, Y0, Y1, T, VM, xOf, yOf };
 }

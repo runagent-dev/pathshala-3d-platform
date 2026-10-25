@@ -18,33 +18,44 @@ V = (u + v)/2 times the time, which is the area under the বেগ–সময�
 v² = u² + 2as.
 
 ## Terms (as in the book)
-গতির সমীকরণ, আদি বেগ (u), শেষ বেগ (v), ত্বরণ (a), সময় (t), বিবেচ্য সময়কাল, অতিক্রান্ত দূরত্ব (s), গড় বেগ (V),
-সমত্বরণ, সুষম ত্বরণ, ধনাত্মক, ঋণাত্মক, বেগ (graph axis), সময় (graph axis). Formulas in Latin letters and digits as the
-book prints them (v = u + at, s = ut + ½at², v² = u² + 2as, V = (u+v)/2); numbers in Bangla digits. Units: m, m/s,
-m/s² (the book writes m/s for velocity on page 40 and ms⁻² for acceleration on page 44; m/s² keeps the pair alike).
+গতির সমীকরণ, আদি বেগ (u), শেষ বেগ (v), ত্বরণ (a), সময় (t), অতিক্রান্ত দূরত্ব (s), গড় বেগ (V), সমত্বরণ, সুষম ত্বরণ,
+ধনাত্মক, ঋণাত্মক, মন্দন; "বেগ–সময় গ্রাফ" for the graph, as the book's উদাহরণ and the 2.6 figure write it. Formulas in
+Latin letters and digits as the book prints them (v = u + at, s = ut + ½at², v² = u² + 2as, V = (u+v)/2); numbers in
+Bangla digits. Units as the book: m/s for velocity (p40), ms⁻² for acceleration (p44), m, s; a number and its unit
+never part at a line break.
 
 ## How the figure works
-- A commuter train car (16 m, broad gauge as in Bangladesh) on a straight double-track railway, seen from the front
-  a little above; white posts every 10 m with their numbers. Real sizes, real time (a 6 s run takes 6 s).
-- Three steppers set u (0–15 m/s), a (−1.5 to 1.5 m/s² in steps of 0.5: what a real train does) and t (1–10 s).
-  A braking train stops and never goes backwards: if a would stop it before t, t is cut to when it stops (the panel
-  says so); one more second is refused, and a negative a at rest is refused (it would go backwards).
-- চালাও (or a tap on the train) runs it. The graph draws v = u + at; the area under it fills in 1-second strips in
-  two blues, the same as the distance bar under the train (from the start post to the nose): equal seconds,
-  unequal distances, and the area is always where the train is. A drag on the train shows any moment.
-- On the far track a see-through train (raspberry, the colour of V) runs the whole time at V = (u + v)/2 and arrives
-  with the real one. The dashed V line crosses the velocity line at half the time (the book's sentence). At the end
-  the triangle above V turns half round into the gap below it: the trapezium becomes the rectangle V × t, s = Vt.
-- The panel writes v = u + at, V = (u + v)/2, s = Vt, s = ut + ½at², v² = u² + 2as with the student's numbers, and one
-  line on what to see now.
-- The graph and the railway's labels are drawn on a 2D overlay canvas (crisp, collision-checked, part of `capture`);
-  the camera fits the railway into its part of the stage with an off-centre projection.
-- Test (5 tap questions, one of each kind, numbers from a real train): the final velocity; the distance (by
-  ut + ½at² or from the graph's area); the average velocity or the velocity at half time; no acceleration (v or s);
-  braking to a stop (the distance from v² = u² + 2as, or the time from v = u + at). Wrong choices are real mistakes
-  (forgot u, forgot ½, used v × t, divided wrongly, the sign of a, …); the worked answer names the mistake, and the
-  run then plays to check it.
+- A commuter railcar (16 m, diesel, broad gauge as in Bangladesh) on a straight double-track railway, seen from the
+  front a little above; white posts every 10 m with their numbers. Real sizes, real time (a 6 s run takes 6 s).
+- The camera follows the trains on a fixed 40 m stretch (the train and the widest gap to the V-train, 18.75 m, always
+  fit): the train stays about 145 px long on a 390 px phone, 180 px at 844×390, 265 px at 1280×800, in every run and
+  in the test; the posts stream past faster and faster.
+- Under the railway a trip bar from ০ to the whole distance fills in 1-second segments in two blues, each second's
+  distance written on it, with the nose mark and s; the graph's 1-second strips have the same colours.
+- Three steppers set u (0–15 m/s), a (−1.5 to 1.5 ms⁻² in steps of 0.5: what a real train does) and t (1–10 s). A
+  braking train stops and never goes backwards: if a would stop it before t, t is cut to the last whole second before
+  it stops, and the panel says honestly when it stops (to 0.1 s, "প্রায়" when not on a whole second); one more second
+  is refused, and a negative a at rest is refused (it would go backwards). A stepper during a run goes back to the
+  start of the new plan.
+- চালাও (or a tap on the train) runs it. The বেগ–সময় গ্রাফ draws v = u + at; the area under it fills in 1-second
+  strips. Touching or dragging the graph or the bar shows any moment, to 0.1 s.
+- On the far track an imagined see-through train (raspberry, the colour of V) runs the whole time at V = (u + v)/2 and
+  arrives with the real one. The dashed V line crosses the velocity line at half the time (the book's sentence). One
+  second after arriving, the triangle above V folds into the gap below it in two flips that stay inside the graph
+  (across the half-time line, then down across V), while the s = Vt row is lit; a touch on the triangle or on that
+  row folds it again. The panel then says: আয়তক্ষেত্র V × t, ক্ষেত্রফল একই: s = Vt.
+- The panel: a headline in the book's words (সুষম ত্বরণে দূরত্ব = গড় বেগ × সময় = বেগ–সময় গ্রাফের নিচের
+  ক্ষেত্রফল; on the tightest phone and beside the picture in landscape there is no room, and the sentence under the
+  sums says it at the end), then v = u + at, V = (u + v)/2, s = Vt, s = ut + ½at², v² = u² + 2as with the student's
+  numbers and the book's names (শেষ বেগ, গড় বেগ, অতিক্রান্ত দূরত্ব), and one line on what to see now.
+- The graph, the bar and the railway's labels are drawn on a 2D overlay canvas (crisp, collision-checked, part of
+  `capture`); the camera fits the railway into its part of the stage with an off-centre projection.
+- Test (5 tap questions, numbers from a real train): the final velocity or the distance by formula; the distance as
+  the area under the graph (read off the graph); the average velocity or the velocity at half time read off the graph
+  (no numbers in the question); the next second's distance after the first (equal seconds, unequal distances); and no
+  acceleration or braking to a stop (from v² = u² + 2as or v = u + at). Wrong choices are real mistakes; the worked
+  answer names the mistake; the run then replays (with V, its train and the fold only for the average-velocity
+  questions).
 
 ## Open questions
-- The book writes ms⁻² for acceleration (page 44); the figure writes m/s² beside m/s. Change if the owner prefers.
 - The book's picture is a graph only; the train is our own idea (the 2.6 figure uses a street vehicle).

@@ -141,7 +141,16 @@ export const QUIZ = {
     { u: 12, a: -1, t: 6 },
     { u: 3, a: 0.5, t: 10 },
   ],
-  // no acceleration: v = u and s = ut
+  // equal seconds, unequal distances (the book, page 45): the first second's distance is given, the second's asked
+  strip: [
+    { u: 4, a: 1, t: 4 },
+    { u: 2, a: 1, t: 4 },
+    { u: 3, a: 1, t: 4 },
+    { u: 5, a: 1, t: 4 },
+    { u: 2, a: 1.5, t: 4 },
+    { u: 6, a: 1, t: 4 },
+  ],
+  // no acceleration: s = ut
   zero: [
     { u: 6, a: 0, t: 5 },
     { u: 8, a: 0, t: 4 },
@@ -161,7 +170,7 @@ export const QUIZ = {
 };
 
 /**
- * The right answer and the usual mistakes for one question. kind: 'v' | 's' | 'area' | 'avg' | 'mid' | 'zero-v' |
+ * The right answer and the usual mistakes for one question. kind: 'v' | 's' | 'area' | 'avg' | 'mid' | 'strip' |
  * 'zero-s' | 'brake-s' | 'brake-t'. Every mistake is named, so the worked answer can say what went wrong.
  */
 export function answers(kind, { u, a, t }) {
@@ -180,8 +189,11 @@ export function answers(kind, { u, a, t }) {
     case 'avg':
     case 'mid':
       return { right: r((u + v) / 2), wrong: { sum: r(u + v), diff_half: r(Math.abs(v - u) / 2), diff: r(Math.abs(v - u)), end_half: r(v / 2) } };
-    case 'zero-v':
-      return { right: r(u), wrong: { rest: 0, times: r(u * t), add: r(u + t) } };
+    case 'strip': {
+      // the second second: s(2) − s(1) = u + 1.5a; the first: u + 0.5a
+      const first = u + 0.5 * a;
+      return { right: r(u + 1.5 * a), first: r(first), wrong: { same: r(first), v1: r(u + a), total: r(2 * u + 2 * a), double: r(2 * first) } };
+    }
     case 'zero-s':
       return { right: r(u * t), wrong: { rest: 0, half: r(0.5 * u * t), add: r(u + t), just_u: r(u) } };
     case 'brake-s': {

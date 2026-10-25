@@ -85,6 +85,15 @@ describe('the train only goes forwards', () => {
   it('one more second than it takes to stop is refused', () => {
     assert.deepEqual(m.stepPlan({ u: 12, a: -1.5, t: 8 }, 't', 1), { u: 12, a: -1.5, t: 8, note: 'stops' });
   });
+  it('a stop that is not on a whole second: the time is cut to the last whole second before it', () => {
+    close(m.stopTime(4, -1.5), 8 / 3, 1e-12);
+    const cut = m.stepPlan({ u: 4, a: -1, t: 4 }, 'a', -1);
+    assert.deepEqual(cut, { u: 4, a: -1.5, t: 2, note: 'cut' });
+    assert.ok(m.stopTime(cut.u, cut.a) > cut.t, 'it is still moving at the end: v > 0');
+    assert.equal(m.finalVelocity(cut.u, cut.a, cut.t), 1);
+    assert.deepEqual(m.stepPlan({ u: 5, a: -1.5, t: 3 }, 't', 1), { u: 5, a: -1.5, t: 3, note: 'stops' });
+    close(m.stopTime(5, -1.5), 10 / 3, 1e-12);
+  });
   it('braking harder cuts the time to when it stops', () => {
     assert.deepEqual(m.stepPlan({ u: 4, a: -0.5, t: 6 }, 'a', -1), { u: 4, a: -1, t: 4, note: 'cut' });
     assert.deepEqual(m.stepPlan({ u: 4, a: -1, t: 4 }, 'u', -1), { u: 3, a: -1, t: 3, note: 'cut' });
@@ -150,7 +159,7 @@ describe('numbers', () => {
 });
 
 describe('the test', () => {
-  const kinds = { v: ['v'], s: ['s', 'area'], avg: ['avg', 'mid'], zero: ['zero-v', 'zero-s'], brake: ['brake-s', 'brake-t'] };
+  const kinds = { v: ['v'], s: ['s', 'area'], avg: ['avg', 'mid'], strip: ['strip'], zero: ['zero-s'], brake: ['brake-s', 'brake-t'] };
   it('uses numbers a real train can have, inside the steppers’ ranges', () => {
     for (const [set, list] of Object.entries(m.QUIZ))
       for (const q of list) {
@@ -166,10 +175,14 @@ describe('the test', () => {
     assert.equal(m.answers('area', { u: 4, a: 1, t: 6 }).right, 42);
     assert.equal(m.answers('avg', { u: 4, a: 1, t: 6 }).right, 7);
     assert.equal(m.answers('mid', { u: 12, a: -1, t: 6 }).right, 9);
-    assert.equal(m.answers('zero-v', { u: 6, a: 0, t: 5 }).right, 6);
+    // the second second of u = 4 m/s, a = 1 ms⁻²: 4.5 m in the first, 5.5 m in the second
+    assert.deepEqual(
+      { right: m.answers('strip', { u: 4, a: 1, t: 4 }).right, first: m.answers('strip', { u: 4, a: 1, t: 4 }).first },
+      { right: 5.5, first: 4.5 },
+    );
     assert.equal(m.answers('zero-s', { u: 6, a: 0, t: 5 }).right, 30);
-    assert.equal(m.answers('brake-s', { u: 12, a: -1.5 }).right, 48); // 0 = 12² − 2 × 1.5 × s
-    assert.equal(m.answers('brake-t', { u: 12, a: -1.5 }).right, 8);
+    assert.equal(m.answers('brake-s', { u: 12, a: -1.5, t: 8 }).right, 48); // 0 = 12² − 2 × 1.5 × s
+    assert.equal(m.answers('brake-t', { u: 12, a: -1.5, t: 8 }).right, 8);
   });
   it('always has at least three different wrong answers, none equal to the right one', () => {
     for (const [set, list] of Object.entries(m.QUIZ))

@@ -6,10 +6,8 @@ import { GAUGE } from './train.js';
 
 export const GROUND = -0.6; // the ground, under the ballast
 export const TRACKS = { near: 4.4, far: -4.4 }; // z of each track's centre line (the camera looks from +z)
-export const POST_Z = 7.9; // the posts stand in front of the near track
+export const POST_Z = 7.1; // the posts stand in front of the near track
 export const POST_EVERY = 10;
-const FROM = -70;
-const TO = 330;
 const SLEEPER_GAP = 0.62;
 
 /** A long prism along x with this cross-section [(z, y), …] (counter-clockwise seen from +x). */
@@ -30,7 +28,8 @@ function prism(section, x0, x1, material) {
   return new THREE.Mesh(flat, material);
 }
 
-export function createRailway() {
+/** The railway from x = from to x = to (m); the figure shows −70 to 330 m, the GLB a short stretch. */
+export function createRailway({ from: FROM = -70, to: TO = 330 } = {}) {
   const root = new THREE.Group();
   root.name = 'Railway';
   const ballastMat = new THREE.MeshStandardMaterial({ name: 'Ballast', color: 0xbdb6aa, roughness: 1, metalness: 0 });
@@ -79,7 +78,7 @@ export function createRailway() {
   root.children[0].receiveShadow = true;
 
   // posts every 10 m from the start; the start post is green
-  const count = Math.floor(TO / POST_EVERY) + 1;
+  const count = Math.max(1, Math.floor(TO / POST_EVERY) + 1);
   const postGeo = new THREE.BoxGeometry(0.16, 1.2, 0.16);
   const capGeo = new THREE.BoxGeometry(0.2, 0.22, 0.2);
   const posts = new THREE.InstancedMesh(postGeo, postMat, count - 1);
@@ -101,15 +100,11 @@ export function createRailway() {
   start.castShadow = true;
   root.add(posts, caps, start);
 
-  return {
-    root,
-    /** Where a post stands on the ground (for its number on the overlay). */
-    postFoot: (x, out = new THREE.Vector3()) => out.set(x, GROUND, POST_Z),
-  };
+  return { root };
 }
 
 /** The pale ground under the railway, fading into the white page at the sides (not exported). */
-export function createGround() {
+export function createGround({ from: FROM = -70, to: TO = 330 } = {}) {
   const c = document.createElement('canvas');
   c.width = 4;
   c.height = 256;

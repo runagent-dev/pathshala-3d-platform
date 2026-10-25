@@ -1,5 +1,5 @@
-// A commuter train car, procedural three.js, in metres: 16 m long, a driver's cab at each end, white with a
-// green band, two bogies on broad-gauge wheels (1.676 m, as on Bangladesh's railways). The nose is at x = 0 (the
+// A commuter railcar (diesel, as Bangladesh's commuter trains), procedural three.js, in metres: 16 m long, a
+// driver's cab at each end, white with a green band, two bogies on broad-gauge wheels (1.676 m, as on Bangladesh's railways). The nose is at x = 0 (the
 // train's position is where its nose is), the tail at x = −16; the wheels stand on the rails' top at y = 0.
 // createTrain({ ghost }) also makes the "ghost": the same car in the colour of the average velocity, see-through,
 // for the train that runs the whole time at V.
@@ -184,7 +184,7 @@ export function createTrain({ ghost = false, color = '#c2255c' } = {}) {
     }
   }
 
-  // underframe skirt, roof units and the pantograph
+  // underframe skirt and roof units (a diesel railcar: no pantograph, there is no overhead wire)
   const skirt = new THREE.Mesh(new RoundedBoxGeometry(L - 1.4, 0.42, W - 0.35, 2, 0.06), dark);
   skirt.position.set(-L / 2, FLOOR - 0.12, 0);
   root.add(skirt);
@@ -193,22 +193,6 @@ export function createTrain({ ghost = false, color = '#c2255c' } = {}) {
     unit.position.set(x, ROOF + 0.1, 0);
     root.add(unit);
   }
-  const panto = new THREE.Group();
-  const bar = (len, x, y, rot) => {
-    const m = new THREE.Mesh(new THREE.BoxGeometry(len, 0.06, 0.06), dark);
-    m.position.set(x, y, 0);
-    m.rotation.z = rot;
-    return m;
-  };
-  const base = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.14, 0.9), dark);
-  base.position.y = 0.07;
-  panto.add(base, bar(1.25, -0.42, 0.42, 0.62), bar(1.1, -0.38, 0.88, -0.7));
-  const head = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.06, 1.7), steel);
-  head.position.set(-0.02, 1.08, 0);
-  panto.add(head);
-  panto.position.set(-8, ROOF, 0);
-  root.add(panto);
-
   // bogies: a frame and four wheels each, on the rails (wheels at the rails' centre lines)
   const wheelGeo = new THREE.CylinderGeometry(WHEEL_R, WHEEL_R, 0.14, 22);
   wheelGeo.rotateX(Math.PI / 2);

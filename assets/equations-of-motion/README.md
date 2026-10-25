@@ -28,7 +28,7 @@ To listen to it or control it from the book page, use the helper shipped in the 
 |---|---|---|---|
 | `lang` | Language | `bn` বাংলা · `en` English | `bn` |
 | `u` | Initial velocity u (0 to 15 m/s, whole numbers) | number | `4` |
-| `a` | Acceleration a (−1.5 to 1.5 m/s² in steps of 0.5; negative brakes) | number | `1` |
+| `a` | Acceleration a (−1.5 to 1.5 ms⁻² in steps of 0.5; negative brakes) | number | `1` |
 | `t` | Time t (1 to 10 s) | number | `6` |
 | `time` | Moment shown at the start (0 is the start; t (or more) is the end of the run) | number | `0` |
 | `view` | View | `front` · `3d` | `front` |
