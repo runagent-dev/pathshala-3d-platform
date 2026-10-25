@@ -1,0 +1,104 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "falling-bodies",
+  "title": "Laws of falling bodies (পড়ন্ত বস্তুর সূত্র)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 48,
+  "topic": "2.8",
+  "placement": "Book pages 48–49, topic 2.8: পড়ন্ত বস্তুর সূত্র (Laws of Falling Bodies). Next to Galileo's three laws and the paper-and-stone paragraph.",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "The book's own experiment in 3D (pages 48–49, 2.8): two clear tubes of the same height, one with air (বাতাস আছে) and one emptied (বাতাসহীন), each with a small stone and a piece of paper at rest at the same height. Press the red button or ছেড়ে দাও: all four fall at once, shown 8 times slower. In air the stone lands first (0.3 s) and the paper flutters down far behind (0.51 s); without air the stone and the paper land together (0.3 s). In the empty tube the bodies leave a faint picture every 0.1 s with a dashed line across the centimetre scale and a velocity arrow; the panel's table shows v = gt and h = ½gt² at 0.1, 0.2 and 0.3 s, with the ratios 1 : 2 : 3 (v ∝ t) and 1 : 4 : 9 (h ∝ t²). Step 0.1 s at a time, or crumple the paper (the same mass, less air hindrance: it then falls almost with the stone even in air). Test tab: 5 questions (which lands first without air, why the paper lags in air, v and h from the equations or from the picture, the ratio of heights or velocities, does the time depend on mass). Phone-first, Bangla.",
+  "tags": ["motion", "free-fall", "gravity", "galileo", "air-resistance", "acceleration", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "t",
+      "label": "Time after the release (paused)",
+      "type": "number",
+      "default": "0",
+      "placeholder": "seconds",
+      "help": "0 = ready to let go; e.g. 0.25 shows both tubes 0.25 s into the fall"
+    },
+    {
+      "name": "paper",
+      "label": "Paper",
+      "type": "select",
+      "options": [["flat", "flat sheet"], ["crumpled", "crumpled ball"]],
+      "default": "flat"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "First-use pointers", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "release": true } },
+    { "name": "set", "payload": { "play": false } },
+    { "name": "set", "payload": { "step": 1 } },
+    { "name": "set", "payload": { "t": 0.25 } },
+    { "name": "set", "payload": { "paper": "crumpled" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": [
+    "ready",
+    "change",
+    "release",
+    "land",
+    "done",
+    "paper",
+    "view",
+    "practice-start",
+    "practice-result",
+    "practice-end"
+  ],
+  "export": {
+    "poster": { "params": { "coach": "0", "t": "0.25" } },
+    "glb": [{ "name": "default" }],
+    "video": {
+      "kind": "script",
+      "seconds": 18,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 0.8, "command": "set", "payload": { "release": true } },
+        { "at": 6.2, "command": "set", "payload": { "t": 0 } },
+        { "at": 6.8, "command": "set", "payload": { "step": 1 } },
+        { "at": 8.2, "command": "set", "payload": { "step": 1 } },
+        { "at": 9.6, "command": "set", "payload": { "step": 1 } },
+        { "at": 11.6, "command": "set", "payload": { "paper": "crumpled" } },
+        { "at": 12.4, "command": "set", "payload": { "release": true } }
+      ]
+    }
+  }
+}
