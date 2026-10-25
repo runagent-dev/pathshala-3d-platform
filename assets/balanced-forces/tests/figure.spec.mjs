@@ -14,29 +14,45 @@ test('balanced-forces: the forces and the state follow the ball and the rope', a
   expect(s.forces.T).toEqual({ x: 0, y: 9.8 });
   expect(s.resultant.size).toBe(0);
 
-  // held aside at 30°: T = mg cos 30° = 8.49 N, and T and W give a resultant of mg sin 30° = 4.9 N
+  // held aside at 30° by a hand: T = mg cos 30° = 8.49 N, the hand pulls with mg sin 30° = 4.9 N, the three cancel
   s = await fig.call('set', { hold: 30, animate: false });
-  expect(s).toMatchObject({ phase: 'held', state: 'held', angle: 30 });
+  expect(s).toMatchObject({ phase: 'held', state: 'balanced', balanced: true, angle: 30 });
   expect(s.forces.tension).toBeCloseTo(8.49, 2);
-  expect(s.resultant.size).toBeCloseTo(4.9, 2);
-  expect(s.resultant.x).toBeLessThan(0); // towards the lowest point
-  expect(s.resultant.y).toBeLessThan(0);
+  expect(Math.hypot(s.forces.hand.x, s.forces.hand.y)).toBeCloseTo(4.9, 2);
+  expect(s.forces.hand.x).toBeGreaterThan(0); // away from the lowest point
+  expect(s.resultant.size).toBe(0);
 
-  // let go: it swings (unbalanced), back and forth
+  // the cord is not cut while the ball is held (or swings): the button rests
+  await expect(
+    page
+      .frames()
+      .find((f) => f.url().includes('/assets/balanced-forces/'))
+      .locator('[data-act="a1"]'),
+  ).toBeDisabled();
+
+  // let go: the hand's pull is gone; T and W give a resultant (mg sin 30° = 4.9 N, towards the lowest point)
+  s = await fig.call('set', { release: 30, at: 0.02, freeze: true });
+  expect(s).toMatchObject({ phase: 'swing', state: 'unbalanced', balanced: false, frozen: true });
+  expect(s.forces.hand).toBeNull();
+  expect(s.resultant.size).toBeCloseTo(4.9, 1);
+  expect(s.resultant.x).toBeLessThan(0);
+  expect(s.resultant.y).toBeLessThan(0);
+  // it swings, back and forth
   s = await fig.call('set', { release: 30, at: 0.2 });
-  expect(s).toMatchObject({ phase: 'swing', state: 'unbalanced', balanced: false });
+  expect(s).toMatchObject({ phase: 'swing', state: 'unbalanced', frozen: false });
   expect(Math.abs(s.angle)).toBeLessThan(30);
   await fig.advance(1000);
   s = await fig.call('get');
   expect(s.phase).toBe('swing');
 
-  // cut: only W is left; it lands on the table 0.2 m below, then the table holds it (balanced again)
+  // cut: only W is left; it lands on the bench 0.15 m below, then the bench pushes it up (balanced again)
   s = await fig.call('set', { cut: true, at: 0.4 });
   expect(s).toMatchObject({ phase: 'fall', state: 'unbalanced' });
   expect(s.forces.T).toBeNull();
   expect(s.resultant).toMatchObject({ x: 0, y: -9.8 });
   s = await fig.call('set', { cut: true, animate: false });
-  expect(s).toMatchObject({ phase: 'landed', state: 'balanced', dropped: 0.2 });
+  expect(s).toMatchObject({ phase: 'landed', state: 'balanced', dropped: 0.15 });
+  expect(s.forces.push).toEqual({ x: 0, y: 9.8 });
   s = await fig.call('set', { rehang: true });
   expect(s).toMatchObject({ phase: 'rest', state: 'balanced', dropped: 0 });
 

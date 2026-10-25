@@ -1,6 +1,6 @@
 /* Balanced and unbalanced forces. The page, and one colour per quantity, the same in the 3D, the labels and the
-   panel: a pull (T, T₁, T₂) orange, the weight W violet, the resultant (লব্ধি বল) near-black. Never colour alone:
-   every arrow carries its symbol. The student view itself is ../../shared/lib/student/student.css (linked first). */
+   panel: a pull (T, T₁, T₂, the bench's push) orange, the hand's pull light orange (dashed label), the weight W
+   violet, the resultant (লব্ধি বল) near-black. Never colour alone: every arrow carries its symbol. The student view itself is ../../shared/lib/student/student.css (linked first). */
 html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
 #app { position: fixed; inset: 0; }
 body.bg-transparent { background: transparent; }
@@ -17,7 +17,11 @@ body.bg-transparent { background: transparent; }
 .bf-chips button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
 .bf-chips button.on small { color: rgba(255, 255, 255, 0.85); }
 
-.bf-read { display: flex; align-items: center; gap: 12px; min-height: 92px; }
+/* the drawing beside the state; its caption under the state (phones) or under both (narrow or wide side columns) */
+.bf-read { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: 'sum state' 'sum cap'; align-items: center; column-gap: 12px; min-height: 92px; }
+.bf-sum { grid-area: sum; }
+.bf-state { grid-area: state; }
+.bf-cap { grid-area: cap; align-self: start; }
 .bf-sum { flex: none; width: 116px !important; height: 92px !important; border: 1px solid var(--line); border-radius: 7px; background: #fbfcfd; overflow: visible; }
 .bf-sum text { font-family: var(--font); }
 .bf-state { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
@@ -26,8 +30,9 @@ body.bg-transparent { background: transparent; }
 .bf-word[data-state='unbalanced'] { color: var(--c-res); }
 .bf-word[data-state='unbalanced']::before { content: ''; display: inline-block; width: 9px; height: 9px; margin-right: 7px; border-radius: 50%; background: var(--c-res); vertical-align: 2px; }
 .bf-word[data-state='balanced']::before { content: ''; display: inline-block; width: 9px; height: 9px; margin-right: 7px; border-radius: 50%; border: 2px solid var(--ok); box-sizing: border-box; vertical-align: 2px; }
-.bf-word[data-state='held'] { color: var(--ink-2); }
 .bf-res { font-size: 15px; line-height: 1.4; color: var(--ink); min-height: 2.8em; }
+/* what the small drawing beside it is, in one line */
+.bf-cap { font-size: 12px; line-height: 1.3; color: var(--ink-3); white-space: nowrap; }
 
 /* the book's words for what is happening (room for the longest, so the 3D view never changes size) */
 .bf-say { margin: 0; min-height: 4.35em; font-size: 14.5px; line-height: 1.45; color: var(--ink-2); }
@@ -37,6 +42,10 @@ body.bg-transparent { background: transparent; }
 .bf-acts .pvc-btn { height: 40px; min-width: 8.2em; font-size: 15.5px; }
 .bf-acts .pvc-btn .ic { display: inline-flex; color: var(--accent); }
 .bf-acts .pvc-btn:disabled { opacity: 0.45; }
+/* "hang again" asks for a tap (the ball lies on the bench) */
+.bf-acts .pvc-btn.bf-nudge { animation: bf-nudge 0.9s ease-in-out 3; }
+@keyframes bf-nudge { 50% { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); } }
+@media (prefers-reduced-motion: reduce) { .bf-acts .pvc-btn.bf-nudge { animation: none; outline: 2px solid var(--accent); } }
 
 /* the note at the top left of the 3D: the arrows' scale, the slowed-down fall */
 .bf-note { position: absolute; left: 8px; top: 8px; z-index: 3; max-width: max(120px, min(46%, calc(100% - 250px))); padding: 2px 7px; border-radius: 4px; background: rgba(255, 255, 255, 0.86); font-size: 12.5px; line-height: 1.35; color: var(--ink-2); pointer-events: none; }
@@ -45,8 +54,9 @@ body.bg-transparent { background: transparent; }
 
 /* labels on the arrows: the symbol (and the size) in the arrow's colour, next to its head */
 .pvc-anno-force { --c: var(--ink); padding: 0 7px; border: 1.5px solid var(--c); border-radius: 5px; background: rgba(255, 255, 255, 0.93); color: var(--c); font-size: 14px; font-weight: 700; line-height: 1.5; }
-.pvc-anno-lines .k-force, .pvc-anno-lines .k-letter { display: none; }
-.pvc-anno-letter { display: grid; place-items: center; width: 26px; height: 26px; padding: 0; border-radius: 50%; border: 1.5px solid #6c757d; background: #fff; color: #343a40; font-size: 15px; font-weight: 700; }
+.pvc-anno-hand { --c: #c25a00; padding: 0 7px; border: 1.5px dashed var(--c); border-radius: 5px; background: rgba(255, 255, 255, 0.93); color: var(--c); font-size: 14px; font-weight: 700; line-height: 1.5; }
+.pvc-anno-lines .k-force, .pvc-anno-lines .k-letter, .pvc-anno-lines .k-hand { display: none; }
+.pvc-anno-letter { display: grid; place-items: center; width: 25px; height: 25px; padding: 0; border-radius: 50%; border: 1.5px solid #6c757d; background: #fff; color: #343a40; font-size: 14.5px; font-weight: 700; }
 .pvc-anno-callout { padding: 1px 8px; background: rgba(255, 255, 255, 0.95); font-size: 14px; }
 
 /* the test: answers in words; room for three lines of question and of worked answer */
@@ -58,7 +68,7 @@ body.bg-transparent { background: transparent; }
 @container pvc-panel (min-width: 600px) {
   .bf .pvc-learn { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); grid-template-areas: 'chips acts' 'read say'; column-gap: 16px; row-gap: 8px; align-content: start; }
   .bf-chips { grid-area: chips; }
-  .bf-read { grid-area: read; }
+  .bf-read { grid-area: read; grid-template-areas: 'sum state' 'cap cap'; row-gap: 3px; }
   .bf-say { grid-area: say; align-self: center; min-height: 5.8em; }
   .bf-acts { grid-area: acts; justify-content: flex-end; }
   /* the wide sheet has room for a worked answer in two lines: the 3D view gets the rest */
@@ -76,7 +86,7 @@ body.bg-transparent { background: transparent; }
   .bf .pvc-learn { gap: 5px; }
   .bf-chips button { height: 40px; }
   .bf-chips button small { font-size: 11px; }
-  .bf-read { min-height: 73px; gap: 10px; }
+  .bf-read { min-height: 73px; column-gap: 10px; }
   .bf-sum { width: 92px !important; height: 73px !important; }
   .bf-word { font-size: 18px; }
   .bf-res { font-size: 14px; }
@@ -97,7 +107,7 @@ body.bg-transparent { background: transparent; }
   .bf-chips button { height: 42px; padding: 1px 3px; }
   .bf-chips button b { font-size: 13px; }
   .bf-chips button small { font-size: 11px; }
-  .bf-read { min-height: 73px; gap: 9px; }
+  .bf-read { min-height: 73px; column-gap: 9px; row-gap: 3px; grid-template-areas: "sum state" "cap cap"; }
   .bf-sum { width: 92px !important; height: 73px !important; }
   .bf-word { font-size: 17px; }
   .bf-res { font-size: 13.5px; }
@@ -107,5 +117,5 @@ body.bg-transparent { background: transparent; }
   .bf .pvc-opt { height: 50px; }
   .bf .pvc-opt .bf-opt { font-size: 12.5px; line-height: 1.2; }
   .bf .pvc-q-text { font-size: 15px; }
-  .bf .pvc-q-feedback { font-size: 13.5px; }
+  .bf .pvc-q-feedback { font-size: 13.5px; --pvc-q-feedback-min: 4lh; }
 }

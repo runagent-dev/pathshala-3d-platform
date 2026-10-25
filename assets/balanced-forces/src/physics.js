@@ -6,22 +6,23 @@
 // The string pulls along itself, towards the hook, with T = mg cos θ + mLω² (the radial equation of motion; at rest
 // or at the moment it is let go ω = 0, so T = mg cos θ). The weight W = mg pulls straight down. Their resultant has a
 // part along the path, mg sin θ towards the lowest point, and a part towards the hook, mLω² (it bends the path): it
-// is zero only when the body hangs straight down and is still.
+// is zero only when the body hangs straight down and is still. Held aside by a hand, the ball is still: the hand pulls
+// with −(T + W), mg sin θ at right angles to the string, away from the lowest point, and the three forces cancel.
 //
 // চিত্র ৩.০৩, a book hung from the middle of a rope pulled at both ends: each half of the rope makes the angle α with
 // the horizontal; at rest the two pulls (equal, by symmetry) hold the weight up: 2T sin α = W, so T = W / (2 sin α).
 // Their horizontal parts cancel. The resultant of T₁, T₂ and W is zero at every α; T grows as the rope flattens.
 
 export const G = 9.8; // ms⁻², as in the book (2.8, falling bodies)
-export const MASS = 1; // kg: the steel ball and the book (W = 9.8 N, so both scenes share one arrow scale)
-export const LENGTH = 0.45; // m, the hook to the ball's centre
-export const BALL_R = 0.031; // m: a 1 kg steel ball is 6.2 cm across
-export const DROP = 0.2; // m from the bottom of the hanging ball to the table
-export const SLOW = 5; // the cut string's fall is shown 5 times slower than real (it lasts 0.2 s)
+export const MASS = 1; // kg: the ball and the book (W = 9.8 N, so both scenes share one arrow scale)
+export const LENGTH = 0.3; // m, the hook to the ball's centre (the hook and the stand's arm stay in the picture)
+export const BALL_R = 0.04; // m: the 1 kg ball is 8 cm across (a metal bob, hollow inside)
+export const DROP = 0.15; // m from the bottom of the hanging ball to the table
+export const SLOW = 5; // the cut string's fall is shown 5 times slower than real (it lasts 0.17 s)
 export const DAMPING = 0.1; // 1/s: air slows the swing a little (amplitude halves in about 14 s)
-export const MAX_DEG = 35; // the ball is pulled aside at most this far (the book: a little)
+export const MAX_DEG = 30; // the ball is pulled aside at most this far (the book: a little)
 export const ALPHA = { min: 20, max: 70, start: 30 }; // deg: the rope's angle above the horizontal
-export const HALF_ROPE = 0.4; // m, the knot to each hand
+export const HALF_ROPE = 0.32; // m, the knot to each hand
 
 export const rad = (deg) => (deg * Math.PI) / 180;
 export const deg = (r) => (r * 180) / Math.PI;
@@ -62,6 +63,16 @@ export function pendulumForces(theta, omega = 0, { m = MASS, L = LENGTH } = {}) 
     /** Its part along the string, towards the hook (mLω²). */
     inward: m * L * omega * omega,
   };
+}
+
+/**
+ * The ball held still at θ by a hand: T = mg cos θ along the string, W down, and the hand's pull H = −(T + W)
+ * (mg sin θ at right angles to the string, away from the lowest point). The three add up to zero.
+ */
+export function heldForces(theta, { m = MASS, L = LENGTH } = {}) {
+  const f = pendulumForces(theta, 0, { m, L });
+  const H = { x: -f.R.x, y: -f.R.y };
+  return { T: f.T, W: f.W, H, tension: f.tension, weight: f.weight, hand: len(H), R: add(f.T, f.W, H), resultant: len(add(f.T, f.W, H)) };
 }
 
 /** The resultant of T and W just as the ball is let go at θ: mg sin θ, at right angles to the string. */

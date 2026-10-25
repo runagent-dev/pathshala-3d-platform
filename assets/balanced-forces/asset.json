@@ -13,7 +13,7 @@
   "order": 2,
   "maintainers": ["RadeenXALNW"],
   "units": "m",
-  "description": "Interactive 3D figure for balanced and unbalanced forces (বলের সাম্যাবস্থা ও অসাম্যাবস্থা), book pages 69–70, topic 3.3: the page's two pictures, real size. চিত্র ৩.০২: a 1 kg steel ball hangs on a cord from a lab stand; the pull of the cord T (orange) and the weight W = 9.8 N (violet) are equal and opposite, the resultant is zero (সাম্যাবস্থা). The student pulls the ball aside (a hand holds it): T and W are no longer opposite and their resultant (black, mg sin θ, at right angles to the cord) appears; let go, it acts and the ball swings in real time (45 cm cord, the forces stay correct throughout: T = mg cos θ + mLω²). Or the student cuts the cord (tap it, or the button): T is gone, only W is left, the অসাম্য বল, and the ball falls with g onto the table, five times slower, leaving a mark every 0.04 s (the gaps grow). চিত্র ৩.০৩: a heavy book hangs from the middle of a rope whose ends two hands pull; T₁, T₂ and W add up to zero at every angle; dragging the hands apart makes the pulls grow (T = W / 2 sin α) while the book stays at rest. The panel names the state in the book's words and draws the forces tip to tail: the chain closes when the resultant is zero. Test: 5 questions (the pull of a string holding a body at rest, which force is unbalanced after the cut, which arrow is the resultant the moment the ball is let go, the resultant of the book's three forces, what pulling the rope tighter does). Phone-first, Bangla.",
+  "description": "Interactive 3D figure for balanced and unbalanced forces (বলের সাম্যাবস্থা ও অসাম্যাবস্থা), book pages 69–70, topic 3.3: the page's two pictures, real size. চিত্র ৩.০২: a 1 kg steel ball hangs on a 30 cm cord from the hook of a lab stand; the pull of the cord T (orange) and the weight W = 9.8 N (violet) are equal and opposite, the resultant is zero (সাম্যাবস্থা). The student pulls the ball aside: a hand pinches it and pulls too (light orange, at right angles to the cord), and the three forces cancel. Let go: the hand's pull is gone, T and W no longer cancel, their resultant (black, mg sin θ) acts and the ball swings in real time (the forces stay correct throughout: T = mg cos θ + mLω²). Or, while it hangs still, the student cuts the cord (tap it, or the button): T is gone, only W is left, the অসাম্য বল; the ball falls with g onto the bench, five times slower, leaving a mark every 0.04 s (the gaps grow), the view following it down; on the bench its push balances W again. চিত্র ৩.০৩: a heavy book hangs from the middle of a rope whose ends two hands pull; T₁, T₂ and W add up to zero at every angle; dragging the hands apart makes the pulls grow (T = W / 2 sin α) while the book stays at rest. Every change takes a force away or adds one. The panel names the state in the book's words and draws the forces tip to tail: the chain closes when the resultant is zero. Forces in নিউটন (N). Test: 5 questions (the pull of a string holding a body at rest, read off the picture; which force is unbalanced after the cut; which of four arrows is the resultant just after letting go; what the book's two pulls add up to; what pulling the rope tighter does). Phone-first, Bangla.",
   "tags": [
     "force",
     "balanced-forces",
@@ -66,7 +66,7 @@
   "commands": [
     { "name": "get", "payload": {} },
     { "name": "set", "payload": { "hold": 30 } },
-    { "name": "set", "payload": { "release": 30, "at": 0.4 } },
+    { "name": "set", "payload": { "release": 30, "at": 0.3 } },
     { "name": "set", "payload": { "cut": true, "animate": false } },
     { "name": "set", "payload": { "rehang": true } },
     { "name": "set", "payload": { "scene": "book", "alpha": 25 } },
@@ -90,7 +90,10 @@
     "practice-end"
   ],
   "export": {
-    "poster": { "params": { "coach": "0", "hold": "30" } },
+    "poster": {
+      "params": { "coach": "0" },
+      "setup": [{ "command": "set", "payload": { "release": 30, "at": 0.05, "freeze": true, "animate": false } }]
+    },
     "glb": [
       { "name": "default" },
       { "name": "held", "setup": [{ "command": "set", "payload": { "hold": 30, "animate": false } }] },

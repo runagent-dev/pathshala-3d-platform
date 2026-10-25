@@ -56,9 +56,9 @@ describe('balanced forces: the ball on its string', () => {
     assert.ok(least > 2.5, `least resultant ${least}`);
   });
 
-  it('swings with the real period for 45 cm, and the same whatever the frame rate', () => {
-    close(p.period(), 2 * Math.PI * Math.sqrt(0.45 / 9.8));
-    assert.ok(p.period() > 1.33 && p.period() < 1.36);
+  it('swings with the real period for 30 cm, and the same whatever the frame rate', () => {
+    close(p.period(), 2 * Math.PI * Math.sqrt(0.3 / 9.8));
+    assert.ok(p.period() > 1.09 && p.period() < 1.11);
     // a small swing: back at the same side after one period
     const T = p.period();
     const end = p.swingAt(rad(3), T, { damping: 0 });
@@ -73,14 +73,41 @@ describe('balanced forces: the ball on its string', () => {
     assert.ok(amp < rad(30) * 0.5 && amp > rad(3), `amplitude ${p.deg(amp)}°`);
   });
 
-  it('cut: only W is left, the ball falls with g (0.2 m in about 0.2 s)', () => {
+  it('cut: only W is left, the ball falls with g (0.15 m in about 0.17 s)', () => {
     close(p.fallDistance(0.1), 0.049);
-    close(p.fallTime(0.2), Math.sqrt(0.4 / 9.8));
-    assert.equal(p.round(p.fallTime(), 2), 0.2);
+    close(p.fallTime(0.15), Math.sqrt(0.3 / 9.8));
+    assert.equal(p.round(p.fallTime(), 2), 0.17);
+  });
+
+  it('held aside by a hand: the hand pulls with mg sin θ at right angles to the string, and the three forces cancel', () => {
+    for (const deg of [-35, -12, 20, 30]) {
+      const th = rad(deg);
+      const h = p.heldForces(th);
+      close(h.resultant, 0, 1e-12);
+      close(h.tension, 9.8 * Math.cos(th), 1e-12);
+      close(h.hand, 9.8 * Math.abs(Math.sin(th)), 1e-12);
+      // at right angles to the string, away from the lowest point (and upward)
+      close(h.H.x * -Math.sin(th) + h.H.y * Math.cos(th), 0, 1e-12);
+      assert.ok(Math.sign(h.H.x) === Math.sign(th) && h.H.y > 0);
+      // let go: the hand's pull goes, and what is left is the release resultant, exactly opposite
+      const f = p.pendulumForces(th, 0);
+      close(f.R.x, -h.H.x, 1e-12);
+      close(f.R.y, -h.H.y, 1e-12);
+    }
   });
 });
 
 describe('balanced forces: the book on the rope', () => {
+  it('a heavier or lighter book: the pulls scale with its weight, the two together equal W upward', () => {
+    for (const m of [0.6, 0.8, 1.2]) {
+      const f = p.bookForces(35, m);
+      close(f.weight, 9.8 * m, 1e-12);
+      close(f.T1.y + f.T2.y, f.weight, 1e-12);
+      close(f.T1.x + f.T2.x, 0, 1e-12);
+      close(f.resultant, 0, 1e-12);
+    }
+  });
+
   it('T = W / (2 sin α); T₁, T₂ and W add up to zero at every angle', () => {
     for (const a of [20, 30, 45, 60, 70]) {
       const f = p.bookForces(a);
