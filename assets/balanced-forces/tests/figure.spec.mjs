@@ -83,8 +83,9 @@ test('balanced-forces: the test runs five questions, each answered by a tap', as
   const fig = await openFigure(page, 'balanced-forces');
   const frame = page.frames().find((f) => f.url().includes('/assets/balanced-forces/'));
   await frame.evaluate(() => {
-    window.__results = [];
-    window.figure.on('practice-result', (e) => window.__results.push(e));
+    const w = /** @type {any} */ (window);
+    w.__results = [];
+    w.figure.on('practice-result', (e) => w.__results.push(e));
   });
   const canvasHeight = async () => (await frame.locator('.pvc-canvas canvas').first().boundingBox()).height;
   const h0 = await canvasHeight();
@@ -97,7 +98,7 @@ test('balanced-forces: the test runs five questions, each answered by a tap', as
     expect(await canvasHeight()).toBe(h0); // the 3D view keeps its size
     await frame.locator('[data-act="q-next"]').click();
   }
-  const results = await frame.evaluate(() => window.__results);
+  const results = await frame.evaluate(() => /** @type {any} */ (window).__results);
   expect(results.map((r) => r.kind).sort()).toEqual(['book', 'cut', 'pull', 'release', 'tension']);
   // the tension's question comes before the cut's (its scene shows T = W), the book's before the pull's
   const order = results.map((r) => r.kind);
