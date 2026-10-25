@@ -1,0 +1,116 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "balanced-forces",
+  "title": "Balanced and unbalanced forces (বলের সাম্যাবস্থা ও অসাম্যাবস্থা)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 69,
+  "topic": "3.3",
+  "placement": "Book pages 69–70, topic 3.3: বলের সাম্যাবস্থা ও অসাম্যাবস্থা (Balanced and Unbalanced Forces). Next to চিত্র ৩.০২ (a ball hanging on a string; the same pendulum pulled aside) and চিত্র ৩.০৩ (a heavy book hung from a rope pulled at both ends).",
+  "order": 2,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "Interactive 3D figure for balanced and unbalanced forces (বলের সাম্যাবস্থা ও অসাম্যাবস্থা), book pages 69–70, topic 3.3: the page's two pictures, real size. চিত্র ৩.০২: a 1 kg steel ball hangs on a cord from a lab stand; the pull of the cord T (orange) and the weight W = 9.8 N (violet) are equal and opposite, the resultant is zero (সাম্যাবস্থা). The student pulls the ball aside (a hand holds it): T and W are no longer opposite and their resultant (black, mg sin θ, at right angles to the cord) appears; let go, it acts and the ball swings in real time (45 cm cord, the forces stay correct throughout: T = mg cos θ + mLω²). Or the student cuts the cord (tap it, or the button): T is gone, only W is left, the অসাম্য বল, and the ball falls with g onto the table, five times slower, leaving a mark every 0.04 s (the gaps grow). চিত্র ৩.০৩: a heavy book hangs from the middle of a rope whose ends two hands pull; T₁, T₂ and W add up to zero at every angle; dragging the hands apart makes the pulls grow (T = W / 2 sin α) while the book stays at rest. The panel names the state in the book's words and draws the forces tip to tail: the chain closes when the resultant is zero. Test: 5 questions (the pull of a string holding a body at rest, which force is unbalanced after the cut, which arrow is the resultant the moment the ball is let go, the resultant of the book's three forces, what pulling the rope tighter does). Phone-first, Bangla.",
+  "tags": [
+    "force",
+    "balanced-forces",
+    "unbalanced-force",
+    "resultant",
+    "equilibrium",
+    "pendulum",
+    "tension",
+    "weight",
+    "vector",
+    "bangla"
+  ],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "scene",
+      "label": "Example",
+      "type": "select",
+      "options": [["pendulum", "body on a string (চিত্র ৩.০২)"], ["book", "book on a rope (চিত্র ৩.০৩)"]],
+      "default": "pendulum"
+    },
+    { "name": "hold", "label": "Ball held aside", "type": "number", "default": "0", "placeholder": "deg, −35 to 35" },
+    { "name": "alpha", "label": "Rope angle", "type": "number", "default": "30", "placeholder": "deg, 20 to 70" },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "First-use pointers", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "hold": 30 } },
+    { "name": "set", "payload": { "release": 30, "at": 0.4 } },
+    { "name": "set", "payload": { "cut": true, "animate": false } },
+    { "name": "set", "payload": { "rehang": true } },
+    { "name": "set", "payload": { "scene": "book", "alpha": 25 } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": [
+    "ready",
+    "change",
+    "scene",
+    "view",
+    "release",
+    "cut",
+    "landed",
+    "dragstart",
+    "dragend",
+    "practice-start",
+    "practice-result",
+    "practice-end"
+  ],
+  "export": {
+    "poster": { "params": { "coach": "0", "hold": "30" } },
+    "glb": [
+      { "name": "default" },
+      { "name": "held", "setup": [{ "command": "set", "payload": { "hold": 30, "animate": false } }] },
+      { "name": "book", "setup": [{ "command": "set", "payload": { "scene": "book", "animate": false } }] }
+    ],
+    "video": {
+      "kind": "script",
+      "seconds": 20,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 1.2, "command": "set", "payload": { "hold": 30 } },
+        { "at": 3.6, "command": "set", "payload": { "release": 30 } },
+        { "at": 8.4, "command": "set", "payload": { "rehang": true } },
+        { "at": 9.4, "command": "set", "payload": { "cut": true } },
+        { "at": 13.2, "command": "set", "payload": { "scene": "book" } },
+        { "at": 14.6, "command": "set", "payload": { "alpha": 20 } },
+        { "at": 16.8, "command": "set", "payload": { "alpha": 65 } },
+        { "at": 18.6, "command": "set", "payload": { "alpha": 30 } }
+      ]
+    }
+  }
+}
