@@ -44,6 +44,22 @@ before designing; reviewers check against it. When a new decision is taken for a
 - The book's unification sentence: তড়িৎ চৌম্বক আর দুর্বল নিউক্লীয় বল একই সূত্রে, তাই বল তিন ধরনের: মহাকর্ষ, ইলেকট্রো
   উইক (Electro-weak) এবং নিউক্লিয়ার বল।
 
+## Forces and momentum (topics 3.3–3.5.1, pages 69–73)
+
+- Colours, one per quantity: a pull or tension (T, T₁, T₂, a hand's pull in a lighter orange) #e8590c; weight W
+  #7048e8 (gravity's colour); the resultant (লব্ধি বল) #212529; velocity #1c6fd9; momentum #2f9e44 for arrows and
+  #237a35 for green text (contrast); kinetic energy #f59f00. Every arrow also carries its symbol or label.
+- Forces in Bangla as "নিউটন" (English "N"), as `newtons-first-law` and `gravitational-force` do, with a no-break
+  space between number and unit. Momentum "kg m/s" (book p71), [p] = MLT<sup>−1</sup>; energy "J (জুল)" glossed once.
+- One-dimensional vectors: to the right is positive, said in these words: "ডান দিক ধনাত্মক (+) ধরে"; a left
+  velocity or momentum shows its "−" (U+2212) and its arrow points left. "বাম দিকে", never "বাঁ দিকে".
+- The book's words: "সম্মিলিত ভরবেগ" (not "মোট"); "সংঘর্ষ" / "আঘাত" (not "ধাক্কা"); p⃗ = mv⃗ with arrows in 3.4,
+  plain m₁u₁ in 3.5.1 (each as its page prints it). Superscripts and subscripts as <sup>/<sub>: the bundled
+  Noto Sans Bengali has no ⁻ ¹ ² ₁ ₂ →.
+- Big numbers with Bangladeshi commas (৫,০০০, ৫০,০০০), never a thin space.
+- A body at rest never carries a non-zero "লব্ধি বল" label: when a hand holds it, draw the hand's pull too
+  (`balanced-forces`).
+
 ## Open questions for the book team
 
 - The strength numbers in 3.2.2 vs 3.2.4 (above).
@@ -53,4 +69,8 @@ before designing; reviewers check against it. When a new decision is taken for a
   "বন্ধ" for the switch.
 - Words the figures add that aren't on the page (e.g. সুইচ, তারের কুণ্ডলী (কয়েল), দণ্ড চুম্বক, সমমেরু, বিপরীত মেরু;
   the crumpled-paper extra in falling-bodies, marked "বাড়তি পরীক্ষা (বইয়ে নেই)").
+- Page 69–70: "নিউটন" is used before the book defines the newton; the hand's pull in `balanced-forces` is not in
+  the book's picture; its 1 kg ball is drawn 8 cm across (a hollow bob) so the hook fits on a phone.
+- Page 72–73: whether to name "চিত্র ৩.০৪" on screen; whether a stuck-together (inelastic) example belongs here.
+- Page 71: the photon remark is left out of `momentum` on purpose (one idea).
 - Every figure's Bangla wording needs a person's check against the book (the unchecked box in each PR).
