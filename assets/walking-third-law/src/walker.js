@@ -234,6 +234,7 @@ export function createWalker({ shirt = '#f4f6f8', trousers = '#2f3d55' } = {}) {
      * @returns {[THREE.Vector3, THREE.Vector3, number, string][]} (the last: which part)
      */
     bones() {
+      /** @type {[THREE.Vector3, THREE.Vector3, number, string][]} */
       const out = [];
       const at = (v) => v.clone().add(root.position);
       for (const [i, l] of legs.entries()) {
