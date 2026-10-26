@@ -73,8 +73,8 @@ const VIEW_3D = new THREE.Vector3(-0.62, 0.62, 0.82).normalize();
 // down the lane from behind the launcher (portrait frames), more from the side on wide ones (the lane fills the width)
 const OVERVIEW_DIRS = [new THREE.Vector3(-1, 0.95, 0.5).normalize(), new THREE.Vector3(-0.42, 0.8, 1).normalize()];
 const ENDLESS_LOOK = 1.6; // s the view down the lane lasts with no friction, before it goes back beside the book
-// the curved-wall question, seen from above: the wall's end and the four paths (the run-in starts off screen)
-const CURVE_BOX = new THREE.Box3(new THREE.Vector3(-0.36, 0, -0.3), new THREE.Vector3(1.4, 0.05, 0.98));
+// the curved-wall question, seen from above: the whole wall with the run-in, and the four paths (below the note)
+const CURVE_BOX = new THREE.Box3(new THREE.Vector3(-0.46, 0, -0.6), new THREE.Vector3(1.4, 0.05, 0.98));
 
 export function createApp(root, options = {}) {
   const o = { ...DEFAULTS, ...options };
@@ -93,7 +93,7 @@ export function createApp(root, options = {}) {
     learn: cleanSheet(t, {
       examples: { label: 'surfaces', results: true, items: SURFACE_IDS.map((id) => ({ id, label: `chip_${id}` })) },
       quiet: [{ act: 'home', label: 'act_home', icon: ICONS.reset }],
-      lines: { outcome: 1, rule: 3 },
+      lines: { action: 2, outcome: 1, rule: 3 },
     }),
   });
   const sheet = bindCleanSheet(ui.learn);
@@ -533,6 +533,9 @@ export function createApp(root, options = {}) {
           [0, 0],
           [-6, 0],
           [6, 0],
+          [-50, 0],
+          [-90, 0],
+          [0, 22],
         ],
         priority: 0,
         color: '#4b5766',
@@ -561,6 +564,9 @@ export function createApp(root, options = {}) {
         labels.hide(`pin-${id}`);
         continue;
       }
+      // the floor just tried is placed first and never hidden: the book sits on its line, inside the ring, so its
+      // label gets spots that clear the ring
+      const newest = id === newestPin();
       labels.set(`pin-${id}`, {
         text: t('pin', { name: t(`chip_${id}`), d: plain(s.results[id]) }),
         point: pinPoint[id],
@@ -569,6 +575,10 @@ export function createApp(root, options = {}) {
         spots: [
           [0, -8],
           [0, -24],
+          [0, -30],
+          [0, -46],
+          [-40, -20],
+          [40, -20],
           [6, -6],
           [-6, -6],
           [0, 8],
@@ -577,12 +587,20 @@ export function createApp(root, options = {}) {
           [-10, 14],
           [10, 14],
           [0, 28],
+          [0, 44],
         ],
-        priority: side ? 1 : 6,
+        priority: newest ? 9 : side ? 1 : 6,
+        keep: newest,
         color: SURFACE_COLORS[id],
         leader: true,
       });
     }
+  }
+
+  /** The floor whose stop line the book is on (the run on screen), else the one tried last. */
+  function newestPin() {
+    if (s.run && FRICTION_IDS.includes(s.run.surface)) return s.run.surface;
+    return seen[seen.length - 1] ?? null;
   }
 
   /** The book and its arrows: boxes on the screen that no label may cover (read after the frame is drawn). */
@@ -617,9 +635,8 @@ export function createApp(root, options = {}) {
     if (b) blockersList.push(b);
     let i = 1;
     for (const a of Object.values(arrows)) if (a.visible && screenBox(a.root, boxes[i])) blockersList.push(boxes[i++]);
-    // the numbered badge on the book (it keeps clear of the labels too, and keeps its place while that holds)
-    const badgeBox = action?.box();
-    if (badgeBox) blockersList.push({ l: badgeBox.left, t: badgeBox.top, r: badgeBox.right, b: badgeBox.bottom });
+    // the numbered badge and the ring round the book: no label sits on them (the badge keeps clear of the labels too)
+    for (const box of [action?.box(), action?.ringBox()]) if (box) blockersList.push({ l: box.left, t: box.top, r: box.right, b: box.bottom });
     return blockersList.slice();
   }
 
@@ -627,20 +644,21 @@ export function createApp(root, options = {}) {
   const outcomeEl = ui.$('.pvc-outcome');
   /** Floors in the order their stops were seen (for the comparison in the rule). */
   const seen = [];
-  const stepOf = (id) => SURFACE_IDS.indexOf(id) + 1;
   const moving = (st) => st.phase === 'push' || st.phase === 'slide' || st.phase === 'brake';
 
   /**
    * What the big button (and a tap on the book) does now: push on this floor; or, once the book has stopped (or,
-   * with no friction, has passed every floor's stop), push on the next floor not tried yet, in the row's order. Its
-   * badge number is that floor's place in the row (মাদুর ১ … ঘর্ষণ নেই ৪).
+   * with no friction, has passed every floor's stop), push on the next floor not tried yet, in the row's order (that
+   * word is marked in the row). The badge's number is the student's own step: the floors tried so far + 1; "আবার
+   * ধাক্কা দাও" has none.
    */
   function plan(st = state()) {
     const run = s.run;
-    if (!run) return { surface: s.surface, label: 'act_push' };
+    const step = SURFACE_IDS.filter((id) => s.results[id] != null).length + 1;
+    if (!run) return { surface: s.surface, label: 'act_push', step };
     const over = st.phase === 'stopped' || (run.mu === 0 && s.results.none != null);
     const next = over ? SURFACE_IDS.find((id) => s.results[id] == null && id !== run.surface) : null;
-    return next ? { surface: next, label: `act_on_${next}` } : { surface: s.surface, label: 'act_again' };
+    return next ? { surface: next, label: `act_on_${next}`, step } : { surface: s.surface, label: 'act_again', step: '' };
   }
 
   /** The result line: [key, vars, kind] (kind colours the number: the velocity's blue or the floor's colour). */
@@ -656,7 +674,9 @@ export function createApp(root, options = {}) {
   function ruleHtml(st) {
     const law = s.results.none != null;
     const run = s.run;
-    if (!run) return t(law ? 'rule_law' : s.surface === 'none' ? 'rule_rest_none' : 'rule_rest');
+    if (!run) return law ? t('rule_law') : t(s.surface === 'none' ? 'rule_rest_none' : 'rule_rest', { v: V0 });
+    // during the 0.2 s push the paddle's force speeds the book up: never "the velocity does not change" yet
+    if (st.phase === 'push') return t('rule_push', { v: V0 });
     if (run.mu === 0) return t(law ? 'rule_law' : 'rule_slide_none');
     if (st.phase !== 'stopped') return t('rule_slide');
     if (law) return t('rule_book_stop');
@@ -687,7 +707,8 @@ export function createApp(root, options = {}) {
     sheet.rule(ruleHtml(st));
     if (action) {
       const p = plan(st);
-      action.set({ step: stepOf(p.surface), label: p.label });
+      action.set({ step: p.step, label: p.label });
+      sheet.next(p.surface !== s.surface ? p.surface : null); // the word the action will choose next
       // the ring shows on the book while it waits (at the start or at its stop), never while it moves
       if (s.scene === 'lane' && !moving(st) && !(s.run?.mu === 0 && st.phase !== 'stopped')) action.show('run');
       else action.hide('run');
@@ -721,7 +742,7 @@ export function createApp(root, options = {}) {
       camera: s.cam, // 'side' | 'overview'
       view: s.view,
       mode: s.mode,
-      next: { surface: p.surface, step: stepOf(p.surface) }, // what the big button does now: push on that floor
+      next: { surface: p.surface, step: p.step }, // what the big button does now: push on that floor (step '' = again)
     };
   }
 
@@ -1333,7 +1354,7 @@ export function createApp(root, options = {}) {
           p.material.opacity = j === question.expected ? 1 : 0.18;
         });
         for (let j = 0; j < 4; j++) if (j !== question.expected) labels.remove(`opt${j}`);
-        rideCurve(curveEnd(), curveEnd() + 1.3);
+        rideCurve(curveEnd(), curveEnd() + 0.6); // straight on, and still in the picture at the end
         return t('why_curve', { k: letters[question.expected] }) + note({ circle: 'not_circle', spiral: 'not_spiral', outward: 'not_outward' });
       },
       done() {

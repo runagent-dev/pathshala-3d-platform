@@ -86,7 +86,8 @@ export function brakeAt(t, v, a) {
 // ── the test's curved wall (seen from above; x right, z toward the viewer = down the screen) ──────────────────
 
 /** The book goes round inside a quarter-circle wall about the origin, from (0, −r) moving +x to (r, 0) moving +z. */
-export const CURVE = { r: 0.42, speed: 0.7, lead: 0.4 }; // r: radius of the book's centre; lead: straight run-in (m)
+// r: radius of the book's centre (the wall stands at r + half the book's width); lead: straight run-in (m)
+export const CURVE = { r: 0.38, speed: 0.7, lead: 0.4 };
 
 /** The book's centre and heading on the curved-wall run, s m along it (run-in, then the quarter circle). */
 export function curveAt(s) {

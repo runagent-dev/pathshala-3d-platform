@@ -16,7 +16,7 @@ const CORNER = 0.006; // m: rounded outer corners of the boards
 
 /** The printed front cover (portrait: its width along x, its height along z, the top at −z). */
 function coverTexture(t, aspect) {
-  const W = 600;
+  const W = 512;
   const H = Math.round(W / aspect);
   const c = document.createElement('canvas');
   c.width = W;
@@ -30,8 +30,8 @@ function coverTexture(t, aspect) {
   ctx.fillRect(0, 0, W, H);
   // a thin frame inset from the edges
   ctx.strokeStyle = 'rgba(255,255,255,0.45)';
-  ctx.lineWidth = 4;
-  ctx.strokeRect(22, 22, W - 44, H - 44);
+  ctx.lineWidth = 3;
+  ctx.strokeRect(16, 16, W - 32, H - 32);
   // the title and the class
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
@@ -41,20 +41,22 @@ function coverTexture(t, aspect) {
     do ctx.font = `${weight} ${s--}px ${FONT}`;
     while (ctx.measureText(text).width > max && s > 10);
   };
-  fit(t('book_title'), 700, 100, W - 150);
-  ctx.fillText(t('book_title'), W / 2, H * 0.19);
+  // big enough to read on a phone: the title across about 90 % of the cover, the class line about 65 %
+  fit(t('book_title'), 700, 140, W * 0.86);
+  ctx.fillText(t('book_title'), W / 2, H * 0.2);
   ctx.fillStyle = BOOK_COLORS.klass;
-  fit(t('book_class'), 700, 52, W - 140);
-  ctx.fillText(t('book_class'), W / 2, H * 0.28);
+  fit(t('book_class'), 700, 90, W * 0.66);
+  ctx.fillText(t('book_class'), W / 2, H * 0.31);
   // an atom in a white disc: the nucleus, three orbits, an electron on each
   const cx = W / 2;
-  const cy = H * 0.58;
-  const R = W * 0.3;
+  const cy = H * 0.6;
+  const R = W * 0.22;
+  const k0 = R / 180; // the drawing below was sized for a disc of radius 180 px
   ctx.fillStyle = '#ffffff';
   ctx.beginPath();
   ctx.arc(cx, cy, R, 0, Math.PI * 2);
   ctx.fill();
-  ctx.lineWidth = 7;
+  ctx.lineWidth = Math.max(4, 7 * k0);
   ctx.strokeStyle = BOOK_COLORS.cover;
   const orbit = R * 0.8;
   for (let k = 0; k < 3; k++) {
@@ -68,7 +70,7 @@ function coverTexture(t, aspect) {
     // its electron
     ctx.fillStyle = '#f08c00';
     ctx.beginPath();
-    ctx.arc(orbit * Math.cos(1.1 + k * 2), orbit * 0.34 * Math.sin(1.1 + k * 2), 13, 0, Math.PI * 2);
+    ctx.arc(orbit * Math.cos(1.1 + k * 2), orbit * 0.34 * Math.sin(1.1 + k * 2), 13 * k0, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   }
@@ -82,7 +84,7 @@ function coverTexture(t, aspect) {
   ]) {
     ctx.fillStyle = col;
     ctx.beginPath();
-    ctx.arc(cx + dx, cy + dy, 14, 0, Math.PI * 2);
+    ctx.arc(cx + dx * k0, cy + dy * k0, 14 * k0, 0, Math.PI * 2);
     ctx.fill();
   }
   // the bottom: a red line and a green band, as on the board's covers

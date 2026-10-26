@@ -12,6 +12,7 @@ test('newtons-first-law: friction stops the book, without friction it keeps its 
   await page.setViewportSize({ width: 800, height: 500 });
   const log = await preparePage(page);
   const fig = await openFigure(page, 'newtons-first-law');
+  const text = async (sel) => (await fig.frame.locator(sel).first().textContent()).replace(/\u00a0/g, ' ');
 
   const start = await fig.call('get');
   expect(start).toMatchObject({ surface: 'mat', phase: 'rest', speed: 0, distance: 0, results: { mat: null, wood: null, ice: null, none: null } });
@@ -20,9 +21,15 @@ test('newtons-first-law: friction stops the book, without friction it keeps its 
   expect(await fig.call('get')).toMatchObject({ phase: 'rest', speed: 0, distance: 0 });
 
   // the mat: pushed (0.2 s), then slowing evenly: half-way through the slide it goes at half the speed
+  // at rest: step ১, the rule says the push is the same every time
+  expect((await fig.call('get')).next).toEqual({ surface: 'mat', step: 1 });
+  expect(await text('.pvc-rule')).toContain('প্রতিবার একই ধাক্কা: বইটি ৩ মি/সে বেগে ছাড়া পায়');
   await fig.call('set', { push: true });
   await fig.advance(100);
   expect((await fig.call('get')).phase).toBe('push');
+  // while the paddle pushes, the rule says so (never "the velocity does not change" yet)
+  expect(await text('.pvc-rule')).toContain('ধাক্কার বল বইটির বেগ বাড়াচ্ছে');
+  expect((await fig.call('get')).next.step).toBe(''); // "আবার ধাক্কা দাও", no number
   await fig.advance(100 + 437);
   const mid = await fig.call('get');
   expect(mid.phase).toBe('slide');
@@ -35,17 +42,18 @@ test('newtons-first-law: friction stops the book, without friction it keeps its 
   expect((await fig.call('get')).camera).toBe('overview');
   // the panel: the distance under মাদুর, the result line, the rule about the mat's friction; the big button (and the
   // numbered ring on the book) now offer the next floor, ২ কাঠের মেঝেতে
-  const text = (sel) => fig.frame.locator(sel).first().textContent();
   expect(await text('[data-example="mat"] .pvc-ex-res')).toBe('১.৩১ মি');
   expect(await text('.pvc-outcome')).toBe('মাদুরে বইটি ১.৩১ মি গিয়ে থামল');
   expect(await text('.pvc-rule')).toContain('মাদুরের ঘর্ষণ বইটিকে তাড়াতাড়ি থামাল');
   expect((await fig.call('get')).next).toEqual({ surface: 'wood', step: 2 });
   expect(await text('.pvc-act-badge')).toBe('২');
-  expect(await fig.frame.locator('.pvc-act-marker.in').count()).toBe(1);
+  expect(await text('.pvc-act')).toContain('কাঠের মেঝেতে চালাও');
+  expect(await fig.frame.locator('[data-example="wood"].next').count()).toBe(1); // the word it will choose is marked
+  expect(await fig.frame.locator('.pvc-act-marker.in:not(.pvc-act-under)').count()).toBe(1);
   await fig.frame.locator('.pvc-act').click();
   await fig.advance(1500); // the view flies back to the start (0.9 s), then the push
   expect(await fig.call('get')).toMatchObject({ surface: 'wood', phase: 'slide' });
-  expect(await fig.frame.locator('.pvc-act-marker.in').count()).toBe(0); // no ring while it moves
+  expect(await fig.frame.locator('.pvc-act-marker.in:not(.pvc-act-under)').count()).toBe(0); // no ring while it moves
   await fig.advance(3000);
   expect(await fig.call('get')).toMatchObject({ phase: 'stopped', results: { wood: 2.55 } });
   expect(await text('.pvc-rule')).toContain('কাঠের মেঝেতে ঘর্ষণ মাদুরের চেয়ে কম');
@@ -86,7 +94,10 @@ test('newtons-first-law: friction stops the book, without friction it keeps its 
     const ask = await text('.pvc-q-text');
     const st = await fig.call('get');
     expect(st.mode).toBe('quiz');
-    expect(await fig.frame.locator('.pvc-act-marker').evaluate((el) => getComputedStyle(el).visibility)).toBe('hidden');
+    expect(await fig.frame.locator('.pvc-act-marker').evaluateAll((els) => els.map((el) => getComputedStyle(el).visibility))).toEqual([
+      'hidden',
+      'hidden',
+    ]);
     if (ask.includes('বাতাসের বাধা নেই এমন')) {
       scenes.push('predict');
       expect(st).toMatchObject({ surface: 'none', phase: 'rest' });

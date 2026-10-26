@@ -32,25 +32,27 @@ export const STRINGS = {
     res_none: 'থামে না',
 
     // the action (the big button and the numbered ring on the book)
-    act_push: 'বইটিতে ধাক্কা দাও',
+    act_push: 'বইটিকে ধাক্কা দাও',
     act_again: 'আবার ধাক্কা দাও',
-    act_on_mat: 'মাদুরে ধাক্কা দাও',
-    act_on_wood: 'কাঠের মেঝেতে ধাক্কা দাও',
-    act_on_ice: 'বরফে ধাক্কা দাও',
-    act_on_none: 'ঘর্ষণহীন তলে ধাক্কা দাও',
+    act_on_mat: 'মাদুরে চালাও',
+    act_on_wood: 'কাঠের মেঝেতে চালাও',
+    act_on_ice: 'বরফে চালাও',
+    act_on_none: 'ঘর্ষণহীন তলে চালাও',
     act_home: 'শুরুতে ফেরাও',
 
     // the result line: the number that matters in <b>
-    out_rest: 'বইটি স্থির: বেগ <b>{v}</b> মি/সে',
-    out_move: 'বেগ <b>{v}</b> মি/সে, দূরত্ব {d} মি',
-    out_stop: '{at} বইটি <b>{d} মি</b> গিয়ে থামল',
-    out_none: 'থামছে না: বেগ <b>{v}</b> মি/সে, দূরত্ব {d} মি',
+    // the result line: no-break spaces keep a number with its unit
+    out_rest: 'বইটি স্থির: বেগ <b>{v}</b>\u00a0মি/সে',
+    out_move: 'বেগ <b>{v}</b>\u00a0মি/সে, দূরত্ব\u00a0{d}\u00a0মি',
+    out_stop: '{at} বইটি <b>{d}\u00a0মি</b> গিয়ে থামল',
+    out_none: 'থামছে না: বেগ <b>{v}</b>\u00a0মি/সে, দূরত্ব\u00a0{d}\u00a0মি',
 
     // the rule line: the book's words in <b>, growing with what the student has found out
-    rule_rest: '<b>বল প্রয়োগ না করলে স্থির বস্তু স্থির থাকে:</b> বইটি নিজে থেকে নড়ে না। ধাক্কা দিয়ে দেখো কী হয়।',
-    rule_rest_none: '<b>ঘর্ষণ না থাকলেও, বল প্রয়োগ না করলে স্থির বস্তু স্থির থাকে।</b> ধাক্কা দিলে কী হবে?',
+    rule_rest: '<b>বল প্রয়োগ না করলে স্থির বস্তু স্থির থাকে:</b> বইটি নিজে থেকে নড়ে না। প্রতিবার একই ধাক্কা: বইটি {v}\u00a0মি/সে বেগে ছাড়া পায়।',
+    rule_rest_none: '<b>ঘর্ষণ না থাকলেও বল প্রয়োগ না করলে স্থির বস্তু স্থির থাকে।</b> প্রতিবার একই ধাক্কা: বইটি {v}\u00a0মি/সে বেগে ছাড়া পায়।',
+    rule_push: '<b>ধাক্কার বল বইটির বেগ বাড়াচ্ছে।</b> প্রতিবার একই ধাক্কা: বইটি {v}\u00a0মি/সে বেগে ছাড়া পায়।',
     rule_slide: 'ছেড়ে দেওয়ার পর সামনের দিকে কোনো বল নেই। <b>ঘর্ষণ বেগের বিপরীত দিকে কাজ করে</b>, তাই বেগ কমছে।',
-    rule_slide_none: 'ছেড়ে দেওয়ার পর সামনে-পেছনে কোনো বল নেই, <b>তাই বেগ বদলাচ্ছে না।</b>',
+    rule_slide_none: 'ছেড়ে দেওয়ার পর সামনে-পেছনে কোনো বল নেই, <b>তাই বেগ বদলাচ্ছে না:</b> বইটি সরলরেখায় একই দ্রুতিতে, অর্থাৎ সমবেগে চলছে; দাগগুলোও সমান দূরে দূরে।',
     rule_stop_mat: '<b>মাদুরের ঘর্ষণ বইটিকে তাড়াতাড়ি থামাল।</b> ঘর্ষণ বেগের বিপরীত দিকে কাজ করে। মসৃণ মেঝেতে কী হবে?',
     rule_stop_wood: '<b>কাঠের মেঝের ঘর্ষণ বইটিকে থামাল।</b> ঘর্ষণ বেগের বিপরীত দিকে কাজ করে। অন্য মেঝেতে কী হবে?',
     rule_stop_ice: '<b>বরফে ঘর্ষণ খুব কম, কিন্তু শূন্য নয়:</b> তাই বইটি অনেক দূর গিয়ে তবে থামল।',
@@ -184,21 +186,25 @@ export const STRINGS = {
 
     act_push: 'Push the book',
     act_again: 'Push again',
-    act_on_mat: 'Push it on the mat',
-    act_on_wood: 'Push it on the wooden floor',
-    act_on_ice: 'Push it on ice',
-    act_on_none: 'Push it with no friction',
+    act_on_mat: 'Now on the mat',
+    act_on_wood: 'Now on the wooden floor',
+    act_on_ice: 'Now on ice',
+    act_on_none: 'Now with no friction',
     act_home: 'Back to start',
 
-    out_rest: 'The book is at rest: velocity <b>{v}</b> m/s',
-    out_move: 'Velocity <b>{v}</b> m/s, distance {d} m',
-    out_stop: '{at} the book stopped after <b>{d} m</b>',
-    out_none: 'Not stopping: velocity <b>{v}</b> m/s, distance {d} m',
+    out_rest: 'The book is at rest: velocity <b>{v}</b>\u00a0m/s',
+    out_move: 'Velocity <b>{v}</b>\u00a0m/s, distance\u00a0{d}\u00a0m',
+    out_stop: '{at} the book stopped after <b>{d}\u00a0m</b>',
+    out_none: 'Not stopping: velocity <b>{v}</b>\u00a0m/s, distance\u00a0{d}\u00a0m',
 
-    rule_rest: '<b>Without a force, a body at rest stays at rest:</b> the book does not move by itself. Push it and see.',
-    rule_rest_none: '<b>Even with no friction, a body at rest stays at rest without a force.</b> What will a push do?',
+    rule_rest:
+      '<b>Without a force, a body at rest stays at rest:</b> the book does not move by itself. The same push every time: it leaves at {v}\u00a0m/s.',
+    rule_rest_none:
+      '<b>Even with no friction, a body at rest stays at rest without a force.</b> The same push every time: it leaves at {v}\u00a0m/s.',
+    rule_push: '<b>The push is a force: it is speeding the book up.</b> The same push every time: it leaves at {v}\u00a0m/s.',
     rule_slide: 'Once let go, no force pushes the book forward. <b>Friction acts against the velocity</b>, so the velocity falls.',
-    rule_slide_none: 'Once let go, no force acts forward or back, <b>so the velocity does not change.</b>',
+    rule_slide_none:
+      'Once let go, no force acts forward or back, <b>so the velocity does not change:</b> the book goes on in a straight line at the same speed, that is with uniform velocity; the dots are evenly spaced.',
     rule_stop_mat: '<b>The mat’s friction stopped the book quickly.</b> Friction acts against the velocity. And on a smoother floor?',
     rule_stop_wood: '<b>The wooden floor’s friction stopped the book.</b> Friction acts against the velocity. And on another floor?',
     rule_stop_ice: '<b>On ice friction is very small, but not zero:</b> so the book went a long way, and then stopped.',

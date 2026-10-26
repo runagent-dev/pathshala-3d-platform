@@ -83,7 +83,7 @@
   ],
   "events": ["ready", "change", "push", "stop", "surface", "view", "practice-start", "practice-result", "practice-end"],
   "export": {
-    "poster": { "params": { "coach": "0", "surface": "none", "at": "3.6", "tried": "mat,wood,ice" } },
+    "poster": { "params": { "coach": "0", "surface": "none", "at": "0.4", "tried": "mat,wood,ice,none" } },
     "glb": [
       {
         "name": "default",
