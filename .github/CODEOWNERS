@@ -3,6 +3,7 @@
 # No platform owners yet: add GitHub usernames to .github/owners.json, then run npm run generate.
 
 /assets/acceleration/ @RadeenXALNW
+/assets/balanced-forces/ @RadeenXALNW
 /assets/circular-motion/ @RadeenXALNW
 /assets/contact-noncontact-force/ @RadeenXALNW
 /assets/digital-balance/ @RadeenXALNW
