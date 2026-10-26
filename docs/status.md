@@ -2,7 +2,7 @@
 
 Snapshot of 2026-10-26. Update it whenever a batch lands (the `/figure-batch` skill's last step).
 
-## On `main`: 26 figures (Physics 9–10)
+## On `main`: 28 figures (Physics 9–10)
 
 | Page | Topic | Figure | Title |
 |---|---|---|---|
@@ -29,25 +29,37 @@ Snapshot of 2026-10-26. Update it whenever a batch lands (the `/figure-batch` sk
 | 69 | 3.3 | `balanced-forces` | বলের সাম্যাবস্থা ও অসাম্যাবস্থা |
 | 71 | 3.4 | `momentum` | ভরবেগ |
 | 72 | 3.5.1 | `conservation-of-momentum` | ভরবেগ এবং শক্তির সংরক্ষণশীলতা |
+| 74 | 3.5.2 | `safe-journey` | নিরাপদ ভ্রমণ: বেগ ও বল |
+| 75 | 3.6 | `newtons-second-law` | নিউটনের দ্বিতীয় গতি সূত্র |
 
 Every figure from page 36 on was built by a builder agent, reviewed by an independent reviewer agent, fixed, and
 touch-tested (see `docs/agents/`). The ones from page 36 on are at studio status "idea": the owner moves them to
 "review" in the studio when reviewers should see them. Their Bangla still needs a person's check against the book.
 
-## In progress
+## In progress (2026-10-26; builders and reviewers are Sonnet agents, one builder and one reviewer per figure)
 
-- **The clean panel ("one action, one result, one rule")**, from the owner's feedback of 2026-10-25: the panels
-  under the picture had too many boxes. The kit gets a big action button with a numbered badge that matches a
-  marker on the 3D object, one result line and one rule line (`kit/action-panel`, kit 1.3.0); `newtons-first-law`
-  is redone on it first (with a real-looking textbook) for the owner to see, then the owner's other four:
-  `scalar-vector` (a simpler idea instead of the board of arrows), `distance-displacement` (the panel tied to the
-  picture: path = দূরত্ব, arrow = সরণ), `contact-noncontact-force` (which force touches and which doesn't, in the
-  scene and the test), `electromagnetic-force` (frame the comb, the hair and the paper together), then the rest of
-  chapter 2 and the batch-3 figures.
-- `images/` (untracked, in the studio checkout) holds pages 43–72; all of them are done. New pages come as new
-  images there.
+- **Batch 4, pages 74–90** (images `P-75…P-90` in the studio's `images/`), each on the clean panel from the start:
+  built and merged: `safe-journey`, `newtons-second-law`. Open: `law-of-gravitation` (3.7, p78: review fixes),
+  and in the first build `hanging-weight-pull` (3.7 example, p81), `newtons-third-law` (3.8, p84) and
+  `walking-third-law` (3.8 example, p86). Not started: `friction-force` (3.9, p88) and `types-of-friction`
+  (3.9.1, p89: all three types in ONE 3D scene, the owner's wish).
+- **Chapter 2 and the rest of chapter 3 move to the clean panel**, one figure per PR with its own review:
+  `linear-motion`, `circular-motion`, `translational-motion`, `periodic-motion`, `simple-harmonic-motion`,
+  `speed-velocity`, `acceleration`, `equations-of-motion`, `falling-bodies`, then `inertia`, `gravitational-force`,
+  `weak-nuclear-force`, `strong-nuclear-force`, `balanced-forces`, `momentum`, `conservation-of-momentum` (and
+  chapter 1 only if the owner wants it).
+- `images/` (untracked, in the studio checkout) holds pages 43–90; pages 43–75 are done, the rest of batch 4 is above.
 
 ## Recently merged
+
+- **The clean panel** (owner's feedback 2026-10-25, "one action, one result, one rule"): kit 1.3.0 (#35: a big numbered
+  action button whose twin badge rings the thing to touch in 3D, ring under the labels, a keyboard-friendly row of
+  words, one result line, one rule line; `docs/student-kit.md`), and five figures redone on it: `newtons-first-law`
+  (#38, with a real hardcover textbook), `contact-noncontact-force` (#39: the picture shows touch or gap),
+  `distance-displacement` (#40: blue trail = দূরত্ব, orange arrow = সরণ), `electromagnetic-force` (#41: comb, hair
+  and paper in one view) and `scalar-vector` (#43: "find your friend"). New figures of batch 4 start on it.
+- **Batch 4 so far**: #42 `safe-journey` (3.5.2), #44 `newtons-second-law` (3.6). Merged on the local checks (CI was
+  blocked, below); `npm run check`, 547 unit tests and types pass on `main`.
 
 - **Batch 3 (pages 69–73)**: #32 `balanced-forces` (3.3), #34 `momentum` (3.4), #33 `conservation-of-momentum`
   (3.5.1), each built, independently reviewed, fixed and touch-tested; merged on the local checks (CI was blocked,
@@ -63,6 +75,8 @@ touch-tested (see `docs/agents/`). The ones from page 36 on are at studio status
 
 ## Open pull requests (not merged)
 
+- **#37** (`sawradip`): CI keeps only the fast check job and runs the browser tests locally, because the free
+  Actions minutes ran out (about 1,115 minutes in two days, mostly the two Playwright jobs). Not reviewed by us.
 - **#1–#4**: Dependabot updates (actions, tooling). Review and merge when convenient.
 
 ## Known issues
