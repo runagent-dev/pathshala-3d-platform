@@ -1,11 +1,11 @@
 // কোনো কিছুকে ধাক্কা দেওয়া: a student pushes a carton on a flat trolley. The hands touch the carton's back only
 // while pushing; once they let go the trolley rolls on by itself, slowing a little, and the push is over. Real size,
 // metres, motion along +x. update(m) places the trolley, the student (leaning, hands on the carton, walking) and the
-// force arrow on the carton's side at the height of the hands.
+// force arrow on the carton's side at the height of the hands; the contact patch lights the palms on the carton.
 import * as THREE from 'three';
 import { createArrow } from './arrow.js';
 import { createPerson } from './person.js';
-import { V, box, canvasTexture, castShadows, groundPatch, hitBox, mat, wheel } from './parts.js';
+import { V, box, canvasTexture, castShadows, glowSpot, groundPatch, hitBox, mat, wheel } from './parts.js';
 
 const CARTON = { w: 0.66, h: 0.78, d: 0.58 };
 const DECK_Y = 0.17; // top of the trolley's deck
@@ -13,7 +13,7 @@ const HAND_Y = 0.82;
 const PERSON_BACK = 0.52; // the student's hips are this far behind the carton's back face
 const LEAN = 0.42; // radians, pushing
 
-export function createPushScene({ colors }) {
+export function createPushScene({ color }) {
   const root = new THREE.Group();
   root.name = 'PushScene';
   const model = new THREE.Group();
@@ -79,22 +79,26 @@ export function createPushScene({ colors }) {
   castShadows(model);
 
   const hits = [hitBox(1.1, 1.2, 0.9, 0, 0.55, 0, trolley), hitBox(0.7, 1.7, 0.6, 0, 0.85, 0, person.root)];
-  const arrow = createArrow({ color: colors.force, radius: 0.016, head: 0.1, headRadius: 0.042 });
+  const arrow = createArrow({ color, radius: 0.016, head: 0.1, headRadius: 0.042 });
   root.add(arrow.root);
+  // the contact patch: the palms on the carton's back (one patch covers both hands seen from the front)
+  const spot = glowSpot(color, 0.22);
+  root.add(spot);
 
   const X0 = -0.1; // the trolley's middle at the start
   const backFace = () => trolley.position.x - CARTON.w / 2;
   const handR = new THREE.Vector3();
   const handL = new THREE.Vector3();
   const v = new THREE.Vector3();
-  let wobble = 0;
+  const touch = new THREE.Vector3();
+  const body = new THREE.Box3();
 
-  function update(m, { arrowOn = false } = {}) {
+  function update(m, { arrowOn = false, marks = false } = {}) {
     trolley.position.set(X0 + m.pos, 0, 0);
     for (const w of wheels) w.rotation.z = -m.pos / 0.055;
     // the student: behind the carton, leaning into it as the hands reach it; after letting go, standing back
     const px = X0 - CARTON.w / 2 - PERSON_BACK + m.person;
-    person.root.position.set(px + wobble * 0.01, 0, 0);
+    person.root.position.set(px, 0, 0);
     const reach = m.reach ?? 0;
     const lean = 0.08 + (LEAN - 0.08) * reach;
     const hx = backFace() - px - 0.035; // the palms on the carton's back (or where they were, as it rolls away)
@@ -112,6 +116,9 @@ export function createPushScene({ colors }) {
     // a pushing stance: the back foot stays back when standing
     arrow.setOpacity(arrowOn ? 1 : 0);
     if (arrowOn) arrow.set(v.set(backFace() + 0.02, HAND_Y, CARTON.d / 2 + 0.03), V(1, 0, 0), 0.42);
+    touch.set(backFace() - 0.01, HAND_Y, 0.12);
+    spot.position.copy(touch);
+    spot.visible = marks && m.touching;
   }
 
   return {
@@ -120,19 +127,19 @@ export function createPushScene({ colors }) {
     model,
     hits,
     arrow,
-    fit: { min: V(-1.4, -0.02, -0.4), max: V(1.82, 1.7, 0.4) },
+    // the student and the trolley up to the telling moment (the hands still pushing), with room for the tag
+    fit: { min: V(-1.42, -0.02, -0.4), max: V(0.78, 1.75, 0.4) },
     views: { front: V(0.18, 0.2, 1).normalize(), '3d': V(0.75, 0.5, 0.8).normalize() },
     shadow: { center: V(0.2, 0, 0), r: 2.6 },
     update,
-    /** Where the push touches the carton: the near hand on its back face. */
-    marker: () => ({ kind: 'contact', at: v.set(backFace(), HAND_Y, 0.17).clone() }),
+    /** The body the force acts on (the action's ring goes round it): the carton on its trolley. */
+    subject: () => body.set(V(trolley.position.x - 0.48, 0, -0.31), V(trolley.position.x + 0.48, DECK_Y + CARTON.h, 0.31)),
+    /** Where the push touches the carton: the palms on its back face. */
+    contact: () => touch,
+    gap: () => null,
     bodies: () => [
       { min: V(backFace(), 0, -CARTON.d / 2), max: V(backFace() + CARTON.w, DECK_Y + CARTON.h, CARTON.d / 2) },
       { min: V(person.root.position.x - 0.3, 0, -0.25), max: V(person.root.position.x + 0.35, 1.62, 0.25) },
     ],
-    actor: (out, k = 0) => out.set(backFace() + CARTON.w * 0.4, DECK_Y + CARTON.h * [0.5, 0.8, 0.25][k], CARTON.d / 2),
-    wiggle(k) {
-      wobble = Math.sin(k * Math.PI * 4) * (1 - k);
-    },
   };
 }

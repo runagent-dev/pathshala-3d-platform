@@ -140,7 +140,11 @@ export const DURATION = {
   magnet: MAGNET.slide + MAGNET.wait + MAGNET.T * SLOW.magnet,
 };
 
-/** The moment each example stops at the first time, so the student can look and sort it (s on screen). */
+/**
+ * The telling moment of each example (s on screen): where a run stops and holds, the force acting and the body
+ * moving, so the student sees what touches it (or the gap): later the hands let go, the crate stops, the football
+ * lands and the nail clicks onto the magnet, and the picture would no longer show it.
+ */
 export const KEY = {
   crane: CRANE.take + 1.3, // half a metre up, rising at 0.5 m/s
   push: PUSH.lean + 0.5, // the hands push, the trolley at 0.5 m/s
@@ -253,37 +257,46 @@ export function moved(id, m) {
   return id === 'friction' || m.pos > 1e-9;
 }
 
-/** The real speed in m/s with one decimal, for the panel. */
-export const speedText = (v) => roundTo(Math.max(0, v), 0.1).toFixed(1);
+/** A gap (m) as the figure writes it, in cm: whole cm from 10 cm up (the football), one decimal below (the nail). */
+export function gapCm(gap) {
+  const cm = Math.max(0, gap) * 100;
+  return cm >= 10 ? Math.round(cm) : roundTo(cm, 0.1);
+}
 
 // ── the test ─────────────────────────────────────────────────────────────────────────────────────────────────
 
-/** New cases for the test: which kind each is. */
+/** New cases for the test (not on the page): which kind each is. */
 export const CASES = { rope: 'contact', parachute: 'contact', comb: 'noncontact' };
 
 /**
- * Answer keys (i18n) for "what kind of force is this?", the right one first; the others are the usual mistakes:
- * the person does not touch the cart, air cannot be seen, the hand holds the comb, the paper ends up stuck to the
- * comb, the right kind for a wrong reason (the wheels, light paper), "no force".
+ * Answer keys (i18n) for "what kind of force is this?", the right one first; the others are the usual mistakes.
+ *  - rope, parachute, comb (the test's new cases): the person does not touch the cart, air cannot be seen, the hand
+ *    holds the comb, the paper ends up stuck to the comb, the right kind for a wrong reason, "no force".
+ *  - crate (friction on the sliding crate): a contact force although nothing seems to push it ("nobody touches
+ *    it", "it stops by itself", the right kind for a wrong reason: "the air pushes on its front").
+ *  - ball (gravity on the falling football): a non-contact force ("the air pushes it down", "the Earth touches it
+ *    through the floor", "it falls by itself").
  */
 export const KIND_CHOICES = {
   rope: ['k_rope_ok', 'k_rope_person', 'k_rope_wheels', 'k_rope_none'],
   parachute: ['k_para_ok', 'k_para_unseen', 'k_para_gravity', 'k_para_none'],
   comb: ['k_comb_ok', 'k_comb_hand', 'k_comb_touch', 'k_comb_light'],
+  crate: ['k_crate_ok', 'k_crate_nobody', 'k_crate_none', 'k_crate_air'],
+  ball: ['k_ball_ok', 'k_ball_air', 'k_ball_floor', 'k_ball_none'],
 };
+/** The kind of force each set of answers is about. */
+export const CHOICE_KIND = { rope: 'contact', parachute: 'contact', comb: 'noncontact', crate: 'contact', ball: 'noncontact' };
 
 /** "What is the force doing?": the right effect for an example caught in the middle of its action. */
 export const EFFECT_RIGHT = { friction: 'eff_slower', fall: 'eff_faster', magnet: 'eff_faster' };
 export const EFFECT_CHOICES = ['eff_faster', 'eff_slower', 'eff_same', 'eff_nothing'];
 
-/** "How can you be sure a force acts?": the first law's answer and the usual mistakes. */
-export const EVIDENCE_CHOICES = ['ev_change', 'ev_moving', 'ev_rest', 'ev_fast'];
-
-/** "Which of the book's examples is the same kind as this one?" (for a non-contact example: the other one). */
-export function sameChoices(id) {
-  const other = id === 'magnet' ? 'fall' : 'magnet';
-  return [other, ...EXAMPLE_IDS.filter((x) => KIND[x] !== KIND[id])];
-}
+/**
+ * The five questions of a test, in a shuffled order: a new contact case (a rope or a parachute), the comb (a new
+ * non-contact case), friction (contact although nothing pushes), gravity (pulls without touching), and what the
+ * magnet's pull does to the nail (the book's definition of force).
+ */
+export const QUESTION_KINDS = ['case', 'comb', 'friction', 'gravity', 'effect'];
 
 /** Fisher–Yates with a given random source (Math.random is seeded by the test harness). */
 export function shuffle(list, random = Math.random) {

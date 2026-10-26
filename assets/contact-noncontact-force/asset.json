@@ -5,7 +5,7 @@
   "title": "Force: contact and non-contact (বল: স্পর্শ ও অস্পর্শ বল)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "book": "physics-9-10",
   "page": 67,
   "topic": "3.1.2",
@@ -13,7 +13,7 @@
   "order": 1,
   "maintainers": ["RadeenXALNW"],
   "units": "m",
-  "description": "Interactive 3D figure for force (বল) and its two kinds, স্পর্শ বল and অস্পর্শ বল, book page 67, topic 3.1.2. The page's five examples, one at a time, real size: a truck crane lifts a concrete block (ক্রেন দিয়ে ভারী জিনিস তোলা), a student pushes a trolley (ধাক্কা দেওয়া), friction stops a sliding crate (ঘর্ষণ), a football let go falls (মাধ্যাকর্ষণ বল) and a magnet brought by a hand pulls an iron nail (চুম্বকের আকর্ষণ). Press চালাও or touch the picture: the force acts, its orange arrow appears where it acts with its name, and where it meets the body is marked: a hollow blue ring round the place where something touches, a dashed violet bracket across the empty gap. The first time it stops at that moment and the student puts the example in the right box (স্পর্শ বল or অস্পর্শ বল); the book's definition of force lights the part that applies (a body at rest starts moving, or a moving body's velocity changes) and a readout shows the velocity (m/s and its direction). Slowed-down examples say so. Test tab: 5 questions with new cases in 3D (a rope pulling a cart, a parachute, a comb lifting paper: which kind and why), what a force is doing to a moving body, how the first law tells a force is acting, and which book example is the same kind. Phone-first, Bangla.",
+  "description": "Interactive 3D figure for force (বল) and its two kinds, স্পর্শ বল and অস্পর্শ বল, book page 67, topic 3.1.2. The page's five examples, one at a time, real size: a truck crane lifts a concrete block (ক্রেন দিয়ে ভারী জিনিস তোলা), a student pushes a trolley (ধাক্কা দেওয়া), friction stops a sliding crate (ঘর্ষণ), a football let go falls (মাধ্যাকর্ষণ বল) and a magnet pulls an iron nail (চুম্বকের আকর্ষণ). One big numbered action plays the example (its badge rings the body the force acts on); the run holds at the telling moment, where the picture says the kind: a contact force lights the patch where the two bodies touch (the hook in the ring, the palms on the carton, the floor under the crate) with the tag ছুঁয়ে আছে: স্পর্শ বল; a non-contact force shows the empty gap between them, measured in cm, with the tag ছোঁয়নি, তবু টানে: অস্পর্শ বল. The arrow and the tag carry the kind's colour and words. The panel is the clean sheet: the examples as one row of words with each one's kind under it once seen, one result line naming the force and its kind, one rule that starts with the book's definition of force and grows into the two kinds. Slowed-down and held pictures say so. Test tab: 5 questions with the scene set up for each (a rope pulling a cart or a parachute, a comb lifting paper, friction with nobody pushing, gravity with nothing touching, what the magnet's pull does to the nail); the answer lights the patch or measures the gap. Phone-first, Bangla.",
   "tags": [
     "force",
     "contact-force",
@@ -52,7 +52,7 @@
       "options": [["rest", "at rest"], ["key", "the telling moment"], ["end", "the end"]],
       "default": "rest"
     },
-    { "name": "sorted", "label": "All already sorted", "type": "boolean", "default": "0" },
+    { "name": "seen", "label": "All five already seen", "type": "boolean", "default": "0" },
     { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
     {
       "name": "mode",
@@ -61,7 +61,7 @@
       "options": [["explore", "learn"], ["quiz", "test"]],
       "default": "explore"
     },
-    { "name": "coach", "label": "First-use pointers", "type": "boolean", "default": "1" },
+    { "name": "coach", "label": "Pulse the action's marker", "type": "boolean", "default": "1" },
     {
       "name": "numerals",
       "label": "Digits",
@@ -77,17 +77,17 @@
     { "name": "get", "payload": {} },
     { "name": "set", "payload": { "example": "magnet" } },
     { "name": "set", "payload": { "play": true } },
+    { "name": "set", "payload": { "act": true } },
     { "name": "set", "payload": { "at": "key" } },
-    { "name": "set", "payload": { "sort": "noncontact" } },
-    { "name": "set", "payload": { "sorted": "all", "example": "fall", "at": "key" } },
+    { "name": "set", "payload": { "seen": "all", "example": "fall", "at": "key" } },
     { "name": "reset", "payload": {} },
     { "name": "practice", "payload": {} },
     { "name": "capture", "payload": { "width": 800, "height": 500 } },
     { "name": "export-glb", "payload": {} }
   ],
-  "events": ["ready", "change", "example", "act", "sort", "view", "practice-start", "practice-result", "practice-end"],
+  "events": ["ready", "change", "example", "act", "view", "practice-start", "practice-result", "practice-end"],
   "export": {
-    "poster": { "params": { "coach": "0", "example": "magnet", "at": "key", "sorted": "1" } },
+    "poster": { "params": { "coach": "0", "example": "magnet", "at": "key", "seen": "1" } },
     "glb": [
       { "name": "default", "setup": [{ "command": "set", "payload": { "example": "crane", "animate": false } }] },
       { "name": "push", "setup": [{ "command": "set", "payload": { "example": "push", "animate": false } }] },
@@ -101,17 +101,11 @@
       "fps": 30,
       "params": { "coach": "0" },
       "script": [
-        { "at": 0.5, "command": "set", "payload": { "play": true } },
-        { "at": 3, "command": "set", "payload": { "sort": "contact" } },
-        { "at": 5.2, "command": "set", "payload": { "example": "push" } },
-        { "at": 5.6, "command": "set", "payload": { "play": true } },
-        { "at": 7.6, "command": "set", "payload": { "sort": "contact" } },
-        { "at": 10.6, "command": "set", "payload": { "example": "fall" } },
-        { "at": 11, "command": "set", "payload": { "play": true } },
-        { "at": 13, "command": "set", "payload": { "sort": "noncontact" } },
-        { "at": 15.9, "command": "set", "payload": { "example": "magnet" } },
-        { "at": 16.3, "command": "set", "payload": { "play": true } },
-        { "at": 18.6, "command": "set", "payload": { "sort": "noncontact" } }
+        { "at": 0.6, "command": "set", "payload": { "act": true } },
+        { "at": 4, "command": "set", "payload": { "act": true } },
+        { "at": 7.2, "command": "set", "payload": { "act": true } },
+        { "at": 10.4, "command": "set", "payload": { "act": true } },
+        { "at": 14.2, "command": "set", "payload": { "act": true } }
       ]
     }
   }

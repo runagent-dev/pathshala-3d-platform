@@ -1,8 +1,8 @@
 // চুম্বকের আকর্ষণ: a hand brings a bar magnet (6 cm, N red, S blue) to 3 cm from an iron nail (5 cm) lying on a
 // table. The hand touches the magnet, nothing touches the nail, yet the nail starts to move and rushes, faster and
 // faster, to the magnet's N pole. Real size, metres (shown 10 times slower than real). The arrow lies just behind
-// the nail, pointing at the magnet, and grows as the gap closes (the pull is stronger nearer the magnet); a dashed
-// line in front of the nail shows the gap still open. The view is close on the nail, the gap and the N pole: the S
+// the nail, pointing at the magnet, and grows as the gap closes (the pull is stronger nearer the magnet); gap() gives
+// the gap still open, measured in front of the nail. The view is close on the nail, the gap and the N pole: the S
 // end and the hand run off the right edge on a phone.
 import * as THREE from 'three';
 import { textMesh } from '@shared/student/materials.js';
@@ -14,7 +14,7 @@ const NAIL = { len: 0.05, r: 0.0019, head: 0.0042 };
 const BAR = { len: 0.06, h: 0.01, d: 0.017 };
 const TIP0 = -0.012; // the nail's tip at the start (x)
 
-export function createMagnetScene({ colors }) {
+export function createMagnetScene({ color }) {
   const root = new THREE.Group();
   root.name = 'MagnetScene';
   const model = new THREE.Group();
@@ -108,19 +108,21 @@ export function createMagnetScene({ colors }) {
   castShadows(model);
 
   const hits = [hitBox(0.1, 0.04, 0.05, BAR.len / 2, 0.01, 0, magnet), hitBox(0.085, 0.03, 0.04, -NAIL.len / 2, 0.005, 0, nail)];
-  const arrow = createArrow({ color: colors.force, radius: 0.0011, head: 0.0062, headRadius: 0.0028 });
+  const arrow = createArrow({ color, radius: 0.0011, head: 0.0062, headRadius: 0.0028 });
   root.add(arrow.root);
 
   const v = new THREE.Vector3();
+  const body = new THREE.Box3();
+  const gapA = new THREE.Vector3();
+  const gapB = new THREE.Vector3();
   let tip = TIP0;
   let face = TIP0 + MAGNET.far;
-  let wobble = 0;
 
   function update(m, { arrowOn = false } = {}) {
     tip = TIP0 + m.pos;
     face = TIP0 + (m.magnet ?? MAGNET.far);
     nail.position.x = tip;
-    magnet.position.set(face + wobble * 0.0015, 0, 0);
+    magnet.position.set(face, 0, 0);
     arrow.setOpacity(arrowOn ? 1 : 0);
     // just behind the nail (farther from the viewer), along it, pointing at the magnet; longer as the gap closes
     const len = 0.017 + 0.015 * (m.strength ?? 1);
@@ -140,16 +142,15 @@ export function createMagnetScene({ colors }) {
     views: { front: V(0.08, 0.62, 1).normalize(), '3d': V(0.7, 0.75, 0.75).normalize() },
     shadow: { center: V(0.02, 0, 0), r: 0.14 },
     update,
-    /** The gap between the nail's tip and the magnet's N face (in front of the nail, on the table). */
-    marker: (m) => (m.gap != null ? { kind: 'gap', a: V(tip, 0.001, 0.007), b: V(face, 0.001, 0.007) } : null),
+    /** The body the force acts on (the action's ring goes round it): the nail. */
+    subject: () => body.set(V(tip - NAIL.len, 0, -NAIL.head), V(tip, 2 * NAIL.head, NAIL.head)),
+    contact: () => null,
+    /** The gap between the nail's tip and the magnet's N face, measured in front of the nail on the table. */
+    gap: (m) => (m.gap != null ? { a: gapA.set(tip, 0.001, 0.007), b: gapB.set(face, 0.001, 0.007) } : null),
     bodies: () => [
       { min: V(tip - NAIL.len, 0, -NAIL.head), max: V(tip, 2 * NAIL.head, NAIL.head) },
       { min: V(face, 0, -BAR.d / 2), max: V(face + BAR.len, BAR.h, BAR.d / 2) },
       { min: V(face + BAR.len - 0.02, 0, -0.04), max: V(face + BAR.len + 0.2, 0.15, 0.01) }, // the hand
     ],
-    actor: (out, k = 0) => (k === 1 ? out.set(tip - NAIL.len / 2, 0.004, 0) : out.set(face + BAR.len * (k === 0 ? 0.2 : 0.45), BAR.h, BAR.d / 2)),
-    wiggle(k) {
-      wobble = Math.sin(k * Math.PI * 4) * (1 - k);
-    },
   };
 }

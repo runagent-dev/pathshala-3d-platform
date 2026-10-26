@@ -1,10 +1,10 @@
 // ক্রেন দিয়ে ভারী জিনিস তোলা: a truck crane on its outriggers lifts a concrete block (1.5 m × 1 m × 1 m, about
-// three and a half tonnes) by its steel ring. Real size, metres; the truck faces −x, the load hangs at +x. update(m) places the block,
-// the hook and the cable for the motion m (motion.js craneAt); the force arrow goes up beside the cable, from the
-// block's top where the ring is.
+// three and a half tonnes) by its steel ring. Real size, metres; the truck faces −x, the load hangs at +x. update(m)
+// places the block, the hook and the cable for the motion m (motion.js craneAt); the force arrow goes up beside the
+// cable, from the block's top where the ring is; the contact patch lights the hook in the ring.
 import * as THREE from 'three';
 import { createArrow } from './arrow.js';
-import { V, blob, box, canvasTexture, castShadows, groundPatch, hitBox, mat, tube, wheel } from './parts.js';
+import { V, blob, box, canvasTexture, castShadows, glowSpot, groundPatch, hitBox, mat, tube, wheel } from './parts.js';
 
 const BOOM_PIVOT = V(-0.45, 1.95, 0);
 const BOOM_ANGLE = THREE.MathUtils.degToRad(35);
@@ -14,7 +14,7 @@ const CABLE_X = TIP.x + 0.2; // the cable leaves the far side of the pulley
 const LOAD = { w: 1.5, h: 1.0, d: 1.0 };
 const RING_H = 0.17;
 
-export function createCraneScene({ colors }) {
+export function createCraneScene({ color }) {
   const root = new THREE.Group();
   root.name = 'CraneScene';
   const model = new THREE.Group();
@@ -133,24 +133,30 @@ export function createCraneScene({ colors }) {
   // big targets: the block (it moves with the block) and the truck
   const hits = [hitBox(2.1, 2.2, 1.6, 0, 0.95, 0, load), hitBox(3.2, 2.6, 2.6, -1.4, 1.4, 0, model)];
 
-  const arrow = createArrow({ color: colors.force, radius: 0.045, head: 0.26, headRadius: 0.11 });
+  const arrow = createArrow({ color, radius: 0.045, head: 0.26, headRadius: 0.11 });
   root.add(arrow.root);
+  // the contact patch: the hook in the block's ring, where the crane's pull reaches the block
+  const spot = glowSpot(color, 0.36);
+  root.add(spot);
 
   const v = new THREE.Vector3();
+  const touch = new THREE.Vector3();
+  const body = new THREE.Box3();
   let lift = 0;
-  let wobble = 0;
 
-  function update(m, { arrowOn = false } = {}) {
+  function update(m, { arrowOn = false, marks = false } = {}) {
     lift = m.pos;
     const take = m.take ?? 1; // the slack goes out of the cable (the hook block rises a little first)
     load.position.set(CABLE_X, lift, 0);
-    load.rotation.z = wobble * 0.03;
     const hookY = lift + LOAD.h + RING_H + 0.02 * take;
     hookBlock.position.set(CABLE_X, hookY + 0.22, 0);
     cable.position.set(CABLE_X, (TIP.y - 0.18 + hookY + 0.62) / 2, 0);
     cable.scale.set(0.018, TIP.y - 0.18 - (hookY + 0.62), 0.018);
     arrow.setOpacity(arrowOn ? 1 : 0);
     if (arrowOn) arrow.set(v.set(CABLE_X + 0.42, lift + LOAD.h + 0.02, 0.3), V(0, 1, 0), 0.8);
+    touch.set(CABLE_X, lift + LOAD.h + RING_H * 0.62, 0);
+    spot.position.copy(touch);
+    spot.visible = marks && m.touching;
     // a soft shadow under the block: its lift reads even without real shadows
     shade.scale.setScalar(1 + lift * 0.25);
     shade.material.opacity = Math.max(0.25, 1 - lift * 0.45);
@@ -162,25 +168,22 @@ export function createCraneScene({ colors }) {
     model,
     hits,
     arrow,
-    // what the front view frames: the block's whole 1.3 m path, the hook block and the cable above it; the boom's
-    // tip and the truck's cab run off the top and the left (wide frames show more of the truck)
-    fit: { min: V(CABLE_X - 1.35, -0.05, -0.5), max: V(CABLE_X + 1.3, 3.45, 0.6) },
+    // what the front view frames: the block, lifted to its telling moment (about half a metre), the hook block and
+    // room above them for the tag; the boom's tip and the truck's cab run off the top and the left
+    fit: { min: V(CABLE_X - 1.3, -0.05, -0.5), max: V(CABLE_X + 1.25, 2.75, 0.6) },
     views: { front: V(0.26, 0.16, 1).normalize(), '3d': V(0.85, 0.42, 0.78).normalize() },
     shadow: { center: V(0.4, 0, 0), r: 6 },
     update,
+    /** The body the force acts on (the action's ring goes round it): the block. */
+    subject: () => body.set(V(CABLE_X - LOAD.w / 2, lift, -LOAD.d / 2), V(CABLE_X + LOAD.w / 2, lift + LOAD.h, LOAD.d / 2)),
     /** Where the cable's pull touches the block: the hook in the ring. */
-    marker: () => ({ kind: 'contact', at: v.set(CABLE_X, lift + LOAD.h + RING_H * 0.62, 0).clone() }),
+    contact: () => touch,
+    gap: () => null,
     /** Things the labels must not cover: the block, the hook block, the cable up to the pulley. */
     bodies: () => [
       { min: V(CABLE_X - LOAD.w / 2, lift, -LOAD.d / 2), max: V(CABLE_X + LOAD.w / 2, lift + LOAD.h + RING_H, LOAD.d / 2) },
       { min: V(CABLE_X - 0.2, lift + LOAD.h + RING_H, -0.15), max: V(CABLE_X + 0.2, lift + LOAD.h + RING_H + 0.7, 0.15) },
       { min: V(CABLE_X - 0.06, lift + LOAD.h + RING_H + 0.7, -0.03), max: V(CABLE_X + 0.06, TIP.y, 0.03) },
     ],
-    /** Where the coach's hand points: the middle of the block's front face. */
-    actor: (out, k = 0) => out.set(CABLE_X, lift + LOAD.h * [0.45, 0.8, 0.98][k], LOAD.d / 2),
-    wiggle(k) {
-      wobble = Math.sin(k * Math.PI * 4) * (1 - k);
-      load.rotation.z = wobble * 0.03;
-    },
   };
 }

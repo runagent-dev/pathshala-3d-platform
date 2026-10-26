@@ -1,9 +1,11 @@
 // The maths of the contact-noncontact-force figure (book p67, topic 3.1.2): which of the page's examples are
 // contact and which non-contact forces, the motion of each (real speeds: a crane's hoist, a push, friction
 // slowing a crate at μg, free fall at g with bounces, a nail pulled to a magnet), the telling moments the figure
-// stops at, and the test's answer keys (one right answer, the others the usual mistakes).
+// holds at (a contact force touching, a non-contact one across a gap), the gap as written in cm, and the test's
+// answer keys (one right answer, the others the usual mistakes) with their strings in both languages.
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
+import { STRINGS } from '../../assets/contact-noncontact-force/src/i18n.js';
 import * as f from '../../assets/contact-noncontact-force/src/motion.js';
 
 const close = (a, b, eps = 1e-9) => assert.ok(Math.abs(a - b) < eps, `${a} ≈ ${b}`);
@@ -46,10 +48,7 @@ describe('force: the page’s five examples', () => {
     }
   });
   it('every example ends at rest: speed 0 at the end of its action (also the magnet, whose times add to 2.3499…)', () => {
-    for (const id of f.EXAMPLE_IDS) {
-      assert.equal(f.actionAt(id, f.DURATION[id]).speed, 0, `${id} at its end`);
-      assert.equal(f.speedText(f.actionAt(id, f.DURATION[id]).speed), '0.0');
-    }
+    for (const id of f.EXAMPLE_IDS) assert.equal(f.actionAt(id, f.DURATION[id]).speed, 0, `${id} at its end`);
     assert.equal(f.magnetAt(f.DURATION.magnet).speed, 0);
   });
   it('the panel waits for the body to move: crane taking up the slack, hands reaching, magnet brought near', () => {
@@ -78,12 +77,20 @@ describe('force: the page’s five examples', () => {
     }
     assert.equal(f.magnetAt(f.DURATION.magnet).strength, 1);
   });
-  it('rounds without binary leftovers and writes speeds with one decimal', () => {
+  it('rounds without binary leftovers', () => {
     assert.equal(f.roundTo(0.1 + 0.2, 0.1), 0.3);
     assert.equal(f.roundTo(1.118, 0.01), 1.12);
-    assert.equal(f.speedText(0.5), '0.5');
-    assert.equal(f.speedText(1.118), '1.1');
-    assert.equal(f.speedText(-0.0001), '0.0');
+  });
+  it('writes a gap in cm: whole cm from 10 cm up, one decimal below, never negative', () => {
+    assert.equal(f.gapCm(0.599), 60);
+    assert.equal(f.gapCm(1.04), 104);
+    assert.equal(f.gapCm(0.0233), 2.3);
+    assert.equal(f.gapCm(0.1), 10);
+    assert.equal(f.gapCm(0.0996), 10); // 9.96 cm rounds to one decimal: 10
+    assert.equal(f.gapCm(-0.001), 0);
+    // the figure's two telling moments: the football about 60 cm above the floor, the nail about 2.3 cm from the magnet
+    assert.equal(f.gapCm(f.fallAt(f.KEY.fall).gap), 60);
+    assert.equal(f.gapCm(f.magnetAt(f.KEY.magnet).gap), 2.3);
   });
 });
 
@@ -174,13 +181,31 @@ describe('force: the motions', () => {
 });
 
 describe('force: the test', () => {
-  it('each new case has four different answers, the right one first, of the right kind', () => {
-    for (const [id, keys] of Object.entries(f.KIND_CHOICES)) {
+  it('each "which kind?" question has four different answers, the right one first, naming the right kind', () => {
+    const kindWord = { contact: 'স্পর্শ বল:', noncontact: 'অস্পর্শ বল:' };
+    for (const [set, keys] of Object.entries(f.KIND_CHOICES)) {
       assert.equal(new Set(keys).size, 4);
-      assert.ok(keys[0].endsWith('_ok'), `${id}: the right answer first`);
-      assert.ok(f.CASES[id] === 'contact' || f.CASES[id] === 'noncontact');
+      assert.ok(keys[0].endsWith('_ok'), `${set}: the right answer first`);
+      const kind = f.CHOICE_KIND[set];
+      assert.ok(STRINGS.bn[keys[0]].startsWith(kindWord[kind]), `${set}: the right answer names ${kind}`);
+      // every answer in both languages, and a worked answer that speaks to each wrong one
+      for (const k of keys) {
+        assert.ok(STRINGS.bn[k] && STRINGS.en[k], `${k} in both languages`);
+        assert.ok(STRINGS.bn[`miss_${k}`] || k === keys[0], `a worked answer for the mistake ${k}`);
+      }
+      assert.ok(STRINGS.bn[`why_${set}`] && STRINGS.en[`why_${set}`], `${set}: the worked answer`);
     }
-    assert.deepEqual(Object.keys(f.CASES).sort(), Object.keys(f.KIND_CHOICES).sort());
+    for (const [id, kind] of Object.entries(f.CASES)) assert.equal(f.CHOICE_KIND[id], kind);
+    // the book's examples in the test: the crate's friction is contact, the football's gravity non-contact
+    assert.equal(f.CHOICE_KIND.crate, f.KIND.friction);
+    assert.equal(f.CHOICE_KIND.ball, f.KIND.fall);
+  });
+  it('a test has five different questions, and the book examples it shows are held where their marks are clear', () => {
+    assert.equal(new Set(f.QUESTION_KINDS).size, 5);
+    const crate = f.actionAt('friction', f.KEY.friction);
+    assert.ok(crate.touching && crate.speed > 0); // still sliding: friction acts, the floor touches it
+    const ball = f.actionAt('fall', f.KEY.fall);
+    assert.ok(!ball.touching && ball.gap > 0.5); // falling: nothing touches it, a clear gap below
   });
   it('"what is the force doing?" agrees with the motion at that moment', () => {
     for (const [id, right] of Object.entries(f.EFFECT_RIGHT)) {
@@ -190,16 +215,15 @@ describe('force: the test', () => {
       assert.ok(f.EFFECT_CHOICES.includes(right));
     }
     assert.equal(new Set(f.EFFECT_CHOICES).size, 4);
-    assert.equal(new Set(f.EVIDENCE_CHOICES).size, 4);
+    for (const k of f.EFFECT_CHOICES.filter((x) => x !== f.EFFECT_RIGHT.magnet)) assert.ok(STRINGS.bn[`miss_${k}_magnet`], k);
   });
-  it('"same kind as which example?": one of the same kind, three of the other', () => {
-    for (const id of ['magnet', 'fall']) {
-      const list = f.sameChoices(id);
-      assert.equal(list.length, 4);
-      assert.equal(new Set(list).size, 4);
-      assert.ok(!list.includes(id));
-      assert.equal(f.KIND[list[0]], f.KIND[id]);
-      for (const x of list.slice(1)) assert.notEqual(f.KIND[x], f.KIND[id]);
+  it('every string has its Bangla and English, with the same placeholders', () => {
+    for (const [k, bn] of Object.entries(STRINGS.bn)) {
+      const en = STRINGS.en[k];
+      assert.ok(en != null, `${k} in English`);
+      const vars = (s) => [...s.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort();
+      assert.deepEqual(vars(bn), vars(en), `${k}: the same placeholders`);
+      assert.ok(!/[0-9]/.test(bn.replace(/<[^>]+>/g, '')), `${k}: no Latin digits in Bangla (numbers go through t.num)`);
     }
   });
   it('shuffles without losing or repeating anything', () => {
