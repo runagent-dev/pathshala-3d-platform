@@ -1,8 +1,9 @@
 // The two values on the map, placed on the screen every frame where they cover nothing: the distance beside the
-// rider, like a trip meter, and the displacement beside its arrow (never on it). Each keeps clear of the other, of
-// the arrow, of the cyclist, of the posts' plates and of the buttons in the corner; a value that finds no free
-// place is left out (the panel always shows both). They look like the kit's callouts (student.css), but the kit's
-// annotations sit at a fixed offset from their point, and these have to move round.
+// rider, like a trip meter, and the displacement beside its arrow (never on it), or, back at A where the arrow is
+// gone, "সরণ ০" beside A. Each keeps clear of the other, of the arrow, of the road (the blue path), of the cyclist, of
+// the posts' plates, of the buttons in the corner and of the action's ring and badge; a value that finds no free place is left out (the panel
+// always shows both). They look like the kit's callouts (student.css), but the kit's annotations sit at a fixed
+// offset from their point, and these have to move round.
 
 const GAP = 8; // px between a value and what it stands beside (the arrow is a few px wide)
 
@@ -53,7 +54,7 @@ export function createValueTags(layer, colors) {
   }
 
   const rect = { x0: 0, y0: 0, x1: 0, y1: 0 };
-  const placed = { x0: 0, y0: 0, x1: 0, y1: 0 };
+  const taken = []; // the boxes of the values placed so far this frame
   /**
    * Find a place for tag among candidate centres (cand(i) → { x, y } or null, i = 0…n−1), keeping the last one
    * while it is still free. Returns true if it found one.
@@ -91,18 +92,40 @@ export function createValueTags(layer, colors) {
   const c = { x: 0, y: 0 };
   /**
    * Place both. view: { width, height, top (px kept free at the top right for the buttons, and its left edge
-   * cornerX), cyclist ({ x0, y0, x1, y1 }), arrow ({ a: { x, y }, b: { x, y } } or null), plates ([rects]) };
-   * texts: { dist, disp } (null hides).
+   * cornerX), cyclist ({ x0, y0, x1, y1 }), arrow ({ a: { x, y }, b: { x, y } } or null), origin (A on the screen,
+   * { x, y }), plates ([rects]), keep ([rects]: more to keep clear of), soft ([rects]: kept clear of unless there is
+   * no other place), road (the road on the screen: x0, y0, x1, y1, …), ridden (how many of its numbers the blue path
+   * covers) and roadPad (px: half its width) }; texts:
+   * { dist, disp } (null hides).
    */
   let v = null; // the view being placed in (update's argument)
-  let distPlaced = false;
+  // how strict a candidate is: strict ones keep off v.soft too (the room round the action's ring where the badge
+  // goes); onArrow is the last resort for the displacement, a pill on the middle of its arrow like a line's label
+  const mode = { strict: true, onArrow: false };
+  const sa = { x: 0, y: 0 };
+  const sb = { x: 0, y: 0 };
   function clearOf(r) {
     if (r.x0 < 4 || r.y0 < 4 || r.x1 > v.width - 4 || r.y1 > v.height - 4) return false;
     if (r.y0 < v.top && r.x1 > v.cornerX) return false; // under the buttons in the corner
     if (overlaps(r, v.cyclist)) return false;
-    if (distPlaced && overlaps(r, placed)) return false;
+    for (const q of taken) if (overlaps(r, q)) return false; // the other value
     for (const q of v.plates) if (overlaps(r, q)) return false;
-    return !(v.arrow && nearSegment(r, v.arrow.a, v.arrow.b, 3));
+    for (const q of v.keep) if (overlaps(r, q)) return false;
+    if (mode.strict) for (const q of v.soft) if (overlaps(r, q)) return false;
+    if (v.arrow && !mode.onArrow && nearSegment(r, v.arrow.a, v.arrow.b, 3)) return false;
+    // nor on the road (the blue path is drawn on it): its points on the screen, x0, y0, x1, y1, …; a last-resort
+    // place may lie on the grey road ahead, never on the blue path ridden so far
+    const road = v.road;
+    const end = mode.strict ? (road?.length ?? 0) : Math.min(road?.length ?? 0, v.ridden ?? 0);
+    if (road)
+      for (let i = 0; i + 3 < end; i += 2) {
+        sa.x = road[i];
+        sa.y = road[i + 1];
+        sb.x = road[i + 2];
+        sb.y = road[i + 3];
+        if (nearSegment(r, sa, sb, v.roadPad ?? 4)) return false;
+      }
+    return true;
   }
 
   function update(view, texts) {
@@ -110,35 +133,52 @@ export function createValueTags(layer, colors) {
     setText(disp, texts.disp);
     v = view;
     const { cyclist, arrow } = view;
-    distPlaced = false;
+    taken.length = 0;
+    const take = (tag) => taken.push({ x0: tag.x - 3, y0: tag.y - 3, x1: tag.x + tag.w + 3, y1: tag.y + tag.h + 3 });
 
-    // the distance: beside the rider
+    /** Candidate centres round a box (8 sides and corners, then a little further out). */
+    const around = (tag, box) => (i) => {
+      const [ox, oy] = OFFSETS[i % OFFSETS.length];
+      const gap = i < OFFSETS.length ? GAP : GAP + 18;
+      c.x = ox ? (ox > 0 ? box.x1 + gap + tag.w / 2 : box.x0 - gap - tag.w / 2) : (box.x0 + box.x1) / 2;
+      c.y = oy ? (oy > 0 ? box.y1 + gap + tag.h / 2 : box.y0 - gap - tag.h / 2) : (box.y0 + box.y1) / 2;
+      return c;
+    };
+
+    // a zero displacement (back at A): "সরণ ০" beside A first (on a small map A and the rider share little room,
+    // and the distance's value is also large in the panel's result line), the distance after it
+    const zero = texts.disp != null && !arrow && view.origin;
+    if (zero) {
+      const o = view.origin;
+      const box = {
+        x0: Math.min(o.x - 10, cyclist.x0),
+        y0: Math.min(o.y - 10, cyclist.y0),
+        x1: Math.max(o.x + 10, cyclist.x1),
+        y1: Math.max(o.y + 10, cyclist.y1),
+      };
+      const near = around(disp, box);
+      const n = OFFSETS.length * 2;
+      const cand = (i) => {
+        mode.strict = i < n; // then the same places, now also in the room round the ring
+        mode.onArrow = false;
+        return near(i % n);
+      };
+      const ok = place(disp, 2 * n, cand, clearOf);
+      if (ok) take(disp);
+      show(disp, ok);
+    }
+
+    // the distance: beside the rider (strict places only: it is beside the rider in the panel's words too)
+    mode.strict = true;
+    mode.onArrow = false;
     if (texts.dist != null) {
-      const cx = (cyclist.x0 + cyclist.x1) / 2;
-      const cy = (cyclist.y0 + cyclist.y1) / 2;
-      const ok = place(
-        dist,
-        OFFSETS.length * 2,
-        (i) => {
-          const [ox, oy] = OFFSETS[i % OFFSETS.length];
-          const gap = i < OFFSETS.length ? GAP : GAP + 18; // then a little further out
-          c.x = ox ? (ox > 0 ? cyclist.x1 + gap + dist.w / 2 : cyclist.x0 - gap - dist.w / 2) : cx;
-          c.y = oy ? (oy > 0 ? cyclist.y1 + gap + dist.h / 2 : cyclist.y0 - gap - dist.h / 2) : cy;
-          return c;
-        },
-        clearOf,
-      );
-      if (ok) {
-        placed.x0 = dist.x - 3;
-        placed.y0 = dist.y - 3;
-        placed.x1 = dist.x + dist.w + 3;
-        placed.y1 = dist.y + dist.h + 3;
-        distPlaced = true;
-      }
+      const ok = place(dist, OFFSETS.length * 2, around(dist, cyclist), clearOf);
+      if (ok) take(dist);
       show(dist, ok);
     } else show(dist, false);
+    if (zero) return;
 
-    // the displacement: beside the middle of its arrow, when the arrow is longer on screen than the value
+    // the displacement: beside the middle of its arrow, else on it (when the arrow is longer than the value)
     if (texts.disp != null && arrow) {
       const dx = arrow.b.x - arrow.a.x;
       const dy = arrow.b.y - arrow.a.y;
@@ -148,20 +188,25 @@ export function createValueTags(layer, colors) {
       const along = Math.abs(ux) * disp.w + Math.abs(uy) * disp.h; // the value's length along the arrow
       const across = (Math.abs(uy) * disp.w + Math.abs(ux) * disp.h) / 2; // half its depth across it
       const T = [0.5, 0.4, 0.6, 0.3, 0.7];
-      const ok =
-        len > along + 20 &&
-        place(
-          disp,
-          T.length * 2,
-          (i) => {
-            const t = T[i >> 1];
-            const side = i % 2 ? -1 : 1;
-            c.x = arrow.a.x + dx * t - uy * side * (across + GAP);
-            c.y = arrow.a.y + dy * t + ux * side * (across + GAP);
-            return c;
-          },
-          clearOf,
-        );
+      const n = T.length * 2 + 1; // beside the arrow at five places on either side, then on its middle
+      const midOk = len > along + 12; // the arrow shows on both sides of the pill (6 px or more)
+      const cand = (i) => {
+        const k = i % n;
+        mode.strict = i < n; // strict places first, then the same places in the room round the ring too
+        mode.onArrow = k === n - 1;
+        if (mode.onArrow) {
+          if (!midOk) return null;
+          c.x = arrow.a.x + dx * 0.5;
+          c.y = arrow.a.y + dy * 0.5;
+          return c;
+        }
+        const t = T[k >> 1];
+        const side = k % 2 ? -1 : 1;
+        c.x = arrow.a.x + dx * t - uy * side * (across + GAP);
+        c.y = arrow.a.y + dy * t + ux * side * (across + GAP);
+        return c;
+      };
+      const ok = place(disp, 2 * n, cand, clearOf); // beside a short arrow is still beside it
       show(disp, ok);
     } else show(disp, false);
   }

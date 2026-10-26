@@ -511,8 +511,10 @@ function createLabels() {
     const holder = new THREE.Group();
     const order = 20 + items.length * 6; // each label's layers together, so overlapping labels never interleave
     const post = kind === 'post';
-    const em = post ? 14 : 12.5;
-    const num = textMesh(text, em, { color: post ? '#1d2733' : '#3d4752', weight: post ? 700 : 600 });
+    // the posts' numbers are the road's kilometre scale: quiet grey, so the letters A, B, C and the two quantities
+    // stand out (a post with a letter keeps its number dark: "B is at 4")
+    const em = post ? 13 : 12.5;
+    const num = textMesh(text, em, { color: post ? (letter ? '#1d2733' : '#4f5a66') : '#3d4752', weight: post ? 700 : 600 });
     num.geometry.computeBoundingBox();
     const box = num.geometry.boundingBox;
     const glyphs = box.max.x - box.min.x - 0.16 * em; // the glyphs' width (textMesh pads 0.16 em)
@@ -522,7 +524,7 @@ function createLabels() {
     const w = letter ? Math.max(pw + 3, 33) : post ? pw + 3 : pw;
     const y0 = -h / 2; // the plate at the bottom, the letter above it
     if (post) {
-      const border = flat(rounded(pw + 3, 24, 6), '#5b6672', order);
+      const border = flat(rounded(pw + 3, 24, 6), letter ? '#5b6672' : '#9aa4af', order);
       border.position.y = y0;
       const plate = flat(rounded(pw, 21, 5), '#ffffff', order + 1);
       plate.position.y = y0 + 1.5;
@@ -660,7 +662,8 @@ function compass(labels, t) {
 
 /**
  * The whole tile. t: the strings (for the compass), N: digits in the language. Returns { root, labels (update them
- * before each frame), pickables (the road, posts and labels, for tapping a place), box (for framing) }.
+ * before each frame), stops ({ A, B, C }: { label, road, km }), pickables (the road, posts and labels, for tapping a
+ * place), box (for framing) }.
  */
 export function createCountryside({ renderer, t, N }) {
   const root = new THREE.Group();
@@ -701,6 +704,7 @@ export function createCountryside({ renderer, t, N }) {
   const postGroup = new THREE.Group();
   postGroup.name = 'Kilometre posts';
   const letters = Object.fromEntries(Object.entries(STOPS).map(([k, v]) => [v, k]));
+  const stops = {}; // A, B, C: their labels (the action's ring goes round the next one) and road points
   for (const sp of spots) {
     const post = new THREE.Group();
     post.name = `Post ${sp.km} km`;
@@ -713,7 +717,9 @@ export function createCountryside({ renderer, t, N }) {
     post.add(b, c);
     post.userData.km = sp.km;
     postGroup.add(post);
-    labels.add({ text: N(sp.km), letter: letters[sp.km] ?? null, road: toScene(p.x, p.y, ROAD_Y), side: toScene(sp.x, sp.n, ROAD_Y), km: sp.km });
+    const at = toScene(p.x, p.y, ROAD_Y);
+    const label = labels.add({ text: N(sp.km), letter: letters[sp.km] ?? null, road: at, side: toScene(sp.x, sp.n, ROAD_Y), km: sp.km });
+    if (letters[sp.km]) stops[letters[sp.km]] = { label, road: at, km: sp.km };
   }
   root.add(postGroup);
   root.add(compass(labels, t));
@@ -739,6 +745,7 @@ export function createCountryside({ renderer, t, N }) {
   return {
     root,
     labels,
+    stops,
     pickables: [roadHit, postGroup, labels.group],
     /** Scene box of everything that matters for framing (the tile's top face). */
     box: new THREE.Box3(toScene(BOARD.x0, BOARD.n1, 0), toScene(BOARD.x1, BOARD.n0, 60)),
