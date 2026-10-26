@@ -74,8 +74,6 @@ body.bg-transparent { background: transparent; }
 .mo .pvc-q-text { font-size: 16px; }
 .mo .pvc-q-feedback { font-size: 14px; }
 .mo .pvc-q-feedback .mo-vec, .mo .pvc-q-feedback b { white-space: nowrap; }
-/* in the test the locked hint sits at the top of the view */
-.mo[data-mode='quiz'] .pvc-stage[data-ui='simple'] .pvc-hint { top: 54px; bottom: auto; }
 
 /* wide frames: the table and the actions side by side */
 @container pvc (min-width: 720px) and (min-height: 461px) {

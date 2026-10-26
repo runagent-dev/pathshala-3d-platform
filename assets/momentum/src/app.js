@@ -774,7 +774,6 @@ export function createApp(root, options = {}) {
     audio.unlock();
     if (!quiet) {
       coach?.objectUsed();
-      hideHint();
     }
     emit('play', { speed: s.speed, dir: s.dir > 0 ? 'right' : 'left' });
     refresh();
@@ -992,22 +991,17 @@ export function createApp(root, options = {}) {
     });
   });
 
-  // ── hint line ───────────────────────────────────────────────────────────────
-  let hintTimer = 0;
-  function showHint(text, { duration = 3200 } = {}) {
-    ui.hintText.textContent = text;
-    ui.hintAct.hidden = true;
-    ui.hint.classList.add('show');
-    clearTimeout(hintTimer);
-    if (duration) hintTimer = setTimeout(hideHint, duration);
-  }
-  function hideHint() {
-    clearTimeout(hintTimer);
-    ui.hint.classList.remove('show');
-  }
+  /**
+   * A tap or key that would change the test's picture: a buzz, and while the question is open its line under the
+   * choices says why (as conservation-of-momentum does). Nothing is written over the scene and its labels; once
+   * answered, that line keeps the worked answer.
+   */
   function lockedNudge() {
-    showHint(t('q_locked'));
     audio.error();
+    if (s.mode !== 'quiz' || quiz.revealed) return;
+    const fb = $('.pvc-q-feedback');
+    fb.textContent = t('q_locked');
+    fb.dataset.tone = '';
   }
 
   // ── a test question's picture ───────────────────────────────────────────────
@@ -1112,7 +1106,6 @@ export function createApp(root, options = {}) {
     const kind = kinds[i % kinds.length];
     const my = ++qToken;
     s.locked = true;
-    hideHint();
     const ok = () => alive() && my === qToken;
     if (kind === 'damage') {
       const u = pickOne(VARIANTS.damage);
@@ -1275,7 +1268,6 @@ export function createApp(root, options = {}) {
           s.t = runTime();
           s.playing = false;
         }
-        hideHint();
         // the five kinds in a new order each time
         kinds = shuffle(['damage', 'calc', 'compare', 'double', 'sign']);
         syncUI();
@@ -1285,7 +1277,6 @@ export function createApp(root, options = {}) {
         tweener.cancel('double');
         s.mode = 'explore';
         s.locked = false;
-        hideHint();
         const back = s.learn || { speed: s.speed, dir: s.dir };
         s.learn = null;
         s.scene = 'run';
@@ -1424,7 +1415,6 @@ export function createApp(root, options = {}) {
     else if (k === 'r' || k === 'R') setRun();
     else if (k === 'f' || k === 'F') setView('front');
     else if (k === 'v' || k === 'V') setView('3d');
-    else if (k === 'Escape') hideHint();
     else return;
     e.preventDefault();
   });
