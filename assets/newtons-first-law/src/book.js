@@ -1,48 +1,151 @@
-// The book that slides: a class 9–10 physics textbook lying flat (metres). Soft cover in the green of the
-// Bangladesh textbooks, cream page edges, the title on the cover in Noto Sans Bengali. Its origin is on the floor
-// under the middle of the front edge (+x), so x along the floor reads like the tape.
+// The book that slides: a class 9–10 physics textbook lying flat (metres), drawn to be recognised at a glance on a
+// phone: a hardcover whose boards stand a little proud of a cream page block (page lines on its three open edges),
+// rounded outer corners, a rounded spine, and a printed cover: "পদার্থবিজ্ঞান", "নবম-দশম শ্রেণি" and an atom in a
+// white disc, in the blue and green of the board's covers (a canvas texture in the bundled Noto Sans Bengali; the
+// font is loaded before the figure is made). It lies with its spine at the back (−x, against the launcher's paddle)
+// and the cover's top away from the viewer (−z), so the title reads upright in the side view. Its origin is on the
+// floor under the middle of the front edge (+x), so x along the floor reads like the tape.
 import * as THREE from 'three';
-import { textMesh } from '@shared/student/materials.js';
+import { FONT, textMesh } from '@shared/student/materials.js';
 import { BOOK } from './motion.js';
 
-const COVER = '#2f7a43';
+export const BOOK_COLORS = { cover: '#1d5aa0', band: '#2b8a3e', stripe: '#e03131', title: '#ffffff', klass: '#ffd43b' };
+const BOARD = 0.0022; // m: board thickness
+const OVERHANG = 0.003; // m: the boards stand this far proud of the pages on the three open edges
+const CORNER = 0.006; // m: rounded outer corners of the boards
 
-/** A box with gently rounded vertical edges (the page block and the covers). */
-function roundedSlab(w, h, d, r) {
-  const s = new THREE.Shape();
-  const x = w / 2;
-  const z = d / 2;
-  s.moveTo(-x + r, -z);
-  s.lineTo(x - r, -z);
-  s.quadraticCurveTo(x, -z, x, -z + r);
-  s.lineTo(x, z - r);
-  s.quadraticCurveTo(x, z, x - r, z);
-  s.lineTo(-x + r, z);
-  s.quadraticCurveTo(-x, z, -x, z - r);
-  s.lineTo(-x, -z + r);
-  s.quadraticCurveTo(-x, -z, -x + r, -z);
-  const g = new THREE.ExtrudeGeometry(s, { depth: h, bevelEnabled: false, curveSegments: 4 });
-  g.rotateX(Math.PI / 2); // extruded along −y, from 0 down to −h
-  g.translate(0, h, 0);
-  return g;
+/** The printed front cover (portrait: its width along x, its height along z, the top at −z). */
+function coverTexture(t, aspect) {
+  const W = 512;
+  const H = Math.round(W / aspect);
+  const c = document.createElement('canvas');
+  c.width = W;
+  c.height = H;
+  const ctx = c.getContext('2d');
+  // the board's cloth: blue, a little lighter towards the top
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#2366b3');
+  g.addColorStop(1, BOOK_COLORS.cover);
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+  // a thin frame inset from the edges
+  ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+  ctx.lineWidth = 3;
+  ctx.strokeRect(16, 16, W - 32, H - 32);
+  // the title and the class
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = BOOK_COLORS.title;
+  const fit = (text, weight, size, max) => {
+    let s = size;
+    do ctx.font = `${weight} ${s--}px ${FONT}`;
+    while (ctx.measureText(text).width > max && s > 10);
+  };
+  // big enough to read on a phone: the title across about 90 % of the cover, the class line about 65 %
+  fit(t('book_title'), 700, 140, W * 0.86);
+  ctx.fillText(t('book_title'), W / 2, H * 0.2);
+  ctx.fillStyle = BOOK_COLORS.klass;
+  fit(t('book_class'), 700, 90, W * 0.66);
+  ctx.fillText(t('book_class'), W / 2, H * 0.31);
+  // an atom in a white disc: the nucleus, three orbits, an electron on each
+  const cx = W / 2;
+  const cy = H * 0.6;
+  const R = W * 0.22;
+  const k0 = R / 180; // the drawing below was sized for a disc of radius 180 px
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.arc(cx, cy, R, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.lineWidth = Math.max(4, 7 * k0);
+  ctx.strokeStyle = BOOK_COLORS.cover;
+  const orbit = R * 0.8;
+  for (let k = 0; k < 3; k++) {
+    const a = (k * Math.PI) / 3 + Math.PI / 6;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(a);
+    ctx.beginPath();
+    ctx.ellipse(0, 0, orbit, orbit * 0.34, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    // its electron
+    ctx.fillStyle = '#f08c00';
+    ctx.beginPath();
+    ctx.arc(orbit * Math.cos(1.1 + k * 2), orbit * 0.34 * Math.sin(1.1 + k * 2), 13 * k0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+  // the nucleus: a little cluster of protons (red) and neutrons (grey)
+  for (const [dx, dy, col] of [
+    [-11, -8, '#d6336c'],
+    [10, -10, '#868e96'],
+    [-9, 11, '#868e96'],
+    [12, 9, '#d6336c'],
+    [0, 0, '#e03131'],
+  ]) {
+    ctx.fillStyle = col;
+    ctx.beginPath();
+    ctx.arc(cx + dx * k0, cy + dy * k0, 14 * k0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // the bottom: a red line and a green band, as on the board's covers
+  ctx.fillStyle = BOOK_COLORS.stripe;
+  ctx.fillRect(0, H * 0.885, W, H * 0.014);
+  ctx.fillStyle = BOOK_COLORS.band;
+  ctx.fillRect(0, H * 0.899, W, H * 0.101);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  return tex;
 }
 
-/** Fine horizontal lines on the page edges, so the block reads as paper. */
+/** Page lines on the page block's open edges (lines along the edge, stacked through the thickness). */
 function pagesTexture() {
   const c = document.createElement('canvas');
-  c.width = 16;
-  c.height = 128;
+  c.width = 8;
+  c.height = 96;
   const ctx = c.getContext('2d');
-  ctx.fillStyle = '#f3ecd9';
-  ctx.fillRect(0, 0, 16, 128);
-  for (let y = 0; y < 128; y += 3) {
-    ctx.fillStyle = `rgba(150,130,95,${0.18 + ((y * 7) % 5) * 0.03})`;
-    ctx.fillRect(0, y, 16, 1);
+  ctx.fillStyle = '#f6efdc';
+  ctx.fillRect(0, 0, 8, 96);
+  for (let y = 2; y < 96; y += 5) {
+    ctx.fillStyle = `rgba(140,118,80,${0.3 + ((y * 7) % 5) * 0.05})`;
+    ctx.fillRect(0, y, 8, 1.4);
   }
+  // a little shade under the boards, top and bottom
+  const g = ctx.createLinearGradient(0, 0, 0, 96);
+  g.addColorStop(0, 'rgba(90,70,40,0.25)');
+  g.addColorStop(0.12, 'rgba(90,70,40,0)');
+  g.addColorStop(0.88, 'rgba(90,70,40,0)');
+  g.addColorStop(1, 'rgba(90,70,40,0.25)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 8, 96);
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
-  t.wrapS = t.wrapT = THREE.RepeatWrapping;
   return t;
+}
+
+/**
+ * A board: a slab x0…x1 along x, the book's width along z, `BOARD` thick, its outer corners (+x) rounded; its top
+ * face carries `map` (u along x, v from the near edge +z up to the far edge −z, so a cover reads upright).
+ */
+function board(x0, x1, w, faceMat, edgeMat) {
+  const r = CORNER;
+  const z = w / 2;
+  const s = new THREE.Shape();
+  s.moveTo(x0, -z);
+  s.lineTo(x1 - r, -z);
+  s.quadraticCurveTo(x1, -z, x1, -z + r);
+  s.lineTo(x1, z - r);
+  s.quadraticCurveTo(x1, z, x1 - r, z);
+  s.lineTo(x0, z);
+  s.lineTo(x0, -z);
+  const uv = {
+    generateTopUV: (_g, v, a, b, c) => [a, b, c].map((i) => new THREE.Vector2((v[i * 3] - x0) / (x1 - x0), 0.5 - v[i * 3 + 1] / w)),
+    generateSideWallUV: () => [new THREE.Vector2(), new THREE.Vector2(), new THREE.Vector2(), new THREE.Vector2()],
+  };
+  const g = new THREE.ExtrudeGeometry(s, { depth: BOARD, bevelEnabled: false, curveSegments: 5, UVGenerator: uv });
+  g.rotateX(Math.PI / 2); // the shape's y becomes z; extruded from y = 0 down to −BOARD; the cap at y = 0 faces up
+  g.translate(0, BOARD, 0);
+  return new THREE.Mesh(g, [faceMat, edgeMat]);
 }
 
 /**
@@ -52,46 +155,38 @@ export function createBook({ t }) {
   const root = new THREE.Group();
   root.name = 'Book';
   const { length: L, width: W, thick: H } = BOOK;
-  const coverT = 0.0016;
-  const cover = new THREE.MeshPhysicalMaterial({ name: 'BookCover', color: COVER, roughness: 0.42, clearcoat: 0.5, clearcoatRoughness: 0.35 });
-  const pages = new THREE.MeshStandardMaterial({ name: 'BookPages', map: pagesTexture(), roughness: 0.85 });
+  const cloth = new THREE.MeshStandardMaterial({ name: 'BookBoard', color: BOOK_COLORS.cover, roughness: 0.6 });
+  const cover = new THREE.MeshStandardMaterial({ name: 'BookCover', map: coverTexture(t, L / W), roughness: 0.5 });
+  const pageLines = pagesTexture();
+  const pages = new THREE.MeshStandardMaterial({ name: 'BookPages', map: pageLines, roughness: 0.9 });
+  const paper = new THREE.MeshStandardMaterial({ name: 'BookPaper', color: '#f6efdc', roughness: 0.9 });
 
-  const body = new THREE.Group(); // centred on the book; root's origin is at the front edge
+  const body = new THREE.Group(); // centred on the book; the root's origin is at the front edge
+  body.name = 'BookBody';
   body.position.x = -L / 2;
   root.add(body);
-  const bottom = new THREE.Mesh(roundedSlab(L, coverT, W, 0.004), cover);
-  const top = new THREE.Mesh(roundedSlab(L, coverT, W, 0.004), cover);
-  top.position.y = H - coverT;
-  const block = new THREE.Mesh(new THREE.BoxGeometry(L - 0.006, H - 2 * coverT, W - 0.006), pages);
-  block.position.set(0, H / 2, 0.0015);
-  // the spine along the far side (−z): the cover wraps round it (half a flattened cylinder, axis along x)
-  const spine = new THREE.Mesh(new THREE.CylinderGeometry(H / 2, H / 2, L, 16, 1, false, Math.PI / 2, Math.PI), cover);
-  spine.rotation.z = Math.PI / 2;
-  spine.position.set(0, H / 2, -W / 2 + 0.001);
-  spine.scale.z = 0.45;
-  body.add(bottom, top, block, spine);
 
-  // the cover: the title, the class, and a thin frame
-  const title = textMesh(t('book_title'), 0.03, { color: '#ffffff', weight: 700 });
-  title.rotation.x = -Math.PI / 2;
-  title.position.set(0.01, H + 0.0004, 0.012);
-  const sub = textMesh(t('book_class'), 0.015, { color: '#e6f2e8', weight: 600 });
-  sub.rotation.x = -Math.PI / 2;
-  sub.position.set(0.01, H + 0.0004, 0.05);
-  const frameMat = new THREE.MeshBasicMaterial({ name: 'BookFrame', color: '#cfe6d4', toneMapped: false });
-  const frame = new THREE.Group();
-  for (const [w, d, x, z] of [
-    [L - 0.03, 0.0018, 0, -W / 2 + 0.018],
-    [L - 0.03, 0.0018, 0, W / 2 - 0.016],
-    [0.0018, W - 0.034, -L / 2 + 0.015, 0.001],
-    [0.0018, W - 0.034, L / 2 - 0.015, 0.001],
-  ]) {
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), frameMat);
-    m.rotation.x = -Math.PI / 2;
-    m.position.set(x, H + 0.0003, z);
-    frame.add(m);
-  }
-  body.add(title, sub, frame);
-
-  return { root };
+  const spineR = H / 2;
+  const bulge = 0.006; // m: how far the rounded spine stands out behind the boards
+  const x0 = -L / 2 + bulge; // the boards and the page block start where the spine's curve ends
+  const x1 = L / 2;
+  const bottom = board(x0, x1, W, cloth, cloth);
+  const top = board(x0, x1, W, cover, cloth);
+  top.position.y = H - BOARD;
+  // the page block between the boards, a little in from their edges
+  const blockL = x1 - OVERHANG - x0;
+  const block = new THREE.Mesh(new THREE.BoxGeometry(blockL, H - 2 * BOARD, W - 2 * OVERHANG), [pages, paper, paper, paper, pages, pages]);
+  block.position.set(x0 + blockL / 2, H / 2, 0);
+  // the spine: a flattened half-cylinder along z, round the back of the page block
+  const spineGeo = new THREE.CylinderGeometry(spineR, spineR, W, 18, 1, false, Math.PI, Math.PI);
+  spineGeo.rotateX(Math.PI / 2);
+  const spine = new THREE.Mesh(spineGeo, cloth);
+  spine.scale.x = bulge / spineR;
+  spine.position.set(x0, H / 2, 0);
+  // the title along the spine, reading from the top of the book (far, −z) to its foot
+  const spineTitle = textMesh(t('book_title'), H * 0.42, { color: '#ffffff', weight: 700 });
+  spineTitle.rotation.y = -Math.PI / 2;
+  spineTitle.position.set(-L / 2 - 0.0004, H / 2, -W * 0.12);
+  body.add(bottom, top, block, spine, spineTitle);
+  return { root, body };
 }

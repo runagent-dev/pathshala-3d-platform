@@ -29,27 +29,36 @@ export function createLabels({ stage, layer, avoid = () => [], blockers = () => 
     svg.setAttribute('viewBox', `0 0 ${stage.width} ${stage.height}`);
     const sr = stage.canvas.getBoundingClientRect();
     const taken = blockers();
-    for (const r of avoid()) if (r.width) taken.push({ l: r.left - sr.left, t: r.top - sr.top, r: r.right - sr.left, b: r.bottom - sr.top });
+    const hard = []; // the buttons, the notes, the hint: even a label that is never hidden stays off them
+    for (const r of avoid()) if (r.width) hard.push({ l: r.left - sr.left, t: r.top - sr.top, r: r.right - sr.left, b: r.bottom - sr.top });
+    taken.push(...hard);
     const list = [...items.values()].sort((a, b) => b.priority - a.priority);
     for (const it of list) {
       const anchors = (Array.isArray(it.point) ? it.point : [it.point]).map((p) => project(p()));
       const w = it.el.offsetWidth;
       const h = it.el.offsetHeight;
       let placed = null;
+      let fallback = null; // keep: the first spot inside the view, when every spot is taken
       let a = anchors[0];
       if (w && it.visible !== false)
         for (const [dx, dy, k = 0] of it.spots) {
-          a = anchors[k];
-          if (!a.ok) continue;
+          const at = anchors[k];
+          if (!at.ok) continue;
           // the spot is where the label's nearest edge goes: left of the point for dx < 0, right for dx > 0
-          const left = dx < -2 ? a.x + dx - w : dx > 2 ? a.x + dx : a.x - w / 2;
-          const top = dy < -2 ? a.y + dy - h : dy > 2 ? a.y + dy : a.y - h / 2;
+          const left = dx < -2 ? at.x + dx - w : dx > 2 ? at.x + dx : at.x - w / 2;
+          const top = dy < -2 ? at.y + dy - h : dy > 2 ? at.y + dy : at.y - h / 2;
           const box = { l: left, t: top, r: left + w, b: top + h };
           if (box.l < 4 || box.t < 4 || box.r > stage.width - 4 || box.b > stage.height - 4) continue;
+          if (!fallback && !hard.some((o) => overlap(box, o))) fallback = { box, at };
           if (taken.some((o) => overlap(box, o))) continue;
           placed = box;
+          a = at;
           break;
         }
+      if (!placed && it.keep && fallback) {
+        placed = fallback.box;
+        a = fallback.at;
+      }
       it.el.classList.toggle('in', Boolean(placed));
       it.line.style.visibility = placed && it.leader ? 'visible' : 'hidden';
       if (!placed) continue;
@@ -72,9 +81,10 @@ export function createLabels({ stage, layer, avoid = () => [], blockers = () => 
     /**
      * text: HTML; point: () => Vector3, or a list of them; spots: [[dx, dy, k], …] candidate offsets in pixels from
      * point k (default the first), best first; priority: higher is placed first; color: the label's colour (its
-     * meaning); leader: draw a line to the point.
+     * meaning); leader: draw a line to the point; keep: never hidden (when every spot is taken it takes the first
+     * one inside the view that is clear of the buttons and notes, over the scene if it must).
      */
-    set(id, { text, point, spots, priority = 0, color, leader = true, kind = 'callout' }) {
+    set(id, { text, point, spots, priority = 0, color, leader = true, kind = 'callout', keep = false }) {
       let it = items.get(id);
       if (!it) {
         const el = document.createElement('div');
@@ -94,7 +104,7 @@ export function createLabels({ stage, layer, avoid = () => [], blockers = () => 
         it.el.style.setProperty('--c', color);
         it.line.style.stroke = color;
       }
-      Object.assign(it, { point, spots, priority, leader, visible: true });
+      Object.assign(it, { point, spots, priority, leader, keep, visible: true });
       stage.invalidate();
     },
     /** Hide a label without forgetting it (show again with set). */
