@@ -34,12 +34,12 @@ test('electromagnetic-force: comb and paper in two steps, coil and magnet', asyn
   await expect(frame.locator('.pvc-outcome')).toContainText('<');
   await fig.advance(3000);
   s = await fig.call('get');
-  expect(s.comb.lifted).toBeGreaterThan(6);
+  expect(s.comb.lifted).toBeGreaterThan(5);
   expect(s.comb.wins).toBe(true);
   // then it lifts them up into the air ("কাগজকে আকর্ষণ করে তুলে নাও"); the result line says the comb's pull won
   await fig.advance(1500);
   s = await fig.call('get');
-  expect(s.comb).toMatchObject({ height: 60, wins: true, lifted: 9 });
+  expect(s.comb).toMatchObject({ height: 60, wins: true, lifted: 7 });
   expect(s.next).toMatchObject({ action: 'again', step: '' });
   await expect(frame.locator('.pvc-outcome')).toContainText('>');
   await expect(frame.locator('.pvc-rule')).toContainText('অনেক শক্তিশালী');
@@ -48,6 +48,23 @@ test('electromagnetic-force: comb and paper in two steps, coil and magnet', asyn
   await fig.call('set', { again: true, animate: false });
   s = await fig.call('set', { place: 'paper', height: 10, animate: false });
   expect(s.comb).toMatchObject({ place: 'paper', charge: 0, lifted: 0, pull: 0, wins: false });
+  expect(s.next).toMatchObject({ action: 'again', step: 1 }); // "১ চিরুনি দিয়ে চুল আঁচড়াও", not "আবার …"
+
+  // a step 2 cut short (the other example chosen while the comb comes down) offers step 2 again: down it comes
+  await fig.call('set', { again: true, animate: false });
+  await fig.call('set', { charge: 5 });
+  await act.click();
+  await fig.advance(1300);
+  await frame.locator('[data-example="magnet"]').click();
+  await fig.advance(300);
+  await frame.locator('[data-example="comb"]').click();
+  await fig.advance(800);
+  s = await fig.call('get');
+  expect(s.comb).toMatchObject({ place: 'paper', lifted: 0 });
+  expect(s.next).toMatchObject({ action: 'lower', step: 2, busy: false });
+  await act.click();
+  await fig.advance(3500);
+  expect((await fig.call('get')).comb).toMatchObject({ lifted: 7, wins: true, height: 60 });
 
   // held high, nothing jumps; lowered to its reach, it does
   await fig.call('set', { again: true, animate: false });
@@ -55,7 +72,7 @@ test('electromagnetic-force: comb and paper in two steps, coil and magnet', asyn
   s = await fig.call('set', { place: 'paper', height: 60, animate: false });
   expect(s.comb).toMatchObject({ lifted: 0, wins: false, reach: 45 });
   s = await fig.call('set', { place: 'paper', height: 30, animate: false });
-  expect(s.comb.lifted).toBeGreaterThan(6);
+  expect(s.comb.lifted).toBeGreaterThan(5);
 
   // the magnets, from the row of words: step 1 switches on and the coil pulls the magnet in (unlike poles)
   await frame.locator('[data-example="magnet"]').click();

@@ -28,10 +28,11 @@ a চিরুনি/চুম্বক toggle and a big button. Now:
 - **One frame for the whole experiment**, the same at every size and through every step (no camera flights within an
   example): the student's head at the edge of the picture (its back cut off), the comb in the front of the hair, and
   the bits of paper on the table right under the face. To fit a phone: the student bends low over the table's left
-  end, the comb is a 12 cm pocket comb, the bits are 1.7–2.1 cm (torn bits of thin paper), the camera looks from 42°
+  end, the comb is a 12 cm pocket comb, the bits are 2.4–2.8 cm (torn bits of coloured notebook paper, each with a darker edge, so they still show once
+  lifted against the white page), the camera looks from 42°
   above (bits read as bits, not slivers) through a long lens (fov 20°, so the head, nearer the camera, is not drawn
-  bigger), and the table is only 11 cm deep so the lifted bits hang above its far edge. Measured: each bit is 16–21 px
-  wide at 390×700 (8–12 px at 390×520, 19–25 px at 844×390).
+  bigger), and the table is only 11 cm deep so the lifted bits hang above its far edge. Measured: each bit is 23–28 px
+  wide at 390×700, 13–16 px at 390×520, 17–21 px at 800×500 and 29–36 px at 844×390.
 - **One action in two numbered steps** (kit createAction): "১ চিরুনি দিয়ে চুল আঁচড়াও", its badge and dashed ring on
   the comb; five strokes along the front of the hair, a level of charge each (two blue "−" discs per stroke; loose hairs
   stand up). Then "২ চিরুনি কাগজের কাছে আনো", the ring round the bits of paper: the comb flies over them, comes down,
@@ -60,7 +61,7 @@ a চিরুনি/চুম্বক toggle and a big button. Now:
 - Two examples in the row of words: **চিরুনি** (first, the book's own experiment) and **চুম্বক**.
 - **চিরুনি**: about every pass of the comb along the front of the hair adds one charge level (0–5): blue "−" discs on
   the comb (two per level), loose hairs on the crown stand up, leaning towards the comb (charged hair). Brought to the
-  paper, the comb arrives 6.2 cm above the table and comes down slowly over nine bits. A bit jumps when the comb's pull
+  paper, the comb arrives 6.2 cm above the table and comes down slowly over seven bits. A bit jumps when the comb's pull
   is bigger than its weight: pull ÷ weight = (q/5)² × (45 mm / d)⁵ (a small polarisable bit in the comb's field: the
   pull grows very fast as the comb comes closer). So a fully charged comb lifts paper from 4.5 cm, a one-stroke comb
   from 2.4 cm, an uncharged comb never. The comb stops a little inside its reach (`stopHeight`), waits, and lifts the
@@ -69,9 +70,16 @@ a চিরুনি/চুম্বক toggle and a big button. Now:
   comb's end, half beyond it, so its arrows stay clear of the comb. Its arrows: পুরো পৃথিবীর টান (down, purple, the
   মহাকর্ষ colour of 3.2.1, 26 mm) and চিরুনির টান (up, blue #1c7ed6, তড়িৎ চৌম্বক বল), drawn to the same scale until the
   comb's is 2 times the weight (then it stays: close to the comb the real pull is much bigger still). They show while
-  the comb is over the paper (and in the test only after the answer).
-- **চুম্বক**: a circuit in a row on the bench: a 1.5 V cell (+ at its right end), a knife switch, a coil of copper wire
-  on a plastic tube (no iron, so it is not attracted when off), and the wire back to the cell along the front. A bar
+  the comb is over the paper (and in the test only after the answer). On a picture less than 400 px tall both are
+  drawn longer and thicker by the same factor (up to 2), so their ratio stays the same; their names sit beside the
+  shafts (the leader dot on the middle of the shaft, never on a head).
+- **চুম্বক**: a coil of copper wire on a plastic tube (no iron, so it is not attracted when off), with a 1.5 V cell
+  (+ at its right end) and a knife switch lying on the bench in front of it (round 2: the row is about a third shorter
+  than with the cell and switch beside the coil, so a phone shows it a third bigger); the camera looks from 38° above,
+  so they show in front of the coil, not on it. The current goes + → switch → the coil's right end → round it → its
+  left end → −; the winding turns anticlockwise seen from the magnet, so the right end is N. At the start the coil,
+  the cell, the switch and the magnet are named (the coil's name while no current flows: then its poles name it;
+  the cell's and the switch's until the switch has been used). A bar
   magnet (N red, S grey: not blue, the force's colour) on a little cart. Switched on (the action, or a tap on the
   switch), amber chevrons run along the wires (the current, "তড়িৎ চলছে"), the coil's ends turn red/grey, named N and S
   under them: the coil has become a magnet. Unlike poles attract (the cart rolls in and clicks against the coil), like
@@ -82,14 +90,18 @@ a চিরুনি/চুম্বক toggle and a big button. Now:
   shrinking along the whole track but never reaches zero. At the end of the track the pull still beats the wheels'
   friction, so the magnet comes back: পাল্লা অসীম. The poles follow the right-hand grip rule (the right end, facing
   the magnet, is N).
+- If step 2 is cut short (the other example chosen while the comb comes down), the button offers step 2 again; after
+  bringing down a comb with no charge it offers step 1 ("১ চিরুনি দিয়ে চুল আঁচড়াও").
 - The button waits (greyed) while a step plays; its ring hides then and comes back on the next thing to touch. Double
   taps within 400 ms are ignored; a drag on the comb stops a running step.
 - Test (5 questions, tap answers, the 3D sets each up and plays the outcome after the answer; the arrows only after
-  the answer): why the paper rises (or: what an uncombed comb does, then it comes down and nothing jumps); like or
-  unlike poles from the letters in the picture; the coil with the switch open (then it switches on and pulls); which
+  the answer): from the picture, what a comb with or without "−" on it does when lowered to the paper (the same four
+  answers either way: the student reads the comb; then it comes down and the bits jump, or nothing does); why the
+  paper rises; like or unlike poles from the letters in the picture; the coil with the switch open, or (one of the two)
+  whether the coil still pulls the magnet at the far end of the track; which
   force is stronger and by how much (তড়িৎ চৌম্বক/মাধ্যাকর্ষণ × 10³⁶/৩৬, and the worked answer says the 10³⁶ is for like
-  particles such as two protons); and, from the picture, whether the coil still pulls the magnet at the far end of the
-  track. Wrong answers get a short note on the mistake (not on the strength question).
+  particles such as two protons). The comb-lowering question always comes before the two whose pictures show a charged
+  comb holding the bits up. Wrong answers get a short note on the mistake (not on the strength question).
 - Keys: space/enter the action, 1/2 the examples (or the arrow keys in the row of words), ← → comb along the hair /
   move the comb or the cart, ↑ ↓ the comb's height over the paper, x turns the magnet round, f/v views.
 
@@ -99,7 +111,7 @@ a চিরুনি/চুম্বক toggle and a big button. Now:
   10³⁸). The figures show the strengths as an order only (weakest to strongest), and quote each section's own
   sentence. 10³⁶ matches the electric ÷ gravitational force between two protons (1.24 × 10³⁶, unit-tested). For the
   book team.
-- Stylised on purpose: the student bends low over the table and the bits are 1.7–2.1 cm, so the head, the comb and
+- Stylised on purpose: the student bends low over the table and the bits are 2.4–2.8 cm, so the head, the comb and
   the paper fit one phone picture; the comb is drawn along the front of the hair (real combing strokes front to back,
   which from the side would show the comb end-on). Also (a corner note in the magnet example says the first): the coil is an air-core coil fed by one
   cell, which in real life is a weak magnet; its pull on the cart is drawn about as strong as a small iron-core
@@ -108,6 +120,4 @@ a চিরুনি/চুম্বক toggle and a big button. Now:
 - Switch wording: "সুইচ বন্ধ" means "off" in everyday Bangla but could be read against "বন্ধ বর্তনী" (closed circuit),
   which the book teaches later; the figure says "সুইচ চালু করো" / "সুইচ খুলে দাও" and "সুইচ খোলা". Please check.
 - "সুইচ" and "তারের কুণ্ডলী (কয়েল)" are not on page 68; please check they are the words the book uses later.
-- The magnet example on a phone in portrait is a long row (cell, switch, coil, track), so its parts are small
-  (the magnet about 75 px wide at 390×700). Laying the cell and switch in front of the coil would make it about a third
-  bigger; not done in this round.
+- The page's second name, বিদ্যুৎ চৌম্বকীয় বল, appears once, in the book's rule at the end.

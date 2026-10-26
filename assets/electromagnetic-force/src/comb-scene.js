@@ -20,23 +20,23 @@ export const COMB_SIZE = { half: 52.5, end: 58, teeth: 18, top: 30, thick: 3 }; 
 /** The table: its top at y = 0, from its left end (just right of the student) along x, and front to back along z. */
 export const TABLE = { x0: -95, x1: 450, z0: -34, z1: 80 };
 /**
- * The bits of paper on the table (top at y = 0): x, z, size (mm). Torn bits of thin paper, 1.7–2.1 cm, so a phone
+ * The bits of paper on the table (top at y = 0): x, z, size (mm). Torn bits of thin paper, 2.4–2.8 cm, so a phone
  * shows each one clearly. All lie under the comb's row of teeth when it hangs over them; the
  * last one, under its last teeth, is the one with the arrows. The comb's middle hangs at x = 15.
  */
 const BITS = [
-  [-33, -14, 19],
-  [-19, 16, 18],
-  [-4, -3, 21],
-  [10, 22, 17],
-  [23, -17, 20],
-  [36, 9, 18],
-  [48, -7, 19],
-  [56, 23, 17],
-  [64, 1, 20],
+  [-32, -17, 27],
+  [-14, 19, 25],
+  [4, -17, 28],
+  [22, 19, 26],
+  [40, -17, 27],
+  [50, 27, 24],
+  [64, 1, 27],
 ];
 export const FEATURED = BITS.length - 1;
-const PAPER = ['#fbfbf6', '#f7efd8', '#f8dfe4', '#f6f0c2', '#e0eaf7', '#e3f1de'];
+// coloured notebook paper (white bits would vanish against the white page once they are lifted), each with a thin
+// darker edge round it
+const PAPER = ['#f3d98b', '#f2b8c6', '#a9d3f0', '#bfe3b0', '#f7c79a', '#d7c8f0', '#fff4c2'];
 const DISC_SLOTS = 10; // "−" discs on the comb at full charge
 const DISC_ORDER = [4, 5, 3, 6, 2, 7, 1, 8, 0, 9]; // they fill from the middle outwards
 
@@ -349,7 +349,21 @@ export function createCombScene({ materials, colors }) {
   // ── the bits of paper ──
   const bits = BITS.map(([x, z, size], i) => {
     const mat = new THREE.MeshStandardMaterial({ name: 'Paper', color: PAPER[i % PAPER.length], roughness: 0.85, side: THREE.DoubleSide });
-    const mesh = new THREE.Mesh(bitGeometry(size, r), mat);
+    const geo = bitGeometry(size, r);
+    const mesh = new THREE.Mesh(geo, mat);
+    // the edge: the same shape a little bigger, darker, just behind it
+    const rim = new THREE.Mesh(
+      geo,
+      new THREE.MeshStandardMaterial({
+        name: 'PaperEdge',
+        color: new THREE.Color(PAPER[i % PAPER.length]).multiplyScalar(0.62),
+        roughness: 0.9,
+        side: THREE.DoubleSide,
+      }),
+    );
+    rim.scale.setScalar(1 + 1.6 / size);
+    rim.position.z = -0.12;
+    mesh.add(rim);
     mesh.name = 'PaperBit';
     const g = new THREE.Group();
     g.add(mesh);

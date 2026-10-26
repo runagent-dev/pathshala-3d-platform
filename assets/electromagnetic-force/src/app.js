@@ -59,7 +59,7 @@ export const DEFAULTS = {
 // one colour per thing: the four forces as in the other three figures of 3.2 (তড়িৎ চৌম্বক blue, মহাকর্ষ purple),
 // the magnet's poles as painted (N red, S grey: not blue, which is the force's colour); style.css has the same
 const COLORS = { em: '#1c7ed6', grav: '#7048e8', north: '#e03131', south: '#5c6670' };
-const W_ARROW = 26; // mm of arrow for a bit of paper's weight (the Earth's pull)
+const W_ARROW = 26; // mm of arrow for a bit of paper's weight (the Earth's pull), on a picture at least 400 px tall
 const MAX_RATIO = 2; // the comb's arrow is drawn at most this many times the weight's
 // where the comb's middle may be over the paper: its last teeth stay over the bit with the arrows, so that bit is the
 // first to jump (it hangs at the comb's end, its arrows clear of the comb)
@@ -72,8 +72,7 @@ const TAP_MOVE = 7; // px a finger may move and still tap
 const deg = THREE.MathUtils.degToRad;
 // how far above the front the camera looks from (front view): the comb's from higher up, so the bits on the table show
 // as bits, not slivers, and the head is seen from above a little (its hair, where the comb goes)
-const ELEVATION = { comb: 42, magnet: 24 };
-const COIL_X = (COIL.x0 + COIL.x1) / 2;
+const ELEVATION = { comb: 42, magnet: 38 }; // the magnets from higher up too: the cell and the switch show in front of the coil, not on it
 
 export function createApp(root, options = {}) {
   const o = { ...DEFAULTS, ...options };
@@ -310,6 +309,8 @@ export function createApp(root, options = {}) {
   /** Is the comb (or is it going) over the paper? */
   const atPaper = () => (s.comb.place === 'travel' ? s.comb.dest : s.comb.place) === 'paper';
 
+  /** How much longer and thicker the two pulls are drawn: 1 on a picture 400 px tall or more, up to 2 on a small one. */
+  const arrowScale = () => Math.min(2, Math.max(1, 400 / Math.max(stage.height, 1)));
   const UPV = new THREE.Vector3(0, 1, 0);
   const DOWNV = new THREE.Vector3(0, -1, 0);
   let lastLifted = 0;
@@ -369,12 +370,15 @@ export function createApp(root, options = {}) {
       refresh();
       emitChange();
     }
-    // the two arrows on the bit with the arrows, while the comb is over the paper (or on its way)
+    // the two arrows on the bit with the arrows, while the comb is over the paper (or on its way); on a small picture
+    // both are drawn longer and thicker by the same factor, so their ratio stays the same
     const p = cs.bits[FEATURED].group.position;
     const show = s.showArrows && s.scene === 'comb' && s.comb.place !== 'hair';
     const up = Math.min(ratio, MAX_RATIO);
-    const movedUp = upArrow.set(p, UPV, show && up >= 0.05 ? W_ARROW * up : 0);
-    const movedDown = downArrow.set(p, DOWNV, show ? W_ARROW : 0);
+    const k = arrowScale();
+    const thicker = upArrow.setThickness(k) | downArrow.setThickness(k);
+    const movedUp = upArrow.set(p, UPV, show && up >= 0.05 ? W_ARROW * k * up : 0);
+    const movedDown = downArrow.set(p, DOWNV, show ? W_ARROW * k : 0) || thicker;
     if (movedUp || movedDown) {
       stage.invalidate(); // drawing is on demand: an arrow that changed needs a new frame
       syncArrowLabels();
@@ -551,7 +555,12 @@ export function createApp(root, options = {}) {
   function plan() {
     if (s.scene === 'comb') {
       const c = s.comb;
-      if (atPaper()) return { id: 'again', step: '', label: 'act_again_comb', target: 'none' }; // no ring over the result
+      if (atPaper()) {
+        if (!c.charge) return { id: 'again', step: 1, label: 'act_comb', target: 'comb' }; // brought down with no charge
+        // charged, over the paper, nothing lifted and nothing playing (the run was cut short): bring it down again
+        if (c.place === 'paper' && !lifted() && !s.busy) return { id: 'lower', step: 2, label: 'act_bring', target: 'paper' };
+        return { id: 'again', step: '', label: 'act_again_comb', target: 'none' }; // no ring over the result
+      }
       if (c.charge > 0) return { id: 'bring', step: 2, label: 'act_bring', target: 'paper' };
       return { id: 'comb', step: 1, label: 'act_comb', target: 'comb' };
     }
@@ -703,15 +712,19 @@ export function createApp(root, options = {}) {
       0,
     );
   const PAPER_LABEL_AT = new THREE.Vector3(15, 0, 28);
-  const COIL_LABEL_AT = new THREE.Vector3(COIL_X, 2, 18);
+  const COIL_LABEL_AT = new THREE.Vector3(COIL.x0 + 14, 2 * COIL.flange, 0); // the top of the coil's left end
   const cartLabelAt = new THREE.Vector3();
-  const upTip = new THREE.Vector3();
-  const downTip = new THREE.Vector3();
+  const cellLabelAt = new THREE.Vector3();
+  const upMid = new THREE.Vector3();
+  const downMid = new THREE.Vector3();
+  /** Beside an arrow's shaft (its middle), never on its head: right, left, then a little up or down. */
   const SIDE = (d) => [
-    { dx: 14, dy: d },
-    { dx: -14, dy: d },
-    { dx: 14, dy: 0 },
-    { dx: -14, dy: 0 },
+    { dx: 16, dy: 0 },
+    { dx: -16, dy: 0 },
+    { dx: 16, dy: d },
+    { dx: -16, dy: d },
+    { dx: -22, dy: 2 * d },
+    { dx: 22, dy: 2 * d },
   ];
   /** The two pulls' names beside their arrows (left out when there is no room: the result line names them too). */
   function syncArrowLabels() {
@@ -720,13 +733,8 @@ export function createApp(root, options = {}) {
         text: t('pull_earth'),
         kind: 'callout',
         color: COLORS.grav,
-        point: () => downTip.copy(downArrow.tip()),
-        spots: [
-          { dx: -14, dy: 12 },
-          { dx: 0, dy: 20 },
-          { dx: 14, dy: 10 },
-          { dx: -14, dy: 26 },
-        ],
+        point: () => downMid.copy(downArrow.root.position).add(downArrow.tip()).multiplyScalar(0.5),
+        spots: SIDE(12),
         optional: true,
         avoid: [() => combBox(), () => arrowBox(upArrow), () => bitBoxes(), headBox],
       });
@@ -736,8 +744,8 @@ export function createApp(root, options = {}) {
         text: t('pull_comb'),
         kind: 'callout',
         color: COLORS.em,
-        point: () => upTip.copy(upArrow.tip()).setY(upArrow.tip().y - 6),
-        spots: [{ dx: 0, dy: -16 }, ...SIDE(-4), { dx: -20, dy: -18 }, { dx: -40, dy: -26 }],
+        point: () => upMid.copy(upArrow.root.position).add(upArrow.tip()).multiplyScalar(0.5),
+        spots: SIDE(-14),
         optional: true,
         avoid: [() => combBox(), () => arrowBox(downArrow), () => bitBoxes(), headBox],
       });
@@ -813,45 +821,62 @@ export function createApp(root, options = {}) {
         anno.remove('poleS');
         anno.remove('poleN');
       }
+      // the parts' names keep off the coil's poles (added later, so they would not move for a name)
+      const poles = () => [anno.box('poleS'), anno.box('poleN')].filter(Boolean);
       const part = (id, key, point, spots, show = true) =>
-        show && !quizzing ? label(id, { text: t(key), point, spots, optional: true }) : anno.remove(id);
+        show && !quizzing ? label(id, { text: t(key), point, spots, optional: true, avoid: [poles] }) : anno.remove(id);
       part(
         'current',
         'current_on',
         () => ms.points.cell,
         [
-          { dx: 0, dy: -26 },
-          { dx: -20, dy: -22 },
-          { dx: 20, dy: -22 },
+          { dx: 0, dy: 34 },
+          { dx: -30, dy: 30 },
+          { dx: 30, dy: 30 },
         ],
         mag.on,
       );
-      part('coil', 'lbl_coil', () => COIL_LABEL_AT, [
-        { dx: 0, dy: mag.on ? 44 : 20 },
-        { dx: -20, dy: mag.on ? 44 : 18 },
-        { dx: 0, dy: 20 },
-      ]);
+      // above the coil's left end (the cell and the switch lie in front of it), while it is only a coil: once the
+      // current flows it is a magnet, named by its poles, and the force's name takes the room above it
+      part(
+        'coil',
+        'lbl_coil',
+        () => COIL_LABEL_AT,
+        [
+          { dx: -6, dy: -30 },
+          { dx: 30, dy: -34 },
+          { dx: -30, dy: -20 },
+        ],
+        !mag.on,
+      );
       part('magnet', 'lbl_magnet', () => cartLabelAt.set(ms.cart.position.x, 2, 18), [
         { dx: 0, dy: 20 },
         { dx: 20, dy: 18 },
+        { dx: 36, dy: 30 },
+        { dx: 0, dy: 40 },
       ]);
       part(
         'switch',
         'lbl_switch',
         () => ms.points.switch,
         [
-          { dx: 0, dy: -30 },
-          { dx: 24, dy: -20 },
+          { dx: 0, dy: 44 },
+          { dx: 0, dy: 72 },
+          { dx: 56, dy: 30 },
+          { dx: 60, dy: 50 },
         ],
         !mag.everOn,
       );
       part(
         'cell',
         'lbl_cell',
-        () => ms.points.cell,
+        () => cellLabelAt.copy(ms.points.cell).setX(ms.points.cell.x - 12), // a little left: clear of the switch's ring
         [
-          { dx: 0, dy: -34 },
-          { dx: -22, dy: -26 },
+          { dx: 0, dy: 36 },
+          { dx: 0, dy: 58 },
+          { dx: 0, dy: 74 },
+          { dx: -40, dy: 34 },
+          { dx: -60, dy: 12 },
         ],
         !mag.everOn,
       );
@@ -898,19 +923,21 @@ export function createApp(root, options = {}) {
       // the comb over them, from where it arrives to where it holds the bits up in the air
       for (const y of [stopHeight(COMB.levels), PAPER_H.start]) combAt({ x: PAPER_X.start, y, rot: 0 });
       const f = cs.bits[FEATURED].home.position;
-      pts.push({ p: V(f.x, -W_ARROW, f.z), box: [-8, 0, 8, 8] }); // the weight's arrow under the bit
+      const w = W_ARROW * arrowScale();
+      pts.push({ p: V(f.x, -w, f.z), box: [-8, 0, 8, 8] }); // the weight's arrow under the bit
       const hung = V(PAPER_X.start + cs.bits[FEATURED].cling.x, LIFT_HEIGHT + cs.bits[FEATURED].cling.y);
-      pts.push({ p: hung.clone().setY(hung.y + W_ARROW * MAX_RATIO), box: [-8, -26, 8, 0] }); // the comb's arrow, its name above
+      pts.push({ p: hung.clone().setY(hung.y + w * MAX_RATIO), box: [-8, -8, 8, 0] }); // the comb's arrow
       return pts;
     }
-    // the magnets: the circuit in a row (cell, switch, coil), the track to the end block, the arrows and their label
-    const { left, right } = ms.extent;
-    pts.push(V(left, 0, 26), V(left, 22, -12), V(right, 0, 22), V(right, 24, -22));
-    pts.push(V(COIL.x0, 2 * COIL.flange, -20), V(COIL_X, 0, 32)); // the coil, the wire along the front
+    // the magnets: the coil with the cell and the switch in front of it, the track to the end block, the arrows, the names
+    const { left, right, front } = ms.extent;
+    pts.push(V(left, 0, front), V(left, 22, -16), V(right, 0, 22), V(right, 24, -22));
+    pts.push(V(COIL.x0, 2 * COIL.flange, -20)); // the coil
     pts.push(V(COIL.x1 - 40, ARROW.y + 5, ARROW.z), V(COIL.x1 + MAG.gapMax + 40, ARROW.y + 5, ARROW.z)); // the arrows
     pts.push({ p: V(COIL.x1 + START_GAP / 2, ARROW.y, ARROW.z), box: [-45, -44, 45, 0] }); // their label
-    pts.push({ p: V(COIL_X, 0, 20), box: [-70, 0, 70, 56] }, { p: V(magnetX(START_GAP), 0, 20), box: [-50, 0, 50, 40] });
-    pts.push({ p: ms.points.cell, box: [-50, -48, 50, 0] }); // the current's or the cell's label
+    pts.push({ p: COIL_LABEL_AT, box: [-70, -44, 60, 0] }); // the coil's name above it
+    pts.push({ p: V(magnetX(START_GAP), 0, 20), box: [-50, 0, 50, 40] }); // the magnet's name under it
+    for (const p of [ms.points.cell, ms.points.switch]) pts.push({ p: V(p.x, 0, p.z + 10), box: [-50, 0, 50, 70] }); // their names
     return pts;
   }
   function boxOf(node, pad = 6) {
@@ -1122,6 +1149,16 @@ export function createApp(root, options = {}) {
     return true;
   }
   /** The action once both steps are done: the bits fall, the comb goes back to the hair and is combed again. */
+  /** The comb already over the paper (a run was cut short): down it comes until the bits jump, then up with them. */
+  function lowerAndLift() {
+    const my = ++run;
+    tweener.cancel('comb');
+    return playing(my, async () => {
+      if (!(await lower(stopHeight(s.comb.charge), 1.6, my))) return;
+      await wait(350);
+      if (my === run) await lower(LIFT_HEIGHT, 1.0, my);
+    });
+  }
   function againAndComb() {
     const my = ++run;
     return playing(my, async () => {
@@ -1169,6 +1206,7 @@ export function createApp(root, options = {}) {
     if (p.id === 'comb') combAuto();
     else if (p.id === 'bring') bring();
     else if (p.id === 'again') againAndComb();
+    else if (p.id === 'lower') lowerAndLift();
     else if (p.id === 'on') setSwitch(true);
     else if (p.id === 'flip') flip();
   }
@@ -1395,7 +1433,11 @@ export function createApp(root, options = {}) {
         drag = null;
         mag.dragging = false;
         hideHint();
-        kinds = shuffle([Math.random() < 0.5 ? 'rise' : 'dry', 'poles', 'off', 'strength', 'range']);
+        // two about the comb, two about the magnets, one about the book's number; the comb lowered over the paper
+        // comes before the questions whose pictures show a charged comb holding the bits up (they would answer it)
+        kinds = shuffle(['lower', 'rise', 'poles', Math.random() < 0.5 ? 'off' : 'range', 'strength']);
+        const first = Math.min(kinds.indexOf('rise'), kinds.indexOf('strength'));
+        if (kinds.indexOf('lower') > first) kinds.splice(first, 0, ...kinds.splice(kinds.indexOf('lower'), 1));
         syncUI();
         refreshLabels();
       },
@@ -1419,10 +1461,17 @@ export function createApp(root, options = {}) {
           combQuestion(4);
           say(t('q_rise'));
           c = wordChoices(['opt_rise_right', 'opt_rise_mass', 'opt_rise_nograv', 'opt_rise_air']);
-        } else if (kind === 'dry') {
-          combQuestion(0, 62);
-          say(t('q_dry'));
-          c = wordChoices(['opt_dry_right', 'opt_dry_jump', 'opt_dry_away', 'opt_dry_small']);
+        } else if (kind === 'lower') {
+          // from the picture: a comb with or without "−" on it, held over the paper; the same four answers either way
+          const charged = Math.random() < 0.5;
+          combQuestion(charged ? 4 : 0, 62);
+          say(t('q_lower'));
+          c = wordChoices(
+            charged
+              ? ['opt_low_jump', 'opt_low_stay', 'opt_low_earth', 'opt_low_away']
+              : ['opt_low_stay', 'opt_low_jump', 'opt_low_always', 'opt_low_away'],
+          );
+          question.charged = charged;
         } else if (kind === 'poles') {
           const facing = Math.random() < 0.5 ? 'N' : 'S';
           magnetQuestion({ on: true, facing, gap: 34 });
@@ -1456,7 +1505,7 @@ export function createApp(root, options = {}) {
           c = wordChoices(['opt_far_right', 'opt_far_zero', 'opt_far_touch', 'opt_far_more']);
         }
         Object.assign(question, c);
-        return { ...c, meta: { kind, facing: question.facing } };
+        return { ...c, meta: { kind, facing: question.facing, charged: question.charged } };
       },
       reveal(_q, _correct, picked) {
         const q = question;
@@ -1467,10 +1516,10 @@ export function createApp(root, options = {}) {
           s.showArrows = true; // now the two pulls are shown
           return t('why_rise') + miss('mis_rise');
         }
-        if (q.kind === 'dry') {
+        if (q.kind === 'lower') {
           s.showArrows = true;
-          lower(stopHeight(0), 1.6, my); // down it comes: nothing jumps
-          return t('why_dry') + miss('mis_dry');
+          lower(stopHeight(s.comb.charge), 1.6, my); // down it comes: the bits jump, or nothing does
+          return q.charged ? t('why_low_jump') + miss('mis_lowq') : t('why_low_stay') + miss('mis_low0');
         }
         if (q.kind === 'poles') {
           mag.hold = false;

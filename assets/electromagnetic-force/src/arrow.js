@@ -1,6 +1,7 @@
 // A force arrow (round shaft and cone head), drawn over everything like an arrow on a printed diagram, so it
 // stays visible where it passes into the desk. set(from, dir, length) places it (and says whether anything
-// changed, so the caller can ask for a new frame); the head keeps its size, the shaft stretches. A helper, never
+// changed, so the caller can ask for a new frame); the head keeps its size, the shaft stretches; setThickness(k)
+// makes the shaft and the head k times as thick and the head k times as long (for a small picture). A helper, never
 // exported to the GLB.
 import * as THREE from 'three';
 
@@ -31,12 +32,21 @@ export function createArrow({ color, radius = 1.2, head = 6, headRadius = 3.4, n
   const d = new THREE.Vector3();
   const end = new THREE.Vector3();
   const last = { from: new THREE.Vector3(Infinity, 0, 0), dir: new THREE.Vector3(), length: -1 };
+  let thick = 1;
 
   return {
     root,
     material,
     /** The point the arrow ends at (world), after the last set(). */
     tip: () => end,
+    /** Shaft and head k times as thick, the head k times as long (from the next set()). True if it changed. */
+    setThickness(k) {
+      if (Math.abs(k - thick) < 1e-3) return false;
+      thick = k;
+      root.scale.set(k, 1, k);
+      last.length = -1; // set() draws it again
+      return true;
+    },
     /** From a point, along a direction (any length), `length` long (head included); 0 hides it. True if it changed. */
     set(from, dir, length) {
       d.copy(dir).normalize();
@@ -50,11 +60,12 @@ export function createArrow({ color, radius = 1.2, head = 6, headRadius = 3.4, n
       root.position.copy(from);
       root.quaternion.setFromUnitVectors(UP, d);
       end.copy(from).addScaledVector(d, length);
-      const body = Math.max(0.001, length - head);
-      const k = Math.min(1, length / head); // very short arrows: a smaller head
-      shaft.scale.set(1, length > head ? body : 0.001, 1);
-      tip.position.y = length > head ? body : 0;
-      tip.scale.setScalar(Math.max(k, 0.001));
+      const h = head * thick;
+      const body = Math.max(0.001, length - h);
+      const k = Math.max(Math.min(1, length / h), 0.001); // very short arrows: a smaller head
+      shaft.scale.set(1, length > h ? body : 0.001, 1);
+      tip.position.y = length > h ? body : 0;
+      tip.scale.set(k, k * thick, k); // the root is `thick` times as wide: the head as long too
       root.visible = visible;
       return true;
     },

@@ -68,7 +68,7 @@ body.bg-transparent { background: transparent; }
   .ef .pvc-outcome { font-size: 15px; line-height: 1.55; white-space: normal; --pvc-outcome-lines: 2; }
   .ef .pvc-rule { --pvc-rule-lines: 4; font-size: 14px; line-height: 1.45; }
   .ef-forces { font-size: 12px; line-height: 1.4; }
-  .ef-forces-k { white-space: normal; }
+  .ef-forces-k { display: block; white-space: normal; } /* the heading on its own line(s), the list under it */
   .ef .pvc-q-text { font-size: 14px; }
   .ef .pvc-q-feedback { font-size: 13px; }
   .ef .pvc-opt { height: 44px; padding: 0 4px; }
