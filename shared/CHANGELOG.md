@@ -5,30 +5,38 @@ student kit). Every zip records it in `PACKAGE.json` as `kit`. Bump it with each
 patch for fixes, minor for additions, major when a figure has to change to keep working. Run the visual comparison
 across all figures before merging a kit change (`npm run test:visual`).
 
-## 1.3.0 (2026-10-25)
+## 1.3.0 (2026-10-26)
 
 One action, one result, one rule: the owner found the শেখো panels of most figures (chapter 2 especially) too boxy and
 a bit overwhelming, and asked for a distinctive button wherever the student should touch something, in the picture
-or in the panel. Added, nothing changes for existing figures (they don't use it yet; visual comparison: identical in
-all figures). Tested in `test/browser/kit.spec.mjs` (on `test/kit.html`).
-- `action.js` (new): `createAction({ stage, layer, host, t, step, label, icon, target, radius | worldRadius, avoid,
-  onAct, pulse })` → `{ button, marker, badge, set, refresh, hide(reason), show(reason), flash, update, box, visible,
-  dispose }`. The big action button (an accent pill: a numbered badge, the verb, a hand; a real button, ≥ 44 px) and
-  its twin on the 3D view: a dashed ring round the part to touch (a point with a radius, or an Object3D/Box3 with the
-  ring fitted round its box on the screen, projected every frame) with the same numbered badge, pulsing gently (not
-  under prefers-reduced-motion). The ring lets taps through to the figure's raycast; the badge (a 46 px target) does
-  the action too. The badge keeps clear of the corner buttons, the hint and the figure's labels (`avoid`). The marker
-  hides by itself while a finger drags on the view, while the button is disabled and during the test.
-- `shell.js`: `cleanSheet(t, { examples, quiet, lines })` (one row of example words, the action's slot with quiet
-  secondary buttons, one result line, one rule line) and `bindCleanSheet(ui.learn)` → `{ words, choose, result,
-  outcome, rule }`.
-- `student.css`: `.pvc-examples` (a row of words, the chosen one underlined, a small result under a word), `.pvc-act`
-  (the action pill and its badge), `.pvc-act-marker` (ring and badge on the view), `.pvc-quiet` (quiet secondary
-  buttons: icon and words, only the icon in a phone-wide panel), `.pvc-outcome` (one result line, the number in
-  `<b>` larger), `.pvc-rule` (the rule line). Light and dark.
+or in the panel. Added, nothing changes for existing figures (they don't use it yet; visual comparison against
+`origin/main`: identical apart from the two known flakes). Tested in `test/browser/kit.spec.mjs` (on
+`test/kit.html`).
+- `action.js` (new): `createAction({ stage, layer, host, t, step, label, icon, caption, target, radius | worldRadius,
+  avoid, onAct, trigger, pulse })` → `{ button, marker, badge, ring, set, refresh, hide(reason), show(reason), flash,
+  update, box, ringBox, visible, dispose }`. The big action button (an accent pill: a numbered badge, the verb, a hand;
+  a real button, ≥ 44 px, a solid focus ring) and its twin on the 3D view: a dashed ring round the part to touch (a
+  point with a radius, or an Object3D/Box3 with the ring fitted round its box on the screen, projected every frame),
+  drawn under the figure's labels, and the same numbered badge just outside it, above the labels. Both pulse for
+  about three beats each time the marker appears, then stay still (never with `pulse: false` or under
+  prefers-reduced-motion). The ring lets touches through to the figure's raycast; the badge (a 46 px target) acts on
+  a real tap (8 px, 500 ms) and hands any other gesture to what is under it; `trigger: 'pointerdown'` for timing
+  figures, `onAct: null` for parts the student drags. `ringBox()` for the labels' avoid lists; the badge keeps clear
+  of the corner buttons, the hint and the labels (`avoid`). The marker hides by itself while a finger drags on the
+  view, while the button is disabled and during the test. Reads before writes in each frame; `dispose()` lets go of
+  the frame hooks.
+- `shell.js`: `cleanSheet(t, { examples, quiet, lines: { action, outcome, rule } })` (one row of example words, the
+  action's slot with quiet secondary buttons, one result line, one rule line; the action row never wraps) and
+  `bindCleanSheet(ui.learn)` → `{ words, choose, next, result, outcome, rule }`; the row of words is a radio group
+  (one Tab stop, the arrow keys move and choose and never reach the figure's keys).
+- `student.css`: `.pvc-examples` (a row of words, the chosen one underlined, the next one dotted, a small result under
+  a word), `.pvc-act` (the action pill and its badge), `.pvc-act-marker` / `.pvc-act-under` (badge and ring on the
+  view), `.pvc-act-cap`, `.pvc-quiet` (quiet secondary buttons: icon and words, only the icon in a phone-wide panel),
+  `.pvc-outcome` (one result line, the number in `<b>` larger), `.pvc-rule` (the rule line). Light and dark.
 - `quiz.js`: `createQuiz({ action })` hides the action's marker while the test runs.
 - `annotations.js`: `boxes()`, the boxes of every label shown (for `createAction`'s `avoid`).
-- `icons.js`: `hand` (the coach's hand, filled).
+- `icons.js`: `hand` (the coach's hand, filled), `drag`.
+- `templates/interactive` uses the clean sheet and `createAction` (a drag action: the button shows the move).
 
 ## 1.2.0 (2026-10-25)
 

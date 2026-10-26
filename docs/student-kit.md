@@ -80,10 +80,15 @@ Styles: `student/student.css` (link it before the figure's `style.css`; set `roo
 - `cleanSheet(t, { examples, quiet, lines })` (kit 1.3.0): the clean শেখো sheet, **one action, one result, one rule**
   (below). `examples: { label, items: [{ id, label }], results }` is one row of words (`data-example="<id>"`; with
   `results: true` room is kept for a small result under each word); `quiet: [{ act, label, icon }]` are quiet
-  secondary buttons (`data-act`) after the action's slot (`.pvc-act-slot`); `lines: { outcome, rule }` keeps room for
-  that many lines of the result and the rule (per layout: set `--pvc-outcome-lines` / `--pvc-rule-lines` in CSS).
-- `bindCleanSheet(ui.learn)` → `{ words, choose(id), result(id, text), outcome(html), rule(html) }`: writes it (only
-  what changed, so it can run every frame).
+  secondary buttons (`data-act`) after the action's slot (`.pvc-act-slot`); `lines: { action, outcome, rule }` keeps
+  room for that many lines of the action's words, the result and the rule (per layout: set `--pvc-act-lines` /
+  `--pvc-outcome-lines` / `--pvc-rule-lines` in CSS). The action row never wraps: a long verb wraps inside the pill,
+  and `lines.action: 2` keeps the row as tall as a two-line pill in every state.
+- `bindCleanSheet(ui.learn)` → `{ words, choose(id), next(id), result(id, text), outcome(html), rule(html) }`: writes
+  it (only what changed, so it can run every frame). It makes the row of words a proper radio group: one Tab stop (the
+  chosen word); the arrow keys, Home and End move to a word and choose it by clicking it (your click handler does the
+  rest), and those keys never reach your scene keys. `next(id)` marks the word the action will choose next (a dotted
+  underline; `null` for none).
 
 ### One action, one result, one rule (kit 1.3.0)
 
@@ -93,8 +98,8 @@ on the 3D object, so they know exactly what to touch, in the picture or in the p
 
 ```
  মাদুর     কাঠ     বরফ    ঘর্ষণ নেই        ← examples: one row of words, the chosen one underlined
- ১.৩১ মি  ‾‾‾‾                            ← a small result under a word once it is known
- (১) বইটিতে ধাক্কা দাও  ☝          ⟲      ← the action (accent pill, numbered badge, verb, hand) · quiet reset
+ ১.৩১ মি  ‾‾‾‾   ┄┄                       ← a small result under a word once known; the next word dotted
+ (১) বইটিকে ধাক্কা দাও  ☝          ⟲      ← the action (accent pill, numbered badge, verb, hand) · quiet reset
  মাদুরে বইটি ১.৩১ মি গিয়ে থামল              ← one result line, the number that matters larger
  মাদুরের ঘর্ষণ বইটিকে তাড়াতাড়ি থামাল। …      ← one rule in the book's words, explained plainly
 ```
@@ -105,41 +110,69 @@ import { bindCleanSheet, buildStudentShell, cleanSheet } from '@shared/student/s
 const ui = buildStudentShell(root, t, { learn: cleanSheet(t, {
   examples: { label: 'floors', results: true, items: [{ id: 'mat', label: 'chip_mat' }, …] },
   quiet: [{ act: 'home', label: 'act_home', icon: ICONS.reset }],
-  lines: { outcome: 1, rule: 3 },
+  lines: { action: 2, outcome: 1, rule: 3 },
 }) });
 const sheet = bindCleanSheet(ui.learn);
-const action = createAction({
+let action = null;
+const anno = createAnnotations({ stage, layer: ui.annoLayer, avoid: [ui.corner, ui.hint, () => action?.ringBox()] });
+action = createAction({
   stage, layer: ui.coachLayer, host: ui.$('.pvc-act-slot'), t,
-  step: 1, label: 'act_push', target: () => book,            // Object3D | Box3 | Vector3 (+ radius px) | null
+  step: 1, label: 'act_push', target: () => book.body,       // Object3D | Box3 | Vector3 (+ radius px) | null
   avoid: [ui.corner, ui.hint, () => anno.boxes()],           // the badge never covers these
   pulse: o.coach, onAct: () => push(),
 });
-// the figure's own raycast on the part calls the same push(); the ring lets the tap through
+// the figure's own raycast on the part calls the same push(); the ring lets the touch through
 const quiz = createQuiz({ …, action });                     // the marker hides during the test
-sheet.choose('mat'); sheet.result('mat', '১.৩১ মি');
+sheet.choose('mat'); sheet.next('wood'); sheet.result('mat', '১.৩১ মি');
 sheet.outcome(t('out_stop', { … }));                         // '… বইটি <b>১.৩১ মি</b> গিয়ে থামল'
 sheet.rule(t('rule_mat'));                                    // '<b>মাদুরের ঘর্ষণ …</b> …'
 ```
 
-`createAction(options)` → `{ button, marker, badge, set(change), refresh(), hide(reason), show(reason), flash(),
-update(), box(), visible, step, enabled, dispose() }`:
-- `label`: an i18n key or `() => text` (read again on `set` / `refresh`); `step`: the badge's number (`t.num`), or
-  `''` for none; `icon`: the button's picture (default `ICONS.hand`); `enabled: false` disables the button and hides
-  the marker.
+`createAction(options)` → `{ button, marker, badge, ring, set(change), refresh(), hide(reason), show(reason), flash(),
+update(), box(), ringBox(), visible, step, enabled, dispose() }`:
+- `label`: an i18n key or `() => text` (read again on `set` / `refresh`); `icon`: the button's picture (default
+  `ICONS.hand`; `ICONS.drag` for a part that is dragged); `caption`: an optional small word under the badge on the
+  view (for a flow of several steps); `enabled: false` disables the button and hides the marker.
+- **`step` is the student's own step**, shown in the badge and on the button (`t.num`): 1 for the first thing to do,
+  2 for the next… It is not an item's index in a list (a student who picks the third example first is on step 1).
+  `''` shows no number (e.g. "আবার ধাক্কা দাও" once everything is done).
 - `target: () => …`: a `Vector3` (ring of `radius` px, or `worldRadius` in scene units), an `Object3D` or `Box3`
   (a pill-shaped ring fitted round its box on the screen, `pad` px out), or `null` (no ring). Projected every frame.
-- The badge sits on the ring (top right first, then other corners and sides), inside the view, clear of `avoid`
-  (elements, `{ left, top, right, bottom }` canvas-pixel boxes, or functions returning them); it keeps its place
-  while that stays clear. It is a 46 px tap target and does the action too.
-- `hide(reason)` / `show(reason)` hide the marker (the button stays) until every reason is shown again. It hides by
-  itself while a finger or the mouse drags on the view (`'drag'`), while disabled, during the test
-  (`.pvc[data-mode="quiz"]`, and `createQuiz({ action })`), and when its target is off the view.
-- `pulse: false` keeps it still (e.g. `?coach=0`); prefers-reduced-motion stops the pulse anyway. `flash()`: one
-  stronger pulse (e.g. after a tap that did nothing). `box()`: the badge's box, for the figure's own labels.
-- **The coach**: the action's marker replaces the first-use coach for tap actions. Keep `createCoach` for drags (the
-  hand moves the part); if both show, give the coach `avoid: [action.badge]`.
-- CSS: `.pvc-examples`, `.pvc-act`, `.pvc-act-marker`, `.pvc-quiet`, `.pvc-outcome` (`<b>` = the key number; set
-  `--c` on it for the quantity's colour), `.pvc-rule` (`<b>` = the book's words).
+  **An Object3D target uses `Box3.setFromObject`, which includes invisible children** (a big invisible hit box would
+  blow the ring up): pass the visible body (newtons-first-law passes `book.body`, not the book with its hit box).
+- **Layers**: the ring is drawn under the figure's labels (its layer is put in the stage just before
+  `.pvc-anno-layer`), the badge above them (in `layer`). `ringBox()` gives the ring's box (canvas pixels, worked out
+  now; `null` while hidden): put `() => action.ringBox()` in the labels' `avoid` (createAnnotations, or your own
+  placer) so no label sits on the ring. `box()` gives the badge's box (also `null` while hidden or in the test).
+- The badge sits just outside the ring (top right first, then the other corners and sides), inside the view, clear of
+  `avoid` (elements, `{ left, top, right, bottom }` canvas-pixel boxes, or functions returning them); it keeps its
+  place while that stays clear.
+- **Touches**: the ring lets every touch through to the figure's hit boxes. The badge (a 46 px target) acts on a real
+  tap only (the finger comes up within 8 px and 500 ms); a drag that starts on it is handed on to what is under it
+  (the camera turns, the part is dragged). `trigger: 'pointerdown'` makes the button and the badge act as the finger
+  goes down (figures where timing matters, like a stopwatch; keyboard Enter and Space still work). `onAct: null`
+  makes the badge only a sign (a part the student drags: touches go straight through).
+- `hide(reason)` / `show(reason)` hide the marker (the button stays). Reasons are a set: hiding twice with the same
+  reason is cleared by one `show`. It hides by itself while a finger or the mouse drags on the view (`'drag'`), while
+  disabled, during the test (`.pvc[data-mode="quiz"]`, and `createQuiz({ action })`), and when its target is off
+  the view.
+- **The pulse**: about three beats (ring, badge and the button's badge) each time the marker appears, then still.
+  `pulse: false` keeps both still (e.g. `?coach=0`); prefers-reduced-motion stops it anyway. `flash()`: one stronger
+  pulse (e.g. after a tap that did nothing).
+- `dispose()` lets go of everything (frame hooks, listeners, the elements).
+- CSS: `.pvc-examples`, `.pvc-act`, `.pvc-act-marker` (`.pvc-act-under` holds the ring), `.pvc-act-cap`,
+  `.pvc-quiet`, `.pvc-outcome` (`<b>` = the key number; set `--c` on it for the quantity's colour), `.pvc-rule`
+  (`<b>` = the book's words).
+
+**Kinds of figures**
+- **A tap** (push, drop, start, choose): `onAct` does it, the target is the part to tap (the figure's own raycast on
+  that part calls the same function). This replaces the first-use coach.
+- **A drag** (screw gauge, vernier, a slider on a part): ring and badge on the part to drag, `icon: ICONS.drag`, the
+  verb "… টেনে সরাও"; `onAct` either shows the move (a short slide and back, as `templates/interactive` does) or is
+  `null` (the badge is only a sign). The coach's hand may stay for the very first drag (give it
+  `avoid: [action.badge]`); the marker hides by itself while the student drags.
+- **An animation with nothing to tap** (si-prefixes): `target: () => null` (no ring, no badge); the button is the
+  play/pause or "next" control, changed with `set({ icon: ICONS.pause, label: 'act_pause', step: '' })`.
 
 ### `quiz.js`
 `createQuiz({ ui, t, emit, audio, questions: 5, lines, hooks, action })` (`action`: a `createAction` whose marker
@@ -203,7 +236,7 @@ element. Use it for every drag (the magnifier does; `templates/interactive` show
 
 ### `audio.js`, `icons.js`
 - `createAudio(enabled)` → `{ unlock(), setEnabled, tick, contact, lock, success, error, pop }` (synthesized, no files).
-- `ICONS` (`measure`, `play`, `pause`, `reset`, `expand`, `chevR`, `check`, `close`, `arrowR`, `hand`, …) and `svg(paths)`.
+- `ICONS` (`measure`, `play`, `pause`, `reset`, `expand`, `chevR`, `check`, `close`, `arrowR`, `hand`, `drag`, …) and `svg(paths)`.
   The bundled Noto Sans Bengali has no ✓ ✗ → glyphs (they fall back to another font, or a box): in HTML use
   `ICONS.check`, `ICONS.close` and `ICONS.arrowR`; in text drawn in 3D (`textMesh`) leave them out.
 

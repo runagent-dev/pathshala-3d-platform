@@ -21,6 +21,10 @@ Follow AGENTS.md ("Making a figure", "Rules"). In short:
    `si-prefixes` are full examples): 3D in `src/<object>.js`, maths in `src/reading.js` with unit tests in
    `test/unit/`, strings only in `src/i18n.js` (Bangla first, NCTB terms, `t.num()` for numbers), the figure in
    `src/app.js` on `@shared/student/…`. Keep it simple: the object, the one idea, a short tap-to-answer test.
+   The শেখো panel is the kit's clean sheet, **one action, one result, one rule** (`cleanSheet` + `bindCleanSheet` in
+   `shell.js`, `createAction` in `action.js`; the interactive template already uses them): the examples as one row of
+   words, one big numbered action button whose same badge rings the part to touch on the 3D view, one result line
+   with the number that matters, one rule in the book's words. Secondary actions are quiet icons.
 7. **Its own test:** adapt `assets/<id>/tests/figure.spec.mjs` to check the reading through `set`/`get`.
 8. **Verify:** `npm run verify -- <id>` until everything is ✓. Then Read the pictures in `test-results/<id>/`
    (390x700 and 844x390 first, then poster.png) and fix what looks wrong: clipped text, tiny controls, the object

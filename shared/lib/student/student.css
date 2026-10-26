@@ -239,52 +239,64 @@
 .pvc-examples button.on { color: var(--accent); }
 .pvc-examples button.on .pvc-ex-res { color: var(--accent); }
 .pvc-examples button.on::after { content: ''; position: absolute; left: 14%; right: 14%; bottom: -1px; height: 3px; border-radius: 2px 2px 0 0; background: var(--accent); }
+/* the word the action will choose next (bindCleanSheet's next(id)): a dotted underline in the accent */
+.pvc-examples button.next:not(.on)::after { content: ''; position: absolute; left: 22%; right: 22%; bottom: 1px; height: 2px; background: repeating-linear-gradient(90deg, var(--accent) 0 4px, transparent 4px 7px); }
+.pvc-examples button.next:not(.on) .pvc-ex-word { color: var(--accent); }
 .pvc-examples button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 
 /* the action row: the big action, then quiet secondary buttons */
-/* when the action and the quiet buttons don't fit on one line, the quiet ones wrap (the action never squeezes) */
-.pvc-act-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
-.pvc-act-slot { display: flex; min-width: 0; flex: 0 1 auto; }
+/* one line always: a long verb wraps inside the pill; cleanSheet({ lines: { action: 2 } }) keeps the row as tall as
+   a two-line pill in every state, so the lines under it never move */
+.pvc-act-row { display: flex; flex-wrap: nowrap; align-items: center; gap: 8px; min-width: 0; min-height: max(48px, calc(var(--pvc-act-lines, var(--pvc-act-room, 1)) * 1.375em + 10px)); }
+.pvc-act-row:not(:has(.pvc-act, .pvc-quiet)) { display: none; }
+.pvc-act-slot { display: flex; min-width: 0; flex: 1 1 auto; }
 .pvc-act-row .pvc-quiet { margin-left: auto; }
 /* the big action: an accent pill with a numbered badge, the verb and a hand */
 .pvc .pvc-act { display: inline-flex; align-items: center; gap: 10px; min-height: 48px; max-width: 100%; padding: 5px 18px 5px 6px; border-radius: 999px; border: 0; background: var(--accent); color: #fff; font-size: 16.5px; font-weight: 700; line-height: 1.25; text-align: left; box-shadow: 0 2px 0 color-mix(in srgb, var(--accent) 62%, #000); transition: background-color 0.15s, transform 0.08s; }
 .pvc .pvc-act:hover { background: color-mix(in srgb, var(--accent) 88%, #000); }
 .pvc .pvc-act:active { transform: translateY(1px); box-shadow: 0 1px 0 color-mix(in srgb, var(--accent) 62%, #000); }
-.pvc .pvc-act:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: 2px; }
+.pvc .pvc-act:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
 .pvc .pvc-act:disabled { opacity: 0.45; cursor: default; transform: none; }
 .pvc[data-theme='dark'] .pvc-act { color: #0b1522; }
-.pvc-act-text { min-width: 0; }
+.pvc-act-text { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
 .pvc-act-icon { display: inline-flex; flex: none; }
 .pvc .pvc-act-icon svg { width: 19px; height: 22px; }
 /* the numbered badge, the same on the button and on the 3D view: a white disc, the number in the accent */
 .pvc-act-num { position: relative; display: inline-grid; place-items: center; flex: none; width: 36px; height: 36px; border-radius: 50%; border: 2.5px solid var(--accent); background: var(--panel); color: var(--accent); font-size: 19px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
 .pvc-act .pvc-act-num { border-color: var(--panel); }
 .pvc-act-num::after { content: ''; position: absolute; inset: -3px; border-radius: 50%; border: 2.5px solid var(--accent); opacity: 0; pointer-events: none; }
-.pvc-act.live .pvc-act-num::after { border-color: #fff; animation: pvc-act-halo 1.6s ease-out infinite; }
+/* the pulse: about three beats each time the marker appears, then still (pulse: false: never) */
+.pvc-act.live:not(.still) .pvc-act-num::after { border-color: #fff; animation: pvc-act-halo 1.6s ease-out 3; }
 /* the marker on the 3D view: a dashed ring round the part and the badge; taps go through the ring to the figure */
 .pvc-act-marker { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 0.25s; }
 .pvc-act-marker.in { opacity: 1; }
+/* the ring's holder sits in the stage just before the labels' layer, so labels are drawn over the ring */
+.pvc-act-under { overflow: hidden; }
 .pvc[data-mode='quiz'] .pvc-act-marker { visibility: hidden; }
 .pvc-act-ringbox, .pvc-act-badge { position: absolute; left: 0; top: 0; will-change: transform; }
 .pvc .pvc-act-ring { display: block; width: auto; height: auto; overflow: visible; fill: none; stroke-linecap: round; transform-origin: 50% 50%; }
-.pvc .pvc-act-marker:not(.still) .pvc-act-ring { animation: pvc-act-breathe 1.6s ease-in-out infinite; }
+.pvc .pvc-act-marker.in:not(.still) .pvc-act-ring { animation: pvc-act-breathe 1.6s ease-in-out 3; }
 .pvc-act-ring .halo { stroke: rgba(255, 255, 255, 0.85); stroke-width: 5.5; }
 .pvc-act-ring .dash { stroke: var(--accent); stroke-width: 2.5; stroke-dasharray: 7 6; }
 .pvc[data-theme='dark'] .pvc-act-ring .halo { stroke: rgba(17, 22, 29, 0.7); }
 /* the badge on the view: a 44 px target round a 38 px disc; a tap on it does the action */
-.pvc-act-badge { display: grid; place-items: center; width: 46px; height: 46px; cursor: pointer; }
-.pvc-act-marker.in .pvc-act-badge { pointer-events: auto; }
+.pvc-act-badge { display: grid; place-items: center; width: 46px; height: 46px; cursor: pointer; touch-action: none; }
+.pvc-act-marker.in .pvc-act-badge:not(.passive) { pointer-events: auto; }
+.pvc-act-badge.passive { cursor: default; }
+/* an optional word under the badge (createAction({ caption })) */
+.pvc-act-cap { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: -2px; padding: 0 6px; border-radius: 4px; background: var(--panel); color: var(--accent); font-size: 12.5px; font-weight: 700; line-height: 1.5; white-space: nowrap; }
+.pvc-act-cap:empty { display: none; }
 .pvc-act-badge .pvc-act-num { width: 38px; height: 38px; font-size: 20px; box-shadow: 0 1px 4px rgba(20, 30, 45, 0.28); }
 .pvc-act-badge.empty { display: none; }
-.pvc-act-marker.in:not(.still) .pvc-act-badge .pvc-act-num::after { animation: pvc-act-halo 1.6s ease-out infinite; }
+.pvc-act-marker.in:not(.still) .pvc-act-badge .pvc-act-num::after { animation: pvc-act-halo 1.6s ease-out 3; }
 .pvc-act.flash { animation: pvc-act-flash 0.8s ease-out; }
 .pvc-act-marker.flash .pvc-act-num { animation: pvc-act-flash 0.8s ease-out; }
 @keyframes pvc-act-halo { 0% { transform: scale(0.9); opacity: 0.9; } 70%, 100% { transform: scale(1.45); opacity: 0; } }
 @keyframes pvc-act-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.045); } }
 @keyframes pvc-act-flash { 0% { transform: scale(1); } 30% { transform: scale(1.08); } 100% { transform: scale(1); } }
 @media (prefers-reduced-motion: reduce) {
-  .pvc .pvc-act-marker:not(.still) .pvc-act-ring, .pvc-act.live .pvc-act-num::after, .pvc-act-marker.in:not(.still) .pvc-act-badge .pvc-act-num::after { animation: none; }
-  .pvc-act.flash, .pvc-act-marker.flash .pvc-act-num { animation: none; outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: 2px; }
+  .pvc .pvc-act-marker.in:not(.still) .pvc-act-ring, .pvc-act.live:not(.still) .pvc-act-num::after, .pvc-act-marker.in:not(.still) .pvc-act-badge .pvc-act-num::after { animation: none; }
+  .pvc-act.flash, .pvc-act-marker.flash .pvc-act-num { animation: none; outline: 3px solid var(--ink); outline-offset: 2px; }
 }
 /* quiet secondary actions (back to the start, …): words and an icon, no box */
 .pvc .pvc-quiet { display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex: none; min-width: 44px; min-height: 44px; padding: 0 8px; border: 0; border-radius: 8px; background: none; color: var(--ink-3); font-size: 14.5px; font-weight: 500; white-space: nowrap; }

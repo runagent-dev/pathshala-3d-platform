@@ -1,14 +1,17 @@
 // {{title}}: the student view. Template figure: slide the marker along a ruler, read cm + mm × 0.1 cm, take a
-// short test. It shows every piece of the shared student kit (@shared/student/…); replace the ruler with your
-// object and keep the structure: 3D in ruler.js, maths in reading.js, strings in i18n.js.
+// short test. It shows the shared student kit (@shared/student/…) and its clean শেখো sheet (one action, one result,
+// one rule: docs/student-kit.md): the big numbered action button whose badge rings the part to touch, one result line
+// and one rule line (add `examples` to cleanSheet when the student picks from a few cases). Replace the ruler with
+// your object and keep the structure: 3D in ruler.js, maths in reading.js, strings in i18n.js.
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
 import { createTweener, ease } from '@shared/tween.js';
 import { createMaterials } from '@shared/student/materials.js';
 import { createLoupe } from '@shared/student/loupe.js';
 import { createAudio } from '@shared/student/audio.js';
-import { buildStudentShell, learnSheet } from '@shared/student/shell.js';
-import { createCoach } from '@shared/student/coach.js';
+import { bindCleanSheet, buildStudentShell, cleanSheet } from '@shared/student/shell.js';
+import { createAction } from '@shared/student/action.js';
+import { ICONS } from '@shared/student/icons.js';
 import { createQuiz } from '@shared/student/quiz.js';
 import { capturePointer } from '@shared/student/pointer.js';
 import { createI18n } from './i18n.js';
@@ -20,7 +23,7 @@ export const DEFAULTS = {
   view: 'front', // 'front' | '3d'
   mode: 'explore', // 'explore' | 'quiz'
   magnifier: true,
-  coach: true, // first-use pointers
+  coach: true, // the numbered ring on the part pulses at first (false: it stays still)
   numerals: null, // 'bn' | 'latin' (default follows the language)
   lang: 'bn',
   bg: 'light', // 'light' | 'transparent'
@@ -43,16 +46,9 @@ export function createApp(root, options = {}) {
   root.dataset.ui = 'simple'; // the student layout of student.css
   root.lang = t.lang;
   root.tabIndex = 0;
-  const ui = buildStudentShell(root, t, {
-    learn: learnSheet(t, {
-      terms: [
-        { cls: 'cm', label: 'cm_long', op: '=' },
-        { cls: 'mm', label: 'mm_long', op: '+' },
-        { cls: 'lc', label: 'lc_long', op: '×' },
-      ],
-      button: false,
-    }),
-  });
+  // the clean sheet: the action's row, one result line, one rule line (room kept so the 3D view keeps its size)
+  const ui = buildStudentShell(root, t, { learn: cleanSheet(t, { lines: { action: 1, outcome: 1, rule: 2 } }) });
+  const sheet = bindCleanSheet(ui.learn);
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 24, near: 2, far: 4000, environment: 'studio-light' });
@@ -65,8 +61,7 @@ export function createApp(root, options = {}) {
   const tweener = createTweener();
   stage.addTicker((dt) => tweener.tick(dt));
   const audio = createAudio(o.sound);
-  let coach = null;
-  const loupe = createLoupe({ stage, layer: ui.lensLayer, clearColor: 0xffffff, onDragStart: () => coach?.lensUsed() });
+  const loupe = createLoupe({ stage, layer: ui.lensLayer, clearColor: 0xffffff });
 
   if (o.shadow && o.bg !== 'transparent') {
     stage.renderer.shadowMap.enabled = true;
@@ -96,27 +91,13 @@ export function createApp(root, options = {}) {
   const reading = () => read(s.pos);
   const snapshot = (r = reading()) => ({ value: r.value, cm: r.cm, mm: r.mm, lc: LC, unit: 'mm', locked: s.locked, mode: s.mode });
 
-  // ── the reading panel ───────────────────────────────────────────────────────
-  const $ = ui.$;
-  const el = {
-    value: $('.pvc-result .v'),
-    unit: $('.pvc-result .u'),
-    cm: $('.pvc-t.cm b'),
-    mm: $('.pvc-t.mm b'),
-    lc: $('.pvc-t.lc b'),
-    status: $('.pvc-status span'),
-  };
-  el.unit.textContent = t('unit_cm');
-  el.lc.textContent = N('0.1');
-
+  // ── the panel: one result (the reading and its sum), one rule ───────────────
+  sheet.rule(t('rule_reading'));
   let lastValue = null;
   function refresh() {
     const r = reading();
     ruler.highlight(!quiz || quiz.revealed ? r.value : -1); // in the test the colour waits for the answer
-    el.value.textContent = N(formatCm(r.value));
-    el.cm.textContent = N(String(r.cm));
-    el.mm.textContent = N(String(r.mm));
-    el.status.textContent = t(s.locked ? 'status_locked' : 'status_free');
+    sheet.outcome(t('out_reading', { v: formatCm(r.value), cm: r.cm, mm: r.mm, lc: '0.1' }));
     if (r.value !== lastValue) {
       lastValue = r.value;
       emit('change', snapshot(r));
@@ -211,7 +192,6 @@ export function createApp(root, options = {}) {
     'pointerdown',
     (e) => {
       audio.unlock();
-      coach?.interrupt();
       const hit = pick(canvasPoint(e));
       if (!hit || drag) return; // the camera controls take it
       e.stopPropagation();
@@ -222,7 +202,6 @@ export function createApp(root, options = {}) {
       s.dragging = true;
       loupe.setFrozen(true);
       capturePointer(ui.canvasHost, e.pointerId); // never throws for a synthetic or lifted pointer
-      coach?.objectUsed();
       emit('dragstart', snapshot());
     },
     true,
@@ -237,10 +216,7 @@ export function createApp(root, options = {}) {
     drag = null;
     s.dragging = false;
     loupe.setFrozen(false);
-    animatePos(roundTo(s.pos, LC), 0.12).then(() => {
-      emit('dragend', snapshot());
-      coach?.objectReleased();
-    });
+    animatePos(roundTo(s.pos, LC), 0.12).then(() => emit('dragend', snapshot()));
   }
   ui.canvasHost.addEventListener('pointerup', endDrag);
   ui.canvasHost.addEventListener('pointercancel', endDrag);
@@ -251,6 +227,28 @@ export function createApp(root, options = {}) {
     setTimeout(() => ui.hint.classList.remove('show'), 3000);
     audio.error();
   }
+
+  // ── the action: one big button, and the same numbered badge in a ring round the marker's grip ─────────────
+  // The marker is dragged, so the button shows the move (a short slide and back) and the badge is a sign; a tap on
+  // the grip itself starts the drag as before. For a tap action (start, push, drop) onAct does the action itself.
+  const action = createAction({
+    stage,
+    layer: ui.coachLayer,
+    host: ui.$('.pvc-act-slot'),
+    t,
+    step: 1,
+    label: 'act_drag',
+    icon: ICONS.drag,
+    target: () => ruler.grip(),
+    radius: 24,
+    avoid: [ui.corner, ui.hint],
+    pulse: Boolean(o.coach),
+    onAct: () => {
+      if (s.locked) return lockedNudge();
+      const p0 = s.pos;
+      animatePos(Math.min(LENGTH, p0 + 12), 0.7).then((done) => done && animatePos(p0, 0.6));
+    },
+  });
 
   // ── the test ────────────────────────────────────────────────────────────────
   const shuffle = (list) => {
@@ -274,6 +272,7 @@ export function createApp(root, options = {}) {
     audio,
     questions: 5,
     lines: { text: 2, feedback: 2 }, // room for the longest question and worked answer: the 3D view keeps its size
+    action, // its ring and badge hide during the test
     hooks: {
       enter() {
         s.mode = 'quiz';
@@ -312,33 +311,6 @@ export function createApp(root, options = {}) {
     },
   });
 
-  // ── first-use pointers ──────────────────────────────────────────────────────
-  if (o.coach) {
-    const v = new THREE.Vector3();
-    coach = createCoach({
-      stage,
-      layer: ui.coachLayer,
-      t,
-      loupe,
-      tweener,
-      avoid: [ui.corner, ui.hint],
-      object: {
-        label: 'coach_drag',
-        candidates: () => {
-          v.copy(ruler.grip()).project(camera);
-          return [{ x: (v.x * 0.5 + 0.5) * stage.width, y: (-v.y * 0.5 + 0.5) * stage.height }];
-        },
-        grabbable: (p) => !!pick(p) && !pick(p).viaLens,
-        async demo(alive) {
-          const p0 = s.pos;
-          if (!alive() || !(await animatePos(Math.min(LENGTH, p0 + 12), 0.9))) return;
-          if (alive()) await animatePos(p0, 0.8);
-        },
-        cancel: () => tweener.cancel('pos'),
-      },
-    });
-  }
-
   // ── buttons, keys ───────────────────────────────────────────────────────────
   function syncUI() {
     for (const b of ui.$$('[data-view]')) b.classList.toggle('on', b.dataset.view === s.view);
@@ -350,7 +322,6 @@ export function createApp(root, options = {}) {
     }
     ui.learn.inert = s.mode === 'quiz';
     ui.quiz.inert = s.mode !== 'quiz';
-    coach?.setMode(s.mode);
   }
   const fullscreenBtn = ui.$('[data-act="fullscreen"]');
   if (fullscreenBtn && !document.fullscreenEnabled) fullscreenBtn.hidden = true;
@@ -385,7 +356,6 @@ export function createApp(root, options = {}) {
   syncUI();
   const ready = (async () => {
     if (o.mode === 'quiz') quiz.start();
-    else coach?.start();
   })();
 
   return {
