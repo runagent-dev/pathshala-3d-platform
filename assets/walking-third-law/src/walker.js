@@ -10,7 +10,7 @@ import * as THREE from 'three';
 import { PUSH_TIME, stretchAt } from './reading.js';
 
 const HIP_Y = 0.86; // the pelvis (the upper body leans about it)
-const HIP_JOINT = 0.82; // where the legs start
+const HIP_JOINT = 0.78; // where the legs start
 const THIGH = 0.43;
 const SHIN = 0.41;
 const UPPER = 0.29;
@@ -20,7 +20,7 @@ const FOOT = { len: 0.24, thick: 0.07, wide: 0.095, back: 0.12, ankle: [-0.06, 0
 const LEG_Z = 0.1; // the feet's distance from the middle line
 const TOE0 = 0.05; // the rear foot's toe at the start (hip frame)
 const HEEL0 = 0.07; // the front heel at the start (hip frame)
-const HEEL1 = 0.32; // the front heel where it lands (hip frame)
+const HEEL1 = 0.4; // the front heel where it lands (hip frame)
 const HEEL_LIFT = 0.75; // rad: the rear heel's lift at the end of the push
 
 const UP = new THREE.Vector3(0, 1, 0);

@@ -39,14 +39,16 @@ export const DEFAULTS = {
 /** One colour per force, the same on the arrow, its label and the result: the foot's push on the ground (a push, as in
  * the other figures of the chapter), the ground's push on the student (a friction-like grip force, crimson). */
 export const COLORS = { foot: '#e8590c', ground: '#c2255c', plain: '#4b5766' };
-const ARROW_PER_N = 0.005; // m of arrow per newton: both arrows, the same scale (100 N = 0.5 m)
-const ARROW = { radius: 0.013, head: 0.09, headRadius: 0.038 };
+const ARROW_PER_N = 0.007; // m of arrow per newton: both arrows, the same scale (100 N = 0.7 m, 20 N = 0.14 m)
+const ARROW = { radius: 0.013, head: 0.065, headRadius: 0.034 }; // a small head: a 20 N arrow still shows its shaft
+const BALL = 0.03; // the foot touches the ground this far behind the toe's tip: where both arrows start
 const ARROW_Z = 0.22; // in front of the feet, so nothing hides them
 const F_Y = 0.03; // the foot's push lies on the ground
 const MF_Y = 0.118; // the ground's push starts at the shoe
-const TOP_ROOM = 44; // px kept clear at the top of the view for the corner buttons and the note
+const TOP_ROOM = 44; // px kept clear at the top of the view for the corner buttons and the note (less on a wide view)
 const TAP = { move: 10, ms: 600 };
 const FRAME = { min: new THREE.Vector3(-0.7, -0.26, -0.45), max: new THREE.Vector3(1.2, 1.72, 0.45) };
+const FRAME_WIDE = { min: new THREE.Vector3(-0.7, -0.14, -0.45), max: new THREE.Vector3(1.2, 1.68, 0.45) }; // wide: room to spare sideways
 const DIRS = { front: new THREE.Vector3(0, 0.16, 1).normalize(), '3d': new THREE.Vector3(0.62, 0.34, 1).normalize() };
 
 /** Where the labels may go round their point (px, best first): rows of offsets, nearest row first. */
@@ -55,7 +57,7 @@ const SPOTS = {
   // the foot's push: under the ground line, in the face of the ground
   f: rows([34, 58], [0, 46, -46, 92, -92, 130, -130]).concat(rows([-44, -70, -96], [-62, -100, -140, 62, 100, 140]), [[-80, 0]]),
   // the ground's push: over the arrow, between the legs or clear of them, left or right of the student
-  mf: rows([-38, -62, -88, -14], [0, 46, -46, 92, -92, 112, -112, 140]),
+  mf: rows([-38, -62, -88, -14], [0, 30, -30, 46, -46, 70, -70, 92, -92, 112, -112, 140]),
   start: [
     [-26, 0],
     [26, 0],
@@ -151,7 +153,6 @@ export function createApp(root, options = {}) {
     plain: '', // '' (named, in their colours) or the letters the arrows carry (a test question)
     letters: { f: '', mf: '' }, // the letters on the two arrows of a test question (t('letters'))
     numbers: false, // the foot's push shows its number ("equal" question)
-    reveal: false,
   };
   const realNow = () => realTime(s.shown);
   const progressNow = () => progress(realNow());
@@ -180,8 +181,8 @@ export function createApp(root, options = {}) {
     const a = arrowAlpha();
     const len = pushOn(s.ground) * ARROW_PER_N;
     if (a > 0.01) {
-      arrows.f.set(tail.set(toe, F_Y, ARROW_Z), BACK, len);
-      arrows.mf.set(tail.set(toe + 0.012, MF_Y, ARROW_Z), FWD, len);
+      arrows.f.set(tail.set(toe - BALL, F_Y, ARROW_Z), BACK, len);
+      arrows.mf.set(tail.set(toe - BALL, MF_Y, ARROW_Z), FWD, len);
       arrows.f.setOpacity(a);
       arrows.mf.setOpacity(a);
     } else {
@@ -247,7 +248,7 @@ export function createApp(root, options = {}) {
     const words = t(key === 'f' ? 'l_f' : 'l_mf');
     if (s.plain) {
       if (!s.numbers) return `<b>${s.letters[key]}</b>`;
-      return `${words}<small>${key === 'f' ? t('e_val', { n: pushOn(s.ground) }) : '?'}</small>`;
+      return `${t(key === 'f' ? 'l_f_short' : 'l_mf_short')}: <b>${key === 'f' ? t('e_val', { n: pushOn(s.ground) }) : '?'}</b>`;
     }
     return symbolsOn() ? `<b>${key === 'f' ? 'F' : '−F'}</b> ${words}` : words;
   }
@@ -319,14 +320,14 @@ export function createApp(root, options = {}) {
     return t(`out_${g}`, { n: pushOn(g) });
   }
   /**
-   * The rule, one short sentence per idea: the puzzle, then what the student finds on each ground in everyday words,
-   * and the book's own sentence last, once all three grounds are found.
+   * The rule, one short sentence per idea: the puzzle, then what this ground shows in everyday words (it stays on
+   * screen), and the book's own sentence under it, last, once all three grounds are found.
    */
   function ruleHtml() {
     const g = s.ground;
-    if (triedCount() === GROUND_IDS.length) return t('rule_all');
-    if (s.phase === 'rest') return s.tried[g] ? t(`rule_${g}`) : t('rule_start');
-    return t(`rule_${g}`);
+    if (s.phase === 'rest' && !s.tried[g]) return t('rule_start');
+    const book = triedCount() === GROUND_IDS.length ? ` ${t('rule_book')}` : '';
+    return `${t(`rule_${g}`)}${book}`;
   }
 
   let lastNote = '';
@@ -423,7 +424,8 @@ export function createApp(root, options = {}) {
   /** The side (or turned) view that fits the frame in the room below the buttons. */
   function viewPose(view = s.view) {
     const dir = DIRS[view];
-    const { min, max } = FRAME;
+    const wide = stage.width >= 600 && stage.width / Math.max(stage.height, 1) > 1.7;
+    const { min, max } = wide || stage.height < 280 ? FRAME_WIDE : FRAME; // short or wide: less ground below, less sky above
     centre.addVectors(min, max).multiplyScalar(0.5);
     basisX.crossVectors(new THREE.Vector3(0, 1, 0), dir).normalize();
     basisY.crossVectors(dir, basisX).normalize();
@@ -438,7 +440,7 @@ export function createApp(root, options = {}) {
     }
     const W = Math.max(stage.width, 1);
     const H = Math.max(stage.height, 1);
-    const top = Math.min(TOP_ROOM, H * 0.16);
+    const top = wide ? 22 : Math.min(TOP_ROOM, H * 0.16);
     const bottom = 6;
     const side = 8;
     const tanV = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
@@ -548,23 +550,8 @@ export function createApp(root, options = {}) {
     });
   });
 
-  // ── hint line (only for a locked tap in the test) ───────────────────────────
-  let hintTimer = 0;
-  function showHint(text, { duration = 4000 } = {}) {
-    ui.hintText.textContent = text;
-    ui.hintAct.hidden = true;
-    ui.hint.classList.add('show');
-    clearTimeout(hintTimer);
-    if (duration) hintTimer = setTimeout(hideHint, duration);
-    stage.invalidate();
-  }
-  function hideHint() {
-    clearTimeout(hintTimer);
-    ui.hint.classList.remove('show');
-    stage.invalidate();
-  }
+  /** A tap or a key during the test: nothing happens (the scene is locked), with a short error sound. */
   function lockedNudge() {
-    showHint(t('q_locked'), { duration: 2200 });
     audio.error();
   }
 
@@ -610,7 +597,6 @@ export function createApp(root, options = {}) {
     s.arrows = arrows;
     s.plain = plain;
     s.numbers = numbers;
-    s.reveal = false;
     labelState.f = labelState.mf = '';
     anno.remove('f');
     anno.remove('mf');
@@ -632,7 +618,6 @@ export function createApp(root, options = {}) {
     s.arrows = true;
     s.plain = '';
     s.numbers = false;
-    s.reveal = true;
     labelState.f = labelState.mf = '';
     anno.remove('f');
     anno.remove('mf');
@@ -651,7 +636,6 @@ export function createApp(root, options = {}) {
       enter() {
         s.mode = 'quiz';
         s.locked = true;
-        hideHint();
         syncUI();
       },
       leave() {
@@ -660,7 +644,6 @@ export function createApp(root, options = {}) {
         s.arrows = true;
         s.plain = '';
         s.numbers = false;
-        s.reveal = false;
         question = null;
         labelState.f = labelState.mf = '';
         anno.remove('f');
@@ -669,7 +652,7 @@ export function createApp(root, options = {}) {
         setGround(s.ground, { quiet: true });
       },
       prepare(i, _alive, say) {
-        if (i === 0) order = shuffle(['which', 'equal', 'cancel', 'slip', 'sand']);
+        if (i === 0) order = shuffle(['which', 'equal', 'cancel', 'slip', 'who']);
         const kind = order[i % order.length];
         if (kind === 'which') {
           const g = pickOne(GROUND_IDS.filter((x) => x !== 'slip'));
@@ -698,7 +681,9 @@ export function createApp(root, options = {}) {
           return { text: t('q_equal'), ...c, meta: { kind, answer: n } };
         }
         if (kind === 'cancel') {
-          questionScene('hard');
+          const [lf, lmf] = shuffle([...letters]);
+          s.letters = { f: lf, mf: lmf };
+          questionScene('hard', { plain: 'letters' }); // two plain letters: the picture does not say which is which
           question = { kind };
           const items = [item('c_bodies'), item('c_bigger'), item('c_inertia'), item('c_muscle')];
           const c = textChoices(items);
@@ -715,13 +700,13 @@ export function createApp(root, options = {}) {
           say(t('q_slip'));
           return { text: t('q_slip'), ...c, meta: { kind, answer: 'friction' } };
         }
-        questionScene('sand', { arrows: false });
-        question = { kind: 'sand' };
-        const items = [item('d_less'), item('d_same'), item('d_more'), item('d_none')];
+        questionScene('hard', { arrows: false }); // the student mid-push, the arrows only with the answer
+        question = { kind: 'who' };
+        const items = [item('h_ground'), item('h_foot'), item('h_self'), item('h_air')];
         const c = textChoices(items);
         question.list = c.list.map((x) => x.key);
-        say(t('q_sand'));
-        return { text: t('q_sand'), ...c, meta: { kind: 'sand', answer: 'less' } };
+        say(t('q_who'));
+        return { text: t('q_who'), ...c, meta: { kind: 'who', answer: 'ground' } };
       },
       reveal(_q, correct, picked) {
         const q = question;
@@ -737,7 +722,7 @@ export function createApp(root, options = {}) {
         }
         if (q.kind === 'cancel') return t(correct ? 'why_cancel' : `miss_${key}`);
         if (q.kind === 'slip') return t(correct ? 'why_slip' : `miss_${key}`);
-        return t(correct ? 'why_sand' : `miss_${key}`, { a: pushOn('hard'), b: pushOn('sand') });
+        return t(correct ? 'why_who' : `miss_${key}`);
       },
       done() {
         s.locked = false;
@@ -804,7 +789,6 @@ export function createApp(root, options = {}) {
       else setGround(s.ground);
     } else if (k === 'f') setView('front');
     else if (k === 'v') setView('3d');
-    else if (k === 'escape') hideHint();
     else return;
     e.preventDefault();
   });
@@ -904,7 +888,6 @@ export function createApp(root, options = {}) {
     },
     async reset() {
       quiz.stop();
-      hideHint();
       s.tried = {};
       for (const g of String(o.tried || '')
         .split(',')

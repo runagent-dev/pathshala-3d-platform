@@ -40,46 +40,50 @@ needs grip (friction): on sand that gives way, or a soapy or oily floor, the pus
 - A student (a 50 kg example) stands on a path, seen from the side. One big numbered action ("শক্ত মাটিতে পা দিয়ে ধাক্কা
   দাও"; its badge rings the pushing foot; a tap on the student works too) takes the first push-off of a walk, slowed down
   4 times ("সময় ৪ গুণ ধীর করে দেখানো"), and holds at the telling moment ("থামিয়ে দেখানো"). Everyday words first (the owner's
-  "explain it easily" rule): an orange arrow lying on the ground behind the toe says "পা মাটিকে ঠেলছে", a crimson arrow at
-  the shoe pointing forward says "মাটি মানুষটিকে ঠেলছে". The two arrows are always equally long (one scale, 100 N =
-  0.5 m). The book's names **F** (the foot's push on the ground, orange) and **−F** (the ground's push on the student,
-  crimson) appear on the same two labels only at the last step, when all three grounds are found and the rule gives the
-  book's sentence and says "বইয়ে ঠেলা দুটির নাম F আর −F"; the test never uses them. A dashed "শুরু" line shows how far the
-  student has moved off.
+  "explain it easily" rule), one verb everywhere, the page's own ধাক্কা: an orange arrow lying on the ground behind the
+  ball of the foot says "পা মাটিকে ধাক্কা দিচ্ছে", a crimson arrow at the shoe pointing forward says "মাটি মানুষটিকে ধাক্কা
+  দিচ্ছে". The two arrows are always equally long (one scale, 100 N = 0.7 m, 20 N = 0.14 m: nothing is stretched to look
+  bigger). The book's names **F** (the foot's push on the ground, orange) and **−F** (the ground's push on the student,
+  crimson) join the same two labels only at the last step, once all three grounds are found; the test never uses them. A
+  dashed "শুরু" line shows how far the student has moved off.
 - The row of words is the page's three grounds, in its order: **শক্ত মাটি**, **ঝুরঝুরে বালু**, **পিচ্ছিল মেঝে** (the
   page's soapy water or oil). Each shows its push under it once tried; the action goes on to the next ground.
   - Firm ground: the leg's push of 100 N is all there; a = 100 / 50 = 2 ms⁻²; after the 0.6 s push-off the student has
-    moved 0.36 m at 1.2 m/s (a walking pace); the rear toe stays planted.
+    moved 0.36 m at 1.2 m/s (a walking pace); the rear toe stays planted ("শক্ত মাটিতে পা আটকে থাকে").
   - Loose sand: it gives way, so only 50 N (a = 1 ms⁻², 0.18 m); the foot slides back 0.18 m and pushes a heap of sand.
   - Soapy or oily floor: 20 N (a = 0.4 ms⁻², 0.07 m); the foot slides back 0.29 m, leaving a smear; the student barely
     leaves the "শুরু" line.
   The leg stretches the same on every ground (it means the same push); what the ground can give back decides how much of
   that moves the body and how much is the foot sliding. All three are the same third-law pair: equal, opposite, one on
   the ground and one on the student.
-- One result line: "পা মাটিকে ঠেলল, মাটি মানুষটিকে ঠেলল। দুটি ঠেলাই সমান: ১০০ নিউটন।" One rule that grows, one short
-  everyday sentence per idea: the puzzle ("হাঁটার সময় কেউ আমাদের ঠেলে না, তবু আমরা এগোই। কীভাবে?") → firm ground ("পা
-  মাটিকে পেছনে ঠেলে, তাই মাটি আমাদের সামনে ঠেলে") → sand ("বালু সরে যায়, …") → the slippery floor ("ঘর্ষণ খুব কম, তাই পা পিছলে
-  যায়, …") → the book's own sentence last, once all three are found ("বল প্রয়োগ করলে বিপরীত এবং সমান বল পাওয়া যায়: এটাই নিউটনের
-  তৃতীয় সূত্র।").
-- Test (5 questions, each scene set up, the arrows named only with the answer): which arrow moves the student (ক/খ on
-  grey arrows); how hard the ground pushes back (the foot's push is read off the picture; right: the same, wrong: double,
-  half, zero); why equal and opposite pushes do not cancel (they act on two different things; wrong: ground's push is
-  bigger, inertia, muscle force); why the slippery floor stops us (friction very small; wrong: it pulls back, the law does
-  not work, not pushing hard); how sand differs (less; wrong: same, more, none).
+- One result line: "পা মাটিকে ধাক্কা দিল, মাটি মানুষটিকে ধাক্কা দিল। দুটি ধাক্কাই সমান, যেমন ১০০ নিউটন।" ("যেমন": the numbers
+  are an example, the book gives none). One rule, one short everyday sentence per idea: the puzzle ("হাঁটার সময় কেউ আমাদের ধাক্কা
+  দেয় না, তবু আমরা এগোই। কীভাবে?") → firm ground ("শক্ত মাটিতে পা আটকে থাকে। পা মাটিকে পেছনে, মাটি আমাদের সামনে ধাক্কা দেয়।")
+  → sand ("বালু সরে যায়, …") → the slippery floor ("ঘর্ষণ খুব কম, তাই পা পিছলে যায়। মাটিকে প্রায় ধাক্কা দিতে না পারলে মাটিও
+  প্রায় ধাক্কা দেয় না।", "প্রায়" because the result shows 20 N, the page's idealisation of "no force"). The current ground's
+  own line always stays on screen; once all three are found the book's own sentence comes under it, last ("বল প্রয়োগ করলে
+  বিপরীত এবং সমান বল পাওয়া যায়: এটাই নিউটনের তৃতীয় সূত্র।").
+- Test (5 questions, each scene set up, the cause left out of the question so the picture has to be read, the pushes named
+  only with the answer): which arrow moves the student (ক/খ on grey arrows); how big the ground's push is (the foot's push
+  is read off the picture; right: the same, wrong: double, half, zero); why equal and opposite pushes do not cancel (plain
+  letters on the arrows; they act on two different things; wrong: ground's push is bigger, inertia, muscle force); why the
+  student hardly moves on the slippery floor (friction very small; wrong: it pulls back, the law does not work, not pushing
+  hard); who pushes the student forward (the ground; wrong: the foot, himself, the air). A tap or a key in the test does
+  nothing (a short error sound), so no hint ever covers the picture.
 
 ## Terms (as in the book)
 ত্বরণ, বল প্রয়োগ, ধাক্কা (দেওয়া), পা, মাটি, মেঝে, শরীর, নিউটনের তৃতীয় সূত্র, সমান এবং বিপরীত বল, পাল্টা (ধাক্কা / বল),
-প্রতিক্রিয়া, ঘর্ষণ, পিচ্ছিল, ঝুরঝুরে বালু, শক্ত মাটি, সাবান পানি, তেল, হাঁটা. The figure says "ঠেলা / ঠেলছে" (everyday) for
-the pushes until the book's sentence at the end, and keeps ঘর্ষণ, তৃতীয় সূত্র and "সমান এবং বিপরীত" for the slippery floor and the
-last step. Forces are written "নিউটন" (English N),
+প্রতিক্রিয়া, ঘর্ষণ, পিচ্ছিল, ঝুরঝুরে বালু, শক্ত মাটি, সাবান পানি, তেল, হাঁটা. The figure says "ধাক্কা" (the page's own verb, never "ঠেলা") for the
+pushes until the book's sentence at the end, and keeps ঘর্ষণ, তৃতীয় সূত্র and "সমান এবং বিপরীত" for the slippery floor and the
+last step. "সাবান পানি" is written without a hyphen, as the page does. Forces are written "নিউটন" (English N),
 as the rest of the chapter. The symbols F and −F are as the book's figure.
 
 ## Open questions
 - The brief had F and −F the other way round; the figure follows the printed picture (F: the foot's push on the ground,
   −F: the ground's push on the person). Is that what the book team means? (The sibling `newtons-third-law` should
   label its pair the same way.)
-- The book's arrows are slanted (back-and-down, forward-and-up). The figure draws only the horizontal part, the part that
-  gives the forward acceleration; the vertical part is balanced by the weight (a different pair). Say so in the book?
+- The book's arrows are slanted (back-and-down, forward-and-up). The figure draws only the horizontal parts, the parts that
+  give the forward acceleration; the vertical parts are balanced by the weight (a different pair). Say so in the book?
 - The numbers (a 50 kg student, 100 N, 50 N, 20 N) are an example; the book gives none. 20 N on the slippery floor is
   "very little" rather than the page's "কোনো বলও পাব না": with no push at all the student would not move and there would
   be nothing to draw. Is "very little" fine for the page's idealisation?

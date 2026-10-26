@@ -27,7 +27,7 @@ test('walking-third-law: push, hold, F and −F, three grounds, the rule grows, 
   await expect(frame.locator('.pvc-act')).toContainText('শক্ত মাটিতে পা দিয়ে ধাক্কা দাও');
   await expect(frame.locator('.pvc-act-marker.pvc-act-under')).toHaveClass(/\bin\b/); // the ring round the pushing foot
   await expect(frame.locator('.pvc-outcome')).toContainText('স্থির দাঁড়িয়ে আছে');
-  await expect(frame.locator('.pvc-rule')).toContainText('কেউ আমাদের ঠেলে না');
+  await expect(frame.locator('.pvc-rule')).toContainText('কেউ আমাদের ধাক্কা দেয় না');
   await expect(frame.locator('.wtl-note')).toBeHidden();
 
   // firm ground: the big button pushes; slowed down, then held at the telling moment
@@ -55,12 +55,12 @@ test('walking-third-law: push, hold, F and −F, three grounds, the rule grows, 
   // both pushes, in plain words where they act (the symbols F and −F come only when all three grounds are found)
   const labels = frame.locator('.pvc-anno-force');
   await expect(labels).toHaveCount(2);
-  await expect(labels.nth(0)).toHaveText('পা মাটিকে ঠেলছে');
-  await expect(labels.nth(1)).toHaveText('মাটি মানুষটিকে ঠেলছে');
-  await expect(frame.locator('.pvc-outcome')).toContainText('পা মাটিকে ঠেলল, মাটি মানুষটিকে ঠেলল');
+  await expect(labels.nth(0)).toHaveText('পা মাটিকে ধাক্কা দিচ্ছে');
+  await expect(labels.nth(1)).toHaveText('মাটি মানুষটিকে ধাক্কা দিচ্ছে');
+  await expect(frame.locator('.pvc-outcome')).toContainText('পা মাটিকে ধাক্কা দিল, মাটি মানুষটিকে ধাক্কা দিল');
   await expect(frame.locator('.pvc-outcome b')).toHaveText('১০০ নিউটন');
   await expect(frame.locator('[data-example="hard"] .pvc-ex-res')).toHaveText('১০০ নিউটন');
-  await expect(frame.locator('.pvc-rule')).toContainText('পা মাটিকে পেছনে ঠেলে, তাই মাটি আমাদের সামনে ঠেলে');
+  await expect(frame.locator('.pvc-rule')).toContainText('পা মাটিকে পেছনে, মাটি আমাদের সামনে ধাক্কা দেয়');
   // the action now goes on to the sand, step 2; the ring is gone
   expect(st.next).toEqual({ ground: 'sand', step: 2 });
   await expect(frame.locator('.pvc-act')).toContainText('বালুতে পা দিয়ে ধাক্কা দাও');
@@ -101,22 +101,25 @@ test('walking-third-law: push, hold, F and −F, three grounds, the rule grows, 
   });
   await expect(frame.locator('.pvc-outcome')).toContainText('পা পিছলে গেল');
   await expect(frame.locator('.pvc-outcome b')).toHaveText('২০ নিউটন');
-  // all three found: the book's sentence comes last, with the names F and −F on the two pushes (same colours, same places)
+  // all three found: the slippery floor's own line stays, the book's sentence comes under it, and the two pushes get the
+  // book's names F and −F (same colours, same places)
+  await expect(frame.locator('.pvc-rule')).toContainText('ঘর্ষণ খুব কম');
   await expect(frame.locator('.pvc-rule')).toContainText('বিপরীত এবং সমান বল পাওয়া যায়');
-  await expect(frame.locator('.pvc-rule')).toContainText('F আর −F');
-  await expect(labels.nth(0)).toHaveText('F পা মাটিকে ঠেলছে');
-  await expect(labels.nth(1)).toHaveText('−F মাটি মানুষটিকে ঠেলছে');
+  await expect(labels.nth(0)).toHaveText('F পা মাটিকে ধাক্কা দিচ্ছে');
+  await expect(labels.nth(1)).toHaveText('−F মাটি মানুষটিকে ধাক্কা দিচ্ছে');
   // the action replays, without a number
   expect(st.next).toEqual({ ground: 'slip', step: '' });
   await expect(frame.locator('.pvc-act')).toContainText('আবার ধাক্কা দাও');
   await frame.locator('[data-act="home"]').click();
   expect(await fig.call('get')).toMatchObject({ phase: 'rest', moved: 0, arrows: false });
+  await expect(frame.locator('.pvc-rule')).toContainText('ঘর্ষণ খুব কম');
   await expect(frame.locator('.pvc-rule')).toContainText('বিপরীত এবং সমান বল পাওয়া যায়');
   await expect(frame.locator('.pvc-anno-force')).toHaveCount(0);
   // the slippery floor on its own (found first): its own sentence, no symbols yet
   await fig.call('set', { ground: 'slip', tried: [], at: 'hold', animate: false });
   await expect(frame.locator('.pvc-rule')).toContainText('ঘর্ষণ খুব কম');
-  await expect(frame.locator('.pvc-anno-force').nth(0)).toHaveText('পা মাটিকে ঠেলছে');
+  await expect(frame.locator('.pvc-anno-force').nth(0)).toHaveText('পা মাটিকে ধাক্কা দিচ্ছে');
+  await expect(frame.locator('.pvc-rule')).not.toContainText('বিপরীত এবং সমান বল পাওয়া যায়');
 
   // a tap on the student pushes too (the ring lets the touch through)
   await fig.call('set', { ground: 'hard', tried: [], at: 'rest', animate: false });
@@ -146,21 +149,27 @@ test('walking-third-law: push, hold, F and −F, three grounds, the rule grows, 
         ? 'equal'
         : text.includes('উল্টো দিকে')
           ? 'cancel'
-          : text.includes('সাবান-পানি')
+          : text.includes('প্রায় এগোল না')
             ? 'slip'
-            : 'sand';
+            : 'who';
     seen.add(kind);
     const before = await fig.call('get');
-    if (kind === 'which') {
+    if (kind === 'which' || kind === 'cancel') {
       await expect(frame.locator('.pvc-anno-letter')).toHaveCount(2); // two grey arrows with letters, not named
       await expect(frame.locator('.pvc-anno-force')).toHaveCount(0);
     } else if (kind === 'equal') {
       await expect(frame.locator('.pvc-anno-force').first()).toContainText('নিউটন'); // the foot's push is read off the picture
-    } else if (kind === 'slip' || kind === 'sand') {
+    } else if (kind === 'slip') {
       expect(before.arrows).toBe(false); // the scene shows the foot and the ground, not the arrows
       expect(before.slipped).toBeGreaterThan(0.15);
+    } else {
+      expect(before.arrows).toBe(false); // the student mid-push; the pushes are named with the answer
     }
     expect(before.phase).toBe('held');
+    // a tap or a key in the test does nothing and puts no hint over the picture
+    await page.keyboard.press('r');
+    await expect(frame.locator('.pvc-hint.show')).toHaveCount(0);
+    expect((await fig.call('get')).phase).toBe('held');
     await expect(frame.locator('.pvc-opt')).toHaveCount(4);
     await frame.locator('.pvc-opt[data-q="0"]').click();
     await fig.advance(600);

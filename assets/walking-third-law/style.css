@@ -37,7 +37,7 @@ body.bg-transparent { background: transparent; }
 .wtl .pvc-anno-lines .k-start, .wtl .pvc-anno-lines circle.k-start { visibility: hidden !important; }
 .wtl.wtl-narrow .pvc-anno-force { width: max-content; max-width: 116px; white-space: normal; font-size: 13.5px; line-height: 1.25; padding: 2px 6px 3px; }
 .wtl.wtl-compact .pvc-anno-force { font-size: 12.5px; line-height: 1.2; padding: 1px 5px 2px; }
-.wtl.wtl-narrow.wtl-compact .pvc-anno-force { max-width: 104px; }
+.wtl.wtl-narrow.wtl-compact .pvc-anno-force { max-width: 108px; }
 .wtl.wtl-compact .pvc-anno-force b { font-size: 14px; }
 .wtl.wtl-compact .pvc-anno-force small { font-size: 12px; }
 
@@ -84,4 +84,8 @@ body.bg-transparent { background: transparent; }
   .wtl .pvc-opt { height: 50px; padding: 2px 4px; }
   .wtl .pvc-opt .wtl-opt { font-size: 12.5px; line-height: 1.2; }
   .wtl .pvc-q-feedback { font-size: 13px; --pvc-q-feedback-min: 4lh; }
+}
+/* a narrower column beside the scene: the rule with the book's sentence under it needs one more line */
+@container pvc (max-width: 700px) and (max-height: 460px) and (min-aspect-ratio: 3/2) {
+  .wtl .pvc-rule { --pvc-rule-lines: 5; }
 }

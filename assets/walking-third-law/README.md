@@ -4,13 +4,15 @@
 
 Interactive 3D figure for the Pathshala book. How we walk, the example that explains Newton's third law: a student
 stands on a path, seen from the side. One big numbered button (its badge rings the pushing foot) takes the first
-push-off of a walk, slowed down 4 times, and holds at the telling moment: in everyday words, "পা মাটিকে ঠেলছে" (an
-arrow on the ground) and "মাটি মানুষটিকে ঠেলছে" (an arrow at the shoe), the two equally long. The row of words is the
-page's three grounds: firm ground (100 N each way, the student moves off), loose sand (the sand gives way, 50 N) and a
-floor made slippery with soapy water or oil (the foot slides back, only 20 N, the student hardly moves). One result
-line, one short rule per idea, and the book's own sentence last, once all three grounds are found, when the two
-pushes also get the book's names F and −F. Numbers are for an example 50 kg student; the book gives none. A test of
-5 questions follows, in the same plain words.
+push-off of a walk, slowed down 4 times, and holds at the telling moment: in everyday words, "পা মাটিকে ধাক্কা দিচ্ছে" (an
+arrow on the ground) and "মাটি মানুষটিকে ধাক্কা দিচ্ছে" (an arrow at the shoe), the two equally long. The row of words is the
+page's three grounds: firm ground (the foot grips; the two pushes are, for example, 100 N each, and the student moves
+off), loose sand (the sand gives way, 50 N) and a floor made slippery with soapy water or oil (the foot slides back, only
+20 N, the student hardly moves). One result line, one short rule per idea (the current ground's own line always stays), and
+the book's own sentence under it, last, once all three grounds are found, when the two pushes also get the book's names F
+and −F. The numbers are for an example 50 kg student; the book gives none. The book's arrows are slanted (back and down,
+forward and up); the figure draws only their horizontal parts, the parts that accelerate the student (the vertical parts
+are balanced by the weight, a different pair). A test of 5 questions follows, in the same plain words.
 
 ## Embed
 

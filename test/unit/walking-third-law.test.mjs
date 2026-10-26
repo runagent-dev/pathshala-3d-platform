@@ -134,7 +134,7 @@ describe('walking: every string, both languages', () => {
   it('the keys the figure builds from the ground and the number exist', () => {
     for (const id of r.GROUND_IDS)
       for (const k of [`chip_${id}`, `act_${id}`, `out_rest_${id}`, `out_${id}`, `rule_${id}`]) assert.ok(k in STRINGS.bn, k);
-    for (const k of ['rule_start', 'rule_all', 'act_again', 'res_push', 'out_push', 'note_slow', 'note_held']) assert.ok(k in STRINGS.bn, k);
+    for (const k of ['rule_start', 'rule_book', 'act_again', 'res_push', 'out_push', 'note_slow', 'note_held']) assert.ok(k in STRINGS.bn, k);
   });
   it('numbers show Bangla digits, with the book’s unit নিউটন; English keeps N', () => {
     const t = createI18n('bn');
@@ -143,37 +143,48 @@ describe('walking: every string, both languages', () => {
     assert.ok(t('out_hard', { n: 100 }).includes('<b>১০০ নিউটন</b>'));
     assert.equal(createI18n('en')('res_push', { n: 100 }), '100 N');
   });
-  it('the result lines say the two pushes are equal, with the number; firm ground names who pushes whom', () => {
+  it('the result lines say the two pushes are equal and that the number is an example (যেমন)', () => {
     const t = createI18n('bn');
     for (const id of r.GROUND_IDS) {
       const s = t(`out_${id}`, { n: r.pushOn(id) });
       assert.ok(s.includes('সমান'), id);
+      assert.ok(s.includes('যেমন'), `${id}: an example number`);
       assert.ok(s.includes(t.num(r.pushOn(id))), id);
     }
-    assert.ok(t('out_hard', { n: 100 }).includes('পা মাটিকে ঠেলল, মাটি মানুষটিকে ঠেলল'));
+    assert.ok(t('out_hard', { n: 100 }).includes('পা মাটিকে ধাক্কা দিল, মাটি মানুষটিকে ধাক্কা দিল'));
+  });
+  it('one verb everywhere, the page’s own: ধাক্কা (no ঠেলা), and "সাবান পানি" without a hyphen', () => {
+    for (const [k, v] of Object.entries(STRINGS.bn)) {
+      assert.ok(!/ঠেল/.test(v), `${k} uses ঠেলা/ঠেলছে`);
+      assert.ok(!v.includes('সাবান-পানি'), k);
+    }
   });
   it('the two pushes are named in plain words first: who pushes whom, no symbol', () => {
-    assert.equal(STRINGS.bn.l_f, 'পা মাটিকে ঠেলছে');
-    assert.equal(STRINGS.bn.l_mf, 'মাটি মানুষটিকে ঠেলছে');
+    assert.equal(STRINGS.bn.l_f, 'পা মাটিকে ধাক্কা দিচ্ছে');
+    assert.equal(STRINGS.bn.l_mf, 'মাটি মানুষটিকে ধাক্কা দিচ্ছে');
     for (const lang of ['bn', 'en']) {
-      for (const k of Object.keys(STRINGS[lang]).filter((x) => !['rule_all', 'title'].includes(x))) {
+      for (const k of Object.keys(STRINGS[lang]).filter((x) => x !== 'title')) {
         assert.ok(
           !/(^|[^A-Za-z])−?F([^A-Za-z]|$)/.test(STRINGS[lang][k].replace(/<[^>]+>/g, '')),
-          `${lang} ${k} uses a symbol before the rule that names it`,
+          `${lang} ${k} uses a symbol (the labels add F and −F themselves at the last step)`,
         );
       }
     }
   });
-  it('the rule: everyday words for each step, one short sentence per idea, the book’s sentence and the symbols last', () => {
+  it('the rule: everyday words for each step, one short sentence per idea, the book’s sentence last', () => {
     const t = createI18n('bn');
     const plain = (k) => t(k).replace(/<[^>]+>/g, '');
-    assert.ok(plain('rule_start').includes('কেউ আমাদের ঠেলে না'));
-    assert.ok(plain('rule_hard').includes('পা মাটিকে পেছনে ঠেলে, তাই মাটি আমাদের সামনে ঠেলে'));
+    assert.ok(plain('rule_start').includes('কেউ আমাদের ধাক্কা দেয় না'));
+    assert.ok(plain('rule_hard').includes('শক্ত মাটিতে পা আটকে থাকে'));
+    assert.ok(plain('rule_hard').includes('পা মাটিকে পেছনে, মাটি আমাদের সামনে ধাক্কা দেয়'));
     assert.ok(plain('rule_sand').includes('বালু সরে যায়'));
-    assert.ok(plain('rule_slip').includes('ঘর্ষণ খুব কম'));
-    assert.ok(plain('rule_all').includes('বল প্রয়োগ করলে বিপরীত এবং সমান বল পাওয়া যায়'));
-    assert.ok(plain('rule_all').includes('নিউটনের তৃতীয় সূত্র') && plain('rule_all').includes('F আর −F'));
-    for (const k of ['rule_start', 'rule_hard', 'rule_sand', 'rule_slip']) assert.ok(plain(k).length <= 85, `${k} is short (${plain(k).length})`);
+    assert.ok(plain('rule_slip').includes('ঘর্ষণ খুব কম') && plain('rule_slip').includes('প্রায়'), 'slip: "almost", as the result shows 20 N');
+    assert.ok(plain('rule_book').includes('বল প্রয়োগ করলে বিপরীত এবং সমান বল পাওয়া যায়'));
+    assert.ok(plain('rule_book').includes('নিউটনের তৃতীয় সূত্র'));
+    for (const k of ['rule_start', 'rule_hard', 'rule_sand', 'rule_slip']) assert.ok(plain(k).length <= 105, `${k} is short (${plain(k).length})`);
+    // under the ground's own line the book's sentence still fits three lines of a phone
+    for (const k of ['rule_hard', 'rule_sand', 'rule_slip'])
+      assert.ok(plain(k).length + plain('rule_book').length <= 170, `${k} + the book’s sentence`);
   });
   it('the test: every wrong choice has a note, every question a worked answer', () => {
     const wrong = {
@@ -181,12 +192,29 @@ describe('walking: every string, both languages', () => {
       e_: ['e_double', 'e_half', 'e_zero'],
       c_: ['c_bigger', 'c_inertia', 'c_muscle'],
       s_: ['s_back', 's_law', 's_weak'],
-      d_: ['d_same', 'd_more', 'd_none'],
+      h_: ['h_foot', 'h_self', 'h_air'],
     };
-    for (const k of wrong.w_) assert.ok(`miss_${k}` in STRINGS.bn, k);
-    for (const k of wrong.e_) assert.ok(`miss_${k}` in STRINGS.bn, k);
-    for (const k of [...wrong.c_, ...wrong.s_, ...wrong.d_]) assert.ok(`miss_${k}` in STRINGS.bn, k);
-    for (const k of ['why_which', 'why_equal', 'why_cancel', 'why_slip', 'why_sand']) assert.ok(k in STRINGS.bn, k);
+    for (const list of Object.values(wrong)) for (const k of list) assert.ok(`miss_${k}` in STRINGS.bn && `miss_${k}` in STRINGS.en, k);
+    for (const k of ['why_which', 'why_equal', 'why_cancel', 'why_slip', 'why_who']) assert.ok(k in STRINGS.bn && k in STRINGS.en, k);
+  });
+  it('the questions take the cause out: the picture has to be read', () => {
+    const t = createI18n('bn');
+    assert.ok(!t('q_slip').includes('সাবান') && !t('q_slip').includes('পিচ্ছিল'));
+    assert.ok(t('q_slip').includes('ছবি দেখো'));
+    assert.ok(!/ঘর্ষণ|বালু/.test(t('q_who')));
+    assert.ok(!t('q_equal').match(/[০-৯]/), 'the number is read off the picture');
+  });
+  it('the right choice is not the longest, and no two choices are alike in length by more than a short line', () => {
+    const t = createI18n('bn');
+    for (const set of [
+      ['c_bodies', 'c_bigger', 'c_inertia', 'c_muscle'],
+      ['s_friction', 's_back', 's_law', 's_weak'],
+      ['h_ground', 'h_foot', 'h_self', 'h_air'],
+    ]) {
+      const len = set.map((k) => t(k).length);
+      assert.ok(len[0] < Math.max(...len) || len.filter((x) => x === len[0]).length > 1, `${set[0]} is the longest choice`);
+      assert.ok(Math.max(...len) <= 50, `${set[0]}: choices fit two lines of a button`);
+    }
   });
   it('the worked answers lead with the answer in bold', () => {
     for (const [k, v] of Object.entries(STRINGS.bn)) if (/^(why|miss)_/.test(k)) assert.ok(v.startsWith('<b>'), k);
