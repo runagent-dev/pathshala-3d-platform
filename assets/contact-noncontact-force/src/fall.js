@@ -1,7 +1,7 @@
 // কোনো কিছু ছেড়ে দিলে মাধ্যাকর্ষণ বলের জন্য নিচে পড়া: a student holds a football (22 cm) out in both hands, its
 // bottom about 1 m above the floor, and lets go: the hands move apart and nothing touches the ball, yet it starts
 // to fall, faster and faster, then bounces a little and stops. Real size, metres. The weight arrow is drawn from
-// the ball's middle (over the ball); while it falls, a dashed line beside it shows the empty space below.
+// the ball's middle (over the ball); while it falls, gap() gives the empty space below it, measured beside it.
 import * as THREE from 'three';
 import { createArrow } from './arrow.js';
 import { createPerson } from './person.js';
@@ -52,7 +52,7 @@ function footballTexture() {
   });
 }
 
-export function createFallScene({ colors }) {
+export function createFallScene({ color }) {
   const root = new THREE.Group();
   root.name = 'FallScene';
   const model = new THREE.Group();
@@ -100,18 +100,20 @@ export function createFallScene({ colors }) {
   castShadows(model);
 
   const hits = [hitBox(0.5, 0.5, 0.5, 0, 0, 0, ball), hitBox(0.6, 1.7, 0.6, 0, 0.85, 0, person.root)];
-  const arrow = createArrow({ color: colors.force, radius: 0.011, head: 0.07, headRadius: 0.03, onTop: true });
+  const arrow = createArrow({ color, radius: 0.011, head: 0.07, headRadius: 0.03, onTop: true });
   root.add(arrow.root);
 
   const v = new THREE.Vector3();
   const handR = new THREE.Vector3();
   const handL = new THREE.Vector3();
+  const body = new THREE.Box3();
+  const gapA = new THREE.Vector3();
+  const gapB = new THREE.Vector3();
   let y = FALL.h;
-  let bob = 0;
 
   function update(m, { arrowOn = false } = {}) {
     y = m.y;
-    ball.position.set(HELD.x, y + R + bob * 0.012, HELD.z);
+    ball.position.set(HELD.x, y + R, HELD.z);
     // the hands hold the ball at its sides, then move apart
     const open = m.open ?? 0;
     const z = R + 0.035 + 0.13 * open;
@@ -137,15 +139,14 @@ export function createFallScene({ colors }) {
     views: { front: V(0.12, 0.14, 1).normalize(), '3d': V(0.75, 0.42, 0.8).normalize() },
     shadow: { center: V(-0.1, 0, 0.1), r: 1.5 },
     update,
-    /** The empty space between the falling ball and the floor (the Earth): to the left of the ball. */
-    marker: (m) => (m.gap != null ? { kind: 'gap', a: V(HELD.x - R - 0.06, y, HELD.z), b: V(HELD.x - R - 0.06, 0, HELD.z) } : null),
+    /** The body the force acts on (the action's ring goes round it): the football. */
+    subject: () => body.set(V(HELD.x - R, y, HELD.z - R), V(HELD.x + R, y + 2 * R, HELD.z + R)),
+    contact: () => null,
+    /** The empty space between the falling football and the floor (the Earth), measured beside the football. */
+    gap: (m) => (m.gap != null ? { a: gapA.set(HELD.x - R - 0.05, y, HELD.z), b: gapB.set(HELD.x - R - 0.05, 0, HELD.z) } : null),
     bodies: () => [
       { min: V(HELD.x - R, y, HELD.z - R), max: V(HELD.x + R, y + 2 * R, HELD.z + R) },
       { min: V(HELD.x - 0.3, FALL.h + R - 0.07, HELD.z - 0.15), max: V(HELD.x + 0.3, FALL.h + R + 0.07, HELD.z + 0.15) }, // the hands
     ],
-    actor: (out, k = 0) => out.set(HELD.x, y + R * [1, 1.6, 0.5][k], HELD.z + R * [1, 0.7, 0.9][k]),
-    wiggle(k) {
-      bob = Math.sin(k * Math.PI * 4) * (1 - k);
-    },
   };
 }

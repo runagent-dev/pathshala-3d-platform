@@ -1,15 +1,16 @@
 // চলতে চলতে ঘর্ষণের জন্য চলন্ত বস্তুর থেমে যাওয়া: a wooden crate slides on a board floor at 2 m/s and friction
 // from the floor slows it to a stop in about 1 m (kinetic friction about 0.2: it slows by about 2 m/s every
 // second). Real size, metres, sliding along +x. The arrow lies on the floor along the crate's bottom edge,
-// pointing back; faint lines behind the crate show that it moves, and a scuff on the boards shows where it slid.
+// pointing back; faint lines behind the crate show that it moves, and a scuff on the boards shows where it slid. The
+// contact patch is the floor under the crate, lit a little wider than the crate, with its touching front edge.
 import * as THREE from 'three';
 import { createArrow } from './arrow.js';
-import { V, box, canvasTexture, castShadows, groundPatch, hitBox } from './parts.js';
+import { V, box, canvasTexture, castShadows, glowPatch, groundPatch, hitBox } from './parts.js';
 
 const CRATE = { w: 0.6, h: 0.48, d: 0.5 };
 const X0 = -0.98; // the crate's middle at the start
 
-export function createFrictionScene({ colors, materials }) {
+export function createFrictionScene({ color, materials }) {
   const root = new THREE.Group();
   root.name = 'FrictionScene';
   const model = new THREE.Group();
@@ -91,16 +92,32 @@ export function createFrictionScene({ colors, materials }) {
   castShadows(model);
 
   const hits = [hitBox(0.95, 0.85, 0.85, 0, 0.35, 0, crate)];
-  const arrow = createArrow({ color: colors.force, radius: 0.013, head: 0.085, headRadius: 0.036 });
+  const arrow = createArrow({ color, radius: 0.013, head: 0.085, headRadius: 0.036 });
   root.add(arrow.root);
+  // the contact patch: the floor under the crate (the rim shows round it) and the crate's touching front edge
+  const patch = glowPatch(CRATE.w + 0.16, CRATE.d + 0.2, color);
+  patch.position.y = 0.003;
+  const edge = new THREE.Mesh(new THREE.BoxGeometry(CRATE.w + 0.02, 0.018, 0.012), new THREE.MeshBasicMaterial({ color, toneMapped: false }));
+  edge.userData.noExport = true;
+  edge.position.set(0, 0.009, CRATE.d / 2 + 0.004);
+  const contactMarks = new THREE.Group();
+  contactMarks.userData.noExport = true;
+  contactMarks.add(patch, edge);
+  patch.visible = true;
+  contactMarks.visible = false;
+  root.add(contactMarks);
 
   const v = new THREE.Vector3();
+  const touch = new THREE.Vector3();
+  const body = new THREE.Box3();
   let x = X0;
-  let wobble = 0;
 
-  function update(m, { arrowOn = false, moving = false } = {}) {
+  function update(m, { arrowOn = false, moving = false, marks = false } = {}) {
     x = X0 + m.pos;
-    crate.position.set(x + wobble * 0.012, 0, 0);
+    crate.position.set(x, 0, 0);
+    contactMarks.position.x = x;
+    contactMarks.visible = marks && m.touching;
+    touch.set(x, 0.01, CRATE.d / 2);
     // the lines show that it moves (also in the first, still picture, where it is already sliding)
     const k = Math.min(1, m.speed / 2);
     for (const l of lines) {
@@ -125,16 +142,17 @@ export function createFrictionScene({ colors, materials }) {
     model,
     hits,
     arrow,
-    fit: { min: V(-1.55, -0.02, -0.3), max: V(0.42, 0.55, 0.45) },
-    views: { front: V(0.12, 0.3, 1).normalize(), '3d': V(0.7, 0.55, 0.8).normalize() },
+    // where it slid from (the scuff behind it) to where it is held at its telling moment, with room for the tag
+    fit: { min: V(-1.45, -0.02, -0.3), max: V(0.2, 0.55, 0.55) },
+    // a little from above, so the lit floor round the crate shows
+    views: { front: V(0.12, 0.42, 1).normalize(), '3d': V(0.7, 0.55, 0.8).normalize() },
     shadow: { center: V(-0.5, 0, 0), r: 1.6 },
     update,
-    /** The face that touches the floor: its front bottom edge. */
-    marker: () => ({ kind: 'edge', a: V(x - CRATE.w / 2, 0.004, CRATE.d / 2), b: V(x + CRATE.w / 2, 0.004, CRATE.d / 2) }),
+    /** The body the force acts on (the action's ring goes round it): the crate. */
+    subject: () => body.set(V(x - CRATE.w / 2, 0, -CRATE.d / 2), V(x + CRATE.w / 2, CRATE.h, CRATE.d / 2)),
+    /** Where the floor's friction touches the crate: its bottom face (the middle of its front edge for the tag). */
+    contact: () => touch,
+    gap: () => null,
     bodies: () => [{ min: V(x - CRATE.w / 2, 0, -CRATE.d / 2), max: V(x + CRATE.w / 2, CRATE.h, CRATE.d / 2) }],
-    actor: (out, k = 0) => out.set(x, CRATE.h * [0.55, 0.85, 0.3][k], CRATE.d / 2),
-    wiggle(k) {
-      wobble = Math.sin(k * Math.PI * 4) * (1 - k);
-    },
   };
 }

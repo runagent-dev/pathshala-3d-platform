@@ -1,12 +1,13 @@
 // The test's new cases (not on the page), each a small scene that keeps moving: update(t) draws it at time t (s),
-// looping. Real size, metres.
+// looping. Real size, metres. Each has the same marks as the book's examples, shown with the answer: the contact
+// patch (marks: true in update) or gap() for the measured gap.
 //  - rope: a student pulls a cart with a rope (the student never touches the cart; the rope does).
 //  - parachute: a student comes down under an open parachute; the air below the canopy holds it back.
 //  - comb: a comb rubbed on dry hair, brought near bits of paper, lifts them without touching them.
 import * as THREE from 'three';
 import { createArrow } from './arrow.js';
 import { createPerson } from './person.js';
-import { V, box, canvasTexture, castShadows, groundPatch, mat, placeTube, tube, wheel } from './parts.js';
+import { V, box, canvasTexture, castShadows, glowSpot, groundPatch, mat, placeTube, tube, wheel } from './parts.js';
 
 const frac = (x) => x - Math.floor(x);
 const clamp01 = (x) => Math.min(1, Math.max(0, x));
@@ -16,7 +17,7 @@ const smooth = (x) => {
 };
 
 // ── a student pulls a cart with a rope ───────────────────────────────────────────────────────────────────────
-export function createRopeScene({ colors, materials }) {
+export function createRopeScene({ color, materials }) {
   const root = new THREE.Group();
   root.name = 'RopeScene';
   const model = new THREE.Group();
@@ -85,13 +86,16 @@ export function createRopeScene({ colors, materials }) {
   root.add(ground);
   castShadows(model);
 
-  const arrow = createArrow({ color: colors.force, radius: 0.014, head: 0.085, headRadius: 0.036 });
+  const arrow = createArrow({ color, radius: 0.014, head: 0.085, headRadius: 0.036 });
   root.add(arrow.root);
+  // the contact patch: where the rope is tied to the cart's ring
+  const spot = glowSpot(color, 0.16);
+  root.add(spot);
   const hand = new THREE.Vector3();
   const ringW = new THREE.Vector3();
   const dir = new THREE.Vector3();
 
-  function update(t, { arrowOn = false } = {}) {
+  function update(t, { arrowOn = false, marks = false } = {}) {
     const d = t * SPEED;
     tiles.offset.x = frac(d / 1) * 1; // 1 m per tile column … repeat 5 over 5 m
     for (const w of wheels) w.rotation.z = -d / 0.11;
@@ -101,6 +105,8 @@ export function createRopeScene({ colors, materials }) {
     placeTube(rope, ringW, hand, 0.009);
     arrow.setOpacity(arrowOn ? 1 : 0);
     if (arrowOn) arrow.set(ringW, dir.subVectors(hand, ringW).normalize(), 0.36);
+    spot.position.copy(ringW);
+    spot.visible = marks;
   }
 
   return {
@@ -113,17 +119,18 @@ export function createRopeScene({ colors, materials }) {
     views: { front: V(0.15, 0.18, 1).normalize(), '3d': V(0.75, 0.5, 0.8).normalize() },
     shadow: { center: V(0, 0, 0), r: 2 },
     update,
-    marker: () => ({ kind: 'contact', at: ringW.clone() }),
+    /** Where the pull reaches the cart: the rope in its ring. */
+    contact: () => ringW,
+    gap: () => null,
     bodies: () => [
       { min: V(CART_X - 0.35, 0, -0.25), max: V(CART_X + 0.35, 0.7, 0.25) },
       { min: V(PERSON_X - 0.3, 0, -0.25), max: V(PERSON_X + 0.3, 1.62, 0.25) },
     ],
-    actor: (out) => out.copy(ringW),
   };
 }
 
 // ── a student under an open parachute ────────────────────────────────────────────────────────────────────────
-export function createParachuteScene({ colors }) {
+export function createParachuteScene({ color }) {
   const root = new THREE.Group();
   root.name = 'ParachuteScene';
   const model = new THREE.Group();
@@ -170,13 +177,17 @@ export function createParachuteScene({ colors }) {
   });
   castShadows(model);
 
-  const arrow = createArrow({ color: colors.force, radius: 0.028, head: 0.17, headRadius: 0.07 });
+  const arrow = createArrow({ color, radius: 0.028, head: 0.17, headRadius: 0.07 });
   root.add(arrow.root);
+  // the contact patch: the canopy's cloth, which the air below it touches
+  const spot = glowSpot(color, 0.95);
+  root.add(spot);
   const hands = [V(0.05, 1.72, 0.2), V(0.05, 1.72, -0.2)];
   const handW = new THREE.Vector3();
   const v = new THREE.Vector3();
+  const touch = new THREE.Vector3();
 
-  function update(t, { arrowOn = false } = {}) {
+  function update(t, { arrowOn = false, marks = false } = {}) {
     const sway = Math.sin(t * 1.3) * 0.035;
     model.rotation.z = sway;
     person.pose({ lean: 0, hands, walk: Math.PI / 2, stride: 0.06, spread: 0.08, lift: 0.03 });
@@ -196,6 +207,9 @@ export function createParachuteScene({ colors }) {
     arrow.setOpacity(arrowOn ? 1 : 0);
     if (arrowOn)
       arrow.set(v.set(-Math.sin(sway) * (RIM_Y + top), Math.cos(sway) * (RIM_Y + top) + 0.02, 0), V(-Math.sin(sway), Math.cos(sway), 0), 0.75);
+    touch.set(0, RIM_Y + top * 0.35, rimR * 0.5).applyMatrix4(model.matrixWorld);
+    spot.position.copy(touch);
+    spot.visible = marks;
   }
 
   return {
@@ -209,17 +223,17 @@ export function createParachuteScene({ colors }) {
     shadow: { center: V(0, 1.5, 0), r: 2.5 },
     update,
     /** The canopy's underside, where the air pushes on it. */
-    marker: () => ({ kind: 'contact', at: V(0, RIM_Y + top * 0.35, rimR * 0.5).applyMatrix4(model.matrixWorld) }),
+    contact: () => touch,
+    gap: () => null,
     bodies: () => [
       { min: V(-rimR, RIM_Y - 0.1, -rimR), max: V(rimR, RIM_Y + top, rimR) },
       { min: V(-0.3, 0, -0.3), max: V(0.3, 1.75, 0.3) },
     ],
-    actor: (out) => out.set(0, RIM_Y + top * 0.5, rimR),
   };
 }
 
 // ── a comb lifts bits of paper ───────────────────────────────────────────────────────────────────────────────
-export function createCombScene({ colors }) {
+export function createCombScene({ color }) {
   const root = new THREE.Group();
   root.name = 'CombScene';
   const model = new THREE.Group();
@@ -295,9 +309,11 @@ export function createCombScene({ colors }) {
   root.add(table);
   castShadows(model);
 
-  const arrow = createArrow({ color: colors.force, radius: 0.0011, head: 0.0062, headRadius: 0.0028 });
+  const arrow = createArrow({ color, radius: 0.0011, head: 0.0062, headRadius: 0.0028 });
   root.add(arrow.root);
   const v = new THREE.Vector3();
+  const gapA = new THREE.Vector3();
+  const gapB = new THREE.Vector3();
   let combY = 0.1;
   let watched = bits[0]; // the bit the arrow is on
 
@@ -314,7 +330,7 @@ export function createCombScene({ colors }) {
     const u = frac(t / LOOP) * LOOP;
     const lower = smooth(u / 0.8);
     const raise = smooth((u - 3.4) / 0.6);
-    combY = 0.105 - 0.05 * lower + 0.05 * raise; // the comb's middle above the table
+    combY = 0.105 - 0.07 * lower + 0.07 * raise; // the comb's middle above the table: its teeth come to about 2 cm
     comb.position.set(0, combY, 0);
     const teethY = combY - COMB.h / 2 - 0.0012;
     let next = null;
@@ -327,7 +343,7 @@ export function createCombScene({ colors }) {
     }
     watched = next || bits.find((b) => b.userData.order === 6);
     arrow.setOpacity(arrowOn && next ? 1 : 0);
-    if (arrowOn && next) arrow.set(v.set(next.position.x, next.position.y + 0.002, next.position.z), V(0, 1, 0), 0.024);
+    if (arrowOn && next) arrow.set(v.set(next.position.x, next.position.y + 0.002, next.position.z), V(0, 1, 0), 0.012);
   }
 
   return {
@@ -340,13 +356,12 @@ export function createCombScene({ colors }) {
     views: { front: V(0.05, 0.3, 1).normalize(), '3d': V(0.7, 0.5, 0.8).normalize() },
     shadow: { center: V(0, 0, 0), r: 0.2 },
     update,
-    /** The empty space between a bit still on the table and the comb's teeth. */
-    marker: () => ({
-      kind: 'gap',
-      a: V(watched.position.x - 0.012, watched.position.y, watched.position.z + 0.006),
-      b: V(watched.position.x - 0.012, combY - COMB.h / 2, watched.position.z + 0.006),
+    contact: () => null,
+    /** The empty space between a bit still on the table and the comb's teeth, measured beside the bit. */
+    gap: () => ({
+      a: gapA.set(watched.position.x - 0.012, watched.position.y, watched.position.z + 0.006),
+      b: gapB.set(watched.position.x - 0.012, combY - COMB.h / 2, watched.position.z + 0.006),
     }),
     bodies: () => [{ min: V(-COMB.len / 2, combY - COMB.h / 2, -0.01), max: V(COMB.len / 2 + 0.05, combY + COMB.h / 2, 0.01) }],
-    actor: (out) => out.set(0, combY, 0.01),
   };
 }

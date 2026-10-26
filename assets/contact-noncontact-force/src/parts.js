@@ -1,5 +1,6 @@
 // Small pieces the scenes share: materials by colour, a tube between two points, a wheel, a ground patch with a
-// soft edge (so each scene stands on the white page), a canvas texture, and an invisible tap target.
+// soft edge (so each scene stands on the white page), a canvas texture, an invisible tap target, and the glowing
+// contact patches (a spot where two bodies touch at a point, a flat patch under a body on a floor).
 import * as THREE from 'three';
 
 const UP = new THREE.Vector3(0, 1, 0);
@@ -154,6 +155,96 @@ export function blob(r, opacity = 0.35) {
   );
   mesh.rotation.x = -Math.PI / 2;
   mesh.userData.noExport = true;
+  return mesh;
+}
+
+/**
+ * The contact patch where two bodies touch, seen from anywhere: a disc facing the camera, a bright rim round a light
+ * fill, in the colour of contact, drawn over what it marks (the hook in its ring, the palms on the carton stay seen
+ * through the fill). `diameter` in the scene's metres; never smaller than `minPx` on the screen. Not exported.
+ */
+export function glowSpot(color, diameter, { minPx = 40 } = {}) {
+  const tex = canvasTexture(
+    128,
+    128,
+    (ctx, W, H) => {
+      const img = ctx.createImageData(W, H);
+      for (let y = 0; y < H; y++)
+        for (let x = 0; x < W; x++) {
+          const r = Math.hypot(x + 0.5 - W / 2, y + 0.5 - H / 2) / (W / 2);
+          // a light fill, a bright rim, a soft edge
+          const a = r < 0.6 ? 0.26 : r < 0.74 ? 0.26 + (0.74 * (r - 0.6)) / 0.14 : r < 0.88 ? 1 : r < 1 ? (1 - r) / 0.12 : 0;
+          const i = (y * W + x) * 4;
+          img.data[i] = img.data[i + 1] = img.data[i + 2] = 255;
+          img.data[i + 3] = Math.round(255 * a);
+        }
+      ctx.putImageData(img, 0, 0);
+    },
+    { srgb: false },
+  );
+  tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+  const sprite = new THREE.Sprite(
+    new THREE.SpriteMaterial({ map: tex, color, transparent: true, depthTest: false, depthWrite: false, toneMapped: false }),
+  );
+  sprite.name = 'ContactSpot';
+  sprite.renderOrder = 20;
+  sprite.userData.noExport = true;
+  sprite.visible = false;
+  const size = new THREE.Vector2();
+  const at = new THREE.Vector3();
+  sprite.onBeforeRender = (renderer, _scene, camera) => {
+    renderer.getSize(size);
+    const dist = at.setFromMatrixPosition(sprite.matrixWorld).distanceTo(camera.position);
+    const perPx = (2 * dist * Math.tan(THREE.MathUtils.degToRad(camera.fov ?? 30) / 2)) / Math.max(1, size.y);
+    const d = Math.max(diameter, minPx * perPx);
+    if (Math.abs(sprite.scale.x - d) > 1e-9) {
+      sprite.scale.set(d, d, 1);
+      sprite.updateMatrixWorld();
+    }
+  };
+  return sprite;
+}
+
+/**
+ * The contact patch of a body lying on a floor: a flat glow a little larger than its footprint (w × d m), bright at
+ * the edges that show round the body, in the colour of contact. Not exported.
+ */
+export function glowPatch(w, d, color) {
+  const tex = canvasTexture(
+    128,
+    128,
+    (ctx, W, H) => {
+      const img = ctx.createImageData(W, H);
+      for (let y = 0; y < H; y++)
+        for (let x = 0; x < W; x++) {
+          const e = Math.min(x + 0.5, W - x - 0.5, y + 0.5, H - y - 0.5) / W; // 0 at the edge … 0.5 in the middle
+          const a = e < 0.04 ? e / 0.04 : e < 0.16 ? 1 : 0.45;
+          const i = (y * W + x) * 4;
+          img.data[i] = img.data[i + 1] = img.data[i + 2] = 255;
+          img.data[i + 3] = Math.round(255 * a);
+        }
+      ctx.putImageData(img, 0, 0);
+    },
+    { srgb: false },
+  );
+  tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+  const mesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(w, d),
+    new THREE.MeshBasicMaterial({
+      map: tex,
+      color,
+      transparent: true,
+      depthWrite: false,
+      toneMapped: false,
+      polygonOffset: true,
+      polygonOffsetFactor: -2,
+    }),
+  );
+  mesh.rotation.x = -Math.PI / 2;
+  mesh.name = 'ContactPatch';
+  mesh.renderOrder = 2;
+  mesh.userData.noExport = true;
+  mesh.visible = false;
   return mesh;
 }
 
