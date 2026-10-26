@@ -8,8 +8,8 @@ import * as THREE from 'three';
 import { textMesh } from '@shared/student/materials.js';
 import { DHAKA, earthTexture } from './maps.js';
 
-export const WEIGHT = { h: 0.15, r0: 0.092, r1: 0.074 }; // in Earth radii (drawn huge)
-const LIFT = 0.085; // how far above the ground the weight is held in one test question (drawn huge: "1 m")
+export const WEIGHT = { h: 0.22, r0: 0.13, r1: 0.105 }; // in Earth radii (drawn huge)
+export const LIFT = 0.085; // how far above the ground the weight is held in one test question (drawn huge: "1 m")
 
 /** The layers on a cut face: a radial gradient, centre at the middle of the texture. */
 function layersTexture() {
@@ -71,7 +71,7 @@ function createWeight(materials, label, name) {
   const ring = new THREE.Mesh(new THREE.TorusGeometry(r1 * 0.42, r1 * 0.11, 10, 28), materials.iron);
   ring.position.y = h + r1 * 0.36;
   ring.name = `${name}Handle`;
-  const text = textMesh(label, h * 0.26, { color: '#f1f3f5', weight: 700 });
+  const text = textMesh(label, h * 0.3, { color: '#f1f3f5', weight: 700 });
   text.position.set(0, h * 0.5, r1 * 1.02 + 0.002);
   group.add(body, ring, text);
   return group;
@@ -143,10 +143,10 @@ export function createEarth({ renderer, kg }) {
   root.add(weights);
 
   let placed = 1; // 0: off the Earth (above it, out of the picture), 1: on the ground
-  let lift = 0; // 0 … 1: held LIFT above the ground (a test question)
+  let lift = 0; // Earth radii above the ground (a test question holds the weight up)
   let count = 1;
   function layout() {
-    const ground = 1 + lift * LIFT;
+    const ground = 1 + lift;
     weights.position.y = ground + (1 - placed) * 1.6;
     w2.position.y = WEIGHT.h; // on the first one's flat top
     w1.children[1].visible = count === 1; // the bottom weight's handle hides under the top one
@@ -164,7 +164,7 @@ export function createEarth({ renderer, kg }) {
       placed = k;
       layout();
     },
-    /** 0 … 1: the weight held a little above the ground (the test's "1 m"). */
+    /** The weight held this far above the ground, in Earth radii (the test's "1 m" is LIFT; one radius is 1). */
     setLift(k) {
       lift = k;
       layout();

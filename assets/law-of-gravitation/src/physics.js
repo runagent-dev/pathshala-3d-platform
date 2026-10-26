@@ -96,9 +96,13 @@ export function distanceChoices(F, k = 2) {
   return [F / (k * k), F / k, F * k, F * k * k];
 }
 
-/** g = GM/R² from the book's numbers, and the usual slips: R not squared, the diameter for R, R left in km. */
-export function gravityChoices(M = EARTH.M, R = EARTH.R) {
-  return [gravity(M, R), (G * M) / R, gravity(M, 2 * R), gravity(M, R / 1000)];
+/**
+ * g at a place k Earth radii from the centre (k = 2: a weight one radius above the ground), with the usual slips: g
+ * = GM/(kR)² is right; the distance not squared; g unchanged (as if height did not matter); the wrong way squared.
+ */
+export function heightChoices(k = 2, M = EARTH.M, R = EARTH.R) {
+  const g0 = gravity(M, R);
+  return [gravity(M, k * R), g0 / k, g0, g0 * k * k];
 }
 
 /** R for a body 1 m above the ground: about the Earth's radius; the height above the ground; the diameter; km read as m. */

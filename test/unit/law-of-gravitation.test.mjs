@@ -135,13 +135,16 @@ describe('law of gravitation: the test’s choices (right answer first, then the
     close(c[2], F0 / 2);
     close(c[3], F0 / 4);
   });
-  it('g: about 9.8; R not squared; the diameter; R in km', () => {
-    const c = lg.gravityChoices();
-    close(c[0], lg.gravity());
-    close(c[1], (lg.G * lg.EARTH.M) / lg.EARTH.R, 1e-9);
-    close(c[2], lg.gravity() / 4);
-    close(c[3], lg.gravity() * 1e6);
-    assert.equal(lg.roundTo(c[2], 1), 2.5);
+  it('g two radii from the centre: a quarter; the distance not squared; unchanged; the wrong way squared', () => {
+    const g0 = lg.gravity();
+    const c = lg.heightChoices(2);
+    close(c[0], g0 / 4);
+    close(c[1], g0 / 2);
+    close(c[2], g0);
+    close(c[3], g0 * 4);
+    assert.equal(lg.roundTo(c[0], 1), 2.5);
+    assert.equal(lg.roundTo(c[1], 1), 4.9);
+    assert.equal(lg.roundTo(c[3], 1), 39.3);
   });
   it('R for a weight 1 m up: about the Earth’s radius; the height; the diameter; km read as m', () => {
     const c = lg.radiusChoices();

@@ -34,10 +34,10 @@ test('law-of-gravitation: double the distance, a quarter; double a mass, twice; 
   expect(st.force / st.before).toBeCloseTo(2, 6);
   expect(st.force).toBeCloseTo(F(2000, 1000, 2), 14);
 
-  // step 3: the right mass too: four times the force at 2 m, as much as at the start
+  // step 3: the right mass too: four times the force at 2 m (the faint arrows are the mass example's start)
   st = await fig.call('set', { act: true });
   expect(st).toMatchObject({ example: 'mass', m1: 2000, m2: 2000, last: 'm2' });
-  expect(st.force / st.before).toBeCloseTo(2, 6);
+  expect(st.force / st.before).toBeCloseTo(4, 6); // compared with where the mass example starts: four times
   expect(st.force).toBeCloseTo(F(1000, 1000, 1), 14);
   expect(st.next).toEqual({ example: 'earth', act: 'place', step: 4 });
 
@@ -55,6 +55,15 @@ test('law-of-gravitation: double the distance, a quarter; double a mass, twice; 
   expect(st.next).toEqual({ example: 'dist', act: 'again', step: '' });
   st = await fig.call('set', { act: true });
   expect(st).toMatchObject({ example: 'dist', scene: 'spheres', r: 1, m1: 1000, m2: 1000, before: null });
+  // starting again is a real restart: nothing found, the numbering begins at 1 once more (never a step 6)
+  expect(Object.values(st.found).some(Boolean)).toBe(false);
+  expect(st.next).toEqual({ example: 'dist', act: 'r2', step: 1 });
+  st = await fig.call('set', { act: true });
+  expect(st.next).toEqual({ example: 'mass', act: 'm1', step: 2 });
+  // a step done before keeps its own number when it is done again (the quiet reset on the Earth: step 4, not 6)
+  await fig.call('set', { steps: 5, animate: false });
+  st = await fig.call('set', { example: 'earth' });
+  expect(st.next).toEqual({ example: 'earth', act: 'place', step: 4 });
 
   // the example words: the mass example starts with both 1,000 kg 2 m apart
   st = await fig.call('set', { example: 'mass' });
@@ -91,7 +100,7 @@ test('law-of-gravitation: the panel, a tap on the ringed sphere, the keys and th
   await fig.advance(2500);
   let st = await fig.call('get');
   expect(st).toMatchObject({ r: 2, last: 'r2' });
-  await expect(f.locator('.pvc-outcome')).toContainText('আগের ৪ ভাগের ১');
+  await expect(f.locator('.pvc-outcome')).toContainText('শুরুর ৪ ভাগের ১');
   await expect(f.locator('[data-example="dist"] .pvc-ex-res')).toContainText('৪ ভাগের ১');
 
   // a tap on the ringed sphere (the left one now) does the same as the button

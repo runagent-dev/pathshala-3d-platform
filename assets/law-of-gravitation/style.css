@@ -11,10 +11,12 @@ body.bg-transparent { background: transparent; }
 
 /* the result line: the force in gravity's violet */
 .lg .pvc-outcome b { color: var(--c-g); }
-.lg .pvc-outcome small { font-size: 0.86em; white-space: nowrap; }
+.lg .pvc-outcome small { font-size: 0.86em; white-space: nowrap; color: #6b52d6; } /* the colour of the faint arrows of the moment before */
 
 /* on the view: the honest note, top left (the corner buttons are top right) */
 .lg-note { position: absolute; left: 10px; top: 10px; z-index: 5; max-width: calc(100% - 240px); color: #5c6672; font-size: 13px; font-weight: 500; line-height: 1.4; pointer-events: none; }
+.lg-note.below { top: 54px; max-width: calc(100% - 20px); }
+.lg-note.hide { display: none; }
 
 /* the labels: masses written on the iron balls, the arrows' F beside them (no leader lines), the rest as parts */
 .lg .pvc-anno-ball { padding: 0; border: 0; background: none; color: #fff; font-size: clamp(8.5px, calc(var(--lg-ball, 72) * 0.19px), 13.5px); font-weight: 600; text-align: center; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55); transition: none; }
@@ -22,8 +24,13 @@ body.bg-transparent { background: transparent; }
 .lg .pvc-anno-ball small { display: block; font-size: 0.92em; line-height: 1.25; white-space: nowrap; }
 .lg .pvc-anno-flat { padding: 0 4px; border: 0; background: rgba(255, 255, 255, 0.82); border-radius: 4px; color: var(--c, var(--ink)); font-size: 15px; font-weight: 700; transition: none; }
 .lg .pvc-anno-flat i { font-size: 1.12em; }
-.lg .pvc-anno-lines .k-ball, .lg .pvc-anno-lines .k-flat { display: none; }
+.lg .pvc-anno-lines .k-ball, .lg .pvc-anno-lines .k-flat, .lg .pvc-anno-lines .k-rdim { display: none; }
+/* r: written on the bench top between the stands, small enough for the thin top of a wide, short view */
+.lg .pvc-anno-rdim { padding: 1px 6px; border: 0; border-radius: 4px; background: rgba(255, 255, 255, 0.88); color: var(--ink); font-size: 12.5px; font-weight: 700; line-height: 1.25; transition: none; }
+.lg .pvc-anno-rdim i { font-size: 1.1em; }
 .lg .pvc-anno-part { font-size: 13.5px; }
+.lg[data-short='1'] .pvc-anno-part { font-size: 11.5px; padding: 1px 6px; }
+.lg[data-short='1'] .pvc-anno-flat { font-size: 12.5px; }
 
 /* the test: answers in words or numbers with powers of ten; room kept for the question and the worked answer */
 .lg .pvc-opt { font-size: 16px; line-height: 1.25; }
