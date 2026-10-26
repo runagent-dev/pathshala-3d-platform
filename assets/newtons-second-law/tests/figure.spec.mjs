@@ -35,6 +35,12 @@ test('newtons-second-law: F = ma for the handcart, and the direction of the chan
   expect(mid.speed).toBeLessThan(1.2);
   expect(await text('.pvc-rule')).toContain('বল যতক্ষণ কাজ করছে, বেগ ততক্ষণ বাড়ছে');
   expect(await fig.frame.locator('.pvc-act-marker.in:not(.pvc-act-under)').count()).toBe(0); // no ring while it moves
+  // the action keeps its words and its number while the push is on (no "again" in the middle of it)
+  expect(await text('.pvc-act')).toContain('গাড়িটি ২ সেকেন্ড ঠেলো');
+  expect(await text('.pvc-act')).not.toContain('আবার');
+  // the arrows are labelled with their numbers (a is on the picture before the result line has it)
+  expect(await text('.pvc-anno-layer')).toContain('a = ১ ms');
+  expect(await text('.pvc-anno-layer')).toContain('F = ১০০ নিউটন');
   // the result line: the time to 0.1 s, the velocity from that time
   expect(await text('.pvc-outcome')).toMatch(/^t = ১\.[০-৯] s, বেগ v = ১\.[০-৯]০ m\/s$/);
   await fig.advance(1300);
@@ -44,6 +50,9 @@ test('newtons-second-law: F = ma for the handcart, and the direction of the chan
   expect(await text('[data-example="base"] .pvc-ex-res')).toBe('১ ms−2');
   expect(await text('.pvc-rule')).toContain('F = ma');
   expect(await text('.pvc-rule')).toContain('১০০ নিউটন = ১০০ kg × ১ ms−2');
+  expect(await text('.pvc-rule')).toContain('ভরবেগ প্রতি সেকেন্ডে ১০০ kg m/s করে বাড়ছে');
+  // the push is over: the words on the view say why the velocity stays
+  expect(await text('.pvc-anno-layer')).toContain('ঠেলা শেষ: বল নেই, তাই বেগ বদলায় না');
   // rolling on at 2 m/s (no force): 0.5 s later still 2 m/s
   await fig.advance(500);
   expect(await fig.call('get')).toMatchObject({ phase: 'coast', speed: 2 });
@@ -56,6 +65,7 @@ test('newtons-second-law: F = ma for the handcart, and the direction of the chan
   const stopped = await fig.call('get');
   expect(stopped.phase).toBe('stopped');
   expect(stopped.distance).toBeCloseTo(5.52, 2);
+  expect(await text('.pvc-anno-layer')).toContain('বস্তা থামাল');
 
   // double the force: two people, 2 ms⁻²
   await fig.frame.locator('.pvc-act').click();
@@ -79,6 +89,7 @@ test('newtons-second-law: F = ma for the handcart, and the direction of the chan
   expect(brake.force).toBe(-100);
   expect(brake.acceleration).toBe(-1);
   expect(await text('.pvc-rule')).toContain('বল বাম দিকে, গাড়ি চলছে ডান দিকে');
+  expect(await text('.pvc-anno-layer')).toContain('ভরবেগের পরিবর্তন'); // the green arrow, the way of the force
   await fig.advance(1800);
   const back = await fig.call('get');
   expect(back).toMatchObject({ phase: 'stopped', speed: 0, measured: { u: 2, v: 0, a: -1 } });
@@ -110,5 +121,9 @@ test('newtons-second-law: F = ma for the handcart, and the direction of the chan
 
   await fig.call('reset');
   expect(await fig.call('get')).toMatchObject({ example: 'base', phase: 'rest', results: { base: null, force: null, mass: null, back: null } });
+  // the direction example found first: the rule works the force out from the change of momentum
+  await fig.call('set', { example: 'back', push: true, animate: false });
+  expect(await text('.pvc-rule')).toContain('(০ − ২০০) ÷ ২ = −১০০ নিউটন');
+  expect(await text('.pvc-outcome')).toBe('a = (v − u) ÷ t = (০ − ২) ÷ ২ = −১ ms−2');
   expect(log.errors).toEqual([]);
 });

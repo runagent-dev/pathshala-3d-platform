@@ -33,7 +33,7 @@ import {
   EXAMPLE_IDS,
   EXAMPLES,
   GIVE,
-  MARK_STEP,
+  markTimes,
   measured,
   momentum,
   PAIR_CASES,
@@ -66,11 +66,17 @@ export const DEFAULTS = {
 
 // one colour per quantity, as in the chapter's other figures (docs/book-notes.md)
 export const COLORS = { force: '#e8590c', acc: '#0c8599', vel: '#1c6fd9', mom: '#2f9e44', momText: '#237a35', mass: '#495057' };
-const F_SCALE = 0.0055; // m of arrow per newton (100 N: 0.55 m)
-const A_SCALE = 0.5; // m of arrow per ms⁻² (2 ms⁻²: 1 m)
+const F_SCALE = 0.0077; // m of arrow per newton (100 N: 0.77 m)
+const A_SCALE = 0.7; // m of arrow per ms⁻² (2 ms⁻²: 1.4 m)
+const A_GAP = 0.78; // m between the force's arrow and the acceleration's over it (room for the force's label between them)
+const A_GAP_WIDE = 0.42; // the same on a wide, low view (the force's label is then beside its tip)
+const DP_LEN = 0.7; // m: the change of momentum's arrow (its direction is what it shows)
 const V_SCALE = 0.25; // m of arrow per m/s (4 m/s: 1 m)
 const Z_NEAR = 0.6; // the velocity arrow on the cart's near side
 const V_Y = 0.12; // the velocity arrow: in front of the cart, low, on its near side (below the feet of anyone there)
+const DIR_WINDOW = 4.5; // m of the lane in view for the question about the direction (the person in front is in it)
+const STOP_SHOW = 1.6; // s the words for the sacks stopping the cart stay
+const COAST_MIN = 0.6; // s: a coast shorter than this is too quick to need words
 const DOUBLE_TAP = 450; // ms: a second request this soon after one is ignored
 const PAIR_B = 4.3; // m: where the second cart's front waits in the two-cart question
 const XP = new THREE.Vector3(1, 0, 0);
@@ -125,7 +131,7 @@ export function createApp(root, options = {}) {
   marks.mesh.userData.noExport = true;
   world.add(floor.group, rig.root, rigB.root, marks.mesh);
 
-  const arrow = (color, name) => createArrow({ color, radius: 0.019, head: 0.11, headRadius: 0.048, name });
+  const arrow = (color, name) => createArrow({ color, radius: 0.028, head: 0.16, headRadius: 0.07, name });
   const arrows = {
     F: arrow(COLORS.force, 'ForceArrow'),
     a: arrow(COLORS.acc, 'AccelerationArrow'),
@@ -175,11 +181,11 @@ export function createApp(root, options = {}) {
     mode: 'explore',
     locked: false,
     /** @type {any} */
-    run: null, // { plan, t0, pausedAt, quiet, known, done, hit, knownP, doneP }
+    run: null, // { plan, t0, pausedAt, quiet, known, done, hit, marks, knownP, doneP }
     results: { base: null, force: null, mass: null, back: null }, // the acceleration found (ms⁻²)
     seen: [], // examples in the order their results came
     scene: 'lane', // 'lane' | 'rig' (close on the cart, a test question) | 'pair' (two carts, a test question)
-    show: { F: true, a: true, v: true }, // the arrows (the test hides some until the answer)
+    show: { F: true, a: true, v: true, dp: 'auto' }, // the arrows (the test hides some until the answer); dp: 'auto' = while the person in front pushes back
     follow: 0, // m the side view has moved along the lane with the cart
     userMovedCamera: false,
   };
@@ -264,6 +270,7 @@ export function createApp(root, options = {}) {
       known: false,
       done: false,
       hit: false,
+      marks: markTimes(plan), // when the cart's front leaves its marks (s after the push began)
       knownP: new Promise((r) => (resolveKnown = r)),
       doneP: new Promise((r) => (resolveDone = r)),
     };
@@ -318,6 +325,14 @@ export function createApp(root, options = {}) {
     }
     if (!run.done && r.phase === 'stopped') {
       run.done = true;
+      // nothing moves now, so nothing draws again by itself: look again when the words for the stop are due to go
+      if (!run.plan.back)
+        setTimeout(
+          () => {
+            if (s.run === run) refresh();
+          },
+          STOP_SHOW * 1000 + 60,
+        );
       run.resolveDone(true);
       emitChange();
     }
@@ -331,23 +346,30 @@ export function createApp(root, options = {}) {
     const run = s.run;
     if (!run) return;
     const base = rig.baseX;
-    while (marks.count * MARK_STEP <= Math.min(time, run.plan.end) + 1e-9 && marks.count < 12)
-      marks.add(base + runAt(run.plan, marks.count * MARK_STEP).x);
+    while (marks.count < run.marks.length && run.marks[marks.count] <= time + 1e-9) marks.add(base + runAt(run.plan, run.marks[marks.count]).x);
   }
 
   const tmpA = new THREE.Vector3();
-  /** The force (orange, where it acts), the acceleration (teal, over the load) and the velocity (blue, in front). */
+  /**
+   * The force (orange, where it acts), the acceleration (teal, over the load, while the push lasts) and the velocity
+   * (blue, in front). While the person in front pushes back, the change of momentum (green, in the same place as the
+   * acceleration's arrow and the same way as the force) takes the acceleration's place: the panel works out that a.
+   */
   function placeArrows(r) {
     const front = rig.front();
     const [yF, yA] = arrowHeights(rig);
     // from the cart's middle; pushed back from the front, from the front rail where the person in front pushes
     const cx = r.F < 0 || r.a < 0 ? front + CART.rail.x : front - CART.length / 2;
+    const way = r.F < 0 || r.a < 0 ? XN : XP;
     // the force on the cart and its acceleration, one over the other from the cart's middle: they always point the
     // same way, and their lengths compare (the force doubled: both double; the mass doubled: the same force, half a)
     if (s.show.F && Math.abs(r.F) > 1e-6) arrows.F.set(tmpA.set(cx, yF, 0), r.F > 0 ? XP : XN, Math.abs(r.F) * F_SCALE);
     else arrows.F.hide();
     const pushing = r.phase === 'push' || r.phase === 'brake';
-    if (s.show.a && pushing && Math.abs(r.a) > 1e-6) arrows.a.set(tmpA.set(cx, yA, 0), r.a > 0 ? XP : XN, Math.abs(r.a) * A_SCALE);
+    const dp = pushing && (s.show.dp === true || (s.show.dp === 'auto' && r.phase === 'brake'));
+    if (dp) arrows.dp.set(tmpA.set(cx, yA, 0), way, DP_LEN);
+    else arrows.dp.hide();
+    if (s.show.a && pushing && !dp && Math.abs(r.a) > 1e-6) arrows.a.set(tmpA.set(cx, yA, 0), way, Math.abs(r.a) * A_SCALE);
     else arrows.a.hide();
     const v = shown(r).v;
     if (s.show.v && v > 0.004) arrows.v.set(tmpA.set(front + 0.03, V_Y, Z_NEAR), XP, v * V_SCALE);
@@ -355,10 +377,12 @@ export function createApp(root, options = {}) {
     stage.invalidate();
   }
 
+  /** A wide, low view (a phone on its side, a tablet): the arrows' labels go beside their tips, the arrows close together. */
+  const roomy = () => wideness() >= 0.5;
   /** The heights of the force and the acceleration arrows over a cart: just over its load, and over that. */
-  function arrowHeights(target) {
+  function arrowHeights(target, gap = roomy() ? A_GAP_WIDE : A_GAP) {
     const yF = Math.max(CART.rail.y, target.cart.top()) + 0.17;
-    return [yF, yF + 0.34];
+    return [yF, yF + gap];
   }
 
   // ── labels on the scene ─────────────────────────────────────────────────────
@@ -427,14 +451,35 @@ export function createApp(root, options = {}) {
     mk: new THREE.Vector3(),
     sack: new THREE.Vector3(),
     dp: new THREE.Vector3(),
+    c: new THREE.Vector3(),
+    stop: new THREE.Vector3(),
   };
   const mid = (a, out) => out.copy(a.root.position).add(a.tip).multiplyScalar(0.5);
   const SPOTS = {
+    // a little higher than `above`: the force's label clears its own arrow's head and the acceleration's arrow
+    over: [
+      { dx: 0, dy: -28 },
+      { dx: -32, dy: -28 },
+      { dx: 32, dy: -28 },
+      { dx: -32, dy: -40 },
+      { dx: 32, dy: -40 },
+      { dx: 0, dy: -40 },
+      { dx: 0, dy: 26 },
+    ],
+    // the two carts' accelerations (the test): close over their arrows, the stage being low there
+    pair: [
+      { dx: 0, dy: -20 },
+      { dx: 0, dy: -32 },
+      { dx: 0, dy: 22 },
+      { dx: 0, dy: 34 },
+    ],
     above: [
-      { dx: 0, dy: -16 },
-      { dx: 0, dy: -30 },
-      { dx: 0, dy: 18 },
-      { dx: 0, dy: 32 },
+      { dx: 0, dy: -28 },
+      { dx: -32, dy: -28 },
+      { dx: 32, dy: -28 },
+      { dx: 0, dy: -42 },
+      { dx: 0, dy: 26 },
+      { dx: 0, dy: 40 },
     ],
     right: [
       { dx: 12, dy: 0 },
@@ -442,6 +487,8 @@ export function createApp(root, options = {}) {
       { dx: -10, dy: 20 },
       { dx: 10, dy: 16 },
       { dx: 0, dy: 34 },
+      { dx: -28, dy: 36 },
+      { dx: -64, dy: 36 },
     ],
     below: [
       { dx: 0, dy: 20 },
@@ -451,35 +498,55 @@ export function createApp(root, options = {}) {
     ],
   };
 
-  const tipCache = { 1: null, '-1': null };
-  /** Spots beside an arrow's tip, on the side it points to. */
-  function tipSpots(way) {
-    if (!tipCache[way])
-      tipCache[way] = [
-        { dx: 10 * way, dy: 0 },
-        { dx: 10 * way, dy: 12 },
-        { dx: 10 * way, dy: -12 },
-        { dx: 0, dy: 22 },
-      ];
-    return tipCache[way];
-  }
-
+  /** The sacks have just stopped the cart (a short while: the words, then the ring on the cart takes over). */
+  const stopWords = (r) =>
+    s.mode === 'explore' && s.run && !s.run.plan.back && (r.phase === 'stop' || (r.phase === 'stopped' && r.t < s.run.plan.end + STOP_SHOW));
+  let labelsWide = false;
+  const tipSpots = (way) => [
+    { dx: 10 * way, dy: 0 },
+    { dx: 10 * way, dy: 12 },
+    { dx: 10 * way, dy: -12 },
+    { dx: 10 * way, dy: 26 },
+    { dx: 10 * way, dy: -28 },
+    { dx: 0, dy: 22 },
+  ];
+  /** Beside an arrow, past its tip (from its middle), on the side it points to. */
+  const sideSpots = (way) => [
+    { dx: 30 * way, dy: 0 },
+    { dx: 30 * way, dy: 14 },
+    { dx: 30 * way, dy: -14 },
+  ];
   let mAfterV = false;
   function labelsFor() {
     const lane = s.scene !== 'pair';
     const r = state();
-    // the force's label beside its tip (left of it when it points left), the acceleration's over its arrow
-    const way = r.F < 0 ? -1 : 1;
+    // The arrows' labels. On a tall view (a phone held upright) each over the middle of its arrow (a tip may be at the
+    // edge of the view; a label never covers its arrow); on a wide, low one the force's beside its tip.
+    const wide = roomy();
+    if (wide !== labelsWide) {
+      labelsWide = wide;
+      for (const id of ['F', 'a', 'dp']) anno.remove(id);
+    }
+    const way = r.F < 0 || r.a < 0 ? -1 : 1;
     if (lane && arrows.F.root.visible)
       label('F', {
         text: t('l_force', { F: sgn(r.F || s.run?.plan?.F || 0) }),
-        point: () => pts.F.copy(arrows.F.tip),
+        point: () => (wide ? pts.F.copy(arrows.F.tip) : mid(arrows.F, pts.F)),
         color: COLORS.force,
-        spots: tipSpots(way),
+        spots: wide ? tipSpots(way) : SPOTS.over,
       });
     else anno.remove('F');
-    if (lane && arrows.a.root.visible) label('a', { text: t('l_acc'), point: () => mid(arrows.a, pts.a), color: COLORS.acc, spots: SPOTS.above });
+    if (lane && arrows.a.root.visible)
+      label('a', { text: t('l_acc', { a: sgn(r.a) }), point: () => mid(arrows.a, pts.a), color: COLORS.acc, spots: SPOTS.above });
     else anno.remove('a');
+    if (lane && arrows.dp.root.visible)
+      label('dp', {
+        text: t('l_dp'),
+        point: () => mid(arrows.dp, pts.dp),
+        color: COLORS.momText,
+        spots: wide ? [...SPOTS.above, ...sideSpots(way)] : SPOTS.above,
+      });
+    else anno.remove('dp');
     const moving = lane && arrows.v.root.visible;
     if (moving) {
       label('v', { text: t('l_vel', { v: fix(shown(r).v, 2) }), point: () => pts.v.copy(arrows.v.tip), color: COLORS.vel, spots: SPOTS.right });
@@ -502,6 +569,33 @@ export function createApp(root, options = {}) {
         optional: moving,
       });
     } else anno.remove('m');
+    // the push is over (a coast long enough to read): no force, so the velocity stays (the first law)
+    const seg = r.seg;
+    if (s.scene === 'lane' && s.mode === 'explore' && s.run && r.phase === 'coast' && seg && seg.dur >= COAST_MIN)
+      label('coast', {
+        text: t('l_coast'),
+        point: () => pts.c.set(rig.front() - CART.length / 2, arrowHeights(rig)[1] + 0.2, 0),
+        color: '#4b5766',
+        spots: [
+          { dx: 0, dy: -12 },
+          { dx: 0, dy: -34 },
+          { dx: 0, dy: 26 },
+        ],
+      });
+    else anno.remove('coast');
+    // the sacks at the end of the floor stop the cart (a force too, though no arrow is drawn for it)
+    if (s.scene === 'lane' && stopWords(r))
+      label('stop', {
+        text: t('l_stop'),
+        point: () => pts.stop.set(BUFFER_X + 0.45, 0.62, 0),
+        color: '#4b5766',
+        spots: [
+          { dx: 0, dy: -38 },
+          { dx: 0, dy: -54 },
+          { dx: -24, dy: -38 },
+        ],
+      });
+    else anno.remove('stop');
     // what the marks are (not on a short stage, where the view is full already)
     if (s.scene === 'lane' && s.mode === 'explore' && s.run && marks.count >= 2 && !s.run.done && stage.height >= 300)
       label('marks', {
@@ -521,18 +615,21 @@ export function createApp(root, options = {}) {
   // ── the panel: one action, one result, one rule ─────────────────────────────
   const allFound = () => EXAMPLE_IDS.every((id) => s.results[id] != null);
   /**
-   * What the big button (and a tap on the cart) does now: push in this example; once the result is in, the next
-   * example not tried yet (that word is marked in the row). The badge's number is the student's own step.
+   * What the big button (and a tap on the cart) does now: push in this example (the same words and number while the
+   * push is on, until its result is known); once the result is in, the next example not tried yet (that word is
+   * marked in the row). The badge's number is the student's own step.
    */
   function plan() {
     const run = s.run;
     const step = EXAMPLE_IDS.filter((id) => s.results[id] != null).length + 1;
     if (!run) return { example: s.example, label: `act_${s.example}`, step };
-    if (!run.known) return { example: s.example, label: 'act_again', step: '' };
+    if (!run.known) return { example: s.example, label: `act_${s.example}`, step }; // the run is on: the action stays
     const next = EXAMPLE_IDS.find((id) => s.results[id] == null && id !== run.plan.id);
     return next ? { example: next, label: `act_on_${next}`, step } : { example: s.example, label: 'act_again', step: '' };
   }
 
+  /** The velocity's zero is not made bold: a bold Bangla zero is a ring, like a radio button. */
+  const unboldZero = (html) => html.replace(/<b>([0\u09e6](?:[.,][0\u09e6]+)?)<\/b>/g, '$1');
   function outcome(r) {
     const run = s.run;
     if (!run) return ['out_rest', { v: 0 }, 'vel'];
@@ -560,7 +657,7 @@ export function createApp(root, options = {}) {
     const plan0 = planOf(id);
     if (id === 'back') {
       const m = measured(plan0);
-      return t('rule_back', { p0: momentum(plan0.m, m.u), p1: momentum(plan0.m, m.v) });
+      return t('rule_back', { p0: momentum(plan0.m, m.u), p1: momentum(plan0.m, m.v), t: m.t, F: sgn(m.F) });
     }
     const base = s.results.base;
     if (id === 'force' && base != null) return t('rule_force', { a0: sgn(base), a1: sgn(a) });
@@ -602,7 +699,7 @@ export function createApp(root, options = {}) {
     sheet.choose(s.example);
     writeResults();
     const [key, vars, kind] = outcome(r);
-    sheet.outcome(t(key, vars));
+    sheet.outcome(unboldZero(t(key, vars)));
     if (kind !== lastKind) outcomeEl.dataset.k = lastKind = kind;
     sheet.rule(ruleHtml(r));
     if (action) {
@@ -611,7 +708,7 @@ export function createApp(root, options = {}) {
       sheet.next(p.example !== s.example ? p.example : null);
       // the ring shows on the cart while it waits (at the start, or stopped), never while it moves
       const moving = s.run && !s.run.done;
-      if (s.scene === 'lane' && !moving) action.show('run');
+      if (s.scene === 'lane' && !moving && !stopWords(r)) action.show('run');
       else action.hide('run');
     }
     labelsFor();
@@ -742,7 +839,9 @@ export function createApp(root, options = {}) {
   function windowWidth() {
     const full = LANE.right - LANE.left;
     const w = 4.3 + (full - 4.3) * wideness();
-    return Math.min(full, rig.cfg.back && s.scene === 'lane' ? Math.max(w, 6.1) : w);
+    if (!rig.cfg.back || s.scene !== 'lane') return Math.min(full, w);
+    // the question about the direction: close on the cart and the person in front, so the force's arrow reads
+    return Math.min(full, s.mode === 'quiz' ? Math.min(w, DIR_WINDOW) : Math.max(w, 6.1));
   }
   /**
    * How far the side view must have moved along the lane to keep the cart's front and its velocity arrow in view
@@ -752,7 +851,9 @@ export function createApp(root, options = {}) {
     const w = windowWidth();
     const front = rig.front();
     // room ahead of the cart for its velocity arrow and the arrow's label
-    let f = front + Math.max(1.2, V_SCALE * r.v + 1.35) - (LANE.left + w);
+    // (the question about the direction shows a little more of what is ahead, so the person left behind is out of view)
+    const ahead = s.mode === 'quiz' && rig.cfg.back ? 0.5 : 0;
+    let f = front + Math.max(1.2, V_SCALE * r.v + 1.35) + ahead - (LANE.left + w);
     // the people pushing stay in view; once they let go the view may run on ahead of them, smoothly
     const pushEnd = s.run ? s.run.plan.segs[0].dur : 0;
     f = Math.min(f, front - START_X + 1.5 * Math.max(0, r.t - pushEnd));
@@ -844,7 +945,17 @@ export function createApp(root, options = {}) {
     tweener.cancel('camera');
   });
   stage.onResize(() => {
-    if (!s.userMovedCamera) flyTo(viewPose(), 0);
+    if (!s.userMovedCamera) {
+      // a new shape of the view (a phone turned): how far along the lane it must be is worked out again, also when
+      // the run is held or over (nothing ticks then), so the cart is never cut off at the edge
+      const lane = s.scene === 'lane';
+      if (lane) {
+        tweener.cancel('follow');
+        s.follow = 0;
+      }
+      flyTo(viewPose(), 0);
+      if (lane && s.run) setFollow(followFor(state()));
+    }
     refresh();
   });
 
@@ -937,7 +1048,6 @@ export function createApp(root, options = {}) {
   /** A clean scene for a question: nothing moving, no marks, no labels left, the lane seen from the side. */
   async function cleanScene() {
     ++token;
-    showDp(false);
     goHome();
     anno.clear();
     rigB.root.visible = false;
@@ -945,7 +1055,7 @@ export function createApp(root, options = {}) {
     arrows.dp.hide();
     arrows.FB.hide();
     arrows.aB.hide();
-    s.show = { F: true, a: true, v: true };
+    s.show = { F: true, a: true, v: true, dp: 'auto' };
     if (s.view !== 'front') setView('front', { animate: false });
     await setScene('lane');
     refresh();
@@ -990,11 +1100,10 @@ export function createApp(root, options = {}) {
         s.example = saved.example;
         rigB.root.visible = false;
         rig.baseX = 0;
-        showDp(false);
         arrows.FB.hide();
         arrows.aB.hide();
         anno.clear();
-        s.show = { F: true, a: true, v: true };
+        s.show = { F: true, a: true, v: true, dp: 'auto' };
         s.scene = 'lane';
         setupRig(rig, EXAMPLES[s.example]);
         tweener.cancel('follow');
@@ -1053,10 +1162,11 @@ export function createApp(root, options = {}) {
             { from: 'mass', what: 'force' },
           ]);
           setupRig(rig, EXAMPLES[v.from]);
+          await setScene('lane'); // the view fitted again (the last question may have had the person in front)
           say(t('q_look'));
           await wait(300);
           if (!alive()) return null;
-          s.show = { F: true, a: false, v: true };
+          s.show = { F: true, a: false, v: true, dp: 'auto' };
           if (!(await runTo(v.from, PUSH_TIME + 0.45, alive))) return null;
           const m = measured(s.run.plan);
           const ch = doubleChoices(m.a, v.what);
@@ -1072,9 +1182,10 @@ export function createApp(root, options = {}) {
           say(t('q_look'));
           await wait(300);
           if (!alive()) return null;
-          s.show = { F: true, a: false, v: true };
+          s.show = { F: true, a: false, v: true, dp: false }; // the force's arrow is what to read; the answer comes after
           const brake = planOf('back').segs.find((x) => x.kind === 'brake');
           if (!(await runTo('back', brake.t0 + 0.3, alive))) return null;
+          rig.people[0].root.visible = false; // the one who pushed first is behind the view: he is no part of the question
           question = { kind };
           const items = [
             { key: 'd_left', text: t('d_left') },
@@ -1116,11 +1227,14 @@ export function createApp(root, options = {}) {
           return { text: t('q_pair', { F: PERSON_FORCE, mc: CART_MASS, ms: SACK_MASS }), ...choicesOf(items, { kind }) };
         }
 
-        // the law, with the two people pushing the empty cart (the run held half way through the push)
+        // the law: a force at work on the cart, with the change of momentum it makes (the run held half way through
+        // the push); the force and the momentum's change on the picture, the question asks how they go together
         setupRig(rig, EXAMPLES.force);
+        await setScene('lane');
         say(t('q_look'));
         await wait(300);
         if (!alive()) return null;
+        s.show = { F: true, a: false, v: true, dp: true };
         if (!(await runTo('force', 1.2, alive))) return null;
         question = { kind: 'law' };
         const items = [
@@ -1155,7 +1269,7 @@ export function createApp(root, options = {}) {
           else cfg.sacks += 2;
           const my = token;
           setupRig(rig, cfg, { animate: true });
-          s.show = { F: true, a: true, v: true };
+          s.show = { F: true, a: true, v: true, dp: 'auto' };
           goHome();
           setTimeout(() => {
             if (my === token) startRun({ quiet: true, cfg });
@@ -1166,8 +1280,7 @@ export function createApp(root, options = {}) {
             : t('why_double_mass', vars) + note1({ same: 'not_same', flip: 'not_flip_mass', square: 'not_square_mass' });
         }
         if (k === 'dir') {
-          s.show = { F: true, a: false, v: true }; // the change of momentum shows in the acceleration's place
-          showDp(true);
+          s.show = { F: true, a: false, v: true, dp: true }; // the change of momentum shows in the acceleration's place
           resumeRun();
           return t('why_dir') + note1({ d_right: 'not_right', d_none: 'not_none', d_later: 'not_later' });
         }
@@ -1179,13 +1292,13 @@ export function createApp(root, options = {}) {
             [rigB, ratio.aB, 'aB'],
           ]) {
             const arr = key === 'aA' ? arrows.a : arrows.aB;
-            arr.set(tmpA.set(target.front() - CART.length / 2, arrowHeights(target)[1], 0), XP, a * A_SCALE);
+            arr.set(tmpA.set(target.front() - CART.length / 2, arrowHeights(target, 0.34)[1], 0), XP, a * A_SCALE);
             anno.add(`acc-${key}`, {
               kind: 'callout',
               text: `a = ${N(sgn(a))}${NB}${MS2}`,
               point: () => mid(arr, new THREE.Vector3()),
               color: COLORS.acc,
-              spots: SPOTS.above,
+              spots: SPOTS.pair,
             });
           }
           anno.remove('pair-l_A');
@@ -1209,26 +1322,6 @@ export function createApp(root, options = {}) {
         refresh();
       },
     },
-  });
-
-  /** The change of momentum during the push back: a green arrow over the cart, to the left, while it slows. */
-  let dpOn = false;
-  function showDp(on) {
-    dpOn = on;
-    if (!on) {
-      arrows.dp.hide();
-      anno.remove('dp');
-    }
-    stage.invalidate();
-  }
-  stage.onBeforeRender(() => {
-    if (!dpOn) return;
-    const r = state();
-    if (r.phase === 'brake' || r.phase === 'stopped') {
-      arrows.dp.set(tmpA.set(rig.front() + CART.rail.x, arrowHeights(rig)[1], 0), XN, 0.6);
-      if (!anno.has('dp'))
-        anno.add('dp', { kind: 'callout', text: t('l_dp'), point: () => mid(arrows.dp, pts.dp), color: COLORS.momText, spots: SPOTS.above });
-    }
   });
 
   // ── buttons, keys ───────────────────────────────────────────────────────────

@@ -62,20 +62,25 @@ acceleration; a force against the motion makes the momentum change backward (the
   of sacks at the end of the floor that stops the rolling cart.
 - **The push** (the book's ঠেলাগাড়ি example, "বেশ কিছুক্ষণ ঠেলে … ছেড়ে দিতে পারি"): always 2 s, 100 N per person. While
   it lasts: an orange F arrow and a teal ত্বরণ a arrow one over the other from the cart's middle (same direction; their
-  lengths compare between examples), a blue v arrow in front growing evenly, a mark on the floor every second. Then
-  the person lets go: no force, so the velocity stays (the first law) until the sacks stop the cart. On a phone held
-  upright the view follows the cart (about 3.6 m of the lane); on wide frames the whole lane shows.
+  lengths compare between examples; each labelled with its number: "F = ১০০ নিউটন", "a = ১ ms⁻²"), a blue v arrow in
+  front growing evenly, a mark on the floor every second. Then the person lets go: no force, so the velocity stays (the
+  first law; said on the view: "ঠেলা শেষ: বল নেই, তাই বেগ বদলায় না") until the sacks at the end of the floor stop the
+  cart ("বস্তা থামাল"). On a phone held upright the view follows the cart (about 3.6 m of the lane); on wide frames
+  the whole lane shows.
 - **Examples** (one row of words): খালি গাড়ি (100 N on 100 kg: 1 ms⁻²), দ্বিগুণ বল (two people, 200 N: 2 ms⁻²),
   দ্বিগুণ ভর (two sacks, 200 kg: 0.5 ms⁻²), উল্টো দিকে বল (pushed to 2 m/s, it rolls to a second person in front, who
-  pushes back with 100 N for 2 s: 2 → 0 m/s, a = −1 ms⁻², the momentum 200 → 0 kg m/s). The book's direction clause
+  pushes back with 100 N for 2 s: 2 → 0 m/s, a = −1 ms⁻², the momentum 200 → 0 kg m/s; a green arrow "ভরবেগের
+  পরিবর্তন" shows the change of momentum the way of the force, in the place of the a arrow). The book's direction clause
   is shown with a force against the motion (1-D) rather than the cricket ball (2-D), so the figure stays one lane.
 - **Panel** (kit 1.3.0 clean sheet): the result line works out a = (v − u) ÷ t with the run's numbers; the acceleration
   found stays under each word; the rule grows: F = ma (k = 1) with the numbers → "বল দ্বিগুণ, ত্বরণও দ্বিগুণ" → "ভর
   দ্বিগুণ, ত্বরণ অর্ধেক" → the direction clause with the momentum → the book's law word for word with F = ma.
 - **Test** (5, reshuffled each time): a from the force and the masses read off the picture (cart and sack tags, counting
   sacks); a after doubling the force or the mass (the velocity read off the run); the direction of the change of
-  momentum when the force is against the motion (the scene held as the person in front starts pushing); two carts side
-  by side (count people and sacks: how B's acceleration compares with A's); the law in the book's words.
+  momentum when the force is against the motion (the scene held as the person in front starts pushing, close on the
+  cart: the direction is read off the orange F arrow and its "−১০০", the question does not say which way); two carts
+  side by side (count people and sacks: how B's acceleration compares with A's); the law in the book's words (the
+  scene: a force at work, with the green change-of-momentum arrow).
 
 ## Open questions for the book team
 
