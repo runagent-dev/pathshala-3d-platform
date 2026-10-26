@@ -1,8 +1,9 @@
 // The two values on the map, placed on the screen every frame where they cover nothing: the distance beside the
-// rider, like a trip meter, and the displacement beside its arrow (never on it). Each keeps clear of the other, of
-// the arrow, of the cyclist, of the posts' plates and of the buttons in the corner; a value that finds no free
-// place is left out (the panel always shows both). They look like the kit's callouts (student.css), but the kit's
-// annotations sit at a fixed offset from their point, and these have to move round.
+// rider, like a trip meter, and the displacement beside its arrow (never on it), or, back at A where the arrow is
+// gone, "সরণ ০" beside A. Each keeps clear of the other, of the arrow, of the road (the blue path), of the cyclist, of
+// the posts' plates, of the buttons in the corner and of the action's ring and badge; a value that finds no free place is left out (the panel
+// always shows both). They look like the kit's callouts (student.css), but the kit's annotations sit at a fixed
+// offset from their point, and these have to move round.
 
 const GAP = 8; // px between a value and what it stands beside (the arrow is a few px wide)
 
@@ -91,10 +92,13 @@ export function createValueTags(layer, colors) {
   const c = { x: 0, y: 0 };
   /**
    * Place both. view: { width, height, top (px kept free at the top right for the buttons, and its left edge
-   * cornerX), cyclist ({ x0, y0, x1, y1 }), arrow ({ a: { x, y }, b: { x, y } } or null), plates ([rects]) };
-   * texts: { dist, disp } (null hides).
+   * cornerX), cyclist ({ x0, y0, x1, y1 }), arrow ({ a: { x, y }, b: { x, y } } or null), origin (A on the screen,
+   * { x, y }), plates ([rects]), keep ([rects]: more to keep clear of), road (the road on the screen: x0, y0, x1,
+   * y1, …) and roadPad (px: half its width) }; texts: { dist, disp } (null hides).
    */
   let v = null; // the view being placed in (update's argument)
+  const sa = { x: 0, y: 0 };
+  const sb = { x: 0, y: 0 };
   let distPlaced = false;
   function clearOf(r) {
     if (r.x0 < 4 || r.y0 < 4 || r.x1 > v.width - 4 || r.y1 > v.height - 4) return false;
@@ -102,7 +106,19 @@ export function createValueTags(layer, colors) {
     if (overlaps(r, v.cyclist)) return false;
     if (distPlaced && overlaps(r, placed)) return false;
     for (const q of v.plates) if (overlaps(r, q)) return false;
-    return !(v.arrow && nearSegment(r, v.arrow.a, v.arrow.b, 3));
+    for (const q of v.keep) if (overlaps(r, q)) return false;
+    if (v.arrow && nearSegment(r, v.arrow.a, v.arrow.b, 3)) return false;
+    // nor on the road (the blue path is drawn on it): its points on the screen, x0, y0, x1, y1, …
+    const road = v.road;
+    if (road)
+      for (let i = 0; i + 3 < road.length; i += 2) {
+        sa.x = road[i];
+        sa.y = road[i + 1];
+        sb.x = road[i + 2];
+        sb.y = road[i + 3];
+        if (nearSegment(r, sa, sb, v.roadPad ?? 4)) return false;
+      }
+    return true;
   }
 
   function update(view, texts) {
@@ -112,22 +128,18 @@ export function createValueTags(layer, colors) {
     const { cyclist, arrow } = view;
     distPlaced = false;
 
+    /** Candidate centres round a box (8 sides and corners, then a little further out). */
+    const around = (tag, box) => (i) => {
+      const [ox, oy] = OFFSETS[i % OFFSETS.length];
+      const gap = i < OFFSETS.length ? GAP : GAP + 18;
+      c.x = ox ? (ox > 0 ? box.x1 + gap + tag.w / 2 : box.x0 - gap - tag.w / 2) : (box.x0 + box.x1) / 2;
+      c.y = oy ? (oy > 0 ? box.y1 + gap + tag.h / 2 : box.y0 - gap - tag.h / 2) : (box.y0 + box.y1) / 2;
+      return c;
+    };
+
     // the distance: beside the rider
     if (texts.dist != null) {
-      const cx = (cyclist.x0 + cyclist.x1) / 2;
-      const cy = (cyclist.y0 + cyclist.y1) / 2;
-      const ok = place(
-        dist,
-        OFFSETS.length * 2,
-        (i) => {
-          const [ox, oy] = OFFSETS[i % OFFSETS.length];
-          const gap = i < OFFSETS.length ? GAP : GAP + 18; // then a little further out
-          c.x = ox ? (ox > 0 ? cyclist.x1 + gap + dist.w / 2 : cyclist.x0 - gap - dist.w / 2) : cx;
-          c.y = oy ? (oy > 0 ? cyclist.y1 + gap + dist.h / 2 : cyclist.y0 - gap - dist.h / 2) : cy;
-          return c;
-        },
-        clearOf,
-      );
+      const ok = place(dist, OFFSETS.length * 2, around(dist, cyclist), clearOf);
       if (ok) {
         placed.x0 = dist.x - 3;
         placed.y0 = dist.y - 3;
@@ -137,6 +149,19 @@ export function createValueTags(layer, colors) {
       }
       show(dist, ok);
     } else show(dist, false);
+
+    // a zero displacement (back at A): beside A, clear of the distance
+    if (texts.disp != null && !arrow && view.origin) {
+      const o = view.origin;
+      const box = {
+        x0: Math.min(o.x - 10, cyclist.x0),
+        y0: Math.min(o.y - 10, cyclist.y0),
+        x1: Math.max(o.x + 10, cyclist.x1),
+        y1: Math.max(o.y + 10, cyclist.y1),
+      };
+      show(disp, place(disp, OFFSETS.length * 2, around(disp, box), clearOf));
+      return;
+    }
 
     // the displacement: beside the middle of its arrow, when the arrow is longer on screen than the value
     if (texts.disp != null && arrow) {

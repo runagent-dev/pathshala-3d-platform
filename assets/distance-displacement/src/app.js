@@ -1,21 +1,24 @@
 // Distance and displacement (book page 39, topic 2.4), student view. A cyclist rides the winding road of চিত্র ২.০৪
 // from A. The blue trail behind it is the distance travelled (দূরত্ব: how far along the path, just a size, a scalar);
 // the straight orange arrow from A to the cyclist is the displacement (সরণ: how far and which way from A, a vector).
-// Drag the cyclist, tap the road, or ride to B (4 km of road, but only 2 km from A), to C (6 km, 1.31 km) and back
-// to A (the distance keeps growing, the displacement becomes zero). Then a short test. Built on the shared student
+// The panel is the kit's clean sheet: a key that names the blue path and the orange arrow, ONE action (the story's
+// next leg: ১ B পর্যন্ত, ২ C পর্যন্ত, ৩ back to A; the same numbered badge rings the stop on the map), ONE result line
+// comparing the two at each stop, and ONE rule in the book's words that grows (src/story.js). The cyclist can also
+// be dragged along the road, or sent anywhere by a tap on the road. Then a short test. Built on the shared student
 // kit (@shared/student/…).
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
 import { createTweener, ease } from '@shared/tween.js';
+import { createAction } from '@shared/student/action.js';
 import { createAudio } from '@shared/student/audio.js';
-import { buildStudentShell } from '@shared/student/shell.js';
-import { createCoach } from '@shared/student/coach.js';
+import { ICONS } from '@shared/student/icons.js';
+import { capturePointer } from '@shared/student/pointer.js';
 import { createQuiz } from '@shared/student/quiz.js';
-import { createI18n } from './i18n.js';
-import { createCountryside, FRAME, KM, ROAD_Y } from './countryside.js';
+import { bindCleanSheet, buildStudentShell, cleanSheet } from '@shared/student/shell.js';
+import { createCountryside, FRAME, KM, ROAD_W, ROAD_Y } from './countryside.js';
 import { createCyclist, SCALE } from './cyclist.js';
+import { createI18n } from './i18n.js';
 import { COLORS, createArrow, createTrail } from './marks.js';
-import { createValueTags } from './values.js';
 import {
   COMPASS,
   COUNT,
@@ -34,12 +37,14 @@ import {
   travelled,
   turn,
 } from './road.js';
+import { advance, legsToShow, mergeLegs, nextStop, outcomeKind, ruleLevel } from './story.js';
+import { createValueTags } from './values.js';
 
 export const DEFAULTS = {
   km: 0, // where the cyclist starts, km along the road from A (as if it had ridden there from A)
   view: 'front', // 'front' (from above, north up, like the book's picture) | '3d' (lower, turn it round)
   mode: 'explore', // 'explore' | 'quiz'
-  coach: true,
+  coach: true, // the action's marker pulses (still with coach=0)
   numerals: null,
   lang: 'bn',
   bg: 'light',
@@ -59,13 +64,20 @@ function viewDir(view, aspect, out = new THREE.Vector3()) {
 const RIDE_SPEED = 2.4; // km of road per second of animation (not to time: speed is the next figure's topic)
 const LAST = Math.round(END / STEP); // the last sample the cyclist reaches
 const PLACES = { A: STOPS.A, B: STOPS.B, C: STOPS.C };
+const DOUBLE_TAP = 450; // ms: a second action this soon after one is ignored
+
+// the key's two little pictures: a piece of winding blue path, a straight orange arrow (the same as on the map)
+const SWATCH_PATH = '<svg class="dd-sw" viewBox="0 0 30 16" aria-hidden="true"><path d="M2 12c5-9 9-9 13-4s8 5 13-4"/></svg>';
+const SWATCH_ARROW =
+  '<svg class="dd-sw" viewBox="0 0 30 16" aria-hidden="true"><path d="M3 13 21.5 5.2"/><path class="head" d="m28 2.5-10.4.2 3.9 9.2z"/></svg>';
 
 export function createApp(root, options = {}) {
   const o = { ...DEFAULTS, ...options };
   const t = createI18n(o.lang, { numerals: o.numerals });
   const N = t.num;
-  const K = (km) => N(fmtKm(km)); // km with two decimals (the live readings), in the language's digits
-  const S = (km) => N(fmtShort(km)); // km as in a sentence: 4, 1.31, 12
+  const U = t('u_km');
+  const live = (km) => fmtKm(km); // km with two decimals (readings that change while it rides)
+  const plain = (km) => fmtShort(km); // km as in a sentence: 4, 1.31, 12
 
   root.classList.add('pvc', 'dd');
   root.dataset.theme = o.bg;
@@ -74,26 +86,17 @@ export function createApp(root, options = {}) {
   root.tabIndex = 0;
   const ui = buildStudentShell(root, t, {
     learn: `
-          <div class="dd-read">
-            <div class="dd-card dist">
-              <span class="k">${t('distance')} <small>${t('scalar')}</small></span>
-              <span class="v"><b>0</b> <span class="u">${t('unit_km')}</span></span>
-              <span class="s">${t('dist_note')}</span>
-            </div>
-            <div class="dd-card disp">
-              <span class="k">${t('displacement')} <small>${t('vector')}</small></span>
-              <span class="v"><b>0</b> <span class="u">${t('unit_km')}</span></span>
-              <span class="s"><svg class="dd-needle" viewBox="-10 -10 20 20" aria-hidden="true"><path d="M0 -8.5 5.5 6 0 2.6 -5.5 6Z"/></svg><span class="dd-dir"></span></span>
-            </div>
+          <div class="dd-key" role="group" aria-label="${t('key')}">
+            <p class="dd-key-item d">${SWATCH_PATH}<span><b>${t('key_dist')}</b><small>${t('key_dist_sub')}</small></span></p>
+            <p class="dd-key-item s">${SWATCH_ARROW}<span><b>${t('key_disp')}</b><small>${t('key_disp_sub')}</small></span></p>
           </div>
-          <p class="pvc-learn-extra dd-extra"></p>
-          <div class="pvc-learn-foot dd-foot">
-            <button class="pvc-btn" data-act="ride" data-to="B">${t('act_b')}</button>
-            <button class="pvc-btn" data-act="ride" data-to="C">${t('act_c')}</button>
-            <button class="pvc-btn" data-act="ride" data-to="A">${t('act_a')}</button>
-            <button class="pvc-btn dd-new" data-act="new" title="${t('act_new_long')}">${t('act_new')}</button>
-          </div>`,
+          ${cleanSheet(t, { quiet: [{ act: 'new', label: 'act_new', icon: ICONS.reset }], lines: { outcome: 2, rule: 3 } })}`,
   });
+  const sheet = bindCleanSheet(ui.learn);
+  // the honest note: the road is to scale, the cycle and the village are not (top left; the buttons are top right)
+  const note = document.createElement('div');
+  note.className = 'dd-note';
+  ui.stage.append(note);
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 30, near: 40, far: 40000, environment: 'studio-light', exposure: 1.05 });
@@ -101,6 +104,7 @@ export function createApp(root, options = {}) {
   controls.minDistance = 1500;
   controls.maxDistance = 14000;
   controls.maxPolarAngle = 1.35; // never under the tile
+  controls.enablePan = false;
   const world = new THREE.Group();
   world.name = 'DistanceDisplacementScene';
   scene.add(world);
@@ -143,7 +147,10 @@ export function createApp(root, options = {}) {
     km: 0, // the cyclist's place, km along the road from A
     trip: 0, // the distance travelled since the trip began at A, km
     legs: [], // the trip's legs, km: + going out, − coming back (a turn-round makes a new leg)
-    rolled: 0, // metres the wheels have turned (for the pedals; the coach's little demo turns them too)
+    far: 0, // the farthest km along the road reached this trip (the blue path covers 0 … far)
+    step: 0, // the story's stops reached this trip (0 … 3: B, C, back at A)
+    level: 0, // how far the rule line has grown this trip (src/story.js)
+    rolled: 0, // metres the wheels have turned (for the pedals)
     dir: 1, // the way the cyclist faces: 1 the way km grows, −1 back towards A
     yaw: 0,
     yawTarget: 0,
@@ -158,22 +165,29 @@ export function createApp(root, options = {}) {
 
   /** The displacement's size (the road data's metre of tracing error never shows it bigger than the distance). */
   const size = (d) => (d.km > s.trip && d.km - s.trip < 0.002 ? s.trip : d.km);
-
-  /** The legs to show: a turn-round of less than 50 m is a wobble, counted in the leg before it (the sum stays). */
-  function legs() {
-    const out = [];
-    for (const leg of s.legs) {
-      const last = out.length - 1;
-      if (last >= 0 && (Math.abs(leg) < 0.05 || Math.sign(leg) === Math.sign(out[last]))) out[last] += Math.sign(out[last]) * Math.abs(leg);
-      else out.push(leg);
-    }
-    return out.map(Math.abs);
+  const legs = () => mergeLegs(s.legs);
+  /** "৬ + ৬ = ১২" for a trip of more than one leg, else "১২". */
+  function tripSum() {
+    const list = legs();
+    if (list.length < 2) return plain(s.trip);
+    return `${legsToShow(list)
+      .map((v) => (v == null ? '…' : plain(v)))
+      .join(' + ')} = ${plain(s.trip)}`;
   }
-  /** "৬ + ৬ + ৬ + ৬" (at most four parts shown; more become "৬ + … + ৬"). */
-  const legSum = (list) => (list.length > 4 ? [list[0], list[1], null, list.at(-1)] : list).map((v) => (v == null ? '…' : S(v))).join(' + ');
+  const moving = () => s.riding || s.dragging;
+
+  /** What the big action does now: ride to the story's next stop (after the story, a new trip to B). */
+  function plan() {
+    const next = nextStop(s.step);
+    if (!next) return { stop: 'B', step: '', label: 'act_again', fresh: true }; // the story is done: no step number
+    // the story starts at A with nothing ridden: a trip that wandered off and came back to A starts afresh
+    const fresh = s.step === 0 && s.trip >= 0.005 && stopAt(s.km) === 'A';
+    return { stop: next, step: s.step + 1, label: `act_${next.toLowerCase()}`, fresh };
+  }
 
   function snapshot() {
     const d = displacement(s.km);
+    const p = plan();
     return {
       km: roundTo(s.km, 0.001),
       trip: roundTo(s.trip, 0.001),
@@ -187,6 +201,9 @@ export function createApp(root, options = {}) {
       },
       at: stopAt(s.km),
       riding: s.riding,
+      story: s.step, // stops of the story reached this trip: 0 … 3 (B, C, back at A)
+      next: { stop: p.stop, step: p.step }, // what the big button does now: ride to that stop
+      rule: s.level, // how far the rule line has grown (0 … 3)
       view: s.view,
       mode: s.mode,
     };
@@ -194,63 +211,49 @@ export function createApp(root, options = {}) {
   let lastEmitted = '';
   function emitChange() {
     const snap = snapshot();
-    const key = `${snap.km}|${snap.trip}`;
+    const key = `${snap.km}|${snap.trip}|${snap.story}`;
     if (key === lastEmitted) return;
     lastEmitted = key;
     emit('change', snap);
   }
 
-  // ── the panel ───────────────────────────────────────────────────────────────
-  const $ = ui.$;
-  const el = {
-    dist: $('.dd-card.dist b'),
-    legs: $('.dd-card.dist .s'),
-    disp: $('.dd-card.disp b'),
-    dir: $('.dd-dir'),
-    needle: $('.dd-needle'),
-    extra: $('.dd-extra'),
-    toB: $('[data-act="ride"][data-to="B"]'),
-  };
-
-  function extraLine(d) {
+  // ── the panel: the result line, the rule, the action ───────────────────────────
+  const outcomeEl = ui.$('.pvc-outcome');
+  function outcomeHtml(d) {
     const at = stopAt(s.km);
-    const parts = legs();
-    const vars = {
-      dist: S(s.trip),
-      disp: S(size(d)),
-      dir: d.bearing == null ? '' : t(`dir_${compass8(d.bearing)}`),
-      sum: legSum(parts),
-      out: S(parts[0] ?? 0),
-      back: S(parts[1] ?? 0),
-      stop: stopAt(parts[0] ?? 0) ?? '',
-    };
-    if (s.trip < 0.005) return t('idea');
-    if (s.riding || s.dragging) return t('line_moving');
-    if (at === 'A') {
-      if (parts.length === 2) return t(vars.stop ? 'line_back_stop' : 'line_back_km', vars); // there and back
-      return t(parts.length > 2 ? 'line_back_sum' : 'line_back', vars);
-    }
-    if (at === 'B' && parts.length === 1) return t('line_b', vars);
-    if (at === 'C' && parts.length === 1) return t('line_c', vars);
-    return t(parts.length > 1 ? 'line_any_legs' : 'line_any', vars);
+    const kind = outcomeKind({ trip: s.trip, at, moving: moving() });
+    const dir = d.bearing == null ? '' : t(`dir_${compass8(d.bearing)}`);
+    if (kind === 'move') return [kind, t('out_move', { dist: live(s.trip), disp: live(size(d)), u: U })];
+    if (kind === 'start') return [kind, t('out_start', { z: 0 })];
+    if (kind === 'back') return [kind, t('out_back', { z: 0, sum: tripSum(), u: U })];
+    const vars = { at, dist: plain(s.trip), disp: plain(size(d)), dir, u: U };
+    return [kind, t(kind === 'stop' ? 'out_stop' : 'out_here', vars)];
   }
 
+  let lastKind = '';
   function refresh() {
     const d = displacement(s.km);
-    el.dist.textContent = K(s.trip);
-    // the distance's parts: out and back, so a round trip's 12 km reads 6 + 6
-    const parts = legs();
-    el.legs.textContent =
-      parts.length === 2 ? t('dist_legs2', { a: S(parts[0]), b: S(parts[1]) }) : parts.length > 2 ? legSum(parts) : t('dist_note');
-    el.disp.textContent = K(size(d));
-    const none = d.km < 0.005;
-    el.dir.textContent = none ? t('dir_none') : t('dir_line', { dir: t(`dir_${compass8(d.bearing)}`) });
-    el.needle.style.display = none ? 'none' : '';
-    el.needle.style.transform = `rotate(${d.bearing ?? 0}deg)`;
-    el.extra.textContent = extraLine(d);
-    el.toB.classList.toggle('primary', s.trip < 0.005); // the book's own example, first
-    texts.dist = s.values && s.trip > 0.005 ? t('pill_dist', { v: S(s.trip) }) : null;
-    texts.disp = s.values && d.km > 0.005 ? t('pill_disp', { v: S(size(d)) }) : null;
+    const at = stopAt(s.km);
+    s.level = ruleLevel(s.level, { step: s.step, at, trip: s.trip, moving: moving() });
+    const [kind, html] = outcomeHtml(d);
+    sheet.outcome(html);
+    if (kind !== lastKind) outcomeEl.dataset.k = lastKind = kind;
+    sheet.rule(t(`rule_${s.level}`, { b: PLACES.B, u: U }));
+    if (action) {
+      const p = plan();
+      action.set({ step: p.step, label: p.label });
+      // the ring shows on the next stop while the cyclist waits, never while it rides
+      if (s.riding) action.hide('ride');
+      else action.show('ride');
+    }
+    texts.dist = s.values && s.trip > 0.005 ? t('pill_dist', { v: plain(s.trip) }) : null;
+    texts.disp = !s.values
+      ? null
+      : d.km > 0.005
+        ? t('pill_disp', { v: plain(size(d)) })
+        : s.trip > 0.05 && !moving()
+          ? t('pill_zero', { z: 0 })
+          : null;
     stage.invalidate();
   }
 
@@ -259,7 +262,13 @@ export function createApp(root, options = {}) {
   const texts = { dist: null, disp: null };
   const cyclistBox = { x0: 0, y0: 0, x1: 0, y1: 0 };
   const arrowOnScreen = { a: { x: 0, y: 0 }, b: { x: 0, y: 0 } };
-  const view = { width: 1, height: 1, top: 0, cornerX: 0, cyclist: cyclistBox, arrow: null, plates: [] };
+  const origin = { x: 0, y: 0 };
+  const badgeBox = { x0: 0, y0: 0, x1: 0, y1: 0 };
+  const noteBox = { x0: 0, y0: 0, x1: 0, y1: 0 };
+  const ROAD_EVERY = 4; // samples between the road's points on the screen (0.1 km), for the values to keep off it
+  const roadPx = new Float32Array((Math.floor(LAST / ROAD_EVERY) + 1) * 2);
+  const ringBox = { x0: 0, y0: 0, x1: 0, y1: 0 };
+  const view = { width: 1, height: 1, top: 0, cornerX: 0, cyclist: cyclistBox, arrow: null, origin, plates: [], keep: [], road: roadPx, roadPad: 4 };
   const corner = new THREE.Vector3();
   const toPx = (p, out) => {
     corner.copy(p).project(camera);
@@ -273,7 +282,10 @@ export function createApp(root, options = {}) {
     const cr = ui.corner.getBoundingClientRect();
     view.top = cr.bottom - sr.top + 4;
     view.cornerX = cr.left - sr.left - 4;
+    const nr = note.getBoundingClientRect();
+    Object.assign(noteBox, { x0: nr.left - sr.left - 3, y0: nr.top - sr.top - 3, x1: nr.right - sr.left + 3, y1: nr.bottom - sr.top + 3 });
   }
+  let ringRadius = 30;
   stage.onBeforeRender(() => {
     camera.updateMatrixWorld();
     cyclist.root.updateMatrixWorld();
@@ -293,16 +305,52 @@ export function createApp(root, options = {}) {
     // the labels on the map: smaller on small screens, and never over the cyclist
     const labelSize = THREE.MathUtils.clamp(Math.min(stage.width, stage.height * 1.25) / 440, 0.62, 1.05);
     view.plates = country.labels.update(camera, stage.width, stage.height, labelSize, cyclistBox);
+    // the action's ring round the next stop's label (its letter and its post's number)
+    const r = country.stops[plan().stop].label.userData.rect;
+    const radius = Math.round(Math.max(r.x1 - r.x0, r.y1 - r.y0) / 2 + 7);
+    if (radius !== ringRadius) {
+      ringRadius = radius;
+      action?.set({ radius });
+    }
     // the arrow from A to the cyclist's place on the road
     view.arrow = null;
+    toPx(corner.set(0, ROAD_Y + 9, 0), origin);
     if (displacement(s.km).km > 0.005) {
-      toPx(corner.set(0, ROAD_Y + 9, 0), arrowOnScreen.a);
+      arrowOnScreen.a.x = origin.x;
+      arrowOnScreen.a.y = origin.y;
       pointAt(s.km, at);
       toPx(corner.set(at.x * KM, ROAD_Y + 9, -at.y * KM), arrowOnScreen.b);
       view.arrow = arrowOnScreen;
     }
     view.width = stage.width;
     view.height = stage.height;
+    for (let i = 0, j = 0; i <= LAST; i += ROAD_EVERY, j += 2) {
+      toPx(corner.set(FRAME.cx[i], ROAD_Y, FRAME.cz[i]), px);
+      roadPx[j] = px.x;
+      roadPx[j + 1] = px.y;
+    }
+    // the road's half width on the screen (it is 90 m wide), so the values stay off the blue path
+    toPx(corner.set(0, ROAD_Y, 0), px);
+    const ax = px.x;
+    toPx(corner.set(ROAD_W / 2, ROAD_Y, 0), px);
+    view.roadPad = Math.max(3, Math.abs(px.x - ax));
+    // the values keep clear of the action's ring and badge and the honest note too
+    view.keep.length = 0;
+    const b = action?.box();
+    if (b) view.keep.push(Object.assign(badgeBox, { x0: b.left - 2, y0: b.top - 2, x1: b.right + 2, y1: b.bottom + 2 }));
+    // the ring and every place round it where the kit may put the badge (just outside it): a value there would push
+    // the badge somewhere worse (on a small map, under the corner buttons)
+    // (ringBox() is null in the frame where the marker comes back after a ride, so the ring is also worked out here
+    // whenever it is about to show: round the next stop's label, as the kit draws a ring round a point)
+    let rb = action?.ringBox();
+    if (!rb && action && !s.riding && s.mode !== 'quiz') {
+      toPx(ringTarget(), px);
+      const half = Math.max(22, ringRadius) + 3;
+      rb = { left: px.x - half, top: px.y - half, right: px.x + half, bottom: px.y + half };
+    }
+    const room = 0.38 * 46 + 23;
+    if (rb) view.keep.push(Object.assign(ringBox, { x0: rb.left - room, y0: rb.top - room, x1: rb.right + room, y1: rb.bottom + room }));
+    if (!note.hidden) view.keep.push(noteBox);
     values.update(view, texts);
   });
 
@@ -321,21 +369,9 @@ export function createApp(root, options = {}) {
     cyclist.roll(s.rolled);
   }
 
-  let shownAt = null; // where the model is shown while the pointer's little show runs
-  /**
-   * Ride the cyclist to km, adding to the distance and the trail; the arrow and the readings follow. count: false
-   * only shows the model there (the pointer's little show): nothing is measured, so nothing else moves.
-   */
-  function moveTo(km, { count = true, snap = false } = {}) {
+  /** Ride the cyclist to km, adding to the distance and the trail; the arrow and the readings follow. */
+  function moveTo(km, { snap = false } = {}) {
     const k = THREE.MathUtils.clamp(km, 0, END);
-    if (!count) {
-      s.rolled += Math.abs(k - (shownAt ?? s.km)) * KM;
-      shownAt = k;
-      placeCyclist(k, snap);
-      stage.invalidate();
-      return;
-    }
-    shownAt = null;
     const d = k - s.km;
     if (Math.abs(d) > 1e-9) {
       s.trip += Math.abs(d);
@@ -348,9 +384,15 @@ export function createApp(root, options = {}) {
       if (Math.abs(d) > 0.002) s.dir = d > 0 ? 1 : -1; // a finger's tremble does not turn the cyclist round
       s.rolled += Math.abs(d) * KM;
       s.km = k;
+      s.far = Math.max(s.far, k);
     }
     placeCyclist(k, snap);
     arrow.set(at.x * KM, -at.y * KM);
+    refresh();
+  }
+  /** The cyclist has come to rest: the story moves on if this is its next stop. */
+  function settle() {
+    s.step = advance(s.step, stopAt(s.km), s.trip);
     refresh();
   }
   // turning round (riding back) takes a moment; on the road it follows the bends at once
@@ -370,14 +412,17 @@ export function createApp(root, options = {}) {
     return true;
   });
 
-  /** A new trip: the cyclist at A, the distance zero, no trail. */
+  /** A new trip: the cyclist at A, the distance zero, no trail, the story from the start. */
   function newTrip() {
-    coach?.interrupt();
+    rideToken++;
     tweener.cancel('ride');
     s.riding = false;
     s.km = 0;
     s.trip = 0;
     s.legs = [];
+    s.far = 0;
+    s.step = 0;
+    s.level = 0;
     s.dir = 1;
     trail.clear();
     moveTo(0, { snap: true });
@@ -387,20 +432,24 @@ export function createApp(root, options = {}) {
   /** Ride along the road through the stops (km), adding to the distance; resolves false if interrupted. */
   async function ride(stops, { speed = RIDE_SPEED, animate = true } = {}) {
     const my = ++rideToken;
-    coach?.interrupt(); // the pointer's little show stops
     tweener.cancel('ride');
     if (!animate) {
-      for (const k of stops) moveTo(k, { snap: true });
+      for (const k of stops) {
+        moveTo(k, { snap: true });
+        settle();
+      }
       s.riding = false;
       refresh();
       emitChange();
       return true;
     }
     s.riding = true;
+    refresh();
     for (const [i, target] of stops.entries()) {
       const from = s.km;
       const to = THREE.MathUtils.clamp(target, 0, END);
       if (i > 0 && !(await tweener.animate({ key: 'ride', duration: 0.35 }).finished)) return false; // a breath at the turn
+      if (my !== rideToken) return false;
       if (Math.abs(to - from) < 1e-6) continue;
       const done = await tweener.animate({
         key: 'ride',
@@ -409,6 +458,7 @@ export function createApp(root, options = {}) {
         onUpdate: (k) => moveTo(from + (to - from) * k),
       }).finished;
       if (!done || my !== rideToken) return false;
+      settle(); // a stop on the way counts for the story too
     }
     s.riding = false;
     refresh();
@@ -422,15 +472,110 @@ export function createApp(root, options = {}) {
     tweener.cancel('ride');
     if (s.riding) {
       s.riding = false;
-      refresh();
+      settle();
       emitChange();
     }
   }
-  /** The student asked to ride somewhere (a button, a tap on the road, a key). */
+  /** The student asked to ride somewhere (a tap on the road or a post, a key). */
   function rideTo(km) {
     if (s.locked) return lockedNudge();
-    coach?.objectUsed();
     return ride([km]);
+  }
+
+  // ── the one action: the story's next leg ─────────────────────────────────────
+  let lastAct = -Infinity;
+  /** The big button, its badge on the map, a tap inside its ring, Enter/Space: ride to the story's next stop. */
+  function doAction() {
+    if (s.locked) return lockedNudge();
+    const now = performance.now();
+    if (now - lastAct < DOUBLE_TAP) return; // a double tap must not ride on to the stop after
+    lastAct = now;
+    const p = plan();
+    if (p.fresh) {
+      newTrip();
+      emitChange();
+    }
+    return ride([PLACES[p.stop]]);
+  }
+  const ringAt = new THREE.Vector3();
+  /** Where the ring goes: the next stop's label (its letter disc over its post's number). */
+  function ringTarget() {
+    if (s.mode === 'quiz') return null;
+    return ringAt.copy(country.stops[plan().stop].label.position);
+  }
+  /** @type {ReturnType<typeof createAction> | null} */
+  let action = null;
+  action = createAction({
+    stage,
+    layer: ui.coachLayer,
+    host: ui.$('.pvc-act-slot'),
+    t,
+    step: 1,
+    label: 'act_b',
+    target: ringTarget,
+    radius: ringRadius,
+    // the badge keeps clear of the buttons, the hint, the note, the two values, the cyclist, the other plates, the
+    // arrow and the road (the blue path)
+    avoid: [ui.corner, ui.hint, note, () => [...ui.annoLayer.querySelectorAll('.dd-tag.in')], sceneBoxes],
+    pulse: o.coach,
+    onAct: () => {
+      audio.unlock();
+      doAction();
+    },
+  });
+  /**
+   * Boxes (canvas px) of what the badge must not cover on the map: the plates, the cyclist, the arrow and, when the
+   * badge still has a free place round the ring, the blue path ridden so far (on a small map after a long ride the
+   * path runs all round the next stop; then the badge may sit on the path rather than under the corner buttons).
+   */
+  const sceneHard = [];
+  const scenePath = [];
+  function sceneBoxes() {
+    sceneHard.length = 0;
+    scenePath.length = 0;
+    const own = country.stops[plan().stop].label.userData.rect;
+    for (const r of view.plates) if (r !== own) sceneHard.push({ left: r.x0, top: r.y0, right: r.x1, bottom: r.y1 });
+    sceneHard.push({ left: cyclistBox.x0, top: cyclistBox.y0, right: cyclistBox.x1, bottom: cyclistBox.y1 });
+    const dot = (list, x, y, r) => list.push({ left: x - r, top: y - r, right: x + r, bottom: y + r });
+    if (view.arrow) {
+      const { a, b } = view.arrow;
+      const n = Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / 10);
+      for (let i = 0; i <= n; i++) dot(sceneHard, a.x + ((b.x - a.x) * i) / n, a.y + ((b.y - a.y) * i) / n, 5);
+    }
+    const ridden = s.trip > 0 ? Math.min(roadPx.length, 2 * (Math.floor(s.far / (STEP * ROAD_EVERY)) + 1)) : 0;
+    for (let j = 0; j + 1 < ridden; j += 2) dot(scenePath, roadPx[j], roadPx[j + 1], view.roadPad);
+    return badgeRoom([...sceneHard, ...scenePath]) ? [...sceneHard, ...scenePath] : sceneHard;
+  }
+  /** Is there a place on the ring (roughly where the kit puts its badge) clear of these and of the panels' boxes? */
+  function badgeRoom(boxes) {
+    const tg = ringTarget();
+    if (!tg) return true;
+    toPx(tg, ringPx);
+    const origin = stage.canvas.getBoundingClientRect();
+    const others = [ui.corner, note, ...ui.annoLayer.querySelectorAll('.dd-tag.in')].map((e) => {
+      const r = e.getBoundingClientRect();
+      return { left: r.left - origin.left, top: r.top - origin.top, right: r.right - origin.left, bottom: r.bottom - origin.top };
+    });
+    // the badge's middle just outside the ring, as the kit puts it (0.38 of its 46 px out from the dashed line)
+    const R = Math.max(22, ringRadius) + 0.38 * 46;
+    const free = (deg) => {
+      const x = ringPx.x + R * Math.cos((deg * Math.PI) / 180);
+      const y = ringPx.y + R * Math.sin((deg * Math.PI) / 180);
+      const b = { left: x - 23, top: y - 23, right: x + 23, bottom: y + 23 };
+      if (b.left < 8 || b.top < 8 || b.right > stage.width - 8 || b.bottom > stage.height - 8) return false;
+      const hit = (r) => b.left < r.right + 4 && b.right > r.left - 4 && b.top < r.bottom + 4 && b.bottom > r.top - 4;
+      return !boxes.some(hit) && !others.some(hit);
+    };
+    return [-45, -135, 0, 180, -90, 45, 135, 90].some(free);
+  }
+  const ringPx = { x: 0, y: 0 };
+  /** Is this canvas point inside the action's ring on the map (a tap there does the action)? */
+  function inRing(p) {
+    if (!action?.visible) return false;
+    const tg = ringTarget();
+    if (!tg) return false;
+    toPx(tg, ringPx);
+    return Math.hypot(p.x - ringPx.x, p.y - ringPx.y) <= Math.max(22, ringRadius) + 4;
   }
 
   // ── camera ──────────────────────────────────────────────────────────────────
@@ -446,10 +591,10 @@ export function createApp(root, options = {}) {
   const right = new THREE.Vector3();
   const up = new THREE.Vector3();
   /** A camera pose that fits the whole tile in the view, below the buttons in the corner. */
-  function viewPose(view) {
+  function viewPose(which) {
     const w = Math.max(stage.width, 100);
     const h = Math.max(stage.height, 100);
-    const dir = viewDir(view, w / h);
+    const dir = viewDir(which, w / h);
     const target = country.box.getCenter(new THREE.Vector3()).setY(0);
     fitCam.copy(camera);
     const top = 1 - (2 * 50) / h; // the view and full-screen buttons
@@ -505,9 +650,11 @@ export function createApp(root, options = {}) {
       },
     }).finished;
   }
-  function setView(view, { animate = true } = {}) {
-    s.view = view === '3d' ? '3d' : 'front';
+  function setView(which, { animate = true } = {}) {
+    s.view = which === '3d' ? '3d' : 'front';
+    // the view from above is the book's picture: no turning, no zoom (a pinch would end the fitting for good)
     controls.enableRotate = s.view === '3d';
+    controls.enableZoom = s.view === '3d';
     s.userMovedCamera = false;
     syncUI();
     emit('view', { view: s.view });
@@ -518,11 +665,17 @@ export function createApp(root, options = {}) {
     tweener.cancel('camera');
   });
   stage.onResize(() => {
+    writeNote();
     measureCorner();
     if (s.userMovedCamera) return;
     tweener.cancel('camera');
     flyTo(viewPose(s.view), 0);
   });
+  let noteText = '';
+  function writeNote() {
+    const text = t(stage.width < 470 ? 'note_scale_short' : 'note_scale');
+    if (text !== noteText) note.textContent = noteText = text;
+  }
 
   // ── touching the cyclist and the road ───────────────────────────────────────
   const raycaster = new THREE.Raycaster();
@@ -545,9 +698,9 @@ export function createApp(root, options = {}) {
     rayFrom(p);
     const hit = raycaster.intersectObjects(country.pickables, true)[0];
     if (!hit) return null;
-    for (let o = hit.object; o; o = o.parent) {
-      if (o.userData.km != null) return Math.min(END, o.userData.km);
-      if (o === country.labels.group) return null; // the compass's উ and the scale's label name no place
+    for (let ob = hit.object; ob; ob = ob.parent) {
+      if (ob.userData.km != null) return Math.min(END, ob.userData.km);
+      if (ob === country.labels.group) return null; // the compass's উ and the scale's label name no place
     }
     return nearestKm(hit.point.x / KM, -hit.point.z / KM, 0, END);
   }
@@ -571,7 +724,7 @@ export function createApp(root, options = {}) {
       screen[2 * i + 1] = ((1 - v.y) / 2) * stage.height;
     }
   }
-  function followFinger(px, py) {
+  function followFinger(fx, fy) {
     let center = s.km / STEP;
     let best = center;
     for (let iter = 0; iter < 12; iter++) {
@@ -583,8 +736,8 @@ export function createApp(root, options = {}) {
         const ay = screen[2 * j + 1];
         const bx = screen[2 * j + 2] - ax;
         const by = screen[2 * j + 3] - ay;
-        const f = Math.min(1, Math.max(0, ((px - ax) * bx + (py - ay) * by) / (bx * bx + by * by || 1)));
-        const d = Math.hypot(ax + bx * f - px, ay + by * f - py);
+        const f = Math.min(1, Math.max(0, ((fx - ax) * bx + (fy - ay) * by) / (bx * bx + by * by || 1)));
+        const d = Math.hypot(ax + bx * f - fx, ay + by * f - fy);
         if (d < bestD) {
           bestD = d;
           best = j + f;
@@ -602,7 +755,6 @@ export function createApp(root, options = {}) {
     'pointerdown',
     (e) => {
       audio.unlock();
-      coach?.interrupt();
       const p = canvasPoint(e);
       const grab = onCyclist(p) || (e.pointerType !== 'mouse' && nearby(p));
       tap = grab ? null : { id: e.pointerId, x: e.clientX, y: e.clientY };
@@ -616,12 +768,7 @@ export function createApp(root, options = {}) {
       const i = Math.min(LAST, Math.round(s.km / STEP));
       drag = { id: e.pointerId, dx: p.x - screen[2 * i], dy: p.y - screen[2 * i + 1] };
       s.dragging = true;
-      try {
-        ui.canvasHost.setPointerCapture(e.pointerId); // keep the drag even when the finger leaves the view
-      } catch {
-        // the pointer is already gone
-      }
-      coach?.objectUsed();
+      capturePointer(ui.canvasHost, e.pointerId); // keep the drag even when the finger leaves the view
       emit('dragstart', snapshot());
       refresh();
     },
@@ -636,17 +783,22 @@ export function createApp(root, options = {}) {
   function endDrag(e) {
     if (tap && e.pointerId === tap.id && e.type === 'pointerup') {
       tap = null;
-      const km = placeAt(canvasPoint(e));
+      const p = canvasPoint(e);
+      if (inRing(p)) {
+        audio.unlock();
+        doAction();
+        return;
+      }
+      const km = placeAt(p);
       if (km != null) rideTo(km);
       return;
     }
     if (!drag || e.pointerId !== drag.id) return;
     drag = null;
     s.dragging = false;
-    refresh();
+    settle();
     emitChange();
     emit('dragend', snapshot());
-    coach?.objectReleased();
   }
   ui.canvasHost.addEventListener('pointerup', endDrag);
   ui.canvasHost.addEventListener('pointercancel', endDrag);
@@ -657,7 +809,7 @@ export function createApp(root, options = {}) {
     const p = canvasPoint(e);
     requestAnimationFrame(() => {
       hoverQueued = false;
-      ui.canvasHost.style.cursor = onCyclist(p) ? (s.locked ? 'not-allowed' : 'grab') : placeAt(p) != null ? 'pointer' : '';
+      ui.canvasHost.style.cursor = onCyclist(p) ? (s.locked ? 'not-allowed' : 'grab') : inRing(p) || placeAt(p) != null ? 'pointer' : '';
     });
   });
 
@@ -689,29 +841,37 @@ export function createApp(root, options = {}) {
   };
   const pickOne = (list) => list[Math.floor(Math.random() * list.length)];
   const dirName = (dir) => t(`dir_${dir}`);
-  const kmLabel = (v) => `${N(String(v))}<small>${t('unit_km')}</small>`;
-  const textLabel = (list) => (j) => `<span class="dd-opt">${list[j]}</span>`;
-  /** Text choices: the right one first in `texts`; returns the quiz's choice fields. */
-  function textChoices(texts) {
-    const order = shuffle([0, 1, 2, 3]);
-    const list = order.map((i) => texts[i]);
-    return { choices: [0, 1, 2, 3], expected: order.indexOf(0), tolerance: 0.5, label: textLabel(list), list };
+  const kmLabel = (x) => `${N(String(x))}<small>${U}</small>`;
+  /**
+   * Choices in words: items [{ text, note }], the right one first (note: what that mistake is). Returns the quiz's
+   * choice fields; the choices are the items' places in `list` (shuffled).
+   */
+  function wordChoices(items) {
+    const list = shuffle(items.map((it, i) => ({ ...it, right: i === 0 })));
+    return {
+      choices: [0, 1, 2, 3],
+      expected: list.findIndex((it) => it.right),
+      tolerance: 0.5,
+      label: (j) => `<span class="dd-opt">${list[j].text}</span>`,
+      list,
+    };
   }
-  /** Number choices (km): the right one and three wrong ones, all different. */
+  /** Number choices (km): the right one and three wrong ones (each with its note), all different. */
   function kmChoices(right, wrong) {
     const seen = new Set([String(right)]);
-    const list = [right];
+    const list = [{ value: right, note: '' }];
     for (const w of wrong) {
-      if (list.length === 4 || w < 0 || seen.has(String(w))) continue;
-      seen.add(String(w));
+      if (list.length === 4 || w.value < 0 || seen.has(String(w.value))) continue;
+      seen.add(String(w.value));
       list.push(w);
     }
     for (let k = 1; list.length < 4; k++) {
       if (seen.has(String(right + k))) continue; // a fallback, rarely needed
       seen.add(String(right + k));
-      list.push(right + k);
+      list.push({ value: right + k, note: '' });
     }
-    return { choices: shuffle(list), expected: right, tolerance: 0.001, label: kmLabel };
+    shuffle(list);
+    return { choices: list.map((it) => it.value), expected: right, tolerance: 0.001, label: kmLabel, list };
   }
 
   let kinds = [];
@@ -722,12 +882,14 @@ export function createApp(root, options = {}) {
     emit,
     audio,
     questions: 5,
+    lines: { text: 2, feedback: 3 },
+    action,
     hooks: {
       enter() {
         s.mode = 'quiz';
         stopRide();
         hideHint();
-        kinds = shuffle(['say', 'dir', 'trip', 'zero', 'rule']);
+        kinds = shuffle(['vec', 'dir', 'trip', 'zero', 'rule']);
         syncUI();
       },
       leave() {
@@ -743,65 +905,104 @@ export function createApp(root, options = {}) {
         const kind = kinds[i % kinds.length];
         s.locked = true;
         s.values = false;
+        question = null;
         newTrip();
         const go = async (route, text) => {
           say(text);
           const ok = await ride(route); // at the usual pace: the student has to see where it goes
           return ok && alive();
         };
-        if (kind === 'say') {
-          const stop = pickOne(['B', 'C']);
-          const km = PLACES[stop];
-          if (!(await go([km], t('q_say', { stop })))) return null;
+        if (kind === 'vec') {
+          // the book's example: B, 4 km of road, 2 km north-east
+          const km = PLACES.B;
+          if (!(await go([km], t('q_vec')))) return null;
           const d = displacement(km);
-          const mag = roundTo(d.km, 0.01); // 2 at B (the book's 2 km), 1.31 at C, as on the map
+          const mag = plain(d.km);
           const dir = dirName(compass8(d.bearing));
-          question = { kind, d: mag, dir, dist: km };
-          const c = textChoices([t('opt_vec', { d: mag, dir }), t('opt_only', { d: mag }), t('opt_vec', { d: km, dir }), t('opt_only', { d: km })]);
-          return { ...c, meta: { kind, stop } };
+          const vars = { d: mag, dir, dist: km, u: U };
+          question = { kind, vars };
+          const c = wordChoices([
+            { text: t('opt_vec', vars) },
+            { text: t('opt_only', vars), note: 'miss_vec_only' },
+            { text: t('opt_vec', { ...vars, d: km }), note: 'miss_vec_dist' },
+            { text: t('opt_only', { ...vars, d: km }), note: 'miss_vec_dist_only' },
+          ]);
+          question.list = c.list;
+          return { ...c, meta: { kind, stop: 'B' } };
         }
         if (kind === 'dir') {
-          const km = pickOne([4, 5]);
+          // a short ride where the cycle is not heading the way of the arrow (km 1: south-east, riding east;
+          // km 2: east, riding north-east)
+          const km = pickOne([1, 2]);
           if (!(await go([km], t('q_dir')))) return null;
           const right = compass8(displacement(km).bearing);
           const h = headingAt(km);
           const heading = compass8((Math.atan2(h.x, h.y) * 180) / Math.PI);
           // the usual mistakes: the way the cycle rides, the arrow read backwards, east and west swapped
           const mirror = COMPASS[(8 - COMPASS.indexOf(right)) % 8];
-          const wrong = [heading, turn(right, 4), mirror, turn(right, 2), turn(right, -2)].filter((w, j, all) => w !== right && all.indexOf(w) === j);
-          question = { kind, dir: dirName(right), heading: dirName(heading) };
-          const c = textChoices([right, ...wrong.slice(0, 3)].map(dirName));
+          const wrong = [
+            { dir: heading, note: 'miss_dir_heading' },
+            { dir: turn(right, 4), note: 'miss_dir_back' },
+            { dir: mirror, note: 'miss_dir_mirror' },
+            { dir: turn(right, 2), note: 'miss_dir_other' },
+            { dir: turn(right, -2), note: 'miss_dir_other' },
+          ].filter((w, j, all) => w.dir !== right && all.findIndex((x) => x.dir === w.dir) === j);
+          question = { kind, vars: { dir: dirName(right), heading: dirName(heading) } };
+          const c = wordChoices([{ text: dirName(right) }, ...wrong.slice(0, 3).map((w) => ({ text: dirName(w.dir), note: w.note }))]);
+          question.list = c.list;
           return { ...c, meta: { kind, km, dir: right } };
         }
         if (kind === 'trip') {
           const k1 = pickOne([4, 5, 6, 7]);
-          const k2 = 1 + Math.floor(Math.random() * (k1 - 2));
+          // back to a post short of the far one, never half way (adding the two post numbers would then be right)
+          const k2 = pickOne(Array.from({ length: k1 - 2 }, (_, j) => j + 1).filter((k) => 2 * k !== k1));
           if (!(await go([k1, k2], t('q_trip', { k1, k2 })))) return null;
           const total = travelled([0, k1, k2]);
-          question = { kind, k1, back: k1 - k2, total };
-          return { ...kmChoices(total, [k2, k1, roundTo(displacement(k2).km, 0.01), k1 + k2]), meta: { kind, route: [0, k1, k2] } };
+          const dk2 = roundTo(displacement(k2).km, 0.01);
+          const vars = { k1, k2, back: k1 - k2, total, d: dk2, u: U };
+          question = { kind, vars };
+          const c = kmChoices(total, [
+            { value: k2, note: 'miss_trip_at' },
+            { value: k1, note: 'miss_trip_far' },
+            { value: k1 + k2, note: 'miss_trip_sum' },
+            { value: dk2, note: 'miss_trip_disp' },
+          ]);
+          question.list = c.list;
+          return { ...c, meta: { kind, route: [0, k1, k2] } };
         }
         if (kind === 'zero') {
           const k = pickOne([3, 4, 5, 6]);
-          if (!(await go([k, 0], t('q_zero', { k })))) return null;
-          question = { kind, k, total: 2 * k };
-          return { ...kmChoices(0, [2 * k, k, roundTo(displacement(k).km, 0.01)]), meta: { kind, route: [0, k, 0] } };
+          if (!(await go([k, 0], t('q_zero')))) return null;
+          const dk = roundTo(displacement(k).km, 0.01);
+          const vars = { k, total: 2 * k, d: dk, z: 0, u: U };
+          question = { kind, vars };
+          const c = kmChoices(0, [
+            { value: 2 * k, note: 'miss_zero_dist' },
+            { value: k, note: 'miss_zero_half' },
+            { value: dk, note: 'miss_zero_far' },
+          ]);
+          question.list = c.list;
+          return { ...c, meta: { kind, route: [0, k, 0] } };
         }
-        // rule: displacement never more than distance (shown on the ride to C)
+        // rule: the displacement is never more than the distance (shown on the ride to C)
         if (!(await go([PLACES.C], t('q_rule')))) return null;
-        question = { kind, dist: fmtShort(s.trip), disp: fmtShort(size(displacement(s.km))) };
-        const c = textChoices([t('opt_rule_ok'), t('opt_rule_eq'), t('opt_rule_more'), t('opt_rule_back')]);
+        question = { kind, vars: { dist: plain(s.trip), disp: plain(size(displacement(s.km))), u: U } };
+        const c = wordChoices([
+          { text: t('opt_rule_ok') },
+          { text: t('opt_rule_eq'), note: 'miss_rule_eq' },
+          { text: t('opt_rule_more'), note: 'miss_rule_more' },
+          { text: t('opt_rule_back'), note: 'miss_rule_back' },
+        ]);
+        question.list = c.list;
         return { ...c, meta: { kind } };
       },
-      reveal() {
+      reveal(_q, correct, picked) {
         s.values = true;
         refresh();
-        const q = question;
-        if (q.kind === 'say') return t('why_say', q);
-        if (q.kind === 'dir') return t('why_dir', q);
-        if (q.kind === 'trip') return t('why_trip', q);
-        if (q.kind === 'zero') return t('why_zero', q);
-        return t('why_rule', q);
+        const { kind, vars, list } = question;
+        const why = t(`why_${kind}`, vars);
+        const miss = correct ? '' : list[picked.index]?.note;
+        return miss ? `${why} ${t(miss, vars)}` : why;
       },
       done() {
         s.locked = false;
@@ -809,59 +1010,6 @@ export function createApp(root, options = {}) {
       },
     },
   });
-
-  // ── first-use pointer: on the cyclist ───────────────────────────────────────
-  let coach = null;
-  if (o.coach) {
-    const p = new THREE.Vector3();
-    coach = createCoach({
-      stage,
-      layer: ui.coachLayer,
-      t,
-      loupe: null,
-      tweener,
-      avoid: [ui.corner, ui.hint],
-      object: {
-        label: 'coach_drag',
-        candidates: () => {
-          p.copy(cyclist.root.position)
-            .setY(ROAD_Y + 0.7 * SCALE)
-            .project(camera);
-          return [{ x: (p.x * 0.5 + 0.5) * stage.width, y: (-p.y * 0.5 + 0.5) * stage.height }];
-        },
-        grabbable: (q) => onCyclist(q),
-        // the cyclist rolls a little way along the road and back: only a show, so nothing is measured (the arrow
-        // and the readings stay where they are)
-        async demo(alive) {
-          const k0 = s.km;
-          const k1 = k0 < END - 0.4 ? k0 + 0.3 : k0 - 0.3;
-          for (const [from, to] of [
-            [k0, k1],
-            [k1, k0],
-          ]) {
-            if (!alive()) break;
-            const ok = await tweener.animate({
-              key: 'coach',
-              duration: 0.9,
-              ease: ease.inOutSine,
-              onUpdate: (k) => moveTo(from + (to - from) * k, { count: false }),
-            }).finished;
-            if (!ok) break;
-          }
-          if (shownAt != null) moveTo(s.km, { count: false });
-          shownAt = null;
-        },
-        // the student took the cyclist during the show: it really rode there, so that bit counts from now on
-        cancel: () => {
-          tweener.cancel('coach');
-          if (shownAt == null) return;
-          const here = shownAt;
-          shownAt = null;
-          moveTo(here);
-        },
-      },
-    });
-  }
 
   // ── buttons, keys ───────────────────────────────────────────────────────────
   function syncUI() {
@@ -874,7 +1022,12 @@ export function createApp(root, options = {}) {
     }
     ui.learn.inert = s.mode === 'quiz';
     ui.quiz.inert = s.mode !== 'quiz';
-    coach?.setMode(s.mode);
+    stage.invalidate();
+  }
+  function startAgain() {
+    if (s.locked) return lockedNudge();
+    newTrip();
+    emitChange();
   }
   const fullscreenBtn = ui.$('[data-act="fullscreen"]');
   if (fullscreenBtn && !document.fullscreenEnabled) fullscreenBtn.hidden = true;
@@ -893,15 +1046,8 @@ export function createApp(root, options = {}) {
       case 'q-again':
         quiz.start();
         break;
-      case 'ride':
-        rideTo(PLACES[b.dataset.to]);
-        break;
       case 'new':
-        if (s.locked) lockedNudge();
-        else {
-          newTrip();
-          emitChange();
-        }
+        startAgain();
         break;
       case 'fullscreen':
         if (document.fullscreenElement) document.exitFullscreen?.();
@@ -912,23 +1058,25 @@ export function createApp(root, options = {}) {
   root.addEventListener('keydown', (e) => {
     const target = /** @type {Element} */ (e.target);
     if (target.closest('input, textarea, select') || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (target.closest('button') && (e.key === 'Enter' || e.key === ' ')) return; // the button does it
     const step = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[e.key];
     const k = e.key.toLowerCase();
     if (step) {
       if (s.locked) lockedNudge();
       else {
         stopRide();
-        coach?.interrupt();
-        coach?.objectUsed();
         moveTo(roundTo(s.km + step * (e.shiftKey ? 1 : 0.1), 0.1));
+        settle();
         emitChange();
       }
+    } else if (e.key === 'Enter' || e.key === ' ') {
+      if (s.mode === 'quiz') return;
+      audio.unlock();
+      doAction();
     } else if (k === 'b' || k === 'c') rideTo(PLACES[k.toUpperCase()]);
     else if (k === 'a') rideTo(PLACES.A);
-    else if (k === 'n' && !s.locked) {
-      newTrip();
-      emitChange();
-    } else if (k === 'f') setView('front');
+    else if (k === 'n') startAgain();
+    else if (k === 'f') setView('front');
     else if (k === 'v') setView('3d');
     else if (k === 'escape') hideHint();
     else return;
@@ -938,13 +1086,13 @@ export function createApp(root, options = {}) {
   // ── start ───────────────────────────────────────────────────────────────────
   newTrip();
   if (o.km) ride([Number(o.km)], { animate: false });
+  writeNote();
   measureCorner();
   setView(s.view, { animate: false });
   syncUI();
   refresh();
   const ready = (async () => {
     if (o.mode === 'quiz') quiz.start();
-    else coach?.start();
   })();
 
   return {
@@ -957,8 +1105,9 @@ export function createApp(root, options = {}) {
     getState: snapshot,
     /**
      * Change any of: km (a new trip from A straight to km), route (a new trip from A through these km, e.g.
-     * [6, 0]), ride ('A' | 'B' | 'C' or km: ride on from here, adding to the distance), newTrip (true: back to A,
-     * distance zero), view; animate: false jumps (the distance still counts every leg).
+     * [6, 0]), ride ('A' | 'B' | 'C' or km: ride on from here, adding to the distance), act (true: what the big
+     * button does, the story's next leg), newTrip (true: back to A, distance zero), view; animate: false jumps (the
+     * distance still counts every leg).
      */
     async set(p = {}) {
       const animate = p.animate !== false;
@@ -976,6 +1125,12 @@ export function createApp(root, options = {}) {
         await ride(p.route.map(Number), { animate });
       }
       if (p.ride != null) await ride([PLACES[p.ride] ?? Number(p.ride)], { animate });
+      if (p.act) {
+        const plan0 = plan();
+        if (plan0.fresh) newTrip();
+        lastAct = -Infinity;
+        await ride([PLACES[plan0.stop]], { animate });
+      }
       return snapshot();
     },
     async reset() {

@@ -3,6 +3,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import * as road from '../../assets/distance-displacement/src/road.js';
+import * as story from '../../assets/distance-displacement/src/story.js';
 
 const near = (a, b, tol, what) => assert.ok(Math.abs(a - b) <= tol, `${what}: ${a} is not ${b} ± ${tol}`);
 
@@ -111,5 +112,53 @@ describe('numbers', () => {
     assert.equal(road.fmtShort(1.31086), '1.31');
     assert.equal(road.fmtShort(2.5), '2.5');
     assert.equal(road.fmtShort(-0.001), '0');
+  });
+});
+
+describe('the story of the শেখো panel (src/story.js)', () => {
+  it('goes B, C, back to A, then is done', () => {
+    assert.deepEqual(story.STORY, ['B', 'C', 'A']);
+    assert.equal(story.nextStop(0), 'B');
+    assert.equal(story.nextStop(2), 'A');
+    assert.equal(story.nextStop(3), null);
+  });
+  it('moves on only at its next stop, and at A only after a ride', () => {
+    assert.equal(story.advance(0, 'B', 4), 1);
+    assert.equal(story.advance(0, 'C', 6), 0, 'C before B does not count');
+    assert.equal(story.advance(0, null, 2.5), 0);
+    assert.equal(story.advance(1, 'C', 6), 2);
+    assert.equal(story.advance(2, 'A', 12), 3);
+    assert.equal(story.advance(2, 'A', 0.01), 2, 'a wobble at A is no return');
+    assert.equal(story.advance(3, 'B', 16), 3, 'done stays done');
+  });
+  it('grows the rule and never shrinks it within a trip', () => {
+    const at = (step, a, trip, moving = false) => ({ step, at: a, trip, moving });
+    assert.equal(story.ruleLevel(0, at(0, 'A', 0)), 0, 'before riding');
+    assert.equal(story.ruleLevel(0, at(0, null, 2, true)), 0, 'while riding the first leg');
+    assert.equal(story.ruleLevel(0, at(1, 'B', 4)), 1, 'after a stop');
+    assert.equal(story.ruleLevel(0, at(0, null, 2.5)), 1, 'after a stop anywhere');
+    assert.equal(story.ruleLevel(1, at(2, 'C', 6)), 2, 'after C');
+    assert.equal(story.ruleLevel(2, at(2, null, 9, true)), 2, 'riding back');
+    assert.equal(story.ruleLevel(2, at(3, 'A', 12)), 3, 'back at A: the law');
+    assert.equal(story.ruleLevel(0, at(0, 'A', 12)), 3, 'back at A after any ride');
+    assert.equal(story.ruleLevel(3, at(0, null, 14, true)), 3, 'never shrinks');
+  });
+  it('picks the result line for the state', () => {
+    assert.equal(story.outcomeKind({ trip: 0, at: 'A', moving: false }), 'start');
+    assert.equal(story.outcomeKind({ trip: 2, at: null, moving: true }), 'move');
+    assert.equal(story.outcomeKind({ trip: 4, at: 'B', moving: false }), 'stop');
+    assert.equal(story.outcomeKind({ trip: 6, at: 'C', moving: false }), 'stop');
+    assert.equal(story.outcomeKind({ trip: 12, at: 'A', moving: false }), 'back');
+    assert.equal(story.outcomeKind({ trip: 2.5, at: null, moving: false }), 'here');
+  });
+  it('names the legs of a trip, a wobble counted in the leg before it', () => {
+    assert.deepEqual(story.mergeLegs([6, -6]), [6, 6]);
+    assert.deepEqual(story.mergeLegs([4, 2]), [6]);
+    const wobbly = story.mergeLegs([3, -0.02, 0.02, 3]);
+    assert.equal(wobbly.length, 1);
+    near(wobbly[0], 6.04, 1e-9, 'the sum stays');
+    assert.deepEqual(story.mergeLegs([]), []);
+    assert.deepEqual(story.legsToShow([7, 7, 7, 7]), [7, 7, 7, 7]);
+    assert.deepEqual(story.legsToShow([6, 6, 6, 6, 3]), [6, 6, null, 3]);
   });
 });
