@@ -16,7 +16,7 @@
 export const COMB = {
   levels: 5, // strokes to a fully charged comb
   reach: 45, // mm: at full charge a bit of paper jumps from this far (teeth to paper)
-  strokeMm: 60, // mm of combing through the hair for one more level (about one pass)
+  strokeMm: 30, // mm of combing through the hair for one more level (one pass along the top of the hair)
 };
 
 /** How far from the comb's teeth a bit of paper jumps up, at charge level q (0 when the comb has no charge). */
@@ -47,8 +47,11 @@ export function protonForceRatio() {
   return (k * e * e) / (G * mp * mp);
 }
 
-/** How high (mm) the comb holds the lifted bits up in the air, once they have jumped. */
-export const LIFT_HEIGHT = 50;
+/**
+ * How high (mm) the comb holds the lifted bits up in the air, once they have jumped: well above where they lay, so
+ * the picture shows them hanging in the air, clear of the table's far edge.
+ */
+export const LIFT_HEIGHT = 60;
 
 /**
  * How low (mm above the desk) the comb comes down over the paper before it is lifted again: a little inside its

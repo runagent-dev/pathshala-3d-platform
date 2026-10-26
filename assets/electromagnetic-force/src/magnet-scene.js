@@ -1,8 +1,9 @@
-// The magnet scene, in millimetres: a circuit laid out in a row on the desk (a 1.5 V cell, a knife switch, a coil of
-// copper wire on a plastic tube with no iron inside, and the wire back to the cell along the front of the desk), and
-// a bar magnet (N red, S grey) on a little cart that can roll towards the coil or away from it, up to a block at the
-// end. The current goes from the cell's + end through the switch into the coil's left end and round it as a
-// right-handed screw turns, so the coil's right end (facing the magnet) is a north pole while the current flows.
+// The magnet scene, in millimetres: a coil of copper wire on a plastic tube with no iron inside, with a 1.5 V cell and a
+// knife switch lying on the desk in front of it (so the row is short and a phone shows it big), and a bar magnet (N red,
+// S grey) on a little cart that can roll towards the coil or away from it, up to a block at the end. The current goes
+// from the cell's + end through the switch into the coil's RIGHT end and round it back to its left end, then to the
+// cell's − end; the winding turns so that, seen from the magnet, the current goes anticlockwise: the coil's right end
+// (facing the magnet) is a north pole while the current flows (right-hand grip rule).
 // While the switch is closed, small chevrons run along the wires: the current. The app moves things; this file
 // builds them and says where they are.
 import * as THREE from 'three';
@@ -19,19 +20,23 @@ export const ARROW = { y: 46, z: 5 };
 /** The middle of the bar magnet for a gap between it and the coil. */
 export const magnetX = (gap) => COIL.x1 + gap + BAR.len / 2;
 const COIL_X = (COIL.x0 + COIL.x1) / 2;
-const CELL = { x: -161, r: 10, len: 50 }; // a 1.5 V cell left of the coil, + at its right end
-const SWITCH_X = -113;
+const FRONT = 52; // z of the cell and the switch, in front of the coil
+const CELL = { x: -88, r: 10, len: 50 }; // a 1.5 V cell in front of the coil's left half, + at its right end
+const SWITCH_X = -43; // the knife switch in front of the coil's right half (hinge on its left)
 const CHEVRON_GAP = 15; // mm between the current's chevrons along the wires
 const CURRENT_SPEED = 24; // mm/s they move (only a picture of the current: the real drift is far slower)
 
-/** A helix along +x, turning as a right-handed screw (y → z → −y → −z as it goes): the coil's winding. */
+/**
+ * A helix along +x (u = 0 at its left end): the coil's winding. Going from its right end to its left (the way the
+ * current goes), it turns y → z → −y → −z: anticlockwise about +x, so the right end is the north pole.
+ */
 class Helix extends THREE.Curve {
   constructor(x0, x1, r, turns) {
     super();
     Object.assign(this, { x0, x1, r, turns });
   }
   getPoint(u, out = new THREE.Vector3()) {
-    const a = u * this.turns * Math.PI * 2;
+    const a = -u * this.turns * Math.PI * 2;
     return out.set(this.x0 + (this.x1 - this.x0) * u, COIL.y + this.r * Math.cos(a), this.r * Math.sin(a));
   }
 }
@@ -86,7 +91,7 @@ export function createMagnetScene({ materials, colors }) {
   const minus = textMesh('−', 9, { color: '#ffffff', weight: 700 });
   minus.position.set(-10, 0, CELL.r + 0.3);
   cell.add(body, band, nub, cap, plus, minus);
-  cell.position.set(CELL.x, CELL.r, 0);
+  cell.position.set(CELL.x, CELL.r, FRONT);
   root.add(cell);
 
   // ── the knife switch between the cell and the coil ──
@@ -107,7 +112,7 @@ export function createMagnetScene({ materials, colors }) {
   handle.position.set(19, 4.5, 0);
   blade.add(bladeBar, handle);
   sw.add(base, hinge, contact, blade);
-  sw.position.set(SWITCH_X, 0, 0);
+  sw.position.set(SWITCH_X, 0, FRONT);
   root.add(sw);
   /** The blade down on its contact (closed: the current flows) or up (open). k: 0 open … 1 closed. */
   const setBlade = (k) => {
@@ -115,53 +120,50 @@ export function createMagnetScene({ materials, colors }) {
   };
   setBlade(0);
   const switchHit = new THREE.Mesh(new THREE.BoxGeometry(40, 46, 40), new THREE.MeshBasicMaterial({ visible: false }));
-  switchHit.position.set(SWITCH_X, 16, 4);
+  switchHit.position.set(SWITCH_X, 16, FRONT);
   switchHit.userData = { part: 'switch', noExport: true };
   root.add(switchHit);
 
-  // ── the wires: + of the cell → switch → the coil's left end; the coil's right end → along the front → − ──
+  // ── the wires: + of the cell → switch → the coil's right end; round the coil; its left end → − of the cell ──
   const red = new THREE.MeshStandardMaterial({ name: 'WireRed', color: 0xc92a2a, roughness: 0.5 });
   const black = new THREE.MeshStandardMaterial({ name: 'WireBlack', color: 0x2b2d31, roughness: 0.5 });
-  const start = helix.getPoint(0);
-  const end = helix.getPoint(1);
+  const start = helix.getPoint(0); // the left end (top of the tube)
+  const end = helix.getPoint(1); // the right end
   const plusEnd = CELL.x + CELL.len / 2 + 3;
   const minusEnd = CELL.x - CELL.len / 2 - 1.2;
   const wires = [
     [
       curveOf([
-        [plusEnd, CELL.r, 0],
-        [plusEnd + 3, CELL.r + 4, 3],
-        [SWITCH_X - 12, 15, 2],
-        [SWITCH_X - 9, 14.5, 0],
+        [plusEnd, CELL.r, FRONT],
+        [plusEnd + 3, CELL.r + 3, FRONT + 2],
+        [SWITCH_X - 12, 15, FRONT + 1],
+        [SWITCH_X - 9, 14.5, FRONT],
       ]),
       red,
     ],
     [
       curveOf([
-        [SWITCH_X + 9, 14.5, 0],
-        [SWITCH_X + 12, 24, 6],
-        [start.x - 4, start.y + 4, 5],
-        [start.x, start.y, start.z],
-      ]),
-      red,
-    ],
-    [
-      curveOf([
+        [SWITCH_X + 9, 14.5, FRONT],
+        [SWITCH_X + 13, 20, FRONT - 6],
+        [end.x + 1, 8, 24],
+        [end.x + 2, end.y + 3, 10],
         [end.x, end.y, end.z],
-        [end.x + 3, end.y + 4, 8],
-        [COIL.x1 + 3, 22, 22],
-        [COIL.x1 + 1, 4, 26],
-        [COIL_X, 1.6, 28],
-        [SWITCH_X, 1.6, 27],
-        [CELL.x, 1.6, 24],
-        [minusEnd - 8, 4, 12],
-        [minusEnd, CELL.r, 0],
+      ]),
+      red,
+    ],
+    [
+      curveOf([
+        [start.x, start.y, start.z],
+        [start.x - 2, start.y + 3, 10],
+        [COIL.x0 - 5, 10, 22],
+        [minusEnd - 8, 4, FRONT - 6],
+        [minusEnd, CELL.r, FRONT],
       ]),
       black,
     ],
   ];
   wires.forEach(([curve, material], i) => {
-    const m = new THREE.Mesh(new THREE.TubeGeometry(curve, i === 2 ? 90 : 30, 1.4, 8, false), material);
+    const m = new THREE.Mesh(new THREE.TubeGeometry(curve, i ? 40 : 24, 1.4, 8, false), material);
     m.name = 'Wire';
     root.add(m);
   });
@@ -272,10 +274,10 @@ export function createMagnetScene({ materials, colors }) {
     hits: [magnetHit, switchHit],
     meshes: { coil, cell, sw, cart },
     /** What the camera must show (x from … to, in mm). */
-    extent: { left: minusEnd - 10, right: stopper.position.x + 8 },
+    extent: { left: Math.min(minusEnd - 10, COIL.x0 - 10), right: stopper.position.x + 8, front: FRONT + 14 },
     points: {
-      cell: new THREE.Vector3(CELL.x, 2 * CELL.r, 0),
-      switch: new THREE.Vector3(SWITCH_X, 16, 0),
+      cell: new THREE.Vector3(CELL.x, 2 * CELL.r, FRONT),
+      switch: new THREE.Vector3(SWITCH_X, 16, FRONT),
       south: new THREE.Vector3(COIL.x0 + 1.5, 1, COIL.flange * 0.6),
       north: new THREE.Vector3(COIL.x1 - 1.5, 1, COIL.flange * 0.6),
     },

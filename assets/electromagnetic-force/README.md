@@ -2,16 +2,19 @@
 
 **Where it goes in the book:** Book page 68, topic 3.2.2: তড়িৎ চৌম্বক বল বা বিদ্যুৎ চৌম্বকীয় বল (Electromagnetic Force), next to that paragraph.
 
-Interactive 3D figure for the Pathshala book. Two examples: **চিরুনি** (comb a student's hair, bring the charged comb
-to bits of paper: they jump up and it lifts them into the air, the comb's pull beating the whole Earth's, with the two
-force arrows) and **চুম্বক** (a cell, a switch and a coil in a row: switch on and the current runs and the coil becomes a
-magnet; unlike poles attract, like poles repel a bar magnet on a cart). The panel shows the four fundamental forces in
-order, this one highlighted. Then a five-question test.
+Interactive 3D figure for the Pathshala book, on the kit's clean panel (one action, one result, one rule). Two
+examples in a row of words: **চিরুনি** (one table-top view with the student's head at the edge, the comb in the hair
+and bits of paper on the table; the action in two numbered steps: comb the hair, the charge builds on the comb; bring
+it to the paper, the bits jump up and cling because its pull beats the whole Earth's, with the two force arrows) and
+**চুম্বক** (a cell, a switch and a coil in a row: switch on and the coil becomes a magnet that pulls a bar magnet on a
+cart; turn the magnet round and like poles push it away). A quiet strip names the four fundamental forces in order,
+this one marked. Then a five-question test.
 
 `set` takes `scene` (`comb` | `magnet`), `charge` (0–5), `strokes` (comb this many times), `place` (`hair` |
 `paper`; over the paper without `height` the comb ends holding the lifted bits up) with `height` (mm above the
-desk), `again`, `on` (the switch), `facing` (`N` | `S`), `gap` (mm, 0–60), `view`, and `animate: false` to jump. `get` returns `{ scene, view, mode, comb: { charge, place, height, reach, lifted,
-pull, wins }, magnet: { on, facing, gap, force, moving } }`.
+table), `again`, `on` (the switch), `facing` (`N` | `S`), `gap` (mm, 0–60), `view`, and `animate: false` to jump.
+`get` returns `{ scene, view, mode, comb: { charge, place, height, reach, lifted, pull, wins }, magnet: { on, facing,
+gap, force, moving }, next: { action, step, busy } }` (`next`: what the big button does now).
 
 ## Embed
 
