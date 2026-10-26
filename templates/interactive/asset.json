@@ -20,7 +20,7 @@
     { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
     { "name": "mode", "label": "Start in", "type": "select", "options": [["explore", "learn"], ["quiz", "test"]], "default": "explore" },
     { "name": "magnifier", "label": "Magnifier", "type": "boolean", "default": "1" },
-    { "name": "coach", "label": "First-use pointers", "type": "boolean", "default": "1" },
+    { "name": "coach", "label": "The ring on the part pulses at first", "type": "boolean", "default": "1" },
     { "name": "numerals", "label": "Digits", "type": "select", "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]], "default": "" },
     { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
     { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },

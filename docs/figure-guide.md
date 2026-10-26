@@ -28,7 +28,9 @@ assets/<id>/
 1. **Options and strings.** `const o = { ...DEFAULTS, ...options }`, `const t = createI18n(o.lang, { numerals })`,
    `const N = t.num`. URL parameters arrive typed from `asset.json` through `startFigure`.
 2. **The root.** `root.classList.add('pvc')`, `root.dataset.ui = 'simple'`, `root.dataset.theme = o.bg`,
-   `root.lang = t.lang`, then `buildStudentShell(root, t, { learn: learnSheet(t, { terms }) })`.
+   `root.lang = t.lang`, then `buildStudentShell(root, t, { learn: learnSheet(t, { terms }) })`, or for a figure
+   where the student picks an example and does one thing, `learn: cleanSheet(t, { examples, quiet, lines })` (one
+   action, one result, one rule: `docs/student-kit.md`).
 3. **3D.** `createStage(ui.canvasHost, …)`, `createMaterials`, your model from `src/<object>.js`, a tweener on the
    stage ticker, `createAudio`, `createLoupe`. Optional soft shadow on an invisible page (see the template).
 4. **State and the panel.** One state object `s`; a `refresh()` that writes the reading into the learn sheet (with
@@ -46,8 +48,9 @@ assets/<id>/
    and returns the right answer and three wrong ones from the usual mistakes; `reveal(q, correct, picked)` writes the
    worked sum (and can name the mistake behind `picked`). Give `lines: { text: 2, feedback: 2 }` (or what your
    longest question and answer need) so the sheet keeps its height and the 3D view its size.
-8. **First-use pointers.** `createCoach` with spots on the movable part that a finger really grabs (`labelAt` if its
-   words would cover a label).
+8. **First-use pointers.** For a tap (push, start, drop): `createAction`, the big numbered button with the same
+   numbered badge in a dashed ring on the part, which the student can tap instead. For a drag: `createCoach` with
+   spots on the movable part that a finger really grabs (`labelAt` if its words would cover a label).
 9. **Buttons and keys** through one click handler on the root (`data-view`, `data-mode`, `data-q`, `data-act`).
 10. **Start and API.** Set the initial state, then return `{ ready, on, getState, set, reset, capture, exportRoot,
     startPractice }`. `getState` and `set` are what the book and the tests use: keep them plain JSON.

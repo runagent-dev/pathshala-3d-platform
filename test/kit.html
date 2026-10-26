@@ -24,12 +24,14 @@
     import { exportGLB } from '@shared/export-glb.js';
     import { createStage } from '@shared/stage.js';
     import { createTweener } from '@shared/tween.js';
+    import { createAction } from '@shared/student/action.js';
     import { createAnnotations } from '@shared/student/annotations.js';
     import { createCoach } from '@shared/student/coach.js';
     import { createLoupe } from '@shared/student/loupe.js';
     import { capturePointer, releasePointer } from '@shared/student/pointer.js';
     import { createQuiz } from '@shared/student/quiz.js';
-    import { buildStudentShell } from '@shared/student/shell.js';
+    import { ICONS } from '@shared/student/icons.js';
+    import { bindCleanSheet, buildStudentShell, cleanSheet } from '@shared/student/shell.js';
 
     window.kit = {
       THREE,
@@ -40,6 +42,7 @@
       exportGLB,
       createStage,
       createTweener,
+      createAction,
       createAnnotations,
       createCoach,
       createLoupe,
@@ -47,6 +50,25 @@
       releasePointer,
       createQuiz,
       buildStudentShell,
+      cleanSheet,
+      bindCleanSheet,
+      ICONS,
+      /** A touch on an element: down at its middle (+dx, dy), an optional move, up after `wait` ms. */
+      tap(el, { dx = 0, dy = 0, move = 0, id = 31, wait = 0 } = {}) {
+        const r = el.getBoundingClientRect();
+        const x = r.left + r.width / 2 + dx;
+        const y = r.top + r.height / 2 + dy;
+        const ev = (type, px) =>
+          new PointerEvent(type, { pointerId: id, pointerType: 'touch', isPrimary: true, bubbles: true, cancelable: true, clientX: px, clientY: y, button: 0, buttons: type === 'pointerup' ? 0 : 1 });
+        el.dispatchEvent(ev('pointerdown', x));
+        if (move) el.dispatchEvent(ev('pointermove', x + move));
+        return new Promise((done) =>
+          setTimeout(() => {
+            el.dispatchEvent(ev('pointerup', x + move));
+            done(undefined);
+          }, wait),
+        );
+      },
     };
   </script>
 </body>

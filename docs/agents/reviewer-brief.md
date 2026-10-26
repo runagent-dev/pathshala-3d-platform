@@ -51,6 +51,12 @@ and terms but the visuals should come from imagination: vivid, clear, delightful
    - Layout at every size: clipped or overlapping labels, tiny text, controls too small, the 3D object too small or
      badly framed, the layout jumping while in use, anything off-screen, scroll or zoom.
    - Look: does it look like a quality textbook figure (white, plain, well lit, tasteful colours), or generated?
+   - The panel follows the owner's rule, **one action, one result, one rule** (kit 1.3.0: `cleanSheet`,
+     `createAction`): examples as one row of words, one big numbered action button whose same badge rings the part to
+     touch (a tap on either works; labels are never crossed by the ring or covered by the badge; the ring's
+     `ringBox()` is in the labels' avoid list), one result line, one rule that grows with what the student found;
+     no boxed readouts, no rows of small boxed buttons, secondary actions quiet. The action row never wraps (the
+     panel must not jump when the verb changes), `step` counts the student's own steps.
    - Sister figures: does it agree with neighbouring figures (units, terms, colours, headings; see book-notes)?
    - Code: kit used properly (no copied kit code), strings only in `i18n.js`, `t.num()` for numbers, no dead code,
      no test-only hacks, comments in the style of the reference figures, `asset.json` complete and honest

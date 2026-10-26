@@ -24,12 +24,16 @@ work") and **`docs/book-notes.md`** (decisions shared across figures: units, ter
 - **All student-facing text in Bangla**, in the book's NCTB terms (exactly as the page writes them), English as the
   second language. Every string in `src/i18n.js` (the checker refuses Bangla anywhere else). Numbers through
   `t.num()` so they show Bangla digits. Font: Noto Sans Bengali (bundled; never Hind Siliguri).
-- Build on the shared student kit (`shared/lib/student/`): `buildStudentShell` (custom learn panel HTML is fine),
-  `createQuiz` with hooks (`lines` keeps the sheet's height steady), `createCoach` (first-use pointer on the 3D
-  object; `loupe: null` if no magnifier; `inset`, `labelAt`), `createAnnotations` (labels pinned to 3D points; give
-  them `spots` and `avoid` so they stay clear of each other, the corner buttons and the hint), `createArrow` (3D
-  vector arrows), `createMaterials`, `textMesh`, `createAudio`, `createTweener`, `createStage`. Kit 1.2.0 added
-  these for what earlier figures worked around (`docs/student-kit.md`). Keep only figure-specific code in the figure.
+- Build on the shared student kit (`shared/lib/student/`): `buildStudentShell` with **`cleanSheet`** for the শেখো
+  panel (one row of example words, one action, one result line, one rule line; `bindCleanSheet` writes it) and
+  **`createAction`** (the big numbered action button and the same numbered badge in a dashed ring on the 3D part the
+  student taps; it replaces the coach for tap actions), `createQuiz` with hooks (`lines` keeps the sheet's height
+  steady; `action` hides the marker in the test), `createCoach` (first-use pointer for **drags** on the 3D object;
+  `loupe: null` if no magnifier; `inset`, `labelAt`), `createAnnotations` (labels pinned to 3D points; give them
+  `spots` and `avoid` so they stay clear of each other, the corner buttons and the hint), `createArrow` (3D vector
+  arrows), `createMaterials`, `textMesh`, `createAudio`, `createTweener`, `createStage`. Kit 1.2.0 and 1.3.0 added
+  these for what earlier figures worked around or the owner asked for (`docs/student-kit.md`). Keep only
+  figure-specific code in the figure. `assets/newtons-first-law/` is the first figure on the clean sheet.
 
 ## Read before you start
 
@@ -102,8 +106,15 @@ Shell note: each Bash call may start in your worktree root again; use absolute p
 
 - **One idea, instantly visible.** Someone glancing at the poster understands what the figure is about. The panel
   states the idea in one short line in the book's words, plus at most one live readout/sum that makes it concrete.
+- **One action, one result, one rule** (the owner's rule for the শেখো panel, kit 1.3.0): examples as one row of
+  words (not boxes); ONE big action button (`createAction`: accent pill, numbered badge, verb, hand) whose same
+  numbered badge pulses in a dashed ring on the 3D part, and a tap on either does it; ONE result line with the number
+  that matters, large; ONE rule in the book's words, explained plainly, that grows with what the student has found
+  out. No cards or borders round readouts, no dense paragraphs, no rows of small boxed buttons; secondary actions
+  (reset) are quiet (icon or text), never a second big button.
 - **The student does something meaningful** within seconds (tap, drag, play/pause, choose an example), guided by
-  the coach pointer on the 3D object. Controls: a few clear Bangla buttons at most.
+  the action's marker on the 3D object (taps) or the coach pointer (drags). Controls: a few clear Bangla buttons at
+  most.
 - **The test**: 5 questions, 4 tap choices each, wrong choices from real mistakes, a worked answer after each
   (the kit's `reveal`), questions varied (not five copies of one), correct physics, unambiguous Bangla. The 3D
   scene sets up each question ("look at this and answer"); most questions should need the picture.
