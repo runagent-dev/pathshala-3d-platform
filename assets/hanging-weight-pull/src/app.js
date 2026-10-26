@@ -20,7 +20,27 @@ import { ICONS } from '@shared/student/icons.js';
 import { createI18n } from './i18n.js';
 import { BENCH, STRING_Y, createApparatus } from './apparatus.js';
 import { fitPose } from './camera.js';
-import { EXPERIMENTS, G, IDS, SLOW, plain, pull, round, runAt, runTime, solve, travel, twoWeights } from './reading.js';
+import {
+  CALC_PAIRS,
+  EXPERIMENTS,
+  G,
+  IDS,
+  M_PAIRS,
+  SLOW,
+  TWO_PAIRS,
+  calcChoices,
+  m_PAIRS,
+  plain,
+  pull,
+  round,
+  runAt,
+  runTime,
+  sameChoices,
+  solve,
+  travel,
+  twoChoices,
+  twoWeights,
+} from './reading.js';
 
 export const DEFAULTS = {
   id: 'w2', // 'w2' | 'w5' | 'heavy' | 'two': the experiment (the row of words)
@@ -37,8 +57,12 @@ export const DEFAULTS = {
 };
 
 const COLORS = { W: '#7048e8', T: '#e8590c', a: '#0c8599' };
-const FORCE_SCALE = { single: 0.0048, two: 0.0026 }; // m of arrow per newton (one scale for all forces in a scene)
-const ACC_SCALE = 0.045; // m of arrow per ms⁻²
+// m of arrow per newton (one scale for all forces in a scene) and per ms⁻²; no arrow is longer than ARROW_MAX (m), so a
+// big mass never draws an arrow off the stage
+const FORCE_SCALE = { single: 0.0048, two: 0.0028 };
+const ACC_SCALE = { single: 0.045, two: 0.07 };
+const ARROW_MAX = 0.3;
+const NBSP = '\u00a0';
 const ZF = 0.2; // the arrows are drawn in a plane in front of the bench, so nothing hides them
 const DOUBLE_TAP = 450; // ms
 // what the camera shows: the bench from the left a little before the block to beyond the weight (room for labels)
@@ -52,30 +76,6 @@ const DOWN = new THREE.Vector3(0, -1, 0);
 const UPV = new THREE.Vector3(0, 1, 0);
 const RIGHT = new THREE.Vector3(1, 0, 0);
 const LEFT = new THREE.Vector3(-1, 0, 0);
-// mass pairs for the test (M, m): every a has at most two decimals, and the wrong answers are all different
-const PAIRS = [
-  [2, 3],
-  [3, 4],
-  [4, 3],
-  [3, 7],
-];
-const M_PAIRS = [
-  [2, 4],
-  [2, 6],
-  [3, 6],
-];
-const m_PAIRS = [
-  [5, 5],
-  [3, 3],
-  [4, 3],
-];
-const TWO_PAIRS = [
-  [10, 5, 5],
-  [5, 10, 5],
-  [6, 2, 4],
-  [2, 6, 4],
-];
-
 export function createApp(root, options = {}) {
   const o = { ...DEFAULTS, ...options };
   const t = createI18n(o.lang, { numerals: o.numerals });
@@ -213,15 +213,17 @@ export function createApp(root, options = {}) {
     if (!arrowsOn()) return;
     const { sol, setup } = s;
     const two = setup.kind === 'two';
-    const kf = FORCE_SCALE[two ? 'two' : 'single'];
+    const biggest = two ? Math.max(sol.W2, sol.W1, sol.T2, sol.T1) : Math.max(sol.W, sol.T);
+    const kf = Math.min(FORCE_SCALE[two ? 'two' : 'single'], ARROW_MAX / biggest);
+    const ka = Math.min(ACC_SCALE[two ? 'two' : 'single'], ARROW_MAX / Math.max(sol.a, 1e-6));
     const bk = geom.block;
     if (!two) {
       const r = geom.right;
       A.rW.set(at(r.x, r.com), DOWN, sol.W * kf);
       A.rT.set(at(r.x, r.top), UPV, sol.T * kf);
-      A.ra.set(at(r.x + r.size.rBottom + 0.075, r.com), DOWN, sol.a * ACC_SCALE);
+      A.ra.set(at(r.x + r.size.rBottom + 0.075, r.com), DOWN, sol.a * ka);
       A.bR.set(at(bk.x + bk.w / 2 + 0.012, STRING_Y), RIGHT, sol.T * kf);
-      A.ba.set(at(bk.x, BENCH.top - 0.03), RIGHT, sol.a * ACC_SCALE);
+      A.ba.set(at(bk.x, BENCH.top - 0.03), RIGHT, sol.a * ka);
       return;
     }
     // two weights: the heavier one (m₂ on the left, or m₁ on the right) falls and the lighter one rises
@@ -230,18 +232,21 @@ export function createApp(root, options = {}) {
     const leftFalls = sol.left;
     A.lW.set(at(l.x, l.com), DOWN, sol.W2 * kf);
     A.lT.set(at(l.x, l.top), UPV, sol.T2 * kf);
-    A.la.set(at(l.x - l.size.rBottom - 0.075, l.com), leftFalls ? DOWN : UPV, sol.a * ACC_SCALE);
+    A.la.set(at(l.x - l.size.rBottom - 0.075, l.com), leftFalls ? DOWN : UPV, sol.a * ka);
     A.rW.set(at(r.x, r.com), DOWN, sol.W1 * kf);
     A.rT.set(at(r.x, r.top), UPV, sol.T1 * kf);
-    A.ra.set(at(r.x + r.size.rBottom + 0.075, r.com), leftFalls ? UPV : DOWN, sol.a * ACC_SCALE);
+    A.ra.set(at(r.x + r.size.rBottom + 0.075, r.com), leftFalls ? UPV : DOWN, sol.a * ka);
     A.bL.set(at(bk.x - bk.w / 2 - 0.012, STRING_Y), LEFT, sol.T2 * kf);
     A.bR.set(at(bk.x + bk.w / 2 + 0.012, STRING_Y), RIGHT, sol.T1 * kf);
-    A.ba.set(at(bk.x, BENCH.top - 0.03), leftFalls ? LEFT : RIGHT, sol.a * ACC_SCALE);
+    A.ba.set(at(bk.x, BENCH.top - 0.03), leftFalls ? LEFT : RIGHT, sol.a * ka);
   }
 
   // ── the run ─────────────────────────────────────────────────────────────────
+  /** Two equal masses hold each other: nothing moves (only reachable through set({ masses })). */
+  const balanced = () => s.setup.kind === 'two' && s.sol.a < 1e-3;
   function release({ quiet = false, jump = false } = {}) {
     if (s.phase === 'run' && s.hold == null) return;
+    if (balanced()) return showHint(t('hint_balanced'), { duration: 3000 });
     s.hold = null;
     s.phase = 'run';
     s.t0 = now();
@@ -312,7 +317,7 @@ export function createApp(root, options = {}) {
     const { sol, setup } = s;
     if (s.phase === 'ready')
       return setup.kind === 'two' ? t('out_ready_two', { m2: setup.m2, m1: setup.m1, m: setup.m }) : t('out_ready', { M: setup.M, m: setup.m });
-    return t('out_run', { a: plain(sol.a) });
+    return t(s.phase === 'done' ? 'out_done' : 'out_run', { a: plain(sol.a) });
   }
 
   /** All three single experiments run: the law may be shown, and the picture's words become the symbols. */
@@ -322,8 +327,12 @@ export function createApp(root, options = {}) {
 
   /** The rule: one short sentence per idea, growing with what the student has found; the law last. */
   function ruleHtml() {
-    if (s.setup.kind === 'two') return s.phase === 'ready' ? t('rule_two_ready') : t(s.sol.left ? 'rule_two_left' : 'rule_two_right');
-    if (lawFound()) return t('rule_law');
+    if (s.setup.kind === 'two') {
+      if (balanced()) return t('rule_two_balanced');
+      return s.phase === 'ready' ? t('rule_two_ready') : t(s.sol.left ? 'rule_two_left' : 'rule_two_right');
+    }
+    // the law, and under it, small and quiet, the book's own two equations
+    if (lawFound()) return `${t('rule_law')}<span class="hw-book">${t('rule_book')}</span>`;
     if (s.phase === 'ready') return t('rule_ready');
     if (s.id === 'w2') return t(found('w5') ? 'rule_more_M' : 'rule_first');
     if (s.id === 'w5') return t(found('w2') ? 'rule_more_M' : found('heavy') ? 'rule_more_m' : 'rule_first');
@@ -355,7 +364,7 @@ export function createApp(root, options = {}) {
       note.innerHTML = text;
       lastNote = text;
     }
-    scaleNote.textContent = arrowsOn() ? t('note_scale') : '';
+    scaleNote.textContent = arrowsOn() ? t(s.phase === 'done' ? 'note_scale_done' : 'note_scale') : '';
     syncLabels();
     stage.invalidate();
   }
@@ -422,6 +431,8 @@ export function createApp(root, options = {}) {
   const T_BLOCK_L = [spot(-36, -15), spot(-36, -33), spot(0, -33), spot(0, -15), spot(-12, 0), spot(0, 18), spot(0, 36)];
   const BELOW = [spot(0, 16), spot(0, 34), spot(14, 16), spot(-14, 16)];
   const RIGHT_OF = [spot(12, 0), spot(12, 16), spot(12, -16)];
+  const A_BLOCK = [spot(-8, 16), spot(-8, 34), spot(0, 16), spot(0, 34), ...RIGHT_OF];
+  const AROUND = [spot(0, 16), spot(0, 34), spot(0, -16), spot(0, -34)]; // above or below a weight's acceleration arrow
 
   const blockTop = new THREE.Vector3();
   const weightMid = { right: new THREE.Vector3(), left: new THREE.Vector3() };
@@ -441,13 +452,10 @@ export function createApp(root, options = {}) {
     // a label is the word (ওজন, টান, ত্বরণ), or its symbol once the law has been shown; it carries a number only where
     // it matters, and the test keeps the numbers off until the answer
     const name = (k) => t(sym ? `nm_${k}_sym` : `nm_${k}`);
-    const label = (k, numbered, v, fmt) => {
-      if (!(s.numbers && numbered)) return name(k);
-      return t(sym ? 'lbl_sym' : 'lbl_plain', { name: name(k), val: t(fmt, { v: plain(v) }) });
-    };
+    const label = (k, numbered, v, unit) =>
+      s.numbers && numbered ? t(`${sym ? 'lbl_sym' : 'lbl_plain'}_${unit}`, { name: name(k), v: plain(v) }) : name(k);
     // two weights: always the words (বাম, ডান): the symbols m₁, m₂, T₁, T₂ are left to the book
-    const side = (k, numbered, v, fmt) =>
-      !(s.numbers && numbered) ? t(`nm_${k}`) : t('lbl_plain', { name: t(`nm_${k}`), val: t(fmt, { v: plain(v) }) });
+    const side = (k, numbered, v, unit) => (s.numbers && numbered ? t(`lbl_plain_${unit}`, { name: t(`nm_${k}`), v: plain(v) }) : t(`nm_${k}`));
     // the masses: a weight's label sits beside it, clear of its ring (the weight's width on the screen sets how far)
     const away = (sd, dir) => {
       const b = screenBox(ap.weightBody(sd));
@@ -485,31 +493,52 @@ export function createApp(root, options = {}) {
       const own = [bodyBoxes];
       // the ones that matter first (they choose their places first); then the ones on the weights, which hide when crowded
       if (!two) {
-        addLabel('bR', { text: label('T', true, sol.T, 'val_N'), point: () => A.bR.tip, spots: T_BLOCK, color: COLORS.T, own });
-        addLabel('rW', { text: label('W', true, sol.W, 'val_N'), point: () => A.rW.tip, spots: IN_R, color: COLORS.W, own });
+        addLabel('bR', { text: label('T', true, sol.T, 'N'), point: () => A.bR.tip, spots: T_BLOCK, color: COLORS.T, own });
+        addLabel('rW', { text: label('W', true, sol.W, 'N'), point: () => A.rW.tip, spots: IN_R, color: COLORS.W, own });
         addLabel('ba', {
-          text: label('a', true, sol.a, 'val_a'),
+          text: label('a', true, sol.a, 'a'),
           point: () => A.ba.tip,
-          spots: [...RIGHT_OF, ...BELOW],
+          spots: A_BLOCK, // under its arrow and left of its head: clear of the string by the pulley
           color: COLORS.a,
           own,
           optional: true,
         });
         if (!compact) {
           addLabel('rT', { text: label('T', false), point: () => A.rT.tip, spots: IN_R, color: COLORS.T, own, optional: true });
-          addLabel('ra', { text: label('a', false), point: () => A.ra.tip, spots: [...OUT_R, ...IN_R], color: COLORS.a, own, optional: true });
+          addLabel('ra', {
+            text: label('a', false),
+            point: () => A.ra.tip,
+            spots: [...OUT_R, ...IN_R, ...AROUND],
+            color: COLORS.a,
+            own,
+            optional: true,
+          });
         }
       } else {
-        addLabel('bL', { text: side('Tl', true, sol.T2, 'val_N'), point: () => A.bL.tip, spots: T_BLOCK_L, color: COLORS.T, own });
-        addLabel('bR', { text: side('Tr', true, sol.T1, 'val_N'), point: () => A.bR.tip, spots: T_BLOCK, color: COLORS.T, own });
+        addLabel('bL', { text: side('Tl', true, sol.T2, 'N'), point: () => A.bL.tip, spots: T_BLOCK_L, color: COLORS.T, own });
+        addLabel('bR', { text: side('Tr', true, sol.T1, 'N'), point: () => A.bR.tip, spots: T_BLOCK, color: COLORS.T, own });
         addLabel('lW', { text: side('Wl', false), point: () => A.lW.tip, spots: IN_L, color: COLORS.W, own, optional: true });
         addLabel('rW', { text: side('Wr', false), point: () => A.rW.tip, spots: IN_R, color: COLORS.W, own, optional: true });
-        addLabel('ba', { text: side('a', true, sol.a, 'val_a'), point: () => A.ba.tip, spots: BELOW, color: COLORS.a, own, optional: true });
+        addLabel('ba', { text: side('a', true, sol.a, 'a'), point: () => A.ba.tip, spots: BELOW, color: COLORS.a, own, optional: true });
         if (!compact) {
           addLabel('lT', { text: side('T', false), point: () => A.lT.tip, spots: IN_L, color: COLORS.T, own, optional: true });
           addLabel('rT', { text: side('T', false), point: () => A.rT.tip, spots: IN_R, color: COLORS.T, own, optional: true });
-          addLabel('la', { text: side('a', false), point: () => A.la.tip, spots: [...OUT_L, ...IN_L], color: COLORS.a, own, optional: true });
-          addLabel('ra', { text: side('a', false), point: () => A.ra.tip, spots: [...OUT_R, ...IN_R], color: COLORS.a, own, optional: true });
+          addLabel('la', {
+            text: side('a', false),
+            point: () => A.la.tip,
+            spots: [...OUT_L, ...IN_L, ...AROUND],
+            color: COLORS.a,
+            own,
+            optional: true,
+          });
+          addLabel('ra', {
+            text: side('a', false),
+            point: () => A.ra.tip,
+            spots: [...OUT_R, ...IN_R, ...AROUND],
+            color: COLORS.a,
+            own,
+            optional: true,
+          });
         }
       }
     }
@@ -536,6 +565,8 @@ export function createApp(root, options = {}) {
     const [min, max] = VIEW_BOXES[s.setup?.kind === 'two' ? 'two' : 'single'];
     box.min.copy(min);
     box.max.copy(max);
+    // a wide, short view (a book column): show more of the bench on the left, so the picture fills the frame
+    if (s.setup?.kind !== 'two' && stage.width / Math.max(1, stage.height) > 2.3) box.min.x = -0.5;
     return fitPose({ box, dir: VIEW_DIRS[s.view].clone().normalize(), camera, width: stage.width, height: stage.height, margin: MARGIN });
   }
   function flyTo({ position, target }, duration = 0.7) {
@@ -720,8 +751,6 @@ export function createApp(root, options = {}) {
       meta: { kind, answer: items[0].key, ...extra },
     };
   }
-  const sameWords = (items) => items.map((x) => x.key);
-  void sameWords;
 
   /** A scene for a question: these masses, the block held, nothing moving. */
   function showScene(setup, { hold = null, forces = false, numbers = false } = {}) {
@@ -745,7 +774,7 @@ export function createApp(root, options = {}) {
   let question = null;
   let picked = -1;
   const unit = () => t('u_a');
-  const aText = (v) => `${N(plain(v))} ${unit()}`;
+  const aText = (v) => `${N(plain(v))}${NBSP}${unit()}`;
 
   const quiz = createQuiz({
     ui,
@@ -777,14 +806,8 @@ export function createApp(root, options = {}) {
         picked = -1;
         const kind = ['calc', pickOne(['M', 'm']), 'tension', 'same', 'two'][i % 5];
         if (kind === 'calc') {
-          const [Mm, m] = pickOne(PAIRS);
-          const a = pull(Mm, m).a;
-          const items = [
-            { key: 'right', v: a },
-            { key: 'swap', v: (m * G) / (Mm + m) },
-            { key: 'block', v: (Mm * G) / m },
-            { key: 'g', v: G },
-          ].map((x) => ({ ...x, v: round(x.v, 2) }));
+          const [Mm, m] = pickOne(CALC_PAIRS);
+          const items = calcChoices(Mm, m);
           showScene({ kind: 'single', M: Mm, m });
           question = { kind, M: Mm, m, a: items[0].v };
           return { text: t('q_calc', { g: G }), ...choicesOf(items, kind, (x) => aText(x.v), { M: Mm, m }) };
@@ -796,7 +819,7 @@ export function createApp(root, options = {}) {
           const items = ['c_M_more', 'c_M_double', 'c_M_same', 'c_M_less'].map((key) => ({ key }));
           showScene({ kind: 'single', M: Mm, m });
           question = { kind, M: Mm, m, a1, a2 };
-          return { text: t('q_M', { M: Mm, m, M2: 2 * Mm }), ...choicesOf(items, kind, (x) => t(x.key), { M: Mm, m }) };
+          return { text: t('q_M'), ...choicesOf(items, kind, (x) => t(x.key), { M: Mm, m }) };
         }
         if (kind === 'm') {
           const [Mm, m] = pickOne(m_PAIRS);
@@ -805,43 +828,25 @@ export function createApp(root, options = {}) {
           const items = ['c_m_less', 'c_m_half', 'c_m_same', 'c_m_more'].map((key) => ({ key }));
           showScene({ kind: 'single', M: Mm, m });
           question = { kind, M: Mm, m, a1, a2 };
-          return { text: t('q_m', { M: Mm, m, dm: m, m2: 2 * m }), ...choicesOf(items, kind, (x) => t(x.key), { M: Mm, m }) };
+          return { text: t('q_m'), ...choicesOf(items, kind, (x) => t(x.key), { M: Mm, m }) };
         }
         if (kind === 'tension') {
-          const [Mm, m] = pickOne(PAIRS);
+          const [Mm, m] = pickOne(CALC_PAIRS);
           showScene({ kind: 'single', M: Mm, m }, { hold: 0.5, forces: true, numbers: false });
           question = { kind, M: Mm, m };
           const items = ['c_T_less', 'c_T_equal', 'c_T_more', 'c_T_zero'].map((key) => ({ key }));
           return { text: t('q_tension'), ...choicesOf(items, kind, (x) => t(x.key), { M: Mm, m }) };
         }
         if (kind === 'same') {
-          // the string's pull on the block is written on the picture: how big is it on the hanging weight?
-          const [Mm, m] = pickOne(PAIRS);
-          const sol = solve({ kind: 'single', M: Mm, m });
-          const T = round(sol.T, 2);
-          const items = [
-            { key: 'same', v: T },
-            { key: 'weight', v: round(sol.W, 2) },
-            { key: 'zero', v: 0 },
-            { key: 'sum', v: round(2 * sol.T, 2) },
-          ];
+          // the string's pull on the block is written on the picture: how big is it on the hanging mass?
+          const [Mm, m] = pickOne(CALC_PAIRS);
+          const items = sameChoices(Mm, m);
           showScene({ kind: 'single', M: Mm, m }, { hold: 0.5, forces: true, numbers: true });
-          question = { kind, M: Mm, m, T };
+          question = { kind, M: Mm, m, T: items[0].v };
+          const word = { same: 'c_same_same', weight: 'c_same_weight', zero: 'c_same_zero', sum: 'c_same_sum' };
           return {
             text: t('q_same'),
-            ...choicesOf(
-              items,
-              kind,
-              (x) =>
-                x.key === 'same'
-                  ? t('c_same_same', { T: plain(x.v) })
-                  : x.key === 'weight'
-                    ? t('c_same_weight', { W: plain(x.v) })
-                    : x.key === 'zero'
-                      ? t('c_same_zero')
-                      : t('c_same_sum', { T2: plain(x.v) }),
-              { M: Mm, m },
-            ),
+            ...choicesOf(items, kind, (x) => t(word[x.key], { T: plain(x.v), W: plain(x.v), T2: plain(x.v) }), { M: Mm, m }),
           };
         }
         // two weights (the page-82 example): which way, and a
@@ -850,18 +855,13 @@ export function createApp(root, options = {}) {
         const big = Math.max(m1, m2);
         const small = Math.min(m1, m2);
         const a = round(sol.a, 2);
-        const items = [
-          { key: 'right', left: sol.left, v: a },
-          { key: 'side', left: !sol.left, v: a },
-          { key: 'one', left: sol.left, v: round((big * G) / (big + small + m), 2) },
-          { key: 'nomass', left: sol.left, v: round(((big - small) * G) / (big + small), 2) },
-        ];
+        const items = twoChoices(m2, m1, m);
         showScene({ kind: 'two', m2, m1, m });
         question = { kind: 'two', m2, m1, m, a, big, small, sol };
         if (!alive()) return null;
         return {
           text: t('q_two', { g: G }),
-          ...choicesOf(items, 'two', (x) => `${t(x.left ? 'side_left' : 'side_right')}, <b>${aText(x.v)}</b>`, { m2, m1, m }),
+          ...choicesOf(items, 'two', (x) => `${t(x.left ? 'side_left' : 'side_right')},${NBSP}<b>${aText(x.v)}</b>`, { m2, m1, m }),
         };
       },
       reveal(q, correct) {

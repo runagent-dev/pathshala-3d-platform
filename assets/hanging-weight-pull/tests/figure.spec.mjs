@@ -56,3 +56,25 @@ test('hanging-weight-pull: a frozen run, the next step and the reset', async ({ 
   expect(reset.results).toEqual({ w2: null, w5: null, heavy: null, two: null });
   expect(log.errors).toEqual([]);
 });
+
+test('hanging-weight-pull: other masses, equal masses hold still, a mirrored example goes the other way', async ({ page }) => {
+  await page.setViewportSize({ width: 800, height: 500 });
+  const log = await preparePage(page);
+  const fig = await openFigure(page, 'hanging-weight-pull');
+  // two equal masses hold each other: it stays held, a = 0
+  await fig.call('set', { masses: { m2: 5, m1: 5, m: 5 } });
+  const held = await fig.call('set', { release: true });
+  expect(held).toMatchObject({ kind: 'two', phase: 'ready' });
+  expect(held.a).toBeCloseTo(0, 6);
+  // the heavier mass on the right: the block goes right, with the same size of a as the book's example
+  await fig.call('set', { masses: { m2: 5, m1: 10, m: 5 } });
+  const mirrored = await fig.call('set', { release: true, animate: false });
+  expect(mirrored).toMatchObject({ phase: 'done', towards: 'right' });
+  expect(mirrored.a).toBeCloseTo(2.45, 3);
+  // a big mass runs like any other, and its run is not kept in the row of words
+  const big = await fig.call('set', { masses: { M: 20, m: 0.5 }, release: true, animate: false });
+  expect(big).toMatchObject({ phase: 'done', M: 20, m: 0.5 });
+  expect(big.a).toBeCloseTo((20 * 9.8) / 20.5, 3);
+  expect(big.results).toEqual({ w2: null, w5: null, heavy: null, two: null });
+  expect(log.errors).toEqual([]);
+});

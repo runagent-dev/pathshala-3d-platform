@@ -72,3 +72,65 @@ export const weightSize = (M) => {
   const k = (M / 5) ** (1 / 3);
   return { rBottom: 0.105 * k, rTop: 0.066 * k, body: 0.115 * k, knob: 0.045 };
 };
+
+// ── the test's mass sets and choices (pure, so the unit tests can check that no two choices read the same) ──────────
+/** (M, m) for the question that reads the acceleration off the picture: M < m, so even the wrong Mg/m stays below g. */
+export const CALC_PAIRS = [
+  [2, 3],
+  [3, 4],
+  [3, 7],
+  [2, 5],
+  [4, 6],
+];
+/** (M, m) for "the hanging mass is made 2 times" and "the block is made 2 times as heavy". */
+export const M_PAIRS = [
+  [2, 4],
+  [2, 6],
+  [3, 6],
+];
+export const m_PAIRS = [
+  [5, 5],
+  [3, 3],
+  [4, 3],
+];
+/** (m₂ left, m₁ right, m) for the two-weights question: the heavier side is left or right. */
+export const TWO_PAIRS = [
+  [10, 5, 5],
+  [5, 10, 5],
+  [8, 2, 5],
+  [2, 8, 5],
+];
+
+/** The acceleration question: the right a first, then three real mistakes (M and m swapped; M forgotten as a moving mass; a = g). */
+export function calcChoices(M, m, g = G) {
+  return [
+    { key: 'right', v: (M * g) / (M + m) },
+    { key: 'swap', v: (m * g) / (M + m) },
+    { key: 'block', v: (M * g) / m },
+    { key: 'g', v: g },
+  ].map((x) => ({ ...x, v: round(x.v, 2) }));
+}
+
+/** "One string, one pull": the pull on the hanging mass equals the one on the block; wrong: the weight, nothing, both added. */
+export function sameChoices(M, m, g = G) {
+  const { W, T } = pull(M, m, g);
+  return [
+    { key: 'same', v: round(T, 2) },
+    { key: 'weight', v: round(W, 2) },
+    { key: 'zero', v: 0 },
+    { key: 'sum', v: round(2 * T, 2) },
+  ];
+}
+
+/** The two-weights question: the right way and a first; then the other way, forgetting the lighter mass, forgetting the block. */
+export function twoChoices(m2, m1, m, g = G) {
+  const sol = twoWeights(m2, m1, m, g);
+  const big = Math.max(m1, m2);
+  const small = Math.min(m1, m2);
+  return [
+    { key: 'right', left: sol.left, v: round(sol.a, 2) },
+    { key: 'side', left: !sol.left, v: round(sol.a, 2) },
+    { key: 'one', left: sol.left, v: round((big * g) / (big + small + m), 2) },
+    { key: 'nomass', left: sol.left, v: round(((big - small) * g) / (big + small), 2) },
+  ];
+}

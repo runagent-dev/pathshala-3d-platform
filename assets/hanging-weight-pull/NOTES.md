@@ -36,46 +36,52 @@ block m gives a smaller a. With a mass at each end there are two strings, so two
   bench and lands on a padded crate. Smooth table (no friction), light string and frictionless pulley assumed (said on the
   stage). g = 9.8 ms⁻². The bodies are sized from their mass (cube root), so 10 kg looks heavier than 5 kg.
 - **Plain words first (the owner's rule: "explain more easily").** The student reads everyday words about what they see,
-  not symbols: "ঝুলন্ত ওজন", "ব্লক", "সুতার টান", "ত্বরণ" (with "গতি প্রতি সেকেন্ডে … m/s করে বাড়ছে" next to it). The
-  symbols M, m, Mg, T, a come only in the last step, when all three single experiments have been run: the law line
+  not symbols: "ঝুলন্ত ভর" (kg), "ব্লক", "সুতার টান", "ত্বরণ". "ওজন" is only the force Mg (N), never the hanging object.
+  The symbols M, m, Mg, T, a come only in the last step, when all three single experiments have been run: the law line
   shows them, each in the colour of what it stands for (a teal, Mg purple, m the wooden block's brown), and from then on
-  the picture's labels switch from the words to the symbols. With two weights the figure says "বাম" and "ডান" (never m₁,
-  m₂, T₁, T₂). Comparisons come before numbers ("যত বেশি … তত …", "২ গুণ ভারী হলেও ধীর অর্ধেক হয় না").
-- **One action:** "১ ছেড়ে দাও" (the gate drops, the run starts). The same numbered badge and dashed ring sit on the block
-  (on the heavier weight with two weights); a tap on the block or on a weight does the same. After a run the button offers
-  the next experiment in the row ("৫ kg ঝুলিয়ে ছেড়ে দাও", "ভারী ব্লকে ছেড়ে দাও", "দুই দিকে ঝুলিয়ে ছেড়ে দাও"), then "আবার ছেড়ে দাও".
+  the picture's labels switch from the words to the symbols. Under the law one small grey line gives the book's own
+  working: "বইয়ের হিসাব: ব্লকে T = ma, ঝুলন্ত ভরে T − Mg = M(−a) (নিচের দিক ঋণাত্মক)" (T orange, Mg purple, a teal). With two
+  weights the figure says "বাম" and "ডান" (never m₁, m₂, T₁, T₂). Comparisons come before numbers ("যত বেশি … তত …").
+- **One action:** "১ ছাড়ো" (the gate drops, the run starts). The same numbered badge and dashed ring sit on the block (on
+  the heavier mass with two weights); a tap on the block or on a weight does the same. After a run the button offers the
+  next experiment in the row ("৫ kg ঝুলিয়ে ছাড়ো", "ভারী ব্লকে ছাড়ো", "দুই দিকে ছাড়ো"), then "আবার ছাড়ো"; the labels are short
+  enough never to wrap.
 - **The row of words** is four experiments, each leaving its acceleration under its word ("ত্বরণ ২.৮"): **ঝুলন্ত ২ kg**
-  (block 5 kg), **ঝুলন্ত ৫ kg** (it speeds up more), **ব্লক ১০ kg** (the weight stays 5 kg; it speeds up less),
-  **দুই দিকে** (the book's 10 kg on the left and 5 kg on the right, block 5 kg).
-- **One result** (one line, one number): before a release "ঝুলন্ত ওজন ৫ kg · ব্লক ৫ kg"; then "গতি প্রতি সেকেন্ডে **৪.৯ m/s**
-  করে বাড়ছে" (that is a = 4.9 ms⁻², named in the picture's teal label "ত্বরণ ৪.৯ ms⁻²").
-- **One rule, growing, one short sentence per idea:** before a run "ঝুলন্ত ওজন সুতা দিয়ে ব্লককে টানবে। ছেড়ে দিলে কী হবে?";
-  after the first run "সুতার টান দুই মাথায় সমান, কিন্তু ঝুলন্ত ওজনের চেয়ে কম। তাই ওজন নামে, ব্লক ছোটে।" (the book's "একটি
-  সুতায় একটি মাত্র টান বল"); after a second weight "ঝুলন্ত ওজন যত বেশি, ব্লক তত তাড়াতাড়ি ছোটে।"; after a heavier block "ব্লক যত
-  ভারী, তত ধীরে ছোটে। ব্লক ২ গুণ ভারী হলেও ধীর অর্ধেক হয় না।"; and last, once all three are run, the law: "নিউটনের দ্বিতীয় সূত্র:
-  a = Mg ÷ (M + m)। a ত্বরণ, M ঝুলন্ত ভর, m ব্লকের ভর।" With two weights: which way, and "দুই সুতার টান আলাদা".
+  (block 5 kg), **ঝুলন্ত ৫ kg** (it speeds up more), **ভারী ব্লক** (the block is 10 kg, the hanging mass stays 5 kg; it
+  speeds up less), **দুই দিকে** (the book's 10 kg on the left and 5 kg on the right, block 5 kg).
+- **One result** (one line, one number): before a release "ঝুলন্ত ভর ৫ kg · ব্লক ৫ kg"; during the run "ত্বরণ: গতি প্রতি
+  সেকেন্ডে **৪.৯ m/s** করে বাড়ছে" (a = 4.9 ms⁻², the picture's teal label says "ত্বরণ ৪.৯ ms⁻²"); once the run has ended, in the
+  past tense: "ত্বরণ ছিল: … বাড়ছিল".
+- **One rule, growing, one short sentence per idea:** before a run "ঝুলন্ত ভর সুতা দিয়ে ব্লককে টানবে। ছেড়ে দিলে কী হবে?";
+  after the first run "সুতার টান দুই মাথায় সমান, কিন্তু ওজনের চেয়ে কম। তাই ঝুলন্ত ভর নামে, ব্লক ছোটে।" (the book's "একটি সুতায়
+  একটি মাত্র টান বল"); after a second mass "ঝুলন্ত ভর যত বেশি, ব্লক তত দ্রুত গতি বাড়ায়।"; after a heavier block "ব্লক যত ভারী,
+  তত ধীরে গতি বাড়ায়। ২ গুণ ভারী হলে ত্বরণ অর্ধেক হয় না।"; and last, once all three are run, the law: "নিউটনের দ্বিতীয় সূত্র
+  থেকে: a = Mg ÷ (M + m), অর্থাৎ ত্বরণ = ঝুলন্ত ওজন ÷ দুই ভর একসাথে।" With two weights: "বাম ভর ভারী, তাই বাম সুতা বেশি টানে। দুই
+  টানের পার্থক্যেই ব্লক বামে ছোটে।" (and for equal masses, "কিছুই নড়ে না").
 - **The picture:** arrows in the weight's colours: weight purple (as everywhere in chapter 3), the string's pull orange (one
   pull, the same number on the block and on the weight, always shorter than the weight), acceleration teal. All forces in a
-  scene share one length scale ("বল ও ত্বরণের তীর আলাদা মাপে": force and acceleration arrows have different scales). The
-  numbers sit on the block's labels (pull, acceleration) and on the weight's own weight; with two weights the block's two
-  pulls carry their numbers ("বাম টান ৭৩.৫ N", "ডান টান ৬১.২৫ N"). N and mg on the block are not drawn: the book says they
-  cancel and promises to explain N later.
+  scene share one length scale and no arrow is longer than 0.3 m, so any mass stays on the stage; force and acceleration
+  arrows have different scales (said on the stage). The numbers sit on the block's labels (pull, acceleration) and on the
+  weight's own weight; with two weights the block's two pulls carry their numbers ("বাম টান ৭৩.৫ N", "ডান টান ৬১.২৫ N"). N and
+  mg on the block are not drawn: the book says they cancel and promises to explain N later. The unit ms⁻² is always Latin
+  (only the number gets Bangla digits), with a no-break space after every number.
 - **Time** is slowed 4 times (a run lasts 0.3 to 0.7 s for real), said on the stage. The weight lands on its crate at the
-  moment the block reaches the rubber stop bar; the picture then stands still with its arrows (the end of the run, not
-  a state at rest): the result line and the arrows describe the run.
+  moment the block reaches the rubber stop bar; the picture then stands still with its arrows. That is the end of the
+  run, not a state at rest, so the result line is in the past tense and the stage says "তীর চলার সময়ের".
 - **For the book's code:** `set({ id, release, at, home, view, tried })`, and `set({ masses: { M, m } })` or
   `set({ masses: { m2, m1, m } })` (kg, 0.5 to 20) for other masses; with two weights the block goes towards the
-  heavier one, whichever side it is on. A run of other masses is not kept in the row of words.
-- **Test (5 questions, each sets its own scene, in the same plain words):** the acceleration from the two weights read off
-  the picture; what happens when the hanging weight, or the block, is made 2 times (grows but less than 2 times; falls but
-  not to half); the string's pull against the weight, from the arrows (the weight is bigger); one string, one pull (the pull
-  on the block is on the picture: how big is it on the weight? the same, not the weight, not 0, not both added); which way
-  the block goes and the acceleration with two weights (the heavier side may be left or right).
+  heavier one, whichever side it is on; equal masses hold each other still. A run of other masses is not kept in the row.
+- **Test (5 questions, each sets its own scene, in the same plain words, the masses read off the picture):** the
+  acceleration from the two masses; what happens when the hanging mass, or the block, is made 2 times (grows but less than
+  2 times; falls but not to half); the string's pull against the weight, from the arrows (the weight is bigger); one string,
+  one pull (the pull on the block is on the picture: how big is it on the hanging mass? four plain numbers: the same, the
+  weight, 0, both added); which way the block goes and the acceleration with two weights (the heavier side may be left or
+  right). Every set of four choices reads differently (unit-tested).
 
 ## Terms (as in the book)
 ভর M, m; ওজন Mg; মাধ্যাকর্ষণ বল; সুতার টান T / টান বল T; ত্বরণ a; নিউটনের দ্বিতীয় (গতি)সূত্র; কপিকল; সুতা; টেবিল; তলের
 প্রতিক্রিয়া বল N; লব্ধি; ধনাত্মক, ঋণাত্মক; ভেক্টর; উল্লম্ব. Added by the figure, not on the page: **ব্লক** for the block
-(the page says "m ভরটি" / "m বস্তু"), **ঝুলন্ত ভর** (hanging mass), **ছেড়ে দাও** (let go), **মসৃণ টেবিল** (smooth table).
+(the page says "m ভরটি" / "m বস্তু"), **ঝুলন্ত ভর** (hanging mass), **ছাড়ো** (let go), **মসৃণ টেবিল** (smooth table).
 Units: kg, নিউটন (N on the picture), ms⁻² (book-notes), g = ৯.৮.
 
 ## Open questions for the book team
@@ -86,10 +92,10 @@ Units: kg, নিউটন (N on the picture), ms⁻² (book-notes), g = ৯.৮
 - On the page "বাম দিকে / ডান দিকে" in the sign convention is first the two sides of an equation, then the directions;
   confirm the figure's reading (right and up positive, left and down negative).
 - "ব্লক" for the block: the page says "বস্তু" and "ভর". Keep ব্লক?
-- The book's equations T = ma (block) and T − Mg = M(−a) (hanging mass), and the sign convention, are not on screen: the
-  owner asked for plain words and the law last, so the figure shows the same idea as the pull being equal at both ends,
-  less than the weight, and the final a = Mg ÷ (M + m). The (−)/(+) of "বাম দিকে (−)" appears only in the last test
-  question. Does the book team want T = ma and T − Mg = M(−a) shown after the law line?
+- The book's equations T = ma (block) and T − Mg = M(−a) (hanging mass) are not in the rule: the owner asked for plain
+  words and the law last, so the rule says the same idea as the pull being equal at both ends, less than the weight, and
+  ends with a = Mg ÷ (M + m). The (−)/(+) of "বাম দিকে (−)" appears only in the last test
+  question. After the law line one small grey line now gives T = ma and T − Mg = M(−a) with the sign note; is that enough?
 - Block and weight sizes are drawn from their mass (cube root) and the weight is an iron "bell" as on the page; the bench,
   the crate and the gate of pegs are the figure's own.
 - Friction: the page assumes none without saying so ("মসৃণ টেবিল", "সুতা ভরহীন", "কপিকল ঘর্ষণহীন" are not printed).

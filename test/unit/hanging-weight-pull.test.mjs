@@ -174,8 +174,75 @@ describe('hanging weight: the words', () => {
     const en = createI18n('en');
     assert.equal(bn.num('14.5'), '১৪.৫');
     assert.equal(en.num('14.5'), '14.5');
-    assert.equal(bn('val_N', { v: 14 }), '১৪ N');
-    assert.equal(bn('out_ready', { M: 2, m: 5 }).includes('২ kg'), true);
-    assert.equal(bn('lbl_sym', { name: bn('nm_T_sym'), val: bn('val_N', { v: '14' }) }), 'T = ১৪ N');
+    assert.equal(bn('out_ready', { M: 2, m: 5 }).includes('২ kg'), true);
+    assert.equal(bn('lbl_sym_N', { name: bn('nm_T_sym'), v: '14' }), 'T = ১৪ N');
+    assert.equal(bn('lbl_plain_N', { name: bn('nm_W'), v: '19.6' }), 'ওজন ১৯.৬ N');
+  });
+
+  it('keeps the unit ms⁻² Latin on the picture, in the answers and in the choices (only the number gets Bangla digits)', () => {
+    const bn = createI18n('bn');
+    const label = bn('lbl_plain_a', { name: bn('nm_a'), v: '2.8' });
+    assert.equal(label, 'ত্বরণ ২.৮ ms<sup>−2</sup>');
+    assert.ok(!/[০-৯]/.test(label.replace('২.৮', '')), 'no Bangla digit outside the number');
+    assert.ok(bn('why_calc', { a: '3.92', M: 2, m: 3, g: 9.8 }).includes('ms<sup>−2</sup>'));
+  });
+
+  it('puts a no-break space between every number and its unit', () => {
+    for (const lang of ['bn', 'en'])
+      for (const [key, text] of Object.entries(STRINGS[lang]))
+        assert.ok(!/(\}|[0-9০-৯]) (kg\b|\{u_N\}|\{u_n\}|\{u_a\}|\{u_v\})/.test(text), `${lang}.${key}: ${text}`);
+  });
+
+  it('says ঝুলন্ত ভর for the object and ওজন only for the force (the weight Mg, in N)', () => {
+    for (const [key, text] of Object.entries(STRINGS.bn)) assert.ok(!text.includes('ঝুলন্ত ওজন') || key === 'rule_law' || key === 'why_calc', key);
+  });
+});
+
+describe('hanging weight: the test (every set of four choices reads differently)', () => {
+  const key = (x) => `${x.left ?? ''}|${x.v}`;
+  const distinct = (items, what) => assert.equal(new Set(items.map(key)).size, items.length, `${what}: ${JSON.stringify(items)}`);
+
+  it('has four different choices for every (M, m) of the acceleration question, the wrong Mg/m below g', () => {
+    for (const [M, m] of r.CALC_PAIRS) {
+      const items = r.calcChoices(M, m);
+      distinct(items, `calc ${M},${m}`);
+      assert.equal(items[0].v, r.round(r.pull(M, m).a, 2));
+      assert.ok(items[2].v < r.G, `Mg/m = ${items[2].v} stays below g (${M},${m})`);
+      assert.ok(items[0].v === r.round(items[0].v, 2));
+    }
+  });
+
+  it('has four different choices for every two-weights set, the right one first, and the heavier side on either side', () => {
+    const sides = new Set();
+    for (const [m2, m1, m] of r.TWO_PAIRS) {
+      const items = r.twoChoices(m2, m1, m);
+      distinct(items, `two ${m2},${m1},${m}`);
+      const s = r.twoWeights(m2, m1, m);
+      assert.equal(items[0].left, s.left);
+      assert.equal(items[0].v, r.round(s.a, 2));
+      assert.equal(items[1].left, !s.left); // the same a, the wrong way
+      sides.add(s.left);
+    }
+    assert.equal(sides.size, 2, 'the block goes left in some sets and right in others');
+  });
+
+  it('has four different choices for every (M, m) of the "one string, one pull" question', () => {
+    for (const [M, m] of r.CALC_PAIRS) {
+      const items = r.sameChoices(M, m);
+      distinct(items, `same ${M},${m}`);
+      assert.equal(items[0].v, r.round(r.pull(M, m).T, 2));
+      assert.ok(items[0].v < items[1].v, 'the pull is less than the weight');
+    }
+  });
+
+  it('keeps the "made 2 times" answers apart: a grows by less than double; a falls by less than half', () => {
+    for (const [M, m] of r.M_PAIRS) {
+      const ratio = r.pull(2 * M, m).a / r.pull(M, m).a;
+      assert.ok(ratio > 1 && ratio < 2);
+    }
+    for (const [M, m] of r.m_PAIRS) {
+      const ratio = r.pull(M, 2 * m).a / r.pull(M, m).a;
+      assert.ok(ratio < 1 && ratio > 0.5);
+    }
   });
 });
