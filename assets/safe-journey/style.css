@@ -1,0 +1,60 @@
+/* Safe journey: the page, the colours that carry meaning (বেগ blue #1c6fd9 as the arrows, গতিশক্তি amber #f59f00 as
+   the cubes, its text a darker amber for contrast), the honest note about time on the stage and the test's answers in
+   words. The panel is the kit's clean sheet (one action, one result, one rule: ../../shared/lib/student/student.css,
+   .pvc-examples, .pvc-act, .pvc-outcome, .pvc-rule). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.sj { --c-vel: #1c6fd9; --c-ke: #b86a00; }
+/* m₁, v₂, ½mv²: sub- and superscripts never make their line taller (the panel keeps its height) */
+.sj sub, .sj sup { line-height: 0; }
+
+/* the result line: its number in the colour of what it is */
+.sj .pvc-outcome[data-k='velocity'] b { color: var(--c-vel); }
+.sj .pvc-outcome[data-k='energy'] b { color: var(--c-ke); }
+.sj .pvc-examples button.on .pvc-ex-res { color: var(--c-ke); }
+.sj .pvc-examples .pvc-ex-res { color: color-mix(in srgb, var(--c-ke) 70%, var(--ink-3)); }
+
+/* on the stage: the honest note about time, top left (the buttons are top right) */
+.sj-note { position: absolute; left: 10px; top: 10px; z-index: 5; max-width: calc(100% - 230px); padding: 3px 9px; border-radius: 6px; border: 1px solid var(--line-2); background: rgba(255, 255, 255, 0.94); color: var(--ink-2); font-size: 13px; font-weight: 600; line-height: 1.4; white-space: nowrap; pointer-events: none; }
+.sj .pvc-anno { font-size: 14px; }
+.sj .pvc-anno-callout { padding: 1px 7px; font-weight: 700; }
+.sj .pvc-anno-part { color: var(--ink-2); font-size: 13px; padding: 1px 6px; }
+/* in the test the locked hint sits at the top of the view, clear of the road */
+.sj[data-mode='quiz'] .pvc-stage[data-ui='simple'] .pvc-hint { top: 54px; bottom: auto; }
+
+/* the test: answers in words (two lines allowed) */
+.sj .pvc-opt { font-size: 14.5px; line-height: 1.25; }
+.sj-opt { display: block; white-space: normal; text-align: center; }
+.sj .pvc-q-text { font-size: 15.5px; }
+.sj .pvc-q-feedback { font-size: 14px; }
+
+/* wide frames (tabs beside the sheet): the lines one under the other, close together; on very wide frames the words
+   and the action side by side */
+@container pvc (min-width: 720px) and (min-height: 461px) {
+  .sj .pvc-learn { justify-content: flex-start; gap: 8px; }
+  .sj .pvc-examples { max-width: 520px; }
+  .sj .pvc-outcome { --pvc-outcome-lines: 1; }
+  .sj .pvc-rule { --pvc-rule-lines: 2; }
+}
+@container pvc (min-width: 1000px) and (min-height: 461px) {
+  .sj .pvc-learn { display: grid; grid-template-columns: minmax(0, 480px) minmax(0, 1fr); grid-template-areas: 'ex act' 'out out' 'rule rule'; align-content: start; align-items: center; gap: 8px 32px; }
+  .sj .pvc-examples { grid-area: ex; }
+  .sj .pvc-act-row { grid-area: act; }
+  .sj .pvc-outcome { grid-area: out; }
+  .sj .pvc-rule { grid-area: rule; }
+}
+@container pvc (max-width: 560px) and (max-height: 600px) {
+  .sj .pvc-q-text { font-size: 14.5px; }
+  .sj .pvc-opt { font-size: 13.5px; }
+  .sj .pvc-q-feedback { font-size: 13px; }
+}
+/* short and wide (phone held sideways): the panel is beside the scene */
+@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
+  .sj .pvc-outcome { --pvc-outcome-lines: 2; font-size: 15px; line-height: 1.6; }
+  .sj .pvc-rule { --pvc-rule-lines: 4; font-size: 14px; line-height: 1.45; }
+  .sj .pvc-q-text { font-size: 14px; }
+  .sj .pvc-opt { font-size: 13.5px; height: auto; min-height: 42px; }
+  .sj .pvc-q-feedback { font-size: 13px; }
+}
