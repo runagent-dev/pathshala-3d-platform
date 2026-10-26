@@ -65,6 +65,14 @@ const RIDE_SPEED = 2.4; // km of road per second of animation (not to time: spee
 const LAST = Math.round(END / STEP); // the last sample the cyclist reaches
 const PLACES = { A: STOPS.A, B: STOPS.B, C: STOPS.C };
 const DOUBLE_TAP = 450; // ms: a second action this soon after one is ignored
+// The kit's badge geometry (shared/lib/student/action.js, kit 1.3.0), copied because the kit does not expose it yet
+// (kit gap: badge spots / constants, and a ringBox() valid in the frame the marker comes back): a ring round a point
+// is at least 44 px across, and the badge (46 px) sits 0.38 of its size outside the dashed line. The measure script
+// asserts the badge really sits there, so a kit change shows up.
+const KIT = { minRing: 44, badge: 46, out: 0.38 * 46 };
+const ringHalf = (radius) => Math.max(KIT.minRing / 2, radius); // the ring's radius on the screen, px
+// the bike is about this many px long on the screen (scaled up to 1.8 times on small maps; never below its size)
+const CYCLIST_PX = 40;
 
 // the key's two little pictures: a piece of winding blue path, a straight orange arrow (the same as on the map)
 const SWATCH_PATH = '<svg class="dd-sw" viewBox="0 0 30 16" aria-hidden="true"><path d="M2 12c5-9 9-9 13-4s8 5 13-4"/></svg>';
@@ -226,7 +234,8 @@ export function createApp(root, options = {}) {
     if (kind === 'move') return [kind, t('out_move', { dist: live(s.trip), disp: live(size(d)), u: U })];
     if (kind === 'start') return [kind, t('out_start', { z: 0 })];
     if (kind === 'back') return [kind, t('out_back', { z: 0, sum: tripSum(), u: U })];
-    const vars = { at, dist: plain(s.trip), disp: plain(size(d)), dir, u: U };
+    const vars = { at, dist: plain(s.trip), disp: plain(size(d)), dir, u: U, z: 0 };
+    if (kind === 'here' && size(d) < 0.005) return [kind, t('out_here0', vars)]; // a nudge off A and back: no direction
     return [kind, t(kind === 'stop' ? 'out_stop' : 'out_here', vars)];
   }
 
@@ -268,7 +277,21 @@ export function createApp(root, options = {}) {
   const ROAD_EVERY = 4; // samples between the road's points on the screen (0.1 km), for the values to keep off it
   const roadPx = new Float32Array((Math.floor(LAST / ROAD_EVERY) + 1) * 2);
   const ringBox = { x0: 0, y0: 0, x1: 0, y1: 0 };
-  const view = { width: 1, height: 1, top: 0, cornerX: 0, cyclist: cyclistBox, arrow: null, origin, plates: [], keep: [], road: roadPx, roadPad: 4 };
+  const ringRoom = { x0: 0, y0: 0, x1: 0, y1: 0 };
+  const view = {
+    width: 1,
+    height: 1,
+    top: 0,
+    cornerX: 0,
+    cyclist: cyclistBox,
+    arrow: null,
+    origin,
+    plates: [],
+    keep: [],
+    soft: [],
+    road: roadPx,
+    roadPad: 4,
+  };
   const corner = new THREE.Vector3();
   const toPx = (p, out) => {
     corner.copy(p).project(camera);
@@ -286,8 +309,18 @@ export function createApp(root, options = {}) {
     Object.assign(noteBox, { x0: nr.left - sr.left - 3, y0: nr.top - sr.top - 3, x1: nr.right - sr.left + 3, y1: nr.bottom - sr.top + 3 });
   }
   let ringRadius = 30;
+  const camRight = new THREE.Vector3();
+  const pxA = { x: 0, y: 0 };
+  const pxB = { x: 0, y: 0 };
   stage.onBeforeRender(() => {
     camera.updateMatrixWorld();
+    // the cyclist big enough to see on a phone: px per metre across the view where it is, the bike's length from it
+    camRight.set(1, 0, 0).applyQuaternion(camera.quaternion);
+    toPx(cyclist.root.position, pxA);
+    toPx(corner.copy(cyclist.root.position).addScaledVector(camRight, 100), pxB);
+    const bikePx = (Math.hypot(pxB.x - pxA.x, pxB.y - pxA.y) / 100) * 1.9 * SCALE;
+    const grow = THREE.MathUtils.clamp(CYCLIST_PX / Math.max(1, bikePx), 1, 1.8);
+    if (Math.abs(grow - cyclist.root.scale.x) > 0.005) cyclist.root.scale.setScalar(grow);
     cyclist.root.updateMatrixWorld();
     Object.assign(cyclistBox, { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity });
     for (const [y, z] of [
@@ -329,27 +362,31 @@ export function createApp(root, options = {}) {
       roadPx[j] = px.x;
       roadPx[j + 1] = px.y;
     }
+    view.ridden = s.trip > 0 ? Math.min(roadPx.length, 2 * (Math.floor(s.far / (STEP * ROAD_EVERY)) + 2)) : 0;
     // the road's half width on the screen (it is 90 m wide), so the values stay off the blue path
     toPx(corner.set(0, ROAD_Y, 0), px);
     const ax = px.x;
     toPx(corner.set(ROAD_W / 2, ROAD_Y, 0), px);
     view.roadPad = Math.max(3, Math.abs(px.x - ax));
-    // the values keep clear of the action's ring and badge and the honest note too
+    // the values keep clear of the action's ring and badge and the honest note; if they can, of the room round the
+    // ring where the badge may go too (a value there would push the badge somewhere worse: on a small map, under the
+    // corner buttons). ringBox() is null in the frame where the marker comes back after a ride, so the ring is also
+    // worked out here whenever it is about to show (round the next stop's label, as the kit draws a ring round a point)
     view.keep.length = 0;
+    view.soft.length = 0;
     const b = action?.box();
     if (b) view.keep.push(Object.assign(badgeBox, { x0: b.left - 2, y0: b.top - 2, x1: b.right + 2, y1: b.bottom + 2 }));
-    // the ring and every place round it where the kit may put the badge (just outside it): a value there would push
-    // the badge somewhere worse (on a small map, under the corner buttons)
-    // (ringBox() is null in the frame where the marker comes back after a ride, so the ring is also worked out here
-    // whenever it is about to show: round the next stop's label, as the kit draws a ring round a point)
     let rb = action?.ringBox();
     if (!rb && action && !s.riding && s.mode !== 'quiz') {
       toPx(ringTarget(), px);
-      const half = Math.max(22, ringRadius) + 3;
+      const half = ringHalf(ringRadius) + 3;
       rb = { left: px.x - half, top: px.y - half, right: px.x + half, bottom: px.y + half };
     }
-    const room = 0.38 * 46 + 23;
-    if (rb) view.keep.push(Object.assign(ringBox, { x0: rb.left - room, y0: rb.top - room, x1: rb.right + room, y1: rb.bottom + room }));
+    if (rb) {
+      view.keep.push(Object.assign(ringBox, { x0: rb.left, y0: rb.top, x1: rb.right, y1: rb.bottom }));
+      const room = KIT.out + KIT.badge / 2;
+      view.soft.push(Object.assign(ringRoom, { x0: rb.left - room, y0: rb.top - room, x1: rb.right + room, y1: rb.bottom + room }));
+    }
     if (!note.hidden) view.keep.push(noteBox);
     values.update(view, texts);
   });
@@ -556,12 +593,13 @@ export function createApp(root, options = {}) {
       const r = e.getBoundingClientRect();
       return { left: r.left - origin.left, top: r.top - origin.top, right: r.right - origin.left, bottom: r.bottom - origin.top };
     });
-    // the badge's middle just outside the ring, as the kit puts it (0.38 of its 46 px out from the dashed line)
-    const R = Math.max(22, ringRadius) + 0.38 * 46;
+    // the badge's middle just outside the ring, as the kit puts it (KIT, above)
+    const R = ringHalf(ringRadius) + KIT.out;
+    const half = KIT.badge / 2;
     const free = (deg) => {
       const x = ringPx.x + R * Math.cos((deg * Math.PI) / 180);
       const y = ringPx.y + R * Math.sin((deg * Math.PI) / 180);
-      const b = { left: x - 23, top: y - 23, right: x + 23, bottom: y + 23 };
+      const b = { left: x - half, top: y - half, right: x + half, bottom: y + half };
       if (b.left < 8 || b.top < 8 || b.right > stage.width - 8 || b.bottom > stage.height - 8) return false;
       const hit = (r) => b.left < r.right + 4 && b.right > r.left - 4 && b.top < r.bottom + 4 && b.bottom > r.top - 4;
       return !boxes.some(hit) && !others.some(hit);
@@ -575,7 +613,7 @@ export function createApp(root, options = {}) {
     const tg = ringTarget();
     if (!tg) return false;
     toPx(tg, ringPx);
-    return Math.hypot(p.x - ringPx.x, p.y - ringPx.y) <= Math.max(22, ringRadius) + 4;
+    return Math.hypot(p.x - ringPx.x, p.y - ringPx.y) <= ringHalf(ringRadius) + 4;
   }
 
   // ── camera ──────────────────────────────────────────────────────────────────
@@ -984,17 +1022,19 @@ export function createApp(root, options = {}) {
           question.list = c.list;
           return { ...c, meta: { kind, route: [0, k, 0] } };
         }
-        // rule: the displacement is never more than the distance (shown on the ride to C)
-        if (!(await go([PLACES.C], t('q_rule')))) return null;
-        question = { kind, vars: { dist: plain(s.trip), disp: plain(size(displacement(s.km))), u: U } };
-        const c = wordChoices([
-          { text: t('opt_rule_ok') },
-          { text: t('opt_rule_eq'), note: 'miss_rule_eq' },
-          { text: t('opt_rule_more'), note: 'miss_rule_more' },
-          { text: t('opt_rule_back'), note: 'miss_rule_back' },
+        // rule: read the displacement off the map with the 1 km bar; it is never more than the distance
+        const k = pickOne([5, 6]); // about 1.4 or 1.3 km: far enough from the book's 2 km to tell apart by eye
+        if (!(await go([k], t('q_rule', { k, one: 1, u: U })))) return null;
+        const d = roundTo(displacement(k).km, 0.1);
+        const vars = { k, d, book: 2, one: 1, u: U };
+        question = { kind, vars };
+        const c = kmChoices(d, [
+          { value: k, note: 'miss_rule_dist' },
+          { value: 2, note: 'miss_rule_book' },
+          { value: k + 1, note: 'miss_rule_more' },
         ]);
         question.list = c.list;
-        return { ...c, meta: { kind } };
+        return { ...c, meta: { kind, km: k } };
       },
       reveal(_q, correct, picked) {
         s.values = true;

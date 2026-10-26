@@ -32,7 +32,7 @@ test('distance-displacement: the story A → B → C → A on the clean panel', 
   await expect(act).toHaveText('১B পর্যন্ত চালাও');
   await expect(f.locator('.pvc-act')).toHaveCount(1); // one big button, no row of boxed buttons
   await expect(outcome).toContainText('এখনো দূরত্ব ০');
-  await expect(rule).toContainText('খুঁটির সংখ্যাগুলো');
+  await expect(rule).toContainText('খুঁটির সংখ্যা বলে A থেকে রাস্তা ধরে কত km');
 
   // ১ the book's example: 4 km of road to B, a displacement of only 2 km, north-east
   await ride();

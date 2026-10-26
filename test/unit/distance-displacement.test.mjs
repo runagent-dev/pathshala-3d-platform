@@ -150,6 +150,7 @@ describe('the story of the শেখো panel (src/story.js)', () => {
     assert.equal(story.outcomeKind({ trip: 6, at: 'C', moving: false }), 'stop');
     assert.equal(story.outcomeKind({ trip: 12, at: 'A', moving: false }), 'back');
     assert.equal(story.outcomeKind({ trip: 2.5, at: null, moving: false }), 'here');
+    assert.equal(story.outcomeKind({ trip: 0.02, at: 'A', moving: false }), 'here', 'a nudge off A and back is no return');
   });
   it('names the legs of a trip, a wobble counted in the leg before it', () => {
     assert.deepEqual(story.mergeLegs([6, -6]), [6, 6]);

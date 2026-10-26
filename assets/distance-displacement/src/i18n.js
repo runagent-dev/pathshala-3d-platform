@@ -51,14 +51,14 @@ export const STRINGS = {
     out_move: '<i class="d">দূরত্ব <b>{dist} {u}</b></i> <span class="dd-dot">·</span> <i class="s">সরণ <b>{disp} {u}</b></i>',
     out_stop: '{at}-তে: পথ ধরে <i class="d">দূরত্ব <b>{dist} {u}</b></i>, কিন্তু A থেকে সোজা <i class="s">সরণ <b>{disp} {u}</b>, {dir} দিকে</i>।',
     out_here: 'এখানে: পথ ধরে <i class="d">দূরত্ব <b>{dist} {u}</b></i>, A থেকে সোজা <i class="s">সরণ <b>{disp} {u}</b>, {dir} দিকে</i>।',
+    out_here0: 'এখানে: পথ ধরে <i class="d">দূরত্ব <b>{dist} {u}</b></i>, কিন্তু <i class="s">সরণ <b>{z}</b></i>।',
     out_back: 'A-তে ফিরে এলে <i class="s">সরণ <b>{z}</b></i>, কিন্তু <i class="d">দূরত্ব <b>{sum} {u}</b></i>।',
 
     // the one rule, growing: before the first stop, after a stop, after C, back at A
-    rule_0: 'খুঁটির সংখ্যাগুলো বলে A থেকে রাস্তা ধরে কত {u}; B আছে {b} নম্বর খুঁটিতে। <b>সরণ</b> বলতে বোঝানো হয় A বিন্দুর সাপেক্ষে তোমার <b>অবস্থান</b>।',
-    rule_1: '<b>দূরত্ব একটি স্কেলার রাশি</b>: শুধু মান, কোনো দিকের কথা বলতে হয় না। <b>সরণ ভেক্টর রাশি</b>: মান ও দিক দুটোই; <b>তিরের দিকটি হচ্ছে সরণের দিক</b>।',
-    rule_2: '<b>দূরত্ব</b> যত চলবে তত বাড়বে; <b>সরণ</b> শুধু দেখে শুরু আর শেষের অবস্থান, তাই কমতেও পারে। দূরত্ব <b>স্কেলার রাশি</b>, সরণ <b>ভেক্টর রাশি</b>।',
-    rule_3:
-      '<b>দূরত্ব</b> শুধু মান (<b>স্কেলার রাশি</b>), <b>সরণ</b> মান ও দিক (<b>ভেক্টর রাশি</b>)। <b>সরণের মান কখনো দূরত্বের চেয়ে বেশি হয় না</b>: সোজা রেখাই সবচেয়ে ছোট পথ।',
+    rule_0: 'খুঁটির সংখ্যা বলে A থেকে রাস্তা ধরে কত {u}, আর <b>সরণ</b> হলো A বিন্দুর সাপেক্ষে তোমার <b>অবস্থান</b>।',
+    rule_1: '<b>দূরত্ব একটি স্কেলার রাশি</b> (শুধু মান), <b>সরণ ভেক্টর রাশি</b> (মান ও দিক): <b>তিরের দিকটি হচ্ছে সরণের দিক</b>।',
+    rule_2: '<b>দূরত্ব</b> যত চলবে তত বাড়বে, কিন্তু <b>সরণ</b> শুধু দেখে শুরু আর শেষের অবস্থান, তাই কমতেও পারে।',
+    rule_3: '<b>দূরত্ব স্কেলার রাশি</b>, <b>সরণ ভেক্টর রাশি</b>, আর <b>সরণের মান কখনো দূরত্বের চেয়ে বেশি হয় না</b>: সোজা রেখাই সবচেয়ে ছোট পথ।',
 
     q_locked: 'পরীক্ষার সময় সাইকেল নিজে চলে। ছবি দেখে উত্তর বেছে নাও।',
 
@@ -76,7 +76,7 @@ export const STRINGS = {
     q_again: 'আবার পরীক্ষা দাও',
 
     // 1. how to state the displacement at B (a vector: size and direction)
-    q_vec: 'সাইকেলটি A থেকে আঁকাবাঁকা পথে B-তে এসেছে। A-র সাপেক্ষে এর সরণ কোনটি?',
+    q_vec: 'সাইকেলটি A থেকে আঁকাবাঁকা পথে B-তে এসেছে। A বিন্দুর সাপেক্ষে এর সরণ কোনটি?',
     opt_vec: '{d} {u}, {dir} দিকে',
     opt_only: 'শুধু {d} {u}',
     why_vec: '<b>{d} {u}, {dir} দিকে</b>: সরণ ভেক্টর রাশি, তাই মান ও দিক দুটোই লাগে।',
@@ -84,9 +84,9 @@ export const STRINGS = {
     miss_vec_dist: '{dist} {u} হলো পথ ধরে দূরত্ব (নীল পথ), সরণ নয়।',
     miss_vec_dist_only: '{dist} {u} হলো দূরত্ব (নীল পথ), সরণ নয়।',
     // 2. the direction of the displacement, against the way the cycle rides there
-    q_dir: 'A-র সাপেক্ষে সাইকেলের সরণ কোন দিকে? (উ = উত্তর)',
+    q_dir: 'A বিন্দুর সাপেক্ষে সাইকেলের সরণ কোন দিকে? (উ = উত্তর)',
     why_dir: '<b>{dir}</b>: কমলা তির A থেকে সাইকেলের দিকে, সেটাই সরণের দিক।',
-    miss_dir_heading: 'সাইকেল এখন {heading} দিকে চলছে; সরণের দিক রাস্তার বাঁক দেখে না।',
+    miss_dir_heading: 'সাইকেল রাস্তা ধরে {heading} দিকে এসেছে; সরণের দিক রাস্তার বাঁক দেখে না।',
     miss_dir_back: 'এটা উল্টো দিক: তির A থেকে শুরু হয়ে সাইকেলে শেষ।',
     miss_dir_mirror: 'পূর্ব আর পশ্চিম উল্টে গেছে: উ-এর ডান দিকে পূর্ব।',
     miss_dir_other: 'কম্পাসের উ দেখে তিরের দিক মেলাও।',
@@ -104,15 +104,11 @@ export const STRINGS = {
     miss_zero_half: '{k} {u} হলো যাওয়ার পথ, সেটাও দূরত্ব।',
     miss_zero_far: '{d} {u} ছিল খুঁটি {k}-তে থাকার সময়ের সরণ।',
     // 5. the displacement is never more than the distance
-    q_rule: 'ছবির নীল পথ আর কমলা তির দেখো। যেকোনো যাত্রায় কোনটি সব সময় সত্য?',
-    opt_rule_ok: 'সরণের মান দূরত্বের সমান বা কম',
-    opt_rule_eq: 'সরণ আর দূরত্ব সব সময় সমান',
-    opt_rule_more: 'সরণের মান দূরত্বের চেয়ে বেশি হতে পারে',
-    opt_rule_back: 'ফিরে এলে দূরত্বও শূন্য হয়',
-    why_rule: '<b>সমান বা কম</b>: সোজা রেখাই সবচেয়ে ছোট পথ (এখানে সরণ {disp} {u}, দূরত্ব {dist} {u})।',
-    miss_rule_eq: 'সমান হয় শুধু সোজা পথে এক দিকে চললে।',
-    miss_rule_more: 'তির সোজা রেখা; কোনো পথ তার চেয়ে ছোট হয় না।',
-    miss_rule_back: 'ফিরে এলে সরণ শূন্য হয়, দূরত্ব নয়।',
+    q_rule: 'সাইকেল রাস্তা ধরে {k} {u} এসেছে। {one} {u} দাগে মেপে বলো, সরণ (কমলা তির) প্রায় কত?',
+    why_rule: '<b>প্রায় {d} {u}</b>: তিরটি {one} {u} দাগের প্রায় {d} গুণ লম্বা, পথ ধরে দূরত্ব ({k} {u}) থেকে অনেক কম।',
+    miss_rule_dist: '{k} {u} হলো পথ ধরে দূরত্ব (নীল পথ), সোজা তির নয়।',
+    miss_rule_book: '{book} {u} ছিল বইয়ের B-র সরণ; এই তিরটি মেপে দেখো।',
+    miss_rule_more: 'সরণের মান কখনো দূরত্বের চেয়ে বেশি হয় না: সোজা রেখাই সবচেয়ে ছোট পথ।',
   },
   en: {
     title: 'Distance and displacement',
@@ -159,16 +155,15 @@ export const STRINGS = {
       'At {at}: along the way, <i class="d">distance <b>{dist} {u}</b></i>, but straight from A, <i class="s">displacement <b>{disp} {u}</b> to the {dir}</i>.',
     out_here:
       'Here: along the way, <i class="d">distance <b>{dist} {u}</b></i>; straight from A, <i class="s">displacement <b>{disp} {u}</b> to the {dir}</i>.',
+    out_here0: 'Here: along the way, <i class="d">distance <b>{dist} {u}</b></i>, but <i class="s">displacement <b>{z}</b></i>.',
     out_back: 'Back at A, the <i class="s">displacement is <b>{z}</b></i>, but the <i class="d">distance is <b>{sum} {u}</b></i>.',
 
-    rule_0:
-      'The numbers on the posts say how many {u} along the road from A; B is at post {b}. <b>Displacement</b> means your <b>position</b> with respect to A.',
-    rule_1:
-      '<b>Distance is a scalar</b>: just a size, no direction needs to be said. <b>Displacement is a vector</b>: size and direction; <b>the arrow’s way is its direction</b>.',
+    rule_0: 'The posts’ numbers say how many {u} along the road from A, and <b>displacement</b> is your <b>position</b> with respect to point A.',
+    rule_1: '<b>Distance is a scalar</b> (just a size), <b>displacement a vector</b> (size and direction): <b>the arrow’s way is its direction</b>.',
     rule_2:
-      'The <b>distance</b> grows as long as you ride; the <b>displacement</b> only looks at where you started and where you are, so it can shrink. Distance is a <b>scalar</b>, displacement a <b>vector</b>.',
+      'The <b>distance</b> grows as long as you ride, but the <b>displacement</b> only looks at where you started and where you are, so it can shrink.',
     rule_3:
-      '<b>Distance</b> is just a size (a <b>scalar</b>), <b>displacement</b> a size and a direction (a <b>vector</b>). <b>The displacement is never more than the distance</b>: a straight line is the shortest way.',
+      '<b>Distance is a scalar</b>, <b>displacement a vector</b>, and <b>the displacement is never more than the distance</b>: a straight line is the shortest way.',
 
     q_locked: 'In the test the cycle moves by itself. Look at the picture and pick an answer.',
 
@@ -185,16 +180,16 @@ export const STRINGS = {
     q_try: 'Try once more.',
     q_again: 'Take the test again',
 
-    q_vec: 'The cycle rode from A along the winding road to B. What is its displacement from A?',
+    q_vec: 'The cycle rode from A along the winding road to B. What is its displacement with respect to point A?',
     opt_vec: '{d} {u}, towards the {dir}',
     opt_only: 'just {d} {u}',
     why_vec: '<b>{d} {u}, towards the {dir}</b>: displacement is a vector, so it needs a size and a direction.',
     miss_vec_only: 'The direction is missing: a size alone is a scalar.',
     miss_vec_dist: '{dist} {u} is the distance along the road (the blue path), not the displacement.',
     miss_vec_dist_only: '{dist} {u} is the distance (the blue path), not the displacement.',
-    q_dir: 'Which way is the displacement of the cycle from A? (N = north)',
+    q_dir: 'Which way is the displacement of the cycle with respect to point A? (N = north)',
     why_dir: '<b>{dir}</b>: the orange arrow points from A to the cycle; that is the direction of the displacement.',
-    miss_dir_heading: 'The cycle is riding {heading} now; the displacement does not follow the bends of the road.',
+    miss_dir_heading: 'The cycle came {heading} along the road; the displacement does not follow the bends of the road.',
     miss_dir_back: 'That is the opposite way: the arrow starts at A and ends at the cycle.',
     miss_dir_mirror: 'East and west are swapped: east is to the right of N.',
     miss_dir_other: 'Match the arrow against the compass’s N.',
@@ -209,15 +204,11 @@ export const STRINGS = {
     miss_zero_dist: '{total} {u} is the distance (out + back), not the displacement.',
     miss_zero_half: '{k} {u} is the way out, a distance too.',
     miss_zero_far: '{d} {u} was the displacement at post {k}.',
-    q_rule: 'Look at the blue path and the orange arrow. Which is always true, on any trip?',
-    opt_rule_ok: 'The displacement is at most the distance',
-    opt_rule_eq: 'Displacement and distance are always equal',
-    opt_rule_more: 'The displacement can be bigger than the distance',
-    opt_rule_back: 'Coming back makes the distance zero too',
-    why_rule: '<b>At most the distance</b>: a straight line is the shortest way (here the displacement is {disp} {u}, the distance {dist} {u}).',
-    miss_rule_eq: 'They are equal only on a straight road, riding one way.',
-    miss_rule_more: 'The arrow is a straight line; no way is shorter than it.',
-    miss_rule_back: 'Coming back makes the displacement zero, not the distance.',
+    q_rule: 'The cycle rode {k} {u} along the road. Measure with the {one} {u} bar: about how big is the displacement?',
+    why_rule: '<b>About {d} {u}</b>: the arrow is about {d} times the {one} {u} bar, much less than the distance along the way ({k} {u}).',
+    miss_rule_dist: '{k} {u} is the distance along the road (the blue path), not the straight arrow.',
+    miss_rule_book: '{book} {u} was the displacement of B in the book; measure this arrow.',
+    miss_rule_more: 'The displacement is never more than the distance: a straight line is the shortest way.',
   },
 };
 

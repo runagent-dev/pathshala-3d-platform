@@ -36,12 +36,13 @@ export function ruleLevel(prev, { step, at, trip, moving }) {
 
 /**
  * Which result line to show: 'move' while it rides or is dragged, 'start' before any ride, 'back' at A after a
- * ride, 'stop' at B or C, 'here' anywhere else.
+ * ride (at least 50 m, as advance() counts it: a nudge off A and back is no return), 'stop' at B or C, 'here'
+ * anywhere else.
  */
 export function outcomeKind({ trip, at, moving }) {
   if (moving) return 'move';
   if (trip < 0.005) return 'start';
-  if (at === 'A') return 'back';
+  if (at === 'A' && trip >= 0.05) return 'back';
   if (at === 'B' || at === 'C') return 'stop';
   return 'here';
 }

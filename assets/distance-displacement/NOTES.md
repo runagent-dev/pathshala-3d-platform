@@ -23,6 +23,8 @@ from A to B, the সরণ is only 2 km; back at A it is zero, however far you r
 পূর্ব … (the compass on the map shows উ).
 
 ## How it works (v0.2.0, the clean panel)
+- The cyclist is scaled up on small maps (1 to 1.8 times, worked out every frame so the bike is about 40 px long:
+  about 36 px at 390×700, 31 px at 390×520), on top of being drawn 230 times bigger than real.
 - A 3D tile of Bangladeshi countryside (rice fields, ponds, homes with tin roofs, trees) with the book's road. The
   road is the shared one in `src/road.js` (also used by the speed figure on page 41): B is 4 km along it and 2.000
   km from A, C is 6 km along it and 1.311 km from A. The road and distances are to scale; houses, trees, posts and
@@ -32,9 +34,12 @@ from A to B, the সরণ is only 2 km; back at A it is zero, however far you r
   A, B, C keep a dark number under the letter), a compass and a 1 km scale bar. দূরত্ব (blue): the trail on the road,
   out on one side and back on the other (Bangladesh keeps left), a second stripe for a second pass. সরণ (orange): a
   flat arrow from A to the cyclist. Their values sit beside them on the map ("দূরত্ব ৪ km" by the rider,
-  "সরণ ২ km" beside the arrow, "সরণ ০" beside A after a round trip), placed every frame where they cover nothing:
+  "সরণ ২ km" beside the arrow, or on its middle like a line's label when there is no room beside it, "সরণ ০" beside
+  A after a round trip, placed before the distance there), placed every frame where they cover nothing:
   not the road, the arrow, the cyclist, the plates, the action's ring (and the room round it where the badge goes)
-  or the corner buttons (`src/values.js`); a value with no free place is left out, the panel always has it. The
+  or the corner buttons (`src/values.js`; the room round the ring and the grey road ahead are given up before a value
+  is left out); a value with no free place is left out, the panel always has it (at 390×520 at C the 52 px arrow
+  between the C label, the ring round A and the blue path has no room for it). The
   badge in turn keeps off the values, the plates, the cyclist, the arrow and the blue path (the path only when there
   is room elsewhere: on a small map after a long ride it runs all round the next stop).
 - **The panel is the kit's clean sheet** (kit 1.3.0), so it explains the whole picture:
@@ -49,10 +54,10 @@ from A to B, the সরণ is only 2 km; back at A it is zero, however far you r
     riding "তুমি A বিন্দুতে: এখনো দূরত্ব ০, সরণ ০"; while riding the live values (two decimals); at B "B-তে: পথ ধরে
     দূরত্ব ৪ km, কিন্তু A থেকে সোজা সরণ ২ km, উত্তর-পূর্ব দিকে"; at C "… দূরত্ব ৬ km … সরণ ১.৩১ km, উত্তর দিকে";
     back at A "A-তে ফিরে এলে সরণ ০, কিন্তু দূরত্ব ৬ + ৬ = ১২ km"; elsewhere "এখানে: …".
-  - **one rule that grows** (it never shrinks during a trip): before the first stop, what the posts' numbers are and
-    the book's সরণ ("A বিন্দুর সাপেক্ষে তোমার অবস্থান"); after a stop, "দূরত্ব একটি স্কেলার রাশি … সরণ ভেক্টর রাশি …
-    তিরের দিকটি হচ্ছে সরণের দিক"; after C, the distance only grows while the displacement can shrink; back at A,
-    "সরণের মান কখনো দূরত্বের চেয়ে বেশি হয় না".
+  - **one rule that grows**, one sentence each (it never shrinks during a trip): before the first stop, what the
+    posts' numbers are and the book's সরণ ("A বিন্দুর সাপেক্ষে তোমার অবস্থান"); after a stop, "দূরত্ব একটি স্কেলার
+    রাশি (শুধু মান), সরণ ভেক্টর রাশি (মান ও দিক): তিরের দিকটি হচ্ছে সরণের দিক"; after C, the distance only grows
+    while the displacement can shrink; back at A, "সরণের মান কখনো দূরত্বের চেয়ে বেশি হয় না".
   - the quiet "নতুন করে শুরু" (an icon on phones) starts a new trip.
 - The cyclist can still be dragged along the road (no first-use hand: the action's marker is the guide), or sent
   anywhere by a tap on the road or a post. Arrow keys ride ±0.1 km (Shift ±1 km); b, c, a ride to B, C, A; n starts
@@ -62,7 +67,9 @@ from A to B, the সরণ is only 2 km; back at A it is zero, however far you r
   just a number, the road's 4 km); the direction of the displacement at km 1 or 2, against the way the cycle is
   riding there; the distance of an out-and-back ride (A → post k1 → post k2, never back to half way, where adding the
   post numbers would be right by chance); the displacement after a round trip to a post (zero; the post is read off
-  the trail); which is always true (displacement ≤ distance), on the ride to C.
+  the trail); the displacement at km 5 or 6 read off the map with the 1 km scale bar (about 1.4 or 1.3 km, against
+  the distance, the book's 2 km for B, and more than the distance).
+- A nudge off A and back (under 50 m) reads "এখানে: … দূরত্ব …, কিন্তু সরণ ০", never "A-তে ফিরে এলে".
 - The ride is not to time on purpose: speed and velocity are the next figure (page 41).
 
 ## What changed in v0.2.0 and why
