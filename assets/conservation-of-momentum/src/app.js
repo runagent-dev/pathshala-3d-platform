@@ -75,7 +75,7 @@ const FRONT_TILTS = [13, 18, 23, 28].map(fromFront);
 const LANE_GAP = [0.075, 0.03];
 const LANE_TOP = 2 * radiusOf(3) + LANE_GAP[0]; // the framing keeps room for this (the examples' biggest ball)
 const TRACK_FRONT = 0.13; // m: the framing shows the track this far towards the camera (its front edge may go)
-const TAG_GAP = 6; // px between the tags' lower edge and m₁'s arrow
+const TAG_GAP = 5; // px between the tags' lower edge and m₁'s arrow
 const DRAG_START = 7; // px a finger moves before a touch on a ball becomes a drag (less: a tap plays or pauses)
 const DOUBLE_TAP = 400; // ms: a second tap this soon does not undo the first
 const SAY_HINT = 3800; // ms a hint stays in the panel's sentence line
@@ -352,7 +352,8 @@ export function createApp(root, options = {}) {
   function placeTags() {
     camera.updateMatrixWorld();
     const lane = lanes();
-    const lift = (tagH / 2 + TAG_GAP) / Math.max(1, pxPerMetre(tail[1]));
+    // over the arrows' heads (their radius grows with the picture), then TAG_GAP px and half a tag
+    const lift = arrowStyle.headRadius + (tagH / 2 + TAG_GAP) / Math.max(1, pxPerMetre(tail[1]));
     for (const i of [1, 2]) {
       const x = balls[i].root.position.x;
       tagPoint[i].set(x, lane[0] + lift, 0);
@@ -404,11 +405,14 @@ export function createApp(root, options = {}) {
 
   function viewPose(v = s.view) {
     layout();
-    const box = new THREE.Box3(new THREE.Vector3(WINDOW.left, -0.01, -0.1), new THREE.Vector3(WINDOW.right, LANE_TOP, TRACK_FRONT));
+    const box = new THREE.Box3(
+      new THREE.Vector3(WINDOW.left, -0.01, -0.1),
+      new THREE.Vector3(WINDOW.right, LANE_TOP + arrowStyle.headRadius, TRACK_FRONT),
+    );
     const sr = ui.stage.getBoundingClientRect();
     const corner = ui.corner.getBoundingClientRect();
     // the tags hang tagH + TAG_GAP above m₁'s arrow and stay under the corner buttons and the note about time
-    const below = Math.max(corner.bottom - sr.top, 38) + 4;
+    const below = Math.max(corner.bottom - sr.top, 38) + 2;
     const top = below + tagH + TAG_GAP;
     const fit = (dir) => fitPose({ box, dir, camera, width: stage.width, height: stage.height, margin: { top, bottom: L.stripH + 18, side: 8 } });
     if (v !== 'front') return fit(VIEW_DIRS[v]);
