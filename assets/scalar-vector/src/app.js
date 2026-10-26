@@ -1,10 +1,10 @@
 // Scalar and vector quantities (book page 38, topic 2.3), student view: "find your friend" on a school field seen from
 // slightly above. You stand on a chalk compass; your friend is hiding. Call, and the friend answers with a size only
-// ("৩০ মিটার দূরে"): a measuring line sweeps round and the ring of every place 30 m away lights up with question
+// ("২৫ m দূরে"): a measuring line sweeps round and the ring of every place 25 m away lights up with question
 // marks, so you cannot find them (a মান alone; like a temperature, a স্কেলার needs nothing more, but a position
-// does). Ask the direction too ("৩০ মিটার, উত্তর-পূর্ব দিকে"): the compass point glows, one arrow A grows to exactly
+// does). Ask the direction too ("২৫ m, উত্তর-পূর্ব দিকে"): the compass point glows, one arrow A grows to exactly
 // one spot, the friend pops up, and you walk over (মান + দিক = ভেক্টর). Then the book's চিত্র ২.০৩ in the same story:
-// B, C and D walk their own clues from other places, and each arrow in turn slides, unturned and unstretched, onto
+// B, C and D wait in turn; each, when sent, walks its own clue from another place, and its arrow slides, unturned and unstretched, onto
 // the tail of the one the book compares it with: B covers A exactly (হুবহু এক, যদিও ভিন্ন অবস্থানে), C has A's
 // মান but another দিক (an orange arc), D has C's দিক but half its মান. The panel is the kit's clean sheet: one big
 // numbered action whose same badge rings what to touch on the field, one result line, one rule that grows to the
@@ -28,11 +28,11 @@ import {
   CELLS,
   FRIEND,
   PAIRS,
-  QUANTITIES,
   RING,
   START,
   TEST_D,
   TEST_L,
+  TEST_NEAR,
   VECTORS,
   WALKERS,
   along,
@@ -46,7 +46,7 @@ import {
 } from './reading.js';
 
 export const DEFAULTS = {
-  stage: 0, // steps already done: 0 start · 1 the ring · 2 found · 3 B, C, D walked · 4–6 B, C, D compared
+  stage: 0, // steps already done: 0 start · 1 the ring · 2 found · 3–5 B, C, D sent and compared
   view: 'front', // 'front' | '3d'
   mode: 'explore', // 'explore' | 'quiz'
   coach: true, // the numbered ring on the field pulses (false: it stays still)
@@ -59,14 +59,15 @@ export const DEFAULTS = {
 
 const NAMES = ['B', 'C', 'D'];
 const F = headOf(FRIEND); // where the friend is
-const YOU_END = [F[0] + 4.6, F[1] - 1.6]; // you stop beside the friend (not on the arrow's head)
+const YOU_END = [F[0] + 7, F[1] - 1.5]; // you stop beside the friend (not on the arrow's head, not so close the ring round you cuts the friend)
+const ARC_R = 15; // m: the arc between two দিক round the common tail
 const LINE_AT = 210; // the measuring line ends pointing this way (away from the answer)
 const TEMP = 37; // ° C, the book's body temperature
 const WALK = 17; // m/s: walks are quicker than life (no time is shown)
 const STRIDE = 2.4; // m of walk per radian of the legs' swing
 const DOUBLE_TAP = 450; // ms
 const FRAME = new THREE.Box3(new THREE.Vector3(-29, 0, -29.5), new THREE.Vector3(29, 6, 29));
-const VIEW_3D = new THREE.Vector3(-0.5, 0.62, 0.6).normalize();
+const VIEW_3D = new THREE.Vector3(-0.45, 0.8, 0.55).normalize(); // about 53° above the field
 const MARGIN = { top: 48, bottom: 8, side: 8 };
 const rad = THREE.MathUtils.degToRad;
 const lerp2 = (a, b, k) => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k];
@@ -90,9 +91,6 @@ export function createApp(root, options = {}) {
   });
   const sheet = bindCleanSheet(ui.learn);
   const outcomeEl = ui.$('.pvc-outcome');
-  const note = document.createElement('div');
-  note.className = 'sv-note';
-  ui.stage.append(note);
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 30, near: 1, far: 900, environment: 'studio-light' });
@@ -182,10 +180,10 @@ export function createApp(root, options = {}) {
   // ── state ───────────────────────────────────────────────────────────────────
   const s = {
     clue: 0, // 0 nothing yet · 1 the distance only · 2 distance and direction (found)
-    walked: false, // B, C and D have walked their clues
-    compared: [], // the children whose arrows were slid onto their partner's tail, in order
+    compared: [], // the children sent (they walked their clue and their arrow was slid onto its partner's tail), in order
     current: null, // whose comparison shows now
-    pending: null, // what an animation is in the middle of: 'heard' | 'walking' | { moving: name }
+    // what an animation is in the middle of: 'calling' | 'heard' | { walking: name } | { moving: name }
+    pending: null,
     busy: false,
     view: o.view === '3d' ? '3d' : 'front',
     mode: 'explore',
@@ -210,8 +208,13 @@ export function createApp(root, options = {}) {
       arc: 0,
     };
   }
-  /** The scene once a state is reached (no animation). */
-  function visFor({ clue, walked, current }) {
+  /** The next child to send, or null once all three were. */
+  const nextChild = (compared = s.compared) => NAMES.find((n) => !compared.includes(n)) ?? null;
+  /**
+   * The scene once a state is reached (no animation). Once the friend is found the next child waits at its start
+   * (waiting: false leaves it out, for a test's picture).
+   */
+  function visFor({ clue, compared = [], current = null }, { waiting = true } = {}) {
     const v = freshVis();
     if (clue >= 1) Object.assign(v.ring, { drawn: 1, marks: 1, line: 1 });
     if (clue >= 2) {
@@ -221,12 +224,14 @@ export function createApp(root, options = {}) {
       v.friend = { pop: 1, wave: 1, waveT: 0.6 };
       v.you = { p: [...YOU_END], heading: 180, walk: 0, wave: 0, waveT: 0, look: 0 };
     }
-    if (walked) {
+    if (compared.length) {
       Object.assign(v.ring, { opacity: 0, markOpacity: 0 });
       v.rose = 0;
       v.friend.wave = 0;
-      for (const n of NAMES) v.w[n] = { show: 1, f: 1, p: headOf(WALKERS[n]), walk: 0 };
     }
+    for (const n of compared) v.w[n] = { show: 1, f: 1, p: headOf(WALKERS[n]), walk: 0 };
+    const next = nextChild(compared);
+    if (clue >= 2 && next && waiting) v.w[next] = { show: 1, f: 0, p: [...WALKERS[next].tail], walk: 0 };
     if (current) {
       v.ghost = { name: current, k: 1, show: 1 };
       v.arc = verdict(VECTORS[current], VECTORS[PAIRS[current]]) === 'direction' ? 1 : 0;
@@ -276,7 +281,7 @@ export function createApp(root, options = {}) {
     } else ghost.hide();
     if (g.name && vis.arc > 0.01) {
       const ref = VECTORS[PAIRS[g.name]];
-      arc.set(ref.tail, ref.angle, VECTORS[g.name].angle, 12, vis.arc);
+      arc.set(ref.tail, ref.angle, VECTORS[g.name].angle, ARC_R, vis.arc);
     } else arc.hide();
     learnLabels();
     stage.invalidate();
@@ -286,7 +291,13 @@ export function createApp(root, options = {}) {
   const anno = createAnnotations({
     stage,
     layer: ui.annoLayer,
-    avoid: [ui.corner, note, () => (ui.hint.classList.contains('show') ? hintBox() : null), () => action?.box(), () => action?.ringBox()],
+    avoid: [
+      ui.corner,
+      () => (ui.hint.classList.contains('show') ? hintBox() : null),
+      () => action?.box(),
+      () => action?.ringBox(),
+      () => roseBoxes(), // the compass letters (উ above all: the clue says উত্তর-পূর্ব)
+    ],
   });
   const shownText = new Map();
   /** A label on the field, or none (spec null). Text, point and colour change in place. */
@@ -305,6 +316,10 @@ export function createApp(root, options = {}) {
       shownText.set(id, key);
     } else anno.update(id, { point: spec.point });
   }
+  // farther places round a point, for labels that must not cover the compass letters, the arrows or the children
+  const FAR = [40, 54].flatMap((r) =>
+    [-35, 35, -145, 145, 0, 180, -90, 90].map((a) => ({ dx: Math.round(r * Math.cos(rad(a))), dy: Math.round(r * Math.sin(rad(a)) * 0.8) })),
+  );
   // beside the head first (straight above it is the compass's উ, behind the child on the screen), outside the ring the
   // action draws round you
   const BY_HEAD = [
@@ -313,14 +328,13 @@ export function createApp(root, options = {}) {
     { dx: 30, dy: -22 },
     { dx: -30, dy: -22 },
     { dx: 0, dy: -30 },
+    { dx: 62, dy: -8 },
+    { dx: -62, dy: -8 },
+    { dx: 58, dy: -44 },
+    { dx: -58, dy: -44 },
   ];
   // the friend's name away from you (you stand on the friend's right)
-  const FRIEND_SPOTS = [
-    { dx: -20, dy: -12 },
-    { dx: 0, dy: -18 },
-    { dx: -26, dy: 2 },
-    { dx: -22, dy: 16 },
-  ];
+  const FRIEND_SPOTS = [{ dx: -20, dy: -12 }, { dx: 0, dy: -18 }, { dx: -26, dy: 2 }, { dx: -22, dy: 16 }, ...FAR];
   const ABOVE = [
     { dx: 0, dy: -16 },
     { dx: 18, dy: -12 },
@@ -338,6 +352,17 @@ export function createApp(root, options = {}) {
     { dx: -30, dy: 6 },
     { dx: -36, dy: -26 },
     { dx: 36, dy: 26 },
+  ];
+  const NAME_SPOTS = [{ dx: 30, dy: 4 }, ...BESIDE, ...FAR]; // an arrow's name: beside it first
+  // the test's arrows lie close together: more places, farther out
+  const WIDE_BESIDE = [
+    ...BESIDE,
+    { dx: 0, dy: -38 },
+    { dx: 0, dy: 38 },
+    { dx: 46, dy: 0 },
+    { dx: -46, dy: 0 },
+    { dx: 40, dy: -30 },
+    { dx: -40, dy: 30 },
   ];
   const tmp = new THREE.Vector3();
   const headTop = (kid) => () => kid.root.localToWorld(tmp.copy(kid.top));
@@ -378,6 +403,7 @@ export function createApp(root, options = {}) {
         bead(P(x, y, 1, beadA), 10);
       }
     }
+    if (arc.mesh.visible) for (const p of arc.points()) bead(p, 9); // the orange arc between two দিক
     out.push(...kidBoxes(0.45));
     for (const f of flags) {
       if (!f.root.visible) continue;
@@ -386,6 +412,19 @@ export function createApp(root, options = {}) {
       out.push({ left: foot.x - 6, top: top.y, right: foot.x + 18, bottom: foot.y + 3 });
     }
     return out;
+  }
+  /** The compass letters on the screen (each a box as big as the letter, 3.5 m wide), while the compass shows. */
+  const edge = new THREE.Vector3();
+  function roseBoxes() {
+    if (!rose.root.visible) return null;
+    return rose.letters.map((p) => {
+      const c = toScreen(p);
+      const ex = toScreen(edge.copy(p).setX(p.x + 1.75));
+      const ey = toScreen(edge.copy(p).setZ(p.z - 1.75));
+      const w = Math.max(7, Math.abs(ex.x - c.x));
+      const h = Math.max(6, Math.abs(ey.y - c.y));
+      return { left: c.x - w, top: c.y - h, right: c.x + w, bottom: c.y + h };
+    });
   }
   function hintBox() {
     const o2 = stage.canvas.getBoundingClientRect();
@@ -396,7 +435,7 @@ export function createApp(root, options = {}) {
   function learnLabels() {
     if (s.scene !== 'learn' && !picture) return;
     const found = s.clue >= 2 || vis.friend.pop > 0.6;
-    const early = !s.walked && s.pending !== 'walking';
+    const early = !s.compared.length && !s.pending?.walking && !s.pending?.moving; // until the first child is sent
     setLabel('you', early ? { text: t('l_you'), point: headTop(you), color: '#1d2733', spots: BY_HEAD } : null);
     setLabel(
       'friend',
@@ -410,18 +449,9 @@ export function createApp(root, options = {}) {
         ? { text: t('l_metres', { d: RING }), point: () => ring.lineMiddle(), color: COLORS.magnitude, spots: BESIDE }
         : null,
     );
-    const aFull = vis.a > 0.999;
-    setLabel(
-      'A',
-      aFull
-        ? {
-            text: early ? t('l_vector', { v: V('A'), d: RING, dir: dirName(FRIEND.angle) }) : V('A'),
-            point: () => arrows.A.middle(),
-            color: COLORS.vector,
-            spots: BESIDE,
-          }
-        : null,
-    );
+    // the arrow's name only: its মান and দিক are in the result line, in the same colours, and the label must not
+    // cover the compass's উ (the clue is উত্তর-পূর্ব)
+    setLabel('A', vis.a > 0.999 ? { text: V('A'), point: () => arrows.A.middle(), color: COLORS.vector, spots: NAME_SPOTS } : null);
     for (const n of NAMES) {
       const w = vis.w[n];
       if (w.show < 0.6) {
@@ -429,9 +459,16 @@ export function createApp(root, options = {}) {
         continue;
       }
       const drawn = w.f > 0.999;
+      // a child waiting to be sent is named by the ring, the badge and the button ("B-কে পাঠাও"); its letter shows
+      // once it moves (the ring leaves no room for it)
+      const next = plan();
+      if (!drawn && !s.busy && next.act === 'send' && next.name === n && s.scene === 'learn') {
+        setLabel(n, null);
+        continue;
+      }
       setLabel(n, {
         text: drawn ? V(n) : n,
-        point: drawn ? nameAt[n] : headTop(kids[n]),
+        point: drawn ? () => nameAt[n] : headTop(kids[n]),
         color: COLORS.vector,
         spots: drawn ? BESIDE : ABOVE,
       });
@@ -449,55 +486,58 @@ export function createApp(root, options = {}) {
       const spots = v === 'direction' ? [{ dx: 0, dy: -14 }, ...ABOVE, ...BESIDE] : [...BESIDE, ...ABOVE];
       setLabel('verdict', { ...spec, point, spots, optional: true });
     } else setLabel('verdict', null);
+    scaleLabels();
+  }
+  /** Under the bar; flush with the view's right edge when the bar is near it (the label is wider than the bar). */
+  const scalePlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.1);
+  const scaleRay = new THREE.Raycaster();
+  const scalePoint = new THREE.Vector3();
+  function scaleAnchor() {
+    const bar = toScreen(scaleBar.middle);
+    const x = bar.x > stage.width - 120 ? stage.width - 6 - 68 : bar.x; // near the right edge: flush with it (68: half the label, with a little to spare)
+    scaleRay.setFromCamera(new THREE.Vector2((x / stage.width) * 2 - 1, -(bar.y / stage.height) * 2 + 1), camera);
+    return scaleRay.ray.intersectPlane(scalePlane, scalePoint) ?? scaleBar.middle;
+  }
+  /** The 10 m bar's words, and under it the honest note about the children's size (in the test too). */
+  function scaleLabels() {
+    // one label, so the two never part: the bar's length, and under it the honest note about the children's size
     setLabel('scale', {
-      text: t('l_metres', { d: 10 }),
-      point: () => scaleBar.middle,
+      text: `<b>${t('l_metres', { d: 10 })}</b><small>${t('note_big')}</small>`,
+      point: scaleAnchor,
       color: '#2f3d4a',
-      kind: 'part',
-      spots: [
-        { dx: 0, dy: -12 },
-        { dx: 40, dy: 0 },
-      ],
-      optional: true,
+      kind: 'scale',
+      spots: [{ dx: 0, dy: 26 }, { dx: -6, dy: 28 }, { dx: 0, dy: -30 }, { dx: -14, dy: -6 }, ...FAR],
     });
   }
   let picture = false; // a test question shows the learn scene as its picture
-  // the ring to compare an arrow sits a little nearer its tail than its head, where its child stands (room for the badge)
-  const ringAt = Object.fromEntries(NAMES.map((n) => [n, P(...along(WALKERS[n], 0.3), 1.6)]));
-  // a child's arrow is named near its head (its middle is where D's copy ends when it lies on C; its ring is nearer the tail)
-  const nameAt = Object.fromEntries(
-    NAMES.map((n) => [
-      n,
-      (
-        (p) => () =>
-          p
-      )(P(...along(WALKERS[n], 0.82), 1.5)),
-    ]),
-  );
+  // a child's arrow is named near its head (its middle is where D's copy ends when it lies on C)
+  const nameAt = Object.fromEntries(NAMES.map((n) => [n, P(...along(WALKERS[n], 0.82), 1.5)]));
 
   // ── the panel: one action, one result, one rule ─────────────────────────────
   /** What the big button (and a tap on its ring) does next, with the student's step number. */
   function plan() {
     if (s.clue === 0) return { act: 'call', step: 1, label: 'act_call' };
     if (s.clue === 1) return { act: 'ask', step: 2, label: 'act_ask' };
-    if (!s.walked) return { act: 'walk', step: 3, label: 'act_walk' };
-    const n = NAMES.find((x) => !s.compared.includes(x));
-    if (n) return { act: 'compare', name: n, step: 4 + s.compared.length, label: `act_cmp_${n}` };
+    const n = nextChild();
+    if (n) return { act: 'send', name: n, step: 3 + s.compared.length, label: `act_send_${n}` };
     return { act: 'again', step: '', label: 'act_again' };
   }
-  /** What the ring goes round: you (your visible body: you call, ask and call the others), or the middle of the arrow to compare (a long diagonal arrow's box would ring half the field). */
+  /** What the ring goes round: you (you call and ask), or the child waiting to be sent (their visible bodies). */
   function actionTarget() {
     if (s.scene !== 'learn' || s.busy) return null;
     const p = plan();
-    if (p.act === 'compare') return ringAt[p.name];
-    return you.body;
+    return p.act === 'send' ? kids[p.name].body : you.body;
   }
 
   function outcome() {
     const pend = s.pending;
     if (pend?.moving) return [t('out_moving', { x: V(pend.moving), y: V(PAIRS[pend.moving]) }), 'vector'];
+    if (pend?.walking) {
+      const v = VECTORS[pend.walking];
+      return [t('out_told', { x: V(pend.walking), d: v.length, dir: dirName(v.angle) }), 'vector'];
+    }
+    if (pend === 'calling') return [t('out_calling', { d: RING }), 'magnitude'];
     if (pend === 'heard') return [t('out_heard', { d: RING, dir: dirName(FRIEND.angle) }), 'vector'];
-    if (pend === 'walking') return [t('out_walking'), 'vector'];
     if (s.current) {
       const x = s.current;
       const y = PAIRS[x];
@@ -505,7 +545,6 @@ export function createApp(root, options = {}) {
       const key = v === 'equal' ? 'out_equal' : v === 'magnitude' ? 'out_mag' : 'out_dir';
       return [t(key, { x: V(x), y: V(y) }), v];
     }
-    if (s.walked) return [t('out_walk', { a: V('A') }), 'vector'];
     if (s.clue >= 2) return [t('out_found', { d: RING, dir: dirName(FRIEND.angle) }), 'vector'];
     if (s.clue === 1) return [t('out_ring', { d: RING }), 'magnitude'];
     return [t('out_start'), ''];
@@ -515,7 +554,6 @@ export function createApp(root, options = {}) {
     if (s.current === 'B') return t('rule_B', { a: V('A'), b: V('B') });
     if (s.current === 'C') return t(s.compared.includes('B') ? 'rule_C_ab' : 'rule_C', { a: V('A'), b: V('B'), c: V('C') });
     if (s.current === 'D') return t('rule_D', { c: V('C'), d: V('D') });
-    if (s.walked) return t('rule_walk');
     if (s.clue >= 2) return t('rule_found');
     if (s.clue === 1) return t('rule_ring', { d: RING });
     return t('rule_start', { temp: TEMP });
@@ -533,8 +571,6 @@ export function createApp(root, options = {}) {
       const p = plan();
       action.set({ step: p.step, label: p.label, enabled: !s.busy && s.mode !== 'quiz' });
     }
-    const n = t(stage.width < 560 ? 'note_big_short' : 'note_big');
-    if (note.textContent !== n) note.textContent = n;
     stage.invalidate();
   }
 
@@ -545,16 +581,15 @@ export function createApp(root, options = {}) {
       return { tail: v.tail, length: v.length, angle: v.angle, direction: compass(v.angle) };
     };
     const vectors = { A: s.clue >= 2 ? vec('A') : null };
-    for (const n of NAMES) vectors[n] = s.walked ? vec(n) : null;
+    for (const n of NAMES) vectors[n] = s.compared.includes(n) ? vec(n) : null;
     return {
-      stage: s.clue + (s.walked ? 1 + s.compared.length : 0),
+      stage: s.clue + s.compared.length, // steps done: 0 … 5
       clue: ['none', 'distance', 'direction'][s.clue], // what the friend has said
       found: s.clue >= 2,
-      walked: s.walked,
-      compared: [...s.compared],
+      compared: [...s.compared], // the children sent, who walked their clue and were compared
       current: s.current ? { name: s.current, with: PAIRS[s.current], verdict: verdict(VECTORS[s.current], VECTORS[PAIRS[s.current]]) } : null,
       vectors, // map metres: x to পূর্ব, y to উত্তর; angle from পূর্ব towards উত্তর
-      next: p.act === 'compare' ? { action: p.act, step: p.step, name: p.name } : { action: p.act, step: p.step },
+      next: p.act === 'send' ? { action: p.act, step: p.step, name: p.name } : { action: p.act, step: p.step },
       busy: s.busy,
       camera: camera.position.toArray().map((x) => +x.toFixed(2)), // scene metres (y up, -z north)
       target: controls.target.toArray().map((x) => +x.toFixed(2)),
@@ -583,7 +618,7 @@ export function createApp(root, options = {}) {
     target: actionTarget,
     pad: 8,
     radius: 22,
-    avoid: [ui.corner, note, () => anno.boxes(), () => kidBoxes(0.2)], // never over a child (the friend found!)
+    avoid: [ui.corner, () => anno.boxes(), () => kidBoxes(0.2)], // never over a child (the friend found!)
     pulse: o.coach,
     onAct: () => {
       audio.unlock();
@@ -642,7 +677,7 @@ export function createApp(root, options = {}) {
 
   async function stepCall(animate) {
     const my = begin();
-    s.clue = 1; // the friend answers at once: "30 m away"
+    s.pending = 'calling'; // "I am 25 m away!": the ring is drawn before the panel says what it means
     vis = visFor({ clue: 0 });
     refresh();
     audio.pop();
@@ -650,18 +685,19 @@ export function createApp(root, options = {}) {
     if (animate) {
       vis.ring.line = 1;
       const look = anim(1.9, (_k, p) => (vis.you.look = Math.sin(p * Math.PI * 2) * 0.75), ease.linear);
-      // the measuring line sweeps once round, drawing the ring of every place 30 m away
+      // the measuring line sweeps once round, drawing the ring of every place 25 m away
       if (!(await anim(1.4, (k) => ((vis.ring.drawn = k), (vis.ring.lineAngle = LINE_AT + 360 * k)), ease.inOutSine)) || my !== token) return;
       audio.pop();
       if (!(await anim(0.8, (k) => (vis.ring.marks = k), ease.linear)) || my !== token) return;
       await look;
     }
+    s.clue = 1;
     end(my);
   }
 
   async function stepAsk(animate) {
     const my = begin();
-    s.pending = 'heard'; // "30 m, to the north-east"
+    s.pending = 'heard'; // "25 m, to the north-east"
     vis = visFor({ clue: 1 });
     refresh();
     emit('step', { step: 2, action: 'ask' });
@@ -690,12 +726,14 @@ export function createApp(root, options = {}) {
       );
       if (!walked || my !== token) return;
       const h0 = vis.you.heading;
+      const next = nextChild();
       if (
         !(await anim(0.9, (_k, p) => {
           vis.you.walk = 0;
           vis.you.heading = h0 + (180 - h0) * Math.min(1, p * 2);
           vis.friend.wave = Math.min(1, p * 3);
           vis.friend.waveT = p * 0.9;
+          if (next) vis.w[next].show = Math.max(0, p * 2 - 1); // the first child to send appears at its start
         })) ||
         my !== token
       )
@@ -704,43 +742,79 @@ export function createApp(root, options = {}) {
     end(my);
   }
 
-  async function stepWalk(animate) {
+  /**
+   * One child's turn: told a clue, they walk it (the arrow first, then the walk), then a copy of their arrow lifts
+   * off and slides, unturned and unstretched, onto the tail the book compares it with; then the next child appears.
+   */
+  async function stepSend(name, animate) {
     const my = begin();
-    s.pending = 'walking';
-    vis = visFor({ clue: 2 });
+    s.pending = { walking: name };
+    s.current = null;
+    vis = visFor(s);
+    applyLearn();
     refresh();
-    emit('step', { step: 3, action: 'walk' });
+    emit('step', { step: 3 + s.compared.length, action: 'send', name });
+    const w = vis.w[name];
     if (animate) {
-      const fade = (k) => {
-        vis.ring.opacity = 0.5 * (1 - k);
-        vis.ring.markOpacity = 0.3 * (1 - k);
-        vis.rose = 1 - k;
-        vis.friend.wave = 1 - k;
-        for (const n of NAMES) vis.w[n].show = k;
-      };
-      if (!(await anim(0.5, fade, ease.linear)) || my !== token) return;
+      const r0 = { ...vis.ring };
+      const rose0 = vis.rose;
+      const wave0 = vis.friend.wave;
+      // the ring of places was about the friend: it goes
+      if (r0.opacity > 0.01 || rose0 > 0.01) {
+        const fade = (k) => {
+          vis.ring.opacity = r0.opacity * (1 - k);
+          vis.ring.markOpacity = r0.markOpacity * (1 - k);
+          vis.rose = rose0 * (1 - k);
+          vis.friend.wave = wave0 * (1 - k);
+        };
+        if (!(await anim(0.4, fade, ease.linear)) || my !== token) return;
+      }
       audio.pop();
-      if (!(await anim(0.8, (k) => NAMES.forEach((n) => (vis.w[n].f = k)), ease.inOutSine)) || my !== token) return;
-      const far = Math.max(...NAMES.map((n) => WALKERS[n].length));
+      if (!(await anim(0.8, (k) => (w.f = k), ease.inOutSine)) || my !== token) return;
+      const L = WALKERS[name].length;
       const walk = (_k, p) => {
-        for (const n of NAMES) {
-          const L = WALKERS[n].length;
-          const d = Math.min(L, p * far);
-          vis.w[n].p = along(WALKERS[n], d / L);
-          vis.w[n].walk = d < L ? d / STRIDE + 0.001 : 0;
-        }
+        w.p = along(WALKERS[name], p);
+        w.walk = p < 1 ? (p * L) / STRIDE + 0.001 : 0;
       };
-      if (!(await anim(far / WALK, walk, ease.linear)) || my !== token) return;
+      if (!(await anim(L / WALK, walk, ease.linear)) || my !== token) return;
+      w.walk = 0;
+      s.pending = { moving: name };
+      refresh();
+      vis.ghost = { name, k: 0, show: 0 };
+      if (!(await anim(0.3, (k) => (vis.ghost.show = k), ease.linear)) || my !== token) return;
+      if (!(await anim(1.2, (k) => (vis.ghost.k = k))) || my !== token) return;
     }
-    s.walked = true;
+    if (!s.compared.includes(name)) s.compared.push(name);
+    landed(name);
+    if (animate) {
+      if (verdict(VECTORS[name], VECTORS[PAIRS[name]]) === 'direction' && !(await anim(0.4, (k) => (vis.arc = k), ease.linear))) return;
+      const next = nextChild();
+      if (my !== token) return;
+      if (next) {
+        vis.w[next] = { show: 0, f: 0, p: [...WALKERS[next].tail], walk: 0 };
+        if (!(await anim(0.45, (k) => (vis.w[next].show = k), ease.linear)) || my !== token) return;
+      }
+    }
     end(my);
   }
 
+  /** The copy has landed: the verdict, in the panel and on the field. */
+  function landed(name) {
+    s.current = name;
+    s.pending = null;
+    vis.ghost = { name, k: 1, show: 1 };
+    const v = verdict(VECTORS[name], VECTORS[PAIRS[name]]);
+    emit('compare', { name, with: PAIRS[name], verdict: v });
+    if (v === 'equal') audio.success();
+    else audio.contact();
+    applyLearn();
+    refresh();
+    emitChange();
+  }
+
+  /** A child already sent: its copy slides onto its partner's tail again (a tap on its arrow). */
   async function stepCompare(name, animate) {
-    if (!s.walked) {
-      s.walked = true;
-      s.clue = 2;
-    }
+    if (!s.compared.includes(name)) return;
     const my = begin();
     s.pending = { moving: name };
     s.current = null;
@@ -753,17 +827,8 @@ export function createApp(root, options = {}) {
       if (!(await anim(0.3, (k) => (vis.ghost.show = k), ease.linear)) || my !== token) return;
       if (!(await anim(1.2, (k) => (vis.ghost.k = k))) || my !== token) return;
     }
-    s.current = name;
-    if (!s.compared.includes(name)) s.compared.push(name);
-    s.pending = null;
-    const v = verdict(VECTORS[name], VECTORS[PAIRS[name]]);
-    emit('compare', { name, with: PAIRS[name], verdict: v });
-    emit('step', { step: 3 + s.compared.length, action: 'compare', name });
-    if (v === 'equal') audio.success();
-    else audio.contact();
-    refresh();
-    if (animate && v === 'direction') {
-      vis.ghost.k = 1;
+    landed(name);
+    if (animate && verdict(VECTORS[name], VECTORS[PAIRS[name]]) === 'direction') {
       if (!(await anim(0.4, (k) => (vis.arc = k), ease.linear)) || my !== token) return;
     }
     end(my);
@@ -773,20 +838,19 @@ export function createApp(root, options = {}) {
   function goHome() {
     ++token;
     cancelAnims();
-    Object.assign(s, { clue: 0, walked: false, compared: [], current: null, pending: null, busy: false });
+    Object.assign(s, { clue: 0, compared: [], current: null, pending: null, busy: false });
     snap();
     refresh();
     emitChange();
   }
 
-  /** Straight to a state: the number of steps done (0 … 6) in the story's order. */
+  /** Straight to a state: the number of steps done (0 … 5) in the story's order. */
   function jumpTo(stageN) {
-    const n = Math.max(0, Math.min(6, Math.round(Number(stageN) || 0)));
+    const n = Math.max(0, Math.min(5, Math.round(Number(stageN) || 0)));
     ++token;
     cancelAnims();
     s.clue = Math.min(2, n);
-    s.walked = n >= 3;
-    s.compared = NAMES.slice(0, Math.max(0, n - 3));
+    s.compared = NAMES.slice(0, Math.max(0, n - 2));
     s.current = s.compared.at(-1) ?? null;
     s.pending = null;
     s.busy = false;
@@ -805,8 +869,7 @@ export function createApp(root, options = {}) {
     const p = plan();
     if (p.act === 'call') return stepCall(animate);
     if (p.act === 'ask') return stepAsk(animate);
-    if (p.act === 'walk') return stepWalk(animate);
-    if (p.act === 'compare') return stepCompare(p.name, animate);
+    if (p.act === 'send') return stepSend(p.name, animate);
     goHome();
     lastAct = now();
     return stepCall(animate);
@@ -877,9 +940,11 @@ export function createApp(root, options = {}) {
     if (s.scene !== 'learn') return null;
     ndc.set((p.x / stage.width) * 2 - 1, -(p.y / stage.height) * 2 + 1);
     raycaster.setFromCamera(ndc, camera);
-    if (s.walked) for (const n of NAMES) if (hits(arrows[n].hit) || hits(kids[n].hit)) return { compare: n };
-    const next = plan().act;
-    if (next !== 'compare' && hits(you.hit)) return { act: true };
+    const next = plan();
+    // a child already sent (its arrow or the child): compare again; the child waiting: send it (the next step)
+    for (const n of s.compared) if (hits(arrows[n].hit) || hits(kids[n].hit)) return { compare: n };
+    if (next.act === 'send' && hits(kids[next.name].hit)) return { act: true };
+    if (next.act !== 'send' && hits(you.hit)) return { act: true };
     return null;
   }
   // a real tap on what the step needs does it (the finger comes up within 8 px and 500 ms, like the kit's badge); a
@@ -994,11 +1059,12 @@ export function createApp(root, options = {}) {
   function youAtStart() {
     you.root.visible = true;
     placeKid(you, { p: START, heading: 285, walk: 0, wave: 0, waveT: 0, look: 0 });
-    setLabel('you', { text: t('l_you'), point: headTop(you), color: '#1d2733', spots: BY_HEAD });
+    // the flags' and arrows' labels matter more in a question: yours gives way when nothing is free
+    setLabel('you', { text: t('l_you'), point: headTop(you), color: '#1d2733', spots: BY_HEAD, optional: true });
   }
-  const flagLabel = (i, k) =>
+  const flagLabel = (i, k, d = null) =>
     setLabel(`t${i}`, {
-      text: t('flag', { k }),
+      text: d == null ? t('flag', { k }) : t('flag_at', { k, d }),
       point: () => flags[i].root.localToWorld(tmp.copy(flags[i].top)),
       color: COLORS.flag,
       spots: [
@@ -1006,6 +1072,10 @@ export function createApp(root, options = {}) {
         { dx: 26, dy: -6 },
         { dx: -26, dy: -6 },
         { dx: 0, dy: 22 },
+        { dx: 30, dy: 14 },
+        { dx: -30, dy: 14 },
+        { dx: 0, dy: -30 },
+        ...FAR,
       ],
     });
   function placeFlag(i, angle, d = TEST_D) {
@@ -1039,12 +1109,12 @@ export function createApp(root, options = {}) {
     lines: { text: 2, feedback: 3 },
     hooks: {
       enter() {
-        learnSaved = { clue: s.clue, walked: s.walked, compared: [...s.compared], current: s.current };
+        learnSaved = { clue: s.clue, compared: [...s.compared], current: s.current };
         ++token;
         cancelAnims();
         s.busy = false;
         s.pending = null;
-        Object.assign(s, { clue: 0, walked: false, compared: [], current: null });
+        Object.assign(s, { clue: 0, compared: [], current: null });
         s.mode = 'quiz';
         s.scene = 'test';
         s.locked = true;
@@ -1060,7 +1130,7 @@ export function createApp(root, options = {}) {
         s.scene = 'learn';
         s.locked = false;
         hintOff();
-        Object.assign(s, learnSaved || { clue: 0, walked: false, compared: [], current: null });
+        Object.assign(s, learnSaved || { clue: 0, compared: [], current: null });
         s.busy = false;
         s.pending = null;
         snap();
@@ -1104,29 +1174,35 @@ export function createApp(root, options = {}) {
   };
 
   /** "I am 20 m away": three flags, all 20 m from you in three directions; which one? Any of them. */
+  /**
+   * "I am 20 m away": three flags with their distances chalked on the grass, two 20 m away and one nearer. Where can
+   * Raju be? Either of the two (a মান alone leaves more than one place). Every choice is a set of flags.
+   */
   function prepClue() {
-    youAtStart();
+    rose.root.visible = false; // no directions in this question: the chalk lines would run over the compass letters
     const start = Math.floor(Math.random() * 8);
     const angles = [start, start + 3, start + 5].map((k) => (k % 8) * 45);
-    const order = shuffle([0, 1, 2]);
-    const spots = angles.map((a, j) => ({ a, k: letters[order[j]] })).sort((p, q) => p.k.localeCompare(q.k));
-    spots.forEach(({ a, k }, j) => {
-      placeFlag(j, a);
-      chalk[j].set(headOf({ tail: START, length: 2.6, angle: a }), headOf({ tail: START, length: TEST_D - 2, angle: a }));
-      flagLabel(j, k);
-      const mid = P(...headOf({ tail: START, length: TEST_D * 0.55, angle: a }), 0.3);
-      setLabel(`t${3 + j}`, { text: t('l_metres', { d: TEST_D }), point: () => mid, color: '#1d2733', kind: 'part', spots: BESIDE, optional: true });
+    const near = Math.floor(Math.random() * 3); // which of the three is not 20 m away
+    const ks = shuffle([...letters.slice(0, 3)]);
+    const spots = angles.map((a, j) => ({ a, k: ks[j], d: j === near ? TEST_NEAR : TEST_D })).sort((p, q) => p.k.localeCompare(q.k));
+    spots.forEach(({ a, k, d }, j) => {
+      placeFlag(j, a, d);
+      chalk[j].set(headOf({ tail: START, length: 2.6, angle: a }), headOf({ tail: START, length: d - 2, angle: a }));
+      flagLabel(j, k, d); // its name and its distance in one label
     });
+    const far = spots.filter((p) => p.d === TEST_D).map((p) => p.k);
+    const closer = spots.find((p) => p.d !== TEST_D).k;
     const items = [
-      { key: 'any', right: true, text: t('c_any') },
-      ...spots.map(({ a, k }) => ({ key: `spot_${k}`, k, text: t('c_spot', { k, dir: dirName(a) }) })),
+      { key: 'two', right: true, text: t('c_two', { a: far[0], b: far[1] }) },
+      { key: 'all', text: t('c_all', { a: spots[0].k, b: spots[1].k, c: spots[2].k }) },
+      ...far.map((k, j) => ({ key: `only_${j}`, k, other: far[1 - j], text: t('c_only', { k }) })),
     ];
-    return { text: t('q_clue', { d: TEST_D }), ...choiceList(items, 'clue') };
+    youAtStart(); // last: its label gives way to the flags' names
+    return { text: t('q_clue', { d: TEST_D }), ...choiceList(items, 'clue', { far, closer }) };
   }
 
   /** "20 m to the south-east": four flags 20 m away on the diagonals; the clue's direction picks one. */
   function prepFind() {
-    youAtStart();
     const angle = pickOne([45, 135, 225, 315]);
     const opts = findOptions(angle);
     const ks = shuffle([...letters]);
@@ -1137,6 +1213,7 @@ export function createApp(root, options = {}) {
     });
     ring20.setDrawn(1);
     ring20.setOpacity(0.35);
+    youAtStart(); // last: its label gives way to the flags' names
     const sorted = [...opts].sort((p, q) => p.k.localeCompare(q.k));
     question = { kind: 'find', angle, opts, sorted };
     return {
@@ -1160,12 +1237,12 @@ export function createApp(root, options = {}) {
     const names = ['B', 'C', 'D', 'E'];
     const A = { tail: centredTail(CELLS[aCell], TEST_L, a), length: TEST_L, angle: a };
     testArrows[0].set(A);
-    setLabel('t0', { text: V('A'), point: () => testArrows[0].middle(), color: COLORS.vector, spots: BESIDE });
+    setLabel('t0', { text: V('A'), point: () => testArrows[0].middle(), color: COLORS.vector, spots: WIDE_BESIDE });
     placed.forEach((op, j) => {
       op.name = names[j];
       op.v = { tail: centredTail(CELLS[op.cell], op.length, op.angle), length: op.length, angle: op.angle };
       testArrows[j + 1].set(op.v);
-      setLabel(`t${j + 1}`, { text: V(op.name), point: () => testArrows[j + 1].middle(), color: COLORS.vector, spots: BESIDE });
+      setLabel(`t${j + 1}`, { text: V(op.name), point: () => testArrows[j + 1].middle(), color: COLORS.vector, spots: WIDE_BESIDE });
     });
     question = { kind: 'equal', A, placed };
     return {
@@ -1195,26 +1272,27 @@ export function createApp(root, options = {}) {
     const Q1 = { ...q, tail: centredTail(CELLS[cq], q.length, q.angle) };
     testArrows[0].set(P1);
     testArrows[1].set(Q1);
-    setLabel('t0', { text: V('P'), point: () => testArrows[0].middle(), color: COLORS.vector, spots: BESIDE });
-    setLabel('t1', { text: V('Q'), point: () => testArrows[1].middle(), color: COLORS.vector, spots: BESIDE });
+    setLabel('t0', { text: V('P'), point: () => testArrows[0].middle(), color: COLORS.vector, spots: WIDE_BESIDE });
+    setLabel('t1', { text: V('Q'), point: () => testArrows[1].middle(), color: COLORS.vector, spots: WIDE_BESIDE });
     const items = ['direction', 'magnitude', 'both', 'place'].map((k) => ({ key: k, right: k === kind, text: t(`w_${k}`) }));
     return { text: t('q_why', { p: 'P', q: 'Q' }), ...choiceList(items, 'why', { P: P1, Q: Q1, answer: kind }) };
   }
 
-  /** The found friend as the picture; which quantity needs only a মান (or which needs a দিক too)? */
+  /**
+   * The found friend as the picture (the ring of places 25 m away, the arrow A to the one place): what is the
+   * distance and what is A; or, in this story, what needs a দিক as well as a মান. Choices of one form each.
+   */
   function prepKind() {
     picture = true;
     s.clue = 2; // the learn scene's step 2 as the picture (the learn state is kept apart and comes back)
-    vis = visFor({ clue: 2, walked: false, current: null });
+    vis = visFor({ clue: 2 }, { waiting: false });
     applyLearn();
     setLabel('line', null);
-    const scalarQ = Math.random() < 0.5;
-    const scalars = Object.keys(QUANTITIES).filter((k) => QUANTITIES[k] === 'scalar');
-    const vectors = Object.keys(QUANTITIES).filter((k) => QUANTITIES[k] === 'vector');
-    const right = scalarQ ? pickOne(scalars) : pickOne(vectors);
-    const wrong = scalarQ ? vectors : shuffle(scalars.filter((k) => k !== 'temp')).slice(0, 3);
-    const items = [{ key: right, right: true, text: t(`qn_${right}`) }, ...wrong.map((k) => ({ key: k, text: t(`qn_${k}`) }))];
-    return { text: t(scalarQ ? 'q_kind_s' : 'q_kind_v'), ...choiceList(items, 'kind', { scalarQ }) };
+    const what = Math.random() < 0.5;
+    const items = what
+      ? ['k_right', 'k_swap', 'k_both_s', 'k_both_v'].map((key, j) => ({ key, right: j === 0, text: t(key) }))
+      : ['n_where', 'n_far', 'n_time', 'n_temp'].map((key, j) => ({ key, right: j === 0, text: t(key) }));
+    return { text: t(what ? 'q_kind_what' : 'q_kind_need', { d: RING }), ...choiceList(items, 'kind', { what }) };
   }
 
   /** The worked answer (it leads with the answer and names the student's mistake); the scene shows it. */
@@ -1224,7 +1302,8 @@ export function createApp(root, options = {}) {
       ring20.setOpacity(1);
       testTween(0.9, (k) => (ring20.setDrawn(k), ring20.setMarks(Math.max(0, k * 1.4 - 0.4))), ease.linear);
       const pick = q.list[pickedIndex];
-      return t('why_clue', { d: TEST_D }) + (correct ? '' : ` ${t('not_spot', { k: pick.k, d: TEST_D })}`);
+      const note = correct ? '' : pick.key === 'all' ? t('not_all', { c: q.closer, n: TEST_NEAR }) : t('not_only', { o: pick.other, d: TEST_D });
+      return t('why_clue', { a: q.far[0], b: q.far[1], d: TEST_D }) + (note ? ` ${note}` : '');
     }
     if (q.kind === 'find') {
       const right = q.opts.find((op) => op.kind === 'right');
@@ -1281,10 +1360,9 @@ export function createApp(root, options = {}) {
       return t(`why_${q.answer}`, vars) + (note ? ` ${note}` : '');
     }
     // kind
-    const right = q.list.find((x) => x.right);
     const pick = q.list[pickedIndex];
-    const note = correct ? '' : ` ${t(QUANTITIES[pick.key] === 'vector' ? 'not_is_vector' : 'not_is_scalar', { q: pick.text })}`;
-    return t(q.scalarQ ? 'why_kind_s' : 'why_kind_v', { q: right.text }) + note;
+    const note = correct ? '' : ` ${t(`not_${pick.key}`, { d: RING, temp: TEMP })}`;
+    return t(q.what ? 'why_kind_what' : 'why_kind_need', { d: RING }) + note;
   }
 
   // ── buttons, keys ───────────────────────────────────────────────────────────
@@ -1364,7 +1442,7 @@ export function createApp(root, options = {}) {
     },
     getState: snapshot,
     /**
-     * Change any of: stage (0 … 6: the steps done, in the story's order), act (true: the next step, as the big
+     * Change any of: stage (0 … 5: the steps done, in the story's order), act (true: the next step, as the big
      * button), compare ('B' | 'C' | 'D': slide that arrow onto its partner's tail), home (true: back to the start),
      * view; animate: false jumps to the end of a step.
      */
@@ -1376,16 +1454,24 @@ export function createApp(root, options = {}) {
       if (p.stage != null) jumpTo(p.stage);
       if (p.act) {
         if (s.busy) {
-          jumpTo(snapshot().stage + (s.pending ? 1 : 0)); // finish the step that is running, then do the next
+          // finish the step that is running (a replayed comparison is no step), then do the next
+          const again = s.pending?.moving && s.compared.includes(s.pending.moving);
+          jumpTo(snapshot().stage + (s.pending && !again ? 1 : 0));
         }
         lastAct = Number.NEGATIVE_INFINITY;
         await doAction({ animate });
       }
       if (p.compare && NAMES.includes(p.compare)) {
-        ++token;
-        cancelAnims();
-        s.busy = false;
-        await stepCompare(p.compare, animate);
+        // a child already sent is compared again; otherwise the children before it are sent at once, then this one
+        if (s.compared.includes(p.compare)) {
+          ++token;
+          cancelAnims();
+          s.busy = false;
+          await stepCompare(p.compare, animate);
+        } else {
+          jumpTo(2 + NAMES.indexOf(p.compare));
+          await stepSend(p.compare, animate);
+        }
       }
       emitChange();
       return snapshot();

@@ -5,9 +5,9 @@
 Interactive 3D figure for the Pathshala book: find your friend on a school field. A clue with only a size ("২৫ m
 দূরে") lights up a whole ring of places; adding the direction ("উত্তর-পূর্ব দিকে") gives exactly one, with the arrow A:
 a position needs মান and দিক (a vector), while a temperature needs only a মান (a scalar). Then the book's চিত্র ২.০৩ in
-the same story: three children walk their own clues, and each arrow slides onto its partner's tail (B equals A in
-another place, C differs from A in দিক, D from C in মান). One big numbered button leads the steps; then a
-five-question test. `?stage=2` (0–6) opens it at a step; `stage=2` is the poster.
+the same story: three children, sent one by one, walk their own clues, and each arrow slides onto its partner's tail (B
+equals A in another place, C differs from A in দিক, D from C in মান). One big numbered button leads the five steps;
+then a five-question test. `?stage=2` (0–5) opens it at a step; `stage=2` is the poster.
 
 ## Embed
 
@@ -32,7 +32,7 @@ To listen to it or control it from the book page, use the helper shipped in the 
 | Param | Meaning | Values | Default |
 |---|---|---|---|
 | `lang` | Language | `bn` বাংলা · `en` English | `bn` |
-| `stage` | Start at step | `0` the start (nothing said yet) · `1` the ring: 30 m away · `2` found: 30 m north-east · `3` B, C, D have walked · `4` B compared with A · `5` C compared with A · `6` D compared with C | `0` |
+| `stage` | Start at step | `0` the start (nothing said yet) · `1` the ring: 25 m away · `2` found: 25 m north-east (B waits) · `3` B sent, compared with A · `4` C sent, compared with A · `5` D sent, compared with C | `0` |
 | `view` | View | `front` · `3d` | `front` |
 | `mode` | Start in | `explore` learn · `quiz` test | `explore` |
 | `coach` | The numbered ring pulses | `1` · `0` | `1` |

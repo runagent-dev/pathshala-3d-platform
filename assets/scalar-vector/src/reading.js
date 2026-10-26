@@ -11,7 +11,7 @@ export const RING = 25;
 export const DIRS = ['e', 'ne', 'n', 'nw', 'w', 'sw', 's', 'se'];
 /** Where you start: the middle of the chalk compass on the field. */
 export const START = [0, 0];
-/** The friend, as the clue gives it: 30 m উত্তর-পূর্ব from you (the arrow A). */
+/** The friend, as the clue gives it: 25 m উত্তর-পূর্ব from you (the arrow A). */
 export const FRIEND = { tail: START, length: RING, angle: 45 };
 /**
  * Three more children walk their own clues from other places, like চিত্র ২.০৩: B as far and the same way as you (the
@@ -29,7 +29,7 @@ export const WALKERS = {
 export const VECTORS = { A: FRIEND, ...WALKERS };
 /** Each child's arrow is compared, tail to tail, with this one: the book's caption (A ও B, C ও A, D ও C). */
 export const PAIRS = { B: 'A', C: 'A', D: 'C' };
-/** The question marks round the ring of every place 30 m away: every 30°, so none sits where the friend is. */
+/** The question marks round the ring of every place 25 m away: every 30°, so none sits where the friend is. */
 export const RING_MARKS = Array.from({ length: 12 }, (_, i) => i * 30);
 
 /** The book's examples (page 38): a স্কেলার needs only a মান, a ভেক্টর needs a দিক too. */
@@ -144,6 +144,8 @@ export function whyPartner(u, kind, turn = 90) {
 /** m: how far the flags are from you in the test, and how long its arrows are (half that for the "half as long" one). */
 export const TEST_D = 20;
 export const TEST_L = 16;
+/** m: the one flag that is nearer in "I am 20 m away" (so only two places fit the clue). */
+export const TEST_NEAR = 12;
 /**
  * Six places for the test's arrows (3 across, 2 down), 19 m by 25 m each: an arrow of up to 16 m centred on one never
  * comes within 3 m of the next, whatever its দিক.

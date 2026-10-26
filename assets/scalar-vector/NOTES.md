@@ -32,36 +32,42 @@ says a position could not be given by the distance alone, its direction was need
 
 ## How the figure works
 - A school field seen from slightly above (north up): mown grass, the white line, trees, the school and the national
-  flag beyond it. You (white shirt, "তুমি") stand on a chalk compass (উ পূ দ প); a 10 m bar lies on the grass. The
-  children, trees and school are drawn bigger than life so they can be seen on a phone; distances are to scale. A
-  note on the view says so ("মানুষ বড় করে আঁকা").
-- The panel is the kit's clean sheet. One big numbered button leads the story; its same numbered badge rings what to
-  touch on the field (a tap on either does it; so does a tap on the thing itself). The number is the student's own
-  step. While a step plays the button waits (greyed) and the ring hides; a double tap never skips a step.
-  1. **বন্ধুকে ডাকো**: the friend answers with a size only, "আমি ২৫ m দূরে!". A measuring line sweeps once round
-     you, drawing the ring of every place 25 m away; question marks pop up all round it; you look about. Result:
-     "… তাহলে এই বৃত্তের যেকোনো জায়গায়।" Rule: a মান alone did not say where the friend is; a quantity a single value
-     describes completely, like temperature, is a স্কেলার রাশি.
-  2. **দিকও জিজ্ঞেস করো**: "২৫ m, উত্তর-পূর্ব দিকে!". The উত্তর-পূর্ব point of the compass glows orange, the
-     question marks fade, one violet arrow A⃗ grows to exactly one place, the friend (red) pops up, you walk over and
-     the friend waves. Result: "ঠিক এখানে: পেয়ে গেছ!". Rule: the book's sentence (অবস্থান needed the দিক too), so it
-     is a ভেক্টর রাশি. This is the poster.
-  3. **অন্যরাও হাঁটুক**: three more children appear and walk their own clues from other places: B 25 m উত্তর-পূর্ব (like
-     you), C 25 m উত্তর-পশ্চিম, D 12.5 m উত্তর-পশ্চিম. Rule: to compare, bring one arrow to the other's tail without
-     turning or stretching it.
-  4. **B তির মিলিয়ে দেখো**: a copy of B lifts off and slides onto A's tail and covers A exactly: "হুবহু এক". Rule: the
-     caption, "A ও B ভেক্টর হুবহু এক, যদিও ভিন্ন অবস্থানে রয়েছে।"
-  5. **C তির মিলিয়ে দেখো**: C's copy at A's tail is as long but points another way; an orange arc marks the angle:
-     "দিক ভিন্ন". Rule: "C ভেক্টর A ও B থেকে ভিন্ন, কারণ মান সমান হলেও দিক ভিন্ন।"
-  6. **D তির মিলিয়ে দেখো**: D's copy at C's tail runs along C but ends half way: "মান সমান নয়". Rule: two vectors are
-     the same only if মান and দিক are both equal; স্কেলার: তাপমাত্রা, সময়, দৈর্ঘ্য, ভর; ভেক্টর: অবস্থান, বেগ, বল.
-  Then "আবার শুরু করো". A tap on any walked arrow (or its child) compares that one. The quiet round arrow goes back
-  to the start. Keys: → / Space / Enter the next step, ← one step back, R the start, F/V the views.
-- Labels on the field are the kit's annotations with spots, kept off the arrows, the children, the ring and the
-  badge. The result line colours its key words by meaning: মান blue, ভেক্টর violet, the same vector green, দিক orange.
-- Test (5 questions, 4 tap answers, a scene set up for each, an order in which no scene gives away a later answer):
-  - **clue**: Raju says only "২০ m দূরে"; three flags, each with a chalk line "২০ m" from you. Which flag?
-    Right: any of them (the reveal draws the 20 m ring through all three). Wrong: each flag by name (the guess).
+  flag beyond it. You (white shirt, "তুমি") stand on a chalk compass (উ পূ দ প; the উত্তর point is longest and its
+  letter farthest out, so a child standing on the compass never hides it, and no label may cover the letters); a 10 m
+  bar lies on the grass in the bottom right corner. The children, trees and school are drawn bigger than life so they
+  can be seen on a phone; distances are to scale. A note under the bar says so (the label reads "১০ m", under it
+  "মানুষ ৫ গুণ বড় করে আঁকা"; a child is drawn 9 m tall, about 5 times a child of 1.65 m).
+- The panel is the kit's clean sheet. One big numbered button leads five steps; its same numbered badge rings what to
+  touch on the field (you, or the child waiting to be sent; a tap on either, or on the thing itself, does it). The
+  number is the student's own step. While a step plays the button waits (greyed) and the ring hides; a double tap never
+  skips a step.
+  1. **বন্ধুকে ডাকো**: the friend answers with a size only, "আমি ২৫ m দূরে!". A measuring line sweeps once round you,
+     drawing the ring of every place 25 m away; question marks pop up all round it; you look about. Only then the result
+     ("… তাহলে সে এই বৃত্তের যেকোনো জায়গায় থাকতে পারে।") and the rule: 25 m is a মান; a quantity one value describes
+     completely, like temperature, is a স্কেলার রাশি; but the মান alone did not say where the friend is.
+  2. **দিকও জিজ্ঞেস করো**: "২৫ m, উত্তর-পূর্ব দিকে!". The উত্তর-পূর্ব point of the compass glows orange, the question marks
+     fade, one violet arrow A⃗ grows to exactly one place, the friend (red) pops up, you walk over (stopping 7 m away, so
+     the ring round the next thing to touch never cuts the friend) and the friend waves. Result: "ঠিক এখানে: পেয়ে গেছ!".
+     Rule: the book's sentence (অবস্থান needed the দিক too), so it is a ভেক্টর রাশি. B appears, waiting at its start.
+     This is the poster.
+  3. **B-কে পাঠাও**: "B-কে বলা হলো: ২৫ m, উত্তর-পূর্ব দিকে" (your clue). B's arrow grows, B walks it, then a copy of B's
+     arrow lifts off and slides, unturned and unstretched, onto A's tail and covers A exactly: "হুবহু এক". Rule: the
+     caption, "A ও B ভেক্টর হুবহু এক, যদিও ভিন্ন অবস্থানে রয়েছে।" C appears.
+  4. **C-কে পাঠাও**: 25 m উত্তর-পশ্চিম; C's copy at A's tail is as long but points another way; an orange arc (radius
+     15 m, clear of the compass's উ) marks the angle: "দিক ভিন্ন". Rule: "C ভেক্টর A ও B থেকে ভিন্ন, কারণ মান সমান হলেও দিক ভিন্ন।" D appears.
+  5. **D-কে পাঠাও**: 12.5 m উত্তর-পশ্চিম; D's copy at C's tail runs along C but ends half way: "মান সমান নয়". Rule: two
+     vectors are the same only if মান and দিক are both equal; স্কেলার: তাপমাত্রা, সময়, দৈর্ঘ্য, ভর; ভেক্টর: অবস্থান, বেগ, বল.
+  Then "আবার শুরু করো". A tap on an arrow already compared (or its child) slides it again. The quiet round arrow goes
+  back to the start. Keys: → / Space / Enter the next step, ← one step back, R the start, F/V the views.
+- Labels on the field are the kit's annotations with spots, kept off the arrows, the children, the orange arc, the
+  compass letters, the ring and the badge. An arrow's name is just its letter (A⃗): its মান and দিক are in the result
+  line, in the same colours; a long label "A: ২৫ m, উত্তর-পূর্ব দিকে" could not be kept off the উ on a phone. The result line colours its key words by meaning: মান blue, ভেক্টর violet,
+  the same vector green, দিক orange.
+- Test (5 questions, 4 tap answers of one form each, a scene set up for each, an order in which no scene gives away a
+  later answer):
+  - **clue**: Raju says only "২০ m দূরে"; three flags with their distances chalked on the grass (the flag's name over
+    its distance), two at 20 m and one at 12 m; no compass in this scene (nothing here has a direction). Where can he be? Right: either of the two 20 m flags. Wrong: only one of them (one distance, one place), or
+    any of the three (the distances not read). The reveal draws the 20 m ring through the two.
   - **find**: "২০ m, দক্ষিণ-পূর্ব দিকে" (a random diagonal); four flags 20 m away on the diagonals. Wrong: the
     opposite way, east and west swapped, north and south swapped. The reveal lights the compass point, draws the arrow
     and the friend pops up by the flag.
@@ -69,15 +75,17 @@ says a position could not be given by the distance alone, its direction was need
     both differ; the misconception "drawn in different places"). The reveal slides Q onto P's tail.
   - **equal**: five arrows; which equals A? (wrong: turned, half as long, reversed). The reveal slides the right one
     onto A's tail.
-  - **kind**: the found-friend picture; which quantity needs only a মান (or which needs a দিক too), from the book's
-    lists.
+  - **kind**: the picture of the found friend (the ring, the arrow A, the friend by it): either which is right
+    about "২৫ m দূরে" and A (the distance a scalar and A a vector; swapped; both scalars; both vectors), or which part
+    of the story needs a দিক as well (where the friend is; how far, how long you walked, the friend's temperature).
 
 ## Decisions
 - **Distances**: the clue is 25 m (a school field is about 100 m across) and the arrows are to scale with the 10 m
   bar. The frame is set by the ring's width on a phone held upright, so 25 m (rather than 50 m) keeps the children
   about 35 px tall at 390×700; they are drawn about five times bigger than life, and the note says so.
 - **Directions** are the eight compass words; the camera looks north so উত্তর is up, a little tilted (44° on phones, a
-  little lower on wide frames) so the children stand up.
+  little lower on wide frames) so the children stand up. The rotated view (ঘুরিয়ে দেখো) starts about 53° above the
+  field, so arrows are not squashed.
 - **C and D point উত্তর-পশ্চিম** as in the book's picture; the layout of B, C, D was searched so that no two arrows or
   comparison copies come within 9 m, no standing child hides another arrow, and everything fits the frame (unit tests
   check it).

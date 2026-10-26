@@ -1,5 +1,5 @@
 // The school field (মাঠ) seen from above: mown grass, the white line along the far side, trees and the school with
-// the national flag beyond it, a chalk compass where you start, the ring of every place 30 m away (dashes and question
+// the national flag beyond it, a chalk compass where you start, the ring of every place 25 m away (dashes and question
 // marks), a 10 m scale bar, flags and chalk lines for the test. Distances are to scale; the children, trees
 // and the school are drawn bigger than real so that they can be seen on a phone (the figure says so).
 // Scene units: metres. Map x = পূর্ব (east), map y = উত্তর (north) → scene (x, 0, -y); y is up.
@@ -11,7 +11,7 @@ import { RING, RING_MARKS } from './reading.js';
 export const P = (x, y, h = 0, out = new THREE.Vector3()) => out.set(x, h, -y);
 
 export const COLORS = {
-  magnitude: '#1c7ed6', // মান: the ring, the 30 m line
+  magnitude: '#1c7ed6', // মান: the ring, the 25 m line
   direction: '#e8590c', // দিক: the compass point, the angle between two arrows
   vector: '#5f3dc4', // a ভেক্টর (মান and দিক): the arrows
   equal: '#2b8a3e', // the same vector
@@ -205,7 +205,10 @@ export function createRose({ t, at = [0, 0] }) {
   const spikes = [];
   for (let i = 0; i < 8; i++) {
     const long = i % 2 === 0;
-    const m = new THREE.Mesh(spikeGeometry(long ? 9.2 : 5.6, long ? 2.4 : 1.7), chalk);
+    // the উত্তর point is longest, and its letter farthest out: a child standing on the compass hides about 9 m of grass
+    // behind it on the screen, and উ must show (the clue is উত্তর-পূর্ব)
+    const len = i === 2 ? 15 : long ? 9.2 : 5.6;
+    const m = new THREE.Mesh(spikeGeometry(len, long ? 2.4 : 1.7), chalk);
     m.rotation.y = (i * Math.PI) / 4;
     m.position.y = 0.05;
     m.renderOrder = 1;
@@ -216,7 +219,7 @@ export function createRose({ t, at = [0, 0] }) {
   ring.position.y = 0.05;
   root.add(ring);
   const letters = [
-    ['rose_n', 0, 14.2],
+    ['rose_n', 0, 19.5],
     ['rose_e', 13.6, 0],
     ['rose_s', 0, -12.6],
     ['rose_w', -13.6, 0],
@@ -238,6 +241,8 @@ export function createRose({ t, at = [0, 0] }) {
   root.add(hi);
   return {
     root,
+    /** Where the four letters lie (world points), for the labels to keep off them. */
+    letters: letters.map(([, x, y]) => P(at[0] + x, at[1] + y, 0.1)),
     /** Colour the point towards `angle` (map degrees) orange, or none. */
     highlight(angle, opacity = 1) {
       hi.visible = angle != null && opacity > 0.01;
@@ -248,7 +253,7 @@ export function createRose({ t, at = [0, 0] }) {
   };
 }
 
-// ── the ring of every place 30 m away ───────────────────────────────────────────
+// ── the ring of every place 25 m away ───────────────────────────────────────────
 
 /** A "?" in a blue disc, drawn once. */
 let markTex = null;
@@ -456,7 +461,7 @@ export function createChalkLine(name = 'ChalkLine', color = '#ffffff') {
 }
 
 /** The 10 m scale bar lying on the grass (its words are a label on the view). */
-export function createScaleBar(at = [17, -27.5], length = 10) {
+export function createScaleBar(at = [20.5, -19.5], length = 10) {
   const g = new THREE.Group();
   g.name = 'ScaleBar';
   const mat = new THREE.MeshBasicMaterial({ name: 'ScaleBar', color: '#ffffff', toneMapped: false });
@@ -468,5 +473,5 @@ export function createScaleBar(at = [17, -27.5], length = 10) {
     tick.position.copy(P(at[0] + x, at[1], 0.08));
     g.add(tick);
   }
-  return { root: g, middle: P(at[0] + length / 2, at[1] + 1.2, 0.1) };
+  return { root: g, middle: P(at[0] + length / 2, at[1] - 1.2, 0.1) };
 }

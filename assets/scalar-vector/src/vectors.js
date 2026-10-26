@@ -115,6 +115,8 @@ export function createArc({ color = COLORS.direction, name = 'DirectionArc' } = 
   mesh.renderOrder = 2;
   mesh.visible = false;
   let drawn = '';
+  /** @type {THREE.Vector3[]} */
+  const pts = [];
   const mid = new THREE.Vector3();
   return {
     mesh,
@@ -139,10 +141,17 @@ export function createArc({ color = COLORS.direction, name = 'DirectionArc' } = 
         ).rotateX(-Math.PI / 2);
         mesh.position.copy(P(at[0], at[1], 0.12));
         const m = ((start + d / 2) * Math.PI) / 180;
-        P(at[0] + (r + 3.5) * Math.cos(m), at[1] + (r + 3.5) * Math.sin(m), 0.5, mid);
+        P(at[0] + (r + 0.8) * Math.cos(m), at[1] + (r + 0.8) * Math.sin(m), 0.5, mid);
+        pts.length = 0;
+        for (let a = 0; a <= d + 1e-6; a += Math.max(5, d / 8)) {
+          const ra = ((start + a) * Math.PI) / 180;
+          pts.push(P(at[0] + r * Math.cos(ra), at[1] + r * Math.sin(ra), 0.3));
+        }
       }
     },
-    /** Just outside the middle of the arc (world), for its label. */
+    /** Points along the arc (world), for labels to keep off it. */
+    points: () => pts,
+    /** The middle of the arc (world), for its label. */
     middle: () => mid,
     hide() {
       mesh.visible = false;
