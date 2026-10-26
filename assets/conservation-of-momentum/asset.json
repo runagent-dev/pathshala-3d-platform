@@ -1,0 +1,130 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "conservation-of-momentum",
+  "title": "Conservation of momentum and energy (ভরবেগ এবং শক্তির সংরক্ষণশীলতা)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 72,
+  "topic": "3.5.1",
+  "placement": "Book pages 72–73, topic 3.5.1 (in 3.5 সংঘর্ষ, Collision): ভরবেগ এবং শক্তির সংরক্ষণশীলতা. Next to চিত্র ৩.০৪ (two balls m₁ and m₂ before, during and after a collision) and the equations m₁u₁ + m₂u₂ = m₁v₁ + m₂v₂ and ½m₁u₁² + ½m₂u₂² = ½m₁v₁² + ½m₂v₂².",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "The collision of চিত্র ৩.০৪ (page 72, 3.5.1) that the student plays: two balls, m₁ behind m₂, on a smooth straight track, each with a blue velocity arrow and one tag on its outer side (its mass over its velocity, hung on a dashed stalk). The student picks an example (a heavy ball into a light one at rest, equal masses, a light ball into a heavy one, head-on) or drags an arrow to choose u₁ and u₂ (whole m/s, u₁ > u₂ so they meet, u₁ − u₂ ≤ 4 so the run fits the picture), then plays the collision 10 times slower, or scrubs it: the balls approach, touch (a flash; that moment slowed much more, and the velocities change over smoothly) and move apart with v₁ and v₂ from the two conservation laws. Under the picture a momentum strip lays m₁'s and m₂'s momenta tip to tail, before and now, with the total (সম্মিলিত ভরবেগ) as a dashed line and the sign cue (to the right is positive): while they touch the parts trade but the row always ends on the line. The panel writes the book's two equations with the student's numbers under the names of the two laws (ভরবেগের সংরক্ষণশীলতা বা নিত্যতা in kg m/s, শক্তির সংরক্ষণশীলতা in J), the after side as ? until the balls have collided, the book's assumption that only kinetic energy changes hands, and why one equation is not enough. Test tab: 5 questions on their own scenes (the total momentum before, v₂ from the momentum equation, which of four (v₁, v₂) pairs that all keep the momentum also keeps the kinetic energy, equal masses or a light ball into a heavy one predicted and then played, and what stays the same or the kinetic energy after). Phone-first, Bangla.",
+  "tags": ["momentum", "collision", "conservation", "kinetic-energy", "elastic-collision", "force", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "preset",
+      "label": "Example",
+      "type": "select",
+      "options": [
+        ["heavy", "heavy behind (3 kg, 1 kg)"],
+        ["equal", "equal masses"],
+        ["light", "light behind (1 kg, 3 kg)"],
+        ["headon", "head-on"]
+      ],
+      "default": "heavy"
+    },
+    {
+      "name": "u1",
+      "label": "u₁ (m/s)",
+      "type": "number",
+      "default": "",
+      "placeholder": "the example's",
+      "help": "whole numbers −3…3, more than u₂, at most 4 more"
+    },
+    {
+      "name": "u2",
+      "label": "u₂ (m/s)",
+      "type": "number",
+      "default": "",
+      "placeholder": "the example's",
+      "help": "whole numbers −3…3, less than u₁, at most 4 less"
+    },
+    {
+      "name": "at",
+      "label": "Moment of the run",
+      "type": "text",
+      "default": "",
+      "placeholder": "start",
+      "help": "touch, contact, after, end, or seconds of the run on screen"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "First-use pointers", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "preset": "light" } },
+    { "name": "set", "payload": { "play": true } },
+    { "name": "set", "payload": { "preset": "headon", "at": "contact" } },
+    { "name": "set", "payload": { "u1": 3, "u2": -1 } },
+    { "name": "set", "payload": { "at": "end" } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": [
+    "ready",
+    "change",
+    "setup",
+    "play",
+    "pause",
+    "collide",
+    "end",
+    "view",
+    "dragstart",
+    "dragend",
+    "practice-start",
+    "practice-result",
+    "practice-end"
+  ],
+  "export": {
+    "poster": { "params": { "coach": "0", "preset": "heavy", "at": "end" } },
+    "glb": [
+      {
+        "name": "default",
+        "setup": [{ "command": "set", "payload": { "preset": "heavy", "at": "start", "animate": false } }]
+      }
+    ],
+    "video": {
+      "kind": "script",
+      "seconds": 20,
+      "fps": 30,
+      "params": { "coach": "0", "preset": "heavy" },
+      "script": [
+        { "at": 0.6, "command": "set", "payload": { "play": true } },
+        { "at": 6.2, "command": "set", "payload": { "preset": "light", "play": true } },
+        { "at": 13.2, "command": "set", "payload": { "preset": "headon", "play": true } }
+      ]
+    }
+  }
+}
