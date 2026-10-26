@@ -1,0 +1,120 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "newtons-second-law",
+  "title": "Newton's second law of motion (নিউটনের দ্বিতীয় গতি সূত্র)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 75,
+  "topic": "3.6",
+  "placement": "Book pages 75–76, topic 3.6: বস্তুর গতির উপর বলের প্রভাব: নিউটনের দ্বিতীয় গতি সূত্র. Next to the football and cricket-ball examples, the law in its box and the steps to F = ma.",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "Newton's second law (নিউটনের দ্বিতীয় সূত্র, pages 75–76, 3.6) with the book's own example, a handcart (ঠেলাগাড়ি) pushed from rest, on a smooth floor (friction left out, said on the view). One tap and a person pushes the wooden cart for 2 s with 100 N: an orange F arrow at the crossbar, a teal acceleration arrow over the cart and a blue velocity arrow that grows by the same amount every second (a mark on the floor every second); then he lets go and the cart rolls on at the velocity it has until a pile of rice sacks at the end of the floor stops it. The panel is one action, one result, one rule: a row of four examples (খালি গাড়ি, দ্বিগুণ বল with two people, দ্বিগুণ ভর with two 50 kg sacks, উল্টো দিকে বল where a second person pushes back on the moving cart), a big numbered button whose same badge rings the cart, the result line working out a = (v − u) ÷ t (1, 2, 0.5 and −1 ms⁻², written under each word), and a rule that grows from F = ma (k = 1) through 'double the force, double the acceleration' and 'double the mass, half the acceleration' to 'the momentum changes in the direction of the force' (200 to 0 kg m/s) and the book's law word for word. Real numbers, real time. Test tab: 5 questions on scenes set up for them (the acceleration from the force and the masses read off the picture, the acceleration when the force or the mass is doubled after a run, the direction of the change of momentum when the force is against the motion, two carts side by side compared, and the law in the book's words).",
+  "tags": ["force", "newtons-laws", "second-law", "acceleration", "momentum", "f-ma", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "example",
+      "label": "Example",
+      "type": "select",
+      "options": [
+        ["base", "empty cart"],
+        ["force", "double force"],
+        ["mass", "double mass"],
+        ["back", "force backward"]
+      ],
+      "default": "base"
+    },
+    {
+      "name": "at",
+      "label": "A moment of the run",
+      "type": "number",
+      "default": "",
+      "placeholder": "s after the push began",
+      "help": "e.g. 1.5: the run held 1.5 s after the push began, for pictures (empty: at rest)"
+    },
+    {
+      "name": "tried",
+      "label": "Examples already tried",
+      "type": "text",
+      "default": "",
+      "placeholder": "base,force",
+      "help": "their accelerations show under the words"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on the cart pulses", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "example": "force" } },
+    { "name": "set", "payload": { "push": true } },
+    { "name": "set", "payload": { "example": "mass", "push": true } },
+    { "name": "set", "payload": { "at": 1.5 } },
+    { "name": "set", "payload": { "tried": ["base", "force"] } },
+    { "name": "set", "payload": { "home": true } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": [
+    "ready",
+    "change",
+    "push",
+    "result",
+    "example",
+    "view",
+    "practice-start",
+    "practice-result",
+    "practice-end"
+  ],
+  "export": {
+    "poster": { "params": { "coach": "0", "example": "force", "at": "1.5", "tried": "base" } },
+    "glb": [
+      {
+        "name": "default",
+        "setup": [{ "command": "set", "payload": { "example": "mass", "home": true, "animate": false } }]
+      }
+    ],
+    "video": {
+      "kind": "script",
+      "seconds": 24,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 0.6, "command": "set", "payload": { "push": true } },
+        { "at": 5, "command": "set", "payload": { "example": "force", "push": true } },
+        { "at": 8.6, "command": "set", "payload": { "example": "mass", "push": true } },
+        { "at": 16.4, "command": "set", "payload": { "example": "back", "push": true } }
+      ]
+    }
+  }
+}
