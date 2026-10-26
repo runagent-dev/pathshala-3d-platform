@@ -2,7 +2,7 @@
 
 Snapshot of 2026-10-26. Update it whenever a batch lands (the `/figure-batch` skill's last step).
 
-## On `main`: 28 figures (Physics 9–10)
+## On `main`: 29 figures (Physics 9–10)
 
 | Page | Topic | Figure | Title |
 |---|---|---|---|
@@ -31,6 +31,7 @@ Snapshot of 2026-10-26. Update it whenever a batch lands (the `/figure-batch` sk
 | 72 | 3.5.1 | `conservation-of-momentum` | ভরবেগ এবং শক্তির সংরক্ষণশীলতা |
 | 74 | 3.5.2 | `safe-journey` | নিরাপদ ভ্রমণ: বেগ ও বল |
 | 75 | 3.6 | `newtons-second-law` | নিউটনের দ্বিতীয় গতি সূত্র |
+| 78 | 3.7 | `law-of-gravitation` | মহাকর্ষ বল |
 
 Every figure from page 36 on was built by a builder agent, reviewed by an independent reviewer agent, fixed, and
 touch-tested (see `docs/agents/`). The ones from page 36 on are at studio status "idea": the owner moves them to
@@ -39,16 +40,16 @@ touch-tested (see `docs/agents/`). The ones from page 36 on are at studio status
 ## In progress (2026-10-26; builders and reviewers are Sonnet agents, one builder and one reviewer per figure)
 
 - **Batch 4, pages 74–90** (images `P-75…P-90` in the studio's `images/`), each on the clean panel from the start:
-  built and merged: `safe-journey`, `newtons-second-law`. Open: `law-of-gravitation` (3.7, p78: review fixes),
-  and in the first build `hanging-weight-pull` (3.7 example, p81), `newtons-third-law` (3.8, p84) and
-  `walking-third-law` (3.8 example, p86). Not started: `friction-force` (3.9, p88) and `types-of-friction`
-  (3.9.1, p89: all three types in ONE 3D scene, the owner's wish).
+  built and merged: `safe-journey`, `newtons-second-law`, `law-of-gravitation`. In the first build:
+  `hanging-weight-pull` (3.7 example, p81), `newtons-third-law` (3.8, p84), `walking-third-law` (3.8 example, p86)
+  and `friction-force` (3.9, p88). Not started: `types-of-friction` (3.9.1, p89: all three types in ONE 3D scene,
+  the owner's wish).
 - **Chapter 2 and the rest of chapter 3 move to the clean panel**, one figure per PR with its own review:
   `linear-motion`, `circular-motion`, `translational-motion`, `periodic-motion`, `simple-harmonic-motion`,
   `speed-velocity`, `acceleration`, `equations-of-motion`, `falling-bodies`, then `inertia`, `gravitational-force`,
   `weak-nuclear-force`, `strong-nuclear-force`, `balanced-forces`, `momentum`, `conservation-of-momentum` (and
   chapter 1 only if the owner wants it).
-- `images/` (untracked, in the studio checkout) holds pages 43–90; pages 43–75 are done, the rest of batch 4 is above.
+- `images/` (untracked, in the studio checkout) holds pages 43–90; pages 43–79 are done, the rest of batch 4 is above.
 
 ## Recently merged
 
@@ -58,7 +59,7 @@ touch-tested (see `docs/agents/`). The ones from page 36 on are at studio status
   (#38, with a real hardcover textbook), `contact-noncontact-force` (#39: the picture shows touch or gap),
   `distance-displacement` (#40: blue trail = দূরত্ব, orange arrow = সরণ), `electromagnetic-force` (#41: comb, hair
   and paper in one view) and `scalar-vector` (#43: "find your friend"). New figures of batch 4 start on it.
-- **Batch 4 so far**: #42 `safe-journey` (3.5.2), #44 `newtons-second-law` (3.6). Merged on the local checks (CI was
+- **Batch 4 so far**: #42 `safe-journey` (3.5.2), #44 `newtons-second-law` (3.6), #46 `law-of-gravitation` (3.7). Merged on the local checks (CI was
   blocked, below); `npm run check`, 547 unit tests and types pass on `main`.
 
 - **Batch 3 (pages 69–73)**: #32 `balanced-forces` (3.3), #34 `momentum` (3.4), #33 `conservation-of-momentum`
