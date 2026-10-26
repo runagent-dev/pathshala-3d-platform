@@ -1,0 +1,67 @@
+/* Newton's third law: the page, the colours that carry meaning (বল orange, মহাকর্ষ বল purple, ত্বরণ teal: the same as
+   src/app.js COLORS), the honest note on the stage and the test's answers in words. The panel is the kit's clean sheet
+   (one action, one result, one rule: ../../shared/lib/student/student.css, .pvc-examples, .pvc-act, .pvc-outcome,
+   .pvc-rule). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.nt { --c-force: #e8590c; --c-grav: #7048e8; --c-acc: #0c8599; }
+
+/* the result line: its numbers in the colour of what they are (the force's orange, gravity's purple, the acceleration's teal) */
+.nt .pvc-outcome[data-k='force'] b { color: var(--c-force); }
+.nt .pvc-outcome[data-k='gravity'] b { color: var(--c-grav); }
+.nt .pvc-outcome[data-k='accel'] b { color: var(--c-acc); }
+
+/* on the stage: the honest note about the picture, top left (the buttons are top right) */
+.nt-badge { position: absolute; left: 10px; top: 10px; z-index: 5; max-width: calc(100% - 230px); padding: 3px 9px; border-radius: 6px; border: 1px solid var(--line-2); background: rgba(255, 255, 255, 0.94); color: #475569; font-size: 12.5px; font-weight: 600; line-height: 1.4; pointer-events: none; }
+/* in the test the locked hint sits at the top of the view */
+.nt[data-mode='quiz'] .pvc-stage[data-ui='simple'] .pvc-hint { top: 54px; bottom: auto; }
+/* labels come and go with what they name, at once (a force label must not outlive the push) */
+.nt .pvc-anno { transition: none; padding: 1px 7px; line-height: 1.3; }
+.nt .pvc-anno-part { color: #334155; font-size: 13.5px; font-weight: 600; }
+.nt .pvc-anno-callout { font-size: 13.5px; font-weight: 600; }
+.nt .pvc-anno sup { font-size: 0.7em; line-height: 0; }
+/* the swatch in a force label: a solid or a dashed line, as the arrow it names */
+.nt-key { display: inline-block; width: 14px; margin-right: 5px; border-top: 3px solid currentColor; vertical-align: middle; }
+.nt-key.dash { border-top-style: dashed; }
+
+/* a narrow panel (a phone held sideways): the three words and what each showed fit side by side */
+@container pvc-panel (max-width: 330px) {
+  .nt .pvc-examples .pvc-ex-word { font-size: 13.5px; }
+  .nt .pvc-examples .pvc-ex-res { font-size: 11.5px; }
+}
+
+/* the test: answers in words (two lines allowed), room kept for the question and the worked answer */
+.nt .pvc-opt { font-size: 14.5px; line-height: 1.25; }
+.nt-opt { display: block; white-space: normal; text-align: center; }
+.nt .pvc-q-text { font-size: 15.5px; }
+.nt .pvc-q-feedback { font-size: 14px; }
+
+/* wide frames (tabs beside the sheet): the lines one under the other, close together; on very wide frames the words
+   and the action side by side */
+@container pvc (min-width: 720px) and (min-height: 461px) {
+  .nt .pvc-learn { justify-content: flex-start; gap: 8px; }
+  .nt .pvc-examples { max-width: 520px; }
+  .nt .pvc-rule { --pvc-rule-lines: 2; }
+}
+@container pvc (min-width: 1000px) and (min-height: 461px) {
+  .nt .pvc-learn { display: grid; grid-template-columns: minmax(0, 480px) minmax(0, 1fr); grid-template-areas: 'ex act' 'out out' 'rule rule'; align-content: start; align-items: center; gap: 8px 32px; }
+  .nt .pvc-examples { grid-area: ex; }
+  .nt .pvc-act-row { grid-area: act; }
+  .nt .pvc-outcome { grid-area: out; }
+  .nt .pvc-rule { grid-area: rule; }
+}
+@container pvc (max-width: 560px) and (max-height: 600px) {
+  .nt .pvc-q-text { font-size: 14.5px; }
+  .nt .pvc-opt { font-size: 13.5px; }
+  .nt .pvc-q-feedback { font-size: 13px; }
+}
+/* short and wide (phone held sideways): the panel is beside the scene */
+@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
+  .nt .pvc-outcome { --pvc-outcome-lines: 3; font-size: 15px; line-height: 1.5; }
+  .nt .pvc-rule { --pvc-rule-lines: 5; font-size: 14px; line-height: 1.45; }
+  .nt .pvc-q-text { font-size: 14px; }
+  .nt .pvc-opt { font-size: 13px; height: 54px; }
+  .nt .pvc-q-feedback { font-size: 13px; }
+}
