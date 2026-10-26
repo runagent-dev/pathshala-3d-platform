@@ -14,6 +14,19 @@
   (390x700) and landscape (844x390) first. Software rendering is slow; use `?shadow=0` for quick looks.
 - Ask the user for the book page, topic and a screenshot if you don't have them; don't guess page numbers.
 
+## Browser tests run locally, not in CI
+
+GitHub Actions minutes are limited (2,000 a month for the whole `runagent-dev` account), and the browser jobs used
+them up in two days. CI now runs only check, lint, types and unit tests. Everything that starts a browser runs here,
+before you push or open a pull request:
+
+- every figure you changed: `npm run verify -- <id>` (browser tests, packaged zip, GLB, pictures);
+- a change to `shared/lib/` or `templates/`: also `npm run test:visual` and `npm run test:templates`;
+- write in the PR description which of these you ran and that they passed. That is the proof reviewers go by.
+
+Don't add browser, Playwright, visual or packaging jobs back to `.github/workflows/`, and don't push commit after
+commit to an open PR just to see CI: each push is a new run. Batch fixes into one push.
+
 ## This server
 
 - The studio runs as `npm run dev:public` (all addresses; accounts in `data/users.json`, moved from

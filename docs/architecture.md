@@ -3,7 +3,7 @@
 ## Parts
 
 ```
-contributors (Claude Code, own computers) ──git──▶ remote (GitHub) ──CI──▶ checks, browser tests, zips
+contributors (Claude Code, own computers) ──git──▶ remote (GitHub) ──CI──▶ fast checks (browser tests run locally)
         │                                              │
         ▼                                              ▼
   npm run dev (local studio)                 studio server (this machine): previews, reviews, status,
@@ -62,7 +62,8 @@ a pull that cannot be rebased leaves the studio's commits on a pushed `studio/re
 | on every edit (Claude hook) | `npm run check` for the edited figure |
 | pre-commit | `npm run check --staged`, Biome on staged files |
 | pre-push | unit tests, types |
-| CI on every pull request | check, lint, types, unit tests, browser tests for changed figures, templates, visual comparison, zips |
+| before pushing (local) | `npm run verify -- <id>` for changed figures; `test:visual` and `test:templates` for kit or template changes |
+| CI on every pull request | check, lint, types, unit tests (browser tests and zips run locally, see CLAUDE.md) |
 | before a figure is approved | `npm run verify -- <id>` + a person looking at it |
 
 ## Decisions

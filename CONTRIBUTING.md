@@ -23,5 +23,6 @@ screenshot of the page; the `/new-figure` skill walks through the steps.
 3. `npm run verify -- <id>`, look at `test-results/<id>/`.
 4. Commit (Conventional Commits: `feat(<id>): …`), push, open a pull request and fill in its checklist.
 
-The hooks check what you commit (`npm run check`) and push (unit tests, types); CI runs the browser tests, the
-visual comparison and packaging. The figure's maintainers and the platform owners review it.
+The hooks check what you commit (`npm run check`) and push (unit tests, types); CI runs only the fast checks. The
+browser tests (`npm run verify -- <id>`), the visual comparison (`npm run test:visual`) and packaging run on your
+machine before you push; say in the pull request which ones you ran. The figure's maintainers and the platform owners review it.
