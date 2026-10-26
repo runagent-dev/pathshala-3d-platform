@@ -1,8 +1,8 @@
 # Status: what is done, what is open, how to continue
 
-Snapshot of 2026-10-25. Update it whenever a batch lands (the `/figure-batch` skill's last step).
+Snapshot of 2026-10-26. Update it whenever a batch lands (the `/figure-batch` skill's last step).
 
-## On `main`: 23 figures (Physics 9–10)
+## On `main`: 26 figures (Physics 9–10)
 
 | Page | Topic | Figure | Title |
 |---|---|---|---|
@@ -26,6 +26,9 @@ Snapshot of 2026-10-25. Update it whenever a batch lands (the `/figure-batch` sk
 | 68 | 3.2.2 | `electromagnetic-force` | তড়িৎ চৌম্বক বল |
 | 68 | 3.2.3 | `weak-nuclear-force` | দুর্বল নিউক্লীয় বল |
 | 69 | 3.2.4 | `strong-nuclear-force` | সবল নিউক্লীয় বল |
+| 69 | 3.3 | `balanced-forces` | বলের সাম্যাবস্থা ও অসাম্যাবস্থা |
+| 71 | 3.4 | `momentum` | ভরবেগ |
+| 72 | 3.5.1 | `conservation-of-momentum` | ভরবেগ এবং শক্তির সংরক্ষণশীলতা |
 
 Every figure from page 36 on was built by a builder agent, reviewed by an independent reviewer agent, fixed, and
 touch-tested (see `docs/agents/`). The ones from page 36 on are at studio status "idea": the owner moves them to
@@ -33,11 +36,22 @@ touch-tested (see `docs/agents/`). The ones from page 36 on are at studio status
 
 ## In progress
 
-Nothing: the batch for pages 43–69 (ten figures) is merged. `images/` (untracked, in the studio checkout) still
-holds those ten pages; they are all done. New pages come as new images there.
+- **The clean panel ("one action, one result, one rule")**, from the owner's feedback of 2026-10-25: the panels
+  under the picture had too many boxes. The kit gets a big action button with a numbered badge that matches a
+  marker on the 3D object, one result line and one rule line (`kit/action-panel`, kit 1.3.0); `newtons-first-law`
+  is redone on it first (with a real-looking textbook) for the owner to see, then the owner's other four:
+  `scalar-vector` (a simpler idea instead of the board of arrows), `distance-displacement` (the panel tied to the
+  picture: path = দূরত্ব, arrow = সরণ), `contact-noncontact-force` (which force touches and which doesn't, in the
+  scene and the test), `electromagnetic-force` (frame the comb, the hair and the paper together), then the rest of
+  chapter 2 and the batch-3 figures.
+- `images/` (untracked, in the studio checkout) holds pages 43–72; all of them are done. New pages come as new
+  images there.
 
 ## Recently merged
 
+- **Batch 3 (pages 69–73)**: #32 `balanced-forces` (3.3), #34 `momentum` (3.4), #33 `conservation-of-momentum`
+  (3.5.1), each built, independently reviewed, fixed and touch-tested; merged on the local checks (CI was blocked,
+  below). Shared decisions in `docs/book-notes.md` ("Forces and momentum").
 - **#18 kit 1.2.0** (`shared/CHANGELOG.md`): what the chapter-2 figures worked around is now in the kit: labels
   placed clear of each other and of the corner buttons (`createAnnotations` `spots` + `avoid`), `createArrow`, the
   quiz's `lines` (steady sheet height) and `reveal(q, correct, picked)`, the coach's `inset` / `labelAt`. New
@@ -53,6 +67,9 @@ holds those ten pages; they are all done. New pages come as new images there.
 
 ## Known issues
 
+- **GitHub Actions don't start** since 2026-10-25 ~19:00 UTC: "recent account payments have failed or your
+  spending limit needs to be increased" (the `runagent-dev` account's billing). Until the owner fixes it, every PR
+  shows a red check with nothing run; the local `npm run verify`, touch tests and the pre-push hook are the proof.
 - **CI "Visual comparison" flakes** on `speed-velocity` (up to ~160 px) and `periodic-motion` (15–76 px) in PRs that
   don't touch them: those two figures aren't fully deterministic under the virtual clock (they differ even when
   `main` is compared with itself). Every other check is reliable. Fix in the figures (or the kit) in its own PR;
