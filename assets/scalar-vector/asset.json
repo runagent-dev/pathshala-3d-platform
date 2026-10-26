@@ -5,16 +5,16 @@
   "title": "Scalar and vector quantities (স্কেলার ও ভেক্টর রাশি)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "book": "physics-9-10",
   "page": 38,
   "topic": "2.3",
   "placement": "Book page 38, topic 2.3: স্কেলার ও ভেক্টর রাশি. Next to চিত্র ২.০৩ (vectors A, B, C, D), or in place of it.",
   "order": 1,
   "maintainers": ["RadeenXALNW"],
-  "units": "mm",
-  "description": "Interactive 3D version of the book's চিত্র ২.০৩ (page 38, 2.3): four arrow pieces A, B, C, D lie on graph paper with a compass rose, beside a thermometer reading 37° C. Drag an arrow by its body to move it (its মান and দিক stay the same: the same vector), drag its head to turn it to another compass direction (দিক) or stretch it (মান, counted by the marks on it, one per unit); the panel says what changed. Drop an arrow on another's tail to compare: only when মান and দিক are both equal are they the same vector, wherever they were drawn; both দিক arcs are drawn and the caption's verdicts are given in the book's words. Move or turn the thermometer and nothing changes: a temperature has a মান and no দিক (a scalar). Buttons line up the book's pairs A–B, A–C, C–D. Test tab: 5 questions (which arrow equals A, why two vectors differ, scalar, vector or not a quantity (or the hand-written notation), what makes '4 km from home' a position, reading an arrow's মান and দিক). Phone-first, Bangla.",
-  "tags": ["vector", "scalar", "magnitude", "direction", "temperature", "motion", "bangla"],
+  "units": "m",
+  "description": "Scalar and vector quantities (page 38, 2.3) as a game of finding a friend on a school field seen from slightly above. The student stands on a chalk compass (উ পূ দ প); the friend is hiding. One big numbered button leads the story, and its same numbered badge rings what to touch on the field. Call your friend: the answer gives a size only (\"আমি ২৫ m দূরে\"), a measuring line sweeps round and the whole ring of places 25 m away lights up with question marks, so the friend cannot be found: a মান alone, which is all a স্কেলার রাশি like temperature (37° C, the book's example) needs, does not fix a position. Ask the direction too (\"২৫ m, উত্তর-পূর্ব দিকে\"): the compass point glows, one arrow A grows to exactly one place, the friend pops up and the student walks over: অবস্থান needs মান and দিক, a ভেক্টর রাশি (the book's sentence: শুধু দূরত্ব দিয়ে কাজ হয়নি, তার দিকটিও নির্দেশ করতে হয়েছিল). Then the book's চিত্র ২.০৩ in the same story: B, C and D walk their own clues from other places, and each arrow in turn slides, unturned and unstretched, onto the tail of the one the caption compares it with: B covers A exactly (হুবহু এক, যদিও ভিন্ন অবস্থানে), C has A's মান but another দিক (an orange arc), D has C's দিক but half its মান. One result line, one rule that grows to the caption's words and the book's lists (স্কেলার: তাপমাত্রা, সময়, দৈর্ঘ্য, ভর; ভেক্টর: অবস্থান, বেগ, বল). Distances are to scale (a 10 m bar lies on the grass); the children are drawn bigger than life, and the figure says so. Test tab: 5 questions on scenes set up for each (three flags all 20 m away: which one is the friend at; four flags 20 m away on the diagonals: which one matches '20 m to the south-east'; why two arrows are different vectors; which of five arrows equals A; which quantity is a scalar or a vector). Phone-first, Bangla.",
+  "tags": ["vector", "scalar", "magnitude", "direction", "position", "compass", "bangla"],
   "params": [
     {
       "name": "lang",
@@ -24,18 +24,19 @@
       "default": "bn"
     },
     {
-      "name": "compare",
-      "label": "Start with a pair lined up",
+      "name": "stage",
+      "label": "Start at step",
       "type": "select",
-      "options": [["", "none"], ["A,B", "A and B"], ["A,C", "A and C"], ["C,D", "C and D"]],
-      "default": ""
-    },
-    {
-      "name": "select",
-      "label": "Chosen arrow",
-      "type": "select",
-      "options": [["A", "A"], ["B", "B"], ["C", "C"], ["D", "D"], ["T", "thermometer"]],
-      "default": "A"
+      "options": [
+        ["0", "the start (nothing said yet)"],
+        ["1", "the ring: 30 m away"],
+        ["2", "found: 30 m north-east"],
+        ["3", "B, C, D have walked"],
+        ["4", "B compared with A"],
+        ["5", "C compared with A"],
+        ["6", "D compared with C"]
+      ],
+      "default": "0"
     },
     { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
     {
@@ -45,7 +46,7 @@
       "options": [["explore", "learn"], ["quiz", "test"]],
       "default": "explore"
     },
-    { "name": "coach", "label": "First-use pointers", "type": "boolean", "default": "1" },
+    { "name": "coach", "label": "The numbered ring pulses", "type": "boolean", "default": "1" },
     {
       "name": "numerals",
       "label": "Digits",
@@ -59,45 +60,33 @@
   ],
   "commands": [
     { "name": "get", "payload": {} },
-    { "name": "set", "payload": { "compare": ["A", "B"] } },
-    { "name": "set", "payload": { "compare": ["A", "C"] } },
-    { "name": "set", "payload": { "compare": ["C", "D"] } },
-    { "name": "set", "payload": { "arrows": { "C": { "angle": 45 } }, "select": "C" } },
-    { "name": "set", "payload": { "select": "T", "thermometer": { "angle": 90 } } },
+    { "name": "set", "payload": { "act": true } },
+    { "name": "set", "payload": { "stage": 2 } },
+    { "name": "set", "payload": { "stage": 3, "animate": false } },
+    { "name": "set", "payload": { "compare": "C" } },
     { "name": "set", "payload": { "home": true } },
+    { "name": "set", "payload": { "view": "3d" } },
     { "name": "reset", "payload": {} },
     { "name": "practice", "payload": {} },
     { "name": "capture", "payload": { "width": 800, "height": 500 } },
     { "name": "export-glb", "payload": {} }
   ],
-  "events": [
-    "ready",
-    "change",
-    "select",
-    "compare",
-    "dragstart",
-    "dragend",
-    "view",
-    "practice-start",
-    "practice-result",
-    "practice-end"
-  ],
+  "events": ["ready", "change", "step", "compare", "view", "practice-start", "practice-result", "practice-end"],
   "export": {
-    "poster": { "params": { "coach": "0", "compare": "A,C" } },
-    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "home": true, "animate": false } }] }],
+    "poster": { "params": { "coach": "0", "stage": "2" } },
+    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "stage": 6, "animate": false } }] }],
     "video": {
       "kind": "script",
-      "seconds": 21,
+      "seconds": 20,
       "fps": 30,
       "params": { "coach": "0" },
       "script": [
-        { "at": 1, "command": "set", "payload": { "compare": ["A", "B"] } },
-        { "at": 4.5, "command": "set", "payload": { "compare": ["A", "C"] } },
-        { "at": 8, "command": "set", "payload": { "compare": ["C", "D"] } },
-        { "at": 11.5, "command": "set", "payload": { "home": true } },
-        { "at": 12.8, "command": "set", "payload": { "arrows": { "C": { "angle": 45 } }, "select": "C" } },
-        { "at": 15, "command": "set", "payload": { "compare": ["A", "C"] } },
-        { "at": 18, "command": "set", "payload": { "select": "T", "thermometer": { "angle": 90 } } }
+        { "at": 0.8, "command": "set", "payload": { "act": true } },
+        { "at": 4.2, "command": "set", "payload": { "act": true } },
+        { "at": 9, "command": "set", "payload": { "act": true } },
+        { "at": 12.4, "command": "set", "payload": { "act": true } },
+        { "at": 14.8, "command": "set", "payload": { "act": true } },
+        { "at": 17.2, "command": "set", "payload": { "act": true } }
       ]
     }
   }
