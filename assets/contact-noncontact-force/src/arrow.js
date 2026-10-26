@@ -1,4 +1,4 @@
-// The force arrow: a round shaft and a cone head, in the colour of the force's kind (স্পর্শ বল blue, অস্পর্শ বল
+// The force arrow: a round shaft and a cone head, in the colour of the force's kind (স্পর্শ বল orange, অস্পর্শ বল
 // violet). set(from, dir, length) places it with its tail at `from`; the head keeps its size and the shaft stretches.
 // Sizes are in the scene's metres, so each example makes its own (a 6 cm nail needs a thinner arrow than a crane).
 // It can be drawn over the body it starts in (`onTop`: a weight arrow from the middle of a football) and reports its
@@ -45,7 +45,7 @@ export function createArrow({ color, radius = 0.03, head = 0.16, headRadius = 0.
       tip.position.y = length > head ? body : 0;
       tip.scale.setScalar(k);
     },
-    /** Its colour: the kind of force in the শেখো view, a plain "this force" orange in a test question. */
+    /** Its colour: the kind of force in the শেখো view, a plain grey "this force" in a test question. */
     setColor(c) {
       material.color.set(c);
       material.emissive.set(c).multiplyScalar(0.25);

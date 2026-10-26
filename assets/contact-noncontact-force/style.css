@@ -1,13 +1,14 @@
 /* Force: contact and non-contact. The page, and one colour per kind of force, the same in the 3D (the arrow, the lit
-   contact patch, the gap's line), the tags and the panel: স্পর্শ বল blue, অস্পর্শ বল violet. Never colour alone: a
-   solid tag "ছুঁয়ে আছে" at a lit patch vs a dashed tag "ছোঁয়নি" at a measured gap, and the words. In the test the arrow
-   is a plain orange "এই বল" until the answer. The panel is the kit's clean sheet (one action, one result, one rule:
+   contact patch, the gap's line), the tags and the panel: স্পর্শ বল orange (the pull of balanced-forces and
+   momentum), অস্পর্শ বল violet (gravity's colour). Never colour alone: a solid tag "ছুঁয়ে আছে" at a lit patch vs a
+   dashed tag "ছোঁয়নি" at a measured gap, and the words. In the test the arrow
+   is a plain grey "এই বল" until the answer. The panel is the kit's clean sheet (one action, one result, one rule:
    ../../shared/lib/student/student.css, .pvc-examples, .pvc-act, .pvc-outcome, .pvc-rule), linked first. */
 html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
 #app { position: fixed; inset: 0; }
 body.bg-transparent { background: transparent; }
 
-.pvc { --c-contact: #1c6fd9; --c-noncontact: #7048e8; --c-test: #e8590c; }
+.pvc { --c-contact: #e8590c; --c-noncontact: #7048e8; --c-test: #4b5766; }
 .pvc .c-contact { color: var(--c-contact); }
 .pvc .c-noncontact { color: var(--c-noncontact); }
 
@@ -26,6 +27,9 @@ body.bg-transparent { background: transparent; }
 /* how time is shown, at the top left of the 3D view */
 .cnf-note { position: absolute; left: 8px; top: 8px; z-index: 3; max-width: max(110px, min(42%, calc(100% - 250px))); padding: 2px 7px; border-radius: 4px; background: rgba(255, 255, 255, 0.85); font-size: 12.5px; line-height: 1.35; color: var(--ink-2); pointer-events: none; }
 .cnf-note:empty { display: none; }
+/* held at the telling moment: plain words with a pause sign, a little stronger than the time note */
+.cnf-note.held { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px 3px 7px; border: 1px solid var(--line-2); background: rgba(255, 255, 255, 0.95); color: var(--ink); font-size: 13.5px; font-weight: 600; }
+.cnf-note.held svg { width: 13px; height: 13px; color: var(--ink-2); }
 
 /* the measured gap: a dashed line across the empty space, a solid tick on each body (screen space, src/marks.js) */
 .cnf-marks { position: absolute; inset: 0; width: 100% !important; height: 100% !important; overflow: visible; pointer-events: none; }

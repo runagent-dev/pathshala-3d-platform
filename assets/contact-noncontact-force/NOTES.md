@@ -43,9 +43,12 @@ result, one rule):
   edge) and a big tag "ছুঁয়ে আছে: স্পর্শ বল" points at it; a non-contact force shows the empty space between the two
   bodies as a dimension line with a tick on each surface (the football and the floor, the nail and the magnet's N
   face) and the tag "ছোঁয়নি, তবু টানে: অস্পর্শ বল" with the measured gap ("ফাঁক ৬০ cm", "ফাঁক ২.৩ cm"). The arrow, the
-  patch or gap and the tag take the kind's colour (স্পর্শ blue #1c6fd9, অস্পর্শ violet #7048e8, the gravity violet of
-  3.2.1), and the kind is also in words and in the shape (solid tag at a patch, dashed tag at a gap): never colour
-  alone. The force's name stays beside its arrow when there is room.
+  patch or gap and the tag take the kind's colour, aligned with the chapter-3 figures (review round 2): স্পর্শ বল
+  orange #e8590c, the pull and tension of `balanced-forces` and `momentum` (blue #1c6fd9 is velocity there, so it is
+  not used for a force here); অস্পর্শ বল violet #7048e8, gravity's colour from 3.2.1. Friction keeps the contact
+  orange here (in `newtons-first-law` its arrow is crimson #c2255c): in this figure the colour says the kind. The
+  kind is also in words and in the shape (solid tag at a patch, dashed tag at a gap): never colour alone. The force's
+  name stays beside its arrow when there is room.
 - **One action**: a big numbered button with the example's own verb (ক্রেন দিয়ে তোলো, ধাক্কা দাও, পিছলে যেতে দাও,
   ফুটবলটি ছেড়ে দাও, পেরেকের কাছে চুম্বক আনো) whose twin badge rings the body the force acts on (the block, the carton
   on its trolley, the crate, the football, the nail); a tap on the body does the same. The run holds at the telling
@@ -66,13 +69,15 @@ result, one rule):
 - **The test** (5 questions, order shuffled): a new contact case (a rope pulling a cart, or a parachute), the comb
   lifting paper (a new non-contact case), friction on the crate with nobody pushing (contact although nothing seems
   to push it), gravity on the falling football (nothing touches it), and what the magnet's pull does to the nail (the
-  book's definition: its velocity increases). The scene of each question is set up first; its arrow is a plain orange
+  book's definition: its velocity increases). The scene of each question is set up first; its arrow is a plain grey
   "এই বল" (the kind's colour would give the answer away). The answer lights the patch or measures the gap and turns
   the arrow to the kind's colour; the worked answer leads with the answer and points at the picture ("ছবিতে দেখো,
-  ফুটবল আর মেঝের মাঝে ৬০ cm ফাঁক …"), speaking to the student's own mistake. The wrong answers are the usual
-  confusions: the person does not touch the cart, air cannot be seen, nobody touches the crate, it stops by itself,
-  the air pushes the football down, the Earth touches it through the floor, the paper ends up stuck to the comb, the
-  paper is light.
+  ফুটবল আর মেঝের মাঝে ৬০ cm ফাঁক …"), speaking to the student's own mistake. Every "which kind?" question has two
+  স্পর্শ and two অস্পর্শ answers, each wrong one a real misconception with its own note, no "কোনো বল নয়" filler: the
+  person does not touch the cart / the long rope pulls from a distance / the wheels touch; air cannot be seen /
+  gravity slows it / the ground pushes from below; nobody touches the crate / the Earth pulls it to a stop / the
+  earlier push still pushes it; the air pushes the football down / the Earth touches it through the floor / the
+  hands' push is still in it; the hand holds the comb / the paper sticks to it / the paper is light.
 - Framing: each view is now framed on the body up to its telling moment (not on its whole run), so the bodies are
   larger on a phone; the crate is seen a little more from above so the lit floor round it shows.
 - Bridge: `seen` replaces `sorted` (URL parameter and `set`), `act: true` does what the big button does, `get` adds
@@ -100,15 +105,19 @@ result, one rule):
 - The kit's labels place the tag first (round the patch or the gap's middle, clear of the bodies, the arrow, the gap
   line, the corner buttons, the note and the action's ring), then the force's name (hidden when there is no room).
 
+- Held pictures (decided in review round 2): a tap on a held picture replays the example from rest; it never runs on
+  to the end. The end pictures erase the lesson: the hands have let go of the carton, the crate has stopped (no
+  friction acts any more), the football lies on the floor (the floor now touches it) and the nail sits on the magnet
+  (no gap). The test's last question plays the magnet to its end on purpose: the answer is "its velocity grows".
+- The comb is brought down until its teeth are about 2 cm above the paper (real pickup with a rubbed comb is about
+  1–3 cm), and its tag sits below the gap line, not on it.
+
 ## Open questions
-- The run holds at the telling moment, so the learn view never shows the ends (the football landing, the nail
-  clicking onto the magnet; the test's last question plays the magnet to its end). Should a tap on a held picture play
-  it on to its end?
 - The Earth pulling the Moon (suggested for the test) is left to the gravitational-force figure (3.2.1). Kicking a
   football was left out as too close to the push. A magnet pulling through a sheet of paper would be a good test case
   (a real confusion) but needs a new scene; for now the comb is the new non-contact case.
-- In the gravity question the right answer is the only "অস্পর্শ বল" choice (the confusion tested is "something must
-  be touching it"); in the other kind questions each kind appears at least twice.
+- The crane is held rising at a steady 0.5 m/s: there the cable's pull equals the block's weight (net force zero);
+  only the pull is drawn, to keep the picture simple. "স্থির বস্তু চলতে শুরু করল" stays true (it started from rest).
 - The football's bounce (restitution 0.45) and the trolley rolling to a stop still exist for `at: 'end'` and the GLB,
   not in the learn view.
 - The crane's arrow is drawn beside the cable (not on it) so the hook stays visible; the football's weight arrow is

@@ -330,7 +330,7 @@ export function createCombScene({ color }) {
     const u = frac(t / LOOP) * LOOP;
     const lower = smooth(u / 0.8);
     const raise = smooth((u - 3.4) / 0.6);
-    combY = 0.105 - 0.05 * lower + 0.05 * raise; // the comb's middle above the table
+    combY = 0.105 - 0.07 * lower + 0.07 * raise; // the comb's middle above the table: its teeth come to about 2 cm
     comb.position.set(0, combY, 0);
     const teethY = combY - COMB.h / 2 - 0.0012;
     let next = null;
@@ -343,7 +343,7 @@ export function createCombScene({ color }) {
     }
     watched = next || bits.find((b) => b.userData.order === 6);
     arrow.setOpacity(arrowOn && next ? 1 : 0);
-    if (arrowOn && next) arrow.set(v.set(next.position.x, next.position.y + 0.002, next.position.z), V(0, 1, 0), 0.024);
+    if (arrowOn && next) arrow.set(v.set(next.position.x, next.position.y + 0.002, next.position.z), V(0, 1, 0), 0.012);
   }
 
   return {

@@ -66,7 +66,7 @@ describe('force: the page’s five examples', () => {
     assert.ok(f.fallAt(0).acting && f.fallAt(0).held);
     assert.ok(f.fallAt(f.KEY.fall).acting && !f.fallAt(f.KEY.fall).held);
     assert.ok(f.fallAt(f.DURATION.fall).acting && f.fallAt(f.DURATION.fall).resting);
-    assert.equal(f.fallAt(f.KEY.fall).dir, 'down');
+    assert.ok(f.fallAt(f.KEY.fall).velocity < 0); // on its way down
   });
   it('the magnet’s pull grows as the gap closes', () => {
     let last = -1;
@@ -188,6 +188,10 @@ describe('force: the test', () => {
       assert.ok(keys[0].endsWith('_ok'), `${set}: the right answer first`);
       const kind = f.CHOICE_KIND[set];
       assert.ok(STRINGS.bn[keys[0]].startsWith(kindWord[kind]), `${set}: the right answer names ${kind}`);
+      // no give-away by the first word: two answers say স্পর্শ বল, two অস্পর্শ বল; no "কোনো বল নয়" filler
+      const starts = keys.map((k) => STRINGS.bn[k].split(':')[0]);
+      assert.equal(starts.filter((x) => x === 'স্পর্শ বল').length, 2, `${set}: two contact answers`);
+      assert.equal(starts.filter((x) => x === 'অস্পর্শ বল').length, 2, `${set}: two non-contact answers`);
       // every answer in both languages, and a worked answer that speaks to each wrong one
       for (const k of keys) {
         assert.ok(STRINGS.bn[k] && STRINGS.en[k], `${k} in both languages`);

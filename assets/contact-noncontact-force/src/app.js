@@ -19,6 +19,7 @@ import { bindCleanSheet, buildStudentShell, cleanSheet } from '@shared/student/s
 import { createAction } from '@shared/student/action.js';
 import { createAnnotations } from '@shared/student/annotations.js';
 import { createQuiz } from '@shared/student/quiz.js';
+import { ICONS } from '@shared/student/icons.js';
 import { createI18n } from './i18n.js';
 import { createGapMark } from './marks.js';
 import { createCraneScene } from './crane.js';
@@ -62,7 +63,7 @@ export const DEFAULTS = {
 };
 
 /** One colour per kind of force, the same for the arrow, the patch or gap, the tag and the panel's words. */
-const COLORS = { contact: '#1c6fd9', noncontact: '#7048e8', test: '#e8590c' }; // test: "this force", before the answer
+const COLORS = { contact: '#e8590c', noncontact: '#7048e8', test: '#4b5766' }; // the chapter's pull and gravity; test: "this force" (grey)
 const TOP_ROOM = 52; // px kept clear at the top of the view for the corner buttons and the note
 const TAP = { move: 10, ms: 600 }; // a tap on the picture: the finger comes up within 10 px and 0.6 s
 
@@ -72,14 +73,14 @@ const TAP = { move: 10, ms: 600 }; // a tap on the picture: the finger comes up 
  * or the middle of the gap, the force's name round its arrow (at `along` from its tail to its head).
  */
 const SPOTS = {
-  crane: { tag: '-26,-58 -56,0 26,-72 -26,62 56,0', force: '24,0 24,-30 24,30 -24,0' },
+  crane: { tag: '-26,-58 -46,-40 -56,0 -46,44 26,-72 -26,62 56,0', force: '24,0 24,-30 24,30 -24,0' },
   push: { tag: '0,-66 34,-62 -34,-62 40,-46 -50,-30 40,46 -50,40', force: '30,-54 54,-62 0,-60 0,76 96,24' },
   friction: { tag: '0,50 34,48 -34,48 62,0 0,-74', force: '-14,0 -14,-24 -14,24 0,26 0,-26', along: 1 },
   fall: { tag: '-18,0 -18,-44 -18,44 18,0 18,-44', force: '34,0 34,24 34,-26 -34,0' },
   magnet: { tag: '0,50 26,50 -26,50 0,-58', force: '0,-36 -30,-34 30,-34 0,-52 0,40' },
   rope: { tag: '0,-62 -34,-54 34,-54 0,62', force: '0,-24 0,24 24,0' },
   parachute: { tag: '0,74 64,0 -64,0 0,-74', force: '24,0 -24,0 24,26' },
-  comb: { tag: '-18,0 18,0 -18,-42 18,42', force: '-22,0 22,0 0,24' },
+  comb: { tag: '0,62 -30,58 30,58 -34,0 34,0 0,-74', force: '-22,0 22,0 0,24' },
 };
 const spotsOf = (id, which) =>
   SPOTS[id][which].split(' ').map((p) => {
@@ -254,7 +255,7 @@ export function createApp(root, options = {}) {
     return g ? gapCm(g.a.distanceTo(g.b)) : 0;
   };
   gapMark.set(gapNow);
-  /** The arrow's colour: its kind; in a test question a plain orange "this force" until the answer says the kind. */
+  /** The arrow's colour: its kind; in a test question a plain grey "this force" until the answer says the kind. */
   const arrowColor = () => (s.mode === 'quiz' && !(s.reveal && question?.marks) ? COLORS.test : COLORS[kindOf(s.scene)]);
 
   const labelKey = { tag: '', force: '' };
@@ -435,8 +436,12 @@ export function createApp(root, options = {}) {
   /** How time is shown, in the top left corner: held, slowed down, or real. */
   function noteNow() {
     const id = s.scene;
-    const text = isPool(id) || !id ? '' : s.phase === 'paused' ? t('note_held') : SLOW[id] > 1 ? t('note_slow', { k: SLOW[id] }) : t('note_real');
-    if (text !== lastNote) note.textContent = lastNote = text;
+    const held = !isPool(id) && Boolean(id) && s.phase === 'paused';
+    // held on purpose at the telling moment: said plainly, with a pause sign, so it is not taken for a frozen screen
+    const html = isPool(id) || !id ? '' : held ? `${ICONS.pause}${t('note_held')}` : SLOW[id] > 1 ? t('note_slow', { k: SLOW[id] }) : t('note_real');
+    if (html === lastNote) return;
+    note.innerHTML = lastNote = html;
+    note.classList.toggle('held', held);
   }
 
   // ── the action ──────────────────────────────────────────────────────────────
@@ -696,7 +701,7 @@ export function createApp(root, options = {}) {
   const textLabel = (keys) => (j) => `<span class="cnf-opt">${t(keys[j])}</span>`;
   let order = [];
 
-  /** A book example for a question: it plays from rest and holds at its telling moment, its arrow in plain orange. */
+  /** A book example for a question: it plays from rest and holds at its telling moment, its arrow in plain grey. */
   function questionExample(id) {
     s.reveal = false;
     s.time = 0;

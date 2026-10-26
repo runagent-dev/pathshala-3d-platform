@@ -47,7 +47,7 @@ export function createMagnetScene({ color }) {
   box(BAR.len / 2, BAR.h, BAR.d, mat('#2b63b8', { roughness: 0.42, name: 'SouthBlue' }), (3 * BAR.len) / 4, BAR.h / 2, 0, magnet);
   for (const [txt, x] of [
     ['N', BAR.len * 0.17],
-    ['S', BAR.len * 0.83],
+    ['S', BAR.len * 0.68],
   ]) {
     const letter = textMesh(txt, 0.0085, { color: '#ffffff', weight: 700 });
     letter.rotation.x = -Math.PI / 2;
@@ -75,7 +75,7 @@ export function createMagnetScene({ color }) {
     m.quaternion.setFromUnitVectors(UPV, dirV.normalize());
   }
   const E = BAR.len; // the S end
-  finger(0.0043, 0.02, V(E - 0.022, BAR.h + 0.0043, -0.001), V(E + 0.004, BAR.h + 0.007, -0.002)); // forefinger on top
+  finger(0.0043, 0.012, V(E - 0.011, BAR.h + 0.0043, -0.001), V(E + 0.005, BAR.h + 0.007, -0.002)); // forefinger on the end, the S left clear
   finger(0.0047, 0.01, V(E - 0.009, BAR.h * 0.5, BAR.d / 2 + 0.0047), V(E + 0.004, BAR.h * 0.8, BAR.d / 2 + 0.004)); // thumb
   finger(0.0044, 0.012, V(E + 0.004, BAR.h + 0.002, -0.008), V(E + 0.012, BAR.h + 0.008, -0.014)); // curled fingers
   finger(0.0042, 0.011, V(E + 0.006, BAR.h + 0.001, -0.016), V(E + 0.013, BAR.h + 0.007, -0.021));
