@@ -2,11 +2,12 @@
 
 **Where it goes in the book:** Book page 38, topic 2.3: স্কেলার ও ভেক্টর রাশি. Next to চিত্র ২.০৩ (vectors A, B, C, D), or in place of it.
 
-Interactive 3D figure for the Pathshala book: the arrows A, B, C, D of চিত্র ২.০৩ as pieces on graph paper, beside a
-thermometer reading 37° C. The student moves an arrow (the vector stays the same), turns or stretches it by its head
-(দিক, মান), and lines two up tail to tail to see whether they are the same vector; moving or turning the thermometer
-changes nothing (a scalar). Then a five-question test. `?compare=A,B` (or `A,C`, `C,D`) opens it with one of the
-caption's pairs already lined up.
+Interactive 3D figure for the Pathshala book: find your friend on a school field. A clue with only a size ("২৫ m
+দূরে") lights up a whole ring of places; adding the direction ("উত্তর-পূর্ব দিকে") gives exactly one, with the arrow A:
+a position needs মান and দিক (a vector), while a temperature needs only a মান (a scalar). Then the book's চিত্র ২.০৩ in
+the same story: three children, sent one by one, walk their own clues, and each arrow slides onto its partner's tail (B
+equals A in another place, C differs from A in দিক, D from C in মান). One big numbered button leads the five steps;
+then a five-question test. `?stage=2` (0–5) opens it at a step; `stage=2` is the poster.
 
 ## Embed
 
@@ -31,11 +32,10 @@ To listen to it or control it from the book page, use the helper shipped in the 
 | Param | Meaning | Values | Default |
 |---|---|---|---|
 | `lang` | Language | `bn` বাংলা · `en` English | `bn` |
-| `compare` | Start with a pair lined up | (empty) none · `A,B` A and B · `A,C` A and C · `C,D` C and D |  |
-| `select` | Chosen arrow | `A` A · `B` B · `C` C · `D` D · `T` thermometer | `A` |
+| `stage` | Start at step | `0` the start (nothing said yet) · `1` the ring: 25 m away · `2` found: 25 m north-east (B waits) · `3` B sent, compared with A · `4` C sent, compared with A · `5` D sent, compared with C | `0` |
 | `view` | View | `front` · `3d` | `front` |
 | `mode` | Start in | `explore` learn · `quiz` test | `explore` |
-| `coach` | First-use pointers | `1` · `0` | `1` |
+| `coach` | The numbered ring pulses | `1` · `0` | `1` |
 | `numerals` | Digits | (empty) follow language · `bn` Bangla · `latin` Latin |  |
 | `bg` | Background | `light` · `transparent` | `light` |
 | `shadow` | Soft shadow | `1` · `0` | `1` |
@@ -50,11 +50,11 @@ Every figure answers `ping` with `{ asset, version }`. Send commands with `figur
 | Command | Example payload |
 |---|---|
 | `get` | `{}` |
-| `set` | `{"compare":["A","B"]}` |
+| `set` | `{"act":true}` |
 | `reset` | `{}` |
 | `practice` | `{}` |
 | `capture` | `{"width":800,"height":500}` |
 | `export-glb` | `{}` |
 
-Events: `ready`, `change`, `select`, `compare`, `dragstart`, `dragend`, `view`, `practice-start`, `practice-result`, `practice-end`.
+Events: `ready`, `change`, `step`, `compare`, `view`, `practice-start`, `practice-result`, `practice-end`.
 <!-- /generated:bridge -->

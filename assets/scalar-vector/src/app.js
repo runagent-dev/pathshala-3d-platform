@@ -1,70 +1,55 @@
-// Scalar and vector quantities (book page 38, topic 2.3), student view: four arrow pieces A, B, C, D lie on graph
-// paper as in চিত্র ২.০৩, beside a thermometer reading 37° C. Drag an arrow by its body to move it (its মান and দিক
-// stay the same: the same vector), drag its head to turn it (দিক) or stretch it (মান), and drop it on another
-// arrow's tail to compare the two: only when মান and দিক are both equal are they the same vector, wherever they were
-// drawn. The thermometer can be moved and turned too, and nothing changes: a temperature is a scalar, a মান with no
-// দিক. The panel reads the chosen piece; three buttons line up the book's pairs (A–B, A–C, C–D). Then a short test.
+// Scalar and vector quantities (book page 38, topic 2.3), student view: "find your friend" on a school field seen from
+// slightly above. You stand on a chalk compass; your friend is hiding. Call, and the friend answers with a size only
+// ("২৫ m দূরে"): a measuring line sweeps round and the ring of every place 25 m away lights up with question
+// marks, so you cannot find them (a মান alone; like a temperature, a স্কেলার needs nothing more, but a position
+// does). Ask the direction too ("২৫ m, উত্তর-পূর্ব দিকে"): the compass point glows, one arrow A grows to exactly
+// one spot, the friend pops up, and you walk over (মান + দিক = ভেক্টর). Then the book's চিত্র ২.০৩ in the same story:
+// B, C and D wait in turn; each, when sent, walks its own clue from another place, and its arrow slides, unturned and unstretched, onto
+// the tail of the one the book compares it with: B covers A exactly (হুবহু এক, যদিও ভিন্ন অবস্থানে), C has A's
+// মান but another দিক (an orange arc), D has C's দিক but half its মান. The panel is the kit's clean sheet: one big
+// numbered action whose same badge rings what to touch on the field, one result line, one rule that grows to the
+// book's words. Then a five-question test on scenes set up for each question.
 // Built on the shared student kit (@shared/student/…).
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
 import { createTweener, ease } from '@shared/tween.js';
-import { createMaterials, textMesh } from '@shared/student/materials.js';
 import { createAudio } from '@shared/student/audio.js';
-import { buildStudentShell } from '@shared/student/shell.js';
-import { createCoach } from '@shared/student/coach.js';
+import { bindCleanSheet, buildStudentShell, cleanSheet } from '@shared/student/shell.js';
+import { createAction } from '@shared/student/action.js';
+import { createAnnotations } from '@shared/student/annotations.js';
 import { createQuiz } from '@shared/student/quiz.js';
 import { ICONS } from '@shared/student/icons.js';
 import { createI18n } from './i18n.js';
+import { COLORS, P, createChalkLine, createField, createFlag, createRing, createRose, createScaleBar } from './field.js';
+import { createKid } from './people.js';
+import { createArc, createFieldArrow } from './vectors.js';
+import { fitPose } from './camera.js';
 import {
-  BOARD_SIZE,
-  COLORS,
-  PAPER_SIZE,
-  PAPER_TOP,
-  UNIT,
-  createAngleMark,
-  createArrow,
-  createBoard,
-  createDockMark,
-  createGhost,
-  createPlaces,
-  createRing,
-  createThermometer,
-  toPaper,
-  toWorld,
-} from './board.js';
-import {
-  ANGLE_STEP,
-  BOOK,
-  LEN_MAX,
-  LEN_MIN,
-  NAMES,
-  PAPER,
-  ROSE,
-  TEMPERATURE,
-  THERMO,
-  commonTail,
-  compare,
+  CELLS,
+  FRIEND,
+  PAIRS,
+  RING,
+  START,
+  TEST_D,
+  TEST_L,
+  TEST_NEAR,
+  VECTORS,
+  WALKERS,
+  along,
+  centredTail,
   compass,
-  fitOnPaper,
-  fitThermo,
+  equalOptions,
+  findOptions,
   headOf,
-  landing,
-  maxLengthFrom,
-  norm360,
-  placeApart,
-  readingMistakes,
-  sameDirection,
-  segmentDistance,
-  snapPolar,
-  thermoEnds,
+  verdict,
+  whyPartner,
 } from './reading.js';
 
 export const DEFAULTS = {
-  compare: '', // "A,B": B starts on A's tail
-  select: 'A',
+  stage: 0, // steps already done: 0 start · 1 the ring · 2 found · 3–5 B, C, D sent and compared
   view: 'front', // 'front' | '3d'
   mode: 'explore', // 'explore' | 'quiz'
-  coach: true,
+  coach: true, // the numbered ring on the field pulses (false: it stays still)
   numerals: null,
   lang: 'bn',
   bg: 'light',
@@ -72,124 +57,119 @@ export const DEFAULTS = {
   sound: true,
 };
 
-const dirFrom = (azimuth, elevation) => {
-  const a = THREE.MathUtils.degToRad(azimuth);
-  const e = THREE.MathUtils.degToRad(elevation);
-  return new THREE.Vector3(Math.sin(a) * Math.cos(e), Math.sin(e), Math.cos(a) * Math.cos(e));
-};
-// front: nearly from above at every aspect, so a দিক on the paper looks like the দিক it is (at most 18° of slant)
-const viewDir = (view, aspect) =>
-  view === '3d' ? dirFrom(28, 36) : dirFrom(0, THREE.MathUtils.lerp(78, 72, THREE.MathUtils.clamp((aspect - 0.9) / 1.2, 0, 1)));
-const BOOK_NAMES = ['A', 'B', 'C', 'D'];
-const T = 'T'; // the thermometer, chosen like an arrow
-const LIFT = 5; // mm a piece is raised while it is carried
-const PAIRS = [
-  ['A', 'B'],
-  ['A', 'C'],
-  ['C', 'D'],
-];
-// where an arrow's name may go: along it (k), on its left or right (side), how far out (off); first ones first
-const LABEL_SPOTS = [0.5, 0.32, 0.68]
-  .flatMap((k) => [1, -1].map((side) => ({ k, side, off: 1.05 })))
-  .concat([
-    { k: 0.5, side: 1, off: 1.65 },
-    { k: 0.5, side: -1, off: 1.65 },
-  ]);
-const OK = ICONS.check.replace('<svg ', '<svg class="sv-ok" ');
-const NO = ICONS.close.replace('<svg ', '<svg class="sv-no" ');
+const NAMES = ['B', 'C', 'D'];
+const F = headOf(FRIEND); // where the friend is
+const YOU_END = [F[0] + 7, F[1] - 1.5]; // you stop beside the friend (not on the arrow's head, not so close the ring round you cuts the friend)
+const ARC_R = 15; // m: the arc between two দিক round the common tail
+const LINE_AT = 210; // the measuring line ends pointing this way (away from the answer)
+const TEMP = 37; // ° C, the book's body temperature
+const WALK = 17; // m/s: walks are quicker than life (no time is shown)
+const STRIDE = 2.4; // m of walk per radian of the legs' swing
+const DOUBLE_TAP = 450; // ms
+const FRAME = new THREE.Box3(new THREE.Vector3(-29, 0, -29.5), new THREE.Vector3(29, 6, 29));
+const VIEW_3D = new THREE.Vector3(-0.45, 0.8, 0.55).normalize(); // about 53° above the field
+const MARGIN = { top: 48, bottom: 8, side: 8 };
+const rad = THREE.MathUtils.degToRad;
+const lerp2 = (a, b, k) => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k];
+const headingTo = (a, b) => (Math.atan2(b[1] - a[1], b[0] - a[0]) * 180) / Math.PI;
 
 export function createApp(root, options = {}) {
   const o = { ...DEFAULTS, ...options };
   const t = createI18n(o.lang, { numerals: o.numerals });
-  const N = t.num;
-  const V = (name) => `<b class="sv-v">${name}</b>`; // a vector's name, bold as the book prints it
-  const marks = (html) => html.replaceAll('{ok}', OK).replaceAll('{no}', NO);
-  /** A দিক in words (the eight compass directions), or in degrees from পূর্ব in between. */
-  const dirText = (angle) => {
-    const c = compass(angle);
-    return c ? t(`dir_${c}`) : t('deg', { d: angle });
-  };
+  /** A vector's name as it is written by hand: the letter with a small arrow over it (style.css). */
+  const V = (n) => `<span class="sv-vec">${n}</span>`;
+  const dirName = (angle) => t(`dir_${compass(angle)}`);
 
   root.classList.add('pvc', 'sv');
   root.dataset.theme = o.bg;
   root.dataset.ui = 'simple';
   root.lang = t.lang;
   root.tabIndex = 0;
-  const pairButton = ([a, b]) => `<button class="pvc-btn" data-pair="${a},${b}">${t('pair', { a: V(a), b: V(b) })}</button>`;
   const ui = buildStudentShell(root, t, {
-    learn: `
-          <div class="pvc-learn-main sv-main">
-            <span class="sv-name"><b class="sv-v">A</b><small>${t('vector')}</small></span>
-            <div class="pvc-sum sv-sum">
-              <span class="pvc-t mag"><b>0</b><small>${t('mag')}</small></span>
-              <span class="pvc-t dir"><b>0</b><small>${t('dir')}</small></span>
-            </div>
-          </div>
-          <div class="sv-kinds"><span>${t('kind_scalar', { temp: TEMPERATURE })}</span><span>${t('kind_vector')}</span></div>
-          <p class="pvc-learn-extra sv-extra" aria-live="polite"></p>
-          <div class="pvc-learn-foot sv-foot">
-            <span class="sv-foot-k">${t('compare_k')}</span>
-            <div class="sv-acts">
-              ${PAIRS.map(pairButton).join('')}
-              <button class="pvc-btn sv-home" data-act="home" title="${t('act_home')}" aria-label="${t('act_home')}">${ICONS.reset}</button>
-            </div>
-          </div>`,
+    learn: cleanSheet(t, { quiet: [{ act: 'home', label: 'act_home', icon: ICONS.reset }], lines: { action: 1, outcome: 2, rule: 3 } }),
+    learnAlign: 'start',
   });
+  const sheet = bindCleanSheet(ui.learn);
+  const outcomeEl = ui.$('.pvc-outcome');
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
-  const stage = createStage(ui.canvasHost, { fov: 30, near: 5, far: 5000, environment: 'studio-light' });
+  const stage = createStage(ui.canvasHost, { fov: 30, near: 1, far: 900, environment: 'studio-light' });
   const { camera, controls, scene } = stage;
   controls.enablePan = false;
-  controls.minDistance = 120;
-  controls.maxDistance = 1200;
-  controls.maxPolarAngle = THREE.MathUtils.degToRad(80);
-  const M = createMaterials(stage.renderer);
+  controls.enableRotate = false;
+  controls.enableZoom = false;
+  controls.minDistance = 40;
+  controls.maxDistance = 320;
+  controls.maxPolarAngle = rad(80);
   const world = new THREE.Group();
-  world.name = 'ScalarVectorScene';
+  world.name = 'ScalarVector';
   scene.add(world);
-  const board = createBoard({ materials: M, t });
-  world.add(board.root);
-  const arrows = {};
-  for (const name of NAMES) {
-    const a = createArrow(name);
-    arrows[name] = a;
-    world.add(a.root);
-  }
-  const thermo = createThermometer({ num: N, label: t('temp_value', { v: TEMPERATURE }) });
-  world.add(thermo.root);
-  const angleMark = createAngleMark();
-  const angleMark2 = createAngleMark({ radius: 19, faint: true }); // the other arrow of a lined-up pair, outside the first arc
-  angleMark2.setVisible(false);
-  const ring = createRing();
-  const dockMark = createDockMark();
-  const ghost = createGhost();
-  const places = createPlaces();
-  places.setHouse(null);
-  places.setFlag(null);
-  ring.setVisible(false);
-  world.add(angleMark.root, angleMark2.root, ring.root, dockMark.root, ghost.root, places.root);
+
+  const field = createField();
+  const rose = createRose({ t, at: START });
+  const ring = createRing({ at: START, radius: RING, from: LINE_AT });
+  const ring20 = createRing({ at: START, radius: TEST_D, from: 0, dashes: 52 }); // the test's ring
+  ring20.root.name = 'TestRing';
+  const scaleBar = createScaleBar();
+  world.add(field.root, rose.root, ring.root, ring20.root, scaleBar.root);
+
+  const you = createKid({ name: 'You', clothes: { top: '#f8f9fa', legs: '#25324a' } });
+  const friend = createKid({ name: 'Friend', clothes: { top: '#f03e3e', legs: '#1f2d3d', hair: '#2b1d14' } });
+  const kids = {
+    B: createKid({ name: 'ChildB', clothes: { top: '#fcc419', legs: '#343a40' } }),
+    C: createKid({ name: 'ChildC', clothes: { top: '#e64980', legs: '#2b2f36', hair: '#3b2412' } }),
+    D: createKid({ name: 'ChildD', clothes: { top: '#22b8cf', legs: '#343a40' } }),
+  };
+  world.add(you.root, friend.root, ...Object.values(kids).map((k) => k.root));
+
+  const arrows = Object.fromEntries(['A', ...NAMES].map((n) => [n, createFieldArrow({ name: `Vector${n}` })]));
+  const ghost = createFieldArrow({ name: 'Copy', color: '#9b7cf6', opacity: 0.66, ticks: false, hit: false });
+  ghost.root.userData.noExport = true;
+  const arc = createArc();
+  arc.mesh.userData.noExport = true;
+  world.add(...Object.values(arrows).map((a) => a.root), ghost.root, arc.mesh);
+
+  // the test's things: four flags, three chalk lines, five arrows
+  const flags = Array.from({ length: 4 }, (_, i) => createFlag(`Flag${i}`));
+  for (const f of flags) f.root.visible = false;
+  const chalk = Array.from({ length: 3 }, (_, i) => createChalkLine(`ChalkLine${i}`));
+  const testArrows = Array.from({ length: 5 }, (_, i) => createFieldArrow({ name: `TestArrow${i}` }));
+  const testGroup = new THREE.Group();
+  testGroup.name = 'TestScene';
+  testGroup.userData.noExport = true;
+  testGroup.add(...flags.map((f) => f.root), ...chalk.map((c) => c.mesh), ...testArrows.map((a) => a.root));
+  world.add(testGroup);
+
   const tweener = createTweener();
   stage.addTicker((dt) => tweener.tick(dt));
   const audio = createAudio(o.sound);
 
+  let sun = null;
   if (o.shadow && o.bg !== 'transparent') {
     stage.renderer.shadowMap.enabled = true;
     stage.renderer.shadowMap.type = THREE.VSMShadowMap;
-    // low enough from the side that a flat arrow piece throws a shadow (a carried one, a clearly lifted one)
-    const sun = new THREE.DirectionalLight(0xffffff, 0.45);
-    sun.position.set(-220, 330, 260);
+    sun = new THREE.DirectionalLight(0xffffff, 0.55);
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048);
-    Object.assign(sun.shadow.camera, { left: -110, right: 110, top: 110, bottom: -110, near: 250, far: 750 });
+    Object.assign(sun.shadow.camera, { left: -60, right: 60, top: 60, bottom: -60, near: 10, far: 260 });
     sun.shadow.radius = 5;
-    sun.shadow.bias = -0.0004;
-    const table = new THREE.Mesh(new THREE.PlaneGeometry(3000, 3000), new THREE.ShadowMaterial({ opacity: 0.1 }));
-    table.rotation.x = -Math.PI / 2;
-    table.position.y = -BOARD_SIZE.h;
-    table.receiveShadow = true;
-    scene.add(sun, sun.target, table);
-    board.root.traverse((m) => m instanceof THREE.Mesh && m.name === 'DrawingBoard' && (m.castShadow = true));
-    places.root.traverse((m) => m instanceof THREE.Mesh && (m.castShadow = true));
+    sun.shadow.bias = -0.0005;
+    sun.position.set(40, 120, 60);
+    sun.target.position.set(0, 0, 0);
+    scene.add(sun, sun.target);
+    field.ground.receiveShadow = true;
+    const casters = [
+      you.root,
+      friend.root,
+      ...Object.values(kids).map((k) => k.root),
+      ...Object.values(arrows).map((a) => a.root),
+      ...testArrows.map((a) => a.root),
+      ...flags.map((f) => f.root),
+    ];
+    for (const obj of casters)
+      obj.traverse((m) => {
+        if (m instanceof THREE.Mesh && m.material && !m.material.transparent && m.material.visible !== false) m.castShadow = true;
+      });
   }
 
   const listeners = new Map();
@@ -197,112 +177,422 @@ export function createApp(root, options = {}) {
     for (const fn of listeners.get(type) || []) fn(payload);
   }
 
-  const clone = (v) => ({ tail: [v.tail[0], v.tail[1]], length: v.length, angle: v.angle });
+  // ── state ───────────────────────────────────────────────────────────────────
   const s = {
-    vec: Object.fromEntries(BOOK_NAMES.map((n) => [n, clone(BOOK[n])])), // name → { tail, length, angle }
-    shown: [...BOOK_NAMES],
-    thermo: { at: [...THERMO.at], angle: THERMO.angle },
-    thermoShown: true,
-    selected: 'A', // an arrow's name, or T for the thermometer
-    pair: null, // { a, b }: b lies on a's tail, the two are compared
-    from: null, // where b was before it was lined up (drawn faintly, with the path it slid along)
-    base: null, // { name, v }: an arrow as it was before the student began to turn or stretch it
-    note: null, // { key, vars }: what the last action showed
+    clue: 0, // 0 nothing yet · 1 the distance only · 2 distance and direction (found)
+    compared: [], // the children sent (they walked their clue and their arrow was slid onto its partner's tail), in order
+    current: null, // whose comparison shows now
+    // what an animation is in the middle of: 'calling' | 'heard' | { walking: name } | { moving: name }
+    pending: null,
+    busy: false,
     view: o.view === '3d' ? '3d' : 'front',
     mode: 'explore',
+    scene: 'learn', // 'learn' | 'test'
     locked: false,
-    drag: null,
-    headHinted: false,
     userMovedCamera: false,
   };
+  let token = 0; // bumped by anything that calls off what is pending
+  let lastAct = Number.NEGATIVE_INFINITY;
+  const now = () => performance.now();
 
-  /** Draw an arrow where its vector says (or as given while it is animated or carried). */
-  function draw(name, v = s.vec[name], lift = 0) {
-    arrows[name].set(v);
-    arrows[name].setLift(lift);
-  }
-  function showOnly(names, { thermometer = false } = {}) {
-    s.shown = [...names];
-    for (const n of NAMES) arrows[n].setVisible(names.includes(n));
-    s.thermoShown = thermometer;
-    thermo.setVisible(thermometer);
-  }
-
-  /** Free room (squares) round a paper point: away from the edge, the pieces as they are drawn and the faint copy. */
-  function room(p, { skip = null } = {}) {
-    let r = Math.min(p[0], p[1], PAPER.w - p[0], PAPER.h - p[1]) + 0.4;
-    for (const m of s.shown) {
-      if (m === skip) continue;
-      const st = arrows[m].state;
-      r = Math.min(r, segmentDistance(p, p, st.tail, headOf(st)));
-    }
-    if (s.thermoShown && skip !== T) {
-      const [e1, e2] = thermoEnds(thermo.state);
-      r = Math.min(r, segmentDistance(p, p, e1, e2) - 0.15);
-    }
-    const pair = livePair();
-    if (pair && s.from) {
-      const to = s.vec[pair.b].tail;
-      const len = Math.hypot(to[0] - s.from.tail[0], to[1] - s.from.tail[1]) || 1;
-      const stop = Math.max(0, len - 2.2) / len; // the dotted path stops short of the new tail
-      const end = [s.from.tail[0] + (to[0] - s.from.tail[0]) * stop, s.from.tail[1] + (to[1] - s.from.tail[1]) * stop];
-      r = Math.min(r, segmentDistance(p, p, s.from.tail, headOf(s.from)), segmentDistance(p, p, s.from.tail, end) - 0.1);
-    }
-    return Math.min(r, Math.hypot(p[0] - ROSE.x, p[1] - ROSE.y) - ROSE.r + 0.2);
-  }
-  /** Each name where it has most room: off the arrows, the thermometer, the angles, the rose and the edge. */
-  function placeLabels() {
-    const order = [...s.shown].sort((x, y) => (x === s.pair?.b) - (y === s.pair?.b));
-    const placed = [angleMark.textAt(), angleMark2.textAt()].filter(Boolean);
-    const score = (p, skip, pref) => {
-      let r = room(p, { skip });
-      for (const q of placed) r = Math.min(r, Math.hypot(p[0] - q[0], p[1] - q[1]) - 0.6);
-      return r - pref;
+  /** The look of the learn scene at one moment: every animation moves these numbers, applyLearn() draws them. */
+  function freshVis() {
+    return {
+      ring: { drawn: 0, marks: 0, markOpacity: 1, opacity: 1, line: 0, lineAngle: LINE_AT, lineOpacity: 1 },
+      rose: 0, // the উত্তর-পূর্ব point glows
+      a: 0, // how much of A is drawn
+      you: { p: [...START], heading: 285, walk: 0, wave: 0, waveT: 0, look: 0 },
+      friend: { pop: 0, wave: 0, waveT: 0 },
+      w: Object.fromEntries(NAMES.map((n) => [n, { show: 0, f: 0, p: [...WALKERS[n].tail], walk: 0 }])),
+      ghost: { name: null, k: 0, show: 0 },
+      arc: 0,
     };
-    for (const n of order) {
-      let best = null;
-      LABEL_SPOTS.forEach((sp, i) => {
-        const p = arrows[n].labelAt(sp);
-        const sc = score(p, null, i * 0.04);
-        if (!best || sc > best.sc + 0.02) best = { sc, sp, p };
-      });
-      arrows[n].setLabelSpot(best.sp);
-      placed.push(best.p);
-    }
-    if (s.thermoShown) {
-      const [p1, p2] = [thermo.labelAt(1), thermo.labelAt(-1)];
-      thermo.setLabelSide(score(p1, T, 0) >= score(p2, T, 0.05) ? 1 : -1);
-    }
   }
-  /** How far a point is from the dashed line to পূর্ব drawn at a tail (an angle written on it would be misread). */
-  const offEast = (p, tail) => segmentDistance(p, p, tail, [tail[0] + 2, tail[1]]) - 0.05;
-  /** The দিক of an arrow drawn at its tail: the arc from পূর্ব and the angle, where it can be read. */
-  function markAngle(name, v = s.vec[name]) {
-    angleMark.set(v.tail, v.angle, N(t('deg', { d: v.angle })), (p) => Math.min(room(p), offEast(p, v.tail)));
+  /** The next child to send, or null once all three were. */
+  const nextChild = (compared = s.compared) => NAMES.find((n) => !compared.includes(n)) ?? null;
+  /**
+   * The scene once a state is reached (no animation). Once the friend is found the next child waits at its start
+   * (waiting: false leaves it out, for a test's picture).
+   */
+  function visFor({ clue, compared = [], current = null }, { waiting = true } = {}) {
+    const v = freshVis();
+    if (clue >= 1) Object.assign(v.ring, { drawn: 1, marks: 1, line: 1 });
+    if (clue >= 2) {
+      Object.assign(v.ring, { line: 0, markOpacity: 0.3, opacity: 0.5 });
+      v.rose = 1;
+      v.a = 1;
+      v.friend = { pop: 1, wave: 1, waveT: 0.6 };
+      v.you = { p: [...YOU_END], heading: 180, walk: 0, wave: 0, waveT: 0, look: 0 };
+    }
+    if (compared.length) {
+      Object.assign(v.ring, { opacity: 0, markOpacity: 0 });
+      v.rose = 0;
+      v.friend.wave = 0;
+    }
+    for (const n of compared) v.w[n] = { show: 1, f: 1, p: headOf(WALKERS[n]), walk: 0 };
+    const next = nextChild(compared);
+    if (clue >= 2 && next && waiting) v.w[next] = { show: 1, f: 0, p: [...WALKERS[next].tail], walk: 0 };
+    if (current) {
+      v.ghost = { name: current, k: 1, show: 1 };
+      v.arc = verdict(VECTORS[current], VECTORS[PAIRS[current]]) === 'direction' ? 1 : 0;
+    }
+    return v;
+  }
+  let vis = freshVis();
+
+  const popScale = (k) => (k >= 1 ? 1 : Math.max(0.001, ease.outBack(Math.max(0, k))));
+  function placeKid(kid, st) {
+    kid.root.position.copy(P(st.p[0], st.p[1]));
+    kid.root.rotation.y = rad(st.heading);
+    kid.pose(st);
   }
 
-  /** The pair, if b still lies on a's tail. */
-  function livePair() {
-    const p = s.pair;
-    if (!p || !s.shown.includes(p.a) || !s.shown.includes(p.b)) return null;
-    const ta = s.vec[p.a].tail;
-    const tb = s.vec[p.b].tail;
-    return Math.hypot(ta[0] - tb[0], ta[1] - tb[1]) < 1e-6 ? p : null;
+  /** Draws the learn scene from `vis`. */
+  function applyLearn() {
+    const r = vis.ring;
+    ring.root.visible = true;
+    ring.setDrawn(r.drawn);
+    ring.setMarks(r.marks, r.markOpacity);
+    ring.setOpacity(r.opacity);
+    ring.setLine(r.lineAngle, r.line, r.lineOpacity);
+    rose.highlight(vis.rose > 0.01 ? FRIEND.angle : null, vis.rose);
+    if (vis.a > 0.001) arrows.A.set(FRIEND, vis.a);
+    else arrows.A.hide();
+    you.root.visible = true;
+    placeKid(you, vis.you);
+    friend.root.visible = vis.friend.pop > 0.001;
+    friend.body.scale.setScalar(popScale(vis.friend.pop));
+    placeKid(friend, { p: F, heading: 0, walk: 0, look: 0, wave: vis.friend.wave, waveT: vis.friend.waveT });
+    for (const n of NAMES) {
+      const w = vis.w[n];
+      const kid = kids[n];
+      kid.root.visible = w.show > 0.001;
+      kid.body.scale.setScalar(popScale(w.show));
+      placeKid(kid, { p: w.p, heading: WALKERS[n].angle, walk: w.walk, look: 0, wave: 0, waveT: 0 });
+      if (w.f > 0.001) arrows[n].set(WALKERS[n], w.f);
+      else arrows[n].hide();
+    }
+    const g = vis.ghost;
+    if (g.name && g.show > 0.01) {
+      const v = VECTORS[g.name];
+      const to = VECTORS[PAIRS[g.name]].tail;
+      ghost.set({ ...v, tail: lerp2(v.tail, to, g.k) }, 1, 1.2 + Math.sin(Math.PI * g.k) * 5);
+      ghost.setOpacity(g.show);
+    } else ghost.hide();
+    if (g.name && vis.arc > 0.01) {
+      const ref = VECTORS[PAIRS[g.name]];
+      arc.set(ref.tail, ref.angle, VECTORS[g.name].angle, ARC_R, vis.arc);
+    } else arc.hide();
+    learnLabels();
+    stage.invalidate();
+  }
+
+  // ── labels on the field ─────────────────────────────────────────────────────
+  const anno = createAnnotations({
+    stage,
+    layer: ui.annoLayer,
+    avoid: [
+      ui.corner,
+      () => (ui.hint.classList.contains('show') ? hintBox() : null),
+      () => action?.box(),
+      () => action?.ringBox(),
+      () => roseBoxes(), // the compass letters (উ above all: the clue says উত্তর-পূর্ব)
+    ],
+  });
+  const shownText = new Map();
+  /** A label on the field, or none (spec null). Text, point and colour change in place. */
+  function setLabel(id, spec) {
+    if (!spec) {
+      if (anno.has(id)) anno.remove(id);
+      shownText.delete(id);
+      return;
+    }
+    const key = `${spec.text}|${spec.color}|${spec.kind}`;
+    if (!anno.has(id)) {
+      anno.add(id, { kind: 'callout', avoid: [sceneBoxes], ...spec });
+      shownText.set(id, key);
+    } else if (shownText.get(id) !== key) {
+      anno.update(id, { text: spec.text, color: spec.color, point: spec.point, spots: spec.spots ?? null });
+      shownText.set(id, key);
+    } else anno.update(id, { point: spec.point });
+  }
+  // farther places round a point, for labels that must not cover the compass letters, the arrows or the children
+  const FAR = [40, 54].flatMap((r) =>
+    [-35, 35, -145, 145, 0, 180, -90, 90].map((a) => ({ dx: Math.round(r * Math.cos(rad(a))), dy: Math.round(r * Math.sin(rad(a)) * 0.8) })),
+  );
+  // beside the head first (straight above it is the compass's উ, behind the child on the screen), outside the ring the
+  // action draws round you
+  const BY_HEAD = [
+    { dx: 34, dy: 0 },
+    { dx: -34, dy: 0 },
+    { dx: 30, dy: -22 },
+    { dx: -30, dy: -22 },
+    { dx: 0, dy: -30 },
+    { dx: 62, dy: -8 },
+    { dx: -62, dy: -8 },
+    { dx: 58, dy: -44 },
+    { dx: -58, dy: -44 },
+  ];
+  // the friend's name away from you (you stand on the friend's right)
+  const FRIEND_SPOTS = [{ dx: -20, dy: -12 }, { dx: 0, dy: -18 }, { dx: -26, dy: 2 }, { dx: -22, dy: 16 }, ...FAR];
+  const ABOVE = [
+    { dx: 0, dy: -16 },
+    { dx: 18, dy: -12 },
+    { dx: -18, dy: -12 },
+    { dx: 24, dy: 4 },
+    { dx: -24, dy: 4 },
+    { dx: 0, dy: 26 },
+  ];
+  const BESIDE = [
+    { dx: -22, dy: -14 },
+    { dx: 22, dy: 14 },
+    { dx: 0, dy: -24 },
+    { dx: 0, dy: 24 },
+    { dx: 30, dy: -6 },
+    { dx: -30, dy: 6 },
+    { dx: -36, dy: -26 },
+    { dx: 36, dy: 26 },
+  ];
+  const NAME_SPOTS = [{ dx: 30, dy: 4 }, ...BESIDE, ...FAR]; // an arrow's name: beside it first
+  // the test's arrows lie close together: more places, farther out
+  const WIDE_BESIDE = [
+    ...BESIDE,
+    { dx: 0, dy: -38 },
+    { dx: 0, dy: 38 },
+    { dx: 46, dy: 0 },
+    { dx: -46, dy: 0 },
+    { dx: 40, dy: -30 },
+    { dx: -40, dy: 30 },
+  ];
+  const tmp = new THREE.Vector3();
+  const headTop = (kid) => () => kid.root.localToWorld(tmp.copy(kid.top));
+
+  /** Boxes on the screen no label may cover: the arrows (beads along them), the children, the flags. */
+  const proj = new THREE.Vector3();
+  function toScreen(p) {
+    proj.copy(p).project(camera);
+    return { x: (proj.x * 0.5 + 0.5) * stage.width, y: (-proj.y * 0.5 + 0.5) * stage.height };
+  }
+  const beadA = new THREE.Vector3();
+  const beadB = new THREE.Vector3();
+  /** The children on the screen, `half` of their height out to each side of their feet. */
+  function kidBoxes(half = 0.3) {
+    const out = [];
+    for (const kid of [you, friend, ...Object.values(kids)]) {
+      if (!kid.root.visible) continue;
+      const foot = toScreen(kid.root.getWorldPosition(beadA));
+      const top = toScreen(kid.root.localToWorld(beadB.copy(kid.top)));
+      const w = Math.max(8, Math.abs(foot.y - top.y) * half);
+      out.push({ left: foot.x - w, top: top.y, right: foot.x + w, bottom: foot.y + 3 });
+    }
+    return out;
+  }
+  function sceneBoxes() {
+    const out = [];
+    const bead = (p, r) => {
+      const c = toScreen(p);
+      out.push({ left: c.x - r, top: c.y - r, right: c.x + r, bottom: c.y + r });
+    };
+    for (const a of [...Object.values(arrows), ghost, ...testArrows]) {
+      const v = a.vector;
+      if (!v) continue;
+      const len = v.length;
+      const n = Math.max(2, Math.ceil(len / 4));
+      for (let i = 0; i <= n; i++) {
+        const [x, y] = along({ ...v, length: len }, i / n);
+        bead(P(x, y, 1, beadA), 10);
+      }
+    }
+    if (arc.mesh.visible) for (const p of arc.points()) bead(p, 9); // the orange arc between two দিক
+    out.push(...kidBoxes(0.45));
+    for (const f of flags) {
+      if (!f.root.visible) continue;
+      const foot = toScreen(f.root.getWorldPosition(beadA));
+      const top = toScreen(f.root.localToWorld(beadB.copy(f.top)));
+      out.push({ left: foot.x - 6, top: top.y, right: foot.x + 18, bottom: foot.y + 3 });
+    }
+    return out;
+  }
+  /** The compass letters on the screen (each a box as big as the letter, 3.5 m wide), while the compass shows. */
+  const edge = new THREE.Vector3();
+  function roseBoxes() {
+    if (!rose.root.visible) return null;
+    return rose.letters.map((p) => {
+      const c = toScreen(p);
+      const ex = toScreen(edge.copy(p).setX(p.x + 1.75));
+      const ey = toScreen(edge.copy(p).setZ(p.z - 1.75));
+      const w = Math.max(7, Math.abs(ex.x - c.x));
+      const h = Math.max(6, Math.abs(ey.y - c.y));
+      return { left: c.x - w, top: c.y - h, right: c.x + w, bottom: c.y + h };
+    });
+  }
+  function hintBox() {
+    const o2 = stage.canvas.getBoundingClientRect();
+    const r = ui.hint.getBoundingClientRect();
+    return { left: r.left - o2.left, top: r.top - o2.top, right: r.right - o2.left, bottom: r.bottom - o2.top };
+  }
+
+  function learnLabels() {
+    if (s.scene !== 'learn' && !picture) return;
+    const found = s.clue >= 2 || vis.friend.pop > 0.6;
+    const early = !s.compared.length && !s.pending?.walking && !s.pending?.moving; // until the first child is sent
+    setLabel('you', early ? { text: t('l_you'), point: headTop(you), color: '#1d2733', spots: BY_HEAD } : null);
+    setLabel(
+      'friend',
+      early && found && vis.friend.pop > 0.6
+        ? { text: t('l_friend'), point: headTop(friend), color: '#2b8a3e', spots: FRIEND_SPOTS, optional: true }
+        : null,
+    );
+    setLabel(
+      'line',
+      ring.line && vis.ring.lineOpacity > 0.6 && vis.ring.drawn > 0.999
+        ? { text: t('l_metres', { d: RING }), point: () => ring.lineMiddle(), color: COLORS.magnitude, spots: BESIDE }
+        : null,
+    );
+    // the arrow's name only: its মান and দিক are in the result line, in the same colours, and the label must not
+    // cover the compass's উ (the clue is উত্তর-পূর্ব)
+    setLabel('A', vis.a > 0.999 ? { text: V('A'), point: () => arrows.A.middle(), color: COLORS.vector, spots: NAME_SPOTS } : null);
+    for (const n of NAMES) {
+      const w = vis.w[n];
+      if (w.show < 0.6) {
+        setLabel(n, null);
+        continue;
+      }
+      const drawn = w.f > 0.999;
+      // a child waiting to be sent is named by the ring, the badge and the button ("B-কে পাঠাও"); its letter shows
+      // once it moves (the ring leaves no room for it)
+      const next = plan();
+      if (!drawn && !s.busy && next.act === 'send' && next.name === n && s.scene === 'learn') {
+        setLabel(n, null);
+        continue;
+      }
+      setLabel(n, {
+        text: drawn ? V(n) : n,
+        point: drawn ? () => nameAt[n] : headTop(kids[n]),
+        color: COLORS.vector,
+        spots: drawn ? BESIDE : ABOVE,
+      });
+    }
+    const g = vis.ghost;
+    if (g.name && g.k > 0.999 && s.current === g.name) {
+      const v = verdict(VECTORS[g.name], VECTORS[PAIRS[g.name]]);
+      const spec = {
+        equal: { text: `${ICONS.check}<span>${t('l_same')}</span>`, color: COLORS.equal },
+        direction: { text: t('l_dir'), color: COLORS.direction },
+        magnitude: { text: t('l_mag'), color: COLORS.magnitude },
+      }[v === 'both' ? 'direction' : v];
+      const point = v === 'direction' ? () => arc.middle() : () => ghost.tip();
+      // it repeats the result line, so it hides when nothing is free round its point
+      const spots = v === 'direction' ? [{ dx: 0, dy: -14 }, ...ABOVE, ...BESIDE] : [...BESIDE, ...ABOVE];
+      setLabel('verdict', { ...spec, point, spots, optional: true });
+    } else setLabel('verdict', null);
+    scaleLabels();
+  }
+  /** Under the bar; flush with the view's right edge when the bar is near it (the label is wider than the bar). */
+  const scalePlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.1);
+  const scaleRay = new THREE.Raycaster();
+  const scalePoint = new THREE.Vector3();
+  function scaleAnchor() {
+    const bar = toScreen(scaleBar.middle);
+    const x = bar.x > stage.width - 120 ? stage.width - 6 - 68 : bar.x; // near the right edge: flush with it (68: half the label, with a little to spare)
+    scaleRay.setFromCamera(new THREE.Vector2((x / stage.width) * 2 - 1, -(bar.y / stage.height) * 2 + 1), camera);
+    return scaleRay.ray.intersectPlane(scalePlane, scalePoint) ?? scaleBar.middle;
+  }
+  /** The 10 m bar's words, and under it the honest note about the children's size (in the test too). */
+  function scaleLabels() {
+    // one label, so the two never part: the bar's length, and under it the honest note about the children's size
+    setLabel('scale', {
+      text: `<b>${t('l_metres', { d: 10 })}</b><small>${t('note_big')}</small>`,
+      point: scaleAnchor,
+      color: '#2f3d4a',
+      kind: 'scale',
+      spots: [{ dx: 0, dy: 26 }, { dx: -6, dy: 28 }, { dx: 0, dy: -30 }, { dx: -14, dy: -6 }, ...FAR],
+    });
+  }
+  let picture = false; // a test question shows the learn scene as its picture
+  // a child's arrow is named near its head (its middle is where D's copy ends when it lies on C)
+  const nameAt = Object.fromEntries(NAMES.map((n) => [n, P(...along(WALKERS[n], 0.82), 1.5)]));
+
+  // ── the panel: one action, one result, one rule ─────────────────────────────
+  /** What the big button (and a tap on its ring) does next, with the student's step number. */
+  function plan() {
+    if (s.clue === 0) return { act: 'call', step: 1, label: 'act_call' };
+    if (s.clue === 1) return { act: 'ask', step: 2, label: 'act_ask' };
+    const n = nextChild();
+    if (n) return { act: 'send', name: n, step: 3 + s.compared.length, label: `act_send_${n}` };
+    return { act: 'again', step: '', label: 'act_again' };
+  }
+  /** What the ring goes round: you (you call and ask), or the child waiting to be sent (their visible bodies). */
+  function actionTarget() {
+    if (s.scene !== 'learn' || s.busy) return null;
+    const p = plan();
+    return p.act === 'send' ? kids[p.name].body : you.body;
+  }
+
+  function outcome() {
+    const pend = s.pending;
+    if (pend?.moving) return [t('out_moving', { x: V(pend.moving), y: V(PAIRS[pend.moving]) }), 'vector'];
+    if (pend?.walking) {
+      const v = VECTORS[pend.walking];
+      return [t('out_told', { x: V(pend.walking), d: v.length, dir: dirName(v.angle) }), 'vector'];
+    }
+    if (pend === 'calling') return [t('out_calling', { d: RING }), 'magnitude'];
+    if (pend === 'heard') return [t('out_heard', { d: RING, dir: dirName(FRIEND.angle) }), 'vector'];
+    if (s.current) {
+      const x = s.current;
+      const y = PAIRS[x];
+      const v = verdict(VECTORS[x], VECTORS[y]);
+      const key = v === 'equal' ? 'out_equal' : v === 'magnitude' ? 'out_mag' : 'out_dir';
+      return [t(key, { x: V(x), y: V(y) }), v];
+    }
+    if (s.clue >= 2) return [t('out_found', { d: RING, dir: dirName(FRIEND.angle) }), 'vector'];
+    if (s.clue === 1) return [t('out_ring', { d: RING }), 'magnitude'];
+    return [t('out_start'), ''];
+  }
+  function rule() {
+    if (s.compared.length === NAMES.length && s.current) return t('rule_all');
+    if (s.current === 'B') return t('rule_B', { a: V('A'), b: V('B') });
+    if (s.current === 'C') return t(s.compared.includes('B') ? 'rule_C_ab' : 'rule_C', { a: V('A'), b: V('B'), c: V('C') });
+    if (s.current === 'D') return t('rule_D', { c: V('C'), d: V('D') });
+    if (s.clue >= 2) return t('rule_found');
+    if (s.clue === 1) return t('rule_ring', { d: RING });
+    return t('rule_start', { temp: TEMP });
+  }
+
+  let lastKind = null;
+  function refresh() {
+    if (s.scene === 'learn') {
+      const [html, kind] = outcome();
+      sheet.outcome(html);
+      if (kind !== lastKind) outcomeEl.dataset.k = lastKind = kind;
+      sheet.rule(rule());
+    }
+    if (action) {
+      const p = plan();
+      action.set({ step: p.step, label: p.label, enabled: !s.busy && s.mode !== 'quiz' });
+    }
+    stage.invalidate();
   }
 
   function snapshot() {
-    const arrowsState = {};
-    for (const n of s.shown) {
-      const v = s.vec[n];
-      arrowsState[n] = { tail: [...v.tail], length: v.length, angle: v.angle, head: headOf(v) };
-    }
-    const p = livePair();
-    const c = p ? compare(s.vec[p.a], s.vec[p.b]) : null;
+    const p = plan();
+    const vec = (n) => {
+      const v = VECTORS[n];
+      return { tail: v.tail, length: v.length, angle: v.angle, direction: compass(v.angle) };
+    };
+    const vectors = { A: s.clue >= 2 ? vec('A') : null };
+    for (const n of NAMES) vectors[n] = s.compared.includes(n) ? vec(n) : null;
     return {
-      arrows: arrowsState,
-      thermometer: s.thermoShown ? { at: [...s.thermo.at], angle: s.thermo.angle, temperature: TEMPERATURE } : null,
-      selected: s.selected,
-      compare: p ? { a: p.a, b: p.b, sameMagnitude: c.sameMagnitude, sameDirection: c.sameDirection, equal: c.equal } : null,
+      stage: s.clue + s.compared.length, // steps done: 0 … 5
+      clue: ['none', 'distance', 'direction'][s.clue], // what the friend has said
+      found: s.clue >= 2,
+      compared: [...s.compared], // the children sent, who walked their clue and were compared
+      current: s.current ? { name: s.current, with: PAIRS[s.current], verdict: verdict(VECTORS[s.current], VECTORS[PAIRS[s.current]]) } : null,
+      vectors, // map metres: x to পূর্ব, y to উত্তর; angle from পূর্ব towards উত্তর
+      next: p.act === 'send' ? { action: p.act, step: p.step, name: p.name } : { action: p.act, step: p.step },
+      busy: s.busy,
+      camera: camera.position.toArray().map((x) => +x.toFixed(2)), // scene metres (y up, -z north)
+      target: controls.target.toArray().map((x) => +x.toFixed(2)),
       view: s.view,
       mode: s.mode,
     };
@@ -310,376 +600,306 @@ export function createApp(root, options = {}) {
   let lastEmitted = '';
   function emitChange() {
     const snap = snapshot();
-    const key = JSON.stringify([snap.arrows, snap.thermometer, snap.selected, snap.compare]);
+    const key = JSON.stringify([snap.stage, snap.compared, snap.current, snap.busy, snap.mode, snap.view]);
     if (key === lastEmitted) return;
     lastEmitted = key;
     emit('change', snap);
   }
 
-  // ── the panel ───────────────────────────────────────────────────────────────
-  const $ = ui.$;
-  const el = {
-    chip: $('.sv-name'),
-    name: $('.sv-name .sv-v'),
-    kind: $('.sv-name small'),
-    mag: $('.pvc-t.mag b'),
-    dirTerm: $('.pvc-t.dir'),
-    dir: $('.pvc-t.dir b'),
-    dirLabel: $('.pvc-t.dir small'),
-    extra: $('.sv-extra'),
-  };
+  /** @type {ReturnType<typeof createAction> | null} */
+  let action = null;
+  action = createAction({
+    stage,
+    layer: ui.coachLayer,
+    host: ui.$('.pvc-act-slot'),
+    t,
+    step: 1,
+    label: 'act_call',
+    target: actionTarget,
+    pad: 8,
+    radius: 22,
+    avoid: [ui.corner, () => anno.boxes(), () => kidBoxes(0.2)], // never over a child (the friend found!)
+    pulse: o.coach,
+    onAct: () => {
+      audio.unlock();
+      doAction();
+    },
+  });
 
-  function verdict(p) {
-    const a = s.vec[p.a];
-    const b = s.vec[p.b];
-    const c = compare(a, b);
-    if (c.equal) {
-      const [x, y] = [p.a, p.b].sort(); // the book: "A ও B ভেক্টর হুবহু এক"
-      return marks(t('cmp_equal', { a: V(x), b: V(y) }));
-    }
-    const vars = { a: V(p.a), b: V(p.b), ma: a.length, mb: b.length, da: dirText(a.angle), db: dirText(b.angle) };
-    return marks(t(c.sameMagnitude ? 'cmp_dir' : c.sameDirection ? 'cmp_mag' : 'cmp_both', vars));
+  // ── the steps ───────────────────────────────────────────────────────────────
+  const animKeys = new Set();
+  let animSeq = 0;
+  /** A tween that redraws the learn scene each frame; resolves false if called off. */
+  function anim(duration, onUpdate, fn = ease.inOutCubic) {
+    const key = `sv${++animSeq}`;
+    animKeys.add(key);
+    return tweener
+      .animate({
+        key,
+        duration,
+        ease: fn,
+        onUpdate: (k, p) => {
+          onUpdate(k, p);
+          applyLearn();
+        },
+      })
+      .finished.then((done) => {
+        animKeys.delete(key);
+        return done;
+      });
   }
-
-  function refresh() {
-    const name = s.selected;
-    const quiz = s.mode === 'quiz';
-    const scalar = name === T;
-    el.chip.classList.toggle('is-scalar', scalar);
-    el.dirTerm.classList.toggle('none', scalar);
-    if (scalar) {
-      // a temperature: a মান, and no দিক at all
-      el.name.textContent = t('temperature');
-      el.kind.textContent = t('scalar');
-      el.mag.textContent = t('temp_value', { v: TEMPERATURE });
-      el.dir.textContent = t('dir_none');
-      el.dirLabel.textContent = t('dir');
-    } else {
-      const v = s.vec[name];
-      const named = compass(v.angle);
-      el.name.textContent = name;
-      el.kind.textContent = t('vector');
-      el.mag.innerHTML = `${N(v.length)} <span class="u">${t('unit')}</span>`;
-      el.dir.textContent = dirText(v.angle);
-      el.dirLabel.textContent = named ? t('dir_sub_named', { d: v.angle }) : t('dir_sub');
-    }
-    const p = livePair();
-    let extra = t('idea');
-    if (s.drag?.part === 'head' && s.drag.moved) extra = t('turning');
-    else if (s.note) extra = t(s.note.key, s.note.vars);
-    else if (p) extra = verdict(p);
-    el.extra.innerHTML = extra;
-    for (const b of ui.$$('[data-pair]')) {
-      const [a, c] = b.dataset.pair.split(',');
-      b.classList.toggle('on', Boolean(p && p.a === a && p.b === c));
-    }
-    // on the paper: the chosen piece is highlighted; an arrow's দিক is drawn from পূর্ব (both, for a pair)
-    for (const n of NAMES) arrows[n].setSelected(!quiz && n === name && s.shown.includes(n));
-    thermo.setSelected(!quiz && scalar && s.thermoShown);
-    if (!quiz) {
-      angleMark.setVisible(!scalar && s.shown.includes(name));
-      if (!scalar) markAngle(name);
-      const other = p && !scalar && p.b === name ? p.a : null;
-      const show2 = Boolean(other) && !sameDirection(s.vec[other], s.vec[name]);
-      angleMark2.setVisible(show2);
-      if (show2) {
-        const first = angleMark.textAt();
-        const room2 = (q) => Math.min(room(q), offEast(q, s.vec[other].tail), first ? Math.hypot(q[0] - first[0], q[1] - first[1]) - 0.75 : 9);
-        angleMark2.set(s.vec[other].tail, s.vec[other].angle, N(t('deg', { d: s.vec[other].angle })), room2);
-      }
-    }
-    placeLabels();
-    ghost.show(p && s.from ? s.from : null, p ? s.vec[p.b].tail : null);
-    stage.invalidate();
+  function cancelAnims() {
+    for (const k of [...animKeys]) tweener.cancel(k);
+    animKeys.clear();
   }
-
-  function select(name, { silent = false } = {}) {
-    if (name === T ? !s.thermoShown : !s.shown.includes(name)) return;
-    if (s.selected === name) return;
-    s.selected = name;
-    if (!silent) emit('select', { name });
-    refresh();
-  }
-
-  // ── moving, turning, comparing ──────────────────────────────────────────────
-  /** Animate an arrow from where it is drawn to the vector v (carried a little above the paper). */
-  function animateTo(name, v, { duration = 0.6, lift = 10 } = {}) {
-    const from = clone(arrows[name].state);
-    const lift0 = arrows[name].state.lift;
-    const turn = ((((v.angle - from.angle) % 360) + 540) % 360) - 180; // the shorter way round
-    const far = Math.hypot(v.tail[0] - from.tail[0], v.tail[1] - from.tail[1]) > 0.01;
-    return tweener.animate({
-      key: `arrow:${name}`,
-      duration,
-      ease: ease.inOutCubic,
-      onUpdate: (k) => {
-        draw(
-          name,
-          {
-            tail: [from.tail[0] + (v.tail[0] - from.tail[0]) * k, from.tail[1] + (v.tail[1] - from.tail[1]) * k],
-            length: from.length + (v.length - from.length) * k,
-            angle: norm360(from.angle + turn * k),
-          },
-          lift0 * (1 - k) + (far ? Math.sin(Math.PI * k) * lift : 0),
-        );
-        if (name === s.selected && s.mode !== 'quiz') markAngle(name, { ...arrows[name].state, angle: v.angle });
-        stage.invalidate();
-      },
-      onComplete: () => {
-        draw(name, v);
-        refresh();
-      },
-    }).finished;
-  }
-  function put(name, v, { animate = true } = {}) {
-    s.vec[name] = clone(v);
-    if (animate) return animateTo(name, s.vec[name]);
-    tweener.cancel(`arrow:${name}`);
-    draw(name);
-    return Promise.resolve(true);
-  }
-  /** The other things on the paper as segments, for keeping a lined-up pair clear of them. */
-  function obstacles(except) {
-    const list = s.shown.filter((n) => !except.includes(n)).map((n) => [s.vec[n].tail, headOf(s.vec[n])]);
-    if (s.thermoShown) list.push(thermoEnds(s.thermo));
-    return list;
-  }
-
-  /** Line b up on a's tail (a moves too if b would not fit on the paper there) and compare them. */
-  async function lineUp(a, b, { animate = true } = {}) {
-    if (a === b || !s.shown.includes(a) || !s.shown.includes(b)) return;
-    const tail = commonTail(s.vec[a], s.vec[b], { avoid: obstacles([a, b]) });
-    const from = clone(s.vec[b]);
-    s.from = Math.hypot(from.tail[0] - tail[0], from.tail[1] - tail[1]) > 1e-6 ? from : null;
-    const moves = [];
-    // any other arrow lying on that tail goes back to its place in the book
-    for (const n of s.shown)
-      if (n !== a && n !== b && BOOK[n] && Math.hypot(s.vec[n].tail[0] - tail[0], s.vec[n].tail[1] - tail[1]) < 1e-6)
-        moves.push(put(n, BOOK[n], { animate }));
-    if (Math.hypot(s.vec[a].tail[0] - tail[0], s.vec[a].tail[1] - tail[1]) > 1e-6) moves.push(put(a, { ...s.vec[a], tail }, { animate }));
-    moves.push(put(b, { ...s.vec[b], tail }, { animate }));
-    s.pair = { a, b };
-    s.note = null;
-    s.base = null;
-    s.selected = b;
-    refresh();
-    if (animate) await Promise.all(moves);
-    announcePair();
-  }
-  let matchTimer = 0;
-  function announcePair() {
-    const p = livePair();
+  function begin() {
+    ++token;
+    cancelAnims();
+    s.busy = true;
     refresh();
     emitChange();
-    if (!p) return;
-    const c = compare(s.vec[p.a], s.vec[p.b]);
-    emit('compare', { a: p.a, b: p.b, ...c });
-    if (s.mode !== 'explore') return; // the test makes its own sounds
-    if (c.equal) {
-      // a short green moment as the two match exactly
-      audio.success();
-      clearTimeout(matchTimer);
-      arrows[p.b].setMatch(true);
-      stage.invalidate();
-      matchTimer = setTimeout(() => {
-        arrows[p.b].setMatch(false);
-        stage.invalidate();
-      }, 1400);
-    } else audio.pop();
+    return token;
   }
-
-  async function home({ animate = true } = {}) {
-    s.pair = null;
-    s.from = null;
-    s.note = null;
-    s.base = null;
-    s.thermo = { at: [...THERMO.at], angle: THERMO.angle };
-    thermo.set({ ...s.thermo, lift: 0 });
-    await Promise.all(BOOK_NAMES.map((n) => put(n, BOOK[n], { animate })));
-    refresh();
-    emitChange();
-  }
-
-  /** What changed about an arrow since the student began to turn or stretch it, for the panel. */
-  function changeNote(name) {
-    const b = s.base?.name === name ? s.base.v : null;
-    if (!b) return null;
-    const v = s.vec[name];
-    const dm = b.length !== v.length;
-    const dd = !sameDirection(b, v);
-    const n = V(name);
-    if (dm && dd) return { key: 'note_both', vars: { n, ma: b.length, mb: v.length, da: dirText(b.angle), db: dirText(v.angle) } };
-    if (dm) return { key: 'note_mag', vars: { n, a: b.length, b: v.length } };
-    if (dd) return { key: 'note_dir', vars: { n, a: dirText(b.angle), b: dirText(v.angle) } };
-    return { key: 'note_back', vars: { n } };
-  }
-
-  /** A new মান or দিক for an arrow, from the head being dragged or the keys; the arrow stays on the paper. */
-  function reshape(name, { length, angle }) {
-    const v = s.vec[name];
-    const a = angle == null ? v.angle : norm360(angle);
-    let len = Math.min(LEN_MAX, Math.max(LEN_MIN, Math.round(length ?? v.length)));
-    len = Math.min(len, maxLengthFrom(v.tail, a));
-    if (len === v.length && a === v.angle) return false;
-    if (s.base?.name !== name) s.base = { name, v: clone(v) };
-    s.vec[name] = { tail: fitOnPaper(v.tail, len, a), length: len, angle: a };
-    // in a lined-up pair the verdict says it (live); otherwise say what changed
-    s.note = livePair()?.b === name || livePair()?.a === name ? null : changeNote(name);
-    draw(name, s.vec[name], s.drag?.name === name ? 2 : 0);
-    audio.tick();
+  function end(my) {
+    if (my !== token) return false;
+    s.busy = false;
+    s.pending = null;
+    snap();
     refresh();
     emitChange();
     return true;
   }
-
-  /** Move an arrow by whole squares (the keys); it sits on another arrow's tail if it lands there. */
-  function nudge(name, dx, dy) {
-    const v = s.vec[name];
-    const raw = fitOnPaper([v.tail[0] + dx, v.tail[1] + dy], v.length, v.angle);
-    const others = s.shown.filter((n) => n !== name).map((n) => ({ name: n, tail: s.vec[n].tail }));
-    const land = landing(raw, v, others, { dock: 0.01 });
-    s.vec[name] = { ...v, tail: land.tail };
-    draw(name);
-    settled(name, land.dockedOn);
-  }
-  /** After a move: a pair if it sits on another tail, otherwise "the vector did not change". */
-  function settled(name, dockedOn) {
-    s.base = null;
-    if (dockedOn) {
-      s.pair = { a: dockedOn, b: name };
-      s.from = null;
-      s.note = null;
-      announcePair();
-    } else {
-      if (s.pair && (s.pair.a === name || s.pair.b === name)) s.pair = null;
-      s.note = { key: 'moved' };
-      audio.tick();
-      refresh();
-      emitChange();
-    }
+  /** The scene exactly as the state says. */
+  function snap() {
+    vis = visFor(s);
+    applyLearn();
   }
 
-  // ── the thermometer: move it, turn it; the temperature stays the same ───────
-  function thermoNote() {
-    s.note = { key: 'thermo_note', vars: { temp: TEMPERATURE } };
-  }
-  function turnThermo(by = ANGLE_STEP, { animate = true } = {}) {
-    const from = { ...s.thermo };
-    const angle = norm360(from.angle + by);
-    s.thermo = { at: fitThermo(from.at, angle), angle };
-    thermoNote();
-    audio.tick();
-    if (!animate) {
-      thermo.set({ ...s.thermo, lift: 0 });
-      refresh();
-      emitChange();
-      return;
+  async function stepCall(animate) {
+    const my = begin();
+    s.pending = 'calling'; // "I am 25 m away!": the ring is drawn before the panel says what it means
+    vis = visFor({ clue: 0 });
+    refresh();
+    audio.pop();
+    emit('step', { step: 1, action: 'call' });
+    if (animate) {
+      vis.ring.line = 1;
+      const look = anim(1.9, (_k, p) => (vis.you.look = Math.sin(p * Math.PI * 2) * 0.75), ease.linear);
+      // the measuring line sweeps once round, drawing the ring of every place 25 m away
+      if (!(await anim(1.4, (k) => ((vis.ring.drawn = k), (vis.ring.lineAngle = LINE_AT + 360 * k)), ease.inOutSine)) || my !== token) return;
+      audio.pop();
+      if (!(await anim(0.8, (k) => (vis.ring.marks = k), ease.linear)) || my !== token) return;
+      await look;
     }
-    tweener.animate({
-      key: 'thermo',
-      duration: 0.35,
-      onUpdate: (k) => {
-        thermo.set({
-          at: [from.at[0] + (s.thermo.at[0] - from.at[0]) * k, from.at[1] + (s.thermo.at[1] - from.at[1]) * k],
-          angle: from.angle + by * k,
-          lift: Math.sin(Math.PI * k) * 3,
-        });
-        stage.invalidate();
-      },
-      onComplete: () => {
-        thermo.set({ ...s.thermo, lift: 0 });
-        refresh();
-      },
-    });
+    s.clue = 1;
+    end(my);
+  }
+
+  async function stepAsk(animate) {
+    const my = begin();
+    s.pending = 'heard'; // "25 m, to the north-east"
+    vis = visFor({ clue: 1 });
+    refresh();
+    emit('step', { step: 2, action: 'ask' });
+    if (animate) {
+      if (!(await anim(0.45, (k) => ((vis.rose = k), (vis.ring.markOpacity = 1 - 0.7 * k), (vis.ring.lineOpacity = 1 - k))))) return;
+      if (my !== token || !(await anim(0.9, (k) => (vis.a = k), ease.inOutSine)) || my !== token) return;
+    }
+    // exactly one place: the friend pops up there
+    s.clue = 2;
+    s.pending = null;
+    refresh();
+    emitChange();
+    audio.success();
+    if (animate) {
+      if (!(await anim(0.5, (k) => ((vis.friend.pop = k), (vis.ring.opacity = 1 - 0.5 * k)), ease.linear)) || my !== token) return;
+      const dist = Math.hypot(YOU_END[0] - START[0], YOU_END[1] - START[1]);
+      vis.you.heading = headingTo(START, YOU_END);
+      const walked = await anim(
+        dist / WALK,
+        (_k, p) => {
+          vis.you.p = lerp2(START, YOU_END, p);
+          vis.you.walk = p < 1 ? (p * dist) / STRIDE + 0.001 : 0;
+          vis.you.look = 0;
+        },
+        ease.linear,
+      );
+      if (!walked || my !== token) return;
+      const h0 = vis.you.heading;
+      const next = nextChild();
+      if (
+        !(await anim(0.9, (_k, p) => {
+          vis.you.walk = 0;
+          vis.you.heading = h0 + (180 - h0) * Math.min(1, p * 2);
+          vis.friend.wave = Math.min(1, p * 3);
+          vis.friend.waveT = p * 0.9;
+          if (next) vis.w[next].show = Math.max(0, p * 2 - 1); // the first child to send appears at its start
+        })) ||
+        my !== token
+      )
+        return;
+    }
+    end(my);
+  }
+
+  /**
+   * One child's turn: told a clue, they walk it (the arrow first, then the walk), then a copy of their arrow lifts
+   * off and slides, unturned and unstretched, onto the tail the book compares it with; then the next child appears.
+   */
+  async function stepSend(name, animate) {
+    const my = begin();
+    s.pending = { walking: name };
+    s.current = null;
+    vis = visFor(s);
+    applyLearn();
+    refresh();
+    emit('step', { step: 3 + s.compared.length, action: 'send', name });
+    const w = vis.w[name];
+    if (animate) {
+      const r0 = { ...vis.ring };
+      const rose0 = vis.rose;
+      const wave0 = vis.friend.wave;
+      // the ring of places was about the friend: it goes
+      if (r0.opacity > 0.01 || rose0 > 0.01) {
+        const fade = (k) => {
+          vis.ring.opacity = r0.opacity * (1 - k);
+          vis.ring.markOpacity = r0.markOpacity * (1 - k);
+          vis.rose = rose0 * (1 - k);
+          vis.friend.wave = wave0 * (1 - k);
+        };
+        if (!(await anim(0.4, fade, ease.linear)) || my !== token) return;
+      }
+      audio.pop();
+      if (!(await anim(0.8, (k) => (w.f = k), ease.inOutSine)) || my !== token) return;
+      const L = WALKERS[name].length;
+      const walk = (_k, p) => {
+        w.p = along(WALKERS[name], p);
+        w.walk = p < 1 ? (p * L) / STRIDE + 0.001 : 0;
+      };
+      if (!(await anim(L / WALK, walk, ease.linear)) || my !== token) return;
+      w.walk = 0;
+      s.pending = { moving: name };
+      refresh();
+      vis.ghost = { name, k: 0, show: 0 };
+      if (!(await anim(0.3, (k) => (vis.ghost.show = k), ease.linear)) || my !== token) return;
+      if (!(await anim(1.2, (k) => (vis.ghost.k = k))) || my !== token) return;
+    }
+    if (!s.compared.includes(name)) s.compared.push(name);
+    landed(name);
+    if (animate) {
+      if (verdict(VECTORS[name], VECTORS[PAIRS[name]]) === 'direction' && !(await anim(0.4, (k) => (vis.arc = k), ease.linear))) return;
+      const next = nextChild();
+      if (my !== token) return;
+      if (next) {
+        vis.w[next] = { show: 0, f: 0, p: [...WALKERS[next].tail], walk: 0 };
+        if (!(await anim(0.45, (k) => (vis.w[next].show = k), ease.linear)) || my !== token) return;
+      }
+    }
+    end(my);
+  }
+
+  /** The copy has landed: the verdict, in the panel and on the field. */
+  function landed(name) {
+    s.current = name;
+    s.pending = null;
+    vis.ghost = { name, k: 1, show: 1 };
+    const v = verdict(VECTORS[name], VECTORS[PAIRS[name]]);
+    emit('compare', { name, with: PAIRS[name], verdict: v });
+    if (v === 'equal') audio.success();
+    else audio.contact();
+    applyLearn();
     refresh();
     emitChange();
   }
-  function moveThermo(at) {
-    s.thermo = { at: fitThermo(at, s.thermo.angle), angle: s.thermo.angle };
-    thermo.set({ ...s.thermo, lift: 0 });
-    thermoNote();
-    audio.tick();
+
+  /** A child already sent: its copy slides onto its partner's tail again (a tap on its arrow). */
+  async function stepCompare(name, animate) {
+    if (!s.compared.includes(name)) return;
+    const my = begin();
+    s.pending = { moving: name };
+    s.current = null;
+    vis = visFor(s);
+    vis.ghost = { name, k: 0, show: 0 };
+    vis.arc = 0;
+    applyLearn();
+    refresh();
+    if (animate) {
+      if (!(await anim(0.3, (k) => (vis.ghost.show = k), ease.linear)) || my !== token) return;
+      if (!(await anim(1.2, (k) => (vis.ghost.k = k))) || my !== token) return;
+    }
+    landed(name);
+    if (animate && verdict(VECTORS[name], VECTORS[PAIRS[name]]) === 'direction') {
+      if (!(await anim(0.4, (k) => (vis.arc = k), ease.linear)) || my !== token) return;
+    }
+    end(my);
+  }
+
+  /** Back to the start: nothing said yet, you on the compass. */
+  function goHome() {
+    ++token;
+    cancelAnims();
+    Object.assign(s, { clue: 0, compared: [], current: null, pending: null, busy: false });
+    snap();
     refresh();
     emitChange();
+  }
+
+  /** Straight to a state: the number of steps done (0 … 5) in the story's order. */
+  function jumpTo(stageN) {
+    const n = Math.max(0, Math.min(5, Math.round(Number(stageN) || 0)));
+    ++token;
+    cancelAnims();
+    s.clue = Math.min(2, n);
+    s.compared = NAMES.slice(0, Math.max(0, n - 2));
+    s.current = s.compared.at(-1) ?? null;
+    s.pending = null;
+    s.busy = false;
+    snap();
+    refresh();
+    emitChange();
+  }
+
+  /** The action: the big button, its badge, a tap on what it rings, Space/Enter/→. */
+  function doAction({ animate = true } = {}) {
+    if (s.locked) return lockedNudge();
+    if (s.busy) return;
+    if (animate && now() - lastAct < DOUBLE_TAP) return; // a double tap must not skip a step
+    lastAct = now();
+    hintOff();
+    const p = plan();
+    if (p.act === 'call') return stepCall(animate);
+    if (p.act === 'ask') return stepAsk(animate);
+    if (p.act === 'send') return stepSend(p.name, animate);
+    goHome();
+    lastAct = now();
+    return stepCall(animate);
   }
 
   // ── camera ──────────────────────────────────────────────────────────────────
-  const fitCam = new THREE.PerspectiveCamera();
-  const CORNERS = [];
-  for (const x of [-1, 1])
-    for (const z of [-1, 1]) for (const y of [0, 8]) CORNERS.push(new THREE.Vector3((x * (PAPER_SIZE.w + 4)) / 2, y, (z * (PAPER_SIZE.d + 4)) / 2));
-  // the corners of the grid itself: only these must stay clear of the buttons (paper margin and wood may go under)
-  const GRID = [];
-  for (const x of [-1, 1]) for (const z of [-1, 1]) GRID.push(new THREE.Vector3((x * PAPER.w * UNIT) / 2, 0, (z * PAPER.h * UNIT) / 2));
-  const pv = new THREE.Vector3();
-  const right = new THREE.Vector3();
-  const up = new THREE.Vector3();
-  /** Fit the paper into the box (NDC) for a view: the camera's target and distance. */
-  function fit(dir, box) {
-    const target = new THREE.Vector3(0, 0, 0);
-    let d = 450;
-    for (let i = 0; i < 8; i++) {
-      fitCam.position.copy(target).addScaledVector(dir, d);
-      fitCam.lookAt(target);
-      fitCam.updateMatrixWorld();
-      let x0 = Infinity;
-      let x1 = -Infinity;
-      let y0 = Infinity;
-      let y1 = -Infinity;
-      for (const c of CORNERS) {
-        pv.copy(c).project(fitCam);
-        x0 = Math.min(x0, pv.x);
-        x1 = Math.max(x1, pv.x);
-        y0 = Math.min(y0, pv.y);
-        y1 = Math.max(y1, pv.y);
-      }
-      const halfH = Math.tan(THREE.MathUtils.degToRad(fitCam.fov / 2)) * d;
-      right.setFromMatrixColumn(fitCam.matrixWorld, 0);
-      up.setFromMatrixColumn(fitCam.matrixWorld, 1);
-      target
-        .addScaledVector(right, ((x0 + x1) / 2 - (box.left + box.right) / 2) * halfH * fitCam.aspect)
-        .addScaledVector(up, ((y0 + y1) / 2 - (box.bottom + box.top) / 2) * halfH);
-      d *= Math.max((x1 - x0) / (box.right - box.left), (y1 - y0) / (box.top - box.bottom));
-    }
-    return { target, d };
+  /** 0 for a portrait stage … 1 for a wide one. */
+  const wideness = () => Math.min(1, Math.max(0, (stage.width / Math.max(1, stage.height) - 0.9) / 0.9));
+  function frontDir() {
+    const e = rad(44 - 6 * wideness()); // a little steeper on a phone held upright, lower on wide frames
+    return new THREE.Vector3(0, Math.sin(e), Math.cos(e));
   }
-  /** The camera for a view: the whole paper in the frame at any aspect, its grid clear of the corner buttons. */
-  function viewPose(view) {
-    fitCam.fov = camera.fov;
-    fitCam.aspect = camera.aspect;
-    fitCam.updateProjectionMatrix();
-    const dir = viewDir(view, camera.aspect);
-    const box = { left: -0.97, right: 0.97, bottom: -0.96, top: 0.96 };
-    let pose = fit(dir, box);
-    const btnLeft = 1 - (2 * (ui.corner.offsetWidth + 12)) / stage.width;
-    const btnBottom = 1 - (2 * (ui.corner.offsetHeight + 12)) / stage.height;
-    for (let k = 0; k < 6; k++) {
-      fitCam.position.copy(pose.target).addScaledVector(dir, pose.d);
-      fitCam.lookAt(pose.target);
-      fitCam.updateMatrixWorld();
-      const under = GRID.some((c) => {
-        pv.copy(c).project(fitCam);
-        return pv.x > btnLeft && pv.y > btnBottom;
-      });
-      if (!under) break;
-      box.top -= (box.top - btnBottom) / 2 + 0.01; // lower the top a little at a time, only as far as needed
-      pose = fit(dir, box);
-    }
-    return { target: pose.target, position: pose.target.clone().addScaledVector(dir, pose.d) };
+  function viewPose(view = s.view) {
+    return fitPose({ box: FRAME, dir: view === '3d' ? VIEW_3D : frontDir(), camera, width: stage.width, height: stage.height, margin: MARGIN });
   }
   function flyTo({ position, target }, duration = 0.8) {
-    const p0 = camera.position.clone();
-    const t0 = controls.target.clone();
     if (!duration) {
+      tweener.cancel('camera');
       camera.position.copy(position);
       controls.target.copy(target);
       controls.update();
       stage.invalidate();
       return Promise.resolve(true);
     }
+    const p0 = camera.position.clone();
+    const t0 = controls.target.clone();
     return tweener.animate({
       key: 'camera',
       duration,
+      ease: ease.inOutCubic,
       onUpdate: (k) => {
         camera.position.lerpVectors(p0, position, k);
         controls.target.lerpVectors(t0, target, k);
@@ -691,215 +911,99 @@ export function createApp(root, options = {}) {
   function setView(view, { animate = true } = {}) {
     s.view = view === '3d' ? '3d' : 'front';
     controls.enableRotate = s.view === '3d';
+    controls.enableZoom = s.view === '3d';
     s.userMovedCamera = false;
     syncUI();
+    emitChange();
     emit('view', { view: s.view });
-    return flyTo(viewPose(s.view), animate ? 0.8 : 0);
+    return flyTo(viewPose(), animate ? 0.8 : 0);
   }
   controls.addEventListener('start', () => {
     s.userMovedCamera = true;
     tweener.cancel('camera');
   });
   stage.onResize(() => {
-    if (s.userMovedCamera) return;
-    tweener.cancel('camera');
-    flyTo(viewPose(s.view), 0);
+    if (!s.userMovedCamera) flyTo(viewPose(), 0);
+    refresh();
   });
 
-  // ── dragging: an arrow's body moves it, its head turns and stretches it; the thermometer moves and turns ─
+  // ── touching the field ──────────────────────────────────────────────────────
   const raycaster = new THREE.Raycaster();
   const ndc = new THREE.Vector2();
-  const paperPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -PAPER_TOP);
-  const hitPoint = new THREE.Vector3();
   const canvasPoint = (e) => {
     const r = stage.canvas.getBoundingClientRect();
     return { x: e.clientX - r.left, y: e.clientY - r.top };
   };
-  function ray(p) {
+  const hits = (obj) => obj?.visible && raycaster.intersectObject(obj, false).length > 0;
+  /** What a tap at a canvas point means in the learn scene: { act } or { compare: name } or null. */
+  function pick(p) {
+    if (s.scene !== 'learn') return null;
     ndc.set((p.x / stage.width) * 2 - 1, -(p.y / stage.height) * 2 + 1);
     raycaster.setFromCamera(ndc, camera);
-  }
-  /** The piece under a canvas point: { name, part: 'body' | 'head' | 'thermo' }, a head first, or null. */
-  function pick(p) {
-    ray(p);
-    const targets = s.shown.flatMap((n) => arrows[n].hits);
-    if (s.thermoShown) targets.push(...thermo.hits);
-    const hits = raycaster.intersectObjects(targets, false);
-    if (!hits.length) return null;
-    // a head wins over a body it overlaps; of two arrows on the same tail, the one carried last is on top
-    const head = hits.find((h) => h.object.userData.part === 'head');
-    const best = head || hits.find((h) => h.object.userData.arrow === s.pair?.b) || hits[0];
-    if (best.object.userData.thermo) return { name: T, part: 'thermo' };
-    return { name: best.object.userData.arrow, part: best.object.userData.part };
-  }
-  // fingers are wide: a touch just beside an arrow still takes it
-  function pickNear(p, touch) {
-    const direct = pick(p);
-    if (direct || !touch) return direct;
-    for (const r of [9, 18]) {
-      for (let k = 0; k < 8; k++) {
-        const a = (k * Math.PI) / 4;
-        const found = pick({ x: p.x + r * Math.cos(a), y: p.y + r * Math.sin(a) });
-        if (found) return found;
-      }
-    }
+    const next = plan();
+    // a child already sent (its arrow or the child): compare again; the child waiting: send it (the next step)
+    for (const n of s.compared) if (hits(arrows[n].hit) || hits(kids[n].hit)) return { compare: n };
+    if (next.act === 'send' && hits(kids[next.name].hit)) return { act: true };
+    if (next.act !== 'send' && hits(you.hit)) return { act: true };
     return null;
   }
-  /** Where a canvas point falls on the paper, in squares. */
-  function paperAt(p) {
-    ray(p);
-    return raycaster.ray.intersectPlane(paperPlane, hitPoint) ? toPaper(hitPoint) : null;
-  }
-
+  // a real tap on what the step needs does it (the finger comes up within 8 px and 500 ms, like the kit's badge); a
+  // drag that starts there still turns the camera in the rotated view
+  /** @type {{ id: number, x: number, y: number, t: number, what: { act?: boolean, compare?: string } } | null} */
+  let down = null;
   ui.canvasHost.addEventListener(
     'pointerdown',
     (e) => {
       audio.unlock();
-      root.focus({ preventScroll: true });
-      coach?.interrupt();
-      if (s.drag || (e.pointerType === 'mouse' && e.button !== 0)) return;
-      const p = canvasPoint(e);
-      const hit = pickNear(p, e.pointerType !== 'mouse');
-      if (!hit) return; // the camera controls take it
-      e.stopPropagation(); // a drag on a piece is not a camera move
-      e.preventDefault();
-      if (s.locked) return lockedNudge();
-      const at = paperAt(p);
-      if (!at) return;
-      const drag = { id: e.pointerId, name: hit.name, part: hit.part, from: at, raw: null, x: e.clientX, y: e.clientY, moved: false };
-      if (hit.name === T) {
-        tweener.cancel('thermo');
-        drag.start = [...s.thermo.at];
-      } else {
-        tweener.cancel(`arrow:${hit.name}`);
-        draw(hit.name);
-        const v = s.vec[hit.name];
-        const tip = headOf(v);
-        drag.tail = [...v.tail];
-        drag.grab = [tip[0] - at[0], tip[1] - at[1]]; // a head follows the finger from where it was taken: nothing jumps
-      }
-      select(hit.name);
-      s.drag = drag;
-      try {
-        ui.canvasHost.setPointerCapture(e.pointerId); // the drag goes on when the finger leaves the view
-      } catch {}
-      ui.canvasHost.style.cursor = 'grabbing';
-      hideHint();
-      emit('dragstart', { name: hit.name, part: hit.part });
+      const what = pick(canvasPoint(e));
+      down = what ? { id: e.pointerId, x: e.clientX, y: e.clientY, t: now(), what } : null;
     },
     true,
   );
-  ui.canvasHost.addEventListener('pointermove', (e) => {
-    const d = s.drag;
-    if (!d || e.pointerId !== d.id) return;
-    if (!d.moved && Math.hypot(e.clientX - d.x, e.clientY - d.y) < 4) return;
-    const at = paperAt(canvasPoint(e));
-    if (!at) return;
-    if (!d.moved) {
-      d.moved = true;
-      if (d.name !== T) coach?.objectUsed();
-      if (d.part === 'head') {
-        ring.setVisible(true);
-        refresh();
+  window.addEventListener(
+    'pointerup',
+    (e) => {
+      const d = down;
+      down = null;
+      if (!d || e.pointerId !== d.id || Math.hypot(e.clientX - d.x, e.clientY - d.y) > 8 || now() - d.t > 500) return;
+      if (s.locked) return lockedNudge();
+      if (s.busy) return;
+      if (d.what.act) doAction();
+      else if (now() - lastAct >= DOUBLE_TAP) {
+        lastAct = now();
+        stepCompare(d.what.compare, true);
       }
-    }
-    if (d.part === 'thermo') {
-      d.raw = fitThermo([d.start[0] + at[0] - d.from[0], d.start[1] + at[1] - d.from[1]], s.thermo.angle);
-      thermo.set({ at: d.raw, angle: s.thermo.angle, lift: LIFT });
-      placeLabels();
-      stage.invalidate();
-      return;
-    }
-    const v = s.vec[d.name];
-    if (d.part === 'head') {
-      reshape(d.name, snapPolar(at[0] + d.grab[0] - v.tail[0], at[1] + d.grab[1] - v.tail[1]));
-      ring.set(s.vec[d.name].tail, s.vec[d.name].length);
-      stage.invalidate();
-      return;
-    }
-    // the body: the arrow follows the finger, lifted, and stays on the paper
-    const raw = fitOnPaper([d.tail[0] + at[0] - d.from[0], d.tail[1] + at[1] - d.from[1]], v.length, v.angle);
-    d.raw = raw;
-    draw(d.name, { ...v, tail: raw }, LIFT);
-    markAngle(d.name, { ...v, tail: raw });
-    placeLabels();
-    const others = s.shown.filter((n) => n !== d.name).map((n) => ({ name: n, tail: s.vec[n].tail }));
-    const land = landing(raw, v, others);
-    dockMark.show(land.dockedOn ? land.tail : null);
-    if (land.dockedOn) showHint(t('hint_dock', { a: land.dockedOn, b: d.name }), { duration: 0 });
-    else hideHint();
-    stage.invalidate();
-  });
-  function endDrag(e) {
-    const d = s.drag;
-    if (!d || e.pointerId !== d.id) return;
-    s.drag = null;
-    ui.canvasHost.style.cursor = '';
-    dockMark.show(null);
-    ring.setVisible(false);
-    hideHint();
-    if (d.part === 'thermo') {
-      // a tap turns it, a drag moves it: either way the temperature is the same
-      if (d.moved && d.raw) moveThermo([Math.round(d.raw[0] * 2) / 2, Math.round(d.raw[1] * 2) / 2]);
-      else turnThermo();
-    } else if (d.part === 'body' && d.moved && d.raw) {
-      const v = s.vec[d.name];
-      const others = s.shown.filter((n) => n !== d.name).map((n) => ({ name: n, tail: s.vec[n].tail }));
-      const land = landing(d.raw, v, others);
-      if (land.dockedOn) lineUp(land.dockedOn, d.name);
-      else {
-        put(d.name, { ...v, tail: land.tail }, { animate: false });
-        // settle onto the grid from where it was let go
-        arrows[d.name].set({ tail: d.raw });
-        animateTo(d.name, s.vec[d.name], { duration: 0.18, lift: 0 });
-        settled(d.name, null);
-      }
-      if (!s.headHinted) {
-        s.headHinted = true;
-        setTimeout(() => s.mode === 'explore' && !s.drag && showHint(t('hint_head'), { duration: 4200 }), 900);
-      }
-    } else if (d.name !== T) {
-      draw(d.name);
-      if (d.part === 'head' && d.moved) {
-        s.headHinted = true;
-        announcePair(); // the note of what changed (or the pair's verdict) stays in the panel
-      }
-    }
-    if (d.name !== T) coach?.objectReleased();
-    refresh();
-    emit('dragend', { name: d.name, part: d.part });
-  }
-  ui.canvasHost.addEventListener('pointerup', endDrag);
-  ui.canvasHost.addEventListener('pointercancel', endDrag);
+    },
+    true,
+  );
+  window.addEventListener('pointercancel', () => (down = null), true);
   let hoverQueued = false;
   ui.canvasHost.addEventListener('pointermove', (e) => {
-    if (s.drag || e.pointerType !== 'mouse' || hoverQueued) return;
+    if (e.pointerType !== 'mouse' || hoverQueued) return;
     hoverQueued = true;
     const p = canvasPoint(e);
     requestAnimationFrame(() => {
       hoverQueued = false;
-      const hit = pick(p);
-      ui.canvasHost.style.cursor = hit ? (s.locked ? 'not-allowed' : hit.part === 'head' ? 'crosshair' : 'grab') : '';
+      ui.canvasHost.style.cursor = pick(p) ? 'pointer' : '';
     });
   });
 
-  function lockedNudge() {
-    showHint(t('q_locked'), { duration: 3000 });
-    audio.error();
-  }
-
   // ── hint line ───────────────────────────────────────────────────────────────
   let hintTimer = 0;
-  function showHint(text, { duration = 4000 } = {}) {
+  function showHint(text, { duration = 3000 } = {}) {
     ui.hintText.textContent = text;
     ui.hintAct.hidden = true;
     ui.hint.classList.add('show');
     clearTimeout(hintTimer);
-    if (duration) hintTimer = setTimeout(hideHint, duration);
+    if (duration) hintTimer = setTimeout(hintOff, duration);
   }
-  function hideHint() {
+  function hintOff() {
     clearTimeout(hintTimer);
     ui.hint.classList.remove('show');
+  }
+  function lockedNudge() {
+    showHint(t('q_locked'), { duration: 2400 });
+    audio.error();
   }
 
   // ── the test ────────────────────────────────────────────────────────────────
@@ -911,62 +1015,89 @@ export function createApp(root, options = {}) {
     return list;
   };
   const pickOne = (list) => list[Math.floor(Math.random() * list.length)];
-  const randInt = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1));
-  /** Tails for the arrows of a question, laid well apart on the paper (room for their names between them). */
-  function spread(vectors) {
-    for (const gap of [1.7, 1.5, 1.3])
-      for (let k = 0; k < 20; k++) {
-        const tails = placeApart(vectors, Math.random, { gap });
-        if (tails) return vectors.map((v, i) => ({ ...v, tail: tails[i] }));
-      }
-    return vectors.map((v) => ({ ...v, tail: fitOnPaper([PAPER.w / 2, PAPER.h / 2], v.length, v.angle) }));
+  const letters = [...t('letters')];
+
+  /** The five kinds in an order where no scene gives away a later answer, the two flag questions apart. */
+  function questionOrder() {
+    const kinds = ['clue', 'find', 'why', 'equal', 'kind'];
+    for (let i = 0; i < 200; i++) {
+      shuffle(kinds);
+      const at = (k) => kinds.indexOf(k);
+      if (at('clue') < at('find') && at('why') < at('equal') && at('find') - at('clue') > 1) break;
+    }
+    return kinds;
   }
-  const txt = (html) => `<span class="sv-o">${html}</span>`;
-  const SCALARS = ['qn_temp', 'qn_time', 'qn_length', 'qn_mass'];
-  const VECTORS = ['qn_pos', 'qn_vel', 'qn_force'];
+
+  /** Every test thing hidden, the learn scene cleared, the front view. */
+  function clearTest() {
+    ++token;
+    cancelAnims();
+    tweener.cancel('test');
+    picture = false;
+    for (const f of flags) f.root.visible = false;
+    for (const c of chalk) c.clear();
+    for (const a of testArrows) a.hide();
+    ghost.hide();
+    arc.hide();
+    ring.root.visible = false;
+    ring20.setDrawn(0);
+    ring20.setMarks(0);
+    ring20.setLine(0, 0);
+    rose.highlight(null);
+    rose.root.visible = true;
+    for (const a of Object.values(arrows)) a.hide();
+    for (const k of [you, friend, ...Object.values(kids)]) {
+      k.root.visible = false;
+      k.body.scale.setScalar(1);
+    }
+    for (const id of ['you', 'friend', 'line', 'A', 'verdict', ...NAMES]) setLabel(id, null);
+    for (let i = 0; i < 6; i++) setLabel(`t${i}`, null);
+    setLabel('tq', null);
+    if (s.view !== 'front') setView('front', { animate: false });
+    stage.invalidate();
+  }
+  function youAtStart() {
+    you.root.visible = true;
+    placeKid(you, { p: START, heading: 285, walk: 0, wave: 0, waveT: 0, look: 0 });
+    // the flags' and arrows' labels matter more in a question: yours gives way when nothing is free
+    setLabel('you', { text: t('l_you'), point: headTop(you), color: '#1d2733', spots: BY_HEAD, optional: true });
+  }
+  const flagLabel = (i, k, d = null) =>
+    setLabel(`t${i}`, {
+      text: d == null ? t('flag', { k }) : t('flag_at', { k, d }),
+      point: () => flags[i].root.localToWorld(tmp.copy(flags[i].top)),
+      color: COLORS.flag,
+      spots: [
+        { dx: 0, dy: -14 },
+        { dx: 26, dy: -6 },
+        { dx: -26, dy: -6 },
+        { dx: 0, dy: 22 },
+        { dx: 30, dy: 14 },
+        { dx: -30, dy: 14 },
+        { dx: 0, dy: -30 },
+        ...FAR,
+      ],
+    });
+  function placeFlag(i, angle, d = TEST_D) {
+    const [x, y] = headOf({ tail: START, length: d, angle });
+    flags[i].root.visible = true;
+    flags[i].root.position.copy(P(x, y));
+    return [x, y];
+  }
+  const testTween = (duration, onUpdate, fn = ease.inOutCubic) =>
+    tweener.animate({
+      key: 'test',
+      duration,
+      ease: fn,
+      onUpdate: (k, p) => {
+        onUpdate(k, p);
+        stage.invalidate();
+      },
+    }).finished;
+
   let kinds = [];
   let question = null;
-  let saved = null; // the student's arrows and thermometer, put back after the test
-  let schoolLabel = null;
-  let houseLabel = null;
-  let scaleLabel = null;
-
-  function clearScene() {
-    for (const n of NAMES) {
-      tweener.cancel(`arrow:${n}`);
-      arrows[n].setLabelVisible(true);
-    }
-    s.pair = null;
-    s.from = null;
-    s.note = null;
-    ring.setVisible(false);
-    angleMark.setVisible(false);
-    angleMark2.setVisible(false);
-    places.setHouse(null);
-    places.setFlag(null);
-    for (const l of [schoolLabel, houseLabel, scaleLabel]) if (l) l.visible = false;
-  }
-  /** Show these vectors (name → vector), and the thermometer if asked, and nothing else. */
-  function stageVectors(map, { thermometer = false } = {}) {
-    clearScene();
-    for (const [n, v] of Object.entries(map)) put(n, v, { animate: false });
-    if (thermometer) {
-      s.thermo = { at: [...THERMO.at], angle: THERMO.angle };
-      thermo.set({ ...s.thermo, lift: 0 });
-    }
-    showOnly(Object.keys(map), { thermometer });
-    refresh();
-  }
-  function flatLabel(text, color, size) {
-    const m = textMesh(text, size, { color, weight: 700 });
-    m.rotation.x = -Math.PI / 2;
-    m.userData.noExport = true;
-    world.add(m);
-    return m;
-  }
-  /** Of some candidate spots (paper coordinates), the one with most room, given a room function. */
-  const roomiest = (spots, roomAt) =>
-    spots.reduce((best, p, i) => (roomAt(p) - i * 0.05 > roomAt(best.p) - best.i * 0.05 ? { p, i } : best), { p: spots[0], i: 0 }).p;
+  let learnSaved = null;
 
   const quiz = createQuiz({
     ui,
@@ -974,259 +1105,264 @@ export function createApp(root, options = {}) {
     emit,
     audio,
     questions: 5,
+    action,
+    lines: { text: 2, feedback: 3 },
     hooks: {
       enter() {
+        learnSaved = { clue: s.clue, compared: [...s.compared], current: s.current };
+        ++token;
+        cancelAnims();
+        s.busy = false;
+        s.pending = null;
+        Object.assign(s, { clue: 0, compared: [], current: null });
         s.mode = 'quiz';
-        saved = {
-          vec: Object.fromEntries(BOOK_NAMES.map((n) => [n, clone(s.vec[n])])),
-          thermo: { at: [...s.thermo.at], angle: s.thermo.angle },
-          selected: s.selected,
-          pair: s.pair,
-        };
-        s.base = null;
-        hideHint();
-        kinds = shuffle(['equal', 'why', 'kind', 'need', 'read']);
-        syncUI();
-      },
-      leave() {
-        s.mode = 'explore';
-        s.locked = false;
-        clearScene();
-        if (saved) {
-          for (const n of BOOK_NAMES) put(n, saved.vec[n], { animate: false });
-          s.thermo = saved.thermo;
-          thermo.set({ ...s.thermo, lift: 0 });
-          s.selected = saved.selected;
-          s.pair = saved.pair;
-        }
-        showOnly(BOOK_NAMES, { thermometer: true });
+        s.scene = 'test';
+        s.locked = true;
+        hintOff();
+        kinds = questionOrder();
         syncUI();
         refresh();
         emitChange();
       },
-      prepare(i, _alive, say) {
-        const kind = kinds[i % kinds.length];
-        s.locked = true;
-        if (kind === 'equal') {
-          // A, and one arrow equal to it among three that are not: turned, longer or shorter, reversed
-          const len = randInt(3, 5);
-          const ang = randInt(0, 7) * 45;
-          const others = shuffle([
-            { role: 'same', length: len, angle: ang },
-            { role: 'turned', length: len, angle: norm360(ang + pickOne([45, -45, 90, -90])) },
-            { role: 'size', length: len + pickOne([-2, -1, 1, 2]), angle: ang },
-            { role: 'reversed', length: len, angle: norm360(ang + 180) },
-          ]);
-          const placed = spread([{ length: len, angle: ang }, ...others]);
-          const map = { A: placed[0] };
-          const names = ['B', 'C', 'D', 'E'];
-          names.forEach((n, k) => (map[n] = placed[k + 1]));
-          stageVectors(map);
-          const right = others.findIndex((x) => x.role === 'same');
-          question = { kind, x: names[right] };
-          say(t('q_equal', { a: 'A' }));
-          return { choices: [0, 1, 2, 3], expected: right, tolerance: 0.5, label: (j) => V(names[j]), meta: { kind, vectors: snapshot().arrows } };
-        }
-        if (kind === 'why') {
-          const len = randInt(3, 5);
-          const ang = randInt(0, 7) * 45;
-          const why = pickOne(['dir', 'mag', 'both']);
-          const other =
-            why === 'dir'
-              ? { length: len, angle: norm360(ang + pickOne([45, 90, 135, 180, -45, -90])) }
-              : why === 'mag'
-                ? { length: len + pickOne([-2, -1, 1, 2]), angle: ang }
-                : { length: len + pickOne([-2, -1, 1, 2]), angle: norm360(ang + pickOne([90, -90, 135])) };
-          const [A, C] = spread([{ length: len, angle: ang }, other]);
-          stageVectors({ A, C });
-          const opts = shuffle(['why_dir', 'why_mag', 'why_both', 'why_place']);
-          question = { kind, why, A, C };
-          say(t('q_why', { a: 'A', c: 'C' }));
-          return {
-            choices: [0, 1, 2, 3],
-            expected: opts.indexOf(`why_${why}`),
-            tolerance: 0.5,
-            label: (j) => txt(t(opts[j])),
-            meta: { kind, why },
-          };
-        }
-        if (kind === 'kind') {
-          // the scene: the thermometer (a scalar) beside an arrow (a vector); for the notation, the arrow alone
-          const variant = pickOne(['vec', 'sca', 'notq', 'notation']);
-          stageVectors({ A: BOOK.A }, { thermometer: variant !== 'notation' });
-          let right;
-          let wrong;
-          if (variant === 'vec') {
-            right = pickOne(VECTORS);
-            wrong = shuffle([...SCALARS]).slice(0, 3);
-          } else if (variant === 'sca') {
-            right = pickOne(SCALARS);
-            wrong = [...VECTORS];
-          } else if (variant === 'notq') {
-            right = pickOne(['qn_joy', 'qn_sorrow']);
-            wrong = shuffle([...SCALARS, ...VECTORS]).slice(0, 3);
-          } else {
-            right = 'nt_arrow';
-            wrong = ['nt_bold', 'nt_capital', 'nt_bracket'];
-          }
-          const opts = shuffle([right, ...wrong]);
-          question = { kind, variant, right };
-          say(t(`q_${variant}`));
-          return { choices: [0, 1, 2, 3], expected: opts.indexOf(right), tolerance: 0.5, label: (j) => txt(t(opts[j])), meta: { kind, variant } };
-        }
-        if (kind === 'need') {
-          // "the school is r km from home": the house in the middle, every place r km away is a ring
-          const r = pickOne([3, 4]);
-          const at = [6, 5];
-          stageVectors({});
-          places.setHouse(at);
-          ring.set(at, r);
-          ring.setVisible(true);
-          // the school's direction: one whose place and name keep clear of the compass rose
-          const angle = pickOne(
-            [0, 45, 90, 135, 180, 225, 270, 315].filter((a) => {
-              const h = headOf({ tail: at, length: r, angle: a });
-              return Math.hypot(h[0] - ROSE.x, h[1] - ROSE.y) > ROSE.r + 2.2;
-            }),
-          );
-          houseLabel ??= flatLabel(t('house'), COLORS.ink, 4.2);
-          houseLabel.visible = true;
-          // the name on the far side of the house from where the answer's arrow will go
-          const away = headOf({ tail: at, length: 1.2, angle: norm360(angle + 180) });
-          toWorld(away[0], away[1], 0.3, houseLabel.position);
-          scaleLabel ??= flatLabel(t('scale_km', { one: 1 }), '#4b5766', 3.6);
-          scaleLabel.visible = true;
-          toWorld(PAPER.w - 1.9, 0.45, 0.3, scaleLabel.position);
-          const opts = shuffle(['need_dir', 'need_time', 'need_exact', 'need_unit']);
-          question = { kind, r, at, angle, away };
-          stage.invalidate();
-          say(t('q_need', { r }));
-          const vars = { dir: t(`dir_${compass(angle)}`), h: 1, r: r.toFixed(2), m: r * 1000 };
-          return {
-            choices: [0, 1, 2, 3],
-            expected: opts.indexOf('need_dir'),
-            tolerance: 0.5,
-            label: (j) => txt(t(opts[j], vars)),
-            meta: { kind, km: r },
-          };
-        }
-        // read the arrow: its মান (count the parts) and its দিক (by the compass rose)
-        const v = { length: randInt(2, 6), angle: randInt(0, 7) * 45 };
-        const [A] = spread([v]);
-        stageVectors({ A });
-        const list = shuffle([v, ...readingMistakes(v)]);
-        question = { kind, A };
-        say(t('q_read'));
-        return {
-          choices: [0, 1, 2, 3],
-          expected: list.findIndex((c) => c.length === v.length && c.angle === v.angle),
-          tolerance: 0.5,
-          label: (j) => txt(t('read_opt', { n: list[j].length, dir: t(`dir_${compass(list[j].angle)}`) })),
-          meta: { kind, length: v.length, angle: v.angle },
-        };
+      leave() {
+        clearTest();
+        s.mode = 'explore';
+        s.scene = 'learn';
+        s.locked = false;
+        hintOff();
+        Object.assign(s, learnSaved || { clue: 0, compared: [], current: null });
+        s.busy = false;
+        s.pending = null;
+        snap();
+        syncUI();
+        refresh();
+        emitChange();
       },
-      reveal() {
-        const q = question;
-        if (q.kind === 'equal') {
-          lineUp('A', q.x);
-          return t('equal_work', { x: V(q.x), a: V('A') });
+      async prepare(i, alive) {
+        clearTest();
+        if (i === 0) {
+          kinds = questionOrder(); // a new order on "আবার পরীক্ষা দাও" too
+          s.locked = true;
         }
-        if (q.kind === 'why') {
-          const { A, C } = q;
-          lineUp('A', 'C');
-          const vars = { l: A.length, d: dirText(A.angle), la: A.length, lc: C.length, da: dirText(A.angle), dc: dirText(C.angle) };
-          return t(`why_work_${q.why}`, vars);
-        }
-        if (q.kind === 'kind') {
-          const key = { vec: 'vec_work', sca: 'sca_work', notq: 'notq_work', notation: 'notation_work' }[q.variant];
-          return t(key, { q: t(q.right), va: '<span class="sv-arrowed">A</span>', vb: V('A') });
-        }
-        if (q.kind === 'need') {
-          const head = headOf({ tail: q.at, length: q.r, angle: q.angle });
-          const v = { tail: q.at, length: q.r, angle: q.angle };
-          put('A', { tail: q.at, length: 1, angle: q.angle }, { animate: false });
-          showOnly(['A']);
-          arrows.A.setLabelVisible(false);
-          s.vec.A = v;
-          animateTo('A', v, { duration: 0.7, lift: 0 });
-          places.setFlag(head);
-          schoolLabel ??= flatLabel(t('school'), COLORS.ink, 4.2);
-          schoolLabel.visible = true;
-          // the school's name next to the flag where there is room: off the arrow, the rose, the edge
-          const out = (k, side) => {
-            const a = ((q.angle + side * 90) * Math.PI) / 180;
-            const b = headOf({ tail: q.at, length: q.r + k, angle: q.angle });
-            return side ? [b[0] + Math.cos(a) * 1.1, b[1] + Math.sin(a) * 1.1] : b;
-          };
-          const at = roomiest([out(1.1, 0), out(0, 1), out(0, -1), out(0.6, 1), out(0.6, -1)], (p) =>
-            Math.min(
-              p[0] - 0.6,
-              p[1] - 0.4,
-              PAPER.w - 0.6 - p[0],
-              PAPER.h - 0.4 - p[1],
-              Math.hypot(p[0] - ROSE.x, p[1] - ROSE.y) - ROSE.r - 0.5,
-              segmentDistance(p, p, q.at, head),
-              Math.hypot(p[0] - q.away[0], p[1] - q.away[1]) - 1,
-            ),
-          );
-          toWorld(at[0], at[1], 0.3, schoolLabel.position);
-          stage.invalidate();
-          return t('need_work', { r: q.r, dir: t(`dir_${compass(q.angle)}`) });
-        }
-        const v = q.A;
-        markAngle('A', v);
-        angleMark.setVisible(true);
-        stage.invalidate();
-        return t('read_work', { n: v.length, dir: t(`dir_${compass(v.angle)}`) });
+        const kind = kinds[i % kinds.length];
+        if (kind === 'clue') return prepClue();
+        if (kind === 'find') return prepFind();
+        if (kind === 'equal') return prepEqual();
+        if (kind === 'why') return prepWhy();
+        if (!alive()) return null;
+        return prepKind();
+      },
+      reveal(_q, correct, picked) {
+        return revealFor(question, correct, picked.index);
       },
       done() {
         s.locked = false;
-        refresh();
       },
     },
   });
 
-  // ── first-use pointer: on arrow B, which the student can carry onto A ───────
-  let coach = null;
-  if (o.coach) {
-    const v = new THREE.Vector3();
-    coach = createCoach({
-      stage,
-      layer: ui.coachLayer,
-      t,
-      loupe: null,
-      tweener,
-      avoid: [ui.corner, ui.hint],
-      object: {
-        label: 'coach_drag',
-        candidates: () =>
-          [0.4, 0.3, 0.55].map((k) => {
-            arrows.B.pointAt(k, v).project(camera);
-            return { x: (v.x * 0.5 + 0.5) * stage.width, y: (-v.y * 0.5 + 0.5) * stage.height };
-          }),
-        grabbable: (p) => {
-          const hit = pick(p);
-          return hit?.name === 'B' && hit.part === 'body';
-        },
-        // B slides a little towards A's tail and back, as if it wants to be compared
-        async demo(alive) {
-          const b = s.vec.B;
-          const a = s.vec.A;
-          const len = Math.hypot(a.tail[0] - b.tail[0], a.tail[1] - b.tail[1]) || 1;
-          const to = { ...b, tail: [b.tail[0] + ((a.tail[0] - b.tail[0]) / len) * 0.9, b.tail[1] + ((a.tail[1] - b.tail[1]) / len) * 0.9] };
-          for (let i = 0; i < 2 && alive() && !s.drag; i++) {
-            if (!(await animateTo('B', to, { duration: 0.55, lift: 3 }))) return;
-            if (!alive()) return;
-            if (!(await animateTo('B', s.vec.B, { duration: 0.55, lift: 3 }))) return;
-          }
-        },
-        cancel: () => {
-          tweener.cancel('arrow:B');
-          draw('B');
-          stage.invalidate();
-        },
-      },
+  const choiceList = (items, kind, meta = {}) => {
+    const list = shuffle([...items]);
+    question = { kind, list, ...meta };
+    return {
+      choices: [0, 1, 2, 3],
+      expected: list.findIndex((x) => x.right),
+      tolerance: 0.5,
+      label: (j) => `<span class="sv-opt">${list[j].text}</span>`,
+      meta: { kind, answer: items.find((x) => x.right).key },
+    };
+  };
+
+  /** "I am 20 m away": three flags, all 20 m from you in three directions; which one? Any of them. */
+  /**
+   * "I am 20 m away": three flags with their distances chalked on the grass, two 20 m away and one nearer. Where can
+   * Raju be? Either of the two (a মান alone leaves more than one place). Every choice is a set of flags.
+   */
+  function prepClue() {
+    rose.root.visible = false; // no directions in this question: the chalk lines would run over the compass letters
+    const start = Math.floor(Math.random() * 8);
+    const angles = [start, start + 3, start + 5].map((k) => (k % 8) * 45);
+    const near = Math.floor(Math.random() * 3); // which of the three is not 20 m away
+    const ks = shuffle([...letters.slice(0, 3)]);
+    const spots = angles.map((a, j) => ({ a, k: ks[j], d: j === near ? TEST_NEAR : TEST_D })).sort((p, q) => p.k.localeCompare(q.k));
+    spots.forEach(({ a, k, d }, j) => {
+      placeFlag(j, a, d);
+      chalk[j].set(headOf({ tail: START, length: 2.6, angle: a }), headOf({ tail: START, length: d - 2, angle: a }));
+      flagLabel(j, k, d); // its name and its distance in one label
     });
+    const far = spots.filter((p) => p.d === TEST_D).map((p) => p.k);
+    const closer = spots.find((p) => p.d !== TEST_D).k;
+    const items = [
+      { key: 'two', right: true, text: t('c_two', { a: far[0], b: far[1] }) },
+      { key: 'all', text: t('c_all', { a: spots[0].k, b: spots[1].k, c: spots[2].k }) },
+      ...far.map((k, j) => ({ key: `only_${j}`, k, other: far[1 - j], text: t('c_only', { k }) })),
+    ];
+    youAtStart(); // last: its label gives way to the flags' names
+    return { text: t('q_clue', { d: TEST_D }), ...choiceList(items, 'clue', { far, closer }) };
+  }
+
+  /** "20 m to the south-east": four flags 20 m away on the diagonals; the clue's direction picks one. */
+  function prepFind() {
+    const angle = pickOne([45, 135, 225, 315]);
+    const opts = findOptions(angle);
+    const ks = shuffle([...letters]);
+    opts.forEach((op, j) => {
+      placeFlag(j, op.angle);
+      op.k = ks[j];
+      flagLabel(j, op.k);
+    });
+    ring20.setDrawn(1);
+    ring20.setOpacity(0.35);
+    youAtStart(); // last: its label gives way to the flags' names
+    const sorted = [...opts].sort((p, q) => p.k.localeCompare(q.k));
+    question = { kind: 'find', angle, opts, sorted };
+    return {
+      text: t('q_find', { d: TEST_D, dir: dirName(angle) }),
+      choices: [0, 1, 2, 3],
+      expected: sorted.findIndex((op) => op.kind === 'right'),
+      tolerance: 0.5,
+      label: (j) => `<span class="sv-opt">${t('flag', { k: sorted[j].k })}</span>`,
+      meta: { kind: 'find', answer: compass(angle) },
+    };
+  }
+
+  /** Five arrows on the field: which is the same vector as A? (turned, half as long and reversed are near misses) */
+  function prepEqual() {
+    rose.root.visible = false; // the arrows lie where the compass is; the question is about matching them
+    const a = pickOne([45, 90, 0, 135]);
+    const opts = shuffle(equalOptions({ length: TEST_L, angle: a }, pickOne([90, -90])));
+    const cells = shuffle([0, 1, 2, 3, 4, 5]);
+    const aCell = cells[0];
+    const placed = opts.map((op, j) => ({ ...op, cell: cells[j + 1] })).sort((p, q) => p.cell - q.cell);
+    const names = ['B', 'C', 'D', 'E'];
+    const A = { tail: centredTail(CELLS[aCell], TEST_L, a), length: TEST_L, angle: a };
+    testArrows[0].set(A);
+    setLabel('t0', { text: V('A'), point: () => testArrows[0].middle(), color: COLORS.vector, spots: WIDE_BESIDE });
+    placed.forEach((op, j) => {
+      op.name = names[j];
+      op.v = { tail: centredTail(CELLS[op.cell], op.length, op.angle), length: op.length, angle: op.angle };
+      testArrows[j + 1].set(op.v);
+      setLabel(`t${j + 1}`, { text: V(op.name), point: () => testArrows[j + 1].middle(), color: COLORS.vector, spots: WIDE_BESIDE });
+    });
+    question = { kind: 'equal', A, placed };
+    return {
+      text: t('q_equal', { a: 'A' }),
+      choices: [0, 1, 2, 3],
+      expected: placed.findIndex((op) => op.kind === 'equal'),
+      tolerance: 0.5,
+      label: (j) => `<span class="sv-opt sv-opt-vec">${V(placed[j].name)}</span>`,
+      meta: { kind: 'equal', answer: placed.find((op) => op.kind === 'equal').name },
+    };
+  }
+
+  /** Two arrows P and Q: why are they different vectors? (only the দিক, only the মান, or both differ) */
+  function prepWhy() {
+    rose.root.visible = false; // the arrows lie where the compass is; the question is about matching them
+    const kind = pickOne(['direction', 'magnitude', 'both']);
+    const a = pickOne([45, 0, 90, 135]);
+    const p = { length: TEST_L, angle: a };
+    const q = whyPartner(p, kind, pickOne([90, -90]));
+    const [cp, cq] = pickOne([
+      [0, 5],
+      [3, 2],
+      [0, 4],
+      [3, 1],
+    ]);
+    const P1 = { ...p, tail: centredTail(CELLS[cp], p.length, p.angle) };
+    const Q1 = { ...q, tail: centredTail(CELLS[cq], q.length, q.angle) };
+    testArrows[0].set(P1);
+    testArrows[1].set(Q1);
+    setLabel('t0', { text: V('P'), point: () => testArrows[0].middle(), color: COLORS.vector, spots: WIDE_BESIDE });
+    setLabel('t1', { text: V('Q'), point: () => testArrows[1].middle(), color: COLORS.vector, spots: WIDE_BESIDE });
+    const items = ['direction', 'magnitude', 'both', 'place'].map((k) => ({ key: k, right: k === kind, text: t(`w_${k}`) }));
+    return { text: t('q_why', { p: 'P', q: 'Q' }), ...choiceList(items, 'why', { P: P1, Q: Q1, answer: kind }) };
+  }
+
+  /**
+   * The found friend as the picture (the ring of places 25 m away, the arrow A to the one place): what is the
+   * distance and what is A; or, in this story, what needs a দিক as well as a মান. Choices of one form each.
+   */
+  function prepKind() {
+    picture = true;
+    s.clue = 2; // the learn scene's step 2 as the picture (the learn state is kept apart and comes back)
+    vis = visFor({ clue: 2 }, { waiting: false });
+    applyLearn();
+    setLabel('line', null);
+    const what = Math.random() < 0.5;
+    const items = what
+      ? ['k_right', 'k_swap', 'k_both_s', 'k_both_v'].map((key, j) => ({ key, right: j === 0, text: t(key) }))
+      : ['n_where', 'n_far', 'n_time', 'n_temp'].map((key, j) => ({ key, right: j === 0, text: t(key) }));
+    return { text: t(what ? 'q_kind_what' : 'q_kind_need', { d: RING }), ...choiceList(items, 'kind', { what }) };
+  }
+
+  /** The worked answer (it leads with the answer and names the student's mistake); the scene shows it. */
+  function revealFor(q, correct, pickedIndex) {
+    const my = token;
+    if (q.kind === 'clue') {
+      ring20.setOpacity(1);
+      testTween(0.9, (k) => (ring20.setDrawn(k), ring20.setMarks(Math.max(0, k * 1.4 - 0.4))), ease.linear);
+      const pick = q.list[pickedIndex];
+      const note = correct ? '' : pick.key === 'all' ? t('not_all', { c: q.closer, n: TEST_NEAR }) : t('not_only', { o: pick.other, d: TEST_D });
+      return t('why_clue', { a: q.far[0], b: q.far[1], d: TEST_D }) + (note ? ` ${note}` : '');
+    }
+    if (q.kind === 'find') {
+      const right = q.opts.find((op) => op.kind === 'right');
+      rose.highlight(right.angle);
+      testArrows[0].set({ tail: START, length: TEST_D, angle: right.angle }, 0);
+      testTween(0.8, (k) => testArrows[0].set({ tail: START, length: TEST_D, angle: right.angle }, k), ease.inOutSine).then((done) => {
+        if (!done || my !== token) return;
+        const [x, y] = headOf({ tail: START, length: TEST_D, angle: right.angle });
+        friend.root.visible = true;
+        placeKid(friend, { p: [x + 3.2, y], heading: 270, walk: 0, look: 0, wave: 1, waveT: 0.5 });
+        testTween(0.45, (k) => friend.body.scale.setScalar(popScale(k)), ease.linear);
+      });
+      const pick = q.sorted[pickedIndex];
+      const note = correct ? '' : ` ${t(`not_${pick.kind}`, { dir: dirName(pick.angle) })}`;
+      return t('why_find', { k: right.k, d: TEST_D, dir: dirName(right.angle) }) + note;
+    }
+    if (q.kind === 'equal') {
+      const j = q.placed.findIndex((op) => op.kind === 'equal');
+      const op = q.placed[j];
+      testTween(1.2, (k) => {
+        ghost.set({ ...op.v, tail: lerp2(op.v.tail, q.A.tail, k) }, 1, 1.2 + Math.sin(Math.PI * k) * 5);
+        ghost.setOpacity(0.66);
+      });
+      const pick = q.placed[pickedIndex];
+      return t('why_equal', { x: V(op.name), a: V('A') }) + (correct ? '' : ` ${t(`not_${pick.kind}`, { x: V(pick.name) })}`);
+    }
+    if (q.kind === 'why') {
+      const { P: P1, Q: Q1 } = q;
+      testTween(1.2, (k) => {
+        ghost.set({ ...Q1, tail: lerp2(Q1.tail, P1.tail, k) }, 1, 1.2 + Math.sin(Math.PI * k) * 5);
+        ghost.setOpacity(0.66);
+      }).then((done) => {
+        if (done && my === token && q.answer !== 'magnitude') arc.set(P1.tail, P1.angle, Q1.angle, 9, 1);
+        stage.invalidate();
+      });
+      const vars = { l1: P1.length, l2: Q1.length, d1: dirName(P1.angle), d2: dirName(Q1.angle) };
+      let note = '';
+      if (!correct) {
+        const pick = q.list[pickedIndex].key;
+        if (pick === 'place') note = t('not_place');
+        else {
+          const sameMag = P1.length === Q1.length;
+          const sameDir = P1.angle === Q1.angle;
+          const claimsMagDiff = pick === 'magnitude' || pick === 'both';
+          const claimsDirDiff = pick === 'direction' || pick === 'both';
+          const notes = [];
+          if (claimsMagDiff && sameMag) notes.push(t('not_same_mag'));
+          if (!claimsMagDiff && !sameMag) notes.push(t('not_diff_mag'));
+          if (claimsDirDiff && sameDir) notes.push(t('not_same_dir'));
+          if (!claimsDirDiff && !sameDir) notes.push(t('not_diff_dir'));
+          note = notes[0] ?? ''; // the first wrong claim (one note keeps the answer short)
+        }
+      }
+      return t(`why_${q.answer}`, vars) + (note ? ` ${note}` : '');
+    }
+    // kind
+    const pick = q.list[pickedIndex];
+    const note = correct ? '' : ` ${t(`not_${pick.key}`, { d: RING, temp: TEMP })}`;
+    return t(q.what ? 'why_kind_what' : 'why_kind_need', { d: RING }) + note;
   }
 
   // ── buttons, keys ───────────────────────────────────────────────────────────
@@ -1240,23 +1376,17 @@ export function createApp(root, options = {}) {
     }
     ui.learn.inert = s.mode === 'quiz';
     ui.quiz.inert = s.mode !== 'quiz';
-    coach?.setMode(s.mode);
   }
   const fullscreenBtn = ui.$('[data-act="fullscreen"]');
   if (fullscreenBtn && !document.fullscreenEnabled) fullscreenBtn.hidden = true;
   root.addEventListener('click', (e) => {
-    const b = /** @type {HTMLElement} */ (e.target).closest('button');
+    const b = /** @type {Element} */ (e.target).closest('button');
     if (!b || !root.contains(b)) return;
     audio.unlock();
     if (b.dataset.view) setView(b.dataset.view);
     if (b.dataset.mode === 'quiz' && s.mode !== 'quiz') quiz.start();
     if (b.dataset.mode === 'explore') quiz.stop();
     if (b.dataset.q != null) quiz.choose(Number(b.dataset.q));
-    if (b.dataset.pair && s.mode === 'explore') {
-      const [a, c] = b.dataset.pair.split(',');
-      coach?.objectUsed();
-      lineUp(a, c);
-    }
     switch (b.dataset.act) {
       case 'q-next':
         quiz.next();
@@ -1265,7 +1395,8 @@ export function createApp(root, options = {}) {
         quiz.start();
         break;
       case 'home':
-        if (s.mode === 'explore') home();
+        if (s.locked) lockedNudge();
+        else goHome();
         break;
       case 'fullscreen':
         if (document.fullscreenElement) document.exitFullscreen?.();
@@ -1274,51 +1405,32 @@ export function createApp(root, options = {}) {
     }
   });
   root.addEventListener('keydown', (e) => {
-    const target = /** @type {HTMLElement} */ (e.target);
+    const target = /** @type {Element} */ (e.target);
     if (target.closest('input, textarea, select') || e.metaKey || e.ctrlKey || e.altKey) return;
-    const k = e.key.toLowerCase();
-    const n = s.selected;
-    const explore = s.mode === 'explore' && !s.locked;
-    const step = { arrowleft: [-1, 0], arrowright: [1, 0], arrowup: [0, 1], arrowdown: [0, -1] }[k];
-    if (explore && 'abcd'.includes(k) && k.length === 1) select(k.toUpperCase());
-    else if (explore && '1234'.includes(k) && k.length === 1) select(BOOK_NAMES[Number(k) - 1]);
-    else if (explore && k === 't') {
-      if (s.selected === T) turnThermo();
-      else select(T);
-    } else if (explore && n === T && step) {
-      if (e.shiftKey && step[0]) turnThermo(-step[0] * ANGLE_STEP);
-      else moveThermo([s.thermo.at[0] + step[0], s.thermo.at[1] + step[1]]);
-    } else if (explore && step && e.shiftKey) {
-      if (step[0])
-        reshape(n, { angle: s.vec[n].angle - step[0] * ANGLE_STEP }); // ← turns anticlockwise
-      else reshape(n, { length: s.vec[n].length + step[1] });
-    } else if (explore && step) nudge(n, step[0], step[1]);
-    else if (explore && n !== T && (k === '[' || k === ']')) reshape(n, { angle: s.vec[n].angle + (k === '[' ? ANGLE_STEP : -ANGLE_STEP) });
-    else if (explore && n !== T && (k === '+' || k === '=' || k === '-')) reshape(n, { length: s.vec[n].length + (k === '-' ? -1 : 1) });
-    else if (explore && k === 'h') home();
-    else if (k === 'f') setView('front');
-    else if (k === 'v') setView('3d');
-    else if (k === 'escape') hideHint();
+    const k = e.key;
+    const onButton = Boolean(target.closest('button'));
+    const sceneKey = ['ArrowRight', 'ArrowLeft', 'r', 'R', 'Home'].includes(k) || ((k === ' ' || k === 'Enter') && !onButton);
+    if (sceneKey && s.mode === 'quiz') {
+      if (quiz.active && !quiz.revealed) lockedNudge();
+      return;
+    }
+    if (k === 'ArrowRight' || ((k === ' ' || k === 'Enter') && !onButton)) doAction();
+    else if (k === 'ArrowLeft') jumpTo(Math.max(0, snapshot().stage - 1));
+    else if (k === 'r' || k === 'R' || k === 'Home') goHome();
+    else if (k === 'f' || k === 'F') setView('front');
+    else if (k === 'v' || k === 'V') setView('3d');
+    else if (k === 'Escape') hintOff();
     else return;
     e.preventDefault();
   });
 
   // ── start ───────────────────────────────────────────────────────────────────
-  for (const n of NAMES) draw(n, s.vec[n] || BOOK.A);
-  thermo.set({ ...s.thermo, lift: 0 });
-  showOnly(BOOK_NAMES, { thermometer: true });
-  if (BOOK_NAMES.includes(String(o.select).toUpperCase())) s.selected = String(o.select).toUpperCase();
-  const startPair = String(o.compare || '')
-    .toUpperCase()
-    .split(',')
-    .map((x) => x.trim());
-  if (startPair.length === 2 && startPair.every((x) => BOOK_NAMES.includes(x))) lineUp(startPair[0], startPair[1], { animate: false });
+  jumpTo(o.stage);
   setView(s.view, { animate: false });
   syncUI();
   refresh();
   const ready = (async () => {
     if (o.mode === 'quiz') quiz.start();
-    else coach?.start();
   })();
 
   return {
@@ -1330,61 +1442,62 @@ export function createApp(root, options = {}) {
     },
     getState: snapshot,
     /**
-     * Change any of: home (true: every piece back to its place), arrows ({ C: { tail: [x, y], length, angle } }:
-     * squares, whole units 1–7, degrees from পূর্ব), compare (["A", "B"]: B is lined up on A's tail; false: none),
-     * thermometer ({ at: [x, y], angle }), select ("C", or "T" for the thermometer), view; animate: false jumps.
+     * Change any of: stage (0 … 5: the steps done, in the story's order), act (true: the next step, as the big
+     * button), compare ('B' | 'C' | 'D': slide that arrow onto its partner's tail), home (true: back to the start),
+     * view; animate: false jumps to the end of a step.
      */
     async set(p = {}) {
       const animate = p.animate !== false;
       if (p.view) await setView(p.view, { animate });
-      if (p.home) await home({ animate });
-      if (p.arrows && s.mode === 'explore') {
-        const moves = [];
-        for (const [name, q] of Object.entries(p.arrows)) {
-          if (!BOOK_NAMES.includes(name) || !q) continue;
-          const v = clone(s.vec[name]);
-          const length = Math.min(LEN_MAX, Math.max(LEN_MIN, Math.round(Number(q.length ?? v.length))));
-          const angle = norm360(Math.round(Number(q.angle ?? v.angle)));
-          const tail = fitOnPaper(Array.isArray(q.tail) ? q.tail.map(Number) : v.tail, length, angle);
-          moves.push(put(name, { tail, length, angle }, { animate }));
-          // the panel says what this did to the vector (moved only, or a new মান or দিক)
-          s.base = { name, v };
-          s.note = length === v.length && angle === v.angle ? { key: 'moved' } : changeNote(name);
+      if (s.mode === 'quiz' && (p.stage != null || p.act || p.compare || p.home)) quiz.stop();
+      if (p.home) goHome();
+      if (p.stage != null) jumpTo(p.stage);
+      if (p.act) {
+        if (s.busy) {
+          // finish the step that is running (a replayed comparison is no step), then do the next
+          const again = s.pending?.moving && s.compared.includes(s.pending.moving);
+          jumpTo(snapshot().stage + (s.pending && !again ? 1 : 0));
         }
-        if (!livePair()) s.pair = null;
-        refresh();
-        if (animate) await Promise.all(moves);
-        emitChange();
+        lastAct = Number.NEGATIVE_INFINITY;
+        await doAction({ animate });
       }
-      if (p.thermometer && s.thermoShown) {
-        const angle = norm360(Number(p.thermometer.angle ?? s.thermo.angle));
-        const at = Array.isArray(p.thermometer.at) ? p.thermometer.at.map(Number) : s.thermo.at;
-        s.thermo = { at: fitThermo(at, angle), angle };
-        thermo.set({ ...s.thermo, lift: 0 });
-        thermoNote();
-        refresh();
-        emitChange();
+      if (p.compare && NAMES.includes(p.compare)) {
+        // a child already sent is compared again; otherwise the children before it are sent at once, then this one
+        if (s.compared.includes(p.compare)) {
+          ++token;
+          cancelAnims();
+          s.busy = false;
+          await stepCompare(p.compare, animate);
+        } else {
+          jumpTo(2 + NAMES.indexOf(p.compare));
+          await stepSend(p.compare, animate);
+        }
       }
-      if (Array.isArray(p.compare) && p.compare.length === 2) await lineUp(String(p.compare[0]), String(p.compare[1]), { animate });
-      if (p.compare === false) {
-        s.pair = null;
-        refresh();
-        emitChange();
-      }
-      if (p.select) select(String(p.select).toUpperCase());
+      emitChange();
       return snapshot();
     },
     async reset() {
       quiz.stop();
-      hideHint();
-      await home({ animate: false });
-      s.selected = 'A';
+      goHome();
+      await setView('front', { animate: false });
       refresh();
       emitChange();
-      await setView('front');
     },
     startPractice: () => quiz.start(),
     capture: (opts) => stage.capture(opts),
-    exportRoot: () => world, // the board, the paper, the arrows and the thermometer; helpers on the paper are left out
+    /** The field round the start (80 m square), the chalk compass, the arrows and the children as they are, in metres. */
+    exportRoot() {
+      const copy = new THREE.Group();
+      copy.name = 'ScalarVector';
+      const patch = new THREE.Mesh(new THREE.PlaneGeometry(84, 84).rotateX(-Math.PI / 2), field.ground.material.clone());
+      patch.material.map = field.ground.material.map.clone();
+      patch.material.map.repeat.set(84 / 16, 84 / 16);
+      patch.material.map.needsUpdate = true;
+      patch.name = 'Grass';
+      copy.add(patch, rose.root.clone(true));
+      for (const a of Object.values(arrows)) if (a.visible) copy.add(a.root.clone(true));
+      for (const k of [you, friend, ...Object.values(kids)]) if (k.root.visible) copy.add(k.root.clone(true));
+      return copy;
+    },
   };
 }
