@@ -1,0 +1,91 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "law-of-gravitation",
+  "title": "Law of gravitation (মহাকর্ষ বল)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 78,
+  "topic": "3.7",
+  "placement": "Book pages 78–79, topic 3.7: মহাকর্ষ বল (Gravitational Force). Next to চিত্র ৩.০৭ (two masses m₁ and m₂ at distance r), F = Gm₁m₂/r² and the Earth's g = GM/R².",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "Newton's law of gravitation (মহাকর্ষ বল, pages 78–79, topic 3.7) made concrete. Two solid iron spheres m₁ and m₂ (1,000 kg is a ball 62 cm across) rest on stands on a bench with a metre scale; above each one a violet arrow shows the gravitational pull on it, the two arrows equal and pointing at each other, drawn to one honest scale (6.67 × 10⁻⁵ N, the pull between two 1,000 kg spheres 1 m apart, is 1 m long; a note says the real force is tiny). The panel is one action, one result, one rule: the examples দূরত্ব · ভর · পৃথিবী as a row of words with what was found under each, one big numbered button whose same badge rings the sphere to touch, one result line (F in নিউটন, and how many times the force before), and one rule in the book's words that grows. The student doubles the distance (1 m to 2 m: the arrows shrink to a quarter, the faint arrows of the moment before stay), doubles the left mass (the force doubles on both spheres: the small sphere pulls the big one just as hard) and the right mass (four times). Then the Earth, cut open to its centre with its layers showing: a 1 kg bazaar weight comes down on Dhaka, the line R grows from the Earth's centre to it (not from the surface), F = GMm/R² is its weight, about 9.8 N, and the Earth is pulled up by the same force; a second weight doubles the weight and leaves g = GM/R² ≈ 9.8 m s⁻² the same (the book's M = 5.98 × 10²⁴ kg, R = 6.37 × 10⁶ m). Test tab: 5 questions on their own scenes, numbers read off the picture (one mass doubled; the distance doubled or halved; whether a small sphere pulls a big one as hard; which R for a weight 1 m above the ground; g from the book's numbers), each wrong answer named. Phone-first, Bangla.",
+  "tags": ["force", "gravitation", "newtons-law-of-gravitation", "inverse-square", "weight", "g", "earth", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "example",
+      "label": "Start at",
+      "type": "select",
+      "options": [["dist", "distance (1 m apart)"], ["mass", "mass (2 m apart)"], ["earth", "the Earth"]],
+      "default": "dist"
+    },
+    {
+      "name": "steps",
+      "label": "Steps already done",
+      "type": "number",
+      "default": "0",
+      "placeholder": "0–5",
+      "help": "the state after that many of the student's steps: 1 distance doubled, 2 left mass doubled, 3 right mass doubled, 4 weight on the Earth, 5 a second weight"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The numbered ring pulses", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "act": true } },
+    { "name": "set", "payload": { "example": "mass" } },
+    { "name": "set", "payload": { "example": "earth" } },
+    { "name": "set", "payload": { "steps": 3, "animate": false } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "act", "example", "view", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": { "params": { "coach": "0", "steps": "1" } },
+    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "example": "dist", "animate": false } }] }],
+    "video": {
+      "kind": "script",
+      "seconds": 22,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 1.2, "command": "set", "payload": { "act": true } },
+        { "at": 5.2, "command": "set", "payload": { "act": true } },
+        { "at": 8.8, "command": "set", "payload": { "act": true } },
+        { "at": 12.4, "command": "set", "payload": { "act": true } },
+        { "at": 17.2, "command": "set", "payload": { "act": true } }
+      ]
+    }
+  }
+}
