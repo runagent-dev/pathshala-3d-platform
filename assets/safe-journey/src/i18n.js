@@ -26,7 +26,7 @@ export const STRINGS = {
     reading: 'বেগ',
     speeds: 'বেগ বেছে নাও',
     speed: '{v} km/h',
-    res_cubes: '{n} ঘনক',
+    res_cubes: '{n}টি ঘনক',
 
     // the action (the big button and the numbered ring on the car)
     act_go: 'মুখোমুখি চালাও',
@@ -35,27 +35,28 @@ export const STRINGS = {
     act_home: 'শুরুতে ফেরাও',
 
     // the result line: the number that matters in <b>
-    out_ready: 'বেগ {v} km/h: গাড়ির গতিশক্তি <b>{n} ঘনক</b>',
+    out_ready: 'বেগ {v} km/h: গাড়ির গতিশক্তি <b>{n}টি ঘনক</b>',
     out_run: 'গাড়ির বেগ <b>{v}</b> km/h, ট্রাকের {w} km/h',
-    out_end: 'গাড়ির বেগ {a} থেকে {b} km/h: পরিবর্তন <b>{c} km/h</b>',
-    out_end_real: 'গাড়ির বেগ {a} থেকে প্রায় {b} km/h: পরিবর্তন <b>প্রায় {c} km/h</b>',
+    out_end: 'গাড়ির বেগ {a} থেকে {b} km/h: পরিবর্তন <b>{c} km/h</b> (= 4u)',
+    out_end_real: 'গাড়ির বেগ {a} থেকে প্রায় {b} km/h: পরিবর্তন <b>প্রায় {c} km/h</b> (≈ {k}u)',
 
     // the rule line: the book's words in <b>, growing with what the student has found
     rule_ke_1: `<b>গতিশক্তি ${S.ke}: এর মাঝে বেগের বর্গ রয়েছে।</b> একটি ঘনক = {v} km/h বেগে গাড়িটির গতিশক্তি। বেগ বাড়ালে কী হয়?`,
-    rule_ke_2: '<b>বেগ দ্বিগুণ করা হলে গতিশক্তি চার গুণ বেড়ে যায়:</b> {a} থেকে {v} km/h, তাই {n0} থেকে {n} ঘনক। এই শক্তি নিয়েই গাড়িটি সংঘর্ষে যাবে।',
-    rule_ke_3: '<b>গতিশক্তির মাঝে বেগের বর্গ রয়েছে:</b> বেগ তিন গুণ ({a} থেকে {v} km/h), তাই গতিশক্তি নয় গুণ ({n} ঘনক)। এই শক্তি নিয়েই গাড়িটি সংঘর্ষে যাবে।',
+    rule_ke_2: '<b>বেগ দ্বিগুণ করা হলে গতিশক্তি চার গুণ বেড়ে যায়:</b> {a} থেকে {v} km/h, তাই {n0}টি থেকে {n}টি ঘনক। এই শক্তি নিয়েই গাড়িটি সংঘর্ষে যাবে।',
+    rule_ke_3: '<b>গতিশক্তির মাঝে বেগের বর্গ রয়েছে:</b> বেগ তিন গুণ ({a} থেকে {v} km/h), তাই গতিশক্তি নয় গুণ ({n}টি ঘনক)। এই শক্তি নিয়েই গাড়িটি সংঘর্ষে যাবে।',
     rule_approach: `ডান দিক ধনাত্মক (+) ধরে: <b>ট্রাকের বেগ u হলে গাড়ির বেগ −u।</b> ছোট গাড়ির ভর ${S.m2} ট্রাকের ভর ${S.m1} এর তুলনায় অনেক কম।`,
     rule_contact: '<b>সংঘর্ষে এই শক্তির কারণেই গাড়ি ক্ষতিগ্রস্ত হয় এবং আরোহীরা আঘাত পায়।</b> দেখো, কার বেগ বদলাচ্ছে।',
     rule_end: `<b>ট্রাকটি একই বেগে যেতে থাকে; ছোট গাড়িটির বেগ −u থেকে 3u:</b> বেগের পরিবর্তন 3u − (−u) = 4u, গাড়িটি উল্টোদিকে ছিটকে যায় (${S.m2} ≈ {z} ধরে)।`,
     rule_end_real: `<b>আসল ভর নিলেও প্রায় একই:</b> ট্রাকের বেগ প্রায় {a}u, গাড়ির প্রায় {b}u; গাড়ির বেগের পরিবর্তন প্রায় {c}u, ট্রাকের মাত্র {d}u।`,
     rule_more:
-      '<b>বেগ {a} থেকে {b} km/h, গতিশক্তি {m} থেকে {n} ঘনক:</b> গাড়িটি আরও বেশি দুমড়ে গেল। <b>দুর্ঘটনার সময় ক্ষতি কমানোর সবচেয়ে সহজ উপায় হচ্ছে গতি কম রাখা।</b>',
-    rule_less: '<b>বেগ {a} থেকে {b} km/h, গতিশক্তি {m} থেকে {n} ঘনক:</b> গাড়িটি কম দুমড়েছে। <b>দুর্ঘটনার সময় ক্ষতি কমানোর সবচেয়ে সহজ উপায় হচ্ছে গতি কম রাখা।</b>',
+      '<b>বেগ {a} থেকে {b} km/h, গতিশক্তি {m}টি থেকে {n}টি ঘনক:</b> গাড়িটি আরও বেশি দুমড়ে গেল। <b>দুর্ঘটনার সময় ক্ষতি কমানোর সবচেয়ে সহজ উপায় হচ্ছে গতি কম রাখা।</b>',
+    rule_less:
+      '<b>বেগ {a} থেকে {b} km/h, গতিশক্তি {m}টি থেকে {n}টি ঘনক:</b> গাড়িটি কম দুমড়েছে। <b>দুর্ঘটনার সময় ক্ষতি কমানোর সবচেয়ে সহজ উপায় হচ্ছে গতি কম রাখা।</b>',
     rule_final:
       '<b>আমাদের দেশের বেশির ভাগ দুর্ঘটনা হয় গাড়ির বেগ বেশি রাখার কারণে।</b> তখন নিয়ন্ত্রণ করাও কঠিন, আর সংঘর্ষে অনেক শক্তি ব্যয় হয়। নিরাপদ ভ্রমণের উপায়: গতি কম রাখা।',
 
     // labels on the scene
-    l_ke: 'গতিশক্তি',
+    l_ke: 'গাড়ির গতিশক্তি',
     l_u: 'u',
     l_mu: '−u',
     l_v1: `${S.v1} = u`,
@@ -64,8 +65,8 @@ export const STRINGS = {
     l_v1_live: S.v1,
     l_v1_real: `${S.v1} ≈ {a}u`,
     l_v2_real: `${S.v2} ≈ {b}u`,
-    l_u_num: 'u = {v}\u00a0km/h',
-    l_mu_num: '−u = {v}\u00a0km/h',
+    l_u_num: '{v}\u00a0km/h',
+    l_mu_num: '{v}\u00a0km/h',
     l_v1_num: `${S.v1} = {v}\u00a0km/h`,
     l_v2_num: `${S.v2} = {v}\u00a0km/h`,
     l_truck: `ট্রাক (${S.m1})`,
@@ -74,13 +75,13 @@ export const STRINGS = {
     l_m2: S.m2,
     note_slow: 'সময় {n} গুণ ধীর',
     note_contact: 'সংঘর্ষ আরও ধীরে',
+    note_assume: 'বইয়ের হিসাবে গতিশক্তি ছাড়া অন্য শক্তি নেই (আসলে ঠিক নয়)',
 
     hint_wait: 'চলছে: দেখো কী হয়।',
 
     q_count: 'প্রশ্ন {i} / {n}',
     q_score: 'সঠিক: {right}',
     q_hint: 'দৃশ্যটি দেখো, ভেবে সঠিক উত্তরটি বেছে নাও।',
-    q_look: 'দেখো…',
     q_right: 'ঠিক হয়েছে!',
     q_wrong: 'হয়নি। সঠিক উত্তর',
     q_next: 'পরের প্রশ্ন',
@@ -106,26 +107,28 @@ export const STRINGS = {
     s_half_v: 'বেগ অর্ধেক করলে ({h} km/h)',
     s_half_m: 'ভর অর্ধেক করলে (বেগ একই)',
     s_minus: 'বেগ {d} km/h কমালে',
-    why_safe: '<b>বেগ অর্ধেক করলে</b>: গতিশক্তি (½)<sup>{p}</sup> = ¼ গুণ, {n} থেকে {y} ঘনক।',
-    n_half_m: ' ভর অর্ধেক করলে গতিশক্তি মাত্র অর্ধেক ({x} ঘনক)।',
-    n_minus: ' {w} km/h বেগে গতিশক্তি {x} ঘনক।',
+    s_third_m: 'ভর তিন ভাগের এক ভাগ করলে',
+    why_safe: '<b>বেগ অর্ধেক করলে</b>: গতিশক্তি (½)<sup>{p}</sup> = ¼ গুণ, {n}টি থেকে {y}টি ঘনক।',
+    n_half_m: ' ভর অর্ধেকে গতিশক্তি {x}টি ঘনক।',
+    n_third_m: ' ভর তিন ভাগের এক ভাগে গতিশক্তি {x}টি ঘনক।',
+    n_minus: ' {w} km/h বেগে গতিশক্তি {x}টি ঘনক।',
 
     // 3. the car's velocity after the head-on crash
-    q_v2: `ট্রাকের বেগ u, গাড়ির −u। ${S.m2} ≈ {z} ধরে: মুখোমুখি সংঘর্ষের পর ছোট গাড়িটির বেগ কত হবে?`,
+    q_v2: `ছবিতে দুটির বেগ দেখো। ${S.m2} ≈ {z} ধরে: মুখোমুখি সংঘর্ষের পর ছোট গাড়িটির বেগ কত হবে?`,
     c_3u: `${S.v2} = 3u`,
     c_4u: `${S.v2} = 4u`,
     c_u: `${S.v2} = u`,
     c_m3u: `${S.v2} = −3u`,
-    why_v2: `<b>3u</b>: ${S.v2} = (${S.m1}u + 2${S.m1}u) ÷ ${S.m1} = 3u। গাড়িটি উল্টোদিকে, ডান দিকে ছিটকে যায়।`,
-    n_v2_4u: ' 4u হলো বেগের পরিবর্তন, 3u − (−u); বেগ নয়।',
-    n_v2_u: ' দুটি জুড়ে গেলে একসাথে u বেগে চলত; এখানে গাড়িটি ছিটকে যায়।',
-    n_v2_m3u: ' দিক ভুল: গাড়িটি উল্টোদিকে, অর্থাৎ ডান দিকে (+) ছিটকে যায়।',
+    why_v2: `<b>{b} km/h</b>: ${S.v2} = (${S.m1}u + 2${S.m1}u) ÷ ${S.m1} = 3u; গাড়িটি উল্টোদিকে ছিটকে যায়।`,
+    n_v2_4u: ' {c} হলো বেগের পরিবর্তন, 4u; বেগ নয়।',
+    n_v2_u: ' জুড়ে গেলে দুটি একসাথে u বেগে চলত।',
+    n_v2_m3u: ' দিক ভুল: গাড়িটি ডান দিকে (+) ছিটকে যায়।',
 
     // 4. the change of the car's velocity, read off the picture
     q_change: 'সংঘর্ষের আগে গাড়িটির বেগ ছিল {a} km/h (বাম দিকে)। ছবি দেখে বলো, এর বেগের পরিবর্তন কত?',
     c_kmh: '{v} km/h',
     why_change: '<b>{c} km/h</b>: পরিবর্তন = শেষ বেগ − আগের বেগ = {b} − ({a}) = {c} km/h, অর্থাৎ 4u।',
-    n_ch_drop: ' আগের বেগ ঋণাত্মক: {b} − ({a}) = {b} + {u} = {c}।',
+    n_ch_drop: ' আগের বেগ ঋণাত্মক: তা বিয়োগ করলে যোগ হয়।',
     n_ch_final: ' এটি শেষ বেগ; পরিবর্তন = শেষ বেগ − আগের বেগ।',
     n_ch_order: ' উল্টো বিয়োগ: শেষ বেগ থেকে আগের বেগ বাদ দিতে হয়।',
 
@@ -134,11 +137,11 @@ export const STRINGS = {
     t_mass: 'গাড়িটির ভর অনেক কম',
     t_faster: 'ট্রাকটির বেগ বেশি ছিল',
     t_noforce: 'ট্রাকটির উপর বল কাজ করেনি',
-    t_first: 'ট্রাকটিই আগে আঘাত করেছে',
-    why_truck: `<b>গাড়ির ভর অনেক কম</b>: তাই বই ${S.m2} ≈ {z} ধরেছে; তখন ${S.v1} = u, ট্রাক সংঘর্ষের ভয়াবহতা অনুভব করে না।`,
+    t_less: 'ট্রাকটির উপর কম বল লেগেছে',
+    why_truck: `<b>গাড়ির ভর অনেক কম</b> (বই ${S.m2} ≈ {z} ধরেছে): ট্রাক সংঘর্ষের ভয়াবহতা অনুভব করে না।`,
     n_t_faster: ' দুটির বেগের মান সমান ছিল: u।',
-    n_t_noforce: ' ট্রাকের উপরও বল কাজ করে, কিন্তু বিশাল ভরের কারণে বেগ প্রায় বদলায় না।',
-    n_t_first: ' মুখোমুখি সংঘর্ষে দুটিই একে অপরকে আঘাত করে।',
+    n_t_noforce: ' ট্রাকের উপরও বল কাজ করে; বিশাল ভর বলে বেগ প্রায় বদলায় না।',
+    n_t_less: ' দুটির উপর বল সমান ও বিপরীত; বিশাল ভর বলেই ট্রাকের বেগ প্রায় একই থাকে।',
   },
   en: {
     title: 'Safe journey: velocity and force',
@@ -160,8 +163,8 @@ export const STRINGS = {
 
     out_ready: 'Speed {v} km/h: the car’s kinetic energy <b>{n} cubes</b>',
     out_run: 'Car’s velocity <b>{v}</b> km/h, truck’s {w} km/h',
-    out_end: 'Car’s velocity {a} to {b} km/h: a change of <b>{c} km/h</b>',
-    out_end_real: 'Car’s velocity {a} to about {b} km/h: a change of <b>about {c} km/h</b>',
+    out_end: 'Car’s velocity {a} to {b} km/h: a change of <b>{c} km/h</b> (= 4u)',
+    out_end_real: 'Car’s velocity {a} to about {b} km/h: a change of <b>about {c} km/h</b> (≈ {k}u)',
 
     rule_ke_1: `<b>Kinetic energy is ${S.ke}: it has the square of the velocity.</b> One cube = the car’s kinetic energy at {v} km/h. What happens at a higher speed?`,
     rule_ke_2:
@@ -179,7 +182,7 @@ export const STRINGS = {
     rule_final:
       '<b>Most accidents in our country happen because vehicles go too fast.</b> Then they are hard to control, and a lot of energy is spent in the crash. The way to a safe journey: keep the speed low.',
 
-    l_ke: 'kinetic energy',
+    l_ke: 'the car’s kinetic energy',
     l_u: 'u',
     l_mu: '−u',
     l_v1: `${S.v1} = u`,
@@ -188,8 +191,8 @@ export const STRINGS = {
     l_v1_live: S.v1,
     l_v1_real: `${S.v1} ≈ {a}u`,
     l_v2_real: `${S.v2} ≈ {b}u`,
-    l_u_num: 'u = {v}\u00a0km/h',
-    l_mu_num: '−u = {v}\u00a0km/h',
+    l_u_num: '{v}\u00a0km/h',
+    l_mu_num: '{v}\u00a0km/h',
     l_v1_num: `${S.v1} = {v}\u00a0km/h`,
     l_v2_num: `${S.v2} = {v}\u00a0km/h`,
     l_truck: `truck (${S.m1})`,
@@ -198,13 +201,13 @@ export const STRINGS = {
     l_m2: S.m2,
     note_slow: 'time {n} times slower',
     note_contact: 'the crash even slower',
+    note_assume: 'In the book’s sum there is no energy but kinetic energy (not really true)',
 
     hint_wait: 'It is running: watch what happens.',
 
     q_count: 'Question {i} / {n}',
     q_score: 'Right: {right}',
     q_hint: 'Look at the scene, think, and pick the right answer.',
-    q_look: 'Watch…',
     q_right: 'Right!',
     q_wrong: 'Not quite. The answer is',
     q_next: 'Next question',
@@ -228,24 +231,26 @@ export const STRINGS = {
     s_half_v: 'Halving the speed ({h} km/h)',
     s_half_m: 'Halving the mass (same speed)',
     s_minus: 'Slowing down by {d} km/h',
+    s_third_m: 'A third of the mass',
     why_safe: '<b>Halving the speed</b>: the kinetic energy becomes (½)<sup>{p}</sup> = ¼, {n} to {y} cubes.',
-    n_half_m: ' Half the mass gives only half the energy ({x} cubes).',
+    n_half_m: ' Half the mass leaves {x} cubes.',
+    n_third_m: ' A third of the mass leaves {x} cubes.',
     n_minus: ' At {w} km/h the energy is {x} cubes.',
 
-    q_v2: `The truck’s velocity is u, the car’s −u. Taking ${S.m2} ≈ {z}: what is the small car’s velocity after the head-on crash?`,
+    q_v2: `Look at the two velocities. Taking ${S.m2} ≈ {z}: what is the small car’s velocity after the head-on crash?`,
     c_3u: `${S.v2} = 3u`,
     c_4u: `${S.v2} = 4u`,
     c_u: `${S.v2} = u`,
     c_m3u: `${S.v2} = −3u`,
-    why_v2: `<b>3u</b>: ${S.v2} = (${S.m1}u + 2${S.m1}u) ÷ ${S.m1} = 3u. The car is flung back the other way, to the right.`,
-    n_v2_4u: ' 4u is the change of velocity, 3u − (−u); not the velocity.',
+    why_v2: `<b>{b} km/h</b>: ${S.v2} = (${S.m1}u + 2${S.m1}u) ÷ ${S.m1} = 3u; the car is flung back.`,
+    n_v2_4u: ' {c} is the change of velocity, 4u; not the velocity.',
     n_v2_u: ' Stuck together they would move at u; here the car is flung away.',
     n_v2_m3u: ' Wrong way: the car is flung back, to the right (+).',
 
     q_change: 'Before the crash the car’s velocity was {a} km/h (to the left). From the picture: by how much did its velocity change?',
     c_kmh: '{v} km/h',
     why_change: '<b>{c} km/h</b>: change = final velocity − earlier velocity = {b} − ({a}) = {c} km/h, that is 4u.',
-    n_ch_drop: ' The earlier velocity is negative: {b} − ({a}) = {b} + {u} = {c}.',
+    n_ch_drop: ' The earlier velocity is negative: subtracting it adds.',
     n_ch_final: ' That is the final velocity; the change = final − earlier.',
     n_ch_order: ' Subtracted the wrong way round: take the earlier velocity from the final one.',
 
@@ -253,11 +258,11 @@ export const STRINGS = {
     t_mass: 'The car’s mass is much smaller',
     t_faster: 'The truck was faster',
     t_noforce: 'No force acted on the truck',
-    t_first: 'The truck hit first',
-    why_truck: `<b>The car’s mass is much smaller</b>: so the book takes ${S.m2} ≈ {z}; then ${S.v1} = u, and the truck hardly feels the crash.`,
+    t_less: 'A smaller force acted on the truck',
+    why_truck: `<b>The car’s mass is much smaller</b> (the book takes ${S.m2} ≈ {z}): the truck hardly feels the crash.`,
     n_t_faster: ' Their speeds were the same: u.',
     n_t_noforce: ' A force acts on the truck too, but with its huge mass its velocity hardly changes.',
-    n_t_first: ' In a head-on crash each hits the other.',
+    n_t_less: ' The forces on the two are equal and opposite; the truck’s huge mass is what keeps its velocity.',
   },
 };
 

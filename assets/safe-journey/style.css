@@ -18,6 +18,8 @@ body.bg-transparent { background: transparent; }
 
 /* on the stage: the honest note about time, top left (the buttons are top right) */
 .sj-note { position: absolute; left: 10px; top: 10px; z-index: 5; max-width: calc(100% - 230px); padding: 3px 9px; border-radius: 6px; border: 1px solid var(--line-2); background: rgba(255, 255, 255, 0.94); color: var(--ink-2); font-size: 13px; font-weight: 600; line-height: 1.4; white-space: nowrap; pointer-events: none; }
+/* after the crash: the book's assumption, under the buttons, across the top of the view */
+.sj-assume { position: absolute; left: 10px; right: 10px; top: 52px; z-index: 5; width: fit-content; max-width: min(560px, calc(100% - 20px)); padding: 3px 9px; border-radius: 6px; border: 1px solid var(--line-2); background: rgba(255, 255, 255, 0.94); color: var(--ink-2); font-size: 13px; line-height: 1.4; text-wrap: balance; pointer-events: none; }
 .sj .pvc-anno { font-size: 14px; }
 .sj .pvc-anno-callout { padding: 1px 7px; font-weight: 700; }
 .sj .pvc-anno-part { color: var(--ink-2); font-size: 13px; padding: 1px 6px; }
@@ -58,3 +60,5 @@ body.bg-transparent { background: transparent; }
   .sj .pvc-opt { font-size: 13.5px; height: auto; min-height: 42px; }
   .sj .pvc-q-feedback { font-size: 13px; }
 }
+/* the test's locked hint takes the top of the view for a moment: the assumption note gives way */
+.pvc-hint.show ~ .sj-assume { visibility: hidden; }

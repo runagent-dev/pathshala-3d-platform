@@ -24,8 +24,6 @@ export const SPEEDS = [20, 40, 60];
 export const BASE = 20;
 /** The masses: as the book takes them (m₂ ≈ 0), or real ones (a loaded truck and a small car). */
 export const MASSES = { book: { m1: 20000, m2: 0 }, real: { m1: 20000, m2: 1000 } };
-/** The car's real mass (kg), for its kinetic energy (½mv² needs a mass even when the crash takes m₂ ≈ 0). */
-export const CAR_MASS = 1000;
 /** Before and after the contact, time on screen runs this many times slower than in the crash. */
 export const SLOW = 8;
 /** Seconds on screen for the contact itself (in the crash it lasts a few hundredths of a second). */
@@ -48,8 +46,8 @@ export function elastic(m1, m2, u1, u2) {
 export const cubes = (v) => clean((v / BASE) ** 2);
 /** Kinetic energy ½mv² in J, for a mass in kg and a velocity in km/h. */
 export const kinetic = (m, v) => clean(0.5 * m * (v * KMH) ** 2, 3);
-/** How far the car's front is squashed (m): in proportion to its kinetic energy, 10 cm at 20 km/h (drawn, not computed). */
-export const crumpleDepth = (v) => clean(0.1 * cubes(v));
+/** How far the car's front is squashed (m): in proportion to its kinetic energy, 15 cm per cube (drawn, not computed). */
+export const crumpleDepth = (v) => clean(0.15 * cubes(v));
 /** The gap between the two at the start (m), and how far the car goes after the contact before the run ends. */
 export const startGap = (v) => clean(2 + 0.1 * v);
 export const flightDistance = (v) => clean(1.2 + 0.05 * v);
@@ -137,11 +135,6 @@ export function stateAt(p, tau) {
   const x1 = end.x1 + p.v1 * tf;
   const rear = end.rear + p.v2 * tf;
   return { phase: done ? 'end' : 'after', k: 1, x1, rear, front: rear - L + p.c, crumple: p.c, v1: p.v1, v2: p.v2 };
-}
-
-/** The car's velocity change and the truck's (km/h): ratio of the two is m₁/m₂ (momentum is kept). */
-export function changes(p) {
-  return { car: p.kmh.change, truck: p.kmh.truckChange };
 }
 
 /** The total momentum (kg m/s) at a state: the same before, during and after (no force from outside). */

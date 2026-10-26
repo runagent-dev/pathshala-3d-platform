@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
-export const ENERGY = { cube: 1.0, gap: 0.08, max: 4, color: '#f59f00' };
+export const ENERGY = { cube: 1.0, depth: 0.6, gap: 0.08, max: 4, color: '#f59f00' };
 
 export function createEnergy() {
   const root = new THREE.Group();
@@ -49,7 +49,7 @@ export function createEnergy() {
       m.visible = true;
       const sx = w * ENERGY.cube;
       const sy = h * ENERGY.cube;
-      m.scale.set(sx, sy, ENERGY.cube);
+      m.scale.set(sx, sy, ENERGY.depth);
       m.position.set(-half + i * step + sx / 2, j * step + sy / 2, 0);
     }
   }

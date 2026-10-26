@@ -43,11 +43,12 @@ export const DEFAULTS = {
   sound: true,
 };
 
-const COLORS = { velocity: '#1c6fd9', energy: '#b86a00', part: '#4b5766' };
+const COLORS = { velocity: '#1c6fd9', energy: '#b86a00' };
 const LANE = ROAD.lane; // z of the lane where they meet
 const ROW_Z = ROAD.half - 0.55; // the velocity arrows lie on the road in front of the vehicles, inside the edge line
 const ROW_Y = 0.2;
-const KE_Y = CAR.height + 0.5; // the energy square stands on this height over the car's roof (room for the badge beside it)
+const KE_Y = CAR.height + 1.5; // the energy square stands on this height over the car's roof, clear of the ring round the car (and room for the badge)
+const GHOST = 0.2; // after the crash the cubes stay as a faint ghost over the car: the energy that crushed it
 const TRUCK_SHOWN = 3.8; // m of the truck (its cab and the front of its load) always in the picture
 const DOUBLE_TAP = 450; // ms: a second tap this soon after one is ignored
 const GROW = 0.7; // s for the energy square to grow or shrink to a new speed
@@ -81,7 +82,12 @@ export function createApp(root, options = {}) {
   const note = document.createElement('div');
   note.className = 'sj-note';
   note.hidden = true;
-  ui.stage.append(note);
+  // after the crash: the book's assumption, said where the result is seen
+  const assume = document.createElement('div');
+  assume.className = 'sj-assume';
+  assume.hidden = true;
+  assume.textContent = t('note_assume');
+  ui.stage.append(note, assume);
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 22, near: 1, far: 600, environment: 'studio-light' });
@@ -305,7 +311,7 @@ export function createApp(root, options = {}) {
     car.crumple(st.crumple);
     car.roll(start.rear - st.rear);
     // the energy square rides over the car until the crash, then fades
-    const fade = st.phase === 'contact' ? Math.max(0, 1 - st.k / 0.3) : st.phase === 'after' || st.phase === 'end' ? 0 : 1;
+    const fade = st.phase === 'contact' ? GHOST + (1 - GHOST) * Math.max(0, 1 - st.k / 0.3) : st.phase === 'after' || st.phase === 'end' ? GHOST : 1;
     const carMidX = xc + (st.front + st.rear) / 2;
     // over the car, a little toward its back (room for the numbered badge in front of it)
     energy.root.position.x = xc + st.rear - CAR_LENGTH / 2 + 0.4;
@@ -322,7 +328,7 @@ export function createApp(root, options = {}) {
     pts.truckMid.set(truckMidX + (v1 * ARROW) / 2, 0, ROW_Z + 0.42);
     pts.carMid.set(carMidX + (v2 * ARROW) / 2, 0, ROW_Z + 0.42);
     const half = energy.size / 2;
-    pts.keCorner.set(energy.root.position.x + half, KE_Y + energy.size, LANE - ENERGY.cube / 2); // its top right corner
+    pts.keCorner.set(energy.root.position.x + half, KE_Y + energy.size, LANE - ENERGY.depth / 2); // its top right corner
     pts.truckTop.set(xc + st.x1 - 1.1, TRUCK.height + 0.05, LANE);
     // the car's back end, half way up (the energy square is over its middle)
     pts.carTop.set(xc + st.rear - 0.1, CAR.height * 0.6, LANE);
@@ -415,8 +421,8 @@ export function createApp(root, options = {}) {
     if (!energy.root.visible || energy.material.opacity < 0.3 || !energy.size) return null;
     const half = energy.size / 2;
     const x0 = energy.root.position.x;
-    keBounds.min.set(x0 - half, KE_Y, LANE - ENERGY.cube / 2);
-    keBounds.max.set(x0 + half, KE_Y + energy.size, LANE + ENERGY.cube / 2);
+    keBounds.min.set(x0 - half, KE_Y, LANE - ENERGY.depth / 2);
+    keBounds.max.set(x0 + half, KE_Y + energy.size, LANE + ENERGY.depth / 2);
     return screenBox(keBounds);
   }
 
@@ -425,7 +431,7 @@ export function createApp(root, options = {}) {
   const anno = createAnnotations({
     stage,
     layer: ui.annoLayer,
-    avoid: [ui.corner, ui.hint, note, () => action?.ringBox() ?? null, () => action?.box() ?? null, () => keBox()],
+    avoid: [ui.corner, ui.hint, note, assume, () => action?.ringBox() ?? null, () => action?.box() ?? null, () => keBox()],
   });
   const below = [
     { dx: 0, dy: 18 },
@@ -436,6 +442,7 @@ export function createApp(root, options = {}) {
     { dx: 46, dy: 28 },
   ];
   const shown = new Map(); // id → text now shown
+  let vcYields = false;
   function label(id, text, opts) {
     if (!text) {
       if (shown.has(id)) {
@@ -475,7 +482,12 @@ export function createApp(root, options = {}) {
       else if (after) ct = real ? t('l_v2_real', { b: two(p.v2 / p.u) }) : t('l_v2');
       else ct = st.phase === 'contact' ? t('l_v2_live') : t('l_mu');
     }
-    label('vc', ct, { point: () => pts.carMid, kind: 'callout', color: COLORS.velocity, spots: below });
+    // while they touch the two arrows meet: the car's (changing) label gives way when there is no room
+    const yields = st.phase === 'contact';
+    const had = shown.has('vc');
+    label('vc', ct, { point: () => pts.carMid, kind: 'callout', color: COLORS.velocity, spots: below, optional: yields });
+    if (had && shown.has('vc') && yields !== vcYields) anno.update('vc', { optional: yields });
+    vcYields = yields;
     // the energy square, while it shows
     const keOn = energy.root.visible && energy.material.opacity > 0.5;
     label('ke', keOn ? t('l_ke') : '', {
@@ -487,6 +499,8 @@ export function createApp(root, options = {}) {
         { dx: 0, dy: -18 },
         { dx: -14, dy: -16 },
         { dx: 12, dy: 18 },
+        { dx: 0, dy: -40 },
+        { dx: -30, dy: -40 },
       ],
     });
     // the two vehicles' names (only their symbols on a narrow stage), where there is room
@@ -594,6 +608,9 @@ export function createApp(root, options = {}) {
     return run.t0 != null;
   }
   stage.addTicker(() => tick());
+  // a few more frames after each change, so the labels and the numbered badge settle round each other
+  let settle = 0;
+  stage.addTicker(() => settle-- > 0);
 
   // ── the panel: one action, one result, one rule ─────────────────────────────
   const outcomeEl = ui.$('.pvc-outcome');
@@ -615,7 +632,7 @@ export function createApp(root, options = {}) {
     const p = s.run.p;
     if (st.phase === 'ready') return [t('out_ready', { v: p.speed, n: two(cubes(p.speed)) }), 'energy'];
     if (st.phase === 'approach' || st.phase === 'contact') return [t('out_run', { v: kmh(st.v2 / KMH), w: kmh(st.v1 / KMH) }), 'velocity'];
-    const vars = { a: kmh(-p.speed), b: kmh(p.kmh.v2), c: kmh(p.kmh.change) };
+    const vars = { a: kmh(-p.speed), b: kmh(p.kmh.v2), c: kmh(p.kmh.change), k: two((p.v2 + p.u) / p.u) };
     return [t(p.masses === 'real' ? 'out_end_real' : 'out_end', vars), 'velocity'];
   }
 
@@ -666,6 +683,8 @@ export function createApp(root, options = {}) {
       note.hidden = !text;
       lastNote = text;
     }
+    assume.hidden = !(st.phase === 'after' || st.phase === 'end');
+    settle = 4;
     stage.invalidate();
   }
 
@@ -744,10 +763,10 @@ export function createApp(root, options = {}) {
   const ringBox = new THREE.Box3();
   function carRing() {
     const st = current();
-    const x0 = s.run.xc + st.front;
-    const x1 = s.run.xc + st.rear;
-    ringBox.min.set(x0, 0.32, LANE - 0.25);
-    ringBox.max.set(x1, CAR.height - 0.02, LANE + 0.25);
+    const x0 = s.run.xc + st.front - 0.2;
+    const x1 = s.run.xc + st.rear + 0.05;
+    ringBox.min.set(x0, 0.3, LANE - 0.05);
+    ringBox.max.set(x1, CAR.height - 0.08, LANE + 0.05);
     return ringBox;
   }
   action = createAction({
@@ -759,7 +778,7 @@ export function createApp(root, options = {}) {
     label: 'act_go',
     target: () => (s.run ? carRing() : null),
     pad: 3,
-    avoid: [ui.corner, ui.hint, note, () => anno.boxes(), () => keBox(), () => truckBox()],
+    avoid: [ui.corner, ui.hint, note, assume, () => anno.boxes(), () => keBox(), () => truckBox()],
     pulse: Boolean(o.coach),
     onAct: () => {
       audio.unlock();
@@ -1002,20 +1021,17 @@ export function createApp(root, options = {}) {
           const v = 60;
           questionScene(v);
           const h = v / 2;
-          const items = [
-            item('s_half_v', { h }),
-            item('s_half_m'),
-            item('s_minus20', null, t('s_minus', { d: 20 })),
-            item('s_minus10', null, t('s_minus', { d: 10 })),
-          ];
+          // a third of the mass is a bigger cut than half the speed, but the speed is squared
+          const items = [item('s_half_v', { h }), item('s_third_m'), item('s_half_m'), item('s_minus20', null, t('s_minus', { d: 20 }))];
           question = { kind, v };
           return ask(t('q_safe', { v }), textChoices(items, kind));
         }
         if (kind === 'v2') {
           const v = pickOne(SPEEDS);
           const p = makePlan(v, s.masses);
-          questionScene(v, Math.max(0.01, p.approach - 0.35));
-          const items = [item('c_3u'), item('c_4u'), item('c_u'), item('c_m3u')];
+          questionScene(v, Math.max(0.01, p.approach - 0.6), { numbers: true });
+          const kv = (key, x) => item(key, null, t('c_kmh', { v: kmh(x) }));
+          const items = [kv('v_3u', 3 * v), kv('v_4u', 4 * v), kv('v_u', v), kv('v_m3u', -3 * v)];
           question = { kind, v };
           return ask(t('q_v2', { z: 0 }), textChoices(items, kind));
         }
@@ -1038,7 +1054,7 @@ export function createApp(root, options = {}) {
         const v = pickOne(SPEEDS.filter((x) => x !== question?.v));
         questionScene(v, makePlan(v, 'book').duration);
         if (!alive()) return null;
-        const items = [item('t_mass'), item('t_faster'), item('t_noforce'), item('t_first')];
+        const items = [item('t_mass'), item('t_faster'), item('t_noforce'), item('t_less')];
         question = { kind: 'truck', v };
         return ask(t('q_truck'), textChoices(items, 'truck'));
       },
@@ -1075,15 +1091,19 @@ export function createApp(root, options = {}) {
           return (
             t('why_safe', { n: two(n), y: two(cubes(h)), p: 2 }) +
             note1({
+              s_third_m: () => t('n_third_m', { x: two(n / 3) }),
               s_half_m: () => t('n_half_m', { x: two(n / 2) }),
               s_minus20: () => t('n_minus', { w: question.v - 20, x: two(cubes(question.v - 20)) }),
-              s_minus10: () => t('n_minus', { w: question.v - 10, x: two(cubes(question.v - 10)) }),
             })
           );
         }
         if (k === 'v2') {
           startRun({ quiet: true, at: s.run.tau });
-          return t('why_v2') + note1({ c_4u: () => t('n_v2_4u'), c_u: () => t('n_v2_u'), c_m3u: () => t('n_v2_m3u') });
+          const v = question.v;
+          return (
+            t('why_v2', { b: kmh(3 * v) }) +
+            note1({ v_4u: () => t('n_v2_4u', { c: t('c_kmh', { v: kmh(4 * v) }) }), v_u: () => t('n_v2_u'), v_m3u: () => t('n_v2_m3u') })
+          );
         }
         if (k === 'change') {
           const { v, b, c } = question;
@@ -1092,9 +1112,7 @@ export function createApp(root, options = {}) {
             t('why_change', vars) + note1({ ch_drop: () => t('n_ch_drop', vars), ch_final: () => t('n_ch_final'), ch_order: () => t('n_ch_order') })
           );
         }
-        return (
-          t('why_truck', { z: 0 }) + note1({ t_faster: () => t('n_t_faster'), t_noforce: () => t('n_t_noforce'), t_first: () => t('n_t_first') })
-        );
+        return t('why_truck', { z: 0 }) + note1({ t_faster: () => t('n_t_faster'), t_noforce: () => t('n_t_noforce'), t_less: () => t('n_t_less') });
       },
       done() {
         s.locked = false;
@@ -1243,11 +1261,13 @@ export function createApp(root, options = {}) {
     },
     startPractice: () => quiz.start(),
     capture: (opts) => stage.capture(opts),
-    /** The truck, the car (as it is now) and a stretch of the road, in metres. */
+    /** The truck, the car (as it is now) and 40 m of road under them (no scenery), in metres. */
     exportRoot() {
       const copy = new THREE.Group();
       copy.name = 'SafeJourney';
-      copy.add(road.root.clone(true), truck.root.clone(true), car.root.clone(true));
+      const stretch = createRoad({ length: 40, scenery: false }).root;
+      stretch.position.x = (truck.root.position.x + car.root.position.x) / 2;
+      copy.add(stretch, truck.root.clone(true), car.root.clone(true));
       return copy;
     },
   };

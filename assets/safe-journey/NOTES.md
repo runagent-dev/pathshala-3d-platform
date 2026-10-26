@@ -57,11 +57,13 @@ km/h, kg, চালাও, শুরুতে ফেরাও, সময় … 
   side and a little above (36° in portrait, 15° on wide frames), with a long lens, so lengths along the road are true.
 - **Speed** (the row of words): ২০, ৪০, ৬০ km/h, the same for both (the book's "একই বেগে"). Default 20 km/h.
 - **Kinetic energy**: amber cubes (#f59f00, the kinetic-energy colour of chapter 3) standing in a square over the car,
-  labelled গতিশক্তি. One cube is the car's kinetic energy at 20 km/h (½ × 1,000 kg × (20 km/h)² ≈ 15,000 J; the
-  figure never shows joules), and the square's side is v / 20, so its area is (v/20)²: 1, 4, 9 cubes. The side grows
+  labelled গাড়ির গতিশক্তি (the truck's, 20 times the mass, would be 20 times as many). One cube is the car's kinetic
+  energy at 20 km/h (½ × 1,000 kg × (20 km/h)² ≈ 15,000 J; the figure never shows joules), and the square's side is v / 20, so its area is (v/20)²: 1, 4, 9 cubes. The side grows
   smoothly when the speed changes, so the student sees the square grow twice as wide and four times as big. Between
   whole sides the last row and column are part cubes (the test's 30 km/h: 1.5 × 1.5 = 2.25 cubes), always exact.
-  The square shows the energy the car takes into the crash; it fades as they touch.
+  The square shows the energy the car takes into the crash; as they touch it fades to a faint ghost over the car
+  (the energy that crushed it). Counts are written "৪টি ঘনক" everywhere. The square floats 1.5 m above the roof, so the dashed ring round the car never touches its bottom row at any of
+  the six sizes; a flat slab of a ring, so it hugs the car.
 - **Velocity arrows** (blue #1c6fd9, 0.04 m per km/h) lie on the road just in front of each vehicle, from its middle:
   u to the right for the truck, −u to the left for the car (to the right positive); labelled u, −u before, v₁ = u and
   v₂ = 3u after (live v₂ during the contact). The car's arrow shrinks, vanishes for an instant and grows to the right,
@@ -71,7 +73,7 @@ km/h, kg, চালাও, শুরুতে ফেরাও, সময় … 
   flash, and the contact itself is shown much slower (1.2 s on screen for 3–9 hundredths of a second; "সংঘর্ষ আরও
   ধীরে"): the relative velocity goes from −2u to 2u as −2u·cos πk (as a very stiff spring would do it), so momentum is
   kept at every instant and half way both move together (when the car is squashed most). The car's front is crushed
-  in proportion to its kinetic energy (10, 40, 90 cm: a drawing of the damage, not a computation; the bonnet buckles,
+  in proportion to its kinetic energy (15 cm per cube: 15, 60, 135 cm, a drawing of the damage, not a computation; the bonnet buckles,
   the bumper hangs, the front wheels are pushed back, the windscreen cracks from 40 km/h). Then the truck goes on at
   v₁ and the car is flung back at v₂ until it has gone 2.2–4.2 m, and the picture holds there. The camera glides along
   the road during the crash (the same scale throughout) so the end, the truck and the car with its long arrow, fills
@@ -81,11 +83,11 @@ km/h, kg, চালাও, শুরুতে ফেরাও, সময় … 
   instead, as the book invites: v₁ ≈ 0.81u, v₂ ≈ 2.81u, the car's change ≈ 3.81u, the truck's 0.19u (20 times less).
   The student panel keeps the book's version (one idea); the real masses are there for the book team.
 - **The panel** (kit 1.3.0 clean sheet): the speeds as one row of words (once a crash at a speed is seen, its cubes
-  under the word: "৪ ঘনক"); the action "১ মুখোমুখি চালাও" whose same badge rings the car (a tap on the truck or the
+  under the word: "৪টি ঘনক"); the action "১ মুখোমুখি চালাও" whose same badge rings the car (a tap on the truck or the
   car does it too, as the finger goes down); after a crash it offers the next speed not tried ("২ ২০ km/h-এ চালাও",
   the word marked in the row; the cubes grow first, then the run starts); quiet "শুরুতে ফেরাও". The result line: before
-  the run "বেগ ৪০ km/h: গাড়ির গতিশক্তি ৪ ঘনক", during it the car's and the truck's velocity, after it "গাড়ির বেগ −৪০ থেকে
-  ১২০ km/h: পরিবর্তন ১৬০ km/h". The rule grows: ½mv² and the cube's meaning (20 km/h) → the book's "বেগ দ্বিগুণ করা হলে
+  the run "বেগ ৪০ km/h: গাড়ির গতিশক্তি ৪টি ঘনক", during it the car's and the truck's velocity, after it "গাড়ির বেগ −৪০ থেকে
+  ১২০ km/h: পরিবর্তন ১৬০ km/h (= 4u)". The rule grows: ½mv² and the cube's meaning (20 km/h) → the book's "বেগ দ্বিগুণ করা হলে
   গতিশক্তি চার গুণ বেড়ে যায়" (40) or three times, nine times (60) → u and −u (approach) → "এই শক্তির কারণেই গাড়ি
   ক্ষতিগ্রস্ত হয়…" (contact) → "ট্রাকটি একই বেগে যেতে থাকে; ছোট গাড়িটির বেগ −u থেকে 3u: বেগের পরিবর্তন 3u − (−u) = 4u
   … (m₂ ≈ ০ ধরে)" (first crash) → a comparison of two speeds and their cubes with "ক্ষতি কমানোর সবচেয়ে সহজ উপায় হচ্ছে
@@ -95,21 +97,29 @@ km/h, kg, চালাও, শুরুতে ফেরাও, সময় … 
   after a crash, and "twice the speed" before "which lowers the energy most"):
   1. 20 km/h with its one cube: twice (or three times) the speed, how many cubes? (4 | 2 linear, 8 cube, 1 same mass;
      9 | 3, 27, 6 = 3 × 2). The answer grows the square.
-  2. 60 km/h with nine cubes: which lowers the energy most? halving the speed (2.25 cubes) | halving the mass (4.5) |
-     20 km/h less (4) | 10 km/h less (6.25). The answer shrinks the square to 30 km/h.
-  3. Both just before they touch (u, −u, m₂ ≈ 0): the car's velocity after? 3u | 4u (the change) | u (stuck
-     together) | −3u (wrong way). The answer plays the crash.
+  2. 60 km/h with nine cubes: which lowers the energy most? halving the speed (2.25 cubes) | a third of the mass (3:
+     the bigger cut, but the speed is squared) | half the mass (4.5) | 20 km/h less (4). The answer shrinks the
+     square to 30 km/h.
+  3. Both just before they touch, the arrows labelled in km/h (u = ৪০, −u = −৪০; m₂ ≈ 0): the car's velocity after?
+     ১২০ (3u) | ১৬০ (4u, the change) | ৪০ (u, stuck together) | −১২০ (wrong way). The answer plays the crash.
   4. The end of a crash with numbers on the arrows (v₂ = ১২০ km/h): "before it was −৪০ km/h; the change?" 160 | 80
      (sign dropped) | 120 (the final velocity) | −160 (subtracted the wrong way round).
   5. The end of a crash: why did the truck keep its velocity? the car's mass is much smaller | the truck was faster
-     (the picture shows equal arrows) | no force acted on the truck | the truck hit first.
+     (the picture shows equal arrows) | no force acted on the truck | a smaller force acted on the truck (the forces
+     are equal and opposite; the truck's mass is what keeps its velocity).
   Every wrong choice has its own one-line note. During the test the scene is locked (a tap says so).
 
 ## Deliberate choices and kit gaps
-- The stylised time and the drawn crumple are said on screen (the corner note) and here. The crumple grows with the
+- The stylised time is said in the corner note; after the crash (phases after and end, hidden while the test's
+  "locked" hint shows) a second note, one line, under the buttons says the book's assumption in short ("বইয়ের হিসাবে
+  গতিশক্তি ছাড়া অন্য শক্তি নেই (আসলে ঠিক নয়)"; the book: "গতিশক্তি ছাড়া অন্য কোনো শক্তির আদান প্রদান ঘটেনি, যা আসলে ঠিক
+  নয়"), and the result line ends "(= 4u)". The crumple grows with the
   kinetic energy, the book's "এই শক্তিটির কারণেই গাড়ি ক্ষতিগ্রস্ত হয়", even though the velocities come from the
   elastic sums (no energy lost); the book itself says that assumption "আসলে ঠিক নয়".
 - No gore: a crushed car, nobody shown inside.
+- km/h here, while the sister figures use m/s: this is about road safety, and speeds on roads (and their signs)
+  are in km/h; no sum here needs m/s (½mv² is compared, not computed in joules).
+- The GLB holds the truck, the car as it is and 40 m of road (no scenery).
 - The book says the car is flung back "চার গুণ বেগে"; by its own sums it leaves at 3u, its velocity *changes* by 4u.
   The figure says "3u বেগে… বেগের পরিবর্তন 4u" and never "চার গুণ বেগে" (a question for the book team, below).
 - No kit gaps: built on createAction, cleanSheet/bindCleanSheet, createAnnotations, createArrow, createQuiz.

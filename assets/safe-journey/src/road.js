@@ -26,10 +26,10 @@ const texture = (c, repeatX = 1, repeatY = 1) => {
 };
 
 /** A strip along the road at z (its middle), `width` wide, from a canvas texture tiled every `tile` m along x. */
-function strip(name, c, width, z, tile, y = 0) {
+function strip(name, c, length, width, z, tile, y = 0) {
   const m = new THREE.Mesh(
-    new THREE.PlaneGeometry(ROAD.length, width),
-    new THREE.MeshStandardMaterial({ name, map: texture(c, ROAD.length / tile, 1), roughness: 0.95 }),
+    new THREE.PlaneGeometry(length, width),
+    new THREE.MeshStandardMaterial({ name, map: texture(c, length / tile, 1), roughness: 0.95 }),
   );
   m.rotation.x = -Math.PI / 2;
   m.position.set(0, y, z);
@@ -38,10 +38,11 @@ function strip(name, c, width, z, tile, y = 0) {
   return m;
 }
 
-export function createRoad() {
+export function createRoad({ length = ROAD.length, scenery = true } = {}) {
   const root = new THREE.Group();
   root.name = 'Road';
   const W = ROAD.half * 2;
+  const L = length;
 
   // asphalt: 8 m of road in the texture (a 3 m dash and a 5 m gap on the centre line), 48 px per metre
   {
@@ -60,7 +61,7 @@ export function createRoad() {
     ctx.fillStyle = '#f1f1ec';
     ctx.fillRect(0, zpx(0) - 4, 3 * ppm, 8); // the centre dashes
     for (const z of [-ROAD.half + 0.2, ROAD.half - 0.2]) ctx.fillRect(0, zpx(z) - 4, c.width, 7); // edge lines
-    root.add(strip('Asphalt', c, W, 0, 8));
+    root.add(strip('Asphalt', c, L, W, 0, 8));
   }
   // earth shoulders, a little lighter at the edge of the asphalt
   {
@@ -73,7 +74,7 @@ export function createRoad() {
       ctx.fillStyle = `rgba(120,98,64,${0.15 + r() * 0.2})`;
       ctx.fillRect(r() * 64, r() * 32, 2, 2);
     }
-    for (const s of [-1, 1]) root.add(strip('Shoulder', c, ROAD.shoulder, s * (ROAD.half + ROAD.shoulder / 2), 2, -0.004));
+    for (const s of [-1, 1]) root.add(strip('Shoulder', c, L, ROAD.shoulder, s * (ROAD.half + ROAD.shoulder / 2), 2, -0.004));
   }
   // grass verges: soft green, a few darker tufts
   {
@@ -86,8 +87,9 @@ export function createRoad() {
       ctx.fillStyle = `rgba(92,140,70,${0.12 + r() * 0.22})`;
       ctx.fillRect(r() * 128, r() * 64, 2, 3);
     }
-    for (const s of [-1, 1]) root.add(strip('Verge', c, ROAD.verge, s * (ROAD.half + ROAD.shoulder + ROAD.verge / 2), 4, -0.008));
+    for (const s of [-1, 1]) root.add(strip('Verge', c, L, ROAD.verge, s * (ROAD.half + ROAD.shoulder + ROAD.verge / 2), 4, -0.008));
   }
+  if (!scenery) return { root };
   // the ground beyond: white, like the page (unlit, so it stays white)
   const edge = ROAD.half + ROAD.shoulder + ROAD.verge;
   {

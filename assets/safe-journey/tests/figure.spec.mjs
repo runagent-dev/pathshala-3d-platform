@@ -17,7 +17,7 @@ test('safe-journey: twice the speed, four times the energy; the car’s velocity
   const start = await fig.call('get');
   expect(start).toMatchObject({ speed: 20, phase: 'ready', cubes: 1, truck: 20, car: -20, change: null, crumple: 0, tried: [] });
   expect(start.next).toEqual({ speed: 20, step: 1 });
-  expect(await outcome()).toMatch(/১\s+ঘনক/);
+  expect(await outcome()).toMatch(/১টি\s+ঘনক/);
 
   // the energy grows with the square of the speed
   await fig.call('set', { speed: 40 });
@@ -45,7 +45,7 @@ test('safe-journey: twice the speed, four times the energy; the car’s velocity
   }
   expect(sawContact).toBe(true);
   const end40 = await fig.call('get');
-  expect(end40).toMatchObject({ phase: 'end', truck: 40, car: 120, change: 160, crumple: 0.4, tried: [40] });
+  expect(end40).toMatchObject({ phase: 'end', truck: 40, car: 120, change: 160, crumple: 0.6, tried: [40] });
   expect(await outcome()).toContain('১৬০');
   // the action now offers the next speed not tried (20 km/h), as step 2
   expect(end40.next).toEqual({ speed: 20, step: 2 });
@@ -58,7 +58,7 @@ test('safe-journey: twice the speed, four times the energy; the car’s velocity
   // at 60 km/h the car is crushed more
   await fig.call('set', { speed: 60, play: true, animate: false });
   const end60 = await fig.call('get');
-  expect(end60).toMatchObject({ phase: 'end', car: 180, change: 240, crumple: 0.9 });
+  expect(end60).toMatchObject({ phase: 'end', car: 180, change: 240, crumple: 1.35 });
 
   // the big button plays the crash too (at the next speed not tried)
   await frame.locator('.pvc-act').first().click();

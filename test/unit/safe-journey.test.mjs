@@ -51,7 +51,7 @@ describe('kinetic energy grows with the square of the speed', () => {
   it('the crumple follows the energy', () => {
     assert.deepEqual(
       c.SPEEDS.map((v) => c.crumpleDepth(v)),
-      [0.1, 0.4, 0.9],
+      [0.15, 0.6, 1.35],
     );
   });
   it('normalizeSpeed picks the nearest speed offered', () => {
