@@ -1,0 +1,126 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "safe-journey",
+  "title": "Safe journey: velocity and force (নিরাপদ ভ্রমণ: বেগ ও বল)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 74,
+  "topic": "3.5.2",
+  "placement": "Book pages 74–75, topic 3.5.2: নিরাপদ ভ্রমণ: বেগ ও বল (Safe journey: Velocity and Force). Next to the head-on truck and small-car example and its v₁, v₂ sums.",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "The book's safe-journey example (নিরাপদ ভ্রমণ, pages 74–75, 3.5.2) as a road scene: a heavy truck loaded with stones (m₁) and a small red car (m₂) face each other in one lane of a two-lane highway. The speed is chosen in a row of words (২০, ৪০, ৬০ km/h). Over the car, amber cubes in a square show its kinetic energy ½mv²: one cube is its energy at 20 km/h, so twice the speed makes a square twice as wide, four cubes, and three times nine (\"বেগ দ্বিগুণ করা হলে গতিশক্তি চার গুণ বেড়ে যায়\"). Blue velocity arrows lie on the road in front of each vehicle (u for the truck, −u for the car, to the right positive). The panel is one action, one result, one rule: a big numbered button (\"১ মুখোমুখি চালাও\") whose same badge rings the car plays the head-on crash with time 8 times slower (the contact slower still): the car's front is crushed in proportion to its energy, its velocity goes from −u through zero to 3u (the book's sums with m₂ ≈ 0) and it is flung back while the truck goes on at u; the result line gives the car's change (\"−৪০ থেকে ১২০ km/h: পরিবর্তন ১৬০ km/h\", 4u) and the rule grows from ½mv² through 3u − (−u) = 4u to the book's \"ক্ষতি কমানোর সবচেয়ে সহজ উপায় গতি কম রাখা\". Then the button offers the next speed. Test tab: 5 questions on their own scenes (the cubes at twice or three times the speed, which change lowers the energy most, the car's velocity after the crash, its change read off the picture, why the truck's velocity hardly changes). Phone-first, Bangla.",
+  "tags": ["kinetic-energy", "collision", "momentum", "road-safety", "velocity", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "speed",
+      "label": "Speed",
+      "type": "select",
+      "options": [["20", "20 km/h"], ["40", "40 km/h"], ["60", "60 km/h"]],
+      "default": "20"
+    },
+    {
+      "name": "at",
+      "label": "Start the crash at",
+      "type": "number",
+      "default": "",
+      "placeholder": "s into the run",
+      "help": "e.g. 2.5: the crash already 2.5 s on (screen time); 99 shows the end. Empty: both wait at the start"
+    },
+    {
+      "name": "tried",
+      "label": "Speeds already tried",
+      "type": "text",
+      "default": "",
+      "placeholder": "20,40",
+      "help": "their cubes show under the words and the rule compares them"
+    },
+    {
+      "name": "masses",
+      "label": "Masses",
+      "type": "select",
+      "options": [["book", "as the book: m₂ ≈ 0"], ["real", "real: 20,000 kg truck, 1,000 kg car"]],
+      "default": "book"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on the car pulses", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "speed": 40 } },
+    { "name": "set", "payload": { "play": true } },
+    { "name": "set", "payload": { "speed": 60, "play": true, "animate": false } },
+    { "name": "set", "payload": { "at": 2.5 } },
+    { "name": "set", "payload": { "tried": [20, 40] } },
+    { "name": "set", "payload": { "masses": "real" } },
+    { "name": "set", "payload": { "home": true } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": [
+    "ready",
+    "change",
+    "play",
+    "crash",
+    "end",
+    "speed",
+    "view",
+    "practice-start",
+    "practice-result",
+    "practice-end"
+  ],
+  "export": {
+    "poster": { "params": { "coach": "0", "speed": "60", "at": "99", "tried": "20,40,60" } },
+    "glb": [
+      { "name": "default", "setup": [{ "command": "set", "payload": { "speed": 40, "home": true, "animate": false } }] },
+      {
+        "name": "after-crash",
+        "setup": [{ "command": "set", "payload": { "speed": 60, "play": true, "animate": false } }]
+      }
+    ],
+    "video": {
+      "kind": "script",
+      "seconds": 20,
+      "fps": 30,
+      "params": { "coach": "0", "speed": "20" },
+      "script": [
+        { "at": 0.6, "command": "set", "payload": { "play": true } },
+        { "at": 6.6, "command": "set", "payload": { "speed": 40 } },
+        { "at": 7.6, "command": "set", "payload": { "play": true } },
+        { "at": 13, "command": "set", "payload": { "speed": 60 } },
+        { "at": 14, "command": "set", "payload": { "play": true } }
+      ]
+    }
+  }
+}
