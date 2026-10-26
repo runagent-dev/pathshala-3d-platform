@@ -65,7 +65,7 @@ describe('kinetic energy grows with the square of the speed', () => {
 describe('one run', () => {
   const sample = (p, n = 400) => Array.from({ length: n + 1 }, (_, i) => c.stateAt(p, (p.duration * i) / n));
   it('starts at the start gap, touches at the contact, ends with v₁ and v₂', () => {
-    for (const masses of ['book', 'real'])
+    for (const masses of /** @type {const} */ (['book', 'real']))
       for (const v of c.SPEEDS) {
         const p = c.plan(v, masses);
         const s0 = c.stateAt(p, 0);
@@ -84,7 +84,7 @@ describe('one run', () => {
       }
   });
   it('positions are continuous and the car never goes into the truck', () => {
-    for (const masses of ['book', 'real'])
+    for (const masses of /** @type {const} */ (['book', 'real']))
       for (const v of c.SPEEDS) {
         const p = c.plan(v, masses);
         let prev = null;
