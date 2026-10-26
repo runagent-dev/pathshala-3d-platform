@@ -1,0 +1,103 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "walking-third-law",
+  "title": "How we walk: the third law (হাঁটা ও নিউটনের তৃতীয় সূত্র)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 86,
+  "topic": "3.8",
+  "placement": "Book page 86, topic 3.8 (example): how we walk. Next to চিত্র ৩.১২ (a person's foot pushing the ground back, the ground pushing the person forward, labelled F and −F).",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "Interactive 3D figure for how we walk (হাঁটা), the example that explains Newton's third law (নিউটনের তৃতীয় সূত্র), book page 86, topic 3.8, next to চিত্র ৩.১২. A student stands on a path, seen from the side, real size. One big numbered action (\"শক্ত মাটিতে পা দিয়ে ধাক্কা দাও\", its badge rings the pushing foot; a tap on the student works too) takes the first push-off of a walk, slowed down 4 times, and holds at the telling moment with a pause note. Everyday words first: an orange arrow lying on the ground behind the toe says \"পা মাটিকে ঠেলছে\" and a crimson arrow at the shoe pointing forward says \"মাটি মানুষটিকে ঠেলছে\", the two equally long (100 N = 0.5 m); the student has moved off from a dashed start line. The panel is the clean sheet: the page's three grounds as one row of words (শক্ত মাটি, ঝুরঝুরে বালু, পিচ্ছিল মেঝে), each with its push under it once tried, the action going on to the next ground; one result line (\"পা মাটিকে ঠেলল, মাটি মানুষটিকে ঠেলল। দুটি ঠেলাই সমান: ১০০ নিউটন\"); one short rule per idea in plain words (\"পা মাটিকে পেছনে ঠেলে, তাই মাটি আমাদের সামনে ঠেলে\"; \"বালু সরে যায়\"; \"ঘর্ষণ খুব কম, তাই পা পিছলে যায়\") and the book's own sentence last, once all three grounds are found (\"বল প্রয়োগ করলে বিপরীত এবং সমান বল পাওয়া যায়\"), when the two pushes also get the book's names F and −F on their labels. Firm ground: both pushes 100 N (a = 2 ms⁻², the student moves off at 1.2 m/s); loose sand: the sand gives way, a heap is pushed back, both 50 N; a floor made slippery with soapy water or oil: the foot slides back, both only 20 N, the student hardly moves. Numbers are for an example 50 kg student (the book gives none). Test tab: 5 questions on held scenes in the same plain words (which arrow moves the student, how hard the ground pushes back, why equal and opposite pushes do not cancel, why the slippery floor stops us walking, how sand differs from firm ground), each wrong answer with its note. Phone-first, Bangla.",
+  "tags": ["force", "newtons-laws", "third-law", "action-reaction", "walking", "friction", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "ground",
+      "label": "Ground",
+      "type": "select",
+      "options": [["hard", "firm ground"], ["sand", "loose sand"], ["slip", "slippery floor"]],
+      "default": "hard"
+    },
+    {
+      "name": "at",
+      "label": "Start at",
+      "type": "text",
+      "default": "rest",
+      "placeholder": "rest | hold | s",
+      "help": "rest: standing; hold: stopped at the telling moment (both forces shown); or seconds (0 to 2.4) into the slowed-down push-off"
+    },
+    {
+      "name": "tried",
+      "label": "Grounds already found",
+      "type": "text",
+      "default": "",
+      "placeholder": "hard,sand",
+      "help": "their pushes show under the words"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on the foot pulses", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "ground": "sand" } },
+    { "name": "set", "payload": { "play": true } },
+    { "name": "set", "payload": { "act": true } },
+    { "name": "set", "payload": { "at": "hold" } },
+    { "name": "set", "payload": { "tried": ["hard", "sand"] } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "push", "hold", "ground", "view", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": { "params": { "coach": "0", "ground": "hard", "at": "hold", "tried": "hard" } },
+    "glb": [
+      {
+        "name": "default",
+        "setup": [{ "command": "set", "payload": { "ground": "hard", "at": "rest", "animate": false } }]
+      }
+    ],
+    "video": {
+      "kind": "script",
+      "seconds": 14,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 0.8, "command": "set", "payload": { "act": true } },
+        { "at": 5, "command": "set", "payload": { "act": true } },
+        { "at": 9.2, "command": "set", "payload": { "act": true } }
+      ]
+    }
+  }
+}
