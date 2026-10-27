@@ -1,0 +1,120 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "newtons-third-law",
+  "title": "Newton's third law of motion (নিউটনের তৃতীয় গতি সূত্র)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 84,
+  "topic": "3.8",
+  "placement": "Book pages 84–86, topic 3.8: নিউটনের তৃতীয় গতি সূত্র (Newton's Third Law of Motion). Next to the boxed law, the action–reaction paragraph and চিত্র ৩.১২ (an apple and the Earth pulling each other).",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "Newton's third law (নিউটনের তৃতীয় সূত্র, pages 84–86, 3.8) as an experiment the student runs: two skaters face each other on a smooth floor, hands together; one tap and they push each other with the same steady 10 N for a moment. A pair of equal, opposite arrows is drawn, each on the body it acts on and named (\"A-এর ওপর বল\", \"B-এর ওপর বল\"), so the two never cancel; both skaters move off, and with unequal masses (50 kg and 100 kg) the lighter one accelerates twice as much (a = F/m, 0.2 and 0.1 ms⁻²). The third picture is the book's চিত্র ৩.১২: a 1 kg apple let go above the Earth, the pull on the apple and the pull on the Earth both 9.8 N, while the Earth's acceleration a = (m/M)g is 1.64 × 10⁻²⁴ ms⁻² (M = 5.98 × 10²⁴ kg), too small to draw. The panel is one action, one result, one rule: a big numbered button (\"১ ধাক্কা দাও\") whose same numbered badge rings the hands (a tap on a skater or the apple does the same), one result line and one rule that grows from a question to the book's boxed law, word for word. Honest notes on the view: smooth floor; for the apple, time 2 times slower and not to scale. Test tab: 5 questions (which force is the reaction, why the pair does not cancel, who accelerates more, the pair is equal for any masses, why the Earth does not visibly move). Phone-first, Bangla.",
+  "tags": ["force", "newtons-laws", "action-reaction", "third-law", "acceleration", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "example",
+      "label": "Pair",
+      "type": "select",
+      "options": [["equal", "equal masses"], ["unequal", "light and heavy"], ["apple", "apple and Earth"]],
+      "default": "equal"
+    },
+    {
+      "name": "at",
+      "label": "Start already moving",
+      "type": "number",
+      "default": "",
+      "placeholder": "s after the push",
+      "help": "e.g. 0.9: the skaters are 0.9 s into the push (the apple's clock runs 2 times slower); empty: standing ready"
+    },
+    {
+      "name": "tried",
+      "label": "Pairs already tried",
+      "type": "text",
+      "default": "",
+      "placeholder": "equal,unequal",
+      "help": "their small results show under the words"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring pulses", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "example": "unequal" } },
+    { "name": "set", "payload": { "push": true } },
+    { "name": "set", "payload": { "example": "apple", "push": true } },
+    { "name": "set", "payload": { "at": 0.9 } },
+    { "name": "set", "payload": { "tried": ["equal", "unequal"] } },
+    { "name": "set", "payload": { "home": true } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": [
+    "ready",
+    "change",
+    "push",
+    "release",
+    "done",
+    "example",
+    "view",
+    "practice-start",
+    "practice-result",
+    "practice-end"
+  ],
+  "export": {
+    "poster": {
+      "params": { "coach": "0", "example": "unequal", "tried": "equal" },
+      "setup": [{ "command": "set", "payload": { "push": true } }]
+    },
+    "glb": [
+      {
+        "name": "default",
+        "setup": [{ "command": "set", "payload": { "example": "unequal", "home": true, "animate": false } }]
+      }
+    ],
+    "video": {
+      "kind": "script",
+      "seconds": 22,
+      "fps": 30,
+      "params": { "coach": "0", "example": "equal" },
+      "script": [
+        { "at": 0.8, "command": "set", "payload": { "push": true } },
+        { "at": 8, "command": "set", "payload": { "example": "unequal" } },
+        { "at": 8.8, "command": "set", "payload": { "push": true } },
+        { "at": 16, "command": "set", "payload": { "example": "apple" } },
+        { "at": 16.8, "command": "set", "payload": { "push": true } }
+      ]
+    }
+  }
+}
