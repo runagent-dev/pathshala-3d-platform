@@ -1,0 +1,32 @@
+{
+  "id": "mvqtrlsl63fb0f",
+  "author": "This computer",
+  "text": "change the friction picture",
+  "createdAt": "2026-10-27T15:12:59.926Z",
+  "status": "open",
+  "image": "reviews/mvqtrlsl63fb0f.webp",
+  "context": {
+    "frame": "fill",
+    "size": "484×150",
+    "params": {},
+    "state": {
+      "load": 2,
+      "side": "right",
+      "phase": "done",
+      "push": 0,
+      "friction": 0,
+      "limit": 19.6,
+      "block": -0.192,
+      "moved": {
+        "0": 9.8,
+        "1": 14.7,
+        "2": 19.6
+      },
+      "lens": true,
+      "heat": 0,
+      "view": "front",
+      "mode": "explore",
+      "next": "again"
+    }
+  }
+}
