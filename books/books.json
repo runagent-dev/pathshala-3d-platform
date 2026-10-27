@@ -10,7 +10,8 @@
       "chapters": [
         { "number": 1, "title": { "bn": "ভৌত রাশি ও পরিমাপ", "en": "Physical quantities and measurement" } },
         { "number": 2, "title": { "bn": "গতি", "en": "Motion" } },
-        { "number": 3, "title": { "bn": "বল", "en": "Force" } }
+        { "number": 3, "title": { "bn": "বল", "en": "Force" } },
+        { "number": 4, "title": { "bn": "কাজ, ক্ষমতা ও শক্তি", "en": "Work, power and energy" } }
       ]
     }
   ]
