@@ -6,6 +6,7 @@
 // Runs with `npm run test:figures` (dev-only folder, never packaged).
 import { expect, test } from '@playwright/test';
 import { openFigure, preparePage } from '../../../scripts/lib/export/driver.mjs';
+import { glbInfo } from '../../../scripts/lib/export/glb.mjs';
 
 test('types-of-friction: static grows with the push, kinetic is smaller, rolling is smallest', async ({ page }) => {
   test.setTimeout(240_000);
@@ -48,24 +49,34 @@ test('types-of-friction: static grows with the push, kinetic is smaller, rolling
   expect(slide.friction).toBe(7.84);
   expect(slide.push).toBeLessThan(9.8);
   expect(slide.distance).toBeGreaterThan(0);
-  expect(await text('[data-example="static"] .pvc-ex-res')).toBe('৯.৮ নিউটন');
+  // static friction has no one number (the page): the word says "maximum"
+  expect(await text('[data-example="static"] .pvc-ex-res')).toBe('সর্বোচ্চ ৯.৮ নিউটন');
   expect(await text('[data-example="kinetic"] .pvc-ex-res')).toBe('৭.৮ নিউটন');
-  expect(await text('.pvc-outcome')).toContain('পিছলে চলতে ঘর্ষণ ৭.৮ নিউটন');
+  expect(await text('.pvc-outcome')).toContain('স্থিতি ঘর্ষণ সর্বোচ্চ ৯.৮ নিউটন ছিল');
+  expect(await text('.pvc-outcome')).toContain('গতি ঘর্ষণ ৭.৮ নিউটন');
   expect(await text('.pvc-anno-layer')).toContain('ঘর্ষণ ৭.৮ নিউটন');
+  expect(await text('.pvc-anno-layer')).toContain('সর্বোচ্চ ৯.৮ নিউটন'); // the faint old arrow is named
   expect(await text('.pvc-act')).toContain('ঠেলা ছেড়ে দাও');
   // a steady pace: the push settles at the friction
   await fig.advance(1500);
   const steady = await fig.call('get');
   expect(steady.stage).toBe('slide');
   expect(Math.abs(steady.push - 7.84)).toBeLessThan(0.15);
-  // the person lets go (or the time runs out): it stops
+  // the steady pace goes on until the student lets go (nothing ends it for several seconds)
+  await fig.advance(4000);
+  expect((await fig.call('get')).stage).toBe('slide');
+  // the person lets go: the push is 0 at once and the block stops within a moment, the panel true at that moment
   await fig.frame.locator('.pvc-act').click();
-  await fig.advance(1500);
+  await fig.advance(250);
   const slid = await fig.call('get');
   expect(slid).toMatchObject({ stage: 'slid', push: 0, friction: 0, speed: 0 });
+  expect(await text('.pvc-outcome')).toContain('ঠেলা বন্ধ হতেই ব্লক থেমে গেল');
+  expect(await text('.pvc-anno-layer')).not.toContain('ঠেলা ');
+  expect(await fig.frame.locator('.pvc-anno', { hasText: 'সর্বোচ্চ' }).count()).toBe(0); // no stray old arrow after the stop
   expect(await text('.pvc-act')).toContain('ব্লকটি চাকায় তোলো');
   expect(await fig.frame.locator('[data-example="rolling"].next').count()).toBe(1);
 
+  await fig.advance(300); // (a second tap this soon after the last would count as a double tap)
   // on wheels: nothing pushes at first, then about 1 N keeps it rolling
   await tap();
   await fig.advance(1800);
@@ -77,13 +88,18 @@ test('types-of-friction: static grows with the push, kinetic is smaller, rolling
   expect(roll.stage).toBe('roll');
   expect(roll.found.rolling).toBe(0.98);
   expect(await text('[data-example="rolling"] .pvc-ex-res')).toBe('১ নিউটন');
-  await fig.advance(4500);
-  expect((await fig.call('get')).stage).toBe('rolled');
+  expect(await text('.pvc-anno-layer')).toContain('পিছলে ৭.৮ নিউটন'); // the faint 7.8 N beside the 1 N
+  await fig.frame.locator('.pvc-act').click(); // let go: the push is 0 and it stops in under half a second
+  await fig.advance(600);
+  const rolled = await fig.call('get');
+  expect(rolled).toMatchObject({ stage: 'rolled', push: 0, friction: 0, speed: 0 });
   // the formulas come last, after all three
   const rule = await text('.pvc-rule');
   expect(rule).toContain('f');
   expect(rule).toContain('μ');
   expect(rule).toContain('ওজনের সমান');
+  expect(rule).toContain('০.৫ × ১৯.৬ = ৯.৮');
+  expect(rule).toContain('০.৪ × ১৯.৬ = ৭.৮');
   expect(await text('.pvc-act')).toContain('আবার দেখো');
 
   // a word of the row goes back to its part; home keeps what was found
@@ -99,20 +115,38 @@ test('types-of-friction: static grows with the push, kinetic is smaller, rolling
   expect(jump.stage).toBe('slide');
   expect(jump.push).toBe(7.84);
 
-  // the test: five questions, each on its own scene; the ring hides; the scene is locked
+  // the one GLB has the trolley under the block (block 0.12 m on a deck 0.056 m high), not a floating block
+  const glb = await fig.call('export-glb', {});
+  const info = await glbInfo(Buffer.from(glb.base64 ?? '', 'base64'));
+  expect(info.size[1]).toBeGreaterThan(0.17);
+  expect(info.size[1]).toBeLessThan(0.19);
+
+  // the test: five questions, each on its own scene; the ring hides; the scene is locked; no number in the question
+  // text that the picture shows; a second round comes in another order
+  const round = async () => {
+    const asked = [];
+    for (let i = 0; i < 5; i++) {
+      await fig.advance(1500);
+      const opts = fig.frame.locator('.pvc-opt:not([disabled])');
+      expect(await opts.count()).toBe(4);
+      const q = await text('.pvc-q-text');
+      asked.push(q.slice(0, 14));
+      if (/^ব্লকটি (নড়ছে না|একই বেগে)/.test(q)) expect(q).not.toMatch(/[০-৯]/); // read the push off the gauge
+      expect(await fig.frame.locator('.pvc-act-marker.in:not(.pvc-act-under)').count()).toBe(0);
+      await opts.first().click();
+      await fig.advance(400);
+      expect(((await text('.pvc-q-feedback')) || '').length).toBeGreaterThan(10);
+      await fig.frame.locator('[data-act="q-next"]').click();
+    }
+    await fig.advance(500);
+    return asked;
+  };
   await fig.call('practice');
-  for (let i = 0; i < 5; i++) {
-    await fig.advance(1500);
-    const opts = fig.frame.locator('.pvc-opt:not([disabled])');
-    expect(await opts.count()).toBe(4);
-    expect(await fig.frame.locator('.pvc-act-marker.in:not(.pvc-act-under)').count()).toBe(0);
-    await opts.first().click();
-    await fig.advance(400);
-    expect(((await text('.pvc-q-feedback')) || '').length).toBeGreaterThan(10);
-    await fig.frame.locator('[data-act="q-next"]').click();
-  }
-  await fig.advance(500);
+  const first = await round();
+  expect(new Set(first).size).toBe(5);
   expect(await fig.frame.locator('.pvc-q-done .pvc-q-result').textContent()).toContain('৫টির মধ্যে');
+  await fig.frame.locator('[data-act="q-again"]').click();
+  expect((await round()).join('|')).not.toBe(first.join('|'));
   // leaving the test brings back what the student had found
   await fig.frame.locator('[data-mode="explore"]').click();
   await fig.advance(300);

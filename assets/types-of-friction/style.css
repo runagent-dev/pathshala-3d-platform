@@ -14,6 +14,8 @@ body.bg-transparent { background: transparent; }
 .tf .pvc-rule .c-n { color: var(--c-n); }
 .tf .pvc-rule .c-mu { color: var(--ink); }
 .tf .pvc-rule sub { font-size: 0.72em; line-height: 0; }
+/* each formula and each worked sum stays in one piece when the line breaks */
+.tf .nw { white-space: nowrap; }
 
 /* the result line: its number in the colour of what it is (friction crimson) */
 .tf .pvc-outcome b { color: var(--c-fric); }

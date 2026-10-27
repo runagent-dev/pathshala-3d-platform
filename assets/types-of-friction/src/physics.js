@@ -74,6 +74,9 @@ export function step(st, dt, goal, rate = RATE) {
   return { ...st, pull, v, x, moving, friction, broke };
 }
 
+/** The hand lets go: the push is 0 at once, so the friction alone stops a moving block (nothing fades). */
+export const letGo = (st) => ({ ...st, pull: 0, friction: st.moving ? st.friction : 0 });
+
 /** The whole story of one tap on a support, from rest with the push rising: states every step (for tests). */
 export function simulate(on, mass, { seconds = 8, dt = 1 / 120, up = on === 'wheels' ? RATE_WHEELS_UP : RATE.up, cruiseFor = 3 } = {}) {
   let st = { on, mass, pull: 0, v: 0, x: 0, moving: false, friction: 0, broke: false };

@@ -26,7 +26,7 @@ import { createTrolley, TROLLEY } from './trolley.js';
 import { createGauge } from './gauge.js';
 import { createFloor } from './floor.js';
 import { fitPose } from './camera.js';
-import { MASS, MU, NOTCHES, RATE, RATE_WHEELS_UP, V_STEADY, cruiseGoal, fmtForce, limits, round, step, weight } from './physics.js';
+import { MASS, MU, NOTCHES, RATE, RATE_WHEELS_UP, V_STEADY, cruiseGoal, fmtForce, letGo, limits, round, step, weight } from './physics.js';
 
 export const STAGES = ['rest', 'pull', 'slide', 'slid', 'wheels', 'roll', 'rolled'];
 
@@ -46,12 +46,13 @@ export const DEFAULTS = {
 const COLORS = { push: '#e8590c', friction: '#c2255c' };
 const ARROW = 0.015; // m of arrow per newton (9.8 N = 14.7 cm; the block is 20 cm long)
 const FOLLOW_AT = 0.1; // m: the view follows the block once it is this far along
-const T_CRUISE = { floor: 3.2, wheels: 3.4 }; // s the person keeps pushing at a steady pace after the block gives way
+const T_CRUISE = { floor: 8, wheels: 8 }; // s: the person keeps pushing at a steady pace until the student lets go (or this long)
+const T_STEADY = 3.2; // s of steady pace a scene that starts part way (pictures, the test) is run on to
 const LIFT = 0.075; // m: the block is lifted this high to slip the trolley under it
 const TROLLEY_FROM = -0.9; // m: where the trolley comes from (out of sight on the left)
 const DOUBLE_TAP = 350; // ms
 const VIEW_3D = new THREE.Vector3(-0.35, 0.55, 0.8).normalize();
-const ELEVATION = 24; // degrees above the floor for the side view
+const ELEVATION = 26; // degrees above the floor for the side view
 const CHIPS = ['static', 'kinetic', 'rolling'];
 
 export function createApp(root, options = {}) {
@@ -72,6 +73,7 @@ export function createApp(root, options = {}) {
     }),
   });
   const sheet = bindCleanSheet(ui.learn);
+  ui.canvasHost.setAttribute('aria-label', t('aria_stage'));
   // the honest note on the view: the book gives no numbers
   const note = document.createElement('div');
   note.className = 'tf-note';
@@ -180,12 +182,15 @@ export function createApp(root, options = {}) {
         if (!s.hold && s.cruiseT >= T_CRUISE[s.sim.on]) s.mode = 'release';
         else goal = cruiseGoal(s.sim.on, s.sim.mass, s.sim.v);
       }
-      if (s.mode === 'release') goal = 0;
+      if (s.mode === 'release') {
+        goal = 0;
+        s.sim = letGo(s.sim); // the hand lets go at once: the push is 0, the friction alone stops the block
+      }
       s.sim = step(s.sim, h, goal, { ...RATE, up: s.up });
       if (s.hold && s.sim.x > 8) s.sim = { ...s.sim, x: s.sim.x - 6 }; // the floor repeats every 0.1 m: seamless
       if (s.sim.broke) onBreak();
       if (s.mode === 'ramp' && !s.sim.moving && Math.abs(s.sim.pull - s.goal) < 1e-6) s.mode = 'idle';
-      if (s.mode === 'release' && !s.sim.moving && s.sim.pull < 0.01) {
+      if (s.mode === 'release' && !s.sim.moving) {
         s.mode = 'idle';
         s.goal = 0;
         s.sim = { ...s.sim, pull: 0, friction: 0 };
@@ -253,14 +258,17 @@ export function createApp(root, options = {}) {
     const fricX = x + (s.trolley ? TROLLEY.L / 2 : L / 2);
     const fricZ = s.trolley ? TROLLEY.wheelZ + 0.032 : D / 2 + 0.026;
     arrows.friction.set(tmpA.set(fricX, 0.006, fricZ), XN, s.busy ? 0 : st.friction * ARROW);
-    const old = s.stage === 'slide' || s.stage === 'slid' ? s.found.static : null;
-    if (old != null && !s.busy) {
-      const oldLen = old * ARROW;
+    const shown = !s.busy && !s.locked;
+    const oldMax = shown && s.stage === 'slide' ? s.found.static : null; // the old maximum, while it slides
+    const oldSlide = shown && s.stage === 'roll' ? limits('floor', st.mass).move : null; // what sliding would give
+    if (oldMax != null) {
+      const oldLen = oldMax * ARROW;
       ghosts.push.set(tmpA.set(faceX - oldLen, arrowY, -0.001), XP, oldLen);
       ghosts.friction.set(tmpA.set(fricX, 0.006, fricZ - 0.001), XN, oldLen);
     } else {
       ghosts.push.hide();
-      ghosts.friction.hide();
+      if (oldSlide != null) ghosts.friction.set(tmpA.set(fricX, 0.006, fricZ - 0.001), XN, oldSlide * ARROW);
+      else ghosts.friction.hide();
     }
     floor.showStart(!s.locked && st.x > 0.03 && !s.trolley);
     placeSun(x);
@@ -385,7 +393,12 @@ export function createApp(root, options = {}) {
   const grid = (dys, dxs) => dys.flatMap((dy) => dxs.map((dx) => ({ dx, dy })));
   const SPOTS = {
     push: grid([-28, -48], [0, -10, -20, -30, -45, -60, -80, -110, 10, 20]),
-    friction: [...grid([28], [0, -12, 12, -24, -40]), ...grid([10, 4, -4], [-70, -100, -140, -170, -220]), ...grid([48, 62], [0, -12, 12, -40, -70])],
+    friction: [
+      ...grid([28], [0, -12, 12, -24, -40]),
+      ...grid([10, 4, -4], [-70, -100, -140, -170, -220, -280, -340, -400]),
+      ...grid([10, 4], [150, 190]),
+      ...grid([48, 62], [0, -12, 12, -40, -70]),
+    ],
     gauge: [...grid([28, 48], [0, -20, -40, -70, 20]), ...grid([10, -6], [-60, -90, -120])],
   };
   function labelsFor() {
@@ -397,15 +410,36 @@ export function createApp(root, options = {}) {
     if (st.pull >= 0.2 && !s.busy)
       keepLabel('push', { text: t('l_push', { f: fmt(st.pull) }), point: () => pushMid, color: COLORS.push, kind: 'callout', spots: SPOTS.push });
     else anno.remove('push');
-    if (st.friction >= 0.2 && !s.busy)
+    if (st.friction >= 0.2 && !s.busy && s.hideFric !== 'hide')
       keepLabel('fric', {
-        text: s.hideFric ? t('l_fric_q') : t('l_fric', { f: fmt(st.friction) }),
+        text: s.hideFric === 'ask' ? t('l_fric_q') : t('l_fric', { f: fmt(st.friction) }),
         point: () => arrows.friction.tip,
         color: COLORS.friction,
         kind: 'callout',
         spots: SPOTS.friction,
       });
     else anno.remove('fric');
+    // the faint old arrows: the old maximum while it slides, what sliding would give while it rolls
+    if (ghosts.push.root.visible)
+      keepLabel('oldpush', {
+        text: t('l_max', { f: fmt(s.found.static ?? 0) }),
+        point: () => ghosts.push.root.position,
+        color: COLORS.push,
+        kind: 'part',
+        spots: SPOTS.push,
+        optional: true,
+      });
+    else anno.remove('oldpush');
+    if (ghosts.friction.root.visible && s.stage === 'roll')
+      keepLabel('oldfric', {
+        text: t('l_old_slide', { f: fmt(limits('floor', st.mass).move) }),
+        point: () => ghosts.friction.tip,
+        color: COLORS.friction,
+        kind: 'part',
+        spots: SPOTS.friction,
+        optional: true,
+      });
+    else anno.remove('oldfric');
   }
 
   // ── the panel: one action, one result, one rule ─────────────────────────────
@@ -439,8 +473,9 @@ export function createApp(root, options = {}) {
       case 'pull':
         return ramping ? t('out_ramp') : t('out_push', { p: fmt(s.sim.pull) });
       case 'slide':
-      case 'slid':
         return t('out_slide', { k: fmt(f.kinetic ?? 0), m: fmt(f.static ?? 0) });
+      case 'slid':
+        return t('out_slid', { k: fmt(f.kinetic ?? 0) });
       case 'wheels':
         return ramping ? t('out_ramp') : t('out_wheels');
       case 'roll':
@@ -464,7 +499,7 @@ export function createApp(root, options = {}) {
       case 'roll':
         return t('rule_roll');
       default:
-        return t('rule_all', { w: fmt(weight(MASS)), ms: MU.s, mk: MU.k });
+        return t('rule_all', { w: fmt(weight(MASS)), ms: MU.s, mk: MU.k, fs: fmt(limits('floor').max), fk: fmt(limits('floor').move) });
     }
   }
 
@@ -475,7 +510,7 @@ export function createApp(root, options = {}) {
     sheet.next(s.stage === 'slid' ? 'rolling' : null);
     for (const id of CHIPS) {
       const v = s.found[id];
-      sheet.result(id, v == null ? '' : t('res_n', { f: fmt(v) }));
+      sheet.result(id, v == null ? '' : t(id === 'static' ? 'res_max' : 'res_n', { f: fmt(v) }));
     }
     sheet.outcome(outcomeHtml());
     outcomeEl.dataset.k = chipOf();
@@ -788,7 +823,7 @@ export function createApp(root, options = {}) {
     s.stage = pushN > 0 ? 'pull' : 'rest';
   }
   /** The block already moving at its steady pace (the test: it goes on until the answer). */
-  function setCruising(on, mass = MASS, { hold = true, seconds = T_CRUISE[on] } = {}) {
+  function setCruising(on, mass = MASS, { hold = true, seconds = T_STEADY } = {}) {
     setNow(on, mass);
     startBreak(on === 'wheels' ? 20 : 40);
     s.hold = true; // the steady pace must not end while we run on to it
@@ -888,7 +923,6 @@ export function createApp(root, options = {}) {
         s.mode_ui = 'quiz';
         s.locked = true;
         hintOff();
-        kinds = shuffle([...KINDS]);
         syncUI();
       },
       leave() {
@@ -905,27 +939,28 @@ export function createApp(root, options = {}) {
         emitChange();
       },
       async prepare(i, alive) {
+        if (i === 0) kinds = shuffle([...KINDS]); // a new round, a new order
         const kind = kinds[i % kinds.length];
         question = { kind };
         if (kind === 'static') {
           const p = pickOne([3, 5, 7, 8]);
           setPushed(p);
-          s.hideFric = true;
+          s.hideFric = 'ask';
           question.p = p;
           show(alive);
           return {
-            text: t('q_static', { p: fmt(p) }),
+            text: t('q_static'),
             ...textChoices([ans('s_eq', p), ans('s_zero', 0), ans('s_max', maxOf(MASS)), ans('s_weight', weight(MASS))], kind),
           };
         }
         if (kind === 'slide') {
           const m = pickOne([2, 3]);
           setCruising('floor', m);
-          s.hideFric = true;
+          s.hideFric = 'ask';
           question.m = m;
           show(alive);
           return {
-            text: t('q_slide', { k: fmt(moveOf(m)) }),
+            text: t('q_slide'),
             ...textChoices([ans('k_eq', moveOf(m)), ans('k_zero', 0), ans('k_max', maxOf(m)), ans('k_weight', weight(m))], kind),
           };
         }
@@ -933,7 +968,7 @@ export function createApp(root, options = {}) {
           const what = pickOne(['static', 'kinetic', 'rolling']);
           if (what === 'static') setPushed(pickOne([3, 5, 7, 8]));
           else setCruising(what === 'kinetic' ? 'floor' : 'wheels');
-          s.hideFric = true;
+          s.hideFric = 'hide';
           question.what = what;
           show(alive);
           const others = ['w_static', 'w_kinetic', 'w_rolling', 'w_none'].filter((k) => k !== `w_${what}`);
@@ -945,7 +980,7 @@ export function createApp(root, options = {}) {
           question.m = m;
           show(alive);
           return {
-            text: t('q_load', { m, m0: MASS, f0: fmt(maxOf(MASS)) }),
+            text: t('q_load', { m0: MASS, f0: fmt(maxOf(MASS)) }),
             ...textChoices(
               [ans('l_eq', maxOf(m)), ans('l_same', maxOf(MASS)), ans('l_add', maxOf(MASS) + (m - MASS)), ans('l_whole', weight(m))],
               kind,
@@ -953,7 +988,7 @@ export function createApp(root, options = {}) {
           };
         }
         setCruising('wheels');
-        s.hideFric = true;
+        s.hideFric = 'hide';
         show(alive);
         return { text: t('q_wheels'), ...textChoices([word('y_roll'), word('y_light'), word('y_none'), word('y_floor')], kind) };
       },
@@ -963,7 +998,7 @@ export function createApp(root, options = {}) {
         refresh();
         const key = correct ? null : q.list?.[picked.index]?.key;
         const r = fmt(limits('wheels').move);
-        const note = (map) => (key && map[key] ? ` ${t(map[key], { r })}` : '');
+        const note = (map) => (key && map[key] ? ` ${t(map[key], { r, k: question.m ? question.m / MASS : 1 })}` : '');
         if (k === 'static') return t('why_static', { p: fmt(question.p) }) + note({ s_zero: 'not_zero', s_max: 'not_max', s_weight: 'not_weight' });
         if (k === 'slide')
           return (
@@ -973,7 +1008,7 @@ export function createApp(root, options = {}) {
         if (k === 'which') return t(`why_which_${question.what}`) + note({ w_none: 'not_none' });
         if (k === 'load')
           return (
-            t('why_load', { f: fmt(maxOf(question.m)), k: question.m / MASS, n: fmt(weight(question.m)), ms: MU.s }) +
+            t('why_load', { f: fmt(maxOf(question.m)), f0: fmt(maxOf(MASS)), k: question.m / MASS }) +
             note({ l_same: 'not_same', l_add: 'not_add', l_whole: 'not_whole' })
           );
         return t('why_wheels', { r, k: fmt(moveOf(MASS)) }) + note({ y_light: 'not_light', y_none: 'not_wheel_none', y_floor: 'not_floor' });
@@ -1101,7 +1136,9 @@ export function createApp(root, options = {}) {
       trolley.root.position.set(0, 0, 0);
       trolley.roll(0);
       gauge.place(-BLOCK.L / 2, TROLLEY.top + BLOCK.H / 2, 0, 0.25);
-      copy.add(trolley.root.clone(true), block.root.clone(true), gauge.root.clone(true));
+      const trolleyCopy = trolley.root.clone(true);
+      trolleyCopy.visible = true;
+      copy.add(trolleyCopy, block.root.clone(true), gauge.root.clone(true));
       block.setMass(mass);
       place();
       return copy;

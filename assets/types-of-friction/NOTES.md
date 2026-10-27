@@ -34,17 +34,22 @@ the friction (আবর্ত) is far smaller. So 9.8 N, 7.8 N, about 1 N for th
   squeezes by 3 mm per newton; the whole gauge moves towards the block by that squeeze while the block stays put.
 - Arrows: the push (ঠেলা) orange #e8590c at the block's left face, the friction (ঘর্ষণ) crimson #c2255c at the floor
   under the block, 1.5 cm per newton (one scale for both), each with its number on a label. After the block gives way a
-  faint wider arrow keeps the old 9.8 N round the live ones, so the drop to 7.8 N is seen. The weight and the normal
+  faint wider arrow (named "সর্বোচ্চ ৯.৮ নিউটন") keeps the old 9.8 N round the live ones while it slides, so the drop to
+  7.8 N is seen; on wheels a faint 7.8 N friction arrow ("পিছলে ৭.৮ নিউটন") sits beside the 1 N one, so the three sizes
+  are side by side. Neither is drawn after the stop or in the test. The weight and the normal
   force are not drawn (they would be inside the block); N is explained in the last rule and by the 3 kg and 4 kg
   blocks of the test, which carry real 1 kg weights on top.
 - The panel is the kit's clean sheet: the three terms as one row of words (স্থিতি ঘর্ষণ · গতি ঘর্ষণ · আবর্ত ঘর্ষণ) with
-  the friction found under each (৯.৮ · ৭.৮ · ১ নিউটন); one numbered action; one result line with the one number that
+  the friction found under each (সর্বোচ্চ ৯.৮ · ৭.৮ · ১ নিউটন: the page says static friction has no fixed size, only a
+  maximum); one numbered action; one result line with the one number that
   matters; one rule that grows: plain words first (ঠেলা, পিছলে চলা, গড়িয়ে চলা), the book's terms in bold, the formulas and
-  N ("তল ব্লককে যত জোরে ওপরে ঠেলে, ওজনের সমান") and μ ("তল কত খসখসে") last.
+  N ("তল ব্লককে যত জোরে উপরে ঠেলে, ওজনের সমান") and μ ("তল কত খসখসে") last.
 - The story, one tap each: ১ ধীরে ধীরে ঠেলো, then "আরও জোরে ঠেলো" (3, 6, 9 N: the block does not move, the friction
   equals the push each time; the 4th tap pushes past 9.8 N) → the block gives way, the person eases off to keep a steady
-  pace, the gauge falls to 7.8 N (button "ঠেলা ছেড়ে দাও"; it lets go by itself after 3.2 s and the block stops at once,
-  kinetic friction alone) → ২ ব্লকটি চাকায় তোলো (the block is lifted, a small trolley rolls under it) → ৩ চাকার ব্লকটি
+  pace, the gauge falls to 7.8 N (the slide goes on until the student taps "ঠেলা ছেড়ে দাও", with a fallback after
+  8 s; the push drops to 0 at once, the block stops within a few hundredths of a second on the floor, a quarter of a
+  second on wheels, kinetic friction alone, and the result line says so: "ঠেলা বন্ধ হতেই ব্লক থেমে গেল", the page's brake
+  sentence) → ২ ব্লকটি চাকায় তোলো (the block is lifted, a small trolley rolls under it) → ৩ চাকার ব্লকটি
   ঠেলো (it rolls on about 1 N) → "আবার দেখো". A word of the row goes to its part (স্থিতি: the start; গতি: pushes until it
   gives way; আবর্ত: onto the wheels and pushes). The quiet ⟲ goes back to the start and keeps what was found.
 - Real physics, real time: `src/physics.js` integrates m·a = push − friction in 1/120 s steps. At rest the friction
@@ -53,11 +58,14 @@ the friction (আবর্ত) is far smaller. So 9.8 N, 7.8 N, about 1 N for th
 - Example numbers (a note on the view says "সংখ্যাগুলো উদাহরণ"; the book gives none): 2 kg, g = 9.8 (the weight and N
   are 19.6 N), μ<sub>s</sub> = 0.5 (maximum 9.8 N; with 1 kg on top 14.7 N, with 2 kg 19.6 N, as in `friction-force`),
   μ<sub>k</sub> = 0.4 (7.84 N, shown 7.8), rolling coefficient 0.05 (0.98 N, shown 1).
-- Test (5 questions in a random order, each on its own scene): the friction while the block is held by a push read off
-  the gauge (3, 5, 7 or 8 N); the friction at a steady slide read off the gauge (2 or 3 kg); which of the three frictions
-  acts (the picture is at rest, sliding or on wheels); how much push a 3 kg or 4 kg block needs (N bigger, friction
-  bigger); why wheels make a suitcase easy to pull. Wrong choices are real mistakes (no friction while it is still,
-  the maximum value always, the weight, kg added to N, the wheels lighten it) with a note each.
+- Test (5 questions, a new random order each round, each on its own scene; the picture is needed: no question prints a
+  number the picture shows): the friction while the block is held by a push, read off the gauge (3, 5, 7 or 8 N); the
+  friction at a steady slide, read off the gauge (2 or 3 kg); which of the three frictions acts (the picture is at rest,
+  sliding or on wheels); how much push a block needs whose mass is on the block (3 kg or 4 kg: the weights on top carry
+  their 1 kg labels); why wheels make a suitcase easy to pull (four answers of the same length and style). Wrong choices
+  are real mistakes (no friction while it is still, the maximum value always, the weight, kg added to N, the wheels
+  lighten it) with a note each; the worked answers say it plainly ("ওজন ১.৫ গুণ হলে সর্বোচ্চ ঘর্ষণও ১.৫ গুণ") before the
+  student may have read the formula.
 
 ## Terms (as in the book)
 ঘর্ষণ, ঘর্ষণ বল, স্থিতি ঘর্ষণ, গতি ঘর্ষণ, আবর্ত ঘর্ষণ, সর্বোচ্চ স্থিতি ঘর্ষণ, স্থিতি ঘর্ষণ সহগ, গতি ঘর্ষণ সহগ, তল, নিউটন,
@@ -77,8 +85,13 @@ the friction (আবর্ত) is far smaller. So 9.8 N, 7.8 N, about 1 N for th
   numbers (9.8, 7.8, 1 N) can be seen on one gauge.
 - "ঠেলা" for the applied force (the page says "বল"), "বলমাপক" for the force gauge (the page names no instrument; a
   student may know it as স্প্রিং স্কেল), "ব্লক" and "তল": which words does the edition want?
-- The last sentence of the rolling paragraph reads "অনেক বেগ পেতে হতো" (probably "বেগ" in the sense of trouble); the
-  figure does not quote it.
+- The last sentence of the rolling paragraph reads "অনেক বেগ পেতে হতো": the idiom "বেগ পেতে হওয়া" (to have a hard
+  time), so rule_roll uses it ("চাকা না থাকলে টেনে নিতে অনেক বেগ পেতে হতো"). Is that the intended reading?
+- `friction-force` (page 88) shows 9.8 N while the block slides (one μ for both); this figure shows 7.8 N once it slides
+  (μ<sub>k</sub> < μ<sub>s</sub>), because that drop is the lesson of 3.9.1. The two figures agree on 9.8 / 14.7 / 19.6 N
+  as the static maxima.
+- "ওজন" means both weight and the force on screen (as in `friction-force`); the figure keeps the book's word.
+- Spelling follows pages 89–90: "উপর" (not "ওপর").
 - The glyph μ is not in the bundled Noto Sans Bengali (nor ₛ ₖ): μ falls back to the system font, f<sub>s</sub> is
   written with <sub>.
 - Whether the wheels should be shown as the trolley under the block (stylised: the block is lifted and a small trolley

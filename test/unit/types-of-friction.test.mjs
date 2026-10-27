@@ -13,6 +13,7 @@ import {
   V_STEADY,
   cruiseGoal,
   fmtForce,
+  letGo,
   limits,
   round,
   simulate,
@@ -95,6 +96,35 @@ describe('types-of-friction: the step', () => {
     assert.equal(st.moving, false);
     assert.equal(st.v, 0);
     assert.ok(st.x > 0 && st.x < 0.1, `it stopped within a few centimetres (${st.x})`);
+  });
+});
+
+describe('types-of-friction: letting go', () => {
+  test('the push is 0 at once, and the friction alone stops the block (floor in a few centimetres, wheels slower)', () => {
+    for (const [on, within] of [
+      ['floor', 0.08],
+      ['wheels', 0.4],
+    ]) {
+      const { move } = limits(on, MASS);
+      let st = letGo({ on, mass: MASS, pull: move, v: V_STEADY, x: 0, moving: true, friction: move, broke: false });
+      assert.equal(st.pull, 0);
+      let t = 0;
+      while (st.moving && t < 2) {
+        st = step(st, 1 / 120, 0);
+        t += 1 / 120;
+        assert.equal(st.pull, 0, 'nothing fades: the push stays 0');
+      }
+      assert.equal(st.moving, false);
+      assert.equal(st.v, 0);
+      assert.equal(st.friction, 0);
+      assert.ok(t < within, `${on} stopped within ${within} s (${t.toFixed(3)} s)`);
+    }
+  });
+
+  test('letting go of a block at rest changes nothing', () => {
+    const st = letGo({ on: 'floor', mass: MASS, pull: 6, v: 0, x: 0, moving: false, friction: 6, broke: false });
+    assert.equal(st.pull, 0);
+    assert.equal(st.friction, 0);
   });
 });
 
