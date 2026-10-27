@@ -144,8 +144,9 @@ describe('law of gravitation: the test’s choices (right answer first, then the
     distinct(c);
     close(lg.force(1000, 1000, 1) / lg.force(1000, 1000, 2), c[0]);
   });
-  it('g two radii from the centre: a quarter; the distance not squared; unchanged; the wrong way squared', () => {
-    const g0 = lg.gravity();
+  it('the weight two radii from the centre: a quarter; the distance not squared; unchanged; the wrong way squared', () => {
+    // every choice starts from the 9.8 the question states, so the last one is 4 × 9.8 = 39.2 (not 4 × 9.83)
+    const g0 = 9.8;
     const c = lg.heightChoices(2);
     close(c[0], g0 / 4);
     close(c[1], g0 / 2);
@@ -153,8 +154,17 @@ describe('law of gravitation: the test’s choices (right answer first, then the
     close(c[3], g0 * 4);
     assert.equal(lg.roundTo(c[0], 1), 2.5);
     assert.equal(lg.roundTo(c[1], 1), 4.9);
-    assert.equal(lg.roundTo(c[3], 1), 39.3);
+    assert.equal(lg.roundTo(c[3], 1), 39.2);
     assert.equal(new Set(c.map((x) => lg.roundTo(x, 1))).size, 4, 'four different choices on the screen');
+    // and the true answer from M and R agrees with the shown one: GM/(2R)² = 2.46, shown as 2.5
+    assert.equal(lg.roundTo(lg.gravity(lg.EARTH.M, 2 * lg.EARTH.R), 1), lg.roundTo(c[0], 1));
+  });
+  it('one mass made 3 times as big: 3; squared by mistake 9; a third; unchanged', () => {
+    const c = lg.massFactors(3);
+    assert.deepEqual([c[0], c[1], c[3]], [3, 9, 1]);
+    close(c[2], 1 / 3);
+    close(lg.force(3000, 1000, 2) / lg.force(1000, 1000, 2), c[0]);
+    assert.equal(new Set(c).size, 4);
   });
   it('R for a weight 1 m up: about the Earth’s radius; the height; the diameter; km read as m', () => {
     const c = lg.radiusChoices();

@@ -102,10 +102,12 @@ export function distanceFactors(k = 2) {
 /**
  * g at a place k Earth radii from the centre (k = 2: a weight one radius above the ground), with the usual slips: g
  * = GM/(kR)² is right; the distance not squared; g unchanged (as if height did not matter); the wrong way squared.
+ * Every choice starts from the g the question states (9.8, rounded to one decimal), so 4 × 9.8 = 39.2 is the last one,
+ * not 4 × 9.83.
  */
 export function heightChoices(k = 2, M = EARTH.M, R = EARTH.R) {
-  const g0 = gravity(M, R);
-  return [gravity(M, k * R), g0 / k, g0, g0 * k * k];
+  const g0 = roundTo(gravity(M, R), 1);
+  return [g0 / (k * k), g0 / k, g0, g0 * k * k];
 }
 
 /** R for a body 1 m above the ground: about the Earth's radius; the height above the ground; the diameter; km read as m. */
