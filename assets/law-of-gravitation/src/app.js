@@ -1,15 +1,17 @@
 // Law of gravitation (book pages 78–79, topic 3.7), student view. Two solid iron spheres (1,000 kg is a ball 62 cm
-// across) rest on stands on a bench with a metre scale; above each one a violet arrow shows the gravitational pull on
-// it (মহাকর্ষ বল, the colour gravity has in every figure): two equal arrows pointing at each other, drawn to one scale
-// (the pull between two 1,000 kg spheres 1 m apart, 6.67 × 10⁻⁵ N, is 1 m long). The student does five things, each
-// changing one thing from the picture before, the old arrows left faint so the change shows: doubles the distance (the
-// arrows shrink to a quarter), doubles the left mass (they double, on both spheres: the small one pulls the big one
-// just as hard), doubles the right mass (four times); then, on the Earth cut open to its centre, puts a 1 kg weight on
-// the ground (F = GMm/R² is its weight, about 9.8 N, R from the Earth's centre) and a second one (twice the weight,
-// the same g = GM/R² ≈ 9.8 m s⁻²). Then a short test. The panel is the kit's clean sheet (one action, one result, one
-// rule): the examples দূরত্ব · ভর · পৃথিবী as one row of words with what was found under each, one big numbered action
-// whose same badge rings the part to touch, one result line (the force in নিউটন), one rule in the book's words that
-// grows with what the student has found. Built on the shared student kit (@shared/student/…).
+// across) rest on stands on a bench with a metre scale; above each one a violet arrow, tied to its sphere, shows the
+// pull on it (মহাকর্ষ বল, the colour gravity has in every figure): two equal arrows pointing at each other, drawn to
+// one scale (the pull between two 1,000 kg spheres 1 m apart, 6.67 × 10⁻⁵ N, is 1 m long; in words: the weight of an
+// ant). The student does five things, each changing one thing from the picture before, the old arrows left faint so
+// the change shows, and every change said first as a comparison ("টান ৪ ভাগের ১ ভাগ", "২ গুণ", "৪ গুণ"), never as a
+// power of ten: doubles the distance (the arrows shrink to a quarter), doubles the left mass (they double, on both
+// spheres: the small one pulls the big one just as hard), doubles the right mass (four times, and now, last, the
+// formula F = Gm₁m₂/r² with each symbol in the colour of what the student changed); then, on the Earth cut open to
+// its centre, puts a 1 kg weight on the ground (its weight, about 9.8 N: the Earth's pull; R from the Earth's centre)
+// and a second one (twice the weight, the same 9.8 N for each kg: g). Then a short test. The panel is the kit's clean
+// sheet (one action, one result, one rule): the examples দূরত্ব · ভর · পৃথিবী as one row of words with what was found
+// under each, one big numbered action whose same badge rings the part to touch, one result line (how the pull compares
+// with the start; the exact force only as a quiet grey note), one short rule. Built on the shared student kit.
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
 import { createTweener, ease } from '@shared/tween.js';
@@ -31,14 +33,15 @@ import {
   EXAMPLES,
   STEPS,
   arrowLength,
-  distanceChoices,
+  decimal,
+  distanceFactors,
   force,
   gravity,
   heightChoices,
-  massChoices,
+  massFactors,
   radiusChoices,
   roundTo,
-  sci,
+  sphereRadius,
   stateAfter,
   weight,
 } from './physics.js';
@@ -57,6 +60,7 @@ export const DEFAULTS = {
 };
 
 const GRAVITY = '#7048e8'; // মহাকর্ষ বল: the same violet as gravitational-force and the weight in chapter 3
+const DIST = 0x0b7285; // দূরত্ব: one colour for the distance, on the bench's r line, in the sentences and in the formula
 const MINUS = '−';
 const LANE = { above: 0.14, gap: 0.17 }; // m: the arrows' lanes above the taller sphere, the lower one for m₁'s arrow
 const GHOST_DROP = 0.06; // m: the faint arrow of the moment before runs just under its arrow
@@ -81,32 +85,67 @@ export function createApp(root, options = {}) {
   const N = t.num;
   const plain = (x, d = 2) => String(roundTo(x, d)); // numbers in sentences: no trailing zeros
 
-  // symbols with subscripts and powers (the font has no ₁ ² ⁻): passed into strings as vars
+  // symbols with subscripts and powers (the font has no ₁ ² ⁻): passed into strings as vars. What the student changes
+  // keeps one colour from the picture to the formula: the pull violet, the masses orange, the distance teal (no number
+  // in a class name: the vars' numbers turn into Bangla ones)
   const SYM = {
-    F: '<i>F</i>',
+    F: '<i class="lg-qf">F</i>',
     G: '<i>G</i>',
-    M: '<i>M</i>',
-    R: '<i>R</i>',
-    r: '<i>r</i>',
-    g: '<i>g</i>',
-    m: '<i>m</i>',
-    m1: '<i>m</i><sub>1</sub>',
-    m2: '<i>m</i><sub>2</sub>',
-    r2: '<i>r</i><sup>2</sup>',
-    law: '<i>F</i> = <i>G</i><i>m</i><sub>1</sub><i>m</i><sub>2</sub>/<i>r</i><sup>2</sup>',
-    GMm: '<i>GMm</i>/<i>R</i><sup>2</sup>',
-    GM: '<i>GM</i>/<i>R</i><sup>2</sup>',
-    mg: '<i>mg</i>',
+    M: '<i class="lg-qm">M</i>',
+    R: '<i class="lg-qd">R</i>',
+    r: '<i class="lg-qd">r</i>',
+    g: '<i class="lg-qf">g</i>',
+    m: '<i class="lg-qm">m</i>',
+    m1: '<i class="lg-qm">m</i><sub class="lg-qm">1</sub>',
+    m2: '<i class="lg-qm">m</i><sub class="lg-qm">2</sub>',
+    r2: '<i class="lg-qd">r</i><sup class="lg-qd">2</sup>',
+    R2: '<i class="lg-qd">R</i><sup class="lg-qd">2</sup>',
     ms2: `ms<sup>${MINUS}2</sup>`,
     four: '4',
     one: '1',
     two: '2',
+    sq: '2 × 2 = 4', // never split over two lines
+    // the words for what the student changes, in the same colours
+    dist: `<span class="lg-qd">${t('w_dist')}</span>`,
+    mass: `<span class="lg-qm">${t('w_mass')}</span>`,
   };
-  /** a × 10ⁿ as HTML (digits not yet in Bangla: pass it through t() vars or N). */
-  const sciHtml = (x, digits = 2, exp = null) => {
-    const { m, e } = sci(x, digits, exp);
-    return `${m} × 10<sup>${e < 0 ? MINUS : ''}${Math.abs(e)}</sup>`;
+  /** A fraction written the way a student writes it in a line (the font has no ¼): ১/৪. */
+  const frac = (a, b) => `<span class="lg-frac">${N(a)}/${N(b)}</span>`;
+  /** One symbol of a formula with the word for it underneath, both in the colour of what it stands for. */
+  const term = (cls, sym, cap = '') => `<span class="lg-term ${cls}"><span class="lg-sym">${N(sym)}</span><small>${cap}</small></span>`;
+  const op = (c) => `<span class="lg-op">${c}</span>`;
+  /** An operator with the term after it, kept together: a formula that must wrap breaks between these, never inside one. */
+  const grp = (c, termHtml) => `<span class="lg-grp">${c ? op(c) : ''}${termHtml}</span>`;
+  /** The law, last: F = G × m₁ × m₂ ÷ r², each symbol over its word, coloured like what the student changed. */
+  const lawHtml = () =>
+    `<span class="lg-formula"><span class="lg-sumword">${t('sum_word')}</span>${[
+      grp('', term('lg-qf', SYM.F, t('cap_pull'))),
+      grp('=', term('lg-qg', SYM.G, t('cap_G'))),
+      grp('×', term('lg-qm', SYM.m1, t('cap_mass'))),
+      grp('×', term('lg-qm', SYM.m2, t('cap_mass'))),
+      grp('÷', term('lg-qd', SYM.r2, t('cap_dist2'))),
+    ].join('')}</span>`;
+  /** The same law for a body on the Earth, for each kg: g = G × M ÷ R². */
+  const earthLawHtml = () =>
+    `<span class="lg-formula">${[
+      grp('', term('lg-qf', SYM.g)),
+      grp('=', term('lg-qg', SYM.G, t('cap_G'))),
+      grp('×', term('lg-qm', SYM.M, t('cap_earth_mass'))),
+      grp('÷', term('lg-qd', SYM.R2, t('cap_centre_dist2'))),
+    ].join('')}</span>`;
+  /** a × 10ⁿ as HTML: only in the quiet "book values" line, never in a first view. */
+  const pow10 = (m, e) => `${m}\u00a0×\u00a010<sup>${e < 0 ? MINUS : ''}${Math.abs(e)}</sup>`;
+  const BOOK = {
+    G: SYM.G,
+    Gv: pow10('6.67', -11),
+    Gu: `N\u00a0m<sup>2</sup>\u00a0kg<sup>${MINUS}2</sup>`,
+    M: SYM.M,
+    Mv: pow10('5.98', 24),
+    R: SYM.R,
+    Rv: pow10('6.37', 6),
   };
+  /** The book's numbers as a small grey line after a formula, on frames with room for it (CSS: ≥ 900 px). */
+  const bookHtml = (key) => `<span class="lg-line lg-book">${t(key, BOOK)}</span>`;
 
   root.classList.add('pvc', 'lg');
   root.dataset.theme = o.bg;
@@ -150,14 +189,25 @@ export function createApp(root, options = {}) {
   const ghost = [0, 1].map((i) => createArrow({ ...arrowOpts, opacity: 0.34, name: `Before${i + 1}` }));
   for (const a of [...pull, ...ghost]) sphereScene.add(a.root);
   for (const a of ghost) a.root.userData.noExport = true;
-  const ink = new THREE.MeshBasicMaterial({ color: 0x5c6672, transparent: true, opacity: 0.55, depthWrite: false });
+  // each arrow is tied to its own sphere: a violet cord from the sphere's top to the arrow's tail, with a dot where it
+  // is fastened to the sphere and one at the tail
+  const cord = new THREE.MeshBasicMaterial({ color: GRAVITY, transparent: true, opacity: 0.85, depthWrite: false });
   const stalks = [0, 1].map(() => {
-    const m = new THREE.Mesh(new THREE.CylinderGeometry(0.0045, 0.0045, 1, 8).translate(0, 0.5, 0), ink);
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(0.0065, 0.0065, 1, 8).translate(0, 0.5, 0), cord);
     m.userData.noExport = true;
     sphereScene.add(m);
     return m;
   });
-  const dimInk = new THREE.MeshBasicMaterial({ color: 0x1d2733 });
+  const dotGeo = new THREE.SphereGeometry(0.026, 16, 12);
+  const dots = [0, 1].map(() =>
+    [0, 1].map(() => {
+      const m = new THREE.Mesh(dotGeo, cord);
+      m.userData.noExport = true;
+      sphereScene.add(m);
+      return m;
+    }),
+  );
+  const dimInk = new THREE.MeshBasicMaterial({ color: DIST });
   const rLine = new THREE.Group();
   rLine.userData.noExport = true;
   const rBar = new THREE.Mesh(new THREE.BoxGeometry(1, 0.007, 0.007), dimInk);
@@ -189,11 +239,11 @@ export function createApp(root, options = {}) {
   wGhost.root.userData.noExport = true;
   eGhost.root.userData.noExport = true;
   /** A dimension line: a bar from a to b with a short tick across each end (on the cut face it is drawn on). */
-  function dimLine(name) {
+  function dimLine(name, color = 0x1d2733) {
     const g = new THREE.Group();
     g.name = name;
     g.userData.noExport = true;
-    const mat = new THREE.MeshBasicMaterial({ color: 0x1d2733, depthTest: false });
+    const mat = new THREE.MeshBasicMaterial({ color, depthTest: false });
     const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 1, 8).translate(0, 0.5, 0), mat);
     const ticks = [0, 1].map(() => new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.008, 0.008), mat));
     g.add(bar, ...ticks);
@@ -221,8 +271,8 @@ export function createApp(root, options = {}) {
       hide: () => (g.visible = false),
     };
   }
-  const RLine = dimLine('RLine');
-  const radiusLine = dimLine('RadiusLine');
+  const RLine = dimLine('RLine', DIST); // the distance R in the distance's colour
+  const radiusLine = dimLine('RadiusLine', DIST);
   const liftLine = dimLine('HeightLine');
   // the R line runs on the left cut face, beside the edge from the weight to the centre; the radius on the right face
   const LEFT_U = new THREE.Vector3(-1, 0, 1).normalize();
@@ -292,7 +342,7 @@ export function createApp(root, options = {}) {
     view: o.view === '3d' ? '3d' : 'front',
     mode: 'explore',
     locked: false,
-    quizScene: null, // what a test question shows: { arrows: bool, value: bool, R: bool, radius: bool, lift: bool, M: bool }
+    quizScene: null, // what a test question shows: { arrows: bool, R: bool, radius: bool, lift: bool, M: bool }
     userMovedCamera: false,
   };
   const sceneOf = (ex) => (ex === 'earth' ? 'earth' : 'spheres');
@@ -330,10 +380,13 @@ export function createApp(root, options = {}) {
       else pull[i].hide();
       if (arrowsOn && s.ghostF != null && !s.busy) ghost[i].set(tA.set(x, ys[i] - GHOST_DROP, 0), dir, arrowLength(s.ghostF));
       else ghost[i].hide();
-      const top = spheres.top(i).y + 0.015;
+      const top = spheres.top(i).y + 0.005;
       stalks[i].visible = arrowsOn;
       stalks[i].position.set(x, top, 0);
       stalks[i].scale.set(1, Math.max(0.001, ys[i] - top), 1);
+      dots[i][0].visible = dots[i][1].visible = arrowsOn;
+      dots[i][0].position.set(x, top, 0);
+      dots[i][1].position.set(x, ys[i], 0);
     }
     rBar.scale.x = s.r;
     rBar.position.x = s.r / 2;
@@ -455,7 +508,7 @@ export function createApp(root, options = {}) {
       ui.annoLayer.style.setProperty('--lg-ball', String(px));
     }
   });
-  // each arrow's F just behind its tail (above its own sphere), so the two never meet: "F ——→" and "←—— F"
+  // each arrow is named just behind its tail (above its own sphere), so the two never meet: "টান ——→" and "←—— টান"
   const tailPoint = (i) => () => {
     const [y0, y1] = lanes();
     return pts.arrow[i].set(i === 0 ? 0 : s.r, i === 0 ? y0 : y1, 0);
@@ -463,18 +516,24 @@ export function createApp(root, options = {}) {
   const TAIL_SPOTS = [
     [
       { dx: -12, dy: 0 },
-      { dx: -10, dy: -16 },
-      { dx: 0, dy: -20 },
+      { dx: -10, dy: -18 },
+      { dx: 0, dy: -22 },
+      { dx: 24, dy: -22 },
     ],
     [
       { dx: 12, dy: 0 },
-      { dx: 10, dy: -16 },
-      { dx: 0, dy: -20 },
+      { dx: 10, dy: -18 },
+      { dx: 0, dy: -22 },
+      { dx: -24, dy: -22 },
     ],
   ];
-  // the test's value of F: in the middle, above the arrows
-  const valuePoint = new THREE.Vector3();
-  const valueAt = () => valuePoint.set(s.r / 2, lanes()[1], 0);
+  /** How big the pull is next to the faint one of the moment before: "২ গুণ" or a fraction; '' when nothing to compare. */
+  function pullCompare() {
+    if (s.ghostF == null || s.busy) return '';
+    const k = F() / s.ghostF;
+    if (Math.abs(k - 1) < 0.01) return '';
+    return k > 1 ? t('cmp_times', { k: plain(k, 1) }) : frac(1, roundTo(1 / k, 1));
+  }
   // a label is (re)made only when its words change: the kit fades a new label in
   const labelText = new Map();
   function label(id, opts) {
@@ -489,50 +548,45 @@ export function createApp(root, options = {}) {
       labelText.delete(id);
     }
   }
-  const SPHERE_LABELS = ['m0', 'm1', 'F0', 'F1', 'Fv', 'r', 'gh'];
+  const SPHERE_LABELS = ['m0', 'm1', 'F0', 'F1', 'r', 'gh'];
   const EARTH_LABELS = ['centre', 'w', 'e', 'mw', 'R', 'radius', 'lift'];
-  /** Where the faint arrow of the moment before shows beyond its arrow's tip (a force that shrank), else null. */
+  /**
+   * Where the faint arrow of the moment before is named: at its tip on m₂'s lane (that arrow points left). `grew` is
+   * true when the new arrow is the longer one (the faint one is the short one under it), else the faint one shows
+   * beyond the new arrow's tip. Null when there is nothing to name.
+   */
   function ghostLabelAt() {
     if (s.ghostF == null || s.busy) return null;
     const L = arrowLength(F());
     const Lg = arrowLength(s.ghostF);
-    if (Lg <= L + 0.05) return null;
+    if (Math.abs(Lg - L) < 0.05) return null;
     const y1 = lanes()[1];
-    return { at: new THREE.Vector3(s.r - Lg, y1 - GHOST_DROP, 0) }; // m₂'s arrow points left: the label goes left of its tip
+    return { at: new THREE.Vector3(s.r - Lg, y1 - GHOST_DROP, 0), grew: Lg < L };
   }
   function labelsFor() {
     const q = s.quizScene;
     if (sceneNow() === 'spheres') {
       unlabel(...EARTH_LABELS);
+      // plain first: "১,০০০ kg" on a sphere, "দূরত্ব = ১ m" on the bench; m₁, m₂ and r (same colours) come with the formula
+      const symbols = formulaShown();
       for (const i of [0, 1])
         label(`m${i}`, {
-          text: t('l_mass', { m: i ? SYM.m2 : SYM.m1, kg: groupBD(i ? s.m2 : s.m1) }),
+          text: symbols ? t('l_mass', { m: i ? SYM.m2 : SYM.m1, kg: groupBD(i ? s.m2 : s.m1) }) : t('l_mass_plain', { kg: groupBD(i ? s.m2 : s.m1) }),
           point: ballPoint(i),
           dx: 0,
           dy: 0,
           kind: 'ball',
         });
       const arrowsOn = !q || q.arrows;
-      const value = q?.value;
+      const cmp = pullCompare();
+      const pullText = cmp ? t('l_pull_cmp', { k: cmp }) : t('l_pull');
       for (const i of [0, 1]) {
         if (!arrowsOn) unlabel(`F${i}`);
-        else label(`F${i}`, { text: t('l_force', { F: SYM.F }), point: tailPoint(i), kind: 'flat', color: GRAVITY, spots: TAIL_SPOTS[i] });
+        else label(`F${i}`, { text: pullText, point: tailPoint(i), kind: 'flat', color: GRAVITY, spots: TAIL_SPOTS[i] });
       }
-      if (arrowsOn && value)
-        label('Fv', {
-          text: t('l_force_value', { F: SYM.F, f: sciHtml(F()) }),
-          point: valueAt,
-          kind: 'flat',
-          color: GRAVITY,
-          spots: [
-            { dx: 0, dy: -28 },
-            { dx: 0, dy: -42 },
-          ],
-        });
-      else unlabel('Fv');
       // r: written on the middle of the bench top (the bar under it shows the distance, centre to centre)
       label('r', {
-        text: t('l_r', { r: SYM.r, v: plain(s.r) }),
+        text: symbols ? t('l_r', { r: SYM.r, v: plain(s.r) }) : t('l_dist', { dist: SYM.dist, v: plain(s.r) }),
         point: () => pts.r.set(s.r / 2, BENCH.top + 0.004, 0),
         kind: 'rdim',
         spots: [
@@ -544,18 +598,29 @@ export function createApp(root, options = {}) {
       const gl = ghostLabelAt();
       if (arrowsOn && gl)
         label('gh', {
-          text: t(q ? 'l_before' : 'l_start'),
+          text: t('l_before'),
           point: () => {
             const g = ghostLabelAt();
             return g ? pts.gh.copy(g.at) : pts.gh;
           },
           kind: 'flat',
           color: '#6b7683',
-          optional: true,
-          spots: [
-            { dx: -8, dy: -6 },
-            { dx: -8, dy: -14 },
-          ],
+          // never dropped: it is what "টান আগের ২ গুণ" is compared with. Shrunk: left of the faint tip; grew: under
+          // the short faint arrow, below its own box
+          spots: gl.grew
+            ? [
+                { dx: -34, dy: 12 },
+                { dx: -34, dy: 22 },
+                { dx: 0, dy: 26 },
+                { dx: -26, dy: 26 },
+                { dx: 26, dy: 26 },
+                { dx: 0, dy: 38 },
+              ]
+            : [
+                { dx: -8, dy: -6 },
+                { dx: -8, dy: -14 },
+                { dx: -8, dy: -26 },
+              ],
         });
       else unlabel('gh');
       return;
@@ -587,7 +652,7 @@ export function createApp(root, options = {}) {
     if (arrowsOn) {
       const L = W_ARROW * s.kg * s.pullK;
       label('w', {
-        text: t(stage.height < 250 ? 'l_force' : 'l_weight', { F: SYM.F }),
+        text: t('l_weight'),
         point: () => pts.w.copy(earth.bodyCentre()).add(new THREE.Vector3(0, -L * 0.62, 0.035)),
         kind: 'flat',
         color: GRAVITY,
@@ -598,7 +663,7 @@ export function createApp(root, options = {}) {
         ],
       });
       label('e', {
-        text: t('l_on_earth', { F: SYM.F }),
+        text: t(stage.height < 250 ? 'l_on_earth_short' : 'l_on_earth'),
         point: () => pts.e.set(0, L * 0.6, 0.035),
         kind: 'flat',
         color: GRAVITY,
@@ -610,10 +675,10 @@ export function createApp(root, options = {}) {
         ],
       });
     } else unlabel('w', 'e');
-    // the weight's mass, m in F = GMm/R²
-    if (!q && s.placed > 0.999)
+    // the two weights together (each weight has its own "১ kg" plate)
+    if (!q && s.placed > 0.999 && (s.kg === 2 || s.dropping))
       label('mw', {
-        text: t('l_weight_m', { m: SYM.m, kg: s.kg === 2 || s.dropping ? '2' : '1' }),
+        text: t('l_weight_total', { kg: '2' }),
         point: () => pts.mw.copy(earth.bodyCentre()).add(new THREE.Vector3(0, 0, 0.1)),
         kind: 'flat',
         spots: [
@@ -630,7 +695,7 @@ export function createApp(root, options = {}) {
           ? t('l_r2R', { r: SYM.r, R: SYM.R, two: '2' })
           : small
             ? t('l_R_short', { R: SYM.R })
-            : t('l_R', { R: SYM.R, v: sciHtml(EARTH.R) }),
+            : t('l_R', { R: SYM.R, v: groupBD(EARTH.R / 1000) }),
         point: () => pts.R.copy(R_OFF).setY(earth.bodyCentre().y * (q?.R2 ? 0.74 : 0.42)),
         kind: 'part',
         spots: [
@@ -645,7 +710,7 @@ export function createApp(root, options = {}) {
         text: q.R2
           ? small
             ? t('l_R_short', { R: SYM.R })
-            : t('l_R', { R: SYM.R, v: sciHtml(EARTH.R) })
+            : t('l_R', { R: SYM.R, v: groupBD(EARTH.R / 1000) })
           : t('l_radius', { v: groupBD(EARTH.R / 1000) }),
         point: () => pts.radius.copy(RIGHT_U).multiplyScalar(0.62),
         kind: 'part',
@@ -709,37 +774,59 @@ export function createApp(root, options = {}) {
     return { example: 'dist', act: 'again', step: '' };
   }
 
-  function factorText(before, after) {
-    const k = after / before;
-    if (k >= 1) return t('k_times', { a: plain(k, 1) });
-    return t('k_part', { a: plain(1 / k, 1), b: '1' });
+  /** The pull the step being animated ends with (so the words are right while the arrows are still moving). */
+  function targetForce() {
+    if (!s.busy) return F();
+    if (s.acting === 'r2') return force(s.m1, s.m2, 2);
+    if (s.acting === 'm1') return force(2000, s.m2, s.r);
+    if (s.acting === 'm2') return force(s.m1, 2000, s.r);
+    return F();
   }
+  /** The exact pull, quiet and grey, no power of ten ("আসল মান ০.০০০০৬৬৭ নিউটন"). */
+  const exactHtml = (f) => t('out_exact', { f: decimal(f) });
+  const block = (html) => `<span class="lg-line">${html}</span>`;
   function outcomeHtml() {
     if (sceneOf(s.example) === 'spheres') {
-      const vars = { F: SYM.F, f: sciHtml(F()) };
-      if (s.ghostF != null && !s.busy) return t('out_force_vs', { ...vars, k: factorText(s.ghostF, F()) });
-      return t('out_force', vars);
+      const f = targetForce();
+      if (s.ghostF == null) return `${t(s.example === 'mass' ? 'out_start_mass' : 'out_start', { two: '2', mass: SYM.mass })} ${exactHtml(f)}`;
+      // the comparison with the faint arrow: "শুরুর ¼ (৪ ভাগের ১ ভাগ)" or "শুরুর ২ গুণ"
+      const k = f / s.ghostF;
+      if (k >= 1) return `${t('out_vs_times', { k: plain(k, 1) })} ${exactHtml(f)}`;
+      const n = roundTo(1 / k, 1);
+      return `${t('out_vs_part', { frac: frac(1, n), a: n, b: 1 })} ${exactHtml(f)}`;
     }
-    if (s.placed < 0.999 || s.acting === 'place') return t('out_earth', { M: SYM.M, R: SYM.R, mv: sciHtml(EARTH.M), rv: sciHtml(EARTH.R) });
+    if (s.placed < 0.999 || s.acting === 'place') return t('out_earth0');
     // g is rounded first (9.8), so that two weights read exactly twice one: 9.8 and 19.6 newtons
     const g1 = roundTo(gravity(), 1);
-    if (s.kg === 1 || s.acting === 'add') return t('out_weight', { kg: '1', w: plain(g1 * 1, 1) });
-    return t('out_weight2', { kg: '2', w: plain(g1 * 2, 1), g: SYM.g, gv: plain(g1, 1), ms2: SYM.ms2 });
+    if (s.kg === 1 || s.acting === 'add') return t('out_weight', { kg: '1', w: plain(g1, 1) });
+    return t('out_weight2', { kg: '2', w: plain(g1 * 2, 1), one: '1', two: '2' });
+  }
+  /** The law is on the screen: every effect met (distance, then the masses), and the rule is the last one or a summary. */
+  function formulaShown() {
+    if (s.quizScene || sceneOf(s.example) !== 'spheres') return false;
+    const f = s.found;
+    return Boolean(f.r2 && f.m1 && f.m2 && (s.last == null || s.last === 'm2'));
   }
   function ruleHtml() {
     const v = { ...SYM };
+    const f = s.found;
+    const all = f.r2 && f.m1 && f.m2; // every effect met: now, last, the law with the same colours
+    const law = () => block(lawHtml()) + bookHtml('book_G');
     if (sceneOf(s.example) === 'spheres') {
       if (s.last === 'r2') return t('rule_dist', v);
       if (s.last === 'm1') return t('rule_m1', v);
-      if (s.last === 'm2') return t('rule_m2', v);
-      if (s.found.r2 && s.found.m1) return t('rule_sum_both', v);
-      if (s.found.r2) return t('rule_sum_dist', v);
-      if (s.found.m1) return t('rule_sum_mass', v);
+      if (s.last === 'm2') return t('rule_m2', v) + (all ? law() : t('rule_hint_dist', v));
+      if (all) return t('rule_all', v) + law();
+      if (f.r2 && f.m1) return t('rule_sum_both', v);
+      if (f.r2) return t('rule_sum_dist', v);
+      if (f.m1) return t('rule_sum_mass', v);
       return t('rule_start', v);
     }
-    if (s.placed < 0.999 || s.acting === 'place' || !s.found.place) return t('rule_earth0', v);
-    if (s.kg === 1 || s.acting === 'add') return t('rule_earth1', v);
-    return t('rule_earth2', { ...v, gv: plain(gravity(), 1) });
+    if (s.placed < 0.999 || s.acting === 'place' || !f.place) return t('rule_earth0', v);
+    if (s.kg === 1 || s.acting === 'add') return t('rule_earth1', { ...v, km: groupBD(EARTH.R / 1000) });
+    // g = G × M ÷ R² only after the law for two spheres (so "G" has been met), else the sentence alone
+    const earthLaw = all ? block(earthLawHtml()) + bookHtml('book_earth') : '';
+    return t('rule_earth2', { ...v, gv: plain(roundTo(gravity(), 1), 1) }) + earthLaw;
   }
 
   let lastKind = '';
@@ -760,13 +847,15 @@ export function createApp(root, options = {}) {
       sheet.rule(ruleHtml());
       if (action) {
         const p = plan();
-        action.set({ step: p.step, label: ACT_KEY[p.act], worldRadius: actionRing()?.radius ?? 0.3 });
+        action.set({ step: p.step, label: () => t(ACT_KEY[p.act], { two: '2' }), worldRadius: actionRing()?.radius ?? 0.3 });
         sheet.next(p.example !== s.example ? p.example : null);
         if (s.busy) action.hide('run');
         else action.show('run');
       }
     }
-    const text = sceneNow() === 'earth' ? t('note_earth') : t('note_spheres', { kg: '1', one: '1' });
+    const text = sceneNow() === 'earth' ? t('note_earth') : t('note_spheres');
+    const noteWaits = sceneNow() === 'spheres' && s.mode !== 'quiz' && s.ghostF == null && !Object.values(s.found).some(Boolean);
+    note.style.visibility = noteWaits ? 'hidden' : '';
     if (note.dataset.text !== text) {
       note.textContent = text;
       note.dataset.text = text;
@@ -836,6 +925,21 @@ export function createApp(root, options = {}) {
         }
         return done;
       });
+  }
+  /** A step still moving is finished where it was going (its numbers, found, last), so nothing half-done is kept. */
+  function settleStep() {
+    const act = s.acting;
+    if (!act) return;
+    if (act === 'r2') s.r = 2;
+    else if (act === 'm1') s.m1 = 2000;
+    else if (act === 'm2') s.m2 = 2000;
+    else if (act === 'place') {
+      s.kg = 1;
+      s.placed = 1;
+      s.rGrow = 1;
+    } else if (act === 'add') s.kg = 2;
+    s.found[act] = true;
+    s.last = act;
   }
   function cancelTweens() {
     for (const k of ['m1', 'm2', 'r', 'placed', 'kg', 'lift', 'rGrow', 'fade']) tweener.cancel(k);
@@ -1016,7 +1120,7 @@ export function createApp(root, options = {}) {
     host: ui.$('.pvc-act-slot'),
     t,
     step: 1,
-    label: 'act_double_r',
+    label: () => t('act_double_r', { two: '2' }),
     target: actionTarget,
     worldRadius: 0.36,
     // the masses written on the balls sit inside the ring: the badge keeps clear of the other labels and the arrows
@@ -1039,11 +1143,11 @@ export function createApp(root, options = {}) {
   function sphereBox() {
     // framed for the largest learn picture (both spheres 2,000 kg, 2 m apart), so the view never moves as they change;
     // a test question with a bigger sphere frames for it
-    const R = Math.max(spheres.radius(0), spheres.radius(1), 0.3925);
+    const R = Math.max(spheres.radius(0), spheres.radius(1), 0.3925, s.quizScene?.maxMass ? sphereRadius(s.quizScene.maxMass) : 0);
     const top = Math.max(lanes()[1], 0.62 + R + LANE.above + LANE.gap);
     box.min.set(-R - 0.06, 0.02, -0.15);
-    // room above the arrows for their F (under the note, on a narrow stage), and for the test's F value on a line
-    box.max.set(2 + R + 0.06, top + (s.quizScene?.value ? 0.42 : s.quizScene ? 0.1 : 0.3), BENCH.depth / 2);
+    // room above the arrows for their names (under the note, on a narrow stage)
+    box.max.set(2 + R + 0.06, top + (s.quizScene ? 0.1 : 0.3), BENCH.depth / 2);
     return box;
   }
   function earthBox() {
@@ -1227,9 +1331,13 @@ export function createApp(root, options = {}) {
     await flyTo(viewPose(), 0);
     refresh();
   }
-  /** The value of a force at the question's power of ten (choices compare at a glance). */
-  const forceLabel = (v, exp) => `<span class="lg-opt">${N(sciHtml(v, 2, exp))}</span>`;
   const optText = (html) => `<span class="lg-opt lg-opt-words">${html}</span>`;
+  /** "how many times" as words: ২ গুণ · ৩ গুণ · অর্ধেক · ৪ ভাগের ১ ভাগ · একই থাকে (no power of ten anywhere). */
+  const factorLabel = (f) => {
+    if (f === 1) return optText(t('ch_same'));
+    if (f === 0.5) return optText(t('ch_half'));
+    return optText(f > 1 ? t('ch_times', { k: plain(f, 1) }) : t('ch_part', { k: plain(1 / f, 1), one: '1' }));
+  };
 
   const quiz = createQuiz({
     ui,
@@ -1241,6 +1349,7 @@ export function createApp(root, options = {}) {
     action,
     hooks: {
       enter() {
+        settleStep(); // a step still moving (the test tapped mid-run) is finished first, then saved whole
         learnSaved = {
           example: s.example,
           m1: s.m1,
@@ -1299,48 +1408,53 @@ export function createApp(root, options = {}) {
           if (alive()) qText.innerHTML = html;
         };
         if (kind === 'mass') {
+          // the picture says what the mass is now; the question only says what it becomes, so the factor (×২ or ×৩) is read
+          // off the sphere's own "১,০০০ kg"
           const start = pickOne([
-            { m1: 1000, m2: 1000, side: pickOne(['left', 'right']) },
-            { m1: 2000, m2: 1000, side: 'right' },
-            { m1: 1000, m2: 2000, side: 'left' },
+            { m1: 1000, m2: 1000, side: 'left', to: 2000 },
+            { m1: 1000, m2: 1000, side: 'right', to: 3000 },
+            { m1: 1000, m2: 1000, side: 'left', to: 3000 },
+            { m1: 2000, m2: 1000, side: 'left', to: 4000 },
+            { m1: 2000, m2: 1000, side: 'right', to: 2000 },
+            { m1: 1000, m2: 2000, side: 'right', to: 4000 },
           ]);
-          await setQuizScene({ scene: 'spheres', m1: start.m1, m2: start.m2, r: 2, arrows: true, value: true });
+          const now = start.side === 'left' ? start.m1 : start.m2;
+          const k = start.to / now;
+          await setQuizScene({ scene: 'spheres', m1: start.m1, m2: start.m2, r: 2, arrows: true, maxMass: Math.max(start.to, start.m1, start.m2) });
           if (!alive()) return null;
           const f = F();
-          const exp = sci(f).e;
-          const list = massChoices(f, 2);
+          const list = massFactors(k); // by how many times the pull changes: right, squared, divided, unchanged
           const order = shuffle([0, 1, 2, 3]);
-          question = { kind, side: start.side, f, exp, list, order };
-          ask(t('q_mass', { side: t(`side_${start.side}`), F: SYM.F }));
+          question = { kind, side: start.side, to: start.to, now, k, f, list, order };
+          ask(t('q_mass', { side: t(`side_${start.side}`), to: groupBD(start.to) }));
           return {
             choices: order,
             expected: 0, // the choices are the items' numbers in a shuffled order; item 0 is right
             tolerance: 0.5,
-            label: (j) => forceLabel(list[j], exp),
+            label: (j) => factorLabel(list[j]),
             meta: { kind, side: start.side, force: f, answer: list[0] },
           };
         }
         if (kind === 'dist') {
           const far = pickOne([false, true]); // false: 1 m, doubled; true: 2 m, halved
-          await setQuizScene({ scene: 'spheres', m1: 1000, m2: 1000, r: far ? 2 : 1, arrows: true, value: true });
+          await setQuizScene({ scene: 'spheres', m1: 1000, m2: 1000, r: far ? 2 : 1, arrows: true });
           if (!alive()) return null;
           const f = F();
-          const exp = sci(f).e;
-          const list = distanceChoices(f, far ? 0.5 : 2);
+          const list = distanceFactors(far ? 0.5 : 2);
           const order = shuffle([0, 1, 2, 3]);
-          question = { kind, far, f, exp, list, order };
-          ask(t(far ? 'q_dist_half' : 'q_dist2', { F: SYM.F }));
+          question = { kind, far, f, list, order };
+          ask(t(far ? 'q_dist_half' : 'q_dist2', { two: '2' }));
           return {
             choices: order,
             expected: 0, // the choices are the items' numbers in a shuffled order; item 0 is right
             tolerance: 0.5,
-            label: (j) => forceLabel(list[j], exp),
+            label: (j) => factorLabel(list[j]),
             meta: { kind, halved: far, force: f, answer: list[0] },
           };
         }
         if (kind === 'equal') {
           const bigLeft = pickOne([true, false]);
-          await setQuizScene({ scene: 'spheres', m1: bigLeft ? 4000 : 1000, m2: bigLeft ? 1000 : 4000, r: 2, arrows: false, value: false });
+          await setQuizScene({ scene: 'spheres', m1: bigLeft ? 4000 : 1000, m2: bigLeft ? 1000 : 4000, r: 2, arrows: false });
           if (!alive()) return null;
           const keys = ['eq_same', 'eq_less', 'eq_more', 'eq_none'];
           const order = shuffle([0, 1, 2, 3]);
@@ -1350,7 +1464,7 @@ export function createApp(root, options = {}) {
             choices: order,
             expected: 0, // the choices are the items' numbers in a shuffled order; item 0 is right
             tolerance: 0.5,
-            label: (j) => optText(t(keys[j], { k: '4' })),
+            label: (j) => optText(t(keys[j], { four: '4' })),
             meta: { kind, answer: 'same' },
           };
         }
@@ -1360,29 +1474,29 @@ export function createApp(root, options = {}) {
           const list = radiusChoices();
           const order = shuffle([0, 1, 2, 3]);
           question = { kind, list, order };
-          ask(t('q_radius', { h: '1', F: SYM.F, GMm: SYM.GMm, R: SYM.R }));
-          // all four are written alike (a number and its unit), so none gives the answer away by its look
-          const lab = [N(sciHtml(list[0])), N('1'), N(sciHtml(list[2])), N(groupBD(list[3]))];
+          ask(t('q_radius', { h: '1', R: SYM.R }));
+          // all four are written alike (a number and its unit, the radius in km), so none gives the answer away by its look
+          const lab = [`${groupBD(list[0] / 1000)}\u00a0km`, '1\u00a0m', `${groupBD(list[2] / 1000)}\u00a0km`, `${groupBD(list[3])}\u00a0m`];
           return {
             choices: order,
             expected: 0, // the choices are the items' numbers in a shuffled order; item 0 is right
             tolerance: 0.5,
-            label: (j) => optText(`${lab[j]}\u00a0m`),
+            label: (j) => optText(N(lab[j])),
             meta: { kind, answer: list[0] },
           };
         }
-        // g two radii from the Earth's centre: needs r read off the picture and squared
+        // the weight two radii from the Earth's centre: needs r read off the picture and squared
         await setQuizScene({ scene: 'earth', arrows: false, R: true, R2: true, radius: true, lift: LIFT_2R });
         if (!alive()) return null;
         const list = heightChoices(2);
         const order = shuffle([0, 1, 2, 3]);
         question = { kind: 'h', list, order };
-        ask(t('q_h', { g: SYM.g, g0: plain(gravity(), 1), ms2: SYM.ms2 }));
+        ask(t('q_h', { kg: '1', two: '2', R: SYM.R, w0: plain(roundTo(gravity(), 1), 1) }));
         return {
           choices: order,
           expected: 0, // the choices are the items' numbers in a shuffled order; item 0 is right
           tolerance: 0.5,
-          label: (j) => optText(`${N(plain(list[j], 1))}\u00a0${N(SYM.ms2)}`),
+          label: (j) => optText(`${N(plain(list[j], 1))}\u00a0${t('newton')}`),
           meta: { kind: 'h', answer: list[0] },
         };
       },
@@ -1391,20 +1505,19 @@ export function createApp(root, options = {}) {
         const wrong = correct ? null : q.order[picked];
         const mistake = (map, vars = {}) => (wrong != null && map[wrong] ? ` ${t(map[wrong], { ...SYM, ...vars })}` : '');
         if (q.kind === 'mass') {
-          const ans = sciHtml(q.list[0], 2, q.exp);
           const key = q.side === 'left' ? 'm1' : 'm2';
-          s.ghostF = q.f;
-          tweenTo(key, s[key] * 2, 0.8);
-          return t('why_mass', { ...SYM, ans, f: sciHtml(q.f, 2, q.exp) }) + mistake({ 1: 'not_mass_sq', 2: 'not_mass_inv', 3: 'not_mass_same' });
+          s.ghostF = q.f; // the faint arrows keep the pull before, the new arrows show the answer
+          tweenTo(key, q.to, 0.8);
+          const vars = { k: plain(q.k, 1), k2: plain(q.k * q.k, 1), kg0: groupBD(q.now), to: groupBD(q.to) };
+          return t('why_mass', { ...SYM, ...vars }) + mistake({ 1: 'not_mass_sq', 2: 'not_mass_inv', 3: 'not_mass_same' }, vars);
         }
         if (q.kind === 'dist') {
-          const ans = sciHtml(q.list[0], 2, q.exp);
           s.ghostF = q.f;
           tweenTo('r', q.far ? 1 : 2, 1.1);
           const map = q.far
             ? { 1: 'not_dist_nosq', 2: 'not_dist_near', 3: 'not_dist_near' }
             : { 1: 'not_dist_nosq', 2: 'not_dist_far', 3: 'not_dist_far' };
-          return t(q.far ? 'why_dist_half' : 'why_dist2', { ...SYM, ans, f: sciHtml(q.f, 2, q.exp) }) + mistake(map);
+          return t(q.far ? 'why_dist_half' : 'why_dist2', SYM) + mistake(map);
         }
         if (q.kind === 'equal') {
           s.quizScene = { ...s.quizScene, arrows: true };
@@ -1414,12 +1527,10 @@ export function createApp(root, options = {}) {
         if (q.kind === 'radius') {
           s.quizScene = { ...s.quizScene, R: true };
           tweenTo('rGrow', 1, 0.7);
+          const km = groupBD(EARTH.R / 1000);
           return (
-            t('why_radius', { ...SYM, ans: sciHtml(q.list[0]), km: groupBD(EARTH.R / 1000), h: '1' }) +
-            mistake(
-              { 1: 'not_rad_height', 2: 'not_rad_diam', 3: 'not_rad_km' },
-              { km: groupBD(EARTH.R / 1000), m: groupBD(EARTH.R), kmm: groupBD(EARTH.R / 1000) },
-            )
+            t('why_radius', { ...SYM, km, h: '1' }) +
+            mistake({ 1: 'not_rad_height', 2: 'not_rad_diam', 3: 'not_rad_km' }, { km, m: km, kmm: plain(EARTH.R / 1e6, 2) })
           );
         }
         // the pull two radii out: a quarter of the weight at the ground (the faint arrows keep the weight at the ground)
@@ -1428,7 +1539,8 @@ export function createApp(root, options = {}) {
         s.ghostKg = 1;
         refresh();
         return (
-          t('why_h', { ...SYM, ans: plain(q.list[0], 1), g0: plain(gravity(), 1) }) + mistake({ 1: 'not_h_nosq', 2: 'not_h_same', 3: 'not_h_more' })
+          t('why_h', { ...SYM, ans: plain(q.list[0], 1), w0: plain(roundTo(gravity(), 1), 1) }) +
+          mistake({ 1: 'not_h_nosq', 2: 'not_h_same', 3: 'not_h_more' })
         );
       },
       done() {

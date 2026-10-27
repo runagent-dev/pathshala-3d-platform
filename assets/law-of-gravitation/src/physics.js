@@ -24,21 +24,6 @@ export function roundTo(x, d = 2) {
   return Math.round(x * k * (1 + 1e-12)) / k;
 }
 
-/**
- * x in scientific notation with `digits` decimals: { m: '1.67', e: -5 } for 1.6675e-5. With `exp` given, the mantissa
- * is written for that power of ten instead (0.42 for 4.17e-6 at exp −5), so choices can be compared at a glance.
- */
-export function sci(x, digits = 2, exp = null) {
-  if (x === 0) return { m: (0).toFixed(digits), e: exp ?? 0 };
-  let e = exp ?? Math.floor(Math.log10(Math.abs(x)));
-  let m = roundTo(x / 10 ** e, digits);
-  if (exp == null && Math.abs(m) >= 10) {
-    e += 1;
-    m = roundTo(x / 10 ** e, digits);
-  }
-  return { m: m.toFixed(digits), e };
-}
-
 // ── the figure's cases ────────────────────────────────────────────────────────
 export const MASSES = [1000, 2000]; // kg: each sphere is 1,000 kg or (doubled) 2,000 kg of iron
 export const DISTANCES = [1, 2]; // m between the centres
@@ -85,24 +70,44 @@ export const F_REF = force(1000, 1000, 1);
 export const ARROW_REF = 1; // m
 export const arrowLength = (F) => (F / F_REF) * ARROW_REF;
 
-// ── the test: the right answer first, then the usual mistakes ────────────────
-/** What F becomes when one mass doubles (or halves): right, squared by mistake, the other way, unchanged. */
-export function massChoices(F, factor = 2) {
-  return [F * factor, F * factor * factor, F / factor, F];
+// ── plain numbers: no powers of ten in a student's first views ───────────────
+/**
+ * x written out with `sig` significant digits and no power of ten: 6.67e-5 → "0.0000667". The exact force is only a
+ * quiet second line; the first thing a student reads is a comparison ("2 times", "a quarter").
+ */
+export function decimal(x, sig = 3) {
+  if (x === 0) return '0';
+  const e = Math.floor(Math.log10(Math.abs(x)));
+  const d = Math.max(0, sig - 1 - e);
+  return roundTo(x, d).toFixed(d);
 }
 
-/** What F becomes when r is multiplied by k (2 or ½): right (1/k²), the square forgotten, the wrong way, the wrong way squared. */
-export function distanceChoices(F, k = 2) {
-  return [F / (k * k), F / k, F * k, F * k * k];
+/**
+ * The mass (milligrams) whose weight on the Earth's surface is the force F. The pull between the two 1,000 kg spheres
+ * 1 m apart is the weight of about 6.8 mg: an ant (the figure says "about an ant's weight").
+ */
+export const milligramsOf = (F, g = gravity()) => (F / g) * 1e6;
+
+// ── the test: the right answer first, then the usual mistakes ────────────────
+/** What the force is multiplied by when ONE mass is multiplied by k: right (k), squared by mistake, the other way, unchanged. */
+export function massFactors(k = 2) {
+  return [k, k * k, 1 / k, 1];
+}
+
+/** What the force is multiplied by when r is multiplied by k (2 or ½): right (1/k²), the square forgotten, the wrong way, the wrong way squared. */
+export function distanceFactors(k = 2) {
+  return [1 / (k * k), 1 / k, k, k * k];
 }
 
 /**
  * g at a place k Earth radii from the centre (k = 2: a weight one radius above the ground), with the usual slips: g
  * = GM/(kR)² is right; the distance not squared; g unchanged (as if height did not matter); the wrong way squared.
+ * Every choice starts from the g the question states (9.8, rounded to one decimal), so 4 × 9.8 = 39.2 is the last one,
+ * not 4 × 9.83.
  */
 export function heightChoices(k = 2, M = EARTH.M, R = EARTH.R) {
-  const g0 = gravity(M, R);
-  return [gravity(M, k * R), g0 / k, g0, g0 * k * k];
+  const g0 = roundTo(gravity(M, R), 1);
+  return [g0 / (k * k), g0 / k, g0, g0 * k * k];
 }
 
 /** R for a body 1 m above the ground: about the Earth's radius; the height above the ground; the diameter; km read as m. */
