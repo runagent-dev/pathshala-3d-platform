@@ -38,6 +38,10 @@ test('newtons-third-law: equal and opposite forces on two bodies, the lighter on
   expect(await text('.pvc-outcome')).toBe('A ধাক্কা দিচ্ছে B-কে, B-ও ধাক্কা দিচ্ছে A-কে: সমান জোরে, ১০ নিউটন করে');
   expect(await text('.pvc-rule')).toContain('A ধাক্কা দেয় B-কে, B-ও ধাক্কা দেয় A-কে, সমান জোরে');
   expect(await fig.frame.locator('.pvc-act-marker.in:not(.pvc-act-under)').count()).toBe(0); // no ring while it moves
+  // while the first run goes on the button keeps its own words ("again" only for a pair already seen)
+  expect(await text('.pvc-act')).toContain('ধাক্কা দাও');
+  expect(await text('.pvc-act')).not.toContain('আবার');
+  expect(await text('.pvc-act-badge')).toBe('১');
   await fig.advance(100); // the labels fade in on the next frame
   const labels = await fig.frame.locator('.pvc-anno.in').allTextContents();
   expect(labels.join('|')).toContain('A-এর ওপর বল');
@@ -48,6 +52,8 @@ test('newtons-third-law: equal and opposite forces on two bodies, the lighter on
   expect(glide).toMatchObject({ phase: 'glide', force: 0, arrows: { onA: false, onB: false } });
   expect(glide.speed.A).toBeCloseTo(0.283, 2);
   expect(glide.speed.A).toBeCloseTo(glide.speed.B, 3);
+  expect(await text('.pvc-outcome')).toContain('ধাক্কা শেষ: এখন কোনো বল নেই');
+  expect(await text('.pvc-act')).not.toContain('আবার'); // still the first run
   await fig.advance(1500);
   expect((await fig.call('get')).tried.equal).toBe(true);
   expect(await text('.pvc-outcome')).toContain('সমান সরে গেল');
@@ -55,6 +61,9 @@ test('newtons-third-law: equal and opposite forces on two bodies, the lighter on
   expect((await fig.call('get')).next).toEqual({ example: 'unequal', step: 2 }); // the button offers the next pair
   expect(await text('.pvc-act-badge')).toBe('২');
   expect(await text('.pvc-act')).toContain('হালকা ও ভারীকে ধাক্কা দাও');
+  // the button offers a pair that is not on the picture: no ring on the skaters, the dotted word in the row says it
+  expect(await fig.frame.locator('.pvc-act-marker.in:not(.pvc-act-under)').count()).toBe(0);
+  expect(await fig.frame.locator('[data-example="unequal"].next').count()).toBe(1);
   // they leave the picture and stand ready again
   await fig.advance(4000);
   expect(await fig.call('get')).toMatchObject({ phase: 'rest', moved: { A: 0, B: 0 } });
@@ -91,7 +100,7 @@ test('newtons-third-law: equal and opposite forces on two bodies, the lighter on
   expect(await text('.pvc-rule')).toBe(
     'নিউটনের তৃতীয় সূত্র: যখন একটি বস্তু অন্য একটি বস্তুর ওপর বল প্রয়োগ করে তখন সেই বস্তুটিও প্রথম বস্তুটির ওপর বিপরীত দিকে সমান বল প্রয়োগ করে।',
   );
-  expect(await text('[data-example="apple"] .pvc-ex-res')).toBe('পৃথিবী নড়ে না');
+  expect(await text('[data-example="apple"] .pvc-ex-res')).toBe('প্রায় নড়ে না');
   // at that last step the pair of skaters' forces take the book's names F and −F (right is positive)
   await fig.call('set', { example: 'equal', at: 1 });
   await fig.advance(150);
@@ -110,6 +119,7 @@ test('newtons-third-law: equal and opposite forces on two bodies, the lighter on
   // the test: the ring hides; every question sets up its own scene
   await fig.call('practice');
   const scenes = new Set();
+  const order = [];
   for (let q = 0; q < 5; q++) {
     for (let k = 0; k < 80 && !(await fig.frame.locator('.pvc-opt[data-q="0"]').count()); k++) await fig.advance(250);
     const ask = await text('.pvc-q-text');
@@ -121,29 +131,47 @@ test('newtons-third-law: equal and opposite forces on two bodies, the lighter on
     ]);
     if (ask.includes('আপেল কী করছে')) {
       scenes.add('react');
+      order.push('react');
       expect(st).toMatchObject({ scene: 'apple', phase: 'fall', arrows: { onApple: true, onEarth: false } }); // one arrow only
     } else if (ask.includes('কাটাকাটি হচ্ছে না কেন')) {
       scenes.add('cancel');
+      order.push('cancel');
       expect(st).toMatchObject({ scene: 'skaters', phase: 'push', arrows: { onA: true, onB: true } });
     } else if (ask.includes('কে বেশি সরবে')) {
       scenes.add('who');
+      order.push('who');
       expect(st).toMatchObject({ scene: 'skaters', phase: 'rest', arrows: { onA: false, onB: false } });
       expect(st.masses.A).not.toBe(st.masses.B);
-    } else if (ask.includes('কার ওপর জোর বেশি')) {
+    } else if (ask.includes('B-এর ওপর বল কত')) {
       scenes.add('size');
-      expect(st).toMatchObject({ scene: 'skaters', phase: 'rest', arrows: { onA: false, onB: false } });
+      order.push('size');
+      // the picture shows the force on A (with its number), the question is about B
+      expect(st).toMatchObject({ scene: 'skaters', phase: 'push', arrows: { onA: true, onB: false } });
+      expect(st.masses.A).not.toBe(st.masses.B);
+      expect(await fig.frame.locator('.pvc-opt').allTextContents()).toEqual(
+        ['০ নিউটন', '৫ নিউটন', '১০ নিউটন', '২০ নিউটন'].map((x) => x.replace(' ', '\u00a0')),
+      );
     } else {
       scenes.add('earth');
-      expect(ask).toContain('তবু পৃথিবীকে নড়তে দেখি না কেন');
+      order.push('earth');
+      expect(ask).toContain('তবু আমরা পৃথিবীকে নড়তে দেখি না কেন');
       expect(st).toMatchObject({ scene: 'apple', phase: 'rest' });
     }
     await fig.frame.locator('.pvc-opt[data-q="0"]').click();
     await fig.advance(300);
     expect(['ok', 'bad']).toContain(await fig.frame.locator('.pvc-q-feedback').getAttribute('data-tone'));
+    // the worked answer of the apple and cancelling questions talks about both arrows: they stay on while it is read
+    const after = await fig.call('get');
+    if (order.at(-1) === 'react') expect(after.arrows).toEqual({ onApple: true, onEarth: true });
+    if (order.at(-1) === 'cancel') expect(after.arrows).toEqual({ onA: true, onB: true });
+    if (order.at(-1) === 'size') expect(after.arrows).toEqual({ onA: true, onB: true });
     await fig.frame.locator('[data-act="q-next"]').click();
     await fig.advance(300);
   }
   expect(scenes.size).toBe(5); // five kinds, one each
+  // an order that never gives a later answer away: the size question first, the apple's reaction before the Earth's question
+  expect(order[0]).toBe('size');
+  expect(order.indexOf('react')).toBeLessThan(order.indexOf('earth'));
 
   await fig.call('reset');
   await fig.advance(800);

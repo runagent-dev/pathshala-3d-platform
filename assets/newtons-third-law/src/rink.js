@@ -25,3 +25,42 @@ export function createRink(half = RINK.half) {
   }
   return { root };
 }
+
+/**
+ * Where each skater started and how far each has gone: a small mark at each start and a bar from it to where the skater
+ * is now, on the floor in front (so "the lighter one went twice as far" can be seen, not only read). A drawing, not exported.
+ */
+export function createMarks() {
+  const root = new THREE.Group();
+  root.name = 'DistanceBars';
+  root.userData.noExport = true;
+  const mat = new THREE.MeshStandardMaterial({ name: 'DistanceBar', color: '#3b4a5e', roughness: 0.6, metalness: 0 });
+  const mk = (w, h, d) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+    m.visible = false;
+    root.add(m);
+    return m;
+  };
+  const Z = 0.5;
+  const bars = [mk(1, 0.018, 0.06), mk(1, 0.018, 0.06)];
+  const starts = [mk(0.03, 0.018, 0.22), mk(0.03, 0.018, 0.22)];
+  return {
+    root,
+    /** Start and present places (x, metres) of the two skaters. Nothing shows until a skater has moved. */
+    set(startA, nowA, startB, nowB) {
+      for (const [i, [x0, x1]] of [
+        [startA, nowA],
+        [startB, nowB],
+      ].entries()) {
+        const len = Math.abs(x1 - x0);
+        const on = len > 0.006;
+        bars[i].visible = on;
+        starts[i].visible = on;
+        if (!on) continue;
+        bars[i].scale.x = len;
+        bars[i].position.set((x0 + x1) / 2, 0.008, Z);
+        starts[i].position.set(x0, 0.008, Z);
+      }
+    },
+  };
+}

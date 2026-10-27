@@ -74,6 +74,3 @@ export function sci(x, digits = 2) {
   }
   return { mantissa, exponent };
 }
-
-/** How many times the apple's acceleration is the Earth's: M/m. */
-export const accelerationRatio = (m = APPLE_MASS, M = EARTH_MASS) => M / m;

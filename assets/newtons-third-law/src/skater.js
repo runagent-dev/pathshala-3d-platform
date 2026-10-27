@@ -15,9 +15,6 @@ const CROUCH = 0.1; // m: the knees are bent a little, as a skater stands
 
 const UP = new THREE.Vector3(0, 1, 0);
 
-/** The height of a shoulder above the floor for a skater of this scale (so the figure can aim the hands). */
-export const shoulderHeight = (scale) => BLADE + (SHOULDER.y - CROUCH) * scale;
-
 /**
  * @param {{ jacket?: string, trousers?: string, hair?: string, skin?: string, name?: string }} [look]
  */

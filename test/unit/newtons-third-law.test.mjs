@@ -9,7 +9,6 @@ import {
   PAIRS,
   PUSH_FORCE,
   STROKE,
-  accelerationRatio,
   appleAt,
   earthAcceleration,
   pushAt,
@@ -95,8 +94,7 @@ test("the Earth's acceleration for a 1 kg body is (m/M)g = 1.64 × 10⁻²⁴ ms
   const { mantissa, exponent } = sci(a);
   assert.equal(mantissa, 1.64);
   assert.equal(exponent, -24);
-  close(accelerationRatio(), 5.98e24);
-  close(G / a, accelerationRatio()); // the apple's own acceleration g is M/m times the Earth's
+  close(G / a, EARTH_MASS / APPLE_MASS); // the apple's own acceleration g is M/m times the Earth's
 });
 
 test('sci() handles round numbers and rounding up to the next power', () => {

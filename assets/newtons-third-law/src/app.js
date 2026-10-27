@@ -18,7 +18,7 @@ import { bindCleanSheet, buildStudentShell, cleanSheet } from '@shared/student/s
 import { createAction } from '@shared/student/action.js';
 import { createQuiz } from '@shared/student/quiz.js';
 import { createI18n } from './i18n.js';
-import { createRink } from './rink.js';
+import { createMarks, createRink } from './rink.js';
 import { createSkater } from './skater.js';
 import { APPLE_R, createEarthScene } from './earth.js';
 import { fitPose } from './camera.js';
@@ -62,9 +62,8 @@ const SKATER_LOOK = {
 const DOUBLE_TAP = 450; // ms: a second request this soon after one is ignored
 const FRONT_DIR = new THREE.Vector3(0, 0.2, 1).normalize();
 const VIEW_3D = new THREE.Vector3(-0.55, 0.38, 1).normalize();
-const SKATER_BOX = new THREE.Box3(new THREE.Vector3(-1.5, -0.05, -0.55), new THREE.Vector3(1.5, 1.85, 0.55));
-const APPLE_BOX = new THREE.Box3(new THREE.Vector3(-1.45, -0.7, -0.3), new THREE.Vector3(1.45, 1.95, 0.3));
-const MARGIN = { top: 34, bottom: 8, side: 8 };
+const SKATER_BOX = new THREE.Box3(new THREE.Vector3(-1.5, -0.05, -0.55), new THREE.Vector3(1.5, 1.78, 0.55));
+const APPLE_BOX = new THREE.Box3(new THREE.Vector3(-1.45, -0.3, -0.3), new THREE.Vector3(1.45, 1.85, 0.3));
 
 export function createApp(root, options = {}) {
   const o = { ...DEFAULTS, ...options };
@@ -110,7 +109,8 @@ export function createApp(root, options = {}) {
   const rink = createRink();
   const A = createSkater({ ...SKATER_LOOK.A, name: 'SkaterA' });
   const B = createSkater({ ...SKATER_LOOK.B, name: 'SkaterB' });
-  skatersGroup.add(rink.root, A.root, B.root);
+  const marks = createMarks();
+  skatersGroup.add(rink.root, marks.root, A.root, B.root);
   B.root.rotation.y = Math.PI;
   const earthScene = createEarthScene({ renderer: stage.renderer, fall: APPLE_FALL });
   world.add(skatersGroup, earthScene.root);
@@ -268,6 +268,8 @@ export function createApp(root, options = {}) {
       }
       sk.pose({ lean, hands, relax: pushing ? 0 : relax });
     }
+    // where each started and how far each has gone, on the floor in front
+    marks.set(-BODY_SHIFT, xa, BODY_SHIFT, xb);
     // the force arrows: each starts at the hands' meeting point and points away from the other skater
     const F = PUSH_FORCE * ARROW_PER_N;
     const on = st.force;
@@ -302,7 +304,9 @@ export function createApp(root, options = {}) {
   }
 
   // ── the camera ──────────────────────────────────────────────────────────────
-  const fit = (box, dir) => fitPose({ box, dir, camera, width: stage.width, height: stage.height, margin: MARGIN });
+  // room on top for the corner buttons, which only matters where the view is not very wide (the subject is in the middle)
+  const margin = () => ({ top: stage.width > 520 && stage.width / stage.height > 1.6 ? 14 : 34, bottom: 8, side: 8 });
+  const fit = (box, dir) => fitPose({ box, dir, camera, width: stage.width, height: stage.height, margin: margin() });
   function viewPose() {
     const box = skaters() ? SKATER_BOX : APPLE_BOX;
     return fit(box, s.view === '3d' ? VIEW_3D : FRONT_DIR);
@@ -392,16 +396,12 @@ export function createApp(root, options = {}) {
       { dx: -52, dy: 30 },
       { dx: 0, dy: -50 },
     ]);
-  // the Earth's acceleration after the landing: below and to the side of the apple, clear of the ring round it
-  const ACC_SPOTS = [52, 92, 140].flatMap((d) => [
-    { dx: -d, dy: 34 },
-    { dx: d, dy: 34 },
-  ]);
+  // the Earth's tag: out to the left of its point (away from the apple and the ring round it), else centred, else lower
   const EARTH_NAME = [
-    { dx: 0, dy: 0 },
     { dx: -6, dy: 0 },
-    { dx: 0, dy: 30 },
+    { dx: 0, dy: 0 },
     { dx: -6, dy: 30 },
+    { dx: 0, dy: 30 },
   ];
   const BACK = 0.26; // m: from a skater's middle to its back, where its force label hangs
   const tagA = V3(0, 0, 0);
@@ -411,14 +411,14 @@ export function createApp(root, options = {}) {
   const applePoint = V3(0, 0, 0);
   const applePull = V3(0, 0, 0);
   const earthPull = V3(APPLE_ARROW_X, 0.3, 0.12);
-  const earthTag = V3(-1.0, -0.5, 0.2);
+  const earthTag = V3(-0.85, -0.12, 0.2);
   // the name F (the book's) comes only at the last step, once all three pairs have been seen
   const forceText = (on, f, { dashed = false, neg = false } = {}) =>
-    `<span class="nt-key${dashed ? ' dash' : ''}"></span>${t(on)}<br>${t(allTried() ? (neg ? 'l_F_neg' : 'l_F_sym') : 'l_F', { f })}`;
+    `<span class="nt-key${dashed ? ' dash' : ''}"></span>${t(on)}<br>${t(allTried() && s.mode === 'explore' ? (neg ? 'l_F_neg' : 'l_F_sym') : 'l_F', { f })}`;
   /** Which labels show, and where: names of the bodies (always), the forces (while they act). */
   function syncLabels() {
     if (skaters()) {
-      for (const id of ['apple', 'earth', 'earthAcc', 'pullApple', 'pullEarth']) label(id, null);
+      for (const id of ['apple', 'earth', 'pullApple', 'pullEarth']) label(id, null);
       const st = skaterState();
       // the names (with the masses) hang at the outer side of each skater, at knee height; a name goes when its skater has left the picture
       const tag = (id, sk, side, text, out) => {
@@ -472,7 +472,7 @@ export function createApp(root, options = {}) {
       // the forces are what the picture is about: they are placed first, the names take what room is left
       if (released !== namesAfterForces) {
         namesAfterForces = released;
-        for (const id of ['apple', 'earth', 'earthAcc']) label(id, null);
+        for (const id of ['apple', 'earth']) label(id, null);
       }
       const f = plain(+(G * APPLE_MASS).toFixed(1));
       label(
@@ -514,22 +514,20 @@ export function createApp(root, options = {}) {
             }
           : null,
       );
-      // the Earth: "very heavy" while the apple falls; once it has landed, its (tiny) acceleration, for the one who wants the number
+      // the Earth's name tag: "very heavy" while the apple falls; once it has landed, the Earth's (tiny) acceleration,
+      // for the one who wants the number (in the test it stays "very heavy": the test asks why)
+      const landed = st.landed && s.mode === 'explore';
       label(
         'earth',
-        s.names && !(st.landed && s.mode === 'explore')
-          ? { text: `${t('l_earth_name')}<br>${t('l_earth_big')}`, kind: 'part', color: '#334155', point: () => earthTag, spots: EARTH_NAME }
-          : null,
-      );
-      label(
-        'earthAcc',
-        s.names && st.landed && s.mode === 'explore'
+        s.names
           ? {
-              text: `${t('l_earth_acc')}<br>${sciHtml(earthAcceleration(APPLE_MASS, EARTH_MASS))}${NBSP}${MS2}`,
+              text: landed
+                ? `${t('l_earth_acc')}<br>${sciHtml(earthAcceleration(APPLE_MASS, EARTH_MASS))}${NBSP}${MS2}`
+                : `${t('l_earth_name')}<br>${t('l_earth_big')}`,
               kind: 'part',
               color: '#334155',
-              point: () => earthScene.appleAt(applePoint),
-              spots: ACC_SPOTS,
+              point: () => earthTag,
+              spots: EARTH_NAME,
             }
           : null,
       );
@@ -549,24 +547,26 @@ export function createApp(root, options = {}) {
   function plan() {
     const ex = s.example;
     const step = IDS.filter((id) => s.tried[id]).length + 1;
-    const fresh = !s.tried[ex] && sim.t0 == null;
-    if (fresh) return { example: ex, label: `act_${ex}`, step };
-    const over = sim.t0 == null || sim.done;
-    const next = over ? IDS.find((id) => !s.tried[id] && id !== ex) : null;
+    const again = ex === 'apple' ? 'act_again_apple' : 'act_again';
+    // while a run is going on it keeps its own words ("আবার" only for a pair already seen)
+    if (busy()) return s.tried[ex] ? { example: ex, label: again, step: '' } : { example: ex, label: `act_${ex}`, step };
+    if (!s.tried[ex] && sim.t0 == null) return { example: ex, label: `act_${ex}`, step };
+    const next = IDS.find((id) => !s.tried[id] && id !== ex);
     if (next) return { example: next, label: `act_on_${next}`, step };
-    return { example: ex, label: ex === 'apple' ? 'act_again_apple' : 'act_again', step: '' };
+    return { example: ex, label: again, step: '' };
   }
 
   function outcomeKey() {
     if (s.example === 'apple') {
       const st = appleState();
       if (st.time > 0 && !st.landed)
-        return [allTried() ? 'out_apple_fall_f' : 'out_apple_fall', { f: plain(+(G * APPLE_MASS).toFixed(1)) }, 'gravity'];
+        return [allTried() && s.mode === 'explore' ? 'out_apple_fall_f' : 'out_apple_fall', { f: plain(+(G * APPLE_MASS).toFixed(1)) }, 'gravity'];
       if (st.landed || s.tried.apple) return ['out_apple_after', {}, 'rest'];
       return ['out_apple_rest', {}, 'rest'];
     }
     const st = skaterState();
-    if (st.phase === 'push') return [allTried() ? 'out_push_f' : 'out_push', { f: plain(PUSH_FORCE) }, 'force'];
+    if (st.phase === 'push') return [allTried() && s.mode === 'explore' ? 'out_push_f' : 'out_push', { f: plain(PUSH_FORCE) }, 'force'];
+    if (st.phase === 'glide' && !sim.done) return ['out_glide', {}, 'rest']; // the push is over: no force now
     if (st.phase === 'glide' || s.tried[s.example]) {
       if (s.pair.mA === s.pair.mB) return ['out_same', {}, 'rest'];
       return ['out_more', { k: plain(+(Math.max(s.pair.mA, s.pair.mB) / Math.min(s.pair.mA, s.pair.mB)).toFixed(1)) }, 'accel'];
@@ -580,6 +580,9 @@ export function createApp(root, options = {}) {
     return s.example === 'apple' ? 'rule_start_apple' : 'rule_start_skaters';
   }
 
+  // the Earth is about this many times heavier than the apple: "6 followed by 24 zeros" (5.98 × 10²⁴ for 1 kg)
+  const heavier = sci(EARTH_MASS / APPLE_MASS, 0);
+  const ruleVars = { six: heavier.mantissa, zeros: heavier.exponent };
   let lastKind = '';
   let lastPlan = '';
   function refresh() {
@@ -588,7 +591,7 @@ export function createApp(root, options = {}) {
     const [key, vars, kind] = outcomeKey();
     sheet.outcome(t(key, vars));
     if (kind !== lastKind) outcomeEl.dataset.k = lastKind = kind;
-    sheet.rule(t(ruleKey()));
+    sheet.rule(t(ruleKey(), ruleVars));
     if (action) {
       const p = plan();
       const sig = `${p.example}|${p.label}|${p.step}`;
@@ -597,23 +600,28 @@ export function createApp(root, options = {}) {
         lastPlan = sig;
       }
       sheet.next(p.example !== s.example ? p.example : null); // the word the action will choose next
-      // the ring shows on the hands (or the apple) while they wait, never while they move
-      if (s.mode === 'explore' && sim.t0 == null) action.show('run');
+      // the ring shows on the hands (or the apple) while they wait, never while they move, and only when the button does
+      // what the picture shows (when it offers the next pair, the dotted word in the row says so)
+      if (s.mode === 'explore' && sim.t0 == null && p.example === s.example) action.show('run');
       else action.hide('run');
     }
     const note = skaters() ? t('badge_skaters') : t('badge_apple', { k: SLOW });
     if (badge.innerHTML !== note) badge.innerHTML = note;
     syncLabels();
     stage.invalidate();
-    // the ring (and the number badge) settle on the next frame: the labels then make room for them
+    // the ring (and the number badge) settle over the next frames: the labels then make room for them
+    annoFrames = 4;
     if (!annoPending) {
       annoPending = true;
-      requestAnimationFrame(() => {
-        annoPending = false;
+      const again = () => {
         anno.update();
-      });
+        if (--annoFrames > 0) requestAnimationFrame(again);
+        else annoPending = false;
+      };
+      requestAnimationFrame(again);
     }
   }
+  let annoFrames = 0;
   let annoPending = false;
 
   function snapshot() {
@@ -710,14 +718,6 @@ export function createApp(root, options = {}) {
     refresh();
     if (!quiet) emit(skaters() ? 'push' : 'release', { example: s.example });
     stage.invalidate();
-  }
-
-  /** Carry on from a still moment (the test's answer): the picture's clock runs on from where it stood. */
-  function resume() {
-    const at = sim.frozen ?? 0;
-    sim.frozen = null;
-    sim.t0 = now() - at * 1000;
-    sim.done = false;
   }
 
   /** What happens as the clock runs: the result is in, they have gone, the apple has landed. Returns true while moving. */
@@ -901,14 +901,17 @@ export function createApp(root, options = {}) {
     };
   }
   const item = (key, vars) => ({ key, text: t(key, vars) });
-  /** The five kinds in a random order, the size question before the cancelling one (a scene must not give a later answer away). */
+  /**
+   * The five kinds in a random order that never gives a later answer away: the size question first (its answer, "equal",
+   * is in the cancelling and the who-moves-more worked answers), the apple's reaction before the Earth's question.
+   */
   function questionOrder() {
-    const kinds = ['react', 'cancel', 'who', 'size', 'earth'];
+    const rest = ['react', 'cancel', 'who', 'earth'];
     for (let i = 0; i < 50; i++) {
-      shuffle(kinds);
-      if (kinds.indexOf('size') < kinds.indexOf('cancel')) break;
+      shuffle(rest);
+      if (rest.indexOf('react') < rest.indexOf('earth')) break;
     }
-    return kinds;
+    return ['size', ...rest];
   }
 
   let saved = null;
@@ -995,15 +998,27 @@ export function createApp(root, options = {}) {
           return { text: t('q_who'), ...textChoices([item(right), item(heavy), item('who_same'), item('who_unknown')], kind, { light }) };
         }
         if (kind === 'size') {
+          // light and heavy in the middle of the push; only the force on A is drawn, with its number
           const pair = pickOne([
             { mA: 50, mB: 100 },
             { mA: 100, mB: 50 },
             { mA: 40, mB: 80 },
             { mA: 80, mB: 40 },
           ]);
-          questionScene({ scene: 'skaters', pair });
+          const T = pushStats(pair.mA, pair.mB).T;
+          questionScene({ scene: 'skaters', pair, frozen: T * 0.55, show: { first: true, second: false } });
           question.pair = pair;
-          return { text: t('q_size'), ...textChoices([item('s_equal'), item('s_heavy'), item('s_light'), item('s_pusher')], kind) };
+          const list = [0, 5, PUSH_FORCE, 2 * PUSH_FORCE];
+          const keys = ['s_zero', 's_half', 's_ok', 's_double'];
+          return {
+            text: t('q_size'),
+            list: list.map((n, j) => ({ key: keys[j], text: t(keys[j], { n }) })),
+            choices: [0, 1, 2, 3],
+            expected: 2,
+            tolerance: 0.5,
+            label: (j) => `<span class="nt-opt">${t(keys[j], { n: list[j] })}</span>`,
+            meta: { kind, answer: 's_ok' },
+          };
         }
         questionScene({ scene: 'apple', frozen: 0, show: { first: false, second: false } });
         return { text: t('q_earth'), ...textChoices([item('e_ok'), item('e_less'), item('e_cancel'), item('e_none')], kind) };
@@ -1013,13 +1028,13 @@ export function createApp(root, options = {}) {
         const wrongKey = correct ? null : q.list?.[picked]?.key;
         const note = (map) => (wrongKey && map[wrongKey] ? ` ${t(map[wrongKey])}` : '');
         s.show = { first: true, second: true };
-        if (k === 'react') {
-          resume();
-          return t('why_react') + note({ r_same: 'not_r_same', r_none: 'not_r_none', r_ground: 'not_r_ground' });
-        }
-        if (k === 'cancel') {
-          resume();
-          return t('why_cancel') + note({ c_small: 'not_c_small', c_fric: 'not_c_fric', c_time: 'not_c_time' });
+        if (k === 'react' || k === 'cancel') {
+          // keep the scene as it stands, both arrows on: the answer talks about them
+          place();
+          refresh();
+          return k === 'react'
+            ? t('why_react') + note({ r_same: 'not_r_same', r_none: 'not_r_none', r_ground: 'not_r_ground' })
+            : t('why_cancel') + note({ c_small: 'not_c_small', c_fric: 'not_c_fric', c_time: 'not_c_time' });
         }
         if (k === 'who') {
           startRun({ quiet: true, at: 0 });
@@ -1030,8 +1045,9 @@ export function createApp(root, options = {}) {
           );
         }
         if (k === 'size') {
-          startRun({ quiet: true, at: 0 });
-          return t('why_size', { f: plain(PUSH_FORCE) }) + note({ s_heavy: 'not_s_heavy', s_light: 'not_s_light', s_pusher: 'not_s_pusher' });
+          place();
+          refresh();
+          return t('why_size', { f: plain(PUSH_FORCE) }) + note({ s_half: 'not_s_half', s_double: 'not_s_double', s_zero: 'not_s_zero' });
         }
         startRun({ quiet: true, at: 0 });
         return (

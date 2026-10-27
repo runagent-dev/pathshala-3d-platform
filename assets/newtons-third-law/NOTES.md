@@ -35,23 +35,29 @@ the Earth pull each other with the same force, but the Earth is so heavy that it
   long, pointing away from the other skater, named on the body it acts on ("A-এর ওপর বল", "B-এর ওপর বল"). The two forces of a pair
   are the same kind of force, so both are orange (the push; the apple's pair is gravity violet) and are told apart by position,
   name and a solid arrow (A's push, on B) against a dashed one (B's push back, on A), with the same solid or dashed swatch in the
-  label: never colour alone. Afterwards there is no force and each goes on at the speed it
-  reached; the faster one leaves the picture, then they stand ready again. a = F/m: with equal masses both move equally (0.2 ms⁻²);
+  label: never colour alone. Afterwards there is no force ("ধাক্কা শেষ: এখন কোনো বল নেই, তাই দুজনের বেগ আর বদলাচ্ছে না") and each goes on
+  at the speed it reached; the faster one leaves the picture, then they stand ready again. A small mark on the floor shows where each
+  started and a bar from it how far each has gone, so "twice as far" is seen on the floor, not only read. a = F/m: with equal masses both move equally (0.2 ms⁻²);
   with 50 kg and 100 kg the lighter goes twice as far (0.2 and 0.1 ms⁻²). Result line: "দুজন সমান সরে গেল" / "হালকা A সরে গেল ভারী
   B-র চেয়ে ২ গুণ বেশি" (a comparison first, no formula).
 - Apple: held in a hand above a ball-shaped Earth; the fingers open, the hand lifts away, the apple falls (1.4 m in the picture,
   time 2× slower, the note says so) and lands. While it falls: an arrow on the apple (down) and an arrow on the Earth (up), both
   9.8 N, equally long (gravity violet), each named on its body. Result: "আপেল নিচে নামল, কিন্তু পৃথিবী নড়ল না বললেই চলে"; after the
-  landing the Earth's tag shows its acceleration (1.64 × 10⁻²⁴ ms⁻²) for the one who wants the number: no powers of ten in the
-  first views, M and the formulas only at the end (the test's worked answer).
-- The rule line grows in plain words (a question first, then "A ঠেলে B-কে, B-ও ঠেলে A-কে, সমান জোরে", then "বল সমান, তবু হালকা জন
+  landing the Earth's tag ("পৃথিবীর ত্বরণ …") shows its acceleration (1.64 × 10⁻²⁴ ms⁻²) for the one who wants the number: no powers of ten in
+  the first views. The feel for its size is one plain sentence in the rule ("পৃথিবীর ভর আপেলের চেয়ে প্রায় ৬-এর পরে ২৪টি শূন্য বসালে যত, তত গুণ
+  বেশি": 5.98 × 10²⁴ ≈ 6 followed by 24 zeros); M and the formulas appear only in the test's worked answer.
+- The rule line grows in plain words (a question first, then "A ধাক্কা দেয় B-কে, B-ও ধাক্কা দেয় A-কে, সমান জোরে", then "বল সমান, তবু হালকা জন
   বেশি সরে", then the apple) and ends on the book's boxed law word for word once all three pairs have been seen; at that step the
   force labels take the book's names: F and −F for the two skaters (right is positive, as `walking-third-law`), F on both for the apple, as the page's picture labels it.
-- Test (5, each on its own scene, the size question always before the cancelling one): what the apple does to the Earth (the apple
-  falling, only the Earth's pull drawn), why two equal opposite forces do not cancel (skaters mid-push, both arrows), who moves more
-  (masses on the picture), on whom the force is bigger (heavy and light), why the Earth does not visibly move. Wrong choices are the
-  real mistakes (the small one does not pull the big one, the forces cancel, friction, one force first, more mass means more force, the
-  one who starts pushes harder, the ground's push).
+- The action keeps its own words while the first run of a pair goes on ("১ ধাক্কা দাও"; "আবার …" only for a pair already seen). When it offers
+  a pair that is not on the picture, no ring sits on the picture (the dotted word in the row says what comes next).
+- Test (5, each on its own scene), in an order that never gives a later answer away: the size question first (its answer, "equal", is in
+  the later worked answers), the apple's reaction before the Earth's question. Size: the picture shows only the force on A with its number
+  (10 N), the question is how big the force on B is (0 / 5 / 10 / 20 N, in order); reaction: what the apple does to the Earth (the apple
+  falling, only the Earth's pull drawn); cancel: why two equal opposite forces do not cancel (skaters mid-push, both arrows); who moves
+  more (masses on the picture); why the Earth does not visibly move. The worked answers of the reaction, cancel and size questions keep the
+  scene still with both arrows on while they are read. Wrong choices are the real mistakes (the small one does not pull the big one, the
+  forces cancel, the floor holds one back, one force first, mass divides the force, the force doubles, no force back, the ground's push).
 
 ## Terms (as in the book)
 নিউটনের তৃতীয় সূত্র, বল প্রয়োগ, ক্রিয়া (Action), প্রতিক্রিয়া (Reaction), সমান, বিপরীত দিকে, ভিন্ন ভিন্ন বস্তু, কাটাকাটি, আকর্ষণ,
@@ -63,6 +69,11 @@ masses), হালকা/ভারী, ধাক্কা দাও (the page's 
   named only at the last step; a = F/m and M appear only in the test's worked answers.
 - The picture is not to scale and says so: the apple is drawn much bigger than a real one and the Earth a few metres across, so its
   curve shows; the apple's time is 2× slower. The skaters' picture is in real time (smooth floor, friction ignored).
+- F and −F for the two skaters but F and F for the apple, on purpose: page 86 prints F and −F for the walking pair (`walking-third-law`),
+  page 84's printed picture of the apple labels both arrows F. The names come only at the last step, with one bridging sentence.
+- The pair colours: both forces of a pair are the SAME hue (a push or pull orange; gravity violet), told apart by position, name and a solid
+  vs dashed arrow. `walking-third-law` draws its pair in orange and crimson because the ground's push on a walker IS static friction (crimson
+  is friction in this chapter); here neither force is friction.
 - The 1 kg apple is the book's "1 kg ভরের একটা বস্তু" (a real apple is about 0.1–0.2 kg; a = (m/M)g scales with m).
 - Colours: a push or pull orange, gravity violet, for BOTH forces of a pair (crimson is friction and teal acceleration in this chapter); acceleration teal only in the result line's number.
 
@@ -70,7 +81,7 @@ masses), হালকা/ভারী, ধাক্কা দাও (the page's 
 - The page break: the image of page 85 ends "… তার জন্য পৃথিবীর ত্বরণ হবে—" and page 86 begins "এটি এত ক্ষুদ্র যে …": the number itself (it should be
   1.64 × 10⁻²⁴ ms⁻²: (1 / 5.98 × 10²⁴) × 9.8) is not in the supplied images. Please confirm what the printed line says; the figure shows 1.64 × 10⁻²⁴ ms⁻².
 - The caption of চিত্র ৩.১২ is cut by the page edge in the supplied image ("… ভরটি পৃথিবীকেও সেভাবে …"); the figure does not quote it.
-- F and −F for the skaters (as `walking-third-law`) but F and F for the apple, because the page's picture of the apple labels both arrows F.
-  Is that mixture fine?
-- The page says "ক্রিয়া/প্রতিক্রিয়া" is loosely used; the figure uses "প্রতিক্রিয়া" only in one worked answer. Is that wanted?
+- F and −F for the skaters but F and F for the apple (above): is the mixture fine, or should the skaters' pair also be F and F?
+- The page says "ক্রিয়া/প্রতিক্রিয়া" is loosely used: the figure does not use either word on screen (it says "বল দুটি আলাদা দুই বস্তুর ওপর").
+  Should one worked answer name them once?
 - Every Bangla line needs a person's check against the book (the unchecked box in the pull request).
