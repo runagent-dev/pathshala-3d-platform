@@ -1,0 +1,74 @@
+/* Hanging weight pulls a block: the page, the colours that carry meaning (ওজন Mg purple, টান T orange, ত্বরণ a teal:
+   the same as the arrows, src/app.js), the labels on the picture, the note on the stage and the test's answers in
+   words. The panel is the kit's clean sheet (one action, one result, one rule: ../../shared/lib/student/student.css,
+   .pvc-examples, .pvc-act, .pvc-outcome, .pvc-rule). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.hw { --c-W: #7048e8; --c-T: #e8590c; --c-a: #0c8599; }
+.hw sub, .hw sup { font-size: 0.72em; line-height: 0; }
+/* the law line: each symbol in the colour of what it stands for in the picture (a teal, Mg purple, m the wooden block) */
+.hw .c-a { color: var(--c-a); font-weight: 700; }
+.hw .c-W { color: var(--c-W); font-weight: 700; }
+.hw .c-m { color: #8a5a1c; font-weight: 700; }
+.hw .c-T { color: var(--c-T); font-weight: 700; }
+/* under the law: the book's own two equations, one quiet line (the symbols in the picture's colours) */
+.hw-book { display: block; margin-top: 3px; font-size: 12.5px; font-weight: 400; line-height: 1.4; color: var(--ink-3); }
+.hw-book .c-a, .hw-book .c-T, .hw-book .c-W, .hw-book .c-m { font-weight: 600; }
+/* the small result under a word: never smaller than 12.5 px */
+.hw .pvc-examples .pvc-ex-res { font-size: 12.5px; }
+
+/* the result line: the weight's number in the weight's purple before the run, the acceleration's teal after it */
+.hw .pvc-outcome[data-k='ready'] b { color: var(--c-W); }
+.hw .pvc-outcome[data-k='run'] b { color: var(--c-a); }
+
+/* the notes on the stage: the smooth table, the slowed-down time, the arrows' scales (top left; the buttons are top right) */
+.hw-note { position: absolute; left: 8px; top: 8px; z-index: 3; max-width: max(110px, min(52%, calc(100% - 232px))); padding: 3px 8px; border-radius: 5px; background: rgba(255, 255, 255, 0.9); font-size: 12.5px; line-height: 1.4; color: var(--ink-2); pointer-events: none; }
+.hw-note b { color: var(--ink); font-weight: 700; }
+.hw-scale { position: absolute; right: 8px; bottom: 5px; z-index: 3; text-align: right; font-size: 11.5px; line-height: 1.3; color: var(--ink-3); pointer-events: none; }
+.hw-scale:empty { display: none; }
+
+/* labels on the picture: the symbol and its number in the arrow's colour (no leader lines: the label sits at the arrow's head) */
+.pvc-anno-force { --c: var(--ink); padding: 0 6px; border: 1.5px solid var(--c); border-radius: 5px; background: rgba(255, 255, 255, 0.94); color: var(--c); font-size: 13.5px; font-weight: 700; line-height: 1.5; transition: none; }
+.pvc-anno-mass { padding: 0 7px; border: 1px solid var(--line-2); border-radius: 5px; background: rgba(255, 255, 255, 0.94); color: var(--ink); font-size: 13.5px; font-weight: 600; line-height: 1.5; }
+.pvc-anno-mass-on { padding: 0 3px; border: 0; background: none; color: #4a2e0a; font-size: 13.5px; font-weight: 700; line-height: 1.5; text-shadow: 0 0 3px rgba(255, 238, 205, 0.95), 0 0 2px rgba(255, 238, 205, 0.95); }
+.pvc-anno-lines .k-force, .pvc-anno-lines .k-mass, .pvc-anno-lines .k-mass-on { display: none; }
+
+/* the test: answers in words (two lines allowed), room kept for the question and the worked answer */
+.hw .pvc-opt { font-size: 14.5px; line-height: 1.25; }
+.hw-opt { display: block; white-space: normal; text-align: center; }
+.hw .pvc-q-text { font-size: 16px; }
+.hw .pvc-q-feedback { font-size: 14px; }
+
+/* wide frames (tabs beside the sheet): the lines one under the other, close together */
+@container pvc (min-width: 720px) and (min-height: 461px) {
+  .hw .pvc-learn { justify-content: flex-start; gap: 8px; }
+  .hw .pvc-examples { max-width: 520px; }
+  .hw .pvc-rule { --pvc-rule-lines: 3; }
+}
+@container pvc (min-width: 1000px) and (min-height: 461px) {
+  .hw .pvc-learn { display: grid; grid-template-columns: minmax(0, 480px) minmax(0, 1fr); grid-template-areas: 'ex act' 'out out' 'rule rule'; align-content: start; align-items: center; gap: 8px 32px; }
+  .hw .pvc-examples { grid-area: ex; }
+  .hw .pvc-act-row { grid-area: act; }
+  .hw .pvc-outcome { grid-area: out; }
+  .hw .pvc-rule { grid-area: rule; }
+}
+@container pvc (max-width: 560px) and (max-height: 600px) {
+  .hw .pvc-q-text { font-size: 15px; }
+  .hw .pvc-opt { font-size: 13.5px; }
+  .hw .pvc-q-feedback { font-size: 13px; }
+}
+/* short and wide (phone held sideways): the panel is beside the scene */
+@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
+  .hw .pvc-outcome { --pvc-outcome-lines: 2; font-size: 15px; line-height: 1.6; }
+  .hw .pvc-rule { --pvc-rule-lines: 5; font-size: 14px; line-height: 1.45; }
+  .hw .pvc-q-text { font-size: 14.5px; }
+  .hw .pvc-opt { font-size: 13.5px; height: 42px; }
+  .hw .pvc-q-feedback { font-size: 13px; }
+}
+/* a narrow panel beside the scene: the four words of the row keep clear of each other */
+@container pvc-panel (max-width: 330px) {
+  .hw .pvc-examples .pvc-ex-word { font-size: 12.5px; }
+  .hw .pvc-examples button { padding-left: 1px; padding-right: 1px; }
+}

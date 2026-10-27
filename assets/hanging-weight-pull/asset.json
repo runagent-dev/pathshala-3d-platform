@@ -1,0 +1,101 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "hanging-weight-pull",
+  "title": "Hanging weight pulls a block (ঝুলন্ত ভর ও টেবিলের বস্তু)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 81,
+  "topic": "3.7",
+  "placement": "Book pages 81–82, topic 3.7 (উদাহরণ): a hanging mass M pulling a block m across a table through a string over a pulley (চিত্র ৩.০৯ style), and the two-weights example. Next to the page's T = ma, T − Mg = M(−a) and a = Mg/(M+m).",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "A hanging weight pulls a block across a smooth table (page 81, topic 3.7, and the page-82 example), explained in plain words first: a wooden block rests on a bench, held by a gate of two pegs, and a string runs over a pulley at the bench's edge to an iron weight hanging beside it. The panel is one action, one result, one rule: a big numbered button (\"১ ছাড়ো\") whose same numbered badge rings the block on the 3D view (a tap on the block or the weight lets go too); one result line in everyday words (\"ত্বরণ: গতি প্রতি সেকেন্ডে ৪.৯ m/s করে বাড়ছে\"); and one short rule that grows with what the student has found: \"সুতার টান দুই মাথায় সমান, কিন্তু ওজনের চেয়ে কম\", then \"ঝুলন্ত ভর যত বেশি, ব্লক তত দ্রুত গতি বাড়ায়\", then \"ব্লক যত ভারী, তত ধীরে গতি বাড়ায়; ২ গুণ ভারী হলে ত্বরণ অর্ধেক হয় না\", and last, with every symbol in the colour of what it stands for, the law a = Mg ÷ (M + m), with the book's own T = ma and T − Mg = M(−a) in one quiet line under it. The row of words is four experiments (ঝুলন্ত ২ kg, ঝুলন্ত ৫ kg, ভারী ব্লক, and the book's two-weights example with 10 kg on the left and 5 kg on the right), each leaving its acceleration under its word. On release the weight falls 0.34 m and the block slides 0.34 m with the true acceleration (time slowed 4 times, said on the stage); arrows show the weight (purple), the one string's pull (orange, the same number on the block and on the weight, always less than the weight) and the acceleration (teal); the picture's labels are words (ওজন, টান, ত্বরণ) until the law has been shown, then symbols. With two weights the strings pull differently and the block goes towards the heavier one. Test tab, in the same plain words: 5 questions, each on its own scene (the acceleration from the two weights read off the picture; what happens when the hanging weight or the block is made 2 times; the string's pull against the weight from the arrows; one string, one pull; which way the block goes, and how fast it speeds up, with two weights), every wrong choice a real mistake with its own note. Phone-first, Bangla and English.",
+  "tags": ["force", "newtons-laws", "second-law", "tension", "acceleration", "pulley", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "id",
+      "label": "Experiment",
+      "type": "select",
+      "options": [["w2", "M = 2 kg"], ["w5", "M = 5 kg"], ["heavy", "m = 10 kg"], ["two", "two weights"]],
+      "default": "w2"
+    },
+    {
+      "name": "at",
+      "label": "Freeze part-way",
+      "type": "number",
+      "default": "",
+      "placeholder": "0 to 1",
+      "help": "e.g. 0.6: the run is frozen 60% of the way, arrows showing (empty: the block is held at the start)"
+    },
+    {
+      "name": "tried",
+      "label": "Experiments already run",
+      "type": "text",
+      "default": "",
+      "placeholder": "w2,w5",
+      "help": "their accelerations show under their words"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on the block pulses", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "id": "w5" } },
+    { "name": "set", "payload": { "release": true } },
+    { "name": "set", "payload": { "id": "two", "release": true } },
+    { "name": "set", "payload": { "at": 0.6 } },
+    { "name": "set", "payload": { "masses": { "m2": 4, "m1": 6, "m": 5 } } },
+    { "name": "set", "payload": { "tried": ["w2", "w5"] } },
+    { "name": "set", "payload": { "home": true } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": [
+    "ready",
+    "change",
+    "release",
+    "stop",
+    "experiment",
+    "view",
+    "practice-start",
+    "practice-result",
+    "practice-end"
+  ],
+  "export": {
+    "poster": { "params": { "coach": "0", "id": "two", "at": "0.55" } },
+    "glb": [
+      { "name": "default", "setup": [{ "command": "set", "payload": { "id": "w2", "home": true, "animate": false } }] }
+    ]
+  }
+}
