@@ -13,7 +13,7 @@
   "order": 1,
   "maintainers": ["RadeenXALNW"],
   "units": "m",
-  "description": "Friction (ঘর্ষণ বল, pages 88–89, 3.9) as five short steps on a wooden block lying on a table, in plain words first (the symbols F and f only after the first push). Step 1: a push rod leans on the block and the push grows (a gentle 5 N held for a second, then harder); the table holds it back with a friction force exactly as big and the other way round (two equal arrows, the orange push and the crimson friction) until the push reaches the most the table can hold, 9.8 N for the 2 kg block, and the block starts to slide. Step 2: push from the other side and friction turns round too (the book: friction always acts opposite to the applied force). Step 3: put 1 kg weights on the block (a row of words: none, 1 kg, 2 kg) and it takes a bigger push to move it, 14.7 N and 19.6 N: friction grew with the weight (the number under each word once found). Step 4: a round window, joined by a cone to the touching spot as in চিত্র ৩.১৬, zooms in a long way on the table and the block: both surfaces are rough, their teeth lock into each other's grooves, and with more weight the teeth sink deeper (a purple weight arrow presses down, at right angles to the sideways friction); a push leans the teeth on each other and sliding rides them up and over. Step 5: the block is rubbed to and fro, friction always against the motion, and the two surfaces glow warm (the book's engine remark). The panel is one action, one result line, one short rule. Test tab: 5 questions on clean scenes (which way friction acts on a block that is not moving, how big it is, what a weight does to a push that used to move the block, why smooth-looking surfaces have friction, what rubbing does to the surfaces). Phone-first, Bangla.",
+  "description": "Friction (ঘর্ষণ বল, pages 88–89, 3.9) as five short steps on a wooden block lying on a table, in plain words first (the symbols F and f only after the first push). Step 1: a push rod leans on the block and the push grows (a gentle 5 N held for a second, then harder); the table holds it back with a friction force exactly as big and the other way round (two equal arrows, the orange push and the crimson friction) until the push passes the most the table can hold, 9.8 N for the 2 kg block. Then the push goes on past the friction (the push arrow is visibly longer than the friction arrow), the block speeds up on what is left (a = (F − f)/m, the book's \"friction reduces the applied force\"), the hand lets go and friction alone slows it to a stop. Step 2: push from the other side and friction turns round too (the book: friction always acts opposite to the applied force). Step 3: put 1 kg weights on the block (a row of words: empty block, +1 kg, +2 kg) and it takes a bigger push to move it, 14.7 N and 19.6 N: friction grew with the weight (the push it took under each word once found). Step 4: a round window, joined by a cone to the touching spot as in চিত্র ৩.১৬, zooms in a long way on the table and the block: both surfaces are rough, their teeth lock into each other's grooves, and with more weight the teeth sink deeper (a purple weight arrow presses down, at right angles to the sideways friction); sliding rides the teeth up and over. Step 5: the block is rubbed to and fro, friction always against the velocity, and the two surfaces glow warm (the book's engine remark). One friction number (μ = 0.5, not shown) serves for resting and for sliding: static and kinetic friction are for the next figure (3.9.1). The panel is one action, one result line, one short rule. Test tab: 5 questions on clean scenes (which way friction acts on a block that is not moving, how big it is, what a weight does to a push that used to move the block, why smooth-looking surfaces have friction, what rubbing does to the surfaces). Phone-first, Bangla.",
   "tags": ["force", "friction", "contact-force", "surface", "heat", "bangla"],
   "params": [
     {
@@ -54,6 +54,14 @@
       "placeholder": "s after the rubbing began",
       "help": "e.g. 3: the block has been rubbed to and fro for 3 s, the surfaces are warm"
     },
+    {
+      "name": "hold",
+      "label": "Hold a push of",
+      "type": "number",
+      "default": "",
+      "placeholder": "N",
+      "help": "e.g. 9: the rod pushes with 9 N and the block stays still (friction is 9 N too), for pictures"
+    },
     { "name": "lens", "label": "Zoom-in open", "type": "boolean", "default": "0" },
     { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
     {
@@ -81,6 +89,7 @@
     { "name": "set", "payload": { "load": 1, "push": true } },
     { "name": "set", "payload": { "side": "right", "push": true } },
     { "name": "set", "payload": { "at": 2.6 } },
+    { "name": "set", "payload": { "hold": 9 } },
     { "name": "set", "payload": { "lens": true } },
     { "name": "set", "payload": { "rub": true } },
     { "name": "set", "payload": { "home": true } },
@@ -105,7 +114,7 @@
     "practice-end"
   ],
   "export": {
-    "poster": { "params": { "coach": "0", "load": "1", "lens": "1", "at": "2.6" } },
+    "poster": { "params": { "coach": "0", "load": "1", "lens": "1", "hold": "9" } },
     "glb": [
       { "name": "default", "setup": [{ "command": "set", "payload": { "load": 1, "home": true, "animate": false } }] }
     ],

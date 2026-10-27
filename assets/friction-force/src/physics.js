@@ -2,11 +2,13 @@
 // test/unit/friction-force.test.mjs). A wooden block lies on a table and is pushed along it by a hand (a push rod).
 //
 // The model is the simplest one that is true: the table can hold the block back with a friction force f that is
-// whatever the push F needs, up to a largest value, μ × (the force pressing the block down). Below that most, the block does
-// not move and f = F (equal and opposite). The moment the push reaches it, the block starts to slide, and then it
-// slides steadily with f = F again. One μ (0.5) is used for both: the book's page 88–89 has no formula; the next
-// figure (types of friction, 3.9.1) is where static and kinetic friction are told apart. The weights add to the
-// force pressing down: 2 kg block (19.6 N), 3 kg (29.4 N), 4 kg (39.2 N); so the most friction is 9.8, 14.7, 19.6 N.
+// whatever the push F needs, up to a largest value, μ × (the force pressing the block down). Below it the block does
+// not move and f = F (equal and opposite). Push harder than that and the block slides with f staying at that largest
+// value: the push minus the friction is what is left over, and it speeds the block up (a = (F − f) / m). When the
+// hand lets go, friction alone slows it to a stop (a = μ g). One μ (0.5) is used for resting and for sliding: the
+// book's pages 88–89 have no formula; the next figure (types of friction, 3.9.1) tells static and kinetic friction
+// apart. The weights add to the force pressing down: 2 kg block (19.6 N), 3 kg (29.4 N), 4 kg (39.2 N); so the most
+// friction, and the push at which the block starts to slide, is 9.8, 14.7, 19.6 N.
 
 export const G = 9.8; // m/s²
 export const MU = 0.5; // the wood-on-wood grip, one number (not shown to the student)
@@ -20,10 +22,11 @@ export const GENTLE = 5; // N
 export const RATE = 6; // N/s
 export const T_RISE = 0.8; // s to the gentle push
 export const T_HOLD = 1.0; // s it is held
-export const T_SLIP = 1.1; // s the block slides on once it gives way
-export const T_LET_GO = 0.35; // s the hand lets go
-export const SLIP_SPEED = 0.15; // m/s: how fast it creeps while the push stays at the limit (F = f, steady)
-const SLIP_EASE = 0.12; // s: it picks up its creep speed over about this long
+// once it gives way the hand keeps pushing: the push goes on past the friction by m × A_NET newtons (reached over
+// T_PUSH_UP s), so the block speeds up at up to A_NET whatever the weights; then the hand lets go
+export const A_NET = 1.2; // m/s²
+export const T_PUSH_UP = 0.4; // s
+export const T_SLIP = 0.7; // s the hand pushes on after the block gave way
 
 export const round = (x, d = 1) => +(Math.round(x * 10 ** d) / 10 ** d).toFixed(d);
 export const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
@@ -39,44 +42,79 @@ export const weightOf = (load) => round(massOf(load) * G);
 /** N: the most friction the table can give, so the push at which the block starts to slide (9.8, 14.7, 19.6). */
 export const capacity = (load) => round(MU * massOf(load) * G);
 
-/** s at which each phase of a push starts: rise, hold, climb, slip, let go, done. */
+/** N: how far past the friction the push goes (it is this, over the mass, that speeds the block up). */
+export const extraOf = (load) => round(massOf(load) * A_NET, 1);
+/** m/s² the friction slows a sliding block at once the hand lets go (μ g). */
+export const SLOWING = MU * G;
+
+/** s at which each phase of a push starts: rise, hold, climb, slip, release (the hand lets go); done when it has stopped. */
 export function pushTimes(load) {
   const c = capacity(load);
   const rise = 0;
   const hold = T_RISE;
   const climb = hold + T_HOLD;
   const slip = climb + (c - GENTLE) / RATE;
-  const letGo = slip + T_SLIP;
-  const done = letGo + T_LET_GO;
-  return { rise, hold, climb, slip, letGo, done, c };
+  const release = slip + T_SLIP;
+  const done = release + coastTime();
+  return { rise, hold, climb, slip, release, done, c };
 }
 
-/** How far the block has crept (m) τ s after it started to slide: a short ease into the creep speed, then steady. */
-export function creep(tau) {
-  if (tau <= 0) return 0;
-  return SLIP_SPEED * (tau + SLIP_EASE * (Math.exp(-tau / SLIP_EASE) - 1));
+/** Speed (m/s) and distance (m) τ s after the block gave way, while the hand pushes on (τ ≤ T_PUSH_UP: a smooth start, then steady). */
+export function speedUp(tau) {
+  const T = T_PUSH_UP;
+  const u = clamp(tau / T, 0, 1);
+  if (tau <= 0) return { v: 0, x: 0 };
+  if (tau <= T) return { v: A_NET * T * (u ** 3 - u ** 4 / 2), x: A_NET * T * T * (u ** 4 / 4 - u ** 5 / 10) };
+  const d = tau - T;
+  const v1 = A_NET * T * 0.5;
+  return { v: v1 + A_NET * d, x: A_NET * T * T * 0.15 + v1 * d + 0.5 * A_NET * d * d };
+}
+/** Speed (m/s) and distance (m) when the hand lets go. */
+const atRelease = () => speedUp(T_SLIP);
+/** s the block coasts on after the hand lets go, slowed by friction alone. */
+export function coastTime() {
+  return atRelease().v / SLOWING;
 }
 
 /**
- * One push, t s after the hand started: phase 'rise' | 'hold' | 'climb' | 'slip' | 'letgo' | 'done'; F the push (N);
- * f the friction (N, always equal to F: at rest it is exactly as big as the push, while sliding steadily too); the
- * slide (m) the block has crept along the push; moving: whether it is sliding.
+ * One push, t s after the hand started: phase 'rise' | 'hold' | 'climb' | 'slip' | 'coast' | 'done'.
+ * F the push (N), f the friction (N): at rest f = F exactly; once the block gives way f stays at the most the table can
+ * hold (limit) while F goes on past it, so the block speeds up; after the hand lets go F is 0 and friction slows it.
+ * slide: how far the block has moved (m); v its speed (m/s); moving: it is sliding; padX: how far the rod's pad has
+ * followed (it stops where the hand let go).
  */
 export function pushAt(t, load) {
   const T = pushTimes(load);
   const c = T.c;
-  const slideEnd = creep(T_SLIP);
-  if (t < T.hold) return { phase: 'rise', F: round(GENTLE * smooth(t / T_RISE), 2), slide: 0, moving: false, limit: c };
-  if (t < T.climb) return { phase: 'hold', F: GENTLE, slide: 0, moving: false, limit: c };
-  if (t < T.slip) return { phase: 'climb', F: round(GENTLE + RATE * (t - T.climb), 2), slide: 0, moving: false, limit: c };
-  if (t < T.letGo) return { phase: 'slip', F: c, slide: creep(t - T.slip), moving: true, limit: c };
-  if (t < T.done) return { phase: 'letgo', F: round(c * (1 - smooth((t - T.letGo) / T_LET_GO)), 2), slide: slideEnd, moving: false, limit: c };
-  return { phase: 'done', F: 0, slide: slideEnd, moving: false, limit: c };
+  const still = { v: 0, slide: 0, moving: false, limit: c, padX: 0 };
+  if (t < T.hold) {
+    const F = round(GENTLE * smooth(t / T_RISE), 2);
+    return { ...still, phase: 'rise', F, f: F };
+  }
+  if (t < T.climb) return { ...still, phase: 'hold', F: GENTLE, f: GENTLE };
+  if (t < T.slip) {
+    const F = round(GENTLE + RATE * (t - T.climb), 2);
+    return { ...still, phase: 'climb', F, f: F };
+  }
+  if (t < T.release) {
+    const tau = t - T.slip;
+    const s = speedUp(tau);
+    const F = round(c + extraOf(load) * smooth(tau / T_PUSH_UP), 2);
+    return { phase: 'slip', F, f: c, v: s.v, slide: s.x, moving: true, limit: c, padX: s.x };
+  }
+  const r = atRelease();
+  const tc = t - T.release;
+  if (t < T.done)
+    return { phase: 'coast', F: 0, f: c, v: r.v - SLOWING * tc, slide: r.x + r.v * tc - 0.5 * SLOWING * tc * tc, moving: true, limit: c, padX: r.x };
+  return { phase: 'done', F: 0, f: 0, v: 0, slide: pushDistance(), moving: false, limit: c, padX: r.x };
 }
 /** Seconds the whole push takes. */
 export const pushDuration = (load) => pushTimes(load).done;
-/** Where the block ends up after a push (m along the push). */
-export const pushDistance = () => creep(T_SLIP);
+/** Where the block ends up after a push (m along the push): the same for every weight (the same speeding up and slowing down). */
+export const pushDistance = () => {
+  const r = atRelease();
+  return r.x + (r.v * r.v) / (2 * SLOWING);
+};
 
 // rubbing: the hand moves the block back and forth, so it slides all the time and friction turns round with every
 // stroke (always against the motion), and the surfaces warm up

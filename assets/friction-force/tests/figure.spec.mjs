@@ -35,6 +35,13 @@ test('friction-force: friction matches the push, turns round, grows with weight,
   expect(await text('.pvc-outcome')).toBe('ব্লক নড়ছে না: ঘর্ষণ ঠেলার সমান, দুটোই ৫ নিউটন');
   expect(await fig.frame.locator('.pvc-anno').allTextContents()).toEqual(expect.arrayContaining(['ঠেলা', 'ঘর্ষণ'])); // plain words, no symbols yet
   expect(await fig.frame.locator('.pvc-act-marker.in:not(.pvc-act-under)').count()).toBe(0); // no ring while it runs
+  // the big button keeps its words and stays pressable while it runs: a tap says the push is on
+  expect(await fig.frame.locator('.pvc-act').isEnabled()).toBe(true);
+  expect(await text('.pvc-act')).toContain('ব্লকটিকে ঠেলা দাও');
+  await fig.frame.locator('.pvc-act').click();
+  await run(100);
+  expect(await fig.frame.locator('.pvc-hint.show').count()).toBe(1);
+  expect(await fig.call('get')).toMatchObject({ phase: 'hold' }); // the tap did not start another push
   // growing at 6 N/s: friction stays equal to the push at every moment, the block still does not move
   for (let i = 0; i < 3; i++) {
     await run(300);
@@ -44,20 +51,28 @@ test('friction-force: friction matches the push, turns round, grows with weight,
     expect(s.push).toBeLessThan(9.8);
     expect(s.block).toBe(0);
   }
-  await run(400);
+  await run(500);
+  // the block gave way: friction stays at the most (9.8 N), the push goes on past it, the block speeds up
   const slip = await fig.call('get');
   expect(slip.phase).toBe('slip');
-  expect(slip).toMatchObject({ push: 9.8, friction: 9.8 });
+  expect(slip.friction).toBe(9.8);
+  expect(slip.push).toBeGreaterThan(9.8);
+  expect(slip.push).toBeLessThanOrEqual(12.2);
   expect(slip.block).toBeGreaterThan(0);
   expect(slip.moved[0]).toBe(9.8);
-  expect(await text('.pvc-outcome')).toBe('ঠেলা ৯.৮ নিউটন হতেই ব্লক সরতে শুরু করল');
+  expect(await text('.pvc-outcome')).toBe('ঠেলা ৯.৮ নিউটনের বেশি, মানে ঘর্ষণের চেয়ে বেশি হতেই ব্লক গতি পেল');
+  expect(await text('.pvc-act')).toContain('ব্লকটিকে ঠেলা দাও'); // not the next step yet
+
   expect(await text('.pvc-rule')).toContain('ঠেলা বাড়লে ঘর্ষণও ততটা বাড়ে');
   expect(await fig.frame.locator('.pvc-anno').allTextContents()).toEqual(expect.arrayContaining(['ঠেলা F', 'ঘর্ষণ f'])); // the symbols, now
   await run(1500);
-  expect(await fig.call('get')).toMatchObject({ phase: 'done', push: 0, friction: 0, next: 'other' }); // the hand let go: friction went too
-  expect(await text('[data-example="w0"] .pvc-ex-res')).toBe('৯.৮ নিউটন');
+  const done = await fig.call('get');
+  expect(done).toMatchObject({ phase: 'done', push: 0, friction: 0, next: 'other' }); // the hand let go, friction stopped the block
+  expect(done.block).toBeGreaterThan(0.15);
+  expect(done.block).toBeLessThan(0.25);
+  expect(await text('[data-example="w0"] .pvc-ex-res')).toBe('সরাতে ৯.৮ নিউটন');
   expect(await text('.pvc-act-badge')).toBe('২');
-  expect(await text('.pvc-act')).toContain('উল্টো দিক থেকে ঠেলা দাও');
+  expect(await text('.pvc-act')).toContain('উল্টো দিক থেকে ঠেলা');
 
   // step 2: from the other side: the block goes left, friction turned round (the arrows are opposite again)
   await fig.frame.locator('.pvc-act').click();
@@ -73,8 +88,8 @@ test('friction-force: friction matches the push, turns round, grows with weight,
   const heavy = await fig.call('get');
   expect(heavy).toMatchObject({ load: 1, limit: 14.7, phase: 'done', next: 'lens' });
   expect(heavy.moved[1]).toBe(14.7);
-  expect(await text('.pvc-outcome')).toBe('আগের চেয়ে বেশি ঠেলা লাগল: ১৪.৭ নিউটনে ব্লক সরল');
-  expect(await text('[data-example="w1"] .pvc-ex-res')).toBe('১৪.৭ নিউটন');
+  expect(await text('.pvc-outcome')).toBe('আগের চেয়ে বেশি ঠেলা লাগল: ১৪.৭ নিউটনের বেশি ঠেলায় ব্লক গতি পেল');
+  expect(await text('[data-example="w1"] .pvc-ex-res')).toBe('সরাতে ১৪.৭ নিউটন');
   expect(await text('.pvc-rule')).toContain('ওজন বসালে ঘর্ষণ আরও বাড়ে');
 
   // step 4: the zoom-in opens; the note says it is not to scale
@@ -83,13 +98,18 @@ test('friction-force: friction matches the push, turns round, grows with weight,
   expect((await fig.call('get')).lens).toBe(true);
   expect(await text('.pvc-rule')).toContain('এবড়োখেবড়ো');
   expect(await text('.ff-lens-cap')).toContain('আকার প্রকৃত অনুপাতে নয়');
+  // the first look names what is there and asks for the comparison; the comparison comes once the weight is changed
+  expect(await text('.pvc-outcome')).toContain('ওজন বদলে দেখো');
+  expect(await text('.pvc-outcome')).not.toContain('আরও');
 
   // the row of words: two weights, then none (the block goes back to the middle each time)
   await fig.call('set', { load: 2 });
   await run(900);
   expect(await fig.call('get')).toMatchObject({ load: 2, limit: 19.6, block: 0, phase: 'rest' });
+  expect(await text('.pvc-outcome')).toBe('ওজন বাড়াতেই খাঁজ আরও গভীরে ঢুকল');
   await fig.frame.locator('[data-example="w0"]').click();
   await run(300);
+  expect(await text('.pvc-outcome')).toBe('ওজন কমাতেই খাঁজ আলগা হল');
   expect(await fig.call('get')).toMatchObject({ load: 0, limit: 9.8 });
 
   // step 5: rubbing: friction against the motion, the surfaces warm up
@@ -104,6 +124,13 @@ test('friction-force: friction matches the push, turns round, grows with weight,
   expect(await fig.call('get')).toMatchObject({ phase: 'done', next: 'again' });
   expect(await text('.pvc-act')).toContain('আবার ঠেলা দাও');
   expect(await text('.pvc-act-badge')).toBe('');
+
+  // a held push (for pictures, and the poster): the block stays still, friction equals it, the button is normal
+  await fig.call('reset');
+  await fig.call('set', { load: 1, hold: 9, lens: true });
+  await run(600);
+  expect(await fig.call('get')).toMatchObject({ load: 1, phase: 'hold', push: 9, friction: 9, block: 0, lens: true });
+  expect(await fig.frame.locator('.pvc-act').isEnabled()).toBe(true);
 
   // reset brings everything back
   await fig.call('reset');

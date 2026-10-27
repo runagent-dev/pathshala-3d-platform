@@ -82,8 +82,9 @@ export function createLens({ stage, t }) {
     label.position.set(x, y, DEPTH / 2 + 0.03);
     return label;
   };
-  upper.add(tag(t('l_block_word'), '#6b4513', -0.55, 0.95));
-  micro.add(tag(t('l_table_word'), '#ffffff', 0, -0.25));
+  const words = [tag(t('l_block_word'), '#6b4513', -0.55, 0.95), tag(t('l_table_word'), '#ffffff', 0, -0.25)];
+  upper.add(words[0]);
+  micro.add(words[1]);
 
   // a glowing line along the touching surfaces (shows when they warm up)
   const glowMat = new THREE.MeshBasicMaterial({ color: MICRO_COLORS.heat, transparent: true, opacity: 0, depthWrite: false, toneMapped: false });
@@ -168,8 +169,8 @@ export function createLens({ stage, t }) {
      * bite: how deep the teeth have sunk (0…1); shear: how far the block's teeth lean on the table's (teeth units),
      * or slide: how far it has slid (rides over the teeth); weight: N for the arrow; heat 0…1.
      */
-    set({ bite, shear = 0, weight = 0, heat = 0 }) {
-      const key = [bite, shear, weight, heat].map((v) => Math.round(v * 1000)).join();
+    set({ bite, shear = 0, weight = 0, heat = 0, labels = true }) {
+      const key = [bite, shear, weight, heat, labels ? 1 : 0].map((v) => Math.round(v * 1000)).join();
       if (key === drawn) return;
       drawn = key;
       buildUpper(bite);
@@ -181,7 +182,8 @@ export function createLens({ stage, t }) {
       const len = 0.022 * weight;
       press.set(new THREE.Vector3(0, TOP + len + 0.06, 0), new THREE.Vector3(0, -1, 0), len);
       pressText.position.set(0.26, TOP + 0.06 + len / 2, 0.1);
-      pressText.visible = weight > 0;
+      pressText.visible = labels && weight > 0; // in a small window the words would be too tiny to read: the panel has them
+      for (const w of words) w.visible = labels;
       stage.invalidate();
     },
     dispose() {

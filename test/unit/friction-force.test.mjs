@@ -40,24 +40,57 @@ describe('friction: one push', () => {
     const hold = p.pushAt(p.T_RISE + 0.5, 0);
     assert.equal(hold.phase, 'hold');
     close(hold.F, p.GENTLE);
+    close(hold.f, p.GENTLE);
     assert.equal(hold.moving, false);
     close(hold.slide, 0);
   });
 
-  it('then grows steadily at 6 N/s; the block stays still until the push reaches the most (9.8 N here)', () => {
+  it('then grows steadily at 6 N/s; friction equals the push and the block stays still until the push reaches the most (9.8 N here)', () => {
     const T = p.pushTimes(0);
     const early = p.pushAt(T.climb + 0.3, 0);
     assert.equal(early.phase, 'climb');
     close(early.F, p.GENTLE + p.RATE * 0.3, 1e-9);
+    close(early.f, early.F);
     assert.equal(early.moving, false);
     close(early.slide, 0);
     const justBefore = p.pushAt(T.slip - 0.01, 0);
     assert.equal(justBefore.moving, false);
     assert.ok(justBefore.F < p.capacity(0));
-    const at = p.pushAt(T.slip + 0.01, 0);
-    assert.equal(at.phase, 'slip');
-    assert.equal(at.moving, true);
-    close(at.F, p.capacity(0));
+    close(justBefore.f, justBefore.F);
+  });
+
+  it('once the push passes the most the block gives way: friction stays at the most, the push goes on past it, the block speeds up', () => {
+    for (const l of p.LOADS) {
+      const T = p.pushTimes(l);
+      const c = p.capacity(l);
+      let lastV = -1;
+      let lastX = -1;
+      for (let k = 1; k <= 12; k++) {
+        const s = p.pushAt(T.slip + (p.T_SLIP * k) / 12.5, l);
+        assert.equal(s.phase, 'slip');
+        assert.equal(s.moving, true);
+        close(s.f, c); // friction does not grow any more
+        assert.ok(s.F > c, `the push is more than the friction (${s.F} vs ${c})`);
+        assert.ok(s.F <= c + p.extraOf(l) + 1e-9);
+        assert.ok(s.v > lastV, 'it keeps speeding up');
+        assert.ok(s.slide > lastX);
+        lastV = s.v;
+        lastX = s.slide;
+      }
+    }
+  });
+
+  it('the acceleration is (push − friction) / mass: the same 1.2 m/s² whatever the weights, since the extra push is mass × 1.2', () => {
+    for (const l of p.LOADS) {
+      close(p.extraOf(l) / p.massOf(l), p.A_NET, 1e-9);
+      const T = p.pushTimes(l);
+      // steady part: once the extra push has built up, the speed grows by A_NET each second
+      const a = p.pushAt(T.slip + 0.5, l);
+      const b = p.pushAt(T.slip + 0.6, l);
+      close((b.v - a.v) / 0.1, p.A_NET, 1e-6);
+      close((a.F - a.f) / p.massOf(l), p.A_NET, 0.02);
+    }
+    assert.ok(p.extraOf(0) < p.extraOf(1) && p.extraOf(1) < p.extraOf(2));
   });
 
   it('with weights it takes a bigger push, and longer, before the block gives way', () => {
@@ -65,48 +98,61 @@ describe('friction: one push', () => {
     const t1 = p.pushTimes(1).slip;
     const t2 = p.pushTimes(2).slip;
     assert.ok(t0 < t1 && t1 < t2);
-    // the push at which it slides is the capacity
-    for (const l of p.LOADS) close(p.pushAt(p.pushTimes(l).slip + 0.05, l).F, p.capacity(l));
+    for (const l of p.LOADS) close(p.pushAt(p.pushTimes(l).slip - 1e-6, l).F, p.capacity(l), 1e-4);
   });
 
-  it('while it slides it creeps along steadily and the push stays at the most (F = f, no net force)', () => {
-    const T = p.pushTimes(1);
-    let last = -1;
-    for (let k = 1; k <= 10; k++) {
-      const s = p.pushAt(T.slip + (p.T_SLIP * k) / 11, 1);
-      assert.equal(s.phase, 'slip');
-      assert.ok(s.slide > last, 'it keeps moving');
-      close(s.F, p.capacity(1));
-      last = s.slide;
+  it('then the hand lets go: the push is gone at once, friction alone slows the block (μg = 4.9 m/s²) to a stop', () => {
+    for (const l of p.LOADS) {
+      const T = p.pushTimes(l);
+      const c = p.capacity(l);
+      const first = p.pushAt(T.release + 1e-6, l);
+      assert.equal(first.phase, 'coast');
+      close(first.F, 0);
+      close(first.f, c);
+      assert.equal(first.moving, true);
+      const later = p.pushAt(T.release + 0.05, l);
+      close(first.v - later.v, p.SLOWING * 0.05, 1e-3);
+      const done = p.pushAt(T.done + 1, l);
+      assert.equal(done.phase, 'done');
+      close(done.F, 0);
+      close(done.f, 0);
+      close(done.v, 0);
+      close(done.slide, p.pushDistance(), 1e-9);
+      assert.equal(p.pushDuration(l), T.done);
     }
-    close(p.pushAt(T.letGo - 1e-6, 1).slide, p.pushDistance(), 1e-4);
   });
 
-  it('then the hand lets go: the push falls to zero and the block stays where it stopped', () => {
-    const T = p.pushTimes(2);
-    const mid = p.pushAt(T.letGo + p.T_LET_GO / 2, 2);
-    assert.equal(mid.phase, 'letgo');
-    assert.ok(mid.F > 0 && mid.F < p.capacity(2));
-    const done = p.pushAt(T.done + 1, 2);
-    assert.equal(done.phase, 'done');
-    close(done.F, 0);
-    close(done.slide, p.pushDistance());
-    assert.equal(p.pushDuration(2), T.done);
+  it('stops where the physics says, the same place whatever the weights (≈ 0.19 m), with no jump in position', () => {
+    close(p.pushDistance(), 0.192, 0.003);
+    for (const l of p.LOADS) {
+      const T = p.pushTimes(l);
+      const before = p.pushAt(T.release - 1e-6, l);
+      const after = p.pushAt(T.release + 1e-6, l);
+      close(before.slide, after.slide, 1e-4);
+      close(before.v, after.v, 1e-4);
+      const end = p.pushAt(T.done - 1e-6, l);
+      close(end.slide, p.pushDistance(), 1e-4);
+      close(end.v, 0, 1e-3);
+    }
   });
 
-  it('never pushes backwards, and the push never passes the most', () => {
+  it('never pushes backwards, never stops with the push less than friction while it speeds up, and the block never goes back', () => {
     for (const l of p.LOADS)
-      for (let t = 0; t < p.pushDuration(l) + 1; t += 0.05) {
+      for (let t = 0; t < p.pushDuration(l) + 1; t += 0.02) {
         const s = p.pushAt(t, l);
-        assert.ok(s.F >= -1e-9 && s.F <= p.capacity(l) + 1e-9, `F ${s.F} at ${t}`);
-        assert.ok(s.slide >= 0);
+        assert.ok(s.F >= -1e-9, `F ${s.F} at ${t}`);
+        assert.ok(s.slide >= -1e-9 && s.v >= -1e-9);
+        if (!s.moving) close(s.f, s.F, 1e-9); // at rest friction is exactly the push
       }
   });
 
-  it('creeps in smoothly: no jump in position when it starts to slide', () => {
-    close(p.creep(0), 0);
-    assert.ok(p.creep(0.02) < p.SLIP_SPEED * 0.02);
-    close(p.creep(100) - p.creep(99), p.SLIP_SPEED, 1e-6);
+  it('the pad follows the block while the hand pushes and stays where the hand let go', () => {
+    const T = p.pushTimes(1);
+    const mid = p.pushAt(T.slip + 0.3, 1);
+    close(mid.padX, mid.slide);
+    const late = p.pushAt(T.release + 0.05, 1);
+    assert.ok(late.padX < late.slide);
+    close(late.padX, p.pushAt(T.release - 1e-6, 1).slide, 1e-4);
   });
 });
 

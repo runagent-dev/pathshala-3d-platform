@@ -31,6 +31,7 @@ To listen to it or control it from the book page, use the helper shipped in the 
 | `side` | Push from | `left` left (pushes right) · `right` right (pushes left) | `left` |
 | `at` | Start already pushing (e.g. 2.6: the push has been growing for 2.6 s) | number |  |
 | `rub` | Start already rubbing (e.g. 3: the block has been rubbed to and fro for 3 s, the surfaces are warm) | number |  |
+| `hold` | Hold a push of (e.g. 9: the rod pushes with 9 N and the block stays still (friction is 9 N too), for pictures) | number |  |
 | `lens` | Zoom-in open | `1` · `0` | `0` |
 | `view` | View | `front` · `3d` | `front` |
 | `mode` | Start in | `explore` learn · `quiz` test | `explore` |

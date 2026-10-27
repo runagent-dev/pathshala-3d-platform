@@ -30,6 +30,7 @@ export const DEFAULTS = {
   side: 'left', // the push rod: 'left' pushes the block to the right, 'right' to the left
   at: '', // s after the push began: start with the push already going (for pictures)
   rub: '', // s after the rubbing began: start rubbing already
+  hold: '', // N: hold a push of this size, the block at rest (for pictures)
   lens: false, // the zoom-in is open
   view: 'front', // 'front' | '3d'
   mode: 'explore', // 'explore' | 'quiz'
@@ -41,14 +42,14 @@ export const DEFAULTS = {
   sound: true,
 };
 
-const K_ARROW = 0.0135; // m of arrow per newton (the push and the friction share it)
+const K_ARROW = 0.011; // m of arrow per newton (the push and the friction share it)
 const Y_PUSH = DIM.block.h * 0.5; // the push arrow lies along the rod
 const Z_PUSH = DIM.pad.d / 2 + 0.026; // in front of the pad
 const Y_FRIC = 0.011; // the friction arrow lies on the table at the block's front
 const Z_FRIC = DIM.block.d / 2 + 0.03;
 const SHEAR_PER_M = 8; // teeth units the block's teeth move per metre it slides (the lens is far bigger than life)
 const DOUBLE_TAP = 450; // ms: a second tap this soon after one is ignored
-const FRAME = { x: 0.44, y0: -0.38, y1: 0.3 }; // what the front view shows, in metres
+const FRAME = { x: 0.4, y0: -0.38, y1: 0.3 }; // what the front view shows, in metres
 const FRONT = new THREE.Vector3(0, 0.22, 1).normalize();
 const OBLIQUE = new THREE.Vector3(-0.5, 0.42, 0.75).normalize();
 const XP = new THREE.Vector3(1, 0, 0);
@@ -144,6 +145,9 @@ export function createApp(root, options = {}) {
     x: 0, // where the block waits (m); during a push or a rub the run says where it is
     drop: 0, // m the last weight is still above its place (it is lowered when put on)
     moving: false, // the block is gliding back to the middle
+    lensDir: 0, // the last change of weights while the zoom-in is open: +1 more, −1 less, 0 none yet
+    numbers: false, // the test shows the push's size on its arrow
+    frozen: null, // the big button keeps its words while a push or a rub runs
     bite: 0, // how deep the teeth have sunk (follows the weights)
     shear: 0, // how far the block's teeth have leant or slid, in the lens's units (follows the run)
     run: null, // { t0, load, side, slipped, quiet }
@@ -183,7 +187,9 @@ export function createApp(root, options = {}) {
         kind: 'rub',
         phase: r.phase,
         x: r.x,
+        padX: r.x,
         F: r.F,
+        f: r.f,
         dir: r.dir,
         pads: { 1: on, '-1': on },
         press: 1,
@@ -197,15 +203,17 @@ export function createApp(root, options = {}) {
       const tt = (T - s.run.t0) / 1000;
       const p = pushAt(tt, s.run.load);
       const dir = s.run.side;
-      const slid = p.phase === 'slip' || p.phase === 'letgo' || p.phase === 'done';
+      const slid = p.phase === 'slip' || p.phase === 'coast' || p.phase === 'done';
       return {
         kind: 'push',
         phase: p.phase,
         x: dir * p.slide,
+        padX: dir * p.padX,
         F: p.F,
+        f: p.f,
         dir,
         pads: { [dir]: true, [-dir]: false },
-        press: clamp(p.F / 0.8, 0, 1),
+        press: p.phase === 'coast' || p.phase === 'done' ? 0 : clamp(p.F / 0.8, 0, 1),
         rubbing: false,
         shear: slid ? dir * p.slide * SHEAR_PER_M : dir * 0.05 * (p.F / p.limit),
         limit: p.limit,
@@ -217,7 +225,9 @@ export function createApp(root, options = {}) {
         kind: 'hold',
         phase: 'hold',
         x: 0,
+        padX: 0,
         F: s.hold.F,
+        f: s.hold.F,
         dir: s.hold.side,
         pads: { [s.hold.side]: true, [-s.hold.side]: false },
         press: 1,
@@ -231,7 +241,9 @@ export function createApp(root, options = {}) {
       kind: 'idle',
       phase: 'rest',
       x: s.x,
+      padX: s.x,
       F: 0,
+      f: 0,
       dir: s.side,
       pads: { [s.side]: true, [-s.side]: false },
       press: 0,
@@ -251,13 +263,18 @@ export function createApp(root, options = {}) {
       if (m.phase === 'rub') return s.heat >= 0.25 ? ['out_rub_hot', {}, 'hot'] : ['out_rub', {}, 'rub'];
     } else if (m.kind === 'push') {
       if (m.phase === 'rise' && m.F < 0.05) return ['out_rest', {}, 'rest'];
-      if (!m.slipped && m.phase !== 'letgo') return ['out_hold', { f: plain(m.F) }, 'push'];
+      if (!m.slipped) return ['out_hold', { f: plain(m.F) }, 'push'];
       const first = s.found[0];
       const more = s.run.load > 0 && first != null && m.limit > first;
       return [more ? 'out_slip_more' : 'out_slip', { f: plain(m.limit) }, 'push'];
     } else if (m.kind === 'hold') return ['out_hold', { f: plain(m.F) }, 'push'];
     if (s.heat >= 0.3 && !s.hideHeat) return ['out_hot', {}, 'hot'];
-    if (s.lens && s.lensK > 0.5) return [s.load > 0 ? 'out_lens_w' : 'out_lens', {}, 'lens'];
+    if (s.lens && s.lensK > 0.5) {
+      // the first look says what is there and asks for the comparison; the comparison line comes once the student changes the weights
+      if (s.lensDir > 0) return ['out_lens_more', {}, 'lens'];
+      if (s.lensDir < 0) return ['out_lens_less', {}, 'lens'];
+      return ['out_lens', {}, 'lens'];
+    }
     return ['out_rest', {}, 'rest'];
   }
   const ruleKey = () => `rule_${s.topic}`;
@@ -276,7 +293,9 @@ export function createApp(root, options = {}) {
   function refresh(force = false) {
     const m = model();
     const [key, vars, kind] = outcomeOf(m);
-    const p = plan();
+    if (busy(m)) s.frozen ||= plan();
+    else s.frozen = null;
+    const p = s.frozen || plan();
     const next = p.kind === 'weight' && s.load === 0 ? 'w1' : null;
     const panelKey = JSON.stringify([key, vars, s.load, s.found, s.topic, p.kind, busy(m), s.mode, s.locked, s.side, s.seen]);
     if (!force && panelKey === lastPanel) return;
@@ -288,7 +307,7 @@ export function createApp(root, options = {}) {
     if (outcomeEl.dataset.k !== kind) outcomeEl.dataset.k = kind;
     sheet.rule(t(ruleKey()));
     if (action) {
-      action.set({ step: p.step, label: p.label, enabled: !busy(m) && s.mode !== 'quiz' });
+      action.set({ step: p.step, label: p.label });
       if (!busy(m)) action.show('run');
       else action.hide('run');
     }
@@ -307,14 +326,15 @@ export function createApp(root, options = {}) {
   const { w: BW, d: BD } = DIM.block;
 
   function placeArrows(m) {
-    const L = m.F * K_ARROW;
-    const on = m.F > 0.04;
     const d = m.dir;
-    if (on && s.show.push) {
-      tailF.set(m.x - d * (BW / 2) - d * L, Y_PUSH, Z_PUSH);
+    // the push is drawn from the rod's pad (it stays where the hand let go), the friction from the far side of the block
+    if (m.F > 0.04 && s.show.push) {
+      const L = m.F * K_ARROW;
+      tailF.set(m.padX - d * (BW / 2) - d * L, Y_PUSH, Z_PUSH);
       arrows.push.set(tailF, d > 0 ? XP : XN, L);
     } else arrows.push.hide();
-    if (on && s.show.fric) {
+    if (m.f > 0.04 && s.show.fric) {
+      const L = m.f * K_ARROW;
       tailf.set(m.x + d * (BW / 2), Y_FRIC, Z_FRIC);
       arrows.fric.set(tailf, d > 0 ? XN : XP, L);
     } else arrows.fric.hide();
@@ -327,7 +347,9 @@ export function createApp(root, options = {}) {
   ];
   const fricSpots = (side) => [
     { dx: side * 16, dy: 0 },
+    { dx: side * 36, dy: 0 }, // clear of the numbered ring round the block
     { dx: side * 16, dy: 24 },
+    { dx: side * 36, dy: 24 },
     { dx: 0, dy: 26 },
     { dx: -side * 30, dy: 26 },
   ];
@@ -340,8 +362,9 @@ export function createApp(root, options = {}) {
       if (show && !anno.has(id)) anno.add(id, opts);
       else if (!show && anno.has(id)) anno.remove(id);
     };
+    const pushText = () => (s.numbers ? t('l_push_n', { f: plain(s.hold?.F ?? m.F) }) : t(sym ? 'l_push_f' : 'l_push'));
     on('push', arrows.push.root.visible, {
-      text: t(sym ? 'l_push_f' : 'l_push'),
+      text: pushText(),
       kind: 'callout',
       color: COLORS.push,
       point: () => tailF,
@@ -357,9 +380,9 @@ export function createApp(root, options = {}) {
       optional: true,
     });
     // the words follow what the student has seen; the places follow the direction (it turns round in the rub)
-    const wording = `${sym}`;
+    const wording = `${sym}|${s.numbers ? plain(s.hold?.F ?? m.F) : ''}`;
     if (side !== labelSide || wording !== labelWording) {
-      if (anno.has('push')) anno.update('push', { text: t(sym ? 'l_push_f' : 'l_push'), spots: pushSpots(side) });
+      if (anno.has('push')) anno.update('push', { text: pushText(), spots: pushSpots(side) });
       if (anno.has('fric')) anno.update('fric', { text: t(sym ? 'l_fric_f' : 'l_fric'), spots: fricSpots(side) });
     }
     labelSide = side;
@@ -377,12 +400,14 @@ export function createApp(root, options = {}) {
     }
     const from = project(contactPoint);
     const below = project(tmp.set(0, -DIM.table.h, DIM.table.d / 2));
-    const free = stage.height - below.y - 10;
+    // the window may reach up over the table's front edge (never over the block or its arrows)
+    const top = Math.max(from.y + 12, below.y - 14);
+    const free = stage.height - 8 - top;
     const d = clamp(Math.min(free, stage.width * 0.5, 200), 64, 200);
-    const cy = Math.min(stage.height - 8 - d / 2, below.y + 8 + d / 2);
+    const cy = Math.min(stage.height - 8 - d / 2, top + d / 2);
     const cx = clamp(from.x, d / 2 + 8, stage.width - d / 2 - 8);
     lens.place({ cx, cy, d, from, k });
-    lens.set({ bite: s.bite, shear: s.shear, weight: weightOf(s.load), heat: s.hideHeat ? 0 : s.heat });
+    lens.set({ bite: s.bite, shear: s.shear, weight: weightOf(s.load), heat: s.hideHeat ? 0 : s.heat, labels: d >= 104 });
     // the note under the window: what it is, and that it is not to scale
     if (!lensCaption) {
       lensCaption = document.createElement('div');
@@ -423,7 +448,7 @@ export function createApp(root, options = {}) {
 
     rig.placeBlock(m.x);
     rig.placeWeights(s.load, s.drop, m.x);
-    for (const sd of [1, -1]) rig.placePusher(sd, m.x, m.press, Boolean(m.pads[sd]));
+    for (const sd of [1, -1]) rig.placePusher(sd, m.padX, m.press, Boolean(m.pads[sd]));
     placeArrows(m);
     rig.setHeat(s.hideHeat ? 0 : s.heat, -RUB.amplitude, RUB.amplitude);
     placeLens(m);
@@ -542,6 +567,7 @@ export function createApp(root, options = {}) {
     ++token;
     const up = to > s.load;
     s.load = to;
+    if (s.lens) s.lensDir = up ? 1 : -1; // the zoom-in is open: the comparison is there to see
     await goHome({ animate: false, own: false });
     refresh(true);
     tweener.cancel('drop');
@@ -572,6 +598,7 @@ export function createApp(root, options = {}) {
   function openLens({ animate = true } = {}) {
     if (!s.lens) {
       s.lens = true;
+      s.lensDir = 0;
       emit('lens', { open: true });
       flyTo(viewPose(), animate ? 0.6 : 0); // the view makes room under the table for the window
     }
@@ -597,6 +624,7 @@ export function createApp(root, options = {}) {
   /** The big button, the ring on the block, a tap on the block, Space or Enter: the next step. */
   async function doAction() {
     if (s.locked) return lockedNudge();
+    if (busy(model())) return hintBusy(); // the button stays pressable while it runs: it says so
     const p = plan();
     if (p.kind === 'lens') {
       if (now() - lastAct < DOUBLE_TAP) return;
@@ -612,11 +640,11 @@ export function createApp(root, options = {}) {
     if (p.kind === 'rub') return rubIt();
     if (p.kind === 'again') s.topic = 'all';
     if (p.kind === 'other') {
-      if (now() - lastAct < DOUBLE_TAP || busy(model())) return;
+      if (now() - lastAct < DOUBLE_TAP) return;
       return push({ side: s.sides.has(1) ? -1 : 1 }); // the side not tried yet
     }
     if (p.kind === 'weight' && s.load === 0) {
-      if (now() - lastAct < DOUBLE_TAP || busy(model())) return;
+      if (now() - lastAct < DOUBLE_TAP) return;
       lastAct = now() + 500; // the weight takes 0.4 s to land; a second tap meanwhile is ignored
       await setLoad(1);
       lastAct = Number.NEGATIVE_INFINITY;
@@ -796,7 +824,7 @@ export function createApp(root, options = {}) {
   let learnSaved = null;
 
   /** A clean scene for a question: nothing running, nothing left from before, the front view. */
-  async function cleanScene({ load = 0, side = 1, F = null, showPush = true, showFric = false, lensOn = false } = {}) {
+  async function cleanScene({ load = 0, side = 1, F = null, showPush = true, showFric = false, lensOn = false, numbers = false } = {}) {
     ++token;
     tweener.cancel('home');
     tweener.cancel('drop');
@@ -812,6 +840,8 @@ export function createApp(root, options = {}) {
     s.heat = 0;
     s.hideHeat = false;
     s.show = { push: showPush, fric: showFric };
+    s.numbers = numbers;
+    s.lensDir = 0;
     s.lens = lensOn;
     s.lensK = lensOn ? 1 : 0;
     anno.clear();
@@ -851,6 +881,7 @@ export function createApp(root, options = {}) {
         s.heat = 0;
         s.hideHeat = false;
         s.show = { push: true, fric: true };
+        s.numbers = false;
         s.load = saved.load;
         s.bite = biteOf(s.load);
         s.side = saved.side;
@@ -878,19 +909,21 @@ export function createApp(root, options = {}) {
         }
         if (kind === 'eq') {
           const F = pickOne([3, 4, 6, 7, 8]);
-          await cleanScene({ side, F });
+          await cleanScene({ side, F, numbers: true }); // the size of the push is on the arrow, nowhere else
           if (!alive()) return null;
           question = { kind, F };
-          return { text: t('q_eq', { f: F }), ...textChoices([item('e_same'), item('e_zero'), item('e_double'), item('e_weight')], kind, { F }) };
+          const n = (key, f) => ({ key, text: t('n_newton', { f }) });
+          const items = [n('e_same', F), n('e_zero', 0), n('e_double', 2 * F), n('e_weight', weightOf(0))];
+          return { text: t('q_eq'), ...textChoices(items, kind, { F }) };
         }
         if (kind === 'wt') {
           const load = pickOne([1, 2]);
-          const F = capacity(0);
-          await cleanScene({ load, side, F });
+          const F = 10; // a little over what moves the empty block (9.8 N): it slid at this push
+          await cleanScene({ load, side, F, numbers: true });
           if (!alive()) return null;
           question = { kind, load, F };
           return {
-            text: t('q_wt', { f: plain(F) }),
+            text: t('q_wt'),
             ...textChoices([item('w_stay'), item('w_same'), item('w_easy'), item('w_fast')], kind, { load }),
           };
         }
@@ -926,6 +959,7 @@ export function createApp(root, options = {}) {
         }
         if (k === 'wt') {
           s.show.fric = true;
+          s.numbers = false;
           s.hold = null;
           push({ quiet: true, force: true, side: s.side });
           return t('why_wt', { c: plain(capacity(question.load)) }) + note({ w_same: 'not_same', w_easy: 'not_easy', w_fast: 'not_fast' });
@@ -1014,9 +1048,9 @@ export function createApp(root, options = {}) {
     return {
       load: s.load, // weights on the block (0, 1 or 2; 1 kg each)
       side: s.side > 0 ? 'left' : 'right', // which side the rod pushes from
-      phase: m.phase, // 'rest' | 'rise' | 'hold' | 'climb' | 'slip' | 'letgo' | 'done' | 'rub'
+      phase: m.phase, // 'rest' | 'rise' | 'hold' | 'climb' | 'slip' (it speeds up) | 'coast' (the hand let go) | 'done' | 'rub'
       push: round(m.F, 1), // N: the push now
-      friction: round(m.F, 1), // N: always equal to the push (at rest, and while sliding steadily)
+      friction: round(m.f, 1), // N: equal to the push while the block is at rest; once it slides it stays at `limit`
       limit: capacity(s.load), // N: the push at which the block starts to slide, with this many weights
       block: round(m.x, 3), // m the block has moved
       moved: { 0: s.found[0], 1: s.found[1], 2: s.found[2] }, // the push that moved it, per weights (null: not tried)
@@ -1048,6 +1082,8 @@ export function createApp(root, options = {}) {
   if (at != null && Number.isFinite(at)) {
     s.run = { t0: now() - Math.max(0, at) * 1000, load: s.load, side: s.side, slipped: false, quiet: false, ended: false };
   }
+  const holdAt = o.hold === '' || o.hold == null ? null : Number(o.hold);
+  if (holdAt != null && Number.isFinite(holdAt) && !s.run) s.hold = { F: clamp(holdAt, 0, capacity(s.load)), side: s.side };
   const rubAtStart = o.rub === '' || o.rub == null ? null : Number(o.rub);
   if (rubAtStart != null && Number.isFinite(rubAtStart)) {
     s.run = null;
@@ -1084,6 +1120,10 @@ export function createApp(root, options = {}) {
         await openLens({ animate });
       } else if (p.lens === false) closeLens();
       if (p.home) await goHome({ animate });
+      if (typeof p.hold === 'number') {
+        await goHome({ animate: false });
+        s.hold = { F: clamp(p.hold, 0, capacity(s.load)), side: s.side };
+      } else if (p.hold === false) s.hold = null;
       if (p.at != null) await push({ force: true, at: Math.max(0, Number(p.at) || 0) });
       else if (p.push) await push({ force: true });
       if (p.rub === true) await rubIt({ force: true });

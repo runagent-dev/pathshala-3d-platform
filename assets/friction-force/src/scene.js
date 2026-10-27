@@ -242,13 +242,13 @@ export function createRig({ t, aniso = 8 }) {
     /** The warm strip on the table from x0 to x1 and how warm (0…1); the block and its edge glow too. */
     setHeat(k, x0 = -0.12, x1 = 0.12) {
       this.heat = k;
-      trackMat.opacity = 0.85 * k;
+      trackMat.opacity = 0.85 * Math.min(1, 1.7 * k); // clear already when only half warm
       track.visible = k > 0.01;
       track.scale.x = Math.max(0.01, x1 - x0 + w);
       track.position.x = (x0 + x1) / 2;
-      edgeMat.opacity = 0.9 * k;
+      edgeMat.opacity = 0.9 * Math.min(1, 1.7 * k);
       edge.visible = k > 0.01;
-      blockMat.emissive.copy(heatColor).multiplyScalar(0.22 * k);
+      blockMat.emissive.copy(heatColor).multiplyScalar(0.3 * Math.min(1, 1.5 * k));
     },
     /** A copy for the GLB: the table, the block, the weights on it and the push rod, in metres. */
     exportRoot() {
