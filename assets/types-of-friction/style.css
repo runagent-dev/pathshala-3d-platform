@@ -1,0 +1,61 @@
+/* Types of friction: the page, the colours that carry meaning (ঠেলা orange, ঘর্ষণ crimson, the normal force N grey: the
+   same as the sister figures and src/app.js), the honest note on the view and the test's answers in words. The panel is
+   the kit's clean sheet (one action, one result, one rule: ../../shared/lib/student/student.css, .pvc-examples,
+   .pvc-act, .pvc-outcome, .pvc-rule). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.tf { --c-push: #e8590c; --c-fric: #c2255c; --c-n: #495057; }
+
+/* the symbols of the formula take the colour of what they are: f the friction's crimson, N the surface's grey */
+.tf .pvc-rule i { font-style: normal; font-weight: 700; }
+.tf .pvc-rule .c-f { color: var(--c-fric); }
+.tf .pvc-rule .c-n { color: var(--c-n); }
+.tf .pvc-rule .c-mu { color: var(--ink); }
+.tf .pvc-rule sub { font-size: 0.72em; line-height: 0; }
+/* each formula and each worked sum stays in one piece when the line breaks */
+.tf .nw { white-space: nowrap; }
+
+/* the result line: its number in the colour of what it is (friction crimson) */
+.tf .pvc-outcome b { color: var(--c-fric); }
+.tf .pvc-outcome[data-k='rest'] b { color: var(--c-push); }
+
+/* on the stage: the honest note about the example numbers, top left (the buttons are top right) */
+.tf-note { position: absolute; left: 10px; top: 10px; z-index: 5; padding: 2px 8px; border-radius: 6px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.92); color: var(--ink-3); font-size: 12.5px; font-weight: 600; line-height: 1.4; white-space: nowrap; pointer-events: none; }
+/* in the test the locked hint sits at the top of the view */
+.tf[data-mode='quiz'] .pvc-stage[data-ui='simple'] .pvc-hint { top: 40px; bottom: auto; }
+
+/* the test: answers in words (two lines allowed), room kept for the question and the worked answer */
+.tf .pvc-opt { font-size: 14.5px; line-height: 1.25; }
+.tf-opt { display: block; white-space: normal; text-align: center; }
+.tf .pvc-q-text { font-size: 15.5px; }
+.tf .pvc-q-feedback { font-size: 14px; }
+.tf .pvc-q-feedback sub { font-size: 0.72em; line-height: 0; }
+
+/* wide frames (tabs beside the sheet): the lines one under the other, close together */
+@container pvc (min-width: 720px) and (min-height: 461px) {
+  .tf .pvc-learn { justify-content: flex-start; gap: 8px; }
+  .tf .pvc-examples { max-width: 520px; }
+  .tf .pvc-rule { --pvc-rule-lines: 3; }
+}
+@container pvc (min-width: 1000px) and (min-height: 461px) {
+  .tf .pvc-learn { display: grid; grid-template-columns: minmax(0, 480px) minmax(0, 1fr); grid-template-areas: 'ex act' 'out out' 'rule rule'; align-content: start; align-items: center; gap: 8px 32px; }
+  .tf .pvc-examples { grid-area: ex; }
+  .tf .pvc-act-row { grid-area: act; }
+  .tf .pvc-outcome { grid-area: out; }
+  .tf .pvc-rule { grid-area: rule; --pvc-rule-lines: 2; }
+}
+@container pvc (max-width: 560px) and (max-height: 600px) {
+  .tf .pvc-q-text { font-size: 14.5px; }
+  .tf .pvc-opt { font-size: 13.5px; }
+  .tf .pvc-q-feedback { font-size: 13px; }
+}
+/* short and wide (phone held sideways): the panel is beside the scene */
+@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
+  .tf .pvc-outcome { --pvc-outcome-lines: 3; font-size: 15px; line-height: 1.5; }
+  .tf .pvc-rule { --pvc-rule-lines: 5; font-size: 14px; line-height: 1.45; }
+  .tf .pvc-q-text { font-size: 14px; }
+  .tf .pvc-opt { font-size: 13px; height: 42px; }
+  .tf .pvc-q-feedback { font-size: 12.5px; }
+}
