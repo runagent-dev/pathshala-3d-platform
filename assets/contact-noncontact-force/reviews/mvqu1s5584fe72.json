@@ -1,0 +1,39 @@
+{
+  "id": "mvqu1s5584fe72",
+  "author": "This computer",
+  "text": "add magnetic indicator",
+  "createdAt": "2026-10-27T15:20:54.715Z",
+  "status": "open",
+  "image": "reviews/mvqu1s5584fe72.webp",
+  "context": {
+    "frame": "fill",
+    "size": "484×150",
+    "params": {},
+    "state": {
+      "example": "magnet",
+      "scene": "magnet",
+      "phase": "paused",
+      "time": 1.81,
+      "speed": 0.25,
+      "acting": true,
+      "touching": false,
+      "gap": 0.023,
+      "kind": "noncontact",
+      "effect": "start",
+      "marks": "gap",
+      "seen": {
+        "crane": "contact",
+        "push": "contact",
+        "friction": "contact",
+        "fall": "noncontact",
+        "magnet": "noncontact"
+      },
+      "next": {
+        "example": "magnet",
+        "step": ""
+      },
+      "view": "front",
+      "mode": "explore"
+    }
+  }
+}
