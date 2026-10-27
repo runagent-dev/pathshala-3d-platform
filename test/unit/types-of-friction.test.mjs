@@ -101,10 +101,12 @@ describe('types-of-friction: the step', () => {
 
 describe('types-of-friction: letting go', () => {
   test('the push is 0 at once, and the friction alone stops the block (floor in a few centimetres, wheels slower)', () => {
-    for (const [on, within] of [
-      ['floor', 0.08],
-      ['wheels', 0.4],
-    ]) {
+    /** @type {Array<{ on: 'floor' | 'wheels', within: number }>} */
+    const cases = [
+      { on: 'floor', within: 0.08 },
+      { on: 'wheels', within: 0.4 },
+    ];
+    for (const { on, within } of cases) {
       const { move } = limits(on, MASS);
       let st = letGo({ on, mass: MASS, pull: move, v: V_STEADY, x: 0, moving: true, friction: move, broke: false });
       assert.equal(st.pull, 0);
@@ -164,7 +166,9 @@ describe('types-of-friction: the whole story of a tap', () => {
   });
 
   test('the push the person keeps for the pace never goes below the friction while it speeds up', () => {
-    for (const on of ['floor', 'wheels']) {
+    /** @type {Array<'floor' | 'wheels'>} */
+    const supports = ['floor', 'wheels'];
+    for (const on of supports) {
       const { move } = limits(on, MASS);
       assert.ok(cruiseGoal(on, MASS, 0) > move);
       assert.ok(Math.abs(cruiseGoal(on, MASS, V_STEADY) - move) < 1e-9);
