@@ -22,9 +22,14 @@
 //   --report <file>        where to write the JSON report (default <cache-dir>/report.json)
 //   --check                exit 1 when the library is behind (for CI); changes nothing
 //   --json                 print the report as JSON instead of the table
+//   --notify / --no-notify after a production --apply that changed the library, the Books server is told (LIBRARY_SYNC_HOOK_URL and
+//                          LIBRARY_SYNC_HOOK_TOKEN in the environment) so it updates the labs and models in books; --notify sends it
+//                          even when nothing changed, --no-notify never does. A failed notification never fails the sync.
+import path from 'node:path';
 import { parseArgs } from 'node:util';
 import { LockedError } from './lib/library/lock.mjs';
-import { reconcile } from './lib/library/reconcile.mjs';
+import { announceSync } from './lib/library/notify.mjs';
+import { DEFAULT_CACHE_DIR, reconcile } from './lib/library/reconcile.mjs';
 
 const HELP = `Usage: npm run library:sync -- [--library <url>] [--apply] [options]   (see the top of scripts/library-sync.mjs)`;
 
@@ -48,12 +53,18 @@ try {
       report: { type: 'string' },
       check: { type: 'boolean', default: false },
       json: { type: 'boolean', default: false },
+      notify: { type: 'boolean', default: false },
+      'no-notify': { type: 'boolean', default: false },
       help: { type: 'boolean', short: 'h', default: false },
     },
     allowPositionals: false,
   }));
 } catch (err) {
   console.error(`${err.message}\n${HELP}`);
+  process.exit(2);
+}
+if (values.notify && values['no-notify']) {
+  console.error(`--notify and --no-notify cannot be used together\n${HELP}`);
   process.exit(2);
 }
 if (values.help) {
@@ -80,6 +91,13 @@ try {
     log: values.json ? () => {} : (line) => console.log(line),
   });
   if (values.json) console.log(JSON.stringify(report, null, 2));
+  // the library is already up to date here: telling the Books server is a courtesy that can fail without failing the sync
+  await announceSync({
+    report: values.check ? { ...report, mode: 'dry-run' } : report,
+    flags: { notify: values.notify, noNotify: values['no-notify'] },
+    log: values.json ? (line) => console.error(line) : (line) => console.log(line),
+    cacheDir: path.resolve(values['cache-dir'] || DEFAULT_CACHE_DIR),
+  });
   const failed = report.figures.filter((f) => f.result === 'failed').length;
   const behind = report.figures.filter((f) => ['new', 'changed', 'repair', 'withdraw'].includes(f.category)).length;
   if (failed) process.exit(1);
