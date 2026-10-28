@@ -179,8 +179,7 @@ schema, and a lab placed with its defaults passes the reader's own settings chec
 - **No default address.** `--library` is required to touch a server, and `--apply` also needs the token in the environment
   variable named by `--token-env` (default `LIBRARY_TOKEN`). The token is never printed or written.
 - **Writes only to `.cache/library`** (the built files, the lock, the state, the report) **and the `--report` file**.
-- **Tiers.** `--tier staging` (default) publishes every figure. `--tier production` publishes only figures whose status is
-  `approved`, from a clean worktree (no uncommitted change to the figure or the kit files it imports), with a new version
+- **Tiers.** `--tier staging` (default) publishes every figure. `--tier production` publishes every figure too (a figure's status is not a gate: this is our own work), but only from a clean worktree (no uncommitted change to the figure or the kit files it imports), with a new version
   (a changed figure with the same version is blocked, so a published version always means the same bytes). A figure that fails a gate is `blocked` with the reason, not skipped silently.
 - **License.** `--license <SPDX>` or `"license"` in `library-sync.config.json`; written on every item and the manifest.
   It is **optional** in both tiers (this is our own work): without one the items carry no `license` field. One that is given must be an SPDX expression.

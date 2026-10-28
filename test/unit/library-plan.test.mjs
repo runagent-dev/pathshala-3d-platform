@@ -157,10 +157,10 @@ describe('library planner', () => {
   });
 
   it('a figure that may not be published is blocked, whatever the library holds', () => {
-    const p = plan(complete(), local({ problems: ['status is "idea": production publishes only approved figures'] }));
+    const p = plan(complete(), local({ problems: ['the figure or the kit files it imports have uncommitted changes: production publishes from a clean worktree'] }));
     assert.equal(p.category, 'blocked');
     assert.deepEqual(p.build, { lab: false, poster: false, video: false, glb: [], manifest: false });
-    assert.match(p.reasons[0], /approved/);
+    assert.match(p.reasons[0], /uncommitted/);
   });
 
   it('formats limit what is expected: lab only expects no poster and no model', () => {

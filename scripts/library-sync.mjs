@@ -9,7 +9,7 @@
 //   --library <url>        the library server (never has a default)
 //   --token-env <NAME>     environment variable holding the token (default LIBRARY_TOKEN); the token is never printed
 //   --apply                do it (without it nothing is published)
-//   --tier staging|production     staging publishes everything; production only approved figures from a clean worktree (default staging)
+//   --tier staging|production     both publish every figure; production also needs a clean worktree and a new version (default staging)
 //   --only <id[,id]>       only these figures
 //   --changed-since <ref>  only figures touched since a git ref (their files, or the kit files they import)
 //   --formats lab,poster,glb,video   what to publish (default lab,poster,glb; video is slow)

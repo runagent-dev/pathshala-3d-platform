@@ -76,7 +76,6 @@ export async function describeFigure(id, ctx) {
   ]);
   const status = (await readStatus(id)).status;
   if (tier === 'production') {
-    if (status !== 'approved') problems.push(`status is "${status}": production publishes only approved figures`);
     if (!git) problems.push('not a git checkout: production needs the commit it publishes');
     else if (git.dirty) problems.push('the figure or the kit files it imports have uncommitted changes: production publishes from a clean worktree');
     if (unbumped) problems.push(`the library already has ${asset.version} with other contents: bump the version in asset.json`);

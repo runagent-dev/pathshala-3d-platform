@@ -22,7 +22,7 @@ date. The repo is the source of truth and the sync only ever moves the library t
 - *Withdrawing is rare and explicit.* Only for figures removed from the repo, only with `--allow-withdraw`, never for an item a
   book uses. The library does not allow a withdrawn key to come back, so a hand-withdrawn item is reported, not resurrected.
 - *Dry run by default; no default address; the token only from the environment; writes only to `.cache/library` and the
-  report.* Production publishes approved figures from a clean worktree only, (a license is optional: items carry one only when someone sets it).
+  report.* Production publishes from a clean worktree only, with a new version when contents changed (a figure's status and a license are not gates: this is our own work; items carry a license only when someone sets one).
 - *Labs are built, not rewritten.* The figure's own page is bundled to one HTML file by esbuild; its bridge, `location.search`
   and `asset.json` fetch are replaced at build time by a small Host API adapter. Neither the figure nor the kit changes, so
   the same source serves the zip handoff and the lab. three.js is shared as the lab's libraries, not repeated in each file.

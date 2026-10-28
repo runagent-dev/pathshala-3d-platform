@@ -82,18 +82,16 @@ describe('library sync, against an in-memory library', () => {
     assert.ok(before);
   });
 
-  it('production publishes only approved figures, with a license, and says why it did not', async () => {
+  it('production does not look at a figure\'s status or license, only at the worktree and the version, and says why it did not publish', async () => {
     const lib = fakeLibrary();
     const cache = tempDir();
     const noLicense = await reconcile(options(lib, cache, { apply: true, tier: 'production', license: undefined })); // a missing license blocks nothing
-    for (const f of noLicense.figures) assert.doesNotMatch(String(f.reason ?? f.reasons ?? ''), /licen[sc]e/i, f.id);
+    for (const f of noLicense.figures) assert.doesNotMatch(String(f.reasons ?? ''), /licen[sc]e|approved|status/i, f.id); // neither gates a figure
     const report = await reconcile(options(lib, cache, { apply: true, tier: 'production' }));
     for (const f of report.figures) {
-      assert.equal(f.category, 'blocked', f.id);
-      assert.equal(f.result, 'blocked');
-      assert.match(f.reasons.join(' '), /approved|uncommitted/);
+      assert.doesNotMatch(f.reasons.join(' '), /approved|status/i, f.id);
+      if (f.category === 'blocked') assert.match(f.reasons.join(' '), /uncommitted|git checkout|version/, f.id); // the gates that are left
     }
-    assert.deepEqual(lib.writes(), []);
   });
 
   it('a figure removed from the repo is withdrawn only with --allow-withdraw, and refused while a book uses it', async () => {
