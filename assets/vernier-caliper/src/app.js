@@ -7,6 +7,7 @@
 import * as THREE from 'three';
 import { exportGLB as exportFigureGLB } from '@shared/export-glb.js';
 import { createStage } from '@shared/stage.js';
+import { createPresentation } from './presentation.js';
 import { createTweener, ease } from '@shared/tween.js';
 import { createMaterials } from '@shared/student/materials.js';
 import { createCaliper, DIM } from './caliper.js';
@@ -22,7 +23,7 @@ import { createQuiz, QUIZ_KINDS } from './quiz.js';
 import { createCoach } from './coach.js';
 import { measure, format, formatSigned, roundTo, LEAST_COUNTS } from './reading.js';
 
-export const VERSION = '0.3.5';
+export const VERSION = '0.3.6';
 
 /** Wait (briefly) for the Bangla webfont, so the numbers engraved on the scales are drawn with it. */
 export function loadFonts(timeout = 2500) {
@@ -74,9 +75,9 @@ export function createVernierApp(root, userOptions = {}) {
   root.tabIndex = 0;
   const ui = buildUI(root, t, { ui: o.ui, kinds: SPECIMEN_KINDS });
 
-  const stage = createStage(ui.canvasHost, { fov: 24, near: 2, far: 8000, environment: o.theme === 'dark' ? 'studio' : 'studio-light' });
+  const stage = createStage(ui.canvasHost, { fov: 24, near: 2, far: 8000, environment: 'studio' });
   const { camera, controls, scene } = stage;
-  // Read the figure's CSS colour so the magnifier and exported stills match the stage.
+  // Use the stage's fallback colour when a magnifier looks outside the scene.
   const stageBackground = getComputedStyle(root).getPropertyValue('--stage-background').trim() || '#ffffff';
   controls.zoomToCursor = true;
   controls.rotateSpeed = 0.6; // a one-finger swipe on a phone should turn it, not spin it
@@ -84,6 +85,7 @@ export function createVernierApp(root, userOptions = {}) {
   controls.maxDistance = 1800;
 
   const M = createMaterials(stage.renderer);
+  const presentation = createPresentation(stage, M, o);
   const caliper = createCaliper({
     materials: M,
     lc: o.lc,
@@ -104,27 +106,6 @@ export function createVernierApp(root, userOptions = {}) {
     onDragStart: () => coach?.lensUsed(),
   });
 
-  // On white, a soft drop shadow on an invisible "page" behind the caliper makes it read like a figure on paper.
-  if (o.shadow && o.theme !== 'dark') {
-    stage.renderer.shadowMap.enabled = true;
-    stage.renderer.shadowMap.type = THREE.VSMShadowMap;
-    stage.renderer.shadowMap.autoUpdate = false; // drawn once per frame, then reused by the magnifier
-    stage.onBeforeRender(() => (stage.renderer.shadowMap.needsUpdate = true));
-    const sun = new THREE.DirectionalLight(0xffffff, 0.3);
-    sun.position.set(70, 130, 420);
-    sun.target.position.set(100, 0, 0);
-    sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 1024);
-    Object.assign(sun.shadow.camera, { left: -210, right: 270, top: 120, bottom: -120, near: 250, far: 650 });
-    sun.shadow.radius = 14;
-    sun.shadow.blurSamples = 24;
-    sun.shadow.bias = -0.0005;
-    const page = new THREE.Mesh(new THREE.PlaneGeometry(2400, 1400), new THREE.ShadowMaterial({ opacity: 0.11 }));
-    page.position.set(100, 0, -5.5);
-    page.receiveShadow = true;
-    page.name = 'ShadowCatcher';
-    scene.add(sun, sun.target, page);
-  }
   const castShadows = (obj) =>
     obj.traverse((m) => {
       if (m.isMesh && !m.isInstancedMesh && !m.material.transparent) m.castShadow = true;
@@ -1203,11 +1184,12 @@ export function createVernierApp(root, userOptions = {}) {
     /** Student view: the multiple-choice quiz. Full view: typed practice ({ zeroErrors }). */
     startPractice: (opts) => (quiz ? quiz.start() : practice.start(opts)),
     stopPractice: () => (quiz ? quiz.stop() : practice.stop()),
-    capture: ({ background = stageBackground, ...opts } = {}) => stage.capture({ ...opts, background }),
+    capture: (options) => presentation.capture(options),
     exportGLB,
     dispose() {
       tweener.cancel();
       loupe.dispose();
+      presentation.dispose();
       stage.dispose();
       root.innerHTML = '';
       listeners.clear();

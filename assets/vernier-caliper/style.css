@@ -5,8 +5,8 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
 body.bg-dark { background: #11161d; }
 body.bg-transparent { background: transparent; }
 
-/* Rich teal gives the silver instrument a distinct silhouette. */
-.pvc[data-theme='light'] { --stage-background: #087f8c; }
+/* Navy studio backdrop: the white reading panel stays separate from the instrument. */
+.pvc[data-theme='light'] { --stage-background: #142b40; }
 .pvc[data-theme='light'] .pvc-stage { background: var(--stage-background); }
 
 
