@@ -82,7 +82,7 @@ describe('library sync, against an in-memory library', () => {
     assert.ok(before);
   });
 
-  it('production does not look at a figure\'s status or license, only at the worktree and the version, and says why it did not publish', async () => {
+  it("production does not look at a figure's status or license, only at the worktree and the version, and says why it did not publish", async () => {
     const lib = fakeLibrary();
     const cache = tempDir();
     const noLicense = await reconcile(options(lib, cache, { apply: true, tier: 'production', license: undefined })); // a missing license blocks nothing
