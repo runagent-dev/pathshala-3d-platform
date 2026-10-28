@@ -296,7 +296,7 @@ test('third law: gravity cards stay outside their own shafts without crossed lea
               const leaders = lines.filter(
                 (line) => line.x2 >= box.left - 1 && line.x2 <= box.right + 1 && line.y2 >= box.top - 1 && line.y2 <= box.bottom + 1,
               );
-              return [{ body: span.dataset.forceBody, ...box, leaders }];
+              return [{ body: span.getAttribute('data-force-body'), ...box, leaders }];
             });
           });
           for (const card of cards) {
