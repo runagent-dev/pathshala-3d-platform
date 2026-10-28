@@ -548,6 +548,8 @@ async function publishFigure({ opt, library, plan, local, lab, remote, runStamp,
       tags: recordTags({ ...base, kind: 'manifest' }),
       subject: book.subject,
       license: opt.license || undefined,
+      // the record names its poster too (registry API §4): the library's pickers take the thumbnail from the record, not from the file
+      poster: keys.poster,
     });
     made.manifest = done;
     keep(done.key);

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { recordTags } from '../../scripts/lib/library/manifest.mjs';
+import { recordTags, tagValue } from '../../scripts/lib/library/manifest.mjs';
 import { currentItems, groupByFigure, planAll, planFigure, summarize } from '../../scripts/lib/library/plan.mjs';
 
 const H = (c) => c.repeat(64);
@@ -33,7 +33,10 @@ const local = (over = {}) => ({
 });
 
 /** The library's items for a figure that is fully published and matches `local()`. */
-const complete = (figure = 'f') => [item(figure, 'manifest'), item(figure, 'lab'), item(figure, 'poster'), item(figure, 'glb', { pose: 'default' })];
+const complete = (figure = 'f') => {
+  const poster = item(figure, 'poster');
+  return [{ ...item(figure, 'manifest'), poster: poster.key }, item(figure, 'lab'), poster, item(figure, 'glb', { pose: 'default' })];
+};
 const plan = (records, l = local()) => planFigure({ id: 'f', local: l, remote: groupByFigure(records).get('f') });
 
 describe('library planner', () => {
@@ -48,6 +51,17 @@ describe('library planner', () => {
     assert.equal(p.category, 'unchanged');
     assert.deepEqual(p.build, { lab: false, poster: false, video: false, glb: [], manifest: false });
     assert.deepEqual(p.reasons, []);
+  });
+
+  it('a manifest whose record does not name the poster is repaired (rewritten), nothing else is built', () => {
+    const records = complete().map((r) => (tagValue(r, 'kind') === 'manifest' ? { ...r, poster: null } : r));
+    const p = plan(records);
+    assert.equal(p.category, 'repair');
+    assert.deepEqual(p.build, { lab: false, poster: false, video: false, glb: [], manifest: true });
+    assert.match(p.reasons.join(), /does not name its poster/);
+    // labs only: the poster is not wanted, so a missing poster field is nothing to repair
+    const labOnly = plan(records, local({ formats: new Set(['lab']) }));
+    assert.equal(labOnly.category, 'unchanged');
   });
 
   it('a changed lab fingerprint rebuilds the lab and the manifest, not the poster or the model', () => {

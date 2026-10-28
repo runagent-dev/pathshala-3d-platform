@@ -143,6 +143,12 @@ export function planFigure({ id, local, remote }) {
       reasons.push('the figure changed (manifest)');
       plan.build.manifest = true;
     }
+    // a poster exists but the manifest's record does not name it: the picker shows no thumbnail until the record is written again
+    if (cur.manifest && cur.poster && wantPoster && !cur.manifest.poster) {
+      missing = true;
+      reasons.push('the lab manifest record does not name its poster (no thumbnail in the picker)');
+      plan.build.manifest = true;
+    }
     // anything rebuilt means the manifest (the commit point) is written again so it points at the new items
     if (plan.build.lab || plan.build.poster || plan.build.video || plan.build.glb.length) plan.build.manifest = true;
   }
