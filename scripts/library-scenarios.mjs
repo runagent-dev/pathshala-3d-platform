@@ -7,6 +7,7 @@
 //   (f) an item withdrawn or retagged by hand: reported / repaired
 //   (g) kill the process mid-apply: the rerun converges, no duplicate manifests
 //   (h) bump a tool version: everything is rebuilt
+//   (i) the library holds chalk-format's three.js bytes once, and a changed figure does not republish the libraries
 //
 //   node scripts/library-scenarios.mjs --library http://127.0.0.1:4900 --token dev-token --admin-token dev-admin
 //
@@ -59,6 +60,7 @@ const { createLibrary } = await mod('scripts/lib/library/registry.mjs');
 const { figureIds } = await mod('scripts/lib/library/local.mjs');
 const { figureGraph } = await mod('scripts/lib/depgraph.mjs');
 const { tagValue } = await mod('scripts/lib/library/manifest.mjs');
+const { loadCatalog } = await mod('scripts/lib/library/catalog.mjs');
 
 // ---- helpers --------------------------------------------------------------------------------------------------------
 const results = [];
@@ -209,6 +211,51 @@ if (want('c')) {
     'one current manifest per figure',
     ids.every((id) => currentOf(after, id, 'manifest').length === 1),
   );
+}
+
+if (want('i')) {
+  title("i) the library holds chalk-format's three.js once, and a changed figure does not republish the libraries");
+  const catalog = loadCatalog(path.join(REPO, 'scripts/lib/library/lab-library-catalog.json'));
+  const libs = (records) => records.filter((r) => tagValue(r, 'kind') === 'library' && tagValue(r, 'state') === 'current');
+  const before = libs(await snapshot());
+  const three = before.filter((r) => tagValue(r, 'library') === 'three');
+  const pinned = catalog.libraries.find((l) => l.specifier === 'three');
+  check('i', 'three.js is in the library once, current', three.length === 1, `${three.length} copies`);
+  check('i', "under the catalog's key", three[0]?.key === pinned.key, `${three[0]?.key} vs ${pinned.key}`);
+  check(
+    'i',
+    'tagged catalog:shared, with the chalk-format commit',
+    three[0]?.tags.includes('catalog:shared') && three[0]?.tags.some((t) => t.startsWith('catalog-ref:chalk-format-')),
+  );
+  const shared = before.filter((r) => r.tags.includes('catalog:shared'));
+  check(
+    'i',
+    'every library from the catalog has the catalog key',
+    shared.length > 0 && shared.every((r) => catalog.libraries.find((l) => l.specifier === tagValue(r, 'library'))?.key === r.key),
+    `${shared.length} shared, ${before.length - shared.length} extra`,
+  );
+  check(
+    'i',
+    'the others are marked catalog:extra',
+    before.filter((r) => !r.tags.includes('catalog:shared')).every((r) => r.tags.includes('catalog:extra')),
+  );
+  const target = 'stopwatch';
+  append(`assets/${target}/src/main.js`, '\nglobalThis.__scenarioI = 1; // scenario i: an edit\n');
+  const report = await sync({ apply: true, verify: false });
+  check(
+    'i',
+    'only that figure is republished',
+    JSON.stringify(byResult(report, 'published')) === JSON.stringify([target]),
+    byResult(report, 'published').join(', '),
+  );
+  const after = libs(await snapshot());
+  check(
+    'i',
+    'no library was published or retagged',
+    JSON.stringify(after.map((r) => r.key).sort()) === JSON.stringify(before.map((r) => r.key).sort()) && report.libraries.missing.length === 0,
+  );
+  const again = await sync({ apply: true, verify: false });
+  check('i', 'and the next run writes nothing', again.counts.unchanged === ids.length && writes === 0, `${writes} writes`);
 }
 
 if (want('d')) {
