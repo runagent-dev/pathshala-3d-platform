@@ -4,6 +4,19 @@
 
 Interactive 3D figure for the Pathshala book.
 
+The v0.2 lesson adds a vivid 3D child-and-wagon scene, adult/two-child pushers, and a live free-body diagram.
+The 100 kg unloaded system includes an 80 kg cart and 20 kg passenger; each sack adds 50 kg. The floor control
+compares zero resistance with a constant 20 N resisting force. The live formula uses the **resultant** force,
+including friction and buffer contact, and vertical support balances the system's weight. Diagram arrows are
+labelled as schematic. Pause the motion to inspect its forces. Click F = ma for the textbook momentum derivation and complete mass accounting.
+
+Additive bridge controls: `set({diagram:true, friction:20})` and `set({paused:true})`; snapshots include `forces`, `diagram` and the
+floor's resisting-force setting. Changing the floor restarts the comparison. The existing four example IDs,
+smooth-floor results, quiz and motion controls remain supported.
+`friction` is the selected resistance magnitude; `forces.friction` is its signed instantaneous component
+(and is zero at rest). `force`/`forces.net` are the horizontal resultant; `forces.normal` and `forces.weight`
+are vertical force magnitudes. Use `set({at:1.2, paused:true})` to hold an exact bridge-controlled moment.
+
 ## Embed
 
 ```html
@@ -27,7 +40,9 @@ To listen to it or control it from the book page, use the helper shipped in the 
 | Param | Meaning | Values | Default |
 |---|---|---|---|
 | `lang` | Language | `bn` বাংলা · `en` English | `bn` |
-| `example` | Example | `base` empty cart · `force` double force · `mass` double mass · `back` force backward | `base` |
+| `example` | Example | `base` one adult pushes · `force` two children push · `mass` double mass · `back` force backward | `base` |
+| `friction` | Resisting force | `0` smooth floor · `20` 20 N friction | `0` |
+| `diagram` | Live free-body diagram | `1` · `0` | `0` |
 | `at` | A moment of the run (e.g. 1.5: the run held 1.5 s after the push began, for pictures (empty: at rest)) | number |  |
 | `tried` | Examples already tried (their accelerations show under the words) | text |  |
 | `view` | View | `front` · `3d` | `front` |
@@ -47,7 +62,7 @@ Every figure answers `ping` with `{ asset, version }`. Send commands with `figur
 | Command | Example payload |
 |---|---|
 | `get` | `{}` |
-| `set` | `{"example":"force"}` |
+| `set` | `{"diagram":true,"friction":20}` |
 | `reset` | `{}` |
 | `practice` | `{}` |
 | `capture` | `{"width":800,"height":500}` |

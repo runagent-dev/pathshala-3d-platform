@@ -1,62 +1,21 @@
-/* Newton's second law: the page, the colours that carry meaning (বল orange, ত্বরণ teal, বেগ blue, ভরবেগ green, as in
-   src/app.js COLORS and docs/book-notes.md), the honest note on the stage and the test's answers in words. The panel
-   is the kit's clean sheet (one action, one result, one rule: ../../shared/lib/student/student.css, .pvc-examples,
-   .pvc-act, .pvc-outcome, .pvc-rule). */
-html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
-#app { position: fixed; inset: 0; }
-body.bg-transparent { background: transparent; }
+html,body{margin:0;height:100%;overflow:hidden;background:#fff}#app{position:fixed;inset:0}body.bg-transparent{background:transparent}
+.ns{--c-force:#a8550b;--c-acc:#087d72;--c-vel:#2161b8;--c-mom:#237a35}
+.ns sup,.ns sub{font-size:.68em;line-height:0}
+.ns .pvc-learn{gap:7px;justify-content:flex-start}
+.ns .pvc-outcome{font-size:14px;line-height:1.4;min-height:2.8em}
+.ns .pvc-rule{font-size:13px;line-height:1.4;min-height:2.8em}
+.ns .pvc-act-row{min-height:42px}.ns .pvc-act{min-height:40px;padding:3px 10px 3px 5px;font-size:14px}.ns .pvc-act-num{width:30px;height:30px;font-size:17px}
+.ns .pvc-examples{flex-wrap:nowrap;gap:3px}.ns .pvc-examples button{flex:1 1 0;min-width:0;min-height:40px;padding:3px 1px}.ns .pvc-ex-word{font-size:12px;white-space:normal;line-height:1.3}.ns .pvc-ex-res{font-size:11px;min-height:16px;color:var(--c-acc)}
+.ns-extras{display:flex;gap:8px;min-height:27px}.ns-extras button{flex:1;min-height:27px;padding:2px 6px;border:1px solid #94aabc;border-radius:4px;background:white;color:#234963;font:inherit;font-size:12px}.ns-extras button[aria-pressed=true]{background:#e4f4f0;border-color:#217e7b;color:#16656a}
+.ns-formula{border-left:3px solid #238f8d;background:#eff8f6;padding:5px 8px;color:#204f5f;font-size:13px;line-height:1.5;min-height:113px;box-sizing:border-box}
+.ns-formula>div{white-space:nowrap}.ns-formula small{display:block;font-size:10.5px;color:#526d79;white-space:normal}
+.ns-formula-head{display:flex;align-items:center;justify-content:space-between;gap:6px}.ns-formula-head button{display:flex;align-items:center;gap:10px;min-height:27px;border:0;background:transparent;color:#13576a;padding:0;cursor:pointer;font:inherit}.ns-formula-head b{font-size:20px;white-space:nowrap}.ns-formula-head span{font-size:11px;text-decoration:underline}
+.ns-note{position:absolute;left:10px;top:54px;max-width:45%;color:#effaff;font-size:11px;line-height:1.35;z-index:4;pointer-events:none}.ns-note b{font-weight:600}.ns .pvc-anno{font-size:12px;line-height:1.3;background:#fffdf3;padding:3px 6px;transition:none}
+.ns .pvc-q-text{font-size:14px}.ns .pvc-q-feedback{font-size:12.5px}.ns .pvc-opt{font-size:12.5px;line-height:1.25}.ns-opt{display:block;white-space:normal}
+.ns-math-dialog{box-sizing:border-box;width:min(530px,calc(100vw - 24px));max-height:calc(100vh - 20px);border:1px solid #9bbfc3;border-radius:8px;padding:15px;color:#214958;background:#fffdf5;font-size:14px;line-height:1.6}
+.ns-math-dialog::backdrop{background:rgba(8,30,50,.5)}.ns-math-dialog h2{margin:0 0 8px;font-size:18px}.ns-math-dialog p{margin:8px 0;font-size:12px;line-height:1.5}.ns-math-dialog small{display:block;font-size:11.5px;line-height:1.5;margin:6px 0}.ns-math-dialog>strong{display:block;color:#135f70;font-size:18px}.ns-math-dialog>button{display:block;margin:10px 0 0 auto;min-height:32px}
+@container pvc (min-width:720px){.ns .pvc-shell{grid-template-columns:minmax(0,1fr) clamp(300px,36%,390px);grid-template-rows:minmax(0,1fr)}.ns .pvc-panel{display:flex;align-items:stretch;border-top:0;border-left:1px solid var(--line);padding:10px;gap:7px;overflow:hidden}.ns .pvc-tabs{grid-template-columns:1fr 1fr;max-width:none}.ns .pvc-tabs button+button{border-top:0;border-left:1px solid var(--line-2)}.ns .pvc-q-options{grid-template-columns:1fr 1fr}}
+@container pvc (max-width:560px) and (max-height:600px){.ns .pvc-panel{padding:6px 12px;gap:4px}.ns .pvc-learn{gap:4px}.ns .pvc-examples button{min-height:33px}.ns .pvc-ex-word{font-size:11px}.ns .pvc-ex-res{font-size:10px;min-height:13px}.ns .pvc-act-row{min-height:35px}.ns .pvc-act{min-height:34px;font-size:12px}.ns .pvc-act-num{width:26px;height:26px;font-size:15px}.ns .pvc-outcome,.ns .pvc-rule{font-size:11.5px;line-height:1.35;min-height:2.7em}.ns-formula{font-size:11.5px;line-height:1.4;min-height:97px;padding:3px 6px}.ns-formula-head b{font-size:17px}.ns-formula small{font-size:10px}.ns-extras,.ns-extras button{min-height:25px;font-size:11px}.ns .pvc-q-text{font-size:12.5px;--pvc-q-text-min:2.7lh}.ns .pvc-q-feedback{font-size:11.5px;--pvc-q-feedback-min:3lh}.ns .pvc-opt{height:37px;font-size:12px}.ns-note{font-size:10px;top:52px}.ns-math-dialog{font-size:13px;padding:12px}.ns-math-dialog p{font-size:11.5px}}
+@container pvc (max-height:460px) and (min-aspect-ratio:3/2){.ns .pvc-panel{padding:7px 9px;gap:4px}.ns .pvc-learn{gap:4px}.ns .pvc-ex-word{font-size:10.5px}.ns .pvc-ex-res{font-size:10px;min-height:13px}.ns .pvc-examples button{min-height:33px}.ns .pvc-act-row{min-height:35px}.ns .pvc-act{min-height:33px;font-size:12px}.ns .pvc-act-num{width:25px;height:25px;font-size:15px}.ns .pvc-outcome,.ns .pvc-rule{font-size:11.5px;line-height:1.35;min-height:2.7em}.ns-formula{font-size:11px;line-height:1.4;min-height:94px;padding:3px 6px}.ns-formula small{font-size:9.5px}.ns-formula-head b{font-size:17px}.ns-formula-head span{font-size:10px}.ns-extras,.ns-extras button{min-height:24px;font-size:11px}.ns .pvc-q-text{font-size:12.5px}.ns .pvc-q-feedback{font-size:11.5px}.ns .pvc-opt{font-size:12px;height:38px}.ns-math-dialog{font-size:12px;line-height:1.5;padding:10px}.ns-math-dialog p{font-size:11px;margin:5px 0}.ns-math-dialog small{font-size:10.5px;margin:4px 0}}
 
-.ns { --c-force: #e8590c; --c-acc: #0c8599; --c-vel: #1c6fd9; --c-mom: #237a35; }
-
-/* the result line: its number in the colour of what it is (the velocity's blue, the acceleration's teal) */
-.ns .pvc-outcome[data-k='vel'] b { color: var(--c-vel); }
-.ns .pvc-outcome[data-k='acc'] b { color: var(--c-acc); }
-.ns sup { font-size: 0.68em; line-height: 0; }
-/* the acceleration found, under each word of the row */
-.ns .pvc-examples .pvc-ex-res { color: var(--c-acc); }
-.ns .pvc-examples .pvc-ex-word { font-size: 15.5px; }
-
-/* on the stage: the honest note about the floor, top left (the buttons are top right) */
-.ns-note { position: absolute; left: 10px; top: 10px; z-index: 5; max-width: calc(100% - 230px); padding: 3px 9px; border-radius: 6px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.94); color: var(--ink-2); font-size: 13px; font-weight: 600; line-height: 1.4; pointer-events: none; }
-.ns-note b, .ns-note span { white-space: nowrap; }
-.ns-note b { font-weight: 700; }
-.ns[data-mode='quiz'] .pvc-stage[data-ui='simple'] .pvc-hint { top: 50px; bottom: auto; }
-.ns .pvc-anno-callout { font-size: 14px; font-weight: 700; }
-
-/* the test: answers in words (two lines allowed), room kept for the question and the worked answer */
-.ns .pvc-opt { font-size: 14.5px; line-height: 1.25; }
-.ns-opt { display: block; white-space: normal; text-align: center; }
-.ns .pvc-q-text { font-size: 15.5px; }
-.ns .pvc-q-feedback { font-size: 14px; }
-
-@container pvc (min-width: 720px) and (min-height: 461px) {
-  .ns .pvc-learn { justify-content: flex-start; gap: 8px; }
-  .ns .pvc-examples { max-width: 560px; }
-  .ns .pvc-rule { --pvc-rule-lines: 2; }
-}
-@container pvc (min-width: 1000px) and (min-height: 461px) {
-  .ns .pvc-learn { display: grid; grid-template-columns: minmax(0, 520px) minmax(0, 1fr); grid-template-areas: 'ex act' 'out out' 'rule rule'; align-content: start; align-items: center; gap: 8px 32px; }
-  .ns .pvc-examples { grid-area: ex; }
-  .ns .pvc-act-row { grid-area: act; }
-  .ns .pvc-outcome { grid-area: out; }
-  .ns .pvc-rule { grid-area: rule; }
-}
-@container pvc (max-width: 560px) and (max-height: 600px) {
-  .ns .pvc-q-text { font-size: 14.5px; }
-  .ns .pvc-opt { font-size: 13.5px; }
-  .ns .pvc-q-feedback { font-size: 13px; }
-}
-/* short and wide (phone held sideways): the panel is beside the scene */
-@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
-  .ns .pvc-outcome { --pvc-outcome-lines: 2; font-size: 15px; line-height: 1.6; }
-  .ns .pvc-rule { --pvc-rule-lines: 4; font-size: 14px; line-height: 1.45; }
-  .ns .pvc-q-text { font-size: 14px; }
-  .ns .pvc-opt { font-size: 13.5px; height: 42px; }
-  .ns .pvc-q-feedback { font-size: 13px; }
-}
-/* a narrow panel (beside the scene on a phone held sideways): the four words in two rows */
-@container pvc-panel (max-width: 360px) {
-  .ns .pvc-examples { flex-wrap: wrap; row-gap: 6px; }
-  .ns .pvc-examples button { flex: 1 1 45%; min-height: 38px; padding-bottom: 4px; }
-  .ns .pvc-examples button.on::after { left: 24%; right: 24%; }
-}
+.ns-formula-values>div{white-space:nowrap}

@@ -62,7 +62,7 @@ function createWheel(M) {
   const R = CART.wheel;
   const tyre = new THREE.Mesh(new THREE.TorusGeometry(R - 0.035, 0.035, 10, 32), M.tyre);
   g.add(tyre);
-  const rim = new THREE.Mesh(new THREE.TorusGeometry(R - 0.07, 0.012, 6, 28), M.steel);
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(R - 0.07, 0.012, 6, 28), M.gold);
   g.add(rim);
   const spokeGeo = new THREE.CylinderGeometry(0.007, 0.007, R - 0.07, 6).translate(0, (R - 0.07) / 2, 0);
   for (let i = 0; i < 6; i++) {
@@ -97,10 +97,12 @@ export function createCartMaterials(kitWood) {
   const wood = kitWood || mat('CartWood', '#c08a55', 0.75);
   const darkWood = wood.clone();
   darkWood.name = 'CartWoodDark';
-  darkWood.color.set('#9a7350');
+  darkWood.color.set('#cf3b47');
   return {
     wood,
     darkWood,
+    paint: mat('CoralWagon', '#f43b4d', 0.36),
+    gold: mat('WheelGold', '#ffbf36', 0.35, 0.45),
     steel: mat('CartSteel', '#9aa3ad', 0.35, 0.8),
     dark: mat('CartIron', '#3b4048', 0.5, 0.6),
     tyre: mat('Tyre', '#25282d', 0.9),
@@ -131,8 +133,8 @@ export function createCart(M) {
   for (let i = 0; i < 5; i++) add(new THREE.BoxGeometry(L, 0.04, plankW - 0.008), M.wood, -L / 2, B - 0.02, -W / 2 + plankW * (i + 0.5));
   for (const z of [-0.28, 0.28]) add(new THREE.BoxGeometry(L - 0.04, 0.07, 0.07), M.darkWood, -L / 2, B - 0.075, z);
   // low side boards and a front board
-  for (const z of [-W / 2 + 0.015, W / 2 - 0.015]) add(new THREE.BoxGeometry(L, 0.1, 0.03), M.darkWood, -L / 2, B + 0.05, z);
-  add(new THREE.BoxGeometry(0.03, 0.12, W), M.darkWood, -0.015, B + 0.06, 0);
+  for (const z of [-W / 2 + 0.015, W / 2 - 0.015]) add(new THREE.BoxGeometry(L, 0.1, 0.03), M.paint, -L / 2, B + 0.05, z);
+  add(new THREE.BoxGeometry(0.03, 0.12, W), M.paint, -0.015, B + 0.06, 0);
   // axles and their brackets
   for (const x of CART.wheelX) {
     add(new THREE.CylinderGeometry(0.018, 0.018, 2 * CART.wheelZ + 0.02, 10).rotateX(Math.PI / 2), M.dark, x, CART.wheel, 0);
@@ -156,6 +158,10 @@ export function createCart(M) {
   add(new THREE.CylinderGeometry(0.018, 0.018, 0.76, 10).rotateX(Math.PI / 2), M.steel, r.x, r.y, 0);
   for (const z of [-g.half, g.half]) add(new THREE.SphereGeometry(0.026, 10, 8), M.dark, g.x, g.y, z);
 
+  // Rear seat leaves the front of the bed free for stacked cargo.
+  add(new RoundedBoxGeometry(0.32, 0.055, 0.64, 2, 0.02), M.paint, -0.98, 0.77, 0);
+  for (const z of [-0.25, 0.25]) add(new THREE.CylinderGeometry(0.015, 0.015, 0.3, 8), M.steel, -1.1, 0.65, z);
+  add(new RoundedBoxGeometry(0.045, 0.24, 0.66, 2, 0.02), M.paint, -1.15, 0.91, 0);
   const wheels = [];
   for (const x of CART.wheelX)
     for (const z of [-CART.wheelZ, CART.wheelZ]) {
@@ -168,9 +174,9 @@ export function createCart(M) {
   // the load: two sacks side by side across the bed, a third on top of them
   const sacks = [];
   const spots = [
-    [-0.36, B + SACK.y / 2],
-    [-0.92, B + SACK.y / 2],
-    [-0.64, B + SACK.y * 1.5 - 0.03],
+    [-0.3, B + SACK.y / 2],
+    [-0.3, B + SACK.y * 1.5],
+    [-0.3, B + SACK.y * 2.5],
   ];
   for (const [x, y] of spots) {
     const s = createSack(M);
@@ -180,8 +186,8 @@ export function createCart(M) {
     sacks.push(s);
   }
 
-  const hit = new THREE.Mesh(new THREE.BoxGeometry(L + 0.8, 1.2, W + 0.3), new THREE.MeshBasicMaterial({ visible: false }));
-  hit.position.set(-L / 2 - 0.25, 0.55, 0);
+  const hit = new THREE.Mesh(new THREE.BoxGeometry(L + 0.8, 1.5, W + 0.3), new THREE.MeshBasicMaterial({ visible: false }));
+  hit.position.set(-L / 2 - 0.25, 0.7, 0);
   hit.userData.noExport = true;
   root.add(hit);
 
@@ -206,6 +212,6 @@ export function createCart(M) {
       for (const w of wheels) w.rotation.z = -d / CART.wheel;
     },
     /** The top of the load (m above the floor). */
-    top: () => (load >= 3 ? B + 2 * SACK.y : load ? B + SACK.y : B + 0.1),
+    top: () => Math.max(1.34, B + load * SACK.y),
   };
 }

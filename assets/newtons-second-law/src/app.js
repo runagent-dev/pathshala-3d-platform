@@ -1,17 +1,10 @@
-// Newton's second law (book pages 75–76, topic 3.6), student view: a wooden handcart (ঠেলাগাড়ি) waits on a smooth
-// floor with a person behind it. One tap and he pushes it for 2 s with 100 N: while the force acts the velocity grows
-// by the same amount every second (an orange F arrow at the crossbar, a teal acceleration arrow over the cart, a blue
-// velocity arrow growing in front, a mark on the floor every second); then he lets go and the cart rolls on at the
-// velocity it has until a pile of sacks at the end of the floor stops it. The panel works out a = (v − u) ÷ t and the
-// rule grows with what the student finds, one example at a time, chosen in a row of words: the empty cart (1 ms⁻²),
-// double the force (two people, 2 ms⁻²), double the mass (two 50 kg sacks of rice, 0.5 ms⁻²), and the force backward
-// (a second person in front pushes against the moving cart: the velocity falls from 2 m/s to 0, a = −1 ms⁻², the
-// momentum changes in the direction of the force) — up to the book's law and F = ma. Then a short test.
-// The panel is the kit's clean sheet (one action, one result, one rule): the examples as one row of words (the
-// acceleration found under each), one big numbered action whose same numbered badge rings the cart (tap either), one
-// result line, one rule line. Built on the shared student kit (@shared/student/…).
+// Textbook 3.6: a live cart/passenger system, one or two external pushers, constant-mass F = ma,
+// optional 20 N resistance, and a 3D free-body diagram driven by the same motion state.
+// The shared clean sheet keeps one main action, measured comparisons, and a separate derivation.
 import * as THREE from 'three';
-import { createArrow } from '@shared/arrow.js';
+import { createVector } from './arrow.js';
+import { createForceDiagram } from './force-diagram.js';
+import { createPresentation } from './presentation.js';
 import { createStage } from '@shared/stage.js';
 import { createTweener, ease } from '@shared/tween.js';
 import { createAction } from '@shared/student/action.js';
@@ -28,6 +21,9 @@ import {
   BUFFER_X,
   CALC_CASES,
   CART_MASS,
+  CART_OWN_MASS,
+  RIDER_MASS,
+  forceBalance,
   calcChoices,
   doubleChoices,
   EXAMPLE_IDS,
@@ -51,6 +47,8 @@ import {
 import { createFloor, createMarks, createRig, FLOOR } from './scene.js';
 
 export const DEFAULTS = {
+  friction: 0,
+  diagram: false,
   example: 'base', // 'base' | 'force' | 'mass' | 'back'
   at: '', // s after the push began: start with the run already going (for pictures)
   tried: '', // examples already tried, e.g. 'base,force' (their accelerations show)
@@ -65,7 +63,7 @@ export const DEFAULTS = {
 };
 
 // one colour per quantity, as in the chapter's other figures (docs/book-notes.md)
-export const COLORS = { force: '#e8590c', acc: '#0c8599', vel: '#1c6fd9', mom: '#2f9e44', momText: '#237a35', mass: '#495057' };
+export const COLORS = { force: '#e8590c', acc: '#0c8599', vel: '#1c6fd9', mom: '#2f9e44', momText: '#237a35', mass: '#495057', net: '#203345' };
 const F_SCALE = 0.0077; // m of arrow per newton (100 N: 0.77 m)
 const A_SCALE = 0.7; // m of arrow per ms⁻² (2 ms⁻²: 1.4 m)
 const A_GAP = 0.78; // m between the force's arrow and the acceleration's over it (room for the force's label between them)
@@ -100,11 +98,28 @@ export function createApp(root, options = {}) {
   const ui = buildStudentShell(root, t, {
     learn: cleanSheet(t, {
       examples: { label: 'examples', results: true, items: EXAMPLE_IDS.map((id) => ({ id, label: `ex_${id}` })) },
-      quiet: [{ act: 'home', label: 'act_home', icon: ICONS.reset }],
+      quiet: [
+        { act: 'home', label: 'act_home', icon: ICONS.reset },
+        { act: 'pause', label: 'act_pause', icon: ICONS.pause },
+      ],
       lines: { action: 2, outcome: 1, rule: 3 },
     }),
   });
   const sheet = bindCleanSheet(ui.learn);
+  const extras = document.createElement('div');
+  extras.className = 'ns-extras';
+  extras.innerHTML = `<button type="button" data-act="diagram" aria-pressed="false"></button><button type="button" data-act="friction" aria-pressed="false"></button>`;
+  ui.$('.pvc-examples').after(extras);
+  const liveFormula = document.createElement('div');
+  liveFormula.className = 'ns-formula';
+  liveFormula.innerHTML = `<div class="ns-formula-head"><small>${t('formula_now')}</small><button type="button" data-act="maths" aria-label="${t('formula_title')}"><b>${t('formula_main')}</b> <span>${t('formula_open')}</span></button></div><div class="ns-formula-values"></div>`;
+  const formulaValues = liveFormula.querySelector('.ns-formula-values');
+  ui.$('.pvc-rule').before(liveFormula);
+  const mathDialog = document.createElement('dialog');
+  mathDialog.className = 'ns-math-dialog';
+  mathDialog.setAttribute('aria-label', t('formula_title'));
+  root.append(mathDialog);
+  let mathResume = false;
   const outcomeEl = ui.$('.pvc-outcome');
   const note = document.createElement('div');
   note.className = 'ns-note';
@@ -117,6 +132,7 @@ export function createApp(root, options = {}) {
   controls.maxDistance = 40;
   controls.enablePan = false;
   controls.enableRotate = false;
+  const presentation = createPresentation(stage, o.bg === 'transparent');
   const M = createMaterials(stage.renderer);
   const CM = createCartMaterials(M.wood);
   const world = new THREE.Group();
@@ -131,13 +147,13 @@ export function createApp(root, options = {}) {
   marks.mesh.userData.noExport = true;
   world.add(floor.group, rig.root, rigB.root, marks.mesh);
 
-  const arrow = (color, name) => createArrow({ color, radius: 0.028, head: 0.16, headRadius: 0.07, name });
+  const arrow = (color, name) => createVector(color, name, name.startsWith('ForceArrow') ? '#fff2c4' : '#142b46');
   const arrows = {
-    F: arrow(COLORS.force, 'ForceArrow'),
+    F: arrow(COLORS.net, 'ForceArrow'),
     a: arrow(COLORS.acc, 'AccelerationArrow'),
     v: arrow(COLORS.vel, 'VelocityArrow'),
     dp: arrow(COLORS.mom, 'MomentumChangeArrow'),
-    FB: arrow(COLORS.force, 'ForceArrowB'),
+    FB: arrow(COLORS.net, 'ForceArrowB'),
     aB: arrow(COLORS.acc, 'AccelerationArrowB'),
   };
   for (const a of Object.values(arrows)) {
@@ -145,6 +161,8 @@ export function createApp(root, options = {}) {
     world.add(a.root);
   }
 
+  const diagram = createForceDiagram();
+  world.add(diagram.root);
   const tweener = createTweener();
   stage.addTicker((dt) => tweener.tick(dt));
   const audio = createAudio(o.sound);
@@ -180,6 +198,8 @@ export function createApp(root, options = {}) {
     view: o.view === '3d' ? '3d' : 'front',
     mode: 'explore',
     locked: false,
+    friction: Number(o.friction) === 20 ? 20 : 0,
+    diagram: Boolean(o.diagram),
     /** @type {any} */
     run: null, // { plan, t0, pausedAt, quiet, known, done, hit, marks, knownP, doneP }
     results: { base: null, force: null, mass: null, back: null }, // the acceleration found (ms⁻²)
@@ -207,7 +227,7 @@ export function createApp(root, options = {}) {
     return time;
   };
   function state() {
-    if (!s.run) return { phase: 'rest', x: START_X, v: 0, a: 0, F: 0, t: 0, seg: null };
+    if (!s.run) return { phase: 'rest', x: START_X, v: 0, a: 0, F: 0, applied: 0, drag: 0, contact: 0, t: 0, seg: null };
     return runAt(s.run.plan, runTime());
   }
   /**
@@ -259,7 +279,9 @@ export function createApp(root, options = {}) {
 
   /** The push starts (at: jump that many seconds into the run). */
   function startRun({ quiet = false, at = null, cfg = null } = {}) {
-    const plan = planOf(cfg ?? s.example);
+    const source = cfg ?? s.example;
+    const plan = planOf(typeof source === 'string' && s.mode === 'explore' && s.friction ? { ...EXAMPLES[source], friction: s.friction } : source);
+    if (typeof source === 'string') plan.id = source;
     let resolveKnown;
     let resolveDone;
     s.run = {
@@ -313,7 +335,7 @@ export function createApp(root, options = {}) {
       run.resolveKnown(true);
       emitChange();
     }
-    if (!run.plan.back) {
+    if (!run.plan.back && run.plan.endReason !== 'friction') {
       if (r.phase === 'stop' || r.phase === 'stopped') {
         if (!run.hit) {
           run.hit = true;
@@ -357,13 +379,16 @@ export function createApp(root, options = {}) {
    */
   function placeArrows(r) {
     const front = rig.front();
+    const balance = forceBalance(r, s.run?.plan.m ?? CART_MASS + rig.cfg.sacks * SACK_MASS, s.run?.plan.pushers ?? rig.cfg.pushers);
+    diagram.root.visible = s.diagram && s.mode === 'explore' && s.scene === 'lane';
+    diagram.set(front, balance, stage.height < 280);
     const [yF, yA] = arrowHeights(rig);
     // from the cart's middle; pushed back from the front, from the front rail where the person in front pushes
     const cx = r.F < 0 || r.a < 0 ? front + CART.rail.x : front - CART.length / 2;
     const way = r.F < 0 || r.a < 0 ? XN : XP;
     // the force on the cart and its acceleration, one over the other from the cart's middle: they always point the
     // same way, and their lengths compare (the force doubled: both double; the mass doubled: the same force, half a)
-    if (s.show.F && Math.abs(r.F) > 1e-6) arrows.F.set(tmpA.set(cx, yF, 0), r.F > 0 ? XP : XN, Math.abs(r.F) * F_SCALE);
+    if (s.show.F && Math.abs(r.F) > 1e-6) arrows.F.set(tmpA.set(cx, yF, 0), r.F > 0 ? XP : XN, r.phase === 'stop' ? 0.9 : Math.abs(r.F) * F_SCALE);
     else arrows.F.hide();
     const pushing = r.phase === 'push' || r.phase === 'brake';
     const dp = pushing && (s.show.dp === true || (s.show.dp === 'auto' && r.phase === 'brake'));
@@ -374,6 +399,11 @@ export function createApp(root, options = {}) {
     const v = shown(r).v;
     if (s.show.v && v > 0.004) arrows.v.set(tmpA.set(front + 0.03, V_Y, Z_NEAR), XP, v * V_SCALE);
     else arrows.v.hide();
+    if (diagram.root.visible) {
+      arrows.F.hide();
+      arrows.a.hide();
+      arrows.dp.hide();
+    }
     stage.invalidate();
   }
 
@@ -381,7 +411,7 @@ export function createApp(root, options = {}) {
   const roomy = () => wideness() >= 0.5;
   /** The heights of the force and the acceleration arrows over a cart: just over its load, and over that. */
   function arrowHeights(target, gap = roomy() ? A_GAP_WIDE : A_GAP) {
-    const yF = Math.max(CART.rail.y, target.cart.top()) + 0.17;
+    const yF = Math.max(1.6, CART.rail.y, target.cart.top()) + 0.17;
     return [yF, yF + gap];
   }
 
@@ -422,7 +452,7 @@ export function createApp(root, options = {}) {
   /** What no label may cover: the arrows, the cart, the people. */
   function sceneBlockers() {
     const out = [];
-    for (const a of Object.values(arrows)) {
+    for (const a of [...Object.values(arrows), ...(diagram.root.visible ? Object.values(diagram.arrows) : [])]) {
       const b = a.root.visible ? screenBox(a.root) : null;
       if (b) out.push(b);
     }
@@ -440,7 +470,7 @@ export function createApp(root, options = {}) {
     avoid: [ui.corner, ui.hint, note, () => action?.ringBox(), () => action?.box(), () => sceneBlockers()],
   });
   const label = (id, opts) => {
-    if (anno.has(id)) anno.update(id, { text: opts.text, color: opts.color, optional: Boolean(opts.optional) });
+    if (anno.has(id)) anno.update(id, { text: opts.text, color: opts.color, optional: opts.optional !== false });
     else anno.add(id, { kind: 'callout', ...opts });
   };
   const pts = {
@@ -500,7 +530,11 @@ export function createApp(root, options = {}) {
 
   /** The sacks have just stopped the cart (a short while: the words, then the ring on the cart takes over). */
   const stopWords = (r) =>
-    s.mode === 'explore' && s.run && !s.run.plan.back && (r.phase === 'stop' || (r.phase === 'stopped' && r.t < s.run.plan.end + STOP_SHOW));
+    s.mode === 'explore' &&
+    s.run &&
+    !s.run.plan.back &&
+    s.run.plan.endReason !== 'friction' &&
+    (r.phase === 'stop' || (r.phase === 'stopped' && r.t < s.run.plan.end + STOP_SHOW));
   let labelsWide = false;
   const tipSpots = (way) => [
     { dx: 10 * way, dy: 0 },
@@ -517,7 +551,54 @@ export function createApp(root, options = {}) {
     { dx: 30 * way, dy: -14 },
   ];
   let mAfterV = false;
+  let diagramLabelSet = '';
   function labelsFor() {
+    const compactDiagram = stage.height < 430 || stage.width < 500;
+    const activeDiagramLabels = `${compactDiagram}:${Object.entries(diagram.arrows)
+      .filter(([, a]) => diagram.root.visible && a.root.visible)
+      .map(([key]) => key)
+      .join(',')}`;
+    if (activeDiagramLabels !== diagramLabelSet) {
+      for (const key of Object.keys(diagram.arrows)) anno.remove(`diagram-${key}`);
+      diagramLabelSet = activeDiagramLabels;
+    }
+    for (const [key, arr] of Object.entries(diagram.arrows)) {
+      const id = `diagram-${key}`;
+      if (!diagram.root.visible || !arr.root.visible) {
+        anno.remove(id);
+        continue;
+      }
+      const fallbackSpots = [24, -24, 48, -48, 80, -80, 112, -112].flatMap((dx) => [0, 24, -24, 48, -48, 72, -72].map((dy) => ({ dx, dy })));
+      const preferredSpots =
+        key === 'normal'
+          ? [
+              { dx: 16, dy: -10 },
+              { dx: -16, dy: -10 },
+              { dx: 40, dy: -10 },
+              { dx: -40, dy: -10 },
+            ]
+          : key === 'weight'
+            ? [
+                { dx: 18, dy: 0 },
+                { dx: -18, dy: 0 },
+                { dx: 48, dy: 0 },
+                { dx: -48, dy: 0 },
+              ]
+            : [
+                { dx: 18 * Math.sign(diagram.values[key]), dy: 0 },
+                { dx: 0, dy: 24 },
+                { dx: 0, dy: -24 },
+              ];
+      label(id, {
+        text: t(`${compactDiagram ? 'd_short_' : 'd_'}${key}`, {
+          v: sgn(['F1', 'F2', 'contact'].includes(key) ? diagram.values[key] : Math.abs(diagram.values[key])),
+        }),
+        point: () => diagram.point(key),
+        color: key === 'weight' ? '#6741b5' : key === 'friction' ? '#b62249' : '#224866',
+        spots: [...preferredSpots, ...fallbackSpots],
+        optional: true,
+      });
+    }
     const lane = s.scene !== 'pair';
     const r = state();
     // The arrows' labels. On a tall view (a phone held upright) each over the middle of its arrow (a tip may be at the
@@ -532,7 +613,7 @@ export function createApp(root, options = {}) {
       label('F', {
         text: t('l_force', { F: sgn(r.F || s.run?.plan?.F || 0) }),
         point: () => (wide ? pts.F.copy(arrows.F.tip) : mid(arrows.F, pts.F)),
-        color: COLORS.force,
+        color: COLORS.net,
         spots: wide ? tipSpots(way) : SPOTS.over,
       });
     else anno.remove('F');
@@ -571,7 +652,7 @@ export function createApp(root, options = {}) {
     } else anno.remove('m');
     // the push is over (a coast long enough to read): no force, so the velocity stays (the first law)
     const seg = r.seg;
-    if (s.scene === 'lane' && s.mode === 'explore' && s.run && r.phase === 'coast' && seg && seg.dur >= COAST_MIN)
+    if (s.scene === 'lane' && s.mode === 'explore' && s.run && r.phase === 'coast' && !s.friction && seg && seg.dur >= COAST_MIN)
       label('coast', {
         text: t('l_coast'),
         point: () => pts.c.set(rig.front() - CART.length / 2, arrowHeights(rig)[1] + 0.2, 0),
@@ -634,6 +715,7 @@ export function createApp(root, options = {}) {
     const run = s.run;
     if (!run) return ['out_rest', { v: 0 }, 'vel'];
     const m = measured(run.plan);
+    if (run.known && s.friction) return ['rough_result', { F: sgn(m.F), m: m.m, a: sgn(m.a) }, 'acc'];
     if (run.known) return ['out_result', { v: sgn(m.v), u: sgn(m.u), t: m.t, a: sgn(m.a) }, 'acc'];
     const sh = shown(r);
     if (r.phase === 'push') return ['out_push', { t: sh.t.toFixed(1), v: fix(sh.v, 2) }, 'vel'];
@@ -662,11 +744,16 @@ export function createApp(root, options = {}) {
     const base = s.results.base;
     if (id === 'force' && base != null) return t('rule_force', { a0: sgn(base), a1: sgn(a) });
     if (id === 'mass' && base != null) return t('rule_mass', { a0: sgn(base), a1: sgn(a) });
-    return t('rule_fma', { k: 1, F: plan0.F, m: plan0.m, a: sgn(a) });
+    return t('short_result', { F: plan0.F });
   }
   function ruleHtml(r) {
     const run = s.run;
-    if (allFound() && (!run || run.known)) return t('rule_law');
+    if (s.friction) {
+      if (!run) return t('rough_rest', { p: PERSON_FORCE * EXAMPLES[s.example].pushers, f: s.friction });
+      if (run.plan.endReason === 'friction' && r.phase === 'stopped') return t('rough_stopped');
+      return t(r.phase === 'coast' ? 'rough_coast' : 'rough_push');
+    }
+    if (allFound() && (!run || run.known)) return t('short_law');
     if (!run) return s.results[s.example] != null ? resultRule(s.example) : startRule(s.example);
     if (!run.known) {
       if (r.phase === 'push') return t('rule_push');
@@ -675,8 +762,7 @@ export function createApp(root, options = {}) {
     }
     const id = run.plan.id;
     if (!id) return t('rule_coast');
-    const next = EXAMPLE_IDS.find((e) => s.results[e] == null);
-    return `${resultRule(id)}${next ? ` ${t(`rule_ask_${next}`)}` : ''}`;
+    return resultRule(id);
   }
 
   const resultEls = Object.fromEntries(EXAMPLE_IDS.map((id) => [id, ui.$(`[data-example="${id}"] .pvc-ex-res`)]));
@@ -692,6 +778,7 @@ export function createApp(root, options = {}) {
     }
   }
 
+  let lastFormula = '';
   let lastKind = '';
   let lastNote = '';
   function refresh() {
@@ -711,14 +798,87 @@ export function createApp(root, options = {}) {
       if (s.scene === 'lane' && !moving && !stopWords(r)) action.show('run');
       else action.hide('run');
     }
+    updateFormula(r);
+    const pauseButton = ui.$('[data-act="pause"]');
+    pauseButton.disabled = !s.run || s.run.done || s.mode === 'quiz';
+    const pauseLabel = t(s.run?.pausedAt != null ? 'act_resume' : 'act_pause');
+    pauseButton.setAttribute('aria-label', pauseLabel);
+    pauseButton.title = pauseLabel;
+    pauseButton.innerHTML = s.run?.pausedAt != null ? ICONS.play : ICONS.pause;
     labelsFor();
-    const html = `<b>${t('note_head')}</b> <span>${t(stage.width < 470 ? 'note_short' : 'note')}</span>`;
+    const html = diagram.root.visible
+      ? t('note_diagram')
+      : r.phase === 'stop'
+        ? t('note_buffer')
+        : s.friction
+          ? t('note_rough', { f: s.friction })
+          : `<b>${t('note_head')}</b> <span>${t(stage.width < 470 ? 'note_short' : 'note')}</span>`;
     if (html !== lastNote) {
       note.innerHTML = html;
       lastNote = html;
     }
     stage.invalidate();
   }
+
+  function updateFormula(r) {
+    const mass = s.run?.plan.m ?? CART_MASS + rig.cfg.sacks * SACK_MASS;
+    const balance = forceBalance(r, mass, s.run?.plan.pushers ?? rig.cfg.pushers);
+    const two = (s.run?.plan.pushers ?? rig.cfg.pushers) > 1;
+    const stopped = Boolean(r.contact);
+    const vars = {
+      p: sgn(stopped ? balance.contact : balance.F1),
+      q: sgn(balance.F2),
+      f: sgn(Math.abs(balance.friction)),
+      F: sgn(balance.net),
+      m: mass,
+      a: sgn(r.a, 3),
+      w: sgn(balance.weight),
+    };
+    const html = `<div>${t(stopped ? 'formula_stop' : two ? 'formula_two' : 'formula_one')}</div><div>${t(two && !stopped ? 'eval_two' : 'eval_one', vars)}</div><div>${t('eval_acc', vars)}</div><small>${t('balance_y', vars)}</small>`;
+    if (html !== lastFormula) {
+      formulaValues.innerHTML = html;
+      lastFormula = html;
+    }
+    const d = extras.querySelector('[data-act="diagram"]');
+    d.textContent = t(s.diagram ? 'motion' : 'diagram');
+    d.setAttribute('aria-pressed', String(s.diagram));
+    const f = extras.querySelector('[data-act="friction"]');
+    f.textContent = t(s.friction ? 'friction_on' : 'friction_off', { f: s.friction });
+    f.setAttribute('aria-pressed', String(Boolean(s.friction)));
+  }
+  function setDiagram(value) {
+    s.diagram = value;
+    tweener.cancel('follow');
+    s.follow = 0;
+    if (s.run && s.scene === 'lane') s.follow = followFor(state());
+    anno.clear();
+    placeArrows(state());
+    flyTo(viewPose(), 0);
+    refresh();
+  }
+  async function setFriction(value) {
+    if (value === s.friction) return;
+    s.friction = value;
+    s.results = { base: null, force: null, mass: null, back: null };
+    s.seen = [];
+    await chooseExample(s.example, { animate: false, quiet: true });
+  }
+  function openMaths() {
+    if (s.mode === 'quiz') return;
+    mathResume = Boolean(s.run && s.run.pausedAt == null);
+    if (mathResume) s.run.pausedAt = runTime();
+    const plan0 = s.run?.plan ?? planOf({ ...EXAMPLES[s.example], friction: s.friction });
+    const m = measured(plan0);
+    mathDialog.innerHTML = `<h2>${t('formula_title')}</h2><p>${t('rule_law')}</p><small>${t('derive_system', { cart: CART_OWN_MASS, child: RIDER_MASS, load: plan0.sacks * SACK_MASS, m: plan0.m })}</small><div>${t('derive_dp')}</div><div>${t('derive_rate')}</div><div>${t('derive_a')}</div><strong>${t('derive_force')}</strong><small>${t('derive_const', { k: 1 })} ${t('derive_unit', { one: 1 })}</small><p>${t('derive_example', { F: sgn(m.F), m: plan0.m, a: sgn(m.a) })}</p><button type="button" class="pvc-btn primary" data-act="maths-close">${t('formula_close')}</button>`;
+    mathDialog.showModal();
+  }
+  function finishMathPause() {
+    const resume = mathResume && s.mode === 'explore';
+    mathResume = false;
+    if (resume) resumeRun();
+  }
+  mathDialog.addEventListener('cancel', finishMathPause);
+  mathDialog.addEventListener('close', finishMathPause);
 
   function snapshot() {
     const r = state();
@@ -732,6 +892,9 @@ export function createApp(root, options = {}) {
       speed: round(r.v, 2), // m/s
       distance: round(r.x - START_X, 2), // m the cart's front has moved
       force: round(r.F, 2), // N on the cart now (+ to the right)
+      friction: s.friction,
+      diagram: s.diagram,
+      forces: forceBalance(r, run ? run.plan.m : CART_MASS + rig.cfg.sacks * SACK_MASS, run?.plan.pushers ?? rig.cfg.pushers),
       mass: run ? run.plan.m : CART_MASS + SACK_MASS * EXAMPLES[s.example].sacks, // kg
       acceleration: round(r.a, 3), // ms⁻² now
       measured: m ? { u: m.u, v: m.v, t: m.t, a: m.a } : null,
@@ -755,6 +918,10 @@ export function createApp(root, options = {}) {
   /** A new example: the run is called off, the cart waits at the start with its load and its people. */
   async function chooseExample(id, { push: andPush = false, animate = true, quiet = false } = {}) {
     if (!EXAMPLE_IDS.includes(id)) return;
+    if (mathDialog.open) {
+      mathResume = false;
+      mathDialog.close();
+    }
     if (s.locked && !quiet) return lockedNudge();
     const my = ++token;
     const changed = id !== s.example;
@@ -838,7 +1005,9 @@ export function createApp(root, options = {}) {
    */
   function windowWidth() {
     const full = LANE.right - LANE.left;
-    const w = 4.3 + (full - 4.3) * wideness();
+    if (s.diagram && stage.height < 280) return 6.1;
+    const narrow = root.clientWidth < 560 && root.clientHeight > root.clientWidth;
+    const w = narrow ? 4.3 : 4.3 + (full - 4.3) * wideness();
     if (!rig.cfg.back || s.scene !== 'lane') return Math.min(full, w);
     // the question about the direction: close on the cart and the person in front, so the force's arrow reads
     return Math.min(full, s.mode === 'quiz' ? Math.min(w, DIR_WINDOW) : Math.max(w, 6.1));
@@ -853,11 +1022,11 @@ export function createApp(root, options = {}) {
     // room ahead of the cart for its velocity arrow and the arrow's label
     // (the question about the direction shows a little more of what is ahead, so the person left behind is out of view)
     const ahead = s.mode === 'quiz' && rig.cfg.back ? 0.5 : 0;
-    let f = front + Math.max(1.2, V_SCALE * r.v + 1.35) + ahead - (LANE.left + w);
+    let f = front + (s.diagram && stage.height < 280 ? 3.0 : Math.max(1.2, V_SCALE * r.v + 1.35)) + ahead - (LANE.left + w);
     // the people pushing stay in view; once they let go the view may run on ahead of them, smoothly
     const pushEnd = s.run ? s.run.plan.segs[0].dur : 0;
     f = Math.min(f, front - START_X + 1.5 * Math.max(0, r.t - pushEnd));
-    return Math.min(Math.max(0, f), LANE.right - LANE.left - w);
+    return Math.min(Math.max(0, f), LANE.right - LANE.left - w + (s.diagram && stage.height < 280 ? 3 : 0));
   }
   const BOXES = {
     rig: new THREE.Box3(new THREE.Vector3(-2.5, 0, -0.6), new THREE.Vector3(0.45, 1.72, 0.6)),
@@ -867,7 +1036,11 @@ export function createApp(root, options = {}) {
   const VIEW_3D = new THREE.Vector3(-0.5, 0.55, 0.9).normalize();
   function viewPose(view = s.view) {
     const lane = s.scene === 'lane';
-    if (lane) laneBox.set(new THREE.Vector3(LANE.left, 0, -0.62), new THREE.Vector3(LANE.left + windowWidth(), 1.72, 0.66));
+    if (lane)
+      laneBox.set(
+        new THREE.Vector3(LANE.left, 0, -0.62),
+        new THREE.Vector3(LANE.left + windowWidth(), s.diagram ? (stage.height < 280 ? 2.1 : 3.65) : 2.65, 0.66),
+      );
     const box = lane ? laneBox : BOXES[s.scene];
     const e = THREE.MathUtils.degToRad(38 - 20 * wideness());
     const dir = view === '3d' && lane ? VIEW_3D : new THREE.Vector3(0, Math.sin(e), Math.cos(e));
@@ -945,6 +1118,7 @@ export function createApp(root, options = {}) {
     tweener.cancel('camera');
   });
   stage.onResize(() => {
+    placeArrows(state());
     if (!s.userMovedCamera) {
       // a new shape of the view (a phone turned): how far along the lane it must be is worked out again, also when
       // the run is held or over (nothing ticks then), so the cart is never cut off at the edge
@@ -1083,7 +1257,13 @@ export function createApp(root, options = {}) {
     action,
     hooks: {
       enter() {
-        learnSaved = { example: s.example, results: { ...s.results }, seen: [...s.seen] };
+        if (mathDialog.open) {
+          mathResume = false;
+          mathDialog.close();
+        }
+        learnSaved = { example: s.example, results: { ...s.results }, seen: [...s.seen], friction: s.friction, diagram: s.diagram };
+        s.friction = 0;
+        s.diagram = false;
         s.mode = 'quiz';
         s.locked = true;
         hintOff();
@@ -1095,6 +1275,8 @@ export function createApp(root, options = {}) {
         s.locked = false;
         ++token;
         const saved = learnSaved || { example: 'base', results: { base: null, force: null, mass: null, back: null }, seen: [] };
+        s.friction = saved.friction || 0;
+        s.diagram = Boolean(saved.diagram);
         s.results = { ...saved.results };
         s.seen = [...saved.seen];
         s.example = saved.example;
@@ -1360,6 +1542,30 @@ export function createApp(root, options = {}) {
       case 'q-again':
         quiz.start();
         break;
+      case 'pause':
+        if (s.locked) lockedNudge();
+        else if (s.run && !s.run.done) {
+          if (s.run.pausedAt != null) resumeRun();
+          else s.run.pausedAt = runTime();
+          refresh();
+          emitChange();
+        }
+        break;
+      case 'diagram':
+        if (s.locked) lockedNudge();
+        else setDiagram(!s.diagram);
+        break;
+      case 'friction':
+        if (s.locked) lockedNudge();
+        else setFriction(s.friction ? 0 : 20);
+        break;
+      case 'maths':
+        openMaths();
+        break;
+      case 'maths-close':
+        finishMathPause();
+        mathDialog.close();
+        break;
       case 'home':
         if (s.locked) lockedNudge();
         else {
@@ -1374,6 +1580,14 @@ export function createApp(root, options = {}) {
     }
   });
   root.addEventListener('keydown', (e) => {
+    if (mathDialog.open) {
+      if (e.key === 'Escape') {
+        finishMathPause();
+        mathDialog.close();
+        e.preventDefault();
+      }
+      return;
+    }
     const target = /** @type {Element} */ (e.target);
     if (target.closest('input, textarea, select') || e.metaKey || e.ctrlKey || e.altKey) return;
     const k = e.key;
@@ -1434,6 +1648,8 @@ export function createApp(root, options = {}) {
      */
     async set(p = {}) {
       const animate = p.animate !== false;
+      if (p.friction != null && s.mode !== 'quiz') await setFriction(Number(p.friction) === 20 ? 20 : 0);
+      if (p.diagram != null && s.mode !== 'quiz') setDiagram(Boolean(p.diagram));
       if (p.view) await setView(p.view, { animate });
       if (p.tried) markTried(Array.isArray(p.tried) ? p.tried : String(p.tried).split(','));
       if (p.example) {
@@ -1450,14 +1666,22 @@ export function createApp(root, options = {}) {
         if (animate) await push({ quiet: true });
         else await push({ quiet: true, at: planOf(s.example).end + 0.01 });
       }
+      if (p.paused === true && s.run) s.run.pausedAt = runTime();
+      else if (p.paused === false) resumeRun();
       refresh();
       emitChange();
       return snapshot();
     },
     async reset() {
+      if (mathDialog.open) {
+        mathResume = false;
+        mathDialog.close();
+      }
       quiz.stop();
       ++token;
       s.results = { base: null, force: null, mass: null, back: null };
+      s.friction = 0;
+      s.diagram = false;
       s.seen = [];
       s.view = 'front';
       controls.enableRotate = false;
@@ -1468,12 +1692,13 @@ export function createApp(root, options = {}) {
       emitChange();
     },
     startPractice: () => quiz.start(),
-    capture: (opts) => stage.capture(opts),
+    capture: (opts) => presentation.capture(opts),
     /** The handcart with its load and its people where they are, the floor and the pile of sacks, in metres. */
     exportRoot() {
       const copy = new THREE.Group();
       copy.name = 'NewtonsSecondLaw';
       copy.add(floor.group.clone(true), rig.root.clone(true));
+      if (diagram.root.visible) copy.add(diagram.root.clone(true));
       const hidden = [];
       copy.traverse((obj) => {
         if (!obj.visible) hidden.push(obj);

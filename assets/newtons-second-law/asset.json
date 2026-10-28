@@ -5,7 +5,7 @@
   "title": "Newton's second law of motion (নিউটনের দ্বিতীয় গতি সূত্র)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "book": "physics-9-10",
   "page": 75,
   "topic": "3.6",
@@ -13,7 +13,7 @@
   "order": 1,
   "maintainers": ["RadeenXALNW"],
   "units": "m",
-  "description": "Newton's second law (নিউটনের দ্বিতীয় সূত্র, pages 75–76, 3.6) with the book's own example, a handcart (ঠেলাগাড়ি) pushed from rest, on a smooth floor (friction left out, said on the view). One tap and a person pushes the wooden cart for 2 s with 100 N: an orange F arrow at the crossbar, a teal acceleration arrow over the cart and a blue velocity arrow that grows by the same amount every second (a mark on the floor every second); then he lets go and the cart rolls on at the velocity it has until a pile of rice sacks at the end of the floor stops it. The panel is one action, one result, one rule: a row of four examples (খালি গাড়ি, দ্বিগুণ বল with two people, দ্বিগুণ ভর with two 50 kg sacks, উল্টো দিকে বল where a second person pushes back on the moving cart), a big numbered button whose same badge rings the cart, the result line working out a = (v − u) ÷ t (1, 2, 0.5 and −1 ms⁻², written under each word), and a rule that grows from F = ma (k = 1) through 'double the force, double the acceleration' and 'double the mass, half the acceleration' to 'the momentum changes in the direction of the force' (200 to 0 kg m/s) and the book's law word for word. Real numbers, real time. Test tab: 5 questions on scenes set up for them (the acceleration from the force and the masses read off the picture, the acceleration when the force or the mass is doubled after a run, the direction of the change of momentum when the force is against the motion, two carts side by side compared, and the law in the book's words).",
+  "description": "Vivid live 3D Newton second-law lesson for textbook topic 3.6, pages 75–76. A child rides a coral wagon pushed by an adult or two children; wheels turn, pushers walk and cargo changes the total mass. A live 3D free-body diagram shows individual pushes, friction, ground support and weight. Students can compare a smooth floor with a constant 20 N resisting force. The current force sum, F = ma and a = F/m follow the same motion state; a separate calculation sheet connects them to the textbook momentum derivation at constant mass in SI units. Cart 80 kg + passenger 20 kg form the 100 kg unloaded system; cargo adds 50 kg per sack. Four examples and five scene-based tap questions are retained. Offline, Bangla/English, with GLB export.",
   "tags": ["force", "newtons-laws", "second-law", "acceleration", "momentum", "f-ma", "bangla"],
   "params": [
     {
@@ -28,13 +28,21 @@
       "label": "Example",
       "type": "select",
       "options": [
-        ["base", "empty cart"],
-        ["force", "double force"],
+        ["base", "one adult pushes"],
+        ["force", "two children push"],
         ["mass", "double mass"],
         ["back", "force backward"]
       ],
       "default": "base"
     },
+    {
+      "name": "friction",
+      "label": "Resisting force",
+      "type": "select",
+      "options": [["0", "smooth floor"], ["20", "20 N friction"]],
+      "default": "0"
+    },
+    { "name": "diagram", "label": "Live free-body diagram", "type": "boolean", "default": "0" },
     {
       "name": "at",
       "label": "A moment of the run",
@@ -73,6 +81,8 @@
   ],
   "commands": [
     { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "diagram": true, "friction": 20 } },
+    { "name": "set", "payload": { "paused": true } },
     { "name": "set", "payload": { "example": "force" } },
     { "name": "set", "payload": { "push": true } },
     { "name": "set", "payload": { "example": "mass", "push": true } },
@@ -102,18 +112,46 @@
       {
         "name": "default",
         "setup": [{ "command": "set", "payload": { "example": "mass", "home": true, "animate": false } }]
+      },
+      {
+        "name": "force-diagram",
+        "setup": [
+          {
+            "command": "set",
+            "payload": {
+              "example": "force",
+              "at": 1.2,
+              "diagram": true,
+              "friction": 20,
+              "animate": false,
+              "paused": true
+            }
+          }
+        ]
       }
     ],
     "video": {
       "kind": "script",
-      "seconds": 24,
+      "seconds": 30,
       "fps": 30,
       "params": { "coach": "0" },
       "script": [
         { "at": 0.6, "command": "set", "payload": { "push": true } },
         { "at": 5, "command": "set", "payload": { "example": "force", "push": true } },
         { "at": 8.6, "command": "set", "payload": { "example": "mass", "push": true } },
-        { "at": 16.4, "command": "set", "payload": { "example": "back", "push": true } }
+        { "at": 16.4, "command": "set", "payload": { "example": "back", "push": true } },
+        {
+          "at": 23,
+          "command": "set",
+          "payload": {
+            "example": "force",
+            "friction": 20,
+            "diagram": true,
+            "at": 1.2,
+            "paused": true,
+            "animate": false
+          }
+        }
       ]
     }
   }

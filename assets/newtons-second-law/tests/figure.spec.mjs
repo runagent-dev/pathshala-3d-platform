@@ -6,6 +6,7 @@
 // in the test). Every test question sets up its own scene; reset brings everything back.
 // Runs with `npm run test:figures` (dev-only folder, never packaged).
 import { expect, test } from '@playwright/test';
+import { planOf, EXAMPLES } from '../src/physics.js';
 import { openFigure, preparePage } from '../../../scripts/lib/export/driver.mjs';
 
 test('newtons-second-law: F = ma for the handcart, and the direction of the change', async ({ page }) => {
@@ -49,10 +50,13 @@ test('newtons-second-law: F = ma for the handcart, and the direction of the chan
   expect(await text('.pvc-outcome')).toBe('a = (v − u) ÷ t = (২ − ০) ÷ ২ = ১ ms−2');
   expect(await text('[data-example="base"] .pvc-ex-res')).toBe('১ ms−2');
   expect(await text('.pvc-rule')).toContain('F = ma');
-  expect(await text('.pvc-rule')).toContain('১০০ নিউটন = ১০০ kg × ১ ms−2');
-  expect(await text('.pvc-rule')).toContain('ভরবেগ প্রতি সেকেন্ডে ১০০ kg m/s করে বাড়ছে');
+  expect(await text('.pvc-rule')).toContain('ভরবেগ ১০০ kg m/s');
+  await fig.frame.locator('[data-act="maths"]').click();
+  expect(await text('.ns-math-dialog')).toContain('Δp/Δt');
+  expect(await text('.ns-math-dialog')).toContain('F = ১০০ N, m = ১০০ kg');
+  await fig.frame.locator('[data-act="maths-close"]').click();
   // the push is over: the words on the view say why the velocity stays
-  expect(await text('.pvc-anno-layer')).toContain('ঠেলা শেষ: বল নেই, তাই বেগ বদলায় না');
+  expect(await text('.pvc-anno-layer')).toContain('ঠেলা শেষ: লব্ধি বল শূন্য, তাই বেগ বদলায় না');
   // rolling on at 2 m/s (no force): 0.5 s later still 2 m/s
   await fig.advance(500);
   expect(await fig.call('get')).toMatchObject({ phase: 'coast', speed: 2 });
@@ -95,9 +99,11 @@ test('newtons-second-law: F = ma for the handcart, and the direction of the chan
   expect(back).toMatchObject({ phase: 'stopped', speed: 0, measured: { u: 2, v: 0, a: -1 } });
   expect(back.distance).toBeCloseTo(4.6, 2);
   // all four found: the book's law, word for word
-  expect(await text('.pvc-rule')).toContain(
+  await fig.frame.locator('[data-act="maths"]').click();
+  expect(await text('.ns-math-dialog')).toContain(
     'নিউটনের দ্বিতীয় সূত্র: বস্তুর ভরবেগের পরিবর্তনের হার তার উপর প্রযুক্ত বলের সমানুপাতিক এবং যেদিকে বল প্রয়োগ করা হয় ভরবেগের পরিবর্তনও সেদিকে ঘটে।',
   );
+  await fig.frame.locator('[data-act="maths-close"]').click();
   expect(await text('[data-example="back"] .pvc-ex-res')).toBe('−১ ms−2');
 
   // the test: five questions, each on its own scene; the ring hides; tapping the cart is locked
@@ -125,5 +131,158 @@ test('newtons-second-law: F = ma for the handcart, and the direction of the chan
   await fig.call('set', { example: 'back', push: true, animate: false });
   expect(await text('.pvc-rule')).toContain('(০ − ২০০) ÷ ২ = −১০০ নিউটন');
   expect(await text('.pvc-outcome')).toBe('a = (v − u) ÷ t = (০ − ২) ÷ ২ = −১ ms−2');
+  expect(log.errors).toEqual([]);
+});
+
+test('second law: live 3D forces include the passenger, friction, support and the textbook derivation', async ({ page }) => {
+  await page.setViewportSize({ width: 800, height: 500 });
+  const log = await preparePage(page);
+  const fig = await openFigure(page, 'newtons-second-law', { params: { example: 'force', diagram: '1', friction: '20', at: '1.2' } });
+  let s = await fig.call('get');
+  expect(s).toMatchObject({
+    mass: 100,
+    force: 180,
+    acceleration: 1.8,
+    friction: 20,
+    diagram: true,
+    forces: { F1: 100, F2: 100, friction: -20, net: 180 },
+  });
+  expect(s.forces.normal).toBeCloseTo(980);
+  expect(s.forces.normal).toBe(s.forces.weight);
+  const model = await fig.frame.evaluate(() => {
+    const root = /** @type {any} */ (window).figure.exportRoot();
+    return {
+      child: Boolean(root.getObjectByName('ChildPassenger')),
+      diagram: Boolean(root.getObjectByName('LiveFreeBodyDiagram')),
+      forceMeshes: root.getObjectByName('Diagram_F1').children.length,
+    };
+  });
+  expect(model).toEqual({ child: true, diagram: true, forceMeshes: 2 });
+  await expect(fig.frame.locator('.ns-formula-values')).toContainText('১০০ + ১০০ − ২০');
+  const humanPose = () =>
+    fig.frame.evaluate(async () => {
+      const { Vector3 } = await import('three');
+      const model = /** @type {any} */ (window).figure.exportRoot();
+      model.updateMatrixWorld(true);
+      const person = model.getObjectByName('Pusher1');
+      return {
+        foot: person.getObjectByName('ShoeNear').getWorldPosition(new Vector3()).toArray(),
+        hand: person.getObjectByName('HandNear').getWorldPosition(new Vector3()).toArray(),
+        front: model.getObjectByName('CartBody').getWorldPosition(new Vector3()).x,
+      };
+    });
+  await fig.call('set', { example: 'base', at: 0.5, paused: true, animate: false });
+  const poseA = await humanPose();
+  await fig.call('set', { at: 0.7, paused: true, animate: false });
+  const poseB = await humanPose();
+  expect(poseB.foot[0]).toBeCloseTo(poseA.foot[0], 4);
+  expect(poseB.hand[0]).toBeCloseTo(poseB.front - 1.82, 4);
+  expect(poseB.hand[1]).toBeCloseTo(0.88, 4);
+
+  await fig.call('set', { at: 2.5, paused: true });
+  s = await fig.call('get');
+  expect(s).toMatchObject({ phase: 'coast', force: -20, acceleration: -0.2, forces: { F1: 0, F2: 0, friction: -20 } });
+  const paused = s.time;
+  await fig.advance(1000);
+  expect((await fig.call('get')).time).toBe(paused);
+  await fig.call('set', { paused: false });
+  const formula = fig.frame.locator('[data-act="maths"]');
+  await formula.focus();
+  await fig.advance(250);
+  await expect(formula).toBeFocused();
+  await formula.press('Enter');
+  await expect(fig.frame.locator('.ns-math-dialog')).toBeVisible();
+  const time = (await fig.call('get')).time;
+  await fig.advance(500);
+  expect((await fig.call('get')).time).toBe(time);
+  await expect(fig.frame.locator('.ns-math-dialog')).toContainText('গাড়ি ৮০ kg + শিশু ২০ kg');
+  await expect(fig.frame.locator('.ns-math-dialog')).toContainText('Δp/Δt');
+  await fig.frame.locator('.ns-math-dialog').press('Escape');
+  await expect(fig.frame.locator('.ns-math-dialog')).not.toBeVisible();
+  await fig.advance(300);
+  expect((await fig.call('get')).time).toBeGreaterThan(time);
+  await fig.call('practice');
+  await fig.advance(300);
+  expect(await fig.call('get')).toMatchObject({ mode: 'quiz', diagram: false, friction: 0 });
+  await fig.frame.locator('[data-mode="explore"]').click();
+  await fig.advance(100);
+  expect(await fig.call('get')).toMatchObject({ mode: 'explore', diagram: true, friction: 20 });
+  await fig.call('set', { at: 1, paused: true, animate: false });
+  await fig.frame.locator('[data-act="pause"]').click();
+  await fig.advance(250);
+  await fig.frame.locator('[data-act="pause"]').click();
+  const held = (await fig.call('get')).time;
+  await fig.advance(500);
+  expect((await fig.call('get')).time).toBe(held);
+
+  await fig.frame.locator('[data-act="friction"]').click();
+  expect(await fig.call('get')).toMatchObject({ phase: 'rest', friction: 0, results: { base: null, force: null, mass: null, back: null } });
+  await fig.call('reset');
+  expect(await fig.call('get')).toMatchObject({ example: 'base', diagram: false, friction: 0, mass: 100 });
+  expect(log.errors).toEqual([]);
+});
+
+test('second law: motion, live diagrams and calculation sheet fit every required frame in both languages', async ({ page }) => {
+  test.setTimeout(300000);
+  const log = await preparePage(page);
+  const plan = planOf({ ...EXAMPLES.force, friction: 20 }),
+    stop = plan.segs.find((s) => s.kind === 'stop');
+  for (const lang of ['bn', 'en'])
+    for (const [width, height] of [
+      [390, 700],
+      [390, 520],
+      [844, 390],
+      [640, 400],
+      [800, 500],
+      [1280, 800],
+    ]) {
+      await page.setViewportSize({ width, height });
+      const fig = await openFigure(page, 'newtons-second-law', { params: { lang } });
+      for (const state of [
+        { example: 'base', at: 0, diagram: false, friction: 0 },
+        { example: 'force', at: 1.2, diagram: false, friction: 0 },
+        { example: 'force', at: 1.2, diagram: true, friction: 20 },
+        { example: 'force', at: 2.5, diagram: true, friction: 20 },
+        { example: 'back', at: 3.3, diagram: true, friction: 20 },
+        { example: 'mass', at: 12, diagram: true, friction: 20 },
+        { example: 'force', at: stop.t0 + stop.dur / 2, diagram: true, friction: 20 },
+      ]) {
+        await fig.call('set', { ...state, paused: true, animate: false });
+        await fig.advance(150);
+        const report = await fig.frame.evaluate(() => {
+          const bad = [];
+          for (const e of document.querySelectorAll('.pvc-learn button,.ns-formula-values,.ns-formula-values>div,.pvc-outcome,.pvc-rule,.pvc-anno')) {
+            const cs = getComputedStyle(e);
+            if (cs.visibility === 'hidden' || cs.display === 'none' || Number(cs.opacity) === 0) continue;
+            const r = e.getBoundingClientRect();
+            if (!r.width || !r.height) continue;
+            if (r.left < -1 || r.right > innerWidth + 1 || r.top < -1 || r.bottom > innerHeight + 1 || e.scrollWidth > e.clientWidth + 1)
+              bad.push({ text: e.textContent, right: r.right, bottom: r.bottom, overflow: e.scrollWidth - e.clientWidth });
+          }
+          const p = document.querySelector('.pvc-panel');
+          return { bad, overflow: p.scrollHeight - p.clientHeight, stage: document.querySelector('.pvc-stage').getBoundingClientRect().height };
+        });
+        expect(report.bad, `${lang} ${width}×${height} ${JSON.stringify(state)}`).toEqual([]);
+        expect(report.overflow).toBeLessThanOrEqual(1);
+        expect(report.stage).toBeGreaterThan(150);
+        if (state.diagram && state.example === 'force' && state.at === 1.2) {
+          await expect(fig.frame.locator('.pvc-anno').filter({ hasText: /F1/ }), `${lang} ${width}x${height} F1`).toBeVisible();
+          await expect(fig.frame.locator('.pvc-anno').filter({ hasText: /F2/ }), `${lang} ${width}x${height} F2`).toBeVisible();
+          await expect(fig.frame.locator('.pvc-anno').filter({ hasText: /^N$|N =/ }), `${lang} ${width}x${height} N`).toBeVisible();
+          await expect(fig.frame.locator('.pvc-anno').filter({ hasText: /^W$|W =/ }), `${lang} ${width}x${height} W`).toBeVisible();
+        }
+      }
+      await fig.frame.locator('[data-act="maths"]').click();
+      const sheet = await fig.frame.locator('.ns-math-dialog').evaluate((e) => {
+        const r = e.getBoundingClientRect();
+        return {
+          inside: r.left >= 0 && r.top >= 0 && r.right <= innerWidth + 1 && r.bottom <= innerHeight + 1,
+          overflow: e.scrollHeight - e.clientHeight,
+        };
+      });
+      expect(sheet.inside).toBe(true);
+      expect(sheet.overflow).toBeLessThanOrEqual(1);
+      await fig.frame.locator('[data-act="maths-close"]').click();
+    }
   expect(log.errors).toEqual([]);
 });

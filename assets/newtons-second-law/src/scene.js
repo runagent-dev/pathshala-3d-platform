@@ -1,6 +1,5 @@
 // The floor and the people round the handcart, in metres:
-//  - createFloor(): a smooth, polished floor (pale grey tiles, a faint line every metre across the lane) that fades
-//    into the white page, and at its far end a low pile of rice sacks that stops the rolling cart (BUFFER_X).
+//  - createFloor(): a smooth, polished floor (saturated teal tiles, with a line every metre across the lane), and at its far end a low pile of rice sacks that stops the rolling cart (BUFFER_X).
 //  - createMarks(): the marks the cart's front leaves on the floor every second (thin dark bars across the lane).
 //  - createRig(): one handcart with up to two people behind it (who push) and one in front of it (who pushes back),
 //    placed from the run of physics.js by place(plan, t).
@@ -35,10 +34,10 @@ export function createFloor(cartM) {
     const k = w / W; // pixels per metre
     const X = (x) => (x - FLOOR.x0) * k;
     const Z = (z) => (z - FLOOR.z0) * k;
-    ctx.fillStyle = '#e9ebee';
+    ctx.fillStyle = '#158a98';
     ctx.fillRect(0, 0, w, h);
     // polished tiles, 0.6 m
-    ctx.strokeStyle = 'rgba(150,158,168,0.28)';
+    ctx.strokeStyle = 'rgba(123,231,220,0.18)';
     ctx.lineWidth = 1.2;
     for (let x = Math.ceil(FLOOR.x0 / 0.6) * 0.6; x < FLOOR.x1; x += 0.6) {
       ctx.beginPath();
@@ -53,36 +52,18 @@ export function createFloor(cartM) {
       ctx.stroke();
     }
     // the lane: two painted edges from the start to the sacks
-    ctx.fillStyle = 'rgba(96,106,118,0.55)';
+    ctx.fillStyle = 'rgba(255,211,72,0.9)';
     for (const z of [-FLOOR.lane, FLOOR.lane]) ctx.fillRect(X(-2.6), Z(z) - 1.5, X(BUFFER_X) - X(-2.6), 3);
     // a line across the lane every metre from the start
-    ctx.fillStyle = 'rgba(96,106,118,0.4)';
+    ctx.fillStyle = 'rgba(206,249,241,0.5)';
     for (let x = START_X; x <= BUFFER_X - 0.3; x += 1) ctx.fillRect(X(x) - 1, Z(-FLOOR.lane), 2, Z(FLOOR.lane) - Z(-FLOOR.lane));
   });
   tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
-  // it fades out at its edges into the white page: nothing ends in a hard line
-  const alpha = canvasTexture(128, 64, (ctx, w, h) => {
-    const img = ctx.createImageData(w, h);
-    for (let y = 0; y < h; y++)
-      for (let x = 0; x < w; x++) {
-        const ex = Math.min(x, w - 1 - x) / (w * 0.12);
-        const ey = Math.min(y, h - 1 - y) / (h * 0.3);
-        const a = Math.max(0, Math.min(1, ex, ey));
-        const v = Math.round(255 * a * a * (3 - 2 * a));
-        const i = (y * w + x) * 4;
-        img.data[i] = img.data[i + 1] = img.data[i + 2] = v;
-        img.data[i + 3] = 255;
-      }
-    ctx.putImageData(img, 0, 0);
-  });
-  alpha.colorSpace = THREE.NoColorSpace;
-  alpha.wrapS = alpha.wrapT = THREE.ClampToEdgeWrapping;
   const floorMat = new THREE.MeshStandardMaterial({
     name: 'SmoothFloor',
     map: tex,
-    alphaMap: alpha,
-    transparent: true,
-    depthWrite: false,
+    transparent: false,
+    depthWrite: true,
     roughness: 0.4,
     metalness: 0,
   });
@@ -154,9 +135,9 @@ export function createMarks(max = 12) {
 }
 
 const SHIRTS = [
-  { shirt: '#f1f3f5', trousers: '#2f3d55', skin: '#b27b50' }, // the first pusher: a white shirt
-  { shirt: '#e9d9a8', trousers: '#4a4136', skin: '#9c6a43' }, // the second pusher: a pale yellow shirt
-  { shirt: '#c9d1c3', trousers: '#33363b', skin: '#a8734a' }, // the person in front: grey-green
+  { shirt: '#ffb51b', trousers: '#4b43c4', skin: '#b27b50', ponytail: true }, // the first pusher: a white shirt
+  { shirt: '#ef478d', trousers: '#193d72', skin: '#9c6a43' }, // the second pusher: a pale yellow shirt
+  { shirt: '#3079e6', trousers: '#25334b', skin: '#a8734a' }, // the person in front: grey-green
 ];
 
 /**
@@ -174,6 +155,11 @@ export function createRig({ M, name = 'Rig' }) {
     root.add(p.root);
     return p;
   });
+  const passenger = createPerson({ shirt: '#13d8d5', trousers: '#233b72', skin: '#bd835b', name: 'ChildPassenger' });
+  passenger.root.scale.setScalar(0.62);
+  passenger.root.position.set(-0.96, 0.55, 0);
+  passenger.pose({ seated: true, lean: 0.04, hands: [new THREE.Vector3(0.32, 0.43, 0.16), new THREE.Vector3(0.32, 0.43, -0.16)] });
+  cart.body.add(passenger.root);
   const catcher = people[2];
   catcher.root.rotation.y = Math.PI; // faces the cart, toward −x
   const cfg = { pushers: 1, sacks: 0, back: false };
@@ -187,6 +173,8 @@ export function createRig({ M, name = 'Rig' }) {
     cfg.sacks = sacks;
     cfg.back = back;
     cart.setLoad(sacks);
+    people[0].root.scale.setScalar(pushers === 2 ? 0.86 : 1);
+    people[1].root.scale.setScalar(0.84);
     people[0].root.visible = pushers >= 1;
     people[1].root.visible = pushers >= 2;
     catcher.root.visible = back;
@@ -195,7 +183,8 @@ export function createRig({ M, name = 'Rig' }) {
   /** A pusher behind the cart: on the crossbar while pushing, then letting go and slowing to a stop. */
   function placePusher(p, z, st, letGo) {
     const gripX = baseX + START_X + g.x + st.dx; // where the crossbar was when he last held it, or is now
-    const hip = gripX - HIP_BACK;
+    const scale = p.root.scale.x;
+    const hip = gripX - HIP_BACK * scale;
     p.root.position.set(hip, 0, z);
     const speed = st.v;
     // after letting go the arms come down over 0.4 s
@@ -205,14 +194,14 @@ export function createRig({ M, name = 'Rig' }) {
     const hx = st.on ? cartGrip - hip : Math.min(cartGrip - hip, HIP_BACK + 0.02);
     // the hands, in the person's own space (+z is world +z here): shoulder-wide on the crossbar
     const w = z === 0 ? 0.18 : 0.15;
-    handR.set(hx, g.y, w);
-    handL.set(hx, g.y, -w);
+    handR.set(hx / scale, g.y / scale, w / scale);
+    handL.set(hx / scale, g.y / scale, -w / scale);
     p.pose({
       lean,
       hands: reach > 0.05 ? [handR, handL] : [null, null],
-      walk: (Math.PI * st.dx) / 0.62,
-      stride: 0.22 + Math.min(0.2, speed * 0.05),
-      lift: 0.05 + Math.min(0.08, speed * 0.02),
+      walk: (Math.PI * st.dx) / (0.62 * scale),
+      stride: 0.31,
+      lift: speed > 0.01 ? 0.05 + Math.min(0.08, speed * 0.02) : 0,
       spread: 0.1,
     });
   }
@@ -229,8 +218,8 @@ export function createRig({ M, name = 'Rig' }) {
       lean: st.on ? 0.36 : 0.16,
       hands: [handR, handL],
       walk: (-Math.PI * st.dx) / 0.5,
-      stride: 0.2,
-      lift: 0.04,
+      stride: 0.25,
+      lift: st.v > 0.01 ? 0.04 : 0,
       spread: 0.11,
     });
   }
@@ -258,6 +247,7 @@ export function createRig({ M, name = 'Rig' }) {
     cart,
     people,
     catcher,
+    passenger,
     cfg,
     setup,
     place,

@@ -13,7 +13,7 @@ const SHOULDER = { y: 1.33, z: 0.18 };
 
 const UP = new THREE.Vector3(0, 1, 0);
 
-export function createPerson({ shirt = '#f4f6f8', trousers = '#2f3d55', skin = '#b98057', name = 'Person' } = {}) {
+export function createPerson({ shirt = '#f4f6f8', trousers = '#2f3d55', skin = '#b98057', name = 'Person', ponytail = false } = {}) {
   const root = new THREE.Group();
   root.name = name;
   const mat = (name, color, roughness = 0.8) => new THREE.MeshStandardMaterial({ name, color, roughness, metalness: 0 });
@@ -72,6 +72,19 @@ export function createPerson({ shirt = '#f4f6f8', trousers = '#2f3d55', skin = '
   upper.add(hair);
   const nose = ball(0.018, M.skin, upper);
   nose.position.set(0.105, 0.655, 0);
+  const face = mat('Face', '#39251d');
+  for (const side of [-1, 1]) {
+    const ear = ball(0.021, M.skin, upper);
+    ear.position.set(-0.015, 0.655, side * 0.091);
+    const eye = ball(0.009, face, upper);
+    eye.position.set(0.087, 0.68, side * 0.045);
+  }
+  if (ponytail) {
+    const tail = new THREE.Mesh(new THREE.CapsuleGeometry(0.045, 0.15, 4, 10), M.hair);
+    tail.position.set(-0.11, 0.6, 0);
+    tail.rotation.z = -0.18;
+    upper.add(tail);
+  }
   const sleeves = [1, -1].map((side) => {
     const s = ball(0.062, M.shirt, upper);
     s.position.set(0, SHOULDER.y - HIP_Y, side * SHOULDER.z);
@@ -84,7 +97,11 @@ export function createPerson({ shirt = '#f4f6f8', trousers = '#2f3d55', skin = '
     side,
     upper: tube(M.shirt, root),
     fore: tube(M.skin, root),
-    hand: ball(0.046, M.skin, root),
+    hand: (() => {
+      const h = ball(0.046, M.skin, root);
+      h.name = side > 0 ? 'HandNear' : 'HandFar';
+      return h;
+    })(),
   }));
   const legs = [1, -1].map((side) => ({
     side,
@@ -92,6 +109,7 @@ export function createPerson({ shirt = '#f4f6f8', trousers = '#2f3d55', skin = '
     shin: tube(M.trousers, root),
     foot: (() => {
       const f = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.07, 0.095), M.shoe);
+      f.name = side > 0 ? 'ShoeNear' : 'ShoeFar';
       root.add(f);
       return f;
     })(),
@@ -126,14 +144,14 @@ export function createPerson({ shirt = '#f4f6f8', trousers = '#2f3d55', skin = '
   const armPole = new THREE.Vector3();
   const legPole = new THREE.Vector3(1, 0, 0);
   const rest = new THREE.Vector3();
-  const state = { lean: 0, hands: [null, null], walk: 0, stride: 0.26, spread: 0.11 };
+  const state = { lean: 0, hands: [null, null], walk: 0, stride: 0.26, spread: 0.11, hipY: HIP_Y };
 
   /** Where a shoulder is (root space) for the current lean. */
   function shoulderAt(side, out) {
     const c = Math.cos(state.lean);
     const sn = Math.sin(state.lean);
     const h = SHOULDER.y - HIP_Y;
-    return out.set(sn * h, HIP_Y + c * h, side * SHOULDER.z);
+    return out.set(sn * h, state.hipY + c * h, side * SHOULDER.z);
   }
 
   /**
@@ -141,7 +159,9 @@ export function createPerson({ shirt = '#f4f6f8', trousers = '#2f3d55', skin = '
    * cycle; stride: half a step's length in m; spread: feet apart from the middle line (m); lift: how high a foot
    * comes up as it steps (0 standing).
    */
-  function pose({ lean = 0, hands = [null, null], walk = 0, stride = 0.26, spread = 0.11, lift = 0.07 } = {}) {
+  function pose({ lean = 0, hands = [null, null], walk = 0, stride = 0.26, spread = 0.11, lift = 0.07, seated = false } = {}) {
+    state.hipY = seated ? 0.45 : HIP_Y;
+    upper.position.y = hipBall.position.y = state.hipY;
     state.lean = lean;
     state.hands = hands;
     state.walk = walk;
@@ -166,12 +186,21 @@ export function createPerson({ shirt = '#f4f6f8', trousers = '#2f3d55', skin = '
     }
     for (const leg of legs) {
       const phase = walk + (leg.side > 0 ? 0 : Math.PI);
-      hip.set(0, HIP_Y - 0.04, leg.side * 0.085);
-      footT.set(Math.sin(phase) * stride, 0.045 + Math.max(0, Math.cos(phase)) * lift, leg.side * spread);
+      hip.set(0, state.hipY - 0.04, leg.side * 0.085);
+      if (seated) footT.set(0.5, -0.045, leg.side * 0.11);
+      else {
+        const cycle = (((phase / (2 * Math.PI)) % 1) + 1) % 1;
+        if (cycle < 0.5) footT.set(stride * (1 - 4 * cycle), 0.045, leg.side * spread);
+        else {
+          const q = (cycle - 0.5) * 2,
+            e = q * q * (3 - 2 * q);
+          footT.set(stride * (-1 + 2 * e), 0.045 + Math.sin(Math.PI * q) * lift, leg.side * spread);
+        }
+      }
       reach(hip, footT, THIGH, SHIN, legPole, knee, foot);
       place(leg.thigh, hip, knee, 0.062);
       place(leg.shin, knee, foot, 0.05);
-      leg.foot.position.set(foot.x + 0.06, Math.max(0.035, foot.y - 0.01), foot.z);
+      leg.foot.position.set(foot.x + 0.06, seated ? foot.y - 0.01 : Math.max(0.035, foot.y - 0.01), foot.z);
     }
   }
   pose();
