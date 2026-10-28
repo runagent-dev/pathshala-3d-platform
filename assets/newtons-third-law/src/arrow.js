@@ -3,6 +3,7 @@
 // in its label), so they are told apart by more than colour. API as the kit's createArrow: set(from, dir, length),
 // hide(), root, tip, material.
 import * as THREE from 'three';
+import { createArrow } from '@shared/arrow.js';
 
 const UP = new THREE.Vector3(0, 1, 0);
 
@@ -15,15 +16,18 @@ export function createDashedArrow({
   gap = 0.05,
   max = 14,
   name = 'DashedArrow',
+  material: suppliedMaterial,
 }) {
-  const material = new THREE.MeshStandardMaterial({
-    name: `${name}Material`,
-    color,
-    roughness: 0.45,
-    metalness: 0,
-    emissive: color,
-    emissiveIntensity: 0.2,
-  });
+  const material =
+    suppliedMaterial ||
+    new THREE.MeshStandardMaterial({
+      name: `${name}Material`,
+      color,
+      roughness: 0.45,
+      metalness: 0,
+      emissive: color,
+      emissiveIntensity: 0.2,
+    });
   const root = new THREE.Group();
   root.name = name;
   root.visible = false;
@@ -70,6 +74,43 @@ export function createDashedArrow({
     },
     hide() {
       root.visible = false;
+    },
+  };
+}
+
+// Bold, unlit vector colours with a dark casing remain readable over water, wood and clothing.
+// The casing follows the exact same length and dashed pattern; it does not change the force pair.
+export function createLessonArrow({ name, color, dashed = false }) {
+  const root = new THREE.Group();
+  root.name = name;
+  root.visible = false;
+  root.userData.noExport = true;
+  const make = dashed ? createDashedArrow : createArrow;
+  const material = new THREE.MeshBasicMaterial({ name: `${name}Colour`, color, depthTest: false, depthWrite: false, toneMapped: false });
+  const casing = new THREE.MeshBasicMaterial({ name: `${name}Casing`, color: '#142b46', depthTest: false, depthWrite: false, toneMapped: false });
+  const dimensions = { head: 0.23, dash: 0.12, gap: 0.075 };
+  const edge = make({ ...dimensions, name: `${name}Outline`, radius: 0.063, headRadius: 0.14, material: casing });
+  const ink = make({ ...dimensions, name: `${name}Fill`, radius: 0.043, headRadius: 0.11, material });
+  edge.root.traverse((object) => {
+    object.renderOrder = 9;
+  });
+  ink.root.traverse((object) => {
+    object.renderOrder = 10;
+  });
+  root.add(edge.root, ink.root);
+  return {
+    root,
+    material,
+    tip: ink.tip,
+    set(from, dir, length) {
+      edge.set(from, dir, length);
+      ink.set(from, dir, length);
+      root.visible = ink.root.visible;
+    },
+    hide() {
+      root.visible = false;
+      edge.hide();
+      ink.hide();
     },
   };
 }
