@@ -265,6 +265,12 @@ test('second law: motion, live diagrams and calculation sheet fit every required
         expect(report.bad, `${lang} ${width}×${height} ${JSON.stringify(state)}`).toEqual([]);
         expect(report.overflow).toBeLessThanOrEqual(1);
         expect(report.stage).toBeGreaterThan(150);
+        if (state.diagram && state.example === 'force' && state.at === 1.2) {
+          await expect(fig.frame.locator('.pvc-anno').filter({ hasText: /F1/ }), `${lang} ${width}x${height} F1`).toBeVisible();
+          await expect(fig.frame.locator('.pvc-anno').filter({ hasText: /F2/ }), `${lang} ${width}x${height} F2`).toBeVisible();
+          await expect(fig.frame.locator('.pvc-anno').filter({ hasText: /^N$|N =/ }), `${lang} ${width}x${height} N`).toBeVisible();
+          await expect(fig.frame.locator('.pvc-anno').filter({ hasText: /^W$|W =/ }), `${lang} ${width}x${height} W`).toBeVisible();
+        }
       }
       await fig.frame.locator('[data-act="maths"]').click();
       const sheet = await fig.frame.locator('.ns-math-dialog').evaluate((e) => {

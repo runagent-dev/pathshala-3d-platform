@@ -559,7 +559,7 @@ export function createApp(root, options = {}) {
         continue;
       }
       label(id, {
-        text: t(`${stage.height < 280 ? 'd_short_' : 'd_'}${key}`, {
+        text: t(`${stage.height < 280 || stage.width < 500 ? 'd_short_' : 'd_'}${key}`, {
           v: sgn(['F1', 'F2', 'contact'].includes(key) ? diagram.values[key] : Math.abs(diagram.values[key])),
         }),
         point: () => diagram.point(key),
@@ -569,6 +569,10 @@ export function createApp(root, options = {}) {
             ? [
                 { dx: 16, dy: -10 },
                 { dx: -16, dy: -10 },
+                { dx: 40, dy: -10 },
+                { dx: -40, dy: -10 },
+                { dx: 64, dy: -10 },
+                { dx: -64, dy: -10 },
               ]
             : key === 'weight'
               ? [
@@ -578,11 +582,23 @@ export function createApp(root, options = {}) {
                   { dx: -48, dy: 0 },
                   { dx: 72, dy: 0 },
                   { dx: -72, dy: 0 },
+                  { dx: 100, dy: -24 },
+                  { dx: -100, dy: -24 },
+                  { dx: 120, dy: -36 },
+                  { dx: -120, dy: -36 },
+                  { dx: 100, dy: 48 },
+                  { dx: -100, dy: 48 },
+                  { dx: 48, dy: 48 },
+                  { dx: -48, dy: 48 },
                 ]
               : [
                   { dx: 18 * Math.sign(diagram.values[key]), dy: 0 },
                   { dx: 0, dy: 24 },
                   { dx: 0, dy: -24 },
+                  { dx: 42 * Math.sign(diagram.values[key]), dy: 0 },
+                  { dx: 64 * Math.sign(diagram.values[key]), dy: 24 },
+                  { dx: 64 * Math.sign(diagram.values[key]), dy: -24 },
+                  { dx: 42 * Math.sign(diagram.values[key]), dy: 40 },
                 ],
         optional: true,
       });
