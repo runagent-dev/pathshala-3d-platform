@@ -13,7 +13,7 @@
 //   --only <id[,id]>       only these figures
 //   --changed-since <ref>  only figures touched since a git ref (their files, or the kit files they import)
 //   --formats lab,poster,glb,video   what to publish (default lab,poster,glb; video is slow)
-//   --license <SPDX>       license written on every item (or "license" in library-sync.config.json); production refuses without
+//   --license <SPDX>       license written on every item (or "license" in library-sync.config.json); optional: without one, items carry none
 //   --libraries catalog|own  catalog (default): the three.js libraries are built to match chalk-format's pinned catalog and shared with
 //                          every other lab; own: this repo's own copies, nothing shared (tagged catalog:own)
 //   --no-verify            do not run each new lab in the sandbox before publishing it

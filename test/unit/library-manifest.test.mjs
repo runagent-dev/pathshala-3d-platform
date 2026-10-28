@@ -133,11 +133,11 @@ describe('lab manifest from asset.json', () => {
 });
 
 describe('license', () => {
-  it('production refuses to publish without one; staging warns', () => {
-    assert.match(resolveLicense({ tier: 'production' }).problems[0], /no license/);
-    const staging = resolveLicense({ tier: 'staging' });
-    assert.deepEqual(staging.problems, []);
-    assert.equal(staging.warnings.length, 1);
+  it('is optional in every tier: no license is neither a problem nor a warning', () => {
+    for (const tier of ['production', 'staging']) {
+      assert.deepEqual(resolveLicense({ tier }), { license: null, problems: [], warnings: [] });
+    }
+    assert.equal(resolveLicense({ cli: '  ', config: '', tier: 'production' }).license, null);
   });
 
   it('the command line beats the config file; both must be SPDX', () => {

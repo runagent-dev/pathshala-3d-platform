@@ -78,18 +78,17 @@ export function publishedVersion(figureVersion, fp8, { unbumped = false } = {}) 
 }
 
 /**
- * Chooses the license text. The command line beats the config file. Production refuses a missing one (the repo has no LICENSE
- * and a library that serves schools must not guess); staging allows it and warns.
- * @param {{ cli?: string|null, config?: string|null, tier: string }} o
+ * Chooses the license text. The command line beats the config file. A license is optional in every tier: without one the items simply
+ * carry no `license` field (this is the owners' own work; set one when it is decided). One that is given must be an SPDX expression.
+ * @param {{ cli?: string|null, config?: string|null, tier?: string }} o
  * @returns {{ license: string|null, problems: string[], warnings: string[] }}
  */
-export function resolveLicense({ cli, config, tier }) {
+export function resolveLicense({ cli, config }) {
   const license = (cli || config || '').trim() || null;
   const problems = [];
   const warnings = [];
   if (license && !SPDX_RE.test(license))
     problems.push(`the license "${license}" is not an SPDX expression (for example CC-BY-4.0, Apache-2.0 or LicenseRef-pathshala)`);
-  if (!license) (tier === 'production' ? problems : warnings).push('no license is set (--license, or "license" in library-sync.config.json)');
   return { license, problems, warnings };
 }
 

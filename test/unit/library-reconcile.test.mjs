@@ -85,7 +85,8 @@ describe('library sync, against an in-memory library', () => {
   it('production publishes only approved figures, with a license, and says why it did not', async () => {
     const lib = fakeLibrary();
     const cache = tempDir();
-    await assert.rejects(reconcile(options(lib, cache, { apply: true, tier: 'production', license: undefined })), /no license/);
+    const noLicense = await reconcile(options(lib, cache, { apply: true, tier: 'production', license: undefined })); // a missing license blocks nothing
+    for (const f of noLicense.figures) assert.doesNotMatch(String(f.reason ?? f.reasons ?? ''), /licen[sc]e/i, f.id);
     const report = await reconcile(options(lib, cache, { apply: true, tier: 'production' }));
     for (const f of report.figures) {
       assert.equal(f.category, 'blocked', f.id);

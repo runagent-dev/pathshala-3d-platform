@@ -181,10 +181,9 @@ schema, and a lab placed with its defaults passes the reader's own settings chec
 - **Writes only to `.cache/library`** (the built files, the lock, the state, the report) **and the `--report` file**.
 - **Tiers.** `--tier staging` (default) publishes every figure. `--tier production` publishes only figures whose status is
   `approved`, from a clean worktree (no uncommitted change to the figure or the kit files it imports), with a new version
-  (a changed figure with the same version is blocked, so a published version always means the same bytes), and with a
-  license. A figure that fails a gate is `blocked` with the reason, not skipped silently.
+  (a changed figure with the same version is blocked, so a published version always means the same bytes). A figure that fails a gate is `blocked` with the reason, not skipped silently.
 - **License.** `--license <SPDX>` or `"license"` in `library-sync.config.json`; written on every item and the manifest.
-  Production refuses without one (the repo has no LICENSE file: this is a decision for the owners); staging warns.
+  It is **optional** in both tiers (this is our own work): without one the items carry no `license` field. One that is given must be an SPDX expression.
 - **Withdrawing.** Only figures that are **gone from the repo**, only with `--allow-withdraw`, never an item a book uses
   (`GET /v1/assets/{key}/books`; the figure is `blocked` instead), never superseded versions (books may use old ones), and
   more than three figures in one run also needs `--confirm-withdraw`. A withdrawn key is gone for good (spec 1.2 §8).
@@ -289,7 +288,7 @@ changed figure does not republish the libraries. It refuses a library that is no
   with labs from both worlds carries one copy. Moving to another three.js is a catalog refresh, together in chalk-format and here.
   The figures themselves run the vendored copy in `shared/vendor/three` (same version, enforced); the lab runs the catalog's
   build of that version, a bundled and minified build of the same source, not the vendored file.
-- **License.** The repo has none. The sync takes one from you and refuses production without it.
+- **License.** The repo has none, and none is required: set one (`--license`, or in the config) when the owners decide; until then items carry no license.
 - **Withdrawn is final.** Hand-withdrawn items are reported, not resurrected (above).
 - **Fonts.** About 190 KiB of every lab is the embedded Bengali font; a shared font as a lab `asset` would shrink them if the
   reader supports fonts from assets.
