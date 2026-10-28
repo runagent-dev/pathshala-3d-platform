@@ -199,7 +199,9 @@ export async function reconcile(rawOptions) {
           publishedVersion: l?.version ?? null,
           status: l?.status ?? null,
           build: p.build,
-          lab: lab ? { bytes: lab.bytes, gzipBytes: lab.gzipBytes, libraries: lab.libraries, warnings: lab.warnings, errors: lab.errors } : null,
+          lab: lab
+            ? { bytes: lab.bytes, gzipBytes: lab.gzipBytes, libraries: lab.libraries, warnings: lab.warnings, errors: lab.errors, cached: lab.cached }
+            : null,
           poses: l?.poses ?? [],
           result: p.category === 'unchanged' ? 'unchanged' : opt.apply ? 'pending' : 'planned',
         };

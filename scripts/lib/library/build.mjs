@@ -106,7 +106,9 @@ export async function exportedFiles(local, { cacheDir, kinds, poses = [], onProg
   fs.mkdirSync(dir, { recursive: true });
   const out = fs.mkdtempSync(path.join(dir, 'export-'));
   try {
-    const record = await exportFigure(local.id, { out: path.join(out, 'x'), formats: [...need], browser: await exportBrowser(), onProgress });
+    // software rendering is slow and its waits are time limits: on a busy machine a figure can miss one, so a failed export is tried once more
+    const run = async () => exportFigure(local.id, { out: path.join(out, 'x'), formats: [...need], browser: await exportBrowser(), onProgress });
+    const record = await run().catch(() => run());
     const of = (name) => path.join(out, 'x', name);
     for (const f of record.files) {
       if (f.kind === 'glb' && kinds.has('glb') && poses.includes(f.pose)) {
