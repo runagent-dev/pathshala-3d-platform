@@ -2,6 +2,7 @@
 // The anvil face is at x = 0 and the spindle face at x = gap. One turn of the thimble moves it 1 mm
 // (the pitch); its circular scale has 100 parts. Instanced ticks so the reading marks can be coloured.
 import * as THREE from 'three';
+import { createEnamel } from './presentation.js';
 import { textMesh, INK } from '@shared/student/materials.js';
 import { PITCH, DIVISIONS, RANGE, read } from './reading.js';
 
@@ -40,7 +41,7 @@ export function createGauge({ materials: M, text = {} }) {
   fixed.name = 'Fixed';
   root.add(fixed);
 
-  const enamel = new THREE.MeshPhysicalMaterial({ name: 'Enamel', color: 0x3a4552, roughness: 0.55, clearcoat: 0.45, clearcoatRoughness: 0.35 });
+  const enamel = createEnamel();
   const s = new THREE.Shape();
   s.moveTo(-17, 6);
   s.lineTo(-6.5, 6);
@@ -67,11 +68,45 @@ export function createGauge({ materials: M, text = {} }) {
   frame.position.z = -DIM.frameZ + 0.6;
   frame.name = 'Frame';
   fixed.add(frame);
+
+  // A dark insulated grip follows the lower frame; the measuring faces stay bare metal.
+  const gripShape = new THREE.Shape();
+  gripShape.moveTo(-13.5, -21.5);
+  gripShape.quadraticCurveTo(-13.5, -39.5, 6, -39.5);
+  gripShape.lineTo(18, -39.5);
+  gripShape.quadraticCurveTo(38, -39.5, 38, -21.5);
+  gripShape.lineTo(32.8, -21.5);
+  gripShape.quadraticCurveTo(31, -32, 18, -32);
+  gripShape.lineTo(6, -32);
+  gripShape.quadraticCurveTo(-8, -32, -8, -21.5);
+  gripShape.closePath();
+  const gripMaterial = new THREE.MeshPhysicalMaterial({
+    name: 'InsulatedGrip',
+    color: 0x151a20,
+    roughness: 0.86,
+    bumpMap: enamel.bumpMap,
+    bumpScale: 0.08,
+  });
+  const gripPlate = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(gripShape, { depth: 0.4, bevelEnabled: true, bevelThickness: 0.15, bevelSize: 0.2, bevelSegments: 2 }),
+    gripMaterial,
+  );
+  gripPlate.position.z = DIM.frameZ + 0.05;
+  gripPlate.name = 'InsulatedGrip';
+  fixed.add(gripPlate);
+  for (const x of [-10.5, 35.2]) {
+    const screw = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 0.4, 24), M.knurl);
+    screw.rotation.x = Math.PI / 2;
+    screw.position.set(x, -26, DIM.frameZ + 0.7);
+    const slot = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.22, 0.08), gripMaterial);
+    slot.position.set(x, -26, DIM.frameZ + 0.94);
+    fixed.add(screw, slot);
+  }
   // range and least count, printed on the frame like a real one
   const t1 = textMesh(`${num('0')}–${num(String(RANGE))} ${mm}`, 3, { color: '#e9edf2', weight: 600 });
-  t1.position.set(12, -35.2, DIM.frameZ + 0.02);
+  t1.position.set(12, -35.2, DIM.frameZ + 0.75);
   const t2 = textMesh(`${num('0.01')} ${mm}`, 2.6, { color: '#e9edf2', weight: 500 });
-  t2.position.set(12, -38.8, DIM.frameZ + 0.02);
+  t2.position.set(12, -38.8, DIM.frameZ + 0.75);
   fixed.add(t1, t2);
 
   const anvil = cylinderX(DIM.axisR, DIM.axisR, 11, M.satin);
