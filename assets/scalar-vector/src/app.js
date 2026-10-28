@@ -79,6 +79,7 @@ export function createApp(root, options = {}) {
   let action;
 
   function target() {
+    if (s.stage === 2 && diagram.map.visible) return null; // The next action changes the example, rather than a part of this map.
     if (diagram.pairs.visible) {
       const pose = diagram.poses[s.comparison || 'B'][1];
       const a = THREE.MathUtils.degToRad(pose.angle);
@@ -123,6 +124,7 @@ export function createApp(root, options = {}) {
   function labels({ testing = false, reveal = false } = {}) {
     annotations.clear();
     if (diagram.map.visible) {
+      const lift = stage.width >= 720 ? -52 : stage.height >= 300 ? -35 : -30;
       for (const [id, p, key] of [
         ['start', JOURNEY.start, 'start'],
         ['finish', JOURNEY.finish, 'finish'],
@@ -147,8 +149,8 @@ export function createApp(root, options = {}) {
             color: COLORS.scalar,
             kind: 'reading',
             spots: [
-              { dx: 0, dy: -25 },
-              { dx: -12, dy: -25 },
+              { dx: 0, dy: lift },
+              { dx: -12, dy: lift },
               { dx: 0, dy: 35 },
               { dx: 12, dy: -35 },
             ],
@@ -459,7 +461,9 @@ export function createApp(root, options = {}) {
     (event) => {
       if (!down || Math.hypot(event.clientX - down[0], event.clientY - down[1]) > 8 || s.mode === 'quiz') return;
       down = null;
-      const p = target().project(camera);
+      const targetPoint = target();
+      if (!targetPoint) return;
+      const p = targetPoint.project(camera);
       const rect = stage.canvas.getBoundingClientRect();
       if (Math.hypot(event.clientX - rect.left - (p.x * 0.5 + 0.5) * stage.width, event.clientY - rect.top - (-p.y * 0.5 + 0.5) * stage.height) < 34)
         advance();
