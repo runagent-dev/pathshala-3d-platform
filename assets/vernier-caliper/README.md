@@ -5,7 +5,7 @@
 > (Also in `PACKAGE.json` as `page`, `topic`, `placement`.)
 
 Interactive 3D slide calipers for the Pathshala book (Physics 9–10, ভৌত রাশি ও পরিমাপ).
-Bangla UI by default (Noto Sans Bengali, bundled), white page, works offline. No build step; three.js r185 is bundled.
+Bangla UI by default (Noto Sans Bengali, bundled), white reading panel with a rich teal instrument background, works offline. No build step; three.js r185 is bundled.
 
 Two views:
 

@@ -2,6 +2,9 @@
 
 Feedback and change requests. Newest at the top. (Written from the dashboard's Notes tab; stays out of the handoff zip.)
 
+## 2026-10-28
+- v0.3.5: Rich teal background behind the instrument for clearer contrast on classroom boards and embedded pages. The magnifier and default PNG captures use the same colour. Explicit capture backgrounds and transparent embeds remain supported.
+
 ## 2026-10-24
 - v0.3.2: no visible change. Its student view, quiz screen, pointers, magnifier, materials and sounds moved to shared/lib/student so the screw gauge (and later figures) use the same code; checked pixel for pixel against the previous version.
 - Book location: page 20, topic 1.6 (in asset.json `page`/`topic`/`placement`, top of README, PACKAGE.json in the zip).
