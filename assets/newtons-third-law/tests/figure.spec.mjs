@@ -24,6 +24,8 @@ test('third law: boat recoil replaces both mass tabs, and the apple–Earth pair
   expect(s.speed.boat).toBeLessThan(0);
   await fig.advance(2500);
   expect(await fig.call('get')).toMatchObject({ phase: 'landed', done: true, playing: false });
+  await expect(fig.frame.locator('.pvc-anno').filter({ hasText: 'ছেলের গতি' })).toHaveCount(0);
+  await expect(fig.frame.locator('.pvc-anno').filter({ hasText: 'নৌকার গতি' })).toHaveCount(1);
   await fig.call('set', { example: 'apple', at: 0.2 });
   s = await fig.call('get');
   expect(s).toMatchObject({ example: 'apple', phase: 'fall', force: 9.8, arrows: { onApple: true, onEarth: true } });
@@ -136,5 +138,48 @@ test('third law: the new pictures, equations and controls fit all six frames in 
       }
     }
   }
+  expect(log.errors).toEqual([]);
+});
+
+test('third law: shoes grip the pitching boat until takeoff rather than sliding', async ({ page }) => {
+  await page.setViewportSize({ width: 800, height: 500 });
+  const log = await preparePage(page);
+  const fig = await openFigure(page, 'newtons-third-law');
+  const measure = () =>
+    fig.frame.evaluate(async () => {
+      const { Vector3 } = await import('three');
+      const root = /** @type {any} */ (window).figure.exportRoot();
+      root.updateMatrixWorld(true);
+      const boat = root.getObjectByName('WoodenBoat');
+      return {
+        pitch: boat.rotation.z,
+        shoes: ['RightSole', 'LeftSole'].map((name) => {
+          const sole = root.getObjectByName(name);
+          const world = sole.localToWorld(new Vector3(0, -0.009, 0));
+          return { world: world.toArray(), onBoat: boat.worldToLocal(world.clone()).toArray() };
+        }),
+      };
+    });
+  const start = await measure();
+  for (const at of [0.05, 0.15, 0.25, 0.35]) {
+    await fig.call('set', { at });
+    const sample = await measure();
+    for (let foot = 0; foot < 2; foot++) {
+      expect(sample.shoes[foot].onBoat[1]).toBeCloseTo(0.34, 4);
+      for (let axis = 0; axis < 3; axis++) expect(sample.shoes[foot].onBoat[axis]).toBeCloseTo(start.shoes[foot].onBoat[axis], 4);
+    }
+    expect(sample.pitch).toBeLessThan(start.pitch);
+  }
+  const takeoff = await measure();
+  await fig.call('set', { at: 0.350001 });
+  const released = await measure();
+  for (let foot = 0; foot < 2; foot++)
+    for (let axis = 0; axis < 3; axis++) expect(released.shoes[foot].world[axis]).toBeCloseTo(takeoff.shoes[foot].world[axis], 4);
+  await fig.call('set', { at: 0.65 });
+  const air = await measure();
+  expect(air.shoes[0].onBoat[1]).toBeGreaterThan(0.5);
+  expect(Math.abs(air.pitch)).toBeLessThan(Math.abs(takeoff.pitch));
+  await fig.call('reset');
+  expect(await measure()).toEqual(start);
   expect(log.errors).toEqual([]);
 });

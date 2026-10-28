@@ -30,10 +30,20 @@ export function sci(x, digits = 2) {
 
 // Boat replacement: x points towards the jetty. Only the horizontal contact-force pair is illustrated.
 export const BOAT = { personMass: 50, boatMass: 150, force: 300, pushTime: 0.35, startX: 0.35, footY: 0.34, dockY: 0.28, jumpV: 2.8, duration: 1.5 };
+// Small illustrative pitch/heave under the leg push; the quantitative model remains horizontal.
+export function boatFloatAt(t) {
+  const q = Math.min(Math.max(t / BOAT.pushTime, 0), 1);
+  const after = Math.max(0, t - BOAT.pushTime);
+  const load = t <= BOAT.pushTime ? 0.25 + 0.75 * q * q * (3 - 2 * q) : Math.exp(-7 * after) * (Math.cos(10 * after) + 0.7 * Math.sin(10 * after));
+  return { pitch: -0.085 * load, heave: -0.035 * load };
+}
+const supportHeight = ({ pitch, heave }) => heave + BOAT.startX * Math.sin(pitch) + BOAT.footY * Math.cos(pitch);
 export function boatAt(t) {
   const time = Math.max(0, t);
   const T = BOAT.pushTime;
-  const flightDuration = (BOAT.jumpV + Math.sqrt(BOAT.jumpV ** 2 + 2 * G * (BOAT.footY - BOAT.dockY))) / G;
+  const releaseY = supportHeight(boatFloatAt(T));
+  const float = boatFloatAt(time);
+  const flightDuration = (BOAT.jumpV + Math.sqrt(BOAT.jumpV ** 2 + 2 * G * (releaseY - BOAT.dockY))) / G;
   const landTime = T + flightDuration;
   const personTime = Math.min(time, landTime);
   const personPush = Math.min(personTime, T);
@@ -52,7 +62,8 @@ export function boatAt(t) {
     force: contact ? BOAT.force : 0,
     personX,
     boatX,
-    personY: time <= T ? BOAT.footY : BOAT.footY + BOAT.jumpV * flight - 0.5 * G * flight ** 2,
+    personY: time <= T ? supportHeight(float) : releaseY + BOAT.jumpV * flight - 0.5 * G * flight ** 2,
+    ...float,
     personV: time >= landTime ? 0 : aPerson * personPush,
     boatV: aBoat * boatPush,
     personA: contact ? aPerson : 0,

@@ -98,6 +98,7 @@ export function createPerson({ jacket = '#f05139', trousers = '#183e61', hair = 
     const boot = new THREE.Group();
     const upperShoe = new THREE.Mesh(new RoundedBoxGeometry(0.22, 0.085, 0.105, 2, 0.025), M.boot);
     const sole = new THREE.Mesh(new RoundedBoxGeometry(0.23, 0.018, 0.11, 2, 0.008), M.belt);
+    sole.name = side > 0 ? 'RightSole' : 'LeftSole';
     sole.position.y = -0.043;
     boot.add(upperShoe, sole);
     body.add(boot);
@@ -136,9 +137,9 @@ export function createPerson({ jacket = '#f05139', trousers = '#183e61', hair = 
   const aim = new THREE.Vector3();
 
   /** Where a shoulder is (the body's space, before the root's scale) for a lean in radians. */
-  function shoulderAt(side, lean, out) {
+  function shoulderAt(side, lean, out, crouch = CROUCH) {
     const h = SHOULDER.y - HIP_Y;
-    return out.set(Math.sin(lean) * h, HIP_Y - CROUCH + Math.cos(lean) * h, side * SHOULDER.z);
+    return out.set(Math.sin(lean) * h, HIP_Y - crouch + Math.cos(lean) * h, side * SHOULDER.z);
   }
 
   /**
@@ -146,10 +147,12 @@ export function createPerson({ jacket = '#f05139', trousers = '#183e61', hair = 
    * root's scale; `toLocal` makes them from world points) or null (hanging); relax: 0 the hands where they are given,
    * 1 hanging by the sides; stance: how far apart the feet stand along x (m).
    */
-  function pose({ lean = 0.1, hands = [null, null], relax = 0, stance = 0.09, jump = 0 } = {}) {
+  function pose({ lean = 0.1, hands = [null, null], relax = 0, stance = 0.09, jump = 0, crouch = CROUCH, feet = null, footPitch = 0 } = {}) {
+    upper.position.y = HIP_Y - crouch;
+    hipBall.position.y = HIP_Y - crouch;
     upper.rotation.z = -lean;
     for (const arm of arms) {
-      shoulderAt(arm.side, lean, shoulder);
+      shoulderAt(arm.side, lean, shoulder, crouch);
       rest.set(shoulder.x + 0.06, shoulder.y - UPPER - FORE + 0.02, arm.side * (SHOULDER.z + 0.05));
       const given = hands[arm.side > 0 ? 0 : 1];
       if (given) aim.copy(given).lerp(rest, relax);
@@ -162,12 +165,17 @@ export function createPerson({ jacket = '#f05139', trousers = '#183e61', hair = 
     }
     for (const leg of legs) {
       const fwd = leg.side > 0 ? stance : -stance;
-      hip.set(0, HIP_Y - CROUCH - 0.04, leg.side * 0.085);
-      footT.set(fwd, 0.05 + (leg.side < 0 ? jump * 0.25 : 0), leg.side * 0.11);
+      hip.set(0, HIP_Y - crouch - 0.04, leg.side * 0.085);
+      const soleTarget = feet?.[leg.side > 0 ? 0 : 1];
+      if (soleTarget) {
+        // Inverse kinematics keeps the sole planted on a moving, pitched deck.
+        footT.copy(soleTarget).add(new THREE.Vector3(-0.06 - 0.052 * Math.sin(footPitch), -SOLE + 0.005 + 0.052 * Math.cos(footPitch), 0));
+      } else footT.set(fwd, 0.037 + (leg.side < 0 ? jump * 0.25 : 0), leg.side * 0.11);
       reach(hip, footT, THIGH, SHIN, legPole, knee, foot);
       place(leg.thigh, hip, knee, 0.062);
       place(leg.shin, knee, foot, 0.05);
       leg.boot.position.set(foot.x + 0.06, foot.y - 0.005, foot.z);
+      leg.boot.rotation.z = footPitch;
     }
   }
   pose();
