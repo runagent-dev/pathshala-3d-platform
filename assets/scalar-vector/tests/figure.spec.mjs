@@ -120,7 +120,11 @@ test('scalar-vector: the walker follows the route, and a four-direction compass 
   const fig = await openFigure(page, 'scalar-vector');
   await expect(fig.frame.locator('.sv-compass svg')).toHaveAttribute('role', 'img');
   expect(await fig.frame.locator('.sv-compass text').allTextContents()).toEqual(['উ', 'পূ', 'দ', 'প']);
-  const readCompass = () => fig.frame.evaluate(() => window.figure._internals.compass.directions());
+  const readCompass = () =>
+    fig.frame.evaluate(() => {
+      const w = /** @type {any} */ (window);
+      return w.figure._internals.compass.directions();
+    });
   await fig.advance(100);
   let directions = await readCompass();
   expect(directions.n.y).toBeLessThan(-0.99);
@@ -131,8 +135,10 @@ test('scalar-vector: the walker follows the route, and a four-direction compass 
   await fig.advance(1100);
   expect((await fig.call('get')).busy).toBe(true);
   const position = await fig.frame.evaluate(async () => {
-    const { JOURNEY, pointAt } = await import('/assets/scalar-vector/src/journey.js');
-    const app = window.figure,
+    const source = '/assets/scalar-vector/src/journey.js';
+    const { JOURNEY, pointAt } = await import(source);
+    const w = /** @type {any} */ (window);
+    const app = w.figure,
       state = app.getState(),
       walker = app._internals.diagram.traveler;
     const expected = pointAt(state.journey.distance / JOURNEY.length);
@@ -150,7 +156,8 @@ test('scalar-vector: the walker follows the route, and a four-direction compass 
   await expect(fig.frame.locator('.sv-meaning.scalar')).toContainText('১২০ m');
   await expect(fig.frame.locator('.sv-meaning.vector')).toContainText('২০ m উত্তর দিকে');
   await fig.frame.evaluate(() => {
-    const { stage } = window.figure._internals;
+    const w = /** @type {any} */ (window);
+    const { stage } = w.figure._internals;
     stage.camera.position.copy(stage.controls.target).add({ x: 100, y: 200, z: 0 });
     stage.camera.lookAt(stage.controls.target);
     stage.controls.update();
