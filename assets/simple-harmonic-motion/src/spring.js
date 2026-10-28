@@ -28,17 +28,19 @@ class Helix extends THREE.Curve {
 export function createSpringStand({ materials: M }) {
   const root = new THREE.Group();
   root.name = 'SpringStand';
-  const paint = new THREE.MeshPhysicalMaterial({ name: 'StandBase', color: 0x1879b6, roughness: 0.5, clearcoat: 0.3 });
-  const springSteel = new THREE.MeshStandardMaterial({ name: 'SpringSteel', color: 0xe6effa, roughness: 0.38, metalness: 0.6 });
+  const paint = new THREE.MeshPhysicalMaterial({ name: 'StandBase', color: 0x3055c9, roughness: 0.5, clearcoat: 0.3 });
+  const rodPaint = new THREE.MeshPhysicalMaterial({ name: 'StandTeal', color: 0x2dc6d0, roughness: 0.3, metalness: 0.25, clearcoat: 0.4 });
+  const collarPaint = new THREE.MeshStandardMaterial({ name: 'ClampCoral', color: 0xf36b93, roughness: 0.4 });
+  const springSteel = new THREE.MeshStandardMaterial({ name: 'SpringSteel', color: 0x65f1dc, roughness: 0.3, metalness: 0.35 });
 
   // ── the stand: a heavy base, an upright rod, a boss and an arm ──
   const base = new THREE.Mesh(new RoundedBoxGeometry(0.36, 0.026, 0.22, 2, 0.006), paint);
   base.position.set(-0.07, 0.013, 0);
-  const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, TOP + 0.08, 20), M.steel);
+  const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, TOP + 0.08, 20), rodPaint);
   rod.position.set(ROD_X, (TOP + 0.08) / 2 + 0.02, 0);
-  const boss = new THREE.Mesh(new RoundedBoxGeometry(0.045, 0.045, 0.045, 2, 0.008), paint);
+  const boss = new THREE.Mesh(new RoundedBoxGeometry(0.045, 0.045, 0.045, 2, 0.008), collarPaint);
   boss.position.set(ROD_X, TOP + 0.02, 0);
-  const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.23, 16), M.steel);
+  const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.23, 16), rodPaint);
   arm.rotation.z = Math.PI / 2;
   arm.position.set(ROD_X + 0.115, TOP + 0.02, 0);
   const hook = new THREE.Mesh(new THREE.TorusGeometry(0.009, 0.0025, 8, 20), M.steel);

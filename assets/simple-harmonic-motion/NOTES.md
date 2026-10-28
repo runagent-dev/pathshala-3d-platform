@@ -83,3 +83,15 @@ is greatest, then falls to zero at the other end; one full back-and-forth takes 
 - Larger filled speed graph with five tappable moments: selecting one pauses the body at the matching position,
   including the final return to the starting end. A live sentence explains increasing/decreasing speed.
 - Wide frames place the lesson beside the figure to preserve picture height; phones retain the stacked layout.
+
+## Spring graph update (v0.3.0)
+- Keep the existing vertical spring, its 2 kg mass, 50 N/m stiffness and motion controls. Add a violet/plum
+  background, mint coil, turquoise stand, coral clamp, cobalt base and gold masses.
+- Motion view: signed displacement, velocity and acceleration over one period. Positive is UP from equilibrium;
+  the gold/cyan/lilac curves, current numbers and cursors all use the same oscillator state as the mass.
+- Energy view: gold kinetic K and coral potential U in an energy-share ring and time graph, with constant total E.
+  Since this spring is vertical, U is the combined elastic PLUS gravitational potential relative to equilibrium,
+  U = kx²/2; it is NOT elastic energy measured from the spring's natural length. The caption states the reference.
+- Graph views occupy the same space, including while a hand holds the mass (then a release hint hides the graphs).
+  The shared five phase buttons pause/inspect both views. The compact phone view prioritises the scene and charts;
+  its period is written on the common time axis. The swing retains its previous speed-graph lesson.

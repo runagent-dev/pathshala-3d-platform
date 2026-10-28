@@ -90,3 +90,26 @@ describe('simple harmonic motion: places and dots', () => {
     assert.deepEqual(shm.periodChoices(1.5), { right: 3, wrong: [1.5, 0.75, 6] });
   });
 });
+
+describe('vertical spring: acceleration and energy measured from equilibrium', () => {
+  it('trades potential for kinetic energy while preserving the total at every phase and amplitude', () => {
+    for (const amplitude of [0.06, 0.12, 0.15])
+      for (const side of [-1, 1])
+        for (const phase of [0, 0.125, 0.25, 0.5, 0.75, 1]) {
+          const m = shm.motionAt('spring', side * amplitude, phase * shm.period('spring'));
+          const q = shm.springQuantities(m);
+          close(q.total, 0.5 * shm.SPRING.k * amplitude ** 2, 1e-12);
+          close(q.acceleration, -(shm.SPRING.k / shm.SPRING.m) * m.x, 1e-12);
+          if (phase % 0.5 === 0) close(q.kinetic, 0, 1e-12);
+          else if (phase % 0.25 === 0) close(q.potential, 0, 1e-12);
+        }
+  });
+  it('includes gravity: potential relative to equilibrium equals the full elastic-plus-gravity difference', () => {
+    const stretch = shm.springStretch();
+    const atEquilibrium = 0.5 * shm.SPRING.k * stretch ** 2;
+    for (const x of [-0.15, -0.06, 0, 0.06, 0.15]) {
+      const absolute = 0.5 * shm.SPRING.k * (stretch - x) ** 2 + shm.SPRING.m * shm.G * x;
+      close(shm.springQuantities({ x, v: 0 }).potential, absolute - atEquilibrium, 1e-12);
+    }
+  });
+});
