@@ -2,7 +2,25 @@
 
 **Where it goes in the book:** Book pages 84–86, topic 3.8: নিউটনের তৃতীয় গতি সূত্র (Newton's Third Law of Motion). Next to the boxed law, the action–reaction paragraph and চিত্র ৩.১২ (an apple and the Earth pulling each other).
 
-Interactive 3D figure for the Pathshala book.
+Two vivid 3D examples replace the old mass-comparison skaters:
+
+- A schoolboy jumps from a planked wooden boat onto a jetty. Equal and opposite horizontal contact forces act on
+  the boy and boat while his feet push. After takeoff, the contact arrows disappear and separate velocity arrows
+  show the boy moving forward and the boat backward. Water resistance is ignored; time runs at half speed.
+- A red apple above the **whole Earth**, mapped with NASA's locally bundled Blue Marble imagery. Equal gravity
+  arrows act on different bodies. The centre-to-centre guide R matches the book's formula: F = GmM/R² = mg;
+  a_m = g and a_M = F/M = (m/M)g ≈ 1.64 × 10⁻²⁴ m/s², using m = 1 kg and M = 5.98 × 10²⁴ kg.
+  The main sheet has three short results; **Full calculation** opens the full derivation and constants separately. The fall pauses
+  before contact. The picture is explicitly not to scale. Texture credit: [media/README.md](media/README.md).
+
+Five picture-based tap questions cover force equality, separate bodies, boat recoil, the apple's reaction force,
+and the Earth's very small acceleration. Keyboard: Space/Enter/→ runs the action; 1/2 selects the example.
+
+**Version 1.0 integration change:** `example` is now `boat` or `apple`. The removed `equal`, `unequal` and `tried`
+options and skater-specific snapshot fields are no longer supported. `set({push:true})` runs either example;
+`set({at:0.18})` pauses at physical simulation seconds. `get` returns phase, playing/done, force, masses, positions
+and horizontal acceleration for the boat, or fallen distance and both accelerations for the apple. Arrow visibility
+identifies which body each force acts on. `home` rewinds the chosen example; `reset` returns to the boat.
 
 ## Embed
 
@@ -27,9 +45,8 @@ To listen to it or control it from the book page, use the helper shipped in the 
 | Param | Meaning | Values | Default |
 |---|---|---|---|
 | `lang` | Language | `bn` বাংলা · `en` English | `bn` |
-| `example` | Pair | `equal` equal masses · `unequal` light and heavy · `apple` apple and Earth | `equal` |
-| `at` | Start already moving (e.g. 0.9: the skaters are 0.9 s into the push (the apple's clock runs 2 times slower); empty: standing ready) | number |  |
-| `tried` | Pairs already tried (their small results show under the words) | text |  |
+| `example` | Pair | `boat` boy jumps from a boat · `apple` apple and Earth | `boat` |
+| `at` | Start already moving (Physical simulation seconds: e.g. 0.18 shows the boat contact forces; 0.55 shows the boy airborne. Animation runs at half speed.) | number |  |
 | `view` | View | `front` · `3d` | `front` |
 | `mode` | Start in | `explore` learn · `quiz` test | `explore` |
 | `coach` | The ring pulses | `1` · `0` | `1` |
@@ -47,7 +64,7 @@ Every figure answers `ping` with `{ asset, version }`. Send commands with `figur
 | Command | Example payload |
 |---|---|
 | `get` | `{}` |
-| `set` | `{"example":"unequal"}` |
+| `set` | `{"example":"boat"}` |
 | `reset` | `{}` |
 | `practice` | `{}` |
 | `capture` | `{"width":800,"height":500}` |

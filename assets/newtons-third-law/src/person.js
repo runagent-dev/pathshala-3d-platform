@@ -1,8 +1,6 @@
-// A skater built from simple shapes (jacket, dark trousers, skates), real size in metres: about 1.6 m tall before it is
-// scaled. Local +x is forward (the way it faces), +y up, +z its right. pose() puts the hands on given points (two-bone
-// reach, elbows down and back) and leans the body; the hands can relax to hang by the sides. The figure puts two of
-// them face to face with their hands together (a person's reach is only about 0.55 m, so the push has a short stroke).
+// A schoolboy with articulated limbs, complete head and sneakers; local +x points towards the jetty.
 import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
 const HIP_Y = 0.86;
 const THIGH = 0.43;
@@ -10,15 +8,15 @@ const SHIN = 0.41;
 const UPPER = 0.29;
 const FORE = 0.27;
 const SHOULDER = { y: 1.33, z: 0.18 };
-const BLADE = 0.035; // m: the skate's blade under the boot (the body stands this high)
-const CROUCH = 0.1; // m: the knees are bent a little, as a skater stands
+const SOLE = 0.02; // m: the shoe sole under the foot (the body stands this high)
+const CROUCH = 0.1; // m: the knees are bent a little, while preparing to jump
 
 const UP = new THREE.Vector3(0, 1, 0);
 
 /**
  * @param {{ jacket?: string, trousers?: string, hair?: string, skin?: string, name?: string }} [look]
  */
-export function createSkater({ jacket = '#9db6d4', trousers = '#2f3d55', hair = '#1d1d20', skin = '#b98057', name = 'Skater' } = {}) {
+export function createPerson({ jacket = '#f05139', trousers = '#183e61', hair = '#1d1d20', skin = '#b98057', name = 'Boy' } = {}) {
   const root = new THREE.Group();
   root.name = name;
   const mat = (matName, color, roughness = 0.8, metalness = 0) => new THREE.MeshStandardMaterial({ name: matName, color, roughness, metalness });
@@ -27,8 +25,7 @@ export function createSkater({ jacket = '#9db6d4', trousers = '#2f3d55', hair = 
     trousers: mat('Trousers', trousers, 0.85),
     skin: mat('Skin', skin, 0.7),
     hair: mat('Hair', hair, 0.75),
-    boot: mat('Boots', '#262a31', 0.6),
-    blade: mat('Blades', '#c7cdd4', 0.3, 0.85),
+    boot: mat('Sneakers', '#fff3dc', 0.5),
     belt: mat('Belt', '#1d2026', 0.5),
   };
   const unitTube = new THREE.CylinderGeometry(1, 1, 1, 10);
@@ -52,9 +49,9 @@ export function createSkater({ jacket = '#9db6d4', trousers = '#2f3d55', hair = 
     return mesh;
   };
 
-  // the body stands on its blades: everything is lifted by BLADE; the upper body leans about the hips
+  // the body stands on its shoe soles: everything is lifted by SOLE; the upper body leans about the hips
   const body = new THREE.Group();
-  body.position.y = BLADE;
+  body.position.y = SOLE;
   root.add(body);
   const upper = new THREE.Group();
   upper.position.y = HIP_Y - CROUCH;
@@ -80,7 +77,12 @@ export function createSkater({ jacket = '#9db6d4', trousers = '#2f3d55', hair = 
   upper.add(cap);
   const nose = ball(0.018, M.skin, upper);
   nose.position.set(0.105, 0.655, 0);
+  const face = mat('FaceDetails', '#34211b');
   for (const side of [1, -1]) {
+    const ear = ball(0.021, M.skin, upper);
+    ear.position.set(-0.015, 0.655, side * 0.091);
+    const eye = ball(0.009, face, upper);
+    eye.position.set(0.087, 0.68, side * 0.045);
     const sleeve = ball(0.062, M.jacket, upper);
     sleeve.position.set(0, SHOULDER.y - HIP_Y, side * SHOULDER.z);
   }
@@ -93,12 +95,13 @@ export function createSkater({ jacket = '#9db6d4', trousers = '#2f3d55', hair = 
     hand: ball(0.046, M.skin, body),
   }));
   const legs = [1, -1].map((side) => {
-    const boot = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.085, 0.09), M.boot);
-    const blade = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.012, 0.012), M.blade);
-    const post1 = new THREE.Mesh(new THREE.BoxGeometry(0.012, BLADE, 0.012), M.blade);
-    const post2 = post1.clone();
-    body.add(boot, blade, post1, post2);
-    return { side, thigh: tube(M.trousers, body), shin: tube(M.trousers, body), boot, blade, post1, post2 };
+    const boot = new THREE.Group();
+    const upperShoe = new THREE.Mesh(new RoundedBoxGeometry(0.22, 0.085, 0.105, 2, 0.025), M.boot);
+    const sole = new THREE.Mesh(new RoundedBoxGeometry(0.23, 0.018, 0.11, 2, 0.008), M.belt);
+    sole.position.y = -0.043;
+    boot.add(upperShoe, sole);
+    body.add(boot);
+    return { side, thigh: tube(M.trousers, body), shin: tube(M.skin, body), boot };
   });
   const hipBall = ball(0.13, M.trousers, body);
   hipBall.scale.set(0.75, 0.55, 1);
@@ -143,7 +146,7 @@ export function createSkater({ jacket = '#9db6d4', trousers = '#2f3d55', hair = 
    * root's scale; `toLocal` makes them from world points) or null (hanging); relax: 0 the hands where they are given,
    * 1 hanging by the sides; stance: how far apart the feet stand along x (m).
    */
-  function pose({ lean = 0.1, hands = [null, null], relax = 0, stance = 0.09 } = {}) {
+  function pose({ lean = 0.1, hands = [null, null], relax = 0, stance = 0.09, jump = 0 } = {}) {
     upper.rotation.z = -lean;
     for (const arm of arms) {
       shoulderAt(arm.side, lean, shoulder);
@@ -160,14 +163,11 @@ export function createSkater({ jacket = '#9db6d4', trousers = '#2f3d55', hair = 
     for (const leg of legs) {
       const fwd = leg.side > 0 ? stance : -stance;
       hip.set(0, HIP_Y - CROUCH - 0.04, leg.side * 0.085);
-      footT.set(fwd, 0.05, leg.side * 0.11);
+      footT.set(fwd, 0.05 + (leg.side < 0 ? jump * 0.25 : 0), leg.side * 0.11);
       reach(hip, footT, THIGH, SHIN, legPole, knee, foot);
       place(leg.thigh, hip, knee, 0.062);
       place(leg.shin, knee, foot, 0.05);
       leg.boot.position.set(foot.x + 0.06, foot.y - 0.005, foot.z);
-      leg.blade.position.set(foot.x + 0.06, -BLADE + 0.006, foot.z);
-      leg.post1.position.set(foot.x - 0.05, -BLADE / 2, foot.z);
-      leg.post2.position.set(foot.x + 0.17, -BLADE / 2, foot.z);
     }
   }
   pose();

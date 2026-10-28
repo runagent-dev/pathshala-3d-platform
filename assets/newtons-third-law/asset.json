@@ -5,7 +5,7 @@
   "title": "Newton's third law of motion (নিউটনের তৃতীয় গতি সূত্র)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "book": "physics-9-10",
   "page": 84,
   "topic": "3.8",
@@ -13,7 +13,7 @@
   "order": 1,
   "maintainers": ["RadeenXALNW"],
   "units": "m",
-  "description": "Newton's third law (নিউটনের তৃতীয় সূত্র, pages 84–86, 3.8) as an experiment the student runs: two skaters face each other on a smooth floor, hands together; one tap and they push each other with the same steady 10 N for a moment. A pair of equal, opposite arrows is drawn, each on the body it acts on and named (\"A-এর ওপর বল\", \"B-এর ওপর বল\"), so the two never cancel; both skaters move off, and with unequal masses (50 kg and 100 kg) the lighter one accelerates twice as much (a = F/m, 0.2 and 0.1 ms⁻²). The third picture is the book's চিত্র ৩.১২: a 1 kg apple let go above the Earth, the pull on the apple and the pull on the Earth both 9.8 N, while the Earth's acceleration a = (m/M)g is 1.64 × 10⁻²⁴ ms⁻² (M = 5.98 × 10²⁴ kg), too small to draw. The panel is one action, one result, one rule: a big numbered button (\"১ ধাক্কা দাও\") whose same numbered badge rings the hands (a tap on a skater or the apple does the same), one result line and one rule that grows from a question to the book's boxed law, word for word. Honest notes on the view: smooth floor; for the apple, time 2 times slower and not to scale. Test tab: 5 questions (which force is the reaction, why the pair does not cancel, who accelerates more, the pair is equal for any masses, why the Earth does not visibly move). Phone-first, Bangla.",
+  "description": "Newton's third law (Physics 9–10, topic 3.8, pp84–86): a boy jumps from a wooden boat onto a jetty while the boat recoils. Equal, opposite horizontal contact forces act on two different bodies only while his feet push on the boat; after takeoff, separate velocity arrows show the motion. The apple–Earth example shows the complete NASA Blue Marble globe, a red apple, equal and opposite gravitational forces, centre-to-centre distance R and the textbook equations F = GmM/R² = mg, a_m = g and a_M = F/M = (m/M)g ≈ 1.64×10^-24 m/s² for m = 1 kg and M = 5.98×10^24 kg. Sizes and separation are explicitly not to scale. Five tap questions connect the pictures to the force-pair principle. Offline, Bangla/English, with self-contained GLB exports. Version 1.0 replaces the equal/unequal skater example IDs with boat; apple remains apple.",
   "tags": ["force", "newtons-laws", "action-reaction", "third-law", "acceleration", "bangla"],
   "params": [
     {
@@ -27,24 +27,16 @@
       "name": "example",
       "label": "Pair",
       "type": "select",
-      "options": [["equal", "equal masses"], ["unequal", "light and heavy"], ["apple", "apple and Earth"]],
-      "default": "equal"
+      "options": [["boat", "boy jumps from a boat"], ["apple", "apple and Earth"]],
+      "default": "boat"
     },
     {
       "name": "at",
       "label": "Start already moving",
       "type": "number",
       "default": "",
-      "placeholder": "s after the push",
-      "help": "e.g. 0.9: the skaters are 0.9 s into the push (the apple's clock runs 2 times slower); empty: standing ready"
-    },
-    {
-      "name": "tried",
-      "label": "Pairs already tried",
-      "type": "text",
-      "default": "",
-      "placeholder": "equal,unequal",
-      "help": "their small results show under the words"
+      "placeholder": "s into the jump or fall",
+      "help": "Physical simulation seconds: e.g. 0.18 shows the boat contact forces; 0.55 shows the boy airborne. Animation runs at half speed."
     },
     { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
     {
@@ -68,11 +60,10 @@
   ],
   "commands": [
     { "name": "get", "payload": {} },
-    { "name": "set", "payload": { "example": "unequal" } },
+    { "name": "set", "payload": { "example": "boat" } },
     { "name": "set", "payload": { "push": true } },
-    { "name": "set", "payload": { "example": "apple", "push": true } },
-    { "name": "set", "payload": { "at": 0.9 } },
-    { "name": "set", "payload": { "tried": ["equal", "unequal"] } },
+    { "name": "set", "payload": { "at": 0.18 } },
+    { "name": "set", "payload": { "example": "apple", "at": 0.2 } },
     { "name": "set", "payload": { "home": true } },
     { "name": "set", "payload": { "view": "3d" } },
     { "name": "reset", "payload": {} },
@@ -93,27 +84,20 @@
     "practice-end"
   ],
   "export": {
-    "poster": {
-      "params": { "coach": "0", "example": "unequal", "tried": "equal" },
-      "setup": [{ "command": "set", "payload": { "push": true } }]
-    },
+    "poster": { "params": { "coach": "0", "example": "boat", "at": "0.55" } },
     "glb": [
-      {
-        "name": "default",
-        "setup": [{ "command": "set", "payload": { "example": "unequal", "home": true, "animate": false } }]
-      }
+      { "name": "default", "setup": [{ "command": "set", "payload": { "example": "boat", "at": 0.55 } }] },
+      { "name": "apple-earth", "setup": [{ "command": "set", "payload": { "example": "apple", "at": 0.2 } }] }
     ],
     "video": {
       "kind": "script",
-      "seconds": 22,
+      "seconds": 12,
       "fps": 30,
-      "params": { "coach": "0", "example": "equal" },
+      "params": { "coach": "0", "example": "boat" },
       "script": [
-        { "at": 0.8, "command": "set", "payload": { "push": true } },
-        { "at": 8, "command": "set", "payload": { "example": "unequal" } },
-        { "at": 8.8, "command": "set", "payload": { "push": true } },
-        { "at": 16, "command": "set", "payload": { "example": "apple" } },
-        { "at": 16.8, "command": "set", "payload": { "push": true } }
+        { "at": 0.5, "command": "set", "payload": { "push": true } },
+        { "at": 5, "command": "set", "payload": { "example": "apple" } },
+        { "at": 5.6, "command": "set", "payload": { "push": true } }
       ]
     }
   }
