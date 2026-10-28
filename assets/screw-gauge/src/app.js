@@ -17,7 +17,7 @@ import { createGauge, DIM } from './gauge.js';
 import { OBJECTS, OBJECT_KINDS, createObject, randomSize } from './objects.js';
 import { read, format, roundTo, LC, PITCH, DIVISIONS, RANGE } from './reading.js';
 
-export const VERSION = '0.2.1';
+export const VERSION = '0.2.2';
 
 /** Wait (briefly) for the Bangla webfont, so the numbers on the scales are drawn with it. */
 export function loadFonts(timeout = 2500) {
@@ -71,6 +71,8 @@ export function createScrewGaugeApp(root, userOptions = {}) {
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 24, near: 2, far: 6000, environment: 'studio-light' });
   const { camera, controls, scene } = stage;
+  // Read the figure's CSS colour so the magnifier and exported stills match the stage.
+  const stageBackground = getComputedStyle(root).getPropertyValue('--stage-background').trim() || '#ffffff';
   controls.zoomToCursor = true;
   controls.minDistance = 15;
   controls.maxDistance = 1500;
@@ -84,7 +86,12 @@ export function createScrewGaugeApp(root, userOptions = {}) {
   stage.addTicker((dt) => tweener.tick(dt));
   const audio = createAudio(o.sound);
   let coach = null;
-  const loupe = createLoupe({ stage, layer: ui.lensLayer, clearColor: 0xffffff, onDragStart: () => coach?.lensUsed() });
+  const loupe = createLoupe({
+    stage,
+    layer: ui.lensLayer,
+    clearColor: new THREE.Color(stageBackground).getHex(),
+    onDragStart: () => coach?.lensUsed(),
+  });
 
   // A soft shadow on an invisible "page" behind it, so it reads like a figure on paper.
   if (o.shadow && o.theme !== 'dark') {
@@ -841,7 +848,7 @@ export function createScrewGaugeApp(root, userOptions = {}) {
     },
     startPractice: () => quiz.start(),
     stopPractice: () => quiz.stop(),
-    capture: (opts) => stage.capture(opts),
+    capture: ({ background = stageBackground, ...opts } = {}) => stage.capture({ ...opts, background }),
     /** The gauge (with the object between its faces, if any) for GLB export. */
     exportRoot: () => gauge.root,
     dispose() {

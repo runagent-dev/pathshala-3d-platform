@@ -4,6 +4,10 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
 #app { position: fixed; inset: 0; }
 body.bg-transparent { background: transparent; }
 
+/* Golden amber separates the graphite frame and silver scales from the page. */
+.pvc[data-theme='light'] { --stage-background: #f4b13d; }
+.pvc[data-theme='light'] .pvc-stage { background: var(--stage-background); }
+
 .pvc { --c-lin: #1c6fd9; --c-cir: #d9480f; --c-lc: #6741d9; }
 .pvc-t.lin { --c: var(--c-lin); }
 .pvc-t.cir { --c: var(--c-cir); }
