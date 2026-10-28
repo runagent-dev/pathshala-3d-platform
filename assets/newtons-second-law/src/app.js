@@ -551,55 +551,51 @@ export function createApp(root, options = {}) {
     { dx: 30 * way, dy: -14 },
   ];
   let mAfterV = false;
+  let diagramLabelSet = '';
   function labelsFor() {
+    const compactDiagram = stage.height < 430 || stage.width < 500;
+    const activeDiagramLabels = `${compactDiagram}:${Object.entries(diagram.arrows)
+      .filter(([, a]) => diagram.root.visible && a.root.visible)
+      .map(([key]) => key)
+      .join(',')}`;
+    if (activeDiagramLabels !== diagramLabelSet) {
+      for (const key of Object.keys(diagram.arrows)) anno.remove(`diagram-${key}`);
+      diagramLabelSet = activeDiagramLabels;
+    }
     for (const [key, arr] of Object.entries(diagram.arrows)) {
       const id = `diagram-${key}`;
       if (!diagram.root.visible || !arr.root.visible) {
         anno.remove(id);
         continue;
       }
+      const fallbackSpots = [24, -24, 48, -48, 80, -80, 112, -112].flatMap((dx) => [0, 24, -24, 48, -48, 72, -72].map((dy) => ({ dx, dy })));
+      const preferredSpots =
+        key === 'normal'
+          ? [
+              { dx: 16, dy: -10 },
+              { dx: -16, dy: -10 },
+              { dx: 40, dy: -10 },
+              { dx: -40, dy: -10 },
+            ]
+          : key === 'weight'
+            ? [
+                { dx: 18, dy: 0 },
+                { dx: -18, dy: 0 },
+                { dx: 48, dy: 0 },
+                { dx: -48, dy: 0 },
+              ]
+            : [
+                { dx: 18 * Math.sign(diagram.values[key]), dy: 0 },
+                { dx: 0, dy: 24 },
+                { dx: 0, dy: -24 },
+              ];
       label(id, {
-        text: t(`${stage.height < 280 || stage.width < 500 ? 'd_short_' : 'd_'}${key}`, {
+        text: t(`${compactDiagram ? 'd_short_' : 'd_'}${key}`, {
           v: sgn(['F1', 'F2', 'contact'].includes(key) ? diagram.values[key] : Math.abs(diagram.values[key])),
         }),
         point: () => diagram.point(key),
         color: key === 'weight' ? '#6741b5' : key === 'friction' ? '#b62249' : '#224866',
-        spots:
-          key === 'normal'
-            ? [
-                { dx: 16, dy: -10 },
-                { dx: -16, dy: -10 },
-                { dx: 40, dy: -10 },
-                { dx: -40, dy: -10 },
-                { dx: 64, dy: -10 },
-                { dx: -64, dy: -10 },
-              ]
-            : key === 'weight'
-              ? [
-                  { dx: 18, dy: 0 },
-                  { dx: -18, dy: 0 },
-                  { dx: 48, dy: 0 },
-                  { dx: -48, dy: 0 },
-                  { dx: 72, dy: 0 },
-                  { dx: -72, dy: 0 },
-                  { dx: 100, dy: -24 },
-                  { dx: -100, dy: -24 },
-                  { dx: 120, dy: -36 },
-                  { dx: -120, dy: -36 },
-                  { dx: 100, dy: 48 },
-                  { dx: -100, dy: 48 },
-                  { dx: 48, dy: 48 },
-                  { dx: -48, dy: 48 },
-                ]
-              : [
-                  { dx: 18 * Math.sign(diagram.values[key]), dy: 0 },
-                  { dx: 0, dy: 24 },
-                  { dx: 0, dy: -24 },
-                  { dx: 42 * Math.sign(diagram.values[key]), dy: 0 },
-                  { dx: 64 * Math.sign(diagram.values[key]), dy: 24 },
-                  { dx: 64 * Math.sign(diagram.values[key]), dy: -24 },
-                  { dx: 42 * Math.sign(diagram.values[key]), dy: 40 },
-                ],
+        spots: [...preferredSpots, ...fallbackSpots],
         optional: true,
       });
     }
@@ -1122,6 +1118,7 @@ export function createApp(root, options = {}) {
     tweener.cancel('camera');
   });
   stage.onResize(() => {
+    placeArrows(state());
     if (!s.userMovedCamera) {
       // a new shape of the view (a phone turned): how far along the lane it must be is worked out again, also when
       // the run is held or over (nothing ticks then), so the cart is never cut off at the edge
