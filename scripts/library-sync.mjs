@@ -28,6 +28,7 @@
 import path from 'node:path';
 import { parseArgs } from 'node:util';
 import { LockedError } from './lib/library/lock.mjs';
+import { ENV_FILE_NAME, loadEnvFile } from './lib/library/env-file.mjs';
 import { announceSync } from './lib/library/notify.mjs';
 import { DEFAULT_CACHE_DIR, reconcile } from './lib/library/reconcile.mjs';
 
@@ -70,6 +71,19 @@ if (values.notify && values['no-notify']) {
 if (values.help) {
   console.log(HELP);
   process.exit(0);
+}
+
+// settings kept in a git-ignored file at the repo root (.env.library: LIBRARY_TOKEN, LIBRARY_SYNC_HOOK_URL, LIBRARY_SYNC_HOOK_TOKEN); the shell wins
+const envFile = loadEnvFile(path.resolve(import.meta.dirname, '..', ENV_FILE_NAME));
+if (envFile.found && !values.json) {
+  console.log(
+    `${ENV_FILE_NAME}: ${envFile.loaded.length ? `took ${envFile.loaded.join(', ')} (values are never shown)` : 'nothing new (the shell already sets what it has)'}`,
+  );
+  if (envFile.ignored.length)
+    console.log(
+      `${ENV_FILE_NAME}: ignored ${envFile.ignored.join(', ')} (only the library token and the Books notification settings are read from it)`,
+    );
+  if (envFile.open) console.log(`${ENV_FILE_NAME}: other users of this computer can read it; run: chmod 600 ${ENV_FILE_NAME}`);
 }
 
 try {

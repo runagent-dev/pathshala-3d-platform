@@ -18,6 +18,50 @@ Decision records: [0007](decisions/0007-library-sync.md), [0008](decisions/0008-
 libraries are chalk-format's bytes). Chalk side: the lab spec (`spec/1.1` §3, `spec/1.5`) and the
 registry API (`spec/1.2/registry-api.md`) in the chalk-format repo.
 
+## Publishing runbook: the exact steps
+
+**Where things are.** Library: `https://library.pathshalax.com` (Coolify app `chalk-library`; reading and searching are open, **writing needs a
+token**). Books server (updates the labs inside books after a sync): `https://internal.pathshalax.com` (Coolify app `chalkbook-internal:main`; its
+side is in that repo's README, "Publishing figures and updating books"). The sync runs **on a computer with this repo**, not in Coolify.
+
+**Once per computer**
+
+1. `git clone` the repo, Node 22, `npm ci` (posters and models also need `npm run setup` for Chromium, and 10 GB free disk).
+2. Create `.env.library` in the repo root (git-ignored; `chmod 600 .env.library`). The sync reads exactly these names from it, the shell wins:
+
+   ```
+   LIBRARY_TOKEN=<a write token of the library: one of the tokens in the TOKENS setting of the Coolify app chalk-library>
+   LIBRARY_SYNC_HOOK_URL=https://internal.pathshalax.com/api/library-sync/hook
+   LIBRARY_SYNC_HOOK_TOKEN=<the same value as LIBRARY_SYNC_HOOK_TOKEN on the Books server (Coolify app chalkbook-internal:main)>
+   ```
+
+   The last two are optional: without them the library is updated but the Books server is not told (`--notify` later, below). Values are
+   never printed. The same token works for local and production because both are the same library and database.
+
+**Every time figures are added or changed**
+
+1. Work on a branch, **commit everything** (production publishes only from a clean worktree), and **bump `version` in `asset.json`** of every
+   figure whose contents changed (a changed figure under an old version is blocked: a version always means the same bytes).
+2. Look first (dry run, writes nothing, needs no token):
+   `npm run library:sync -- --library https://library.pathshalax.com --tier production --formats lab`
+   Read the table: `new`, `changed`, `repair`, `unchanged`, `blocked` (with the reason), and the libraries line.
+3. Publish: the same command plus `--apply`. Each lab runs once in a sandbox before it is published; one figure failing does not stop the
+   others (exit code 1 if any failed). Safe to run again.
+4. Posters and models too (needs Chromium and 10 GB free, `PATHSHALA_MIN_FREE_GB` lowers the limit): `--formats lab,poster,glb`.
+5. Only some figures: `--only screw-gauge,vernier-caliper`. Only figures touched since a ref: `--changed-since origin/main`.
+6. Check: the same command without `--apply` must say `unchanged` for everything (`--check` exits 1 when the library is behind).
+7. **Books follow automatically**: after a production `--apply` that changed something, the sync tells the Books server which figures changed
+   (needs the two hook settings above); it answers with how many embeds it updated or held for review (major versions are held: *Updates* page
+   in the dashboard). If that failed or was not set up: `npm run library:sync -- --library https://library.pathshalax.com --tier production --notify`.
+
+**Other things you may need.** A figure removed from the repo is withdrawn only with `--allow-withdraw` (final: a withdrawn key never comes
+back); a license is optional (`--license CC-BY-4.0` or `"license"` in `library-sync.config.json`); `--libraries own` publishes this repo's own
+three.js copies instead of the shared catalog (see "The shared libraries"); `--no-verify` skips the sandbox run.
+
+**Asking Claude to do it.** Say "publish the new figures to the library". The checklist for Claude: read this section, run the dry run, show the
+table, wait for the token in `.env.library` (never ask for it in chat), run with `--apply`, run the dry run again to confirm `unchanged`, then
+report what the Books server answered.
+
 ## What it publishes
 
 For each figure, as separate library items that a book can use on their own or together:

@@ -20,6 +20,12 @@ The studio lists every figure in book order, previews it in book-sized frames (p
 reloads it whenever a file changes, lets you try its URL options, shows the messages it sends to the book, keeps
 notes and reviews, captures thumbnails, exports a static GLB and builds the handoff zip.
 
+## Publishing figures to the library
+
+`npm run library:sync` publishes the figures as Chalk labs (and posters and models) to the Chalk library, and tells the Books server so the
+books follow. The exact steps, the token file (`.env.library`) and the commands are in
+[docs/library-sync.md](docs/library-sync.md#publishing-runbook-the-exact-steps).
+
 ## The studio on a server
 
 The proper setup is `npm run studio` as a service behind HTTPS: see [docs/ops/runbook.md](docs/ops/runbook.md).
