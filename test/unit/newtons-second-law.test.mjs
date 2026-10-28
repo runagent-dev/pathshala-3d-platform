@@ -17,6 +17,8 @@ import {
   PUSH_TIME,
   pairRatio,
   planOf,
+  EXAMPLES,
+  forceBalance,
   plain,
   pusherAt,
   RATIO_KEYS,
@@ -181,5 +183,65 @@ describe('newtons-second-law: the test', () => {
     assert.equal(plain(-1), '-1');
     assert.equal(round(-0.0001, 2), 0);
     assert.equal(round(1.005, 2), 1.01);
+  });
+});
+
+describe('newtons-second-law: resultant force with resistance and buffer contact', () => {
+  test('20 N resistance changes the acceleration and breaks naive doubling of applied force', () => {
+    const one = planOf({ ...EXAMPLES.base, friction: 20 });
+    const two = planOf({ ...EXAMPLES.force, friction: 20 });
+    const heavy = planOf({ ...EXAMPLES.mass, friction: 20 });
+    assert.equal(one.a, 0.8);
+    assert.equal(two.a, 1.8);
+    assert.equal(heavy.a, 0.4);
+    const r = runAt(two, 1);
+    assert.equal(r.F, 180);
+    assert.equal(r.applied, 200);
+    assert.equal(r.drag, -20);
+    assert.notEqual(two.a / one.a, 2);
+    assert.equal(heavy.a / one.a, 0.5);
+  });
+  test('all external horizontal forces sum to ma, including the stopping contact force', () => {
+    for (const ex of Object.values(EXAMPLES))
+      for (const friction of [0, 20]) {
+        const plan = planOf({ ...ex, friction });
+        for (const seg of plan.segs) {
+          const r = runAt(plan, seg.t0 + seg.dur / 2);
+          const f = forceBalance(r, plan.m, plan.pushers);
+          assert.ok(Math.abs(f.F1 + f.F2 + f.friction + f.contact - f.net) < 1e-7);
+          assert.ok(Math.abs(f.net - plan.m * r.a) < 1e-7);
+          assert.equal(f.normal, f.weight);
+          const dt = Math.min(1e-4, seg.dur / 100);
+          const rate = (plan.m * (runAt(plan, r.t + dt).v - runAt(plan, r.t - dt).v)) / (2 * dt);
+          assert.ok(Math.abs(rate - r.F) < 1e-4);
+        }
+      }
+  });
+  test('after release friction slows the cart and can stop a heavy cart before the buffer', () => {
+    const plan = planOf({ ...EXAMPLES.mass, friction: 20 });
+    const a = runAt(plan, 2.5),
+      b = runAt(plan, 3.5);
+    assert.ok(b.v < a.v);
+    assert.equal(a.F, -20);
+    assert.equal(a.a, -0.1);
+    assert.equal(plan.endReason, 'friction');
+    assert.ok(plan.xEnd < BUFFER_X);
+    const stopped = runAt(plan, plan.end + 0.1);
+    assert.equal(stopped.v, 0);
+    assert.equal(stopped.F, 0);
+    assert.equal(stopped.drag, 0);
+    assert.equal(stopped.contact, 0);
+  });
+  test('frictional pieces preserve position and velocity at every boundary', () => {
+    for (const ex of Object.values(EXAMPLES)) {
+      const p = planOf({ ...ex, friction: 20 });
+      for (const seg of p.segs) {
+        const time = seg.t0 + seg.dur;
+        const a = runAt(p, time - 1e-8),
+          b = runAt(p, time + 1e-8);
+        assert.ok(Math.abs(a.x - b.x) < 1e-5);
+        assert.ok(Math.abs(a.v - b.v) < 1e-5);
+      }
+    }
   });
 });

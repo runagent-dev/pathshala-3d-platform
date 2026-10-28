@@ -93,3 +93,24 @@ acceleration; a force against the motion makes the momentum change backward (the
   constant as Latin "1"; the figure writes Bangla digits (k = ১).
 - Words the figure adds that the page doesn't use: মসৃণ মেঝে, বস্তা, বোঝাই, ডান দিক ধনাত্মক (+) ধরে (as in the
   chapter's other figures).
+
+## Owner reference integration (v0.2.0)
+The new reference shows two children or an adult pushing a wagon with a seated child, plus force/free-body
+diagrams. These are now live procedural 3D models: a coral wagon, complete articulated people, turning wheels
+and a seated 20 kg passenger. The unloaded system is cart 80 kg + child 20 kg = 100 kg; each cargo sack adds 50 kg.
+Pushers are outside the system. Existing example IDs and the smooth-floor results are retained.
+
+The optional live 3D diagram shows separate pushes F1/F2, a constant 20 N resisting force when enabled, weight
+W=mg and ground support N=mg. Its arrows are explicitly schematic rather than on a common force scale. All
+components and the current net force, mass and acceleration come from the same piecewise motion state.
+Coasting with friction decelerates; it can stop before the buffer. Buffer contact now contributes its real net
+force rather than an unphysical zero force during nonzero acceleration. The contact arrow is schematic.
+
+The panel presents F=ma and the current numerical force sum and acceleration. A separate formula sheet retains
+the exact textbook law and derives F=Δp/Δt=ma at constant mass, using SI k=1 and 1 N=1 kg m/s². The quiz uses
+the smooth model and restores the student's chosen floor/diagram afterwards. Changing the floor restarts the
+comparison and clears prior measured results. Colours are deliberately saturated at the owner's request.
+
+On short phone canvases the force diagram moves beside the cart, rather than making the figures tiny above it.
+The pause/resume control holds a moment for reading its forces. Walking feet stay fixed during each stance,
+and a browser geometry regression checks a planted shoe and hands aligned with the moving handle.

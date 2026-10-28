@@ -1,13 +1,14 @@
-// Newton's second law (book pages 75–76, topic 3.6), the maths: a handcart (ঠেলাগাড়ি) on a smooth floor, pushed for
-// 2 s by one or two people (100 N each), empty (100 kg) or with two 50 kg sacks of rice. While the push lasts the
-// acceleration is a = F / m (F = ma with the book's k = 1); after it the cart rolls on at the velocity it has (no
-// friction, no force), until the sacks at the end of the floor stop it. In the "back" example a second person stands
-// in front and pushes back (to the left) for 2 s: the velocity falls from 2 m/s to 0. Real numbers, real time, metres.
-// Pure functions only (unit-tested in test/unit/newtons-second-law.test.mjs).
+// Constant-mass wagon system: 80 kg cart + 20 kg passenger, plus 50 kg per cargo sack.
+// Applied pushes last 2 s. Optional constant resistance is included in the resultant during push,
+// coast and braking; a soft buffer supplies the contact force at the end of the lane. SI units.
+// Pure motion and force accounting; unit tested in test/unit/newtons-second-law.test.mjs.
 
 export const PUSH_TIME = 2; // s: every push lasts this long
 export const PERSON_FORCE = 100; // N: one person's push
-export const CART_MASS = 100; // kg: the empty handcart
+export const CART_OWN_MASS = 80;
+export const RIDER_MASS = 20;
+export const GRAVITY = 9.8;
+export const CART_MASS = CART_OWN_MASS + RIDER_MASS; // kg: cart plus passenger
 export const SACK_MASS = 50; // kg: one sack of rice
 export const START_X = 0; // m: where the cart's front waits
 export const BUFFER_X = 5.4; // m: the cart's front meets the sacks at the end of the floor here
@@ -44,36 +45,49 @@ export const plain = (x, d = 2) => String(round(x, d));
  *   coast  nobody pushes: the velocity stays
  *   brake  the person in front pushes backward with 100 N ("back" only)
  *   stop   the sacks at the end of the floor stop the cart over GIVE m
- * @param {string | { pushers: number, sacks: number, back?: boolean, F?: number }} which
+ * @param {string | { pushers: number, sacks: number, back?: boolean, F?: number, friction?: number }} which
  */
 export function planOf(which) {
   const ex = typeof which === 'string' ? (EXAMPLES[which] ?? EXAMPLES.base) : which;
   const id = typeof which === 'string' && EXAMPLES[which] ? which : null;
   const m = massOf(ex.sacks);
   const F = ex.F ?? forceOf(ex.pushers);
-  const a = F / m;
-  /** @type {Array<{ kind: 'push' | 'coast' | 'brake' | 'stop', t0: number, dur: number, x0: number, v0: number, a: number, F: number }>} */
+  const friction = Math.max(0, Number(ex.friction) || 0);
+  const a = Math.max(0, F - friction) / m;
   const segs = [];
-  let t = 0;
-  let x = START_X;
-  let v = 0;
-  const add = (kind, dur, acc, force) => {
-    segs.push({ kind, t0: t, dur, x0: x, v0: v, a: acc, F: force });
+  let t = 0,
+    x = START_X,
+    v = 0;
+  const add = (kind, dur, acc, applied, drag = 0, contact = 0) => {
+    if (dur <= 1e-10) return;
+    segs.push({ kind, t0: t, dur, x0: x, v0: v, a: acc, F: applied + drag + contact, applied, drag, contact });
     x += v * dur + 0.5 * acc * dur * dur;
-    v += acc * dur;
+    v = Math.max(0, v + acc * dur);
     t += dur;
   };
-  add('push', PUSH_TIME, a, F);
+  add('push', PUSH_TIME, a, F, -Math.min(friction, F));
   const back = Boolean(ex.back);
-  if (back) {
-    add('coast', (CATCH_X - x) / v, 0, 0);
-    add('brake', PUSH_TIME, -PERSON_FORCE / m, -PERSON_FORCE);
+  let endReason = back ? 'brake' : 'buffer';
+  const destination = back ? CATCH_X : BUFFER_X;
+  const distance = Math.max(0, destination - x);
+  const decel = friction / m;
+  if (v <= 1e-9 || (decel > 0 && (v * v) / (2 * decel) <= distance)) {
+    if (v > 0) add('coast', v / decel, -decel, 0, -friction);
+    endReason = 'friction';
   } else {
-    add('coast', Math.max(0, (BUFFER_X - x) / v), 0, 0);
-    const dur = (2 * GIVE) / v;
-    add('stop', dur, -v / dur, 0);
+    const speedAtEnd = Math.sqrt(Math.max(0, v * v - 2 * decel * distance));
+    const coastTime = decel > 0 ? (v - speedAtEnd) / decel : distance / v;
+    add('coast', coastTime, -decel, 0, -friction);
+    if (back) {
+      const acc = -(PERSON_FORCE + friction) / m;
+      add('brake', v / -acc, acc, -PERSON_FORCE, -friction);
+    } else {
+      const dur = (2 * GIVE) / v;
+      const acc = -v / dur;
+      add('stop', dur, acc, 0, -friction, m * acc + friction);
+    }
   }
-  return { id, m, F, a, back, pushers: ex.pushers, sacks: ex.sacks, segs, end: t, xEnd: x };
+  return { id, m, F, a, friction, endReason, back, pushers: ex.pushers, sacks: ex.sacks, segs, end: t, xEnd: x };
 }
 
 /**
@@ -83,19 +97,30 @@ export function planOf(which) {
  * @param {number} t
  */
 export function runAt(plan, t) {
-  if (t <= 0) return { phase: 'rest', x: START_X, v: 0, a: 0, F: 0, t: 0, seg: null };
+  if (t <= 0) return { phase: 'rest', x: START_X, v: 0, a: 0, F: 0, applied: 0, drag: 0, contact: 0, t: 0, seg: null };
   for (const seg of plan.segs) {
     if (t < seg.t0 + seg.dur) {
       const s = t - seg.t0;
-      return { phase: seg.kind, x: seg.x0 + seg.v0 * s + 0.5 * seg.a * s * s, v: seg.v0 + seg.a * s, a: seg.a, F: seg.F, t, seg };
+      return {
+        phase: seg.kind,
+        x: seg.x0 + seg.v0 * s + 0.5 * seg.a * s * s,
+        v: seg.v0 + seg.a * s,
+        a: seg.a,
+        F: seg.F,
+        applied: seg.applied,
+        drag: seg.drag,
+        contact: seg.contact,
+        t,
+        seg,
+      };
     }
   }
-  return { phase: 'stopped', x: plan.xEnd, v: 0, a: 0, F: 0, t, seg: null };
+  return { phase: 'stopped', x: plan.xEnd, v: 0, a: 0, F: 0, applied: 0, drag: 0, contact: 0, t, seg: null };
 }
 
 /** The piece whose acceleration the student measures: the push, or in "back" the push backward. */
 export function measuredSeg(plan) {
-  return plan.segs.find((s) => s.kind === (plan.back ? 'brake' : 'push'));
+  return plan.segs.find((s) => s.kind === (plan.back ? 'brake' : 'push')) ?? plan.segs[0];
 }
 
 /**
@@ -106,7 +131,7 @@ export function measured(plan) {
   const seg = measuredSeg(plan);
   const u = round(seg.v0, 2);
   const v = round(seg.v0 + seg.a * seg.dur, 2);
-  return { u, v, t: seg.dur, a: round((v - u) / seg.dur, 3), F: seg.F, m: plan.m, at: seg.t0 + seg.dur, from: seg.t0 };
+  return { u, v, t: seg.dur, a: round(seg.a, 3), F: seg.F, m: plan.m, at: seg.t0 + seg.dur, from: seg.t0 };
 }
 
 /** Times (s after the push began) of the marks the cart's front leaves: every MARK_STEP s until it stops. */
@@ -215,3 +240,17 @@ export function pairRatio({ a, b }) {
 }
 /** The words for a ratio of accelerations (keys of i18n: r_same, r_twice, r_half, r_four, r_quarter). */
 export const RATIO_KEYS = { 1: 'r_same', 2: 'r_twice', 0.5: 'r_half', 4: 'r_four', 0.25: 'r_quarter' };
+
+/** External forces on cart + passenger + cargo; pushers are outside the system. */
+export function forceBalance(state, mass, pushers = 1) {
+  const applied = state.applied || 0;
+  return {
+    F1: applied / pushers,
+    F2: pushers > 1 ? applied / pushers : 0,
+    friction: state.drag || 0,
+    contact: state.contact || 0,
+    net: state.F || 0,
+    normal: mass * GRAVITY,
+    weight: mass * GRAVITY,
+  };
+}
