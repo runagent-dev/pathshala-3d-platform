@@ -213,21 +213,34 @@ Exports need headless Chromium and, like `npm run export`, 10 GB free disk; `PAT
 
 The books in the Books dashboard (chalkbook-internal) hold labs and 3D models by exact version. Their update job brings every book up to
 the library's current versions (same-major updates apply by themselves; a major or breaking one waits for a person). So that this happens
-**at once** and not on some timer, a production sync ends by telling the Books server.
+**at once** and not on some timer, a production sync ends by telling the Books server, **naming the figures it changed**: the server then looks only
+at the labs and models of those figures.
 
 | Setting (environment only, never a flag) | |
 |---|---|
-| `LIBRARY_SYNC_HOOK_URL` | the endpoint, for example `https://<books host>/api/library-sync`. `https`, except `http://127.0.0.1` and `http://localhost` (for tests) |
+| `LIBRARY_SYNC_HOOK_URL` | the endpoint, for example `https://<books host>/api/library-sync/hook`. `https`, except `http://127.0.0.1` and `http://localhost` (for tests) |
 | `LIBRARY_SYNC_HOOK_TOKEN` | the shared secret, sent as `Authorization: Bearer`. It is never printed or written anywhere, not even if the server echoes it |
 
 **When it fires:** after `--apply --tier production` (not a dry run, not `--check`, not staging), when at least one figure was
 published or withdrawn, or a shared library was repaired. Nothing changed: nothing is sent. `--notify` sends it anyway (still only
 for a production `--apply`; it explains itself when it does not), `--no-notify` never sends.
 
-**What is sent:** `POST` with `{"tier":"production","syncedAt":"<time>","published":<n>,"withdrawn":<n>}`: numbers only. The server runs
-the update **before it answers** (up to 10 minutes; the sync then gives up waiting and says the update may still be running) and
-replies `{"ok":true,"applied":n,"review":n,"failed":n,"books":n}`, printed as `Books updated: 3 applied, 1 need review, 0 failed`.
-Items that need review are listed in the dashboard under Books, Updates.
+**What is sent:** `POST` with `{"tier":"production","syncedAt":"<time>","published":<n>,"withdrawn":<n>,"figures":["screw-gauge","vernier-caliper"]}`:
+numbers and figure ids only. `figures` are the ids (the slug the library tags its items with, `figure:<id>`) of every figure this sync
+**published or withdrew**, unique and sorted; unchanged, blocked and failed figures are not in it. The server runs the update **before it
+answers** (up to 10 minutes; the sync then gives up waiting and says the update may still be running) and replies
+`{"ok":true,"applied":n,"review":n,"failed":n,"books":n}`, printed as `Books updated: 3 applied, 1 need review, 0 failed (figures: screw-gauge, vernier-caliper)`
+(at most five names, then `+N more`). Items that need review are listed in the dashboard under Books, Updates.
+
+| `figures` | When | What the server does |
+|---|---|---|
+| a list | the normal case | updates only the labs and models of those figures |
+| `[]` | the sync only repaired a shared library; no figure changed | nothing to update in books; answers ok |
+| left out | more than 200 figures changed (a first full publish), or `--notify` (always a full run), or the report cannot say | updates everything; the line says `(all figures)` |
+
+A figure id that is not a plausible id (`^[a-z0-9][a-z0-9._-]{0,120}$`) is left out of the list, with one line saying which. A server
+that answers `"scope":"all"` (one that does not read `figures` yet) is believed: the line then says `(all figures)`, and nothing is lost,
+because the update is complete whichever way it runs. The server must read `figures` for the narrowing to happen.
 
 **When it goes wrong, the sync does not.** The library is already updated at that point, so a failed notification never changes
 the exit code and never undoes anything. It prints what happened and ends with `Books were NOT notified; run: npm run library:sync
@@ -243,8 +256,8 @@ the exit code and never undoes anything. It prints what happened and ends with `
 | 502 / 504, network error | server or network trouble | retried twice, then reported |
 | a redirect | refused: it could carry the token to another host | reported; use the final address |
 
-To re-send without publishing anything: `npm run library:sync -- --library <url> --tier production --apply --notify` (nothing is
-republished when nothing changed). The last outcome is kept in `<cache-dir>/last-notification.json` (time, status, counts; no secrets).
+`--notify` is a **full run**: it sends no `figures`, so it also repairs a notification that was missed. To re-send without publishing anything: `npm run library:sync -- --library <url> --tier production --apply --notify` (nothing is
+republished when nothing changed). The last outcome is kept in `<cache-dir>/last-notification.json` (time, status, counts, `scope` and the number of figures; no secrets).
 
 ## Trying it on your machine
 
@@ -281,5 +294,5 @@ changed figure does not republish the libraries. It refuses a library that is no
 - **Fonts.** About 190 KiB of every lab is the embedded Bengali font; a shared font as a lab `asset` would shrink them if the
   reader supports fonts from assets.
 - **Video** is only built with `--formats video` and was not run in the scenarios.
-- **Telling the Books server** was tested against a stand-in HTTP server here, not against the real Books endpoint (built in parallel in chalkbook-internal).
+- **Telling the Books server** is tested here against a stand-in HTTP server. The `figures` list needs the Books server to read it (chalkbook-internal); until it does, every notification is a full update, which is correct, only not narrowed.
 - Which library to publish to (staging or production) is for the owners to say; nothing here knows or defaults to either.
