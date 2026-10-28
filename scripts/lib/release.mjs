@@ -7,7 +7,8 @@ import { gitInfo, isTracked } from './git.mjs';
 import { assetDir, ROOT } from './paths.mjs';
 import { readStatus } from './status.mjs';
 
-export const MIN_FREE_BYTES = 10 * 1024 ** 3; // exports refuse to start with less free disk than this
+// exports refuse to start with less free disk than this (10 GB; PATHSHALA_MIN_FREE_GB lowers it on a small disk, for example in CI)
+export const MIN_FREE_BYTES = (Number(process.env.PATHSHALA_MIN_FREE_GB) || 10) * 1024 ** 3;
 export const releaseTag = (id, version) => `${id}@v${version}`;
 
 function tagExists(tag) {
