@@ -22,6 +22,7 @@ import { createQuiz } from '@shared/student/quiz.js';
 import { bindCleanSheet, buildStudentShell, cleanSheet } from '@shared/student/shell.js';
 import { createTweener, ease } from '@shared/tween.js';
 import { createArrow } from './arrow.js';
+import { createPresentation } from './presentation.js';
 import { fitPose } from './camera.js';
 import { ARC, COMB_SIZE, FEATURED, HEAD, createCombScene, hairSlope, hairTop } from './comb-scene.js';
 import { createI18n } from './i18n.js';
@@ -110,6 +111,7 @@ export function createApp(root, options = {}) {
   // a long lens (narrow field of view): the head, nearer the camera than the table, is not drawn much bigger than it is
   const stage = createStage(ui.canvasHost, { fov: 20, near: 5, far: 12000, environment: 'studio-light' });
   const { camera, controls, scene } = stage;
+  const presentation = createPresentation(stage, o.bg === 'transparent');
   controls.minDistance = 120;
   controls.maxDistance = 4000;
   controls.maxPolarAngle = Math.PI * 0.49; // never under the table
@@ -320,6 +322,7 @@ export function createApp(root, options = {}) {
     const tnow = now();
     let busy = false;
     const q = s.comb.charge;
+    cs.updateChargeMarkers(camera, q > 0 && atPaper() && s.showArrows);
     const r = reach(q);
     s.bits.forEach((st, i) => {
       const b = cs.bits[i];
@@ -791,10 +794,26 @@ export function createApp(root, options = {}) {
           avoid: [() => combBox(2)],
         });
       else anno.remove('charge');
-      if (!lifted() && !quizzing)
+      if (s.comb.charge > 0 && !quizzing)
+        label('hair-charge', {
+          text: t('lbl_hair_charge'),
+          kind: 'callout',
+          color: '#b52b42',
+          point: cs.points.positive,
+          spots: [
+            { dx: -25, dy: -32 },
+            { dx: -40, dy: -46 },
+            { dx: -52, dy: 0 },
+            { dx: 34, dy: -40 },
+          ],
+          optional: true,
+          avoid: [() => combBox(), headBox],
+        });
+      else anno.remove('hair-charge');
+      if ((!lifted() || (s.comb.charge > 0 && atPaper())) && !quizzing)
         label('paper', {
-          text: t('lbl_paper'),
-          point: () => PAPER_LABEL_AT,
+          text: t(s.comb.charge > 0 && atPaper() ? 'lbl_paper_neutral' : 'lbl_paper'),
+          point: () => (atPaper() ? cs.bits[FEATURED].group.position : PAPER_LABEL_AT),
           spots: [
             { dx: 0, dy: 26 },
             { dx: -30, dy: 24 },
@@ -803,12 +822,12 @@ export function createApp(root, options = {}) {
             { dx: -80, dy: 14 },
           ],
           optional: true,
-          avoid: [() => bitBoxes(), () => combBox()],
+          avoid: [() => bitBoxes(), () => combBox(), headBox],
         });
       else anno.remove('paper');
       syncArrowLabels();
     } else {
-      for (const id of ['up', 'down', 'charge', 'paper']) anno.remove(id);
+      for (const id of ['up', 'down', 'charge', 'paper', 'hair-charge']) anno.remove(id);
       // while the current flows the coil is a magnet: its ends are named under them (N faces the bar magnet)
       if (mag.on) {
         const below = (dx) => [
@@ -906,6 +925,11 @@ export function createApp(root, options = {}) {
     if (key === 'comb') {
       // the comb in the hair (its ring round it, with room for the badge), enough of the hair, the face
       combAt(hairPose(REST_X), [-12, -12, 12, 12]);
+      // Keep the wrist and fingers in frame during both steps.
+      for (const pose of [hairPose(ARC.from), hairPose(ARC.to), { x: PAPER_X.start, y: PAPER_H.start, rot: 0 }]) {
+        const m = new THREE.Matrix4().compose(V(pose.x, pose.y), new THREE.Quaternion().setFromAxisAngle(Z, pose.rot), V(1, 1, 1));
+        for (const x of [-148, -48]) for (const y of [-12, 42]) pts.push(V(x, y, 12).applyMatrix4(m));
+      }
       // the ring is a pill round the tilted comb's box: its corners must stay clear of the buttons too
       const rest = combAtBox(hairPose(REST_X));
       for (const x of [rest.min.x, rest.max.x]) for (const y of [rest.min.y, rest.max.y]) pts.push({ p: V(x, y), box: [-6, -6, 6, 6] });
@@ -1222,6 +1246,7 @@ export function createApp(root, options = {}) {
     mag.dragging = false;
     drag = null;
     s.scene = next;
+    presentation.setScene(next);
     cs.root.visible = next === 'comb';
     ms.root.visible = next === 'magnet';
     anno.clear();
@@ -1728,7 +1753,7 @@ export function createApp(root, options = {}) {
       await setView('front');
     },
     startPractice: () => quiz.start(),
-    capture: (opts) => stage.capture(opts),
+    capture: (opts) => presentation.capture(opts),
     // the example shown: the student, the comb and the paper; or the coil, cell, switch and magnet (no arrows or tags)
     exportRoot: () => (s.scene === 'comb' ? cs.root : ms.root),
   };

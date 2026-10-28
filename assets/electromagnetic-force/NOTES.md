@@ -121,3 +121,16 @@ a চিরুনি/চুম্বক toggle and a big button. Now:
   which the book teaches later; the figure says "সুইচ চালু করো" / "সুইচ খুলে দাও" and "সুইচ খোলা". Please check.
 - "সুইচ" and "তারের কুণ্ডলী (কয়েল)" are not on page 68; please check they are the words the book uses later.
 - The page's second name, বিদ্যুৎ চৌম্বকীয় বল, appears once, in the book's rule at the end.
+
+## Clearer comb experiment (v0.3.0)
+- Replace the oversized side-face composition with a compact complete human head: both eyes, eyebrows, ears,
+  nose, mouth, hair, neck and shoulders. An original procedural hand grips the red comb and follows its motion.
+  Keep the two numbered actions; both the head and paper stay in one frame. Wide boards put the lesson beside it.
+- Saturated blue/teal background, blue bench and shirt, warm skin, brown hair, coral comb and vivid paper colours.
+- Every comb charge level shows two negative comb signs and two positive hair signs: electrons transfer from hair
+  to the plastic comb. Counts are explanatory symbols, not a count of actual electrons.
+- One paper bit gets a paired +/− indicator when the charged comb approaches. The nearer side is positive and the
+  farther side negative; the paper remains net neutral. This is polarization, not transfer of net positive charge
+  to the paper. The symbols face the camera, follow the bit and are hidden during unanswered quiz scenes.
+- Existing lift thresholds, force comparison, keyboard/drag actions and magnetic example are retained. Charge
+  symbols, as well as arrows and labels, are omitted from GLB. The actual hand and complete human model are exported.
