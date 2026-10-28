@@ -1,89 +1,111 @@
-/* Simple harmonic motion: the page, and the colours of the quantities: the path and its places (blue) and the
-   speed (orange), the same in the 3D view, the labels and the panel. The student view itself is
-   ../../shared/lib/student/student.css (linked first). */
+/* Saturated scene, readable white lesson panel; pink ends, gold equilibrium and speed, cyan path. */
 html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
 #app { position: fixed; inset: 0; }
 body.bg-transparent { background: transparent; }
-
-.pvc { --c-pos: #1c6fd9; --c-spd: #e8590c; }
+.pvc { --c-pos: #157ca0; --c-spd: #a75c00; }
 .shm button { touch-action: manipulation; }
-
-/* the speed */
+.shm .pvc-learn { gap: 8px; }
 .shm-main { gap: 2px 22px; }
 .shm-speed .k { display: inline-flex; align-items: center; gap: 6px; color: var(--c-spd); font-weight: 600; }
 .shm-speed .v { color: var(--c-spd); min-width: 2.4em; }
 .shm-arrow-ic { display: inline-block; width: 18px; height: 3px; background: var(--c-spd); position: relative; border-radius: 2px; }
 .shm-arrow-ic::after { content: ''; position: absolute; right: -4px; top: -4px; border: 5.5px solid transparent; border-left: 7px solid var(--c-spd); border-right: 0; }
-
-/* the speed over one period (time along, speed up), from one end round to the same end */
-.shm-trip { display: flex; flex-direction: column; gap: 1px; padding: 0 2px; }
-.shm-graph { position: relative; height: 40px; border-bottom: 1.5px solid var(--line-2); }
-.pvc .shm-graph svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-.pvc .shm-graph .shm-grid { stroke: var(--line); stroke-width: 1; stroke-dasharray: 3 3; fill: none; }
-.pvc .shm-graph .shm-curve { stroke: var(--c-spd); stroke-width: 2; fill: none; }
-.shm-graph-k { position: absolute; left: 0; top: -3px; font-size: 11.5px; font-weight: 600; line-height: 1.2; color: var(--c-spd); }
-.shm-graph-t { position: absolute; right: 0; top: -3px; font-size: 11.5px; font-weight: 600; line-height: 1.2; color: var(--ink-2); }
-.shm-dot { position: absolute; left: 0; top: 96%; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; background: var(--c-spd); border: 2px solid #fff; box-shadow: 0 0 0 1px var(--c-spd); }
-.shm-stops { position: relative; height: 17px; }
-.shm-stops span { position: absolute; top: 0; transform: translateX(-50%); font-size: 12px; line-height: 1.4; color: var(--c-pos); white-space: nowrap; }
-.shm-stops span:first-child { transform: none; }
-.shm-stops span:last-child { transform: translateX(-100%); }
-/* the whole width is one period: a bracket with arrowheads under the stops */
-.shm-span { display: flex; align-items: center; gap: 6px; height: 17px; font-size: 12.5px; line-height: 1; color: var(--ink-2); }
+/* Two humps are speed (always positive), one complete back-and-forth. */
+.shm-trip { display: flex; flex-direction: column; gap: 4px; padding: 0 3px; }
+.shm-graph { position: relative; height: 72px; background: #173b51; border-radius: 5px; border-bottom: 2px solid #40798c; }
+.pvc .shm-graph svg { position: absolute; inset: 13px 0 2px; width: 100%; height: calc(100% - 15px); overflow: visible; }
+.pvc .shm-graph .shm-area { fill: #ffd04d; fill-opacity: 0.13; stroke: none; }
+.pvc .shm-graph .shm-grid { stroke: #6b9baa; stroke-width: 1; stroke-dasharray: 3 3; fill: none; }
+.pvc .shm-graph .shm-curve { stroke: #ffd04d; stroke-width: 2.5; fill: none; }
+.shm-graph-k, .shm-graph-t { position: absolute; top: 2px; font-size: 11.5px; font-weight: 600; line-height: 1.2; }
+.shm-graph-k { left: 6px; color: #ffe16a; }
+.shm-graph-t { right: 6px; color: #e0f6ff; }
+.shm-dot { position: absolute; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; background: #ffcd3e; border: 2px solid #fff; box-shadow: 0 0 0 1px #cc8700; }
+.shm-stops { position: relative; height: 38px; }
+.shm-stops button { position: absolute; top: 0; transform: translateX(-50%); height: 36px; width: 66px; padding: 2px; border: 1px solid transparent; border-radius: 4px; background: #fff; color: #a52c4c; font-size: 12px; line-height: 1.25; white-space: nowrap; }
+.shm-stops button:first-child { transform: none; text-align: left; width: 30px; }
+.shm-stops button:last-child { transform: translateX(-100%); text-align: right; width: 30px; }
+.shm-stops button b, .shm-stops button small { display: block; font-size: inherit; }
+.shm-stops button small { font-size: 11px; font-weight: 500; }
+.shm-stops [data-stop='mid'] { color: #805300; }
+.shm-stops button.on { background: #fff1d0; border-color: #cd8a19; }
+.shm-stops button:hover { border-color: currentColor; }
+.shm-stops button:focus-visible { outline: 2px solid #156fa5; outline-offset: 1px; }
+.shm-span { display: flex; align-items: center; gap: 6px; height: 18px; font-size: 12px; line-height: 1; color: var(--ink-2); }
 .shm-span b { color: var(--ink); font-weight: 700; }
 .shm-span .tx { white-space: nowrap; }
 .shm-span i { position: relative; flex: 1; height: 1.5px; background: var(--ink-3); }
 .shm-span i::before { content: ''; position: absolute; top: -4px; border: 5px solid transparent; }
 .shm-span i:first-child::before { left: -2px; border-right: 7px solid var(--ink-3); border-left: 0; }
 .shm-span i:last-child::before { right: -2px; border-left: 7px solid var(--ink-3); border-right: 0; }
-
-/* the idea, or what to do while holding it: as tall as its longest version, so the 3D view keeps its size */
-.shm-extra { margin: 0; min-height: 4.5em; font-size: 13.5px; line-height: 1.5; color: var(--ink-2); }
-.shm-extra b { color: var(--ink); font-weight: 600; }
-
+.shm-state { margin: 0; min-height: 2.8em; padding-left: 8px; border-left: 3px solid #16806e; color: #125f53; font-size: 14px; font-weight: 600; line-height: 1.4; }
+.shm-extra { margin: 0; min-height: 3em; font-size: 13px; line-height: 1.5; color: var(--ink-2); }
+.shm-extra b { color: #135f81; font-weight: 600; }
 .shm-acts { display: flex; gap: 6px; }
-.shm-acts .pvc-btn, .shm .pvc-learn-foot .pvc-btn { height: 38px; padding: 0 13px; font-size: 15px; }
+.shm-acts .pvc-btn, .shm .pvc-learn-foot .pvc-btn { height: 38px; padding: 0 12px; font-size: 15px; }
 .shm-acts [data-act='play'] { min-width: 96px; }
 .shm-acts [data-act='play'] .ic { display: inline-flex; }
 .shm-acts [data-act='play'] svg { color: #fff; }
 .shm-acts [data-act='slow'].on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
-.shm-ex button { height: 36px; padding: 0 14px; font-size: 15px; }
-
-/* time slowed down: said on the 3D view itself */
-.shm-badge { position: absolute; left: 10px; top: 10px; z-index: 5; padding: 3px 10px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line-2); color: var(--ink-2); font-size: 13.5px; font-weight: 500; pointer-events: none; }
-
-/* labels on the path: the place (blue) and its speed (orange) */
-.shm .pvc-anno-part { padding: 2px 8px; font-size: 13px; line-height: 1.3; text-align: center; }
+.shm-ex button { height: 36px; padding: 0 12px; font-size: 15px; }
+.shm-badge { position: absolute; left: 10px; top: 10px; z-index: 5; padding: 3px 10px; border-radius: 6px; background: #fff; color: #125f53; font-size: 13.5px; font-weight: 500; pointer-events: none; }
+.shm .pvc-anno-part { padding: 3px 8px; border: 0; background: #fffdf4; font-size: 13px; line-height: 1.35; text-align: center; }
 .shm-l-place, .shm-l-speed { display: block; font-weight: 600; }
-.shm-l-place { color: var(--c-pos); }
-.shm-l-speed { color: var(--c-spd); }
+.shm-l-place.end { color: #b52c4c; }
+.shm-l-place.middle { color: #855200; }
+.shm-l-speed { color: #183e50; }
 .shm .pvc-anno-callout { min-width: 26px; text-align: center; border-radius: 13px; font-size: 15px; }
-
-/* the test: words as answers */
 .shm .pvc-q-text { min-height: 2.8em; }
 .shm .pvc-q-feedback { min-height: 2.9em; }
 .shm-opt { font-size: 15.5px; font-weight: 600; line-height: 1.25; }
 .shm .pvc-opt { padding: 0 8px; }
-
-/* wide frames: the speed beside the graph, so the panel stays low and the 3D view big */
-@container pvc (min-width: 720px) and (min-height: 461px) {
-  .shm .pvc-learn { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 28px; row-gap: 6px; align-content: space-between; }
-  .shm-main { grid-column: 1; grid-row: 1; flex-direction: column; align-items: flex-start; }
-  .shm-trip { grid-column: 2; grid-row: 1; align-self: end; }
-  .shm-extra { grid-column: 1 / -1; min-height: 3em; }
-  .shm .pvc-learn-foot { grid-column: 1 / -1; }
+/* Wide boards keep the swing large, with its graph and controls in a side panel. */
+@container pvc (min-width: 720px) {
+  .shm .pvc-shell { grid-template-rows: minmax(0, 1fr); grid-template-columns: minmax(0, 1fr) clamp(270px, 34%, 350px); }
+  .shm .pvc-panel { display: flex; align-items: stretch; border-top: 0; border-left: 1px solid var(--line); padding: 12px; gap: 10px; overflow: hidden; }
+  .shm .pvc-tabs { grid-template-columns: 1fr 1fr; max-width: none; }
+  .shm .pvc-tabs button + button { border-top: 0; border-left: 1px solid var(--line-2); }
+  .shm .pvc-learn { justify-content: flex-start; gap: 12px; }
+  .shm-extra { min-height: 6em; }
+}
+@container pvc-panel (max-width: 330px) {
+  .shm-stops button { width: 52px; font-size: 11px; }
+  .shm-stops button:first-child, .shm-stops button:last-child { width: 30px; }
+  .shm .pvc-learn-foot { flex-wrap: nowrap; gap: 6px; }
+  .shm-acts { gap: 4px; }
+  .shm-acts [data-act='play'] { min-width: 34px; padding: 0 8px; }
+  .shm-acts [data-act='play'] .tx { display: none; }
+  .shm .pvc-learn-foot .pvc-btn { padding: 0 8px; font-size: 13px; }
+  .shm-ex button { padding: 0 9px; font-size: 13px; }
+  .shm-opt { font-size: 14px; }
 }
 @container pvc (max-width: 560px) and (max-height: 600px) {
-  .shm-extra { min-height: 4.35em; font-size: 12.5px; line-height: 1.45; }
-  .shm-graph { height: 32px; }
+  .shm .pvc-learn { gap: 5px; }
+  .shm-graph { height: 48px; }
+  .shm-stops { height: 32px; }
+  .shm-stops button { height: 30px; font-size: 11px; }
+  .shm-state { min-height: 1.4em; font-size: 12.5px; }
+  .shm-extra { min-height: 3em; font-size: 12px; }
+  .shm-speed .v { font-size: 28px; }
 }
 @container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
-  .shm-main { gap: 0 14px; }
+  .shm .pvc-panel { overflow: hidden; }
+  .shm .pvc-learn { gap: 6px; }
   .shm-speed .v { font-size: 26px; }
-  .shm-graph { height: 32px; }
-  .shm-extra { min-height: 4.35em; font-size: 12.5px; line-height: 1.45; }
-  .shm-acts .pvc-btn, .shm .pvc-learn-foot .pvc-btn { height: 36px; }
-  .shm .pvc-learn-foot { gap: 6px 8px; }
-  .shm-opt { font-size: 14.5px; }
+  .shm-graph { height: 46px; }
+  .shm-stops { height: 32px; }
+  .shm-stops button { height: 30px; }
+  .shm-state { font-size: 13px; }
+  .shm-extra { min-height: 4.5em; font-size: 12px; }
+  .shm-opt { font-size: 14px; }
   .shm .pvc-q-text { min-height: 0; }
+}
+@container pvc (min-width: 1000px) and (min-height: 601px) {
+  .shm .pvc-anno-part { font-size: 16px; padding: 5px 10px; }
+  .shm .pvc-learn { gap: 16px; }
+  .shm-graph { height: 112px; }
+  .shm-stops button { width: 68px; font-size: 13px; }
+  .shm-stops button:first-child, .shm-stops button:last-child { width: 40px; }
+  .shm-state { font-size: 16px; }
+  .shm-extra { font-size: 15px; }
 }

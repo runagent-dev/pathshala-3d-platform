@@ -6,6 +6,7 @@
 // where it oscillates from. Then a short test. Built on the shared student kit (@shared/student/…).
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
+import { createPresentation } from './presentation.js';
 import { createTweener, ease } from '@shared/tween.js';
 import { createMaterials } from '@shared/student/materials.js';
 import { createAudio } from '@shared/student/audio.js';
@@ -54,7 +55,7 @@ const VIEW_DIRS = {
   front: new THREE.Vector3(0.06, 0.05, 1).normalize(), // from the side of the swing, as in the book's picture
   '3d': new THREE.Vector3(0.78, 0.38, 0.62).normalize(),
 };
-const COLOR = { path: 0x1c6fd9, speed: 0xe8590c, mark: 0x6741d9 }; // the test's marked part: purple, far from the speed's orange
+const COLOR = { path: 0x44c9f2, speed: 0xffd04d, mark: 0xbca1ff }; // the test's marked part: purple, far from the speed's orange
 // where the helpers go: the swing's path just under the seat, its speed arrow under the girl's feet; the spring's
 // path on the right of the mass, its arrow on the left, and the equilibrium level across
 const R_PATH = SWING.R + 0.05;
@@ -118,15 +119,21 @@ export function createApp(root, options = {}) {
   // the speed over one period: two humps, zero at the ends, greatest at the equilibrium point
   const curvePts = [];
   for (let x = 0; x <= 400; x += 4) curvePts.push(`${x},${(96 - 88 * Math.abs(Math.sin((Math.PI * 2 * x) / 400))).toFixed(1)}`);
-  const stops = ['stop_end', 'stop_mid', 'stop_end', 'stop_mid', 'stop_end'].map((k, i) => `<span style="left:${i * 25}%">${t(k)}</span>`).join('');
+  const stops = ['stop_end', 'stop_mid', 'stop_end', 'stop_mid', 'stop_end']
+    .map(
+      (key, i) =>
+        `<button type="button" data-phase="${i / 4}" data-stop="${i % 2 ? 'mid' : 'end'}" style="left:${i * 25}%" aria-label="${t('inspect_phase', { n: i + 1, where: t(key) })}"><b>${t(i % 2 ? 'graph_mid' : key)}</b><small>${t(i % 2 ? 'speed_peak_short' : 'speed_zero_short')}</small></button>`,
+    )
+    .join('');
   const ui = buildStudentShell(root, t, {
     learn: `
           <div class="pvc-learn-main shm-main">
             <div class="pvc-result shm-speed"><span class="k"><i class="shm-arrow-ic"></i>${t('speed')}</span><span class="v">0</span><span class="u">${t('unit_speed')}</span></div>
           </div>
-          <div class="shm-trip" role="img" aria-label="${t('graph_label')}">
-            <div class="shm-graph">
+          <div class="shm-trip">
+            <div class="shm-graph" role="img" aria-label="${t('graph_label')}">
               <svg viewBox="0 0 400 100" preserveAspectRatio="none" aria-hidden="true">
+                <path class="shm-area" d="M0,96L${curvePts.join('L')}L400,96Z"/>
                 <path class="shm-grid" d="M100 0V100M200 0V100M300 0V100" vector-effect="non-scaling-stroke"/>
                 <path class="shm-curve" d="M${curvePts.join('L')}" vector-effect="non-scaling-stroke"/>
               </svg>
@@ -134,9 +141,10 @@ export function createApp(root, options = {}) {
               <span class="shm-graph-t">${t('graph_time')}</span>
               <b class="shm-dot"></b>
             </div>
-            <div class="shm-stops" aria-hidden="true">${stops}</div>
+            <div class="shm-stops" role="group" aria-label="${t('inspect_label')}">${stops}</div>
             <div class="shm-span"><i></i><span class="tx"></span><i></i></div>
           </div>
+          <p class="shm-state" role="status" aria-live="off"></p>
           <p class="pvc-learn-extra shm-extra"></p>
           <div class="pvc-learn-foot">
             <div class="shm-acts">
@@ -157,15 +165,19 @@ export function createApp(root, options = {}) {
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 24, near: 0.05, far: 80, environment: 'studio-light' });
   const { camera, controls, scene } = stage;
+  const presentation = createPresentation(stage, o.bg === 'transparent');
   controls.minDistance = 0.6;
   controls.maxDistance = 25;
   const M = createMaterials(stage.renderer);
+  M.brass.color.set(0xf4bd49);
+  M.brass.metalness = 0.65;
+  M.brass.roughness = 0.38;
   const models = { swing: createSwing({ materials: M }), spring: createSpringStand({ materials: M }) };
   for (const m of Object.values(models)) scene.add(m.root);
   const tweener = createTweener();
   stage.addTicker((dt) => tweener.tick(dt));
   const audio = createAudio(o.sound);
-  const annotations = createAnnotations({ stage, layer: ui.annoLayer });
+  const annotations = createAnnotations({ stage, layer: ui.annoLayer, avoid: [ui.corner, ui.hint, badge] });
 
   if (o.shadow && o.bg !== 'transparent') {
     stage.renderer.shadowMap.enabled = true;
@@ -191,8 +203,8 @@ export function createApp(root, options = {}) {
   helpers.name = 'Helpers';
   helpers.userData.noExport = true;
   scene.add(helpers);
-  const pathMat = new THREE.MeshStandardMaterial({ name: 'Path', color: COLOR.path, roughness: 0.5, transparent: true, opacity: 0.55 });
-  const dotMat = new THREE.MeshStandardMaterial({ name: 'Dot', color: COLOR.path, roughness: 0.4, emissive: COLOR.path, emissiveIntensity: 0.15 });
+  const pathMat = new THREE.MeshBasicMaterial({ name: 'Path', color: COLOR.path, toneMapped: false, transparent: true, opacity: 0.85 });
+  const dotMat = new THREE.MeshBasicMaterial({ name: 'Dot', color: COLOR.path, toneMapped: false });
   const markMat = new THREE.MeshStandardMaterial({ name: 'Mark', color: COLOR.mark, roughness: 0.5, emissive: COLOR.mark, emissiveIntensity: 0.2 });
   const ARC_SEGS = 200;
   const arc = new Arc(R_PATH, SWING.maxDeg);
@@ -204,11 +216,23 @@ export function createApp(root, options = {}) {
   const marks = new THREE.Group();
   const dashGeo = new THREE.CylinderGeometry(1, 1, 1, 10);
   const markHead = new THREE.Mesh(new THREE.ConeGeometry(1, 1, 16).translate(0, 0.5, 0), markMat);
-  helpers.add(swingPath, springPath, springLevel, marks, markHead);
+  const equilibriumGuide = new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, PIVOT.y, -0.08), new THREE.Vector3(0, PIVOT.y - R_PATH, -0.08)]),
+    new THREE.LineDashedMaterial({ color: 0xffe16a, dashSize: 0.055, gapSize: 0.045, transparent: true, opacity: 0.65, toneMapped: false }),
+  );
+  equilibriumGuide.computeLineDistances();
+  helpers.add(swingPath, springPath, springLevel, marks, markHead, equilibriumGuide);
   const FRACTIONS = strobe(); // 1 … −1: where the dots are, as fractions of the amplitude
   const dotGeo = new THREE.SphereGeometry(1, 16, 12);
-  const dots = FRACTIONS.map(() => {
-    const d = new THREE.Mesh(dotGeo, dotMat);
+  const dots = FRACTIONS.map((_, i) => {
+    const d = new THREE.Mesh(
+      dotGeo,
+      i === 0 || i === FRACTIONS.length - 1
+        ? new THREE.MeshBasicMaterial({ color: 0xff7d9f, toneMapped: false })
+        : i === (FRACTIONS.length - 1) / 2
+          ? new THREE.MeshBasicMaterial({ color: 0xffe16a, toneMapped: false })
+          : dotMat,
+    );
     helpers.add(d);
     return d;
   });
@@ -283,24 +307,48 @@ export function createApp(root, options = {}) {
     speed: $('.shm-speed .v'),
     span: $('.shm-span .tx'),
     dot: $('.shm-dot'),
+    status: $('.shm-state'),
     extra: $('.shm-extra'),
     playIc: $('[data-act="play"] .ic'),
     playTx: $('[data-act="play"] .tx'),
     slow: $('[data-act="slow"]'),
   };
-  const shown = { speed: '', extra: '' };
+  const shown = { speed: '', extra: '', state: '' };
   function panel(m) {
     const speed = N(m.speed.toFixed(2));
     if (speed !== shown.speed) el.speed.textContent = shown.speed = speed;
     const k = m.maxSpeed > 0 ? m.speed / m.maxSpeed : 0;
-    el.dot.style.left = `${(m.phase * 100).toFixed(2)}%`;
-    el.dot.style.top = `${(96 - 88 * k).toFixed(2)}%`;
+    const wholePeriod = !s.playing && s.held == null && s.time > 0 && Math.abs(s.time / m.period - Math.round(s.time / m.period)) < 1e-8;
+    const graphPhase = wholePeriod ? 1 : m.phase;
+    el.dot.style.left = `${(graphPhase * 100).toFixed(2)}%`;
+    const active = Math.round(graphPhase * 4);
+    ui.$$('[data-phase]').forEach((button, i) => {
+      button.classList.toggle('on', i === active);
+      button.setAttribute('aria-pressed', String(i === active));
+    });
+    const key =
+      s.held != null
+        ? 'state_held'
+        : m.speed < 1e-5
+          ? 'state_end'
+          : Math.abs(m.x) < 1e-5
+            ? 'state_mid'
+            : placeOf(m.phase).going === 'in'
+              ? 'state_in'
+              : 'state_out';
+    if (key !== shown.state) {
+      el.status.textContent = t(key);
+      el.status.dataset.place = key;
+      shown.state = key;
+    }
+    el.dot.style.top = `calc(13px + (100% - 15px) * ${((96 - 88 * k) / 100).toFixed(4)})`;
     const extra = s.held != null ? t('idea_drag') : t('idea', { dt: strobeStep(s.example).toFixed(2), who: t(`who_${s.example}`) });
     if (extra !== shown.extra) el.extra.innerHTML = shown.extra = extra;
   }
   function syncButtons() {
     el.playIc.innerHTML = s.playing ? ICONS.pause : ICONS.play;
     el.playTx.textContent = t(s.playing ? 'act_pause' : 'act_play');
+    el.playTx.parentElement.setAttribute('aria-label', el.playTx.textContent);
     el.slow.classList.toggle('on', s.slow);
     el.slow.setAttribute('aria-pressed', String(s.slow));
     for (const b of ui.$$('[data-ex]')) b.classList.toggle('on', b.dataset.ex === s.example);
@@ -312,7 +360,7 @@ export function createApp(root, options = {}) {
   /** Show the path from end to end for amplitude a (m), with the dots at equal time steps along it. */
   function setPath(a) {
     const swing = s.example === 'swing';
-    swingPath.visible = swing;
+    swingPath.visible = equilibriumGuide.visible = swing;
     springPath.visible = springLevel.visible = !swing;
     const r = DOT_R[s.example];
     const sign = s.held != null ? Math.sign(s.held) || 1 : s.side;
@@ -369,20 +417,80 @@ export function createApp(root, options = {}) {
   };
   const swingMid = models.swing.pointAt(0, R_PATH);
   const springMid = new THREE.Vector3(LEVEL_FROM, EQUILIBRIUM + SPRING_MID, 0); // the end of the equilibrium level
-  const label = (place, speed) => `<span class="shm-l-place">${t(place)}</span><span class="shm-l-speed">${t(speed)}</span>`;
+  const label = (place, speed) =>
+    `<span class="shm-l-place ${place === 'stop_mid' ? 'middle' : 'end'}">${t(place)}</span><span class="shm-l-speed">${t(speed)}</span>`;
   function showLabels() {
     annotations.clear('part');
     if (!s.helpers) return;
     if (s.example === 'swing') {
       // below and outside the ends (the girl's feet reach out beside the far end), the middle one under the arrow
-      annotations.add('end-a', { text: label('stop_end', 'speed_zero'), point: endPoint(-1), dx: -10, dy: 30 });
-      annotations.add('end-b', { text: label('stop_end', 'speed_zero'), point: endPoint(1), dx: 10, dy: 30 });
-      annotations.add('mid', { text: label('stop_mid', 'speed_max'), point: () => swingMid, dy: 58 });
+      annotations.add('end-a', {
+        text: label('stop_end', 'speed_zero'),
+        point: endPoint(-1),
+        dx: -48,
+        dy: 32,
+        spots: [
+          { dx: -48, dy: 32 },
+          { dx: -42, dy: 50 },
+          { dx: -42, dy: -32 },
+        ],
+      });
+      annotations.add('end-b', {
+        text: label('stop_end', 'speed_zero'),
+        point: endPoint(1),
+        dx: 48,
+        dy: 32,
+        spots: [
+          { dx: 48, dy: 32 },
+          { dx: 42, dy: 50 },
+          { dx: 42, dy: -32 },
+        ],
+      });
+      annotations.add('mid', {
+        text: label('stop_mid', 'speed_max'),
+        point: () => swingMid,
+        dy: 64,
+        spots: [
+          { dx: 0, dy: 64 },
+          { dx: 0, dy: 45 },
+          { dx: 0, dy: 84 },
+        ],
+      });
     } else {
       // the two ends are close on a small screen: the labels lean away from each other
-      annotations.add('end-a', { text: label('stop_end', 'speed_zero'), point: endPoint(1), dx: 18, dy: -14 });
-      annotations.add('end-b', { text: label('stop_end', 'speed_zero'), point: endPoint(-1), dx: 18, dy: 14 });
-      annotations.add('mid', { text: label('stop_mid', 'speed_max'), point: () => springMid, dx: -8, dy: 0 });
+      annotations.add('end-a', {
+        text: label('stop_end', 'speed_zero'),
+        point: endPoint(1),
+        dx: 28,
+        dy: -22,
+        spots: [
+          { dx: 28, dy: -22 },
+          { dx: 36, dy: -40 },
+          { dx: -28, dy: -28 },
+        ],
+      });
+      annotations.add('end-b', {
+        text: label('stop_end', 'speed_zero'),
+        point: endPoint(-1),
+        dx: 28,
+        dy: 22,
+        spots: [
+          { dx: 28, dy: 22 },
+          { dx: 36, dy: 40 },
+          { dx: -28, dy: 28 },
+        ],
+      });
+      annotations.add('mid', {
+        text: label('stop_mid', 'speed_max'),
+        point: () => springMid,
+        dx: -28,
+        dy: 0,
+        spots: [
+          { dx: -28, dy: 0 },
+          { dx: -36, dy: -20 },
+          { dx: -36, dy: 20 },
+        ],
+      });
     }
   }
 
@@ -908,6 +1016,16 @@ export function createApp(root, options = {}) {
     const b = /** @type {Element} */ (e.target).closest('button');
     if (!b || !root.contains(b)) return;
     audio.unlock();
+    if (b.dataset.phase != null) {
+      if (s.mode === 'quiz') return lockedNudge();
+      s.time = Number(b.dataset.phase) * period(s.example);
+      s.held = null;
+      s.playing = false;
+      coach?.objectUsed();
+      syncButtons();
+      pose();
+      emitChange();
+    }
     if (b.dataset.view) setView(b.dataset.view);
     if (b.dataset.mode === 'quiz' && s.mode !== 'quiz') quiz.start();
     if (b.dataset.mode === 'explore') quiz.stop();
@@ -1017,7 +1135,7 @@ export function createApp(root, options = {}) {
       await setView('front');
     },
     startPractice: () => quiz.start(),
-    capture: (opts) => stage.capture(opts),
+    capture: (opts) => presentation.capture(opts),
     exportRoot: () => model().root, // the swing (or the spring and its stand), without the helpers
   };
 }

@@ -75,3 +75,11 @@ is greatest, then falls to zero at the other end; one full back-and-forth takes 
 - Bamboo frame instead of the book's (unseen) support: chosen to look like a Bangladeshi swing; its legs splay wide
   so that they stay out of the way of the swinging girl.
 - "মি/সে" for m/s: the book writes m/s in formulas; the Bangla abbreviation reads better in a Bangla panel.
+
+## Presentation update (v0.2.0)
+- Saturated navy/teal/green scene with brighter bamboo, clothing and brass so the moving body stands out.
+- Cyan equal-time path dots, pink turning points and a gold equilibrium point/guide connect the 3D scene to the
+  speed graph. Gold is also used for the speed arrow; text labels state zero/greatest so colour is optional.
+- Larger filled speed graph with five tappable moments: selecting one pauses the body at the matching position,
+  including the final return to the starting end. A live sentence explains increasing/decreasing speed.
+- Wide frames place the lesson beside the figure to preserve picture height; phones retain the stacked layout.
