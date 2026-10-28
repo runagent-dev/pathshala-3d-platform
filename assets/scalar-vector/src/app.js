@@ -13,6 +13,7 @@ import { COLORS, createDiagram, point3 } from './diagram.js';
 import { JOURNEY, pointAt } from './journey.js';
 import { VECTORS, PAIRS, compass, verdict } from './reading.js';
 import { fitPose } from './camera.js';
+import { createCompass } from './compass.js';
 
 export const DEFAULTS = { stage: 0, view: 'front', mode: 'explore', coach: true, numerals: null, lang: 'bn', bg: 'light', shadow: true, sound: true };
 const NAMES = ['B', 'C', 'D'];
@@ -44,16 +45,16 @@ export function createApp(root, options = {}) {
   ui.$('.pvc-outcome').setAttribute('aria-live', 'polite');
   const heading = document.createElement('div');
   heading.className = 'sv-heading';
-  const north = document.createElement('div');
-  north.className = 'sv-north';
-  north.innerHTML = `<i aria-hidden="true"></i><span>${t('north')}</span>`;
   const note = document.createElement('div');
   note.className = 'sv-note';
   note.textContent = t('map_note');
-  ui.stage.append(heading, north, note);
+  ui.stage.append(heading, note);
 
   const stage = createStage(ui.canvasHost, { fov: 30, near: 1, far: 1000, environment: false });
   const { camera, controls, scene } = stage;
+  const compassRose = createCompass(stage, t);
+  const north = compassRose.el;
+  ui.stage.append(north);
   controls.enablePan = false;
   controls.enableZoom = false;
   controls.enableRotate = false;
@@ -97,9 +98,13 @@ export function createApp(root, options = {}) {
     target,
     radius: 25,
     pulse: o.coach,
-    avoid: [ui.corner, heading, north, () => annotations?.boxes() || []],
+    avoid: [ui.corner, heading, north, () => diagram.walkerBox(), () => annotations?.boxes() || []],
   });
-  annotations = createAnnotations({ stage, layer: ui.annoLayer, avoid: [ui.corner, heading, north, note, () => action.ringBox()] });
+  annotations = createAnnotations({
+    stage,
+    layer: ui.annoLayer,
+    avoid: [ui.corner, heading, north, note, () => diagram.walkerBox(), () => action.ringBox()],
+  });
 
   function fit() {
     const dir = s.view === '3d' ? new THREE.Vector3(0.12, 1, 0.48).normalize() : new THREE.Vector3(0, 1, 0.0001).normalize();
@@ -120,6 +125,7 @@ export function createApp(root, options = {}) {
     stage.invalidate();
   }
   stage.onResize(fit);
+  stage.onBeforeRender(() => diagram.fitMarker(stage));
 
   function labels({ testing = false, reveal = false } = {}) {
     annotations.clear();
@@ -134,6 +140,12 @@ export function createApp(root, options = {}) {
           point: () => point3(p),
           kind: 'endpoint',
           spots: [
+            ...(id === 'finish'
+              ? [
+                  { dx: 0, dy: -28 },
+                  { dx: 14, dy: -24 },
+                ]
+              : []),
             { dx: -12, dy: 0 },
             { dx: 0, dy: 23 },
             { dx: 12, dy: 0 },
@@ -210,7 +222,12 @@ export function createApp(root, options = {}) {
     const outcome = s.busy && s.stage === 0 ? 'out_walking' : ['out_start', 'out_scalar', 'out_vector'][s.stage] || `out_${name}`;
     const rule = ['rule_start', 'rule_scalar', 'rule_vector'][s.stage] || `rule_${name}`;
     sheet.outcome(t(outcome, { d: s.stage === 1 ? 120 : JOURNEY.magnitude }));
-    sheet.rule(t(rule));
+    const vars = { walk: 120, position: JOURNEY.magnitude, full: 25, half: 12.5 };
+    if (s.stage < 3) {
+      sheet.rule(`<span class="sv-explain-intro">${t('guide_intro')}</span>
+        <span class="sv-meaning scalar"><b>${t('guide_scalar_title')}</b><span>${t(s.stage === 0 ? 'guide_scalar_start' : 'guide_scalar_done', vars)}</span></span>
+        <span class="sv-meaning vector"><b>${t('guide_vector_title')}</b><span>${t(s.stage < 2 ? 'guide_vector_start' : 'guide_vector_done', vars)}</span></span>`);
+    } else sheet.rule(`${t(rule)}<span class="sv-book-detail">${t(`guide_${name}`, vars)}</span>`);
     action.set({ step: s.stage < 5 ? s.stage + 1 : '', label: ACTIONS[s.stage], enabled: !s.busy && s.mode === 'explore' });
     heading.textContent = t(diagram.pairs.visible ? 'pair_title' : 'map_title');
     note.hidden = diagram.pairs.visible;
@@ -288,7 +305,7 @@ export function createApp(root, options = {}) {
       syncUI();
       const run = tweener.animate({
         key: 'lesson',
-        duration: next === 1 ? 1.8 : 0.65,
+        duration: next === 1 ? 3.2 : 0.65,
         ease: ease.linear,
         onUpdate(k) {
           if (my !== token) return;
@@ -516,6 +533,7 @@ export function createApp(root, options = {}) {
       abort.abort();
       action.dispose();
       annotations.clear();
+      compassRose.dispose();
       diagram.root.traverse((mesh) => {
         if (mesh.isMesh) {
           mesh.geometry.dispose();
@@ -526,6 +544,6 @@ export function createApp(root, options = {}) {
       root.innerHTML = '';
       listeners.clear();
     },
-    _internals: { stage, diagram },
+    _internals: { stage, diagram, compass: compassRose },
   };
 }

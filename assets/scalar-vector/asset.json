@@ -5,7 +5,7 @@
   "title": "Scalar and vector quantities (স্কেলার ও ভেক্টর রাশি)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "book": "physics-9-10",
   "page": 38,
   "topic": "2.3",
@@ -13,7 +13,7 @@
   "order": 1,
   "maintainers": ["RadeenXALNW"],
   "units": "m",
-  "description": "A simple illustrated journey introduces scalar length and vector position for page 38, topic 2.3. A blue dashed path around a pond is exactly 120 m long; a coral arrow from the start to the finish is 20 m north. One action follows the path, then reveals the straight position arrow with clear Bangla labels. Three short comparisons show only two of the book’s A/B/C/D vectors at a time: equal magnitude and direction, changed direction, changed magnitude. One action, result and rule; five tap-answer questions; keyboard access, offline operation and six responsive layouts. Distances are to scale; trees and pond are symbolic.",
+  "description": "A simple illustrated journey introduces scalar length and vector position for page 38, topic 2.3. A blue dashed path around a pond is exactly 120 m long; a coral arrow from the start to the finish is 20 m north. An illustrated person walks the path, with short scalar and vector explanations and a camera-aligned four-direction compass. One action follows the path, then reveals the straight position arrow with clear Bangla labels. Three short comparisons show only two of the book’s A/B/C/D vectors at a time: equal magnitude and direction, changed direction, changed magnitude. One action, result and rule; five tap-answer questions; keyboard access, offline operation and six responsive layouts. Distances are to scale; trees and pond are symbolic.",
   "tags": ["vector", "scalar", "magnitude", "direction", "position", "compass", "bangla"],
   "params": [
     {
@@ -76,15 +76,15 @@
     "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "stage": 2, "animate": false } }] }],
     "video": {
       "kind": "script",
-      "seconds": 12,
+      "seconds": 14,
       "fps": 30,
       "params": { "coach": "0" },
       "script": [
         { "at": 0.5, "command": "set", "payload": { "act": true } },
-        { "at": 3, "command": "set", "payload": { "act": true } },
-        { "at": 5, "command": "set", "payload": { "act": true } },
-        { "at": 7, "command": "set", "payload": { "act": true } },
-        { "at": 9, "command": "set", "payload": { "act": true } }
+        { "at": 4, "command": "set", "payload": { "act": true } },
+        { "at": 6, "command": "set", "payload": { "act": true } },
+        { "at": 8, "command": "set", "payload": { "act": true } },
+        { "at": 10, "command": "set", "payload": { "act": true } }
       ]
     }
   }

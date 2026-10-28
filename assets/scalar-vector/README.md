@@ -4,7 +4,7 @@
 
 A simple illustrated journey teaches **scalar length** and **vector position**. One blue winding path goes from the start to the finish around a pond. Its length is **১২০ m**; the finish is **২০ m north** of the start, shown by a straight coral arrow. The arrow is labelled **অবস্থান**, following topic 2.3 rather than introducing the next section's সরণ.
 
-One numbered action walks the path, then reveals the position vector. Three short comparisons show just **two arrows at a time**, preserving Figure 2.03: A and B are equal; C has A's magnitude but another direction; D has C's direction but half its magnitude. Clear labels name the path and arrow. The panel has one action, one result and one rule.
+One illustrated person walks the path. Separate short explanations tell what they walked (scalar length) and where they finished (vector position). A four-direction compass follows the map when the view tilts. One numbered action walks the path, then reveals the position vector. Three short comparisons show just **two arrows at a time**, preserving Figure 2.03: A and B are equal; C has A's magnitude but another direction; D has C's direction but half its magnitude. Clear labels name the path and arrow. The panel has one action, one result and one rule.
 
 Five tap-answer questions read the pictures. Keyboard: Right / Enter / Space advance, Left goes back, R resets, F shows the map from above and V tilts it. The test locks scene changes and restores the learn state afterwards. All six book and phone sizes are checked. The path and arrow are to scale; trees and pond are symbolic.
 
