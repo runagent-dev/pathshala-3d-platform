@@ -85,3 +85,13 @@ export const strobeStep = (example) => period(example) / STROBE;
 export function periodChoices(h) {
   return { right: roundTo(2 * h, 0.01), wrong: [roundTo(h, 0.01), roundTo(h / 2, 0.01), roundTo(4 * h, 0.01)] };
 }
+
+/** Vertical spring: x is measured UP from equilibrium, not from the unstretched spring length.
+ * U includes elastic and gravitational potential, with its zero at equilibrium: U = k x² / 2.
+ * The two linear terms cancel because k·stretch = mg. K + U is therefore conserved.
+ */
+export function springQuantities({ x, v }) {
+  const kinetic = 0.5 * SPRING.m * v * v;
+  const potential = 0.5 * SPRING.k * x * x;
+  return { acceleration: -(omega('spring') ** 2) * x, kinetic, potential, total: kinetic + potential };
+}

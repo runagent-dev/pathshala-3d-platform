@@ -7,6 +7,7 @@
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
 import { createPresentation } from './presentation.js';
+import { createSpringGraphs } from './spring-graphs.js';
 import { createTweener, ease } from '@shared/tween.js';
 import { createMaterials } from '@shared/student/materials.js';
 import { createAudio } from '@shared/student/audio.js';
@@ -131,6 +132,7 @@ export function createApp(root, options = {}) {
             <div class="pvc-result shm-speed"><span class="k"><i class="shm-arrow-ic"></i>${t('speed')}</span><span class="v">0</span><span class="u">${t('unit_speed')}</span></div>
           </div>
           <div class="shm-trip">
+            <div class="shm-spring-graphs" hidden></div>
             <div class="shm-graph" role="img" aria-label="${t('graph_label')}">
               <svg viewBox="0 0 400 100" preserveAspectRatio="none" aria-hidden="true">
                 <path class="shm-area" d="M0,96L${curvePts.join('L')}L400,96Z"/>
@@ -313,6 +315,8 @@ export function createApp(root, options = {}) {
     playTx: $('[data-act="play"] .tx'),
     slow: $('[data-act="slow"]'),
   };
+  const springGraphHost = $('.shm-spring-graphs');
+  const springGraphs = createSpringGraphs(springGraphHost, t);
   const shown = { speed: '', extra: '', state: '' };
   function panel(m) {
     const speed = N(m.speed.toFixed(2));
@@ -321,6 +325,8 @@ export function createApp(root, options = {}) {
     const wholePeriod = !s.playing && s.held == null && s.time > 0 && Math.abs(s.time / m.period - Math.round(s.time / m.period)) < 1e-8;
     const graphPhase = wholePeriod ? 1 : m.phase;
     el.dot.style.left = `${(graphPhase * 100).toFixed(2)}%`;
+    if (s.example === 'spring')
+      springGraphs.update(m, { amplitude: s.held != null ? Math.abs(s.held) : s.amp, side: s.side, phase: graphPhase, held: s.held != null });
     const active = Math.round(graphPhase * 4);
     ui.$$('[data-phase]').forEach((button, i) => {
       button.classList.toggle('on', i === active);
@@ -572,6 +578,9 @@ export function createApp(root, options = {}) {
     if (!EXAMPLES.includes(ex)) return;
     const changed = ex !== s.example;
     s.example = ex;
+    root.dataset.example = ex;
+    springGraphHost.hidden = ex !== 'spring';
+    presentation.setExample(ex);
     for (const [k, m] of Object.entries(models)) m.root.visible = k === ex;
     drag = null; // a finger still on the old example lets go of it
     tweener.cancel('let-go');

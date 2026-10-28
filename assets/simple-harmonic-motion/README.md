@@ -7,7 +7,9 @@ equilibrium point (সাম্যবিন্দু): an arrow shows the speed,
 point, dots on the path mark where it is every T/16, and the panel shows the speed over one period (পর্যায়কাল). The
 student pulls the seat, a rope or the mass to one side and lets go, or taps one of five graph moments to pause
 and inspect the matching position. Pink endpoints and a gold equilibrium marker connect the scene and graph; a
-short sentence explains how speed changes. A 5-question test checks understanding. Units: metres (the GLB too).
+short sentence explains how speed changes. The spring also has signed position/velocity/acceleration graphs and an energy view (kinetic/potential shares
+and time curves, with total energy conserved). Potential energy includes gravity and is zero at equilibrium.
+A 5-question test checks understanding. Units: metres (the GLB too).
 
 `get` returns `{ example, amplitude (m along the path; for the swing, the seat's arc), angle (degrees, swing), side,
 time (s since let go), phase (0…1), x (m from the equilibrium point), speed, maxSpeed (m/s, of the seat or the mass), period (s), place ('end' | 'between' | 'middle'),
