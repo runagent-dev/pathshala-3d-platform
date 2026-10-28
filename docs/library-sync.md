@@ -201,13 +201,50 @@ schema, and a lab placed with its defaults passes the reader's own settings chec
 `npm run library:sync -- --help` lists them; the top of `scripts/library-sync.mjs` explains each. The useful ones: `--only
 <id,id>`, `--changed-since <git ref>` (figures whose files or imported kit modules changed since the ref; no withdrawals),
 `--formats lab,poster,glb,video`, `--tier`, `--license`, `--libraries catalog|own`, `--no-verify`, `--check` (exit 1 when the library is behind, for CI),
-`--cache-dir`, `--report`, `--json`.
+`--cache-dir`, `--report`, `--json`, `--notify` / `--no-notify` (see "Telling the Books server").
 
 `library-sync.config.json` (optional, at the repo root; read only): `{ "license": "CC-BY-4.0", "formats": ["lab", "poster",
 "glb"], "size": { "width": 800, "height": 500, "minWidth": 390, "minHeight": 390 } }`.
 
 Exports need headless Chromium and, like `npm run export`, 10 GB free disk; `PATHSHALA_MIN_FREE_GB` lowers that limit
 (a small disk, or CI).
+
+## Telling the Books server
+
+The books in the Books dashboard (chalkbook-internal) hold labs and 3D models by exact version. Their update job brings every book up to
+the library's current versions (same-major updates apply by themselves; a major or breaking one waits for a person). So that this happens
+**at once** and not on some timer, a production sync ends by telling the Books server.
+
+| Setting (environment only, never a flag) | |
+|---|---|
+| `LIBRARY_SYNC_HOOK_URL` | the endpoint, for example `https://<books host>/api/library-sync`. `https`, except `http://127.0.0.1` and `http://localhost` (for tests) |
+| `LIBRARY_SYNC_HOOK_TOKEN` | the shared secret, sent as `Authorization: Bearer`. It is never printed or written anywhere, not even if the server echoes it |
+
+**When it fires:** after `--apply --tier production` (not a dry run, not `--check`, not staging), when at least one figure was
+published or withdrawn, or a shared library was repaired. Nothing changed: nothing is sent. `--notify` sends it anyway (still only
+for a production `--apply`; it explains itself when it does not), `--no-notify` never sends.
+
+**What is sent:** `POST` with `{"tier":"production","syncedAt":"<time>","published":<n>,"withdrawn":<n>}`: numbers only. The server runs
+the update **before it answers** (up to 10 minutes; the sync then gives up waiting and says the update may still be running) and
+replies `{"ok":true,"applied":n,"review":n,"failed":n,"books":n}`, printed as `Books updated: 3 applied, 1 need review, 0 failed`.
+Items that need review are listed in the dashboard under Books, Updates.
+
+**When it goes wrong, the sync does not.** The library is already updated at that point, so a failed notification never changes
+the exit code and never undoes anything. It prints what happened and ends with `Books were NOT notified; run: npm run library:sync
+-- --notify`:
+
+| Answer | Meaning | What the sync does |
+|---|---|---|
+| nothing set | not configured | one line, `Books notification: not configured (LIBRARY_SYNC_HOOK_URL)` |
+| only one setting | half configured | a clear line, nothing sent |
+| 409 | an update was already running on the server | says so; repeat later with `--notify` |
+| 401 / 403 | wrong token | prints the status and the server's message (200 characters at most) |
+| 503 | the Books server is not set up for this call, or is starting | retried twice (2 s, 6 s), then reported |
+| 502 / 504, network error | server or network trouble | retried twice, then reported |
+| a redirect | refused: it could carry the token to another host | reported; use the final address |
+
+To re-send without publishing anything: `npm run library:sync -- --library <url> --tier production --apply --notify` (nothing is
+republished when nothing changed). The last outcome is kept in `<cache-dir>/last-notification.json` (time, status, counts; no secrets).
 
 ## Trying it on your machine
 
@@ -244,4 +281,5 @@ changed figure does not republish the libraries. It refuses a library that is no
 - **Fonts.** About 190 KiB of every lab is the embedded Bengali font; a shared font as a lab `asset` would shrink them if the
   reader supports fonts from assets.
 - **Video** is only built with `--formats video` and was not run in the scenarios.
+- **Telling the Books server** was tested against a stand-in HTTP server here, not against the real Books endpoint (built in parallel in chalkbook-internal).
 - Which library to publish to (staging or production) is for the owners to say; nothing here knows or defaults to either.
