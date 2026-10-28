@@ -27,7 +27,7 @@ function bambooTexture() {
   c.width = 128;
   c.height = 8;
   const ctx = c.getContext('2d');
-  ctx.fillStyle = '#d6bd84';
+  ctx.fillStyle = '#edc363';
   ctx.fillRect(0, 0, 128, 8);
   let seed = 5;
   const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
@@ -62,11 +62,11 @@ function createGirl() {
   const g = new THREE.Group();
   g.name = 'Girl';
   const mat = (name, color, roughness = 0.75) => new THREE.MeshStandardMaterial({ name, color, roughness, metalness: 0 });
-  const skin = mat('Skin', 0xb57a52, 0.6);
-  const dress = mat('Kameez', 0xc2417a);
-  const salwar = mat('Salwar', 0xf1e2cf);
+  const skin = mat('Skin', 0xd7a075, 0.6);
+  const dress = mat('Kameez', 0xf45c82);
+  const salwar = mat('Salwar', 0xffdc73);
   const hair = mat('Hair', 0x1d1714, 0.55);
-  const shoe = mat('Sandal', 0x7a4a2b);
+  const shoe = mat('Sandal', 0x243b55);
 
   g.add(limb(v3(-0.035, 0.075, -0.07), v3(-0.035, 0.075, 0.07), 0.075, dress)); // hips
   g.add(limb(v3(-0.04, 0.09, 0), v3(-0.075, 0.3, 0), 0.092, dress)); // body, leaning back a little
@@ -123,9 +123,9 @@ export function createSwing({ materials: M }) {
 
   const cane = bambooTexture();
   const bamboo = new THREE.MeshStandardMaterial({ name: 'Bamboo', map: cane, roughness: 0.42, metalness: 0 });
-  const node = new THREE.MeshStandardMaterial({ name: 'BambooNode', color: 0xa98a52, roughness: 0.5, metalness: 0 });
+  const node = new THREE.MeshStandardMaterial({ name: 'BambooNode', color: 0xb98732, roughness: 0.5, metalness: 0 });
   const tie = new THREE.MeshStandardMaterial({ name: 'Lashing', color: 0x5e4630, roughness: 0.95, metalness: 0 });
-  const rope = new THREE.MeshStandardMaterial({ name: 'Rope', color: 0xc6a06a, roughness: 0.95, metalness: 0 });
+  const rope = new THREE.MeshStandardMaterial({ name: 'Rope', color: 0xffe4ac, roughness: 0.95, metalness: 0 });
   // the kit's wood is tiled for millimetres: here one picture of the grain runs along the whole seat
   const grain = M.wood.map.clone();
   grain.repeat.set(1, 0.3);

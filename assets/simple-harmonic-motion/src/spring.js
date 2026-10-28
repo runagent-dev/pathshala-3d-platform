@@ -28,8 +28,8 @@ class Helix extends THREE.Curve {
 export function createSpringStand({ materials: M }) {
   const root = new THREE.Group();
   root.name = 'SpringStand';
-  const paint = new THREE.MeshPhysicalMaterial({ name: 'StandBase', color: 0x3a4250, roughness: 0.5, clearcoat: 0.3 });
-  const springSteel = new THREE.MeshStandardMaterial({ name: 'SpringSteel', color: 0xb8c0c8, roughness: 0.3, metalness: 1 });
+  const paint = new THREE.MeshPhysicalMaterial({ name: 'StandBase', color: 0x1879b6, roughness: 0.5, clearcoat: 0.3 });
+  const springSteel = new THREE.MeshStandardMaterial({ name: 'SpringSteel', color: 0xe6effa, roughness: 0.38, metalness: 0.6 });
 
   // ── the stand: a heavy base, an upright rod, a boss and an arm ──
   const base = new THREE.Mesh(new RoundedBoxGeometry(0.36, 0.026, 0.22, 2, 0.006), paint);
