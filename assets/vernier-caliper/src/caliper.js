@@ -4,6 +4,7 @@
 // The slider group sits at x = gap (true jaw opening). Its vernier zero is at local x = 0
 // (shifted by the zero error), and its outside-jaw face at local x = DIM.faceX.
 import * as THREE from 'three';
+import { createEnamel } from './presentation.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { textMesh, boxProjectUV, INK } from '@shared/student/materials.js';
 import { divisionsFor } from './reading.js';
@@ -113,6 +114,7 @@ function tickMesh(count, material, name) {
 // ── build ──────────────────────────────────────────────────────────────────────
 export function createCaliper({ materials, lc = 0.1, zeroError = 0, text: textOpts = {} }) {
   const M = materials;
+  const enamel = createEnamel();
   const T = { ...DEFAULT_TEXT, ...textOpts };
   const root = new THREE.Group();
   root.name = 'VernierCaliper';
@@ -223,11 +225,11 @@ export function createCaliper({ materials, lc = 0.1, zeroError = 0, text: textOp
       'VernierPlate',
     ),
   );
-  addSlider(mesh(rbox(S0, S0 + 1.5, DIM.scaleY - 0.2, DIM.beamTop + 0.3, DIM.beamHalfT + 0.05, P, 0.3), M.sliderSteel, 'WindowLeft'));
-  addSlider(mesh(rbox(54, S1, DIM.scaleY - 0.2, DIM.beamTop + 0.3, DIM.beamHalfT + 0.05, P, 0.5), M.sliderSteel, 'WindowRight'));
-  addSlider(mesh(rbox(S0, S1, DIM.beamTop + 0.05, 23.5, -P, P, 0.9), M.sliderSteel, 'TopBar'));
-  addSlider(mesh(rbox(S0, S1, -6, -0.05, -P, P - 0.02, 0.7), M.sliderSteel, 'BottomBar'));
-  addSlider(mesh(rbox(S0, S1, -6, 23.5, -P, -DIM.beamHalfT - 0.05, 0.6), M.sliderSteel, 'BackPlate'));
+  addSlider(mesh(rbox(S0, S0 + 1.5, DIM.scaleY - 0.2, DIM.beamTop + 0.3, DIM.beamHalfT + 0.05, P, 0.3), enamel, 'WindowLeft'));
+  addSlider(mesh(rbox(54, S1, DIM.scaleY - 0.2, DIM.beamTop + 0.3, DIM.beamHalfT + 0.05, P, 0.5), enamel, 'WindowRight'));
+  addSlider(mesh(rbox(S0, S1, DIM.beamTop + 0.05, 23.5, -P, P, 0.9), enamel, 'TopBar'));
+  addSlider(mesh(rbox(S0, S1, -6, -0.05, -P, P - 0.02, 0.7), enamel, 'BottomBar'));
+  addSlider(mesh(rbox(S0, S1, -6, 23.5, -P, -DIM.beamHalfT - 0.05, 0.6), enamel, 'BackPlate'));
 
   const sliderJaw = new THREE.Shape();
   sliderJaw.moveTo(DIM.faceX, -4.5);
@@ -268,7 +270,7 @@ export function createCaliper({ materials, lc = 0.1, zeroError = 0, text: textOp
   cap.rotateX(Math.PI / 2);
   roller.add(wheel, mesh(cap, M.chrome, 'RollerAxle'));
   addSlider(roller);
-  addSlider(mesh(rbox(51.5, S1, -9.2, -5.5, -P, -1.9, 0.5), M.sliderSteel, 'RollerBracket'));
+  addSlider(mesh(rbox(51.5, S1, -9.2, -5.5, -P, -1.9, 0.5), enamel, 'RollerBracket'));
 
   // Locking screw on the top bar.
   const lock = new THREE.Group();
