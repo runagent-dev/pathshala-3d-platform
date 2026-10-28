@@ -2,6 +2,19 @@
 
 Book: physics-9-10 › 2.3 › p38 (chapter 2, গতি). Screenshot: `reference/page-38.png`.
 
+## 2026-10-28 — v0.3.0: a simpler illustrated journey
+The owner found the school-field story complex and supplied a winding-path/straight-arrow diagram as a visual reference (`reference/journey-style.png`). The new view uses one start, one finish, one winding blue path and one straight coral arrow, with a small pond and three symbolic trees. No people, school, ring of possible places, question marks or multi-child sequence.
+
+- Rich green, cyan, coral and blue replace the earlier pale scene. The map fills the frame; the explanation sits beside it on wide screens. Labels are checked for overlap at all six sizes and grow on larger classroom displays.
+- The path is exactly 120 m; the finish is 20 m north of the start. The path length is a scalar; the finish's **position relative to the start** is a vector. The arrow is labelled **অবস্থান** to follow topic 2.3; the term সরণ belongs to the next section and is not introduced here.
+- One action walks the path and reveals its scalar length; the next reveals magnitude and direction for the position vector. Labels point directly to the path and arrow, without relying on colour alone.
+- Steps 3–5 compare only two arrows at a time, using the book's exact A/B/C/D relationships and caption. No extra actors or simultaneous four-arrow layout.
+- Five questions read the diagram: scalar information, vector information, direction, equal vectors, and changed magnitude/direction. Each question resets its scene and locks scene-changing controls. Learn state is restored on leaving the test.
+- Top-down is the default and is forced in the test. The optional tilted view retains the same diagram. The stage size stays fixed across all steps and test questions.
+- The main bridge and URL names stay supported, including steps 0–5, act, compare, home, reset, capture and GLB export. The story attached to the steps has changed as above; `get.journey` exposes the path reading and actual position vector.
+
+## Previous implementation (v0.2.0)
+
 ## What the page shows
 Section ২.৩ স্কেলার ও ভেক্টর রাশি. What we can measure is a রাশি (আনন্দ or দুঃখ is not; তাপমাত্রা is). Body
 temperature 37° C (98.4° F) is given by one value. "অবস্থান ছিল সে রকম একটি রাশি, যেটা বোঝানোর জন্য আমাদের শুধু দূরত্ব
@@ -80,7 +93,7 @@ says a position could not be given by the distance alone, its direction was need
     of the story needs a দিক as well (where the friend is; how far, how long you walked, the friend's temperature).
 
 ## Decisions
-- **Distances**: the clue is 25 m (a school field is about 100 m across) and the arrows are to scale with the 10 m
+- **Distances**: the clue is 25 m (a school field is about 120 m across) and the arrows are to scale with the 10 m
   bar. The frame is set by the ring's width on a phone held upright, so 25 m (rather than 50 m) keeps the children
   about 35 px tall at 390×700; they are drawn about five times bigger than life, and the note says so.
 - **Directions** are the eight compass words; the camera looks north so উত্তর is up, a little tilted (44° on phones, a
