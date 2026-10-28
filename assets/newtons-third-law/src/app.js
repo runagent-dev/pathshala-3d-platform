@@ -1,12 +1,11 @@
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
-import { createArrow } from '@shared/arrow.js';
 import { createAnnotations } from '@shared/student/annotations.js';
 import { buildStudentShell, cleanSheet, bindCleanSheet } from '@shared/student/shell.js';
 import { createAction } from '@shared/student/action.js';
 import { createQuiz } from '@shared/student/quiz.js';
 import { createAudio } from '@shared/student/audio.js';
-import { createDashedArrow } from './arrow.js';
+import { createLessonArrow } from './arrow.js';
 import { createBoatScene } from './boat.js';
 import { createEarthScene, EARTH_R } from './earth.js';
 import { createPresentation } from './presentation.js';
@@ -120,21 +119,14 @@ export function createApp(root, options = {}) {
     else anno.add(id, opts);
   };
   const arrow = (name, colour, dashed = false) => {
-    const a = dashed
-      ? createDashedArrow({ name, color: colour, radius: 0.016, head: 0.12, headRadius: 0.05 })
-      : createArrow({ name, color: colour, radius: 0.016, head: 0.12, headRadius: 0.05 });
-    a.root.userData.noExport = true;
-    a.material.depthTest = false;
-    a.root.traverse((m) => {
-      m.renderOrder = 10;
-    });
+    const a = createLessonArrow({ name, color: colour, dashed });
     scene.add(a.root);
     return a;
   };
-  const force1 = arrow('ForceOnBoyOrApple', '#ffb547');
-  const force2 = arrow('ForceOnBoatOrEarth', '#ffb547', true);
-  const motion1 = arrow('BoyVelocity', '#61e1ff');
-  const motion2 = arrow('BoatVelocity', '#61e1ff');
+  const force1 = arrow('ForceOnBoyOrApple', '#ffca3a');
+  const force2 = arrow('ForceOnBoatOrEarth', '#ffca3a', true);
+  const motion1 = arrow('BoyVelocity', '#70f4ff');
+  const motion2 = arrow('BoatVelocity', '#70f4ff');
   const measurement = new THREE.Line(
     new THREE.BufferGeometry(),
     new THREE.LineDashedMaterial({ color: 0xaed8f1, dashSize: 0.045, gapSize: 0.035, transparent: true, opacity: 0.65, depthTest: false }),
@@ -293,9 +285,8 @@ export function createApp(root, options = {}) {
   function updatePicture() {
     const m = stateNow();
     for (const arrow of [force1, force2]) {
-      const colour = s.example === 'boat' ? '#ffb547' : '#bca2ff';
+      const colour = s.example === 'boat' ? '#ffca3a' : '#bca2ff';
       arrow.material.color.set(colour);
-      arrow.material.emissive.set(colour);
     }
     boat.root.visible = s.example === 'boat';
     earth.root.visible = s.example === 'apple';
@@ -310,11 +301,11 @@ export function createApp(root, options = {}) {
       remove('earth');
       remove('radius');
       if (m.contact) {
-        if (s.showFirst) force1.set(v(m.personX, m.personY + 0.9, 0.63), v(1, 0), 0.65);
-        if (s.showSecond) force2.set(v(m.boatX - 0.15, 0.42, 0.63), v(-1, 0), 0.65);
+        if (s.showFirst) force1.set(v(m.personX + 0.16, m.personY + 0.82, 0.63), v(1, 0), 0.85);
+        if (s.showSecond) force2.set(v(m.boatX - 0.15, 0.42, 0.63), v(-1, 0), 0.85);
       } else if (s.time > BOAT.pushTime && s.mode === 'explore') {
-        if (m.personV > 0) motion1.set(v(m.personX, m.personY + 0.7, 0.63), v(1, 0), 0.4);
-        motion2.set(v(m.boatX - 0.15, 0.42, 0.63), v(-1, 0), 0.4);
+        if (m.personV > 0) motion1.set(v(m.personX, m.personY + 0.7, 0.63), v(1, 0), 0.62);
+        motion2.set(v(m.boatX - 0.15, 0.42, 0.63), v(-1, 0), 0.62);
       }
       label('boy', {
         text: t('boy'),

@@ -118,3 +118,10 @@ The bow dips by about five degrees under the push, then gently rebounds and sett
 stays on the water. This pitch/heave is an illustrative load response, not a quantified buoyancy model.
 The release height follows the dipped deck, with a continuous transition to ballistic flight and a softer
 landing pose. The horizontal force, momentum and simple formula presentation are unchanged.
+
+## Clearer vector arrows (v1.0.2)
+Force and motion arrows have thicker shafts, larger heads and a dark outline; their unlit colours stay vivid
+over clothing, wood and water. The two horizontal force arrows remain equal in length (now 0.85 scene units),
+with matching gold colour and solid/dashed shafts. The boy's force begins at his forward side so more of it is
+visible outside the torso. Cyan motion arrows are longer too; gravity keeps the established violet pair.
+The outline follows each arrow's exact endpoints and dash pattern. Labels continue avoiding the boy.
