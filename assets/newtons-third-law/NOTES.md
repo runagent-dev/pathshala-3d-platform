@@ -110,3 +110,11 @@ The owner's follow-up asks for simpler-looking maths. The default apple sheet no
 apple acceleration and Earth acceleration, with short names and results. A keyboard-accessible **পূর্ণ হিসাব**
 button opens a separate calculation sheet with the full inverse-square equation, vector pair, masses and constants.
 This leaves the picture and default explanation uncluttered; the derivation remains complete and offline.
+
+## Planted push and bow dip (v1.0.1)
+Both sneaker soles stay fixed on a dedicated wooden footboard in boat coordinates throughout contact.
+The hips travel forward as the knees bend and the arms swing; the feet leave only when the contact pair ends.
+The bow dips by about five degrees under the push, then gently rebounds and settles after takeoff; the wake
+stays on the water. This pitch/heave is an illustrative load response, not a quantified buoyancy model.
+The release height follows the dipped deck, with a continuous transition to ballistic flight and a softer
+landing pose. The horizontal force, momentum and simple formula presentation are unchanged.

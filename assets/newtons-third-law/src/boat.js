@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { createPerson } from './person.js';
-import { BOAT } from './physics.js';
+import { BOAT, boatAt } from './physics.js';
 const v = (x, y, z = 0) => new THREE.Vector3(x, y, z);
 const material = (name, color, roughness = 0.6) => new THREE.MeshPhysicalMaterial({ name, color, roughness, clearcoat: 0.2 });
 function woodTexture() {
@@ -92,6 +92,11 @@ export function createBoatScene() {
       }
       boat.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 70, 0.004, 4, false), dark));
     }
+  // A broad footboard supports both shoes throughout the push.
+  const footboard = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.04, 0.64), inside);
+  footboard.name = 'PushFootboard';
+  footboard.position.set(0.39, BOAT.footY - 0.02, 0);
+  boat.add(footboard);
   const person = createPerson();
   person.root.name = 'Boy';
   person.root.scale.setScalar(0.9);
@@ -123,7 +128,7 @@ export function createBoatScene() {
   // Small wave lines give the boat a clear waterline without a distracting grid.
   const wake = new THREE.Group();
   wake.userData.noExport = true;
-  boat.add(wake);
+  root.add(wake);
   const rippleMat = new THREE.MeshBasicMaterial({ color: 0x96eff5, transparent: true, opacity: 0.55 });
   for (const side of [-1, 1]) {
     const pts = [];
@@ -140,20 +145,58 @@ export function createBoatScene() {
   root.traverse((o) => {
     if (o instanceof THREE.Mesh && o !== water) o.castShadow = true;
   });
+  const personBounds = new THREE.Box3();
   return {
     root,
     boat,
+    personBounds,
     person: person.root,
     hit,
     set(state) {
-      boat.position.x = state.boatX;
+      boat.position.set(state.boatX, state.heave, 0);
+      boat.rotation.z = state.pitch;
+      wake.position.x = state.boatX;
       person.root.position.set(state.personX, state.personY, 0);
+      const q = Math.min(state.time / BOAT.pushTime, 1);
+      const smooth = (x) => {
+        const n = Math.max(0, Math.min(x, 1));
+        return n * n * (3 - 2 * n);
+      };
       const air = state.phase === 'flight';
+      const release = boatAt(BOAT.pushTime);
+      const lift = smooth((state.time - BOAT.pushTime) / 0.14);
+      const landing = smooth((state.landTime - state.time) / 0.14);
+      // Fix each sole in BOAT coordinates until takeoff, while the hips travel forward.
+      // After release, blend from that exact pose into the airborne stride (no popping feet).
+      const planted = (side, pose) => {
+        const x = BOAT.startX + 0.9 * (side * 0.09 + 0.06);
+        return v(
+          pose.boatX + x * Math.cos(pose.pitch) - BOAT.footY * Math.sin(pose.pitch) - pose.personX,
+          pose.heave + x * Math.sin(pose.pitch) + BOAT.footY * Math.cos(pose.pitch) - pose.personY,
+          side * 0.099,
+        ).divideScalar(0.9);
+      };
+      const feet = [1, -1].map((side) => {
+        if (state.time <= BOAT.pushTime) return planted(side, state);
+        const stride = air ? 0.09 + 0.19 * landing : 0.09;
+        const target = v(side * stride + 0.06, air && side < 0 ? 0.25 * landing : 0, side * 0.11);
+        return planted(side, release).lerp(target, lift);
+      });
+      const crouch = state.time <= BOAT.pushTime ? 0.22 + 0.05 * q + 0.09 * Math.sin(Math.PI * q) : 0.27 * (1 - lift) + 0.1 * lift;
       person.pose({
-        lean: state.phase === 'push' ? 0.3 : air ? 0.12 : 0.03,
-        stance: air ? 0.28 : 0.09,
-        jump: air ? 1 : 0,
-        hands: air ? [v(0.42, 1.4, 0.2), v(0.05, 1.1, -0.25)] : [v(0.25, 1.2, 0.2), v(0.17, 1.08, -0.2)],
+        lean: state.time <= BOAT.pushTime ? 0.1 + 0.3 * q : 0.4 * (1 - lift) + (air ? 0.12 : 0.03) * lift,
+        crouch,
+        feet,
+        footPitch: state.time <= BOAT.pushTime ? state.pitch : release.pitch * (1 - lift),
+        hands:
+          state.time <= BOAT.pushTime
+            ? [v(-0.12 + 0.54 * q, 0.85 + 0.55 * q, 0.2), v(-0.2 + 0.25 * q, 0.8 + 0.3 * q, -0.25)]
+            : [v(0.42, 1.4, 0.2), v(0.05, 1.1, -0.25)],
+      });
+      person.root.updateMatrixWorld(true);
+      personBounds.makeEmpty();
+      person.root.traverse((object) => {
+        if (object instanceof THREE.Mesh && object !== hit) personBounds.expandByObject(object);
       });
     },
     bounds: new THREE.Box3(v(-2.3, -0.3, -0.75), v(2.6, 2.55, 0.75)),

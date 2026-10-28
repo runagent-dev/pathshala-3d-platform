@@ -27,6 +27,9 @@ test('boat: the contact pair ends at takeoff, with continuous positions and velo
   assert.equal(after.boatA, 0);
   close(before.personX, after.personX, 1e-7);
   close(before.boatX, after.boatX, 1e-7);
+  close(before.personY, after.personY, 1e-7);
+  close(before.pitch, after.pitch, 1e-7);
+  close(before.heave, after.heave, 1e-7);
   close(before.personV, after.personV);
   close(before.boatV, after.boatV);
 });

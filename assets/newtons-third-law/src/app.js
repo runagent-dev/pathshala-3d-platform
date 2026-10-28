@@ -93,7 +93,28 @@ export function createApp(root, options = {}) {
   let lastText = '';
   let lastEquations = '';
   let lastPhase = '';
-  const anno = createAnnotations({ stage, layer: ui.annoLayer, avoid: [ui.corner, badge, ui.hint, () => action?.ringBox(), () => action?.box()] });
+  function boyScreenBox() {
+    if (s.example !== 'boat' || boat.personBounds.isEmpty()) return null;
+    const box = { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity };
+    const { min, max } = boat.personBounds;
+    for (const x of [min.x, max.x])
+      for (const y of [min.y, max.y])
+        for (const z of [min.z, max.z]) {
+          const p = v(x, y, z).project(camera);
+          const px = (p.x * 0.5 + 0.5) * stage.width;
+          const py = (-p.y * 0.5 + 0.5) * stage.height;
+          box.left = Math.min(box.left, px);
+          box.right = Math.max(box.right, px);
+          box.top = Math.min(box.top, py);
+          box.bottom = Math.max(box.bottom, py);
+        }
+    return box;
+  }
+  const anno = createAnnotations({
+    stage,
+    layer: ui.annoLayer,
+    avoid: [ui.corner, badge, ui.hint, boyScreenBox, () => action?.ringBox(), () => action?.box()],
+  });
   const label = (id, opts) => {
     if (anno.has(id)) anno.update(id, opts);
     else anno.add(id, opts);
@@ -292,7 +313,7 @@ export function createApp(root, options = {}) {
         if (s.showFirst) force1.set(v(m.personX, m.personY + 0.9, 0.63), v(1, 0), 0.65);
         if (s.showSecond) force2.set(v(m.boatX - 0.15, 0.42, 0.63), v(-1, 0), 0.65);
       } else if (s.time > BOAT.pushTime && s.mode === 'explore') {
-        motion1.set(v(m.personX, m.personY + 0.7, 0.63), v(1, 0), 0.4);
+        if (m.personV > 0) motion1.set(v(m.personX, m.personY + 0.7, 0.63), v(1, 0), 0.4);
         motion2.set(v(m.boatX - 0.15, 0.42, 0.63), v(-1, 0), 0.4);
       }
       label('boy', {
@@ -325,6 +346,8 @@ export function createApp(root, options = {}) {
           ],
           optional: true,
         });
+      } else remove('motion-boy');
+      if (motion2.root.visible) {
         label('motion-boat', {
           text: t('motion_boat'),
           point: () => motion2.tip,
@@ -336,10 +359,7 @@ export function createApp(root, options = {}) {
           ],
           optional: true,
         });
-      } else {
-        remove('motion-boy');
-        remove('motion-boat');
-      }
+      } else remove('motion-boat');
     } else {
       for (const id of ['boy', 'boat', 'motion-boy', 'motion-boat']) remove(id);
       earth.setFall(m.fallen);
