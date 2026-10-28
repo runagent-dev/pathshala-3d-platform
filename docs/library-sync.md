@@ -14,7 +14,8 @@ npm run library:sync -- --library <url>                 # dry run against a libr
 LIBRARY_TOKEN=… npm run library:sync -- --library <url> --apply
 ```
 
-Decision record: [0007](decisions/0007-library-sync.md). Chalk side: the lab spec (`spec/1.1` §3, `spec/1.5`) and the
+Decision records: [0007](decisions/0007-library-sync.md), [0008](decisions/0008-shared-library-catalog.md) (the three.js
+libraries are chalk-format's bytes). Chalk side: the lab spec (`spec/1.1` §3, `spec/1.5`) and the
 registry API (`spec/1.2/registry-api.md`) in the chalk-format repo.
 
 ## What it publishes
@@ -28,7 +29,7 @@ For each figure, as separate library items that a book can use on their own or t
 | **Poster** | `image/webp` (the exporter's 800×500 picture) | `--formats poster`; named by the manifest, shown before the lab starts |
 | **Models** | `model/gltf-binary`, one per pose in `export.glb` | `--formats glb`; models from `export.glb`, or the figure itself for a `model` figure |
 | **Video** | `video/mp4` | only with `--formats video` (slow); figures that have `export.video` |
-| **Libraries** | `text/javascript`, one per module | three.js and the add-ons the labs import; shared by every lab, published once |
+| **Libraries** | `text/javascript`, one per module | three.js and the add-ons the labs import; chalk-format's catalog bytes, shared by every lab in every book, published once (see "The shared libraries") |
 
 The default is `lab,poster,glb`. Every item is tagged `origin:pathshala-3d`, `kind:…`, `figure:<id>`,
 `figure-version:<v>`, `page:<n>`, `topic:<x.y.z>`, `book:<id>`, the subject, `license:<spdx>`, `source:<hash8>`,
@@ -71,7 +72,11 @@ wins and the older is demoted. One figure failing does not stop the others; the 
   descriptive fields (`title`, `description`, `tags`, `maintainers`, `placement`, `order`, `commands`, `events`) and `version`;
 - the tool versions: esbuild and `@chalk-format/core` (labs), Playwright and the glTF tools (models, poster), the
   vendored three.js (everything, via `shared/vendor/three/VERSION`, not by hashing its bytes), the kit version, and
-  the code of the lab adapter, the bundler and the exporter.
+  the code of the lab adapter, the bundler and the exporter;
+- for a lab, the **pinned library catalog** (a hash of its specifiers, versions and keys) or `own` with `--libraries own`.
+  The keys of the libraries a lab imports are part of that hash, so a lab is rebuilt when any shared library changes. A
+  catalog change that touches a library the labs do not use also rebuilds them (the hash is of the whole catalog, not of
+  the libraries each lab uses); it is rare and cheap.
 
 So a changed description rebuilds no lab (it rewrites the manifest only), a version bump rebuilds the lab only, a
 changed export pose rebuilds the models and the poster only, and a new esbuild rebuilds every lab and nothing else.
@@ -97,9 +102,9 @@ and reports `ready` when the figure's own `ready` event fires. Opened on its own
 lab starts with its defaults. Stylesheets (the Noto Sans Bengali font as data URLs, the student kit CSS, the figure's own)
 are inlined in page order.
 
-three.js and its add-ons are **not** in the file. They are bundled once each from `shared/vendor/three` as ES modules and
-published as the lab's `libraries` (spec 1.5 §2), so thirty labs share one 700 KB copy of three.js and the lab runs the
-exact three.js this repo's figures were made and tested with (the library's version is in the item tags and the manifest).
+three.js and its add-ons are **not** in the file. They are the lab's `libraries` (spec 1.5 §2): built once each, as the
+catalog's bytes (next section), so thirty labs share one 700 KB copy of three.js, and so does every other lab in the book.
+The lab is run in the sandbox against exactly those bytes (`verify-lab.mjs` gets the library bytes the manifest will name).
 
 **Size.** Of the 34 figures, all fit the 2 MiB limit (258–343 KiB); 16 are over the recommended 300 KiB. About 190 KiB
 of every lab is the Noto Sans Bengali font as base64 (the Bangla and Latin subsets), which the file must carry because a
@@ -112,6 +117,39 @@ report ready, receive the designer's settings (the query the figure reads, and t
 `value`), stop drawing frames while hidden and resume when visible, call `reset`, draw something, and raise no error or CSP
 violation. It does **not** check teaching content, touch input, phone layout (the existing `npm run verify` does), the Chalk
 reader's own UI, or the `state`/`progress` capabilities (see Limits).
+
+## The shared libraries (three.js, one copy per book)
+
+chalk-format builds three.js and a few add-ons once (`tools/lab-libraries.ts`, `libraries/catalog.json`): the same bytes
+are the same `c1:` key, so a book that holds labs from several makers carries **one** copy of three.js. This repo pins
+that catalog and builds its libraries to match it, byte for byte (decision 0008):
+
+- `scripts/lib/library/lab-library-catalog.json` is the pinned copy (specifier, version, key, size, plus `source`: the
+  chalk-format commit it was taken from and the esbuild it was built with). Refresh it with
+  `npm run library:catalog -- --from <chalk-format>/libraries/catalog.json` (a file, a checkout, or a raw GitHub URL;
+  `--dry-run` only shows the difference). It validates the file, shows what changed (a changed key is a different copy in
+  every book), writes it, and says what else has to move (three, esbuild-catalog).
+- `scripts/lib/library/build-libraries.mjs` builds with chalk-format's exact recipe (esbuild `bundle`, `minify`, format
+  `esm`, target `es2020`, `legalComments: inline`, add-ons `external: ['three']`) from `node_modules/three`
+  (`build/three.module.js`, `examples/jsm/...`), **not** from `shared/vendor/three`, and compares each key with the
+  catalog. A different key is never published: the run stops with the cause (this repo's three or esbuild is not the
+  version the catalog was built with) and the fix.
+- esbuild has two entries in `package.json`: `esbuild` (bundles the labs) and `esbuild-catalog`
+  (`npm:esbuild@0.25.12`, chalk-format's version) for the libraries. The key depends on the esbuild that made the bytes;
+  keep them apart so the labs can move to a newer esbuild without moving the catalog.
+- Tags: `catalog:shared` and `catalog-ref:chalk-format-<commit12>` for a library the catalog lists; `catalog:extra` for an
+  add-on it does not list yet (built the same way, a candidate for the catalog: a lab that uses it still works, its key is
+  just not shared); `catalog:own` with `--libraries own`.
+- **Three.js version gate.** `npm run library:sync` (dry run or not, so `--check` too) and `npm run check` fail when this
+  repo's three.js (`package.json`, `shared/vendor/three/VERSION`, the installed package) is not the catalog's version, with a
+  one-line fix: `npm install --save-exact three@<v> && npm run vendor:three`, or refresh the catalog.
+- `--libraries own` is the old behaviour (built from `shared/vendor/three` with this repo's esbuild): the labs run, the
+  libraries are not shared with anyone. An older own copy stays in the library, marked `state:superseded` once the catalog
+  copy is published, because books may use it.
+
+The manifest's `libraries[]` carries the catalog's `specifier`, `version` and key, so a book holding this repo's labs and
+a chalk-format lab names the same asset (`test/unit/library-sharing.test.mjs` packs both into one `.chalk` and checks that
+three.js is stored once).
 
 ## The manifest
 
@@ -162,7 +200,7 @@ schema, and a lab placed with its defaults passes the reader's own settings chec
 
 `npm run library:sync -- --help` lists them; the top of `scripts/library-sync.mjs` explains each. The useful ones: `--only
 <id,id>`, `--changed-since <git ref>` (figures whose files or imported kit modules changed since the ref; no withdrawals),
-`--formats lab,poster,glb,video`, `--tier`, `--license`, `--no-verify`, `--check` (exit 1 when the library is behind, for CI),
+`--formats lab,poster,glb,video`, `--tier`, `--license`, `--libraries catalog|own`, `--no-verify`, `--check` (exit 1 when the library is behind, for CI),
 `--cache-dir`, `--report`, `--json`.
 
 `library-sync.config.json` (optional, at the repo root; read only): `{ "license": "CC-BY-4.0", "formats": ["lab", "poster",
@@ -187,7 +225,8 @@ LIBRARY_TOKEN=dev-token npm run library:sync -- --library http://127.0.0.1:4900 
 `node scripts/library-scenarios.mjs --library http://127.0.0.1:4900 --token dev-token --admin-token dev-admin` (on an empty
 library) runs the scenarios below on a copy of the repo in `.cache/library/scenarios`, never on the figures themselves: first
 sync, a second that does nothing, one figure edited, one kit module edited, a figure deleted (and withdrawn only with the flag),
-items changed by hand, a killed run, and a tool version bump. It refuses a library that is not on this machine.
+items changed by hand, a killed run, a tool version bump, and that the library holds chalk-format's three.js bytes once and a
+changed figure does not republish the libraries. It refuses a library that is not on this machine.
 
 ## Limits of phase 1 (what is not done or not verified)
 
@@ -196,8 +235,10 @@ items changed by hand, a killed run, and a tool version bump. It refuses a libra
   checked in a real reader first.
 - **Only the reference reader was used** (the host code of `@chalk-format/core` in headless Chromium), not the Chalk
   reader's editor or the phone app. Phone layout is covered by the existing `npm run verify`, not by this.
-- **three.js version.** The labs ship with the repo's three.js (0.185.1); Chalk's own examples use 0.183.2. Libraries are
-  keyed by bytes, so both can coexist; which one the book should standardise on is a decision.
+- **three.js version.** The labs use the catalog's three.js (0.185.1, chalk-format's, see "The shared libraries"), so a book
+  with labs from both worlds carries one copy. Moving to another three.js is a catalog refresh, together in chalk-format and here.
+  The figures themselves run the vendored copy in `shared/vendor/three` (same version, enforced); the lab runs the catalog's
+  build of that version, a bundled and minified build of the same source, not the vendored file.
 - **License.** The repo has none. The sync takes one from you and refuses production without it.
 - **Withdrawn is final.** Hand-withdrawn items are reported, not resurrected (above).
 - **Fonts.** About 190 KiB of every lab is the embedded Bengali font; a shared font as a lab `asset` would shrink them if the
