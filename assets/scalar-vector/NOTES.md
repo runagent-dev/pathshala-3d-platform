@@ -5,7 +5,7 @@ Book: physics-9-10 › 2.3 › p38 (chapter 2, গতি). Screenshot: `referenc
 ## 2026-10-28 — v0.3.0: a simpler illustrated journey
 The owner found the school-field story complex and supplied a winding-path/straight-arrow diagram as a visual reference (`reference/journey-style.png`). The new view uses one start, one finish, one winding blue path and one straight coral arrow, with a small pond and three symbolic trees. No people, school, ring of possible places, question marks or multi-child sequence.
 
-- Rich green, cyan, coral and blue replace the earlier pale scene. The map fills the frame; the explanation sits beside it on wide screens. Labels are checked for overlap at all six sizes.
+- Rich green, cyan, coral and blue replace the earlier pale scene. The map fills the frame; the explanation sits beside it on wide screens. Labels are checked for overlap at all six sizes and grow on larger classroom displays.
 - The path is exactly 120 m; the finish is 20 m north of the start. The path length is a scalar; the finish's **position relative to the start** is a vector. The arrow is labelled **অবস্থান** to follow topic 2.3; the term সরণ belongs to the next section and is not introduced here.
 - One action walks the path and reveals its scalar length; the next reveals magnitude and direction for the position vector. Labels point directly to the path and arrow, without relying on colour alone.
 - Steps 3–5 compare only two arrows at a time, using the book's exact A/B/C/D relationships and caption. No extra actors or simultaneous four-arrow layout.

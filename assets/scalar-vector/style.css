@@ -73,3 +73,17 @@ body.bg-transparent { background: transparent; }
 @container pvc-panel (max-width: 310px) {
   .sv[lang='en'] .pvc-q-feedback { --pvc-q-feedback-min: 5lh; }
 }
+.sv .pvc-anno-reading { max-width: none; }
+@container pvc (min-height: 601px) {
+  .sv .pvc-anno-reading b, .sv .pvc-anno-reading small { font-size: 14px; }
+}
+@container pvc (min-width: 1000px) {
+  .sv-heading { font-size: 17px; }
+  .sv-north { font-size: 15px; }
+  .sv .pvc-anno-endpoint { font-size: 17px; }
+  .sv .pvc-anno-reading { padding: 7px 12px; }
+  .sv .pvc-anno-reading b { font-size: 17px; }
+  .sv .pvc-anno-reading small { font-size: 16px; }
+  .sv .pvc-anno-arrow b { font-size: 28px; }
+  .sv .pvc-anno-arrow small { font-size: 16px; }
+}
