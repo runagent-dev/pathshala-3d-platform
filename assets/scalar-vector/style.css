@@ -1,65 +1,75 @@
-/* Scalar and vector: the page and the colours that carry meaning, the same as src/field.js: মান blue (the ring of
-   every place 25 m away), দিক orange (the compass point, the angle between two arrows), a ভেক্টর violet (the arrows),
-   the same vector green. The panel is the kit's clean sheet (one action, one result, one rule:
-   ../../shared/lib/student/student.css, .pvc-act, .pvc-outcome, .pvc-rule). */
+/* Simple journey diagram: blue path length, coral position vector, green equal vectors. */
 html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
 #app { position: fixed; inset: 0; }
 body.bg-transparent { background: transparent; }
-
-.sv { --c-mag: #1c7ed6; --c-dir: #d9480f; --c-vec: #5f3dc4; --c-equal: #2b8a3e; }
-
-/* a vector's name as it is written by hand (the book, p38): the letter with a small arrow over it */
-.sv-vec { position: relative; display: inline-block; padding-top: 0.32em; margin-top: -0.32em; font-weight: 700; line-height: 1; font-family: 'Noto Sans Bengali', Georgia, serif; }
-.sv-vec::before { content: ''; position: absolute; left: 0.04em; right: 0.24em; top: 0.1em; border-top: 0.09em solid currentColor; }
-.sv-vec::after { content: ''; position: absolute; right: 0.02em; top: -0.04em; border: 0.15em solid transparent; border-left: 0.3em solid currentColor; border-right: 0; }
-
-/* the result line: what matters in the colour of what it is */
-.sv .pvc-outcome[data-k='magnitude'] b { color: var(--c-mag); }
-.sv .pvc-outcome[data-k='vector'] b { color: var(--c-vec); }
-.sv .pvc-outcome[data-k='equal'] b { color: var(--c-equal); }
-.sv .pvc-outcome[data-k='direction'] b, .sv .pvc-outcome[data-k='both'] b { color: var(--c-dir); }
-.sv .pvc-outcome b { white-space: normal; }
-.sv .pvc-outcome .sv-vec { color: var(--c-vec); }
-.sv .pvc-rule .sv-vec { color: var(--ink); }
-
-/* on the field: the honest note about sizes, by the 10 m bar (a quiet label, no leader line) */
-.sv .pvc-anno-scale { display: flex; flex-direction: column; align-items: center; padding: 1px 5px 2px; border: 0; border-radius: 4px; background: rgba(255, 255, 255, 0.88); color: #2f3d4a; line-height: 1.3; }
-.sv .pvc-anno-scale b { font-size: 13px; font-weight: 700; }
-.sv .pvc-anno-scale small { font-size: 11px; font-weight: 500; color: #3c4652; }
-.sv .pvc-anno-lines .k-scale { display: none; }
-/* labels on the field: a vector's name a little bigger; the verdict with its tick */
-.sv .pvc-anno-callout { padding: 1px 8px; font-size: 14.5px; text-align: center; }
-.sv .pvc-anno-callout .sv-vec { font-size: 1.12em; }
-.sv .pvc-anno-callout svg { width: 15px; height: 15px; margin-right: 3px; vertical-align: -2px; stroke-width: 2.6; }
-.sv .pvc-anno-part { font-size: 13px; padding: 1px 6px; }
-/* in the test the locked hint sits at the top of the view, clear of the flags and arrows */
-.sv[data-mode='quiz'] .pvc-stage[data-ui='simple'] .pvc-hint { top: 54px; bottom: auto; }
-
-/* the test: answers in words (two lines allowed) or a vector's name */
-.sv .pvc-opt { font-size: 14.5px; line-height: 1.25; }
-.sv-opt { display: block; white-space: normal; text-align: center; }
-.sv-opt-vec { font-size: 22px; }
-.sv .pvc-q-text { font-size: 16px; }
-.sv .pvc-q-feedback { font-size: 14px; }
-
-/* wide frames (tabs beside the sheet): the rule on two lines */
+.sv { --c-mag: #246da9; --c-vec: #d84f42; --c-equal: #18846c; }
+.sv-heading { position: absolute; top: 15px; left: 14px; max-width: calc(100% - 230px); color: #0b241d; font-size: 14px; font-weight: 700; line-height: 1.4; pointer-events: none; }
+.sv-north { position: absolute; left: 15px; top: 65px; display: flex; flex-direction: column; align-items: center; gap: 3px; color: #0b241d; font-size: 12px; font-weight: 600; pointer-events: none; }
+.sv-north i { position: relative; display: block; width: 2px; height: 22px; background: currentColor; }
+.sv-north i::before { content: ''; position: absolute; top: -4px; left: -4px; border: 5px solid transparent; border-bottom: 8px solid currentColor; border-top: 0; }
+.sv-note { position: absolute; bottom: 5px; right: 10px; color: #446442; font-size: 10.5px; pointer-events: none; }
+.sv-vec { position: relative; display: inline-block; padding-top: 0.3em; font-family: 'Noto Sans Bengali', Georgia, serif; font-weight: 700; line-height: 1; }
+.sv-vec::before { content: ''; position: absolute; left: 0; right: 0.14em; top: 0.08em; border-top: 0.08em solid currentColor; }
+.sv-vec::after { content: ''; position: absolute; right: -0.02em; top: -0.04em; border: 0.14em solid transparent; border-left: 0.25em solid currentColor; border-right: 0; }
+.sv .pvc-outcome[data-kind='scalar'] b { color: var(--c-mag); }
+.sv .pvc-outcome[data-kind='vector'] b, .sv .pvc-outcome[data-kind='different'] b { color: var(--c-vec); }
+.sv .pvc-outcome[data-kind='equal'] b { color: var(--c-equal); }
+.sv .pvc-anno-endpoint { padding: 3px 8px; border: 0; background: #fffdf5; border-radius: 4px; font-size: 14px; color: #0b241d; }
+.sv .pvc-anno-lines .k-endpoint { display: none; }
+.sv .pvc-anno-reading { padding: 5px 9px; border: 0; border-left: 3px solid var(--c); border-radius: 4px; color: var(--c); background: #fffffc; max-width: 158px; line-height: 1.35; }
+.sv .pvc-anno-reading b { display: block; font-size: 13px; font-weight: 600; }
+.sv .pvc-anno-reading small { display: block; margin-top: 2px; font-size: 13px; font-weight: 700; }
+.sv .pvc-anno-arrow { padding: 5px 10px; border: 0; border-radius: 5px; text-align: center; color: var(--c); background: #fff; line-height: 1.2; }
+.sv .pvc-anno-arrow b { display: block; font-size: 21px; }
+.sv .pvc-anno-arrow small { display: block; padding-top: 5px; font-size: 13px; font-weight: 600; }
+.sv .pvc-anno-lines line { stroke-width: 1.5; }
+.sv .pvc-opt { font-size: 14px; line-height: 1.3; }
+.sv-opt { display: block; white-space: normal; }
+.sv .pvc-q-text { font-size: 15px; }
+.sv .pvc-q-feedback { font-size: 13.5px; }
+.sv .pvc-learn { gap: 9px; }
 @container pvc (min-width: 720px) and (min-height: 461px) {
-  .sv .pvc-learn { gap: 8px; }
   .sv .pvc-outcome { --pvc-outcome-lines: 1; }
   .sv .pvc-rule { --pvc-rule-lines: 2; }
-  .sv .pvc-q-feedback { --pvc-q-feedback-min: 2lh; } /* the worked answers fit two lines this wide */
 }
 @container pvc (max-width: 560px) and (max-height: 600px) {
-  .sv .pvc-q-text { font-size: 15px; }
-  .sv .pvc-opt { font-size: 13.5px; }
-  .sv .pvc-q-feedback { font-size: 13px; }
+  .sv .pvc-rule { font-size: 13.5px; }
+  .sv .pvc-outcome { font-size: 16px; }
+  .sv .pvc-q-feedback { font-size: 12.5px; }
+  .sv .pvc-opt { font-size: 13px; }
+  .sv-heading { top: 12px; font-size: 12px; }
+  .sv-north { top: 55px; font-size: 11px; }
+  .sv .pvc-anno-reading b { font-size: 12px; }
+  .sv .pvc-anno-reading small { font-size: 12px; }
 }
-/* short and wide (phone held sideways): the panel is beside the field */
 @container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
-  .sv .pvc-act-row { --pvc-act-lines: 2; } /* a long verb may wrap in the narrow side panel */
-  .sv .pvc-outcome { --pvc-outcome-lines: 3; font-size: 15px; line-height: 1.6; }
-  .sv .pvc-rule { --pvc-rule-lines: 5; font-size: 14px; line-height: 1.45; }
-  .sv .pvc-q-text { font-size: 14.5px; }
-  .sv .pvc-opt { font-size: 13.5px; height: 42px; }
-  .sv .pvc-q-feedback { font-size: 13px; }
+  .sv .pvc-act-row { --pvc-act-lines: 2; }
+  .sv .pvc-outcome { --pvc-outcome-lines: 3; font-size: 15px; }
+  .sv .pvc-rule { --pvc-rule-lines: 4; font-size: 14px; }
+  .sv .pvc-q-text { font-size: 14px; }
+  .sv .pvc-opt { font-size: 13px; height: 42px; }
+  .sv .pvc-q-feedback { font-size: 12.5px; }
+  .sv-heading { font-size: 12px; }
+}
+/* A map needs the height of the board: keep its concise explanation beside it on wide screens. */
+@container pvc (min-width: 720px) {
+  .sv .pvc-shell { grid-template-rows: minmax(0, 1fr); grid-template-columns: minmax(0, 1fr) clamp(260px, 34%, 340px); }
+  .sv .pvc-panel { display: flex; align-items: stretch; border-top: 0; border-left: 1px solid var(--line); padding: 12px; gap: 10px; overflow: hidden; }
+  .sv .pvc-tabs { grid-template-columns: 1fr 1fr; max-width: none; }
+  .sv .pvc-tabs button + button { border-top: 0; border-left: 1px solid var(--line-2); }
+  .sv .pvc-outcome { --pvc-outcome-lines: 3; font-size: 17px; }
+  .sv .pvc-rule { --pvc-rule-lines: 5; font-size: 14px; }
+  .sv .pvc-act-row { --pvc-act-lines: 2; }
+  .sv .pvc-q-options { grid-template-columns: 1fr 1fr; }
+}
+.sv[data-scene='comparison'] .sv-heading, .sv[data-scene='comparison'] .sv-north { color: #f2f8f5; }
+.sv .pvc-anno-reading { white-space: normal; }
+.sv .pvc-anno-reading b, .sv .pvc-anno-reading small { white-space: nowrap; }
+.sv-note { color: #0b241d; }
+@container pvc-panel (max-width: 310px) {
+  .sv .pvc-q-feedback { --pvc-q-feedback-min: 4lh; }
+}
+.sv[lang='en'] .pvc-q-feedback { --pvc-q-feedback-min: 4lh; }
+@container pvc-panel (max-width: 310px) {
+  .sv[lang='en'] .pvc-q-feedback { --pvc-q-feedback-min: 5lh; }
 }
