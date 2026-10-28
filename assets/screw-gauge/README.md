@@ -5,7 +5,7 @@
 > (Also in `PACKAGE.json` as `page`, `topic`, `placement`.)
 
 Interactive 3D screw gauge, made as the book describes it: one turn moves the screw by the **pitch, ১ মিমি**, and the
-circular scale has **১০০ ভাগ**, so the **ন্যূনাঙ্ক (least count) is ০.০১ মিমি**. Bangla, white page, works offline.
+circular scale has **১০০ ভাগ**, so the **ন্যূনাঙ্ক (least count) is ০.০১ মিমি**. Bangla, white reading panel with a navy studio and wooden bench behind the blue-enamel instrument, works offline.
 
 What the student can do:
 
