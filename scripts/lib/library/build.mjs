@@ -63,10 +63,10 @@ export const isLabVerified = (local, { cacheDir }) => {
   return fs.existsSync(meta) && JSON.parse(fs.readFileSync(meta, 'utf8')).verified === true;
 };
 
-/** A library module (three, an add-on) from the cache, or built. */
-export async function libraryFile(specifier, { cacheDir, sharedDir }) {
-  const lib = await buildLibrary(specifier, { sharedDir });
-  const file = path.join(cacheDir, 'libraries', `${safe(specifier)}-${lib.version}.js`);
+/** A library module (three, an add-on), built now (the catalog's bytes unless `libraries` is "own") and kept in the cache. */
+export async function libraryFile(specifier, { cacheDir, sharedDir, root, libraries, catalog }) {
+  const lib = await buildLibrary(specifier, { sharedDir, root, libraries, catalog });
+  const file = path.join(cacheDir, 'libraries', `${safe(specifier)}-${lib.version}-${lib.key.slice(3, 11)}.js`);
   if (!fs.existsSync(file) || !fs.readFileSync(file).equals(lib.bytes)) writeAtomic(file, lib.bytes);
   return { ...lib, file };
 }

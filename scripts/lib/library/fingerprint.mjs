@@ -14,6 +14,7 @@ import path from 'node:path';
 import { DEV_ONLY_DIRS, DEV_ONLY_FILES } from '../assets.mjs';
 import { figureGraph } from '../depgraph.mjs';
 import { ASSETS_DIR, ROOT, SHARED_DIR } from '../paths.mjs';
+import { catalogHashOf } from './catalog.mjs';
 import { walkFilesSync } from './files.mjs';
 
 /** Bump when the shape of what the sync publishes changes (tags, manifest fields, artifact set): everything is rebuilt. */
@@ -41,7 +42,7 @@ export const LAB_RUNTIME_FIELDS = ['id', 'version', 'type', 'units', 'book', 'pa
 export const labRuntimeManifest = (manifest) => Object.fromEntries(LAB_RUNTIME_FIELDS.filter((k) => k in manifest).map((k) => [k, manifest[k]]));
 
 /** The tool and dependency versions that change what is built. `root` is the repo root (tests use a copy). */
-export function toolVersions(root = ROOT) {
+export function toolVersions(root = ROOT, { libraries = 'catalog' } = {}) {
   const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
   const dev = pkg.devDependencies || {};
   const installed = (name) => {
@@ -59,6 +60,8 @@ export function toolVersions(root = ROOT) {
     gltfTransform: installed('@gltf-transform/core'),
     gltfValidator: installed('gltf-validator'),
     three: readText(path.join(root, 'shared/vendor/three/VERSION')),
+    // the shared libraries a lab imports: the pinned catalog (specifiers, versions, keys), or own copies built here
+    libraries: libraries === 'own' ? 'own' : `catalog:${catalogHashOf(root)}`,
     kit: readText(path.join(root, 'shared/lib/VERSION')),
   };
 }
@@ -154,7 +157,14 @@ export function fingerprintFigure(
     kind: 'lab',
     files,
     manifest: labRuntimeManifest(inputs.manifest),
-    tools: { format: tools.format, esbuild: tools.esbuild, chalkCore: tools.chalkCore, three: tools.three, kit: tools.kit },
+    tools: {
+      format: tools.format,
+      esbuild: tools.esbuild,
+      chalkCore: tools.chalkCore,
+      three: tools.three,
+      libraries: tools.libraries,
+      kit: tools.kit,
+    },
     code: code.lab,
   });
   const glb = hashJson({

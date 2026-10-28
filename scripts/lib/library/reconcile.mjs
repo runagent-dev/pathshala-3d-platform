@@ -12,6 +12,8 @@ import path from 'node:path';
 import { loadBooks } from '../books.mjs';
 import { gitInfo } from '../git.mjs';
 import { ASSETS_DIR, ROOT, SHARED_DIR } from '../paths.mjs';
+import { LIBRARY_MODES, catalogTag } from './build-libraries.mjs';
+import { libraryPreflight, loadCatalog } from './catalog.mjs';
 import { closeExportBrowser, exportedFiles, isLabVerified, labFile, libraryFile, markLabVerified } from './build.mjs';
 import { DEFAULT_FORMATS, loadConfig, parseFormats } from './config.mjs';
 import { buildCodeHashes, toolVersions } from './fingerprint.mjs';
@@ -67,6 +69,8 @@ export function normalizeOptions(o) {
   if (apply && !token) throw new Error(`--apply needs a token: set the environment variable ${o.tokenEnv || '(--token-env NAME)'}`);
   const lic = resolveLicense({ cli: o.license, config: config.license, tier });
   if (apply && lic.problems.length) throw new Error(lic.problems[0]);
+  const libraries = o.libraries || 'catalog';
+  if (!LIBRARY_MODES.includes(libraries)) throw new Error(`--libraries must be ${LIBRARY_MODES.join(' or ')}, not "${libraries}"`);
   if (o.confirmWithdraw && !o.allowWithdraw) throw new Error('--confirm-withdraw only goes with --allow-withdraw');
   return {
     tier,
@@ -91,6 +95,7 @@ export function normalizeOptions(o) {
     allowWithdraw: Boolean(o.allowWithdraw),
     confirmWithdraw: Boolean(o.confirmWithdraw),
     verify: o.verify !== false,
+    libraries,
     cacheDir: path.resolve(o.cacheDir || DEFAULT_CACHE_DIR),
     reportPath: o.reportPath ? path.resolve(o.reportPath) : null,
     size: config.size || {},
@@ -105,13 +110,23 @@ export function normalizeOptions(o) {
 /** The libraries (three and its add-ons) the labs of this run import, as the library items to publish or already there. */
 function libraryRecords(snapshot) {
   const out = new Map();
-  for (const r of snapshot) if (tagValue(r, 'kind') === 'library') out.set(`${tagValue(r, 'library')}@${tagValue(r, 'library-version')}`, r);
+  for (const r of snapshot) {
+    if (tagValue(r, 'kind') !== 'library') continue;
+    const name = `${tagValue(r, 'library')}@${tagValue(r, 'library-version')}`;
+    if (!out.has(name) || tagValue(r, 'state') !== 'superseded') out.set(name, r); // a superseded copy never hides the current one
+  }
   return out;
 }
 
 export async function reconcile(rawOptions) {
   const opt = normalizeOptions(rawOptions);
   const { log, cacheDir } = opt;
+  // the shared libraries are the catalog's bytes: this repo's three.js must be the catalog's version before anything is built
+  const catalog = opt.libraries === 'catalog' ? loadCatalog(path.join(opt.root, 'scripts', 'lib', 'library', 'lab-library-catalog.json')) : null;
+  if (catalog) {
+    const problems = libraryPreflight({ root: opt.root, catalog });
+    if (problems.length) throw new Error(problems[0]);
+  }
   fs.mkdirSync(cacheDir, { recursive: true });
   const lock = acquireLock(path.join(cacheDir, 'sync.lock'), { tier: opt.tier, library: opt.library, apply: opt.apply });
   const startedAt = new Date().toISOString();
@@ -119,7 +134,7 @@ export async function reconcile(rawOptions) {
     const library = opt.library ? createLibrary(opt.library, { token: opt.token, fetch: opt.fetch }) : null;
     const snapshot = library ? await library.snapshot() : [];
     const remote = groupByFigure(snapshot);
-    const tools = toolVersions(opt.root);
+    const tools = toolVersions(opt.root, { libraries: opt.libraries });
     const code = buildCodeHashes(opt.root);
     const books = loadBooks();
     const git = gitInfo();
@@ -180,7 +195,16 @@ export async function reconcile(rawOptions) {
     const needs = [...new Set([...labs.values()].flatMap((lab) => lab.libraries))].sort();
     const have = libraryRecords(snapshot);
     const threeVersion = tools.three.match(/three@(\d+\.\d+\.\d+)/)?.[1];
-    const missingLibraries = library ? needs.filter((s) => !have.has(`${s}@${threeVersion}`)) : needs;
+    // built now, and in catalog mode checked against the catalog's keys: a build that is not the catalog's bytes stops the run here
+    const libraryBuilds = new Map();
+    for (const specifier of needs)
+      libraryBuilds.set(
+        specifier,
+        await libraryFile(specifier, { cacheDir, sharedDir: opt.sharedDir, root: opt.root, libraries: opt.libraries, catalog }),
+      );
+    const missingLibraries = library
+      ? needs.filter((s) => have.get(`${s}@${libraryBuilds.get(s).version}`)?.key !== libraryBuilds.get(s).key)
+      : needs;
     const counts = summarize(plans);
 
     // 4. the report so far
@@ -216,7 +240,14 @@ export async function reconcile(rawOptions) {
       formats: [...opt.formats],
       license: opt.license,
       counts,
-      libraries: { needed: needs, version: threeVersion, missing: missingLibraries },
+      libraries: {
+        mode: opt.libraries,
+        needed: needs,
+        version: threeVersion,
+        missing: missingLibraries,
+        keys: Object.fromEntries(needs.map((s) => [s, { key: libraryBuilds.get(s).key, origin: libraryBuilds.get(s).origin }])),
+        catalog: catalog ? { commit: catalog.source.commit ?? null, ref: catalog.source.ref ?? null } : null,
+      },
       figures,
       withdrawn: [],
       notes: [...opt.licenseWarnings, ...(opt.library ? [] : ['no --library: planned against an empty library (everything shows as new)'])],
@@ -226,7 +257,7 @@ export async function reconcile(rawOptions) {
 
     // 5. apply
     if (opt.apply) {
-      await applyPlan({ opt, library, plans, byId, labs, remote, report, git, missingLibraries });
+      await applyPlan({ opt, library, plans, byId, labs, remote, report, git, missingLibraries, libraryBuilds, snapshot, catalog });
       report.results = countResults(report.figures);
     }
     report.finishedAt = new Date().toISOString();
@@ -285,7 +316,11 @@ function printPlan(report, log) {
     log(`  ${f.category.padEnd(9)} ${f.id.padEnd(34)} ${String(f.version ?? '').padEnd(7)} ${size}${why}`);
   }
   if (report.libraries.needed.length)
-    log(`  libraries: ${report.libraries.needed.length} used (three ${report.libraries.version}), ${report.libraries.missing.length} to publish`);
+    log(
+      `  libraries: ${report.libraries.needed.length} used (three ${report.libraries.version}, ${
+        report.libraries.mode === 'own' ? 'own copies' : `chalk-format catalog ${report.libraries.catalog?.commit?.slice(0, 8) ?? ''}`
+      }), ${report.libraries.missing.length} to publish`,
+    );
   const c = report.counts;
   log(
     `Summary: ${Object.entries(c)
@@ -298,7 +333,7 @@ function printPlan(report, log) {
 // ---------------------------------------------------------------------------------------------------------------------
 // apply
 
-async function applyPlan({ opt, library, plans, byId, labs, remote, report, git, missingLibraries }) {
+async function applyPlan({ opt, library, plans, byId, labs, remote, report, git, missingLibraries, libraryBuilds, snapshot, catalog }) {
   const { log } = opt;
   const runStamp = stamp();
   const resultOf = (id) => report.figures.find((f) => f.id === id);
@@ -306,14 +341,29 @@ async function applyPlan({ opt, library, plans, byId, labs, remote, report, git,
 
   async function ensureLibrary(specifier) {
     if (libraryKeys.has(specifier)) return libraryKeys.get(specifier);
-    const lib = await libraryFile(specifier, { cacheDir: opt.cacheDir, sharedDir: opt.sharedDir });
+    const lib =
+      libraryBuilds.get(specifier) ??
+      (await libraryFile(specifier, { cacheDir: opt.cacheDir, sharedDir: opt.sharedDir, root: opt.root, libraries: opt.libraries, catalog }));
     const done = await library.publish(lib.bytes, {
       type: LIBRARY_JS_TYPE,
       filename: `${specifier.replace(/[^A-Za-z0-9.]+/g, '-')}-${lib.version}.js`,
       title: `${specifier} ${lib.version} (library for labs)`,
-      tags: recordTags({ kind: 'library', specifier, libraryVersion: lib.version, state: 'current', published: runStamp }),
+      tags: [
+        ...recordTags({ kind: 'library', specifier, libraryVersion: lib.version, state: 'current', published: runStamp }),
+        catalogTag(lib.origin),
+        ...(lib.origin !== 'own' && catalog?.source.commit ? [`catalog-ref:chalk-format-${catalog.source.commit.slice(0, 12)}`] : []),
+      ],
       subject: 'physics',
     });
+    // an earlier copy of the same library under other bytes (an own build) stays, for books that use it, but is no longer current
+    for (const old of snapshot)
+      if (
+        tagValue(old, 'kind') === 'library' &&
+        tagValue(old, 'library') === specifier &&
+        tagValue(old, 'state') === 'current' &&
+        old.key !== done.key
+      )
+        await library.retag(old, retagged(old, 'superseded'));
     const entry = { specifier, version: lib.version, asset: done.key, uploaded: done.uploaded, bytes: lib.bytes };
     libraryKeys.set(specifier, entry);
     return entry;

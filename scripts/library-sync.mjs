@@ -14,6 +14,8 @@
 //   --changed-since <ref>  only figures touched since a git ref (their files, or the kit files they import)
 //   --formats lab,poster,glb,video   what to publish (default lab,poster,glb; video is slow)
 //   --license <SPDX>       license written on every item (or "license" in library-sync.config.json); production refuses without
+//   --libraries catalog|own  catalog (default): the three.js libraries are built to match chalk-format's pinned catalog and shared with
+//                          every other lab; own: this repo's own copies, nothing shared (tagged catalog:own)
 //   --no-verify            do not run each new lab in the sandbox before publishing it
 //   --allow-withdraw       withdraw items of figures removed from the repo (not used by any book); more than 3 needs --confirm-withdraw
 //   --cache-dir <dir>      default .cache/library (the only place this writes, besides the report)
@@ -38,6 +40,7 @@ try {
       'changed-since': { type: 'string' },
       formats: { type: 'string' },
       license: { type: 'string' },
+      libraries: { type: 'string' },
       'no-verify': { type: 'boolean', default: false },
       'allow-withdraw': { type: 'boolean', default: false },
       'confirm-withdraw': { type: 'boolean', default: false },
@@ -69,6 +72,7 @@ try {
     formats: values.formats,
     license: values.license,
     verify: !values['no-verify'],
+    libraries: values.libraries,
     allowWithdraw: values['allow-withdraw'],
     confirmWithdraw: values['confirm-withdraw'],
     cacheDir: values['cache-dir'],
