@@ -31,8 +31,9 @@ test('third law: boat recoil replaces both mass tabs, and the apple–Earth pair
   expect(s).toMatchObject({ example: 'apple', phase: 'fall', force: 9.8, arrows: { onApple: true, onEarth: true } });
   expect(s.acceleration.earth).toBeCloseTo(1.64e-24, 26);
   const maths = await fig.frame.locator('.nt-equations').textContent();
-  expect(maths).toContain('mg');
-  expect(maths).toContain('a = F/M');
+  expect(maths).toContain('পৃথিবী টানে আপেলকে');
+  expect(maths).toContain('আপেল টানে পৃথিবীকে');
+  expect(maths).not.toContain('a = F/M');
   expect(maths).not.toContain('G =');
   await fig.frame.locator('[data-act="maths-open"]').click();
   await expect(fig.frame.locator('.nt-math-dialog')).toBeVisible();
@@ -41,8 +42,8 @@ test('third law: boat recoil replaces both mass tabs, and the apple–Earth pair
   expect(full).toContain('G =');
   await fig.frame.locator('.nt-math-dialog').press('Escape');
   await expect(fig.frame.locator('.nt-math-dialog')).not.toBeVisible();
-  expect(maths).toContain('১.৬৪');
-  expect(maths).toContain('−২৪');
+  expect(full).toContain('১.৬৪');
+  expect(full).toContain('−২৪');
   // The real texture is bundled and ready, and the entire globe is exported rather than a cropped surface.
   const earth = await fig.frame.evaluate(() => {
     const model = /** @type {any} */ (window).figure.exportRoot();
@@ -83,6 +84,7 @@ test('third law: five questions use the new boat and Earth scenes and reveal bot
 });
 
 test('third law: the new pictures, equations and controls fit all six frames in both languages', async ({ page }) => {
+  test.setTimeout(240000);
   const log = await preparePage(page);
   for (const lang of ['bn', 'en']) {
     for (const [width, height] of [
@@ -95,13 +97,20 @@ test('third law: the new pictures, equations and controls fit all six frames in 
     ]) {
       await page.setViewportSize({ width, height });
       const fig = await openFigure(page, 'newtons-third-law', { params: { lang } });
+      let appleStage = null;
       for (const state of [
         { example: 'boat', at: 0 },
         { example: 'boat', at: 0.2 },
         { example: 'boat', at: 0.55 },
         { example: 'apple', at: 0.2 },
+        { example: 'apple', at: 0.43, lessonStep: 1 },
+        { example: 'apple', at: 0.43, lessonStep: 2 },
+        { example: 'apple', at: 0.43, lessonStep: 2, answer: 'force' },
+        { example: 'apple', at: 0.43, lessonStep: 2, answer: 'mass' },
       ]) {
-        await fig.call('set', state);
+        const { answer, ...setup } = state;
+        await fig.call('set', setup);
+        if (answer) await fig.frame.locator(`[data-reason="${answer}"]`).click();
         await fig.frame.locator('.pvc-stage').boundingBox();
         await fig.advance(300);
         const report = await fig.frame.evaluate(() => {
@@ -115,12 +124,22 @@ test('third law: the new pictures, equations and controls fit all six frames in 
               bad.push({ text: e.textContent, width: r.width, scroll: e.scrollWidth - e.clientWidth, bottom: r.bottom });
           }
           const p = document.querySelector('.pvc-panel');
+          const content = document.querySelector('.nt-lesson-content');
+          if (content && content.scrollHeight > content.clientHeight + 1)
+            bad.push({
+              text: 'lesson content overflows',
+              width: content.clientWidth,
+              scroll: content.scrollHeight - content.clientHeight,
+              bottom: content.getBoundingClientRect().bottom,
+            });
           return { bad, overflow: p.scrollHeight - p.clientHeight, stage: document.querySelector('.pvc-stage').getBoundingClientRect().height };
         });
         expect(report.bad, `${lang} ${width}×${height} ${state.example}`).toEqual([]);
         expect(report.overflow).toBeLessThanOrEqual(1);
         expect(report.stage).toBeGreaterThan(160);
         if (state.example === 'apple') {
+          if (appleStage === null) appleStage = report.stage;
+          expect(report.stage).toBeCloseTo(appleStage, 0);
           await fig.frame.locator('[data-act="maths-open"]').click();
           const full = await fig.frame.locator('.nt-math-dialog').evaluate((el) => {
             const r = el.getBoundingClientRect();
@@ -181,5 +200,65 @@ test('third law: shoes grip the pitching boat until takeoff rather than sliding'
   expect(Math.abs(air.pitch)).toBeLessThan(Math.abs(takeoff.pitch));
   await fig.call('reset');
   expect(await measure()).toEqual(start);
+  expect(log.errors).toEqual([]);
+});
+
+test('third law: a guided fall, equal-force comparison and retryable mass question teach the apple example', async ({ page }) => {
+  await page.setViewportSize({ width: 800, height: 500 });
+  const log = await preparePage(page);
+  const fig = await openFigure(page, 'newtons-third-law');
+  await fig.call('set', { example: 'apple' });
+  const action = fig.frame.locator('.pvc-act');
+  await expect(fig.frame.locator('.nt-progress [aria-current]')).toContainText('পতন');
+  const stageHeight = await fig.frame.locator('.pvc-stage').evaluate((el) => el.clientHeight);
+  await expect(fig.frame.locator('.nt-pull-row b')).toHaveCount(0);
+  await action.click();
+  await fig.advance(1000);
+  const state = await fig.call('get');
+  expect(state.playing).toBe(true);
+  expect(state.time).toBeLessThan(0.3);
+  expect(state.arrows).toEqual({ onApple: true, onEarth: true });
+  const trail = await fig.frame.evaluate(() => {
+    const root = /** @type {any} */ (window).figure.exportRoot();
+    return {
+      visible: root.getObjectByName('FallTrail').visible,
+      start: root.getObjectByName('AppleStart').position.y,
+      now: root.getObjectByName('Apple').position.y,
+    };
+  });
+  expect(trail.visible).toBe(true);
+  expect(trail.now).toBeLessThan(trail.start);
+  await fig.frame.locator('[data-act="maths-open"]').click();
+  const paused = (await fig.call('get')).time;
+  await fig.advance(500);
+  expect((await fig.call('get')).time).toBe(paused);
+  await fig.frame.locator('.nt-math-dialog').press('Escape');
+  await fig.advance(2200);
+  expect(await fig.call('get')).toMatchObject({ done: true, playing: false, lesson: { step: 0, reason: null } });
+  await expect(action).toContainText('বল দুটি তুলনা');
+  await action.click();
+  await fig.advance(500);
+  expect((await fig.call('get')).lesson.step).toBe(1);
+  await expect(fig.frame.locator('.nt-pull-row b')).toHaveText(['৯.৮ N', '৯.৮ N']);
+  await action.click();
+  await fig.advance(500);
+  expect((await fig.call('get')).lesson.step).toBe(2);
+  await expect(action).toBeDisabled();
+  await fig.frame.locator('[data-reason="force"]').click();
+  await expect(fig.frame.locator('.nt-reason-feedback')).toContainText('বল কম নয়');
+  await expect(fig.frame.locator('[data-reason="mass"]')).toBeFocused();
+  expect((await fig.call('get')).arrows).toEqual({ onApple: true, onEarth: true });
+  await fig.frame.locator('[data-reason="mass"]').press('Enter');
+  await expect(fig.frame.locator('.nt-reason-feedback')).toContainText('ঠিক');
+  await expect(fig.frame.locator('.nt-lesson-content')).toContainText('a = F/m');
+  await expect(fig.frame.locator('.nt-lesson-content')).not.toContainText('−২৪');
+  await expect(action).toBeFocused();
+  expect((await fig.call('get')).lesson).toEqual({ step: 2, reason: 'mass' });
+  expect(await fig.frame.locator('.pvc-stage').evaluate((el) => el.clientHeight)).toBe(stageHeight);
+  await action.click();
+  expect(await fig.call('get')).toMatchObject({ playing: true, lesson: { step: 0, reason: null } });
+  await fig.call('set', { home: true });
+  expect(await fig.call('get')).toMatchObject({ time: 0, playing: false, lesson: { step: 0, reason: null } });
+  await expect(fig.frame.locator('[data-reason]')).toHaveCount(0);
   expect(log.errors).toEqual([]);
 });

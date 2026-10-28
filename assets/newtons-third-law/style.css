@@ -114,3 +114,50 @@ body.bg-transparent { background: transparent; }
  .nt-math-dialog { padding: 12px; }
 }
 .nt[data-example='apple'] .nt-pair { color: #6741b5; }
+
+/* Three paused teaching steps share one steady space, before the optional derivation. */
+.nt[data-example='apple'] .nt-equations { padding: 5px 8px; }
+.nt-progress { display: flex; gap: 9px; list-style: none; padding: 0; margin: 0 0 5px; height: 26px; align-items: center; font-size: 12px; color: #617487; }
+.nt-progress li { white-space: nowrap; }
+.nt-progress b { display: inline-grid; place-items: center; width: 20px; height: 20px; border: 1px solid #9aacbc; border-radius: 50%; font-size: 12px; }
+.nt-progress [aria-current] { color: #5531a0; font-weight: 700; }
+.nt-progress [aria-current] b { background: #6741b5; color: #fff; border-color: #6741b5; }
+.nt .nt-lesson-content { height: 96px; white-space: normal; }
+.nt-pull-row { display: grid; grid-template-columns: 24px minmax(0,1fr) auto; gap: 5px; align-items: center; min-height: 29px; font-size: 13px; color: #523387; }
+.nt-pull-key { font-weight: 800; font-size: 22px; border-bottom: 2px solid #7048e8; line-height: 1; text-align: center; }
+.nt-pull-key.dash { border-bottom-style: dashed; }
+.nt-equal-caption { margin: 7px 0 0; font-size: 11.5px; line-height: 1.4; white-space: normal; }
+.nt-reasons { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.nt-reasons button { min-height: 43px; padding: 3px 6px; border: 1px solid #6d65a5; border-radius: 5px; background: #fff; color: #49376c; font: inherit; font-size: 12px; line-height: 1.25; }
+.nt-reasons button[aria-pressed='true'] { background: #fff1dc; border-color: #b8791b; }
+.nt-reason-feedback { min-height: 2.7em; margin: 5px 0 0; font-size: 12px; line-height: 1.35; color: #975113; }
+.nt-reason-feedback.correct { color: #245c56; margin: 0 0 3px; }
+@container pvc (max-width: 560px) and (max-height: 600px) {
+ .nt-progress { height: 21px; font-size: 11px; margin-bottom: 3px; }
+ .nt-progress b { width: 18px; height: 18px; font-size: 11px; }
+ .nt .nt-lesson-content { height: 79px; }
+ .nt-pull-row { min-height: 24px; font-size: 12px; }
+ .nt-equal-caption { font-size: 10.5px; margin-top: 4px; }
+ .nt-reasons button { min-height: 37px; font-size: 11.5px; }
+ .nt-reason-feedback { font-size: 11px; }
+ .nt[data-example='apple'] .pvc-outcome, .nt[data-example='apple'] .pvc-rule { min-height: 2.8em; }
+ .nt[data-example='apple'] .nt-equations { padding: 3px 6px; }
+}
+@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
+ .nt-progress { font-size: 11px; height: 23px; }
+ .nt .nt-lesson-content { height: 85px; }
+ .nt-pull-row { font-size: 11.5px; min-height: 25px; }
+ .nt-equal-caption { font-size: 10.5px; }
+ .nt-reason-feedback { font-size: 11.5px; }
+}
+
+@container pvc (max-width: 560px) {
+ .nt[data-example='apple'] .nt-badge { max-width: 42%; }
+}
+@container pvc (max-width: 560px) and (max-height: 600px) {
+ /* The legend and answer feedback already state the rule; leave more room for the fall. */
+ .nt[data-example='apple'] .pvc-rule { display: none; }
+}
+
+.nt-reason-feedback.correct { min-height: 0; }
+.nt-summary-formula { color: #315e68; font-size: 12px; font-weight: 600; line-height: 1.3; }
