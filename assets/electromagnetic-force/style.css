@@ -74,3 +74,24 @@ body.bg-transparent { background: transparent; }
   .ef .pvc-opt { height: 44px; padding: 0 4px; }
   .pvc-opt .ef-opt { font-size: 12.5px; line-height: 1.18; }
 }
+/* Keep room for the hand, hair and paper together on a board. */
+@container pvc (min-width: 720px) {
+  .ef .pvc-shell { grid-template-rows: minmax(0, 1fr); grid-template-columns: minmax(0, 1fr) clamp(280px, 35%, 370px); }
+  .ef .pvc-panel { display: flex; align-items: stretch; border-top: 0; border-left: 1px solid var(--line); padding: 12px; gap: 10px; overflow: hidden; }
+  .ef .pvc-tabs { grid-template-columns: 1fr 1fr; max-width: none; }
+  .ef .pvc-tabs button + button { border-top: 0; border-left: 1px solid var(--line-2); }
+  .ef .pvc-outcome { white-space: normal; --pvc-outcome-lines: 2; font-size: 16px; }
+  .ef .pvc-rule { --pvc-rule-lines: 5; font-size: 14px; }
+  .ef .pvc-act-row { --pvc-act-lines: 2; }
+  .ef .pvc-q-options { grid-template-columns: 1fr 1fr; }
+  .ef .pvc-opt { height: 46px; }
+  .ef-forces-k { white-space: normal; }
+}
+@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
+  .ef .pvc-panel { padding: 8px 10px; gap: 6px; }
+  .ef .pvc-learn { gap: 6px; }
+  .ef .pvc-examples button { min-height: 32px; padding: 2px 3px; }
+  .ef .pvc-act-row { min-height: 48px; }
+  .ef .pvc-outcome { min-height: 44px; font-size: 14.5px; line-height: 1.45; }
+  .ef .pvc-rule { min-height: 84px; font-size: 14px; line-height: 1.4; }
+}
