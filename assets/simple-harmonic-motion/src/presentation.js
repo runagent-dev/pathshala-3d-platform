@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 export function createPresentation(stage, transparent) {
   const backgrounds = {};
-  for (const [example, colours] of Object.entries({ swing: ['#163650', '#12616c', '#207357'], spring: ['#21184f', '#493273', '#863e70'] })) {
+  for (const [example, colours] of Object.entries({ swing: ['#163650', '#12616c', '#207357'], spring: ['#092b48', '#0b5368', '#127f79'] })) {
     if (transparent) break;
     const canvas = document.createElement('canvas');
     canvas.width = 32;
@@ -14,6 +14,13 @@ export function createPresentation(stage, transparent) {
     gradient.addColorStop(1, colours[2]);
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, 32, 512);
+    if (example === 'spring') {
+      const glow = ctx.createRadialGradient(18, 245, 0, 18, 245, 280);
+      glow.addColorStop(0, 'rgba(39, 167, 170, 0.22)');
+      glow.addColorStop(1, 'rgba(39, 167, 170, 0)');
+      ctx.fillStyle = glow;
+      ctx.fillRect(0, 0, 32, 512);
+    }
     const texture = new THREE.CanvasTexture(canvas);
     texture.colorSpace = THREE.SRGBColorSpace;
     backgrounds[example] = texture;
