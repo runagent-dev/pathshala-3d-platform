@@ -84,7 +84,7 @@ describe('labs from both worlds in one book', () => {
     assert.equal(inZip.length, 1, `three.js is stored once in the .chalk (${inZip.join(', ')})`);
 
     const opened = await unpackLesson(file);
-    assert.deepEqual(opened.missingAssetIds, []);
+    assert.deepEqual(opened.missingAssetIds, [there.poster], "only chalk-format's poster picture (not part of this test) is not in the book");
     const labs = opened.lesson.pages[0].objects.filter(isLabObject).map((o) => o.lab);
     assert.deepEqual(
       labs.map((l) => l.libraries.find((x) => x.specifier === 'three').asset),
