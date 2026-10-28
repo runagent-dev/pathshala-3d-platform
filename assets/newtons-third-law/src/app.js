@@ -95,10 +95,10 @@ export function createApp(root, options = {}) {
   let lastText = '';
   let lastEquations = '';
   let lastPhase = '';
-  function boyScreenBox() {
-    if (s.example !== 'boat' || boat.personBounds.isEmpty()) return null;
+  function screenBox(bounds) {
+    if (bounds.isEmpty()) return null;
     const box = { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity };
-    const { min, max } = boat.personBounds;
+    const { min, max } = bounds;
     for (const x of [min.x, max.x])
       for (const y of [min.y, max.y])
         for (const z of [min.z, max.z]) {
@@ -112,10 +112,32 @@ export function createApp(root, options = {}) {
         }
     return box;
   }
+  function boyScreenBox() {
+    return s.example === 'boat' ? screenBox(boat.personBounds) : null;
+  }
+  function appleScreenBoxes() {
+    if (s.example !== 'apple') return [];
+    return [earth.earth, earth.apple, earth.root.getObjectByName('AppleStart'), force1.root, force2.root]
+      .filter((object) => object.visible)
+      .map((object) => {
+        object.updateWorldMatrix(true, true);
+        const bounds = new THREE.Box3();
+        if (object === earth.earth) {
+          // A rotated sphere keeps its radius; a rotated bounding cube would hide useful labels.
+          bounds.setFromCenterAndSize(object.getWorldPosition(v()), v(EARTH_R * 2, EARTH_R * 2, EARTH_R * 2));
+          return screenBox(bounds);
+        }
+        object.traverseVisible((mesh) => {
+          if (mesh instanceof THREE.Mesh && mesh.material.visible !== false) bounds.expandByObject(mesh);
+        });
+        return screenBox(bounds);
+      })
+      .filter(Boolean);
+  }
   const anno = createAnnotations({
     stage,
     layer: ui.annoLayer,
-    avoid: [ui.corner, badge, ui.hint, boyScreenBox, () => action?.ringBox(), () => action?.box()],
+    avoid: [ui.corner, badge, ui.hint, boyScreenBox, appleScreenBoxes, () => action?.ringBox(), () => action?.box()],
   });
   const label = (id, opts) => {
     if (anno.has(id)) anno.update(id, opts);
@@ -186,7 +208,11 @@ export function createApp(root, options = {}) {
       camera,
       width: stage.width,
       height: stage.height,
-      margin: { top: s.example === 'apple' && stage.height < 260 ? 50 : 60, bottom: 14, side: 16 },
+      margin: {
+        top: s.example === 'apple' && stage.height < 260 ? 50 : 60,
+        bottom: 14,
+        side: s.example === 'apple' && stage.height > stage.width * 1.3 ? 100 : 16,
+      },
     });
     camera.position.copy(p.position);
     controls.target.copy(p.target);
@@ -318,17 +344,38 @@ export function createApp(root, options = {}) {
     }
   }
   const remove = (id) => anno.remove(id);
+  const gravitySpots = (side) => [28, 44, 60, 80].map((gap) => ({ dx: side * gap, dy: 0 }));
+  const gravityAnchor = (arrow, dashed) => arrow.tip.clone().add(v(0, dashed ? -0.43 : 0.43, 0));
+  function gravitySide() {
+    camera.updateMatrixWorld(true);
+    if (!force1.root.visible || !force2.root.visible) return -1;
+    return gravityAnchor(force1, false).project(camera).x <= gravityAnchor(force2, true).project(camera).x ? -1 : 1;
+  }
+  let lastGravitySide = 0;
+  stage.onBeforeRender(() => {
+    if (s.example !== 'apple') return;
+    const side = gravitySide();
+    if (side === lastGravitySide) return;
+    lastGravitySide = side;
+    // Keep the cards outside the pair even when the student rotates the camera behind it.
+    anno.update('force1', { spots: gravitySpots(side) });
+    anno.update('force2', { spots: gravitySpots(-side) });
+  });
   function forceLabel(id, a, key, dashed, dy) {
+    const gravity = s.example === 'apple';
+    const text = `<span class="nt-key ${dashed ? 'dash' : ''}"></span>${t(key)}${!gravity || s.mode === 'quiz' || s.lessonStep > 0 ? `<br><b>${t('force_value', { f: gravity ? APPLE_MASS * G : BOAT.force })}</b>` : ''}`;
     label(id, {
-      text: `<span class="nt-key ${dashed ? 'dash' : ''}"></span>${t(key)}${s.example === 'boat' || s.mode === 'quiz' || s.lessonStep > 0 ? `<br><b>${t('force_value', { f: s.example === 'boat' ? BOAT.force : APPLE_MASS * G })}</b>` : ''}`,
+      text: gravity ? `<span class="nt-gravity-label" data-force-body="${dashed ? 'earth' : 'apple'}">${text}</span>` : text,
       kind: 'callout',
-      color: s.example === 'boat' ? '#a05000' : '#6741b5',
-      point: () => a.tip,
-      spots: [
-        { dx: dashed ? (s.example === 'apple' ? 38 : -16) : 16, dy },
-        { dx: 24, dy: -30 },
-        { dx: -24, dy: -30 },
-      ],
+      color: gravity ? '#6741b5' : '#a05000',
+      point: gravity ? () => gravityAnchor(a, dashed) : () => a.tip,
+      spots: gravity
+        ? gravitySpots(gravitySide() * (dashed ? -1 : 1))
+        : [
+            { dx: dashed ? -16 : 16, dy },
+            { dx: 24, dy: -30 },
+            { dx: -24, dy: -30 },
+          ],
       optional: true,
     });
   }
@@ -406,6 +453,15 @@ export function createApp(root, options = {}) {
     } else {
       for (const id of ['boy', 'boat', 'motion-boy', 'motion-boat']) remove(id);
       earth.setFall(m.fallen);
+      const y = earth.apple.position.y;
+      // Both arrows lie in one diagram plane, so their identical lengths also look identical in the front view.
+      if (s.showFirst) force1.set(v(-0.52, y, 1.18), v(0, -1), 0.6);
+      if (s.showSecond) force2.set(v(0.8, -0.5, 1.18), v(0, 1), 0.6);
+      // Place the essential force cards before optional part names and the fall readout.
+      if (force1.root.visible) forceLabel('force1', force1, 'on_apple', false, 0);
+      else remove('force1');
+      if (force2.root.visible) forceLabel('force2', force2, 'on_earth', true, 0);
+      else remove('force2');
       const withTrail = s.mode === 'explore' && m.fallen > 0.02;
       earth.showTrail(withTrail, m.fallen);
       if (withTrail) {
@@ -431,10 +487,6 @@ export function createApp(root, options = {}) {
         remove('trail-start');
         remove('trail-fallen');
       }
-      const y = earth.apple.position.y;
-      // Both arrows lie in one diagram plane, so their identical lengths also look identical in the front view.
-      if (s.showFirst) force1.set(v(0.34, y, 1.18), v(0, -1), 0.6);
-      if (s.showSecond) force2.set(v(0.68, -0.5, 1.18), v(0, 1), 0.6);
       measurement.geometry.setFromPoints([v(0, -EARTH_R, 1.14), v(-1.34, -EARTH_R, 1.14), v(-1.34, y, 1.14), v(0, y, 1.14)]);
       measurement.computeLineDistances();
       label('apple', {
@@ -451,7 +503,9 @@ export function createApp(root, options = {}) {
         point: () => v(0.7, -1.68, 0.9),
         spots: [
           { dx: 24, dy: 0 },
-          { dx: 0, dy: 24 },
+          { dx: 64, dy: 0 },
+          { dx: 96, dy: 0 },
+          { dx: 0, dy: 56 },
         ],
         optional: true,
       });
@@ -459,10 +513,12 @@ export function createApp(root, options = {}) {
         label('radius', { text: t('radius_symbol'), point: () => v(-1.34, (y - EARTH_R) / 2, 1.14), spots: [{ dx: 12, dy: 0 }], optional: true });
       else remove('radius');
     }
-    if (force1.root.visible) forceLabel('force1', force1, s.example === 'boat' ? 'on_boy' : 'on_apple', false, -25);
-    else remove('force1');
-    if (force2.root.visible) forceLabel('force2', force2, s.example === 'boat' ? 'on_boat' : 'on_earth', true, s.example === 'boat' ? -25 : 22);
-    else remove('force2');
+    if (s.example === 'boat') {
+      if (force1.root.visible) forceLabel('force1', force1, 'on_boy', false, -25);
+      else remove('force1');
+      if (force2.root.visible) forceLabel('force2', force2, 'on_boat', true, -25);
+      else remove('force2');
+    }
     updatePanel(m);
     stage.invalidate();
     if (m.phase !== lastPhase) {
@@ -595,6 +651,7 @@ export function createApp(root, options = {}) {
       },
       reveal(q) {
         s.showFirst = s.showSecond = true;
+        if (s.example === 'apple') anno.clear();
         updatePicture();
         return t(`why_${q.meta.kind}`, { f: BOAT.force });
       },
