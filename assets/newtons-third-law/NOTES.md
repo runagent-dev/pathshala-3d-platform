@@ -125,3 +125,22 @@ over clothing, wood and water. The two horizontal force arrows remain equal in l
 with matching gold colour and solid/dashed shafts. The boy's force begins at his forward side so more of it is
 visible outside the torso. Cyan motion arrows are longer too; gravity keeps the established violet pair.
 The outline follows each arrow's exact endpoints and dash pattern. Labels continue avoiding the boy.
+
+## Guided apple–Earth lesson (v1.1.0)
+The owner found the one-click fall and formulas insufficient to teach the idea. Apple learning now proceeds
+through three paused stages: a fall at 6× slower time with a ghost start and distance trail; a comparison naming
+Earth → apple and apple → Earth with the same 9.8 N on different bodies; and a two-choice explanation of why
+Earth barely moves. A wrong smaller-force answer points back to the equal values and allows retry. Only after
+the correct mass explanation does the main sheet show the two acceleration results. The complete derivation
+remains behind Full calculation. Both arrows remain simultaneous, with a persistent panel legend when labels
+need to hide on a phone. Earth is not moved by an exaggerated amount. R is reserved for the calculation view.
+The bridge retains push/release and physical at; optional lessonStep (0–2) selects a paused teaching stage.
+Boat behavior is unchanged; home and example changes restart the apple lesson, and quiz mode owns its scene.
+
+The final stage uses a qualitative acceleration comparison and the single relation a = F/m. Scientific notation
+and the complete numerical acceleration results stay in the calculation sheet. Compact phones omit a repeated
+rule paragraph (already taught in the legend/feedback) to leave more room for an enlarged apple. The ghost
+becomes visible only once it separates from the real apple, preventing two superimposed apples during early fall.
+
+The comparison step reveals both force values together; the observation step names who pulls whom without
+numbers. The paused-fall explanation belongs in the panel rather than a third line over the small-screen object.

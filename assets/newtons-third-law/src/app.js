@@ -26,6 +26,7 @@ export const DEFAULTS = {
   sound: true,
 };
 const SLOW = 2;
+const APPLE_SLOW = 6;
 const APPLE_DISTANCE = 0.9; // pause before contact, so only the free-fall force pair needs to be shown
 const APPLE_END = Math.sqrt((2 * APPLE_DISTANCE) / G);
 const IDS = ['boat', 'apple'];
@@ -86,6 +87,8 @@ export function createApp(root, options = {}) {
     mode: 'explore',
     showFirst: true,
     showSecond: true,
+    lessonStep: 0,
+    reason: null,
   };
   let action = null;
   let quiz = null;
@@ -168,7 +171,7 @@ export function createApp(root, options = {}) {
             speed: { person: m.personV, boat: m.boatV },
             horizontalAcceleration: { person: m.personA, boat: m.boatA },
           }
-        : { fallen: m.fallen, acceleration: { apple: G, earth: earthAcceleration() } }),
+        : { fallen: m.fallen, acceleration: { apple: G, earth: earthAcceleration() }, lesson: { step: s.lessonStep, reason: s.reason } }),
       arrows:
         s.example === 'boat'
           ? { onPerson: force1.root.visible, onBoat: force2.root.visible }
@@ -183,7 +186,7 @@ export function createApp(root, options = {}) {
       camera,
       width: stage.width,
       height: stage.height,
-      margin: { top: 60, bottom: 14, side: 16 },
+      margin: { top: s.example === 'apple' && stage.height < 260 ? 50 : 60, bottom: 14, side: 16 },
     });
     camera.position.copy(p.position);
     controls.target.copy(p.target);
@@ -210,14 +213,17 @@ export function createApp(root, options = {}) {
     const open = `<button type="button" class="nt-maths-open" data-act="maths-open">${t('maths_open')}</button>`;
     if (s.example === 'boat')
       return `<div class="nt-simple-boat">${t('simple_boat', { f: BOAT.force })}</div><small>${t('simple_boat_hint')}</small>${open}`;
-    const row = (label, key, vars) => `<div class="nt-simple-row"><span>${t(label)}</span><strong>${t(key, vars)}</strong></div>`;
-    return (
-      `<small>${t('simple_mass', { m: APPLE_MASS })}</small>` +
-      row('simple_force_label', 'simple_force', { f: (APPLE_MASS * G).toFixed(1) }) +
-      row('simple_apple_label', 'simple_apple', { g: G }) +
-      row('simple_earth_label', 'simple_earth', { a: scientific(earthAcceleration()) }) +
-      open
-    );
+    const progress = `<ol class="nt-progress" aria-label="${t('lesson_progress')}">${['lesson_fall', 'lesson_pair', 'lesson_mass'].map((key, i) => `<li${s.lessonStep === i ? ' aria-current="step"' : ''}><b>${N(i + 1)}</b> ${t(key)}</li>`).join('')}</ol>`;
+    let content;
+    if (s.lessonStep === 2 && s.reason !== 'mass') {
+      content = `<div class="nt-reasons"><button type="button" data-reason="mass">${t('reason_mass')}</button><button type="button" data-reason="force"${s.reason === 'force' ? ' aria-pressed="true"' : ''}>${t('reason_force')}</button></div><p class="nt-reason-feedback" role="status">${s.reason === 'force' ? t('reason_retry', { f: APPLE_MASS * G }) : ''}</p>`;
+    } else if (s.lessonStep === 2) {
+      content = `<p class="nt-reason-feedback correct" role="status">${t('reason_correct')}</p><div class="nt-simple-row"><span>${t('simple_apple_label')}</span><strong>${t('summary_apple')}</strong></div><div class="nt-simple-row"><span>${t('simple_earth_label')}</span><strong>${t('summary_earth')}</strong></div><div class="nt-summary-formula">${t('summary_formula')}</div>`;
+    } else {
+      const reading = s.lessonStep === 1 ? `<b>${t('force_number', { f: APPLE_MASS * G })}</b>` : '';
+      content = `<div class="nt-pull-row"><span class="nt-pull-key">↓</span><span>${t('pull_apple')}</span>${reading}</div><div class="nt-pull-row"><span class="nt-pull-key dash">↑</span><span>${t('pull_earth')}</span>${reading}</div><p class="nt-equal-caption">${t(s.lessonStep === 1 ? 'equal_caption' : 'observe_caption', { m: APPLE_MASS })}</p>`;
+    }
+    return `${progress}<div class="nt-lesson-content">${content}</div>${open}`;
   }
   function openMaths() {
     if (s.mode === 'quiz') return;
@@ -226,13 +232,14 @@ export function createApp(root, options = {}) {
     updatePicture();
     mathsDialog.innerHTML = `<h2>${t('maths_title')}</h2><div class="nt-dialog-maths">${fullEquationHtml()}</div><button type="button" class="pvc-btn primary" data-act="maths-close">${t('maths_close')}</button>`;
     mathsDialog.showModal();
+    updatePicture();
   }
   mathsDialog.addEventListener('close', () => {
     if (resumeAfterMath && s.mode === 'explore') {
       s.running = true;
-      updatePicture();
     }
     resumeAfterMath = false;
+    updatePicture();
   });
   function syncMode() {
     root.dataset.mode = s.mode;
@@ -249,20 +256,63 @@ export function createApp(root, options = {}) {
     syncMode();
     sheet.choose(s.example);
     const key =
-      s.example === 'boat' ? `boat_${m.phase === 'landed' ? 'done' : m.phase}` : s.done ? 'apple_done' : s.time > 0 ? 'apple_fall' : 'apple_rest';
+      s.example === 'boat'
+        ? `boat_${m.phase === 'landed' ? 'done' : m.phase}`
+        : s.lessonStep === 2
+          ? s.reason === 'mass'
+            ? 'guide_understood'
+            : 'guide_question'
+          : s.lessonStep === 1
+            ? 'guide_pair'
+            : s.done
+              ? 'guide_observed'
+              : s.time > 0
+                ? 'guide_falling'
+                : 'guide_ready';
     if (key !== lastText) {
       sheet.outcome(t(key));
       lastText = key;
     }
-    sheet.rule(t(`rule_${s.example}`));
+    sheet.rule(
+      t(
+        s.example === 'boat'
+          ? 'rule_boat'
+          : s.lessonStep === 2
+            ? s.reason === 'mass'
+              ? 'guide_rule_end'
+              : 'guide_rule_question'
+            : s.lessonStep === 1
+              ? 'guide_rule_pair'
+              : 'guide_rule_start',
+      ),
+    );
     const html = equationHtml();
     if (html !== lastEquations) {
       equations.innerHTML = html;
       lastEquations = html;
     }
-    badge.innerHTML = `${t(`note_${s.example}`)}<br>${t('slow_note', { n: SLOW })}`;
+    badge.innerHTML = `${t(`note_${s.example}`)}<br>${t('slow_note', { n: s.example === 'apple' ? APPLE_SLOW : SLOW })}`;
     if (action) {
-      action.set({ label: s.done ? 'act_again' : `act_${s.example}`, step: s.example === 'boat' ? 1 : 2, target: target, enabled: !s.running });
+      const actionLabel =
+        s.example === 'boat'
+          ? s.done
+            ? 'act_again'
+            : 'act_boat'
+          : s.lessonStep === 2
+            ? s.reason === 'mass'
+              ? 'act_restart'
+              : 'act_answer'
+            : s.lessonStep === 1
+              ? 'act_reason'
+              : s.done
+                ? 'act_compare'
+                : 'act_apple';
+      action.set({
+        label: actionLabel,
+        step: s.example === 'boat' ? 1 : s.lessonStep + 1,
+        target: target,
+        enabled: !s.running && !(s.example === 'apple' && s.lessonStep === 2 && s.reason !== 'mass'),
+      });
       if (s.running || s.time > 0) action.hide('running');
       else action.show('running');
     }
@@ -270,7 +320,7 @@ export function createApp(root, options = {}) {
   const remove = (id) => anno.remove(id);
   function forceLabel(id, a, key, dashed, dy) {
     label(id, {
-      text: `<span class="nt-key ${dashed ? 'dash' : ''}"></span>${t(key)}<br><b>${t('force_value', { f: s.example === 'boat' ? BOAT.force : APPLE_MASS * G })}</b>`,
+      text: `<span class="nt-key ${dashed ? 'dash' : ''}"></span>${t(key)}${s.example === 'boat' || s.mode === 'quiz' || s.lessonStep > 0 ? `<br><b>${t('force_value', { f: s.example === 'boat' ? BOAT.force : APPLE_MASS * G })}</b>` : ''}`,
       kind: 'callout',
       color: s.example === 'boat' ? '#a05000' : '#6741b5',
       point: () => a.tip,
@@ -290,7 +340,7 @@ export function createApp(root, options = {}) {
     }
     boat.root.visible = s.example === 'boat';
     earth.root.visible = s.example === 'apple';
-    measurement.visible = s.example === 'apple';
+    measurement.visible = s.example === 'apple' && mathsDialog.open;
     force1.hide();
     force2.hide();
     motion1.hide();
@@ -300,6 +350,8 @@ export function createApp(root, options = {}) {
       remove('apple');
       remove('earth');
       remove('radius');
+      remove('trail-start');
+      remove('trail-fallen');
       if (m.contact) {
         if (s.showFirst) force1.set(v(m.personX + 0.16, m.personY + 0.82, 0.63), v(1, 0), 0.85);
         if (s.showSecond) force2.set(v(m.boatX - 0.15, 0.42, 0.63), v(-1, 0), 0.85);
@@ -354,6 +406,31 @@ export function createApp(root, options = {}) {
     } else {
       for (const id of ['boy', 'boat', 'motion-boy', 'motion-boat']) remove(id);
       earth.setFall(m.fallen);
+      const withTrail = s.mode === 'explore' && m.fallen > 0.02;
+      earth.showTrail(withTrail, m.fallen);
+      if (withTrail) {
+        label('trail-start', {
+          text: t('trail_start'),
+          point: () => v(-0.4, earth.startY, 0.2),
+          spots: [
+            { dx: -16, dy: 0 },
+            { dx: 24, dy: -14 },
+          ],
+          optional: true,
+        });
+        label('trail-fallen', {
+          text: t('trail_fallen', { s: N(m.fallen.toFixed(1)) }),
+          point: () => v(-0.4, earth.apple.position.y, 0.2),
+          spots: [
+            { dx: -16, dy: 0 },
+            { dx: -12, dy: -25 },
+          ],
+          optional: true,
+        });
+      } else {
+        remove('trail-start');
+        remove('trail-fallen');
+      }
       const y = earth.apple.position.y;
       // Both arrows lie in one diagram plane, so their identical lengths also look identical in the front view.
       if (s.showFirst) force1.set(v(0.34, y, 1.18), v(0, -1), 0.6);
@@ -362,7 +439,7 @@ export function createApp(root, options = {}) {
       measurement.computeLineDistances();
       label('apple', {
         text: t('apple'),
-        point: () => earth.apple.position.clone().add(v(-0.22, 0.1, 0.2)),
+        point: () => earth.apple.position.clone().add(v(-0.29, 0.1, 0.2)),
         spots: [
           { dx: -25, dy: -12 },
           { dx: 0, dy: -32 },
@@ -378,7 +455,9 @@ export function createApp(root, options = {}) {
         ],
         optional: true,
       });
-      label('radius', { text: t('radius_symbol'), point: () => v(-1.34, (y - EARTH_R) / 2, 1.14), spots: [{ dx: 12, dy: 0 }], optional: true });
+      if (measurement.visible)
+        label('radius', { text: t('radius_symbol'), point: () => v(-1.34, (y - EARTH_R) / 2, 1.14), spots: [{ dx: 12, dy: 0 }], optional: true });
+      else remove('radius');
     }
     if (force1.root.visible) forceLabel('force1', force1, s.example === 'boat' ? 'on_boy' : 'on_apple', false, -25);
     else remove('force1');
@@ -407,6 +486,8 @@ export function createApp(root, options = {}) {
     s.done = false;
     s.running = false;
     s.showFirst = s.showSecond = true;
+    s.lessonStep = 0;
+    s.reason = null;
     lastText = '';
     anno.clear();
     presentation.set(example);
@@ -420,8 +501,22 @@ export function createApp(root, options = {}) {
     s.done = false;
     s.running = true;
     s.showFirst = s.showSecond = true;
+    s.lessonStep = 0;
+    s.reason = null;
     updatePicture();
     emit(s.example === 'boat' ? 'push' : 'release', getState());
+  }
+  function act() {
+    if (s.mode === 'quiz' || s.running) return;
+    if (s.example !== 'apple' || (s.lessonStep === 0 && !s.done) || (s.lessonStep === 2 && s.reason === 'mass')) {
+      play();
+      return;
+    }
+    if (s.lessonStep < 2) {
+      s.lessonStep += 1;
+      updatePicture();
+      emit('change', getState());
+    }
   }
   action = createAction({
     stage,
@@ -434,11 +529,11 @@ export function createApp(root, options = {}) {
     pad: 8,
     avoid: [ui.corner, badge, () => anno.boxes()],
     pulse: o.coach,
-    onAct: play,
+    onAct: act,
   });
   stage.addTicker((dt) => {
     if (!s.running) return false;
-    s.time = Math.min(maxTime(), s.time + dt / SLOW);
+    s.time = Math.min(maxTime(), s.time + dt / (s.example === 'apple' ? APPLE_SLOW : SLOW));
     if (s.time >= maxTime()) {
       s.running = false;
       s.done = true;
@@ -517,7 +612,13 @@ export function createApp(root, options = {}) {
     else if (b.dataset.example && s.mode !== 'quiz') chooseExample(b.dataset.example);
     else if (b.dataset.q != null) quiz.choose(Number(b.dataset.q));
     else if (b.dataset.view && s.mode !== 'quiz') setView(b.dataset.view);
-    else if (b.dataset.act === 'maths-open') openMaths();
+    else if (b.dataset.reason && s.example === 'apple' && s.lessonStep === 2 && s.mode !== 'quiz') {
+      s.reason = b.dataset.reason;
+      updatePicture();
+      if (s.reason === 'mass') ui.$('.pvc-act').focus();
+      else equations.querySelector('[data-reason="mass"]').focus();
+      emit('change', getState());
+    } else if (b.dataset.act === 'maths-open') openMaths();
     else if (b.dataset.act === 'maths-close') mathsDialog.close();
     else if (b.dataset.act === 'q-next') quiz.next();
     else if (b.dataset.act === 'q-again') quiz.start();
@@ -543,13 +644,13 @@ export function createApp(root, options = {}) {
       new THREE.Vector2(((event.clientX - rect.left) / rect.width) * 2 - 1, (-(event.clientY - rect.top) / rect.height) * 2 + 1),
       camera,
     );
-    if (ray.intersectObject(s.example === 'boat' ? boat.hit : earth.hit, true).length) play();
+    if (ray.intersectObject(s.example === 'boat' ? boat.hit : earth.hit, true).length) act();
   });
   root.addEventListener('keydown', (event) => {
     if (event.target.closest('button') || s.mode === 'quiz') return;
     if ([' ', 'Enter', 'ArrowRight'].includes(event.key)) {
       event.preventDefault();
-      play();
+      act();
     } else if (event.key === '1') chooseExample('boat');
     else if (event.key === '2') chooseExample('apple');
   });
@@ -579,12 +680,19 @@ export function createApp(root, options = {}) {
         s.time = 0;
         s.done = false;
         s.running = false;
+        s.lessonStep = 0;
+        s.reason = null;
       }
       if (p.push) play();
       if (p.at != null) {
         s.time = Math.min(maxTime(), Math.max(0, Number(p.at) || 0));
         s.running = false;
         s.done = s.time >= maxTime();
+      }
+      if (s.example === 'apple' && p.lessonStep != null) {
+        s.lessonStep = Math.max(0, Math.min(2, Math.trunc(Number(p.lessonStep) || 0)));
+        s.running = false;
+        s.reason = null;
       }
       updatePicture();
       return getState();

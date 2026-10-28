@@ -1,11 +1,9 @@
-// The book's চিত্র ৩.১২: an apple held above the Earth, then let go. Metres, y up, the Earth's top at y = 0 and the apple
-// above it. The picture is not to scale: the Earth is drawn as a ball a few metres across (so it is seen curving under
-// the apple) and the apple much bigger than a real one; the figure says so on the view. The apple is round and red with
-// a stem and a leaf; the hand is two fingers and a thumb round it (they open when it is let go).
+// Whole Earth and apple: a slowed fall, a ghost start position and a distance trail.
+// Scene units are metres, but object sizes and separation are deliberately not to scale.
 import * as THREE from 'three';
 
 export const EARTH_R = 1.05; // m: the drawn Earth (not to scale)
-export const APPLE_R = 0.24; // m: the drawn apple's radius
+export const APPLE_R = 0.3; // m: the drawn apple's radius
 
 const mat = (name, color, roughness = 0.8) => new THREE.MeshStandardMaterial({ name, color, roughness, metalness: 0 });
 
@@ -66,6 +64,20 @@ export function createEarthScene({ renderer }) {
   apple.root.name = 'Apple';
   root.add(apple.root);
   const startY = 1.45;
+  const ghost = createApple(APPLE_R).root;
+  ghost.name = 'AppleStart';
+  ghost.userData.noExport = true;
+  ghost.position.y = startY;
+  ghost.traverse((object) => {
+    if (object instanceof THREE.Mesh) {
+      object.material = new THREE.MeshBasicMaterial({ color: '#e4f5ff', wireframe: true, transparent: true, opacity: 0.24, depthWrite: false });
+    }
+  });
+  root.add(ghost);
+  const trail = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineDashedMaterial({ color: '#d7efff', dashSize: 0.055, gapSize: 0.04 }));
+  trail.name = 'FallTrail';
+  trail.userData.noExport = true;
+  root.add(trail);
   const hit = new THREE.Mesh(new THREE.SphereGeometry(0.34, 16, 12), new THREE.MeshBasicMaterial({ visible: false }));
   hit.userData.noExport = true;
   apple.root.add(hit);
@@ -76,6 +88,12 @@ export function createEarthScene({ renderer }) {
     hit,
     ready,
     startY,
+    showTrail(show, fallen) {
+      ghost.visible = show && fallen > APPLE_R * 2.1;
+      trail.visible = show && fallen > 0.02;
+      trail.geometry.setFromPoints([new THREE.Vector3(-0.4, startY, 0.1), new THREE.Vector3(-0.4, startY - fallen, 0.1)]);
+      trail.computeLineDistances();
+    },
     setFall(fallen) {
       apple.root.position.set(0, startY - fallen, 0);
     },
