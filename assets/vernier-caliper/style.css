@@ -5,6 +5,10 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
 body.bg-dark { background: #11161d; }
 body.bg-transparent { background: transparent; }
 
+/* Navy studio backdrop: the white reading panel stays separate from the instrument. */
+.pvc[data-theme='light'] { --stage-background: #142b40; }
+.pvc[data-theme='light'] .pvc-stage { background: var(--stage-background); }
+
 
 /* ── header ── */
 .pvc-header {
