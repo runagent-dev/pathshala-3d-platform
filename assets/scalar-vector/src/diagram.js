@@ -1,6 +1,7 @@
-// A quiet illustrated map: one winding path, one straight vector, a pond and a few trees. No school, actors or rings.
+// A quiet illustrated map: one winding path, one straight vector, a pond and a few trees. One illustrated walker follows the route.
 import * as THREE from 'three';
 import { JOURNEY, pointAt } from './journey.js';
+import { createWalker } from './walker.js';
 
 export const COLORS = { grass: '#35a06c', scalar: '#1452a0', vector: '#d84f42', equal: '#18846c', other: '#7351bd', ink: '#203e35' };
 export const point3 = ([x, y], height = 0.5) => new THREE.Vector3(x, height, -y);
@@ -148,9 +149,8 @@ export function createDiagram() {
     marker.position.copy(point3(at, 0));
     map.add(marker);
   }
-  const traveler = new THREE.Group();
-  traveler.name = 'WalkerMarker';
-  traveler.add(disk(1.13, '#ffffff', 0.7), disk(0.91, '#e6aa2e', 0.73), disk(0.26, COLORS.ink, 0.76));
+  const walker = createWalker();
+  const traveler = walker.root;
   map.add(traveler);
 
   const pairs = new THREE.Group();
@@ -178,6 +178,7 @@ export function createDiagram() {
     map,
     pairs,
     traveler,
+    walkerBox: () => walker.box(),
     first,
     second,
     poses,
@@ -185,8 +186,9 @@ export function createDiagram() {
       map.visible = true;
       pairs.visible = false;
       trail.geometry.setDrawRange(0, Math.floor(progress * (JOURNEY.points.length - 1)) * 6);
-      traveler.position.copy(point3(pointAt(progress), 0));
-      traveler.visible = progress < 1;
+      traveler.position.copy(point3(pointAt(progress), 1));
+      traveler.visible = true;
+      walker.set(progress);
       position.visible = showVector > 0;
       position.scale.x = Math.max(0.001, showVector);
     },
@@ -199,13 +201,7 @@ export function createDiagram() {
       return [a, b];
     },
     fitMarker(stage) {
-      const p = traveler.position.clone().project(stage.camera);
-      const q = traveler.position
-        .clone()
-        .add(new THREE.Vector3(1, 0, 0))
-        .project(stage.camera);
-      const px = (Math.abs(p.x - q.x) * stage.width) / 2;
-      traveler.scale.setScalar((stage.height < 240 ? 11 : 16) / Math.max(1, px));
+      walker.fit(stage);
     },
   };
 }

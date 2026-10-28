@@ -14,7 +14,7 @@ test('scalar-vector: one journey, then only two of the book’s arrows at a time
   await fig.advance(150);
   await expect(button).toBeDisabled();
   await button.click({ force: true });
-  await fig.advance(2000);
+  await fig.advance(3600);
   expect(await fig.call('get')).toMatchObject({ stage: 1, busy: false, journey: { distance: 120, vectorVisible: false } });
   await expect(fig.frame.locator('.pvc-anno-reading')).toContainText('স্কেলার');
   await expect(fig.frame.locator('.pvc-outcome')).toContainText('১২০ m');
@@ -37,11 +37,11 @@ test('scalar-vector: one journey, then only two of the book’s arrows at a time
   await button.click();
   await fig.advance(200);
   await fig.frame.locator('[data-act="home"]').click();
-  await fig.advance(2500);
+  await fig.advance(3600);
   expect(await fig.call('get')).toMatchObject({ stage: 0, busy: false, journey: { distance: 0, vectorVisible: false } });
   await fig.frame.locator('#app').focus();
   await page.keyboard.press('ArrowRight');
-  await fig.advance(2200);
+  await fig.advance(3600);
   expect((await fig.call('get')).stage).toBe(1);
   expect(log.errors).toEqual([]);
 });
@@ -113,3 +113,63 @@ for (const viewport of VIEWPORTS)
       expect(report.clipped, `step ${stage}: clipped label`).toEqual([]);
     }
   });
+
+test('scalar-vector: the walker follows the route, and a four-direction compass follows the map', async ({ page }) => {
+  await page.setViewportSize({ width: 800, height: 500 });
+  const log = await preparePage(page);
+  const fig = await openFigure(page, 'scalar-vector');
+  await expect(fig.frame.locator('.sv-compass svg')).toHaveAttribute('role', 'img');
+  expect(await fig.frame.locator('.sv-compass text').allTextContents()).toEqual(['উ', 'পূ', 'দ', 'প']);
+  const readCompass = () =>
+    fig.frame.evaluate(() => {
+      const w = /** @type {any} */ (window);
+      return w.figure._internals.compass.directions();
+    });
+  await fig.advance(100);
+  let directions = await readCompass();
+  expect(directions.n.y).toBeLessThan(-0.99);
+  expect(directions.e.x).toBeGreaterThan(0.99);
+  expect(directions.s.y).toBeGreaterThan(0.99);
+  expect(directions.w.x).toBeLessThan(-0.99);
+  await fig.frame.locator('.pvc-act').click();
+  await fig.advance(1100);
+  expect((await fig.call('get')).busy).toBe(true);
+  const position = await fig.frame.evaluate(async () => {
+    const source = '/assets/scalar-vector/src/journey.js';
+    const { JOURNEY, pointAt } = await import(source);
+    const w = /** @type {any} */ (window);
+    const app = w.figure,
+      state = app.getState(),
+      walker = app._internals.diagram.traveler;
+    const expected = pointAt(state.journey.distance / JOURNEY.length);
+    return {
+      error: Math.hypot(walker.position.x - expected[0], walker.position.z + expected[1]),
+      visible: walker.visible,
+      box: app._internals.diagram.walkerBox(),
+    };
+  });
+  expect(position.visible).toBe(true);
+  expect(position.error).toBeLessThan(0.01);
+  expect(position.box.bottom - position.box.top).toBeGreaterThan(35);
+  await fig.advance(2500);
+  await fig.call('set', { stage: 2, view: '3d' });
+  await expect(fig.frame.locator('.sv-meaning.scalar')).toContainText('১২০ m');
+  await expect(fig.frame.locator('.sv-meaning.vector')).toContainText('২০ m উত্তর দিকে');
+  await fig.frame.evaluate(() => {
+    const w = /** @type {any} */ (window);
+    const { stage } = w.figure._internals;
+    stage.camera.position.copy(stage.controls.target).add({ x: 100, y: 200, z: 0 });
+    stage.camera.lookAt(stage.controls.target);
+    stage.controls.update();
+    stage.invalidate();
+  });
+  await fig.advance(150);
+  directions = await readCompass();
+  expect(directions.n.x).toBeGreaterThan(0.99);
+  expect(Math.abs(directions.n.y)).toBeLessThan(0.01);
+  expect(directions.e.y).toBeGreaterThan(0.99);
+  await fig.call('practice');
+  await fig.advance(100);
+  expect((await readCompass()).n.y).toBeLessThan(-0.99);
+  expect(log.errors).toEqual([]);
+});

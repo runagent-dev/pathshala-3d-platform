@@ -2,6 +2,13 @@
 
 Book: physics-9-10 › 2.3 › p38 (chapter 2, গতি). Screenshot: `reference/page-38.png`.
 
+## 2026-10-28 — v0.4.0: a walker, fuller explanations and a proper compass
+The owner asked for a person, more explanation than one scalar/vector line, and a proper compass. One illustrated person now walks the blue route and remains by the finish. The human is a larger-than-life map symbol, stated in the map note; the route and position readings remain 120 m and 20 m north.
+
+The learn panel explains each separately: what the person walked (scalar length, magnitude only), and where they finished relative to the start (vector position, magnitude plus direction). The book's arrow comparisons also show their actual lengths and directions in words. Text uses the space already available under the result; the map stays large.
+
+A four-direction compass uses the book's উ / পূ / দ / প letters (N/E/S/W in English), a red north needle and an accessible description. All four directions are projected from the map's world axes, including when the camera is tilted or rotated. Labels avoid the compass and person.
+
 ## 2026-10-28 — v0.3.0: a simpler illustrated journey
 The owner found the school-field story complex and supplied a winding-path/straight-arrow diagram as a visual reference (`reference/journey-style.png`). The new view uses one start, one finish, one winding blue path and one straight coral arrow, with a small pond and three symbolic trees. No people, school, ring of possible places, question marks or multi-child sequence.
 
