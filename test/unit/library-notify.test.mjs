@@ -5,7 +5,16 @@ import http from 'node:http';
 import path from 'node:path';
 import { after, before, describe, it } from 'node:test';
 import { ROOT } from '../../scripts/lib/paths.mjs';
-import { announceSync, changesOf, checkHookUrl, decide, postNotification } from '../../scripts/lib/library/notify.mjs';
+import {
+  announceSync,
+  changesOf,
+  checkHookUrl,
+  decide,
+  figuresOf,
+  MAX_FIGURES,
+  postNotification,
+  scopeText,
+} from '../../scripts/lib/library/notify.mjs';
 import { tempDir } from '../helpers.mjs';
 
 const TOKEN = 'sekret-token-do-not-print-0123456789';
@@ -144,8 +153,8 @@ describe('telling the Books server', () => {
     assert.equal(call.method, 'POST');
     assert.equal(call.headers.authorization, `Bearer ${TOKEN}`);
     assert.equal(call.headers['content-type'], 'application/json');
-    assert.deepEqual(call.body, { tier: 'production', syncedAt: '2026-11-01T10:00:00.000Z', published: 1, withdrawn: 1 });
-    assert.deepEqual(out.lines, ['Books updated: 3 applied, 1 need review, 0 failed']);
+    assert.deepEqual(call.body, { tier: 'production', syncedAt: '2026-11-01T10:00:00.000Z', published: 1, withdrawn: 1, figures: ['a', 'c'] });
+    assert.deepEqual(out.lines, ['Books updated: 3 applied, 1 need review, 0 failed (figures: a, c)']);
     const saved = JSON.parse(fs.readFileSync(path.join(cacheDir, 'last-notification.json'), 'utf8'));
     assert.equal(saved.ok, true);
     assert.equal(saved.status, 200);
@@ -271,6 +280,75 @@ describe('telling the Books server', () => {
     assert.deepEqual(books.calls[0].body.published, 0);
   });
 
+  const ok = { status: 200, body: { ok: true, applied: 0, review: 0, failed: 0, books: 0 } };
+  const fig = (id, result) => ({ id, result });
+
+  it('names the changed figures: sorted, unique, only published or withdrawn', async () => {
+    books.answer(ok);
+    const report = production({
+      figures: [
+        fig('vernier-caliper', 'published'),
+        fig('screw-gauge', 'published'),
+        fig('screw-gauge', 'published'),
+        fig('si-prefixes', 'withdrawn'),
+        fig('x', 'unchanged'),
+        fig('y', 'blocked'),
+        fig('z', 'failed'),
+      ],
+    });
+    const { out } = await run({ report });
+    assert.deepEqual(books.calls[0].body.figures, ['screw-gauge', 'si-prefixes', 'vernier-caliper']);
+    assert.deepEqual(out.lines, ['Books updated: 0 applied, 0 need review, 0 failed (figures: screw-gauge, si-prefixes, vernier-caliper)']);
+  });
+
+  it('sends an empty list when only libraries were repaired', async () => {
+    books.answer(ok);
+    await run({ report: production({ figures: [fig('a', 'unchanged')], libraries: { missing: ['three'] } }) });
+    assert.deepEqual(books.calls[0].body.figures, []);
+  });
+
+  it(`leaves the list out (everything is updated) above ${MAX_FIGURES} figures, and with --notify`, async () => {
+    books.answer(ok);
+    const many = Array.from({ length: MAX_FIGURES + 1 }, (_, i) => fig(`fig-${String(i).padStart(3, '0')}`, 'published'));
+    const big = await run({ report: production({ figures: many }) });
+    assert.equal('figures' in books.calls[0].body, false);
+    assert.equal(books.calls[0].body.published, MAX_FIGURES + 1);
+    assert.match(big.out.text(), /\(all figures\)/);
+    const exactly = Array.from({ length: MAX_FIGURES }, (_, i) => fig(`fig-${String(i).padStart(3, '0')}`, 'published'));
+    await run({ report: production({ figures: exactly }) });
+    assert.equal(books.calls[1].body.figures.length, MAX_FIGURES);
+    const forced = await run({ flags: { notify: true } }); // changed figures exist, but a forced run is a full one
+    assert.equal('figures' in books.calls[2].body, false);
+    assert.match(forced.out.text(), /\(all figures\)/);
+  });
+
+  it('leaves an invalid figure id out of the list and says so in one line', async () => {
+    books.answer(ok);
+    const { out } = await run({
+      report: production({ figures: [fig('good-one', 'published'), fig('Bad Id!', 'published'), fig('../etc', 'withdrawn')] }),
+    });
+    assert.deepEqual(books.calls[0].body.figures, ['good-one']);
+    const lines = out.lines.filter((l) => /not a valid figure id/.test(l));
+    assert.equal(lines.length, 1);
+    assert.match(lines[0], /\.\.\/etc, Bad Id!/);
+  });
+
+  it('believes a server that says it updated everything, and never prints the token', async () => {
+    books.answer({ status: 200, body: { ok: true, applied: 1, review: 0, failed: 0, books: 1, scope: 'all', figures: 0 } });
+    const { out } = await run();
+    assert.match(out.text(), /\(all figures\)/);
+    assert.doesNotMatch(out.text(), new RegExp(TOKEN));
+  });
+
+  it('records the scope next to the outcome', async () => {
+    books.answer(ok);
+    const { cacheDir } = await run();
+    const saved = JSON.parse(fs.readFileSync(path.join(cacheDir, 'last-notification.json'), 'utf8'));
+    assert.equal(saved.scope, 'figures');
+    assert.equal(saved.figures, 2);
+    assert.doesNotMatch(JSON.stringify(saved), new RegExp(TOKEN));
+  });
+
   it('never throws, whatever goes wrong', async () => {
     const out = capture();
     const r = await announceSync({
@@ -320,5 +398,19 @@ describe('library:sync as a program', () => {
     });
     assert.equal(run.status, 2);
     assert.match(run.stderr, /cannot be used together/);
+  });
+});
+
+describe('which figures', () => {
+  it('figuresOf: null when forced or when the report cannot say; skipped lists unusable ids', () => {
+    assert.deepEqual(figuresOf(production(), { forced: true }), { figures: null, skipped: [] });
+    assert.deepEqual(figuresOf({ mode: 'apply' }), { figures: null, skipped: [] });
+    assert.deepEqual(figuresOf(production({ figures: [{ id: 7, result: 'published' }] })), { figures: [], skipped: ['7'] });
+  });
+  it('scopeText shows at most five names', () => {
+    assert.equal(scopeText(null), '(all figures)');
+    assert.equal(scopeText([]), '(no figures)');
+    assert.equal(scopeText(['a', 'b']), '(figures: a, b)');
+    assert.equal(scopeText(['a', 'b', 'c', 'd', 'e', 'f', 'g']), '(figures: a, b, c, d, e +2 more)');
   });
 });

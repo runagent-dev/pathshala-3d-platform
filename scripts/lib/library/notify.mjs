@@ -11,6 +11,9 @@ export const HOOK_URL_ENV = 'LIBRARY_SYNC_HOOK_URL';
 export const HOOK_TOKEN_ENV = 'LIBRARY_SYNC_HOOK_TOKEN';
 export const NOTIFY_TIMEOUT_MS = 10 * 60 * 1000;
 const RETRIES = 2;
+/** More changed figures than this (a first full publish): the server is asked to update everything instead of naming them. */
+export const MAX_FIGURES = 200;
+const FIGURE_ID = /^[a-z0-9][a-z0-9._-]{0,120}$/;
 const BACKOFF_MS = [2_000, 6_000];
 const RETRY_STATUSES = new Set([502, 503, 504]);
 const REPEAT = 'Books were NOT notified; run: npm run library:sync -- --notify';
@@ -26,20 +29,50 @@ export function changesOf(report) {
 
 /**
  * @param {any} report
+ * @param {{ forced?: boolean }} [o] `forced`: the notification was asked for with --notify, which is always a full run
+ * @returns {{ figures: string[] | null, skipped: string[] }}
+ *
+ * Which figures the server should update: the ids (the slug the library tags its items with, `figure:<id>`) of every figure this sync published
+ * or withdrew, unique and sorted. `null` = all of them: forced, a report that cannot say, or more than MAX_FIGURES. An id that is not a plausible
+ * figure id is left out and returned in `skipped`. A sync that only repaired libraries gives an empty list (nothing to update in books).
+ */
+export function figuresOf(report, { forced = false } = {}) {
+  if (forced || !Array.isArray(report?.figures)) return { figures: null, skipped: [] };
+  const ids = new Set();
+  const skipped = new Set();
+  for (const f of report.figures) {
+    if (f?.result !== 'published' && f?.result !== 'withdrawn') continue;
+    if (typeof f.id === 'string' && FIGURE_ID.test(f.id)) ids.add(f.id);
+    else skipped.add(String(f?.id));
+  }
+  if (ids.size > MAX_FIGURES) return { figures: null, skipped: [...skipped].sort() };
+  return { figures: [...ids].sort(), skipped: [...skipped].sort() };
+}
+
+/** "(figures: a, b, c, d, e +2 more)" or "(all figures)", for the line a person reads. */
+export function scopeText(figures) {
+  if (!figures) return '(all figures)';
+  if (!figures.length) return '(no figures)';
+  const shown = figures.slice(0, 5).join(', ');
+  return `(figures: ${shown}${figures.length > 5 ? ` +${figures.length - 5} more` : ''})`;
+}
+
+/**
+ * @param {any} report
  * @param {{ notify?: boolean, noNotify?: boolean }} [flags]
- * @returns {{ send: boolean, why: string, published: number, withdrawn: number }}
+ * @returns {{ send: boolean, why: string, published: number, withdrawn: number, figures: string[] | null, skipped: string[] }}
  *
  * Whether to notify: only after a real (not dry-run, not --check) write to the PRODUCTION tier, and only when something changed, unless
  * `notify` forces it. `why` is a line for a person when the answer is no for a reason they may not expect (only given with --notify).
  */
 export function decide(report, { notify = false, noNotify = false } = {}) {
-  const no = (why = '') => ({ send: false, why, published: 0, withdrawn: 0 });
+  const no = (why = '') => ({ send: false, why, published: 0, withdrawn: 0, figures: null, skipped: [] });
   if (noNotify) return no();
   if (report?.mode !== 'apply') return no(notify ? 'not notifying: this was a dry run' : '');
   if (report?.tier !== 'production') return no(notify ? `not notifying: the tier was ${report?.tier}, only production is announced` : '');
   const c = changesOf(report);
   if (!c.changed && !notify) return no();
-  return { send: true, why: '', published: c.published, withdrawn: c.withdrawn };
+  return { send: true, why: '', published: c.published, withdrawn: c.withdrawn, ...figuresOf(report, { forced: notify }) };
 }
 
 /** The endpoint, or a reason it is refused: https only, except this computer (for tests). */
@@ -79,7 +112,7 @@ async function errorText(res, token) {
 }
 
 /**
- * @param {{ url: string, token: string, body: object, fetch?: typeof fetch, sleep?: (ms: number) => Promise<void>, timeoutMs?: number, log?: (line: string) => void }} o
+ * @param {{ url: string, token: string, body: object, scope?: string, fetch?: typeof fetch, sleep?: (ms: number) => Promise<void>, timeoutMs?: number, log?: (line: string) => void }} o
  * @returns {Promise<{ ok: boolean, status: number, outcome: string, result?: any }>}
  *
  * One announcement. Returns `{ ok, status, outcome }`; never throws. `log` gets the lines a person reads. Retries (twice, with a pause) only
@@ -89,6 +122,7 @@ export async function postNotification({
   url,
   token,
   body,
+  scope = '',
   fetch: doFetch = globalThis.fetch,
   sleep = (ms) => new Promise((r) => setTimeout(r, ms)),
   timeoutMs = NOTIFY_TIMEOUT_MS,
@@ -138,7 +172,9 @@ export async function postNotification({
         /* an answer that is not JSON still means it worked */
       }
       const n = (v) => (Number.isFinite(v) ? v : '?');
-      log(`Books updated: ${n(j?.applied)} applied, ${n(j?.review)} need review, ${n(j?.failed)} failed`);
+      // a server that answers for everything although a list was sent (an older one) is believed over what was sent
+      const shown = j?.scope === 'all' ? '(all figures)' : scope;
+      log(`Books updated: ${n(j?.applied)} applied, ${n(j?.review)} need review, ${n(j?.failed)} failed${shown ? ` ${shown}` : ''}`);
       return {
         ok: true,
         status: 200,
@@ -213,11 +249,13 @@ export async function announceSync({
       return { sent: false };
     }
 
+    if (d.skipped.length) log(`Books notification: left out of the figures list (not a valid figure id): ${d.skipped.join(', ')}`);
     const at = now().toISOString();
     const result = await postNotification({
       url: target.url.href,
       token,
-      body: { tier: 'production', syncedAt: at, published: d.published, withdrawn: d.withdrawn },
+      body: { tier: 'production', syncedAt: at, published: d.published, withdrawn: d.withdrawn, ...(d.figures ? { figures: d.figures } : {}) },
+      scope: scopeText(d.figures),
       log,
       ...(doFetch ? { fetch: doFetch } : {}),
       ...(sleep ? { sleep } : {}),
@@ -231,6 +269,8 @@ export async function announceSync({
       outcome: result.outcome,
       published: d.published,
       withdrawn: d.withdrawn,
+      scope: d.figures ? 'figures' : 'all',
+      ...(d.figures ? { figures: d.figures.length } : {}),
       ...(result.result ? { books: result.result } : {}),
     });
     return { sent: true, ...result };
