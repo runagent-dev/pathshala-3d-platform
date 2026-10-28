@@ -262,3 +262,62 @@ test('third law: a guided fall, equal-force comparison and retryable mass questi
   await expect(fig.frame.locator('[data-reason]')).toHaveCount(0);
   expect(log.errors).toEqual([]);
 });
+
+test('third law: gravity cards stay outside their own shafts without crossed leaders', async ({ page }) => {
+  test.setTimeout(240000);
+  const log = await preparePage(page);
+  for (const lang of ['bn', 'en'])
+    for (const [width, height] of [
+      [390, 700],
+      [390, 520],
+      [844, 390],
+      [640, 400],
+      [800, 500],
+      [1280, 800],
+      [1000, 1100],
+    ]) {
+      await page.setViewportSize({ width, height });
+      const fig = await openFigure(page, 'newtons-third-law', { params: { lang, example: 'apple' } });
+      for (const view of ['front', '3d'])
+        for (const lessonStep of [0, 1]) {
+          await fig.call('set', { view, at: 0.43, lessonStep });
+          await fig.advance(150);
+          const cards = await fig.frame.evaluate(() => {
+            const svg = document.querySelector('.pvc-anno-lines');
+            const origin = svg.getBoundingClientRect();
+            const lines = [...svg.querySelectorAll('line')]
+              .filter((line) => line.style.visibility !== 'hidden')
+              .map((line) => Object.fromEntries(['x1', 'x2', 'y1', 'y2'].map((key) => [key, Number(line.getAttribute(key))])));
+            return [...document.querySelectorAll('.nt-gravity-label')].flatMap((span) => {
+              const el = span.closest('.pvc-anno');
+              if (getComputedStyle(el).visibility === 'hidden') return [];
+              const r = el.getBoundingClientRect();
+              const box = { left: r.left - origin.left, right: r.right - origin.left, top: r.top - origin.top, bottom: r.bottom - origin.top };
+              const leaders = lines.filter(
+                (line) => line.x2 >= box.left - 1 && line.x2 <= box.right + 1 && line.y2 >= box.top - 1 && line.y2 <= box.bottom + 1,
+              );
+              return [{ body: span.dataset.forceBody, ...box, leaders }];
+            });
+          });
+          for (const card of cards) {
+            expect(card.leaders, `${lang} ${width} ${view} ${card.body}`).toHaveLength(1);
+            const leader = card.leaders[0];
+            // Every leader stays horizontal and reaches the card's near edge from its own shaft.
+            expect(Math.abs(leader.y1 - leader.y2)).toBeLessThan(1);
+            expect(card.right <= leader.x1 - 8 || card.left >= leader.x1 + 8).toBe(true);
+          }
+          if (cards.length === 2) {
+            const ordered = cards.toSorted((a, b) => a.leaders[0].x1 - b.leaders[0].x1);
+            expect(ordered[0].right).toBeLessThan(ordered[0].leaders[0].x1);
+            expect(ordered[1].left).toBeGreaterThan(ordered[1].leaders[0].x1);
+            expect(ordered[0].leaders[0].x1).toBeLessThan(ordered[1].leaders[0].x1);
+          }
+          if (view === 'front' && width >= 800) expect(cards, `${lang} ${width}×${height}`).toHaveLength(2);
+          if (lessonStep === 1) {
+            await expect(fig.frame.locator('.nt-pull-row')).toHaveCount(2);
+            await expect(fig.frame.locator('.nt-pull-row b')).toHaveText(lang === 'bn' ? ['৯.৮ N', '৯.৮ N'] : ['9.8 N', '9.8 N']);
+          }
+        }
+    }
+  expect(log.errors).toEqual([]);
+});

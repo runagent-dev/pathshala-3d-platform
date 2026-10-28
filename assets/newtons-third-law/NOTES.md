@@ -144,3 +144,12 @@ becomes visible only once it separates from the real apple, preventing two super
 
 The comparison step reveals both force values together; the observation step names who pulls whom without
 numbers. The paused-fall explanation belongs in the panel rather than a third line over the small-screen object.
+
+## Gravity label layout (v1.1.1)
+The two gravity arrows use separate lanes beside the apple and upper Earth. Their cards name the agent and
+recipient on short lines and connect horizontally to their own shafts. Each card stays outside the pair;
+when the camera orbits behind the scene, the card sides swap with the projected arrow order. Geometry bounds
+keep all apple-scene labels clear of the real apple, Earth, start-position ghost and both arrow shapes.
+Tight frames hide optional scene cards instead of placing them over another arrow; the lesson's named force
+legend remains available. Tall studio frames reserve horizontal room for the cards. Physics and lesson flow
+are unchanged; both force arrows retain equal length and their solid/dashed distinction.

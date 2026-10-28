@@ -161,3 +161,5 @@ body.bg-transparent { background: transparent; }
 
 .nt-reason-feedback.correct { min-height: 0; }
 .nt-summary-formula { color: #315e68; font-size: 12px; font-weight: 600; line-height: 1.3; }
+
+.nt-gravity-label { display: block; white-space: normal; text-align: left; }
