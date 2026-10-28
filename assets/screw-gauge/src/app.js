@@ -5,6 +5,7 @@
 //   const app = createScrewGaugeApp(document.getElementById('app'), { value: 3.47 });
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
+import { createPresentation } from './presentation.js';
 import { createTweener, ease } from '@shared/tween.js';
 import { createMaterials } from '@shared/student/materials.js';
 import { createLoupe } from '@shared/student/loupe.js';
@@ -17,7 +18,7 @@ import { createGauge, DIM } from './gauge.js';
 import { OBJECTS, OBJECT_KINDS, createObject, randomSize } from './objects.js';
 import { read, format, roundTo, LC, PITCH, DIVISIONS, RANGE } from './reading.js';
 
-export const VERSION = '0.2.2';
+export const VERSION = '0.2.3';
 
 /** Wait (briefly) for the Bangla webfont, so the numbers on the scales are drawn with it. */
 export function loadFonts(timeout = 2500) {
@@ -69,9 +70,9 @@ export function createScrewGaugeApp(root, userOptions = {}) {
   });
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
-  const stage = createStage(ui.canvasHost, { fov: 24, near: 2, far: 6000, environment: 'studio-light' });
+  const stage = createStage(ui.canvasHost, { fov: 24, near: 2, far: 6000, environment: 'studio' });
   const { camera, controls, scene } = stage;
-  // Read the figure's CSS colour so the magnifier and exported stills match the stage.
+  // Use the stage's fallback colour when a magnifier looks outside the scene.
   const stageBackground = getComputedStyle(root).getPropertyValue('--stage-background').trim() || '#ffffff';
   controls.zoomToCursor = true;
   controls.minDistance = 15;
@@ -79,6 +80,7 @@ export function createScrewGaugeApp(root, userOptions = {}) {
   controls.rotateSpeed = 0.6;
 
   const M = createMaterials(stage.renderer);
+  const presentation = createPresentation(stage, M, o);
   const gauge = createGauge({ materials: M, text: { digits: N, mm: t('unit_mm') } });
   scene.add(gauge.root);
 
@@ -93,26 +95,6 @@ export function createScrewGaugeApp(root, userOptions = {}) {
     onDragStart: () => coach?.lensUsed(),
   });
 
-  // A soft shadow on an invisible "page" behind it, so it reads like a figure on paper.
-  if (o.shadow && o.theme !== 'dark') {
-    stage.renderer.shadowMap.enabled = true;
-    stage.renderer.shadowMap.type = THREE.VSMShadowMap;
-    stage.renderer.shadowMap.autoUpdate = false;
-    stage.onBeforeRender(() => (stage.renderer.shadowMap.needsUpdate = true));
-    const sun = new THREE.DirectionalLight(0xffffff, 0.3);
-    sun.position.set(30, 110, 400);
-    sun.target.position.set(40, -15, 0);
-    sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 1024);
-    Object.assign(sun.shadow.camera, { left: -70, right: 150, top: 60, bottom: -80, near: 250, far: 650 });
-    sun.shadow.radius = 12;
-    sun.shadow.blurSamples = 24;
-    sun.shadow.bias = -0.0005;
-    const page = new THREE.Mesh(new THREE.PlaneGeometry(1600, 1000), new THREE.ShadowMaterial({ opacity: 0.11 }));
-    page.position.set(40, -15, -9);
-    page.receiveShadow = true;
-    scene.add(sun, sun.target, page);
-  }
   const castShadows = (obj) => obj.traverse((m) => m.isMesh && !m.isInstancedMesh && !m.material.transparent && (m.castShadow = true));
   castShadows(gauge.root);
 
@@ -848,13 +830,14 @@ export function createScrewGaugeApp(root, userOptions = {}) {
     },
     startPractice: () => quiz.start(),
     stopPractice: () => quiz.stop(),
-    capture: ({ background = stageBackground, ...opts } = {}) => stage.capture({ ...opts, background }),
+    capture: (options) => presentation.capture(options),
     /** The gauge (with the object between its faces, if any) for GLB export. */
     exportRoot: () => gauge.root,
     dispose() {
       tweener.cancel();
       loupe.dispose();
       coach?.dispose();
+      presentation.dispose();
       stage.dispose();
       root.innerHTML = '';
       listeners.clear();
