@@ -1,186 +1,140 @@
-// Newton's third law through the bridge (book pages 84–86, topic 3.8): two skaters push each other with the same 10 N
-// (an arrow on each body while the hands touch, none before and after), both move off, and with unequal masses the
-// lighter one goes twice as far; the apple and the Earth feel the same 9.8 N while it falls, the Earth's acceleration
-// is 1.64 × 10⁻²⁴ ms⁻². The clean panel: the small result under each word, the result line, the rule growing to the
-// book's boxed law (word for word, the last step), the big numbered button offering the next pair (its ring only while
-// they stand ready, never in the test). Every test question sets up its own scene; reset brings everything back.
-// Runs with `npm run test:figures` (dev-only folder, never packaged).
 import { expect, test } from '@playwright/test';
 import { openFigure, preparePage } from '../../../scripts/lib/export/driver.mjs';
 
-test('newtons-third-law: equal and opposite forces on two bodies, the lighter one moves more', async ({ page }) => {
+test('third law: boat recoil replaces both mass tabs, and the apple–Earth pair has full equations', async ({ page }) => {
   await page.setViewportSize({ width: 800, height: 500 });
   const log = await preparePage(page);
   const fig = await openFigure(page, 'newtons-third-law');
-  const text = async (sel) => (await fig.frame.locator(sel).first().textContent()).replace(/ /g, ' ');
-
-  // at the start: equal masses, standing ready, no force
-  const start = await fig.call('get');
-  expect(start).toMatchObject({ example: 'equal', scene: 'skaters', phase: 'rest', force: 0, masses: { A: 50, B: 50 } });
-  expect(start.arrows).toEqual({ onA: false, onB: false });
-  expect(start.next).toEqual({ example: 'equal', step: 1 });
-  expect(await text('.pvc-rule')).toContain('একজন আরেকজনকে ধাক্কা দিলে কী হবে');
-  expect(await text('.pvc-act-badge')).toBe('১');
-  expect(await text('.pvc-act')).toContain('ধাক্কা দাও');
-  expect(await fig.frame.locator('.pvc-act-marker.in:not(.pvc-act-under)').count()).toBe(1); // the ring on the hands
-  await fig.advance(3000); // nobody pushed: nothing happens however long we wait
-  expect(await fig.call('get')).toMatchObject({ phase: 'rest', moved: { A: 0, B: 0 } });
-
-  // the push: 10 N on each, an arrow on each body, 0.2 ms⁻², they move apart equally
+  expect(await fig.frame.locator('.pvc-examples [data-example]').evaluateAll((es) => es.map((e) => e.dataset.example))).toEqual(['boat', 'apple']);
+  expect(await fig.frame.locator('.pvc-examples').textContent()).not.toMatch(/সমান ভর|হালকা|ভারী/);
+  expect(await fig.call('get')).toMatchObject({ example: 'boat', phase: 'rest', force: 0 });
   await fig.call('set', { push: true });
-  await fig.advance(1450); // 0.45 s standing ready, then 1 s of pushing
-  const push = await fig.call('get');
-  expect(push).toMatchObject({ phase: 'push', force: 10, arrows: { onA: true, onB: true }, acceleration: { A: 0.2, B: 0.2 } });
-  expect(push.moved.A).toBeGreaterThan(0.05);
-  expect(push.moved.A).toBeCloseTo(push.moved.B, 3); // equal masses, equal motion
-  expect(push.position.A).toBeLessThan(0);
-  expect(push.position.B).toBeGreaterThan(0);
-  expect(await text('.pvc-outcome')).toBe('A ধাক্কা দিচ্ছে B-কে, B-ও ধাক্কা দিচ্ছে A-কে: সমান জোরে, ১০ নিউটন করে');
-  expect(await text('.pvc-rule')).toContain('A ধাক্কা দেয় B-কে, B-ও ধাক্কা দেয় A-কে, সমান জোরে');
-  expect(await fig.frame.locator('.pvc-act-marker.in:not(.pvc-act-under)').count()).toBe(0); // no ring while it moves
-  // while the first run goes on the button keeps its own words ("again" only for a pair already seen)
-  expect(await text('.pvc-act')).toContain('ধাক্কা দাও');
-  expect(await text('.pvc-act')).not.toContain('আবার');
-  expect(await text('.pvc-act-badge')).toBe('১');
-  await fig.advance(100); // the labels fade in on the next frame
-  const labels = await fig.frame.locator('.pvc-anno.in').allTextContents();
-  expect(labels.join('|')).toContain('A-এর ওপর বল');
-  expect(labels.join('|')).toContain('B-এর ওপর বল');
-  // after the push there is no force; each goes on at the speed it reached
-  await fig.advance(1500);
-  const glide = await fig.call('get');
-  expect(glide).toMatchObject({ phase: 'glide', force: 0, arrows: { onA: false, onB: false } });
-  expect(glide.speed.A).toBeCloseTo(0.283, 2);
-  expect(glide.speed.A).toBeCloseTo(glide.speed.B, 3);
-  expect(await text('.pvc-outcome')).toContain('ধাক্কা শেষ: এখন কোনো বল নেই');
-  expect(await text('.pvc-act')).not.toContain('আবার'); // still the first run
-  await fig.advance(1500);
-  expect((await fig.call('get')).tried.equal).toBe(true);
-  expect(await text('.pvc-outcome')).toContain('সমান সরে গেল');
-  expect(await text('[data-example="equal"] .pvc-ex-res')).toBe('সমান সরে');
-  expect((await fig.call('get')).next).toEqual({ example: 'unequal', step: 2 }); // the button offers the next pair
-  expect(await text('.pvc-act-badge')).toBe('২');
-  expect(await text('.pvc-act')).toContain('হালকা ও ভারীকে ধাক্কা দাও');
-  // the button offers a pair that is not on the picture: no ring on the skaters, the dotted word in the row says it
-  expect(await fig.frame.locator('.pvc-act-marker.in:not(.pvc-act-under)').count()).toBe(0);
-  expect(await fig.frame.locator('[data-example="unequal"].next').count()).toBe(1);
-  // they leave the picture and stand ready again
-  await fig.advance(4000);
-  expect(await fig.call('get')).toMatchObject({ phase: 'rest', moved: { A: 0, B: 0 } });
-
-  // light and heavy: the same 10 N, the lighter goes twice as far (jumping into the glide)
-  await fig.call('set', { example: 'unequal', at: 1.2 });
-  const mid = await fig.call('get');
-  expect(mid).toMatchObject({ example: 'unequal', phase: 'push', force: 10, masses: { A: 50, B: 100 }, acceleration: { A: 0.2, B: 0.1 } });
-  expect(mid.moved.A / mid.moved.B).toBeCloseTo(2, 2);
-  await fig.call('set', { example: 'unequal', at: 3 });
-  const after = await fig.call('get');
-  expect(after).toMatchObject({ phase: 'glide', force: 0 });
-  expect(after.moved.A / after.moved.B).toBeCloseTo(2, 1);
-  await fig.advance(3000);
-  expect(await text('.pvc-outcome')).toContain('২ গুণ বেশি');
-  expect(await text('.pvc-rule')).toContain('বল সমান, তবু হালকা জন বেশি সরে');
-
-  // the apple: the same 9.8 N on the apple and on the Earth while it falls; the Earth's acceleration is tiny
-  await fig.call('set', { example: 'apple' });
-  expect((await fig.call('get')).phase).toBe('rest');
-  await fig.call('set', { push: true, at: 0.5 });
-  const fall = await fig.call('get');
-  expect(fall).toMatchObject({ scene: 'apple', phase: 'fall', force: 9.8, arrows: { onApple: true, onEarth: true } });
-  expect(fall.acceleration.apple).toBe(9.8);
-  expect(fall.acceleration.earth).toBeCloseTo(1.64e-24, 26);
-  expect(await text('.pvc-outcome')).toContain('সমান জোরে');
-  await fig.advance(4000);
-  const landed = await fig.call('get');
-  expect(landed).toMatchObject({ phase: 'landed', force: 0, arrows: { onApple: false, onEarth: false } });
-  expect(landed.fallen).toBeCloseTo(1.4, 2);
-  expect(await text('.pvc-outcome')).toContain('নড়ল না');
-  expect(await text('.pvc-outcome')).not.toMatch(/×|১০/); // no powers of ten in the result line
-  // all three tried: the rule is the book's boxed law, word for word, and F is named
-  expect(await text('.pvc-rule')).toBe(
-    'নিউটনের তৃতীয় সূত্র: যখন একটি বস্তু অন্য একটি বস্তুর ওপর বল প্রয়োগ করে তখন সেই বস্তুটিও প্রথম বস্তুটির ওপর বিপরীত দিকে সমান বল প্রয়োগ করে।',
-  );
-  expect(await text('[data-example="apple"] .pvc-ex-res')).toBe('প্রায় নড়ে না');
-  // at that last step the pair of skaters' forces take the book's names F and −F (right is positive)
-  await fig.call('set', { example: 'equal', at: 1 });
-  await fig.advance(150);
-  const named = (await fig.frame.locator('.pvc-anno.in').allTextContents()).join('|');
-  expect(named).toContain('−F');
-  expect(named).toMatch(/F = /);
-  expect(await text('.pvc-outcome')).toContain('F আর −F');
-  // the two arrows of a pair are told apart by more than colour: a solid and a dashed swatch in their labels
-  expect(await fig.frame.locator('.nt-key').count()).toBe(2);
-  expect(await fig.frame.locator('.nt-key.dash').count()).toBe(1);
-
-  // back to the start
-  await fig.call('set', { example: 'equal', home: true });
-  expect(await fig.call('get')).toMatchObject({ example: 'equal', phase: 'rest' });
-
-  // the test: the ring hides; every question sets up its own scene
-  await fig.call('practice');
-  const scenes = new Set();
-  const order = [];
-  for (let q = 0; q < 5; q++) {
-    for (let k = 0; k < 80 && !(await fig.frame.locator('.pvc-opt[data-q="0"]').count()); k++) await fig.advance(250);
-    const ask = await text('.pvc-q-text');
-    const st = await fig.call('get');
-    expect(st.mode).toBe('quiz');
-    expect(await fig.frame.locator('.pvc-act-marker').evaluateAll((els) => els.map((el) => getComputedStyle(el).visibility))).toEqual([
-      'hidden',
-      'hidden',
-    ]);
-    if (ask.includes('আপেল কী করছে')) {
-      scenes.add('react');
-      order.push('react');
-      expect(st).toMatchObject({ scene: 'apple', phase: 'fall', arrows: { onApple: true, onEarth: false } }); // one arrow only
-    } else if (ask.includes('কাটাকাটি হচ্ছে না কেন')) {
-      scenes.add('cancel');
-      order.push('cancel');
-      expect(st).toMatchObject({ scene: 'skaters', phase: 'push', arrows: { onA: true, onB: true } });
-    } else if (ask.includes('কে বেশি সরবে')) {
-      scenes.add('who');
-      order.push('who');
-      expect(st).toMatchObject({ scene: 'skaters', phase: 'rest', arrows: { onA: false, onB: false } });
-      expect(st.masses.A).not.toBe(st.masses.B);
-    } else if (ask.includes('B-এর ওপর বল কত')) {
-      scenes.add('size');
-      order.push('size');
-      // the picture shows the force on A (with its number), the question is about B
-      expect(st).toMatchObject({ scene: 'skaters', phase: 'push', arrows: { onA: true, onB: false } });
-      expect(st.masses.A).not.toBe(st.masses.B);
-      expect(await fig.frame.locator('.pvc-opt').allTextContents()).toEqual(
-        ['০ নিউটন', '৫ নিউটন', '১০ নিউটন', '২০ নিউটন'].map((x) => x.replace(' ', '\u00a0')),
-      );
-    } else {
-      scenes.add('earth');
-      order.push('earth');
-      expect(ask).toContain('তবু আমরা পৃথিবীকে নড়তে দেখি না কেন');
-      expect(st).toMatchObject({ scene: 'apple', phase: 'rest' });
-    }
-    await fig.frame.locator('.pvc-opt[data-q="0"]').click();
-    await fig.advance(300);
-    expect(['ok', 'bad']).toContain(await fig.frame.locator('.pvc-q-feedback').getAttribute('data-tone'));
-    // the worked answer of the apple and cancelling questions talks about both arrows: they stay on while it is read
-    const after = await fig.call('get');
-    if (order.at(-1) === 'react') expect(after.arrows).toEqual({ onApple: true, onEarth: true });
-    if (order.at(-1) === 'cancel') expect(after.arrows).toEqual({ onA: true, onB: true });
-    if (order.at(-1) === 'size') expect(after.arrows).toEqual({ onA: true, onB: true });
-    await fig.frame.locator('[data-act="q-next"]').click();
-    await fig.advance(300);
-  }
-  expect(scenes.size).toBe(5); // five kinds, one each
-  // an order that never gives a later answer away: the size question first, the apple's reaction before the Earth's question
-  expect(order[0]).toBe('size');
-  expect(order.indexOf('react')).toBeLessThan(order.indexOf('earth'));
-
-  await fig.call('reset');
+  await fig.advance(350);
+  let s = await fig.call('get');
+  expect(s.phase).toBe('push');
+  expect(s.arrows).toEqual({ onPerson: true, onBoat: true });
+  expect(s.force).toBe(300);
+  expect(s.position.person).toBeGreaterThan(0.35);
+  expect(s.position.boat).toBeLessThan(0);
   await fig.advance(800);
-  expect(await fig.call('get')).toMatchObject({
-    example: 'equal',
-    phase: 'rest',
-    mode: 'explore',
-    view: 'front',
-    tried: { equal: false, unequal: false, apple: false },
+  s = await fig.call('get');
+  expect(s.phase).toBe('flight');
+  expect(s.arrows).toEqual({ onPerson: false, onBoat: false });
+  expect(s.speed.person).toBeGreaterThan(0);
+  expect(s.speed.boat).toBeLessThan(0);
+  await fig.advance(2500);
+  expect(await fig.call('get')).toMatchObject({ phase: 'landed', done: true, playing: false });
+  await fig.call('set', { example: 'apple', at: 0.2 });
+  s = await fig.call('get');
+  expect(s).toMatchObject({ example: 'apple', phase: 'fall', force: 9.8, arrows: { onApple: true, onEarth: true } });
+  expect(s.acceleration.earth).toBeCloseTo(1.64e-24, 26);
+  const maths = await fig.frame.locator('.nt-equations').textContent();
+  expect(maths).toContain('mg');
+  expect(maths).toContain('a = F/M');
+  expect(maths).not.toContain('G =');
+  await fig.frame.locator('[data-act="maths-open"]').click();
+  await expect(fig.frame.locator('.nt-math-dialog')).toBeVisible();
+  const full = await fig.frame.locator('.nt-dialog-maths').textContent();
+  expect(full).toContain('aM = F/M = (m/M)g');
+  expect(full).toContain('G =');
+  await fig.frame.locator('.nt-math-dialog').press('Escape');
+  await expect(fig.frame.locator('.nt-math-dialog')).not.toBeVisible();
+  expect(maths).toContain('১.৬৪');
+  expect(maths).toContain('−২৪');
+  // The real texture is bundled and ready, and the entire globe is exported rather than a cropped surface.
+  const earth = await fig.frame.evaluate(() => {
+    const model = /** @type {any} */ (window).figure.exportRoot();
+    const e = model.getObjectByName('Earth');
+    return { texture: e.material.map.image.width, radius: e.geometry.parameters.radius };
   });
+  expect(earth.texture).toBe(1024);
+  expect(earth.radius).toBe(1.05);
+  await fig.call('reset');
+  expect(await fig.call('get')).toMatchObject({ example: 'boat', phase: 'rest', mode: 'explore', view: 'front' });
+  expect(log.errors).toEqual([]);
+});
+
+test('third law: five questions use the new boat and Earth scenes and reveal both forces', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 700 });
+  const log = await preparePage(page);
+  const fig = await openFigure(page, 'newtons-third-law');
+  await fig.call('set', { view: '3d' });
+  await fig.call('practice');
+  expect((await fig.call('get')).view).toBe('front');
+  for (let i = 0; i < 5; i++) {
+    await fig.advance(100);
+    await expect(fig.frame.locator('.pvc-opt')).toHaveCount(4);
+    const s = await fig.call('get');
+    expect(s.mode).toBe('quiz');
+    expect(s.example).toBe(i < 3 ? 'boat' : 'apple');
+    if (i === 0) expect(s.arrows).toEqual({ onPerson: true, onBoat: false });
+    if (i === 3) expect(s.arrows).toEqual({ onApple: true, onEarth: false });
+    await fig.frame.locator('.pvc-examples [data-example="apple"]').evaluate((el) => el.click());
+    expect((await fig.call('get')).example).toBe(s.example);
+    await fig.frame.locator('[data-q="0"]').click();
+    await fig.advance(100);
+    expect(await fig.frame.locator('.pvc-q-feedback').textContent()).not.toMatch(/undefined|NaN/);
+    await fig.frame.locator('[data-act="q-next"]').click();
+  }
+  await expect(fig.frame.locator('.pvc-q-result')).toContainText('৫');
+  expect(log.errors).toEqual([]);
+});
+
+test('third law: the new pictures, equations and controls fit all six frames in both languages', async ({ page }) => {
+  const log = await preparePage(page);
+  for (const lang of ['bn', 'en']) {
+    for (const [width, height] of [
+      [390, 700],
+      [390, 520],
+      [844, 390],
+      [640, 400],
+      [800, 500],
+      [1280, 800],
+    ]) {
+      await page.setViewportSize({ width, height });
+      const fig = await openFigure(page, 'newtons-third-law', { params: { lang } });
+      for (const state of [
+        { example: 'boat', at: 0 },
+        { example: 'boat', at: 0.2 },
+        { example: 'boat', at: 0.55 },
+        { example: 'apple', at: 0.2 },
+      ]) {
+        await fig.call('set', state);
+        await fig.frame.locator('.pvc-stage').boundingBox();
+        await fig.advance(300);
+        const report = await fig.frame.evaluate(() => {
+          const bad = [];
+          for (const e of document.querySelectorAll('.pvc-learn button,.nt-equations,.nt-equations>div,.pvc-outcome,.pvc-rule,.pvc-anno')) {
+            const style = getComputedStyle(e);
+            if (e.closest('[hidden]') || style.visibility === 'hidden' || style.display === 'none' || Number(style.opacity) === 0) continue;
+            const r = e.getBoundingClientRect();
+            if (!r.width || !r.height) continue;
+            if (r.left < -1 || r.right > innerWidth + 1 || r.top < -1 || r.bottom > innerHeight + 1 || e.scrollWidth > e.clientWidth + 1)
+              bad.push({ text: e.textContent, width: r.width, scroll: e.scrollWidth - e.clientWidth, bottom: r.bottom });
+          }
+          const p = document.querySelector('.pvc-panel');
+          return { bad, overflow: p.scrollHeight - p.clientHeight, stage: document.querySelector('.pvc-stage').getBoundingClientRect().height };
+        });
+        expect(report.bad, `${lang} ${width}×${height} ${state.example}`).toEqual([]);
+        expect(report.overflow).toBeLessThanOrEqual(1);
+        expect(report.stage).toBeGreaterThan(160);
+        if (state.example === 'apple') {
+          await fig.frame.locator('[data-act="maths-open"]').click();
+          const full = await fig.frame.locator('.nt-math-dialog').evaluate((el) => {
+            const r = el.getBoundingClientRect();
+            return {
+              width: r.width,
+              height: r.height,
+              scroll: el.scrollHeight - el.clientHeight,
+              inside: r.left >= 0 && r.top >= 0 && r.right <= innerWidth + 1 && r.bottom <= innerHeight + 1,
+            };
+          });
+          expect(full.inside).toBe(true);
+          expect(full.scroll).toBeLessThanOrEqual(1);
+          await fig.frame.locator('[data-act="maths-close"]').click();
+        }
+      }
+    }
+  }
   expect(log.errors).toEqual([]);
 });

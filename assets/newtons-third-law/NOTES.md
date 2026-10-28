@@ -85,3 +85,28 @@ masses), হালকা/ভারী, ধাক্কা দাও (the page's 
 - The page says "ক্রিয়া/প্রতিক্রিয়া" is loosely used: the figure does not use either word on screen (it says "বল দুটি আলাদা দুই বস্তুর ওপর").
   Should one worked answer name them once?
 - Every Bangla line needs a person's check against the book (the unchecked box in the pull request).
+
+## Replacement requested by the owner (v1.0.0)
+The equal/unequal skater tabs and models are replaced by **নৌকা থেকে লাফ**: a complete articulated schoolboy jumps
+from a hollow planked wooden boat onto a jetty; the boat recoils. During the 0.35 s push, horizontal forces are
++300 N on the 50 kg boy and −300 N on the 150 kg boat. The boy accelerates forward and the boat backward; horizontal
+momentum is conserved until the boy lands on the external jetty. Only these horizontal contact forces are drawn
+(the note states this; water resistance is ignored). After takeoff those force arrows disappear; separately named
+cyan velocity arrows show motion. Vertical flight is ballistic after takeoff; the initial upward speed represents
+the leg push, whose vertical force components and buoyancy are outside the horizontal diagram.
+
+The apple view now shows the WHOLE globe with NASA's locally bundled Blue Marble map, an enlarged red apple,
+equal-length solid/dashed gravity arrows in one diagram plane, and a centre-to-centre R guide. The learner sees
+F = GmM/R² = mg, F_m = −F_M as vectors, a_m = F/m = g and a_M = F/M = (m/M)g ≈ 1.64×10⁻²⁴ m/s²,
+with m = 1 kg and M = 5.98×10²⁴ kg. The picture is explicitly not to scale. It pauses BEFORE surface contact, avoiding
+an unshown normal force in a lesson about the free-fall pair; both gravitational forces remain visible in the paused
+moment. Both examples run at half speed. Credit and provenance are in media/README.md; no network is needed at runtime.
+
+Version 1.0.0 is intentional: example IDs equal/unequal are removed and replaced by boat; apple remains apple.
+The old skater-specific snapshot/tried API and questions are removed. `at` is now physical simulation seconds;
+`push` starts either the jump or release. The five questions use only the new boat/apple scenes.
+
+The owner's follow-up asks for simpler-looking maths. The default apple sheet now shows only equal force,
+apple acceleration and Earth acceleration, with short names and results. A keyboard-accessible **পূর্ণ হিসাব**
+button opens a separate calculation sheet with the full inverse-square equation, vector pair, masses and constants.
+This leaves the picture and default explanation uncluttered; the derivation remains complete and offline.
