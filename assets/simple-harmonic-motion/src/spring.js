@@ -28,10 +28,11 @@ class Helix extends THREE.Curve {
 export function createSpringStand({ materials: M }) {
   const root = new THREE.Group();
   root.name = 'SpringStand';
-  const paint = new THREE.MeshPhysicalMaterial({ name: 'StandBase', color: 0x3055c9, roughness: 0.5, clearcoat: 0.3 });
-  const rodPaint = new THREE.MeshPhysicalMaterial({ name: 'StandTeal', color: 0x2dc6d0, roughness: 0.3, metalness: 0.25, clearcoat: 0.4 });
-  const collarPaint = new THREE.MeshStandardMaterial({ name: 'ClampCoral', color: 0xf36b93, roughness: 0.4 });
-  const springSteel = new THREE.MeshStandardMaterial({ name: 'SpringSteel', color: 0x65f1dc, roughness: 0.3, metalness: 0.35 });
+  const paint = new THREE.MeshPhysicalMaterial({ name: 'StandBase', color: 0x143c60, roughness: 0.3, clearcoat: 0.55 });
+  const rodPaint = new THREE.MeshPhysicalMaterial({ name: 'StandCoralEnamel', color: 0xef6248, roughness: 0.28, metalness: 0.15, clearcoat: 0.55 });
+  const collarPaint = new THREE.MeshStandardMaterial({ name: 'ClampBlue', color: 0x225d86, roughness: 0.32 });
+  const massBrass = new THREE.MeshPhysicalMaterial({ name: 'SatinBrassMass', color: 0xe7ad4b, roughness: 0.28, metalness: 0.65, clearcoat: 0.25 });
+  const springSteel = new THREE.MeshStandardMaterial({ name: 'SpringSteel', color: 0xe9f3ff, roughness: 0.23, metalness: 0.65 });
 
   // ── the stand: a heavy base, an upright rod, a boss and an arm ──
   const base = new THREE.Mesh(new RoundedBoxGeometry(0.36, 0.026, 0.22, 2, 0.006), paint);
@@ -63,7 +64,7 @@ export function createSpringStand({ materials: M }) {
   stem.position.y = -0.04;
   mass.add(hangerHook, stem);
   for (let i = 0; i < 2; i++) {
-    const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.0155, 48), M.brass);
+    const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.0155, 48), massBrass);
     disc.position.y = -0.03 - 0.0085 - i * 0.0165;
     mass.add(disc);
   }

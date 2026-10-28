@@ -95,3 +95,8 @@ is greatest, then falls to zero at the other end; one full back-and-forth takes 
 - Graph views occupy the same space, including while a hand holds the mass (then a release hint hides the graphs).
   The shared five phase buttons pause/inspect both views. The compact phone view prioritises the scene and charts;
   its period is written on the common time axis. The swing retains its previous speed-graph lesson.
+
+## Spring palette refinement (v0.3.1)
+Peacock blue/teal replaces the violet backdrop; the support has coral enamel, an ink-blue base and blue clamp.
+The silver coil and satin brass weights have distinct metallic finishes. Matching deep-blue graph panels and
+teal selectors complete the palette while retaining the quantity colours, labels and motion/energy behaviour.
