@@ -2,7 +2,9 @@
 
 **Where it goes in the book:** Book pages 88–89, topic 3.9: ঘর্ষণ বল (Frictional Force). Next to চিত্র ৩.১৫ (a block pushed on a table: F and the friction f) and চিত্র ৩.১৬ (the microscopic roughness of two touching surfaces).
 
-Interactive 3D figure for the Pathshala book.
+A person pulls a red crate by a rope. Reverse the pull or add weight to compare tension and friction; an enlarged cyan/green contact view explains roughness, sliding and heating. Motion can be paused for inspection.
+
+The contact particles and warmth indicator are illustrative. The scene works offline in Bangla and English.
 
 ## Embed
 
@@ -28,11 +30,11 @@ To listen to it or control it from the book page, use the helper shipped in the 
 |---|---|---|---|
 | `lang` | Language | `bn` বাংলা · `en` English | `bn` |
 | `load` | Weights on the block (1 kg each) | number | `0` |
-| `side` | Push from | `left` left (pushes right) · `right` right (pushes left) | `left` |
-| `at` | Start already pushing (e.g. 2.6: the push has been growing for 2.6 s) | number |  |
+| `side` | Pull direction (legacy aliases) | `left` rightward pull · `right` leftward pull | `left` |
+| `at` | Start already pulling (e.g. 2.6: the pull has been growing for 2.6 s) | number |  |
 | `rub` | Start already rubbing (e.g. 3: the block has been rubbed to and fro for 3 s, the surfaces are warm) | number |  |
-| `hold` | Hold a push of (e.g. 9: the rod pushes with 9 N and the block stays still (friction is 9 N too), for pictures) | number |  |
-| `lens` | Zoom-in open | `1` · `0` | `0` |
+| `hold` | Hold a pull of (e.g. 9: rope tension and opposing friction are both 9 N while the crate stays still) | number |  |
+| `lens` | Zoom-in open | `1` · `0` | `1` |
 | `view` | View | `front` · `3d` | `front` |
 | `mode` | Start in | `explore` learn · `quiz` test | `explore` |
 | `coach` | The ring on the block pulses | `1` · `0` | `1` |

@@ -233,3 +233,32 @@ describe('friction: the teeth in the zoom-in', () => {
     }
   });
 });
+
+describe('friction force: rope-pulling anatomy', () => {
+  it('hands reach a horizontal rope while the knees stay above the floor', async () => {
+    const { createPuller } = await import('../../assets/friction-force/src/person.js');
+    const { Vector3 } = await import('three');
+    const human = createPuller();
+    for (const effort of [0, 0.5, 1])
+      for (const shift of [-0.1, 0, 0.1]) {
+        const targets = [new Vector3(0.29 - shift / 2, 0.9, 0.12), new Vector3(0.29 - shift / 2, 0.9, -0.12)];
+        human.pose({ lean: -0.12 - 0.1 * effort, hipY: 0.81 - 0.04 * effort, hands: targets });
+        for (let i = 0; i < 2; i++) assert.ok(human.handAt(i).distanceTo(targets[i]) < 0.003);
+        for (const leg of human.bones().filter((b) => b[3] === 'leg')) assert.ok(leg[1].y > 0.03, 'knee/ankle above floor');
+      }
+  });
+  it('the backward shuffle keeps a stance shoe planted', async () => {
+    const { createPuller } = await import('../../assets/friction-force/src/person.js');
+    const { Vector3 } = await import('three');
+    const human = createPuller(),
+      v = new Vector3(),
+      x = [];
+    for (const distance of [0.12, 0.16, 0.2]) {
+      human.root.position.x = distance;
+      human.pose({ distance, walking: true });
+      human.root.updateMatrixWorld(true);
+      x.push(human.feet[0].getWorldPosition(v).x);
+    }
+    for (const value of x) assert.ok(Math.abs(value - x[0]) < 1e-8);
+  });
+});

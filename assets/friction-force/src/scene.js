@@ -1,20 +1,19 @@
-// The things in the picture (metres): a wooden table, a wooden block on it (2 kg, written on its front), up to two
-// 1 kg weights that go on top of the block, a push rod with a rubber pad that pushes the block from the left or the
-// right, and the places the figure draws on: the table's top (y = 0) and the contact line under the block. Arrows
-// are made in app.js. Everything the student should not see in the GLB (hit boxes, glows, shadows) is marked noExport.
+// Metres: a red 2 kg demonstration crate, two optional 1 kg weights, a teal floor and articulated rope pullers.
+// The contact plane is y = 0. Hit boxes, glows and helpers are marked noExport.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { createPuller } from './person.js';
 import { textMesh } from '@shared/student/materials.js';
 
 export const DIM = {
-  block: { w: 0.24, h: 0.14, d: 0.12 },
-  weight: { w: 0.085, h: 0.052, d: 0.085 },
-  table: { w: 1.0, h: 0.05, d: 0.5, leg: 0.5 },
+  block: { w: 0.9, h: 1.0, d: 0.65 },
+  weight: { w: 0.2, h: 0.13, d: 0.2 },
+  table: { w: 5.8, h: 0.12, d: 2.0, leg: 0.0 },
   pad: { t: 0.022, h: 0.1, d: 0.1 },
   gap: 0.03, // m between the pad and the block when nobody pushes
 };
-export const WEIGHT_X = { 1: [0], 2: [-0.058, 0.058] }; // where the weights stand on the block for 1 and 2 weights
-export const COLORS = { push: '#e8590c', friction: '#c2255c', heat: '#ff6a2b' };
+export const WEIGHT_X = { 1: [0], 2: [-0.14, 0.14] }; // where the weights stand on the block for 1 and 2 weights
+export const COLORS = { push: '#ffb326', friction: '#ff3f76', heat: '#ff6a2b' };
 
 function canvasOf(w, h) {
   const c = document.createElement('canvas');
@@ -101,25 +100,24 @@ export function createRig({ t, aniso = 8 }) {
   root.name = 'FrictionForce';
 
   // ── the table: its top surface is y = 0 ──
-  const tableMat = new THREE.MeshStandardMaterial({ name: 'TableWood', map: woodTexture([150, 100, 62], 7, aniso), roughness: 0.68, metalness: 0 });
+  const tableMat = new THREE.MeshStandardMaterial({ name: 'TableWood', map: woodTexture([25, 120, 135], 7, aniso), roughness: 0.68, metalness: 0 });
   const table = new THREE.Group();
   table.name = 'Table';
   const slab = new THREE.Mesh(new RoundedBoxGeometry(DIM.table.w, DIM.table.h, DIM.table.d, 3, 0.008), tableMat);
   slab.position.y = -DIM.table.h / 2;
   slab.name = 'TableTop';
   table.add(slab);
-  for (const sx of [-1, 1])
-    for (const sz of [-1, 1]) {
-      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.05, DIM.table.leg, 0.05), tableMat);
-      leg.position.set(sx * (DIM.table.w / 2 - 0.06), -DIM.table.h - DIM.table.leg / 2 + 0.002, sz * (DIM.table.d / 2 - 0.06));
-      leg.name = 'TableLeg';
-      table.add(leg);
-    }
   root.add(table);
+  const stripeMaterial = new THREE.MeshBasicMaterial({ color: 0xffc34b });
+  for (const z of [-0.94, 0.94]) {
+    const stripe = new THREE.Mesh(new THREE.BoxGeometry(DIM.table.w, 0.008, 0.025), stripeMaterial);
+    stripe.position.set(0, 0.005, z);
+    table.add(stripe);
+  }
 
   // ── the block: origin on the table under its middle ──
   const { w, h, d } = DIM.block;
-  const blockMat = new THREE.MeshStandardMaterial({ name: 'BlockWood', map: woodTexture([226, 190, 138], 31, aniso), roughness: 0.62, metalness: 0 });
+  const blockMat = new THREE.MeshStandardMaterial({ name: 'BlockWood', map: woodTexture([236, 55, 20], 31, aniso), roughness: 0.62, metalness: 0 });
   const heatColor = new THREE.Color(COLORS.heat);
   const block = new THREE.Group();
   block.name = 'Block';
@@ -127,7 +125,7 @@ export function createRig({ t, aniso = 8 }) {
   body.position.y = h / 2;
   body.name = 'BlockBody';
   block.add(body);
-  const mass = textMesh(t('l_block', { n: 2 }), 0.026, { color: '#4a3217', weight: 700 });
+  const mass = textMesh(t('l_block', { n: 2 }), 0.14, { color: '#fff1bd', weight: 700 });
   mass.position.set(0, h * 0.5, d / 2 + 0.0008);
   block.add(mass);
   const hit = noExport(new THREE.Mesh(new THREE.BoxGeometry(w + 0.07, h + 0.1, d + 0.06), new THREE.MeshBasicMaterial({ visible: false })));
@@ -172,7 +170,7 @@ export function createRig({ t, aniso = 8 }) {
     b.position.y = DIM.weight.h / 2;
     const knob = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.015, 0.016, 20), ironMat);
     knob.position.y = DIM.weight.h + 0.008;
-    const tx = textMesh(t('l_weight', { n: 1 }), 0.019, { color: '#ffffff', weight: 700 });
+    const tx = textMesh(t('l_weight', { n: 1 }), 0.065, { color: '#ffffff', weight: 700 });
     tx.position.set(0, DIM.weight.h * 0.5, DIM.weight.d / 2 + 0.0008);
     g.add(b, knob, tx);
     return g;
@@ -183,24 +181,35 @@ export function createRig({ t, aniso = 8 }) {
     root.add(wt);
   }
 
-  // ── the push rods: a rod with a rubber pad. side +1 stands on the left and pushes to the right, side −1 the other
-  // way round; in its own frame the pad's face (x = 0) pushes toward +x ──
-  const rubber = new THREE.MeshStandardMaterial({ name: 'Rubber', color: 0x39424e, roughness: 0.8, metalness: 0 });
-  const rodMat = new THREE.MeshStandardMaterial({ name: 'Rod', color: 0xb9c0c9, roughness: 0.35, metalness: 0.9 });
-  function makePusher(side) {
-    const g = new THREE.Group();
-    g.name = side > 0 ? 'PushRodLeft' : 'PushRodRight';
-    const pad = new THREE.Mesh(new RoundedBoxGeometry(DIM.pad.t, DIM.pad.h, DIM.pad.d, 3, 0.006), rubber);
-    pad.position.set(-DIM.pad.t / 2, h * 0.5, 0);
-    const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.0065, 0.0065, 0.9, 16).rotateZ(Math.PI / 2), rodMat);
-    rod.position.set(-DIM.pad.t - 0.45, h * 0.5, 0);
-    g.add(pad, rod);
-    g.scale.x = side;
-    g.visible = false;
-    root.add(g);
-    return g;
+  // Each puller faces the box, leans away and grips a horizontal rope.
+  // Rubbing uses two visible people taking turns, rather than teleporting a person.
+  const ropeMat = new THREE.MeshStandardMaterial({ name: 'Rope', color: 0x50321d, roughness: 0.95 });
+  const strapPoints = [
+    [-w / 2 - 0.008, -d / 2 - 0.008],
+    [w / 2 + 0.008, -d / 2 - 0.008],
+    [w / 2 + 0.008, d / 2 + 0.008],
+    [-w / 2 - 0.008, d / 2 + 0.008],
+    [-w / 2 - 0.008, -d / 2 - 0.008],
+  ].map(([x, z]) => new THREE.Vector3(x, 0.9, z));
+  const wrap = new THREE.CurvePath();
+  for (let i = 1; i < strapPoints.length; i++) wrap.add(new THREE.LineCurve3(strapPoints[i - 1], strapPoints[i]));
+  const strap = new THREE.Mesh(new THREE.TubeGeometry(wrap, 40, 0.011, 8, false), ropeMat);
+  block.add(strap);
+  function makePuller(side) {
+    const rootGroup = new THREE.Group();
+    rootGroup.name = side > 0 ? 'RightPuller' : 'LeftPuller';
+    const human = createPuller();
+    human.root.scale.x = -side;
+    const rope = new THREE.Mesh(new THREE.BufferGeometry(), ropeMat);
+    rope.name = 'TensionRope';
+    const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.3, 16).rotateX(Math.PI / 2), ropeMat);
+    grip.name = 'RopeGrip';
+    rootGroup.add(human.root, rope, grip);
+    root.add(rootGroup);
+    return { root: rootGroup, human, rope, grip };
   }
-  const pushers = { 1: makePusher(1), '-1': makePusher(-1) };
+  const pullers = { 1: makePuller(1), '-1': makePuller(-1) };
+  const pushers = { 1: pullers[1].root, '-1': pullers[-1].root };
 
   const rig = {
     root,
@@ -231,13 +240,28 @@ export function createRig({ t, aniso = 8 }) {
         wt.position.set(x + spots[i], h + (last ? drop : 0), 0);
       });
     },
-    /** The pad on one side (side +1: left of the block, pushing right): shown or not, and how hard it presses (0…1). */
-    placePusher(side, x, press, visible = true) {
-      const g = pushers[side];
-      g.visible = visible;
+    /** side is the force direction; the human stands on that side and pulls outward. */
+    placePusher(side, x, press, visible = true, rubbing = false) {
+      const puller = pullers[side];
+      puller.root.visible = visible;
       if (!visible) return;
-      const gap = DIM.gap * (1 - press);
-      g.position.set(x - side * (w / 2 + gap), 0, 0);
+      const baseX = rubbing ? x * 0.5 : x;
+      puller.human.root.position.set(baseX + side * 1.42, 0, 0);
+      const reach = 0.29 - (rubbing ? side * x * 0.5 : 0);
+      puller.human.pose({
+        lean: -0.12 - 0.1 * press,
+        hipY: 0.81 - 0.04 * press,
+        distance: -side * baseX,
+        walking: Math.abs(baseX) > 0.008,
+        hands: [new THREE.Vector3(reach, 0.9, 0.12), new THREE.Vector3(reach, 0.9, -0.12)],
+      });
+      const start = new THREE.Vector3(this.x + (side * w) / 2, 0.9, 0);
+      const end = new THREE.Vector3(baseX + side * (1.42 - reach), 0.9, 0);
+      const mid = start.clone().lerp(end, 0.5);
+      mid.y -= press > 0.02 ? 0 : 0.09;
+      puller.rope.geometry.dispose();
+      puller.rope.geometry = new THREE.TubeGeometry(new THREE.CatmullRomCurve3([start, mid, end]), 20, 0.011, 8, false);
+      puller.grip.position.copy(end);
     },
     /** The warm strip on the table from x0 to x1 and how warm (0…1); the block and its edge glow too. */
     setHeat(k, x0 = -0.12, x1 = 0.12) {
@@ -250,13 +274,18 @@ export function createRig({ t, aniso = 8 }) {
       edge.visible = k > 0.01;
       blockMat.emissive.copy(heatColor).multiplyScalar(0.3 * Math.min(1, 1.5 * k));
     },
-    /** A copy for the GLB: the table, the block, the weights on it and the push rod, in metres. */
+    /** Current crate, people and ropes; the microscopic explanation is an inset. */
     exportRoot() {
       const copy = new THREE.Group();
       copy.name = 'FrictionForce';
-      const rod = pushers[1].clone(true);
-      rod.visible = true;
-      for (const o of [table, block, rod, ...weights.filter((x) => x.visible)]) copy.add(o.clone(true));
+      copy.add(
+        table.clone(true),
+        block.clone(true),
+        ...weights.filter((w) => w.visible).map((w) => w.clone(true)),
+        ...Object.values(pushers)
+          .filter((p) => p.visible)
+          .map((p) => p.clone(true)),
+      );
       return copy;
     },
   };

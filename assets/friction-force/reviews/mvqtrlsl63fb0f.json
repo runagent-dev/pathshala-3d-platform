@@ -3,7 +3,7 @@
   "author": "This computer",
   "text": "change the friction picture",
   "createdAt": "2026-10-27T15:12:59.926Z",
-  "status": "open",
+  "status": "done",
   "image": "reviews/mvqtrlsl63fb0f.webp",
   "context": {
     "frame": "fill",
@@ -28,5 +28,6 @@
       "mode": "explore",
       "next": "again"
     }
-  }
+  },
+  "reply": "Replaced the push rod and small block with an articulated rope-pulling person, a red crate and clear opposing force arrows. Added an enlarged cyan/green rough-contact view and a qualitative warmth indicator, with responsive Bangla/English controls and pause. (v0.2.0)"
 }
