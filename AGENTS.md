@@ -133,6 +133,7 @@ reply in the studio.
   so the same commit always renders the same pixels.
 - Put a figure's own tests in `assets/<id>/tests/*.spec.mjs` (see the template); drive it with
   `openFigure` / `call` from `scripts/lib/export/driver.mjs`.
+- What CI runs and skips, and why: `docs/ci.md`.
 - Pure maths goes in unit tests under `test/unit/` (`import … from '../../assets/<id>/src/reading.js'`).
 
 ## Layout

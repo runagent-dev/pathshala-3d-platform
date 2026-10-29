@@ -137,7 +137,7 @@ const stable = (value) => {
     );
   return value;
 };
-const hashJson = (value) => sha256(JSON.stringify(stable(value)));
+export const hashJson = (value) => sha256(JSON.stringify(stable(value)));
 
 /**
  * The fingerprints of a figure: { sourceHash, lab, glb, poster, video, files, tools } (the hashes are hex SHA-256; `lab` is null

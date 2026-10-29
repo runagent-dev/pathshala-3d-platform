@@ -31,9 +31,12 @@ jobs:
       - run: npm run test:unit
       - run: npm audit --omit=dev --audit-level=high
 
+  # The two slow jobs below run for changes going into `main`. A release pull request into `prod` only carries what already
+  # passed on `main`, so they are skipped there (docs/ci.md).
   figures:
     name: Figures in the browser
     needs: static
+    if: github.event_name != 'pull_request' || github.base_ref != 'prod'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -41,24 +44,41 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version-file: .nvmrc, cache: npm }
       - run: npm ci
+      # figures that already passed with exactly these inputs (their files, the kit modules they import, their tests and the
+      # test harness) are remembered between runs and left out
+      - uses: actions/cache/restore@v4
+        with:
+          path: .cache/figure-tests
+          key: figure-tests-${{ runner.os }}-${{ github.sha }}
+          restore-keys: figure-tests-${{ runner.os }}-
       - id: changed
-        run: node scripts/ci-figures.mjs ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || github.event.before }} >> "$GITHUB_OUTPUT"
+        run: node scripts/ci-figures.mjs ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || github.event.before }} --markers .cache/figure-tests >> "$GITHUB_OUTPUT"
       - if: steps.changed.outputs.figures != '' || steps.changed.outputs.templates == 'true'
-        run: npx playwright install --with-deps chromium
+        uses: ./.github/actions/playwright
       - if: steps.changed.outputs.figures != ''
-        run: npm run test:figures
-        env: { FIGURES: '${{ steps.changed.outputs.figures }}' }
+        run: npm run test:figures -- --reporter=list,json,html
+        env:
+          FIGURES: '${{ steps.changed.outputs.figures }}'
+          PLAYWRIGHT_JSON_OUTPUT_NAME: playwright-results.json
       - if: steps.changed.outputs.templates == 'true'
         run: npm run test:templates
       - if: steps.changed.outputs.templates == 'true'
         run: npx playwright test test/browser
+      # remember each figure that passed, even when another one failed
+      - if: always() && steps.changed.outputs.figures != ''
+        run: node scripts/ci-figures.mjs --record --markers .cache/figure-tests --results playwright-results.json
+      - if: always() && steps.changed.outputs.figures != ''
+        uses: actions/cache/save@v4
+        with:
+          path: .cache/figure-tests
+          key: figure-tests-${{ runner.os }}-${{ github.sha }}
       - if: failure()
         uses: actions/upload-artifact@v4
         with: { name: playwright-report, path: playwright-report, retention-days: 14 }
 
   visual:
     name: Visual comparison with the base branch
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && github.base_ref != 'prod'
     needs: static
     runs-on: ubuntu-24.04
     steps:
@@ -67,8 +87,21 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version-file: .nvmrc, cache: npm }
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
-      - run: npm run test:visual -- --base origin/${{ github.base_ref }}
+      - uses: ./.github/actions/playwright
+      # a picture depends only on the figure's inputs and the renderer: pictures are kept under that hash
+      - id: runner
+        run: echo "image=${ImageVersion:-unknown}" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache/restore@v4
+        with:
+          path: .cache/visual-shots
+          key: visual-${{ runner.os }}-${{ steps.runner.outputs.image }}-${{ hashFiles('package-lock.json') }}-${{ github.sha }}
+          restore-keys: visual-${{ runner.os }}-${{ steps.runner.outputs.image }}-${{ hashFiles('package-lock.json') }}-
+      - run: npm run test:visual -- --base origin/${{ github.base_ref }} --changed
+      - if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: .cache/visual-shots
+          key: visual-${{ runner.os }}-${{ steps.runner.outputs.image }}-${{ hashFiles('package-lock.json') }}-${{ github.sha }}
       - if: always()
         uses: actions/upload-artifact@v4
         with: { name: visual-comparison, path: test-results/visual, retention-days: 14 }
