@@ -222,3 +222,29 @@ describe('the derivation sheet: every way gives the same answer', () => {
     }
   });
 });
+
+describe('the worked example (page 45): a car from rest to 60 km/hour in 1 minute', () => {
+  it('gives the book’s numbers: 16.67 m/s and 0.278 m/s²', () => {
+    const e = m.exampleNumbers(m.EXAMPLE);
+    assert.equal(e.v, 16.67);
+    assert.equal(e.a, 0.278);
+    assert.equal(e.minutes, 1);
+    assert.equal(e.speedup, 5);
+    assert.equal(e.s, 500); // ½at², with the exact a
+  });
+  it('the steppers stay on their steps and in range', () => {
+    assert.deepEqual(m.fixExample({ kmh: 63, t: 7 }), { kmh: 60, t: 10 });
+    assert.deepEqual(m.fixExample({ kmh: 500, t: 999 }), { kmh: 120, t: 120 });
+    assert.deepEqual(m.fixExample({}), m.EXAMPLE);
+  });
+  it('a = v/t from the rounded v, for every question the steppers can reach', () => {
+    for (let kmh = 10; kmh <= 120; kmh += 10)
+      for (let t = 10; t <= 120; t += 10) {
+        const e = m.exampleNumbers({ kmh, t });
+        close(e.v, (kmh * 1000) / 3600, 0.005, 'v');
+        assert.equal(e.a, m.roundTo(e.v / t, 3));
+        close(e.aExact * t * 3.6, kmh, 1e-9, 'reaches the speed at t');
+        assert.ok(t / e.speedup <= 15 && t / e.speedup >= 7.5, `run of ${t / e.speedup} s`);
+      }
+  });
+});

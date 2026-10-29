@@ -26,7 +26,9 @@ never part at a line break.
 
 ## How the figure works
 Version 0.2.0 (the owner's three requests: colourful, a separate derivation window, simpler): one colour per
-quantity, a sunny setting, one equation at a time, and the সমীকরণ কীভাবে এল sheet.
+quantity, a sunny setting, one equation at a time, and the সমীকরণ কীভাবে এল sheet. Version 0.3.0 (the owner: "add
+these math with a proper interactive bus or car or anything colorful", then "not a green background, a different
+scenery"): the উদাহরণ sheet with the book's worked example and a red car on a city street.
 
 - A commuter railcar (16 m, diesel, broad gauge as in Bangladesh; cream above a bottle-green lower body with gold
   and red lines, a yellow panel on each cab) on a straight double-track railway, seen from the front a little above,
@@ -79,6 +81,23 @@ quantity, a sunny setting, one equation at a time, and the সমীকরণ �
   পরের ধাপ shows the next line (with its graph), আগের ধাপ goes back. Every line carries the student's own numbers
   (u, a, t from the steppers: 24 + 18 = 42 m by the area, 7 × 6 = 42 m by the fold, 100 = 16 + 84), and the last line
   of steps 2 and 3 says একই উত্তর. The arrow keys step, Tab stays inside the sheet.
+- উদাহরণ (the second button beside কীভাবে এল, with a small car) opens the book's worked example on page 45 over the
+  whole figure, the same kind of sheet: "একটা গাড়ির বেগ স্থির অবস্থা থেকে বেড়ে 1 মিনিটে 60 km/hour হয়েছে।
+  গাড়িটির ত্বরণ কত?" Above, a bright red hatchback (car.js: 4.3 m, glossy paint, dark glass, lights, five-spoke
+  rims that blur into a disc when they turn too fast to see) starts from a white line on a city avenue (road.js):
+  paved footpaths with kerbs, a row of pastel buildings of three to eight floors with windows and balconies, shops
+  under striped awnings, trees in planters, street lamps every 30 m, a hazy skyline; no green fields, so it looks
+  unlike the railway. Everything repeats around the car, which may go 2 km. A speedometer (0–140 km/hour, the needle
+  and an orange arc) shows km/hour and under it the same speed in m/s, a clock shows t, and a chip says how much
+  faster than real time the run plays (a whole number near t/12: a minute plays in 12 s, "৫ গুণ দ্রুত"); the camera
+  follows the car and draws back as the road flies past faster (12 m of road at rest, up to 36 m). Below: the
+  question (its time and speed in their colours), two steppers (শেষ বেগ 10–120 km/hour in tens, সময় 10–120 s in
+  tens; a new question puts the car back at the line) and the book's answer one line per পরের ধাপ: t = 1 মিনিট =
+  60 s (when it is whole minutes); v = 60 km/hour = (60 × 1000 m)/(60 × 60 s) = 16.67 m/s (fractions stacked as in
+  the book); v = u + at = at (from rest, u = 0); a = v/t = 16.67 m/s / 60 s = 0.278 m/s² (the book's unit here),
+  marked বইয়ের উত্তর for the book's numbers, otherwise "প্রতি সেকেন্ডে বেগ বাড়ে … m/s". The sum uses v rounded to
+  2 places, as the book does; the car moves with the exact acceleration, so the speedometer reaches the chosen
+  km/hour exactly at t. চালাও (or a tap on the street, or Space) runs, pauses and runs again; arrows step the lines.
 - The graph, the bar and the railway's labels are drawn on a 2D overlay canvas (crisp, collision-checked, part of
   `capture`); the camera fits the railway into its part of the stage with an off-centre projection.
 - Test (5 tap questions, numbers from a real train): the final velocity or the distance by formula; the distance as
@@ -89,7 +108,10 @@ quantity, a sunny setting, one equation at a time, and the সমীকরণ �
   questions). The derivation sheet and the letters are closed and put out during the test.
 - Bridge: set { eq: 'v' | 's2' | 'v2' | 'Vt' }, set { hl: 'u' | 'v' | 'a' | 't' | 's' | 'V' | null },
   set { derive: 1–4, part } opens the sheet at a step and line, set { derive: false } closes it; get reports eq, hl
-  and derive; the event `derive` reports the sheet's step and line.
+  and derive; the event `derive` reports the sheet's step and line. set { example: true | false } opens or closes the
+  worked example, set { example: { kmh, t, part, time, playing } } sets it (time in the car's seconds, or 'end');
+  get reports example (open, part, kmh, t, v, a, time, speed, distance, speedup, playing, phase); the event `example`
+  reports it on every change.
 
 ## Open questions
 - The book's picture is a graph only; the train is our own idea (the 2.6 figure uses a street vehicle).

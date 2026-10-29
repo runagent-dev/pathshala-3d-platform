@@ -234,3 +234,40 @@ export function answers(kind, { u, a, t }) {
   }
   throw new Error(`unknown question kind ${kind}`);
 }
+
+// ── the book's worked example (page 45, উদাহরণ): a car from rest reaches 60 km/hour in 1 minute; a = ? ──
+/** The example as the book sets it, and what the student may change: the final speed (km/hour) and the time (s). */
+export const EXAMPLE = { kmh: 60, t: 60 };
+/** @type {{ kmh: [number, number, number], t: [number, number, number] }} [min, max, step] */
+export const EX_LIMITS = { kmh: [10, 120, 10], t: [10, 120, 10] };
+
+/** Speed and time kept in range and on their steps (the book's 60 km/hour, 60 s when missing). */
+export function fixExample(p = {}) {
+  const snapTo = (x, [lo, hi, step], dflt) => {
+    const k = Number.isFinite(Number(x)) ? Number(x) : dflt;
+    return Math.min(hi, Math.max(lo, Math.round(k / step) * step));
+  };
+  return { kmh: snapTo(p.kmh, EX_LIMITS.kmh, EXAMPLE.kmh), t: snapTo(p.t, EX_LIMITS.t, EXAMPLE.t) };
+}
+
+/**
+ * The numbers of the example, as the book works it: v in m/s rounded to 2 places (60 km/hour = 16.67 m/s), then
+ * a = v/t from that rounded v, to 3 places (16.67 / 60 = 0.278 m/s²). The car itself moves with the exact
+ * acceleration, so its speedometer reaches the chosen km/hour exactly at t. `speedup`: how much faster than real
+ * time the run plays (a whole number, about 12 s of watching); `minutes` when t is a whole number of minutes.
+ */
+export function exampleNumbers({ kmh, t }) {
+  const vExact = (kmh * 1000) / 3600;
+  const v = roundTo(vExact, 2);
+  const aExact = vExact / t;
+  return {
+    kmh,
+    t,
+    v,
+    a: roundTo(v / t, 3),
+    aExact,
+    s: roundTo(0.5 * aExact * t * t, 2),
+    minutes: t % 60 === 0 ? t / 60 : null,
+    speedup: Math.max(1, Math.round(t / 12)),
+  };
+}
