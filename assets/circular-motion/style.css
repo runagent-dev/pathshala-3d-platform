@@ -77,3 +77,7 @@ body.bg-transparent { background: transparent; }
   .cm-acts { margin-left: 0; }
   .cm .pvc-q-feedback { font-size: 13.5px; }
 }
+
+/* An opaque note stays readable over every vivid scene. */
+.cm-note { color: #243448; background: #fff9e9; padding: 4px 7px; border-radius: 5px; }
+.cm-note:empty { display: none; }

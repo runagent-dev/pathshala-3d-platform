@@ -25,7 +25,7 @@ export function createClock({ t }) {
   const N = t.num;
   const root = new THREE.Group();
   root.name = 'WallClock';
-  const wood = new THREE.MeshPhysicalMaterial({ name: 'Frame', color: 0x4a2f20, roughness: 0.42, clearcoat: 0.6, clearcoatRoughness: 0.25 });
+  const wood = new THREE.MeshPhysicalMaterial({ name: 'Frame', color: 0xe76619, roughness: 0.42, clearcoat: 0.6, clearcoatRoughness: 0.25 });
   const faceMat = new THREE.MeshStandardMaterial({ name: 'Face', color: 0xffffff, roughness: 0.8, emissive: 0xffffff, emissiveIntensity: 0.22 });
   const black = new THREE.MeshStandardMaterial({ name: 'Hands', color: 0x1b1e23, roughness: 0.45, metalness: 0.2 });
   const tickMat = new THREE.MeshBasicMaterial({ name: 'Ticks', color: 0x22262c, toneMapped: false });

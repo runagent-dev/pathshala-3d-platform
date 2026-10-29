@@ -41,11 +41,11 @@ export function createFan({ materials: M }) {
   );
   root.add(plane);
 
-  const body = new THREE.MeshPhysicalMaterial({ name: 'FanBody', color: 0x7d5038, roughness: 0.32, clearcoat: 0.7, clearcoatRoughness: 0.2 });
+  const body = new THREE.MeshPhysicalMaterial({ name: 'FanBody', color: 0xee761b, roughness: 0.32, clearcoat: 0.7, clearcoatRoughness: 0.2 });
   // glossy cream paint, as on the metal blades of the fans sold in Bangladesh
   const paint = new THREE.MeshPhysicalMaterial({
     name: 'Blade',
-    color: 0xf7f2e6,
+    color: 0x22c4aa,
     roughness: 0.26,
     clearcoat: 0.8,
     clearcoatRoughness: 0.15,
