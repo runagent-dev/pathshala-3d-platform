@@ -69,6 +69,16 @@ body.bg-transparent { background: transparent; }
 .eom-derive:hover { background: color-mix(in srgb, var(--accent) 8%, #fff); }
 .eom-derive:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
 .eom-derive svg { width: 16px; height: 16px; stroke-width: 2.6; }
+/* the derivation and the worked example side by side at the end of the action row */
+.eom-more { display: flex; gap: 8px; flex: none; margin-left: auto; }
+.eom-more .eom-derive { margin-left: 0; }
+/* the short label (কীভাবে এল) unless the frame is wide, so the run button and both buttons fit in one row */
+.eom-derive .l-long { display: none; }
+@container pvc (min-width: 1000px) {
+  .eom-derive .l-long { display: inline; }
+  .eom-derive .l-short { display: none; }
+}
+.eom .eom-ex-open-btn svg { display: block; width: 21px; height: 21px; stroke-width: 2; }
 
 /* the test: room for two lines of question and three of worked answer, so the 3D view keeps its size; the
    answers are short numbers, so all four fit in one row */
@@ -95,6 +105,8 @@ body.bg-transparent { background: transparent; }
   .eom-n { font-size: 14.5px; }
   .eom-derive { padding: 0 12px; font-size: 14.5px; }
   .eom-derive svg { display: none; }
+  .eom-more { gap: 6px; }
+  .eom .eom-ex-open-btn { padding: 0 11px 0 8px; gap: 4px; }
 }
 /* phone embeds that are not very tall: a little smaller, so the 3D view keeps more room */
 @container pvc (max-width: 560px) and (max-height: 600px) {
@@ -135,6 +147,8 @@ body.bg-transparent { background: transparent; }
   .eom .pvc-act .pvc-act-num { width: 28px; height: 28px; font-size: 15px; }
   .eom-derive { min-height: 40px; padding: 0 10px; font-size: 13.5px; }
   .eom-derive svg { display: none; }
+  .eom-more { gap: 6px; }
+  .eom .eom-ex-open-btn { padding: 0 10px 0 7px; gap: 4px; }
   .eom .pvc-q-text { min-height: 4.2em; } /* beside the picture, the panel's height does not touch the 3D view */
   .eom .pvc-q-feedback { font-size: 13px; min-height: 7.2em; }
   .eom .pvc-opt { font-size: 16px; height: 42px; }
@@ -156,12 +170,13 @@ body.bg-transparent { background: transparent; }
 @container pvc-panel (max-width: 330px) {
   .eom .eom-chips { display: grid; grid-template-columns: 1fr 1fr; }
   .eom .pvc-act-row { flex-wrap: wrap; row-gap: 6px; }
-  .eom-derive { flex: 1 1 100%; justify-content: center; margin-left: 0; }
+  .eom-more { flex: 1 1 100%; margin-left: 0; }
+  .eom-derive { flex: 1 1 0; justify-content: center; margin-left: 0; }
 }
 
 /* ── the derivation sheet: over the whole figure; on big frames a card on a pale veil ── */
-.eom-dv { position: absolute; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; background: rgba(226, 234, 242, 0.72); }
-.eom-dv[hidden] { display: none; }
+.eom-dv, .eom-ex { position: absolute; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; background: rgba(226, 234, 242, 0.72); }
+.eom-dv[hidden], .eom-ex[hidden] { display: none; }
 .eom-dv-card { box-sizing: border-box; display: flex; flex-direction: column; gap: 8px; width: 100%; height: 100%; padding: 8px 14px calc(10px + env(safe-area-inset-bottom, 0px)); background: #fff; overflow: hidden; }
 .eom-dv-head { display: flex; align-items: center; gap: 8px; }
 .eom-dv-head h2 { flex: 1; margin: 0; font-size: 18px; line-height: 1.3; font-weight: 700; color: var(--ink); }
@@ -265,11 +280,142 @@ body.bg-transparent { background: transparent; }
   .eom-dv-head h2 { grid-column: 1; grid-row: 1; font-size: 15.5px; }
   .eom-dv-tabs { grid-column: 2; grid-row: 1; }
   .eom-dv-x { grid-column: 3; grid-row: 1; margin-right: -6px; }
-  .eom-dv-body { grid-column: 1 / -1; grid-row: 2; }
+  .eom-dv-body, .eom-ex-body { grid-column: 1 / -1; grid-row: 2; }
   .eom-dv-foot { grid-column: 1 / -1; grid-row: 3; }
 }
 /* big frames: a card, not the whole figure */
 @container pvc (min-width: 720px) and (min-height: 520px) {
-  .eom-dv { padding: 24px; }
+  .eom-dv, .eom-ex { padding: 24px; }
   .eom-dv-card { max-width: 860px; max-height: 640px; padding: 14px 20px 16px; border-radius: 16px; box-shadow: 0 12px 40px rgba(25, 45, 70, 0.18); }
+}
+
+/* ── the worked example (উদাহরণ): the car on the road with its speedometer, then the question and the sum ── */
+.k-v { --c: var(--c-v); }
+.eom-ex-card { gap: 6px; }
+.eom-ex-body { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
+.eom-ex-scene { position: relative; flex: 1 1 auto; min-height: 150px; border-radius: 12px; overflow: hidden; background: #dff0fb; }
+.eom-ex-gl { position: absolute; inset: 0; cursor: grab; touch-action: none; }
+.eom-ex-gl:active { cursor: grabbing; }
+/* on the street: the playing speed (top right), the view (bottom right), the timeline along the bottom */
+.eom-ex-seg { position: absolute; display: flex; padding: 3px; gap: 2px; border-radius: 999px; background: rgba(255, 255, 255, 0.94); box-shadow: 0 1px 5px rgba(20, 40, 60, 0.2); }
+.eom-ex-seg button { min-width: 38px; min-height: 32px; padding: 0 10px; border: 0; border-radius: 999px; background: none; color: var(--ink-2); font-size: 14px; font-weight: 700; white-space: nowrap; }
+.eom-ex-seg button.on { background: var(--accent); color: #fff; }
+.eom-ex-seg button:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
+.eom-ex-rates { top: 8px; right: 8px; }
+.eom-ex-views { right: 8px; bottom: 50px; }
+.eom-ex-scrub { position: absolute; left: 8px; right: 8px; bottom: 6px; padding: 2px 12px 1px; border-radius: 12px; background: rgba(255, 255, 255, 0.94); box-shadow: 0 1px 5px rgba(20, 40, 60, 0.2); }
+.eom-ex-scrub input { display: block; width: 100%; height: 24px; margin: 0; background: none; appearance: none; -webkit-appearance: none; cursor: pointer; }
+.eom-ex-scrub input::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--c-t) var(--at, 0%), #dfe4ea var(--at, 0%)); }
+.eom-ex-scrub input::-moz-range-track { height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--c-t) var(--at, 0%), #dfe4ea var(--at, 0%)); }
+.eom-ex-scrub input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; margin-top: -8px; border: 3px solid #fff; border-radius: 50%; background: var(--c-t); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3); }
+.eom-ex-scrub input::-moz-range-thumb { width: 16px; height: 16px; border: 3px solid #fff; border-radius: 50%; background: var(--c-t); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3); }
+.eom-ex-scrub input:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 6px; }
+.eom-ex-ticks { display: flex; justify-content: space-between; font-size: 11.5px; line-height: 1.2; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.eom-ex-chip { position: absolute; top: 8px; padding: 3px 10px; border-radius: 999px; background: rgba(255, 255, 255, 0.92); box-shadow: 0 1px 4px rgba(20, 40, 60, 0.18); font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; pointer-events: none; }
+.eom-ex-clock { left: 8px; color: var(--c-t); }
+.eom-ex-speedo { position: absolute; left: 8px; bottom: 50px; display: flex; flex-direction: column; align-items: center; width: 104px; padding: 4px 4px 5px; border-radius: 14px; background: rgba(255, 255, 255, 0.94); box-shadow: 0 2px 8px rgba(20, 40, 60, 0.2); pointer-events: none; }
+.eom-ex-speedo svg { display: block; width: 96px; height: auto; overflow: visible; }
+.eom-ex-speedo .sp-face { fill: #fbfcfd; stroke: #dfe5eb; stroke-width: 1.5; }
+.eom-ex-speedo .sp-track { fill: none; stroke: #e6ebf0; stroke-width: 7; stroke-linecap: round; }
+.eom-ex-speedo .sp-fill { fill: none; stroke: var(--c-v); stroke-width: 7; stroke-linecap: round; }
+.eom-ex-speedo .sp-tick { stroke: #7a8592; stroke-width: 1; }
+.eom-ex-speedo .sp-tick.big { stroke: var(--ink); stroke-width: 1.8; }
+.eom-ex-speedo text { fill: var(--ink-2); font-family: inherit; }
+.eom-ex-speedo .sp-num { font-size: 8.5px; font-weight: 600; }
+.eom-ex-speedo .sp-needle { fill: #d6332e; }
+.eom-ex-speedo .sp-kmh { fill: var(--c-v); font-size: 19px; font-weight: 700; }
+.eom-ex-speedo .sp-unit { font-size: 8.5px; }
+.eom-ex-ms { margin-top: -1px; font-size: 13.5px; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.eom-ex-text { flex: none; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.eom-ex-q { margin: 0; font-size: 15px; line-height: 1.45; color: var(--ink); }
+.eom-ex-q b { font-weight: 700; }
+.eom-ex-steps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.eom-ex-lines { position: relative; margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; }
+.eom-ex-line { display: flex; flex-wrap: wrap; align-items: center; column-gap: 10px; row-gap: 0; min-height: 1.6em; visibility: hidden; opacity: 0; transform: translateY(4px); transition: opacity 0.3s, transform 0.3s; }
+.eom-ex-line.in { visibility: visible; opacity: 1; transform: none; }
+.eom-ex-line .f { display: inline-flex; align-items: center; gap: 0.3em; font-size: 16.5px; font-weight: 600; color: var(--ink); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.eom-ex-line .f i { font-weight: 700; }
+.eom-ex-line .n { font-size: 13px; color: var(--ink-3); white-space: nowrap; }
+.eom-ex-line.res .f { padding: 1px 8px; border-radius: 8px; background: #fff6d6; box-shadow: inset 0 0 0 1.5px #f0c84a; }
+.eom-ex-line.res .f b { font-size: 1.12em; }
+.eom-ex-hint { position: absolute; inset: 0 0 auto; padding: 8px 12px; border-radius: 10px; background: var(--soft); font-size: 14.5px; line-height: 1.5; color: var(--ink-2); }
+/* a fraction, as the book prints it: the top over a line over the bottom */
+.eom-ex .fr { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; font-size: 0.86em; line-height: 1.2; }
+.eom-ex .fr > span { padding: 0 3px; }
+.eom-ex .fr > span:first-child { border-bottom: 1.5px solid currentColor; }
+.eom-ex-run { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 18px 0 12px; border: 0; border-radius: 999px; background: var(--c-v); color: #fff; font-size: 16px; font-weight: 700; white-space: nowrap; box-shadow: 0 2px 6px rgba(194, 65, 12, 0.3); }
+.eom-ex-run svg { width: 22px; height: 22px; stroke-width: 2; }
+.eom-ex-run svg .fill { fill: currentColor; stroke: none; }
+.eom-ex-run:focus-visible { outline: 2px solid var(--c-v); outline-offset: 2px; }
+.eom-ex .eom-dv-nav.primary { margin-left: 0; }
+.eom-ex .eom-dv-dots { margin: 0 auto; }
+
+/* phones: the previous-step button as an arrow only, so the run button and the next step fit beside it; the street
+   edge to edge, the steppers in one row with their labels beside them */
+@container pvc (max-width: 560px) {
+  .eom-ex-scene { margin: 0 -14px; border-radius: 0; }
+  .eom-ex-steps { gap: 8px; }
+  .eom-ex-steps .eom-step { flex-direction: row; align-items: center; gap: 6px; }
+  .eom-ex-steps .eom-name { flex: 1 1 auto; min-width: 0; }
+  .eom-ex-steps .eom-ctl { flex: none; width: 102px; height: 36px; }
+  .eom-ex-steps .eom-pm { width: 32px; }
+  .eom-ex-steps .eom-name small { font-size: 10.5px; }
+  .eom-ex-steps .eom-val { font-size: 17px; }
+  .eom-ex-card .eom-dv-head h2 { font-size: 16.5px; }
+  .eom-ex-card .eom-dv-x { width: 40px; height: 40px; }
+  .eom-ex-prev { min-width: 44px; padding: 0; }
+  .eom-ex-prev span { display: none; }
+  .eom-ex .eom-dv-dots { display: none; }
+  .eom-ex .eom-dv-foot { justify-content: space-between; }
+  .eom-ex .eom-dv-nav.primary { min-width: 0; margin-left: auto; }
+}
+@container pvc (max-width: 420px) {
+  .eom-ex-line .f { font-size: 15px; }
+  .eom-ex-q { font-size: 13.5px; line-height: 1.4; }
+  .eom-ex-steps .eom-name .w { display: none; }
+  .eom-ex-speedo { width: 90px; }
+  .eom-ex-speedo svg { width: 82px; }
+}
+/* not tall: everything a little smaller, the speedometer too */
+@container pvc (max-height: 600px) {
+  .eom-ex-card { gap: 4px; }
+  .eom-ex-body { gap: 5px; }
+  .eom-ex-q { font-size: 13.5px; line-height: 1.4; }
+  .eom-ex-steps .eom-ctl { height: 34px; }
+  .eom-ex-lines { gap: 2px; }
+  .eom-ex-line .f { font-size: 14.5px; }
+  .eom-ex-line .n { font-size: 12px; }
+  .eom-ex-hint { font-size: 13px; padding: 6px 10px; }
+  .eom-ex-run, .eom-ex .eom-dv-nav { min-height: 40px; }
+  .eom-ex-speedo { width: 80px; padding: 2px 2px 3px; border-radius: 12px; }
+  .eom-ex-speedo svg { width: 74px; }
+  .eom-ex-ms { font-size: 12px; }
+  .eom-ex-chip { top: 6px; font-size: 13.5px; }
+  .eom-ex-seg button { min-height: 28px; padding: 0 8px; font-size: 13px; }
+  .eom-ex-speedo, .eom-ex-views { bottom: 46px; }
+  .eom-ex-ticks { font-size: 10.5px; }
+}
+/* wide: the road on the left, the question and the sum on the right */
+@container pvc (min-aspect-ratio: 7/5) {
+  .eom-ex-body { flex-direction: row; gap: 14px; }
+  .eom-ex-scene { flex: 1 1 60%; min-height: 0; }
+  .eom-ex-text { flex: 1 1 40%; justify-content: center; }
+  .eom-ex-steps .eom-step { flex-direction: row; align-items: center; justify-content: space-between; gap: 6px; }
+  .eom-ex-steps { grid-template-columns: 1fr; gap: 4px; }
+  .eom-ex-steps .eom-ctl { width: 136px; flex: none; }
+}
+@container pvc (min-aspect-ratio: 7/5) and (max-height: 460px) {
+  .eom-ex-line .f { font-size: 14px; }
+  .eom-ex-q { font-size: 13px; }
+  .eom-ex-steps .eom-ctl { height: 32px; }
+}
+@container pvc (min-width: 720px) and (min-height: 520px) {
+  .eom-ex-card { max-width: 1200px; max-height: 780px; padding: 14px 20px 16px; border-radius: 16px; box-shadow: 0 12px 40px rgba(25, 45, 70, 0.18); }
+  .eom-ex-text { flex-basis: 38%; }
+  .eom-ex-speedo { width: 132px; bottom: 54px; }
+  .eom-ex-speedo svg { width: 122px; }
+  .eom-ex-ms { font-size: 15px; }
+  .eom-ex-steps { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .eom-ex-steps .eom-step { flex-direction: column; align-items: stretch; }
+  .eom-ex-steps .eom-ctl { width: auto; }
 }

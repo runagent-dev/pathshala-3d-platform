@@ -7,7 +7,8 @@
 // quantity has one colour, and a tap on a letter lights it in the graph and on the railway. With s = ut + ½at² the
 // area splits into the rectangle ut and the triangle ½at²; with s = Vt an imagined see-through train runs at the
 // average velocity V and the triangle above V folds into the gap below it. "সমীকরণ কীভাবে এল" opens the derivation
-// sheet (derive.js). A braking train (negative a) stops, it never goes backwards. Then a short test. Built on the
+// sheet (derive.js); "উদাহরণ" the book's worked example with a car (example.js). A braking train (negative a)
+// stops, it never goes backwards. Then a short test. Built on the
 // shared student kit (@shared/student/…); the maths is in motion.js, the graph in graph.js.
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
@@ -18,6 +19,7 @@ import { ICONS } from '@shared/student/icons.js';
 import { createQuiz } from '@shared/student/quiz.js';
 import { bindCleanSheet, buildStudentShell } from '@shared/student/shell.js';
 import { createDerivation } from './derive.js';
+import { createExample } from './example.js';
 import { FONT, drawGraph, placeFirst, placeLabel, swapTriangles } from './graph.js';
 import { createI18n } from './i18n.js';
 import {
@@ -82,6 +84,9 @@ const COLORS = {
 // the four equations the chips choose (Latin, as the book prints them)
 const EQS = { v: 'v = u + at', s2: 's = ut + ½at²', v2: 'v² = u² + 2as', Vt: 's = Vt' };
 const SYMS = ['u', 'v', 'a', 't', 's', 'V'];
+// the way into the worked example: a small car
+const CAR_ICON =
+  '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15.5V13l2-4.5h10l3.5 4.5H21v2.5h-1.5"/><path d="M8.5 15.5h6"/><circle cx="6.5" cy="15.5" r="2"/><circle cx="16.5" cy="15.5" r="2"/><path d="M9.5 8.5V13M5 13h13.5"/></svg>';
 // where the camera looks from (towards the camera from the railway): from the front a little above, so the car's
 // side shows and both tracks; "rotate" starts from the front left
 const elev = THREE.MathUtils.degToRad(28);
@@ -141,7 +146,7 @@ export function createApp(root, options = {}) {
             .join('')}</div>
           <p class="pvc-rule eom-rule" aria-live="polite"></p>
           <div class="pvc-outcome eom-big"><div class="eom-f"></div><div class="eom-n"></div></div>
-          <div class="pvc-act-row"><div class="pvc-act-slot"></div><button type="button" class="eom-derive" data-act="derive">${ICONS.chevR}<span>${t('derive')}</span></button></div>`,
+          <div class="pvc-act-row"><div class="pvc-act-slot"></div><div class="eom-more"><button type="button" class="eom-derive" data-act="derive" aria-label="${t('derive')}">${ICONS.chevR}<span class="l-long">${t('derive')}</span><span class="l-short" aria-hidden="true">${t('derive_short')}</span></button><button type="button" class="eom-derive eom-ex-open-btn" data-act="example">${CAR_ICON}<span>${t('example')}</span></button></div></div>`,
   });
   const sheet = bindCleanSheet(ui.learn);
   const overlay = document.createElement('canvas');
@@ -266,6 +271,7 @@ export function createApp(root, options = {}) {
   let action = null;
   /** @type {ReturnType<typeof createDerivation> | null} */
   let derive = null;
+  let example = null;
   let railTaken = []; // the labels on the railway (the action's badge keeps clear of them)
 
   const canSwap = () => s.show.V && s.show.area && Math.abs(s.plan.a) > 1e-9;
@@ -295,6 +301,7 @@ export function createApp(root, options = {}) {
       eq: s.eq,
       hl: s.hl,
       derive: derive ? derive.state : { open: false, step: 1, part: 0 },
+      example: example ? example.state : { open: false },
     };
   }
   /** In the learn view the picture follows the chosen equation: V, its train and the fold only for s = Vt (or V). */
@@ -1201,6 +1208,7 @@ export function createApp(root, options = {}) {
         drag = null;
         s.hl = null;
         derive?.close();
+        example?.close();
         hideHint();
         // five different kinds of question, in a random order: one by a formula, the area under the graph, the
         // average velocity read off the graph, equal seconds with unequal distances, and no acceleration or braking
@@ -1330,6 +1338,14 @@ export function createApp(root, options = {}) {
   });
   derive.setPlan(s.plan);
 
+  // ── the book's worked example ("উদাহরণ"): a car from rest to 60 km/hour in a minute ──
+  example = createExample({
+    root,
+    t,
+    now,
+    onChange: (st) => emit('example', st),
+  });
+
   // ── buttons, keys ───────────────────────────────────────────────────────────
   function syncUI() {
     for (const b of ui.$$('[data-view]')) b.classList.toggle('on', b.dataset.view === s.view);
@@ -1372,6 +1388,12 @@ export function createApp(root, options = {}) {
       case 'derive':
         if (s.mode !== 'quiz') derive?.open(1, 0);
         break;
+      case 'example':
+        if (s.mode !== 'quiz') {
+          pause();
+          example?.open();
+        }
+        break;
       case 'fullscreen':
         if (document.fullscreenElement) document.exitFullscreen?.();
         else root.requestFullscreen?.().catch(() => {});
@@ -1381,7 +1403,7 @@ export function createApp(root, options = {}) {
   root.addEventListener('keydown', (e) => {
     const target0 = /** @type {Element} */ (e.target);
     if (target0.closest('input, textarea, select') || e.metaKey || e.ctrlKey || e.altKey) return;
-    if (derive?.state.open) return; // the sheet has its own keys
+    if (derive?.state.open || example?.state.open) return; // the sheets have their own keys
     const k = e.key.toLowerCase();
     const learning = s.mode !== 'quiz'; // in the test the picture belongs to the question
     if ((k === ' ' || k === 'enter') && !target0.closest('button')) {
@@ -1437,11 +1459,17 @@ export function createApp(root, options = {}) {
         if (p0.derive) derive?.open(Number(p0.derive) || 1, Number(p0.part) || 0);
         else derive?.close();
       }
+      // the worked example: true/false opens or closes it, an object sets it ({ kmh, t, part, time, playing })
+      if (p0.example != null && s.mode !== 'quiz') {
+        if (p0.example === true || typeof p0.example === 'object') pause();
+        example?.set(typeof p0.example === 'object' ? { open: true, ...p0.example } : { open: Boolean(p0.example) });
+      }
       return snapshot();
     },
     async reset() {
       quiz.stop();
       derive?.close();
+      example?.set({ open: false, kmh: 60, t: 60, part: 0 });
       s.note = null;
       s.eq = 'v';
       s.hl = null;
