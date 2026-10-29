@@ -23,12 +23,12 @@ test('newtons-first-law: friction stops the book, without friction it keeps its 
   // the mat: pushed (0.2 s), then slowing evenly: half-way through the slide it goes at half the speed
   // at rest: step ১, the rule says the push is the same every time
   expect((await fig.call('get')).next).toEqual({ surface: 'mat', step: 1 });
-  expect(await text('.pvc-rule')).toContain('প্রতিবার একই ধাক্কা: বইটি ৩ মি/সে বেগে ছাড়া পায়');
+  expect(await text('.pvc-rule')).toContain('প্রতিবার একই ধাক্কা: ব্লকটি ৩ মি/সে বেগে ছাড়া পায়');
   await fig.call('set', { push: true });
   await fig.advance(100);
   expect((await fig.call('get')).phase).toBe('push');
   // while the paddle pushes, the rule says so (never "the velocity does not change" yet)
-  expect(await text('.pvc-rule')).toContain('ধাক্কার বল বইটির বেগ বাড়াচ্ছে');
+  expect(await text('.pvc-rule')).toContain('ধাক্কার বল ব্লকটির বেগ বাড়াচ্ছে');
   expect((await fig.call('get')).next.step).toBe(''); // "আবার ধাক্কা দাও", no number
   await fig.advance(100 + 437);
   const mid = await fig.call('get');
@@ -43,8 +43,8 @@ test('newtons-first-law: friction stops the book, without friction it keeps its 
   // the panel: the distance under মাদুর, the result line, the rule about the mat's friction; the big button (and the
   // numbered ring on the book) now offer the next floor, ২ কাঠের মেঝেতে
   expect(await text('[data-example="mat"] .pvc-ex-res')).toBe('১.৩১ মি');
-  expect(await text('.pvc-outcome')).toBe('মাদুরে বইটি ১.৩১ মি গিয়ে থামল');
-  expect(await text('.pvc-rule')).toContain('মাদুরের ঘর্ষণ বইটিকে তাড়াতাড়ি থামাল');
+  expect(await text('.pvc-outcome')).toBe('মাদুরে ব্লকটি ১.৩১ মি গিয়ে থামল');
+  expect(await text('.pvc-rule')).toContain('মাদুরের ঘর্ষণ ব্লকটিকে তাড়াতাড়ি থামাল');
   expect((await fig.call('get')).next).toEqual({ surface: 'wood', step: 2 });
   expect(await text('.pvc-act-badge')).toBe('২');
   expect(await text('.pvc-act')).toContain('কাঠের মেঝেতে চালাও');
@@ -137,5 +137,25 @@ test('newtons-first-law: friction stops the book, without friction it keeps its 
     camera: 'side',
     results: { mat: null, wood: null, ice: null, none: null },
   });
+  expect(log.errors).toEqual([]);
+});
+
+test('newtons-first-law: the moving object is a flat-contact lab slider in both languages and its GLB', async ({ page }) => {
+  await page.setViewportSize({ width: 800, height: 500 });
+  const log = await preparePage(page);
+  for (const lang of ['bn', 'en']) {
+    const fig = await openFigure(page, 'newtons-first-law', { params: { lang } });
+    await fig.advance(400);
+    const words = await fig.frame.locator('.pvc-learn').innerText();
+    expect(words).not.toMatch(/বই|\bbook\b/i);
+    expect(words).toContain(lang === 'bn' ? 'ব্লক' : 'slider');
+    if (lang === 'en') continue;
+    const result = await fig.call('export-glb');
+    const bytes = Buffer.from(result.base64, 'base64');
+    const json = JSON.parse(bytes.subarray(20, 20 + bytes.readUInt32LE(12)).toString());
+    const names = json.nodes.map((node) => node.name);
+    expect(names).toEqual(expect.arrayContaining(['LabSlider', 'SliderBody', 'FlatContactPad', 'CarryingHandle']));
+    expect(names.some((name) => /Book|Pages|Spine/.test(name || ''))).toBe(false);
+  }
   expect(log.errors).toEqual([]);
 });

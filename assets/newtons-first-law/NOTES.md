@@ -134,3 +134,15 @@ book (it read as a green slab). The owner approved the sketch "one action, one r
   book's front is already sliding onto the floor, and the launcher makes up for that floor's friction. The
   friction arrow shows from the moment it is let go.
 - The push arrow is drawn longest but not to the friction arrows' scale (it would be 1.07 m).
+
+## Owner colour update (0.3.0)
+The owner explicitly requested vivid backgrounds and strong object contrast, overriding the usual white scene.
+The learning panel stays white; transparent embeds and explicit capture backgrounds remain supported.
+
+The moving object is now a red flat-contact laboratory slider with a yellow carrying handle and corner guards.
+It has no wheels, so the existing sliding-friction thought experiment, initial speed and stopping distances still
+apply. `BOOK` remains the internal footprint constant for compatibility; the new body is 6.5 cm high, and the
+handle is included in camera/label bounds. Student labels and both quiz languages call it a block/slider.
+The coefficients are illustrative contact-pad values, not measurements for a particular manufactured slider.
+
+Plum backdrop with the red slider, yellow handle/corner guards and existing material-specific floor textures.

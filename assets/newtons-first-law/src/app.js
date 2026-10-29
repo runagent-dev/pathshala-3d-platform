@@ -20,7 +20,7 @@ import { createAction } from '@shared/student/action.js';
 import { createQuiz } from '@shared/student/quiz.js';
 import { ICONS } from '@shared/student/icons.js';
 import { createI18n } from './i18n.js';
-import { createBook } from './book.js';
+import { createSlider } from './slider.js';
 import { createLauncher } from './launcher.js';
 import { createFloor, createMarks, createStopMark, createSurfaces, createTape, FLOOR, SURFACE_COLORS } from './floor.js';
 import { COLORS, createArrow, createDottedPath } from './arrows.js';
@@ -105,6 +105,19 @@ export function createApp(root, options = {}) {
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 24, near: 0.02, far: 150, environment: 'studio-light' });
   const { camera, controls, scene } = stage;
+  // The owner requested a vivid scene; the white learning panel keeps the text readable.
+  const backdropCanvas = document.createElement('canvas');
+  backdropCanvas.width = 8;
+  backdropCanvas.height = 256;
+  const backdropContext = backdropCanvas.getContext('2d');
+  const backdropGradient = backdropContext.createLinearGradient(0, 0, 0, 256);
+  backdropGradient.addColorStop(0, '#241546');
+  backdropGradient.addColorStop(1, '#6c2858');
+  backdropContext.fillStyle = backdropGradient;
+  backdropContext.fillRect(0, 0, 8, 256);
+  const backdrop = new THREE.CanvasTexture(backdropCanvas);
+  backdrop.colorSpace = THREE.SRGBColorSpace;
+  scene.background = o.bg === 'transparent' ? null : backdrop;
   controls.minDistance = 0.4;
   controls.maxDistance = 80; // the view down the lane stands far back
   controls.enablePan = false;
@@ -118,7 +131,7 @@ export function createApp(root, options = {}) {
   const floor = createFloor(surfaces);
   const tape = createTape({ t });
   const launcher = createLauncher({ materials: M });
-  const book = createBook({ t });
+  const book = createSlider();
   const marks = createMarks();
   const stops = Object.fromEntries(FRICTION_IDS.map((id) => [id, createStopMark(SURFACE_COLORS[id])]));
   world.add(floor.mesh, tape.group, launcher.root, book.root, marks.mesh);
@@ -793,7 +806,7 @@ export function createApp(root, options = {}) {
     t,
     step: 1,
     label: 'act_push',
-    target: () => (s.scene === 'lane' ? book.body : null),
+    target: () => (s.scene === 'lane' ? book.touchTarget : null),
     pad: 8,
     avoid: [ui.corner, ui.hint, badge, () => [...ui.annoLayer.querySelectorAll('.nf-label.in')]],
     pulse: o.coach,
@@ -1499,7 +1512,16 @@ export function createApp(root, options = {}) {
       emitChange();
     },
     startPractice: () => quiz.start(),
-    capture: (opts) => stage.capture(opts),
+    capture(opts = {}) {
+      const background = scene.background;
+      if (opts.background !== undefined) scene.background = null;
+      try {
+        return stage.capture(opts);
+      } finally {
+        scene.background = background;
+        stage.invalidate();
+      }
+    },
     /** The launcher, the book where it is, the floor (4 m past the release point) and the tape, in metres. */
     exportRoot() {
       const copy = new THREE.Group();
