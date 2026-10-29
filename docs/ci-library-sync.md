@@ -1,9 +1,9 @@
 # Automatic library sync (CI/CD): design note
 
-> **Status: design only. Nothing in this note is built or enabled.** No workflow file exists, no secret is set, no code
-> was changed for it. It is written so that someone (or Claude) can build it later from this page alone.
-> Written 2026-10-29 for PR #58 (`studio/library-sync`). What was **verified in the code** and what is **assumed** is
-> marked in the last section ("Verified and assumed").
+> **Status: built (steps 1 to 3 of the rollout): the plan on pull requests, the publish on `prod` and by hand, the nightly drift
+> check.** Removed figures are still only reported (step 4, orphan marking, and step 5, withdrawing, are not built). Workflows:
+> `.github/workflows/library-plan.yml`, `library-publish.yml`, `library-drift.yml`; the summary: `scripts/ci/library-summary.mjs`.
+> Written 2026-10-29 for PR #58 (`studio/library-sync`); built on 2026-10-30. The sections below still describe the whole design.
 
 Today a person runs `npm run library:sync` by hand (see the "Publishing runbook" in [library-sync.md](library-sync.md)).
 The goal is that a change in this repository reaches the library, and then the books, **by itself**:
@@ -14,6 +14,24 @@ The goal is that a change in this repository reaches the library, and then the b
   explicit setup.
 
 Not the highest priority: the manual way works. This note is the plan for when it is.
+
+## Setup (once)
+
+1. **A dedicated library token.** In the Coolify app `chalk-library`, add one entry to the `TOKENS` setting: `ci:<a long random value>`,
+   with **no `!`** (a name ending in `!` is an administrator). The server already treats the two kinds differently: any token can upload,
+   register and re-tag (all the sync needs), only an administrator can withdraw (checked locally: the `ci` token gets 403 on withdraw).
+   Redeploy the library. The value goes to GitHub only (below), never into chat or the repo.
+2. **A GitHub environment** `library-production` (Settings → Environments). Restrict deployment to the `prod` branch. Add *required reviewers*
+   if a person should approve every publish. Its secrets: `LIBRARY_TOKEN` (the `ci` value), `LIBRARY_SYNC_HOOK_URL`
+   (`https://internal.pathshalax.com/api/library-sync/hook`), `LIBRARY_SYNC_HOOK_TOKEN` (the same value as on the Books server).
+   Optional repository variable `LIBRARY_URL` (default `https://library.pathshalax.com`).
+3. **The `prod` branch.** Create it from `main`. Merging `main` into `prod` is the publish.
+4. **First run by hand.** Actions → *Library publish* → Run workflow with `dry_run` on, then off with `only: screw-gauge`. The second run
+   must report `unchanged`.
+
+How an update lands: a changed figure needs a new `version` in `asset.json` (otherwise it is `blocked` and the pull request's plan fails).
+Its new items are added with `state:current` and the previous ones become `state:superseded`: nothing is overwritten, old versions stay readable
+for books that pin them, and a run that is repeated or interrupted finishes the job without duplicates.
 
 ## At a glance (the decisions)
 
