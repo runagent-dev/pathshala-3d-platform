@@ -71,3 +71,25 @@ white/transparent PNG captures remain supported. The vivid scene is the owner's 
 ## Owner fan colour refinement (v0.1.2)
 The owner requested a whitish fan. Blades now use warm ivory, and the motor/canopy use a slightly deeper
 off-white. Brass trim, the coloured tracking sticker and the navy/teal background provide contrast.
+
+## Heart model rebuild (v0.2.0)
+The owner reported that the heart looked like a low-quality assembly of spheres and tubes. The organ now has a
+single smooth, indexed tissue mesh with asymmetric ventricular shape and integrated atrial lobes. Its surface
+uses subtle vertex colour variation, with finer branching coronary arteries/veins. Major vessels taper, branch
+and have shaded lumens at the exposed ends, rather than spherical caps. This is an illustrative anterior model,
+not a patient scan or a diagnostic/anatomy reference model.
+
+Basic arrangement was checked against [NHLBI: What the Heart Looks Like](https://www.nhlbi.nih.gov/health/heart/anatomy)
+and [NHLBI: How Blood Flows through the Heart](https://www.nhlbi.nih.gov/health/heart/blood-flow).
+No external images or remote model dependencies are shipped. The tissue is sculpted once locally; shared indexed
+vertices keep live deformation affordable. Tissue and vessel roots use a continuous squeeze field so they remain
+connected; exposed vessel ends move less. The existing P/R-wave and atrial/ventricular timing functions are retained.
+The ECG has a higher-resolution trace and a rounded light frame. Tall/wide bounds include the frame and vessels.
+
+Validation includes a closed tissue mesh with finite unit normals, a reversible contraction, anchored vessel ends,
+period/count and pause/resume regression checks, and Khronos validation of the actual heart export (in addition to
+the generic fan export). Heart views at all six frame sizes and rotated close-ups are inspected separately.
+
+In stacked portrait layouts the ECG callout sits beside the chart, keeping it off the heart apex.
+The chart is lowered in stacked layouts so the enlarged heart apex has a clear gap above its frame; a browser
+regression checks both vertical and horizontal model/chart separation.

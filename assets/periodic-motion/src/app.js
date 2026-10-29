@@ -469,13 +469,19 @@ export function createApp(root, options = {}) {
         ex.strip,
         t('ecg'),
         'part',
-        // above the strip, not over the heart
-        [
-          [0.15, -1],
-          [0.7, -0.7],
-          [-0.15, -1],
-          [-0.6, -0.8],
-        ],
+        // Beside a stacked strip; above a side-by-side strip, clear of the heart's apex.
+        camera.aspect <= 1.25
+          ? [
+              [-1, 0],
+              [-0.8, 0.5],
+              [-0.6, -0.8],
+            ]
+          : [
+              [0.15, -1],
+              [0.7, -0.7],
+              [-0.15, -1],
+              [-0.6, -0.8],
+            ],
         44,
         taken,
         { optional: true },
