@@ -187,3 +187,112 @@ test('walking-third-law: push, hold, F and −F, three grounds, the rule grows, 
   expect(await fig.call('get')).toMatchObject({ ground: 'hard', phase: 'rest', tried: {}, view: 'front', mode: 'explore' });
   expect(log.errors).toEqual([]);
 });
+
+test('walking: the enlarged contact, pause, timeline and explanation use the same forces and pose', async ({ page }) => {
+  const log = await preparePage(page);
+  await page.setViewportSize({ width: 800, height: 500 });
+  const fig = await openFigure(page, 'walking-third-law');
+  await fig.call('set', { ground: 'sand', at: 1.2, paused: true });
+  const s = await fig.call('get');
+  expect(s).toMatchObject({ paused: true, forces: { onGround: -50, onPerson: 50 }, acceleration: 1 });
+  const geometry = await fig.frame.evaluate(async () => {
+    const { Box3, Vector3 } = await import('three');
+    const model = /** @type {any} */ (window).figure.exportRoot();
+    model.updateMatrixWorld(true);
+    const original = model.getObjectByName('RearShoe'),
+      detail = model.getObjectByName('EnlargedRearShoe');
+    const a = model.getObjectByName('ContactForceOnGround'),
+      b = model.getObjectByName('ContactForceOnPerson');
+    return {
+      pose: Math.abs(original.quaternion.dot(detail.quaternion)),
+      a: new Box3().setFromObject(a).getSize(new Vector3()).x,
+      b: new Box3().setFromObject(b).getSize(new Vector3()).x,
+      contact: model.getObjectByName('GripContactPoint').position.x,
+    };
+  });
+  expect(geometry.pose).toBeCloseTo(1, 6);
+  expect(geometry.a).toBeCloseTo(geometry.b, 6);
+  expect(geometry.contact).toBeCloseTo(-s.slipped * 2.3, 2);
+  await fig.advance(500);
+  expect((await fig.call('get')).time).toBe(s.time);
+  await fig.frame.locator('[data-act="pause"]').click();
+  await fig.advance(300);
+  expect((await fig.call('get')).time).toBeGreaterThan(s.time);
+  await fig.frame.locator('[data-act="explain"]').click();
+  const held = (await fig.call('get')).time;
+  await fig.advance(300);
+  expect((await fig.call('get')).time).toBe(held);
+  await expect(fig.frame.locator('.wtl-dialog')).toContainText('ভিন্ন বস্তুর উপর');
+  await fig.frame.locator('.wtl-dialog').press('Escape');
+  await fig.advance(300);
+  expect((await fig.call('get')).time).toBeGreaterThan(held);
+  await fig.frame.locator('[data-moment="0.9"]').click();
+  expect(await fig.call('get')).toMatchObject({ paused: true, time: 0.225 });
+  await fig.call('practice');
+  await fig.advance(300);
+  const before = await fig.call('get');
+  await fig.call('set', { at: 0, paused: false, view: '3d' });
+  expect(await fig.call('get')).toMatchObject({ phase: before.phase, view: 'front', mode: 'quiz' });
+  expect(log.errors).toEqual([]);
+});
+
+test('walking: detailed lesson and explanations fit six frames in Bangla and English', async ({ page }) => {
+  test.setTimeout(300000);
+  const log = await preparePage(page);
+  for (const lang of ['bn', 'en'])
+    for (const [width, height] of [
+      [390, 700],
+      [390, 520],
+      [844, 390],
+      [640, 400],
+      [800, 500],
+      [1280, 800],
+    ]) {
+      await page.setViewportSize({ width, height });
+      const fig = await openFigure(page, 'walking-third-law', { params: { lang } });
+      for (const state of [
+        { ground: 'hard', at: 'rest' },
+        { ground: 'hard', at: 0.9 },
+        { ground: 'hard', at: 'hold' },
+        { ground: 'sand', at: 'hold' },
+        { ground: 'slip', at: 'hold', tried: 'all' },
+      ]) {
+        await fig.call('set', { ...state, paused: true, animate: false });
+        await fig.advance(100);
+        const report = await fig.frame.evaluate(() => {
+          const bad = [];
+          const labels = [];
+          for (const e of document.querySelectorAll('.pvc-learn button,.wtl-analysis,.wtl-timeline,.pvc-rule,.pvc-anno')) {
+            const cs = getComputedStyle(e);
+            if (cs.visibility === 'hidden' || cs.display === 'none' || Number(cs.opacity) === 0) continue;
+            const r = e.getBoundingClientRect();
+            if (!r.width || !r.height) continue;
+            if (r.left < -1 || r.right > innerWidth + 1 || r.top < -1 || r.bottom > innerHeight + 1 || e.scrollWidth > e.clientWidth + 1)
+              bad.push(e.textContent);
+            if (e.matches('.pvc-anno-force')) labels.push(r.toJSON());
+          }
+          const corner = document.querySelector('.pvc-corner').getBoundingClientRect();
+          const overlap = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+          return {
+            bad,
+            overlap: labels.some((r) => overlap(r, corner)) || (labels.length === 2 && overlap(labels[0], labels[1])),
+            overflow: document.querySelector('.pvc-panel').scrollHeight - document.querySelector('.pvc-panel').clientHeight,
+            stage: document.querySelector('.pvc-stage').getBoundingClientRect().height,
+          };
+        });
+        expect(report, `${lang} ${width}x${height} ${JSON.stringify(state)}`).toMatchObject({ bad: [], overlap: false, overflow: 0 });
+        expect(report.stage).toBeGreaterThan(145);
+      }
+      await fig.frame.locator('[data-act="explain"]').click();
+      for (const tab of ['pair', 'grip']) {
+        await fig.frame.locator(`[data-explanation="${tab}"]`).click();
+        const dialog = await fig.frame.locator('.wtl-dialog').evaluate((e) => {
+          const r = e.getBoundingClientRect();
+          return { overflow: e.scrollHeight - e.clientHeight, inside: r.top >= 0 && r.bottom <= innerHeight + 1 };
+        });
+        expect(dialog, `${lang} ${width}x${height} ${tab}`).toEqual({ overflow: 0, inside: true });
+      }
+      await fig.frame.locator('[data-act="explain-close"]').click();
+    }
+  expect(log.errors).toEqual([]);
+});

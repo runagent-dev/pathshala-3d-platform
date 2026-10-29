@@ -8,9 +8,9 @@ export const SLAB = { x0: -2.6, x1: 3.4, depth: 0.8, thick: 0.34 };
 const FOOT_Z = 0.1;
 
 const LOOKS = {
-  hard: { top: '#cbc4b6', side: '#a09786', rough: 0.95 },
-  sand: { top: '#ecdcaa', side: '#d4bd80', rough: 1 },
-  slip: { top: '#e6f1f5', side: '#b8ccd5', rough: 0.07 },
+  hard: { top: '#088b85', side: '#076470', rough: 0.95 },
+  sand: { top: '#f5b32d', side: '#bf681c', rough: 1 },
+  slip: { top: '#2557bf', side: '#12387e', rough: 0.07 },
 };
 
 /** A small tiling picture for the top: speckled ground, grains of sand, or smooth tiles with joints. */
@@ -28,7 +28,7 @@ function makeTexture(id, anisotropy) {
   };
   if (id === 'slip') {
     // tiles: a joint every half of the picture, a faint sheen
-    g.strokeStyle = '#b9cdd6';
+    g.strokeStyle = '#133c8d';
     g.lineWidth = 4;
     g.strokeRect(0, 0, size, size);
     g.strokeRect(size / 2, 0, 0, size);
@@ -40,7 +40,7 @@ function makeTexture(id, anisotropy) {
     g.fillStyle = grad;
     g.fillRect(0, 0, size, size);
   } else {
-    const dark = id === 'hard' ? ['#8d8576', '#a59d8e', '#b8b1a2'] : ['#d2bb7c', '#dcc88e', '#c8ae6c'];
+    const dark = id === 'hard' ? ['#075960', '#12b5a6', '#086e70'] : ['#b6691e', '#ffda63', '#db8f16'];
     const n = id === 'hard' ? 520 : 1400;
     for (let i = 0; i < n; i++) {
       g.fillStyle = dark[Math.floor(rnd() * dark.length)];
@@ -140,7 +140,7 @@ export function createGround({ anisotropy = 4 } = {}) {
   root.add(wet);
 
   // the heap of sand the foot pushes back, and the grains it throws behind
-  const sandMat = new THREE.MeshStandardMaterial({ name: 'SandHeap', color: '#c9ac5f', roughness: 1, metalness: 0 });
+  const sandMat = new THREE.MeshStandardMaterial({ name: 'SandHeap', color: '#e1911a', roughness: 1, metalness: 0 });
   const heap = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2), sandMat);
   heap.name = 'SandHeap';
   heap.visible = false;
@@ -166,7 +166,7 @@ export function createGround({ anisotropy = 4 } = {}) {
   root.add(sand);
 
   // the line the student starts from: dashes standing on the ground at x = 0, so a step forward can be seen
-  const dashMat = new THREE.MeshBasicMaterial({ color: '#8b96a3' });
+  const dashMat = new THREE.MeshBasicMaterial({ color: '#ffe28a' });
   const dash = new THREE.InstancedMesh(new THREE.BoxGeometry(0.014, 0.034, 0.014), dashMat, 24);
   const m4 = new THREE.Matrix4();
   for (let i = 0; i < 24; i++) dash.setMatrixAt(i, m4.makeTranslation(0, 0.02 + i * 0.068, 0));

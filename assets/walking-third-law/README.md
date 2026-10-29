@@ -2,17 +2,24 @@
 
 **Where it goes in the book:** Book page 86, topic 3.8 (example): how we walk. Next to চিত্র ৩.১২ (a person's foot pushing the ground back, the ground pushing the person forward, labelled F and −F).
 
-Interactive 3D figure for the Pathshala book. How we walk, the example that explains Newton's third law: a student
-stands on a path, seen from the side. One big numbered button (its badge rings the pushing foot) takes the first
-push-off of a walk, slowed down 4 times, and holds at the telling moment: in everyday words, "পা মাটিকে ধাক্কা দিচ্ছে" (an
-arrow on the ground) and "মাটি মানুষটিকে ধাক্কা দিচ্ছে" (an arrow at the shoe), the two equally long. The row of words is the
-page's three grounds: firm ground (the foot grips; the two pushes are, for example, 100 N each, and the student moves
-off), loose sand (the sand gives way, 50 N) and a floor made slippery with soapy water or oil (the foot slides back, only
-20 N, the student hardly moves). One result line, one short rule per idea (the current ground's own line always stays), and
-the book's own sentence under it, last, once all three grounds are found, when the two pushes also get the book's names F
-and −F. The numbers are for an example 50 kg student; the book gives none. The book's arrows are slanted (back and down,
-forward and up); the figure draws only their horizontal parts, the parts that accelerate the student (the vertical parts
-are balanced by the weight, a different pair). A test of 5 questions follows, in the same plain words.
+A vivid 3D lesson for the textbook's walking example. A detailed articulated person pushes off while an enlarged
+live view of the same shoe separates the equal opposite forces on the ground and the person. Firm ground, loose
+sand and a slippery floor change grip, forward motion and backward slip. The two arrows appear simultaneously
+and use one force scale within each view.
+
+Pause or scrub the timeline to inspect a moment; three buttons select foot placement, the force pair and forward
+motion. The live panel identifies each receiving body and computes the person's acceleration from the ground's
+forward force. The two-page explanation covers arrow direction, simultaneous reaction, static friction and why
+forces on different objects do not cancel. The five earlier scene-based questions remain.
+
+The human model includes shaped clothing, tapered limbs, facial features, hands with fingers, and rounded shoes
+with soles and laces; the shoe's contact and joint lengths still follow the original pure kinematics. The contact
+view enlarges the shoe by 2.3×; its force arrows use 1.35× the main view's scale. Only horizontal forces are shown.
+This is a simplified initial push-off for an example 50 kg person, shown four times slower than real time.
+
+Bridge additions: `set({at:1.2, paused:true})` holds 1.2 s into the slowed picture; `set({paused:false})` resumes it.
+`forces.onGround` and `forces.onPerson` are signed live horizontal forces, with right positive. Existing `push`
+is the selected example's push magnitude. The exported GLB includes the human, ground and enlarged contact view.
 
 ## Embed
 

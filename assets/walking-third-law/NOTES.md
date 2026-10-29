@@ -91,3 +91,28 @@ as the rest of the chapter. The symbols F and −F are as the book's figure.
   friction of `newtons-first-law`). `newtons-third-law`'s pair may use other colours: agree on one pair for the chapter.
 - The panel names the surface "পিচ্ছিল মেঝে" (the page: "সাবান পানি কিংবা তেল দিয়ে পিচ্ছিল করে"); the picture shows
   soapy water and foam. Every Bangla string needs a person's check against the book (the unchecked box in the PR).
+
+## Detailed contact lesson and human model (v0.2.0)
+
+Owner request: a much more detailed, vivid visualization of the arrows and forces, with a more realistic human.
+The student now has a shaped torso, tapered limbs and rounded joints, a jaw, nose, eyes, brows, ears and mouth,
+separate fingers and thumbs, a polo collar/buttons/pocket, fabric relief, and rounded shoes with laces and tread.
+The original two-bone pose and planted rear toe are retained, so the added detail follows the contact mechanics.
+
+A second live 3D view enlarges that same rear shoe by 2.3×, with a dashed guide from the real contact. It shows the
+force on the shoe above the contact and the force on the ground below it. The two arrows have equal lengths
+(1.35× the main view's common force scale); both shrink on weak-grip surfaces. The enlarged shoe's rotation and
+slip follow the student. The view is a magnification diagram, not a second foot. It is hidden during questions.
+
+A scrubber, three moment buttons and pause/resume let students inspect the same initial push-off. Both forces
+appear together; there is no action-first/reaction-later delay. The live panel separates the receiving bodies,
+shows their equal magnitudes, uses only the forward force on the person in a = F/m, and reports travel/slip.
+Rest shows zero horizontal forces and acceleration. Existing `push` remains the selected example's push size;
+new `forces.onGround` and `forces.onPerson` are signed live components (right positive), with `paused` in the bridge.
+The explanation has separate force-pair and grip/arrow pages so it remains readable in short frames, and pauses
+an active run while open. The quiz keeps its earlier scenes and hides the explanatory contact view and live panel.
+
+This remains a simplified first push-off with the page's example numbers, not a full repeating gait or a general
+biomechanics model. Only horizontal forces are drawn; vertical weight/support are outside this lesson. Ground
+materials are deliberately vivid at the owner's request. Duplicate stage captions may hide when no collision-free
+spot is available; the live panel still identifies both forces and their receiving bodies.
