@@ -3,10 +3,10 @@
 import * as THREE from 'three';
 
 export const COLORS = {
-  path: 0x5d6b7a,
-  mark: 0xe8590c, // the count is taken at the mark: same orange as "পুনরাবৃত্তি" in the panel
-  velocity: 0x2b8a3e,
-  particle: 0xc2255c,
+  path: 0x70d9ff,
+  mark: 0xffb32a, // the count is taken at the mark: same orange as "পুনরাবৃত্তি" in the panel
+  velocity: 0x62e596,
+  particle: 0xff4e93,
 };
 
 let stripes = null;

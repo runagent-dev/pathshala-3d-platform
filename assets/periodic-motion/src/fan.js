@@ -46,10 +46,10 @@ function bladeGeometry() {
 export function createFan(M) {
   const root = new THREE.Group();
   root.name = 'CeilingFan';
-  const paint = new THREE.MeshPhysicalMaterial({ name: 'FanPaint', color: 0xf3efe6, roughness: 0.38, clearcoat: 0.6, clearcoatRoughness: 0.3 });
+  const paint = new THREE.MeshPhysicalMaterial({ name: 'FanPaint', color: 0xee761b, roughness: 0.38, clearcoat: 0.6, clearcoatRoughness: 0.3 });
   const bladePaint = new THREE.MeshPhysicalMaterial({
     name: 'BladePaint',
-    color: 0xa36a45,
+    color: 0x22c4aa,
     metalness: 0.15,
     roughness: 0.42,
     clearcoat: 0.7,

@@ -59,3 +59,11 @@ shape of the path.
 - The ECG trace is stylised (P, QRS, T waves); the paper runs at twice the usual 25 mm/s for a clearer trace.
 - Chip label "ফ্যান" (the book says "ফ্যানের পাখা", used in the text and the test); the long label did not fit
   four chips on a phone held sideways.
+
+## Owner colour update (v0.1.1)
+The owner identified this figure's brown fan and white background in a screenshot after the separate
+`circular-motion` fan had been recoloured. This is a distinct figure (page 37 rather than page 36).
+It now uses the same navy/teal background, turquoise blades and copper-orange hub. Brighter cyan paths,
+green velocity arrows, amber marks and pink particles contrast with the backdrop across all four examples.
+The white learning panel and timing/measurement behaviour are retained. Transparent embeds and explicit
+white/transparent PNG captures remain supported. The vivid scene is the owner's explicit styling preference.
