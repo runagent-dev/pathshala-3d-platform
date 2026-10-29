@@ -9,8 +9,8 @@ import { testHash, hashPaths, TEST_HARNESS } from './figure-hashes.mjs';
 
 /** Changes that touch no figure: the studio's own commits (reviews, status, notes). */
 const STUDIO_ONLY = /^assets\/[^/]+\/(reviews\/|status\.json$|NOTES\.md$)/;
-/** Tooling that no figure test or template depends on: the library sync, the CI scripts. */
-const TOOLING_ONLY = /^scripts\/(ci\/|ci-figures\.mjs$|lib\/ci\/|lib\/library\/|library-)/;
+/** Tooling that no figure test or template depends on: the library sync, the CI scripts, the visual comparison. */
+const TOOLING_ONLY = /^scripts\/(ci\/|ci-figures\.mjs$|visual\.mjs$|lib\/ci\/|lib\/library\/|library-)/;
 
 /** The changed files that can change what a figure does. */
 export const relevantFiles = (files) => files.filter((f) => !STUDIO_ONLY.test(f) && !TOOLING_ONLY.test(f));

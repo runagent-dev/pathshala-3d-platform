@@ -138,6 +138,7 @@ describe('planning a run', () => {
       'scripts/lib/library/plan.mjs',
       'scripts/ci/library-summary.mjs',
       'scripts/ci-figures.mjs',
+      'scripts/visual.mjs',
       'assets/a/NOTES.md',
       'assets/a/reviews/r1.json',
     ];
