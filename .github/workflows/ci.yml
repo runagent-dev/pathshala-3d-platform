@@ -1,13 +1,20 @@
 # Checks every push to main and every pull request. Each step only calls npm scripts, so the same runs
 # locally (and moves to another CI service easily).
+#
+# CI runs only the fast checks (about a minute). The browser tests, the visual comparison and the handoff zips run
+# on the contributor's machine before pushing (CLAUDE.md, "Browser tests run locally"): in CI they took ~90% of
+# the account's Actions minutes and used it up in two days (2026-10-24/25). The zips can still be built here by
+# hand: Actions → CI → Run workflow.
 name: CI
 
 on:
   push:
     branches: [main]
     # the studio pushes reviews, status and notes on its own: nothing to check when only those change
-    paths-ignore: ['assets/*/reviews/**', 'assets/*/status.json', 'assets/*/NOTES.md']
+    paths-ignore: ['assets/*/reviews/**', 'assets/*/status.json', 'assets/*/NOTES.md', 'docs/**']
   pull_request:
+    paths-ignore: ['assets/*/reviews/**', 'assets/*/status.json', 'assets/*/NOTES.md', 'docs/**']
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -31,50 +38,9 @@ jobs:
       - run: npm run test:unit
       - run: npm audit --omit=dev --audit-level=high
 
-  figures:
-    name: Figures in the browser
-    needs: static
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
-      - uses: actions/setup-node@v4
-        with: { node-version-file: .nvmrc, cache: npm }
-      - run: npm ci
-      - id: changed
-        run: node scripts/ci-figures.mjs ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || github.event.before }} >> "$GITHUB_OUTPUT"
-      - if: steps.changed.outputs.figures != '' || steps.changed.outputs.templates == 'true'
-        run: npx playwright install --with-deps chromium
-      - if: steps.changed.outputs.figures != ''
-        run: npm run test:figures
-        env: { FIGURES: '${{ steps.changed.outputs.figures }}' }
-      - if: steps.changed.outputs.templates == 'true'
-        run: npm run test:templates
-      - if: steps.changed.outputs.templates == 'true'
-        run: npx playwright test test/browser
-      - if: failure()
-        uses: actions/upload-artifact@v4
-        with: { name: playwright-report, path: playwright-report, retention-days: 14 }
-
-  visual:
-    name: Visual comparison with the base branch
-    if: github.event_name == 'pull_request'
-    needs: static
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
-      - uses: actions/setup-node@v4
-        with: { node-version-file: .nvmrc, cache: npm }
-      - run: npm ci
-      - run: npx playwright install --with-deps chromium
-      - run: npm run test:visual -- --base origin/${{ github.base_ref }}
-      - if: always()
-        uses: actions/upload-artifact@v4
-        with: { name: visual-comparison, path: test-results/visual, retention-days: 14 }
-
   package:
     name: Handoff zips
+    if: github.event_name == 'workflow_dispatch'
     needs: static
     runs-on: ubuntu-24.04
     steps:

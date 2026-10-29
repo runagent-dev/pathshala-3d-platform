@@ -139,9 +139,9 @@ builder id, ports, commits, reviewer id, verdict, PR) in your scratchpad so a lo
 
 ## 6. Merge (only with the owner's OK)
 
-- CI: "Check, lint, types, unit tests", "Figures in the browser" and "Handoff zips" must be green. "Visual comparison"
-  may fail only on figures the PR doesn't touch (known flake in `speed-velocity` and `periodic-motion`, see
-  status.md); read its log (`gh run view <id> --log-failed | grep '✗'`) to be sure.
+- CI: "Check, lint, types, unit tests" must be green. The browser tests aren't in CI: the builder's PR report must
+  show `npm run verify -- <id>` passing (and `npm run test:visual` for kit changes, where only the known flakes in
+  `speed-velocity` and `periodic-motion` may differ, see status.md). Run them yourself if in doubt.
 - `docs/agents/merge-prs.sh 22:agent-aaa… 27:agent-bbb… …` in book order. Each PR adds a CODEOWNERS line, so every
   PR after the first is rebased and CODEOWNERS regenerated; the script does that, pushes with `--force-with-lease`,
   then squash-merges with `--match-head-commit`.
