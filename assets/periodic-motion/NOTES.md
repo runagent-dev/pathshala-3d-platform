@@ -67,3 +67,7 @@ It now uses the same navy/teal background, turquoise blades and copper-orange hu
 green velocity arrows, amber marks and pink particles contrast with the backdrop across all four examples.
 The white learning panel and timing/measurement behaviour are retained. Transparent embeds and explicit
 white/transparent PNG captures remain supported. The vivid scene is the owner's explicit styling preference.
+
+## Owner fan colour refinement (v0.1.2)
+The owner requested a whitish fan. Blades now use warm ivory, and the motor/canopy use a slightly deeper
+off-white. Brass trim, the coloured tracking sticker and the navy/teal background provide contrast.
