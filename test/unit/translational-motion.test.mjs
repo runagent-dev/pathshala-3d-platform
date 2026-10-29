@@ -3,6 +3,8 @@
 // rolling wheel traces arches (a cycloid: 8 × radius per turn of the wheel, against 2π × radius for the car).
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
+import * as THREE from 'three';
+import { createCar } from '../../assets/translational-motion/src/car.js';
 import * as m from '../../assets/translational-motion/src/motion.js';
 
 const close = (a, b, tol = 1e-9, msg = '') => assert.ok(Math.abs(a - b) <= tol, `${msg} ${a} ≉ ${b}`);
@@ -121,5 +123,61 @@ describe('numbers as the figure shows them', () => {
   it('writes metres with one decimal', () => {
     assert.equal(m.fmtM(4), '4.0');
     assert.equal(m.fmtM(10.377), '10.4');
+  });
+});
+
+// The detailed visual model must still match the exact points used for the measured paths.
+describe('detailed car: visual geometry agrees with the motion model', () => {
+  const car = createCar({
+    materials: {},
+    colors: { body: '#f4f3ef', front: '#1670dd', window: '#288d45', roof: '#ed6500', back: '#7845dc', wheel: '#e62c74' },
+  });
+  it('keeps every tread inside the rolling radius and in contact with the road', () => {
+    for (const key of ['rl', 'rr', 'fl', 'fr']) {
+      const hub = car.root.getObjectByName(`Wheel_${key}`);
+      const tyre = hub.getObjectByName('TreadedTyre');
+      assert.ok(tyre instanceof THREE.Mesh);
+      const p = tyre.geometry.attributes.position;
+      let max = 0,
+        minY = Infinity;
+      for (let i = 0; i < p.count; i++) {
+        max = Math.max(max, Math.hypot(p.getX(i), p.getY(i)));
+        minY = Math.min(minY, p.getY(i) + hub.position.y);
+      }
+      close(max, m.CAR.wheelR, 0.002);
+      assert.ok(minY >= -1e-7 && minY < 0.002, `${key}: ground clearance ${minY}`);
+    }
+  });
+  it('carries all body markers and the tyre marker along the measured trajectories', () => {
+    for (const path of ['straight', 'turn'])
+      for (const d of [0, 0.7, 2, m.D_MAX[path]]) {
+        const pose = m.pose(path, d);
+        car.root.position.set(pose.x, 0, pose.z);
+        car.root.rotation.y = pose.heading;
+        const turns = {};
+        for (const key of ['rl', 'rr', 'fl', 'fr']) {
+          const hub = car.root.getObjectByName(`Wheel_${key}`);
+          turns[key] = m.wheelTurn(path, hub.position.toArray(), d);
+        }
+        car.setWheels(turns, m.steer(path));
+        car.root.updateMatrixWorld(true);
+        for (const key of m.DOT_KEYS) {
+          const at = car.dots[key].getWorldPosition(new THREE.Vector3()).toArray();
+          // Stickers stand 4 mm off the actual painted point to avoid z-fighting.
+          close(len(sub(at, m.dotAt(path, key, d))), 0.004, 1e-9, key);
+        }
+        const wheelAt = car.dots.wheel.getWorldPosition(new THREE.Vector3()).toArray();
+        close(len(sub(wheelAt, m.wheelDotAt(path, d))), 0, 1e-9, 'wheel');
+      }
+  });
+  it('holds the brake calipers still while the wheels roll', () => {
+    car.setWheels({ rl: 1.3, rr: 1.3, fl: 1.3, fr: 1.3 }, m.steer('straight'));
+    for (const key of ['rl', 'rr', 'fl', 'fr']) {
+      const hub = car.root.getObjectByName(`Wheel_${key}`),
+        caliper = hub.getObjectByName('BrakeCaliper');
+      assert.equal(caliper.parent, hub);
+      close(caliper.rotation.z, 0);
+      close(hub.getObjectByName(`WheelSpin_${key}`).rotation.z, -1.3);
+    }
   });
 });

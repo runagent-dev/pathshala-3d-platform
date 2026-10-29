@@ -54,8 +54,8 @@ export function createRoad(path) {
   const g = new THREE.Group();
   g.name = `Road_${path}`;
   const pts = centreLine(path);
-  const asphalt = new THREE.MeshStandardMaterial({ name: 'Road', color: 0xdde1e6, roughness: 1, metalness: 0 });
-  const edge = new THREE.MeshBasicMaterial({ name: 'RoadEdge', color: 0xa9b2bd });
+  const asphalt = new THREE.MeshStandardMaterial({ name: 'Road', color: 0x34495d, roughness: 1, metalness: 0 });
+  const edge = new THREE.MeshBasicMaterial({ name: 'RoadEdge', color: 0xd3e0ec });
   const road = new THREE.Mesh(band(pts, ROAD_W, 0, 0), asphalt);
   road.receiveShadow = true;
   g.add(road);
@@ -74,13 +74,13 @@ export function createRuler({ digits, unit }) {
   const { max, z: z0 } = RULER;
   const g = new THREE.Group();
   g.name = 'MetreMarks';
-  const ink = new THREE.MeshBasicMaterial({ name: 'Marks', color: 0x6b7683 });
+  const ink = new THREE.MeshBasicMaterial({ name: 'Marks', color: 0xf2dfaa });
   const PEG = 0.16;
   const pegGeo = new THREE.BoxGeometry(0.035, PEG, 0.035);
   pegGeo.translate(0, PEG / 2, 0);
   const labels = [];
   const text = (s, size, weight) => {
-    const m = textMesh(s, size, { color: '#4b5766', weight });
+    const m = textMesh(s, size, { color: '#fff0c6', weight });
     m.material.depthTest = false; // on the road's near edge, nothing stands in front of them
     m.renderOrder = 4;
     labels.push(m);
