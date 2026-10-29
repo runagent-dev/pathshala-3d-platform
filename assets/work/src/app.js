@@ -15,7 +15,7 @@ import { createQuiz } from '@shared/student/quiz.js';
 import { bindCleanSheet, buildStudentShell, cleanSheet } from '@shared/student/shell.js';
 import { fitPose } from './camera.js';
 import { CRATE, createCrate } from './crate.js';
-import { createFloor, WALL } from './floor.js';
+import { createFloor, onTape, TAPE, WALL } from './floor.js';
 import { createI18n, group } from './i18n.js';
 import { createPusher } from './person.js';
 import {
@@ -60,7 +60,8 @@ const PALM = 0.012; // between the person's reach and the crate's back face
 const REST = { x: 0.1, y: 0.8, z: 0.21 }; // where the hands hang when they let go
 const RELEASE = 0.45; // s: the hands come off and the person stops
 const WALL_T = 2.2; // s: the push against the wall (lean in 0.6 s, then hold)
-const ARROW_Z = 0.68; // the s and d arrows lie on the floor just in front of the tape (floor.js TAPE.z), so they read on it
+// the s and d arrows lie on the tape's front band (floor.js), so their ends read against its ticks without parallax
+const { y: ARROW_Y, z: ARROW_Z } = onTape(TAPE.band, 0.026);
 const ELEVATION = 21; // degrees, the front view: high enough to see the tape and the arrows on the floor
 const AZIMUTH = 20; // degrees, when the view is not much wider than the trip
 const VIEW_3D = new THREE.Vector3(0.55, 0.45, 0.9).normalize();
@@ -238,6 +239,7 @@ export function createApp(root, options = {}) {
     floor.wall.visible = s.example === 'wall';
     floor.tape.visible = s.example === 'push';
     floor.placeWall(0);
+    floor.markFront(n.x);
 
     // the person: hands on the crate's back while it is pushed; then they let go, take a last step and stand
     const back = (s.example === 'wall' ? 0 : n.x) - L - PALM - HAND.x;
@@ -267,9 +269,9 @@ export function createApp(root, options = {}) {
     if (showF) arrows.F.set(tmp.set(crateBack + 0.03, H + 0.24, 0), XP, forceLength(s.F, s.example === 'wall'));
     else arrows.F.hide();
     // s (blue) and d (grey) on the floor in front of the path
-    if (s.example === 'push' && n.x > 1e-3) arrows.s.set(tmp.set(0, 0.035, ARROW_Z), XP, Math.min(n.x, p.s));
+    if (s.example === 'push' && n.x > 1e-3) arrows.s.set(tmp.set(0, ARROW_Y, ARROW_Z), XP, Math.min(n.x, p.s));
     else arrows.s.hide();
-    if (s.example === 'push' && n.x > p.s + 1e-3) arrows.d.set(tmp.set(p.s, 0.035, ARROW_Z), XP, n.x - p.s);
+    if (s.example === 'push' && n.x > p.s + 1e-3) arrows.d.set(tmp.set(p.s, ARROW_Y, ARROW_Z), XP, n.x - p.s);
     else arrows.d.hide();
     labels(n, p);
     panel(n, p);
@@ -331,13 +333,13 @@ export function createApp(root, options = {}) {
     pF.set((s.example === 'wall' ? 0 : n.x) - L + 0.03 + fLen + 0.05, H + 0.24, 0);
     label('F', arrows.F.root.visible, t('l_F', { F: s.F }), pF, COLORS.F, TIP);
     const sLen = Math.min(n.x, p.s);
-    pS.set(sLen / 2, 0.035, ARROW_Z);
+    pS.set(sLen / 2, ARROW_Y, ARROW_Z);
     const sText = letters ? t('l_s_only') : t('l_s', { s: s.phase === 'push' ? fixed1(n.sNow) : plain(n.sNow) });
     label('s', arrows.s.root.visible, sText, pS, COLORS.s, BELOW);
-    pD.set(p.s + Math.max(0, n.x - p.s) / 2, 0.035, ARROW_Z);
+    pD.set(p.s + Math.max(0, n.x - p.s) / 2, ARROW_Y, ARROW_Z);
     const dText = letters ? t('l_d_only') : t('l_d', { d: s.phase === 'slide' ? fixed1(n.dNow) : plain(n.dNow) });
     label('d', arrows.d.root.visible && n.x - p.s > 0.12, dText, pD, COLORS.d, BELOW);
-    pS.set(0.02, 0.035, ARROW_Z);
+    pS.set(0.02, ARROW_Y, ARROW_Z);
     label('s0', s.example === 'wall' && s.phase === 'done', t('l_s0'), pS.clone(), COLORS.s, [{ dx: -40, dy: 20 }, ...BELOW]);
   }
 
@@ -552,7 +554,7 @@ export function createApp(root, options = {}) {
   function viewPose() {
     const end = s.example === 'wall' ? WALL.thick + 0.05 : s.sPlan + slideOf(s.sPlan) + 0.12;
     box.min.set(-L - PALM - HAND.x - 0.45, -0.05, -0.45);
-    box.max.set(end, 1.85, ARROW_Z + 0.08);
+    box.max.set(end, 1.85, TAPE.z + 0.06);
     const e = THREE.MathUtils.degToRad(ELEVATION);
     // turned a little toward the person (unless the view is very wide), so the trip recedes and the person and crate
     // come out bigger
@@ -640,7 +642,8 @@ export function createApp(root, options = {}) {
     t,
     step: 1,
     label: 'act_push',
-    target: () => crate.box(),
+    // no ring once the crate has stopped: nothing covers the result on the tape (the button offers the next step)
+    target: () => (s.phase === 'done' ? null : crate.box()),
     pad: 8,
     avoid: [ui.corner, ui.hint, () => anno.boxes(), headBox],
     pulse: Boolean(o.coach),

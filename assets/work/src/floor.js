@@ -1,11 +1,20 @@
 // The floor (metres): bright saffron tiles 0.5 m square, a metre tape along the front edge (0 at the crate's front face where it
 // starts, a long tick and a number every metre, a short tick every half metre, tilted towards the viewer so the numbers
-// read from a low camera), and a brick wall for the "push against a wall" example. +x is the way the crate is pushed.
+// read from a low camera; a dark bar marks the crate's front edge on it, and its front band carries the s and d arrows), and a brick wall for the "push against a wall" example. +x is the way the crate is pushed.
 import * as THREE from 'three';
 import { textMesh } from '@shared/student/materials.js';
 
 export const FLOOR = { x0: -7, x1: 11, z0: -2.5, z1: 6, tile: 0.5 };
-export const TAPE = { z: 0.6, from: -0.15, to: 6.4, metres: 6, wide: 0.3 };
+export const TAPE = { z: 0.76, from: -0.15, to: 6.4, metres: 6, wide: 0.4, tilt: 0.35, band: 0.05 };
+
+/**
+ * A point on the tape's face, `ly` metres back from its front edge and `lz` above it, as world { y, z } (x is the
+ * same along the tape): the s and d arrows lie on its front band, so they line up with its ticks from any view.
+ */
+export function onTape(ly, lz = 0) {
+  const th = -Math.PI / 2 + TAPE.tilt;
+  return { y: 0.006 + ly * Math.cos(th) - lz * Math.sin(th), z: TAPE.z + ly * Math.sin(th) + lz * Math.cos(th) };
+}
 export const WALL = { thick: 0.4, high: 1.45, deep: 2.1 };
 
 function canvasTexture(w, h, draw) {
@@ -69,7 +78,7 @@ export function createFloor({ digit, unit }) {
   const tape = new THREE.Group();
   tape.name = 'MetreTape';
   tape.position.set(0, 0.006, TAPE.z);
-  tape.rotation.x = -Math.PI / 2 + 0.35; // the strip faces up and toward the camera
+  tape.rotation.x = -Math.PI / 2 + TAPE.tilt; // the strip faces up and toward the camera
   root.add(tape);
   const tapeMat = new THREE.MeshStandardMaterial({ name: 'Tape', color: '#fbfaf4', roughness: 0.6, metalness: 0 });
   const inkMat = new THREE.MeshBasicMaterial({ name: 'TapeInk', color: '#1d1f22' });
@@ -84,12 +93,17 @@ export function createFloor({ digit, unit }) {
     tape.add(tick);
     if (whole) {
       const n = textMesh(digit(i / 2), 0.17, { color: '#1d1f22', weight: 700 });
-      n.position.set(i / 2, 0.11, 0.004);
+      n.position.set(i / 2, 0.205, 0.004);
       tape.add(n);
     }
   }
+  // the crate's front edge on the tape: a dark bar that moves with it, so where it stops reads exactly
+  const cursor = new THREE.Mesh(new THREE.BoxGeometry(0.03, TAPE.wide, 0.004), new THREE.MeshBasicMaterial({ name: 'TapeCursor', color: '#7a3b0c' }));
+  cursor.name = 'CrateFrontOnTape';
+  cursor.position.set(0, TAPE.wide / 2, 0.005);
+  tape.add(cursor);
   const u = textMesh(unit, 0.13, { color: '#1d1f22', weight: 700 });
-  u.position.set(TAPE.metres + 0.25, 0.11, 0.004);
+  u.position.set(TAPE.metres + 0.25, 0.205, 0.004);
   tape.add(u);
 
   // the wall: plastered bricks, standing just in front of the crate's starting place
@@ -121,6 +135,10 @@ export function createFloor({ digit, unit }) {
     tape,
     wall,
     /** The wall's front face (the side the crate touches) at x. */
+    /** The crate's front edge at x metres along the tape. */
+    markFront(x) {
+      cursor.position.x = x;
+    },
     placeWall(x) {
       wall.position.x = x;
     },
