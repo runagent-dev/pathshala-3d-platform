@@ -71,7 +71,8 @@ test('periodic-motion: the detailed heart pauses, repeats its count and exports 
   expect(paused.measured).toBeCloseTo(0.8, 6);
   const gaps = await fig.frame.evaluate(async () => {
     const { Box3 } = await import('three');
-    const { createHeart } = await import('./src/heart.js');
+    const modelModule = new URL('./src/heart.js', document.baseURI).href;
+    const { createHeart } = await import(modelModule);
     const ex = createHeart();
     ex.arrange(false);
     const body = new Box3().setFromObject(ex.model, true);
