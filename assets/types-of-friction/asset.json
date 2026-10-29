@@ -5,7 +5,7 @@
   "title": "Types of friction (ঘর্ষণের প্রকারভেদ)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "book": "physics-9-10",
   "page": 89,
   "topic": "3.9.1",
@@ -13,7 +13,7 @@
   "order": 1,
   "maintainers": ["RadeenXALNW"],
   "units": "m",
-  "description": "The three kinds of friction in ONE scene (ঘর্ষণের প্রকারভেদ, pages 89–90, 3.9.1): the same 2 kg wooden block as in friction-force is pushed with a force gauge (বলমাপক). Tap by tap the push grows (3, 6, 9 N) and the block does not move: the crimson friction arrow under it grows to match the push exactly, the static friction (স্থিতি ঘর্ষণ). At 9.8 N the block gives way; the person eases off to keep a steady pace (until the student lets go) and the gauge falls to 7.8 N, the kinetic friction (গতি ঘর্ষণ), a faint arrow keeping the old 9.8 N for comparison. Then the block is lifted onto a small trolley with wheels and pushed again: it rolls on about 1 N, the rolling friction (আবর্ত ঘর্ষণ), the smallest of the three (suitcase wheels), a faint 7.8 N arrow beside it for comparison. The panel is one action, one result, one rule: a row of the book's three terms with the friction found under each (maximum 9.8, 7.8, 1 N), one numbered button whose same badge rings the block, a result line and a rule that grows in plain words (ঠেলা, ঘর্ষণ, পিছলে চলা, গড়িয়ে চলা) and ends with f_s = μ_s N and f_k = μ_k N, N explained as the surface's push up (equal to the weight) and μ as how rough the surface is. μ_s = 0.5, μ_k = 0.4 and 0.05 on wheels are example numbers (the book gives none; a note on the view says so). Test tab: 5 questions on scenes set up for them (the friction while the block is held by a push read off the gauge, the friction at a steady slide, which of the three frictions is acting, how much push a loaded block needs, why wheels make a suitcase easy to pull).",
+  "description": "Vivid 3D comparison of static, kinetic and rolling friction for textbook topic 3.9.1, pages 89–90. A detailed human pushes the same hollow 2 kg crate directly on the floor, then pushes its loaded wheeled trolley by a real handle. The hands follow the contact and stance shoes stay planted while walking. Orange push, red friction and blue velocity arrows follow the original physics: static friction matches 3, 6 and 9 N pushes, sliding friction is 7.84 N, and rolling resistance 0.98 N. Both rolling-force arrows are explicitly magnified 3× for visibility; values stay in newtons. A live force/motion panel, pause control and separate force-direction/formula pages explain balanced motion and the static limit. Five existing scene-based questions remain, with arrow readouts replacing the force meter. The current human/crate/trolley and vectors export as GLB. Offline in Bangla and English.",
   "tags": ["friction", "static-friction", "kinetic-friction", "rolling-friction", "force", "newton", "bangla"],
   "params": [
     {
@@ -74,11 +74,20 @@
     { "name": "set", "payload": { "stage": "slide" } },
     { "name": "set", "payload": { "chip": "rolling" } },
     { "name": "set", "payload": { "home": true } },
+    { "name": "set", "payload": { "stage": "roll", "paused": true } },
     { "name": "reset", "payload": {} },
     { "name": "practice", "payload": {} },
     { "name": "capture", "payload": { "width": 800, "height": 500 } },
     { "name": "export-glb", "payload": {} }
   ],
   "events": ["ready", "change", "break", "stop", "practice-start", "practice-result", "practice-end"],
-  "export": { "poster": { "params": { "coach": "0", "stage": "roll" } }, "glb": [{ "name": "default" }] }
+  "export": {
+    "poster": { "params": { "coach": "0", "stage": "roll" } },
+    "glb": [
+      {
+        "name": "default",
+        "setup": [{ "command": "set", "payload": { "stage": "roll", "paused": true, "animate": false } }]
+      }
+    ]
+  }
 }

@@ -55,7 +55,7 @@ test('types-of-friction: static grows with the push, kinetic is smaller, rolling
   expect(await text('.pvc-outcome')).toContain('স্থিতি ঘর্ষণ সর্বোচ্চ ৯.৮ নিউটন ছিল');
   expect(await text('.pvc-outcome')).toContain('গতি ঘর্ষণ ৭.৮ নিউটন');
   expect(await text('.pvc-anno-layer')).toContain('ঘর্ষণ ৭.৮ নিউটন');
-  expect(await text('.pvc-anno-layer')).toContain('সর্বোচ্চ ৯.৮ নিউটন'); // the faint old arrow is named
+  expect(await text('[data-example="static"]')).toContain('সর্বোচ্চ ৯.৮ নিউটন'); // the earlier maximum remains in the comparison row
   expect(await text('.pvc-act')).toContain('ঠেলা ছেড়ে দাও');
   // a steady pace: the push settles at the friction
   await fig.advance(1500);
@@ -88,18 +88,20 @@ test('types-of-friction: static grows with the push, kinetic is smaller, rolling
   expect(roll.stage).toBe('roll');
   expect(roll.found.rolling).toBe(0.98);
   expect(await text('[data-example="rolling"] .pvc-ex-res')).toBe('১ নিউটন');
-  expect(await text('.pvc-anno-layer')).toContain('পিছলে ৭.৮ নিউটন'); // the faint 7.8 N beside the 1 N
+  expect(await text('[data-example="kinetic"]')).toContain('৭.৮ নিউটন'); // compare with the same box sliding
   await fig.frame.locator('.pvc-act').click(); // let go: the push is 0 and it stops in under half a second
   await fig.advance(600);
   const rolled = await fig.call('get');
   expect(rolled).toMatchObject({ stage: 'rolled', push: 0, friction: 0, speed: 0 });
-  // the formulas come last, after all three
-  const rule = await text('.pvc-rule');
-  expect(rule).toContain('f');
+  // The formulas explain the static limit separately from the current friction.
+  await fig.frame.locator('[data-act="explain"]').click();
+  await fig.frame.locator('[data-explainpage="formulas"]').click();
+  const rule = await text('.tf-dialog');
   expect(rule).toContain('μ');
-  expect(rule).toContain('ওজনের সমান');
+  expect(rule).toContain('≤');
   expect(rule).toContain('০.৫ × ১৯.৬ = ৯.৮');
   expect(rule).toContain('০.৪ × ১৯.৬ = ৭.৮');
+  await fig.frame.locator('[data-act="explain-close"]').click();
   expect(await text('.pvc-act')).toContain('আবার দেখো');
 
   // a word of the row goes back to its part; home keeps what was found
@@ -118,8 +120,8 @@ test('types-of-friction: static grows with the push, kinetic is smaller, rolling
   // the one GLB has the trolley under the block (block 0.12 m on a deck 0.056 m high), not a floating block
   const glb = await fig.call('export-glb', {});
   const info = await glbInfo(Buffer.from(glb.base64 ?? '', 'base64'));
-  expect(info.size[1]).toBeGreaterThan(0.17);
-  expect(info.size[1]).toBeLessThan(0.19);
+  expect(info.size[1]).toBeGreaterThan(1.5);
+  expect(info.size[1]).toBeLessThan(2);
 
   // the test: five questions, each on its own scene; the ring hides; the scene is locked; no number in the question
   // text that the picture shows; a second round comes in another order
@@ -154,5 +156,120 @@ test('types-of-friction: static grows with the push, kinetic is smaller, rolling
 
   await fig.call('reset');
   expect(await fig.call('get')).toMatchObject({ stage: 'rest', found: { static: null, kinetic: null, rolling: null } });
+  expect(log.errors).toEqual([]);
+});
+
+test('friction: human palms, trolley, pause and force balance share the live state', async ({ page }) => {
+  const log = await preparePage(page);
+  await page.setViewportSize({ width: 800, height: 500 });
+  const fig = await openFigure(page, 'types-of-friction');
+  for (const stage of ['pull', 'slide', 'roll']) {
+    const state = await fig.call('set', { stage, pull: 6, paused: true, animate: false });
+    const model = await fig.frame.evaluate(async () => {
+      const { Vector3, Box3 } = await import('three');
+      const root = /** @type {any} */ (window).figure.exportRoot();
+      root.updateMatrixWorld(true);
+      const hand = root.getObjectByName('HandNear').getWorldPosition(new Vector3());
+      const box = root.getObjectByName('WoodenBlock').getWorldPosition(new Vector3());
+      const a = root.getObjectByName('HumanAppliedForce'),
+        b = root.getObjectByName('ContactFriction');
+      let gauge = false;
+      root.traverse((o) => {
+        if (/gauge/i.test(o.name)) gauge = true;
+      });
+      return {
+        hand: hand.toArray(),
+        box: box.toArray(),
+        handle: Boolean(root.getObjectByName('TrolleyHandle')),
+        gauge,
+        a: new Box3().setFromObject(a).getSize(new Vector3()).x,
+        b: new Box3().setFromObject(b).getSize(new Vector3()).x,
+      };
+    });
+    expect(model.gauge).toBe(false);
+    expect(model.handle).toBe(stage === 'roll');
+    expect(model.hand[0]).toBeCloseTo(model.box[0] - (stage === 'roll' ? 0.6 : 0.85 / 2 + 0.025), 2);
+    expect(model.hand[1]).toBeCloseTo(stage === 'roll' ? 0.95 : 0.93, 2);
+    expect(model.a).toBeCloseTo(model.b, 5);
+    expect(state.netForce).toBe(0);
+    const x = state.distance;
+    await fig.advance(500);
+    expect((await fig.call('get')).distance).toBe(x);
+  }
+  await fig.frame.locator('[data-act="pause"]').click();
+  await fig.advance(400);
+  const x = (await fig.call('get')).distance;
+  await fig.frame.locator('[data-act="explain"]').click();
+  await fig.advance(500);
+  expect((await fig.call('get')).distance).toBe(x);
+  await expect(fig.frame.locator('.tf-dialog')).toContainText('তলের বল');
+  await fig.frame.locator('.tf-dialog').press('Escape');
+  await fig.advance(400);
+  expect((await fig.call('get')).distance).toBeGreaterThan(x);
+  await fig.call('practice');
+  await fig.advance(200);
+  const before = await fig.call('get');
+  await fig.call('set', { stage: 'rest', paused: false, view: '3d', home: true });
+  expect(await fig.call('get')).toMatchObject({ stage: before.stage, mode: 'quiz', view: 'front' });
+  expect(log.errors).toEqual([]);
+});
+
+test('friction: three human-push examples and formulas fit all six frames in both languages', async ({ page }) => {
+  test.setTimeout(300000);
+  const log = await preparePage(page);
+  for (const lang of ['bn', 'en'])
+    for (const [width, height] of [
+      [390, 700],
+      [390, 520],
+      [844, 390],
+      [640, 400],
+      [800, 500],
+      [1280, 800],
+    ]) {
+      await page.setViewportSize({ width, height });
+      const fig = await openFigure(page, 'types-of-friction', { params: { lang } });
+      for (const stage of ['rest', 'pull', 'slide', 'slid', 'wheels', 'roll', 'rolled']) {
+        await fig.call('set', { stage, pull: 6, paused: true, animate: false });
+        await fig.advance(100);
+        const report = await fig.frame.evaluate(() => {
+          const bad = [],
+            labels = [];
+          for (const e of document.querySelectorAll('.pvc-learn button,.tf-live,.tf-values>div,.pvc-rule,.pvc-anno')) {
+            const cs = getComputedStyle(e);
+            if (cs.display === 'none' || cs.visibility === 'hidden' || Number(cs.opacity) === 0) continue;
+            const r = e.getBoundingClientRect();
+            if (!r.width || !r.height) continue;
+            if (r.left < -1 || r.right > innerWidth + 1 || r.top < -1 || r.bottom > innerHeight + 1 || e.scrollWidth > e.clientWidth + 1)
+              bad.push(e.textContent);
+            if (e.matches('.pvc-anno')) labels.push(r.toJSON());
+          }
+          const c = document.querySelector('.pvc-corner').getBoundingClientRect();
+          const hit = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+          const overlap = labels.some((a, i) => hit(a, c) || labels.slice(i + 1).some((b) => hit(a, b)));
+          return {
+            bad,
+            overlap,
+            overflow: document.querySelector('.pvc-panel').scrollHeight - document.querySelector('.pvc-panel').clientHeight,
+            stage: document.querySelector('.pvc-stage').getBoundingClientRect().height,
+          };
+        });
+        expect(report, `${lang} ${width}x${height} ${stage}`).toMatchObject({ bad: [], overlap: false, overflow: 0 });
+        expect(report.stage).toBeGreaterThan(150);
+        if (width >= 800 && ['pull', 'slide', 'roll'].includes(stage)) {
+          await expect(fig.frame.locator('.pvc-anno').filter({ hasText: /^ঠেলা |^Push / })).toBeVisible();
+          await expect(fig.frame.locator('.pvc-anno').filter({ hasText: /^ঘর্ষণ |^Friction / })).toBeVisible();
+        }
+      }
+      await fig.frame.locator('[data-act="explain"]').click();
+      for (const tab of ['forces', 'formulas']) {
+        await fig.frame.locator(`[data-explainpage="${tab}"]`).click();
+        const r = await fig.frame.locator('.tf-dialog').evaluate((e) => {
+          const r = e.getBoundingClientRect();
+          return { inside: r.top >= 0 && r.bottom <= innerHeight + 1, overflow: e.scrollHeight - e.clientHeight };
+        });
+        expect(r, `${lang} ${width}x${height} ${tab}`).toEqual({ inside: true, overflow: 0 });
+      }
+      await fig.frame.locator('[data-act="explain-close"]').click();
+    }
   expect(log.errors).toEqual([]);
 });

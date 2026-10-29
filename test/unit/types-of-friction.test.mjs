@@ -183,3 +183,46 @@ describe('types-of-friction: the whole story of a tap', () => {
     }
   });
 });
+
+describe('types-of-friction: the human and trolley contact', () => {
+  test('palms reach the box and trolley handle without stretched arms', async () => {
+    const { createPusher } = await import('../../assets/types-of-friction/src/person.js');
+    const { Vector3 } = await import('three');
+    const person = createPusher();
+    for (const height of [0.93, 0.95])
+      for (const lean of [0.07, 0.15, 0.3, 0.38]) {
+        const targets = [new Vector3(0.43, height, 0.18), new Vector3(0.43, height, -0.18)];
+        person.pose({ lean, hands: targets });
+        for (let i = 0; i < 2; i++) assert.ok(person.handAt(i).distanceTo(targets[i]) < 0.003);
+        const bones = person.bones();
+        for (const bone of bones.filter((b) => b[3] === 'arm')) assert.ok(bone[0].distanceTo(bone[1]) <= 0.291);
+      }
+  });
+  test('a shoe in stance stays planted while the pushing person advances', async () => {
+    const { createPusher } = await import('../../assets/types-of-friction/src/person.js');
+    const { Vector3 } = await import('three');
+    const person = createPusher(),
+      v = new Vector3(),
+      positions = [];
+    for (const d of [0.12, 0.16, 0.2]) {
+      person.root.position.x = d;
+      person.pose({ distance: d, walking: true });
+      person.root.updateMatrixWorld(true);
+      positions.push(person.feet[0].getWorldPosition(v).x);
+    }
+    for (const x of positions) assert.ok(Math.abs(x - positions[0]) < 1e-8);
+  });
+  test('the loaded trolley wheels turn by travelled distance over their actual radius', async () => {
+    const { createTrolley, TROLLEY } = await import('../../assets/types-of-friction/src/trolley.js');
+    const trolley = createTrolley();
+    for (const distance of [0, 0.12, 0.6]) {
+      trolley.roll(distance);
+      const wheels = [];
+      trolley.root.traverse((o) => {
+        if (o.name === 'Wheel') wheels.push(o);
+      });
+      assert.equal(wheels.length, 4);
+      for (const w of wheels) assert.ok(Math.abs(w.rotation.z + distance / TROLLEY.wheel) < 1e-9);
+    }
+  });
+});

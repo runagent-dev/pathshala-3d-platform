@@ -2,7 +2,7 @@
 // the sliding crate is seen to move when the view follows it), and a dashed outline on it where the crate started.
 import * as THREE from 'three';
 
-export const FLOOR = { x0: -4, x1: 14, width: 0.56, thick: 0.02, tile: 0.1 };
+export const FLOOR = { x0: -4, x1: 14, width: 2.3, thick: 0.1, tile: 0.5 };
 
 function gridTexture() {
   const S = 128;
@@ -10,9 +10,9 @@ function gridTexture() {
   c.width = S;
   c.height = S;
   const ctx = c.getContext('2d');
-  ctx.fillStyle = '#eef0f3';
+  ctx.fillStyle = '#067f8a';
   ctx.fillRect(0, 0, S, S);
-  ctx.fillStyle = '#d9dde3';
+  ctx.fillStyle = '#11a6a2';
   ctx.fillRect(0, 0, 3, S);
   ctx.fillRect(0, 0, S, 3);
   const tex = new THREE.CanvasTexture(c);
@@ -29,7 +29,7 @@ export function createFloor() {
   root.name = 'Floor';
   const len = FLOOR.x1 - FLOOR.x0;
   const top = new THREE.MeshStandardMaterial({ name: 'FloorTop', map: gridTexture(), roughness: 0.9, metalness: 0 });
-  const side = new THREE.MeshStandardMaterial({ name: 'FloorEdge', color: '#c9ced6', roughness: 0.9, metalness: 0 });
+  const side = new THREE.MeshStandardMaterial({ name: 'FloorEdge', color: '#054d68', roughness: 0.9, metalness: 0 });
   const slab = new THREE.Mesh(new THREE.BoxGeometry(len, FLOOR.thick, FLOOR.width), [side, side, top, side, side, side]);
   slab.position.set((FLOOR.x0 + FLOOR.x1) / 2, -FLOOR.thick / 2, 0);
   slab.name = 'FloorSlab';
@@ -40,7 +40,7 @@ export function createFloor() {
   const start = new THREE.Group();
   start.name = 'StartOutline';
   start.userData.noExport = true;
-  const dashMat = new THREE.MeshBasicMaterial({ color: '#7d8794', toneMapped: false });
+  const dashMat = new THREE.MeshBasicMaterial({ color: '#ffe2a0', toneMapped: false });
   start.visible = false;
   root.add(start);
 

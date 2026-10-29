@@ -1,5 +1,5 @@
 // The maths of the figure (pure functions, unit-tested in test/unit/types-of-friction.test.mjs): a wooden block, the
-// three frictions on it and a person pushing it with a force gauge.
+// three frictions on it and a person pushing it directly.
 //
 // The book gives the three kinds of friction and f_s = μ_s N, f_k = μ_k N (pages 89–90) but no numbers. The numbers
 // here are examples (and the figure says so), the same as the sister figure friction-force (page 88): a 2 kg block
@@ -46,7 +46,7 @@ export function cruiseGoal(on, mass, v) {
 
 /**
  * One time step. `st` = { on, mass, pull, v, x, moving }; `goal` is the push the person is heading for (`pull` is the
- * push, the number the force gauge shows). It follows the goal at a limited rate. At rest the friction matches the
+ * push, the person's applied force). It follows the goal at a limited rate. At rest the friction matches the
  * push up to `max`; past it the block moves and the friction is `move`, so m·a = push − friction.
  * Returns a new state with `friction` (the force of the friction now) and `broke` (true on the step it starts).
  */

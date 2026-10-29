@@ -1,12 +1,12 @@
-// The wooden block (real size in metres): 0.2 m long, 0.12 m high and 0.14 m deep, a solid piece of wood of 2 kg with
+// The wooden block (real size in metres): 0.85 m long, 1 m high and 0.62 m deep, an illustrative hollow 2 kg crate with
 // "২ কেজি" painted on the front, the same block as in the sister figure friction-force. setMass(kg) puts 1 kg brass
 // weights on top (3 kg: one, 4 kg: two) for the test. Origin: on the floor under the middle of the block, +x to the
 // right (the way it is pushed), +y up.
 import * as THREE from 'three';
 import { textMesh } from '@shared/student/materials.js';
 
-export const BLOCK = { L: 0.2, H: 0.12, D: 0.14, mass: 2 };
-const WEIGHT = { r: 0.032, h: 0.034 }; // a 1 kg brass weight
+export const BLOCK = { L: 0.85, H: 1.0, D: 0.62, mass: 2 };
+const WEIGHT = { r: 0.1, h: 0.1 }; // a 1 kg brass weight
 const mat = (name, color, roughness = 0.7, metalness = 0) => new THREE.MeshStandardMaterial({ name, color, roughness, metalness });
 
 /** Plain wood: long grain along the block, a few darker streaks (a canvas, so the figure has no image files). */
@@ -19,11 +19,11 @@ function woodTexture() {
   const ctx = c.getContext('2d');
   let seed = 9;
   const rnd = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296;
-  ctx.fillStyle = '#d8ad72';
+  ctx.fillStyle = '#f5b739';
   ctx.fillRect(0, 0, W, H);
   for (let i = 0; i < 46; i++) {
     const y = rnd() * H;
-    ctx.strokeStyle = `rgba(120,78,36,${0.08 + rnd() * 0.2})`;
+    ctx.strokeStyle = `rgba(130,65,12,${0.08 + rnd() * 0.2})`;
     ctx.lineWidth = 0.6 + rnd() * 1.4;
     ctx.beginPath();
     ctx.moveTo(0, y);
@@ -51,10 +51,21 @@ export function createBlock({ t }) {
   block.position.y = H / 2;
   block.name = 'Block';
   body.add(block);
+  const bandMaterial = mat('CrateBands', '#2149a6', 0.55, 0.15);
+  for (const x of [-L * 0.32, L * 0.32]) {
+    const band = new THREE.Mesh(new THREE.BoxGeometry(0.045, H + 0.008, D + 0.012), bandMaterial);
+    band.position.set(x, H / 2, 0);
+    body.add(band);
+  }
+  for (const y of [0.04, H - 0.04]) {
+    const rail = new THREE.Mesh(new THREE.BoxGeometry(L + 0.014, 0.06, D + 0.018), bandMaterial);
+    rail.position.y = y;
+    body.add(rail);
+  }
 
   // the stencil: the mass, painted on the front
-  const stencil = textMesh(t('block_kg', { m: BLOCK.mass }), 0.036, { color: '#3a2a16', weight: 700 });
-  stencil.position.set(0, H * 0.5, D / 2 + 0.0015);
+  const stencil = textMesh(t('block_kg', { m: BLOCK.mass }), 0.14, { color: '#3a2a16', weight: 700 });
+  stencil.position.set(0, H * 0.5, D / 2 + 0.006);
   stencil.name = 'Stencil';
   body.add(stencil);
 
@@ -70,10 +81,10 @@ export function createBlock({ t }) {
     cyl.position.y = WEIGHT.h / 2;
     const knob = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, 0.01, 12), brass);
     knob.position.y = WEIGHT.h + 0.005;
-    const label = textMesh(t('block_kg', { m: 1 }), 0.015, { color: '#3b2e0e', weight: 700 });
+    const label = textMesh(t('block_kg', { m: 1 }), 0.045, { color: '#3b2e0e', weight: 700 });
     label.position.set(0, WEIGHT.h / 2, WEIGHT.r + 0.0012);
     w.add(cyl, knob, label);
-    w.position.y = H + i * (WEIGHT.h + 0.004);
+    w.position.y = H + i * (WEIGHT.h + 0.012);
     w.visible = false;
     weights.add(w);
   }
@@ -109,6 +120,6 @@ export function createBlock({ t }) {
     /** The block's size (metres). */
     size: () => ({ L, H, D }),
     /** The height of the top of everything on the floor (the block and its weights). */
-    top: () => H + (extra ? extra * (WEIGHT.h + 0.004) + 0.01 : 0),
+    top: () => H + (extra ? extra * (WEIGHT.h + 0.012) + 0.03 : 0),
   };
 }

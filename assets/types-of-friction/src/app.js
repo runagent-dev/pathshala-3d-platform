@@ -1,19 +1,9 @@
-// Types of friction (book pages 89–90, topic 3.9.1), student view: ONE scene for all three frictions. A 2 kg wooden
-// block (the same as in the sister figure friction-force) is pushed by a person through a force gauge (বলমাপক). Tap by
-// tap the push grows (3, 6, 9 N) and the block does not move: the friction under it (crimson arrow) grows to match the
-// push exactly, that is the static friction (স্থিতি ঘর্ষণ). At 9.8 N it gives way; the person eases off to keep a steady
-// pace and the gauge falls to 7.8 N: the kinetic friction (গতি ঘর্ষণ) is smaller than the maximum static friction (a
-// faint arrow shows the old 9.8 N). Then the block is lifted onto a small trolley with wheels and pushed again: it
-// rolls on 1 N, the rolling friction (আবর্ত ঘর্ষণ), the smallest of the three. Only at the end come the book's formulas
-// f_s = μ_s N and f_k = μ_k N with N explained. The numbers (2 kg, μ_s = 0.5, μ_k = 0.4, rolling 0.05) are examples:
-// the book gives none (a note on the view says so). The panel is the kit's clean sheet (one action, one result, one
-// rule): the three terms as one row of words (the friction found under each), one numbered action whose same badge
-// rings the block (tap either), one result line, one rule that grows with what the student has found. Then a short
-// test. Built on the shared student kit.
+// Types of friction: a detailed human pushes the same crate on the floor or a loaded wheeled trolley.
+// The original physics and comparison numbers are preserved; the arrows and live panel read that same state.
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
 import { createTweener, ease } from '@shared/tween.js';
-import { createArrow } from '@shared/arrow.js';
+import { createVector } from './arrow.js';
 import { createAudio } from '@shared/student/audio.js';
 import { bindCleanSheet, buildStudentShell, cleanSheet } from '@shared/student/shell.js';
 import { createAction } from '@shared/student/action.js';
@@ -23,7 +13,7 @@ import { ICONS } from '@shared/student/icons.js';
 import { createI18n } from './i18n.js';
 import { BLOCK, createBlock } from './block.js';
 import { createTrolley, TROLLEY } from './trolley.js';
-import { createGauge } from './gauge.js';
+import { createPusher } from './person.js';
 import { createFloor } from './floor.js';
 import { fitPose } from './camera.js';
 import { MASS, MU, NOTCHES, RATE, RATE_WHEELS_UP, V_STEADY, cruiseGoal, fmtForce, letGo, limits, round, step, weight } from './physics.js';
@@ -43,16 +33,16 @@ export const DEFAULTS = {
   sound: true,
 };
 
-const COLORS = { push: '#e8590c', friction: '#c2255c' };
-const ARROW = 0.015; // m of arrow per newton (9.8 N = 14.7 cm; the block is 20 cm long)
+const COLORS = { push: '#ffb431', friction: '#ff4777', velocity: '#59ccff' };
+const ARROW = 0.085; // m of arrow per newton (9.8 N = 14.7 cm; the block is 20 cm long)
 const FOLLOW_AT = 0.1; // m: the view follows the block once it is this far along
 const T_CRUISE = { floor: 8, wheels: 8 }; // s: the person keeps pushing at a steady pace until the student lets go (or this long)
 const T_STEADY = 3.2; // s of steady pace a scene that starts part way (pictures, the test) is run on to
-const LIFT = 0.075; // m: the block is lifted this high to slip the trolley under it
-const TROLLEY_FROM = -0.9; // m: where the trolley comes from (out of sight on the left)
+const LIFT = 0.32; // m: the block is lifted this high to slip the trolley under it
+const TROLLEY_FROM = 2.3; // m: where the trolley comes from (out of sight on the left)
 const DOUBLE_TAP = 350; // ms
 const VIEW_3D = new THREE.Vector3(-0.35, 0.55, 0.8).normalize();
-const ELEVATION = 26; // degrees above the floor for the side view
+const ELEVATION = 8; // degrees above the floor for the side view
 const CHIPS = ['static', 'kinetic', 'rolling'];
 
 export function createApp(root, options = {}) {
@@ -68,11 +58,23 @@ export function createApp(root, options = {}) {
   const ui = buildStudentShell(root, t, {
     learn: cleanSheet(t, {
       examples: { label: 'types', results: true, items: CHIPS.map((id) => ({ id, label: `chip_${id}` })) },
-      quiet: [{ act: 'home', label: 'act_home', icon: ICONS.reset }],
+      quiet: [
+        { act: 'pause', label: 'act_pause', icon: ICONS.pause },
+        { act: 'home', label: 'act_home', icon: ICONS.reset },
+      ],
       lines: { action: 1, outcome: 2, rule: 3 },
     }),
   });
   const sheet = bindCleanSheet(ui.learn);
+  const live = document.createElement('section');
+  live.className = 'tf-live';
+  live.innerHTML = `<button type="button" data-act="explain"><b>${t('live_title')}</b><span>${t('explain_link')}</span></button><div class="tf-values"></div>`;
+  ui.$('.pvc-outcome').after(live);
+  const explanation = document.createElement('dialog');
+  explanation.className = 'tf-dialog';
+  explanation.setAttribute('aria-label', t('explain_title'));
+  root.append(explanation);
+
   ui.canvasHost.setAttribute('aria-label', t('aria_stage'));
   // the honest note on the view: the book gives no numbers
   const note = document.createElement('div');
@@ -81,10 +83,30 @@ export function createApp(root, options = {}) {
   ui.stage.append(note);
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
-  const stage = createStage(ui.canvasHost, { fov: 24, near: 0.03, far: 80, environment: 'studio-light' });
+  const stage = createStage(ui.canvasHost, { fov: 32, near: 0.03, far: 80, environment: 'studio-light' });
   const { camera, controls, scene } = stage;
+  const bgCanvas = document.createElement('canvas');
+  bgCanvas.width = 16;
+  bgCanvas.height = 256;
+  const bgContext = bgCanvas.getContext('2d'),
+    bgGradient = bgContext.createLinearGradient(0, 0, 0, 256);
+  bgGradient.addColorStop(0, '#1b245c');
+  bgGradient.addColorStop(1, '#155e79');
+  bgContext.fillStyle = bgGradient;
+  bgContext.fillRect(0, 0, 16, 256);
+  const background = new THREE.CanvasTexture(bgCanvas);
+  background.colorSpace = THREE.SRGBColorSpace;
+  scene.background = o.bg === 'transparent' ? null : background;
+  scene.add(new THREE.HemisphereLight(0xe2f4ff, 0x21385a, 0.8));
+  const keyLight = new THREE.DirectionalLight(0xffe8d0, 1.1);
+  keyLight.position.set(-2, 4, 3);
+  scene.add(keyLight);
+  const rimLight = new THREE.DirectionalLight(0x7edcff, 0.6);
+  rimLight.position.set(2, 2, -3);
+  scene.add(rimLight);
+
   controls.minDistance = 0.3;
-  controls.maxDistance = 6;
+  controls.maxDistance = 25;
   controls.enablePan = false;
   controls.enableRotate = false;
   const world = new THREE.Group();
@@ -94,21 +116,32 @@ export function createApp(root, options = {}) {
   const floor = createFloor();
   const block = createBlock({ t });
   const trolley = createTrolley();
-  const gauge = createGauge({ colors: { pointer: COLORS.push } });
-  world.add(floor.root, trolley.root, block.root, gauge.root);
+  const person = createPusher();
+  world.add(floor.root, trolley.root, block.root, person.root);
   trolley.root.visible = false;
   floor.setStart(0, BLOCK.L, BLOCK.D);
 
-  const arrowOf = (color, name, radius = 0.004) => createArrow({ color, name, radius, head: radius * 6.5, headRadius: radius * 2.9 });
-  const arrows = { push: arrowOf(COLORS.push, 'PushArrow'), friction: arrowOf(COLORS.friction, 'FrictionArrow') };
-  // the old maximum, faint round the live arrow: it shows how much smaller the friction became
-  const ghostOf = (color, name) => createArrow({ color, name, radius: 0.0066, head: 0.034, headRadius: 0.0165, opacity: 0.3 });
-  const ghosts = { push: ghostOf(COLORS.push, 'OldPush'), friction: ghostOf(COLORS.friction, 'OldFriction') };
-  for (const a of [...Object.values(arrows), ...Object.values(ghosts)]) {
+  const arrows = {
+    push: createVector(COLORS.push, 'HumanAppliedForce'),
+    friction: createVector(COLORS.friction, 'ContactFriction'),
+    velocity: createVector(COLORS.velocity, 'MotionDirection'),
+  };
+  for (const a of Object.values(arrows)) {
     a.root.userData.noExport = true;
     world.add(a.root);
   }
 
+  const contactLeader = new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]),
+    new THREE.LineDashedMaterial({ color: 0xffd36c, dashSize: 0.035, gapSize: 0.025 }),
+  );
+  contactLeader.name = 'PushContactGuide';
+  contactLeader.userData.noExport = true;
+  world.add(contactLeader);
+  const contactMarker = new THREE.Mesh(new THREE.SphereGeometry(0.018, 16, 10), new THREE.MeshBasicMaterial({ color: 0xffdc7a }));
+  contactMarker.name = 'PushContactPoint';
+  contactMarker.userData.noExport = true;
+  world.add(contactMarker);
   const tweener = createTweener();
   stage.addTicker((dt) => tweener.tick(dt));
   const audio = createAudio(o.sound);
@@ -124,7 +157,7 @@ export function createApp(root, options = {}) {
     sun.shadow.radius = 5;
     sun.shadow.bias = -0.0003;
     scene.add(sun, sun.target);
-    for (const obj of [block.root, trolley.root, gauge.root])
+    for (const obj of [block.root, trolley.root, person.root])
       obj.traverse((m) => {
         if (m instanceof THREE.Mesh && m.material && !m.material.transparent && m.material.visible !== false) m.castShadow = true;
       });
@@ -143,12 +176,13 @@ export function createApp(root, options = {}) {
   // ── the state: one place every line, label and arrow is drawn from ────────
   const s = {
     stage: 'rest', // 'rest' | 'pull' | 'slide' | 'slid' | 'wheels' | 'roll' | 'rolled'
-    // `pull` is the push on the block (the number the gauge shows); `friction` the friction under it
+    // `pull` is the push on the block (the applied force); `friction` the friction under it
     sim: { on: 'floor', mass: MASS, pull: 0, v: 0, x: 0, moving: false, friction: 0, broke: false },
     mode: 'idle', // the person's push: 'idle' | 'ramp' (to goal) | 'cruise' (steady pace) | 'release'
     goal: 0,
     up: RATE.up, // N/s the push rises at
     cruiseT: 0,
+    paused: false,
     hold: false, // the test: the steady pace goes on until the answer
     notch: 0, // how many taps so far on the floor (the 4th passes the maximum)
     found: { static: null, kinetic: null, rolling: null }, // N, once seen
@@ -235,7 +269,7 @@ export function createApp(root, options = {}) {
     s.mode = 'ramp';
   }
 
-  // ── what the person sees: block, trolley, gauge, arrows ────────────────────
+  // ── what the person sees: box, trolley, person, arrows ────────────────────
   const tmpA = new THREE.Vector3();
   const pushMid = new THREE.Vector3();
   const XP = new THREE.Vector3(1, 0, 0);
@@ -248,28 +282,38 @@ export function createApp(root, options = {}) {
     trolley.root.visible = s.trolley;
     trolley.root.position.set(x + s.trolleyDX, 0, 0);
     trolley.roll(x + s.trolleyDX);
-    const faceX = x - L / 2; // the left face, where the gauge pushes
-    const midY = s.blockY + H / 2;
-    gauge.place(faceX, midY, st.pull);
-    const pushLen = st.pull * ARROW;
-    const arrowY = midY + 0.034;
-    arrows.push.set(tmpA.set(faceX - pushLen, arrowY, 0), XP, pushLen);
-    pushMid.set(faceX - pushLen / 2, arrowY, 0);
-    const fricX = x + (s.trolley ? TROLLEY.L / 2 : L / 2);
-    const fricZ = s.trolley ? TROLLEY.wheelZ + 0.032 : D / 2 + 0.026;
-    arrows.friction.set(tmpA.set(fricX, 0.006, fricZ), XN, s.busy ? 0 : st.friction * ARROW);
-    const shown = !s.busy && !s.locked;
-    const oldMax = shown && s.stage === 'slide' ? s.found.static : null; // the old maximum, while it slides
-    const oldSlide = shown && s.stage === 'roll' ? limits('floor', st.mass).move : null; // what sliding would give
-    if (oldMax != null) {
-      const oldLen = oldMax * ARROW;
-      ghosts.push.set(tmpA.set(faceX - oldLen, arrowY, -0.001), XP, oldLen);
-      ghosts.friction.set(tmpA.set(fricX, 0.006, fricZ - 0.001), XN, oldLen);
-    } else {
-      ghosts.push.hide();
-      if (oldSlide != null) ghosts.friction.set(tmpA.set(fricX, 0.006, fricZ - 0.001), XN, oldSlide * ARROW);
-      else ghosts.friction.hide();
-    }
+    const faceX = x - L / 2;
+    const handle = s.trolley && !s.busy;
+    const contactX = handle ? x - 0.6 : faceX - 0.025;
+    const contactY = handle ? 0.95 : s.blockY + H * 0.93;
+    person.root.position.set(contactX - 0.43, 0, 0);
+    const effort = Math.min(1, st.pull / Math.max(limits('floor', st.mass).max, 1));
+    const resting = s.stage === 'slid' || s.stage === 'rolled';
+    person.pose({
+      lean: 0.07 + 0.31 * effort,
+      distance: x,
+      walking: st.moving,
+      hands: resting ? null : [new THREE.Vector3(0.43, contactY, 0.18), new THREE.Vector3(0.43, contactY, -0.18)],
+    });
+    // The rolling arrows share a labelled 3× magnification; numbers always stay in newtons.
+    const scale = ARROW * (s.trolley ? 3 : 1),
+      pushLen = st.pull * scale,
+      fricLen = st.friction * scale;
+    const arrowY = s.blockY + H + 0.15,
+      z = D / 2 + 0.14;
+    if (st.pull > 0.01 && !s.busy) arrows.push.set(tmpA.set(faceX, arrowY, z), XP, pushLen);
+    else arrows.push.hide();
+    pushMid.set(faceX + pushLen / 2, arrowY, z);
+    contactMarker.position.set(contactX, contactY, 0.18);
+    contactMarker.visible = contactLeader.visible = arrows.push.root.visible;
+    contactLeader.geometry.setFromPoints([contactMarker.position, new THREE.Vector3(faceX, arrowY, z)]);
+    contactLeader.computeLineDistances();
+    const fricX = x + (s.trolley ? TROLLEY.wheelX : L * 0.35);
+    if (st.friction > 0.01 && !s.busy) arrows.friction.set(tmpA.set(fricX, 0.045, z), XN, fricLen);
+    else arrows.friction.hide();
+    if (st.moving && !s.busy) arrows.velocity.set(tmpA.set(x + L / 2 + 0.14, s.blockY + H * 0.5, z), XP, 0.5);
+    else arrows.velocity.hide();
+    note.textContent = t(s.trolley ? 'note_rolling_scale' : 'note_examples', { k: 3 });
     floor.showStart(!s.locked && st.x > 0.03 && !s.trolley);
     placeSun(x);
   }
@@ -277,10 +321,11 @@ export function createApp(root, options = {}) {
   // ── camera ──────────────────────────────────────────────────────────────────
   const sideBox = new THREE.Box3();
   const followX = () => Math.max(0, s.sim.x - FOLLOW_AT);
-  const fit = (box, dir) => fitPose({ box, dir, camera, width: stage.width, height: stage.height, margin: { top: 40, bottom: 8, side: 8 } });
+  const fit = (box, dir) =>
+    fitPose({ box, dir, camera, width: stage.width, height: stage.height, margin: { top: Math.min(56, stage.height * 0.28), bottom: 42, side: 8 } });
   function viewPose(view = s.view) {
-    sideBox.min.set(-BLOCK.L / 2 - 0.27, 0, -0.12);
-    sideBox.max.set(BLOCK.L / 2 + 0.18, Math.max(block.top(), BLOCK.H) + TROLLEY.top + 0.04, 0.16);
+    sideBox.min.set(-1.65, -0.12, -0.42);
+    sideBox.max.set(1.55, Math.max(1.78, block.top() + TROLLEY.top + 0.15), 0.8);
     const e = THREE.MathUtils.degToRad(ELEVATION);
     const pose = fit(sideBox, view === '3d' ? VIEW_3D : new THREE.Vector3(0, Math.sin(e), Math.cos(e)));
     pose.position.x += s.follow;
@@ -323,8 +368,9 @@ export function createApp(root, options = {}) {
     controls.update();
   }
   function setView(view, { animate = true } = {}) {
+    if (s.mode_ui === 'quiz') return Promise.resolve(false);
     s.view = view === '3d' ? '3d' : 'front';
-    controls.enableRotate = s.view === '3d';
+    controls.enableRotate = controls.enableZoom = s.view === '3d';
     s.userMovedCamera = false;
     syncUI();
     return flyTo(viewPose(), animate ? 0.8 : 0);
@@ -335,6 +381,7 @@ export function createApp(root, options = {}) {
   });
   stage.onResize(() => {
     if (!s.userMovedCamera) flyTo(viewPose(), 0);
+    place();
     refresh();
   });
 
@@ -343,7 +390,7 @@ export function createApp(root, options = {}) {
   let action = null;
   const corners = Array.from({ length: 8 }, () => new THREE.Vector3());
   const tmpBox = new THREE.Box3();
-  const boxOut = [0, 1, 2, 3].map(() => ({ left: 0, top: 0, right: 0, bottom: 0 }));
+  const boxOut = [0, 1, 2, 3, 4, 5].map(() => ({ left: 0, top: 0, right: 0, bottom: 0 }));
   /** A box of the world on the screen (canvas pixels), for labels to keep clear of. */
   function screenBox(box3, out) {
     if (box3.isEmpty()) return null;
@@ -377,6 +424,8 @@ export function createApp(root, options = {}) {
         [
           screenBox(block.box(), boxOut[0]),
           s.trolley ? screenBox(tmpBox.setFromObject(trolley.root), boxOut[1]) : null,
+          screenBox(tmpBox.setFromObject(person.root), boxOut[4]),
+          arrows.velocity.root.visible ? screenBox(tmpBox.setFromObject(arrows.velocity.root), boxOut[5]) : null,
           arrows.push.root.visible ? screenBox(tmpBox.setFromObject(arrows.push.root), boxOut[2]) : null,
           arrows.friction.root.visible ? screenBox(tmpBox.setFromObject(arrows.friction.root), boxOut[3]) : null,
         ].filter(Boolean),
@@ -392,54 +441,46 @@ export function createApp(root, options = {}) {
   // arrows and the other labels
   const grid = (dys, dxs) => dys.flatMap((dy) => dxs.map((dx) => ({ dx, dy })));
   const SPOTS = {
-    push: grid([-28, -48], [0, -10, -20, -30, -45, -60, -80, -110, 10, 20]),
+    push: grid([-28, -48, -68, -88], [0, 20, 40, 70, -20, -40, -70, -110, 110]),
     friction: [
       ...grid([28], [0, -12, 12, -24, -40]),
       ...grid([10, 4, -4], [-70, -100, -140, -170, -220, -280, -340, -400]),
       ...grid([10, 4], [150, 190]),
       ...grid([48, 62], [0, -12, 12, -40, -70]),
     ],
-    gauge: [...grid([28, 48], [0, -20, -40, -70, 20]), ...grid([10, -6], [-60, -90, -120])],
   };
   function labelsFor() {
     const st = s.sim;
-    // the force gauge's name, while nothing is being pushed (the push and friction labels have the room after that)
-    if (st.pull < 0.2 && !s.busy)
-      keepLabel('gauge', { text: t('l_gauge'), point: () => gauge.centre(), color: '#4b5563', kind: 'part', spots: SPOTS.gauge, optional: true });
-    else anno.remove('gauge');
     if (st.pull >= 0.2 && !s.busy)
-      keepLabel('push', { text: t('l_push', { f: fmt(st.pull) }), point: () => pushMid, color: COLORS.push, kind: 'callout', spots: SPOTS.push });
+      keepLabel('push', {
+        text: t('l_push', { f: fmt(st.pull) }),
+        point: () => pushMid,
+        color: '#a04a06',
+        kind: 'callout',
+        spots: SPOTS.push,
+        optional: s.mode_ui !== 'quiz',
+      });
     else anno.remove('push');
     if (st.friction >= 0.2 && !s.busy && s.hideFric !== 'hide')
       keepLabel('fric', {
         text: s.hideFric === 'ask' ? t('l_fric_q') : t('l_fric', { f: fmt(st.friction) }),
         point: () => arrows.friction.tip,
-        color: COLORS.friction,
+        color: '#b32150',
         kind: 'callout',
         spots: SPOTS.friction,
+        optional: s.mode_ui !== 'quiz',
       });
     else anno.remove('fric');
-    // the faint old arrows: the old maximum while it slides, what sliding would give while it rolls
-    if (ghosts.push.root.visible)
-      keepLabel('oldpush', {
-        text: t('l_max', { f: fmt(s.found.static ?? 0) }),
-        point: () => ghosts.push.root.position,
-        color: COLORS.push,
-        kind: 'part',
-        spots: SPOTS.push,
+    if (arrows.velocity.root.visible)
+      keepLabel('velocity', {
+        text: t('l_velocity', { v: round(st.v, 2) }),
+        point: () => arrows.velocity.tip,
+        color: '#1763a7',
+        kind: 'callout',
+        spots: grid([-28, -48, 28, 48], [0, -40, 40, -80, 80]),
         optional: true,
       });
-    else anno.remove('oldpush');
-    if (ghosts.friction.root.visible && s.stage === 'roll')
-      keepLabel('oldfric', {
-        text: t('l_old_slide', { f: fmt(limits('floor', st.mass).move) }),
-        point: () => ghosts.friction.tip,
-        color: COLORS.friction,
-        kind: 'part',
-        spots: SPOTS.friction,
-        optional: true,
-      });
-    else anno.remove('oldfric');
+    else anno.remove('velocity');
   }
 
   // ── the panel: one action, one result, one rule ─────────────────────────────
@@ -499,13 +540,62 @@ export function createApp(root, options = {}) {
       case 'roll':
         return t('rule_roll');
       default:
-        return t('rule_all', { w: fmt(weight(MASS)), ms: MU.s, mk: MU.k, fs: fmt(limits('floor').max), fk: fmt(limits('floor').move) });
+        return t('rule_complete');
     }
   }
 
+  let lastLive = '';
+  function updateLive() {
+    const st = s.sim,
+      net = st.pull - st.friction;
+    const frictionText = s.hideFric ? '?' : t('res_n', { f: fmt(st.friction) });
+    const html = `<div class="tf-force-row push"><span>→</span><span>${t('human_push')}</span><b>${t('res_n', { f: fmt(st.pull) })}</b></div><div class="tf-force-row friction"><span>←</span><span>${t('contact_friction')}</span><b>${frictionText}</b></div><div class="tf-balance">${t(st.moving ? 'moving_state' : 'still_state', { v: round(st.v, 2) })}</div><small>${t('net_force', { f: fmt(net) })}</small>`;
+    if (html !== lastLive) {
+      live.querySelector('.tf-values').innerHTML = html;
+      lastLive = html;
+    }
+    const pause = ui.$('[data-act="pause"]');
+    pause.disabled = s.busy || (s.mode === 'idle' && !st.moving) || s.mode_ui === 'quiz';
+    pause.innerHTML = s.paused ? ICONS.play : ICONS.pause;
+    pause.setAttribute('aria-label', t(s.paused ? 'act_resume' : 'act_pause'));
+    ui.$('[data-act="explain"]').disabled = s.busy;
+  }
+  let resumeExplanation = false;
+  function closeExplanation() {
+    if (resumeExplanation && s.mode_ui !== 'quiz') s.paused = false;
+    resumeExplanation = false;
+    refresh();
+  }
+  let explanationPage = 'forces';
+  function renderExplanation() {
+    const st = s.sim,
+      N = fmt(weight(st.mass)),
+      l = limits('floor', st.mass);
+    const content =
+      explanationPage === 'forces'
+        ? `<div class="tf-vector-diagram" aria-label="${t('diagram_label')}"><div class="tf-normal">↑ ${t('support_force', { n: N })}</div><div class="tf-horizontal"><span class="tf-friction">← ${t('res_n', { f: fmt(st.friction) })}</span><b>${t(s.trolley ? 'box_with_trolley' : 'box_system')}</b><span class="tf-push">${t('res_n', { f: fmt(st.pull) })} →</span></div><div class="tf-weight">↓ ${t('weight_force', { n: N })}</div></div><p>${t('force_explanation')}</p>`
+        : `<p>${t('static_formula', { mu: MU.s, n: N, max: fmt(l.max) })}</p><p>${t('kinetic_formula', { mu: MU.k, n: N, value: fmt(l.move) })}</p><small>${t('rolling_explanation')}</small>`;
+    explanation.innerHTML = `<h2>${t('explain_title')}</h2><nav>${['forces', 'formulas'].map((page) => `<button type="button" data-explainpage="${page}" aria-pressed="${page === explanationPage}">${t(`explain_${page}`)}</button>`).join('')}</nav>${content}<button type="button" class="pvc-btn primary" data-act="explain-close">${t('explain_close')}</button>`;
+  }
+  function openExplanation() {
+    if (s.mode_ui === 'quiz' || s.busy) return;
+    resumeExplanation = !s.paused;
+    s.paused = true;
+    explanationPage = 'forces';
+    renderExplanation();
+    explanation.showModal();
+    refresh();
+  }
+  explanation.addEventListener('close', closeExplanation);
+  explanation.addEventListener('cancel', (e) => {
+    e.preventDefault();
+    explanation.close();
+    closeExplanation();
+  });
   const outcomeEl = ui.$('.pvc-outcome');
   let lastRing = null;
   function refresh() {
+    updateLive();
     sheet.choose(chipOf());
     sheet.next(s.stage === 'slid' ? 'rolling' : null);
     for (const id of CHIPS) {
@@ -519,7 +609,7 @@ export function createApp(root, options = {}) {
       const p = plan();
       action.set({ step: p.step, label: p.label });
       // the ring shows on the block while it waits (never while it moves, is pushed, or is being lifted)
-      const wantRing = !s.busy && s.mode === 'idle' && !s.sim.moving && !s.locked;
+      const wantRing = !s.busy && s.mode === 'idle' && s.sim.pull < 0.01 && !s.sim.moving && !s.locked;
       if (wantRing) action.show('run');
       else action.hide('run');
       // the ring takes a frame to show or hide: draw once more after it, so the labels move off it
@@ -538,7 +628,7 @@ export function createApp(root, options = {}) {
     return {
       stage: s.stage, // 'rest' | 'pull' | 'slide' | 'slid' | 'wheels' | 'roll' | 'rolled'
       support: st.on, // 'floor' | 'wheels'
-      push: round(st.pull, 2), // N, what the force gauge shows
+      push: round(st.pull, 2), // N, the person's applied force
       friction: round(st.friction, 2), // N, the friction under the block now
       speed: round(st.v, 3), // m/s
       distance: round(st.x, 3), // m from the start
@@ -548,6 +638,9 @@ export function createApp(root, options = {}) {
       view: s.view,
       mode: s.mode_ui,
       locked: s.locked,
+      paused: s.paused,
+      netForce: round(st.pull - st.friction, 2),
+      acceleration: round((st.pull - st.friction) / st.mass, 3),
     };
   }
   let lastEmitted = '';
@@ -563,7 +656,7 @@ export function createApp(root, options = {}) {
   let lastStage = '';
   let wasActive = false;
   stage.addTicker((dt) => {
-    const moving = advance(dt);
+    const moving = s.paused ? false : advance(dt);
     const active = moving || tweener.busy;
     if (active || wasActive) {
       applyFollow();
@@ -603,6 +696,7 @@ export function createApp(root, options = {}) {
     s.trolleyDX = wheels ? 0 : TROLLEY_FROM;
     s.blockY = wheels ? TROLLEY.top : 0;
     s.busy = false;
+    s.paused = false;
     s.mode = 'idle';
     s.hold = false;
     s.goal = 0;
@@ -655,6 +749,7 @@ export function createApp(root, options = {}) {
   /** Back to the start: the block on the floor where it began, nothing pushing. What was found stays on the words. */
   async function goHome({ animate = true } = {}) {
     const my = ++token;
+    s.paused = false;
     for (const key of ['lift', 'trolley', 'x']) tweener.cancel(key);
     const wasBusy = s.busy;
     s.mode = 'idle';
@@ -697,6 +792,7 @@ export function createApp(root, options = {}) {
 
   /** What a tap on the big button, the ring or the block does now. */
   function doAction() {
+    s.paused = false;
     if (s.locked) return lockedNudge();
     if (s.busy || now() - lastTap < DOUBLE_TAP) return; // a double tap must not do two steps
     lastTap = now();
@@ -920,6 +1016,13 @@ export function createApp(root, options = {}) {
     hooks: {
       enter() {
         learnSaved = { found: { ...s.found } };
+        if (explanation.open) {
+          resumeExplanation = false;
+          explanation.close();
+        }
+        s.paused = false;
+        s.view = 'front';
+        controls.enableRotate = false;
         s.mode_ui = 'quiz';
         s.locked = true;
         hintOff();
@@ -1038,12 +1141,30 @@ export function createApp(root, options = {}) {
     const b = /** @type {Element} */ (e.target).closest('button');
     if (!b || !root.contains(b)) return;
     audio.unlock();
+    if (b.dataset.explainpage) {
+      explanationPage = b.dataset.explainpage;
+      renderExplanation();
+    }
     if (b.dataset.view) setView(b.dataset.view);
     if (b.dataset.example) showType(b.dataset.example);
     if (b.dataset.mode === 'quiz' && s.mode_ui !== 'quiz') quiz.start();
     if (b.dataset.mode === 'explore') quiz.stop();
     if (b.dataset.q != null) quiz.choose(Number(b.dataset.q));
     switch (b.dataset.act) {
+      case 'pause':
+        if (s.mode_ui !== 'quiz') {
+          s.paused = !s.paused;
+          refresh();
+          emitChange();
+        }
+        break;
+      case 'explain':
+        openExplanation();
+        break;
+      case 'explain-close':
+        explanation.close();
+        closeExplanation();
+        break;
       case 'q-next':
         quiz.next();
         break;
@@ -1061,6 +1182,14 @@ export function createApp(root, options = {}) {
     }
   });
   root.addEventListener('keydown', (e) => {
+    if (explanation.open) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        explanation.close();
+        closeExplanation();
+      }
+      return;
+    }
     const target = /** @type {Element} */ (e.target);
     if (target.closest('input, textarea, select') || e.metaKey || e.ctrlKey || e.altKey) return;
     const k = e.key;
@@ -1102,18 +1231,28 @@ export function createApp(root, options = {}) {
      * `pull` in N), tap (true: the same as the big button), chip ('static' | 'kinetic' | 'rolling'), home (true), view.
      */
     async set(p = {}) {
-      if (p.view) await setView(p.view, { animate: p.animate !== false });
-      if (p.stage) jumpTo(p.stage, { pull: p.pull });
-      if (p.home) await goHome({ animate: p.animate !== false });
+      if (explanation.open && (p.stage || p.home || p.chip)) {
+        resumeExplanation = false;
+        explanation.close();
+      }
+      if (p.view && s.mode_ui !== 'quiz') await setView(p.view, { animate: p.animate !== false });
+      if (p.stage && s.mode_ui !== 'quiz') jumpTo(p.stage, { pull: p.pull });
+      if (p.home && s.mode_ui !== 'quiz') await goHome({ animate: p.animate !== false });
       if (p.chip) await showType(p.chip);
+      if (p.paused != null && s.mode_ui !== 'quiz') s.paused = Boolean(p.paused);
       if (p.tap) {
         lastTap = Number.NEGATIVE_INFINITY;
         doAction();
       }
+      refresh();
       emitChange();
       return snapshot();
     },
     async reset() {
+      if (explanation.open) {
+        resumeExplanation = false;
+        explanation.close();
+      }
       quiz.stop();
       s.found = { static: null, kinetic: null, rolling: null };
       s.view = 'front';
@@ -1125,22 +1264,28 @@ export function createApp(root, options = {}) {
       emitChange();
     },
     startPractice: () => quiz.start(),
-    capture: (opts) => stage.capture(opts),
-    /** The block on the trolley with the force gauge at its left face, in metres (the floor and the arrows stay out). */
+    capture(opts = {}) {
+      const before = scene.background;
+      if (opts.background !== undefined) scene.background = null;
+      try {
+        return stage.capture(opts);
+      } finally {
+        scene.background = before;
+        stage.invalidate();
+      }
+    },
+    /** Current human, crate, trolley and force vectors; the long floor and HTML labels stay out. */
     exportRoot() {
       const copy = new THREE.Group();
       copy.name = 'TypesOfFriction';
-      const mass = s.sim.mass;
-      block.setMass(MASS);
-      block.root.position.set(0, TROLLEY.top, 0);
-      trolley.root.position.set(0, 0, 0);
-      trolley.roll(0);
-      gauge.place(-BLOCK.L / 2, TROLLEY.top + BLOCK.H / 2, 0, 0.25);
-      const trolleyCopy = trolley.root.clone(true);
-      trolleyCopy.visible = true;
-      copy.add(trolleyCopy, block.root.clone(true), gauge.root.clone(true));
-      block.setMass(mass);
-      place();
+      copy.add(person.root.clone(true), block.root.clone(true));
+      if (s.trolley) copy.add(trolley.root.clone(true));
+      for (const a of Object.values(arrows))
+        if (a.root.visible) {
+          const c = a.root.clone(true);
+          delete c.userData.noExport;
+          copy.add(c);
+        }
       return copy;
     },
   };
