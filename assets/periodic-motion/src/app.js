@@ -101,6 +101,18 @@ export function createApp(root, options = {}) {
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 30, near: 0.01, far: 50, environment: 'studio-light' });
   const { camera, controls, scene } = stage;
+  const backdropCanvas = document.createElement('canvas');
+  backdropCanvas.width = 8;
+  backdropCanvas.height = 256;
+  const backdropContext = backdropCanvas.getContext('2d');
+  const backdropGradient = backdropContext.createLinearGradient(0, 0, 0, 256);
+  backdropGradient.addColorStop(0, '#122344');
+  backdropGradient.addColorStop(1, '#075d70');
+  backdropContext.fillStyle = backdropGradient;
+  backdropContext.fillRect(0, 0, 8, 256);
+  const backdrop = new THREE.CanvasTexture(backdropCanvas);
+  backdrop.colorSpace = THREE.SRGBColorSpace;
+  scene.background = o.bg === 'transparent' ? null : backdrop;
   const M = createMaterials(stage.renderer);
   scene.add(camera);
   const headlight = new THREE.DirectionalLight(0xffffff, 0.75);
@@ -1138,7 +1150,16 @@ export function createApp(root, options = {}) {
       emitChange();
     },
     startPractice: () => quiz.start(),
-    capture: (opts) => stage.capture(opts),
+    capture(opts = {}) {
+      const background = scene.background;
+      if (opts.background !== undefined) scene.background = null;
+      try {
+        return stage.capture(opts);
+      } finally {
+        scene.background = background;
+        stage.invalidate();
+      }
+    },
     exportRoot: () => cur().model,
   };
 }

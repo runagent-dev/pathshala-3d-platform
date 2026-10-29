@@ -89,8 +89,8 @@ export function createHeart() {
   model.name = 'Heart';
   root.add(model);
 
-  const muscle = new THREE.MeshPhysicalMaterial({ name: 'Muscle', color: 0xb5323a, roughness: 0.42, clearcoat: 0.7, clearcoatRoughness: 0.3 });
-  const atrium = new THREE.MeshPhysicalMaterial({ name: 'Atrium', color: 0x9e2c3b, roughness: 0.45, clearcoat: 0.6, clearcoatRoughness: 0.35 });
+  const muscle = new THREE.MeshPhysicalMaterial({ name: 'Muscle', color: 0xd44049, roughness: 0.42, clearcoat: 0.7, clearcoatRoughness: 0.3 });
+  const atrium = new THREE.MeshPhysicalMaterial({ name: 'Atrium', color: 0xb73649, roughness: 0.45, clearcoat: 0.6, clearcoatRoughness: 0.35 });
   const artery = new THREE.MeshPhysicalMaterial({ name: 'Artery', color: 0xd2413f, roughness: 0.4, clearcoat: 0.6, clearcoatRoughness: 0.3 });
   const vein = new THREE.MeshPhysicalMaterial({ name: 'Vein', color: 0x4c63c4, roughness: 0.42, clearcoat: 0.6, clearcoatRoughness: 0.3 });
   const coronary = new THREE.MeshPhysicalMaterial({ name: 'Coronary', color: 0x7d1d2a, roughness: 0.4, clearcoat: 0.5 });

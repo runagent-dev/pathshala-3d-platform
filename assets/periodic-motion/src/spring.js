@@ -28,7 +28,7 @@ class Helix extends THREE.Curve {
 export function createSpring(M) {
   const root = new THREE.Group();
   root.name = 'SpringStand';
-  const dark = new THREE.MeshPhysicalMaterial({ name: 'StandPaint', color: 0x2d3238, roughness: 0.5, clearcoat: 0.3 });
+  const dark = new THREE.MeshPhysicalMaterial({ name: 'StandPaint', color: 0x0c919b, roughness: 0.5, clearcoat: 0.3 });
 
   const base = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.014, 0.11), dark);
   base.position.set(-0.03, 0.007, 0);
