@@ -52,7 +52,7 @@ export const DEFAULTS = {
 };
 
 // One colour per painted point (the same in the 3D view, its trail, its label and the panel), and the car's paint.
-const COLORS = { body: '#cfd5dc', front: '#1c6fd9', window: '#2b8a3e', roof: '#e8590c', back: '#7048e8', wheel: '#d6336c' };
+const COLORS = { body: '#f4f3ef', front: '#1c6fd9', window: '#2b8a3e', roof: '#e8590c', back: '#7048e8', wheel: '#d6336c' };
 const KEYS = [...DOT_KEYS, 'wheel'];
 const LIFT = 0.06; // m: trails run just off the paint, so the body never hides them
 const TRAIL_R = 0.05; // m: thick enough to see on a phone
@@ -103,6 +103,18 @@ export function createApp(root, options = {}) {
   // A narrow lens from far away, nearly a parallel projection: equal trails look equal wherever they are.
   const stage = createStage(ui.canvasHost, { fov: 10, near: 4, far: 900, environment: 'studio-light' });
   const { camera, controls, scene } = stage;
+  const backgroundCanvas = document.createElement('canvas');
+  backgroundCanvas.width = 8;
+  backgroundCanvas.height = 256;
+  const backgroundContext = backgroundCanvas.getContext('2d');
+  const backgroundGradient = backgroundContext.createLinearGradient(0, 0, 0, 256);
+  backgroundGradient.addColorStop(0, '#092968');
+  backgroundGradient.addColorStop(1, '#126fb5');
+  backgroundContext.fillStyle = backgroundGradient;
+  backgroundContext.fillRect(0, 0, 8, 256);
+  const background = new THREE.CanvasTexture(backgroundCanvas);
+  background.colorSpace = THREE.SRGBColorSpace;
+  scene.background = o.bg === 'transparent' ? null : background;
   controls.minDistance = 20;
   controls.maxDistance = 220;
   controls.enablePan = false;
@@ -126,7 +138,7 @@ export function createApp(root, options = {}) {
 
   const car = createCar({ materials: M, colors: COLORS });
   world.add(car.root);
-  const ghostMat = new THREE.MeshBasicMaterial({ name: 'StartOutline', color: 0x8d99a8, transparent: true, opacity: 0, depthWrite: false });
+  const ghostMat = new THREE.MeshBasicMaterial({ name: 'StartOutline', color: 0xd8e5ef, transparent: true, opacity: 0, depthWrite: false });
   const ghost = createCar({ materials: M, colors: COLORS, ghost: ghostMat });
   ghost.root.userData.noExport = true;
   world.add(ghost.root);
@@ -166,12 +178,13 @@ export function createApp(root, options = {}) {
     return [x + n[0] * LIFT, y + n[1] * LIFT, z + n[2] * LIFT];
   };
   // the tyre point's trail is drawn last and over everything: it weaves between the others and touches the road
+  const trailColors = { front: '#57caff', window: '#6ee59b', roof: '#ffb341', back: '#c8afff', wheel: '#ff79ad' };
   const trailMats = Object.fromEntries(
-    KEYS.map((k) => [k, new THREE.MeshBasicMaterial({ name: `Trail_${k}`, color: COLORS[k], toneMapped: false, depthTest: k !== 'wheel' })]),
+    KEYS.map((k) => [k, new THREE.MeshBasicMaterial({ name: `Trail_${k}`, color: trailColors[k], toneMapped: false, depthTest: k !== 'wheel' })]),
   );
   // while the tyre point is shown, the body's trails step back a little (lighter), so its path stands out
   const shades = Object.fromEntries(
-    DOT_KEYS.map((k) => [k, [new THREE.Color(COLORS[k]), new THREE.Color(COLORS[k]).lerp(new THREE.Color('#ffffff'), 0.5)]]),
+    DOT_KEYS.map((k) => [k, [new THREE.Color(trailColors[k]), new THREE.Color(trailColors[k]).lerp(new THREE.Color('#ffffff'), 0.5)]]),
   );
   const trails = {}; // path → key → { samples, tube }
   const wheelExact = {}; // path → samples of the tyre point itself (its distance has no simple formula)
@@ -203,7 +216,7 @@ export function createApp(root, options = {}) {
     const r0 = (k === 'wheel' ? WHEEL_DOT_R : DOT_R) * 0.75;
     const ring = new THREE.Mesh(
       new THREE.RingGeometry(r0, r0 + 0.05 * small, 32),
-      new THREE.MeshBasicMaterial({ color: COLORS[k], toneMapped: false, side: THREE.DoubleSide, depthTest: k !== 'wheel' }),
+      new THREE.MeshBasicMaterial({ color: trailColors[k], toneMapped: false, side: THREE.DoubleSide, depthTest: k !== 'wheel' }),
     );
     if (k === 'wheel') a.renderOrder = ring.renderOrder = 5;
     ring.name = `Start_${k}`;
@@ -1140,7 +1153,16 @@ export function createApp(root, options = {}) {
       await setView('front');
     },
     startPractice: () => quiz.start(),
-    capture: (opts) => stage.capture(opts),
+    capture(opts = {}) {
+      const before = scene.background;
+      if (opts.background !== undefined) scene.background = null;
+      try {
+        return stage.capture(opts);
+      } finally {
+        scene.background = before;
+        stage.invalidate();
+      }
+    },
     exportRoot: () => car.root, // the car with its painted points, as it stands now
   };
 }

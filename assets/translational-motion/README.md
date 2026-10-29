@@ -2,7 +2,7 @@
 
 **Where it goes in the book:** Book page 36, topic 2.2: চলন গতি (Translational Motion), next to that paragraph (the page has no picture for it).
 
-Interactive 3D figure for the Pathshala book.
+A detailed pearl-white car with red accents on a deep blue scene. Track four points on the body to compare straight-line translation with a turning car and a point on a rolling wheel.
 
 ## Embed
 

@@ -23,7 +23,7 @@ In চলন গতি every particle (every point) of the body moves the same d
   one turn of a wheel = 2 m) on a road with metre marks (numbered from where the rear bumper starts). Four painted
   points (stickers) at four clearly different heights, so no two trails run close together: সামনের বাম্পার
   (0.49 m), পেছনের দিক (0.72 m, the rear corner by the tail lamp), জানালা (1.15 m, the front window), ছাদ (1.475 m).
-  One colour each (the same in 3D, trail, label and panel), and their names on labels while the car stands at the
+  One hue each (dark on white labels and the panel, bright on the blue scene), and their names on labels while the car stands at the
   start (colour is never the only way to tell them apart).
 - The student drags the car along the road (or taps it, or presses চালাও; arrow keys too). Each point leaves a
   trail with an arrowhead from a ring where it started; a faint outline stays where the car started. The panel
@@ -73,5 +73,10 @@ drives there), `wheel` (the straight road), `playing`, `view`. Events: `change`,
 ## Open questions
 - The book's paragraph has no picture: the placement is "next to the paragraph". A book developer may prefer it
   after the paragraph.
-- Car colour: neutral silver so the four point colours carry the meaning; a Bangladeshi vehicle (CNG, bus) was
-  considered but the book says গাড়ি.
+
+## Visual update (v0.2.0)
+- Requested treatment: deep blue scene, pearl-white car, restrained red accents, dark asphalt and warm ivory metre marks. The student panel stays white. Explicit white/transparent captures remain supported.
+- The unbranded four-door family car now has a shaped painted body, crowned roof, glazed windows with seals and pillars, door gaps and handles, mirrors with indicators, projector lamps, LED bars, grille, plates, bumpers and exhaust tips. Seats, head restraints, dashboard and steering wheel are visible through the windows.
+- Four treaded tyres have split-spoke alloys, brake discs, wheel bolts and red calipers. Calipers stay fixed to the steering hubs while tyres and wheels rotate.
+- The original dimensions, axle centres, rolling radius, marker coordinates and motion equations remain authoritative. Bright trails retain the marker hue, names and numeric distances for recognition without relying on colour alone.
+- A Bangladeshi vehicle (CNG, bus) was considered, but the book uses গাড়ি.
