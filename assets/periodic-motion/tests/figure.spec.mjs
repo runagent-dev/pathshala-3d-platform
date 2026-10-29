@@ -3,6 +3,7 @@
 // starts the count again; pausing stops the clock; the test runs. Runs with `npm run test:figures` (dev only).
 import { expect, test } from '@playwright/test';
 import { openFigure, preparePage } from '../../../scripts/lib/export/driver.mjs';
+import { validateGlb } from '../../../scripts/lib/export/glb.mjs';
 
 test('periodic-motion: the same time between repetitions, for every example', async ({ page }) => {
   await page.setViewportSize({ width: 800, height: 500 });
@@ -56,5 +57,32 @@ test('periodic-motion: the same time between repetitions, for every example', as
   await fig.call('reset');
   await fig.advance(500);
   expect(await fig.call('get')).toMatchObject({ example: 'fan', mode: 'explore', view: 'front', playing: true });
+  expect(log.errors).toEqual([]);
+});
+
+test('periodic-motion: the detailed heart pauses, repeats its count and exports a valid sculpted model', async ({ page }) => {
+  await page.setViewportSize({ width: 800, height: 500 });
+  const log = await preparePage(page);
+  const fig = await openFigure(page, 'periodic-motion', { params: { example: 'heart' } });
+  await fig.call('set', { playing: false, time: 3.6, animate: false });
+  const paused = await fig.call('get');
+  await fig.advance(1000);
+  expect((await fig.call('get')).time).toBe(paused.time);
+  expect(paused.measured).toBeCloseTo(0.8, 6);
+  const glb = await fig.call('export-glb');
+  const bytes = Buffer.from(glb.base64, 'base64');
+  const json = JSON.parse(bytes.subarray(20, 20 + bytes.readUInt32LE(12)).toString());
+  const names = json.nodes.map((node) => node.name);
+  expect(names).toEqual(
+    expect.arrayContaining(['SculptedMyocardium', 'Aorta', 'AortaLumen', 'PulmonaryTrunk', 'SuperiorVenaCava', 'AnteriorCoronaryArtery']),
+  );
+  const validation = await validateGlb(bytes);
+  expect(validation.errors, JSON.stringify(validation.messages)).toBe(0);
+  expect(validation.warnings, JSON.stringify(validation.messages)).toBe(0);
+  await fig.call('set', { playing: true });
+  await fig.advance(800);
+  const after = await fig.call('get');
+  expect(after.count).toBe(paused.count + 1);
+  expect(after.measured).toBeCloseTo(0.8, 6);
   expect(log.errors).toEqual([]);
 });
