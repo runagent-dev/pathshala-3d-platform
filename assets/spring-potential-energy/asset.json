@@ -1,0 +1,102 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "spring-potential-energy",
+  "title": "Potential energy of a spring (বিভব শক্তি)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 106,
+  "topic": "4.3.2",
+  "placement": "Book page 106, topic 4.3.2: বিভব শক্তি (Potential Energy). Next to চিত্র ৪.০২ (the spring at rest and squeezed by a finger) and the box V = ½kx² at the top of page 107.",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "Interactive 3D figure for textbook topic 4.3.2 (বিভব শক্তি, Potential Energy), page 106, with the box V = ½kx² on page 107. A magenta coil spring (a real helix whose coils spread and bunch) is screwed to a wall board on a wooden bench; a realistic hand holds the wooden handle at its free end. The student drags the handle (or taps steppers, or the big button's three steps: pull 5 cm, twice as far, now push in) to stretch or compress it by x, read on a centimetre ruler against the dashed x = 0 line, with an orange x bracket. The hand's force F_P and the spring's force F_S are drawn equal and opposite, to scale with F = kx, and F_S always points back toward x = 0. The panel works out F = kx in N and the book's V = ½kx² in J live (k 100–400 N/m, x up to 10 cm) and compares: twice x, twice the force, four times the energy. Five tap questions: the direction of F_S, F and V from the ruler, x doubled or tripled, stretched versus squeezed. The bench, wall, spring, handle and hand export as GLB in metres. Offline, in Bangla and English.",
+  "tags": ["potential energy", "spring", "spring constant", "elastic", "energy", "force", "hooke", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "x",
+      "label": "Stretch x",
+      "type": "number",
+      "default": "0",
+      "placeholder": "cm",
+      "help": "−10 … 10 cm: + pulled out, − pushed in"
+    },
+    {
+      "name": "k",
+      "label": "Spring constant k",
+      "type": "number",
+      "default": "200",
+      "placeholder": "N/m",
+      "help": "100–400 N/m in steps of 100"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on the handle pulses", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "x": 10 } },
+    { "name": "set", "payload": { "x": -10, "k": 300 } },
+    { "name": "set", "payload": { "act": true } },
+    { "name": "set", "payload": { "home": true } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": [
+    "ready",
+    "change",
+    "act",
+    "dragstart",
+    "dragend",
+    "view",
+    "practice-start",
+    "practice-result",
+    "practice-end"
+  ],
+  "export": {
+    "poster": { "params": { "coach": "0", "x": "10" } },
+    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "x": 10, "animate": false } }] }],
+    "video": {
+      "kind": "script",
+      "seconds": 18,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 0.8, "command": "set", "payload": { "act": true } },
+        { "at": 4, "command": "set", "payload": { "act": true } },
+        { "at": 8.5, "command": "set", "payload": { "act": true } },
+        { "at": 12.5, "command": "set", "payload": { "k": 400 } },
+        { "at": 15, "command": "set", "payload": { "act": true } }
+      ]
+    }
+  }
+}

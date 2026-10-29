@@ -1,0 +1,113 @@
+/* Potential energy of a spring (বিভব শক্তি): the page, the colours that carry meaning (F_P the hand's force green, F_S
+   the spring's force blue, x orange, the stored energy V purple: the same as src/app.js), the calculator's steppers,
+   the book's stacked ½, the note in the corner, the test's answers in words. The panel is the kit's clean sheet (one
+   action, one result, one rule: ../../shared/lib/student/student.css, .pvc-examples, .pvc-act, .pvc-outcome, .pvc-rule). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.sp { --c-FP: #237a35; --c-FS: #1864d6; --c-x: #d9480f; --c-V: #6741d9; --c-k: #c2255c; }
+.sp i { font-style: italic; font-size: 1.05em; }
+
+/* the book's ½, stacked */
+/* (negative margins: the stacked ½ never makes its line taller) */
+.sp-fr { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; font-size: 0.66em; line-height: 1; margin: -0.95em 1px; }
+.sp-fr > span:first-child { border-bottom: 1.2px solid currentColor; padding: 0 1px; }
+.sp sup { font-size: 0.68em; line-height: 0; }
+.sp sub { font-size: 0.7em; line-height: 0; }
+
+/* the calculator: x and k with tap steppers, side by side */
+.sp-calc { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.sp-step { --c: var(--ink); display: inline-flex; align-items: center; gap: 4px; min-width: 0; }
+.sp-step.c-x { --c: var(--c-x); }
+.sp-step.c-k { --c: var(--c-k); }
+.sp-name { font-size: 14px; font-weight: 600; color: var(--c); white-space: nowrap; margin-right: 2px; }
+.sp-btn { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 38px; padding: 0; border-radius: 8px; border: 1.5px solid color-mix(in srgb, var(--c) 55%, #fff); background: color-mix(in srgb, var(--c) 13%, #fff); color: var(--c); cursor: pointer; }
+.sp-btn svg { width: 18px; height: 18px; stroke-width: 2.4; }
+.sp-btn:hover:not(:disabled) { background: color-mix(in srgb, var(--c) 24%, #fff); }
+.sp-btn:disabled { opacity: 0.35; cursor: default; }
+.sp-val { min-width: 3.6em; text-align: center; font-size: 16px; font-weight: 700; color: var(--c); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* a warm, lightly tinted panel under the vivid scene */
+.sp .pvc-panel { background: linear-gradient(180deg, #fff4f8, #fffdfe 60%); }
+
+/* the result: the force and the energy, one line each, the numbers in their colours */
+.sp .pvc-outcome { font-size: 15px; line-height: 1.5; }
+.sp-out { display: block; white-space: nowrap; }
+.sp-out.c-F b { color: var(--c-FP); }
+.sp-out.c-V b { color: var(--c-V); }
+
+/* the note in the corner: the arrows are drawn to scale */
+.sp-note { position: absolute; left: 8px; top: 8px; z-index: 5; max-width: calc(100% - 120px); padding: 2px 8px; border-radius: 6px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.9); font-size: 12.5px; line-height: 1.45; color: var(--ink-2); pointer-events: none; }
+.sp[data-mode='quiz'] .sp-note { display: none; }
+
+/* labels on the picture: at once (a fading label would lag the spring) */
+.sp .pvc-anno { transition: none; font-size: 14px; font-weight: 700; color: var(--c); border-color: color-mix(in srgb, var(--c) 45%, var(--line)); padding: 1px 7px; }
+
+/* the test: answers in words (two lines allowed), the mistake note under the worked answer */
+.sp .pvc-opt { font-size: 14.5px; line-height: 1.25; }
+.sp-opt { display: block; white-space: normal; text-align: center; }
+.sp-why { display: block; margin-top: 2px; color: var(--ink-2); }
+.sp .pvc-q-text { font-size: 15px; }
+.sp .pvc-q-feedback { font-size: 13.5px; line-height: 1.45; }
+
+/* a narrow panel (beside the scene): the letters x and k only */
+@container pvc-panel (max-width: 430px) {
+  .sp-word { display: none; }
+  .sp-calc { gap: 4px; }
+  .sp-step { gap: 2px; }
+  .sp .sp-val { min-width: 3.3em; font-size: 14px; }
+  .sp .pvc-outcome { font-size: 13px; }
+}
+/* a narrow side panel: the sums without their words and units (the steppers show the units) */
+@container pvc-panel (max-width: 330px) {
+  .sp .sp-w, .sp .sp-u { display: none; }
+}
+/* narrower still (640 × 400): x and k one under the other */
+@container pvc-panel (max-width: 290px) {
+  .sp-calc { flex-direction: column; align-items: stretch; gap: 3px; }
+  .sp-step { justify-content: space-between; }
+  .sp-btn { height: 32px; }
+  .sp .pvc-outcome { font-size: 12px; }
+  .sp .pvc-rule { font-size: 12.5px; }
+}
+
+/* wide frames (tabs beside the sheet) */
+@container pvc (min-width: 720px) and (min-height: 461px) {
+  .sp .pvc-learn { gap: 9px; }
+  .sp .pvc-examples, .sp-calc { max-width: 520px; }
+  .sp-calc { justify-content: flex-start; gap: 28px; }
+  .sp .pvc-rule { --pvc-rule-lines: 2; }
+  .sp .pvc-q-feedback { --pvc-q-feedback-min: 3lh; }
+}
+/* the tightest phone (390 × 520): smaller steps and lines */
+@container pvc (max-width: 560px) and (max-height: 600px) {
+  .sp .pvc-panel { padding-top: 6px; padding-bottom: 6px; gap: 5px; }
+  .sp .pvc-tabs button { height: 34px; font-size: 14px; }
+  .sp .pvc-learn { gap: 4px; }
+  .sp .pvc-examples button { min-height: 32px; padding-top: 1px; padding-bottom: 1px; }
+  .sp .pvc-ex-word { font-size: 13.5px; }
+  .sp .pvc-ex-res { font-size: 10.5px; min-height: 12px; }
+  .sp .pvc-act-row { min-height: 38px; }
+  .sp .pvc-act { min-height: 36px; font-size: 14px; }
+  .sp-btn { width: 40px; height: 32px; }
+  .sp-val { font-size: 14.5px; min-width: 3.3em; }
+  .sp-name { font-size: 13px; }
+  .sp .pvc-outcome { font-size: 13.5px; line-height: 1.4; }
+  .sp .pvc-rule { font-size: 12.5px; line-height: 1.4; }
+  .sp .pvc-q-text { font-size: 14px; }
+  .sp .pvc-opt { font-size: 13px; height: 38px; }
+  .sp .pvc-q-feedback { font-size: 12.5px; line-height: 1.4; }
+}
+/* short and wide (phone held sideways): the panel is beside the scene */
+@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
+  .sp .pvc-learn { gap: 5px; }
+  .sp-btn { width: 38px; height: 32px; }
+  .sp-val { font-size: 14px; min-width: 3.2em; }
+  .sp-name { font-size: 13px; }
+  .sp .pvc-outcome { font-size: 12.5px; }
+  .sp .pvc-rule { --pvc-rule-lines: 4; font-size: 12.5px; line-height: 1.4; }
+  .sp .pvc-q-text { font-size: 13.5px; }
+  .sp .pvc-opt { font-size: 12.5px; height: 40px; }
+  .sp .pvc-q-feedback { font-size: 12px; }
+}
