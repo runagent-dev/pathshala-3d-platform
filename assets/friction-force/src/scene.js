@@ -247,10 +247,10 @@ export function createRig({ t, aniso = 8 }) {
       if (!visible) return;
       const baseX = rubbing ? x * 0.5 : x;
       puller.human.root.position.set(baseX + side * 1.42, 0, 0);
-      const reach = 0.29 - (rubbing ? side * x * 0.5 : 0);
+      const reach = 0.34 - (rubbing ? side * x * 0.5 : 0);
       puller.human.pose({
         lean: -0.12 - 0.1 * press,
-        hipY: 0.81 - 0.04 * press,
+        hipY: 0.86 - 0.025 * press,
         distance: -side * baseX,
         walking: Math.abs(baseX) > 0.008,
         hands: [new THREE.Vector3(reach, 0.9, 0.12), new THREE.Vector3(reach, 0.9, -0.12)],
