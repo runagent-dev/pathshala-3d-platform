@@ -52,6 +52,16 @@ red box by a rope, and an enlarged cyan/green particulate contact diagram. They 
 for objects and background. These override the usual white scene convention; the learning panel remains white.
 Reference files: `reference/rope-pull.png` and `reference/contact-particles.png` (development only).
 
+## Human repair (v0.2.1)
+The owner reported that the human looked broken, with a screenshot of reversed knees and visibly segmented limbs.
+The character now uses capped continuous arms, a single connected shirt including both sleeves, and one connected
+trouser surface including the pelvis and both legs. Smooth surface unions remove shoulder and hip seams; clothing
+is sculpted once, then deformed with blended bone transforms for live motion. Elbow and knee bends are rounded. The knee pole points toward the toes, with one foot
+forward and the other behind the hips; the shuffle keeps a stance foot planted. Shirt, sleeves, neck, head and hair
+have been reshaped, and the head counter-rotates the body's lean to look toward the crate. The revised hand reach
+keeps both palms on the rope handle. Checks cover forward knee bends on both mirrored sides throughout shuffling,
+closed limb geometry, hand reach and planted stance shoes. The force model and lesson sequence are unchanged.
+
 ## How the figure works
 - A procedural articulated person faces the crate, grasps a horizontal rope with two hands and leans backward as
   tension grows. The head has facial features, ears and hair; hands have fingers, and clothing and shoes are shaped.

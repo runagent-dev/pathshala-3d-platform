@@ -241,8 +241,8 @@ describe('friction force: rope-pulling anatomy', () => {
     const human = createPuller();
     for (const effort of [0, 0.5, 1])
       for (const shift of [-0.1, 0, 0.1]) {
-        const targets = [new Vector3(0.29 - shift / 2, 0.9, 0.12), new Vector3(0.29 - shift / 2, 0.9, -0.12)];
-        human.pose({ lean: -0.12 - 0.1 * effort, hipY: 0.81 - 0.04 * effort, hands: targets });
+        const targets = [new Vector3(0.34 - shift / 2, 0.9, 0.12), new Vector3(0.34 - shift / 2, 0.9, -0.12)];
+        human.pose({ lean: -0.12 - 0.1 * effort, hipY: 0.86 - 0.025 * effort, hands: targets });
         for (let i = 0; i < 2; i++) assert.ok(human.handAt(i).distanceTo(targets[i]) < 0.003);
         for (const leg of human.bones().filter((b) => b[3] === 'leg')) assert.ok(leg[1].y > 0.03, 'knee/ankle above floor');
       }
@@ -260,5 +260,58 @@ describe('friction force: rope-pulling anatomy', () => {
       x.push(human.feet[0].getWorldPosition(v).x);
     }
     for (const value of x) assert.ok(Math.abs(value - x[0]) < 1e-8);
+  });
+});
+
+describe('friction puller: connected limbs and forward-bending knees', () => {
+  it('both knees bend toward the shoes throughout pulling and shuffling, on either side', async () => {
+    const { createPuller } = await import('../../assets/friction-force/src/person.js');
+    const human = createPuller();
+    for (const mirror of [-1, 1]) {
+      human.root.scale.x = mirror;
+      for (const effort of [0, 0.5, 1])
+        for (const distance of [-0.22, -0.1, 0, 0.12, 0.3]) {
+          human.pose({ lean: -0.12 - 0.1 * effort, hipY: 0.86 - 0.025 * effort, walking: distance !== 0, distance });
+          const segments = human.bones().filter((b) => b[3] === 'leg');
+          for (let i = 0; i < segments.length; i += 2) {
+            const [hip, knee] = segments[i],
+              ankle = segments[i + 1][1];
+            const dx = (ankle.x - hip.x) * mirror,
+              dy = ankle.y - hip.y;
+            const bend = (knee.x - hip.x) * mirror * -dy + (knee.y - hip.y) * dx;
+            assert.ok(bend > 0.02, 'knees must bend forward, not invert behind the body');
+            assert.ok(knee.y > 0.15 && ankle.y >= 0.074, 'joints remain above the floor');
+          }
+        }
+    }
+  });
+  it('arm and trouser surfaces have no open mesh edges at elbows, knees or cuffs', async () => {
+    const { Mesh } = await import('three');
+    const { createPuller } = await import('../../assets/friction-force/src/person.js');
+    const human = createPuller();
+    for (const distance of [0, -0.12, 0.12]) {
+      human.pose({ walking: distance !== 0, distance });
+      let checked = 0;
+      human.root.traverse((part) => {
+        if (!(part instanceof Mesh) || !['ContinuousArm', 'ConnectedShirt', 'ConnectedTrousers'].includes(part.name)) return;
+        const g = part.geometry,
+          positions = g.attributes.position;
+        const key = (i) => [positions.getX(i), positions.getY(i), positions.getZ(i)].map((v) => Math.round(v * 1e6)).join(',');
+        const edges = new Map();
+        for (let i = 0; i < (g.index?.count ?? g.drawRange.count); i += 3) {
+          const ids = [0, 1, 2].map((offset) => key(g.index ? g.index.getX(i + offset) : i + offset));
+          for (let j = 0; j < 3; j++) {
+            const edge = [ids[j], ids[(j + 1) % 3]].sort().join('|');
+            edges.set(edge, (edges.get(edge) || 0) + 1);
+          }
+        }
+        assert.ok(
+          [...edges.values()].every((count) => count === 2),
+          `${part.name} is closed across its joints`,
+        );
+        checked++;
+      });
+      assert.equal(checked, 4);
+    }
   });
 });
