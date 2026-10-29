@@ -10,8 +10,8 @@ body.bg-transparent { background: transparent; }
 .ke sup { font-size: 0.68em; line-height: 0; }
 .ke-frac { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; margin: 0 1px; font-size: 0.76em; line-height: 1.05; font-weight: inherit; }
 .ke-frac > span:first-child { border-bottom: 1.3px solid currentColor; padding: 0 1px; }
-/* the panel: a soft sky-to-grass tint, like the scene (and the sister figure) */
-.ke .pvc-panel { background: linear-gradient(180deg, #e3f2ff 0%, #effbe6 100%); }
+/* the panel: a soft maple tint, like the hall's floor */
+.ke .pvc-panel { background: linear-gradient(180deg, #fff6ea 0%, #fde8cf 100%); }
 
 /* the steppers: m and v side by side */
 .ke-calc { display: flex; justify-content: space-between; align-items: center; gap: 8px; }

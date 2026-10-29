@@ -17,7 +17,7 @@ import { capturePointer } from '@shared/student/pointer.js';
 import { bindCleanSheet, buildStudentShell, cleanSheet } from '@shared/student/shell.js';
 import { createMaterials } from '@shared/student/materials.js';
 import { ARM, BOW_SHOULDER, createArcher } from './archer.js';
-import { ARROW_LEN, ARROW_RISE, BALE, BRACE, createArrowMesh, createBale, createBow, createRange } from './bow.js';
+import { ARROW_LEN, ARROW_RISE, BALE, BRACE, createArrowMesh, createBale, createBow, createFace, createRange } from './bow.js';
 import { fitPose } from './camera.js';
 import {
   choicesFrom,
@@ -51,7 +51,7 @@ export const DEFAULTS = {
   coach: true, // the numbered ring on the string pulses at first
   numerals: null, // 'bn' | 'latin' (default follows the language)
   lang: 'bn',
-  bg: 'light', // 'light' (the sky) | 'transparent'
+  bg: 'light', // 'light' (the hall) | 'transparent'
   shadow: true,
   sound: true,
 };
@@ -119,7 +119,7 @@ export function createApp(root, options = {}) {
   note.hidden = true; // shown while an arrow flies (and the cutaway is labelled on the bale)
   ui.stage.append(note);
 
-  // ── 3D: a sunny archery range ────────────────────────────────────────────────
+  // ── 3D: an indoor archery range in a sports hall ─────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 30, near: 0.05, far: 80, environment: 'studio-light' });
   const { camera, controls, scene } = stage;
   controls.minDistance = 1;
@@ -127,39 +127,11 @@ export function createApp(root, options = {}) {
   controls.enablePan = false;
   controls.enableRotate = false;
   controls.enableZoom = false;
-  const sky = document.createElement('canvas');
-  sky.width = 512;
-  sky.height = 256;
-  const skyCtx = sky.getContext('2d');
-  const grad = skyCtx.createLinearGradient(0, 0, 0, 256);
-  grad.addColorStop(0, '#2f8fe0');
-  grad.addColorStop(0.7, '#9fd3f7');
-  grad.addColorStop(1, '#d9f0fc');
-  skyCtx.fillStyle = grad;
-  skyCtx.fillRect(0, 0, 512, 256);
-  // a few soft fair-weather clouds
-  for (const [cx, cy, w] of [
-    [70, 46, 70],
-    [300, 30, 90],
-    [440, 70, 60],
-    [190, 90, 46],
-  ]) {
-    for (let i = 0; i < 6; i++) {
-      const x = cx + (i - 2.5) * w * 0.28;
-      const r = w * (0.32 + 0.18 * Math.sin(i * 1.7 + cx));
-      const g = skyCtx.createRadialGradient(x, cy, 0, x, cy, r);
-      g.addColorStop(0, 'rgba(255,255,255,0.9)');
-      g.addColorStop(1, 'rgba(255,255,255,0)');
-      skyCtx.fillStyle = g;
-      skyCtx.fillRect(x - r, cy - r, 2 * r, 2 * r);
-    }
-  }
-  const skyTex = new THREE.CanvasTexture(sky);
-  skyTex.colorSpace = THREE.SRGBColorSpace;
-  scene.background = o.bg === 'transparent' ? null : skyTex;
-  scene.add(new THREE.HemisphereLight('#d8ecff', '#4f7a2a', 0.85));
-  const sun = new THREE.DirectionalLight('#fff1d6', 1.9);
-  sun.position.set(-1.5, 6, 4);
+  // indoors: the roof's underside behind everything, a warm fill from the maple floor, lamps overhead
+  scene.background = o.bg === 'transparent' ? null : new THREE.Color('#7d8796');
+  scene.add(new THREE.HemisphereLight('#fff6e6', '#b5793c', 0.95));
+  const sun = new THREE.DirectionalLight('#fff4e0', 1.7); // the lamps over the lane
+  sun.position.set(0.8, 6, 2.4);
   sun.target.position.set(1.6, 0, 0);
   scene.add(sun, sun.target);
 
@@ -172,6 +144,9 @@ export function createApp(root, options = {}) {
   const bow = createBow({ wood: M.wood });
   bow.root.position.copy(GRIP);
   const bale = createBale({ cutZ: ARROW_Z - 0.004 });
+  range.backdrop.visible = o.bg !== 'transparent';
+  // a 60 cm target face, its gold 1.3 m above the floor as World Archery sets it indoors
+  bale.root.add(createFace({ cutZ: ARROW_Z - 0.004, y: 1.31 }));
   world.add(range.root, archer.root, bow.root, bale.root);
   // a hit area round the string and the drawing hand: a drag here draws the bow
   const stringHit = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.5, 0.4), new THREE.MeshBasicMaterial({ visible: false }));

@@ -337,78 +337,263 @@ export function createBale({ cutZ }) {
   return { root, body: bale };
 }
 
-// ── the range: mown grass, a white shooting line ─────────────────────────────
-export function createRange() {
-  const root = new THREE.Group();
-  root.name = 'Range';
+// ── the hall: an indoor archery range in a sports hall ──────────────────────
+/** A small seeded random number generator, so every load draws the same planks and bricks. */
+const seeded = (seed) => () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+function canvasTexture(w, h, draw, repeat = [1, 1]) {
   const c = document.createElement('canvas');
-  c.width = 512;
-  c.height = 512;
-  const ctx = c.getContext('2d');
-  for (let i = 0; i < 8; i++) {
-    ctx.fillStyle = i % 2 ? '#5fae3c' : '#6dbb46'; // mown stripes
-    ctx.fillRect(i * 64, 0, 64, 512);
-  }
-  let seed = 3;
-  const r = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-  for (let i = 0; i < 9000; i++) {
-    ctx.fillStyle = ['#4f9a30', '#7ccb55', '#3f8a26', '#8fd463'][Math.floor(r() * 4)];
-    ctx.fillRect(r() * 512, r() * 512, 1.5, 3 + r() * 3);
-  }
+  c.width = w;
+  c.height = h;
+  draw(c.getContext('2d'), w, h);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-  tex.repeat.set(6, 4);
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(40, 24), mat('Grass', '#ffffff', 0.95, 0, { map: tex }));
+  tex.repeat.set(...repeat);
+  tex.anisotropy = 8;
+  return tex;
+}
+
+/** Maple floor boards (7 cm wide, along the shooting direction), each a slightly different honey tone. */
+function mapleTexture() {
+  return canvasTexture(
+    512,
+    512,
+    (ctx, w, h) => {
+      const r = seeded(17);
+      const board = 32; // px: 8 boards in the 0.56 m the texture covers
+      for (let row = 0; row < h / board; row++) {
+        let x = -r() * 300;
+        while (x < w) {
+          const len = 140 + r() * 260;
+          const l = 60 + r() * 6;
+          ctx.fillStyle = `hsl(${30 + r() * 4}, ${62 + r() * 8}%, ${l}%)`;
+          ctx.fillRect(x, row * board, len, board);
+          // grain
+          for (let g = 0; g < 7; g++) {
+            ctx.strokeStyle = `hsla(28, 55%, ${l - 10 - r() * 8}%, 0.35)`;
+            ctx.lineWidth = 0.6 + r();
+            const y = row * board + 3 + r() * (board - 6);
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.bezierCurveTo(x + len * 0.3, y + r() * 3 - 1.5, x + len * 0.7, y + r() * 3 - 1.5, x + len, y);
+            ctx.stroke();
+          }
+          ctx.fillStyle = 'rgba(90, 50, 20, 0.45)'; // the butt joint
+          ctx.fillRect(x, row * board, 1.2, board);
+          x += len;
+        }
+        ctx.fillStyle = 'rgba(90, 50, 20, 0.35)'; // the seam between boards
+        ctx.fillRect(0, row * board, w, 1.2);
+      }
+    },
+    [50 / 0.56, 16 / 0.56],
+  );
+}
+
+/** Red brick in stretcher bond: 215 × 65 mm bricks, 10 mm mortar (the texture covers 0.9 × 0.6 m). */
+function brickTexture() {
+  return canvasTexture(
+    512,
+    512,
+    (ctx, w, h) => {
+      ctx.fillStyle = '#d8cfc2'; // mortar
+      ctx.fillRect(0, 0, w, h);
+      const r = seeded(29);
+      const px = w / 0.9; // px per metre (x); the rows are 75 mm in 0.6 m
+      const bw = 0.215 * px;
+      const bh = (h / 8) * (65 / 75);
+      const gap = 0.01 * px;
+      for (let row = 0; row < 8; row++) {
+        const y = (row * h) / 8 + gap / 2;
+        const shift = row % 2 ? (bw + gap) / 2 : 0;
+        for (let x = -shift; x < w; x += bw + gap) {
+          const hue = 8 + r() * 12;
+          ctx.fillStyle = `hsl(${hue}, ${52 + r() * 18}%, ${36 + r() * 12}%)`;
+          ctx.fillRect(x, y, bw, bh);
+          ctx.fillStyle = `rgba(255, 220, 190, ${0.05 + r() * 0.08})`; // a little texture on each face
+          for (let k = 0; k < 5; k++) ctx.fillRect(x + r() * bw, y + r() * bh, 2 + r() * 6, 1 + r() * 2);
+        }
+      }
+    },
+    [50 / 0.9, 7 / 0.6],
+  );
+}
+
+/** Wall padding: orange vinyl panels 1.2 m wide with a dark seam between them. */
+function padTexture() {
+  return canvasTexture(
+    256,
+    128,
+    (ctx, w, h) => {
+      const g = ctx.createLinearGradient(0, 0, w, 0);
+      g.addColorStop(0, '#e8590c');
+      g.addColorStop(0.5, '#f76707');
+      g.addColorStop(1, '#e8590c');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = '#a63a05';
+      ctx.fillRect(0, 0, 3, h);
+      ctx.fillStyle = 'rgba(255,255,255,0.25)';
+      ctx.fillRect(3, 0, 2, h);
+    },
+    [50 / 1.2, 1],
+  );
+}
+
+/** Arrow-stop netting: a dark knotted mesh you can see through, hanging in soft folds. */
+function netTexture() {
+  return canvasTexture(
+    256,
+    256,
+    (ctx, w, h) => {
+      for (let x = 0; x < w; x++) {
+        // folds: a little denser where the net bunches
+        ctx.fillStyle = `rgba(18, 20, 26, ${0.42 + 0.12 * Math.sin((x / w) * Math.PI * 6)})`;
+        ctx.fillRect(x, 0, 1, h);
+      }
+      ctx.strokeStyle = 'rgba(12, 14, 18, 0.9)';
+      ctx.lineWidth = 1.5;
+      for (let i = -h; i < w + h; i += 16) {
+        ctx.beginPath();
+        ctx.moveTo(i, 0);
+        ctx.lineTo(i + h, h);
+        ctx.moveTo(i, h);
+        ctx.lineTo(i + h, 0);
+        ctx.stroke();
+      }
+    },
+    [4, 3],
+  );
+}
+
+/** A World Archery target face (60 cm): ten rings, gold, red, blue, black and white, 3 cm each. */
+function faceTexture() {
+  const tex = canvasTexture(512, 512, (ctx, w) => {
+    const c = w / 2;
+    const ring = c / 10;
+    const colours = ['#ffffff', '#ffffff', '#1d1d1f', '#1d1d1f', '#00a2e8', '#00a2e8', '#e2231a', '#e2231a', '#ffe552', '#ffe552'];
+    for (let i = 0; i < 10; i++) {
+      ctx.beginPath();
+      ctx.arc(c, c, (10 - i) * ring, 0, Math.PI * 2);
+      ctx.fillStyle = colours[i];
+      ctx.fill();
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = i === 2 || i === 3 ? '#ffffff' : '#1d1d1f'; // the dividing lines (white in the black rings)
+      ctx.stroke();
+    }
+    ctx.beginPath(); // the inner 10 and the centre cross
+    ctx.arc(c, c, ring / 2, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.fillRect(c - 4, c - 0.75, 8, 1.5);
+    ctx.fillRect(c - 0.75, c - 4, 1.5, 8);
+  });
+  tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+  return tex;
+}
+
+/** The target face pinned on the front of the boss, gold centre at `y`, cut in half with the boss (z < cutZ). */
+export function createFace({ cutZ, y }) {
+  const face = new THREE.Mesh(
+    new THREE.CircleGeometry(0.3, 64, Math.PI / 2, Math.PI), // only the half behind the cut (local x < 0 → z < cutZ)
+    mat('TargetFace', '#ffffff', 0.85, 0, { map: faceTexture() }),
+  );
+  face.name = 'TargetFace';
+  face.rotation.y = -Math.PI / 2; // facing the archer (−x)
+  face.position.set(BALE.x - 0.002, y, cutZ);
+  return face;
+}
+
+/**
+ * The hall: a maple sports floor with court lines, the white shooting line, orange wall padding under a red brick
+ * wall with high windows, lamps under the roof, and a black arrow-stop net behind the target. `backdrop` is
+ * everything but the floor (hidden for a transparent background).
+ */
+export function createRange() {
+  const root = new THREE.Group();
+  root.name = 'Hall';
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(50, 16), mat('MapleFloor', '#ffffff', 0.32, 0, { map: mapleTexture() }));
   ground.rotation.x = -Math.PI / 2;
-  ground.position.set(2, 0, -6);
+  ground.position.set(2, 0, -4);
   ground.receiveShadow = true;
   root.add(ground);
-  const line = new THREE.Mesh(new THREE.PlaneGeometry(0.05, 3), mat('ShootingLine', '#ffffff', 0.8));
-  line.rotation.x = -Math.PI / 2;
-  line.position.set(0, 0.002, -0.2);
-  line.receiveShadow = true;
-  root.add(line);
-  // a hedge and a tree line far behind: many small leafy clumps in several greens, low, so the archer and the
-  // bale stand clear against the sky
-  const leaf = new THREE.SphereGeometry(1, 10, 8);
-  const leafM = mat('Foliage', '#ffffff', 0.92);
-  const greens = ['#2e7d32', '#3a8c3c', '#256b2a', '#4a9a40', '#357a30'].map((c) => new THREE.Color(c));
-  let s2 = 9;
-  const r2 = () => (s2 = (s2 * 16807) % 2147483647) / 2147483647;
-  const clumps = [];
-  for (let i = 0; i < 90; i++) clumps.push([-9 + i * 0.22 + r2() * 0.1, 0.25 + r2() * 0.45, -12 - r2() * 0.5, 0.22 + r2() * 0.18]); // hedge
-  for (const [x, z, h] of [
-    [-6, -15, 3.4],
-    [-3.2, -16, 2.8],
-    [5.2, -15.5, 3.6],
-    [9, -16, 3],
-  ])
-    for (let i = 0; i < 26; i++) {
-      const a = r2() * Math.PI * 2;
-      const rr = r2() * h * 0.32;
-      clumps.push([x + Math.cos(a) * rr, h * (0.5 + r2() * 0.42), z + Math.sin(a) * rr * 0.6, h * (0.13 + r2() * 0.08)]);
-    }
-  const foliage = new THREE.InstancedMesh(leaf, leafM, clumps.length);
-  const q = new THREE.Matrix4();
-  const one = new THREE.Quaternion();
-  for (const [i, [x, y, z, r]] of clumps.entries()) {
-    q.compose(new THREE.Vector3(x, y, z), one, new THREE.Vector3(r, r * 0.85, r));
-    foliage.setMatrixAt(i, q);
-    foliage.setColorAt(i, greens[Math.floor(r2() * greens.length)]);
+  const tape = (name, color, w, l, x, z, along = 'z') => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(along === 'z' ? w : l, along === 'z' ? l : w), mat(name, color, 0.55));
+    m.rotation.x = -Math.PI / 2;
+    m.position.set(x, 0.002, z);
+    m.receiveShadow = true;
+    root.add(m);
+    return m;
+  };
+  const line = tape('ShootingLine', '#ffffff', 0.05, 5, 0, -1.6); // across the lanes, where the archer stands
+  tape('WaitingLine', '#ffd43b', 0.05, 5, -3, -1.6); // 3 m behind it: where archers wait
+  // the hall's own court lines, painted on the floor along the long side
+  tape('CourtRed', '#e03131', 0.05, 30, 2, -2.4, 'x');
+  tape('CourtBlue', '#1971c2', 0.05, 30, 2, -3.3, 'x');
+  const arc = new THREE.Mesh(new THREE.RingGeometry(1.775, 1.825, 64, 1, Math.PI * 0.08, Math.PI * 0.84), mat('CourtArc', '#e03131', 0.55));
+  arc.rotation.x = -Math.PI / 2;
+  arc.position.set(-4.2, 0.002, -2.4);
+  root.add(arc);
+
+  const backdrop = new THREE.Group();
+  backdrop.name = 'HallWalls';
+  root.add(backdrop);
+  const WALL_Z = -4.6;
+  const PAD = 1.2; // m of padding
+  const pad = new THREE.Mesh(new THREE.BoxGeometry(50, PAD, 0.06), mat('WallPadding', '#ffffff', 0.55, 0, { map: padTexture() }));
+  pad.position.set(2, PAD / 2, WALL_Z + 0.03);
+  pad.receiveShadow = true;
+  const cap = new THREE.Mesh(new THREE.BoxGeometry(50, 0.04, 0.08), mat('PadCap', '#5c2a0c', 0.5));
+  cap.position.set(2, PAD, WALL_Z + 0.04);
+  const brick = new THREE.Mesh(new THREE.PlaneGeometry(50, 7), mat('Brick', '#ffffff', 0.9, 0, { map: brickTexture() }));
+  brick.position.set(2, 3.5, WALL_Z);
+  brick.receiveShadow = true;
+  backdrop.add(pad, cap, brick);
+  // high windows: a row of daylight panes in white frames
+  const glassM = mat('Windows', '#cfe9ff', 0.2, 0, { emissive: '#bfe2ff', emissiveIntensity: 0.9 });
+  const frameM = mat('WindowFrames', '#f1f3f5', 0.5);
+  for (let i = 0; i < 22; i++) {
+    const x = -20 + i * 2.2;
+    const frame = new THREE.Mesh(new THREE.BoxGeometry(1.7, 1.1, 0.05), frameM);
+    frame.position.set(x, 4.35, WALL_Z + 0.02);
+    const glass = new THREE.Mesh(new THREE.PlaneGeometry(1.56, 0.96), glassM);
+    glass.position.set(x, 4.35, WALL_Z + 0.05);
+    const bar = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.96, 0.03), frameM);
+    bar.position.set(x, 4.35, WALL_Z + 0.06);
+    backdrop.add(frame, glass, bar);
   }
-  root.add(foliage);
-  const trunkM = mat('Trunks', '#5d3f25', 0.9);
-  for (const [x, z, h] of [
-    [-6, -15, 3.4],
-    [-3.2, -16, 2.8],
-    [5.2, -15.5, 3.6],
-    [9, -16, 3],
-  ]) {
-    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.15, h * 0.55, 8), trunkM);
-    trunk.position.set(x, h * 0.27, z);
-    root.add(trunk);
+  // a blue band under the windows, as gyms often have
+  const band = new THREE.Mesh(new THREE.PlaneGeometry(50, 0.18), mat('WallBand', '#1c5fd0', 0.6));
+  band.position.set(2, 3.0, WALL_Z + 0.01);
+  backdrop.add(band);
+  // the roof: a steel truss line and hanging LED lamps
+  const steelM = mat('Truss', '#6c7686', 0.5, 0.6);
+  const beam = new THREE.Mesh(new THREE.BoxGeometry(50, 0.2, 0.2), steelM);
+  beam.position.set(2, 5.6, -2.5);
+  backdrop.add(beam);
+  const lampM = mat('Lamps', '#ffffff', 0.4, 0, { emissive: '#fff7e0', emissiveIntensity: 1.4 });
+  for (let i = 0; i < 6; i++) {
+    const x = -4 + i * 2.6;
+    const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.5, 6), steelM);
+    rod.position.set(x, 5.25, -2.5);
+    const shade = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.16, 0.26, 0.14, 20, 1, true),
+      mat('LampShade', '#4a5260', 0.5, 0.4, { side: THREE.DoubleSide }),
+    );
+    shade.position.set(x, 4.95, -2.5);
+    const glow = new THREE.Mesh(new THREE.CircleGeometry(0.25, 20), lampM);
+    glow.rotation.x = Math.PI / 2;
+    glow.position.set(x, 4.885, -2.5);
+    backdrop.add(rod, shade, glow);
   }
+  // the arrow-stop net behind the targets, from the floor to the roof, across the lanes
+  const net = new THREE.Mesh(
+    new THREE.PlaneGeometry(6.4, 5.6),
+    mat('ArrowNet', '#ffffff', 0.95, 0, { map: netTexture(), side: THREE.DoubleSide, transparent: true, depthWrite: false }),
+  );
+  net.rotation.y = -Math.PI / 2;
+  net.position.set(BALE.x + 1.1, 2.8, WALL_Z + 3.2);
+  net.receiveShadow = true;
+  backdrop.add(net);
   for (const o of root.children) if (o !== ground && o !== line) o.userData.noExport = true;
-  return { root, ground };
+  return { root, ground, backdrop };
 }
