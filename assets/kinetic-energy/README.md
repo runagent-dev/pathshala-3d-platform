@@ -2,7 +2,7 @@
 
 **Where it goes in the book:** Book page 104, topic 4.3.1: ৪.৩.১ গতিশক্তি (Kinetic Energy). Next to the derivation W = Fs = … = ½mv² and the boxed formula T = ½mv², with the sentence on v being squared and the result ½mv² = ½mu² + W.
 
-Interactive 3D figure for the Pathshala book: an archer draws a bow, the arrow flies into a straw bale, and the panel works the book's T = ½mv² out with the student's mass and speed (twice the speed, four times the kinetic energy).
+Interactive 3D figure for the Pathshala book: an archer draws a bow, the arrow flies into a straw target in an indoor archery hall, and the panel works the book's T = ½mv² out with the student's mass and speed (twice the speed, four times the kinetic energy).
 
 ## Embed
 
@@ -34,7 +34,7 @@ To listen to it or control it from the book page, use the helper shipped in the 
 | `mode` | Start in | `explore` learn · `quiz` test | `explore` |
 | `coach` | The ring on the string pulses at first | `1` · `0` | `1` |
 | `numerals` | Digits | (empty) follow language · `bn` Bangla · `latin` Latin |  |
-| `bg` | Background | `light` sky · `transparent` transparent | `light` |
+| `bg` | Background | `light` hall · `transparent` transparent | `light` |
 | `shadow` | Soft shadow | `1` · `0` | `1` |
 | `sound` | Sound | `1` · `0` | `1` |
 <!-- /generated:params -->

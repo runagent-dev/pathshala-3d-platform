@@ -61,9 +61,14 @@ the speed, so twice the speed means four times the kinetic energy. And it comes 
 calls it বিভব শক্তি and colours it purple, and so does this figure's label).
 
 ## How the figure works
-- A sunny archery range (sky, mown grass, a hedge), the owner's archer idea: a realistic archer (adapted from the
-  `types-of-friction` pusher: same proportions, blue jacket, dark trousers, arm guard, hip quiver) stands side-on in
-  a firm stance with a red recurve bow; a straw bale on a stand 2.5 m ahead, cut open along the arrows' plane.
+- An indoor archery range in a school sports hall (v0.2: the owner asked for a hall instead of the green lawn):
+  a maple sports floor with the hall's red and blue court lines, the white shooting line (the archer straddles it,
+  as the rules ask) and the yellow waiting line 3 m behind, orange wall padding under a red brick wall with a blue
+  band, and a black arrow-stop net you can see through behind the target. The owner's archer idea: a realistic
+  archer (adapted from the `types-of-friction` pusher: same proportions, blue jacket, dark trousers, arm guard, hip
+  quiver) stands side-on in a firm stance with a red recurve bow; a straw boss on a stand 2.5 m ahead, with a 60 cm
+  World Archery target face (gold, red, blue, black, white; gold centre 1.3 m above the floor, as indoors), cut open
+  along the arrows' plane.
 - শেখো: tap steppers for **ভর m** (0.02 / 0.03 / 0.04 kg: carbon, aluminium and wooden arrows that look different)
   and **বেগ v** (20–60 m/s in steps of 10; the bow cannot give a 0.03 or 0.04 kg arrow more than 50 m/s, the + then
   says so), one action **ছিলা টেনে ছেড়ে দাও** (also: a tap on the archer, or drag the string back: each 26 px is one
@@ -96,6 +101,9 @@ calls it বিভব শক্তি and colours it purple, and so does this fi
   a moving body pushes another some distance and does work). The rule says "প্রায় চার গুণ গভীরে".
 - Masses and speeds are real: target arrows weigh about 20 g, heavy ones 40 g; recurve arrows fly at about 55–60 m/s.
 - The bowstring and arrow shafts are drawn a little thicker than life so they show on a phone.
+- The target stands 2.5 m from the archer, not the 18 m of an indoor competition, so archer and target fit on a
+  phone screen together; the speeds and energies are real. Both arrows land in the red ring (about 12 cm from the
+  centre), at two heights so they don't hide each other.
 
 ## Open questions for the book team
 - The page says "কোনো বস্তুর গতিশক্তিকে দ্বিগুণ বাড়াতে আমাদের চার গুণ বেশি শক্তি দিতে হয়"; physically it is the

@@ -5,7 +5,7 @@
   "title": "Kinetic energy (গতিশক্তি)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "book": "physics-9-10",
   "page": 104,
   "topic": "4.3.1",
@@ -13,7 +13,7 @@
   "order": 1,
   "maintainers": ["RadeenXALNW"],
   "units": "m",
-  "description": "Interactive 3D archery range for textbook topic 4.3.1 (page 104), on a sunny lawn. A realistic archer draws a red recurve bow: the bent bow stores energy; on release the string pushes the arrow (it does work on it), the arrow flies (shown 15 times slower) and sinks into a straw bale cut open to show how deep. Tap steppers pick the arrow's mass m (0.02, 0.03, 0.04 kg: carbon, aluminium and wooden arrows) and speed v (20 to 60 m/s; a heavier arrow cannot be drawn as fast by this bow), and the student shoots by the big action button, a tap on the archer, or by dragging the string back and letting go. The panel fills in the book's formula T = ½mv² with their numbers in J, compares each shot with the one before (twice the speed: four times the kinetic energy and about four times as deep; twice the mass: twice), and states the book's rule. Physics: an ideal linear bow (K = 400 N/m, 200 N at a 0.5 m draw) giving all its stored energy to the arrow, real gravity drop, and a steady straw resistance of 160 N (depth = T / F). Five scene-based test questions. Archer, bow, arrows and bale export as GLB. Offline, Bangla and English.",
+  "description": "Interactive 3D indoor archery range for textbook topic 4.3.1 (page 104), in a school sports hall (maple floor, padded brick walls, an arrow-stop net). A realistic archer draws a red recurve bow: the bent bow stores energy; on release the string pushes the arrow (it does work on it), the arrow flies (shown 15 times slower) and sinks into a straw boss with a 60 cm target face, cut open to show how deep. Tap steppers pick the arrow's mass m (0.02, 0.03, 0.04 kg: carbon, aluminium and wooden arrows) and speed v (20 to 60 m/s; a heavier arrow cannot be drawn as fast by this bow), and the student shoots by the big action button, a tap on the archer, or by dragging the string back and letting go. The panel fills in the book's formula T = ½mv² with their numbers in J, compares each shot with the one before (twice the speed: four times the kinetic energy and about four times as deep; twice the mass: twice), and states the book's rule. Physics: an ideal linear bow (K = 400 N/m, 200 N at a 0.5 m draw) giving all its stored energy to the arrow, real gravity drop, and a steady straw resistance of 160 N (depth = T / F). Five scene-based test questions. Archer, bow, arrows and bale export as GLB. Offline, Bangla and English.",
   "tags": ["kinetic-energy", "energy", "work", "archery", "bow", "arrow", "formula", "bangla"],
   "params": [
     {
@@ -72,7 +72,7 @@
       "name": "bg",
       "label": "Background",
       "type": "select",
-      "options": [["light", "sky"], ["transparent", "transparent"]],
+      "options": [["light", "hall"], ["transparent", "transparent"]],
       "default": "light"
     },
     { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
