@@ -68,5 +68,5 @@ body.bg-transparent { background: transparent; }
 }
 
 /* not a white page: the panel in a soft sky-to-meadow tint, matching the scene */
-.en .pvc-panel { background: linear-gradient(180deg, #e3f2ff 0%, #effbe6 100%); }
+.en .pvc-panel { background: linear-gradient(180deg, #e3f2ff 0%, #fff1dc 100%); }
 .en .pvc-tabs button:not(.on) { background: rgba(255, 255, 255, 0.7); }

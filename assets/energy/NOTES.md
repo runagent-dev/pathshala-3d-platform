@@ -35,7 +35,10 @@ energy only changes form (here from height to motion), its total staying the sam
 ## How the figure shows it
 
 The owner's reference picture (a cyclist going up a hill, "Energy in", "Potential energy" at the top, "Energy out"
-going down) as a real 3D scene, with the book's words instead of the picture's English labels:
+going down) as a real 3D scene, with the book's words instead of the picture's English labels. Since 0.2.0 the
+hill is part of a cycle race track (asphalt, red-and-white kerbs, a chequered start line, grandstands and flags),
+not a green field: the owner asked for a race track that is not green.
+
 
 1. **ধনাত্মক কাজ** (step ১, "প্যাডেল করে পাহাড়ে ওঠো"): the rider pedals up at 3 m/s; an orange arrow along the road shows
    the pedal force along the motion; the energy bar grows as the work is done. The rule quotes the book's line and
