@@ -65,9 +65,20 @@ test('equations-of-motion: run, average velocity, braking', async ({ page }) => 
 
   // the book's worked example: from rest to 60 km/hour in 1 minute → 16.67 m/s, a = 0.278 m/s²
   await frame.locator('[data-act="example"]').click();
-  expect((await fig.call('get')).example).toMatchObject({ open: true, part: 0, kmh: 60, t: 60, v: 16.67, a: 0.278, speedup: 5, phase: 'ready' });
+  expect((await fig.call('get')).example).toMatchObject({
+    open: true,
+    part: 0,
+    kmh: 60,
+    t: 60,
+    v: 16.67,
+    a: 0.278,
+    rate: 1,
+    view: 'side',
+    phase: 'ready',
+  });
   await expect(frame.locator('.eom-ex-line.in')).toHaveCount(0);
-  // it plays 5 times faster than real time: 6 s of watching is 30 s for the car, half its final speed
+  // real time to start with; at ৫× 6 s of watching is 30 s for the car, half its final speed
+  await frame.locator('[data-ex-rate="5"]').click();
   await frame.locator('[data-ex="run"]').click();
   await fig.advance(6000);
   const ex = (await fig.call('get')).example;
@@ -76,7 +87,13 @@ test('equations-of-motion: run, average velocity, braking', async ({ page }) => 
   expect(ex.time).toBeLessThan(31.5);
   expect(ex.speed).toBeCloseTo((ex.time * 1000) / 3600, 2);
   await fig.advance(7000);
-  expect((await fig.call('get')).example).toMatchObject({ phase: 'done', time: 60, playing: false });
+  expect((await fig.call('get')).example).toMatchObject({ phase: 'done', time: 60, playing: false, rate: 5 });
+  // the timeline shows any moment, stopped there; the camera goes behind the car
+  await frame.locator('.eom-ex-scrub input').fill('20');
+  expect((await fig.call('get')).example).toMatchObject({ time: 20, phase: 'paused' });
+  expect((await fig.call('get')).example.speed).toBeCloseTo(20000 / 3600, 2);
+  await frame.locator('[data-ex-view="chase"]').click();
+  expect((await fig.call('get')).example.view).toBe('chase');
   // the answer line by line, the last one the book's 0.278
   for (let i = 0; i < 4; i++) await frame.locator('[data-ex="next"]').click();
   await expect(frame.locator('.eom-ex-line.in')).toHaveCount(4);
@@ -86,7 +103,7 @@ test('equations-of-motion: run, average velocity, braking', async ({ page }) => 
   await frame.locator('[data-ex-step="v"][data-dir="1"]').click();
   await frame.locator('[data-ex-step="v"][data-dir="1"]').click();
   for (let i = 0; i < 3; i++) await frame.locator('[data-ex-step="t"][data-dir="-1"]').click();
-  expect((await fig.call('get')).example).toMatchObject({ kmh: 90, t: 30, v: 25, a: 0.833, time: 0, phase: 'ready', speedup: 3 });
+  expect((await fig.call('get')).example).toMatchObject({ kmh: 90, t: 30, v: 25, a: 0.833, time: 0, phase: 'ready' });
   await frame.locator('[data-ex="close"]').click();
   expect((await fig.call('get')).example.open).toBe(false);
 

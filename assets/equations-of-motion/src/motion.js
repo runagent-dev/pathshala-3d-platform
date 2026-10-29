@@ -253,8 +253,8 @@ export function fixExample(p = {}) {
 /**
  * The numbers of the example, as the book works it: v in m/s rounded to 2 places (60 km/hour = 16.67 m/s), then
  * a = v/t from that rounded v, to 3 places (16.67 / 60 = 0.278 m/s²). The car itself moves with the exact
- * acceleration, so its speedometer reaches the chosen km/hour exactly at t. `speedup`: how much faster than real
- * time the run plays (a whole number, about 12 s of watching); `minutes` when t is a whole number of minutes.
+ * acceleration, so its speedometer reaches the chosen km/hour exactly at t. `minutes` when t is a whole number of
+ * minutes.
  */
 export function exampleNumbers({ kmh, t }) {
   const vExact = (kmh * 1000) / 3600;
@@ -268,6 +268,5 @@ export function exampleNumbers({ kmh, t }) {
     aExact,
     s: roundTo(0.5 * aExact * t * t, 2),
     minutes: t % 60 === 0 ? t / 60 : null,
-    speedup: Math.max(1, Math.round(t / 12)),
   };
 }

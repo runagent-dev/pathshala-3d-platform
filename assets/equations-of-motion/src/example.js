@@ -1,7 +1,9 @@
 // "উদাহরণ": the book's worked example on page 45 as a sheet over the figure. A car starts from rest and reaches
 // 60 km/hour in 1 minute; what is its acceleration? Above, the car (a red hatchback, car.js) drives off from a
-// start line on a country road (road.js) with a speedometer that shows km/hour and the same speed in m/s, a clock,
-// and how much faster than real time the run plays (a minute is long to watch). Below, the question with two
+// start line on a city street (road.js) with a speedometer that shows km/hour and the same speed in m/s and a
+// clock. It plays in real time (a whole minute) or two or five times faster (১× ২× ৫×); a finger turns the camera
+// round the car as it drives, পাশ থেকে / পেছন থেকে put it beside or behind the car, and a timeline under the
+// street shows any moment (dragging it stops the car there). Below, the question with two
 // steppers (the final speed in km/hour, the time in s: the book's 60 km/hour and 1 minute to start) and the
 // book's answer line by line ("পরের ধাপ"): the time in seconds, 60 km/hour = (60 × 1000 m)/(60 × 60 s) =
 // 16.67 m/s, v = u + at = at (from rest, u = 0), a = v/t = 16.67 m/s / 60 s = 0.278 m/s². The numbers follow the
@@ -17,7 +19,9 @@ import { LANE, createRoad } from './road.js';
 /** The lines of the answer, shown one at a time. */
 export const EX_PARTS = 4;
 const DIAL_MAX = 140; // km/hour at the end of the speedometer's dial
-const VIEW = new THREE.Vector3(0.3, 0.34, 0.89).normalize(); // towards the camera: from the front left, a little above
+// towards the camera: beside the car (from the front left, a little above) or behind it, looking down the street
+const VIEWS = { side: new THREE.Vector3(0.3, 0.34, 0.89).normalize(), chase: new THREE.Vector3(-0.92, 0.36, 0.16).normalize() };
+const RATES = [1, 2, 5]; // real time, or this many times faster
 const q = (c) => `<i class="q-${c}">${c}</i>`;
 const fr = (top, bottom) => `<span class="fr"><span>${top}</span><span>${bottom}</span></span>`;
 /** A point on the dial: angle in degrees from straight up, clockwise. */
@@ -41,7 +45,7 @@ export function createExample({ root, t, now = () => performance.now(), onChange
   el.setAttribute('aria-labelledby', 'eom-ex-title');
   const stepper = (k) => `
         <div class="eom-step k-${k}">
-          <span class="eom-name"><b>${k}</b> ${t(`ex_name_${k}`)} <small>(${k === 'v' ? t('u_kmh') : t('u_s')})</small></span>
+          <span class="eom-name"><b>${k}</b> <span class="w">${t(`ex_name_${k}`)}</span> <small>(${k === 'v' ? t('u_kmh') : t('u_s')})</small></span>
           <div class="eom-ctl">
             <button type="button" class="eom-pm" data-ex-step="${k}" data-dir="-1" aria-label="${t(`ex_less_${k}`)}">${ICONS.minus}</button>
             <output class="eom-val" data-ex-val="${k}"></output>
@@ -73,7 +77,14 @@ export function createExample({ root, t, now = () => performance.now(), onChange
         <div class="eom-ex-scene">
           <div class="eom-ex-gl"></div>
           <span class="eom-ex-chip eom-ex-clock q-t"></span>
-          <span class="eom-ex-chip eom-ex-fast"></span>
+          <div class="eom-ex-seg eom-ex-rates" role="radiogroup" aria-label="${t('ex_rate')}">${RATES.map(
+            (k) =>
+              `<button type="button" role="radio" data-ex-rate="${k}" aria-label="${t(k === 1 ? 'ex_real' : 'ex_fast', { k })}">${t('ex_rate_k', { k })}</button>`,
+          ).join('')}</div>
+          <div class="eom-ex-seg eom-ex-views" role="radiogroup" aria-label="${t('ex_view')}">
+            <button type="button" role="radio" data-ex-view="side">${t('ex_view_side')}</button><button type="button" role="radio" data-ex-view="chase">${t('ex_view_chase')}</button>
+          </div>
+          <div class="eom-ex-scrub"><input type="range" min="0" max="60" step="0.5" value="0" aria-label="${t('ex_scrub')}"/><div class="eom-ex-ticks" aria-hidden="true"></div></div>
           <div class="eom-ex-speedo" role="img">
             <svg viewBox="0 0 120 112" aria-hidden="true">
               <circle class="sp-face" cx="60" cy="60" r="57"/>
@@ -102,7 +113,11 @@ export function createExample({ root, t, now = () => performance.now(), onChange
     </div>`;
   root.append(el);
   const $ = (sel) => /** @type {HTMLElement} */ (el.querySelector(sel));
-  const st = { open: false, part: 0, kmh: EXAMPLE.kmh, t: EXAMPLE.t, time: 0, playing: false, startedAt: 0 };
+  const st = { open: false, part: 0, kmh: EXAMPLE.kmh, t: EXAMPLE.t, time: 0, playing: false, startedAt: 0, rate: 1, view: 'side' };
+  const scrub = /** @type {HTMLInputElement} */ (el.querySelector('.eom-ex-scrub input'));
+  const dir = VIEWS.side.clone(); // where the camera is, seen from the car (a finger changes it)
+  let dirGoal = null; // a view button's direction, reached in a few frames
+  let aimed = false;
   let ex = exampleNumbers(st);
   let opener = null;
   /** @type {any} */
@@ -122,7 +137,8 @@ export function createExample({ root, t, now = () => performance.now(), onChange
       time: Math.round(st.time * 1000) / 1000,
       speed: Math.round(speedAt(st.time) * 1000) / 1000,
       distance: Math.round(distAt(st.time) * 1000) / 1000,
-      speedup: ex.speedup,
+      rate: st.rate,
+      view: st.view,
       playing: st.playing,
       phase: phase(),
     };
@@ -131,7 +147,13 @@ export function createExample({ root, t, now = () => performance.now(), onChange
   // ── the 3D: the road, the car, a camera that follows it (further back the faster it goes) ──
   function makeView() {
     const stage = createStage($('.eom-ex-gl'), { fov: 26, near: 0.3, far: 1200, environment: 'studio-light' });
-    stage.controls.enabled = false;
+    // a finger turns the camera round the car (no zoom or pan: the camera keeps its distance and follows the car)
+    const ctl = stage.controls;
+    ctl.enableZoom = false;
+    ctl.enablePan = false;
+    ctl.minPolarAngle = 0.25;
+    ctl.maxPolarAngle = 1.42;
+    ctl.rotateSpeed = 0.7;
     const skyCanvas = document.createElement('canvas');
     skyCanvas.width = 2;
     skyCanvas.height = 256;
@@ -153,6 +175,16 @@ export function createExample({ root, t, now = () => performance.now(), onChange
     car.root.position.z = LANE;
     stage.scene.add(road.root, car.root);
     stage.addTicker(() => tick());
+    stage.addTicker(() => {
+      if (!dirGoal) return false;
+      if (!st.playing) place();
+      return true;
+    });
+    ctl.addEventListener('start', () => {
+      dirGoal = null; // a finger takes over from the view buttons
+      st.view = 'free';
+      hud();
+    });
     stage.onResize(() => place());
     return { stage, road, car };
   }
@@ -164,7 +196,7 @@ export function createExample({ root, t, now = () => performance.now(), onChange
     const v = speedAt(st.time);
     car.root.position.x = x - NOSE;
     road.follow(x);
-    const onScreen = v * ex.speedup; // m/s as the eye sees it
+    const onScreen = v * st.rate; // m/s as the eye sees it
     car.spin(x, st.playing ? onScreen / (2 * Math.PI * 0.32) : 0);
     // the window of road shown: 12 m around the car at rest, up to 36 m when the road flies past
     const span = 12 + 24 * THREE.MathUtils.smoothstep(onScreen, 0, 90);
@@ -175,10 +207,24 @@ export function createExample({ root, t, now = () => performance.now(), onChange
     // never gets tiny
     const fitW = span / 2 / Math.tan(half);
     const fitH = span / 2 / Math.tan(THREE.MathUtils.degToRad(cam.fov / 2));
-    const dist = Math.max(7, Math.min(fitW, fitH));
-    const target = new THREE.Vector3(x - NOSE + span * 0.1, 0.75, LANE - 0.3);
-    cam.position.copy(target).addScaledVector(VIEW, dist);
-    stage.controls.target.copy(target); // the controls (switched off) still aim the camera every frame
+    const fit = Math.max(7, Math.min(fitW, fitH));
+    // where the camera is now (a finger may have turned it), easing towards a view button's direction
+    if (aimed) dir.subVectors(cam.position, stage.controls.target).normalize();
+    aimed = true;
+    if (dirGoal) {
+      dir.lerp(dirGoal, 0.18).normalize();
+      if (dir.distanceTo(dirGoal) < 0.003) {
+        dir.copy(dirGoal);
+        dirGoal = null;
+      }
+    }
+    // beside the car the whole span fits; behind it the camera stays close, a little further the faster it goes
+    const along = dir.x * dir.x;
+    const dist = THREE.MathUtils.lerp(fit, 16 + onScreen * 0.12, along);
+    // behind the car it sits in the middle of the picture, above the speedometer and the timeline
+    const target = new THREE.Vector3(x - NOSE + span * 0.1 * (1 - along) + 1.5 * along, 0.75 - 0.35 * along, LANE - 0.3 * (1 - along));
+    cam.position.copy(target).addScaledVector(dir, dist);
+    stage.controls.target.copy(target);
     cam.lookAt(target);
     stage.invalidate();
   }
@@ -193,9 +239,22 @@ export function createExample({ root, t, now = () => performance.now(), onChange
     $('.eom-ex-ms').textContent = t('ex_ms', { v: st.time >= st.t - 1e-9 ? fmt(ex.v) : v.toFixed(2) });
     $('.eom-ex-speedo').setAttribute('aria-label', `${t('ex_speedo')}: ${N(kmhShown)} ${t('u_kmh')}`);
     $('.eom-ex-clock').innerHTML = `${q('t')} = ${N(Math.floor(st.time + 1e-6))} s`;
-    const fast = $('.eom-ex-fast');
-    fast.hidden = ex.speedup <= 1;
-    fast.textContent = t('ex_fast', { k: ex.speedup });
+    if (document.activeElement !== scrub || !st.playing) {
+      scrub.max = String(st.t);
+      scrub.value = String(st.time);
+    }
+    scrub.style.setProperty('--at', `${((100 * st.time) / st.t).toFixed(2)}%`);
+    scrub.setAttribute('aria-valuetext', `${N(fmt(st.time, 1))} s`);
+    for (const b of el.querySelectorAll('[data-ex-rate]')) {
+      const on = Number(/** @type {HTMLElement} */ (b).dataset.exRate) === st.rate;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-checked', String(on));
+    }
+    for (const b of el.querySelectorAll('[data-ex-view]')) {
+      const on = /** @type {HTMLElement} */ (b).dataset.exView === st.view;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-checked', String(on));
+    }
     const run = $('[data-ex="run"]');
     const ph = phase();
     if (run.dataset.phase === ph) return;
@@ -206,7 +265,7 @@ export function createExample({ root, t, now = () => performance.now(), onChange
 
   function tick() {
     if (!st.playing) return false;
-    st.time = Math.min(st.t, ((now() - st.startedAt) / 1000) * ex.speedup);
+    st.time = Math.min(st.t, ((now() - st.startedAt) / 1000) * st.rate);
     if (st.time >= st.t) {
       st.playing = false;
       changed();
@@ -255,6 +314,7 @@ export function createExample({ root, t, now = () => performance.now(), onChange
       b.classList.toggle('off', dir < 0 ? st[k] <= lo : st[k] >= hi);
     }
     $('.eom-ex-lines').innerHTML = st.part === 0 ? `<li class="eom-ex-hint">${t('ex_hint')}</li>${lines()}` : lines();
+    $('.eom-ex-ticks').innerHTML = [0, st.t / 2, st.t].map((k) => `<span>${N(fmt(k, 1))} s</span>`).join('');
     $('.eom-dv-dots').innerHTML = Array.from({ length: EX_PARTS + 1 }, (_, i) => `<i class="${i <= st.part ? 'on' : ''}"></i>`).join('');
     /** @type {HTMLButtonElement} */ ($('[data-ex="prev"]')).disabled = st.part === 0;
     const next = $('[data-ex="next"]');
@@ -269,7 +329,7 @@ export function createExample({ root, t, now = () => performance.now(), onChange
 
   function play() {
     if (st.time >= st.t - 1e-9) st.time = 0;
-    st.startedAt = now() - (st.time / ex.speedup) * 1000;
+    st.startedAt = now() - (st.time / st.rate) * 1000;
     st.playing = true;
     view?.stage.invalidate();
     render();
@@ -277,7 +337,7 @@ export function createExample({ root, t, now = () => performance.now(), onChange
   }
   function pause() {
     if (!st.playing) return;
-    st.time = Math.min(st.t, ((now() - st.startedAt) / 1000) * ex.speedup);
+    st.time = Math.min(st.t, ((now() - st.startedAt) / 1000) * st.rate);
     st.playing = false;
     render();
     changed();
@@ -286,6 +346,22 @@ export function createExample({ root, t, now = () => performance.now(), onChange
     st.playing = false;
     st.time = Math.min(st.t, Math.max(0, tau));
     render();
+    changed();
+  }
+  function setRate(k) {
+    if (!RATES.includes(k)) return;
+    if (st.playing) st.time = Math.min(st.t, ((now() - st.startedAt) / 1000) * st.rate);
+    st.rate = k;
+    if (st.playing) st.startedAt = now() - (st.time / st.rate) * 1000; // the car goes on from where it is
+    hud();
+    changed();
+  }
+  function setView(v) {
+    if (!VIEWS[v]) return;
+    st.view = v;
+    dirGoal = VIEWS[v].clone();
+    view?.stage.invalidate();
+    hud();
     changed();
   }
   function setNumbers(p) {
@@ -329,24 +405,40 @@ export function createExample({ root, t, now = () => performance.now(), onChange
     if (b?.dataset.exStep) {
       const k = b.dataset.exStep === 'v' ? 'kmh' : 't';
       setNumbers({ [k]: st[k] + Number(b.dataset.dir) * EX_LIMITS[k][2] });
-    } else if (b?.dataset.ex === 'run') st.playing ? pause() : play();
+    } else if (b?.dataset.exRate) setRate(Number(b.dataset.exRate));
+    else if (b?.dataset.exView) setView(b.dataset.exView);
+    else if (b?.dataset.ex === 'run') st.playing ? pause() : play();
     else if (b?.dataset.ex === 'next') st.part >= EX_PARTS ? close() : go(st.part + 1);
     else if (b?.dataset.ex === 'prev') go(st.part - 1);
     else if (b?.dataset.ex === 'close') close();
-    else if (target.closest('.eom-ex-scene'))
-      st.playing ? pause() : play(); // a tap on the car runs it
+    else if (target.closest('.eom-ex-gl') && !dragged)
+      st.playing ? pause() : play(); // a tap on the street runs it
     else if (target === el) close(); // a tap on the backdrop
     e.stopPropagation();
   });
+  // a tap on the street runs the car; a drag turns the camera
+  let downAt = null;
+  let dragged = false;
+  const gl = $('.eom-ex-gl');
+  gl.addEventListener('pointerdown', (e) => {
+    downAt = [e.clientX, e.clientY];
+    dragged = false;
+  });
+  gl.addEventListener('pointermove', (e) => {
+    if (downAt && Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 6) dragged = true;
+  });
+  // the timeline: any moment, the car stopped there
+  scrub.addEventListener('input', () => showAt(Number(scrub.value)));
   el.addEventListener('keydown', (e) => {
     const onButton = /** @type {Element} */ (e.target).closest('button');
+    if (e.target === scrub && e.key !== 'Escape' && e.key !== 'Tab') return e.stopPropagation();
     if (e.key === 'Escape') close();
     else if (e.key === 'ArrowRight') go(st.part + 1);
     else if (e.key === 'ArrowLeft') go(st.part - 1);
     else if ((e.key === ' ' || e.key === 'Enter') && !onButton) st.playing ? pause() : play();
     else if (e.key === 'Tab') {
       // focus stays inside the sheet
-      const list = [...el.querySelectorAll('button:not(:disabled)')];
+      const list = [...el.querySelectorAll('button:not(:disabled), input')];
       const i = list.indexOf(/** @type {Element} */ (document.activeElement));
       if (e.shiftKey && i <= 0) /** @type {HTMLElement} */ (list[list.length - 1]).focus();
       else if (!e.shiftKey && i === list.length - 1) /** @type {HTMLElement} */ (list[0]).focus();
@@ -367,13 +459,16 @@ export function createExample({ root, t, now = () => performance.now(), onChange
     },
     /**
      * Change any of: open (true/false), kmh and t (the question: a new one puts the car back at the start), part
-     * (0–4 lines of the answer shown), time (s into the run, stopped there; 'end'), playing.
+     * (0–4 lines of the answer shown), time (s into the run, stopped there; 'end'), playing, rate (1, 2 or 5 times
+     * real time), view ('side' or 'chase').
      */
     set(p = {}) {
       if (p.open === true) open();
       if (p.kmh != null || p.t != null) setNumbers({ kmh: p.kmh != null ? Number(p.kmh) : undefined, t: p.t != null ? Number(p.t) : undefined });
       if (p.part != null) go(Number(p.part) || 0);
       if (p.time != null) showAt(p.time === 'end' ? st.t : Number(p.time) || 0);
+      if (p.rate != null) setRate(Number(p.rate));
+      if (p.view != null) setView(String(p.view));
       if (p.playing === true && !st.playing) play();
       if (p.playing === false) pause();
       if (p.open === false) close();

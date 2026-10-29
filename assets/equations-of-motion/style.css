@@ -293,12 +293,27 @@ body.bg-transparent { background: transparent; }
 .k-v { --c: var(--c-v); }
 .eom-ex-card { gap: 6px; }
 .eom-ex-body { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
-.eom-ex-scene { position: relative; flex: 1 1 auto; min-height: 120px; border-radius: 12px; overflow: hidden; background: #dff0fb; cursor: pointer; }
-.eom-ex-gl { position: absolute; inset: 0; }
+.eom-ex-scene { position: relative; flex: 1 1 auto; min-height: 150px; border-radius: 12px; overflow: hidden; background: #dff0fb; }
+.eom-ex-gl { position: absolute; inset: 0; cursor: grab; touch-action: none; }
+.eom-ex-gl:active { cursor: grabbing; }
+/* on the street: the playing speed (top right), the view (bottom right), the timeline along the bottom */
+.eom-ex-seg { position: absolute; display: flex; padding: 3px; gap: 2px; border-radius: 999px; background: rgba(255, 255, 255, 0.94); box-shadow: 0 1px 5px rgba(20, 40, 60, 0.2); }
+.eom-ex-seg button { min-width: 38px; min-height: 32px; padding: 0 10px; border: 0; border-radius: 999px; background: none; color: var(--ink-2); font-size: 14px; font-weight: 700; white-space: nowrap; }
+.eom-ex-seg button.on { background: var(--accent); color: #fff; }
+.eom-ex-seg button:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
+.eom-ex-rates { top: 8px; right: 8px; }
+.eom-ex-views { right: 8px; bottom: 50px; }
+.eom-ex-scrub { position: absolute; left: 8px; right: 8px; bottom: 6px; padding: 2px 12px 1px; border-radius: 12px; background: rgba(255, 255, 255, 0.94); box-shadow: 0 1px 5px rgba(20, 40, 60, 0.2); }
+.eom-ex-scrub input { display: block; width: 100%; height: 24px; margin: 0; background: none; appearance: none; -webkit-appearance: none; cursor: pointer; }
+.eom-ex-scrub input::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--c-t) var(--at, 0%), #dfe4ea var(--at, 0%)); }
+.eom-ex-scrub input::-moz-range-track { height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--c-t) var(--at, 0%), #dfe4ea var(--at, 0%)); }
+.eom-ex-scrub input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; margin-top: -8px; border: 3px solid #fff; border-radius: 50%; background: var(--c-t); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3); }
+.eom-ex-scrub input::-moz-range-thumb { width: 16px; height: 16px; border: 3px solid #fff; border-radius: 50%; background: var(--c-t); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3); }
+.eom-ex-scrub input:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 6px; }
+.eom-ex-ticks { display: flex; justify-content: space-between; font-size: 11.5px; line-height: 1.2; color: var(--ink-3); font-variant-numeric: tabular-nums; }
 .eom-ex-chip { position: absolute; top: 8px; padding: 3px 10px; border-radius: 999px; background: rgba(255, 255, 255, 0.92); box-shadow: 0 1px 4px rgba(20, 40, 60, 0.18); font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; pointer-events: none; }
 .eom-ex-clock { left: 8px; color: var(--c-t); }
-.eom-ex-fast { right: 8px; color: var(--ink-2); font-size: 13.5px; font-weight: 600; }
-.eom-ex-speedo { position: absolute; left: 8px; bottom: 8px; display: flex; flex-direction: column; align-items: center; width: 104px; padding: 4px 4px 5px; border-radius: 14px; background: rgba(255, 255, 255, 0.94); box-shadow: 0 2px 8px rgba(20, 40, 60, 0.2); pointer-events: none; }
+.eom-ex-speedo { position: absolute; left: 8px; bottom: 50px; display: flex; flex-direction: column; align-items: center; width: 104px; padding: 4px 4px 5px; border-radius: 14px; background: rgba(255, 255, 255, 0.94); box-shadow: 0 2px 8px rgba(20, 40, 60, 0.2); pointer-events: none; }
 .eom-ex-speedo svg { display: block; width: 96px; height: auto; overflow: visible; }
 .eom-ex-speedo .sp-face { fill: #fbfcfd; stroke: #dfe5eb; stroke-width: 1.5; }
 .eom-ex-speedo .sp-track { fill: none; stroke: #e6ebf0; stroke-width: 7; stroke-linecap: round; }
@@ -331,12 +346,23 @@ body.bg-transparent { background: transparent; }
 .eom-ex-run { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 18px 0 12px; border: 0; border-radius: 999px; background: var(--c-v); color: #fff; font-size: 16px; font-weight: 700; white-space: nowrap; box-shadow: 0 2px 6px rgba(194, 65, 12, 0.3); }
 .eom-ex-run svg { width: 22px; height: 22px; stroke-width: 2; }
 .eom-ex-run svg .fill { fill: currentColor; stroke: none; }
-.eom-ex-run:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+.eom-ex-run:focus-visible { outline: 2px solid var(--c-v); outline-offset: 2px; }
 .eom-ex .eom-dv-nav.primary { margin-left: 0; }
 .eom-ex .eom-dv-dots { margin: 0 auto; }
 
-/* phones: the previous-step button as an arrow only, so the run button and the next step fit beside it */
+/* phones: the previous-step button as an arrow only, so the run button and the next step fit beside it; the street
+   edge to edge, the steppers in one row with their labels beside them */
 @container pvc (max-width: 560px) {
+  .eom-ex-scene { margin: 0 -14px; border-radius: 0; }
+  .eom-ex-steps { gap: 8px; }
+  .eom-ex-steps .eom-step { flex-direction: row; align-items: center; gap: 6px; }
+  .eom-ex-steps .eom-name { flex: 1 1 auto; min-width: 0; }
+  .eom-ex-steps .eom-ctl { flex: none; width: 102px; height: 36px; }
+  .eom-ex-steps .eom-pm { width: 32px; }
+  .eom-ex-steps .eom-name small { font-size: 10.5px; }
+  .eom-ex-steps .eom-val { font-size: 17px; }
+  .eom-ex-card .eom-dv-head h2 { font-size: 16.5px; }
+  .eom-ex-card .eom-dv-x { width: 40px; height: 40px; }
   .eom-ex-prev { min-width: 44px; padding: 0; }
   .eom-ex-prev span { display: none; }
   .eom-ex .eom-dv-dots { display: none; }
@@ -345,7 +371,8 @@ body.bg-transparent { background: transparent; }
 }
 @container pvc (max-width: 420px) {
   .eom-ex-line .f { font-size: 15px; }
-  .eom-ex-q { font-size: 14px; }
+  .eom-ex-q { font-size: 13.5px; line-height: 1.4; }
+  .eom-ex-steps .eom-name .w { display: none; }
   .eom-ex-speedo { width: 90px; }
   .eom-ex-speedo svg { width: 82px; }
 }
@@ -364,12 +391,15 @@ body.bg-transparent { background: transparent; }
   .eom-ex-speedo svg { width: 74px; }
   .eom-ex-ms { font-size: 12px; }
   .eom-ex-chip { top: 6px; font-size: 13.5px; }
+  .eom-ex-seg button { min-height: 28px; padding: 0 8px; font-size: 13px; }
+  .eom-ex-speedo, .eom-ex-views { bottom: 46px; }
+  .eom-ex-ticks { font-size: 10.5px; }
 }
 /* wide: the road on the left, the question and the sum on the right */
 @container pvc (min-aspect-ratio: 7/5) {
   .eom-ex-body { flex-direction: row; gap: 14px; }
-  .eom-ex-scene { flex: 1 1 48%; min-height: 0; }
-  .eom-ex-text { flex: 1 1 52%; justify-content: center; }
+  .eom-ex-scene { flex: 1 1 60%; min-height: 0; }
+  .eom-ex-text { flex: 1 1 40%; justify-content: center; }
   .eom-ex-steps .eom-step { flex-direction: row; align-items: center; justify-content: space-between; gap: 6px; }
   .eom-ex-steps { grid-template-columns: 1fr; gap: 4px; }
   .eom-ex-steps .eom-ctl { width: 136px; flex: none; }
@@ -380,8 +410,11 @@ body.bg-transparent { background: transparent; }
   .eom-ex-steps .eom-ctl { height: 32px; }
 }
 @container pvc (min-width: 720px) and (min-height: 520px) {
-  .eom-ex-card { max-width: 980px; max-height: 660px; padding: 14px 20px 16px; border-radius: 16px; box-shadow: 0 12px 40px rgba(25, 45, 70, 0.18); }
-  .eom-ex-text { flex-basis: 50%; }
+  .eom-ex-card { max-width: 1200px; max-height: 780px; padding: 14px 20px 16px; border-radius: 16px; box-shadow: 0 12px 40px rgba(25, 45, 70, 0.18); }
+  .eom-ex-text { flex-basis: 38%; }
+  .eom-ex-speedo { width: 132px; bottom: 54px; }
+  .eom-ex-speedo svg { width: 122px; }
+  .eom-ex-ms { font-size: 15px; }
   .eom-ex-steps { grid-template-columns: 1fr 1fr; gap: 10px; }
   .eom-ex-steps .eom-step { flex-direction: column; align-items: stretch; }
   .eom-ex-steps .eom-ctl { width: auto; }

@@ -229,7 +229,6 @@ describe('the worked example (page 45): a car from rest to 60 km/hour in 1 minut
     assert.equal(e.v, 16.67);
     assert.equal(e.a, 0.278);
     assert.equal(e.minutes, 1);
-    assert.equal(e.speedup, 5);
     assert.equal(e.s, 500); // ½at², with the exact a
   });
   it('the steppers stay on their steps and in range', () => {
@@ -244,7 +243,6 @@ describe('the worked example (page 45): a car from rest to 60 km/hour in 1 minut
         close(e.v, (kmh * 1000) / 3600, 0.005, 'v');
         assert.equal(e.a, m.roundTo(e.v / t, 3));
         close(e.aExact * t * 3.6, kmh, 1e-9, 'reaches the speed at t');
-        assert.ok(t / e.speedup <= 15 && t / e.speedup >= 7.5, `run of ${t / e.speedup} s`);
       }
   });
 });

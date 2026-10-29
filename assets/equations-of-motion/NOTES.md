@@ -88,16 +88,21 @@ scenery"): the উদাহরণ sheet with the book's worked example and a red
   paved footpaths with kerbs, a row of pastel buildings of three to eight floors with windows and balconies, shops
   under striped awnings, trees in planters, street lamps every 30 m, a hazy skyline; no green fields, so it looks
   unlike the railway. Everything repeats around the car, which may go 2 km. A speedometer (0–140 km/hour, the needle
-  and an orange arc) shows km/hour and under it the same speed in m/s, a clock shows t, and a chip says how much
-  faster than real time the run plays (a whole number near t/12: a minute plays in 12 s, "৫ গুণ দ্রুত"); the camera
-  follows the car and draws back as the road flies past faster (12 m of road at rest, up to 36 m). Below: the
+  and an orange arc) shows km/hour and under it the same speed in m/s, and a clock shows t. Then the owner: "make
+  the 3d bigger and much more longer and interactive": the street takes most of the sheet (edge to edge on phones,
+  60 % of the width beside the words); the run plays in real time, a whole minute (১× ২× ৫× in the corner change
+  it, even while it runs); a finger turns the camera round the car while it drives (no zoom or pan: it keeps
+  following), পাশ থেকে / পেছন থেকে put it beside the car or behind it looking down the street; a timeline along the
+  bottom shows any moment (dragging it stops the car there; arrow keys on it too). Beside the car the camera shows
+  12 m of road at rest and draws back to 36 m as the road flies past; behind it, it stays close. Below: the
   question (its time and speed in their colours), two steppers (শেষ বেগ 10–120 km/hour in tens, সময় 10–120 s in
   tens; a new question puts the car back at the line) and the book's answer one line per পরের ধাপ: t = 1 মিনিট =
   60 s (when it is whole minutes); v = 60 km/hour = (60 × 1000 m)/(60 × 60 s) = 16.67 m/s (fractions stacked as in
   the book); v = u + at = at (from rest, u = 0); a = v/t = 16.67 m/s / 60 s = 0.278 m/s² (the book's unit here),
   marked বইয়ের উত্তর for the book's numbers, otherwise "প্রতি সেকেন্ডে বেগ বাড়ে … m/s". The sum uses v rounded to
   2 places, as the book does; the car moves with the exact acceleration, so the speedometer reaches the chosen
-  km/hour exactly at t. চালাও (or a tap on the street, or Space) runs, pauses and runs again; arrows step the lines.
+  km/hour exactly at t. চালাও (or a tap on the street without dragging, or Space) runs, pauses and runs again; arrows
+  step the lines.
 - The graph, the bar and the railway's labels are drawn on a 2D overlay canvas (crisp, collision-checked, part of
   `capture`); the camera fits the railway into its part of the stage with an off-centre projection.
 - Test (5 tap questions, numbers from a real train): the final velocity or the distance by formula; the distance as
@@ -109,8 +114,9 @@ scenery"): the উদাহরণ sheet with the book's worked example and a red
 - Bridge: set { eq: 'v' | 's2' | 'v2' | 'Vt' }, set { hl: 'u' | 'v' | 'a' | 't' | 's' | 'V' | null },
   set { derive: 1–4, part } opens the sheet at a step and line, set { derive: false } closes it; get reports eq, hl
   and derive; the event `derive` reports the sheet's step and line. set { example: true | false } opens or closes the
-  worked example, set { example: { kmh, t, part, time, playing } } sets it (time in the car's seconds, or 'end');
-  get reports example (open, part, kmh, t, v, a, time, speed, distance, speedup, playing, phase); the event `example`
+  worked example, set { example: { kmh, t, part, time, playing, rate: 1 | 2 | 5, view: 'side' | 'chase' } } sets it (time in the
+  car's seconds, or 'end'); get reports example (open, part, kmh, t, v, a, time, speed, distance, rate, view,
+  playing, phase); the event `example`
   reports it on every change.
 
 ## Open questions
