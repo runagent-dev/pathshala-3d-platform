@@ -62,9 +62,10 @@ three.js copies instead of the shared catalog (see "The shared libraries"); `--n
 table, wait for the token in `.env.library` (never ask for it in chat), run with `--apply`, run the dry run again to confirm `unchanged`, then
 report what the Books server answered.
 
-**Automatic publishing (planned).** Running this from CI on every merge, with a marked-not-deleted treatment of figures that
-disappear from the repo and a separate, explicit deletion workflow, is designed but not built: see
-[ci-library-sync.md](ci-library-sync.md) (triggers, runner and the billing blocker, secrets, rollout steps, workflow sketch).
+**Automatic publishing.** A commit on the `prod` branch runs this sync in GitHub Actions (`.github/workflows/library-publish.yml`):
+the plan, the publish, then a check that everything is `unchanged`; the Books server is told, so books follow. A pull request gets
+a plan comment (`library-plan.yml`), and a nightly job fails when the library is behind `prod` (`library-drift.yml`). Removed figures are
+never withdrawn by CI. One-time setup and the rollout: [ci-library-sync.md](ci-library-sync.md#setup-once).
 
 ## What it publishes
 

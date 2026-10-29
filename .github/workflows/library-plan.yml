@@ -1,0 +1,56 @@
+# What a pull request would change in the Chalk library: a dry run of `npm run library:sync`, shown on the pull request.
+# It writes nothing and uses no secret (the library is read openly), so it is safe for pull requests from forks.
+# It fails when a figure the pull request touches is `blocked` (usually: its files changed but its version did not).
+# Docs: docs/ci-library-sync.md
+name: Library plan
+
+on:
+  pull_request:
+    paths: ['assets/**', 'shared/**', 'scripts/lib/library/**', 'package-lock.json']
+
+concurrency:
+  group: library-plan-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  plan:
+    name: What this would change in the library
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      LIBRARY_URL: ${{ vars.LIBRARY_URL || 'https://library.pathshalax.com' }}
+      BASE: origin/${{ github.base_ref }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version-file: .nvmrc, cache: npm }
+      - run: npm ci
+      # only the figures this pull request touches (their files, or the kit files they import)
+      - id: plan
+        run: |
+          set +e
+          node scripts/library-sync.mjs --library "$LIBRARY_URL" --tier production --changed-since "$BASE" --report plan.json
+          echo "code=$?" >> "$GITHUB_OUTPUT"
+      - id: summary
+        run: |
+          set +e
+          node scripts/ci/library-summary.mjs plan.json --heading "Library plan" --fail-on blocked,failed > summary.md
+          echo "code=$?" >> "$GITHUB_OUTPUT"
+          cat summary.md >> "$GITHUB_STEP_SUMMARY"
+      # a pull request from a fork gets a read-only token: it keeps the job summary instead of a comment
+      - if: github.event.pull_request.head.repo.full_name == github.repository
+        run: gh pr comment "$PR" --edit-last --create-if-none --body-file summary.md
+        env: { GH_TOKEN: '${{ github.token }}', PR: '${{ github.event.pull_request.number }}' }
+        continue-on-error: true
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with: { name: library-plan, path: plan.json, retention-days: 30, if-no-files-found: ignore }
+      - if: steps.plan.outputs.code != '0' || steps.summary.outputs.code != '0'
+        run: |
+          echo "The plan found a problem: see the job summary (blocked or failed figures)." >&2
+          exit 1
