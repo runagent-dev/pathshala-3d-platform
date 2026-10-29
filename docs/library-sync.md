@@ -62,6 +62,10 @@ three.js copies instead of the shared catalog (see "The shared libraries"); `--n
 table, wait for the token in `.env.library` (never ask for it in chat), run with `--apply`, run the dry run again to confirm `unchanged`, then
 report what the Books server answered.
 
+**Automatic publishing (planned).** Running this from CI on every merge, with a marked-not-deleted treatment of figures that
+disappear from the repo and a separate, explicit deletion workflow, is designed but not built: see
+[ci-library-sync.md](ci-library-sync.md) (triggers, runner and the billing blocker, secrets, rollout steps, workflow sketch).
+
 ## What it publishes
 
 For each figure, as separate library items that a book can use on their own or together:

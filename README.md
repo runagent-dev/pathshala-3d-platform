@@ -24,7 +24,8 @@ notes and reviews, captures thumbnails, exports a static GLB and builds the hand
 
 `npm run library:sync` publishes the figures as Chalk labs (and posters and models) to the Chalk library, and tells the Books server so the
 books follow. The exact steps, the token file (`.env.library`) and the commands are in
-[docs/library-sync.md](docs/library-sync.md#publishing-runbook-the-exact-steps).
+[docs/library-sync.md](docs/library-sync.md#publishing-runbook-the-exact-steps). Doing it automatically from CI is planned, not built:
+[docs/ci-library-sync.md](docs/ci-library-sync.md).
 
 ## The studio on a server
 
