@@ -1,91 +1,10 @@
-/* How we walk: the third law. The page, and one colour per force, the same on the 3D arrow, its label and the result:
-   the foot's push on the ground (F) orange (a push, as in the other figures of the chapter), the ground's push on the
-   student (−F) crimson (a grip force, as the friction of newtons-first-law). Never colour alone: each arrow also
-   carries its symbol, its name and the body it acts on. In the test the arrows are plain grey letters until the
-   answer. The panel is the kit's clean sheet (one action, one result, one rule:
-   ../../shared/lib/student/student.css, .pvc-examples, .pvc-act, .pvc-outcome, .pvc-rule), linked first. */
-html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
-#app { position: fixed; inset: 0; }
-body.bg-transparent { background: transparent; }
-
-.pvc { --c-foot: #e8590c; --c-ground: #c2255c; --c-plain: #4b5766; }
-
-/* the result line: the number that matters, a little larger */
-.wtl .pvc-outcome { line-height: 1.55; }
-.wtl .pvc-outcome b { font-size: 1.16em; line-height: 1.2; }
-.wtl .pvc-rule b { font-weight: 700; }
-
-/* a replay has no step number: the verb keeps the pill's even padding instead of the badge's slot */
-.wtl .pvc-act:has(> .pvc-act-num[hidden]) { padding-left: 18px; }
-
-/* how time is shown, at the top left of the 3D view: slowed down, or held at the telling moment */
-.wtl-note { position: absolute; left: 8px; top: 8px; z-index: 3; max-width: max(110px, min(42%, calc(100% - 250px))); padding: 2px 7px; border-radius: 4px; background: rgba(255, 255, 255, 0.85); font-size: 12.5px; line-height: 1.35; color: var(--ink-2); pointer-events: none; }
-.wtl-note:empty { display: none; }
-.wtl-note.held { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px 3px 7px; border: 1px solid var(--line-2); background: rgba(255, 255, 255, 0.95); color: var(--ink); font-size: 13.5px; font-weight: 600; }
-.wtl-note.held svg { width: 13px; height: 13px; color: var(--ink-2); }
-
-/* the two forces, named where they act: the symbol, the name, and the body it acts on */
-.wtl .pvc-anno-force { padding: 2px 8px 3px; border: 2px solid var(--c); border-radius: 7px; background: rgba(255, 255, 255, 0.95); color: var(--c); font-size: 14px; font-weight: 700; line-height: 1.3; text-align: center; }
-.wtl .pvc-anno-force b { font-size: 16.5px; }
-.wtl .pvc-anno-force small { display: block; font-size: 13px; font-weight: 700; color: var(--ink-2); font-variant-numeric: tabular-nums; }
-/* in the test: a letter on a plain grey arrow */
-.wtl .pvc-anno-letter { min-width: 30px; padding: 1px 6px 2px; border: 2px solid var(--c); border-radius: 50%; background: rgba(255, 255, 255, 0.96); color: var(--c); font-size: 17px; font-weight: 700; line-height: 1.3; text-align: center; }
-.wtl .pvc-anno-start { padding: 0 4px; border: 0; background: transparent; color: #66717e; font-size: 13px; font-weight: 600; }
-.wtl .pvc-anno-lines .k-force { stroke-width: 1.8; }
-.wtl .pvc-anno-lines circle.k-force { r: 2.5px; }
-.wtl .pvc-anno-lines .k-letter { stroke-width: 1.5; }
-.wtl .pvc-anno-lines .k-start, .wtl .pvc-anno-lines circle.k-start { visibility: hidden !important; }
-.wtl.wtl-narrow .pvc-anno-force { width: max-content; max-width: 116px; white-space: normal; font-size: 13.5px; line-height: 1.25; padding: 2px 6px 3px; }
-.wtl.wtl-compact .pvc-anno-force { font-size: 12.5px; line-height: 1.2; padding: 1px 5px 2px; }
-.wtl.wtl-narrow.wtl-compact .pvc-anno-force { max-width: 108px; }
-.wtl.wtl-compact .pvc-anno-force b { font-size: 14px; }
-.wtl.wtl-compact .pvc-anno-force small { font-size: 12px; }
-
-/* the test: answers in words (two lines allowed) */
-.wtl .pvc-opt { height: 52px; }
-.wtl .pvc-opt .wtl-opt { display: block; font-size: 14px; line-height: 1.25; font-weight: 600; white-space: normal; text-align: center; }
-.wtl .pvc-q-text { font-size: 16px; }
-.wtl .pvc-q-feedback { font-size: 14px; }
-
-/* wide frames (tabs beside the sheet): the lines one under the other, close together; very wide: words and action
-   side by side */
-@container pvc (min-width: 720px) and (min-height: 461px) {
-  .wtl .pvc-learn { justify-content: flex-start; gap: 8px; }
-  .wtl .pvc-examples { max-width: 560px; }
-  .wtl .pvc-outcome { --pvc-outcome-lines: 2; }
-  .wtl .pvc-rule { --pvc-rule-lines: 2; }
-  .wtl .pvc-q-text { --pvc-q-text-min: 1lh; }
-  .wtl .pvc-q-feedback { --pvc-q-feedback-min: 2lh; }
-}
-@container pvc (min-width: 1000px) and (min-height: 461px) {
-  .wtl .pvc-learn { display: grid; grid-template-columns: minmax(0, 560px) minmax(0, 1fr); grid-template-areas: 'ex act' 'out out' 'rule rule'; align-content: start; align-items: center; gap: 8px 32px; }
-  .wtl .pvc-examples { grid-area: ex; }
-  .wtl .pvc-act-row { grid-area: act; }
-  .wtl .pvc-outcome { grid-area: out; }
-  .wtl .pvc-rule { grid-area: rule; }
-}
-/* phones that are not very tall */
-@container pvc (max-width: 560px) and (max-height: 600px) {
-  .wtl .pvc-outcome { font-size: 14.5px; line-height: 1.5; }
-  .wtl .pvc-rule { font-size: 13.5px; line-height: 1.45; }
-  .wtl .pvc-q-text { font-size: 15px; }
-  .wtl .pvc-opt { height: 46px; }
-  .wtl .pvc-opt .wtl-opt { font-size: 13px; }
-  .wtl .pvc-q-feedback { font-size: 13px; }
-}
-/* short and wide (phone held sideways): the panel is a column beside the scene */
-@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
-  .wtl .pvc-act-row { --pvc-act-lines: 2; }
-  .wtl .pvc-outcome { --pvc-outcome-lines: 3; font-size: 14.5px; line-height: 1.5; }
-  .wtl .pvc-rule { --pvc-rule-lines: 4; font-size: 13.5px; line-height: 1.45; }
-  .wtl .pvc-examples .pvc-ex-word { font-size: 14px; }
-  .wtl .pvc-examples .pvc-ex-res { font-size: 12px; }
-  .wtl .pvc-q-text { font-size: 14px; line-height: 1.4; --pvc-q-text-min: 3lh; }
-  .wtl .pvc-opt { height: 50px; padding: 2px 4px; }
-  .wtl .pvc-opt .wtl-opt { font-size: 12.5px; line-height: 1.2; }
-  .wtl .pvc-q-feedback { font-size: 13px; --pvc-q-feedback-min: 4lh; }
-}
-/* a narrower column beside the scene: the rule with the book's sentence under it needs one more line */
-@container pvc (max-width: 700px) and (max-height: 460px) and (min-aspect-ratio: 3/2) {
-  .wtl .pvc-rule { --pvc-rule-lines: 5; }
-}
+html,body{margin:0;height:100%;overflow:hidden;background:#fff}#app{position:fixed;inset:0}body.bg-transparent{background:transparent}
+.wtl{--c-foot:#b85206;--c-ground:#b51c50}.wtl sup{font-size:.7em;line-height:0}.wtl .pvc-learn{gap:6px;justify-content:flex-start}.wtl .pvc-outcome{display:none}.wtl .pvc-rule{font-size:13px;line-height:1.4;min-height:4.2em}.wtl .pvc-act-row{min-height:42px}.wtl .pvc-act{min-height:40px;padding:3px 8px 3px 5px;font-size:14px}.wtl .pvc-act-num{width:29px;height:29px;font-size:17px}.wtl .pvc-quiet{width:26px;min-width:26px}.wtl .pvc-examples{flex-wrap:nowrap}.wtl .pvc-examples button{flex:1;min-height:40px;padding:3px 1px}.wtl .pvc-ex-word{font-size:13px;line-height:1.3;white-space:normal}.wtl .pvc-ex-res{font-size:11px;min-height:14px}.wtl .pvc-tabs{max-width:none}.wtl .pvc-q-text{font-size:14px}.wtl .pvc-q-feedback{font-size:12px}.wtl .pvc-opt{height:46px}.wtl-opt{font-size:12.5px;line-height:1.25;display:block;white-space:normal}
+.wtl-timeline{color:#3b566d;font-size:11px}.wtl-timeline>div:first-child{display:flex;justify-content:space-between}.wtl-timeline input{display:block;width:100%;height:24px;margin:0;accent-color:#087d83;cursor:pointer}.wtl-steps{display:flex;justify-content:space-between;gap:6px}.wtl-steps button{min-height:24px;border:0;background:none;padding:0 4px;font-size:11px;color:#577080}.wtl-steps button[aria-pressed=true]{color:#086d75;font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.wtl-analysis{border-left:3px solid #15878a;background:#f1f8f6;padding:4px 8px;color:#194e5d;min-height:110px}.wtl-analysis>button{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;padding:0;min-height:27px;background:none;border:0;text-align:left}.wtl-analysis>button b{font-size:13px}.wtl-analysis>button span{font-size:11px;white-space:nowrap;text-decoration:underline}.wtl-pair-row{display:grid;grid-template-columns:18px 1fr auto;gap:5px;font-size:12px;line-height:1.5;white-space:nowrap}.wtl-pair-row.foot{color:#a34a06}.wtl-pair-row.person{color:#b31d4d}.wtl-pair-row>span:first-child{font-weight:800;font-size:16px;line-height:1.1}.wtl-calculation{font-size:12px;line-height:1.6;white-space:nowrap}.wtl-live-values small{display:block;font-size:10px;line-height:1.4}
+.wtl-note{position:absolute;left:9px;top:54px;z-index:3;max-width:45%;font-size:11px;line-height:1.3;color:#e5f4ff;pointer-events:none}.wtl-note:empty{display:none}.wtl-note svg{width:12px;height:12px;vertical-align:middle;margin-right:4px}.wtl .pvc-anno{transition:none;background:#fffbed;font-size:12px;line-height:1.3;padding:3px 6px}.wtl .pvc-anno-force{font-weight:700;white-space:normal;max-width:200px;text-align:center;border:1.5px solid var(--c)}.wtl .pvc-anno-force b{font-size:14px}.wtl .pvc-anno-start{background:none;border:0;color:#ffe698;font-size:11px}.wtl .pvc-anno-detail{color:#fff4bc;background:#163b59;border:1px solid #c9b96f;font-size:11px;white-space:nowrap}.wtl .pvc-anno-letter{border:2px solid #405a73;border-radius:50%;font-size:16px;font-weight:700}.wtl .pvc-anno-lines .k-start{display:none}
+.wtl-dialog{box-sizing:border-box;width:min(570px,calc(100vw - 24px));max-height:calc(100vh - 20px);padding:16px;border:1px solid #85afb3;border-radius:8px;background:#fffdf5;color:#204a5b;font:14px/1.5 var(--font)}.wtl-dialog::backdrop{background:rgba(8,25,49,.6)}.wtl-dialog h2{margin:0 0 8px;font-size:20px}.wtl-dialog p{margin:8px 0;font-size:12px;line-height:1.5}.wtl-dialog small{display:block;font-size:11px;line-height:1.4}.wtl-dialog>button{display:block;margin:12px 0 0 auto}.wtl-body-pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}.wtl-body-pair>div{padding:8px;border-top:3px solid #f39c28;background:#fff1cf}.wtl-body-pair>div+div{border-color:#d62464;background:#ffebf1}.wtl-body-pair strong{display:block;font-size:34px;line-height:1.1}.wtl-body-pair>div:first-child{color:#8e440a}.wtl-body-pair>div+div{color:#a91d4d}
+@container pvc (min-width:720px){.wtl .pvc-shell{grid-template-columns:minmax(0,1fr) clamp(310px,36%,390px);grid-template-rows:minmax(0,1fr)}.wtl .pvc-panel{display:flex;border-top:0;border-left:1px solid var(--line);padding:10px;gap:7px;overflow:hidden}.wtl .pvc-tabs{grid-template-columns:1fr 1fr}.wtl .pvc-tabs button+button{border-top:0;border-left:1px solid var(--line-2)}.wtl .pvc-q-options{grid-template-columns:1fr 1fr}}
+@container pvc (max-width:560px) and (max-height:600px){.wtl .pvc-panel{padding:6px 12px;gap:4px}.wtl .pvc-tabs button{height:34px;font-size:14px}.wtl .pvc-learn{gap:4px}.wtl .pvc-examples button{min-height:32px}.wtl .pvc-ex-word{font-size:11px}.wtl .pvc-ex-res{font-size:10px;min-height:13px}.wtl .pvc-act-row{min-height:34px}.wtl .pvc-act{min-height:33px;font-size:12px}.wtl .pvc-act-num{width:25px;height:25px;font-size:15px}.wtl .pvc-rule{font-size:11.5px;line-height:1.35;min-height:4.05em}.wtl-analysis{min-height:96px;padding:3px 6px}.wtl-analysis>button{min-height:25px}.wtl-analysis>button b{font-size:12px}.wtl-pair-row,.wtl-calculation{font-size:11px}.wtl .pvc-q-text{font-size:12.5px;--pvc-q-text-min:2.7lh}.wtl .pvc-q-feedback{font-size:11.5px;--pvc-q-feedback-min:3lh}.wtl .pvc-opt{height:37px}.wtl-opt{font-size:11.5px}.wtl-timeline{font-size:10px}.wtl .pvc-anno-force{max-width:108px;font-size:11px}.wtl .pvc-anno-detail{font-size:9px}.wtl-dialog{font-size:12px;padding:12px}.wtl-dialog h2{font-size:17px}.wtl-dialog p{font-size:11px;line-height:1.4}.wtl-dialog small{font-size:10px}}
+@container pvc (max-height:460px) and (min-aspect-ratio:3/2){.wtl .pvc-panel{padding:6px 9px;gap:4px}.wtl .pvc-tabs button{height:32px;font-size:14px}.wtl .pvc-learn{gap:4px}.wtl .pvc-examples button{min-height:31px}.wtl .pvc-ex-word{font-size:11px}.wtl .pvc-ex-res{font-size:10px;min-height:13px}.wtl .pvc-act-row{min-height:34px}.wtl .pvc-act{min-height:33px;font-size:12px}.wtl .pvc-act-num{width:25px;height:25px;font-size:15px}.wtl .pvc-rule{font-size:11.5px;line-height:1.35;min-height:4.05em}.wtl-book{display:none}.wtl-analysis{min-height:94px;padding:3px 6px}.wtl-analysis>button{min-height:25px}.wtl-analysis>button b{font-size:11px}.wtl-analysis>button span{font-size:10px}.wtl-pair-row,.wtl-calculation{font-size:10.5px}.wtl-live-values small{font-size:9.5px}.wtl-timeline{font-size:10px}.wtl-steps button{font-size:10px;min-height:24px}.wtl .pvc-q-text{font-size:12.5px}.wtl .pvc-q-feedback{font-size:11.5px}.wtl .pvc-opt{height:39px}.wtl-opt{font-size:11.5px}.wtl-dialog{padding:10px}.wtl-dialog p{font-size:11px;margin:5px 0}.wtl-dialog small{font-size:10px}.wtl-dialog h2{font-size:17px}}
+.wtl-dialog nav{display:flex;gap:8px;margin-bottom:8px}.wtl-dialog nav button{min-height:28px;padding:2px 10px;border:1px solid #91b3b9;border-radius:4px;background:white;font:inherit;font-size:12px}.wtl-dialog nav button[aria-pressed=true]{background:#176e7c;color:#fff}.wtl-dialog .wtl-body-pair b{font-size:13px}

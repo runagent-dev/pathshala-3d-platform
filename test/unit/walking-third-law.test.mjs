@@ -8,6 +8,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { STRINGS, createI18n } from '../../assets/walking-third-law/src/i18n.js';
 import * as r from '../../assets/walking-third-law/src/reading.js';
+import { Mesh, Vector3 } from 'three';
 import { createWalker } from '../../assets/walking-third-law/src/walker.js';
 
 const close = (a, b, eps = 1e-9) => assert.ok(Math.abs(a - b) < eps, `${a} ≈ ${b}`);
@@ -114,6 +115,21 @@ describe('walking: the pose of the student', () => {
         const lowest = shoe.position.y - Math.abs(Math.sin(shoe.rotation.z)) * half - Math.cos(shoe.rotation.z) * 0.035;
         assert.ok(lowest > -0.0015, `${name} at ${p}: ${lowest}`);
       }
+    }
+  });
+  it('the detailed shoe, sole and tread stay above the ground through the push-off', () => {
+    const point = new Vector3();
+    for (let step = 0; step <= 20; step++) {
+      w.pose(step / 20);
+      w.root.updateMatrixWorld(true);
+      w.rearShoe.traverse((part) => {
+        if (!(part instanceof Mesh)) return;
+        const positions = part.geometry.attributes.position;
+        for (let i = 0; i < positions.count; i++) {
+          point.fromBufferAttribute(positions, i).applyMatrix4(part.matrixWorld);
+          assert.ok(point.y >= -0.00001, `shoe penetrated ground at ${step / 20}: ${point.y}`);
+        }
+      });
     }
   });
   it('the push-off ends with the heel lifted on the rear foot and the front heel landing ahead of the hips', () => {

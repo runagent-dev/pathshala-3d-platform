@@ -10,7 +10,8 @@
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
 import { createTweener, ease } from '@shared/tween.js';
-import { createArrow } from '@shared/arrow.js';
+import { createVector } from './arrow.js';
+import { createContactDetail } from './contact.js';
 import { createAudio } from '@shared/student/audio.js';
 import { bindCleanSheet, buildStudentShell, cleanSheet } from '@shared/student/shell.js';
 import { createAction } from '@shared/student/action.js';
@@ -20,7 +21,7 @@ import { ICONS } from '@shared/student/icons.js';
 import { createI18n } from './i18n.js';
 import { createWalker } from './walker.js';
 import { createGround } from './ground.js';
-import { GROUND_IDS, SHOWN_TIME, SLOW, accelOn, bodyAt, progress, pushOn, realTime, round, slipAt, speedAt } from './reading.js';
+import { GROUND_IDS, MASS, SHOWN_TIME, SLOW, accelOn, bodyAt, progress, pushOn, realTime, round, slipAt, speedAt } from './reading.js';
 
 export const DEFAULTS = {
   ground: 'hard', // 'hard' | 'sand' | 'slip'
@@ -38,17 +39,15 @@ export const DEFAULTS = {
 
 /** One colour per force, the same on the arrow, its label and the result: the foot's push on the ground (a push, as in
  * the other figures of the chapter), the ground's push on the student (a friction-like grip force, crimson). */
-export const COLORS = { foot: '#e8590c', ground: '#c2255c', plain: '#4b5766' };
+export const COLORS = { foot: '#ffb02e', ground: '#ff426d', plain: '#74859b' };
 const ARROW_PER_N = 0.007; // m of arrow per newton: both arrows, the same scale (100 N = 0.7 m, 20 N = 0.14 m)
-const ARROW = { radius: 0.013, head: 0.065, headRadius: 0.034 }; // a small head: a 20 N arrow still shows its shaft
 const BALL = 0.03; // the foot touches the ground this far behind the toe's tip: where both arrows start
 const ARROW_Z = 0.22; // in front of the feet, so nothing hides them
 const F_Y = 0.03; // the foot's push lies on the ground
 const MF_Y = 0.118; // the ground's push starts at the shoe
-const TOP_ROOM = 44; // px kept clear at the top of the view for the corner buttons and the note (less on a wide view)
+const TOP_ROOM = 56; // px kept clear at the top of the view for the corner buttons and the note (less on a wide view)
 const TAP = { move: 10, ms: 600 };
-const FRAME = { min: new THREE.Vector3(-0.7, -0.26, -0.45), max: new THREE.Vector3(1.2, 1.72, 0.45) };
-const FRAME_WIDE = { min: new THREE.Vector3(-0.7, -0.14, -0.45), max: new THREE.Vector3(1.2, 1.68, 0.45) }; // wide: room to spare sideways
+const FRAME = { min: new THREE.Vector3(-0.82, -0.35, -0.4), max: new THREE.Vector3(3.02, 1.78, 0.5) };
 const DIRS = { front: new THREE.Vector3(0, 0.16, 1).normalize(), '3d': new THREE.Vector3(0.62, 0.34, 1).normalize() };
 
 /** Where the labels may go round their point (px, best first): rows of offsets, nearest row first. */
@@ -78,11 +77,31 @@ export function createApp(root, options = {}) {
   const ui = buildStudentShell(root, t, {
     learn: cleanSheet(t, {
       examples: { label: 'ex_label', results: true, items: GROUND_IDS.map((id) => ({ id, label: `chip_${id}` })) },
-      quiet: [{ act: 'home', label: 'act_home', icon: ICONS.reset }],
+      quiet: [
+        { act: 'pause', label: 'act_pause', icon: ICONS.pause },
+        { act: 'home', label: 'act_home', icon: ICONS.reset },
+      ],
       lines: { action: 2, outcome: 2, rule: 3 },
     }),
   });
   const sheet = bindCleanSheet(ui.learn);
+  const timeline = document.createElement('div');
+  timeline.className = 'wtl-timeline';
+  timeline.innerHTML = `<div><label for="walk-moment">${t('timeline')}</label><output></output></div><input id="walk-moment" type="range" min="0" max="${SHOWN_TIME}" step="0.02" aria-label="${t('timeline')}"><div class="wtl-steps">${[0, 0.9, SHOWN_TIME].map((at, i) => `<button type="button" data-moment="${at}">${t(`step_${i}`)}</button>`).join('')}</div>`;
+  ui.$('.pvc-act-row').after(timeline);
+  const analysis = document.createElement('section');
+  analysis.className = 'wtl-analysis';
+  analysis.innerHTML = `<button type="button" data-act="explain"><b>${t('pair_title')}</b><span>${t('explain_link')}</span></button><div class="wtl-live-values"></div>`;
+  ui.$('.pvc-outcome').after(analysis);
+  const explainDialog = document.createElement('dialog');
+  explainDialog.className = 'wtl-dialog';
+  explainDialog.setAttribute('aria-label', t('explain_title'));
+  root.append(explainDialog);
+  const scrubber = /** @type {HTMLInputElement} */ (timeline.querySelector('input'));
+  scrubber.addEventListener('input', () => {
+    if (s.mode !== 'quiz') jump(Number(scrubber.value), true);
+  });
+
   const outcomeEl = /** @type {HTMLElement} */ (ui.$('.pvc-outcome'));
   outcomeEl.setAttribute('aria-live', 'polite');
   const note = document.createElement('div');
@@ -92,6 +111,19 @@ export function createApp(root, options = {}) {
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 30, near: 0.01, far: 100, environment: 'studio-light' });
   const { camera, controls, scene } = stage;
+  const backgroundCanvas = document.createElement('canvas');
+  backgroundCanvas.width = 16;
+  backgroundCanvas.height = 256;
+  const bgContext = backgroundCanvas.getContext('2d');
+  const gradient = bgContext.createLinearGradient(0, 0, 0, 256);
+  gradient.addColorStop(0, '#172653');
+  gradient.addColorStop(1, '#125f73');
+  bgContext.fillStyle = gradient;
+  bgContext.fillRect(0, 0, 16, 256);
+  const background = new THREE.CanvasTexture(backgroundCanvas);
+  background.colorSpace = THREE.SRGBColorSpace;
+  scene.background = o.bg === 'transparent' ? null : background;
+  scene.add(new THREE.HemisphereLight(0xe4f7ff, 0x193957, 0.7));
   controls.enablePan = false;
   const tweener = createTweener();
   stage.addTicker((dt) => tweener.tick(dt));
@@ -103,12 +135,17 @@ export function createApp(root, options = {}) {
   const ground = createGround({ anisotropy: stage.renderer.capabilities.getMaxAnisotropy() });
   const walker = createWalker();
   world.add(ground.root, walker.root);
+  const detail = createContactDetail(walker.rearShoe, COLORS);
+  world.add(detail.root, detail.guide);
 
   const shadows = o.shadow && o.bg !== 'transparent';
-  const sun = new THREE.DirectionalLight(0xffffff, shadows ? 0.6 : 0.35);
+  const sun = new THREE.DirectionalLight(0xffecd6, shadows ? 1.1 : 0.9);
   sun.position.set(1.4, 3.2, 2.2);
   sun.target.position.set(0.3, 0.5, 0);
   scene.add(sun, sun.target);
+  const rim = new THREE.DirectionalLight(0x85cfff, 0.65);
+  rim.position.set(-2, 2, -2);
+  scene.add(rim);
   if (shadows) {
     stage.renderer.shadowMap.enabled = true;
     stage.renderer.shadowMap.type = THREE.VSMShadowMap;
@@ -124,8 +161,8 @@ export function createApp(root, options = {}) {
 
   // the two force arrows: the foot's push on the ground (backward), the ground's push on the student (forward)
   const arrows = {
-    f: createArrow({ color: COLORS.foot, name: 'FootPushArrow', ...ARROW }),
-    mf: createArrow({ color: COLORS.ground, name: 'GroundPushArrow', ...ARROW }),
+    f: createVector(COLORS.foot, 'FootPushArrow'),
+    mf: createVector(COLORS.ground, 'GroundPushArrow'),
   };
   for (const a of Object.values(arrows)) {
     a.root.userData.noExport = true;
@@ -142,6 +179,7 @@ export function createApp(root, options = {}) {
   const s = {
     ground: GROUND_IDS.includes(o.ground) ? o.ground : 'hard',
     phase: 'rest', // 'rest' | 'push' (the slowed-down push-off runs) | 'held' (stopped at the telling moment)
+    paused: false,
     shown: 0, // s into the slowed-down picture, 0 … SHOWN_TIME
     tried: /** @type {Record<string, boolean>} */ ({}), // grounds whose telling moment has been seen
     view: o.view === '3d' ? '3d' : 'front',
@@ -191,9 +229,19 @@ export function createApp(root, options = {}) {
     }
     const grey = s.plain ? COLORS.plain : null;
     arrows.f.material.color.set(grey || COLORS.foot);
-    arrows.f.material.emissive.set(grey || COLORS.foot);
+    arrows.f.material.emissive?.set(grey || COLORS.foot);
     arrows.mf.material.color.set(grey || COLORS.ground);
-    arrows.mf.material.emissive.set(grey || COLORS.ground);
+    arrows.mf.material.emissive?.set(grey || COLORS.ground);
+    detail.root.visible = detail.guide.visible = s.mode !== 'quiz';
+    detail.set({
+      toe: walker.toe(),
+      worldToe: walker.toe().clone().add(walker.root.position),
+      slip: slipAt(t1, s.ground),
+      length: len,
+      alpha: a,
+      ground: s.ground,
+      plain: Boolean(s.plain),
+    });
     stage.invalidate();
   }
 
@@ -218,10 +266,10 @@ export function createApp(root, options = {}) {
   }
   function arrowBoxes() {
     const out = [];
-    for (const a of Object.values(arrows)) {
+    for (const a of [...Object.values(arrows), ...(detail.root.visible ? Object.values(detail.arrows) : [])]) {
       if (!a.root.visible) continue;
-      const pa = toScreen(a.root.position);
-      const pb = toScreen(a.tip);
+      const pa = toScreen(a.root.getWorldPosition(new THREE.Vector3()));
+      const pb = toScreen(a.root.parent.localToWorld(a.tip.clone()));
       const n = Math.max(1, Math.ceil(Math.hypot(pb.x - pa.x, pb.y - pa.y) / 9));
       for (let i = 0; i <= n; i++) {
         const x = pa.x + ((pb.x - pa.x) * i) / n;
@@ -236,6 +284,7 @@ export function createApp(root, options = {}) {
   const anno = createAnnotations({ stage, layer: ui.annoLayer, avoid: [ui.corner, note, ui.hint, () => action?.ringBox()] });
   const mid = { f: new THREE.Vector3(), mf: new THREE.Vector3() };
   const midOf = (key) => () => {
+    if (s.mode !== 'quiz') return detail.point(key);
     const a = arrows[key];
     return mid[key].copy(a.root.position).addScaledVector(along.subVectors(a.tip, a.root.position), 0.5);
   };
@@ -245,7 +294,15 @@ export function createApp(root, options = {}) {
   const symbolsOn = () => s.mode === 'explore' && !s.plain && triedCount() === GROUND_IDS.length;
   /** The text of a force's label now: who pushes whom in plain words (the symbol later); a letter in a test question. */
   function labelText(key) {
-    const words = t(key === 'f' ? 'l_f' : 'l_mf');
+    const words = t(
+      s.mode !== 'quiz' && (stage.height < 260 || stage.width < 480)
+        ? key === 'f'
+          ? 'l_ground_compact'
+          : 'l_person_compact'
+        : key === 'f'
+          ? 'l_f'
+          : 'l_mf',
+    );
     if (s.plain) {
       if (!s.numbers) return `<b>${s.letters[key]}</b>`;
       return `${t(key === 'f' ? 'l_f_short' : 'l_mf_short')}: <b>${key === 'f' ? t('e_val', { n: pushOn(s.ground) }) : '?'}</b>`;
@@ -256,7 +313,7 @@ export function createApp(root, options = {}) {
     for (const key of ['f', 'mf']) {
       const want = arrows[key].root.visible && arrowAlpha() > 0.6;
       const text = want ? labelText(key) : '';
-      const color = s.plain ? COLORS.plain : key === 'f' ? COLORS.foot : COLORS.ground;
+      const color = s.plain ? COLORS.plain : key === 'f' ? '#a54b08' : '#b51c50';
       const sig = `${text}|${color}`;
       if (!want) {
         if (labelState[key]) anno.remove(key);
@@ -269,9 +326,12 @@ export function createApp(root, options = {}) {
           point: midOf(key),
           kind: s.plain && !s.numbers ? 'letter' : 'force',
           color,
-          spots: toSpots(s.plain && !s.numbers ? SPOTS[key].map(([x, y]) => [x * 0.5, y * 0.8]) : SPOTS[key]),
+          spots:
+            s.mode !== 'quiz'
+              ? toSpots(rows(key === 'f' ? [28, 46, 64, -28] : [-28, -46, -64, 28], [0, 30, -30, 65, -65, 100, -100]))
+              : toSpots(s.plain && !s.numbers ? SPOTS[key].map(([x, y]) => [x * 0.5, y * 0.8]) : SPOTS[key]),
           avoid: [() => bodyBoxes(), arrowBoxes],
-          optional: false,
+          optional: s.mode !== 'quiz',
         });
         labelState[key] = sig;
       } else if (labelState[key] !== sig) {
@@ -279,6 +339,20 @@ export function createApp(root, options = {}) {
         labelState[key] = sig;
       }
     }
+    if (s.mode !== 'quiz' && !anno.has('contact-title'))
+      anno.add('contact-title', {
+        text: t('contact_title'),
+        point: () => detail.title(),
+        kind: 'detail',
+        dx: 0,
+        dy: -12,
+        optional: true,
+        spots: [
+          { dx: 0, dy: -12 },
+          { dx: 0, dy: -30 },
+        ],
+      });
+    if (s.mode === 'quiz') anno.remove('contact-title');
     if (!labelState.start) {
       anno.add('start', {
         text: t('l_start'),
@@ -326,13 +400,14 @@ export function createApp(root, options = {}) {
   function ruleHtml() {
     const g = s.ground;
     if (s.phase === 'rest' && !s.tried[g]) return t('rule_start');
-    const book = triedCount() === GROUND_IDS.length ? ` ${t('rule_book')}` : '';
+    const book = triedCount() === GROUND_IDS.length ? ` <span class="wtl-book">${t('rule_book')}</span>` : '';
     return `${t(`rule_${g}`)}${book}`;
   }
 
   let lastNote = '';
   function noteNow() {
-    const html = s.phase === 'push' ? t('note_slow', { k: SLOW }) : s.phase === 'held' ? `${ICONS.pause}${t('note_held')}` : '';
+    const html =
+      s.phase === 'push' ? t(s.paused ? 'note_paused' : 'note_slow', { k: SLOW }) : s.phase === 'held' ? `${ICONS.pause}${t('note_held')}` : '';
     if (html === lastNote) return;
     note.innerHTML = lastNote = html;
     note.classList.toggle('held', s.phase === 'held');
@@ -341,6 +416,7 @@ export function createApp(root, options = {}) {
   /** Write the panel and the action (only what changed: it runs on every frame of a run). */
   function refresh() {
     if (s.mode === 'quiz') return;
+    updateAnalysis();
     sheet.choose(s.ground);
     for (const g of GROUND_IDS) sheet.result(g, s.tried[g] ? t('res_push', { n: pushOn(g) }) : '');
     sheet.outcome(outcomeHtml());
@@ -355,6 +431,56 @@ export function createApp(root, options = {}) {
   }
 
   // ── the run ─────────────────────────────────────────────────────────────────
+  let lastAnalysis = '';
+  function updateAnalysis() {
+    const active = s.phase !== 'rest' && s.shown > 0;
+    const force = active ? pushOn(s.ground) : 0;
+    const html = `<div class="wtl-pair-row foot"><span>←</span><span>${t('on_ground')}</span><b>${t('res_push', { n: force })}</b></div><div class="wtl-pair-row person"><span>→</span><span>${t('on_person')}</span><b>${t('res_push', { n: force })}</b></div><div class="wtl-calculation">${t('live_acceleration', { force, mass: MASS, two: 2, a: active ? round(accelOn(s.ground), 2) : 0 })}</div><small>${t('live_motion', { moved: round(bodyAt(realNow(), s.ground), 2), slip: round(slipAt(realNow(), s.ground), 2) })}</small>`;
+    if (html !== lastAnalysis) {
+      analysis.querySelector('.wtl-live-values').innerHTML = html;
+      lastAnalysis = html;
+    }
+    scrubber.value = String(s.shown);
+    timeline.querySelector('output').textContent = t('timeline_time', { time: round(realNow(), 2) });
+    const phase = s.phase === 'rest' ? 0 : progressNow() < 0.7 ? 1 : 2;
+    for (const b of timeline.querySelectorAll('button'))
+      b.setAttribute('aria-pressed', String(Number(b.dataset.moment) === [0, 0.9, SHOWN_TIME][phase]));
+    const pause = ui.$('[data-act="pause"]');
+    pause.disabled = s.phase !== 'push';
+    pause.innerHTML = s.paused ? ICONS.play : ICONS.pause;
+    pause.setAttribute('aria-label', t(s.paused ? 'act_resume' : 'act_pause'));
+  }
+  let dialogResume = false;
+  function closeExplanation() {
+    if (dialogResume && s.mode !== 'quiz' && s.phase === 'push') s.paused = false;
+    dialogResume = false;
+    drawScene();
+    refresh();
+  }
+  let explanationPage = 'pair';
+  function renderExplanation() {
+    const content =
+      explanationPage === 'pair'
+        ? `<p>${t('explain_simultaneous')}</p><div class="wtl-body-pair"><div><strong>←</strong><b>${t('ground_body')}</b><p>${t('explain_ground')}</p></div><div><strong>→</strong><b>${t('person_body')}</b><p>${t('explain_person')}</p></div></div><p><b>${t('explain_cancel')}</b></p>`
+        : `<p>${t('explain_arrow')}</p><p>${t('explain_friction')}</p><small>${t('explain_model', { mass: MASS, slow: SLOW })}</small>`;
+    explainDialog.innerHTML = `<h2>${t('explain_title')}</h2><nav>${['pair', 'grip'].map((page) => `<button type="button" data-explanation="${page}" aria-pressed="${explanationPage === page}">${t(`explain_tab_${page}`)}</button>`).join('')}</nav>${content}<button type="button" class="pvc-btn primary" data-act="explain-close">${t('explain_close')}</button>`;
+  }
+  function openExplanation() {
+    if (s.mode === 'quiz') return;
+    dialogResume = s.phase === 'push' && !s.paused;
+    if (dialogResume) s.paused = true;
+    explanationPage = 'pair';
+    renderExplanation();
+    explainDialog.showModal();
+    drawScene();
+    refresh();
+  }
+  explainDialog.addEventListener('close', closeExplanation);
+  explainDialog.addEventListener('cancel', (e) => {
+    e.preventDefault();
+    explainDialog.close();
+    closeExplanation();
+  });
   let lastAct = -1e9;
   /** A new ground: the student stands still on it, ready to push. */
   function setGround(id, { quiet = false } = {}) {
@@ -362,6 +488,7 @@ export function createApp(root, options = {}) {
     const changed = id !== s.ground;
     s.ground = id;
     s.phase = 'rest';
+    s.paused = false;
     s.shown = 0;
     ground.setSurface(id);
     drawScene();
@@ -375,6 +502,7 @@ export function createApp(root, options = {}) {
     if (s.locked) return lockedNudge();
     if (s.phase === 'push') return;
     s.phase = 'push';
+    s.paused = false;
     s.shown = 0;
     lastAct = performance.now();
     if (!silent) audio.pop();
@@ -400,7 +528,7 @@ export function createApp(root, options = {}) {
   }
 
   stage.addTicker((dt) => {
-    if (s.phase !== 'push') return false;
+    if (s.phase !== 'push' || s.paused) return false;
     s.shown = Math.min(SHOWN_TIME, s.shown + dt);
     if (s.shown >= SHOWN_TIME) {
       s.phase = 'held';
@@ -424,8 +552,7 @@ export function createApp(root, options = {}) {
   /** The side (or turned) view that fits the frame in the room below the buttons. */
   function viewPose(view = s.view) {
     const dir = DIRS[view];
-    const wide = stage.width >= 600 && stage.width / Math.max(stage.height, 1) > 1.7;
-    const { min, max } = wide || stage.height < 280 ? FRAME_WIDE : FRAME; // short or wide: less ground below, less sky above
+    const { min, max } = s.mode === 'quiz' ? { min: new THREE.Vector3(-0.8, -0.3, -0.4), max: new THREE.Vector3(1.25, 1.78, 0.5) } : FRAME; // short or wide: less ground below, less sky above
     centre.addVectors(min, max).multiplyScalar(0.5);
     basisX.crossVectors(new THREE.Vector3(0, 1, 0), dir).normalize();
     basisY.crossVectors(dir, basisX).normalize();
@@ -440,7 +567,7 @@ export function createApp(root, options = {}) {
     }
     const W = Math.max(stage.width, 1);
     const H = Math.max(stage.height, 1);
-    const top = wide ? 22 : Math.min(TOP_ROOM, H * 0.16);
+    const top = Math.min(TOP_ROOM, H * 0.45);
     const bottom = 6;
     const side = 8;
     const tanV = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
@@ -479,6 +606,7 @@ export function createApp(root, options = {}) {
     }).finished;
   }
   function setView(view, { animate = true } = {}) {
+    if (s.mode === 'quiz') return Promise.resolve(false);
     s.view = view === '3d' ? '3d' : 'front';
     controls.enableRotate = controls.enableZoom = s.view === '3d';
     s.userMovedCamera = false;
@@ -505,7 +633,7 @@ export function createApp(root, options = {}) {
   stage.onResize(() => {
     setCompact();
     if (!s.userMovedCamera) flyTo(viewPose(s.view), 0);
-    noteNow();
+    drawScene();
   });
 
   // ── touching the picture: a tap on the student pushes ───────────────────────
@@ -634,13 +762,23 @@ export function createApp(root, options = {}) {
     action,
     hooks: {
       enter() {
+        if (explainDialog.open) {
+          dialogResume = false;
+          explainDialog.close();
+        }
         s.mode = 'quiz';
+        s.paused = false;
+        down = null;
         s.locked = true;
+        flyTo(viewPose('front'), 0);
+        s.view = 'front';
+        controls.enableRotate = controls.enableZoom = false;
         syncUI();
       },
       leave() {
         s.mode = 'explore';
         s.locked = false;
+        flyTo(viewPose(s.view), 0);
         s.arrows = true;
         s.plain = '';
         s.numbers = false;
@@ -748,7 +886,15 @@ export function createApp(root, options = {}) {
     const b = /** @type {HTMLElement | null} */ (/** @type {Element} */ (e.target).closest('button'));
     if (!b || !root.contains(b)) return;
     audio.unlock();
-    if (b.dataset.view) setView(b.dataset.view);
+    if (b.dataset.explanation) {
+      explanationPage = b.dataset.explanation;
+      renderExplanation();
+    }
+    if (b.dataset.view) {
+      if (s.locked) lockedNudge();
+      else setView(b.dataset.view);
+    }
+    if (b.dataset.moment != null && !s.locked) jump(Number(b.dataset.moment), true);
     if (b.dataset.example) {
       if (s.locked) lockedNudge();
       else if (b.dataset.example !== s.ground || s.phase !== 'rest') setGround(b.dataset.example);
@@ -757,6 +903,21 @@ export function createApp(root, options = {}) {
     if (b.dataset.mode === 'explore') quiz.stop();
     if (b.dataset.q != null) quiz.choose(Number(b.dataset.q));
     switch (b.dataset.act) {
+      case 'pause':
+        if (s.mode !== 'quiz' && s.phase === 'push') {
+          s.paused = !s.paused;
+          drawScene();
+          refresh();
+          emitChange();
+        }
+        break;
+      case 'explain':
+        openExplanation();
+        break;
+      case 'explain-close':
+        explainDialog.close();
+        closeExplanation();
+        break;
       case 'q-next':
         quiz.next();
         break;
@@ -774,6 +935,14 @@ export function createApp(root, options = {}) {
     }
   });
   root.addEventListener('keydown', (e) => {
+    if (explainDialog.open) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        explainDialog.close();
+        closeExplanation();
+      }
+      return;
+    }
     const target = /** @type {Element} */ (e.target);
     if (target.closest('input, textarea, select') || e.metaKey || e.ctrlKey || e.altKey) return;
     const k = e.key.toLowerCase();
@@ -802,11 +971,13 @@ export function createApp(root, options = {}) {
       phase: s.phase, // 'rest' | 'push' | 'held'
       time: round(t1, 3), // s of the push-off in real time (0 … 0.6)
       push: pushOn(s.ground), // N: the foot's push on the ground = the ground's push on the student
-      acceleration: round(accelOn(s.ground), 2), // ms⁻², once the push has begun
+      acceleration: s.phase === 'rest' ? 0 : round(accelOn(s.ground), 2), // ms⁻², once the push has begun
       speed: round(speedAt(t1, s.ground), 2), // m/s now
       moved: round(bodyAt(t1, s.ground), 3), // m the student has moved
       slipped: round(slipAt(t1, s.ground), 3), // m the foot has slid back over the ground
       arrows: arrows.f.root.visible,
+      paused: s.paused,
+      forces: { onGround: s.phase === 'rest' ? 0 : -pushOn(s.ground), onPerson: s.phase === 'rest' ? 0 : pushOn(s.ground) },
       tried: { ...s.tried },
       next: { ground: p.ground, step: p.step }, // what the big action does now
       view: s.view,
@@ -816,14 +987,15 @@ export function createApp(root, options = {}) {
   let lastEmitted = '';
   function emitChange() {
     const snap = snapshot();
-    const key = JSON.stringify([snap.ground, snap.phase, snap.tried, snap.view, snap.mode]);
+    const key = JSON.stringify([snap.ground, snap.phase, snap.paused, snap.tried, snap.view, snap.mode]);
     if (key === lastEmitted) return;
     lastEmitted = key;
     emit('change', snap);
   }
 
   /** Jump to 'rest', 'hold', or a time in s of the slowed-down picture; stopped there. */
-  function jump(at) {
+  function jump(at, paused = false) {
+    s.paused = paused;
     if (at === 'rest' || at === 0) {
       s.phase = 'rest';
       s.shown = 0;
@@ -877,8 +1049,9 @@ export function createApp(root, options = {}) {
         for (const g of list.map((x) => String(x).trim())) if (GROUND_IDS.includes(g)) s.tried[g] = true;
       }
       if (p.ground && s.mode !== 'quiz') setGround(p.ground);
-      if (p.view) await setView(p.view, { animate });
-      if (p.at != null && s.mode !== 'quiz') jump(p.at);
+      if (p.view && s.mode !== 'quiz') await setView(p.view, { animate });
+      if (p.at != null && s.mode !== 'quiz') jump(p.at, p.paused === true);
+      if (p.paused != null && s.mode !== 'quiz') s.paused = Boolean(p.paused);
       if (p.play) play({ silent: true });
       if (p.act) doAction();
       drawScene();
@@ -887,6 +1060,10 @@ export function createApp(root, options = {}) {
       return snapshot();
     },
     async reset() {
+      if (explainDialog.open) {
+        dialogResume = false;
+        explainDialog.close();
+      }
       quiz.stop();
       s.tried = {};
       for (const g of String(o.tried || '')
@@ -897,12 +1074,22 @@ export function createApp(root, options = {}) {
       await setView('front');
     },
     startPractice: () => quiz.start(),
-    capture: (opts) => stage.capture(opts),
-    /** The student in the pose on screen and the ground: no arrows, labels or start line. */
+    capture(opts = {}) {
+      const before = scene.background;
+      if (opts.background !== undefined) scene.background = null;
+      try {
+        return stage.capture(opts);
+      } finally {
+        scene.background = before;
+        stage.invalidate();
+      }
+    },
+    /** Current human, ground and enlarged contact, including its live force arrows. HTML labels stay in the lesson. */
     exportRoot() {
       const copy = new THREE.Group();
       copy.name = 'WalkingThirdLaw';
       copy.add(walker.root.clone(true), ground.exportGroup());
+      if (detail.root.visible) copy.add(detail.root.clone(true), detail.guide.clone());
       return copy;
     },
   };

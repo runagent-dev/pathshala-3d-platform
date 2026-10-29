@@ -26,7 +26,7 @@ const HEEL_LIFT = 0.75; // rad: the rear heel's lift at the end of the push
 const UP = new THREE.Vector3(0, 1, 0);
 const smooth = (x) => x * x * (3 - 2 * x);
 
-export function createWalker({ shirt = '#f4f6f8', trousers = '#2f3d55' } = {}) {
+export function createWalker({ shirt = '#ff593e', trousers = '#2542a5' } = {}) {
   const root = new THREE.Group();
   root.name = 'Student';
   const mat = (name, color, roughness = 0.8) => new THREE.MeshStandardMaterial({ name, color, roughness, metalness: 0 });
@@ -36,9 +36,62 @@ export function createWalker({ shirt = '#f4f6f8', trousers = '#2f3d55' } = {}) {
     skin: mat('Skin', '#b98057', 0.7),
     hair: mat('Hair', '#1d1d20', 0.75),
     shoe: mat('Shoes', '#262a31', 0.6),
+    sole: mat('ShoeSole', '#ffe08a', 0.7),
+    eye: mat('Eyes', '#17233e', 0.5),
+    white: mat('EyeWhite', '#fff5df'),
+    lips: mat('Lips', '#794632'),
+    seam: mat('ShirtSeams', '#d73e2d'),
+    soleSide: mat('SoleEdge', '#d8b36c'),
     belt: mat('Belt', '#1d2026', 0.5),
   };
-  const unitTube = new THREE.CylinderGeometry(1, 1, 1, 10);
+  const limbGeometry = (profile) =>
+    new THREE.LatheGeometry(
+      profile.map(([y, r]) => new THREE.Vector2(r, y)),
+      20,
+    );
+  const unitTube = limbGeometry([
+    [-0.5, 0.72],
+    [-0.42, 0.85],
+    [-0.2, 0.97],
+    [0.05, 1],
+    [0.3, 0.92],
+    [0.5, 0.85],
+  ]);
+  const thighGeometry = limbGeometry([
+    [-0.5, 0.7],
+    [-0.32, 0.78],
+    [0, 0.94],
+    [0.32, 1],
+    [0.5, 0.9],
+  ]);
+  const calfGeometry = limbGeometry([
+    [-0.5, 0.62],
+    [-0.25, 0.7],
+    [0.08, 1],
+    [0.3, 0.94],
+    [0.5, 0.78],
+  ]);
+  // Small procedural weave/skin relief stays offline and gives the surfaces a matte finish.
+  if (typeof document !== 'undefined') {
+    const c = document.createElement('canvas');
+    c.width = c.height = 128;
+    const ctx = c.getContext('2d');
+    const data = ctx.createImageData(128, 128);
+    let seed = 17;
+    for (let i = 0; i < 128 * 128; i++) {
+      seed = (seed * 16807) % 2147483647;
+      const v = 115 + (seed % 25);
+      data.data.set([v, v, v, 255], i * 4);
+    }
+    ctx.putImageData(data, 0, 0);
+    const relief = new THREE.CanvasTexture(c);
+    relief.wrapS = relief.wrapT = THREE.RepeatWrapping;
+    relief.repeat.set(6, 6);
+    for (const key of ['shirt', 'trousers', 'skin']) {
+      M[key].bumpMap = relief;
+      M[key].bumpScale = key === 'skin' ? 0.0005 : 0.0012;
+    }
+  }
   const tmp = new THREE.Vector3();
   const place = (mesh, a, b, r) => {
     tmp.subVectors(b, a);
@@ -53,7 +106,7 @@ export function createWalker({ shirt = '#f4f6f8', trousers = '#2f3d55' } = {}) {
     return mesh;
   };
   const ball = (r, m, parent) => {
-    const mesh = new THREE.Mesh(new THREE.SphereGeometry(r, 14, 10), m);
+    const mesh = new THREE.Mesh(new THREE.SphereGeometry(r, 24, 16), m);
     parent.add(mesh);
     return mesh;
   };
@@ -62,10 +115,39 @@ export function createWalker({ shirt = '#f4f6f8', trousers = '#2f3d55' } = {}) {
   const upper = new THREE.Group();
   upper.position.y = HIP_Y;
   root.add(upper);
-  const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.135, 0.36, 4, 12), M.shirt);
-  torso.position.y = 0.27;
-  torso.scale.set(0.72, 1, 1);
+  const torso = new THREE.Mesh(
+    new THREE.LatheGeometry(
+      [
+        new THREE.Vector2(0.11, 0.05),
+        new THREE.Vector2(0.125, 0.12),
+        new THREE.Vector2(0.14, 0.25),
+        new THREE.Vector2(0.165, 0.38),
+        new THREE.Vector2(0.16, 0.44),
+        new THREE.Vector2(0.075, 0.5),
+      ],
+      32,
+    ),
+    M.shirt,
+  );
+  torso.scale.set(0.74, 1, 1.14);
   upper.add(torso);
+  // Polo collar, placket, buttons and a sewn chest pocket lie on the front (+x).
+  for (const side of [-1, 1]) {
+    const collar = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.065, 0.063), M.seam);
+    collar.position.set(0.06, 0.467, side * 0.055);
+    collar.rotation.x = side * 0.35;
+    upper.add(collar);
+  }
+  const placket = new THREE.Mesh(new THREE.BoxGeometry(0.009, 0.115, 0.018), M.seam);
+  placket.position.set(0.12, 0.385, 0);
+  upper.add(placket);
+  for (let i = 0; i < 3; i++) {
+    const button = ball(0.005, M.white, upper);
+    button.position.set(0.126, 0.42 - i * 0.033, 0);
+  }
+  const pocket = new THREE.Mesh(new THREE.BoxGeometry(0.009, 0.075, 0.065), M.seam);
+  pocket.position.set(0.116, 0.32, 0.09);
+  upper.add(pocket);
   const belt = new THREE.Mesh(new THREE.CylinderGeometry(0.128, 0.13, 0.05, 16), M.belt);
   belt.position.y = 0.04;
   belt.scale.set(0.74, 1, 1);
@@ -75,28 +157,144 @@ export function createWalker({ shirt = '#f4f6f8', trousers = '#2f3d55' } = {}) {
   upper.add(neck);
   const head = ball(0.1, M.skin, upper);
   head.position.set(0.01, 0.66, 0);
-  head.scale.set(0.95, 1.08, 0.92);
+  head.name = 'AnatomicalHead';
+  head.scale.set(0.94, 1.1, 0.85);
+  const jaw = ball(0.072, M.skin, upper);
+  jaw.position.set(0.034, 0.61, 0);
+  jaw.scale.set(0.85, 0.85, 0.95);
+  jaw.name = 'Jaw';
   const hair = new THREE.Mesh(new THREE.SphereGeometry(0.106, 16, 10, 0, Math.PI * 2, 0, Math.PI * 0.52), M.hair);
   hair.position.set(-0.008, 0.675, 0);
   hair.rotation.z = 0.32;
   hair.scale.set(0.98, 1.06, 0.95);
   upper.add(hair);
+  const bridge = ball(0.018, M.skin, upper);
+  bridge.position.set(0.097, 0.662, 0);
+  bridge.scale.set(0.8, 1.25, 0.68);
   const nose = ball(0.018, M.skin, upper);
-  nose.position.set(0.105, 0.655, 0);
+  nose.position.set(0.113, 0.645, 0);
+  nose.scale.set(0.9, 0.75, 0.85);
+  nose.name = 'Nose';
+  const mouthPoints = [-0.026, -0.013, 0, 0.013, 0.026].map((z) => new THREE.Vector3(0.099 - Math.abs(z) * 0.12, 0.617 + Math.abs(z) * 0.07, z));
+  const mouth = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(mouthPoints), 12, 0.0026, 6, false), M.lips);
+  mouth.name = 'Mouth';
+  upper.add(mouth);
+  for (let i = 0; i < 11; i++) {
+    const tuft = ball(0.026, M.hair, upper);
+    tuft.scale.set(1.5, 0.55, 0.7);
+    tuft.position.set(0.055 - (i % 4) * 0.035, 0.755 + Math.sin(i) * 0.008, ((i % 3) - 1) * 0.044);
+    tuft.rotation.z = -0.25;
+  }
+
   for (const side of [1, -1]) {
+    const ear = ball(0.025, M.skin, upper);
+    ear.position.set(-0.008, 0.65, side * 0.084);
+    ear.scale.set(0.65, 1.1, 0.65);
+    const eye = ball(0.013, M.white, upper);
+    eye.scale.set(0.35, 0.65, 1);
+    eye.position.set(0.064, 0.682, side * 0.064);
+    eye.rotation.y = -side * 0.7;
+    const pupil = ball(0.006, M.eye, upper);
+    pupil.scale.set(0.45, 1, 1);
+    pupil.position.set(0.068, 0.682, side * 0.068);
+    pupil.rotation.y = -side * 0.7;
+    pupil.name = side > 0 ? 'EyeNear' : 'EyeFar';
+    const brow = new THREE.Mesh(new THREE.CapsuleGeometry(0.003, 0.021, 3, 8), M.hair);
+    brow.rotation.x = Math.PI / 2;
+    brow.position.set(0.063, 0.7, side * 0.063);
+    upper.add(brow);
+
     const s = ball(0.062, M.shirt, upper);
     s.position.set(0, SHOULDER.y - HIP_Y, side * SHOULDER.z);
   }
 
   // arms and legs (placed in root space by pose)
-  const arms = [1, -1].map((side) => ({ side, upper: tube(M.shirt, root), fore: tube(M.skin, root), hand: ball(0.046, M.skin, root) }));
+  function makeHand() {
+    const hand = new THREE.Group();
+    hand.name = 'AnatomicalHand';
+    root.add(hand);
+    const palm = ball(0.032, M.skin, hand);
+    palm.scale.set(0.76, 1, 0.45);
+    for (let i = 0; i < 4; i++) {
+      const finger = new THREE.Mesh(new THREE.CapsuleGeometry(0.006, 0.022 - (i === 0 || i === 3 ? 0.006 : 0), 4, 8), M.skin);
+      finger.position.set(-0.019 + i * 0.012, 0.037, 0);
+      hand.add(finger);
+    }
+    const thumb = new THREE.Mesh(new THREE.CapsuleGeometry(0.008, 0.022, 4, 8), M.skin);
+    thumb.position.set(-0.03, 0.008, 0.002);
+    thumb.rotation.z = -0.55;
+    hand.add(thumb);
+    return hand;
+  }
+  const arms = [1, -1].map((side) => ({
+    side,
+    upper: tube(M.shirt, root),
+    fore: tube(M.skin, root),
+    hand: makeHand(),
+    elbow: ball(0.031, M.skin, root),
+    cuff: ball(0.042, M.seam, root),
+  }));
+  const shoeShape = new THREE.Shape();
+  shoeShape.moveTo(-0.108, -0.034);
+  shoeShape.quadraticCurveTo(-0.12, -0.034, -0.114, 0.026);
+  shoeShape.quadraticCurveTo(-0.11, 0.04, -0.075, 0.039);
+  shoeShape.lineTo(0.07, 0.04);
+  shoeShape.quadraticCurveTo(0.114, 0.04, 0.114, 0);
+  shoeShape.quadraticCurveTo(0.114, -0.037, 0.065, -0.04);
+  shoeShape.lineTo(-0.108, -0.034);
+  const shoeGeometry = new THREE.ExtrudeGeometry(shoeShape, {
+    depth: 0.052,
+    bevelEnabled: true,
+    bevelThickness: 0.008,
+    bevelSize: 0.006,
+    bevelSegments: 3,
+    steps: 1,
+    curveSegments: 12,
+  });
+  shoeGeometry.rotateX(Math.PI / 2);
+  shoeGeometry.translate(0, 0.026, 0);
+  const soleGeometry = new THREE.ExtrudeGeometry(shoeShape, {
+    depth: 0.012,
+    bevelEnabled: true,
+    bevelThickness: 0.002,
+    bevelSize: 0.004,
+    bevelSegments: 2,
+    steps: 1,
+    curveSegments: 12,
+  });
+  soleGeometry.rotateX(Math.PI / 2);
+  soleGeometry.translate(0, -0.021, 0);
+
   const legs = [1, -1].map((side) => ({
     side,
     thigh: tube(M.trousers, root),
     shin: tube(M.trousers, root),
-    foot: new THREE.Mesh(new THREE.BoxGeometry(FOOT.len, FOOT.thick, FOOT.wide), M.shoe),
+    foot: new THREE.Mesh(shoeGeometry, M.shoe),
+    knee: ball(0.051, M.trousers, root),
   }));
-  for (const l of legs) root.add(l.foot);
+  for (const l of legs) {
+    root.add(l.foot);
+    l.thigh.geometry = thighGeometry;
+    l.shin.geometry = calfGeometry;
+    const sole = new THREE.Mesh(soleGeometry, M.sole);
+    sole.name = 'GripSole';
+    l.foot.add(sole);
+    const heel = new THREE.Mesh(new THREE.SphereGeometry(0.04, 20, 12), M.shoe);
+    heel.scale.set(0.75, 0.8, 1.02);
+    heel.position.set(-0.075, 0.025, 0);
+    l.foot.add(heel);
+    for (let i = 0; i < 6; i++) {
+      const tread = new THREE.Mesh(new THREE.BoxGeometry(0.009, 0.005, 0.07), M.soleSide);
+      tread.position.set(-0.085 + i * 0.032, -0.032, 0);
+      l.foot.add(tread);
+    }
+
+    for (let i = 0; i < 4; i++) {
+      const lace = new THREE.Mesh(new THREE.BoxGeometry(0.009, 0.006, FOOT.wide * 0.75), M.white);
+      lace.position.set(-0.03 + i * 0.026, FOOT.thick / 2 + 0.001, 0);
+      l.foot.add(lace);
+    }
+  }
   const hipBall = ball(0.13, M.trousers, root);
   hipBall.scale.set(0.75, 0.55, 1);
   hipBall.position.y = HIP_Y;
@@ -176,7 +374,11 @@ export function createWalker({ shirt = '#f4f6f8', trousers = '#2f3d55' } = {}) {
       reach(shoulder, aim, UPPER, FORE, armPole, elbow, hand);
       place(arm.upper, shoulder, elbow, 0.042);
       place(arm.fore, elbow, hand, 0.034);
+      arm.elbow.position.copy(elbow);
+      arm.cuff.position.copy(elbow).lerp(shoulder, 0.07);
+      arm.cuff.scale.set(1, 0.45, 1);
       arm.hand.position.copy(hand);
+      arm.hand.quaternion.setFromUnitVectors(UP, new THREE.Vector3().subVectors(hand, elbow).normalize());
       const j = joints.arms[arm.side > 0 ? 0 : 1];
       j.shoulder = (j.shoulder || new THREE.Vector3()).copy(shoulder);
       j.elbow = (j.elbow || new THREE.Vector3()).copy(elbow);
@@ -190,6 +392,7 @@ export function createWalker({ shirt = '#f4f6f8', trousers = '#2f3d55' } = {}) {
     reach(hip, ankle, THIGH, SHIN, legPole, knee, aim);
     place(rear.thigh, hip, knee, 0.062);
     place(rear.shin, knee, aim, 0.05);
+    rear.knee.position.copy(knee);
     storeLeg(0, hip, knee, aim);
     lastToe.set(toeX, 0, LEG_Z);
     lastHeel.set(toeX - FOOT.len * Math.cos(lift), FOOT.len * Math.sin(lift), LEG_Z);
@@ -203,6 +406,7 @@ export function createWalker({ shirt = '#f4f6f8', trousers = '#2f3d55' } = {}) {
     reach(hip, ankle, THIGH, SHIN, legPole, knee, aim);
     place(front.thigh, hip, knee, 0.062);
     place(front.shin, knee, aim, 0.05);
+    front.knee.position.copy(knee);
     storeLeg(1, hip, knee, aim);
     upper.updateMatrixWorld(true);
   }
