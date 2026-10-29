@@ -89,3 +89,5 @@ The ECG has a higher-resolution trace and a rounded light frame. Tall/wide bound
 Validation includes a closed tissue mesh with finite unit normals, a reversible contraction, anchored vessel ends,
 period/count and pause/resume regression checks, and Khronos validation of the actual heart export (in addition to
 the generic fan export). Heart views at all six frame sizes and rotated close-ups are inspected separately.
+
+In stacked portrait layouts the ECG callout sits beside the chart, keeping it off the heart apex.
