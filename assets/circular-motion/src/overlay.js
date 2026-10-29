@@ -49,8 +49,9 @@ function arcTube(r, tube, from, to, radial = 6) {
 
 /** A flat-coloured material drawn on top of the model (the overlay is a drawing over the photo, so to speak). */
 function ink(color, { top = true, opacity = 1 } = {}) {
+  const sceneInk = color === COLORS.path ? 0x68d8ff : color === COLORS.dist ? 0xffc14a : color === COLORS.center ? 0xc6a7ff : color;
   return new THREE.MeshBasicMaterial({
-    color,
+    color: sceneInk,
     toneMapped: false,
     depthTest: !top,
     depthWrite: false,

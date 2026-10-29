@@ -65,3 +65,9 @@ the chosen example (for the Moon: "চাঁদকে কোনো কিছু 
   simple.
 - The Earth's own spin is not shown (it would turn 27 times per lunar turn); the corner note says the time is not in
   real proportion.
+
+## Owner colour update (0.1.1)
+The owner explicitly requested vivid backgrounds and strong object contrast, overriding the usual white scene.
+The learning panel stays white; transparent embeds and explicit capture backgrounds remain supported.
+
+Navy/teal backdrop, turquoise fan blades and copper-orange hub/clock rim; bright scene paths retain darker matching label inks.

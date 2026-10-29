@@ -90,6 +90,19 @@ export function createApp(root, options = {}) {
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 30, near: 1, far: 6000, environment: 'studio-light' });
   const { camera, controls, scene } = stage;
+  // The owner requested a vivid scene; the white learning panel keeps the text readable.
+  const backdropCanvas = document.createElement('canvas');
+  backdropCanvas.width = 8;
+  backdropCanvas.height = 256;
+  const backdropContext = backdropCanvas.getContext('2d');
+  const backdropGradient = backdropContext.createLinearGradient(0, 0, 0, 256);
+  backdropGradient.addColorStop(0, '#122344');
+  backdropGradient.addColorStop(1, '#075d70');
+  backdropContext.fillStyle = backdropGradient;
+  backdropContext.fillRect(0, 0, 8, 256);
+  const backdrop = new THREE.CanvasTexture(backdropCanvas);
+  backdrop.colorSpace = THREE.SRGBColorSpace;
+  scene.background = o.bg === 'transparent' ? null : backdrop;
   const M = createMaterials(stage.renderer);
   const world = new THREE.Group();
   world.name = 'CircularMotionScene';
@@ -1144,7 +1157,16 @@ export function createApp(root, options = {}) {
       await setView('front');
     },
     startPractice: () => quiz.start(),
-    capture: (opts) => stage.capture(opts),
+    capture(opts = {}) {
+      const background = scene.background;
+      if (opts.background !== undefined) scene.background = null;
+      try {
+        return stage.capture(opts);
+      } finally {
+        scene.background = background;
+        stage.invalidate();
+      }
+    },
     exportRoot: () => cur().exportRoot, // the example's model: no drawing, labels, lights or shadow planes
   };
 }
