@@ -1,0 +1,96 @@
+/* Work (কাজ): the page, the colours that carry meaning (F the push's orange, s blue, d grey: no force, W green; the
+   same as src/app.js), the calculator's steppers and the test's answers in words. The panel is the kit's clean sheet
+   (one action, one result, one rule: ../../shared/lib/student/student.css, .pvc-examples, .pvc-act, .pvc-outcome,
+   .pvc-rule). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.wk { --c-F: #d9480f; --c-s: #1c6fd9; --c-d: #6b7280; --c-W: #237a35; }
+.wk i { font-style: italic; font-size: 1.05em; }
+
+/* the calculator: F and s with tap steppers, side by side */
+.wk-calc { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.wk-step { --c: var(--ink); display: inline-flex; align-items: center; gap: 4px; min-width: 0; }
+.wk-step.c-F { --c: var(--c-F); }
+.wk-step.c-s { --c: var(--c-s); }
+.wk-name { font-size: 14px; font-weight: 600; color: var(--c); white-space: nowrap; margin-right: 2px; }
+.wk-btn { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 38px; padding: 0; border-radius: 8px; border: 1.5px solid color-mix(in srgb, var(--c) 55%, #fff); background: color-mix(in srgb, var(--c) 13%, #fff); color: var(--c); cursor: pointer; }
+.wk-btn svg { width: 18px; height: 18px; stroke-width: 2.4; }
+.wk-btn:hover:not(:disabled) { background: color-mix(in srgb, var(--c) 24%, #fff); }
+.wk-btn:disabled { opacity: 0.35; cursor: default; }
+.wk-val { min-width: 3.4em; text-align: center; font-size: 17px; font-weight: 700; color: var(--c); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.wk-step.fixed .wk-val { opacity: 0.75; }
+
+/* a warm, lightly tinted panel under the vivid scene */
+.wk .pvc-panel { background: linear-gradient(180deg, #fff6e6, #fffdf8 60%); }
+
+/* a narrow panel (beside the scene): the letters F and s only, the steppers keep their size */
+@container pvc-panel (max-width: 350px) {
+  .wk-word { display: none; }
+  .wk-calc { gap: 4px; }
+  .wk-step { gap: 2px; }
+  .wk-name { margin-right: 1px; }
+  .wk .wk-val { min-width: 2.7em; font-size: 14.5px; }
+}
+/* narrower still (640 × 400): F and s one under the other */
+@container pvc-panel (max-width: 290px) {
+  .wk-calc { flex-direction: column; align-items: stretch; gap: 3px; }
+  .wk-step { justify-content: space-between; }
+  .wk-btn { height: 32px; }
+  .wk .pvc-rule { font-size: 12.5px; }
+}
+
+/* the result line: W in green once it is known */
+.wk .pvc-outcome { white-space: nowrap; }
+.wk .pvc-outcome[data-k='work'] b { color: var(--c-W); }
+
+/* labels on the picture: at once (a fading F label would outlive the push) */
+.wk .pvc-anno { transition: none; font-size: 14px; font-weight: 700; color: var(--c); border-color: color-mix(in srgb, var(--c) 45%, var(--line)); padding: 1px 7px; }
+.wk .pvc-anno small { font-size: 0.82em; font-weight: 500; color: var(--ink-2); }
+
+/* the test: answers in words (two lines allowed), the mistake note under the worked answer */
+.wk .pvc-opt { font-size: 14.5px; line-height: 1.25; }
+.wk-opt { display: block; white-space: normal; text-align: center; }
+.wk-why { display: block; margin-top: 2px; color: var(--ink-2); }
+.wk .pvc-q-text { font-size: 15.5px; }
+.wk .pvc-q-feedback { font-size: 13.5px; line-height: 1.45; }
+
+/* wide frames (tabs beside the sheet) */
+@container pvc (min-width: 720px) and (min-height: 461px) {
+  .wk .pvc-learn { gap: 9px; }
+  .wk .pvc-examples, .wk-calc { max-width: 520px; }
+  .wk-calc { justify-content: flex-start; gap: 28px; }
+  .wk .pvc-rule { --pvc-rule-lines: 2; }
+}
+/* the tightest phone (390 × 520): smaller steps and lines */
+@container pvc (max-width: 560px) and (max-height: 600px) {
+  .wk .pvc-panel { padding-top: 6px; padding-bottom: 6px; gap: 5px; }
+  .wk .pvc-tabs button { height: 34px; font-size: 14px; }
+  .wk .pvc-learn { gap: 4px; }
+  .wk .pvc-examples button { min-height: 32px; padding-top: 1px; padding-bottom: 1px; }
+  .wk .pvc-ex-word { font-size: 13.5px; }
+  .wk .pvc-ex-res { font-size: 10.5px; min-height: 12px; }
+  .wk .pvc-act-row { min-height: 38px; }
+  .wk .pvc-act { min-height: 36px; font-size: 14px; }
+  .wk-btn { width: 40px; height: 34px; }
+  .wk-val { font-size: 15.5px; min-width: 3.2em; }
+  .wk-name { font-size: 13px; }
+  .wk .pvc-outcome { font-size: 14.5px; }
+  .wk .pvc-rule { font-size: 13px; line-height: 1.4; }
+  .wk .pvc-q-text { font-size: 14px; }
+  .wk .pvc-opt { font-size: 13px; height: 38px; }
+  .wk .pvc-q-feedback { font-size: 12.5px; line-height: 1.4; }
+}
+/* short and wide (phone held sideways): the panel is beside the scene */
+@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
+  .wk .pvc-learn { gap: 5px; }
+  .wk-btn { width: 40px; height: 34px; }
+  .wk-val { font-size: 15px; min-width: 3.1em; }
+  .wk-name { font-size: 13px; }
+  .wk .pvc-outcome { font-size: 14.5px; }
+  .wk .pvc-rule { --pvc-rule-lines: 4; font-size: 13px; line-height: 1.4; }
+  .wk .pvc-q-text { font-size: 13.5px; }
+  .wk .pvc-opt { font-size: 12.5px; height: 40px; }
+  .wk .pvc-q-feedback { font-size: 12px; }
+}

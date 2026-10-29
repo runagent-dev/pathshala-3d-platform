@@ -1,0 +1,109 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "work",
+  "title": "Work (কাজ)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 100,
+  "topic": "4.1",
+  "placement": "Book page 100, topic 4.1: কাজ (Work). Next to the definition W = Fs, the unit box (J, জুল) and the push-then-let-go example (work only over s, none over d).",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "Interactive 3D figure for textbook topic 4.1 (কাজ, Work), page 100. A realistic person leans on a wooden crate and pushes it s metres with a force F, then lets go; the crate slides d = s/2 more and stops, the book's own example. The orange F arrow shows only while the hands push, the blue s arrow grows with the crate and W = Fs counts up live; over the grey d the force is gone and W stays put. A second example pushes the crate against a brick wall: s = 0, so W = 0 (the book's guard). A small calculator with tap steppers for F (10–100 N) and s (1–4 m) works W = Fs out in J (জুল); a metre tape on the floor lets the test read s off the picture. Five tap questions: where F did work, W from the tape, the wall, F from W, the unit. The person, crate, floor, wall and arrows export as GLB in metres. Offline, in Bangla and English.",
+  "tags": ["work", "force", "displacement", "joule", "energy", "push", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "example",
+      "label": "Example",
+      "type": "select",
+      "options": [["push", "push, let go, slide"], ["wall", "push against a wall"]],
+      "default": "push"
+    },
+    {
+      "name": "F",
+      "label": "Force F",
+      "type": "number",
+      "default": "50",
+      "placeholder": "N",
+      "help": "10–100 N in steps of 10"
+    },
+    {
+      "name": "s",
+      "label": "Push distance s",
+      "type": "number",
+      "default": "2",
+      "placeholder": "m",
+      "help": "1–4 m; the crate then slides s/2 more"
+    },
+    {
+      "name": "at",
+      "label": "Held at",
+      "type": "number",
+      "default": "",
+      "placeholder": "s",
+      "help": "seconds into the push, held still (pictures); empty: before the push"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on the crate pulses", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "push": true } },
+    { "name": "set", "payload": { "F": 80, "s": 3 } },
+    { "name": "set", "payload": { "at": 2.2 } },
+    { "name": "set", "payload": { "done": true } },
+    { "name": "set", "payload": { "example": "wall" } },
+    { "name": "set", "payload": { "home": true } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "push", "stop", "example", "view", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": { "params": { "coach": "0", "at": "2.3" } },
+    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "at": 2.3, "animate": false } }] }],
+    "video": {
+      "kind": "script",
+      "seconds": 21,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 0.6, "command": "set", "payload": { "push": true } },
+        { "at": 7, "command": "set", "payload": { "example": "wall" } },
+        { "at": 8, "command": "set", "payload": { "push": true } },
+        { "at": 12, "command": "set", "payload": { "example": "push", "F": 80, "s": 3 } },
+        { "at": 13, "command": "set", "payload": { "push": true } }
+      ]
+    }
+  }
+}
