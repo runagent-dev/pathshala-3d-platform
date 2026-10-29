@@ -93,6 +93,29 @@ export function solve({ u, a, t }) {
   return { u, a, t, v, V: averageVelocity(u, a, t), s, ut: roundTo(u * t, 6), half: roundTo(0.5 * a * t * t, 6) };
 }
 
+/**
+ * The numbers of the derivation sheet's four steps for a plan, each worked out its own way, so the sheet can show
+ * the same answer coming out each time: the slope of the line (a = (v − u)/t, v = u + at), the area as a rectangle
+ * and a triangle (s = ut + ½t(v − u)), the fold (s = Vt) and t taken out (v² = u² + 2as; t = (v − u)/a, none when
+ * a = 0).
+ */
+export function derivation({ u, a, t }) {
+  const v = u + a * t;
+  const V = (u + v) / 2;
+  const s = distance(u, a, t);
+  return {
+    slope: { dv: roundTo(v - u, 6), a: roundTo(t > 0 ? (v - u) / t : 0, 6), at: roundTo(a * t, 6), v: roundTo(u + a * t, 6) },
+    area: { rect: roundTo(u * t, 6), tri: roundTo(0.5 * t * (v - u), 6), s: roundTo(u * t + 0.5 * t * (v - u), 6) },
+    fold: { V: roundTo(V, 6), s: roundTo(V * t, 6) },
+    noTime: {
+      t: Math.abs(a) > EPS ? roundTo((v - u) / a, 6) : null,
+      twoAS: roundTo(2 * a * s, 6),
+      v2: roundTo(v * v, 6),
+      u2: roundTo(u * u, 6),
+    },
+  };
+}
+
 /** Where the train is after each whole second (1, 2, … up to t): the marks between which the 1-second strips lie. */
 export function secondMarks(u, a, t) {
   const out = [];

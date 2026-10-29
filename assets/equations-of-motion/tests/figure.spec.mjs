@@ -38,8 +38,33 @@ test('equations-of-motion: run, average velocity, braking', async ({ page }) => 
   // no acceleration: v = u and s = vt
   expect(await fig.call('set', { u: 6, a: 0, t: 5 })).toMatchObject({ v: 6, V: 6, s: 30 });
 
+  // one equation at a time; a tapped letter lights its quantity; the train at V only comes with s = Vt
+  const frame = page.frames().find((f) => f.url().includes('/assets/equations-of-motion/'));
+  expect(await fig.call('set', { u: 4, a: 1, t: 6, eq: 's2' })).toMatchObject({ eq: 's2', hl: null });
+  await expect(frame.locator('.eom-f')).toHaveText('s = ut + ½at²');
+  await frame.locator('.eom-chips [data-example="Vt"]').click();
+  await frame.locator('.eom-f [data-sym="t"]').click();
+  expect(await fig.call('get')).toMatchObject({ eq: 'Vt', hl: 't' });
+  await expect(frame.locator('.eom-rule')).toContainText('t');
+
+  // the derivation sheet: four steps, পরের ধাপ shows the next line, and it closes
+  await frame.locator('[data-act="derive"]').click();
+  expect((await fig.call('get')).derive).toEqual({ open: true, step: 1, part: 0 });
+  await expect(frame.locator('.eom-dv-line.in')).toHaveCount(0);
+  await frame.locator('[data-dv="next"]').click();
+  await frame.locator('[data-dv="next"]').click();
+  await expect(frame.locator('.eom-dv-line.in')).toHaveCount(2);
+  await frame.locator('[data-dv-step="2"]').click();
+  for (let i = 0; i < 4; i++) await frame.locator('[data-dv="next"]').click();
+  // the student's numbers: 24 + 18 = 42 m, the same as the run
+  await expect(frame.locator('.eom-dv-line.res .n')).toContainText(/42|\u09ea\u09e8/);
+  await frame.locator('[data-dv="prev"]').click();
+  expect((await fig.call('get')).derive).toEqual({ open: true, step: 2, part: 3 });
+  await frame.locator('[data-dv="close"]').click();
+  expect((await fig.call('get')).derive.open).toBe(false);
+
   await fig.call('reset');
   await fig.advance(1000);
-  expect(await fig.call('get')).toMatchObject({ u: 4, a: 1, t: 6, time: 0, phase: 'ready', view: 'front', mode: 'explore' });
+  expect(await fig.call('get')).toMatchObject({ u: 4, a: 1, t: 6, time: 0, phase: 'ready', view: 'front', mode: 'explore', eq: 'v', hl: null });
   expect(log.errors).toEqual([]);
 });

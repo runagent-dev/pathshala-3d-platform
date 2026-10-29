@@ -198,3 +198,27 @@ describe('the test', () => {
         }
   });
 });
+
+describe('the derivation sheet: every way gives the same answer', () => {
+  it('the opening example: slope, area, fold and v² = u² + 2as', () => {
+    assert.deepEqual(m.derivation(m.START), {
+      slope: { dv: 6, a: 1, at: 6, v: 10 },
+      area: { rect: 24, tri: 18, s: 42 },
+      fold: { V: 7, s: 42 },
+      noTime: { t: 6, twoAS: 84, v2: 100, u2: 16 },
+    });
+  });
+  it('agrees with solve() for every plan the steppers can reach', () => {
+    for (const p of allPlans()) {
+      const d = m.derivation(p);
+      const r = m.solve(p);
+      close(d.slope.a, p.a, 1e-6, 'slope');
+      close(d.slope.v, r.v, 1e-6, 'v');
+      close(d.area.s, r.s, 1e-6, 'area');
+      close(d.fold.s, r.s, 1e-6, 'fold');
+      close(d.noTime.v2, d.noTime.u2 + d.noTime.twoAS, 1e-6, 'v²');
+      if (p.a === 0) assert.equal(d.noTime.t, null);
+      else close(d.noTime.t, p.t, 1e-6, 't');
+    }
+  });
+});

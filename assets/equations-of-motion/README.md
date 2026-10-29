@@ -54,5 +54,5 @@ Every figure answers `ping` with `{ asset, version }`. Send commands with `figur
 | `capture` | `{"width":800,"height":500}` |
 | `export-glb` | `{}` |
 
-Events: `ready`, `change`, `plan`, `run`, `arrive`, `view`, `dragstart`, `dragend`, `practice-start`, `practice-result`, `practice-end`.
+Events: `ready`, `change`, `plan`, `run`, `arrive`, `view`, `dragstart`, `dragend`, `derive`, `practice-start`, `practice-result`, `practice-end`.
 <!-- /generated:bridge -->

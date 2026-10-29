@@ -1,60 +1,74 @@
-/* Equations of motion: the page, the colours of the quantities (বেগ orange, গড় বেগ raspberry, দূরত্ব blue, সময়
-   purple, ত্বরণ green: the same as on the picture), the three steppers and the equations in the panel. The
-   student view itself is ../../shared/lib/student/student.css (linked first). */
+/* Equations of motion: the page, one colour per quantity (u teal, v orange, a green, t purple, s blue, V raspberry,
+   the triangle ½at² gold: the same as on the picture and in the derivation sheet), the steppers, the chosen equation
+   with its tappable letters, the derivation sheet. The student view itself is ../../shared/lib/student/student.css
+   (linked first). Every text colour has at least 4.5 : 1 contrast on white. */
 html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
 #app { position: fixed; inset: 0; }
 body.bg-transparent { background: transparent; }
 
-.pvc { --c-v: #d9480f; --c-V: #c2255c; --c-s: #1c6fd9; --c-t: #6741d9; --c-a: #2b8a3e; }
+.pvc { --c-u: #0b7285; --c-v: #c2410c; --c-a: #2b7a3a; --c-t: #6741d9; --c-s: #1c6fd9; --c-V: #c2255c; --c-tri: #8a6100; }
+.eom .q-u { color: var(--c-u); }
 .eom .q-v { color: var(--c-v); }
-.eom .q-V { color: var(--c-V); }
-.eom .q-s { color: var(--c-s); }
-.eom .q-t { color: var(--c-t); }
 .eom .q-a { color: var(--c-a); }
+.eom .q-t { color: var(--c-t); }
+.eom .q-s { color: var(--c-s); }
+.eom .q-V { color: var(--c-V); }
 .eom i { font-style: italic; }
 
 /* the graph, the trip bar and the railway's labels are drawn on this canvas, over the 3D */
 .eom-overlay { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; }
 
-/* the learn sheet: the steppers, the equations, then the sentence and the run button */
-.eom .pvc-learn { justify-content: flex-start; gap: 7px; }
+/* ── the learn sheet: steppers, the four equations, the rule, the chosen equation, the action ── */
+.eom .pvc-learn { gap: 6px; }
 .eom-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .eom-step { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.k-u { --c: var(--c-v); }
+.k-u { --c: var(--c-u); }
 .k-a { --c: var(--c-a); }
 .k-t { --c: var(--c-t); }
 .eom-name { font-size: 12.5px; line-height: 1.35; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .eom-name b { color: var(--c); font-size: 15px; font-style: italic; margin-right: 1px; }
 .eom-name small { color: var(--ink-3); font-size: 11.5px; }
-.eom-ctl { display: flex; align-items: stretch; height: 40px; border: 1px solid var(--line-2); border-radius: 8px; overflow: hidden; background: var(--panel); }
-.eom-pm { flex: none; width: 40px; border: 0; padding: 0; background: var(--soft); display: grid; place-items: center; color: var(--ink); }
-.eom-pm:hover { background: var(--soft-2); }
+.eom-ctl { display: flex; align-items: stretch; height: 40px; border: 1.5px solid color-mix(in srgb, var(--c) 38%, #fff); border-radius: 9px; overflow: hidden; background: var(--panel); }
+.eom-pm { flex: none; width: 40px; border: 0; padding: 0; background: color-mix(in srgb, var(--c) 9%, #fff); display: grid; place-items: center; color: var(--c); }
+.eom-pm:hover { background: color-mix(in srgb, var(--c) 16%, #fff); }
 .eom-pm svg { width: 18px; height: 18px; stroke-width: 2.4; }
 .eom-pm.off { color: var(--ink-3); opacity: 0.45; }
 .eom-val { flex: 1; min-width: 0; display: grid; place-items: center; font-size: 19px; font-weight: 700; color: var(--c); font-variant-numeric: tabular-nums; white-space: nowrap; }
 
-/* the equations: formula | the student's numbers | result | the book's name for it */
-.eom-eqs { display: grid; grid-template-columns: max-content max-content max-content minmax(0, 1fr); column-gap: 9px; padding: 4px 10px 5px; border-radius: 8px; background: var(--soft); font-size: 14.5px; line-height: 1.5; }
-.eom-head { grid-column: 1 / -1; margin: 0 0 1px; font-size: 12.5px; line-height: 1.4; font-weight: 600; color: var(--ink-2); }
-.eom-eq { display: contents; }
-.eom-eq > span { white-space: nowrap; }
-.eom-eq .f { font-weight: 600; }
-.eom-eq .n { color: var(--ink-2); font-variant-numeric: tabular-nums; }
-.eom-eq .r b { font-weight: 700; }
-.eom-eq .nm { align-self: center; font-size: 11.5px; line-height: 1.15; color: var(--ink-3); white-space: normal; } /* a narrow column: two short lines */
-.eom-eq small { font-size: 0.82em; color: var(--ink-3); }
-.eom-eq .ok { display: inline-flex; vertical-align: -3px; }
-.eom-eq .ok svg { width: 16px; height: 16px; color: var(--ok); stroke-width: 2.4; }
-/* s = Vt: touch it to see the triangle fold again; lit while it folds */
-.eom-eq[data-eq='s'] > span { cursor: pointer; }
-.eom-eq.hot > span { background: color-mix(in srgb, var(--c-V) 14%, transparent); }
-.eom-eq.hot > .f { border-radius: 4px 0 0 4px; }
-.eom-eq.hot > .nm { border-radius: 0 4px 4px 0; }
+/* the four equations: one row of words (the chosen one underlined), each letter in its colour */
+.eom .eom-chips button { min-height: 38px; padding: 2px 2px 5px; }
+.eom .eom-chips .pvc-ex-word { font-size: 15px; font-weight: 700; color: var(--ink-2); }
+.eom .eom-chips button.on .pvc-ex-word { font-size: 15.5px; }
+.eom .eom-chips button:not(.on) i { opacity: 0.78; }
+.eom .eom-chips .pvc-ex-res { display: none; }
 
-.eom .eom-foot { flex-wrap: nowrap; margin-top: auto; align-items: center; }
-.eom-say { flex: 1; min-width: 0; margin: 0; min-height: 2.9em; font-size: 13.5px; line-height: 1.45; color: var(--ink-2); } /* 2 lines: the 3D view keeps its size */
-.eom .eom-run { flex: none; min-width: 8em; height: 40px; font-size: 15.5px; }
-.eom .pvc-learn-foot .eom-run svg { color: #fff; }
+/* the rule: the equation in plain words (or what a tapped letter means), always room for two lines */
+.eom .eom-rule { height: 2.9em; overflow: hidden; font-size: 14px; line-height: 1.45; } /* always two lines: the 3D view keeps its size */
+.eom .eom-rule b { font-style: italic; font-size: 1.08em; }
+.eom .eom-rule[data-hl='u'] b { color: var(--c-u); }
+.eom .eom-rule[data-hl='v'] b { color: var(--c-v); }
+.eom .eom-rule[data-hl='a'] b { color: var(--c-a); }
+.eom .eom-rule[data-hl='t'] b { color: var(--c-t); }
+.eom .eom-rule[data-hl='s'] b { color: var(--c-s); }
+.eom .eom-rule[data-hl='V'] b { color: var(--c-V); }
+
+/* the chosen equation, large: each letter is a button that lights its quantity in the picture */
+.eom .eom-big { display: flex; flex-wrap: nowrap; align-items: baseline; column-gap: 10px; line-height: 1.2; min-width: 0; }
+.eom-f { font-size: 26px; font-weight: 700; color: var(--ink); white-space: pre; }
+.eom-sym { display: inline-block; min-width: 24px; min-height: 32px; padding: 0; margin: 0 -3px; border: 0; border-radius: 7px; background: none; font: inherit; font-style: italic; line-height: 32px; text-align: center; cursor: pointer; text-decoration: underline dotted 2px; text-underline-offset: 5px; }
+.eom-sym:hover { background: color-mix(in srgb, currentColor 9%, transparent); }
+.eom-sym.on { background: color-mix(in srgb, currentColor 15%, #fff); text-decoration: none; box-shadow: inset 0 0 0 2px currentColor; }
+.eom-sym:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.eom-n { flex: none; font-size: 15.5px; color: var(--ink-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.eom-n b { font-size: 1.3em; font-weight: 700; }
+.eom-n small { font-size: 0.9em; color: inherit; }
+
+/* the action row: the run button, and the way into the derivation sheet */
+.eom .pvc-act-row { gap: 8px; }
+.eom-derive { display: inline-flex; align-items: center; gap: 5px; flex: none; min-height: 44px; margin-left: auto; padding: 0 14px 0 10px; border: 1.5px solid var(--accent); border-radius: 999px; background: var(--panel); color: var(--accent); font-size: 15px; font-weight: 700; white-space: nowrap; }
+.eom-derive:hover { background: color-mix(in srgb, var(--accent) 8%, #fff); }
+.eom-derive:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+.eom-derive svg { width: 16px; height: 16px; stroke-width: 2.6; }
 
 /* the test: room for two lines of question and three of worked answer, so the 3D view keeps its size; the
    answers are short numbers, so all four fit in one row */
@@ -68,65 +82,194 @@ body.bg-transparent { background: transparent; }
 @container pvc (max-width: 560px) {
   .eom .pvc-corner .pvc-seg { display: none; }
 }
-/* phones and narrow columns: narrower ± so "−১.৫" fits */
+/* phones and narrow columns: narrower ± so "−১.৫" fits; the derivation button without its arrow */
 @container pvc (max-width: 420px) {
-  .eom-eqs { font-size: 13.5px; column-gap: 7px; padding: 4px 8px; }
-  .eom-head { font-size: 12px; }
   .eom-steps { gap: 6px; }
   .eom-name { font-size: 12px; }
   .eom-name small { font-size: 11px; }
   .eom-pm { width: 36px; }
   .eom-val { font-size: 17px; }
+  .eom .eom-chips .pvc-ex-word { font-size: 14px; }
+  .eom .eom-chips button.on .pvc-ex-word { font-size: 14.5px; }
+  .eom-f { font-size: 24px; }
+  .eom-n { font-size: 14.5px; }
+  .eom-derive { padding: 0 12px; font-size: 14.5px; }
+  .eom-derive svg { display: none; }
 }
 /* phone embeds that are not very tall: a little smaller, so the 3D view keeps more room */
 @container pvc (max-width: 560px) and (max-height: 600px) {
-  .eom .pvc-learn { gap: 5px; }
-  .eom-ctl { height: 36px; }
-  .eom-eqs { font-size: 12.5px; line-height: 1.38; }
-  .eom-head { display: none; } /* the graph says it: "ক্ষেত্রফল = s" */
-  .eom-say { font-size: 12.5px; }
-  .eom .eom-run { height: 36px; }
+  .eom .pvc-learn { gap: 4px; }
+  .eom-ctl { height: 34px; }
+  .eom .eom-chips button { min-height: 32px; padding: 1px 2px 3px; }
+  .eom .eom-rule { font-size: 12.5px; }
+  .eom-f { font-size: 21px; }
+  .eom-sym { min-height: 26px; line-height: 26px; min-width: 24px; }
+  .eom-n { font-size: 13.5px; }
+  .eom .pvc-act-row { min-height: 40px; }
+  .eom .pvc-act { min-height: 40px; padding-top: 2px; padding-bottom: 2px; font-size: 15px; }
+  .eom .pvc-act .pvc-act-num { width: 30px; height: 30px; font-size: 16px; }
+  .eom-derive { min-height: 40px; }
   .eom .pvc-q-text { font-size: 15px; }
   .eom .pvc-q-feedback { font-size: 13px; }
   .eom .pvc-opt { height: 40px; }
 }
 /* short and wide (phone held sideways): a wider panel beside the picture, the steppers one under the other */
 @container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
-  .eom .pvc-shell { grid-template-columns: minmax(0, 1fr) clamp(280px, 42%, 372px); }
-  .eom .pvc-learn { gap: 5px; }
-  .eom-steps { grid-template-columns: 1fr; gap: 4px; }
+  .eom .pvc-shell { grid-template-columns: minmax(0, 1fr) clamp(290px, 43%, 380px); }
+  .eom .pvc-learn { gap: 4px; }
+  .eom-steps { grid-template-columns: 1fr; gap: 3px; }
   .eom-step { flex-direction: row; align-items: center; justify-content: space-between; gap: 8px; }
-  .eom-ctl { height: 34px; width: 140px; flex: none; }
-  .eom-pm { width: 40px; }
-  .eom-val { font-size: 17px; }
-  .eom-eqs { font-size: 14px; line-height: 1.36; column-gap: 6px; padding: 3px 8px; }
-  .eom-eq .nm { font-size: 10.5px; }
-  .eom-head { display: none; } /* no room beside the picture: the sentence under the sums says it at the end */
-  .eom .eom-foot { flex-wrap: wrap; gap: 4px; }
-  .eom-say { flex-basis: 100%; min-height: 4.2em; font-size: 13px; }
-  .eom .eom-run { height: 36px; min-width: 7em; margin-left: auto; }
+  .eom-ctl { height: 32px; width: 136px; flex: none; }
+  .eom-pm { width: 38px; }
+  .eom-val { font-size: 16px; }
+  .eom .eom-chips button { min-height: 30px; padding: 0 1px 3px; }
+  .eom .eom-chips .pvc-ex-word { font-size: 13px; }
+  .eom .eom-chips button.on .pvc-ex-word { font-size: 13.5px; }
+  .eom .eom-rule { font-size: 13.5px; height: auto; min-height: 2.9em; }
+  .eom-f { font-size: 22px; }
+  .eom .eom-big { flex-wrap: wrap; } /* beside the picture: the numbers may go under the equation */
+  .eom-sym { min-height: 26px; line-height: 26px; min-width: 24px; }
+  .eom-n { font-size: 13.5px; }
+  .eom .pvc-act-row { min-height: 40px; }
+  .eom .pvc-act { min-height: 40px; padding-top: 2px; padding-bottom: 2px; font-size: 14.5px; }
+  .eom .pvc-act .pvc-act-num { width: 28px; height: 28px; font-size: 15px; }
+  .eom-derive { min-height: 40px; padding: 0 10px; font-size: 13.5px; }
+  .eom-derive svg { display: none; }
   .eom .pvc-q-text { min-height: 4.2em; } /* beside the picture, the panel's height does not touch the 3D view */
   .eom .pvc-q-feedback { font-size: 13px; min-height: 7.2em; }
   .eom .pvc-opt { font-size: 16px; height: 42px; }
   .eom .pvc-opt small { font-size: 11.5px; }
 }
-
-/* wide frames (book page, desktop): the steppers in a column beside the equations */
+/* wide frames (book page, desktop): the steppers in a column beside the equation */
 @container pvc (min-width: 720px) and (min-height: 461px) {
-  .eom .pvc-learn { display: grid; grid-template-columns: minmax(0, 262px) minmax(0, 1fr); grid-template-rows: auto auto; gap: 8px 16px; align-content: start; }
-  .eom-steps { grid-template-columns: 1fr; gap: 5px; }
+  .eom .pvc-learn { display: grid; grid-template-columns: minmax(0, 226px) minmax(0, 1fr); grid-template-rows: auto auto auto 1fr; gap: 6px 18px; align-content: start; }
+  .eom .eom-big { flex-wrap: wrap; } /* always two rows here: the equation, then its numbers */
+  .eom-n { flex-basis: 100%; }
+  .eom-steps { grid-column: 1; grid-row: 1 / span 4; grid-template-columns: 1fr; gap: 5px; align-self: start; }
   .eom-step { flex-direction: row; align-items: center; justify-content: space-between; gap: 10px; }
-  .eom-ctl { width: 140px; flex: none; height: 38px; }
-  .eom-eqs { align-self: start; max-width: 560px; }
-  .eom .eom-foot { grid-column: 1 / -1; }
+  .eom-ctl { width: 124px; flex: none; height: 38px; }
+  .eom .eom-chips, .eom .eom-rule, .eom .eom-big, .eom .pvc-act-row { grid-column: 2; }
 }
 
-/* a narrow panel (beside the picture on small screens): no room for the names after the results */
-@container pvc-panel (max-width: 320px) {
-  .eom-eqs { grid-template-columns: max-content max-content minmax(0, 1fr); }
-  .eom-eq .nm { display: none; }
+/* a narrow panel beside the picture (small landscape embeds): the four equations in two rows, the derivation
+   button under the run button (the panel's height does not touch the 3D view there) */
+@container pvc-panel (max-width: 330px) {
+  .eom .eom-chips { display: grid; grid-template-columns: 1fr 1fr; }
+  .eom .pvc-act-row { flex-wrap: wrap; row-gap: 6px; }
+  .eom-derive { flex: 1 1 100%; justify-content: center; margin-left: 0; }
 }
-/* the narrowest phones: a slimmer run button leaves the sentence room for its two lines */
-@container pvc (max-width: 380px) {
-  .eom .eom-run { min-width: 0; padding: 0 10px; }
+
+/* ── the derivation sheet: over the whole figure; on big frames a card on a pale veil ── */
+.eom-dv { position: absolute; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; background: rgba(226, 234, 242, 0.72); }
+.eom-dv[hidden] { display: none; }
+.eom-dv-card { box-sizing: border-box; display: flex; flex-direction: column; gap: 8px; width: 100%; height: 100%; padding: 8px 14px calc(10px + env(safe-area-inset-bottom, 0px)); background: #fff; overflow: hidden; }
+.eom-dv-head { display: flex; align-items: center; gap: 8px; }
+.eom-dv-head h2 { flex: 1; margin: 0; font-size: 18px; line-height: 1.3; font-weight: 700; color: var(--ink); }
+.eom-dv-x { flex: none; display: grid; place-items: center; width: 44px; height: 44px; margin-right: -8px; border: 0; border-radius: 10px; background: none; color: var(--ink-2); }
+.eom-dv-x:hover { background: var(--soft); color: var(--ink); }
+.eom-dv-x svg { width: 22px; height: 22px; }
+.eom-dv-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.eom-dv-tabs button { display: flex; align-items: center; justify-content: center; gap: 5px; min-width: 0; min-height: 38px; padding: 0 4px; border: 1.5px solid var(--line-2); border-radius: 999px; background: var(--panel); color: var(--ink-2); font-size: 14px; font-weight: 600; white-space: nowrap; }
+.eom-dv-tabs button b { display: inline-grid; place-items: center; flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--soft); color: var(--ink-2); font-size: 13px; }
+.eom-dv-tabs button span { overflow: hidden; text-overflow: ellipsis; }
+.eom-dv-tabs button.on { border-color: var(--accent); background: var(--accent); color: #fff; }
+.eom-dv-tabs button.on b { background: #fff; color: var(--accent); }
+.eom-dv-body { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 6px; }
+.eom-dv-fig { flex: 1 1 auto; min-height: 96px; display: flex; justify-content: center; }
+.eom-dv-fig svg { width: 100%; height: 100%; max-width: 560px; overflow: visible; fill: none; stroke: none; }
+.eom-dv-text { flex: none; display: flex; flex-direction: column; gap: 4px; }
+.eom-dv-yours { margin: 0; font-size: 12.5px; color: var(--ink-3); }
+.eom-dv-yours i { font-weight: 700; }
+.eom-dv-say { margin: 0; min-height: 2.9em; font-size: 15px; line-height: 1.45; color: var(--ink); }
+.eom-dv-lines { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 3px; min-height: calc(4 * 1.55em + 9px); font-size: 15px; }
+.eom-dv-line { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 8px; line-height: 1.55; visibility: hidden; opacity: 0; transform: translateY(4px); transition: opacity 0.3s, transform 0.3s; }
+.eom-dv-line.in { visibility: visible; opacity: 1; transform: none; }
+.eom-dv-line .f { font-size: 16.5px; font-weight: 700; color: var(--ink); white-space: nowrap; }
+.eom-dv-line .n { font-size: 14.5px; color: var(--ink-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.eom-dv-line.res .f { padding: 0 8px; border-radius: 7px; background: #fff6d6; box-shadow: inset 0 0 0 1.5px #f0c84a; font-size: 18px; }
+.eom-dv-line.note { display: block; font-size: 13.5px; line-height: 1.4; color: var(--ink-2); }
+.eom-dv-ok { display: inline-flex; align-items: center; gap: 3px; margin-left: 6px; color: var(--ok); font-size: 13px; font-weight: 700; }
+.eom-dv-ok svg { width: 17px; height: 17px; stroke-width: 2.6; }
+.eom-dv-foot { display: flex; align-items: center; gap: 8px; }
+.eom-dv-nav { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-width: 7.5em; min-height: 44px; padding: 0 14px; border: 1.5px solid var(--accent); border-radius: 999px; background: var(--panel); color: var(--accent); font-size: 15.5px; font-weight: 700; }
+.eom-dv-nav.primary { margin-left: auto; background: var(--accent); color: #fff; }
+.eom-dv-nav:disabled { opacity: 0.4; cursor: default; }
+.eom-dv-nav svg { width: 17px; height: 17px; stroke-width: 2.6; }
+.eom-dv-dots { display: flex; gap: 6px; margin: 0 auto; }
+.eom-dv-dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--line-2); }
+.eom-dv-dots i.on { background: var(--accent); }
+
+/* the small graph's parts, each in its quantity's colour */
+.eom-dv svg text { fill: var(--ink); font-family: inherit; font-size: 15px; font-weight: 700; paint-order: stroke; stroke: #fff; stroke-width: 3px; stroke-linejoin: round; }
+.eom-dv svg tspan { font-style: italic; }
+.eom-dv .g-card { fill: #fff; }
+.eom-dv .g-grid { stroke: #e9edf2; stroke-width: 1; }
+.eom-dv .g-axis { fill: none; stroke: var(--ink); stroke-width: 1.6; }
+.eom-dv .g-axis-head, .eom-dv .g-head { fill: var(--ink); }
+.eom-dv .g-area { fill: #edf3fa; }
+.eom-dv .g-area.on { fill: #cfe5ff; stroke: var(--c-s); stroke-width: 1.5; }
+.eom-dv .g-rect { fill: #c3ecf1; stroke: var(--c-u); stroke-width: 1.5; }
+.eom-dv .g-tri { fill: #ffe08a; stroke: #d9a300; stroke-width: 1.5; }
+.eom-dv .g-tri.minus { fill: #fff3c4; stroke-dasharray: 5 3; }
+.eom-dv .g-vt { fill: #d3e8ff; stroke: var(--c-V); stroke-width: 1.5; }
+.eom-dv .g-was { fill: none; stroke: #d9a300; stroke-width: 1.3; stroke-dasharray: 4 3; }
+.eom-dv .g-arrow { fill: none; stroke: var(--c-tri); stroke-width: 1.6; }
+.eom-dv .g-head { fill: var(--c-tri); }
+.eom-dv .g-slope { fill: #d3f0d9; }
+.eom-dv .g-t { stroke: var(--c-t); stroke-width: 3.5; stroke-linecap: round; }
+.eom-dv .g-dv { stroke: var(--c-v); stroke-width: 3.5; stroke-linecap: round; }
+.eom-dv .g-line { stroke: var(--c-v); stroke-width: 3; stroke-linecap: round; }
+.eom-dv .g-line.slope { stroke: var(--c-a); stroke-width: 3.5; }
+.eom-dv .g-V { stroke: var(--c-V); stroke-width: 2; stroke-dasharray: 7 5; }
+.eom-dv .g-mid { fill: #fff; stroke: var(--c-V); stroke-width: 2; }
+.eom-dv .g-u { fill: var(--c-u); }
+.eom-dv .g-v { fill: var(--c-v); }
+.eom-dv .l-u { fill: var(--c-u); font-style: italic; }
+.eom-dv .l-v { fill: var(--c-v); font-style: italic; }
+.eom-dv .l-V { fill: var(--c-V); font-style: italic; }
+.eom-dv .l-t { fill: var(--c-t); font-style: italic; }
+.eom-dv .l-t.gone { fill: #9aa3ad; }
+.eom-dv .g-gone { stroke: #9aa3ad; stroke-width: 2; stroke-linecap: round; }
+.eom-dv .l-o { fill: var(--ink-3); font-weight: 500; font-size: 13px; }
+.eom-dv .l-dv, .eom-dv .l-rect, .eom-dv .l-tri, .eom-dv .l-vt, .eom-dv .l-s { font-size: 16px; }
+.eom-dv .l-tri i { fill: var(--c-tri); }
+.eom-dv svg .q-u { fill: var(--c-u); }
+.eom-dv svg .q-v { fill: var(--c-v); }
+.eom-dv svg .q-a { fill: var(--c-a); }
+.eom-dv svg .q-t { fill: var(--c-t); }
+.eom-dv svg .q-s { fill: var(--c-s); }
+.eom-dv svg .q-V { fill: var(--c-V); }
+
+/* phones that are not tall: a smaller title and graph, so all the lines fit */
+@container pvc (max-height: 600px) {
+  .eom-dv-card { gap: 5px; padding-top: 4px; }
+  .eom-dv-head h2 { font-size: 16.5px; }
+  .eom-dv-tabs button { min-height: 34px; font-size: 13px; }
+  .eom-dv-say { font-size: 13.5px; }
+  .eom-dv-lines { font-size: 14px; gap: 1px; }
+  .eom-dv-line .f { font-size: 15px; }
+  .eom-dv-line.res .f { font-size: 16px; }
+  .eom-dv-line .n { font-size: 13.5px; }
+  .eom-dv-nav { min-height: 40px; }
+}
+/* wide and short (phone sideways, small embeds): the graph left, the words right */
+@container pvc (min-aspect-ratio: 7/5) {
+  .eom-dv-body { flex-direction: row; gap: 14px; }
+  .eom-dv-fig { flex: 1 1 48%; min-height: 0; align-items: center; }
+  .eom-dv-text { flex: 1 1 52%; min-width: 0; justify-content: center; }
+}
+/* …and short: the title, the steps and the close button in one row */
+@container pvc (min-aspect-ratio: 7/5) and (max-height: 460px) {
+  .eom-dv-card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-rows: auto minmax(0, 1fr) auto; column-gap: 12px; }
+  .eom-dv-head { display: contents; }
+  .eom-dv-head h2 { grid-column: 1; grid-row: 1; font-size: 15.5px; }
+  .eom-dv-tabs { grid-column: 2; grid-row: 1; }
+  .eom-dv-x { grid-column: 3; grid-row: 1; margin-right: -6px; }
+  .eom-dv-body { grid-column: 1 / -1; grid-row: 2; }
+  .eom-dv-foot { grid-column: 1 / -1; grid-row: 3; }
+}
+/* big frames: a card, not the whole figure */
+@container pvc (min-width: 720px) and (min-height: 520px) {
+  .eom-dv { padding: 24px; }
+  .eom-dv-card { max-width: 860px; max-height: 640px; padding: 14px 20px 16px; border-radius: 16px; box-shadow: 0 12px 40px rgba(25, 45, 70, 0.18); }
 }

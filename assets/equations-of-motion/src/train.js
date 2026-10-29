@@ -1,5 +1,6 @@
 // A commuter railcar (diesel, as Bangladesh's commuter trains), procedural three.js, in metres: 16 m long, a
-// driver's cab at each end, white with a green band, two bogies on broad-gauge wheels (1.676 m, as on Bangladesh's railways). The nose is at x = 0 (the
+// driver's cab at each end, cream above a bottle-green lower body with gold and red lines and a yellow
+// panel on each cab's face, two bogies on broad-gauge wheels (1.676 m, as on Bangladesh's railways). The nose is at x = 0 (the
 // train's position is where its nose is), the tail at x = −16; the wheels stand on the rails' top at y = 0.
 // createTrain({ ghost }) also makes the "ghost": the same car in the colour of the average velocity, see-through,
 // for the train that runs the whole time at V.
@@ -48,11 +49,15 @@ function liveryTexture() {
     ctx.beginPath();
     ctx.roundRect(X(x0), Y(y1), (x1 - x0) * PX, (y1 - y0) * PX, r * PX);
   };
-  // the band along the car, under the windows, and a thin line over it
-  ctx.fillStyle = '#1f7a4d';
-  ctx.fillRect(0, Y(1.78), c.width, 0.34 * PX);
-  ctx.fillStyle = '#e8590c';
-  ctx.fillRect(0, Y(1.9), c.width, 0.06 * PX);
+  // the livery: a bottle-green lower body with a gold line over it, a red line along the window band, cream above
+  ctx.fillStyle = '#17734c';
+  ctx.fillRect(0, Y(2.02), c.width, (2.02 - FLOOR) * PX);
+  ctx.fillStyle = '#f2b705';
+  ctx.fillRect(0, Y(2.13), c.width, 0.09 * PX);
+  ctx.fillStyle = '#d6332e';
+  ctx.fillRect(0, Y(3.42), c.width, 0.08 * PX);
+  ctx.fillStyle = '#17734c';
+  ctx.fillRect(0, Y(3.62), c.width, 0.05 * PX);
   // doors: grey panels with a window
   for (const d of [-3.35, -12.65]) {
     rect(d - 0.66, 1.2, d + 0.66, 3.32, 0.08);
@@ -115,7 +120,7 @@ export function createTrain({ ghost = false, color = '#c2255c' } = {}) {
     : null;
   const mat = (m) => ghostMat || m;
   const body = mat(
-    new THREE.MeshPhysicalMaterial({ name: 'Paint', color: 0xf2f3f1, roughness: 0.38, metalness: 0, clearcoat: 0.5, clearcoatRoughness: 0.25 }),
+    new THREE.MeshPhysicalMaterial({ name: 'Paint', color: 0xfbf5e6, roughness: 0.38, metalness: 0, clearcoat: 0.5, clearcoatRoughness: 0.25 }),
   );
   const dark = mat(new THREE.MeshStandardMaterial({ name: 'Underframe', color: 0x3b4148, roughness: 0.7, metalness: 0.2 }));
   const steel = mat(new THREE.MeshStandardMaterial({ name: 'Wheel', color: 0x7d858d, roughness: 0.35, metalness: 0.85 }));
@@ -169,16 +174,26 @@ export function createTrain({ ghost = false, color = '#c2255c' } = {}) {
       root.add(w);
     }
 
+    // a yellow panel on each cab's face, under the windscreen (as on real railcars: seen from far)
+    const nosePanel = new THREE.MeshStandardMaterial({ name: 'NosePanel', color: 0xf7c518, roughness: 0.45, metalness: 0 });
+    const panelGeo = new THREE.PlaneGeometry(W - 0.5, 0.78);
+    for (const front of [true, false]) {
+      const panel = new THREE.Mesh(panelGeo, nosePanel);
+      panel.position.set(front ? 0.006 : -L - 0.006, 1.58, 0);
+      panel.rotation.y = front ? Math.PI / 2 : -Math.PI / 2;
+      panel.name = 'NosePanel';
+      root.add(panel);
+    }
     // lamps: white at the front, red at the back
     const lampGeo = new THREE.CircleGeometry(0.11, 16);
     const white = new THREE.MeshBasicMaterial({ name: 'Headlamp', color: 0xfffbe8 });
     const red = new THREE.MeshBasicMaterial({ name: 'TailLamp', color: 0xd9363e });
     for (const z of [-0.95, 0.95]) {
       const h = new THREE.Mesh(lampGeo, white);
-      h.position.set(0.006, 1.62, z);
+      h.position.set(0.014, 1.62, z);
       h.rotation.y = Math.PI / 2;
       const tl = new THREE.Mesh(lampGeo, red);
-      tl.position.set(-L - 0.006, 1.62, z);
+      tl.position.set(-L - 0.014, 1.62, z);
       tl.rotation.y = -Math.PI / 2;
       root.add(h, tl);
     }
