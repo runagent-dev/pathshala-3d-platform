@@ -14,7 +14,7 @@ const PLUNGER_REST = BALL.x - BALL.r - 0.001; // the plunger's tip just touches 
 export function createBall() {
   const root = new THREE.Group();
   root.name = 'CricketBall';
-  const leather = new THREE.MeshPhysicalMaterial({ name: 'Leather', color: 0xa3161a, roughness: 0.42, clearcoat: 0.55, clearcoatRoughness: 0.35 });
+  const leather = new THREE.MeshPhysicalMaterial({ name: 'Leather', color: 0xef5b27, roughness: 0.42, clearcoat: 0.55, clearcoatRoughness: 0.35 });
   const ball = new THREE.Mesh(new THREE.SphereGeometry(BALL.r, 36, 24), leather);
   root.add(ball);
   const seamMat = new THREE.MeshStandardMaterial({ name: 'Seam', color: 0xf1e7cf, roughness: 0.6 });
@@ -36,7 +36,7 @@ export function createStand({ materials: M }) {
   const root = new THREE.Group();
   root.name = 'Stand';
   const ballY = BOARD.surface + BALL.height; // centre of the ball in the holder
-  const iron = new THREE.MeshPhysicalMaterial({ name: 'PaintedIron', color: 0x34404d, roughness: 0.5, clearcoat: 0.3 });
+  const iron = new THREE.MeshPhysicalMaterial({ name: 'PaintedIron', color: 0x0c919b, roughness: 0.5, clearcoat: 0.3 });
 
   // a clamp on the rail: a block on top, a jaw down the outside, the screw under the rail
   const railTop = BOARD.surface + 0.022;

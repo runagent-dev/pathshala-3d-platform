@@ -48,3 +48,9 @@ Our own words: স্ট্রাইকার, বল, পথ, বাঁকা, 
 - পাশে ছোড়া is not in the book's paragraph; it is the contrast (a curved path). Kept after review (see above).
 - The everyday items avoid motions that are both periodic and linear (a mass on a spring, page 37) so the "which is
   not linear" question has one answer.
+
+## Owner colour update (0.1.1)
+The owner explicitly requested vivid backgrounds and strong object contrast, overriding the usual white scene.
+The learning panel stays white; transparent embeds and explicit capture backgrounds remain supported.
+
+Berry/plum backdrop, a teal carrom frame and stand, an orange ball, and brighter cyan/green airborne traces keep paths visible.
