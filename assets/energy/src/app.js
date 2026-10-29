@@ -120,7 +120,7 @@ export function createApp(root, options = {}) {
     scene.background = tex;
   }
   scene.fog = new THREE.Fog(SKY.low, 90, 320);
-  scene.add(new THREE.HemisphereLight('#d8ecff', '#4f7a2a', 0.9));
+  scene.add(new THREE.HemisphereLight('#d8ecff', '#a8703c', 0.9));
   const sun = new THREE.DirectionalLight('#fff1d6', 2.1);
   scene.add(sun, sun.target);
   if (o.shadow && o.bg !== 'transparent') {
@@ -929,7 +929,7 @@ export function createApp(root, options = {}) {
         stage.invalidate();
       }
     },
-    /** The rider on the bicycle where they are now, and the road over the hill (no trees, sky or guide lines). */
+    /** The rider on the bicycle where they are now, and the road over the hill (no stands, sky or guide lines). */
     exportRoot() {
       const copy = new THREE.Group();
       copy.name = 'Energy';
