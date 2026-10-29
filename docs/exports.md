@@ -47,4 +47,8 @@ have no uncommitted changes, and its version has no release yet. It exports ever
     (e.g. `set` with animation), so motion comes from the figure itself.
   - `turntable` for models: the camera goes once round the model.
 
-Exports are not stored in git (`exports/` is ignored). Exports refuse to start with less than 10 GB free disk.
+Exports are not stored in git (`exports/` is ignored). Exports refuse to start with less than 10 GB free disk
+(`PATHSHALA_MIN_FREE_GB` lowers the limit on a small disk).
+
+To get the poster and the GLBs into the Chalk library, and keep them there as figures change, use
+`npm run library:sync` ([library-sync.md](library-sync.md)): it runs this exporter for the figures that need it.

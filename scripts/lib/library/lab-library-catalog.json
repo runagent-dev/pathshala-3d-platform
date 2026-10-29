@@ -1,0 +1,40 @@
+{
+  "about": "The shared lab libraries (spec 1.5 §2), pinned from chalk-format. Do not edit by hand: npm run library:catalog -- --from <chalk-format>/libraries/catalog.json",
+  "source": {
+    "repo": "runagent-dev/chalk-format",
+    "path": "libraries/catalog.json",
+    "ref": "chore/three-0.185.1",
+    "commit": "9176639ebbacb41c5078e4830c63f3e2d800d59c",
+    "esbuild": "0.25.12"
+  },
+  "libraries": [
+    {
+      "specifier": "three",
+      "version": "0.185.1",
+      "file": "build/three-0.185.1-core.js",
+      "size": 729902,
+      "key": "c1:tnju7fmkkem7urwcj2quaiihxm"
+    },
+    {
+      "specifier": "three/addons/controls/OrbitControls.js",
+      "version": "0.185.1",
+      "file": "build/three-0.185.1-OrbitControls.js",
+      "size": 19728,
+      "key": "c1:nqdfnh3c3kmjnngrlj4erirjdm"
+    },
+    {
+      "specifier": "three/addons/loaders/GLTFLoader.js",
+      "version": "0.185.1",
+      "file": "build/three-0.185.1-GLTFLoader.js",
+      "size": 45689,
+      "key": "c1:lwq77txearu4ueh57koubhv43e"
+    },
+    {
+      "specifier": "three/addons/renderers/CSS2DRenderer.js",
+      "version": "0.185.1",
+      "file": "build/three-0.185.1-CSS2DRenderer.js",
+      "size": 2469,
+      "key": "c1:4hz5hrfsx3uzrxa3mx55r6i4qm"
+    }
+  ]
+}
