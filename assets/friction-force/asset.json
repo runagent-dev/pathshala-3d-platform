@@ -5,7 +5,7 @@
   "title": "Frictional force (ঘর্ষণ বল)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "book": "physics-9-10",
   "page": 88,
   "topic": "3.9",
@@ -13,7 +13,7 @@
   "order": 1,
   "maintainers": ["RadeenXALNW"],
   "units": "m",
-  "description": "Friction (ঘর্ষণ বল, pages 88–89, 3.9) as five short steps on a wooden block lying on a table, in plain words first (the symbols F and f only after the first push). Step 1: a push rod leans on the block and the push grows (a gentle 5 N held for a second, then harder); the table holds it back with a friction force exactly as big and the other way round (two equal arrows, the orange push and the crimson friction) until the push passes the most the table can hold, 9.8 N for the 2 kg block. Then the push goes on past the friction (the push arrow is visibly longer than the friction arrow), the block speeds up on what is left (a = (F − f)/m, the book's \"friction reduces the applied force\"), the hand lets go and friction alone slows it to a stop. Step 2: push from the other side and friction turns round too (the book: friction always acts opposite to the applied force). Step 3: put 1 kg weights on the block (a row of words: empty block, +1 kg, +2 kg) and it takes a bigger push to move it, 14.7 N and 19.6 N: friction grew with the weight (the push it took under each word once found). Step 4: a round window, joined by a cone to the touching spot as in চিত্র ৩.১৬, zooms in a long way on the table and the block: both surfaces are rough, their teeth lock into each other's grooves, and with more weight the teeth sink deeper (a purple weight arrow presses down, at right angles to the sideways friction); sliding rides the teeth up and over. Step 5: the block is rubbed to and fro, friction always against the velocity, and the two surfaces glow warm (the book's engine remark). One friction number (μ = 0.5, not shown) serves for resting and for sliding: static and kinetic friction are for the next figure (3.9.1). The panel is one action, one result line, one short rule. Test tab: 5 questions on clean scenes (which way friction acts on a block that is not moving, how big it is, what a weight does to a push that used to move the block, why smooth-looking surfaces have friction, what rubbing does to the surfaces). Phone-first, Bangla.",
+  "description": "A red 2 kg crate is pulled by an articulated person in an orange shirt and blue trousers, leaning away and gripping a horizontal rope. A saturated navy-to-teal scene separates the people, crate and large outlined force arrows. Orange tension and pink friction are equal and opposite while the crate is held; beyond the friction limit the crate accelerates, and after release friction slows it. Reverse the pull or add 1 kg weights to compare the threshold (9.8, 14.7, 19.6 N; one friction coefficient for this introductory lesson). An enlarged rectangular contact window is open by default: cyan and green particle markers follow the rough upper and lower surfaces, showing interlocking, compression and relative sliding. A qualitative warmth indicator rises during rubbing; particles and roughness are illustrative, not to scale, and no measured temperature is claimed. Two visible pullers alternate during the schematic back-and-forth rubbing demonstration. The compact panel shows force values, a short rule, one guided action and pause/replay controls. Five quiz scenes cover direction, balanced forces, weight, roughness and heating, with learning controls locked during assessment. Self-contained Three.js, Bangla first, with English and keyboard support.",
   "tags": ["force", "friction", "contact-force", "surface", "heat", "bangla"],
   "params": [
     {
@@ -33,18 +33,18 @@
     },
     {
       "name": "side",
-      "label": "Push from",
+      "label": "Pull direction (legacy aliases)",
       "type": "select",
-      "options": [["left", "left (pushes right)"], ["right", "right (pushes left)"]],
+      "options": [["left", "rightward pull"], ["right", "leftward pull"]],
       "default": "left"
     },
     {
       "name": "at",
-      "label": "Start already pushing",
+      "label": "Start already pulling",
       "type": "number",
       "default": "",
-      "placeholder": "s after the push began",
-      "help": "e.g. 2.6: the push has been growing for 2.6 s"
+      "placeholder": "s after the pull began",
+      "help": "e.g. 2.6: the pull has been growing for 2.6 s"
     },
     {
       "name": "rub",
@@ -56,13 +56,13 @@
     },
     {
       "name": "hold",
-      "label": "Hold a push of",
+      "label": "Hold a pull of",
       "type": "number",
       "default": "",
       "placeholder": "N",
-      "help": "e.g. 9: the rod pushes with 9 N and the block stays still (friction is 9 N too), for pictures"
+      "help": "e.g. 9: rope tension and opposing friction are both 9 N while the crate stays still"
     },
-    { "name": "lens", "label": "Zoom-in open", "type": "boolean", "default": "0" },
+    { "name": "lens", "label": "Zoom-in open", "type": "boolean", "default": "1" },
     { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
     {
       "name": "mode",
@@ -93,6 +93,7 @@
     { "name": "set", "payload": { "lens": true } },
     { "name": "set", "payload": { "rub": true } },
     { "name": "set", "payload": { "home": true } },
+    { "name": "set", "payload": { "paused": true } },
     { "name": "set", "payload": { "view": "3d" } },
     { "name": "reset", "payload": {} },
     { "name": "practice", "payload": {} },
@@ -116,7 +117,10 @@
   "export": {
     "poster": { "params": { "coach": "0", "load": "1", "lens": "1", "hold": "9" } },
     "glb": [
-      { "name": "default", "setup": [{ "command": "set", "payload": { "load": 1, "home": true, "animate": false } }] }
+      {
+        "name": "default",
+        "setup": [{ "command": "set", "payload": { "load": 1, "hold": 9, "paused": true, "animate": false } }]
+      }
     ],
     "video": {
       "kind": "script",

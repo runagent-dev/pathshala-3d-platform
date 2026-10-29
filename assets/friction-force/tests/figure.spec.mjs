@@ -11,7 +11,7 @@ import { openFigure, preparePage } from '../../../scripts/lib/export/driver.mjs'
 test('friction-force: friction matches the push, turns round, grows with weight, locks in the teeth, makes heat', async ({ page }) => {
   await page.setViewportSize({ width: 800, height: 500 });
   const log = await preparePage(page);
-  const fig = await openFigure(page, 'friction-force');
+  const fig = await openFigure(page, 'friction-force', { params: { lens: '0' } });
   const text = async (sel) => (await fig.frame.locator(sel).first().textContent()).replace(/ /g, ' ');
   const run = (ms) => fig.advance(ms, 100);
 
@@ -23,7 +23,7 @@ test('friction-force: friction matches the push, turns round, grows with weight,
   expect(await fig.call('get')).toMatchObject({ phase: 'rest', push: 0, friction: 0 });
   expect(await text('.pvc-outcome')).toContain('ঘর্ষণও নেই');
   expect(await text('.pvc-rule')).toContain('ঘর্ষণ বল'); // the word is explained before the student pushes
-  expect(await text('.pvc-act')).toContain('ব্লকটিকে ঠেলা দাও');
+  expect(await text('.pvc-act')).toContain('বাক্সটিকে টান দাও');
   expect(await text('.pvc-act-badge')).toBe('১');
   expect(await fig.frame.locator('.pvc-act-marker.in:not(.pvc-act-under)').count()).toBe(1); // the ring is on the block
 
@@ -32,12 +32,12 @@ test('friction-force: friction matches the push, turns round, grows with weight,
   await run(1600);
   const hold = await fig.call('get');
   expect(hold).toMatchObject({ phase: 'hold', push: 5, friction: 5, block: 0 });
-  expect(await text('.pvc-outcome')).toBe('ব্লক নড়ছে না: ঘর্ষণ ঠেলার সমান, দুটোই ৫ নিউটন');
-  expect(await fig.frame.locator('.pvc-anno').allTextContents()).toEqual(expect.arrayContaining(['ঠেলা', 'ঘর্ষণ'])); // plain words, no symbols yet
+  expect(await text('.pvc-outcome')).toBe('বাক্স নড়ছে না: ঘর্ষণ টানের সমান, দুটোই ৫ নিউটন');
+  expect(await fig.frame.locator('.pvc-anno').allTextContents()).toEqual(expect.arrayContaining(['টান', 'ঘর্ষণ'])); // plain words, no symbols yet
   expect(await fig.frame.locator('.pvc-act-marker.in:not(.pvc-act-under)').count()).toBe(0); // no ring while it runs
   // the big button keeps its words and stays pressable while it runs: a tap says the push is on
   expect(await fig.frame.locator('.pvc-act').isEnabled()).toBe(true);
-  expect(await text('.pvc-act')).toContain('ব্লকটিকে ঠেলা দাও');
+  expect(await text('.pvc-act')).toContain('বাক্সটিকে টান দাও');
   await fig.frame.locator('.pvc-act').click();
   await run(100);
   expect(await fig.frame.locator('.pvc-hint.show').count()).toBe(1);
@@ -60,11 +60,11 @@ test('friction-force: friction matches the push, turns round, grows with weight,
   expect(slip.push).toBeLessThanOrEqual(12.2);
   expect(slip.block).toBeGreaterThan(0);
   expect(slip.moved[0]).toBe(9.8);
-  expect(await text('.pvc-outcome')).toBe('ঠেলা ৯.৮ নিউটনের বেশি, মানে ঘর্ষণের চেয়ে বেশি হতেই ব্লক গতি পেল');
-  expect(await text('.pvc-act')).toContain('ব্লকটিকে ঠেলা দাও'); // not the next step yet
+  expect(await text('.pvc-outcome')).toBe('টান ৯.৮ নিউটনের বেশি, মানে ঘর্ষণের চেয়ে বেশি হতেই বাক্স গতি পেল');
+  expect(await text('.pvc-act')).toContain('বাক্সটিকে টান দাও'); // not the next step yet
 
-  expect(await text('.pvc-rule')).toContain('ঠেলা বাড়লে ঘর্ষণও ততটা বাড়ে');
-  expect(await fig.frame.locator('.pvc-anno').allTextContents()).toEqual(expect.arrayContaining(['ঠেলা F', 'ঘর্ষণ f'])); // the symbols, now
+  expect(await text('.pvc-rule')).toContain('টান বাড়লে ঘর্ষণও ততটা বাড়ে');
+  expect(await fig.frame.locator('.pvc-anno').allTextContents()).toEqual(expect.arrayContaining(['টান F', 'ঘর্ষণ f'])); // the symbols, now
   await run(1500);
   const done = await fig.call('get');
   expect(done).toMatchObject({ phase: 'done', push: 0, friction: 0, next: 'other' }); // the hand let go, friction stopped the block
@@ -72,7 +72,7 @@ test('friction-force: friction matches the push, turns round, grows with weight,
   expect(done.block).toBeLessThan(0.25);
   expect(await text('[data-example="w0"] .pvc-ex-res')).toBe('সরাতে ৯.৮ নিউটন');
   expect(await text('.pvc-act-badge')).toBe('২');
-  expect(await text('.pvc-act')).toContain('উল্টো দিক থেকে ঠেলা');
+  expect(await text('.pvc-act')).toContain('উল্টো দিক থেকে টান');
 
   // step 2: from the other side: the block goes left, friction turned round (the arrows are opposite again)
   await fig.frame.locator('.pvc-act').click();
@@ -88,7 +88,7 @@ test('friction-force: friction matches the push, turns round, grows with weight,
   const heavy = await fig.call('get');
   expect(heavy).toMatchObject({ load: 1, limit: 14.7, phase: 'done', next: 'lens' });
   expect(heavy.moved[1]).toBe(14.7);
-  expect(await text('.pvc-outcome')).toBe('আগের চেয়ে বেশি ঠেলা লাগল: ১৪.৭ নিউটনের বেশি ঠেলায় ব্লক গতি পেল');
+  expect(await text('.pvc-outcome')).toBe('আগের চেয়ে বেশি টান লাগল: ১৪.৭ নিউটনের বেশি টানে বাক্স গতি পেল');
   expect(await text('[data-example="w1"] .pvc-ex-res')).toBe('সরাতে ১৪.৭ নিউটন');
   expect(await text('.pvc-rule')).toContain('ওজন বসালে ঘর্ষণ আরও বাড়ে');
 
@@ -96,7 +96,7 @@ test('friction-force: friction matches the push, turns round, grows with weight,
   await fig.frame.locator('.pvc-act').click();
   await run(1500);
   expect((await fig.call('get')).lens).toBe(true);
-  expect(await text('.pvc-rule')).toContain('এবড়োখেবড়ো');
+  expect(await text('.pvc-rule')).toContain('উঁচুনিচু');
   expect(await text('.ff-lens-cap')).toContain('আকার প্রকৃত অনুপাতে নয়');
   // the first look names what is there and asks for the comparison; the comparison comes once the weight is changed
   expect(await text('.pvc-outcome')).toContain('ওজন বদলে দেখো');
@@ -122,7 +122,7 @@ test('friction-force: friction matches the push, turns round, grows with weight,
   expect((await fig.call('get')).heat).toBeGreaterThan(0.5);
   await fig.advance(800, 50);
   expect(await fig.call('get')).toMatchObject({ phase: 'done', next: 'again' });
-  expect(await text('.pvc-act')).toContain('আবার ঠেলা দাও');
+  expect(await text('.pvc-act')).toContain('আবার টান দাও');
   expect(await text('.pvc-act-badge')).toBe('');
 
   // a held push (for pictures, and the poster): the block stays still, friction equals it, the button is normal
@@ -160,13 +160,21 @@ test('friction-force: the test sets up five scenes and marks the answers', async
     await fig.call('set', { load: 2 });
     expect((await fig.call('get')).load).toBe(before.load);
     // the right answer is marked after a tap (find it by trying each choice in turn across the questions)
-    await fig.frame
-      .locator('.pvc-opt')
-      .nth(q % 4)
-      .click();
+    const directionQuestion = ask.includes('কোন দিকে');
+    const opposite = before.side === 'left' ? 'বাম দিকে' : 'ডান দিকে';
+    if (directionQuestion) await fig.frame.locator('.pvc-opt').filter({ hasText: opposite }).click();
+    else
+      await fig.frame
+        .locator('.pvc-opt')
+        .nth(q % 4)
+        .click();
     await run(300);
     const tone = await fig.frame.locator('.pvc-q-feedback').getAttribute('data-tone');
     expect(['ok', 'bad']).toContain(tone);
+    if (directionQuestion) {
+      expect(tone).toBe('ok');
+      await expect(fig.frame.locator('.pvc-q-feedback')).toContainText(opposite);
+    }
     if (tone === 'ok') right++;
     expect((await fig.frame.locator('.pvc-q-feedback').textContent()).length).toBeGreaterThan(20);
     expect(await fig.frame.locator('.pvc-opt.right').count()).toBe(1);
@@ -181,4 +189,89 @@ test('friction-force: the test sets up five scenes and marks the answers', async
   await run(500);
   expect(await fig.call('get')).toMatchObject({ mode: 'explore', phase: 'rest', load: 0 });
   expect(log.errors).toEqual([]);
+});
+
+test('friction-force: pause freezes the rubbing and heat, reset restores the contact window, and GLB includes the puller', async ({ page }) => {
+  await page.setViewportSize({ width: 800, height: 500 });
+  const log = await preparePage(page);
+  const fig = await openFigure(page, 'friction-force');
+  expect((await fig.call('get')).lens).toBe(true);
+  await fig.call('set', { rub: 1, paused: true });
+  const frozen = await fig.call('get');
+  await fig.advance(1200, 100);
+  expect(await fig.call('get')).toMatchObject({ block: frozen.block, heat: frozen.heat, phase: 'rub', paused: true });
+  await fig.frame.locator('[data-act="pause"]').click();
+  await fig.advance(400, 50);
+  const running = await fig.call('get');
+  expect(running.paused).toBe(false);
+  expect(running.heat).toBeGreaterThan(frozen.heat);
+  expect(running.block).not.toBe(frozen.block);
+  await fig.call('set', { lens: false });
+  await fig.call('reset');
+  expect(await fig.call('get')).toMatchObject({ phase: 'rest', lens: true, paused: false, heat: 0 });
+  for (const [side, person, other] of [
+    ['left', 'RightPuller', 'LeftPuller'],
+    ['right', 'LeftPuller', 'RightPuller'],
+  ]) {
+    await fig.call('set', { side, load: 1, hold: 9, animate: false });
+    const glb = await fig.call('export-glb');
+    const bytes = Buffer.from(glb.base64, 'base64');
+    const json = JSON.parse(bytes.subarray(20, 20 + bytes.readUInt32LE(12)).toString());
+    const names = json.nodes.map((n) => n.name);
+    expect(names).toContain(person);
+    expect(names).not.toContain(other);
+    for (const name of ['AnatomicalHead', 'HandNear', 'HandFar', 'TensionRope', 'RopeGrip']) expect(names).toContain(name);
+    expect(names.some((n) => /rod|pad/i.test(n || ''))).toBe(false);
+  }
+  expect(log.errors).toEqual([]);
+});
+
+test('friction-force: both languages keep the panel and contact caption visible across frames and lesson states', async ({ page }) => {
+  test.setTimeout(240_000);
+  const log = await preparePage(page);
+  for (const lang of ['bn', 'en']) {
+    await page.setViewportSize({ width: 800, height: 500 });
+    const fig = await openFigure(page, 'friction-force', { params: { lang } });
+    for (const [width, height] of [
+      [390, 700],
+      [390, 520],
+      [844, 390],
+      [640, 400],
+      [800, 500],
+      [1280, 800],
+    ]) {
+      await page.setViewportSize({ width, height });
+      for (const state of [
+        { load: 0, side: 'left', hold: 5, lens: true },
+        { load: 2, side: 'right', hold: 19, lens: true },
+        { rub: 3, lens: true },
+        { hold: 9, lens: false },
+      ]) {
+        await fig.call('set', { ...state, animate: false, paused: true });
+        await fig.advance(150);
+        const report = await fig.frame.evaluate(() => {
+          const panel = document.querySelector('.pvc-panel');
+          const stage = document.querySelector('.pvc-stage').getBoundingClientRect();
+          const visible = [...document.querySelectorAll('.pvc-panel button, .pvc-rule, .ff-live, .ff-lens-cap.on')].filter(
+            (el) => el.getClientRects().length && !el.closest('[hidden]') && getComputedStyle(el).visibility !== 'hidden',
+          );
+          return {
+            overflow: panel.scrollHeight - panel.clientHeight,
+            height: stage.height,
+            clipped: visible
+              .filter((el) => {
+                const r = el.getBoundingClientRect();
+                return r.left < -1 || r.right > innerWidth + 1 || r.top < -1 || r.bottom > innerHeight + 1;
+              })
+              .map((el) => el.className),
+          };
+        });
+        expect(report.overflow, `${lang} ${width}×${height} panel`).toBeLessThanOrEqual(1);
+        expect(report.height).toBeGreaterThan(150);
+        expect(report.clipped, `${lang} ${width}×${height}`).toEqual([]);
+      }
+    }
+  }
+  expect(log.errors).toEqual([]);
+  expect(log.external).toEqual([]);
 });
