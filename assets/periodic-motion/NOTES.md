@@ -30,7 +30,7 @@ shape of the path.
     নয়"); the mark starts near the Sun, where the comet is fastest;
   - a 500 g mass on a 30.8 N/m spring on a lab stand (T = 2π√(m/k) = 0.8 s, real time): the spring (natural length
     8 cm) hangs gT²/4π² ≈ 16 cm longer and swings 7.5 cm each way; the particle is a coloured dot on the mass;
-  - an anatomical heart beating 75 times a minute (0.8 s, real time) that gives a visible squeeze after each R wave,
+  - an anatomical heart (one wet red-brown tissue like a real heart, raised branching coronary vessels, open cut great vessels) beating 75 times a minute (0.8 s, real time) that gives a visible squeeze after each R wave,
     with an ECG strip running past a pen (under the heart on tall views, beside it on wide ones). The paper moves at
     a fixed speed (0.2 s a big square), so in the test a faster heart puts the beats closer together.
 - A mark (দাগ, orange) on the path. The first time the particle passes it the clock (ঘড়ি, top left) starts; each
