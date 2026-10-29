@@ -48,13 +48,16 @@ export function createTrace({
 
   // faint pictures with a darker edge (it darkens where the surface turns away from the eye), so they read on the
   // light board and against each other; still a standard material, so the GLB keeps them
-  const rim = { rimColor: { value: new THREE.Color(COLORS.rim) }, rimStrength: { value: 1 } };
+  const inAir = name !== 'PushTrace';
+  const sceneColor = inAir ? '#70dfff' : color;
+  const sceneLine = inAir ? '#63ec9e' : COLORS.line;
+  const rim = { rimColor: { value: new THREE.Color(inAir ? '#4bb5e8' : COLORS.rim) }, rimStrength: { value: 1 } };
   const ghostMat = new THREE.MeshStandardMaterial({
     name: `${name}Picture`,
-    color,
+    color: sceneColor,
     roughness: 0.5,
     transparent: true,
-    opacity: 0.4,
+    opacity: inAir ? 0.55 : 0.4,
     depthWrite: false,
   });
   ghostMat.onBeforeCompile = (shader) => {
@@ -76,20 +79,20 @@ export function createTrace({
     return m;
   });
 
-  const dotMat = new THREE.MeshBasicMaterial({ name: `${name}Path`, color, toneMapped: false });
+  const dotMat = new THREE.MeshBasicMaterial({ name: `${name}Path`, color: sceneColor, toneMapped: false });
   const dots = new THREE.InstancedMesh(new THREE.SphereGeometry(dotRadius, 8, 6), dotMat, maxDots);
   dots.count = 0;
   dots.frustumCulled = false;
   group.add(dots);
 
-  const lineMat = new THREE.MeshBasicMaterial({ name: `${name}StraightLine`, color: COLORS.line, toneMapped: false });
+  const lineMat = new THREE.MeshBasicMaterial({ name: `${name}StraightLine`, color: sceneLine, toneMapped: false });
   const maxDashes = 80;
   const dashes = new THREE.InstancedMesh(new THREE.CylinderGeometry(lineRadius, lineRadius, 1, 8), lineMat, maxDashes);
   dashes.count = 0;
   dashes.frustumCulled = false;
   group.add(dashes);
 
-  const gapMat = new THREE.MeshBasicMaterial({ name: `${name}Gap`, color: COLORS.gap, toneMapped: false });
+  const gapMat = new THREE.MeshBasicMaterial({ name: `${name}Gap`, color: inAir ? '#d5b7ff' : COLORS.gap, toneMapped: false });
   const gap = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.0022, 0.0022, 1, 8), gapMat, 3);
   gap.count = 0;
   gap.frustumCulled = false;
@@ -179,12 +182,12 @@ export function createTrace({
     },
     /** Greyed and faint (true) or in the meaning colours (false). */
     faded(on) {
-      ghostMat.color.set(on ? COLORS.faded : color);
-      ghostMat.opacity = on ? 0.2 : 0.4;
-      rim.rimColor.value.set(on ? COLORS.faded : COLORS.rim);
+      ghostMat.color.set(on ? COLORS.faded : sceneColor);
+      ghostMat.opacity = on ? 0.2 : inAir ? 0.55 : 0.4;
+      rim.rimColor.value.set(on ? COLORS.faded : inAir ? '#4bb5e8' : COLORS.rim);
       rim.rimStrength.value = on ? 0.5 : 1;
-      dotMat.color.set(on ? COLORS.faded : color);
-      lineMat.color.set(on ? COLORS.faded : COLORS.line);
+      dotMat.color.set(on ? COLORS.faded : sceneColor);
+      lineMat.color.set(on ? COLORS.faded : sceneLine);
     },
     get path() {
       return path;

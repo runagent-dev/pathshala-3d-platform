@@ -101,6 +101,19 @@ export function createApp(root, options = {}) {
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 30, near: 0.02, far: 60, environment: 'studio-light' });
   const { camera, controls, scene } = stage;
+  // The owner requested a vivid scene; the white learning panel keeps the text readable.
+  const backdropCanvas = document.createElement('canvas');
+  backdropCanvas.width = 8;
+  backdropCanvas.height = 256;
+  const backdropContext = backdropCanvas.getContext('2d');
+  const backdropGradient = backdropContext.createLinearGradient(0, 0, 0, 256);
+  backdropGradient.addColorStop(0, '#35154f');
+  backdropGradient.addColorStop(1, '#8f2857');
+  backdropContext.fillStyle = backdropGradient;
+  backdropContext.fillRect(0, 0, 8, 256);
+  const backdrop = new THREE.CanvasTexture(backdropCanvas);
+  backdrop.colorSpace = THREE.SRGBColorSpace;
+  scene.background = o.bg === 'transparent' ? null : backdrop;
   controls.minDistance = 0.4;
   controls.maxDistance = 8;
   controls.enablePan = false;
@@ -1307,7 +1320,16 @@ export function createApp(root, options = {}) {
       emitChange();
     },
     startPractice: () => quiz.start(),
-    capture: (opts) => stage.capture(opts),
+    capture(opts = {}) {
+      const background = scene.background;
+      if (opts.background !== undefined) scene.background = null;
+      try {
+        return stage.capture(opts);
+      } finally {
+        scene.background = background;
+        stage.invalidate();
+      }
+    },
     /** The board, the striker, the stand, the ball and any marks the motions left (the stand even in the push). */
     exportRoot() {
       const copy = world.clone(true);
