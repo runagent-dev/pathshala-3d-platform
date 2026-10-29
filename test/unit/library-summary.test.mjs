@@ -56,7 +56,7 @@ describe('library-summary', () => {
   });
 
   it('exits 1 on an offender, 0 without, 2 on a bad file', () => {
-    const dir = tempDir('library-summary');
+    const dir = tempDir();
     const file = path.join(dir, 'report.json');
     fs.writeFileSync(file, JSON.stringify(report));
     const run = (...args) => spawnSync(process.execPath, [path.join(ROOT, 'scripts/ci/library-summary.mjs'), ...args], { encoding: 'utf8' });
