@@ -1,0 +1,106 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "energy",
+  "title": "Energy (শক্তি)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 102,
+  "topic": "4.2",
+  "placement": "Book page 102, section 4.2 শক্তি (Energy): next to the definition \"শক্তি হচ্ছে কাজ করার সামর্থ্য\" and the two lines ধনাত্মক কাজ করা → বস্তুটিকে শক্তি দেওয়া, ঋণাত্মক কাজ করা → বস্তুটি থেকে শক্তি সরিয়ে নেওয়া.",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "Energy (শক্তি, page 102, 4.2) as a bicycle ride over a hill: a realistically dressed rider in a helmet on a hybrid bicycle waits on a dirt road at the foot of a smooth grassy hill 5 m high. The panel is one action, one result, one rule. Step ১ \"প্যাডেল করে পাহাড়ে ওঠো\" (the big button, or a tap on the bicycle, ringed by the same numbered badge): the rider pedals up at 3 m/s, an orange arrow shows the pedal force along the motion, and the energy bar grows: positive work gives the bicycle energy (ধনাত্মক কাজ করা → বস্তুটিকে শক্তি দেওয়া), supplied by the rider. At the top it rests with 3,430 J stored by its height (বিভব শক্তি, 70 kg × 9.8 m/s² × 5 m); a dashed line down to the road's level shows the height. Step ২ lets it roll down without pedalling: the purple potential-energy part of the bar shrinks as the amber kinetic-energy part grows, the total staying 3,430 J because friction is left out (said on the view); at the bottom it rolls on at about 9.9 m/s. Step ৩ brakes: a crimson arrow against the motion, the brake pads glow, and the energy leaves the bicycle as heat (hatched): negative work takes energy away (ঋণাত্মক কাজ করা → বস্তুটি থেকে শক্তি সরিয়ে নেওয়া). The last rule gives the book's summary: energy has no direction, it is a scalar, unit J (জুল). The row of words (ধনাত্মক কাজ, শক্তির রূপান্তর, ঋণাত্মক কাজ) jumps to each part. Test tab: 5 tap questions on frozen scenes (what the pedal force does, the energy at rest on the top, the kinetic energy read from a potential-energy label on the way down, what the brakes do, the same energy down either slope, the unit). Phone-first, Bangla.",
+  "tags": ["energy", "work", "potential-energy", "kinetic-energy", "conservation-of-energy", "bicycle", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "phase",
+      "label": "Start at",
+      "type": "select",
+      "options": [
+        ["start", "at rest below the hill"],
+        ["climb", "pedalling up"],
+        ["top", "at rest on the top"],
+        ["roll", "rolling down"],
+        ["flat", "rolling on the flat road"],
+        ["brake", "braking"],
+        ["stopped", "stopped after braking"]
+      ],
+      "default": "start",
+      "help": "start part way through the ride, for pictures"
+    },
+    {
+      "name": "height",
+      "label": "Height for 'pedalling up' / 'rolling down'",
+      "type": "number",
+      "default": "",
+      "placeholder": "m",
+      "help": "0 to 5 m (default 2.5)"
+    },
+    {
+      "name": "hold",
+      "label": "Keep a part-way start still",
+      "type": "boolean",
+      "default": "0",
+      "help": "for pictures: the bicycle waits until the student acts"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on the bicycle pulses", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "tap": true } },
+    { "name": "set", "payload": { "part": "down" } },
+    { "name": "set", "payload": { "phase": "roll", "height": 2.5 } },
+    { "name": "set", "payload": { "phase": "brake", "speed": 6 } },
+    { "name": "set", "payload": { "home": true } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "action", "phase", "part", "view", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": { "params": { "coach": "0", "phase": "roll", "height": "2.5", "hold": "1" } },
+    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "phase": "top" } }] }],
+    "video": {
+      "kind": "script",
+      "seconds": 22,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 0.8, "command": "set", "payload": { "tap": true } },
+        { "at": 11, "command": "set", "payload": { "tap": true } },
+        { "at": 17.5, "command": "set", "payload": { "tap": true } }
+      ]
+    }
+  }
+}

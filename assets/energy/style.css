@@ -1,0 +1,72 @@
+/* Energy: the page, the colours that carry meaning (বিভব শক্তি purple, the weight's colour; গতিশক্তি amber, as in the
+   momentum figures; heat in the brakes hatched grey; the pedal force orange, the brake force crimson, as on the 3D
+   arrows), the energy bar in the result line and the honest note on the view. The panel is the kit's clean sheet
+   (../../shared/lib/student/student.css). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.en { --c-pe: #6741d9; --c-ke: #e8930c; --c-ke-text: #a35f00; --c-heat: #868e96; }
+
+/* the energy bar: the full length is the 3,430 J the rider put in (a dashed outline), split into its parts */
+.en .pvc-outcome { font-size: 13px; line-height: 1.35; }
+.en-meter { display: flex; flex-direction: column; gap: 5px; width: 100%; }
+.en-bar { position: relative; display: flex; height: 16px; border-radius: 4px; outline: 1.5px dashed #9aa3ad; outline-offset: 1px; background: #f3f4f6; overflow: hidden; }
+.en-bar i { display: block; height: 100%; width: 0; flex: none; }
+.en-bar .pe { background: var(--c-pe); }
+.en-bar .ke { background: var(--c-ke); }
+.en-bar .heat { background: repeating-linear-gradient(135deg, #adb5bd 0 4px, #e9ecef 4px 8px); }
+.en-legend { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 10px; font-weight: 500; color: #343a40; }
+.en-legend > span { white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
+.en-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; }
+.en-legend em { font-style: normal; }
+.en-legend b { font-size: 14px; font-weight: 700; }
+.en-legend .pe i { background: var(--c-pe); }
+.en-legend .pe b { color: var(--c-pe); }
+.en-legend .ke i { background: var(--c-ke); }
+.en-legend .ke b { color: var(--c-ke-text); }
+.en-legend .tot i { background: none; outline: 1.5px dashed #9aa3ad; }
+.en-legend .heat i { background: repeating-linear-gradient(135deg, #adb5bd 0 2px, #e9ecef 2px 4px); }
+.en .pvc-rule { font-size: 13.5px; line-height: 1.5; }
+
+/* on the view: the honest note, top left (the buttons are top right) */
+.en-note { position: absolute; left: 10px; top: 10px; z-index: 3; max-width: calc(100% - 210px); padding: 3px 8px; border-radius: 6px; background: rgba(255, 255, 255, 0.86); color: #3b4250; font-size: 11.5px; line-height: 1.35; pointer-events: none; }
+.en .pvc-anno { transition: none; font-size: 13px; font-weight: 600; padding: 2px 7px; }
+.en .pvc-anno-part { color: var(--c, #343a40); }
+
+/* the test: answers in words, room kept for the question and the worked answer */
+.en .pvc-opt { font-size: 13.5px; line-height: 1.25; }
+.en-opt { display: block; white-space: normal; text-align: center; }
+.en .pvc-q-text { font-size: 14.5px; }
+.en .pvc-q-feedback { font-size: 13px; }
+.en[data-mode='quiz'] .pvc-stage[data-ui='simple'] .pvc-hint { top: 54px; bottom: auto; }
+
+/* wide frames: the panel beside the view */
+@container pvc (min-width: 720px) and (min-height: 461px) {
+  .en .pvc-learn { justify-content: flex-start; gap: 10px; }
+  .en .pvc-rule { --pvc-rule-lines: 3; }
+}
+/* phone portrait, short */
+@container pvc (max-width: 560px) and (max-height: 600px) {
+  .en .pvc-rule { font-size: 12px; line-height: 1.4; }
+  .en .pvc-outcome { font-size: 12px; }
+  .en-legend b { font-size: 12.5px; }
+  .en-bar { height: 12px; }
+  .en .pvc-q-text { font-size: 13px; }
+  .en .pvc-opt { font-size: 12.5px; }
+  .en .pvc-q-feedback { font-size: 12px; }
+}
+/* short and wide (phone held sideways): the panel beside the scene */
+@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
+  .en .pvc-rule { --pvc-rule-lines: 5; font-size: 12.5px; line-height: 1.42; }
+  .en .pvc-outcome { font-size: 12px; }
+  .en-legend b { font-size: 12.5px; }
+  .en .pvc-q-text { font-size: 13px; }
+  .en .pvc-opt { font-size: 12.5px; height: 42px; }
+  .en .pvc-q-feedback { font-size: 12px; }
+  .en-note { font-size: 10.5px; max-width: calc(100% - 190px); }
+}
+
+/* not a white page: the panel in a soft sky-to-meadow tint, matching the scene */
+.en .pvc-panel { background: linear-gradient(180deg, #e3f2ff 0%, #effbe6 100%); }
+.en .pvc-tabs button:not(.on) { background: rgba(255, 255, 255, 0.7); }
