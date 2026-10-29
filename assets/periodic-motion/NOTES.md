@@ -91,3 +91,5 @@ period/count and pause/resume regression checks, and Khronos validation of the a
 the generic fan export). Heart views at all six frame sizes and rotated close-ups are inspected separately.
 
 In stacked portrait layouts the ECG callout sits beside the chart, keeping it off the heart apex.
+The chart is lowered in stacked layouts so the enlarged heart apex has a clear gap above its frame; a browser
+regression checks both vertical and horizontal model/chart separation.

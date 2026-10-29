@@ -69,6 +69,20 @@ test('periodic-motion: the detailed heart pauses, repeats its count and exports 
   await fig.advance(1000);
   expect((await fig.call('get')).time).toBe(paused.time);
   expect(paused.measured).toBeCloseTo(0.8, 6);
+  const gaps = await fig.frame.evaluate(async () => {
+    const { Box3 } = await import('three');
+    const { createHeart } = await import('./src/heart.js');
+    const ex = createHeart();
+    ex.arrange(false);
+    const body = new Box3().setFromObject(ex.model, true);
+    const chart = new Box3().setFromObject(ex.root.getObjectByName('ECG'), true);
+    const vertical = body.min.y - chart.max.y;
+    ex.arrange(true);
+    chart.setFromObject(ex.root.getObjectByName('ECG'), true);
+    return { vertical, horizontal: chart.min.x - body.max.x };
+  });
+  expect(gaps.vertical).toBeGreaterThan(0.008);
+  expect(gaps.horizontal).toBeGreaterThan(0.015);
   const glb = await fig.call('export-glb');
   const bytes = Buffer.from(glb.base64, 'base64');
   const json = JSON.parse(bytes.subarray(20, 20 + bytes.readUInt32LE(12)).toString());

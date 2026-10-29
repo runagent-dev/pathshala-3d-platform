@@ -17,7 +17,7 @@ const AMP = 0.026; // height of the R wave on the strip, m
 const BASE = -STRIP_H / 2 + 0.015; // the trace's baseline
 const PEN_X = STRIP_W / 2;
 // what must be in the picture, with the strip under the heart or beside it
-const TALL = new THREE.Box3(new THREE.Vector3(-0.088, -0.038, -0.07), new THREE.Vector3(0.105, 0.285, 0.07));
+const TALL = new THREE.Box3(new THREE.Vector3(-0.088, -0.065, -0.07), new THREE.Vector3(0.105, 0.285, 0.07));
 const WIDE = new THREE.Box3(new THREE.Vector3(-0.075, 0.04, -0.06), new THREE.Vector3(0.305, 0.285, 0.07));
 
 /** ECG paper: one big square (0.2 s) of five by five small ones (0.04 s), repeated over the strip. */
@@ -173,7 +173,7 @@ export function createHeart() {
     bounds: TALL.clone(),
     /** The ECG strip under the heart (a tall view) or beside it (a wide one), so the heart can be large. */
     arrange(wide) {
-      paper.position.set(wide ? 0.2 : 0, wide ? 0.11 : 0, 0);
+      paper.position.set(wide ? 0.2 : 0, wide ? 0.11 : -0.025, 0);
       this.bounds.copy(wide ? WIDE : TALL);
     },
     ground: null,
