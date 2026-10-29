@@ -226,3 +226,52 @@ describe('types-of-friction: the human and trolley contact', () => {
     }
   });
 });
+
+describe('types-of-friction: equal forces mean unchanged velocity', () => {
+  test('a balanced push cannot start the resting box', () => {
+    let st = { on: 'floor', mass: MASS, pull: 7.84, v: 0, x: 0, moving: false, friction: 7.84, broke: false };
+    for (let i = 0; i < 240; i++) st = step(st, 1 / 120, 7.84);
+    assert.equal(st.v, 0);
+    assert.equal(st.x, 0);
+    assert.ok(Math.abs(st.friction - st.pull) < 1e-12);
+  });
+  test('the same balanced push keeps an already sliding box at its existing speed', () => {
+    let st = { on: 'floor', mass: MASS, pull: 7.84, v: V_STEADY, x: 0, moving: true, friction: 7.84, broke: false };
+    for (let i = 0; i < 240; i++) st = step(st, 1 / 120, 7.84);
+    assert.ok(Math.abs(st.v - V_STEADY) < 1e-12);
+    assert.ok(Math.abs(st.x - 2 * V_STEADY) < 1e-12);
+    assert.ok(Math.abs(st.friction - st.pull) < 1e-12);
+  });
+});
+
+describe('types-of-friction: connected anatomy', () => {
+  test('the arms and clothing have closed edges throughout the pushing gait', async () => {
+    const { Mesh, Vector3 } = await import('three');
+    const { createPusher } = await import('../../assets/types-of-friction/src/person.js');
+    const person = createPusher();
+    for (const distance of [0, 0.12, 0.3]) {
+      person.pose({ lean: 0.3, distance, walking: distance !== 0, hands: [new Vector3(0.43, 0.93, 0.18), new Vector3(0.43, 0.93, -0.18)] });
+      let checked = 0;
+      person.root.traverse((part) => {
+        if (!(part instanceof Mesh) || !['ContinuousArm', 'ConnectedShirt', 'ConnectedTrousers'].includes(part.name)) return;
+        const g = part.geometry,
+          positions = g.attributes.position;
+        const key = (i) => [positions.getX(i), positions.getY(i), positions.getZ(i)].map((v) => Math.round(v * 1e7)).join(',');
+        const edges = new Map();
+        for (let i = 0; i < (g.index?.count ?? g.drawRange.count); i += 3) {
+          const ids = [0, 1, 2].map((offset) => key(g.index ? g.index.getX(i + offset) : i + offset));
+          for (let j = 0; j < 3; j++) {
+            const edge = [ids[j], ids[(j + 1) % 3]].sort().join('|');
+            edges.set(edge, (edges.get(edge) || 0) + 1);
+          }
+        }
+        assert.ok(
+          [...edges.values()].every((count) => count === 2),
+          `${part.name}: closed joints`,
+        );
+        checked++;
+      });
+      assert.equal(checked, 4);
+    }
+  });
+});

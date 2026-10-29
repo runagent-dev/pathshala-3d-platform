@@ -5,7 +5,7 @@
   "title": "Types of friction (ঘর্ষণের প্রকারভেদ)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "book": "physics-9-10",
   "page": 89,
   "topic": "3.9.1",
@@ -13,7 +13,7 @@
   "order": 1,
   "maintainers": ["RadeenXALNW"],
   "units": "m",
-  "description": "Vivid 3D comparison of static, kinetic and rolling friction for textbook topic 3.9.1, pages 89–90. A detailed human pushes the same hollow 2 kg crate directly on the floor, then pushes its loaded wheeled trolley by a real handle. The hands follow the contact and stance shoes stay planted while walking. Orange push, red friction and blue velocity arrows follow the original physics: static friction matches 3, 6 and 9 N pushes, sliding friction is 7.84 N, and rolling resistance 0.98 N. Both rolling-force arrows are explicitly magnified 3× for visibility; values stay in newtons. A live force/motion panel, pause control and separate force-direction/formula pages explain balanced motion and the static limit. Five existing scene-based questions remain, with arrow readouts replacing the force meter. The current human/crate/trolley and vectors export as GLB. Offline in Bangla and English.",
+  "description": "Vivid 3D comparison of static, kinetic and rolling friction for textbook topic 3.9.1, pages 89–90. A human with connected anatomical clothing and limbs pushes the same hollow 2 kg crate directly on the floor, then pushes its loaded wheeled trolley by a real handle. The hands follow the contact and stance shoes stay planted while walking. Orange push, red friction and blue velocity arrows follow the original physics: static friction matches 3, 6 and 9 N pushes, sliding friction is 7.84 N, and rolling resistance 0.98 N. Both rolling-force arrows are explicitly magnified 3× for visibility; values stay in newtons. A live force/motion panel, pause control and separate force-direction/formula pages distinguish speeding up, constant speed and slowing down, including why balanced forces keep an already-moving box moving. The separate formula page explains the static limit. Five existing scene-based questions remain, with arrow readouts replacing the force meter. The current human/crate/trolley and vectors export as GLB. Offline in Bangla and English.",
   "tags": ["friction", "static-friction", "kinetic-friction", "rolling-friction", "force", "newton", "bangla"],
   "params": [
     {

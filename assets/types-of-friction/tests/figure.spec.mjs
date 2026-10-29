@@ -273,3 +273,24 @@ test('friction: three human-push examples and formulas fit all six frames in bot
     }
   expect(log.errors).toEqual([]);
 });
+
+test('friction: equal forces preserve existing motion and releasing the push stops it', async ({ page }) => {
+  await page.setViewportSize({ width: 800, height: 500 });
+  const log = await preparePage(page);
+  const fig = await openFigure(page, 'types-of-friction');
+  await fig.call('set', { stage: 'pull', pull: 7.84, paused: false });
+  await fig.advance(600);
+  expect(await fig.call('get')).toMatchObject({ push: 7.84, friction: 7.84, speed: 0, distance: 0, netForce: 0 });
+  await fig.call('set', { stage: 'slide', paused: false });
+  const before = await fig.call('get');
+  await fig.advance(1000);
+  const after = await fig.call('get');
+  expect(after).toMatchObject({ push: 7.84, friction: 7.84, speed: before.speed, netForce: 0 });
+  expect(after.distance - before.distance).toBeCloseTo(0.12, 2);
+  await expect(fig.frame.locator('.tf-balance')).toContainText('একই বেগে');
+  await expect(fig.frame.locator('.pvc-rule')).toContainText('আগে থেকেই চলছিল');
+  await fig.frame.locator('.pvc-act').click();
+  await fig.advance(250);
+  expect(await fig.call('get')).toMatchObject({ stage: 'slid', push: 0, speed: 0 });
+  expect(log.errors).toEqual([]);
+});

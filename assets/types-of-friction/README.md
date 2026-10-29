@@ -5,7 +5,12 @@
 A vivid live 3D comparison of static, kinetic and rolling friction. A detailed person pushes the same illustrative
 2 kg hollow crate directly on the floor, then pushes its loaded four-wheel trolley by the handle. The palms stay
 at the contact, walking shoes stay planted during stance, and wheel rotation follows distance over wheel radius.
-The force meter is replaced by labelled arrows and a live force/motion readout.
+The person has connected clothing and limbs, a shaped face, flat palms for the crate and curled fingers for the
+trolley handle. The force meter is replaced by labelled arrows and a live force/motion readout.
+
+The readout distinguishes increasing, constant and decreasing speed. At equal push and friction it explains that
+the box was already moving: zero resultant means zero acceleration, so its speed stays the same. Releasing the
+push lets friction bring it to rest. The same balanced forces cannot start the stationary box.
 
 The original numerical story remains: static friction matches the 3, 6 and 9 N pushes; after breakaway, sliding
 friction is 7.84 N; steady rolling needs 0.98 N. Orange is applied force, red is friction and blue is velocity.
