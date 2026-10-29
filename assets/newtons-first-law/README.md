@@ -2,7 +2,7 @@
 
 **Where it goes in the book:** Book page 64, topic 3.1: জড়তা এবং বলের ধারণা: নিউটনের প্রথম গতি সূত্র. Next to the boxed law and the paragraph after it.
 
-Interactive 3D figure for the Pathshala book.
+A red laboratory slider with a yellow carrying handle demonstrates rest, uniform motion and friction on four surfaces. A vivid plum background keeps the slider and force arrows distinct.
 
 ## Embed
 
