@@ -293,6 +293,7 @@ export function createApp(root, options = {}) {
       lean: 0.07 + 0.31 * effort,
       distance: x,
       walking: st.moving,
+      grip: handle,
       hands: resting ? null : [new THREE.Vector3(0.43, contactY, 0.18), new THREE.Vector3(0.43, contactY, -0.18)],
     });
     // The rolling arrows share a labelled 3× magnification; numbers always stay in newtons.
@@ -442,18 +443,13 @@ export function createApp(root, options = {}) {
   const grid = (dys, dxs) => dys.flatMap((dy) => dxs.map((dx) => ({ dx, dy })));
   const SPOTS = {
     push: grid([-28, -48, -68, -88], [0, 20, 40, 70, -20, -40, -70, -110, 110]),
-    friction: [
-      ...grid([28], [0, -12, 12, -24, -40]),
-      ...grid([10, 4, -4], [-70, -100, -140, -170, -220, -280, -340, -400]),
-      ...grid([10, 4], [150, 190]),
-      ...grid([48, 62], [0, -12, 12, -40, -70]),
-    ],
+    friction: [...grid([28, 48, 62], [0, -12, 12, -24, -40]), ...grid([10, 4, -4], [-70, -100, -140, -170]), ...grid([10, 4], [150, 190])],
   };
   function labelsFor() {
     const st = s.sim;
     if (st.pull >= 0.2 && !s.busy)
       keepLabel('push', {
-        text: t('l_push', { f: fmt(st.pull) }),
+        text: t('l_push', { f: forceNow(st.pull) }),
         point: () => pushMid,
         color: '#a04a06',
         kind: 'callout',
@@ -463,7 +459,7 @@ export function createApp(root, options = {}) {
     else anno.remove('push');
     if (st.friction >= 0.2 && !s.busy && s.hideFric !== 'hide')
       keepLabel('fric', {
-        text: s.hideFric === 'ask' ? t('l_fric_q') : t('l_fric', { f: fmt(st.friction) }),
+        text: s.hideFric === 'ask' ? t('l_fric_q') : t('l_fric', { f: forceNow(st.friction) }),
         point: () => arrows.friction.tip,
         color: '#b32150',
         kind: 'callout',
@@ -473,7 +469,7 @@ export function createApp(root, options = {}) {
     else anno.remove('fric');
     if (arrows.velocity.root.visible)
       keepLabel('velocity', {
-        text: t('l_velocity', { v: round(st.v, 2) }),
+        text: t(['steady', 'near_steady'].includes(motionPhase()) ? `l_velocity_${motionPhase()}` : 'l_velocity', { v: round(st.v, 2) }),
         point: () => arrows.velocity.tip,
         color: '#1763a7',
         kind: 'callout',
@@ -532,24 +528,42 @@ export function createApp(root, options = {}) {
       case 'pull':
         return s.notch >= NOTCHES.length ? t('rule_push3') : t('rule_push');
       case 'slide':
-        return t('rule_slide');
+        return motionRule();
       case 'slid':
         return t('rule_slid');
       case 'wheels':
         return t('rule_wheels');
       case 'roll':
-        return t('rule_roll');
+        return motionRule();
       default:
         return t('rule_complete');
     }
   }
 
+  // A moving body can have zero resultant: forces change velocity, not velocity's existence.
+  function motionPhase() {
+    const st = s.sim,
+      net = st.pull - st.friction;
+    if (!st.moving) return 'still';
+    if (Math.abs(net) < 1e-8) return 'steady';
+    if (Math.abs(net) < 0.05) return 'near_steady';
+    return net > 0 ? 'speeding' : 'slowing';
+  }
+  function forceNow(value) {
+    const st = s.sim;
+    // Avoid two identical rounded arrows while a visible resultant changes the speed.
+    if (st.moving && Math.abs(st.pull - st.friction) >= 0.05 && fmt(st.pull) === fmt(st.friction)) return String(round(value, 2));
+    return fmt(value);
+  }
+  function motionRule() {
+    return t(`rule_${motionPhase()}`);
+  }
   let lastLive = '';
   function updateLive() {
     const st = s.sim,
       net = st.pull - st.friction;
-    const frictionText = s.hideFric ? '?' : t('res_n', { f: fmt(st.friction) });
-    const html = `<div class="tf-force-row push"><span>→</span><span>${t('human_push')}</span><b>${t('res_n', { f: fmt(st.pull) })}</b></div><div class="tf-force-row friction"><span>←</span><span>${t('contact_friction')}</span><b>${frictionText}</b></div><div class="tf-balance">${t(st.moving ? 'moving_state' : 'still_state', { v: round(st.v, 2) })}</div><small>${t('net_force', { f: fmt(net) })}</small>`;
+    const frictionText = s.hideFric ? '?' : t('res_n', { f: forceNow(st.friction) });
+    const html = `<div class="tf-force-row push"><span>→</span><span>${t('human_push')}</span><b>${t('res_n', { f: forceNow(st.pull) })}</b></div><div class="tf-force-row friction"><span>←</span><span>${t('contact_friction')}</span><b>${frictionText}</b></div><div class="tf-balance">${t(`${motionPhase()}_state`, { v: round(st.v, 2) })}</div><small>${t(Math.abs(net) > 1e-8 && Math.abs(net) < 0.05 ? 'net_force_small' : 'net_force', { f: String(round(net, 2)) })}</small>`;
     if (html !== lastLive) {
       live.querySelector('.tf-values').innerHTML = html;
       lastLive = html;
@@ -573,7 +587,7 @@ export function createApp(root, options = {}) {
       l = limits('floor', st.mass);
     const content =
       explanationPage === 'forces'
-        ? `<div class="tf-vector-diagram" aria-label="${t('diagram_label')}"><div class="tf-normal">↑ ${t('support_force', { n: N })}</div><div class="tf-horizontal"><span class="tf-friction">← ${t('res_n', { f: fmt(st.friction) })}</span><b>${t(s.trolley ? 'box_with_trolley' : 'box_system')}</b><span class="tf-push">${t('res_n', { f: fmt(st.pull) })} →</span></div><div class="tf-weight">↓ ${t('weight_force', { n: N })}</div></div><p>${t('force_explanation')}</p>`
+        ? `<div class="tf-vector-diagram" aria-label="${t('diagram_label')}"><div class="tf-normal">↑ ${t('support_force', { n: N })}</div><div class="tf-horizontal"><span class="tf-friction">← ${t('res_n', { f: forceNow(st.friction) })}</span><b>${t(s.trolley ? 'box_with_trolley' : 'box_system')}</b><span class="tf-push">${t('res_n', { f: forceNow(st.pull) })} →</span></div><div class="tf-weight">↓ ${t('weight_force', { n: N })}</div></div><p>${t('force_explanation')}</p>`
         : `<p>${t('static_formula', { mu: MU.s, n: N, max: fmt(l.max) })}</p><p>${t('kinetic_formula', { mu: MU.k, n: N, value: fmt(l.move) })}</p><small>${t('rolling_explanation')}</small>`;
     explanation.innerHTML = `<h2>${t('explain_title')}</h2><nav>${['forces', 'formulas'].map((page) => `<button type="button" data-explainpage="${page}" aria-pressed="${page === explanationPage}">${t(`explain_${page}`)}</button>`).join('')}</nav>${content}<button type="button" class="pvc-btn primary" data-act="explain-close">${t('explain_close')}</button>`;
   }

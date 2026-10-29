@@ -129,3 +129,21 @@ scene-based questions, reads the push arrow rather than a meter, hides the learn
 Bridge additions are `paused`, `netForce` and `acceleration`; existing stage/pull/chip commands retain their meaning.
 The GLB now exports the current human/crate/trolley and visible vectors; its default setup is paused rolling.
 Colours are intentionally saturated at the owner's request. No shared-kit or status changes.
+
+
+## Balanced motion and connected human (v0.2.2)
+
+Owner observed two equal 7.8 N arrows while the box moved and requested a more realistic human. This is a valid
+constant-speed state, so the force model is retained: a balanced push cannot start the box from rest; after the
+larger starting push, equal sliding resistance and push preserve existing velocity. The live panel now names
+speeding up, steady speed, nearly steady speed and slowing down from the same actual net force. The rule at exact
+balance says the box was already moving and that zero resultant means no acceleration; it invites releasing the
+push. Small residual resultants during settling are explicitly described as approximately zero. The force dialog
+contrasts the balanced stationary and moving cases in both languages.
+
+The pusher now uses locally copied connected clothing surfaces and anatomical head construction from friction-force,
+with continuous arms, smooth knees/hips, shaped hair and connected cuffs. The mesh is baked in a pushing pose and
+bound to the existing two-bone gait. Both original hand contact positions and stance-foot behaviour remain. Flat
+palms press the crate; curled fingers hold the trolley bar. Amber clothing and navy trousers contrast with the blue
+scene and golden crate. All three examples use the same person. The rolling resistance and force-arrow scale are
+unchanged; no shared kit or other figure changes.
