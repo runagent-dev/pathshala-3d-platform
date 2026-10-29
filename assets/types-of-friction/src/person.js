@@ -13,50 +13,58 @@ const FOOT = { len: 0.24, thick: 0.07, wide: 0.095, back: 0.12, ankle: [-0.06, 0
 
 const UP = new THREE.Vector3(0, 1, 0);
 
-export function createPusher({ shirt = '#f34675', trousers = '#2542a5' } = {}) {
+export function createPusher({ shirt = '#e8e3d6', trousers = '#3e4452' } = {}) {
   const root = new THREE.Group();
   root.name = 'HumanPusher';
   const mat = (name, color, roughness = 0.8) => new THREE.MeshStandardMaterial({ name, color, roughness, metalness: 0 });
   const M = {
     shirt: mat('Shirt', shirt, 0.85),
     trousers: mat('Trousers', trousers, 0.85),
-    skin: mat('Skin', '#b98057', 0.7),
-    hair: mat('Hair', '#1d1d20', 0.75),
-    shoe: mat('Shoes', '#262a31', 0.6),
-    sole: mat('ShoeSole', '#ffe08a', 0.7),
-    eye: mat('Eyes', '#17233e', 0.5),
-    white: mat('EyeWhite', '#fff5df'),
-    lips: mat('Lips', '#794632'),
-    seam: mat('ShirtSeams', '#d73e2d'),
-    soleSide: mat('SoleEdge', '#d8b36c'),
-    belt: mat('Belt', '#1d2026', 0.5),
+    skin: mat('Skin', '#a8724e', 0.62),
+    hair: mat('Hair', '#17171a', 0.7),
+    shoe: mat('Shoes', '#5b3b25', 0.5),
+    sole: mat('ShoeSole', '#2b2523', 0.85),
+    eye: mat('Eyes', '#1b1512', 0.4),
+    white: mat('EyeWhite', '#efe8dc'),
+    lips: mat('Lips', '#7d4a3a'),
+    seam: mat('ShirtSeams', '#d3ccbc', 0.85),
+    soleSide: mat('SoleEdge', '#3a322e'),
+    belt: mat('Belt', '#3b2a1e', 0.45),
   };
   const limbGeometry = (profile) =>
     new THREE.LatheGeometry(
       profile.map(([y, r]) => new THREE.Vector2(r, y)),
       20,
     );
+  // Limbs taper the way real ones do: thick at the body end (y = −0.5), thinner towards the hand or foot.
   const unitTube = limbGeometry([
-    [-0.5, 0.72],
-    [-0.42, 0.85],
-    [-0.2, 0.97],
-    [0.05, 1],
-    [0.3, 0.92],
-    [0.5, 0.85],
+    [-0.5, 1],
+    [-0.25, 0.99],
+    [0.1, 0.92],
+    [0.5, 0.8],
+  ]);
+  const foreGeometry = limbGeometry([
+    [-0.5, 1],
+    [-0.25, 1.03],
+    [0.2, 0.86],
+    [0.5, 0.74],
+  ]);
+  const sleeveGeometry = limbGeometry([
+    [-0.5, 1],
+    [0.35, 0.96],
+    [0.5, 0.98],
   ]);
   const thighGeometry = limbGeometry([
-    [-0.5, 0.7],
-    [-0.32, 0.78],
-    [0, 0.94],
-    [0.32, 1],
-    [0.5, 0.9],
+    [-0.5, 1],
+    [-0.25, 0.99],
+    [0.15, 0.9],
+    [0.5, 0.82],
   ]);
   const calfGeometry = limbGeometry([
-    [-0.5, 0.62],
-    [-0.25, 0.7],
-    [0.08, 1],
-    [0.3, 0.94],
-    [0.5, 0.78],
+    [-0.5, 0.8],
+    [-0.15, 0.79],
+    [0.25, 0.74],
+    [0.5, 0.73],
   ]);
   // Small procedural weave/skin relief stays offline and gives the surfaces a matte finish.
   if (typeof document !== 'undefined') {
@@ -74,12 +82,14 @@ export function createPusher({ shirt = '#f34675', trousers = '#2542a5' } = {}) {
     const relief = new THREE.CanvasTexture(c);
     relief.wrapS = relief.wrapT = THREE.RepeatWrapping;
     relief.repeat.set(6, 6);
-    for (const key of ['shirt', 'trousers', 'skin']) {
+    for (const key of ['trousers']) {
       M[key].bumpMap = relief;
       M[key].bumpScale = key === 'skin' ? 0.0005 : 0.0012;
     }
   }
   const tmp = new THREE.Vector3();
+  const tmp2 = new THREE.Vector3();
+  const tmp3 = new THREE.Vector3();
   const place = (mesh, a, b, r) => {
     tmp.subVectors(b, a);
     const len = tmp.length();
@@ -105,18 +115,20 @@ export function createPusher({ shirt = '#f34675', trousers = '#2542a5' } = {}) {
   const torso = new THREE.Mesh(
     new THREE.LatheGeometry(
       [
-        new THREE.Vector2(0.11, 0.05),
-        new THREE.Vector2(0.125, 0.12),
-        new THREE.Vector2(0.14, 0.25),
-        new THREE.Vector2(0.165, 0.38),
-        new THREE.Vector2(0.16, 0.44),
-        new THREE.Vector2(0.075, 0.5),
+        new THREE.Vector2(0.142, -0.03),
+        new THREE.Vector2(0.136, 0.0),
+        new THREE.Vector2(0.131, 0.1),
+        new THREE.Vector2(0.142, 0.24),
+        new THREE.Vector2(0.158, 0.36),
+        new THREE.Vector2(0.16, 0.43),
+        new THREE.Vector2(0.13, 0.48),
+        new THREE.Vector2(0.06, 0.51),
       ],
-      32,
+      40,
     ),
     M.shirt,
   );
-  torso.scale.set(0.74, 1, 1.14);
+  torso.scale.set(0.78, 1, 1.18);
   upper.add(torso);
   // Polo collar, placket, buttons and a sewn chest pocket lie on the front (+x).
   for (const side of [-1, 1]) {
@@ -139,11 +151,11 @@ export function createPusher({ shirt = '#f34675', trousers = '#2542a5' } = {}) {
   belt.position.y = 0.04;
   belt.scale.set(0.74, 1, 1);
   upper.add(belt);
-  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.05, 0.08, 10), M.skin);
-  neck.position.y = 0.55;
+  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.047, 0.054, 0.09, 16), M.skin);
+  neck.position.y = 0.535;
   upper.add(neck);
-  const head = ball(0.1, M.skin, upper);
-  head.position.set(0.01, 0.66, 0);
+  const head = ball(0.102, M.skin, upper);
+  head.position.set(0.008, 0.655, 0);
   head.name = 'AnatomicalHead';
   head.scale.set(0.94, 1.1, 0.85);
   const jaw = ball(0.072, M.skin, upper);
@@ -156,22 +168,28 @@ export function createPusher({ shirt = '#f34675', trousers = '#2542a5' } = {}) {
   hair.scale.set(0.98, 1.06, 0.95);
   upper.add(hair);
   const bridge = ball(0.018, M.skin, upper);
-  bridge.position.set(0.097, 0.662, 0);
-  bridge.scale.set(0.8, 1.25, 0.68);
-  const nose = ball(0.018, M.skin, upper);
-  nose.position.set(0.113, 0.645, 0);
-  nose.scale.set(0.9, 0.75, 0.85);
+  bridge.position.set(0.091, 0.664, 0);
+  bridge.scale.set(0.7, 1.3, 0.62);
+  const nose = new THREE.Mesh(new THREE.ConeGeometry(0.014, 0.04, 10), M.skin);
+  nose.position.set(0.1, 0.648, 0);
+  nose.rotation.z = -1.05;
+  nose.scale.set(1, 1, 0.8);
+  upper.add(nose);
   nose.name = 'Nose';
   const mouthPoints = [-0.026, -0.013, 0, 0.013, 0.026].map((z) => new THREE.Vector3(0.099 - Math.abs(z) * 0.12, 0.617 + Math.abs(z) * 0.07, z));
   const mouth = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(mouthPoints), 12, 0.0026, 6, false), M.lips);
   mouth.name = 'Mouth';
   upper.add(mouth);
-  for (let i = 0; i < 11; i++) {
-    const tuft = ball(0.026, M.hair, upper);
-    tuft.scale.set(1.5, 0.55, 0.7);
-    tuft.position.set(0.055 - (i % 4) * 0.035, 0.755 + Math.sin(i) * 0.008, ((i % 3) - 1) * 0.044);
-    tuft.rotation.z = -0.25;
-  }
+  const crown = ball(0.104, M.hair, upper);
+  crown.position.set(-0.006, 0.688, 0);
+  crown.scale.set(1.0, 0.72, 0.98);
+  const fringe = ball(0.05, M.hair, upper);
+  fringe.position.set(0.058, 0.728, 0.02);
+  fringe.scale.set(0.9, 0.42, 1.25);
+  fringe.rotation.z = -0.3;
+  const back = ball(0.09, M.hair, upper);
+  back.position.set(-0.04, 0.655, 0);
+  back.scale.set(0.8, 0.9, 1.04);
 
   for (const side of [1, -1]) {
     const ear = ball(0.025, M.skin, upper);
@@ -191,8 +209,9 @@ export function createPusher({ shirt = '#f34675', trousers = '#2542a5' } = {}) {
     brow.position.set(0.063, 0.7, side * 0.063);
     upper.add(brow);
 
-    const s = ball(0.062, M.shirt, upper);
-    s.position.set(0, SHOULDER.y - HIP_Y, side * SHOULDER.z);
+    const s = ball(0.052, M.shirt, upper);
+    s.position.set(0, SHOULDER.y - HIP_Y - 0.012, side * (SHOULDER.z - 0.008));
+    s.scale.set(1.05, 0.95, 1);
   }
 
   // arms and legs (placed in root space by pose)
@@ -200,11 +219,12 @@ export function createPusher({ shirt = '#f34675', trousers = '#2542a5' } = {}) {
     const hand = new THREE.Group();
     hand.name = 'AnatomicalHand';
     root.add(hand);
-    const palm = ball(0.032, M.skin, hand);
-    palm.scale.set(0.76, 1, 0.45);
+    const palm = ball(0.036, M.skin, hand);
+    palm.scale.set(0.78, 1.05, 0.42);
     for (let i = 0; i < 4; i++) {
-      const finger = new THREE.Mesh(new THREE.CapsuleGeometry(0.006, 0.022 - (i === 0 || i === 3 ? 0.006 : 0), 4, 8), M.skin);
-      finger.position.set(-0.019 + i * 0.012, 0.037, 0);
+      const finger = new THREE.Mesh(new THREE.CapsuleGeometry(0.0072, 0.03 - (i === 0 || i === 3 ? 0.007 : 0), 4, 10), M.skin);
+      finger.position.set(-0.021 + i * 0.014, 0.046, 0.002);
+      finger.rotation.x = 0.15;
       hand.add(finger);
     }
     const thumb = new THREE.Mesh(new THREE.CapsuleGeometry(0.008, 0.022, 4, 8), M.skin);
@@ -215,11 +235,12 @@ export function createPusher({ shirt = '#f34675', trousers = '#2542a5' } = {}) {
   }
   const arms = [1, -1].map((side) => ({
     side,
-    upper: tube(M.shirt, root),
-    fore: tube(M.skin, root),
+    upper: tube(M.skin, root),
+    sleeve: new THREE.Mesh(sleeveGeometry, M.shirt),
+    fore: new THREE.Mesh(foreGeometry, M.skin),
     hand: makeHand(),
-    elbow: ball(0.031, M.skin, root),
-    cuff: ball(0.042, M.seam, root),
+    elbow: ball(0.036, M.skin, root),
+    cuff: ball(0.05, M.seam, root),
   }));
   const shoeShape = new THREE.Shape();
   shoeShape.moveTo(-0.108, -0.034);
@@ -252,13 +273,16 @@ export function createPusher({ shirt = '#f34675', trousers = '#2542a5' } = {}) {
   soleGeometry.rotateX(Math.PI / 2);
   soleGeometry.translate(0, -0.021, 0);
 
-  for (const arm of arms) arm.hand.name = arm.side > 0 ? 'HandNear' : 'HandFar';
+  for (const arm of arms) {
+    arm.hand.name = arm.side > 0 ? 'HandNear' : 'HandFar';
+    root.add(arm.sleeve, arm.fore);
+  }
   const legs = [1, -1].map((side) => ({
     side,
     thigh: tube(M.trousers, root),
     shin: tube(M.trousers, root),
     foot: new THREE.Mesh(shoeGeometry, M.shoe),
-    knee: ball(0.051, M.trousers, root),
+    knee: ball(0.063, M.trousers, root),
   }));
   for (const l of legs) {
     root.add(l.foot);
@@ -283,9 +307,23 @@ export function createPusher({ shirt = '#f34675', trousers = '#2542a5' } = {}) {
       l.foot.add(lace);
     }
   }
-  const hipBall = ball(0.13, M.trousers, root);
-  hipBall.scale.set(0.75, 0.55, 1);
-  hipBall.position.y = HIP_Y;
+  // the seat of the trousers: one piece from the waist over the tops of both thighs
+  const seat = new THREE.Mesh(
+    new THREE.LatheGeometry(
+      [
+        new THREE.Vector2(0.05, -0.17),
+        new THREE.Vector2(0.135, -0.14),
+        new THREE.Vector2(0.15, -0.07),
+        new THREE.Vector2(0.138, -0.01),
+        new THREE.Vector2(0.118, 0.02),
+      ],
+      32,
+    ),
+    M.trousers,
+  );
+  seat.scale.set(0.74, 1, 1.12);
+  seat.position.y = HIP_Y;
+  root.add(seat);
   const rear = legs[0]; // the right leg: it pushes
   rear.foot.name = 'RearShoe';
 
@@ -358,10 +396,12 @@ export function createPusher({ shirt = '#f34675', trousers = '#2542a5' } = {}) {
       }
       reach(shoulder, aim, UPPER, FORE, armPole, elbow, hand);
       place(arm.upper, shoulder, elbow, 0.045);
-      place(arm.fore, elbow, hand, 0.035);
+      place(arm.sleeve, shoulder, tmp2.copy(shoulder).lerp(elbow, 0.55), 0.053);
+      place(arm.fore, elbow, hand, 0.036);
       arm.elbow.position.copy(elbow);
-      arm.cuff.position.copy(elbow).lerp(shoulder, 0.07);
-      arm.cuff.scale.set(1, 0.45, 1);
+      arm.cuff.position.copy(shoulder).lerp(elbow, 0.55);
+      arm.cuff.quaternion.setFromUnitVectors(UP, tmp3.subVectors(elbow, shoulder).normalize());
+      arm.cuff.scale.set(1.06, 0.16, 1.06);
       arm.hand.position.copy(hand);
       arm.hand.quaternion.setFromUnitVectors(UP, new THREE.Vector3().subVectors(hand, elbow).normalize());
       const j = joints.arms[arm.side > 0 ? 0 : 1];
@@ -385,8 +425,8 @@ export function createPusher({ shirt = '#f34675', trousers = '#2542a5' } = {}) {
       setFoot(leg, leg.side * 0.11, 'toe', x + FOOT.back, y, 0);
       hip.set(0, HIP_JOINT, leg.side * 0.085);
       reach(hip, ankle, THIGH, SHIN, legPole, knee, aim);
-      place(leg.thigh, hip, knee, 0.067);
-      place(leg.shin, knee, aim, 0.052);
+      place(leg.thigh, hip, knee, 0.078);
+      place(leg.shin, knee, aim, 0.08);
       leg.knee.position.copy(knee);
       storeLeg(i, hip, knee, aim);
       if (i === 0) {
