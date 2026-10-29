@@ -1,61 +1,9 @@
-/* Types of friction: the page, the colours that carry meaning (ঠেলা orange, ঘর্ষণ crimson, the normal force N grey: the
-   same as the sister figures and src/app.js), the honest note on the view and the test's answers in words. The panel is
-   the kit's clean sheet (one action, one result, one rule: ../../shared/lib/student/student.css, .pvc-examples,
-   .pvc-act, .pvc-outcome, .pvc-rule). */
-html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
-#app { position: fixed; inset: 0; }
-body.bg-transparent { background: transparent; }
-
-.tf { --c-push: #e8590c; --c-fric: #c2255c; --c-n: #495057; }
-
-/* the symbols of the formula take the colour of what they are: f the friction's crimson, N the surface's grey */
-.tf .pvc-rule i { font-style: normal; font-weight: 700; }
-.tf .pvc-rule .c-f { color: var(--c-fric); }
-.tf .pvc-rule .c-n { color: var(--c-n); }
-.tf .pvc-rule .c-mu { color: var(--ink); }
-.tf .pvc-rule sub { font-size: 0.72em; line-height: 0; }
-/* each formula and each worked sum stays in one piece when the line breaks */
-.tf .nw { white-space: nowrap; }
-
-/* the result line: its number in the colour of what it is (friction crimson) */
-.tf .pvc-outcome b { color: var(--c-fric); }
-.tf .pvc-outcome[data-k='rest'] b { color: var(--c-push); }
-
-/* on the stage: the honest note about the example numbers, top left (the buttons are top right) */
-.tf-note { position: absolute; left: 10px; top: 10px; z-index: 5; padding: 2px 8px; border-radius: 6px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.92); color: var(--ink-3); font-size: 12.5px; font-weight: 600; line-height: 1.4; white-space: nowrap; pointer-events: none; }
-/* in the test the locked hint sits at the top of the view */
-.tf[data-mode='quiz'] .pvc-stage[data-ui='simple'] .pvc-hint { top: 40px; bottom: auto; }
-
-/* the test: answers in words (two lines allowed), room kept for the question and the worked answer */
-.tf .pvc-opt { font-size: 14.5px; line-height: 1.25; }
-.tf-opt { display: block; white-space: normal; text-align: center; }
-.tf .pvc-q-text { font-size: 15.5px; }
-.tf .pvc-q-feedback { font-size: 14px; }
-.tf .pvc-q-feedback sub { font-size: 0.72em; line-height: 0; }
-
-/* wide frames (tabs beside the sheet): the lines one under the other, close together */
-@container pvc (min-width: 720px) and (min-height: 461px) {
-  .tf .pvc-learn { justify-content: flex-start; gap: 8px; }
-  .tf .pvc-examples { max-width: 520px; }
-  .tf .pvc-rule { --pvc-rule-lines: 3; }
-}
-@container pvc (min-width: 1000px) and (min-height: 461px) {
-  .tf .pvc-learn { display: grid; grid-template-columns: minmax(0, 480px) minmax(0, 1fr); grid-template-areas: 'ex act' 'out out' 'rule rule'; align-content: start; align-items: center; gap: 8px 32px; }
-  .tf .pvc-examples { grid-area: ex; }
-  .tf .pvc-act-row { grid-area: act; }
-  .tf .pvc-outcome { grid-area: out; }
-  .tf .pvc-rule { grid-area: rule; --pvc-rule-lines: 2; }
-}
-@container pvc (max-width: 560px) and (max-height: 600px) {
-  .tf .pvc-q-text { font-size: 14.5px; }
-  .tf .pvc-opt { font-size: 13.5px; }
-  .tf .pvc-q-feedback { font-size: 13px; }
-}
-/* short and wide (phone held sideways): the panel is beside the scene */
-@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
-  .tf .pvc-outcome { --pvc-outcome-lines: 3; font-size: 15px; line-height: 1.5; }
-  .tf .pvc-rule { --pvc-rule-lines: 5; font-size: 14px; line-height: 1.45; }
-  .tf .pvc-q-text { font-size: 14px; }
-  .tf .pvc-opt { font-size: 13px; height: 42px; }
-  .tf .pvc-q-feedback { font-size: 12.5px; }
-}
+html,body{margin:0;height:100%;overflow:hidden;background:#fff}#app{position:fixed;inset:0}body.bg-transparent{background:transparent}
+.tf{--c-push:#a54a06;--c-fric:#b51f51;--c-n:#495057}.tf sub{font-size:.7em;line-height:0}.tf .pvc-learn{gap:7px;justify-content:flex-start}.tf .pvc-outcome{display:none}.tf .pvc-rule{font-size:13px;line-height:1.45;min-height:4.35em}.tf .pvc-rule i{font-style:normal}.tf .nw{white-space:nowrap}.tf .pvc-act-row{min-height:42px}.tf .pvc-act{min-height:40px;padding:3px 10px 3px 5px;font-size:14px}.tf .pvc-act-num{width:29px;height:29px;font-size:17px}.tf .pvc-quiet{width:26px;min-width:26px}.tf .pvc-examples{flex-wrap:nowrap}.tf .pvc-examples button{flex:1;min-height:40px;padding:3px 1px}.tf .pvc-ex-word{font-size:13px;white-space:normal;line-height:1.3}.tf .pvc-ex-res{font-size:10px;min-height:14px}.tf .pvc-tabs{max-width:none}
+.tf-live{border-left:3px solid #168d94;padding:5px 8px;background:#f0f8f7;color:#214f60;min-height:116px}.tf-live>button{display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:28px;width:100%;border:0;background:none;padding:0;text-align:left}.tf-live>button b{font-size:13px}.tf-live>button span{font-size:11px;white-space:nowrap;text-decoration:underline}.tf-force-row{display:grid;grid-template-columns:18px 1fr auto;gap:5px;font-size:13px;line-height:1.5}.tf-force-row.push{color:#a04a06}.tf-force-row.friction{color:#b52150}.tf-force-row>span:first-child{font-size:18px;line-height:1;font-weight:700}.tf-balance{font-size:12px;line-height:1.6;color:#1665a6}.tf-values small{display:block;font-size:11px;line-height:1.45}
+.tf-note{position:absolute;left:10px;top:54px;max-width:46%;font-size:10px;line-height:1.35;color:#eff8ff;z-index:3;pointer-events:none}.tf .pvc-anno{transition:none;background:#fffbed;font-size:12px;line-height:1.3;padding:3px 6px}.tf .pvc-q-text{font-size:14px}.tf .pvc-q-feedback{font-size:12px}.tf .pvc-opt{height:46px;font-size:12px}.tf-opt{display:block;white-space:normal;line-height:1.25}
+.tf-dialog{box-sizing:border-box;width:min(560px,calc(100vw - 24px));max-height:calc(100vh - 20px);padding:16px;border:1px solid #91b6ba;border-radius:8px;background:#fffdf5;color:#20495a;font:14px/1.5 var(--font)}.tf-dialog::backdrop{background:rgba(8,26,51,.6)}.tf-dialog h2{margin:0 0 8px;font-size:19px}.tf-dialog p{font-size:12px;line-height:1.5;margin:8px 0}.tf-dialog small{display:block;font-size:11px;line-height:1.4}.tf-dialog>button{display:block;margin:12px 0 0 auto}.tf-vector-diagram{text-align:center;padding:6px;background:#f1f8f6;font-size:12px;line-height:1.6}.tf-horizontal{display:flex;gap:12px;align-items:center;justify-content:center;min-height:36px}.tf-horizontal b{padding:4px 10px;border:1px solid #295d73;background:#fff}.tf-normal{color:#087da5}.tf-weight{color:#7147ae}.tf-push{color:#a54b06}.tf-friction{color:#b51e50}
+@container pvc (min-width:720px){.tf .pvc-shell{grid-template-columns:minmax(0,1fr) clamp(310px,36%,390px);grid-template-rows:minmax(0,1fr)}.tf .pvc-panel{display:flex;border-top:0;border-left:1px solid var(--line);padding:10px;gap:7px;overflow:hidden}.tf .pvc-tabs{grid-template-columns:1fr 1fr}.tf .pvc-tabs button+button{border-top:0;border-left:1px solid var(--line-2)}.tf .pvc-q-options{grid-template-columns:1fr 1fr}}
+@container pvc (max-width:560px) and (max-height:600px){.tf .pvc-panel{padding:6px 12px;gap:4px}.tf .pvc-tabs button{height:34px;font-size:14px}.tf .pvc-learn{gap:4px}.tf .pvc-examples button{min-height:33px}.tf .pvc-ex-word{font-size:11px}.tf .pvc-ex-res{font-size:10px;min-height:13px}.tf .pvc-act-row{min-height:34px}.tf .pvc-act{min-height:33px;font-size:12px}.tf .pvc-act-num{width:25px;height:25px;font-size:15px}.tf .pvc-rule{font-size:11.5px;line-height:1.35;min-height:4.05em}.tf-live{min-height:106px;padding:3px 6px}.tf-live>button b{font-size:12px}.tf-force-row{font-size:12px}.tf-balance{font-size:11px}.tf-values small{font-size:10px}.tf .pvc-q-text{font-size:12.5px;--pvc-q-text-min:2.7lh}.tf .pvc-q-feedback{font-size:11.5px;--pvc-q-feedback-min:3lh}.tf .pvc-opt{height:37px}.tf .pvc-anno{font-size:11px}.tf-dialog{font-size:12px;padding:12px}.tf-dialog h2{font-size:17px}.tf-dialog p{font-size:11px;line-height:1.4}.tf-dialog small{font-size:10px}}
+@container pvc (max-height:460px) and (min-aspect-ratio:3/2){.tf .pvc-panel{padding:6px 9px;gap:4px}.tf .pvc-tabs button{height:32px;font-size:14px}.tf .pvc-learn{gap:4px}.tf .pvc-examples button{min-height:31px}.tf .pvc-ex-word{font-size:11px}.tf .pvc-ex-res{font-size:10px;min-height:13px}.tf .pvc-act-row{min-height:34px}.tf .pvc-act{min-height:33px;font-size:12px}.tf .pvc-act-num{width:25px;height:25px;font-size:15px}.tf .pvc-rule{font-size:11.5px;line-height:1.35;min-height:4.05em}.tf-live{min-height:103px;padding:3px 6px}.tf-live>button b{font-size:11px}.tf-live>button span{font-size:10px}.tf-force-row{font-size:11px}.tf-balance{font-size:11px}.tf-values small{font-size:10px}.tf .pvc-q-text{font-size:12.5px}.tf .pvc-q-feedback{font-size:11.5px}.tf .pvc-opt{height:39px;font-size:11.5px}.tf-dialog{padding:10px}.tf-dialog p{font-size:11px;margin:5px 0}.tf-dialog small{font-size:10px}.tf-dialog h2{font-size:17px}}
+.tf-dialog nav{display:flex;gap:8px;margin-bottom:10px}.tf-dialog nav button{min-height:28px;padding:2px 10px;border:1px solid #91b3b9;border-radius:4px;background:white;font:inherit;font-size:12px}.tf-dialog nav button[aria-pressed=true]{background:#176e7c;color:#fff}

@@ -9,6 +9,31 @@ const NB = '\u00a0';
 
 export const STRINGS = {
   bn: {
+    box_with_trolley: 'বাক্সসহ ট্রলি',
+    explain_forces: 'দিক ও বল',
+    explain_formulas: 'ঘর্ষণের সূত্র',
+    act_pause: 'থামিয়ে দেখো',
+    act_resume: 'চালিয়ে যাও',
+    live_title: 'এই মুহূর্তে বাক্সের বল',
+    explain_link: 'বল ও সূত্র',
+    human_push: 'মানুষের ঠেলা',
+    contact_friction: 'ঘর্ষণ',
+    still_state: 'বাক্স স্থির · বেগ {v} m/s',
+    moving_state: 'বাক্স চলছে → বেগ {v} m/s',
+    net_force: 'লব্ধি বল = ঠেলা − ঘর্ষণ = {f} নিউটন',
+    l_velocity: 'বেগ {v} m/s →',
+    note_rolling_scale: 'চাকায় দুটি বলের তীর {k} গুণ বড় · মান নিউটনে',
+    explain_title: 'বাক্সের উপর কোন বল কাজ করছে?',
+    diagram_label: 'ঠেলা ডানে, ঘর্ষণ বামে; তলের বল উপরে, ওজন নিচে',
+    support_force: 'তলের বল N = {n} নিউটন',
+    weight_force: 'ওজন W = {n} নিউটন',
+    box_system: 'বাক্স',
+    force_explanation: 'অনুভূমিক লব্ধি বল = ঠেলা − ঘর্ষণ। একই বেগে চললেও ঘর্ষণ থাকে: তখন ঠেলা ও ঘর্ষণ সমান। উল্লম্ব দিকে তলের বল ও ওজন সমান।',
+    static_formula: 'স্থিতি ঘর্ষণ ঠেলার সঙ্গে বাড়ে: f<sub>s</sub> ≤ μ<sub>s</sub>N। সর্বোচ্চ = {mu} × {n} = {max} নিউটন।',
+    kinetic_formula: 'পিছলে চললে গতি ঘর্ষণ: f<sub>k</sub> = μ<sub>k</sub>N = {mu} × {n} = {value} নিউটন।',
+    rolling_explanation: 'চাকা গড়ায়, বাক্স তলে পিছলায় না। তাই প্রতিরোধ কম, শূন্য নয়। সংখ্যাগুলি উদাহরণ; তুলনার জন্য ট্রলির নিজস্ব ভর উপেক্ষা করা হয়েছে।',
+    explain_close: 'ফিরে যাও',
+    rule_complete: '<b>সর্বোচ্চ স্থিতি ঘর্ষণ > গতি ঘর্ষণ > আবর্ত ঘর্ষণ।</b> একই বাক্সে চাকা লাগালে কম ঠেলা লাগে।',
     title: 'ঘর্ষণের প্রকারভেদ',
     view: 'দেখার ধরন',
     view_front_short: 'সামনে',
@@ -28,13 +53,12 @@ export const STRINGS = {
 
     // on the stage
     block_kg: '{m} কেজি',
-    l_gauge: 'বলমাপক',
     l_push: `ঠেলা {f}${NB}নিউটন`,
     l_fric: `ঘর্ষণ {f}${NB}নিউটন`,
     l_fric_q: 'ঘর্ষণ কত?',
     l_max: `সর্বোচ্চ {f}${NB}নিউটন`,
     l_old_slide: `পিছলে {f}${NB}নিউটন`,
-    aria_stage: 'তলের উপর কাঠের ব্লক, বলমাপক দিয়ে তাকে ঠেলা হচ্ছে',
+    aria_stage: 'একজন মানুষ বাক্স ঠেলছে; তলে বা চাকার ট্রলিতে ঘর্ষণের তুলনা',
     note_examples: 'সংখ্যাগুলো উদাহরণ',
 
     // the action (the big button and the numbered ring on the block)
@@ -57,13 +81,13 @@ export const STRINGS = {
     out_all: `গড়িয়ে চলতে ঘর্ষণ <b>{r}${NB}নিউটন</b>: তিনটির মধ্যে সবচেয়ে কম।`,
 
     // the rule line: the book's words in <b>, growing with what the student has found out
-    rule_rest: '<b>কাঠের ব্লকটি ঠেলে দেখো,</b> তল কী করে। বলমাপক বলে, কত জোরে ঠেলছ।',
+    rule_rest: '<b>মানুষটিকে দিয়ে বাক্স ঠেলাও।</b> তীরের দিক ও বলের মান দেখো; প্রথমে বাক্স স্থির থাকে।',
     rule_push: '<b>স্থিতি ঘর্ষণ:</b> ব্লক স্থির থাকলে ঘর্ষণ ঠিক ঠেলার সমান, উল্টো দিকে। যত ঠেলো, ঘর্ষণও তত বাড়ে।',
     rule_push3: '<b>স্থিতি ঘর্ষণ ঠেলার সমান হয়েই বাড়ছে।</b> আর কতটা ঠেললে ব্লক নড়বে? আরও ঠেলো।',
-    rule_slide: '<b>ব্লক নড়তে শুরু করেছে।</b> চলন্ত ব্লকে <b>গতি ঘর্ষণ</b> কাজ করে। তা সর্বোচ্চ স্থিতি ঘর্ষণের চেয়ে কম, তাই কম ঠেলাই লাগছে।',
-    rule_slid: '<b>গতি ঘর্ষণ</b> সর্বোচ্চ স্থিতি ঘর্ষণের চেয়ে কম: ভারী জিনিস সরাতে শুরুতে বেশি জোর লাগে, চলতে শুরু করলে কম। এবার ব্লকের নিচে চাকা লাগিয়ে দেখো।',
+    rule_slide: '<b>গতি ঘর্ষণ:</b> বাক্স পিছলে চলছে। একই বেগে চলতে ঠেলা ও ঘর্ষণ সমান; শুরুতে বেশি ঠেলা লাগে।',
+    rule_slid: '<b>ঠেলা ছাড়লে</b> গতি ঘর্ষণ বাক্স থামায়। এবার চাকা বসিয়ে একই বাক্স ঠেলে দেখো।',
     rule_wheels: '<b>চাকা লাগালে?</b> ব্লক আর তলে ঘষা খায় না, গড়িয়ে চলে। কত ঠেলা লাগবে, আন্দাজ করো।',
-    rule_roll: '<b>আবর্ত ঘর্ষণ:</b> গড়িয়ে চলার ঘর্ষণ সবচেয়ে ছোট। তাই সুটকেস আর সব যানবাহনে চাকা থাকে; চাকা না থাকলে টেনে নিতে অনেক বেগ পেতে হতো।',
+    rule_roll: '<b>আবর্ত ঘর্ষণ</b> পিছলানোর ঘর্ষণের চেয়ে কম। তাই চাকার ট্রলিতে একই বাক্স কম ঠেলায় চলে।',
     rule_all: `<b><span class="nw"><i class="c-f">f<sub>s</sub></i> = <i class="c-mu">μ<sub>s</sub></i><i class="c-n">N</i></span> (সর্বোচ্চ স্থিতি ঘর্ষণ), <span class="nw"><i class="c-f">f<sub>k</sub></i> = <i class="c-mu">μ<sub>k</sub></i><i class="c-n">N</i></span> (গতি ঘর্ষণ)।</b> <i class="c-n">N</i>: তল ব্লককে যত জোরে উপরে ঠেলে (ওজনের সমান, {w}${NB}নিউটন)। <i class="c-mu">μ</i>: তল কত খসখসে। যেমন <span class="nw">{ms} × {w} = {fs}</span>, <span class="nw">{mk} × {w} = {fk}</span> নিউটন।`,
 
     // the test
@@ -81,8 +105,8 @@ export const STRINGS = {
     q_again: 'আবার পরীক্ষা দাও',
     q_locked: 'পরীক্ষার সময় দৃশ্য আটকানো থাকে। ছবি দেখে উত্তর বেছে নাও।',
 
-    q_static: 'ব্লকটি নড়ছে না। বলমাপকে ঠেলার মাপ দেখো: তখন ঘর্ষণ কত?',
-    q_slide: 'ব্লকটি একই বেগে পিছলে চলছে। বলমাপকে ঠেলার মাপ দেখো: ঘর্ষণ কত?',
+    q_static: 'বাক্সটি নড়ছে না। ঠেলার তীরে বলের মান দেখো: তখন ঘর্ষণ কত?',
+    q_slide: 'বাক্সটি একই বেগে পিছলে চলছে। ঠেলার তীরে বলের মান দেখো: ঘর্ষণ কত?',
     q_which: 'ছবিতে ব্লকটির উপর কোন ঘর্ষণ কাজ করছে?',
     q_load: `ব্লকের উপর ওজন চাপানো হলো: ছবিতে মোট ভর দেখো। {m0} কেজির ব্লক নড়াতে {f0}${NB}নিউটন ঠেলা লাগত। এখন নড়াতে প্রায় কত ঠেলা লাগবে?`,
     q_wheels: 'সুটকেসে চাকা থাকলে টেনে নেওয়া সহজ। এই ব্লকটি চাকার উপর সহজে চলছে কেন?',
@@ -104,7 +128,7 @@ export const STRINGS = {
     why_which_kinetic: '<b>গতি ঘর্ষণ।</b> ব্লক তলের উপর পিছলে চলছে।',
     why_which_rolling: '<b>আবর্ত ঘর্ষণ।</b> ব্লক চাকার উপর গড়িয়ে চলছে।',
     why_load: `<b>{f}${NB}নিউটন।</b> ওজন {k} গুণ হলে সর্বোচ্চ ঘর্ষণও {k} গুণ: {f0} × {k} = {f}${NB}নিউটন।`,
-    why_wheels: `<b>গড়িয়ে চললে ঘর্ষণ সবচেয়ে কম।</b> বলমাপক মাত্র {r}${NB}নিউটন দেখাচ্ছে, পিছলে চলতে লাগত {k}${NB}নিউটন।`,
+    why_wheels: `<b>গড়িয়ে চললে ঘর্ষণ সবচেয়ে কম।</b> ঠেলা মাত্র {r}${NB}নিউটন দেখাচ্ছে, পিছলে চলতে লাগত {k}${NB}নিউটন।`,
 
     // a note on a wrong choice
     not_zero: 'নড়ছে না বলেই ঘর্ষণ আছে: সে ঠেলাকে ঠিক আটকে রেখেছে।',
@@ -117,10 +141,37 @@ export const STRINGS = {
     not_add: 'কেজি আর নিউটন যোগ করা যায় না। ওজন যত গুণ, ঘর্ষণও তত গুণ।',
     not_whole: 'ওজনের পুরোটা ঘর্ষণ নয়: এখানে ঘর্ষণ ওজনের অর্ধেক।',
     not_light: 'ওজন একই থাকে। ঘর্ষণ কমে, কারণ ব্লক পিছলায় না, গড়ায়।',
-    not_wheel_none: `আবর্ত ঘর্ষণ খুব ছোট, কিন্তু শূন্য নয়: বলমাপকে {r}${NB}নিউটন।`,
+    not_wheel_none: `আবর্ত ঘর্ষণ খুব ছোট, কিন্তু শূন্য নয়: ঠেলা {r}${NB}নিউটন।`,
     not_floor: 'তল একই থাকে। বদলায় ঘর্ষণের ধরন: পিছলানোর বদলে গড়ানো।',
   },
   en: {
+    box_with_trolley: 'Loaded trolley',
+    explain_forces: 'Directions & forces',
+    explain_formulas: 'Friction formulas',
+    act_pause: 'Pause',
+    act_resume: 'Continue',
+    live_title: 'Forces on the box now',
+    explain_link: 'Forces & formulas',
+    human_push: 'Person’s push',
+    contact_friction: 'Friction',
+    still_state: 'Box stationary · Speed {v} m/s',
+    moving_state: 'Box moving → Speed {v} m/s',
+    net_force: 'Resultant = push − friction = {f} N',
+    l_velocity: 'Velocity {v} m/s →',
+    note_rolling_scale: 'Both rolling-force arrows enlarged {k}× · values in N',
+    explain_title: 'Which forces act on the box?',
+    diagram_label: 'Push right, friction left; support up, weight down',
+    support_force: 'Support N = {n} N',
+    weight_force: 'Weight W = {n} N',
+    box_system: 'Box',
+    force_explanation:
+      'Horizontal resultant = push − friction. Friction still acts at constant speed: the push balances it. Vertically, support balances weight.',
+    static_formula: 'Static friction adapts to the push: f<sub>s</sub> ≤ μ<sub>s</sub>N. Maximum = {mu} × {n} = {max} N.',
+    kinetic_formula: 'While sliding: f<sub>k</sub> = μ<sub>k</sub>N = {mu} × {n} = {value} N.',
+    rolling_explanation:
+      'The wheels roll instead of the box sliding. Resistance is smaller, not zero. Numbers are examples; the carrier’s own mass is neglected for this comparison.',
+    explain_close: 'Back to the scene',
+    rule_complete: '<b>Maximum static > kinetic > rolling friction.</b> The same box needs less push on wheels.',
     title: 'Types of friction',
     view: 'View',
     view_front_short: 'Front',
@@ -138,13 +189,12 @@ export const STRINGS = {
     res_max: `Maximum {f}${NB}N`,
 
     block_kg: '{m} kg',
-    l_gauge: 'Force gauge',
     l_push: `Push {f}${NB}N`,
     l_fric: `Friction {f}${NB}N`,
     l_fric_q: 'Friction = ?',
     l_max: `Maximum {f}${NB}N`,
     l_old_slide: `Sliding {f}${NB}N`,
-    aria_stage: 'A wooden block on a surface, being pushed with a force gauge',
+    aria_stage: 'A person pushing a crate, on the floor or on a wheeled trolley',
     note_examples: 'Example numbers',
 
     act_push1: 'Push slowly',
@@ -164,7 +214,7 @@ export const STRINGS = {
     out_roll: `Rolling: friction only <b>{r}${NB}N</b>. Sliding took a push of {k}${NB}N.`,
     out_all: `Rolling friction is <b>{r}${NB}N</b>: the smallest of the three.`,
 
-    rule_rest: '<b>Push the wooden block</b> and see what the surface does. The force gauge shows how hard you push.',
+    rule_rest: '<b>Let the person push the box.</b> Read the arrows and their forces; the box stays still at first.',
     rule_push: '<b>Static friction:</b> while the block is at rest, friction is exactly equal to the push, the other way. Push more, friction grows.',
     rule_push3: '<b>Static friction keeps equal to the push.</b> How hard must you push before the block moves? Push harder.',
     rule_slide:
@@ -190,8 +240,8 @@ export const STRINGS = {
     q_again: 'Try again',
     q_locked: 'The scene stays put during the test. Look at the picture and pick an answer.',
 
-    q_static: 'The block is not moving. Read the push on the force gauge: how big is the friction on it?',
-    q_slide: 'The block slides at a steady speed. Read the push on the force gauge: how big is the friction?',
+    q_static: 'The block is not moving. Read the labelled push arrow: how big is the friction on it?',
+    q_slide: 'The block slides at a steady speed. Read the labelled push arrow: how big is the friction?',
     q_which: 'Which friction acts on the block in the picture?',
     q_load: `Weights are put on the block: read its total mass in the picture. A {m0} kg block took {f0}${NB}N to start. About how much push starts it now?`,
     q_wheels: 'Suitcases with wheels are easy to pull. Why does this block move so easily on wheels?',
@@ -212,7 +262,7 @@ export const STRINGS = {
     why_which_kinetic: '<b>Kinetic friction.</b> The block slides over the surface.',
     why_which_rolling: '<b>Rolling friction.</b> The block rolls on wheels.',
     why_load: `<b>{f}${NB}N.</b> {k} times the weight means {k} times the maximum friction: {f0} × {k} = {f}${NB}N.`,
-    why_wheels: `<b>Rolling friction is the smallest.</b> The gauge shows only {r}${NB}N; sliding needed {k}${NB}N.`,
+    why_wheels: `<b>Rolling friction is the smallest.</b> The push arrow shows only {r}${NB}N; sliding needed {k}${NB}N.`,
 
     not_zero: 'Friction is there because it is not moving: it holds the push exactly.',
     not_max: 'The maximum is only reached when the block is about to move. Here the push is smaller, so is the friction.',
@@ -224,7 +274,7 @@ export const STRINGS = {
     not_add: 'You cannot add kg and newtons. {k} times the weight means {k} times the friction.',
     not_whole: 'The whole weight is not the friction: here the friction is half the weight.',
     not_light: 'The weight stays the same. The friction is smaller because the block rolls instead of sliding.',
-    not_wheel_none: `Rolling friction is very small but not zero: the gauge shows {r}${NB}N.`,
+    not_wheel_none: `Rolling friction is very small but not zero: the push arrow shows {r}${NB}N.`,
     not_floor: 'The surface is the same. What changes is the kind of friction: rolling instead of sliding.',
   },
 };

@@ -28,7 +28,7 @@ friction (স্থিতি) grows to match your push, up to a maximum; once it
 the friction (আবর্ত) is far smaller. So 9.8 N, 7.8 N, about 1 N for the 2 kg block. The formulas f<sub>s</sub> =
 μ<sub>s</sub>N and f<sub>k</sub> = μ<sub>k</sub>N come last, after the student has met all three.
 
-## How the figure works
+## Earlier v0.1 design (superseded by the v0.2 update below)
 - One scene: a 2 kg wooden block (the same block as in `friction-force`, "২ কেজি" painted on it) on a plain floor, a
   force gauge (বলমাপক) pushing it from the left. The gauge has a real scale (0 to 12 N, an orange pointer) and its rod
   squeezes by 3 mm per newton; the whole gauge moves towards the block by that squeeze while the block stays put.
@@ -97,3 +97,35 @@ the friction (আবর্ত) is far smaller. So 9.8 N, 7.8 N, about 1 N for th
 - Whether the wheels should be shown as the trolley under the block (stylised: the block is lifted and a small trolley
   rolls in) or as wheels on the block itself (the suitcase). Rolling friction for the trolley comes from the wheels
   only; the block's weight is the load.
+
+
+## Human-push lesson (v0.2.0)
+
+Owner request: replace the force meter with a proper human for all three kinds; the rolling example should have a
+box on a wheeled carrier. The supplied reference shows the applied push, opposing friction and motion separately.
+`reference/pushing-reference.png` records the example; the shipped figure uses procedural 3D, not the reference raster.
+
+The crate is now an illustrative hollow 2 kg crate, 0.85 × 1 × 0.62 m, with blue bands and a large mass stencil.
+The detailed human is adapted from walking-third-law's anatomical model: face, jaw, hair, fingers, shaped clothing
+and rounded shoes. A two-bone reach puts both palms on the crate face; on wheels, the palms reach a real trolley
+crossbar at 0.95 m. Lean reflects the same absolute force across all supports, so rolling looks easier. Stance shoes
+stay fixed relative to the floor. The trolley has four 0.09 m wheels, a 1.08 × 0.74 m deck and a rear handle.
+The insertion animation brings it from the front so it does not pass through the standing person's legs.
+
+The original pure physics and example values are retained: static maximum 9.8 N, sliding 7.84 N, rolling 0.98 N.
+The trolley's own mass is neglected for this same-load comparison, stated in the calculation sheet. Only the box's
+horizontal dynamics are simulated; this is not a biomechanics simulation of the pusher. Static friction still adapts
+to the push instead of always being maximal. At steady slide/roll the nonzero push balances nonzero resistance.
+
+The meter and faded comparison arrows have been removed. Applied force is orange, resistance red and velocity
+blue, with numbers and labels. A contact dot/leader connects the human's palms to the applied vector offset above
+the box. Both rolling-force vectors use a clearly labelled 3× enlargement for legibility; their values stay in N.
+Recorded comparison values stay under the three example words. A live panel identifies push/friction and reports
+speed and the resultant. Optional duplicate stage captions hide when no collision-free placement exists.
+
+A pause control freezes the live motion. The separate two-page explanation freezes a run while open and covers
+horizontal balance, vertical support/weight and f_s ≤ μ_sN (maximum μ_sN), f_k = μ_kN. The quiz retains its five
+scene-based questions, reads the push arrow rather than a meter, hides the learn panel and locks scene commands.
+Bridge additions are `paused`, `netForce` and `acceleration`; existing stage/pull/chip commands retain their meaning.
+The GLB now exports the current human/crate/trolley and visible vectors; its default setup is paused rolling.
+Colours are intentionally saturated at the owner's request. No shared-kit or status changes.
