@@ -2,7 +2,9 @@
 // `capture`): the velocity line from u to v, the area under it in 1-second strips (each strip is the distance of
 // that second, the same colours as the trip bar under the railway), the average velocity V as a dashed line, the
 // moment the line crosses it (half the time), and at the end of a run the triangle above V folding into the gap
-// below it, in two flips that stay inside the graph: the trapezium becomes the rectangle V × t, so s = Vt.
+// below it, in two flips that stay inside the graph: the trapezium becomes the rectangle V × t, so s = Vt. For
+// s = ut + ½at² the area splits into the rectangle ut and the triangle ½at²; a tapped letter lights its quantity
+// (u, v, a, t, s) in its colour.
 // Labels are placed one by one and skip a spot that would cover one already drawn (or a line).
 
 export const FONT = '"Noto Sans Bengali", "Segoe UI", Roboto, Arial, sans-serif';
@@ -104,8 +106,10 @@ export function swapTriangles({ u, a, t, v, V }) {
  *   axisT, axisV: { max, step } the axes
  *   show: { plan, line, area, strips, V, mid, uLabel, vLabel, sLabel, cursor, tMark },
  *   swap,                      0…1: the triangle above V folding into the gap below it (two flips)
+ *   split,                     at the end: the area as the rectangle ut and the triangle ½at² (s = ut + ½at²)
+ *   hl,                        a tapped letter (u, v, a, t, s): its quantity lit in its colour
  *   sText, cursorText: { t, v }  live texts (already in the right digits)
- *   text: { axisV, axisT, area, u, v, V, formulaV, tMark }  labels (already in the right digits)
+ *   text: { axisV, axisT, area, u, v, V, formulaV, tMark, ut, half, stepA }  labels (already in the right digits)
  *   card,                      the white area behind the graph
  *   N, colors, taken            digits function, colours, boxes already taken on the overlay (corner buttons…)
  * }
@@ -169,7 +173,45 @@ export function drawGraph(ctx, R, g) {
 
   // the area under the line up to tau: 1-second strips, or (while the triangle folds) one colour
   const swap = g.swap || 0;
-  if (g.show.area && tau > 0) {
+  const split = g.split && done && swap <= 0 && g.show.area;
+  if (split) {
+    // s = ut + ½at²: the rectangle u × t (u's colour) and the triangle between u and the line (its own colour; when
+    // braking it lies inside the rectangle, above the line, and is taken away: hatched)
+    ctx.fillStyle = C.rect;
+    ctx.fillRect(xOf(0), yOf(g.u), xOf(g.t) - xOf(0), Y0 - yOf(g.u));
+    if (Math.abs(g.a) > 1e-9) {
+      ctx.beginPath();
+      ctx.moveTo(xOf(0), yOf(g.u));
+      ctx.lineTo(xOf(g.t), yOf(g.u));
+      ctx.lineTo(xOf(g.t), yOf(g.v));
+      ctx.closePath();
+      if (g.a > 0) {
+        ctx.fillStyle = C.tri;
+        ctx.fill();
+      } else {
+        ctx.fillStyle = '#fff';
+        ctx.fill();
+        ctx.save();
+        ctx.clip();
+        ctx.strokeStyle = C.triEdge;
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        for (let x = xOf(0) - (Y0 - Y1); x < xOf(g.t); x += 7) {
+          ctx.moveTo(x, Y0);
+          ctx.lineTo(x + (Y0 - Y1), Y1);
+        }
+        ctx.stroke();
+        ctx.restore();
+      }
+      ctx.strokeStyle = C.triEdge;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(xOf(0), yOf(g.u));
+      ctx.lineTo(xOf(g.t), yOf(g.u));
+      ctx.lineTo(xOf(g.t), yOf(g.v));
+      ctx.stroke();
+    }
+  } else if (g.show.area && tau > 0) {
     if (swap > 0) {
       // everything under min(line, V): the trapezium without the triangle above V
       ctx.fillStyle = C.strips[0];
@@ -222,16 +264,16 @@ export function drawGraph(ctx, R, g) {
     ctx.clip();
     // where it came from: a dashed outline
     ctx.setLineDash([4, 3]);
-    ctx.strokeStyle = C.avg;
+    ctx.strokeStyle = C.triEdge;
     ctx.lineWidth = 1.3;
     path(piece, 1, 1);
     ctx.stroke();
     ctx.setLineDash([]);
-    // the moving piece, in its own colour
+    // the moving piece, in the triangle's own colour
     path(piece, sx, sy);
-    ctx.fillStyle = C.moved;
+    ctx.fillStyle = C.tri;
     ctx.fill();
-    ctx.strokeStyle = C.avg;
+    ctx.strokeStyle = C.triEdge;
     ctx.lineWidth = 1.8;
     ctx.stroke();
     ctx.restore();
@@ -285,9 +327,84 @@ export function drawGraph(ctx, R, g) {
     ctx.stroke();
     ctx.lineCap = 'butt';
   }
+  // a tapped letter: its quantity lit in its colour (u and v as bars up the axes, t along the time axis, a as one
+  // second's step on the line, s as the outline of the area)
+  const hl = g.hl;
+  const bar = (x0, y0, x1, y1, color) => {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 6;
+    ctx.lineCap = 'round';
+    ctx.globalAlpha = 0.85;
+    ctx.beginPath();
+    ctx.moveTo(x0, y0);
+    ctx.lineTo(x1, y1);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.lineCap = 'butt';
+  };
+  if (hl === 'u') bar(X0, Y0, X0, yOf(g.u), C.u);
+  if (hl === 'v') {
+    ctx.setLineDash([4, 3]);
+    ctx.strokeStyle = C.vel;
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(xOf(g.t), yOf(g.v));
+    ctx.lineTo(X0, yOf(g.v));
+    ctx.stroke();
+    ctx.setLineDash([]);
+    bar(xOf(g.t), Y0, xOf(g.t), yOf(g.v), C.vel);
+  }
+  if (hl === 't') bar(X0, Y0, xOf(g.t), Y0, C.time);
+  if (hl === 's' && g.show.area) {
+    ctx.strokeStyle = C.dist;
+    ctx.lineWidth = 3;
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(xOf(0), Y0);
+    ctx.lineTo(xOf(0), yOf(g.u));
+    ctx.lineTo(xOf(Math.max(tau, 1e-6)), yOf(vAt(tau)));
+    ctx.lineTo(xOf(Math.max(tau, 1e-6)), Y0);
+    ctx.closePath();
+    ctx.stroke();
+  }
+  if (hl === 'a' && g.t >= 1) {
+    // one second's step on the line, half-way along: 1 s across, a up (or down)
+    const k = Math.max(0, Math.floor(g.t / 2 - 0.5));
+    const xa = xOf(k);
+    const xb = xOf(k + 1);
+    const ya = yOf(vAt(k));
+    const yb = yOf(vAt(k + 1));
+    ctx.fillStyle = C.accelTint;
+    ctx.beginPath();
+    ctx.moveTo(xa, ya);
+    ctx.lineTo(xb, ya);
+    ctx.lineTo(xb, yb);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = C.accel;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(xa, ya);
+    ctx.lineTo(xb, ya);
+    ctx.lineTo(xb, yb);
+    ctx.stroke();
+    if (g.text.stepA)
+      placeFirst(
+        ctx,
+        taken,
+        g.text.stepA,
+        [
+          [xb + 5, (ya + yb) / 2, {}],
+          [xb + 5, ya + (g.a >= 0 ? 10 : -10), {}],
+          [xa - 5, ya + (g.a >= 0 ? 10 : -10), { align: 'right' }],
+        ],
+        { color: C.accel, size: fs + 0.5, weight: 700, bounds },
+      );
+  }
+
   // u: the start of the line
   if (g.show.uLabel) {
-    ctx.fillStyle = C.vel;
+    ctx.fillStyle = C.u;
     ctx.beginPath();
     ctx.arc(xOf(0), yOf(g.u), 4, 0, Math.PI * 2);
     ctx.fill();
@@ -357,7 +474,7 @@ export function drawGraph(ctx, R, g) {
   // y-axis: u and V, left of the axis (the left margin is as wide as they are)
   const leftLabel = (vv, text, color) =>
     placeLabel(ctx, taken, text, X0 - 6, yOf(vv), { align: 'right', color, size: fs + 0.5, weight: 700, force: true });
-  if (g.show.uLabel) leftLabel(g.u, g.text.u, C.vel);
+  if (g.show.uLabel) leftLabel(g.u, g.text.u, C.u);
   if (g.show.V && Math.abs(g.V - g.u) * ((Y0 - Y1) / VM) > fs + 2) leftLabel(g.V, g.text.V, C.avg);
   // v at the end of the line
   if (g.show.vLabel && done) {
@@ -420,8 +537,25 @@ export function drawGraph(ctx, R, g) {
       { color: C.time, size: fs + 0.5, weight: 700, bounds },
     );
   }
+  // s = ut + ½at²: each part named inside it, when there is room
+  if (split) {
+    const rh = Y0 - yOf(g.u);
+    // under the line (when braking the line crosses the rectangle)
+    const lx = g.a < 0 ? g.t * 0.28 : g.t / 2;
+    const ly = g.a < 0 ? yOf(vAt(lx) * 0.42) : Y0 - rh / 2;
+    if (rh > 18 && g.text.ut)
+      placeLabel(ctx, taken, g.text.ut, xOf(lx), ly, { align: 'center', color: C.rectInk, size: fs + 2, weight: 700, bounds });
+    if (Math.abs(yOf(g.v) - yOf(g.u)) > 22 && g.text.half)
+      placeLabel(ctx, taken, g.text.half, xOf((g.t * 2) / 3), yOf(g.u + (g.v - g.u) / 3), {
+        align: 'center',
+        color: C.triInk,
+        size: fs + 1,
+        weight: 700,
+        bounds,
+      });
+  }
   // the area: what it means and how big it is
-  if (g.show.area && g.show.sLabel && tau > 0 && g.sText) {
+  if (!split && g.show.area && g.show.sLabel && tau > 0 && g.sText) {
     const whole = swap > 0.5;
     const tm = (whole ? g.t : tau) / 2;
     const top = whole ? g.V : Math.min(vAt(tm), g.V || vAt(tm));

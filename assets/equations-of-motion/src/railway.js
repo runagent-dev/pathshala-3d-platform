@@ -1,6 +1,7 @@
 // A straight double-track railway, procedural three.js, in metres: two broad-gauge tracks (rails, concrete
 // sleepers, ballast) along x, and a white post every 10 m beside the near track from the start (x = 0) on; the
-// posts' numbers are drawn on the 2D overlay (app.js), so they stay readable at any size. Rail tops at y = 0.
+// posts' numbers are drawn on the 2D overlay (app.js), so they stay readable at any size. Rail tops at y = 0. Round it
+// the sunny setting: grass, a row of trees behind the far track (createGround, not exported).
 import * as THREE from 'three';
 import { GAUGE } from './train.js';
 
@@ -103,29 +104,73 @@ export function createRailway({ from: FROM = -70, to: TO = 330 } = {}) {
   return { root };
 }
 
-/** The pale ground under the railway, fading into the white page at the sides (not exported). */
+/** Where the land ends behind the far track: a row of trees stands there, the sky is behind them. */
+export const HORIZON_Z = TRACKS.far - 4.6;
+
+/**
+ * The sunny setting (not exported to the GLB): grass on both sides of the tracks, a little lighter far away, and a
+ * row of round trees along the back edge, so the sky shows above them. The trees are made the same way every time
+ * (a fixed sequence of numbers), so the pictures never change.
+ */
 export function createGround({ from: FROM = -70, to: TO = 330 } = {}) {
+  const root = new THREE.Group();
+  root.name = 'Ground';
+  root.userData.noExport = true;
+  // grass: from the row of trees to well in front of the posts, a soft stripe pattern along the track
   const c = document.createElement('canvas');
   c.width = 4;
   c.height = 256;
   const ctx = c.getContext('2d');
   const g = ctx.createLinearGradient(0, 0, 0, 256);
-  g.addColorStop(0, 'rgba(238, 240, 234, 0)');
-  g.addColorStop(0.25, 'rgba(236, 238, 231, 1)');
-  g.addColorStop(0.75, 'rgba(236, 238, 231, 1)');
-  g.addColorStop(1, 'rgba(238, 240, 234, 0)');
+  g.addColorStop(0, '#a9d98a');
+  g.addColorStop(0.3, '#93cd6f');
+  g.addColorStop(1, '#7fbf5c');
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, 4, 256);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
-  const m = new THREE.Mesh(
-    new THREE.PlaneGeometry(TO - FROM + 200, 30),
-    new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, toneMapped: false }),
+  const depth = POST_Z + 40 - HORIZON_Z;
+  const grass = new THREE.Mesh(
+    new THREE.PlaneGeometry(TO - FROM + 200, depth),
+    new THREE.MeshStandardMaterial({ name: 'Grass', map: tex, roughness: 1, metalness: 0 }),
   );
-  m.rotation.x = -Math.PI / 2;
-  m.position.set((FROM + TO) / 2, GROUND - 0.01, 0);
-  m.renderOrder = -1;
-  m.userData.noExport = true;
-  m.name = 'Ground';
-  return m;
+  grass.rotation.x = -Math.PI / 2;
+  grass.position.set((FROM + TO) / 2, GROUND - 0.01, HORIZON_Z + depth / 2);
+  grass.receiveShadow = true;
+  grass.name = 'Grass';
+  root.add(grass);
+
+  // the row of trees: a trunk and a round crown each, in two greens
+  let seed = 7;
+  const rand = () => {
+    seed = (seed * 16807) % 2147483647;
+    return (seed - 1) / 2147483646;
+  };
+  const spots = [];
+  for (let x = FROM - 40; x < TO + 60; x += 5.5 + rand() * 4)
+    spots.push({ x, z: HORIZON_Z - 0.9 - rand() * 1.2, h: 0.9 + rand() * 0.9, r: 1.25 + rand() * 0.6, k: rand() });
+  const trunkGeo = new THREE.CylinderGeometry(0.18, 0.26, 1, 7);
+  const crownGeo = new THREE.IcosahedronGeometry(1, 1);
+  const trunks = new THREE.InstancedMesh(trunkGeo, new THREE.MeshStandardMaterial({ name: 'Trunk', color: 0x8a5a36, roughness: 0.9 }), spots.length);
+  const crownMat = new THREE.MeshStandardMaterial({ name: 'Leaves', color: 0xffffff, roughness: 0.85, flatShading: true });
+  const crowns = new THREE.InstancedMesh(crownGeo, crownMat, spots.length);
+  const dummy = new THREE.Object3D();
+  const greens = [new THREE.Color('#3f9e3a'), new THREE.Color('#5cb346'), new THREE.Color('#2f8a3a')];
+  spots.forEach((p, i) => {
+    dummy.position.set(p.x, GROUND + p.h / 2, p.z);
+    dummy.scale.set(1, p.h, 1);
+    dummy.rotation.set(0, 0, 0);
+    dummy.updateMatrix();
+    trunks.setMatrixAt(i, dummy.matrix);
+    dummy.position.set(p.x, GROUND + p.h + p.r * 0.55, p.z);
+    dummy.scale.set(p.r, p.r * 0.92, p.r);
+    dummy.rotation.set(0, p.k * 6, 0);
+    dummy.updateMatrix();
+    crowns.setMatrixAt(i, dummy.matrix);
+    crowns.setColorAt(i, greens[Math.floor(p.k * greens.length) % greens.length]);
+  });
+  trunks.name = 'Trunks';
+  crowns.name = 'Trees';
+  root.add(trunks, crowns);
+  return root;
 }

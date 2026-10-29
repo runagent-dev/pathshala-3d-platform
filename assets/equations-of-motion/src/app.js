@@ -1,22 +1,23 @@
 // Equations of motion (book pages 45–46, topic 2.7), student view. A commuter train on a straight double-track
-// railway; the student sets its আদি বেগ u, ত্বরণ a and the time t with three steppers and runs it (in real time).
-// The camera follows the train on a 40 m stretch of track, so the train stays big and the posts stream past
-// faster and faster. Under it a trip bar (০ to the whole distance) fills in 1-second segments, and the বেগ–সময়
-// গ্রাফ draws the straight line v = u + at while the area under it fills in the same 1-second strips: the area is
-// the distance, and equal seconds give unequal distances. On the other track an imagined see-through train runs
-// the whole time at the average velocity V = (u + v)/2 and arrives at the same place at the same moment; at the
-// end the triangle above V folds into the gap below it, so the area is V × t: s = Vt = ut + ½at². The panel writes
-// the equations with the student's numbers. Touching or dragging the graph or the bar shows any moment. A braking
-// train (negative a) stops, it never goes backwards. Then a short test. Built on the shared student kit
-// (@shared/student/…); the maths is in motion.js, the graph in graph.js.
+// railway in a sunny setting; the student sets its আদি বেগ u, ত্বরণ a and the time t with three steppers and runs it
+// (in real time) with one big button. The camera follows the train on a 40 m stretch of track. Under it a trip bar
+// (0 to the whole distance) fills in 1-second segments, and the বেগ–সময় গ্রাফ draws v = u + at while the area under
+// it fills in the same 1-second strips: the area is the distance. One equation at a time (chips: v = u + at,
+// s = ut + ½at², v² = u² + 2as, s = Vt), large, with the student's numbers, under a comparison in plain words; each
+// quantity has one colour, and a tap on a letter lights it in the graph and on the railway. With s = ut + ½at² the
+// area splits into the rectangle ut and the triangle ½at²; with s = Vt an imagined see-through train runs at the
+// average velocity V and the triangle above V folds into the gap below it. "সমীকরণ কীভাবে এল" opens the derivation
+// sheet (derive.js). A braking train (negative a) stops, it never goes backwards. Then a short test. Built on the
+// shared student kit (@shared/student/…); the maths is in motion.js, the graph in graph.js.
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
 import { createTweener } from '@shared/tween.js';
+import { createAction } from '@shared/student/action.js';
 import { createAudio } from '@shared/student/audio.js';
-import { createCoach } from '@shared/student/coach.js';
 import { ICONS } from '@shared/student/icons.js';
 import { createQuiz } from '@shared/student/quiz.js';
-import { buildStudentShell } from '@shared/student/shell.js';
+import { bindCleanSheet, buildStudentShell } from '@shared/student/shell.js';
+import { createDerivation } from './derive.js';
 import { FONT, drawGraph, placeFirst, placeLabel, swapTriangles } from './graph.js';
 import { createI18n } from './i18n.js';
 import {
@@ -53,22 +54,34 @@ export const DEFAULTS = {
   sound: true,
 };
 
-// one colour per quantity (style.css has the same): বেগ orange, গড় বেগ raspberry, দূরত্ব blue, সময় purple, ত্বরণ green
+// one colour per quantity, the same in the graph, the steppers, the formulas and the labels on the railway (style.css
+// has the same): u teal, v orange, a green, t purple, s blue, V raspberry; the triangle of ½at² its own gold. Every
+// colour used for text has at least 4.5 : 1 contrast on white.
 const COLORS = {
-  vel: '#d9480f',
-  velFaint: '#f0a27a',
+  u: '#0b7285',
+  vel: '#c2410c', // v and the velocity line
+  velFaint: '#f2a983',
   avg: '#c2255c',
   dist: '#1c6fd9',
   distDark: '#14529f',
-  strips: ['#9fc4f2', '#d3e4fa'],
-  moved: '#f2c6d6', // the triangle that folds into the gap: the same area, in the colour of V
+  strips: ['#8cc2ff', '#d3e8ff'], // the 1-second strips: two tints of s's blue
+  rect: '#c3ecf1', // the rectangle u × t
+  rectInk: '#0b5c6b',
+  tri: '#ffe08a', // the triangle ½at² (and the one that folds into the gap)
+  triEdge: '#d9a300',
+  triInk: '#8a6100',
   time: '#6741d9',
+  accel: '#2b7a3a',
+  accelTint: '#d3f0d9',
   ink: '#1d2733',
   ink2: '#4b5766',
-  ink3: '#7a8594',
+  ink3: '#6b7684',
   grid: '#e6eaef',
   track: '#eef1f4',
 };
+// the four equations the chips choose (Latin, as the book prints them)
+const EQS = { v: 'v = u + at', s2: 's = ut + ½at²', v2: 'v² = u² + 2as', Vt: 's = Vt' };
+const SYMS = ['u', 'v', 'a', 't', 's', 'V'];
 // where the camera looks from (towards the camera from the railway): from the front a little above, so the car's
 // side shows and both tracks; "rotate" starts from the front left
 const elev = THREE.MathUtils.degToRad(28);
@@ -107,23 +120,30 @@ export function createApp(root, options = {}) {
                 <button class="eom-pm" data-step="${k}" data-dir="1" aria-label="${t(`more_${k}`)}">${ICONS.plus}</button>
               </div>
             </div>`;
+  // a formula's Latin letters coloured (chips), or as buttons that light the quantity in the picture (the big one)
+  const colourF = (f) => f.replace(/[uvatsV]/g, (c) => `<i class="q-${c}">${c}</i>`);
+  const symbolF = (f) =>
+    f.replace(
+      /[uvatsV]/g,
+      (c) => `<button type="button" class="eom-sym q-${c}" data-sym="${c}" aria-pressed="false" aria-label="${t(`sym_${c}`)}">${c}</button>`,
+    );
+  // the clean sheet (kit 1.3.0): the steppers, the four equations as one row of words, the rule in plain words, the
+  // chosen equation large with the student's numbers, and one action (plus the derivation sheet)
   const ui = buildStudentShell(root, t, {
+    learnAlign: 'start',
     learn: `
           <div class="eom-steps">${stepper('u')}${stepper('a')}${stepper('t')}</div>
-          <div class="eom-eqs" role="group" aria-label="${t('eqs')}">
-            <p class="eom-head">${t('headline')}</p>
-            ${['v', 'V', 's', 's2', 'v2']
-              .map(
-                (k) =>
-                  `<div class="eom-eq" data-eq="${k}"><span class="f"></span><span class="n"></span><span class="r"></span><span class="nm"></span></div>`,
-              )
-              .join('')}
-          </div>
-          <div class="pvc-learn-foot eom-foot">
-            <p class="eom-say" aria-live="polite"></p>
-            <button class="pvc-btn primary eom-run" data-act="run"><span class="ic"></span><span class="lb"></span></button>
-          </div>`,
+          <div class="pvc-examples eom-chips" role="radiogroup" aria-label="${t('eq_pick')}">${Object.entries(EQS)
+            .map(
+              ([id, f], i) =>
+                `<button type="button" role="radio" aria-checked="false" tabindex="${i ? -1 : 0}" data-example="${id}"><span class="pvc-ex-word">${colourF(f)}</span><small class="pvc-ex-res"></small></button>`,
+            )
+            .join('')}</div>
+          <p class="pvc-rule eom-rule" aria-live="polite"></p>
+          <div class="pvc-outcome eom-big"><div class="eom-f"></div><div class="eom-n"></div></div>
+          <div class="pvc-act-row"><div class="pvc-act-slot"></div><button type="button" class="eom-derive" data-act="derive">${ICONS.chevR}<span>${t('derive')}</span></button></div>`,
   });
+  const sheet = bindCleanSheet(ui.learn);
   const overlay = document.createElement('canvas');
   overlay.className = 'eom-overlay';
   overlay.setAttribute('aria-hidden', 'true');
@@ -144,6 +164,29 @@ export function createApp(root, options = {}) {
   const world = new THREE.Group();
   world.name = 'EquationsOfMotion';
   scene.add(world, createGround());
+  // a sunny sky behind the trees: blue at the top of the picture, paler down to the railway's lower edge (the trip
+  // bar and the graph are on white below it)
+  const skyCanvas = document.createElement('canvas');
+  skyCanvas.width = 2;
+  skyCanvas.height = 256;
+  const sky = new THREE.CanvasTexture(skyCanvas);
+  sky.colorSpace = THREE.SRGBColorSpace;
+  let skyAt = -1;
+  function paintSky(f) {
+    if (Math.abs(f - skyAt) < 0.004) return;
+    skyAt = f;
+    const c = skyCanvas.getContext('2d');
+    const g = c.createLinearGradient(0, 0, 0, 256);
+    g.addColorStop(0, '#79c2f2');
+    g.addColorStop(Math.max(0.05, f * 0.6), '#bfe2fa');
+    g.addColorStop(Math.max(0.1, f), '#eaf6fe');
+    g.addColorStop(1, '#ffffff');
+    c.fillStyle = g;
+    c.fillRect(0, 0, 2, 256);
+    sky.needsUpdate = true;
+    stage.invalidate();
+  }
+  if (o.bg !== 'transparent') scene.background = sky;
   const railway = createRailway();
   const train = createTrain();
   const ghost = createTrain({ ghost: true, color: COLORS.avg });
@@ -208,6 +251,8 @@ export function createApp(root, options = {}) {
     userMovedCamera: false,
     lastToggle: -1e9,
     note: null, // { key, vars, until }: a stepper's note in the panel
+    eq: 'v', // the equation the chips chose: 'v' | 's2' | 'v2' | 'Vt'
+    hl: null, // the quantity whose letter was tapped: 'u' | 'v' | 'a' | 't' | 's' | 'V' | null
     // what the picture shows (the test hides what a question asks)
     show: { ...ALL },
     graphTau: null, // the graph drawn this far (the test can draw it all while the train waits at the start)
@@ -217,6 +262,11 @@ export function createApp(root, options = {}) {
     barScale: null, // the trip bar's whole length (m): the plan's distance, or in the test a fixed one
   };
   let r = solve(s.plan); // v, V, s, … of the plan
+  /** @type {ReturnType<typeof createAction> | null} */
+  let action = null;
+  /** @type {ReturnType<typeof createDerivation> | null} */
+  let derive = null;
+  let railTaken = []; // the labels on the railway (the action's badge keeps clear of them)
 
   const canSwap = () => s.show.V && s.show.area && Math.abs(s.plan.a) > 1e-9;
   const swapProgress = () => {
@@ -242,8 +292,17 @@ export function createApp(root, options = {}) {
       playing: s.playing,
       view: s.view,
       mode: s.mode,
+      eq: s.eq,
+      hl: s.hl,
+      derive: derive ? derive.state : { open: false, step: 1, part: 0 },
     };
   }
+  /** In the learn view the picture follows the chosen equation: V, its train and the fold only for s = Vt (or V). */
+  function learnShow() {
+    const vOn = s.eq === 'Vt' || s.hl === 'V';
+    s.show = { ...ALL, V: vOn, mid: vOn, ghost: vOn };
+  }
+  learnShow();
   let lastEmitted = '';
   function emitChange() {
     const snap0 = snapshot();
@@ -285,7 +344,6 @@ export function createApp(root, options = {}) {
     s.swapFrom = 0;
     s.swapStage = 0;
     s.note = null;
-    coach?.objectUsed();
     emit('run', { from: roundTo(s.tau, 3) });
     refresh();
     emitChange();
@@ -364,25 +422,10 @@ export function createApp(root, options = {}) {
   const $ = ui.$;
   const el = {
     vals: { u: $('[data-val="u"]'), a: $('[data-val="a"]'), t: $('[data-val="t"]') },
-    eq: Object.fromEntries(['v', 'V', 's', 's2', 'v2'].map((k) => [k, $(`[data-eq="${k}"]`)])),
-    say: $('.eom-say'),
-    runIcon: $('.eom-run .ic'),
-    runLabel: $('.eom-run .lb'),
+    rule: $('.eom-rule'),
+    f: $('.eom-f'),
+    n: $('.eom-n'),
   };
-  const q = (cls, x) => `<i class="q-${cls}">${x}</i>`;
-  const FORMULAS = {
-    v: `${q('v', 'v')} = ${q('v', 'u')} + ${q('a', 'a')}${q('t', 't')}`,
-    V: `${q('V', 'V')} = (${q('v', 'u')} + ${q('v', 'v')})/2`,
-    s: `${q('s', 's')} = ${q('V', 'V')}${q('t', 't')}`,
-    s2: `${q('s', 's')} = ${q('v', 'u')}${q('t', 't')} + ½${q('a', 'a')}${q('t', 't')}²`,
-    v2: `${q('v', 'v')}² = ${q('v', 'u')}² + 2${q('a', 'a')}${q('s', 's')}`,
-  };
-  for (const [k, f] of Object.entries(FORMULAS)) el.eq[k].querySelector('.f').innerHTML = f;
-  // the book's names after the results
-  el.eq.v.querySelector('.nm').textContent = t('nm_v');
-  el.eq.V.querySelector('.nm').textContent = t('nm_V');
-  el.eq.s.querySelector('.nm').textContent = t('nm_s');
-  el.eq.s.title = t('replay');
   const shown = new Map();
   const put = (node, html) => {
     if (shown.get(node) === html) return;
@@ -390,19 +433,47 @@ export function createApp(root, options = {}) {
     node.innerHTML = html;
   };
 
-  function sayLine() {
+  /**
+   * The numbers stay on the equation's line whatever they are (so the panel never changes height): a long sum
+   * (decimals, a negative a) is written a little smaller.
+   */
+  const big = $('.eom-big');
+  let fitKey = '';
+  function fitNumbers() {
+    const key = `${el.n.innerHTML}|${big.clientWidth}|${el.f.offsetWidth}`;
+    if (key === fitKey || !big.clientWidth) return;
+    fitKey = key;
+    el.n.style.fontSize = '';
+    if (getComputedStyle(big).flexWrap === 'wrap') return; // beside the picture or on wide frames: a second row
+    const room = big.clientWidth - el.f.offsetWidth - 10;
+    let size = Number.parseFloat(getComputedStyle(el.n).fontSize);
+    while (el.n.scrollWidth > room && size > 12) {
+      size -= 0.5;
+      el.n.style.fontSize = `${size}px`;
+    }
+  }
+  new ResizeObserver(() => fitNumbers()).observe(big);
+
+  /** The rule line: a stepper's note for a moment; else what the tapped letter means; else the equation in words. */
+  function ruleLine() {
     const { u, a, t: tt } = s.plan;
     if (s.note && now() < s.note.until) return t(s.note.key, s.note.vars);
-    const ph = phase();
-    const rest = u === 0 && a === 0;
-    if (ph === 'ready')
-      return t(rest ? 'say_ready_rest' : a > 0 ? 'say_ready_up' : a < 0 ? 'say_ready_down' : 'say_ready_zero', { a: fmt(a), b: fmt(-a) });
-    if (ph === 'running') return t(rest ? 'say_ready_rest' : a > 0 ? 'say_run_up' : a < 0 ? 'say_run_down' : 'say_run_zero');
-    if (ph === 'paused') return t('say_paused', { tau: fmt(s.tau, 2), v: fmt(velocityAt(u, a, s.tau), 2), s: fmt(distanceAt(u, a, s.tau), 2) });
-    if (rest) return t('say_done_rest');
-    if (a === 0) return t('say_done_zero', { u: fmt(u), t: fmt(tt), s: fmt(r.s) });
-    const key = s.swapFrom && s.swapStage === 1 ? 'say_swapping' : s.swapFrom && s.swapStage === 2 ? 'say_swapped' : 'say_arrived';
-    return t(key, { V: fmt(r.V), t: fmt(tt), s: fmt(r.s) });
+    const sign = a > 0 ? 'up' : a < 0 ? 'down' : 'zero';
+    const vars = { u: fmt(u), v: fmt(r.v), a: fmt(a), b: fmt(-a), t: fmt(tt), s: fmt(r.s), V: fmt(r.V), k0: 0, k4: 4 };
+    if (s.hl) return t(s.hl === 'a' ? `hl_a_${sign}` : `hl_${s.hl}`, vars);
+    if (s.eq === 'v') return t(`rule_v_${sign}`, vars);
+    if (s.eq === 's2') return t(a === 0 ? 'rule_s2_zero' : a < 0 ? 'rule_s2_down' : 'rule_s2', vars);
+    if (s.eq === 'v2') return t(a === 0 ? 'rule_v2_zero' : a < 0 ? 'rule_v2_down' : 'rule_v2', vars);
+    return t('rule_Vt', vars);
+  }
+  /** The chosen equation's numbers: the student's u, a, t in it, and the answer. */
+  function numbersLine() {
+    const { u, a, t: tt } = s.plan;
+    const unit = (b, k, cls) => `<b class="q-${cls}">${b}</b>&nbsp;<small>${t(k)}</small>`;
+    if (s.eq === 'v') return `= ${n(u)} + ${p(a)}\u2009×\u2009${n(tt)} = ${unit(n(r.v), 'u_ms', 'v')}`;
+    if (s.eq === 's2') return `= ${n(u)}\u2009×\u2009${n(tt)} + ½\u2009×\u2009${p(a)}\u2009×\u2009${n(tt)}² = ${unit(n(r.s), 'u_m', 's')}`;
+    if (s.eq === 'v2') return `= ${n(u * u)} + ${p(2 * a * r.s)} = ${n(r.v * r.v)} → v = ${unit(n(r.v), 'u_ms', 'v')}`;
+    return `= ${n(r.V)}\u2009×\u2009${n(tt)} = ${unit(n(r.s), 'u_m', 's')}`;
   }
 
   function refresh() {
@@ -417,27 +488,60 @@ export function createApp(root, options = {}) {
       b.classList.toggle('off', off);
       b.setAttribute('aria-disabled', String(off));
     }
-    const ms = `<small>${t('u_ms')}</small>`;
-    const m = `<small>${t('u_m')}</small>`;
-    const row = (k, nums, res) => {
-      put(el.eq[k].querySelector('.n'), nums);
-      put(el.eq[k].querySelector('.r'), res);
-    };
-    row('v', `= ${n(u)} + ${p(a)} × ${n(tt)}`, `= ${q('v', `<b>${n(r.v)}</b>`)}&nbsp;${ms}`);
-    row('V', `= (${n(u)} + ${n(r.v)}) ÷ ${N(2)}`, `= ${q('V', `<b>${n(r.V)}</b>`)}&nbsp;${ms}`);
-    row('s', `= ${n(r.V)} × ${n(tt)}`, `= ${q('s', `<b>${n(r.s)}</b>`)}&nbsp;${m}`);
-    row('s2', `= ${n(r.ut)} + ${p(r.half)}`, `= ${q('s', `<b>${n(r.s)}</b>`)}&nbsp;${m}`);
-    row('v2', `${n(r.v * r.v)} = ${n(u * u)} + ${p(2 * a * r.s)}`, `<span class="ok">${ICONS.check}</span>`);
-    el.eq.s.classList.toggle('hot', s.swapFrom > 0 && s.swapStage === 1); // the sum the folding triangle shows
-    put(el.say, sayLine());
-    const ph = phase();
-    put(el.runIcon, s.playing ? ICONS.pause : ph === 'done' ? ICONS.reset : ICONS.play);
-    put(el.runLabel, t(s.playing ? 'act_pause' : ph === 'done' ? 'act_again' : ph === 'paused' ? 'act_on' : 'act_run'));
+    sheet.choose(s.eq);
+    put(el.f, symbolF(EQS[s.eq]));
+    for (const b of ui.$$('[data-sym]')) {
+      const on = b.dataset.sym === s.hl;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', String(on));
+    }
+    put(el.n, numbersLine());
+    fitNumbers();
+    el.rule.dataset.hl = s.hl ?? '';
+    sheet.rule(ruleLine());
+    if (action) {
+      const ph = phase();
+      action.set({
+        label: s.playing ? 'act_pause' : ph === 'done' ? 'act_again' : ph === 'paused' ? 'act_on' : 'act_run',
+        icon: s.playing ? ICONS.pause : ph === 'done' ? ICONS.reset : ICONS.play,
+      });
+      // the ring on the train while it waits to run; never while it runs or after it has arrived
+      if (s.mode !== 'quiz' && (ph === 'ready' || ph === 'paused') && !(u === 0 && a === 0)) action.show('run');
+      else action.hide('run');
+    }
+    derive?.setPlan(s.plan);
     stage.invalidate();
   }
-  /** While running only the say line can change (the sums are those of the plan). */
-  function refreshLive() {
-    put(el.say, sayLine());
+  /** While running nothing in the panel changes (the sums are those of the plan). */
+  function refreshLive() {}
+
+  /** A chip: the equation shown large (V, its train and the fold come with s = Vt). */
+  function chooseEq(id) {
+    if (!EQS[id] || s.mode === 'quiz') return;
+    const was = s.eq;
+    s.eq = id;
+    s.hl = null;
+    learnShow();
+    // at the end of a run, choosing s = Vt folds the triangle there and then
+    if (id === 'Vt' && was !== 'Vt' && phase() === 'done' && canSwap()) {
+      s.swapFrom = now() + 300;
+      s.swapStage = 0;
+    } else if (id !== 'Vt') {
+      s.swapFrom = 0;
+      s.swapStage = 0;
+    }
+    placeTrains();
+    refresh();
+    emitChange();
+  }
+  /** A letter in the big equation: its quantity lit in the graph and on the railway (a second tap puts it out). */
+  function highlight(sym, toggle = true) {
+    if (s.mode === 'quiz') return;
+    s.hl = SYMS.includes(sym) && !(toggle && s.hl === sym) ? sym : null;
+    learnShow();
+    placeTrains();
+    refresh();
+    emitChange();
   }
 
   /** One tap on a stepper (key 'u' | 'a' | 't', dir ±1). */
@@ -459,7 +563,6 @@ export function createApp(root, options = {}) {
     }
     audio.tick();
     setPlan(res);
-    coach?.objectUsed();
   }
   /** A new plan. During a run it goes back to the start; at the end it shows the new end; else the same moment. */
   function setPlan(plan) {
@@ -561,6 +664,7 @@ export function createApp(root, options = {}) {
       const y0 = top + Math.max(0, (H - top - 6 - railH - barH) / 2);
       L.rail = { x, y: y0, w, h: railH };
       L.bar = { x, y: y0 + railH, w, h: barH };
+      paintSky((y0 + railH) / Math.max(1, H));
       return;
     }
     const top = toggleShown && L.corner ? L.corner.bottom : 0;
@@ -570,6 +674,7 @@ export function createApp(root, options = {}) {
     L.rail = { x: 4, y: top, w: W - 8, h: railH };
     L.bar = { x: 4, y: top + railH, w: W - 8, h: barH };
     L.graph = { x: 4, y: top + railH + barH + 2, w: W - 8, h: H - top - railH - barH - 6 };
+    paintSky((top + railH) / Math.max(1, H));
   }
 
   // ── camera: the railway fitted into its part of the picture ───────────────────
@@ -645,8 +750,10 @@ export function createApp(root, options = {}) {
   const sp = [{}, {}, {}, {}];
 
   /** The posts' numbers (they stream past as the camera follows) and the V-train's name. */
-  function drawRail(ctx, taken) {
+  function drawRail(ctx, taken, ring) {
     const clip = { left: L.rail.x, right: L.rail.x + L.rail.w, top: L.rail.y - 4, bottom: L.rail.y + L.rail.h + 4 };
+    drawTag(ctx, taken, { ...clip, top: L.rail.y + 2 }); // the tag may sit inside the ring (it is beside the train)
+    if (ring) taken.push(ring);
     const P = (x, out) => toScreen(x, GROUND, POST_Z, out);
     const f0 = P(0, sp[0]);
     const f1 = P(10, sp[1]);
@@ -691,13 +798,67 @@ export function createApp(root, options = {}) {
     }
   }
 
+  /** A tag (white pill, coloured edge and words) at the first free spot; its box, or null. */
+  function placeTag(ctx, taken, text, spots, color, bounds) {
+    const size = L.side || stage.height >= 330 ? 13 : 12;
+    ctx.font = `700 ${size}px ${FONT}`;
+    const w = ctx.measureText(text).width + 14;
+    const h = size + 10;
+    for (const [x, y, align] of spots) {
+      const left = align === 'left' ? x : align === 'right' ? x - w : x - w / 2;
+      const box = { left, top: y - h, right: left + w, bottom: y };
+      if (box.left < bounds.left || box.right > bounds.right || box.top < bounds.top || box.bottom > bounds.bottom) continue;
+      if (taken.some((b) => box.left < b.right && box.right > b.left && box.top < b.bottom && box.bottom > b.top)) continue;
+      ctx.beginPath();
+      ctx.roundRect(box.left, box.top, w, h, h / 2);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+      ctx.fill();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.6;
+      ctx.stroke();
+      ctx.fillStyle = color;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, box.left + w / 2, box.top + h / 2 + 0.5);
+      taken.push(box);
+      return box;
+    }
+    return null;
+  }
+  /** The tapped letter's tag over the train (V: the imagined train's own name says it). */
+  function drawTag(ctx, taken, clip) {
+    const k = s.mode === 'quiz' ? null : s.hl;
+    if (!k || k === 'V') return;
+    const { u, a, t: tt } = s.plan;
+    const sign = a > 0 ? 'up' : a < 0 ? 'down' : 'zero';
+    const text = t(k === 'a' ? `tag_a_${sign}` : `tag_${k}`, { u: fmt(u), v: fmt(r.v), a: fmt(a), b: fmt(-a), t: fmt(tt), s: fmt(r.s) });
+    const color = { u: COLORS.u, v: COLORS.vel, a: COLORS.accel, t: COLORS.time, s: COLORS.distDark }[k];
+    const x = train.root.position.x;
+    const top = toScreen(x - TRAIN_LENGTH / 2, 4.4, TRACKS.near, sp[0]);
+    const nose = toScreen(x, 4.4, TRACKS.near, sp[1]);
+    const low = toScreen(x - TRAIN_LENGTH / 2, GROUND, TRACKS.near + 2.6, sp[2]);
+    placeTag(
+      ctx,
+      taken,
+      text,
+      [
+        [top.x, top.y - 4, 'center'],
+        [nose.x, top.y - 4, 'right'],
+        [nose.x - (nose.x - top.x) * 2, top.y - 4, 'left'],
+        [low.x, low.y + 26, 'center'],
+      ],
+      color,
+      clip,
+    );
+  }
+
   /** The trip bar's ends on the canvas and its scale. */
   function barGeometry() {
     const B = L.bar;
     const short = B.h < 34;
     return { x0: B.x + 10, x1: B.x + B.w - 10, y: B.y + 2, h: short ? 12 : 14, S: s.barScale ?? Math.max(r.s, 0.001), short };
   }
-  /** The trip: from ০ to the whole distance, a segment per second (each second's distance written on it). */
+  /** The trip: from 0 to the whole distance, a segment per second (each second's distance written on it). */
   function drawBar(ctx, taken) {
     const { u, a } = s.plan;
     const G = barGeometry();
@@ -729,7 +890,7 @@ export function createApp(root, options = {}) {
     }
     if (s.tau > 0) {
       ctx.strokeStyle = COLORS.dist;
-      ctx.lineWidth = 1.4;
+      ctx.lineWidth = s.hl === 's' && s.mode !== 'quiz' ? 3 : 1.4;
       ctx.strokeRect(G.x0 + 0.5, G.y + 0.5, X(x) - G.x0 - 1, G.h - 1);
       ctx.beginPath();
       for (let k = 1; k < secs; k++) {
@@ -786,10 +947,12 @@ export function createApp(root, options = {}) {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, W, H);
     const taken = L.corner ? [L.corner] : [];
-    drawRail(ctx, taken);
+    const ring = action?.visible ? action.ringBox?.() : null;
+    drawRail(ctx, taken, ring);
+    railTaken = taken.filter((b) => b !== ring && b !== L.corner);
     // the trip bar and the graph sit on white
     ctx.fillStyle = '#fff';
-    if (L.side) ctx.fillRect(L.bar.x - 4, L.bar.y, L.bar.w + 8, L.bar.h);
+    if (L.side) ctx.fillRect(L.bar.x - 4, L.bar.y, L.bar.w + 8, H - L.bar.y);
     else ctx.fillRect(0, L.bar.y, W, H - L.bar.y);
     drawBar(ctx, taken);
     const { u, a, t: tt } = s.plan;
@@ -809,6 +972,8 @@ export function createApp(root, options = {}) {
       axisV: niceAxis(vTop),
       show: { ...s.show, plan: s.show.plan && gt <= 1e-9, cursor: shownMoment, tMark: Boolean(s.tMark) },
       swap,
+      split: s.mode !== 'quiz' && s.eq === 's2' && !s.playing,
+      hl: s.mode === 'quiz' ? null : s.hl,
       // live numbers with fixed decimals while it runs (steady readouts); stopped, no trailing zeros
       sText: t('lbl_s', { s: s.playing ? fixed(distanceAt(u, a, gt), 1) : fmt(distanceAt(u, a, gt), 2) }),
       cursorText: {
@@ -824,6 +989,9 @@ export function createApp(root, options = {}) {
         V: t('lbl_V', { V: fmt(r.V) }),
         formulaV: swap > 0 || s.mode === 'quiz' ? '' : t('lbl_formula_V'),
         tMark: s.tMark?.text ?? '',
+        ut: t('lbl_ut'),
+        half: t('lbl_half'),
+        stepA: a > 0 ? `+${N(fmt(a))}` : a < 0 ? N(fmt(a)) : '',
       },
       tMarkAt: s.tMark?.at,
       N,
@@ -880,7 +1048,6 @@ export function createApp(root, options = {}) {
     'pointerdown',
     (e) => {
       audio.unlock();
-      coach?.interrupt();
       const pt = canvasPoint(e);
       const kind = target(pt);
       if (!kind) return; // the camera controls take it (in the turned view)
@@ -892,7 +1059,6 @@ export function createApp(root, options = {}) {
         ui.canvasHost.setPointerCapture(e.pointerId);
       } catch {}
       if (kind === 'bar' || (kind === 'graph' && !drag.replay)) {
-        coach?.objectUsed();
         showAt(momentAt(kind, pt));
       }
     },
@@ -1025,6 +1191,7 @@ export function createApp(root, options = {}) {
     emit,
     audio,
     questions: 5,
+    action: { hide: (why) => action?.hide(why), show: (why) => action?.show(why) },
     hooks: {
       enter() {
         saved = { plan: { ...s.plan }, view: s.view };
@@ -1032,6 +1199,8 @@ export function createApp(root, options = {}) {
         s.playing = false;
         s.note = null;
         drag = null;
+        s.hl = null;
+        derive?.close();
         hideHint();
         // five different kinds of question, in a random order: one by a formula, the area under the graph, the
         // average velocity read off the graph, equal seconds with unequal distances, and no acceleration or braking
@@ -1041,7 +1210,7 @@ export function createApp(root, options = {}) {
       leave() {
         s.mode = 'explore';
         s.locked = false;
-        s.show = { ...ALL };
+        learnShow();
         s.graphTau = null;
         s.axisT = null;
         s.tMark = null;
@@ -1131,33 +1300,35 @@ export function createApp(root, options = {}) {
     },
   });
 
-  // ── first-use pointer: on the train ─────────────────────────────────────────
-  let coach = null;
-  if (o.coach) {
-    const pts = [{}, {}, {}];
-    coach = createCoach({
-      stage,
-      layer: ui.coachLayer,
-      t,
-      loupe: null,
-      tweener,
-      avoid: [ui.corner, ui.hint],
-      object: {
-        label: 'coach_tap',
-        candidates: () => {
-          const x = train.root.position.x;
-          return [
-            toScreen(x - TRAIN_LENGTH * 0.45, 2.4, TRACKS.near + 1.45, pts[0]),
-            toScreen(x - TRAIN_LENGTH * 0.25, 2.4, TRACKS.near + 1.45, pts[1]),
-            toScreen(x - TRAIN_LENGTH * 0.7, 2.4, TRACKS.near + 1.45, pts[2]),
-          ];
-        },
-        grabbable: (pt) => pick(pt) === 'train',
-        demo: null,
-        cancel: () => {},
-      },
-    });
-  }
+  // ── the one action: the big button in the panel and its numbered ring on the train (taps go through to it) ──
+  action = createAction({
+    stage,
+    layer: ui.coachLayer,
+    host: ui.$('.pvc-act-slot'),
+    t,
+    step: 1,
+    label: 'act_run',
+    icon: ICONS.play,
+    target: () => train.root,
+    pad: 6,
+    // the badge stays on the railway: clear of the corner buttons, the labels there, the trip bar and the graph
+    avoid: [
+      ui.corner,
+      ui.hint,
+      () => railTaken,
+      () => ({ left: 0, top: L.bar.y, right: L.side ? L.bar.x + L.bar.w : stage.width, bottom: stage.height }),
+    ],
+    pulse: o.coach,
+    onAct: () => toggleRun(),
+  });
+
+  // ── the derivation sheet ("সমীকরণ কীভাবে এল") ─────────────────────────────────
+  derive = createDerivation({
+    root,
+    t,
+    onChange: (st) => emit('derive', st),
+  });
+  derive.setPlan(s.plan);
 
   // ── buttons, keys ───────────────────────────────────────────────────────────
   function syncUI() {
@@ -1170,16 +1341,19 @@ export function createApp(root, options = {}) {
     }
     ui.learn.inert = s.mode === 'quiz';
     ui.quiz.inert = s.mode !== 'quiz';
-    coach?.setMode(s.mode);
   }
   const fullscreenBtn = ui.$('[data-act="fullscreen"]');
   if (fullscreenBtn && !document.fullscreenEnabled) fullscreenBtn.hidden = true;
   root.addEventListener('click', (e) => {
     const target0 = /** @type {Element} */ (e.target);
-    if (target0.closest('[data-eq="s"]') && s.mode !== 'quiz') replaySwap(); // the s = Vt row shows the fold again
     const b = /** @type {HTMLElement} */ (target0.closest('button'));
     if (!b || !root.contains(b)) return;
     audio.unlock();
+    if (b.dataset.example) chooseEq(b.dataset.example);
+    if (b.dataset.sym) {
+      highlight(b.dataset.sym);
+      if (s.hl === 'V' || (s.hl === 's' && s.eq === 'Vt')) replaySwap(); // V (or s in s = Vt): the fold again
+    }
     if (b.dataset.view) setView(b.dataset.view);
     if (b.dataset.mode === 'quiz' && s.mode !== 'quiz') quiz.start();
     if (b.dataset.mode === 'explore') quiz.stop();
@@ -1195,8 +1369,8 @@ export function createApp(root, options = {}) {
       case 'q-again':
         quiz.start();
         break;
-      case 'run':
-        toggleRun();
+      case 'derive':
+        if (s.mode !== 'quiz') derive?.open(1, 0);
         break;
       case 'fullscreen':
         if (document.fullscreenElement) document.exitFullscreen?.();
@@ -1207,6 +1381,7 @@ export function createApp(root, options = {}) {
   root.addEventListener('keydown', (e) => {
     const target0 = /** @type {Element} */ (e.target);
     if (target0.closest('input, textarea, select') || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (derive?.state.open) return; // the sheet has its own keys
     const k = e.key.toLowerCase();
     const learning = s.mode !== 'quiz'; // in the test the picture belongs to the question
     if ((k === ' ' || k === 'enter') && !target0.closest('button')) {
@@ -1231,7 +1406,6 @@ export function createApp(root, options = {}) {
   refresh();
   const ready = (async () => {
     if (o.mode === 'quiz') quiz.start();
-    else coach?.start(1200);
   })();
 
   return {
@@ -1257,11 +1431,21 @@ export function createApp(root, options = {}) {
       if (p0.time != null) showAt(p0.time === 'end' ? s.plan.t : Number(p0.time) || 0);
       if (p0.playing === true && !s.playing) play();
       if (p0.playing === false) pause();
+      if (p0.eq != null) chooseEq(String(p0.eq));
+      if (p0.hl !== undefined) highlight(p0.hl ? String(p0.hl) : null, false);
+      if (p0.derive != null && s.mode !== 'quiz') {
+        if (p0.derive) derive?.open(Number(p0.derive) || 1, Number(p0.part) || 0);
+        else derive?.close();
+      }
       return snapshot();
     },
     async reset() {
       quiz.stop();
+      derive?.close();
       s.note = null;
+      s.eq = 'v';
+      s.hl = null;
+      learnShow();
       s.plan = fixPlan({});
       r = solve(s.plan);
       showAt(0);
