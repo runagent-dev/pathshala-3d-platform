@@ -25,8 +25,14 @@ describe('pickToken', () => {
     });
     assert.deepEqual(pickToken({ tokenEnv: 'LIBRARY_TOKEN', env: { [READ_TOKEN_ENV]: '  ' } }), { token: undefined, source: null });
   });
-  it('an --apply never publishes with the read token', () => {
+  it('an --apply never publishes with the read token, not even when it is named', () => {
     assert.deepEqual(pickToken({ tokenEnv: 'LIBRARY_TOKEN', apply: true, env: { [READ_TOKEN_ENV]: READ } }), { token: undefined, source: null });
+    assert.throws(
+      () => pickToken({ tokenEnv: READ_TOKEN_ENV, apply: true, env: { [READ_TOKEN_ENV]: READ } }),
+      /cannot publish with LIBRARY_READ_TOKEN/,
+    );
+    // a dry run may name it
+    assert.deepEqual(pickToken({ tokenEnv: READ_TOKEN_ENV, env: { [READ_TOKEN_ENV]: READ } }), { token: READ, source: READ_TOKEN_ENV });
   });
 });
 

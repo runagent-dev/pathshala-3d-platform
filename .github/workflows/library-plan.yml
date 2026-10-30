@@ -1,6 +1,7 @@
 # What a pull request would change in the Chalk library: a dry run of `npm run library:sync`, shown on the pull request.
 # It writes nothing. It reads the library with the read-only secret LIBRARY_READ_TOKEN (a key with the reader role); a pull request
 # from a fork gets no secrets: then it reads openly if the library allows that, and otherwise skips the library part and says so.
+# A branch of this repository runs its own code with the read token: accepted, it cannot write (docs/ci-library-sync.md, Secrets).
 # It fails when a figure the pull request touches is `blocked` (usually: its files changed but its version did not).
 # Docs: docs/ci-library-sync.md
 name: Library plan

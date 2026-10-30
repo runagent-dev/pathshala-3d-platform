@@ -127,7 +127,7 @@ seen on PR #58; the checks never run). Whatever is chosen below, the first step 
 | `LIBRARY_SYNC_HOOK_TOKEN` | secret | same environment | the same value as on the Books server (Coolify app `chalkbook-internal:main`) |
 | `LIBRARY_SYNC_HOOK_URL` | variable | same environment | `https://internal.pathshalax.com/api/library-sync/hook` |
 | `LIBRARY_ADMIN_TOKEN` | secret | **only** environment `library-withdraw` | an administrator token; used only by the deletion workflow |
-| `LIBRARY_READ_TOKEN` | secret | **repository** secret (Actions), so the PR plan, the nightly drift check and the publish workflow's plan and check steps all get it | a library API key with **only the `reader` role** (`chalk-library key add ci-read --roles reader`), needed once the library is set to `PUBLIC_READ=false`. It cannot write, so it is safe outside the protected environment. Pull requests from forks do not get it |
+| `LIBRARY_READ_TOKEN` | secret | **repository** secret (Actions), so the PR plan, the nightly drift check and the publish workflow's plan and check steps all get it | a library API key with **only the `reader` role** (`chalk-library key add ci-read --roles reader`), needed once the library is set to `PUBLIC_READ=false`. It cannot write, so it is kept outside the protected environment. Pull requests from forks do not get it; a pull request from a branch of this repository does, and runs that branch's code with it: anyone who can push a branch can read it (as they can every repository secret, by editing a workflow on their branch). That is accepted because it only reads; rotate it (`DELETE /v1/admin/keys/{id}`, then a new key) if someone with push access leaves |
 
 Rules for the workflows:
 

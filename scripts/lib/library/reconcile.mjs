@@ -69,6 +69,8 @@ export const READ_TOKEN_ENV = 'LIBRARY_READ_TOKEN';
  */
 export function pickToken(o) {
   const env = o.env ?? process.env;
+  if (o.apply && o.tokenEnv === READ_TOKEN_ENV)
+    throw new Error(`--apply cannot publish with ${READ_TOKEN_ENV}: it is a read-only key; use LIBRARY_TOKEN (a key with the author role)`);
   /** @param {string | undefined} name */
   const value = (name) => (name ? env[name]?.trim() || undefined : undefined);
   if (o.token) return { token: o.token, source: 'the caller' };
