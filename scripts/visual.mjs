@@ -21,7 +21,7 @@ import pixelmatch from 'pixelmatch';
 import { PNG } from 'pngjs';
 import { allFigures } from './check/index.mjs';
 import { hashPaths, RENDER_HARNESS, renderHash } from './lib/ci/figure-hashes.mjs';
-import { CHROMIUM_ARGS, openFigure, preparePage, readFigureManifest } from './lib/export/driver.mjs';
+import { CHROMIUM_ARGS, openFigure, preparePage } from './lib/export/driver.mjs';
 import { CACHE_DIR, ROOT } from './lib/paths.mjs';
 import { serveStatic } from './lib/static-server.mjs';
 
@@ -55,11 +55,12 @@ function touchedFigures(base) {
   return ids;
 }
 
-async function shoot(browser, baseUrl, id, viewport) {
+async function shoot(browser, baseUrl, id, viewport, root) {
   const page = await browser.newPage({ viewport });
   try {
     const log = await preparePage(page);
-    const params = readFigureManifest(id).export?.poster?.params || {};
+    // the poster settings of the checkout being drawn (the base's own on the base side), as its render hash describes
+    const params = JSON.parse(fs.readFileSync(path.join(root, 'assets', id, 'asset.json'), 'utf8')).export?.poster?.params || {};
     const fig = await openFigure(page, id, { base: baseUrl, params, harness: false });
     await fig.advance(SETTLE_MS);
     const png = await page.screenshot({ animations: 'disabled' });
@@ -154,13 +155,13 @@ async function main() {
       for (const vp of VISUAL_VIEWPORTS) {
         const viewport = `${vp.width}x${vp.height}`;
         const name = `${id}-${viewport}`;
-        const head = await shotFor(headHash, () => shoot(browser, after.url, id, vp), vp);
+        const head = await shotFor(headHash, () => shoot(browser, after.url, id, vp, ROOT), vp);
         fs.writeFileSync(path.join(OUT, `${name}-head.png`), head.png);
         if (!inBase) {
           rows.push({ id, viewport, status: 'new', head: `${name}-head.png`, note: `not in ${base}` });
           continue;
         }
-        const old = await shotFor(baseHash, () => shoot(browser, before.url, id, vp), vp);
+        const old = await shotFor(baseHash, () => shoot(browser, before.url, id, vp, BASE_DIR), vp);
         fs.writeFileSync(path.join(OUT, `${name}-base.png`), old.png);
         const { changed, diff } = compare(old.png, head.png);
         if (diff && changed) fs.writeFileSync(path.join(OUT, `${name}-diff.png`), diff);

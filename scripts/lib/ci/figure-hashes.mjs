@@ -19,6 +19,7 @@ export const TEST_HARNESS = [
   'playwright.config.js',
   'playwright.config.ts',
   'package-lock.json',
+  '.nvmrc',
   'scripts/dev.mjs',
   'scripts/studio',
   'scripts/lib/export',
@@ -31,7 +32,14 @@ export const TEST_HARNESS = [
 ];
 
 /** Files and folders that decide how the visual comparison draws a figure. */
-export const RENDER_HARNESS = ['scripts/visual.mjs', 'scripts/lib/export', 'scripts/lib/static-server.mjs', 'shared/fonts', 'package-lock.json'];
+export const RENDER_HARNESS = [
+  'scripts/visual.mjs',
+  'scripts/lib/export',
+  'scripts/lib/static-server.mjs',
+  'shared/fonts',
+  'package-lock.json',
+  '.nvmrc',
+];
 
 const readText = (file) => (fs.existsSync(file) ? fs.readFileSync(file, 'utf8').trim() : '');
 

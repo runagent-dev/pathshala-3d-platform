@@ -42,6 +42,16 @@ describe('library sync lock', () => {
     lock.release();
   });
 
+  it('respects a lock file that is still empty (another run has just made it), but takes over an old damaged one', () => {
+    const file = lockFile();
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, '');
+    assert.throws(() => acquireLock(file), LockedError);
+    const old = new Date(Date.now() - 60_000);
+    fs.utimesSync(file, old, old);
+    acquireLock(file).release();
+  });
+
   it('respects a lock held on another machine, whatever its pid', () => {
     const file = lockFile();
     fs.mkdirSync(path.dirname(file), { recursive: true });

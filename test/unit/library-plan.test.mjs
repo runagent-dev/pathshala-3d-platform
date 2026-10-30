@@ -210,6 +210,10 @@ describe('library planner', () => {
     assert.deepEqual(summarize(plans), { new: 1, changed: 0, repair: 0, unchanged: 1, withdraw: 1, blocked: 0 });
   });
 
+  it('a figure in the repo that could not be planned (a broken asset.json) is never planned for withdrawal', () => {
+    assert.deepEqual(planAll({ locals: [], records: complete('broken'), knownIds: ['broken'] }), []);
+  });
+
   it('with a selection of figures, nothing is planned for withdrawal', () => {
     const plans = planAll({ locals: [local({ id: 'present' })], records: [...complete('present'), ...complete('removed')], detectRemoved: false });
     assert.deepEqual(

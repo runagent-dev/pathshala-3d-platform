@@ -167,12 +167,13 @@ export function planFigure({ id, local, remote }) {
   return plan;
 }
 
-/** Plans all figures; figures in the library but not in `locals` (when `detectRemoved`) are planned for withdrawal. */
-export function planAll({ locals, records, detectRemoved = true }) {
+/** Plans all figures; figures in the library but not in `locals` or `knownIds` (when `detectRemoved`) are planned for withdrawal. */
+export function planAll({ locals, records, detectRemoved = true, knownIds = [] }) {
   const remote = groupByFigure(records);
   const plans = locals.map((local) => planFigure({ id: local.id, local, remote: remote.get(local.id) }));
   if (detectRemoved) {
-    const present = new Set(locals.map((l) => l.id));
+    // knownIds: figures that exist in the repo but could not be planned (a broken asset.json): they are blocked, never "removed"
+    const present = new Set([...locals.map((l) => l.id), ...knownIds]);
     for (const [id, r] of [...remote].sort(([a], [b]) => a.localeCompare(b)))
       if (!present.has(id)) plans.push(planFigure({ id, local: null, remote: r }));
   }
