@@ -6,7 +6,11 @@
 //   npm run test:visual                         working tree vs origin/main (or HEAD when there is no remote)
 //   npm run test:visual -- --base baseline-2026-10-24
 //   npm run test:visual -- --figures screw-gauge,si-prefixes
+//   npm run test:visual -- --changed            only figures whose inputs differ from the base (CI)
 //
+// A picture depends only on the figure's files, the kit modules it imports and the renderer (lib/ci/figure-hashes.mjs), so
+// pictures are kept in .cache/visual-shots under that hash and drawn again only when it changes; --changed leaves out the
+// figures whose hash is the same on both sides.
 // A difference in a figure whose own files did not change (for example after a shared kit change) fails the run;
 // differences in figures you changed are reported only. The report is test-results/visual/index.html.
 import { execFileSync } from 'node:child_process';
@@ -16,7 +20,8 @@ import { chromium } from '@playwright/test';
 import pixelmatch from 'pixelmatch';
 import { PNG } from 'pngjs';
 import { allFigures } from './check/index.mjs';
-import { CHROMIUM_ARGS, openFigure, preparePage, readFigureManifest } from './lib/export/driver.mjs';
+import { renderHarness, renderHash } from './lib/ci/figure-hashes.mjs';
+import { CHROMIUM_ARGS, openFigure, preparePage } from './lib/export/driver.mjs';
 import { CACHE_DIR, ROOT } from './lib/paths.mjs';
 import { serveStatic } from './lib/static-server.mjs';
 
@@ -26,6 +31,7 @@ export const VISUAL_VIEWPORTS = [
 ];
 const OUT = path.join(ROOT, 'test-results', 'visual');
 const BASE_DIR = path.join(CACHE_DIR, 'visual-base');
+const SHOT_DIR = path.join(CACHE_DIR, 'visual-shots');
 const SETTLE_MS = 1500; // virtual time after "ready" before the picture
 
 const git = (...args) => execFileSync('git', args, { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
@@ -49,17 +55,41 @@ function touchedFigures(base) {
   return ids;
 }
 
-async function shoot(browser, baseUrl, id, viewport) {
+async function shoot(browser, baseUrl, id, viewport, root) {
   const page = await browser.newPage({ viewport });
   try {
     const log = await preparePage(page);
-    const params = readFigureManifest(id).export?.poster?.params || {};
-    const fig = await openFigure(page, id, { base: baseUrl, params, harness: false });
+    // the poster settings of the checkout being drawn (the base's own on the base side), as its render hash describes
+    const manifest = JSON.parse(fs.readFileSync(path.join(root, 'assets', id, 'asset.json'), 'utf8'));
+    const params = manifest.export?.poster?.params || {};
+    const entry = `/assets/${id}/${manifest.entry || 'index.html'}`; // the entry page of this checkout, which a rename may have changed
+    const fig = await openFigure(page, id, { base: baseUrl, path: entry, params, harness: false });
     await fig.advance(SETTLE_MS);
     const png = await page.screenshot({ animations: 'disabled' });
     return { png, errors: [...log.errors, ...log.external.map((u) => `external: ${u}`)] };
   } finally {
     await page.close();
+  }
+}
+
+/** The picture for a hash and size: from the saved ones, or drawn now and saved. Without a hash it is always drawn. */
+async function shotFor(hash, draw, vp) {
+  const file = hash ? path.join(SHOT_DIR, `${hash}-${vp.width}x${vp.height}.png`) : null;
+  if (file && fs.existsSync(file)) return { png: fs.readFileSync(file), errors: [] };
+  const shot = await draw();
+  if (file && !shot.errors.length) {
+    fs.mkdirSync(SHOT_DIR, { recursive: true });
+    fs.writeFileSync(file, shot.png);
+  }
+  return shot;
+}
+
+/** A figure's render hash in a checkout, or null when it cannot be worked out (then it is always drawn). */
+function hashOf(id, root, harness) {
+  try {
+    return renderHash(id, { root, harness });
+  } catch {
+    return null;
   }
 }
 
@@ -99,6 +129,7 @@ async function main() {
   };
   const base = opt('base') || (hasRef('origin/main') ? 'origin/main' : 'HEAD');
   if (!hasRef(base)) throw new Error(`unknown base "${base}"`);
+  const changedOnly = args.includes('--changed');
   const only = opt('figures')?.split(',').filter(Boolean);
   const figures = only || allFigures();
 
@@ -110,20 +141,31 @@ async function main() {
   const [before, after] = await Promise.all([serveStatic(BASE_DIR), serveStatic(ROOT)]);
   const browser = await chromium.launch({ args: CHROMIUM_ARGS });
   const touched = touchedFigures(base);
+  // both sides are drawn by this checkout's code (visual.mjs, the driver, the server), from each checkout's own files: a base
+  // picture is kept under the base's inputs and this renderer, never under the base's own renderer it was not drawn with
+  const harnessHead = renderHarness(ROOT);
+  const harnessBase = renderHarness(BASE_DIR, ROOT);
   const rows = [];
+  let skipped = 0;
   try {
     for (const id of figures) {
       const inBase = fs.existsSync(path.join(BASE_DIR, 'assets', id, 'asset.json'));
+      const headHash = hashOf(id, ROOT, harnessHead);
+      const baseHash = inBase ? hashOf(id, BASE_DIR, harnessBase) : null;
+      if (changedOnly && inBase && headHash && headHash === baseHash) {
+        skipped++;
+        continue;
+      }
       for (const vp of VISUAL_VIEWPORTS) {
         const viewport = `${vp.width}x${vp.height}`;
         const name = `${id}-${viewport}`;
-        const head = await shoot(browser, after.url, id, vp);
+        const head = await shotFor(headHash, () => shoot(browser, after.url, id, vp, ROOT), vp);
         fs.writeFileSync(path.join(OUT, `${name}-head.png`), head.png);
         if (!inBase) {
           rows.push({ id, viewport, status: 'new', head: `${name}-head.png`, note: `not in ${base}` });
           continue;
         }
-        const old = await shoot(browser, before.url, id, vp);
+        const old = await shotFor(baseHash, () => shoot(browser, before.url, id, vp, BASE_DIR), vp);
         fs.writeFileSync(path.join(OUT, `${name}-base.png`), old.png);
         const { changed, diff } = compare(old.png, head.png);
         if (diff && changed) fs.writeFileSync(path.join(OUT, `${name}-diff.png`), diff);
@@ -147,6 +189,7 @@ async function main() {
     await Promise.all([before.close(), after.close()]);
     git('worktree', 'remove', '--force', BASE_DIR);
   }
+  if (changedOnly) console.log(`\n${skipped} figure(s) left out: the same inputs on both sides, so the same pictures.`);
   report(rows, base);
   const failed = rows.filter((r) => r.status === 'fail');
   console.log(`\nReport: ${path.relative(ROOT, path.join(OUT, 'index.html'))}`);

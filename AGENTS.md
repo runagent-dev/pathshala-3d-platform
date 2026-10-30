@@ -109,6 +109,7 @@ These are checked where possible (`npm run check`, the browser tests); the rest 
 | `npm run find -- p21` | Figures on a page, in a topic, or by name |
 | `npm run package -- <id>` | The handoff zip in `dist/` (byte-identical for the same commit) |
 | `npm run export -- <id>` | Zip, pictures, GLB (and video with `--formats all`) → `exports/`; `--official` releases (docs/exports.md) |
+| `npm run library:sync` | Dry run: what differs between the figures and the Chalk library; `--apply` publishes labs, posters and models (docs/library-sync.md) |
 | `npm run generate` | Rewrites generated files |
 
 ## Definition of done
@@ -132,6 +133,7 @@ reply in the studio.
   so the same commit always renders the same pixels.
 - Put a figure's own tests in `assets/<id>/tests/*.spec.mjs` (see the template); drive it with
   `openFigure` / `call` from `scripts/lib/export/driver.mjs`.
+- What CI runs and skips, and why: `docs/ci.md`.
 - Pure maths goes in unit tests under `test/unit/` (`import … from '../../assets/<id>/src/reading.js'`).
 
 ## Layout

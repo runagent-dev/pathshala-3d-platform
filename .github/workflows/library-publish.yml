@@ -1,0 +1,96 @@
+# Publishes the figures to the Chalk library: runs `npm run library:sync --apply` when a commit lands on the `prod` branch,
+# or by hand (Actions → Library publish → Run workflow; a dry run by default). New figures are added, changed figures get a
+# new version (the old items are marked state:superseded, nothing is overwritten), unchanged figures cost nothing, and
+# the Books server is told, so books move to the new versions (major versions wait for a person).
+# The secrets live in the `library-production` environment, never in a pull request's run. Docs: docs/ci-library-sync.md
+name: Library publish
+
+on:
+  push:
+    branches: [prod]
+    # the studio pushes reviews, status and notes on its own: they are not part of a figure's items
+    paths-ignore: ['assets/*/reviews/**', 'assets/*/status.json', 'assets/*/NOTES.md']
+  workflow_dispatch:
+    inputs:
+      only: { description: 'figure ids, comma separated (empty = all)', required: false, default: '' }
+      formats: { description: 'lab,poster,glb (video is slow)', required: false, default: 'lab,poster,glb' }
+      dry_run: { description: 'only plan, publish nothing', type: boolean, default: true }
+
+# two publishes never run at once, and a running one is never cancelled halfway
+concurrency:
+  group: library-publish
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Publish to the library
+    runs-on: ubuntu-24.04
+    # a manual run can pick any branch: only `prod` may publish (the environment should say the same; this does not rely on it)
+    if: github.ref == 'refs/heads/prod'
+    environment: library-production
+    timeout-minutes: 120
+    env:
+      LIBRARY_URL: ${{ vars.LIBRARY_URL || 'https://library.pathshalax.com' }}
+      FORMATS: ${{ inputs.formats || 'lab,poster,glb' }}
+      ONLY: ${{ inputs.only }}
+      # a push publishes; a manual run publishes only when "dry run" is switched off
+      APPLY: ${{ github.event_name == 'push' || inputs.dry_run == false }}
+      PATHSHALA_MIN_FREE_GB: '4'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version-file: .nvmrc, cache: npm }
+      - run: npm ci
+      # 1. look first (only the read-only token, no browser)
+      - name: Plan
+        id: plan
+        env: { LIBRARY_READ_TOKEN: '${{ secrets.LIBRARY_READ_TOKEN }}' }
+        run: |
+          args=(--library "$LIBRARY_URL" --tier production --formats "$FORMATS" --report plan.json)
+          [ -n "$ONLY" ] && args+=(--only "$ONLY")
+          node scripts/library-sync.mjs "${args[@]}"
+          node scripts/ci/library-summary.mjs plan.json --heading "Plan" >> "$GITHUB_STEP_SUMMARY"
+          node scripts/ci/library-work.mjs plan.json >> "$GITHUB_OUTPUT"
+
+      # Chromium is only needed to build labs, posters and models: not when everything is unchanged
+      - if: steps.plan.outputs.work == 'true' && steps.plan.outputs.browser == 'true'
+        uses: ./.github/actions/playwright
+
+      # 2. publish: the only step that sees the secrets
+      - name: Publish
+        if: env.APPLY == 'true' && steps.plan.outputs.work == 'true'
+        env:
+          LIBRARY_TOKEN: ${{ secrets.LIBRARY_TOKEN }}
+          LIBRARY_SYNC_HOOK_URL: ${{ secrets.LIBRARY_SYNC_HOOK_URL }}
+          LIBRARY_SYNC_HOOK_TOKEN: ${{ secrets.LIBRARY_SYNC_HOOK_TOKEN }}
+        run: |
+          test -n "$LIBRARY_TOKEN" || { echo "The secret LIBRARY_TOKEN is not set in the library-production environment." >&2; exit 2; }
+          args=(--library "$LIBRARY_URL" --tier production --formats "$FORMATS" --apply --report publish.json)
+          [ -n "$ONLY" ] && args+=(--only "$ONLY")
+          set +e
+          node scripts/library-sync.mjs "${args[@]}"
+          code=$?
+          [ -f publish.json ] && node scripts/ci/library-summary.mjs publish.json --heading "Published" --fail-on failed,library >> "$GITHUB_STEP_SUMMARY"
+          exit $code
+
+      # 3. look again: everything must now be unchanged (a figure removed from the repo is only a warning here)
+      - name: Check the library is up to date
+        if: env.APPLY == 'true' && steps.plan.outputs.work == 'true'
+        env: { LIBRARY_READ_TOKEN: '${{ secrets.LIBRARY_READ_TOKEN }}' }
+        run: |
+          args=(--library "$LIBRARY_URL" --tier production --formats "$FORMATS" --check --report check.json)
+          [ -n "$ONLY" ] && args+=(--only "$ONLY")
+          node scripts/library-sync.mjs "${args[@]}" || true
+          node scripts/ci/library-summary.mjs check.json --heading "Check after publishing" --fail-on new,changed,repair,library >> "$GITHUB_STEP_SUMMARY"
+
+      # 4. a figure the plan refused (usually: files changed, version not) is a failed release, not a quiet green run
+      - name: Fail when a figure was refused
+        if: always() && steps.plan.conclusion == 'success'
+        run: node scripts/ci/library-summary.mjs plan.json --heading "Refused by the plan" --fail-on blocked >> "$GITHUB_STEP_SUMMARY"
+
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with: { name: library-reports, path: '*.json', retention-days: 30, if-no-files-found: ignore }
