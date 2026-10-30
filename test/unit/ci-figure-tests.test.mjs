@@ -131,7 +131,7 @@ describe('planning a run', () => {
 
   it('tests every figure when the test harness, the browser config or the Node version changes (the markers still skip those that passed)', () => {
     const r = makeRepo();
-    for (const f of ['test/figures/layout.spec.mjs', 'playwright.config.mjs', '.nvmrc', 'package-lock.json']) {
+    for (const f of ['test/figures/layout.spec.mjs', 'test/harness.html', 'playwright.config.mjs', '.nvmrc', 'package-lock.json']) {
       assert.equal(harnessAffected([f]), true, f);
       const plan = planRun({ root: r.root, ids: ['a', 'b', 'c'], changedFiles: [f], markersDir: path.join(r.root, 'markers'), touchedOf: () => [] });
       assert.deepEqual(plan.figures, ['a', 'b', 'c'], f);

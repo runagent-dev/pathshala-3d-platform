@@ -166,6 +166,12 @@ describe('library planner', () => {
     assert.equal(p.withdraw.length, 4, 'the superseded lab is left alone');
   });
 
+  it('a removed figure with two current labs (an interrupted run) withdraws both', () => {
+    const records = [...complete(), item('f', 'lab', { published: '20250101T000000000Z' })];
+    const p = planFigure({ id: 'f', local: null, remote: groupByFigure(records).get('f') });
+    assert.equal(p.withdraw.length, 5);
+  });
+
   it('a figure that is in neither place is nothing to do', () => {
     assert.equal(planFigure({ id: 'f', local: null, remote: undefined }).category, 'unchanged');
   });

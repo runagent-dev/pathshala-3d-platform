@@ -81,7 +81,8 @@ export function planFigure({ id, local, remote }) {
 
   if (!local) {
     // removed from the repo: its current items are withdrawn, but only when the caller allows it
-    const items = [cur.manifest, cur.lab, cur.poster, cur.video, ...Object.values(cur.glb)].filter(Boolean);
+    // duplicates (two current items for one part, after an interrupted run) are withdrawn too: an older current manifest would stay discoverable
+    const items = [cur.manifest, cur.lab, cur.poster, cur.video, ...Object.values(cur.glb), ...cur.duplicates].filter(Boolean);
     plan.category = has ? 'withdraw' : 'unchanged';
     plan.withdraw = items;
     plan.reasons.push('the figure is no longer in the repo');

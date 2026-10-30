@@ -62,7 +62,31 @@ export function acquireLock(file, info = {}) {
           holder,
         );
       }
-      fs.rmSync(file, { force: true }); // stale: its process is gone
+      // stale: its process is gone. Moved aside (not deleted) so that two contenders cannot both delete a lock that a third has
+      // just taken: if what was moved is not the lock judged stale, it is put back and this run backs off.
+      const aside = `${file}.stale-${process.pid}`;
+      try {
+        fs.renameSync(file, aside);
+      } catch {
+        continue; // someone else already took it over: try the "create" again
+      }
+      let moved = null;
+      try {
+        moved = JSON.parse(fs.readFileSync(aside, 'utf8'));
+      } catch {
+        // still unreadable: the damaged one we meant to remove
+      }
+      const same = holder ? moved?.pid === holder.pid && moved?.startedAt === holder.startedAt : moved === null;
+      if (!same) {
+        try {
+          fs.linkSync(aside, file);
+        } catch {
+          // another run has made a new lock since: that one stands, and this copy is dropped
+        }
+        fs.rmSync(aside, { force: true });
+        throw new LockedError(`another sync took the lock ${file} while it was being cleared; try again in a moment`, moved);
+      }
+      fs.rmSync(aside, { force: true });
     }
   }
   throw new LockedError(`could not take the lock ${file}`, null);

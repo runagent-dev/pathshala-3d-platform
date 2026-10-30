@@ -19,7 +19,7 @@ export const relevantFiles = (files) => files.filter((f) => !STUDIO_ONLY.test(f)
 export const templatesAffected = (files) => relevantFiles(files).some((f) => /^(templates|shared|scripts)\//.test(f) || f === 'package-lock.json');
 
 /** Changes to what runs the figure tests (not a figure's own files): every figure is a candidate, and the markers decide which really run. */
-const HARNESS_CHANGE = /^(test\/figures\/|playwright\.config\.|\.nvmrc$|package(-lock)?\.json$)/;
+const HARNESS_CHANGE = /^(test\/(figures\/|harness\.html$)|playwright\.config\.|\.nvmrc$|package(-lock)?\.json$)/;
 export const harnessAffected = (files) => relevantFiles(files).some((f) => HARNESS_CHANGE.test(f));
 
 const markerFile = (dir, hash) => path.join(dir, hash);

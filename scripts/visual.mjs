@@ -60,8 +60,10 @@ async function shoot(browser, baseUrl, id, viewport, root) {
   try {
     const log = await preparePage(page);
     // the poster settings of the checkout being drawn (the base's own on the base side), as its render hash describes
-    const params = JSON.parse(fs.readFileSync(path.join(root, 'assets', id, 'asset.json'), 'utf8')).export?.poster?.params || {};
-    const fig = await openFigure(page, id, { base: baseUrl, params, harness: false });
+    const manifest = JSON.parse(fs.readFileSync(path.join(root, 'assets', id, 'asset.json'), 'utf8'));
+    const params = manifest.export?.poster?.params || {};
+    const entry = `/assets/${id}/${manifest.entry || 'index.html'}`; // the entry page of this checkout, which a rename may have changed
+    const fig = await openFigure(page, id, { base: baseUrl, path: entry, params, harness: false });
     await fig.advance(SETTLE_MS);
     const png = await page.screenshot({ animations: 'disabled' });
     return { png, errors: [...log.errors, ...log.external.map((u) => `external: ${u}`)] };

@@ -15,6 +15,8 @@ import { walkFilesSync } from '../library/files.mjs';
 /** Files and folders (relative to the repo root) that decide how the browser tests behave. */
 export const TEST_HARNESS = [
   'test/figures',
+  'test/harness.html',
+  'shared/lib/host.js',
   'playwright.config.mjs',
   'playwright.config.js',
   'playwright.config.ts',
