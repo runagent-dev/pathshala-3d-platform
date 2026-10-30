@@ -1,5 +1,6 @@
 # What a pull request would change in the Chalk library: a dry run of `npm run library:sync`, shown on the pull request.
-# It writes nothing and uses no secret (the library is read openly), so it is safe for pull requests from forks.
+# It writes nothing. It reads the library with the read-only secret LIBRARY_READ_TOKEN (a key with the reader role); a pull request
+# from a fork gets no secrets: then it reads openly if the library allows that, and otherwise skips the library part and says so.
 # It fails when a figure the pull request touches is `blocked` (usually: its files changed but its version did not).
 # Docs: docs/ci-library-sync.md
 name: Library plan
@@ -30,17 +31,37 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version-file: .nvmrc, cache: npm }
       - run: npm ci
+      # can this run read the library? with the read token; else openly, if the library still allows that (401/403: it does not)
+      - id: access
+        env: { LIBRARY_READ_TOKEN: '${{ secrets.LIBRARY_READ_TOKEN }}' }
+        run: |
+          if [ -n "$LIBRARY_READ_TOKEN" ]; then echo "read=token" >> "$GITHUB_OUTPUT"; exit 0; fi
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 "$LIBRARY_URL/v1/search?limit=1" || true)
+          if [ "$code" = 401 ] || [ "$code" = 403 ]; then echo "read=none" >> "$GITHUB_OUTPUT"; else echo "read=open" >> "$GITHUB_OUTPUT"; fi
       # only the figures this pull request touches (their files, or the kit files they import)
       - id: plan
+        if: steps.access.outputs.read != 'none'
+        env: { LIBRARY_READ_TOKEN: '${{ secrets.LIBRARY_READ_TOKEN }}' }
         run: |
           set +e
           node scripts/library-sync.mjs --library "$LIBRARY_URL" --tier production --changed-since "$BASE" --report plan.json
           echo "code=$?" >> "$GITHUB_OUTPUT"
       - id: summary
+        env: { READ: '${{ steps.access.outputs.read }}' }
         run: |
           set +e
-          node scripts/ci/library-summary.mjs plan.json --heading "Library plan" --fail-on blocked,failed > summary.md
-          echo "code=$?" >> "$GITHUB_OUTPUT"
+          if [ "$READ" = none ]; then
+            {
+              echo '### Library plan: skipped'
+              echo
+              echo "The library at \`$LIBRARY_URL\` needs a token to be read, and this run has none: a pull request from a fork gets no secrets (or the repository secret \`LIBRARY_READ_TOKEN\` is not set). Nothing was compared with the library; the plan runs again when a maintainer pushes the change to a branch of this repository."
+            } > summary.md
+            echo "::notice title=Library plan skipped::the library needs a token to be read and this run has none (LIBRARY_READ_TOKEN)"
+            echo "code=0" >> "$GITHUB_OUTPUT"
+          else
+            node scripts/ci/library-summary.mjs plan.json --heading "Library plan" --fail-on blocked,failed > summary.md
+            echo "code=$?" >> "$GITHUB_OUTPUT"
+          fi
           cat summary.md >> "$GITHUB_STEP_SUMMARY"
       # a pull request from a fork gets a read-only token: it keeps the job summary instead of a comment
       - if: github.event.pull_request.head.repo.full_name == github.repository
@@ -50,7 +71,7 @@ jobs:
       - if: always()
         uses: actions/upload-artifact@v4
         with: { name: library-plan, path: plan.json, retention-days: 30, if-no-files-found: ignore }
-      - if: steps.plan.outputs.code != '0' || steps.summary.outputs.code != '0'
+      - if: (steps.access.outputs.read != 'none' && steps.plan.outputs.code != '0') || steps.summary.outputs.code != '0'
         run: |
           echo "The plan found a problem: see the job summary (blocked or failed figures)." >&2
           exit 1

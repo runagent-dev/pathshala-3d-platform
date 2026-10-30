@@ -80,7 +80,7 @@ for books that pin them, and a run that is repeated or interrupted finishes the 
 
 | Trigger | Does | Publishes? | Notes |
 |---|---|---|---|
-| `pull_request` touching `assets/**`, `shared/**`, `scripts/lib/library/**`, `package-lock.json` | dry run against the library; comments the plan table; **fails when a figure is `blocked` or `failed`** | no | needs no secret (library reads are open), so it also works for PRs from forks; this is the version-bump check |
+| `pull_request` touching `assets/**`, `shared/**`, `scripts/lib/library/**`, `package-lock.json` | dry run against the library; comments the plan table; **fails when a figure is `blocked` or `failed`** | no | reads with the `LIBRARY_READ_TOKEN` secret; a PR from a fork gets none and then reads openly, or skips the library part when the library needs a token (never fails for it); this is the version-bump check |
 | `push` to `main` (same paths, `paths-ignore` the studio's data files) | publishes the state of that commit | yes, after approval | idempotent: the whole repo state is planned, unchanged figures cost nothing, so no `--changed-since` is needed |
 | `workflow_dispatch` | the same, with inputs: `only` (figure ids), `formats`, `dry_run` (default **true**) | only when `dry_run` is off | for a first publish, a re-send, posters or models later |
 | `schedule` nightly | `--check`: fails when the library is behind | no | the safety net: a missed run, a failed run, a hand-edited library |
@@ -127,13 +127,16 @@ seen on PR #58; the checks never run). Whatever is chosen below, the first step 
 | `LIBRARY_SYNC_HOOK_TOKEN` | secret | same environment | the same value as on the Books server (Coolify app `chalkbook-internal:main`) |
 | `LIBRARY_SYNC_HOOK_URL` | variable | same environment | `https://internal.pathshalax.com/api/library-sync/hook` |
 | `LIBRARY_ADMIN_TOKEN` | secret | **only** environment `library-withdraw` | an administrator token; used only by the deletion workflow |
+| `LIBRARY_READ_TOKEN` | secret | **repository** secret (Actions), so the PR plan, the nightly drift check and the publish workflow's plan and check steps all get it | a library API key with **only the `reader` role** (`chalk-library key add ci-read --roles reader`), needed once the library is set to `PUBLIC_READ=false`. It cannot write, so it is safe outside the protected environment. Pull requests from forks do not get it |
 
 Rules for the workflows:
 
 - **Environment with required reviewers** on `library-production`: a publish waits for a person's approval. (A push to `main`
   already passed review as a PR; the approval is the second look at *publishing*. Owners may drop it for push if they trust
   the PR check.) Branch restriction: only `main`.
-- **No secrets for fork PRs** (GitHub's default: keep it). The PR job needs none (library reads are open).
+- **No secrets for fork PRs** (GitHub's default: keep it). The PR job reads the library with `LIBRARY_READ_TOKEN`; without it (a fork, or
+  the secret not created yet) it reads openly while the library allows that, and when the library answers 401/403 it **skips the library
+  part**: the job summary (and, for a branch of this repo, the PR comment) says "Library plan: skipped" and why, and the job passes.
 - **Least privilege:** `permissions: contents: read` (the PR job adds `pull-requests: write` to comment).
 - **Pin third-party actions by full commit SHA** in the new workflows (the existing `ci.yml` uses tags; do not copy that). Look
   the SHAs up when building (`gh api repos/actions/checkout/git/ref/tags/v4`); the sketch below has `<sha>` placeholders on
@@ -298,7 +301,7 @@ jobs:
       - uses: actions/setup-node@<sha> # v4
         with: { node-version-file: .nvmrc, cache: npm }
       - run: npm ci
-      # a dry run reads the library (open reads: no secret) and builds the labs to size them; it writes nothing
+      # a dry run reads the library (with the read-only LIBRARY_READ_TOKEN once reads need a token) and builds the labs to size them; it writes nothing
       - run: node scripts/library-sync.mjs --library "$LIBRARY_URL" --tier production --formats lab,poster,glb --report plan.json
       # blocked does not change the sync's exit code: read the report. (to write: scripts/ci/library-summary.mjs)
       - run: node scripts/ci/library-summary.mjs plan.json --fail-on blocked,failed >> "$GITHUB_STEP_SUMMARY"
@@ -379,7 +382,7 @@ jobs:
       - uses: actions/setup-node@<sha> # v4
         with: { node-version-file: .nvmrc, cache: npm }
       - run: npm ci
-      # exit 1 when the library is behind the repo; no secret needed
+      # exit 1 when the library is behind the repo; needs only the read-only LIBRARY_READ_TOKEN
       - run: node scripts/library-sync.mjs --library https://library.pathshalax.com --tier production --formats lab,poster,glb --check --report drift.json
 ```
 

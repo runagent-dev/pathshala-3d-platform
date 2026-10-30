@@ -44,9 +44,10 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version-file: .nvmrc, cache: npm }
       - run: npm ci
-      # 1. look first (no token, no browser)
+      # 1. look first (only the read-only token, no browser)
       - name: Plan
         id: plan
+        env: { LIBRARY_READ_TOKEN: '${{ secrets.LIBRARY_READ_TOKEN }}' }
         run: |
           args=(--library "$LIBRARY_URL" --tier production --formats "$FORMATS" --report plan.json)
           [ -n "$ONLY" ] && args+=(--only "$ONLY")
@@ -78,6 +79,7 @@ jobs:
       # 3. look again: everything must now be unchanged (a figure removed from the repo is only a warning here)
       - name: Check the library is up to date
         if: env.APPLY == 'true' && steps.plan.outputs.work == 'true'
+        env: { LIBRARY_READ_TOKEN: '${{ secrets.LIBRARY_READ_TOKEN }}' }
         run: |
           args=(--library "$LIBRARY_URL" --tier production --formats "$FORMATS" --check --report check.json)
           [ -n "$ONLY" ] && args+=(--only "$ONLY")

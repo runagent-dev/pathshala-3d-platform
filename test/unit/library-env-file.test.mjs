@@ -41,7 +41,7 @@ describe('env file', () => {
     assert.equal(env.PATH, undefined);
     assert.equal(r.open, false);
     assert.ok(!JSON.stringify(r).includes('from-file'));
-    assert.deepEqual(ENV_FILE_KEYS, ['LIBRARY_TOKEN', 'LIBRARY_SYNC_HOOK_URL', 'LIBRARY_SYNC_HOOK_TOKEN']);
+    assert.deepEqual(ENV_FILE_KEYS, ['LIBRARY_TOKEN', 'LIBRARY_READ_TOKEN', 'LIBRARY_SYNC_HOOK_URL', 'LIBRARY_SYNC_HOOK_TOKEN']);
   });
 
   it('a missing file is fine, and a file others can read is reported', () => {

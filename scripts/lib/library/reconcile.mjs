@@ -57,6 +57,27 @@ function writeJsonAtomic(file, data) {
   fs.renameSync(tmp, file);
 }
 
+/** The environment variable a run that only reads may take its token from: a key with the reader role, never one that can write. */
+export const READ_TOKEN_ENV = 'LIBRARY_READ_TOKEN';
+
+/**
+ * The token a run sends to the library. An --apply needs the write token (--token-env, default LIBRARY_TOKEN) and reads with it too. A dry
+ * run reads with the write token when there is one, else with LIBRARY_READ_TOKEN, else with none (a library that is open for reading answers
+ * anyway; one with PUBLIC_READ=false says a token is needed). Returns the token and the name of the variable it came from, never printed.
+ * @param {{ token?: string, tokenEnv?: string, apply?: boolean, env?: Record<string, string | undefined> }} o
+ * @returns {{ token: string | undefined, source: string | null }}
+ */
+export function pickToken(o) {
+  const env = o.env ?? process.env;
+  /** @param {string | undefined} name */
+  const value = (name) => (name ? env[name]?.trim() || undefined : undefined);
+  if (o.token) return { token: o.token, source: 'the caller' };
+  const write = value(o.tokenEnv);
+  if (write) return { token: write, source: o.tokenEnv ?? null };
+  const read = o.apply ? undefined : value(READ_TOKEN_ENV);
+  return read ? { token: read, source: READ_TOKEN_ENV } : { token: undefined, source: null };
+}
+
 /** Checks the options and fills the defaults; throws Error with a message for the person at the keyboard. */
 export function normalizeOptions(o) {
   const config = o.config ?? loadConfig();
@@ -65,7 +86,7 @@ export function normalizeOptions(o) {
   const formats = parseFormats(o.formats ?? config.formats ?? DEFAULT_FORMATS);
   const apply = Boolean(o.apply);
   if (apply && !o.library) throw new Error('--apply needs --library <address of the library server>');
-  const token = o.token ?? (o.tokenEnv ? process.env[o.tokenEnv] : undefined);
+  const { token, source: tokenSource } = pickToken({ token: o.token, tokenEnv: o.tokenEnv, apply, env: o.env });
   if (apply && !token) throw new Error(`--apply needs a token: set the environment variable ${o.tokenEnv || '(--token-env NAME)'}`);
   const lic = resolveLicense({ cli: o.license, config: config.license, tier });
   if (apply && lic.problems.length) throw new Error(lic.problems[0]);
@@ -78,6 +99,7 @@ export function normalizeOptions(o) {
     apply,
     library: o.library || null,
     token,
+    tokenSource,
     license: lic.license,
     licenseWarnings: lic.warnings,
     only: o.only
@@ -132,6 +154,7 @@ export async function reconcile(rawOptions) {
   const startedAt = new Date().toISOString();
   try {
     const library = opt.library ? createLibrary(opt.library, { token: opt.token, fetch: opt.fetch }) : null;
+    if (library) log(`library ${opt.library}: ${opt.tokenSource ? `reading with the token from ${opt.tokenSource}` : 'reading without a token'}`);
     const snapshot = library ? await library.snapshot() : [];
     const remote = groupByFigure(snapshot);
     const tools = toolVersions(opt.root, { libraries: opt.libraries });

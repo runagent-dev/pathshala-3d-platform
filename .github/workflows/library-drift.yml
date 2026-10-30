@@ -1,5 +1,6 @@
 # Every night: is the library behind the figures in `prod`? A dry run that fails when something is new, changed or missing
-# there (a publish failed, or a figure was merged without being published). Writes nothing and uses no secret.
+# there (a publish failed, or a figure was merged without being published). Writes nothing; reads the library with the read-only
+# secret LIBRARY_READ_TOKEN (a key with the reader role), which a library with PUBLIC_READ=false needs.
 # Docs: docs/ci-library-sync.md
 name: Library drift
 
@@ -23,7 +24,9 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version-file: .nvmrc, cache: npm }
       - run: npm ci
-      - run: |
+      - env: { LIBRARY_READ_TOKEN: '${{ secrets.LIBRARY_READ_TOKEN }}' }
+        run: |
+          [ -n "$LIBRARY_READ_TOKEN" ] || echo "::warning title=No LIBRARY_READ_TOKEN::the drift check reads the library without a token; it fails once the library needs one to be read"
           node scripts/library-sync.mjs --library "$LIBRARY_URL" --tier production --check --report drift.json || true
           node scripts/ci/library-summary.mjs drift.json --heading "Library drift" --fail-on new,changed,repair,blocked,library,failed >> "$GITHUB_STEP_SUMMARY"
       - if: always()
