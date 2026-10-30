@@ -26,21 +26,25 @@ export const timeToLift = (m, P, h = H) => roundTo(workToLift(m, h) / P, 1e-6);
 /** Kilograms a pump of power P lifts through h in t seconds: m = Pt / (gh). */
 export const massLifted = (P, t, h = H) => roundTo((P * t) / (G * h), 1e-6);
 
+/** @typedef {{ P: number, t: number, m: number, W: number }} Pump one pump's run: W, s, kg, J */
+
 /**
  * One example's plan: how long each pump runs and how much it lifts.
  * 'work' (একই কাজ): both fill FULL kg, so they stop at different times. 'time' (একই সময়): both run SAME_TIME s.
  * @param {'work' | 'time'} example
  * @param {number} [mass] kg each pump fills in 'work'
  * @param {number} [T] s each pump runs in 'time'
+ * @returns {{ small: Pump, big: Pump, total: number }}
  */
 export function plan(example, mass = FULL, T = SAME_TIME) {
+  /** @type {Record<string, Pump>} */
   const out = {};
   for (const [id, P] of Object.entries(PUMPS)) {
     const t = example === 'time' ? T : timeToLift(mass, P);
     const m = example === 'time' ? massLifted(P, T) : mass;
     out[id] = { P, t, m, W: workToLift(m) };
   }
-  return { ...out, total: Math.max(out.small.t, out.big.t) };
+  return { small: out.small, big: out.big, total: Math.max(out.small.t, out.big.t) };
 }
 
 /**
