@@ -106,42 +106,41 @@ describe('library sync lock', () => {
     assert.equal(fs.existsSync(file), false);
   });
 
-  it('waits for another takeover in progress, however old, and clears a guard whose run is gone', async () => {
+  it('waits for another takeover in progress, however old, and goes past a guard whose run is gone without removing it', async () => {
     const file = lockFile();
     fs.mkdirSync(path.dirname(file), { recursive: true });
     const dead = { pid: 999999, host: os.hostname(), startedAt: 'dead' };
     fs.writeFileSync(file, JSON.stringify(dead));
-    const guard = `${file}.takeover`;
     const old = new Date(Date.now() - 60_000);
-    // a live (if slow) run holds the guard: never cleared for its age
-    fs.writeFileSync(guard, JSON.stringify({ pid: process.pid, host: os.hostname(), startedAt: 'slow' }));
-    fs.utimesSync(guard, old, old);
+    // a live (if slow) run holds guard 1: never passed for its age
+    fs.writeFileSync(`${file}.takeover.1`, JSON.stringify({ pid: process.pid, host: os.hostname(), startedAt: 'slow' }));
+    fs.utimesSync(`${file}.takeover.1`, old, old);
     assert.throws(() => takeOver(file, dead), LockedError);
-    assert.equal(fs.existsSync(guard), true);
     assert.equal(fs.existsSync(file), true);
-    // its run is gone: cleared, and the next attempt takes over
+    // its run is gone: this run takes guard 2, takes over, and removes only its own guard
     const child = spawn(process.execPath, ['-e', ''], { stdio: 'ignore' });
     await new Promise((resolve) => child.on('exit', resolve));
-    fs.writeFileSync(guard, JSON.stringify({ pid: child.pid, host: os.hostname(), startedAt: 'died' }));
-    assert.throws(() => takeOver(file, dead), LockedError);
-    assert.equal(fs.existsSync(guard), false);
+    fs.writeFileSync(`${file}.takeover.1`, JSON.stringify({ pid: child.pid, host: os.hostname(), startedAt: 'died' }));
     takeOver(file, dead);
     assert.equal(fs.existsSync(file), false);
-    // an unreadable guard: respected while new, cleared once old
+    assert.equal(fs.existsSync(`${file}.takeover.1`), true);
+    assert.equal(fs.existsSync(`${file}.takeover.2`), false);
+    // guard 2 taken by someone else meanwhile: this run backs off
     fs.writeFileSync(file, JSON.stringify(dead));
-    fs.writeFileSync(guard, '');
-    assert.throws(() => takeOver(file, dead), LockedError);
-    assert.equal(fs.existsSync(guard), true);
-    fs.utimesSync(guard, old, old);
-    assert.throws(() => takeOver(file, dead), LockedError);
-    assert.equal(fs.existsSync(guard), false);
+    fs.writeFileSync(`${file}.takeover.2`, JSON.stringify({ pid: child.pid, host: os.hostname(), startedAt: 'raced' }));
+    fs.rmSync(`${file}.takeover.2`);
+    fs.writeFileSync(`${file}.takeover.2`, '');
+    assert.throws(() => takeOver(file, dead), LockedError); // an unreadable guard is respected while new
+    fs.utimesSync(`${file}.takeover.2`, old, old);
+    takeOver(file, dead); // and passed once old
+    assert.equal(fs.existsSync(file), false);
+    assert.deepEqual(fs.readdirSync(path.dirname(file)).sort(), ['sync.lock.takeover.1', 'sync.lock.takeover.2']);
   });
 
   it('does not remove a guard that is no longer its own', () => {
     const file = lockFile();
     fs.mkdirSync(path.dirname(file), { recursive: true });
-    // simulated: the lock read happens, then someone else's guard is found in place of ours
-    const guard = `${file}.takeover`;
+    const guard = `${file}.takeover.1`;
     const other = { pid: process.pid, host: os.hostname(), startedAt: 'other' };
     const realRead = fs.readFileSync;
     const spy = mock.method(fs, 'readFileSync', (/** @type {any} */ f, /** @type {any} */ opts) => {

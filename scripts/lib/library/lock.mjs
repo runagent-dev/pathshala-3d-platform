@@ -1,7 +1,7 @@
 // One sync at a time per cache folder: two runs publishing at once could each demote what the other just made current.
 // The lock is a file made with the "create, fail if it exists" flag. A lock left by a run that died (its process is gone, on
 // this machine) is taken over; one held by a live process, or by another machine, is respected. Taking over is serialised by a
-// second file, `<lock>.takeover`, made the same way: only its holder removes a lock that is not its own.
+// takeover guard (`<lock>.takeover.<n>`, see takeOver): only its holder removes a lock that is not its own.
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -15,7 +15,7 @@ export class LockedError extends Error {
 }
 
 const UNREADABLE_GRACE_MS = 10_000;
-// an unreadable takeover guard this old was left by a run that died while creating it
+// an unreadable (damaged) takeover guard this old is counted as dead
 const GUARD_STALE_MS = 30_000;
 
 const alive = (pid) => {
@@ -37,39 +37,57 @@ const readLock = (file) => {
   }
 };
 
+/** The takeover guards of a lock, `<lock>.takeover.<n>`, highest number first. */
+const guardsOf = (file) => {
+  const base = `${path.basename(file)}.takeover.`;
+  return fs
+    .readdirSync(path.dirname(file))
+    .filter((n) => n.startsWith(base) && /^\d+$/.test(n.slice(base.length)))
+    .map((n) => Number(n.slice(base.length)))
+    .sort((x, y) => y - x);
+};
+
 /**
- * Removes the stale lock `judged` (null: an old unreadable one) while holding `<file>.takeover`; throws LockedError when another
- * run is taking it over. The guard says who holds it, like the lock: it is cleared only when its process is gone (this machine),
- * never for its age alone, so a run that is merely slow (paused, swapped out) keeps it. An unreadable guard (its run died between
- * creating and writing it, a few microseconds) is cleared once it is old.
+ * Removes the stale lock `judged` (null: an old unreadable one) while holding a takeover guard; throws LockedError when another
+ * run is taking it over.
+ *
+ * Guards are numbered, `<lock>.takeover.<n>`, and nobody ever removes another run's guard. A run takes the number after the
+ * highest guard there is, and only when that guard's run is gone (on this machine); a live one, however slow, is waited for.
+ * A guard is made complete in one step (written to a file of its own, then hard-linked to its name, which fails if the name
+ * exists), so two runs that find the same dead guard race for the same next number and exactly one gets it. A run removes its
+ * own guard when it is done; guards of runs that died stay behind as small files.
  */
 export function takeOver(file, judged) {
-  const guard = `${file}.takeover`;
+  const guards = guardsOf(file);
+  const top = guards[0];
+  if (top !== undefined) {
+    const at = `${file}.takeover.${top}`;
+    const { holder } = readLock(at);
+    const age = Date.now() - (fs.statSync(at, { throwIfNoEntry: false })?.mtimeMs ?? Date.now());
+    // a guard is never half-written (see below); an unreadable one is damaged, and counted as dead once it is old
+    const dead = holder ? holder.host === os.hostname() && !alive(holder.pid) : age > GUARD_STALE_MS;
+    if (!dead) {
+      throw new LockedError(
+        holder && holder.host !== os.hostname()
+          ? `another machine (${holder.host}) is taking over the stale lock ${file}; delete ${at} if you are sure it is dead`
+          : `another sync is taking over the stale lock ${file} right now; try again in a moment`,
+        null,
+      );
+    }
+  }
+  const guard = `${file}.takeover.${(top ?? 0) + 1}`;
   const mine = { pid: process.pid, host: os.hostname(), startedAt: `${new Date().toISOString()} ${Math.random()}` };
-  let fd;
+  const draft = `${guard}.${process.pid}.draft`;
+  fs.writeFileSync(draft, `${JSON.stringify(mine)}\n`);
   try {
-    fd = fs.openSync(guard, 'wx');
+    fs.linkSync(draft, guard);
   } catch (err) {
     if (err.code !== 'EEXIST') throw err;
-    const { holder } = readLock(guard);
-    const age = Date.now() - (fs.statSync(guard, { throwIfNoEntry: false })?.mtimeMs ?? Date.now());
-    const dead = holder ? holder.host === os.hostname() && !alive(holder.pid) : age > GUARD_STALE_MS;
-    if (dead) {
-      // read again just before removing, and only if it is still the dead one. Two runs clearing the same dead guard at the same
-      // instant could still both pass; that needs a run to die inside the takeover first.
-      const again = readLock(guard);
-      if (sameLock(holder, again.holder)) fs.rmSync(guard, { force: true });
-    }
-    throw new LockedError(
-      holder && !dead && holder.host !== os.hostname()
-        ? `another machine (${holder.host}) is taking over the stale lock ${file}; delete ${guard} if you are sure it is dead`
-        : `another sync is taking over the stale lock ${file} right now; try again in a moment`,
-      null,
-    );
+    throw new LockedError(`another sync is taking over the stale lock ${file} right now; try again in a moment`, null);
+  } finally {
+    fs.rmSync(draft, { force: true });
   }
   try {
-    fs.writeSync(fd, `${JSON.stringify(mine)}\n`);
-    fs.closeSync(fd);
     const now = readLock(file);
     // an unreadable lock is removed only while it is still old: a new one another run has just created is unreadable too
     const old = Date.now() - (fs.statSync(file, { throwIfNoEntry: false })?.mtimeMs ?? Date.now()) >= UNREADABLE_GRACE_MS;
