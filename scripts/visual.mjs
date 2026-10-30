@@ -20,7 +20,7 @@ import { chromium } from '@playwright/test';
 import pixelmatch from 'pixelmatch';
 import { PNG } from 'pngjs';
 import { allFigures } from './check/index.mjs';
-import { hashPaths, RENDER_HARNESS, renderHash } from './lib/ci/figure-hashes.mjs';
+import { renderHarness, renderHash } from './lib/ci/figure-hashes.mjs';
 import { CHROMIUM_ARGS, openFigure, preparePage } from './lib/export/driver.mjs';
 import { CACHE_DIR, ROOT } from './lib/paths.mjs';
 import { serveStatic } from './lib/static-server.mjs';
@@ -141,8 +141,10 @@ async function main() {
   const [before, after] = await Promise.all([serveStatic(BASE_DIR), serveStatic(ROOT)]);
   const browser = await chromium.launch({ args: CHROMIUM_ARGS });
   const touched = touchedFigures(base);
-  const harnessHead = hashPaths(ROOT, RENDER_HARNESS);
-  const harnessBase = hashPaths(BASE_DIR, RENDER_HARNESS);
+  // both sides are drawn by this checkout's code (visual.mjs, the driver, the server), from each checkout's own files: a base
+  // picture is kept under the base's inputs and this renderer, never under the base's own renderer it was not drawn with
+  const harnessHead = renderHarness(ROOT);
+  const harnessBase = renderHarness(BASE_DIR, ROOT);
   const rows = [];
   let skipped = 0;
   try {
