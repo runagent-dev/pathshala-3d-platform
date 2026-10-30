@@ -113,8 +113,10 @@ try {
     cacheDir: path.resolve(values['cache-dir'] || DEFAULT_CACHE_DIR),
   });
   const failed = report.figures.filter((f) => f.result === 'failed').length;
-  const behind = report.figures.filter((f) => ['new', 'changed', 'repair', 'withdraw'].includes(f.category)).length;
-  if (failed) process.exit(1);
+  const behind =
+    report.figures.filter((f) => ['new', 'changed', 'repair', 'withdraw'].includes(f.category)).length + (report.libraries?.missing?.length ?? 0);
+  // a shared library that could not be published leaves the labs without their runtime: that is a failure too
+  if (failed || report.libraries?.failed?.length) process.exit(1);
   if (values.check && behind) process.exit(1);
 } catch (err) {
   console.error(`library:sync: ${err.message}`);

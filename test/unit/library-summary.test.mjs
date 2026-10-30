@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, it } from 'node:test';
 import { ROOT } from '../../scripts/lib/paths.mjs';
-import { offenders, summarize } from '../../scripts/ci/library-summary.mjs';
+import { libraryOffenders, offenders, summarize } from '../../scripts/ci/library-summary.mjs';
 import { tempDir } from '../helpers.mjs';
 
 const report = {
@@ -23,6 +23,13 @@ const report = {
 };
 
 describe('library-summary', () => {
+  it('fails on a shared library that is missing (dry run) or could not be published (apply)', () => {
+    assert.deepEqual(libraryOffenders({ mode: 'dry-run', libraries: { missing: ['three'], failed: [] } }, ['library']), ['three']);
+    assert.deepEqual(libraryOffenders({ mode: 'apply', libraries: { missing: ['three'], failed: [] } }, ['library']), []);
+    assert.deepEqual(libraryOffenders({ mode: 'apply', libraries: { missing: ['three'], failed: ['three'] } }, ['library']), ['three']);
+    assert.deepEqual(libraryOffenders({ mode: 'dry-run', libraries: { missing: ['three'] } }, ['blocked']), []);
+  });
+
   it('lists what is not unchanged, with the reason, and escapes table pipes', () => {
     const md = summarize(report, { heading: 'Library plan', failOn: ['blocked'] });
     assert.match(md, /### Library plan/);

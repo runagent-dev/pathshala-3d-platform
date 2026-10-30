@@ -1,10 +1,19 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, it } from 'node:test';
 import { workOf } from '../../scripts/ci/library-work.mjs';
 import { testHash, renderHash } from '../../scripts/lib/ci/figure-hashes.mjs';
-import { figureOfSpec, passedFigures, planRun, recordPassed, relevantFiles, templatesAffected } from '../../scripts/lib/ci/figure-tests.mjs';
+import {
+  figureOfSpec,
+  harnessAffected,
+  passedFigures,
+  planRun,
+  recordPassed,
+  relevantFiles,
+  templatesAffected,
+} from '../../scripts/lib/ci/figure-tests.mjs';
 import { tempDir } from '../helpers.mjs';
 
 /** A small repo: figures a, b, c and a kit of x, y and an unused module (a imports x, b imports y, c imports both). */
@@ -120,6 +129,16 @@ describe('planning a run', () => {
     ]);
   });
 
+  it('tests every figure when the test harness, the browser config or the Node version changes (the markers still skip those that passed)', () => {
+    const r = makeRepo();
+    for (const f of ['test/figures/layout.spec.mjs', 'test/harness.html', 'playwright.config.mjs', '.nvmrc', 'package-lock.json']) {
+      assert.equal(harnessAffected([f]), true, f);
+      const plan = planRun({ root: r.root, ids: ['a', 'b', 'c'], changedFiles: [f], markersDir: path.join(r.root, 'markers'), touchedOf: () => [] });
+      assert.deepEqual(plan.figures, ['a', 'b', 'c'], f);
+    }
+    assert.equal(harnessAffected(['assets/a/src/main.js', 'docs/ci.md']), false);
+  });
+
   it('never tests a figure the change does not touch', () => {
     const r = makeRepo();
     const plan = planRun({
@@ -186,6 +205,11 @@ describe('remembering what passed', () => {
     assert.deepEqual(passedFigures(report), ['a', 'c']);
   });
 
+  it('does not count a figure whose tests were all skipped', () => {
+    const skipped = { suites: [{ file: 'assets/d/tests/figure.spec.mjs', specs: [spec('assets/d/tests/figure.spec.mjs', 'd', 'skipped')] }] };
+    assert.deepEqual(passedFigures(skipped), []);
+  });
+
   it('writes a marker per passed figure and removes markers no figure has any more', () => {
     const r = makeRepo();
     const markersDir = path.join(r.root, 'markers');
@@ -203,11 +227,24 @@ describe('what a library publish run needs', () => {
   it('needs nothing when everything is unchanged', () => {
     assert.deepEqual(workOf({ figures: [fig('unchanged', { lab: true })] }), { work: false, browser: false, figures: 0 });
   });
-  it('needs Chromium for a lab, a poster or a model, but not for a manifest alone', () => {
+  it('needs Chromium for a lab, a poster, a model or a manifest (which runs its lab in the sandbox), but not for a demotion alone', () => {
     assert.equal(workOf({ figures: [fig('new', { lab: true })] }).browser, true);
     assert.equal(workOf({ figures: [fig('repair', { glb: ['default'] })] }).browser, true);
     assert.equal(workOf({ figures: [fig('changed', { poster: true })] }).browser, true);
-    assert.deepEqual(workOf({ figures: [fig('changed', { manifest: true, glb: [] })] }), { work: true, browser: false, figures: 1 });
+    assert.deepEqual(workOf({ figures: [fig('changed', { manifest: true, glb: [] })] }), { work: true, browser: true, figures: 1 });
+    assert.deepEqual(workOf({ figures: [fig('repair', { manifest: false, glb: [] })] }), { work: true, browser: false, figures: 1 });
+  });
+  it('is work when a shared library is missing from the library, even with every figure unchanged', () => {
+    assert.equal(workOf({ figures: [fig('unchanged', {})], libraries: { missing: ['three'] } }).work, true);
+  });
+  it('ci-figures makes every figure a candidate when the diff base is unknown (an all-zero "before")', () => {
+    const markers = path.join(tempDir(), 'markers');
+    const script = path.join(import.meta.dirname, '..', '..', 'scripts', 'ci-figures.mjs');
+    const out = spawnSync(process.execPath, [script, '0000000000000000000000000000000000000000', '--markers', markers], { encoding: 'utf8' });
+    assert.equal(out.status, 0, out.stderr);
+    assert.match(out.stderr, /every figure is a candidate/);
+    assert.match(out.stdout, /^figures=.+$/m);
+    assert.match(out.stdout, /^templates=true$/m);
   });
   it('does not count blocked or withdrawn figures as work', () => {
     assert.equal(workOf({ figures: [fig('blocked', {}), fig('withdraw', {})] }).work, false);

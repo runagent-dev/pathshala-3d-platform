@@ -181,7 +181,12 @@ export async function reconcile(rawOptions) {
     // 3. the plan
     const plannable = selected.filter((l) => l.fp).map((l) => ({ ...l, problems: l.problems }));
     const broken = selected.filter((l) => !l.fp);
-    const plans = planAll({ locals: plannable, records: snapshot, detectRemoved: !opt.only.length && !opt.changedSince });
+    const plans = planAll({
+      locals: plannable,
+      records: snapshot,
+      detectRemoved: !opt.only.length && !opt.changedSince,
+      knownIds: locals.map((l) => l.id),
+    });
     for (const l of broken)
       plans.push({
         id: l.id,
@@ -245,6 +250,7 @@ export async function reconcile(rawOptions) {
         needed: needs,
         version: threeVersion,
         missing: missingLibraries,
+        failed: [], // shared libraries an --apply run could not publish
         keys: Object.fromEntries(needs.map((s) => [s, { key: libraryBuilds.get(s).key, origin: libraryBuilds.get(s).origin }])),
         catalog: catalog ? { commit: catalog.source.commit ?? null, ref: catalog.source.ref ?? null } : null,
       },
@@ -377,6 +383,7 @@ async function applyPlan({ opt, library, plans, byId, labs, remote, report, git,
     } catch (err) {
       log(`  library ${specifier}: FAILED ${err.message}`);
       report.notes.push(`library ${specifier} could not be published: ${err.message}`);
+      report.libraries.failed.push(specifier);
     }
   }
 

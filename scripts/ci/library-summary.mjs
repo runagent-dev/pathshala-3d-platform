@@ -5,7 +5,7 @@
 //   node scripts/ci/library-summary.mjs <report.json> [--fail-on blocked,failed] [--heading "Library plan"]
 //
 // Prints Markdown on stdout. Exit 1 when a figure is in one of the --fail-on states, 2 when the report cannot be read.
-//   States: the sync's categories (new, changed, repair, unchanged, withdraw, blocked) and results (failed, not-withdrawn).
+//   States: the sync's categories (new, changed, repair, unchanged, withdraw, blocked), results (failed, not-withdrawn) and `library` (a shared library missing or not published).
 import fs from 'node:fs';
 import { parseArgs } from 'node:util';
 
@@ -14,6 +14,12 @@ const CATEGORIES = ['new', 'changed', 'repair', 'unchanged', 'withdraw', 'blocke
 /** The states one figure is in: its category and, when the sync ran, its result. */
 export function statesOf(figure) {
   return [figure.category, figure.result].filter(Boolean);
+}
+
+/** Shared libraries in a state that fails: those an apply could not publish, or (dry run) those the library is missing. State `library`. */
+export function libraryOffenders(report, failOn) {
+  if (!failOn.includes('library')) return [];
+  return (report.mode === 'apply' ? report.libraries?.failed : report.libraries?.missing) ?? [];
 }
 
 /** The figures in any of the given states. */
@@ -50,6 +56,12 @@ export function summarize(report, { heading = 'Library sync', failOn = [] } = {}
   for (const n of report.notes ?? []) lines.push(`- ${n}`);
   if (report.notes?.length) lines.push('');
 
+  const badLibraries = libraryOffenders(report, failOn);
+  if (badLibraries.length)
+    lines.push(
+      `**Fails:** shared ${badLibraries.length > 1 ? 'libraries' : 'library'} ${badLibraries.map((s) => `\`${s}\``).join(', ')} (library).`,
+      '',
+    );
   const bad = offenders(report, failOn);
   if (bad.length)
     lines.push(
@@ -84,5 +96,5 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     .map((s) => s.trim())
     .filter(Boolean);
   console.log(summarize(report, { heading: values.heading, failOn }));
-  process.exit(offenders(report, failOn).length ? 1 : 0);
+  process.exit(offenders(report, failOn).length || libraryOffenders(report, failOn).length ? 1 : 0);
 }

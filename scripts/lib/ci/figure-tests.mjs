@@ -18,6 +18,10 @@ export const relevantFiles = (files) => files.filter((f) => !STUDIO_ONLY.test(f)
 /** Whether the templates (and the converter's browser tests) must run. */
 export const templatesAffected = (files) => relevantFiles(files).some((f) => /^(templates|shared|scripts)\//.test(f) || f === 'package-lock.json');
 
+/** Changes to what runs the figure tests (not a figure's own files): every figure is a candidate, and the markers decide which really run. */
+const HARNESS_CHANGE = /^(test\/(figures\/|harness\.html$)|playwright\.config\.|\.nvmrc$|package(-lock)?\.json$)/;
+export const harnessAffected = (files) => relevantFiles(files).some((f) => HARNESS_CHANGE.test(f));
+
 const markerFile = (dir, hash) => path.join(dir, hash);
 const hasMarkers = (dir) => fs.existsSync(dir) && fs.readdirSync(dir).length > 0;
 
@@ -26,7 +30,7 @@ const hasMarkers = (dir) => fs.existsSync(dir) && fs.readdirSync(dir).length > 0
  * inputs have no marker; with an empty marker folder (a cold cache) that is every figure the change touches.
  */
 export function planRun({ root, ids, changedFiles, markersDir, touchedOf = figuresTouched }) {
-  const touched = touchedOf(relevantFiles(changedFiles)).filter((id) => ids.includes(id));
+  const touched = (harnessAffected(changedFiles) ? ids : touchedOf(relevantFiles(changedFiles))).filter((id) => ids.includes(id));
   const warm = hasMarkers(markersDir);
   const harness = hashPaths(root, TEST_HARNESS);
   const figures = warm ? touched.filter((id) => !fs.existsSync(markerFile(markersDir, testHash(id, { root, harness })))) : touched;
@@ -42,19 +46,21 @@ export function figureOfSpec(spec) {
 
 /** From a Playwright JSON report: the figures that ran and had every one of their tests pass. */
 export function passedFigures(report) {
-  const status = new Map(); // id → true while every spec passed
+  const status = new Map(); // id → { ok: true while every spec passed, ran: at least one test really ran }
   const visit = (suite) => {
     for (const spec of suite.specs ?? []) {
       const id = figureOfSpec({ file: spec.file || suite.file, title: spec.title });
       if (!id) continue;
-      const ok = (spec.tests ?? []).length > 0 && spec.tests.every((t) => ['expected', 'skipped'].includes(t.status));
-      status.set(id, (status.get(id) ?? true) && ok);
+      const tests = spec.tests ?? [];
+      const ok = tests.length > 0 && tests.every((t) => ['expected', 'skipped'].includes(t.status));
+      const before = status.get(id) ?? { ok: true, ran: false };
+      status.set(id, { ok: before.ok && ok, ran: before.ran || tests.some((t) => t.status === 'expected') });
     }
     for (const child of suite.suites ?? []) visit({ ...child, file: child.file || suite.file });
   };
   for (const suite of report.suites ?? []) visit(suite);
   return [...status]
-    .filter(([, ok]) => ok)
+    .filter(([, s]) => s.ok && s.ran) // a figure whose tests were all skipped has not passed
     .map(([id]) => id)
     .sort();
 }

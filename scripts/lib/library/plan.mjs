@@ -81,7 +81,8 @@ export function planFigure({ id, local, remote }) {
 
   if (!local) {
     // removed from the repo: its current items are withdrawn, but only when the caller allows it
-    const items = [cur.manifest, cur.lab, cur.poster, cur.video, ...Object.values(cur.glb)].filter(Boolean);
+    // duplicates (two current items for one part, after an interrupted run) are withdrawn too: an older current manifest would stay discoverable
+    const items = [cur.manifest, cur.lab, cur.poster, cur.video, ...Object.values(cur.glb), ...cur.duplicates].filter(Boolean);
     plan.category = has ? 'withdraw' : 'unchanged';
     plan.withdraw = items;
     plan.reasons.push('the figure is no longer in the repo');
@@ -167,12 +168,13 @@ export function planFigure({ id, local, remote }) {
   return plan;
 }
 
-/** Plans all figures; figures in the library but not in `locals` (when `detectRemoved`) are planned for withdrawal. */
-export function planAll({ locals, records, detectRemoved = true }) {
+/** Plans all figures; figures in the library but not in `locals` or `knownIds` (when `detectRemoved`) are planned for withdrawal. */
+export function planAll({ locals, records, detectRemoved = true, knownIds = [] }) {
   const remote = groupByFigure(records);
   const plans = locals.map((local) => planFigure({ id: local.id, local, remote: remote.get(local.id) }));
   if (detectRemoved) {
-    const present = new Set(locals.map((l) => l.id));
+    // knownIds: figures that exist in the repo but could not be planned (a broken asset.json): they are blocked, never "removed"
+    const present = new Set([...locals.map((l) => l.id), ...knownIds]);
     for (const [id, r] of [...remote].sort(([a], [b]) => a.localeCompare(b)))
       if (!present.has(id)) plans.push(planFigure({ id, local: null, remote: r }));
   }

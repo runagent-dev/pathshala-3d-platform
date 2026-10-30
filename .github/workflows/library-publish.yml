@@ -28,6 +28,8 @@ jobs:
   publish:
     name: Publish to the library
     runs-on: ubuntu-24.04
+    # a manual run can pick any branch: only `prod` may publish (the environment should say the same; this does not rely on it)
+    if: github.ref == 'refs/heads/prod'
     environment: library-production
     timeout-minutes: 120
     env:
@@ -70,7 +72,7 @@ jobs:
           set +e
           node scripts/library-sync.mjs "${args[@]}"
           code=$?
-          [ -f publish.json ] && node scripts/ci/library-summary.mjs publish.json --heading "Published" --fail-on failed >> "$GITHUB_STEP_SUMMARY"
+          [ -f publish.json ] && node scripts/ci/library-summary.mjs publish.json --heading "Published" --fail-on failed,library >> "$GITHUB_STEP_SUMMARY"
           exit $code
 
       # 3. look again: everything must now be unchanged (a figure removed from the repo is only a warning here)
@@ -80,7 +82,12 @@ jobs:
           args=(--library "$LIBRARY_URL" --tier production --formats "$FORMATS" --check --report check.json)
           [ -n "$ONLY" ] && args+=(--only "$ONLY")
           node scripts/library-sync.mjs "${args[@]}" || true
-          node scripts/ci/library-summary.mjs check.json --heading "Check after publishing" --fail-on new,changed,repair >> "$GITHUB_STEP_SUMMARY"
+          node scripts/ci/library-summary.mjs check.json --heading "Check after publishing" --fail-on new,changed,repair,library >> "$GITHUB_STEP_SUMMARY"
+
+      # 4. a figure the plan refused (usually: files changed, version not) is a failed release, not a quiet green run
+      - name: Fail when a figure was refused
+        if: always() && steps.plan.conclusion == 'success'
+        run: node scripts/ci/library-summary.mjs plan.json --heading "Refused by the plan" --fail-on blocked >> "$GITHUB_STEP_SUMMARY"
 
       - if: always()
         uses: actions/upload-artifact@v4

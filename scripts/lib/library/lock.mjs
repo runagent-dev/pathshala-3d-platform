@@ -13,6 +13,8 @@ export class LockedError extends Error {
   }
 }
 
+const UNREADABLE_GRACE_MS = 10_000;
+
 const alive = (pid) => {
   try {
     process.kill(pid, 0);
@@ -48,16 +50,43 @@ export function acquireLock(file, info = {}) {
       try {
         holder = JSON.parse(fs.readFileSync(file, 'utf8'));
       } catch {
-        // unreadable: a lock being written right now, or damaged. Treated as held for a moment, then as stale.
+        // unreadable: a lock being written right now (held for a grace period), or damaged (then taken over).
       }
       const sameHost = holder?.host === os.hostname();
+      // an unreadable lock may be one another process has just created and not yet filled in: it is stale only once it is old
+      const fresh = !holder && Date.now() - (fs.statSync(file, { throwIfNoEntry: false })?.mtimeMs ?? 0) < UNREADABLE_GRACE_MS;
+      if (fresh) throw new LockedError(`another sync is taking the lock ${file} right now; try again in a moment`, null);
       if (holder && (!sameHost || alive(holder.pid))) {
         throw new LockedError(
           `another sync holds the lock (pid ${holder.pid} on ${holder.host}, started ${holder.startedAt}); wait for it, or delete ${file} if you are sure it is dead`,
           holder,
         );
       }
-      fs.rmSync(file, { force: true }); // stale: its process is gone
+      // stale: its process is gone. Moved aside (not deleted) so that two contenders cannot both delete a lock that a third has
+      // just taken: if what was moved is not the lock judged stale, it is put back and this run backs off.
+      const aside = `${file}.stale-${process.pid}`;
+      try {
+        fs.renameSync(file, aside);
+      } catch {
+        continue; // someone else already took it over: try the "create" again
+      }
+      let moved = null;
+      try {
+        moved = JSON.parse(fs.readFileSync(aside, 'utf8'));
+      } catch {
+        // still unreadable: the damaged one we meant to remove
+      }
+      const same = holder ? moved?.pid === holder.pid && moved?.startedAt === holder.startedAt : moved === null;
+      if (!same) {
+        try {
+          fs.linkSync(aside, file);
+        } catch {
+          // another run has made a new lock since: that one stands, and this copy is dropped
+        }
+        fs.rmSync(aside, { force: true });
+        throw new LockedError(`another sync took the lock ${file} while it was being cleared; try again in a moment`, moved);
+      }
+      fs.rmSync(aside, { force: true });
     }
   }
   throw new LockedError(`could not take the lock ${file}`, null);

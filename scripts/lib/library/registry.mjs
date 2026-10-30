@@ -23,8 +23,10 @@ export function createLibrary(base, { token, fetch: f = globalThis.fetch.bind(gl
     const headers = { ...(body ? { 'Content-Type': 'application/json' } : {}), ...(token ? { Authorization: `Bearer ${token}` } : {}) };
     const res = await f(root + path, { method, headers, ...(body ? { body: JSON.stringify(body) } : {}) });
     const data = res.status === 204 ? null : await res.json().catch(() => null);
+    // an error message from the server is shown in logs: the token is never part of it, even if the server echoes it
+    const clean = (text) => (token ? String(text).split(token).join('***') : String(text));
     if (!res.ok)
-      throw new LibraryError(res.status, data?.error?.code || 'failed', data?.error?.message || `HTTP ${res.status} for ${method} ${path}`);
+      throw new LibraryError(res.status, data?.error?.code || 'failed', clean(data?.error?.message || `HTTP ${res.status} for ${method} ${path}`));
     return data;
   }
 

@@ -15,14 +15,18 @@ import { walkFilesSync } from '../library/files.mjs';
 /** Files and folders (relative to the repo root) that decide how the browser tests behave. */
 export const TEST_HARNESS = [
   'test/figures',
+  'test/harness.html',
+  'shared/lib/host.js',
   'playwright.config.mjs',
   'playwright.config.js',
   'playwright.config.ts',
   'package-lock.json',
+  '.nvmrc',
   'scripts/dev.mjs',
   'scripts/studio',
   'scripts/lib/export',
   'scripts/lib/static-server.mjs',
+  'scripts/lib/mime.mjs',
   'scripts/lib/assets.mjs',
   'scripts/lib/depgraph.mjs',
   'shared/fonts',
@@ -31,7 +35,15 @@ export const TEST_HARNESS = [
 ];
 
 /** Files and folders that decide how the visual comparison draws a figure. */
-export const RENDER_HARNESS = ['scripts/visual.mjs', 'scripts/lib/export', 'scripts/lib/static-server.mjs', 'shared/fonts', 'package-lock.json'];
+export const RENDER_HARNESS = [
+  'scripts/visual.mjs',
+  'scripts/lib/export',
+  'scripts/lib/static-server.mjs',
+  'scripts/lib/mime.mjs',
+  'shared/fonts',
+  'package-lock.json',
+  '.nvmrc',
+];
 
 const readText = (file) => (fs.existsSync(file) ? fs.readFileSync(file, 'utf8').trim() : '');
 
