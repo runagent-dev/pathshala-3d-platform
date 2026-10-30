@@ -679,13 +679,6 @@ export function createApp(root, options = {}) {
     { dx: 10 * way, dy: -28 },
     { dx: 0, dy: 22 },
   ];
-  /** Behind an arrow's tail, on the side away from where it points. */
-  const tailSpots = (way) => [
-    { dx: -10 * way, dy: 0 },
-    { dx: -10 * way, dy: -8 },
-    { dx: -10 * way, dy: 8 },
-    { dx: -10 * way, dy: -16 },
-  ];
   /** Beside an arrow, past its tip (from its middle), on the side it points to. */
   const sideSpots = (way) => [
     { dx: 30 * way, dy: 0 },
