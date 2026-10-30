@@ -16,6 +16,9 @@ export class LibraryError extends Error {
 /** @param {string} base  the library's address, e.g. http://127.0.0.1:4900  @param {{ token?: string, fetch?: typeof fetch }} [o] */
 export function createLibrary(base, { token, fetch: f = globalThis.fetch.bind(globalThis) } = {}) {
   if (!base) throw new Error('no library address (--library)');
+  // a token a header cannot carry (a line break, a space) would make fetch throw an error quoting the whole header: refuse it first
+  if (token !== undefined && !/^[\x21-\x7e]+$/.test(token))
+    throw new Error('the library token is not valid: it has spaces, line breaks or other characters a header cannot carry');
   const root = base.endsWith('/') ? base : `${base}/`;
 
   /** @param {string} path @param {{ method?: string, body?: object }} [init] @returns {Promise<any>} */

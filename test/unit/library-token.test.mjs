@@ -65,6 +65,20 @@ describe('a library that needs a token to be read', () => {
     });
   });
 
+  it('refuses a token a header cannot carry before sending anything, without printing it', async () => {
+    const lib = fakeLibrary({ token: READ });
+    const bad = `${READ}\nsecond-line`;
+    assert.throws(
+      () => createLibrary('http://library.test', { token: bad, fetch: lib.fetch }),
+      (/** @type {any} */ err) => {
+        assert.match(err.message, /not valid/);
+        assert.equal(err.message.includes(READ), false);
+        return true;
+      },
+    );
+    assert.deepEqual(lib.auths, []);
+  });
+
   it('with a wrong token, says so and never prints it', async () => {
     const lib = fakeLibrary({ token: READ });
     await assert.rejects(createLibrary('http://library.test', { token: WRITE, fetch: lib.fetch }).snapshot(), (/** @type {any} */ err) => {
