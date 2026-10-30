@@ -1,0 +1,97 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "power",
+  "title": "Power (ক্ষমতা)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 120,
+  "topic": "4.7",
+  "placement": "Book page 120, topic 4.7: ক্ষমতা (Power). Next to the definition P = W/t, the unit box (W, ওয়াট; [P] = ML²T⁻³) and the paragraph on 1 W = 1 J each second, the 100 W bulb and the 1000 MW power plant.",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "Interactive 3D figure for textbook topic 4.7 (ক্ষমতা, Power), page 120. A sunny Bangladeshi house and courtyard: two electric pumps (a small blue one and a big red one) lift water from the underground tank through white PVC pipes into two see-through tanks on the roof, h = 3 m up, with a stopwatch beside each tank. Same work: both lift 500 kg (W = mgh = 14,700 J); the big pump fills its tank in 15 s, the small one in 30 s, so P = W/t = 980 W against 490 W, worked out live in a small W ÷ t = P table. Same time: both run 15 s and the big pump lifts twice the water, twice the work. The book's 100 W bulb over the door uses 100 J each second (1 W = 1 J/s), next to the book's 1000 MW power plant (1000 × 10⁶ J each second). Ideal pumps (no energy lost, efficiency is 4.8), time shown 3 times faster and said so. Five tap questions: a pump's power from the picture, same time, the bulb's energy, what a watt means, the power plant. The house, pumps, pipes and tanks export as GLB in metres. Offline, in Bangla and English.",
+  "tags": ["power", "work", "energy", "watt", "pump", "rate", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "example",
+      "label": "Example",
+      "type": "select",
+      "options": [
+        ["work", "same work, different times"],
+        ["time", "same time, different work"],
+        ["bulb", "the 100 W bulb"]
+      ],
+      "default": "work"
+    },
+    {
+      "name": "at",
+      "label": "Held at",
+      "type": "number",
+      "default": "",
+      "placeholder": "s",
+      "help": "seconds into the run (scene time; the pumps' runs take 30 s and 15 s, the bulb 10 s), held still (pictures); empty: before the run"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on the pumps pulses", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "run": true } },
+    { "name": "set", "payload": { "at": 21 } },
+    { "name": "set", "payload": { "done": true } },
+    { "name": "set", "payload": { "example": "time" } },
+    { "name": "set", "payload": { "example": "bulb", "run": true } },
+    { "name": "set", "payload": { "home": true } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "run", "stop", "example", "view", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": { "params": { "coach": "0", "at": "21" } },
+    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "at": 21, "animate": false } }] }],
+    "video": {
+      "kind": "script",
+      "seconds": 34,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 0.8, "command": "set", "payload": { "run": true } },
+        { "at": 13, "command": "set", "payload": { "example": "time" } },
+        { "at": 14, "command": "set", "payload": { "run": true } },
+        { "at": 21, "command": "set", "payload": { "example": "bulb" } },
+        { "at": 22, "command": "set", "payload": { "run": true } }
+      ]
+    }
+  }
+}

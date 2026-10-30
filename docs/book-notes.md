@@ -60,6 +60,15 @@ before designing; reviewers check against it. When a new decision is taken for a
 - A body at rest never carries a non-zero "লব্ধি বল" label: when a hand holds it, draw the hand's pull too
   (`balanced-forces`).
 
+## Work, energy and power (topics 4.1–4.8, pages 100–121)
+
+- Colours: work W green #237a35 (`work`, `power`); a distance along the force s, or a height h, blue #1c6fd9; the push F
+  orange #ff6a13 (`work`); time t crimson #c2255c (a stopwatch hand); power P grape #862e9c; potential energy violet
+  #6741d9 and kinetic energy amber #e8930c (`energy`, `kinetic-energy`).
+- Units as Latin symbols: N, m, s, kg, J (জুল glossed once), W (ওয়াট glossed once), ms⁻²; g = 9.8 ms⁻² as the
+  book's worked examples (p121).
+- `power` uses ideal pumps and says so; efficiency (কর্মদক্ষতা) is 4.8, p121.
+
 ## Open questions for the book team
 
 - The strength numbers in 3.2.2 vs 3.2.4 (above).
