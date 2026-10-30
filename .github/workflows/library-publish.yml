@@ -92,5 +92,5 @@ jobs:
         run: node scripts/ci/library-summary.mjs plan.json --heading "Refused by the plan" --fail-on blocked >> "$GITHUB_STEP_SUMMARY"
 
       - if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with: { name: library-reports, path: '*.json', retention-days: 30, if-no-files-found: ignore }
