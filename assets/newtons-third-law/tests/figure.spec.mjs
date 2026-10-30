@@ -233,6 +233,9 @@ test('third law: a guided fall, equal-force comparison and retryable mass questi
   await fig.advance(500);
   expect((await fig.call('get')).time).toBe(paused);
   await fig.frame.locator('.nt-math-dialog').press('Escape');
+  // the dialog's close event (which restarts the fall) is queued on the browser's own clock, not the virtual one: on a slow
+  // machine advancing at once would run before it, and the fall would not move
+  await expect.poll(async () => (await fig.call('get')).playing, { timeout: 15_000 }).toBe(true);
   await fig.advance(2200);
   expect(await fig.call('get')).toMatchObject({ done: true, playing: false, lesson: { step: 0, reason: null } });
   await expect(action).toContainText('বল দুটি তুলনা');
