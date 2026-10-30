@@ -5,7 +5,7 @@
   "title": "Newton's second law of motion (নিউটনের দ্বিতীয় গতি সূত্র)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "book": "physics-9-10",
   "page": 75,
   "topic": "3.6",
@@ -13,7 +13,7 @@
   "order": 1,
   "maintainers": ["RadeenXALNW"],
   "units": "m",
-  "description": "Vivid live 3D Newton second-law lesson for textbook topic 3.6, pages 75–76. A child rides a coral wagon pushed by an adult or two children; wheels turn, pushers walk and cargo changes the total mass. A live 3D free-body diagram shows individual pushes, friction, ground support and weight. Students can compare a smooth floor with a constant 20 N resisting force. The current force sum, F = ma and a = F/m follow the same motion state; a separate calculation sheet connects them to the textbook momentum derivation at constant mass in SI units. Cart 80 kg + passenger 20 kg form the 100 kg unloaded system; cargo adds 50 kg per sack. Four examples and five scene-based tap questions are retained. Offline, Bangla/English, with GLB export.",
+  "description": "Vivid live 3D Newton second-law lesson for textbook topic 3.6, pages 75–76. A child rides a coral wagon pushed by an adult or two children; wheels turn, pushers walk and cargo changes the total mass. A live 3D free-body diagram shows individual pushes, friction, ground support and weight. Students can compare a smooth floor with a constant 20 N resisting force. By default the run plays at half speed (said on the view): the force and acceleration arrows grow in before the cart moves, a clock shows t, and at each whole second of the push the run holds while the velocity is stamped on the floor, so the equal steps of v (0 → 1 → 2 m/s) show the acceleration; a button switches to real time. The current force sum, F = ma and a = F/m follow the same motion state; a separate calculation sheet connects them to the textbook momentum derivation at constant mass in SI units. Cart 80 kg + passenger 20 kg form the 100 kg unloaded system; cargo adds 50 kg per sack. Four examples and five scene-based tap questions are retained. Offline, Bangla/English, with GLB export.",
   "tags": ["force", "newtons-laws", "second-law", "acceleration", "momentum", "f-ma", "bangla"],
   "params": [
     {
@@ -43,6 +43,13 @@
       "default": "0"
     },
     { "name": "diagram", "label": "Live free-body diagram", "type": "boolean", "default": "0" },
+    {
+      "name": "speed",
+      "label": "Playback speed",
+      "type": "select",
+      "options": [["0.5", "slow (0.5×): arrows grow in, held at each second"], ["1", "real time"]],
+      "default": "0.5"
+    },
     {
       "name": "at",
       "label": "A moment of the run",
@@ -83,6 +90,7 @@
     { "name": "get", "payload": {} },
     { "name": "set", "payload": { "diagram": true, "friction": 20 } },
     { "name": "set", "payload": { "paused": true } },
+    { "name": "set", "payload": { "speed": 1 } },
     { "name": "set", "payload": { "example": "force" } },
     { "name": "set", "payload": { "push": true } },
     { "name": "set", "payload": { "example": "mass", "push": true } },
@@ -132,16 +140,16 @@
     ],
     "video": {
       "kind": "script",
-      "seconds": 30,
+      "seconds": 62,
       "fps": 30,
       "params": { "coach": "0" },
       "script": [
         { "at": 0.6, "command": "set", "payload": { "push": true } },
-        { "at": 5, "command": "set", "payload": { "example": "force", "push": true } },
-        { "at": 8.6, "command": "set", "payload": { "example": "mass", "push": true } },
-        { "at": 16.4, "command": "set", "payload": { "example": "back", "push": true } },
+        { "at": 11.5, "command": "set", "payload": { "example": "force", "push": true } },
+        { "at": 22, "command": "set", "payload": { "example": "mass", "push": true } },
+        { "at": 41, "command": "set", "payload": { "example": "back", "push": true } },
         {
-          "at": 23,
+          "at": 57,
           "command": "set",
           "payload": {
             "example": "force",

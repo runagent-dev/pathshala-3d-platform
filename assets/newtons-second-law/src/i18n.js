@@ -13,6 +13,14 @@ const KGMS = `kg${NB}m/s`;
 export const STRINGS = {
   bn: {
     act_pause: 'থামিয়ে দেখো',
+    speed_slow: 'ধীর গতি (০.৫×): চাপলে স্বাভাবিক গতি',
+    speed_real: 'স্বাভাবিক গতি (১×): চাপলে ধীর গতি',
+    speed_word_slow: 'ধীরে: ০.৫×',
+    speed_word_real: 'স্বাভাবিক: ১×',
+    clock_slow: 'সময় ২ গুণ ধীর',
+    clock_real: 'প্রকৃত সময়',
+    clock_held: 'থামানো: বেগ দেখো',
+    ladder: `প্রতি সেকেন্ডে বেগ: {list}${NB}${MS}`,
     act_resume: 'চালিয়ে যাও',
     diagram: 'বলচিত্র',
     motion: 'গতি দেখো',
@@ -90,9 +98,9 @@ export const STRINGS = {
 
     // the result line: the number that matters in <b>
     out_rest: `গাড়িটি স্থির: বেগ <b>{v}</b>${NB}${MS}`,
-    out_push: `t${NB}=${NB}{t}${NB}s, বেগ v${NB}=${NB}<b>{v}</b>${NB}${MS}`,
+    out_push: `t${NB}=${NB}{t}${NB}s: বেগ v${NB}=${NB}u${NB}+${NB}at${NB}= {u}${NB}+${NB}{a}${NB}×${NB}{t}${NB}=${NB}<b>{v}</b>${NB}${MS}`,
     out_coast: `ঠেলা শেষ: বেগ <b>{v}</b>${NB}${MS}, আর বদলাচ্ছে না`,
-    out_brake: `উল্টো ঠেলার {t}${NB}s: বেগ <b>{v}</b>${NB}${MS}`,
+    out_brake: `উল্টো ঠেলার {t}${NB}s: বেগ v${NB}=${NB}u${NB}+${NB}at${NB}= {u}${NB}+${NB}({a})${NB}×${NB}{t}${NB}=${NB}<b>{v}</b>${NB}${MS}`,
     out_result: `a = (v − u) ÷ t = ({v} − {u}) ÷ {t} = <b>{a}</b>${NB}${MS2}`,
 
     // the rule line: the book's words in <b>, growing with what the student has found
@@ -102,7 +110,7 @@ export const STRINGS = {
     what_0: 'গাড়ি ও শিশুর মোট ভর',
     what_n: 'বস্তাসহ গাড়ির ভর',
     rule_start_back: `প্রথমে সামনে ঠেলো। তারপর সামনের জন {F}${NB}নিউটন বলে উল্টো দিকে ঠেলে থামাবে।`,
-    rule_push: '<b>বল যতক্ষণ কাজ করছে, বেগ ততক্ষণ বাড়ছে।</b> বেগের পরিবর্তনের হারই ত্বরণ।',
+    rule_push: `<b>বল যতক্ষণ কাজ করছে, বেগ ততক্ষণ বাড়ছে:</b> প্রতি সেকেন্ডে {a}${NB}${MS} করে। বেগের পরিবর্তনের এই হারই ত্বরণ a।`,
     rule_coast: 'ঠেলা শেষ: সামনে-পেছনে কোনো বল নেই, তাই বেগ আর বদলাচ্ছে না।',
     rule_brake: '<b>বল বাম দিকে, গাড়ি চলছে ডান দিকে:</b> তাই বেগ কমছে। ভরবেগের পরিবর্তন হচ্ছে বলের দিকে, বাম দিকে।',
     rule_fma: `<b>F = ma</b> (সমানুপাতিক ধ্রুবক k = {k} ধরে): {F}${NB}নিউটন = {m}${NB}kg × {a}${NB}${MS2}। ভরবেগ প্রতি সেকেন্ডে {F}${NB}${KGMS} করে বাড়ছে।`,
@@ -119,10 +127,13 @@ export const STRINGS = {
     // on the scene
     l_force: `লব্ধি বল F = {F}${NB}নিউটন`,
     l_mass: `m = {m}${NB}kg`,
-    l_acc: `a${NB}=${NB}{a}${NB}${MS2}`,
+    l_acc: `ত্বরণ a${NB}=${NB}{a}${NB}${MS2}`,
+    l_acc_2: `ত্বরণ<br>a${NB}=${NB}{a}${NB}${MS2}`,
     l_coast: 'ঠেলা শেষ: লব্ধি বল শূন্য, তাই বেগ বদলায় না',
     l_stop: 'বস্তা থামাল',
-    l_vel: `v = {v}${NB}${MS}`,
+    l_vel: `বেগ v = {v}${NB}${MS}`,
+    l_vel_2: `বেগ<br>v${NB}=${NB}{v}${NB}${MS}`,
+    l_stamp: `{t}${NB}s: v${NB}=${NB}{v}${NB}${MS}`,
     l_marks: 'প্রতি সেকেন্ডে দাগ',
     l_dp: 'ভরবেগের পরিবর্তন',
     l_cart: `গাড়ি + শিশু {m}${NB}kg`,
@@ -201,6 +212,14 @@ export const STRINGS = {
   },
   en: {
     act_pause: 'Pause to inspect',
+    speed_slow: 'Slow motion (0.5×): tap for real time',
+    speed_real: 'Real time (1×): tap for slow motion',
+    speed_word_slow: 'Slow: 0.5×',
+    speed_word_real: 'Real time: 1×',
+    clock_slow: 'time 2× slower',
+    clock_real: 'real time',
+    clock_held: 'held: read v',
+    ladder: `velocity each second: {list}${NB}${MS}`,
     act_resume: 'Resume',
     diagram: 'Force diagram',
     motion: 'Show motion',
@@ -276,9 +295,9 @@ export const STRINGS = {
     act_home: 'Back to start',
 
     out_rest: `The cart is at rest: velocity <b>{v}</b>${NB}${MS}`,
-    out_push: `t${NB}=${NB}{t}${NB}s, velocity v${NB}=${NB}<b>{v}</b>${NB}${MS}`,
+    out_push: `t${NB}=${NB}{t}${NB}s: velocity v${NB}=${NB}u${NB}+${NB}at${NB}= {u}${NB}+${NB}{a}${NB}×${NB}{t}${NB}=${NB}<b>{v}</b>${NB}${MS}`,
     out_coast: `Push over: velocity <b>{v}</b>${NB}${MS}, not changing`,
-    out_brake: `Pushed back for {t}${NB}s: velocity <b>{v}</b>${NB}${MS}`,
+    out_brake: `Pushed back {t}${NB}s: v${NB}=${NB}u${NB}+${NB}at${NB}= {u}${NB}+${NB}({a})${NB}×${NB}{t}${NB}=${NB}<b>{v}</b>${NB}${MS}`,
     out_result: `a = (v − u) ÷ t = ({v} − {u}) ÷ {t} = <b>{a}</b>${NB}${MS2}`,
 
     rule_start: `{who}: {F}${NB}N for {t}${NB}s. Cart, child and cargo together: {m}${NB}kg.`,
@@ -287,8 +306,7 @@ export const STRINGS = {
     what_0: 'the empty cart has a mass of',
     what_n: 'with the sacks the mass is',
     rule_start_back: `Push forward, then push back with {F}${NB}N to stop the cart.`,
-    rule_push:
-      '<b>While the force acts, the velocity grows:</b> by the same amount every second. The rate of change of velocity is the acceleration.',
+    rule_push: `<b>While the force acts, the velocity grows:</b> by {a}${NB}${MS} every second. This rate of change of velocity is the acceleration a.`,
     rule_coast: 'The push is over: no force forward or back, so the velocity no longer changes.',
     rule_brake:
       '<b>The force is to the left, the cart moves to the right:</b> so it slows down. Its momentum changes in the direction of the force, to the left.',
@@ -303,12 +321,15 @@ export const STRINGS = {
     rule_law:
       "<b>Newton's second law:</b> the rate of change of a body's momentum is proportional to the force applied to it, and the momentum changes in the direction the force is applied. <b>F = ma</b>",
 
-    l_force: `F = {F}${NB}N`,
+    l_force: `force F = {F}${NB}N`,
     l_mass: `m = {m}${NB}kg`,
-    l_acc: `a${NB}=${NB}{a}${NB}${MS2}`,
+    l_acc: `acceleration a${NB}=${NB}{a}${NB}${MS2}`,
+    l_acc_2: `acceleration<br>a${NB}=${NB}{a}${NB}${MS2}`,
     l_coast: 'Push over: no force, so the velocity does not change',
     l_stop: 'the sacks stop it',
-    l_vel: `v = {v}${NB}${MS}`,
+    l_vel: `velocity v = {v}${NB}${MS}`,
+    l_vel_2: `velocity<br>v${NB}=${NB}{v}${NB}${MS}`,
+    l_stamp: `{t}${NB}s: v${NB}=${NB}{v}${NB}${MS}`,
     l_marks: 'a mark every second',
     l_dp: 'change of momentum',
     l_cart: `cart {m}${NB}kg`,

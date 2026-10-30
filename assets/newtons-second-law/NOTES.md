@@ -114,3 +114,24 @@ comparison and clears prior measured results. Colours are deliberately saturated
 On short phone canvases the force diagram moves beside the cart, rather than making the figures tiny above it.
 The pause/resume control holds a moment for reading its forces. Walking feet stay fixed during each stance,
 and a browser geometry regression checks a planted shoe and hands aligned with the moving handle.
+
+## Slow enough to follow (v0.3.0)
+The owner: "the actual arrow and everything goes very fast, and student wont be clear". At real time the whole push
+was over in 2 s and the arrows came and went with it. Now (lessons.md 8: the slowing is said on the view):
+- **Half speed by default** (`clock.js`, pure and unit tested): the run's own seconds (the physics, the numbers) are
+  unchanged; one run second takes two real seconds. A clock on the view shows t; the note says "সময় ২ গুণ ধীর".
+  A third button in the row under the examples, "ধীরে: ০.৫×" ↔ "স্বাভাবিক: ১×" (or S), switches to real time
+  (no lead-in, no holds); P pauses as the pause button does.
+- **Lead-in** (1.6 s): after the tap, the force arrow grows in, then the acceleration arrow (same way), with their
+  labels "লব্ধি বল F = ১০০ নিউটন" and "ত্বরণ a = ১ ms⁻²", before the cart moves (the clock waits at 0).
+- **Held at each whole second** of the measured push (1.1 s, the clock says "থামানো: বেগ দেখো"): the velocity is
+  stamped on the floor at that second's mark (a faint blue arrow, labelled "১ s: v = ১ m/s" where there is room),
+  and a row under the clock lists the velocity each second, "প্রতি সেকেন্ডে বেগ: ০ → ১ → ২ m/s": the equal steps
+  are the acceleration. The hold at the end of the push is a hair before it ends, so F and a are still drawn; in
+  "উল্টো দিকে বল" the holds are at the start of the push back (u = 2) and each second after (২ → ১ → ০).
+- The arrows are labelled with their Bangla names (বেগ v on the scene to 0.1 m/s; the panel keeps 0.01). The result
+  line during the push works it out: "t = ১.০ s: বেগ v = u + at = ০ + ১ × ১.০ = ১.০০ m/s"; the rule line says
+  "প্রতি সেকেন্ডে ১ m/s করে. বেগের পরিবর্তনের এই হারই ত্বরণ a".
+- On a short stage (390×520, 640×400) the note moves to the top-left corner and drops the smooth-floor words (the
+  ঘর্ষণ button says it), the force's label goes behind its arrow's tail and the acceleration's past its tip.
+- The test plays at the chosen speed without the lead-in or the holds. The video is retimed to 62 s at half speed.
