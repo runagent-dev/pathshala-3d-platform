@@ -5,11 +5,13 @@ import crypto from 'node:crypto';
 
 const c1 = (sha) => `c1:${sha.slice(0, 25).replace(/[^a-z2-7]/g, 'a')}a`;
 
-export function fakeLibrary() {
+/** @param {{ token?: string }} [o] token: the library needs it for every request, reading too (PUBLIC_READ=false) */
+export function fakeLibrary({ token } = {}) {
   const items = new Map(); // key → record
   const bytes = new Map(); // upload ticket → { key }
   const books = new Map(); // key → [bookId]
   const calls = [];
+  const auths = []; // the Authorization header of every request, in order
   let tickets = 0;
   /** @type {((call: { method: string, path: string }) => void) | null} */
   let hook = null;
@@ -23,6 +25,10 @@ export function fakeLibrary() {
     const path = u.pathname;
     calls.push({ method, path });
     hook?.({ method, path });
+    const auth = new Headers(init.headers).get('authorization');
+    auths.push(auth);
+    if (token && path.startsWith('/v1/') && !path.startsWith('/v1/upload/') && auth !== `Bearer ${token}`)
+      return err(401, 'unauthorized', 'a token is needed');
     const body = init.body && typeof init.body === 'string' ? JSON.parse(init.body) : null;
 
     if (method === 'GET' && path === '/v1/search') {
@@ -78,6 +84,7 @@ export function fakeLibrary() {
     fetch,
     items,
     calls,
+    auths,
     /** Mutating requests so far (what a no-op run must not make). */
     writes: () => calls.filter((c) => c.method !== 'GET' && !(c.method === 'POST' && c.path === '/v1/assets/check')),
     clearCalls: () => calls.splice(0),

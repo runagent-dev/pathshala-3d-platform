@@ -3,11 +3,14 @@
 //
 //   npm run library:sync                                     DRY RUN: what would change (needs no library, no token)
 //   npm run library:sync -- --library http://127.0.0.1:4900  dry run against a library: new, changed, repair, withdraw, blocked
+//                                                            (reads with LIBRARY_TOKEN, else LIBRARY_READ_TOKEN, else no token)
 //   npm run library:sync -- --library <url> --token-env LIBRARY_TOKEN --apply
 //
 // Options
 //   --library <url>        the library server (never has a default)
-//   --token-env <NAME>     environment variable holding the token (default LIBRARY_TOKEN); the token is never printed
+//   --token-env <NAME>     environment variable holding the token (default LIBRARY_TOKEN); the token is never printed. A dry run
+//                          without it reads with LIBRARY_READ_TOKEN (a reader key) when that is set, which a library that needs a
+//                          token for reading (PUBLIC_READ=false) asks for
 //   --apply                do it (without it nothing is published)
 //   --tier staging|production     both publish every figure; production also needs a clean worktree and a new version (default staging)
 //   --only <id[,id]>       only these figures
@@ -73,7 +76,8 @@ if (values.help) {
   process.exit(0);
 }
 
-// settings kept in a git-ignored file at the repo root (.env.library: LIBRARY_TOKEN, LIBRARY_SYNC_HOOK_URL, LIBRARY_SYNC_HOOK_TOKEN); the shell wins
+// settings kept in a git-ignored file at the repo root (.env.library: LIBRARY_TOKEN, LIBRARY_READ_TOKEN, LIBRARY_SYNC_HOOK_URL,
+// LIBRARY_SYNC_HOOK_TOKEN); the shell wins
 const envFile = loadEnvFile(path.resolve(import.meta.dirname, '..', ENV_FILE_NAME));
 if (envFile.found && !values.json) {
   console.log(

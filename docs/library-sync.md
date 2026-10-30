@@ -10,7 +10,7 @@ publishes only what is new or changed. It is safe to run again and again, and it
 ```bash
 git pull
 npm run library:sync                                    # dry run: what would change (needs no library)
-npm run library:sync -- --library <url>                 # dry run against a library
+npm run library:sync -- --library <url>                 # dry run against a library (a reader token when it needs one, below)
 LIBRARY_TOKEN=… npm run library:sync -- --library <url> --apply
 ```
 
@@ -20,8 +20,8 @@ registry API (`spec/1.2/registry-api.md`) in the chalk-format repo.
 
 ## Publishing runbook: the exact steps
 
-**Where things are.** Library: `https://library.pathshalax.com` (Coolify app `chalk-library`; reading and searching are open, **writing needs a
-token**). Books server (updates the labs inside books after a sync): `https://internal.pathshalax.com` (Coolify app `chalkbook-internal:main`; its
+**Where things are.** Library: `https://library.pathshalax.com` (Coolify app `chalk-library`; **writing needs a token**; reading and searching
+are open today, and need a token too once the library is set to `PUBLIC_READ=false`: see "Reading a library that needs a token"). Books server (updates the labs inside books after a sync): `https://internal.pathshalax.com` (Coolify app `chalkbook-internal:main`; its
 side is in that repo's README, "Publishing figures and updating books"). The sync runs **on a computer with this repo**, not in Coolify.
 
 **Once per computer**
@@ -30,7 +30,8 @@ side is in that repo's README, "Publishing figures and updating books"). The syn
 2. Create `.env.library` in the repo root (git-ignored; `chmod 600 .env.library`). The sync reads exactly these names from it, the shell wins:
 
    ```
-   LIBRARY_TOKEN=<a write token of the library: one of the tokens in the TOKENS setting of the Coolify app chalk-library>
+   LIBRARY_TOKEN=<a write token of the library: an API key with the author role, or one of the tokens in the TOKENS setting of chalk-library>
+   LIBRARY_READ_TOKEN=<optional: a key with only the reader role, for dry runs on a computer that should not hold a write token>
    LIBRARY_SYNC_HOOK_URL=https://internal.pathshalax.com/api/library-sync/hook
    LIBRARY_SYNC_HOOK_TOKEN=<the same value as LIBRARY_SYNC_HOOK_TOKEN on the Books server (Coolify app chalkbook-internal:main)>
    ```
@@ -42,7 +43,7 @@ side is in that repo's README, "Publishing figures and updating books"). The syn
 
 1. Work on a branch, **commit everything** (production publishes only from a clean worktree), and **bump `version` in `asset.json`** of every
    figure whose contents changed (a changed figure under an old version is blocked: a version always means the same bytes).
-2. Look first (dry run, writes nothing, needs no token):
+2. Look first (dry run, writes nothing; it reads with `LIBRARY_TOKEN` from `.env.library`, which a library that needs a token for reading asks for):
    `npm run library:sync -- --library https://library.pathshalax.com --tier production --formats lab`
    Read the table: `new`, `changed`, `repair`, `unchanged`, `blocked` (with the reason), and the libraries line.
 3. Publish: the same command plus `--apply`. Each lab runs once in a sandbox before it is published; one figure failing does not stop the
@@ -221,10 +222,26 @@ The bytes are deterministic (no date, no commit, no path): the same figure at th
 changes with each run (commit, fingerprints, time) is in the item tags. All 34 figures' manifests pass the Chalk reader's own
 schema, and a lab placed with its defaults passes the reader's own settings check (`test/unit/library-manifest.test.mjs`).
 
+## Reading a library that needs a token
+
+A library can be set to need a token for reading too (`PUBLIC_READ=false` on the server): then search and records answer 401 without
+one. The sync sends a token with **every** request, reads included, chosen this way:
+
+| Run | Token sent |
+|---|---|
+| `--apply` | the write token (`--token-env`, default `LIBRARY_TOKEN`); required. Never `LIBRARY_READ_TOKEN` |
+| dry run, `--check` | `LIBRARY_TOKEN` (or `--token-env`) when it is set, else `LIBRARY_READ_TOKEN`, else none |
+
+`LIBRARY_READ_TOKEN` is meant for jobs that only read (the CI plan and drift checks, a computer that only looks): a key with the
+`reader` role, made by the library's administrator (`chalk-library key add <name> --roles reader`, shown once). A blank value counts as
+not set. The sync prints which variable it read with (`library <url>: reading with the token from LIBRARY_READ_TOKEN`), never the value.
+Without a token, a library that needs one makes the run stop with `the library needs a token, even to read: set LIBRARY_READ_TOKEN …`;
+a token the library does not accept (401) or one without the needed role (403) is reported the same way.
+
 ## Safety
 
-- **Dry run by default.** Without `--apply` nothing is published, withdrawn or retagged. A dry run needs no token and, without
-  `--library`, no library (it plans against an empty one).
+- **Dry run by default.** Without `--apply` nothing is published, withdrawn or retagged. A dry run needs no write token (only a reader
+  token when the library needs one to be read) and, without `--library`, no library (it plans against an empty one).
 - **No default address.** `--library` is required to touch a server, and `--apply` also needs the token in the environment
   variable named by `--token-env` (default `LIBRARY_TOKEN`). The token is never printed or written.
 - **Writes only to `.cache/library`** (the built files, the lock, the state, the report) **and the `--report` file**.

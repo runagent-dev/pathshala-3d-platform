@@ -1,8 +1,8 @@
 import fs from 'node:fs';
 
-/** The settings the sync may take from `.env.library`: the library's write token and where to tell the Books server. */
+/** The settings the sync may take from `.env.library`: the library's write token (or a read-only one), and where to tell the Books server. */
 export const ENV_FILE_NAME = '.env.library';
-export const ENV_FILE_KEYS = ['LIBRARY_TOKEN', 'LIBRARY_SYNC_HOOK_URL', 'LIBRARY_SYNC_HOOK_TOKEN'];
+export const ENV_FILE_KEYS = ['LIBRARY_TOKEN', 'LIBRARY_READ_TOKEN', 'LIBRARY_SYNC_HOOK_URL', 'LIBRARY_SYNC_HOOK_TOKEN'];
 
 /**
  * @param {string} text

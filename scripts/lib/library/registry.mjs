@@ -16,6 +16,9 @@ export class LibraryError extends Error {
 /** @param {string} base  the library's address, e.g. http://127.0.0.1:4900  @param {{ token?: string, fetch?: typeof fetch }} [o] */
 export function createLibrary(base, { token, fetch: f = globalThis.fetch.bind(globalThis) } = {}) {
   if (!base) throw new Error('no library address (--library)');
+  // a token a header cannot carry (a line break, a space) would make fetch throw an error quoting the whole header: refuse it first
+  if (token !== undefined && !/^[\x21-\x7e]+$/.test(token))
+    throw new Error('the library token is not valid: it has spaces, line breaks or other characters a header cannot carry');
   const root = base.endsWith('/') ? base : `${base}/`;
 
   /** @param {string} path @param {{ method?: string, body?: object }} [init] @returns {Promise<any>} */
@@ -25,8 +28,19 @@ export function createLibrary(base, { token, fetch: f = globalThis.fetch.bind(gl
     const data = res.status === 204 ? null : await res.json().catch(() => null);
     // an error message from the server is shown in logs: the token is never part of it, even if the server echoes it
     const clean = (text) => (token ? String(text).split(token).join('***') : String(text));
-    if (!res.ok)
-      throw new LibraryError(res.status, data?.error?.code || 'failed', clean(data?.error?.message || `HTTP ${res.status} for ${method} ${path}`));
+    if (!res.ok) {
+      const said = clean(data?.error?.message || `HTTP ${res.status} for ${method} ${path}`);
+      // a library with PUBLIC_READ=false wants a token for reading too: say which settings give one
+      const hint =
+        res.status === 401 && !token
+          ? ' (the library needs a token, even to read: set LIBRARY_READ_TOKEN to a key with the reader role, or LIBRARY_TOKEN)'
+          : res.status === 401
+            ? ' (the library did not accept the token: is it revoked or mistyped?)'
+            : res.status === 403
+              ? ' (the token is not allowed to do this: reading needs the reader role, publishing author, withdrawing admin)'
+              : '';
+      throw new LibraryError(res.status, data?.error?.code || 'failed', `${said}${hint}`);
+    }
     return data;
   }
 
