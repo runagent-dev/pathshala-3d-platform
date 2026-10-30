@@ -45,12 +45,32 @@ export const STRINGS = {
     act_home: 'স্থির অবস্থায় ফেরাও',
     drag_hint: 'হাতলটি আঙুলে টেনে বা ঠেলে দেখো',
 
-    // the result: the force and the stored energy, the number that matters in <b>
-    out_F: '<span class="sp-w">বল </span>F = kx = {k}<span class="sp-u"> N/m</span> × {xm}<span class="sp-u"> m</span> = <b>{F} N</b>',
-    out_V: '<span class="sp-w">বিভব শক্তি </span>V = {half}kx<sup>{two}</sup> = {half} × {k} × {xm}<sup>{two}</sup> = <b>{V} J</b>',
+    // the result: the two formulas, each letter a button that lights its part of the picture
+    fx: 'সূত্র: যেকোনো অক্ষর ছুঁয়ে দেখো ছবিতে সেটি কোথায়',
+    w_F: 'বল',
+    w_V: 'বিভব শক্তি',
+    half: '{half}',
+    sym_F: 'F: বল (তীর)',
+    sym_k: 'k: স্প্রিংয়ের ধ্রুবক (স্প্রিং)',
+    sym_x: 'x: দূরত্ব (কমলা দাগ)',
+    sym_half: 'এক-অর্ধেক কেন',
+    sym_sq: 'x-এর বর্গ',
+    sym_V: 'V: বিভব শক্তি',
+    // what a tapped letter means, with the student's numbers
+    why_F:
+      '<b>F = kx = {k} × {xm} = {F} N</b>: হাত যে বলে টানছে বা চাপছে (সবুজ তীর F<sub>P</sub>)। স্প্রিংও সমান বলে উল্টো দিকে টানে (নীল তীর F<sub>S</sub>)। x যত বড়, বল তত বড়।',
+    why_k: '<b>k = {k} N/m</b>: স্প্রিংয়ের ধ্রুবক, স্প্রিংটি কত শক্ত। শক্ত স্প্রিংয়ে k বড়: একই x-এ বেশি বল লাগে, শক্তিও বেশি জমে। k-এর + − বোতামে বদলে দেখো।',
+    why_x: '<b>x = {x} cm = {xm} m</b>: স্থির অবস্থা (x = {z} রেখা) থেকে স্প্রিংয়ের মাথা কত দূর সরেছে (কমলা দাগ)। টানা বা চাপা, x একটি দূরত্ব; সূত্রে মিটারে বসাও।',
+    why_sq:
+      '<b>x<sup>{two}</sup> = x × x = {xm} × {xm} = {x2}</b>। x দ্বিগুণ হলে x<sup>{two}</sup> চার গুণ ({two} × {two} = {four})। তাই সবুজ দাগ (বল) সমান তালে বাড়ে, বেগুনি দাগ (শক্তি) পরে অনেক দ্রুত।',
+    why_half:
+      '<b>{half} কেন?</b> টানার শুরুতে বল {z}, শেষে kx = {F} N; গড়ে {half}kx। কাজ = গড় বল × দূরত্ব = {half}kx × x = {half}kx<sup>{two}</sup>। এই কাজটুকুই স্প্রিংয়ে জমা থাকে।',
+    why_V:
+      '<b>V = {half}kx<sup>{two}</sup> = {half} × {k} × {xm}<sup>{two}</sup> = {V} J</b>: স্প্রিংয়ে সঞ্চিত বিভব শক্তি। হাত যে কাজ করেছে তা হারায়নি, স্প্রিংয়ের ভেতর লুকিয়ে আছে; ছেড়ে দিলে স্প্রিং এই শক্তিতে কাজ করতে পারে।',
+    why_rest: 'এখন x = {z}: হাতলটি টেনে বা চেপে দেখো।',
 
     // the rule, growing with what the student has found out (everyday words first, the book's formula last)
-    rule_rest: 'স্প্রিংটি তার <b>স্থির অবস্থায়</b> আছে: x = {z}। কোনো বল নেই, কোনো শক্তিও জমা নেই। হাতলটি টেনে বা চেপে দেখো কী হয়।',
+    rule_rest: 'স্প্রিংটি তার <b>স্থির অবস্থায়</b>: x = {z}, বল নেই, শক্তিও জমা নেই। হাতলটি টেনে বা চেপে দেখো; সূত্রের রঙিন অক্ষর ছুঁলে ছবিতে তার অংশটি জ্বলে ওঠে।',
     rule_rest_after: 'আবার <b>স্থির অবস্থা</b>, x = {z}: বল {z}, সঞ্চিত শক্তিও {z}। যে শক্তি জমা ছিল, স্প্রিং ফিরে আসার সময় তা হাতকে ফিরিয়ে দিয়েছে।',
     rule_stretched:
       'হাত বাইরে টানছে (F<sub>P</sub>), স্প্রিং উল্টো দিকে ভেতরে টানছে (F<sub>S</sub>): <b>দুটো বল সমান, বিপরীত</b>। স্প্রিং সবসময় x = {z}-তে ফিরতে চায়। টানতে যে কাজ হলো, তা স্প্রিংয়ে জমা আছে।',
@@ -67,6 +87,7 @@ export const STRINGS = {
     l_FS: 'F<sub>S</sub> = {F} N',
     l_FP_only: 'F<sub>P</sub>',
     l_V: 'V = {V} J',
+    l_k: 'k = {k} N/m',
     note: 'তীরের দৈর্ঘ্য বলের সমানুপাতিক',
     note_short: 'তীর ∝ বল',
 
@@ -164,16 +185,38 @@ export const STRINGS = {
     act_home: 'Back to rest',
     drag_hint: 'Drag the handle out or in with a finger',
 
-    out_F: '<span class="sp-w">Force </span>F = kx = {k}<span class="sp-u"> N/m</span> × {xm}<span class="sp-u"> m</span> = <b>{F} N</b>',
-    out_V: '<span class="sp-w">Potential energy </span>V = {half}kx<sup>{two}</sup> = {half} × {k} × {xm}<sup>{two}</sup> = <b>{V} J</b>',
+    fx: 'The formulas: tap any letter to see where it is in the picture',
+    w_F: 'Force',
+    w_V: 'Potential energy',
+    half: '{half}',
+    sym_F: 'F: the force (the arrows)',
+    sym_k: 'k: the spring constant (the spring)',
+    sym_x: 'x: the distance (the orange mark)',
+    sym_half: 'Why one half',
+    sym_sq: 'x squared',
+    sym_V: 'V: the potential energy',
+    why_F:
+      '<b>F = kx = {k} × {xm} = {F} N</b>: the hand’s pull or push (green arrow F<sub>P</sub>); the spring pulls back just as hard (blue arrow F<sub>S</sub>). Larger x, larger force.',
+    why_k:
+      '<b>k = {k} N/m</b>: the spring constant, how stiff the spring is. A stiffer spring (larger k) needs more force for the same x and stores more energy.',
+    why_x:
+      '<b>x = {x} cm = {xm} m</b>: how far the end has moved from rest (the x = {z} line; the orange mark). Pulled or pushed, x is a distance; use metres in the formula.',
+    why_sq:
+      '<b>x<sup>{two}</sup> = x × x = {xm} × {xm} = {x2}</b>. Twice x, four times x<sup>{two}</sup> ({two} × {two} = {four}): the green bar (force) grows evenly, the purple bar (energy) faster and faster.',
+    why_half:
+      '<b>Why {half}?</b> The force grows from {z} to kx = {F} N as you pull, {half}kx on average. Work = average force × distance = {half}kx × x = {half}kx<sup>{two}</sup>, stored in the spring.',
+    why_V:
+      '<b>V = {half}kx<sup>{two}</sup> = {half} × {k} × {xm}<sup>{two}</sup> = {V} J</b>: the energy stored in the spring. The hand’s work is not lost: let go, and the spring can do work with it.',
+    why_rest: 'Now x = {z}: pull the handle out or push it in.',
 
-    rule_rest: 'The spring is <b>at rest</b>: x = {z}. No force, and no energy stored. Pull the handle out or push it in and see.',
+    rule_rest:
+      'The spring is <b>at rest</b>: x = {z}, no force, no stored energy. Pull or push the handle, or tap a letter of the formula to see it in the picture.',
     rule_rest_after:
       '<b>At rest</b> again, x = {z}: no force and no stored energy. The energy that was stored went back into the hand as the spring came back.',
     rule_stretched:
-      'The hand pulls outward (F<sub>P</sub>), the spring pulls back inward (F<sub>S</sub>): <b>two equal, opposite forces</b>. The spring always wants to go back to x = {z}. The work done pulling it is stored in it.',
+      'The hand pulls out (F<sub>P</sub>), the spring pulls back in (F<sub>S</sub>): <b>equal, opposite forces</b>. The spring always heads back to x = {z}; the work of pulling is stored in it.',
     rule_compressed:
-      'Pushed in, the spring pushes back outward (F<sub>S</sub>). Neither the hand nor the spring moves, yet energy hides inside: <b>this stored energy is called potential energy</b>.',
+      'Pushed in, the spring pushes back out (F<sub>S</sub>). Nothing moves, yet energy hides inside: <b>this stored energy is called potential energy</b>.',
     rule_times:
       'x is {n} times ({x1} → {x2} cm): the force is <b>{n} times</b> ({F1} → {F2} N), but the potential energy is <b>{nn} times</b> ({V1} → {V2} J), because {n} × {n} = {nn}.',
     rule_law:
@@ -185,6 +228,7 @@ export const STRINGS = {
     l_FS: 'F<sub>S</sub> = {F} N',
     l_FP_only: 'F<sub>P</sub>',
     l_V: 'V = {V} J',
+    l_k: 'k = {k} N/m',
     note: 'Arrow lengths are proportional to the forces',
     note_short: 'Arrow ∝ force',
 
@@ -202,7 +246,7 @@ export const STRINGS = {
     q_again: 'Try again',
     q_locked: 'The scene stays put during the test. Read the picture and pick an answer.',
 
-    q_dir: 'The hand holds the spring pushed in (the green arrow). Which way does the spring’s own force point?',
+    q_dir: 'The hand holds the spring pushed in (green arrow). Which way does the spring’s force point?',
     c_out: 'Outward, toward the hand',
     c_in: 'Inward, toward the wall',
     c_none: 'Nowhere, all is still',
@@ -213,14 +257,14 @@ export const STRINGS = {
     m_none: 'All is still because the two forces are equal and opposite; the forces are there.',
     m_down: 'The spring’s force acts along its length, not up or down.',
 
-    q_F: 'This spring’s constant is k = {k} N/m. Read x in the picture: how hard does the hand pull?',
+    q_F: 'This spring has k = {k} N/m. Read x in the picture: how hard does the hand pull?',
     r_F: '<b>{F} N</b>: x = {x} cm = {xm} m, so F = kx = {k} × {xm} = {F} N.',
     m_cm: 'Turn x into metres first ({h} cm = {one} m).',
     m_halfF: 'The {half} belongs to the energy (V = {half}kx<sup>{two}</sup>), not the force (F = kx).',
     m_sqF: 'The force has no square: F = kx.',
     m_div: 'Multiply k by x, don’t divide.',
 
-    q_V: 'This spring’s constant is k = {k} N/m. Read x in the picture: how much potential energy is stored in it?',
+    q_V: 'This spring has k = {k} N/m. Read x in the picture: how much energy does it store?',
     r_V: '<b>{V} J</b>: x = {xm} m, so V = {half}kx<sup>{two}</sup> = {half} × {k} × {xm}<sup>{two}</sup> = {V} J.',
     m_noHalf: 'The {half} was left out: V = {half}kx<sup>{two}</sup>.',
     m_noSq: 'x must be squared: V = {half}kx<sup>{two}</sup>.',
@@ -255,7 +299,7 @@ export function createI18n(lang = 'bn', { numerals = null } = {}) {
   const num = (x) => (bangla ? toBanglaDigits(x) : String(x));
   function t(key, vars) {
     const s = dict[key] ?? key;
-    const all = { z: 0, one: 1, two: 2, three: 3, h: 100, half: HALF, ...vars }; // these follow the digits too
+    const all = { z: 0, one: 1, two: 2, three: 3, four: 4, h: 100, half: HALF, ...vars }; // these follow the digits too
     return s.replace(/\{(\w+)\}/g, (m, k) => (k in all ? num(all[k]) : m));
   }
   t.num = num;

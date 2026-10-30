@@ -1,6 +1,7 @@
 /* Potential energy of a spring (বিভব শক্তি): the page, the colours that carry meaning (F_P the hand's force green, F_S
-   the spring's force blue, x orange, the stored energy V purple: the same as src/app.js), the calculator's steppers,
-   the book's stacked ½, the note in the corner, the test's answers in words. The panel is the kit's clean sheet (one
+   the spring's force blue, x orange, the stored energy V purple, k the spring's magenta: the same as src/app.js), the
+   calculator's steppers, the two formulas with a button per letter, the book's stacked ½, the note in the corner, the
+   test's answers in words. Only the 3D scene is light blue; the panel stays the kit's white sheet. The panel is the kit's clean sheet (one
    action, one result, one rule: ../../shared/lib/student/student.css, .pvc-examples, .pvc-act, .pvc-outcome, .pvc-rule). */
 html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
 #app { position: fixed; inset: 0; }
@@ -28,14 +29,48 @@ body.bg-transparent { background: transparent; }
 .sp-btn:disabled { opacity: 0.35; cursor: default; }
 .sp-val { min-width: 3.6em; text-align: center; font-size: 16px; font-weight: 700; color: var(--c); font-variant-numeric: tabular-nums; white-space: nowrap; }
 
-/* a warm, lightly tinted panel under the vivid scene */
-.sp .pvc-panel { background: linear-gradient(180deg, #fff4f8, #fffdfe 60%); }
+/* the result: the two formulas in a grid (the = signs line up). Each letter is a button in its quantity's colour,
+   underlined so it reads as tappable; a lit letter is filled, and the student's numbers that belong to it are marked.
+   A thin bar under each formula grows with its value: the force evenly, the energy as x². */
+.sp .pvc-outcome { font-size: 15px; line-height: 1.3; }
+.sp-fx { display: grid; grid-template-columns: max-content max-content 1fr; align-items: center; column-gap: 6px; }
+.sp-lhs, .sp-sum, .sp-res { white-space: nowrap; }
+.sp-lhs { display: inline-flex; align-items: center; gap: 3px; }
+.sp-wd { font-size: 0.92em; color: var(--ink-2); margin-right: 4px; }
+.sp-eq { margin: 0 2px; }
+.sp-s { --c: var(--ink); display: inline-flex; align-items: center; justify-content: center; min-width: 25px; height: 26px; padding: 0 4px; border: 0; border-radius: 7px; background: color-mix(in srgb, var(--c) 12%, #fff); color: var(--c); font: inherit; font-size: 1.12em; font-weight: 700; line-height: 1; cursor: pointer; transition: background 0.15s, color 0.15s; }
+.sp-s .sp-fr { font-size: 0.72em; margin: 0; }
+.sp-s.s-F { --c: var(--c-FP); }
+.sp-s.s-k { --c: var(--c-k); }
+.sp-s.s-x, .sp-s.s-sq { --c: var(--c-x); }
+.sp-s.s-V { --c: var(--c-V); }
+.sp-s.s-half { --c: #364fc7; }
+.sp-s sup { font-size: 0.66em; line-height: 0; margin-left: 1px; vertical-align: 0.55em; }
+.sp-s:hover { background: color-mix(in srgb, var(--c) 22%, #fff); }
+.sp-s:focus-visible { outline: 2px solid var(--c); outline-offset: 1px; }
+.sp-s.on { background: var(--c); color: #fff; box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 28%, transparent); }
+.sp-sum { color: var(--ink-2); }
+.sp-op { font-style: normal; margin: 0 0.28em; color: var(--ink-2); }
+.sp-sum > .sp-op:first-child, .sp-res > .sp-op { margin-left: 0; }
+.sp-sum .sp-fr { font-size: 0.78em; margin: -0.9em 1px; }
+.sp-sum .n-k { color: var(--c-k); font-weight: 600; }
+.sp-sum .n-x { color: var(--c-x); font-weight: 600; }
+.sp-sum .n-half { color: #364fc7; }
+.sp-sum > span { border-radius: 4px; transition: background 0.15s; }
+.sp-fx[data-focus='k'] .n-k, .sp-fx[data-focus='x'] .n-x, .sp-fx[data-focus='sq'] .n-x, .sp-fx[data-focus='half'] .n-half { background: color-mix(in srgb, currentColor 16%, transparent); box-shadow: 0 0 0 2px color-mix(in srgb, currentColor 16%, transparent); }
+.sp-res b { font-size: 1.3em; font-weight: 700; font-variant-numeric: tabular-nums; }
+.sp-res.c-F b { color: var(--c-FP); }
+.sp-res.c-V b { color: var(--c-V); }
+.sp-fx[data-focus='F'] .sp-res.c-F b, .sp-fx[data-focus='half'] .sp-res.c-F b, .sp-fx[data-focus='V'] .sp-res.c-V b { border-radius: 5px; padding: 0 3px; color: #fff; background: currentColor; }
+.sp-fx[data-focus='F'] .sp-res.c-F b, .sp-fx[data-focus='half'] .sp-res.c-F b { background: var(--c-FP); }
+.sp-fx[data-focus='V'] .sp-res.c-V b { background: var(--c-V); }
+.sp-bar { --c: var(--ink); grid-column: 1 / -1; height: 4px; margin: 0 0 3px; border-radius: 2px; background: color-mix(in srgb, var(--c) 13%, transparent); overflow: hidden; }
+.sp-bar.c-F { --c: #2b9a3e; }
+.sp-bar.c-V { --c: #7048e8; }
+.sp-bar > span { display: block; width: 0; height: 100%; border-radius: inherit; background: var(--c); }
 
-/* the result: the force and the energy, one line each, the numbers in their colours */
-.sp .pvc-outcome { font-size: 15px; line-height: 1.5; }
-.sp-out { display: block; white-space: nowrap; }
-.sp-out.c-F b { color: var(--c-FP); }
-.sp-out.c-V b { color: var(--c-V); }
+/* a label on the picture whose letter is lit in the formula: filled with its colour */
+.sp .pvc-anno:has(.sp-hot) { background: var(--c); color: #fff; border-color: var(--c); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 30%, transparent); }
 
 /* the note in the corner: the arrows are drawn to scale */
 .sp-note { position: absolute; left: 8px; top: 8px; z-index: 5; max-width: calc(100% - 120px); padding: 2px 8px; border-radius: 6px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.9); font-size: 12.5px; line-height: 1.45; color: var(--ink-2); pointer-events: none; }
@@ -53,7 +88,7 @@ body.bg-transparent { background: transparent; }
 
 /* a narrow panel (beside the scene): the letters x and k only */
 @container pvc-panel (max-width: 430px) {
-  .sp-word { display: none; }
+  .sp-word, .sp-wd { display: none; }
   .sp-calc { gap: 4px; }
   .sp-step { gap: 2px; }
   .sp .sp-val { min-width: 3.3em; font-size: 14px; }
@@ -61,24 +96,47 @@ body.bg-transparent { background: transparent; }
 }
 /* a narrow side panel: the sums without their words and units (the steppers show the units) */
 @container pvc-panel (max-width: 330px) {
-  .sp .sp-w, .sp .sp-u { display: none; }
+  .sp .sp-u { display: none; }
+  .sp-fx { column-gap: 4px; }
+  .sp-sum { font-size: 0.9em; }
+  .sp-op { margin: 0 0.14em; }
+  .sp-res b { font-size: 1.15em; }
 }
 /* narrower still (640 × 400): x and k one under the other */
 @container pvc-panel (max-width: 290px) {
   .sp-calc { flex-direction: column; align-items: stretch; gap: 3px; }
   .sp-step { justify-content: space-between; }
   .sp-btn { height: 32px; }
-  .sp .pvc-outcome { font-size: 12px; }
+  .sp .pvc-outcome { font-size: 13px; }
+  .sp-lhs { gap: 2px; }
+  .sp-s { padding: 0 2px; }
+  .sp-eq { margin: 0 1px; }
   .sp .pvc-rule { font-size: 12.5px; }
 }
 
-/* wide frames (tabs beside the sheet) */
+/* the narrowest side panel (640 × 400): the sums with the student's numbers are left out of the formula lines; a tap on
+   F or V shows them in the rule */
+@container pvc-panel (max-width: 260px) {
+  .sp-fx { grid-template-columns: max-content 1fr; column-gap: 5px; }
+  .sp-sum { display: none; }
+  .sp .pvc-outcome { font-size: 13px; }
+}
+
+/* wide frames (tabs beside the sheet): the steppers and the big button share a row, so the 3D view keeps its height */
 @container pvc (min-width: 720px) and (min-height: 461px) {
-  .sp .pvc-learn { gap: 9px; }
-  .sp .pvc-examples, .sp-calc { max-width: 520px; }
-  .sp-calc { justify-content: flex-start; gap: 28px; }
+  .sp .pvc-learn { display: grid; grid-template-columns: max-content minmax(0, 1fr); column-gap: 28px; row-gap: 9px; align-content: start; }
+  .sp .pvc-examples, .sp .pvc-outcome, .sp .pvc-rule { grid-column: 1 / -1; }
+  .sp .pvc-examples, .sp-fx { max-width: 560px; }
+  .sp-calc { justify-content: flex-start; gap: 20px; }
   .sp .pvc-rule { --pvc-rule-lines: 2; }
   .sp .pvc-q-feedback { --pvc-q-feedback-min: 3lh; }
+}
+@container pvc (min-width: 720px) and (max-width: 1100px) and (min-height: 461px) {
+  .sp-word { display: none; }
+  .sp-btn { width: 34px; }
+  .sp .pvc-act-row { --pvc-act-lines: 2; } /* the big button may take two lines beside the steppers */
+  .sp .pvc-act-row .pvc-quiet > span { display: none; }
+  .sp .pvc-act-row .pvc-quiet { padding: 0; }
 }
 /* the tightest phone (390 × 520): smaller steps and lines */
 @container pvc (max-width: 560px) and (max-height: 600px) {

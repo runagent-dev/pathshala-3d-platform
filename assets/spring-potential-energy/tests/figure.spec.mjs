@@ -1,6 +1,7 @@
 // Potential energy of a spring (book p106–107, topic 4.3.2) through the bridge: the big button's three steps (pull
 // 5 cm, twice as far, push in) give F = kx and the book's V = ½kx² with the comparison "twice x: twice the force, four
-// times the energy"; the steppers change x and k; the test sets up its own scenes; reset brings everything back.
+// times the energy"; the steppers change x and k; a tap on a letter of the formula lights its part of the picture and
+// says what it means; the test sets up its own scenes; reset brings everything back.
 // Runs with `npm run test:figures` (dev-only folder, never packaged).
 import { expect, test } from '@playwright/test';
 import { openFigure, preparePage } from '../../../scripts/lib/export/driver.mjs';
@@ -22,8 +23,10 @@ test('spring-potential-energy: F = kx, V = ½kx², twice x gives four times V', 
   await fig.advance(1500);
   const s1 = await fig.call('get');
   expect(s1).toMatchObject({ x: 5, F: 10, V: 0.25, state: 'stretched', moving: false, results: { stretched: 0.25 } });
-  expect(await text('.pvc-outcome')).toContain('বল F = kx = ২০০ N/m × ০.০৫ m = ১০ N');
-  expect(await text('.pvc-outcome')).toContain('= ০.২৫ J');
+  expect(await text('[data-sum="F"]')).toBe('=২০০ N/m×০.০৫ m');
+  expect(await text('[data-res="F"]')).toBe('=১০ N');
+  expect(await text('[data-sum="V"]')).toContain('×২০০×০.০৫২'); // ½ × k × x², x in metres
+  expect(await text('[data-res="V"]')).toBe('=০.২৫ J');
   expect(await text('.pvc-rule')).toContain('দুটো বল সমান, বিপরীত');
   expect(await text('[data-example="stretched"] .pvc-ex-res')).toBe('০.২৫ J');
   expect(s1.next).toEqual({ label: 'act_double', step: 2, to: [10] });
@@ -51,12 +54,28 @@ test('spring-potential-energy: F = kx, V = ½kx², twice x gives four times V', 
   expect(await text('.pvc-rule')).toContain('V =');
   await fig.frame.locator('[data-act="k+"]').click();
   expect(await fig.call('get')).toMatchObject({ x: -9, k: 300, F: 27, V: 1.215 });
-  expect(await text('.pvc-outcome')).toContain('= ১.২১৫ J');
+  expect(await text('[data-res="V"]')).toBe('=১.২১৫ J');
 
-  // let it back: at rest again, nothing stored
-  await fig.call('set', { home: true });
-  await fig.advance(1000);
-  expect(await fig.call('get')).toMatchObject({ x: 0, F: 0, V: 0, state: 'rest' });
+  // the formula's letters: x² lights the x bracket and explains the square; a second tap puts it out; k names the spring
+  await fig.frame.locator('[data-sym="sq"]').click();
+  expect((await fig.call('get')).focus).toBe('sq');
+  expect(await fig.frame.locator('[data-sym="sq"]').getAttribute('aria-pressed')).toBe('true');
+  expect(await text('.pvc-rule')).toContain('x × x = ০.০৯ × ০.০৯ = ০.০০৮১');
+  expect(await text('.pvc-anno:has(.sp-hot)')).toBe('x = ৯ cm');
+  await fig.frame.locator('[data-sym="sq"]').click();
+  expect((await fig.call('get')).focus).toBe(null);
+  await fig.frame.locator('[data-sym="k"]').first().click();
+  await fig.advance(3000);
+  expect(await text('.pvc-anno:has(.sp-hot)')).toBe('k = ৩০০ N/m');
+  expect(await text('.pvc-rule')).toContain('স্প্রিংয়ের ধ্রুবক');
+  await fig.frame.locator('[data-sym="half"]').click();
+  expect(await text('.pvc-rule')).toContain('গড়ে');
+  expect(await fig.frame.locator('.pvc-anno:has(.sp-hot)').count()).toBe(2); // F_P and F_S
+
+  // let it back (the big button): at rest again, nothing stored, and the step's own words come back
+  await fig.frame.locator('.pvc-act').click();
+  await fig.advance(2000);
+  expect(await fig.call('get')).toMatchObject({ x: 0, F: 0, V: 0, state: 'rest', focus: null });
   expect(await text('.pvc-rule')).toContain('আবার');
 
   // the test: five questions, each sets up its own scene; the scene is locked
@@ -79,6 +98,6 @@ test('spring-potential-energy: F = kx, V = ½kx², twice x gives four times V', 
 
   // reset
   const r = await fig.call('reset');
-  expect(r).toMatchObject({ x: 0, k: 200, seen: { stretched: false, compressed: false, double: false } });
+  expect(r).toMatchObject({ x: 0, k: 200, focus: null, seen: { stretched: false, compressed: false, double: false } });
   expect(log.errors).toEqual([]);
 });

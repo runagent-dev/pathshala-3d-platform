@@ -15,7 +15,7 @@ import { createAudio } from '@shared/student/audio.js';
 import { ICONS } from '@shared/student/icons.js';
 import { createQuiz } from '@shared/student/quiz.js';
 import { bindCleanSheet, buildStudentShell, cleanSheet } from '@shared/student/shell.js';
-import { AXIS, createApparatus, X0 } from './apparatus.js';
+import { AXIS, COIL, createApparatus, X0 } from './apparatus.js';
 import { fitPose } from './camera.js';
 import { createHand } from './hand.js';
 import { createI18n } from './i18n.js';
@@ -50,9 +50,10 @@ export const DEFAULTS = {
   sound: true,
 };
 
-// one colour per quantity (style.css has the same): the hand's force F_P green, the spring's force F_S blue, x orange
-// (as in the owner's reference picture), the stored energy V purple (as the energy figure), the spring magenta
-const COLORS = { FP: '#2b9a3e', FS: '#1864d6', x: '#f76707', V: '#6741d9', zero: '#ffffff', spring: '#e0317a' };
+// one colour per quantity, the same in the picture and in the formula (style.css has them too): the hand's force F_P
+// green, the spring's force F_S blue, x orange, x = 0 navy (as in the owner's reference picture), the stored energy V
+// purple (as the energy figure), the spring and its constant k magenta
+const COLORS = { FP: '#2b9a3e', FS: '#1864d6', x: '#f76707', V: '#7048e8', zero: '#1b1f3b', spring: '#e0317a' };
 const SCALE = 0.004; // m of arrow per newton (40 N → 16 cm): the arrows are drawn to scale, F = kx
 const ARROW_Y = 0.03; // the force arrows run under the spring, above the bench
 const BRACKET_Y = 0.215; // the x bracket above the spring
@@ -101,6 +102,25 @@ export function createApp(root, options = {}) {
   const ui = buildStudentShell(root, t, { learn: sheetHtml, learnAlign: 'start' });
   const sheet = bindCleanSheet(ui.learn);
   const $ = ui.$;
+  // the result line is the book's two formulas, each letter a button tied to its part of the picture (k the spring,
+  // x the orange bracket, F the arrows, V the stored energy, ½ and the square explained), with the student's numbers
+  // in the same colours and a bar under each that grows with the value (the force evenly, the energy as x²)
+  const sym = (id, html) =>
+    `<button type="button" class="sp-s s-${id}" data-sym="${id}" aria-pressed="false" aria-label="${t(`sym_${id}`)}">${html}</button>`;
+  const row = (q, lhs) =>
+    `<span class="sp-lhs"><span class="sp-wd">${t(`w_${q}`)} </span>${lhs}</span><span class="sp-sum" data-sum="${q}"></span><span class="sp-res c-${q}" data-res="${q}"></span><span class="sp-bar c-${q}" aria-hidden="true"><span data-bar="${q}"></span></span>`;
+  const fx = $('.pvc-outcome');
+  fx.innerHTML = `<span class="sp-fx" role="group" aria-label="${t('fx')}">${row('F', `${sym('F', '<i>F</i>')}<span class="sp-eq">=</span>${sym('k', '<i>k</i>')}${sym('x', '<i>x</i>')}`)}${row(
+    'V',
+    `${sym('V', '<i>V</i>')}<span class="sp-eq">=</span>${sym('half', t('half'))}${sym('k', '<i>k</i>')}${sym('sq', `<span><i>x</i><sup>${N(2)}</sup></span>`)}`,
+  )}</span>`;
+  const fxEl = {
+    box: $('.sp-fx'),
+    sum: { F: $('[data-sum="F"]'), V: $('[data-sum="V"]') },
+    res: { F: $('[data-res="F"]'), V: $('[data-res="V"]') },
+    bar: { F: $('[data-bar="F"]'), V: $('[data-bar="V"]') },
+    syms: ui.$$('[data-sym]'),
+  };
   const el = {
     x: $('[data-v="x"]'),
     k: $('[data-v="k"]'),
@@ -121,24 +141,30 @@ export function createApp(root, options = {}) {
   controls.maxDistance = 4;
   controls.enablePan = false;
   controls.enableRotate = false;
-  // a vivid backdrop: deep blue at the top to light sky blue at the bench (the orange x and white x = 0 read on it)
+  // a light blue studio: a soft sky-blue sweep, brighter low down where the table meets it (the owner's request), so
+  // the magenta spring, the navy wall, the orange x and the green and blue arrows stand out
   if (o.bg !== 'transparent') {
     const c = document.createElement('canvas');
-    c.width = 8;
+    c.width = 256;
     c.height = 256;
     const ctx = c.getContext('2d');
     const g = ctx.createLinearGradient(0, 0, 0, 256);
-    g.addColorStop(0, '#173a7a');
-    g.addColorStop(0.55, '#2f7fd0');
-    g.addColorStop(1, '#a5d8ff');
+    g.addColorStop(0, '#74c0fc');
+    g.addColorStop(0.5, '#a5d8ff');
+    g.addColorStop(1, '#e7f5ff');
     ctx.fillStyle = g;
-    ctx.fillRect(0, 0, 8, 256);
+    ctx.fillRect(0, 0, 256, 256);
+    const glow = ctx.createRadialGradient(150, 170, 10, 150, 170, 190);
+    glow.addColorStop(0, 'rgba(255, 255, 255, 0.55)');
+    glow.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, 256, 256);
     const sky = new THREE.CanvasTexture(c);
     sky.colorSpace = THREE.SRGBColorSpace;
     scene.background = sky;
   }
-  scene.add(new THREE.HemisphereLight(0xeaf4ff, 0xb98a5a, 0.85));
-  const key = new THREE.DirectionalLight(0xfff1df, 1.1);
+  scene.add(new THREE.HemisphereLight(0xe3f2ff, 0xffffff, 0.8));
+  const key = new THREE.DirectionalLight(0xfff6ea, 1.1);
   key.position.set(0.6, 1.4, 1.2);
   scene.add(key);
 
@@ -146,7 +172,7 @@ export function createApp(root, options = {}) {
   world.name = 'SpringPotentialEnergy';
   scene.add(world);
   const app = createApparatus({ num: N, unit: t('u_cm'), springColor: COLORS.spring });
-  const hand = createHand({ sleeve: '#f1e6cf' });
+  const hand = createHand({ sleeve: '#ffffff' });
   world.add(app.root, hand.root);
 
   const helpers = new THREE.Group(); // arrows and guide lines: shown, never exported
@@ -193,6 +219,36 @@ export function createApp(root, options = {}) {
   endLine.scale.y = BRACKET_Y + 0.012 - 0.003;
   helpers.add(endLine);
 
+  // ── a letter of the formula lights its part of the picture: it pulses a few times, then stays lit ──
+  const FOCUS = {
+    F: { arrows: true, labels: ['FP', 'FS'] },
+    half: { arrows: true, labels: ['FP', 'FS'] }, // ½: the force grows from 0 to kx while the spring is pulled
+    k: { spring: COLORS.spring, labels: ['k'] },
+    x: { x: true, labels: ['x'] },
+    sq: { x: true, labels: ['x'] },
+    V: { spring: COLORS.V, labels: ['V'] },
+  };
+  const forceMats = [arrows.FP.material, arrows.FS.material];
+  const xMats = [arrows.xa.material, arrows.xb.material, endLine.material];
+  const springMat = app.materials.spring;
+  const pulse = { t: 0 };
+  const PULSE = 2.4; // s: two and a half pulses, ending lit
+  function glow() {
+    const f = FOCUS[s.focus] || {};
+    const lit = pulse.t >= PULSE ? 1 : 0.5 - 0.5 * Math.cos((pulse.t / (PULSE / 2.5)) * Math.PI * 2);
+    for (const m of forceMats) m.emissiveIntensity = f.arrows ? 0.2 + 0.6 * lit : 0.2;
+    for (const m of xMats) m.emissiveIntensity = f.x ? 0.3 + 0.6 * lit : m === endLine.material ? 0.35 : 0.2;
+    if (f.spring) springMat.emissive.set(f.spring);
+    springMat.emissiveIntensity = f.spring ? 0.55 * lit : 0;
+    stage.invalidate();
+  }
+  stage.addTicker((dt) => {
+    if (!s.focus || pulse.t >= PULSE) return false;
+    pulse.t = Math.min(PULSE, pulse.t + dt);
+    glow();
+    return true;
+  });
+
   const tweener = createTweener();
   stage.addTicker((dt) => tweener.tick(dt));
   const audio = createAudio(o.sound);
@@ -237,6 +293,7 @@ export function createApp(root, options = {}) {
     userMovedCamera: false,
     lastAct: -1e9,
     run: 0, // a token: bumped by anything that cancels a run
+    focus: null, // the formula's letter the student tapped: 'F' | 'k' | 'x' | 'half' | 'sq' | 'V' (lit in the picture)
   };
   const F = () => force(s.k, s.x);
   const V = () => energy(s.k, s.x);
@@ -311,10 +368,14 @@ export function createApp(root, options = {}) {
     FS: new THREE.Vector3(),
     V: new THREE.Vector3(),
   };
+  // above the line's top first; when the corner buttons are there (a short phone), beside the line lower down
   const ZERO_SPOTS = [
     { dx: 0, dy: -14 },
     { dx: -30, dy: -6 },
     { dx: 30, dy: -6 },
+    { dx: -24, dy: 22 },
+    { dx: 24, dy: 22 },
+    { dx: -24, dy: 44 },
   ];
   // under the bracket first (between it and the spring), so the x = 0 label above stays clear
   const X_SPOTS = [
@@ -322,7 +383,9 @@ export function createApp(root, options = {}) {
     { dx: 0, dy: -16 },
     { dx: 44, dy: 15 },
   ];
-  const ZERO_SPOTS_R = [ZERO_SPOTS[0], ZERO_SPOTS[2], ZERO_SPOTS[1]];
+  // pushed in, the bracket ends by the hand and the action's badge: above it first
+  const X_SPOTS_IN = [X_SPOTS[1], X_SPOTS[0], { dx: -44, dy: 15 }];
+  const ZERO_SPOTS_R = [ZERO_SPOTS[0], ZERO_SPOTS[2], ZERO_SPOTS[1], ZERO_SPOTS[4], ZERO_SPOTS[3], { dx: 24, dy: 44 }];
   const ABOVE = [
     { dx: 0, dy: -16 },
     { dx: 0, dy: -32 },
@@ -346,32 +409,34 @@ export function createApp(root, options = {}) {
       }
       return;
     }
-    if (!shown.has(id)) {
-      anno.add(id, { text, point: () => point, color, spots, kind: 'part', optional });
-      shown.set(id, text);
-    } else if (shown.get(id) !== text) {
-      anno.setText(id, text);
-      shown.set(id, text);
-    }
+    const was = shown.get(id);
+    if (!was) anno.add(id, { text, point: () => point, color, spots, kind: 'part', optional });
+    else if (was.text !== text || was.spots !== spots) anno.update(id, { text, spots }); // the spots change with the side
+    shown.set(id, { text, spots });
   }
   function labels(end, Fs, show) {
     const letters = s.labels === 'letters';
     const out = s.shown > 0;
-    label('zero', true, t('l_zero'), P.zero, '#212529', s.shown < 0 ? ZERO_SPOTS_R : ZERO_SPOTS);
+    // a label whose letter the student tapped in the formula is filled with its colour
+    const lit = FOCUS[s.focus]?.labels || [];
+    const hot = (id, text) => (lit.includes(id) ? `<span class="sp-hot">${text}</span>` : text);
+    label('zero', true, t('l_zero'), P.zero, COLORS.zero, s.shown < 0 ? ZERO_SPOTS_R : ZERO_SPOTS);
     P.x.set((end + X0) / 2, BRACKET_Y, 0);
-    label('x', show, t('l_x', { x: Math.abs(s.x) }), P.x, COLORS.x, X_SPOTS); // x is given by the picture, also in the test
+    label('x', show, hot('x', t('l_x', { x: Math.abs(s.x) })), P.x, COLORS.x, s.shown < 0 ? X_SPOTS_IN : X_SPOTS); // x is given by the picture, also in the test
     const len = Fs * SCALE;
     P.FP.set(end + (out ? len : -len), ARROW_Y, 0);
     P.FS.set(end + (out ? -len : len), ARROW_Y, 0);
     // a label per direction: when the spring goes from pulled to pushed, each label starts again on its arrow's side
-    const fp = letters ? t('l_FP_only') : t('l_FP', { F: F() });
-    const fs = letters ? 'F<sub>S</sub>' : t('l_FS', { F: F() });
+    const fp = hot('FP', letters ? t('l_FP_only') : t('l_FP', { F: F() }));
+    const fs = hot('FS', letters ? 'F<sub>S</sub>' : t('l_FS', { F: F() }));
     label('FP-out', show && out, fp, P.FP, COLORS.FP, TIP_R);
     label('FP-in', show && !out, fp, P.FP, COLORS.FP, TIP_L);
     label('FS-out', show && out && !s.hideFS, fs, P.FS, COLORS.FS, TIP_L);
     label('FS-in', show && !out && !s.hideFS, fs, P.FS, COLORS.FS, TIP_R);
-    P.V.set(Math.max(0.07, (Math.min(end, X0) - 0.06) / 2), AXIS.y + 0.03, 0); // over the coils by the wall, clear of the bracket
-    label('V', show && !letters, t('l_V', { V: plain(V()) }), P.V, COLORS.V, ABOVE, true);
+    P.V.set(Math.max(0.07, (Math.min(end, X0) - 0.06) / 2), AXIS.y + COIL.radius + 0.004, 0); // over the coils by the wall, clear of the bracket
+    // k names the spring itself (shown while its letter is lit, in the stored energy's place)
+    label('k', s.focus === 'k', hot('k', t('l_k', { k: s.k })), P.V, COLORS.spring, ABOVE);
+    label('V', show && !letters && s.focus !== 'k', hot('V', t('l_V', { V: plain(V()) })), P.V, COLORS.V, ABOVE, true);
   }
 
   // ── the panel ───────────────────────────────────────────────────────────────
@@ -385,14 +450,14 @@ export function createApp(root, options = {}) {
     el.kplus.disabled = lock || s.k >= K_RANGE.max;
 
     const xm = plain(metres(s.x));
-    sheet.outcome(
-      `<span class="sp-out c-F">${t('out_F', { k: s.k, xm, F: F() })}</span><span class="sp-out c-V">${t('out_V', { k: s.k, xm, V: plain(V()) })}</span>`,
-    );
+    const vars = { k: s.k, x: Math.abs(s.x), xm, F: F(), V: plain(V()), x2: plain(metres(s.x) ** 2) };
+    writeFormula(vars);
 
-    // the rule, growing with what the student has found out
+    // the rule: what the tapped letter means, else growing with what the student has found out
     let rule;
     const st = stateOf(s.x);
-    if (st === 'rest') rule = s.seen.stretched || s.seen.compressed ? t('rule_rest_after') : t('rule_rest');
+    if (s.focus) rule = `${t(`why_${s.focus}`, vars)}${st === 'rest' && !['k', 'x'].includes(s.focus) ? ` ${t('why_rest')}` : ''}`;
+    else if (st === 'rest') rule = s.seen.stretched || s.seen.compressed ? t('rule_rest_after') : t('rule_rest');
     else if (s.cmp && !s.dragging && !s.moving) {
       const prev = { k: s.k, x: (s.x / Math.abs(s.x)) * (Math.abs(s.x) / s.cmp.times) };
       rule = t('rule_times', {
@@ -415,6 +480,45 @@ export function createApp(root, options = {}) {
     const nx = nextAction();
     sheet.next(stateOf(nx.to[nx.to.length - 1]) !== st ? stateOf(nx.to[nx.to.length - 1]) : null);
     action?.set({ label: nx.label, step: nx.step, enabled: !s.moving && !s.locked });
+  }
+
+  /** The formula's numbers and bars, written only when they change (the letters are buttons: never rebuilt). */
+  const lastFx = {};
+  function writeFormula(v) {
+    const n = (cls, x) => `<span class="${cls}">${N(x)}</span>`;
+    const op = (c) => `<i class="sp-op">${c}</i>`; // = and ×, spaced by CSS (closer in a narrow panel)
+    const parts = {
+      sumF: `${op('=')}${n('n-k', v.k)}<span class="sp-u"> N/m</span>${op('×')}${n('n-x', v.xm)}<span class="sp-u"> m</span>`,
+      sumV: `${op('=')}<span class="n-half">${t('half')}</span>${op('×')}${n('n-k', v.k)}${op('×')}<span class="n-x">${N(v.xm)}<sup class="n-sq">${N(2)}</sup></span>`,
+      resF: `${op('=')}<b>${N(v.F)} N</b>`,
+      resV: `${op('=')}<b>${N(v.V)} J</b>`,
+    };
+    for (const [key, html] of Object.entries(parts)) {
+      if (lastFx[key] === html) continue;
+      lastFx[key] = html;
+      const el = key.startsWith('sum') ? fxEl.sum[key.slice(3)] : fxEl.res[key.slice(3)];
+      el.innerHTML = html;
+    }
+    // the bars: the largest force and energy the figure can show (k 400 N/m, x 10 cm: 40 N, 2 J) fill them
+    fxEl.bar.F.style.width = `${(100 * v.F) / force(K_RANGE.max, X_RANGE.max)}%`;
+    fxEl.bar.V.style.width = `${(100 * Number(v.V)) / energy(K_RANGE.max, X_RANGE.max)}%`;
+    fxEl.box.dataset.focus = s.focus || '';
+    for (const b of fxEl.syms) {
+      const on = b.dataset.sym === s.focus;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', String(on));
+    }
+  }
+
+  /** Light a letter of the formula, its part of the picture, and say what it means (null: none). */
+  function setFocus(f) {
+    const next = f && FOCUS[f] ? f : null;
+    if (next === s.focus) return;
+    s.focus = next;
+    pulse.t = 0;
+    glow();
+    place();
+    changed();
   }
 
   /** What the big button does next: { label, step, to: [cm, …] }. The steps are the student's own. */
@@ -445,12 +549,13 @@ export function createApp(root, options = {}) {
       mode: s.mode,
       view: s.view,
       locked: s.locked,
+      focus: s.focus,
     };
   }
   let lastEmit = '';
   function changed() {
     const snap = snapshot();
-    const keyNow = `${snap.x}|${snap.k}|${snap.moving}|${snap.mode}`;
+    const keyNow = `${snap.x}|${snap.k}|${snap.moving}|${snap.mode}|${snap.focus}`;
     if (keyNow !== lastEmit) {
       lastEmit = keyNow;
       emit('change', snap);
@@ -537,6 +642,7 @@ export function createApp(root, options = {}) {
     if (s.moving || s.dragging) return;
     s.lastAct = performance.now();
     audio.unlock();
+    if (s.focus) setFocus(null); // the step's own words come back
     const nx = nextAction();
     const token = s.run + 1;
     for (const [i, x] of nx.to.entries()) {
@@ -573,7 +679,7 @@ export function createApp(root, options = {}) {
   }
 
   // ── camera: the wall, the spring at its longest, the hand, the longest arrow ─
-  const box = new THREE.Box3(new THREE.Vector3(-0.02, -0.01, -0.03), new THREE.Vector3(0.6, ZERO_TOP + 0.02, 0.03));
+  const box = new THREE.Box3(new THREE.Vector3(-0.02, -0.01, -0.03), new THREE.Vector3(0.52, ZERO_TOP + 0.02, 0.03));
   function viewPose() {
     // a tall view is short of width: turn further toward the hand, so the spring recedes and the hand comes closer
     const tall = stage.width / Math.max(1, stage.height) < 1.2;
@@ -875,6 +981,7 @@ export function createApp(root, options = {}) {
     hooks: {
       enter() {
         cancelRun();
+        setFocus(null);
         saved = { x: s.x, k: s.k };
         s.mode = 'quiz';
         s.locked = true;
@@ -953,6 +1060,11 @@ export function createApp(root, options = {}) {
     if (b.dataset.mode === 'quiz' && s.mode !== 'quiz') quiz.start();
     if (b.dataset.mode === 'explore') quiz.stop();
     if (b.dataset.q != null) quiz.choose(Number(b.dataset.q));
+    if (b.dataset.sym) {
+      // a second tap on the same letter puts it out
+      setFocus(b.dataset.sym === s.focus ? null : b.dataset.sym);
+      audio.tick();
+    }
     if (b.dataset.example) {
       if (s.locked) lockedNudge();
       else {
@@ -1012,10 +1124,12 @@ export function createApp(root, options = {}) {
     getState: () => snapshot(),
     /**
      * Change any of: x (cm, + pulled out, − pushed in), k (N/m), act (true: the big button), home (true: back to
-     * rest), view; animate: false jumps (and waits for nothing).
+     * rest), view, focus (a letter of the formula: 'F' | 'k' | 'x' | 'half' | 'sq' | 'V', or null); animate: false jumps
+     * (and waits for nothing).
      */
     async set(p = {}) {
       const animate = p.animate !== false;
+      if (p.focus !== undefined && !s.locked) setFocus(p.focus);
       if (s.locked && (p.x != null || p.k != null || p.act || p.home)) return snapshot();
       if (p.view) await setView(p.view, { animate });
       if (p.k != null) {
@@ -1039,6 +1153,7 @@ export function createApp(root, options = {}) {
       quiz.stop();
       cancelRun();
       Object.assign(s, { k: START.k, labels: 'full', hideFS: false });
+      setFocus(null);
       forget();
       await moveTo(START.x, { animate: false });
       forget();

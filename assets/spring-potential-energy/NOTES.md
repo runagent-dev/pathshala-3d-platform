@@ -49,13 +49,15 @@ position; it grows with x (F = kx), and the energy grows faster: twice x, twice 
 "জমা", "শক্ত স্প্রিং" (large k), "নরম স্প্রিং" (small k); the book's words in the rule's bold lines.
 
 ## How the figure works
-- **The scene (metres, `units: "m"`).** A yellow wall board on a wooden bench with a steel plate; a magenta coil spring
-  (13 turns, 4.4 cm across, 30 cm long at rest) screwed to it, rebuilt as a real helix every time its length changes, so
+- **The scene (metres, `units: "m"`).** A light blue studio (0.2.0, the owner's request): a soft sky-blue sweep behind a
+  white table with a light blue-grey edge; a navy wall with the diagonal hatching that marks a fixed wall in physics
+  drawings, rising out of the frame, with a steel plate; a magenta coil spring (13 turns, 4.4 cm across, 30 cm long at
+  rest) screwed to it, rebuilt as a real helix every time its length changes, so
   its coils spread when pulled and bunch when pushed; a steel end cap with a wooden handle bar; a realistic right hand (palm,
   three tapered bones per finger, thumb, nails, forearm, rolled sleeve: `src/hand.js`, modelled after the hands of
-  `types-of-friction`'s person) holds the bar; a white centimetre ruler on the bench under the spring with its 0 under the
+  `types-of-friction`'s person, white shirt sleeve) holds the bar; a yellow centimetre ruler on the table under the spring with its 0 under the
   free end at rest (too small to read on a phone, so the x bracket also carries its value). Life-size: nothing is drawn bigger than life.
-- **The owner's reference picture, in 3D**: a dashed white line at **x = ০**; the orange **x** bracket from it to the end,
+- **The owner's reference picture, in 3D**: a dashed navy line at **x = ০**; the orange **x** bracket from it to the end,
   with a thin orange line down to the ruler (so x reads on the ruler without parallax); the hand's force **F<sub>P</sub>**
   (green) and the spring's force **F<sub>S</sub>** (blue) from the end, equal and opposite, drawn to scale (4 mm per newton,
   "তীরের দৈর্ঘ্য বলের সমানুপাতিক" in the corner), F<sub>S</sub> always toward x = 0. The stored energy **V** (purple, the
@@ -69,8 +71,21 @@ position; it grows with x (F = kx), and the energy grows faster: twice x, twice 
   the handle** (mouse or finger) moves the end in whole centimetres; **steppers** change x and k; ← → move x, ↑ ↓ change k,
   R goes back to rest. The row of words (স্থির অবস্থা · টেনে লম্বা · চেপে সংকুচিত) shows the state and the last V seen in
   each.
-- **One result** (two short lines, the numbers in colour): "বল F = kx = ২০০ N/m × ০.১ m = **২০ N**" and "বিভব শক্তি V =
-  ½kx² = ½ × ২০০ × ০.১² = **১ J**", live with x and k.
+- **One result: the two formulas, tappable** (0.2.0, "interactive formula understanding"). Two aligned lines,
+  "বল F = kx = ২০০ N/m × ০.১ m = **২০ N**" and "বিভব শক্তি V = ½kx² = ½ × ২০০ × ০.১² = **১ J**", live with x and k. Every
+  letter of the formulas is a button in its quantity's colour (F green, k magenta like the spring, x and x² orange like
+  the bracket, ½ indigo, V purple), and the student's numbers in the sums carry the same colours. A tap lights the
+  letter and its part of the picture (it pulses two and a half times, then stays lit; a second tap puts it out): **F**
+  and **½** the two force arrows and their labels, **k** the spring (it glows, and a "k = ২০০ N/m" label names it), **x**
+  and **x²** the orange bracket, its mark and label, **V** the spring glowing purple and the V label. The rule line then
+  says what the letter means with the student's numbers: F (the hand's force and the spring's equal, opposite one), k
+  (how stiff; larger k, more force and more energy for the same x), x (cm → m, measured from the x = ০ line), x² (x × x
+  with the numbers; twice x, four times x²), ½ (the force grows from ০ to kx, ½kx on average; work = average force ×
+  distance = ½kx × x = ½kx²: the page's own route from work to stored energy) and V (the stored work, the book's
+  বিভব শক্তি). A thin bar under each formula grows with its value (full at 40 N and 2 J, k 400 N/m and x 10 cm): while
+  the student drags, the force bar grows evenly and the energy bar slowly, then fast; the x² explanation points at
+  them. In the narrowest side panel (640 × 400) the sums are left out of the lines (the lhs and the result stay) and a
+  tap on F or V shows them in the rule. The big button puts any lit letter out, so each step's own words come back.
 - **One rule, growing:** at rest → pulled ("দুটো বল সমান, বিপরীত … স্প্রিং সবসময় x = ০-তে ফিরতে চায়") → twice as far
   ("x ২ গুণ (৫ → ১০ cm): বল ২ গুণ (১০ → ২০ N), কিন্তু বিভব শক্তি ৪ গুণ (০.২৫ → ১ J), কারণ ২ × ২ = ৪"; the same for 3 ×,
   whenever the student reaches a whole multiple of an earlier x, same k, same direction) → pushed in ("এই সঞ্চিত শক্তিকে
@@ -81,17 +96,26 @@ position; it grows with x (F = kx), and the energy grows faster: twice x, twice 
   (2) F from k and the x shown in the picture (x left in cm, a ½ added, x squared); (3) V from k and the x shown (no ½,
   no square, the force instead, cm); the forces carry only their letters and V is hidden until the answer; (4) x doubled or tripled from a stated V: ×4 or ×9 (linear, cubed, unchanged); (5) the same
   x pushed in instead of pulled out: the same V (negative, zero, twice).
-- **Bridge.** `get` (x, k, xm, F, V, state, seen, results, compare, next, moving, mode, view, locked), `set` (x, k, act,
-  home, view, animate:false), `reset`, `practice`, `capture`, `export-glb` (the bench, wall, ruler, spring, handle and hand;
+- **Bridge.** `get` (x, k, xm, F, V, state, seen, results, compare, next, moving, mode, view, locked, focus), `set` (x,
+  k, act, home, view, focus: 'F' | 'k' | 'x' | 'half' | 'sq' | 'V' | null, animate:false), `reset`, `practice`, `capture`, `export-glb` (the bench, wall, ruler, spring, handle and hand;
   the arrows and guide lines are not exported). Events: ready, change, act, dragstart, dragend, view, practice-*. Poster:
   pulled out 10 cm (F 20 N, V 1 J).
 
 ## Look
-Vivid on purpose (the owner asked for it): a deep-blue-to-sky backdrop as in `work`, a yellow board, a magenta spring (the
-reference picture's colour), a wooden bench, a white ruler. Colours: F<sub>P</sub> #2b9a3e, F<sub>S</sub> #1864d6 (as the
-owner's reference picture (b)), x #f76707, V #6741d9 (as `energy`'s বিভব শক্তি), k (stepper) #c2255c.
+0.2.0, after the owner's look at 0.1.0: "light blue background, beautiful vivid contrast, interactive formula
+understanding". Only the 3D scene is light blue (#74c0fc → #a5d8ff → #e7f5ff, a soft white glow behind the spring); the
+panel stays the kit's white sheet. Vivid against it: a magenta spring (the reference picture's colour), a hatched navy
+wall (#28337f), a yellow ruler, a navy x = ০ line (#1b1f3b), a white table. Colours: F<sub>P</sub> #2b9a3e,
+F<sub>S</sub> #1864d6 (as the owner's reference picture (b)), x #f76707, V #7048e8 in the scene (#6741d9 text, as
+`energy`'s বিভব শক্তি), k #c2255c (the spring's magenta, text), ½ #364fc7.
+
+0.1.0 had a deep-blue-to-sky backdrop, a yellow wall board and a wooden bench, and the result as two plain lines.
 
 ## Stylised on purpose
+- The ½ explanation (average force × distance) is not on the page; it follows the page's own argument (work done by a
+  force becomes energy) and is offered only when the student taps ½. Open question 6 below.
+- The bars under the formulas are not a graph (the page has none): two plain bars, full at the largest force and energy
+  the figure can show.
 - The spring hangs straight out from the board with no sag (a stiff spring), and its coils never touch (at 20 cm long the
   turns are still 15 mm apart).
 - The hand holds the handle the same way to pull and to push (palm down, fingers round the bar); the book's picture pushes
@@ -110,3 +134,5 @@ owner's reference picture (b)), x #f76707, V #6741d9 (as `energy`'s বিভব
 5. An older, unmerged branch `fig/potential-energy/first-version` (no pull request) has another figure for this page (a
    squeezed spring pushing a trolley, energy as cubes). This figure follows the owner's newer reference picture; the old
    branch can be closed if this one is taken.
+6. The ½ explanation ("the force grows from ০ to kx, ½kx on average; work = average force × distance") is not on the
+   page. Is it welcome as the tap-to-see reason, or should the ½ only be named?

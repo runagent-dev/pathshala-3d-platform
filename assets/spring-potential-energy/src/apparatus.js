@@ -1,6 +1,6 @@
-// The apparatus (metres): a wooden bench, a painted wall board with a steel plate, a coil spring screwed to it, a
-// steel end cap with a wooden handle bar, and a centimetre ruler on the bench with its 0 under the spring's free end
-// at rest. The spring is a real helix of wire: setEnd(x) rebuilds it so its coils spread out when it is pulled and
+// The apparatus (metres): a white lab table with a navy edge, a navy wall block with a steel plate, a magenta coil
+// spring screwed to it, a steel end cap with a wooden handle bar, and a yellow centimetre ruler on the table with its
+// 0 under the spring's free end at rest. Vivid colours on purpose: they stand out on the light blue backdrop. The spring is a real helix of wire: setEnd(x) rebuilds it so its coils spread out when it is pulled and
 // bunch up when it is pushed in (the number of turns stays the same).
 import * as THREE from 'three';
 import { REST_LENGTH } from './spring-maths.js';
@@ -22,12 +22,12 @@ function rulerTexture(num, unit) {
   c.height = 160;
   const ctx = c.getContext('2d');
   const g = ctx.createLinearGradient(0, 0, 0, c.height);
-  g.addColorStop(0, '#ffffff');
-  g.addColorStop(1, '#eef1f4');
+  g.addColorStop(0, '#ffe066');
+  g.addColorStop(1, '#fcc419');
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, c.width, c.height);
-  ctx.strokeStyle = '#3d3a2e';
-  ctx.fillStyle = '#2b2a24';
+  ctx.strokeStyle = '#1b1f3b';
+  ctx.fillStyle = '#1b1f3b';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
   for (let mm = RULER.from * 10; mm <= RULER.to * 10; mm++) {
@@ -53,29 +53,46 @@ function rulerTexture(num, unit) {
   return tex;
 }
 
-/** Wood grain for the bench: warm planks drawn once on a canvas. */
-function benchTexture() {
+/** The table's top: white laminate with a faint speckle, drawn once on a canvas (shadows read clearly on it). */
+function tableTexture() {
   const c = document.createElement('canvas');
-  c.width = 512;
-  c.height = 256;
+  c.width = 256;
+  c.height = 128;
   const ctx = c.getContext('2d');
-  ctx.fillStyle = '#c9864a';
-  ctx.fillRect(0, 0, 512, 256);
-  for (let i = 0; i < 90; i++) {
-    const y = (i * 37) % 256;
-    ctx.strokeStyle = `rgba(${110 + (i % 5) * 8}, ${58 + (i % 3) * 6}, 24, ${0.08 + (i % 4) * 0.03})`;
-    ctx.lineWidth = 1 + (i % 3);
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    for (let x = 0; x <= 512; x += 32) ctx.lineTo(x, y + Math.sin(x / 60 + i) * 3);
-    ctx.stroke();
+  ctx.fillStyle = '#eef6ff';
+  ctx.fillRect(0, 0, 256, 128);
+  for (let i = 0; i < 900; i++) {
+    const x = (i * 97) % 256;
+    const y = (i * 61 + ((i * i) % 17)) % 128;
+    ctx.fillStyle = `rgba(120, 150, 190, ${0.05 + (i % 5) * 0.012})`;
+    ctx.fillRect(x, y, 1 + (i % 2), 1);
   }
-  ctx.fillStyle = 'rgba(90, 45, 15, 0.35)';
-  for (const y of [0, 128]) ctx.fillRect(0, y, 512, 2);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-  tex.repeat.set(2, 1);
+  tex.repeat.set(6, 1.2);
+  return tex;
+}
+
+/** The wall's face: navy with the diagonal hatching that marks a fixed wall in physics drawings. */
+function wallTexture() {
+  const c = document.createElement('canvas');
+  c.width = 256;
+  c.height = 512;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#28337f';
+  ctx.fillRect(0, 0, 256, 512);
+  ctx.strokeStyle = 'rgba(165, 216, 255, 0.35)';
+  ctx.lineWidth = 6;
+  for (let d = -512; d < 512; d += 44) {
+    ctx.beginPath();
+    ctx.moveTo(d, 512);
+    ctx.lineTo(d + 512, 0);
+    ctx.stroke();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 8;
   return tex;
 }
 
@@ -107,9 +124,10 @@ export function createApparatus({ num = String, unit = 'cm', springColor = '#e03
   const root = new THREE.Group();
   root.name = 'SpringApparatus';
   const M = {
-    bench: new THREE.MeshStandardMaterial({ name: 'Bench', map: benchTexture(), roughness: 0.6, metalness: 0 }),
-    benchEdge: new THREE.MeshStandardMaterial({ name: 'BenchEdge', color: '#8a4f24', roughness: 0.65 }),
-    board: new THREE.MeshStandardMaterial({ name: 'WallBoard', color: '#ffc21a', roughness: 0.55 }),
+    bench: new THREE.MeshStandardMaterial({ name: 'Table', map: tableTexture(), roughness: 0.42, metalness: 0 }),
+    benchEdge: new THREE.MeshStandardMaterial({ name: 'TableEdge', color: '#8fa9cc', roughness: 0.5 }),
+    board: new THREE.MeshStandardMaterial({ name: 'Wall', color: '#28337f', roughness: 0.6 }),
+    wallFace: new THREE.MeshStandardMaterial({ name: 'WallFace', map: wallTexture(), roughness: 0.6 }),
     steel: new THREE.MeshPhysicalMaterial({ name: 'Steel', color: '#d7dde4', metalness: 0.95, roughness: 0.32 }),
     screw: new THREE.MeshPhysicalMaterial({ name: 'Screw', color: '#9aa3ad', metalness: 1, roughness: 0.35 }),
     spring: new THREE.MeshPhysicalMaterial({
@@ -122,7 +140,7 @@ export function createApparatus({ num = String, unit = 'cm', springColor = '#e03
     }),
     handle: new THREE.MeshPhysicalMaterial({ name: 'Handle', color: '#a0612f', roughness: 0.42, clearcoat: 0.5 }),
     ruler: new THREE.MeshStandardMaterial({ name: 'Ruler', map: rulerTexture(num, unit), roughness: 0.5 }),
-    rulerSide: new THREE.MeshStandardMaterial({ name: 'RulerSide', color: '#d5dbe1', roughness: 0.5 }),
+    rulerSide: new THREE.MeshStandardMaterial({ name: 'RulerSide', color: '#e8a90c', roughness: 0.5 }),
   };
   const mesh = (geometry, material, name, parent = root) => {
     const m = new THREE.Mesh(geometry, material);
@@ -133,12 +151,12 @@ export function createApparatus({ num = String, unit = 'cm', springColor = '#e03
     return m;
   };
 
-  // the bench
-  const bench = mesh(new THREE.BoxGeometry(1.6, 0.04, 0.5), [M.benchEdge, M.benchEdge, M.bench, M.benchEdge, M.benchEdge, M.benchEdge], 'Bench');
-  bench.position.set(0.35, -0.02, -0.12);
-  // the wall board, clamped upright at the bench's left
-  const board = mesh(new THREE.BoxGeometry(0.03, 0.3, 0.34), M.board, 'WallBoard');
-  board.position.set(-0.015, 0.15, -0.08);
+  // the table
+  const bench = mesh(new THREE.BoxGeometry(1.6, 0.04, 0.32), [M.benchEdge, M.benchEdge, M.bench, M.benchEdge, M.benchEdge, M.benchEdge], 'Table');
+  bench.position.set(0.35, -0.02, -0.06);
+  // the wall, a solid block upright at the table's left (picture (a) of the owner's reference: the spring fixed to a wall)
+  const board = mesh(new THREE.BoxGeometry(0.03, 0.42, 0.3), [M.wallFace, M.board, M.board, M.board, M.board, M.board], 'Wall');
+  board.position.set(-0.015, 0.21, -0.06);
   const plate = mesh(new THREE.CylinderGeometry(0.036, 0.036, 0.004, 40).rotateZ(Math.PI / 2), M.steel, 'WallPlate');
   plate.position.set(0.002, AXIS.y, AXIS.z);
   for (const [dy, dz] of [
