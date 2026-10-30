@@ -31,12 +31,15 @@ jobs:
       - run: npm run test:unit
       - run: npm audit --omit=dev --audit-level=high
 
-  # The two slow jobs below run for changes going into `main`. A release pull request into `prod` only carries what already
-  # passed on `main`, so they are skipped there (docs/ci.md).
+  # The two slow jobs below run for changes going into `main`. A release pull request (this repository's `main` into `prod`)
+  # only carries what already passed on `main`, so they are skipped there (docs/ci.md). Any other pull request into `prod`
+  # (a branch straight into `prod`, or one from a fork) runs them.
   figures:
     name: Figures in the browser
     needs: static
-    if: github.event_name != 'pull_request' || github.base_ref != 'prod'
+    if: >-
+      github.event_name != 'pull_request' || github.base_ref != 'prod' || github.head_ref != 'main' ||
+      github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -78,7 +81,9 @@ jobs:
 
   visual:
     name: Visual comparison with the base branch
-    if: github.event_name == 'pull_request' && github.base_ref != 'prod'
+    if: >-
+      github.event_name == 'pull_request' && (github.base_ref != 'prod' || github.head_ref != 'main' ||
+      github.event.pull_request.head.repo.full_name != github.repository)
     needs: static
     runs-on: ubuntu-24.04
     steps:

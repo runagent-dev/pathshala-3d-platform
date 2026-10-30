@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, it } from 'node:test';
 import { workOf } from '../../scripts/ci/library-work.mjs';
-import { testHash, renderHash } from '../../scripts/lib/ci/figure-hashes.mjs';
+import { renderHarness, renderHash, testHash } from '../../scripts/lib/ci/figure-hashes.mjs';
 import {
   figureOfSpec,
   harnessAffected,
@@ -50,6 +50,28 @@ describe('figure hashes', () => {
   it('are the same for the same inputs, wherever the repo is', () => {
     assert.deepEqual(makeRepo().hashes(), makeRepo().hashes());
     assert.deepEqual(makeRepo().hashes(renderHash), makeRepo().hashes(renderHash));
+  });
+
+  it("a base picture is keyed by the renderer that draws it (the running checkout), not by the base checkout's own", () => {
+    const base = makeRepo();
+    const head = makeRepo();
+    const key = () => renderHash('a', { root: base.root, harness: renderHarness(base.root, head.root) });
+    const before = key();
+    base.write('scripts/visual.mjs', '// the base renderer, which does not run\n');
+    assert.equal(key(), before);
+    head.write('scripts/visual.mjs', '// the renderer that runs\n');
+    assert.notEqual(key(), before);
+    base.write('shared/fonts/a.woff2', 'a font served from the base');
+    assert.notEqual(key(), renderHash('a', { root: base.root, harness: renderHarness(base.root, base.root) }));
+  });
+
+  it('test hashes cover package.json and the machine the tests ran on', () => {
+    const r = makeRepo();
+    const before = r.hashes();
+    r.write('package.json', '{"scripts":{"test:figures":"playwright test --retries=0"}}');
+    assert.deepEqual(changed(before, r.hashes()), ['a', 'b', 'c']);
+    const now = testHash('a', { root: r.root });
+    assert.notEqual(testHash('a', { root: r.root, environment: 'v22.0.0 linux x64 ubuntu24 20260101.1' }), now);
   });
 
   it('change for a figure when its own file changes, and for no other', () => {

@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { describe, it } from 'node:test';
-import { LockedError, acquireLock } from '../../scripts/lib/library/lock.mjs';
+import { LockedError, acquireLock, takeOver } from '../../scripts/lib/library/lock.mjs';
 import { tempDir } from '../helpers.mjs';
 
 const lockFile = () => path.join(tempDir(), 'cache', 'sync.lock');
@@ -78,5 +78,64 @@ describe('library sync lock', () => {
       });
     const codes = await Promise.all([run(), run(), run(), run()]);
     assert.equal(codes.filter((c) => c === 10).length, 1, `codes ${codes}`);
+  });
+
+  it('a takeover removes only the lock it judged stale, never one that changed since', () => {
+    const file = lockFile();
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    const dead = { pid: 999999, host: os.hostname(), startedAt: 'dead' };
+    const live = { pid: process.pid, host: os.hostname(), startedAt: 'live' };
+    fs.writeFileSync(file, JSON.stringify(live));
+    takeOver(file, dead);
+    assert.equal(JSON.parse(fs.readFileSync(file, 'utf8')).startedAt, 'live');
+    fs.writeFileSync(file, JSON.stringify(dead));
+    takeOver(file, dead);
+    assert.equal(fs.existsSync(file), false);
+    assert.equal(fs.existsSync(`${file}.takeover`), false);
+  });
+
+  it('a takeover of a damaged lock leaves a new, still empty one alone', () => {
+    const file = lockFile();
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, '');
+    takeOver(file, null);
+    assert.equal(fs.existsSync(file), true);
+    const old = new Date(Date.now() - 60_000);
+    fs.utimesSync(file, old, old);
+    takeOver(file, null);
+    assert.equal(fs.existsSync(file), false);
+  });
+
+  it('waits for another takeover in progress, and clears a guard left by a run that died in one', () => {
+    const file = lockFile();
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    const dead = { pid: 999999, host: os.hostname(), startedAt: 'dead' };
+    fs.writeFileSync(file, JSON.stringify(dead));
+    fs.writeFileSync(`${file}.takeover`, '1\n');
+    assert.throws(() => takeOver(file, dead), LockedError);
+    assert.equal(fs.existsSync(file), true);
+    const old = new Date(Date.now() - 60_000);
+    fs.utimesSync(`${file}.takeover`, old, old);
+    assert.throws(() => takeOver(file, dead), LockedError);
+    takeOver(file, dead);
+    assert.equal(fs.existsSync(file), false);
+  });
+
+  it('only one of several that find the same stale lock gets it', async () => {
+    const file = lockFile();
+    for (let round = 0; round < 5; round++) {
+      fs.mkdirSync(path.dirname(file), { recursive: true });
+      fs.writeFileSync(file, JSON.stringify({ pid: 999999, host: os.hostname(), startedAt: `dead-${round}` }));
+      const script = `import { acquireLock } from ${JSON.stringify(new URL('../../scripts/lib/library/lock.mjs', import.meta.url).href)};
+        try { acquireLock(${JSON.stringify(file)}); await new Promise((r) => setTimeout(r, 600)); process.exit(10); } catch { process.exit(11); }`;
+      const run = () =>
+        new Promise((resolve) => {
+          const c = spawn(process.execPath, ['--input-type=module', '-e', script], { stdio: 'ignore' });
+          c.on('exit', resolve);
+        });
+      const codes = await Promise.all([run(), run(), run(), run()]);
+      assert.ok(codes.filter((c) => c === 10).length <= 1, `round ${round}: codes ${codes}`);
+      fs.rmSync(file, { force: true });
+    }
   });
 });

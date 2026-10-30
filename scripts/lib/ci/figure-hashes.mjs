@@ -20,6 +20,7 @@ export const TEST_HARNESS = [
   'playwright.config.mjs',
   'playwright.config.js',
   'playwright.config.ts',
+  'package.json', // the test:figures command and its flags
   'package-lock.json',
   '.nvmrc',
   'scripts/dev.mjs',
@@ -34,16 +35,30 @@ export const TEST_HARNESS = [
   'schemas',
 ];
 
-/** Files and folders that decide how the visual comparison draws a figure. */
-export const RENDER_HARNESS = [
+/**
+ * What decides how the visual comparison draws a figure, in two parts: the code that draws (it runs from the checkout running
+ * the comparison, also for the base side's pictures) and the files that are served with the figure (from the checkout drawn).
+ */
+export const RENDERER = [
   'scripts/visual.mjs',
   'scripts/lib/export',
   'scripts/lib/static-server.mjs',
   'scripts/lib/mime.mjs',
-  'shared/fonts',
   'package-lock.json',
   '.nvmrc',
 ];
+export const RENDER_SERVED = ['shared/fonts'];
+export const RENDER_HARNESS = [...RENDERER, ...RENDER_SERVED];
+
+/** The render harness for pictures of the checkout `root` drawn by the code in `rendererRoot` (the running checkout). */
+export const renderHarness = (root, rendererRoot = root) => sha256(`${hashPaths(rendererRoot, RENDERER)}\n${hashPaths(root, RENDER_SERVED)}`);
+
+/**
+ * The machine the tests run on, beyond the files: the resolved Node version (`.nvmrc` says only "22") and, in GitHub Actions,
+ * the runner image (system libraries). A pass on another setup is not a pass on this one.
+ */
+export const testEnvironment = () =>
+  `${process.version} ${process.platform} ${process.arch} ${process.env.ImageOS ?? ''} ${process.env.ImageVersion ?? ''}`;
 
 const readText = (file) => (fs.existsSync(file) ? fs.readFileSync(file, 'utf8').trim() : '');
 
@@ -72,11 +87,11 @@ function inputsOf(id, root) {
 }
 
 /** The hash of everything a figure's browser tests depend on. */
-export function testHash(id, { root, harness = hashPaths(root, TEST_HARNESS) }) {
-  return hashJson({ kind: 'test', ...inputsOf(id, root), tests: hashPaths(path.join(root, 'assets', id), ['tests']), harness });
+export function testHash(id, { root, harness = hashPaths(root, TEST_HARNESS), environment = testEnvironment() }) {
+  return hashJson({ kind: 'test', ...inputsOf(id, root), tests: hashPaths(path.join(root, 'assets', id), ['tests']), harness, environment });
 }
 
 /** The hash of everything a figure's pictures in the visual comparison depend on. */
-export function renderHash(id, { root, harness = hashPaths(root, RENDER_HARNESS) }) {
+export function renderHash(id, { root, harness = renderHarness(root) }) {
   return hashJson({ kind: 'render', ...inputsOf(id, root), harness });
 }

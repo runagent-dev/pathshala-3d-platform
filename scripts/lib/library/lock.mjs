@@ -1,6 +1,7 @@
 // One sync at a time per cache folder: two runs publishing at once could each demote what the other just made current.
 // The lock is a file made with the "create, fail if it exists" flag. A lock left by a run that died (its process is gone, on
-// this machine) is taken over; one held by a live process, or by another machine, is respected.
+// this machine) is taken over; one held by a live process, or by another machine, is respected. Taking over is serialised by a
+// second file, `<lock>.takeover`, made the same way: only its holder removes a lock that is not its own.
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -14,6 +15,8 @@ export class LockedError extends Error {
 }
 
 const UNREADABLE_GRACE_MS = 10_000;
+// the takeover takes milliseconds; a guard this old was left by a run that died inside it
+const GUARD_STALE_MS = 30_000;
 
 const alive = (pid) => {
   try {
@@ -23,6 +26,43 @@ const alive = (pid) => {
     return err.code === 'EPERM';
   }
 };
+
+const sameLock = (a, b) => (a ? b?.pid === a.pid && b?.startedAt === a.startedAt && b?.host === a.host : b === null);
+
+const readLock = (file) => {
+  try {
+    return { exists: true, holder: JSON.parse(fs.readFileSync(file, 'utf8')) };
+  } catch (err) {
+    return { exists: err.code !== 'ENOENT', holder: null };
+  }
+};
+
+/** Removes the stale lock `judged` (null: an old unreadable one) while holding `<file>.takeover`; throws LockedError when another run is taking it over. */
+export function takeOver(file, judged) {
+  const guard = `${file}.takeover`;
+  let fd;
+  try {
+    fd = fs.openSync(guard, 'wx');
+  } catch (err) {
+    if (err.code !== 'EEXIST') throw err;
+    const age = Date.now() - (fs.statSync(guard, { throwIfNoEntry: false })?.mtimeMs ?? Date.now());
+    // its run died inside the takeover (a window of milliseconds); the next attempt takes the guard. Two runs clearing the same
+    // dead guard at once could both enter, which needs a crash inside that window and then two runs starting together.
+    if (age > GUARD_STALE_MS) fs.rmSync(guard, { force: true });
+    throw new LockedError(`another sync is taking over the stale lock ${file} right now; try again in a moment`, null);
+  }
+  try {
+    fs.writeSync(fd, `${process.pid}\n`);
+    fs.closeSync(fd);
+    const now = readLock(file);
+    // an unreadable lock is removed only while it is still old: a new one another run has just created is unreadable too
+    const old = Date.now() - (fs.statSync(file, { throwIfNoEntry: false })?.mtimeMs ?? Date.now()) >= UNREADABLE_GRACE_MS;
+    if (now.exists && sameLock(judged, now.holder) && (judged || old)) fs.rmSync(file, { force: true });
+    // otherwise it is gone or someone else's by now: the next "create" decides
+  } finally {
+    fs.rmSync(guard, { force: true });
+  }
+}
 
 /** Takes the lock or throws LockedError. Returns { release() }. `info` (tier, library, ...) is written for whoever finds the lock. */
 export function acquireLock(file, info = {}) {
@@ -62,31 +102,10 @@ export function acquireLock(file, info = {}) {
           holder,
         );
       }
-      // stale: its process is gone. Moved aside (not deleted) so that two contenders cannot both delete a lock that a third has
-      // just taken: if what was moved is not the lock judged stale, it is put back and this run backs off.
-      const aside = `${file}.stale-${process.pid}`;
-      try {
-        fs.renameSync(file, aside);
-      } catch {
-        continue; // someone else already took it over: try the "create" again
-      }
-      let moved = null;
-      try {
-        moved = JSON.parse(fs.readFileSync(aside, 'utf8'));
-      } catch {
-        // still unreadable: the damaged one we meant to remove
-      }
-      const same = holder ? moved?.pid === holder.pid && moved?.startedAt === holder.startedAt : moved === null;
-      if (!same) {
-        try {
-          fs.linkSync(aside, file);
-        } catch {
-          // another run has made a new lock since: that one stands, and this copy is dropped
-        }
-        fs.rmSync(aside, { force: true });
-        throw new LockedError(`another sync took the lock ${file} while it was being cleared; try again in a moment`, moved);
-      }
-      fs.rmSync(aside, { force: true });
+      // stale: its process is gone. Only the run holding the takeover guard may remove a lock, and it removes it only if it is
+      // still the one judged stale. Nobody else ever removes a lock but its live owner, so between that check and the removal
+      // the file cannot become someone else's: no path is left vacant while a live lock is moved, as a rename-aside would.
+      takeOver(file, holder);
     }
   }
   throw new LockedError(`could not take the lock ${file}`, null);

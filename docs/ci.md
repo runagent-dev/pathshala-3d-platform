@@ -7,20 +7,24 @@ The checks in `.github/workflows/ci.yml` are slow because every figure is opened
 |---|---|---|
 | Check, lint, types, unit tests | every push to `main`, every pull request | nothing (about a minute) |
 | Handoff zips | the same | nothing (under half a minute) |
-| Figures in the browser | pushes to `main`, pull requests into `main` | **pull requests into `prod`**; figures that already passed with the same inputs |
-| Visual comparison | pull requests into `main` | **pull requests into `prod`**; figures whose inputs are the same as in the base |
+| Figures in the browser | pushes to `main`, pull requests | **release pull requests (`main` into `prod`)**; figures that already passed with the same inputs |
+| Visual comparison | pull requests | **release pull requests (`main` into `prod`)**; figures whose inputs are the same as in the base |
 
 **Why a release pull request (`main` into `prod`) skips the two slow jobs.** It only carries commits that already went
-through them on `main`.
+through them on `main`. Only a pull request from this repository's `main` counts: any other branch (or a fork's `main`) going
+into `prod` runs both jobs.
 
 ## "The same inputs": hashes instead of file paths
 
 `scripts/lib/ci/figure-hashes.mjs` computes two hashes per figure.
 
 - **testHash** (browser tests): the figure's files, the kit modules it imports (found by reading its imports, the same walk the
-  packager and the library sync use), its `asset.json`, its own `tests/`, and the test harness (`test/figures`, the Playwright
-  config, the studio server, the exporter driver, fonts, `books/`, `schemas/`, `package-lock.json`).
-- **renderHash** (visual comparison): the same without the tests, plus the renderer (`scripts/visual.mjs`, the exporter driver, fonts).
+  packager and the library sync use), its `asset.json`, its own `tests/`, the test harness (`test/figures`, `test/harness.html`,
+  the Playwright config, the studio server, the exporter driver, fonts, `books/`, `schemas/`, `package.json`, `package-lock.json`),
+  and the machine: the resolved Node version and, on GitHub, the runner image.
+- **renderHash** (visual comparison): the same without the tests, plus the renderer (`scripts/visual.mjs`, the exporter driver,
+  the static server, fonts). Both sides of a comparison are drawn by the pull request's renderer, so a base picture is kept under
+  the base's files and the pull request's renderer.
 
 A change to one kit module changes the hash of exactly the figures that import it. A change to the library sync, the CI scripts,
 the docs or a figure's notes changes none (`scripts/lib/ci/figure-tests.mjs` lists what counts as "touches no figure").
