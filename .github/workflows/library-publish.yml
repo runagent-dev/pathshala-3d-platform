@@ -58,6 +58,9 @@ jobs:
       # Chromium is only needed to build labs, posters and models: not when everything is unchanged
       - if: steps.plan.outputs.work == 'true' && steps.plan.outputs.browser == 'true'
         uses: ./.github/actions/playwright
+      # posters and pictures are encoded with ffmpeg (WebP), which the runner image does not have
+      - if: steps.plan.outputs.work == 'true' && steps.plan.outputs.browser == 'true'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg && ffmpeg -version | head -1
 
       # 2. publish: the only step that sees the secrets
       - name: Publish
