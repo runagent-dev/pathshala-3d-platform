@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, it } from 'node:test';
@@ -235,6 +236,15 @@ describe('what a library publish run needs', () => {
   });
   it('is work when a shared library is missing from the library, even with every figure unchanged', () => {
     assert.equal(workOf({ figures: [fig('unchanged', {})], libraries: { missing: ['three'] } }).work, true);
+  });
+  it('ci-figures makes every figure a candidate when the diff base is unknown (an all-zero "before")', () => {
+    const markers = path.join(tempDir(), 'markers');
+    const script = path.join(import.meta.dirname, '..', '..', 'scripts', 'ci-figures.mjs');
+    const out = spawnSync(process.execPath, [script, '0000000000000000000000000000000000000000', '--markers', markers], { encoding: 'utf8' });
+    assert.equal(out.status, 0, out.stderr);
+    assert.match(out.stderr, /every figure is a candidate/);
+    assert.match(out.stdout, /^figures=.+$/m);
+    assert.match(out.stdout, /^templates=true$/m);
   });
   it('does not count blocked or withdrawn figures as work', () => {
     assert.equal(workOf({ figures: [fig('blocked', {}), fig('withdraw', {})] }).work, false);

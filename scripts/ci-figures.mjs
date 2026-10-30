@@ -30,9 +30,22 @@ if (values.record) {
   console.error(`ci-figures: ${passed.length} figure(s) passed; ${written} new marker(s), ${pruned} old one(s) removed`);
 } else {
   const base = positionals[0] || 'HEAD~1';
-  const changedFiles = execFileSync('git', ['diff', '--name-only', `${base}...HEAD`], { cwd: ROOT, encoding: 'utf8' })
-    .split('\n')
-    .filter(Boolean);
+  let changedFiles;
+  try {
+    changedFiles = execFileSync('git', ['diff', '--name-only', `${base}...HEAD`], { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })
+      .split('\n')
+      .filter(Boolean);
+  } catch (err) {
+    // no usable base (a new branch has an all-zero "before", a force push lost its old commit): test everything, the markers still skip what passed
+    console.error(
+      `ci-figures: cannot diff against "${base}" (${
+        String(err.stderr || err.message)
+          .trim()
+          .split('\n')[0]
+      }): every figure is a candidate`,
+    );
+    changedFiles = ['package-lock.json'];
+  }
   const plan = planRun({ root: ROOT, ids: allFigures(), changedFiles, markersDir });
   console.error(
     `ci-figures: ${plan.touched.length} figure(s) touched by the change, ${plan.skipped} already passed with the same inputs${plan.warm ? '' : ' (no earlier results: cold cache)'}, ${plan.figures.length} to test`,
