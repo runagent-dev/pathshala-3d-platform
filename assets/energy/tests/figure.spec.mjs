@@ -7,7 +7,7 @@ import { expect, test } from '@playwright/test';
 import { openFigure, preparePage } from '../../../scripts/lib/export/driver.mjs';
 
 test('energy: work in, the total kept on the way down, work out', async ({ page }) => {
-  test.setTimeout(240_000);
+  test.setTimeout(480_000); // about 1.3 minutes on a laptop, over 4 on a GitHub runner (software 3D, two tests at once)
   await page.setViewportSize({ width: 800, height: 500 });
   const log = await preparePage(page);
   const fig = await openFigure(page, 'energy');

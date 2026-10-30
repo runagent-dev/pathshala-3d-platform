@@ -1,5 +1,5 @@
 // Checking and cleaning GLB files in Node (tooling tier: needs `npm ci`). Used by verify, the exporter and uploads.
-import { Logger, NodeIO } from '@gltf-transform/core';
+import { Accessor, Logger, NodeIO } from '@gltf-transform/core';
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
 import { dedup, getBounds, prune, weld } from '@gltf-transform/functions';
 import validator from 'gltf-validator';
@@ -43,10 +43,28 @@ export async function glbInfo(bytes) {
   };
 }
 
+/**
+ * Keeps vertex colours inside 0..1. weld() averages the colours of the vertices it merges in floating point, which can land
+ * a hair above 1 (1.0026); the format and the validator (ACCESSOR_NON_CLAMPED) want 0..1. Integer colours cannot leave the range.
+ */
+function clampColors(doc) {
+  for (const mesh of doc.getRoot().listMeshes())
+    for (const prim of mesh.listPrimitives())
+      for (const semantic of prim.listSemantics().filter((s) => s.startsWith('COLOR_'))) {
+        const accessor = prim.getAttribute(semantic);
+        if (!accessor || accessor.getComponentType() !== Accessor.ComponentType.FLOAT) continue;
+        const values = accessor.getArray();
+        if (!values) continue;
+        for (let i = 0; i < values.length; i++) values[i] = Math.min(1, Math.max(0, values[i]));
+        accessor.setArray(values);
+      }
+}
+
 /** Removes duplicates and unused data, merges identical vertices. Same look, smaller file. */
 export async function optimizeGlb(bytes) {
   const doc = await io().readBinary(new Uint8Array(bytes));
   doc.setLogger(quiet);
   await doc.transform(dedup(), prune(), weld());
+  clampColors(doc);
   return io().writeBinary(doc);
 }
