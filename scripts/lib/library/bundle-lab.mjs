@@ -34,6 +34,19 @@ const DATA_URL = {
   '.gif': 'dataurl',
 };
 const EXTERNAL = ['three', 'three/addons/*'];
+const MIME = {
+  '.woff2': 'font/woff2',
+  '.woff': 'font/woff',
+  '.ttf': 'font/ttf',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp',
+  '.svg': 'image/svg+xml',
+  '.gif': 'image/gif',
+};
+// `new URL('../media/earth.png', import.meta.url)`: how a figure that also runs unbundled (studio, zip) names a file it loads at run time
+const URL_OF_FILE = /new URL\(\s*(['"])(\.{1,2}\/[^'"\n]+)\1\s*,\s*import\.meta\.url\s*\)/g;
 
 /** What a figure's index.html says: language, title, stylesheet and module script URLs (in order), and the body markup. */
 export function readPage(html) {
@@ -74,6 +87,22 @@ function labPlugin({ sharedDir }) {
   return {
     name: 'pathshala-lab',
     setup(build) {
+      // A lab is one file and its sandbox lets images and fonts in only as data: URLs. esbuild leaves `new URL('file', import.meta.url)` alone (it
+      // would be fetched from the sandbox's own address and blocked), so a file of a kind the loaders above inline is inlined here the same way.
+      build.onLoad({ filter: /\.js$/ }, async (args) => {
+        if (args.path.includes(`${path.sep}node_modules${path.sep}`)) return null;
+        const source = await fs.promises.readFile(args.path, 'utf8');
+        if (!source.includes('import.meta.url')) return null;
+        let changed = false;
+        const contents = source.replace(URL_OF_FILE, (all, _q, rel) => {
+          const mime = MIME[path.extname(rel).toLowerCase()];
+          const file = path.resolve(path.dirname(args.path), rel);
+          if (!mime || !fs.existsSync(file) || !fs.statSync(file).isFile()) return all;
+          changed = true;
+          return `new URL(${JSON.stringify(`data:${mime};base64,${fs.readFileSync(file).toString('base64')}`)})`;
+        });
+        return changed ? { contents, loader: 'js', resolveDir: path.dirname(args.path) } : null;
+      });
       build.onResolve({ filter: /^pathshala-lab-prelude$/ }, () => ({ path: path.join(RUNTIME, 'lab-prelude.js') }));
       build.onResolve({ filter: /(^|\/)(bridge|export-glb)\.js$/ }, async (args) => {
         if (args.pluginData?.pathshalaSkip) return null;
