@@ -29,8 +29,12 @@ the heel (50 cm²) four times as deep as the sneaker (200 cm²) under the same f
 - A village yard of soft red clay after rain (a turquoise wall with a yellow band, a blue door, magenta bougainvillea,
   pots of marigolds, a puddle, a blue sky; no white or green page). The owner asked on 2026-10-31 for something other
   than sand-coloured ground (and not grass) and chose red clay over a blue foam mat or purple play sand. Two
-  lower legs, the same force F on each: a cobalt high heel (a woman in a magenta salwar) touching the clay with the
-  front of the sole and the heel's tip, 50 cm²; a yellow sneaker (a man in rolled-up jeans), 200 cm².
+  lower legs, the same force F on each: a glossy cobalt pump with a pointed toe and a slim heel (a woman in a magenta
+  salwar with a golden border, down to the ankle) touching the clay with the front of the sole and the heel's tip,
+  50 cm²; a white sneaker with a yellow stripe, navy trim and criss-cross laces (a man in blue jeans down over its
+  collar), 200 cm². The clothes come down to the ankles so no leg-to-foot join shows (the owner found the first feet
+  "very bad", 2026-10-31); shoes and feet are smooth ring bodies (src/surface.js), the sneaker's panels a texture.
+  The cut face shows red topsoil over ochre, buff and grey clay, so the red arrows stand out.
 - The clay in front is dug away along the line through the middle of both soles ("সামনের মাটি কেটে সরানো"), so the cut
   face shows thin light layers bending down under each shoe and darker packed clay: deep and narrow under the heel,
   shallow and wide under the sneaker. That is the mechanism the owner asked to see.

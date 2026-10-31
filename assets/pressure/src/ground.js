@@ -8,22 +8,22 @@
 import * as THREE from 'three';
 
 const PIT = { x: 0.62, z: 0.62, depth: 0.34 }; // the dug-away part in front: |x| < 0.62, 0 < z < 0.62
-// the layers of clay on the cut face, from the top: [depth of the bottom of the layer (m), colour]: thick
-// terracotta bands with thin pale ochre streaks between them, darker with depth
+// the layers on the cut face, from the top: [depth of the bottom of the layer (m), colour]: a red-brown topsoil over
+// layers of ochre, buff and grey clay (red clay country, as in Madhupur), with thin pale streaks that show the bending
 const LAYERS = [
-  [0.012, '#b9532c'],
-  [0.018, '#efb47a'],
-  [0.04, '#a84826'],
-  [0.046, '#eaa96c'],
-  [0.07, '#9a3f22'],
-  [0.076, '#e3a065'],
-  [0.104, '#8d381f'],
-  [0.11, '#dc955c'],
-  [0.148, '#80321c'],
-  [0.155, '#d48a53'],
-  [0.205, '#742c19'],
-  [0.212, '#cb7f4a'],
-  [1, '#682716'],
+  [0.014, '#8c3a22'],
+  [0.019, '#f1d9a8'],
+  [0.038, '#b8662f'],
+  [0.043, '#f3dfb4'],
+  [0.066, '#cf8a3f'],
+  [0.071, '#f6e6c2'],
+  [0.098, '#b9a596'],
+  [0.103, '#f2e2c4'],
+  [0.138, '#c98840'],
+  [0.144, '#f0dcb2'],
+  [0.19, '#9f9a95'],
+  [0.197, '#ead6ae'],
+  [1, '#a8693a'],
 ];
 
 const smoothstep = (a, b, x) => {
@@ -160,8 +160,8 @@ export function createGround(feet) {
   const uv = new Float32Array(count * 2);
   const col = new Float32Array(count * 3);
   const base = new Float32Array(count * 3); // the clay's own colour (a little drier, lighter, further back)
-  const wet = new THREE.Color('#c0502b');
-  const dry = new THREE.Color('#d2683a');
+  const wet = new THREE.Color('#953b22');
+  const dry = new THREE.Color('#aa4a2a');
   for (let j = 0; j < nz; j++)
     for (let i = 0; i < nx; i++) {
       const k = j * nx + i;
@@ -172,7 +172,9 @@ export function createGround(feet) {
       const y = far * (0.005 * Math.sin(x * 4.3 + z * 2.1) + 0.004 * Math.sin(z * 6.7 - x * 1.3));
       pos.set([x, y, z], k * 3);
       uv.set([x * 3.2, z * 3.2], k * 2);
-      tmpC.copy(wet).lerp(dry, smoothstep(-0.8, -3.5, z) * 0.8);
+      // darker wet patches here and there, a little drier (lighter) further back
+      const patch = 0.5 + 0.5 * Math.sin(x * 5.1 + Math.sin(z * 3.3) * 2) * Math.sin(z * 4.3 - x * 1.7);
+      tmpC.copy(wet).lerp(dry, smoothstep(-0.8, -3.5, z) * 0.7 + 0.3 * patch);
       base.set([tmpC.r, tmpC.g, tmpC.b], k * 3);
       col.set([tmpC.r, tmpC.g, tmpC.b], k * 3);
     }
@@ -189,7 +191,7 @@ export function createGround(feet) {
   topGeo.setIndex(idx);
   topGeo.computeVertexNormals();
   // wet clay has a soft sheen
-  const clayMat = new THREE.MeshStandardMaterial({ map: grain, vertexColors: true, roughness: 0.62 });
+  const clayMat = new THREE.MeshStandardMaterial({ map: grain, vertexColors: true, roughness: 0.5 });
   const top = new THREE.Mesh(topGeo, clayMat);
   top.name = 'ClaySurface';
   top.receiveShadow = true;
@@ -281,7 +283,7 @@ export function createGround(feet) {
   });
 
   // ── the pit: its floor and its two side walls; the yard in front of it and beside it ──
-  const pitMat = new THREE.MeshStandardMaterial({ map: grain, color: '#7a2e18', roughness: 0.9 });
+  const pitMat = new THREE.MeshStandardMaterial({ map: grain, color: '#8f6a4a', roughness: 0.9 });
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(PIT.x * 2, PIT.z), pitMat);
   floor.rotation.x = -Math.PI / 2;
   floor.position.set(0, -PIT.depth, PIT.z / 2);
@@ -303,7 +305,7 @@ export function createGround(feet) {
     wall.receiveShadow = true;
     root.add(wall);
   }
-  const groundMat = new THREE.MeshStandardMaterial({ map: grain, color: '#c0502b', roughness: 0.62 });
+  const groundMat = new THREE.MeshStandardMaterial({ map: grain, color: '#953b22', roughness: 0.5 });
   const addGround = (x0, x1, z0, z1) => {
     const g = new THREE.PlaneGeometry(x1 - x0, z1 - z0);
     const uvs = g.attributes.uv;
@@ -324,7 +326,7 @@ export function createGround(feet) {
   far.name = 'Yard';
   far.userData.noExport = true;
   const mat = (color, roughness = 0.8, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness, ...extra });
-  const farClay = new THREE.Mesh(new THREE.PlaneGeometry(60, 30), mat('#cf6638', 0.7));
+  const farClay = new THREE.Mesh(new THREE.PlaneGeometry(60, 30), mat('#a84a2a', 0.6));
   farClay.rotation.x = -Math.PI / 2;
   farClay.position.set(0, -0.01, -9 - 15 + 0.01);
   far.add(farClay);
@@ -404,10 +406,12 @@ export function createGround(feet) {
   vine(1.4, 1.1, 26);
   vine(-4.2, 0.9, 18);
   vine(4.6, 0.8, 14);
-  // clay pots of orange and yellow marigolds at the foot of the wall
-  const potMat = mat('#a9431f', 0.85);
+  // glazed pots of orange and yellow marigolds at the foot of the wall: cobalt, yellow, white with blue
+  const potMats = [mat('#1d4fc4', 0.25), mat('#ffc21a', 0.3), mat('#1d4fc4', 0.25), mat('#f4efe6', 0.3)];
+  let potN = 0;
   const flowers = [mat('#ff8c00', 0.6), mat('#ffb703', 0.6), mat('#f76707', 0.6)];
   const pot = (x, s) => {
+    const potMat = potMats[potN++ % potMats.length];
     const g = new THREE.Group();
     const body = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.15, 0.36, 24), potMat);
     body.position.y = 0.18;
@@ -452,8 +456,8 @@ export function createGround(feet) {
 
   // ── the clay gives way ──
   const depths = feet.map(() => 0);
-  const shade = new THREE.Color('#7c2a14'); // pressed clay is darker (wetter and packed)
-  const packed = new THREE.Color('#4e1a0c');
+  const shade = new THREE.Color('#5e2412'); // pressed clay is darker (wetter and packed)
+  const packed = new THREE.Color('#5a3a26');
   function apply() {
     const p = topGeo.attributes.position;
     const c = topGeo.attributes.color;
