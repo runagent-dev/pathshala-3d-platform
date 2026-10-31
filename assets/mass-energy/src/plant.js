@@ -132,28 +132,46 @@ export function duskBackground() {
 }
 
 // ── materials ─────────────────────────────────────────────────────────────────────────────────────────────────
-function grassTexture() {
+/** Ripe golden paddy at harvest: plots in amber and mustard shades, a few cut and ploughed, on earth bunds. */
+function fieldTexture() {
   const S = 512;
   const c = canvas(S, S);
   const g = c.getContext('2d');
   const r = rng(21);
-  g.fillStyle = '#6aa83c';
+  g.fillStyle = '#9a6a3c'; // the bunds between plots
   g.fillRect(0, 0, S, S);
-  // fields and patches
-  for (let i = 0; i < 40; i++) {
-    const shades = ['#7fbb48', '#5f9c35', '#8cc152', '#74b043', '#9bc95a'];
-    g.fillStyle = shades[Math.floor(r() * shades.length)];
-    g.globalAlpha = 0.55;
-    g.save();
-    g.translate(r() * S, r() * S);
-    g.rotate(r() * 0.4 - 0.2);
-    g.fillRect(-60, -30, 60 + r() * 120, 30 + r() * 60);
-    g.restore();
+  const shades = ['#e8b23a', '#f0c24a', '#dba032', '#f3cf5e', '#e6a92e', '#d89a2a'];
+  const N = 4;
+  const cell = S / N;
+  for (let i = 0; i < N; i++) {
+    for (let j = 0; j < N; j++) {
+      const ploughed = r() < 0.14;
+      const x = i * cell + 3;
+      const y = j * cell + 3;
+      const w = cell - 6;
+      const h = cell - 6;
+      g.fillStyle = ploughed ? '#b9814e' : shades[Math.floor(r() * shades.length)];
+      g.fillRect(x, y, w, h);
+      // rows of stalks (or furrows) across the plot
+      const across = r() < 0.5;
+      g.strokeStyle = ploughed ? 'rgba(120,70,35,0.35)' : 'rgba(170,110,20,0.28)';
+      g.lineWidth = 2;
+      for (let k = 6; k < (across ? h : w); k += 7) {
+        g.beginPath();
+        if (across) {
+          g.moveTo(x, y + k);
+          g.lineTo(x + w, y + k);
+        } else {
+          g.moveTo(x + k, y);
+          g.lineTo(x + k, y + h);
+        }
+        g.stroke();
+      }
+    }
   }
-  g.globalAlpha = 1;
-  for (let i = 0; i < 9000; i++) {
-    const v = Math.round(r() * 40);
-    g.fillStyle = `rgba(${40 + v},${90 + v},${20 + v},0.25)`;
+  for (let i = 0; i < 7000; i++) {
+    const v = Math.round(r() * 50);
+    g.fillStyle = `rgba(${200 + v},${140 + v},${40 + v / 2},0.22)`;
     g.fillRect(r() * S, r() * S, 2, 2);
   }
   return tex(c, { repeat: [10, 10] });
@@ -331,7 +349,7 @@ export function createPlant() {
   const r = rng(31);
 
   // ground, river, the plant's concrete yard and a road
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(700, 700), new THREE.MeshStandardMaterial({ map: grassTexture(), roughness: 0.95 }));
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(700, 700), new THREE.MeshStandardMaterial({ map: fieldTexture(), roughness: 0.95 }));
   ground.rotation.x = -Math.PI / 2;
   ground.receiveShadow = true;
   root.add(ground);
@@ -715,7 +733,7 @@ export function createPlant() {
     t.rotation.y = r() * 6;
     root.add(t);
   }
-  const hillMat = mat('#4d7f4a', { flatShading: true });
+  const hillMat = mat('#8a7fb8', { flatShading: true }); // far hills go violet in the dusk haze
   for (let i = 0; i < 9; i++) {
     const h = new THREE.Mesh(new THREE.IcosahedronGeometry(30 + r() * 30, 1), hillMat);
     h.scale.y = 0.35;
