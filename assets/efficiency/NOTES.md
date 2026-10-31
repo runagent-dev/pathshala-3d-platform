@@ -67,8 +67,8 @@ Colours: প্রদত্ত শক্তি blue #1c6fd9 (the current), ক�
   অপচয় দেয়"). The total is always exactly input − work. Sound is kept tiny on purpose (it is in real machines).
 - **The oiled (14 s, 70%) and worn (20 s, 49%) motors** are the figure's own, chosen so the times are whole seconds.
 - The load rises at a steady speed (no speeding up at the start); the motor takes 1000 W from the first moment.
-- Words not on the page: ব্যাটারি, সুইচ, ওয়ার্ম গিয়ার (only in the aria text), তাপ, শব্দ, ঘর্ষণে তাপ, মোটরে তাপ, তেল দেওয়া,
-  ক্ষয়ে যাওয়া.
+- Words not on the page: ব্যাটারি, সুইচ, ওয়ার্ম গিয়ার (only in the aria text), তাপ, শব্দ, ঘর্ষণে তাপ, মোটরে তাপ, সাধারণ গিয়ার,
+  তেলযুক্ত গিয়ার, ক্ষয়প্রাপ্ত গিয়ার (the three motors' names).
 
 ## Terms (as in the book)
 
