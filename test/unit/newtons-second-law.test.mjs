@@ -27,6 +27,7 @@ import {
   stampTimes,
 } from '../../assets/newtons-second-law/src/physics.js';
 import { DWELL, LEAD, playbackOf, playTime, SLOW } from '../../assets/newtons-second-law/src/clock.js';
+import { spreadLabels, T_MAX, V_MAX } from '../../assets/newtons-second-law/src/graph.js';
 
 describe('newtons-second-law: F = ma', () => {
   test('the four examples: 1, 2, 0.5 and −1 ms⁻²', () => {
@@ -289,5 +290,21 @@ describe('newtons-second-law: the slow clock a student can follow', () => {
     // set going again at 1.5 s (after a pause): no hold at 1 s, the next at 2 s
     assert.equal(playTime(0.5, { ...pb, lead: 0, from: 1.5 }).t, 1.75);
     assert.equal(playTime(1 + DWELL / 2, { ...pb, lead: 0, from: 1.5 }).held, 2);
+  });
+});
+
+describe('newtons-second-law: the graph', () => {
+  test('tags in the margin keep their place when they are apart', () => {
+    assert.deepEqual(spreadLabels([10, 40, 70], 10, 0, 100), [10, 40, 70]);
+  });
+  test('tags too close are pushed apart, in their order, inside the plot', () => {
+    assert.deepEqual(spreadLabels([50, 45, 52], 10, 0, 100), [55, 45, 65]);
+    const ys = spreadLabels([98, 99, 100], 10, 0, 100);
+    assert.deepEqual(ys, [80, 90, 100]);
+    assert.deepEqual(spreadLabels([-20], 10, 5, 100), [5]);
+  });
+  test('the axes hold every example: 2 s of push, up to 4 m/s', () => {
+    assert.equal(T_MAX, PUSH_TIME);
+    for (const id of EXAMPLE_IDS) assert.ok(measured(planOf(id)).v <= V_MAX && measured(planOf(id)).u <= V_MAX, id);
   });
 });

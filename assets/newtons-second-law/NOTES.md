@@ -135,3 +135,24 @@ was over in 2 s and the arrows came and went with it. Now (lessons.md 8: the slo
 - On a short stage (390×520, 640×400) the note moves to the top-left corner and drops the smooth-floor words (the
   ঘর্ষণ button says it), the force's label goes behind its arrow's tail and the acceleration's past its tip.
 - The test plays at the chosen speed without the lead-in or the holds. The video is retimed to 62 s at half speed.
+
+## See the law, not only read it (v0.4.0)
+The owner: "can you make it a bit more intuitive and amazing". The "এই মুহূর্তে" box of four lines of sums is now a
+picture with the numbers:
+- **বেগ–সময় গ্রাফ** (`graph.js`, the book-notes term; "লেখচিত্র" is not used on screen): t over the 2 s of the push
+  (from the push back's start in উল্টো দিকে বল), v 0–4 m/s. The run's line is drawn as the cart moves (the same clock,
+  held with it; the dot ringed while held). At each whole second a dashed 1 s across and a teal rise +a under the line,
+  labelled "+১" / "+২" / "+০.৫" / "−১"; once a second is reached, "ঢাল = ত্বরণ a" (short "ঢাল = a" on a narrow panel)
+  in the top-left corner, where no line goes. The examples already tried stay as faint grey lines tagged "a = …" in
+  the right margin (tags pushed apart when close: `spreadLabels`, unit tested), so the steepness compares: twice the
+  force, twice as steep; twice the mass, half; the push back goes down. Before the first push: "ঠেলো: রেখা আঁকা হবে".
+  "ঢাল" for slope: is that the word the book uses for the graph's slope (chapter 2)?
+- **Bars for F, m and a** beside the graph (under it on a big panel): each with its value and how it comes, F "=
+  ১০০ + ১০০" (a piece per person; with friction "− ২০" and a striped piece cut off; at the sacks "= বাধা …"), m in
+  pieces (cart with its child 100 kg, a sack 50 kg each), a "= F ÷ m = ২০০ ÷ ১০০" (short "= ২০০ ÷ ১০০" on a narrow
+  panel). Full bars: 200 N, 200 kg, 2 ms⁻². Coasting, the F and a bars are empty while the line on the graph has
+  stopped rising: no force, no acceleration, the velocity stays.
+- While the clock holds, the velocity's label on the scene is lit (pale yellow); with sound on, a soft tick each hold.
+- The support line "ভূমির বল N = ওজন W = mg" moved from the box to the calculation sheet (কীভাবে এলো?); the diagram
+  still labels N and W on the scene. The head's "এই মুহূর্তে" is now the graph's name.
+

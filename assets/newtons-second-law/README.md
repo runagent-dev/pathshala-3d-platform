@@ -19,6 +19,15 @@ the picture. A button beside বলচিত্র and ঘর্ষণ (or the S
 the chosen speed without the holds. `?speed=1` / `set({speed:1})` for real time; snapshots carry `playback` and
 `held`.
 
+v0.4 makes the law something to see, not only read. Beside F = ma the panel draws a live **বেগ–সময় গ্রাফ** of the
+push: the blue line grows with the cart, and at each whole second a teal step (1 s across, +a up) shows that the
+step each second is the acceleration ("ঢাল = ত্বরণ a"). The lines of examples already tried stay, faint and tagged
+"a = …", so two people make the line twice as steep, two sacks half as steep, and the push back makes it go down.
+Under the graph's heading three bars give F, m and a now: the force in one piece per person (friction a striped
+piece cut off), the mass in pieces (cart with its child, one per sack), and a = F ÷ m with the numbers. When the push
+ends the F and a bars empty while the velocity stays. While the clock holds, the velocity's label is lit and the
+graph's dot is ringed; with sound on, a soft tick marks each held second. N = W = mg moved to the calculation sheet.
+
 Additive bridge controls: `set({diagram:true, friction:20})` and `set({paused:true})`; snapshots include `forces`, `diagram` and the
 floor's resisting-force setting. Changing the floor restarts the comparison. The existing four example IDs,
 smooth-floor results, quiz and motion controls remain supported.

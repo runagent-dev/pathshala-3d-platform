@@ -144,6 +144,9 @@ test('second law, slow: the arrows grow in, half speed, held at each whole secon
   expect(await fig.call('get')).toMatchObject({ playback: 0.5, phase: 'rest', time: 0 });
   expect(await text('.ns-clock')).toContain('সময় ২ গুণ ধীর');
   expect(await text('[data-act="speed"]')).toBe('ধীরে: ০.৫×');
+  // the graph waits for the push; the rows say F, m and a now
+  expect(await text('.ns-graph')).toContain('ঠেলো: রেখা আঁকা হবে');
+  expect(await fig.frame.locator('.ns-graph .g-line').count()).toBe(0);
 
   // the lead-in (1.6 s): the force acts and its arrows grow in, the clock waits at 0
   await fig.frame.locator('.pvc-act').click();
@@ -164,6 +167,14 @@ test('second law, slow: the arrows grow in, half speed, held at each whole secon
   expect(await text('.ns-ladder')).toBe('প্রতি সেকেন্ডে বেগ: ০ → ১ m/s');
   expect(await text('.pvc-anno-layer')).toContain('১ s: v = ১ m/s');
   expect(await text('.pvc-outcome')).toBe('t = ১.০ s: বেগ v = u + at = ০ + ১ × ১.০ = ১.০০ m/s');
+  // the graph: its line drawn to 1 s, one step of 1 s across and +1 up, the dot ringed while held
+  expect(await fig.frame.locator('.ns-graph .g-line').count()).toBe(1);
+  expect(await fig.frame.locator('.ns-graph .g-rise').count()).toBe(1);
+  expect(await fig.frame.locator('.ns-graph .g-ring').count()).toBe(1);
+  expect(await text('.ns-graph')).toContain('+১');
+  expect(await text('.ns-row-F')).toContain('১০০ N');
+  expect(await text('.ns-row-m')).toContain('১০০ kg');
+  expect(await text('.ns-row-a')).toContain('= ১০০ ÷ ১০০');
   await fig.advance(500);
   expect((await fig.call('get')).time).toBe(1);
   // on again: 1.5 s of the run 1 s after the hold
@@ -180,6 +191,10 @@ test('second law, slow: the arrows grow in, half speed, held at each whole secon
   await fig.advance(1100);
   expect(await fig.call('get')).toMatchObject({ phase: 'coast', speed: 2, held: null, results: { base: 1 } });
   expect(await text('.pvc-outcome')).toBe('a = (v − u) ÷ t = (২ − ০) ÷ ২ = ১ ms−2');
+  // rolling on: no force, no acceleration (empty bars), the graph keeps its two steps
+  expect(await text('.ns-row-F')).toContain('০ N');
+  expect(await fig.frame.locator('.ns-row-a .ns-fill').getAttribute('style')).toContain('width:0.0%');
+  expect(await fig.frame.locator('.ns-graph .g-rise').count()).toBe(2);
 
   // real time, from the button: the run goes on from where it is, one run second per real second
   const before = (await fig.call('get')).time;
@@ -200,6 +215,10 @@ test('second law, slow: the arrows grow in, half speed, held at each whole secon
   expect(await text('.ns-ladder')).toBe('প্রতি সেকেন্ডে বেগ: ২ m/s');
   await fig.advance(2 * 1100 + 4000);
   expect(await text('.ns-ladder')).toBe('প্রতি সেকেন্ডে বেগ: ২ → ১ → ০ m/s');
+  // the first push's line stays, faint and tagged, under the line going down
+  expect(await fig.frame.locator('.ns-graph .g-past').count()).toBe(1);
+  expect(await text('.ns-graph')).toContain('a = ১');
+  expect(await text('.ns-graph')).toContain('−১');
   expect(log.errors).toEqual([]);
 });
 
