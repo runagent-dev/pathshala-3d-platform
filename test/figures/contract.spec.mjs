@@ -12,7 +12,7 @@ const SKIP = new Set(['tour', 'practice', 'play']);
 for (const { id, manifest } of figuresUnderTest()) {
   if (!/\.html?$/.test(manifest.entry || 'index.html')) continue; // a bare GLB has no page to test
   test(`${id}: bridge contract`, async ({ page }) => {
-    // Every command in the manifest runs to its end, animations too, in software 3D: a heavy scene needs more than the
+    // Each tested command is awaited to its end, animations too, in software 3D: a heavy scene needs more than the
     // default 3 minutes on a GitHub runner (pressure: under a minute on a laptop, 2.4 to over 3 minutes on a runner).
     test.setTimeout(480_000);
     await page.setViewportSize({ width: 1024, height: 640 });
