@@ -1,7 +1,7 @@
-// Pressure (book page 129, topic 5.1), student view. Two feet stand on wet beach sand with the same force F on each:
-// one in a high heel, which touches the sand with only 50 cm² (the front of the sole and the heel's tip), one in a flat
-// sneaker, which touches it with 200 cm². The sand in front of them is dug away along the line through the middle of
-// both soles, so its cut face shows the layers of sand bending down under each shoe. One tap stands them on the sand:
+// Pressure (book page 129, topic 5.1), student view. Two feet stand on soft red clay with the same force F on each:
+// one in a high heel, which touches the clay with only 50 cm² (the front of the sole and the heel's tip), one in a flat
+// sneaker, which touches it with 200 cm². The clay in front of them is dug away along the line through the middle of
+// both soles, so its cut face shows the layers of clay bending down under each shoe. One tap stands them on the clay:
 // the shoes sink in (the heel four times as deep as the sneaker), red arrows press down from each sole (the longer, the
 // more pressure: P = F/A) and the camera goes close to the heel and then to the sneaker. A second tap lifts the feet and
 // shows the prints, each with its area A. The student changes F with a stepper and the panel works out P = F/A for
@@ -17,7 +17,7 @@ import { createAction } from '@shared/student/action.js';
 import { createQuiz } from '@shared/student/quiz.js';
 import { ICONS } from '@shared/student/icons.js';
 import { createI18n } from './i18n.js';
-import { createBeach } from './beach.js';
+import { createGround } from './ground.js';
 import { fitPose } from './camera.js';
 import {
   F_LIMITS,
@@ -44,7 +44,7 @@ import { createHeelShoe, createSneaker } from './shoes.js';
 export const DEFAULTS = {
   F: F_START, // the force on each shoe (N)
   look: 'both', // 'both' | 'heel' | 'sneaker': where the camera looks
-  phase: 'ready', // 'ready' | 'stand' | 'lift': start in the air, standing in the sand, or lifted over the prints
+  phase: 'ready', // 'ready' | 'stand' | 'lift': start in the air, standing in the clay, or lifted over the prints
   view: 'front', // 'front' | '3d'
   mode: 'explore', // 'explore' | 'quiz'
   coach: true,
@@ -57,7 +57,7 @@ export const DEFAULTS = {
 
 const COLORS = { F: '#7048e8', P: '#e03131', A: '#0c8599' };
 const FEET_X = { heel: -0.165, sneaker: 0.168 };
-const HOVER = { ready: 0.045, lift: 0.17 }; // m above the sand
+const HOVER = { ready: 0.045, lift: 0.17 }; // m above the clay
 const FORCE_LEN = 0.0002; // m of the force's arrow per newton (500 N → 10 cm)
 const ZF = 0.075; // the force arrows are drawn this far in front of the legs
 const ZP = 0.012; // the pressure arrows: just in front of the cut face
@@ -124,7 +124,7 @@ export function createApp(root, options = {}) {
     </div>`;
   $('.pvc-act-row').after(eq);
 
-  // notes on the stage: the sand is cut open (top left), what the red arrows mean (bottom left, while they show)
+  // notes on the stage: the clay is cut open (top left), what the red arrows mean (bottom left, while they show)
   const notes = document.createElement('div');
   notes.className = 'pr-notes';
   const cutNote = document.createElement('div');
@@ -145,7 +145,7 @@ export function createApp(root, options = {}) {
   controls.minPolarAngle = 0.35;
   controls.maxPolarAngle = Math.PI * 0.5;
   if (o.bg !== 'transparent') {
-    // a deep blue tropical sky, warm at the horizon
+    // a deep blue sky after the rain, paler at the horizon
     const c = document.createElement('canvas');
     c.width = 4;
     c.height = 256;
@@ -154,23 +154,23 @@ export function createApp(root, options = {}) {
     g.addColorStop(0, '#173fbf');
     g.addColorStop(0.4, '#2f74e6');
     g.addColorStop(0.72, '#7fb6f2');
-    g.addColorStop(0.9, '#f7c59f');
-    g.addColorStop(1, '#ffb27a');
+    g.addColorStop(0.9, '#bcdaf7');
+    g.addColorStop(1, '#d9ebfb');
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, 4, 256);
     const sky = new THREE.CanvasTexture(c);
     sky.colorSpace = THREE.SRGBColorSpace;
     scene.background = sky;
-    scene.fog = new THREE.Fog('#f2c9a8', 4, 40);
+    scene.fog = new THREE.Fog('#d4e6f7', 4, 40);
   }
   function haze() {
     if (!(scene.fog instanceof THREE.Fog)) return;
     const d = camera.position.distanceTo(controls.target);
-    scene.fog.near = d + 2.5;
-    scene.fog.far = d + 45;
+    scene.fog.near = d + 2;
+    scene.fog.far = d + 16;
   }
   controls.addEventListener('change', haze);
-  scene.add(new THREE.HemisphereLight('#cfe3ff', '#c08a52', 0.9));
+  scene.add(new THREE.HemisphereLight('#cfe3ff', '#b8603a', 0.9));
   const sun = new THREE.DirectionalLight('#fff0d8', 1.9);
   sun.position.set(-1.6, 3.2, 2.4);
   sun.target.position.set(0, 0, 0);
@@ -193,8 +193,8 @@ export function createApp(root, options = {}) {
     shoes[id].root.position.x = FEET_X[id];
     scene.add(shoes[id].root);
   }
-  const beach = createBeach(SHOE_IDS.map((id) => ({ x: FEET_X[id], footprint: shoes[id].footprint })));
-  scene.add(beach.root);
+  const ground = createGround(SHOE_IDS.map((id) => ({ x: FEET_X[id], footprint: shoes[id].footprint })));
+  scene.add(ground.root);
 
   // the area each shoe touches: a teal line under the sole on the cut face, and the print's floor once lifted
   const tealLine = new THREE.MeshBasicMaterial({
@@ -248,9 +248,9 @@ export function createApp(root, options = {}) {
     new THREE.MeshBasicMaterial({ color, transparent: true, depthTest: false, depthWrite: false, fog: false, toneMapped: false });
   const OUTLINE_FROM = new THREE.Vector3();
   let thick = 1;
-  function boldArrow(name, color, r) {
+  function boldArrow(name, color, r, padK = 0.65) {
     const core = createArrow({ name, radius: r, head: r * 5, headRadius: r * 2.7, material: flat(color) });
-    const pad = r * 0.65;
+    const pad = r * padK;
     const outline = createArrow({
       name: `${name}Outline`,
       radius: r + pad,
@@ -280,7 +280,7 @@ export function createApp(root, options = {}) {
     const F = boldArrow(`ForceOn_${id}`, COLORS.F, 0.0058);
     scene.add(F.root);
     const P = shoes[id].arrows.map((_, i) => {
-      const a = boldArrow(`Pressure_${id}_${i}`, COLORS.P, 0.0034);
+      const a = boldArrow(`Pressure_${id}_${i}`, COLORS.P, 0.0034, 0.95); // a wider outline: red on red clay
       scene.add(a.root);
       return a;
     });
@@ -304,7 +304,7 @@ export function createApp(root, options = {}) {
     view: o.view === '3d' ? '3d' : 'front',
     mode: 'explore',
     locked: false,
-    y: { heel: HOVER.ready, sneaker: HOVER.ready }, // the bottom of each sole (m; < 0: in the sand)
+    y: { heel: HOVER.ready, sneaker: HOVER.ready }, // the bottom of each sole (m; < 0: in the clay)
     found: { stand: false, lift: false, force: false },
     show: { F: true, A: true, P: true, numbers: true }, // the test hides some until the answer
     focus: null,
@@ -320,14 +320,14 @@ export function createApp(root, options = {}) {
   const standing = () => s.phase === 'stand' || s.phase === 'press';
   const touching = (id) => s.y[id] <= 1e-4;
 
-  // ── the feet and the sand ───────────────────────────────────────────────────
+  // ── the feet and the clay ───────────────────────────────────────────────────
   function syncScene() {
     for (const id of SHOE_IDS) {
       shoes[id].root.position.y = s.y[id];
       const i = SHOE_IDS.indexOf(id);
-      // the sand keeps its print: it only ever goes deeper (until the feet stand somewhere new)
-      if (-s.y[id] > beach.depth(i)) beach.setDepth(i, -s.y[id]);
-      const d = beach.depth(i);
+      // the clay keeps its print: it only ever goes deeper (until the feet stand somewhere new)
+      if (-s.y[id] > ground.depth(i)) ground.setDepth(i, -s.y[id]);
+      const d = ground.depth(i);
       areas[id].strips.position.set(FEET_X[id], -d, 0);
       areas[id].strips.visible = s.show.A && (touching(id) || (s.phase === 'lift' && d > 0.0005));
       areas[id].print.position.set(FEET_X[id], -d + 0.0012, 0);
@@ -361,16 +361,16 @@ export function createApp(root, options = {}) {
     }
   }
 
-  /** Feet up, the sand smooth again (a new place to stand). */
-  function freshSand() {
-    beach.setDepths(SHOE_IDS.map(() => 0));
+  /** Feet up, the clay smooth again (a new place to stand). */
+  function freshClay() {
+    ground.setDepths(SHOE_IDS.map(() => 0));
   }
 
   /** The feet come down and sink in; with `jump` they are there at once. Resolves when done (false if cancelled). */
   function press({ jump = false, quiet = false } = {}) {
     const token = ++s.run;
-    // a print deeper than this force makes (a bigger force before) is somewhere else: smooth sand
-    if (SHOE_IDS.some((id, i) => beach.depth(i) > target(id) + 1e-6)) freshSand();
+    // a print deeper than this force makes (a bigger force before) is somewhere else: smooth clay
+    if (SHOE_IDS.some((id, i) => ground.depth(i) > target(id) + 1e-6)) freshClay();
     const from = { ...s.y };
     s.phase = 'press';
     if (!quiet) audio.pop();
@@ -387,7 +387,7 @@ export function createApp(root, options = {}) {
         duration: PRESS_S,
         ease: ease.linear,
         onUpdate: (k) => {
-          // down through the air (0 … 0.35), then into the sand, slowing as it holds
+          // down through the air (0 … 0.35), then into the clay, slowing as it holds
           for (const id of SHOE_IDS) {
             if (k < 0.35) s.y[id] = from[id] * (1 - ease.inOutCubic(k / 0.35));
             else s.y[id] = -target(id) * ease.outCubic((k - 0.35) / 0.65);
@@ -449,13 +449,13 @@ export function createApp(root, options = {}) {
       .finished.then((ok) => (ok && token === s.run ? done() : false));
   }
 
-  /** Back to the start: the feet in the air over smooth sand. */
+  /** Back to the start: the feet in the air over smooth clay. */
   function goHome() {
     s.run++;
     tweener.cancel('feet');
     s.phase = 'ready';
     for (const id of SHOE_IDS) s.y[id] = HOVER.ready;
-    freshSand();
+    freshClay();
     syncScene();
     refresh();
     emitChange();
@@ -610,9 +610,9 @@ export function createApp(root, options = {}) {
       if (s.look !== 'both' && s.look !== id) continue;
       const x0 = FEET_X[id];
       const own = [shoeBoxes];
-      const onSand = touching(id) && s.phase !== 'lift';
-      const d = beach.depth(SHOE_IDS.indexOf(id));
-      if (onSand && s.show.F)
+      const onClay = touching(id) && s.phase !== 'lift';
+      const d = ground.depth(SHOE_IDS.indexOf(id));
+      if (onClay && s.show.F)
         want.set(`F-${id}`, {
           text: s.show.numbers ? t('lbl_F', { v: N(s.F) }) : 'F',
           point: () => pts[id].F.copy(arrows[id].F.tip).addScaledVector(UPV, s.look === 'both' ? 0.05 : 0.022),
@@ -620,7 +620,7 @@ export function createApp(root, options = {}) {
           color: COLORS.F,
           own,
         });
-      if (onSand && s.show.P) {
+      if (onClay && s.show.P) {
         const mid = arrows[id].P[Math.floor(arrows[id].P.length / 2)];
         want.set(`P-${id}`, {
           text: s.show.numbers ? t('lbl_P', { v: G(P(id)) }) : 'P',
@@ -630,7 +630,7 @@ export function createApp(root, options = {}) {
           own,
         });
       }
-      if (s.show.A && (onSand || s.phase === 'lift') && !(compact && s.look === 'both' && onSand)) {
+      if (s.show.A && (onClay || s.phase === 'lift') && !(compact && s.look === 'both' && onClay)) {
         // at the end of the teal line on the cut face: the toe end for the heel, the heel end for the sneaker
         // standing: at the end of the teal line on the cut face (the toe end for the heel, the heel end for the
         // sneaker); lifted: over the middle of the print
@@ -897,10 +897,10 @@ export function createApp(root, options = {}) {
       refresh();
       return;
     }
-    // standing or lifted: they stand again on smooth sand with the new force
+    // standing or lifted: they stand again on smooth clay with the new force
     s.run++;
     tweener.cancel('feet');
-    freshSand();
+    freshClay();
     for (const id of SHOE_IDS) s.y[id] = HOVER.ready;
     s.phase = 'ready';
     if (!s.userMovedCamera) flyTo(viewPose(), animate ? 0.6 : 0);
@@ -927,7 +927,7 @@ export function createApp(root, options = {}) {
       ratio: ratio(),
       phase: s.phase,
       look: s.look,
-      depth: { heel: round(beach.depth(0) * 100, 2), sneaker: round(beach.depth(1) * 100, 2) }, // cm into the sand
+      depth: { heel: round(ground.depth(0) * 100, 2), sneaker: round(ground.depth(1) * 100, 2) }, // cm into the clay
       found: { ...s.found },
       next: p.label.replace('act_', ''),
       view: s.view,
@@ -969,7 +969,7 @@ export function createApp(root, options = {}) {
     tweener.cancel('feet');
     s.F = fixForce(F);
     s.show = { F: true, A: true, P: true, numbers: true, ...show };
-    freshSand();
+    freshClay();
     for (const id of SHOE_IDS) s.y[id] = -target(id);
     s.phase = 'stand';
     syncScene();
@@ -1020,7 +1020,7 @@ export function createApp(root, options = {}) {
         tweener.cancel('feet');
         s.F = saved?.F ?? s.F;
         s.look = saved?.look ?? 'both';
-        freshSand();
+        freshClay();
         if (saved?.phase === 'stand' || saved?.phase === 'lift') {
           for (const id of SHOE_IDS) s.y[id] = -target(id);
           s.phase = 'stand';
@@ -1067,7 +1067,7 @@ export function createApp(root, options = {}) {
           await scene_(pickOne(QUIZ_FORCES), { phase: 'lift', show: { A: false, numbers: false } });
           if (!alive()) return null;
           question = { kind };
-          const items = ['c_less_area', 'c_more_force', 'c_sneaker_small', 'c_soft_sand'].map((key) => ({ key }));
+          const items = ['c_less_area', 'c_more_force', 'c_sneaker_small', 'c_soft_ground'].map((key) => ({ key }));
           return { text: t('q_prints'), ...choicesOf(items, kind, (x) => t(x.key)) };
         }
         await scene_(pickOne(QUIZ_FORCES), { look: 'both', show: { numbers: false } });
@@ -1097,7 +1097,7 @@ export function createApp(root, options = {}) {
         }
         if (k === 'double') return t('why_double') + note({ c_double: 'mis_double', c_same: 'mis_same', c_four: 'mis_four' });
         if (k === 'prints')
-          return t('why_prints') + note({ c_more_force: 'mis_more_force', c_sneaker_small: 'mis_sneaker_small', c_soft_sand: 'mis_soft_sand' });
+          return t('why_prints') + note({ c_more_force: 'mis_more_force', c_sneaker_small: 'mis_sneaker_small', c_soft_ground: 'mis_soft_ground' });
         return t('why_unit') + note({ c_newton: 'mis_newton', c_nm: 'mis_nm', c_m2: 'mis_m2' });
       },
       done() {
@@ -1214,7 +1214,7 @@ export function createApp(root, options = {}) {
     },
     getState: snapshot,
     /**
-     * Change any of: F (the force on each shoe, N: they stand again on smooth sand if they were standing), phase
+     * Change any of: F (the force on each shoe, N: they stand again on smooth clay if they were standing), phase
      * ('ready' | 'stand' | 'lift'; with animate: false it lands there at once), look ('both' | 'heel' | 'sneaker'),
      * view ('front' | '3d'), found ({ stand, lift, force }: what the rule has already told).
      */
@@ -1251,12 +1251,12 @@ export function createApp(root, options = {}) {
     },
     startPractice: () => quiz.start(),
     capture: (opts) => stage.capture(opts),
-    /** The two feet in their shoes and the sand near them (with the prints as they are), in metres. */
+    /** The two feet in their shoes and the clay near them (with the prints as they are), in metres. */
     exportRoot() {
       const g = new THREE.Group();
       g.name = 'Pressure';
       for (const id of SHOE_IDS) g.add(shoes[id].root.clone(true));
-      for (const m of beach.near()) g.add(m);
+      for (const m of ground.near()) g.add(m);
       return g;
     },
   };

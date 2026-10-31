@@ -1,6 +1,6 @@
-// The two feet that press on the sand, each a lower leg in a shoe (procedural, metres). Each foot's own frame: x along
+// The two feet that press on the clay, each a lower leg in a shoe (procedural, metres). Each foot's own frame: x along
 // the shoe (the toe at +x), y up, z across; y = 0 is the bottom of the sole where it touches the ground. Each also says
-// where it touches the ground (its footprint, a signed distance in the ground plane, for the sand to give way under it)
+// where it touches the ground (its footprint, a signed distance in the ground plane, for the clay to give way under it)
 // and where along its middle line the pressure arrows go.
 //   a high heel (cobalt blue, a woman in a magenta salwar): it touches with the front of the sole and the heel's tip;
 //   a flat sneaker (sunflower yellow, a man in rolled-up jeans): it touches with the whole sole.
@@ -269,7 +269,7 @@ export function sneakerSoleY(x) {
   if (x > 0.095) return (x - 0.095) ** 2 * 22;
   return 0;
 }
-// half the width of the sole where it touches the sand (m) along the shoe
+// half the width of the sole where it touches the clay (m) along the shoe
 const SNEAKER_W = [
   [-0.136, 0.0064],
   [-0.13, 0.0277],

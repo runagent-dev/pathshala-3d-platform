@@ -1,5 +1,5 @@
 /* Pressure: the page, the colours that carry meaning (the force F purple, the pressure P red, the area A teal: the
-   same as the arrows and the area drawn in the sand, src/app.js), the formula under the action (the force's stepper,
+   same as the arrows and the area drawn in the clay, src/app.js), the formula under the action (the force's stepper,
    P = F/A with a button for each symbol, the sum for each shoe), the notes on the stage, the labels on the picture and
    the test's answers. The rest of the panel is the kit's clean sheet (../../shared/lib/student/student.css). */
 html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }

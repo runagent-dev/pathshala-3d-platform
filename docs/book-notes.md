@@ -72,7 +72,8 @@ before designing; reviewers check against it. When a new decision is taken for a
 ## Pressure (topic 5.1 on, page 129)
 
 - Colours (`pressure`): the force F purple #7048e8 (weight's colour: it is the weight on each shoe), the pressure P red
-  #e03131 (arrows pressing down on a surface, their length in proportion to P), the area A teal #0c8599.
+  #e03131 (arrows pressing down on a surface, their length in proportion to P; a wide white outline where the
+  ground is red, as in `pressure`'s clay), the area A teal #0c8599.
 - Units as the book: P = F/A in N ÷ m² = Pa (প্যাসকেল glossed once in the rule); areas may be given in cm² but every
   sum converts first (৫০ cm² = ০.০০৫ m²; 1 m² = 10,000 cm²). Big pressures with Bangladeshi commas in Bangla
   (১,০০,০০০ Pa), groups of three in English (100,000 Pa).

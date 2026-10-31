@@ -2,7 +2,7 @@
 // the book's way, in square metres (the shoes' areas are given in cm² and converted: 1 m² = 10,000 cm²). Pure
 // functions, unit-tested in test/unit/pressure.test.mjs.
 
-/** The two shoes: the area of the sole that touches the sand (cm²). The same force on each. */
+/** The two shoes: the area of the sole that touches the clay (cm²). The same force on each. */
 export const SHOES = {
   heel: { area: 50 }, // a high heel: the front of the sole and the tip of the heel
   sneaker: { area: 200 }, // a flat sneaker: the whole sole
@@ -59,7 +59,7 @@ export function groupIntl(x) {
   return `${x < 0 ? '−' : ''}${int.replace(/\B(?=(\d{3})+$)/g, ',')}${frac ? `.${frac}` : ''}`;
 }
 
-/** How far a shoe sinks into the wet sand (m) under a pressure (Pa): deeper for more pressure (a picture, not data). */
+/** How far a shoe sinks into the soft clay (m) under a pressure (Pa): deeper for more pressure (a picture, not data). */
 export const SINK_PER_PA = 0.055 / 160000; // 1,60,000 Pa (the heel at 800 N) → 5.5 cm
 export const sinkDepth = (P) => Math.max(0, P) * SINK_PER_PA;
 

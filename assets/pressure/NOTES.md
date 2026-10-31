@@ -22,21 +22,23 @@ on the ground (few at the heel, many under the sneaker), HIGH PRESSURE / LOW PRE
 area gives a higher pressure.
 
 ## The one idea to teach
-The same force on a smaller area gives a bigger pressure: P = F/A (in N/m² = Pa). Seen as a shoe sinking into sand:
+The same force on a smaller area gives a bigger pressure: P = F/A (in N/m² = Pa). Seen as a shoe sinking into soft clay:
 the heel (50 cm²) four times as deep as the sneaker (200 cm²) under the same force.
 
 ## Design
-- A sunny beach (blue sky, turquoise sea, fishing boats, colourful umbrellas; warm sand, no white or green page). Two
-  lower legs, the same force F on each: a cobalt high heel (a woman in a magenta salwar) touching the sand with the
+- A village yard of soft red clay after rain (a turquoise wall with a yellow band, a blue door, magenta bougainvillea,
+  pots of marigolds, a puddle, a blue sky; no white or green page). The owner asked on 2026-10-31 for something other
+  than sand-coloured ground (and not grass) and chose red clay over a blue foam mat or purple play sand. Two
+  lower legs, the same force F on each: a cobalt high heel (a woman in a magenta salwar) touching the clay with the
   front of the sole and the heel's tip, 50 cm²; a yellow sneaker (a man in rolled-up jeans), 200 cm².
-- The sand in front is dug away along the line through the middle of both soles ("সামনের বালি কেটে সরানো"), so the cut
-  face shows thin light layers bending down under each shoe and darker packed sand: deep and narrow under the heel,
+- The clay in front is dug away along the line through the middle of both soles ("সামনের মাটি কেটে সরানো"), so the cut
+  face shows thin light layers bending down under each shoe and darker packed clay: deep and narrow under the heel,
   shallow and wide under the sneaker. That is the mechanism the owner asked to see.
 - Arrows drawn over the scene, flat colour in a white outline (as in `hanging-weight-pull`): F purple (book-notes:
   weight's colour) down each leg, equal for both shoes; the pressure as red arrows down from each sole on the cut face,
   evenly spread, **length ∝ P** ("লাল তীর যত লম্বা, চাপ তত বেশি"); the area A as a teal line on the cut face under each sole
   and a teal fill in each print after lifting.
-- One action, one result, one rule: ① বালিতে দাঁড়াও (the feet come down and sink in; the first time the camera goes close
+- One action, one result, one rule: ① নরম মাটিতে দাঁড়াও (the feet come down and sink in; the first time the camera goes close
   to the heel, then the sneaker, then back) → ② পা তুলে ছাপ দেখো (the prints stay: গভীর ছাপ, অগভীর ছাপ, each with A) →
   আবার দাঁড়াও. The row of words is the camera: দুটো জুতা, হিলের নিচে, কেডসের নিচে.
 - The formula: a stepper for F (100–800 N), P = F/A with each symbol a button (its arrows or area pulse), and the sum
@@ -44,19 +46,19 @@ the heel (50 cm²) four times as deep as the sneaker (200 cm²) under the same f
   with Bangladeshi commas (১,০০,০০০). The result line says the ratio (৪ গুণ) or, close up, each shoe's P.
 - The rule grows in the book's words: সমান পরিমাণ বল … চাপ কিন্তু হবে ভিন্ন → P = F/A, less area more pressure (with the
   cm² → m² conversion) → বল প্রয়োগকারী ক্ষেত্রফল বেশি হলে চাপ কম → বল দ্বিগুণ হলে চাপ দ্বিগুণ, ক্ষেত্রফল দ্বিগুণ হলে চাপ অর্ধেক
-  → the unit N/m² or Pa, and pressure is a scalar (the red arrows only show where on the sand how much).
-- Changing F while they stand or after lifting: they stand again on smooth sand (sand does not spring back, so a smaller
+  → the unit N/m² or Pa, and pressure is a scalar (the red arrows only show where on the clay how much).
+- Changing F while they stand or after lifting: they stand again on smooth clay (clay does not spring back, so a smaller
   force on the old prints would lie).
 - Test: the heel's P from F and A on the picture (mistakes: the sneaker's area, cm² not converted, F × A); F = PA for the
   sneaker (P ÷ A, cm², the heel's area); the book's stone with two hands (অর্ধেক; দ্বিগুণ, একই, চার গুণ); why the heel's
-  print is deeper (more force? the sneaker's area smaller? softer sand?); the unit (N, N m, m²).
+  print is deeper (more force? the sneaker's area smaller? softer clay?); the unit (N, N m, m²).
 
 ## Terms (as in the book)
 চাপ, বল, ক্ষেত্রফল, বল প্রয়োগ, বল প্রয়োগকারী ক্ষেত্রফল, দ্বিগুণ, অর্ধেক, একক, প্যাসকেল (Pa), N/m², স্কেলার রাশি, দিক.
-The page writes উপর. Scene words not on the page: হিল জুতা, কেডস, বালি, ছাপ, গভীর, অগভীর.
+The page writes উপর. Scene words not on the page: হিল জুতা, কেডস, নরম মাটি, ছাপ, গভীর, অগভীর.
 
 ## Open questions
-- The sinking depth (5.5 cm at 1,60,000 Pa, in proportion to P) is a picture, not data about real sand; the figure
+- The sinking depth (5.5 cm at 1,60,000 Pa, in proportion to P) is a picture, not data about real clay; the figure
   shows no depth numbers. Arrow length is in proportion to P (10 cm per 1,00,000 Pa); the arrows are spread evenly
   along each sole's middle line, so their count is not the area.
 - The heel's 50 cm² treats the pressure as even over the front of the sole and the heel's tip (P = F/A is the average);

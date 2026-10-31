@@ -1,27 +1,29 @@
-// The beach (metres; y up, the sand's surface at y = 0 before anyone stands on it). The sand in front of the two feet
-// is dug away along z = 0, the line through the middle of both soles, so its cut face shows the layers of wet sand:
-// they dip under each shoe, deep and narrow under the heel, shallow and wide under the sneaker. Behind: the beach,
-// colourful umbrellas, a turquoise sea with two fishing boats, a blue sky. The sand gives way where a sole presses
+// The ground: a village yard of soft red clay after rain (metres; y up, the clay's surface at y = 0 before anyone
+// stands on it). The clay in front of the two feet is dug away along z = 0, the line through the middle of both soles,
+// so its cut face shows the layers of clay: they dip under each shoe, deep and narrow under the heel, shallow and wide
+// under the sneaker. Behind: the red yard with a puddle, a turquoise wall with a yellow band, a blue wooden door,
+// magenta bougainvillea over the wall, clay pots of marigolds, a blue sky. The clay gives way where a sole presses
 // (setDepth): its surface (a fine grid near the feet) and the layers on the cut face move by fields worked out once
 // for each foot, scaled by how deep that foot is in.
 import * as THREE from 'three';
 
 const PIT = { x: 0.62, z: 0.62, depth: 0.34 }; // the dug-away part in front: |x| < 0.62, 0 < z < 0.62
-// the layers of sand on the cut face, from the top: [depth of the bottom of the layer (m), colour]
+// the layers of clay on the cut face, from the top: [depth of the bottom of the layer (m), colour]: thick
+// terracotta bands with thin pale ochre streaks between them, darker with depth
 const LAYERS = [
-  [0.012, '#d9a259'],
-  [0.018, '#f6e2b8'],
-  [0.04, '#c48848'],
-  [0.046, '#f2d9a6'],
-  [0.07, '#b27742'],
-  [0.076, '#eed29c'],
-  [0.104, '#a56d3b'],
-  [0.11, '#e8c891'],
-  [0.148, '#966238'],
-  [0.155, '#dfba82'],
-  [0.205, '#8b5a34'],
-  [0.212, '#d6ab73'],
-  [1, '#7d4f2d'],
+  [0.012, '#b9532c'],
+  [0.018, '#efb47a'],
+  [0.04, '#a84826'],
+  [0.046, '#eaa96c'],
+  [0.07, '#9a3f22'],
+  [0.076, '#e3a065'],
+  [0.104, '#8d381f'],
+  [0.11, '#dc955c'],
+  [0.148, '#80321c'],
+  [0.155, '#d48a53'],
+  [0.205, '#742c19'],
+  [0.212, '#cb7f4a'],
+  [1, '#682716'],
 ];
 
 const smoothstep = (a, b, x) => {
@@ -29,7 +31,7 @@ const smoothstep = (a, b, x) => {
   return k * k * (3 - 2 * k);
 };
 
-/** Unit depth of the sand at a signed distance from a footprint's edge: −1 inside, a small rim of sand pushed up outside. */
+/** Unit depth of the clay at a signed distance from a footprint's edge: −1 inside, a small rim pushed up outside. */
 function unitDepth(sdf) {
   const inside = 1 - smoothstep(-0.003, 0.0055, sdf);
   const rim = sdf > 0 ? Math.exp(-(((sdf - 0.015) / 0.011) ** 2)) : 0;
@@ -74,7 +76,7 @@ function canvasTexture(w, h, draw, repeat = null) {
   return tex;
 }
 
-/** A seeded random number generator, so the beach looks the same every time. */
+/** A seeded random number generator, so the yard looks the same every time. */
 function rng(seed) {
   let a = seed >>> 0;
   return () => {
@@ -86,7 +88,7 @@ function rng(seed) {
   };
 }
 
-/** Grains of sand: a grey-ish noise around white, multiplied with the sand's colours. */
+/** The clay's fine grain: a soft noise around white, multiplied with the clay's colours. */
 function grainTexture(seed = 7) {
   const rand = rng(seed);
   return canvasTexture(
@@ -96,12 +98,12 @@ function grainTexture(seed = 7) {
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, w, h);
       for (let i = 0; i < 9000; i++) {
-        const v = 170 + Math.floor(rand() * 85);
+        const v = 205 + Math.floor(rand() * 50);
         ctx.fillStyle = `rgb(${v},${v - 4},${v - 12})`;
         ctx.fillRect(rand() * w, rand() * h, 1 + rand() * 1.4, 1 + rand() * 1.4);
       }
       for (let i = 0; i < 260; i++) {
-        ctx.fillStyle = rand() < 0.5 ? 'rgba(255,255,255,0.9)' : 'rgba(90,60,30,0.55)';
+        ctx.fillStyle = rand() < 0.5 ? 'rgba(255,235,215,0.7)' : 'rgba(70,25,10,0.4)';
         ctx.fillRect(rand() * w, rand() * h, 1.5, 1.5);
       }
     },
@@ -139,16 +141,16 @@ function crop(mesh, keep) {
 }
 
 /**
- * feet: [{ x (where the foot's frame is along the beach), footprint: { sdf, box } }]. Returns { root, setDepth(i, d),
- * floor(i): the sand's height under foot i, sink colour }.
+ * feet: [{ x (where the foot's frame is along the yard), footprint: { sdf, box } }]. Returns { root, setDepth(i, d),
+ * setDepths(list), depth(i), near() }.
  */
-export function createBeach(feet) {
+export function createGround(feet) {
   const root = new THREE.Group();
-  root.name = 'Beach';
+  root.name = 'ClayYard';
   const grain = grainTexture();
   const tmpC = new THREE.Color();
 
-  // ── the surface of the sand behind the cut (z ≤ 0): fine near the feet ──
+  // ── the surface of the clay behind the cut (z ≤ 0): fine near the feet ──
   const xs = [...new Set([...axis(-7, -0.44, 0.44, 7, 0.003, 0.5), -PIT.x, PIT.x])].sort((a, b) => a - b);
   const zs = axis(-9, -0.13, 0, 0, 0.003, 0.6);
   const nx = xs.length;
@@ -157,20 +159,20 @@ export function createBeach(feet) {
   const pos = new Float32Array(count * 3);
   const uv = new Float32Array(count * 2);
   const col = new Float32Array(count * 3);
-  const base = new Float32Array(count * 3); // the sand's own colour (wetter towards the sea)
-  const dry = new THREE.Color('#e7b46e');
-  const wet = new THREE.Color('#b78350');
+  const base = new Float32Array(count * 3); // the clay's own colour (a little drier, lighter, further back)
+  const wet = new THREE.Color('#c0502b');
+  const dry = new THREE.Color('#d2683a');
   for (let j = 0; j < nz; j++)
     for (let i = 0; i < nx; i++) {
       const k = j * nx + i;
       const x = xs[i];
       const z = zs[j];
-      // tiny ripples far from the feet (the wind's), flat near them
+      // gentle bumps far from the feet (old footprints, puddle edges), smooth near them
       const far = smoothstep(0.5, 1.6, Math.hypot(x, z));
-      const y = far * (0.004 * Math.sin(x * 9 + z * 3) + 0.003 * Math.sin(z * 14 - x * 2));
+      const y = far * (0.005 * Math.sin(x * 4.3 + z * 2.1) + 0.004 * Math.sin(z * 6.7 - x * 1.3));
       pos.set([x, y, z], k * 3);
       uv.set([x * 3.2, z * 3.2], k * 2);
-      tmpC.copy(dry).lerp(wet, smoothstep(-2.5, -5.5, z) * 0.9 + 0.15);
+      tmpC.copy(wet).lerp(dry, smoothstep(-0.8, -3.5, z) * 0.8);
       base.set([tmpC.r, tmpC.g, tmpC.b], k * 3);
       col.set([tmpC.r, tmpC.g, tmpC.b], k * 3);
     }
@@ -186,9 +188,10 @@ export function createBeach(feet) {
   topGeo.setAttribute('color', new THREE.BufferAttribute(col, 3));
   topGeo.setIndex(idx);
   topGeo.computeVertexNormals();
-  const sandMat = new THREE.MeshStandardMaterial({ map: grain, vertexColors: true, roughness: 0.96 });
-  const top = new THREE.Mesh(topGeo, sandMat);
-  top.name = 'SandSurface';
+  // wet clay has a soft sheen
+  const clayMat = new THREE.MeshStandardMaterial({ map: grain, vertexColors: true, roughness: 0.62 });
+  const top = new THREE.Mesh(topGeo, clayMat);
+  top.name = 'ClaySurface';
   top.receiveShadow = true;
   root.add(top);
   const restY = Float32Array.from({ length: count }, (_, k) => pos[k * 3 + 1]);
@@ -210,7 +213,7 @@ export function createBeach(feet) {
     return Float32Array.from(list);
   });
 
-  // ── the cut face (z = 0): the layers of sand, moved down under the feet, fading with depth ──
+  // ── the cut face (z = 0): the layers of clay, moved down under the feet, fading with depth ──
   const fx = xs.filter((x) => x >= -PIT.x - 1e-9 && x <= PIT.x + 1e-9);
   const hs = [];
   for (let h = 0; h <= PIT.depth + 1e-9; h += 0.004) hs.push(h);
@@ -244,7 +247,7 @@ export function createBeach(feet) {
   faceGeo.setAttribute('color', new THREE.BufferAttribute(fcol, 3));
   faceGeo.setIndex(fidx);
   faceGeo.computeVertexNormals();
-  const faceMat = new THREE.MeshStandardMaterial({ map: grain, vertexColors: true, roughness: 0.97 });
+  const faceMat = new THREE.MeshStandardMaterial({ map: grain, vertexColors: true, roughness: 0.85 });
   const face = new THREE.Mesh(faceGeo, faceMat);
   face.name = 'CutFace';
   face.receiveShadow = true;
@@ -277,8 +280,8 @@ export function createBeach(feet) {
     return out;
   });
 
-  // ── the pit: its floor and its two side walls; the beach in front of it and beside it ──
-  const pitMat = new THREE.MeshStandardMaterial({ map: grain, color: '#a8743f', roughness: 0.97 });
+  // ── the pit: its floor and its two side walls; the yard in front of it and beside it ──
+  const pitMat = new THREE.MeshStandardMaterial({ map: grain, color: '#7a2e18', roughness: 0.9 });
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(PIT.x * 2, PIT.z), pitMat);
   floor.rotation.x = -Math.PI / 2;
   floor.position.set(0, -PIT.depth, PIT.z / 2);
@@ -300,7 +303,7 @@ export function createBeach(feet) {
     wall.receiveShadow = true;
     root.add(wall);
   }
-  const groundMat = new THREE.MeshStandardMaterial({ map: grain, color: '#e7b46e', roughness: 0.96 });
+  const groundMat = new THREE.MeshStandardMaterial({ map: grain, color: '#c0502b', roughness: 0.62 });
   const addGround = (x0, x1, z0, z1) => {
     const g = new THREE.PlaneGeometry(x1 - x0, z1 - z0);
     const uvs = g.attributes.uv;
@@ -309,135 +312,137 @@ export function createBeach(feet) {
     m.rotation.x = -Math.PI / 2;
     m.position.set((x0 + x1) / 2, 0, (z0 + z1) / 2);
     m.receiveShadow = true;
-    m.name = 'Beach';
+    m.name = 'Yard';
     root.add(m);
   };
   addGround(-7, -PIT.x, 0, PIT.z);
   addGround(PIT.x, 7, 0, PIT.z);
   addGround(-7, 7, PIT.z, 6);
 
-  // ── far away: the wet edge, the sea, boats, umbrellas ──
+  // ── behind: a puddle, a turquoise wall with a yellow band, a blue door, bougainvillea, pots of marigolds ──
   const far = new THREE.Group();
-  far.name = 'Distance';
+  far.name = 'Yard';
   far.userData.noExport = true;
-  const farSand = new THREE.Mesh(new THREE.PlaneGeometry(60, 30), new THREE.MeshStandardMaterial({ color: '#c99256', roughness: 0.9 }));
-  farSand.rotation.x = -Math.PI / 2;
-  farSand.position.set(0, -0.01, -9 - 15 + 0.01);
-  far.add(farSand);
-  const foam = new THREE.Mesh(new THREE.PlaneGeometry(80, 0.5), new THREE.MeshStandardMaterial({ color: '#e9fbff', roughness: 0.6 }));
-  foam.rotation.x = -Math.PI / 2;
-  foam.position.set(0, 0.002, -11);
-  far.add(foam);
-  const seaTex = canvasTexture(
-    4,
-    256,
-    (ctx, w, h) => {
-      const g = ctx.createLinearGradient(0, 0, 0, h);
-      g.addColorStop(0, '#0b5fa8'); // far
-      g.addColorStop(0.55, '#0d8fb8');
-      g.addColorStop(1, '#2cc3c4'); // near the shore
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, w, h);
-    },
-    null,
-  );
-  const sea = new THREE.Mesh(new THREE.PlaneGeometry(160, 70), new THREE.MeshStandardMaterial({ map: seaTex, roughness: 0.18, metalness: 0.05 }));
-  sea.rotation.x = -Math.PI / 2;
-  sea.position.set(0, 0.0, -11.2 - 35);
-  far.add(sea);
-  // white crests of the small waves near the shore
-  const crestMat = new THREE.MeshStandardMaterial({ color: '#f2fdff', roughness: 0.5, transparent: true, opacity: 0.85 });
-  const rand = rng(11);
-  for (let i = 0; i < 14; i++) {
-    const crest = new THREE.Mesh(new THREE.PlaneGeometry(2 + rand() * 4, 0.12), crestMat);
-    crest.rotation.x = -Math.PI / 2;
-    crest.position.set(-14 + rand() * 28, 0.004, -12.5 - rand() * 6);
-    far.add(crest);
+  const mat = (color, roughness = 0.8, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness, ...extra });
+  const farClay = new THREE.Mesh(new THREE.PlaneGeometry(60, 30), mat('#cf6638', 0.7));
+  farClay.rotation.x = -Math.PI / 2;
+  farClay.position.set(0, -0.01, -9 - 15 + 0.01);
+  far.add(farClay);
+  // a puddle from the rain, the sky in it
+  const puddle = new THREE.Mesh(new THREE.CircleGeometry(1, 40), mat('#5a8fd6', 0.06, { metalness: 0.2 }));
+  puddle.rotation.x = -Math.PI / 2;
+  puddle.scale.set(0.7, 0.32, 1);
+  puddle.position.set(0.95, 0.006, -1.9);
+  far.add(puddle);
+  // the wall: turquoise plaster, a yellow band along the top, a terracotta coping
+  const WALL = { z: -3.6, h: 1.7 };
+  const wallTex = canvasTexture(512, 128, (ctx, w, h) => {
+    ctx.fillStyle = '#16a2b5';
+    ctx.fillRect(0, 0, w, h);
+    const rand = rng(3);
+    for (let i = 0; i < 1400; i++) {
+      ctx.fillStyle = rand() < 0.5 ? 'rgba(255,255,255,0.06)' : 'rgba(0,40,60,0.07)';
+      ctx.fillRect(rand() * w, rand() * h, 3 + rand() * 6, 2 + rand() * 4);
+    }
+    // a splash of red clay along the bottom (the rain)
+    const g = ctx.createLinearGradient(0, h, 0, h * 0.78);
+    g.addColorStop(0, 'rgba(150,55,25,0.75)');
+    g.addColorStop(1, 'rgba(150,55,25,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, h * 0.78, w, h * 0.22);
+  });
+  wallTex.wrapS = THREE.RepeatWrapping;
+  wallTex.repeat.set(4, 1);
+  const wall = new THREE.Mesh(new THREE.BoxGeometry(16, WALL.h, 0.25), new THREE.MeshStandardMaterial({ map: wallTex, roughness: 0.9 }));
+  wall.position.set(0, WALL.h / 2, WALL.z);
+  far.add(wall);
+  const band = new THREE.Mesh(new THREE.BoxGeometry(16, 0.16, 0.27), mat('#ffc21a', 0.7));
+  band.position.set(0, WALL.h - 0.2, WALL.z);
+  far.add(band);
+  const coping = new THREE.Mesh(new THREE.BoxGeometry(16.1, 0.08, 0.34), mat('#b5452a', 0.8));
+  coping.position.set(0, WALL.h + 0.04, WALL.z);
+  far.add(coping);
+  // a blue wooden door with an arch-shaped top panel in orange
+  const door = new THREE.Group();
+  const leaf = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.45, 0.06), mat('#1c4fc4', 0.55));
+  leaf.position.y = 0.725;
+  door.add(leaf);
+  for (const dx of [-0.25, 0.25]) {
+    const panel = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.9, 0.02), mat('#2f6ae6', 0.5));
+    panel.position.set(dx, 0.62, 0.04);
+    door.add(panel);
   }
-  // two fishing boats (a sampan's painted hull, red and blue, with a low cabin)
-  const boat = (x, z, hull, stripe, s) => {
+  const lintel = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.1, 0.08), mat('#f76707', 0.6));
+  lintel.position.set(0, 1.5, 0.01);
+  door.add(lintel);
+  door.position.set(-1.7, 0, WALL.z + 0.13);
+  far.add(door);
+  // bougainvillea over the wall: magenta and pink clusters on dark stems
+  const rand = rng(11);
+  const petal = [mat('#d6197a', 0.7), mat('#f0459a', 0.7), mat('#b5179e', 0.7)];
+  const stem = mat('#5c3320', 0.9);
+  const vine = (cx, spread, n) => {
+    for (let i = 0; i < 3; i++) {
+      const st = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.03, 1.3), stem);
+      st.position.set(cx - spread * 0.3 + i * spread * 0.3, WALL.h - 0.3, WALL.z + 0.2);
+      st.rotation.z = (i - 1) * 0.35;
+      far.add(st);
+    }
+    for (let i = 0; i < n; i++) {
+      const r = 0.12 + rand() * 0.16;
+      const blob = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 1), petal[i % 3]);
+      const a = rand() * Math.PI;
+      blob.position.set(
+        cx + Math.cos(a) * spread * rand(),
+        WALL.h - 0.25 + Math.sin(a) * 0.5 * rand() + rand() * 0.35,
+        WALL.z + 0.12 + rand() * 0.25,
+      );
+      blob.scale.y = 0.75;
+      far.add(blob);
+    }
+  };
+  vine(1.4, 1.1, 26);
+  vine(-4.2, 0.9, 18);
+  vine(4.6, 0.8, 14);
+  // clay pots of orange and yellow marigolds at the foot of the wall
+  const potMat = mat('#a9431f', 0.85);
+  const flowers = [mat('#ff8c00', 0.6), mat('#ffb703', 0.6), mat('#f76707', 0.6)];
+  const pot = (x, s) => {
     const g = new THREE.Group();
-    const shape = new THREE.Shape();
-    shape.moveTo(-1.6, 0.5);
-    shape.quadraticCurveTo(-1.1, -0.05, 0, -0.05);
-    shape.quadraticCurveTo(1.2, -0.05, 1.8, 0.75);
-    shape.lineTo(-1.6, 0.5);
-    const geo = new THREE.ExtrudeGeometry(shape, { depth: 0.9, bevelEnabled: false });
-    geo.translate(0, 0, -0.45);
-    g.add(new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: hull, roughness: 0.6 })));
-    const band = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.1, 0.94), new THREE.MeshStandardMaterial({ color: stripe, roughness: 0.6 }));
-    band.position.set(0.1, 0.42, 0);
-    g.add(band);
-    const cabin = new THREE.Mesh(new THREE.BoxGeometry(1, 0.5, 0.7), new THREE.MeshStandardMaterial({ color: '#ffd43b', roughness: 0.7 }));
-    cabin.position.set(-0.3, 0.75, 0);
-    g.add(cabin);
-    const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.8), new THREE.MeshStandardMaterial({ color: '#5c3b1e' }));
-    mast.position.set(0.6, 1.3, 0);
-    g.add(mast);
-    const flag = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 0.25), new THREE.MeshStandardMaterial({ color: '#e03131', side: THREE.DoubleSide }));
-    flag.position.set(0.8, 2.05, 0);
-    g.add(flag);
-    g.position.set(x, -0.05, z);
-    g.rotation.y = 0.3;
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.15, 0.36, 24), potMat);
+    body.position.y = 0.18;
+    g.add(body);
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.03, 8, 24), potMat);
+    rim.rotation.x = Math.PI / 2;
+    rim.position.y = 0.36;
+    g.add(rim);
+    for (let i = 0; i < 9; i++) {
+      const f = new THREE.Mesh(new THREE.IcosahedronGeometry(0.07 + rand() * 0.03, 1), flowers[i % 3]);
+      const a = (i / 9) * Math.PI * 2;
+      const r = i === 0 ? 0 : 0.12;
+      f.position.set(Math.cos(a) * r, 0.44 + rand() * 0.08, Math.sin(a) * r);
+      g.add(f);
+    }
+    g.position.set(x, 0, WALL.z + 0.45);
     g.scale.setScalar(s);
     far.add(g);
   };
-  boat(-5.5, -30, '#d9480f', '#1c7ed6', 1);
-  boat(7, -40, '#1c7ed6', '#f76707', 1.1);
-  // beach umbrellas with their poles, and a striped deck chair
-  const umbrella = (x, z, colors, tilt) => {
-    const g = new THREE.Group();
-    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 2.1), new THREE.MeshStandardMaterial({ color: '#f1e6d2' }));
-    pole.position.y = 1.05;
-    g.add(pole);
-    const n = colors.length * 2;
-    for (let i = 0; i < n; i++) {
-      const seg = new THREE.Mesh(
-        new THREE.ConeGeometry(1.1, 0.42, 24, 1, true, (i / n) * Math.PI * 2, (Math.PI * 2) / n),
-        new THREE.MeshStandardMaterial({ color: colors[i % colors.length], roughness: 0.7, side: THREE.DoubleSide }),
-      );
-      seg.position.y = 2.1;
-      g.add(seg);
-    }
-    g.rotation.z = tilt;
-    g.position.set(x, 0, z);
-    far.add(g);
-  };
-  umbrella(-2.6, -4.2, ['#e8590c', '#fff3bf'], 0.12);
-  umbrella(2.2, -6.0, ['#1c7ed6', '#ffd43b'], -0.1);
-  umbrella(5.2, -4.8, ['#d6336c', '#ffffff'], 0.08);
-  umbrella(-6.5, -7.5, ['#7048e8', '#ffd8a8'], -0.06);
-  const chair = new THREE.Group();
-  const seatTex = canvasTexture(64, 64, (ctx, w, h) => {
-    for (let i = 0; i < 8; i++) {
-      ctx.fillStyle = i % 2 ? '#fff3bf' : '#f03e3e';
-      ctx.fillRect((i * w) / 8, 0, w / 8, h);
-    }
-  });
-  const seat = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.04, 1.2), new THREE.MeshStandardMaterial({ map: seatTex }));
-  seat.rotation.z = 0.5;
-  seat.position.set(0, 0.35, 0);
-  chair.add(seat);
-  chair.position.set(-1.8, 0, -4.6);
-  chair.rotation.y = 1.2;
-  far.add(chair);
-  // shells and pebbles near the feet
-  const shellMat = new THREE.MeshStandardMaterial({ color: '#f7d9c4', roughness: 0.5 });
-  const pebbleMat = new THREE.MeshStandardMaterial({ color: '#8d7b6a', roughness: 0.8 });
+  pot(-0.6, 1);
+  pot(-0.05, 0.85);
+  pot(2.8, 1.1);
+  pot(-3.2, 0.95);
+  // a few pebbles near the feet
+  const pebbleMat = [mat('#8d7b6a', 0.7), mat('#d9c6a5', 0.6), mat('#5c4a3d', 0.7)];
   const near = new THREE.Group();
-  near.name = 'Shells';
+  near.name = 'Pebbles';
   const r2 = rng(5);
-  for (let i = 0; i < 22; i++) {
+  for (let i = 0; i < 18; i++) {
     const x = -0.9 + r2() * 1.8;
     const z = -0.2 - r2() * 1.2;
     if (Math.abs(x) < 0.38 && z > -0.2) continue;
-    const isShell = r2() < 0.55;
-    const m = new THREE.Mesh(
-      isShell ? new THREE.SphereGeometry(0.008 + r2() * 0.006, 10, 6, 0, Math.PI) : new THREE.IcosahedronGeometry(0.006 + r2() * 0.006, 1),
-      isShell ? shellMat : pebbleMat,
-    );
+    const m = new THREE.Mesh(new THREE.IcosahedronGeometry(0.005 + r2() * 0.007, 1), pebbleMat[i % 3]);
     m.position.set(x, 0.001, z);
-    m.rotation.set(isShell ? -Math.PI / 2 : r2(), r2() * 6, 0);
+    m.rotation.set(r2(), r2() * 6, 0);
     m.scale.y = 0.6;
     m.castShadow = true;
     near.add(m);
@@ -445,10 +450,10 @@ export function createBeach(feet) {
   root.add(near);
   root.add(far);
 
-  // ── the sand gives way ──
+  // ── the clay gives way ──
   const depths = feet.map(() => 0);
-  const shade = new THREE.Color('#8a5a30'); // pressed sand is darker (wet and packed)
-  const packed = new THREE.Color('#5e3a1e');
+  const shade = new THREE.Color('#7c2a14'); // pressed clay is darker (wetter and packed)
+  const packed = new THREE.Color('#4e1a0c');
   function apply() {
     const p = topGeo.attributes.position;
     const c = topGeo.attributes.color;
@@ -494,7 +499,7 @@ export function createBeach(feet) {
           move += ff[k] * depths[f];
         });
         farr[k * 3 + 1] = -hs[j] + move;
-        // sand pushed down is packed tighter: darker, the more it moved
+        // clay pushed down is packed tighter: darker, the more it moved
         const w = Math.min(0.6, Math.max(0, -move) * 22);
         fcarr[k * 3] = fbase[k * 3] + (packed.r - fbase[k * 3]) * w;
         fcarr[k * 3 + 1] = fbase[k * 3 + 1] + (packed.g - fbase[k * 3 + 1]) * w;
@@ -508,7 +513,7 @@ export function createBeach(feet) {
   return {
     root,
     pit: PIT,
-    /** How deep foot i is in the sand (m); the surface and the layers follow. */
+    /** How deep foot i is in the clay (m); the surface and the layers follow. */
     setDepth(i, d) {
       const v = Math.max(0, d);
       if (Math.abs(v - depths[i]) < 1e-6) return;
@@ -527,7 +532,7 @@ export function createBeach(feet) {
       if (changed) apply();
     },
     depth: (i) => depths[i],
-    /** Copies of the sand near the feet, as it is now (with the prints), for the GLB: the surface, the cut face. */
+    /** Copies of the clay near the feet, as it is now (with the prints), for the GLB: the surface, the cut face. */
     near: () => [crop(top, (x, _y, z) => Math.abs(x) < 0.5 && z > -0.35), crop(face, (x) => Math.abs(x) < 0.5)],
   };
 }
