@@ -1,8 +1,8 @@
 // Newton's second law with a rope over a pulley (book pages 81–83, topic 3.7), student view. A village well, cut in
 // half so its shaft can be seen: a man pulls a rope over the well's pulley and a bucket of water hangs from its other
 // end. One light rope over a smooth pulley carries one tension T, so his pull is the rope's pull on the bucket. The
-// student chooses the pull T and the bucket with its water M (steppers, or the row of words: ধরে রাখো, জোরে টানো, ঢিল
-// দাও, বেশি পানি) and the panel works out the book's law for the bucket live, up being positive: T − Mg = Ma, so
+// student chooses the pull T and the bucket with its water M (steppers, or the row of words: ধরে রাখো, জোরে টানো, কম
+// টানো, বেশি পানি) and the panel works out the book's law for the bucket live, up being positive: T − Mg = Ma, so
 // a = (T − Mg)/M. One tap runs it: he pulls hand over hand (or lets the rope slip), the bucket speeds up (up or down)
 // or stays where it is, and arrows show T at the bucket and at his fists (the same number), the weight Mg and the
 // acceleration a. The book's own pictures (চিত্র ৩.০৯: a hanging mass pulls a block on a smooth table; চিত্র ৩.১০: a
@@ -62,10 +62,10 @@ export const DEFAULTS = {
   sound: true,
 };
 
-const COLORS = { W: '#7048e8', T: '#e8590c', a: '#0c8599' };
-const FORCE_SCALE = 0.0042; // m of arrow per newton (98 N → 0.41 m)
-const ACC_SCALE = 0.11; // m of arrow per ms⁻²
-const ARROW_MAX = 0.85;
+const COLORS = { W: '#7048e8', T: '#e8590c', a: '#0c8599', F: '#212529' };
+const FORCE_SCALE = 0.0056; // m of arrow per newton (98 N → 0.55 m)
+const ACC_SCALE = 0.13; // m of arrow per ms⁻²
+const ARROW_MAX = 1.1;
 const NBSP = ' ';
 const DOUBLE_TAP = 450; // ms
 const ZF = 0.24; // the bucket's arrows are drawn this far in front of the rope, so nothing hides them
@@ -170,8 +170,16 @@ export function createApp(root, options = {}) {
     const sky = new THREE.CanvasTexture(c);
     sky.colorSpace = THREE.SRGBColorSpace;
     scene.background = sky;
-    scene.fog = new THREE.Fog('#bcdcf2', 14, 40);
+    // a haze over the yard behind the well (the house, the haystack): the well, the bucket and the arrows stand out
+    scene.fog = new THREE.Fog('#d8e9f6', 10, 20);
   }
+  function hazeYard() {
+    if (!(scene.fog instanceof THREE.Fog)) return;
+    const d = camera.position.distanceTo(controls.target);
+    scene.fog.near = d + 0.5;
+    scene.fog.far = d + 6;
+  }
+  controls.addEventListener('change', hazeYard);
   scene.add(new THREE.HemisphereLight('#d6ecff', '#b0703c', 0.95));
   const sun = new THREE.DirectionalLight('#fff1d6', 1.55);
   sun.position.set(-3.5, 7.5, 6.5);
@@ -203,16 +211,47 @@ export function createApp(root, options = {}) {
 
   const tmp = new THREE.Vector3();
   const tmp2 = new THREE.Vector3();
-  const mkArrow = (name, color) => createArrow({ color, radius: 0.016, head: 0.085, headRadius: 0.042, name });
+  // the arrows are the point of the picture: thick, flat colour in a white outline, drawn over the scenery
+  const flat = (color) =>
+    new THREE.MeshBasicMaterial({ color, transparent: true, depthTest: false, depthWrite: false, fog: false, toneMapped: false });
+  const OUTLINE_FROM = new THREE.Vector3();
+  let thick = 1; // the arrows get thicker (not longer) on a small stage, so they stay at least about 4 px wide
+  function boldArrow(name, color, r = 0.03) {
+    const core = createArrow({ name, radius: r, head: r * 5.2, headRadius: r * 2.7, material: flat(color) });
+    const pad = r * 0.6;
+    const outline = createArrow({
+      name: `${name}Outline`,
+      radius: r + pad,
+      head: r * 5.2 + pad * 2.8,
+      headRadius: r * 2.7 + pad * 2,
+      material: flat('#ffffff'),
+    });
+    core.root.add(outline.root);
+    core.root.renderOrder = 21;
+    outline.root.renderOrder = 20;
+    return {
+      ...core,
+      /** Thickness × k, everything × p (the pulse of a tapped symbol). */
+      scale(p = 1) {
+        core.root.scale.set(thick * p, p, thick * p);
+      },
+      set(from, dir, length) {
+        core.set(from, dir, length);
+        OUTLINE_FROM.set(0, -pad, 0);
+        if (length > 1e-9) outline.set(OUTLINE_FROM, UPV, length + pad * 2.2);
+        else outline.hide();
+      },
+    };
+  }
   const A = {
-    T: mkArrow('TensionOnBucket', COLORS.T),
-    W: mkArrow('WeightOfBucket', COLORS.W),
-    a: mkArrow('AccelerationOfBucket', COLORS.a),
-    H: mkArrow('TensionOnHands', COLORS.T),
+    T: boldArrow('TensionOnBucket', COLORS.T),
+    W: boldArrow('WeightOfBucket', COLORS.W),
+    F: boldArrow('ResultantOnBucket', COLORS.F, 0.026),
+    a: boldArrow('AccelerationOfBucket', COLORS.a, 0.022),
+    H: boldArrow('TensionOnHands', COLORS.T, 0.026),
   };
   for (const a of Object.values(A)) {
     a.root.userData.noExport = true;
-    a.root.renderOrder = 5;
     scene.add(a.root);
   }
 
@@ -400,16 +439,21 @@ export function createApp(root, options = {}) {
 
   function layoutArrows(w) {
     for (const a of Object.values(A)) a.hide();
+    const perPx = (2 * camera.position.distanceTo(controls.target) * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))) / Math.max(1, stage.height);
+    thick = Math.min(1.8, Math.max(1, (4.2 * perPx) / 0.03));
+    for (const a of Object.values(A)) a.scale(1); // a pulse (pulseFocus) scales it again on the next frame
     if (!arrowsOn()) return;
     const { sol } = s;
     const kf = Math.min(FORCE_SCALE, ARROW_MAX / Math.max(sol.T, sol.W, 1));
     const ka = Math.min(ACC_SCALE, ARROW_MAX / Math.max(Math.abs(sol.a), 1e-6));
     const y = w.y;
-    // on the bucket: T up from the handle, Mg down from the bottom, a beside it
+    // on the bucket: T up from the handle, Mg down from its middle; on its left the resultant T − Mg, on its right a
+    // (the same way as the resultant: F = Ma)
+    const mid = y + BUCKET_SIZE.h / 2;
     if (sol.T > 0.01) A.T.set(tmp.set(BUCKET_X, y + KNOT + 0.02, ZF), UPV, sol.T * kf);
-    A.W.set(tmp.set(BUCKET_X, y - 0.01, ZF), DOWN, sol.W * kf);
-    if (Math.abs(sol.a) > 1e-3)
-      A.a.set(tmp.set(BUCKET_X + BUCKET_SIZE.rTop + 0.16, y + BUCKET_SIZE.h / 2, ZF), sol.a > 0 ? UPV : DOWN, Math.abs(sol.a) * ka);
+    A.W.set(tmp.set(BUCKET_X, mid, ZF), DOWN, sol.W * kf);
+    if (Math.abs(sol.net) > 1e-6) A.F.set(tmp.set(BUCKET_X - BUCKET_SIZE.rTop - 0.15, mid, ZF), sol.net > 0 ? UPV : DOWN, Math.abs(sol.net) * kf);
+    if (Math.abs(sol.a) > 1e-3) A.a.set(tmp.set(BUCKET_X + BUCKET_SIZE.rTop + 0.15, mid, ZF), sol.a > 0 ? UPV : DOWN, Math.abs(sol.a) * ka);
     // on his fists: the rope pulls them towards the wheel (the same T)
     if (sol.T > 0.01) {
       const first = lineA.distanceTo(PULLEY_C) <= lineB.distanceTo(PULLEY_C) ? lineA : lineB;
@@ -429,12 +473,8 @@ export function createApp(root, options = {}) {
   /** The arrow of the symbol the student tapped in the law grows and shrinks for a moment. */
   function pulseFocus() {
     const k = s.focus ? 1 + 0.25 * Math.sin(((now() - s.focusAt) / 1000) * Math.PI * 4) : 1;
-    const map = { T: [A.T, A.H], W: [A.W], a: [A.a], M: [] };
-    for (const [key, list] of Object.entries(map))
-      for (const a of list) {
-        const on = s.focus === key;
-        a.root.scale.setScalar(on ? k : 1);
-      }
+    const map = { T: [A.T, A.H], W: [A.W], a: [A.a, A.F], M: [] };
+    for (const [key, list] of Object.entries(map)) for (const a of list) a.scale(s.focus === key ? k : 1);
     bucket.root.scale.setScalar(s.focus === 'M' ? k * 0.97 + 0.03 : 1);
     stage.invalidate();
   }
@@ -581,6 +621,7 @@ export function createApp(root, options = {}) {
   const ABOVE = [spot(0, -16), spot(16, -16), spot(-16, -16), spot(0, -34), ...RIGHT_OF, ...LEFT_OF];
   const labelPoint = {
     bucket: new THREE.Vector3(),
+    net: new THREE.Vector3(),
   };
   const labelState = new Map();
   const want = new Map();
@@ -593,12 +634,12 @@ export function createApp(root, options = {}) {
     const compact = stage.height < 250 || stage.width < 350;
     const sol = s.sol;
     const lbl = (k, v) => (s.numbers ? t(`lbl_${k}`, { v }) : t(`sym_${k}`));
-    // the bucket's mass beside it, on the side away from its arrows
+    // the bucket's mass under it, on the left (the resultant's arrow is beside it)
     addLabel('M', {
       kind: 'mass',
       text: t('lbl_M', { m: N(s.M) }),
-      point: () => labelPoint.bucket.set(BUCKET_X - BUCKET_SIZE.rTop, bucket.root.position.y + BUCKET_SIZE.h * 0.5, 0),
-      spots: [spot(-16, 0), spot(-16, -20), spot(-16, 20), spot(-30, 0)],
+      point: () => labelPoint.bucket.set(BUCKET_X - BUCKET_SIZE.rBottom, bucket.root.position.y, ZF),
+      spots: [spot(-16, 16), spot(-16, 34), spot(-30, 0), spot(-16, -20)],
     });
     if (on) {
       const own = [bodyBoxes];
@@ -606,6 +647,15 @@ export function createApp(root, options = {}) {
       addLabel('W', { text: lbl('W', plain(sol.W)), point: () => A.W.tip, spots: [...RIGHT_OF, ...LEFT_OF], color: COLORS.W, own });
       if (Math.abs(sol.a) > 1e-3)
         addLabel('a', { text: lbl('a', signed(sol.a)), point: () => A.a.tip, spots: [...RIGHT_OF, ...SIDES], color: COLORS.a, own });
+      // the resultant: at its arrow's tip, or beside the bucket when it is zero (held still)
+      const still = Math.abs(sol.net) < 1e-6;
+      addLabel('F', {
+        text: s.numbers ? t('lbl_F', { v: still ? '0' : signed(sol.net, 1) }) : t('sym_F'),
+        point: () => (still ? labelPoint.net.set(BUCKET_X - BUCKET_SIZE.rTop - 0.15, bucket.root.position.y + BUCKET_SIZE.h / 2, ZF) : A.F.tip),
+        spots: [...LEFT_OF, ...ABOVE],
+        color: COLORS.F,
+        own,
+      });
       if (!compact && sol.T > 0.01)
         addLabel('TH', { text: lbl('T', plain(sol.T)), point: () => A.H.tip, spots: ABOVE, color: COLORS.T, own, optional: true });
     }
@@ -652,6 +702,7 @@ export function createApp(root, options = {}) {
       camera.position.copy(position);
       controls.target.copy(target);
       controls.update();
+      hazeYard();
       stage.invalidate();
       return Promise.resolve(true);
     }
@@ -664,6 +715,7 @@ export function createApp(root, options = {}) {
           camera.position.lerpVectors(p0, position, k);
           controls.target.lerpVectors(t0, target, k);
           controls.update();
+          hazeYard();
           stage.invalidate();
         },
       })
