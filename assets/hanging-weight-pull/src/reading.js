@@ -32,6 +32,7 @@ export const signed = (x, digits = 2) => {
 /** The empty bucket, kg (a 15 litre plastic bucket with a steel handle); a litre of water is a kilogram. */
 export const BUCKET = 1;
 /** What the steppers allow: the pull T in newtons, the bucket with its water M in kilograms ([min, max, step]). */
+/** @type {{ T: [number, number, number], M: [number, number, number] }} */
 export const LIMITS = { T: [0, 200, 2], M: [3, 15, 1] };
 /** Time is slowed down by this much on screen: a real run lasts about a second. */
 export const SLOW = 3;
@@ -54,7 +55,10 @@ export function lift(T, M, g = G) {
 /** The pull that holds a bucket still (T = M g). */
 export const holdPull = (M, g = G) => M * g;
 
-/** Snaps a pull and a mass to the steppers' steps and limits. */
+/**
+ * Snaps a pull and a mass to the steppers' steps and limits.
+ * @param {{ T?: any, M?: any }} [p]
+ */
 export function fixLift({ T, M } = {}) {
   const snap = (x, [lo, hi, step], fallback) => {
     const v = Number.isFinite(Number(x)) ? Number(x) : fallback;
@@ -152,6 +156,7 @@ export function fullChoices(T, M, extra, g = G) {
 export const TRAVEL = { single: 0.34, two: 0.26 };
 /** The book's numbers and what the window's steppers allow. */
 export const BOOK = { single: { M: 2, m: 5 }, two: { m2: 10, m1: 5, m: 5 } };
+/** @type {{ M: [number, number, number], m: [number, number, number] }} [min, max, step] */
 export const EX_LIMITS = { M: [1, 10, 1], m: [1, 20, 1] };
 
 /**
