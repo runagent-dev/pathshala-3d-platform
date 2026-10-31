@@ -1,16 +1,17 @@
-// A hanging weight pulls a block (book pages 81–82, topic 3.7), student view. A wooden block rests on a smooth bench,
-// held by a gate; a string runs from it over a pulley to an iron weight that hangs beside the bench. One tap lets go:
-// the weight falls, the block slides, and both speed up together at a = Mg/(M + m), the string's one tension T
-// (T = ma on the block, T − Mg = M(−a) on the weight) smaller than Mg. Arrows show the weight Mg (purple), the
-// tension T (orange, the same on both bodies) and the acceleration a (teal). The row of words is the book's story in
-// four experiments: M = 2 kg, M = 5 kg (a grows), m = 10 kg (a shrinks), and the page-82 example with a mass hanging
-// at each end. The panel is the kit's clean sheet (one action, one result, one rule), then a five-question test.
+// Newton's second law with a rope over a pulley (book pages 81–83, topic 3.7), student view. A village well, cut in
+// half so its shaft can be seen: a man pulls a rope over the well's pulley and a bucket of water hangs from its other
+// end. One light rope over a smooth pulley carries one tension T, so his pull is the rope's pull on the bucket. The
+// student chooses the pull T and the bucket with its water M (steppers, or the row of words: ধরে রাখো, জোরে টানো, ঢিল
+// দাও, বেশি পানি) and the panel works out the book's law for the bucket live, up being positive: T − Mg = Ma, so
+// a = (T − Mg)/M. One tap runs it: he pulls hand over hand (or lets the rope slip), the bucket speeds up (up or down)
+// or stays where it is, and arrows show T at the bucket and at his fists (the same number), the weight Mg and the
+// acceleration a. The book's own pictures (চিত্র ৩.০৯: a hanging mass pulls a block on a smooth table; চিত্র ৩.১০: a
+// mass at each end) open in the উদাহরণ window (example.js), solved line by line. Then a five-question test.
 // Built on the shared student kit (@shared/student/…).
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
 import { createArrow } from '@shared/arrow.js';
 import { createTweener, ease } from '@shared/tween.js';
-import { createMaterials } from '@shared/student/materials.js';
 import { createAudio } from '@shared/student/audio.js';
 import { createAnnotations } from '@shared/student/annotations.js';
 import { bindCleanSheet, buildStudentShell, cleanSheet } from '@shared/student/shell.js';
@@ -18,37 +19,42 @@ import { createAction } from '@shared/student/action.js';
 import { createQuiz } from '@shared/student/quiz.js';
 import { ICONS } from '@shared/student/icons.js';
 import { createI18n } from './i18n.js';
-import { BENCH, STRING_Y, createApparatus } from './apparatus.js';
+import { BUCKET_SIZE, KNOT, createBucket } from './bucket.js';
 import { fitPose } from './camera.js';
+import { createExample } from './example.js';
+import { createPerson } from './person.js';
 import {
-  CALC_PAIRS,
+  CALC_SETS,
+  EASE_SETS,
   EXPERIMENTS,
+  FULL_SETS,
   G,
+  HOLD_MASSES,
   IDS,
-  M_PAIRS,
+  LIMITS,
+  SHAFT,
   SLOW,
-  TWO_PAIRS,
+  bucketAt,
   calcChoices,
-  m_PAIRS,
+  fixLift,
+  fullChoices,
+  holdChoices,
+  lift,
   plain,
-  pull,
   round,
-  runAt,
-  runTime,
-  sameChoices,
-  solve,
-  travel,
-  twoChoices,
-  twoWeights,
+  runSeconds,
+  signed,
 } from './reading.js';
+import { createRope, tangentAngle } from './rope.js';
+import { PULLEY, createWell } from './well.js';
 
 export const DEFAULTS = {
-  id: 'w2', // 'w2' | 'w5' | 'heavy' | 'two': the experiment (the row of words)
+  id: 'hold', // 'hold' | 'pull' | 'ease' | 'full': the experiment (the row of words)
   at: '', // 0 … 1: start frozen at that part of the run, with the arrows (for pictures)
-  tried: '', // experiments already run, e.g. 'w2,w5' (their results show under the words)
+  tried: '', // experiments already run, e.g. 'hold,pull' (their results show under the words)
   view: 'front', // 'front' | '3d'
   mode: 'explore', // 'explore' | 'quiz'
-  coach: true, // the numbered ring on the block pulses (false: it stays still)
+  coach: true, // the numbered ring on the bucket pulses (false: it stays still)
   numerals: null,
   lang: 'bn',
   bg: 'light',
@@ -57,31 +63,32 @@ export const DEFAULTS = {
 };
 
 const COLORS = { W: '#7048e8', T: '#e8590c', a: '#0c8599' };
-// m of arrow per newton (one scale for all forces in a scene) and per ms⁻²; no arrow is longer than ARROW_MAX (m), so a
-// big mass never draws an arrow off the stage
-const FORCE_SCALE = { single: 0.0048, two: 0.0028 };
-const ACC_SCALE = { single: 0.045, two: 0.07 };
-const ARROW_MAX = 0.3;
-const NBSP = '\u00a0';
-const ZF = 0.2; // the arrows are drawn in a plane in front of the bench, so nothing hides them
+const FORCE_SCALE = 0.0042; // m of arrow per newton (98 N → 0.41 m)
+const ACC_SCALE = 0.11; // m of arrow per ms⁻²
+const ARROW_MAX = 0.85;
+const NBSP = ' ';
 const DOUBLE_TAP = 450; // ms
-// what the camera shows: the bench from the left a little before the block to beyond the weight (room for labels)
-const VIEW_BOXES = {
-  single: [new THREE.Vector3(-0.12, 0.05, -0.22), new THREE.Vector3(1.15, 1.12, 0.22)],
-  two: [new THREE.Vector3(-1.15, 0.05, -0.22), new THREE.Vector3(1.15, 1.12, 0.22)],
-};
-const VIEW_DIRS = { front: new THREE.Vector3(-0.1, 0.19, 1), '3d': new THREE.Vector3(-0.58, 0.4, 0.75) };
-const MARGIN = { top: 50, bottom: 22, side: 6 };
-const DOWN = new THREE.Vector3(0, -1, 0);
+const ZF = 0.24; // the bucket's arrows are drawn this far in front of the rope, so nothing hides them
+// the person: where he stands (world), the line his fists hold on the rope, the stroke of one hand
+const MAN = new THREE.Vector3(1.98, 0, -0.14);
+const GRIP_HOME = new THREE.Vector3(1.6, 1.28, -0.14); // the upper fist when he holds the rope still
+const STROKE = 0.24; // m of rope one fist pulls before the other takes over
+const BUCKET_X = PULLEY.x - PULLEY.r; // the rope hangs from the left of the wheel
+// what the camera shows: from left of the well to behind the man, from the water to the beam
+const VIEW_BOX = [new THREE.Vector3(-0.95, -1.12, -0.3), new THREE.Vector3(2.6, 2.32, 0.3)];
+const VIEW_DIRS = { front: new THREE.Vector3(0, 0.15, 1), '3d': new THREE.Vector3(-0.55, 0.32, 0.78) };
+const MARGIN = { top: 56, bottom: 24, side: 4 };
 const UPV = new THREE.Vector3(0, 1, 0);
-const RIGHT = new THREE.Vector3(1, 0, 0);
-const LEFT = new THREE.Vector3(-1, 0, 0);
+const DOWN = new THREE.Vector3(0, -1, 0);
+const BOOK_ICON =
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/><path d="M8 7.5h8M8 11h6"/></svg>';
+
 export function createApp(root, options = {}) {
   const o = { ...DEFAULTS, ...options };
   const t = createI18n(o.lang, { numerals: o.numerals });
   const N = t.num;
 
-  root.classList.add('pvc', 'hw');
+  root.classList.add('pvc', 'wl');
   root.dataset.theme = o.bg;
   root.dataset.ui = 'simple';
   root.lang = t.lang;
@@ -89,61 +96,123 @@ export function createApp(root, options = {}) {
   const ui = buildStudentShell(root, t, {
     learn: cleanSheet(t, {
       examples: { label: 'experiments', results: true, items: IDS.map((id) => ({ id, label: `chip_${id}` })) },
-      quiet: [{ act: 'home', label: 'act_home', icon: ICONS.reset }],
-      lines: { action: 1, outcome: 1, rule: 3 },
+      quiet: [
+        { act: 'example', label: 'act_example', icon: BOOK_ICON },
+        { act: 'home', label: 'act_home', icon: ICONS.reset },
+      ],
+      lines: { action: 1, outcome: 0, rule: 2 },
     }),
+    learnAlign: 'start',
   });
   const sheet = bindCleanSheet(ui.learn);
+  const $ = ui.$;
+
+  // the formula: two steppers (the pull T, the bucket M), the law with each symbol a button, the sum with the numbers
+  const stepper = (k, unit) => `
+      <div class="wl-step k-${k}">
+        <span class="wl-name"><b class="c-${k}">${k}</b> <span>${t(`name_${k}`)}</span></span>
+        <span class="wl-ctl">
+          <button type="button" class="wl-pm" data-step="${k}" data-dir="-1" aria-label="${t(`less_${k}`)}">${ICONS.minus}</button>
+          <output class="wl-val" data-val="${k}" aria-live="polite"></output>
+          <span class="wl-unit">${unit}</span>
+          <button type="button" class="wl-pm" data-step="${k}" data-dir="1" aria-label="${t(`more_${k}`)}">${ICONS.plus}</button>
+        </span>
+      </div>`;
+  const eq = document.createElement('div');
+  eq.className = 'wl-eq';
+  eq.innerHTML = `
+    <div class="wl-steps">${stepper('T', 'N')}${stepper('M', 'kg')}</div>
+    <div class="wl-law" aria-label="${t('law_label')}">
+      <button type="button" class="wl-term c-T" data-term="T">T</button><span class="wl-op">−</span><button type="button" class="wl-term c-W" data-term="W">M<i>g</i></button><span class="wl-op">=</span><button type="button" class="wl-term c-M" data-term="M">M</button><button type="button" class="wl-term c-a" data-term="a">a</button>
+      <span class="wl-sum"></span>
+    </div>`;
+  $('.pvc-act-row').after(eq);
+  const sumEl = /** @type {HTMLElement} */ (eq.querySelector('.wl-sum'));
+
+  // the notes (top left): what is drawn and how, and the sign rule; a chip (bottom right) with the bucket's velocity
+  // during a run and what it did after it
+  const notes = document.createElement('div');
+  notes.className = 'wl-notes';
   const note = document.createElement('div');
-  note.className = 'hw-note';
+  note.className = 'wl-note';
+  const sign = document.createElement('div');
+  sign.className = 'wl-sign';
+  const speed = document.createElement('div');
+  speed.className = 'wl-speed';
+  notes.append(note, sign);
   const scaleNote = document.createElement('div');
-  scaleNote.className = 'hw-scale';
-  ui.stage.append(note, scaleNote);
+  scaleNote.className = 'wl-scale';
+  ui.stage.append(notes, speed, scaleNote);
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
-  const stage = createStage(ui.canvasHost, { fov: 24, near: 0.05, far: 60, environment: 'studio-light' });
+  const stage = createStage(ui.canvasHost, { fov: 30, near: 0.05, far: 90, environment: 'studio-light' });
   const { camera, controls, scene } = stage;
-  controls.minDistance = 1;
-  controls.maxDistance = 12;
+  controls.minDistance = 1.5;
+  controls.maxDistance = 30;
   controls.enablePan = false;
+  controls.enableZoom = false;
   controls.enableRotate = false;
-  const M = createMaterials(stage.renderer);
-  const ap = createApparatus({ materials: M });
-  scene.add(ap.root);
-  const geom = ap.geom;
-
-  let sun = null;
+  controls.minPolarAngle = 0.5;
+  controls.maxPolarAngle = Math.PI * 0.53;
+  if (o.bg !== 'transparent') {
+    // a deep blue sky, paler at the horizon
+    const c = document.createElement('canvas');
+    c.width = 4;
+    c.height = 256;
+    const ctx = /** @type {CanvasRenderingContext2D} */ (c.getContext('2d'));
+    const g = ctx.createLinearGradient(0, 0, 0, 256);
+    g.addColorStop(0, '#1560c8');
+    g.addColorStop(0.45, '#3f8fe0');
+    g.addColorStop(0.8, '#94c8f0');
+    g.addColorStop(1, '#cfe6f6');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 4, 256);
+    const sky = new THREE.CanvasTexture(c);
+    sky.colorSpace = THREE.SRGBColorSpace;
+    scene.background = sky;
+    scene.fog = new THREE.Fog('#bcdcf2', 14, 40);
+  }
+  scene.add(new THREE.HemisphereLight('#d6ecff', '#b0703c', 0.95));
+  const sun = new THREE.DirectionalLight('#fff1d6', 1.55);
+  sun.position.set(-3.5, 7.5, 6.5);
+  sun.target.position.set(0.7, 0, -0.6);
+  scene.add(sun, sun.target);
+  const fill = new THREE.DirectionalLight('#cfe2ff', 0.35);
+  fill.position.set(4, 3, 5);
+  scene.add(fill);
   if (o.shadow && o.bg !== 'transparent') {
     stage.renderer.shadowMap.enabled = true;
     stage.renderer.shadowMap.type = THREE.VSMShadowMap;
-    sun = new THREE.DirectionalLight(0xffffff, 0.45);
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048);
-    Object.assign(sun.shadow.camera, { left: -2, right: 2, top: 1.6, bottom: -0.2, near: 1, far: 9 });
-    sun.shadow.radius = 6;
-    sun.shadow.bias = -0.0004;
-    sun.position.set(0.8, 3.4, 2.4);
-    sun.target.position.set(0, 0.6, 0);
-    scene.add(sun, sun.target);
+    Object.assign(sun.shadow.camera, { left: -4.5, right: 4.5, top: 4, bottom: -3, near: 1, far: 20 });
+    sun.shadow.radius = 5;
+    sun.shadow.bias = -0.0005;
   }
+
+  const well = createWell();
+  scene.add(well.root);
+  const bucket = createBucket();
+  scene.add(bucket.root);
+  const rope = createRope();
+  scene.add(rope.root);
+  const man = createPerson();
+  man.root.position.copy(MAN);
+  man.root.rotation.y = Math.PI; // he faces the well (−x)
+  scene.add(man.root);
 
   const tmp = new THREE.Vector3();
   const tmp2 = new THREE.Vector3();
-  const mkArrow = (name, color) => createArrow({ color, radius: 0.0065, head: 0.04, headRadius: 0.0175, name });
-  // arrows: on the weights (W weight, T tension, a acceleration), on the block (T on each side, a)
+  const mkArrow = (name, color) => createArrow({ color, radius: 0.016, head: 0.085, headRadius: 0.042, name });
   const A = {
-    rW: mkArrow('WeightArrow', COLORS.W),
-    rT: mkArrow('TensionArrow', COLORS.T),
-    ra: mkArrow('AccelerationArrow', COLORS.a),
-    lW: mkArrow('WeightArrowLeft', COLORS.W),
-    lT: mkArrow('TensionArrowLeft', COLORS.T),
-    la: mkArrow('AccelerationArrowLeft', COLORS.a),
-    bR: mkArrow('BlockTensionRight', COLORS.T),
-    bL: mkArrow('BlockTensionLeft', COLORS.T),
-    ba: mkArrow('BlockAcceleration', COLORS.a),
+    T: mkArrow('TensionOnBucket', COLORS.T),
+    W: mkArrow('WeightOfBucket', COLORS.W),
+    a: mkArrow('AccelerationOfBucket', COLORS.a),
+    H: mkArrow('TensionOnHands', COLORS.T),
   };
   for (const a of Object.values(A)) {
     a.root.userData.noExport = true;
+    a.root.renderOrder = 5;
     scene.add(a.root);
   }
 
@@ -158,100 +227,58 @@ export function createApp(root, options = {}) {
   }
 
   const s = {
-    id: IDS.includes(o.id) ? o.id : 'w2',
-    setup: null,
-    sol: null,
-    D: 0.4,
+    id: IDS.includes(o.id) ? o.id : 'hold',
+    T: EXPERIMENTS.hold.T,
+    M: EXPERIMENTS.hold.M,
+    sol: lift(EXPERIMENTS.hold.T, EXPERIMENTS.hold.M),
+    custom: false, // the steppers chose other numbers than the row's
     phase: 'ready', // 'ready' | 'run' | 'done'
-    hold: null, // a fixed progress (a test's picture, or ?at=): the run is frozen there
-    forces: true, // the arrows show once it runs (the test keeps them off until the answer)
+    hold: null, // a fixed part of the run, 0 … 1 (a test's picture, or ?at=): frozen there
+    forces: true, // the arrows show while it runs (the test keeps them off until the answer)
     numbers: true, // the labels carry their numbers (the test keeps symbols only until the answer)
     t0: 0,
     results: Object.fromEntries(IDS.map((id) => [id, null])), // a (ms⁻²) of each experiment's last run
     mode: 'explore',
     view: o.view === '3d' ? '3d' : 'front',
     locked: false,
-    custom: false, // set({ masses }): other masses than the four experiments
+    focus: null, // a symbol of the law the student tapped: its arrow pulses
+    focusAt: 0,
     userMovedCamera: false,
   };
   const now = () => performance.now();
   let lastRelease = Number.NEGATIVE_INFINITY;
 
-  // ── the scene ───────────────────────────────────────────────────────────────
-  function loadSetup(setup, { animate = true } = {}) {
-    const kindChanged = s.setup?.kind !== setup.kind;
-    s.setup = { ...setup };
-    s.sol = solve(setup);
-    s.D = travel(setup);
-    ap.setup(setup);
-    controls.enableRotate = s.view === '3d';
-    if (kindChanged) s.userMovedCamera = false;
-    if (kindChanged || !s.userMovedCamera) flyTo(viewPose(), animate && kindChanged ? 0.7 : 0);
-    syncScene();
-  }
-
-  /** How far the run has gone, 0 … 1. */
-  function progress() {
-    if (s.hold != null) return s.hold;
-    if (s.phase === 'ready') return 0;
-    if (s.phase === 'done') return 1;
-    return runAt(s.sol.a, s.D, Math.max(0, (now() - s.t0) / 1000) / SLOW).s / s.D;
-  }
-  const arrowsOn = () => s.forces && (s.phase !== 'ready' || s.hold != null);
-
-  /** Everything in the picture for now: the bodies, the arrows. */
-  function syncScene() {
-    if (!s.setup) return;
-    ap.place(progress());
-    layoutArrows();
-    stage.invalidate();
-  }
-
-  const at = (x, y, z = ZF) => tmp.set(x, y, z);
-  function layoutArrows() {
-    for (const a of Object.values(A)) a.hide();
-    if (!arrowsOn()) return;
-    const { sol, setup } = s;
-    const two = setup.kind === 'two';
-    const biggest = two ? Math.max(sol.W2, sol.W1, sol.T2, sol.T1) : Math.max(sol.W, sol.T);
-    const kf = Math.min(FORCE_SCALE[two ? 'two' : 'single'], ARROW_MAX / biggest);
-    const ka = Math.min(ACC_SCALE[two ? 'two' : 'single'], ARROW_MAX / Math.max(sol.a, 1e-6));
-    const bk = geom.block;
-    if (!two) {
-      const r = geom.right;
-      A.rW.set(at(r.x, r.com), DOWN, sol.W * kf);
-      A.rT.set(at(r.x, r.top), UPV, sol.T * kf);
-      A.ra.set(at(r.x + r.size.rBottom + 0.075, r.com), DOWN, sol.a * ka);
-      A.bR.set(at(bk.x + bk.w / 2 + 0.012, STRING_Y), RIGHT, sol.T * kf);
-      A.ba.set(at(bk.x, BENCH.top - 0.03), RIGHT, sol.a * ka);
-      return;
-    }
-    // two weights: the heavier one (m₂ on the left, or m₁ on the right) falls and the lighter one rises
-    const l = geom.left;
-    const r = geom.right;
-    const leftFalls = sol.left;
-    A.lW.set(at(l.x, l.com), DOWN, sol.W2 * kf);
-    A.lT.set(at(l.x, l.top), UPV, sol.T2 * kf);
-    A.la.set(at(l.x - l.size.rBottom - 0.075, l.com), leftFalls ? DOWN : UPV, sol.a * ka);
-    A.rW.set(at(r.x, r.com), DOWN, sol.W1 * kf);
-    A.rT.set(at(r.x, r.top), UPV, sol.T1 * kf);
-    A.ra.set(at(r.x + r.size.rBottom + 0.075, r.com), leftFalls ? UPV : DOWN, sol.a * ka);
-    A.bL.set(at(bk.x - bk.w / 2 - 0.012, STRING_Y), LEFT, sol.T2 * kf);
-    A.bR.set(at(bk.x + bk.w / 2 + 0.012, STRING_Y), RIGHT, sol.T1 * kf);
-    A.ba.set(at(bk.x, BENCH.top - 0.03), leftFalls ? LEFT : RIGHT, sol.a * ka);
-  }
-
   // ── the run ─────────────────────────────────────────────────────────────────
-  /** Two equal masses hold each other: nothing moves (only reachable through set({ masses })). */
-  const balanced = () => s.setup.kind === 'two' && s.sol.a < 1e-3;
+  /** Real seconds since the run started (or the frozen moment). */
+  function runTime() {
+    const total = runSeconds(s.sol.a);
+    if (s.hold != null) return s.hold * total;
+    if (s.phase === 'ready') return 0;
+    if (s.phase === 'done') return total;
+    return Math.min(total, Math.max(0, (now() - s.t0) / 1000) / SLOW);
+  }
+  const where = () => bucketAt(s.sol.a, runTime());
+  const moving = () => s.phase === 'run' || s.hold != null;
+  const arrowsOn = () => s.forces && moving();
+
+  function setNumbers(T, M, { custom = true } = {}) {
+    const f = fixLift({ T, M });
+    s.T = f.T;
+    s.M = f.M;
+    s.sol = lift(s.T, s.M);
+    s.custom = custom;
+    s.phase = 'ready';
+    s.hold = null;
+    bucket.setMass(s.M);
+  }
+
   function release({ quiet = false, jump = false } = {}) {
     if (s.phase === 'run' && s.hold == null) return;
-    if (balanced()) return showHint(t('hint_balanced'), { duration: 3000 });
     s.hold = null;
     s.phase = 'run';
     s.t0 = now();
     if (!quiet) audio.pop();
-    emit('release', { id: s.id, ...snapshotSetup() });
+    emit('release', snapshotSetup());
     if (jump) finish(true);
     syncScene();
     refresh();
@@ -261,24 +288,43 @@ export function createApp(root, options = {}) {
     s.phase = 'done';
     s.hold = null;
     if (s.mode === 'explore' && !s.custom) s.results[s.id] = round(s.sol.a, 2);
-    if (!quiet) audio.contact();
-    emit('stop', { id: s.id, a: round(s.sol.a, 2) });
+    const end = bucketAt(s.sol.a, runSeconds(s.sol.a)).end;
+    if (!quiet) {
+      if (end === 'water') audio.contact();
+      else audio.pop();
+    }
+    if (end === 'water') splashFrom = now();
+    emit('stop', { id: s.id, a: round(s.sol.a, 2), end: end || 'held' });
     syncScene();
     refresh();
     emitChange();
   }
+  let splashFrom = Number.NEGATIVE_INFINITY;
   function tick() {
-    if (s.phase !== 'run' || s.hold != null) return false;
-    if (now() - s.t0 >= runTime(s.sol.a, s.D) * SLOW * 1000) {
-      finish();
-      return false;
+    let busy = false;
+    if (s.phase === 'run' && s.hold == null) {
+      if ((now() - s.t0) / 1000 >= runSeconds(s.sol.a) * SLOW) finish();
+      else busy = true;
+      syncScene();
     }
-    syncScene();
-    return true;
+    const k = (now() - splashFrom) / 1200;
+    if (k >= 0 && k <= 1) {
+      well.splash(k);
+      busy = true;
+    } else well.splash(null);
+    if (s.focus && now() - s.focusAt < 1600) {
+      pulseFocus();
+      busy = true;
+    } else if (s.focus) {
+      s.focus = null;
+      pulseFocus();
+    }
+    if (s.phase === 'run') speedChip();
+    return busy;
   }
   stage.addTicker(() => tick());
 
-  /** Back to the start of the run: the gate holds the block again. */
+  /** Back to the start: the bucket half way down, held still. */
   function goHome() {
     s.phase = 'ready';
     s.hold = null;
@@ -286,87 +332,209 @@ export function createApp(root, options = {}) {
     refresh();
     emitChange();
   }
-
-  /** A new experiment in the row of words: its masses, the block held. */
-  function choose(id, { animate = true } = {}) {
+  /** A word in the row: its pull and bucket, held at the start. */
+  function choose(id) {
     if (!IDS.includes(id)) return;
     s.id = id;
-    s.custom = false;
-    s.phase = 'ready';
-    s.hold = null;
-    loadSetup(EXPERIMENTS[id], { animate });
+    setNumbers(EXPERIMENTS[id].T, EXPERIMENTS[id].M, { custom: false });
+    syncScene();
     refresh();
     emitChange();
     emit('experiment', { id });
   }
 
-  // ── the panel: one action, one result, one rule ─────────────────────────────
-  const outcomeEl = ui.$('.pvc-outcome');
-  const found = (id) => s.results[id] != null;
+  // ── the picture: the bucket, the rope, the man's fists hand over hand ──────
+  const ropeDir = new THREE.Vector3(); // from the wheel towards his fists
+  const gripA = new THREE.Vector3();
+  const gripB = new THREE.Vector3();
+  const lineA = new THREE.Vector3();
+  const lineB = new THREE.Vector3();
+  const knot = new THREE.Vector3();
+  const off = new THREE.Vector3();
+  function syncScene() {
+    const w = where();
+    const y = w.y;
+    bucket.root.position.set(BUCKET_X, y, 0);
+    bucket.drip(runTime() * SLOW, moving() && y < SHAFT.start + 0.6 && w.v > 0);
+    knot.set(BUCKET_X, y + KNOT, 0);
+    // the rope's line from the wheel to his fists (fixed: he stands still and pulls the rope through his hands)
+    const phi = tangentAngle(GRIP_HOME);
+    tmp.set(PULLEY.x + Math.cos(phi) * PULLEY.r, PULLEY.y + Math.sin(phi) * PULLEY.r, PULLEY.z);
+    ropeDir.subVectors(GRIP_HOME, tmp).normalize();
+    // hand over hand: one fist holds the rope and moves with it for a stroke while the other goes back for a new hold
+    const run = w.s; // metres of rope that have come towards him
+    const p = (((run / STROKE) % 2) + 2) % 2;
+    const strokeAt = (q) => (q < 1 ? q : 2 - q); // 0 … 1 … 0 along the stroke
+    const place = (q, out, line) => {
+      const along = -0.04 + STROKE * strokeAt(q);
+      line.copy(GRIP_HOME).addScaledVector(ropeDir, along);
+      out.copy(line);
+      if (q >= 1) {
+        // going back up for a new hold: off the rope, nearer his chest
+        const lift2 = Math.sin(Math.PI * (q - 1)) * 0.07;
+        off.set(-ropeDir.y, ropeDir.x, 0).multiplyScalar(lift2);
+        out.add(off);
+        out.z += lift2 * 0.6;
+      }
+    };
+    place(p, gripA, lineA);
+    place((p + 1) % 2, gripB, lineB);
+    // the rope goes through both holds on its line (the nearer the wheel first)
+    const firstA = lineA.distanceTo(tmp) <= lineB.distanceTo(tmp);
+    rope.update({ knot, grips: firstA ? [lineA, lineB] : [lineB, lineA], run });
+    well.spin(run);
+    // his fists (in his own frame), his lean: further back the harder he pulls, a little sway with each stroke
+    const pullK = Math.min(1, (moving() ? s.T : s.sol.W) / 180);
+    const sway = moving() && Math.abs(w.v) > 0.01 ? Math.sin(Math.PI * strokeAt(p)) * 0.03 : 0;
+    man.pose({
+      hands: [man.root.worldToLocal(gripA.clone()), man.root.worldToLocal(gripB.clone())],
+      rope: tmp2.copy(ropeDir).negate().applyAxisAngle(UPV, Math.PI), // towards the wheel, in his frame
+      lean: 0.16 + 0.12 * pullK + sway,
+      hipX: -0.04 - 0.05 * pullK,
+      hipDrop: 0.02 + 0.03 * pullK,
+      look: 0.42,
+    });
+    layoutArrows(w);
+    stage.invalidate();
+  }
 
-  /** What the big button does now: let go with this experiment; once it has run, the next experiment not run yet. */
+  function layoutArrows(w) {
+    for (const a of Object.values(A)) a.hide();
+    if (!arrowsOn()) return;
+    const { sol } = s;
+    const kf = Math.min(FORCE_SCALE, ARROW_MAX / Math.max(sol.T, sol.W, 1));
+    const ka = Math.min(ACC_SCALE, ARROW_MAX / Math.max(Math.abs(sol.a), 1e-6));
+    const y = w.y;
+    // on the bucket: T up from the handle, Mg down from the bottom, a beside it
+    if (sol.T > 0.01) A.T.set(tmp.set(BUCKET_X, y + KNOT + 0.02, ZF), UPV, sol.T * kf);
+    A.W.set(tmp.set(BUCKET_X, y - 0.01, ZF), DOWN, sol.W * kf);
+    if (Math.abs(sol.a) > 1e-3)
+      A.a.set(tmp.set(BUCKET_X + BUCKET_SIZE.rTop + 0.16, y + BUCKET_SIZE.h / 2, ZF), sol.a > 0 ? UPV : DOWN, Math.abs(sol.a) * ka);
+    // on his fists: the rope pulls them towards the wheel (the same T)
+    if (sol.T > 0.01) {
+      const first = lineA.distanceTo(PULLEY_C) <= lineB.distanceTo(PULLEY_C) ? lineA : lineB;
+      tmp2.copy(ropeDir).negate();
+      A.H.set(
+        tmp
+          .copy(first)
+          .addScaledVector(tmp2, 0.06)
+          .add(new THREE.Vector3(0, 0.0, 0.22)),
+        tmp2,
+        sol.T * kf,
+      );
+    }
+  }
+  const PULLEY_C = new THREE.Vector3(PULLEY.x, PULLEY.y, PULLEY.z);
+
+  /** The arrow of the symbol the student tapped in the law grows and shrinks for a moment. */
+  function pulseFocus() {
+    const k = s.focus ? 1 + 0.25 * Math.sin(((now() - s.focusAt) / 1000) * Math.PI * 4) : 1;
+    const map = { T: [A.T, A.H], W: [A.W], a: [A.a], M: [] };
+    for (const [key, list] of Object.entries(map))
+      for (const a of list) {
+        const on = s.focus === key;
+        a.root.scale.setScalar(on ? k : 1);
+      }
+    bucket.root.scale.setScalar(s.focus === 'M' ? k * 0.97 + 0.03 : 1);
+    stage.invalidate();
+  }
+
+  // ── the panel: the row of words, one action, the law with numbers, one rule ──
+  const found = (id) => s.results[id] != null;
+  /** What the big button does now: run these numbers; once they have run, the next experiment not run yet. */
   function plan() {
     const tried = IDS.filter(found).length;
-    if (s.phase !== 'done') return { id: s.id, label: 'act_release', step: tried + 1 };
+    if (s.phase !== 'done')
+      return { id: s.id, label: s.sol.a < -1e-9 ? 'act_ease' : Math.abs(s.sol.a) < 1e-9 ? 'act_hold' : 'act_pull', step: tried + 1 };
+    if (s.custom) return { id: s.id, label: 'act_again', step: '' };
     const next = IDS.find((id) => !found(id) && id !== s.id);
     return next ? { id: next, label: `act_next_${next}`, step: tried + 1 } : { id: s.id, label: 'act_again', step: '' };
   }
 
-  /** The result: what they see, one number (the masses before the run; the speed it gains each second during it). */
+  /** The sum with the student's numbers: "১৩০ − ১০ × ৯.৮ = ১০ × a ⇒ a = +৩.২ ms⁻²". */
+  function sumHtml() {
+    const { T, M, a } = s.sol;
+    const w = `${N(M)}${NBSP}×${NBSP}${N(G)}`;
+    const head = `<span class="wl-num"><b class="c-T">${N(T)}</b> − <b class="c-W">${w}</b> = <b class="c-M">${N(M)}</b>${NBSP}×${NBSP}<b class="c-a">a</b></span>`;
+    const res = `<span class="wl-res">⇒ <b class="c-a">a = ${N(signed(a))}${NBSP}${t('u_a')}</b></span>`;
+    return `${head} ${res}`;
+  }
+
+  /** What the bucket does, in words (during and after the run). */
   function outcomeHtml() {
-    const { sol, setup } = s;
-    if (s.phase === 'ready')
-      return setup.kind === 'two' ? t('out_ready_two', { m2: setup.m2, m1: setup.m1, m: setup.m }) : t('out_ready', { M: setup.M, m: setup.m });
-    return t(s.phase === 'done' ? 'out_done' : 'out_run', { a: plain(sol.a) });
-  }
-
-  /** All three single experiments run: the law may be shown, and the picture's words become the symbols. */
-  const lawFound = () => found('w2') && found('w5') && found('heavy');
-  /** The symbols (M, m, Mg, T, a) only after the student has met every effect (the learn tab, one hanging mass). */
-  const symbols = () => s.mode === 'explore' && s.setup.kind === 'single' && lawFound();
-
-  /** The rule: one short sentence per idea, growing with what the student has found; the law last. */
-  function ruleHtml() {
-    if (s.setup.kind === 'two') {
-      if (balanced()) return t('rule_two_balanced');
-      return s.phase === 'ready' ? t('rule_two_ready') : t(s.sol.left ? 'rule_two_left' : 'rule_two_right');
+    const { a } = s.sol;
+    const dir = Math.abs(a) < 1e-9 ? 'still' : a > 0 ? 'up' : 'down';
+    if (s.phase === 'done') {
+      const end = bucketAt(a, runSeconds(a)).end;
+      return t(end === 'top' ? 'out_top' : end === 'water' ? 'out_water' : 'out_still', { a: N(signed(a)) });
     }
-    // the law, and under it, small and quiet, the book's own two equations
-    if (lawFound()) return `${t('rule_law')}<span class="hw-book">${t('rule_book')}</span>`;
-    if (s.phase === 'ready') return t('rule_ready');
-    if (s.id === 'w2') return t(found('w5') ? 'rule_more_M' : 'rule_first');
-    if (s.id === 'w5') return t(found('w2') ? 'rule_more_M' : found('heavy') ? 'rule_more_m' : 'rule_first');
-    return t(found('w5') ? 'rule_more_m' : 'rule_first');
+    return t(`out_run_${dir}`);
   }
 
-  let lastKind = '';
+  /** The rule: one idea at a time, growing with what the student has found; the book's words. */
+  function ruleHtml() {
+    const { a } = s.sol;
+    if (s.phase === 'ready' && !IDS.some(found)) return t('rule_start');
+    if (found('hold') && found('pull') && found('ease') && found('full')) return t('rule_law');
+    if (a < -1e-9) return t('rule_down');
+    if (Math.abs(a) < 1e-9) return t('rule_still');
+    if (s.id === 'full' && !s.custom) return t('rule_mass');
+    return t('rule_one_rope');
+  }
+
   let lastNote = '';
   function refresh() {
-    if (!s.setup) return;
-    sheet.choose(s.id);
-    for (const id of IDS) sheet.result(id, found(id) ? t('res_a', { a: plain(s.results[id]) }) : '');
-    sheet.outcome(outcomeHtml());
-    const kind = s.phase === 'ready' ? 'ready' : 'run';
-    if (kind !== lastKind) outcomeEl.dataset.k = lastKind = kind;
+    sheet.choose(s.custom ? null : s.id);
+    for (const id of IDS) sheet.result(id, found(id) ? t('res_a', { a: N(signed(s.results[id])) }) : '');
     sheet.rule(ruleHtml());
+    $('[data-val="T"]').textContent = N(s.T);
+    $('[data-val="M"]').textContent = N(s.M);
+    for (const b of eq.querySelectorAll('[data-step]')) {
+      const k = /** @type {HTMLElement} */ (b).dataset.step;
+      const [lo, hi] = LIMITS[k];
+      const dir = Number(/** @type {HTMLElement} */ (b).dataset.dir);
+      b.classList.toggle('off', dir < 0 ? s[k] <= lo : s[k] >= hi);
+    }
+    const sum = sumHtml();
+    if (sumEl.dataset.html !== sum) {
+      sumEl.innerHTML = sum;
+      sumEl.dataset.html = sum;
+    }
     if (action) {
       const p = plan();
       action.set({ step: p.step, label: p.label });
-      sheet.next(p.id !== s.id ? p.id : null);
-      // the ring shows on the block while it waits, never while it moves or stands at the end of a run
+      sheet.next(p.id !== s.id && !s.custom ? p.id : null);
       if (s.phase === 'ready' && s.hold == null) action.show('run');
       else action.hide('run');
     }
-    // the honest notes on the stage
-    const body = t(stage.width < 480 ? 'note_body_short' : 'note_body', { k: SLOW });
-    const text = `<b>${t('note_head')}</b> <span>${body}</span>`;
+    const text = stage.width < 480 ? t('note_body_short', { k: SLOW }) : `<b>${t('note_head')}</b> <span>${t('note_body', { k: SLOW })}</span>`;
     if (text !== lastNote) {
       note.innerHTML = text;
       lastNote = text;
     }
-    scaleNote.textContent = arrowsOn() ? t(s.phase === 'done' ? 'note_scale_done' : 'note_scale') : '';
+    sign.innerHTML = t('sign');
+    scaleNote.textContent = arrowsOn() && stage.width >= 600 ? t('note_scale') : '';
+    speedChip();
     syncLabels();
     stage.invalidate();
+  }
+
+  /** On a chip at the bottom: what the bucket does, its velocity (it grows by a each second) and the time. */
+  let lastSpeed = '';
+  function speedChip() {
+    let html = '';
+    if (stage.height < 240)
+      html = ''; // a very short picture: the labels need the room
+    else if (s.mode === 'explore' && moving()) {
+      const w = where();
+      const v = Math.abs(w.v);
+      const arrow = v < 0.005 ? '' : w.v > 0 ? ' ↑' : ' ↓';
+      html = Math.abs(s.sol.a) < 1e-9 ? outcomeHtml() : t('speed', { v: v.toFixed(1), dir: arrow, t: runTime().toFixed(1) });
+    } else if (s.mode === 'explore' && s.phase === 'done') html = outcomeHtml();
+    if (html !== lastSpeed) {
+      speed.innerHTML = html;
+      lastSpeed = html;
+    }
   }
 
   // ── labels on the picture ───────────────────────────────────────────────────
@@ -378,169 +546,68 @@ export function createApp(root, options = {}) {
     out.y = (-tmp2.y * 0.5 + 0.5) * stage.height;
     return out;
   }
-  const arrowBoxList = [];
   /** Boxes of the arrows on the screen (labels keep off them). */
   function arrowBoxes() {
-    arrowBoxList.length = 0;
+    const list = [];
     for (const a of Object.values(A)) {
       if (!a.root.visible) continue;
       toScreen(a.root.position, P0);
       toScreen(a.tip, P1);
-      arrowBoxList.push({
-        left: Math.min(P0.x, P1.x) - 5,
-        top: Math.min(P0.y, P1.y) - 5,
-        right: Math.max(P0.x, P1.x) + 5,
-        bottom: Math.max(P0.y, P1.y) + 5,
-      });
+      list.push({ left: Math.min(P0.x, P1.x) - 6, top: Math.min(P0.y, P1.y) - 6, right: Math.max(P0.x, P1.x) + 6, bottom: Math.max(P0.y, P1.y) + 6 });
     }
-    return arrowBoxList.slice();
+    return list;
   }
   const corners = Array.from({ length: 8 }, () => new THREE.Vector3());
-  const tmpBox = new THREE.Box3();
-  function screenBox(obj) {
-    tmpBox.setFromObject(obj);
-    if (tmpBox.isEmpty()) return null;
+  function screenBox(b3) {
+    if (b3.isEmpty()) return null;
     let i = 0;
-    for (const x of [tmpBox.min.x, tmpBox.max.x])
-      for (const y of [tmpBox.min.y, tmpBox.max.y]) for (const z of [tmpBox.min.z, tmpBox.max.z]) corners[i++].set(x, y, z).project(camera);
+    for (const x of [b3.min.x, b3.max.x])
+      for (const y of [b3.min.y, b3.max.y]) for (const z of [b3.min.z, b3.max.z]) corners[i++].set(x, y, z).project(camera);
     const xs = corners.map((c) => (c.x * 0.5 + 0.5) * stage.width);
     const ys = corners.map((c) => (-c.y * 0.5 + 0.5) * stage.height);
     return { left: Math.min(...xs), top: Math.min(...ys), right: Math.max(...xs), bottom: Math.max(...ys) };
   }
-  /** The block and the weights on the screen (force labels keep off them). */
-  function bodyBoxes() {
-    const list = [ap.blockBody, ap.weightBody('right'), ...(s.setup?.kind === 'two' ? [ap.weightBody('left')] : [])];
-    return list.map(screenBox).filter(Boolean);
-  }
+  /** The bucket and the man on the screen (labels keep off them). */
+  const bodyBoxes = () => [screenBox(bucket.box()), screenBox(man.box())].filter(Boolean);
   const anno = createAnnotations({
     stage,
     layer: ui.annoLayer,
-    avoid: [ui.corner, ui.hint, note, scaleNote, arrowBoxes, () => action?.box(), () => action?.ringBox()],
+    avoid: [ui.corner, ui.hint, notes, speed, scaleNote, arrowBoxes, () => action?.box(), () => action?.ringBox()],
   });
-
   const spot = (dx, dy) => ({ dx, dy });
-  // spots for a label next to an arrow's tip: on the bench side of a weight ("in"), or away from it ("out")
-  const SIDE_R = [spot(12, 0), spot(12, 16), spot(12, -16), spot(12, 32), spot(12, -32)];
-  const SIDE_L = [spot(-12, 0), spot(-12, 16), spot(-12, -16), spot(-12, 32), spot(-12, -32)];
-  const IN_R = [...SIDE_L, ...SIDE_R];
-  const IN_L = [...SIDE_R, ...SIDE_L];
-  const OUT_R = [...SIDE_R, ...SIDE_L];
-  const OUT_L = [...SIDE_L, ...SIDE_R];
-  // the T on the block: above its head; to its right, or below, when the corner buttons or the note are in the way
-  const T_BLOCK = [spot(36, -15), spot(36, -33), spot(0, -33), spot(0, -15), spot(12, 0), spot(0, 18), spot(0, 36)];
-  const T_BLOCK_L = [spot(-36, -15), spot(-36, -33), spot(0, -33), spot(0, -15), spot(-12, 0), spot(0, 18), spot(0, 36)];
-  const BELOW = [spot(0, 16), spot(0, 34), spot(14, 16), spot(-14, 16)];
-  const RIGHT_OF = [spot(12, 0), spot(12, 16), spot(12, -16)];
-  const A_BLOCK = [spot(-8, 16), spot(-8, 34), spot(0, 16), spot(0, 34), ...RIGHT_OF];
-  const AROUND = [spot(0, 16), spot(0, 34), spot(0, -16), spot(0, -34)]; // above or below a weight's acceleration arrow
-
-  const blockTop = new THREE.Vector3();
-  const weightMid = { right: new THREE.Vector3(), left: new THREE.Vector3() };
-  const labelState = new Map(); // id → the text now shown
+  const RIGHT_OF = [spot(14, 0), spot(14, 18), spot(14, -18), spot(14, 36), spot(14, -36)];
+  const LEFT_OF = [spot(-14, 0), spot(-14, 18), spot(-14, -18), spot(-14, 36), spot(-14, -36)];
+  const SIDES = [...LEFT_OF, ...RIGHT_OF];
+  const ABOVE = [spot(0, -16), spot(16, -16), spot(-16, -16), spot(0, -34), ...RIGHT_OF, ...LEFT_OF];
+  const labelPoint = {
+    bucket: new THREE.Vector3(),
+  };
+  const labelState = new Map();
   const want = new Map();
-  // optional: a label that finds no clear place stays hidden (its arrow is named by the same colour's other label)
-  function addLabel(id, { text, point, spots, color, kind = 'force', own = [], optional = false }) {
-    want.set(id, { text, point, spots, color, kind, own, optional });
+  function addLabel(id, w) {
+    want.set(id, w);
   }
   function syncLabels() {
     want.clear();
-    const two = s.setup.kind === 'two';
-    const sol = s.sol;
     const on = arrowsOn();
-    const compact = stage.height < 250 || stage.width < 350; // a small view: only the labels that matter
-    const sym = symbols();
-    // a label is the word (ওজন, টান, ত্বরণ), or its symbol once the law has been shown; it carries a number only where
-    // it matters, and the test keeps the numbers off until the answer
-    const name = (k) => t(sym ? `nm_${k}_sym` : `nm_${k}`);
-    const label = (k, numbered, v, unit) =>
-      s.numbers && numbered ? t(`${sym ? 'lbl_sym' : 'lbl_plain'}_${unit}`, { name: name(k), v: plain(v) }) : name(k);
-    // two weights: always the words (বাম, ডান): the symbols m₁, m₂, T₁, T₂ are left to the book
-    const side = (k, numbered, v, unit) => (s.numbers && numbered ? t(`lbl_plain_${unit}`, { name: t(`nm_${k}`), v: plain(v) }) : t(`nm_${k}`));
-    // the masses: a weight's label sits beside it, clear of its ring (the weight's width on the screen sets how far)
-    const away = (sd, dir) => {
-      const b = screenBox(ap.weightBody(sd));
-      const d = (b ? ((b.right - b.left) / 2) * 1.3 : 24) + 22;
-      return [spot(dir * d, 0), spot(dir * d, -20), spot(dir * d, 20), spot(-dir * d, 0)];
-    };
-    addLabel('m', {
-      kind: 'mass-on', // printed on the block
-      text: t(sym ? 'lbl_block_sym' : 'lbl_block', { m: s.setup.m }),
-      point: () => blockTop.set(geom.block.x, BENCH.top + geom.block.h / 2, 0),
-      spots: [spot(0, 0)],
+    const compact = stage.height < 250 || stage.width < 350;
+    const sol = s.sol;
+    const lbl = (k, v) => (s.numbers ? t(`lbl_${k}`, { v }) : t(`sym_${k}`));
+    // the bucket's mass beside it, on the side away from its arrows
+    addLabel('M', {
+      kind: 'mass',
+      text: t('lbl_M', { m: N(s.M) }),
+      point: () => labelPoint.bucket.set(BUCKET_X - BUCKET_SIZE.rTop, bucket.root.position.y + BUCKET_SIZE.h * 0.5, 0),
+      spots: [spot(-16, 0), spot(-16, -20), spot(-16, 20), spot(-30, 0)],
     });
-    if (two) {
-      addLabel('mL', {
-        kind: 'mass',
-        text: t('lbl_left', { m: s.setup.m2 }),
-        point: () => weightMid.left.set(geom.left.x, geom.left.com, 0),
-        spots: away('left', 1),
-      });
-      addLabel('mR', {
-        kind: 'mass',
-        text: t('lbl_right', { m: s.setup.m1 }),
-        point: () => weightMid.right.set(geom.right.x, geom.right.com, 0),
-        spots: away('right', -1),
-      });
-    } else {
-      addLabel('mR', {
-        kind: 'mass',
-        text: t(sym ? 'lbl_hang_sym' : 'lbl_hang', { M: s.setup.M }),
-        point: () => weightMid.right.set(geom.right.x, geom.right.com, 0),
-        spots: away('right', -1),
-      });
-    }
     if (on) {
       const own = [bodyBoxes];
-      // the ones that matter first (they choose their places first); then the ones on the weights, which hide when crowded
-      if (!two) {
-        addLabel('bR', { text: label('T', true, sol.T, 'N'), point: () => A.bR.tip, spots: T_BLOCK, color: COLORS.T, own });
-        addLabel('rW', { text: label('W', true, sol.W, 'N'), point: () => A.rW.tip, spots: IN_R, color: COLORS.W, own });
-        addLabel('ba', {
-          text: label('a', true, sol.a, 'a'),
-          point: () => A.ba.tip,
-          spots: A_BLOCK, // under its arrow and left of its head: clear of the string by the pulley
-          color: COLORS.a,
-          own,
-          optional: true,
-        });
-        if (!compact) {
-          addLabel('rT', { text: label('T', false), point: () => A.rT.tip, spots: IN_R, color: COLORS.T, own, optional: true });
-          addLabel('ra', {
-            text: label('a', false),
-            point: () => A.ra.tip,
-            spots: [...OUT_R, ...IN_R, ...AROUND],
-            color: COLORS.a,
-            own,
-            optional: true,
-          });
-        }
-      } else {
-        addLabel('bL', { text: side('Tl', true, sol.T2, 'N'), point: () => A.bL.tip, spots: T_BLOCK_L, color: COLORS.T, own });
-        addLabel('bR', { text: side('Tr', true, sol.T1, 'N'), point: () => A.bR.tip, spots: T_BLOCK, color: COLORS.T, own });
-        addLabel('lW', { text: side('Wl', false), point: () => A.lW.tip, spots: IN_L, color: COLORS.W, own, optional: true });
-        addLabel('rW', { text: side('Wr', false), point: () => A.rW.tip, spots: IN_R, color: COLORS.W, own, optional: true });
-        addLabel('ba', { text: side('a', true, sol.a, 'a'), point: () => A.ba.tip, spots: BELOW, color: COLORS.a, own, optional: true });
-        if (!compact) {
-          addLabel('lT', { text: side('T', false), point: () => A.lT.tip, spots: IN_L, color: COLORS.T, own, optional: true });
-          addLabel('rT', { text: side('T', false), point: () => A.rT.tip, spots: IN_R, color: COLORS.T, own, optional: true });
-          addLabel('la', {
-            text: side('a', false),
-            point: () => A.la.tip,
-            spots: [...OUT_L, ...IN_L, ...AROUND],
-            color: COLORS.a,
-            own,
-            optional: true,
-          });
-          addLabel('ra', {
-            text: side('a', false),
-            point: () => A.ra.tip,
-            spots: [...OUT_R, ...IN_R, ...AROUND],
-            color: COLORS.a,
-            own,
-            optional: true,
-          });
-        }
-      }
+      addLabel('TB', { text: lbl('T', plain(sol.T)), point: () => A.T.tip, spots: [...RIGHT_OF, ...ABOVE], color: COLORS.T, own });
+      addLabel('W', { text: lbl('W', plain(sol.W)), point: () => A.W.tip, spots: [...RIGHT_OF, ...LEFT_OF], color: COLORS.W, own });
+      if (Math.abs(sol.a) > 1e-3)
+        addLabel('a', { text: lbl('a', signed(sol.a)), point: () => A.a.tip, spots: [...RIGHT_OF, ...SIDES], color: COLORS.a, own });
+      if (!compact && sol.T > 0.01)
+        addLabel('TH', { text: lbl('T', plain(sol.T)), point: () => A.H.tip, spots: ABOVE, color: COLORS.T, own, optional: true });
     }
     for (const id of [...labelState.keys()])
       if (!want.has(id)) {
@@ -548,9 +615,17 @@ export function createApp(root, options = {}) {
         labelState.delete(id);
       }
     for (const [id, w] of want) {
-      const key = `${w.text}|${s.setup.kind}|${w.spots.map((p) => `${Math.round(p.dx)},${p.dy}`).join(';')}`;
+      const key = `${w.text}|${w.spots.map((p) => `${p.dx},${p.dy}`).join(';')}`;
       if (!labelState.has(id) || !anno.has(id)) {
-        anno.add(id, { text: w.text, point: w.point, kind: w.kind, color: w.color, spots: w.spots, avoid: w.own, optional: w.optional });
+        anno.add(id, {
+          text: w.text,
+          point: w.point,
+          kind: w.kind || 'force',
+          color: w.color,
+          spots: w.spots,
+          avoid: w.own || [],
+          optional: w.optional,
+        });
         labelState.set(id, key);
       } else if (labelState.get(id) !== key) {
         anno.update(id, { text: w.text, point: w.point, spots: w.spots });
@@ -562,11 +637,11 @@ export function createApp(root, options = {}) {
   // ── camera ──────────────────────────────────────────────────────────────────
   const box = new THREE.Box3();
   function viewPose() {
-    const [min, max] = VIEW_BOXES[s.setup?.kind === 'two' ? 'two' : 'single'];
-    box.min.copy(min);
-    box.max.copy(max);
-    // a wide, short view (a book column): show more of the bench on the left, so the picture fills the frame
-    if (s.setup?.kind !== 'two' && stage.width / Math.max(1, stage.height) > 2.3) box.min.x = -0.5;
+    box.min.copy(VIEW_BOX[0]);
+    box.max.copy(VIEW_BOX[1]);
+    // a wide, short frame: the well and the man side by side fill it; a tall one: a little less of the water
+    const aspect = stage.width / Math.max(1, stage.height);
+    if (aspect > 1.9) box.min.y = -1.0;
     return fitPose({ box, dir: VIEW_DIRS[s.view].clone().normalize(), camera, width: stage.width, height: stage.height, margin: MARGIN });
   }
   function flyTo({ position, target }, duration = 0.7) {
@@ -593,7 +668,7 @@ export function createApp(root, options = {}) {
         },
       })
       .finished.then((done) => {
-        if (done) refresh(); // the labels' places depend on how big things now are on the screen
+        if (done) refresh();
         return done;
       });
   }
@@ -615,28 +690,28 @@ export function createApp(root, options = {}) {
     refresh();
   });
 
-  // ── the action: the big button, the ring on the block, a tap on the block or the weight ────────────────────
+  // ── the action: the big button, the ring on the bucket, a tap on the bucket or the man ─────────────────────
   function doAction() {
     if (s.locked) return lockedNudge();
-    if (s.phase === 'run') return;
+    if (s.phase === 'run' && s.hold == null) return;
     if (now() - lastRelease < DOUBLE_TAP) return; // a double tap must not skip an experiment
     lastRelease = now();
     hintOff();
     const p = plan();
-    if (s.phase === 'done' || p.id !== s.id) choose(p.id, { animate: true });
+    if (s.phase === 'done' && !s.custom && p.id !== s.id) choose(p.id);
+    else if (s.phase === 'done') goHome();
     release();
   }
   action = createAction({
     stage,
     layer: ui.coachLayer,
-    host: ui.$('.pvc-act-slot'),
+    host: $('.pvc-act-slot'),
     t,
     step: 1,
-    label: 'act_release',
-    // the block (held by the gate); with two weights, the heavier one (the block sits too near the corner buttons)
-    target: () => (s.setup?.kind === 'two' ? ap.weightBody(s.sol?.left === false ? 'right' : 'left') : ap.blockBody),
+    label: 'act_hold',
+    target: () => bucket.box(),
     pad: 8,
-    avoid: [ui.corner, ui.hint, note, scaleNote, () => anno.boxes()],
+    avoid: [ui.corner, ui.hint, notes, speed, scaleNote, () => anno.boxes()],
     pulse: o.coach,
     onAct: () => {
       audio.unlock();
@@ -644,7 +719,6 @@ export function createApp(root, options = {}) {
     },
   });
 
-  // touching the scene: the block or a weight lets go
   const raycaster = new THREE.Raycaster();
   const ndc = new THREE.Vector2();
   const canvasPoint = (e) => {
@@ -654,18 +728,17 @@ export function createApp(root, options = {}) {
   function pick(p) {
     ndc.set((p.x / stage.width) * 2 - 1, -(p.y / stage.height) * 2 + 1);
     raycaster.setFromCamera(ndc, camera);
-    const targets = [ap.blockHit, ap.weightR.group, ...(s.setup?.kind === 'two' ? [ap.weightL.group] : [])];
-    return raycaster.intersectObjects(targets, true).length > 0;
+    return raycaster.intersectObjects([bucket.hit, man.hit], false).length > 0;
   }
   ui.canvasHost.addEventListener(
     'pointerdown',
     (e) => {
       audio.unlock();
-      if (!pick(canvasPoint(e))) return; // the camera controls take it
+      if (!pick(canvasPoint(e))) return;
       e.stopPropagation();
       e.preventDefault();
       if (s.locked) return lockedNudge();
-      if (s.phase === 'run') {
+      if (s.phase === 'run' && s.hold == null) {
         if (now() - lastRelease > DOUBLE_TAP) showHint(t('hint_wait'), { duration: 2400 });
         return;
       }
@@ -699,33 +772,45 @@ export function createApp(root, options = {}) {
     audio.error();
   }
 
+  // ── the book's examples (চিত্র ৩.০৯ and ৩.১০), in their own window ─────────────
+  const example = createExample({
+    root,
+    t,
+    now,
+    onChange: (st) => {
+      emit('example', st);
+      emitChange(true);
+    },
+  });
+
   // ── state for the book ──────────────────────────────────────────────────────
   function snapshotSetup() {
-    const { setup, sol } = s;
-    const base = { kind: setup.kind, m: setup.m, a: round(sol.a, 3) };
-    return setup.kind === 'two'
-      ? { ...base, m2: setup.m2, m1: setup.m1, T2: round(sol.T2, 3), T1: round(sol.T1, 3), towards: sol.left ? 'left' : 'right' }
-      : { ...base, M: setup.M, W: round(sol.W, 3), T: round(sol.T, 3) };
+    const { T, M, W, a, net } = s.sol;
+    return { T, M, W: round(W, 3), net: round(net, 3), a: round(a, 3) };
   }
   function snapshot() {
     const p = plan();
+    const w = where();
     return {
-      id: s.id,
+      id: s.custom ? null : s.id,
       ...snapshotSetup(),
       phase: s.phase, // 'ready' | 'run' | 'done'
-      progress: round(progress(), 3), // 0 … 1 of the way (the block's travel and the weight's fall)
-      distance: round(progress() * s.D, 3), // m
-      results: { ...s.results }, // a of each experiment run so far (ms⁻²), or null
+      time: round(runTime(), 3), // real seconds into the run
+      height: round(w.y, 3), // the bucket's bottom, m (the courtyard is 0)
+      speed: round(w.v, 3), // m/s, up +
+      end: s.phase === 'done' ? bucketAt(s.sol.a, runSeconds(s.sol.a)).end || 'held' : null,
+      results: { ...s.results },
       view: s.view,
       mode: s.mode,
-      next: { id: p.id, step: p.step }, // what the big button does now
+      next: { id: p.id, step: p.step },
+      example: example.state,
     };
   }
   let lastEmitted = '';
-  function emitChange() {
+  function emitChange(force = false) {
     const snap = snapshot();
-    const key = JSON.stringify([snap.id, snap.kind, snap.M, snap.m, snap.phase, snap.results, snap.mode, snap.view]);
-    if (key === lastEmitted) return;
+    const key = JSON.stringify([snap.id, snap.T, snap.M, snap.phase, snap.results, snap.mode, snap.view]);
+    if (key === lastEmitted && !force) return;
     lastEmitted = key;
     emit('change', snap);
   }
@@ -739,7 +824,6 @@ export function createApp(root, options = {}) {
     return list;
   };
   const pickOne = (list) => list[Math.floor(Math.random() * list.length)];
-  /** Four tap choices (the right one first in `items`): shuffled, with the index of the right one. */
   function choicesOf(items, kind, label, extra = {}) {
     const list = shuffle([...items]);
     return {
@@ -747,21 +831,20 @@ export function createApp(root, options = {}) {
       choices: [0, 1, 2, 3],
       expected: list.indexOf(items[0]),
       tolerance: 0.5,
-      label: (j) => `<span class="hw-opt">${label(list[j])}</span>`,
+      label: (j) => `<span class="wl-opt">${label(list[j])}</span>`,
       meta: { kind, answer: items[0].key, ...extra },
     };
   }
-
-  /** A scene for a question: these masses, the block held, nothing moving. */
-  function showScene(setup, { hold = null, forces = false, numbers = false } = {}) {
+  /** A scene for a question: these numbers, the bucket held at the start (or frozen part way), nothing moving. */
+  function showScene(T, M, { hold = null, forces = false, numbers = false } = {}) {
+    setNumbers(T, M, { custom: true });
     s.phase = hold != null ? 'run' : 'ready';
     s.hold = hold;
     s.forces = forces;
     s.numbers = numbers;
-    loadSetup(setup, { animate: false });
+    syncScene();
     refresh();
   }
-  /** Shows the answer: the numbers on, the scene runs (or, if frozen, stays frozen with its numbers). */
   function reveal({ run = true } = {}) {
     s.forces = true;
     s.numbers = true;
@@ -769,12 +852,11 @@ export function createApp(root, options = {}) {
     else syncScene();
     refresh();
   }
-
   let learnSaved = null;
   let question = null;
   let picked = -1;
-  const unit = () => t('u_a');
-  const aText = (v) => `${N(plain(v))}${NBSP}${unit()}`;
+  const aText = (v) => `${N(signed(v))}${NBSP}${t('u_a')}`;
+  const nText = (v) => `${N(plain(v))}${NBSP}N`;
 
   const quiz = createQuiz({
     ui,
@@ -786,9 +868,10 @@ export function createApp(root, options = {}) {
     action,
     hooks: {
       enter() {
-        learnSaved = { id: s.id, results: { ...s.results } };
+        learnSaved = { id: s.id, T: s.T, M: s.M, custom: s.custom, results: { ...s.results } };
         s.mode = 'quiz';
         s.locked = true;
+        example.close();
         hintOff();
         syncUI();
       },
@@ -797,71 +880,64 @@ export function createApp(root, options = {}) {
         s.locked = false;
         s.forces = true;
         s.numbers = true;
-        s.results = { ...(learnSaved?.results || s.results) };
+        const saved = learnSaved;
+        s.results = { ...(saved?.results || s.results) };
         syncUI();
-        choose(learnSaved?.id || s.id, { animate: false });
+        if (saved?.custom) {
+          setNumbers(saved.T, saved.M);
+          syncScene();
+          refresh();
+        } else choose(saved?.id || s.id);
         setView(s.view, { animate: false });
       },
-      async prepare(i, alive) {
+      async prepare(i) {
         picked = -1;
-        const kind = ['calc', pickOne(['M', 'm']), 'tension', 'same', 'two'][i % 5];
+        const kind = ['calc', 'hold', 'ease', 'same', 'full'][i % 5];
         if (kind === 'calc') {
-          const [Mm, m] = pickOne(CALC_PAIRS);
-          const items = calcChoices(Mm, m);
-          showScene({ kind: 'single', M: Mm, m });
-          question = { kind, M: Mm, m, a: items[0].v };
-          return { text: t('q_calc', { g: G }), ...choicesOf(items, kind, (x) => aText(x.v), { M: Mm, m }) };
+          const [T, M] = pickOne(CALC_SETS);
+          const items = calcChoices(T, M);
+          showScene(T, M, { hold: 0.35, forces: true, numbers: false });
+          question = { kind, T, M, a: items[0].v };
+          return { text: t('q_calc', { T: N(T), M: N(M), g: N(G) }), ...choicesOf(items, kind, (x) => aText(x.v), { T, M }) };
         }
-        if (kind === 'M') {
-          const [Mm, m] = pickOne(M_PAIRS);
-          const a1 = round(pull(Mm, m).a, 2);
-          const a2 = round(pull(2 * Mm, m).a, 2);
-          const items = ['c_M_more', 'c_M_double', 'c_M_same', 'c_M_less'].map((key) => ({ key }));
-          showScene({ kind: 'single', M: Mm, m });
-          question = { kind, M: Mm, m, a1, a2 };
-          return { text: t('q_M'), ...choicesOf(items, kind, (x) => t(x.key), { M: Mm, m }) };
+        if (kind === 'hold') {
+          const M = pickOne(HOLD_MASSES);
+          const items = holdChoices(M);
+          showScene(M * G, M, { forces: false });
+          // held still: the pull is exactly Mg (the steppers' grid may not have it, so set it directly)
+          s.T = M * G;
+          s.sol = lift(s.T, M);
+          refresh();
+          question = { kind, M, T: items[0].v };
+          return { text: t('q_hold', { M: N(M), g: N(G) }), ...choicesOf(items, kind, (x) => nText(x.v), { M }) };
         }
-        if (kind === 'm') {
-          const [Mm, m] = pickOne(m_PAIRS);
-          const a1 = round(pull(Mm, m).a, 2);
-          const a2 = round(pull(Mm, 2 * m).a, 2);
-          const items = ['c_m_less', 'c_m_half', 'c_m_same', 'c_m_more'].map((key) => ({ key }));
-          showScene({ kind: 'single', M: Mm, m });
-          question = { kind, M: Mm, m, a1, a2 };
-          return { text: t('q_m'), ...choicesOf(items, kind, (x) => t(x.key), { M: Mm, m }) };
-        }
-        if (kind === 'tension') {
-          const [Mm, m] = pickOne(CALC_PAIRS);
-          showScene({ kind: 'single', M: Mm, m }, { hold: 0.5, forces: true, numbers: false });
-          question = { kind, M: Mm, m };
-          const items = ['c_T_less', 'c_T_equal', 'c_T_more', 'c_T_zero'].map((key) => ({ key }));
-          return { text: t('q_tension'), ...choicesOf(items, kind, (x) => t(x.key), { M: Mm, m }) };
+        if (kind === 'ease') {
+          const [T, M] = pickOne(EASE_SETS);
+          showScene(T, M, { forces: false });
+          question = { kind, T, M, a: round(lift(T, M).a, 2) };
+          const items = ['c_down', 'c_up', 'c_none', 'c_up_slow'].map((key) => ({ key }));
+          return { text: t('q_ease', { T: N(T), M: N(M), W: N(plain(M * G)) }), ...choicesOf(items, kind, (x) => t(x.key), { T, M }) };
         }
         if (kind === 'same') {
-          // the string's pull on the block is written on the picture: how big is it on the hanging mass?
-          const [Mm, m] = pickOne(CALC_PAIRS);
-          const items = sameChoices(Mm, m);
-          showScene({ kind: 'single', M: Mm, m }, { hold: 0.5, forces: true, numbers: true });
-          question = { kind, M: Mm, m, T: items[0].v };
-          const word = { same: 'c_same_same', weight: 'c_same_weight', zero: 'c_same_zero', sum: 'c_same_sum' };
-          return {
-            text: t('q_same'),
-            ...choicesOf(items, kind, (x) => t(word[x.key], { T: plain(x.v), W: plain(x.v), T2: plain(x.v) }), { M: Mm, m }),
-          };
+          // the pull at his fists is written on the picture: how big is the rope's pull on the bucket?
+          const [T, M] = pickOne(CALC_SETS);
+          showScene(T, M, { hold: 0.35, forces: true, numbers: false });
+          question = { kind, T, M };
+          const items = [
+            { key: 'same', v: T },
+            { key: 'weight', v: round(M * G, 2) },
+            { key: 'net', v: round(T - M * G, 2) },
+            { key: 'half', v: T / 2 },
+          ];
+          return { text: t('q_same', { T: N(T) }), ...choicesOf(items, kind, (x) => nText(x.v), { T, M }) };
         }
-        // two weights (the page-82 example): which way, and a
-        const [m2, m1, m] = pickOne(TWO_PAIRS);
-        const sol = twoWeights(m2, m1, m);
-        const big = Math.max(m1, m2);
-        const small = Math.min(m1, m2);
-        const a = round(sol.a, 2);
-        const items = twoChoices(m2, m1, m);
-        showScene({ kind: 'two', m2, m1, m });
-        question = { kind: 'two', m2, m1, m, a, big, small, sol };
-        if (!alive()) return null;
+        const [T, M, extra] = pickOne(FULL_SETS);
+        const items = fullChoices(T, M, extra);
+        showScene(T, M + extra, { forces: false });
+        question = { kind: 'full', T, M, extra, a1: round(lift(T, M).a, 2), a2: items[0].v };
         return {
-          text: t('q_two', { g: G }),
-          ...choicesOf(items, 'two', (x) => `${t(x.left ? 'side_left' : 'side_right')},${NBSP}<b>${aText(x.v)}</b>`, { m2, m1, m }),
+          text: t('q_full', { T: N(T), M: N(M), a: N(plain(lift(T, M).a)), extra: N(extra) }),
+          ...choicesOf(items, 'full', (x) => aText(x.v), { T, M, extra }),
         };
       },
       reveal(q, correct) {
@@ -869,52 +945,36 @@ export function createApp(root, options = {}) {
         const wrongKey = correct ? null : q.list?.[picked]?.key;
         const note2 = (map) => (wrongKey && map[wrongKey] ? ` ${t(map[wrongKey])}` : '');
         if (k === 'calc') {
-          reveal();
+          reveal({ run: false });
           return (
-            t('why_calc', { M: question.M, m: question.m, g: G, a: plain(question.a) }) + note2({ swap: 'mis_swap', block: 'mis_block', g: 'mis_g' })
+            t('why_calc', { T: N(question.T), M: N(question.M), g: N(G), W: N(plain(question.M * G)), a: N(signed(question.a)) }) +
+            note2({ nog: 'mis_nog', plus: 'mis_plus', byW: 'mis_byW' })
           );
         }
-        if (k === 'M') {
-          loadSetup({ kind: 'single', M: 2 * question.M, m: question.m }, { animate: false });
+        if (k === 'hold') {
           reveal();
-          return (
-            t('why_M', { a1: plain(question.a1), a2: plain(question.a2) }) +
-            note2({ c_M_double: 'not_M_double', c_M_same: 'not_M_same', c_M_less: 'not_M_less' })
-          );
+          return t('why_hold', { M: question.M, g: G, T: plain(question.T), z: 0 }) + note2({ kg: 'mis_kg', zero: 'mis_zero', double: 'mis_double' });
         }
-        if (k === 'm') {
-          loadSetup({ kind: 'single', M: question.M, m: 2 * question.m }, { animate: false });
+        if (k === 'ease') {
           reveal();
           return (
-            t('why_m', { a1: plain(question.a1), a2: plain(question.a2) }) +
-            note2({ c_m_half: 'not_m_half', c_m_same: 'not_m_same', c_m_more: 'not_m_more' })
-          );
-        }
-        if (k === 'tension') {
-          reveal();
-          const sol = solve({ kind: 'single', M: question.M, m: question.m });
-          return (
-            t('why_tension', { W: plain(sol.W), T: plain(sol.T) }) +
-            note2({ c_T_equal: 'not_T_equal', c_T_more: 'not_T_more', c_T_zero: 'not_T_zero' })
+            t('why_ease', { T: N(question.T), W: N(plain(question.M * G)), M: N(question.M), a: N(signed(question.a)) }) +
+            note2({ c_up: 'mis_up', c_none: 'mis_none', c_up_slow: 'mis_up_slow' })
           );
         }
         if (k === 'same') {
-          reveal();
-          return t('why_same', { T: plain(question.T) }) + note2({ weight: 'not_same_weight', zero: 'not_same_zero', sum: 'not_same_sum' });
+          reveal({ run: false });
+          return t('why_same', { T: N(question.T) }) + note2({ weight: 'mis_weight', net: 'mis_net', half: 'mis_half' });
         }
         reveal();
-        const sol = question.sol;
         return (
-          t('why_two', {
-            side: t(sol.left ? 'side_left' : 'side_right'),
-            a: plain(question.a),
-            big: question.big,
-            small: question.small,
-            g: G,
-            m: question.m,
-            T2: plain(sol.T2),
-            T1: plain(sol.T1),
-          }) + note2({ side: 'not_two_side', one: 'not_two_one', nomass: 'not_two_nomass' })
+          t('why_full', {
+            T: N(question.T),
+            M2: N(question.M + question.extra),
+            W: N(plain((question.M + question.extra) * G)),
+            a1: N(signed(question.a1)),
+            a2: N(signed(question.a2)),
+          }) + note2({ same: 'mis_same', ratio: 'mis_ratio', nog: 'mis_nog2' })
         );
       },
       done() {
@@ -936,17 +996,38 @@ export function createApp(root, options = {}) {
     ui.learn.inert = s.mode === 'quiz';
     ui.quiz.inert = s.mode !== 'quiz';
   }
-  const fullscreenBtn = ui.$('[data-act="fullscreen"]');
+  /** A stepper: the pull or the bucket changes, the bucket goes back to the start (held). */
+  function step(k, dir) {
+    if (s.locked) return lockedNudge();
+    const [, , inc] = LIMITS[k];
+    setNumbers(k === 'T' ? s.T + dir * inc : s.T, k === 'M' ? s.M + dir * inc : s.M);
+    syncScene();
+    refresh();
+    emitChange();
+  }
+  function focusTerm(k) {
+    s.focus = k;
+    s.focusAt = now();
+    for (const b of eq.querySelectorAll('[data-term]')) b.classList.toggle('on', /** @type {HTMLElement} */ (b).dataset.term === k);
+    setTimeout(() => {
+      for (const b of eq.querySelectorAll('[data-term]')) b.classList.remove('on');
+    }, 1600);
+    if (!arrowsOn() && k !== 'M') showHint(t('hint_arrows'), { duration: 2400 });
+    stage.invalidate();
+  }
+  const fullscreenBtn = $('[data-act="fullscreen"]');
   if (fullscreenBtn && !document.fullscreenEnabled) fullscreenBtn.hidden = true;
   root.addEventListener('click', (e) => {
-    const b = /** @type {Element} */ (e.target).closest('button');
-    if (!b || !root.contains(b)) return;
+    const b = /** @type {HTMLElement} */ (/** @type {Element} */ (e.target).closest('button'));
+    if (!b || !root.contains(b) || example.el.contains(b)) return;
     audio.unlock();
     if (b.dataset.view) setView(b.dataset.view);
     if (b.dataset.example) {
       if (s.locked) lockedNudge();
       else choose(b.dataset.example);
     }
+    if (b.dataset.step) step(b.dataset.step, Number(b.dataset.dir));
+    if (b.dataset.term) focusTerm(b.dataset.term);
     if (b.dataset.mode === 'quiz' && s.mode !== 'quiz') quiz.start();
     if (b.dataset.mode === 'explore') quiz.stop();
     if (b.dataset.q != null) {
@@ -964,6 +1045,13 @@ export function createApp(root, options = {}) {
         if (s.locked) lockedNudge();
         else goHome();
         break;
+      case 'example':
+        if (s.locked) lockedNudge();
+        else {
+          if (s.phase === 'run') goHome();
+          example.open();
+        }
+        break;
       case 'fullscreen':
         if (document.fullscreenElement) document.exitFullscreen?.();
         else root.requestFullscreen?.().catch(() => {});
@@ -972,19 +1060,27 @@ export function createApp(root, options = {}) {
   });
   root.addEventListener('keydown', (e) => {
     const target = /** @type {Element} */ (e.target);
+    if (example.state.open) return; // the window has its own keys
     if (target.closest('input, textarea, select') || e.metaKey || e.ctrlKey || e.altKey) return;
     const k = e.key;
     const onButton = Boolean(target.closest('button'));
-    const sceneKey = ['1', '2', '3', '4', 'r', 'R', 'Home', 'ArrowRight'].includes(k) || ((k === ' ' || k === 'Enter') && !onButton);
+    const sceneKey =
+      ['1', '2', '3', '4', 'r', 'R', 'e', 'E', 'Home', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', '+', '-'].includes(k) ||
+      ((k === ' ' || k === 'Enter') && !onButton);
     if (sceneKey && s.mode === 'quiz') {
       if (quiz.active && !quiz.revealed) lockedNudge();
       return;
     }
     if (['1', '2', '3', '4'].includes(k)) choose(IDS[Number(k) - 1]);
-    else if (k === 'ArrowRight' || ((k === ' ' || k === 'Enter') && !onButton)) doAction();
+    else if (k === 'ArrowUp') step('T', 1);
+    else if (k === 'ArrowDown') step('T', -1);
+    else if (k === 'ArrowRight' || k === '+') step('M', 1);
+    else if (k === 'ArrowLeft' || k === '-') step('M', -1);
+    else if ((k === ' ' || k === 'Enter') && !onButton) doAction();
     else if (k === 'r' || k === 'R' || k === 'Home') goHome();
     else if (k === 'f' || k === 'F') setView('front');
     else if (k === 'v' || k === 'V') setView('3d');
+    else if (k === 'e' || k === 'E') example.open();
     else if (k === 'Escape') hintOff();
     else return;
     e.preventDefault();
@@ -995,9 +1091,11 @@ export function createApp(root, options = {}) {
     .split(',')
     .map((x) => x.trim())
     .filter((x) => IDS.includes(x)))
-    s.results[id] = round(solve(EXPERIMENTS[id]).a, 2);
-  loadSetup(EXPERIMENTS[s.id], { animate: false });
+    s.results[id] = round(lift(EXPERIMENTS[id].T, EXPERIMENTS[id].M).a, 2);
+  setNumbers(EXPERIMENTS[s.id].T, EXPERIMENTS[s.id].M, { custom: false });
   syncUI();
+  flyTo(viewPose(), 0);
+  controls.enableRotate = s.view === '3d';
   const startAt = o.at === '' || o.at == null ? null : Number(o.at);
   if (startAt != null && Number.isFinite(startAt)) {
     s.phase = 'run';
@@ -1006,8 +1104,8 @@ export function createApp(root, options = {}) {
       s.hold = null;
       s.phase = 'done';
     }
-    syncScene();
   }
+  syncScene();
   refresh();
   const ready = (async () => {
     if (o.mode === 'quiz') quiz.start();
@@ -1022,32 +1120,24 @@ export function createApp(root, options = {}) {
     },
     getState: snapshot,
     /**
-     * Change any of: id ('w2' | 'w5' | 'heavy' | 'two'), release (true: let go; with animate: false it lands at the end),
-     * at (0 … 1: frozen that far into the run, with the arrows), masses ({ M, m } or { m2, m1, m } in kg), home (true:
-     * the block held again), view; tried
-     * (experiments whose results show, e.g. ['w2']).
+     * Change any of: id ('hold' | 'pull' | 'ease' | 'full'), T and M (the pull in N and the bucket in kg: the bucket
+     * goes back to the start), release (true: he pulls; with animate: false it lands at the end), at (0 … 1: frozen
+     * that far into the run, with the arrows), home (true: the bucket held at the start again), view, tried
+     * (experiments whose results show, e.g. ['hold']), example (true/false: the উদাহরণ window, or an object for it:
+     * { open, kind: 'single' | 'two', M, m, part, time, playing }).
      */
     async set(p = {}) {
       const animate = p.animate !== false;
       if (p.view) await setView(p.view, { animate });
-      if (p.id) choose(p.id, { animate });
-      if (p.masses) {
-        // other masses (kg): { M, m } for one hanging mass, { m2, m1, m } for one at each end; the block is held
-        const k = p.masses;
-        const kg = (x, fallback) => Math.min(20, Math.max(0.5, Number(x) || fallback));
-        const setup =
-          k.m2 != null || k.m1 != null
-            ? { kind: 'two', m2: kg(k.m2, 10), m1: kg(k.m1, 5), m: kg(k.m, 5) }
-            : { kind: 'single', M: kg(k.M, 2), m: kg(k.m, 5) };
-        s.custom = true; // not one of the four experiments: its run is not kept in the row of words
-        s.phase = 'ready';
-        s.hold = null;
-        loadSetup(setup, { animate });
+      if (p.id) choose(p.id);
+      if (p.T != null || p.M != null) {
+        setNumbers(p.T ?? s.T, p.M ?? s.M);
+        syncScene();
         refresh();
       }
       if (p.tried) {
         for (const id of (Array.isArray(p.tried) ? p.tried : String(p.tried).split(',')).filter((x) => IDS.includes(x)))
-          s.results[id] = round(solve(EXPERIMENTS[id]).a, 2);
+          s.results[id] = round(lift(EXPERIMENTS[id].T, EXPERIMENTS[id].M).a, 2);
         refresh();
       }
       if (p.home) goHome();
@@ -1061,26 +1151,34 @@ export function createApp(root, options = {}) {
         s.hold = null;
         release({ quiet: true, jump: !animate });
       }
+      if (p.example != null) {
+        if (p.example === true) example.open();
+        else if (p.example === false) example.close();
+        else if (typeof p.example === 'object') example.set({ open: true, ...p.example });
+      }
       emitChange();
       return snapshot();
     },
     async reset() {
       quiz.stop();
+      example.close();
+      example.set({ kind: 'single', M: 2, m: 5, part: 0 });
       s.results = Object.fromEntries(IDS.map((id) => [id, null]));
-      s.view = 'front';
       s.forces = true;
       s.numbers = true;
-      syncUI();
-      choose('w2', { animate: false });
+      choose('hold');
       await setView('front', { animate: false });
       refresh();
       emitChange();
     },
     startPractice: () => quiz.start(),
     capture: (opts) => stage.capture(opts),
-    /** The bench, the block, the pulley(s), the string(s) and the weight(s) as they stand, in metres. */
+    /** The well, its frame and pulley, the rope, the bucket and the man as they stand, in metres. */
     exportRoot() {
-      return ap.root.clone(true);
+      const g = new THREE.Group();
+      g.name = 'WellPull';
+      for (const obj of [well.root, bucket.root, rope.root, man.root]) g.add(obj.clone(true));
+      return g;
     },
   };
 }

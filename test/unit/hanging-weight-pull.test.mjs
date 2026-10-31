@@ -1,5 +1,6 @@
-// The physics of the hanging-weight-pull figure (book pages 81–82, topic 3.7): a hanging mass M pulls a block m over a
-// smooth table through a string over a pulley, and the page-82 example with a mass at each end. Pure code, no browser.
+// The physics of the hanging-weight-pull figure (book pages 81–83, topic 3.7): a bucket on a rope over a well's pulley
+// (T − Mg = Ma, up positive), and the book's examples: a hanging mass pulling a body on a smooth table (চিত্র ৩.০৯) and a
+// mass at each end (চিত্র ৩.১০). Pure code, no browser.
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import * as r from '../../assets/hanging-weight-pull/src/reading.js';
@@ -7,8 +8,99 @@ import { STRINGS, createI18n } from '../../assets/hanging-weight-pull/src/i18n.j
 
 const close = (a, b, tol = 1e-9) => assert.ok(Math.abs(a - b) <= tol, `${a} ≉ ${b}`);
 
-describe('hanging weight: one mass pulls a block (a = Mg/(M + m))', () => {
-  it("is the book's equations: T = ma on the block and T − Mg = M(−a) on the hanging mass", () => {
+describe('the well: the bucket on the rope (T − Mg = Ma, up positive)', () => {
+  it("is Newton's second law for the bucket: the sum of the forces on the left, mass × acceleration on the right", () => {
+    for (const [T, M] of [
+      [98, 10],
+      [130, 10],
+      [70, 10],
+      [130, 12],
+      [0, 5],
+      [200, 3],
+    ]) {
+      const s = r.lift(T, M);
+      close(s.W, M * r.G);
+      close(s.net, T - M * r.G);
+      close(s.T - s.W, s.M * s.a);
+    }
+  });
+
+  it('is still when the pull equals the weight, goes up when it is more, down when it is less', () => {
+    close(r.lift(98, 10).a, 0);
+    close(r.holdPull(10), 98);
+    assert.ok(r.lift(130, 10).a > 0);
+    assert.ok(r.lift(70, 10).a < 0);
+    // no pull at all: it falls freely, a = −g
+    close(r.lift(0, 7).a, -r.G);
+  });
+
+  it("has the row of words' numbers: 0, +3.2, −2.8 and +1.03 ms⁻²", () => {
+    const a = Object.fromEntries(r.IDS.map((id) => [id, r.round(r.lift(r.EXPERIMENTS[id].T, r.EXPERIMENTS[id].M).a, 2)]));
+    assert.deepEqual(r.IDS, ['hold', 'pull', 'ease', 'full']);
+    assert.deepEqual(a, { hold: 0, pull: 3.2, ease: -2.8, full: 1.03 });
+    // the same pull with more water: less acceleration
+    assert.ok(a.full < a.pull);
+    assert.equal(r.EXPERIMENTS.full.T, r.EXPERIMENTS.pull.T);
+  });
+
+  it('snaps the steppers to their steps and limits', () => {
+    assert.deepEqual(r.fixLift({ T: 131, M: 10.4 }), { T: 132, M: 10 });
+    assert.deepEqual(r.fixLift({ T: -5, M: 99 }), { T: 0, M: 15 });
+    assert.deepEqual(r.fixLift({ T: 'x', M: undefined }), { T: 130, M: 10 });
+    for (const id of r.IDS) assert.deepEqual(r.fixLift(r.EXPERIMENTS[id]), r.EXPERIMENTS[id], id);
+  });
+
+  it('writes the acceleration with its sign: +3.2, −2.8 (U+2212), 0', () => {
+    assert.equal(r.signed(3.2), '+3.2');
+    assert.equal(r.signed(-2.8), '−2.8');
+    assert.equal(r.signed(0), '0');
+    assert.equal(r.signed(1e-12), '0');
+  });
+});
+
+describe('the well: the run', () => {
+  it('starts from rest half way down and moves s = ½at², v = at', () => {
+    const a = 3.2;
+    const w = r.bucketAt(a, 0.5);
+    close(w.s, 0.5 * a * 0.25);
+    close(w.v, a * 0.5);
+    close(w.y, r.SHAFT.start + w.s);
+    assert.equal(w.done, false);
+    assert.deepEqual(r.bucketAt(a, 0), { y: r.SHAFT.start, v: 0, s: 0, done: false, end: null });
+  });
+
+  it('stops at the top going up and at the water going down', () => {
+    const up = r.bucketAt(3.2, 10);
+    close(up.y, r.SHAFT.top);
+    assert.equal(up.end, 'top');
+    const down = r.bucketAt(-2.8, 10);
+    close(down.y, r.SHAFT.bottom);
+    assert.equal(down.end, 'water');
+    // it reaches the end exactly at runSeconds
+    close(r.bucketAt(3.2, r.runSeconds(3.2)).y, r.SHAFT.top, 1e-9);
+    close(r.bucketAt(-2.8, r.runSeconds(-2.8)).y, r.SHAFT.bottom, 1e-9);
+  });
+
+  it('stays where it is held when a = 0, for HOLD_SECONDS on the screen', () => {
+    const w = r.bucketAt(0, 5);
+    close(w.y, r.SHAFT.start);
+    close(w.v, 0);
+    close(r.runSeconds(0) * r.SLOW, r.HOLD_SECONDS);
+  });
+
+  it('lasts about a second for real in the experiments, a few seconds on the screen', () => {
+    for (const id of ['pull', 'ease', 'full']) {
+      const { T, M } = r.EXPERIMENTS[id];
+      const s = r.runSeconds(r.lift(T, M).a) * r.SLOW;
+      assert.ok(s > 1.4 && s < 6, `${id}: ${s} s on the screen`);
+    }
+    // the shaft: the start between the water and the top
+    assert.ok(r.SHAFT.bottom < r.SHAFT.start && r.SHAFT.start < r.SHAFT.top);
+  });
+});
+
+describe("the book's examples: one mass pulls a body on the table (চিত্র ৩.০৯, a = Mg/(M + m))", () => {
+  it("is the book's equations: T = ma on the body and T − Mg = M(−a) on the hanging mass", () => {
     for (const [M, m] of [
       [2, 5],
       [5, 5],
@@ -18,9 +110,8 @@ describe('hanging weight: one mass pulls a block (a = Mg/(M + m))', () => {
       const { W, a, T } = r.pull(M, m);
       close(W, M * r.G);
       close(a, (M * r.G) / (M + m));
-      close(T, m * a); // the block
-      close(T - M * r.G, M * -a); // the hanging mass (up is positive, so its acceleration is −a)
-      close(T, (m * M * r.G) / (M + m)); // the book's T
+      close(T, m * a);
+      close(T - M * r.G, M * -a);
     }
   });
 
@@ -28,137 +119,49 @@ describe('hanging weight: one mass pulls a block (a = Mg/(M + m))', () => {
     for (const M of [0.5, 1, 2, 5, 10, 100])
       for (const m of [0.5, 1, 2, 5, 10, 100]) {
         const { W, a, T } = r.pull(M, m);
-        assert.ok(T < W, `T ${T} < Mg ${W}`);
-        assert.ok(a < r.G);
-        assert.ok(T > 0);
+        assert.ok(T < W && a < r.G && T > 0);
       }
   });
 
-  it('is shared: equal masses give half of g, and a grows with M and shrinks with m', () => {
-    close(r.pull(5, 5).a, r.G / 2);
-    assert.ok(r.pull(5, 5).a > r.pull(2, 5).a);
-    assert.ok(r.pull(5, 10).a < r.pull(5, 5).a);
-    // the numbers on the screen
-    close(r.pull(2, 5).a, 19.6 / 7);
-    close(r.pull(2, 5).T, 14);
-    close(r.pull(5, 5).a, 4.9);
-    close(r.pull(5, 5).T, 24.5);
-    assert.equal(r.round(r.pull(5, 10).a, 2), 3.27);
-    assert.equal(r.round(r.pull(5, 10).T, 2), 32.67);
-  });
-
-  it("doubling M makes a grow, but by less than double; doubling m makes it fall, but by less than half (the test's traps)", () => {
-    for (const [M, m] of [
-      [2, 4],
-      [2, 6],
-      [3, 6],
-    ]) {
-      const ratio = r.pull(2 * M, m).a / r.pull(M, m).a;
-      assert.ok(ratio > 1 && ratio < 2, `M doubled: ${ratio}`);
-    }
-    for (const [M, m] of [
-      [5, 5],
-      [3, 3],
-      [4, 3],
-    ]) {
-      const ratio = r.pull(M, 2 * m).a / r.pull(M, m).a;
-      assert.ok(ratio < 1 && ratio > 0.5, `m doubled: ${ratio}`);
-    }
+  it('gives the window its starting numbers: M = 2 kg, m = 5 kg, a = 2.8 ms⁻², T = 14 N', () => {
+    const { M, m } = r.BOOK.single;
+    close(r.pull(M, m).a, 2.8);
+    close(r.pull(M, m).T, 14);
   });
 });
 
-describe('hanging weight: a mass at each end (page 82)', () => {
-  it("is the book's example: 10 kg on the left, 5 kg on the right, a 5 kg block", () => {
-    const s = r.twoWeights(10, 5, 5);
-    close(s.a, 2.45);
-    assert.equal(s.left, true); // towards the heavier mass
-    close(s.T2, 73.5);
-    close(s.T1, 61.25);
-    close(s.W2, 98);
-    close(s.W1, 49);
-    // the block: T₂ − T₁ = ma; the left mass falls: T₂ − m₂g = m₂(−a); the right one rises: T₁ − m₁g = m₁ a
-    close(s.T2 - s.T1, 5 * s.a);
-    close(s.T2 - 10 * r.G, 10 * -s.a);
-    close(s.T1 - 5 * r.G, 5 * s.a);
-    assert.notEqual(s.T2, s.T1); // two strings, two tensions
+describe("the book's examples: a mass at each end (চিত্র ৩.১০, a = 5g/(m + 15))", () => {
+  it("is the book's three equations, and a = 5g/(m + 15) for any body m", () => {
+    for (const m of [1, 5, 10, 20]) {
+      const s = r.twoWeights(10, 5, m);
+      close(s.a, (5 * r.G) / (m + 15));
+      assert.equal(s.left, true); // m₂ (10 kg, left) goes down
+      close(s.T1 - 5 * r.G, 5 * s.a); // m₁ rises
+      close(s.T1 - s.T2, m * -s.a); // the body goes left
+      close(s.T2 - 10 * r.G, 10 * -s.a); // m₂ falls
+      close(s.T1 - s.T2, 15 * s.a - 5 * r.G); // the book's T₁ − T₂ = 15a − 5g
+    }
+    close(r.twoWeights(10, 5, 5).a, 2.45);
   });
 
-  it('goes the other way when the right mass is heavier, with the same size of a', () => {
+  it('does not move when the masses are equal, and mirrors when the heavier one is on the right', () => {
+    close(r.twoWeights(5, 5, 5).a, 0);
     const l = r.twoWeights(10, 5, 5);
     const rr = r.twoWeights(5, 10, 5);
     assert.equal(rr.left, false);
     close(rr.a, l.a);
-    close(rr.T1, l.T2);
-    close(rr.T2, l.T1);
   });
 
-  it('does not move when the masses are equal (the tensions are then equal too)', () => {
-    const s = r.twoWeights(5, 5, 5);
-    close(s.a, 0);
-    close(s.T2, s.T1);
-    close(s.T1, 5 * r.G);
-  });
-
-  it('matches the single-mass law when the right mass is as small as it gets (a block with one weight, plus m₁ = 0)', () => {
-    const one = r.pull(5, 5);
-    const two = r.twoWeights(5, 0, 5);
-    close(two.a, one.a);
-    close(two.T2, one.T);
+  it('runs from rest and covers the distance in sqrt(2d/a)', () => {
+    const a = 2.45;
+    const d = r.TRAVEL.two;
+    close(r.runTime(a, d), Math.sqrt((2 * d) / a));
+    assert.equal(r.runAt(a, d, 10).done, true);
+    close(r.runAt(a, d, 10).s, d);
   });
 });
 
-describe('hanging weight: the run', () => {
-  it('starts from rest and covers the distance in sqrt(2d/a)', () => {
-    const a = 4.9;
-    const d = 0.34;
-    const T = r.runTime(a, d);
-    close(T, Math.sqrt((2 * d) / a));
-    const mid = r.runAt(a, d, T / 2);
-    close(mid.s, d / 4); // s = a t²/2: a quarter of the way after half the time
-    close(mid.v, a * (T / 2));
-    assert.equal(mid.done, false);
-    const end = r.runAt(a, d, T);
-    close(end.s, d);
-    assert.equal(end.done, true);
-    const after = r.runAt(a, d, T + 5);
-    close(after.s, d); // it stops where it lands
-    close(after.v, a * T);
-    close(r.runAt(a, d, 0).s, 0);
-  });
-
-  it('takes a few tenths of a second for real, which the screen slows by SLOW', () => {
-    for (const id of r.IDS) {
-      const sol = r.solve(r.EXPERIMENTS[id]);
-      const real = r.runTime(sol.a, r.travel(r.EXPERIMENTS[id]));
-      assert.ok(real > 0.2 && real < 1, `${id}: ${real} s`);
-      const onScreen = real * r.SLOW;
-      assert.ok(onScreen > 1 && onScreen < 4, `${id}: ${onScreen} s on screen`);
-    }
-  });
-
-  it("has the four experiments the row of words names, in the book's order", () => {
-    assert.deepEqual(r.IDS, ['w2', 'w5', 'heavy', 'two']);
-    assert.equal(r.EXPERIMENTS.two.m2, 10); // the page-82 masses
-    assert.equal(r.EXPERIMENTS.two.m1, 5);
-    const a = r.IDS.map((id) => r.solve(r.EXPERIMENTS[id]).a);
-    assert.ok(a[1] > a[0], 'M up, a up');
-    assert.ok(a[2] < a[1], 'm up, a down');
-  });
-
-  it('sizes the bodies from their mass, heavier is bigger', () => {
-    assert.ok(r.blockSize(10).w > r.blockSize(5).w && r.blockSize(5).w > r.blockSize(2).w);
-    assert.ok(r.weightSize(10).rBottom > r.weightSize(5).rBottom && r.weightSize(5).rBottom > r.weightSize(2).rBottom);
-  });
-
-  it('writes numbers without trailing zeros', () => {
-    assert.equal(r.plain(14), '14');
-    assert.equal(r.plain(2.8), '2.8');
-    assert.equal(r.plain(3.2666), '3.27');
-    assert.equal(r.plain(61.25), '61.25');
-  });
-});
-
-describe('hanging weight: the words', () => {
+describe('the words', () => {
   it('has every Bangla string in English too, with the same {vars} in both', () => {
     assert.deepEqual(Object.keys(STRINGS.bn).sort(), Object.keys(STRINGS.en).sort());
     const vars = (s) =>
@@ -169,80 +172,62 @@ describe('hanging weight: the words', () => {
     for (const key of Object.keys(STRINGS.bn)) assert.equal(vars(STRINGS.bn[key]), vars(STRINGS.en[key]), key);
   });
 
-  it('writes numbers in Bangla digits (and Latin in English), with the units after them', () => {
+  it('writes numbers in Bangla digits (and Latin in English), the unit ms⁻² staying Latin', () => {
     const bn = createI18n('bn');
     const en = createI18n('en');
-    assert.equal(bn.num('14.5'), '১৪.৫');
-    assert.equal(en.num('14.5'), '14.5');
-    assert.equal(bn('out_ready', { M: 2, m: 5 }).includes('২ kg'), true);
-    assert.equal(bn('lbl_sym_N', { name: bn('nm_T_sym'), v: '14' }), 'T = ১৪ N');
-    assert.equal(bn('lbl_plain_N', { name: bn('nm_W'), v: '19.6' }), 'ওজন ১৯.৬ N');
+    assert.equal(bn('lbl_T', { v: '130' }), 'T = ১৩০ N');
+    assert.equal(en('lbl_T', { v: '130' }), 'T = 130 N');
+    const a = bn('lbl_a', { v: r.signed(-2.8) });
+    assert.equal(a, 'a = −২.৮ ms<sup>−2</sup>');
+    assert.ok(bn('why_calc', { a: '3.2', T: 130, M: 10, g: 9.8, W: 98 }).includes('ms<sup>−2</sup>'));
   });
 
-  it('keeps the unit ms⁻² Latin on the picture, in the answers and in the choices (only the number gets Bangla digits)', () => {
-    const bn = createI18n('bn');
-    const label = bn('lbl_plain_a', { name: bn('nm_a'), v: '2.8' });
-    assert.equal(label, 'ত্বরণ ২.৮ ms<sup>−2</sup>');
-    assert.ok(!/[০-৯]/.test(label.replace('২.৮', '')), 'no Bangla digit outside the number');
-    assert.ok(bn('why_calc', { a: '3.92', M: 2, m: 3, g: 9.8 }).includes('ms<sup>−2</sup>'));
+  it('has no Bangla digit typed into a string (numbers come in as {vars})', () => {
+    for (const [key, text] of Object.entries(STRINGS.bn)) assert.ok(!/[০-৯]/.test(text), `bn.${key}: ${text}`);
   });
 
   it('puts a no-break space between every number and its unit', () => {
     for (const lang of ['bn', 'en'])
       for (const [key, text] of Object.entries(STRINGS[lang]))
-        assert.ok(!/(\}|[0-9০-৯]) (kg\b|\{u_N\}|\{u_n\}|\{u_a\}|\{u_v\})/.test(text), `${lang}.${key}: ${text}`);
+        assert.ok(!/(\}|[0-9০-৯]) (kg\b|N\b|\{u_N\}|\{u_n\}|\{u_a\}|\{u_v\}|m\/s)/.test(text), `${lang}.${key}: ${text}`);
   });
 
-  it('says ঝুলন্ত ভর for the object and ওজন only for the force (the weight Mg, in N)', () => {
-    for (const [key, text] of Object.entries(STRINGS.bn)) assert.ok(!text.includes('ঝুলন্ত ওজন') || key === 'rule_law' || key === 'why_calc', key);
+  it("uses the book's words: টান বল, একটি সুতায় একটি মাত্র টান বল, উপরের দিক ধনাত্মক, নিউটনের দ্বিতীয় গতিসূত্র", () => {
+    const all = Object.values(STRINGS.bn).join(' ');
+    for (const w of ['টান বল', 'একটি সুতায় একটি মাত্র টান বল', 'উপরের দিক ধনাত্মক', 'নিউটনের দ্বিতীয় গতিসূত্র', 'কপিকল']) assert.ok(all.includes(w), w);
   });
 });
 
-describe('hanging weight: the test (every set of four choices reads differently)', () => {
-  const key = (x) => `${x.left ?? ''}|${x.v}`;
-  const distinct = (items, what) => assert.equal(new Set(items.map(key)).size, items.length, `${what}: ${JSON.stringify(items)}`);
+describe('the test (every set of four choices reads differently, the right one first)', () => {
+  const distinct = (list) => new Set(list.map((x) => String(x.v))).size === list.length;
 
-  it('has four different choices for every (M, m) of the acceleration question, the wrong Mg/m below g', () => {
-    for (const [M, m] of r.CALC_PAIRS) {
-      const items = r.calcChoices(M, m);
-      distinct(items, `calc ${M},${m}`);
-      assert.equal(items[0].v, r.round(r.pull(M, m).a, 2));
-      assert.ok(items[2].v < r.G, `Mg/m = ${items[2].v} stays below g (${M},${m})`);
-      assert.ok(items[0].v === r.round(items[0].v, 2));
+  it('has four different choices for every (T, M) of "how big is a?"', () => {
+    for (const [T, M] of r.CALC_SETS) {
+      const c = r.calcChoices(T, M);
+      assert.ok(distinct(c), `${T}, ${M}: ${c.map((x) => x.v)}`);
+      assert.equal(c[0].key, 'right');
+      close(c[0].v, r.round(r.lift(T, M).a, 2));
+      assert.ok(c[0].v > 0, 'the bucket goes up in this question');
     }
   });
 
-  it('has four different choices for every two-weights set, the right one first, and the heavier side on either side', () => {
-    const sides = new Set();
-    for (const [m2, m1, m] of r.TWO_PAIRS) {
-      const items = r.twoChoices(m2, m1, m);
-      distinct(items, `two ${m2},${m1},${m}`);
-      const s = r.twoWeights(m2, m1, m);
-      assert.equal(items[0].left, s.left);
-      assert.equal(items[0].v, r.round(s.a, 2));
-      assert.equal(items[1].left, !s.left); // the same a, the wrong way
-      sides.add(s.left);
-    }
-    assert.equal(sides.size, 2, 'the block goes left in some sets and right in others');
-  });
-
-  it('has four different choices for every (M, m) of the "one string, one pull" question', () => {
-    for (const [M, m] of r.CALC_PAIRS) {
-      const items = r.sameChoices(M, m);
-      distinct(items, `same ${M},${m}`);
-      assert.equal(items[0].v, r.round(r.pull(M, m).T, 2));
-      assert.ok(items[0].v < items[1].v, 'the pull is less than the weight');
+  it('has four different choices for "held still: how big is T?"', () => {
+    for (const M of r.HOLD_MASSES) {
+      const c = r.holdChoices(M);
+      assert.ok(distinct(c));
+      close(c[0].v, M * r.G, 1e-6);
     }
   });
 
-  it('keeps the "made 2 times" answers apart: a grows by less than double; a falls by less than half', () => {
-    for (const [M, m] of r.M_PAIRS) {
-      const ratio = r.pull(2 * M, m).a / r.pull(M, m).a;
-      assert.ok(ratio > 1 && ratio < 2);
-    }
-    for (const [M, m] of r.m_PAIRS) {
-      const ratio = r.pull(M, 2 * m).a / r.pull(M, m).a;
-      assert.ok(ratio < 1 && ratio > 0.5);
+  it('has T < Mg in every "which way?" set', () => {
+    for (const [T, M] of r.EASE_SETS) assert.ok(r.lift(T, M).a < 0, `${T}, ${M}`);
+  });
+
+  it('has four different choices for "the same pull, more water", the new a smaller but still up', () => {
+    for (const [T, M, extra] of r.FULL_SETS) {
+      const c = r.fullChoices(T, M, extra);
+      assert.ok(distinct(c), `${T}, ${M}, ${extra}: ${c.map((x) => x.v)}`);
+      assert.ok(c[0].v > 0 && c[0].v < r.lift(T, M).a);
     }
   });
 });
