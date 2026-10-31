@@ -141,6 +141,17 @@ export function markTimes(plan) {
   return out;
 }
 
+/**
+ * Run times (s after the push began) at which the cart's velocity is stamped on the floor: each whole second of the
+ * measured piece (and its start when the cart is already moving), so the equal steps of the velocity show.
+ */
+export function stampTimes(plan) {
+  const seg = measuredSeg(plan);
+  const out = seg.v0 > 1e-9 ? [round(seg.t0, 6)] : [];
+  for (let k = 1; k <= seg.dur + 1e-9; k++) out.push(round(seg.t0 + k, 6));
+  return out;
+}
+
 /** The momentum p = m v (kg m/s). */
 export const momentum = (m, v) => round(m * v, 2);
 

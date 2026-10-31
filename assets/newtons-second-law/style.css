@@ -10,7 +10,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#fff}#app{position:fix
 .ns-formula{border-left:3px solid #238f8d;background:#eff8f6;padding:5px 8px;color:#204f5f;font-size:13px;line-height:1.5;min-height:113px;box-sizing:border-box}
 .ns-formula>div{white-space:nowrap}.ns-formula small{display:block;font-size:10.5px;color:#526d79;white-space:normal}
 .ns-formula-head{display:flex;align-items:center;justify-content:space-between;gap:6px}.ns-formula-head button{display:flex;align-items:center;gap:10px;min-height:27px;border:0;background:transparent;color:#13576a;padding:0;cursor:pointer;font:inherit}.ns-formula-head b{font-size:20px;white-space:nowrap}.ns-formula-head span{font-size:11px;text-decoration:underline}
-.ns-note{position:absolute;left:10px;top:54px;max-width:45%;color:#effaff;font-size:11px;line-height:1.35;z-index:4;pointer-events:none}.ns-note b{font-weight:600}.ns .pvc-anno{font-size:12px;line-height:1.3;background:#fffdf3;padding:3px 6px;transition:none}
+.ns-note:empty{display:none}.ns-note{position:absolute;left:10px;top:54px;max-width:58%;color:#effaff;font-size:11px;line-height:1.35;z-index:4;pointer-events:none}.ns-note b{font-weight:600}.ns .pvc-anno{font-size:12px;line-height:1.3;background:#fffdf3;padding:3px 6px;transition:none}
 .ns .pvc-q-text{font-size:14px}.ns .pvc-q-feedback{font-size:12.5px}.ns .pvc-opt{font-size:12.5px;line-height:1.25}.ns-opt{display:block;white-space:normal}
 .ns-math-dialog{box-sizing:border-box;width:min(530px,calc(100vw - 24px));max-height:calc(100vh - 20px);border:1px solid #9bbfc3;border-radius:8px;padding:15px;color:#214958;background:#fffdf5;font-size:14px;line-height:1.6}
 .ns-math-dialog::backdrop{background:rgba(8,30,50,.5)}.ns-math-dialog h2{margin:0 0 8px;font-size:18px}.ns-math-dialog p{margin:8px 0;font-size:12px;line-height:1.5}.ns-math-dialog small{display:block;font-size:11.5px;line-height:1.5;margin:6px 0}.ns-math-dialog>strong{display:block;color:#135f70;font-size:18px}.ns-math-dialog>button{display:block;margin:10px 0 0 auto;min-height:32px}
@@ -19,3 +19,30 @@ html,body{margin:0;height:100%;overflow:hidden;background:#fff}#app{position:fix
 @container pvc (max-height:460px) and (min-aspect-ratio:3/2){.ns .pvc-panel{padding:7px 9px;gap:4px}.ns .pvc-learn{gap:4px}.ns .pvc-ex-word{font-size:10.5px}.ns .pvc-ex-res{font-size:10px;min-height:13px}.ns .pvc-examples button{min-height:33px}.ns .pvc-act-row{min-height:35px}.ns .pvc-act{min-height:33px;font-size:12px}.ns .pvc-act-num{width:25px;height:25px;font-size:15px}.ns .pvc-outcome,.ns .pvc-rule{font-size:11.5px;line-height:1.35;min-height:2.7em}.ns-formula{font-size:11px;line-height:1.4;min-height:94px;padding:3px 6px}.ns-formula small{font-size:9.5px}.ns-formula-head b{font-size:17px}.ns-formula-head span{font-size:10px}.ns-extras,.ns-extras button{min-height:24px;font-size:11px}.ns .pvc-q-text{font-size:12.5px}.ns .pvc-q-feedback{font-size:11.5px}.ns .pvc-opt{font-size:12px;height:38px}.ns-math-dialog{font-size:12px;line-height:1.5;padding:10px}.ns-math-dialog p{font-size:11px;margin:5px 0}.ns-math-dialog small{font-size:10.5px;margin:4px 0}}
 
 .ns-formula-values>div{white-space:nowrap}
+.ns-clock{display:block;margin-top:2px;font-size:11px}.ns-clock b{font-size:15px;font-weight:700;margin-right:4px;font-variant-numeric:tabular-nums}
+.ns-ladder{display:block;margin-top:3px;font-size:12px;font-weight:600;color:#bfe0ff}
+.ns-note.ns-note-top{top:10px;max-width:calc(100% - 230px)}
+.ns-formula-body{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:8px;margin-top:2px}
+.ns-graph{position:relative;min-height:80px}.ns .ns-graph .ns-graph-svg{position:absolute;inset:0;width:100%;height:100%;max-width:none;overflow:visible;font-family:inherit}
+.ns-graph-svg text{paint-order:stroke;stroke:#eff8f6;stroke-width:3px;stroke-linejoin:round}
+.ns-graph-svg .g-grid{stroke:#d2e5e2;stroke-width:1}.ns-graph-svg .g-axis{stroke:#58717d;stroke-width:1.3;fill:none}
+.ns-graph-svg .g-num{fill:#58717d}.ns-graph-svg .g-name{fill:#3d5a66}
+.ns-graph-svg .g-past{stroke:#9fb1bb;stroke-width:2;stroke-linecap:round}.ns-graph-svg .g-tag{fill:#5f7480}
+.ns-graph-svg .g-line{stroke-width:3;stroke-linecap:round}.ns-graph-svg .g-dot{stroke:#fff;stroke-width:1.5}
+.ns-graph-svg .g-run{stroke:#6f93a8;stroke-width:1.2;stroke-dasharray:3 2;fill:none}.ns-graph-svg .g-rise{stroke-width:2.6;fill:none}
+.ns-graph-svg .g-step,.ns-graph-svg .g-slope{font-weight:700}.ns-graph-svg .g-ring{fill:none;stroke-width:2}
+.ns-formula-values{display:flex;flex-direction:column;justify-content:center;gap:4px;min-width:0}
+.ns-row{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:6px;row-gap:2px;align-items:center;line-height:1.25;white-space:nowrap}
+.ns-row-name{font-size:12px}.ns-row-val{font-size:12.5px;text-align:right}
+.ns-row .ns-bar{position:relative;height:7px;border-radius:4px;background:#d7e8e5;overflow:hidden}
+.ns-row .ns-bar i{position:absolute;top:0;bottom:0;left:0}.ns-row .ns-fill{border-radius:4px;transition:width .12s linear}
+.ns-row .ns-mark{width:2px;margin-left:-1px;background:#eff8f6}
+.ns-row .ns-cut{background:repeating-linear-gradient(-45deg,#c45a3a 0 2px,#f4d9cf 2px 4px)}
+.ns-row-F .ns-fill{background:#203345}.ns-row-m .ns-fill{background:#6b7680}.ns-row-a .ns-fill{background:#0c8599}
+.ns-row-a .ns-row-name,.ns-row-a .ns-row-val{color:#087d72}
+.ns-formula .ns-row small{display:inline;font-size:10px;color:#526d79;white-space:nowrap;text-align:right}
+@container pvc (max-width:560px) and (max-height:600px){.ns-row{line-height:1.12;row-gap:1px}.ns-graph{min-height:70px}.ns-row-name{font-size:11px}.ns-row-val{font-size:11.5px}.ns-formula .ns-row small{font-size:9.5px}.ns-row .ns-bar{height:6px}.ns-formula-values{gap:2px}}
+@container pvc (max-height:460px) and (min-aspect-ratio:3/2){.ns-row{line-height:1.12;row-gap:1px}.ns-graph{min-height:64px}.ns-row-name{font-size:11px}.ns-row-val{font-size:11.5px}.ns-formula .ns-row small{font-size:9.5px}.ns-row .ns-bar{height:6px}.ns-formula-values{gap:2px}}
+@container pvc (min-width:1000px) and (min-height:700px){.ns-formula-body{grid-template-columns:1fr;gap:10px}.ns-graph{min-height:170px}.ns-formula-values{gap:6px}.ns-row-name,.ns-row-val{font-size:13.5px}.ns-row .ns-bar{height:9px}.ns-formula .ns-row small{font-size:11px}}
+.ns-graph-svg .g-hint{fill:#58717d;font-style:italic}
+.ns .pvc-anno .ns-hot{background:#fff0a0;box-shadow:0 0 0 3px #fff0a0;border-radius:2px}

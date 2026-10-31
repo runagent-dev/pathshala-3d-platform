@@ -24,7 +24,10 @@ import {
   RATIO_KEYS,
   round,
   runAt,
+  stampTimes,
 } from '../../assets/newtons-second-law/src/physics.js';
+import { DWELL, LEAD, playbackOf, playTime, SLOW } from '../../assets/newtons-second-law/src/clock.js';
+import { spreadLabels, T_MAX, V_MAX } from '../../assets/newtons-second-law/src/graph.js';
 
 describe('newtons-second-law: F = ma', () => {
   test('the four examples: 1, 2, 0.5 and −1 ms⁻²', () => {
@@ -243,5 +246,65 @@ describe('newtons-second-law: resultant force with resistance and buffer contact
         assert.ok(Math.abs(a.v - b.v) < 1e-5);
       }
     }
+  });
+});
+
+describe('newtons-second-law: the slow clock a student can follow', () => {
+  test('the velocity is stamped at each whole second of the measured push (and at its start when already moving)', () => {
+    assert.deepEqual(stampTimes(planOf('base')), [1, 2]);
+    assert.deepEqual(stampTimes(planOf('mass')), [1, 2]);
+    // pushed back from 2 m/s: the stamps at 2.3 (u = 2), 3.3 and 4.3 s show 2, 1, 0 m/s
+    const back = planOf('back');
+    assert.deepEqual(stampTimes(back), [2.3, 3.3, 4.3]);
+    assert.deepEqual(
+      stampTimes(back).map((t) => round(runAt(back, t).v, 2)),
+      [2, 1, 0],
+    );
+    // equal steps while the force acts: the step each second is a
+    const force = planOf('force');
+    const vs = [0, ...stampTimes(force)].map((t) => round(runAt(force, t).v, 2));
+    assert.deepEqual(vs, [0, 2, 4]);
+  });
+
+  test('real time: no lead-in, no holds, one run second per real second', () => {
+    const pb = playbackOf(1, [1, 2]);
+    assert.deepEqual(pb, { speed: 1, lead: 0, dwell: 0, stops: [] });
+    assert.deepEqual(playTime(1.5, pb), { t: 1.5, grow: 1, held: null });
+  });
+
+  test('slow: the arrows grow in, then half speed, held at each whole second', () => {
+    const pb = playbackOf(SLOW, [2, 1]);
+    assert.deepEqual(pb.stops, [1, 2]);
+    // the lead-in: the clock waits at 0 while the arrows grow
+    assert.deepEqual(playTime(LEAD / 2, pb), { t: 0, grow: 0.5, held: null });
+    // half speed: 1 run second takes 2 real seconds
+    assert.equal(playTime(LEAD + 1, pb).t, 0.5);
+    // held at 1 s for DWELL real seconds
+    const at1 = LEAD + 1 / SLOW;
+    assert.deepEqual(playTime(at1 + DWELL / 2, pb), { t: 1, grow: 1, held: 1 });
+    // then on again from 1 s
+    assert.ok(Math.abs(playTime(at1 + DWELL + 1, pb).t - 1.5) < 1e-9);
+    // past the last hold the clock runs on at half speed
+    const at2 = at1 + DWELL + 1 / SLOW;
+    assert.ok(Math.abs(playTime(at2 + DWELL + 2, pb).t - 3) < 1e-9);
+    // set going again at 1.5 s (after a pause): no hold at 1 s, the next at 2 s
+    assert.equal(playTime(0.5, { ...pb, lead: 0, from: 1.5 }).t, 1.75);
+    assert.equal(playTime(1 + DWELL / 2, { ...pb, lead: 0, from: 1.5 }).held, 2);
+  });
+});
+
+describe('newtons-second-law: the graph', () => {
+  test('tags in the margin keep their place when they are apart', () => {
+    assert.deepEqual(spreadLabels([10, 40, 70], 10, 0, 100), [10, 40, 70]);
+  });
+  test('tags too close are pushed apart, in their order, inside the plot', () => {
+    assert.deepEqual(spreadLabels([50, 45, 52], 10, 0, 100), [55, 45, 65]);
+    const ys = spreadLabels([98, 99, 100], 10, 0, 100);
+    assert.deepEqual(ys, [80, 90, 100]);
+    assert.deepEqual(spreadLabels([-20], 10, 5, 100), [5]);
+  });
+  test('the axes hold every example: 2 s of push, up to 4 m/s', () => {
+    assert.equal(T_MAX, PUSH_TIME);
+    for (const id of EXAMPLE_IDS) assert.ok(measured(planOf(id)).v <= V_MAX && measured(planOf(id)).u <= V_MAX, id);
   });
 });

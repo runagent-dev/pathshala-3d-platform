@@ -2,9 +2,10 @@ import * as THREE from 'three';
 import { createArrow } from '@shared/arrow.js';
 const UP = new THREE.Vector3(0, 1, 0);
 const ZERO = new THREE.Vector3();
-export function createVector(color, name, edgeColor = '#132b46') {
-  const material = new THREE.MeshBasicMaterial({ name, color, depthTest: false, depthWrite: false, toneMapped: false });
-  const edgeMaterial = new THREE.MeshBasicMaterial({ color: edgeColor, depthTest: false, depthWrite: false, toneMapped: false });
+export function createVector(color, name, edgeColor = '#132b46', opacity = 1) {
+  const look = { depthTest: false, depthWrite: false, toneMapped: false, transparent: opacity < 1, opacity };
+  const material = new THREE.MeshBasicMaterial({ name, color, ...look });
+  const edgeMaterial = new THREE.MeshBasicMaterial({ color: edgeColor, ...look });
   const edge = createArrow({ name: `${name}Outline`, material: edgeMaterial, radius: 0.044, head: 0.18, headRadius: 0.103 });
   const ink = createArrow({ name, material, radius: 0.029, head: 0.18, headRadius: 0.077 });
   const root = new THREE.Group();

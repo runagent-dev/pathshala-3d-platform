@@ -10,6 +10,24 @@ compares zero resistance with a constant 20 N resisting force. The live formula 
 including friction and buffer contact, and vertical support balances the system's weight. Diagram arrows are
 labelled as schematic. Pause the motion to inspect its forces. Click F = ma for the textbook momentum derivation and complete mass accounting.
 
+v0.3 makes the push readable at a student's pace. By default the run plays at **half speed** (the view says
+"সময় ২ গুণ ধীর" and shows a clock `t = … s`): the force (লব্ধি বল F) and acceleration (ত্বরণ a) arrows grow in
+before the cart moves, then at each whole second of the push the run **holds** for about a second while the cart's
+velocity is stamped on the floor (a faint blue arrow and "১ s: v = ১ m/s") and a row on the view lists the velocity
+each second ("০ → ১ → ২ m/s": equal steps, the step is a). The result line works out v = u + at with the numbers on
+the picture. A button beside বলচিত্র and ঘর্ষণ (or the S key) switches to real time; P pauses. The test plays at
+the chosen speed without the holds. `?speed=1` / `set({speed:1})` for real time; snapshots carry `playback` and
+`held`.
+
+v0.4 makes the law something to see, not only read. Beside F = ma the panel draws a live **বেগ–সময় গ্রাফ** of the
+push: the blue line grows with the cart, and at each whole second a teal step (1 s across, +a up) shows that the
+step each second is the acceleration ("ঢাল = ত্বরণ a"). The lines of examples already tried stay, faint and tagged
+"a = …", so two people make the line twice as steep, two sacks half as steep, and the push back makes it go down.
+Under the graph's heading three bars give F, m and a now: the force in one piece per person (friction a striped
+piece cut off), the mass in pieces (cart with its child, one per sack), and a = F ÷ m with the numbers. When the push
+ends the F and a bars empty while the velocity stays. While the clock holds, the velocity's label is lit and the
+graph's dot is ringed; with sound on, a soft tick marks each held second. N = W = mg moved to the calculation sheet.
+
 Additive bridge controls: `set({diagram:true, friction:20})` and `set({paused:true})`; snapshots include `forces`, `diagram` and the
 floor's resisting-force setting. Changing the floor restarts the comparison. The existing four example IDs,
 smooth-floor results, quiz and motion controls remain supported.
@@ -43,6 +61,7 @@ To listen to it or control it from the book page, use the helper shipped in the 
 | `example` | Example | `base` one adult pushes · `force` two children push · `mass` double mass · `back` force backward | `base` |
 | `friction` | Resisting force | `0` smooth floor · `20` 20 N friction | `0` |
 | `diagram` | Live free-body diagram | `1` · `0` | `0` |
+| `speed` | Playback speed | `0.5` slow (0.5×): arrows grow in, held at each second · `1` real time | `0.5` |
 | `at` | A moment of the run (e.g. 1.5: the run held 1.5 s after the push began, for pictures (empty: at rest)) | number |  |
 | `tried` | Examples already tried (their accelerations show under the words) | text |  |
 | `view` | View | `front` · `3d` | `front` |
