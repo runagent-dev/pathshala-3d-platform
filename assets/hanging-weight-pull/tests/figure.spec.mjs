@@ -1,80 +1,112 @@
-// This figure's own behaviour, through the bridge (runs with `npm run test:figures`; dev only, never packaged):
-// each experiment gives the book's numbers, a run covers the same distance for the block and the weight, the big
-// button's next step follows the row of words, and the reset puts everything back.
+// This figure's own behaviour, through the bridge (runs with `npm run test:figures`; dev only, never packaged): the
+// row of words gives the book's law for the bucket (T − Mg = Ma, up positive), a run goes up, down or nowhere, the
+// steppers change the numbers, the big button's next step follows the row, and the book's examples window solves
+// চিত্র ৩.০৯ and ৩.১০.
 import { expect, test } from '@playwright/test';
 import { openFigure, preparePage } from '../../../scripts/lib/export/driver.mjs';
 
-test('hanging-weight-pull: each experiment gives a = Mg/(M + m) and the one tension T', async ({ page }) => {
+test('hanging-weight-pull: the bucket on the rope follows T − Mg = Ma', async ({ page }) => {
   await page.setViewportSize({ width: 800, height: 500 });
   const log = await preparePage(page);
   const fig = await openFigure(page, 'hanging-weight-pull');
   const start = await fig.call('get');
-  expect(start).toMatchObject({ id: 'w2', phase: 'ready', progress: 0, M: 2, m: 5, W: 19.6 });
-  expect(start.results).toEqual({ w2: null, w5: null, heavy: null, two: null });
+  expect(start).toMatchObject({ id: 'hold', phase: 'ready', T: 98, M: 10, W: 98, a: 0, speed: 0 });
+  expect(start.results).toEqual({ hold: null, pull: null, ease: null, full: null });
 
-  await fig.call('set', { id: 'w2', release: true, animate: false });
-  expect(await fig.call('get')).toMatchObject({ phase: 'done', progress: 1, a: 2.8, T: 14, distance: 0.34 });
-  await fig.call('set', { id: 'w5', release: true, animate: false });
-  expect(await fig.call('get')).toMatchObject({ id: 'w5', M: 5, m: 5, a: 4.9, T: 24.5 });
-  await fig.call('set', { id: 'heavy', release: true, animate: false });
-  const heavy = await fig.call('get');
-  expect(heavy).toMatchObject({ m: 10, M: 5 });
-  expect(heavy.a).toBeCloseTo(3.267, 2);
-  expect(heavy.T).toBeCloseTo(32.667, 2);
-  expect(heavy.T).toBeLessThan(heavy.W); // the string's tension is less than the weight
-  // two strings, two tensions, the block towards the heavier mass (the book's 10 kg and 5 kg)
-  await fig.call('set', { id: 'two', release: true, animate: false });
-  const two = await fig.call('get');
-  expect(two).toMatchObject({ kind: 'two', m2: 10, m1: 5, m: 5, towards: 'left', distance: 0.26 });
-  expect(two.a).toBeCloseTo(2.45, 3);
-  expect(two.T2).toBeCloseTo(73.5, 2);
-  expect(two.T1).toBeCloseTo(61.25, 2);
-  expect(two.results).toMatchObject({ w2: 2.8, w5: 4.9, heavy: 3.27, two: 2.45 });
+  // held: it stays where it is
+  const held = await fig.call('set', { release: true, animate: false });
+  expect(held).toMatchObject({ phase: 'done', end: 'held', a: 0 });
+  expect(held.height).toBeCloseTo(start.height, 6);
+  // pulled hard: up to the top, a = +3.2
+  const up = await fig.call('set', { id: 'pull', release: true, animate: false });
+  expect(up).toMatchObject({ id: 'pull', T: 130, M: 10, phase: 'done', end: 'top' });
+  expect(up.a).toBeCloseTo(3.2, 3);
+  expect(up.height).toBeGreaterThan(start.height);
+  // eased off: down to the water, a = −2.8
+  const down = await fig.call('set', { id: 'ease', release: true, animate: false });
+  expect(down).toMatchObject({ end: 'water' });
+  expect(down.a).toBeCloseTo(-2.8, 3);
+  expect(down.height).toBeLessThan(start.height);
+  // more water with the same pull: smaller a
+  const full = await fig.call('set', { id: 'full', release: true, animate: false });
+  expect(full).toMatchObject({ T: 130, M: 12, end: 'top' });
+  expect(full.a).toBeCloseTo(1.033, 2);
+  expect(full.results).toEqual({ hold: 0, pull: 3.2, ease: -2.8, full: 1.03 });
   expect(log.errors).toEqual([]);
 });
 
-test('hanging-weight-pull: a frozen run, the next step and the reset', async ({ page }) => {
+test('hanging-weight-pull: a run in time, the steppers, the next step and the reset', async ({ page }) => {
   await page.setViewportSize({ width: 800, height: 500 });
   const log = await preparePage(page);
   const fig = await openFigure(page, 'hanging-weight-pull');
-  const mid = await fig.call('set', { id: 'w5', at: 0.5 });
-  expect(mid).toMatchObject({ phase: 'run', progress: 0.5 });
-  expect(mid.distance).toBeCloseTo(0.17, 3);
-  // after a run the big button offers the next experiment in the row (the first one not run yet)
-  await fig.call('set', { id: 'w5', release: true, animate: false });
-  expect((await fig.call('get')).next).toEqual({ id: 'w2', step: 2 });
-  await fig.call('set', { id: 'w2', release: true, animate: false });
-  expect((await fig.call('get')).next).toEqual({ id: 'heavy', step: 3 });
-  // the block is held again
-  const home = await fig.call('set', { home: true });
-  expect(home).toMatchObject({ phase: 'ready', progress: 0, distance: 0 });
-  const reset = await (async () => {
-    await fig.call('reset');
-    return fig.call('get');
-  })();
-  expect(reset).toMatchObject({ id: 'w2', phase: 'ready', view: 'front' });
-  expect(reset.results).toEqual({ w2: null, w5: null, heavy: null, two: null });
+  // a real run on the virtual clock: v = at (time slowed 3 times on the screen)
+  await fig.call('set', { id: 'pull', release: true });
+  await fig.advance(1500);
+  const mid = await fig.call('get');
+  expect(mid.phase).toBe('run');
+  expect(mid.time).toBeCloseTo(0.5, 1);
+  expect(mid.speed).toBeCloseTo(3.2 * mid.time, 2);
+  await fig.advance(4000);
+  expect((await fig.call('get')).phase).toBe('done');
+  // the big button then offers the first experiment not run yet
+  expect((await fig.call('get')).next).toEqual({ id: 'hold', step: 2 });
+  // the steppers' numbers: other numbers than the row's, held at the start, not kept in the row
+  const custom = await fig.call('set', { T: 150, M: 8 });
+  expect(custom).toMatchObject({ id: null, T: 150, M: 8, phase: 'ready' });
+  expect(custom.a).toBeCloseTo((150 - 8 * 9.8) / 8, 3);
+  await page
+    .frames()
+    .find((f) => f.url().includes('/assets/hanging-weight-pull/'))
+    .locator('[data-step="T"][data-dir="-1"]')
+    .click();
+  expect((await fig.call('get')).T).toBe(148);
+  const ran = await fig.call('set', { release: true, animate: false });
+  expect(ran.results).toEqual({ hold: null, pull: 3.2, ease: null, full: null });
+  // frozen part way, then home, then reset
+  const frozen = await fig.call('set', { id: 'pull', at: 0.5 });
+  expect(frozen.phase).toBe('run');
+  expect(frozen.height).toBeGreaterThan(-0.45);
+  expect((await fig.call('set', { home: true })).phase).toBe('ready');
+  await fig.call('reset');
+  const reset = await fig.call('get');
+  expect(reset).toMatchObject({ id: 'hold', phase: 'ready', view: 'front' });
+  expect(reset.results).toEqual({ hold: null, pull: null, ease: null, full: null });
   expect(log.errors).toEqual([]);
 });
 
-test('hanging-weight-pull: other masses, equal masses hold still, a mirrored example goes the other way', async ({ page }) => {
-  await page.setViewportSize({ width: 800, height: 500 });
+test("hanging-weight-pull: the book's examples window solves চিত্র ৩.০৯ and ৩.১০", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 700 });
   const log = await preparePage(page);
   const fig = await openFigure(page, 'hanging-weight-pull');
-  // two equal masses hold each other: it stays held, a = 0
-  await fig.call('set', { masses: { m2: 5, m1: 5, m: 5 } });
-  const held = await fig.call('set', { release: true });
-  expect(held).toMatchObject({ kind: 'two', phase: 'ready' });
-  expect(held.a).toBeCloseTo(0, 6);
-  // the heavier mass on the right: the block goes right, with the same size of a as the book's example
-  await fig.call('set', { masses: { m2: 5, m1: 10, m: 5 } });
-  const mirrored = await fig.call('set', { release: true, animate: false });
-  expect(mirrored).toMatchObject({ phase: 'done', towards: 'right' });
-  expect(mirrored.a).toBeCloseTo(2.45, 3);
-  // a big mass runs like any other, and its run is not kept in the row of words
-  const big = await fig.call('set', { masses: { M: 20, m: 0.5 }, release: true, animate: false });
-  expect(big).toMatchObject({ phase: 'done', M: 20, m: 0.5 });
-  expect(big.a).toBeCloseTo((20 * 9.8) / 20.5, 3);
-  expect(big.results).toEqual({ w2: null, w5: null, heavy: null, two: null });
+  const frame = page.frames().find((f) => f.url().includes('/assets/hanging-weight-pull/'));
+  await frame.locator('[data-act="example"]').click();
+  let ex = (await fig.call('get')).example;
+  expect(ex).toMatchObject({ open: true, kind: 'single', M: 2, m: 5, part: 0, phase: 'ready' });
+  expect(ex.a).toBeCloseTo(2.8, 3);
+  expect(ex.T).toBeCloseTo(14, 3);
+  // the lines one at a time
+  for (let i = 0; i < 5; i++) await frame.locator('[data-ex="next"]').click();
+  await expect(frame.locator('.wl-ex-line.in')).toHaveCount(5);
+  // a heavier hanging mass: a = 4 × 9.8 / 9
+  await frame.locator('[data-ex-step="M"][data-dir="1"]').click();
+  await frame.locator('[data-ex-step="M"][data-dir="1"]').click();
+  ex = (await fig.call('get')).example;
+  expect(ex.M).toBe(4);
+  expect(ex.a).toBeCloseTo((4 * 9.8) / 9, 3);
+  // it runs
+  await frame.locator('[data-ex="run"]').click();
+  await fig.advance(6000);
+  expect((await fig.call('get')).example.phase).toBe('done');
+  // চিত্র ৩.১০: 10 kg and 5 kg, a = 5g/(m + 15)
+  await frame.locator('[data-ex-kind="two"]').click();
+  ex = (await fig.call('get')).example;
+  expect(ex).toMatchObject({ kind: 'two', m2: 10, m1: 5, m: 5, part: 0 });
+  expect(ex.a).toBeCloseTo(2.45, 3);
+  ex = (await fig.call('set', { example: { m: 15 } })).example;
+  expect(ex.a).toBeCloseTo((5 * 9.8) / 30, 3);
+  expect(ex.T1 - ex.T2).toBeCloseTo(15 * ex.a - 5 * 9.8, 1); // the state rounds a to 3 decimals
+  // closed by Escape
+  await page.keyboard.press('Escape');
+  expect((await fig.call('get')).example.open).toBe(false);
   expect(log.errors).toEqual([]);
 });
