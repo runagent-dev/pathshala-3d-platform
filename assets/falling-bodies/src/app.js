@@ -16,7 +16,7 @@ import { createCoach } from '@shared/student/coach.js';
 import { createQuiz } from '@shared/student/quiz.js';
 import { ICONS, svg } from '@shared/student/icons.js';
 import { createI18n } from './i18n.js';
-import { ARROW, BOX, TUBE, Y0, createApparatus } from './apparatus.js';
+import { ARROW, BASE, BOX, TUBE, Y0, createApparatus } from './apparatus.js';
 import { createLabels } from './labels.js';
 import { fitPose } from './camera.js';
 import {
