@@ -69,6 +69,17 @@ before designing; reviewers check against it. When a new decision is taken for a
   book's worked examples (p121).
 - `power` uses ideal pumps and says so; efficiency (কর্মদক্ষতা) is 4.8, p121.
 
+## Pressure (topic 5.1 on, page 129)
+
+- Colours (`pressure`): the force F purple #7048e8 (weight's colour: it is the weight on each shoe), the pressure P red
+  #e03131 (arrows pressing down on a surface, their length in proportion to P; a wide white outline where the
+  ground is red, as in `pressure`'s clay), the area A teal #0c8599.
+- Units as the book: P = F/A in N ÷ m² = Pa (প্যাসকেল glossed once in the rule); areas may be given in cm² but every
+  sum converts first (৫০ cm² = ০.০০৫ m²; 1 m² = 10,000 cm²). Big pressures with Bangladeshi commas in Bangla
+  (১,০০,০০০ Pa), groups of three in English (100,000 Pa).
+- The book's words: বল প্রয়োগকারী ক্ষেত্রফল, "সমান পরিমাণ বল প্রয়োগ করলেও চাপ কিন্তু হবে ভিন্ন", "ক্ষেত্রফল দ্বিগুণ … চাপ
+  অর্ধেক", চাপ স্কেলার রাশি ("এর কোনো দিক নেই"); the page writes উপর.
+
 ## Open questions for the book team
 
 - The strength numbers in 3.2.2 vs 3.2.4 (above).
