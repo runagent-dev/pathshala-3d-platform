@@ -1,0 +1,97 @@
+# Notes: Power (ক্ষমতা)
+
+Book: physics-9-10 › 4.7 › p120 (`reference/page-120.png`)
+
+## What the page shows
+No picture: text, the formula and a unit box. Transcribed from the page:
+
+> **৪.৭ ক্ষমতা (Power)**
+>
+> আমাদের দৈনন্দিন জীবনে ক্ষমতা শব্দটা অনেক ব্যবহার হয় এবং সব সময়ই যে শব্দটা ভালো কিছু বোঝানোর জন্য ব্যবহার হয়
+> তা কিন্তু নয়। কিন্তু পদার্থবিজ্ঞানে ক্ষমতা শব্দটার সুনির্দিষ্ট অর্থ আছে, ক্ষমতা হচ্ছে কাজ করার হার। অর্থাৎ t সময়ে
+> W কাজ করা হয়ে থাকলে ক্ষমতা P হচ্ছে:
+>
+> P = W / t
+>
+> আমরা আগেই দেখেছি, কাজ করার অর্থ হচ্ছে শক্তির রূপান্তর। শক্তির যেহেতু ধ্বংস নেই তাই কাজ করার মাঝে দিয়ে শক্তির
+> রূপান্তর করা হয় মাত্র। তাই ইচ্ছে করলে আমরা বলতে পারি, ক্ষমতা হচ্ছে শক্তির রূপান্তরের হার। কাজ বা শক্তি যেহেতু
+> স্কেলার তাই ক্ষমতাও স্কেলার।
+>
+> পদার্থবিজ্ঞান শিখতে গিয়ে আমরা নানা ধরনের রাশি সম্পর্কে জেনেছি, তাদের এককের নাম জেনেছি এবং চেষ্টা করেছি প্রায়
+> প্রত্যেক ক্ষেত্রে সেই রাশিটির মাত্রা সম্পর্কে জানতে। ক্ষমতার একক এবং মাত্রা হচ্ছে—
+>
+> [box] ক্ষমতার একক: W (ওয়াট) · ক্ষমতার মাত্রা: [P] = ML²T⁻³
+>
+> এখানে এটি আমরা প্রথম জানলেও এর এককটি আমাদের খুব পরিচিত। যদি প্রতি সেকেন্ডে 1 জুল কাজ করা হয় তাহলে আমরা বলি
+> 1 ওয়াট (W) কাজ করা হয়েছে বা শক্তির রূপান্তর হয়েছে। আমরা যদি 100 W এর একটা বাতি জ্বালাই তার অর্থ এই বাতিতে
+> প্রতি সেকেন্ডে 100 J শক্তি ব্যয় হচ্ছে। যখন আমরা খবরের কাগজ পড়ি, দেশে 1000 MW নিউক্লিয়ার বিদ্যুৎকেন্দ্র তৈরি হবে
+> তার অর্থ সেই নিউক্লিয়ার শক্তিকেন্দ্রে প্রতি সেকেন্ডে 1000 × 10⁶ J বিদ্যুৎশক্তি উৎপন্ন হবে।
+
+Symbols: **P** (ক্ষমতা), **W** (কাজ), **t** (সময়). Unit **W (ওয়াট)**, dimension **[P] = ML²T⁻³**. Examples on the page:
+the 100 W bulb, the 1000 MW nuclear power plant. No worked numbers.
+
+## The one idea to teach
+Power is the rate of doing work, **P = W/t**: the same work done in less time is more power (and more work in the same
+time is more power). Since work is energy converted, power is also the rate of converting energy; 1 W is 1 J each
+second.
+
+## The owner's visual reference
+`/root/pathshala-3d/images/ref-power-same-work.png`: a hand-drawn sheet, two people lift the same box to the same
+height, A slowly (less power), B quickly (more power), stopwatches under each, P = W/t and 1 W = 1 J/s. The owner:
+"dont need man carrying boxes it can be different pump pulling water and sending into top tank or something but very
+properly. vivid color with color background and very very realistic".
+
+## Terms (as in the book)
+ক্ষমতা, কাজ করার হার, t সময়ে W কাজ, শক্তির রূপান্তর, শক্তির রূপান্তরের হার, স্কেলার, ক্ষমতার একক W (ওয়াট), ক্ষমতার
+মাত্রা [P] = ML²T⁻³, প্রতি সেকেন্ডে 1 জুল কাজ, শক্তি ব্যয়, বাতি, খবরের কাগজ, নিউক্লিয়ার বিদ্যুৎকেন্দ্র, বিদ্যুৎশক্তি উৎপন্ন.
+The page spells রূপান্তর. Units as Latin symbols per `docs/book-notes.md`: kg, m, s, J, W, ms⁻²; MW in the book's example.
+
+## How the figure works
+- A sunny Bangladeshi one-storey house painted warm yellow, a brick-paved courtyard, coconut palms and banana plants,
+  neighbours' houses and trees behind, blue sky with clouds. Two electric monoblock pumps (a small blue one, a big red
+  one) draw water from the open hatch of the underground tank and push it through white PVC pipes up the wall into two
+  identical 500 L tanks at the roof's front edge. The tanks are drawn cut open at the front (a textbook cutaway) so the
+  water level shows; a scale on the cut has a tick every 100 L. An arrow marks **h = 3 m** from the courtyard to the
+  tanks' floor, with a dashed guide to the tank.
+- শেখো: three example words, one action, the result as a small table (a column per symbol: কাজ W ÷ সময় t = ক্ষমতা P,
+  in the symbols' colours), one rule in the book's words.
+  1. **একই কাজ**: both pumps lift 500 kg up 3 m, W = mgh = 500 kg × 9.8 ms⁻² × 3 m = 14,700 J (known before the run;
+     t and P show "?"). The big pump fills its tank in 15 s, the small one in 30 s: 980 W against 490 W, live from
+     the stopwatch labels by each tank. Rule: the book's "ক্ষমতা হচ্ছে কাজ করার হার … P = W/t".
+  2. **একই সময়**: both run 15 s; the big pump lifts 500 kg, the small one 250 kg: twice the work, twice the power. Rule:
+     "কাজ করা মানে শক্তির রূপান্তর … ক্ষমতা হচ্ছে শক্তির রূপান্তরের হার".
+  3. **বাতি**: the camera flies to the 100 W bulb over the door; it glows for 10 s in real time, its label counting
+     the joules (100 J each second). The table adds the book's power plant as a second row,
+     1000 × 10⁶ J ÷ 1 s = 1000 MW. Rule: the unit box (1 W = 1 J each second, [P] = ML²T⁻³).
+- The stopwatches show whole seconds, and the work in the table comes from that same second (W = P × t), so W ÷ t is
+  exactly the pump's power at every moment, which is itself a lesson: the rate stays the same while the work grows.
+- Test (5): a pump's power from the tank's mass, h and its stopwatch (g = 9.8); which statement is right after the same
+  time; the energy a bulb (40/60/100 W) uses in the time on its stopwatch; what "980 W" means; the 1000 MW plant's
+  joules each second. Wrong choices are real mistakes (the other pump's stopwatch, forgetting ÷ t, g or h, × t; equal
+  time means equal power; equal height means equal work; one second only, P + t, P ÷ t, minutes; a total instead of a
+  rate, kg instead of J, seconds; M as 1 or 10³, W instead of J), each with its own note.
+
+## Stylised on purpose (stated honestly)
+- **Ideal pumps**: all the electrical energy goes into lifting the water (no losses). The book has no efficiency here;
+  it is the next topic (4.8, কর্মদক্ষতা). The corner note says "আদর্শ পাম্প (শক্তির অপচয় নেই)". Real domestic pumps
+  of 490 W and 980 W would take several times longer.
+- The pumps' runs are shown **3 times faster** than life (30 s takes 10 s); the note says so. The bulb runs in real time
+  ("সময় প্রকৃত").
+- h is from the courtyard (the underground tank's water is drawn at ground level) to the roof tanks' floor; the water's
+  own depth in the tank (up to 0.86 m) is left out, as a textbook problem would. One litre of water is 1 kg.
+- 490 W and 980 W are chosen so the times are whole seconds (about 0.66 and 1.3 horsepower).
+
+## Look
+Vivid on purpose (the owner asked for colour backgrounds): deep blue sky, warm yellow wall with green windows, a red
+brick courtyard, blue and red pumps, white pipes; the panel stays the kit's clean, lightly warm sheet. The front view
+stands in the courtyard and looks a little up at the roof (fov 42°), so the pumps in front and the tanks above both
+come out as big as the 3 m lift allows; wide frames drop the top margin (the corner buttons are off to the right).
+
+## Colours (chapter 4)
+W green #237a35 (as in `work`), t crimson #c2255c (the stopwatch hand), P grape #862e9c, h blue #1c6fd9 (a distance,
+like `work`'s s). Pumps: small #1f74c9, big #d4382c (each pump's colour is also on its tank's scale; the labels name them).
+
+## Open questions
+- Whether the book wants W = mgh shown here (it comes from 4.3.1); the figure uses it to make "the same work" exact.
+- The quiz's "(g = ৯.৮ ধরো)" has no unit because the kit's question line is plain text (no superscripts).
+- The power plant is in the table and the test only; there is no plant in the picture.
