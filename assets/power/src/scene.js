@@ -1,12 +1,31 @@
 // The place: a sunny Bangladeshi house and its courtyard, procedural three.js, in metres. A one-storey house painted
-// warm yellow (a white sunshade over each green-shuttered window with an iron grill, a wooden door with a bulb over
-// it, a dark plinth band), its flat roof edged with a low parapet; at the roof's front edge two tanks on low stands. In the brick-paved courtyard, the open hatch of the underground water tank between the two pumps; white PVC
-// pipes from the hatch to each pump and from each pump up the wall, over the parapet and into its tank. A coconut
-// palm and a banana plant, flower pots by the door, neighbours' houses and trees behind, a blue sky with clouds.
+// warm yellow and weathered as such walls are (rain streaks, a damp band over the plinth, hairline cracks). Three
+// windows with teak casements, curtains behind the glass, iron grills, sills and sunshades; a panelled teak door with
+// two steps, a doormat and sandals, a bulb over it. The flat roof edged with a low parapet, rain spouts and
+// downpipes; on it a stair room, and at the front edge the two tanks on low stands.
+// The electrics: the service wire comes in from the lane at the right, runs along the wall to the meter, then in
+// conduit to the pump switch board (a switch and a lamp for each pump, lit while it runs) and out to each pump.
+// In the brick-paved courtyard: the open hatch of the underground tank between the two pumps; white PVC pipes from the
+// hatch to each pump and from each pump (through a gate valve) up the wall, over the parapet and into its tank. A
+// tubewell with a bucket and a pitcher, a clothes line, a bicycle against the wall, flower pots, wet patches. Around: see
+// surroundings.js.
 // +x to the right, +y up, the camera looks from +z; the house's front wall is the plane z = 0, the ground y = 0.
 import * as THREE from 'three';
+import { cable, parts, pipeRun, rod } from './build.js';
 import { H } from './power.js';
+import { createSurroundings } from './surroundings.js';
 import { TANK } from './tank.js';
+import {
+  brickTexture,
+  canvasTexture,
+  cementTexture,
+  doorTexture,
+  frontWallTexture,
+  plasterTexture,
+  seeded,
+  wheelTexture,
+  windowTexture,
+} from './textures.js';
 
 export const ROOF = H - TANK.FLOOR; // m: the roof slab's top (the tank stands on it, its floor at h = H)
 export const LAYOUT = {
@@ -19,235 +38,12 @@ export const LAYOUT = {
   hatch: { x: 0, w: 0.7, d: 0.5 },
 };
 const HOUSE = { x0: -7.2, x1: 7.2, depth: 7 };
+const WINDOWS = [0, 4.2, -6.2];
 const PIPE_R = 0.027;
-
-const seeded = (s) => () => {
-  s = (s * 16807) % 2147483647;
-  return (s - 1) / 2147483646;
-};
-function canvasTexture(w, h, draw, repeat = true) {
-  const c = document.createElement('canvas');
-  c.width = w;
-  c.height = h;
-  draw(/** @type {CanvasRenderingContext2D} */ (c.getContext('2d')), w, h);
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  if (repeat) tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-  tex.anisotropy = 8;
-  return tex;
-}
-
-/** Red bricks laid in a herringbone, one 1.2 m square repeat. */
-function brickTexture() {
-  return canvasTexture(256, 256, (ctx, w) => {
-    ctx.fillStyle = '#8f5a3f';
-    ctx.fillRect(0, 0, w, w);
-    const rand = seeded(5);
-    const u = w / 12; // a brick is 2u × 1u
-    for (let i = -14; i < 26; i++)
-      for (let j = -14; j < 26; j++) {
-        const x = (i + j) * u;
-        const y = (j - i) * u;
-        for (const [bx, by, bw, bh] of [
-          [x, y, 2 * u, u],
-          [x + u, y + u, u, 2 * u],
-        ]) {
-          if (bx > w || by > w || bx + bw < 0 || by + bh < 0) continue;
-          const r = 168 + Math.floor(rand() * 40);
-          const g = 74 + Math.floor(rand() * 26);
-          const b = 46 + Math.floor(rand() * 18);
-          ctx.fillStyle = `rgb(${r},${g},${b})`;
-          ctx.fillRect(bx + 1.2, by + 1.2, bw - 2.4, bh - 2.4);
-          ctx.fillStyle = 'rgba(255,230,200,0.08)';
-          ctx.fillRect(bx + 2, by + 2, bw - 4, 2);
-        }
-      }
-    for (let i = 0; i < 900; i++) {
-      ctx.fillStyle = rand() < 0.5 ? 'rgba(0,0,0,0.08)' : 'rgba(255,240,220,0.08)';
-      ctx.fillRect(rand() * w, rand() * w, 2, 2);
-    }
-  });
-}
-
-/** Painted plaster: a warm wall colour with a soft mottle and a few rain streaks. */
-function wallTexture(color) {
-  return canvasTexture(256, 256, (ctx, w) => {
-    ctx.fillStyle = color;
-    ctx.fillRect(0, 0, w, w);
-    const rand = seeded(9);
-    for (let i = 0; i < 70; i++) {
-      ctx.fillStyle = rand() < 0.5 ? 'rgba(255,255,255,0.05)' : 'rgba(120,70,0,0.04)';
-      ctx.beginPath();
-      ctx.arc(rand() * w, rand() * w, 8 + rand() * 26, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    for (let i = 0; i < 1500; i++) {
-      ctx.fillStyle = rand() < 0.5 ? 'rgba(255,255,255,0.12)' : 'rgba(80,50,0,0.06)';
-      ctx.fillRect(rand() * w, rand() * w, 1.5, 1.5);
-    }
-  });
-}
-
-/** Grass: green with blades of lighter and darker green. */
-function grassTexture() {
-  return canvasTexture(128, 128, (ctx, w) => {
-    ctx.fillStyle = '#4f9a35';
-    ctx.fillRect(0, 0, w, w);
-    const rand = seeded(13);
-    for (let i = 0; i < 1600; i++) {
-      ctx.fillStyle = rand() < 0.5 ? 'rgba(160,220,90,0.35)' : 'rgba(20,70,20,0.3)';
-      ctx.fillRect(rand() * w, rand() * w, 1.2, 3 + rand() * 3);
-    }
-  });
-}
-
-/** A window: glass with the sky in it behind an iron grill, in a green frame. */
-function windowTexture() {
-  return canvasTexture(
-    128,
-    128,
-    (ctx, w, h) => {
-      ctx.fillStyle = '#2f7d4f';
-      ctx.fillRect(0, 0, w, h);
-      const g = ctx.createLinearGradient(0, 8, 0, h - 8);
-      g.addColorStop(0, '#a9d4ee');
-      g.addColorStop(0.55, '#4f7f9e');
-      g.addColorStop(1, '#27445a');
-      ctx.fillStyle = g;
-      ctx.fillRect(9, 9, 52, h - 18);
-      ctx.fillRect(67, 9, 52, h - 18);
-      ctx.fillStyle = 'rgba(255,255,255,0.25)';
-      ctx.beginPath();
-      ctx.moveTo(14, h - 14);
-      ctx.lineTo(40, 12);
-      ctx.lineTo(54, 12);
-      ctx.lineTo(28, h - 14);
-      ctx.fill();
-      ctx.fillStyle = '#22262a'; // the grill
-      for (let x = 16; x < w - 8; x += 12) ctx.fillRect(x, 6, 3, h - 12);
-      ctx.fillRect(6, h * 0.36, w - 12, 3);
-      ctx.fillRect(6, h * 0.68, w - 12, 3);
-    },
-    false,
-  );
-}
-
-/** A wooden door with two panels and a brass handle. */
-function doorTexture() {
-  return canvasTexture(
-    128,
-    256,
-    (ctx, w, h) => {
-      ctx.fillStyle = '#7a4527';
-      ctx.fillRect(0, 0, w, h);
-      const rand = seeded(17);
-      for (let i = 0; i < 60; i++) {
-        ctx.fillStyle = `rgba(${rand() < 0.5 ? '40,18,6' : '160,100,60'},0.18)`;
-        ctx.fillRect(rand() * w, 0, 1 + rand() * 2, h);
-      }
-      ctx.strokeStyle = '#4e2a15';
-      ctx.lineWidth = 5;
-      ctx.strokeRect(14, 16, w / 2 - 20, h * 0.42);
-      ctx.strokeRect(w / 2 + 6, 16, w / 2 - 20, h * 0.42);
-      ctx.strokeRect(14, h * 0.52, w / 2 - 20, h * 0.42);
-      ctx.strokeRect(w / 2 + 6, h * 0.52, w / 2 - 20, h * 0.42);
-      ctx.fillStyle = '#3a1f10';
-      ctx.fillRect(w / 2 - 1.5, 0, 3, h);
-      ctx.fillStyle = '#d7aa4a';
-      ctx.fillRect(w / 2 + 6, h * 0.48, 5, 14);
-    },
-    false,
-  );
-}
-
-/** A palm frond: leaflets on a midrib, on a transparent ground (alpha). */
-function frondTexture() {
-  return canvasTexture(
-    256,
-    64,
-    (ctx, w, h) => {
-      ctx.clearRect(0, 0, w, h);
-      ctx.strokeStyle = '#8a7a2c';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(0, h / 2);
-      ctx.lineTo(w, h / 2);
-      ctx.stroke();
-      for (let x = 8; x < w - 4; x += 5) {
-        const len = (h / 2 - 2) * Math.sin((Math.PI * (x + 20)) / (w + 30));
-        for (const s of [-1, 1]) {
-          ctx.strokeStyle = (x / 5) % 3 === 0 ? '#3f8a2a' : (x / 5) % 3 === 1 ? '#2f7a22' : '#5aa236';
-          ctx.lineWidth = 2.6;
-          ctx.beginPath();
-          ctx.moveTo(x, h / 2);
-          ctx.lineTo(x + 9, h / 2 + s * len);
-          ctx.stroke();
-        }
-      }
-    },
-    false,
-  );
-}
-
-/** A soft white cloud on transparent. */
-function cloudTexture(seed) {
-  return canvasTexture(
-    256,
-    128,
-    (ctx, w, h) => {
-      const rand = seeded(seed);
-      for (let i = 0; i < 16; i++) {
-        const x = w * (0.2 + rand() * 0.6);
-        const y = h * (0.45 + rand() * 0.25);
-        const r = 18 + rand() * 30;
-        const g = ctx.createRadialGradient(x, y, 0, x, y, r);
-        g.addColorStop(0, 'rgba(255,255,255,0.95)');
-        g.addColorStop(1, 'rgba(255,255,255,0)');
-        ctx.fillStyle = g;
-        ctx.beginPath();
-        ctx.arc(x, y, r, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    },
-    false,
-  );
-}
-
-/** Neighbours' walls: rows of windows on a wall colour. */
-function facadeTexture(color) {
-  return canvasTexture(64, 64, (ctx, w) => {
-    ctx.fillStyle = color;
-    ctx.fillRect(0, 0, w, w);
-    ctx.fillStyle = '#3c5568';
-    ctx.fillRect(14, 16, 36, 30);
-    ctx.fillStyle = 'rgba(255,255,255,0.7)';
-    ctx.fillRect(10, 12, 44, 4);
-    ctx.fillStyle = '#2b2f33';
-    for (let x = 18; x < 50; x += 7) ctx.fillRect(x, 16, 1.5, 30);
-  });
-}
-
-/** A run of pipe through points, with a fitting at every bend. */
-function pipeRun(points, mat, fitMat, r = PIPE_R) {
-  const g = new THREE.Group();
-  const up = new THREE.Vector3(0, 1, 0);
-  for (let i = 0; i < points.length - 1; i++) {
-    const a = points[i];
-    const b = points[i + 1];
-    const len = a.distanceTo(b);
-    if (len < 1e-4) continue;
-    const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, len, 16), mat);
-    m.position.copy(a).add(b).multiplyScalar(0.5);
-    m.quaternion.setFromUnitVectors(up, b.clone().sub(a).normalize());
-    g.add(m);
-  }
-  for (let i = 1; i < points.length - 1; i++) {
-    const f = new THREE.Mesh(new THREE.SphereGeometry(r * 1.3, 16, 12), fitMat);
-    f.position.copy(points[i]);
-    g.add(f);
-  }
-  return g;
-}
+const WIRE_Y = 2.5; // the service wire along the top of the wall
+const METER = new THREE.Vector3(3.0, 1.92, 0); // the meter box's centre on the wall
+const BOARD = new THREE.Vector3(1.15, 1.32, 0); // the pump switch board's centre
+const JUNCTION_Y = 0.62; // the conduit's run along the bottom of the wall, over the plinth band
 
 /**
  * @param {{ pumps: { small: any, big: any }, tanks: { small: any, big: any } }} parts placed pumps and tanks
@@ -255,11 +51,21 @@ function pipeRun(points, mat, fitMat, r = PIPE_R) {
 export function createScene({ pumps, tanks }) {
   const root = new THREE.Group();
   root.name = 'HouseAndCourtyard';
-  const decor = new THREE.Group(); // far things: not exported
-  decor.name = 'Surroundings';
-  decor.userData.noExport = true;
+  const decor = createSurroundings(); // far things and props: not exported
+  const near = new THREE.Group(); // props by the house: not exported either
+  near.name = 'Props';
+  near.userData.noExport = true;
 
-  // ── the ground: the brick courtyard, grass beyond ─────────────────────────
+  const white = new THREE.MeshStandardMaterial({ color: '#f5f2ea', roughness: 0.82 });
+  const offWhite = new THREE.MeshStandardMaterial({ color: '#e7e1d4', roughness: 0.88 });
+  const iron = new THREE.MeshStandardMaterial({ color: '#2d3136', metalness: 0.55, roughness: 0.45 });
+  const teak = new THREE.MeshStandardMaterial({ color: '#5e321b', roughness: 0.6 });
+  const greyPvc = new THREE.MeshStandardMaterial({ color: '#8d969d', roughness: 0.5 });
+  const black = new THREE.MeshStandardMaterial({ color: '#1d1f22', roughness: 0.55 });
+  const brass = new THREE.MeshStandardMaterial({ color: '#c99a3c', metalness: 0.85, roughness: 0.3 });
+  const steel = new THREE.MeshStandardMaterial({ color: '#c3c9ce', metalness: 0.85, roughness: 0.28 });
+
+  // ── the ground: the brick courtyard, a cement apron along the wall ───────────
   const bricks = brickTexture();
   bricks.repeat.set(16 / 1.2, 9 / 1.2);
   const yard = new THREE.Mesh(new THREE.PlaneGeometry(16, 9), new THREE.MeshStandardMaterial({ map: bricks, roughness: 0.9 }));
@@ -267,18 +73,48 @@ export function createScene({ pumps, tanks }) {
   yard.position.set(0, 0, 4.5);
   yard.name = 'Courtyard';
   root.add(yard);
-  const grass = grassTexture();
-  grass.repeat.set(60, 40);
-  const field = new THREE.Mesh(new THREE.PlaneGeometry(240, 160), new THREE.MeshStandardMaterial({ map: grass, roughness: 1 }));
-  field.rotation.x = -Math.PI / 2;
-  field.position.set(0, -0.01, -20);
-  decor.add(field);
-  // a kerb round the courtyard
-  const kerbMat = new THREE.MeshStandardMaterial({ color: '#c9bfae', roughness: 0.9 });
-  for (const x of [-8.05, 8.05]) {
-    const k = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.06, 9), kerbMat);
-    k.position.set(x, 0.03, 4.5);
-    decor.add(k);
+  const apronTex = cementTexture('#c4bdb1', 4);
+  apronTex.repeat.set(14.4 / 1.5, 1);
+  const apron = new THREE.Mesh(new THREE.BoxGeometry(14.4, 0.03, 0.42), new THREE.MeshStandardMaterial({ map: apronTex, roughness: 0.9 }));
+  apron.position.set(0, 0.015, 0.21);
+  apron.name = 'Apron';
+  root.add(apron);
+  // wet patches round the hatch and the tubewell, darker bricks
+  const wetTex = canvasTexture(
+    128,
+    128,
+    (ctx, w) => {
+      const rand = seeded(71);
+      for (let i = 0; i < 9; i++) {
+        const x = 30 + rand() * 68;
+        const y = 30 + rand() * 68;
+        const r = 18 + rand() * 26;
+        const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+        g.addColorStop(0, 'rgba(40,18,8,0.5)');
+        g.addColorStop(1, 'rgba(40,18,8,0)');
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, w, w);
+      }
+    },
+    false,
+  );
+  const wetMat = new THREE.MeshStandardMaterial({
+    map: wetTex,
+    transparent: true,
+    depthWrite: false,
+    roughness: 0.25,
+    polygonOffset: true,
+    polygonOffsetFactor: -2,
+  });
+  for (const [x, z, s] of [
+    [0.15, 1.15, 1.3],
+    [-0.9, 0.95, 0.7],
+    [5.0, 2.7, 1.6],
+  ]) {
+    const wet = new THREE.Mesh(new THREE.PlaneGeometry(s, s * 0.8), wetMat);
+    wet.rotation.x = -Math.PI / 2;
+    wet.position.set(x, 0.003, z);
+    near.add(wet);
   }
 
   // ── the house ─────────────────────────────────────────────────────────────
@@ -286,62 +122,148 @@ export function createScene({ pumps, tanks }) {
   house.name = 'House';
   root.add(house);
   const W = HOUSE.x1 - HOUSE.x0;
-  const wallTex = wallTexture('#f2c463');
-  wallTex.repeat.set(W / 3, ROOF / 3);
-  const wallMat = new THREE.MeshStandardMaterial({ map: wallTex, roughness: 0.88 });
-  const sideTex = wallTexture('#e6b356');
-  sideTex.repeat.set(HOUSE.depth / 3, ROOF / 3);
+  const wallH = ROOF - 0.16;
+  const front = frontWallTexture({ x0: HOUSE.x0, x1: HOUSE.x1, height: wallH, windows: WINDOWS, door: LAYOUT.door, spouts: [-5.5, 5.5] });
+  const frontMat = new THREE.MeshStandardMaterial({ map: front, roughness: 0.88 });
+  const sideTex = plasterTexture('#e6b356', 19);
+  sideTex.repeat.set(HOUSE.depth / 3, wallH / 3);
   const sideMat = new THREE.MeshStandardMaterial({ map: sideTex, roughness: 0.9 });
-  const white = new THREE.MeshStandardMaterial({ color: '#f7f4ec', roughness: 0.8 });
-  const plinthMat = new THREE.MeshStandardMaterial({ color: '#8b3a2e', roughness: 0.85 });
-  const block = new THREE.Mesh(new THREE.BoxGeometry(W, ROOF - 0.16, HOUSE.depth), [sideMat, sideMat, white, white, wallMat, wallMat]);
-  block.position.set((HOUSE.x0 + HOUSE.x1) / 2, (ROOF - 0.16) / 2, -HOUSE.depth / 2);
+  const block = new THREE.Mesh(new THREE.BoxGeometry(W, wallH, HOUSE.depth), [sideMat, sideMat, white, white, frontMat, sideMat]);
+  block.position.set((HOUSE.x0 + HOUSE.x1) / 2, wallH / 2, -HOUSE.depth / 2);
   house.add(block);
+  const plinthMat = new THREE.MeshStandardMaterial({ map: plasterTexture('#8b3a2e', 27), roughness: 0.85 });
   const plinthBand = new THREE.Mesh(new THREE.BoxGeometry(W + 0.06, 0.42, 0.06), plinthMat);
   plinthBand.position.set(block.position.x, 0.21, 0.03);
   house.add(plinthBand);
-  // the roof slab's edge and the parapet with its railing
-  const slab = new THREE.Mesh(new THREE.BoxGeometry(W + 0.24, 0.18, HOUSE.depth + 0.24), white);
+  const plinthLip = new THREE.Mesh(new THREE.BoxGeometry(W + 0.08, 0.03, 0.08), offWhite);
+  plinthLip.position.set(block.position.x, 0.435, 0.04);
+  house.add(plinthLip);
+  // the roof slab (its top in cement), the parapet and its cap
+  const roofTex = cementTexture('#c9c2b5', 8);
+  roofTex.repeat.set((W + 0.24) / 2.5, (HOUSE.depth + 0.24) / 2.5);
+  const roofTop = new THREE.MeshStandardMaterial({ map: roofTex, roughness: 0.92 });
+  const slab = new THREE.Mesh(new THREE.BoxGeometry(W + 0.24, 0.18, HOUSE.depth + 0.24), [white, white, roofTop, white, white, white]);
   slab.position.set(block.position.x, ROOF - 0.09, -HOUSE.depth / 2);
   house.add(slab);
-  // a low parapet only (no railing), so the tanks on the roof's front edge show whole
-  const parapet = new THREE.Mesh(new THREE.BoxGeometry(W + 0.24, 0.16, 0.16), wallMat);
-  parapet.position.set(block.position.x, ROOF + 0.08, 0.04);
-  house.add(parapet);
-  const cap = new THREE.Mesh(new THREE.BoxGeometry(W + 0.3, 0.04, 0.22), white);
-  cap.position.set(block.position.x, ROOF + 0.18, 0.04);
-  house.add(cap);
-  const iron = new THREE.MeshStandardMaterial({ color: '#2c4f45', metalness: 0.5, roughness: 0.45 });
+  const slabDrip = new THREE.Mesh(new THREE.BoxGeometry(W + 0.28, 0.025, 0.03), offWhite);
+  slabDrip.position.set(block.position.x, ROOF - 0.19, 0.12);
+  house.add(slabDrip);
+  // a low parapet only (no railing), so the tanks on the roof's front edge show whole; round the whole roof
+  const parTex = plasterTexture('#efc062', 33);
+  parTex.repeat.set(W / 3, 0.1);
+  const parMat = new THREE.MeshStandardMaterial({ map: parTex, roughness: 0.88 });
+  const par = parts();
+  const capP = parts();
+  const zc = -HOUSE.depth / 2;
+  for (const [w, d, x, z] of [
+    [W + 0.24, 0.16, block.position.x, 0.04],
+    [W + 0.24, 0.16, block.position.x, -HOUSE.depth - 0.04],
+    [0.16, HOUSE.depth, HOUSE.x0 - 0.04, zc],
+    [0.16, HOUSE.depth, HOUSE.x1 + 0.04, zc],
+  ]) {
+    par.add(new THREE.BoxGeometry(w, 0.16, d), x, ROOF + 0.08, z);
+    capP.add(new THREE.BoxGeometry(w + 0.06, 0.04, d + 0.06), x, ROOF + 0.18, z);
+  }
+  house.add(par.mesh(parMat, 'Parapet'), capP.mesh(white, 'ParapetCap'));
 
-  // windows (with a sunshade) and the door
-  const winMat = new THREE.MeshStandardMaterial({ map: windowTexture(), roughness: 0.4, metalness: 0.1 });
-  for (const wx of [0, 4.2, -6.2]) {
-    const win = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 1.2), winMat);
-    win.position.set(wx, 1.45, 0.012);
+  // rain spouts through the parapet, downpipes at the corners
+  const rain = parts();
+  for (const x of [-5.5, 5.5]) rain.push(rod(new THREE.Vector3(x, ROOF + 0.04, -0.05), new THREE.Vector3(x, ROOF - 0.02, 0.32), 0.035, 12));
+  for (const x of [HOUSE.x0 + 0.12, HOUSE.x1 - 0.12]) {
+    rain.push(rod(new THREE.Vector3(x, ROOF + 0.05, 0.1), new THREE.Vector3(x, 0.18, 0.1), 0.04, 14));
+    rain.push(rod(new THREE.Vector3(x, 0.18, 0.1), new THREE.Vector3(x, 0.06, 0.28), 0.04, 14));
+    for (let y = 0.6; y < ROOF; y += 0.7) rain.add(new THREE.TorusGeometry(0.045, 0.008, 6, 16), x, y, 0.1, Math.PI / 2);
+  }
+  house.add(rain.mesh(greyPvc, 'RainPipes'));
+
+  // ── windows: casements behind glass, an iron grill, a surround, a sill and a sunshade ──
+  WINDOWS.forEach((wx, i) => {
+    const win = new THREE.Mesh(
+      new THREE.PlaneGeometry(1.2, 1.2),
+      new THREE.MeshStandardMaterial({ map: windowTexture(i), roughness: 0.35, metalness: 0.1 }),
+    );
+    win.position.set(wx, 1.45, 0.006);
     house.add(win);
-    const frame = new THREE.Mesh(new THREE.BoxGeometry(1.36, 0.08, 0.1), white);
-    frame.position.set(wx, 0.82, 0.05);
-    house.add(frame);
-    const shade = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.07, 0.42), white);
-    shade.position.set(wx, 2.24, 0.2);
-    shade.rotation.x = 0.08;
-    house.add(shade);
-  }
+    const surround = parts();
+    surround.add(new THREE.BoxGeometry(1.44, 0.1, 0.05), wx, 2.1, 0.025); // the lintel band
+    for (const sx of [-1, 1]) surround.add(new THREE.BoxGeometry(0.1, 1.3, 0.05), wx + sx * 0.67, 1.45, 0.025);
+    surround.add(new THREE.BoxGeometry(1.56, 0.07, 0.17), wx, 0.8, 0.075); // the sill
+    surround.add(new THREE.BoxGeometry(1.6, 0.07, 0.44), wx, 2.25, 0.22, 0.08); // the sunshade
+    surround.add(new THREE.BoxGeometry(1.6, 0.11, 0.03), wx, 2.2, 0.43); // its front lip
+    house.add(surround.mesh(white, 'WindowSurround'));
+    // the grill: flat bars, two rails, a row of arches along the top rail
+    const grill = parts();
+    const gz = 0.05;
+    for (const [w, h, x, y] of [
+      [1.24, 0.03, 0, 0.6],
+      [1.24, 0.03, 0, -0.6],
+      [0.03, 1.24, -0.6, 0],
+      [0.03, 1.24, 0.6, 0],
+      [1.2, 0.02, 0, 0.3],
+      [1.2, 0.02, 0, -0.25],
+    ])
+      grill.add(new THREE.BoxGeometry(w, h, 0.016), wx + x, 1.45 + y, gz);
+    for (let x = -0.5; x <= 0.51; x += 0.1) grill.add(new THREE.BoxGeometry(0.014, 1.2, 0.012), wx + x, 1.45, gz);
+    for (let k = 0; k < 6; k++) grill.add(new THREE.TorusGeometry(0.1, 0.007, 6, 18, Math.PI), wx - 0.5 + k * 0.2, 1.45 + 0.31, gz);
+    house.add(grill.mesh(iron, 'WindowGrill'));
+  });
+
+  // ── the door: teak leaves in a teak frame, a plaster surround, steps, a mat, sandals ──
   const { door } = LAYOUT;
-  const doorMesh = new THREE.Mesh(new THREE.PlaneGeometry(door.w, door.h), new THREE.MeshStandardMaterial({ map: doorTexture(), roughness: 0.7 }));
-  doorMesh.position.set(door.x, door.h / 2 + 0.05, 0.015);
+  const doorMesh = new THREE.Mesh(new THREE.PlaneGeometry(door.w, door.h), new THREE.MeshStandardMaterial({ map: doorTexture(), roughness: 0.6 }));
+  doorMesh.position.set(door.x, door.h / 2 + 0.1, 0.012);
   house.add(doorMesh);
-  const doorFrame = new THREE.Mesh(new THREE.BoxGeometry(door.w + 0.16, 0.1, 0.1), white);
-  doorFrame.position.set(door.x, door.h + 0.1, 0.05);
-  house.add(doorFrame);
-  for (const sx of [-1, 1]) {
-    const jamb = new THREE.Mesh(new THREE.BoxGeometry(0.08, door.h + 0.05, 0.1), white);
-    jamb.position.set(door.x + sx * (door.w / 2 + 0.04), door.h / 2 + 0.05, 0.05);
-    house.add(jamb);
-  }
-  const step = new THREE.Mesh(new THREE.BoxGeometry(door.w + 0.5, 0.1, 0.5), new THREE.MeshStandardMaterial({ color: '#b7aea0', roughness: 0.9 }));
-  step.position.set(door.x, 0.05, 0.25);
-  house.add(step);
+  const frame = parts();
+  frame.add(new THREE.BoxGeometry(door.w + 0.16, 0.08, 0.07), door.x, door.h + 0.14, 0.035);
+  for (const sx of [-1, 1]) frame.add(new THREE.BoxGeometry(0.08, door.h + 0.08, 0.07), door.x + sx * (door.w / 2 + 0.04), door.h / 2 + 0.1, 0.035);
+  house.add(frame.mesh(teak, 'DoorFrame'));
+  const dSurround = parts();
+  dSurround.add(new THREE.BoxGeometry(door.w + 0.4, 0.1, 0.04), door.x, door.h + 0.23, 0.02);
+  for (const sx of [-1, 1]) dSurround.add(new THREE.BoxGeometry(0.12, door.h + 0.2, 0.04), door.x + sx * (door.w / 2 + 0.14), door.h / 2 + 0.1, 0.02);
+  house.add(dSurround.mesh(white, 'DoorSurround'));
+  const stone = new THREE.MeshStandardMaterial({ map: cementTexture('#bdb4a6', 12), roughness: 0.55 });
+  const steps = parts();
+  steps.add(new THREE.BoxGeometry(door.w + 0.6, 0.1, 0.62), door.x, 0.05, 0.31);
+  steps.add(new THREE.BoxGeometry(door.w + 0.3, 0.1, 0.34), door.x, 0.15, 0.17);
+  const stepMesh = steps.mesh(stone, 'DoorSteps');
+  house.add(stepMesh);
+  const matTex = canvasTexture(
+    64,
+    32,
+    (ctx, w, h) => {
+      for (let x = 0; x < w; x += 4) {
+        ctx.fillStyle = (x / 4) % 4 < 2 ? '#c49a58' : (x / 4) % 8 < 4 ? '#8a5a2b' : '#b33a2a';
+        ctx.fillRect(x, 0, 4, h);
+      }
+    },
+    false,
+  );
+  const doormat = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.012, 0.42), new THREE.MeshStandardMaterial({ map: matTex, roughness: 1 }));
+  doormat.position.set(door.x, 0.106, 0.43);
+  near.add(doormat);
+  const sandals = parts();
+  for (const [x, z, r] of [
+    [-0.28, 0.5, 0.2],
+    [-0.16, 0.52, -0.1],
+    [0.22, 0.46, 0.3],
+    [0.33, 0.5, 0.05],
+  ])
+    sandals.add(new THREE.BoxGeometry(0.1, 0.02, 0.25), door.x + x, 0.11 + 0.01, z, 0, r);
+  near.add(sandals.mesh(new THREE.MeshStandardMaterial({ color: '#4b2e2a', roughness: 0.8 }), 'Sandals'));
+  // a brass nameplate and the bell switch beside the door
+  const plate = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.11, 0.012), brass);
+  plate.position.set(door.x + 0.82, 1.62, 0.006);
+  house.add(plate);
+  const bell = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.07, 0.02), white);
+  bell.position.set(door.x + 0.72, 1.32, 0.01);
+  house.add(bell);
+  const bellBtn = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.012, 0.012, 0.01, 12),
+    new THREE.MeshStandardMaterial({ color: '#c92a2a', roughness: 0.4 }),
+  );
+  bellBtn.rotation.x = Math.PI / 2;
+  bellBtn.position.set(door.x + 0.72, 1.32, 0.022);
+  house.add(bellBtn);
 
   // ── the bulb over the door ────────────────────────────────────────────────
   const bulbGroup = new THREE.Group();
@@ -352,13 +274,10 @@ export function createScene({ pumps, tanks }) {
   bracket.rotation.x = Math.PI / 2;
   bracket.position.set(0, 0.12, -0.1);
   bulbGroup.add(bracket);
-  const holder = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.022, 0.026, 0.07, 16),
-    new THREE.MeshStandardMaterial({ color: '#1e1f22', roughness: 0.5 }),
-  );
+  const holder = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.026, 0.07, 16), black);
   holder.position.set(0, 0.085, 0);
   bulbGroup.add(holder);
-  const shadeMat = new THREE.MeshStandardMaterial({ color: '#2f7d4f', metalness: 0.4, roughness: 0.4, side: THREE.DoubleSide });
+  const shadeMat = new THREE.MeshStandardMaterial({ color: '#f1efe8', metalness: 0.2, roughness: 0.35, side: THREE.DoubleSide });
   const lampShade = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.08, 28, 1, true), shadeMat);
   lampShade.position.set(0, 0.1, 0);
   bulbGroup.add(lampShade);
@@ -366,7 +285,6 @@ export function createScene({ pumps, tanks }) {
   const glass = new THREE.MeshStandardMaterial({ color: '#e9edf1', roughness: 0.15, transparent: true, opacity: 0.9, emissive: '#000000' });
   const bulbMesh = new THREE.Mesh(new THREE.SphereGeometry(0.055, 24, 18), glass);
   bulbMesh.scale.y = 1.18;
-  bulbMesh.position.set(0, 0.0, 0);
   bulbGroup.add(bulbMesh);
   const glow = new THREE.Sprite(
     new THREE.SpriteMaterial({
@@ -399,50 +317,25 @@ export function createScene({ pumps, tanks }) {
   bulbGroup.add(bulbHit);
   function setBulb(on) {
     glass.emissive.set(on ? '#ffd27a' : glassOff.emissive);
-    glass.emissiveIntensity = on ? 2.2 : 0;
+    glass.emissiveIntensity = on ? 2.2 : 1; // (1 with a black emissive: no glow, and a clean export)
     glass.color.set(on ? '#fff6dc' : glassOff.color);
     glow.visible = on;
     bulbLight.intensity = on ? 7 : 0;
   }
 
-  // ── flower pots by the door, the hatch, the plumbing ───────────────────────
-  const potMat = new THREE.MeshStandardMaterial({ color: '#b5522f', roughness: 0.85 });
-  const leafMat = new THREE.MeshStandardMaterial({ color: '#3d8b2f', roughness: 0.8 });
-  const flowerMats = ['#e8384f', '#ffb000', '#f06595'].map((c) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.6 }));
-  const rand = seeded(23);
-  for (const [px, pz, s] of [
-    [-5.05, 0.45, 1],
-    [-3.05, 0.5, 0.85],
-    [2.75, 0.5, 0.9],
-  ]) {
-    const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.17 * s, 0.12 * s, 0.28 * s, 18), potMat);
-    pot.position.set(px, 0.14 * s, pz);
-    house.add(pot);
-    for (let i = 0; i < 6; i++) {
-      const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.1 * s, 10, 8), leafMat);
-      leaf.position.set(px + (rand() - 0.5) * 0.2 * s, 0.34 * s + rand() * 0.14 * s, pz + (rand() - 0.5) * 0.2 * s);
-      house.add(leaf);
-    }
-    for (let i = 0; i < 4; i++) {
-      const fl = new THREE.Mesh(new THREE.SphereGeometry(0.035 * s, 8, 6), flowerMats[i % 3]);
-      fl.position.set(px + (rand() - 0.5) * 0.24 * s, 0.42 * s + rand() * 0.12 * s, pz + 0.06 + (rand() - 0.3) * 0.18 * s);
-      house.add(fl);
-    }
-  }
-
+  // ── the hatch of the underground tank ─────────────────────────────────────
   const { hatch } = LAYOUT;
-  const concrete = new THREE.MeshStandardMaterial({ color: '#bdb5a8', roughness: 0.9 });
+  const concrete = new THREE.MeshStandardMaterial({ map: cementTexture('#bdb5a8', 21), roughness: 0.9 });
   const rimW = 0.09;
+  const rim = parts();
   for (const [w, d, x, z] of [
     [hatch.w + 2 * rimW, rimW, 0, -(hatch.d + rimW) / 2],
     [hatch.w + 2 * rimW, rimW, 0, (hatch.d + rimW) / 2],
     [rimW, hatch.d, -(hatch.w + rimW) / 2, 0],
     [rimW, hatch.d, (hatch.w + rimW) / 2, 0],
-  ]) {
-    const rim = new THREE.Mesh(new THREE.BoxGeometry(w, 0.07, d), concrete);
-    rim.position.set(hatch.x + x, 0.035, LAYOUT.pumpZ + z);
-    root.add(rim);
-  }
+  ])
+    rim.add(new THREE.BoxGeometry(w, 0.07, d), hatch.x + x, 0.035, LAYOUT.pumpZ + z);
+  root.add(rim.mesh(concrete, 'HatchRim'));
   const pit = new THREE.Mesh(new THREE.PlaneGeometry(hatch.w, hatch.d), new THREE.MeshStandardMaterial({ color: '#173c5a', roughness: 0.2 }));
   pit.rotation.x = -Math.PI / 2;
   pit.position.set(hatch.x, 0.004, LAYOUT.pumpZ);
@@ -454,18 +347,29 @@ export function createScene({ pumps, tanks }) {
   shine.rotation.x = -Math.PI / 2;
   shine.position.set(hatch.x + 0.05, 0.006, LAYOUT.pumpZ + 0.04);
   root.add(shine);
-  const lid = new THREE.Mesh(
-    new THREE.BoxGeometry(hatch.w + 0.1, 0.03, hatch.d + 0.1),
-    new THREE.MeshStandardMaterial({ color: '#59616a', metalness: 0.6, roughness: 0.45 }),
-  );
-  lid.position.set(hatch.x, 0.07 + ((hatch.d + 0.1) / 2) * Math.sin(1.25) - 0.01, LAYOUT.pumpZ - hatch.d / 2 - rimW - 0.02 - Math.cos(1.25) * 0.05);
+  const lidMat = new THREE.MeshStandardMaterial({ color: '#59616a', metalness: 0.6, roughness: 0.45 });
+  const lid = new THREE.Group();
+  lid.position.set(hatch.x, 0.075, LAYOUT.pumpZ - hatch.d / 2 - rimW - 0.01);
   lid.rotation.x = -1.25;
+  const lidPlate = new THREE.Mesh(new THREE.BoxGeometry(hatch.w + 0.1, 0.03, hatch.d + 0.1), lidMat);
+  lidPlate.position.z = (hatch.d + 0.1) / 2;
+  lid.add(lidPlate);
+  const lidRibs = parts();
+  for (let k = -2; k <= 2; k++) lidRibs.add(new THREE.BoxGeometry(0.02, 0.012, hatch.d), k * 0.15, 0.02, (hatch.d + 0.1) / 2);
+  lidRibs.add(new THREE.TorusGeometry(0.04, 0.008, 6, 14, Math.PI), 0, 0.016, hatch.d + 0.02, Math.PI / 2);
+  lid.add(lidRibs.mesh(lidMat, 'LidRibs'));
   root.add(lid);
 
+  // ── the plumbing: suction from the hatch, delivery up the wall into each tank ──
   const pvc = new THREE.MeshStandardMaterial({ color: '#eef0f1', roughness: 0.42 });
   const fitting = new THREE.MeshStandardMaterial({ color: '#d9dcde', roughness: 0.5 });
   const clampMat = new THREE.MeshStandardMaterial({ color: '#9aa2a8', metalness: 0.7, roughness: 0.35 });
+  const valveWheel = new THREE.MeshStandardMaterial({ color: '#25282c', metalness: 0.3, roughness: 0.5 });
   const PIPE_TOP = ROOF + TANK.FLOOR + TANK.BODY + 0.3; // over the tank's dome
+  const clamps = parts();
+  const valves = parts();
+  const wheels = parts();
+  const posts = parts();
   for (const id of /** @type {const} */ (['small', 'big'])) {
     const pump = pumps[id];
     const tank = tanks[id];
@@ -491,144 +395,374 @@ export function createScene({ pumps, tanks }) {
       ],
       pvc,
       fitting,
+      PIPE_R,
     );
     delivery.name = `DeliveryPipe_${id}`;
     root.add(delivery);
-    // a small brick post under the run across the courtyard, with a clamp
+    // a brass gate valve on the riser, its wheel facing out
+    const vy = out.y + 0.6;
+    valves.add(new THREE.CylinderGeometry(0.042, 0.042, 0.12, 16), xs, vy, pipeZ);
+    valves.add(new THREE.CylinderGeometry(0.024, 0.03, 0.08, 12), xs, vy, pipeZ + 0.06, Math.PI / 2);
+    valves.add(new THREE.CylinderGeometry(0.006, 0.006, 0.06, 8), xs, vy, pipeZ + 0.12, Math.PI / 2);
+    wheels.add(new THREE.TorusGeometry(0.045, 0.008, 8, 20), xs, vy, pipeZ + 0.14);
+    wheels.add(new THREE.BoxGeometry(0.09, 0.008, 0.006), xs, vy, pipeZ + 0.14);
+    wheels.add(new THREE.BoxGeometry(0.008, 0.09, 0.006), xs, vy, pipeZ + 0.14);
+    // a small post under the run across the courtyard
     const postZ = (out.z + pipeZ) / 2;
-    const post = new THREE.Mesh(new THREE.BoxGeometry(0.14, out.y + 0.16 - PIPE_R, 0.14), concrete);
-    post.position.set(x, (out.y + 0.16 - PIPE_R) / 2, postZ);
-    root.add(post);
+    posts.add(new THREE.BoxGeometry(0.14, out.y + 0.16 - PIPE_R, 0.14), x, (out.y + 0.16 - PIPE_R) / 2, postZ);
     for (let y = 0.85; y < ROOF; y += 0.8) {
-      const c = new THREE.Mesh(new THREE.TorusGeometry(PIPE_R + 0.006, 0.006, 6, 16), clampMat);
-      c.rotation.x = Math.PI / 2;
-      c.position.set(xs, y, pipeZ);
-      root.add(c);
+      if (Math.abs(y - vy) < 0.15) continue;
+      clamps.add(new THREE.TorusGeometry(PIPE_R + 0.006, 0.006, 6, 16), xs, y, pipeZ, Math.PI / 2);
+      clamps.add(new THREE.BoxGeometry(0.12, 0.02, 0.012), xs, y, 0.012);
     }
     // suction: from the pump's front port to the hatch and down into the water
     const toward = Math.sign(hatch.x - inl.x);
     const sx = hatch.x - toward * 0.17;
-    const suction = pipeRun([inl, new THREE.Vector3(sx, inl.y, inl.z), new THREE.Vector3(sx, -0.25, inl.z)], pvc, fitting);
+    const suction = pipeRun([inl, new THREE.Vector3(sx, inl.y, inl.z), new THREE.Vector3(sx, -0.25, inl.z)], pvc, fitting, PIPE_R);
     suction.name = `SuctionPipe_${id}`;
     root.add(suction);
   }
+  root.add(
+    clamps.mesh(clampMat, 'PipeClamps'),
+    valves.mesh(brass, 'GateValves'),
+    wheels.mesh(valveWheel, 'ValveWheels'),
+    posts.mesh(concrete, 'PipePosts'),
+  );
 
-  // ── the palm and the banana plant ─────────────────────────────────────────
-  const trunkTex = canvasTexture(64, 256, (ctx, w, h) => {
-    ctx.fillStyle = '#8a6c4a';
-    ctx.fillRect(0, 0, w, h);
-    for (let y = 0; y < h; y += 10) {
-      ctx.fillStyle = 'rgba(60,40,20,0.45)';
-      ctx.fillRect(0, y, w, 3);
-      ctx.fillStyle = 'rgba(200,170,120,0.25)';
-      ctx.fillRect(0, y + 3, w, 2);
+  // ── the electrics: service wire → meter → switch board → each pump ─────────
+  const elec = new THREE.Group();
+  elec.name = 'Electrics';
+  root.add(elec);
+  const boxMat = new THREE.MeshStandardMaterial({ color: '#dfe2e4', roughness: 0.6 });
+  const conduit = parts();
+  const cables = parts();
+  const clips = parts();
+  // the service wire from the lane comes in at the right corner and runs along the top of the wall to the meter
+  const corner = new THREE.Vector3(HOUSE.x1 + 0.02, WIRE_Y, 0.02);
+  const drop = new THREE.Mesh(
+    cable([new THREE.Vector3(10.6, 7.75, -1.2), new THREE.Vector3(9.4, 4.7, -0.6), new THREE.Vector3(8, 3.2, -0.15), corner], 0.009),
+    black,
+  );
+  drop.name = 'ServiceDrop'; // from the pole: in the picture, not in the model
+  near.add(drop);
+  cables.push(
+    cable(
+      [
+        corner,
+        new THREE.Vector3(METER.x + 0.6, WIRE_Y, 0.02),
+        new THREE.Vector3(METER.x + 0.12, WIRE_Y - 0.03, 0.02),
+        new THREE.Vector3(METER.x + 0.08, METER.y + 0.26, 0.03),
+      ],
+      0.008,
+    ),
+  );
+  for (let x = METER.x + 0.5; x < HOUSE.x1; x += 0.55) clips.add(new THREE.BoxGeometry(0.03, 0.03, 0.02), x, WIRE_Y, 0.02);
+  // the meter: a grey box with a window on the dial and a main switch below
+  const meterBox = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.34, 0.11), boxMat);
+  meterBox.position.set(METER.x, METER.y, 0.055);
+  elec.add(meterBox);
+  const meterFace = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.17, 0.12),
+    new THREE.MeshStandardMaterial({
+      map: canvasTexture(
+        64,
+        48,
+        (ctx, w, h) => {
+          ctx.fillStyle = '#1b2a33';
+          ctx.fillRect(0, 0, w, h);
+          ctx.fillStyle = '#9fe3c9';
+          ctx.fillRect(8, 10, w - 16, 14);
+          ctx.fillStyle = '#e03131';
+          ctx.fillRect(10, 32, 6, 6);
+          ctx.fillStyle = '#c1c7cd';
+          for (let i = 0; i < 6; i++) ctx.fillRect(22 + i * 6, 32, 4, 6);
+        },
+        false,
+      ),
+      roughness: 0.2,
+    }),
+  );
+  meterFace.position.set(METER.x, METER.y + 0.06, 0.111);
+  elec.add(meterFace);
+  const mainSw = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.12, 0.08), black);
+  mainSw.position.set(METER.x, METER.y - 0.3, 0.04);
+  elec.add(mainSw);
+  conduit.push(rod(new THREE.Vector3(METER.x, METER.y - 0.17, 0.03), new THREE.Vector3(METER.x, METER.y - 0.24, 0.03), 0.012, 8));
+  // conduit from the main switch to the pump switch board (behind the big pump's riser)
+  const run = [
+    new THREE.Vector3(METER.x - 0.07, METER.y - 0.3, 0.02),
+    new THREE.Vector3(BOARD.x, METER.y - 0.3, 0.02),
+    new THREE.Vector3(BOARD.x, BOARD.y + 0.13, 0.02),
+  ];
+  for (let i = 0; i < run.length - 1; i++) conduit.push(rod(run[i], run[i + 1], 0.011, 8));
+  conduit.add(new THREE.SphereGeometry(0.014, 8, 6), BOARD.x, METER.y - 0.3, 0.02);
+  // the pump switch board: a switch and a lamp for each pump (left: small, right: big)
+  const board = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.22, 0.04), new THREE.MeshStandardMaterial({ color: '#f3f1ec', roughness: 0.5 }));
+  board.position.set(BOARD.x, BOARD.y, 0.02);
+  elec.add(board);
+  const rockers = {};
+  const lamps = {};
+  for (const [id, dx] of /** @type {const} */ ([
+    ['small', -0.07],
+    ['big', 0.07],
+  ])) {
+    const plateM = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.1, 0.008), boxMat);
+    plateM.position.set(BOARD.x + dx, BOARD.y - 0.025, 0.044);
+    elec.add(plateM);
+    const rocker = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.05, 0.012), black);
+    rocker.position.set(BOARD.x + dx, BOARD.y - 0.025, 0.052);
+    elec.add(rocker);
+    rockers[id] = rocker;
+    const lampMat = new THREE.MeshStandardMaterial({ color: '#7a2a20', emissive: '#000000', roughness: 0.3 });
+    const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.011, 12, 8), lampMat);
+    lamp.position.set(BOARD.x + dx, BOARD.y + 0.065, 0.044);
+    elec.add(lamp);
+    lamps[id] = lampMat;
+  }
+  // from the board down to the bottom of the wall, along it to each pump, a junction box, a flexible cable
+  conduit.push(rod(new THREE.Vector3(BOARD.x, BOARD.y - 0.11, 0.02), new THREE.Vector3(BOARD.x, JUNCTION_Y, 0.02), 0.011, 8));
+  conduit.push(rod(new THREE.Vector3(pumps.small.root.position.x, JUNCTION_Y, 0.02), new THREE.Vector3(BOARD.x, JUNCTION_Y, 0.02), 0.011, 8));
+  conduit.add(new THREE.SphereGeometry(0.014, 8, 6), BOARD.x, JUNCTION_Y, 0.02);
+  const pvcBlack = new THREE.MeshStandardMaterial({ color: '#202225', roughness: 0.45 });
+  for (const id of /** @type {const} */ (['small', 'big'])) {
+    const pump = pumps[id];
+    const jx = pump.root.position.x + (id === 'big' ? 0.22 : -0.1);
+    const jb = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.05), boxMat);
+    jb.position.set(jx, JUNCTION_Y, 0.03);
+    elec.add(jb);
+    if (id === 'big') conduit.push(rod(new THREE.Vector3(BOARD.x, JUNCTION_Y, 0.02), new THREE.Vector3(jx, JUNCTION_Y, 0.02), 0.011, 8));
+    const g = pump.root.localToWorld(pump.cableIn.clone());
+    const pz = LAYOUT.pumpZ - 0.27;
+    cables.push(
+      cable(
+        [
+          new THREE.Vector3(jx, JUNCTION_Y - 0.05, 0.04),
+          new THREE.Vector3(jx, 0.47, 0.1),
+          new THREE.Vector3(jx + (g.x - jx) * 0.3, 0.05, 0.2),
+          new THREE.Vector3(g.x + 0.05, 0.03, pz),
+          new THREE.Vector3(g.x, 0.12, pz + 0.04),
+          new THREE.Vector3(g.x, g.y, g.z - 0.06),
+          g,
+        ],
+        0.008,
+      ),
+    );
+  }
+  for (let x = METER.x - 0.4; x > BOARD.x + 0.1; x -= 0.45) clips.add(new THREE.BoxGeometry(0.035, 0.035, 0.015), x, METER.y - 0.3, 0.02);
+  elec.add(conduit.mesh(new THREE.MeshStandardMaterial({ color: '#e9ebe8', roughness: 0.5 }), 'Conduit'));
+  elec.add(cables.mesh(pvcBlack, 'Cables'));
+  elec.add(clips.mesh(boxMat, 'Clips'));
+  function switches(id, on) {
+    rockers[id].rotation.x = on ? -0.3 : 0.3;
+    lamps[id].emissive.set(on ? '#ff4d2e' : '#000000');
+    lamps[id].emissiveIntensity = on ? 2 : 1;
+    lamps[id].color.set(on ? '#ff8a6a' : '#7a2a20');
+  }
+  switches('small', false);
+  switches('big', false);
+
+  // ── on the roof: the stair room ─────────────────────────────────────────
+  const stair = new THREE.Group();
+  stair.name = 'StairRoom';
+  stair.userData.noExport = true;
+  stair.position.set(5.9, ROOF, -5.9);
+  const stairTex = plasterTexture('#efc062', 37);
+  stairTex.repeat.set(1, 1);
+  const stairMat = new THREE.MeshStandardMaterial({ map: stairTex, roughness: 0.9 });
+  const room = new THREE.Mesh(new THREE.BoxGeometry(2.4, 2.1, 2.4), stairMat);
+  room.position.y = 1.05;
+  stair.add(room);
+  const sRoof = new THREE.Mesh(new THREE.BoxGeometry(2.7, 0.12, 2.7), white);
+  sRoof.position.y = 2.16;
+  stair.add(sRoof);
+  const sDoor = new THREE.Mesh(
+    new THREE.BoxGeometry(0.8, 1.9, 0.04),
+    new THREE.MeshStandardMaterial({ color: '#9aa6b2', metalness: 0.4, roughness: 0.45 }),
+  );
+  sDoor.position.set(-0.5, 0.9, 1.21);
+  stair.add(sDoor);
+  const sWin = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.5), new THREE.MeshStandardMaterial({ map: windowTexture(4), roughness: 0.35 }));
+  sWin.position.set(0.55, 1.3, 1.205);
+  stair.add(sWin);
+  const dishMat = new THREE.MeshStandardMaterial({ color: '#e9ecef', roughness: 0.4, side: THREE.DoubleSide });
+  const dish = new THREE.Mesh(new THREE.SphereGeometry(0.4, 20, 10, 0, Math.PI * 2, 0, 0.6), dishMat);
+  dish.position.set(0.6, 2.55, 0.2);
+  dish.rotation.x = 1.1;
+  stair.add(dish);
+  const dishPole = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.5, 8), iron);
+  dishPole.position.set(0.6, 2.42, 0.05);
+  stair.add(dishPole);
+  near.add(stair);
+  // a clothes line across the courtyard's right side: from a hook on the wall to a bamboo pole
+  const line = new THREE.Group();
+  line.name = 'ClothesLine';
+  const lx = 7.45;
+  const lz0 = 0.03;
+  const lz1 = 4.4;
+  const ly = 1.9;
+  const linePoles = parts();
+  linePoles.add(new THREE.CylinderGeometry(0.035, 0.045, 2.1, 8), lx, 1.05, lz1);
+  linePoles.push(cable([new THREE.Vector3(lx, ly, lz0), new THREE.Vector3(lx, ly - 0.14, (lz0 + lz1) / 2), new THREE.Vector3(lx, ly, lz1)], 0.006));
+  line.add(linePoles.mesh(new THREE.MeshStandardMaterial({ color: '#b08d57', roughness: 0.8 }), 'LinePole'));
+  const clothes = [
+    ['#c2255c', 1.0, 1.0], // a sari's end
+    ['#f59f00', 0.45, 0.6], // a towel
+    ['#3b5bdb', 0.55, 0.8], // a lungi
+    ['#f8f9fa', 0.45, 0.55], // a shirt
+    ['#e8590c', 0.4, 0.5],
+  ];
+  let cz = lz0 + 0.5;
+  for (const [c, w, h] of clothes) {
+    const cloth = new THREE.Mesh(
+      new THREE.PlaneGeometry(w, h, 4, 1),
+      new THREE.MeshStandardMaterial({ color: c, roughness: 0.85, side: THREE.DoubleSide }),
+    );
+    const t = (cz + w / 2 - lz0) / (lz1 - lz0);
+    cloth.position.set(lx, ly - 0.14 * Math.sin(Math.PI * t) - h / 2 - 0.01, cz + w / 2);
+    cloth.rotation.y = Math.PI / 2 + 0.12 * Math.sin(cz * 3);
+    line.add(cloth);
+    cz += w + 0.06;
+  }
+  near.add(line);
+
+  // ── props in the courtyard: flower pots, the tubewell, a bicycle ──────────
+  const potMat = new THREE.MeshStandardMaterial({ color: '#b5522f', roughness: 0.85 });
+  const leafMat = new THREE.MeshStandardMaterial({ color: '#35562a', roughness: 0.8 });
+  const flowerMats = { marigold: '#f08c00', bougainvillea: '#d6336c', hibiscus: '#e03131', white: '#fff4e6' };
+  const pots = parts();
+  const leaves = parts();
+  /** @type {Record<string, ReturnType<typeof parts>>} */
+  const flowers = Object.fromEntries(Object.keys(flowerMats).map((k) => [k, parts()]));
+  const rand = seeded(23);
+  for (const [px, pz, s, kind] of /** @type {const} */ ([
+    [-5.05, 0.5, 1, 'bougainvillea'],
+    [-3.05, 0.55, 0.85, 'marigold'],
+    [2.75, 0.55, 0.9, 'hibiscus'],
+    [3.35, 0.5, 0.7, 'marigold'],
+    [6.4, 0.55, 1.1, 'bougainvillea'],
+  ])) {
+    pots.add(new THREE.CylinderGeometry(0.17 * s, 0.12 * s, 0.28 * s, 18), px, 0.14 * s, pz);
+    pots.add(new THREE.TorusGeometry(0.17 * s, 0.02 * s, 6, 18), px, 0.28 * s, pz, Math.PI / 2);
+    for (let i = 0; i < 9; i++)
+      leaves.add(
+        new THREE.IcosahedronGeometry(0.07 * s, 0),
+        px + (rand() - 0.5) * 0.26 * s,
+        0.32 * s + rand() * 0.2 * s,
+        pz + (rand() - 0.5) * 0.24 * s,
+        rand(),
+        rand(),
+        0,
+      );
+    for (let i = 0; i < 12; i++) {
+      const k = i % 5 === 4 ? 'white' : kind;
+      flowers[k].add(
+        new THREE.IcosahedronGeometry((kind === 'marigold' ? 0.045 : 0.035) * s, 1),
+        px + (rand() - 0.5) * 0.3 * s,
+        0.38 * s + rand() * 0.18 * s,
+        pz + 0.04 + (rand() - 0.4) * 0.22 * s,
+      );
     }
+  }
+  near.add(pots.mesh(potMat, 'Pots'), leaves.mesh(leafMat, 'PotLeaves'));
+  for (const [k, p] of Object.entries(flowers))
+    if (p.count) near.add(p.mesh(new THREE.MeshStandardMaterial({ color: flowerMats[k], roughness: 0.6 }), `Flowers_${k}`));
+
+  // the tubewell on its platform, a bucket and an aluminium pitcher under the spout
+  const tw = new THREE.Group();
+  tw.name = 'Tubewell';
+  tw.position.set(5.2, 0, 2.6);
+  tw.rotation.y = -0.5;
+  const plat = parts();
+  plat.add(new THREE.BoxGeometry(1.1, 0.1, 0.9), 0, 0.05, 0);
+  plat.add(new THREE.BoxGeometry(1.1, 0.06, 0.06), 0, 0.13, -0.42);
+  plat.add(new THREE.BoxGeometry(0.06, 0.06, 0.9), -0.52, 0.13, 0);
+  plat.add(new THREE.BoxGeometry(0.06, 0.06, 0.9), 0.52, 0.13, 0);
+  tw.add(plat.mesh(concrete, 'Platform'));
+  const castIron = new THREE.MeshStandardMaterial({ color: '#3b4046', metalness: 0.5, roughness: 0.5 });
+  const pumpBody = parts();
+  pumpBody.add(new THREE.CylinderGeometry(0.06, 0.08, 0.5, 16), -0.25, 0.35, -0.2);
+  pumpBody.add(new THREE.CylinderGeometry(0.09, 0.09, 0.3, 16), -0.25, 0.75, -0.2);
+  pumpBody.add(new THREE.CylinderGeometry(0.1, 0.1, 0.04, 16), -0.25, 0.91, -0.2);
+  pumpBody.push(rod(new THREE.Vector3(-0.25, 0.68, -0.15), new THREE.Vector3(-0.25, 0.62, 0.12), 0.03, 10)); // the spout
+  pumpBody.push(rod(new THREE.Vector3(-0.25, 0.93, -0.24), new THREE.Vector3(-0.25, 1.12, -0.85), 0.018, 8)); // the handle
+  tw.add(pumpBody.mesh(castIron, 'TubewellPump'));
+  const bucket = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.15, 0.11, 0.26, 20, 1, true),
+    new THREE.MeshStandardMaterial({ color: '#f2a20c', roughness: 0.5, side: THREE.DoubleSide }),
+  );
+  bucket.position.set(-0.22, 0.23, 0.2);
+  tw.add(bucket);
+  const bucketWater = new THREE.Mesh(new THREE.CircleGeometry(0.14, 20), new THREE.MeshStandardMaterial({ color: '#4b93c9', roughness: 0.1 }));
+  bucketWater.rotation.x = -Math.PI / 2;
+  bucketWater.position.set(-0.22, 0.32, 0.2);
+  tw.add(bucketWater);
+  const pitcherPts = [];
+  for (let i = 0; i <= 12; i++) {
+    const t = i / 12;
+    const r = 0.04 + 0.11 * Math.sin(Math.PI * Math.min(1, t * 1.25)) + (t > 0.85 ? (t - 0.85) * 0.4 : 0);
+    pitcherPts.push(new THREE.Vector2(Math.max(0.03, r), t * 0.32));
+  }
+  const pitcher = new THREE.Mesh(new THREE.LatheGeometry(pitcherPts, 24), steel);
+  pitcher.position.set(0.25, 0.1, 0.05);
+  tw.add(pitcher);
+  near.add(tw);
+
+  // a bicycle leaning on the wall by the left window
+  const bike = new THREE.Group();
+  bike.name = 'Bicycle';
+  bike.position.set(-6.15, 0, 0.42);
+  bike.rotation.z = -0.06;
+  const wheelMat = new THREE.MeshStandardMaterial({
+    map: wheelTexture(),
+    transparent: true,
+    alphaTest: 0.3,
+    side: THREE.DoubleSide,
+    metalness: 0.6,
+    roughness: 0.35,
   });
-  trunkTex.repeat.set(2, 6);
-  const trunkMat = new THREE.MeshStandardMaterial({ map: trunkTex, roughness: 0.95 });
-  function palm(x, z, height, lean, seed) {
-    const g = new THREE.Group();
-    const curve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(0, 0, 0),
-      new THREE.Vector3(lean * 0.25, height * 0.35, 0),
-      new THREE.Vector3(lean * 0.7, height * 0.7, 0.1),
-      new THREE.Vector3(lean, height, 0.15),
-    ]);
-    const trunk = new THREE.Mesh(new THREE.TubeGeometry(curve, 24, 0.13, 10), trunkMat);
-    g.add(trunk);
-    const top = curve.getPoint(1);
-    const frondMat = new THREE.MeshStandardMaterial({
-      map: frondTexture(),
-      transparent: true,
-      alphaTest: 0.35,
-      side: THREE.DoubleSide,
-      roughness: 0.75,
-    });
-    const r = seeded(seed);
-    for (let i = 0; i < 11; i++) {
-      const len = 2.2 + r() * 0.8;
-      const geo = new THREE.PlaneGeometry(len, 0.55, 12, 1);
-      const pos = geo.attributes.position;
-      for (let k = 0; k < pos.count; k++) {
-        const u = (pos.getX(k) + len / 2) / len;
-        pos.setX(k, u * len);
-        pos.setY(k, pos.getY(k));
-        pos.setZ(k, -u * u * 0.9 * len * 0.5);
-      }
-      geo.computeVertexNormals();
-      const f = new THREE.Mesh(geo, frondMat);
-      f.rotation.order = 'YXZ';
-      f.rotation.y = (i / 11) * Math.PI * 2 + r() * 0.3;
-      f.rotation.x = -Math.PI / 2 + 0.25 + r() * 0.3;
-      f.position.copy(top);
-      g.add(f);
-    }
-    const nutMat = new THREE.MeshStandardMaterial({ color: '#5f7a22', roughness: 0.6 });
-    for (let i = 0; i < 5; i++) {
-      const nut = new THREE.Mesh(new THREE.SphereGeometry(0.11, 12, 10), nutMat);
-      const a = (i / 5) * Math.PI * 2;
-      nut.position.set(top.x + Math.cos(a) * 0.15, top.y - 0.15, top.z + Math.sin(a) * 0.15);
-      g.add(nut);
-    }
-    g.position.set(x, 0, z);
-    return g;
+  const tyres = parts();
+  const frameP = parts();
+  const WR = 0.33;
+  for (const x of [-0.52, 0.52]) {
+    tyres.add(new THREE.TorusGeometry(WR, 0.022, 8, 32), x, WR + 0.02, 0);
+    const spokes = new THREE.Mesh(new THREE.CircleGeometry(WR - 0.01, 32), wheelMat);
+    spokes.position.set(x, WR + 0.02, 0);
+    bike.add(spokes);
   }
-  decor.add(palm(-7.9, 1.6, 7.2, 0.9, 31), palm(9.6, -1.5, 8.4, -0.7, 37));
-  const bananaMat = new THREE.MeshStandardMaterial({ color: '#4c9e2c', roughness: 0.7, side: THREE.DoubleSide });
-  const stemMat = new THREE.MeshStandardMaterial({ color: '#6f8f3a', roughness: 0.8 });
-  function banana(x, z, s) {
-    const g = new THREE.Group();
-    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.1 * s, 0.14 * s, 1.6 * s, 12), stemMat);
-    stem.position.y = 0.8 * s;
-    g.add(stem);
-    for (let i = 0; i < 7; i++) {
-      const geo = new THREE.PlaneGeometry(1.4 * s, 0.42 * s, 8, 1);
-      const pos = geo.attributes.position;
-      for (let k = 0; k < pos.count; k++) {
-        const u = (pos.getX(k) + 0.7 * s) / (1.4 * s);
-        pos.setX(k, u * 1.4 * s);
-        pos.setZ(k, -u * u * 0.5 * s);
-      }
-      geo.computeVertexNormals();
-      const leaf = new THREE.Mesh(geo, bananaMat);
-      leaf.rotation.order = 'YXZ';
-      leaf.rotation.y = (i / 7) * Math.PI * 2;
-      leaf.rotation.x = -Math.PI / 2 + 0.6;
-      leaf.rotation.z = 0.5;
-      leaf.position.y = 1.55 * s;
-      g.add(leaf);
-    }
-    g.position.set(x, 0, z);
-    return g;
-  }
-  decor.add(banana(7.4, 1.4, 1.2), banana(-8.6, -2.2, 1));
+  const P = (x, y) => new THREE.Vector3(x, y, 0);
+  const seat = P(-0.18, 0.92);
+  const head = P(0.36, 0.9);
+  const crank = P(-0.02, 0.36);
+  for (const [a, b] of [
+    [P(-0.52, 0.35), crank],
+    [P(-0.52, 0.35), P(-0.2, 0.86)],
+    [crank, P(-0.2, 0.86)],
+    [crank, P(0.34, 0.82)],
+    [P(-0.2, 0.86), P(0.34, 0.86)],
+    [P(0.34, 0.9), P(0.52, 0.35)],
+    [head, P(0.36, 1.02)],
+  ])
+    frameP.push(rod(a, b, 0.016, 8));
+  frameP.push(rod(new THREE.Vector3(0.36, 1.02, -0.26), new THREE.Vector3(0.36, 1.02, 0.26), 0.012, 8));
+  frameP.push(rod(seat, P(-0.2, 0.86), 0.012, 8));
+  frameP.push(rod(new THREE.Vector3(-0.68, 0.72, -0.1), new THREE.Vector3(-0.3, 0.72, -0.1), 0.01, 6)); // the carrier
+  frameP.push(rod(new THREE.Vector3(-0.68, 0.72, 0.1), new THREE.Vector3(-0.3, 0.72, 0.1), 0.01, 6));
+  frameP.push(rod(new THREE.Vector3(-0.68, 0.72, -0.1), new THREE.Vector3(-0.68, 0.72, 0.1), 0.01, 6));
+  bike.add(
+    tyres.mesh(black, 'Tyres'),
+    frameP.mesh(new THREE.MeshStandardMaterial({ color: '#1b1d20', metalness: 0.6, roughness: 0.35 }), 'BikeFrame'),
+  );
+  const saddle = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.05, 0.12), new THREE.MeshStandardMaterial({ color: '#5a2a1c', roughness: 0.6 }));
+  saddle.position.copy(seat).add(new THREE.Vector3(0, 0.02, 0));
+  bike.add(saddle);
+  const basket = new THREE.Mesh(
+    new THREE.BoxGeometry(0.26, 0.18, 0.3),
+    new THREE.MeshStandardMaterial({ color: '#9aa1a8', metalness: 0.6, roughness: 0.4, wireframe: false }),
+  );
+  basket.position.set(0.5, 0.98, 0);
+  bike.add(basket);
+  near.add(bike);
 
-  // ── the neighbourhood: houses and trees behind, clouds ────────────────────
-  const r2 = seeded(41);
-  const facades = ['#f4a6a0', '#9fd3c7', '#f6e3b4', '#b9c8f0', '#f1c28f', '#d7e8a6'];
-  for (let i = 0; i < 9; i++) {
-    const w = 7 + r2() * 6;
-    const h = 5 + r2() * 5;
-    const tex = facadeTexture(facades[i % facades.length]);
-    tex.repeat.set(w / 2.6, h / 3);
-    const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, 6), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.9 }));
-    b.position.set(-58 + i * 14 + r2() * 3, h / 2, -60 - r2() * 10);
-    decor.add(b);
-  }
-  const treeMats = ['#2f7d32', '#3f9142', '#26692b'].map((c) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.9 }));
-  for (let i = 0; i < 16; i++) {
-    const t = new THREE.Mesh(new THREE.SphereGeometry(1.6 + r2() * 1.6, 14, 10), treeMats[i % 3]);
-    t.position.set(-48 + i * 6.5 + r2() * 2, 1.6 + r2() * 1.2, -26 - r2() * 4);
-    t.scale.y = 0.85;
-    decor.add(t);
-  }
-  for (let i = 0; i < 6; i++) {
-    const cl = new THREE.Sprite(new THREE.SpriteMaterial({ map: cloudTexture(50 + i), transparent: true, depthWrite: false, fog: false }));
-    cl.scale.set(18 + r2() * 10, 8 + r2() * 3, 1);
-    cl.position.set(-50 + i * 20 + r2() * 8, 16 + r2() * 10, -70);
-    decor.add(cl);
-  }
-
-  root.add(decor);
-  return { root, decor, bulb: { group: bulbGroup, mesh: bulbMesh, hit: bulbHit, set: setBulb }, yard };
+  root.add(near, decor);
+  return { root, decor, bulb: { group: bulbGroup, mesh: bulbMesh, hit: bulbHit, set: setBulb }, yard, switches };
 }

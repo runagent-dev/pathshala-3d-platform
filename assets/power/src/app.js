@@ -127,7 +127,7 @@ export function createApp(root, options = {}) {
     const sky = new THREE.CanvasTexture(c);
     sky.colorSpace = THREE.SRGBColorSpace;
     scene.background = sky;
-    scene.fog = new THREE.Fog('#cfe8f8', 40, 140);
+    scene.fog = new THREE.Fog('#d3e8f6', 16, 95); // a little haze on the neighbourhood, none on the house
   }
   scene.add(new THREE.HemisphereLight('#dff0ff', '#b98a55', 0.9));
   const key = new THREE.DirectionalLight('#fff3dc', 1.25);
@@ -140,7 +140,7 @@ export function createApp(root, options = {}) {
   const pumps = {};
   const tanks = {};
   for (const id of IDS) {
-    pumps[id] = createPump({ color: PUMP_COLORS[id], size: PUMP_SIZE[id], name: `Pump_${id}` });
+    pumps[id] = createPump({ color: PUMP_COLORS[id], size: PUMP_SIZE[id], name: `Pump_${id}`, cableSide: id === 'big' ? 1 : -1 }); // cables from the wall
     // the small pump's suction faces right (+x) toward the hatch, the big one's left
     pumps[id].root.position.set(LAYOUT.pumpX[id], 0, LAYOUT.pumpZ);
     if (id === 'big') pumps[id].root.rotation.y = Math.PI;
@@ -252,6 +252,7 @@ export function createApp(root, options = {}) {
       const on = pumpScene && s.phase === 'run' && r.running; // a still held mid-run still shows the water flowing
       tanks[id].pour(on, dt);
       pumps[id].run(on, dt * (s.paused ? 0 : 1), s.t);
+      place3d.switches(id, pumpScene && s.phase === 'run' && r.running);
     }
     bulb.set(isBulb() && s.phase === 'run');
     note.textContent = isBulb() ? t('note_bulb') : t(stage.width < 520 ? 'note_short' : 'note', { k: SPEED });
