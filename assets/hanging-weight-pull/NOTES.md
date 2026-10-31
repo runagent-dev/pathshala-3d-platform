@@ -38,6 +38,14 @@ well, T₁, T₂, W; a man lifting a crate over a pulley; "the pulleys shown are
 the force"). Asked how the well should carry the book's two set-ups, the owner chose: the well with a person pulling a
 bucket as the main scene, and the book's own pictures (চিত্র ৩.০৯, ৩.১০) as a worked-example window.
 
+### Second look (2026-10-31, v0.3.0)
+The owner: "the arrow mark is not very visible … main scenery is too much but the actual thing, force arrow and
+everything, is very little visible", and "ঢিল দাও is not the correct word … show the concept beautifully with much more
+detail". So: the arrows are about twice as thick and a third longer, flat colour in a white outline, drawn on top of
+everything (the orange T no longer melts into the orange wall); the yard behind the well is hazed; a new black arrow
+shows the resultant (লব্ধি বল) T − Mg next to a, so the student sees the difference of the two forces drive the
+acceleration; ঢিল দাও became **কম টানো** (pull less than the weight; short enough for the row of four words).
+
 ## The one idea to teach
 Newton's second law for each body joined by a string: the sum of the forces on it (up and right positive) equals its mass
 times its acceleration. One string carries one tension, along the string and away from the body; a pulley only turns it.
@@ -61,8 +69,8 @@ pull: less acceleration. In the book's pictures the same law, body by body, give
   well is shallow enough to keep the bucket big on a phone (water 1 m below the yard). The bucket starts half way down,
   held; a run goes up to the parapet or down to the water, or stays for 2.4 s when T = Mg. Time is slowed 3 times.
 - **The panel** (the kit's clean sheet): the row of words **ধরে রাখো** (T 98 N, M 10 kg: a = 0), **জোরে টানো** (130 N, 10 kg:
-  +3.2), **ঢিল দাও** (70 N, 10 kg: −2.8), **বেশি পানি** (130 N, 12 kg: +1.03), each leaving its a under its word; one numbered
-  action (ধরে রাখো / টানো / ঢিল দাও, then the next word); quiet buttons for the book's examples and the reset; then **the
+  +3.2), **কম টানো** (70 N, 10 kg: −2.8), **বেশি পানি** (130 N, 12 kg: +1.03), each leaving its a under its word; one numbered
+  action (ধরে রাখো / টানো / কম টানো, then the next word); quiet buttons for the book's examples and the reset; then **the
   formula**: two steppers (T দড়ির টান, M বালতি ও পানি), the law **T − Mg = Ma** with each symbol a button (a tap makes its
   arrow pulse), and the sum with the student's numbers, live: "১৩০ − ১০ × ৯.৮ = ১০ × a ⇒ a = +৩.২ ms⁻²". The steppers put the
   bucket back at the start (held) and a run of them is not kept in the row. One rule line, in the book's words, chosen by
@@ -70,7 +78,10 @@ pull: less acceleration. In the book's pictures the same law, body by body, give
   শূন্য…", "উপরের দিক ধনাত্মক: T < Mg হলে a ঋণাত্মক… বই লেখে T − Mg = M(−a)", "একই টানে ভর বেশি হলে ত্বরণ কম…", and once
   all four are tried, the law with "বাম দিকে বলগুলোর যোগফল, ডান দিকে ভর × ত্বরণ".
 - **The picture while it runs:** T up from the bucket's handle and T at his fists towards the pulley (orange, the same
-  number), Mg down from the bucket (purple), a beside it (teal, up or down); the bucket's mass beside it. Force arrows share
+  number), Mg down from the bucket's middle (purple), the resultant **লব্ধি বল = T − Mg** on its left (black, "লব্ধি বল =
+  +৩২ N", or "০" beside the bucket when held) and a on its right (teal, the same way as the resultant: F = Ma); the
+  bucket's mass under it. The arrows are thick, in flat colour with a white outline, and drawn over the scenery; the
+  yard behind the well (house, haystack, banana) sits in a light haze so the well, the bucket and the arrows stand out. Force arrows share
   one scale, the acceleration has its own (said on wide stages). A chip at the bottom right gives the bucket's velocity and
   the time (v grows by a each second), and after the run what happened. Top left: the slowed time (and on wide stages the
   cut, the light rope and the smooth pulley) and "↑ উপরের দিক ধনাত্মক". No arrows while the bucket is simply held at the start
