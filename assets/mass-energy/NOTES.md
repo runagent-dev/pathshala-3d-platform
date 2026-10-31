@@ -45,6 +45,12 @@ less than the left, and that missing mass is the energy that comes out.
   power runs along the lines and a town's windows light up; the cooling tower's plume grows. Fuel m: 1 g, 10 g,
   100 g, 1 kg of U-235; "শক্তি হয়": 0.079% (split) or 100% (the book's "if fully converted"). E in J and how long a
   100 W bulb would glow on it.
+- The plant is drawn to look real (v0.2.0), all procedural: golden paddy at harvest to the horizon haze, homesteads of
+  trees and tin-roofed houses, a mud bank and country boats on the river; weathered concrete containment with its
+  polar crane, steam generator, pressuriser and coolant pump; a hyperbolic cooling tower on its ring of legs; the
+  ventilation stack, lattice pylons with insulator strings, a transformer with its fins and bushings; a town of flats
+  with water tanks on the roofs. A dusk sky (low sun in the west) is both the background and what the materials
+  reflect.
 - The nucleus scenes stand in the bright water of a reactor pool (painted: light from the surface, fuel assemblies
   glowing blue at the bottom): the nuclei are in the reactor's fuel. A note says nuclei are shown about 10¹² times
   bigger and much slower.

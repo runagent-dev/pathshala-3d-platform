@@ -22,7 +22,7 @@ import { bindCleanSheet, buildStudentShell, cleanSheet } from '@shared/student/s
 import { fitPose } from './camera.js';
 import { createI18n } from './i18n.js';
 import { createSystem, PHASE } from './nucleus.js';
-import { createPlant, duskBackground, poolBackground } from './plant.js';
+import { createPlant, duskSky, HAZE, poolBackground, SUN } from './plant.js';
 import {
   C,
   energyPerSplit,
@@ -197,7 +197,16 @@ export function createApp(root, options = {}) {
   controls.enableZoom = false;
   const transparent = o.bg === 'transparent';
   const bgPool = transparent ? null : poolBackground();
-  const bgDusk = transparent ? null : duskBackground();
+  // the dusk sky: the plant scene's background and the light its materials reflect (the nuclei keep the studio's)
+  const sky = transparent ? null : duskSky();
+  const envStudio = scene.environment;
+  const envDusk = (() => {
+    if (!sky) return envStudio;
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    const env = pmrem.fromEquirectangular(sky).texture;
+    pmrem.dispose();
+    return env;
+  })();
   const hemi = new THREE.HemisphereLight('#ffffff', '#9fd2ea', 1.1);
   const key = new THREE.DirectionalLight('#ffffff', 2.2);
   const rim = new THREE.DirectionalLight('#8fe0ff', 1.4);
@@ -214,7 +223,7 @@ export function createApp(root, options = {}) {
     Object.assign(key.shadow.camera, { left: -45, right: 50, top: 40, bottom: -30, near: 10, far: 220 });
     key.shadow.bias = -0.0006;
     plant.root.traverse((m) => {
-      if (m.isMesh && !m.isInstancedMesh) {
+      if (m.isMesh && m.name !== 'ReactorCore') {
         m.castShadow = true;
         m.receiveShadow = true;
       }
@@ -333,21 +342,25 @@ export function createApp(root, options = {}) {
     chain.root.visible = sc === 'chain';
     plant.root.visible = sc === 'plant';
     if (sc === 'plant') {
-      scene.background = bgDusk;
-      scene.fog = transparent ? null : new THREE.Fog('#f2b9a8', 160, 520);
-      hemi.color.set('#ffe0c8');
-      hemi.groundColor.set('#55704a');
-      hemi.intensity = 1.25;
-      key.color.set('#ffc58a');
-      key.intensity = 2.6;
-      key.position.set(-70, 55, 40);
+      scene.background = sky;
+      scene.environment = envDusk;
+      scene.environmentIntensity = 0.75;
+      scene.fog = transparent ? null : new THREE.FogExp2(HAZE, 0.0024);
+      hemi.color.set('#aab6ff');
+      hemi.groundColor.set('#c4945e');
+      hemi.intensity = 0.55;
+      key.color.set('#ffc28a');
+      key.intensity = 3.1;
       key.target.position.set(5, 0, -10);
+      key.position.copy(SUN).multiplyScalar(110).add(key.target.position);
       key.castShadow = renderer.shadowMap.enabled;
-      rim.intensity = 0.5;
-      rim.color.set('#9fb4ff');
+      rim.intensity = 0.35;
+      rim.color.set('#8f9cff');
       rim.position.set(60, 30, -80);
     } else {
       scene.background = bgPool;
+      scene.environment = envStudio;
+      scene.environmentIntensity = 1;
       scene.fog = null;
       hemi.color.set('#ffffff');
       hemi.groundColor.set('#8ccbe8');
