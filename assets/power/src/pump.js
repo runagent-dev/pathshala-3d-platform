@@ -4,7 +4,8 @@
 // forward (+x) and the delivery port pointing up; feet on a steel base plate, bolted to a small concrete plinth.
 // `size` scales the motor, so the bigger pump is visibly bigger. While it runs, the shaft collar between motor and
 // head spins, the lamp glows and the body hums (a tiny shake).
-// The group's origin is on the ground under the delivery port; `outlet` and `inlet` are the ports' ends (local).
+// The group's origin is on the ground under the delivery port; `outlet` and `inlet` are the ports' ends (local),
+// `cableIn` the terminal box's cable gland (on the side `cableSide`, -1 = local -z).
 import * as THREE from 'three';
 
 const PLINTH_H = 0.1;
@@ -51,7 +52,7 @@ function plateTexture() {
 /**
  * @param {{ color: string, size?: number, name?: string }} opts
  */
-export function createPump({ color, size = 1, name = 'Pump' }) {
+export function createPump({ color, size = 1, name = 'Pump', cableSide = -1 }) {
   const root = new THREE.Group();
   root.name = name;
   const body = new THREE.Group(); // shakes while running
@@ -139,7 +140,7 @@ export function createPump({ color, size = 1, name = 'Pump' }) {
   body.add(lampMesh);
   const gland = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.013, 0.025, 10), dark);
   gland.rotation.x = Math.PI / 2;
-  gland.position.set(box.position.x - 0.02 * size, box.position.y, -0.05 * size);
+  gland.position.set(box.position.x - 0.02 * size, box.position.y, cableSide * 0.05 * size);
   body.add(gland);
   const nameplate = new THREE.Mesh(new THREE.PlaneGeometry(0.085 * size, 0.042 * size), plate);
   nameplate.position.set(mx - LEN * 0.05, AXIS + 0.005, R + 0.0165 * size);
@@ -185,6 +186,7 @@ export function createPump({ color, size = 1, name = 'Pump' }) {
   body.add(union);
 
   const outlet = new THREE.Vector3(0, AXIS + HR * 1.7 + 0.04, 0);
+  const cableIn = gland.position.clone().setZ(cableSide * (0.05 * size + 0.014)); // where the power cable goes in
   const inlet = new THREE.Vector3(HL / 2 + 0.072 * size, AXIS, 0);
 
   // what a tap hits: the whole pump (invisible)
@@ -202,13 +204,14 @@ export function createPump({ color, size = 1, name = 'Pump' }) {
     hit,
     outlet,
     inlet,
+    cableIn,
     axis: AXIS,
     /** The visible pump (for the action's ring), without the hit box. */
     visual: body,
     /** Running or not; `dt` seconds of spinning; `phase` drives the tiny shake. */
     run(on, dt = 0, phase = 0) {
       lamp.emissive.set(on ? '#5cff6b' : '#000000');
-      lamp.emissiveIntensity = on ? 1.6 : 0;
+      lamp.emissiveIntensity = on ? 1.6 : 1; // (1 with a black emissive: no glow, and a clean export)
       lamp.color.set(on ? '#8dff95' : lampOff.color);
       if (on) angle += dt * 60;
       collar.rotation.x = angle;

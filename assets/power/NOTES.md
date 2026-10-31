@@ -47,8 +47,8 @@ properly. vivid color with color background and very very realistic".
 The page spells রূপান্তর. Units as Latin symbols per `docs/book-notes.md`: kg, m, s, J, W, ms⁻²; MW in the book's example.
 
 ## How the figure works
-- A sunny Bangladeshi one-storey house painted warm yellow, a brick-paved courtyard, coconut palms and banana plants,
-  neighbours' houses and trees behind, blue sky with clouds. Two electric monoblock pumps (a small blue one, a big red
+- A sunny Bangladeshi one-storey house painted warm yellow, a brick-paved courtyard, coconut palms and flame trees,
+  neighbours' houses behind, blue sky with clouds (see "Look"). Two electric monoblock pumps (a small blue one, a big red
   one) draw water from the open hatch of the underground tank and push it through white PVC pipes up the wall into two
   identical 500 L tanks at the roof's front edge. The tanks are drawn cut open at the front (a textbook cutaway) so the
   water level shows; a scale on the cut has a tick every 100 L. An arrow marks **h = 3 m** from the courtyard to the
@@ -82,10 +82,18 @@ The page spells রূপান্তর. Units as Latin symbols per `docs/book-
 - 490 W and 980 W are chosen so the times are whole seconds (about 0.66 and 1.3 horsepower).
 
 ## Look
-Vivid on purpose (the owner asked for colour backgrounds): deep blue sky, warm yellow wall with green windows, a red
-brick courtyard, blue and red pumps, white pipes; the panel stays the kit's clean, lightly warm sheet. The front view
-stands in the courtyard and looks a little up at the roof (fov 42°), so the pumps in front and the tanks above both
-come out as big as the 3 m lift allows; wide frames drop the top margin (the corner buttons are off to the right).
+Vivid on purpose (the owner asked for colour backgrounds), with few greens (v0.2.0, the owner: "much more detailed with
+less green"): deep blue sky, a warm yellow wall weathered as such walls are (rain streaks from the roof, the sills and
+two rain spouts, a damp band over the plinth, hairline cracks), teak windows with curtains behind the glass and iron
+grills, a panelled teak door with steps, a doormat and sandals, a red brick courtyard, blue and red pumps, white pipes
+with brass gate valves. The electrics are drawn as they would be: the service wire from the pole on the lane, the
+meter, conduit to a pump switch board whose lamps light while each pump runs, a cable to each pump. Around: a tubewell
+with a bucket and a pitcher, a clothes line, a bicycle, brick boundary walls, bare earth, the neighbours' houses (with
+their own roof tanks) in a light haze, flame trees in flower, coconut palms. The panel stays the kit's clean, lightly
+warm sheet. The front view stands in the courtyard and looks a little up at the roof (fov 42°), so the pumps in front
+and the tanks above both come out as big as the 3 m lift allows; wide frames drop the top margin (the corner buttons
+are off to the right). Only the house, pumps, pipes, tanks and electrics export to the GLB; the props and the
+neighbourhood are for the picture.
 
 ## Colours (chapter 4)
 W green #237a35 (as in `work`), t crimson #c2255c (the stopwatch hand), P grape #862e9c, h blue #1c6fd9 (a distance,
