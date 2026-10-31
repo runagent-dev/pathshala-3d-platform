@@ -36,7 +36,7 @@ body.bg-transparent { background: transparent; }
 .dd .pvc-outcome .dd-dot { margin: 0 4px; color: var(--ink-3); }
 
 /* the honest note, top left (the buttons are top right) */
-.dd-note { position: absolute; left: 10px; top: 12px; z-index: 5; max-width: calc(100% - 250px); font-size: 12.5px; line-height: 1.35; color: var(--ink-3); pointer-events: none; }
+.dd-note { position: absolute; left: 10px; top: 12px; z-index: 5; max-width: calc(100% - 250px); font-size: 12.5px; line-height: 1.35; color: #1d2733; text-shadow: 0 0 3px #fff, 0 0 2px #fff; pointer-events: none; }
 
 /* the test: answers in words (two lines at most) */
 .pvc-opt .dd-opt { font-size: 14px; font-weight: 600; line-height: 1.25; white-space: normal; text-align: center; }

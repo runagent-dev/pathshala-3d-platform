@@ -25,7 +25,8 @@ from A to B, the সরণ is only 2 km; back at A it is zero, however far you r
 ## How it works (v0.2.0, the clean panel)
 - The cyclist is scaled up on small maps (1 to 1.8 times, worked out every frame so the bike is about 40 px long:
   about 36 px at 390×700, 31 px at 390×520), on top of being drawn 230 times bigger than real.
-- A 3D tile of Bangladeshi countryside (rice fields, ponds, homes with tin roofs, trees) with the book's road. The
+- A 3D tile of Bangladeshi countryside in spring (mustard, ripe paddy, ploughed earth, ponds, homes with tin roofs,
+  flowering trees) under a pale blue sky, with the book's road. The
   road is the shared one in `src/road.js` (also used by the speed figure on page 41): B is 4 km along it and 2.000
   km from A, C is 6 km along it and 1.311 km from A. The road and distances are to scale; houses, trees, posts and
   the cyclist are drawn much bigger than real, and a small note in the top left corner says so
@@ -82,6 +83,15 @@ compares the two in the map's colours at each stop with the book's numbers; one 
 the story. The posts' numbers are quieter and the first rule says what they are (the km scale along the road). The
 unit is now km, as the book and the speed figure (page 41, the same road) write it. The test was rewritten around
 the picture with a note for each mistake.
+
+## What changed in v0.3.0 and why
+The owner: "instead of green do something different color but vivid and properly understandable". The map was almost
+all light-green rice fields and green trees on a white page. Now it is a spring countryside under a soft blue sky:
+mustard in flower (সরিষা), ripe paddy, ploughed earth and a little lilac khesari in the fields; flowering trees
+(crimson, pink, purple) with some dark mango; swept earth round the homes; blue tin among the roofs. The ground the
+orange arrow sweeps is pale harvested stubble, so the orange সরণ arrow and the blue দূরত্ব path stay the clearest
+things on the map; no orange-red trees, which would read like the arrow. The corner note is darker, with a white
+halo, to read on the sky.
 
 ## Open questions
 - The page is cut off after "এই ছবিতে সরণের মান 2 km এবং তিরের দিকটি হচ্ছে সরণের দিক": check the rest of the

@@ -101,8 +101,15 @@ function postSpots() {
 }
 
 // ── the ground: fields, ponds, paths, the road's verge (one painted texture) ────────
-const FIELDS_CALM = ['#9fcb6b', '#a9d074', '#93c262', '#b4d57e', '#a3c96c'];
-const FIELDS_ALL = [...FIELDS_CALM, '#c6d982', '#d9d58a', '#e3d27a', '#cdbf91', '#efd54c'];
+// A spring countryside: mustard (সরিষা) in flower, ripe paddy, ploughed earth, a little lilac khesari. The ground the
+// orange arrow sweeps is pale harvested stubble, so the arrow (and the blue path on the road) stay the clearest things.
+const FIELDS_CALM = ['#ebd192', '#e7c985', '#efd9a0', '#e9cf8c'];
+const FIELDS_ALL = [
+  ...['#f2c230', '#efb920', '#f4cc45', '#f2c230', '#efb920', '#f4cc45'], // mustard
+  ...['#dba53a', '#d39a3a', '#dba53a', '#d39a3a'], // ripe paddy
+  ...['#b9805a', '#a9714f', '#b9805a'], // ploughed earth
+  '#b896cc', // khesari, here and there
+];
 
 function groundTexture(renderer, homes, ponds) {
   const W = 1024;
@@ -113,10 +120,10 @@ function groundTexture(renderer, homes, ponds) {
   c.height = H;
   const g = c.getContext('2d');
   const P = (x, n) => [(x - BOARD.x0) * sx, (BOARD.n1 - n) * sx];
-  g.fillStyle = '#a8cd76';
+  g.fillStyle = '#e6c46a';
   g.fillRect(0, 0, W, H);
 
-  // rice fields on a slightly turned, jittered grid; the ground the arrow sweeps stays calm green
+  // fields on a slightly turned, jittered grid; the ground the arrow sweeps stays calm, pale stubble
   const r = rand(21);
   const a = 0.18;
   const U = [Math.cos(a) * 0.17, Math.sin(a) * 0.17];
@@ -142,25 +149,25 @@ function groundTexture(renderer, homes, ponds) {
       for (const [k, [x, n]] of q.entries()) g[k ? 'lineTo' : 'moveTo'](...P(x, n));
       g.closePath();
       g.fill();
-      g.strokeStyle = 'rgba(236, 230, 196, 0.9)'; // the ridges (আইল) between fields
+      g.strokeStyle = 'rgba(150, 105, 60, 0.45)'; // the ridges (আইল) between fields
       g.lineWidth = 1.6;
       g.stroke();
     }
   }
 
-  // homes: a darker grove of trees, a swept courtyard, a path to the road
+  // homes: a patch of swept, shaded earth under the trees, a courtyard, a path to the road
   for (const h of homes) {
     const [x, y] = P(h.x, h.n);
     const grad = g.createRadialGradient(x, y, 0, x, y, 0.24 * sx);
-    grad.addColorStop(0, 'rgba(98, 140, 72, 0.95)');
-    grad.addColorStop(0.7, 'rgba(110, 152, 80, 0.75)');
-    grad.addColorStop(1, 'rgba(110, 152, 80, 0)');
+    grad.addColorStop(0, 'rgba(176, 116, 66, 0.95)');
+    grad.addColorStop(0.7, 'rgba(196, 140, 84, 0.75)');
+    grad.addColorStop(1, 'rgba(196, 140, 84, 0)');
     g.fillStyle = grad;
     g.beginPath();
     g.arc(x, y, 0.24 * sx, 0, Math.PI * 2);
     g.fill();
   }
-  g.strokeStyle = '#d9c99e';
+  g.strokeStyle = '#d8b47a';
   g.lineCap = 'round';
   g.lineWidth = 0.018 * sx;
   for (const h of homes) {
@@ -181,7 +188,7 @@ function groundTexture(renderer, homes, ponds) {
   }
   for (const h of homes) {
     const [x, y] = P(h.x, h.n);
-    g.fillStyle = '#ddd0a8';
+    g.fillStyle = '#e8cf98';
     g.beginPath();
     g.arc(x, y, 0.055 * sx, 0, Math.PI * 2);
     g.fill();
@@ -192,8 +199,8 @@ function groundTexture(renderer, homes, ponds) {
     g.save();
     g.translate(x, y);
     g.rotate(p.turn);
-    g.fillStyle = '#6aa5c9';
-    g.strokeStyle = '#c9bd8f';
+    g.fillStyle = '#35a7d6';
+    g.strokeStyle = '#c9a46e';
     g.lineWidth = 0.012 * sx;
     g.beginPath();
     g.roundRect((-p.w / 2) * sx, (-p.h / 2) * sx, p.w * sx, p.h * sx, 0.025 * sx);
@@ -206,7 +213,7 @@ function groundTexture(renderer, homes, ponds) {
     g.restore();
   }
   // the road's dusty verge (the road itself is a mesh on top)
-  g.strokeStyle = '#d6cba3';
+  g.strokeStyle = '#e2c48e';
   g.lineWidth = 0.14 * sx;
   g.beginPath();
   for (let i = 0; i < COUNT; i++) g[i ? 'lineTo' : 'moveTo'](...P(ROAD[2 * i], ROAD[2 * i + 1]));
@@ -214,7 +221,7 @@ function groundTexture(renderer, homes, ponds) {
   g.stroke();
   g.beginPath();
   g.arc(...P(0, 0), 0.1 * sx, 0, Math.PI * 2);
-  g.fillStyle = '#d6cba3';
+  g.fillStyle = '#e2c48e';
   g.fill();
 
   // the scale bar: 1 km in four black and white quarters (its label "১ কিমি" stands above it)
@@ -342,9 +349,11 @@ function placeVillage(ponds, posts) {
   return { round, palms, houses };
 }
 
-const TREE_GREENS = ['#4f8a3c', '#5c9a45', '#3f7a35', '#6aa64f', '#558f40'];
+// flowering trees (shimul, jarul…) and some dark mango: no orange-red, which would read like the orange arrow
+const TREE_CROWNS = ['#c92a3c', '#d6406f', '#8a46bf', '#9a52cf', '#c92a3c', '#2f6b3a', '#3b7a3f', '#2f6b3a'];
+const PALMS = ['#4d7a2e', '#466f2a', '#557f34'];
 const WALLS = ['#e9e2d2', '#cfa77d', '#b9c0c6', '#ddd2b8'];
-const ROOFS = ['#8e979f', '#a65a3f', '#4e806b', '#b04a3c'];
+const ROOFS = ['#8e979f', '#a65a3f', '#3b6fb0', '#b04a3c'];
 
 function villageMeshes(v) {
   const group = new THREE.Group();
@@ -384,7 +393,7 @@ function villageMeshes(v) {
     q.setFromAxisAngle(up, r() * 6.28);
     m.compose(toScene(t.x, t.n, 28 * t.s, p), q, s.set(size, size * (0.85 + r() * 0.25), size));
     crowns.setMatrixAt(i, m);
-    crowns.setColorAt(i, c.set(TREE_GREENS[Math.floor(r() * TREE_GREENS.length)]));
+    crowns.setColorAt(i, c.set(TREE_CROWNS[Math.floor(r() * TREE_CROWNS.length)]));
     m.compose(toScene(t.x, t.n, 0, p), q.identity(), s.set(size * 0.9, 34 * t.s, size * 0.9));
     trunks.setMatrixAt(i, m);
   }
@@ -409,7 +418,7 @@ function villageMeshes(v) {
     q.setFromAxisAngle(up, r() * 6.28);
     m.compose(top, q, s.setScalar(58 * t.s));
     palmCrowns.setMatrixAt(i, m);
-    palmCrowns.setColorAt(i, c.set(TREE_GREENS[Math.floor(r() * 3)]).offsetHSL(0.02, 0.05, 0.03));
+    palmCrowns.setColorAt(i, c.set(PALMS[Math.floor(r() * PALMS.length)]));
   }
   // houses with tin roofs (টিনের চালা)
   const wallGeo = new THREE.BoxGeometry(1, 1, 1);

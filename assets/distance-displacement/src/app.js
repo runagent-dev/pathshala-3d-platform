@@ -126,6 +126,22 @@ export function createApp(root, options = {}) {
   stage.addTicker((dt) => tweener.tick(dt));
   const audio = createAudio(o.sound);
 
+  if (o.bg !== 'transparent') {
+    // a soft spring sky behind the tile, paler at the bottom
+    const c = document.createElement('canvas');
+    c.width = 4;
+    c.height = 256;
+    const ctx = /** @type {CanvasRenderingContext2D} */ (c.getContext('2d'));
+    const g = ctx.createLinearGradient(0, 0, 0, 256);
+    g.addColorStop(0, '#5aa9e6');
+    g.addColorStop(0.55, '#a3d0f2');
+    g.addColorStop(1, '#d7ecfa');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 4, 256);
+    const sky = new THREE.CanvasTexture(c);
+    sky.colorSpace = THREE.SRGBColorSpace;
+    scene.background = sky;
+  }
   scene.add(new THREE.HemisphereLight('#ffffff', '#8a7a5a', 0.9));
   const sun = new THREE.DirectionalLight('#ffffff', 1.5);
   sun.position.set(1800, 4200, 2600);
