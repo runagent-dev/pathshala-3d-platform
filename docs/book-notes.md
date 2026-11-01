@@ -80,6 +80,14 @@ before designing; reviewers check against it. When a new decision is taken for a
 - The book's words: বল প্রয়োগকারী ক্ষেত্রফল, "সমান পরিমাণ বল প্রয়োগ করলেও চাপ কিন্তু হবে ভিন্ন", "ক্ষেত্রফল দ্বিগুণ … চাপ
   অর্ধেক", চাপ স্কেলার রাশি ("এর কোনো দিক নেই"); the page writes উপর.
 
+## States of matter (topic 5.6 on, page 150)
+
+- Molecules (`states-of-matter`): water as glossy space-filling H₂O, oxygen red #e8383d, hydrogen white #f4f6fa, in
+  round magnifiers (deep navy inside, brass rim) that say "অনেক বড় করে দেখানো". Heating orange #e8590c ("তাপ দিলে"),
+  cooling blue #1c7ed6 ("ঠান্ডা করলে"), always with the words.
+- The book's words (p151): কঠিন/তরল/গ্যাস, বরফ/পানি/জলীয় বাষ্প, "নিয়মিত আকার", "নির্দিষ্ট আয়তন", কাঁপে, মুক্তভাবে
+  ছোটাছুটি. Pages 150–152 do not name the changes of state (গলন, বাষ্পীভবন …), so arrows say what is done instead.
+
 ## Open questions for the book team
 
 - The strength numbers in 3.2.2 vs 3.2.4 (above).

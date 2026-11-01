@@ -1,0 +1,64 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "states-of-matter",
+  "title": "Three states of matter (পদার্থের তিন অবস্থা)",
+  "type": "animation",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 150,
+  "topic": "5.6",
+  "placement": "Book page 150, topic 5.6: পদার্থের তিন অবস্থা: কঠিন, তরল এবং গ্যাস, with চিত্র ৫.১৩ (kotin, torol, gas; on page 151). Put the animation in place of চিত্র ৫.১৩ or right after it, before the paragraph that begins যখন কোনো পদার্থ গ্যাস অবস্থায় থাকে.",
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "Self-playing 3D animation, 72 s, looping, in five parts students can tap: a water molecule (one O, two H) that is no longer water when split; an ice cube in a steel pan on a gas stove, with a magnifier showing its molecules in a regular pattern, only vibrating; the flame melts it into water whose molecules stay close but slide past each other; the water boils, steam rises, and the lens shows the vapour's few molecules far apart, flying freely; last, the three states side by side as in চিত্র ৫.১৩, with curved arrows: তাপ দিলে one way, ঠান্ডা করলে back. Each state shows whether it has a fixed shape and a fixed volume, with an icon and words.",
+  "tags": [
+    "states of matter",
+    "পদার্থের অবস্থা",
+    "molecule",
+    "অণু",
+    "solid",
+    "liquid",
+    "gas",
+    "ice",
+    "water vapour",
+    "animation",
+    "bangla"
+  ],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    { "name": "autoplay", "label": "Play on load", "type": "boolean", "default": "1" },
+    { "name": "loop", "label": "Loop", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "step": 2 } },
+    { "name": "seek", "payload": { "t": 34 } },
+    { "name": "duration", "payload": {} },
+    { "name": "play", "payload": {} },
+    { "name": "pause", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "step", "play", "pause"],
+  "export": {
+    "poster": { "params": { "autoplay": "0" }, "setup": [{ "command": "seek", "payload": { "t": 71 } }] },
+    "glb": [{ "name": "default" }],
+    "video": { "kind": "timeline", "seconds": 72, "fps": 30, "params": { "loop": "0" } }
+  }
+}

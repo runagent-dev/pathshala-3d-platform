@@ -1,0 +1,72 @@
+/* Three states of matter: the page, the caption panel, and the words drawn over the picture (the lens names, the
+   atoms, the cycle's state names and its heat/cool arrows). Colours and type come from
+   ../../shared/lib/student/student.css. Heating is orange-red and cooling blue, and both always carry their words. */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.sm { container-type: size; --heat: #e8590c; --cool: #1c7ed6; --yes: #1864ab; --no: #c92a2a; --panel-bg: #fff8ef; }
+.anim { position: absolute; inset: 0; display: grid; grid-template-rows: 1fr auto; grid-template-columns: 100%; container-type: size; }
+.anim .pvc-stage { position: relative; min-height: 0; overflow: hidden; }
+.anim .pvc-canvas { position: absolute; inset: 0; }
+.anim-panel { padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); border-top: 3px solid #f08c3b; background: var(--panel-bg); display: grid; gap: 7px; align-content: start; }
+.anim-caption { margin: 0; font-size: 16.5px; line-height: 1.45; min-height: 2.9em; color: var(--ink); font-weight: 500; }
+.anim-controls { display: flex; gap: 8px; align-items: center; }
+.anim-steps { display: flex; gap: 5px; flex-wrap: wrap; min-width: 0; }
+.anim-steps button { min-height: 36px; padding: 0 9px; border: 1.5px solid #e3c9a8; border-radius: 18px; background: #fff; font: inherit; font-size: 15px; color: var(--ink); cursor: pointer; }
+.anim-steps button:hover { border-color: var(--accent); }
+.anim-steps button.on { color: #fff; background: #2a2f86; border-color: #2a2f86; font-weight: 600; }
+.anim-play { flex: none; min-width: 42px; min-height: 40px; padding: 0 8px; justify-content: center; border-radius: 20px; }
+.sm .anim-play svg { width: 22px; height: 22px; }
+
+/* shape and volume: an icon and the words, never colour alone */
+.sm-props { min-height: 2.5em; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; font-size: 15px; line-height: 1.45; }
+.sm-line { color: var(--ink-2); }
+.sm-line sub { font-size: 0.72em; line-height: 0; }
+.sm-prop { display: inline-flex; align-items: center; gap: 4px; padding: 1px 10px 1px 6px; border-radius: 14px; font-weight: 600; white-space: nowrap; }
+.sm .sm-prop svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.sm-prop.yes { color: var(--yes); background: #e3eefb; }
+.sm-prop.no { color: var(--no); background: #fbe6e6; }
+
+/* the layer over the 3D view */
+.sm-layer { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.sm .sm-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.sm-cone { fill: rgba(255, 255, 255, 0.16); stroke: rgba(255, 255, 255, 0.75); stroke-width: 1.5; stroke-dasharray: 5 4; }
+.sm-target { fill: none; stroke: #fff; stroke-width: 2.5; filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.6)); }
+.sm-rim-shadow { fill: none; stroke: rgba(10, 8, 30, 0.55); }
+.sm-rim { fill: none; stroke: url(#sm-rim); }
+.sm-rim-in { fill: none; stroke: rgba(255, 255, 255, 0.55); }
+.lit .sm-rim-shadow { stroke: #fff3bf; }
+.sm-arrow { fill: none; stroke-linecap: round; }
+.sm-arrow.heat { stroke: var(--heat); }
+.sm-arrow.cool { stroke: var(--cool); }
+.sm-arrow-halo { fill: none; stroke: #fff; stroke-linecap: round; }
+.sm-head.heat { fill: var(--heat); }
+.sm-head.cool { fill: var(--cool); }
+
+.sm-words > div { position: absolute; left: 0; top: 0; white-space: nowrap; will-change: transform; }
+.sm-tag { display: flex; flex-direction: column; align-items: center; padding: 3px 10px 4px; border-radius: 9px; background: rgba(255, 250, 240, 0.95); color: #1d2147; box-shadow: 0 2px 6px rgba(10, 8, 40, 0.35); line-height: 1.3; }
+.sm-tag b { font-size: 15px; font-weight: 700; }
+.sm-tag small { font-size: 12px; color: #5c5f7a; }
+.sm-state { font-size: 14.5px; font-weight: 700; }
+.sm-arrow-tag { padding: 1px 9px 2px; border-radius: 12px; color: #fff; font-size: 14px; font-weight: 600; line-height: 1.45; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35); }
+.sm-arrow-tag.heat { background: var(--heat); }
+.sm-arrow-tag.cool { background: var(--cool); }
+.sm-arrow-tag.lit { outline: 2px solid #fff; }
+.sm-atom { font-size: 22px; font-weight: 700; color: #fff; text-shadow: 0 0 3px #000, 0 1px 2px #000; }
+.sm-atom.small { font-size: 15px; }
+.sm-not { padding: 1px 10px 2px; border-radius: 12px; background: var(--no); color: #fff; font-size: 14px; font-weight: 700; }
+.sm-heat { display: flex; align-items: center; gap: 2px; padding: 1px 8px 2px 4px; border-radius: 12px; background: rgba(255, 245, 230, 0.95); color: var(--heat); font-size: 14px; font-weight: 700; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3); }
+.sm .sm-heat svg { width: 17px; height: 17px; transform: rotate(-90deg); fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+
+/* short, wide frames: the panel beside the picture */
+@container (min-aspect-ratio: 13/10) and (max-height: 560px) {
+  .anim { grid-template-rows: 100%; grid-template-columns: 1fr minmax(240px, 34%); }
+  .anim-panel { border-top: 0; border-left: 3px solid #f08c3b; align-content: center; gap: 10px; padding: 12px 14px; }
+  .anim-caption { min-height: 4.4em; }
+}
+@container (max-height: 560px) and (max-aspect-ratio: 13/10) {
+  .anim-caption { font-size: 15px; }
+  .sm-props { font-size: 14px; }
+  .anim-steps button { padding: 0 9px; font-size: 14px; min-height: 34px; }
+}
