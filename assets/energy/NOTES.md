@@ -60,7 +60,7 @@ Colours: বিভব শক্তি purple (#6741d9, gravity's colour in the c
 hatched grey, pedal force orange (a pull, #e8590c), brake force crimson (a friction, #c2255c). Every colour also has a
 word next to it.
 
-Stylised on purpose (said on the view: "ঘর্ষণ ও বাতাসের বাধা ধরা হয়নি"): no friction or air resistance, so the total on the
+Stylised on purpose (said in the rule while it rolls down: "ঘর্ষণ ও বাতাসের বাধা ধরা হয়নি"): no friction or air resistance, so the total on the
 way down is exactly the same. The hill is steeper than a real road (about 26° at its steepest) so the whole climb fits
 on a phone.
 
@@ -80,3 +80,41 @@ edition writes বিভব শক্তি, so the figure uses that.
 - The rider's work going into the bicycle "from the chemical energy in the body" follows the page's sentence about the
   one applying the force giving the energy; strictly, the road's static friction does the work on the bicycle as a
   whole. Fine for class 9?
+
+## Polish pass (2026-11-01, 0.3.0)
+
+Against `docs/agents/polish-pass.md`:
+
+- **Layout.** The kit's frame (white panel, no tinted gradient). The panel is lower: the bar keeps only its own
+  height, the question keeps room for two lines (the longest, q_dir, shortened), slightly tighter answers on phones,
+  and on wide frames two lines for the rule and the worked answer. The 3D now gets 55 % of 390×700 (was 50 %), 55 %
+  of 800×500 (was 48 %), 72 % of 1280×800 (was 68 %); every phase and every question keeps the same height (no jumps).
+- **Text on the 3D view.** The note "আরোহী ও সাইকেলের ভর ৭০ kg · ঘর্ষণ ও বাতাসের বাধা ধরা হয়নি" left the view: the mass is
+  in the first rule ("সাইকেলটি (আরোহীসহ ভর ৭০ kg) …"), "ঘর্ষণ ও বাতাসের বাধা ধরা হয়নি" in the rule while it rolls down.
+  The force labels are short names ("প্যাডেলের বল", "ব্রেকের বল"); their direction is the arrow's and the rule's. Left
+  on the view: those two, "উচ্চতা … m" and, in the test, "বিভব শক্তি … J".
+- **Colour and arrows.** The arrows are bold flat colour in a white outline with a thin dark rim, drawn over the
+  scenery, so the orange one reads on the clay and the crimson one on the red kerbs and boards; on a small stage they
+  get thicker (not longer), so the shaft stays about 6 px wide. Label text is a darker
+  shade of its arrow (orange #b8460a 5.4:1, crimson #b0214f 6.6:1 on the chip; #e8590c was 3.6:1). The pale sand that
+  filled the lower half on wide frames is now a narrow run-off beside the kerbs; the hill is packed earth with ruts,
+  and the ground and asphalt have a grit-and-pebble grain (one 512 px texture).
+- **Smooth.** Static parts are merged by material (`src/bake.js`): grandstands, flags (one vertex-coloured mesh),
+  far hills and clouds; the bicycle (frame, each wheel with its tread) and the rider (head, trunk, hands, shoes).
+  The crowd is one instanced mesh per stand, so stands off screen are skipped, with lighter capsules and heads (a
+  few pixels each). Only the parts whose shadow shows cast one; the shadow map is 512 (the frustum was already
+  ±2.2 m, the shadow looks the same). Nothing is allocated per frame (the height line is updated in place), the bar
+  writes to the page only when a value changes, and turning the view no longer redraws the shadows.
+- **Bugs.** None that broke the ride. Fixed: the three words ran into each other in the narrow side panel at
+  640×400 (smaller there now), the label colours failed contrast, and a camera turn asked for a full redraw.
+
+Measured (headless Chromium, software GL, shadows on, 390×700):
+
+| | before (0.2.0) | after (0.3.0) |
+|---|---|---|
+| draw calls avg / max | 493 / 515 | 132 / 154 |
+| triangles max | 429k | 193k |
+| texture memory | 14.1 MB | 9.1 MB |
+| text on the 3D view | 58 characters in 1 box | 0 at rest (labels only while they apply) |
+
+Time to ready is the same within noise: measured back to back against main on a busy machine, 7.9–13.5 s for both.
