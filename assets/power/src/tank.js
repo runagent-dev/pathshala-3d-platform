@@ -4,6 +4,7 @@
 // surface. It stands on a low stand of two plastered brick piers and a slab. The group's origin is on the stand's foot;
 // the tank's floor is at `FLOOR` above it.
 import * as THREE from 'three';
+import { bake } from './build.js';
 import { FULL } from './power.js';
 
 export const TANK = { R: 0.43, FLOOR: 0.25, BODY: 0.9 }; // m: radius, the stand's height, the straight part's height
@@ -73,6 +74,9 @@ function plasterTexture(color) {
   return tex;
 }
 
+const SHARED = new Map(); // materials both tanks share after baking
+let common = null;
+
 /** @param {{ name?: string, accent?: string }} [opts] accent: the level strip's colour (the pump's colour) */
 export function createTank({ name = 'RoofTank', accent = '#1f6fd0' } = {}) {
   const root = new THREE.Group();
@@ -80,7 +84,15 @@ export function createTank({ name = 'RoofTank', accent = '#1f6fd0' } = {}) {
   const { R, FLOOR, BODY } = TANK;
 
   // the stand: two piers and a slab, plastered
-  const plaster = new THREE.MeshStandardMaterial({ map: plasterTexture('#d8d2c6'), roughness: 0.92 });
+  // made once for both tanks
+  common ||= {
+    plaster: new THREE.MeshStandardMaterial({ name: 'Stand', map: plasterTexture('#d8d2c6'), roughness: 0.92 }),
+    shell: new THREE.MeshStandardMaterial({ name: 'Shell', color: '#efe8d6', roughness: 0.55, side: THREE.DoubleSide }),
+    edge: new THREE.MeshStandardMaterial({ name: 'CutEdge', color: '#cfc5ad', roughness: 0.6 }),
+    lid: new THREE.MeshStandardMaterial({ name: 'Lid', color: '#2d3136', roughness: 0.45 }),
+    tick: new THREE.MeshStandardMaterial({ name: 'Ticks', color: '#1d2329', roughness: 0.6 }),
+  };
+  const { plaster } = common;
   for (const x of [-0.3, 0.3]) {
     const pier = new THREE.Mesh(new THREE.BoxGeometry(0.24, FLOOR - 0.08, 0.7), plaster);
     pier.position.set(x, (FLOOR - 0.08) / 2, 0);
@@ -110,19 +122,19 @@ export function createTank({ name = 'RoofTank', accent = '#1f6fd0' } = {}) {
   }
   pts.push(new THREE.Vector2(0.13, BODY + 0.14));
   // cut open at the front (like a textbook cutaway), so the water inside shows against the light plastic
-  const shellMat = new THREE.MeshStandardMaterial({ color: '#efe8d6', roughness: 0.55, side: THREE.DoubleSide });
+  const shellMat = common.shell;
   const shell = new THREE.Mesh(new THREE.LatheGeometry(pts, 56, CUT, Math.PI * 2 - 2 * CUT), shellMat);
   shell.position.y = FLOOR;
   root.add(shell);
   // the cut's edges: two thin strips down the sides of the opening
-  const edgeMat = new THREE.MeshStandardMaterial({ color: '#cfc5ad', roughness: 0.6 });
+  const edgeMat = common.edge;
   for (const a of [CUT, -CUT]) {
     const edge = new THREE.Mesh(new THREE.BoxGeometry(0.012, BODY, 0.03), edgeMat);
     edge.position.set(Math.sin(a) * (R + 0.003), FLOOR + BODY / 2, Math.cos(a) * (R + 0.003));
     edge.rotation.y = a;
     root.add(edge);
   }
-  const lidMat = new THREE.MeshStandardMaterial({ color: '#2d3136', roughness: 0.45 });
+  const lidMat = common.lid;
   const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.145, 0.05, 32), lidMat);
   lid.position.y = FLOOR + BODY + 0.16;
   root.add(lid);
@@ -134,14 +146,14 @@ export function createTank({ name = 'RoofTank', accent = '#1f6fd0' } = {}) {
   }
 
   // the level scale on the cut's left edge (in the pump's colour): a tick every 100 L, a longer one at 500 L
-  const stripMat = new THREE.MeshStandardMaterial({ color: accent, roughness: 0.5 });
+  const stripMat = new THREE.MeshStandardMaterial({ name: 'Scale', color: accent, roughness: 0.5 });
   const sx = -Math.sin(CUT) * (R + 0.012);
   const sz = Math.cos(CUT) * (R + 0.012);
   const strip = new THREE.Mesh(new THREE.BoxGeometry(0.02, WATER_FULL + 0.02, 0.012), stripMat);
   strip.position.set(sx, FLOOR + (WATER_FULL + 0.02) / 2, sz);
   strip.rotation.y = -CUT;
   root.add(strip);
-  const tickMat = new THREE.MeshStandardMaterial({ color: '#1d2329', roughness: 0.6 });
+  const tickMat = common.tick;
   for (let k = 1; k <= 5; k++) {
     const len = k === 5 ? 0.12 : k % 2 === 0 ? 0.085 : 0.06;
     const tick = new THREE.Mesh(new THREE.BoxGeometry(len, 0.01, 0.008), tickMat);
@@ -177,6 +189,16 @@ export function createTank({ name = 'RoofTank', accent = '#1f6fd0' } = {}) {
   stream.renderOrder = 2;
   stream.visible = false;
   root.add(stream);
+
+  // the stand, the shell and the lid cast the tank's shadow and take shadows, and so does the water
+  root.traverse((o) => {
+    const mesh = /** @type {THREE.Mesh} */ (o);
+    if (!mesh.isMesh) return;
+    mesh.castShadow = [plaster, shellMat, lidMat].includes(/** @type {any} */ (mesh.material));
+    mesh.receiveShadow = mesh.castShadow || o === water;
+  });
+  // the still parts in one mesh per material (29 parts become 6 draw calls); the water and the stream stay apart
+  bake(root, { keep: [water, surface, stream], name, materials: SHARED });
 
   let level = -1;
   /** kg of water in the tank (0 … FULL, may go a little past for a tank on its way to full). */

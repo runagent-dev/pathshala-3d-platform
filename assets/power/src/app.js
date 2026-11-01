@@ -5,7 +5,6 @@
 // 1 J/s), next to the book's 1000 MW power plant. The panel is the kit's clean sheet (one action, one result as a small
 // P = W ÷ t table, one rule): docs/student-kit.md. A 5-question test.
 import * as THREE from 'three';
-import { createArrow } from '@shared/arrow.js';
 import { createStage } from '@shared/stage.js';
 import { createTweener, ease } from '@shared/tween.js';
 import { createAction } from '@shared/student/action.js';
@@ -14,6 +13,7 @@ import { createAudio } from '@shared/student/audio.js';
 import { ICONS } from '@shared/student/icons.js';
 import { createQuiz } from '@shared/student/quiz.js';
 import { bindCleanSheet, buildStudentShell, cleanSheet } from '@shared/student/shell.js';
+import { parts } from './build.js';
 import { fitPose } from './camera.js';
 import { createI18n, group } from './i18n.js';
 import {
@@ -90,18 +90,13 @@ export function createApp(root, options = {}) {
       items: EXAMPLES.map((id) => ({ id, label: `ex_${id}` })),
     },
     quiet: [{ act: 'home', label: 'act_home', icon: ICONS.reset }],
-    lines: { action: 1, outcome: 3, rule: 3 },
+    lines: { action: 1, rule: 3 }, // the result's table keeps its own height (a header and two rows)
   });
   const ui = buildStudentShell(root, t, { learn: sheetHtml, learnAlign: 'start' });
   const sheet = bindCleanSheet(ui.learn);
   const $ = ui.$;
   const outcomeEl = $('.pvc-outcome');
   outcomeEl.setAttribute('aria-label', t('calc'));
-
-  // the honest note: time sped up, ideal pumps
-  const note = document.createElement('div');
-  note.className = 'pw-note';
-  ui.stage.append(note);
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 42, near: 0.1, far: 400, environment: 'studio-light' });
@@ -152,56 +147,75 @@ export function createApp(root, options = {}) {
   world.add(place3d.root);
   const bulb = place3d.bulb;
 
-  // h: an arrow up from the courtyard to the roof tanks' floor, a thin guide back to the tank
-  const hArrow = createArrow({ name: 'HeightH', color: COLORS.h, radius: 0.022, head: 0.2, headRadius: 0.07 });
-  hArrow.set(new THREE.Vector3(LAYOUT.hArrowX, 0.02, LAYOUT.pumpZ), new THREE.Vector3(0, 1, 0), H - 0.02);
-  world.add(hArrow.root);
-  const guideMat = new THREE.MeshStandardMaterial({ color: COLORS.h, roughness: 0.5 });
-  const guide = new THREE.Group();
-  guide.name = 'HeightGuide';
+  // h: a bold arrow up from the courtyard to the roof tanks' floor, with a foot on the ground and a dashed guide back
+  // to the tank at the top; a white outline (the inside of a slightly bigger copy) keeps it clear on the yellow wall,
+  // the red bricks and the sky alike. Two meshes, no shadows.
+  const hCore = parts();
+  const hRim = parts();
+  const SHAFT = 0.03;
+  const HEAD = 0.22;
+  const PAD = 0.014;
+  const foot = new THREE.Vector3(LAYOUT.hArrowX, 0.02, LAYOUT.pumpZ);
+  const shaftLen = H - 0.02 - HEAD;
+  hCore.add(new THREE.CylinderGeometry(SHAFT, SHAFT, shaftLen, 16), foot.x, foot.y + shaftLen / 2, foot.z);
+  hRim.add(new THREE.CylinderGeometry(SHAFT + PAD, SHAFT + PAD, shaftLen + PAD, 16), foot.x, foot.y + shaftLen / 2, foot.z);
+  hCore.add(new THREE.ConeGeometry(0.085, HEAD, 24), foot.x, H - HEAD / 2, foot.z);
+  hRim.add(new THREE.ConeGeometry(0.085 + PAD * 1.6, HEAD + PAD * 2.6, 24), foot.x, H - HEAD / 2 - PAD * 0.4, foot.z);
+  hCore.add(new THREE.BoxGeometry(0.26, 0.03, 0.05), foot.x, foot.y + 0.015, foot.z); // the foot: where h starts
+  hRim.add(new THREE.BoxGeometry(0.26 + 2 * PAD, 0.03 + 2 * PAD, 0.05 + 2 * PAD), foot.x, foot.y + 0.015, foot.z);
   const guidePts = [
     new THREE.Vector3(LAYOUT.hArrowX, H, LAYOUT.pumpZ),
     new THREE.Vector3(LAYOUT.hArrowX, H, LAYOUT.tankZ),
     new THREE.Vector3(LAYOUT.pumpX.small - TANK.R, H, LAYOUT.tankZ),
   ];
+  const up = new THREE.Vector3(0, 1, 0);
+  const dash = new THREE.Vector3();
+  const rot = new THREE.Quaternion();
+  const eul = new THREE.Euler();
   for (let i = 0; i < guidePts.length - 1; i++) {
     const a = guidePts[i];
     const b = guidePts[i + 1];
     const len = a.distanceTo(b);
-    const dir = b.clone().sub(a).normalize();
-    for (let d = 0; d < len - 0.02; d += 0.16) {
+    dash.subVectors(b, a).normalize();
+    eul.setFromQuaternion(rot.setFromUnitVectors(up, dash));
+    for (let d = i === 0 ? 0.12 : 0; d < len - 0.02; d += 0.16) {
       const seg = Math.min(0.09, len - d);
-      const m = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, seg, 6), guideMat);
-      m.position.copy(a).addScaledVector(dir, d + seg / 2);
-      m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
-      guide.add(m);
+      const p = a.clone().addScaledVector(dash, d + seg / 2);
+      hCore.add(new THREE.CylinderGeometry(0.012, 0.012, seg, 8), p.x, p.y, p.z, eul.x, eul.y, eul.z);
+      hRim.add(new THREE.CylinderGeometry(0.02, 0.02, seg + 0.016, 8), p.x, p.y, p.z, eul.x, eul.y, eul.z);
     }
   }
-  world.add(guide);
+  const hArrow = new THREE.Group();
+  hArrow.name = 'HeightH';
+  hArrow.add(
+    hCore.mesh(
+      new THREE.MeshStandardMaterial({ name: 'HeightArrow', color: COLORS.h, emissive: COLORS.h, emissiveIntensity: 0.25, roughness: 0.45 }),
+      'HeightArrow',
+    ),
+    hRim.mesh(new THREE.MeshBasicMaterial({ name: 'HeightOutline', color: '#ffffff', side: THREE.BackSide }), 'HeightOutline'),
+  );
+  world.add(hArrow);
 
   const tweener = createTweener();
   stage.addTicker((dt) => tweener.tick(dt));
   const audio = createAudio(o.sound);
 
   if (o.shadow && o.bg !== 'transparent') {
+    // soft sun shadows, the shadow camera fitted closely round what casts and takes them in view (the house front,
+    // the courtyard, the props by the walls), so a 1024 map is as sharp as a 2048 one on the old loose fit. Which
+    // parts cast and take shadows is set where they are built (the ground and the far scenery only take them, or not).
     stage.renderer.shadowMap.enabled = true;
     stage.renderer.shadowMap.type = THREE.VSMShadowMap;
     const sun = new THREE.DirectionalLight('#ffffff', 0.7);
     sun.position.set(-5, 11, 8);
     sun.target.position.set(0, 1.5, 0);
     sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
-    Object.assign(sun.shadow.camera, { left: -8, right: 8, top: 8, bottom: -4, near: 2, far: 30 });
-    sun.shadow.radius = 5;
+    sun.shadow.mapSize.set(1024, 1024);
+    sun.shadow.radius = 3;
+    sun.shadow.blurSamples = 8;
     sun.shadow.bias = -0.0005;
     scene.add(sun, sun.target);
-    world.traverse((m) => {
-      if (!(m instanceof THREE.Mesh)) return;
-      const mat = /** @type {any} */ (m.material);
-      if (mat?.transparent) return;
-      m.castShadow = true;
-      m.receiveShadow = true;
-    });
+    fitShadow(sun, new THREE.Box3(new THREE.Vector3(-7.6, -0.1, -1.6), new THREE.Vector3(7.6, ROOF + 1.7, 4.6)));
   }
 
   const listeners = new Map();
@@ -243,8 +257,7 @@ export function createApp(root, options = {}) {
 
   // ── what the student sees ──────────────────────────────────────────────────
   let action = null;
-  function place(dt = 0) {
-    const n = now();
+  function place(dt = 0, n = now()) {
     const pumpScene = !isBulb();
     for (const id of IDS) {
       const r = n.pumps[id];
@@ -255,7 +268,6 @@ export function createApp(root, options = {}) {
       place3d.switches(id, pumpScene && s.phase === 'run' && r.running);
     }
     bulb.set(isBulb() && s.phase === 'run');
-    note.textContent = isBulb() ? t('note_bulb') : t(stage.width < 520 ? 'note_short' : 'note', { k: SPEED });
     labels(n);
     panel(n);
     stage.invalidate();
@@ -269,7 +281,17 @@ export function createApp(root, options = {}) {
     shown.clear();
     place();
   }
-  const anno = createAnnotations({ stage, layer: ui.annoLayer, avoid: [ui.corner, ui.hint, note, () => action?.ringBox()] });
+  // the h arrow's shaft on the screen: labels keep off it (the pump's name never sits on the arrow)
+  const ha = new THREE.Vector3();
+  const hb = new THREE.Vector3();
+  function arrowBox() {
+    if (!hArrow.visible) return null;
+    ha.set(LAYOUT.hArrowX, 0, LAYOUT.pumpZ).project(camera);
+    hb.set(LAYOUT.hArrowX, H, LAYOUT.pumpZ).project(camera);
+    const x = (ha.x * 0.5 + 0.5) * stage.width;
+    return { left: x - 7, right: x + 7, top: (-hb.y * 0.5 + 0.5) * stage.height, bottom: (-ha.y * 0.5 + 0.5) * stage.height };
+  }
+  const anno = createAnnotations({ stage, layer: ui.annoLayer, avoid: [ui.corner, ui.hint, () => action?.ringBox(), arrowBox] });
   const shown = new Map();
   function label(id, on, text, point, color, spots, optional = false) {
     if (!on) {
@@ -295,30 +317,41 @@ export function createApp(root, options = {}) {
   };
   for (const id of IDS) {
     pts.tank[id].set(LAYOUT.pumpX[id], ROOF + TANK.FLOOR + TANK.BODY * 0.55, LAYOUT.tankZ + TANK.R);
-    pts.pump[id].set(LAYOUT.pumpX[id] + (id === 'small' ? -0.15 : 0.2), 0.32, LAYOUT.pumpZ + 0.12);
+    // at the pump's outer end (its fan cover), so the name sits outside the action's ring, beside the pump
+    pts.pump[id].set(LAYOUT.pumpX[id] + (id === 'small' ? -0.36 : 0.48), 0.24, LAYOUT.pumpZ);
   }
   bulb.group.getWorldPosition(pts.bulb);
   // the stopwatch labels sit outside the tanks (left of the left one, right of the right one), or above
   const SIDE = {
     small: [
-      { dx: -36, dy: 0 },
-      { dx: 0, dy: 62 },
+      { dx: -32, dy: 0 },
       { dx: 0, dy: -58 },
-      { dx: 36, dy: 0 },
+      { dx: 32, dy: 0 },
+      { dx: 34, dy: -44 },
+      { dx: 0, dy: 72 },
     ],
     big: [
-      { dx: 36, dy: 0 },
-      { dx: 0, dy: 62 },
+      { dx: 32, dy: 0 },
       { dx: 0, dy: -58 },
-      { dx: -36, dy: 0 },
+      { dx: -32, dy: 0 },
+      { dx: -34, dy: -44 },
+      { dx: 0, dy: 72 },
     ],
   };
-  const BELOW = [
-    { dx: 0, dy: 34 },
-    { dx: 0, dy: -36 },
-    { dx: 30, dy: 0 },
-    { dx: -30, dy: 0 },
-  ];
+  const OUTSIDE = {
+    small: [
+      { dx: -20, dy: 0 },
+      { dx: 0, dy: 44 },
+      { dx: 0, dy: -48 },
+      { dx: 16, dy: -44 }, // on a short phone: over the wall above the pump (the ring is gone once it runs)
+    ],
+    big: [
+      { dx: 20, dy: 0 },
+      { dx: 0, dy: 44 },
+      { dx: 0, dy: -48 },
+      { dx: -16, dy: -44 },
+    ],
+  };
   function labels(n) {
     const pumpScene = !isBulb();
     for (const id of IDS) {
@@ -328,7 +361,7 @@ export function createApp(root, options = {}) {
       label(`tank-${id}`, pumpScene, `<span class="pw-l">${time}${mass}</span>`, pts.tank[id], COLORS.t, SIDE[id]);
       const showP = s.labels === 'full' && s.phase === 'done';
       const name = `${t(`pump_${id}`)}${showP ? ` <b class="pw-l-P">${t('l_P', { P: PUMPS[id] })}</b>` : ''}`;
-      label(`pump-${id}`, pumpScene, name, pts.pump[id], PUMP_COLORS[id], BELOW, true);
+      label(`pump-${id}`, pumpScene, name, pts.pump[id], PUMP_COLORS[id], OUTSIDE[id], true);
     }
     label('h', pumpScene, t('l_h', { h: H }), pts.h, COLORS.h, [
       { dx: -44, dy: 0 },
@@ -349,14 +382,14 @@ export function createApp(root, options = {}) {
         { dx: 0, dy: 90 },
       ],
     );
-    hArrow.root.visible = pumpScene;
-    guide.visible = pumpScene;
+    hArrow.visible = pumpScene;
   }
 
   // ── the panel: P = W ÷ t for each pump (or the bulb, and the book's power plant) ──
   const cell = (cls, html) => `<span class="${cls}">${html}</span>`;
-  function row(name, W, tt, P) {
-    return `${cell('pw-name', name)}${cell('c-W', W)}${cell('pw-op', '÷')}${cell('c-t', tt)}${cell('pw-op', '=')}<b class="c-P">${P}</b>`;
+  function row(name, W, tt, P, ghost = false) {
+    const g = ghost ? ' pw-ghost' : '';
+    return `${cell(`pw-name${g}`, name)}${cell(`c-W${g}`, W)}${cell(`pw-op${g}`, '÷')}${cell(`c-t${g}`, tt)}${cell(`pw-op${g}`, '=')}<b class="c-P${g}"${ghost ? ' aria-hidden="true"' : ''}>${P}</b>`;
   }
   const q = (u) => `?${u ? ` ${u}` : ''}`;
   function panel(n) {
@@ -366,7 +399,8 @@ export function createApp(root, options = {}) {
       const b = n.bulb;
       const known = s.phase !== 'ready' && b.t > 0;
       rows += row(t('row_bulb'), known ? `${NG(b.E)} J` : q('J'), known ? `${N(b.t)} s` : q('s'), `${N(s.bulbP)} W`);
-      rows += s.phase === 'done' ? row(t('row_plant'), `${N(1000)} × ${N('10<sup>6</sup>')} J`, `${N(1)} s`, `${N(1000)} MW`) : '';
+      // the book's power plant once the bulb has shown what a watt is (until then the row is kept, hidden)
+      rows += row(t('row_plant'), `${N(1000)} × ${N('10<sup>6</sup>')} J`, `${N(1)} s`, `${N(1000)} MW`, s.phase !== 'done');
     } else {
       const p = planNow();
       for (const id of IDS) {
@@ -388,10 +422,10 @@ export function createApp(root, options = {}) {
         ph === 'ready'
           ? t('rule_work_ready', { m: s.mass, h: H, g: G, W: group(workToLift(s.mass)) })
           : ph === 'run'
-            ? t('rule_work_run')
+            ? t('rule_work_run', { k: SPEED })
             : t('rule_work_done');
     } else if (s.example === 'time') {
-      rule = ph === 'ready' ? t('rule_time_ready', { T: s.T }) : ph === 'run' ? t('rule_time_run') : t('rule_time_done');
+      rule = ph === 'ready' ? t('rule_time_ready', { T: s.T }) : ph === 'run' ? t('rule_time_run', { k: SPEED }) : t('rule_time_done');
     } else {
       rule = ph === 'ready' ? t('rule_bulb_ready', { P: s.bulbP }) : ph === 'run' ? t('rule_bulb_run', { P: s.bulbP }) : t('rule_bulb_done');
     }
@@ -408,7 +442,7 @@ export function createApp(root, options = {}) {
     const tried = EXAMPLES.filter((e) => s.runs[e] > 0).length;
     const ex = s.example;
     if (s.phase === 'done') {
-      const untried = EXAMPLES.find((e) => s.runs[e] === 0);
+      const untried = EXAMPLES.find((e) => s.runs[e] === 0 && e !== ex); // never "try" the one just finished
       if (untried) return { label: `act_try_${untried}`, step: tried + 1, example: untried };
       return { label: 'act_again', step: '', example: ex };
     }
@@ -442,12 +476,12 @@ export function createApp(root, options = {}) {
     };
   }
   let lastEmit = '';
-  function changed() {
-    const snap = snapshot();
-    const k = `${snap.example}|${snap.phase}|${snap.pumps.small.t}|${snap.pumps.big.t}|${snap.bulb.t}`;
+  /** Tells the bridge when a stopwatch has moved on a whole second (or the example or phase changed). */
+  function changed(n = now()) {
+    const k = `${s.example}|${s.phase}|${n.pumps.small.t}|${n.pumps.big.t}|${n.bulb.t}`;
     if (k !== lastEmit) {
       lastEmit = k;
-      emit('change', snap);
+      emit('change', snapshot());
     }
   }
 
@@ -476,8 +510,8 @@ export function createApp(root, options = {}) {
         audio.tick();
       }
     }
-    place(dt);
-    changed();
+    place(dt, n);
+    changed(n);
     return true;
   });
 
@@ -541,8 +575,9 @@ export function createApp(root, options = {}) {
   function viewPose() {
     if (isBulb()) {
       const b = LAYOUT.bulb;
-      box.min.set(b.x - 0.3, b.y - 0.5, b.z - 0.2);
-      box.max.set(b.x + 0.3, b.y + 0.2, b.z + 0.1);
+      // the bulb with the top of the door under it and the wall round it, so it reads as the lamp over the door
+      box.min.set(b.x - 0.6, b.y - 0.95, b.z - 0.2);
+      box.max.set(b.x + 0.6, b.y + 0.3, b.z + 0.1);
     } else {
       box.min.set(LAYOUT.hArrowX - 0.25, -0.05, LAYOUT.tankZ - TANK.R);
       box.max.set(LAYOUT.pumpX.big + 0.75, ROOF + TANK.FLOOR + TANK.BODY + 0.3, LAYOUT.pumpZ + 0.3);
@@ -553,7 +588,7 @@ export function createApp(root, options = {}) {
     // the corner buttons are top right: a wide view keeps the tanks (in the middle) clear of them without a margin
     const wide = stage.width / Math.max(1, stage.height) > 1.6;
     const top = wide && !isBulb() ? 16 : Math.min(58, stage.height * 0.2);
-    const bottom = wide && !isBulb() ? 12 : isBulb() ? 30 : 42; // the pumps stand clear of the note
+    const bottom = wide && !isBulb() ? 12 : isBulb() ? 24 : 34; // room for the pumps' names under them
     const side = isBulb() ? Math.min(110, stage.width * 0.2) : 14; // room for the bulb's label beside it
     return fitPose({ box, dir, camera, width: stage.width, height: stage.height, margin: { top, bottom, side } });
   }
@@ -643,11 +678,11 @@ export function createApp(root, options = {}) {
       if (s.phase === 'done') return null;
       if (isBulb()) return bulb.mesh;
       pumpsBox.makeEmpty();
-      for (const id of IDS) pumpsBox.union(tmpBox.setFromObject(pumps[id].body));
+      for (const id of IDS) pumpsBox.union(tmpBox.copy(pumps[id].ringBox).applyMatrix4(pumps[id].root.matrixWorld));
       return pumpsBox;
     },
     pad: 8,
-    avoid: [ui.corner, ui.hint, note, () => anno.boxes()],
+    avoid: [ui.corner, ui.hint, () => anno.boxes()],
     pulse: Boolean(o.coach),
     onAct: () => act(),
   });
@@ -737,7 +772,7 @@ export function createApp(root, options = {}) {
     emit,
     audio,
     questions: ORDER.length,
-    lines: { text: 3, feedback: 3 },
+    lines: { text: 2, feedback: 3 },
     action,
     hooks: {
       enter() {
@@ -868,6 +903,11 @@ export function createApp(root, options = {}) {
       if (p.home) toReady();
       if (p.at != null) holdAt(Number(p.at));
       if (p.done) holdAt(1e9);
+      // a run finished from outside counts as run (the big button then offers the next example)
+      if (s.phase === 'done' && (p.done || p.at != null) && !s.runs[s.example]) {
+        s.runs[s.example] = 1;
+        place();
+      }
       if (p.paused != null && s.phase === 'run') s.paused = Boolean(p.paused);
       if (p.run && (s.phase !== 'run' || s.paused)) startRun();
       stage.invalidate();
@@ -885,4 +925,26 @@ export function createApp(root, options = {}) {
     capture: (opts) => stage.capture(opts),
     exportRoot: () => world,
   };
+}
+
+/** Fits a directional light's shadow camera round a world box (in the light's own view), with a small margin. */
+function fitShadow(light, box) {
+  light.updateMatrixWorld();
+  light.target.updateMatrixWorld();
+  const view = new THREE.Matrix4().lookAt(light.position, light.target.position, new THREE.Vector3(0, 1, 0));
+  view.setPosition(light.position);
+  const inv = view.invert();
+  const lo = new THREE.Vector3(Infinity, Infinity, Infinity);
+  const hi = new THREE.Vector3(-Infinity, -Infinity, -Infinity);
+  const p = new THREE.Vector3();
+  for (const x of [box.min.x, box.max.x])
+    for (const y of [box.min.y, box.max.y])
+      for (const z of [box.min.z, box.max.z]) {
+        p.set(x, y, z).applyMatrix4(inv);
+        lo.min(p);
+        hi.max(p);
+      }
+  const cam = light.shadow.camera;
+  Object.assign(cam, { left: lo.x - 0.2, right: hi.x + 0.2, bottom: lo.y - 0.2, top: hi.y + 0.2, near: Math.max(0.1, -hi.z - 1), far: -lo.z + 1 });
+  cam.updateProjectionMatrix();
 }
