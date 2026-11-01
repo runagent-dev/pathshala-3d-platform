@@ -8,7 +8,9 @@
 // Each has a `root`; parts that are only for picking or pointing, and the sleeves that run out of the picture, carry
 // userData.noExport (the GLB keeps the objects, not a metre of shirt).
 import * as THREE from 'three';
+import { mergeStatic } from './merge.js';
 import { BALL_R, DROP, HALF_ROPE, LENGTH } from './physics.js';
+import { createBench } from './scenery.js';
 
 const UP = new THREE.Vector3(0, 1, 0);
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -26,6 +28,9 @@ export const COLORS = {
 };
 
 const mat = (color, { roughness = 0.6, metalness = 0, name } = {}) => new THREE.MeshStandardMaterial({ color, roughness, metalness, name });
+// the stand's rod and arm, the hook and the ball's eye: plain bright steel (no brushed texture: at this size it does not
+// show)
+const STEEL = new THREE.MeshStandardMaterial({ name: 'Steel', color: 0xd2d7dd, metalness: 1, roughness: 0.32 });
 
 /** A cylinder from a to b (its geometry is 1 long along y, scaled; call again to move it). */
 function stick(radius, material, segments = 10) {
@@ -43,33 +48,10 @@ function stick(radius, material, segments = 10) {
   return m;
 }
 
-/** A wooden table top, its upper face at y. */
-function createTable(_materials, y, { width = 1.6, depth = 0.55, x = 0, z = -0.08 } = {}) {
-  // a pale laminate top with a slightly darker edge, like a school lab bench
-  const top = new THREE.Mesh(new THREE.BoxGeometry(width, 0.03, depth), [
-    mat('#d8c7a6', { roughness: 0.7, name: 'BenchEdge' }),
-    mat('#d8c7a6', { roughness: 0.7, name: 'BenchEdge' }),
-    mat('#efe7d7', { roughness: 0.75, name: 'BenchTop' }),
-    mat('#d8c7a6', { roughness: 0.7, name: 'BenchEdge' }),
-    mat('#d3c09c', { roughness: 0.7, name: 'BenchEdge' }),
-    mat('#d3c09c', { roughness: 0.7, name: 'BenchEdge' }),
-  ]);
-  top.name = 'Table';
-  top.position.set(x, y - 0.015, z);
-  // the bench's front, a little set back under the top, down out of the picture
-  const front = new THREE.Mesh(new THREE.BoxGeometry(width - 0.04, 0.5, depth - 0.04), mat('#e4dccb', { roughness: 0.85, name: 'BenchFront' }));
-  front.name = 'BenchFront';
-  front.userData.noExport = true; // the GLB keeps the bench's top
-  front.position.set(0, -0.265, -0.005);
-  top.add(front);
-  return top;
-}
-
 /**
  * চিত্র ৩.০২: the ball on its cord. The ball's centre rests at the origin; the hook is LENGTH above it.
- * @param {{ materials: any }} options
  */
-export function createPendulum({ materials: M }) {
+export function createPendulum() {
   const root = new THREE.Group();
   root.name = 'Pendulum';
   const hook = V(0, LENGTH, 0);
@@ -82,32 +64,35 @@ export function createPendulum({ materials: M }) {
   const baseX = -0.4;
   const base = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.016, 0.13), iron);
   base.position.set(baseX, tableY + 0.008, -0.03);
-  const rod = stick(0.0065, M.steel, 16);
+  const rod = stick(0.0065, STEEL, 16);
   rod.userData.span(V(baseX + 0.06, tableY, -0.03), V(baseX + 0.06, LENGTH + 0.08, -0.03));
   const boss = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.03, 0.03), iron);
   boss.position.set(baseX + 0.06, LENGTH + 0.024, -0.03);
-  const arm = stick(0.0055, M.steel, 16);
+  const arm = stick(0.0055, STEEL, 16);
   arm.userData.span(V(baseX + 0.06, LENGTH + 0.024, -0.03), V(0.035, LENGTH + 0.024, -0.03));
-  const armEnd = stick(0.0055, M.steel, 16);
+  const armEnd = stick(0.0055, STEEL, 16);
   armEnd.userData.span(V(0.035, LENGTH + 0.024, -0.03), V(0.035, LENGTH + 0.024, 0));
-  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.008, 0.0018, 8, 24), M.steel);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.008, 0.0018, 8, 24), STEEL);
   ring.position.set(0, LENGTH + 0.008, 0);
-  const hookBar = stick(0.0025, M.steel, 8);
+  const hookBar = stick(0.0025, STEEL, 8);
   hookBar.userData.span(V(0, LENGTH + 0.016, 0), V(0, LENGTH + 0.024, 0));
-  const hookCap = stick(0.0025, M.steel, 8);
+  const hookCap = stick(0.0025, STEEL, 8);
   hookCap.userData.span(V(0, LENGTH + 0.024, 0), V(0.035, LENGTH + 0.024, 0));
   stand.add(base, rod, boss, arm, armEnd, ring, hookBar, hookCap);
+  for (const m of [base, rod, boss, arm]) m.castShadow = true;
+  mergeStatic(stand);
   root.add(stand);
 
-  const table = createTable(M, tableY, { width: 0.9, depth: 0.3, x: -0.1, z: -0.06 });
-  root.add(table);
+  const bench = createBench(tableY);
+  const table = bench.top;
+  root.add(bench.root);
 
   // the ball: polished steel with a small eye on top where the cord is tied
   const ball = new THREE.Group();
   ball.name = 'Ball';
   const steel = new THREE.MeshPhysicalMaterial({ name: 'BallSteel', color: 0xc9ced4, metalness: 1, roughness: 0.22 });
   const sphere = new THREE.Mesh(new THREE.SphereGeometry(BALL_R, 40, 28), steel);
-  const eye = new THREE.Mesh(new THREE.TorusGeometry(0.0055, 0.0016, 8, 20), M.steel);
+  const eye = new THREE.Mesh(new THREE.TorusGeometry(0.0055, 0.0016, 8, 20), STEEL);
   eye.position.y = BALL_R + 0.0052;
   ball.add(sphere, eye);
   root.add(ball);
@@ -203,7 +188,7 @@ export function createPendulum({ materials: M }) {
  * A hand closed round a line along its local +x (a rope going through the fist from the knot side), the forearm
  * going on along +x out of the picture. Local y is up, z towards the viewer.
  */
-export function createHand({ materials: _M, grip = 'rope' } = {}) {
+export function createHand({ grip = 'rope' } = {}) {
   const root = new THREE.Group();
   root.name = 'Hand';
   const skin = mat(COLORS.skin, { roughness: 0.62, name: 'Skin' });
@@ -244,15 +229,16 @@ export function createHand({ materials: _M, grip = 'rope' } = {}) {
     capsule(0.0145, V(0.07, 0.002, -0.006), V(0.12, 0.004, -0.008)); // wrist
     capsule(0.02, V(0.112, 0.004, -0.008), V(0.75, 0.02, -0.03), sleeve).userData.noExport = true; // out of the picture
   }
+  // the hand's parts never move against each other: one mesh for the skin, one for the sleeve
+  mergeStatic(root);
   return { root };
 }
 
 /**
  * চিত্র ৩.০৩: the book on its rope. The knot is at the origin, the book hangs below it, the two halves of the rope go
  * up to the hands at angle α above the horizontal.
- * @param {{ materials: any }} options
  */
-export function createBookRig({ materials: M }) {
+export function createBookRig() {
   const root = new THREE.Group();
   root.name = 'BookOnRope';
   const W = 0.17;
@@ -280,6 +266,7 @@ export function createBookRig({ materials: M }) {
   const band2 = band.clone();
   band2.position.y = -H * 0.36;
   book.add(front, back, spine, block, band, band2);
+  mergeStatic(book);
   book.position.set(0, top - H / 2, 0);
   // the book and the rope round it, turned a little about the vertical through the knot
   const turned = new THREE.Group();
@@ -320,8 +307,8 @@ export function createBookRig({ materials: M }) {
   root.add(knot, left, right);
 
   // the hands: the left one is the right one mirrored (scale x −1 on a parent)
-  const handR = createHand({ materials: M });
-  const handL = createHand({ materials: M });
+  const handR = createHand();
+  const handL = createHand();
   const holdR = new THREE.Group();
   const holdL = new THREE.Group();
   holdL.scale.x = -1;

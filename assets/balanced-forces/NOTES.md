@@ -37,12 +37,12 @@ push, as contact-noncontact-force says "মেঝে ঠেলে ধরে র�
 - **চিত্র ৩.০২, a body on a string.** A 1 kg metal ball (8 cm) hangs on a 30 cm dark cord from the hook of a lab
   stand (the hook and the stand's arm are always in the picture), 15 cm above a bench. W = mg = 9.8 N (g = 9.8 ms⁻²,
   as falling-bodies). The ball is about 44 px across at 390×700 and 25 px at 390×520.
-  - At rest: T (orange) up along the cord, W (violet) down, the same length, labelled "সুতার টান T = ৯.৮ নিউটন",
-    "ওজন W = ৯.৮ নিউটন"; a callout "লব্ধি বল = ০"; the panel: **সাম্যাবস্থা**, "লব্ধি বল = ০, তাই ত্বরণ নেই" and the
+  - At rest: T (orange) up along the cord, W (violet) down, the same length, labelled "T = ৯.৮ নিউটন",
+    "W = ৯.৮ নিউটন"; a callout "লব্ধি = ০"; the panel: **সাম্যাবস্থা**, "লব্ধি বল = ০, তাই ত্বরণ নেই" and the
     book's sentence. The first-use hand points at the ball: "পাশে টেনে ছেড়ে দাও".
   - Pulled aside by a finger (or ←/→, 5° a step; at most 30°, the book's "একটুখানি"): a hand pinches the ball and
     pulls it, at right angles to the cord, away from the lowest point, with mg sin θ (light orange arrow along the
-    arm, a dashed label "হাতের টান = ৪.৯ নিউটন"); T = mg cos θ along the cord; the three forces cancel: **সাম্যাবস্থা**
+    arm, a dashed label "হাত = ৪.৯ নিউটন", the name the tip-to-tail drawing uses); T = mg cos θ along the cord; the three forces cancel: **সাম্যাবস্থা**
     (like চিত্র ৩.০৩). The line says what letting go will do, in the book's words: "ছেড়ে দেওয়া মাত্র হাতের টান থাকবে
     না, তখন সুতার টান আর ওজন মিলে একটি লব্ধি বল কাজ করবে।" No "লব্ধি বল = …" label ever sits on a body at rest.
   - Let go (lift the finger, or Space/Enter): the hand's arrow is gone, and T and W's resultant (black) acts: the ball
@@ -54,10 +54,10 @@ push, as contact-noncontact-force says "মেঝে ঠেলে ধরে র�
     (damping 0.1/s); below 0.3° it hangs still again (balanced). A finger on the swinging ball catches it.
   - Cut (tap the cord where to cut it, the button "সুতা কাটো", or C), only while the ball hangs still (held or
     swinging, the button rests and a tap or C says "আগে বস্তুটিকে স্থির ঝুলতে দাও, তারপর সুতা কাটো।"): the top
-    piece stays on the hook, the cut piece goes with the ball. T is gone: only W, labelled "ওজন W: অসাম্য বল"; the
+    piece stays on the hook, the cut piece goes with the ball. T is gone: only W, labelled "W: অসাম্য বল"; the
     view flies down 18 cm (same height) so W stays whole; the ball falls 15 cm (0.17 s) **five times slower**, leaving
-    a dot every 0.04 s of real time (the gaps grow); the note says "সময় ৫ গুণ ধীর · দাগ প্রতি ০.০৪ সেকেন্ডে". On the
-    bench the cut piece falls over beside it, and W and the bench's push ("টেবিলের ঠেলা = ৯.৮ নিউটন", orange, up) are
+    a dot every 0.04 s of real time (the gaps grow); the panel's quiet line says "সময় ৫ গুণ ধীর · দাগ প্রতি ০.০৪
+    সেকেন্ডে". On the bench the cut piece falls over beside it, and W and the bench's push ("ঠেলা = ৯.৮ নিউটন", orange, up) are
     drawn as a balanced pair: সাম্যাবস্থা again. "আবার ঝোলাও" (R) hangs it again and the view goes back up; a tap on
     the ball on the bench makes that button pulse.
 - **চিত্র ৩.০৩, a book on a rope.** A 1 kg book (24 × 17 × 3 cm, maroon hardcover, turned a little so its pages
@@ -67,13 +67,15 @@ push, as contact-noncontact-force says "মেঝে ঠেলে ধরে র�
   horizontal goes from 20° to 70° and the book stays where it is; T = W / (2 sin α) (9.8 N at 30°, where all three
   forces are equal; 14.3 N at 20°, 5.2 N at 70°); the resultant is zero at every angle. After the first change the
   line says "দড়ি যত টানটান, T₁ ও T₂ তত বড়; তবু তিনটি বলের লব্ধি শূন্যই থাকে … তিনটি বল মিলেও সাম্যাবস্থা তৈরি হয়।"
-- **Arrows**: lengths ∝ force, 1.4 cm per N, the same in both scenes (note: "তীরের দৈর্ঘ্য বলের মানের সমানুপাতিক");
-  drawn over the picture from the body's surface outwards (like a diagram on a photo), so they never cover the ball
-  and stay visible over the bench. Colours (batch decision): pulls #e8590c (also the bench's push), the hand's pull a
-  lighter #ffa94d with a dashed label, weight #7048e8, resultant #212529; every arrow carries its words.
+- **Arrows**: lengths ∝ force, 1.4 cm per N, the same in both scenes (the panel's quiet line: "তীরের দৈর্ঘ্য বলের
+  মানের সমানুপাতিক"); bold, flat colour in a white outline (`src/arrows.js`), drawn over the picture from the body's
+  surface outwards (like a diagram on a photo), so they never cover the ball and read on the wall and the bench.
+  Colours (batch decision): pulls #e8590c (also the bench's push), the hand's pull a lighter #ffa94d with a dashed
+  label, weight #7048e8, resultant #212529; every arrow carries its symbol and size on a solid white chip.
 - **The panel**: the state word (সাম্যাবস্থা in green with a ring, অসাম্যাবস্থা in black with a dot), one line with
-  the resultant and the acceleration, the book's sentence for that moment, and a small drawing of the forces **tip
-  to tail** (caption "তীর পরপর জোড়া: শুরুতে ফিরলে লব্ধি ০"): each arrow starts where the one before ended; when the
+  the resultant and the acceleration, two quiet lines (the arrows' scale, or during the fall the slowed time and the
+  marks; then what the small drawing is), the book's sentence for that moment, and a small drawing of the forces
+  **tip to tail** (caption "তীর পরপর জোড়া: শুরুতে ফিরলে লব্ধি ০"): each arrow starts where the one before ended; when the
   last one comes back to the ring where the first began the resultant is zero (the closed triangle of T₁, T₂, W, or
   of T, W and the hand's pull; T and W side by side, equal and opposite); otherwise the dashed black লব্ধি goes from
   the ring to the end. Drawn at its own pixel size (symbols 11.5 px everywhere), fitted to every arrow, its symbols
@@ -81,11 +83,11 @@ push, as contact-noncontact-force says "মেঝে ঠেলে ধরে র�
 - **Test** (5 questions, 4 tap answers; a right answer gets the worked answer, a wrong one leads with the answer and
   says what the picked choice got wrong; the tension question always before the cut one, whose scene shows T = W, and
   the book's question before the pull):
-  1. a ball of 0.6–0.9 kg hangs still, its W shown with its size, "সুতার টান T = ?" on the cord: how big is T? W / 0
+  1. a ball of 0.6–0.9 kg hangs still, its W shown with its size, "T = ?" on the cord: how big is T? W / 0
      ("at rest, so no force") / 2W ("must pull harder") / 9.8 N (the weight of 1 kg, the picture not read); the
      answer draws T.
   2. a ball hangs still: cut the cord, which force is unbalanced? W down / T up / none / T and W, zero; the answer
-     plays the slowed fall, then holds the picture just after the cut: only W, "ওজন W: অসাম্য বল".
+     plays the slowed fall, then holds the picture just after the cut: only W, "W: অসাম্য বল".
   3. the ball just let go at 32–35° (to the right, clear of the buttons), only the cord and four 12 cm grey arrows
      ক–ঘ (their letters a fixed distance past each head): which way does the resultant of the pull and the weight
      point? along the path towards the middle / straight down (only W) / along the cord (only T) / level; the answer
@@ -123,3 +125,44 @@ push, as contact-noncontact-force says "মেঝে ঠেলে ধরে র�
 - The resultant while swinging points up at the bottom (centripetal), which the book does not discuss; the figure
   shows it because it is true and the panel only says "লব্ধি কখনো শূন্য হয় না".
 - Every Bangla line needs a person's check against the book.
+
+## Polish pass (2026-11-01, v0.2.0)
+Against `docs/agents/polish-pass.md`.
+- **Layout.** The 3D on top and the panel below at every size but the kit's short-and-wide one (844×390, 640×400);
+  nothing in this figure's CSS moves the panel. On a phone held upright the panel is tighter (chips 40 px, the
+  drawing 108 × 84, the result line one line, the book's words 13.5 px, the test's answers 43 px): the 3D view has
+  386 of 700 px (55 %, 49 % before). On wide panels the drawing, the state and the book's words sit side by side,
+  the two quiet lines under the words. The panel keeps one height in every state, in both languages (checked for
+  rest, held, swinging, falling, landed, the book at 20° and 70°, and every answer of the test).
+- **Text on the 3D.** The top-left caption "তীরের দৈর্ঘ্য বলের মানের সমানুপাতিক" and the fall's note "সময় ৫ গুণ ধীর ·
+  দাগ প্রতি ০.০৪ সেকেন্ডে" left the picture: they are the first quiet line under the state in the panel (the slowed
+  time while the ball falls and on the bench, the scale otherwise), above the drawing's caption. The labels are short:
+  "T = ৯.৮ নিউটন", "W = ৯.৮ নিউটন", "হাত = ৪.৯ নিউটন", "ঠেলা = ৯.৮ নিউটন", "লব্ধি = ৩.৭ নিউটন", "W: অসাম্য বল",
+  "T₁ = …", "লব্ধি = ০" (the same names as the tip-to-tail drawing; the panel's sentences say সুতার টান, ওজন, হাতের
+  টান, টেবিলের ঠেলা). Text on the 3D: 87 characters in 4 boxes → 35 in 3 (both 390×700 and 844×390).
+- **Setting and arrows.** The near-white background and beige bench became a school physics laboratory
+  (`src/scenery.js`, canvas textures): a blue-grey distempered wall over a dark dado and a rail, a slate blackboard
+  with a chalk drawing of a hanging body and its two forces, a cork notice board with pinned sheets, a clock, a shelf
+  of reagent bottles and a flask, a long lacquered wooden bench with drawers and brass handles, textbooks and a
+  beaker of water on it, a terrazzo floor and a dim room beyond for the turned view. The book hangs in front of the
+  same wall (its shadow on it). Daylight from behind the viewer throws the stand's, the ball's and the hand's shadows
+  onto the bench and the wall. Every force arrow is bold flat colour in a white outline (`src/arrows.js`, as in
+  hanging-weight-pull), so the orange T reads on the rope and the wall, the violet W over the bench, the black
+  resultant over the ball; the test's four choices are dark grey in a white outline (they were pale grey). The
+  labels have solid white chips with a soft shadow. The marks of the fall are dark dots ringed in white.
+- **Smooth, same detail.** The kit's material set (brushed-steel canvases at 1024 and more, built for millimetre
+  instruments) is no longer made: the stand and the ball's eye use one plain steel. The stand, each hand (skin,
+  sleeve) and the book are merged into one mesh per material (`src/merge.js`); the room is a few meshes (one
+  vertex-coloured mesh for all the plain parts); the bench top is one slab for the GLB's table and one for its ends.
+  PCF shadows at 1024 in a box fitted round what casts (VSM at 2048 on a loose box before), only the ball, the cord,
+  the stand, the holding hand, the book and its rope cast; the room and the bench receive. The marks are two
+  instanced meshes instead of a new mesh per mark. The small drawing is redrawn when the phone turns (it kept its
+  old size before).
+- **Bugs fixed.** After turning the phone the tip-to-tail drawing kept the old box's size until the next change; the
+  pale test arrows were hard to see; English lines (the held sentence, one result line, three questions) ran a line
+  longer than the room kept for them, so the 3D view jumped by up to 20 px between states.
+- **Numbers** (headless Chromium, software GL, shadows on, 390×700): draw calls avg 64 / max 86 → 56 / 77;
+  triangles max 31k → 32k (the room); texture memory 56 MB (largest 2048) → 18.1 MB (largest 1024); frames drawn
+  while idle 0/s before and after; text on the 3D 87/4 → 35/3. Time to ready 0.5–0.7 s before on a quiet moment and
+  1.0–1.4 s after with the machine's load at 27–37 (one run at 6–9 s while other agents' tests ran): within the noise
+  here.
