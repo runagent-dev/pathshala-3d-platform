@@ -42,14 +42,14 @@ function tileTexture() {
     const r = rand(23);
     const n = 4;
     const t = w / n;
-    ctx.fillStyle = '#c98a35'; // grout
+    ctx.fillStyle = '#ad9474'; // grout
     ctx.fillRect(0, 0, w, w);
     for (let i = 0; i < n; i++)
       for (let j = 0; j < n; j++) {
         const k = r();
         const g = ctx.createLinearGradient(i * t, j * t, (i + 1) * t, (j + 1) * t);
-        g.addColorStop(0, `hsl(${38 + k * 4}, ${86 - k * 8}%, ${68 + k * 6}%)`);
-        g.addColorStop(1, `hsl(${36 + k * 4}, ${82 - k * 8}%, ${63 + k * 6}%)`);
+        g.addColorStop(0, `hsl(${32 + k * 4}, ${34 - k * 6}%, ${72 + k * 4}%)`);
+        g.addColorStop(1, `hsl(${30 + k * 4}, ${32 - k * 6}%, ${68 + k * 4}%)`);
         ctx.fillStyle = g;
         ctx.fillRect(i * t + 3, j * t + 3, t - 6, t - 6);
         // a soft sheen on each tile
@@ -57,7 +57,7 @@ function tileTexture() {
         ctx.fillRect(i * t + 6, j * t + 6, t * 0.45, t * 0.3);
       }
     // fine speckle (terrazzo-like chips) and a few scuffs
-    for (let i = 0; i < 2600; i++) {
+    for (let i = 0; i < 600; i++) {
       ctx.fillStyle = r() < 0.5 ? `rgba(150, 90, 30, ${0.1 + r() * 0.15})` : `rgba(255, 240, 210, ${0.15 + r() * 0.2})`;
       ctx.fillRect(r() * w, r() * w, 1 + r() * 1.5, 1 + r() * 1.5);
     }
