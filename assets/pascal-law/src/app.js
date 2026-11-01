@@ -101,6 +101,7 @@ export function createApp(root, options = {}) {
   root.lang = t.lang;
   root.tabIndex = 0;
   const ui = buildStudentShell(root, t, {
+    layout: 'side',
     learn: cleanSheet(t, {
       examples: { label: 'ratios', results: false, items: RATIOS.map((k) => ({ id: String(k), label: `chip_${k}` })) },
       quiet: [
