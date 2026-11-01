@@ -9,14 +9,14 @@
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
 import { createTweener, ease } from '@shared/tween.js';
-import { createMaterials } from '@shared/student/materials.js';
 import { createAudio } from '@shared/student/audio.js';
 import { buildStudentShell } from '@shared/student/shell.js';
 import { createCoach } from '@shared/student/coach.js';
 import { createQuiz } from '@shared/student/quiz.js';
 import { ICONS, svg } from '@shared/student/icons.js';
 import { createI18n } from './i18n.js';
-import { ARROW, BASE, BOX, TUBE, Y0, createApparatus } from './apparatus.js';
+import { ARROW, BOX, TUBE, Y0, createApparatus } from './apparatus.js';
+import { DESK_Y, PUMP, createClassroom } from './scenery.js';
 import { createLabels } from './labels.js';
 import { fitPose } from './camera.js';
 import {
@@ -67,6 +67,42 @@ const FRAME = new THREE.Box3(
 );
 const STEP_ICON = svg('<path d="M6 6l7 6-7 6z" class="fill"/><path d="M17 6v12" stroke-width="2.4"/>');
 
+/**
+ * Fits a directional light's shadow camera round `box` (what casts) and where its shadows land on the floor at
+ * height `groundY`, in the light's own frame, so the shadow map's pixels are spent where shadows are.
+ */
+function fitShadow(light, box, groundY) {
+  const look = new THREE.OrthographicCamera();
+  look.position.copy(light.position);
+  look.lookAt(light.target.position);
+  look.updateMatrixWorld();
+  const inv = look.matrixWorld.clone().invert();
+  const toLight = light.position.clone().sub(light.target.position).normalize();
+  const lo = new THREE.Vector3(Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY);
+  const hi = lo.clone().negate();
+  const p = new THREE.Vector3();
+  for (const x of [box.min.x, box.max.x])
+    for (const y of [box.min.y, box.max.y])
+      for (const z of [box.min.z, box.max.z])
+        for (const k of [0, 1]) {
+          p.set(x, y, z);
+          if (k) p.addScaledVector(toLight, -(y - groundY) / toLight.y); // its shadow on the floor
+          p.applyMatrix4(inv);
+          lo.min(p);
+          hi.max(p);
+        }
+  const pad = 0.02;
+  Object.assign(light.shadow.camera, {
+    left: lo.x - pad,
+    right: hi.x + pad,
+    bottom: lo.y - pad,
+    top: hi.y + pad,
+    near: Math.max(0.01, -hi.z - 0.1),
+    far: -lo.z + 0.1,
+  });
+  light.shadow.camera.updateProjectionMatrix();
+}
+
 export function createApp(root, options = {}) {
   const o = { ...DEFAULTS, ...options };
   const t = createI18n(o.lang, { numerals: o.numerals });
@@ -95,43 +131,50 @@ export function createApp(root, options = {}) {
             <button class="pvc-btn" data-act="paper"><span></span></button>
           </div>`,
   });
-  const slowNote = document.createElement('div');
-  slowNote.className = 'fb-slow';
-  ui.stage.append(slowNote);
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
-  const stage = createStage(ui.canvasHost, { fov: 20, near: 0.05, far: 40, environment: 'studio-light' });
+  const stage = createStage(ui.canvasHost, { fov: 20, near: 0.05, far: 40, environment: 'studio-light', environmentIntensity: 0.6 });
   const { camera, controls, scene } = stage;
   controls.minDistance = 0.5;
-  controls.maxDistance = 6;
+  controls.maxDistance = 3;
   controls.enablePan = false;
-  const M = createMaterials(stage.renderer);
-  const app = createApparatus({ materials: M, t });
+  // the turned view stays in front of the board and above the desk
+  controls.minAzimuthAngle = -1.15;
+  controls.maxAzimuthAngle = 1.15;
+  controls.minPolarAngle = 0.3;
+  controls.maxPolarAngle = 1.5;
+  const app = createApparatus({ t });
   scene.add(app.root);
+  // the classroom round the apparatus (src/scenery.js): the teacher's desk before the blackboard; with
+  // bg=transparent only the apparatus
+  const transparent = o.bg === 'transparent';
+  const room = transparent ? null : createClassroom();
+  if (room) {
+    scene.add(room.root);
+    scene.background = room.background;
+  }
+  // a soft fill: the room's light from above, the warm desk below
+  scene.add(new THREE.HemisphereLight(0xf4f1ea, 0x6b4a33, 0.55));
   const tweener = createTweener();
   stage.addTicker((dt) => tweener.tick(dt));
   const audio = createAudio(o.sound);
 
-  if (o.shadow && o.bg !== 'transparent') {
+  // daylight from the classroom's windows, high on the right in front: the tubes' shadows fall back onto the desk
+  const sun = new THREE.DirectionalLight(0xfff3e0, 2.3);
+  sun.position.set(0.75, 2.3, 1.8);
+  sun.target.position.set(0.05, 0.2, 0);
+  scene.add(sun, sun.target);
+  if (o.shadow && !transparent) {
+    // PCF in a box fitted round what casts (the apparatus and the pump) and where their shadows land on the desk,
+    // seen from the light: 1024 px for well under a metre
     stage.renderer.shadowMap.enabled = true;
-    stage.renderer.shadowMap.type = THREE.VSMShadowMap;
-    const sun = new THREE.DirectionalLight(0xffffff, 0.4);
-    sun.position.set(0.6, 2.4, 1.6);
-    sun.target.position.set(0, 0.2, 0);
+    stage.renderer.shadowMap.type = THREE.PCFShadowMap;
     sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
-    Object.assign(sun.shadow.camera, { left: -0.6, right: 0.6, top: 0.8, bottom: -0.5, near: 1, far: 5 });
-    sun.shadow.radius = 8;
-    sun.shadow.bias = -0.0004;
-    const floor = new THREE.Mesh(new THREE.PlaneGeometry(12, 12), new THREE.ShadowMaterial({ opacity: 0.12 }));
-    floor.rotation.x = -Math.PI / 2;
-    floor.position.y = -BASE.h;
-    floor.receiveShadow = true;
-    floor.userData.noExport = true;
-    scene.add(sun, sun.target, floor);
-    app.root.traverse((m) => {
-      if (m instanceof THREE.Mesh && m.material && !m.material.transparent && m.material.visible !== false) m.castShadow = true;
-    });
+    sun.shadow.mapSize.set(1024, 1024);
+    fitShadow(sun, new THREE.Box3(new THREE.Vector3(-0.3, DESK_Y, -0.24), new THREE.Vector3(PUMP.x + 0.13, Y0 + 0.11, 0.12)), DESK_Y);
+    sun.shadow.radius = 3;
+    sun.shadow.bias = -0.0005;
+    sun.shadow.normalBias = 0.0015;
   }
 
   const listeners = new Map();
@@ -212,7 +255,6 @@ export function createApp(root, options = {}) {
     layer: ui.annoLayer,
     avoid: () => [
       ui.corner.getBoundingClientRect(),
-      slowNote.getBoundingClientRect(),
       ui.hint.classList.contains('show') ? ui.hint.getBoundingClientRect() : null,
       boxRect(),
       coachLabel()?.getBoundingClientRect(),
@@ -330,7 +372,7 @@ export function createApp(root, options = {}) {
       return t(crumpled ? 'say_done_crumpled' : 'say_done', { tv: fmt(T_VAC), ts: fmt(T_STONE), tp: fmt(tPaper()) });
     if (s.tau >= T_VAC - 1e-9) return t('say_vac_down', { t: fmt(T_VAC) });
     if (p === 'paused' && s.tau > 0) return t(crumpled ? 'say_paused_crumpled' : 'say_paused', { t: fmt(s.tau) });
-    return t('say_fall', { dt: STEP });
+    return t('say_fall', { dt: STEP, k: SLOW });
   }
 
   let shown = '';
@@ -563,7 +605,7 @@ export function createApp(root, options = {}) {
   ];
   function blocked(pose) {
     const sr = stage.canvas.getBoundingClientRect();
-    const rects = [ui.corner.getBoundingClientRect(), slowNote.getBoundingClientRect()].filter((r) => r.width);
+    const rects = [ui.corner.getBoundingClientRect()].filter((r) => r.width);
     if (!rects.length) return false;
     probe.copy(camera);
     probe.position.copy(pose.position);
@@ -621,12 +663,8 @@ export function createApp(root, options = {}) {
     s.userMovedCamera = true;
     tweener.cancel('camera');
   });
-  // the note in the corner: shorter on a narrow stage, so it keeps clear of the left tube (before the camera fits)
-  const noteText = () => {
-    slowNote.textContent = t(stage.width < 480 ? 'slow_short' : 'slow', { k: SLOW });
-    // on the smallest stage the speed arrows are named by their symbol only (there is room for "v", not for "বেগ v")
-    labels.setText('vel', stage.width < 480 && stage.height < 300 ? 'v' : t('lbl_velocity'));
-  };
+  // on the smallest stage the speed arrows are named by their symbol only (there is room for "v", not for "বেগ v")
+  const noteText = () => labels.setText('vel', stage.width < 480 && stage.height < 300 ? 'v' : t('lbl_velocity'));
   noteText();
   stage.onResize(noteText);
   stage.onResize(() => !s.userMovedCamera && flyTo(viewPose(), 0));
@@ -985,7 +1023,7 @@ export function createApp(root, options = {}) {
       const y = (-v.y * 0.5 + 0.5) * stage.height;
       if (x < 16 || x > stage.width - 16 || y < 16 || y > stage.height - 48) return false;
       const sr = stage.canvas.getBoundingClientRect();
-      return ![ui.corner, slowNote].some((el) => {
+      return ![ui.corner].some((el) => {
         const r = el.getBoundingClientRect();
         return r.width && x > r.left - sr.left - 12 && x < r.right - sr.left + 12 && y > r.top - sr.top - 12 && y < r.bottom - sr.top + 12;
       });
@@ -996,7 +1034,7 @@ export function createApp(root, options = {}) {
       t,
       loupe: null,
       tweener,
-      avoid: [ui.corner, ui.hint, slowNote],
+      avoid: [ui.corner, ui.hint],
       object: {
         // the red button; where it can't be pointed at (too near the corner buttons), the stone on its shutter
         get label() {

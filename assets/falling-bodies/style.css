@@ -40,16 +40,14 @@ body.bg-transparent { background: transparent; }
 .fb-acts [data-act='go'] { min-width: 112px; }
 .fb-ic { display: inline-flex; }
 
-/* the note in the corner: the fall is slowed down */
-.fb-slow { position: absolute; left: 10px; top: 10px; z-index: 5; max-width: calc(100% - 20px); padding: 3px 9px; border-radius: 6px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.92); font-size: 13px; line-height: 1.45; color: var(--ink-2); pointer-events: none; }
-
 /* labels on the scene (src/labels.js) */
-.fb-label { position: absolute; left: 0; top: 0; white-space: nowrap; padding: 1px 8px; border-radius: 4px; border: 1px solid var(--line-2); background: rgba(255, 255, 255, 0.94); font-size: 14px; font-weight: 600; line-height: 1.45; color: var(--ink); pointer-events: none; will-change: transform; }
+.fb-label { position: absolute; left: 0; top: 0; white-space: nowrap; padding: 1px 8px; border-radius: 4px; border: 1px solid var(--line-2); background: #fff; box-shadow: 0 1px 3px rgba(10, 16, 22, 0.35); font-size: 14px; font-weight: 600; line-height: 1.45; color: var(--ink); pointer-events: none; will-change: transform; }
 .fb-label.fb-tube { font-size: 14px; font-weight: 700; padding: 0 7px; }
 .fb-label.fb-time { padding: 0 5px; border-color: color-mix(in srgb, var(--c-t) 45%, transparent); color: var(--c-t); font-size: 13px; }
 .fb-label.fb-vel { padding: 0 5px; border-color: color-mix(in srgb, var(--c-v) 45%, transparent); color: var(--c-v); font-size: 13px; }
 .fb-lines { position: absolute; inset: 0; width: 100% !important; height: 100% !important; overflow: visible; pointer-events: none; }
-.fb-leader { stroke: #5b6672; stroke-width: 1; }
+/* leaders: dark ink in a thin white halo, so they read on the board and on the steel collars alike */
+.fb-leader { stroke: #1d2733; stroke-width: 1.4; filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff); }
 
 /* test answers in words: a little smaller, two lines allowed */
 .fb .pvc-opt { font-size: 15px; line-height: 1.25; }
@@ -69,12 +67,20 @@ body.bg-transparent { background: transparent; }
   .fb-k b { font-size: 15px; }
   .fb-c b { font-size: 20px; }
 }
-/* phones: a little tighter, so the 3D view gets the room */
+/* phones: a little tighter, so the 3D view gets at least 55 % of the height */
 @container pvc (max-width: 560px) {
+  .fb-say { line-height: 1.42; min-height: calc(3 * 1.42em); }
+  .fb .pvc-learn { gap: 4px; }
+  .fb .pvc-q-options { gap: 6px; }
+  .fb .pvc-q-head { min-height: 34px; }
+  .fb .pvc-q-head .pvc-btn { height: 34px; }
+  .fb-c { line-height: 1.1; }
+  .fb-k { line-height: 1.15; }
+  .fb-laws, .fb-eqs { line-height: 1.3; }
   .fb .pvc-panel { gap: 6px; }
   .fb .pvc-tabs button { height: 38px; }
   .fb .pvc-q-ask { gap: 6px; }
-  .fb .pvc-opt { height: 44px; }
+  .fb .pvc-opt { height: 42px; }
   .fb .pvc-q-text { font-size: 15.5px; }
   .fb-acts .pvc-btn { padding: 0 9px; font-size: 14.5px; }
 }
