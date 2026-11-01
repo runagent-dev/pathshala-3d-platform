@@ -123,3 +123,17 @@ result, one rule):
 - The crane's arrow is drawn beside the cable (not on it) so the hook stays visible; the football's weight arrow is
   drawn from its middle, over the ball. The parachute's contact patch is drawn on the middle of the canopy: the air
   touches the whole cloth.
+
+## Polish and declutter (0.3.0)
+Carried over from the unfinished polish pass (its layout for the old bottom panel left out): each example now has a
+simple coloured place instead of the white page (src/setting.js: a building site under the sky for the crane, a
+school corridor for the push, a store room for friction, a classroom for the fall, a teak table for the magnet and
+the comb, a yard and a sky for the test); how time is shown (held, slowed, real) sits at the end of the action's row
+in the panel, not on the view; outlined arrows; soft PCF shadows in a box fitted round each example, only the bodies
+cast; the examples' static parts merged (src/merge.js).
+
+Declutter (the owner: only the main objects): every place is only its floor, wall or sky; no site fence, building,
+town, sand and bricks, notice board, door, window, bench, sacks and crates, blackboard, teacher's table, exercise
+book or pencil. Kit 1.5.0 puts the panel beside the 3D, so the rules for a wide sheet under the view are gone, and the
+old phone-on-its-side rule now serves any narrow side panel (≤ 340 px). No সামনে / ঘুরিয়ে দেখো buttons: the lab starts
+from the front, a drag turns it, and the small "front" icon then brings it back.
