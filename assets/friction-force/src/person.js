@@ -1,7 +1,11 @@
 // Articulated rope puller, metres, local +x toward the crate.
 // Continuous swept limbs round each joint; the knees bend toward the toes.
+// Kept light without losing detail: the connected shirt and trousers are sculpted once (shared by every puller) and
+// skinned on the GPU; the parts that never move against each other (the face, the collar and buttons, each hand, each
+// shoe) are merged into one vertex-coloured mesh each; the materials are shared.
 import * as THREE from 'three';
-import { createSurface, smoothMin, ellipsoidDistance, boneDistance, createDeformer } from './surface.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { bakeSurface, smoothMin, ellipsoidDistance, boneDistance } from './surface.js';
 
 const HIP_Y = 0.86;
 const THIGH = 0.43,
@@ -14,22 +18,175 @@ const UP = new THREE.Vector3(0, 1, 0),
   Z = new THREE.Vector3(0, 0, 1);
 const FRONT = new THREE.Vector3(1, 0, 0);
 
+/** Materials per colour scheme, shared by every puller. */
+const MATERIALS = new Map();
+function materialsFor(shirt, trousers) {
+  const key = `${shirt}|${trousers}`;
+  if (!MATERIALS.has(key)) {
+    const mat = (name, color, roughness = 0.8) => new THREE.MeshStandardMaterial({ name, color, roughness, metalness: 0 });
+    MATERIALS.set(key, {
+      shirt: mat('Shirt', shirt),
+      trousers: mat('Trousers', trousers),
+      skin: mat('Skin', '#b98057', 0.7),
+      hair: mat('Hair', '#222128'),
+      shoe: mat('Shoes', '#232c3a'),
+      sole: mat('ShoeSole', '#ced7dc'),
+      eye: mat('Eyes', '#211d1b'),
+      white: mat('EyeWhite', '#fff4e5'),
+      lips: mat('Lips', '#774631'),
+      seam: mat('ShirtSeams', '#d95412'),
+      // the merged rigid parts keep each part's colour as vertex colours
+      paint: new THREE.MeshStandardMaterial({ name: 'PersonParts', vertexColors: true, roughness: 0.75, metalness: 0 }),
+    });
+  }
+  return MATERIALS.get(key);
+}
+
+/**
+ * Merges every mesh under `group` (but not under `skip`) into one mesh in `group`'s frame, each part's colour kept as
+ * vertex colours, in the shared vertex-coloured material. The parts are removed.
+ */
+function mergeParts(group, name, paint, skip = null) {
+  group.updateMatrixWorld(true);
+  const inv = new THREE.Matrix4().copy(group.matrixWorld).invert();
+  const m = new THREE.Matrix4();
+  const parts = [];
+  const walk = (o) => {
+    for (const c of o.children) {
+      if (c === skip) continue;
+      if (/** @type {THREE.Mesh} */ (c).isMesh && /** @type {any} */ (c).material.visible !== false) parts.push(c);
+      walk(c);
+    }
+  };
+  walk(group);
+  const geos = parts.map((part) => {
+    let g = part.geometry.clone();
+    for (const key of Object.keys(g.attributes)) if (key !== 'position' && key !== 'normal') g.deleteAttribute(key);
+    if (g.index) g = g.toNonIndexed();
+    const color = part.material.color;
+    const rgb = new Float32Array(g.attributes.position.count * 3);
+    for (let i = 0; i < rgb.length; i += 3) color.toArray(rgb, i);
+    g.setAttribute('color', new THREE.BufferAttribute(rgb, 3));
+    g.applyMatrix4(m.multiplyMatrices(inv, part.matrixWorld));
+    return g;
+  });
+  const merged = new THREE.Mesh(mergeGeometries(geos, false), paint);
+  merged.name = name;
+  for (const g of geos) g.dispose();
+  for (const part of parts) part.removeFromParent();
+  group.add(merged);
+  return merged;
+}
+
+// The clothing sculpt (the same for every puller: it is made in the rest pose), baked on first use.
+let SCULPT = null;
+const smoothstep = THREE.MathUtils.smoothstep;
+
+/** The four largest of a vertex's bone weights (the GPU skins with four), normalised. */
+function topFour(weights, skinIndex, skinWeight, i) {
+  const order = weights.map((_w, j) => j).sort((a, b) => weights[b] - weights[a]);
+  let sum = 0;
+  for (let k = 0; k < 4; k++) sum += weights[order[k]] || 0;
+  for (let k = 0; k < 4; k++) {
+    const j = order[k];
+    skinIndex[i * 4 + k] = j ?? 0;
+    skinWeight[i * 4 + k] = j == null || sum <= 0 ? (k === 0 ? 1 : 0) : (weights[j] || 0) / sum;
+  }
+}
+function skin(geometry, weightsAt) {
+  const p = geometry.attributes.position;
+  const skinIndex = new Uint16Array(p.count * 4),
+    skinWeight = new Float32Array(p.count * 4);
+  for (let i = 0; i < p.count; i++) topFour(weightsAt(p.getX(i), p.getY(i), p.getZ(i)), skinIndex, skinWeight, i);
+  geometry.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(skinIndex, 4));
+  geometry.setAttribute('skinWeight', new THREE.Float32BufferAttribute(skinWeight, 4));
+  return geometry;
+}
+
+/** Shirt and sleeves form one surface; pelvis and both legs form another. Sculpted in the rest pose. */
+function sculpt(lean, hipY, joints, shirtFrames, pantsFrames) {
+  const cosine = Math.cos(lean),
+    sine = Math.sin(lean);
+  const profile = [
+    [-0.02, 0.12, 0.145],
+    [0.1, 0.13, 0.155],
+    [0.25, 0.132, 0.18],
+    [0.39, 0.115, 0.185],
+    [0.465, 0.052, 0.072],
+  ];
+  const arms = joints.arms.map((j) => ({ shoulder: j.shoulder.clone(), elbow: j.elbow.clone() }));
+  const legs = joints.legs.map((j) => ({ hip: j.hip.clone(), knee: j.knee.clone(), ankle: j.ankle.clone() }));
+  const cuffs = arms.map((j) => j.shoulder.clone().lerp(j.elbow, 0.65));
+  const bodyDistance = (x, y, z) => {
+    const lx = cosine * x - sine * (y - hipY),
+      ly = sine * x + cosine * (y - hipY);
+    const clamped = THREE.MathUtils.clamp(ly, profile[0][0], profile.at(-1)[0]);
+    let rx = 0.12,
+      rz = 0.145;
+    for (let i = 1; i < profile.length; i++)
+      if (clamped <= profile[i][0]) {
+        const a = profile[i - 1],
+          b = profile[i],
+          t = (clamped - a[0]) / (b[0] - a[0]);
+        rx = a[1] + (b[1] - a[1]) * t;
+        rz = a[2] + (b[2] - a[2]) * t;
+        break;
+      }
+    const radial = (Math.hypot((lx - 0.005) / rx, z / rz) - 1) * Math.min(rx, rz);
+    const vertical = Math.max(profile[0][0] - ly, ly - profile.at(-1)[0]);
+    return -smoothMin(-radial, -vertical, 0.012);
+  };
+  const shirt = bakeSurface([-0.3, 0.58, -0.29], [0.43, 1.47, 0.29], 0.016, (x, y, z) => {
+    let d = bodyDistance(x, y, z);
+    for (let i = 0; i < arms.length; i++) d = smoothMin(d, boneDistance(x, y, z, arms[i].shoulder, cuffs[i], 0.057, 0.05), 0.025);
+    return d;
+  });
+  const pants = bakeSurface([-0.42, 0.015, -0.27], [0.49, 1.0, 0.27], 0.017, (x, y, z) => {
+    let d = ellipsoidDistance(x, y, z, 0, hipY - 0.055, 0, 0.115, 0.145, 0.146);
+    for (const j of legs) {
+      d = smoothMin(d, boneDistance(x, y, z, j.hip, j.knee, 0.072, 0.056), 0.035);
+      d = smoothMin(d, boneDistance(x, y, z, j.knee, j.ankle, 0.054, 0.037, 0.007), 0.025);
+    }
+    return Math.max(d, y - (hipY + 0.014));
+  });
+  const p = new THREE.Vector3(),
+    v = new THREE.Vector3(),
+    w = new THREE.Vector3();
+  skin(shirt, (x, y, z) => {
+    p.set(x, y, z);
+    const influences = arms.map((j, i) => {
+      v.subVectors(cuffs[i], j.shoulder);
+      const t = THREE.MathUtils.clamp(w.subVectors(p, j.shoulder).dot(v) / v.lengthSq(), 0, 1);
+      const distance = p.distanceTo(w.copy(j.shoulder).addScaledVector(v, t));
+      return (1 - smoothstep(distance, 0.063, 0.11)) * smoothstep(bodyDistance(x, y, z), -0.025, 0.025);
+    });
+    const sum = influences[0] + influences[1],
+      factor = sum > 1 ? 1 / sum : 1;
+    return [1 - Math.min(sum, 1), ...influences.map((x) => x * factor)];
+  });
+  skin(pants, (_x, y, z) => {
+    const body = smoothstep(y, hipY - 0.22, hipY - 0.08),
+      near = smoothstep(z, -0.06, 0.06);
+    const weights = [body];
+    for (let i = 0; i < 2; i++) {
+      const thigh = smoothstep(y, legs[i].knee.y - 0.065, legs[i].knee.y + 0.065),
+        side = i === 0 ? near : 1 - near;
+      weights.push((1 - body) * side * thigh, (1 - body) * side * (1 - thigh));
+    }
+    return weights;
+  });
+  return {
+    shirt,
+    pants,
+    shirtRest: shirtFrames.map((m) => m.clone()),
+    pantsRest: pantsFrames.map((m) => m.clone()),
+  };
+}
+
 export function createPuller({ shirt = '#ff790f', trousers = '#2542a5' } = {}) {
   const root = new THREE.Group();
   root.name = 'RopePuller';
-  const mat = (name, color, roughness = 0.8) => new THREE.MeshStandardMaterial({ name, color, roughness, metalness: 0 });
-  const M = {
-    shirt: mat('Shirt', shirt),
-    trousers: mat('Trousers', trousers),
-    skin: mat('Skin', '#b98057', 0.7),
-    hair: mat('Hair', '#222128'),
-    shoe: mat('Shoes', '#232c3a'),
-    sole: mat('ShoeSole', '#ced7dc'),
-    eye: mat('Eyes', '#211d1b'),
-    white: mat('EyeWhite', '#fff4e5'),
-    lips: mat('Lips', '#774631'),
-    seam: mat('ShirtSeams', '#d95412'),
-  };
+  const M = materialsFor(shirt, trousers);
   /** @param {THREE.BufferGeometry} g @param {THREE.Material} m @param {THREE.Object3D} [parent] */
   const mesh = (g, m, parent = root, name = '') => {
     const o = new THREE.Mesh(g, m);
@@ -39,7 +196,14 @@ export function createPuller({ shirt = '#ff790f', trousers = '#2542a5' } = {}) {
   };
   /** @param {THREE.Object3D} [parent] */
   const ellipsoid = (r, scale, position, material, parent = root, name = '') => {
-    const o = mesh(new THREE.SphereGeometry(r, 32, 24), material, parent, name);
+    // segments to suit the size on screen: an eye is a few pixels, a shoe's collar a little more
+    const size = r * Math.max(...scale);
+    const o = mesh(
+      new THREE.SphereGeometry(r, size < 0.008 ? 10 : size < 0.02 ? 16 : 24, size < 0.008 ? 8 : size < 0.02 ? 12 : 16),
+      material,
+      parent,
+      name,
+    );
     o.scale.set(scale[0], scale[1], scale[2]);
     o.position.set(position[0], position[1], position[2]);
     return o;
@@ -49,8 +213,8 @@ export function createPuller({ shirt = '#ff790f', trousers = '#2542a5' } = {}) {
     const points = profile.map(([y, back, front, width]) => new THREE.Vector3((front + back) / 2, y, width));
     const centre = new THREE.CatmullRomCurve3(points);
     const radii = new THREE.CatmullRomCurve3(profile.map(([y, back, front, width]) => new THREE.Vector3((front - back) / 2, width, y)));
-    const radial = 40,
-      rings = 32,
+    const radial = 32,
+      rings = 24,
       positions = [],
       indices = [];
     for (let i = 0; i <= rings; i++) {
@@ -87,7 +251,7 @@ export function createPuller({ shirt = '#ff790f', trousers = '#2542a5' } = {}) {
   const neck = mesh(new THREE.CapsuleGeometry(0.045, 0.065, 8, 24), M.skin, upper, 'Neck');
   neck.position.set(0.005, 0.515, 0);
   // One head surface continues from chin through cheeks and brow to the skull.
-  const head = loft(
+  loft(
     [
       [0.555, -0.008, 0.046, 0.031],
       [0.578, -0.04, 0.074, 0.056],
@@ -105,8 +269,8 @@ export function createPuller({ shirt = '#ff790f', trousers = '#2542a5' } = {}) {
   // Hair follows a shaped hairline, covering the skull without loose spherical tufts.
   const hairPositions = [],
     hairIndices = [],
-    hr = 40,
-    hy = 18;
+    hr = 32,
+    hy = 14;
   for (let i = 0; i <= hy; i++)
     for (let j = 0; j <= hr; j++) {
       const phi = (j / hr) * Math.PI * 2;
@@ -187,6 +351,9 @@ export function createPuller({ shirt = '#ff790f', trousers = '#2542a5' } = {}) {
       part.position.y -= 0.52;
     }
   upper.add(headRig);
+  // the face is one mesh (named for the head), the neck, collar and buttons another
+  mergeParts(headRig, 'AnatomicalHead', M.paint);
+  mergeParts(upper, 'NeckAndCollar', M.paint, headRig);
 
   // A limb is one closed mesh from its top to its cuff, including the bend.
   // Its rings are updated in place, so there is no open cylinder end at an elbow/knee.
@@ -211,7 +378,12 @@ export function createPuller({ shirt = '#ff790f', trousers = '#2542a5' } = {}) {
     const o = mesh(g, material, root, name),
       p = new THREE.Vector3(),
       tangent = new THREE.Vector3(),
-      normal = new THREE.Vector3();
+      normal = new THREE.Vector3(),
+      ab = new THREE.Vector3(),
+      bc = new THREE.Vector3(),
+      entry = new THREE.Vector3(),
+      exit = new THREE.Vector3(),
+      tmp = new THREE.Vector3();
     const radiusAt = (t) => {
       for (let i = 1; i < profile.length; i++)
         if (t <= profile[i][0]) {
@@ -225,21 +397,39 @@ export function createPuller({ shirt = '#ff790f', trousers = '#2542a5' } = {}) {
     return {
       mesh: o,
       set(a, b, c, bend = 0.055) {
-        const ab = b.clone().sub(a).normalize(),
-          bc = c.clone().sub(b).normalize();
+        // a straight part, a rounded bend (a quadratic curve) and a straight part, sampled by length; nothing allocated
+        ab.subVectors(b, a).normalize();
+        bc.subVectors(c, b).normalize();
         const cut = Math.min(bend, a.distanceTo(b) * 0.25, b.distanceTo(c) * 0.25);
-        const entry = b.clone().addScaledVector(ab, -cut),
-          exit = b.clone().addScaledVector(bc, cut);
-        const curve = new THREE.CurvePath();
-        curve.add(new THREE.LineCurve3(a, entry));
-        curve.add(new THREE.QuadraticBezierCurve3(entry, b, exit));
-        curve.add(new THREE.LineCurve3(exit, c));
+        entry.copy(b).addScaledVector(ab, -cut);
+        exit.copy(b).addScaledVector(bc, cut);
+        const l1 = a.distanceTo(entry),
+          l2 = entry.distanceTo(b) * 0.5 + b.distanceTo(exit) * 0.5 + entry.distanceTo(exit) * 0.5, // close to the curve's length
+          l3 = exit.distanceTo(c),
+          total = l1 + l2 + l3;
         for (let i = 0; i <= rings; i++) {
-          const t = i / rings;
-          curve.getPoint(t, p);
-          curve.getTangent(t, tangent);
+          const s = (i / rings) * total;
+          if (s <= l1) {
+            p.copy(a).lerp(entry, l1 > 0 ? s / l1 : 0);
+            tangent.copy(ab);
+          } else if (s <= l1 + l2) {
+            const u = (s - l1) / l2,
+              k = 1 - u;
+            p.copy(entry)
+              .multiplyScalar(k * k)
+              .addScaledVector(b, 2 * k * u)
+              .addScaledVector(exit, u * u);
+            tangent
+              .subVectors(b, entry)
+              .multiplyScalar(2 * k)
+              .addScaledVector(tmp.subVectors(exit, b), 2 * u)
+              .normalize();
+          } else {
+            p.copy(exit).lerp(c, l3 > 0 ? (s - l1 - l2) / l3 : 1);
+            tangent.copy(bc);
+          }
           normal.crossVectors(tangent, Z).normalize();
-          const r = radiusAt(t);
+          const r = radiusAt(i / rings);
           for (let j = 0; j <= radial; j++) {
             const ang = (j / radial) * Math.PI * 2,
               k = (i * (radial + 1) + j) * 3;
@@ -248,8 +438,8 @@ export function createPuller({ shirt = '#ff790f', trousers = '#2542a5' } = {}) {
             positions[k + 2] = p.z + r * Math.sin(ang);
           }
         }
-        positions.set(a.toArray(), end * 3);
-        positions.set(c.toArray(), (end + 1) * 3);
+        a.toArray(positions, end * 3);
+        c.toArray(positions, (end + 1) * 3);
         g.attributes.position.needsUpdate = true;
         g.computeVertexNormals();
         g.computeBoundingSphere();
@@ -286,6 +476,7 @@ export function createPuller({ shirt = '#ff790f', trousers = '#2542a5' } = {}) {
       hand,
       'Thumb',
     );
+    mergeParts(hand, 'Hand', M.paint);
     return hand;
   }
   const arms = [1, -1].map((side) => ({
@@ -312,8 +503,8 @@ export function createPuller({ shirt = '#ff790f', trousers = '#2542a5' } = {}) {
     bevelEnabled: true,
     bevelSize: 0.008,
     bevelThickness: 0.008,
-    bevelSegments: 4,
-    curveSegments: 16,
+    bevelSegments: 3,
+    curveSegments: 10,
   })
     .rotateX(Math.PI / 2)
     .translate(0, 0.052, 0);
@@ -322,19 +513,23 @@ export function createPuller({ shirt = '#ff790f', trousers = '#2542a5' } = {}) {
     bevelEnabled: true,
     bevelSize: 0.006,
     bevelThickness: 0.003,
-    bevelSegments: 3,
-    curveSegments: 16,
+    bevelSegments: 2,
+    curveSegments: 10,
   })
     .rotateX(Math.PI / 2)
     .translate(0, 0.015, 0);
   const legs = [1, -1].map((side, i) => {
-    const foot = mesh(shoeGeometry, M.shoe, root, i === 0 ? 'RearShoe' : 'OtherShoe');
+    const foot = new THREE.Group();
+    foot.name = i === 0 ? 'RearShoe' : 'OtherShoe';
+    root.add(foot);
+    mesh(shoeGeometry, M.shoe, foot, 'Shoe');
     mesh(soleGeometry, M.sole, foot, 'GripSole');
     ellipsoid(1, [0.046, 0.04, 0.043], [-0.055, 0.063, 0], M.shoe, foot, 'ShoeCollar');
     for (let j = 0; j < 4; j++) {
       const lace = mesh(new THREE.BoxGeometry(0.007, 0.004, 0.058), M.white, foot, 'Lace');
       lace.position.set(-0.035 + j * 0.023, 0.06, 0);
     }
+    mergeParts(foot, 'Shoe', M.paint);
     return { side, foot };
   });
   const hit = mesh(new THREE.BoxGeometry(0.95, 1.8, 0.5), new THREE.MeshBasicMaterial({ visible: false }), root);
@@ -363,15 +558,24 @@ export function createPuller({ shirt = '#ff790f', trousers = '#2542a5' } = {}) {
     ankle = new THREE.Vector3(),
     aim = new THREE.Vector3(),
     armPole = new THREE.Vector3();
-  const shirtSurface = createSurface('ConnectedShirt', M.shirt, root, [-0.3, 0.58, -0.29], [0.43, 1.47, 0.29], 0.016);
-  const pantsSurface = createSurface('ConnectedTrousers', M.trousers, root, [-0.42, 0.015, -0.27], [0.49, 1.0, 0.27], 0.017);
-  let deformShirt = null,
-    deformPants = null;
-  const frame = (a, b) =>
-    new THREE.Matrix4().compose(a, new THREE.Quaternion().setFromUnitVectors(UP, b.clone().sub(a).normalize()), new THREE.Vector3(1, 1, 1));
+  // the joints of the current pose (reused: nothing is allocated per pose)
+  for (let i = 0; i < 2; i++) {
+    joints.arms[i] = { shoulder: new THREE.Vector3(), elbow: new THREE.Vector3(), hand: new THREE.Vector3() };
+    joints.legs[i] = { hip: new THREE.Vector3(), knee: new THREE.Vector3(), ankle: new THREE.Vector3() };
+  }
+  const _q = new THREE.Quaternion(),
+    _d = new THREE.Vector3(),
+    ONE = new THREE.Vector3(1, 1, 1);
+  /** A bone frame at a, its y axis toward b. */
+  const frameTo = (out, a, b) => out.compose(a, _q.setFromUnitVectors(UP, _d.subVectors(b, a).normalize()), ONE);
+  // the bones the clothing is skinned to: the trunk and both upper arms (shirt); the pelvis, thighs and shins (trousers)
+  const shirtFrames = [new THREE.Matrix4(), new THREE.Matrix4(), new THREE.Matrix4()];
+  const pantsFrames = [new THREE.Matrix4(), new THREE.Matrix4(), new THREE.Matrix4(), new THREE.Matrix4(), new THREE.Matrix4()];
+  let shirtSkin = null,
+    pantsSkin = null;
   let lastPose = '';
   function pose({ lean = -0.16, distance = 0, walking = false, hands = null, hipY = HIP_Y } = {}) {
-    const poseKey = [lean, distance, walking, hipY, ...(hands || []).flatMap((p) => p.toArray())].join(',');
+    const poseKey = `${lean},${distance},${walking},${hipY},${hands ? `${hands[0].x},${hands[0].y},${hands[0].z},${hands[1].x},${hands[1].y},${hands[1].z}` : ''}`;
     if (poseKey === lastPose) return;
     lastPose = poseKey;
     upper.position.y = hipY;
@@ -380,13 +584,17 @@ export function createPuller({ shirt = '#ff790f', trousers = '#2542a5' } = {}) {
     pelvis.position.y = hipY - 0.055;
     for (const [i, arm] of arms.entries()) {
       shoulder.set(Math.sin(lean) * SHOULDER_Y, hipY + Math.cos(lean) * SHOULDER_Y, arm.side * SHOULDER_Z);
-      aim.copy(hands?.[i] || new THREE.Vector3(0.35, 0.9, arm.side * 0.12));
+      if (hands?.[i]) aim.copy(hands[i]);
+      else aim.set(0.35, 0.9, arm.side * 0.12);
       armPole.set(-0.45, -1, arm.side * 0.15);
       reach(shoulder, aim, UPPER, FORE, armPole, elbow, hand);
       arm.skin.set(shoulder, elbow, hand, 0.042);
       arm.hand.position.copy(hand);
-      arm.hand.quaternion.setFromUnitVectors(UP, hand.clone().sub(elbow).normalize());
-      joints.arms[i] = { shoulder: shoulder.clone(), elbow: elbow.clone(), hand: hand.clone() };
+      arm.hand.quaternion.setFromUnitVectors(UP, _d.subVectors(hand, elbow).normalize());
+      const j = joints.arms[i];
+      j.shoulder.copy(shoulder);
+      j.elbow.copy(elbow);
+      j.hand.copy(hand);
     }
     for (const [i, leg] of legs.entries()) {
       let x = i === 0 ? 0.26 : -0.18,
@@ -407,99 +615,89 @@ export function createPuller({ shirt = '#ff790f', trousers = '#2542a5' } = {}) {
       hip.set(0, hipY - 0.075, leg.side * 0.073);
       // +x is the toe direction. A negative pole made the previous knees bend backward.
       reach(hip, ankle, THIGH, SHIN, FRONT, knee, aim);
-      joints.legs[i] = { hip: hip.clone(), knee: knee.clone(), ankle: aim.clone() };
+      const j = joints.legs[i];
+      j.hip.copy(hip);
+      j.knee.copy(knee);
+      j.ankle.copy(aim);
       if (i === 0) {
         lastToe.set(x + 0.13, y, 0.11);
         lastHeel.set(x - 0.12, y, 0.11);
       }
     }
-    const trunkFrame = new THREE.Matrix4().makeRotationZ(-lean).setPosition(0, hipY, 0);
-    const shirtFrames = [trunkFrame, ...joints.arms.map((j) => frame(j.shoulder, j.elbow))];
-    const pantsFrames = [
-      new THREE.Matrix4().makeTranslation(0, hipY, 0),
-      ...joints.legs.flatMap((j) => [frame(j.hip, j.knee), frame(j.knee, j.ankle)]),
-    ];
-    if (!deformShirt) {
-      // Shirt and sleeves form one surface; pelvis and both legs form another.
-      const cosine = Math.cos(lean),
-        sine = Math.sin(lean);
-      const profile = [
-        [-0.02, 0.12, 0.145],
-        [0.1, 0.13, 0.155],
-        [0.25, 0.132, 0.18],
-        [0.39, 0.115, 0.185],
-        [0.465, 0.052, 0.072],
-      ];
-      const cuffs = joints.arms.map((j) => j.shoulder.clone().lerp(j.elbow, 0.65));
-      const bodyDistance = (x, y, z) => {
-        const lx = cosine * x - sine * (y - hipY),
-          ly = sine * x + cosine * (y - hipY);
-        const clamped = THREE.MathUtils.clamp(ly, profile[0][0], profile.at(-1)[0]);
-        let rx = 0.12,
-          rz = 0.145;
-        for (let i = 1; i < profile.length; i++)
-          if (clamped <= profile[i][0]) {
-            const a = profile[i - 1],
-              b = profile[i],
-              t = (clamped - a[0]) / (b[0] - a[0]);
-            rx = a[1] + (b[1] - a[1]) * t;
-            rz = a[2] + (b[2] - a[2]) * t;
-            break;
-          }
-        const radial = (Math.hypot((lx - 0.005) / rx, z / rz) - 1) * Math.min(rx, rz);
-        const vertical = Math.max(profile[0][0] - ly, ly - profile.at(-1)[0]);
-        const d = -smoothMin(-radial, -vertical, 0.012);
-        return d;
-      };
-      shirtSurface.update((x, y, z) => {
-        let d = bodyDistance(x, y, z);
-        for (let i = 0; i < joints.arms.length; i++) d = smoothMin(d, boneDistance(x, y, z, joints.arms[i].shoulder, cuffs[i], 0.057, 0.05), 0.025);
-        return d;
-      });
-      pantsSurface.update((x, y, z) => {
-        let d = ellipsoidDistance(x, y, z, 0, hipY - 0.055, 0, 0.115, 0.145, 0.146);
-        for (const j of joints.legs) {
-          d = smoothMin(d, boneDistance(x, y, z, j.hip, j.knee, 0.072, 0.056), 0.035);
-          d = smoothMin(d, boneDistance(x, y, z, j.knee, j.ankle, 0.054, 0.037, 0.007), 0.025);
-        }
-        return Math.max(d, y - (hipY + 0.014));
-      });
-
-      const smooth = THREE.MathUtils.smoothstep;
-      deformShirt = createDeformer(shirtSurface.mesh, shirtFrames, (x, y, z) => {
-        const p = new THREE.Vector3(x, y, z);
-        const influences = joints.arms.map((j, i) => {
-          const a = j.shoulder,
-            b = cuffs[i],
-            v = b.clone().sub(a),
-            t = THREE.MathUtils.clamp(p.clone().sub(a).dot(v) / v.lengthSq(), 0, 1);
-          const distance = p.distanceTo(a.clone().addScaledVector(v, t));
-          return (1 - smooth(distance, 0.063, 0.11)) * smooth(bodyDistance(x, y, z), -0.025, 0.025);
-        });
-        const sum = influences[0] + influences[1],
-          factor = sum > 1 ? 1 / sum : 1;
-        return [1 - Math.min(sum, 1), ...influences.map((w) => w * factor)];
-      });
-      deformPants = createDeformer(pantsSurface.mesh, pantsFrames, (_x, y, z) => {
-        const body = smooth(y, hipY - 0.22, hipY - 0.08),
-          near = smooth(z, -0.06, 0.06);
-        const weights = [body];
-        for (let i = 0; i < 2; i++) {
-          const thigh = smooth(y, joints.legs[i].knee.y - 0.065, joints.legs[i].knee.y + 0.065),
-            side = i === 0 ? near : 1 - near;
-          weights.push((1 - body) * side * thigh, (1 - body) * side * (1 - thigh));
-        }
-        return weights;
-      });
+    shirtFrames[0].makeRotationZ(-lean).setPosition(0, hipY, 0);
+    for (let i = 0; i < 2; i++) frameTo(shirtFrames[i + 1], joints.arms[i].shoulder, joints.arms[i].elbow);
+    pantsFrames[0].makeTranslation(0, hipY, 0);
+    for (let i = 0; i < 2; i++) {
+      frameTo(pantsFrames[1 + i * 2], joints.legs[i].hip, joints.legs[i].knee);
+      frameTo(pantsFrames[2 + i * 2], joints.legs[i].knee, joints.legs[i].ankle);
     }
-    deformShirt(shirtFrames);
-    deformPants(pantsFrames);
+    if (!shirtSkin) {
+      // the first pose is the rest pose the clothing is sculpted in (the same for every puller: baked once)
+      SCULPT ||= sculpt(lean, hipY, joints, shirtFrames, pantsFrames);
+      shirtSkin = skinned('ConnectedShirt', SCULPT.shirt, M.shirt, SCULPT.shirtRest);
+      pantsSkin = skinned('ConnectedTrousers', SCULPT.pants, M.trousers, SCULPT.pantsRest);
+    }
+    for (let i = 0; i < 3; i++) shirtSkin.bones[i].matrix.copy(shirtFrames[i]);
+    for (let i = 0; i < 5; i++) pantsSkin.bones[i].matrix.copy(pantsFrames[i]);
     root.updateMatrixWorld(true);
+  }
+  /** A skinned mesh on the shared sculpt, with its own bones (children of the root, posed by matrix). */
+  function skinned(name, geometry, material, rest) {
+    const bones = rest.map(() => {
+      const bone = new THREE.Bone();
+      bone.matrixAutoUpdate = false;
+      root.add(bone);
+      return bone;
+    });
+    const m = new THREE.SkinnedMesh(geometry, material);
+    m.name = name;
+    m.frustumCulled = false; // the posed body moves out of the rest pose's bounds; the person is always in view
+    m.raycast = () => {}; // taps are caught by the person's hit box
+    root.add(m);
+    m.bind(
+      new THREE.Skeleton(
+        bones,
+        rest.map((r) => r.clone().invert()),
+      ),
+      new THREE.Matrix4(),
+    );
+    return { mesh: m, bones };
   }
   pose();
   root.traverse((o) => {
     if (o instanceof THREE.Mesh && o !== hit) o.castShadow = true;
   });
+  /** A still copy of the person in the current pose, for export: the skinned clothing baked into plain meshes. */
+  function exportCopy() {
+    root.updateMatrixWorld(true);
+    const copy = new THREE.Group();
+    copy.name = root.name;
+    copy.position.copy(root.position);
+    copy.quaternion.copy(root.quaternion);
+    copy.scale.copy(root.scale);
+    for (const child of root.children) {
+      if (/** @type {any} */ (child).isBone || child === hit) continue;
+      if (/** @type {any} */ (child).isSkinnedMesh) {
+        const sk = /** @type {THREE.SkinnedMesh} */ (child);
+        const g = new THREE.BufferGeometry();
+        const src = sk.geometry.attributes.position;
+        const out = new Float32Array(src.count * 3);
+        const v = new THREE.Vector3();
+        for (let i = 0; i < src.count; i++) {
+          v.fromBufferAttribute(src, i);
+          sk.applyBoneTransform(i, v);
+          v.toArray(out, i * 3);
+        }
+        g.setAttribute('position', new THREE.BufferAttribute(out, 3));
+        g.setIndex(sk.geometry.index.clone());
+        g.computeVertexNormals();
+        const still = new THREE.Mesh(g, sk.material);
+        still.name = sk.name;
+        copy.add(still);
+      } else copy.add(child.clone(true));
+    }
+    return copy;
+  }
   const body = new THREE.Box3();
   return {
     root,
@@ -511,6 +709,7 @@ export function createPuller({ shirt = '#ff790f', trousers = '#2542a5' } = {}) {
     toe: () => lastToe,
     heel: () => lastHeel,
     materials: M,
+    exportCopy,
     /** Segment endpoints in world space for checks and label avoidance. */
     bones() {
       /** @type {[THREE.Vector3, THREE.Vector3, number, string][]} */
@@ -527,9 +726,9 @@ export function createPuller({ shirt = '#ff790f', trousers = '#2542a5' } = {}) {
         ]);
       }
       for (const j of joints.arms) out.push([at(j.shoulder), at(j.elbow), 0.068, 'arm'], [at(j.elbow), at(j.hand), 0.04, 'arm']);
-      const top = neck.getWorldPosition(new THREE.Vector3());
+      const top = upper.localToWorld(new THREE.Vector3(0.005, 0.515, 0)); // the neck
       out.push([at(new THREE.Vector3(0, pelvis.position.y, 0)), top, 0.17, 'trunk']);
-      const h = head.localToWorld(new THREE.Vector3(0, 0.68, 0));
+      const h = headRig.localToWorld(new THREE.Vector3(0, 0.16, 0));
       out.push([h, h.clone(), 0.12, 'head']);
       return out;
     },

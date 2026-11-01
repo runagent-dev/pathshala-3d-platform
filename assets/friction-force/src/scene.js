@@ -1,8 +1,9 @@
-// Metres: a red 2 kg demonstration crate, two optional 1 kg weights, a teal floor and articulated rope pullers.
-// The contact plane is y = 0. Hit boxes, glows and helpers are marked noExport.
+// Metres: a red 2 kg demonstration crate, two optional 1 kg weights, the store room's cement floor and articulated
+// rope pullers. The contact plane is y = 0. Hit boxes, glows and helpers are marked noExport.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { createPuller } from './person.js';
+import { createRoom, ROOM } from './room.js';
 import { textMesh } from '@shared/student/materials.js';
 
 export const DIM = {
@@ -87,6 +88,66 @@ function glowTexture() {
   t.colorSpace = THREE.SRGBColorSpace;
   return t;
 }
+/**
+ * A rope: a tube through three points (start, the middle where it sags, end), its vertices updated in place.
+ * The rope always lies in an x–y plane, so each ring is round the tangent in that plane and z.
+ */
+function createRope(material, segments = 20, radial = 8, radius = 0.011) {
+  const geo = new THREE.TubeGeometry(new THREE.LineCurve3(new THREE.Vector3(), new THREE.Vector3(1, 0, 0)), segments, radius, radial, false);
+  const pos = geo.attributes.position;
+  const nor = geo.attributes.normal;
+  pos.setUsage(THREE.DynamicDrawUsage);
+  nor.setUsage(THREE.DynamicDrawUsage);
+  const mesh = new THREE.Mesh(geo, material);
+  mesh.name = 'TensionRope';
+  mesh.frustumCulled = false;
+  const p = new THREE.Vector3(),
+    tan = new THREE.Vector3(),
+    n = new THREE.Vector3(),
+    Z = new THREE.Vector3(0, 0, 1),
+    tmp = new THREE.Vector3();
+  let last = '';
+  return {
+    mesh,
+    set(a, m, b) {
+      const key = `${a.x},${a.y},${m.x},${m.y},${b.x},${b.y}`;
+      if (key === last) return;
+      last = key;
+      // a quadratic curve through a and b whose middle is m: control point c = 2m − (a + b) / 2
+      for (let i = 0; i <= segments; i++) {
+        const u = i / segments,
+          k = 1 - u;
+        tmp.copy(m).multiplyScalar(2).addScaledVector(a, -0.5).addScaledVector(b, -0.5); // the control point
+        p.copy(a)
+          .multiplyScalar(k * k)
+          .addScaledVector(tmp, 2 * k * u)
+          .addScaledVector(b, u * u);
+        tan
+          .copy(tmp)
+          .sub(a)
+          .multiplyScalar(2 * k)
+          .addScaledVector(tmp.sub(b).negate(), 2 * u);
+        tan.normalize();
+        n.crossVectors(tan, Z).normalize();
+        for (let j = 0; j <= radial; j++) {
+          const ang = (j / radial) * Math.PI * 2,
+            c = Math.cos(ang),
+            s = Math.sin(ang);
+          const idx = i * (radial + 1) + j;
+          const nx = n.x * c,
+            ny = n.y * c,
+            nz = s;
+          nor.setXYZ(idx, nx, ny, nz);
+          pos.setXYZ(idx, p.x + radius * nx, p.y + radius * ny, p.z + radius * nz);
+        }
+      }
+      pos.needsUpdate = true;
+      nor.needsUpdate = true;
+    },
+  };
+}
+// marks on the floor (the soft shadow, the warm strip) are drawn over it without fighting its depth
+const DECAL = { polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 };
 const noExport = (o) => {
   o.userData.noExport = true;
   return o;
@@ -99,21 +160,12 @@ export function createRig({ t, aniso = 8 }) {
   const root = new THREE.Group();
   root.name = 'FrictionForce';
 
-  // ── the table: its top surface is y = 0 ──
-  const tableMat = new THREE.MeshStandardMaterial({ name: 'TableWood', map: woodTexture([25, 120, 135], 7, aniso), roughness: 0.68, metalness: 0 });
+  // ── the store room; its floor (y = 0) is what the crate rubs on ──
+  const room = createRoom({ aniso });
   const table = new THREE.Group();
-  table.name = 'Table';
-  const slab = new THREE.Mesh(new RoundedBoxGeometry(DIM.table.w, DIM.table.h, DIM.table.d, 3, 0.008), tableMat);
-  slab.position.y = -DIM.table.h / 2;
-  slab.name = 'TableTop';
-  table.add(slab);
-  root.add(table);
-  const stripeMaterial = new THREE.MeshBasicMaterial({ color: 0xffc34b });
-  for (const z of [-0.94, 0.94]) {
-    const stripe = new THREE.Mesh(new THREE.BoxGeometry(DIM.table.w, 0.008, 0.025), stripeMaterial);
-    stripe.position.set(0, 0.005, z);
-    table.add(stripe);
-  }
+  table.name = 'Floor';
+  table.add(room.floor);
+  root.add(table, room.root);
 
   // ── the block: origin on the table under its middle ──
   const { w, h, d } = DIM.block;
@@ -134,7 +186,7 @@ export function createRig({ t, aniso = 8 }) {
   const blob = noExport(
     new THREE.Mesh(
       new THREE.PlaneGeometry(w + 0.16, d + 0.18),
-      new THREE.MeshBasicMaterial({ map: blobTexture(), transparent: true, depthWrite: false, toneMapped: false }),
+      new THREE.MeshBasicMaterial({ map: blobTexture(), transparent: true, depthWrite: false, toneMapped: false, ...DECAL }),
     ),
   );
   blob.rotation.x = -Math.PI / 2;
@@ -155,6 +207,7 @@ export function createRig({ t, aniso = 8 }) {
     opacity: 0,
     depthWrite: false,
     toneMapped: false,
+    ...DECAL,
   });
   const track = noExport(new THREE.Mesh(new THREE.PlaneGeometry(1, d + 0.05), trackMat));
   track.rotation.x = -Math.PI / 2;
@@ -194,26 +247,46 @@ export function createRig({ t, aniso = 8 }) {
   const wrap = new THREE.CurvePath();
   for (let i = 1; i < strapPoints.length; i++) wrap.add(new THREE.LineCurve3(strapPoints[i - 1], strapPoints[i]));
   const strap = new THREE.Mesh(new THREE.TubeGeometry(wrap, 40, 0.011, 8, false), ropeMat);
+  strap.name = 'Strap';
   block.add(strap);
+  const gripGeo = new THREE.CylinderGeometry(0.018, 0.018, 0.3, 16).rotateX(Math.PI / 2);
   function makePuller(side) {
     const rootGroup = new THREE.Group();
     rootGroup.name = side > 0 ? 'RightPuller' : 'LeftPuller';
     const human = createPuller();
     human.root.scale.x = -side;
-    const rope = new THREE.Mesh(new THREE.BufferGeometry(), ropeMat);
-    rope.name = 'TensionRope';
-    const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.3, 16).rotateX(Math.PI / 2), ropeMat);
+    const rope = createRope(ropeMat);
+    const grip = new THREE.Mesh(gripGeo, ropeMat);
     grip.name = 'RopeGrip';
-    rootGroup.add(human.root, rope, grip);
+    rootGroup.add(human.root, rope.mesh, grip);
     root.add(rootGroup);
     return { root: rootGroup, human, rope, grip };
   }
+  const ropeStart = new THREE.Vector3(),
+    ropeMid = new THREE.Vector3(),
+    ropeEnd = new THREE.Vector3();
+  const handTargets = [new THREE.Vector3(), new THREE.Vector3()];
   const pullers = { 1: makePuller(1), '-1': makePuller(-1) };
   const pushers = { 1: pullers[1].root, '-1': pullers[-1].root };
 
+  /** For export: a 6 m × 3 m piece of the floor round the crate and the people (the room's floor is 24 m wide). */
+  function floorPatch() {
+    const W = 6,
+      D = 3;
+    const g = new THREE.PlaneGeometry(W, D).rotateX(-Math.PI / 2);
+    // the same texture scale as the room's floor: its UVs span the whole floor
+    const uv = g.attributes.uv;
+    const depth = ROOM.floorFront - ROOM.wallZ;
+    for (let i = 0; i < uv.count; i++) uv.setXY(i, 0.5 + (uv.getX(i) - 0.5) * (W / ROOM.width), 0.5 + (uv.getY(i) - 0.5) * (D / depth));
+    const m = new THREE.Mesh(g, room.floor.material);
+    m.name = 'Floor';
+    return m;
+  }
   const rig = {
     root,
     table,
+    room: room.root,
+    background: room.background,
     block,
     body,
     hit,
@@ -248,20 +321,21 @@ export function createRig({ t, aniso = 8 }) {
       const baseX = rubbing ? x * 0.5 : x;
       puller.human.root.position.set(baseX + side * 1.42, 0, 0);
       const reach = 0.34 - (rubbing ? side * x * 0.5 : 0);
+      handTargets[0].set(reach, 0.9, 0.12);
+      handTargets[1].set(reach, 0.9, -0.12);
       puller.human.pose({
         lean: -0.12 - 0.1 * press,
         hipY: 0.86 - 0.025 * press,
         distance: -side * baseX,
         walking: Math.abs(baseX) > 0.008,
-        hands: [new THREE.Vector3(reach, 0.9, 0.12), new THREE.Vector3(reach, 0.9, -0.12)],
+        hands: handTargets,
       });
-      const start = new THREE.Vector3(this.x + (side * w) / 2, 0.9, 0);
-      const end = new THREE.Vector3(baseX + side * (1.42 - reach), 0.9, 0);
-      const mid = start.clone().lerp(end, 0.5);
-      mid.y -= press > 0.02 ? 0 : 0.09;
-      puller.rope.geometry.dispose();
-      puller.rope.geometry = new THREE.TubeGeometry(new THREE.CatmullRomCurve3([start, mid, end]), 20, 0.011, 8, false);
-      puller.grip.position.copy(end);
+      ropeStart.set(this.x + (side * w) / 2, 0.9, 0);
+      ropeEnd.set(baseX + side * (1.42 - reach), 0.9, 0);
+      ropeMid.copy(ropeStart).lerp(ropeEnd, 0.5);
+      ropeMid.y -= press > 0.02 ? 0 : 0.09;
+      puller.rope.set(ropeStart, ropeMid, ropeEnd);
+      puller.grip.position.copy(ropeEnd);
     },
     /** The warm strip on the table from x0 to x1 and how warm (0…1); the block and its edge glow too. */
     setHeat(k, x0 = -0.12, x1 = 0.12) {
@@ -279,12 +353,17 @@ export function createRig({ t, aniso = 8 }) {
       const copy = new THREE.Group();
       copy.name = 'FrictionForce';
       copy.add(
-        table.clone(true),
+        floorPatch(),
         block.clone(true),
         ...weights.filter((w) => w.visible).map((w) => w.clone(true)),
-        ...Object.values(pushers)
-          .filter((p) => p.visible)
-          .map((p) => p.clone(true)),
+        ...Object.values(pullers)
+          .filter((p) => p.root.visible)
+          .map((p) => {
+            const g = new THREE.Group();
+            g.name = p.root.name;
+            g.add(p.human.exportCopy(), p.rope.mesh.clone(), p.grip.clone());
+            return g;
+          }),
       );
       return copy;
     },
