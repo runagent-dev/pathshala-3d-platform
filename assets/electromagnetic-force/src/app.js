@@ -92,6 +92,7 @@ export function createApp(root, options = {}) {
     .map((k) => `<span class="ef-f ${k}${k === 'em' ? ' on' : ''}"${k === 'em' ? ' aria-current="true"' : ''}>${t(`f_${k}`)}</span>`)
     .join(' <i aria-hidden="true">·</i> ');
   const ui = buildStudentShell(root, t, {
+    layout: 'side',
     learn: `${cleanSheet(t, {
       examples: {
         label: 'scenes',
