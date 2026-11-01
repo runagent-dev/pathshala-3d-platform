@@ -128,3 +128,10 @@ Measured (headless Chromium, software GL, shadows on, 390×700; the machine was 
 | time to ready | 2.5–4.5 s | 2.2–4.5 s (same within noise) |
 | text on the 3D view | 74 characters in 3 boxes | 11 in 2 (the gauge) |
 
+
+## Declutter pass (2026-11, 0.3.0)
+- Only the winch and its roof: the houses, the tower crane, the trees, the clouds, the truck, the mixer, the sand and
+  brick piles, the scaffolding and net, the column stubs with bars, the cement bags and the drums are gone. The roof
+  slab with its painted edge, the brick floors below, plain earth and a soft, muted sky stay.
+- The height gauge left the 3D view: it is the first reading in the panel (a small bar and the value).
+- The old wide-panel grid (for the panel under the 3D) is gone: the panel is beside the 3D now.
