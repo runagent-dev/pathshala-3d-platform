@@ -5,7 +5,7 @@
   "title": "Newton's third law of motion (নিউটনের তৃতীয় গতি সূত্র)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "book": "physics-9-10",
   "page": 84,
   "topic": "3.8",

@@ -12,6 +12,12 @@ const KGMS = `kg${NB}m/s`;
 
 export const STRINGS = {
   bn: {
+    panel_hide: 'লেখা লুকাও',
+    panel_show: 'লেখা দেখাও',
+    rotate_title: 'ফোনটি আড়াআড়ি ধরো',
+    rotate_body: 'পাশে ঘোরালে ছবি বড় হয়, লেখা থাকে পাশে।',
+    rotate_go: 'ঘুরিয়ে দেখো',
+    rotate_stay: 'এভাবেই দেখো',
     act_pause: 'থামিয়ে দেখো',
     speed_slow: 'ধীর গতি (০.৫×): চাপলে স্বাভাবিক গতি',
     speed_real: 'স্বাভাবিক গতি (১×): চাপলে ধীর গতি',
@@ -222,6 +228,12 @@ export const STRINGS = {
     not_v: 'বল না থাকলেও বস্তু সমবেগে চলতে পারে।',
   },
   en: {
+    panel_hide: 'Hide the text',
+    panel_show: 'Show the text',
+    rotate_title: 'Turn your phone sideways',
+    rotate_body: 'Sideways, the picture is bigger and the text sits beside it.',
+    rotate_go: 'Turn it',
+    rotate_stay: 'Stay like this',
     act_pause: 'Pause to inspect',
     speed_slow: 'Slow motion (0.5×): tap for real time',
     speed_real: 'Real time (1×): tap for slow motion',

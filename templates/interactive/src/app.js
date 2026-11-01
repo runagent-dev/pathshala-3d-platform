@@ -47,7 +47,7 @@ export function createApp(root, options = {}) {
   root.lang = t.lang;
   root.tabIndex = 0;
   // the clean sheet: the action's row, one result line, one rule line (room kept so the 3D view keeps its size)
-  const ui = buildStudentShell(root, t, { learn: cleanSheet(t, { lines: { action: 1, outcome: 1, rule: 2 } }) });
+  const ui = buildStudentShell(root, t, { layout: 'side', learn: cleanSheet(t, { lines: { action: 1, outcome: 1, rule: 2 } }) });
   const sheet = bindCleanSheet(ui.learn);
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
@@ -148,15 +148,19 @@ export function createApp(root, options = {}) {
   }
   function setView(view, { animate = true } = {}) {
     s.view = view === '3d' ? '3d' : 'front';
-    controls.enableRotate = s.view === '3d';
     s.userMovedCamera = false;
     loupe.setFollow(true);
     syncUI();
     return flyTo(viewPose(s.view), animate ? 0.8 : 0);
   }
+  // the view starts from the front; dragging turns it, and then the "front" button appears to come back
   controls.addEventListener('start', () => {
     s.userMovedCamera = true;
     tweener.cancel('camera');
+    if (s.view !== '3d') {
+      s.view = '3d';
+      syncUI();
+    }
   });
   stage.onResize(() => !s.userMovedCamera && !tweener.busy && flyTo(viewPose(s.view), 0));
 
@@ -313,7 +317,8 @@ export function createApp(root, options = {}) {
 
   // ── buttons, keys ───────────────────────────────────────────────────────────
   function syncUI() {
-    for (const b of ui.$$('[data-view]')) b.classList.toggle('on', b.dataset.view === s.view);
+    const front = ui.$('[data-view="front"]');
+    if (front) front.hidden = s.view !== '3d';
     root.dataset.mode = s.mode === 'quiz' ? 'quiz' : 'explore';
     for (const b of ui.$$('[data-mode]')) {
       const on = b.dataset.mode === root.dataset.mode;

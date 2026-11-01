@@ -1,6 +1,12 @@
 // Every visible word in Bangla and English; numbers are interpolated through t.num().
 export const STRINGS = {
   bn: {
+    panel_hide: 'লেখা লুকাও',
+    panel_show: 'লেখা দেখাও',
+    rotate_title: 'ফোনটি আড়াআড়ি ধরো',
+    rotate_body: 'পাশে ঘোরালে ছবি বড় হয়, লেখা থাকে পাশে।',
+    rotate_go: 'ঘুরিয়ে দেখো',
+    rotate_stay: 'এভাবেই দেখো',
     guide_intro: 'নীল পথটি মানুষটির হাঁটা পথ। লাল তিরে বোঝাই শেষের অবস্থান।',
     guide_scalar_title: 'স্কেলার — কতটা পথ হাঁটল?',
     guide_scalar_start: 'পথ ধরে হাঁটলে কতটা গেলে, তা মাপা যায়। এই দৈর্ঘ্য বলতে শুধু মান লাগে।',
@@ -103,6 +109,12 @@ export const STRINGS = {
     both_same: 'দৈর্ঘ্য আর দিক দুটোই মিলে গেছে।',
   },
   en: {
+    panel_hide: 'Hide the text',
+    panel_show: 'Show the text',
+    rotate_title: 'Turn your phone sideways',
+    rotate_body: 'Sideways, the picture is bigger and the text sits beside it.',
+    rotate_go: 'Turn it',
+    rotate_stay: 'Stay like this',
     guide_intro: 'Follow the person: blue shows the walk; red shows the final position.',
     guide_scalar_title: 'Scalar — how far did they walk?',
     guide_scalar_start: 'Length measures how far you walk. Stating a length needs a magnitude only.',

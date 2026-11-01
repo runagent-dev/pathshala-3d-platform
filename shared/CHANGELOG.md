@@ -5,6 +5,45 @@ student kit). Every zip records it in `PACKAGE.json` as `kit`. Bump it with each
 patch for fixes, minor for additions, major when a figure has to change to keep working. Run the visual comparison
 across all figures before merging a kit change (`npm run test:visual`).
 
+## 1.5.0
+
+- `buildStudentShell(root, t, { layout: 'side' })` (the new standard; figures opt in one by one, the default
+  `'stack'` is unchanged) puts the panel **beside** the 3D on every landscape frame (book page, desktop, phone held
+  sideways), full height and scrolling, with a tab on the 3D's edge to hide it so the 3D fills the frame. Portrait
+  frames keep the panel below.
+- The side panel is also a container named `pvc`, so a figure's own `@container pvc` rules measure the panel: a
+  figure styled for a phone-wide panel looks right beside the 3D without changes.
+- On a touch phone held upright, a card asks the student to turn it sideways ("turn it" goes fullscreen and locks
+  landscape where the browser allows; "stay" keeps the stacked layout). `?rotate=0` (or `coach=0`) skips it.
+- With `layout: 'side'`, no "front / rotate" buttons: the view starts from the front and turns when the student drags it. The
+  shell has one `[data-view="front"]` icon button, hidden; a figure shows it once the view was turned (back to the
+  front). Figures must allow rotating in the front view.
+- New figure strings for the shell: `panel_hide`, `panel_show`, `rotate_title`, `rotate_body`, `rotate_go`, `rotate_stay` (added to every figure and template).
+
+## 1.4.0 (2026-11-01)
+
+Butter smooth on phones, with nothing taken out of the picture (the owner heard the figures are heavy). `stage.js`:
+- **Shadows follow the scene, not the camera.** Shadow maps are drawn again only when the scene changes
+  (`invalidate()`, a ticker returning `true`, a resize, `render()`, `capture()`). A frame where only the camera
+  moved keeps them; a ticker that only moves the camera (a glide) can return `'camera'` instead of `true` for the
+  same. With soft VSM shadows (most figures) that saves the casters' depth pass and two full-size blur
+  passes on every frame of turning or zooming the view. `shadows: 'always'` gives the old behaviour. Figures that
+  managed it themselves (`shadowMap.autoUpdate = false` + `needsUpdate` before each render) keep working.
+- **Shadow boxes applied.** A directional light's shadow box (`shadow.camera` left/right/top/bottom/near/far) only
+  takes effect after `updateProjectionMatrix()`, which three.js never calls for it. 30 figures set a box without it,
+  so their shadows came from three's default 10 × 10 m box: blurred in small scenes, cut off in large ones. The stage
+  now applies the box whenever it draws the shadows.
+- **Paused out of view.** Tickers and drawing wait while the figure's container is off screen
+  (IntersectionObserver) or the page is hidden; it draws again when it is seen.
+- **Adaptive resolution.** While something moves, if frames keep coming more than 25 ms apart (over 30 frames),
+  the pixel ratio steps down by 0.25, never below 1. `adaptive: false` turns it off; `stage.pixelRatio` reads it.
+  Tests and exports run at a pixel ratio of 1 on a virtual clock, so their pictures cannot change.
+
+Tested in `test/browser/kit.spec.mjs` (shadows kept while the camera turns, drawn after `invalidate()` and on
+`capture()`, nothing drawn out of view). Visual comparison against `0b922cd`: no figure changed.
+Also `docs/agents/polish-pass.md`: the standard every figure is now held to (layout, labels only on the 3D view,
+colour and clear arrows, six sizes, performance, bugs), and `AGENTS.md` updated to match.
+
 ## 1.3.0 (2026-10-26)
 
 One action, one result, one rule: the owner found the শেখো panels of most figures (chapter 2 especially) too boxy and

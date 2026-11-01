@@ -5,7 +5,7 @@
   "title": "Newton's second law of motion (নিউটনের দ্বিতীয় গতি সূত্র)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "book": "physics-9-10",
   "page": 75,
   "topic": "3.6",

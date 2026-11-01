@@ -5,6 +5,12 @@
 
 export const STRINGS = {
   bn: {
+    panel_hide: 'লেখা লুকাও',
+    panel_show: 'লেখা দেখাও',
+    rotate_title: 'ফোনটি আড়াআড়ি ধরো',
+    rotate_body: 'পাশে ঘোরালে ছবি বড় হয়, লেখা থাকে পাশে।',
+    rotate_go: 'ঘুরিয়ে দেখো',
+    rotate_stay: 'এভাবেই দেখো',
     title: 'দুর্বল নিউক্লীয় বল',
     view: 'দেখার ধরন',
     view_front_short: 'সামনে',
@@ -149,6 +155,12 @@ export const STRINGS = {
     times_why: '<b>{k} গুণ</b>: {r15} থেকে {r} তিন ধাপ, প্রতি ধাপে {ten} গুণ ছোট ({ten} × {ten} × {ten} = {k})। নিউট্রন একটি ফুটবল হলে পাল্লাটি একটি বালুকণা।',
   },
   en: {
+    panel_hide: 'Hide the text',
+    panel_show: 'Show the text',
+    rotate_title: 'Turn your phone sideways',
+    rotate_body: 'Sideways, the picture is bigger and the text sits beside it.',
+    rotate_go: 'Turn it',
+    rotate_stay: 'Stay like this',
     title: 'Weak nuclear force',
     view: 'View',
     view_front_short: 'Front',

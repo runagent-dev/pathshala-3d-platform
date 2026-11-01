@@ -25,11 +25,18 @@ The postMessage protocol: see `docs/bridge-protocol.md`. Figures normally use `c
 ## 3D
 
 ### `stage.js`
-`createStage(container, { fov, near, far, environment: 'studio' | 'studio-light' | 'room' | false, exposure })`
-returns `{ renderer, scene, camera, controls, canvas, width, height, invalidate(), addTicker(fn), onBeforeRender(fn),
+`createStage(container, { fov, near, far, environment: 'studio' | 'studio-light' | 'room' | false, exposure, shadows,
+adaptive })` returns `{ renderer, scene, camera, controls, canvas, width, height, pixelRatio, invalidate(), addTicker(fn), onBeforeRender(fn),
 onAfterRender(fn), onResize(fn), render(), capture({ width, height, background }), dispose() }`.
 It renders on demand: call `invalidate()` after changing the scene; a ticker `fn(dt, now)` returning `true` keeps it
 drawing while something moves (`dt` is capped at 50 ms).
+Since kit 1.4.0 it also keeps phones smooth without taking anything out of the picture: shadow maps are drawn again
+only when the scene changes (`invalidate()`, a ticker returning `true`, a resize, `render()` or `capture()`), not when
+only the camera moves (`shadows: 'always'` restores every frame; a ticker that only glides the camera can return
+`'camera'` instead of `true` to draw without redrawing them); nothing runs while the figure is off screen or the
+page is hidden; and when frames keep coming slower than about 40 a second the pixel ratio steps down by a quarter,
+never below 1 (`adaptive: false` turns this off; `stage.pixelRatio` is the one in use). So: if you move a part that
+casts a shadow, call `invalidate()` (or return `true` from a ticker), as before.
 
 ### `tween.js`
 `createTweener()` → `{ animate({ duration, ease, key, delay, onUpdate(k, p), onComplete }), tick(dt), cancel(key), busy }`.
@@ -70,7 +77,13 @@ Styles: `student/student.css` (link it before the figure's `style.css`; set `roo
 ### `shell.js`
 - `buildStudentShell(root, t, { learn, learnAlign })` → `{ $, $$, stage, canvasHost, annoLayer, lensLayer, coachLayer,
   corner, hint, hintText, hintAct, learn, quiz }`: the 3D area (with the view and full-screen buttons) and the panel
-  with the শেখো and পরীক্ষা tabs. Both sheets share one place, so the panel never changes height; it is as tall as
+  with the শেখো and পরীক্ষা tabs. With `layout: 'side'` (the standard; the default `'stack'` is the older
+  layout): on landscape frames (aspect ≥ 1, ≥ 600 px wide) the panel is beside the 3D, full
+  height, with a hide/show tab on the 3D's edge (`.pvc-shell[data-panel="closed"]`); it is then also a container
+  named `pvc`, so the figure's `@container pvc` rules for the sheet measure the panel. The view starts from the front and turns when dragged (no front/rotate buttons); the hidden
+  `[data-view="front"]` icon button is shown by the figure once the view was turned. Portrait frames keep it below;
+  a touch phone held upright gets a "turn it sideways" card (`?rotate=0` or `coach=0` skips it). Strings:
+  `panel_hide`, `panel_show`, `rotate_title`, `rotate_body`, `rotate_go`, `rotate_stay`. Both sheets share one place, so the panel never changes height; it is as tall as
   the taller sheet. `learnAlign: 'start'` keeps the শেখো content together at the top (default `'spread'`: its first
   and last rows at the top and bottom of the panel, with the space between them). A figure that makes `.pvc-learn` a
   grid gets `align-content: start` from it too.

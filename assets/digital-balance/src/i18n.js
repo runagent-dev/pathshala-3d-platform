@@ -2,6 +2,12 @@
 
 export const STRINGS = {
   bn: {
+    panel_hide: 'লেখা লুকাও',
+    panel_show: 'লেখা দেখাও',
+    rotate_title: 'ফোনটি আড়াআড়ি ধরো',
+    rotate_body: 'পাশে ঘোরালে ছবি বড় হয়, লেখা থাকে পাশে।',
+    rotate_go: 'ঘুরিয়ে দেখো',
+    rotate_stay: 'এভাবেই দেখো',
     title: 'ডিজিটাল ব্যালান্স',
     view: 'দেখার ধরন',
     view_front_short: 'সামনে',
@@ -74,6 +80,12 @@ export const STRINGS = {
     q_locked: 'পরীক্ষার সময় পাল্লা আটকানো থাকে। পাঠ পড়ে উত্তর বেছে নাও।',
   },
   en: {
+    panel_hide: 'Hide the text',
+    panel_show: 'Show the text',
+    rotate_title: 'Turn your phone sideways',
+    rotate_body: 'Sideways, the picture is bigger and the text sits beside it.',
+    rotate_go: 'Turn it',
+    rotate_stay: 'Stay like this',
     title: 'Digital balance',
     view: 'View',
     view_front_short: 'Front',

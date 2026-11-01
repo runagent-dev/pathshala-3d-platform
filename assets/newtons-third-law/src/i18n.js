@@ -1,5 +1,11 @@
 export const STRINGS = {
   bn: {
+    panel_hide: 'লেখা লুকাও',
+    panel_show: 'লেখা দেখাও',
+    rotate_title: 'ফোনটি আড়াআড়ি ধরো',
+    rotate_body: 'পাশে ঘোরালে ছবি বড় হয়, লেখা থাকে পাশে।',
+    rotate_go: 'ঘুরিয়ে দেখো',
+    rotate_stay: 'এভাবেই দেখো',
     pair_boat_on_boy: 'নৌকা ঠেলে ছেলেকে',
     pair_boat_on_boat: 'ছেলে ঠেলে নৌকাকে',
     caption_boat: 'শুধু অনুভূমিক বল · জলের বাধা ধরা হয়নি · সময় {n} গুণ ধীর',
@@ -119,6 +125,12 @@ export const STRINGS = {
     why_earth: 'a = F/M: একই বলকে পৃথিবীর বিশাল ভর দিয়ে ভাগ করলে ত্বরণ অতি ক্ষুদ্র হয়।',
   },
   en: {
+    panel_hide: 'Hide the text',
+    panel_show: 'Show the text',
+    rotate_title: 'Turn your phone sideways',
+    rotate_body: 'Sideways, the picture is bigger and the text sits beside it.',
+    rotate_go: 'Turn it',
+    rotate_stay: 'Stay like this',
     pair_boat_on_boy: 'Boat pushes boy',
     pair_boat_on_boat: 'Boy pushes boat',
     caption_boat: 'Horizontal forces only · no drag · time {n}× slower',

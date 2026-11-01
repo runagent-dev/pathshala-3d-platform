@@ -2,6 +2,12 @@
 // Use {name} placeholders; t('key', { name: value }).
 export const STRINGS = {
   en: {
+    panel_hide: 'Hide the text',
+    panel_show: 'Show the text',
+    rotate_title: 'Turn your phone sideways',
+    rotate_body: 'Sideways, the picture is bigger and the text sits beside it.',
+    rotate_go: 'Turn it',
+    rotate_stay: 'Stay like this',
     title: 'Vernier Caliper',
     view_front: 'Front',
     view_3d: '3D',
@@ -147,6 +153,12 @@ export const STRINGS = {
 };
 
 STRINGS.bn = {
+  panel_hide: 'লেখা লুকাও',
+  panel_show: 'লেখা দেখাও',
+  rotate_title: 'ফোনটি আড়াআড়ি ধরো',
+  rotate_body: 'পাশে ঘোরালে ছবি বড় হয়, লেখা থাকে পাশে।',
+  rotate_go: 'ঘুরিয়ে দেখো',
+  rotate_stay: 'এভাবেই দেখো',
   title: 'স্লাইড ক্যালিপার্স',
   view_front: 'সামনে থেকে',
   view_3d: 'ত্রিমাত্রিক',

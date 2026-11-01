@@ -5,7 +5,7 @@
   "title": "Hanging weight pulls a block (ঝুলন্ত ভর ও টেবিলের বস্তু)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "book": "physics-9-10",
   "page": 81,
   "topic": "3.7",

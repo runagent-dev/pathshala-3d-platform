@@ -5,7 +5,7 @@
   "title": "Vernier Caliper (স্লাইড ক্যালিপার্স)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "0.3.6",
+  "version": "0.3.7",
   "book": "physics-9-10",
   "page": 20,
   "topic": "1.6",

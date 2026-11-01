@@ -4,6 +4,14 @@
  * Every Pathshala asset uses this so they behave the same inside the book: frames are only drawn
  * when something changes (battery-friendly on tablets), pixel ratio is capped, lighting is the
  * same neutral studio environment.
+ *
+ * Kept smooth on phones (kit 1.4.0), with nothing taken out of the picture:
+ * - shadows are drawn again only when the scene changes (invalidate(), a ticker that returns true, a resize, or a
+ *   direct render()), never for a frame where only the camera moved: turning the view costs one pass, not three
+ *   (soft VSM shadows draw the casters and blur twice);
+ * - nothing runs while the figure is off screen or the page is hidden (a book page holds many figures);
+ * - if frames keep coming slower than about 40 a second while something moves, the pixel ratio steps down by a
+ *   quarter at a time, never below 1 (a phone that cannot keep up gets a slightly softer picture, not a stutter).
  */
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -61,10 +69,15 @@ export function createStage(container, options = {}) {
     exposure = 1,
     environment = 'studio', // 'studio' | 'studio-light' | 'room' | false
     environmentIntensity = 1,
+    shadows = 'on-change', // 'on-change': shadow maps follow the scene, not the camera; 'always': every frame
+    adaptive = true, // lower the pixel ratio (not below 1) when frames keep coming slowly
   } = options;
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, maxPixelRatio));
+  let ratio = Math.min(window.devicePixelRatio || 1, maxPixelRatio);
+  renderer.setPixelRatio(ratio);
+  // shadow maps are drawn when the scene changed (see sceneDirty), so a frame where only the camera moved skips them
+  if (shadows !== 'always') renderer.shadowMap.autoUpdate = false;
   renderer.setClearColor(0x000000, 0);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = toneMapping;
@@ -95,7 +108,9 @@ export function createStage(container, options = {}) {
   let width = 1;
   let height = 1;
   let dirty = true;
+  let sceneDirty = true; // something in the scene (not only the camera) changed since the last frame
   let running = true;
+  let onScreen = true; // the container is in view (IntersectionObserver); the page's own visibility is checked too
 
   function resize() {
     const r = container.getBoundingClientRect();
@@ -106,6 +121,7 @@ export function createStage(container, options = {}) {
     camera.updateProjectionMatrix();
     for (const fn of resizers) fn(width, height);
     dirty = true;
+    sceneDirty = true;
   }
   // setSize clears the canvas, so draw again at once: waiting for the next frame shows one blank frame (a white
   // flash on a phone when it turns, or when the panel under the view changes height)
@@ -117,13 +133,66 @@ export function createStage(container, options = {}) {
   });
   ro.observe(container);
   resize();
+  const io =
+    typeof IntersectionObserver === 'function'
+      ? new IntersectionObserver((entries) => {
+          const was = onScreen;
+          onScreen = entries[entries.length - 1].isIntersecting;
+          if (onScreen && !was) dirty = true;
+        })
+      : null;
+  io?.observe(container);
+  const onVisibility = () => {
+    if (!document.hidden) dirty = true;
+  };
+  document.addEventListener('visibilitychange', onVisibility);
 
   controls.addEventListener('change', () => (dirty = true));
 
   function render() {
     for (const fn of before) fn();
+    if (sceneDirty) {
+      renderer.shadowMap.needsUpdate = true;
+      // a directional light's shadow box (left/right/top/bottom/near/far) only takes effect after
+      // updateProjectionMatrix(), which three.js never calls for it: apply what the figure set
+      if (renderer.shadowMap.enabled) scene.traverseVisible(applyShadowBox);
+    }
+    sceneDirty = false;
     renderer.render(scene, camera);
     for (const fn of after) fn();
+  }
+  /** @param {THREE.Object3D} o */
+  function applyShadowBox(o) {
+    const light = /** @type {THREE.DirectionalLight} */ (o);
+    if (light.isDirectionalLight && light.castShadow) light.shadow.camera.updateProjectionMatrix();
+  }
+  /** A redraw asked for from outside (capture, a figure's own call): the scene may have changed, so shadows too. */
+  function renderAll() {
+    sceneDirty = true;
+    render();
+  }
+
+  // adaptive resolution: the time between frames drawn back to back while something moves
+  const SLOW_MS = 25;
+  const WINDOW = 30;
+  let drewLast = false;
+  let lastDraw = 0;
+  let slowSum = 0;
+  let slowCount = 0;
+  function measure(now) {
+    if (drewLast) {
+      slowSum += now - lastDraw;
+      if (++slowCount >= WINDOW) {
+        if (slowSum / slowCount > SLOW_MS && ratio > 1) {
+          ratio = Math.max(1, ratio - 0.25);
+          renderer.setPixelRatio(ratio);
+          resize();
+        }
+        slowSum = 0;
+        slowCount = 0;
+      }
+    }
+    lastDraw = now;
   }
 
   let last = performance.now();
@@ -133,11 +202,26 @@ export function createStage(container, options = {}) {
     raf = requestAnimationFrame(frame);
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
-    for (const fn of tickers) if (fn(dt, now) === true) dirty = true;
+    if (!onScreen || document.hidden) {
+      drewLast = false;
+      return; // paused: tickers and drawing wait until the figure is seen again
+    }
+    let moved = false;
+    for (const fn of tickers) {
+      const r = fn(dt, now);
+      if (r === true) moved = true;
+      else if (r === 'camera') dirty = true; // only the camera moved (a glide): draw, but keep the shadow maps
+    }
+    if (moved) dirty = sceneDirty = true;
     controls.update(dt);
-    if (!dirty) return;
+    if (!dirty) {
+      drewLast = false;
+      return;
+    }
     dirty = false;
+    if (adaptive) measure(now);
     render();
+    drewLast = true;
   }
   raf = requestAnimationFrame(frame);
 
@@ -153,11 +237,17 @@ export function createStage(container, options = {}) {
     get height() {
       return height;
     },
-    /** Ask for a redraw on the next frame. */
+    /** Ask for a redraw on the next frame (the scene changed: shadows are drawn again too). */
     invalidate() {
       dirty = true;
+      sceneDirty = true;
     },
-    /** fn(dt, now) runs every frame; return true to keep drawing (e.g. while animating). */
+    /** The pixel ratio in use (it may step down from the device's while frames come slowly). */
+    get pixelRatio() {
+      return ratio;
+    },
+    /** fn(dt, now) runs every frame; return true to keep drawing (e.g. while animating), or 'camera' when only the
+     * camera moved (a glide), so the frame is drawn without redrawing the shadow maps. */
     addTicker(fn) {
       tickers.add(fn);
       return () => tickers.delete(fn);
@@ -174,10 +264,11 @@ export function createStage(container, options = {}) {
       resizers.add(fn);
       return () => resizers.delete(fn);
     },
-    render,
+    /** Draw now (shadows included). */
+    render: renderAll,
     /** PNG data URL of the current view, cover-fitted to w×h, on white (background: null keeps it transparent). */
     capture({ width: w = 800, height: h = 500, background = '#ffffff' } = {}) {
-      render();
+      renderAll();
       const out = document.createElement('canvas');
       out.width = w;
       out.height = h;
@@ -197,6 +288,8 @@ export function createStage(container, options = {}) {
       running = false;
       cancelAnimationFrame(raf);
       ro.disconnect();
+      io?.disconnect();
+      document.removeEventListener('visibilitychange', onVisibility);
       controls.dispose();
       renderer.dispose();
       canvas.remove();

@@ -8,6 +8,12 @@
 
 export const STRINGS = {
   bn: {
+    panel_hide: 'লেখা লুকাও',
+    panel_show: 'লেখা দেখাও',
+    rotate_title: 'ফোনটি আড়াআড়ি ধরো',
+    rotate_body: 'পাশে ঘোরালে ছবি বড় হয়, লেখা থাকে পাশে।',
+    rotate_go: 'ঘুরিয়ে দেখো',
+    rotate_stay: 'এভাবেই দেখো',
     title: 'বলের সাম্যাবস্থা ও অসাম্যাবস্থা',
     view: 'দেখার ধরন',
     view_front_short: 'সামনে',
@@ -134,6 +140,12 @@ export const STRINGS = {
     miss_p_less_down: 'টান কমে না, বাড়ে; আর বইটি স্থির থাকে, তাই লব্ধি শূন্য, নিচের দিকে নয়।',
   },
   en: {
+    panel_hide: 'Hide the text',
+    panel_show: 'Show the text',
+    rotate_title: 'Turn your phone sideways',
+    rotate_body: 'Sideways, the picture is bigger and the text sits beside it.',
+    rotate_go: 'Turn it',
+    rotate_stay: 'Stay like this',
     title: 'Balanced and unbalanced forces',
     view: 'View',
     view_front_short: 'Front',
