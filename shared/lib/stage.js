@@ -151,10 +151,20 @@ export function createStage(container, options = {}) {
 
   function render() {
     for (const fn of before) fn();
-    if (sceneDirty) renderer.shadowMap.needsUpdate = true;
+    if (sceneDirty) {
+      renderer.shadowMap.needsUpdate = true;
+      // a directional light's shadow box (left/right/top/bottom/near/far) only takes effect after
+      // updateProjectionMatrix(), which three.js never calls for it: apply what the figure set
+      if (renderer.shadowMap.enabled) scene.traverseVisible(applyShadowBox);
+    }
     sceneDirty = false;
     renderer.render(scene, camera);
     for (const fn of after) fn();
+  }
+  /** @param {THREE.Object3D} o */
+  function applyShadowBox(o) {
+    const light = /** @type {THREE.DirectionalLight} */ (o);
+    if (light.isDirectionalLight && light.castShadow) light.shadow.camera.updateProjectionMatrix();
   }
   /** A redraw asked for from outside (capture, a figure's own call): the scene may have changed, so shadows too. */
   function renderAll() {

@@ -14,6 +14,10 @@ Butter smooth on phones, with nothing taken out of the picture (the owner heard 
   same. With soft VSM shadows (most figures) that saves the casters' depth pass and two full-size blur
   passes on every frame of turning or zooming the view. `shadows: 'always'` gives the old behaviour. Figures that
   managed it themselves (`shadowMap.autoUpdate = false` + `needsUpdate` before each render) keep working.
+- **Shadow boxes applied.** A directional light's shadow box (`shadow.camera` left/right/top/bottom/near/far) only
+  takes effect after `updateProjectionMatrix()`, which three.js never calls for it. 30 figures set a box without it,
+  so their shadows came from three's default 10 × 10 m box: blurred in small scenes, cut off in large ones. The stage
+  now applies the box whenever it draws the shadows.
 - **Paused out of view.** Tickers and drawing wait while the figure's container is off screen
   (IntersectionObserver) or the page is hidden; it draws again when it is seen.
 - **Adaptive resolution.** While something moves, if frames keep coming more than 25 ms apart (over 30 frames),

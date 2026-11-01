@@ -892,6 +892,8 @@ test('stage: shadows follow the scene, not the camera; nothing is drawn while th
     const sun = new THREE.DirectionalLight('#ffffff', 2);
     sun.position.set(2, 5, 3);
     sun.castShadow = true;
+    Object.assign(sun.shadow.camera, { left: -2, right: 2, top: 1.5, bottom: -1.5 }); // no updateProjectionMatrix()
+    /** @type {any} */ (window).t.sun = sun;
     const box = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial());
     box.castShadow = true;
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshStandardMaterial());
@@ -908,6 +910,8 @@ test('stage: shadows follow the scene, not the camera; nothing is drawn while th
   await frames();
   const take = () => page.evaluate(() => /** @type {any} */ (window).t.log.splice(0));
   expect(await take()).toContain(true); // the first frame draws the shadows
+  const boxW = await page.evaluate(() => 2 / /** @type {any} */ (window).t.sun.shadow.camera.projectionMatrix.elements[0]);
+  expect(boxW).toBeCloseTo(4, 3); // the shadow box the figure set is applied (three.js leaves it at 10 m)
   await page.evaluate(() => {
     const { stage } = /** @type {any} */ (window).t;
     stage.camera.position.set(3, 2, 9);
