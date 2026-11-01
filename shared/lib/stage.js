@@ -197,7 +197,11 @@ export function createStage(container, options = {}) {
       return; // paused: tickers and drawing wait until the figure is seen again
     }
     let moved = false;
-    for (const fn of tickers) if (fn(dt, now) === true) moved = true;
+    for (const fn of tickers) {
+      const r = fn(dt, now);
+      if (r === true) moved = true;
+      else if (r === 'camera') dirty = true; // only the camera moved (a glide): draw, but keep the shadow maps
+    }
     if (moved) dirty = sceneDirty = true;
     controls.update(dt);
     if (!dirty) {
@@ -232,7 +236,8 @@ export function createStage(container, options = {}) {
     get pixelRatio() {
       return ratio;
     },
-    /** fn(dt, now) runs every frame; return true to keep drawing (e.g. while animating). */
+    /** fn(dt, now) runs every frame; return true to keep drawing (e.g. while animating), or 'camera' when only the
+     * camera moved (a glide), so the frame is drawn without redrawing the shadow maps. */
     addTicker(fn) {
       tickers.add(fn);
       return () => tickers.delete(fn);

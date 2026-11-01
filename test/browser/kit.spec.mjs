@@ -917,6 +917,20 @@ test('stage: shadows follow the scene, not the camera; nothing is drawn while th
   const turned = await take();
   expect(turned.length).toBeGreaterThan(0);
   expect(turned).not.toContain(true); // only the camera moved: the shadow maps are kept
+  // a ticker gliding the camera says so with 'camera': drawn, shadows kept
+  await page.evaluate(() => {
+    const { stage } = /** @type {any} */ (window).t;
+    let n = 0;
+    const off = stage.addTicker(() => {
+      stage.camera.position.x += 0.01;
+      if (++n > 3) off();
+      return 'camera';
+    });
+  });
+  await frames();
+  const glided = await take();
+  expect(glided.length).toBeGreaterThan(0);
+  expect(glided).not.toContain(true);
   await page.evaluate(() => /** @type {any} */ (window).t.stage.invalidate());
   await frames();
   expect(await take()).toContain(true); // the scene changed: drawn again

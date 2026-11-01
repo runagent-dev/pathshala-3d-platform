@@ -32,7 +32,8 @@ It renders on demand: call `invalidate()` after changing the scene; a ticker `fn
 drawing while something moves (`dt` is capped at 50 ms).
 Since kit 1.4.0 it also keeps phones smooth without taking anything out of the picture: shadow maps are drawn again
 only when the scene changes (`invalidate()`, a ticker returning `true`, a resize, `render()` or `capture()`), not when
-only the camera moves (`shadows: 'always'` restores every frame); nothing runs while the figure is off screen or the
+only the camera moves (`shadows: 'always'` restores every frame; a ticker that only glides the camera can return
+`'camera'` instead of `true` to draw without redrawing them); nothing runs while the figure is off screen or the
 page is hidden; and when frames keep coming slower than about 40 a second the pixel ratio steps down by a quarter,
 never below 1 (`adaptive: false` turns this off; `stage.pixelRatio` is the one in use). So: if you move a part that
 casts a shadow, call `invalidate()` (or return `true` from a ticker), as before.

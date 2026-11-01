@@ -10,7 +10,8 @@ across all figures before merging a kit change (`npm run test:visual`).
 Butter smooth on phones, with nothing taken out of the picture (the owner heard the figures are heavy). `stage.js`:
 - **Shadows follow the scene, not the camera.** Shadow maps are drawn again only when the scene changes
   (`invalidate()`, a ticker returning `true`, a resize, `render()`, `capture()`). A frame where only the camera
-  moved keeps them. With soft VSM shadows (most figures) that saves the casters' depth pass and two full-size blur
+  moved keeps them; a ticker that only moves the camera (a glide) can return `'camera'` instead of `true` for the
+  same. With soft VSM shadows (most figures) that saves the casters' depth pass and two full-size blur
   passes on every frame of turning or zooming the view. `shadows: 'always'` gives the old behaviour. Figures that
   managed it themselves (`shadowMap.autoUpdate = false` + `needsUpdate` before each render) keep working.
 - **Paused out of view.** Tickers and drawing wait while the figure's container is off screen
