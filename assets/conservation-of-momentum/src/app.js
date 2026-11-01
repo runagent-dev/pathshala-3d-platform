@@ -140,6 +140,7 @@ export function createApp(root, options = {}) {
     `<div class="cm-row ${kind}" role="row"><span class="cm-name"><b>${t(`row_${kind}`)}</b><small>${t(kind === 'p' ? 'u_p' : 'u_j_long')}</small></span>` +
     `${term(`${kind}_u1`)}<i>+</i>${term(`${kind}_u2`)}<i class="eq">=</i>${term(`${kind}_v1`)}<i>+</i>${term(`${kind}_v2`)}</div>`;
   const ui = buildStudentShell(root, t, {
+    layout: 'side',
     learnAlign: 'start',
     learn: `
           <div class="cm-presets" role="radiogroup" aria-label="${t('presets')}">${PRESET_IDS.map(
