@@ -1,60 +1,75 @@
 // The physics of the figure, as pure functions (unit-tested in test/unit/speed-velocity.test.mjs).
 //
-// The stone: whirled overhead in a horizontal circle (a conical pendulum), radius 1 m at a steady 4 m/s. Its
-// দ্রুতি never changes; its বেগ always points along the circle (the tangent), so its direction keeps changing.
-// Let go of the rope and the stone keeps the বেগ it had at that instant: seen from above it goes in a straight
-// line along the tangent while it falls (g = 9.8 m/s²), lands, and slides to a stop (or sinks in the pond).
-//
-// The road: চিত্র ২.০৪, A to B is 4 km along the road and 2 km in a straight line; by cycle in 20 minutes:
-// গড় দ্রুতি = 4 km ÷ 20 min = 12 km/h, গড় বেগ = 2 km ÷ 20 min = 6 km/h towards B.
-//
-// Map coordinates: e = east, n = north (m for the stone, km for the road). Angles in degrees, counted from east
-// towards north (anticlockwise seen from above), the way the stone goes round.
-import { ROAD } from './road-data.js';
+// Two boys run for the same time, 20 s (the book's numbers, page 40):
+//  - boy 1 runs a zig-zag path 100 m long: দ্রুতি = দূরত্ব ÷ সময় = 100 m ÷ 20 s = 5 m/s, a number with no direction;
+//  - boy 2 runs 50 m in a straight line, in a direction the student picks: বেগ = সরণ ÷ সময় = 50 m ÷ 20 s = 2.5 m/s,
+//    in that direction (a vector).
+// Map coordinates: e = east, n = north, in drawing units (1 unit = 5 m: the boys are drawn bigger than they are, so
+// they show on a phone). Angles in degrees, counted from east towards north (anticlockwise seen from above).
 
-export const G = 9.8; // m/s²
+export const SCALE = 5; // m of the book per drawing unit
+export const RUN = { time: 20, distance: 100, displacement: 50 }; // s, m, m
+export const SPEED = RUN.distance / RUN.time; // 5 m/s
+export const VELOCITY = RUN.displacement / RUN.time; // 2.5 m/s
+export const START = { one: { e: 0, n: -1.6 }, two: { e: 0, n: 1.6 } }; // the two places on the start line
+
 const rad = (deg) => (deg * Math.PI) / 180;
-
-export const STONE = {
-  r: 1, // m, radius of the circle the stone goes round
-  v: 4, // m/s, its দ্রুতি
-  hand: 1.95, // m, height of the hand above the ground
-  size: 0.085, // m, radius of the stone (drawn a little big, so it shows on a phone)
-  slide: 12, // m/s², how fast it slows down on the grass after it lands (it bounces and rolls a little)
-  slow: 3, // the picture runs 3 times slower than real time
-};
-/**
- * The rope hangs below the hand (a conical pendulum): tan(angle below the level) = g r / v², so the stone goes
- * round r · tan = g r² / v² lower than the hand.
- */
-export const DROOP = (G * STONE.r ** 2) / STONE.v ** 2;
-export const HEIGHT = STONE.hand - DROOP; // m, height of the circle
-export const ROPE = Math.hypot(STONE.r, DROOP); // m, length of the rope
-export const PERIOD = (2 * Math.PI * STONE.r) / STONE.v; // s for one turn
-export const OMEGA = STONE.v / STONE.r; // rad/s
-/** Time in the air after letting go, and how far it goes along its বেগ meanwhile. */
-export const AIR_TIME = Math.sqrt((2 * (HEIGHT - STONE.size)) / G);
-export const THROW = STONE.v * AIR_TIME;
-/** Every throw lands on this circle (the tangent is at right angles to the radius). */
-export const LAND_RADIUS = Math.hypot(STONE.r, THROW);
-/** Seen from the centre, it lands this far ahead of where it was let go. */
-export const LAND_AHEAD = (Math.atan2(THROW, STONE.r) * 180) / Math.PI;
-
-export const POND = { bearing: 35, radius: 0.8 }; // the pond: centre on the landing circle, 35° from east
-export const POND_CENTRE = polar(LAND_RADIUS, POND.bearing);
-
 /** 0 ≤ deg < 360. */
 export const wrap = (deg) => ((deg % 360) + 360) % 360;
 
-export function polar(r, deg) {
-  return { e: r * Math.cos(rad(deg)), n: r * Math.sin(rad(deg)) };
+// boy 1's zig-zag (the corners, before scaling to exactly 100 m)
+const RAW = [
+  [0, 0],
+  [2.6, -2.4],
+  [5.2, 0.2],
+  [7.8, -2.6],
+  [10.4, -0.4],
+  [12.6, -2],
+];
+const rawLength = RAW.slice(1).reduce((sum, p, i) => sum + Math.hypot(p[0] - RAW[i][0], p[1] - RAW[i][1]), 0);
+const k = RUN.distance / SCALE / rawLength;
+/** The corners of boy 1's path, in units, from his start; the path is exactly 100 m long. */
+export const PATH = RAW.map(([e, n]) => ({ e: START.one.e + e * k, n: START.one.n + n * k }));
+const SEGS = PATH.slice(1).map((p, i) => {
+  const a = PATH[i];
+  return { a, b: p, len: Math.hypot(p.e - a.e, p.n - a.n), heading: wrap((Math.atan2(p.n - a.n, p.e - a.e) * 180) / Math.PI) };
+});
+
+/** Boy 1 after running `d` m along his path: where he is and which way he faces. */
+export function pathAt(d) {
+  let left = Math.min(Math.max(d, 0), RUN.distance) / SCALE;
+  for (const s of SEGS) {
+    if (left <= s.len || s === SEGS[SEGS.length - 1]) {
+      const f = Math.min(1, left / s.len);
+      return { e: s.a.e + (s.b.e - s.a.e) * f, n: s.a.n + (s.b.n - s.a.n) * f, heading: s.heading };
+    }
+    left -= s.len;
+  }
+  return { ...PATH[0], heading: SEGS[0].heading };
 }
 
-/** Where the stone is at angle θ, and its বেগ there (m/s, map axes; along the tangent, anticlockwise). */
-export function stoneAt(deg) {
-  const p = polar(STONE.r, deg);
-  const u = polar(STONE.v, deg + 90);
-  return { e: p.e, n: p.n, ve: u.e, vn: u.n, heading: wrap(deg + 90) };
+/** Boy 2 after running `d` m straight at `angle`. */
+export function lineAt(d, angle) {
+  const u = Math.max(0, Math.min(d, RUN.displacement)) / SCALE;
+  return { e: START.two.e + u * Math.cos(rad(angle)), n: START.two.n + u * Math.sin(rad(angle)), heading: wrap(angle) };
+}
+
+/** Everything `time` seconds after the start (0–20 s): the panel's numbers. */
+export function runAt(time) {
+  const tt = Math.min(Math.max(time, 0), RUN.time);
+  const distance = SPEED * tt;
+  const displacement = VELOCITY * tt;
+  // boy 1's own displacement (straight from his start), to show it is not his distance
+  const p = pathAt(distance);
+  const straight1 = Math.hypot(p.e - START.one.e, p.n - START.one.n) * SCALE;
+  return {
+    time: tt,
+    distance,
+    displacement,
+    speed: tt > 0 ? distance / tt : null,
+    velocity: tt > 0 ? displacement / tt : null,
+    straight1,
+  };
 }
 
 // ── directions ────────────────────────────────────────────────────────────────
@@ -63,106 +78,12 @@ export const DIRS = ['E', 'NE', 'N', 'NW', 'W', 'SW', 'S', 'SE'];
 /** The compass word for a heading in degrees (nearest of the eight). */
 export const dirOf = (heading) => DIRS[Math.round(wrap(heading) / 45) % 8];
 
-// ── letting go ────────────────────────────────────────────────────────────────
-/** The pond's edge is not a perfect circle: its radius in a direction (deg, seen from the pond's centre). */
-export function pondRadius(deg) {
-  const a = rad(deg);
-  return POND.radius * (1 + 0.07 * Math.sin(3 * a + 1) + 0.045 * Math.sin(5 * a + 2.2));
-}
-export function inPond(e, n) {
-  const de = e - POND_CENTRE.e;
-  const dn = n - POND_CENTRE.n;
-  return Math.hypot(de, dn) < pondRadius((Math.atan2(dn, de) * 180) / Math.PI) - STONE.size;
-}
-
-/**
- * The throw if the rope is let go at angle θ: where it lands, whether that is in the pond, and where it stops.
- * Seen from above it never leaves the straight line along its বেগ at the moment of letting go.
- */
-export function throwFrom(deg) {
-  const s = stoneAt(deg);
-  const ue = s.ve / STONE.v;
-  const un = s.vn / STONE.v;
-  const land = { e: s.e + ue * THROW, n: s.n + un * THROW };
-  const wet = inPond(land.e, land.n);
-  const slide = wet ? 0 : STONE.v ** 2 / (2 * STONE.slide);
-  const rest = { e: land.e + ue * slide, n: land.n + un * slide };
-  return { from: { e: s.e, n: s.n }, dir: { e: ue, n: un }, heading: s.heading, land, wet, rest, slide };
-}
-
-/**
- * The stone τ real seconds after letting go at angle θ: { e, n, h (height of its centre), phase }.
- * phase: 'air' → 'slide' → 'rest' on the grass, or 'air' → 'sink' → 'gone' in the pond.
- */
-export function flightAt(deg, tau, thr = throwFrom(deg)) {
-  const { from, dir } = thr;
-  const v = STONE.v;
-  if (tau < AIR_TIME) {
-    const d = v * Math.max(0, tau);
-    return { e: from.e + dir.e * d, n: from.n + dir.n * d, h: HEIGHT - 0.5 * G * Math.max(0, tau) ** 2, phase: 'air', d };
-  }
-  const after = tau - AIR_TIME;
-  if (thr.wet) {
-    const sink = Math.min(1, after / 0.35);
-    return { e: thr.land.e, n: thr.land.n, h: STONE.size * (1 - 2.4 * sink), phase: sink < 1 ? 'sink' : 'gone', d: THROW };
-  }
-  const tStop = v / STONE.slide;
-  const ts = Math.min(after, tStop);
-  const d = v * ts - 0.5 * STONE.slide * ts * ts;
-  return { e: thr.land.e + dir.e * d, n: thr.land.n + dir.n * d, h: STONE.size, phase: after < tStop ? 'slide' : 'rest', d: THROW + d };
-}
-/** Real seconds from letting go until the stone is at rest (or under water). */
-export const flightEnd = (thr) => AIR_TIME + (thr.wet ? 0.35 : STONE.v / STONE.slide);
-
-/** The angle to let go at so that it lands in the middle of the pond. */
-export const AIM = wrap(POND.bearing - LAND_AHEAD);
-
-// ── the road (চিত্র ২.০৪) ─────────────────────────────────────────────────────
-export const RIDE = { km: ROAD.B.km, minutes: 20 }; // A to B by cycle
-export const RIDE_SPEED = RIDE.km / (RIDE.minutes / 60); // km/h, the cyclist goes at a steady speed
-
-/** The point on the road `km` from A (map km), and its direction there (deg from east). */
-export function roadAt(km) {
-  const pts = ROAD.samples;
-  const x = Math.min(Math.max(km, 0), ROAD.lengthKm) / ROAD.stepKm;
-  const i = Math.min(Math.floor(x), pts.length - 2);
-  const k = Math.min(1, x - i);
-  const [a, b] = [pts[i], pts[i + 1]];
-  return {
-    e: a[0] + (b[0] - a[0]) * k,
-    n: a[1] + (b[1] - a[1]) * k,
-    heading: wrap((Math.atan2(b[1] - a[1], b[0] - a[0]) * 180) / Math.PI),
-  };
-}
-
-/** Everything on the road `km` along from A, at the cyclist's steady speed: the book's sum, worked live. */
-export function rideAt(km) {
-  const d = Math.min(Math.max(km, 0), RIDE.km);
-  const p = roadAt(d);
-  const minutes = (d / RIDE_SPEED) * 60;
-  const displacement = Math.hypot(p.e, p.n);
-  const hours = minutes / 60;
-  return {
-    km: d,
-    minutes,
-    distance: d,
-    displacement,
-    heading: wrap((Math.atan2(p.n, p.e) * 180) / Math.PI), // of the সরণ, from A
-    avgSpeed: hours > 0 ? d / hours : null, // km/h
-    avgVelocity: hours > 0 ? displacement / hours : null, // km/h
-    at: p,
-  };
-}
-
-/** km/h from km and minutes, the way the book works it: 20 minutes = 1/3 hour. */
-export const kmh = (km, minutes) => km / (minutes / 60);
-
 // ── numbers ───────────────────────────────────────────────────────────────────
-/** At most `d` decimals, no trailing zeros, no binary leftovers ("4", "2.4", "1.55"). */
+/** At most `d` decimals, no trailing zeros ("5", "2.5", "1.25"). */
 export function fmt(x, d = 2) {
   if (x == null || !Number.isFinite(x)) return '';
   const s = (+x.toFixed(d)).toFixed(d);
   return d ? s.replace(/\.?0+$/, '') : s;
 }
-/** Exactly `d` decimals ("2.40"): for numbers that change while you watch, so they do not jump about. */
+/** Exactly `d` decimals: for numbers that change while you watch, so they do not jump about. */
 export const fixed = (x, d) => (x == null || !Number.isFinite(x) ? '' : (+x.toFixed(d)).toFixed(d));

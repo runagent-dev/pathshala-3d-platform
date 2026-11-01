@@ -1,53 +1,32 @@
-// Speed and velocity (book pages 40–41, topic 2.5), student view. Two examples, switched by two chips:
-//  - পাথর: a student whirls a stone on a rope. Its দ্রুতি stays 4 m/s, but its বেগ (the arrow, along the circle)
-//    keeps turning, so the বেগ keeps changing. Let go of the rope (touch the hand or the button) and the stone flies
-//    straight on along the বেগ it had at that moment, along the tangent: land it in the pond.
-//  - সাইকেল: the book's example on the road of চিত্র ২.০৪: A to B in 20 minutes, 4 km along the road but 2 km in a
-//    straight line, so গড় দ্রুতি = 4 km ÷ 1/3 h = 12 km/h and গড় বেগ = 2 km ÷ 1/3 h = 6 km/h towards B, worked out
-//    live as the cycle goes.
-// The panel writes both as fractions, as the book does (v = 100 m / 20 s = 5 m/s). Then a short test. Built on the
-// shared student kit (@shared/student/…); the physics is in motion.js.
+// Speed and velocity (book page 40, topic 2.5), student view. Two boys on a plain field run for the same 20 s:
+//  - ১ম জন runs a zig-zag path, 100 m: দ্রুতি = দূরত্ব ÷ সময় = 100 m ÷ 20 s = 5 m/s, a number with no direction;
+//  - ২য় জন runs 50 m straight, along an outlined বেগ arrow whose angle from east is shown:
+//    বেগ = সরণ ÷ সময় = 50 m ÷ 20 s = 2.5 m/s, in that direction (a vector).
+// The student taps দৌড়াও, and turns boy 2's direction (◀ ▶, the arrow keys, or by dragging the arrow). The panel
+// writes both as fractions, as the book does. Then a short test (tap answers). Physics in motion.js.
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
 import { createTweener } from '@shared/tween.js';
 import { createAnnotations } from '@shared/student/annotations.js';
 import { createAudio } from '@shared/student/audio.js';
-import { createCoach } from '@shared/student/coach.js';
 import { createQuiz } from '@shared/student/quiz.js';
+import { capturePointer } from '@shared/student/pointer.js';
 import { buildStudentShell } from '@shared/student/shell.js';
+import { createAction } from '@shared/student/action.js';
+import { ICONS } from '@shared/student/icons.js';
+import { createArrow } from './arrow.js';
+import { createField, skyTexture } from './field.js';
 import { createI18n } from './i18n.js';
-import {
-  AIR_TIME,
-  HEIGHT,
-  OMEGA,
-  PERIOD,
-  POND_CENTRE,
-  RIDE,
-  STONE,
-  dirOf,
-  fixed,
-  flightEnd,
-  fmt,
-  kmh,
-  pondRadius,
-  rideAt,
-  roadAt,
-  stoneAt,
-  throwFrom,
-  wrap,
-} from './motion.js';
-import { createRoad } from './road.js';
-import { ROAD } from './road-data.js';
-import { SKY, skyTexture } from './scenery.js';
-import { COMPASS, createSling } from './sling.js';
+import { DIRS, PATH, RUN, SCALE, START, VELOCITY, dirOf, fixed, fmt, lineAt, pathAt, runAt, wrap } from './motion.js';
+import { createPerson } from './person.js';
 
 export const DEFAULTS = {
-  scene: 'stone', // 'stone' | 'road'
-  view: 'front', // 'front' (from above) | '3d'
+  angle: 40, // boy 2's direction, degrees from east towards north
+  time: 0, // s of the run shown when the figure opens (20: both at the end, for the poster)
+  view: 'front', // 'front' (from above, tilted) | '3d'
   mode: 'explore', // 'explore' | 'quiz'
   coach: true,
   numerals: null,
-  angle: null, // a number: the stone is held still there when the figure opens (the poster), instead of going round
   lang: 'bn',
   bg: 'light',
   shadow: true,
@@ -55,39 +34,19 @@ export const DEFAULTS = {
 };
 
 // one colour per quantity: দূরত্ব and দ্রুতি blue, সরণ and বেগ orange, সময় purple (style.css has the same)
-const COLORS = {
-  distance: '#1c6fd9',
-  displacement: '#e8590c',
-  velocity: '#e8590c',
-  ghost: '#f08a4b',
-  choice: '#4a5563',
-  path: '#f7f3ea', // the circle the stone goes round: chalk white over the earth
-  ink: '#26303b', // words drawn on the ground (the compass, the km stones)
-};
-const RIDE_SCREEN = 8; // s on screen for the 20 minutes from A to B
-const DEG_PER_MS = (OMEGA * 180) / Math.PI / STONE.slow / 1000; // how fast the stone goes round on screen
-const CIRCUMFERENCE = 2 * Math.PI * STONE.r;
-const HOURS = { 10: '1/6', 20: '1/3', 40: '2/3' }; // minutes as a fraction of an hour, for the worked sums
-const STRAIGHT = 0.97; // on the road's first, nearly straight stretch: displacement ÷ distance above this
-const DOUBLE_TAP = 450; // ms after letting go in which a second tap does not whirl a new stone
-
-// where the camera looks from (towards the camera from the middle of the scene): north stays at the top. The stone
-// is seen from above but tilted, so the student stands up and the stone's height and fall show.
-const VIEWS = {
-  stone: { front: new THREE.Vector3(0, 1, 0.6).normalize(), '3d': new THREE.Vector3(0.5, 0.6, 1).normalize() },
-  road: { front: new THREE.Vector3(0, 1, 0.45).normalize(), '3d': new THREE.Vector3(0.55, 0.75, 1).normalize() },
-};
-const ROAD_SHOWN = 5.2; // km of road the picture shows in full (A to B, and on a little)
+const COLORS = { distance: '#1c6fd9', displacement: '#e8590c', ink: '#3a3f47' };
+const RUN_SCREEN = 6; // s on screen for the 20 s run
+const STEP = 15; // degrees per press of ◀ ▶
+const BOY = 2; // the boys drawn twice as big (see NOTES), so they show on a phone
+const ARROW_LEN = 3.2;
+const VIEWS = { front: new THREE.Vector3(0, 1, 0.62).normalize(), '3d': new THREE.Vector3(-0.55, 0.62, 0.9).normalize() };
 const at = (e, n, h = 0) => new THREE.Vector3(e, h, -n);
-const arrowIcon = (cls, heading) =>
-  `<svg class="${cls}" viewBox="-12 -12 24 24" aria-hidden="true" style="transform:rotate(${-Math.round(heading)}deg)"><path d="M-8 0H7M2 -5.5L8 0L2 5.5"/></svg>`;
 
 export function createApp(root, options = {}) {
   const o = { ...DEFAULTS, ...options };
   const t = createI18n(o.lang, { numerals: o.numerals });
   const N = t.num;
   const U = (key) => `<span class="sv-u">${t(key)}</span>`;
-  const dirWord = (heading) => t(`dir_${dirOf(heading)}`);
 
   root.classList.add('pvc', 'sv');
   root.dataset.theme = o.bg;
@@ -95,612 +54,298 @@ export function createApp(root, options = {}) {
   root.lang = t.lang;
   root.tabIndex = 0;
   const ui = buildStudentShell(root, t, {
+    // one structure in every lab: choices, the action (+ reset), the readings, the formula, the rule
     learn: `
-          <div class="sv-rows">
-            <div class="sv-row" data-row="sp"></div>
-            <div class="sv-row" data-row="ve"></div>
+          <div class="fig-choices sv-turn" role="group" aria-label="${t('turn')}">
+            <span>${t('turn')}</span>
+            <button class="pvc-btn" data-act="left" aria-label="${t('turn_left')}">◀</button>
+            <b class="sv-angle"></b>
+            <button class="pvc-btn" data-act="right" aria-label="${t('turn_right')}">▶</button>
           </div>
-          <p class="pvc-learn-extra sv-extra"></p>
-          <div class="pvc-learn-foot sv-foot">
-            <div class="pvc-seg sv-scenes" role="group" aria-label="${t('scenes')}">
-              <button data-scene="stone">${t('scene_stone')}</button>
-              <button data-scene="road">${t('scene_road')}</button>
-            </div>
-            <button class="pvc-btn primary sv-act" data-act="main"><span></span></button>
-          </div>`,
+          <div class="pvc-act-row">
+            <div class="pvc-act-slot"></div>
+            <button type="button" class="pvc-quiet" data-act="reset" aria-label="${t('reset')}" title="${t('reset')}">${ICONS.reset}</button>
+          </div>
+          <dl class="fig-readings">
+            <div class="dist"><dt>${t('boy1')}: ${t('speed')}</dt><dd data-v="sp"></dd></div>
+            <div class="disp"><dt>${t('boy2')}: ${t('velocity')}</dt><dd data-v="ve"></dd></div>
+          </dl>
+          <p class="fig-formula">
+            <span class="dist">${t('speed')} = ${t('cap_speed')} = <b data-v="fs"></b></span>
+            <span class="disp">${t('velocity')} = ${t('cap_velocity')} = <b data-v="fv"></b></span>
+          </p>
+          <p class="pvc-rule sv-rule"></p>`,
   });
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
-  const stage = createStage(ui.canvasHost, { fov: 30, near: 0.1, far: 200, environment: 'studio-light' });
+  const stage = createStage(ui.canvasHost, { fov: 30, near: 0.5, far: 300, environment: 'studio-light' });
   const { camera, controls, scene } = stage;
-  controls.minDistance = 2;
-  controls.maxDistance = 40;
-  controls.maxPolarAngle = Math.PI * 0.47; // never under the ground
+  controls.minDistance = 6;
+  controls.maxDistance = 70;
+  controls.maxPolarAngle = Math.PI * 0.46;
   const tweener = createTweener();
   stage.addTicker((dt) => tweener.tick(dt));
   const audio = createAudio(o.sound);
-  const annotations = createAnnotations({ stage, layer: ui.annoLayer });
+  const annotations = createAnnotations({ stage, layer: ui.annoLayer, avoid: [ui.corner, ui.hint] });
+  const solid = o.bg !== 'transparent';
+  if (solid) scene.background = skyTexture();
 
-  // the sky (seen when the view is turned) and a haze over the far trees
-  if (o.bg !== 'transparent') {
-    scene.background = skyTexture();
-    scene.fog = new THREE.Fog(SKY.haze, 24, 70);
+  const world = new THREE.Group(); // what a GLB export holds
+  world.name = 'SpeedVelocity';
+  scene.add(world);
+  const field = createField({ colors: COLORS, background: solid });
+  world.add(field.root);
+  const boys = [createPerson({ shirt: '#3d7fe0', trousers: '#2f3d55' }), createPerson({ shirt: '#f08a3c', trousers: '#2f3d55' })];
+  for (const b of boys) {
+    b.root.scale.setScalar(BOY);
+    world.add(b.root);
   }
+  const velArrow = createArrow({ color: COLORS.displacement, radius: 0.2, head: 1, headRadius: 0.5, name: 'Velocity' });
+  world.add(velArrow.root);
 
-  const sling = createSling({ t, colors: COLORS });
-  const road = createRoad({ N, colors: COLORS });
-  scene.add(sling.root, road.root);
-
-  // one sun; only the student, the stone, its rope and the cyclist cast shadows, onto the ground. The shadow camera
-  // is fitted tightly round each example (see fitShadow), so a 1024 map is as sharp as a 2048 one was.
-  const shadows = o.shadow && o.bg !== 'transparent';
-  sling.useBlobs(!shadows);
-  const sun = new THREE.DirectionalLight(0xffffff, 0.55);
-  const SUN = new THREE.Vector3(2.5, 12, 3.5).normalize();
+  // one sun; only the boys cast shadows, onto the ground; the shadow box follows the framing
+  const sun = new THREE.DirectionalLight(0xffffff, 0.9);
   scene.add(sun, sun.target);
-  if (shadows) {
+  scene.add(new THREE.HemisphereLight(0xdfeeff, 0xc9a77a, 0.5));
+  if (o.shadow && solid) {
     stage.renderer.shadowMap.enabled = true;
     stage.renderer.shadowMap.type = THREE.PCFShadowMap;
     sun.castShadow = true;
     sun.shadow.mapSize.set(1024, 1024);
-    sun.shadow.bias = -0.0004;
-    sun.shadow.normalBias = 0.01;
-    sun.shadow.radius = 3;
-  }
-  /** The sun over the example shown, its shadow camera just round what casts and receives shadows there. */
-  function fitShadow() {
-    const onRoad = s.scene === 'road';
-    const centre = onRoad ? at(0.63, 0.73) : at(0.4, 0.3);
-    const half = onRoad ? 1.75 : 3.4; // km on the road map, m in the field
-    const dist = onRoad ? 4 : 12;
-    sun.target.position.copy(centre);
-    sun.position.copy(centre).addScaledVector(SUN, dist);
-    sun.target.updateMatrixWorld();
-    sun.updateMatrixWorld();
-    Object.assign(sun.shadow.camera, {
-      left: -half,
-      right: half,
-      top: half,
-      bottom: -half,
-      near: dist - (onRoad ? 0.6 : 3.5),
-      far: dist + (onRoad ? 0.6 : 3.5),
-    });
-    sun.shadow.camera.updateProjectionMatrix();
-    stage.invalidate();
-  }
+    sun.shadow.bias = -0.0005;
+    sun.shadow.normalBias = 0.02;
+  } else for (const b of boys) b.root.traverse((m) => (m.castShadow = false));
 
   const listeners = new Map();
   function emit(type, payload) {
     for (const fn of listeners.get(type) || []) fn(payload);
   }
 
-  const now = () => performance.now();
   const s = {
-    scene: o.scene === 'road' ? 'road' : 'stone',
+    time: Math.min(Math.max(Number(o.time) || 0, 0), RUN.time),
+    angle: wrap(Math.round(Number.isFinite(Number(o.angle)) ? Number(o.angle) : DEFAULTS.angle)),
+    running: false,
     view: o.view === '3d' ? '3d' : 'front',
     mode: 'explore',
     locked: false,
     userMovedCamera: false,
-    zoomedOut: false, // the camera moved back to show where a thrown stone landed
-    extra: [], // more things the picture must show (the arrows of a test question)
-    // the stone: 'whirl' (going round), 'still' (held at one angle, for the test), 'flying', 'done' (landed)
-    stone: { phase: 'whirl', base: 0, since: 0, turned0: 0, angle: 0, turned: 0, arrow: true, traces: true, trail: false, rel: null },
-    // the cycle: km from A, and while it rides: from km0 at time `since`
-    road: { km: 0, playing: false, km0: 0, since: 0, labels: true, toldDrag: false },
+    showAngle: true,
+  };
+  const snapshot = () => {
+    const r = runAt(s.time);
+    return {
+      time: r.time,
+      angle: s.angle,
+      direction: dirOf(s.angle),
+      running: s.running,
+      distance: r.distance,
+      displacement: r.displacement,
+      speed: r.speed,
+      velocity: r.velocity,
+      view: s.view,
+      mode: s.mode,
+    };
   };
 
-  // ── the stone ───────────────────────────────────────────────────────────────
-  function whirlFrom(deg, { turned = deg } = {}) {
-    const st = s.stone;
-    Object.assign(st, { phase: 'whirl', base: wrap(deg), since: now(), turned0: turned, rel: null, arrow: true, traces: true, trail: false });
-    tickStone();
-  }
-  function holdAt(deg, { arrow = true, trail = false } = {}) {
-    const st = s.stone;
-    Object.assign(st, {
-      phase: 'still',
-      base: wrap(deg),
-      angle: wrap(deg),
-      since: now(),
-      turned0: 0,
-      turned: 0,
-      rel: null,
-      arrow,
-      traces: false,
-      trail,
-    });
-    tickStone();
-  }
-  /** Let go of the rope now (or at angle `deg`). instant: jump to where it lands. */
-  function release({ deg = null, instant = false } = {}) {
-    const st = s.stone;
-    if (st.phase !== 'whirl' && st.phase !== 'still' && deg == null) return;
-    const angle = deg == null ? st.angle : wrap(deg);
-    const thr = throwFrom(angle);
-    st.rel = { angle, thr, at: instant ? now() - flightEnd(thr) * 1000 * STONE.slow : now(), landed: false };
-    st.phase = 'flying';
-    st.angle = angle;
-    if (s.mode !== 'quiz') {
-      audio.pop?.();
-      hideHint();
+  // ── the boys and the marks ──────────────────────────────────────────────────
+  const tmp = new THREE.Vector3();
+  const dir = new THREE.Vector3();
+  const hands = boys.map(() => [new THREE.Vector3(), new THREE.Vector3()]);
+  function place() {
+    const r = runAt(s.time);
+    const p1 = pathAt(r.distance);
+    const p2 = lineAt(r.displacement, s.angle);
+    const moving = s.running && s.time < RUN.time;
+    for (const [i, p, d] of [
+      [0, p1, r.distance],
+      [1, p2, r.displacement],
+    ]) {
+      const b = boys[i];
+      b.root.position.copy(at(p.e, p.n));
+      b.root.rotation.y = (p.heading * Math.PI) / 180;
+      const walk = ((d / SCALE / 2.3) * Math.PI * 2) % (Math.PI * 2);
+      const sw = moving ? Math.sin(walk) : 0;
+      b.pose(
+        moving
+          ? {
+              lean: 0.2,
+              walk,
+              stride: 0.4,
+              lift: 0.2,
+              spread: 0.09,
+              hands: [hands[i][0].set(0.14 - 0.26 * sw, 1.0, 0.24), hands[i][1].set(0.14 + 0.26 * sw, 1.0, -0.24)],
+            }
+          : { lean: 0, walk: 0, stride: 0, lift: 0 },
+      );
     }
-    coach?.objectUsed();
-    emit('release', { angle: +angle.toFixed(1), heading: +thr.heading.toFixed(1), direction: dirOf(thr.heading) });
-    tickStone();
-    // the camera moves back only if the place where the stone ends up would be out of the picture
-    if (!s.userMovedCamera && !inView(at(thr.rest.e, thr.rest.n), s.mode === 'quiz' ? 10 : hintRoom())) {
-      s.zoomedOut = true;
-      flyTo(poseFor('stone', s.view), 0.9);
-    }
-    refresh();
-    emitChange();
+    field.setAngle(s.angle);
+    field.setRun(r.distance / SCALE, r.displacement / SCALE, RUN.displacement / SCALE);
+    dir.set(Math.cos((s.angle * Math.PI) / 180), 0, -Math.sin((s.angle * Math.PI) / 180));
+    tmp.copy(at(p2.e, p2.n, 0.32)).addScaledVector(dir, 0.55);
+    velArrow.set(tmp, dir, ARROW_LEN);
+    stage.invalidate();
   }
-  /** A new stone in the hand, going round (not in the moment right after letting go: that is a double tap). */
-  function whirlAgain({ force = false } = {}) {
-    const st = s.stone;
-    if (!force && st.phase === 'flying' && now() - st.rel.at < DOUBLE_TAP) return;
-    whirlFrom(st.angle);
-    if (s.mode !== 'quiz') velLabel(true);
-    hideHint();
-    if (s.zoomedOut && !s.userMovedCamera) flyTo(poseFor('stone', s.view), 0.9);
-    s.zoomedOut = false;
-    refresh();
-    emitChange();
+  const points = {
+    one: () => boys[0].root.position.clone().setY(3.6),
+    two: () => boys[1].root.position.clone().setY(3.6),
+    tip: () => velArrow.root.position.clone().addScaledVector(dir, ARROW_LEN + 0.1),
+  };
+
+  // labels: short, on the view; sentences go in the panel
+  annotations.add('one', { text: t('lbl_one'), point: points.one, dx: 0, dy: -14, kind: 'part' });
+  annotations.add('two', { text: t('lbl_two'), point: points.two, dx: 0, dy: -14, kind: 'part' });
+  annotations.add('vel', {
+    text: t('lbl_velocity', { v: fmt(VELOCITY) }),
+    point: points.tip,
+    spots: [
+      { dx: 14, dy: -16 },
+      { dx: -14, dy: -16 },
+      { dx: 14, dy: 18 },
+      { dx: -14, dy: 18 },
+    ],
+    kind: 'callout',
+    color: COLORS.displacement,
+  });
+  annotations.add('east', { text: t('lbl_east'), point: field.points.east, dx: 12, dy: 0, kind: 'callout', color: COLORS.ink });
+  function angleLabel() {
+    const want = s.showAngle;
+    if (!want) return annotations.has('ang') && annotations.remove('ang');
+    const text = t('lbl_angle', { a: s.angle });
+    if (annotations.has('ang')) annotations.update('ang', { text, point: () => field.points.arc(s.angle) });
+    else annotations.add('ang', { text, point: () => field.points.arc(s.angle), dx: 0, dy: 0, kind: 'callout', color: COLORS.ink });
   }
 
-  let lastDir = '';
-  /** Moves the stone to where it is now; returns true while something moves. */
-  function tickStone() {
-    const st = s.stone;
-    if (st.phase === 'whirl' || st.phase === 'still') {
-      if (st.phase === 'whirl') {
-        const d = DEG_PER_MS * (now() - st.since);
-        st.angle = wrap(st.base + d);
-        st.turned = st.turned0 + d;
-      }
-      sling.setWhirl(st.angle, { turned: st.turned, arrow: st.arrow, traces: st.traces, trail: st.trail });
-      sling.setRipples(-1);
-      const dir = dirOf(st.angle + 90);
-      if (dir !== lastDir) {
-        lastDir = dir;
-        emitChange();
-      }
-      if (st.phase === 'whirl') refreshDirection();
-      return st.phase === 'whirl';
-    }
-    const r = st.rel;
-    if (!r) return false;
-    const tau = (now() - r.at) / 1000 / STONE.slow;
-    sling.setFlight(r.angle, tau, r.thr);
-    sling.setRipples(r.thr.wet ? tau - AIR_TIME : -1, r.thr.land.e, r.thr.land.n);
-    if (!r.landed && tau >= flightEnd(r.thr)) {
-      r.landed = true;
-      st.phase = 'done';
-      if (s.mode !== 'quiz') {
-        showHint(t(r.thr.wet ? 'hint_wet' : 'hint_dry'), { duration: 3200 });
-        if (r.thr.wet) audio.success();
-        else audio.error();
-      }
-      emit('land', { inPond: r.thr.wet, east: +r.thr.rest.e.toFixed(2), north: +r.thr.rest.n.toFixed(2) });
-      refresh();
-      emitChange();
-    }
-    return tau < AIR_TIME + 2.2;
-  }
-
-  // ── the cycle on the road ───────────────────────────────────────────────────
-  function rideTo(km, { play = false } = {}) {
-    const rd = s.road;
-    rd.km = Math.min(Math.max(km, 0), RIDE.km);
-    rd.playing = play && rd.km < RIDE.km;
-    rd.km0 = rd.km;
-    rd.since = now();
-    tickRoad();
-    refresh();
-    emitChange();
-  }
-  function tickRoad() {
-    const rd = s.road;
-    if (rd.playing) {
-      rd.km = Math.min(RIDE.km, rd.km0 + (RIDE.km * (now() - rd.since)) / (RIDE_SCREEN * 1000));
-      if (rd.km >= RIDE.km) {
-        rd.playing = false;
-        if (s.mode !== 'quiz') {
-          audio.success();
-          if (!rd.toldDrag) {
-            rd.toldDrag = true;
-            showHint(t('hint_drag'), { duration: 4000 });
-          }
-        }
-        emit('arrive', { minutes: RIDE.minutes });
-        emitChange();
-      }
-      refresh();
-    }
-    road.setRide(rd.km);
-    roadLabels();
-    return rd.playing;
-  }
-  /** A, B, and the দূরত্ব and সরণ labels (with their values at B; the সরণ label waits until its arrow is long). */
-  function roadLabels() {
-    if (s.scene !== 'road' || !s.road.labels) {
-      for (const id of ['A', 'B', 'dist', 'disp']) annotations.remove(id);
-      return;
-    }
-    const r = rideAt(s.road.km);
-    const atB = r.km >= RIDE.km - 1e-6;
-    const longArrow = r.displacement > 0.45;
-    const key = `${atB}|${longArrow}`;
-    if (annotations.has('A') && roadLabels.key === key) return;
-    roadLabels.key = key;
-    annotations.add('A', { text: 'A', point: road.points.A, dx: -32, dy: 16, kind: 'part' });
-    annotations.add('B', { text: 'B', point: road.points.B, dx: 0, dy: -34, kind: 'part' });
-    annotations.add('dist', {
-      text: atB ? t('lbl_distance_v', { d: fmt(RIDE.km) }) : t('lbl_distance'),
-      point: () => road.points.trailMid(Math.max(0.4, s.road.km)),
-      dx: 46,
-      dy: 14,
-      kind: 'callout',
-      color: COLORS.distance,
-    });
-    if (longArrow)
-      annotations.add('disp', {
-        text: atB ? t('lbl_displacement_v', { s: fmt(ROAD.B.straight) }) : t('lbl_displacement'),
-        point: road.points.arrowMid,
-        dx: -30,
-        dy: -30,
-        kind: 'callout',
-        color: COLORS.displacement,
-      });
-    else annotations.remove('disp');
-  }
-
-  stage.addTicker(() => (s.scene === 'stone' ? tickStone() : tickRoad()));
-
-  // ── the two examples ────────────────────────────────────────────────────────
-  function velLabel(on) {
-    if (on && s.scene === 'stone')
-      annotations.add('vel', { text: t('lbl_velocity'), point: sling.points.arrowTip, dx: 0, dy: 0, kind: 'callout', color: COLORS.velocity });
-    else annotations.remove('vel');
-  }
-  /** The pond's label: the goal of the game while learning, just its name in the test. */
-  function pondLabel() {
-    if (s.scene !== 'stone') return;
-    annotations.add('pond', { text: t('lbl_pond'), point: sling.points.pond, dx: 0, dy: 0, kind: 'part' });
-  }
-  function setScene(name, { animate = true, start = true } = {}) {
-    const next = name === 'road' ? 'road' : 'stone';
-    // what is left behind stops: a flying stone lands, the cycle stops
-    if (next !== 'stone' && s.stone.phase === 'flying') {
-      s.stone.phase = 'done';
-      s.stone.rel.landed = true;
-    }
-    if (next !== 'road') s.road.playing = false;
-    s.scene = next;
-    if (next === 'road') road.ensureCountry();
-    sling.root.visible = s.scene === 'stone';
-    road.root.visible = s.scene === 'road';
-    annotations.clear();
-    roadLabels.key = '';
-    hideHint();
-    s.zoomedOut = false;
-    if (s.scene === 'stone') {
-      if (start) {
-        // as if it had been going round for a while: the faint copies of the last turn are there from the start
-        const from = s.stone.phase === 'whirl' ? s.stone.angle : 0;
-        whirlFrom(from, { turned: from + 360 });
-      }
-      velLabel(s.mode !== 'quiz');
-      pondLabel();
-    } else if (start) rideTo(0, { play: true });
-    s.userMovedCamera = false;
-    fitShadow();
-    flyTo(poseFor(s.scene, s.view), animate ? 0.8 : 0);
-    roadLabels();
-    syncUI();
-    refresh();
-    emit('scene', { scene: s.scene });
-    emitChange();
-  }
-
-  function mainAction() {
-    if (s.locked) return lockedNudge();
-    if (s.scene === 'stone') {
-      if (s.stone.phase === 'whirl' || s.stone.phase === 'still') release();
-      else whirlAgain();
-      return;
-    }
-    const rd = s.road;
-    if (rd.playing) rideTo(rd.km);
-    else rideTo(rd.km >= RIDE.km ? 0 : rd.km, { play: true });
-    coach?.objectUsed();
-  }
-
-  // ── the panel: two rows written as fractions, as the book does ──────────────
+  // ── the panel: the readings, the book's two formulas, the rule ─────────────
   const $ = ui.$;
-  const el = {
-    rows: $('.sv-rows'),
-    sp: $('[data-row="sp"]'),
-    ve: $('[data-row="ve"]'),
-    extra: $('.sv-extra'),
-    act: $('[data-act="main"] span'),
-  };
-  const EQ = '<i>=</i>';
-  const name = (key) => `<span class="sv-k"><b>${t(key)}</b><small data-v="cap-${key}"></small></span>`;
-  const frac = (top, topCls, bottom) =>
-    `<span class="sv-frac"><span class="sv-num ${topCls}" data-v="${top}"></span><span class="sv-den time" data-v="${bottom}"></span></span>`;
-  const result = (k, cls) => `<span class="sv-res ${cls}"><b data-v="${k}"></b><small data-v="${k}-c"></small></span>`;
-  const term = (k, cls, label) => `<span class="pvc-t ${cls}"><b data-v="${k}"></b><small>${t(label)}</small></span>`;
-  let rowsScene = '';
   const cells = {};
-  function buildRows() {
-    if (rowsScene === s.scene) return;
-    rowsScene = s.scene;
-    if (s.scene === 'stone') {
-      el.sp.innerHTML = `${name('speed')}${EQ}${frac('d', 'dist', 't')}${EQ}${result('sp', 'dist')}`;
-      el.ve.innerHTML = `${name('velocity')}${EQ}${term('vm', 'disp', 'magnitude')}${term('vd', 'disp sv-dirt', 'direction')}`;
-    } else {
-      el.sp.innerHTML = `${name('avg_speed')}${EQ}${frac('d', 'dist', 't')}${EQ}${result('sp', 'dist')}`;
-      el.ve.innerHTML = `${name('avg_velocity')}${EQ}${frac('s', 'disp', 't2')}${EQ}${result('vm', 'disp')}`;
-    }
-    for (const k of Object.keys(cells)) delete cells[k];
-    for (const node of el.rows.querySelectorAll('[data-v]')) cells[node.dataset.v] = { node, html: null };
-    for (const k of Object.keys(shown)) delete shown[k];
-  }
-  function put(k, html) {
-    const c = cells[k];
-    if (c && c.html !== html) {
-      c.html = html;
-      c.node.innerHTML = html;
-    }
-  }
+  for (const node of ui.learn.querySelectorAll('[data-v]')) cells[node.dataset.v] = node;
+  const ruleEl = $('.sv-rule');
+  const angleEl = $('.sv-angle');
   const shown = {};
-  function text(key, node, value) {
-    if (shown[key] === value) return;
-    shown[key] = value;
-    node.innerHTML = value;
-  }
-
-  /** The direction of the stone's বেগ in the panel: the arrow turns with it, the word changes every 45°. */
-  function refreshDirection() {
-    if (s.scene !== 'stone') return;
-    const st = s.stone;
-    const heading = st.rel ? st.rel.thr.heading : st.angle + 90;
-    put('vd', `${arrowIcon('sv-dir', 0)}<span>${dirWord(heading)}</span>`);
-    const icon = cells.vd?.node.querySelector('.sv-dir');
-    const turn = `rotate(${-Math.round(heading)}deg)`; // written only when it turns by a whole degree
-    if (icon && icon.dataset.turn !== turn) {
-      icon.dataset.turn = turn;
-      icon.style.transform = turn;
-    }
+  let action = null;
+  function put(k, html, node = cells[k]) {
+    if (!node || shown[k] === html) return;
+    shown[k] = html;
+    node.innerHTML = html;
   }
 
   function refresh() {
-    buildRows();
-    const st = s.stone;
-    if (s.scene === 'stone') {
-      const past = Boolean(st.rel); // after letting go the numbers are those of the moment it was let go
-      el.rows.classList.toggle('sv-past', past);
-      put('cap-speed', t(past ? 'cap_turning' : 'cap_speed'));
-      put('cap-velocity', t(past ? 'cap_released' : 'cap_vector'));
-      put('d', `${N(fmt(CIRCUMFERENCE, 2))}${U('u_m')}`);
-      put('t', `${N(fmt(PERIOD, 2))}${U('u_s')}`);
-      put('sp', `${N(fmt(STONE.v))}${U('u_ms')}`);
-      put('sp-c', t('no_direction'));
-      put('vm', `${N(fmt(STONE.v))}${U('u_ms')}`);
-      refreshDirection();
-      // the idea (or what happened when it was let go), and under it the goal and how time is shown
-      const slow = t('note_slow', { k: STONE.slow });
-      const main = !past
-        ? t('idea_stone', { v: fmt(STONE.v) })
-        : st.phase === 'done'
-          ? t(st.rel.thr.wet ? 'result_wet' : 'result_dry')
-          : t('flew_stone');
-      text('extra', el.extra, `${main}<small class="sv-aside">${past ? slow : `${t('goal_stone')} · ${slow}`}</small>`);
-      text('act', el.act, t(st.phase === 'whirl' || st.phase === 'still' ? 'act_release' : 'act_whirl'));
-    } else {
-      el.rows.classList.remove('sv-past');
-      const r = rideAt(s.road.km);
-      const end = r.km >= RIDE.km - 1e-6;
-      const km = (x) => `${N(end ? fmt(x, 2) : fixed(x, 2))}${U('u_km')}`;
-      // time in hours, so km ÷ h gives km/h (at B the book's 20 minutes, 1/3 hour)
-      const hours = `${N(end ? HOURS[RIDE.minutes] : fixed(r.minutes / 60, 2))}${U('u_h')}`;
-      const speed = (x) => (x == null ? '–' : `${N(end ? fmt(x, 1) : fixed(x, 1))}${U('u_kmh')}`);
-      put('cap-avg_speed', t('cap_speed'));
-      put('cap-avg_velocity', t('cap_velocity'));
-      put('d', km(r.distance));
-      put('t', hours);
-      put('t2', hours);
-      put('s', km(end ? ROAD.B.straight : r.displacement));
-      put('sp', speed(r.avgSpeed));
-      put('sp-c', t('no_direction'));
-      put('vm', speed(end ? kmh(ROAD.B.straight, RIDE.minutes) : r.avgVelocity));
-      put('vm-c', r.km > 0.02 ? `${arrowIcon('sv-dir small', r.heading)}${t('towards', { d: dirWord(r.heading) })}` : '');
-      const straight = r.km > 0.05 && r.displacement / r.distance > STRAIGHT;
-      const main = end
-        ? t('done_road', { d: fmt(RIDE.km), s: fmt(ROAD.B.straight), m: RIDE.minutes, h: HOURS[RIDE.minutes] })
-        : straight
-          ? t('straight_road')
-          : t('idea_road', { m: fixed(r.minutes, 1), h: fixed(r.minutes / 60, 2) });
-      text('extra', el.extra, `${main}<small class="sv-aside">${t('note_fast', { m: RIDE.minutes, s: RIDE_SCREEN })}</small>`);
-      text('act', el.act, t(s.road.playing ? 'act_pause' : end ? 'act_replay' : 'act_play'));
+    const r = runAt(s.time);
+    const end = r.time >= RUN.time - 1e-6;
+    const dirText = t('dir_angle', { a: s.angle, d: t(`dir_${dirOf(s.angle)}`) });
+    put('sp', r.speed == null ? '–' : `${N(fmt(r.speed, 2))}${U('u_ms')} <small>${t('no_direction')}</small>`);
+    put('ve', r.velocity == null ? '–' : `${N(fmt(r.velocity, 2))}${U('u_ms')} <small>${dirText}</small>`);
+    const sum = (top, v) =>
+      r.time > 0 ? `${N(fixed(top, 1).replace(/\.0$/, ''))} m ÷ ${N(fixed(r.time, 1).replace(/\.0$/, ''))} s = ${N(fmt(v, 2))} ${t('u_ms')}` : '–';
+    put('fs', sum(r.distance, r.speed));
+    put('fv', sum(r.displacement, r.velocity));
+    put('angle', dirText, angleEl);
+    const idea = end ? t('idea_done') : s.running ? t('idea_running') : t('idea_start', { t: RUN.time, s: RUN_SCREEN });
+    put('rule', idea, ruleEl);
+    const label = end ? 'act_again' : 'act_run';
+    if (shown.act !== label) {
+      shown.act = label;
+      action?.set({ label });
     }
-    stage.invalidate();
+  }
+  function update() {
+    place();
+    refresh();
   }
 
-  function snapshot() {
-    const st = s.stone;
-    const r = rideAt(s.road.km);
-    const heading = st.rel ? st.rel.thr.heading : wrap(st.angle + 90);
-    return {
-      scene: s.scene,
-      view: s.view,
-      mode: s.mode,
-      stone: {
-        phase: st.phase,
-        angle: +st.angle.toFixed(1),
-        speed: STONE.v,
-        radius: STONE.r,
-        period: +PERIOD.toFixed(3),
-        heading: +heading.toFixed(1),
-        direction: dirOf(heading),
-        released: st.rel
-          ? { angle: +st.rel.angle.toFixed(1), heading: +st.rel.thr.heading.toFixed(1), direction: dirOf(st.rel.thr.heading), inPond: st.rel.thr.wet }
-          : null,
-        landed: st.phase === 'done' ? { east: +st.rel.thr.rest.e.toFixed(2), north: +st.rel.thr.rest.n.toFixed(2), inPond: st.rel.thr.wet } : null,
-      },
-      road: {
-        km: +r.km.toFixed(3),
-        minutes: +r.minutes.toFixed(2),
-        distance: +r.distance.toFixed(3),
-        displacement: +r.displacement.toFixed(3),
-        avgSpeed: r.avgSpeed == null ? null : +r.avgSpeed.toFixed(2),
-        avgVelocity: r.avgVelocity == null ? null : +r.avgVelocity.toFixed(2),
-        direction: r.km > 0 ? dirOf(r.heading) : null,
-        playing: s.road.playing,
-      },
-    };
-  }
-  let lastEmitted = '';
-  function emitChange() {
-    const snap = snapshot();
-    const key = `${snap.scene}|${snap.mode}|${snap.stone.phase}|${snap.stone.direction}|${s.road.playing}|${Math.round(snap.road.km * 20)}`;
-    if (key === lastEmitted) return;
-    lastEmitted = key;
-    emit('change', snap);
-  }
-
-  // ── camera ──────────────────────────────────────────────────────────────────
-  const WORLD_UP = new THREE.Vector3(0, 1, 0);
-  /**
-   * What must be in the picture: points (three.js coordinates), some with a label box around them on the screen
-   * ({ p, box: [left, top, right, bottom] } in px from the point).
-   */
-  function contentOf(name) {
-    const pts = [...s.extra];
-    if (name === 'road') {
-      // the road from A to a little past B, with room for the km numbers and the labels beside it
-      for (let km = 0; km <= ROAD_SHOWN; km += 0.1) {
-        const p = roadAt(km);
-        for (const [de, dn] of [
-          [-0.2, 0],
-          [0.2, 0],
-          [0, 0.2],
-          [0, -0.17],
-        ])
-          pts.push(at(p.e + de, p.n + dn, 0), at(p.e + de, p.n + dn, 0.15));
-      }
-      // the labels A (left of it) and B (above it), as roadLabels() places them
-      pts.push({ p: at(0, 0, 0.02), box: [-64, 0, 0, 32] }, { p: at(ROAD.B.at[0], ROAD.B.at[1], 0.02), box: [-16, -50, 16, 0] });
-      return pts;
-    }
-    for (let k = 0; k < 24; k++) {
-      const a = (k / 24) * Math.PI * 2;
-      pts.push(at(1.42 * Math.cos(a), 1.42 * Math.sin(a), HEIGHT)); // the circle with the arrow and its label
-      const r = pondRadius((k / 24) * 360) * 1.16;
-      pts.push(at(POND_CENTRE.e + r * Math.cos(a), POND_CENTRE.n + r * Math.sin(a), 0)); // the pond and its bank
-    }
-    pts.push(at(0, 0, STONE.hand + 0.1));
-    // the compass plate on the ground
-    for (let k = 0; k < 12; k++) {
-      const a = (k / 12) * Math.PI * 2;
-      pts.push(at(COMPASS.e - 0.04 + 0.8 * Math.cos(a), COMPASS.n - 0.03 + 0.8 * Math.sin(a), 0));
-    }
-    const rel = s.stone.rel;
-    if (rel && s.zoomedOut) {
-      // after letting go: where the stone ends up must show too
-      for (const [de, dn] of [
-        [-0.35, -0.35],
-        [0.35, 0.35],
-        [-0.35, 0.35],
-        [0.35, -0.35],
-      ])
-        pts.push(at(rel.thr.rest.e + de, rel.thr.rest.n + dn, 0));
-    }
-    return pts;
-  }
-  /** Where a box on the stage is, on the canvas (px), a little bigger; null when it is not shown. */
-  function boxOf(el, pad = 6) {
-    if (!el || getComputedStyle(el).visibility === 'hidden') return null;
-    const c = stage.canvas.getBoundingClientRect();
-    const r = el.getBoundingClientRect();
-    if (!r.width) return null;
-    return { left: r.left - c.left - pad, right: r.right - c.left + pad, top: r.top - c.top - pad, bottom: r.bottom - c.top + pad };
-  }
-  /** Room to keep at the bottom of the picture for the hint line (after letting go the hint says where it went). */
-  const hintRoom = () => Math.min(64, Math.max(stage.height, 120) * 0.16);
-  /** Is this point in the picture now, `bottom` px clear of the lower edge? */
-  function inView(p, bottom = 10) {
-    const q = p.clone().project(camera);
-    const x = (q.x * 0.5 + 0.5) * stage.width;
-    const y = (-q.y * 0.5 + 0.5) * stage.height;
-    return q.z < 1 && x > 20 && x < stage.width - 20 && y > 20 && y < stage.height - bottom;
-  }
-  /**
-   * A camera pose that shows the whole scene as big as it can, for this frame's shape: nothing under the buttons
-   * at the top right (the picture may move down a little to make room).
-   */
-  function poseFor(name, view) {
-    const pts = contentOf(name).map((c) => (c.isVector3 ? { p: c, box: null } : c));
-    const lo = new THREE.Vector3(Infinity, Infinity, Infinity);
-    const hi = new THREE.Vector3(-Infinity, -Infinity, -Infinity);
-    for (const { p } of pts) {
-      lo.min(p);
-      hi.max(p);
-    }
-    const target = lo.clone().add(hi).multiplyScalar(0.5);
-    target.y = name === 'stone' ? 0.6 : 0;
-    const back = VIEWS[name][view].clone();
-    const right = new THREE.Vector3().crossVectors(WORLD_UP, back).normalize();
-    const up = new THREE.Vector3().crossVectors(back, right);
-    const local = pts.map(({ p, box }) => {
-      const q = p.clone().sub(target);
-      return { x: q.dot(right), y: q.dot(up), z: q.dot(back), box };
-    });
-    const W = stage.width;
-    const H = Math.max(stage.height, 120);
-    const boxes = [boxOf(ui.corner)].filter(Boolean);
-    const tv = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
-    const th = tv * camera.aspect;
-    const M = 10; // px from the edges
-    const bottom = name === 'stone' && s.zoomedOut && s.mode !== 'quiz' ? hintRoom() : M;
-    const clear = (px, py) => {
-      if (px < M || px > W - M || py < M || py > H - bottom) return false;
-      return !boxes.some((r) => px > r.left && px < r.right && py > r.top && py < r.bottom);
-    };
-    const fits = (d, shift) =>
-      local.every(({ x, y, z, box }) => {
-        const depth = d - z;
-        if (depth < 0.2) return false;
-        const px = W / 2 + (x / (depth * th)) * (W / 2);
-        const py = H / 2 - (y / (depth * tv)) * (H / 2) + shift;
-        if (!box) return clear(px, py);
-        return (
-          clear(px + box[0], py + box[1]) && clear(px + box[2], py + box[1]) && clear(px + box[0], py + box[3]) && clear(px + box[2], py + box[3])
-        );
+  // ── the run ─────────────────────────────────────────────────────────────────
+  function run() {
+    if (s.locked) return;
+    if (s.time >= RUN.time) s.time = 0;
+    s.running = true;
+    audio.tick?.();
+    const t0 = s.time;
+    tweener
+      .animate({
+        key: 'run',
+        duration: ((RUN.time - t0) / RUN.time) * RUN_SCREEN,
+        ease: (x) => x,
+        onUpdate: (k) => {
+          s.time = t0 + (RUN.time - t0) * k;
+          update();
+        },
+      })
+      .finished.then((done) => {
+        s.running = false;
+        update();
+        if (done) {
+          audio.success?.();
+          emit('arrive', snapshot());
+        }
       });
-    let best = null;
-    for (let shift = 0; shift <= 64; shift += 4) {
-      let a = 0.5;
-      let b = 120;
-      if (!fits(b, shift)) continue;
-      for (let i = 0; i < 28; i++) {
-        const mid = (a + b) / 2;
-        if (fits(mid, shift)) b = mid;
-        else a = mid;
-      }
-      if (!best || b < best.d - 1e-4) best = { d: b, shift };
-    }
-    const d = (best?.d ?? 20) * 1.02;
-    // the shift moves the picture down: the camera goes up by as much, at the distance of the scene
-    const t2 = target.addScaledVector(up, ((best?.shift ?? 0) / (H / 2)) * d * tv);
-    return { target: t2, position: t2.clone().addScaledVector(back, d) };
+    update();
   }
-  function flyTo({ position, target }, duration = 0.8) {
+  function stopRun() {
+    tweener.cancel('run');
+    s.running = false;
+  }
+  function setAngle(a, { emitChange = true } = {}) {
+    const next = wrap(Math.round(a));
+    if (next === s.angle && s.time === 0) return;
+    stopRun();
+    s.angle = next;
+    s.time = 0; // a new direction: both back on the start line
+    update();
+    angleLabel();
+    fit(true);
+    if (emitChange) emit('change', snapshot());
+  }
+  function turn(step) {
+    if (s.locked) return lockedNudge();
+    audio.tick?.();
+    setAngle(Math.round((s.angle + step) / STEP) * STEP);
+  }
+
+  // ── camera: frame the start, boy 1's path and boy 2's line ──────────────────
+  function bounds() {
+    const end = lineAt(RUN.displacement, s.angle);
+    const pts = [...PATH, START.two, end];
+    const box = new THREE.Box3();
+    for (const p of pts) {
+      box.expandByPoint(at(p.e, p.n, 0));
+      box.expandByPoint(at(p.e, p.n, 2.2));
+    }
+    return box.expandByVector(new THREE.Vector3(0.7, 0, 0.7));
+  }
+  const corners = Array.from({ length: 8 }, () => new THREE.Vector3());
+  function viewPose(view) {
+    const box = bounds();
+    const target = box.getCenter(new THREE.Vector3()).setY(0.6);
+    const d0 = VIEWS[view];
+    const cam = camera.clone();
+    let d = 30;
+    const topRoom = Math.min(0.3, 60 / Math.max(stage.height, 200)); // the corner buttons
+    for (let i = 0; i < 6; i++) {
+      cam.position.copy(target).addScaledVector(d0, d);
+      cam.lookAt(target);
+      cam.updateMatrixWorld();
+      let k = 0;
+      let j = 0;
+      for (const x of [box.min.x, box.max.x])
+        for (const y of [box.min.y, box.max.y])
+          for (const z of [box.min.z, box.max.z]) {
+            const c = corners[j++].set(x, y, z).project(cam);
+            k = Math.max(k, Math.abs(c.x) / 0.96, c.y > 0 ? c.y / (1 - topRoom * 2) : -c.y / 0.96);
+          }
+      d *= 0.35 + 0.65 * k;
+    }
+    // the sun's shadow box round the same area
+    const half = box.getSize(tmp).length() / 2 + 1;
+    sun.target.position.copy(target).setY(0);
+    sun.position.copy(target).add(new THREE.Vector3(-6, 20, 8));
+    Object.assign(sun.shadow.camera, { left: -half, right: half, top: half, bottom: -half, near: 1, far: 50 });
+    sun.shadow.camera.updateProjectionMatrix();
+    return { target, position: target.clone().addScaledVector(d0, d) };
+  }
+  function flyTo({ position, target }, duration = 0.6) {
     const p0 = camera.position.clone();
     const t0 = controls.target.clone();
     if (!duration) {
-      tweener.cancel('camera');
       camera.position.copy(position);
       controls.target.copy(target);
       controls.update();
@@ -714,132 +359,93 @@ export function createApp(root, options = {}) {
         camera.position.lerpVectors(p0, position, k);
         controls.target.lerpVectors(t0, target, k);
         controls.update();
-        stage.invalidate();
       },
     }).finished;
   }
+  function fit(animate) {
+    if (s.userMovedCamera) return;
+    flyTo(viewPose(s.view), animate ? 0.5 : 0);
+  }
   function setView(view, { animate = true } = {}) {
     s.view = view === '3d' ? '3d' : 'front';
-    controls.enableRotate = s.view === '3d';
     s.userMovedCamera = false;
     syncUI();
     emit('view', { view: s.view });
-    return flyTo(poseFor(s.scene, s.view), animate ? 0.8 : 0);
+    return flyTo(viewPose(s.view), animate ? 0.8 : 0);
   }
+  // the view starts from the front; dragging turns it, and then the "front" button appears to come back
   controls.addEventListener('start', () => {
     s.userMovedCamera = true;
     tweener.cancel('camera');
+    if (s.view !== '3d') {
+      s.view = '3d';
+      syncUI();
+      emit('view', { view: s.view });
+    }
   });
-  // a turned phone or a resized window: the picture is framed again at once (a camera move under way ends there)
-  stage.onResize(() => !s.userMovedCamera && flyTo(poseFor(s.scene, s.view), 0));
+  stage.onResize(() => {
+    if (!s.userMovedCamera) {
+      tweener.cancel('camera');
+      flyTo(viewPose(s.view), 0);
+    }
+  });
 
-  // ── touching the 3D: the hand or the stone lets go of the rope; the cycle can be dragged ──
+  // ── dragging the বেগ arrow turns boy 2 ──────────────────────────────────────
   const raycaster = new THREE.Raycaster();
   const ndc = new THREE.Vector2();
-  const canvasPoint = (e) => {
+  const ground = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+  const hit = new THREE.Vector3();
+  function groundPoint(e) {
     const r = stage.canvas.getBoundingClientRect();
-    return { x: e.clientX - r.left, y: e.clientY - r.top };
-  };
-  const toScreen = (v, out = { x: 0, y: 0 }) => {
-    const p = v.clone().project(camera);
-    out.x = (p.x * 0.5 + 0.5) * stage.width;
-    out.y = (-p.y * 0.5 + 0.5) * stage.height;
-    return out;
-  };
-  /** What a finger at this canvas point takes: 'hand', 'stone', 'cyclist' or null. */
-  function pick(p) {
-    ndc.set((p.x / stage.width) * 2 - 1, -(p.y / stage.height) * 2 + 1);
+    ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
     raycaster.setFromCamera(ndc, camera);
-    const hits = s.scene === 'stone' ? sling.hits : road.hits;
-    const hit = raycaster.intersectObjects(hits, false)[0];
-    if (hit) return hit.object.userData.part;
-    if (s.scene === 'road') {
-      // a touch a little off the small cycle still takes it
-      const c = toScreen(road.points.cyclist());
-      if (Math.hypot(c.x - p.x, c.y - p.y) < 40) return 'cyclist';
-    }
-    return null;
+    return raycaster.ray.intersectPlane(ground, hit);
   }
   let drag = null;
   ui.canvasHost.addEventListener(
     'pointerdown',
     (e) => {
       audio.unlock();
-      coach?.interrupt();
-      const part = pick(canvasPoint(e));
-      if (!part) return; // the camera controls take it
+      const p = groundPoint(e);
+      if (!p || drag) return;
+      // on or near the arrow (or boy 2): turn him
+      const from = velArrow.root.position;
+      const tip = points.tip();
+      const seg = tip.clone().sub(from).setY(0);
+      const rel = p.clone().sub(from).setY(0);
+      const f = THREE.MathUtils.clamp(rel.dot(seg) / seg.lengthSq(), 0, 1);
+      const near = rel.sub(seg.multiplyScalar(f)).length() < 0.9;
+      if (!near) return; // the camera controls take it
       e.stopPropagation();
       e.preventDefault();
       if (s.locked) return lockedNudge();
-      if (part === 'cyclist') {
-        drag = { id: e.pointerId };
-        try {
-          ui.canvasHost.setPointerCapture(e.pointerId); // keep the drag when the finger leaves the cycle
-        } catch {}
-        s.road.playing = false;
-        s.road.toldDrag = true;
-        hideHint();
-        coach?.objectUsed();
-        dragTo(e);
-        return;
-      }
-      // like letting go of a real rope, it happens as the finger goes down
-      if (s.stone.phase === 'whirl' || s.stone.phase === 'still') release();
-      else if (s.stone.phase === 'done' || s.stone.phase === 'flying') whirlAgain();
+      drag = { id: e.pointerId };
+      capturePointer(ui.canvasHost, e.pointerId);
     },
     true,
   );
-  const sp = { x: 0, y: 0 };
-  const toB = Math.round(RIDE.km / ROAD.stepKm);
-  function dragTo(e) {
-    const p = canvasPoint(e);
-    let best = Infinity;
-    let bestKm = s.road.km;
-    for (let i = 0; i <= toB; i++) {
-      const q = roadAt(i * ROAD.stepKm);
-      toScreen(at(q.e, q.n, 0.01), sp);
-      const d = (sp.x - p.x) ** 2 + (sp.y - p.y) ** 2;
-      if (d < best) {
-        best = d;
-        bestKm = i * ROAD.stepKm;
-      }
-    }
-    rideTo(bestKm);
-  }
   ui.canvasHost.addEventListener('pointermove', (e) => {
-    if (drag && e.pointerId === drag.id) {
-      e.preventDefault();
-      dragTo(e);
-    } else if (e.pointerType === 'mouse' && !drag) {
-      ui.canvasHost.style.cursor = pick(canvasPoint(e)) ? (s.locked ? 'not-allowed' : 'pointer') : '';
-    }
+    if (!drag || e.pointerId !== drag.id) return;
+    const p = groundPoint(e);
+    if (!p) return;
+    const a = (Math.atan2(-p.z - START.two.n, p.x - START.two.e) * 180) / Math.PI;
+    if (Math.hypot(p.x - START.two.e, -p.z - START.two.n) > 0.6) setAngle(Math.round(a / 5) * 5, { emitChange: false });
   });
-  const endDrag = (e) => {
+  function endDrag(e) {
     if (!drag || e.pointerId !== drag.id) return;
     drag = null;
-    try {
-      ui.canvasHost.releasePointerCapture(e.pointerId);
-    } catch {}
-  };
+    emit('change', snapshot());
+  }
   ui.canvasHost.addEventListener('pointerup', endDrag);
   ui.canvasHost.addEventListener('pointercancel', endDrag);
 
-  // ── hint line ───────────────────────────────────────────────────────────────
   let hintTimer = 0;
-  function showHint(msg, { duration = 4000 } = {}) {
-    ui.hintText.textContent = msg;
-    ui.hintAct.hidden = true;
+  function lockedNudge() {
+    ui.hintText.textContent = t('q_locked');
     ui.hint.classList.add('show');
     clearTimeout(hintTimer);
-    if (duration) hintTimer = setTimeout(hideHint, duration);
-  }
-  function hideHint() {
-    clearTimeout(hintTimer);
-    ui.hint.classList.remove('show');
-  }
-  function lockedNudge() {
-    showHint(t('q_locked'), { duration: 3000 });
-    audio.error();
+    hintTimer = setTimeout(() => ui.hint.classList.remove('show'), 3000);
+    audio.error?.();
   }
 
   // ── the test ────────────────────────────────────────────────────────────────
@@ -851,65 +457,15 @@ export function createApp(root, options = {}) {
     return list;
   };
   const pickOne = (list) => list[Math.floor(Math.random() * list.length)];
-  const letters = t('letters').split(',');
-  const value = (unit) => (v) => `${N(fmt(v, 2))}<small>${t(unit)}</small>`;
-  // book-style numbers: a distance D m travelled, a displacement d m, in t s
   const WALKS = [
     [100, 50, 20],
-    [120, 60, 30],
-    [150, 90, 30],
-    [160, 120, 40],
-    [90, 60, 15],
-    [200, 140, 40],
-    [180, 120, 30],
+    [120, 80, 40],
+    [60, 30, 12],
+    [90, 45, 15],
+    [200, 120, 50],
   ];
-
-  function clearQuizMarks() {
-    sling.choiceArrows.forEach((a) => {
-      a.root.visible = false;
-      a.setColor(COLORS.choice);
-    });
-    sling.twin.group.visible = false;
-    sling.ring.material.color.set(COLORS.path);
-    for (const id of ['c0', 'c1', 'c2', 'c3', 'p1', 'p2', 'se']) annotations.remove(id);
-    s.road.labels = true;
-    s.extra = [];
-    road.showKm(true);
-  }
-  function stoneQuestion(deg, { arrow, trail = false }) {
-    if (s.scene !== 'stone') setScene('stone', { start: false });
-    holdAt(deg, { arrow, trail });
-    annotations.remove('vel');
-    s.zoomedOut = false;
-    if (!s.userMovedCamera) flyTo(poseFor('stone', s.view), 0.8);
-  }
-  function roadQuestion({ labels }) {
-    if (s.scene !== 'road') setScene('road', { start: false });
-    road.showKm(labels !== 'plain');
-    s.road.labels = true;
-    roadLabels.key = '';
-    rideTo(RIDE.km);
-    if (labels === 'plain') {
-      // the words only: the numbers of the question are not those of the road
-      annotations.add('dist', {
-        text: `${t('lbl_distance')}: ${t('lbl_path')}`,
-        point: () => road.points.trailMid(RIDE.km),
-        dx: 46,
-        dy: 14,
-        kind: 'callout',
-        color: COLORS.distance,
-      });
-      annotations.add('disp', {
-        text: `${t('lbl_displacement')}: ${t('lbl_straight')}`,
-        point: road.points.arrowMid,
-        dx: -30,
-        dy: -30,
-        kind: 'callout',
-        color: COLORS.displacement,
-      });
-    }
-  }
-  /** The right answer and three wrong ones (all different), shuffled. */
+  const value = (u) => (v) => `${N(fmt(v, 2))}<small>${t(u)}</small>`;
+  const words = (keys) => (j) => `<span class="sv-opt">${t(keys[j])}</span>`;
   function numericChoices(right, wrong) {
     const seen = new Set([fmt(right, 2)]);
     const list = [right];
@@ -921,7 +477,6 @@ export function createApp(root, options = {}) {
     }
     return shuffle(list);
   }
-
   let kinds = [];
   let question = null;
   const quiz = createQuiz({
@@ -930,178 +485,99 @@ export function createApp(root, options = {}) {
     emit,
     audio,
     questions: 5,
+    lines: { text: 3, feedback: 2 },
+    action: { hide: (r) => action?.hide(r), show: (r) => action?.show(r) },
     hooks: {
       enter() {
         s.mode = 'quiz';
-        hideHint();
-        kinds = shuffle(['fly', 'same', 'calc', 'road', 'turn']);
-        pondLabel();
+        stopRun();
+        kinds = ['dir', ...shuffle(['calc', 'vector', 'same', 'round'])];
         syncUI();
       },
       leave() {
         s.mode = 'explore';
         s.locked = false;
-        clearQuizMarks();
-        setScene('stone');
+        s.showAngle = true;
+        angleLabel();
         syncUI();
       },
       async prepare(i, _alive, say) {
-        clearQuizMarks();
-        s.locked = true;
+        s.locked = false;
+        s.showAngle = true;
         const kind = kinds[i % kinds.length];
-        if (kind === 'fly') {
-          // the stone held somewhere on the circle, a short trail behind it; four arrows: along the tangent (right),
-          // straight outwards, half-way between, and backwards along the tangent
-          const deg = pickOne([110, 155, 200, 245, 290]); // not facing the pond, where the arrows would crowd it
-          const held = stoneAt(deg);
-          const from = at(held.e, held.n, HEIGHT);
-          const heads = [deg + 90, deg, deg + 45, deg - 90]; // the first is right
-          const order = shuffle([0, 1, 2, 3]); // letter j shows heads[order[j]]
-          const tips = order.map((h) => {
-            const dir = at(Math.cos((heads[h] * Math.PI) / 180), Math.sin((heads[h] * Math.PI) / 180));
-            return { dir, tip: from.clone().addScaledVector(dir, 0.97) };
-          });
-          s.extra = tips.map(({ tip }) => ({ p: tip, box: [-18, -16, 18, 16] }));
-          stoneQuestion(deg, { arrow: false, trail: true });
-          tips.forEach(({ dir, tip }, j) => {
-            const a = sling.choiceArrows[j];
-            a.set(from, dir, 0.78);
-            a.root.visible = true;
-            annotations.add(`c${j}`, { text: letters[j], point: () => tip, dx: 0, dy: 0, kind: 'callout', color: COLORS.choice });
-          });
-          const expected = order.indexOf(0);
-          say(t('q_fly'));
-          question = { kind, deg, expected };
-          return { choices: [0, 1, 2, 3], expected, tolerance: 0.5, label: (j) => letters[j], meta: { kind, angle: deg } };
-        }
-        if (kind === 'same') {
-          const a = pickOne([0, 45, 90, 135, 180, 225, 270, 315]) + 20;
-          const b = a + pickOne([90, 135, 180]);
-          stoneQuestion(b, { arrow: true });
-          const p = stoneAt(a);
-          const pos = at(p.e, p.n, HEIGHT);
-          sling.twin.ball.position.copy(pos);
-          sling.twin.arrow.set(pos, at(p.ve, p.vn), 0.9);
-          sling.twin.group.visible = true;
-          annotations.add('p1', { text: N(1), point: () => pos, dx: 0, dy: 26, kind: 'part' });
-          annotations.add('p2', { text: N(2), point: sling.points.stone, dx: 0, dy: 26, kind: 'part' });
-          say(t('q_same', { a: 1, b: 2 }));
-          const keys = shuffle(['opt_same', 'opt_both_same', 'opt_vel_same', 'opt_both_diff']);
-          question = { kind, a, b };
+        if (kind === 'dir') {
+          // boy 2 faces one of the eight directions; the angle is hidden, the student names the direction
+          const k = pickOne([1, 2, 3, 5, 6, 7]);
+          s.showAngle = false;
+          setAngle(k * 45);
+          angleLabel();
+          s.locked = true;
+          const keys = [DIRS[k], ...shuffle(DIRS.filter((_d, j) => j !== k)).slice(0, 3)].map((d) => `dir_${d}`);
+          const order = shuffle([0, 1, 2, 3]);
+          question = { kind, d: t(keys[0]) };
+          say(t('q_dir'));
           return {
             choices: [0, 1, 2, 3],
-            expected: keys.indexOf('opt_same'),
+            expected: order.indexOf(0),
             tolerance: 0.5,
-            label: (j) => `<span class="sv-opt">${t(keys[j])}</span>`,
-            meta: { kind, from: wrap(a), to: wrap(b) },
+            label: (j) => words(keys)(order[j]),
+            meta: { kind, angle: k * 45 },
           };
         }
+        s.locked = true;
         if (kind === 'calc') {
           const [D, d, tt] = pickOne(WALKS);
           const speed = Math.random() < 0.5;
-          roadQuestion({ labels: 'plain' });
           say(t(speed ? 'q_calc_speed' : 'q_calc_vel', { t: tt, D, d }));
           const right = (speed ? D : d) / tt;
-          // the usual slips: the other length, the division upside down, the two lengths added
           const wrong = speed ? [d / tt, tt / D, (D + d) / tt] : [D / tt, tt / d, (D + d) / tt];
           question = { kind, D, d, t: tt, speed, right };
-          return {
-            choices: numericChoices(right, wrong),
-            expected: right,
-            tolerance: 0.004,
-            label: value('u_ms'),
-            meta: { kind, quantity: speed ? 'speed' : 'velocity', D, d, t: tt },
-          };
+          return { choices: numericChoices(right, wrong), expected: right, tolerance: 0.004, label: value('u_ms'), meta: { kind, D, d, t: tt } };
         }
-        if (kind === 'road') {
-          const m = pickOne([10, 20, 40]);
-          const speed = Math.random() < 0.5;
-          roadQuestion({ labels: true });
-          say(t(speed ? 'q_road_speed' : 'q_road_vel', { m }));
-          const [x, y] = speed ? [RIDE.km, ROAD.B.straight] : [ROAD.B.straight, RIDE.km];
-          // the usual slips: the other quantity, 20 minutes taken as 0.2 hour, minutes not turned into hours
-          const right = kmh(x, m);
-          question = { kind, m, speed, right };
-          return {
-            choices: numericChoices(right, [kmh(y, m), x / (m / 100), x / m]),
-            expected: right,
-            tolerance: 0.004,
-            label: value('u_kmh'),
-            meta: { kind, quantity: speed ? 'average speed' : 'average velocity', minutes: m },
-          };
+        if (kind === 'vector') {
+          const keys = shuffle(['opt_velocity', 'opt_speed', 'opt_distance', 'opt_time']);
+          question = { kind };
+          say(t('q_vector'));
+          return { choices: [0, 1, 2, 3], expected: keys.indexOf('opt_velocity'), tolerance: 0.5, label: words(keys), meta: { kind } };
         }
-        // a whole turn: back where it started, so the displacement and the average velocity are zero
-        const deg = pickOne([0, 90, 180, 270]) + 30;
-        stoneQuestion(deg, { arrow: false });
-        sling.ring.material.color.set(COLORS.distance);
-        annotations.add('se', { text: t('lbl_start_end'), point: sling.points.stone, dx: 0, dy: 30, kind: 'part' });
-        say(t('q_turn', { v: fmt(STONE.v) }));
-        question = { kind };
-        return {
-          choices: shuffle([0, STONE.v, (2 * STONE.r) / PERIOD, STONE.r / PERIOD]),
-          expected: 0,
-          tolerance: 0.004,
-          label: value('u_ms'),
-          meta: { kind },
-        };
+        if (kind === 'same') {
+          const keys = shuffle(['opt_same', 'opt_both_same', 'opt_vel_same', 'opt_both_diff']);
+          question = { kind };
+          say(t('q_same'));
+          return { choices: [0, 1, 2, 3], expected: keys.indexOf('opt_same'), tolerance: 0.5, label: words(keys), meta: { kind } };
+        }
+        const [D, tt] = pickOne([
+          [400, 80],
+          [200, 50],
+          [300, 60],
+        ]);
+        question = { kind, D, t: tt };
+        say(t('q_round', { D, t: tt }));
+        return { choices: shuffle([0, D / tt, D / 2 / tt, tt / D]), expected: 0, tolerance: 0.001, label: value('u_ms'), meta: { kind } };
       },
       reveal() {
         const q = question;
-        if (q.kind === 'fly') {
-          sling.choiceArrows[q.expected].setColor(COLORS.velocity);
-          release({ deg: q.deg });
-          return t('why_fly', { l: letters[q.expected] });
+        if (q.kind === 'dir') {
+          s.showAngle = true;
+          angleLabel();
+          return t('why_dir', { d: q.d });
         }
-        if (q.kind === 'same') return t('why_same', { v: fmt(STONE.v), a: dirWord(q.a + 90), b: dirWord(q.b + 90) });
         if (q.kind === 'calc') return t(q.speed ? 'why_calc_speed' : 'why_calc_vel', { D: q.D, d: q.d, t: q.t, r: fmt(q.right, 2) });
-        if (q.kind === 'road')
-          return t(q.speed ? 'why_road_speed' : 'why_road_vel', {
-            m: q.m,
-            h: HOURS[q.m],
-            D: fmt(RIDE.km),
-            d: fmt(ROAD.B.straight),
-            r: fmt(q.right, 2),
-          });
-        return t('why_turn', { c: fmt(CIRCUMFERENCE, 2), p: fmt(PERIOD, 2), v: fmt(STONE.v), z: 0 });
+        if (q.kind === 'vector') return t('why_vector');
+        if (q.kind === 'same') return t('why_same');
+        return t('why_round', { D: q.D, t: q.t, v: fmt(q.D / q.t, 2), z: 0 });
       },
       done() {
         s.locked = false;
-        clearQuizMarks();
-        setScene('stone');
       },
     },
   });
 
-  // ── first-use pointer: on the hand that holds the rope ──────────────────────
-  let coach = null;
-  if (o.coach) {
-    coach = createCoach({
-      stage,
-      layer: ui.coachLayer,
-      t,
-      loupe: null,
-      tweener,
-      avoid: [ui.corner, ui.hint],
-      object: {
-        label: 'coach_release',
-        candidates: () => (s.scene === 'stone' && s.stone.phase === 'whirl' ? [toScreen(sling.points.hand())] : []),
-        grabbable: (p) => pick(p) === 'hand',
-        demo: null,
-        cancel: () => {},
-      },
-    });
-  }
-
   // ── buttons, keys ───────────────────────────────────────────────────────────
   function syncUI() {
-    for (const b of ui.$$('[data-view]')) b.classList.toggle('on', b.dataset.view === s.view);
-    for (const b of ui.$$('[data-scene]')) {
-      const on = b.dataset.scene === s.scene;
-      b.classList.toggle('on', on);
-      b.setAttribute('aria-pressed', String(on));
-    }
+    const front = ui.$('[data-view="front"]');
+    if (front) front.hidden = s.view !== '3d';
     root.dataset.mode = s.mode === 'quiz' ? 'quiz' : 'explore';
-    root.dataset.scene = s.scene;
     for (const b of ui.$$('[data-mode]')) {
       const on = b.dataset.mode === root.dataset.mode;
       b.classList.toggle('on', on);
@@ -1109,7 +585,6 @@ export function createApp(root, options = {}) {
     }
     ui.learn.inert = s.mode === 'quiz';
     ui.quiz.inert = s.mode !== 'quiz';
-    coach?.setMode(s.mode);
   }
   const fullscreenBtn = ui.$('[data-act="fullscreen"]');
   if (fullscreenBtn && !document.fullscreenEnabled) fullscreenBtn.hidden = true;
@@ -1118,7 +593,6 @@ export function createApp(root, options = {}) {
     if (!b || !root.contains(b)) return;
     audio.unlock();
     if (b.dataset.view) setView(b.dataset.view);
-    if (b.dataset.scene && b.dataset.scene !== s.scene && s.mode !== 'quiz') setScene(b.dataset.scene);
     if (b.dataset.mode === 'quiz' && s.mode !== 'quiz') quiz.start();
     if (b.dataset.mode === 'explore') quiz.stop();
     if (b.dataset.q != null) quiz.choose(Number(b.dataset.q));
@@ -1129,8 +603,19 @@ export function createApp(root, options = {}) {
       case 'q-again':
         quiz.start();
         break;
-      case 'main':
-        if (e.detail === 0) mainAction(); // the keyboard; a finger or the mouse acted on pointerdown
+      case 'reset':
+        if (!s.locked) {
+          stopRun();
+          s.time = 0;
+          update();
+          emit('change', snapshot());
+        }
+        break;
+      case 'left':
+        turn(STEP);
+        break;
+      case 'right':
+        turn(-STEP);
         break;
       case 'fullscreen':
         if (document.fullscreenElement) document.exitFullscreen?.();
@@ -1138,43 +623,41 @@ export function createApp(root, options = {}) {
         break;
     }
   });
-  // letting go of the rope must happen as the finger goes down (a click comes only when it lifts)
-  root.addEventListener('pointerdown', (e) => {
-    if (e.button !== 0 || !(/** @type {Element} */ (e.target).closest('[data-act="main"]'))) return;
-    audio.unlock();
-    mainAction();
-  });
   root.addEventListener('keydown', (e) => {
     const target = /** @type {Element} */ (e.target);
     if (target.closest('input, textarea, select') || e.metaKey || e.ctrlKey || e.altKey) return;
     const k = e.key.toLowerCase();
-    const learning = s.mode !== 'quiz'; // in the test the picture belongs to the question
-    if ((k === ' ' || k === 'enter') && !target.closest('button')) mainAction();
-    else if (k === '1' && learning) setScene('stone');
-    else if (k === '2' && learning) setScene('road');
-    else if ((k === 'arrowright' || k === 'arrowleft') && s.scene === 'road' && learning)
-      rideTo(Math.round((s.road.km + (k === 'arrowright' ? 0.1 : -0.1)) * 1000) / 1000);
+    if ((k === ' ' || k === 'enter') && !target.closest('button')) run();
+    else if (k === 'arrowleft' || k === 'arrowup') turn(STEP);
+    else if (k === 'arrowright' || k === 'arrowdown') turn(-STEP);
     else if (k === 'f') setView('front');
     else if (k === 'v') setView('3d');
-    else if (k === 'escape') hideHint();
     else return;
     e.preventDefault();
   });
 
+  // ── the action: the kit's button in the panel, its badge on the two boys at the start line ─────────────
+  action = createAction({
+    stage,
+    layer: ui.coachLayer,
+    host: ui.$('.pvc-act-slot'),
+    t,
+    step: 1,
+    label: 'act_run',
+    icon: ICONS.play,
+    target: () => null, // the button only: the two boys and their labels keep the start clear
+    avoid: [ui.corner, ui.hint],
+    pulse: Boolean(o.coach),
+    onAct: () => run(),
+  });
+
   // ── start ───────────────────────────────────────────────────────────────────
+  update();
+  angleLabel();
   setView(s.view, { animate: false });
-  setScene(s.scene, { animate: false });
-  if (o.angle != null && Number.isFinite(o.angle) && s.scene === 'stone') {
-    // held still at that angle, with the faint copies of the turn before it: nothing moves until the student acts
-    whirlFrom(o.angle, { turned: o.angle + 360 });
-    s.stone.phase = 'still';
-    tickStone();
-    refresh();
-  }
   syncUI();
   const ready = (async () => {
     if (o.mode === 'quiz') quiz.start();
-    else coach?.start(1400);
   })();
 
   return {
@@ -1186,51 +669,37 @@ export function createApp(root, options = {}) {
     },
     getState: snapshot,
     /**
-     * Change any of: scene ('stone' | 'road'); angle (deg from east, anticlockwise: the stone goes round from there,
-     * with its faint copies); whirl (true: go round again, false: hold it still); release (true: let go now, or an
-     * angle to let go at); km (0–4, the cycle on the road, stopped) or minutes (0–20); playing (the cycle rides on);
-     * view; animate: false jumps (a release lands at once).
+     * Change any of: angle (boy 2's direction, degrees from east towards north; both go back to the start line);
+     * time (0–20 s of the run, stopped); playing (true: run from where they are); view; animate: false jumps.
      */
     async set(p = {}) {
       const animate = p.animate !== false;
       if (p.view) await setView(p.view, { animate });
-      if (p.scene && p.scene !== s.scene) setScene(p.scene, { animate, start: p.km == null && p.minutes == null });
-      if (p.angle != null) {
-        if (s.scene !== 'stone') setScene('stone', { animate });
-        whirlFrom(Number(p.angle), { turned: Number(p.angle) + 360 });
-        velLabel(s.mode !== 'quiz');
-        if (s.zoomedOut && !s.userMovedCamera) flyTo(poseFor('stone', s.view), animate ? 0.6 : 0);
-        s.zoomedOut = false;
+      if (p.angle != null) setAngle(Number(p.angle));
+      if (p.time != null) {
+        stopRun();
+        s.time = Math.min(Math.max(Number(p.time), 0), RUN.time);
+        update();
       }
-      if (p.whirl === true && s.scene === 'stone') whirlAgain({ force: true });
-      if (p.whirl === false && s.stone.phase === 'whirl') {
-        s.stone.phase = 'still';
-        tickStone();
+      if (p.playing === true && !s.running) run();
+      if (p.playing === false) {
+        stopRun();
+        update();
       }
-      if (p.release != null && p.release !== false) {
-        if (s.scene !== 'stone') setScene('stone', { animate });
-        release({ deg: typeof p.release === 'number' ? p.release : s.stone.angle, instant: !animate });
-      }
-      if (p.km != null || p.minutes != null) {
-        if (s.scene !== 'road') setScene('road', { animate, start: false });
-        rideTo(p.km != null ? Number(p.km) : (Number(p.minutes) / RIDE.minutes) * RIDE.km, { play: p.playing === true });
-      } else if (p.playing != null && s.scene === 'road' && Boolean(p.playing) !== s.road.playing) mainAction();
-      refresh();
-      emitChange();
       return snapshot();
     },
     async reset() {
       quiz.stop();
-      clearQuizMarks();
-      s.stone.rel = null;
-      s.stone.phase = 'whirl';
-      s.stone.angle = 0;
-      setScene('stone', { animate: false });
-      whirlFrom(0, { turned: 360 });
+      stopRun();
+      s.time = 0;
+      s.showAngle = true;
+      setAngle(DEFAULTS.angle, { emitChange: false });
+      update();
+      angleLabel();
       await setView('front');
     },
     startPractice: () => quiz.start(),
     capture: (opts) => stage.capture(opts),
-    exportRoot: () => (s.scene === 'stone' ? sling.root : road.root), // the scene shown: helpers are left out
+    exportRoot: () => world,
   };
 }

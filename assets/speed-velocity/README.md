@@ -27,10 +27,10 @@ To listen to it or control it from the book page, use the helper shipped in the 
 | Param | Meaning | Values | Default |
 |---|---|---|---|
 | `lang` | Language | `bn` বাংলা · `en` English | `bn` |
-| `scene` | Example | `stone` whirling stone · `road` cycle on the road (A to B) | `stone` |
+| `angle` | Direction of boy 2 (deg from east) | number | `40` |
+| `time` | Time of the run shown (s, 0–20) | number | `0` |
 | `view` | View | `front` from above · `3d` 3d | `front` |
 | `mode` | Start in | `explore` learn · `quiz` test | `explore` |
-| `angle` | Stone held still at (deg from east) (empty: the stone goes round) | number |  |
 | `coach` | First-use pointers | `1` · `0` | `1` |
 | `numerals` | Digits | (empty) follow language · `bn` Bangla · `latin` Latin |  |
 | `bg` | Background | `light` · `transparent` | `light` |
@@ -46,11 +46,11 @@ Every figure answers `ping` with `{ asset, version }`. Send commands with `figur
 | Command | Example payload |
 |---|---|
 | `get` | `{}` |
-| `set` | `{"scene":"stone"}` |
+| `set` | `{"angle":120}` |
 | `reset` | `{}` |
 | `practice` | `{}` |
 | `capture` | `{"width":800,"height":500}` |
 | `export-glb` | `{}` |
 
-Events: `ready`, `change`, `scene`, `release`, `land`, `arrive`, `view`, `practice-start`, `practice-result`, `practice-end`.
+Events: `ready`, `change`, `arrive`, `view`, `practice-start`, `practice-result`, `practice-end`.
 <!-- /generated:bridge -->

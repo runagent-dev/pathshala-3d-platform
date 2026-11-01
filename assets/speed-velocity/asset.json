@@ -5,16 +5,16 @@
   "title": "Speed and velocity (দ্রুতি এবং বেগ)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "0.2.1",
+  "version": "1.0.0",
   "book": "physics-9-10",
   "page": 40,
   "topic": "2.5",
-  "placement": "Book pages 40–41, topic 2.5: দ্রুতি এবং বেগ. Next to the section text and its example (A to B in 20 minutes on the winding road of চিত্র ২.০৪).",
+  "placement": "Book page 40, topic 2.5: দ্রুতি এবং বেগ. Next to the section text (100 m in 20 s → 5 m/s; 50 m of displacement in 20 s → 2.5 m/s in that direction).",
   "order": 1,
   "maintainers": ["RadeenXALNW"],
   "units": "m",
-  "description": "Speed and velocity (দ্রুতি এবং বেগ, pages 40–41, 2.5) in two examples. A student whirls a stone on a rope overhead (seen from above, tilted): its দ্রুতি stays 4 m/s (the panel writes দ্রুতি = 6.28 m / 1.57 s = 4 m/s, no direction), but its বেগ arrow along the circle keeps turning (the panel names its direction live; faint copies show the arrow at earlier moments), so the বেগ keeps changing. Let go of the rope (touch the hand or the button; it acts as the finger goes down) and the stone flies straight on along the tangent, falling honestly, landing in or beside a pond: the game is to land it in the pond, which works only if you let go when the বেগ arrow points at it. The book's example on the road of চিত্র ২.০৪: a cyclist goes A to B in 20 minutes (drag the cycle or let it ride) while the panel works out গড় দ্রুতি = 4 km / (1/3 h) = 12 km/h and গড় বেগ = 2 km / (1/3 h) = 6 km/h towards the north-east, with the road travelled (দূরত্ব) and the straight সরণ arrow on the map. Test: 5 tap questions (which way the released stone goes, same দ্রুতি but different বেগ, দ্রুতি or বেগ from book-style numbers, average speed or velocity on the road with minutes to hours, the average velocity of a whole turn). Phone-first, Bangla. GLB: the stone scene in metres; the 'road' GLB is the map, 1 km of road drawn as 1 m.",
-  "tags": ["motion", "speed", "velocity", "vector", "circular-motion", "displacement", "bangla"],
+  "description": "Speed and velocity (দ্রুতি এবং বেগ, page 40, 2.5) with two boys on a plain field who run for the same 20 s. Boy 1 runs a zig-zag path: the panel works out দ্রুতি = দূরত্ব ÷ সময় = 100 m ÷ 20 s = 5 m/s, a number with no direction. Boy 2 runs 50 m straight along an outlined বেগ arrow whose angle from east is shown: বেগ = সরণ ÷ সময় = 50 m ÷ 20 s = 2.5 m/s, with its direction (angle and compass word). The student taps দৌড়াও and turns boy 2's direction (◀ ▶, the arrow keys, or by dragging the arrow). Test: 5 tap questions (the direction of boy 2's velocity, speed or velocity from book-style numbers, which quantity is a vector, same speed but different velocity, the average velocity of a run back to the start). Phone-first, Bangla. GLB: the field, the two boys and the arrow; 1 unit is drawn for 5 m.",
+  "tags": ["motion", "speed", "velocity", "vector", "displacement", "distance", "bangla"],
   "params": [
     {
       "name": "lang",
@@ -24,12 +24,13 @@
       "default": "bn"
     },
     {
-      "name": "scene",
-      "label": "Example",
-      "type": "select",
-      "options": [["stone", "whirling stone"], ["road", "cycle on the road (A to B)"]],
-      "default": "stone"
+      "name": "angle",
+      "label": "Direction of boy 2 (deg from east)",
+      "type": "number",
+      "default": "40",
+      "placeholder": "deg"
     },
+    { "name": "time", "label": "Time of the run shown (s, 0–20)", "type": "number", "default": "0", "placeholder": "s" },
     {
       "name": "view",
       "label": "View",
@@ -43,14 +44,6 @@
       "type": "select",
       "options": [["explore", "learn"], ["quiz", "test"]],
       "default": "explore"
-    },
-    {
-      "name": "angle",
-      "label": "Stone held still at (deg from east)",
-      "type": "number",
-      "default": "",
-      "placeholder": "deg",
-      "help": "empty: the stone goes round"
     },
     { "name": "coach", "label": "First-use pointers", "type": "boolean", "default": "1" },
     {
@@ -66,50 +59,28 @@
   ],
   "commands": [
     { "name": "get", "payload": {} },
-    { "name": "set", "payload": { "scene": "stone" } },
-    { "name": "set", "payload": { "angle": 215, "whirl": false } },
-    { "name": "set", "payload": { "release": true } },
-    { "name": "set", "payload": { "release": 331, "animate": false } },
-    { "name": "set", "payload": { "whirl": true } },
-    { "name": "set", "payload": { "scene": "road" } },
-    { "name": "set", "payload": { "km": 2.5 } },
-    { "name": "set", "payload": { "minutes": 20 } },
-    { "name": "set", "payload": { "km": 0, "playing": true } },
+    { "name": "set", "payload": { "angle": 120 } },
+    { "name": "set", "payload": { "time": 20 } },
+    { "name": "set", "payload": { "playing": true } },
+    { "name": "set", "payload": { "view": "3d" } },
     { "name": "reset", "payload": {} },
     { "name": "practice", "payload": {} },
     { "name": "capture", "payload": { "width": 800, "height": 500 } },
     { "name": "export-glb", "payload": {} }
   ],
-  "events": [
-    "ready",
-    "change",
-    "scene",
-    "release",
-    "land",
-    "arrive",
-    "view",
-    "practice-start",
-    "practice-result",
-    "practice-end"
-  ],
+  "events": ["ready", "change", "arrive", "view", "practice-start", "practice-result", "practice-end"],
   "export": {
-    "poster": { "params": { "coach": "0", "angle": "215" } },
-    "glb": [
-      {
-        "name": "default",
-        "setup": [{ "command": "set", "payload": { "angle": 215, "whirl": false, "animate": false } }]
-      },
-      { "name": "road", "setup": [{ "command": "set", "payload": { "km": 4, "animate": false } }] }
-    ],
+    "poster": { "params": { "coach": "0", "time": "20" } },
+    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "time": 20, "animate": false } }] }],
     "video": {
       "kind": "script",
-      "seconds": 19,
+      "seconds": 16,
       "fps": 30,
       "params": { "coach": "0" },
       "script": [
-        { "at": 0.5, "command": "set", "payload": { "angle": 64 } },
-        { "at": 4, "command": "set", "payload": { "release": 331 } },
-        { "at": 8, "command": "set", "payload": { "scene": "road" } }
+        { "at": 0.5, "command": "set", "payload": { "playing": true } },
+        { "at": 8, "command": "set", "payload": { "angle": 120 } },
+        { "at": 9, "command": "set", "payload": { "playing": true } }
       ]
     }
   }
