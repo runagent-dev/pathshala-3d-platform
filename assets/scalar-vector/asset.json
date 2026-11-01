@@ -5,7 +5,7 @@
   "title": "Scalar and vector quantities (স্কেলার ও ভেক্টর রাশি)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "book": "physics-9-10",
   "page": 38,
   "topic": "2.3",
@@ -13,7 +13,7 @@
   "order": 1,
   "maintainers": ["RadeenXALNW"],
   "units": "m",
-  "description": "A simple illustrated journey introduces scalar length and vector position for page 38, topic 2.3. A blue dashed path around a pond is exactly 120 m long; a coral arrow from the start to the finish is 20 m north. An illustrated person walks the path, with short scalar and vector explanations and a camera-aligned four-direction compass. One action follows the path, then reveals the straight position arrow with clear Bangla labels. Three short comparisons show only two of the book’s A/B/C/D vectors at a time: equal magnitude and direction, changed direction, changed magnitude. One action, result and rule; five tap-answer questions; keyboard access, offline operation and six responsive layouts. Distances are to scale; trees and pond are symbolic.",
+  "description": "A simple illustrated journey introduces scalar length and vector position for page 38, topic 2.3. On soft sand, a blue dashed winding path is exactly 120 m long; a coral arrow from the start to the finish is 20 m north. An illustrated person walks the path, with short scalar and vector explanations and a camera-aligned four-direction compass. One action follows the path, then reveals the straight position arrow with clear Bangla labels. Three short comparisons show only two of the book’s A/B/C/D vectors at a time: equal magnitude and direction, changed direction, changed magnitude. One action, result and rule; five tap-answer questions; keyboard access, offline operation and six responsive layouts. Distances are to scale; nothing else is drawn on the map.",
   "tags": ["vector", "scalar", "magnitude", "direction", "position", "compass", "bangla"],
   "params": [
     {

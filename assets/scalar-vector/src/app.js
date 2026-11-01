@@ -43,12 +43,6 @@ export function createApp(root, options = {}) {
   });
   const sheet = bindCleanSheet(ui.learn);
   ui.$('.pvc-outcome').setAttribute('aria-live', 'polite');
-  const heading = document.createElement('div');
-  heading.className = 'sv-heading';
-  const note = document.createElement('div');
-  note.className = 'sv-note';
-  note.textContent = t('map_note');
-  ui.stage.append(heading, note);
 
   const stage = createStage(ui.canvasHost, { fov: 30, near: 1, far: 1000, environment: false });
   const { camera, controls, scene } = stage;
@@ -98,12 +92,12 @@ export function createApp(root, options = {}) {
     target,
     radius: 25,
     pulse: o.coach,
-    avoid: [ui.corner, heading, north, () => diagram.walkerBox(), () => annotations?.boxes() || []],
+    avoid: [ui.corner, north, () => diagram.walkerBox(), () => annotations?.boxes() || []],
   });
   annotations = createAnnotations({
     stage,
     layer: ui.annoLayer,
-    avoid: [ui.corner, heading, north, note, () => diagram.walkerBox(), () => action.ringBox()],
+    avoid: [ui.corner, north, () => diagram.walkerBox(), () => action.ringBox()],
   });
 
   function fit() {
@@ -229,9 +223,7 @@ export function createApp(root, options = {}) {
         <span class="sv-meaning vector"><b>${t('guide_vector_title')}</b><span>${t(s.stage < 2 ? 'guide_vector_start' : 'guide_vector_done', vars)}</span></span>`);
     } else sheet.rule(`${t(rule)}<span class="sv-book-detail">${t(`guide_${name}`, vars)}</span>`);
     action.set({ step: s.stage < 5 ? s.stage + 1 : '', label: ACTIONS[s.stage], enabled: !s.busy && s.mode === 'explore' });
-    heading.textContent = t(diagram.pairs.visible ? 'pair_title' : 'map_title');
-    note.hidden = diagram.pairs.visible;
-    if (o.bg !== 'transparent') scene.background = new THREE.Color(diagram.pairs.visible ? '#173448' : COLORS.grass);
+    if (o.bg !== 'transparent') scene.background = new THREE.Color(diagram.pairs.visible ? '#dde5ec' : COLORS.grass);
   }
 
   function draw() {

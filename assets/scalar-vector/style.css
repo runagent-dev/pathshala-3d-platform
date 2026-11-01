@@ -1,13 +1,11 @@
-/* Simple journey diagram: blue path length, coral position vector, green equal vectors. */
+/* Simple journey diagram on soft sand: blue path length, coral position vector, green equal vectors. */
 html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
 #app { position: fixed; inset: 0; }
 body.bg-transparent { background: transparent; }
 .sv { --c-mag: #246da9; --c-vec: #d84f42; --c-equal: #18846c; }
-.sv-heading { position: absolute; top: 15px; left: 14px; max-width: calc(100% - 230px); color: #0b241d; font-size: 14px; font-weight: 700; line-height: 1.4; pointer-events: none; }
-.sv-north { position: absolute; left: 15px; top: 65px; display: flex; flex-direction: column; align-items: center; gap: 3px; color: #0b241d; font-size: 12px; font-weight: 600; pointer-events: none; }
+.sv-north { position: absolute; right: 15px; bottom: 12px; display: flex; flex-direction: column; align-items: center; gap: 3px; color: #0b241d; font-size: 12px; font-weight: 600; pointer-events: none; }
 .sv-north i { position: relative; display: block; width: 2px; height: 22px; background: currentColor; }
 .sv-north i::before { content: ''; position: absolute; top: -4px; left: -4px; border: 5px solid transparent; border-bottom: 8px solid currentColor; border-top: 0; }
-.sv-note { position: absolute; bottom: 5px; right: 10px; color: #446442; font-size: 10.5px; pointer-events: none; }
 .sv-vec { position: relative; display: inline-block; padding-top: 0.3em; font-family: 'Noto Sans Bengali', Georgia, serif; font-weight: 700; line-height: 1; }
 .sv-vec::before { content: ''; position: absolute; left: 0; right: 0.14em; top: 0.08em; border-top: 0.08em solid currentColor; }
 .sv-vec::after { content: ''; position: absolute; right: -0.02em; top: -0.04em; border: 0.14em solid transparent; border-left: 0.25em solid currentColor; border-right: 0; }
@@ -28,17 +26,12 @@ body.bg-transparent { background: transparent; }
 .sv .pvc-q-text { font-size: 15px; }
 .sv .pvc-q-feedback { font-size: 13.5px; }
 .sv .pvc-learn { gap: 9px; }
-@container pvc (min-width: 720px) and (min-height: 461px) {
-  .sv .pvc-outcome { --pvc-outcome-lines: 1; }
-  .sv .pvc-rule { --pvc-rule-lines: 2; }
-}
 @container pvc (max-width: 560px) and (max-height: 600px) {
   .sv .pvc-rule { font-size: 13.5px; }
   .sv .pvc-outcome { font-size: 16px; }
   .sv .pvc-q-feedback { font-size: 12.5px; }
   .sv .pvc-opt { font-size: 13px; }
-  .sv-heading { top: 12px; font-size: 12px; }
-  .sv-north { top: 55px; font-size: 11px; }
+  .sv-north { font-size: 11px; }
   .sv .pvc-anno-reading b { font-size: 12px; }
   .sv .pvc-anno-reading small { font-size: 12px; }
 }
@@ -49,23 +42,9 @@ body.bg-transparent { background: transparent; }
   .sv .pvc-q-text { font-size: 14px; }
   .sv .pvc-opt { font-size: 13px; height: 42px; }
   .sv .pvc-q-feedback { font-size: 12.5px; }
-  .sv-heading { font-size: 12px; }
 }
-/* A map needs the height of the board: keep its concise explanation beside it on wide screens. */
-@container pvc (min-width: 720px) {
-  .sv .pvc-shell { grid-template-rows: minmax(0, 1fr); grid-template-columns: minmax(0, 1fr) clamp(260px, 34%, 340px); }
-  .sv .pvc-panel { display: flex; align-items: stretch; border-top: 0; border-left: 1px solid var(--line); padding: 12px; gap: 10px; overflow: hidden; }
-  .sv .pvc-tabs { grid-template-columns: 1fr 1fr; max-width: none; }
-  .sv .pvc-tabs button + button { border-top: 0; border-left: 1px solid var(--line-2); }
-  .sv .pvc-outcome { --pvc-outcome-lines: 3; font-size: 17px; }
-  .sv .pvc-rule { --pvc-rule-lines: 5; font-size: 14px; }
-  .sv .pvc-act-row { --pvc-act-lines: 2; }
-  .sv .pvc-q-options { grid-template-columns: 1fr 1fr; }
-}
-.sv[data-scene='comparison'] .sv-heading, .sv[data-scene='comparison'] .sv-north { color: #f2f8f5; }
 .sv .pvc-anno-reading { white-space: normal; }
 .sv .pvc-anno-reading b, .sv .pvc-anno-reading small { white-space: nowrap; }
-.sv-note { color: #0b241d; }
 @container pvc-panel (max-width: 310px) {
   .sv .pvc-q-feedback { --pvc-q-feedback-min: 4lh; }
 }
@@ -78,7 +57,6 @@ body.bg-transparent { background: transparent; }
   .sv .pvc-anno-reading b, .sv .pvc-anno-reading small { font-size: 14px; }
 }
 @container pvc (min-width: 1000px) {
-  .sv-heading { font-size: 17px; }
   .sv-north { font-size: 15px; }
   .sv .pvc-anno-endpoint { font-size: 17px; }
   .sv .pvc-anno-reading { padding: 7px 12px; }
@@ -88,9 +66,8 @@ body.bg-transparent { background: transparent; }
   .sv .pvc-anno-arrow small { font-size: 16px; }
 }
 /* The compass and person keep the direction tied to the map, while the explanation stays beside the drawing. */
-.sv-compass { position: absolute; top: 54px; left: 12px; width: 64px; display: flex; flex-direction: column; align-items: center; gap: 1px; pointer-events: none; color: #0b241d; font-size: 11px; font-weight: 600; line-height: 1.25; }
+.sv-compass { position: absolute; right: 12px; bottom: 8px; width: 64px; display: flex; flex-direction: column; align-items: center; gap: 1px; pointer-events: none; color: #0b241d; font-size: 11px; font-weight: 600; line-height: 1.25; }
 .sv-compass svg { width: 64px; height: 64px; stroke: none; overflow: visible; }
-.sv[data-scene='comparison'] .sv-compass { color: #f2f8f5; }
 .sv .pvc-rule { min-height: 140px; line-height: 1.4; }
 .sv-explain-intro { display: block; margin-bottom: 8px; }
 .sv-meaning { display: block; }
