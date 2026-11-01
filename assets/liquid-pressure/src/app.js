@@ -31,7 +31,6 @@ import {
   HOLES,
   HOLE_IDS,
   RHO,
-  STAND,
   arrowLength,
   column,
   fixDepth,
@@ -59,7 +58,9 @@ export const DEFAULTS = {
   sound: true,
 };
 
-const COLORS = { P: '#e03131', F: '#7048e8', A: '#0c8599', h: '#1c6fd9', ink: '#1d2733' };
+// P red, F purple (weight's colour), A teal; the depth h dark ink, because blue on the blue water would not stand
+// out. Each passes 4.5:1 as label text on its white chip.
+const COLORS = { P: '#d02424', F: '#7048e8', A: '#0b7a8a', h: '#1d2733', ink: '#1d2733' };
 const NBSP = ' ';
 const DOUBLE_TAP = 400; // ms
 const OPEN_S = 1.3; // s: the cork pops and the jet reaches the ground
@@ -155,11 +156,6 @@ export function createApp(root, options = {}) {
       .join('');
   }
 
-  // a note on the stage (bottom left): how to move A, then what the red arrows mean
-  const note = document.createElement('div');
-  note.className = 'lp-note';
-  ui.stage.append(note);
-
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 30, near: 0.05, far: 60, environment: 'studio-light' });
   const { camera, controls, scene } = stage;
@@ -167,9 +163,12 @@ export function createApp(root, options = {}) {
   controls.maxDistance = 9;
   controls.enablePan = false;
   controls.enableZoom = false;
-  controls.enableRotate = false;
+  controls.enableRotate = true;
   controls.minPolarAngle = 0.5;
   controls.maxPolarAngle = Math.PI * 0.52;
+  // turning stays in front of the wall
+  controls.minAzimuthAngle = -0.85;
+  controls.maxAzimuthAngle = 0.95;
   if (o.bg !== 'transparent') scene.background = skyTexture();
   scene.add(new THREE.HemisphereLight('#ffe6cc', '#a2522e', 0.95));
   const sun = new THREE.DirectionalLight('#ffdcae', 1.9);
@@ -185,9 +184,45 @@ export function createApp(root, options = {}) {
     stage.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     sun.castShadow = true;
     sun.shadow.mapSize.set(1024, 1024);
-    Object.assign(sun.shadow.camera, { left: -1.4, right: 1.6, top: 1.8, bottom: -1.2, near: 0.5, far: 9 });
+    fitShadow();
     sun.shadow.bias = -0.0006;
     sun.shadow.normalBias = 0.01;
+  }
+  /**
+   * The sun's shadow box, tight round what casts a shadow (the stand, the tank's base, the spouts and corks, the
+   * gauge) and where those shadows fall on the floor and the wall, in the light's own frame.
+   */
+  function fitShadow() {
+    const cam = sun.shadow.camera;
+    cam.position.copy(sun.position);
+    cam.lookAt(sun.target.position);
+    cam.updateMatrixWorld(true);
+    const L = new THREE.Vector3().subVectors(sun.position, sun.target.position).normalize();
+    const lo = new THREE.Vector3(-0.36, 0, -0.36);
+    const hi = new THREE.Vector3(R + NOZZLE + 0.2, GLASS_TOP - 0.05, 0.36);
+    const ext = new THREE.Box3();
+    const p = new THREE.Vector3();
+    const q = new THREE.Vector3();
+    for (const x of [lo.x, hi.x])
+      for (const y of [lo.y, hi.y])
+        for (const z of [lo.z, hi.z]) {
+          p.set(x, y, z);
+          // the corner, and where its shadow lands: on the floor (y = 0) or the wall behind (z = -1.15)
+          const toFloor = p.y / L.y;
+          const toWall = (p.z + 1.15) / L.z;
+          q.copy(p).addScaledVector(L, -Math.min(toFloor, toWall));
+          for (const v of [p, q]) ext.expandByPoint(v.clone().applyMatrix4(cam.matrixWorldInverse));
+        }
+    const m = 0.05;
+    Object.assign(cam, {
+      left: ext.min.x - m,
+      right: ext.max.x + m,
+      bottom: ext.min.y - m,
+      top: ext.max.y + m,
+      near: Math.max(0.1, -ext.max.z - 0.3),
+      far: -ext.min.z + 0.3,
+    });
+    cam.updateProjectionMatrix(); // three.js never does this for a directional light's box
   }
 
   const yard = createCourtyard({ shadow: shadows });
@@ -196,8 +231,15 @@ export function createApp(root, options = {}) {
   scene.add(tank.root);
 
   // the arrows are the point of the picture: thick, flat colour in a white outline, drawn over the water
-  const flat = (color) =>
-    new THREE.MeshBasicMaterial({ color, transparent: true, depthTest: false, depthWrite: false, fog: false, toneMapped: false });
+  const flatMats = new Map();
+  const flat = (color) => {
+    if (!flatMats.has(color))
+      flatMats.set(
+        color,
+        new THREE.MeshBasicMaterial({ color, transparent: true, depthTest: false, depthWrite: false, fog: false, toneMapped: false }),
+      );
+    return flatMats.get(color);
+  };
   const OUTLINE_FROM = new THREE.Vector3();
   let thick = 1;
   function boldArrow(name, color, r, padK = 0.7) {
@@ -427,6 +469,7 @@ export function createApp(root, options = {}) {
   function setDepth(h, { animate = false, keepRun = false } = {}) {
     const v = fixDepth(h);
     if (!keepRun && animate) s.run++;
+    if (!animate) tweener.cancel('depth'); // a jump wins over a slide still on its way
     if (Math.abs(v - s.h) < 1e-9) {
       refresh();
       return Promise.resolve(true);
@@ -505,7 +548,7 @@ export function createApp(root, options = {}) {
     if (f.open) return t('rule_column', { F: N(column(s.h).F) });
     return t('rule_start');
   }
-  let lastNote = '';
+  let promptOn = false;
   function refresh() {
     const p = plan();
     sheet.choose(holeAt(s.h));
@@ -524,12 +567,12 @@ export function createApp(root, options = {}) {
       zoomBtn.classList.toggle('on', close);
     }
     if (action) action.set({ step: p.step, label: p.label });
-    const arrowsOn = s.show.P && HOLE_IDS.some((id) => s.jet[id] > 0);
-    const text = s.mode !== 'explore' ? '' : !s.found.drag && s.show.column ? t('note_drag') : arrowsOn ? t('note_arrows') : '';
-    if (text !== lastNote) {
-      note.textContent = text;
-      note.classList.toggle('red', text === t('note_arrows'));
-      lastNote = text;
+    // the one prompt on the view: how to move A, until the student has moved it or opened a hole
+    const prompt = s.mode === 'explore' && !s.found.drag && !s.found.open && s.show.column;
+    if (prompt !== promptOn) {
+      promptOn = prompt;
+      if (prompt) showHint(t('note_drag'), { duration: 0 });
+      else if (ui.hintText.textContent === t('note_drag')) hintOff();
     }
     syncLabels();
     stage.invalidate();
@@ -570,7 +613,7 @@ export function createApp(root, options = {}) {
   const anno = createAnnotations({
     stage,
     layer: ui.annoLayer,
-    avoid: [ui.corner, ui.hint, note, arrowBoxes, () => action?.box(), () => action?.ringBox()],
+    avoid: [ui.corner, ui.hint, arrowBoxes, () => action?.box(), () => action?.ringBox()],
   });
   const spot = (dx, dy) => ({ dx, dy });
   const pts = {
@@ -579,7 +622,6 @@ export function createApp(root, options = {}) {
     P: new THREE.Vector3(),
     A: new THREE.Vector3(),
     F: new THREE.Vector3(),
-    grow: new THREE.Vector3(),
     mark: new THREE.Vector3(),
   };
   const gaugePts = Array.from({ length: 6 }, (_, i) => new THREE.Vector3(GAUGE_X - 0.02, SURFACE - i * 0.2, 0.034));
@@ -587,6 +629,7 @@ export function createApp(root, options = {}) {
   const want = new Map();
   function syncLabels() {
     want.clear();
+    camera.updateMatrixWorld(); // the pose may have changed since the last frame
     const compact = stage.height < 260 || stage.width < 340;
     const close = s.look === 'close';
     const yA = () => SURFACE - s.h;
@@ -597,11 +640,11 @@ export function createApp(root, options = {}) {
         spots: [spot(-4, -15), spot(4, -15), spot(-4, -30)],
         color: COLORS.h,
       });
-    if (s.show.column && s.show.P && s.show.numbers && stage.height >= 300) {
+    if (s.show.column && s.show.P && s.show.numbers && stage.height >= 260) {
       want.set('P', {
         text: t('lbl_P', { v: fmt(pressure(round(s.h, 2))) }),
         point: () => pts.P.set(0, yA() - 0.012, 0.004),
-        spots: [spot(0, 22), spot(-12, 24), spot(12, 24), spot(0, 38)],
+        spots: [spot(10, 22), spot(0, 22), spot(-12, 24), spot(0, 38)],
         color: COLORS.P,
         own: [jetBoxes],
       });
@@ -623,14 +666,6 @@ export function createApp(root, options = {}) {
         optional: true,
         own: [jetBoxes],
       });
-    if (s.fill >= 0.999 && s.show.numbers)
-      want.set('grow', {
-        text: t('lbl_grow'),
-        point: () => pts.grow.set(GAUGE_X, STAND - 0.06, 0.035),
-        spots: [spot(0, 18), spot(10, 22), spot(-10, 22)],
-        color: COLORS.P,
-        optional: true,
-      });
     if (s.mark)
       want.set('mark', {
         text: t('lbl_this'),
@@ -639,8 +674,12 @@ export function createApp(root, options = {}) {
         color: COLORS.ink,
       });
     // the depth gauge's numbers (0 at the surface); the labels above find their places first
-    for (let i = 0; i < gaugePts.length; i++)
+    // (only the marks that are in the picture: one below the frame would be pushed to its edge, on top of another)
+    for (let i = 0; i < gaugePts.length; i++) {
+      toScreen(gaugePts[i], P0);
+      if (P0.y < 10 || P0.y > stage.height - 12 || P0.x < 16) continue;
       want.set(`g${i}`, { text: N(round(i * 0.2, 1)), point: () => gaugePts[i], dx: -5, dy: 0, kind: 'tick' });
+    }
     want.set('gauge', {
       text: t('lbl_gauge'),
       point: () => pts.gauge.set(GAUGE_X, GLASS_TOP + 0.02, 0.03),
@@ -698,7 +737,7 @@ export function createApp(root, options = {}) {
       controls.target.copy(aim);
       controls.update();
       layoutArrows();
-      stage.invalidate();
+      refresh(); // the labels from the new pose
       return Promise.resolve(true);
     }
     return tweener
@@ -731,7 +770,6 @@ export function createApp(root, options = {}) {
   }
   function setView(view, { animate = true } = {}) {
     s.view = view === '3d' ? '3d' : 'front';
-    controls.enableRotate = s.view === '3d';
     s.userMovedCamera = false;
     syncUI();
     emit('view', { view: s.view });
@@ -739,6 +777,10 @@ export function createApp(root, options = {}) {
     return flyTo(viewPose(), animate ? 0.7 : 0);
   }
   controls.addEventListener('start', () => {
+    if (s.view !== '3d') {
+      s.view = '3d';
+      syncUI();
+    }
     s.userMovedCamera = true;
     tweener.cancel('camera');
   });
@@ -761,7 +803,7 @@ export function createApp(root, options = {}) {
       return p.target ? tank.holes[p.target].mouth : null;
     },
     radius: 22,
-    avoid: [ui.corner, ui.hint, note, () => anno.boxes()],
+    avoid: [ui.corner, ui.hint, () => anno.boxes()],
     pulse: o.coach,
     onAct: () => {
       audio.unlock();
@@ -950,11 +992,20 @@ export function createApp(root, options = {}) {
     emit,
     audio,
     questions: 5,
-    lines: { text: 3, feedback: 3 },
+    lines: { text: 2, feedback: 3 },
     action,
     hooks: {
       enter() {
-        learnSaved = { h: s.h, open: HOLE_IDS.filter((id) => s.open[id]), look: s.look, found: { ...s.found }, fill: s.fill };
+        // a hole still opening or the gauge still filling counts as done: the test's scenes stop them
+        tweener.cancel('fill');
+        const open = HOLE_IDS.filter((id) => s.open[id]);
+        const found = {
+          ...s.found,
+          open: s.found.open || open.length > 0,
+          compare: s.found.compare || open.length >= 2,
+          all: s.found.all || open.length === 3,
+        };
+        learnSaved = { h: round(s.h, 2), open, look: s.look, found, fill: found.compare ? 1 : 0 };
         s.mode = 'quiz';
         s.locked = true;
         if (drag) endDrag({ pointerId: drag.id });
@@ -1051,7 +1102,8 @@ export function createApp(root, options = {}) {
 
   // ── buttons, keys ───────────────────────────────────────────────────────────
   function syncUI() {
-    for (const b of ui.$$('[data-view]')) b.classList.toggle('on', b.dataset.view === s.view);
+    const front = ui.$('[data-view="front"]');
+    if (front) front.hidden = s.view !== '3d';
     root.dataset.mode = s.mode === 'quiz' ? 'quiz' : 'explore';
     for (const b of ui.$$('[data-mode]')) {
       const on = b.dataset.mode === root.dataset.mode;
@@ -1134,7 +1186,6 @@ export function createApp(root, options = {}) {
 
   // ── start ───────────────────────────────────────────────────────────────────
   syncUI();
-  controls.enableRotate = s.view === '3d';
   for (const id of parseOpen(o.open)) {
     s.open[id] = true;
     s.cork[id] = 1;
