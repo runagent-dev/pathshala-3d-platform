@@ -5,6 +5,7 @@
 // Every tooth is an involute tooth and the gears turn exactly at their ratios, in mesh: set(height) puts every part
 // where it is when `height` m of rope has been wound on. Metres; +x to the right, +y up, the camera looks from +z.
 import * as THREE from 'three';
+import { bake } from './bake.js';
 import { TRAIN } from './reading.js';
 
 // ── where things are ─────────────────────────────────────────────────────────────────────────────────────────────────
@@ -31,6 +32,7 @@ const ROPE_R = 0.0075; // m: the rope's radius
 const ROPE_PITCH = 0.0165; // m: one turn of rope on the drum
 const SPARE = 1.8; // m of rope left on the drum with the load on the ground
 export const LOAD = { w: 0.42, d: 0.3, pallet: 0.1, sling: 0.42, hook: 0.16 };
+const ARC = { radial: 6, tubular: 16 }; // the rope round the pulley
 
 // ── materials ────────────────────────────────────────────────────────────────────────────────────────────────────────
 function noiseTexture(size, paint) {
@@ -98,44 +100,33 @@ function plate(w, h, draw) {
 }
 
 function makeMaterials() {
+  // Standard (not physical) materials: a lower roughness gives the paint its gloss without a second clear-coat layer,
+  // which in software 3D (and on slow phones) costs as much again for every pixel of the machine.
+  const S = (o) => new THREE.MeshStandardMaterial(o);
   const brushed = brushedTexture();
-  const steel = new THREE.MeshPhysicalMaterial({ name: 'Steel', color: '#d5dbe2', metalness: 1, roughness: 0.32, roughnessMap: brushed });
-  const darkSteel = new THREE.MeshPhysicalMaterial({ name: 'DarkSteel', color: '#6e7782', metalness: 0.9, roughness: 0.4 });
-  const gearSteel = new THREE.MeshPhysicalMaterial({ name: 'GearSteel', color: '#c9d0d8', metalness: 1, roughness: 0.26, emissive: '#000000' });
-  const bronze = new THREE.MeshPhysicalMaterial({ name: 'Bronze', color: '#d39b4a', metalness: 1, roughness: 0.27, emissive: '#000000' });
-  const wormSteel = new THREE.MeshPhysicalMaterial({ name: 'WormSteel', color: '#e3e8ee', metalness: 1, roughness: 0.18, emissive: '#000000' });
-  const motorPaint = new THREE.MeshPhysicalMaterial({
-    name: 'MotorPaint',
-    color: '#1f63c9',
-    metalness: 0.25,
-    roughness: 0.38,
-    clearcoat: 0.6,
-    clearcoatRoughness: 0.3,
-  });
-  const motorEnd = new THREE.MeshPhysicalMaterial({ name: 'MotorEnd', color: '#cfd5db', metalness: 0.9, roughness: 0.35 });
-  const copper = new THREE.MeshPhysicalMaterial({
-    name: 'Windings',
-    map: windingTexture(),
-    color: '#ffffff',
-    metalness: 0.85,
-    roughness: 0.32,
-    emissive: '#000000',
-  });
-  const lamination = new THREE.MeshPhysicalMaterial({ name: 'Rotor', color: '#59626c', metalness: 0.95, roughness: 0.3 });
-  const frame = new THREE.MeshPhysicalMaterial({ name: 'FramePaint', color: '#f08c00', metalness: 0.2, roughness: 0.45, clearcoat: 0.4 });
-  const yellow = new THREE.MeshPhysicalMaterial({ name: 'DrumPaint', color: '#fcc419', metalness: 0.15, roughness: 0.4, clearcoat: 0.5 });
-  const red = new THREE.MeshPhysicalMaterial({ name: 'RedPaint', color: '#e03131', metalness: 0.15, roughness: 0.4, clearcoat: 0.5 });
-  const gearWeb = new THREE.MeshPhysicalMaterial({ name: 'GearWeb', color: '#c92a2a', metalness: 0.2, roughness: 0.42, clearcoat: 0.5 });
-  const rope = new THREE.MeshStandardMaterial({ name: 'Rope', color: '#e9ecef', roughness: 0.75, metalness: 0.3 });
-  const cableRed = new THREE.MeshPhysicalMaterial({ name: 'CableRed', color: '#e8222b', roughness: 0.35, clearcoat: 0.6 });
-  const cableBlue = new THREE.MeshPhysicalMaterial({ name: 'CableBlue', color: '#1c58e8', roughness: 0.35, clearcoat: 0.6 });
-  const rubber = new THREE.MeshStandardMaterial({ name: 'Rubber', color: '#25282c', roughness: 0.8 });
-  const batteryCase = new THREE.MeshPhysicalMaterial({ name: 'BatteryCase', color: '#2b3138', roughness: 0.5, metalness: 0.2, clearcoat: 0.3 });
-  const batteryTop = new THREE.MeshPhysicalMaterial({ name: 'BatteryTop', color: '#ffd43b', roughness: 0.4, clearcoat: 0.5 });
-  const brick = new THREE.MeshStandardMaterial({ name: 'Brick', color: '#b5452b', roughness: 0.9 });
-  const wood = new THREE.MeshStandardMaterial({ name: 'PalletWood', color: '#c49a5a', roughness: 0.85 });
-  const chain = new THREE.MeshPhysicalMaterial({ name: 'Chain', color: '#9aa3ad', metalness: 1, roughness: 0.4 });
-  const lampOff = new THREE.MeshStandardMaterial({ name: 'Lamp', color: '#2f6b35', emissive: '#000000', roughness: 0.3 });
+  const steel = S({ name: 'Steel', color: '#d5dbe2', metalness: 1, roughness: 0.32, roughnessMap: brushed });
+  const darkSteel = S({ name: 'DarkSteel', color: '#6e7782', metalness: 0.9, roughness: 0.4 });
+  const gearSteel = S({ name: 'GearSteel', color: '#c9d0d8', metalness: 1, roughness: 0.26, emissive: '#000000' });
+  const bronze = S({ name: 'Bronze', color: '#d39b4a', metalness: 1, roughness: 0.27, emissive: '#000000' });
+  const wormSteel = S({ name: 'WormSteel', color: '#e3e8ee', metalness: 1, roughness: 0.18, emissive: '#000000' });
+  const motorPaint = S({ name: 'MotorPaint', color: '#1f63c9', metalness: 0.25, roughness: 0.3 });
+  const motorEnd = S({ name: 'MotorEnd', color: '#cfd5db', metalness: 0.9, roughness: 0.35 });
+  const copper = S({ name: 'Windings', map: windingTexture(), color: '#ffffff', metalness: 0.85, roughness: 0.32, emissive: '#000000' });
+  const lamination = S({ name: 'Rotor', color: '#59626c', metalness: 0.95, roughness: 0.3 });
+  const frame = S({ name: 'FramePaint', color: '#f08c00', metalness: 0.2, roughness: 0.38 });
+  const yellow = S({ name: 'DrumPaint', color: '#fcc419', metalness: 0.15, roughness: 0.32 });
+  const red = S({ name: 'RedPaint', color: '#e03131', metalness: 0.15, roughness: 0.32 });
+  const gearWeb = S({ name: 'GearWeb', color: '#c92a2a', metalness: 0.2, roughness: 0.34 });
+  const rope = S({ name: 'Rope', color: '#e9ecef', roughness: 0.75, metalness: 0.3 });
+  const cableRed = S({ name: 'CableRed', color: '#e8222b', roughness: 0.28 });
+  const cableBlue = S({ name: 'CableBlue', color: '#1c58e8', roughness: 0.28 });
+  const rubber = S({ name: 'Rubber', color: '#25282c', roughness: 0.8 });
+  const batteryCase = S({ name: 'BatteryCase', color: '#2b3138', roughness: 0.45, metalness: 0.2 });
+  const batteryTop = S({ name: 'BatteryTop', color: '#ffd43b', roughness: 0.34 });
+  const brick = S({ name: 'Brick', color: '#b5452b', roughness: 0.9 });
+  const wood = S({ name: 'PalletWood', color: '#c49a5a', roughness: 0.85 });
+  const chain = S({ name: 'Chain', color: '#9aa3ad', metalness: 1, roughness: 0.4 });
+  const lampOff = S({ name: 'Lamp', color: '#2f6b35', emissive: '#000000', roughness: 0.3 });
   return {
     steel,
     darkSteel,
@@ -372,7 +363,7 @@ export function createMachine({ maxHeight = 20 } = {}) {
     battery.add(post, cap);
   }
   // the front: a display (P and t) and the switch
-  const screen = plate(512, 256, () => {});
+  const screen = plate(256, 128, () => {});
   const display = new THREE.Mesh(new THREE.PlaneGeometry(0.24, 0.12), new THREE.MeshBasicMaterial({ map: screen.tex, toneMapped: false }));
   display.position.set(bcase.position.x, 0.31, B.z1 + 0.002);
   const bezel = box(0.26, 0.14, 0.01, mats.rubber);
@@ -482,7 +473,7 @@ export function createMachine({ maxHeight = 20 } = {}) {
     minus: new THREE.Vector3(tbox.position.x - 0.065, tbox.position.y - 0.012, 0.005),
   };
   for (const p of Object.values(glands)) motor.add(rod('x', 0.014, 0.02, mats.rubber, p.x + 0.004, p.y, p.z, 16));
-  const nameplate = plate(512, 160, () => {});
+  const nameplate = plate(512, 128, () => {});
   const plateMesh = new THREE.Mesh(
     new THREE.PlaneGeometry(0.16, 0.05),
     new THREE.MeshStandardMaterial({ map: nameplate.tex, roughness: 0.4, metalness: 0.3 }),
@@ -622,7 +613,8 @@ export function createMachine({ maxHeight = 20 } = {}) {
   const ropeUp = rod('y', ROPE_R, 1, mats.rope, 0, 0, 0, 8);
   ropeUp.name = 'Rope';
   const ropeDown = rod('y', ROPE_R, 1, mats.rope, 0, 0, 0, 8);
-  const ropeArc = new THREE.Mesh(new THREE.TorusGeometry(AT.pulleyR, ROPE_R, 6, 24, Math.PI / 2), mats.rope);
+  const ropeArc = new THREE.Mesh(new THREE.TorusGeometry(AT.pulleyR, ROPE_R, ARC.radial, ARC.tubular, Math.PI / 2), mats.rope);
+  ropeArc.frustumCulled = false;
   ropeArc.position.copy(AT.pulley);
   const ropes = new THREE.Group();
   ropes.name = 'RopeFree';
@@ -665,19 +657,19 @@ export function createMachine({ maxHeight = 20 } = {}) {
     const shift = layer % 2 ? 0.01 : -0.01;
     m4.makeTranslation(((k % 3) - 1) * 0.134 + shift, LOAD.pallet + 0.033 + layer * 0.068, (Math.floor(k / 3) - 1.5) * 0.074);
     bricks.setMatrixAt(i, m4);
-    const v = 0.78 + r() * 0.34;
+    const v = 0.74 + r() * 0.26; // at most 1, so the colours stay in 0…1 (also in the GLB)
     bricks.setColorAt(i, tint.setRGB(v, v * (0.86 + r() * 0.14), v * (0.82 + r() * 0.16)));
   }
   bricks.instanceMatrix.needsUpdate = true;
   load.add(bricks);
-  const slings = [];
+  // four chain slings from the pallet's corners up to the hook: one instanced mesh
+  const slingCorners = [];
   for (const sx of [-1, 1])
-    for (const sz of [-1, 1]) {
-      const sling = rod('y', 0.004, 1, mats.chain, 0, 0, 0, 6);
-      sling.userData.corner = new THREE.Vector3((sx * LOAD.w) / 2 - sx * 0.02, LOAD.pallet, (sz * LOAD.d) / 2 - sz * 0.02);
-      slings.push(sling);
-      load.add(sling);
-    }
+    for (const sz of [-1, 1]) slingCorners.push(new THREE.Vector3((sx * LOAD.w) / 2 - sx * 0.02, LOAD.pallet, (sz * LOAD.d) / 2 - sz * 0.02));
+  const slings = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.004, 0.004, 1, 6), mats.chain, 4);
+  slings.name = 'Slings';
+  slings.frustumCulled = false;
+  load.add(slings);
   const tag = plate(256, 128, () => {});
   const tagMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.15, 0.075), new THREE.MeshBasicMaterial({ map: tag.tex, toneMapped: false }));
   tagMesh.position.set(0, LOAD.pallet + 0.07, 0.152);
@@ -739,6 +731,33 @@ export function createMachine({ maxHeight = 20 } = {}) {
   const tangent = new THREE.Vector3();
   const zAxis = new THREE.Vector3(0, 0, 1);
   const state = { height: 0, liftTo: 10, hookY: LOAD.pallet + 0.3 + LOAD.sling };
+  const top = new THREE.Vector3();
+  const hookAt = new THREE.Vector3();
+  const dummy = new THREE.Object3D();
+  let arcShown = -1;
+  /** The rope round the pulley, from angle 0 to `arc`: the torus's vertices moved in place (no new geometry). */
+  function arcTo(geo, arc) {
+    if (Math.abs(arc - arcShown) < 1e-4) return;
+    arcShown = arc;
+    const pos = geo.attributes.position;
+    const nor = geo.attributes.normal;
+    let k = 0;
+    for (let j = 0; j <= ARC.radial; j++)
+      for (let i = 0; i <= ARC.tubular; i++) {
+        const u = (i / ARC.tubular) * arc;
+        const w = (j / ARC.radial) * Math.PI * 2;
+        const cx = AT.pulleyR * Math.cos(u);
+        const cy = AT.pulleyR * Math.sin(u);
+        const nx = Math.cos(w) * Math.cos(u);
+        const ny = Math.cos(w) * Math.sin(u);
+        const nz = Math.sin(w);
+        pos.setXYZ(k, cx + ROPE_R * nx, cy + ROPE_R * ny, ROPE_R * nz);
+        nor.setXYZ(k, nx, ny, nz);
+        k++;
+      }
+    pos.needsUpdate = true;
+    nor.needsUpdate = true;
+  }
   let coilShown = -1;
   /** h: rope wound on since the load left the ground (m); liftTo: the whole lift (the load starts liftTo m down). */
   function set(height, liftTo = state.liftTo) {
@@ -781,16 +800,21 @@ export function createMachine({ maxHeight = 20 } = {}) {
     const ta = Math.sin(a1) > Math.sin(a2) ? a1 : a2;
     tangent.set(P.x + AT.pulleyR * Math.cos(ta), P.y + AT.pulleyR * Math.sin(ta), P.z);
     stretch(ropeUp, points.drumTop, tangent);
-    ropeArc.geometry.dispose();
-    ropeArc.geometry = new THREE.TorusGeometry(AT.pulleyR, ROPE_R, 6, 16, Math.max(0.01, ta));
+    arcTo(ropeArc.geometry, Math.max(0.01, ta));
     pulley.rotation.z = -height / AT.pulleyR;
     // the load: its pallet's bottom from liftTo m below the roof up to the roof's level
     const bottom = -liftTo + height;
     load.position.y = bottom;
     points.hook.set(ROPE_X, bottom + state.hookY + 0.12, P.z);
-    stretch(ropeDown, new THREE.Vector3(ROPE_X, P.y, P.z), points.hook);
+    stretch(ropeDown, top.set(ROPE_X, P.y, P.z), points.hook);
     hookBlock.position.y = state.hookY - (LOAD.pallet + 0.3 + LOAD.sling);
-    for (const s of slings) stretch(s, s.userData.corner, new THREE.Vector3(0, state.hookY, 0));
+    hookAt.set(0, state.hookY, 0);
+    slingCorners.forEach((c, i) => {
+      stretch(dummy, c, hookAt);
+      dummy.updateMatrix();
+      slings.setMatrixAt(i, dummy.matrix);
+    });
+    slings.instanceMatrix.needsUpdate = true;
   }
   // the coil is drawn for the drum at height 0; turn it back by the gear's own angle there
   coil.rotation.z = -(MESH_ANGLE + Math.PI - Math.PI / TRAIN.gear - (Math.PI / 2 - MESH_ANGLE) * (TRAIN.pinion / TRAIN.gear));
@@ -828,7 +852,7 @@ export function createMachine({ maxHeight = 20 } = {}) {
   }
   const LOOK = {
     book: { gear: '#c9d0d8', bronze: '#d39b4a', rough: 0.26 },
-    oiled: { gear: '#b9c2cc', bronze: '#c08a3c', rough: 0.1 },
+    oiled: { gear: '#aab4bf', bronze: '#b98236', rough: 0.07 },
     worn: { gear: '#a88f7b', bronze: '#a57a46', rough: 0.62 },
   };
   function setCondition(cond) {
@@ -836,11 +860,7 @@ export function createMachine({ maxHeight = 20 } = {}) {
     mats.gearSteel.color.set(look.gear);
     mats.wormSteel.color.set(cond === 'worn' ? '#b39a86' : cond === 'oiled' ? '#d2d9e0' : '#e3e8ee');
     mats.bronze.color.set(look.bronze);
-    for (const m of [mats.gearSteel, mats.bronze, mats.wormSteel]) {
-      m.roughness = look.rough;
-      m.clearcoat = cond === 'oiled' ? 1 : 0;
-      m.clearcoatRoughness = 0.05;
-    }
+    for (const m of [mats.gearSteel, mats.bronze, mats.wormSteel]) m.roughness = look.rough;
   }
 
   /** The motor's nameplate and the load's mass tag (text from the app, in Bangla). */
@@ -849,14 +869,14 @@ export function createMachine({ maxHeight = 20 } = {}) {
       g.fillStyle = '#e9ecef';
       g.fillRect(0, 0, w, h);
       g.strokeStyle = '#495057';
-      g.lineWidth = 8;
-      g.strokeRect(6, 6, w - 12, h - 12);
+      g.lineWidth = 7;
+      g.strokeRect(5, 5, w - 10, h - 10);
       g.fillStyle = '#1b1e22';
-      g.font = `700 78px "Noto Sans Bengali", sans-serif`;
+      g.font = `700 62px "Noto Sans Bengali", sans-serif`;
       g.textAlign = 'center';
       g.textBaseline = 'middle';
       g.fillText(plateText, w / 2, h * 0.42);
-      g.font = `500 34px "Noto Sans Bengali", sans-serif`;
+      g.font = `500 28px "Noto Sans Bengali", sans-serif`;
       g.fillText(plateSub, w / 2, h * 0.8);
     });
     tag.redraw((g, w, h) => {
@@ -877,13 +897,26 @@ export function createMachine({ maxHeight = 20 } = {}) {
   /** The battery's display: draw(g, w, h) paints it. */
   const setDisplay = (draw) => screen.redraw(draw);
 
+  // ── fewer draw calls with the same detail: every moving part is merged in its own frame, one mesh per material,
+  // and everything that never moves (skid, battery, motor body, bearings, jib, cables) into one mesh per material.
+  // The battery's, motor's and cables' boxes are kept for the rings and for taps.
+  const boxes = {
+    battery: new THREE.Box3().setFromObject(battery),
+    motor: new THREE.Box3().setFromObject(motor),
+    cables: new THREE.Box3().setFromObject(cables),
+  };
+  for (const g of [knob, rotor, motorShaft, wheelGroup, gearGroup, pulley, hookBlock, pallet]) bake(g, g === gearGroup ? { skip: [coil] } : {});
+  bake(root, { skip: [knob, rotor, motorShaft, wheelShaft, drumShaft, pulley, ropes, load] });
+  for (const m of [ropeUp, ropeDown, ropeArc, slings, tagMesh]) m.userData.noShadow = true;
+
   set(0, 10);
   setSwitch(false);
   setCondition('book');
 
   return {
     root,
-    parts: { battery, cables, motor, windings, worm, wheel, pinion, gear, gearGroup, drum: gearGroup, rope: ropes, coil, load, jib, pulley },
+    parts: { gearGroup, wheelGroup, drum: gearGroup, rope: ropes, coil, load, pulley },
+    boxes,
     points,
     curves: { red: redCable.userData.curve, blue: blueCable.userData.curve },
     set,

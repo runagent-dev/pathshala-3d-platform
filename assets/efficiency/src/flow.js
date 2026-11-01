@@ -38,6 +38,8 @@ export function createFlow(host, t) {
   const path = (k, kind = 'b') => /** @type {SVGPathElement} */ (svg.querySelector(`.${kind}.${C[k]}`));
   const tx = /** @type {SVGGElement} */ (svg.querySelector('.tx'));
   let lastTx = '';
+  let lastShape = '';
+  let lastAria = '';
 
   /**
    * e: { input, work, waste, motor, friction, sound } in J (null: not run yet); shares: the final split, used for the
@@ -49,14 +51,22 @@ export function createFlow(host, t) {
     const W = Math.round(Math.min(440, Math.max(240, host.clientWidth || 360)));
     const narrow = W < 330;
     const inX1 = narrow ? 70 : 92;
-    const END = W - (narrow ? 124 : 146);
+    const END = W - (narrow ? 128 : 150);
     const SPLIT = inX1 + (END - inX1) * 0.48;
-    const H = narrow ? 76 : 80;
-    IN.h = narrow ? 50 : 60;
-    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
-    svg.classList.toggle('narrow', narrow);
+    const compact = W < 420; // a phone, or a column beside the formula: the bands a little thinner
+    const H = compact ? 58 : 66;
+    IN.h = compact ? 42 : 50;
     const known = Boolean(e);
     const sh = known ? shares : { work: 0.5, motor: 1 / 6, friction: 1 / 6, sound: 1 / 6 };
+    // the bands' shapes change only with the width and the shares: drawn again only then
+    const shape = `${W}|${known}|${sh.work}|${sh.motor}|${sh.friction}|${Boolean(flowing)}`;
+    const reshape = shape !== lastShape;
+    lastShape = shape;
+    if (reshape) {
+      svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+      svg.classList.toggle('narrow', narrow);
+      svg.classList.toggle('compact', compact);
+    }
     const total = IN.h - GAP - 2 * SUB;
     const hw = Math.max(MIN, total * sh.work);
     const parts = ['motor', 'friction', 'sound'].map((k) => Math.max(MIN, total * sh[k]));
@@ -68,25 +78,28 @@ export function createFlow(host, t) {
     const top = IN.y0;
     const wasteH = hP.reduce((a, b) => a + b, 0);
     // input band
-    path('input').setAttribute('d', `M${IN.x0},${top} L${inX1},${top} L${inX1},${top + hW + wasteH} L${IN.x0},${top + hW + wasteH} Z`);
+    if (reshape) path('input').setAttribute('d', `M${IN.x0},${top} L${inX1},${top} L${inX1},${top + hW + wasteH} L${IN.x0},${top + hW + wasteH} Z`);
     // work: straight on to the end
-    path('work').setAttribute('d', band(inX1, top, top + hW, END, top, top + hW));
+    if (reshape) path('work').setAttribute('d', band(inX1, top, top + hW, END, top, top + hW));
     // waste: down by GAP to the split, then fanned out by SUB
-    path('waste').setAttribute('d', band(inX1, top + hW, top + hW + wasteH, SPLIT, top + hW + GAP, top + hW + GAP + wasteH));
+    if (reshape) path('waste').setAttribute('d', band(inX1, top + hW, top + hW + wasteH, SPLIT, top + hW + GAP, top + hW + GAP + wasteH));
     let a = top + hW + GAP;
     let b = top + hW + GAP;
     const ends = [];
     ['motor', 'friction', 'sound'].forEach((k, i) => {
-      path(k).setAttribute('d', band(SPLIT, a, a + hP[i], END, b, b + hP[i]));
+      if (reshape) path(k).setAttribute('d', band(SPLIT, a, a + hP[i], END, b, b + hP[i]));
       ends.push(b + hP[i] / 2);
       a += hP[i];
       b += hP[i] + SUB;
     });
-    for (const k of Object.keys(C)) path(k, 's').setAttribute('d', path(k).getAttribute('d') || '');
-    svg.classList.toggle('flowing', Boolean(flowing));
-    svg.classList.toggle('known', known);
-    // labels: the input's inside its band, the rest after the ends
-    const val = (k) => (known ? J(e[k]) : t('f_none'));
+    if (reshape) {
+      for (const k of Object.keys(C)) path(k, 's').setAttribute('d', path(k).getAttribute('d') || '');
+      svg.classList.toggle('flowing', Boolean(flowing));
+      svg.classList.toggle('known', known);
+    }
+    // labels: the input's inside its band, the rest after the ends; the waste's three parts are the figure's own
+    // estimate (the book gives only the total), so they carry ≈
+    const val = (k) => (known ? `${['motor', 'friction', 'sound'].includes(k) ? t('f_about') : ''}${J(e[k])}` : t('f_none'));
     const workY = top + hW / 2;
     const wasteTop = top + hW + GAP;
     const rows = [
@@ -117,10 +130,18 @@ export function createFlow(host, t) {
       lastTx = html;
     }
     const n = (k) => (known ? G(e[k]) : '?');
-    svg.setAttribute(
-      'aria-label',
-      t('f_aria', { input: n('input'), work: n('work'), waste: n('waste'), motor: n('motor'), friction: n('friction'), sound: n('sound') }),
-    );
+    const aria = t('f_aria', {
+      input: n('input'),
+      work: n('work'),
+      waste: n('waste'),
+      motor: n('motor'),
+      friction: n('friction'),
+      sound: n('sound'),
+    });
+    if (aria !== lastAria) {
+      lastAria = aria;
+      svg.setAttribute('aria-label', aria);
+    }
   }
   return { draw, svg };
 }

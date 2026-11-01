@@ -63,8 +63,8 @@ Colours: প্রদত্ত শক্তি blue #1c6fd9 (the current), ক�
 ## Honest about what the book doesn't give
 
 - **The split of the waste** between the motor's heat, friction in the gears and sound is the figure's own
-  illustration (book: 2,250 J + 2,850 J + 100 J = 5,200 J), said on the view ("অপচয়ের ভাগ … আনুমানিক: বই শুধু মোট
-  অপচয় দেয়"). The total is always exactly input − work. Sound is kept tiny on purpose (it is in real machines).
+  illustration (book: 2,250 J + 2,850 J + 100 J = 5,200 J), marked ≈ on the flow's three parts and said in the
+  rule while it runs ("… অপচয় হচ্ছে (ভাগ আনুমানিক)"). The total is always exactly input − work. Sound is kept tiny on purpose (it is in real machines).
 - **The oiled (14 s, 70%) and worn (20 s, 49%) motors** are the figure's own, chosen so the times are whole seconds.
 - The load rises at a steady speed (no speeding up at the start); the motor takes 1000 W from the first moment.
 - Words not on the page: ব্যাটারি, সুইচ, ওয়ার্ম গিয়ার (only in the aria text), তাপ, শব্দ, ঘর্ষণে তাপ, মোটরে তাপ, সাধারণ গিয়ার,
@@ -79,3 +79,52 @@ Colours: প্রদত্ত শক্তি blue #1c6fd9 (the current), ক�
 
 - The waste split and the two extra motors are illustrations (above): acceptable, or show only the total?
 - Is "ব্যাটারি" right for a 1000 W supply (the owner's reference shows a battery), or would "বিদ্যুৎ সরবরাহ" be better?
+
+## Polish pass (2026-11-01, 0.2.0)
+
+Against `docs/agents/polish-pass.md`:
+
+- **Layout.** The kit's frame: the tinted panel is gone (white, like every figure). The panel is lower: a thinner
+  flow (58 px on phones), the rule kept to the formula and one or two lines, tighter gaps, two lines for a question;
+  on wide frames the flow and the formula side by side with the book's sentence on one line under them. The 3D gets
+  54 % of 390×700 (was 46 %), 55 % of 800×500 (was 45 %), 71 % of 1280×800 (was 65 %), 44 % of 390×520 (was 40 %);
+  the second form of the formula and every state keep the same height. No CSS of its own moves the panel.
+- **Text on the 3D view.** The note "অপচয়ের ভাগ … আনুমানিক" left the view (≈ on the flow's parts, "(ভাগ আনুমানিক)" in
+  the rule). Labels are short names: "কাজ: বোঝা উঠছে" is now "কাজের পরিমাণ"; the term rings say only the term
+  ("শক্তির অপচয়", not "শক্তির অপচয়: মোটরে ও গিয়ারে"). The rule's sentences are shorter (one line at 800 px, two on a
+  phone) and so are the longest worked answers (three lines on a phone). Left on the view: the gauge ("উচ্চতা",
+  "৯.৭ m") and, while it runs, প্রদত্ত শক্তি, তাপ, ঘর্ষণ, শব্দ, কাজের পরিমাণ.
+- **Colour.** The roof is cast concrete in a warmer mid grey with formwork seams, tie holes and damp patches (it read
+  as near-white); the houses are stronger Dhaka colours (no near-white or mint ones). Labels: their colour on a solid
+  white chip rimmed in the same colour, every text colour at least 4.5 : 1 (the blue, green and orange went a shade
+  darker); the term ring is dashed in a white halo, its word white on the dark colour; the gauge is a solid chip.
+  There are no 3D arrows in this figure.
+- **Smooth.** The site is merged into about fifteen meshes: plain-coloured parts carry their colour in the vertices
+  and share three materials, the twelve houses' faces are one 1024 px atlas, the clouds one mesh (`src/bake.js`). The
+  winch's static parts (skid, battery, motor body, bearings, jib, cables) are one mesh per material, each moving part
+  (rotor, worm shaft, wheel, drum, pulley, hook) merged in its own frame, the four slings one instanced mesh, the 18
+  beads of current one points mesh read from a table, the heat haze one mesh. Standard instead of physical
+  (clear-coat) materials, a slightly lower roughness keeping the gloss. The shadow frustum fitted to the winch
+  (3.5 m, was 4.4 m) at 512 px (was 1024); only the winch casts, the ropes and its labels don't; the street and the
+  houses don't receive. Nothing allocated per frame (the rope round the pulley was a new torus every frame; label
+  points made new vectors), the rule written only when its words change, the flow's bands only when their shape
+  changes, the gauge and the ring only on change; the figure no longer asks for a redraw when the camera turns (the
+  stage does that). A held start (`hold=1`, the poster) draws once and waits instead of animating the waste.
+- **Bugs.** The friction label asked for spots that did not exist (`SPOTS.down`), so it fell anywhere; the rule was
+  rewritten ten times a second while running, so a focused term button lost the keyboard focus; the friction and
+  sound labels showed during the test; a held start kept the flow's stripes moving; switching to oiled gears changed
+  the shader (clear coat on and off), a hitch on slow phones.
+
+Measured (headless Chromium, software GL, shadows on, 390×700; the machine was very busy, so times are noisy):
+
+| | before (0.1.1) | after (0.2.0) |
+|---|---|---|
+| draw calls avg / max (idle) | 396 / 418 | 116 / 138 |
+| draw calls per frame while running | 406 | 107 (214 with the shadow pass) |
+| GPU time per running frame (gl.finish) | 8–17 ms | 4–5 ms |
+| triangles max | 77k | 82k (hoops on the drums) |
+| texture memory | 21.2 MB | 15.7 MB (shadow map 512, one atlas) |
+| the poster's screenshot (1280×800, CI's visual step) | 24–31 s | 0.7–2.5 s |
+| time to ready | 2.5–4.5 s | 2.2–4.5 s (same within noise) |
+| text on the 3D view | 74 characters in 3 boxes | 11 in 2 (the gauge) |
+

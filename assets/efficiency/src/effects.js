@@ -4,6 +4,7 @@
 // that goes that way; render(time) depends only on the time and the strengths, so pictures are repeatable.
 // Nothing here is exported to the GLB (userData.noExport).
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 /** A soft round dot (sparks, beads). */
 function dotTexture() {
@@ -51,8 +52,7 @@ export function createEffects({ points, curves, camera }) {
   root.userData.noExport = true;
   const dot = dotTexture();
 
-  // heat haze over the motor: three crossed planes, always drawn after the scene
-  const haze = new THREE.Group();
+  // heat haze over the motor: three crossed planes in one mesh, always drawn after the scene
   const hazeMat = new THREE.ShaderMaterial({
     ...shimmerShader,
     uniforms: THREE.UniformsUtils.clone(shimmerShader.uniforms),
@@ -61,12 +61,10 @@ export function createEffects({ points, curves, camera }) {
     blending: THREE.AdditiveBlending,
     side: THREE.DoubleSide,
   });
-  for (let i = 0; i < 3; i++) {
-    const plane = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.55), hazeMat);
-    plane.rotation.y = (i * Math.PI) / 3;
-    plane.position.y = 0.3;
-    haze.add(plane);
-  }
+  const haze = new THREE.Mesh(
+    mergeGeometries([0, 1, 2].map((i) => new THREE.PlaneGeometry(0.5, 0.55).rotateY((i * Math.PI) / 3).translate(0, 0.3, 0))),
+    hazeMat,
+  );
   haze.position.copy(points.motorTop);
   haze.renderOrder = 5;
   root.add(haze);
@@ -110,22 +108,37 @@ export function createEffects({ points, curves, camera }) {
     return m;
   });
 
-  // the current: beads running along the cables
+  // the current: beads running along the cables (one points mesh for both cables). Each cable's points are looked up
+  // in a table made once, so a frame only copies numbers.
   const BEADS = 9;
-  const beadMat = new THREE.SpriteMaterial({ map: dot, color: '#fff3a0', transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
-  const beads = [];
+  const LUT = 256;
+  const table = {};
+  for (const k of ['red', 'blue']) {
+    const a = new Float32Array((LUT + 1) * 3);
+    const p = new THREE.Vector3();
+    for (let i = 0; i <= LUT; i++) curves[k].getPointAt(i / LUT, p).toArray(a, i * 3);
+    table[k] = a;
+  }
+  const beadGeo = new THREE.BufferGeometry();
+  beadGeo.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(BEADS * 2 * 3), 3));
+  const beadMat = new THREE.PointsMaterial({
+    size: 0.04,
+    map: dot,
+    color: '#fff3a0',
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+  });
+  const beads = new THREE.Points(beadGeo, beadMat);
+  beads.frustumCulled = false;
+  beads.renderOrder = 6;
+  root.add(beads);
+  const beadList = [];
   for (const [k, dir] of [
     ['red', 1],
     ['blue', -1],
   ])
-    for (let i = 0; i < BEADS; i++) {
-      const s = new THREE.Sprite(beadMat);
-      s.scale.setScalar(0.04);
-      s.userData = { curve: curves[k], dir, phase: i / BEADS };
-      s.renderOrder = 6;
-      root.add(s);
-      beads.push(s);
-    }
+    for (let i = 0; i < BEADS; i++) beadList.push({ k, dir, phase: i / BEADS });
 
   const strength = { heat: 0, motorPower: 0, friction: 0, sound: 0, current: 0 };
   const tmp = new THREE.Vector3();
@@ -151,7 +164,7 @@ export function createEffects({ points, curves, camera }) {
     const pos = sparkGeo.attributes.position;
     const col = sparkGeo.attributes.color;
     const alive = Math.round(SPARKS * Math.min(1, strength.friction));
-    for (let i = 0; i < SPARKS; i++) {
+    for (let i = 0; i < (alive > 0 ? SPARKS : 0); i++) {
       const life = 0.35;
       const t0 = time + (i / SPARKS) * life;
       const n = Math.floor(t0 / life);
@@ -186,13 +199,25 @@ export function createEffects({ points, curves, camera }) {
       m.visible = strength.sound > 0.01;
     }
     // the current: beads moving at a steady speed, + out along the red, back along the blue
-    for (const s of beads) {
-      const { curve, dir, phase } = s.userData;
-      let u = (phase + time * 0.6) % 1;
-      if (dir < 0) u = 1 - u;
-      curve.getPointAt(u, s.position);
-      s.visible = strength.current > 0;
-      s.material.opacity = strength.current;
+    beads.visible = strength.current > 0;
+    if (beads.visible) {
+      const bp = beadGeo.attributes.position;
+      beadList.forEach(({ k, dir, phase }, i) => {
+        let u = (phase + time * 0.6) % 1;
+        if (dir < 0) u = 1 - u;
+        const f = u * LUT;
+        const j = Math.min(LUT - 1, Math.floor(f));
+        const w = f - j;
+        const a = table[k];
+        bp.setXYZ(
+          i,
+          a[j * 3] + (a[j * 3 + 3] - a[j * 3]) * w,
+          a[j * 3 + 1] + (a[j * 3 + 4] - a[j * 3 + 1]) * w,
+          a[j * 3 + 2] + (a[j * 3 + 5] - a[j * 3 + 2]) * w,
+        );
+      });
+      bp.needsUpdate = true;
+      beadMat.opacity = strength.current;
     }
   }
   render(0);
