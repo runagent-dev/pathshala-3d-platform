@@ -16,7 +16,7 @@ import { createQuiz } from '@shared/student/quiz.js';
 import { ICONS, svg } from '@shared/student/icons.js';
 import { createI18n } from './i18n.js';
 import { ARROW, BOX, TUBE, Y0, createApparatus } from './apparatus.js';
-import { DESK_Y, PUMP, createClassroom } from './scenery.js';
+import { DESK_Y, createClassroom } from './scenery.js';
 import { createLabels } from './labels.js';
 import { fitPose } from './camera.js';
 import {
@@ -116,8 +116,13 @@ export function createApp(root, options = {}) {
   const cells = (row) =>
     STEPS_T.map((_, i) => `<span class="fb-c fb-${row}" data-i="${i}"><b>–</b>${row === 't' ? '' : '<small></small>'}</span>`).join('');
   const ui = buildStudentShell(root, t, {
+    layout: 'side', // the panel beside the 3D on landscape frames (kit 1.5.0)
     learn: `
-          <p class="fb-say" aria-live="polite"></p>
+          <div class="fb-acts">
+            <button class="pvc-btn primary" data-act="go"><i class="fb-ic"></i><span></span></button>
+            <button class="pvc-btn" data-act="step" aria-label="${t('act_step_long', { dt: STEP })}" title="${t('act_step_long', { dt: STEP })}">${STEP_ICON}<span>${t('act_step', { dt: STEP })}</span></button>
+            <button class="pvc-btn" data-act="paper"><span></span></button>
+          </div>
           <div class="fb-table">
             <span class="fb-k fb-t"><b>${t('row_t')}</b></span>${cells('t')}<span class="fb-u">${t('u_s')}</span>
             <span class="fb-k fb-v"><b>${t('row_v')}</b><small>${t('eq_v')}</small></span>${cells('v')}<span class="fb-u">${t('u_ms')}<em>${t('law_v_short')}</em></span>
@@ -125,11 +130,7 @@ export function createApp(root, options = {}) {
           </div>
           <p class="fb-laws"><span class="fb-v">${t('law_2')}</span><span class="fb-h">${t('law_3')}</span></p>
           <p class="fb-eqs">${t('eqs', { z: 0 })}</p>
-          <div class="pvc-learn-foot fb-acts">
-            <button class="pvc-btn primary" data-act="go"><i class="fb-ic"></i><span></span></button>
-            <button class="pvc-btn" data-act="step" aria-label="${t('act_step_long', { dt: STEP })}" title="${t('act_step_long', { dt: STEP })}">${STEP_ICON}<span>${t('act_step', { dt: STEP })}</span></button>
-            <button class="pvc-btn" data-act="paper"><span></span></button>
-          </div>`,
+          <p class="fb-say" aria-live="polite"></p>`,
   });
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
@@ -165,13 +166,13 @@ export function createApp(root, options = {}) {
   sun.target.position.set(0.05, 0.2, 0);
   scene.add(sun, sun.target);
   if (o.shadow && !transparent) {
-    // PCF in a box fitted round what casts (the apparatus and the pump) and where their shadows land on the desk,
+    // PCF in a box fitted round what casts (the apparatus) and where their shadows land on the desk,
     // seen from the light: 1024 px for well under a metre
     stage.renderer.shadowMap.enabled = true;
     stage.renderer.shadowMap.type = THREE.PCFShadowMap;
     sun.castShadow = true;
     sun.shadow.mapSize.set(1024, 1024);
-    fitShadow(sun, new THREE.Box3(new THREE.Vector3(-0.3, DESK_Y, -0.24), new THREE.Vector3(PUMP.x + 0.13, Y0 + 0.11, 0.12)), DESK_Y);
+    fitShadow(sun, new THREE.Box3(new THREE.Vector3(-0.3, DESK_Y, -0.24), new THREE.Vector3(0.32, Y0 + 0.11, 0.12)), DESK_Y);
     sun.shadow.radius = 3;
     sun.shadow.bias = -0.0005;
     sun.shadow.normalBias = 0.0015;
