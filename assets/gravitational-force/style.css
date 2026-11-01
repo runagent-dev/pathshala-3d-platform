@@ -20,9 +20,10 @@ body.bg-transparent { background: transparent; }
 /* how the picture is stylised (not to scale, drawn bigger, slower), after the book's sentence: never on the 3D view */
 .gf-style { font-size: 0.86em; color: var(--ink-3); white-space: normal; }
 
-/* the live fact (where you are, the pull between the apples, distances) and the action button beside it */
-.gf-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 2.9em; }
-.gf-fact { margin: 0; flex: 1 1 auto; min-width: 0; font-size: 14px; line-height: 1.45; color: var(--ink-2); }
+/* the action button under the stops, the live fact beside it (where you are, the pull between the apples,
+   distances), then the book's sentence */
+.gf-row { display: flex; align-items: center; gap: 10px; }
+.gf-fact { margin: 0; flex: 1 1 auto; min-width: 0; min-height: 2.9em; font-size: 14px; line-height: 1.45; color: var(--ink-2); }
 .gf-fact b { font-weight: 700; color: var(--ink); }
 .gf-fact b.c-g { color: var(--c-g); }
 .gf-act { flex: none; height: 38px; padding: 0 14px; font-size: 15px; }
@@ -76,7 +77,6 @@ body.bg-transparent { background: transparent; }
 @container pvc (max-width: 560px) and (max-height: 600px) {
   .gf-stops button { height: 34px; }
   .gf-idea { font-size: 13px; line-height: 1.45; min-height: 5.8em; }
-  .gf-row { min-height: 2.6em; }
   .gf-act { height: 34px; padding: 0 12px; font-size: 14.5px; }
   .gf-forces { display: none; } /* the 3D view needs the room more */
   .gf-fact { min-height: 2.9em; }

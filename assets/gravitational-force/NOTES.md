@@ -146,5 +146,7 @@ The owner's standard for every figure (docs/agents/polish-pass.md).
 
 ## Declutter (2026-11-01, v0.3.0)
 The apples lie on a plain warm table before a soft blue backdrop and a plain floor (no wood grain, tiled floor,
-plastered walls, skirting or window with trees). The panel sits beside the 3D (kit 1.5.0): the old wide-frame and
-sideways-phone rules for the bottom panel are gone.
+plastered walls, skirting or window with trees). The panel sits beside the 3D (kit 1.5.0) in the one order every lab
+uses: the stops, the action button with the live fact beside it, then the book's sentence (the old wide-frame and
+sideways-phone rules for the bottom panel are gone). No front/turn buttons: a drag turns the view (not during the
+test), and a front icon brings it back.
