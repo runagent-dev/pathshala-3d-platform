@@ -5,7 +5,7 @@
   "title": "Conservation of momentum and energy (ভরবেগ এবং শক্তির সংরক্ষণশীলতা)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "book": "physics-9-10",
   "page": 72,
   "topic": "3.5.1",
