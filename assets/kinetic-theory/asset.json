@@ -1,0 +1,62 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "kinetic-theory",
+  "title": "Kinetic theory of matter (পদার্থের আণবিক গতিতত্ত্ব)",
+  "type": "animation",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 153,
+  "topic": "5.6.1",
+  "placement": "Book page 153, topic 5.6.1 (পদার্থের আণবিক গতিতত্ত্ব, from the foot of page 152): next to the নিজে করো box (a blown-up balloon with sellotape, pierced through the tape with a needle: it does not burst and the air comes out) and the paragraphs that explain gas pressure with the kinetic theory (molecules hit the wall and bounce back; Newton's third law; countless hits add up to the pressure; heat raises it).",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "The kinetic theory of matter and gas pressure (pages 152–153, topic 5.6.1) as a 78-second animation in a room with a deep-blue wall, a sunny window and paper bunting, on a walnut table. Seven parts the student can tap to jump to: কঠিন (a red clay brick presses only where it touches the table: red arrows down at its footprint, outlined), তরল (a glass tank of blue water presses down and on every side wall, the arrows longer lower down; a hole low in the side lets a jet out into a yellow bowl), গ্যাস (a closed glass box with an orange lid: arrows on every wall), each with a round magnifier of its molecules (a shaking lattice on the table, close molecules sliding in a container, far-apart fast molecules bouncing in a closed box); বেলুন (the book's নিজে করো: a glossy yellow balloon on a stick is blown up, a strip of clear sellotape is smoothed on, a shiny needle pierces through the tape, the balloon does not burst and puffs of air stream out of the hole while it slowly shrinks); কারণ (an iris opens inside a fresh balloon: blue gas molecules rush about and hit the rubber wall; one gold molecule is followed in slow motion with its momentum arrow, the moment of the hit is paused with the purple force on the wall and the equal, opposite dashed reaction on the molecule (Newton's third law), then it bounces back with a different momentum); চাপ (countless hits flash purple forces on the wall, the iris closes and red pressure arrows stand out all round the balloon); তাপ (a heat lamp warms the balloon: the molecules move faster and hit harder, the arrows grow and the balloon swells a little; more in the next chapter). Captions in the book's words, Bangla and English; notes say when the molecules are drawn huge, slowed or paused.",
+  "tags": [
+    "kinetic theory",
+    "gas pressure",
+    "molecules",
+    "balloon",
+    "newtons third law",
+    "momentum",
+    "states of matter",
+    "bangla"
+  ],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    { "name": "autoplay", "label": "Play on load", "type": "boolean", "default": "1" },
+    { "name": "loop", "label": "Loop", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "step": 2 } },
+    { "name": "seek", "payload": { "t": 4.5 } },
+    { "name": "duration", "payload": {} },
+    { "name": "play", "payload": {} },
+    { "name": "pause", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "step", "play", "pause"],
+  "export": {
+    "poster": { "params": { "autoplay": "0" }, "setup": [{ "command": "seek", "payload": { "t": 64 } }] },
+    "glb": [{ "name": "default" }],
+    "video": { "kind": "timeline", "seconds": 78, "fps": 30 }
+  }
+}
