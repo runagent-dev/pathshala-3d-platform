@@ -140,7 +140,7 @@ body.bg-transparent { background: transparent; }
 }
 /* a phone held upright: the velocity and the actions share one row, the formula and the book's box another, so the
    3D view keeps 55 % of the height */
-@container pvc (max-aspect-ratio: 1/1) and (min-height: 640px) {
+@container pvc (max-aspect-ratio: 1/1) and (min-height: 640px) and (min-width: 375px) {
   .mo .pvc-learn { flex-direction: row; flex-wrap: wrap; align-content: flex-start; align-items: center; gap: 6px 8px; }
   .mo .pvc-learn > * { flex: 1 1 100%; }
   .mo .pvc-learn > .mo-choice { flex: 0 0 auto; gap: 6px; }

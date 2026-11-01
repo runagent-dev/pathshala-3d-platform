@@ -134,3 +134,5 @@ the road stay. The panel reads in the order of every lab: the velocity stepper, 
 at the right), the table p⃗ = m × v⃗, the formula, the book's words and the book's box. The rules for a wide panel
 under the view and for the old sideways layout are gone (kit 1.5.0 puts the panel beside the 3D); in the side panel
 the table's heads and names wrap so nothing is cut off. On 390×700 the 3D keeps 55 %.
+No সামনে / ঘুরিয়ে দেখো buttons (kit): the lab starts from the front, a drag turns it, and the small "front" icon
+then brings it back.
