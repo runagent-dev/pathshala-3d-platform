@@ -13,7 +13,6 @@
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
 import { createTweener, ease } from '@shared/tween.js';
-import { createMaterials } from '@shared/student/materials.js';
 import { createAudio } from '@shared/student/audio.js';
 import { bindCleanSheet, buildStudentShell, cleanSheet } from '@shared/student/shell.js';
 import { createAction } from '@shared/student/action.js';
@@ -64,7 +63,7 @@ export const DEFAULTS = {
 
 /** One colour per kind of force, the same for the arrow, the patch or gap, the tag and the panel's words. */
 const COLORS = { contact: '#e8590c', noncontact: '#7048e8', test: '#4b5766' }; // the chapter's pull and gravity; test: "this force" (grey)
-const TOP_ROOM = 52; // px kept clear at the top of the view for the corner buttons and the note
+const TOP_ROOM = 52; // px kept clear at the top of the view for the corner buttons
 const TAP = { move: 10, ms: 600 }; // a tap on the picture: the finger comes up within 10 px and 0.6 s
 
 /**
@@ -98,6 +97,7 @@ export function createApp(root, options = {}) {
   root.lang = t.lang;
   root.tabIndex = 0;
   const ui = buildStudentShell(root, t, {
+    layout: 'side',
     learn: cleanSheet(t, {
       examples: { label: 'ex_label', results: true, items: EXAMPLE_IDS.map((id) => ({ id, label: `ex_${id}` })) },
       lines: { action: 1, outcome: 1, rule: 3 },
@@ -107,29 +107,31 @@ export function createApp(root, options = {}) {
   const resultEls = Object.fromEntries(sheet.words.map((b) => [b.dataset.example, /** @type {HTMLElement} */ (b.querySelector('.pvc-ex-res'))]));
   const outcomeEl = /** @type {HTMLElement} */ (ui.$('.pvc-outcome'));
   outcomeEl.setAttribute('aria-live', 'polite');
-  const note = document.createElement('div');
+  // how time is shown (held, slowed down, real) sits in the panel, at the end of the action's row, not on the view
+  const note = document.createElement('span');
   note.className = 'cnf-note';
-  ui.stage.append(note);
+  ui.$('.pvc-act-row').append(note);
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 30, near: 0.01, far: 200, environment: 'studio-light' });
   const { camera, controls, scene } = stage;
   controls.enablePan = false;
-  const M = createMaterials(stage.renderer);
   const tweener = createTweener();
   stage.addTicker((dt) => tweener.tick(dt));
   const audio = createAudio(o.sound);
 
-  const shadows = o.shadow && o.bg !== 'transparent';
-  const sun = new THREE.DirectionalLight(0xffffff, shadows ? 0.55 : 0.35);
+  const setting = o.bg !== 'transparent'; // each example in its place (setting.js); a transparent page: patches only
+  const shadows = o.shadow && setting;
+  const sun = new THREE.DirectionalLight(0xffffff, shadows ? 0.6 : 0.4);
   scene.add(sun, sun.target);
   if (shadows) {
+    // soft PCF in a box fitted round each example (showScene): 1024 px on a tight box is as sharp as the 2048 px VSM
+    // was, and only the examples' bodies cast (the settings, arrows and marks do not)
     stage.renderer.shadowMap.enabled = true;
-    stage.renderer.shadowMap.type = THREE.VSMShadowMap;
+    stage.renderer.shadowMap.type = THREE.PCFShadowMap;
     sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
-    sun.shadow.radius = 6;
-    sun.shadow.blurSamples = 12;
+    sun.shadow.mapSize.set(1024, 1024);
+    sun.shadow.radius = 3;
   }
 
   const make = {
@@ -148,7 +150,7 @@ export function createApp(root, options = {}) {
   const scenes = {};
   function sceneOf(id) {
     if (!scenes[id]) {
-      const sc = make[id]({ color: COLORS[kindOf(id)], materials: M });
+      const sc = make[id]({ color: COLORS[kindOf(id)], setting });
       sc.root.visible = false;
       scene.add(sc.root);
       scenes[id] = sc;
@@ -189,7 +191,7 @@ export function createApp(root, options = {}) {
   /** @type {ReturnType<typeof createAction> | null} */
   let action = null;
   const gapMark = createGapMark({ stage, layer: ui.annoLayer });
-  const anno = createAnnotations({ stage, layer: ui.annoLayer, avoid: [ui.corner, note, ui.hint, () => action?.ringBox()] });
+  const anno = createAnnotations({ stage, layer: ui.annoLayer, avoid: [ui.corner, ui.hint, () => action?.ringBox()] });
   const pv = new THREE.Vector3();
   const toScreen = (p) => {
     pv.copy(p).project(camera);
@@ -337,6 +339,7 @@ export function createApp(root, options = {}) {
     s.scene = id;
     const sc = sceneOf(id);
     for (const [k, other] of Object.entries(scenes)) other.root.visible = k === id;
+    scene.background = sc.background ?? null;
     // the light (and its shadow box) follows the scene
     const c = sc.shadow.center;
     const r = sc.shadow.r;
@@ -595,7 +598,7 @@ export function createApp(root, options = {}) {
   function setView(view, { animate = true } = {}) {
     s.view = view === '3d' ? '3d' : 'front';
     // turning and zooming only in the 3D view: in the front view the framing stays as fitted
-    controls.enableRotate = controls.enableZoom = s.view === '3d';
+    controls.enableRotate = controls.enableZoom = !s.locked; // the test keeps the view still
     s.userMovedCamera = false;
     syncUI();
     emit('view', { view: s.view });
@@ -605,6 +608,18 @@ export function createApp(root, options = {}) {
   controls.addEventListener('start', () => {
     s.userMovedCamera = true;
     tweener.cancel('camera');
+    turning = true;
+  });
+  // the view starts from the front; a drag turns it (the camera really moves: a tap never does), and then the "front"
+  // button appears to come back
+  let turning = false;
+  controls.addEventListener('end', () => {
+    turning = false;
+  });
+  controls.addEventListener('change', () => {
+    if (!turning || s.view === '3d') return;
+    s.view = '3d';
+    syncUI();
   });
   stage.onResize(() => {
     root.classList.toggle('cnf-compact', stage.height < 300 || stage.width < 360);
@@ -688,7 +703,7 @@ export function createApp(root, options = {}) {
     label: `act_${s.example}`,
     target: () => (s.mode === 'explore' && s.phase === 'rest' && !isPool(s.scene) && cur() ? cur().subject() : null),
     pad: 8,
-    avoid: [ui.corner, ui.hint, note, () => anno.boxes()],
+    avoid: [ui.corner, ui.hint, () => anno.boxes()],
     pulse: o.coach,
     onAct: () => {
       audio.unlock();
@@ -814,7 +829,9 @@ export function createApp(root, options = {}) {
 
   // ── buttons, keys ───────────────────────────────────────────────────────────
   function syncUI() {
-    for (const b of ui.$$('[data-view]')) b.classList.toggle('on', b.dataset.view === s.view);
+    const front = ui.$('[data-view="front"]');
+    if (front) front.hidden = s.view !== '3d';
+    if (!s.locked) controls.enableRotate = controls.enableZoom = true; // the test keeps the view still
     root.dataset.mode = s.mode === 'quiz' ? 'quiz' : 'explore';
     for (const b of ui.$$('[data-mode]')) {
       const on = b.dataset.mode === root.dataset.mode;
@@ -926,7 +943,7 @@ export function createApp(root, options = {}) {
   }
 
   // ── start ───────────────────────────────────────────────────────────────────
-  controls.enableRotate = controls.enableZoom = s.view === '3d';
+  controls.enableRotate = controls.enableZoom = true;
   root.classList.toggle('cnf-compact', stage.height < 300 || stage.width < 360);
   if (o.seen) for (const id of EXAMPLE_IDS) s.seen[id] = KIND[id];
   setExample(s.example, { animate: false });
@@ -977,7 +994,17 @@ export function createApp(root, options = {}) {
       await setView('front');
     },
     startPractice: () => quiz.start(),
-    capture: (opts) => stage.capture(opts),
+    capture(opts = {}) {
+      // a transparent picture (background: null) leaves the setting's sky or wall colour out
+      const before = scene.background;
+      if (opts.background === null) scene.background = null;
+      try {
+        return stage.capture(opts);
+      } finally {
+        scene.background = before;
+        stage.invalidate();
+      }
+    },
     exportRoot: () => cur().model, // the example's objects: no ground, arrow, patch or labels
   };
 }
