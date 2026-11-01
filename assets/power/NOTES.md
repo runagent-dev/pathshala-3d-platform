@@ -136,3 +136,10 @@ like `work`'s s). Pumps: small #1f74c9, big #d4382c (each pump's colour is also 
 - Whether the book wants W = mgh shown here (it comes from 4.3.1); the figure uses it to make "the same work" exact.
 - The quiz's "(g = ৯.৮ ধরো)" has no unit because the kit's question line is plain text (no superscripts).
 - The power plant is in the table and the test only; there is no plant in the picture.
+
+## Declutter (2026-11-01, v0.4.0)
+Only the house wall (plain, calm plaster), the roof, the two pumps, the pipes, the tanks, the electrics and the bulb:
+the windows, the door and its steps, mat and sandals, the stair room, the clothes line, the tubewell, the bicycle, the
+flower pots and the whole neighbourhood (houses, trees, poles, clouds) are gone; a calmer sky. The panel sits beside
+the 3D (kit 1.5.0): the old wide-frame grid and sideways-phone rules are gone. No front/turn buttons: a drag turns
+the view (not during the test), a front icon brings it back.
