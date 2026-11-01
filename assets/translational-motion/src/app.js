@@ -6,7 +6,6 @@
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
 import { createTweener, ease } from '@shared/tween.js';
-import { createMaterials } from '@shared/student/materials.js';
 import { createAudio } from '@shared/student/audio.js';
 import { buildStudentShell } from '@shared/student/shell.js';
 import { createCoach } from '@shared/student/coach.js';
@@ -14,8 +13,9 @@ import { createQuiz } from '@shared/student/quiz.js';
 import { createAnnotations } from '@shared/student/annotations.js';
 import { ICONS, svg } from '@shared/student/icons.js';
 import { createI18n } from './i18n.js';
-import { createCar, DOT_R, WHEEL_DOT_R } from './car.js';
-import { createRoad, createRuler, createTrail, RULER } from './scene.js';
+import { createCar, createGhost, DOT_R, WHEEL_DOT_R } from './car.js';
+import { createRoad, createRuler, createTrail, outlineMaterial, RULER, smoothNormals } from './scene.js';
+import { asphaltTexture, createSetting, createSurroundings, SKY_HAZE } from './setting.js';
 import {
   CAR,
   clampD,
@@ -52,10 +52,12 @@ export const DEFAULTS = {
 };
 
 // One colour per painted point (the same in the 3D view, its trail, its label and the panel), and the car's paint.
-const COLORS = { body: '#f4f3ef', front: '#1c6fd9', window: '#2b8a3e', roof: '#e8590c', back: '#7048e8', wheel: '#d6336c' };
+// The dark shades read at 4.5:1 or more on the white label chips and the panel; the trails use bright ones.
+const COLORS = { body: '#f4f3ef', front: '#1c6fd9', window: '#237a35', roof: '#c2410c', back: '#7048e8', wheel: '#d6336c' };
 const KEYS = [...DOT_KEYS, 'wheel'];
 const LIFT = 0.06; // m: trails run just off the paint, so the body never hides them
-const TRAIL_R = 0.05; // m: thick enough to see on a phone
+const TRAIL_R = 0.065; // m: thick enough to see on a phone
+const OUTLINE = 0.018; // m: the dark rim round each trail, arrowhead and ring
 const STEP = { body: 0.02, wheel: 0.01 }; // m of the car's travel between trail samples
 const ARROW = { len: 0.32, r: 0.115 }; // the arrowhead stops just short of its point
 const SPEED = { straight: 1.6, turn: 2.2 }; // m/s at the most (a car creeping off), with a gentle start and stop
@@ -68,8 +70,48 @@ const HUBS = {
   fl: [FRONT_AXLE, CAR.wheelR, -CAR.track / 2],
   fr: [FRONT_AXLE, CAR.wheelR, CAR.track / 2],
 };
-// where each point's name sits, from the point (px): clear of each other and of the metre numbers below the car
-const LABEL_AT = { front: [30, 44], window: [44, -14], roof: [36, -52], back: [0, -62] };
+// where each point's name may sit, from the point (px), best first, away from the car's middle: the first spot
+// clear of the other labels, the corner buttons, the hint and the metre numbers is taken
+const LABEL_SPOTS = {
+  front: [
+    [44, 40],
+    [62, 8],
+    [22, 58],
+    [-44, 50],
+  ],
+  window: [
+    [48, -20],
+    [40, -50],
+    [64, 8],
+    [-48, -40],
+  ],
+  roof: [
+    [30, -50],
+    [-30, -50],
+    [0, -60],
+    [58, -28],
+    [40, -30],
+    [-44, -28],
+    [0, -46],
+    [-36, -40],
+    [24, -38],
+  ],
+  back: [
+    [0, -58],
+    [-8, -58],
+    [-50, -36],
+    [30, -62],
+    [-62, 4],
+    [-20, -36],
+    [-30, 40],
+  ],
+  wheel: [
+    [-40, 44],
+    [40, 44],
+    [-58, -6],
+    [58, -6],
+  ],
+};
 const BEND_ICON = svg('<path d="M6 20v-6a6 6 0 0 1 6-6h7"/><path d="M15 4l4 4-4 4"/>');
 
 export function createApp(root, options = {}) {
@@ -103,43 +145,51 @@ export function createApp(root, options = {}) {
   // A narrow lens from far away, nearly a parallel projection: equal trails look equal wherever they are.
   const stage = createStage(ui.canvasHost, { fov: 10, near: 4, far: 900, environment: 'studio-light' });
   const { camera, controls, scene } = stage;
-  const backgroundCanvas = document.createElement('canvas');
-  backgroundCanvas.width = 8;
-  backgroundCanvas.height = 256;
-  const backgroundContext = backgroundCanvas.getContext('2d');
-  const backgroundGradient = backgroundContext.createLinearGradient(0, 0, 0, 256);
-  backgroundGradient.addColorStop(0, '#092968');
-  backgroundGradient.addColorStop(1, '#126fb5');
-  backgroundContext.fillStyle = backgroundGradient;
-  backgroundContext.fillRect(0, 0, 8, 256);
-  const background = new THREE.CanvasTexture(backgroundCanvas);
-  background.colorSpace = THREE.SRGBColorSpace;
-  scene.background = o.bg === 'transparent' ? null : background;
+  // the setting: a town street on an afternoon (setting.js); a transparent embed shows only the road and the car
+  const street = o.bg !== 'transparent';
+  scene.background = street ? new THREE.Color(SKY_HAZE) : null;
+  if (street) {
+    // the far ground fades into the haze; the car, about the camera's distance away, never does
+    scene.fog = new THREE.Fog(SKY_HAZE, 80, 400);
+    stage.onBeforeRender(() => {
+      const d = camera.position.distanceTo(controls.target);
+      /** @type {THREE.Fog} */ (scene.fog).near = d + 25;
+      /** @type {THREE.Fog} */ (scene.fog).far = d + 260;
+    });
+  }
   controls.minDistance = 20;
   controls.maxDistance = 220;
   controls.enablePan = false;
-  const M = createMaterials(stage.renderer);
+  controls.maxPolarAngle = THREE.MathUtils.degToRad(84); // never under the ground
   const world = new THREE.Group();
   world.name = 'TranslationalMotionScene';
   scene.add(world);
   const tweener = createTweener();
   stage.addTicker((dt) => tweener.tick(dt));
   const audio = createAudio(o.sound);
-  const annotations = createAnnotations({ stage, layer: ui.annoLayer });
+  const annotations = createAnnotations({
+    stage,
+    layer: ui.annoLayer,
+    avoid: [ui.corner, ui.hint, () => ruler?.boxes(camera, stage.width, stage.height)],
+  });
 
-  const roads = Object.fromEntries(PATHS.map((p) => [p, createRoad(p)]));
-  for (const r of Object.values(roads)) {
+  const asphalt = asphaltTexture();
+  const roads = Object.fromEntries(PATHS.map((p) => [p, createRoad(p, asphalt)]));
+  for (const [path, r] of Object.entries(roads)) {
     r.userData.noExport = true;
+    if (street) r.add(createSetting(path)); // the street goes with its road
     world.add(r);
   }
+  if (street) world.add(createSurroundings());
   const ruler = createRuler({ digits: N, unit: t('unit_m') });
   ruler.group.userData.noExport = true;
   world.add(ruler.group);
 
-  const car = createCar({ materials: M, colors: COLORS });
+  const car = createCar({ materials: {}, colors: COLORS });
   world.add(car.root);
-  const ghostMat = new THREE.MeshBasicMaterial({ name: 'StartOutline', color: 0xd8e5ef, transparent: true, opacity: 0, depthWrite: false });
-  const ghost = createCar({ materials: M, colors: COLORS, ghost: ghostMat });
+  // a faint outline where the car started, made from the car's own shapes (nothing built twice)
+  const ghostMat = new THREE.MeshBasicMaterial({ name: 'StartOutline', color: 0xe8f0f6, transparent: true, opacity: 0, depthWrite: false });
+  const ghost = createGhost(car, ghostMat);
   ghost.root.userData.noExport = true;
   world.add(ghost.root);
   // a big invisible box round the car: a finger anywhere near it takes the car
@@ -149,25 +199,31 @@ export function createApp(root, options = {}) {
   hitBox.userData.noExport = true;
   car.model.add(hitBox);
 
-  if (o.shadow && o.bg !== 'transparent') {
+  // Only the car casts a shadow, so the shadow box is fitted tightly round it and follows it (applyPose):
+  // a 1024 map over 6.4 m is finer than the 2048 map over 18 m it replaces.
+  let sun = null;
+  const SUN = new THREE.Vector3(-1, 22, 11); // from the car towards the sun
+  const SHADOW_BOX = 3.2; // m each way from the car's middle: the car (2.2 m) and its shadow (0.75 m)
+  if (o.shadow && street) {
     stage.renderer.shadowMap.enabled = true;
     stage.renderer.shadowMap.type = THREE.VSMShadowMap;
-    const sun = new THREE.DirectionalLight(0xffffff, 0.45);
-    sun.position.set(3, 22, 9);
-    sun.target.position.set(4, 0, -2);
+    sun = new THREE.DirectionalLight(0xffffff, 0.45);
     sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
-    Object.assign(sun.shadow.camera, { left: -9, right: 9, top: 9, bottom: -9, near: 5, far: 45 });
-    sun.shadow.radius = 8;
+    sun.shadow.mapSize.set(1024, 1024);
+    Object.assign(sun.shadow.camera, {
+      left: -SHADOW_BOX,
+      right: SHADOW_BOX,
+      top: SHADOW_BOX,
+      bottom: -SHADOW_BOX,
+      near: SUN.length() - 6,
+      far: SUN.length() + 4,
+    });
+    sun.shadow.radius = 6;
     sun.shadow.bias = -0.0005;
-    const ground = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.ShadowMaterial({ opacity: 0.1 }));
-    ground.rotation.x = -Math.PI / 2;
-    ground.position.y = -0.002;
-    ground.receiveShadow = true;
-    ground.userData.noExport = true;
-    scene.add(sun, sun.target, ground);
+    scene.add(sun, sun.target);
     car.root.traverse((m) => {
-      if (m instanceof THREE.Mesh && m.visible && m.material.depthTest && !m.material.transparent && m.name !== 'DoorSeam') m.castShadow = true;
+      if (m instanceof THREE.Mesh && !m.name.startsWith('Point') && !m.parent?.name.startsWith('Point') && !m.material.transparent)
+        m.castShadow = true;
     });
   }
 
@@ -186,6 +242,8 @@ export function createApp(root, options = {}) {
   const shades = Object.fromEntries(
     DOT_KEYS.map((k) => [k, [new THREE.Color(trailColors[k]), new THREE.Color(trailColors[k]).lerp(new THREE.Color('#ffffff'), 0.5)]]),
   );
+  // every trail, arrowhead and ring has a dark outline: it stands out on the white car, the road and the footpath
+  const outlines = [outlineMaterial({ width: OUTLINE }), outlineMaterial({ width: OUTLINE, depthTest: false })];
   const trails = {}; // path → key → { samples, tube }
   const wheelExact = {}; // path → samples of the tyre point itself (its distance has no simple formula)
   for (const path of PATHS) {
@@ -193,7 +251,12 @@ export function createApp(root, options = {}) {
     for (const k of KEYS) {
       const fn = k === 'wheel' ? (d) => wheelDotAt(path, d, { out: WHEEL_DOT.out + LIFT }) : (d) => pointAt(path, lifted(k), d);
       const samples = sampleTrail(fn, D_MAX[path], k === 'wheel' ? STEP.wheel : STEP.body);
-      const tube = createTrail(samples.points, { radius: TRAIL_R, radial: k === 'wheel' ? 6 : 8, material: trailMats[k] });
+      const tube = createTrail(samples.points, {
+        radius: TRAIL_R,
+        radial: k === 'wheel' ? 6 : 8,
+        material: trailMats[k],
+        outline: outlines[k === 'wheel' ? 1 : 0],
+      });
       tube.mesh.name = `Trail_${path}_${k}`;
       if (k === 'wheel') tube.mesh.renderOrder = 5;
       world.add(tube.mesh);
@@ -203,22 +266,45 @@ export function createApp(root, options = {}) {
   }
   const coneGeo = new THREE.ConeGeometry(ARROW.r, ARROW.len, 18);
   coneGeo.translate(0, -ARROW.len / 2, 0); // tip at the origin, pointing +y
+  const coneRim = smoothNormals(coneGeo);
+  const ringRimMats = [false, true].map(
+    (over) => new THREE.MeshBasicMaterial({ name: 'Outline', color: '#141a22', toneMapped: false, side: THREE.DoubleSide, depthTest: !over }),
+  );
   const arrows = {};
   const rings = {};
   for (const k of KEYS) {
     const small = k === 'wheel' ? 0.8 : 1;
+    const over = k === 'wheel'; // drawn over everything
     const a = new THREE.Mesh(coneGeo, trailMats[k]);
     a.scale.setScalar(small);
     a.name = `Arrow_${k}`;
     a.userData.noExport = true;
+    const aRim = new THREE.Mesh(coneRim, outlines[over ? 1 : 0]);
+    aRim.name = 'Outline';
+    a.add(aRim);
     world.add(a);
     arrows[k] = a;
     const r0 = (k === 'wheel' ? WHEEL_DOT_R : DOT_R) * 0.75;
     const ring = new THREE.Mesh(
       new THREE.RingGeometry(r0, r0 + 0.05 * small, 32),
-      new THREE.MeshBasicMaterial({ color: trailColors[k], toneMapped: false, side: THREE.DoubleSide, depthTest: k !== 'wheel' }),
+      new THREE.MeshBasicMaterial({
+        color: trailColors[k],
+        toneMapped: false,
+        side: THREE.DoubleSide,
+        depthTest: !over,
+        polygonOffset: true,
+        polygonOffsetFactor: -2,
+        polygonOffsetUnits: -2,
+      }),
     );
-    if (k === 'wheel') a.renderOrder = ring.renderOrder = 5;
+    // its outline: a wider dark ring just behind it
+    const ringRim = new THREE.Mesh(new THREE.RingGeometry(r0 - OUTLINE, r0 + 0.05 * small + OUTLINE, 32), ringRimMats[over ? 1 : 0]);
+    ringRim.name = 'Outline';
+    ring.add(ringRim);
+    if (over) {
+      a.renderOrder = ring.renderOrder = 5;
+      aRim.renderOrder = ringRim.renderOrder = 4.9;
+    }
     ring.name = `Start_${k}`;
     ring.userData.noExport = true;
     world.add(ring);
@@ -328,8 +414,15 @@ export function createApp(root, options = {}) {
     const p0 = pose(s.path, 0);
     ghost.root.position.set(p0.x, 0, p0.z);
     ghost.root.rotation.y = p0.heading;
-    ghost.setWheels({ rl: 0, rr: 0, fl: 0, fr: 0 }, steer(s.path));
-    ghostMat.opacity = 0.2 * THREE.MathUtils.smoothstep(s.d, 0.25, 1.4);
+    ghost.setSteering(steer(s.path));
+    ghostMat.opacity = 0.28 * THREE.MathUtils.smoothstep(s.d, 0.25, 1.4);
+    if (sun) {
+      // the shadow box follows the car's middle
+      const [cx, , cz] = pointAt(s.path, [CAR.length / 2, 0, 0], s.d);
+      sun.target.position.set(cx, 0, cz);
+      sun.position.copy(sun.target.position).add(SUN);
+      sun.target.updateMatrixWorld();
+    }
     ghost.root.visible = ghostMat.opacity > 0.002;
 
     for (const path of PATHS) {
@@ -362,12 +455,10 @@ export function createApp(root, options = {}) {
   function showLabels(keys, text = (k) => t(`dot_${k}`)) {
     annotations.clear();
     for (const k of keys) {
-      const [dx, dy] = LABEL_AT[k] || [-36, 44];
       annotations.add(k, {
         text: text(k),
         point: () => car.dots[k].getWorldPosition(labelPoints[k]),
-        dx,
-        dy,
+        spots: LABEL_SPOTS[k].map(([dx, dy]) => ({ dx, dy })),
         kind: 'callout',
         color: COLORS[k],
       });
@@ -380,7 +471,8 @@ export function createApp(root, options = {}) {
     const want = s.d < LABELS_UNTIL;
     if (want === startNames) return;
     startNames = want;
-    if (want) showLabels(DOT_KEYS);
+    if (want)
+      showLabels(['back', 'roof', 'window', 'front']); // the one nearest the edge chooses first
     else annotations.clear();
   }
 
@@ -660,6 +752,7 @@ export function createApp(root, options = {}) {
   function setView(view, { animate = true } = {}) {
     s.view = view === '3d' ? '3d' : 'front';
     controls.enableRotate = s.view === '3d';
+    controls.enableZoom = s.view === '3d'; // in the front view the camera keeps its fit (no pinch or wheel zoom)
     s.userMovedCamera = false;
     syncUI();
     emit('view', { view: s.view });
@@ -823,6 +916,7 @@ export function createApp(root, options = {}) {
     if (s.userMovedCamera || s.view !== 'front') {
       s.view = 'front';
       controls.enableRotate = false;
+      controls.enableZoom = false;
       s.userMovedCamera = false;
       syncUI();
     }
