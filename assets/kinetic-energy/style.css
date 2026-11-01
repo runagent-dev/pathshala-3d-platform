@@ -6,12 +6,11 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
 body.bg-transparent { background: transparent; }
 
 .ke { --c-pe: #6741d9; --c-ke: #e8930c; --c-ke-text: #a35f00; --c-m: #2f6f3e; --c-v: #1c6fd9; }
-.ke i { font-style: italic; font-size: 1.05em; }
+.ke i { font-style: italic; font-size: 1.05em; line-height: 1; } /* a larger letter never makes its line taller */
 .ke sup { font-size: 0.68em; line-height: 0; }
-.ke-frac { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; margin: 0 1px; font-size: 0.76em; line-height: 1.05; font-weight: inherit; }
+/* a box one em high, the two digits overflowing it evenly: the stacked ½ never makes its line taller (no jumps) */
+.ke-frac { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; height: 1em; vertical-align: middle; margin: 0 1px; font-size: 0.76em; line-height: 1.05; font-weight: inherit; }
 .ke-frac > span:first-child { border-bottom: 1.3px solid currentColor; padding: 0 1px; }
-/* the panel: a soft maple tint, like the hall's floor */
-.ke .pvc-panel { background: linear-gradient(180deg, #fff6ea 0%, #fde8cf 100%); }
 
 /* the steppers: m and v side by side */
 .ke-calc { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
@@ -34,11 +33,10 @@ body.bg-transparent { background: transparent; }
 .ke-f { display: block; font-size: 16px; color: var(--ink); }
 .ke-nb { white-space: nowrap; }
 .ke-f b { color: var(--c-ke-text); font-size: 1.3em; }
-.ke .pvc-rule i, .ke .pvc-q-text i, .ke .pvc-q-feedback i { font-size: 1.08em; }
+.ke .pvc-rule i, .ke .pvc-q-text i, .ke .pvc-q-feedback i { font-size: 1.08em; line-height: 1; }
 
 /* labels on the picture */
 .ke .pvc-anno { transition: none; font-size: 14px; font-weight: 700; color: var(--c); border-color: color-mix(in srgb, var(--c) 45%, var(--line)); background: rgba(255, 255, 255, 0.94); padding: 1px 7px; }
-.ke-note { position: absolute; left: 8px; bottom: 8px; z-index: 3; max-width: calc(100% - 200px); padding: 3px 8px; border-radius: 6px; background: rgba(255, 255, 255, 0.86); color: #3b4250; font-size: 11.5px; line-height: 1.35; pointer-events: none; }
 
 /* the test */
 .ke .pvc-q-text { font-size: 15px; }
@@ -50,6 +48,12 @@ body.bg-transparent { background: transparent; }
   .ke .pvc-learn { gap: 9px; }
   .ke-calc { justify-content: flex-start; gap: 28px; max-width: 560px; }
   .ke .pvc-rule { --pvc-rule-lines: 2; }
+}
+/* phones held upright: the four answers in one row (they are short numbers), so the 3D view keeps its height */
+@container pvc (max-width: 560px) {
+  .ke .pvc-q-options { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+  .ke .pvc-opt { padding: 0 3px; font-size: 17px; }
+  .ke .pvc-opt small { font-size: 13px; }
 }
 /* phones */
 @container pvc (max-width: 420px) {
@@ -72,7 +76,6 @@ body.bg-transparent { background: transparent; }
   .ke .pvc-q-text { font-size: 14px; }
   .ke .pvc-opt { font-size: 13px; }
   .ke .pvc-q-feedback { font-size: 12px; line-height: 1.4; }
-  .ke-note { font-size: 10.5px; }
 }
 /* short and wide (phone held sideways): the panel is beside the scene */
 @container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
@@ -89,5 +92,4 @@ body.bg-transparent { background: transparent; }
   .ke .pvc-q-text { font-size: 13.5px; }
   .ke .pvc-opt { font-size: 12.5px; height: 40px; }
   .ke .pvc-q-feedback { font-size: 12px; }
-  .ke-note { font-size: 10px; max-width: calc(100% - 150px); }
 }
