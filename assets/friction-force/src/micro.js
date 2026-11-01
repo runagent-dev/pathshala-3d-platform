@@ -68,7 +68,7 @@ export function createLens({ stage, t }) {
     upper.geometry.dispose();
     upper.geometry = extrude(shape);
   }
-  const beadGeo = new THREE.SphereGeometry(0.095, 10, 6),
+  const beadGeo = new THREE.SphereGeometry(0.095, 8, 6), // a few pixels across: 8 × 6 is round enough
     upperBead = mat('#19dce9'),
     lowerBead = mat('#7fe237');
   function particles(parent, material, top) {
@@ -84,8 +84,15 @@ export function createLens({ stage, t }) {
   const up = particles(upper, upperBead, true),
     down = particles(lower, lowerBead, false),
     matrix = new THREE.Matrix4();
+  // the labels in the window sit on a dark chip, so they read over the particles too
+  const chipMat = new THREE.MeshBasicMaterial({ color: MICRO_COLORS.field, transparent: true, opacity: 0.88, depthWrite: false });
   const label = (key, color) => {
-    const m = textMesh(t(key), 0.42, { color, weight: 700 });
+    const m = textMesh(t(key), 0.5, { color, weight: 700 });
+    const { width, height } = /** @type {any} */ (m.geometry).parameters;
+    const chip = new THREE.Mesh(new THREE.PlaneGeometry(width * 0.92, height * 0.86), chipMat);
+    chip.position.z = -0.02;
+    chip.renderOrder = 1;
+    m.add(chip);
     m.position.z = 0.7;
     micro.add(m);
     return m;
@@ -171,13 +178,14 @@ export function createLens({ stage, t }) {
       lowerMat.emissive.copy(hot).multiplyScalar(0.25 * heat);
       const right = (2.7 * s.w) / Math.max(1, s.h);
       gauge.position.x = right - 0.8;
-      warmWord.position.set(right - 0.8, -1.3, 0.9);
+      // under the gauge, but never past the window's right edge (the English word is wider than the gauge)
+      warmWord.position.set(Math.min(right - 0.8, right - 0.1 - warmWord.geometry.parameters.width / 2), -1.3, 0.9);
       const level = 0.2 + 2.25 * heat;
       liquid.scale.y = level;
       liquid.position.set(0, -0.6 + level / 2, 0.8);
       bulb.material.emissive.copy(hot).multiplyScalar(heat * 0.35);
       blockWord.position.set(-right + 2, 2.65, 0.8);
-      tableWord.position.set(-right + 2, -1.6, 0.8);
+      tableWord.position.set(-right + 2, -1.5, 0.8);
       pressureWord.position.set(right - 2.6, 2.75, 0.8);
       press.set(new THREE.Vector3(right - 2.6, 2.6 + weight * 0.012, 0.6), new THREE.Vector3(0, -1, 0), weight * 0.012 + 0.25);
       for (const word of [blockWord, tableWord, pressureWord, warmWord]) word.visible = labels;

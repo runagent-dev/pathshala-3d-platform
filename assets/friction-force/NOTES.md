@@ -72,13 +72,15 @@ closed limb geometry, hand reach and planted stance shoes. The force model and l
   are equal and opposite at rest. Above the friction limit the tension exceeds friction, and a = (F − f)/m; after
   release, friction alone slows the box. One μ = 0.5 serves for resting and sliding in this introductory lesson,
   with thresholds 9.8, 14.7 and 19.6 N at 0, 1 and 2 added weights. The next figure teaches separate friction types.
-- Large outlined orange/pink arrows contrast against navy and teal. The compact panel shows rope tension and
-  friction in newtons, with directional glyphs and named labels, so the idea never depends on colour alone.
+- Large white-outlined orange/pink arrows contrast against the blue wall, the grey floor and the red crate. The
+  panel's reading box shows rope tension and friction in newtons, with directional glyphs and named labels, so the
+  idea never depends on colour alone.
 - The rectangular contact window opens by default. Cyan upper particles and green lower particles follow their
   respective rough solid surfaces. The upper surface stays still in the relative view; the floor slides beneath it.
   The teeth remain separated and ride over each other using the existing non-intersection calculation. More weight
   increases the illustrated engagement depth; a purple pressure arrow points perpendicular to the friction.
-- Particle markers and roughness are schematic and not to scale; the caption explicitly says this. The particulate
+- Particle markers and roughness are schematic and not to scale; the note beside the contact switch in the panel
+  says this. The particulate
   diagram supplements the book's roughness explanation, rather than claiming an atomic simulation. Labels inside
   the cutaway are omitted in very short windows; the named explanation and force values remain in the panel.
 - During rubbing, two visible people alternate pulls without teleporting across the crate. The imposed back-and-forth
@@ -113,3 +115,46 @@ verification also checks the bridge, offline zip, GLB validity and six screensho
   explanation uses the more accurate relative-motion/sliding-tendency wording, also valid after release.
 - Microscopic roughness is the book's simplified account. Adhesion and detailed material deformation are outside
   the scope of this introduction.
+
+## Polish pass (2026-11-01)
+Against `docs/agents/polish-pass.md`, version 0.3.0.
+- **Layout.** The panel is under the 3D view at every size but the kit's short-and-wide one (844×390, 640×400):
+  the figure's own rule that put it beside the view from 720 px wide (800×500, 1280×800) is gone. The hidden result
+  line is back, inside a reading box with the two forces side by side and the contact switch. On wide frames the
+  weights, the action and the rule are on the left and the reading box on the right. The 3D view has 56 % of
+  390×700 (51 % before) and 59 % of 800×500. The result line and the rule keep their height in every state.
+- **Text on the view.** Only labels: the caption under the contact window ("স্পর্শস্থান: অনেক বড় করে · আকার প্রকৃত
+  অনুপাতে নয় · কণা প্রতীকী") is now the note beside the switch "স্পর্শস্থান বড় করে" in the panel (shown while the
+  window is open). Text on the view: 62/2 → 0/0 (390×700 and 844×390), not counting the force labels টান/ঘর্ষণ.
+  The window's own labels (বাক্সের তল, মেঝের তল, ওজন, উষ্ণতা) sit on dark chips and are a little larger.
+- **Setting and arrows.** The navy sky and teal table are gone: a store room (গুদামঘর) with a polished blue-grey
+  cement floor (mottled, saw-cut joints, the yellow lane painted on), a powder-blue lime-washed wall over a deep
+  teal dado with a cream line and a dark skirting, two barred windows with the sky outside, a shelf of tins and
+  boxes, a clock, a switchboard, and jute sacks on pallets and wooden crates at both ends. Daylight from the high
+  windows casts soft shadows forward onto the floor, where they show (before, the shadow light came from the camera
+  side and the shadows hid behind the crate); a warm lamp lights the faces turned to the student. Both force arrows
+  have a white outline that runs round the head; the pull arrow rides higher so the weights on the crate stay
+  visible. Turning the view stays in front of the wall and above the floor.
+- **Smooth, detail kept.** The clothing sculpt (shirt and trousers, about 44 k triangles per person) is baked once
+  for both people into welded, indexed meshes and skinned on the GPU: a pose took 136 ms of CPU per frame while
+  anyone moved (130 k vertices deformed in JavaScript), now about 2 ms (the arms and the bones only); building a person took 2.7–3.5 s, now
+  0.6–0.8 s for the first and almost nothing for the second. Each person is 10 meshes instead of 48 (the face, the
+  collar and buttons, each hand and each shoe merged in vertex colours), with shared materials and segment counts
+  matched to size. The ropes are updated in place instead of a new tube geometry every frame; nothing else is
+  allocated per frame (arms, poses, hands). The room is five meshes. Shadows: PCF 1024² on a camera fitted round the
+  people, the crate and where their shadows fall (VSM 1024² before, on a box that missed the people); ropes, the
+  strap and the labels cast none, and only the floor receives. The contact window's particles use 8 × 6 spheres and
+  the window is never wider than its surfaces. A held pull no longer redraws every frame, and the panel's DOM is
+  written only when its values change.
+- **Bugs.** The first frame after loading (and the contact window after a resize or a turn of the phone) could stay
+  stale until something else asked for a redraw: the people stood at the crate and the window was missing in some
+  frames; the stage now draws once more whenever placing changes what is seen. A held pull (the poster, the test)
+  redrew every frame while nothing moved. `set({ rub: n })` started cold, unlike the URL's `rub=n`. The floor marks
+  (the soft shadow, the warm strip) could lose to the floor's depth.
+- **Numbers** (headless Chromium, software GL, shadows on, at rest, 390×700): draw calls avg 110 → 78, max 132 →
+  100; triangles max 229 k → 216 k (the room is in, the people lighter); texture memory 21.4 → 22 MB (the floor
+  and wall textures in, the shadow map the same size); frames drawn while idle 0 → 0; text on the view 62/2 → 0/0.
+  Time to ready 1.1–1.4 s before (quiet machine) and 4.4 s (load 60), 1.3–1.8 s after (load 20): the machine was
+  too busy for a fair comparison, but building the two people (most of the start-up) went from about 5.5 s of
+  CPU to under 1 s in Node.
+

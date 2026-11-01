@@ -5,7 +5,7 @@
   "title": "Frictional force (ঘর্ষণ বল)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "book": "physics-9-10",
   "page": 88,
   "topic": "3.9",
@@ -13,7 +13,7 @@
   "order": 1,
   "maintainers": ["RadeenXALNW"],
   "units": "m",
-  "description": "A red 2 kg crate is pulled by an articulated person in an orange shirt and blue trousers, leaning away and gripping a horizontal rope. A saturated navy-to-teal scene separates the people, crate and large outlined force arrows. Orange tension and pink friction are equal and opposite while the crate is held; beyond the friction limit the crate accelerates, and after release friction slows it. Reverse the pull or add 1 kg weights to compare the threshold (9.8, 14.7, 19.6 N; one friction coefficient for this introductory lesson). An enlarged rectangular contact window is open by default: cyan and green particle markers follow the rough upper and lower surfaces, showing interlocking, compression and relative sliding. A qualitative warmth indicator rises during rubbing; particles and roughness are illustrative, not to scale, and no measured temperature is claimed. Two visible pullers alternate during the schematic back-and-forth rubbing demonstration. The compact panel shows force values, a short rule, one guided action and pause/replay controls. Five quiz scenes cover direction, balanced forces, weight, roughness and heating, with learning controls locked during assessment. Self-contained Three.js, Bangla first, with English and keyboard support.",
+  "description": "A red 2 kg crate is pulled by an articulated person in an orange shirt and blue trousers, leaning away and gripping a horizontal rope, in a store room: a polished blue-grey cement floor with a painted yellow lane, a powder-blue lime-washed wall over a deep teal dado, barred windows, a shelf of tins, jute sacks and wooden crates, with daylight from the windows casting soft shadows forward. Bold white-outlined arrows: orange rope tension above the crate and pink friction at its foot are equal and opposite while the crate is held; beyond the friction limit the crate accelerates, and after release friction slows it. Reverse the pull or add 1 kg weights to compare the threshold (9.8, 14.7, 19.6 N; one friction coefficient for this introductory lesson). An enlarged contact window along the bottom of the view is open by default: cyan and green particle markers follow the rough upper and lower surfaces, showing interlocking, compression and relative sliding; its 'not to scale, particles illustrative' note is in the panel, beside its switch. A qualitative warmth indicator rises during rubbing; no measured temperature is claimed. Two visible pullers alternate during the schematic back-and-forth rubbing. The panel under the view shows the weights, one guided action with pause/turn/replay, a reading box (rope tension and friction in newtons with direction glyphs, the result line, the contact switch) and a short rule. Five quiz scenes cover direction, balanced forces, weight, roughness and heating, with learning controls locked during assessment. Self-contained Three.js, Bangla first, with English and keyboard support.",
   "tags": ["force", "friction", "contact-force", "surface", "heat", "bangla"],
   "params": [
     {
