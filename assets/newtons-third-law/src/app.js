@@ -52,6 +52,7 @@ export function createApp(root, options = {}) {
   root.dataset.theme = o.bg;
   root.tabIndex = 0;
   const ui = buildStudentShell(root, t, {
+    layout: 'side',
     learn: cleanSheet(t, {
       examples: { label: 'pairs', items: IDS.map((id) => ({ id, label: `chip_${id}` })) },
       quiet: [{ act: 'maths-open', label: 'maths_open', icon: CALC_ICON }],
