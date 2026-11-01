@@ -91,6 +91,7 @@ export function createApp(root, options = {}) {
   root.lang = t.lang;
   root.tabIndex = 0;
   const ui = buildStudentShell(root, t, {
+    layout: 'side',
     learn: cleanSheet(t, {
       quiet: [{ act: 'home', label: 'act_home', icon: ICONS.reset }],
       lines: { action: 1, outcome: 1, rule: 3 },
