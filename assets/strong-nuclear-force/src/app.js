@@ -56,6 +56,7 @@ export function createApp(root, options = {}) {
   root.lang = t.lang;
   root.tabIndex = 0;
   const ui = buildStudentShell(root, t, {
+    layout: 'side',
     learn: `
           <div class="snf-scenes" role="radiogroup" aria-label="${t('scenes')}">${SCENES.map(
             (k) => `<button role="radio" data-scene="${k}">${t(`scene_${k}`)}</button>`,
