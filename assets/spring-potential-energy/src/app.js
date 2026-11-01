@@ -6,7 +6,7 @@
 // The panel works out F = kx and the book's V = ½kx² live, then compares: twice x, twice the force, four times V.
 // The panel is the kit's clean sheet (one action, one result, one rule): docs/student-kit.md.
 import * as THREE from 'three';
-import { createArrow } from '@shared/arrow.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { createStage } from '@shared/stage.js';
 import { createTweener, ease } from '@shared/tween.js';
 import { createAction } from '@shared/student/action.js';
@@ -16,9 +16,11 @@ import { ICONS } from '@shared/student/icons.js';
 import { createQuiz } from '@shared/student/quiz.js';
 import { bindCleanSheet, buildStudentShell, cleanSheet } from '@shared/student/shell.js';
 import { AXIS, COIL, createApparatus, X0 } from './apparatus.js';
+import { outlinedArrow } from './arrows.js';
 import { fitPose } from './camera.js';
 import { createHand } from './hand.js';
 import { createI18n } from './i18n.js';
+import { createRoom } from './scenery.js';
 import {
   choicesFrom,
   clampK,
@@ -54,6 +56,8 @@ export const DEFAULTS = {
 // green, the spring's force F_S blue, x orange, x = 0 navy (as in the owner's reference picture), the stored energy V
 // purple (as the energy figure), the spring and its constant k magenta
 const COLORS = { FP: '#2b9a3e', FS: '#1864d6', x: '#f76707', V: '#7048e8', zero: '#1b1f3b', spring: '#e0317a' };
+// the labels' text: the same hues, dark enough to read on their white chips (4.5:1 or more)
+const INK = { FP: '#237a35', FS: '#1864d6', x: '#c2410c', V: '#6741d9', zero: '#1b1f3b', k: '#c2255c' };
 const SCALE = 0.004; // m of arrow per newton (40 N → 16 cm): the arrows are drawn to scale, F = kx
 const ARROW_Y = 0.03; // the force arrows run under the spring, above the bench
 const BRACKET_Y = 0.215; // the x bracket above the spring
@@ -129,91 +133,72 @@ export function createApp(root, options = {}) {
     kminus: $('[data-act="k-"]'),
     kplus: $('[data-act="k+"]'),
   };
-  // the honest note in the corner: the arrows are drawn to scale
-  const note = document.createElement('div');
-  note.className = 'sp-note';
-  ui.stage.appendChild(note);
-
   // ── 3D ──────────────────────────────────────────────────────────────────────
-  const stage = createStage(ui.canvasHost, { fov: 30, near: 0.02, far: 20, environment: 'studio-light' });
+  const stage = createStage(ui.canvasHost, { fov: 30, near: 0.02, far: 20, environment: 'studio-light', environmentIntensity: 0.6 });
   const { camera, controls, scene } = stage;
   controls.minDistance = 0.3;
   controls.maxDistance = 4;
   controls.enablePan = false;
   controls.enableRotate = false;
-  // a light blue studio: a soft sky-blue sweep, brighter low down where the table meets it (the owner's request), so
-  // the magenta spring, the navy wall, the orange x and the green and blue arrows stand out
-  if (o.bg !== 'transparent') {
-    const c = document.createElement('canvas');
-    c.width = 256;
-    c.height = 256;
-    const ctx = c.getContext('2d');
-    const g = ctx.createLinearGradient(0, 0, 0, 256);
-    g.addColorStop(0, '#74c0fc');
-    g.addColorStop(0.5, '#a5d8ff');
-    g.addColorStop(1, '#e7f5ff');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, 256, 256);
-    const glow = ctx.createRadialGradient(150, 170, 10, 150, 170, 190);
-    glow.addColorStop(0, 'rgba(255, 255, 255, 0.55)');
-    glow.addColorStop(1, 'rgba(255, 255, 255, 0)');
-    ctx.fillStyle = glow;
-    ctx.fillRect(0, 0, 256, 256);
-    const sky = new THREE.CanvasTexture(c);
-    sky.colorSpace = THREE.SRGBColorSpace;
-    scene.background = sky;
-  }
-  scene.add(new THREE.HemisphereLight(0xe3f2ff, 0xffffff, 0.8));
-  const key = new THREE.DirectionalLight(0xfff6ea, 1.1);
-  key.position.set(0.6, 1.4, 1.2);
-  scene.add(key);
-
+  // a school physics laboratory in daylight (src/scenery.js): a wooden bench against a sky-blue wall with a window,
+  // the lab's springs on a pegboard and a shelf; with bg=transparent only the bench's middle (the GLB's table)
   const world = new THREE.Group();
   world.name = 'SpringPotentialEnergy';
   scene.add(world);
+  const room = createRoom();
+  if (o.bg !== 'transparent') {
+    scene.add(room.root);
+    scene.background = room.background;
+  }
+  // a soft fill from the room (the sky-blue wall above, the wooden bench below)
+  scene.add(new THREE.HemisphereLight(0xeaf4ff, 0x8a6a4a, 1.0));
+
   const app = createApparatus({ num: N, unit: t('u_cm'), springColor: COLORS.spring });
   const hand = createHand({ sleeve: '#ffffff' });
-  world.add(app.root, hand.root);
+  world.add(room.top, app.root, hand.root);
 
   const helpers = new THREE.Group(); // arrows and guide lines: shown, never exported
   helpers.name = 'Guides';
   helpers.userData.noExport = true;
   scene.add(helpers);
-  const arrowOf = (name, color, radius, head, headRadius) => {
-    const a = createArrow({ name, color, radius, head, headRadius });
-    a.root.traverse((m) => {
-      if (m instanceof THREE.Mesh) m.castShadow = false;
-    });
+  // bold arrows in a white outline, drawn over the picture (the hand's force runs under its fingers), as in the book's
+  // pictures: the two forces under the spring, the x bracket above it (two arrows from its middle)
+  const arrowOf = (name, color, radius, head, headRadius, order) => {
+    const a = outlinedArrow(name, color, { radius, head, headRadius, order });
     helpers.add(a.root);
     return a;
   };
   const arrows = {
-    FP: arrowOf('HandForceFP', COLORS.FP, 0.0045, 0.026, 0.011),
-    FS: arrowOf('SpringForceFS', COLORS.FS, 0.0045, 0.026, 0.011),
-    xa: arrowOf('StretchXa', COLORS.x, 0.0022, 0.014, 0.0065),
-    xb: arrowOf('StretchXb', COLORS.x, 0.0022, 0.014, 0.0065),
+    FP: arrowOf('HandForceFP', COLORS.FP, 0.0048, 0.027, 0.012, 12),
+    FS: arrowOf('SpringForceFS', COLORS.FS, 0.0048, 0.027, 0.012, 12),
+    xa: arrowOf('StretchXa', COLORS.x, 0.0026, 0.016, 0.0075, 10),
+    xb: arrowOf('StretchXb', COLORS.x, 0.0026, 0.016, 0.0075, 10),
   };
-  // the two forces are drawn over the hand (the hand's force runs under its fingers), as in the book's pictures
-  for (const a of [arrows.FP, arrows.FS]) {
-    a.material.depthTest = false;
-    a.root.renderOrder = 5;
-    for (const m of a.root.children) m.renderOrder = 5;
-  }
-  const guideMat = (color) => new THREE.MeshStandardMaterial({ color, roughness: 0.5, emissive: color, emissiveIntensity: 0.35 });
-  // x = 0: a dashed line from the ruler's 0 up past the spring (dashes are thin cylinders, so they read on phones)
+  // x = 0: a dashed navy line from the ruler's 0 up past the spring, in a thin white outline so it reads on the wood
+  // and the wall (dashes are thin cylinders, so they read on phones; one mesh for the dashes, one for the outline)
   const zeroLine = new THREE.Group();
   zeroLine.name = 'ZeroLine';
   {
-    const m = guideMat(COLORS.zero);
-    for (let y = 0.004; y < ZERO_TOP; y += 0.014) {
-      const d = new THREE.Mesh(new THREE.CylinderGeometry(0.0013, 0.0013, Math.min(0.008, ZERO_TOP - y), 8), m);
-      d.position.set(X0, y + 0.004, 0.0);
-      zeroLine.add(d);
-    }
+    const dashes = (r) => {
+      const list = [];
+      for (let y = 0.004; y < ZERO_TOP; y += 0.014) {
+        const h = Math.min(0.008, ZERO_TOP - y);
+        list.push(new THREE.CylinderGeometry(r, r, h + (r - 0.0013) * 2, 8).translate(X0, y + 0.004, 0));
+      }
+      const g = mergeGeometries(list);
+      for (const d of list) d.dispose();
+      return g;
+    };
+    const core = new THREE.Mesh(dashes(0.0013), new THREE.MeshBasicMaterial({ color: COLORS.zero, toneMapped: false }));
+    const rim = new THREE.Mesh(dashes(0.0021), new THREE.MeshBasicMaterial({ color: '#ffffff', toneMapped: false, side: THREE.BackSide }));
+    zeroLine.add(rim, core);
   }
   helpers.add(zeroLine);
   // the end's mark: a thin orange line from the ruler up to the bracket, so x reads on the ruler without parallax
-  const endLine = new THREE.Mesh(new THREE.CylinderGeometry(0.0011, 0.0011, 1, 8).translate(0, 0.5, 0), guideMat(COLORS.x));
+  const endLine = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.0012, 0.0012, 1, 8).translate(0, 0.5, 0),
+    new THREE.MeshBasicMaterial({ color: COLORS.x, toneMapped: false }),
+  );
   endLine.name = 'EndLine';
   endLine.position.y = 0.003;
   endLine.scale.y = BRACKET_Y + 0.012 - 0.003;
@@ -228,16 +213,17 @@ export function createApp(root, options = {}) {
     sq: { x: true, labels: ['x'] },
     V: { spring: COLORS.V, labels: ['V'] },
   };
-  const forceMats = [arrows.FP.material, arrows.FS.material];
-  const xMats = [arrows.xa.material, arrows.xb.material, endLine.material];
   const springMat = app.materials.spring;
   const pulse = { t: 0 };
   const PULSE = 2.4; // s: two and a half pulses, ending lit
+  // a lit arrow's outline turns from white to a yellow glow
   function glow() {
     const f = FOCUS[s.focus] || {};
     const lit = pulse.t >= PULSE ? 1 : 0.5 - 0.5 * Math.cos((pulse.t / (PULSE / 2.5)) * Math.PI * 2);
-    for (const m of forceMats) m.emissiveIntensity = f.arrows ? 0.2 + 0.6 * lit : 0.2;
-    for (const m of xMats) m.emissiveIntensity = f.x ? 0.3 + 0.6 * lit : m === endLine.material ? 0.35 : 0.2;
+    arrows.FP.glow(f.arrows ? lit : 0);
+    arrows.FS.glow(f.arrows ? lit : 0);
+    arrows.xa.glow(f.x ? lit : 0);
+    arrows.xb.glow(f.x ? lit : 0);
     if (f.spring) springMat.emissive.set(f.spring);
     springMat.emissiveIntensity = f.spring ? 0.55 * lit : 0;
     stage.invalidate();
@@ -253,18 +239,24 @@ export function createApp(root, options = {}) {
   stage.addTicker((dt) => tweener.tick(dt));
   const audio = createAudio(o.sound);
 
+  // daylight from the window side, high in front: the spring, the hand and the wall block cast soft shadows on the
+  // bench (only the bench and the ruler receive them)
+  const sun = new THREE.DirectionalLight(0xfff6ea, 1.9);
+  sun.position.set(0.4, 1.6, 0.9);
+  sun.target.position.set(0.3, 0, 0);
+  scene.add(sun, sun.target);
   if (o.shadow && o.bg !== 'transparent') {
+    // PCF in a box fitted round what casts (the wall block, the spring at its longest, the handle, the hand and the
+    // forearm), seen from the light: 1024 px for about 0.9 m
     stage.renderer.shadowMap.enabled = true;
-    stage.renderer.shadowMap.type = THREE.VSMShadowMap;
-    const sun = new THREE.DirectionalLight(0xffffff, 0.7);
-    sun.position.set(0.4, 1.6, 0.9);
-    sun.target.position.set(0.3, 0, 0);
+    stage.renderer.shadowMap.type = THREE.PCFShadowMap;
     sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
-    Object.assign(sun.shadow.camera, { left: -0.5, right: 0.9, top: 0.6, bottom: -0.6, near: 0.3, far: 3 });
-    sun.shadow.radius = 5;
-    sun.shadow.bias = -0.0003;
-    scene.add(sun, sun.target);
+    sun.shadow.mapSize.set(1024, 1024);
+    Object.assign(sun.shadow.camera, { left: -0.38, right: 0.62, top: 0.45, bottom: -0.16, near: 1.2, far: 2.3 });
+    sun.shadow.camera.updateProjectionMatrix();
+    sun.shadow.radius = 3;
+    sun.shadow.bias = -0.0004;
+    sun.shadow.normalBias = 0.0015;
   }
 
   const listeners = new Map();
@@ -359,7 +351,7 @@ export function createApp(root, options = {}) {
 
   // ── labels on the picture (each only while what it names is shown) ──────────
   let action = null;
-  const anno = createAnnotations({ stage, layer: ui.annoLayer, avoid: [ui.corner, ui.hint, note, () => action?.ringBox()] });
+  const anno = createAnnotations({ stage, layer: ui.annoLayer, avoid: [ui.corner, ui.hint, () => action?.ringBox()] });
   const shown = new Map();
   const P = {
     zero: new THREE.Vector3(X0, ZERO_TOP + 0.004, 0),
@@ -420,34 +412,41 @@ export function createApp(root, options = {}) {
     // a label whose letter the student tapped in the formula is filled with its colour
     const lit = FOCUS[s.focus]?.labels || [];
     const hot = (id, text) => (lit.includes(id) ? `<span class="sp-hot">${text}</span>` : text);
-    label('zero', true, t('l_zero'), P.zero, COLORS.zero, s.shown < 0 ? ZERO_SPOTS_R : ZERO_SPOTS);
+    label('zero', true, t('l_zero'), P.zero, INK.zero, s.shown < 0 ? ZERO_SPOTS_R : ZERO_SPOTS);
     P.x.set((end + X0) / 2, BRACKET_Y, 0);
-    label('x', show, hot('x', t('l_x', { x: Math.abs(s.x) })), P.x, COLORS.x, s.shown < 0 ? X_SPOTS_IN : X_SPOTS); // x is given by the picture, also in the test
+    label('x', show, hot('x', t('l_x', { x: Math.abs(s.x) })), P.x, INK.x, s.shown < 0 ? X_SPOTS_IN : X_SPOTS); // x is given by the picture, also in the test
     const len = Fs * SCALE;
     P.FP.set(end + (out ? len : -len), ARROW_Y, 0);
     P.FS.set(end + (out ? -len : len), ARROW_Y, 0);
     // a label per direction: when the spring goes from pulled to pushed, each label starts again on its arrow's side
     const fp = hot('FP', letters ? t('l_FP_only') : t('l_FP', { F: F() }));
     const fs = hot('FS', letters ? 'F<sub>S</sub>' : t('l_FS', { F: F() }));
-    label('FP-out', show && out, fp, P.FP, COLORS.FP, TIP_R);
-    label('FP-in', show && !out, fp, P.FP, COLORS.FP, TIP_L);
-    label('FS-out', show && out && !s.hideFS, fs, P.FS, COLORS.FS, TIP_L);
-    label('FS-in', show && !out && !s.hideFS, fs, P.FS, COLORS.FS, TIP_R);
+    label('FP-out', show && out, fp, P.FP, INK.FP, TIP_R);
+    label('FP-in', show && !out, fp, P.FP, INK.FP, TIP_L);
+    label('FS-out', show && out && !s.hideFS, fs, P.FS, INK.FS, TIP_L);
+    label('FS-in', show && !out && !s.hideFS, fs, P.FS, INK.FS, TIP_R);
     P.V.set(Math.max(0.07, (Math.min(end, X0) - 0.06) / 2), AXIS.y + COIL.radius + 0.004, 0); // over the coils by the wall, clear of the bracket
     // k names the spring itself (shown while its letter is lit, in the stored energy's place)
-    label('k', s.focus === 'k', hot('k', t('l_k', { k: s.k })), P.V, COLORS.spring, ABOVE);
-    label('V', show && !letters && s.focus !== 'k', hot('V', t('l_V', { V: plain(V()) })), P.V, COLORS.V, ABOVE, true);
+    label('k', s.focus === 'k', hot('k', t('l_k', { k: s.k })), P.V, INK.k, ABOVE);
+    label('V', show && !letters && s.focus !== 'k', hot('V', t('l_V', { V: plain(V()) })), P.V, INK.V, ABOVE, true);
   }
 
   // ── the panel ───────────────────────────────────────────────────────────────
+  // the DOM is written only when a value changes (place() runs every frame while the spring moves)
+  const text = (node, v) => {
+    if (node.textContent !== v) node.textContent = v;
+  };
+  const off = (node, v) => {
+    if (node.disabled !== v) node.disabled = v;
+  };
   function panel() {
-    el.x.textContent = `${N(Math.abs(s.x))} ${t('u_cm')}`;
-    el.k.textContent = `${N(s.k)} ${t('u_Nm')}`;
+    text(el.x, `${N(Math.abs(s.x))} ${t('u_cm')}`);
+    text(el.k, `${N(s.k)} ${t('u_Nm')}`);
     const lock = s.locked;
-    el.xminus.disabled = lock || s.x <= X_RANGE.min;
-    el.xplus.disabled = lock || s.x >= X_RANGE.max;
-    el.kminus.disabled = lock || s.k <= K_RANGE.min;
-    el.kplus.disabled = lock || s.k >= K_RANGE.max;
+    off(el.xminus, lock || s.x <= X_RANGE.min);
+    off(el.xplus, lock || s.x >= X_RANGE.max);
+    off(el.kminus, lock || s.k <= K_RANGE.min);
+    off(el.kplus, lock || s.k >= K_RANGE.max);
 
     const xm = plain(metres(s.x));
     const vars = { k: s.k, x: Math.abs(s.x), xm, F: F(), V: plain(V()), x2: plain(metres(s.x) ** 2) };
@@ -500,9 +499,13 @@ export function createApp(root, options = {}) {
       el.innerHTML = html;
     }
     // the bars: the largest force and energy the figure can show (k 400 N/m, x 10 cm: 40 N, 2 J) fill them
-    fxEl.bar.F.style.width = `${(100 * v.F) / force(K_RANGE.max, X_RANGE.max)}%`;
-    fxEl.bar.V.style.width = `${(100 * Number(v.V)) / energy(K_RANGE.max, X_RANGE.max)}%`;
-    fxEl.box.dataset.focus = s.focus || '';
+    const wF = `${(100 * v.F) / force(K_RANGE.max, X_RANGE.max)}%`;
+    const wV = `${(100 * Number(v.V)) / energy(K_RANGE.max, X_RANGE.max)}%`;
+    if (lastFx.wF !== wF) fxEl.bar.F.style.width = lastFx.wF = wF;
+    if (lastFx.wV !== wV) fxEl.bar.V.style.width = lastFx.wV = wV;
+    if (lastFx.focus === (s.focus || '')) return;
+    lastFx.focus = s.focus || '';
+    fxEl.box.dataset.focus = lastFx.focus;
     for (const b of fxEl.syms) {
       const on = b.dataset.sym === s.focus;
       b.classList.toggle('on', on);
@@ -724,11 +727,6 @@ export function createApp(root, options = {}) {
     s.userMovedCamera = true;
     tweener.cancel('camera');
   });
-  const noteText = () => {
-    note.textContent = t(stage.width < 520 ? 'note_short' : 'note');
-  };
-  noteText();
-  stage.onResize(noteText);
   stage.onResize(() => {
     if (!s.userMovedCamera) flyTo(viewPose(), 0);
   });
@@ -869,7 +867,7 @@ export function createApp(root, options = {}) {
     label: () => t('act_pull5', { x: 5 }),
     target: () => (s.moving ? null : app.endBox()),
     pad: 10,
-    avoid: [ui.corner, ui.hint, note, () => anno.boxes(), coilsBox, forcesBox, bracketBox],
+    avoid: [ui.corner, ui.hint, () => anno.boxes(), coilsBox, forcesBox, bracketBox],
     pulse: Boolean(o.coach),
     onAct: () => act(),
   });
@@ -1047,7 +1045,6 @@ export function createApp(root, options = {}) {
     }
     ui.learn.inert = s.mode === 'quiz';
     ui.quiz.inert = s.mode !== 'quiz';
-    note.hidden = false;
     if (s.mode !== 'quiz') ui.hint.classList.remove('show');
   }
   const fullscreenBtn = $('[data-act="fullscreen"]');

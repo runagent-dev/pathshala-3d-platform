@@ -5,6 +5,10 @@
 // tapered bones per finger, a thumb with its ball of muscle, nails, a wrist and a tapered forearm in a rolled sleeve;
 // pose(bar, p) blends the two grips.
 //
+// Drawn in three meshes (skin, nails, sleeve): the parts are built and posed as a hierarchy that is never drawn, and
+// pose() writes their vertices into the three merged meshes, only when the grip changes (moving the hand with the
+// handle only moves the root).
+//
 // Hand frame (the group's local axes): origin at the wrist, the fingers point along −x, the palm faces −y, the thumb
 // is on the +z side. `turn` can rotate the hand about z for a pose (0 for both grips).
 import * as THREE from 'three';
@@ -53,22 +57,25 @@ export function createHand({ skin = '#c58a5f', sleeve = '#1f7a8c' } = {}) {
       sheenColor: new THREE.Color('#f2c8a8'),
     }),
     nail: new THREE.MeshPhysicalMaterial({ name: 'Nail', color: '#e9b9a4', roughness: 0.25, metalness: 0, clearcoat: 0.6 }),
-    crease: new THREE.MeshStandardMaterial({ name: 'Knuckle', color: '#a8714b', roughness: 0.7 }),
-    sleeve: new THREE.MeshStandardMaterial({ name: 'Sleeve', color: sleeve, roughness: 0.85 }),
-    cuff: new THREE.MeshStandardMaterial({ name: 'SleeveCuff', color: new THREE.Color(sleeve).multiplyScalar(0.8), roughness: 0.85 }),
+    cloth: new THREE.MeshStandardMaterial({ name: 'Sleeve', vertexColors: true, roughness: 0.85 }),
   };
-  const mesh = (geometry, material, parent, name) => {
+  const COLOR = { sleeve: new THREE.Color(sleeve), cuff: new THREE.Color(sleeve).multiplyScalar(0.8) };
+  // the posed hierarchy (never drawn): each part remembers which merged mesh it goes into, and its colour there
+  const rig = new THREE.Group();
+  /** @type {{ mesh: THREE.Mesh, into: 'skin' | 'nail' | 'cloth', color?: THREE.Color }[]} */
+  const parts = [];
+  const mesh = (geometry, material, parent, name, color = undefined) => {
     const m = new THREE.Mesh(geometry, material);
     m.name = name;
-    m.castShadow = true;
     parent.add(m);
+    parts.push({ mesh: m, into: material === M.nail ? 'nail' : material === M.skin ? 'skin' : 'cloth', color });
     return m;
   };
 
   // ── the hand, in its own frame ──
   const hand = new THREE.Group();
   hand.name = 'RightHand';
-  root.add(hand);
+  rig.add(hand);
   const palm = mesh(new RoundedBoxGeometry(PALM.length, PALM.thick, PALM.width, 5, 0.012), M.skin, hand, 'Palm');
   palm.position.set(-PALM.length / 2 - 0.004, 0, 0);
   // the heel of the hand and the back of the hand are rounder than a box
@@ -145,9 +152,9 @@ export function createHand({ skin = '#c58a5f', sleeve = '#1f7a8c' } = {}) {
   }
 
   // the wrist and the forearm in a rolled-up sleeve (posed in the scene's frame, between the wrist and the elbow)
-  const wrist = mesh(new THREE.SphereGeometry(1, 24, 16), M.skin, root, 'Wrist');
+  const wrist = mesh(new THREE.SphereGeometry(1, 24, 16), M.skin, rig, 'Wrist');
   wrist.scale.set(0.026, 0.023, 0.031);
-  const forearm = mesh(new THREE.CylinderGeometry(1, 1, 1, 28, 1, true).translate(0, 0.5, 0), M.skin, root, 'Forearm');
+  const forearm = mesh(new THREE.CylinderGeometry(1, 1, 1, 28, 1, true).translate(0, 0.5, 0), M.skin, rig, 'Forearm');
   // tapered: thin at the wrist (y = 0), thick at the elbow (y = 1)
   {
     const pos = forearm.geometry.attributes.position;
@@ -159,8 +166,8 @@ export function createHand({ skin = '#c58a5f', sleeve = '#1f7a8c' } = {}) {
     }
     forearm.geometry.computeVertexNormals();
   }
-  const sleeveMesh = mesh(new THREE.CylinderGeometry(0.046, 0.043, 0.5, 28).translate(0, 0.25, 0), M.sleeve, root, 'Sleeve');
-  const cuff = mesh(new THREE.TorusGeometry(0.043, 0.008, 12, 32), M.cuff, root, 'SleeveCuff');
+  const sleeveMesh = mesh(new THREE.CylinderGeometry(0.046, 0.043, 0.5, 28).translate(0, 0.25, 0), M.cloth, rig, 'Sleeve', COLOR.sleeve);
+  const cuff = mesh(new THREE.TorusGeometry(0.043, 0.008, 12, 32), M.cloth, rig, 'SleeveCuff', COLOR.cuff);
 
   // ── posing ──
   const qPull = new THREE.Quaternion();
@@ -170,7 +177,82 @@ export function createHand({ skin = '#c58a5f', sleeve = '#1f7a8c' } = {}) {
   const elbowAt = new THREE.Vector3();
   const dir = new THREE.Vector3();
   const UP = new THREE.Vector3(0, 1, 0);
-  let last = '';
+  const sleeveStart = new THREE.Vector3();
+  const Z = new THREE.Vector3(0, 0, 1);
+  const out = new THREE.Vector3();
+  let last = Number.NaN;
+
+  // ── the three merged meshes ──
+  const merged = {};
+  const nm = new THREE.Matrix3();
+  for (const into of /** @type {const} */ (['skin', 'nail', 'cloth'])) {
+    const list = parts.filter((p) => p.into === into);
+    let count = 0;
+    let indices = 0;
+    for (const { mesh: m } of list) {
+      count += m.geometry.attributes.position.count;
+      indices += m.geometry.index ? m.geometry.index.count : m.geometry.attributes.position.count;
+    }
+    const pos = new THREE.BufferAttribute(new Float32Array(count * 3), 3).setUsage(THREE.DynamicDrawUsage);
+    const nor = new THREE.BufferAttribute(new Float32Array(count * 3), 3).setUsage(THREE.DynamicDrawUsage);
+    const index = count > 65535 ? new Uint32Array(indices) : new Uint16Array(indices);
+    const rgb = into === 'cloth' ? new Float32Array(count * 3) : null;
+    let v = 0;
+    let n = 0;
+    const spans = list.map(({ mesh: m, color }) => {
+      const g = m.geometry;
+      const c = g.attributes.position.count;
+      if (g.index) for (let i = 0; i < g.index.count; i++) index[n++] = g.index.getX(i) + v;
+      else for (let i = 0; i < c; i++) index[n++] = i + v;
+      if (rgb && color) for (let i = 0; i < c; i++) color.toArray(rgb, (v + i) * 3);
+      const span = { mesh: m, from: v, src: g.attributes.position.array, srcN: g.attributes.normal.array };
+      v += c;
+      return span;
+    });
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', pos);
+    geometry.setAttribute('normal', nor);
+    if (rgb) geometry.setAttribute('color', new THREE.BufferAttribute(rgb, 3));
+    geometry.setIndex(new THREE.BufferAttribute(index, 1));
+    const drawn = new THREE.Mesh(geometry, M[into]);
+    drawn.name = { skin: 'HandSkin', nail: 'Nails', cloth: 'Sleeve' }[into];
+    drawn.castShadow = true;
+    root.add(drawn);
+    merged[into] = { geometry, pos, nor, spans };
+  }
+  const pv = new THREE.Vector3();
+  /** Writes every part's vertices, posed, into its merged mesh (the rig's frame: the bar at the origin). */
+  function writeVertices() {
+    rig.updateMatrixWorld(true);
+    for (const { geometry, pos, nor, spans } of Object.values(merged)) {
+      const P = /** @type {Float32Array} */ (pos.array);
+      const Nn = /** @type {Float32Array} */ (nor.array);
+      for (const { mesh: m, from, src, srcN } of spans) {
+        const e = m.matrixWorld.elements;
+        nm.getNormalMatrix(m.matrixWorld);
+        const q = nm.elements;
+        for (let i = 0, k = from * 3; i < src.length; i += 3, k += 3) {
+          const x = src[i];
+          const y = src[i + 1];
+          const z = src[i + 2];
+          P[k] = e[0] * x + e[4] * y + e[8] * z + e[12];
+          P[k + 1] = e[1] * x + e[5] * y + e[9] * z + e[13];
+          P[k + 2] = e[2] * x + e[6] * y + e[10] * z + e[14];
+          pv.set(
+            q[0] * srcN[i] + q[3] * srcN[i + 1] + q[6] * srcN[i + 2],
+            q[1] * srcN[i] + q[4] * srcN[i + 1] + q[7] * srcN[i + 2],
+            q[2] * srcN[i] + q[5] * srcN[i + 1] + q[8] * srcN[i + 2],
+          ).normalize();
+          Nn[k] = pv.x;
+          Nn[k + 1] = pv.y;
+          Nn[k + 2] = pv.z;
+        }
+      }
+      pos.needsUpdate = true;
+      nor.needsUpdate = true;
+      geometry.computeBoundingSphere();
+    }
+  }
 
   /**
    * bar: the handle bar's centre (scene frame); p: 0 the pull grip … 1 the push. Returns the wrist point.
@@ -178,12 +260,12 @@ export function createHand({ skin = '#c58a5f', sleeve = '#1f7a8c' } = {}) {
    * @param {number} p
    */
   function pose(bar, p) {
-    const key = `${bar.x.toFixed(5)},${bar.y.toFixed(5)},${p.toFixed(4)}`;
-    if (key === last) return wristAt;
-    last = key;
+    root.position.copy(bar);
+    if (p === last) return out.copy(wristAt).add(bar);
+    last = p;
     const A = POSES.pull;
     const B = POSES.push;
-    wristAt.copy(A.wrist).lerp(B.wrist, p).add(bar);
+    wristAt.copy(A.wrist).lerp(B.wrist, p);
     hand.position.copy(wristAt);
     hand.quaternion.slerpQuaternions(qPull, qPush, p);
     const spread = lerp(A.spread, B.spread, p);
@@ -207,12 +289,13 @@ export function createHand({ skin = '#c58a5f', sleeve = '#1f7a8c' } = {}) {
     forearm.position.copy(wristAt).addScaledVector(dir, -0.004);
     forearm.quaternion.setFromUnitVectors(UP, dir);
     forearm.scale.set(1, len, 1);
-    const sleeveStart = new THREE.Vector3().copy(wristAt).addScaledVector(dir, len * 0.97);
+    sleeveStart.copy(wristAt).addScaledVector(dir, len * 0.97);
     sleeveMesh.position.copy(sleeveStart);
     sleeveMesh.quaternion.setFromUnitVectors(UP, dir);
     cuff.position.copy(sleeveStart).addScaledVector(dir, 0.004);
-    cuff.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), dir);
-    return wristAt;
+    cuff.quaternion.setFromUnitVectors(Z, dir);
+    writeVertices();
+    return out.copy(wristAt).add(bar);
   }
 
   return { root, pose, materials: M };
