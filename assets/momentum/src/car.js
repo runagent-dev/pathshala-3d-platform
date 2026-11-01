@@ -4,6 +4,7 @@
 // rear glass cracks when the dent is deep). The wheels never bend. roll(m) turns them.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { instancedWheels, mergeByMaterial } from './merge.js';
 
 export const CAR = { length: 3.5, width: 1.62, height: 1.5, wheel: 0.29, axles: [0.66, 2.86] };
 
@@ -75,6 +76,9 @@ export function createCar({ name = 'SmallCar', color = '#c8423a' } = {}) {
   const L = CAR.length;
   const smooth = THREE.MathUtils.smoothstep;
   const parts = []; // meshes that crumple: { mesh, base: Float32Array }
+  const shell = new THREE.Group(); // the panels, merged by material once built (the rear bumper and glass apart)
+  shell.name = 'Shell';
+  root.add(shell);
 
   // the lower body: rounded corners seen from above, a sloping bonnet, ends tucked in at the bottom
   const lower = shapedBox(L, 0.62, CAR.width, [28, 4, 6], new THREE.Vector3(L / 2, 0.55, 0), (v) => {
@@ -95,8 +99,7 @@ export function createCar({ name = 'SmallCar', color = '#c8423a' } = {}) {
   const addPart = (geo, m, nm) => {
     const mesh = new THREE.Mesh(geo, m);
     mesh.name = nm;
-    root.add(mesh);
-    parts.push({ mesh, base: Float32Array.from(geo.attributes.position.array) });
+    shell.add(mesh);
     return mesh;
   };
   addPart(lower, M.paint, 'Body');
@@ -137,21 +140,30 @@ export function createCar({ name = 'SmallCar', color = '#c8423a' } = {}) {
   }
   addPart(new THREE.BoxGeometry(0.02, 0.13, 0.42).translate(-0.01, 0.55, 0), M.plate, 'Plate');
 
-  // wheels (they do not bend)
-  const wheels = [];
+  // one mesh per material; the rear bumper (it hangs loose) and the rear glass (it cracks) stay their own
+  mergeByMaterial(shell, { skip: (m) => m === rearGlass || m.name === 'RearBumper', prefix: 'Car' });
+  for (const mesh of shell.children) {
+    mesh.userData.smallPart = mesh === rearGlass || [M.tail, M.head, M.plate, M.trim].includes(mesh.material); // no shadow seen
+    parts.push({ mesh, base: Float32Array.from(mesh.geometry.attributes.position.array) });
+  }
+
+  // wheels (they do not bend): tyres, hub caps and a spoke bar, each drawn once for the four
+  const spoke = new THREE.BoxGeometry(0.3, 0.04, 0.22);
   const tyreGeo = new THREE.CylinderGeometry(CAR.wheel, CAR.wheel, 0.2, 24).rotateX(Math.PI / 2);
   const hubGeo = new THREE.CylinderGeometry(0.17, 0.17, 0.21, 16).rotateX(Math.PI / 2);
-  for (const x of CAR.axles)
-    for (const s of [-1, 1]) {
-      const w = new THREE.Group();
-      w.name = 'Wheel';
-      w.position.set(x, CAR.wheel, s * 0.7);
-      w.add(new THREE.Mesh(tyreGeo, M.tyre), new THREE.Mesh(hubGeo, M.hub));
-      const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.04, 0.22), M.trim);
-      w.add(spoke);
-      root.add(w);
-      wheels.push(w);
-    }
+  const spots = [];
+  for (const x of CAR.axles) for (const s of [-1, 1]) spots.push(new THREE.Vector3(x, CAR.wheel, s * 0.7));
+  const wheels = instancedWheels(
+    root,
+    [
+      [tyreGeo, M.tyre],
+      [hubGeo, M.hub],
+      [spoke, M.trim],
+    ],
+    spots,
+    'Wheels',
+  );
+  for (const m of wheels.meshes.slice(1)) m.userData.smallPart = true;
 
   // a big invisible box round it, for taps
   const hit = new THREE.Mesh(new THREE.BoxGeometry(L + 0.4, 1.7, CAR.width + 0.4), new THREE.MeshBasicMaterial({ visible: false }));
@@ -214,7 +226,8 @@ export function createCar({ name = 'SmallCar', color = '#c8423a' } = {}) {
     crumple,
     /** Turn the wheels for `distance` m (positive forward). A skidding car's wheels are locked: pass the same value. */
     roll(distance) {
-      for (const w of wheels) w.rotation.z = -distance / CAR.wheel;
+      for (let i = 0; i < spots.length; i++) wheels.set(i, -distance / CAR.wheel);
+      wheels.commit();
     },
     get dent() {
       return Math.max(0, dent);
