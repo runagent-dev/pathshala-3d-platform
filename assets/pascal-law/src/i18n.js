@@ -62,30 +62,25 @@ export const STRINGS = {
     cmp_less: '&lt;',
 
     // the result line
-    out_ready: 'গাড়ির ওজন {s_W} = <b class="c-W">{W}&nbsp;{u_N}</b>: {s_F2} কি এর চেয়ে বেশি?',
+    out_ready: 'সামনের অংশ কেটে দেখানো; গাড়ি ছোট করে আঁকা',
+    out_inside: '<b class="c-P">লাল তীর = তেলের চাপ:</b> সব সমান, দেয়ালে লম্ব',
+    out_rim: 'হাতল {D} নামলে গাড়ি ওঠে মাত্র <b>{d}</b>',
     out_push: 'তেলের ভেতর দিয়ে চাপ ছড়িয়ে পড়ছে…',
     out_up: '{s_F2} &gt; {s_W}: হাতল নামল {D}, গাড়ি উঠল <b>{d}</b>',
     out_stuck: '{s_F2} &lt; {s_W} ({W}&nbsp;{u_N}): গাড়ি <b>উঠল না</b>',
     out_pump: '{n} বার চাপে হাতল নামল {D}, গাড়ি উঠল <b>{d}</b>',
-    out_pumping: '{n} বার চাপ…',
+    out_pumping: '{n} বার চাপ… (সময় দ্রুত করে দেখানো)',
     out_top: 'লিফট সবচেয়ে উঁচুতে: গাড়ি উঠেছে <b>{d}</b>',
     out_lower: 'তেল ট্যাংকে ফিরে যাচ্ছে, গাড়ি নামছে…',
 
     // the rule: the book's words, one idea at a time
     rule_law: '<b>প্যাসকেলের সূত্র:</b> একটা আবদ্ধ পাত্রে তরল বা বায়বীয় পদার্থে বাইরে থেকে চাপ দেওয়া হলে সেই চাপ সমানভাবে সঞ্চালিত হয়ে পাত্রের সংলগ্ন গায়ে লম্বভাবে কাজ করবে।',
     rule_equal:
-      '<b>চাপ সব জায়গায় সমান:</b> {s_P} = {s_F1}/{s_A1} = {s_F2}/{s_A2}। তাই {s_F2} = {s_F1}({s_A2}/{s_A1}): বড় পিস্টনে বল {k} গুণ। সমান না হলে তেল প্রবাহিত হতো, যতক্ষণ না চাপ সমান হয়।',
+      '<b>চাপ সব জায়গায় সমান:</b> {s_P} = {s_F1}/{s_A1} = {s_F2}/{s_A2}। তাই {s_F2} = {s_F1}({s_A2}/{s_A1}): বড় পিস্টনে বল {k} গুণ। সমান না হলে তেল প্রবাহিত হতো। ({s_F2}, {s_W}-এর তীর ছোট মাপে আঁকা)',
     rule_stuck: '<b>{s_F2} গাড়ির ওজনের চেয়ে কম।</b> হাতলে আরও জোরে চাপ দাও, নয়তো আরও বড় পিস্টন নাও: {s_A2}/{s_A1} যত বেশি, বল তত গুণ।',
     rule_energy:
       '<b>এটা বলবৃদ্ধিকরণ নীতি, শক্তি বাড়ে না।</b> একবার চাপে {s_F1}{s_d1} = {F}&nbsp;{u_N} × {d1}&nbsp;{u_m} = {E}&nbsp;{u_J}, আর {s_F2}{s_d2} = {F2}&nbsp;{u_N} × {d2}&nbsp;{u_m} = {E}&nbsp;{u_J}: যে শক্তি দিলে, ঠিক সেই শক্তি ফিরে পেলে।',
     rule_use: '<b>কলকারখানা কিংবা বিমান নিয়ন্ত্রণে এই পদ্ধতি ব্যবহার করা হয়।</b> বল {k} গুণ হয়, কিন্তু বড় পিস্টন সরে হাতলের {k} ভাগের এক ভাগ: তাই অনেকবার চাপ দিতে হয়।',
-
-    // notes on the stage
-    note_cut: 'সামনের অংশ কেটে দেখানো · গাড়ি ছোট করে আঁকা',
-    note_arrows: 'লাল তীর = তেলের চাপ: সব সমান, দেয়ালে লম্ব',
-    note_scale: '{s_F2}, {s_W}-এর তীর {s_F1}-এর চেয়ে ছোট মাপে আঁকা',
-    note_fast: 'সময় দ্রুত করে দেখানো',
-    note_zoom: 'কাছ থেকে দেখো',
 
     // labels on the picture
     lbl_F1: '{s_F1} = {v}&nbsp;{u_N}',
@@ -186,31 +181,27 @@ export const STRINGS = {
     cmp_more: '&gt;',
     cmp_less: '&lt;',
 
-    out_ready: 'The car’s weight {s_W} = <b class="c-W">{W}&nbsp;{u_N}</b>: is {s_F2} more?',
+    out_ready: 'Front cut away; the car drawn smaller',
+    out_inside: '<b class="c-P">Red arrows = oil pressure:</b> equal, square to walls',
+    out_rim: 'The handle down {D}: the car up only <b>{d}</b>',
     out_push: 'The pressure spreads through the oil…',
     out_up: '{s_F2} &gt; {s_W}: handle down {D}, car up <b>{d}</b>',
     out_stuck: '{s_F2} &lt; {s_W} ({W}&nbsp;{u_N}): the car <b>stays down</b>',
     out_pump: '{n} pushes: handle down {D}, car up <b>{d}</b>',
-    out_pumping: '{n} pushes…',
+    out_pumping: '{n} pushes… (shown sped up)',
     out_top: 'The lift is at its top: the car has risen <b>{d}</b>',
     out_lower: 'The oil goes back to the tank; the car comes down…',
 
     rule_law:
       '<b>Pascal’s law:</b> when pressure is applied from outside to a liquid or gas in a closed vessel, it is passed on equally and acts perpendicular to the walls of the vessel.',
     rule_equal:
-      '<b>The pressure is the same everywhere:</b> {s_P} = {s_F1}/{s_A1} = {s_F2}/{s_A2}. So {s_F2} = {s_F1}({s_A2}/{s_A1}): the big piston gets {k} times the force. If it were not equal, the oil would flow until it was.',
+      '<b>The pressure is the same everywhere:</b> {s_P} = {s_F1}/{s_A1} = {s_F2}/{s_A2}. So {s_F2} = {s_F1}({s_A2}/{s_A1}): {k} times the force. If not, the oil would flow. ({s_F2}, {s_W} arrows to a smaller scale)',
     rule_stuck:
       '<b>{s_F2} is less than the car’s weight.</b> Push the handle harder, or take a bigger piston: the bigger {s_A2}/{s_A1}, the more times the force.',
     rule_energy:
       '<b>It multiplies force, not energy.</b> One push: {s_F1}{s_d1} = {F}&nbsp;{u_N} × {d1}&nbsp;{u_m} = {E}&nbsp;{u_J}, and {s_F2}{s_d2} = {F2}&nbsp;{u_N} × {d2}&nbsp;{u_m} = {E}&nbsp;{u_J}: the energy you put in is exactly what you get back.',
     rule_use:
       '<b>Factories and aircraft controls use this.</b> The force is {k} times bigger, but the big piston moves one {k}th as far as the handle: so you push many times.',
-
-    note_cut: 'Front cut away · car drawn smaller',
-    note_arrows: 'Red arrows = oil pressure: all equal, square to the walls',
-    note_scale: 'The {s_F2} and {s_W} arrows use a smaller scale than {s_F1}',
-    note_fast: 'Shown sped up',
-    note_zoom: 'A close look',
 
     lbl_F1: '{s_F1} = {v}&nbsp;{u_N}',
     lbl_F2: '{s_F2} = {v}&nbsp;{u_N}',
@@ -270,7 +261,7 @@ export const STRINGS = {
     mis_along: 'It acts square to the walls, not along them.',
     mis_big: 'It is the same everywhere, in every direction.',
 
-    q_work: 'The push {s_F1} and the handle’s way down {s_d1} are on the picture. How much energy does the big piston give the car?',
+    q_work: '{s_F1} and the handle’s way down {s_d1} are on the picture. What energy does the car get?',
     why_work:
       '<b>{E}&nbsp;{u_J}</b>: force grows, energy does not: {s_F1}{s_d1} = {F}&nbsp;{u_N} × {dm}&nbsp;{u_m} = {E}&nbsp;{u_J} comes out again.',
     mis_work_times: 'The force grows {k} times, not the energy.',
