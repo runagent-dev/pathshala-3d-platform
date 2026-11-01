@@ -47,6 +47,7 @@ export function createApp(root, options = {}) {
   root.tabIndex = 0;
   const term = (cls, label) => `<span class="pvc-t ${cls}"><b>0</b><small>${t(label)}</small></span>`;
   const ui = buildStudentShell(root, t, {
+    layout: 'side',
     learn: `
           <div class="sw-acts">
             <button class="pvc-btn primary" data-act="startstop"><span></span></button>
