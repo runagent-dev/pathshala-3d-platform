@@ -7,13 +7,20 @@
 // rear wheel, so that after he steps off only the back of the bus passes him). Green and cream paint with a red
 // stripe, white roof, seats along the far side.
 //
-// The street (createStreet) stays where it is: asphalt, a white edge line, a kerb painted in black and yellow
-// stripes as Dhaka kerbs are, a pavement, and calm shapes behind the bus (shops, trees, lamp posts), so one can
-// see the bus move against the ground.
+// Inside: a floor of worn wooden planks, powder-blue laminate lining with a dark kick band, a cream ceiling with
+// two strip lights. The parts that never move relative to the bus are merged into one mesh per material, and the
+// wheels are instanced, so the whole bus is a couple of dozen draw calls.
+//
+// The street (createStreet) stays where it is: dark asphalt, a white edge line, a kerb painted in black and yellow
+// stripes as Dhaka kerbs are, red-brick footpaths on both sides, and behind the bus a row of two-storey shops in
+// warm plaster (signboards, striped awnings, shutters, upper windows), trees and lamp posts under a blue sky, so one
+// can see the bus move against the ground. It is merged by material too.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { BUS } from './motion.js';
+import { mergeStatic } from './merge.js';
+import { asphaltTexture, brickTexture, liningTexture, plankTexture } from './textures.js';
 
 export const BUS_SIZE = { front: 5, rear: -5, half: 1.2, roof: 2.9 };
 const W = BUS_SIZE.half;
@@ -74,6 +81,18 @@ function polygon(points) {
   return s;
 }
 
+/** Texture coordinates from two of a geometry's own axes: u = (a − a0) / su, v = (b − b0) / sv. */
+function planarUV(geo, a, b, su, sv, a0 = 0, b0 = 0) {
+  const pos = geo.attributes.position;
+  const uv = new Float32Array(pos.count * 2);
+  const get = { x: (i) => pos.getX(i), y: (i) => pos.getY(i), z: (i) => pos.getZ(i) };
+  for (let i = 0; i < pos.count; i++) {
+    uv[i * 2] = (get[a](i) - a0) / su;
+    uv[i * 2 + 1] = (get[b](i) - b0) / sv;
+  }
+  geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+}
+
 function tyreGeometry() {
   const half = 0.13;
   const pts = [
@@ -100,9 +119,10 @@ export function createBus({ materials: M }) {
   const cream = mat('BusCream', 0xf1e6c8, 0.5);
   const stripe = mat('BusStripe', 0xc0392b, 0.45);
   const white = mat('BusRoof', 0xf4f4f1, 0.55);
-  const inside = mat('BusInside', 0xefe7d6, 0.8);
-  const ceiling = mat('Ceiling', 0xeef0f1, 0.85);
-  const floorMat = mat('Floor', 0xa7a29a, 0.9);
+  const inside = mat('BusInside', 0xffffff, 0.75, 0, { map: liningTexture() });
+  const housing = mat('WheelHousing', 0x8fa9bc, 0.7);
+  const ceiling = mat('Ceiling', 0xf3ead6, 0.85);
+  const floorMat = mat('Floor', 0xffffff, 0.85, 0, { map: plankTexture() });
   const cutFace = mat('CutEdge', 0xdcd8cf, 0.7);
   const dark = mat('Trim', 0x2d3238, 0.6, 0.1);
   const glass = new THREE.MeshPhysicalMaterial({
@@ -214,7 +234,10 @@ export function createBus({ materials: M }) {
       [-W + T, -W + 0.5],
       [W - 0.5, W - T],
     ])
-      add(box(ax - ARCH_R - 0.04, ax + ARCH_R + 0.04, BUS.floor - 0.02, HOUSING_TOP, z0, z1, inside, 0.04), 'WheelHousing');
+      add(box(ax - ARCH_R - 0.04, ax + ARCH_R + 0.04, BUS.floor - 0.02, HOUSING_TOP, z0, z1, housing, 0.04), 'WheelHousing');
+  // two strip lights along the ceiling
+  const stripLight = mat('StripLight', 0xfffbef, 0.4, 0, { emissive: 0xfff4d6, emissiveIntensity: 0.55 });
+  for (const z of [-0.62, 0.62]) add(box(-4.5, 4.5, EAVE - 0.035, EAVE - 0.012, z - 0.045, z + 0.045, stripLight, 0.01), 'StripLight');
 
   // seats facing forward along the far side (none opposite the door: room to stand), and some behind the near wall
   const seatGeo = mergeGeometries([
@@ -249,21 +272,37 @@ export function createBus({ materials: M }) {
   const rimGeo = new THREE.CylinderGeometry(0.27, 0.27, 0.22, 24).rotateX(Math.PI / 2);
   const hubGeo = new THREE.CylinderGeometry(0.1, 0.1, 0.24, 16).rotateX(Math.PI / 2);
   const nutGeo = new THREE.CylinderGeometry(0.018, 0.018, 0.25, 6).rotateX(Math.PI / 2);
-  const wheels = [];
-  for (const ax of AXLES)
-    for (const side of [-1, 1]) {
-      const w = new THREE.Group();
-      w.name = 'Wheel';
-      w.position.set(ax, WHEEL_R, side * (W - 0.2));
-      w.add(new THREE.Mesh(tyreGeo, rubber), new THREE.Mesh(rimGeo, rimMat), new THREE.Mesh(hubGeo, dark));
-      for (let k = 0; k < 6; k++) {
-        const nut = new THREE.Mesh(nutGeo, dark);
-        nut.position.set(Math.cos((k * Math.PI) / 3) * 0.17, Math.sin((k * Math.PI) / 3) * 0.17, 0);
-        w.add(nut);
-      }
-      root.add(w);
-      wheels.push(w);
+  // one wheel's dark parts (the hub and its six nuts) as one geometry; each part is one InstancedMesh of four wheels
+  const darkGeo = mergeGeometries([
+    hubGeo,
+    ...Array.from({ length: 6 }, (_, k) => nutGeo.clone().translate(Math.cos((k * Math.PI) / 3) * 0.17, Math.sin((k * Math.PI) / 3) * 0.17, 0)),
+  ]);
+  const spots = [];
+  for (const ax of AXLES) for (const side of [-1, 1]) spots.push(new THREE.Vector3(ax, WHEEL_R, side * (W - 0.2)));
+  const wheelParts = [
+    [tyreGeo, rubber, 'Tyre'],
+    [rimGeo, rimMat, 'Rim'],
+    [darkGeo, dark, 'Hub'],
+  ].map(([geo, material, name]) => {
+    const m = new THREE.InstancedMesh(geo, material, spots.length);
+    m.name = `Wheels${name}`;
+    root.add(m);
+    return m;
+  });
+  const wheelDummy = new THREE.Object3D();
+  function turnWheels(angle) {
+    spots.forEach((p, i) => {
+      wheelDummy.position.copy(p);
+      wheelDummy.rotation.set(0, 0, angle);
+      wheelDummy.updateMatrix();
+      for (const m of wheelParts) m.setMatrixAt(i, wheelDummy.matrix);
+    });
+    for (const m of wheelParts) {
+      m.instanceMatrix.needsUpdate = true;
+      m.computeBoundingSphere();
     }
+  }
+  turnWheels(0);
 
   // a big invisible box round the bus: a tap on it plays the event
   const hit = box(-5.1, 5.1, 0, BUS_SIZE.roof, -W - 0.1, W + 0.1, new THREE.MeshBasicMaterial({ visible: false }));
@@ -271,18 +310,38 @@ export function createBus({ materials: M }) {
   hit.name = 'BusHit';
   root.add(hit);
 
+  // everything that never moves relative to the bus: one mesh per material (the wheels are instanced already)
+  // (the matte body parts in plain colours share one painted mesh; glass, chrome, lamps and textured parts keep
+  // their own materials)
+  const paint = new THREE.MeshStandardMaterial({ name: 'BusPaint', vertexColors: true, roughness: 0.55, metalness: 0.05 });
+  const own = new Set([inside, floorMat, glass, tinted, rail, lamp, tail, stripLight, seatFrame, dark]);
+  mergeStatic(root, { skip: (o) => o === hit, prefix: 'Bus', paint, paints: (mt) => !own.has(mt) && !mt.map });
+  // the floor's planks and the lining's panels are laid out in the bus's own metres (one texture size everywhere)
+  for (const m of root.children) {
+    if (m.material === floorMat) planarUV(m.geometry, 'x', 'z', 1, 1);
+    if (m.material === inside) planarUV(m.geometry, 'x', 'y', 1.2, SILL - BUS.floor, 0, BUS.floor);
+  }
+
+  let turned = 0;
   return {
     root,
     hit,
     /** Put the bus at x (m along the road); the wheels turn to match. */
     setX(x) {
       root.position.x = x;
-      for (const w of wheels) w.rotation.z = -x / WHEEL_R;
+      if (x !== turned) {
+        turned = x;
+        turnWheels(-x / WHEEL_R);
+      }
     },
   };
 }
 
-/** The street: road, edge line, black-and-yellow kerb, pavement and calm shapes behind the bus. Stays put. */
+/**
+ * The street, which stays put: dark asphalt, the white edge line and the centre dashes, a black-and-yellow kerb, a
+ * red-brick footpath on the near side (where he lands) and another on the far side, and behind the bus a row of
+ * two-storey shops, trees and lamp posts. Static parts are merged by material; repeats are instanced.
+ */
 export function createStreet() {
   const root = new THREE.Group();
   root.name = 'Street';
@@ -291,48 +350,64 @@ export function createStreet() {
   const X1 = 45;
   const len = X1 - X0;
   const mid = (X0 + X1) / 2;
-  const asphalt = mat('Asphalt', 0xb4b6b8, 0.95);
-  const paveMat = mat('Pavement', 0xdedbd4, 0.9);
-  const lineMat = mat('RoadLine', 0xfafafa, 0.6);
-  const road = new THREE.Mesh(new THREE.PlaneGeometry(len, 12).rotateX(-Math.PI / 2), asphalt);
-  road.position.set(mid, 0, 2.6);
+  const ROAD = [-2.75, 7.0]; // z: the road between the near kerb and the far footpath
+  const asphaltMap = asphaltTexture();
+  asphaltMap.repeat.set(len / 4, (ROAD[1] - ROAD[0]) / 4);
+  const asphalt = mat('Asphalt', 0xffffff, 0.95, 0, { map: asphaltMap });
+  const brickNear = brickTexture();
+  brickNear.repeat.set(len / 1.2, 3 / 1.2);
+  const brickFar = brickNear.clone();
+  brickFar.repeat.set(len / 1.2, 2.4 / 1.2);
+  const paveNear = mat('Footpath', 0xffffff, 0.9, 0, { map: brickNear });
+  const paveFar = mat('FootpathFar', 0xffffff, 0.9, 0, { map: brickFar });
+  const lineMat = mat('RoadLine', 0xf4f4f0, 0.6);
+  const road = new THREE.Mesh(new THREE.PlaneGeometry(len, ROAD[1] - ROAD[0]).rotateX(-Math.PI / 2), asphalt);
+  road.name = 'Road';
+  road.position.set(mid, 0, (ROAD[0] + ROAD[1]) / 2);
   road.receiveShadow = true;
   root.add(road);
-  const pave = new THREE.Mesh(new THREE.BoxGeometry(len, 0.15, 3).translate(0, 0.075, 0), paveMat);
-  pave.position.set(mid, 0, -2.75 - 1.5);
+  const pave = new THREE.Mesh(new THREE.BoxGeometry(len, 0.15, 3).translate(0, 0.075, 0), paveNear);
+  pave.name = 'Footpath';
+  pave.position.set(mid, 0, ROAD[0] - 1.5);
   pave.receiveShadow = true;
   root.add(pave);
+  const paveF = new THREE.Mesh(new THREE.BoxGeometry(len, 0.15, 2.4).translate(0, 0.075, 0), paveFar);
+  paveF.name = 'FootpathFar';
+  paveF.position.set(mid, 0, ROAD[1] + 1.2);
+  root.add(paveF);
   const edge = new THREE.Mesh(new THREE.PlaneGeometry(len, 0.1).rotateX(-Math.PI / 2), lineMat);
   edge.position.set(mid, 0.003, -2.3);
   root.add(edge);
+  const m = new THREE.Matrix4();
   // the centre line: dashes, far side of the bus (seen under it)
   const dashGeo = new THREE.PlaneGeometry(1.5, 0.12).rotateX(-Math.PI / 2);
   const dashes = new THREE.InstancedMesh(dashGeo, lineMat, Math.ceil(len / 4));
-  const m = new THREE.Matrix4();
   for (let i = 0; i < dashes.count; i++) dashes.setMatrixAt(i, m.makeTranslation(X0 + i * 4, 0.003, 2.6));
   root.add(dashes);
-  // the kerb: stones painted black and yellow in turn
+  // the kerbs: stones painted black and yellow in turn, on both footpaths
   const stone = new THREE.BoxGeometry(0.5, 0.17, 0.2);
-  const kerb = new THREE.InstancedMesh(stone, new THREE.MeshStandardMaterial({ name: 'Kerb', color: 0xffffff, roughness: 0.7 }), len * 2);
+  const per = len * 2;
+  const kerb = new THREE.InstancedMesh(stone, new THREE.MeshStandardMaterial({ name: 'Kerb', color: 0xffffff, roughness: 0.7 }), per * 2);
   const yellow = new THREE.Color(0xf2c230);
   const black = new THREE.Color(0x2a2a2a);
-  for (let i = 0; i < kerb.count; i++) {
-    kerb.setMatrixAt(i, m.makeTranslation(X0 + i * 0.5 + 0.25, 0.085, -2.65));
-    kerb.setColorAt(i, i % 2 ? black : yellow);
+  for (let i = 0; i < per; i++) {
+    for (const [k, z] of [
+      [i, ROAD[0] + 0.1],
+      [per + i, ROAD[1] + 0.1],
+    ]) {
+      kerb.setMatrixAt(k, m.makeTranslation(X0 + i * 0.5 + 0.25, 0.085, z));
+      kerb.setColorAt(k, i % 2 ? black : yellow);
+    }
   }
   root.add(kerb);
-  // pavement joints (fine lines every metre), so the pavement moves visibly too
-  const joint = new THREE.InstancedMesh(new THREE.PlaneGeometry(0.02, 3).rotateX(-Math.PI / 2), mat('Joint', 0xc4c0b7, 0.9), len);
-  for (let i = 0; i < joint.count; i++) joint.setMatrixAt(i, m.makeTranslation(X0 + i, 0.152, -4.25));
-  root.add(joint);
 
-  // the road beside the bus, where a passenger steps down: tar seams across it, darker patches and drain covers,
-  // so one sees the ground stream past while the bus moves
-  const seamMat = mat('TarSeam', 0x6f7276, 0.95);
+  // the road beside the bus, where a passenger steps down: tar seams across it, patches and drain covers, so one
+  // sees the ground stream past while the bus moves
+  const seamMat = mat('TarSeam', 0x2f3236, 0.95);
   const seams = new THREE.InstancedMesh(new THREE.PlaneGeometry(0.035, 1.25).rotateX(-Math.PI / 2), seamMat, Math.ceil(len / 1.6));
   for (let i = 0; i < seams.count; i++) seams.setMatrixAt(i, m.makeTranslation(X0 + i * 1.6 + 0.5 * ((i * 7) % 3), 0.004, -1.9));
   root.add(seams);
-  const patchMat = mat('Patch', 0x9a9da1, 0.95);
+  const patchMat = mat('Patch', 0x45494e, 0.95);
   const patches = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), patchMat, Math.ceil(len / 2.7));
   const sc = new THREE.Matrix4();
   for (let i = 0; i < patches.count; i++) {
@@ -342,59 +417,119 @@ export function createStreet() {
     patches.setMatrixAt(i, m.multiply(sc.makeScale(w, 1, d)));
   }
   root.add(patches);
-  const drainMat = mat('DrainCover', 0x55595e, 0.6, 0.4);
-  const drainRim = mat('DrainRim', 0x3e4246, 0.6, 0.3);
+  const drainMat = mat('DrainCover', 0x7a7f86, 0.55, 0.5);
+  const drainRim = mat('DrainRim', 0x2c2f33, 0.6, 0.3);
+  const coverGeo = new THREE.CylinderGeometry(0.27, 0.27, 0.012, 24);
+  const rimGeo = new THREE.TorusGeometry(0.28, 0.025, 6, 24).rotateX(Math.PI / 2);
   for (let px = X0 + 3.6; px < X1; px += 5.5) {
-    const cover = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.27, 0.012, 24), drainMat);
+    const cover = new THREE.Mesh(coverGeo, drainMat);
     cover.position.set(px, 0.006, -2.15);
-    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.025, 6, 24).rotateX(Math.PI / 2), drainRim);
+    const rim = new THREE.Mesh(rimGeo, drainRim);
     rim.position.set(px, 0.008, -2.15);
     root.add(cover, rim);
   }
 
-  // behind the bus (seen through its windows): shop fronts with bright signboards, trees and dark lamp posts close
+  // behind the bus (seen through its windows): two-storey shops in warm plaster, each with a signboard, a striped
+  // awning, a shutter half up over goods or a glass front, and upper windows; trees and dark lamp posts close
   // together, so the street clearly slides by
-  const palette = [0xe9dcc9, 0xd9e4dc, 0xe6d5d2, 0xdcdfe8, 0xeee3c4];
-  const signColors = [0xb23a48, 0x2f8f83, 0xd9a21b, 0x7a4fa3, 0x3f7f3a];
-  const shopGeo = new THREE.BoxGeometry(1, 1, 1);
-  const shopMats = palette.map((c, i) => mat(`Shop${i}`, c, 0.9));
-  const signMats = signColors.map((c, i) => mat(`ShopSign${i}`, c, 0.6));
-  const winMat = mat('ShopWindow', 0x7f8b96, 0.4);
+  const plaster = [0xd77a4f, 0xe0b04f, 0xe59a83, 0xd9bf93, 0x8fb0cf, 0xd88fa1, 0xc9a06a].map((c, i) => mat(`Plaster${i}`, c, 0.9));
+  const signMats = [0xb23a48, 0x2f6fae, 0xd9a21b, 0x7a4fa3, 0x2f8f83, 0xe1662f].map((c, i) => mat(`ShopSign${i}`, c, 0.55));
+  const awningMats = [0xc8443a, 0x2f6fae, 0xe0a526].map((c, i) => mat(`Awning${i}`, c, 0.8));
+  const awningWhite = mat('AwningStripe', 0xf6f1e4, 0.8);
+  const shutter = mat('Shutter', 0x7d858d, 0.5, 0.5);
+  const dim = mat('ShopInside', 0x3a3430, 0.9);
+  const goods = [0xe6c34a, 0x5aa1d8, 0xd2553f, 0xf0efe8].map((c, i) => mat(`Goods${i}`, c, 0.7));
+  const winMat = mat('ShopWindow', 0x4c5d6c, 0.25, 0.3);
+  const frame = mat('WindowFrame', 0xf2eee4, 0.7);
+  const parapet = mat('Parapet', 0xefe6d2, 0.85);
+  const unit = new THREE.BoxGeometry(1, 1, 1);
+  const place = (material, x, y, z, w, h, d) => {
+    const b = new THREE.Mesh(unit, material);
+    b.scale.set(w, h, d);
+    b.position.set(x, y, z);
+    root.add(b);
+  };
+  const F = 9; // the shops' front
   let x = X0;
   let k = 0;
   while (x < X1) {
     const w = 3.2 + ((k * 37) % 5) * 0.5;
-    const h = 3.6 + ((k * 53) % 4) * 0.9;
-    const shop = new THREE.Mesh(shopGeo, shopMats[k % palette.length]);
-    shop.scale.set(w - 0.2, h, 3);
-    shop.position.set(x + w / 2, h / 2, 10.5);
-    const front = new THREE.Mesh(shopGeo, winMat);
-    front.scale.set(w - 1.0, 1.25, 0.05);
-    front.position.set(x + w / 2, 0.85, 8.98);
-    const sign = new THREE.Mesh(shopGeo, signMats[(k * 3) % signMats.length]);
-    sign.scale.set(w - 0.6, 0.55, 0.06);
-    sign.position.set(x + w / 2, 1.85, 8.97);
-    root.add(shop, front, sign);
+    const h = 5.6 + ((k * 53) % 4) * 0.7;
+    const cx = x + w / 2;
+    place(plaster[k % plaster.length], cx, h / 2, F + 1.5, w - 0.12, h, 3);
+    place(parapet, cx, h + 0.06, F + 0.06, w - 0.12, 0.12, 0.24);
+    // the ground floor: a shutter half up over goods, or a glass front in a frame
+    if (k % 3 !== 1) {
+      place(dim, cx, 1.0, F - 0.01, w - 0.9, 2.0, 0.04);
+      place(shutter, cx, 1.65, F - 0.03, w - 0.9, 0.75, 0.04);
+      for (let g = 0; g < 4; g++)
+        place(
+          goods[(k + g) % goods.length],
+          cx - (w - 1.3) / 2 + ((g + 0.5) * (w - 1.3)) / 4,
+          0.55 + (g % 2) * 0.35,
+          F - 0.06,
+          (w - 1.6) / 4,
+          0.28,
+          0.08,
+        );
+    } else {
+      place(frame, cx, 1.05, F - 0.01, w - 0.8, 2.1, 0.05);
+      place(winMat, cx, 1.05, F - 0.03, w - 1.0, 1.9, 0.04);
+    }
+    place(signMats[(k * 5) % signMats.length], cx, 2.45, F - 0.05, w - 0.5, 0.6, 0.08);
+    // the awning: stripes in turn, over the shop front
+    const stripes = Math.max(5, Math.round((w - 0.4) / 0.32));
+    const sw = (w - 0.4) / stripes;
+    for (let i = 0; i < stripes; i++) {
+      const bx = cx - (w - 0.4) / 2 + (i + 0.5) * sw;
+      const a = new THREE.Mesh(unit, i % 2 ? awningWhite : awningMats[k % awningMats.length]);
+      a.scale.set(sw, 0.04, 0.8);
+      a.rotation.x = -0.45;
+      a.position.set(bx, 2.0, F - 0.38);
+      root.add(a);
+    }
+    // the upper floor: two windows in white frames
+    for (const dx of [-w / 4, w / 4]) {
+      place(frame, cx + dx, h - 1.6, F - 0.01, 0.95, 1.25, 0.05);
+      place(winMat, cx + dx, h - 1.6, F - 0.03, 0.8, 1.1, 0.04);
+    }
     x += w;
     k++;
   }
   const trunk = mat('Trunk', 0x6b4f35, 0.9);
-  const leaves = mat('Leaves', 0x6fae5f, 0.95);
-  const pole = mat('LampPost', 0x4f5862, 0.5, 0.4);
+  const leaves = mat('Leaves', 0x4f8f45, 0.95);
+  const pole = mat('LampPost', 0x3f4852, 0.5, 0.4);
+  const lampHead = mat('LampHead', 0xe9e4d4, 0.4, 0, { emissive: 0xfff2c8, emissiveIntensity: 0.25 });
+  const trunkGeo = new THREE.CylinderGeometry(0.13, 0.17, 2.6, 10);
+  const crownGeo = new THREE.SphereGeometry(1.5, 16, 12);
   for (let px = X0 + 3; px < X1; px += 9) {
-    const tr = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.17, 2.6, 10), trunk);
-    tr.position.set(px, 1.3, 7.2);
-    const crown = new THREE.Mesh(new THREE.SphereGeometry(1.5, 16, 12), leaves);
-    crown.position.set(px, 3.6, 7.2);
+    const tr = new THREE.Mesh(trunkGeo, trunk);
+    tr.position.set(px, 1.3, ROAD[1] + 1.4);
+    const crown = new THREE.Mesh(crownGeo, leaves);
+    crown.position.set(px, 3.6, ROAD[1] + 1.4);
     crown.scale.set(1, 0.85, 1);
     root.add(tr, crown);
   }
+  const postGeo = new THREE.CylinderGeometry(0.07, 0.09, 6, 10);
+  const armGeo = new THREE.CylinderGeometry(0.04, 0.04, 1.2, 8).rotateX(Math.PI / 2);
+  const headGeo = new THREE.BoxGeometry(0.22, 0.08, 0.4);
   for (let px = X0 + 1.5; px < X1; px += 4.5) {
-    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 6, 10), pole);
-    post.position.set(px, 3, 6.2);
-    const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.2, 8).rotateX(Math.PI / 2), pole);
-    arm.position.set(px, 5.9, 5.7);
-    root.add(post, arm);
+    const post = new THREE.Mesh(postGeo, pole);
+    post.position.set(px, 3, ROAD[1] + 0.5);
+    const arm = new THREE.Mesh(armGeo, pole);
+    arm.position.set(px, 5.9, ROAD[1]);
+    const head = new THREE.Mesh(headGeo, lampHead);
+    head.position.set(px, 5.85, ROAD[1] - 0.55);
+    root.add(post, arm, head);
   }
+  // the matte parts in plain colours (plaster, signboards, awnings, goods, frames, trees) share one painted mesh
+  const paint = new THREE.MeshStandardMaterial({ name: 'StreetPaint', vertexColors: true, roughness: 0.85 });
+  const glossy = new Set([winMat, shutter, pole, lampHead, drainMat, drainRim, lineMat]);
+  mergeStatic(root, {
+    skip: (o) => o === road || o === pave || o === paveF,
+    prefix: 'Street',
+    paint,
+    paints: (mt) => !glossy.has(mt) && !mt.map,
+  });
   return { root };
 }

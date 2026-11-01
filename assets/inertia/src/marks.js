@@ -1,19 +1,32 @@
 // Helpers drawn over the scene (none of them is exported to the GLB):
-//   createArrow: a velocity arrow lying along x (it turns round for a negative speed);
+//   createArrow: a bold, white-rimmed velocity arrow lying along x (it turns round for a negative speed);
 //   createTags: two-line labels ("which part" / "what it does") pinned to 3D points, placed in screen space each
 //   frame: several spots round the point are tried and the one that covers least of the obstacles (the passenger,
 //   the arrows, the corner buttons, the other label) wins; it keeps its spot while that stays good, so labels do
 //   not jump about. A short leader line joins the label to its point.
 import * as THREE from 'three';
+import { createBoldArrow } from './arrow.js';
 
-/** An arrow along +x from its origin; set(v, scale) shows a speed v (m/s) as v·scale metres (hidden near zero). */
+/**
+ * A velocity arrow along +x from its group's origin, bold and white-rimmed (./arrow.js); set(v, scale) shows a speed v
+ * (m/s) as v·scale metres, pointing along −x for a negative v (hidden near zero).
+ */
 export function createArrow(color, radius) {
-  const mat = new THREE.MeshStandardMaterial({ name: 'Arrow', color, roughness: 0.45, emissive: color, emissiveIntensity: 0.22 });
+  const bold = createBoldArrow({
+    color,
+    name: 'SpeedArrow',
+    radius,
+    head: radius * 5,
+    headRadius: radius * 2.4,
+    rim: radius * 0.42,
+    segments: 14,
+  });
   const group = new THREE.Group();
   group.userData.noExport = true;
-  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 14).rotateZ(-Math.PI / 2).translate(0.5, 0, 0), mat);
-  const head = new THREE.Mesh(new THREE.ConeGeometry(1, 1, 18).rotateZ(-Math.PI / 2).translate(0.5, 0, 0), mat);
-  group.add(shaft, head);
+  group.add(bold.root);
+  const origin = new THREE.Vector3();
+  const dir = new THREE.Vector3(1, 0, 0);
+  let sign = 1;
   const arrow = {
     group,
     length: 0,
@@ -23,15 +36,13 @@ export function createArrow(color, radius) {
       arrow.length = length;
       group.visible = length > radius * 3;
       if (!group.visible) return;
-      group.rotation.y = v < 0 ? Math.PI : 0;
-      const h = Math.min(radius * 5, length * 0.5);
-      shaft.scale.set(length - h, radius, radius);
-      head.position.x = length - h;
-      head.scale.set(h, radius * 2.4, radius * 2.4);
+      sign = v < 0 ? -1 : 1;
+      dir.set(sign, 0, 0);
+      bold.set(origin, dir, length);
     },
     /** The world point at fraction k of the arrow (0: tail, 1: tip). */
     pointAt(k, out = new THREE.Vector3()) {
-      return out.set(arrow.length * k, 0, 0).applyMatrix4(group.matrixWorld);
+      return out.set(sign * arrow.length * k, 0, 0).applyMatrix4(group.matrixWorld);
     },
   };
   return arrow;
@@ -50,11 +61,15 @@ export function createTags({ stage, layer, obstacles }) {
   const tags = new Map();
   const v = new THREE.Vector3();
 
-  /** small: a one-line label; optional: left out when every spot would cover something. */
-  function add(id, { color, prefer, small = false, optional = false }) {
+  /**
+   * color: the arrow's colour (the chip's edge, the leader line); ink: a deeper shade for the words (4.5:1 on the
+   * white chip). small: a one-line label; optional: left out when every spot would cover something.
+   */
+  function add(id, { color, ink = color, prefer, small = false, optional = false }) {
     const el = document.createElement('div');
     el.className = small ? 'in-tag in-tag-small' : 'in-tag';
     el.style.setProperty('--c', color);
+    el.style.setProperty('--ci', ink);
     el.hidden = true;
     layer.append(el);
     const line = document.createElementNS(SVG, 'line');
@@ -63,7 +78,7 @@ export function createTags({ stage, layer, obstacles }) {
     dot.setAttribute('r', '3.5');
     dot.setAttribute('fill', color);
     svg.append(line, dot);
-    tags.set(id, { el, line, dot, prefer, optional, html: '', anchor: null, last: -1, w: 0, h: 0, box: null });
+    tags.set(id, { el, line, dot, prefer, optional, html: '', anchor: null, last: -1, w: 0, h: 0, box: null, w8: {} });
   }
 
   /** Show tag `id` with this HTML at the 3D point anchor() (or hide it: html null). */
@@ -107,15 +122,25 @@ export function createTags({ stage, layer, obstacles }) {
     return names.map((n) => [n, ...all[n]]);
   }
 
+  // the DOM is written only where a value changed (this runs after every frame drawn)
+  const write = (it, key, value, fn) => {
+    if (it.w8[key] === value) return;
+    it.w8[key] = value;
+    fn(value);
+  };
+  let viewBox = '';
   function update() {
     const W = stage.width;
     const H = stage.height;
-    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
-    const blocks = obstacles();
+    const vb = `0 0 ${W} ${H}`;
+    if (vb !== viewBox) svg.setAttribute('viewBox', (viewBox = vb));
+    const any = [...tags.values()].some((it) => it.anchor);
+    const blocks = any ? obstacles() : [];
     const placed = [];
     for (const it of tags.values()) {
       if (!it.anchor) {
-        it.line.style.visibility = it.dot.style.visibility = 'hidden';
+        it.box = null;
+        write(it, 'lineVis', 'hidden', (x) => (it.line.style.visibility = it.dot.style.visibility = x));
         continue;
       }
       v.copy(it.anchor()).project(stage.camera);
@@ -150,21 +175,29 @@ export function createTags({ stage, layer, obstacles }) {
       it.last = best.name;
       it.box = shown ? box : null;
       if (shown) placed.push(box);
-      it.el.style.transform = `translate(${Math.round(box.x)}px, ${Math.round(box.y)}px)`;
-      it.el.style.visibility = shown ? 'visible' : 'hidden';
+      const vis = shown ? 'visible' : 'hidden';
+      write(it, 'tf', `translate(${Math.round(box.x)}px, ${Math.round(box.y)}px)`, (x) => (it.el.style.transform = x));
+      write(it, 'vis', vis, (x) => (it.el.style.visibility = x));
       // the leader line: from the point to the nearest spot on the label's edge
+      const r1 = (x) => Math.round(x * 10) / 10;
       const ex = Math.min(Math.max(p.x, box.x), box.x + box.w);
       const ey = Math.min(Math.max(p.y, box.y), box.y + box.h);
-      it.line.setAttribute('x1', p.x);
-      it.line.setAttribute('y1', p.y);
-      it.line.setAttribute('x2', ex);
-      it.line.setAttribute('y2', ey);
-      it.dot.setAttribute('cx', p.x);
-      it.dot.setAttribute('cy', p.y);
-      it.line.style.visibility = it.dot.style.visibility = shown ? 'visible' : 'hidden';
+      write(it, 'line', `${r1(p.x)} ${r1(p.y)} ${r1(ex)} ${r1(ey)}`, () => {
+        it.line.setAttribute('x1', r1(p.x));
+        it.line.setAttribute('y1', r1(p.y));
+        it.line.setAttribute('x2', r1(ex));
+        it.line.setAttribute('y2', r1(ey));
+        it.dot.setAttribute('cx', r1(p.x));
+        it.dot.setAttribute('cy', r1(p.y));
+      });
+      write(it, 'lineVis', vis, (x) => (it.line.style.visibility = it.dot.style.visibility = x));
     }
   }
   stage.onAfterRender(update);
+  // a new size may change the labels' font (wide frames use a larger one): measure them again
+  stage.onResize(() => {
+    for (const it of tags.values()) it.w = it.h = 0;
+  });
 
   return {
     add,
