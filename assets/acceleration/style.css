@@ -21,7 +21,7 @@ body.bg-transparent { background: transparent; }
 .ac .pvc-learn {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-areas: 'top' 'big' 'mid' 'say';
+  grid-template-areas: 'top' 'act' 'big' 'mid' 'say';
   align-content: start;
   gap: 6px;
 }
@@ -96,8 +96,8 @@ body.bg-transparent { background: transparent; }
 
 
 /* on the picture: the speedometer (top left) */
-.ac-speedo { position: absolute; left: 8px; top: 8px; z-index: 3; width: 98px; padding: 4px 5px 3px; border-radius: 8px; background: rgba(255, 255, 255, 0.92); border: 1px solid var(--line); pointer-events: none; text-align: center; }
-.ac-speedo .ac-speedo-svg { height: auto; }
+.ac-speedo { margin-left: auto; display: flex; align-items: baseline; gap: 6px; pointer-events: none; }
+.ac .ac-speedo .ac-speedo-svg { display: none; }
 .ac .s-arc { stroke: var(--line-2); stroke-width: 3.2; fill: none; }
 .ac .s-val { stroke-width: 3.2; fill: none; stroke-linecap: round; }
 .ac .s-tick { stroke: var(--ink-3); stroke-width: 0.9; }
@@ -105,23 +105,20 @@ body.bg-transparent { background: transparent; }
 .ac .s-num { fill: var(--ink-2); font-size: 9px; font-weight: 600; }
 .ac .s-needle { stroke: var(--ink); stroke-width: 2.4; stroke-linecap: round; }
 .ac .s-hub { fill: var(--ink); }
-.ac-speedo-read { margin-top: 1px; font-size: 17px; font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; color: var(--t-v); }
+.ac-speedo-read { order: 2; font-size: 17px; font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; color: var(--t-v); }
 .ac-speedo-read span { margin-left: 3px; font-size: 11px; font-weight: 600; color: var(--ink-3); }
-.ac-speedo-name { font-size: 11.5px; line-height: 1.25; color: var(--ink-3); }
+.ac-speedo-name { order: 1; font-size: 13px; line-height: 1.25; color: var(--ink-3); }
 
 /* the pedals: press and hold (they act as the finger goes down, and stop as it lifts) */
-.ac-pedals { position: absolute; left: 0; right: 0; bottom: 0; height: 0; z-index: 3; }
+.ac-acts { grid-area: act; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; min-width: 0; }
+.ac-pedals { display: flex; gap: 8px; }
 .ac-pedal {
-  position: absolute;
-  bottom: 10px;
-  width: 94px;
-  height: 64px;
+  height: 44px;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1px;
-  padding: 0 4px;
+  gap: 5px;
+  padding: 0 12px;
   border-radius: 12px;
   border: 1.5px solid var(--line-2);
   background: rgba(255, 255, 255, 0.95);
@@ -135,10 +132,8 @@ body.bg-transparent { background: transparent; }
   user-select: none;
   -webkit-user-select: none;
 }
-.ac-pedal[data-side='left'] { left: 10px; }
-.ac-pedal[data-side='right'] { right: 10px; }
 .ac-pedal span { white-space: nowrap; }
-.ac .ac-pedal svg { width: 26px; height: 26px; stroke-width: 2.3; color: var(--pc); }
+.ac .ac-pedal svg { width: 20px; height: 20px; stroke-width: 2.3; color: var(--pc); }
 .ac-pedal[data-pedal='gas'], .ac-pedal[data-pedal='left'], .ac-pedal[data-pedal='right'] { --pc: var(--c-up); --pt: var(--t-up); }
 .ac-pedal[data-pedal='brake'] { --pc: var(--c-down); --pt: var(--t-down); }
 .ac-pedal:hover { border-color: var(--pc); }
@@ -165,7 +160,6 @@ body.bg-transparent { background: transparent; }
   .ac-res b { font-size: 17.5px; }
   .ac-res small { font-size: 12px; }
   .ac-sum-row { gap: 4px; }
-  .ac-pedal { width: 86px; height: 60px; font-size: 14px; }
 }
 /* phone embeds that are not very tall: a little smaller, so the 3D view keeps more room */
 @container pvc (max-width: 560px) and (max-height: 600px) {
@@ -181,18 +175,9 @@ body.bg-transparent { background: transparent; }
   .ac .pvc-q-text { font-size: 14.5px; line-height: 1.35; min-height: 2.7em; }
   .ac .pvc-q-feedback { font-size: 13px; line-height: 1.4; min-height: 4.2em; }
   .ac .pvc-opt { height: 38px; }
-  /* the speedometer as one line: দ্রুতি 4.8 m/s */
-  .ac-speedo { width: auto; display: flex; align-items: baseline; gap: 6px; padding: 4px 9px; }
-  .ac .ac-speedo .ac-speedo-svg { display: none; }
-  .ac-speedo-read { margin-top: 0; font-size: 15.5px; order: 2; }
-  .ac-speedo-name { order: 1; font-size: 13px; }
-  .ac-pedal { height: 46px; width: 82px; bottom: 8px; flex-direction: row; gap: 4px; }
-  .ac .ac-pedal svg { width: 20px; height: 20px; }
-  .ac-pedal span { white-space: normal; line-height: 1.15; }
 }
 /* short and wide (phone held sideways): a wider panel beside the picture */
 @container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
-  .ac .pvc-shell { grid-template-columns: minmax(0, 1fr) clamp(290px, 40%, 360px); }
   .ac .ac-big { height: 136px; }
   .ac .pvc-learn { gap: 4px; }
   .ac-scenes button, .ac-restart { height: 32px; font-size: 14px; }
@@ -209,10 +194,7 @@ body.bg-transparent { background: transparent; }
   .ac-say { font-size: 13px; min-height: 4.5em; }
   .ac .pvc-q-text { font-size: 15px; min-height: 2.8em; }
   .ac .pvc-q-feedback { font-size: 13.5px; min-height: 4.35em; }
-  .ac-speedo { width: 84px; padding: 3px 4px 2px; }
-  .ac-speedo-read { font-size: 15px; }
-  .ac-speedo-name { font-size: 10.5px; line-height: 1.15; }
-  .ac-pedal { height: 56px; width: 86px; }
+  .ac-pedal { height: 40px; padding: 0 9px; font-size: 14px; }
 }
 /* a narrow side panel (small frames held sideways): the sum still on one line */
 @container pvc-panel (max-width: 300px) {
@@ -240,4 +222,8 @@ body.bg-transparent { background: transparent; }
   .ac-dial { flex-direction: column; justify-content: center; gap: 6px; }
   .ac-compass { height: 104px; }
   .ac-reads { flex-direction: row; gap: 18px; }
+}
+/* phones held upright: a lower graph, so the 3D keeps more of the height */
+@container pvc (max-width: 420px) {
+  .ac .ac-big { height: 100px; }
 }
