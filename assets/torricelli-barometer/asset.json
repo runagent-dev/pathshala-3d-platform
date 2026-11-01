@@ -1,0 +1,121 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "torricelli-barometer",
+  "title": "Torricelli's experiment (টরিসেলির পরীক্ষা)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 145,
+  "topic": "5.4.1",
+  "placement": "Book pages 145–146, topic 5.4.1 (টরিসেলির পরীক্ষা): beside চিত্র ৫.১০ (the tube in a dish of mercury, 'বাতাসের চাপের কারণে পারদ ঠিক 76 cm উচ্চতায় স্থির হয়ে যায়') and the paragraphs before it on the straw, the 10.3 m of cold drink and the 76 cm of mercury.",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "Torricelli's experiment (pages 145–146, topic 5.4.1) in a school lab: a warm teak bench, a blue-grey wall with a slate chalkboard and a window with an iron grille and marigolds on the sill. A row of words follows the page. স্ট্র: a bottle of cola with a clear straw bending into a child's mouth (a head from the side, the inside of the mouth shown through a cut); blue arrows show the outside air's pressure on the drink and the mouth's air pressing on the straw's end; with no sucking they are equal and the drink in the straw stays at the bottle's level, a tap on চুমুক দাও shortens the mouth's arrow and the drink climbs to the mouth. টরিসেলি: a glass tube closed at one end beside a dish of silvery mercury and a cream scale in cm on a retort stand; numbered steps fill it from a beaker, seal it with a thumb and turn it over into the dish, let go: the mercury falls, bobs and stops at 76 cm with a vacuum (শূন্যতা) at the top; the camera visits the vacuum and the dish, where blue air-pressure arrows press on the mercury and a curved arrow carries the pressure under the tube's mouth and up to meet the red arrow of the column's pressure; a fourth step pierces the top, air rushes in and the column falls into the dish. হেলাও: the tube tilts 10° at a time to 40°; the mercury fills more of the tube but its top stays level with 76 on the scale. পাহাড়ে: the barometer goes to 1000, 2000 and 3000 m, the window's view changes from plains to snowy peaks, the arrows shorten and the column falls to about 67, 60 and 53 cm. পানি: in the schoolyard a glass pipe in a tub fills with water to 10.3 m, nearly to the roof of a three-storey school, beside a small 76 cm mercury barometer and a measuring staff. ছিদ্র (the owner's third picture): a tank with a lid and a corked hole; with the lid on, the cork pulled, a few drops come and stop; with the lid off a jet spurts and weakens as the depth h above the hole falls. The panel works out P = hρg with the book's numbers (0.76 m × 13,600 kg m⁻³ × 9.8 m s⁻² ≈ 10⁵ N/m²). Test tab: 5 questions (what is in the space above the mercury; the vertical height of a tilted column; the air's pressure up a mountain from the scale; the water column; the straw without sucking or the tank with its lid on), every wrong choice a real mistake with its own note. Phone-first, Bangla and English.",
+  "tags": ["air pressure", "atmospheric pressure", "barometer", "torricelli", "mercury", "vacuum", "straw", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "example",
+      "label": "Experiment",
+      "type": "select",
+      "options": [
+        ["straw", "the straw"],
+        ["torricelli", "Torricelli's tube"],
+        ["tilt", "the tube tilted"],
+        ["mountain", "up a mountain"],
+        ["water", "water instead of mercury"],
+        ["tank", "the tank with a hole"]
+      ],
+      "default": "torricelli"
+    },
+    {
+      "name": "phase",
+      "label": "Torricelli's tube",
+      "type": "select",
+      "options": [
+        ["ready", "empty, beside the dish"],
+        ["full", "full of mercury"],
+        ["dipped", "turned over into the dish"],
+        ["settled", "let go: 76 cm and a vacuum"],
+        ["pierced", "pierced at the top"]
+      ],
+      "default": "ready"
+    },
+    {
+      "name": "tilt",
+      "label": "Tilt (with example=tilt)",
+      "type": "number",
+      "default": "0",
+      "placeholder": "°",
+      "help": "0, 10, 20, 30 or 40"
+    },
+    {
+      "name": "alt",
+      "label": "Height above the sea (with example=mountain)",
+      "type": "number",
+      "default": "0",
+      "placeholder": "m",
+      "help": "0, 1000, 2000 or 3000"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on the part pulses at first", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "phase": "settled", "animate": false } },
+    { "name": "set", "payload": { "phase": "pierced" } },
+    { "name": "set", "payload": { "example": "straw" } },
+    { "name": "set", "payload": { "suck": true } },
+    { "name": "set", "payload": { "tilt": 30 } },
+    { "name": "set", "payload": { "alt": 2000 } },
+    { "name": "set", "payload": { "water": "done" } },
+    { "name": "set", "payload": { "tank": "open" } },
+    { "name": "set", "payload": { "look": "vacuum" } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": [
+    "ready",
+    "change",
+    "example",
+    "look",
+    "view",
+    "settle",
+    "practice-start",
+    "practice-result",
+    "practice-end"
+  ],
+  "export": {
+    "poster": { "params": { "coach": "0", "phase": "settled" } },
+    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "phase": "settled", "animate": false } }] }]
+  }
+}
