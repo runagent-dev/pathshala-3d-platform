@@ -54,3 +54,8 @@ The owner explicitly requested vivid backgrounds and strong object contrast, ove
 The learning panel stays white; transparent embeds and explicit capture backgrounds remain supported.
 
 Berry/plum backdrop, a teal carrom frame and stand, an orange ball, and brighter cyan/green airborne traces keep paths visible.
+
+## Declutter pass (2026-11, 0.2.0)
+- The dark purple-to-magenta backdrop is now a soft, slightly muted sky-blue to warm sand gradient (vivid means calm).
+- Panel in the labs' one order: the examples, the actions (ধাক্কা দাও, মুছে ফেলো), then the path and its kind, then
+  the sentence. The old wide-frame grid (for the panel under the 3D) is gone: the panel is beside the 3D now.
