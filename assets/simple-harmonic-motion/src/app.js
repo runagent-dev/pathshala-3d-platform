@@ -141,6 +141,7 @@ export function createApp(root, options = {}) {
     )
     .join('');
   const ui = buildStudentShell(root, t, {
+    layout: 'side',
     learn: `
           <div class="pvc-learn-foot">
             <div class="pvc-seg shm-ex" role="group" aria-label="${t('examples')}">
