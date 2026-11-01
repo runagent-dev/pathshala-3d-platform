@@ -2,6 +2,7 @@
 // drawn SCALE times bigger in the scene so that it can be seen on a 7 km road. roll(m) turns the wheels and the
 // pedals for the road covered, and the legs follow the pedals. Local +z is forward, +y up.
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 /** How much bigger than real the cyclist is drawn. */
 export const SCALE = 230;
@@ -128,16 +129,17 @@ export function createCyclist() {
     tube(shoulder, elbow, 0.045, M.shirt);
     tube(elbow, hand, 0.036, M.skin);
   }
-  const legs = [1, -1].map((side) => ({
-    side,
-    thigh: tube(V(0, 1, 0), V(0, 0, 0), 0.062, M.trousers),
-    shin: tube(V(0, 1, 0), V(0, 0, 0), 0.048, M.trousers),
-    foot: (() => {
-      const f = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.05, 0.2), M.saddle);
-      bike.add(f);
-      return f;
-    })(),
-  }));
+  // the legs move with the pedals: two instanced meshes (thighs and shins, feet), their matrices set by pose()
+  const legMesh = new THREE.InstancedMesh(unitTube, M.trousers, 4);
+  legMesh.name = 'Legs';
+  const footMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(0.08, 0.05, 0.2), M.saddle, 2);
+  footMesh.name = 'Feet';
+  for (const m of [legMesh, footMesh]) {
+    m.frustumCulled = false; // the bounding sphere would be the unit tube's
+    bike.add(m);
+  }
+  const legs = [1, -1].map((side, i) => ({ side, thigh: 2 * i, shin: 2 * i + 1, foot: i }));
+  const limb = new THREE.Object3D();
 
   const hip = new THREE.Vector3();
   const knee = new THREE.Vector3();
@@ -156,10 +158,20 @@ export function createCyclist() {
       const uy = dy / d;
       const uz = dz / d;
       knee.set(leg.side * 0.11, hip.y + uy * along + uz * h, hip.z + uz * along - uy * h);
-      place(leg.thigh, hip, knee, 0.062);
-      place(leg.shin, knee, foot, 0.048);
-      leg.foot.position.set(foot.x, foot.y - 0.01, foot.z + 0.03);
+      place(limb, hip, knee, 0.062);
+      limb.updateMatrix();
+      legMesh.setMatrixAt(leg.thigh, limb.matrix);
+      place(limb, knee, foot, 0.048);
+      limb.updateMatrix();
+      legMesh.setMatrixAt(leg.shin, limb.matrix);
+      limb.position.set(foot.x, foot.y - 0.01, foot.z + 0.03);
+      limb.quaternion.identity();
+      limb.scale.setScalar(1);
+      limb.updateMatrix();
+      footMesh.setMatrixAt(leg.foot, limb.matrix);
     }
+    legMesh.instanceMatrix.needsUpdate = true;
+    footMesh.instanceMatrix.needsUpdate = true;
   }
 
   /** Turn the wheels and pedals for m metres of scene road ridden so far (always forward for the rider). */
@@ -170,6 +182,13 @@ export function createCyclist() {
     pose(crank.rotation.x);
   }
   roll(0);
+
+  // merge: the still parts of the bike and rider, each wheel, the pedals (matt colours share one material)
+  const paint = new THREE.MeshStandardMaterial({ name: 'CyclistPaint', vertexColors: true, roughness: 0.8, metalness: 0 });
+  const matt = [M.tyre, M.saddle, M.shirt, M.trousers, M.skin, M.hair];
+  for (const w of wheels) bake(w, matt, paint);
+  bake(crank, matt, paint);
+  bake(bike, matt, paint, [legMesh, footMesh, ...wheels, crank]);
 
   root.traverse((o) => {
     if (o instanceof THREE.Mesh) o.castShadow = true;
@@ -201,4 +220,36 @@ export function createCyclist() {
   bike.add(hit);
 
   return { root, hit, roll };
+}
+
+/**
+ * Merge the meshes directly under `group` (not those in `keep`) into one mesh per material, in the group's frame.
+ * Meshes in one of the `matt` materials go into `paint`, their colour kept as a vertex colour.
+ */
+function bake(group, matt, paint, keep = []) {
+  const buckets = new Map();
+  for (const child of [...group.children]) {
+    if (keep.includes(child) || !(child instanceof THREE.Mesh)) continue;
+    const own = /** @type {THREE.MeshStandardMaterial} */ (child.material);
+    const painted = matt.includes(own);
+    const mat = painted ? paint : own;
+    child.updateMatrix();
+    const g = child.geometry.clone().applyMatrix4(child.matrix);
+    for (const name of Object.keys(g.attributes)) if (name !== 'position' && name !== 'normal') g.deleteAttribute(name);
+    if (painted) {
+      const rgb = new Float32Array(g.attributes.position.count * 3);
+      for (let i = 0; i < rgb.length; i += 3) own.color.toArray(rgb, i);
+      g.setAttribute('color', new THREE.BufferAttribute(rgb, 3));
+    }
+    const list = buckets.get(mat) ?? [];
+    list.push(g.index ? g.toNonIndexed() : g);
+    buckets.set(mat, list);
+    group.remove(child);
+  }
+  for (const [mat, geos] of buckets) {
+    const mesh = new THREE.Mesh(mergeGeometries(geos), mat);
+    mesh.name = mat.name;
+    group.add(mesh);
+    for (const g of geos) g.dispose();
+  }
 }
