@@ -158,3 +158,11 @@ Against `docs/agents/polish-pass.md`, version 0.3.0.
   too busy for a fair comparison, but building the two people (most of the start-up) went from about 5.5 s of
   CPU to under 1 s in Node.
 
+
+## Declutter and side panel (0.4.0)
+Only the main objects: the barred windows, the shelf of tins, the clock, the switchboard and the jute sacks and
+crates along the wall are gone; the floor with its lane, the plain wall and dado, the crate and the student stay.
+The magnified contact uses calmer colours (deep teal and moss instead of neon cyan and green). Kit 1.5.0 puts the
+panel beside the 3D, so the two-column sheet for wide frames, the 1280 × 800 type and the old phone-on-its-side rule
+are gone. No সামনে / ঘুরিয়ে দেখো buttons: the lab starts from the front, a drag turns it, and the small "front" icon
+then brings it back.

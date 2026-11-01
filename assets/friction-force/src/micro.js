@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { createArrow } from '@shared/arrow.js';
 import { textMesh } from '@shared/student/materials.js';
 import { TEETH, climb, gapOf, teethY } from './physics.js';
-export const MICRO_COLORS = { table: '#338d2e', block: '#08799a', weight: '#c4a0ff', heat: '#ff6b3d', field: 0x092c48 };
+export const MICRO_COLORS = { table: '#4f7d3a', block: '#2f7088', weight: '#c4a0ff', heat: '#ff6b3d', field: 0x092c48 };
 const SPAN = 12,
   TOP = 2.15,
   BOTTOM = -1.45,
@@ -69,8 +69,8 @@ export function createLens({ stage, t }) {
     upper.geometry = extrude(shape);
   }
   const beadGeo = new THREE.SphereGeometry(0.095, 8, 6), // a few pixels across: 8 × 6 is round enough
-    upperBead = mat('#19dce9'),
-    lowerBead = mat('#7fe237');
+    upperBead = mat('#6fb9c9'),
+    lowerBead = mat('#9cbf6a');
   function particles(parent, material, top) {
     const points = [];
     for (let x = -SPAN + 0.16; x < SPAN - 0.1; x += 0.31)
