@@ -1,5 +1,5 @@
-/* Newton's third law: the 3D view on top and the panel below at every size but the kit's short-and-wide one (a phone
-   on its side), where the panel sits on the right. The learn sheet, top to bottom: the two examples, the action (with
+/* Newton's third law: the panel beside the 3D on landscape frames and below it on portrait ones (kit 1.5.0). The
+   learn sheet, top to bottom: the two examples, the action (with
    পূর্ণ হিসাব beside it), the result line, the force-pair box (the two forces named with their size and their solid or
    dashed key, a small line of notes) and the rule. On wide frames the sheet is two columns under the view. The box
    keeps one height in every state of both examples, so the 3D view never changes size. The student view itself is
@@ -97,9 +97,8 @@ body.bg-transparent { background: transparent; }
  .nt .pvc-q-feedback { font-size: 11.5px; }
 }
 
-/* short and wide (a phone on its side): the panel on the right, as the kit puts it */
-@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
- .nt .pvc-panel { padding: 8px 10px; gap: 6px; overflow: hidden; }
+/* a narrow side panel beside the 3D (280–360 px): compact type, the caption on two lines */
+@container pvc-panel (max-width: 340px) {
  .nt .pvc-learn { gap: 5px; }
  .nt .pvc-examples button { min-height: 32px; }
  .nt .pvc-ex-word { font-size: 13.5px; }
@@ -117,38 +116,6 @@ body.bg-transparent { background: transparent; }
  .nt .pvc-q-text { font-size: 13px; --pvc-q-text-min: 3lh; }
  .nt .pvc-q-feedback { font-size: 12px; --pvc-q-feedback-min: 4lh; }
  .nt .pvc-opt { height: 40px; font-size: 12px; }
-}
-
-/* wide frames (book page, desktop): the sheet in two columns under the view, the lesson's steps shown */
-@container pvc (min-width: 720px) and (min-height: 461px) {
- .nt .pvc-learn { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: 'ex box' 'act box' 'out rule'; grid-template-rows: auto auto 1fr; align-content: start; gap: 6px 20px; }
- .nt .pvc-examples { grid-area: ex; }
- .nt .pvc-act-row { grid-area: act; align-self: start; }
- .nt .pvc-outcome { grid-area: out; }
- .nt .pvc-rule { grid-area: rule; }
- .nt-equations { grid-area: box; align-self: start; }
- .nt .pvc-outcome, .nt .pvc-rule { align-self: start; }
- .nt-progress { display: flex; }
- .nt[data-example='boat'] .nt-progress { visibility: hidden; }
- .nt .pvc-q-options { grid-template-columns: repeat(4, minmax(0, 1fr)); }
- .nt .pvc-opt { height: 46px; }
- .nt .pvc-q-feedback { --pvc-q-feedback-min: 2lh; }
-}
-@container pvc (min-width: 720px) and (max-width: 999px) and (min-height: 461px) {
- .nt .pvc-act-row .pvc-quiet > span { display: none; }
-}
-@container pvc (min-width: 1000px) and (min-height: 601px) {
- .nt .pvc-outcome { font-size: 16px; }
- .nt .pvc-rule { font-size: 15px; }
- .nt .nt-lesson-content { --row: 27px; }
- .nt-pull-row, .nt-simple-row { font-size: 14.5px; }
- .nt-caption { font-size: 12px; }
- .nt .nt-lesson-content { height: calc(2 * var(--row) + 1.4 * 12px + 3px); }
- .nt-reasons button { font-size: 13.5px; min-height: 44px; }
- .nt .pvc-anno { font-size: 14px; }
- .nt .pvc-q-text { font-size: 16px; }
- .nt .pvc-q-feedback { font-size: 14px; }
- .nt .pvc-opt { font-size: 14px; height: 50px; }
 }
 
 /* the full calculation, in its own dialog */
