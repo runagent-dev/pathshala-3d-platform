@@ -1,8 +1,7 @@
 // Air pressure (book page 142, topic 5.4), student view. A thin tin box (a cube 10 cm on a side, like the book's
-// চিত্র ৫.০৭) stands on a lab table in a school yard at golden hour, joined by a hose to a hand vacuum pump. Bold red
-// arrows press on every face from outside (the air's 10⁵ N/m², the same length everywhere); blue arrows, seen
-// through the tin, push back from inside just as hard. Each tap pumps one stroke: the inside pressure drops, the blue
-// arrows shrink, the red ones stay, and the box crumples in from every side while the camera leans in; the panel
+// চিত্র ৫.০৭) stands on a plain table, nothing else round it. One outlined red arrow presses on each open face from
+// outside (the air's 10⁵ N/m², the same length everywhere); one blue arrow on the left face pushes back from inside
+// just as hard. Each tap pumps one stroke: the inside pressure drops, the blue arrow shrinks, the red ones stay, and the box crumples in from every side while the camera leans in; the panel
 // works out the force left over on one face, F = (P outside − P inside) × A. Then the book's contrast: "what if air
 // pushed only from the top?" shows the wrong flattening (b) as a ghost, and "what really happens" replays the
 // all-sided crush (c). Two short steps: the air column over 1 m² (চিত্র ৫.০৬) whose weight, 10⁵ N, matches an
@@ -20,7 +19,7 @@ import { ICONS } from '@shared/student/icons.js';
 import { createI18n } from './i18n.js';
 import { fitPose } from './camera.js';
 import { createArrowSet } from './arrows.js';
-import { FACES, createCan, createHose, createPump } from './can.js';
+import { FACES, createCan } from './can.js';
 import { COLUMN_AT, ELEPHANT_AT, GROUND, PERSON_AT, createWorld, skyTexture, spaceTexture } from './scene.js';
 import {
   FACE_CM2,
@@ -61,8 +60,6 @@ export const DEFAULTS = {
 };
 
 const COLORS = { out: '#e03131', in: '#1971c2', W: '#7048e8', A: '#0c8599' };
-const PUMP_AT = new THREE.Vector3(-0.145, 0, -0.06);
-const GRID = [-0.5, 0.5]; // where the outside arrows touch each face (u, v in −1 … 1): four a face, the middle left clear
 const GAP = 0.0015; // the arrows' tips stop this far off the tin
 const STROKE_S = 1.5; // s: one stroke of the pump
 const SHAPE_S = 1.6; // s: the flattening (b), the replayed crush (c)
@@ -86,14 +83,8 @@ const LOOKS = {
 // the student's body: points on it where the arrows press (person coordinates) and the way out of the body there
 const BODY_POINTS = [
   [0, 1.585, 0, 0, 1, 0],
-  [0, 1.16, 0.108, 0, 0, 1],
-  [0, 0.94, 0.104, 0, 0, 1],
-  [-0.29, 1.2, 0, -0.95, 0.3, 0],
-  [0.29, 1.2, 0, 0.95, 0.3, 0],
   [-0.36, 0.9, 0.02, -1, 0.08, 0],
   [0.36, 0.9, 0.02, 1, 0.08, 0],
-  [-0.158, 0.5, 0, -1, 0, 0],
-  [0.158, 0.5, 0, 1, 0, 0],
 ].map(([x, y, z, nx, ny, nz]) => ({ p: new THREE.Vector3(x, y, z).add(PERSON_AT), n: new THREE.Vector3(nx, ny, nz).normalize() }));
 const BODY_LEN = 0.16; // m: the same outside and inside
 
@@ -111,6 +102,7 @@ export function createApp(root, options = {}) {
   root.lang = t.lang;
   root.tabIndex = 0;
   const ui = buildStudentShell(root, t, {
+    layout: 'side', // the panel beside the 3D on landscape frames (kit 1.5.0)
     learn: cleanSheet(t, {
       examples: { label: 'parts', results: false, items: PARTS.map((id) => ({ id, label: `chip_${id}` })) },
       quiet: [{ act: 'home', label: 'act_home', icon: ICONS.reset }],
@@ -121,7 +113,7 @@ export function createApp(root, options = {}) {
   const sheet = bindCleanSheet(ui.learn);
   const $ = ui.$;
 
-  // the readout: two pressures (or the column's weight and area) side by side, then the sum
+  // the readings: two pressures (or the column's weight and area) as a small list, then the formula
   const arrowIn =
     '<svg viewBox="0 0 24 12" aria-hidden="true"><path d="M2 6h13M11 1.5 17 6l-6 4.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 1v10" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>';
   const arrowOut =
@@ -136,10 +128,10 @@ export function createApp(root, options = {}) {
     <div class="ap-sum" data-sum aria-live="polite"></div>`;
   $('.pvc-act-row').after(read);
 
-  // a note on the stage (top left): what is made simple, or that a picture is imagined
-  const note = document.createElement('div');
+  // a small note in the panel, under the rule: what is made simple, or that a picture is imagined (off the 3D view)
+  const note = document.createElement('p');
   note.className = 'ap-note';
-  ui.stage.append(note);
+  ui.learn.append(note);
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 30, near: 0.02, far: 90, environment: 'room', environmentIntensity: 0.55 });
@@ -200,38 +192,21 @@ export function createApp(root, options = {}) {
   scene.add(world.root);
   const can = createCan();
   scene.add(can.root);
-  const pump = createPump();
-  pump.root.position.copy(PUMP_AT);
-  pump.root.rotation.y = -0.46;
-  pump.root.scale.setScalar(0.66);
-  scene.add(pump.root);
-  const hose = createHose();
-  scene.add(hose.mesh);
-  const inletWorld = new THREE.Vector3();
-  function syncHose() {
-    pump.root.updateMatrixWorld();
-    inletWorld.copy(pump.inlet);
-    pump.root.localToWorld(inletWorld);
-    hose.set(can.hoseAt, inletWorld);
-  }
 
-  // the arrows: outside (red, on the five open faces, four to a face round the middle, where it dents), inside (blue,
-  // one at the middle of each face, seen through the tin), the column's and the elephant's weight, the body's
+  // the arrows, few and outlined: one red arrow pressing in on each open face (the air outside, every side alike), and
+  // on the face toward the camera one blue arrow beside it pushing out (the air inside), which shrinks as it is pumped
+  // out; the column's and the elephant's weight, the body's
   const openFaces = FACES.filter((f) => f.id !== 'ny');
-  const outSpots = [];
-  for (const face of openFaces)
-    for (const v of GRID)
-      for (const u of GRID) {
-        outSpots.push({ face, u, v, top: face.id === 'py' });
-      }
-  const inSpots = FACES.map((face) => ({ face, u: 0, v: 0 }));
-  const outArrows = createArrowSet({ count: outSpots.length, color: COLORS.out, radius: 0.0027, name: 'OutsidePressure' });
+  const outSpots = openFaces.map((face) => ({ face, u: face.id === 'nx' ? -0.55 : 0, v: 0, top: face.id === 'py' }));
+  const inSpots = [{ face: FACES.find((f) => f.id === 'nx'), u: 0.55, v: 0 }];
+  const outArrows = createArrowSet({ count: outSpots.length, color: COLORS.out, radius: 0.0048, name: 'OutsidePressure' });
   const inArrows = createArrowSet({
     count: inSpots.length,
     color: COLORS.in,
     outline: '#ffffff',
-    radius: 0.0029,
-    xray: true,
+    radius: 0.0048,
+    head: 0.014,
+    headRadius: 0.011,
     name: 'InsidePressure',
   });
   const wArrows = createArrowSet({ count: 2, color: COLORS.W, radius: 0.04, pad: 0.018, name: 'Weights' });
@@ -279,9 +254,7 @@ export function createApp(root, options = {}) {
   let weights = [0, 0, 0];
   function syncCan() {
     weights = can.setShape(s.c, s.f, { ghost: s.ghost });
-    syncHose();
     layoutArrows();
-    pump.setDial(s.pIn / P_AIR);
     stage.invalidate();
   }
   function layoutArrows() {
@@ -298,9 +271,8 @@ export function createApp(root, options = {}) {
     const Li = arrowLength(s.pIn);
     inSpots.forEach((sp, i) => {
       if (!onCan || !s.show.inside || s.ghost || Li < 1e-4) return inArrows.hide(i);
-      can.pointAt(sp.face, sp.u, sp.v, weights, tmpA).addScaledVector(sp.face.n, -0.004);
-      tmpB.copy(tmpA).addScaledVector(sp.face.n, -Li);
-      inArrows.set(i, tmpB, sp.face.n, Li);
+      can.pointAt(sp.face, sp.u, sp.v, weights, tmpA).addScaledVector(sp.face.n, GAP);
+      inArrows.set(i, tmpA, sp.face.n, Li);
     });
     // the weights: down through the column, and down in front of the elephant
     const wOn = s.part === 'column' && s.weighed;
@@ -353,7 +325,6 @@ export function createApp(root, options = {}) {
         ease: ease.linear,
         onUpdate: (k) => {
           // the handle up (0 … 0.42) and back down (… 0.78)
-          pump.setStroke(k < 0.42 ? ease.inOutCubic(k / 0.42) : k < 0.78 ? 1 - ease.inOutCubic((k - 0.42) / 0.36) : 0);
           const kp = ease.inOutCubic(Math.min(1, Math.max(0, (k - 0.05) / 0.45)));
           s.pIn = from.pIn + (to.pIn - from.pIn) * kp;
           // the tin holds, then gives with a little spring (a buckle)
@@ -372,7 +343,6 @@ export function createApp(root, options = {}) {
       })
       .finished.then((done) => {
         if (!done || token !== s.run) return false;
-        pump.setStroke(0);
         s.pIn = to.pIn;
         s.c = to.c;
         s.zoom = 0;
@@ -487,7 +457,6 @@ export function createApp(root, options = {}) {
   function newCan() {
     s.run++;
     tweener.cancel('shape');
-    pump.setStroke(0);
     s.n = 0;
     s.pIn = P_AIR;
     s.c = 0;
@@ -504,7 +473,6 @@ export function createApp(root, options = {}) {
   function canTo(n, { whatIf = false } = {}) {
     s.run++;
     tweener.cancel('shape');
-    pump.setStroke(0);
     s.n = fixStrokes(n);
     s.pIn = insidePressure(s.n);
     s.c = crumpleFor(pressureDifference(s.n));
@@ -522,7 +490,7 @@ export function createApp(root, options = {}) {
     world.outdoors.visible = !inSpace;
     world.column.visible = !inSpace;
     world.elephant.visible = !inSpace;
-    can.root.visible = pump.root.visible = hose.mesh.visible = !inSpace;
+    can.root.visible = !inSpace;
     if (sky) {
       if (inSpace && !stars) stars = spaceTexture();
       scene.background = inSpace ? stars : sky;
@@ -545,7 +513,6 @@ export function createApp(root, options = {}) {
     if (s.busy === 'flat') s.f = 1;
     s.busy = '';
     s.zoom = 0;
-    pump.setStroke(0);
     s.part = part;
     if (part !== 'body') s.space = false;
     if (s.mode === 'explore') {
@@ -655,7 +622,7 @@ export function createApp(root, options = {}) {
       if (s.busy) action.hide('busy');
       else action.show('busy');
     }
-    // the note on the stage
+    // the note under the rule
     let n = '';
     let warn = false;
     if (s.part === 'can') {
@@ -732,8 +699,6 @@ export function createApp(root, options = {}) {
       bbox.min.set(-can.H * k, 0, -can.H * k);
       bbox.max.set(can.H * k, can.H * (s.ghost ? 0.75 : 2), can.H * k);
       out.push(screenBox(bbox));
-      bbox.setFromObject(pump.root);
-      out.push(screenBox(bbox));
     } else if (s.part === 'body') {
       bbox.setFromObject(world.person.root);
       out.push(screenBox(bbox));
@@ -743,7 +708,7 @@ export function createApp(root, options = {}) {
   const anno = createAnnotations({
     stage,
     layer: ui.annoLayer,
-    avoid: [ui.corner, ui.hint, note, arrowBoxes, () => action?.box(), () => action?.ringBox()],
+    avoid: [ui.corner, ui.hint, arrowBoxes, () => action?.box(), () => action?.ringBox()],
   });
   const spot = (dx, dy) => ({ dx, dy });
   const ABOVE = [spot(0, -22), spot(24, -22), spot(-24, -22), spot(0, -40), spot(40, -34), spot(-40, -34), spot(0, -58)];
@@ -758,9 +723,9 @@ export function createApp(root, options = {}) {
   const labelState = new Map();
   const want = new Map();
   /** The outside arrow labelled: the top row's middle on the face toward the camera's right (the +z face). */
-  const outIdx = outSpots.findIndex((sp) => sp.face.id === 'pz' && sp.u === 0.5 && sp.v === 0.5);
-  const topIdx = outSpots.findIndex((sp) => sp.face.id === 'py' && sp.u === 0.5 && sp.v === 0.5);
-  const inIdx = inSpots.findIndex((sp) => sp.face.id === 'pz');
+  const outIdx = outSpots.findIndex((sp) => sp.face.id === 'nx');
+  const topIdx = outSpots.findIndex((sp) => sp.face.id === 'py');
+  const inIdx = 0;
   function syncLabels() {
     want.clear();
     const compact = stage.height < 260 || stage.width < 340;
@@ -858,7 +823,7 @@ export function createApp(root, options = {}) {
       if (s.show.inside)
         want.set('bin', {
           text: T('lbl_body_in'),
-          point: () => pt('bin').copy(bodyIn.tips[4]),
+          point: () => pt('bin').copy(bodyIn.tips[2]),
           spots: [...RIGHT, ...BELOW],
           color: COLORS.in,
           own,
@@ -994,11 +959,10 @@ export function createApp(root, options = {}) {
           .setFromObject(world.column.children[0])
           .intersect(new THREE.Box3(new THREE.Vector3(-99, GROUND, -99), new THREE.Vector3(99, GROUND + 2.6, 99)));
       if (s.part === 'body') return s.space ? null : targetBox.setFromObject(world.person.root);
-      if (s.n < STROKES && !s.whatIf) return targetBox.setFromObject(pump.handle);
       return targetBox.setFromObject(s.ghost ? can.ghost.children[0] : can.mesh);
     },
     pad: 6,
-    avoid: [ui.corner, ui.hint, note, () => anno.boxes()],
+    avoid: [ui.corner, ui.hint, () => anno.boxes()],
     pulse: o.coach,
     onAct: () => {
       audio.unlock();
@@ -1008,7 +972,7 @@ export function createApp(root, options = {}) {
 
   const raycaster = new THREE.Raycaster();
   const ndc = new THREE.Vector2();
-  const hitCan = [can.mesh, ...pump.meshes, hose.mesh];
+  const hitCan = [can.mesh];
   const canvasPoint = (e) => {
     const r = stage.canvas.getBoundingClientRect();
     return { x: e.clientX - r.left, y: e.clientY - r.top };
@@ -1390,14 +1354,11 @@ export function createApp(root, options = {}) {
     },
     startPractice: () => quiz.start(),
     capture: (opts) => stage.capture(opts),
-    /** The tin box as it is now (crumpled or not), the hose and the pump, in metres. */
+    /** The tin box as it is now (crumpled or not), in metres. */
     exportRoot() {
       const g = new THREE.Group();
       g.name = 'AirPressure';
       g.add(can.bake());
-      const h = hose.mesh.clone();
-      h.geometry = hose.mesh.geometry.clone();
-      g.add(h, pump.root.clone(true));
       return g;
     },
   };
