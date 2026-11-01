@@ -2,29 +2,36 @@
 // stands on it). The clay in front of the two feet is dug away along z = 0, the line through the middle of both soles,
 // so its cut face shows the layers of clay: they dip under each shoe, deep and narrow under the heel, shallow and wide
 // under the sneaker. Behind: the red yard with a puddle, a turquoise wall with a yellow band, a blue wooden door,
-// magenta bougainvillea over the wall, clay pots of marigolds, a blue sky. The clay gives way where a sole presses
-// (setDepth): its surface (a fine grid near the feet) and the layers on the cut face move by fields worked out once
-// for each foot, scaled by how deep that foot is in.
+// magenta bougainvillea over the wall, clay pots of marigolds, a blue sky.
+//
+// The clay gives way where a sole presses (setDepth). How each vertex moves for one centimetre of sinking is worked out
+// once, when the yard is made (an attribute per foot), and the vertex shader scales it by how deep each foot is in (a
+// uniform). So sinking costs nothing on the CPU: no vertices are rewritten and no normals recomputed per frame. The
+// surface is fine only where the soles press; the cut face's layers are drawn per pixel from each point's depth before
+// it moved, so their thin pale streaks stay sharp on a modest grid.
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 const PIT = { x: 0.62, z: 0.62, depth: 0.34 }; // the dug-away part in front: |x| < 0.62, 0 < z < 0.62
 // the layers on the cut face, from the top: [depth of the bottom of the layer (m), colour]: a red-brown topsoil over
-// layers of ochre, buff and grey clay (red clay country, as in Madhupur), with thin pale streaks that show the bending
+// mottled yellow, grey and blue-grey clay (red clay country, as in Madhupur), with thin pale streaks that show the
+// bending. Cool and yellow tones below the topsoil, so the red pressure arrows stand out on them.
 const LAYERS = [
   [0.014, '#8c3a22'],
-  [0.019, '#f1d9a8'],
-  [0.038, '#b8662f'],
-  [0.043, '#f3dfb4'],
-  [0.066, '#cf8a3f'],
+  [0.019, '#f3dfb4'],
+  [0.038, '#c9973f'],
+  [0.043, '#f5e4bd'],
+  [0.066, '#9aa3a6'],
   [0.071, '#f6e6c2'],
-  [0.098, '#b9a596'],
-  [0.103, '#f2e2c4'],
-  [0.138, '#c98840'],
+  [0.098, '#d4b062'],
+  [0.103, '#f3e3c4'],
+  [0.138, '#8798a8'],
   [0.144, '#f0dcb2'],
-  [0.19, '#9f9a95'],
+  [0.19, '#b49c78'],
   [0.197, '#ead6ae'],
-  [1, '#a8693a'],
+  [1, '#76858f'],
 ];
+const FINE = 0.003; // the grid's step where the soles press (m)
 
 const smoothstep = (a, b, x) => {
   const k = Math.min(1, Math.max(0, (x - a) / (b - a)));
@@ -72,7 +79,7 @@ function canvasTexture(w, h, draw, repeat = null) {
     tex.wrapT = THREE.RepeatWrapping;
     tex.repeat.set(repeat[0], repeat[1]);
   }
-  tex.anisotropy = 8;
+  tex.anisotropy = 1; // the grain is noise: at a glancing angle the mipmaps blur it, which is fine (and cheap)
   return tex;
 }
 
@@ -86,6 +93,23 @@ function rng(seed) {
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
+}
+
+/**
+ * A matte material lit without the environment map: its light from the sky and the bounce comes from a constant fill
+ * instead (what the studio environment gives a matte surface, near enough). Sampling the environment per pixel is
+ * the dearest part of drawing the large clay and wall surfaces in software 3D; on clay it shows no reflection anyway.
+ */
+const ENV_FILL = new THREE.Color(0.68, 0.69, 0.72);
+function matte(material, key) {
+  const own = material.onBeforeCompile;
+  material.onBeforeCompile = (sh, renderer) => {
+    own?.call(material, sh, renderer);
+    sh.uniforms.uEnvFill = { value: ENV_FILL };
+    sh.fragmentShader = `#undef USE_ENVMAP\nuniform vec3 uEnvFill;\n${sh.fragmentShader.replace('#include <lights_fragment_maps>', '#include <lights_fragment_maps>\nirradiance += uEnvFill;\n#ifdef RE_IndirectSpecular\nradiance += uEnvFill;\niblIrradiance += uEnvFill;\n#endif')}`;
+  };
+  material.customProgramCacheKey = () => `pressure-matte-${key}`;
+  return material;
 }
 
 /** The clay's fine grain: a soft noise around white, multiplied with the clay's colours. */
@@ -111,11 +135,24 @@ function grainTexture(seed = 7) {
   );
 }
 
-/** A copy of a mesh with only the triangles whose corners all pass keep(x, y, z), its vertices packed. */
-function crop(mesh, keep) {
-  const g = mesh.geometry;
-  const pos = g.attributes.position;
-  const index = g.index.array;
+/** A grid geometry from its vertex count across (nx) and its arrays, two triangles per cell. */
+function grid(nx, ny, attrs) {
+  const idx = [];
+  for (let j = 0; j < ny - 1; j++)
+    for (let i = 0; i < nx - 1; i++) {
+      const a = j * nx + i;
+      idx.push(a, a + nx, a + 1, a + 1, a + nx, a + nx + 1);
+    }
+  const g = new THREE.BufferGeometry();
+  for (const [name, [arr, size]] of Object.entries(attrs)) g.setAttribute(name, new THREE.BufferAttribute(arr, size));
+  g.setIndex(idx);
+  return g;
+}
+
+/** A copy of a geometry with only the triangles whose corners all pass keep(x, y, z), its vertices packed. */
+function crop(geo, keep) {
+  const pos = geo.attributes.position;
+  const index = geo.index.array;
   const map = new Int32Array(pos.count).fill(-1);
   const out = [];
   let n = 0;
@@ -128,210 +165,294 @@ function crop(mesh, keep) {
     }
   }
   const copy = new THREE.BufferGeometry();
-  for (const [name, attr] of Object.entries(g.attributes)) {
+  for (const [name, attr] of Object.entries(geo.attributes)) {
     const size = attr.itemSize;
     const arr = new Float32Array(n * size);
     for (let v = 0; v < pos.count; v++) if (map[v] >= 0) for (let c = 0; c < size; c++) arr[map[v] * size + c] = attr.array[v * size + c];
     copy.setAttribute(name, new THREE.BufferAttribute(arr, size));
   }
   copy.setIndex(out);
-  const m = new THREE.Mesh(copy, mesh.material);
-  m.name = mesh.name;
+  return copy;
+}
+
+/** Plain-coloured parts merged into one mesh: each part's colour baked into a vertex colour, its placement baked in. */
+function mergeColoured(parts, material, name) {
+  const list = parts.map(({ geo, color, matrix }) => {
+    const g = (geo.index ? geo.toNonIndexed() : geo.clone()).applyMatrix4(matrix);
+    for (const n of Object.keys(g.attributes)) if (n !== 'position' && n !== 'normal') g.deleteAttribute(n);
+    const c = new THREE.Color(color);
+    const col = new Float32Array(g.attributes.position.count * 3);
+    for (let k = 0; k < col.length; k += 3) col.set([c.r, c.g, c.b], k);
+    g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    return g;
+  });
+  const geo = mergeGeometries(list);
+  for (const g of list) g.dispose();
+  const m = new THREE.Mesh(geo, material);
+  m.name = name;
   return m;
 }
 
 /**
- * feet: [{ x (where the foot's frame is along the yard), footprint: { sdf, box } }]. Returns { root, setDepth(i, d),
- * setDepths(list), depth(i), near() }.
+ * feet: [{ x (where the foot's frame is along the yard), footprint: { sdf, box } }] (two of them). Returns { root,
+ * setDepth(i, d), setDepths(list), depth(i), near() }.
  */
 export function createGround(feet) {
   const root = new THREE.Group();
   root.name = 'ClayYard';
   const grain = grainTexture();
   const tmpC = new THREE.Color();
+  const depths = feet.map(() => 0);
+  const uDepth = { value: new THREE.Vector2() }; // how deep each foot is in (m), shared by the surface and the cut face
+  const shade = new THREE.Color('#5e2412'); // pressed clay is darker (wetter and packed)
+  const packed = new THREE.Color('#4d4038');
+  const footAt = (f, x, z) => unitDepth(f.footprint.sdf(x - f.x, z));
 
-  // ── the surface of the clay behind the cut (z ≤ 0): fine near the feet ──
-  const xs = [...new Set([...axis(-7, -0.44, 0.44, 7, 0.003, 0.5), -PIT.x, PIT.x])].sort((a, b) => a - b);
-  const zs = axis(-9, -0.13, 0, 0, 0.003, 0.6);
-  const nx = xs.length;
-  const nz = zs.length;
-  const count = nx * nz;
-  const pos = new Float32Array(count * 3);
-  const uv = new Float32Array(count * 2);
-  const col = new Float32Array(count * 3);
-  const base = new Float32Array(count * 3); // the clay's own colour (a little drier, lighter, further back)
+  // ── the surface of the clay behind the cut (z ≤ 0) ──
+  // A fine patch where the soles press, and a coarse yard round it whose hole is a little smaller than the patch: the
+  // two overlap on a flat ring (the yard a hair lower), so no seam shows, and no long thin triangles cross the yard
+  // (software 3D draws slivers slowly).
+  const lo = Math.min(...feet.map((f) => f.x + f.footprint.box.x0)) - 0.03;
+  const hi = Math.max(...feet.map((f) => f.x + f.footprint.box.x1)) + 0.03;
+  const zFine = Math.max(...feet.map((f) => f.footprint.box.z)) + 0.03;
+  const PATCH = { x0: lo - 0.03, x1: hi + 0.03, z0: -(zFine + 0.03) };
+  const HOLE = { x0: lo, x1: hi, z0: -zFine };
   const wet = new THREE.Color('#953b22');
   const dry = new THREE.Color('#aa4a2a');
-  for (let j = 0; j < nz; j++)
-    for (let i = 0; i < nx; i++) {
-      const k = j * nx + i;
-      const x = xs[i];
-      const z = zs[j];
-      // gentle bumps far from the feet (old footprints, puddle edges), smooth near them
-      const far = smoothstep(0.5, 1.6, Math.hypot(x, z));
-      const y = far * (0.005 * Math.sin(x * 4.3 + z * 2.1) + 0.004 * Math.sin(z * 6.7 - x * 1.3));
-      pos.set([x, y, z], k * 3);
-      uv.set([x * 3.2, z * 3.2], k * 2);
-      // darker wet patches here and there, a little drier (lighter) further back
-      const patch = 0.5 + 0.5 * Math.sin(x * 5.1 + Math.sin(z * 3.3) * 2) * Math.sin(z * 4.3 - x * 1.7);
-      tmpC.copy(wet).lerp(dry, smoothstep(-0.8, -3.5, z) * 0.7 + 0.3 * patch);
-      base.set([tmpC.r, tmpC.g, tmpC.b], k * 3);
-      col.set([tmpC.r, tmpC.g, tmpC.b], k * 3);
-    }
-  const idx = [];
-  for (let j = 0; j < nz - 1; j++)
-    for (let i = 0; i < nx - 1; i++) {
-      const a = j * nx + i;
-      idx.push(a, a + nx, a + 1, a + 1, a + nx, a + nx + 1);
-    }
-  const topGeo = new THREE.BufferGeometry();
-  topGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  topGeo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
-  topGeo.setAttribute('color', new THREE.BufferAttribute(col, 3));
-  topGeo.setIndex(idx);
-  topGeo.computeVertexNormals();
+  const E = FINE / 2;
+  /** A grid of the clay's surface on xs × zs (cells for which skip(i, j) is true left out), `drop` m lower. */
+  function surface(xs, zs, { skip = () => false, drop = 0 } = {}) {
+    const nx = xs.length;
+    const nz = zs.length;
+    const count = nx * nz;
+    const pos = new Float32Array(count * 3);
+    const uv = new Float32Array(count * 2);
+    const col = new Float32Array(count * 3);
+    const dent = new Float32Array(count * 2); // each foot's unit depth here (× its depth in m = how far it moves)
+    const dentGrad = new Float32Array(count * 4); // its slope in x and z for each foot (for the normals)
+    for (let j = 0; j < nz; j++)
+      for (let i = 0; i < nx; i++) {
+        const k = j * nx + i;
+        const x = xs[i];
+        const z = zs[j];
+        // gentle bumps far from the feet (old footprints, puddle edges), smooth near them
+        const far = smoothstep(0.5, 1.6, Math.hypot(x, z));
+        const y = far * (0.005 * Math.sin(x * 4.3 + z * 2.1) + 0.004 * Math.sin(z * 6.7 - x * 1.3)) - drop;
+        pos.set([x, y, z], k * 3);
+        uv.set([x * 3.2, z * 3.2], k * 2);
+        // darker wet patches here and there, a little drier (lighter) further back
+        const patch = 0.5 + 0.5 * Math.sin(x * 5.1 + Math.sin(z * 3.3) * 2) * Math.sin(z * 4.3 - x * 1.7);
+        tmpC.copy(wet).lerp(dry, smoothstep(-0.8, -3.5, z) * 0.7 + 0.3 * patch);
+        col.set([tmpC.r, tmpC.g, tmpC.b], k * 3);
+        feet.forEach((f, n) => {
+          const { box } = f.footprint;
+          const lx = x - f.x;
+          if (Math.abs(z) > box.z + 0.03 || lx < box.x0 - 0.03 || lx > box.x1 + 0.03) return;
+          dent[k * 2 + n] = footAt(f, x, z);
+          dentGrad[k * 4 + n * 2] = (footAt(f, x + E, z) - footAt(f, x - E, z)) / (2 * E);
+          dentGrad[k * 4 + n * 2 + 1] = (footAt(f, x, z + E) - footAt(f, x, z - E)) / (2 * E);
+        });
+      }
+    const idx = [];
+    for (let j = 0; j < nz - 1; j++)
+      for (let i = 0; i < nx - 1; i++) {
+        if (skip(i, j)) continue;
+        const a = j * nx + i;
+        idx.push(a, a + nx, a + 1, a + 1, a + nx, a + nx + 1);
+      }
+    const g = new THREE.BufferGeometry();
+    for (const [name, arr, size] of [
+      ['position', pos, 3],
+      ['uv', uv, 2],
+      ['color', col, 3],
+      ['dent', dent, 2],
+      ['dentGrad', dentGrad, 4],
+    ])
+      g.setAttribute(name, new THREE.BufferAttribute(arr, size));
+    g.setIndex(idx);
+    g.computeVertexNormals();
+    return g;
+  }
+  const fineXs = [];
+  for (let x = PATCH.x0; x < PATCH.x1 + 1e-9; x += FINE) fineXs.push(x);
+  const fineZs = [];
+  for (let z = PATCH.z0; z < -1e-9; z += FINE) fineZs.push(z);
+  fineZs.push(0);
+  const yardXs = [...new Set([...axis(-7, HOLE.x0, HOLE.x1, 7, 0.02, 0.5), -PIT.x, PIT.x])].sort((a, b) => a - b);
+  const yardZs = axis(-9, HOLE.z0, 0, 0, 0.02, 0.6);
+  const inHole = (i, j) => yardXs[i] >= HOLE.x0 - 1e-9 && yardXs[i + 1] <= HOLE.x1 + 1e-9 && yardZs[j] >= HOLE.z0 - 1e-9;
+  const patchGeo = surface(fineXs, fineZs);
+  const topGeo = mergeGeometries([patchGeo, surface(yardXs, yardZs, { skip: inHole, drop: 0.0004 })]);
+  const dent = /** @type {Float32Array} */ (topGeo.attributes.dent.array);
   // wet clay has a soft sheen
   const clayMat = new THREE.MeshStandardMaterial({ map: grain, vertexColors: true, roughness: 0.5 });
+  clayMat.onBeforeCompile = (sh) => {
+    sh.uniforms.uDepth = uDepth;
+    sh.uniforms.uShade = { value: shade };
+    sh.vertexShader = sh.vertexShader
+      .replace('#include <common>', '#include <common>\nattribute vec2 dent;\nattribute vec4 dentGrad;\nuniform vec2 uDepth;\nuniform vec3 uShade;')
+      .replace(
+        '#include <beginnormal_vertex>',
+        '#include <beginnormal_vertex>\nobjectNormal = normalize(objectNormal - vec3(dot(dentGrad.xz, uDepth), 0.0, dot(dentGrad.yw, uDepth)));',
+      )
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\ntransformed.y += dot(dent, uDepth);')
+      .replace(
+        '#include <color_vertex>',
+        '#include <color_vertex>\n{ vec2 w = clamp(-dent, 0.0, 1.0) * clamp(uDepth / 0.02, 0.0, 1.0) * 0.45; vColor.rgb = mix(vColor.rgb, uShade, min(1.0, w.x + w.y)); }',
+      );
+  };
+  matte(clayMat, 'surface');
   const top = new THREE.Mesh(topGeo, clayMat);
   top.name = 'ClaySurface';
   top.receiveShadow = true;
   root.add(top);
-  const restY = Float32Array.from({ length: count }, (_, k) => pos[k * 3 + 1]);
 
-  // each foot's field on the surface: the unit depth at every vertex near it
-  const fields = feet.map((f) => {
-    const list = [];
-    const { box } = f.footprint;
-    for (let j = 0; j < nz; j++) {
-      const z = zs[j];
-      if (Math.abs(z) > box.z + 0.03) continue;
-      for (let i = 0; i < nx; i++) {
-        const lx = xs[i] - f.x;
-        if (lx < box.x0 - 0.03 || lx > box.x1 + 0.03) continue;
-        const u = unitDepth(f.footprint.sdf(lx, z));
-        if (Math.abs(u) > 1e-4) list.push(j * nx + i, u);
-      }
-    }
-    return Float32Array.from(list);
-  });
-
-  // ── the cut face (z = 0): the layers of clay, moved down under the feet, fading with depth ──
-  const fx = xs.filter((x) => x >= -PIT.x - 1e-9 && x <= PIT.x + 1e-9);
-  const hs = [];
-  for (let h = 0; h <= PIT.depth + 1e-9; h += 0.004) hs.push(h);
-  for (const [d] of LAYERS) if (d < PIT.depth) hs.push(d - 0.0006, d + 0.0006);
-  hs.sort((a, b) => a - b);
+  // ── the cut face (z = 0) and the pit's two side walls: the layers of clay, moved down under the feet ──
+  const fx = [...new Set([...axis(-PIT.x, lo, hi, PIT.x, FINE, 0.06)])].sort((a, b) => a - b);
   const fnx = fx.length;
-  const fnh = hs.length;
-  const fpos = new Float32Array(fnx * fnh * 3);
-  const fuv = new Float32Array(fnx * fnh * 2);
-  const fcol = new Float32Array(fnx * fnh * 3);
-  const layerAt = (h) => LAYERS.find(([d]) => h < d)?.[1] ?? LAYERS[LAYERS.length - 1][1];
-  for (let j = 0; j < fnh; j++) {
-    tmpC.set(layerAt(hs[j]));
-    for (let i = 0; i < fnx; i++) {
-      const k = j * fnx + i;
-      fpos.set([fx[i], -hs[j], 0], k * 3);
-      fuv.set([fx[i] * 3.2, -hs[j] * 3.2], k * 2);
-      fcol.set([tmpC.r, tmpC.g, tmpC.b], k * 3);
-    }
-  }
-  const fidx = [];
-  for (let j = 0; j < fnh - 1; j++)
-    for (let i = 0; i < fnx - 1; i++) {
-      const a = j * fnx + i;
-      fidx.push(a, a + fnx, a + 1, a + 1, a + fnx, a + fnx + 1);
-    }
-  const fbase = Float32Array.from(fcol);
-  const faceGeo = new THREE.BufferGeometry();
-  faceGeo.setAttribute('position', new THREE.BufferAttribute(fpos, 3));
-  faceGeo.setAttribute('uv', new THREE.BufferAttribute(fuv, 2));
-  faceGeo.setAttribute('color', new THREE.BufferAttribute(fcol, 3));
-  faceGeo.setIndex(fidx);
-  faceGeo.computeVertexNormals();
-  const faceMat = new THREE.MeshStandardMaterial({ map: grain, vertexColors: true, roughness: 0.85 });
-  const face = new THREE.Mesh(faceGeo, faceMat);
-  face.name = 'CutFace';
-  face.receiveShadow = true;
-  root.add(face);
-  // each foot's field on the face: the surface's dip along z = 0, spread wider and weaker with depth
-  const faceFields = feet.map((f) => {
-    const prof = fx.map((x) => unitDepth(f.footprint.sdf(x - f.x, 0)));
-    const out = new Float32Array(fnx * fnh);
+  /** Rows down the face: close under the surface, where the bending is sharp, further apart below. */
+  const rowsGraded = () => {
+    const hs = [];
+    for (let h = 0; h < PIT.depth - 1e-9; h += Math.min(0.014, 0.002 + 0.07 * h)) hs.push(h);
+    hs.push(PIT.depth);
+    return hs;
+  };
+  /** Each foot's shift on the face (m per m of sinking): the surface's dip along z = 0, wider and weaker with depth. */
+  function faceShifts(hs) {
+    const fnh = hs.length;
+    const out = new Float32Array(fnx * fnh * feet.length);
+    const w = fx.map((_, m) => (m > 0 && m < fnx - 1 ? (fx[m + 1] - fx[m - 1]) / 2 : FINE));
+    const prof = feet.map((f) => fx.map((x) => footAt(f, x, 0)));
+    const nf = feet.length;
+    const sums = new Float64Array(nf);
     for (let j = 0; j < fnh; j++) {
       const h = hs[j];
       const sigma = 0.0012 + 0.42 * h;
       const fade = Math.exp(-h / 0.17);
       for (let i = 0; i < fnx; i++) {
+        const k = (j * fnx + i) * nf;
         if (h < 1e-6) {
-          out[j * fnx + i] = prof[i];
+          for (let n = 0; n < nf; n++) out[k + n] = prof[n][i];
           continue;
         }
-        let sum = 0;
+        // a Gaussian blur along the face, the same weights for both feet
+        sums.fill(0);
         let wsum = 0;
         for (let m = 0; m < fnx; m++) {
           const dx = fx[m] - fx[i];
           if (Math.abs(dx) > 3 * sigma) continue;
-          const wgt = Math.exp(-0.5 * (dx / sigma) ** 2) * (m > 0 && m < fnx - 1 ? (fx[m + 1] - fx[m - 1]) / 2 : 0.003);
-          sum += prof[m] * wgt;
+          const wgt = Math.exp(-0.5 * (dx / sigma) ** 2) * w[m];
+          for (let n = 0; n < nf; n++) sums[n] += prof[n][m] * wgt;
           wsum += wgt;
         }
-        out[j * fnx + i] = wsum > 0 ? (sum / wsum) * fade : 0;
+        for (let n = 0; n < nf; n++) out[k + n] = wsum > 0 ? (sums[n] / wsum) * fade : 0;
       }
     }
     return out;
+  }
+  /** The face as a grid: rows hs down from the surface. */
+  function faceGeometry(hs) {
+    const fnh = hs.length;
+    const fpos = new Float32Array(fnx * fnh * 3);
+    const fuv = new Float32Array(fnx * fnh * 2);
+    const rest = new Float32Array(fnx * fnh);
+    for (let j = 0; j < fnh; j++)
+      for (let i = 0; i < fnx; i++) {
+        const k = j * fnx + i;
+        fpos.set([fx[i], -hs[j], 0], k * 3);
+        fuv.set([fx[i] * 3.2, -hs[j] * 3.2], k * 2);
+        rest[k] = hs[j];
+      }
+    const g = grid(fnx, fnh, { position: [fpos, 3], uv: [fuv, 2], shift: [faceShifts(hs), 2], rest: [rest, 1] });
+    g.computeVertexNormals();
+    return g;
+  }
+  const walls = [-1, 1].map((sx) => {
+    const g = new THREE.PlaneGeometry(PIT.z, PIT.depth, 1, 12);
+    const n = g.attributes.position.count;
+    const rest = new Float32Array(n);
+    for (let k = 0; k < n; k++) rest[k] = PIT.depth / 2 - g.attributes.position.getY(k);
+    g.setAttribute('rest', new THREE.BufferAttribute(rest, 1));
+    g.setAttribute('shift', new THREE.BufferAttribute(new Float32Array(n * 2), 2));
+    g.applyMatrix4(new THREE.Matrix4().makeRotationY(-sx * (Math.PI / 2)).setPosition(sx * PIT.x, -PIT.depth / 2, PIT.z / 2));
+    return g;
   });
+  const faceGeo = mergeGeometries([faceGeometry(rowsGraded()), ...walls]);
+  const layerD = new Float32Array(LAYERS.map(([d]) => d));
+  const layerC = new Float32Array(LAYERS.flatMap(([, c]) => tmpC.set(c).toArray()));
+  const faceMat = new THREE.MeshStandardMaterial({ map: grain, roughness: 0.85 });
+  faceMat.onBeforeCompile = (sh) => {
+    Object.assign(sh.uniforms, { uDepth, uLayerD: { value: layerD }, uLayerC: { value: layerC }, uPacked: { value: packed } });
+    sh.vertexShader = sh.vertexShader
+      .replace(
+        '#include <common>',
+        '#include <common>\nattribute vec2 shift;\nattribute float rest;\nuniform vec2 uDepth;\nvarying float vRest;\nvarying float vMove;',
+      )
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvMove = dot(shift, uDepth);\ntransformed.y += vMove;\nvRest = rest;');
+    sh.fragmentShader = sh.fragmentShader
+      .replace(
+        '#include <common>',
+        `#include <common>\nuniform float uLayerD[${LAYERS.length}];\nuniform vec3 uLayerC[${LAYERS.length}];\nuniform vec3 uPacked;\nvarying float vRest;\nvarying float vMove;`,
+      )
+      .replace(
+        '#include <color_fragment>',
+        `{
+          // the layer at this point's depth before it moved, its edges a pixel soft
+          float fw = max(fwidth(vRest), 1e-5) * 0.7;
+          vec3 lay = uLayerC[0];
+          for (int i = 0; i < ${LAYERS.length - 1}; i++) lay = mix(lay, uLayerC[i + 1], smoothstep(uLayerD[i] - fw, uLayerD[i] + fw, vRest));
+          // clay pushed down is packed tighter: darker, the more it moved
+          diffuseColor.rgb *= mix(lay, uPacked, clamp(-vMove * 22.0, 0.0, 0.6));
+        }`,
+      );
+  };
+  matte(faceMat, 'face');
+  const face = new THREE.Mesh(faceGeo, faceMat);
+  face.name = 'CutFace';
+  face.receiveShadow = true;
+  root.add(face);
 
-  // ── the pit: its floor and its two side walls; the yard in front of it and beside it ──
-  const pitMat = new THREE.MeshStandardMaterial({ map: grain, color: '#8f6a4a', roughness: 0.9 });
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(PIT.x * 2, PIT.z), pitMat);
-  floor.rotation.x = -Math.PI / 2;
-  floor.position.set(0, -PIT.depth, PIT.z / 2);
-  floor.receiveShadow = true;
+  // ── the pit's floor; the yard in front of it and beside it (one mesh) ──
+  const floor = new THREE.Mesh(
+    new THREE.PlaneGeometry(PIT.x * 2, PIT.z).rotateX(-Math.PI / 2).translate(0, -PIT.depth, PIT.z / 2),
+    matte(new THREE.MeshStandardMaterial({ map: grain, color: '#6f6a64', roughness: 0.9 }), 'floor'),
+  );
   floor.name = 'PitFloor';
   root.add(floor);
-  for (const sx of [-1, 1]) {
-    const g = new THREE.PlaneGeometry(PIT.z, PIT.depth, 1, 40);
-    const c = new Float32Array(g.attributes.position.count * 3);
-    for (let k = 0; k < g.attributes.position.count; k++) {
-      tmpC.set(layerAt(PIT.depth / 2 - g.attributes.position.getY(k)));
-      c.set([tmpC.r * 0.92, tmpC.g * 0.92, tmpC.b * 0.92], k * 3);
-    }
-    g.setAttribute('color', new THREE.BufferAttribute(c, 3));
-    const wall = new THREE.Mesh(g, faceMat);
-    wall.rotation.y = -sx * (Math.PI / 2);
-    wall.position.set(sx * PIT.x, -PIT.depth / 2, PIT.z / 2);
-    wall.name = 'PitWall';
-    wall.receiveShadow = true;
-    root.add(wall);
-  }
-  const groundMat = new THREE.MeshStandardMaterial({ map: grain, color: '#953b22', roughness: 0.5 });
-  const addGround = (x0, x1, z0, z1) => {
+  const yardPart = (x0, x1, z0, z1) => {
     const g = new THREE.PlaneGeometry(x1 - x0, z1 - z0);
     const uvs = g.attributes.uv;
     for (let k = 0; k < uvs.count; k++) uvs.setXY(k, (uvs.getX(k) * (x1 - x0) + x0) * 3.2, (uvs.getY(k) * (z1 - z0) + z0) * 3.2);
-    const m = new THREE.Mesh(g, groundMat);
-    m.rotation.x = -Math.PI / 2;
-    m.position.set((x0 + x1) / 2, 0, (z0 + z1) / 2);
-    m.receiveShadow = true;
-    m.name = 'Yard';
-    root.add(m);
+    return g.rotateX(-Math.PI / 2).translate((x0 + x1) / 2, 0, (z0 + z1) / 2);
   };
-  addGround(-7, -PIT.x, 0, PIT.z);
-  addGround(PIT.x, 7, 0, PIT.z);
-  addGround(-7, 7, PIT.z, 6);
+  const yard = new THREE.Mesh(
+    mergeGeometries([yardPart(-7, -PIT.x, 0, PIT.z), yardPart(PIT.x, 7, 0, PIT.z), yardPart(-7, 7, PIT.z, 6)]),
+    matte(new THREE.MeshStandardMaterial({ map: grain, color: '#953b22', roughness: 0.5 }), 'yard'),
+  );
+  yard.name = 'Yard';
+  root.add(yard);
 
   // ── behind: a puddle, a turquoise wall with a yellow band, a blue door, bougainvillea, pots of marigolds ──
+  // (plain-coloured parts merged into one matte and one glazed mesh: a handful of draw calls for the whole yard)
   const far = new THREE.Group();
   far.name = 'Yard';
   far.userData.noExport = true;
-  const mat = (color, roughness = 0.8, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness, ...extra });
-  const farClay = new THREE.Mesh(new THREE.PlaneGeometry(60, 30), mat('#a84a2a', 0.6));
+  const plain = [];
+  const glazed = [];
+  const M4 = new THREE.Matrix4();
+  const Q = new THREE.Quaternion();
+  const EU = new THREE.Euler();
+  const place = (x, y, z, { rx = 0, ry = 0, rz = 0, s = [1, 1, 1] } = {}) =>
+    M4.clone().compose(new THREE.Vector3(x, y, z), Q.clone().setFromEuler(EU.set(rx, ry, rz)), new THREE.Vector3(...s));
+  const farClay = new THREE.Mesh(new THREE.PlaneGeometry(60, 30), matte(new THREE.MeshStandardMaterial({ color: '#a84a2a', roughness: 0.6 }), 'far'));
   farClay.rotation.x = -Math.PI / 2;
   farClay.position.set(0, -0.01, -9 - 15 + 0.01);
   far.add(farClay);
   // a puddle from the rain, the sky in it
-  const puddle = new THREE.Mesh(new THREE.CircleGeometry(1, 40), mat('#5a8fd6', 0.06, { metalness: 0.2 }));
+  const puddle = new THREE.Mesh(
+    new THREE.CircleGeometry(1, 40),
+    new THREE.MeshStandardMaterial({ color: '#5a8fd6', roughness: 0.06, metalness: 0.2 }),
+  );
   puddle.rotation.x = -Math.PI / 2;
   puddle.scale.set(0.7, 0.32, 1);
   puddle.position.set(0.95, 0.006, -1.9);
@@ -355,163 +476,129 @@ export function createGround(feet) {
   });
   wallTex.wrapS = THREE.RepeatWrapping;
   wallTex.repeat.set(4, 1);
-  const wall = new THREE.Mesh(new THREE.BoxGeometry(16, WALL.h, 0.25), new THREE.MeshStandardMaterial({ map: wallTex, roughness: 0.9 }));
+  const wall = new THREE.Mesh(
+    new THREE.BoxGeometry(16, WALL.h, 0.25),
+    matte(new THREE.MeshStandardMaterial({ map: wallTex, roughness: 0.9 }), 'wall'),
+  );
   wall.position.set(0, WALL.h / 2, WALL.z);
   far.add(wall);
-  const band = new THREE.Mesh(new THREE.BoxGeometry(16, 0.16, 0.27), mat('#ffc21a', 0.7));
-  band.position.set(0, WALL.h - 0.2, WALL.z);
-  far.add(band);
-  const coping = new THREE.Mesh(new THREE.BoxGeometry(16.1, 0.08, 0.34), mat('#b5452a', 0.8));
-  coping.position.set(0, WALL.h + 0.04, WALL.z);
-  far.add(coping);
-  // a blue wooden door with an arch-shaped top panel in orange
-  const door = new THREE.Group();
-  const leaf = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.45, 0.06), mat('#1c4fc4', 0.55));
-  leaf.position.y = 0.725;
-  door.add(leaf);
-  for (const dx of [-0.25, 0.25]) {
-    const panel = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.9, 0.02), mat('#2f6ae6', 0.5));
-    panel.position.set(dx, 0.62, 0.04);
-    door.add(panel);
-  }
-  const lintel = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.1, 0.08), mat('#f76707', 0.6));
-  lintel.position.set(0, 1.5, 0.01);
-  door.add(lintel);
-  door.position.set(-1.7, 0, WALL.z + 0.13);
-  far.add(door);
+  plain.push({ geo: new THREE.BoxGeometry(16, 0.16, 0.27), color: '#ffc21a', matrix: place(0, WALL.h - 0.2, WALL.z) });
+  plain.push({ geo: new THREE.BoxGeometry(16.1, 0.08, 0.34), color: '#b5452a', matrix: place(0, WALL.h + 0.04, WALL.z) });
+  // a blue wooden door with an orange lintel
+  const door = { x: -1.7, z: WALL.z + 0.13 };
+  plain.push({ geo: new THREE.BoxGeometry(1.0, 1.45, 0.06), color: '#1c4fc4', matrix: place(door.x, 0.725, door.z) });
+  for (const dx of [-0.25, 0.25])
+    plain.push({ geo: new THREE.BoxGeometry(0.36, 0.9, 0.02), color: '#2f6ae6', matrix: place(door.x + dx, 0.62, door.z + 0.04) });
+  plain.push({ geo: new THREE.BoxGeometry(1.1, 0.1, 0.08), color: '#f76707', matrix: place(door.x, 1.5, door.z + 0.01) });
   // bougainvillea over the wall: magenta and pink clusters on dark stems
   const rand = rng(11);
-  const petal = [mat('#d6197a', 0.7), mat('#f0459a', 0.7), mat('#b5179e', 0.7)];
-  const stem = mat('#5c3320', 0.9);
+  const petal = ['#d6197a', '#f0459a', '#b5179e'];
+  const stemGeo = new THREE.CylinderGeometry(0.02, 0.03, 1.3, 8);
   const vine = (cx, spread, n) => {
-    for (let i = 0; i < 3; i++) {
-      const st = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.03, 1.3), stem);
-      st.position.set(cx - spread * 0.3 + i * spread * 0.3, WALL.h - 0.3, WALL.z + 0.2);
-      st.rotation.z = (i - 1) * 0.35;
-      far.add(st);
-    }
+    for (let i = 0; i < 3; i++)
+      plain.push({
+        geo: stemGeo,
+        color: '#5c3320',
+        matrix: place(cx - spread * 0.3 + i * spread * 0.3, WALL.h - 0.3, WALL.z + 0.2, { rz: (i - 1) * 0.35 }),
+      });
     for (let i = 0; i < n; i++) {
       const r = 0.12 + rand() * 0.16;
-      const blob = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 1), petal[i % 3]);
       const a = rand() * Math.PI;
-      blob.position.set(
-        cx + Math.cos(a) * spread * rand(),
-        WALL.h - 0.25 + Math.sin(a) * 0.5 * rand() + rand() * 0.35,
-        WALL.z + 0.12 + rand() * 0.25,
-      );
-      blob.scale.y = 0.75;
-      far.add(blob);
+      const x = cx + Math.cos(a) * spread * rand();
+      const y = WALL.h - 0.25 + Math.sin(a) * 0.5 * rand() + rand() * 0.35;
+      const z = WALL.z + 0.12 + rand() * 0.25;
+      plain.push({ geo: new THREE.IcosahedronGeometry(r, 1), color: petal[i % 3], matrix: place(x, y, z, { s: [1, 0.75, 1] }) });
     }
   };
   vine(1.4, 1.1, 26);
   vine(-4.2, 0.9, 18);
   vine(4.6, 0.8, 14);
   // glazed pots of orange and yellow marigolds at the foot of the wall: cobalt, yellow, white with blue
-  const potMats = [mat('#1d4fc4', 0.25), mat('#ffc21a', 0.3), mat('#1d4fc4', 0.25), mat('#f4efe6', 0.3)];
+  const potColors = ['#1d4fc4', '#ffc21a', '#1d4fc4', '#f4efe6'];
+  const flowers = ['#ff8c00', '#ffb703', '#f76707'];
+  const potBody = new THREE.CylinderGeometry(0.22, 0.15, 0.36, 24).translate(0, 0.18, 0);
+  const potRim = new THREE.TorusGeometry(0.22, 0.03, 8, 24).rotateX(Math.PI / 2).translate(0, 0.36, 0);
   let potN = 0;
-  const flowers = [mat('#ff8c00', 0.6), mat('#ffb703', 0.6), mat('#f76707', 0.6)];
   const pot = (x, s) => {
-    const potMat = potMats[potN++ % potMats.length];
-    const g = new THREE.Group();
-    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.15, 0.36, 24), potMat);
-    body.position.y = 0.18;
-    g.add(body);
-    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.03, 8, 24), potMat);
-    rim.rotation.x = Math.PI / 2;
-    rim.position.y = 0.36;
-    g.add(rim);
+    const color = potColors[potN++ % potColors.length];
+    const at = place(x, 0, WALL.z + 0.45, { s: [s, s, s] });
+    glazed.push({ geo: potBody, color, matrix: at }, { geo: potRim, color, matrix: at });
     for (let i = 0; i < 9; i++) {
-      const f = new THREE.Mesh(new THREE.IcosahedronGeometry(0.07 + rand() * 0.03, 1), flowers[i % 3]);
       const a = (i / 9) * Math.PI * 2;
       const r = i === 0 ? 0 : 0.12;
-      f.position.set(Math.cos(a) * r, 0.44 + rand() * 0.08, Math.sin(a) * r);
-      g.add(f);
+      const g = new THREE.IcosahedronGeometry(0.07 + rand() * 0.03, 1).translate(Math.cos(a) * r, 0.44 + rand() * 0.08, Math.sin(a) * r);
+      plain.push({ geo: g, color: flowers[i % 3], matrix: at });
     }
-    g.position.set(x, 0, WALL.z + 0.45);
-    g.scale.setScalar(s);
-    far.add(g);
   };
   pot(-0.6, 1);
   pot(-0.05, 0.85);
   pot(2.8, 1.1);
   pot(-3.2, 0.95);
-  // a few pebbles near the feet
-  const pebbleMat = [mat('#8d7b6a', 0.7), mat('#d9c6a5', 0.6), mat('#5c4a3d', 0.7)];
-  const near = new THREE.Group();
-  near.name = 'Pebbles';
+  far.add(mergeColoured(plain, matte(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.72 }), 'things'), 'YardMatte'));
+  far.add(mergeColoured(glazed, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.27 }), 'YardPots'));
+  // a few pebbles near the feet (their small shadows show)
+  const pebbleColors = ['#8d7b6a', '#d9c6a5', '#5c4a3d'];
+  const pebbleList = [];
   const r2 = rng(5);
   for (let i = 0; i < 18; i++) {
     const x = -0.9 + r2() * 1.8;
     const z = -0.2 - r2() * 1.2;
     if (Math.abs(x) < 0.38 && z > -0.2) continue;
-    const m = new THREE.Mesh(new THREE.IcosahedronGeometry(0.005 + r2() * 0.007, 1), pebbleMat[i % 3]);
-    m.position.set(x, 0.001, z);
-    m.rotation.set(r2(), r2() * 6, 0);
-    m.scale.y = 0.6;
-    m.castShadow = true;
-    near.add(m);
+    const geo = new THREE.IcosahedronGeometry(0.005 + r2() * 0.007, 1);
+    const matrix = place(x, 0.001, z, { rx: r2(), ry: r2() * 6, s: [1, 0.6, 1] });
+    pebbleList.push({ geo, color: pebbleColors[i % 3], matrix });
   }
-  root.add(near);
+  const pebbles = mergeColoured(pebbleList, matte(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.68 }), 'pebbles'), 'Pebbles');
+  pebbles.castShadow = true;
+  root.add(pebbles);
   root.add(far);
 
-  // ── the clay gives way ──
-  const depths = feet.map(() => 0);
-  const shade = new THREE.Color('#5e2412'); // pressed clay is darker (wetter and packed)
-  const packed = new THREE.Color('#5a3a26');
+  // ── the clay gives way: a uniform, read by the vertex shaders ──
   function apply() {
-    const p = topGeo.attributes.position;
-    const c = topGeo.attributes.color;
-    const arr = /** @type {Float32Array} */ (p.array);
-    const carr = /** @type {Float32Array} */ (c.array);
-    // back to rest near the feet
-    for (const field of fields)
-      for (let n = 0; n < field.length; n += 2) {
-        const k = field[n];
-        arr[k * 3 + 1] = restY[k];
-        carr[k * 3] = base[k * 3];
-        carr[k * 3 + 1] = base[k * 3 + 1];
-        carr[k * 3 + 2] = base[k * 3 + 2];
-      }
-    fields.forEach((field, f) => {
-      const d = depths[f];
-      if (d <= 0) return;
-      for (let n = 0; n < field.length; n += 2) {
-        const k = field[n];
-        const u = field[n + 1];
-        arr[k * 3 + 1] += u * d;
-        if (u < 0) {
-          const w = Math.min(1, -u) * Math.min(1, d / 0.02) * 0.45;
-          carr[k * 3] += (shade.r - carr[k * 3]) * w;
-          carr[k * 3 + 1] += (shade.g - carr[k * 3 + 1]) * w;
-          carr[k * 3 + 2] += (shade.b - carr[k * 3 + 2]) * w;
-        }
-      }
-    });
-    p.needsUpdate = true;
-    c.needsUpdate = true;
-    topGeo.computeVertexNormals();
-    // the cut face
-    const fp = faceGeo.attributes.position;
-    const fc = faceGeo.attributes.color;
-    const farr = /** @type {Float32Array} */ (fp.array);
-    const fcarr = /** @type {Float32Array} */ (fc.array);
-    for (let j = 0; j < fnh; j++)
-      for (let i = 0; i < fnx; i++) {
-        const k = j * fnx + i;
-        let move = 0;
-        faceFields.forEach((ff, f) => {
-          move += ff[k] * depths[f];
-        });
-        farr[k * 3 + 1] = -hs[j] + move;
-        // clay pushed down is packed tighter: darker, the more it moved
-        const w = Math.min(0.6, Math.max(0, -move) * 22);
-        fcarr[k * 3] = fbase[k * 3] + (packed.r - fbase[k * 3]) * w;
-        fcarr[k * 3 + 1] = fbase[k * 3 + 1] + (packed.g - fbase[k * 3 + 1]) * w;
-        fcarr[k * 3 + 2] = fbase[k * 3 + 2] + (packed.b - fbase[k * 3 + 2]) * w;
-      }
-    fp.needsUpdate = true;
-    fc.needsUpdate = true;
-    faceGeo.computeVertexNormals();
+    uDepth.value.set(depths[0] || 0, depths[1] || 0);
+  }
+
+  /** The surface as it is now (the prints baked in, normals and colours worked out), for the GLB. */
+  function bakedSurface() {
+    const g = topGeo.clone();
+    const p = g.attributes.position;
+    const c = g.attributes.color;
+    const [d0, d1] = [depths[0] || 0, depths[1] || 0];
+    for (let k = 0; k < p.count; k++) {
+      const u0 = dent[k * 2];
+      const u1 = dent[k * 2 + 1];
+      p.setY(k, p.getY(k) + u0 * d0 + u1 * d1);
+      const w = Math.min(1, (Math.min(1, Math.max(0, -u0)) * Math.min(1, d0 / 0.02) + Math.min(1, Math.max(0, -u1)) * Math.min(1, d1 / 0.02)) * 0.45);
+      tmpC.setRGB(c.getX(k), c.getY(k), c.getZ(k)).lerp(shade, w);
+      c.setXYZ(k, tmpC.r, tmpC.g, tmpC.b);
+    }
+    g.deleteAttribute('dent');
+    g.deleteAttribute('dentGrad');
+    g.computeVertexNormals();
+    return g;
+  }
+  /** The cut face as it is now, on a finer grid with a row at each layer's edge (vertex colours for the GLB). */
+  function bakedFace() {
+    const hs = rowsGraded();
+    for (const [d] of LAYERS) if (d < PIT.depth) hs.push(d - 0.0006, d + 0.0006);
+    hs.sort((a, b) => a - b);
+    const g = faceGeometry(hs);
+    const p = g.attributes.position;
+    const sh = g.attributes.shift;
+    const rest = g.attributes.rest;
+    const colors = new Float32Array(p.count * 3);
+    const layer = new THREE.Color();
+    for (let k = 0; k < p.count; k++) {
+      const move = sh.getX(k) * (depths[0] || 0) + sh.getY(k) * (depths[1] || 0);
+      p.setY(k, p.getY(k) + move);
+      layer.set(LAYERS.find(([d]) => rest.getX(k) < d)?.[1] ?? LAYERS[LAYERS.length - 1][1]);
+      layer.lerp(packed, Math.min(0.6, Math.max(0, -move) * 22));
+      colors.set([layer.r, layer.g, layer.b], k * 3);
+    }
+    g.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    g.deleteAttribute('shift');
+    g.deleteAttribute('rest');
+    return g;
   }
 
   return {
@@ -525,18 +612,25 @@ export function createGround(feet) {
       apply();
     },
     setDepths(list) {
-      let changed = false;
       list.forEach((d, i) => {
-        const v = Math.max(0, d);
-        if (Math.abs(v - depths[i]) >= 1e-6) {
-          depths[i] = v;
-          changed = true;
-        }
+        depths[i] = Math.max(0, d);
       });
-      if (changed) apply();
+      apply();
     },
     depth: (i) => depths[i],
     /** Copies of the clay near the feet, as it is now (with the prints), for the GLB: the surface, the cut face. */
-    near: () => [crop(top, (x, _y, z) => Math.abs(x) < 0.5 && z > -0.35), crop(face, (x) => Math.abs(x) < 0.5)],
+    near() {
+      const surface = new THREE.Mesh(
+        crop(bakedSurface(), (x, _y, z) => Math.abs(x) < 0.5 && z > -0.35),
+        new THREE.MeshStandardMaterial({ map: grain, vertexColors: true, roughness: 0.5 }),
+      );
+      surface.name = 'ClaySurface';
+      const cut = new THREE.Mesh(
+        crop(bakedFace(), (x) => Math.abs(x) < 0.5),
+        new THREE.MeshStandardMaterial({ map: grain, vertexColors: true, roughness: 0.85 }),
+      );
+      cut.name = 'CutFace';
+      return [surface, cut];
+    },
   };
 }

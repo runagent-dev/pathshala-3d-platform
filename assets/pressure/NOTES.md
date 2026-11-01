@@ -34,7 +34,8 @@ the heel (50 cm²) four times as deep as the sneaker (200 cm²) under the same f
   50 cm²; a white sneaker with a yellow stripe, navy trim and criss-cross laces (a man in blue jeans down over its
   collar), 200 cm². The clothes come down to the ankles so no leg-to-foot join shows (the owner found the first feet
   "very bad", 2026-10-31); shoes and feet are smooth ring bodies (src/surface.js), the sneaker's panels a texture.
-  The cut face shows red topsoil over ochre, buff and grey clay, so the red arrows stand out.
+  The cut face shows red topsoil over yellow, grey and blue-grey clay with pale streaks (since the polish pass:
+  cooler tones under the topsoil, so the red arrows stand out).
 - The clay in front is dug away along the line through the middle of both soles ("সামনের মাটি কেটে সরানো"), so the cut
   face shows thin light layers bending down under each shoe and darker packed clay: deep and narrow under the heel,
   shallow and wide under the sneaker. That is the mechanism the owner asked to see.
@@ -70,3 +71,45 @@ The page writes উপর. Scene words not on the page: হিল জুতা, 
 - The book's own picture (a stone pushed with one hand, two hands, the whole body) appears only in the test's third
   question and the rule's "ক্ষেত্রফল দ্বিগুণ হলে চাপ অর্ধেক"; the owner asked for the shoes.
 - The dimension [P] = ML⁻¹T⁻² is not shown (one idea per figure).
+
+## Polish pass (2026-11-01)
+
+The standard in `docs/agents/polish-pass.md`. Version 0.3.0.
+
+- **Layout.** The kit's layout is unchanged: the 3D on top and the panel below, and beside it only in short, wide frames.
+  On phones the formula is tighter: F and its stepper sit on one row with P = F / A written on one line. The stepper's
+  name moved into its tooltip and the buttons' labels. The rule keeps to two lines and the test's questions are
+  shorter. The 3D view now gets 383 of 700 px (55 %; it was 309 px) and 278 of 500 px at 800×500 (it was 241 px). The
+  panel keeps the same height in every state and in both languages.
+- **Text on the 3D view.** The two notes are now in the result line: "সামনের মাটি কেটে সরানো" before the feet stand, and
+  "লাল তীর যত লম্বা, চাপ তত বেশি" while they sink and after ("হিলের নিচে চাপ ৪ গুণ: লাল তীরও ৪ গুণ লম্বা"). This also
+  fixes a bug where the arrow note covered the heel's P label at 390×700. Only the labels with values stay on the view
+  (F, P, A, গভীর/অগভীর ছাপ). Their text is a little darker than the arrows (P #c92a2a, A #0b7a8a), so it reads at 4.5:1
+  or more on the white chips.
+- **Colour.** Under the red topsoil the cut face is now yellow, grey and blue-grey clay instead of orange-brown, so
+  the red pressure arrows (still outlined in white) stand out from what is behind them. The yard, the wall and the
+  sky are unchanged.
+- **Smooth.** The clay used to be re-shaped on the CPU every frame while the feet sank: 50,000 vertices moved, normals
+  recomputed and re-uploaded each frame. Now each vertex's dent per centimetre of sinking (and its slope, for the
+  normals) is worked out once, and the vertex shader scales it by how deep each foot is. Sinking only changes one
+  uniform. The cut face's layers are drawn per pixel from each point's depth before it moved, so the thin pale streaks
+  stay sharp on a coarser grid (about 45 rows instead of 110). The fine grid covers only the patch where the soles
+  press. A coarse yard surrounds it: before, the 3 mm columns ran to the wall as hair-thin slivers, which software 3D
+  draws slowly. The big matte surfaces (clay, cut face, yard, wall) are lit by a constant fill instead of sampling the
+  environment map per pixel, and the clay's grain has no anisotropic filtering. Both looked the same and were the
+  dearest part of a frame. Shadows are PCF 1024 in a box fitted to the feet and the legs' shadows, instead of VSM 2048
+  (VSM drew all of the clay into the shadow map too). The scenery behind is merged into one matte mesh and one glazed
+  mesh. The eyelets, the laces, the foot and leg, and the heel's post and edge are each one mesh. Segment counts on the
+  shoes and clothes are about a third lower. The 13 pressure arrows and the 2 force arrows are two instanced sets
+  (8 draw calls instead of 60). The tour's pauses are timers, not tweens, so a still camera draws no frames.
+- **Bugs.** The arrow note covered the heel's P label at 390×700 (fixed: the note is in the panel now). The panel grew in
+  English (fixed: shorter lines).
+
+| headless Chromium, software GL, shadows on | before | after |
+|---|---|---|
+| draw calls avg / max (390×700) | 146 / 168 | 64 / 86 |
+| triangles max | 467k | 202k |
+| texture memory | 57.5 MB (largest 2048) | 17.5 MB (largest 1024) |
+| time to ready (busy machine) | 2.0–2.5 s | 1.9 s |
+| one frame of a camera flight (1024×640, shadows off) | about 0.4 s | about 0.12 s |
+| text on the 3D view | 22 characters in 1 box (+ the arrow note) | 0 |

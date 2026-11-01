@@ -7,8 +7,8 @@
 // shows the prints, each with its area A. The student changes F with a stepper and the panel works out P = F/A for
 // both shoes live (the book's units, N ÷ m² = Pa). Then a five-question test. Built on the shared student kit.
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { createStage } from '@shared/stage.js';
-import { createArrow } from '@shared/arrow.js';
 import { createTweener, ease } from '@shared/tween.js';
 import { createAudio } from '@shared/student/audio.js';
 import { createAnnotations } from '@shared/student/annotations.js';
@@ -17,6 +17,7 @@ import { createAction } from '@shared/student/action.js';
 import { createQuiz } from '@shared/student/quiz.js';
 import { ICONS } from '@shared/student/icons.js';
 import { createI18n } from './i18n.js';
+import { createDownArrows } from './arrows.js';
 import { createGround } from './ground.js';
 import { fitPose } from './camera.js';
 import {
@@ -56,6 +57,8 @@ export const DEFAULTS = {
 };
 
 const COLORS = { F: '#7048e8', P: '#e03131', A: '#0c8599' };
+// the labels' text: the same hues a little darker, so they read at 4.5:1 or more on their white chips
+const INK = { F: '#7048e8', P: '#c92a2a', A: '#0b7a8a', D: '#5c3b1e' };
 const FEET_X = { heel: -0.165, sneaker: 0.168 };
 const HOVER = { ready: 0.045, lift: 0.17 }; // m above the clay
 const FORCE_LEN = 0.0002; // m of the force's arrow per newton (500 N → 10 cm)
@@ -77,7 +80,6 @@ const LOOKS = {
 const LIFT_DIR = new THREE.Vector3(0.08, 0.42, 1); // over the prints: from a little higher up
 const MARGIN = { top: 52, bottom: 14, side: 4 };
 const UPV = new THREE.Vector3(0, 1, 0);
-const DOWN = new THREE.Vector3(0, -1, 0);
 
 export function createApp(root, options = {}) {
   const o = { ...DEFAULTS, ...options };
@@ -94,7 +96,7 @@ export function createApp(root, options = {}) {
     learn: cleanSheet(t, {
       examples: { label: 'views', results: false, items: VIEWS.map((id) => ({ id, label: `chip_${id}` })) },
       quiet: [{ act: 'home', label: 'act_home', icon: ICONS.reset }],
-      lines: { action: 1, outcome: 1, rule: 3 },
+      lines: { action: 1, outcome: 1, rule: 2 },
     }),
     learnAlign: 'start',
   });
@@ -108,7 +110,7 @@ export function createApp(root, options = {}) {
     <div class="pr-top">
       <div class="pr-step">
         <span class="pr-name"><b class="c-F">F</b> <span>${t('name_F')}</span></span>
-        <span class="pr-ctl">
+        <span class="pr-ctl" title="${t('name_F')}">
           <button type="button" class="pr-pm" data-step="F" data-dir="-1" aria-label="${t('less_F')}">${ICONS.minus}</button>
           <output class="pr-val" data-val="F" aria-live="polite"></output>
           <span class="pr-unit">N</span>
@@ -116,23 +118,13 @@ export function createApp(root, options = {}) {
         </span>
       </div>
       <div class="pr-law" role="group" aria-label="${t('law_label')}">
-        <button type="button" class="pr-term c-P" data-term="P">P</button><span class="pr-op">=</span><span class="pr-frac"><button type="button" class="pr-term c-F" data-term="F">F</button><button type="button" class="pr-term c-A" data-term="A">A</button></span>
+        <button type="button" class="pr-term c-P" data-term="P">P</button><span class="pr-op">=</span><span class="pr-frac"><button type="button" class="pr-term c-F" data-term="F">F</button><span class="pr-slash" aria-hidden="true">/</span><button type="button" class="pr-term c-A" data-term="A">A</button></span>
       </div>
     </div>
     <div class="pr-sums">
       ${SHOE_IDS.map((id) => `<div class="pr-sum k-${id}"><span class="pr-shoe">${t(`shoe_${id}`)}</span><span class="pr-calc" data-sum="${id}"></span></div>`).join('')}
     </div>`;
   $('.pvc-act-row').after(eq);
-
-  // notes on the stage: the clay is cut open (top left), what the red arrows mean (bottom left, while they show)
-  const notes = document.createElement('div');
-  notes.className = 'pr-notes';
-  const cutNote = document.createElement('div');
-  cutNote.className = 'pr-note';
-  const arrowNote = document.createElement('div');
-  arrowNote.className = 'pr-note pr-note-p';
-  notes.append(cutNote);
-  ui.stage.append(notes, arrowNote);
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 30, near: 0.02, far: 140, environment: 'studio-light' });
@@ -180,12 +172,15 @@ export function createApp(root, options = {}) {
   scene.add(fill);
   if (o.shadow && o.bg !== 'transparent') {
     stage.renderer.shadowMap.enabled = true;
-    stage.renderer.shadowMap.type = THREE.VSMShadowMap;
+    // PCF: only what casts a shadow (the shoes, the legs, the pebbles) is drawn into the map, not the clay that
+    // receives it; a box fitted round the feet and the legs' shadows behind them
+    stage.renderer.shadowMap.type = THREE.PCFShadowMap;
     sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
-    Object.assign(sun.shadow.camera, { left: -0.7, right: 0.7, top: 0.7, bottom: -0.7, near: 1, far: 8 });
-    sun.shadow.radius = 4;
+    sun.shadow.mapSize.set(1024, 1024);
+    Object.assign(sun.shadow.camera, { left: -0.5, right: 0.5, top: 0.78, bottom: -0.3, near: 3, far: 5.2 });
+    sun.shadow.radius = 3;
     sun.shadow.bias = -0.0004;
+    sun.shadow.normalBias = 0.002;
   }
 
   const shoes = { heel: createHeelShoe(), sneaker: createSneaker() };
@@ -218,21 +213,20 @@ export function createApp(root, options = {}) {
   for (const id of SHOE_IDS) {
     const fp = shoes[id].footprint;
     // where the middle line is inside the footprint: the parts of the sole that touch, as seen on the cut face
-    const strips = new THREE.Group();
-    strips.name = `${id}AreaOnCut`;
+    const bars = [];
     let from = null;
     for (let x = fp.box.x0; x <= fp.box.x1 + 1e-9; x += 0.001) {
       const inside = fp.sdf(x, 0) < 0;
       if (inside && from == null) from = x;
       if ((!inside || x + 0.001 > fp.box.x1) && from != null) {
         const len = x - from;
-        const bar = new THREE.Mesh(new THREE.BoxGeometry(len, 0.005, 0.002), tealLine);
-        bar.position.set(from + len / 2, -0.0025, ZP - 0.004);
-        bar.renderOrder = 18;
-        strips.add(bar);
+        bars.push(new THREE.BoxGeometry(len, 0.005, 0.002).translate(from + len / 2, -0.0025, ZP - 0.004));
         from = null;
       }
     }
+    const strips = new THREE.Mesh(mergeGeometries(bars), tealLine);
+    strips.name = `${id}AreaOnCut`;
+    strips.renderOrder = 18;
     strips.userData.noExport = true;
     scene.add(strips);
     const print = new THREE.Mesh(new THREE.ShapeGeometry(fp.shapes(), 24), tealFill);
@@ -243,49 +237,21 @@ export function createApp(root, options = {}) {
     areas[id] = { strips, print };
   }
 
-  // the arrows are the point of the picture: thick, flat colour in a white outline, drawn over the scenery
-  const flat = (color) =>
-    new THREE.MeshBasicMaterial({ color, transparent: true, depthTest: false, depthWrite: false, fog: false, toneMapped: false });
-  const OUTLINE_FROM = new THREE.Vector3();
-  let thick = 1;
-  function boldArrow(name, color, r, padK = 0.65) {
-    const core = createArrow({ name, radius: r, head: r * 5, headRadius: r * 2.7, material: flat(color) });
-    const pad = r * padK;
-    const outline = createArrow({
-      name: `${name}Outline`,
-      radius: r + pad,
-      head: r * 5 + pad * 2.8,
-      headRadius: r * 2.7 + pad * 2,
-      material: flat('#ffffff'),
-    });
-    core.root.add(outline.root);
-    core.root.renderOrder = 21;
-    outline.root.renderOrder = 20;
-    core.root.userData.noExport = true;
-    return {
-      ...core,
-      scale(p = 1) {
-        core.root.scale.set(thick * p, p, thick * p);
-      },
-      set(from, dir, length) {
-        core.set(from, dir, length);
-        OUTLINE_FROM.set(0, -pad, 0);
-        if (length > 1e-9) outline.set(OUTLINE_FROM, UPV, length + pad * 2.2);
-        else outline.hide();
-      },
-    };
-  }
+  // the arrows are the point of the picture: thick, flat colour in a white outline, drawn over the scenery; all the
+  // force arrows are one instanced set, all the pressure arrows another (a few draw calls for all of them)
+  const forceSet = createDownArrows({ color: COLORS.F, count: SHOE_IDS.length, radius: 0.0058, name: 'Force' });
+  const nP = SHOE_IDS.reduce((n, id) => n + shoes[id].arrows.length, 0);
+  const pressureSet = createDownArrows({ color: COLORS.P, count: nP, radius: 0.0034, padK: 0.95, name: 'Pressure' }); // a wider outline: red on red clay
+  scene.add(forceSet.root, pressureSet.root);
   const arrows = {};
-  for (const id of SHOE_IDS) {
-    const F = boldArrow(`ForceOn_${id}`, COLORS.F, 0.0058);
-    scene.add(F.root);
-    const P = shoes[id].arrows.map((_, i) => {
-      const a = boldArrow(`Pressure_${id}_${i}`, COLORS.P, 0.0034, 0.95); // a wider outline: red on red clay
-      scene.add(a.root);
-      return a;
-    });
-    arrows[id] = { F, P };
-  }
+  let nextP = 0;
+  SHOE_IDS.forEach((id, k) => {
+    const first = nextP;
+    nextP += shoes[id].arrows.length;
+    arrows[id] = { F: k, P: shoes[id].arrows.map((_, i) => first + i) };
+  });
+  const forceOf = (id) => forceSet.arrows[arrows[id].F];
+  const pressuresOf = (id) => arrows[id].P.map((i) => pressureSet.arrows[i]);
 
   const tweener = createTweener();
   stage.addTicker((dt) => tweener.tick(dt));
@@ -317,7 +283,6 @@ export function createApp(root, options = {}) {
 
   const P = (id, F = s.F) => pressure(F, SHOES[id].area);
   const target = (id) => sinkDepth(P(id)); // how deep each shoe goes at this force
-  const standing = () => s.phase === 'stand' || s.phase === 'press';
   const touching = (id) => s.y[id] <= 1e-4;
 
   // ── the feet and the clay ───────────────────────────────────────────────────
@@ -339,26 +304,28 @@ export function createApp(root, options = {}) {
 
   function layoutArrows() {
     const perPx = (2 * camera.position.distanceTo(controls.target) * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))) / Math.max(1, stage.height);
-    thick = Math.min(2.2, Math.max(1, (3.6 * perPx) / 0.0068));
+    const thick = Math.min(2.2, Math.max(1, (3.6 * perPx) / 0.0068));
+    forceSet.thick(thick);
+    pressureSet.thick(thick);
     for (const id of SHOE_IDS) {
       const a = arrows[id];
-      a.F.hide();
-      for (const p of a.P) p.hide();
-      a.F.scale(1);
-      for (const p of a.P) p.scale(1);
+      forceSet.hide(a.F);
+      for (const i of a.P) pressureSet.hide(i);
       if (!touching(id) || s.phase === 'lift') continue;
       const x0 = FEET_X[id];
       const y0 = s.y[id];
       if (s.show.F) {
         const at = shoes[id].forceAt;
         const len = s.F * FORCE_LEN;
-        a.F.set(new THREE.Vector3(x0 + at.x, y0 + at.y + len, ZF), DOWN, len);
+        forceSet.place(a.F, x0 + at.x, y0 + at.y + len, ZF, len);
       }
       if (s.show.P) {
         const len = arrowLength(P(id));
-        shoes[id].arrows.forEach((ax, i) => a.P[i].set(new THREE.Vector3(x0 + ax, y0 - 0.001, ZP), DOWN, len));
+        shoes[id].arrows.forEach((ax, i) => pressureSet.place(a.P[i], x0 + ax, y0 - 0.001, ZP, len));
       }
     }
+    forceSet.commit();
+    pressureSet.commit();
   }
 
   /** Feet up, the clay smooth again (a new place to stand). */
@@ -471,7 +438,8 @@ export function createApp(root, options = {}) {
       if (token !== s.run) return;
     }
   }
-  const wait = (sec) => tweener.animate({ key: 'wait', duration: sec, onUpdate: () => {} }).finished;
+  // a plain timer, not a tween: holding the camera still must not draw frames
+  const wait = (sec) => new Promise((done) => setTimeout(done, sec * 1000));
 
   // ── the panel ───────────────────────────────────────────────────────────────
   function plan() {
@@ -504,7 +472,6 @@ export function createApp(root, options = {}) {
     return t('rule_start');
   }
 
-  let lastNotes = '';
   function refresh() {
     sheet.choose(s.look);
     sheet.outcome(outcomeHtml());
@@ -531,13 +498,6 @@ export function createApp(root, options = {}) {
       if (s.phase === 'ready') action.show('scene');
       else action.hide('scene');
     }
-    const pOn = s.show.P && standing() && SHOE_IDS.some(touching);
-    const key = `${stage.width < 560}|${pOn}|${stage.height}`;
-    if (key !== lastNotes) {
-      cutNote.textContent = t('note_cut');
-      arrowNote.textContent = pOn && stage.height >= 260 ? t('note_arrows') : '';
-      lastNotes = key;
-    }
     syncLabels();
     stage.invalidate();
   }
@@ -555,9 +515,9 @@ export function createApp(root, options = {}) {
   function arrowBoxes() {
     const list = [];
     for (const id of SHOE_IDS)
-      for (const a of [arrows[id].F, ...arrows[id].P]) {
-        if (!a.root.visible) continue;
-        toScreen(a.root.position, P0);
+      for (const a of [forceOf(id), ...pressuresOf(id)]) {
+        if (!a.visible) continue;
+        toScreen(a.from, P0);
         toScreen(a.tip, P1);
         list.push({
           left: Math.min(P0.x, P1.x) - 7,
@@ -591,7 +551,7 @@ export function createApp(root, options = {}) {
   const anno = createAnnotations({
     stage,
     layer: ui.annoLayer,
-    avoid: [ui.corner, ui.hint, notes, arrowNote, arrowBoxes, () => action?.box(), () => action?.ringBox()],
+    avoid: [ui.corner, ui.hint, arrowBoxes, () => action?.box(), () => action?.ringBox()],
   });
   const spot = (dx, dy) => ({ dx, dy });
   const RIGHT_OF = [spot(14, 0), spot(14, 16), spot(14, -16), spot(14, 32)];
@@ -615,18 +575,18 @@ export function createApp(root, options = {}) {
       if (onClay && s.show.F)
         want.set(`F-${id}`, {
           text: s.show.numbers ? t('lbl_F', { v: N(s.F) }) : 'F',
-          point: () => pts[id].F.copy(arrows[id].F.tip).addScaledVector(UPV, s.look === 'both' ? 0.05 : 0.022),
+          point: () => pts[id].F.copy(forceOf(id).tip).addScaledVector(UPV, s.look === 'both' ? 0.05 : 0.022),
           spots: id === 'heel' ? [...LEFT_OF, ...RIGHT_OF] : [...RIGHT_OF, ...LEFT_OF],
-          color: COLORS.F,
+          color: INK.F,
           own,
         });
       if (onClay && s.show.P) {
-        const mid = arrows[id].P[Math.floor(arrows[id].P.length / 2)];
+        const mid = pressuresOf(id)[Math.floor(arrows[id].P.length / 2)];
         want.set(`P-${id}`, {
           text: s.show.numbers ? t('lbl_P', { v: G(P(id)) }) : 'P',
           point: () => pts[id].P.copy(mid.tip),
           spots: [...BELOW, ...RIGHT_OF, ...LEFT_OF],
-          color: COLORS.P,
+          color: INK.P,
           own,
         });
       }
@@ -645,7 +605,7 @@ export function createApp(root, options = {}) {
           spots: lifted
             ? [spot(0, -18), spot(side * 16, -18), spot(-side * 16, -18), spot(0, -34)]
             : [spot(side * 14, 12), spot(side * 14, 28), spot(0, 24), spot(side * 20, 24), ...(id === 'heel' ? LEFT_OF : RIGHT_OF), ...BELOW],
-          color: COLORS.A,
+          color: INK.A,
           own,
           optional: !(s.mode === 'quiz' && s.look === id), // a question about one shoe needs its area on the picture
         });
@@ -655,7 +615,7 @@ export function createApp(root, options = {}) {
           text: t(id === 'heel' ? 'lbl_deep' : 'lbl_shallow'),
           point: () => pts[id].D.set(x0 + (id === 'heel' ? 0.068 : 0.0), -d - 0.004, ZP),
           spots: [spot(0, 22), spot(18, 22), spot(-18, 22), spot(0, 38)],
-          color: '#5c3b1e',
+          color: INK.D,
           own: [],
           optional: true,
         });
@@ -724,10 +684,9 @@ export function createApp(root, options = {}) {
         onUpdate: (k) => {
           camera.position.lerpVectors(p0, position, k);
           controls.target.lerpVectors(t0, aim, k);
-          controls.update();
+          controls.update(); // (the camera's change asks for the frame: no shadow map is redrawn for it)
           haze();
           layoutArrows();
-          stage.invalidate();
         },
       })
       .finished.then((done) => {
@@ -800,7 +759,7 @@ export function createApp(root, options = {}) {
       return feetBox;
     },
     pad: 6,
-    avoid: [ui.corner, ui.hint, notes, arrowNote, () => anno.boxes()],
+    avoid: [ui.corner, ui.hint, () => anno.boxes()],
     pulse: o.coach,
     onAct: () => {
       audio.unlock();
@@ -862,19 +821,19 @@ export function createApp(root, options = {}) {
     if (!s.focus) return false;
     const on = now() - s.focusAt < 1600;
     const k = on ? 1 + 0.3 * Math.sin(((now() - s.focusAt) / 1000) * Math.PI * 4) : 1;
-    for (const id of SHOE_IDS) {
-      arrows[id].F.scale(s.focus === 'F' ? k : 1);
-      for (const a of arrows[id].P) a.scale(s.focus === 'P' ? k : 1);
-      const ka = s.focus === 'A' ? k : 1;
-      areas[id].strips.scale.set(1, ka * ka, 1);
-      tealFill.opacity = s.focus === 'A' ? 0.3 + 0.3 * (k - 0.7) : 0.42;
-    }
+    forceSet.pulse(s.focus === 'F' ? k : 1);
+    pressureSet.pulse(s.focus === 'P' ? k : 1);
+    forceSet.commit();
+    pressureSet.commit();
+    const ka = s.focus === 'A' ? k : 1;
+    for (const id of SHOE_IDS) areas[id].strips.scale.set(1, ka * ka, 1);
+    tealFill.opacity = s.focus === 'A' ? 0.3 + 0.3 * (k - 0.7) : 0.42;
     if (!on) {
       s.focus = null;
       for (const b of eq.querySelectorAll('[data-term]')) b.classList.remove('on');
+      stage.invalidate(); // the last frame, back to size
     }
-    stage.invalidate();
-    return on;
+    return on; // true keeps the frames coming while the arrows pulse
   }
   stage.addTicker(() => tick());
   function focusTerm(k) {
@@ -999,7 +958,7 @@ export function createApp(root, options = {}) {
     emit,
     audio,
     questions: 5,
-    lines: { text: 3, feedback: 3 },
+    lines: { text: 2, feedback: 3 },
     action,
     hooks: {
       enter() {

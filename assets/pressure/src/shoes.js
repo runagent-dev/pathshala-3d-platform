@@ -8,6 +8,7 @@
 //   collar; it touches with the whole sole.
 // Bodies are built from rings (src/surface.js) and painted per vertex, so they are smooth and have no seams.
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { body, column, lerpTable, openFor, rim, ringAt, roundEnds, spread, tube } from './surface.js';
 
 const V = (x, y, z = 0) => new THREE.Vector3(x, y, z);
@@ -159,13 +160,13 @@ export function createHeelShoe() {
   const W = (x) => lerpTable(HEEL_W, x);
 
   // the sole: a thin dark layer under the whole shoe, up the arch to under the heel cup
-  const sole = body(spread(-0.1255, 0.1365, 90), (x) => ({ y: heelSoleY(x), w: W(x) + 0.0008, h: 0.0055, taper: 0.98, nt: 6, nb: 6 }), { seg: 40 });
+  const sole = body(spread(-0.1255, 0.1365, 72), (x) => ({ y: heelSoleY(x), w: W(x) + 0.0008, h: 0.0055, taper: 0.98, nt: 6, nb: 6 }), { seg: 32 });
   root.add(mesh(sole.geometry, soleMat, 'Sole'));
 
   // the foot inside: from the heel over the instep to the toes; the leg goes up from its ankle
   const footY = (x) => heelSoleY(x) + 0.0055;
   const foot = body(
-    spread(-0.1215, 0.1125, 90),
+    spread(-0.1215, 0.1125, 64),
     (x) => ({
       y: footY(x),
       w: Math.max(0.002, W(x) - 0.0022) * roundEnds(x, -0.1215, 0.1125, 0.006, 0.012),
@@ -174,29 +175,25 @@ export function createHeelShoe() {
       nt: 2.1,
       nb: 3,
     }),
-    { seg: 48 },
+    { seg: 32 },
   );
-  root.add(mesh(foot.geometry, skin, 'Foot'));
   const ankle = V(-0.084, 0.13);
-  const leg = tube(ankle, 0.13, 0.95, (_k, y) => lerpTable(LEG_R, y - 0.13), { lean: 0.03 });
-  root.add(mesh(leg, skin, 'Leg'));
+  // (the leg shows only at the ankle, under the salwar's hem: a few rows are enough; foot and leg are one mesh)
+  const leg = tube(ankle, 0.13, 0.95, (_k, y) => lerpTable(LEG_R, y - 0.13), { lean: 0.03, rows: 14, seg: 32 });
+  leg.deleteAttribute('uv');
+  root.add(mesh(mergeGeometries([foot.geometry, leg]), skin, 'FootAndLeg'));
 
   // the pump: a glossy shell round the last, its sides cut down to the topline; a nude lining inside; a rolled edge
-  const shellXs = spread(-0.1252, 0.1362, 110);
+  const shellXs = spread(-0.1252, 0.1362, 96);
   const pump = (x) => {
     const sec = { y: heelSoleY(x) + 0.0048, w: W(x) + 0.0016, h: lerpTable(PUMP_H, x), taper: 0.72, nt: 2.0, nb: 3.4 };
     return { ...sec, open: openFor(sec, lerpTable(PUMP_TOP, x)) };
   };
-  const outer = body(shellXs, pump, { seg: 64 });
-  const inner = body(shellXs, pump, { seg: 64, inset: 0.0013, flip: true });
+  const outer = body(shellXs, pump, { seg: 56 });
+  const inner = body(shellXs, pump, { seg: 56, inset: 0.0013, flip: true });
   root.add(mesh(outer.geometry, patent, 'Upper'));
   root.add(mesh(inner.geometry, lining, 'Lining', { shadow: false }));
-  const edge = new THREE.Mesh(
-    rim(outer.rows, inner.rows),
-    new THREE.MeshPhysicalMaterial({ color: '#1640c8', roughness: 0.3, clearcoat: 1, side: THREE.DoubleSide }),
-  );
-  edge.name = 'TopEdge';
-  root.add(edge);
+  const edge = rim(outer.rows, inner.rows);
 
   // the heel: a slim post under the heel cup, its back nearly straight, its front curved in, a black tip
   const seatTop = HEEL.seat + 0.004;
@@ -206,10 +203,11 @@ export function createHeelShoe() {
     rx: 0.0076 + 0.0128 * (1 - k) ** 2.2,
     rz: 0.0066 + 0.0104 * (1 - k) ** 1.8,
   }));
+  // the rolled top edge and the heel's post: the same glossy cobalt, seen from both sides, in one mesh
   const post = mesh(
-    column(levels),
-    new THREE.MeshPhysicalMaterial({ color: '#1640c8', roughness: 0.22, clearcoat: 1, side: THREE.DoubleSide }),
-    'HeelPost',
+    mergeGeometries([edge, column(levels)]),
+    new THREE.MeshPhysicalMaterial({ color: '#1640c8', roughness: 0.24, clearcoat: 1, side: THREE.DoubleSide }),
+    'HeelPostAndEdge',
   );
   root.add(post);
   const tipGeo = new THREE.CylinderGeometry(1, 0.95, 0.0085, 28);
@@ -263,7 +261,7 @@ export function createHeelShoe() {
       const r = 0.047 + 0.032 * smooth(0.16, 0.45, y);
       return r * (1 + 0.035 * smooth(0.17, 0.3, y) * Math.sin(7 * a + y * 9));
     },
-    { lean: 0.03, rows: 40, seg: 64 },
+    { lean: 0.03, rows: 30, seg: 48 },
   );
   const salwarMat = new THREE.MeshStandardMaterial({ map: cloth, roughness: 0.9, side: THREE.DoubleSide });
   root.add(mesh(salwar, salwarMat, 'Salwar'));
@@ -359,8 +357,8 @@ export function createSneaker() {
     const e = roundEnds(x, X0, X1, 0.012, 0.018);
     return { y: sneakerSoleY(x), w: (SW(x) + 0.003) * e, h: lerpTable(SOLE_H, x) * (0.45 + 0.55 * e), taper: 0.96, nt: 7, nb: 6 };
   };
-  const sole = body(spread(X0, X1, 110), soleSec, {
-    seg: 56,
+  const sole = body(spread(X0, X1, 96), soleSec, {
+    seg: 48,
     color: (c, x, _th, k) => {
       const up = k * soleSec(x).h;
       c.copy(up < 0.0065 ? C.gum : C.white);
@@ -377,7 +375,7 @@ export function createSneaker() {
   };
   const UX0 = X0 + 0.0015;
   const UX1 = X1 - 0.0015;
-  const upper = body(spread(UX0, UX1, 130), upperSec, { seg: 72, uv: true });
+  const upper = body(spread(UX0, UX1, 110), upperSec, { seg: 56, uv: true });
   // its panels, painted in (u along the shoe, v from the top middle down each side): smooth edges, stitched
   const upperTex = canvasTexture(1024, 512, (ctx, w, h) => {
     const U = (x) => ((x - UX0) / (UX1 - UX0)) * w;
@@ -476,21 +474,27 @@ export function createSneaker() {
     mid.y += lift;
     return new THREE.QuadraticBezierCurve3(a, mid, b);
   };
+  // (all the eyelets one mesh, all the lace one mesh)
+  const rings = [];
+  const laces = [];
+  const ringM = new THREE.Matrix4();
   for (let i = 0; i < LACE_X.length; i++) {
-    for (const side of [1, -1]) {
-      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.0026, 0.0009, 6, 14), ringMat);
-      ring.position.copy(eyelet(LACE_X[i], side));
-      ring.rotation.x = Math.PI / 2 - side * 0.5;
-      root.add(ring);
-    }
+    for (const side of [1, -1])
+      rings.push(
+        new THREE.TorusGeometry(0.0026, 0.0009, 6, 14).applyMatrix4(
+          ringM.makeRotationX(Math.PI / 2 - side * 0.5).setPosition(eyelet(LACE_X[i], side)),
+        ),
+      );
     if (i === LACE_X.length - 1) break;
     for (const side of [1, -1]) {
       const a = eyelet(LACE_X[i], side);
       const b = eyelet(LACE_X[i + 1], -side);
-      const lace = mesh(new THREE.TubeGeometry(span(a, b, 0.004), 12, 0.0017, 8), laceMat, 'Lace');
-      root.add(lace);
+      laces.push(new THREE.TubeGeometry(span(a, b, 0.004), 12, 0.0017, 8));
     }
   }
+  const eyelets = new THREE.Mesh(mergeGeometries(rings), ringMat);
+  eyelets.name = 'Eyelets';
+  root.add(eyelets);
   // a bow at the top lace: two loops and the ends
   const top = [eyelet(LACE_X[0], 1), eyelet(LACE_X[0], -1)];
   const knot = top[0]
@@ -500,10 +504,11 @@ export function createSneaker() {
     .add(V(0, 0.005, 0));
   for (const s of [1, -1]) {
     const loop = new THREE.CatmullRomCurve3([knot, knot.clone().add(V(-0.008, 0.006, s * 0.012)), knot.clone().add(V(0.004, 0.009, s * 0.02)), knot]);
-    root.add(mesh(new THREE.TubeGeometry(loop, 16, 0.0017, 8), laceMat, 'Bow'));
+    laces.push(new THREE.TubeGeometry(loop, 16, 0.0017, 8));
     const end = new THREE.CatmullRomCurve3([knot, knot.clone().add(V(0.012, -0.004, s * 0.008)), knot.clone().add(V(0.02, -0.012, s * 0.016))]);
-    root.add(mesh(new THREE.TubeGeometry(end, 10, 0.0016, 8), laceMat, 'LaceEnd'));
+    laces.push(new THREE.TubeGeometry(end, 10, 0.0016, 8));
   }
+  root.add(mesh(mergeGeometries(laces), laceMat, 'Laces'));
 
   // the jeans: indigo denim down over the shoe's collar, the hem a little lower at the back, with a slight break
   const rand = rng(9);
@@ -529,7 +534,7 @@ export function createSneaker() {
       // the break: soft folds just above the shoe
       return r * (1 + 0.04 * (1 - smooth(0.08, 0.2, y)) * Math.sin(5 * a + y * 40) + 0.015 * Math.sin(9 * a + y * 7));
     },
-    { lean: 0.02, rows: 44, seg: 64 },
+    { lean: 0.02, rows: 32, seg: 48 },
   );
   const jeansMat = new THREE.MeshStandardMaterial({ map: denim, roughness: 0.95, side: THREE.DoubleSide });
   root.add(mesh(jeans, jeansMat, 'Jeans'));
