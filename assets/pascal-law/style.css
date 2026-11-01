@@ -1,0 +1,157 @@
+/* Pascal's law: the page, the colours that carry meaning (the forces F₁ and F₂ orange, the weight W purple, the
+   pressure P red, the areas A₁ and A₂ teal, the distances d₁ and d₂ blue: the same as the arrows, bars and brackets in
+   src/app.js), the formula under the action (the push's stepper, P = F₁/A₁ = F₂/A₂ with a button for each symbol, the
+   sums), the notes on the stage, the labels on the picture and the test's answers. The rest of the panel is the kit's
+   clean sheet (../../shared/lib/student/student.css). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.pl { --c-F: #d9480f; --c-P: #d02424; --c-W: #6741d9; --c-A: #0b7a8a; --c-d: #1864c9; }
+.pl sub, .pl sup { font-size: 0.72em; line-height: 0; }
+.pl i { font-style: italic; }
+.pl .c-F { color: var(--c-F); font-weight: 700; }
+.pl .c-P { color: var(--c-P); font-weight: 700; }
+.pl .c-W { color: var(--c-W); font-weight: 700; }
+.pl .c-A { color: var(--c-A); font-weight: 700; }
+.pl .pvc-outcome { font-size: 15px; line-height: 1.5; }
+.pl .pvc-outcome b { font-size: 1.25em; color: var(--c-d); }
+.pl .pvc-rule { font-size: 14px; line-height: 1.45; }
+.pl .pvc-examples .pvc-ex-word { white-space: nowrap; }
+
+/* ── the formula: the stepper and the law on one row, then the sums ── */
+.pl-eq { display: flex; flex-direction: column; gap: 5px; }
+.pl-top { display: flex; align-items: flex-end; gap: 10px; }
+.pl-step { flex: 1 1 auto; display: flex; flex-direction: column; gap: 2px; min-width: 0; --c: var(--c-F); }
+.pl-name { font-size: 12.5px; line-height: 1.35; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pl-name b { font-size: 15px; margin-right: 1px; }
+.pl-ctl { display: flex; align-items: stretch; height: 38px; max-width: 200px; border: 1.5px solid color-mix(in srgb, var(--c) 40%, #fff); border-radius: 9px; overflow: hidden; background: var(--panel); }
+.pl-pm { flex: none; width: 42px; border: 0; padding: 0; display: grid; place-items: center; background: color-mix(in srgb, var(--c) 10%, #fff); color: var(--c); }
+.pl-pm:hover { background: color-mix(in srgb, var(--c) 18%, #fff); }
+.pl-pm svg { width: 18px; height: 18px; stroke-width: 2.4; }
+.pl-pm.off { color: var(--ink-3); opacity: 0.45; }
+.pl-pm:focus-visible { outline: 2px solid var(--c); outline-offset: -3px; }
+.pl-val { flex: 1; min-width: 2.2em; display: grid; place-items: center end; padding-right: 3px; font-size: 18px; font-weight: 700; color: var(--c); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pl-unit { display: grid; place-items: center start; padding: 0 6px 0 0; font-size: 13px; font-weight: 600; color: var(--c); }
+.pl-law { flex: none; display: flex; align-items: center; gap: 1px; padding: 2px 6px; border-radius: 10px; background: #fff4f0; box-shadow: inset 0 0 0 1.5px #f6c4b4; }
+.pl-frac { display: inline-flex; flex-direction: column; align-items: stretch; }
+.pl-frac .pl-term { min-height: 24px; font-size: 16px; }
+.pl-frac .pl-term:first-child { border-bottom: 2px solid var(--ink); border-radius: 6px 6px 0 0; }
+.pl-term { min-width: 30px; min-height: 30px; padding: 0 4px; border: 0; border-radius: 7px; background: none; font-size: 19px; font-weight: 700; line-height: 1; cursor: pointer; }
+.pl-term:hover { background: rgba(0, 0, 0, 0.05); }
+.pl-term.on { background: color-mix(in srgb, currentColor 16%, #fff); box-shadow: inset 0 0 0 2px currentColor; }
+.pl-term:focus-visible { outline: 2px solid currentColor; outline-offset: 1px; }
+.pl-op { font-size: 18px; font-weight: 600; color: var(--ink-2); padding: 0 2px; }
+.pl-sums { display: flex; flex-direction: column; font-size: 14.5px; line-height: 1.5; font-variant-numeric: tabular-nums; }
+.pl-sum { white-space: nowrap; color: var(--ink); }
+.pl-sum b { font-size: 1.05em; }
+.pl-f2 { display: flex; align-items: center; gap: 0 8px; }
+.pl-cmp { display: inline-flex; align-items: center; gap: 3px; padding: 0 7px 0 4px; border-radius: 99px; font-weight: 700; font-size: 13.5px; line-height: 1.55; }
+.pl-cmp svg { width: 15px; height: 15px; stroke-width: 3; }
+.pl-cmp.ok { background: #e6f6ea; color: #1f7a35; }
+.pl-cmp.no { background: #fdeaea; color: #b3261e; }
+
+/* notes on the stage: the cut and the scale (top left; the buttons are top right), the arrows' note (bottom left) */
+.pl-notes { position: absolute; left: 8px; top: 8px; z-index: 3; max-width: max(120px, min(56%, calc(100% - 232px))); pointer-events: none; }
+.pl-note { padding: 2px 8px; border-radius: 6px; background: rgba(255, 255, 255, 0.9); font-size: 12px; line-height: 1.4; color: var(--ink-2); }
+.pl-note-low { position: absolute; left: 8px; bottom: 6px; z-index: 3; max-width: calc(100% - 16px); color: var(--ink); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+.pl-note-low:empty { display: none; }
+
+/* labels on the picture: the symbol and its number in its colour, on white with a coloured border */
+.pvc-anno-force { --c: var(--ink); padding: 0 6px; border: 1.5px solid var(--c); border-radius: 5px; background: rgba(255, 255, 255, 0.96); color: var(--c); font-size: 13px; font-weight: 700; line-height: 1.5; white-space: nowrap; transition: none; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25); }
+.pvc-anno-force sub { font-size: 0.72em; line-height: 0; }
+.pvc-anno-lines .k-force { stroke-width: 2; }
+
+/* the test: answers in words or numbers, room kept for the question and the worked answer */
+.pl .pvc-opt { font-size: 14.5px; line-height: 1.25; }
+.pl-opt { display: block; white-space: normal; text-align: center; }
+.pl .pvc-q-text { font-size: 15px; }
+.pl .pvc-q-feedback { font-size: 14px; }
+
+/* phones */
+@container pvc (max-width: 420px) {
+  .pl-top { gap: 6px; }
+  .pl-pm { width: 36px; }
+  .pl-val { font-size: 17px; }
+  .pl-sums { font-size: 13.5px; }
+  .pl .pvc-rule { font-size: 13px; }
+  .pl .pvc-outcome { font-size: 14px; }
+  .pl .pvc-examples .pvc-ex-word { font-size: 14px; }
+  .pl-step { flex-direction: row; align-items: center; gap: 6px; }
+  .pl-name span { display: none; }
+  .pl-name b { font-size: 17px; }
+  .pl-ctl { flex: 1 1 auto; }
+  .pl-w { display: none; }
+}
+/* phones that are not tall: the stepper's name beside it, everything a little smaller */
+@container pvc (max-width: 560px) and (max-height: 600px) {
+  .pl-eq { gap: 3px; }
+  .pl-step { flex-direction: row; align-items: center; gap: 6px; }
+  .pl-name span { display: none; }
+  .pl-name b { font-size: 17px; }
+  .pl-ctl { flex: 1 1 auto; height: 32px; }
+  .pl-pm { width: 32px; }
+  .pl-law { padding: 0 6px; }
+  .pl-term { min-height: 26px; font-size: 16px; }
+  .pl-frac .pl-term { min-height: 24px; font-size: 14px; }
+  .pl-sums { font-size: 12.5px; line-height: 1.4; }
+  .pl-sum[data-sum='P'] { display: none; }
+  .pl .pvc-outcome { display: none; }
+  .pl .pvc-rule { font-size: 12px; line-height: 1.35; --pvc-rule-lines: 3; }
+  .pl .pvc-q-text { font-size: 14px; }
+  .pl .pvc-opt { font-size: 13.5px; }
+  .pl .pvc-q-feedback { font-size: 13px; }
+}
+/* short and wide (phone held sideways): the panel is beside the scene */
+@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
+  .pl-eq { gap: 3px; }
+  .pl-step { flex-direction: row; align-items: center; gap: 6px; }
+  .pl-name span { display: none; }
+  .pl-name b { font-size: 17px; }
+  .pl-ctl { flex: 1 1 auto; height: 32px; }
+  .pl-pm { width: 32px; }
+  .pl-law { padding: 0 6px; }
+  .pl-term { min-height: 26px; font-size: 16px; }
+  .pl-frac .pl-term { min-height: 24px; font-size: 14px; }
+  .pl-sums { font-size: 12.5px; line-height: 1.4; }
+  .pl .pvc-outcome { font-size: 13px; line-height: 1.4; }
+  .pl .pvc-rule { font-size: 12px; line-height: 1.35; }
+  .pl .pvc-q-text { font-size: 13.5px; }
+  .pl .pvc-opt { font-size: 13px; height: 42px; }
+  .pl .pvc-q-feedback { font-size: 12.5px; }
+  .pl .pvc-examples .pvc-ex-word { font-size: 13px; }
+}
+/* wide frames (tabs beside the sheet): the row and the action on the left, the formula on the right */
+@container pvc (min-width: 720px) and (min-height: 461px) {
+  .pl .pvc-learn { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); grid-template-areas: 'ex eq' 'act eq' 'out out' 'rule rule'; align-content: start; column-gap: 28px; row-gap: 6px; }
+  .pl .pvc-examples { grid-area: ex; }
+  .pl .pvc-act-row { grid-area: act; }
+  .pl-eq { grid-area: eq; align-self: center; }
+  .pl .pvc-outcome { grid-area: out; --pvc-outcome-lines: 1; }
+  .pl .pvc-rule { grid-area: rule; --pvc-rule-lines: 2; }
+}
+@container pvc (min-width: 720px) and (max-width: 1100px) and (min-height: 461px) {
+  .pl .pvc-quiet span { display: none; }
+  .pl-def { display: none; }
+}
+/* a narrow panel beside the scene: the formula and the sums smaller, so each sum keeps to one line */
+@container pvc-panel (max-width: 330px) {
+  .pl-def { display: none; }
+  .pl-w { display: none; }
+  .pl-f2 { flex-wrap: wrap; } /* beside the scene: a wrap never changes the scene's size */
+  .pl-name { flex: none; overflow: visible; }
+  .pl-top { gap: 5px; }
+  .pl-law { padding: 0 4px; }
+  .pl-term { min-width: 26px; padding: 0 2px; }
+  .pl-sums { font-size: 11.5px; }
+  .pl .pvc-examples .pvc-ex-word { font-size: 12px; }
+}
+/* the narrowest panel beside the scene (640 × 400): only the push's sum; the law box above shows P = F₁/A₁ */
+@container pvc-panel (max-width: 280px) {
+  .pl-sum[data-sum='P'] { display: none; }
+  .pl-name { display: none; } /* the stepper is labelled; the room goes to its buttons */
+  .pl-pm { width: 28px; }
+  .pl-val { min-width: 1.8em; font-size: 16px; }
+  .pl .pvc-outcome { font-size: 12.5px; }
+  .pl .pvc-rule { font-size: 11.5px; line-height: 1.3; }
+}

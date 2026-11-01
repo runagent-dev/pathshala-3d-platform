@@ -4,7 +4,7 @@
 // Scene units: metres. x = east, z = south (north is −z), y = up. A is at the origin.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { textMesh } from '@shared/student/materials.js';
+import { FONT } from '@shared/student/materials.js';
 import { COUNT, END, POSTS, ROAD, ROAD_END, STEP, STOPS, headingAt, pointAt } from './road.js';
 
 /** metres in a kilometre (the road data is in km, the scene in m) */
@@ -101,22 +101,32 @@ function postSpots() {
 }
 
 // ── the ground: fields, ponds, paths, the road's verge (one painted texture) ────────
-const FIELDS_CALM = ['#9fcb6b', '#a9d074', '#93c262', '#b4d57e', '#a3c96c'];
-const FIELDS_ALL = [...FIELDS_CALM, '#c6d982', '#d9d58a', '#e3d27a', '#cdbf91', '#efd54c'];
+// A spring countryside: mustard (সরিষা) in flower, ripe paddy, ploughed earth, a little lilac khesari. The ground the
+// orange arrow sweeps is pale harvested stubble, so the arrow (and the blue path on the road) stay the clearest things.
+const FIELDS_CALM = ['#ebd192', '#e7c985', '#efd9a0', '#e9cf8c'];
+const FIELDS_ALL = [
+  ...['#f2c230', '#efb920', '#f4cc45', '#f2c230', '#efb920', '#f4cc45'], // mustard
+  ...['#dba53a', '#d39a3a', '#dba53a', '#d39a3a'], // ripe paddy
+  ...['#b9805a', '#a9714f', '#b9805a'], // ploughed earth
+  '#b896cc', // khesari, here and there
+];
 
 function groundTexture(renderer, homes, ponds) {
+  // drawn in a W × H frame with square pixels, stored squeezed into 1024 × 1024 (a power of two; the tile's UVs
+  // stretch it back)
   const W = 1024;
   const H = Math.round((W * (BOARD.n1 - BOARD.n0)) / (BOARD.x1 - BOARD.x0));
   const sx = W / (BOARD.x1 - BOARD.x0);
   const c = document.createElement('canvas');
   c.width = W;
-  c.height = H;
-  const g = c.getContext('2d');
+  c.height = 1024;
+  const g = /** @type {CanvasRenderingContext2D} */ (c.getContext('2d'));
+  g.scale(1, 1024 / H);
   const P = (x, n) => [(x - BOARD.x0) * sx, (BOARD.n1 - n) * sx];
-  g.fillStyle = '#a8cd76';
+  g.fillStyle = '#e6c46a';
   g.fillRect(0, 0, W, H);
 
-  // rice fields on a slightly turned, jittered grid; the ground the arrow sweeps stays calm green
+  // fields on a slightly turned, jittered grid; the ground the arrow sweeps stays calm, pale stubble
   const r = rand(21);
   const a = 0.18;
   const U = [Math.cos(a) * 0.17, Math.sin(a) * 0.17];
@@ -142,25 +152,25 @@ function groundTexture(renderer, homes, ponds) {
       for (const [k, [x, n]] of q.entries()) g[k ? 'lineTo' : 'moveTo'](...P(x, n));
       g.closePath();
       g.fill();
-      g.strokeStyle = 'rgba(236, 230, 196, 0.9)'; // the ridges (আইল) between fields
+      g.strokeStyle = 'rgba(150, 105, 60, 0.45)'; // the ridges (আইল) between fields
       g.lineWidth = 1.6;
       g.stroke();
     }
   }
 
-  // homes: a darker grove of trees, a swept courtyard, a path to the road
+  // homes: a patch of swept, shaded earth under the trees, a courtyard, a path to the road
   for (const h of homes) {
     const [x, y] = P(h.x, h.n);
     const grad = g.createRadialGradient(x, y, 0, x, y, 0.24 * sx);
-    grad.addColorStop(0, 'rgba(98, 140, 72, 0.95)');
-    grad.addColorStop(0.7, 'rgba(110, 152, 80, 0.75)');
-    grad.addColorStop(1, 'rgba(110, 152, 80, 0)');
+    grad.addColorStop(0, 'rgba(176, 116, 66, 0.95)');
+    grad.addColorStop(0.7, 'rgba(196, 140, 84, 0.75)');
+    grad.addColorStop(1, 'rgba(196, 140, 84, 0)');
     g.fillStyle = grad;
     g.beginPath();
     g.arc(x, y, 0.24 * sx, 0, Math.PI * 2);
     g.fill();
   }
-  g.strokeStyle = '#d9c99e';
+  g.strokeStyle = '#d8b47a';
   g.lineCap = 'round';
   g.lineWidth = 0.018 * sx;
   for (const h of homes) {
@@ -181,7 +191,7 @@ function groundTexture(renderer, homes, ponds) {
   }
   for (const h of homes) {
     const [x, y] = P(h.x, h.n);
-    g.fillStyle = '#ddd0a8';
+    g.fillStyle = '#e8cf98';
     g.beginPath();
     g.arc(x, y, 0.055 * sx, 0, Math.PI * 2);
     g.fill();
@@ -192,8 +202,8 @@ function groundTexture(renderer, homes, ponds) {
     g.save();
     g.translate(x, y);
     g.rotate(p.turn);
-    g.fillStyle = '#6aa5c9';
-    g.strokeStyle = '#c9bd8f';
+    g.fillStyle = '#35a7d6';
+    g.strokeStyle = '#c9a46e';
     g.lineWidth = 0.012 * sx;
     g.beginPath();
     g.roundRect((-p.w / 2) * sx, (-p.h / 2) * sx, p.w * sx, p.h * sx, 0.025 * sx);
@@ -206,7 +216,7 @@ function groundTexture(renderer, homes, ponds) {
     g.restore();
   }
   // the road's dusty verge (the road itself is a mesh on top)
-  g.strokeStyle = '#d6cba3';
+  g.strokeStyle = '#e2c48e';
   g.lineWidth = 0.14 * sx;
   g.beginPath();
   for (let i = 0; i < COUNT; i++) g[i ? 'lineTo' : 'moveTo'](...P(ROAD[2 * i], ROAD[2 * i + 1]));
@@ -214,7 +224,7 @@ function groundTexture(renderer, homes, ponds) {
   g.stroke();
   g.beginPath();
   g.arc(...P(0, 0), 0.1 * sx, 0, Math.PI * 2);
-  g.fillStyle = '#d6cba3';
+  g.fillStyle = '#e2c48e';
   g.fill();
 
   // the scale bar: 1 km in four black and white quarters (its label "১ কিমি" stands above it)
@@ -277,22 +287,19 @@ function roadMesh() {
   geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
   geo.setIndex(idx);
   geo.computeVertexNormals();
-  const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ name: 'Road', vertexColors: true, roughness: 0.95, metalness: 0 }));
+  // the round open place at A where the ride starts, in the same mesh (one draw call)
+  const square = new THREE.CircleGeometry(62, 32).rotateX(-Math.PI / 2).translate(0, ROAD_Y - 0.5, 0);
+  square.deleteAttribute('uv');
+  const sq = new Float32Array(square.attributes.position.count * 3);
+  for (let i = 0; i < sq.length; i += 3) surface.toArray(sq, i);
+  square.setAttribute('color', new THREE.BufferAttribute(sq, 3));
+  const merged = mergeGeometries([geo, square]);
+  geo.dispose();
+  square.dispose();
+  const mesh = new THREE.Mesh(merged, new THREE.MeshStandardMaterial({ name: 'Road', vertexColors: true, roughness: 0.95, metalness: 0 }));
   mesh.name = 'Road';
   mesh.receiveShadow = true;
-  // the round open place at A where the ride starts
-  const square = new THREE.Mesh(
-    new THREE.CircleGeometry(62, 32),
-    new THREE.MeshStandardMaterial({ name: 'RoadA', color: '#7b8088', roughness: 0.95 }),
-  );
-  square.rotation.x = -Math.PI / 2;
-  square.position.y = ROAD_Y - 0.5;
-  square.receiveShadow = true;
-  square.name = 'Square A';
-  const group = new THREE.Group();
-  group.name = 'Road';
-  group.add(mesh, square);
-  return group;
+  return mesh;
 }
 
 // ── trees and houses (instanced) ────────────────────────────────────────────────
@@ -342,9 +349,11 @@ function placeVillage(ponds, posts) {
   return { round, palms, houses };
 }
 
-const TREE_GREENS = ['#4f8a3c', '#5c9a45', '#3f7a35', '#6aa64f', '#558f40'];
+// flowering trees (shimul, jarul…) and some dark mango: no orange-red, which would read like the orange arrow
+const TREE_CROWNS = ['#c92a3c', '#d6406f', '#8a46bf', '#9a52cf', '#c92a3c', '#2f6b3a', '#3b7a3f', '#2f6b3a'];
+const PALMS = ['#4d7a2e', '#466f2a', '#557f34'];
 const WALLS = ['#e9e2d2', '#cfa77d', '#b9c0c6', '#ddd2b8'];
-const ROOFS = ['#8e979f', '#a65a3f', '#4e806b', '#b04a3c'];
+const ROOFS = ['#8e979f', '#a65a3f', '#3b6fb0', '#b04a3c'];
 
 function villageMeshes(v) {
   const group = new THREE.Group();
@@ -384,7 +393,7 @@ function villageMeshes(v) {
     q.setFromAxisAngle(up, r() * 6.28);
     m.compose(toScene(t.x, t.n, 28 * t.s, p), q, s.set(size, size * (0.85 + r() * 0.25), size));
     crowns.setMatrixAt(i, m);
-    crowns.setColorAt(i, c.set(TREE_GREENS[Math.floor(r() * TREE_GREENS.length)]));
+    crowns.setColorAt(i, c.set(TREE_CROWNS[Math.floor(r() * TREE_CROWNS.length)]));
     m.compose(toScene(t.x, t.n, 0, p), q.identity(), s.set(size * 0.9, 34 * t.s, size * 0.9));
     trunks.setMatrixAt(i, m);
   }
@@ -409,7 +418,7 @@ function villageMeshes(v) {
     q.setFromAxisAngle(up, r() * 6.28);
     m.compose(top, q, s.setScalar(58 * t.s));
     palmCrowns.setMatrixAt(i, m);
-    palmCrowns.setColorAt(i, c.set(TREE_GREENS[Math.floor(r() * 3)]).offsetHSL(0.02, 0.05, 0.03));
+    palmCrowns.setColorAt(i, c.set(PALMS[Math.floor(r() * PALMS.length)]));
   }
   // houses with tin roofs (টিনের চালা)
   const wallGeo = new THREE.BoxGeometry(1, 1, 1);
@@ -480,27 +489,35 @@ function createLabels() {
   group.name = 'Labels';
   group.userData.noExport = true;
   const items = [];
-  const flat = (geo, color, order) => {
-    const mesh = new THREE.Mesh(
-      geo,
-      new THREE.MeshBasicMaterial({ color, depthTest: false, depthWrite: false, toneMapped: false, transparent: true }),
-    );
-    mesh.renderOrder = order;
-    return mesh;
+  // each label is drawn once into its own small canvas (at 3 px per label px, crisp on any phone) and shown on one
+  // quad: one draw call per label instead of three to six
+  const RES = 3;
+  const FONT_STACK = FONT;
+  /** A rounded rectangle, w × h px, its bottom edge `bottom` px above the label's bottom, centred. */
+  const roundRect = (g, W, H, w, h, r, bottom, color, alpha = 1) => {
+    g.globalAlpha = alpha;
+    g.fillStyle = color;
+    g.beginPath();
+    g.roundRect((W - w) / 2, H - bottom - h, w, h, r);
+    g.fill();
+    g.globalAlpha = 1;
   };
-  const rounded = (w, h, r) => {
-    const s = new THREE.Shape();
-    s.moveTo(-w / 2 + r, 0);
-    s.lineTo(w / 2 - r, 0);
-    s.quadraticCurveTo(w / 2, 0, w / 2, r);
-    s.lineTo(w / 2, h - r);
-    s.quadraticCurveTo(w / 2, h, w / 2 - r, h);
-    s.lineTo(-w / 2 + r, h);
-    s.quadraticCurveTo(-w / 2, h, -w / 2, h - r);
-    s.lineTo(-w / 2, r);
-    s.quadraticCurveTo(-w / 2, 0, -w / 2 + r, 0);
-    return new THREE.ShapeGeometry(s, 4);
+  const disc = (g, W, H, r, cy, color, alpha = 1) => {
+    g.globalAlpha = alpha;
+    g.fillStyle = color;
+    g.beginPath();
+    g.arc(W / 2, H - cy, r, 0, Math.PI * 2);
+    g.fill();
+    g.globalAlpha = 1;
   };
+  const write = (g, W, H, text, em, weight, color, cy) => {
+    g.font = `${weight} ${em}px ${FONT_STACK}`;
+    g.fillStyle = color;
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText(text, W / 2, H - cy + em * 0.04);
+  };
+  const measure = document.createElement('canvas').getContext('2d');
   /**
    * A label beside the road point `road`, on the side where `side` lies (the post), clear of the road: a number
    * plate, with a letter disc on top for A, B and C. km: the place it names (a tap on it rides there).
@@ -509,47 +526,57 @@ function createLabels() {
    */
   function add({ text, letter = null, road, side = null, km = null, kind = 'post' }) {
     const holder = new THREE.Group();
-    const order = 20 + items.length * 6; // each label's layers together, so overlapping labels never interleave
     const post = kind === 'post';
     // the posts' numbers are the road's kilometre scale: quiet grey, so the letters A, B, C and the two quantities
     // stand out (a post with a letter keeps its number dark: "B is at 4")
     const em = post ? 13 : 12.5;
-    const num = textMesh(text, em, { color: post ? (letter ? '#1d2733' : '#4f5a66') : '#3d4752', weight: post ? 700 : 600 });
-    num.geometry.computeBoundingBox();
-    const box = num.geometry.boundingBox;
-    const glyphs = box.max.x - box.min.x - 0.16 * em; // the glyphs' width (textMesh pads 0.16 em)
+    const weight = post ? 700 : 600;
+    measure.font = `${weight} ${em}px ${FONT_STACK}`;
+    const glyphs = measure.measureText(text).width;
     const pw = kind === 'north' ? 20 : Math.max(22, glyphs + (post ? 11 : 10));
     const ph = post ? 24 : 20;
     const h = letter ? ph + 3 + 33 : ph;
     const w = letter ? Math.max(pw + 3, 33) : post ? pw + 3 : pw;
-    const y0 = -h / 2; // the plate at the bottom, the letter above it
+    // the canvas, in label px (scaled by RES); 1 px of room all round so the edges stay soft
+    const W = Math.ceil(w + 2);
+    const H = Math.ceil(h + 2);
+    const c = document.createElement('canvas');
+    c.width = W * RES;
+    c.height = H * RES;
+    const g = /** @type {CanvasRenderingContext2D} */ (c.getContext('2d'));
+    g.scale(RES, RES);
+    g.translate(0, -1); // the label's bottom 1 px above the canvas's
     if (post) {
-      const border = flat(rounded(pw + 3, 24, 6), letter ? '#5b6672' : '#9aa4af', order);
-      border.position.y = y0;
-      const plate = flat(rounded(pw, 21, 5), '#ffffff', order + 1);
-      plate.position.y = y0 + 1.5;
-      holder.add(border, plate);
-    } else {
-      const plate = flat(kind === 'north' ? new THREE.CircleGeometry(10, 24).translate(0, 10, 0) : rounded(pw, ph, 10), '#ffffff', order + 1);
-      plate.material.opacity = 0.92;
-      plate.position.y = y0;
-      holder.add(plate);
-    }
-    num.position.y = y0 + ph / 2 + 0.3;
-    num.material.depthTest = false;
-    num.renderOrder = order + 2;
-    holder.add(num);
+      roundRect(g, W, H, pw + 3, 24, 6, 0, letter ? '#5b6672' : '#9aa4af');
+      roundRect(g, W, H, pw, 21, 5, 1.5, '#ffffff');
+    } else if (kind === 'north') disc(g, W, H, 10, 10, '#ffffff', 0.92);
+    else roundRect(g, W, H, pw, ph, 10, 0, '#ffffff', 0.92);
+    write(g, W, H, text, em, weight, post ? (letter ? '#1d2733' : '#4f5a66') : '#3d4752', ph / 2 + 0.3);
     if (letter) {
-      const cy = y0 + 27 + 16.5;
-      const ring = flat(new THREE.CircleGeometry(16.5, 32), '#ffffff', order + 3);
-      const disc = flat(new THREE.CircleGeometry(15, 32), '#1d2733', order + 4);
-      const glyph = textMesh(letter, 19, { color: '#ffffff', weight: 700 });
-      ring.position.y = disc.position.y = cy;
-      glyph.position.y = cy + 0.6;
-      glyph.material.depthTest = false;
-      glyph.renderOrder = order + 5;
-      holder.add(ring, disc, glyph);
+      const cy = 27 + 16.5;
+      disc(g, W, H, 16.5, cy, '#ffffff');
+      disc(g, W, H, 15, cy, '#1d2733');
+      write(g, W, H, letter, 19, 700, '#ffffff', cy + 0.6);
     }
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.premultiplyAlpha = true;
+    const quad = new THREE.Mesh(
+      new THREE.PlaneGeometry(W, H),
+      new THREE.MeshBasicMaterial({
+        map: tex,
+        transparent: true,
+        // the canvas is premultiplied (no grey fringe round the white plates)
+        blending: THREE.CustomBlending,
+        blendSrc: THREE.OneFactor,
+        blendDst: THREE.OneMinusSrcAlphaFactor,
+        depthTest: false,
+        depthWrite: false,
+        toneMapped: false,
+      }),
+    );
+    quad.renderOrder = 20 + items.length; // overlapping labels keep one order
+    holder.add(quad);
     holder.userData = { road: road.clone(), side: side?.clone() ?? null, w, h, km, rect: { x0: 0, y0: 0, x1: 0, y1: 0 } };
     group.add(holder);
     items.push(holder);
@@ -617,47 +644,78 @@ function createLabels() {
 }
 
 // ── kilometre posts (মাইলফলক-like) and the compass ───────────────────────────────
-function postMesh() {
-  const body = new THREE.BoxGeometry(26, 52, 14);
-  body.translate(0, 26, 0);
+function postGeometry() {
+  const paint = (geo, color) => {
+    const c = new THREE.Color(color);
+    const rgb = new Float32Array(geo.attributes.position.count * 3);
+    for (let i = 0; i < rgb.length; i += 3) c.toArray(rgb, i);
+    geo.setAttribute('color', new THREE.BufferAttribute(rgb, 3));
+    return geo;
+  };
+  const body = paint(new THREE.BoxGeometry(26, 52, 14).translate(0, 26, 0), '#f4f2ec');
   const cap = new THREE.CylinderGeometry(13, 13, 14, 16, 1, false, 0, Math.PI);
   cap.rotateZ(Math.PI / 2);
   cap.rotateY(Math.PI / 2);
   cap.translate(0, 52, 0);
-  return { body, cap };
+  return mergeGeometries([body, paint(cap, '#f2c230')]);
 }
 
 function compass(labels, t) {
-  const group = new THREE.Group();
-  group.name = 'Compass';
   const at = toScene(COMPASS_AT.x, COMPASS_AT.n, ROAD_Y);
-  group.position.copy(at);
-  const disc = new THREE.Mesh(
-    new THREE.CircleGeometry(78, 40),
-    new THREE.MeshStandardMaterial({ name: 'CompassDisc', color: '#ffffff', roughness: 0.8 }),
-  );
-  disc.rotation.x = -Math.PI / 2;
-  const ring = new THREE.Mesh(
-    new THREE.RingGeometry(70, 78, 40),
-    new THREE.MeshStandardMaterial({ name: 'CompassRing', color: '#5b6672', roughness: 0.8 }),
-  );
-  ring.rotation.x = -Math.PI / 2;
-  ring.position.y = 0.6;
+  /** a flat part lying on the ground, h m up, in one colour */
+  const part = (geo, color, h) => {
+    geo.rotateX(-Math.PI / 2).translate(0, h, 0);
+    if (geo.attributes.uv) geo.deleteAttribute('uv');
+    const c = new THREE.Color(color);
+    const rgb = new Float32Array(geo.attributes.position.count * 3);
+    for (let i = 0; i < rgb.length; i += 3) c.toArray(rgb, i);
+    geo.setAttribute('color', new THREE.BufferAttribute(rgb, 3));
+    return geo;
+  };
   const needle = (color, dir) => {
     const s = new THREE.Shape();
     s.moveTo(0, 64 * dir);
     s.lineTo(14, 0);
     s.lineTo(-14, 0);
     s.closePath();
-    const mesh = new THREE.Mesh(new THREE.ShapeGeometry(s), new THREE.MeshStandardMaterial({ name: 'Needle', color, roughness: 0.6 }));
-    mesh.rotation.x = -Math.PI / 2;
-    mesh.position.y = 1.2;
-    return mesh;
+    return part(new THREE.ShapeGeometry(s), color, 1.2);
   };
-  group.add(disc, ring, needle('#1d2733', 1), needle('#aab3bd', -1));
-  for (const m of group.children) m.receiveShadow = true;
+  // one mesh: the white disc, its grey ring and the two needles (dark north, pale south)
+  const geo = mergeGeometries([
+    part(new THREE.CircleGeometry(78, 40), '#ffffff', 0),
+    part(new THREE.RingGeometry(70, 78, 40), '#5b6672', 0.6),
+    needle('#1d2733', 1),
+    needle('#aab3bd', -1),
+  ]);
+  const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ name: 'Compass', vertexColors: true, roughness: 0.75 }));
+  mesh.name = 'Compass';
+  mesh.position.copy(at);
+  mesh.receiveShadow = true;
   labels.add({ text: t('north_short'), road: toScene(COMPASS_AT.x, COMPASS_AT.n + 0.064, ROAD_Y + 2), kind: 'north' });
-  return group;
+  return mesh;
+}
+
+/**
+ * The tile: a box w × d m, THICK deep, its top at y = 0. Two draw groups: the soil round the sides (shaded from a
+ * warm brown at the top to a darker one below, as layered earth) and the fields on top. No bottom face.
+ */
+function tileGeometry(w, d) {
+  const box = new THREE.BoxGeometry(w, THICK, d);
+  box.translate(0, -THICK / 2, 0);
+  const pos = box.attributes.position;
+  const top = new THREE.Color('#a67c55');
+  const low = new THREE.Color('#6f4f36');
+  const rgb = new Float32Array(pos.count * 3);
+  for (let i = 0; i < pos.count; i++) (pos.getY(i) > -1 ? top : low).toArray(rgb, i * 3);
+  box.setAttribute('color', new THREE.BufferAttribute(rgb, 3));
+  // BoxGeometry's faces: +x, −x, +y (top), −y (bottom), +z, −z, six indices each
+  const idx = box.index.array;
+  const face = (k) => Array.from(idx.slice(k * 6, k * 6 + 6));
+  box.setIndex([...face(0), ...face(1), ...face(4), ...face(5), ...face(2)]);
+  box.clearGroups();
+  box.addGroup(0, 24, 0);
+  box.addGroup(24, 6, 1);
+  return box;
 }
 
 /**
@@ -685,11 +743,11 @@ export function createCountryside({ renderer, t, N }) {
   // the tile: fields on top, soil on the sides
   const w = (BOARD.x1 - BOARD.x0) * KM;
   const d = (BOARD.n1 - BOARD.n0) * KM;
-  const soil = new THREE.MeshStandardMaterial({ name: 'Soil', color: '#9a7656', roughness: 1 });
+  const soil = new THREE.MeshStandardMaterial({ name: 'Soil', vertexColors: true, roughness: 1 });
   const fields = new THREE.MeshStandardMaterial({ name: 'Fields', map: groundTexture(renderer, HOMES, ponds), roughness: 1, metalness: 0 });
-  const tile = new THREE.Mesh(new THREE.BoxGeometry(w, THICK, d), [soil, soil, fields, soil, soil, soil]);
+  const tile = new THREE.Mesh(tileGeometry(w, d), [soil, fields]);
   tile.name = 'Fields';
-  tile.position.copy(toScene((BOARD.x0 + BOARD.x1) / 2, (BOARD.n0 + BOARD.n1) / 2, -THICK / 2));
+  tile.position.copy(toScene((BOARD.x0 + BOARD.x1) / 2, (BOARD.n0 + BOARD.n1) / 2, 0));
   tile.receiveShadow = true;
   root.add(tile);
 
@@ -698,29 +756,31 @@ export function createCountryside({ renderer, t, N }) {
   root.add(villageMeshes(village));
 
   const labels = createLabels();
-  const { body, cap } = postMesh();
-  const white = new THREE.MeshStandardMaterial({ name: 'PostWhite', color: '#f4f2ec', roughness: 0.8 });
-  const yellow = new THREE.MeshStandardMaterial({ name: 'PostYellow', color: '#f2c230', roughness: 0.7 });
-  const postGroup = new THREE.Group();
-  postGroup.name = 'Kilometre posts';
   const letters = Object.fromEntries(Object.entries(STOPS).map(([k, v]) => [v, k]));
   const stops = {}; // A, B, C: their labels (the action's ring goes round the next one) and road points
-  for (const sp of spots) {
-    const post = new THREE.Group();
-    post.name = `Post ${sp.km} km`;
-    post.position.copy(toScene(sp.x, sp.n, 0));
+  // the kilometre posts: one instanced mesh (a tap on one rides to its km: userData.kms[instanceId])
+  const postGroup = new THREE.InstancedMesh(
+    postGeometry(),
+    new THREE.MeshStandardMaterial({ name: 'Posts', vertexColors: true, roughness: 0.75 }),
+    spots.length,
+  );
+  postGroup.name = 'Kilometre posts';
+  postGroup.castShadow = true;
+  postGroup.userData.kms = spots.map((sp) => sp.km);
+  const m4 = new THREE.Matrix4();
+  const q4 = new THREE.Quaternion();
+  const one = new THREE.Vector3(1, 1, 1);
+  const yAxis = new THREE.Vector3(0, 1, 0);
+  for (const [i, sp] of spots.entries()) {
     const p = pointAt(sp.km);
-    post.rotation.y = Math.atan2(sp.x - p.x, -(sp.n - p.y)); // the face looks at the road
-    const b = new THREE.Mesh(body, white);
-    const c = new THREE.Mesh(cap, yellow);
-    b.castShadow = c.castShadow = true;
-    post.add(b, c);
-    post.userData.km = sp.km;
-    postGroup.add(post);
+    q4.setFromAxisAngle(yAxis, Math.atan2(sp.x - p.x, -(sp.n - p.y))); // the face looks at the road
+    postGroup.setMatrixAt(i, m4.compose(toScene(sp.x, sp.n, 0), q4, one));
     const at = toScene(p.x, p.y, ROAD_Y);
     const label = labels.add({ text: N(sp.km), letter: letters[sp.km] ?? null, road: at, side: toScene(sp.x, sp.n, ROAD_Y), km: sp.km });
     if (letters[sp.km]) stops[letters[sp.km]] = { label, road: at, km: sp.km };
   }
+  postGroup.instanceMatrix.needsUpdate = true;
+  postGroup.computeBoundingSphere();
   root.add(postGroup);
   root.add(compass(labels, t));
   labels.add({ text: t('scale_km', { n: 1 }), road: toScene((SCALE_BAR.x0 + SCALE_BAR.x1) / 2, SCALE_BAR.n + 0.025, ROAD_Y), kind: 'note' });

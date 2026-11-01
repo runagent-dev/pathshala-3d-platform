@@ -1,0 +1,185 @@
+/* Efficiency: the page, the colours that carry meaning (প্রদত্ত শক্তি blue, like the current in the cables; কাজের
+   পরিমাণ green, the load going up; শক্তির অপচয় orange, split into heat in the motor (orange), heat by friction (red)
+   and sound (purple), as on the machine), the flow diagram in the result line, the formula with its term buttons, the
+   gauge on the view and the worked example's sheet. The panel is the kit's clean sheet (../../shared/lib/student/). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.ef {
+  --c-in: #1c6fd9; --c-wk: #2b8a3e; --c-ws: #e8590c; --c-mo: #f76707; --c-fr: #e03131; --c-so: #7048e8;
+  /* the same colours as text on white, each at least 4.5 : 1 */
+  --c-in-text: #1864c7; --c-wk-text: #237032; --c-ws-text: #c2410c; --c-mo-text: #c2410c; --c-fr-text: #c92a2a; --c-so-text: #6741d9;
+}
+
+/* ── the flow (result line) ── */
+.ef .pvc-outcome { display: block; width: 100%; margin: 0; min-height: 0; }
+.ef .pvc-outcome svg.ef-flow { display: block; width: 100%; max-width: 440px; height: auto; overflow: visible; font-family: inherit; stroke: none; }
+.ef-flow .b { transition: opacity 0.3s; }
+.ef-flow .b.in { fill: var(--c-in); }
+.ef-flow .b.wk { fill: var(--c-wk); }
+.ef-flow .b.ws { fill: var(--c-ws); }
+.ef-flow .b.mo { fill: var(--c-mo); }
+.ef-flow .b.fr { fill: var(--c-fr); }
+.ef-flow .b.so { fill: var(--c-so); }
+.ef-flow:not(.known) .b { fill: #dee2e6; }
+.ef-flow:not(.known) .b.in { fill: #ced4da; }
+.ef-flow .s { opacity: 0; }
+.ef-flow.flowing .s { opacity: 1; animation: ef-flow 0.9s linear infinite; }
+@keyframes ef-flow { from { transform: translateX(0); } to { transform: translateX(17px); } }
+@media (prefers-reduced-motion: reduce) { .ef-flow.flowing .s { animation: none; } }
+.ef-flow text { font-size: 11.5px; font-weight: 600; fill: #343a40; }
+.ef-flow .val { font-weight: 700; }
+.ef-flow.narrow text { font-size: 10.5px; }
+.ef-flow.narrow text.val.in { font-size: 12px; }
+.ef-flow.narrow .row.wk .val { font-size: 11.5px; }
+.ef-flow.compact .row.wk .val { font-size: 11.5px; }
+.ef-flow text.in { fill: #fff; }
+.ef-flow text.val.in { font-size: 13px; }
+.ef-flow:not(.known) text.in { fill: #495057; }
+.ef-flow .row.wk .val { fill: var(--c-wk-text); font-size: 12.5px; }
+.ef-flow .row.mo .val { fill: var(--c-mo-text); }
+.ef-flow .row.fr .val { fill: var(--c-fr-text); }
+.ef-flow .row.so .val { fill: var(--c-so-text); }
+.ef-flow text.lab.ws { fill: var(--c-ws-text); font-size: 10.5px; }
+.ef-flow:not(.known) .row .val { fill: #868e96; }
+
+/* ── the formula and the book's sentence (rule line) ── */
+.ef .pvc-rule { --pvc-rule-lines: 4.4; font-size: 13.5px; line-height: 1.45; }
+.ef-f { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 5px; margin-bottom: 3px; }
+.ef-eq:empty { display: none; }
+.ef-eq { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.ef-name { font-weight: 700; }
+.ef .fr { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; line-height: 1.2; }
+.ef .fr > span { display: block; padding: 0 3px; white-space: nowrap; }
+.ef .fr > span:first-child { border-bottom: 1.5px solid currentColor; padding-bottom: 1px; }
+.ef-eff { font-size: 1.3em; color: var(--c-wk-text); }
+.ef-term { min-height: 24px; padding: 0 4px; border: 0; border-bottom: 2px dotted currentColor; border-radius: 4px 4px 0 0; background: none; font: inherit; font-weight: 700; cursor: pointer; }
+.ef-term.input { color: var(--c-in-text); }
+.ef-term.work { color: var(--c-wk-text); }
+.ef-term.waste { color: var(--c-ws-text); }
+.ef-term:hover, .ef-term:focus-visible, .ef-term.on { background: color-mix(in srgb, currentColor 13%, transparent); }
+.ef-term:focus-visible { outline: 2px solid currentColor; outline-offset: 1px; }
+.ef-say { display: block; }
+.ef-f .v { font-weight: 700; }
+.ef-f .v.work { color: var(--c-wk-text); }
+.ef-f .v.input { color: var(--c-in-text); }
+.ef-f .v.waste { color: var(--c-ws-text); }
+
+/* ── on the view: the load's height (a solid chip on the right) and the ring a term of the formula lights ── */
+.ef-gauge { --k: 0; position: absolute; right: 8px; bottom: 10px; top: 58px; z-index: 3; width: 38px; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 4px 0; border: 1px solid var(--line-2); border-radius: 8px; background: var(--panel); pointer-events: none; font-size: 10.5px; color: #343a40; }
+.ef-gauge-name { font-weight: 700; }
+.ef-gauge-bar { position: relative; flex: 1 1 auto; width: 8px; border-radius: 4px; background: #e9ecef; outline: 1px solid #adb5bd; }
+.ef-gauge-bar i { position: absolute; left: 0; right: 0; bottom: 0; height: calc(var(--k) * 100%); border-radius: 4px; background: var(--c-wk); }
+.ef-gauge-bar b { position: absolute; left: 50%; bottom: calc(var(--k) * 100%); width: 16px; height: 9px; margin: 0 0 -4px -8px; border-radius: 2px; background: #b5452b; box-shadow: 0 0 0 1.5px #fff, 0 0 0 2.5px #343a40; }
+.ef-gauge-h { font-weight: 700; color: var(--c-wk-text); white-space: nowrap; }
+.ef-ring { position: absolute; z-index: 2; border: 3px dashed var(--c); border-radius: 14px; box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85), inset 0 0 0 2px rgba(255, 255, 255, 0.85); pointer-events: none; }
+.ef-ring::after { content: attr(data-label); position: absolute; left: 50%; bottom: calc(100% + 4px); transform: translateX(-50%); padding: 2px 8px; border: 1.5px solid #fff; border-radius: 6px; background: var(--c); color: #fff; font-size: 12.5px; font-weight: 700; white-space: nowrap; box-shadow: 0 1px 3px rgba(20, 30, 45, 0.3); }
+/* labels: short names in their colour on the kit's solid white chip, rimmed in the same colour */
+.ef .pvc-anno { transition: none; font-size: 12.5px; font-weight: 700; padding: 2px 7px; }
+.ef .pvc-anno-part { color: var(--c, #343a40); border-color: color-mix(in srgb, var(--c, #343a40) 60%, #fff); }
+
+/* ── the test ── */
+.ef .pvc-opt { font-size: 13.5px; line-height: 1.25; }
+.ef-opt { display: block; white-space: normal; text-align: center; }
+.ef .pvc-q-text { font-size: 14px; }
+.ef .pvc-q-feedback { font-size: 13px; }
+.ef[data-mode='quiz'] .pvc-stage[data-ui='simple'] .pvc-hint { top: 54px; bottom: auto; }
+.ef[data-mode='quiz'] .ef-gauge { display: none; }
+
+/* ── the worked example's sheet ── */
+.ef-ex { position: absolute; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center; padding: 10px; background: rgba(33, 37, 41, 0.42); }
+.ef-ex[hidden] { display: none; }
+.ef-ex-card { display: flex; flex-direction: column; width: min(560px, 100%); max-height: 100%; border-radius: 14px; background: #fff; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25); overflow: hidden; }
+.ef-ex-head { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px 4px 16px; }
+.ef-ex-head h2 { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 17px; }
+.ef-ex-hand svg { width: 22px; height: 22px; color: #e67700; }
+.ef-ex-x { width: 40px; height: 40px; border: 0; border-radius: 20px; background: #f1f3f5; color: #343a40; cursor: pointer; }
+.ef-ex-x svg, .ef-pm svg, .ef-ex-btn svg { width: 18px; height: 18px; }
+.ef-ex-body { overflow-y: auto; padding: 0 16px 6px; font-size: 14px; line-height: 1.45; }
+.ef-ex-q { margin: 0 0 8px; }
+.ef-ex-steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-bottom: 8px; }
+.ef-step { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 2px; border-radius: 8px; background: #f8f9fa; }
+.ef-name { font-size: 12px; color: #495057; white-space: nowrap; }
+.ef-step .ef-name { font-weight: 600; }
+.ef-ctl { display: flex; align-items: center; gap: 2px; }
+.ef-pm { width: 32px; height: 32px; display: grid; place-items: center; border: 1px solid #ced4da; border-radius: 16px; background: #fff; color: #1c6fd9; cursor: pointer; }
+.ef-pm:disabled { opacity: 0.35; cursor: default; }
+.ef-val { min-width: 62px; text-align: center; font-weight: 700; font-size: 14px; white-space: nowrap; }
+.ef-ex-ans { margin: 0 0 2px; }
+.ef-ex-ans small { color: #6c757d; }
+.ef-ex-lines { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+.ef-ex-lines li { padding-left: 2px; }
+.ef-ex-lines .ef-eq { flex-wrap: wrap; white-space: normal; }
+.ef-eq2 { margin-left: 70px; }
+.c-work { color: var(--c-wk-text); }
+.c-input { color: var(--c-in-text); }
+.c-waste { color: var(--c-ws-text); }
+.c-eff { color: var(--c-wk-text); font-size: 1.2em; }
+.ef-book { display: inline-flex; align-items: center; gap: 3px; padding: 1px 8px; border-radius: 12px; background: #d3f9d8; color: #1e6b2e; font-size: 12px; font-weight: 700; }
+.ef-book svg { width: 14px; height: 14px; }
+.ef-bad { display: block; padding: 6px 8px; border-radius: 8px; background: #fff4e6; color: #a6420c; }
+.ef-ex-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 8px 16px 12px; border-top: 1px solid #f1f3f5; }
+.ef-ex-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 14px; border: 1px solid #ced4da; border-radius: 20px; background: #fff; color: #343a40; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.ef-ex-btn.primary { border-color: #1c6fd9; background: #1c6fd9; color: #fff; }
+.ef-ex-btn:disabled { opacity: 0.45; cursor: default; }
+
+/* a wide panel (panel below, tabs beside the sheet): the flow and the formula side by side, the book's sentence on
+   one line under both, so the 3D keeps more than half the frame */
+@container pvc-panel (min-width: 600px) {
+  .ef .pvc-learn { display: grid; grid-template-columns: minmax(250px, 0.85fr) minmax(0, 1.15fr); align-items: center; align-content: start; gap: 8px 16px; }
+  .ef .pvc-examples, .ef .pvc-act-row { grid-column: 1 / -1; }
+  .ef .pvc-rule { display: contents; }
+  .ef .ef-f { margin: 0; }
+  .ef .ef-say { grid-column: 1 / -1; min-height: 1.45em; font-size: 13.5px; line-height: 1.45; color: var(--ink-2); }
+  .ef .pvc-outcome, .ef .ef-f { min-height: 62px; }
+  .ef .pvc-q-feedback { min-height: calc(2 * 1.45em); }
+}
+@container pvc-panel (max-width: 899px) {
+  .ef .ef-f .ef-nums { display: none; }
+  .ef-f.two { gap: 2px 3px; }
+  .ef-f.two .fr { font-size: 0.9em; }
+  .ef-f.two .fr .ef-term { padding: 0 1px; }
+}
+/* a narrow side panel: the examples' words may wrap, the formula a little smaller */
+@container pvc-panel (max-width: 330px) {
+  .ef .pvc-examples .pvc-ex-word { white-space: normal; font-size: 13px; line-height: 1.2; }
+  .ef .pvc-rule { --pvc-rule-lines: 6; font-size: 12px; line-height: 1.36; }
+  .ef .pvc-act-row .pvc-quiet { min-width: 30px; padding-inline: 3px; }
+  .ef .pvc-act { font-size: 14px; }
+  .ef .pvc-act .pvc-act-icon { display: none; }
+}
+/* the second form in a narrow panel: the words' fraction a little smaller so it stays on one row */
+@container pvc-panel (max-width: 420px) {
+  .ef-f .fr .ef-term { padding: 0 1px; }
+  .ef-f.two .fr { font-size: 0.9em; }
+}
+/* phone portrait: a little tighter, so the 3D keeps more than half the height */
+@container pvc (max-width: 560px) {
+  .ef .pvc-panel { gap: 4px; }
+  .ef .pvc-learn { gap: 4px; }
+  .ef .pvc-q-ask { gap: 6px; }
+  .ef .pvc-opt { height: 44px; }
+  .ef .pvc-rule { --pvc-rule-lines: 4.3; font-size: 13px; line-height: 1.38; }
+  .ef-f { margin-bottom: 1px; }
+  .ef-ex-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ef-eq2 { margin-left: 20px; }
+}
+/* phone portrait, short */
+@container pvc (max-width: 560px) and (max-height: 600px) {
+  .ef .pvc-rule { --pvc-rule-lines: 2.6; font-size: 12px; line-height: 1.35; }
+  .ef .ef-say { display: none; }
+  .ef .pvc-q-text { font-size: 13px; }
+  .ef .pvc-opt { font-size: 12.5px; height: 40px; }
+  .ef .pvc-q-feedback { font-size: 12px; }
+  .ef-ex-body { font-size: 13px; }
+}
+/* short and wide (phone held sideways): the kit puts the panel beside the scene */
+@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
+  .ef .pvc-rule { font-size: 12px; line-height: 1.38; }
+  .ef .pvc-q-text { font-size: 13px; }
+  .ef .pvc-opt { font-size: 12.5px; height: 42px; }
+  .ef .pvc-q-feedback { font-size: 12px; }
+  .ef-ex-steps { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .ef-ex-body { font-size: 12.5px; }
+}

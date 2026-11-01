@@ -44,15 +44,15 @@ export function createApparatus({ materials: M }) {
     string: new THREE.MeshStandardMaterial({ name: 'String', color: 0x2f353d, roughness: 0.8, metalness: 0 }),
   };
 
-  // ── the floor: a soft white disc that fades out, so the bench stands on something without a hard edge ─────────
+  // ── the floor: a soft terracotta disc that fades out, so the bench stands on something without a hard edge ─────────
   const floorTex = (() => {
     const c = document.createElement('canvas');
     c.width = c.height = 256;
     const ctx = c.getContext('2d');
     const g = ctx.createRadialGradient(128, 128, 20, 128, 128, 126);
-    g.addColorStop(0, 'rgba(226,230,236,1)');
-    g.addColorStop(0.7, 'rgba(232,235,240,0.85)');
-    g.addColorStop(1, 'rgba(240,242,245,0)');
+    g.addColorStop(0, 'rgba(186,104,58,1)');
+    g.addColorStop(0.7, 'rgba(200,118,66,0.85)');
+    g.addColorStop(1, 'rgba(214,132,76,0)');
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, 256, 256);
     const tex = new THREE.CanvasTexture(c);

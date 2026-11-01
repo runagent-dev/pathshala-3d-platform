@@ -1,0 +1,103 @@
+/* Buoyancy: the page, the colours that carry meaning (the weight W purple, the buoyancy প্লবতা orange, the water's
+   pressure P red, the water pushed aside blue: the same as the arrows and labels on the picture, src/app.js), the sums
+   under the action (with the containers' stepper in মাল বোঝাই), the notes on the stage, the labels and the test's
+   answers. The rest of the panel is the kit's clean sheet (../../shared/lib/student/student.css). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.by { --c-W: #6741d9; --c-B: #d9480f; --c-P: #d02424; --c-V: #0b6e99; }
+.by sub, .by sup { font-size: 0.72em; line-height: 0; }
+.by .pvc-outcome { font-size: 15px; line-height: 1.55; }
+.by .pvc-outcome b { font-size: 1.22em; color: var(--c-B); }
+.by .pvc-rule { font-size: 14.5px; line-height: 1.45; }
+
+/* ── the sums: two lines; the stepper only in মাল বোঝাই ── */
+.by-eq { display: flex; flex-direction: column; gap: 2px; font-size: 14.5px; line-height: 1.5; font-variant-numeric: tabular-nums; }
+.by-line { min-height: 1.5em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--ink); }
+.by-line b { color: var(--c-B); }
+.by-eq[data-step='pressure'] .by-line[data-line='1'] b { color: var(--c-P); }
+.by-eq[data-step='weight'] .by-line[data-line='1'] b, .by-eq[data-step='displaced'] .by-line[data-line='2'] b { color: var(--c-W); }
+.by-eq[data-step='displaced'] .by-line[data-line='1'] b { color: var(--c-V); }
+.by-load { display: none; align-items: center; justify-content: space-between; gap: 10px; --c: #364fc7; }
+.by-eq[data-step='load'] .by-load { display: flex; }
+.by-eq[data-step='load'] .by-line[data-line='2'] { display: none; }
+.by-name { font-size: 13px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.by-ctl { flex: none; display: flex; align-items: stretch; height: 34px; border: 1.5px solid color-mix(in srgb, var(--c) 40%, #fff); border-radius: 9px; overflow: hidden; background: var(--panel); }
+.by-pm { flex: none; width: 40px; border: 0; padding: 0; display: grid; place-items: center; background: color-mix(in srgb, var(--c) 10%, #fff); color: var(--c); cursor: pointer; }
+.by-pm:hover { background: color-mix(in srgb, var(--c) 18%, #fff); }
+.by-pm svg { width: 18px; height: 18px; stroke-width: 2.4; }
+.by-pm.off { color: var(--ink-3); opacity: 0.45; }
+.by-pm:focus-visible { outline: 2px solid var(--c); outline-offset: -3px; }
+.by-val { min-width: 2.6em; display: grid; place-items: center; font-size: 18px; font-weight: 700; color: var(--c); }
+
+/* notes on the stage: the water's numbers, and "imagine" while the water is weighed (top left; the buttons are top right) */
+.by-notes { position: absolute; left: 8px; top: 8px; z-index: 3; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; max-width: max(150px, calc(100% - 120px)); pointer-events: none; }
+.by-note { padding: 2px 8px; border-radius: 6px; background: rgba(255, 255, 255, 0.9); font-size: 12px; line-height: 1.45; color: var(--ink-2); }
+.by-note-x { color: var(--c-V); font-weight: 600; }
+.by-note:empty { display: none; }
+
+/* labels on the picture: the name and its number in its colour, on white */
+.pvc-anno-force { --c: var(--ink); padding: 0 6px; border: 1.5px solid var(--c); border-radius: 5px; background: rgba(255, 255, 255, 0.95); color: var(--c); font-size: 13.5px; font-weight: 700; line-height: 1.5; white-space: nowrap; transition: none; }
+.pvc-anno-lines .k-force { display: none; }
+
+/* the test: answers in words or numbers, room kept for the question and the worked answer */
+.by .pvc-opt { font-size: 14.5px; line-height: 1.25; }
+.by-opt { display: block; white-space: normal; text-align: center; }
+.by .pvc-q-text { font-size: 15px; }
+.by .pvc-q-feedback { font-size: 14px; }
+
+/* the four steps' words may wrap in a narrow panel (never run into each other) */
+.by .pvc-examples .pvc-ex-word { white-space: normal; text-align: center; line-height: 1.2; }
+
+/* phones */
+@container pvc (max-width: 420px) {
+  .by-eq { font-size: 13px; }
+  .by .pvc-rule { font-size: 13.5px; }
+  .by .pvc-outcome { font-size: 14px; }
+  .by .pvc-examples .pvc-ex-word { font-size: 14px; }
+}
+/* phones that are not tall: one line of sums, the result line goes (the sums carry the number) */
+@container pvc (max-width: 560px) and (max-height: 600px) {
+  .by-eq { font-size: 12.5px; line-height: 1.4; gap: 0; }
+  .by-ctl { height: 30px; }
+  .by .pvc-outcome { font-size: 13.5px; line-height: 1.4; }
+  .by .pvc-rule { font-size: 12.5px; line-height: 1.35; }
+  .by .pvc-q-text { font-size: 14px; }
+  .by .pvc-opt { font-size: 13px; }
+  .by .pvc-q-feedback { font-size: 12.5px; }
+  .by-note { font-size: 11px; }
+}
+/* short and wide (phone held sideways): the panel is beside the scene */
+@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
+  .by-eq { font-size: 12.5px; line-height: 1.4; gap: 0; }
+  .by-line { white-space: normal; }
+  .by-ctl { height: 30px; }
+  .by .pvc-outcome { font-size: 13.5px; line-height: 1.45; }
+  .by .pvc-rule { font-size: 12.5px; line-height: 1.35; }
+  .by .pvc-q-text { font-size: 14px; }
+  .by .pvc-opt { font-size: 13px; height: 42px; }
+  .by .pvc-q-feedback { font-size: 12.5px; }
+  .by-note { font-size: 11px; }
+}
+/* wide frames (tabs beside the sheet): the row and the action on the left, the sums on the right */
+@container pvc (min-width: 720px) and (min-height: 461px) {
+  .by .pvc-learn { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); grid-template-areas: 'ex eq' 'act eq' 'out out' 'rule rule'; align-content: start; column-gap: 28px; row-gap: 6px; }
+  .by .pvc-examples { grid-area: ex; }
+  .by .pvc-act-row { grid-area: act; }
+  .by-eq { grid-area: eq; align-self: center; }
+  .by-line { white-space: normal; }
+  .by .pvc-outcome { grid-area: out; }
+  .by .pvc-rule { grid-area: rule; --pvc-rule-lines: 2; }
+}
+@container pvc (min-width: 720px) and (max-width: 1100px) and (min-height: 461px) {
+  .by .pvc-quiet span { display: none; }
+}
+@container pvc-panel (max-width: 330px) {
+  .by-eq { font-size: 12px; }
+  .by-load { gap: 6px; }
+  .by-name { font-size: 11.5px; }
+  .by-pm { width: 32px; }
+  .by-val { min-width: 2em; font-size: 16px; }
+  .by .pvc-examples .pvc-ex-word { font-size: 13px; }
+}

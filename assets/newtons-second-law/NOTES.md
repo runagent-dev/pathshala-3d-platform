@@ -114,3 +114,84 @@ comparison and clears prior measured results. Colours are deliberately saturated
 On short phone canvases the force diagram moves beside the cart, rather than making the figures tiny above it.
 The pause/resume control holds a moment for reading its forces. Walking feet stay fixed during each stance,
 and a browser geometry regression checks a planted shoe and hands aligned with the moving handle.
+
+## Slow enough to follow (v0.3.0)
+The owner: "the actual arrow and everything goes very fast, and student wont be clear". At real time the whole push
+was over in 2 s and the arrows came and went with it. Now (lessons.md 8: the slowing is said on the view):
+- **Half speed by default** (`clock.js`, pure and unit tested): the run's own seconds (the physics, the numbers) are
+  unchanged; one run second takes two real seconds. A clock on the view shows t; the note says "সময় ২ গুণ ধীর".
+  A third button in the row under the examples, "ধীরে: ০.৫×" ↔ "স্বাভাবিক: ১×" (or S), switches to real time
+  (no lead-in, no holds); P pauses as the pause button does.
+- **Lead-in** (1.6 s): after the tap, the force arrow grows in, then the acceleration arrow (same way), with their
+  labels "লব্ধি বল F = ১০০ নিউটন" and "ত্বরণ a = ১ ms⁻²", before the cart moves (the clock waits at 0).
+- **Held at each whole second** of the measured push (1.1 s, the clock says "থামানো: বেগ দেখো"): the velocity is
+  stamped on the floor at that second's mark (a faint blue arrow, labelled "১ s: v = ১ m/s" where there is room),
+  and a row under the clock lists the velocity each second, "প্রতি সেকেন্ডে বেগ: ০ → ১ → ২ m/s": the equal steps
+  are the acceleration. The hold at the end of the push is a hair before it ends, so F and a are still drawn; in
+  "উল্টো দিকে বল" the holds are at the start of the push back (u = 2) and each second after (২ → ১ → ০).
+- The arrows are labelled with their Bangla names (বেগ v on the scene to 0.1 m/s; the panel keeps 0.01). The result
+  line during the push works it out: "t = ১.০ s: বেগ v = u + at = ০ + ১ × ১.০ = ১.০০ m/s"; the rule line says
+  "প্রতি সেকেন্ডে ১ m/s করে. বেগের পরিবর্তনের এই হারই ত্বরণ a".
+- On a short stage (390×520, 640×400) the note moves to the top-left corner and drops the smooth-floor words (the
+  ঘর্ষণ button says it), the force's label goes behind its arrow's tail and the acceleration's past its tip.
+- The test plays at the chosen speed without the lead-in or the holds. The video is retimed to 62 s at half speed.
+
+## See the law, not only read it (v0.4.0)
+The owner: "can you make it a bit more intuitive and amazing". The "এই মুহূর্তে" box of four lines of sums is now a
+picture with the numbers:
+- **বেগ–সময় গ্রাফ** (`graph.js`, the book-notes term; "লেখচিত্র" is not used on screen): t over the 2 s of the push
+  (from the push back's start in উল্টো দিকে বল), v 0–4 m/s. The run's line is drawn as the cart moves (the same clock,
+  held with it; the dot ringed while held). At each whole second a dashed 1 s across and a teal rise +a under the line,
+  labelled "+১" / "+২" / "+০.৫" / "−১"; once a second is reached, "ঢাল = ত্বরণ a" (short "ঢাল = a" on a narrow panel)
+  in the top-left corner, where no line goes. The examples already tried stay as faint grey lines tagged "a = …" in
+  the right margin (tags pushed apart when close: `spreadLabels`, unit tested), so the steepness compares: twice the
+  force, twice as steep; twice the mass, half; the push back goes down. Before the first push: "ঠেলো: রেখা আঁকা হবে".
+  "ঢাল" for slope: is that the word the book uses for the graph's slope (chapter 2)?
+- **Bars for F, m and a** beside the graph (under it on a big panel): each with its value and how it comes, F "=
+  ১০০ + ১০০" (a piece per person; with friction "− ২০" and a striped piece cut off; at the sacks "= বাধা …"), m in
+  pieces (cart with its child 100 kg, a sack 50 kg each), a "= F ÷ m = ২০০ ÷ ১০০" (short "= ২০০ ÷ ১০০" on a narrow
+  panel). Full bars: 200 N, 200 kg, 2 ms⁻². Coasting, the F and a bars are empty while the line on the graph has
+  stopped rising: no force, no acceleration, the velocity stays.
+- While the clock holds, the velocity's label on the scene is lit (pale yellow); with sound on, a soft tick each hold.
+- The support line "ভূমির বল N = ওজন W = mg" moved from the box to the calculation sheet (কীভাবে এলো?); the diagram
+  still labels N and W on the scene. The head's "এই মুহূর্তে" is now the graph's name.
+
+
+## Polish pass (2026-11-01)
+Against `docs/agents/polish-pass.md`, version 0.5.0.
+- **Layout.** The panel is under the 3D view at every size but the kit's short-and-wide one (844×390, 640×400):
+  the figure's own rule that put it beside the view from 720 px wide (800×500, 1280×800) is gone. On a phone held
+  upright every line is one line high (the result line drops "u + at =" when the full working would not fit), the
+  three toggles (বলচিত্র, ঘর্ষণ, ধীরে) sit in the formula box's head beside F = ma, and the bars are one line each
+  (name, bar, value): the 3D view has 55 % of 390×700 (40 % before). At 390×520 the box shows the bars without the
+  graph (too low to read there). On wide frames the examples, the action, the result and the rule are on the left
+  and the formula box on the right (800×500: 56 % for the view). The result line, the rule and the test keep one
+  height in every state, so the view never changes size.
+- **Text on the view.** Only labels with values: the corner note (smooth floor, the clock's sentence, the velocity
+  each second) is now a small clock chip, "t = ১.৫ s সময় ২ গুণ ধীর" ("থামানো" while held); the velocities each
+  second ("০ → ১ → ২ m/s") are in the rule line; "মসৃণ মেঝে, ঘর্ষণ নেই" ends the first rule; the sign convention
+  with friction is in its rule; the coast sentence became the label "লব্ধি বল F = ০" where the force's arrow was;
+  the diagram's scale note is in the rule line, which reads the diagram while it is on (লব্ধি বল F = ১০০ + ১০০ − ২০
+  = ১৮০ N; N = W) and is said once on the hint line when it is turned on. Text on the view: 52/5 → 33/3 (390×700),
+  63/5 → 33/3 (844×390).
+- **Setting and arrows.** The dark navy sky and teal floor are gone: a rice godown (চালের গুদাম) with a polished
+  warm-grey cement floor (mottled, saw-cut joints, the yellow lane and its white metre lines painted on), sand
+  lime-washed walls over a brown dado, square pillars with yellow-and-black feet, high barred windows, jute sacks on
+  wooden pallets and a platform scale. Daylight from the windows behind throws the shadows forward, where they
+  show. Every arrow has a bold white outline; the dark force arrow (it disappeared into the navy sky before) now
+  reads on the sand wall; the force diagram's pale colours became the book's (pushes orange, friction red, support
+  cyan, weight violet) with darker text on their chips; the diagram's dot is dark, ringed in white.
+- **Smooth, detail kept.** Each person is four meshes (the upper body merged in vertex colours, the limbs as three
+  instanced meshes) instead of 27; the cart's still parts are merged per material and each wheel is one mesh; the
+  room is five meshes; shadows come only from the carts, the people and the pile, in PCF at 2048×512 on a box
+  fitted to the lane (VSM 2048×2048 on a loose box before). The kit's materials (with canvases made for millimetre
+  instruments) are no longer built; the cart's wood has its own grain scaled for metres. No new vectors per frame
+  for the label boxes and the diagram's points.
+- **Bugs.** The force arrow was nearly invisible on the dark sky; at 800×500 and 1280×800 the panel was beside the
+  view; the formula box changed height with the toggles' words; the clock showed during the two-cart and close-up
+  test questions.
+- **Numbers** (headless Chromium, software GL, shadows on, at rest): draw calls avg 260 → 62, max 282 → 84;
+  triangles max 54k → 71k (the room); texture memory 56.4 → 15.9 MB; frames drawn while idle 0 → 0. Time to ready:
+  the machine's load was 30–50 during the run; side by side in the same runs, the end of the first frame took the
+  same time (about 1.0 s old, 1.0 s new), with 17 shader programs compiled instead of 12 (instanced limbs, vertex
+  colours).

@@ -1,15 +1,31 @@
 import * as THREE from 'three';
 import { createVector } from './arrow.js';
 const v = (x, y, z = 0) => new THREE.Vector3(x, y, z);
+export const DIAGRAM_COLORS = { F1: '#e8590c', F2: '#e8590c', friction: '#d6336c', contact: '#e8590c', normal: '#0b7285', weight: '#7048e8' };
+/** The same, dark enough for text on a white chip (4.5:1). */
+export const DIAGRAM_TEXT = { F1: '#a8440a', F2: '#a8440a', friction: '#a61e4d', contact: '#a8440a', normal: '#0b6070', weight: '#5f3dc4' };
 export function createForceDiagram() {
   const root = new THREE.Group();
   root.name = 'LiveFreeBodyDiagram';
   root.visible = false;
-  const dot = new THREE.Mesh(new THREE.SphereGeometry(0.065, 18, 12), new THREE.MeshBasicMaterial({ color: '#fff5c4' }));
-  root.add(dot);
-  const colors = { F1: '#ffb347', F2: '#ffb347', friction: '#ff466f', contact: '#ffb347', normal: '#54d5ff', weight: '#b99aff' };
+  // the body as a dot: dark, ringed in white (it sits over the sand-coloured wall)
+  const ring = new THREE.Mesh(
+    new THREE.SphereGeometry(0.085, 16, 10),
+    new THREE.MeshBasicMaterial({ color: '#ffffff', depthTest: false, toneMapped: false }),
+  );
+  const dot = new THREE.Mesh(
+    new THREE.SphereGeometry(0.062, 16, 10),
+    new THREE.MeshBasicMaterial({ color: '#212529', depthTest: false, toneMapped: false }),
+  );
+  ring.renderOrder = 10;
+  dot.renderOrder = 11;
+  root.add(ring, dot);
+  // the pushes in the push's orange, friction red, the ground's support cyan, the weight in gravity's violet
+  // (docs/book-notes.md), each named in its label too
+  const colors = DIAGRAM_COLORS;
   const arrows = Object.fromEntries(Object.entries(colors).map(([key, color]) => [key, createVector(color, `Diagram_${key}`)]));
   for (const a of Object.values(arrows)) root.add(a.root);
+  const tips = Object.fromEntries(Object.keys(colors).map((k) => [k, new THREE.Vector3()]));
   let values = {};
   return {
     root,
@@ -32,9 +48,10 @@ export function createForceDiagram() {
         a.set(v(0, y), vertical ? v(0, key === 'normal' ? 1 : -1) : v(Math.sign(value), 0), length);
       }
     },
+    /** Where an arrow's tip is now (world space; the same vector each call for that arrow). */
     point(key) {
       root.updateMatrixWorld(true);
-      return root.localToWorld(arrows[key].tip.clone());
+      return root.localToWorld(tips[key].copy(arrows[key].tip));
     },
   };
 }

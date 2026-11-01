@@ -30,7 +30,8 @@
       "semicolons": "always",
       "trailingCommas": "all",
       "arrowParentheses": "always"
-    }
+    },
+    "globals": ["__PATHSHALA_LAB__"]
   },
   "json": {
     "formatter": {
@@ -47,6 +48,9 @@
       },
       "complexity": {
         "noCommaOperator": "off"
+      },
+      "correctness": {
+        "noUndeclaredVariables": "error"
       }
     }
   },

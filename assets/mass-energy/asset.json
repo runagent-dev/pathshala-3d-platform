@@ -1,0 +1,109 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "mass-energy",
+  "title": "Relation between mass and energy (ভর ও শক্তির সম্পর্ক)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.2.0",
+  "book": "physics-9-10",
+  "page": 119,
+  "topic": "4.6",
+  "placement": "Book page 119, topic 4.6: ৪.৬ ভর ও শক্তির সম্পর্ক (Relation between mass and energy). Next to চিত্র ৪.০৬ (নিউক্লিয়ার বিক্রিয়ায় শক্তি উৎপাদন) and the equation ¹₀n + ²³⁵₉₂U → ⁹²₃₆Kr + ¹⁴¹₅₆Ba + 3¹₀n, with the paragraphs on E = mc², the chain reaction and the power plant.",
+  "maintainers": ["RadeenXALNW"],
+  "units": "cm",
+  "description": "Interactive 3D figure for textbook topic 4.6 (page 119), the book's চিত্র ৪.০৬ brought to life in three scenes. (1) একটি নিউক্লিয়াস: in the bright water of a reactor pool, a slow neutron flies into a glowing uranium-235 nucleus of 92 red protons (with +) and 143 grey neutrons; the nucleus takes it in, becomes unstable (অস্থিতিশীল), wobbles, stretches into a dumbbell and splits into ⁹²Kr and ¹⁴¹Ba (their own balls, 36 p + 56 n and 56 p + 85 n, flying apart with equal and opposite momentum) and three fast neutrons with streaks, with a flash and the book's yellow star of শক্তি. The panel shows the book's equation with each side's mass (236.0526 u and 235.8667 u, AME2020 atomic masses) and a small balance that tips to the heavier left side, and works E = mc² out with the missing 0.1859 u (3.09 × 10⁻²⁸ kg): 2.78 × 10⁻¹¹ J for one nucleus. (2) চেইন রি-অ্যাকশন: the three neutrons, slowed on their way, split three more nuclei, whose nine neutrons split nine more (1 → 3 → 9, 13 splits and their energy). Both play from the big action button and can be replayed and scrubbed with a slider or the arrow keys. (3) শক্তিকেন্দ্র: a nuclear power plant on a river bank at dusk, cut open: the control rods rise, the core glows blue in its water, steam runs to the turbine, the turbine and generator turn, power runs along the lines and a town's windows light up. The student picks the fuel's mass (1 g to 1 kg of uranium-235) and whether it is split (0.079% of its mass becomes energy) or turned fully into energy as E = mc² says; the panel gives E in J (c = 3 × 10⁸ m/s, as the book) and how long it would light a 100 W bulb. Sizes and times are not to scale (said on screen). Five scene-based test questions. The nucleus exports as GLB (1 cm = 1 fm). Offline, Bangla and English.",
+  "tags": ["mass-energy", "e-mc2", "nuclear", "fission", "uranium", "chain-reaction", "power-plant", "energy", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "scene",
+      "label": "Scene",
+      "type": "select",
+      "options": [["one", "one nucleus splits"], ["chain", "chain reaction"], ["plant", "power plant"]],
+      "default": "one"
+    },
+    {
+      "name": "t",
+      "label": "Time into the split or chain",
+      "type": "number",
+      "default": "0",
+      "placeholder": "s",
+      "help": "for pictures: 0 to 7 s (one nucleus), 0 to 12 s (chain)"
+    },
+    {
+      "name": "m",
+      "label": "Fuel mass (power plant)",
+      "type": "select",
+      "options": [["1", "1 g"], ["10", "10 g"], ["100", "100 g"], ["1000", "1 kg"]],
+      "default": "1"
+    },
+    {
+      "name": "part",
+      "label": "Mass that becomes energy",
+      "type": "select",
+      "options": [["fission", "split (0.079%)"], ["full", "all of it"]],
+      "default": "fission"
+    },
+    { "name": "run", "label": "Power plant running", "type": "boolean", "default": "0" },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on the neutron pulses at first", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    {
+      "name": "bg",
+      "label": "Background",
+      "type": "select",
+      "options": [["light", "scenery"], ["transparent", "transparent"]],
+      "default": "light"
+    },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "scene": "one", "t": 6.6 } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": { "params": { "coach": "0", "scene": "one", "t": "6.2" } },
+    "glb": [
+      { "name": "default", "setup": [{ "command": "set", "payload": { "scene": "one", "t": 6.6, "animate": false } }] }
+    ],
+    "video": {
+      "kind": "script",
+      "seconds": 30,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 0.5, "command": "set", "payload": { "play": true } },
+        { "at": 9, "command": "set", "payload": { "scene": "chain" } },
+        { "at": 9.5, "command": "set", "payload": { "play": true } },
+        { "at": 23, "command": "set", "payload": { "scene": "plant" } },
+        { "at": 23.5, "command": "set", "payload": { "run": true } }
+      ]
+    }
+  }
+}

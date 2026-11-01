@@ -14,7 +14,11 @@ const quantities = [
 ];
 const path = (values, mapY) => values.map((v, i) => `${i ? 'L' : 'M'}${i * 2.4},${mapY(v).toFixed(3)}`).join('');
 
-export function createSpringGraphs(host, t) {
+/**
+ * The spring's graphs in `host`: the two views (গতি: x, v, a; শক্তি: K, U, E) chosen by two buttons beside them.
+ * onMode(mode) runs when the view changes (the figure shows that view's note under the graphs).
+ */
+export function createSpringGraphs(host, t, { onMode = (_mode) => {} } = {}) {
   const value = (key, unit) => `<span class="sg-value"><span data-value="${key}"></span> ${t(unit)}</span>`;
   host.innerHTML = `
     <div class="sg-switch" role="group" aria-label="${t('graph_views')}">
@@ -45,10 +49,12 @@ export function createSpringGraphs(host, t) {
       </div>
       <span class="sg-held" hidden>${t('graph_release')}</span>
     </div>
-    <div class="sg-time"></div>
-    <p class="sg-hint"></p>`;
+`;
   let mode = 'motion';
   let lastCycle = '';
+  let shownHeld = null;
+  /** @type {Record<string, string>} */
+  const shownText = {};
   const $ = (selector) => host.querySelector(selector);
   const values = Object.fromEntries([...host.querySelectorAll('[data-value]')].map((e) => [e.dataset.value, e]));
   const format = (v) => t.num((Math.abs(v) < 0.005 ? 0 : v).toFixed(2).replace('-', '−'));
@@ -57,8 +63,8 @@ export function createSpringGraphs(host, t) {
     host.dataset.graphMode = mode;
     $('.sg-motion').hidden = mode !== 'motion';
     $('.sg-energy').hidden = mode !== 'energy';
-    $('.sg-hint').textContent = t(mode === 'motion' ? 'motion_hint' : 'energy_hint');
     for (const b of host.querySelectorAll('[data-graph]')) b.setAttribute('aria-pressed', String(b.dataset.graph === mode));
+    onMode(mode);
   }
   host.addEventListener('click', (event) => {
     const button = event.target.closest('button[data-graph]');
@@ -66,12 +72,22 @@ export function createSpringGraphs(host, t) {
   });
   setMode(mode);
   return {
+    /** Back to the motion view (the figure's reset). */
+    reset: () => setMode('motion'),
+    /** The note for the view shown: what the signs and the energies mean. */
+    note: () => t(mode === 'motion' ? 'motion_hint' : 'energy_hint'),
     update(m, { amplitude, side, phase, held }) {
-      $('.sg-held').hidden = !held;
-      $('.sg-body').classList.toggle('is-held', held);
+      if (held !== shownHeld) {
+        $('.sg-held').hidden = !held;
+        $('.sg-body').classList.toggle('is-held', held);
+        shownHeld = held;
+      }
       const q = springQuantities(m);
       const current = { x: m.x, v: m.v, a: q.acceleration, k: q.kinetic, u: q.potential, e: q.total };
-      for (const [key, el] of Object.entries(values)) el.textContent = format(current[key]);
+      for (const [key, el] of Object.entries(values)) {
+        const text = format(current[key]);
+        if (shownText[key] !== text) el.textContent = shownText[key] = text;
+      }
       const total = Math.max(1e-12, q.total);
       const scale = { x: amplitude, v: amplitude * omega('spring'), a: amplitude * omega('spring') ** 2, k: total, u: total };
       const y = (key, v) => (key === 'k' || key === 'u' ? 45 - (40 * v) / scale[key] : 25 - (20 * v) / Math.max(1e-12, scale[key]));
@@ -90,7 +106,6 @@ export function createSpringGraphs(host, t) {
               (v) => y(key, v),
             ),
           );
-        $('.sg-time').textContent = t('trace_time', { zero: 0, T: period('spring').toFixed(2) });
         lastCycle = cycle;
       }
       for (const key of ['x', 'v', 'a', 'k', 'u']) {

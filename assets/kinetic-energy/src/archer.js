@@ -3,6 +3,7 @@
 // turned to look along the arrow, and the drawing hand on the string. Metres. The root is world-aligned (+x towards
 // the target, +z towards the camera); the body inside it faces +z.
 import * as THREE from 'three';
+import { bake, paint } from './bake.js';
 
 const HIP_Y = 0.86; // the pelvis
 const HIP_JOINT = 0.78; // where the legs start
@@ -58,12 +59,6 @@ export function createArcher({ jacket = '#2a5db0', trousers = '#353a46' } = {}) 
       profile.map(([y, r]) => new THREE.Vector2(r, y)),
       20,
     );
-  const unitTube = limbGeometry([
-    [-0.5, 1],
-    [-0.25, 0.99],
-    [0.1, 0.92],
-    [0.5, 0.8],
-  ]);
   const foreGeometry = limbGeometry([
     [-0.5, 1],
     [-0.25, 1.03],
@@ -118,8 +113,11 @@ export function createArcher({ jacket = '#2a5db0', trousers = '#353a46' } = {}) 
     mesh.quaternion.setFromUnitVectors(UP, tmp.divideScalar(len || 1));
     mesh.scale.set(r, len, r);
   };
+  // round parts: the segments follow the size (a knee or the head 24 × 16, an eye or an ear 12 × 8), one geometry each
+  const balls = new Map();
   const ball = (r, m, parent) => {
-    const mesh = new THREE.Mesh(new THREE.SphereGeometry(r, 24, 16), m);
+    if (!balls.has(r)) balls.set(r, r < 0.03 ? new THREE.SphereGeometry(r, 12, 8) : new THREE.SphereGeometry(r, 24, 16));
+    const mesh = new THREE.Mesh(balls.get(r), m);
     parent.add(mesh);
     return mesh;
   };
@@ -271,7 +269,6 @@ export function createArcher({ jacket = '#2a5db0', trousers = '#353a46' } = {}) 
   }
   const arms = [1, -1].map((side) => ({
     side,
-    upper: new THREE.Mesh(unitTube, M.skin),
     sleeve: new THREE.Mesh(sleeveGeometry, M.jacket),
     fore: new THREE.Mesh(foreGeometry, M.jacket), // long sleeves to the wrist
     hand: makeHand(),
@@ -280,8 +277,7 @@ export function createArcher({ jacket = '#2a5db0', trousers = '#353a46' } = {}) 
   }));
   for (const arm of arms) {
     arm.hand.name = arm.side > 0 ? 'DrawHand' : 'BowHand';
-    body.add(arm.upper, arm.sleeve, arm.fore);
-    arm.upper.visible = false; // the sleeve covers it
+    body.add(arm.sleeve, arm.fore);
   }
   // a leather arm guard on the bow forearm
   const guard = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 16, 1, true), M.leather);
@@ -391,12 +387,10 @@ export function createArcher({ jacket = '#2a5db0', trousers = '#353a46' } = {}) 
   const legPole = new THREE.Vector3(1, 0, 0);
 
   /**
-   * bowHand: the bow hand's palm on the grip; drawHand: the fingers' hook on the string; both in root space.
-   * headYaw: how far the head turns towards the target. The drawing shoulder comes forward a little when the string
-   * is far (protraction).
+   * bowHand: the bow hand's palm on the grip; drawHand: the fingers' hook on the string; both in root space. Only
+   * the arms move; the drawing shoulder comes forward a little when the string is far (protraction).
    */
-  function pose({ bowHand, drawHand, headYaw = 1.25 }) {
-    headPivot.rotation.set(0, headYaw, -0.06);
+  function pose({ bowHand, drawHand }) {
     for (const arm of arms) {
       const isDraw = arm.side > 0;
       shoulder.set(0, SHOULDER.y, arm.side * SHOULDER.z);
@@ -430,6 +424,10 @@ export function createArcher({ jacket = '#2a5db0', trousers = '#353a46' } = {}) 
         guard.scale.set(0.045, a.distanceTo(b), 0.045);
       }
     }
+  }
+  /** The stance and the head, set once: he stands still and looks along the arrow; only his arms move. */
+  function stance() {
+    headPivot.rotation.set(0, 1.25, -0.06); // the head turned towards the target
     for (const leg of legs) {
       // a firm stance: feet a shoulder's width apart, toes to the camera, slightly turned out
       const z = leg.side * STANCE;
@@ -454,16 +452,22 @@ export function createArcher({ jacket = '#2a5db0', trousers = '#353a46' } = {}) 
     if (o instanceof THREE.Mesh && o !== hit) o.castShadow = true;
   });
 
+  // Fewer draws, the same detail: small plain parts with a similar finish share one vertex-coloured material; each
+  // hand becomes one mesh; everything but the arms (trunk, head, legs, shoes, quiver) one mesh per material.
+  stance();
+  const detail = new THREE.MeshStandardMaterial({ name: 'Details', color: '#ffffff', roughness: 0.75, metalness: 0, vertexColors: true });
+  paint(root, [M.tee, M.eye, M.white, M.lips, M.soleSide, M.sole, M.belt, M.fletch, M.lining], detail);
+  for (const arm of arms) bake(arm.hand);
+  const moving = arms.flatMap((a) => [a.sleeve, a.fore, a.hand, a.elbow, a.cuff]);
+  bake(body, { skip: [...moving, guard] });
+
   const box = new THREE.Box3();
-  const headAt = new THREE.Vector3();
   return {
     root,
     pose,
     hit,
     /** The drawing hand, in root space (after the last pose). */
     drawHand: () => toRoot(arms[0].hand.position, new THREE.Vector3()),
-    /** The head's centre, world space. */
-    head: () => head.getWorldPosition(headAt),
     drawHandMesh: arms[0].hand,
     /** The archer's box in world space (for the camera), without the hit box. */
     box() {

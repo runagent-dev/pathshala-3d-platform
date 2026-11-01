@@ -61,6 +61,32 @@ function viewDir(view, aspect, out = new THREE.Vector3()) {
   const up = THREE.MathUtils.degToRad(THREE.MathUtils.clamp(64 - ((aspect - 0.95) / 1.5) * 22, 42, 64));
   return out.set(0, Math.sin(up), Math.cos(up));
 }
+/**
+ * Fit a directional light's shadow box tightly round the scene box x0…x1, z0…z1 (ground at y = 0, up to `top` m):
+ * the corners in the light's view give left/right/top/bottom/near/far, with a little room.
+ */
+function fitShadow(light, x0, x1, z0, z1, top) {
+  const cam = light.shadow.camera;
+  cam.position.copy(light.position);
+  cam.lookAt(light.target.position);
+  cam.updateMatrixWorld(true);
+  const inv = cam.matrixWorldInverse;
+  const p = new THREE.Vector3();
+  const lo = new THREE.Vector3(Infinity, Infinity, Infinity);
+  const hi = new THREE.Vector3(-Infinity, -Infinity, -Infinity);
+  for (const x of [x0, x1]) {
+    for (const y of [-80, top]) {
+      for (const z of [z0, z1]) {
+        p.set(x, y, z).applyMatrix4(inv);
+        lo.min(p);
+        hi.max(p);
+      }
+    }
+  }
+  const pad = 40;
+  Object.assign(cam, { left: lo.x - pad, right: hi.x + pad, bottom: lo.y - pad, top: hi.y + pad, near: Math.max(1, -hi.z - pad), far: -lo.z + pad });
+  cam.updateProjectionMatrix();
+}
 const RIDE_SPEED = 2.4; // km of road per second of animation (not to time: speed is the next figure's topic)
 const LAST = Math.round(END / STEP); // the last sample the cyclist reaches
 const PLACES = { A: STOPS.A, B: STOPS.B, C: STOPS.C };
@@ -97,14 +123,11 @@ export function createApp(root, options = {}) {
           <div class="dd-key" role="group" aria-label="${t('key')}">
             <p class="dd-key-item d">${SWATCH_PATH}<span><b>${t('key_dist')}</b><small>${t('key_dist_sub')}</small></span></p>
             <p class="dd-key-item s">${SWATCH_ARROW}<span><b>${t('key_disp')}</b><small>${t('key_disp_sub')}</small></span></p>
+            <p class="dd-scale">${t('note_scale')}</p>
           </div>
           ${cleanSheet(t, { quiet: [{ act: 'new', label: 'act_new', icon: ICONS.reset }], lines: { outcome: 2, rule: 3 } })}`,
   });
   const sheet = bindCleanSheet(ui.learn);
-  // the honest note: the road is to scale, the cycle and the village are not (top left; the buttons are top right)
-  const note = document.createElement('div');
-  note.className = 'dd-note';
-  ui.stage.append(note);
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 30, near: 40, far: 40000, environment: 'studio-light', exposure: 1.05 });
@@ -126,25 +149,38 @@ export function createApp(root, options = {}) {
   stage.addTicker((dt) => tweener.tick(dt));
   const audio = createAudio(o.sound);
 
+  if (o.bg !== 'transparent') {
+    // a soft spring sky behind the tile, paler at the bottom
+    const c = document.createElement('canvas');
+    c.width = 4;
+    c.height = 256;
+    const ctx = /** @type {CanvasRenderingContext2D} */ (c.getContext('2d'));
+    const g = ctx.createLinearGradient(0, 0, 0, 256);
+    g.addColorStop(0, '#5aa9e6');
+    g.addColorStop(0.55, '#a3d0f2');
+    g.addColorStop(1, '#d7ecfa');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 4, 256);
+    const sky = new THREE.CanvasTexture(c);
+    sky.colorSpace = THREE.SRGBColorSpace;
+    scene.background = sky;
+  }
   scene.add(new THREE.HemisphereLight('#ffffff', '#8a7a5a', 0.9));
   const sun = new THREE.DirectionalLight('#ffffff', 1.5);
   sun.position.set(1800, 4200, 2600);
   sun.target.position.set(600, 0, -1000);
   scene.add(sun, sun.target);
   if (o.shadow && o.bg !== 'transparent') {
+    // PCF in a box fitted round the tile and everything on it that casts a shadow (up to the cyclist's head): 1024
+    // texels look as soft as the old 2048 VSM map on a loose box, and only the casters are drawn into it
     stage.renderer.shadowMap.enabled = true;
-    stage.renderer.shadowMap.type = THREE.VSMShadowMap;
+    stage.renderer.shadowMap.type = THREE.PCFShadowMap;
     sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
-    Object.assign(sun.shadow.camera, { left: -2600, right: 2600, top: 2600, bottom: -2600, near: 1000, far: 9000 });
-    sun.shadow.radius = 4;
-    sun.shadow.bias = -0.0004;
-    const floor = new THREE.Mesh(new THREE.PlaneGeometry(20000, 20000), new THREE.ShadowMaterial({ opacity: 0.12 }));
-    floor.rotation.x = -Math.PI / 2;
-    floor.position.y = -71;
-    floor.receiveShadow = true;
-    floor.userData.noExport = true;
-    scene.add(floor);
+    sun.shadow.mapSize.set(1024, 1024);
+    fitShadow(sun, country.box.min.x, country.box.max.x, country.box.min.z, country.box.max.z, 820);
+    sun.shadow.radius = 3;
+    sun.shadow.bias = -0.0006;
+    sun.shadow.normalBias = 1.5;
   }
   const listeners = new Map();
   function emit(type, payload) {
@@ -273,7 +309,6 @@ export function createApp(root, options = {}) {
   const arrowOnScreen = { a: { x: 0, y: 0 }, b: { x: 0, y: 0 } };
   const origin = { x: 0, y: 0 };
   const badgeBox = { x0: 0, y0: 0, x1: 0, y1: 0 };
-  const noteBox = { x0: 0, y0: 0, x1: 0, y1: 0 };
   const ROAD_EVERY = 4; // samples between the road's points on the screen (0.1 km), for the values to keep off it
   const roadPx = new Float32Array((Math.floor(LAST / ROAD_EVERY) + 1) * 2);
   const ringBox = { x0: 0, y0: 0, x1: 0, y1: 0 };
@@ -305,11 +340,10 @@ export function createApp(root, options = {}) {
     const cr = ui.corner.getBoundingClientRect();
     view.top = cr.bottom - sr.top + 4;
     view.cornerX = cr.left - sr.left - 4;
-    const nr = note.getBoundingClientRect();
-    Object.assign(noteBox, { x0: nr.left - sr.left - 3, y0: nr.top - sr.top - 3, x1: nr.right - sr.left + 3, y1: nr.bottom - sr.top + 3 });
   }
   let ringRadius = 30;
   const camRight = new THREE.Vector3();
+  const aside = new THREE.Vector3();
   const pxA = { x: 0, y: 0 };
   const pxB = { x: 0, y: 0 };
   stage.onBeforeRender(() => {
@@ -320,7 +354,10 @@ export function createApp(root, options = {}) {
     toPx(corner.copy(cyclist.root.position).addScaledVector(camRight, 100), pxB);
     const bikePx = (Math.hypot(pxB.x - pxA.x, pxB.y - pxA.y) / 100) * 1.9 * SCALE;
     const grow = THREE.MathUtils.clamp(CYCLIST_PX / Math.max(1, bikePx), 1, 1.8);
-    if (Math.abs(grow - cyclist.root.scale.x) > 0.005) cyclist.root.scale.setScalar(grow);
+    if (Math.abs(grow - cyclist.root.scale.x) > 0.005) {
+      cyclist.root.scale.setScalar(grow);
+      stage.renderer.shadowMap.needsUpdate = true; // its shadow grows with it, even when only the camera moved
+    }
     cyclist.root.updateMatrixWorld();
     Object.assign(cyclistBox, { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity });
     for (const [y, z] of [
@@ -345,9 +382,12 @@ export function createApp(root, options = {}) {
       ringRadius = radius;
       action?.set({ radius });
     }
-    // the arrow from A to the cyclist's place on the road
+    // the arrow from A to the cyclist's place on the road, about 6 px wide or more on a small map (up to 2.4 times
+    // its width in metres, so on the smallest map it stays an arrow, not a wedge)
     view.arrow = null;
     toPx(corner.set(0, ROAD_Y + 9, 0), origin);
+    toPx(aside.set(0, ROAD_Y + 9, 0).addScaledVector(camRight, 100), px);
+    arrow.thick(THREE.MathUtils.clamp(6 / Math.max(0.01, (Math.hypot(px.x - origin.x, px.y - origin.y) / 100) * 42), 1, 2.4));
     if (displacement(s.km).km > 0.005) {
       arrowOnScreen.a.x = origin.x;
       arrowOnScreen.a.y = origin.y;
@@ -368,7 +408,7 @@ export function createApp(root, options = {}) {
     const ax = px.x;
     toPx(corner.set(ROAD_W / 2, ROAD_Y, 0), px);
     view.roadPad = Math.max(3, Math.abs(px.x - ax));
-    // the values keep clear of the action's ring and badge and the honest note; if they can, of the room round the
+    // the values keep clear of the action's ring and badge; if they can, of the room round the
     // ring where the badge may go too (a value there would push the badge somewhere worse: on a small map, under the
     // corner buttons). ringBox() is null in the frame where the marker comes back after a ride, so the ring is also
     // worked out here whenever it is about to show (round the next stop's label, as the kit draws a ring round a point)
@@ -387,7 +427,6 @@ export function createApp(root, options = {}) {
       const room = KIT.out + KIT.badge / 2;
       view.soft.push(Object.assign(ringRoom, { x0: rb.left - room, y0: rb.top - room, x1: rb.right + room, y1: rb.bottom + room }));
     }
-    if (!note.hidden) view.keep.push(noteBox);
     values.update(view, texts);
   });
 
@@ -551,9 +590,9 @@ export function createApp(root, options = {}) {
     label: 'act_b',
     target: ringTarget,
     radius: ringRadius,
-    // the badge keeps clear of the buttons, the hint, the note, the two values, the cyclist, the other plates, the
+    // the badge keeps clear of the buttons, the hint, the two values, the cyclist, the other plates, the
     // arrow and the road (the blue path)
-    avoid: [ui.corner, ui.hint, note, () => [...ui.annoLayer.querySelectorAll('.dd-tag.in')], sceneBoxes],
+    avoid: [ui.corner, ui.hint, () => [...ui.annoLayer.querySelectorAll('.dd-tag.in')], sceneBoxes],
     pulse: o.coach,
     onAct: () => {
       audio.unlock();
@@ -589,7 +628,7 @@ export function createApp(root, options = {}) {
     if (!tg) return true;
     toPx(tg, ringPx);
     const origin = stage.canvas.getBoundingClientRect();
-    const others = [ui.corner, note, ...ui.annoLayer.querySelectorAll('.dd-tag.in')].map((e) => {
+    const others = [ui.corner, ...ui.annoLayer.querySelectorAll('.dd-tag.in')].map((e) => {
       const r = e.getBoundingClientRect();
       return { left: r.left - origin.left, top: r.top - origin.top, right: r.right - origin.left, bottom: r.bottom - origin.top };
     });
@@ -703,17 +742,11 @@ export function createApp(root, options = {}) {
     tweener.cancel('camera');
   });
   stage.onResize(() => {
-    writeNote();
     measureCorner();
     if (s.userMovedCamera) return;
     tweener.cancel('camera');
     flyTo(viewPose(s.view), 0);
   });
-  let noteText = '';
-  function writeNote() {
-    const text = t(stage.width < 470 ? 'note_scale_short' : 'note_scale');
-    if (text !== noteText) note.textContent = noteText = text;
-  }
 
   // ── touching the cyclist and the road ───────────────────────────────────────
   const raycaster = new THREE.Raycaster();
@@ -736,6 +769,7 @@ export function createApp(root, options = {}) {
     rayFrom(p);
     const hit = raycaster.intersectObjects(country.pickables, true)[0];
     if (!hit) return null;
+    if (hit.instanceId != null && hit.object.userData.kms) return Math.min(END, hit.object.userData.kms[hit.instanceId]); // a post
     for (let ob = hit.object; ob; ob = ob.parent) {
       if (ob.userData.km != null) return Math.min(END, ob.userData.km);
       if (ob === country.labels.group) return null; // the compass's উ and the scale's label name no place
@@ -1126,7 +1160,6 @@ export function createApp(root, options = {}) {
   // ── start ───────────────────────────────────────────────────────────────────
   newTrip();
   if (o.km) ride([Number(o.km)], { animate: false });
-  writeNote();
   measureCorner();
   setView(s.view, { animate: false });
   syncUI();

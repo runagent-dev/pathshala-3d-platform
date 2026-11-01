@@ -1,19 +1,22 @@
 /* Distance and displacement: the page, the two quantities' colours (distance blue = the trail on the road,
    displacement orange = the arrow from A; the same as src/marks.js), the key that names them, the result line in
    those colours, the honest note and the test's answers in words. The panel is the kit's clean sheet (one action,
-   one result, one rule: ../../shared/lib/student/student.css, .pvc-act, .pvc-outcome, .pvc-rule). */
+   one result, one rule: ../../shared/lib/student/student.css, .pvc-act, .pvc-outcome, .pvc-rule). The 3D view
+   carries only short labels; the note on what is to scale is a quiet line under the key. Orange text uses a darker
+   shade of the arrow's orange (5:1 on white); the arrow and the key's little arrow keep the arrow's own colour. */
 html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
 #app { position: fixed; inset: 0; }
 body.bg-transparent { background: transparent; }
 
-.pvc { --c-dist: #1c6fd9; --c-disp: #e8590c; }
+.pvc { --c-dist: #1c6fd9; --c-disp: #e8590c; --c-disp-ink: #c2410c; }
 .dd button { touch-action: manipulation; }
 
-/* the two values on the map (src/values.js places them; they look like the kit's callouts) */
-.dd .dd-tag { padding: 1px 8px; font-size: 14px; box-shadow: 0 1px 3px rgba(20, 30, 45, 0.18); transition: opacity 0.2s; }
+/* the two values on the map (src/values.js places them; they look like the kit's callouts): a solid white chip */
+.dd .dd-tag { padding: 1px 8px; font-size: 14px; font-weight: 700; border-width: 1.5px; box-shadow: 0 1px 3px rgba(20, 30, 45, 0.25); transition: opacity 0.2s; }
+.dd .dd-tag.s { color: var(--c-disp-ink); }
 
 /* the key: what the blue path and the orange arrow on the map are (one row of words, no boxes) */
-.dd-key { display: flex; gap: 6px 14px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+.dd-key { display: flex; flex-wrap: wrap; gap: 4px 14px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
 .dd-key-item { flex: 1 1 0; min-width: 0; display: flex; align-items: center; gap: 8px; margin: 0; }
 .dd-key-item > span { display: flex; flex-direction: column; min-width: 0; line-height: 1.3; }
 .dd-key-item b { font-size: 15.5px; font-weight: 700; white-space: nowrap; color: var(--c); }
@@ -21,7 +24,11 @@ body.bg-transparent { background: transparent; }
 /* English names are longer: they may wrap */
 .dd:lang(en) .dd-key-item b { white-space: normal; }
 .dd-key-item.d { --c: var(--c-dist); }
-.dd-key-item.s { --c: var(--c-disp); }
+.dd-key-item.s { --c: var(--c-disp-ink); }
+.dd-key-item.s svg.dd-sw { stroke: var(--c-disp); }
+.dd-key-item.s svg.dd-sw .head { fill: var(--c-disp); }
+/* the note on what is to scale (the road and the distances) and what is drawn bigger (one quiet line) */
+.dd-scale { flex: 1 1 100%; margin: 0; font-size: 12.5px; line-height: 1.35; color: var(--ink-3); }
 .pvc svg.dd-sw { flex: none; width: 30px; height: 16px; overflow: visible; fill: none; stroke: var(--c); stroke-linecap: round; stroke-linejoin: round; }
 .dd-key-item.d svg.dd-sw { stroke-width: 4.5; }
 .dd-key-item.s svg.dd-sw { stroke-width: 3.2; }
@@ -30,13 +37,10 @@ body.bg-transparent { background: transparent; }
 /* the result line: each quantity in its colour, the word and the number (never colour alone) */
 .dd .pvc-outcome i { font-style: normal; font-weight: 600; color: var(--c); white-space: nowrap; }
 .dd .pvc-outcome i.d { --c: var(--c-dist); }
-.dd .pvc-outcome i.s { --c: var(--c-disp); }
+.dd .pvc-outcome i.s { --c: var(--c-disp-ink); }
 .dd .pvc-outcome b { font-size: 1.3em; }
 .dd .pvc-outcome[data-k='move'] b { font-variant-numeric: tabular-nums; }
 .dd .pvc-outcome .dd-dot { margin: 0 4px; color: var(--ink-3); }
-
-/* the honest note, top left (the buttons are top right) */
-.dd-note { position: absolute; left: 10px; top: 12px; z-index: 5; max-width: calc(100% - 250px); font-size: 12.5px; line-height: 1.35; color: var(--ink-3); pointer-events: none; }
 
 /* the test: answers in words (two lines at most) */
 .pvc-opt .dd-opt { font-size: 14px; font-weight: 600; line-height: 1.25; white-space: normal; text-align: center; }
@@ -44,19 +48,40 @@ body.bg-transparent { background: transparent; }
 /* wide frames (tabs beside the sheet): the lines close together under the key */
 @container pvc (min-width: 720px) and (min-height: 461px) {
   .dd .pvc-learn { justify-content: flex-start; gap: 8px; }
-  .dd-key, .dd .pvc-act-row { max-width: 620px; }
+  .dd-key, .dd .pvc-act-row { max-width: 720px; }
+  .dd-key { flex-wrap: nowrap; align-items: center; }
+  .dd-key-item { flex: 0 1 auto; }
+  .dd-scale { flex: 1 1 0; min-width: 150px; max-width: 340px; margin-left: auto; text-align: right; }
   .dd .pvc-outcome { --pvc-outcome-lines: 1; }
   .dd .pvc-rule { --pvc-rule-lines: 2; }
   .dd .pvc-q-text { --pvc-q-text-min: 1lh; }
   .dd .pvc-q-feedback { --pvc-q-feedback-min: 2lh; }
 }
-/* phones: the key a little smaller */
+/* … where an English result line may need two */
+@container pvc (min-width: 720px) and (max-width: 1100px) and (min-height: 461px) {
+  .dd:lang(en) .pvc-outcome { --pvc-outcome-lines: 2; }
+}
+/* phones held upright: the key a little smaller and every line a little tighter, so the 3D view keeps 55 % of a
+   390 × 700 frame (the panel is as tall as the test needs, in every state) */
 @container pvc (max-width: 560px) {
-  .dd-key { gap: 6px 10px; }
+  .dd-key { gap: 2px 10px; padding-bottom: 5px; }
   .dd-key-item { gap: 6px; }
+  .dd-key-item > span { line-height: 1.22; }
   .dd-key-item b { font-size: 15px; }
   .dd-key-item small { font-size: 12.5px; }
+  .dd-scale { font-size: 12px; line-height: 1.3; }
   .pvc svg.dd-sw { width: 26px; }
+  .dd .pvc-learn { gap: 6px; }
+  .dd .pvc-outcome { font-size: 15px; line-height: 1.55; }
+  .dd .pvc-rule { font-size: 14px; line-height: 1.42; }
+  .dd .pvc-q-ask { gap: 6px; }
+  .dd .pvc-q-head { min-height: 34px; }
+  .dd .pvc-q-head .pvc-btn { height: 34px; }
+  .dd .pvc-q-text { font-size: 15px; line-height: 1.38; }
+  .dd .pvc-opt { height: 44px; }
+  .dd .pvc-q-feedback { font-size: 13.5px; line-height: 1.38; }
+  /* English runs longer: one more line for the worked answer */
+  .dd:lang(en) .pvc-q-feedback { --pvc-q-feedback-min: 4lh; }
 }
 /* phones that are not very tall: the values on the map smaller, the key without its second line */
 @container pvc (max-height: 600px) {
@@ -73,20 +98,25 @@ body.bg-transparent { background: transparent; }
 }
 /* short and wide (phone held sideways): the panel is a narrow column beside the map */
 @container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
-  .dd-key { flex-direction: column; gap: 2px; }
+  .dd-key { flex-direction: column; flex-wrap: nowrap; gap: 2px; }
+  .dd-scale { flex: none; }
   .dd-key-item small { display: none; }
   .dd-key-item b { font-size: 14.5px; }
+  .dd:lang(en) .dd-key-item b { white-space: nowrap; }
   .dd .pvc-outcome { --pvc-outcome-lines: 2; font-size: 14.5px; line-height: 1.6; }
   .dd .pvc-rule { --pvc-rule-lines: 4; font-size: 13.5px; line-height: 1.45; }
   .dd .pvc-q-text { font-size: 14.5px; }
   .dd .pvc-opt { height: 40px; }
   .pvc-opt .dd-opt { font-size: 13px; }
   .dd .pvc-q-feedback { font-size: 13px; }
-  .dd-note { max-width: calc(100% - 270px); }
 }
 /* a very narrow side panel (640×400): one more line for the result, the question and the worked answer */
 @container pvc-panel (max-width: 280px) {
   .dd .pvc-outcome { --pvc-outcome-lines: 3; }
   .dd .pvc-q-text { --pvc-q-text-min: 3lh; }
   .dd .pvc-q-feedback { --pvc-q-feedback-min: 4lh; }
+}
+/* … and the narrowest (640 × 400): an English result line may take four */
+@container pvc-panel (max-width: 250px) {
+  .dd:lang(en) .pvc-outcome { --pvc-outcome-lines: 4; }
 }

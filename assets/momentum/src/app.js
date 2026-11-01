@@ -7,7 +7,6 @@
 // its car. The student changes the velocity (both factors matter) and the direction (a vector: to the left is
 // negative). Then a short test. Built on the shared student kit (@shared/student/…).
 import * as THREE from 'three';
-import { createArrow } from '@shared/arrow.js';
 import { createStage } from '@shared/stage.js';
 import { createAnnotations } from '@shared/student/annotations.js';
 import { createAudio } from '@shared/student/audio.js';
@@ -16,6 +15,7 @@ import { ICONS } from '@shared/student/icons.js';
 import { createQuiz } from '@shared/student/quiz.js';
 import { buildStudentShell } from '@shared/student/shell.js';
 import { createTweener, ease } from '@shared/tween.js';
+import { createBoldArrow } from './arrow.js';
 import { frontFit, frontPose, screenU, spherePose } from './camera.js';
 import { CAR, createCar } from './car.js';
 import { createI18n } from './i18n.js';
@@ -38,7 +38,7 @@ import {
   SPEED,
   signChoices,
 } from './physics.js';
-import { blobShadow, createStreet, LANES } from './street.js';
+import { blobShadow, createStreet, LANES, skyTexture } from './street.js';
 import { createTruck, TRUCK } from './truck.js';
 
 export const DEFAULTS = {
@@ -108,7 +108,7 @@ export function createApp(root, options = {}) {
             </div>
           </div>
           <table class="mo-tab">
-            <thead><tr><td class="mo-cap"><span>${t('at_hit')}</span></td><th class="c-p">${t('col_p')}<small>${t('u_p')}</small></th><td></td><th class="c-m">${t('col_m')}<small>${t('u_m')}</small></th><td></td><th class="c-v">${t('col_v')}<small>${t('u_v')}</small></th></tr></thead>
+            <thead><tr><td class="mo-cap"><span>${t('at_hit')}</span></td><th class="c-p">${t('col_p')}<small>${t('u_p')}</small></th><td class="op">=</td><th class="c-m">${t('col_m')}<small>${t('u_m')}</small></th><td class="op">×</td><th class="c-v">${t('col_v')}<small>${t('u_v')}</small></th></tr></thead>
             <tbody>${row('far', 'name_truck')}${row('near', 'name_bike')}</tbody>
           </table>
           <p class="mo-say"></p>
@@ -149,6 +149,13 @@ export function createApp(root, options = {}) {
   const street = createStreet();
   street.root.userData.noExport = true;
   world.add(street.root);
+  // the sky shows only when the view is turned (the front view looks down on the street): made then, drawn then
+  let sky = null;
+  function showSky(on) {
+    if (o.bg === 'transparent') return;
+    if (on && !sky) sky = skyTexture();
+    scene.background = on ? sky : null;
+  }
   const tweener = createTweener();
   stage.addTicker((dt) => tweener.tick(dt));
   const audio = createAudio(o.sound);
@@ -159,15 +166,30 @@ export function createApp(root, options = {}) {
     stage.renderer.shadowMap.enabled = true;
     stage.renderer.shadowMap.type = THREE.VSMShadowMap;
     sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
-    Object.assign(sun.shadow.camera, { left: -18, right: 18, top: 14, bottom: -14, near: 5, far: 80 });
-    sun.shadow.radius = 5;
+    // a tight box round the street in view (fitShadow), so 1024 texels look as sharp as 2048 did on a loose one
+    sun.shadow.mapSize.set(1024, 1024);
+    Object.assign(sun.shadow.camera, { left: -16, right: 16, top: 8, bottom: -8, near: 16, far: 46 });
+    sun.shadow.radius = 3;
     sun.shadow.bias = -0.0005;
+  }
+  /** The shadow box: the road across the view (`span` m), both lanes and the bodies' height. */
+  function fitShadow(span) {
+    if (!sun.castShadow) return;
+    const half = THREE.MathUtils.clamp(span / 2 + 3, 10, 22);
+    const cam = sun.shadow.camera;
+    if (Math.abs(cam.right - half) < 0.5) return;
+    Object.assign(cam, { left: -half, right: half });
+    cam.updateProjectionMatrix();
+    stage.invalidate();
   }
   function placeSun(x) {
     sun.position.set(x - 8, 26, 14);
     sun.target.position.set(x, 0, 0);
   }
+
+  // the arrows' size (m); thickness() makes them thicker on a small view
+  const ARROW = { r: 0.075 };
+  const boldArrow = (color, name) => createBoldArrow({ color, name, radius: ARROW.r, head: 0.45, headRadius: 0.2 });
 
   // the two lanes: the far one for the truck, the near one for the bicycle; each with its parked small car, its
   // two arrows and any body a test question needs (made when first needed)
@@ -180,10 +202,7 @@ export function createApp(root, options = {}) {
     parked.root.position.z = z;
     parked.root.add(blobShadow(CAR.length + 0.6, CAR.width + 0.5).translateX(CAR.length / 2));
     group.add(parked.root);
-    const arrows = {
-      v: createArrow({ color: COLOR.v, radius: 0.075, head: 0.45, headRadius: 0.2, name: 'VelocityArrow' }),
-      p: createArrow({ color: COLOR.p, radius: 0.075, head: 0.45, headRadius: 0.2, name: 'MomentumArrow' }),
-    };
+    const arrows = { v: boldArrow(COLOR.v, 'VelocityArrow'), p: boldArrow(COLOR.p, 'MomentumArrow') };
     for (const a of Object.values(arrows)) {
       a.root.userData.noExport = true;
       group.add(a.root);
@@ -194,6 +213,12 @@ export function createApp(root, options = {}) {
   }
   const lanes = { far: makeLane('far'), near: makeLane('near') };
 
+  /** Only the parts whose shadows are seen cast them (not lamps, ropes, plates or the chain). */
+  function castShadows(obj) {
+    obj.traverse((m) => {
+      if (m instanceof THREE.Mesh && m.material?.visible !== false && !m.material?.transparent && !m.userData.smallPart) m.castShadow = true;
+    });
+  }
   /** The body of `kind` in a lane: a wrapper whose origin is the body's front, facing +x. */
   function bodyOf(lane, kind) {
     if (lane.bodies[kind]) return lane.bodies[kind];
@@ -212,20 +237,13 @@ export function createApp(root, options = {}) {
     wrap.position.z = lane.z;
     wrap.visible = false;
     lane.group.add(wrap);
-    if (stage.renderer.shadowMap.enabled)
-      model.root.traverse((m) => {
-        if (m instanceof THREE.Mesh && m.material?.visible !== false && !m.material?.transparent) m.castShadow = true;
-      });
+    if (stage.renderer.shadowMap.enabled) castShadows(model.root);
     const box = new THREE.Box3(new THREE.Vector3(-info.len, 0, -info.half), new THREE.Vector3(0, info.top, info.half));
     const b = { wrap, model, info, box, kind };
     lane.bodies[kind] = b;
     return b;
   }
-  if (stage.renderer.shadowMap.enabled)
-    for (const lane of Object.values(lanes))
-      lane.parked.root.traverse((m) => {
-        if (m instanceof THREE.Mesh && m.material?.visible !== false && !m.material?.transparent) m.castShadow = true;
-      });
+  if (stage.renderer.shadowMap.enabled) for (const lane of Object.values(lanes)) castShadows(lane.parked.root);
 
   /**
    * Put a lane's body where `cur` says: { kind, m, v (m/s along x, signed), x (world x of its front), facing (±1),
@@ -535,8 +553,6 @@ export function createApp(root, options = {}) {
     pxB.set(controls.target.x + 1, 0, lane.z);
     return Math.abs(toScreen(pxB).x - toScreen(pxA).x) || 20;
   }
-  // a wide view has room for the edge label's second line ("…১২৫ গুণ লম্বা"); a phone has it in the panel's line
-  const wideView = () => stage.width >= 700 && stage.height >= 450;
 
   // v⃗'s label sits at the arrow's tail (behind it), p⃗'s at its head (ahead of it): each at its own arrow's
   // height, so the two never stack; over the empty middle lane, never on a body or a parked car
@@ -580,7 +596,7 @@ export function createApp(root, options = {}) {
   const compact = () => s.mode !== 'quiz' && s.scene === 'run' && pxPerM(lanes.near) < 17;
   /** The edge label's spots: above the arrow at the screen's edge (one line), or two lines in a wide view. */
   const edgeSpots = (right) => {
-    const dy = wideView() ? 26 : 17;
+    const dy = 17;
     const k = right ? -1 : 1;
     // at the edge, over or under the arrow; else further along it, clear of the corner buttons
     return [
@@ -611,18 +627,17 @@ export function createApp(root, options = {}) {
     ];
   }
 
-  /** The words of a lane's p label: normal, or at the screen's edge when the arrow runs off it. */
+  /**
+   * The words of a lane's p label: normal, or at the screen's edge when the arrow runs off it (with an arrowhead
+   * saying it goes on). How much longer it is than the bicycle's is said in the panel, not on the view.
+   */
   function pText(lane) {
     const c = lane.cur;
     if (compact() && !lane.edge) return t('lab_p_sym');
     const main = compact() ? t('lab_p_sym') : t('lab_p', { p: group(momentum(c.m, c.v)) });
     if (!lane.edge) return main;
-    const other = lanes[lane.id === 'far' ? 'near' : 'far'];
-    const both = wideView() && other.cur && other.show?.p && other.cur.kind === 'bike' && c.kind === 'truck';
-    const long = both ? t('lab_p_long', { r: Math.round(Math.abs(momentum(c.m, c.v) / momentum(other.cur.m, other.cur.v))) }) : '';
     const arrow = `<span class="mo-ar${c.v < 0 ? ' left' : ''}">${ICONS.arrowR}</span>`;
-    const head = c.v < 0 ? `${arrow}${main}` : `${main}${arrow}`;
-    return `<span class="mo-edge">${head}</span>${long ? `<small>${long}</small>` : ''}`;
+    return `<span class="mo-edge">${c.v < 0 ? `${arrow}${main}` : `${main}${arrow}`}</span>`;
   }
 
   const tmpTag = { far: new THREE.Vector3(), near: new THREE.Vector3() };
@@ -826,6 +841,9 @@ export function createApp(root, options = {}) {
     }
     return { uMin, uMax };
   }
+  function thickness(k) {
+    for (const lane of Object.values(lanes)) for (const a of Object.values(lane.arrows)) a.thicken(k);
+  }
   function computeFit() {
     const ids = s.scene === 'run' ? LANE_IDS : s.frame?.lanes || LANE_IDS;
     const { uMin, uMax } = uRange(ids);
@@ -835,6 +853,10 @@ export function createApp(root, options = {}) {
     const h = stage.height;
     const margin = { top: 64, bottom: Math.min(38, 0.14 * h), side: 8 };
     s.fit = frontFit({ camera, width: stage.width, height: h, uMin, uMax, minSpan, margin });
+    fitShadow(s.fit.span);
+    // the arrows keep at least about 4 px of thickness on a small view (thicker, never longer)
+    const pxm = h / (2 * s.fit.d * Math.tan(THREE.MathUtils.degToRad(FOV.front) / 2));
+    thickness(s.view === 'front' ? THREE.MathUtils.clamp(4.4 / (pxm * 2 * ARROW.r), 1, 2.2) : 1);
     // the long lens is not quite flat: a lane further back looks a little smaller, so its arrows are drawn longer by
     // as much (and the near lane's shorter), and equal vectors are equally long on the screen
     const n = { y: Math.sin(ELEV), z: Math.cos(ELEV) };
@@ -927,6 +949,8 @@ export function createApp(root, options = {}) {
         lane.persp = 1; // turning round, the arrows are drawn at their true lengths
         if (lane.cur) applyLane(lane);
       }
+    if (s.view === '3d') thickness(1);
+    showSky(s.view === '3d');
     const pose = viewPose(s.view);
     return flyTo(pose, animate ? 0.8 : 0, FOV[s.view]).then((done) => {
       if (s.view === '3d') controls.maxDistance = 70;
@@ -1039,6 +1063,7 @@ export function createApp(root, options = {}) {
     camera.fov = FOV.front;
     camera.updateProjectionMatrix();
     computeFit();
+    showSky(false);
     return flyTo(frontView(), animate ? 0.6 : 0, FOV.front);
   }
   /** The x-range a still body and its arrows (at speed v, or `vMax` after an answer) need. */

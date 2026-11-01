@@ -25,11 +25,12 @@ from A to B, the সরণ is only 2 km; back at A it is zero, however far you r
 ## How it works (v0.2.0, the clean panel)
 - The cyclist is scaled up on small maps (1 to 1.8 times, worked out every frame so the bike is about 40 px long:
   about 36 px at 390×700, 31 px at 390×520), on top of being drawn 230 times bigger than real.
-- A 3D tile of Bangladeshi countryside (rice fields, ponds, homes with tin roofs, trees) with the book's road. The
+- A 3D tile of Bangladeshi countryside in spring (mustard, ripe paddy, ploughed earth, ponds, homes with tin roofs,
+  flowering trees) under a pale blue sky, with the book's road. The
   road is the shared one in `src/road.js` (also used by the speed figure on page 41): B is 4 km along it and 2.000
   km from A, C is 6 km along it and 1.311 km from A. The road and distances are to scale; houses, trees, posts and
-  the cyclist are drawn much bigger than real, and a small note in the top left corner says so
-  ("সাইকেল, বাড়ি বড় করে আঁকা").
+  the cyclist are drawn much bigger than real, and a quiet line under the key says so
+  ("রাস্তা ও দূরত্ব মাপমতো; সাইকেল, বাড়ি, গাছ বড় করে আঁকা"; until v0.4.0 it was a note on the 3D view).
 - On the map: kilometre posts 0–7 (the book's km scale along the road; their plates are quiet grey, the posts with
   A, B, C keep a dark number under the letter), a compass and a 1 km scale bar. দূরত্ব (blue): the trail on the road,
   out on one side and back on the other (Bangladesh keeps left), a second stripe for a second pass. সরণ (orange): a
@@ -82,6 +83,54 @@ compares the two in the map's colours at each stop with the book's numbers; one 
 the story. The posts' numbers are quieter and the first rule says what they are (the km scale along the road). The
 unit is now km, as the book and the speed figure (page 41, the same road) write it. The test was rewritten around
 the picture with a note for each mistake.
+
+## What changed in v0.3.0 and why
+The owner: "instead of green do something different color but vivid and properly understandable". The map was almost
+all light-green rice fields and green trees on a white page. Now it is a spring countryside under a soft blue sky:
+mustard in flower (সরিষা), ripe paddy, ploughed earth and a little lilac khesari in the fields; flowering trees
+(crimson, pink, purple) with some dark mango; swept earth round the homes; blue tin among the roofs. The ground the
+orange arrow sweeps is pale harvested stubble, so the orange সরণ arrow and the blue দূরত্ব path stay the clearest
+things on the map; no orange-red trees, which would read like the arrow. The corner note is darker, with a white
+halo, to read on the sky.
+
+## Polish pass (2026-11-01, v0.4.0)
+The owner's standard for every figure (docs/agents/polish-pass.md), keeping the v0.3.0 spring countryside, the
+blue path #1c6fd9 and the orange সরণ arrow #e8590c.
+- **Layout.** 3D on top, the panel below (beside it only on short, wide frames, as the kit does). Tighter lines on
+  phones held upright, so the 3D view has 386 of 700 px (55 %, was 354); the panel is as tall as the test needs and
+  keeps that height in every state (checked by filling each line with every text it can show, Bangla and English,
+  at all six sizes). English gets one more line where it runs longer.
+- **Text on the 3D view.** Labels only (the posts' numbers, A B C, উ, ১ km, and the two values "দূরত্ব ৪ km",
+  "সরণ ২ km"). The corner note ("drawn bigger than real") moved under the key, in the book's words.
+- **Colour and arrows.** The সরণ arrow is now bold: orange inside a white rim and a thin dark edge, so it stands out
+  on the pale stubble, the grey road and the blue path; on a small map it is drawn thicker (about 6 px or more, up
+  to 2.4 times) with a shorter head, so it stays an arrow. Orange words in the panel and on the value chip use a
+  darker shade of the same orange (#c2410c, 5.2:1 on white; the bright orange was 3.6:1); the chips are bold with a
+  firmer border. The tile's soil edge shades from warm brown to dark, like layered earth.
+- **Smooth, with the detail kept.** Same picture, far less work per frame:
+  - each map label (post number, letter disc, উ, ১ km) is drawn once into a small canvas and shown on one quad:
+    10 draw calls instead of 37;
+  - the eight kilometre posts are one instanced mesh (a tap on one still rides to its km), the compass one mesh,
+    the road and the square at A one mesh, the tile two draw groups (soil, fields; no bottom face);
+  - the cyclist is merged by finish (matt paint in vertex colours, the glossy frame, steel): 11 meshes instead of 45,
+    the wheels and pedals still turn and the legs still follow the pedals (instanced thighs, shins and feet);
+  - the trail's four stripes are one mesh, the arrow and its tail dot one mesh;
+  - PCF shadows in a box fitted round the tile and the casters (1024 instead of a loose 2048 VSM map, which also drew
+    every receiver into the map); the invisible shadow floor is gone; the ground texture is 1024 × 1024;
+  - with kit 1.4.0 the cyclist's own shadow is redrawn when it grows or shrinks for a small map, even when only the
+    camera moved.
+- **Numbers** (headless Chromium, software GL, shadows on, 390 × 700 and 844 × 390):
+
+  | | before (0.3.0) | after (0.4.0) |
+  |---|---|---|
+  | draw calls, avg / max | 221 / 243 | 73 / 95 |
+  | triangles, max | 63k | 61k |
+  | texture memory | 60.2 MB (largest 2048) | 18.4 MB (largest 1024) |
+  | time to ready (this machine, same run) | 2.16 s | 1.99 s |
+  | text on the 3D view | 26 characters in 1 box (46 at 844 × 390) | 0 |
+- **Bugs looked for.** No console errors through a double tap on the action, turning the phone mid-ride, the arrow
+  keys, switching to the test mid-ride and back, the 3D view and a tap on the map there, dragging the cyclist, a new
+  trip, reset, and a whole test.
 
 ## Open questions
 - The page is cut off after "এই ছবিতে সরণের মান 2 km এবং তিরের দিকটি হচ্ছে সরণের দিক": check the rest of the

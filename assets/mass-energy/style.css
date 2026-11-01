@@ -1,0 +1,170 @@
+/* Relation between mass and energy (ভর ও শক্তির সম্পর্ক): the page, the colours that carry meaning (proton red, neutron
+   grey and energy amber as in the nucleus figures: docs/book-notes.md), the book's equation with each side's mass and
+   a small balance, the fuel steppers, the scrubber, and the chain's steps on the picture. The panel is the kit's
+   clean sheet (../../shared/lib/student/student.css). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.me { --c-energy: #b86200; --c-energy-bg: #f59f00; --c-p: #d23a50; --c-n: #6b7480; --c-kr: #2f6fb0; --c-ba: #7b3fb8; }
+.me i { font-style: italic; font-size: 1.05em; }
+.me sup { font-size: 0.68em; line-height: 0; }
+/* the panel: a pale tint of the pool's water */
+.me .pvc-panel { background: linear-gradient(180deg, #f6fcff 0%, #e6f4fb 100%); }
+
+/* the row under the scenes: the book's equation (one, chain) or the fuel (plant); one height for both */
+.me-calc { height: 50px; display: flex; align-items: center; }
+.me-calc > [hidden] { display: none; }
+.me-eq { display: grid; grid-template-columns: auto auto auto 1fr; grid-template-rows: auto auto; align-items: center; column-gap: 6px; row-gap: 0; width: 100%; font-size: 17px; color: var(--ink); }
+.me-side { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; }
+.me-arrow { display: inline-flex; color: var(--ink-2); }
+.me-arrow svg { width: 20px; height: 20px; stroke-width: 2.2; }
+.me-op { margin: 0 2px; color: var(--ink-2); }
+.me-nuc { display: inline-flex; align-items: center; font-weight: 600; }
+.me-k { margin-right: 1px; }
+.me-az { display: inline-flex; flex-direction: column; align-items: flex-end; font-size: 0.58em; line-height: 1.02; margin-right: 1px; font-weight: 500; color: var(--ink-2); }
+.me-mass { grid-row: 2; font-size: 13.5px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.me-mass.l { grid-column: 1; color: var(--ink-2); }
+.me-mass.r { grid-column: 3; color: var(--c-energy); }
+.me-scale { grid-column: 4; grid-row: 1 / span 2; justify-self: end; width: 44px; height: 32px; color: var(--ink-2); }
+.me-scale svg { width: 100%; height: 100%; overflow: visible; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.me-scale circle { fill: currentColor; stroke: none; }
+.me-scale .pan { fill: #fff; }
+.me-scale .pan.r { fill: color-mix(in srgb, var(--c-energy-bg) 35%, #fff); }
+.me-scale .beam { transform-origin: 24px 9px; transition: transform 0.6s cubic-bezier(0.3, 1.6, 0.5, 1); }
+/* the left side is heavier: the beam tips to the left */
+.me-scale.tipped .beam { transform: rotate(-9deg); }
+
+.me-fuel { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; }
+.me-step { display: inline-flex; align-items: center; gap: 4px; }
+.me-name { font-size: 18px; font-weight: 700; color: var(--ink); margin-right: 2px; }
+.me-btn { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 38px; padding: 0; border-radius: 6px; border: 1px solid var(--line-2, #c3cad3); background: #fff; color: var(--ink); cursor: pointer; }
+.me-btn svg { width: 18px; height: 18px; stroke-width: 2.4; }
+.me-btn:hover:not(:disabled) { background: var(--soft); }
+.me-btn:disabled { opacity: 0.35; cursor: default; }
+.me-val { min-width: 3.6em; text-align: center; font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.me-seg { display: inline-flex; border: 1px solid var(--line-2, #c3cad3); border-radius: 8px; overflow: hidden; background: #fff; }
+.me-seg button { border: 0; background: transparent; min-width: 64px; height: 38px; padding: 0 10px; font-size: 15.5px; font-weight: 600; color: var(--ink-2); cursor: pointer; font-variant-numeric: tabular-nums; }
+.me-seg button + button { border-left: 1px solid var(--line-2, #c3cad3); }
+.me-seg button.on { background: color-mix(in srgb, var(--c-energy-bg) 22%, #fff); color: var(--c-energy); }
+
+/* the scrubber beside the action (the action keeps its words on one line) */
+.me .pvc-act-slot { flex: 0 1 auto; }
+.me-scrub { flex: 1 8 90px; min-width: 56px; max-width: 320px; height: 32px; margin: 0 2px; accent-color: var(--accent); cursor: pointer; }
+.me-scrub[hidden] { display: none; }
+
+/* the result: a line of words, then E = mc² with the numbers */
+.me .pvc-outcome { line-height: 1.55; }
+.me-w { display: block; font-size: 15px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.me-w b { color: var(--c-energy); font-size: 1.06em; }
+.me-f { display: block; font-size: 15.5px; color: var(--ink); }
+.me-f b { color: var(--c-energy); font-size: 1.18em; white-space: nowrap; }
+.me-nb { white-space: nowrap; }
+.me .pvc-rule b { color: var(--ink); }
+
+/* labels on the picture */
+.me .pvc-anno { transition: none; font-size: 14px; font-weight: 700; color: var(--c); border-color: color-mix(in srgb, var(--c) 45%, var(--line)); background: rgba(255, 255, 255, 0.94); padding: 1px 7px; }
+.me-note { position: absolute; left: 8px; bottom: 6px; z-index: 3; max-width: calc(100% - 120px); padding: 2px 8px; border-radius: 6px; background: rgba(255, 255, 255, 0.82); color: #3b4250; font-size: 11.5px; line-height: 1.35; pointer-events: none; }
+.me-note[hidden] { display: none; }
+/* the chain's steps: 1 → 3 → 9, each lit as it splits */
+.me-steps { position: absolute; left: 8px; top: 8px; z-index: 3; display: flex; align-items: center; gap: 3px; padding: 4px 8px; border-radius: 8px; background: rgba(255, 255, 255, 0.9); font-size: 14px; pointer-events: none; }
+.me-steps[hidden] { display: none; }
+.me-steps b { min-width: 2.2em; text-align: center; padding: 1px 6px; border-radius: 6px; color: var(--ink-3); background: var(--soft); font-variant-numeric: tabular-nums; }
+.me-steps b.on { color: #fff; background: var(--c-energy-bg); }
+.me-to { display: inline-flex; color: var(--ink-3); }
+.me-to svg { width: 14px; height: 14px; }
+/* a quick fade between scenes */
+.me .pvc-stage.me-fade .pvc-canvas { animation: me-fade 0.45s ease-out; }
+@keyframes me-fade { from { opacity: 0.15; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .me .pvc-stage.me-fade .pvc-canvas { animation: none; } .me-scale .beam { transition: none; } }
+
+/* the test */
+.me .pvc-q-text { font-size: 15px; }
+.me .pvc-q-feedback { font-size: 13.5px; line-height: 1.45; }
+.me-why { color: var(--ink-2); }
+
+/* wide frames (tabs beside the sheet) */
+@container pvc (min-width: 720px) and (min-height: 461px) {
+  .me .pvc-learn { gap: 9px; }
+  /* the equation (or the fuel) and the action share a row, so the 3D view stays tall */
+  .me .pvc-learn { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 20px; align-items: center; }
+  .me .pvc-learn > * { grid-column: 1 / -1; }
+  .me .pvc-learn > .me-calc { grid-column: 1; }
+  .me .pvc-learn > .pvc-act-row { grid-column: 2; }
+  .me .pvc-quiet span { display: none; }
+  .me-eq { width: auto; column-gap: 8px; font-size: 16.5px; }
+  .me-scale { margin-left: 8px; justify-self: start; }
+  .me-scrub { min-width: 44px; }
+  .me .pvc-act-row { --pvc-act-lines: 2; }
+  .me-fuel { justify-content: flex-start; gap: 32px; }
+  .me .pvc-rule { --pvc-rule-lines: 2; }
+  .me-w { font-size: 15.5px; }
+  .me-f { font-size: 16.5px; }
+}
+/* phones */
+@container pvc (max-width: 420px) {
+  /* room for three lines of the result at its own line height (the kit counts 1.75 em a line) */
+  .me .pvc-outcome { --pvc-outcome-lines: 0; min-height: 70px; }
+  .me-eq { font-size: 16px; column-gap: 4px; }
+  .me-arrow svg { width: 17px; height: 17px; }
+  .me-mass { font-size: 13px; }
+  .me-w { font-size: 14px; }
+  .me-f { font-size: 14.5px; }
+  .me-seg button { min-width: 58px; padding: 0 8px; font-size: 14.5px; }
+  .me .pvc-rule { font-size: 14px; line-height: 1.45; }
+  .me .pvc-q-feedback { font-size: 13px; line-height: 1.4; }
+}
+/* the tightest phone (390 × 520): smaller rows and lines */
+@container pvc (max-width: 560px) and (max-height: 600px) {
+  .me .pvc-learn { gap: 4px; }
+  .me-calc { height: 42px; }
+  .me-eq { font-size: 15px; }
+  .me-mass { font-size: 12px; }
+  .me-scale { width: 38px; height: 28px; }
+  .me-btn { height: 34px; }
+  .me-seg button { height: 34px; }
+  .me .pvc-outcome { line-height: 1.45; min-height: 61px; }
+  .me-w { font-size: 13px; }
+  .me-f { font-size: 13.5px; }
+  .me .pvc-rule { --pvc-rule-lines: 2; font-size: 12.5px; line-height: 1.38; }
+  .me .pvc-q-text { font-size: 13.5px; }
+  .me .pvc-opt { font-size: 12.5px; }
+  .me .pvc-q-feedback { font-size: 12px; line-height: 1.35; }
+  .me-note { font-size: 10.5px; }
+  .me-steps { font-size: 12.5px; }
+}
+/* short and wide (phone held sideways): the panel is beside the scene */
+@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
+  .me .pvc-learn { gap: 5px; }
+  .me-calc { height: 42px; }
+  .me-eq { font-size: 15px; column-gap: 4px; }
+  .me-mass { font-size: 12px; }
+  .me-scale { width: 36px; height: 28px; }
+  .me-btn { width: 36px; height: 34px; }
+  .me-val { font-size: 15px; min-width: 3.4em; }
+  .me-seg button { height: 34px; min-width: 52px; font-size: 13.5px; padding: 0 6px; }
+  .me .pvc-outcome { line-height: 1.45; --pvc-outcome-lines: 3; }
+  .me-w { font-size: 13px; white-space: normal; }
+  .me-f { font-size: 13.5px; }
+  .me .pvc-rule { --pvc-rule-lines: 4; font-size: 12.5px; line-height: 1.4; }
+  .me .pvc-q-text { font-size: 13.5px; }
+  .me .pvc-opt { font-size: 12.5px; height: 40px; }
+  .me .pvc-q-feedback { font-size: 12px; }
+  .me-note { font-size: 10px; max-width: calc(100% - 90px); }
+  .me-steps { font-size: 12.5px; }
+  .me .pvc-examples .pvc-ex-word { font-size: 13px; white-space: normal; text-align: center; line-height: 1.2; }
+  .me .pvc-examples button { padding-left: 2px; padding-right: 2px; }
+  .me .pvc-act-text { font-size: 15px; }
+  .me .pvc-act-row { --pvc-act-lines: 2; }
+  .me-fuel { gap: 6px; }
+  .me-step { gap: 2px; }
+  .me-name { font-size: 16px; }
+  .me-btn { width: 32px; }
+  .me-val { min-width: 3em; font-size: 14.5px; }
+  .me-seg button { min-width: 0; padding: 0 5px; font-size: 13px; }
+}
+/* a narrow side panel: no room for the balance beside the equation */
+@container pvc-panel (max-width: 300px) {
+  .me-scale { display: none; }
+  .me-eq { font-size: 14.5px; }
+}

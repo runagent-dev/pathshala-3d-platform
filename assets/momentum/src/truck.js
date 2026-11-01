@@ -5,6 +5,7 @@
 // when it brakes.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { instancedWheels, mergeByMaterial, mergePlaced } from './merge.js';
 
 export const TRUCK = { length: 6.8, width: 2.4, height: 3.05, wheel: 0.5, front: -1.25, rear: -5.2 };
 
@@ -178,27 +179,36 @@ export function createTruck({ name = 'Truck' } = {}) {
   const tank = add(new THREE.CylinderGeometry(0.24, 0.24, 0.9, 16), M.chrome, -2.85, 0.72, 0.86, body, 'FuelTank');
   tank.rotation.z = Math.PI / 2;
 
-  // wheels: single at the front, dual at the back
-  const wheels = [];
+  // the body is static in itself (it only pitches as a whole): one mesh per material
+  const small = [M.rope, M.lamp, M.red, M.glass, M.chrome]; // their shadows are not seen: they cast none
+  for (const m of mergeByMaterial(body, { prefix: 'Truck' })) m.userData.smallPart = small.includes(m.material);
+
+  // wheels: single at the front, dual at the back; tyres, hubs and the five bolts (so the turning shows), each
+  // drawn once for all six wheels
   const tyreGeo = new THREE.CylinderGeometry(TRUCK.wheel, TRUCK.wheel, 0.28, 26).rotateX(Math.PI / 2);
   const hubGeo = new THREE.CylinderGeometry(0.22, 0.22, 0.3, 14).rotateX(Math.PI / 2);
-  const spot = (x, z) => {
-    const w = new THREE.Group();
-    w.name = 'Wheel';
-    w.position.set(x, TRUCK.wheel, z);
-    w.add(new THREE.Mesh(tyreGeo, M.tyre), new THREE.Mesh(hubGeo, M.hub));
-    // five bolts, so the turning shows
-    for (let i = 0; i < 5; i++) {
+  const bolt = new THREE.BoxGeometry(0.06, 0.06, 0.32);
+  const boltGeo = mergePlaced(
+    Array.from({ length: 5 }, (_, i) => {
       const a = (i / 5) * Math.PI * 2;
-      const b = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.32), M.chrome);
-      b.position.set(Math.cos(a) * 0.13, Math.sin(a) * 0.13, 0);
-      w.add(b);
-    }
-    root.add(w);
-    wheels.push(w);
-  };
-  for (const z of [-0.98, 0.98]) spot(TRUCK.front, z);
-  for (const z of [-1.12, -0.82, 0.82, 1.12]) spot(TRUCK.rear, z);
+      return [bolt, new THREE.Matrix4().makeTranslation(Math.cos(a) * 0.13, Math.sin(a) * 0.13, 0)];
+    }),
+  );
+  bolt.dispose();
+  const spots = [];
+  for (const z of [-0.98, 0.98]) spots.push(new THREE.Vector3(TRUCK.front, TRUCK.wheel, z));
+  for (const z of [-1.12, -0.82, 0.82, 1.12]) spots.push(new THREE.Vector3(TRUCK.rear, TRUCK.wheel, z));
+  const wheels = instancedWheels(
+    root,
+    [
+      [tyreGeo, M.tyre],
+      [hubGeo, M.hub],
+      [boltGeo, M.chrome],
+    ],
+    spots,
+    'Wheels',
+  );
+  for (const m of wheels.meshes.slice(1)) m.userData.smallPart = true; // the hubs and bolts sit inside the tyres' shadow
 
   // a big invisible box round it: a tap anywhere on the truck works
   const hit = new THREE.Mesh(new THREE.BoxGeometry(7.2, 3.4, 2.8), new THREE.MeshBasicMaterial({ visible: false }));
@@ -212,7 +222,8 @@ export function createTruck({ name = 'Truck' } = {}) {
     hit,
     /** Turn the wheels for `distance` m of road (positive forward). */
     roll(distance) {
-      for (const w of wheels) w.rotation.z = -distance / TRUCK.wheel;
+      for (let i = 0; i < spots.length; i++) wheels.set(i, -distance / TRUCK.wheel);
+      wheels.commit();
     },
     /** Dip the nose (positive a, radians) when braking: the body turns about its middle, over the wheels. */
     setPitch(a) {

@@ -3,6 +3,7 @@
 // advertising boards, grandstands with spectators and flags; violet hills far away and a few clouds.
 // Metres; +x along the track, the camera looks from +z.
 import * as THREE from 'three';
+import { bake } from './bake.js';
 import { HILL, heightAt, START_X } from './energy.js';
 
 const TRACK_HALF = 2; // m: half the asphalt's width (the rider rides in the middle, z = 0)
@@ -39,6 +40,56 @@ const ridge = (z) => (z >= 0 ? 1 - smooth(EDGE, EDGE + 6, z) : 1 - smooth(-EDGE,
 /** The ground's height anywhere (the track at |z| ≤ TRACK_HALF is exactly heightAt). */
 export const groundAt = (x, z) =>
   heightAt(x) * ridge(z) + (Math.abs(z) > 5 ? 0.25 * (noise(x * 0.08, z * 0.08) - 0.5) * smooth(5, 14, Math.abs(z)) : 0);
+
+/**
+ * Grain for the ground and the asphalt: fine specks of grit and a few small pebbles, light and dark around white, so
+ * it only shades the vertex colours (made once, 512 px, repeated every few metres). Null outside a browser.
+ */
+let grain = null;
+function grainTexture() {
+  if (grain || typeof document === 'undefined') return grain;
+  const N = 512;
+  const c = document.createElement('canvas');
+  c.width = c.height = N;
+  const g = c.getContext('2d');
+  g.fillStyle = 'rgb(244,244,244)';
+  g.fillRect(0, 0, N, N);
+  let seed = 7;
+  const rnd = () => {
+    seed = (seed * 16807) % 2147483647;
+    return seed / 2147483647;
+  };
+  // soft blotches, then grit, then pebbles with a lit top and a dark rim (tiles seamlessly: drawn wrapped)
+  const dot = (x, y, r, fill) => {
+    g.fillStyle = fill;
+    g.beginPath();
+    // the copies across an edge only where the dot reaches it
+    for (const dx of x < r ? [0, N] : x > N - r ? [0, -N] : [0])
+      for (const dy of y < r ? [0, N] : y > N - r ? [0, -N] : [0]) {
+        g.moveTo(x + dx + r, y + dy);
+        g.arc(x + dx, y + dy, r, 0, Math.PI * 2);
+      }
+    g.fill();
+  };
+  for (let i = 0; i < 70; i++) dot(rnd() * N, rnd() * N, 18 + rnd() * 40, `rgba(${rnd() < 0.5 ? '205,205,205' : '255,255,255'},0.18)`);
+  for (let i = 0; i < 9000; i++) {
+    const v = rnd() < 0.55 ? 150 + rnd() * 60 : 255;
+    dot(rnd() * N, rnd() * N, 0.6 + rnd() * 1.1, `rgba(${v},${v},${v},0.55)`);
+  }
+  for (let i = 0; i < 160; i++) {
+    const x = rnd() * N;
+    const y = rnd() * N;
+    const r = 2 + rnd() * 3.2;
+    dot(x, y + 0.8, r + 0.8, 'rgba(120,120,120,0.55)');
+    dot(x, y, r, `rgb(${(232 + rnd() * 23) | 0},${(228 + rnd() * 22) | 0},${(222 + rnd() * 20) | 0})`);
+    dot(x - r * 0.3, y - r * 0.3, r * 0.4, 'rgba(255,255,255,0.7)');
+  }
+  grain = new THREE.CanvasTexture(c);
+  grain.wrapS = grain.wrapT = THREE.RepeatWrapping;
+  grain.colorSpace = THREE.NoColorSpace; // a shade, not a colour: 244/255 ≈ 0.96
+  grain.anisotropy = 4;
+  return grain;
+}
 
 /** Sample positions: dense near the road and the hill, sparse far away. */
 function samples(a, b, fine, coarse, from, to) {
@@ -92,24 +143,34 @@ export function createLandscape() {
   const root = new THREE.Group();
   root.name = 'Landscape';
 
-  // ── the ground: one grid, coloured by vertex: pale sandy run-off beside the track, orange clay further out ────────
+  // ── the ground: one grid, coloured by vertex: a narrow sandy run-off beside the track, packed earth on the hill, orange clay further out
   const xs = samples(X0, X1, 0.5, 2.5, -HILL.half - 6, HILL.half + 6);
   const zs = samples(-70, 30, 0.6, 3, -10, 12);
   const pos = new Float32Array(xs.length * zs.length * 3);
   const col = new Float32Array(xs.length * zs.length * 3);
+  const uv = new Float32Array(xs.length * zs.length * 2);
   const clayA = new THREE.Color('#d9692f');
   const clayB = new THREE.Color('#ee9a45');
   const sand = new THREE.Color('#f1d29a');
+  const earth = new THREE.Color('#c45a2c');
   const c = new THREE.Color();
   let i = 0;
   for (const z of zs)
     for (const x of xs) {
       const y = groundAt(x, z);
       pos.set([x, y, z], i * 3);
+      uv.set([x / 3, z / 3], i * 2);
       const n = noise(x * 0.3, z * 0.3) * 0.6 + noise(x * 1.6, z * 1.6) * 0.4;
       c.copy(clayA).lerp(clayB, n);
-      c.lerp(sand, 1 - smooth(EDGE + 1.5, EDGE + 5, Math.abs(z)));
-      c.offsetHSL(0, 0, 0.04 * (noise(x * 3.1, z * 3.1) - 0.5));
+      // the hill's flanks: packed earth, a little redder and darker, with ruts and streaks running along the track
+      const mound = smooth(0.2, 1.2, y);
+      if (mound > 0) {
+        c.lerp(earth, 0.55 * mound);
+        const streak = noise(x * 0.18, z * 1.7) * 0.7 + noise(x * 0.5, z * 4.1) * 0.3;
+        c.offsetHSL(0, -0.04 * mound, -0.1 * mound * smooth(0.35, 0.8, streak));
+      }
+      c.lerp(sand, 1 - smooth(EDGE + 0.4, EDGE + 2.2, Math.abs(z)));
+      c.offsetHSL(0, 0, 0.05 * (noise(x * 3.1, z * 3.1) - 0.5));
       col.set([c.r, c.g, c.b], i * 3);
       i++;
     }
@@ -125,9 +186,13 @@ export function createLandscape() {
   const groundGeo = new THREE.BufferGeometry();
   groundGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   groundGeo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  groundGeo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
   groundGeo.setIndex(index);
   groundGeo.computeVertexNormals();
-  const ground = new THREE.Mesh(groundGeo, new THREE.MeshStandardMaterial({ name: 'Ground', vertexColors: true, roughness: 1, metalness: 0 }));
+  const ground = new THREE.Mesh(
+    groundGeo,
+    new THREE.MeshStandardMaterial({ name: 'Ground', vertexColors: true, map: grainTexture(), roughness: 1, metalness: 0 }),
+  );
   ground.name = 'HillGround';
   ground.receiveShadow = true;
   root.add(ground);
@@ -170,9 +235,9 @@ export function createLandscape() {
 
   // flags on tall poles
   const poleMat = new THREE.MeshStandardMaterial({ name: 'Pole', color: '#e9edf2', metalness: 0.4, roughness: 0.4 });
-  const flagMats = ['#e8333a', '#ffd23f', '#1f6fd1', '#18a058', '#ff8a1f', '#c23fd1'].map(
-    (color) => new THREE.MeshStandardMaterial({ name: 'Flag', color, roughness: 0.7, side: THREE.DoubleSide }),
-  );
+  const flagMat = new THREE.MeshStandardMaterial({ name: 'Flags', vertexColors: true, roughness: 0.7, side: THREE.DoubleSide });
+  const flagColors = ['#e8333a', '#ffd23f', '#1f6fd1', '#18a058', '#ff8a1f', '#c23fd1'].map((h) => new THREE.Color(h));
+  const flagGeos = [];
   const poleGeo = new THREE.CylinderGeometry(0.05, 0.06, 6, 8);
   const flagGeo = new THREE.BufferGeometry();
   flagGeo.setAttribute(
@@ -186,11 +251,16 @@ export function createLandscape() {
     const base = groundAt(x, z);
     const pole = new THREE.Mesh(poleGeo, poleMat);
     pole.position.set(x, base + 3, z);
-    const flag = new THREE.Mesh(flagGeo, flagMats[f++ % flagMats.length]);
-    flag.position.set(x, base + 5.95, z);
-    flag.rotation.y = 0.15 * (hash(x, 9) - 0.5);
-    stands.add(pole, flag);
+    const fc = flagColors[f++ % flagColors.length];
+    const flag = flagGeo.clone();
+    flag.setAttribute('color', new THREE.Float32BufferAttribute(Array.from({ length: 6 }, () => [fc.r, fc.g, fc.b]).flat(), 3));
+    flag.rotateY(0.15 * (hash(x, 9) - 0.5)).translate(x, base + 5.95, z);
+    flagGeos.push(flag);
+    stands.add(pole);
   }
+  const flags = new THREE.Mesh(mergeFlat(flagGeos), flagMat);
+  flags.name = 'Flags';
+  stands.add(flags);
 
   // grandstands: stepped rows of coloured seats with spectators, a back wall and a roof on posts
   const concrete = new THREE.MeshStandardMaterial({ name: 'Concrete', color: '#c9ccd3', roughness: 0.9 });
@@ -199,12 +269,19 @@ export function createLandscape() {
   const seatMats = seatColors.map((color) => new THREE.MeshStandardMaterial({ name: 'Seats', color, roughness: 0.6 }));
   const shirts = ['#ffffff', '#e8333a', '#ffd23f', '#1f6fd1', '#ff8a1f', '#2b2b2b', '#c23fd1', '#18a058'].map((h) => new THREE.Color(h));
   const box = new THREE.BoxGeometry(1, 1, 1);
-  const person = new THREE.CapsuleGeometry(0.17, 0.32, 3, 8);
+  // spectators are 20 m and more away: a few pixels each, so a lighter capsule and head look the same
+  const person = new THREE.CapsuleGeometry(0.17, 0.32, 2, 8);
+  const headGeo = new THREE.SphereGeometry(0.13, 10, 6);
+  const crowdMat = new THREE.MeshStandardMaterial({ name: 'Spectators', roughness: 0.8 });
+  const headMat = new THREE.MeshStandardMaterial({ name: 'Heads', roughness: 0.7 });
+  const shirtsOf = (x, z) => shirts[Math.floor(hash(x, z) * shirts.length) % shirts.length];
+  const skins = ['#8d5a3b', '#a8714a', '#6e432a', '#c08a60'].map((h) => new THREE.Color(h));
+  const m = new THREE.Matrix4();
+  const crowds = [];
   const ROWS = 7;
   const STEP_H = 0.5;
   const STEP_D = 0.85;
   const FRONT_Z = -21;
-  const placed = [];
   for (const [cx, w] of [
     [-38, 18],
     [-6, 24],
@@ -216,6 +293,7 @@ export function createLandscape() {
   ]) {
     const stand = new THREE.Group();
     stand.position.set(cx, groundAt(cx, FRONT_Z) - 0.05, FRONT_Z);
+    const placed = [];
     for (let r = 0; r < ROWS; r++) {
       const step = new THREE.Mesh(box, concrete);
       step.scale.set(w, STEP_H * (r + 1), STEP_D);
@@ -244,25 +322,23 @@ export function createLandscape() {
       stand.add(post);
     }
     stands.add(stand);
+    const crowd = new THREE.InstancedMesh(person, crowdMat, placed.length);
+    const heads = new THREE.InstancedMesh(headGeo, headMat, placed.length);
+    for (const [k, [x, y, z]] of placed.entries()) {
+      crowd.setMatrixAt(k, m.makeTranslation(x, y, z));
+      crowd.setColorAt(k, shirtsOf(x, z));
+      heads.setMatrixAt(k, m.makeTranslation(x, y + 0.4, z));
+      heads.setColorAt(k, skins[Math.floor(hash(z, x) * skins.length) % skins.length]);
+    }
+    crowd.name = 'Spectators';
+    heads.name = 'Heads';
+    crowd.computeBoundingSphere();
+    heads.computeBoundingSphere();
+    crowds.push(crowd, heads);
   }
-  const crowd = new THREE.InstancedMesh(person, new THREE.MeshStandardMaterial({ name: 'Spectators', roughness: 0.8 }), placed.length);
-  const m = new THREE.Matrix4();
-  for (const [k, [x, y, z]] of placed.entries()) {
-    crowd.setMatrixAt(k, m.makeTranslation(x, y, z));
-    crowd.setColorAt(k, shirts[Math.floor(hash(x, z) * shirts.length) % shirts.length]);
-  }
-  crowd.name = 'Spectators';
-  const heads = new THREE.InstancedMesh(
-    new THREE.SphereGeometry(0.13, 12, 8),
-    new THREE.MeshStandardMaterial({ name: 'Heads', roughness: 0.7 }),
-    placed.length,
-  );
-  const skins = ['#8d5a3b', '#a8714a', '#6e432a', '#c08a60'].map((h) => new THREE.Color(h));
-  for (const [k, [x, y, z]] of placed.entries()) {
-    heads.setMatrixAt(k, m.makeTranslation(x, y + 0.4, z));
-    heads.setColorAt(k, skins[Math.floor(hash(z, x) * skins.length) % skins.length]);
-  }
-  stands.add(crowd, heads);
+  // steps, seats, walls, roofs, posts and poles never move: one mesh per material for all seven stands
+  bake(stands);
+  stands.add(...crowds);
 
   root.add(stands);
 
@@ -270,17 +346,19 @@ export function createLandscape() {
   const far = new THREE.Group();
   far.name = 'FarHills';
   const farMat = new THREE.MeshStandardMaterial({ name: 'FarHill', color: '#8d7fd0', roughness: 1 });
+  const dome = new THREE.SphereGeometry(1, 40, 14, 0, Math.PI * 2, 0, Math.PI / 2);
   for (const [x, z, r, h] of [
     [-70, -120, 60, 14],
     [10, -150, 80, 20],
     [90, -125, 65, 15],
     [170, -140, 70, 18],
   ]) {
-    const hill = new THREE.Mesh(new THREE.SphereGeometry(1, 40, 14, 0, Math.PI * 2, 0, Math.PI / 2), farMat);
+    const hill = new THREE.Mesh(dome, farMat);
     hill.position.set(x, -0.5, z);
     hill.scale.set(r, h, r * 0.45);
     far.add(hill);
   }
+  bake(far);
   root.add(far);
   const clouds = new THREE.Group();
   clouds.name = 'Clouds';
@@ -310,6 +388,7 @@ export function createLandscape() {
     }
     clouds.add(cloud);
   }
+  bake(clouds);
   root.add(clouds);
   for (const g of [stands, far, clouds]) g.userData.noExport = true;
 
@@ -332,6 +411,7 @@ function createTrack(a, b) {
   const zs = [-EDGE - 0.15, -TRACK_HALF, -1.2, -0.3, 0, 0.3, 1.2, TRACK_HALF, EDGE + 0.15];
   const pos = [];
   const col = [];
+  const uvs = [];
   const asphalt = new THREE.Color('#4a4e57');
   const worn = new THREE.Color('#3c4048');
   const c = new THREE.Color();
@@ -339,6 +419,7 @@ function createTrack(a, b) {
     for (const x of xs) {
       const edge = Math.abs(z) > TRACK_HALF;
       pos.push(x, heightAt(x) + (edge ? -0.04 : 0.012), z);
+      uvs.push(x / 1.6, z / 1.6);
       c.copy(Math.abs(z) < 0.31 ? worn : asphalt);
       c.offsetHSL(0, 0, 0.04 * (noise(x * 2.3, z * 5) - 0.5));
       col.push(c.r, c.g, c.b);
@@ -353,6 +434,7 @@ function createTrack(a, b) {
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
   geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
   geo.setIndex(index);
   geo.computeVertexNormals();
   const surface = new THREE.Mesh(
@@ -360,6 +442,7 @@ function createTrack(a, b) {
     new THREE.MeshStandardMaterial({
       name: 'Asphalt',
       vertexColors: true,
+      map: grainTexture(),
       roughness: 0.95,
       metalness: 0,
       polygonOffset: true,

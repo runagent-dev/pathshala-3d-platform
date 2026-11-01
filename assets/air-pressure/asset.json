@@ -1,0 +1,107 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "air-pressure",
+  "title": "Air pressure: a tin box crushed from every side (বাতাসের চাপ)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 142,
+  "topic": "5.4",
+  "placement": "Book page 142–143, topic 5.4 (বাতাসের চাপ): next to চিত্র ৫.০৭ (a tin box (a) emptied of air by a pump: (b) what would happen if air pressed only from the top, flattened; (c) what really happens, crushed from every side) and the paragraphs before it: the air column over 1 m² (চিত্র ৫.০৬, 10⁵ N/m², about an elephant's weight), 'চাপ ভেক্টর নয়, তার কোনো দিক নেই তাই যেকোনো জায়গায় চারদিকে চাপ সমান', and why we don't feel the air's pressure (and astronauts wear pressure suits).",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "Air pressure (page 142, topic 5.4) in a school yard paved with red bricks at golden hour, with the school's ochre wall and green shutters, a flame tree in red bloom and pots of marigolds under a deep blue sky. On a wooden lab table stands a thin tin box, a cube 10 cm on a side (as the book's চিত্র ৫.০৭) printed golden yellow with deep blue bands and a marigold, joined by an orange hose to a black hand vacuum pump with a yellow T-handle and a dial. Bold red arrows in a dark outline press on all five open faces from outside, nine to a face and all the same length (the air's 1,00,000 Pa = 10⁵ N/m²); blue arrows, seen through the tin, push back from inside just as hard. Each tap on the pump (or the big button) is one stroke: the handle goes up and down, the dial's needle drops, the inside pressure falls by 20,000 Pa (made simple, said on the picture), the blue arrows shrink while the red stay, and the tin buckles in from every side with a crunch while the camera leans in. The crumple is three precomputed morph targets blended on the GPU (a dent, the all-sided crush, the wrong flattening), cheap on phones. The panel shows the outside and inside pressure and works out the force left over on one face, F = (P outside − P inside) × A with A = 100 cm² = 0.01 m² (up to 1,000 N when no air is left). After five strokes the book's contrast: 'what if air pushed only from the top?' shows the box as a pale ghost flattening under arrows on its top only (চিত্র ৫.০৭ b, marked as imagined), and 'what really happens' replays the crush from every side (c). The row of words also goes to the air column (চিত্র ৫.০৬): a see-through blue 1 m × 1 m column fading upward over a teal square of the yard, with specks of air thinner higher up; a tap shows its weight, 10⁵ N, as a purple arrow beside an elephant's weight of about the same (P = F/A = 10⁵ N/m²). And to our body: a student in school uniform with red arrows pressing in and equal blue arrows pushing out from inside (they cancel, so we don't feel it); 'what about in space?' takes the yard away under the stars and leaves only the inside arrows (why astronauts wear pressure suits). The rule grows in the book's words. Test tab: 5 questions (the force on one face from the pressures on the picture; what the box would do if pressed only from the top; why it crumples from every side; the column's weight over 1 m²; why we don't feel it), every wrong choice a real mistake with its own note. Phone-first, Bangla and English.",
+  "tags": [
+    "air pressure",
+    "atmospheric pressure",
+    "pressure",
+    "vacuum",
+    "pascal",
+    "scalar",
+    "air column",
+    "tin can",
+    "bangla"
+  ],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "part",
+      "label": "Part",
+      "type": "select",
+      "options": [["can", "the tin box"], ["column", "the air column"], ["body", "our body"]],
+      "default": "can"
+    },
+    {
+      "name": "strokes",
+      "label": "Pump strokes done",
+      "type": "number",
+      "default": "0",
+      "help": "0 (full of air) to 5 (no air left); each stroke takes out 20,000 Pa"
+    },
+    {
+      "name": "whatIf",
+      "label": "The box pressed only from the top (needs 5 strokes)",
+      "type": "boolean",
+      "default": "0"
+    },
+    { "name": "weigh", "label": "The column's weight shown", "type": "boolean", "default": "0" },
+    { "name": "space", "label": "The body in space", "type": "boolean", "default": "0" },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring round the pump pulses", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "strokes": 3, "animate": false } },
+    { "name": "set", "payload": { "strokes": 5, "animate": false } },
+    { "name": "set", "payload": { "whatIf": true, "animate": false } },
+    { "name": "set", "payload": { "part": "column", "weigh": true, "animate": false } },
+    { "name": "set", "payload": { "part": "body", "space": true, "animate": false } },
+    { "name": "set", "payload": { "view": "3d", "animate": false } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": [
+    "ready",
+    "change",
+    "pump",
+    "whatif",
+    "part",
+    "space",
+    "view",
+    "practice-start",
+    "practice-result",
+    "practice-end"
+  ],
+  "export": {
+    "poster": { "params": { "coach": "0", "strokes": "3" } },
+    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "strokes": 5, "animate": false } }] }]
+  }
+}

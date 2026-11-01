@@ -1,0 +1,85 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "buoyancy-ship",
+  "title": "Archimedes' principle and buoyancy: a cargo ship (আর্কিমিডিসের নীতি এবং প্লবতা)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 137,
+  "topic": "5.3.1",
+  "placement": "Book page 137, topic 5.3.1 (আর্কিমিডিসের নীতি এবং প্লবতা), continuing on page 138: next to চিত্র ৫.০৪ (a cylinder of area A and height h held in a liquid of density ρ, its faces at depths h₁ and h₂: 'একটি বস্তু যতটুকু তরল অপসারিত করে তার সমপরিমাণ ওজন হারায়') and the derivation P₁ = h₁ρg, P₂ = h₂ρg, F = F₂ − F₁ = Ahρg, the weight of the liquid pushed aside, called প্লবতা.",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "Archimedes' principle and buoyancy (page 137, topic 5.3.1) on one cargo ship in a sunny harbour under a warm sky, a far shore with sheds, orange cranes and a lighthouse: a navy ship with a red anti-fouling bottom, a white bridge near the bow, red funnels and a deck for containers. The water behind its flat stern is cut away like glass, so the hull under the water shows, with draft marks and the load line (Plimsoll mark). Four steps in a row of words, one idea at a time. চাপ: one tap grows the water's pressure arrows (red, outlined) on the hull, short near the surface, long at the bottom (P = hρg, with h₂ marked); a second tap fades the equal side pairs ('কাটাকাটি') and gathers the bottom ones into one bold orange প্লবতা arrow, F = AP₂ = Ahρg with the ship's numbers (h₁ = 0: its top is out of the water). ওজন ও প্লবতা: the ship's weight (purple) and buoyancy (orange), equal; a solid steel cylinder of the empty ship's mass hangs on a giant spring balance; lowered into the water the reading drops by its buoyancy, let go it sinks to the sand (its buoyancy is a seventh of its weight; steel 7,850 kg m⁻³). অপসারিত পানি: a glowing block of water in the hull's shape slides out from under the ship, rises and hangs on the balance, which reads its weight Vρg = the buoyancy (marked 'কল্পনা'). মাল বোঝাই: containers (20 t each, 0 to 12) are lowered onto the deck; the ship settles deeper with a small bob, the weight arrow grows first and the buoyancy catches up, the waterline climbs the draft marks to the load line at 2.5 m. The panel shows the book's sums with live numbers (ρ = 1,000 kg m⁻³, g = 9.8 m s⁻², A = 200 m², Bangla digits) and a rule in the book's words that grows. Test tab: 5 questions (the side forces; P = hρg on the bottom from the marked depth; the weight of the water pushed aside from its volume; two more containers; why the same-mass steel cylinder sinks), every wrong choice a real mistake with its own note. Phone-first, Bangla and English.",
+  "tags": ["buoyancy", "archimedes", "pressure", "density", "displacement", "ship", "plimsoll", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "step",
+      "label": "Step",
+      "type": "select",
+      "options": [
+        ["pressure", "pressure (চাপ)"],
+        ["weight", "weight and buoyancy (ওজন ও প্লবতা)"],
+        ["displaced", "water pushed aside (অপসারিত পানি)"],
+        ["load", "loading (মাল বোঝাই)"]
+      ],
+      "default": "pressure"
+    },
+    {
+      "name": "load",
+      "label": "Containers on board",
+      "type": "number",
+      "default": "0",
+      "placeholder": "0 to 12",
+      "help": "20 t each; 12 bring the water to the load line"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring round the hull pulses", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "step": "pressure", "phase": 2 } },
+    { "name": "set", "payload": { "step": "weight", "phase": 1 } },
+    { "name": "set", "payload": { "step": "displaced", "phase": 1, "animate": false } },
+    { "name": "set", "payload": { "step": "load", "load": 6 } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "step", "view", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": { "params": { "coach": "0", "step": "load", "load": "6" } },
+    "glb": [
+      { "name": "default", "setup": [{ "command": "set", "payload": { "step": "load", "load": 6, "animate": false } }] }
+    ]
+  }
+}

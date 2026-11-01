@@ -56,7 +56,7 @@ const VIEW_DIRS = {
   front: new THREE.Vector3(0.06, 0.05, 1).normalize(), // from the side of the swing, as in the book's picture
   '3d': new THREE.Vector3(0.78, 0.38, 0.62).normalize(),
 };
-const COLOR = { path: 0x44c9f2, speed: 0xffd04d, mark: 0xbca1ff }; // the test's marked part: purple, far from the speed's orange
+const COLOR = { path: 0x4fd3ff, speed: 0xffc93a, mark: 0xc6adff }; // the test's marked part: purple, far from the speed's orange
 // where the helpers go: the swing's path just under the seat, its speed arrow under the girl's feet; the spring's
 // path on the right of the mass, its arrow on the left, and the equilibrium level across
 const R_PATH = SWING.R + 0.05;
@@ -72,23 +72,37 @@ const KINDS = ['speed', 'trend', 'journey', 'time', 'example'];
 const FAST = amplitudeRange('swing')[1] * omega('swing'); // m/s: the seat's top speed at 25°
 const fmt = (v) => String(roundTo(v, 0.01)); // 3, 1.5, 0.75
 
-/** An arrow along its +y axis from its origin, `length` long. */
+const UNIT_SHAFT = new THREE.CylinderGeometry(1, 1, 1, 16).translate(0, 0.5, 0);
+const UNIT_HEAD = new THREE.ConeGeometry(1, 1, 20).translate(0, 0.5, 0);
+const OUTLINE = new THREE.MeshBasicMaterial({ name: 'Outline', color: 0x1d1408, side: THREE.BackSide });
+
+/**
+ * An arrow along its +y axis from its origin, `length` long: lit colour inside a dark outline (the back faces of a
+ * slightly larger copy), so it stands out on the clay of the courtyard as well as on the blackboard.
+ */
 function createArrow(color) {
-  const mat = new THREE.MeshStandardMaterial({ name: 'SpeedArrow', color, roughness: 0.45, emissive: color, emissiveIntensity: 0.18 });
+  const mat = new THREE.MeshStandardMaterial({ name: 'SpeedArrow', color, roughness: 0.45, emissive: color, emissiveIntensity: 0.28 });
   const group = new THREE.Group();
   group.userData.noExport = true;
-  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 14).translate(0, 0.5, 0), mat);
-  const head = new THREE.Mesh(new THREE.ConeGeometry(1, 1, 18).translate(0, 0.5, 0), mat);
-  group.add(shaft, head);
+  const shaft = new THREE.Mesh(UNIT_SHAFT, mat);
+  const head = new THREE.Mesh(UNIT_HEAD, mat);
+  const shaftEdge = new THREE.Mesh(UNIT_SHAFT, OUTLINE);
+  const headEdge = new THREE.Mesh(UNIT_HEAD, OUTLINE);
+  group.add(shaftEdge, headEdge, shaft, head);
   return {
     group,
     set(length, r) {
       group.visible = length > r * 1.5;
       if (!group.visible) return;
       const h = Math.min(r * 5, length * 0.55);
+      const pad = r * 0.5;
       shaft.scale.set(r, length - h, r);
+      shaftEdge.position.y = -pad;
+      shaftEdge.scale.set(r + pad, length - h + pad, r + pad);
       head.position.y = length - h;
       head.scale.set(r * 2.5, h, r * 2.5);
+      headEdge.position.y = length - h - pad * 0.8;
+      headEdge.scale.set(r * 2.5 + pad * 1.8, h + pad * 2.4, r * 2.5 + pad * 1.8);
     },
   };
 }
@@ -130,6 +144,7 @@ export function createApp(root, options = {}) {
     learn: `
           <div class="pvc-learn-main shm-main">
             <div class="pvc-result shm-speed"><span class="k"><i class="shm-arrow-ic"></i>${t('speed')}</span><span class="v">0</span><span class="u">${t('unit_speed')}</span></div>
+            <p class="shm-state" role="status" aria-live="off"></p>
           </div>
           <div class="shm-trip">
             <div class="shm-spring-graphs" hidden></div>
@@ -146,7 +161,6 @@ export function createApp(root, options = {}) {
             <div class="shm-stops" role="group" aria-label="${t('inspect_label')}">${stops}</div>
             <div class="shm-span"><i></i><span class="tx"></span><i></i></div>
           </div>
-          <p class="shm-state" role="status" aria-live="off"></p>
           <p class="pvc-learn-extra shm-extra"></p>
           <div class="pvc-learn-foot">
             <div class="shm-acts">
@@ -165,7 +179,7 @@ export function createApp(root, options = {}) {
   ui.stage.append(badge);
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
-  const stage = createStage(ui.canvasHost, { fov: 24, near: 0.05, far: 80, environment: 'studio-light' });
+  const stage = createStage(ui.canvasHost, { fov: 24, near: 0.05, far: 80, environment: 'studio-light', environmentIntensity: 0.55 });
   const { camera, controls, scene } = stage;
   const presentation = createPresentation(stage, o.bg === 'transparent');
   controls.minDistance = 0.6;
@@ -181,23 +195,47 @@ export function createApp(root, options = {}) {
   const audio = createAudio(o.sound);
   const annotations = createAnnotations({ stage, layer: ui.annoLayer, avoid: [ui.corner, ui.hint, badge] });
 
-  if (o.shadow && o.bg !== 'transparent') {
+  // soft shadows from the key light, in a box fitted round what casts them (the frame and the girl, or the stand)
+  const shadows = o.shadow && o.bg !== 'transparent';
+  if (shadows) {
     stage.renderer.shadowMap.enabled = true;
-    stage.renderer.shadowMap.type = THREE.VSMShadowMap;
-    const sun = new THREE.DirectionalLight(0xffffff, 0.45);
-    sun.position.set(1.5, 7, 4);
+    stage.renderer.shadowMap.type = THREE.PCFShadowMap;
+    const sun = presentation.key;
     sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
-    Object.assign(sun.shadow.camera, { left: -2.4, right: 2.4, top: 2.4, bottom: -2.4, near: 3, far: 14 });
-    sun.shadow.radius = 8;
-    const ground = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.ShadowMaterial({ opacity: 0.13 }));
-    ground.rotation.x = -Math.PI / 2;
-    ground.receiveShadow = true;
-    scene.add(sun, sun.target, ground);
+    sun.shadow.mapSize.set(1024, 1024);
+    sun.shadow.radius = 3;
+    sun.shadow.bias = -0.0004;
+    sun.shadow.normalBias = 0.01;
     for (const m of Object.values(models))
       m.root.traverse((mesh) => {
         if (mesh instanceof THREE.Mesh && mesh.material?.visible !== false) mesh.castShadow = true;
       });
+  }
+  const lightView = new THREE.Matrix4();
+  const corner = new THREE.Vector3();
+  /** Fit the shadow camera round the example's casters (seen from the light), with a small margin. */
+  function fitShadow() {
+    if (!shadows) return;
+    const sun = presentation.key;
+    const box = new THREE.Box3().setFromObject(model().root);
+    lightView.lookAt(sun.position, sun.target.position, UP).setPosition(sun.position).invert();
+    const lo = new THREE.Vector3(Infinity, Infinity, Infinity);
+    const hi = new THREE.Vector3(-Infinity, -Infinity, -Infinity);
+    for (let i = 0; i < 8; i++) {
+      corner.set(i & 1 ? box.max.x : box.min.x, i & 2 ? box.max.y : box.min.y, i & 4 ? box.max.z : box.min.z).applyMatrix4(lightView);
+      lo.min(corner);
+      hi.max(corner);
+    }
+    const pad = 0.04 * (hi.x - lo.x);
+    Object.assign(sun.shadow.camera, {
+      left: lo.x - pad,
+      right: hi.x + pad,
+      bottom: lo.y - pad,
+      top: hi.y + pad,
+      near: Math.max(0.05, -hi.z - 1),
+      far: -lo.z + 1,
+    });
+    sun.shadow.camera.updateProjectionMatrix();
   }
 
   // ── the helpers: path, dots at equal time steps, speed arrow (not exported) ──
@@ -205,39 +243,50 @@ export function createApp(root, options = {}) {
   helpers.name = 'Helpers';
   helpers.userData.noExport = true;
   scene.add(helpers);
-  const pathMat = new THREE.MeshBasicMaterial({ name: 'Path', color: COLOR.path, toneMapped: false, transparent: true, opacity: 0.85 });
+  const pathMat = new THREE.MeshBasicMaterial({ name: 'Path', color: COLOR.path, toneMapped: false });
   const dotMat = new THREE.MeshBasicMaterial({ name: 'Dot', color: COLOR.path, toneMapped: false });
   const markMat = new THREE.MeshStandardMaterial({ name: 'Mark', color: COLOR.mark, roughness: 0.5, emissive: COLOR.mark, emissiveIntensity: 0.2 });
   const ARC_SEGS = 200;
   const arc = new Arc(R_PATH, SWING.maxDeg);
+  // the path is cyan inside a dark edge (a thicker tube's back faces), so it reads on the clay as on the blackboard
   const swingPath = new THREE.Mesh(new THREE.TubeGeometry(arc, ARC_SEGS, 0.009, 6, false), pathMat);
+  const swingPathEdge = new THREE.Mesh(new THREE.TubeGeometry(arc, ARC_SEGS, 0.015, 6, false), OUTLINE);
   const springPath = new THREE.Mesh(new THREE.CylinderGeometry(0.0025, 0.0025, 1, 8), pathMat);
   const springLevel = new THREE.Mesh(new THREE.CylinderGeometry(0.0018, 0.0018, 1, 6), pathMat); // the equilibrium level
   springLevel.rotation.z = Math.PI / 2;
   // the test's marked part of the path: purple dashes, and an arrowhead for the way it goes
   const marks = new THREE.Group();
   const dashGeo = new THREE.CylinderGeometry(1, 1, 1, 10);
-  const markHead = new THREE.Mesh(new THREE.ConeGeometry(1, 1, 16).translate(0, 0.5, 0), markMat);
+  const markHead = new THREE.Mesh(UNIT_HEAD, markMat);
+  const markHeadEdge = new THREE.Mesh(UNIT_HEAD, OUTLINE);
+  markHeadEdge.scale.set(1.3, 1.25, 1.3);
+  markHeadEdge.position.y = -0.1;
+  markHead.add(markHeadEdge);
   const equilibriumGuide = new THREE.Line(
     new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, PIVOT.y, -0.08), new THREE.Vector3(0, PIVOT.y - R_PATH, -0.08)]),
     new THREE.LineDashedMaterial({ color: 0xffe16a, dashSize: 0.055, gapSize: 0.045, transparent: true, opacity: 0.65, toneMapped: false }),
   );
   equilibriumGuide.computeLineDistances();
-  helpers.add(swingPath, springPath, springLevel, marks, markHead, equilibriumGuide);
+  helpers.add(swingPathEdge, swingPath, springPath, springLevel, marks, markHead, equilibriumGuide);
   const FRACTIONS = strobe(); // 1 … −1: where the dots are, as fractions of the amplitude
+  // the dots (pink ends, a gold middle, cyan between), each in a dark rim; plain meshes in the materials the path and
+  // the arrow's outline already use, so they need no shaders of their own
   const dotGeo = new THREE.SphereGeometry(1, 16, 12);
+  const endMat = new THREE.MeshBasicMaterial({ name: 'DotEnd', color: 0xff7d9f, toneMapped: false });
+  const midMat = new THREE.MeshBasicMaterial({ name: 'DotMiddle', color: 0xffe16a, toneMapped: false });
   const dots = FRACTIONS.map((_, i) => {
-    const d = new THREE.Mesh(
-      dotGeo,
-      i === 0 || i === FRACTIONS.length - 1
-        ? new THREE.MeshBasicMaterial({ color: 0xff7d9f, toneMapped: false })
-        : i === (FRACTIONS.length - 1) / 2
-          ? new THREE.MeshBasicMaterial({ color: 0xffe16a, toneMapped: false })
-          : dotMat,
-    );
+    const end = i === 0 || i === FRACTIONS.length - 1;
+    const d = new THREE.Mesh(dotGeo, end ? endMat : i === (FRACTIONS.length - 1) / 2 ? midMat : dotMat);
+    const rim = new THREE.Mesh(dotGeo, OUTLINE);
+    rim.scale.setScalar(1.35);
+    d.add(rim);
     helpers.add(d);
     return d;
   });
+  /** Put dot i where it is, `r` in radius (its rim 35 % larger). */
+  function placeDot(i, r) {
+    dots[i].scale.setScalar(r);
+  }
   const arrows = { swing: createArrow(COLOR.speed), spring: createArrow(COLOR.speed) };
   models.swing.arm.add(arrows.swing.group); // it swings with the seat, so it always points along the path
   arrows.swing.group.position.set(0, -R_ARROW, 0);
@@ -316,8 +365,11 @@ export function createApp(root, options = {}) {
     slow: $('[data-act="slow"]'),
   };
   const springGraphHost = $('.shm-spring-graphs');
-  const springGraphs = createSpringGraphs(springGraphHost, t);
-  const shown = { speed: '', extra: '', state: '' };
+  let graphsReady = false;
+  const springGraphs = createSpringGraphs(springGraphHost, t, { onMode: () => graphsReady && pose() }); // its note goes under it
+  graphsReady = true;
+  const shown = { speed: '', extra: '', state: '', stop: -1 };
+  const stopButtons = ui.$$('[data-phase]');
   function panel(m) {
     const speed = N(m.speed.toFixed(2));
     if (speed !== shown.speed) el.speed.textContent = shown.speed = speed;
@@ -328,10 +380,13 @@ export function createApp(root, options = {}) {
     if (s.example === 'spring')
       springGraphs.update(m, { amplitude: s.held != null ? Math.abs(s.held) : s.amp, side: s.side, phase: graphPhase, held: s.held != null });
     const active = Math.round(graphPhase * 4);
-    ui.$$('[data-phase]').forEach((button, i) => {
-      button.classList.toggle('on', i === active);
-      button.setAttribute('aria-pressed', String(i === active));
-    });
+    if (active !== shown.stop) {
+      stopButtons.forEach((button, i) => {
+        button.classList.toggle('on', i === active);
+        button.setAttribute('aria-pressed', String(i === active));
+      });
+      shown.stop = active;
+    }
     const key =
       s.held != null
         ? 'state_held'
@@ -348,7 +403,12 @@ export function createApp(root, options = {}) {
       shown.state = key;
     }
     el.dot.style.top = `calc(13px + (100% - 15px) * ${((96 - 88 * k) / 100).toFixed(4)})`;
-    const extra = s.held != null ? t('idea_drag') : t('idea', { dt: strobeStep(s.example).toFixed(2), who: t(`who_${s.example}`) });
+    const extra =
+      s.held != null
+        ? t('idea_drag')
+        : s.example === 'spring'
+          ? springGraphs.note()
+          : t('idea', { dt: strobeStep(s.example).toFixed(2), who: t(`who_${s.example}`) });
     if (extra !== shown.extra) el.extra.innerHTML = shown.extra = extra;
   }
   function syncButtons() {
@@ -366,7 +426,7 @@ export function createApp(root, options = {}) {
   /** Show the path from end to end for amplitude a (m), with the dots at equal time steps along it. */
   function setPath(a) {
     const swing = s.example === 'swing';
-    swingPath.visible = equilibriumGuide.visible = swing;
+    swingPath.visible = swingPathEdge.visible = equilibriumGuide.visible = swing;
     springPath.visible = springLevel.visible = !swing;
     const r = DOT_R[s.example];
     const sign = s.held != null ? Math.sign(s.held) || 1 : s.side;
@@ -374,6 +434,7 @@ export function createApp(root, options = {}) {
       const half = ARC_SEGS / 2;
       const n = Math.min(half, Math.ceil((half * degOf(a)) / SWING.maxDeg));
       swingPath.geometry.setDrawRange((half - n) * 6 * 6, 2 * n * 6 * 6);
+      swingPathEdge.geometry.setDrawRange((half - n) * 6 * 6, 2 * n * 6 * 6);
       FRACTIONS.forEach((f, i) => models.swing.pointAt((sign * f * a) / SWING.R, R_PATH, dots[i].position));
     } else {
       springPath.position.set(SPRING_PATH_X, EQUILIBRIUM + SPRING_MID, 0);
@@ -382,10 +443,9 @@ export function createApp(root, options = {}) {
       springLevel.scale.y = SPRING_PATH_X - LEVEL_FROM;
       FRACTIONS.forEach((f, i) => models.spring.pointAt(sign * f * a, SPRING_PATH_X, dots[i].position));
     }
-    for (const d of dots) {
-      d.scale.setScalar(r);
-      d.visible = s.helpers;
-    }
+    for (let i = 0; i < FRACTIONS.length; i++) placeDot(i, r);
+    lit = -1;
+    for (const d of dots) d.visible = s.helpers;
     stage.invalidate();
   }
 
@@ -403,8 +463,8 @@ export function createApp(root, options = {}) {
         boost = 1 - off / 0.2;
       }
     }
-    if (lit >= 0 && lit !== k) dots[lit].scale.setScalar(DOT_R[s.example]);
-    if (k >= 0) dots[k].scale.setScalar(DOT_R[s.example] * (1 + 0.7 * boost));
+    if (lit >= 0 && lit !== k) placeDot(lit, DOT_R[s.example]);
+    if (k >= 0) placeDot(k, DOT_R[s.example] * (1 + 0.7 * boost));
     lit = k;
   }
 
@@ -422,6 +482,18 @@ export function createApp(root, options = {}) {
     };
   };
   const swingMid = models.swing.pointAt(0, R_PATH);
+  const bandA = new THREE.Vector3();
+  const bandB = new THREE.Vector3();
+  /** Where the swing's speed arrow runs near the middle (at its longest, 0.57 m either way), in canvas pixels. */
+  function arrowBand() {
+    if (s.example !== 'swing') return null;
+    const px = (p) => p.project(camera).set((p.x * 0.5 + 0.5) * stage.width, (-p.y * 0.5 + 0.5) * stage.height, 0);
+    const left = px(models.swing.pointAt(-0.3, R_ARROW, bandA)).x;
+    const right = px(models.swing.pointAt(0.3, R_ARROW, bandA)).x;
+    const top = px(models.swing.pointAt(0, R_ARROW - 0.06, bandA)).y;
+    const bottom = px(models.swing.pointAt(0, R_ARROW + 0.06, bandB)).y;
+    return { left: Math.min(left, right), right: Math.max(left, right), top, bottom };
+  }
   const springMid = new THREE.Vector3(LEVEL_FROM, EQUILIBRIUM + SPRING_MID, 0); // the end of the equilibrium level
   const label = (place, speed) =>
     `<span class="shm-l-place ${place === 'stop_mid' ? 'middle' : 'end'}">${t(place)}</span><span class="shm-l-speed">${t(speed)}</span>`;
@@ -456,10 +528,13 @@ export function createApp(root, options = {}) {
         text: label('stop_mid', 'speed_max'),
         point: () => swingMid,
         dy: 64,
+        // under the band the speed arrow sweeps through at the middle, so the arrow never runs over it
+        avoid: [arrowBand],
         spots: [
           { dx: 0, dy: 64 },
+          { dx: 0, dy: 82 },
+          { dx: 0, dy: 100 },
           { dx: 0, dy: 45 },
-          { dx: 0, dy: 84 },
         ],
       });
     } else {
@@ -582,6 +657,7 @@ export function createApp(root, options = {}) {
     springGraphHost.hidden = ex !== 'spring';
     presentation.setExample(ex);
     for (const [k, m] of Object.entries(models)) m.root.visible = k === ex;
+    fitShadow();
     drag = null; // a finger still on the old example lets go of it
     tweener.cancel('let-go');
     s.held = null;
@@ -613,7 +689,8 @@ export function createApp(root, options = {}) {
     const up = new THREE.Vector3().crossVectors(dir, right);
     const tanV = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
     const tanH = tanV * camera.aspect;
-    const band = 64 / Math.max(stage.height, 200); // the buttons on top take this part of the height
+    // the buttons on top take this part of the height; on a wide, low view they sit right of the top pole, clear of it
+    const band = camera.aspect > 1.8 ? 0.04 : 64 / Math.max(stage.height, 200);
     const tanUse = tanV * Math.max(0.5, 1 - band);
     let d = 0;
     for (const p of pts) {
@@ -1088,6 +1165,8 @@ export function createApp(root, options = {}) {
     else if (k === '1' || k === '2') {
       if (s.mode === 'quiz') return;
       setExample(EXAMPLES[Number(k) - 1]);
+      s.playing = true; // as the example buttons do
+      syncButtons();
       emitChange();
     } else if (k === 'f' || k === 'F') setView('front');
     else if (k === 'v' || k === 'V') setView('3d');
@@ -1135,6 +1214,7 @@ export function createApp(root, options = {}) {
     },
     async reset() {
       quiz.stop();
+      springGraphs.reset();
       setExample('swing');
       setSlow(false);
       s.playing = true;

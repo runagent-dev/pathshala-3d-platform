@@ -1,17 +1,55 @@
 // Detailed unbranded family car, metres. The teaching geometry in motion.js stays authoritative.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
+import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { CAR } from './motion.js';
 
 const R = CAR.wheelR,
   FRONT = CAR.rearAxle + CAR.wheelbase,
   ARCH = R + 0.06;
 const cache = new Map();
+/** A rounded box; its corners get as many segments as their size on screen needs (a few px at most). */
 function rounded(w, h, d, r = 0.015) {
   const key = [w, h, d, r].join('|');
-  if (!cache.has(key)) cache.set(key, mergeVertices(new RoundedBoxGeometry(w, h, d, 4, Math.min(r, w / 2, h / 2, d / 2) * 0.95)));
+  if (!cache.has(key)) cache.set(key, new RoundedBoxGeometry(w, h, d, r >= 0.03 ? 3 : 2, Math.min(r, w / 2, h / 2, d / 2) * 0.95));
   return cache.get(key);
+}
+
+/** Position and normal only, always indexed: every part can then be merged with any other. */
+function plain(geo, matrix) {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', geo.attributes.position.clone());
+  if (geo.attributes.normal) g.setAttribute('normal', geo.attributes.normal.clone());
+  g.setIndex(geo.index ? geo.index.clone() : [...Array(geo.attributes.position.count).keys()]);
+  if (!geo.attributes.normal) g.computeVertexNormals();
+  return g.applyMatrix4(matrix);
+}
+
+/**
+ * The parts that never move relative to `group` (its direct meshes), merged into one mesh per material, so the
+ * car draws in a few calls instead of hundreds. A merged mesh keeps its part's name when it has only one part.
+ * `cache` (by key) shares the merged geometries between wheels built alike.
+ */
+function mergeByMaterial(group, cache = null, key = '') {
+  const parts = new Map();
+  for (const child of [...group.children]) {
+    if (!(child instanceof THREE.Mesh)) continue;
+    child.updateMatrix();
+    if (!parts.has(child.material)) parts.set(child.material, []);
+    parts.get(child.material).push(child);
+    group.remove(child);
+  }
+  for (const [material, list] of parts) {
+    const id = `${key}|${material.uuid}`;
+    let geo = cache?.get(id);
+    if (!geo) {
+      geo = mergeGeometries(list.map((m) => plain(m.geometry, m.matrix)));
+      cache?.set(id, geo);
+    }
+    const mesh = new THREE.Mesh(geo, material);
+    mesh.name = list.length === 1 ? list[0].name : `${group.name}_${material.name}`;
+    group.add(mesh);
+  }
 }
 function sideProfile() {
   const s = new THREE.Shape(),
@@ -57,7 +95,7 @@ function shellGeometry() {
   g.computeVertexNormals();
   return mergeVertices(g);
 }
-function tyreGeometry() {
+function tyreGeometry(simple = false) {
   const profile = [
     [0.2, -0.086],
     [0.24, -0.099],
@@ -73,9 +111,9 @@ function tyreGeometry() {
     [0.2, 0.086],
   ];
   const curve = new THREE.SplineCurve(profile.map((p) => new THREE.Vector2(p[0], p[1])));
-  const g = new THREE.LatheGeometry(curve.getPoints(30), 96),
+  const g = new THREE.LatheGeometry(curve.getPoints(simple ? 12 : 30), simple ? 40 : 96),
     p = g.attributes.position;
-  for (let i = 0; i < p.count; i++) {
+  for (let i = 0; i < p.count && !simple; i++) {
     const x = p.getX(i),
       y = p.getY(i),
       z = p.getZ(i),
@@ -304,6 +342,7 @@ export function buildVehicle({ materials: _M, colors, ghost = null }) {
         silver,
       );
     const seam = new THREE.MeshStandardMaterial({ name: 'PanelGap', color: '#6b747a', roughness: 0.75 });
+    const indicator = new THREE.MeshStandardMaterial({ name: 'MirrorIndicator', color: '#ffd197', roughness: 0.4 });
     for (const side of [-1, 1]) {
       const z = side * 0.866;
       line(
@@ -360,13 +399,7 @@ export function buildVehicle({ materials: _M, colors, ghost = null }) {
       );
       box('MirrorHousing', paint, [0.17, 0.105, 0.195], [2.89, 1.035, side * 0.91], 0.038);
       box('MirrorGlass', silver, [0.006, 0.068, 0.14], [2.802, 1.035, side * 0.915], 0.012);
-      box(
-        'MirrorIndicator',
-        new THREE.MeshStandardMaterial({ name: 'MirrorIndicator', color: '#ffd197', roughness: 0.4 }),
-        [0.009, 0.012, 0.13],
-        [2.979, 1.01, side * 0.91],
-        0.004,
-      );
+      box('MirrorIndicator', indicator, [0.009, 0.012, 0.13], [2.979, 1.01, side * 0.91], 0.004);
     }
     // Projector lamp clusters with individual lenses and LED running lights.
     const lamp = new THREE.MeshPhysicalMaterial({ name: 'LampLens', color: '#e9f7ff', metalness: 0.25, roughness: 0.1, clearcoat: 1 });
@@ -446,8 +479,10 @@ export function buildVehicle({ materials: _M, colors, ghost = null }) {
     );
     box('RearDeckLip', paint, [0.1, 0.026, 1.3], [0.3, 0.967, 0], 0.012);
   }
-  const tyre = tyreGeometry(),
+  const brake = new THREE.MeshStandardMaterial({ name: 'BrakeSteel', color: '#87949e', metalness: 0.8, roughness: 0.42 });
+  const tyre = tyreGeometry(Boolean(ghost)),
     wheels = {};
+  const wheelCache = new Map(); // the merged parts of a wheel, shared by the wheels on the same side
   /** @type {Array<[string, number, number]>} */
   const axleLayout = [
     ['rl', CAR.rearAxle, -1],
@@ -469,12 +504,7 @@ export function buildVehicle({ materials: _M, colors, ghost = null }) {
     const rim = add(new THREE.TorusGeometry(0.201, 0.01, 10, 64), silver, 'RimLip', spin);
     rim.position.z = side * 0.092;
     if (!ghost) {
-      const disc = add(
-        new THREE.CylinderGeometry(0.171, 0.171, 0.012, 48),
-        new THREE.MeshStandardMaterial({ name: 'BrakeSteel', color: '#87949e', metalness: 0.8, roughness: 0.42 }),
-        'BrakeDisc',
-        spin,
-      );
+      const disc = add(new THREE.CylinderGeometry(0.171, 0.171, 0.012, 48), brake, 'BrakeDisc', spin);
       disc.rotation.x = Math.PI / 2;
       disc.position.z = side * 0.043;
       for (let i = 0; i < 5; i++)
@@ -495,7 +525,9 @@ export function buildVehicle({ materials: _M, colors, ghost = null }) {
       }
       box('BrakeCaliper', red, [0.051, 0.12, 0.04], [0.12, 0.012, side * 0.046], 0.018, hub);
     }
+    mergeByMaterial(spin, wheelCache, `wheel${side}`);
     wheels[key] = { hub, spin, side };
   }
+  mergeByMaterial(model);
   return { root, model, wheels };
 }

@@ -6,6 +6,7 @@
 //  - createRunner(): a runner in mid-stride (for the test). Origin on the ground under the hips, +x forward.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { mergeByMaterial } from './merge.js';
 
 export const BIKE = { wheel: 0.35, front: -0.35, rear: -1.4, length: 1.75, crank: 0.17, gear: 2.4, head: 1.87 };
 
@@ -32,16 +33,55 @@ function stick(r, len, m, name, capped = true) {
 }
 
 /**
+ * Parts of one shape and material that move each on its own (limbs, cranks): one InstancedMesh, each part a slot
+ * (an Object3D placed like a mesh); commit() copies the slots into the instances.
+ */
+function partSet(parent, geo, material, count, name) {
+  const im = new THREE.InstancedMesh(geo, material, count);
+  im.name = name;
+  im.frustumCulled = false; // small, and always where the rider is
+  parent.add(im);
+  const slots = Array.from({ length: count }, () => new THREE.Object3D());
+  return {
+    im,
+    slots,
+    commit() {
+      for (let i = 0; i < count; i++) {
+        slots[i].updateMatrix();
+        im.setMatrixAt(i, slots[i].matrix);
+      }
+      im.instanceMatrix.needsUpdate = true;
+    },
+  };
+}
+
+/** A limb in a slot of a part set: a capsule of radius r and length len, made from the set's capsule (r0, len0). */
+function limb(slot, r, len, r0, len0) {
+  const k = r / r0;
+  slot.scale.set(k, (len + 2 * r) / (len0 + 2 * r0), k);
+  const d = new THREE.Vector3();
+  return {
+    place(a, b) {
+      slot.position.addVectors(a, b).multiplyScalar(0.5);
+      d.subVectors(b, a);
+      const n = d.length();
+      if (n > 1e-9) slot.quaternion.setFromUnitVectors(Y, d.divideScalar(n));
+    },
+  };
+}
+
+/**
  * The middle joint of a two-part limb from `a` toward `c` (lengths l1, l2), bending toward `pole`; `end` gets where
  * the limb really ends (c, or as near as it reaches). Returns the middle joint in `out`.
  */
+const SOLVE = { dir: new THREE.Vector3(), perp: new THREE.Vector3() };
 function solve(a, c, l1, l2, pole, out, end) {
-  const dir = new THREE.Vector3().subVectors(c, a);
+  const dir = SOLVE.dir.subVectors(c, a);
   const dist = THREE.MathUtils.clamp(dir.length(), Math.abs(l1 - l2) + 1e-3, l1 + l2 - 1e-3);
   dir.normalize();
   const x = (l1 * l1 - l2 * l2 + dist * dist) / (2 * dist);
   const h = Math.sqrt(Math.max(0, l1 * l1 - x * x));
-  const perp = pole.clone().addScaledVector(dir, -pole.dot(dir)).normalize();
+  const perp = SOLVE.perp.copy(pole).addScaledVector(dir, -pole.dot(dir)).normalize();
   out.copy(a).addScaledVector(dir, x).addScaledVector(perp, h);
   end.copy(a).addScaledVector(dir, dist);
   return out;
@@ -74,6 +114,7 @@ function head(M, r = 0.11) {
   const nose = new THREE.Mesh(new THREE.SphereGeometry(0.017, 8, 6), M.skin);
   nose.position.set(r * 0.98, -0.018, 0);
   g.add(nose);
+  mergeByMaterial(g, { prefix: 'Head' });
   return g;
 }
 
@@ -96,10 +137,13 @@ export function createCyclist({ name = 'Cyclist' } = {}) {
   const ST = v3(-1.12, 0.86);
   const HT = v3(-0.48, 0.9);
   const HB = v3(-0.44, 0.74);
+  const fixed = new THREE.Group(); // the frame and its fittings: they never move, merged by material below
+  fixed.name = 'Bicycle';
+  root.add(fixed);
   const tube = (a, b, r, m, nm) => {
     const s = stick(r, a.distanceTo(b), m, nm, false);
     s.place(a, b);
-    root.add(s.mesh);
+    fixed.add(s.mesh);
   };
   tube(ST, HT, 0.019, B.frame, 'TopTube');
   tube(BB, HB, 0.021, B.frame, 'DownTube');
@@ -115,7 +159,7 @@ export function createCyclist({ name = 'Cyclist' } = {}) {
   const saddle = new THREE.Mesh(new RoundedBoxGeometry(0.26, 0.06, 0.16, 2, 0.025), B.saddle);
   saddle.position.set(SEAT.x - 0.01, SEAT.y + 0.03, 0);
   saddle.name = 'Saddle';
-  root.add(saddle);
+  fixed.add(saddle);
   const STEM = v3(-0.5, 1.05);
   tube(HT, STEM, 0.013, B.chrome, 'Stem');
   const GRIP = [v3(-0.58, 1.04, -0.3), v3(-0.58, 1.04, 0.3)];
@@ -124,13 +168,13 @@ export function createCyclist({ name = 'Cyclist' } = {}) {
     tube(v3(STEM.x, STEM.y, g.z * 0.8), g, 0.012, B.chrome, 'Handlebar');
     const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.1, 8).rotateX(Math.PI / 2), B.tyre);
     grip.position.copy(g);
-    root.add(grip);
+    fixed.add(grip);
   }
   // the carrier over the back wheel, with its struts
   const rack = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.02, 0.16), B.chrome);
   rack.position.set(-1.45, 0.82, 0);
   rack.name = 'Carrier';
-  root.add(rack);
+  fixed.add(rack);
   for (const z of [-0.07, 0.07]) tube(v3(-1.66, 0.81, z), v3(RA.x, RA.y, z), 0.008, B.chrome, 'CarrierStrut');
   // mudguards
   for (const [c, a0] of [
@@ -142,7 +186,7 @@ export function createCyclist({ name = 'Cyclist' } = {}) {
     g.rotation.z = a0;
     g.scale.z = 1.6;
     g.name = 'Mudguard';
-    root.add(g);
+    fixed.add(g);
   }
   // wheels: tyre, rim, hub and spokes (they turn)
   const wheels = [FA, RA].map((c) => {
@@ -152,6 +196,7 @@ export function createCyclist({ name = 'Cyclist' } = {}) {
     w.add(new THREE.Mesh(new THREE.TorusGeometry(BIKE.wheel - 0.022, 0.022, 8, 32), B.tyre));
     w.add(new THREE.Mesh(new THREE.TorusGeometry(BIKE.wheel - 0.05, 0.009, 4, 32), B.chrome));
     w.add(new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.12, 10).rotateX(Math.PI / 2), B.chrome));
+    for (const m of mergeByMaterial(w, { prefix: 'Wheel' })) m.userData.smallPart = m.material === B.chrome; // the rim and the hub: one mesh
     const pts = [];
     for (let i = 0; i < 18; i++) {
       const a = (i / 18) * Math.PI * 2;
@@ -170,23 +215,23 @@ export function createCyclist({ name = 'Cyclist' } = {}) {
   const ring = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.012, 6, 24), B.chrome);
   ring.position.set(BB.x, BB.y, 0.06);
   ring.name = 'Chainring';
-  root.add(ring);
+  fixed.add(ring);
   const chain = new THREE.Mesh(new THREE.TorusGeometry(1, 0.006, 4, 30), mat('Chain', '#55595f', 0.5, 0.6));
   chain.scale.set(0.24, 0.07, 1);
   chain.position.set((BB.x + RA.x) / 2, (BB.y + RA.y) / 2 + 0.01, 0.06);
   chain.rotation.z = Math.atan2(RA.y - BB.y, RA.x - BB.x);
   chain.name = 'Chain';
-  root.add(chain);
-  const crankGeo = new THREE.BoxGeometry(BIKE.crank, 0.022, 0.016).translate(BIKE.crank / 2, 0, 0);
-  const pedalGeo = new THREE.BoxGeometry(0.1, 0.022, 0.09);
-  const cranks = [0.09, -0.09].map((z) => {
-    const c = new THREE.Mesh(crankGeo, B.chrome);
+  fixed.add(chain);
+  // only the frame and the mudguards cast a shadow (with the tyres and the rider): the thin chrome, the saddle and
+  // the chain would add draw calls for shadows nobody sees
+  for (const m of mergeByMaterial(fixed, { prefix: 'Bicycle' })) m.userData.smallPart = m.material !== B.frame;
+  const crankSet = partSet(root, new THREE.BoxGeometry(BIKE.crank, 0.022, 0.016).translate(BIKE.crank / 2, 0, 0), B.chrome, 2, 'Cranks');
+  const pedalSet = partSet(root, new THREE.BoxGeometry(0.1, 0.022, 0.09), B.tyre, 2, 'Pedals');
+  crankSet.im.userData.smallPart = pedalSet.im.userData.smallPart = true;
+  const cranks = [0.09, -0.09].map((z, i) => {
+    const c = crankSet.slots[i];
     c.position.set(BB.x, BB.y, z);
-    c.name = 'Crank';
-    const p = new THREE.Mesh(pedalGeo, B.tyre);
-    p.name = 'Pedal';
-    root.add(c, p);
-    return { c, p, z: z * 1.45 };
+    return { c, p: pedalSet.slots[i], z: z * 1.45 };
   });
 
   // ── the rider ──
@@ -204,22 +249,28 @@ export function createCyclist({ name = 'Cyclist' } = {}) {
   const neck = stick(0.045, 0.08, P.skin, 'Neck');
   const hd = head(P);
   rider.add(torso, hips, neck.mesh, hd);
-  const legs = [1, -1].map((s) => {
-    const thigh = stick(0.066, SEG.thigh, P.trousers, 'Thigh');
-    const shin = stick(0.055, SEG.shin, P.trousers, 'Shin');
-    const shoe = new THREE.Mesh(new RoundedBoxGeometry(0.24, 0.08, 0.1, 2, 0.03), P.shoe);
-    shoe.name = 'Shoe';
-    rider.add(thigh.mesh, shin.mesh, shoe);
-    return { thigh, shin, shoe, z: s * 0.1 };
-  });
-  const arms = [1, -1].map((s) => {
-    const upper = stick(0.047, SEG.upper, P.shirt, 'UpperArm');
-    const fore = stick(0.037, SEG.fore - 0.04, P.skin, 'Forearm');
-    const hand = new THREE.Mesh(new THREE.SphereGeometry(0.042, 10, 8), P.skin);
-    hand.name = 'Hand';
-    rider.add(upper.mesh, fore.mesh, hand);
-    return { upper, fore, hand, s };
-  });
+  hd.children.forEach((m) => (m.userData.smallPart = m.material === P.hair));
+  neck.mesh.userData.smallPart = true;
+  // the limbs and shoes, one InstancedMesh per shape: trousers (thighs and shins), sleeves, forearms, hands, shoes
+  const trousers = partSet(rider, new THREE.CapsuleGeometry(0.06, 0.45, 3, 10), P.trousers, 4, 'Legs');
+  const sleeves = partSet(rider, new THREE.CapsuleGeometry(0.047, SEG.upper, 3, 10), P.shirt, 2, 'UpperArms');
+  const forearms = partSet(rider, new THREE.CapsuleGeometry(0.037, SEG.fore - 0.04, 3, 10), P.skin, 2, 'Forearms');
+  const hands = partSet(rider, new THREE.SphereGeometry(0.042, 10, 8), P.skin, 2, 'Hands');
+  const shoes = partSet(rider, new RoundedBoxGeometry(0.24, 0.08, 0.1, 2, 0.03), P.shoe, 2, 'Shoes');
+  forearms.im.userData.smallPart = hands.im.userData.smallPart = shoes.im.userData.smallPart = true;
+  const sets = [trousers, sleeves, forearms, hands, shoes, crankSet, pedalSet];
+  const legs = [1, -1].map((s, i) => ({
+    thigh: limb(trousers.slots[i * 2], 0.066, SEG.thigh, 0.06, 0.45),
+    shin: limb(trousers.slots[i * 2 + 1], 0.055, SEG.shin, 0.06, 0.45),
+    shoe: shoes.slots[i],
+    z: s * 0.1,
+  }));
+  const arms = [1, -1].map((s, i) => ({
+    upper: limb(sleeves.slots[i], 0.047, SEG.upper, 0.047, SEG.upper),
+    fore: limb(forearms.slots[i], 0.037, SEG.fore - 0.04, 0.037, SEG.fore - 0.04),
+    hand: hands.slots[i],
+    s,
+  }));
 
   // a big invisible box round bicycle and rider: a tap anywhere on them works
   const hit = new THREE.Mesh(new THREE.BoxGeometry(2.3, 2.2, 1.4), new THREE.MeshBasicMaterial({ visible: false }));
@@ -233,14 +284,17 @@ export function createCyclist({ name = 'Cyclist' } = {}) {
   let crankAngle = 0.6;
   let lean = 0;
 
+  const shoulder = v3(0, 0);
+  const nb = v3(0, 0);
+  const nt = v3(0, 0);
   function pose() {
     // the trunk leans 30° forward, more in a jolt
     const a = 0.52 + lean * 0.45;
-    const shoulder = v3(HIP.x + Math.sin(a) * SEG.torso, HIP.y + Math.cos(a) * SEG.torso);
+    shoulder.set(HIP.x + Math.sin(a) * SEG.torso, HIP.y + Math.cos(a) * SEG.torso, 0);
     torso.position.lerpVectors(HIP, shoulder, 0.5);
     torso.rotation.set(0, 0, -a);
-    const nb = v3(shoulder.x + Math.sin(a) * 0.04, shoulder.y + Math.cos(a) * 0.04);
-    const nt = v3(shoulder.x + Math.sin(a * 0.6) * 0.12, shoulder.y + Math.cos(a * 0.6) * 0.12);
+    nb.set(shoulder.x + Math.sin(a) * 0.04, shoulder.y + Math.cos(a) * 0.04, 0);
+    nt.set(shoulder.x + Math.sin(a * 0.6) * 0.12, shoulder.y + Math.cos(a * 0.6) * 0.12, 0);
     neck.place(nb, nt);
     hd.position.set(nt.x + 0.03, nt.y + 0.1, 0);
     hd.rotation.z = -lean * 0.3;
@@ -269,6 +323,7 @@ export function createCyclist({ name = 'Cyclist' } = {}) {
       arm.fore.place(tmp.b, tmp.d);
       arm.hand.position.copy(tmp.d);
     }
+    for (const set of sets) set.commit();
   }
   pose();
 
@@ -347,6 +402,7 @@ export function createRunner({ name = 'Runner' } = {}) {
     h.name = 'Hand';
     root.add(h);
   }
+  mergeByMaterial(root, { prefix: 'Runner' }); // a still pose: one mesh per material
   const hit = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.9, 0.9), new THREE.MeshBasicMaterial({ visible: false }));
   hit.position.set(0, 0.95, 0);
   hit.userData.noExport = true;

@@ -1,0 +1,56 @@
+# Floating or sinking: wood, a brick, a tin and a submarine (বস্তুর ভেসে থাকা বা ডুবে যাওয়া)
+
+**Where it goes in the book:** Book page 138, topic 5.3.2 (বস্তুর ভেসে থাকা বা ডুবে যাওয়া): next to the three paragraphs (a body floats, sunk just so far that the water it pushes aside weighs as much as it does; heavier than its displaced water it sinks and seems lighter under water; exactly as heavy it stays wherever it is put, as a submarine does) and the উদাহরণ on page 139 (a piece of wood, ρ = 0.5 × 10³ kg/m³: Vρ = V₁ρw, V₁/V = ρ/ρw = 50%).
+
+Interactive 3D figure for the Pathshala book. Floating and sinking (page 138, topic 5.3.2) in a glass tank of clear blue water on a teak table by a lake at golden hour, the tank's floor sand with rippled light. Three steps in a row of words. Three cases: three 10 cm cubes of the same size hang on cords over the water, wood, a brick and a sealed tin with just enough sand inside; the student lets them go one by one (one numbered button, its badge ringing the body): the wood bobs and floats half under, the brick sinks to the floor, the tin is put under water and stays there. Each body has a purple weight arrow down and an orange buoyancy (প্লবতা) arrow up on one line beside it, outlined in white, their lengths the real forces (1.2 cm per newton) with the numbers on them; the brick on the floor also has the floor's grey push, W − B, which is why under water it seems lighter. Then any body can be dragged anywhere under water and let go: the wood comes up, the brick sinks, the tin stays. The worked example: the book's piece of wood (ρ = 0.5 × 10³ kg/m³) is dropped, settles, and the camera goes close to the waterline; a scale on its side with a yellow V₁ bar and a yellow waterline round it shows half of it under, and the panel works out V₁/V = ρ/ρw = 50%. Cork, ice and brick can be tried too (the brick sinks: the formula holds only while it floats). The submarine: a yellow toy submarine with a window on its ballast tank takes water in (its weight grows past the buoyancy and it goes down), lets some out until weight = buoyancy (it stops at whatever depth it is) or blows it all out (it rises), with bubbles from its sail. The motion comes from a small damped simulation of weight, buoyancy, the water's drag and the floor. The rule line quotes the page. Test tab: 5 questions (which of three tins sinks, from their weights; per cent under water from ρ; ρ from the waterline on the scale; how heavy a stone seems under water; what a submarine must do to rise or dive), every wrong choice a real mistake with its own note. Phone-first, Bangla and English.
+
+## Embed
+
+```html
+<iframe src="float-or-sink/index.html" style="width:100%;aspect-ratio:16/10;border:0" allow="fullscreen" loading="lazy"></iframe>
+```
+
+To listen to it or control it from the book page, use the helper shipped in the zip:
+
+```html
+<script type="module">
+  import { connectAsset } from './float-or-sink/shared/lib/host.js';
+  const figure = connectAsset(document.querySelector('iframe'));
+  await figure.ready;
+  figure.on('change', (state) => console.log(state));
+</script>
+```
+
+## URL parameters
+
+<!-- generated:params (npm run docs) -->
+| Param | Meaning | Values | Default |
+|---|---|---|---|
+| `lang` | Language | `bn` বাংলা · `en` English | `bn` |
+| `step` | Step | `cases` three cases · `wood` the worked example · `sub` the submarine | `cases` |
+| `material` | The example's block | `wood` wood (the book's) · `cork` cork · `ice` ice · `brick` brick | `wood` |
+| `view` | View | `front` · `3d` | `front` |
+| `mode` | Start in | `explore` learn · `quiz` test | `explore` |
+| `coach` | The ring round the body to touch pulses | `1` · `0` | `1` |
+| `numerals` | Digits | (empty) follow language · `bn` Bangla · `latin` Latin |  |
+| `bg` | Background | `light` · `transparent` | `light` |
+| `shadow` | Soft shadow | `1` · `0` | `1` |
+| `sound` | Sound | `1` · `0` | `1` |
+<!-- /generated:params -->
+
+## Commands and events
+
+<!-- generated:bridge (npm run docs) -->
+Every figure answers `ping` with `{ asset, version }`. Send commands with `figure.call(name, payload)` (see `shared/lib/host.js`).
+
+| Command | Example payload |
+|---|---|
+| `get` | `{}` |
+| `set` | `{"release":"all"}` |
+| `reset` | `{}` |
+| `practice` | `{}` |
+| `capture` | `{"width":800,"height":500}` |
+| `export-glb` | `{}` |
+
+Events: `ready`, `change`, `step`, `practice-start`, `practice-result`, `practice-end`.
+<!-- /generated:bridge -->

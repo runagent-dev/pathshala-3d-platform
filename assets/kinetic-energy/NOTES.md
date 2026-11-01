@@ -73,7 +73,7 @@ calls it বিভব শক্তি and colours it purple, and so does this fi
   and **বেগ v** (20–60 m/s in steps of 10; the bow cannot give a 0.03 or 0.04 kg arrow more than 50 m/s, the + then
   says so), one action **ছিলা টেনে ছেড়ে দাও** (also: a tap on the archer, or drag the string back: each 26 px is one
   speed step, with a tick; let go to shoot), a quiet reset.
-- The shot: the archer draws (purple label "বাঁকা ধনুকে শক্তি জমা"), holds, releases: the string pushes the arrow
+- The shot: the archer draws (purple label "ধনুকে শক্তি জমা"; the result line says "বাঁকা ধনুকে শক্তি জমা"), holds, releases: the string pushes the arrow
   (it does work on it), the bow straightens with a ring, the arrow flies with a blue speed streak (longer when
   faster) and its v label while the camera pulls back, and it sinks into the bale; an amber bar on the cut face
   shows how deep. The camera rests on the bale: the last two arrows carry "T = … J" and "আগের তীর: … J". On a phone
@@ -95,7 +95,7 @@ calls it বিভব শক্তি and colours it purple, and so does this fi
   and all the stored energy goes into the arrow (a real bow keeps some 20–30 % in its limbs and string). So the
   draw for a speed is s = v·√(m/K), and twice the speed needs twice the draw and four times the stored energy.
   During the push the string moves like a spring (a quarter swing), speeding the arrow up.
-- The flight is shown **15 times slower** (note on the view while an arrow flies), with real gravity drop; the
+- The flight is shown **15 times slower** (said in the result line while an arrow flies), with real gravity drop; the
   archer aims each arrow at one of two heights on the bale so arrows don't hide each other.
 - The straw resists with a steady 160 N, so the depth is T / 160 N (W = Fs again; the page's own opening sentence:
   a moving body pushes another some distance and does work). The rule says "প্রায় চার গুণ গভীরে".
@@ -114,3 +114,47 @@ calls it বিভব শক্তি and colours it purple, and so does this fi
 - Colours for chapter 4 shared with `energy`: বিভব শক্তি #6741d9, গতিশক্তি #e8930c (text #a35f00); velocity #1c6fd9 (as in
   chapter 3); the mass stepper green #2f6f3e.
 - The page's accident paragraph (বাস-ট্রাক) is left out on purpose: one idea, one scene.
+
+## Polish pass (2026-11-01, 0.3.0)
+
+Against `docs/agents/polish-pass.md`:
+
+- **Layout.** The kit's frame: the white panel (the maple-tinted gradient is gone). The panel is lower: the test's
+  four answers sit in one row on phones held upright (they are short numbers), the question keeps room for two
+  lines (the longer questions shortened, Bangla and English), so the 3D view gets 57 % of 390×700 (was 50 %), 49 % of
+  390×520 (was 39 %), 52 % of 800×500 (was 49 %) and 70 % of 1280×800 (was 68 %). The stacked ½ and the italic
+  letters no longer make a line taller, so the 3D view keeps one height in every phase, every comparison and every
+  question, in both languages (it moved by 2–3 px, and by 25 px in English).
+- **Text on the 3D view.** The note "তীরের ওড়া ১৫ গুণ ধীর করে দেখানো" left the view: the result line says it while an
+  arrow flies ("তীর ছুটছে … m/s বেগে (১৫ গুণ ধীরে দেখানো)"). The bale's caption "খড়ের গাদা কেটে ভেতর দেখানো" is now a
+  part name, "কাটা গাদার ভেতর"; the bow's label is "ধনুকে শক্তি জমা" (the result line keeps "বাঁকা ধনুকে শক্তি জমা").
+  Left on the view: those two, v, T and "আগের তীর" with their values, and the test's short labels.
+- **Colour and arrows.** The hall was already a coloured, detailed setting (maple floor, orange padding, brick). The
+  blue speed streak behind a flying arrow now has a white edge and a solid blue core, so it reads on the brick, the
+  padding and the net; the depth bars keep their white edge; label chips are solid with 4.5:1 text.
+- **Smooth.** The hall is two meshes for the floor (boards, and all the painted lines in one vertex-coloured
+  material) and seven for the walls (22 windows, 6 lamps and the truss merged); the archer's trunk, head, legs, shoes
+  and quiver are one mesh per material, small plain parts share one vertex-coloured material, each hand is one mesh,
+  only the arms move; the bow's still parts, the bale's stand and twine, and each arrow (three meshes, geometry and
+  materials shared by kind, so nothing is created per shot) are merged too; the bale's six faces draw in two.
+  Soft PCF shadows at 1024 on a box fitted round the archer, the bow and the bale (was VSM at 2048 on a loose box,
+  which also drew the walls into the shadow map); only parts whose shadow shows cast one. Per frame: the limbs bend
+  in place with no new arrays (and the limb is measured again as it bends, so its samples stay even), the bow is not
+  rebuilt when it has not moved, the panel is written only when its text changes, the camera pose and the wide-frame
+  test are worked out only when something they depend on changes, and camera glides redraw without redrawing the
+  shadows (kit 1.4).
+- **Bugs.** The 3D view jumped a few pixels between phases (the ½ in the rule) and by a line in English (rules and
+  answers longer than their room); the result line cut off "বেগ প্রায় ১.৬৭ গুণ … প্রায় ২.৭৮ গুণ" on phones; the
+  shadow camera clipped the bale's shadow once tightened (fitted again). ↑ ↓ now change the arrow's mass (← → the
+  speed, as before), so the keyboard reaches both steppers.
+
+Measured (headless Chromium, software GL, shadows on; ready times are noisy, the machine had a load of about 35):
+
+| | before (0.2.0) | after (0.3.0) |
+|---|---|---|
+| draw calls 390×700 (avg / max) | 348 / 432 | 89 / 111 |
+| draw calls 844×390 (avg / max) | 241 / 263 | 88 / 110 |
+| triangles (max) | 125k | 70k |
+| texture memory | 57.4 MB (largest 2048) | 17.4 MB (largest 1024) |
+| time to ready 390×700 | 7.4 s | 7.1 s |
+| text on the 3D view at rest | 0 / 0 | 0 / 0 (and no sentence while an arrow flies) |

@@ -53,3 +53,13 @@ test('falling bodies: together without air, the paper behind in air, v ∝ t and
   expect(await fig.call('get')).toMatchObject({ phase: 'ready', paper: 'flat', view: 'front' });
   expect(log.errors).toEqual([]);
 });
+
+// The tests above run without shadows (TEST_PARAMS); a reader gets them by default, and the shadow code once used a
+// name it never imported (BASE): the figure then never got ready.
+test('falling bodies: with shadows (the default for a reader) it gets ready without errors', async ({ page }) => {
+  await page.setViewportSize({ width: 800, height: 500 });
+  const log = await preparePage(page);
+  const fig = await openFigure(page, 'falling-bodies', { params: { shadow: '1' } });
+  expect((await fig.call('get')).phase).toBe('ready');
+  expect(log.errors).toEqual([]);
+});
