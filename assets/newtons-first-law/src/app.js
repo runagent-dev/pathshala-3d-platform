@@ -381,7 +381,7 @@ export function createApp(root, options = {}) {
     if (wasOverview) {
       s.follow = 0;
       setFollow(0);
-      controls.enableRotate = s.view === '3d' && s.scene === 'lane';
+      controls.enableRotate = s.scene === 'lane';
       const done = await flyTo(viewPose(), animate ? 0.9 : 0);
       return done !== false && my === token;
     }
@@ -940,7 +940,7 @@ export function createApp(root, options = {}) {
       s.follow = Math.max(0, state().x - followAt());
       setFollow(s.follow);
     }
-    controls.enableRotate = s.view === '3d' && s.scene === 'lane';
+    controls.enableRotate = s.scene === 'lane';
     s.userMovedCamera = false;
     syncUI();
     refresh();
@@ -951,6 +951,18 @@ export function createApp(root, options = {}) {
   controls.addEventListener('start', () => {
     s.userMovedCamera = true;
     tweener.cancel('camera');
+    turning = true;
+  });
+  // the view starts from the front; a drag turns it (the camera really moves: a tap never does), and then the "front"
+  // button appears to come back
+  let turning = false;
+  controls.addEventListener('end', () => {
+    turning = false;
+  });
+  controls.addEventListener('change', () => {
+    if (!turning || s.view === '3d') return;
+    s.view = '3d';
+    syncUI();
   });
   stage.onResize(() => {
     if (!s.userMovedCamera) flyTo(viewPose(), 0, s.cam === 'overview' ? 'overview' : 'camera');
@@ -1036,7 +1048,7 @@ export function createApp(root, options = {}) {
       labels.clear('opt');
       labels.remove('wall');
     }
-    controls.enableRotate = s.view === '3d' && lane;
+    controls.enableRotate = lane;
     s.userMovedCamera = false;
     flyTo(viewPose(), 0);
     refresh();
@@ -1379,7 +1391,8 @@ export function createApp(root, options = {}) {
 
   // ── buttons, keys ───────────────────────────────────────────────────────────
   function syncUI() {
-    for (const b of ui.$$('[data-view]')) b.classList.toggle('on', b.dataset.view === s.view);
+    const front = ui.$('[data-view="front"]');
+    if (front) front.hidden = s.view !== '3d';
     root.dataset.mode = s.mode === 'quiz' ? 'quiz' : 'explore';
     for (const b of ui.$$('[data-mode]')) {
       const on = b.dataset.mode === root.dataset.mode;
