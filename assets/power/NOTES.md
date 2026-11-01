@@ -73,10 +73,10 @@ The page spells রূপান্তর. Units as Latin symbols per `docs/book-
 
 ## Stylised on purpose (stated honestly)
 - **Ideal pumps**: all the electrical energy goes into lifting the water (no losses). The book has no efficiency here;
-  it is the next topic (4.8, কর্মদক্ষতা). The corner note says "আদর্শ পাম্প (শক্তির অপচয় নেই)". Real domestic pumps
+  it is the next topic (4.8, কর্মদক্ষতা). The rule line says "দুটি আদর্শ পাম্পই …" before the run and "আদর্শ পাম্পে শক্তির অপচয় নেই" while it runs (no note on the 3D view since v0.3.0). Real domestic pumps
   of 490 W and 980 W would take several times longer.
-- The pumps' runs are shown **3 times faster** than life (30 s takes 10 s); the note says so. The bulb runs in real time
-  ("সময় প্রকৃত").
+- The pumps' runs are shown **3 times faster** than life (30 s takes 10 s); the rule line says so while they run. The bulb runs in real time
+  ("সময় প্রকৃত", in its rule line).
 - h is from the courtyard (the underground tank's water is drawn at ground level) to the roof tanks' floor; the water's
   own depth in the tank (up to 0.86 m) is left out, as a textbook problem would. One litre of water is 1 kg.
 - 490 W and 980 W are chosen so the times are whole seconds (about 0.66 and 1.3 horsepower).
@@ -89,11 +89,44 @@ grills, a panelled teak door with steps, a doormat and sandals, a red brick cour
 with brass gate valves. The electrics are drawn as they would be: the service wire from the pole on the lane, the
 meter, conduit to a pump switch board whose lamps light while each pump runs, a cable to each pump. Around: a tubewell
 with a bucket and a pitcher, a clothes line, a bicycle, brick boundary walls, bare earth, the neighbours' houses (with
-their own roof tanks) in a light haze, flame trees in flower, coconut palms. The panel stays the kit's clean, lightly
-warm sheet. The front view stands in the courtyard and looks a little up at the roof (fov 42°), so the pumps in front
+their own roof tanks) in a light haze, flame trees in flower, coconut palms. The panel is the kit's clean sheet (since v0.3.0 without a tint of its own). The front view stands in the courtyard and looks a little up at the roof (fov 42°), so the pumps in front
 and the tanks above both come out as big as the 3 m lift allows; wide frames drop the top margin (the corner buttons
 are off to the right). Only the house, pumps, pipes, tanks and electrics export to the GLB; the props and the
 neighbourhood are for the picture.
+
+## Polish pass (2026-11-01, v0.3.0)
+The standard in `docs/agents/polish-pass.md`.
+- **Layout.** The kit's frame everywhere: the panel's own warm tint and the tight-phone overrides of the tabs, the
+  example words and the big button are gone. The result table keeps its own height (a header and two rows, the
+  power plant's row kept hidden until the bulb is done), the rule and the answers are a little tighter on phones and
+  the questions fit two lines, so at 390×700 the 3D view has 55 % of the height (was 50 %; 390×520: 45 %, was 41 %)
+  and the sheet's height never changes between states.
+- **Text on the 3D view.** The corner note ("সময় ৩ গুণ দ্রুত দেখানো · আদর্শ পাম্প (শক্তির অপচয় নেই)", "সময় প্রকৃত")
+  moved into the rule line: "দুটি আদর্শ পাম্পই …" before the run, the speed-up and "আদর্শ পাম্পে শক্তির অপচয় নেই" while
+  the pumps run, "সময় প্রকৃত" while the bulb burns. Only labels with values stay on the view. The pumps' names sit
+  at each pump's outer end, outside the action's ring and off the h arrow, so they no longer disappear.
+- **Colour and arrows.** The setting was already a coloured, detailed courtyard. The h arrow is bolder, with a white
+  outline, a foot on the ground where h starts and an outlined dashed guide, so it reads on the yellow wall, the red
+  bricks and the sky. The bulb's light is a warm pool, not a floodlight that turned the door orange, and its view
+  shows the top of the door and the wall round the lamp.
+- **Smooth, detail kept.** Every still part is baked into one mesh per material (`bake` in `src/build.js`; plain
+  colours of the same finish share a vertex-coloured material), the windows, the neighbours' façade bays, the fronds
+  and the clouds are drawn in one texture each (the façades are now made of varied bays), the flowers, the washing,
+  the trees and the poles are vertex-painted. Only what throws a seen shadow casts one, and only what is shaded
+  takes one (VSM draws receivers into the map too). The shadow camera is fitted to the courtyard (1024 map instead
+  of 2048 on a loose fit). No per-frame colour parsing or DOM writes when nothing changed.
+- **Bugs.** After a run finished from the bridge (`done`, or `at` past the end) the big button offered to "try" the
+  example just finished; it now offers the next one, and the run counts. The pump labels hid behind the action's
+  ring at some sizes.
+
+| headless Chromium, software GL, shadows on | before (v0.2.0) | after (v0.3.0) |
+|---|---|---|
+| draw calls, avg / max (390×700) | 645 / 664 | 158 / 178 (one still frame: 138) |
+| triangles, max | 154k | 141k |
+| meshes in the scene | 334 | 109 |
+| texture memory | 62.7 MB (largest 2048) | 26.8 MB (largest 1584) |
+| ready, 390×700 / 844×390 | 2728 / 8859 ms | 2622 / 1611 ms |
+| text on the 3D view, 390×700 / 844×390 | 70 in 7 / 105 in 8 | 40 in 6 / 49 in 7 (labels only) |
 
 ## Colours (chapter 4)
 W green #237a35 (as in `work`), t crimson #c2255c (the stopwatch hand), P grape #862e9c, h blue #1c6fd9 (a distance,
