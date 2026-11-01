@@ -32,8 +32,8 @@ body.bg-transparent { background: transparent; }
 .by-val { min-width: 2.6em; display: grid; place-items: center; font-size: 18px; font-weight: 700; color: var(--c); }
 
 /* notes on the stage: the water's numbers, and "imagine" while the water is weighed (top left; the buttons are top right) */
-.by-notes { position: absolute; left: 8px; top: 8px; z-index: 3; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; max-width: max(150px, calc(100% - 120px)); pointer-events: none; }
-.by-note { padding: 2px 8px; border-radius: 6px; background: rgba(255, 255, 255, 0.9); font-size: 12px; line-height: 1.45; color: var(--ink-2); }
+.by-notes { display: flex; flex-direction: column; gap: 0; }
+.by-note { font-size: 12.5px; line-height: 1.45; color: var(--ink-2); }
 .by-note-x { color: var(--c-V); font-weight: 600; }
 .by-note:empty { display: none; }
 
@@ -50,11 +50,17 @@ body.bg-transparent { background: transparent; }
 /* the four steps' words may wrap in a narrow panel (never run into each other) */
 .by .pvc-examples .pvc-ex-word { white-space: normal; text-align: center; line-height: 1.2; }
 
-/* phones */
+/* a phone held upright: the water's numbers only beside the 3D, so the 3D keeps more than half the height */
 @container pvc (max-width: 420px) {
+  .by .pvc-learn { gap: 6px; }
+  .by-notes { display: none; }
+  .by .pvc-q-options { gap: 6px; }
+  .by .pvc-opt { height: 40px; font-size: 13.5px; line-height: 1.2; }
+  .by .pvc-q-text { font-size: 14.5px; --pvc-q-text-min: calc(2 * 1.4em); }
+  .by .pvc-q-feedback { font-size: 13px; --pvc-q-feedback-min: calc(2 * 1.45em); }
   .by-eq { font-size: 13px; }
-  .by .pvc-rule { font-size: 13.5px; }
-  .by .pvc-outcome { font-size: 14px; }
+  .by .pvc-rule { font-size: 13px; line-height: 1.4; }
+  .by .pvc-outcome { font-size: 14px; line-height: 1.45; }
   .by .pvc-examples .pvc-ex-word { font-size: 14px; }
 }
 /* phones that are not tall: one line of sums, the result line goes (the sums carry the number) */
@@ -80,18 +86,9 @@ body.bg-transparent { background: transparent; }
   .by .pvc-q-feedback { font-size: 12.5px; }
   .by-note { font-size: 11px; }
 }
-/* wide frames (tabs beside the sheet): the row and the action on the left, the sums on the right */
-@container pvc (min-width: 720px) and (min-height: 461px) {
-  .by .pvc-learn { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); grid-template-areas: 'ex eq' 'act eq' 'out out' 'rule rule'; align-content: start; column-gap: 28px; row-gap: 6px; }
-  .by .pvc-examples { grid-area: ex; }
-  .by .pvc-act-row { grid-area: act; }
-  .by-eq { grid-area: eq; align-self: center; }
-  .by-line { white-space: normal; }
-  .by .pvc-outcome { grid-area: out; }
-  .by .pvc-rule { grid-area: rule; --pvc-rule-lines: 2; }
-}
-@container pvc (min-width: 720px) and (max-width: 1100px) and (min-height: 461px) {
-  .by .pvc-quiet span { display: none; }
+/* the panel beside the 3D (a size container, so a height query matches only there) */
+@container pvc-panel (min-height: 300px) {
+  .by-notes { display: flex; }
 }
 @container pvc-panel (max-width: 330px) {
   .by-eq { font-size: 12px; }

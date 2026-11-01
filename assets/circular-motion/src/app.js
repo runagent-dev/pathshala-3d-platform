@@ -74,22 +74,21 @@ export function createApp(root, options = {}) {
   root.tabIndex = 0;
   const slot = '<b class="cm-slot">?</b>';
   const ui = buildStudentShell(root, t, {
+    layout: 'side', // the panel beside the 3D on landscape frames (kit 1.5.0)
     learn: `
           <div class="pvc-seg cm-ex" role="group" aria-label="${t('ex_label')}">
             ${EXAMPLE_IDS.map((id) => `<button data-ex="${id}">${t(`ex_${id}`)}</button>`).join('')}
           </div>
+          <div class="cm-acts">
+            <button class="pvc-btn primary" data-act="measure">${ICONS.target}<span>${t('act_measure')}</span></button>
+            <button class="pvc-btn" data-act="play"><span class="ic"></span><span class="lb"></span></button>
+          </div>
+          <div class="cm-meas">
+            <div class="cm-meas-head"><span class="k"></span><span class="pvc-status"><i></i><span></span></span></div>
+            <span class="cm-slots">${Array(MAX_MARKS).fill(slot).join('<i>=</i>')}</span>
+          </div>
           <p class="cm-idea">${t('idea')}</p>
-          <p class="cm-book"></p>
-          <div class="cm-row">
-            <div class="cm-meas">
-              <div class="cm-meas-head"><span class="k"></span><span class="pvc-status"><i></i><span></span></span></div>
-              <span class="cm-slots">${Array(MAX_MARKS).fill(slot).join('<i>=</i>')}</span>
-            </div>
-            <div class="cm-acts">
-              <button class="pvc-btn" data-act="play"><span class="ic"></span><span class="lb"></span></button>
-              <button class="pvc-btn primary" data-act="measure">${ICONS.target}<span>${t('act_measure')}</span></button>
-            </div>
-          </div>`,
+          <p class="cm-book"></p>`,
   });
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
