@@ -116,3 +116,37 @@ This remains a simplified first push-off with the page's example numbers, not a 
 biomechanics model. Only horizontal forces are drawn; vertical weight/support are outside this lesson. Ground
 materials are deliberately vivid at the owner's request. Duplicate stage captions may hide when no collision-free
 spot is available; the live panel still identifies both forces and their receiving bodies.
+
+## Polish pass (2026-11-01)
+Against `docs/agents/polish-pass.md`, version 0.3.0.
+- **Layout.** The figure's own rule that put the panel beside the 3D view from 720 px wide is gone: the panel is under
+  the view at every size but the kit's short-and-wide one (844×390, 640×400). On wide frames (800×500, 1280×800) the
+  grounds, the action and the timeline are on the left and the force pair and the rule on the right. On a phone held
+  upright the timeline is two rows (the three moments and how time is shown; the slider and the real time) and the
+  force pair is one row ("← মাটির উপর ১০০ নিউটন → মানুষের উপর ১০০ নিউটন", who pushes shown where there is room): the
+  3D view has 56 % of 390×700 (42 % before). The rule keeps room for its longest text, so the view never changes size.
+- **Text on the view.** Only labels with values: the two forces are "পায়ের ধাক্কা ১০০ নিউটন" and "মাটির ধাক্কা ১০০
+  নিউটন" (F and −F in front of them once all three grounds are found) instead of sentences; the corner note ("সময় ৪
+  গুণ ধীর", "থামিয়ে দেখানো") moved into the timeline's head in the panel; the enlarged view's name sits on its card's
+  corner, clear of the force labels (on a phone the force labels used to hide for lack of room). The start line's
+  "শুরু" is a white chip.
+- **Setting and arrows.** The navy gradient and teal ground are gone: a school yard on a clear morning (grey cement
+  yard with joints, a boundary wall of red brick under yellow lime-wash with pillars and a coping, a two-storey school
+  building with blue doors and windows, a mango tree, a flame tree in flower and a jackfruit tree against a blue sky).
+  The path is a cut-away block whose front face shows what lies under each ground: packed earth with pebbles and cracks
+  over clay with roots and stones; rippled sand over earth; polished tiles over a screed and a concrete slab. The
+  enlarged contact is on a pale sky-blue card with a dark frame, and its block is the same ground, magnified. Every
+  arrow is the force's colour inside a dark edge inside a white halo, drawn over the puddle too (it was washed out
+  under the slippery floor's soapy water before); labels are solid white chips in the force's darker colour.
+- **Smooth.** The student's upper body, hands and shoes are merged (one mesh per material, the small plain colours in
+  one vertex-coloured material), sand grains instanced, the start line and bubbles merged, the yard's still parts
+  merged; PCF 1024 shadows on a shadow camera fitted round the student's whole push-off (VSM 2048 before), only the
+  student and the sand heap cast. Nothing is allocated per frame (the guide line used to make a new GPU buffer every
+  frame), and the panel's live values are written only when they change.
+- **Bugs.** The guide line leaked a buffer per frame; the panel rewrote the pause button and the values on every
+  frame; closing the explanation ran its close handler twice; the main foot arrow on the slippery floor was drawn under
+  the puddle; the force labels on phones had no free spot and hid.
+- **Numbers** (headless Chromium, software GL, shadows on, 390×700 / 844×390): draw calls avg 247 / max 269 → 90 / 112;
+  triangles max 95k → 87k; texture memory 54.3 MB (largest 2048 px) → 17.8 MB (1024 px); frames drawn while idle 0/s;
+  text on the view 30/2 at rest (unchanged: "শুরু" and the card's name; held: two short force labels instead of two
+  sentences). Time to ready is the same within noise (about 6 s in a fresh software-GL browser either way).
