@@ -73,3 +73,11 @@ writes "দুর্বল নিউক্লিয়ার বল" in the clos
 - 3.2.3 gives the weak force's range as 10⁻¹⁸ m; the strip shows only the strong force's range (10⁻¹⁵ m).
 - The closing paragraph's "নিউক্লিয়ার বল" (one of the three kinds) is read as the strong nuclear force (the strip's
   bracket under সবল নিউক্লীয়). Is that the book's intent?
+
+## Declutter and polish (2026-11-01, v0.2.0)
+- A deep night-blue backdrop with a soft glow instead of the white page; bold arrows in a white outline; the legend
+  and the honest note moved off the 3D view into the panel's small print.
+- Smooth: standard materials instead of clear-coat physical ones, the scale and the dashed reach edge one mesh each,
+  the energy rays one instanced mesh, one glow texture for both bursts.
+- The panel sits beside the 3D (kit 1.5.0): the wide-frame grid and the sideways-phone rules for the old bottom panel
+  are gone. No front/turn buttons: a drag turns the view (not during the test), a front icon brings it back.
