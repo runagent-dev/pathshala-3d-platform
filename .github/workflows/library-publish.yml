@@ -40,7 +40,7 @@ jobs:
       APPLY: ${{ github.event_name == 'push' || inputs.dry_run == false }}
       PATHSHALA_MIN_FREE_GB: '4'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with: { node-version-file: .nvmrc, cache: npm }
       - run: npm ci
