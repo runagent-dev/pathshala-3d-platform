@@ -1,11 +1,14 @@
 // Labels on the 3D, placed in screen space so they never collide. Each stop has a few labels (made with the kit's
 // annotations, each pinned to a computed point with no leader line). Every frame, before drawing, each label takes
 // the first of its candidate places that is inside the view and touches nothing already placed: the bodies, the
-// arrows, the corner buttons, the note, the coach's bubble and the labels placed before it. The dashed lines are
+// arrows, the corner buttons, the hint, the coach's bubble and the labels placed before it. The dashed lines are
 // avoided where possible (a label may cross one if it must). A label with no free place is hidden for the moment.
 import * as THREE from 'three';
 import { R as EARTH_R } from './globe.js';
 import { FACTS, orbitPoint } from './physics.js';
+
+// scratch vectors for the layouts (they run before every frame drawn: nothing new each time)
+const V = Array.from({ length: 6 }, () => new THREE.Vector3());
 
 /** The labels of each stop (the test may show fewer). */
 export const LABEL_SETS = {
@@ -150,11 +153,11 @@ export function createLabels({ stage, ui, annotations }) {
     return list;
   }
 
-  // the corner buttons and the note move only when the view is resized or the stop changes
+  // the corner buttons move only when the view is resized
   let fixed = [];
   function cacheBoxes() {
     const sr = ui.stage.getBoundingClientRect();
-    fixed = [ui.corner, ui.stage.querySelector('.gf-note')].filter(Boolean).flatMap((e) => {
+    fixed = [ui.corner].flatMap((e) => {
       const b = e.getBoundingClientRect();
       return b.width ? [{ x: (b.left + b.right) / 2 - sr.left, y: (b.top + b.bottom) / 2 - sr.top, w: b.width, h: b.height }] : [];
     });
@@ -201,8 +204,8 @@ export function layoutEarth(labels, { sc, coach }, obstacles) {
   const { LBL } = labels;
   const T = labels.tools;
   const g = sc.earth;
-  const v = new THREE.Vector3();
-  const ref = g.root.getWorldPosition(new THREE.Vector3());
+  const v = V[0];
+  const ref = g.root.getWorldPosition(V[1]);
   const c = T.scr(ref);
   const people = {};
   for (const pid of g.ids) {
@@ -235,7 +238,7 @@ export function layoutEarth(labels, { sc, coach }, obstacles) {
     ];
     // off the globe if possible, then anywhere round the person
     const all = [...cands.filter((q) => !T.touches(globe, q.x, q.y, L.w, L.h)), ...cands, ...T.ring(p.mid, L)];
-    const at = g.points.head(pid, new THREE.Vector3());
+    const at = g.points.head(pid, V[2]);
     if (T.placeSoft(id, all, obstacles, at, lines)) return;
     // nowhere free: the nearest place inside the view, even if it touches something
     const q = all.find((p2) => T.inView(p2, L));
@@ -283,8 +286,8 @@ export function layoutOrbit(labels, { sc, s }, obstacles) {
   const { LBL } = labels;
   const T = labels.tools;
   const o3 = sc[s.stop];
-  const refBig = o3.points.big(new THREE.Vector3());
-  const refSmall = o3.points.small(new THREE.Vector3());
+  const refBig = o3.points.big(V[0]);
+  const refSmall = o3.points.small(V[1]);
   const big = T.scr(refBig);
   const small = T.scr(refSmall);
   const rBig = T.pxSize(refBig, o3.S.big);
@@ -308,7 +311,7 @@ export function layoutOrbit(labels, { sc, s }, obstacles) {
       // beside the arrow on the moving body (it covers S.small … S.small + S.arrow of the line from it)
       const at = [0.5, 0.25, 0.75, 1].map((k) => (o3.S.small + o3.S.arrow * k) / o3.S.r);
       const L = T.sizeOf(LBL.pull);
-      const mid = T.scr(o3.points.arrowMid(new THREE.Vector3()));
+      const mid = T.scr(o3.points.arrowMid(V[2]));
       T.place('pull', [...T.beside(small, big, L, at, [8, 22], LBL.pull.side), ...T.ring(mid, L, [8, 22, 38, 56])], obstacles, refSmall);
     } else T.hide('pull');
   }
@@ -321,8 +324,8 @@ export function layoutOrbit(labels, { sc, s }, obstacles) {
   if (LBL.straight) {
     if (gone && s.free.t > 0.6) {
       const a = orbitPoint(o3.S.r, s.free.phi0);
-      const from = T.scr(o3.root.localToWorld(new THREE.Vector3(a.x, 0, a.z)));
-      const to = left ? T.scr(o3.root.localToWorld(new THREE.Vector3(s.free.end.x, 0, s.free.end.z))) : small;
+      const from = T.scr(o3.root.localToWorld(V[2].set(a.x, 0, a.z)));
+      const to = left ? T.scr(o3.root.localToWorld(V[3].set(s.free.end.x, 0, s.free.end.z))) : small;
       const L = T.sizeOf(LBL.straight);
       T.place(
         'straight',
@@ -339,8 +342,8 @@ export function layoutGalaxy(labels, { sc, s }, obstacles) {
   const { LBL } = labels;
   const T = labels.tools;
   const g = sc.galaxy;
-  const refSun = g.points.sun(new THREE.Vector3());
-  const refC = g.points.centre(new THREE.Vector3());
+  const refSun = g.points.sun(V[0]);
+  const refC = g.points.centre(V[1]);
   const sun = T.scr(refSun);
   const c = T.scr(refC);
   const rMark = T.pxSize(refSun, 2.2);
@@ -353,7 +356,7 @@ export function layoutGalaxy(labels, { sc, s }, obstacles) {
   if (LBL.centre) T.place('centre', T.around(c, -ux, -uy, T.sizeOf(LBL.centre), 10, [0, 50, -50, 100, -100, 150, -150]), obstacles, refC);
   if (LBL.pull) {
     if (s.pulls) {
-      const mid = T.scr(g.points.arrowMid(new THREE.Vector3()));
+      const mid = T.scr(g.points.arrowMid(V[2]));
       const L = T.sizeOf(LBL.pull);
       T.place(
         'pull',
@@ -377,13 +380,13 @@ export function layoutApples(labels, { sc, s }, obstacles) {
   const { LBL } = labels;
   const T = labels.tools;
   const a = sc.apples;
-  const v = new THREE.Vector3();
+  const v = V[0];
   const left = T.scr(a.points.left(v));
   const right = T.scr(a.points.right(v));
   const rA = T.pxSize(v, FACTS.apple.radius);
   obstacles.push({ x: left.x, y: left.y, r: rA }, { x: right.x, y: right.y, r: rA });
   if (LBL.dist) {
-    const ref = a.points.dimMid(new THREE.Vector3());
+    const ref = a.points.dimMid(V[1]);
     const m = T.scr(ref);
     const L = T.sizeOf(LBL.dist);
     T.place(
@@ -398,7 +401,7 @@ export function layoutApples(labels, { sc, s }, obstacles) {
   }
   if (LBL.pull) {
     if (s.pulls) {
-      const ref = a.points.rightArrow(new THREE.Vector3());
+      const ref = a.points.rightArrow(V[2]);
       const m = T.scr(ref);
       const L = T.sizeOf(LBL.pull);
       // just above the arrow (it is as high as the apple's middle): over its middle, or ending just short of the

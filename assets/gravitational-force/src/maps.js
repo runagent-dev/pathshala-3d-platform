@@ -121,9 +121,9 @@ function texture(c, aniso) {
 }
 
 /** The Earth: blue oceans, green and sandy land, Bangladesh marked, white ice at the poles, a few thin clouds. */
-export function earthTexture(aniso = 8) {
-  const W = 2048;
-  const H = 1024;
+export function earthTexture(aniso = 8, W = 1024) {
+  const H = W / 2;
+  const k = W / 2048; // the sizes below were drawn for a 2048 px map
   const X = (lon) => ((lon + 180) / 360) * W;
   const Y = (lat) => ((90 - lat) / 180) * H;
   const path = (g, pts) => {
@@ -160,12 +160,12 @@ export function earthTexture(aniso = 8) {
   path(g, BANGLADESH);
   g.fillStyle = '#0b7a43';
   g.fill();
-  g.lineWidth = 2;
+  g.lineWidth = Math.max(1.2, 2 * k);
   g.strokeStyle = 'rgba(255, 255, 255, 0.85)';
   g.stroke();
   g.fillStyle = '#e03131';
   g.beginPath();
-  g.arc(X(DHAKA[0]), Y(DHAKA[1]), 3.2, 0, Math.PI * 2);
+  g.arc(X(DHAKA[0]), Y(DHAKA[1]), Math.max(2, 3.2 * k), 0, Math.PI * 2);
   g.fill();
 
   // ice: Antarctica (to about 68° S), the Arctic (to about 72° N), Greenland's sheet
@@ -190,8 +190,8 @@ export function earthTexture(aniso = 8) {
   for (let i = 0; i < 70; i++) {
     const lat = (r() - 0.5) * 140;
     const x = r() * W;
-    if (Math.abs(lat - 23.5) < 9 && Math.abs(x - X(90)) < 90) continue;
-    blob(g, x, Y(lat), 48 + r() * 120, 10 + r() * 18, '255, 255, 255', 0.14 + r() * 0.2, (r() - 0.5) * 0.4);
+    if (Math.abs(lat - 23.5) < 9 && Math.abs(x - X(90)) < 90 * k) continue;
+    blob(g, x, Y(lat), (48 + r() * 120) * k, (10 + r() * 18) * k, '255, 255, 255', 0.14 + r() * 0.2, (r() - 0.5) * 0.4);
   }
   return texture(c, aniso);
 }

@@ -17,6 +17,8 @@ body.bg-transparent { background: transparent; }
 .gf-idea { margin: 0; min-height: 4.5em; font-size: 15px; line-height: 1.5; color: var(--ink-2); }
 .gf-idea b { font-weight: 700; color: var(--ink); }
 .gf-idea b.c-g { color: var(--c-g); }
+/* how the picture is stylised (not to scale, drawn bigger, slower), after the book's sentence: never on the 3D view */
+.gf-style { font-size: 0.86em; color: var(--ink-3); white-space: normal; }
 
 /* the live fact (where you are, the pull between the apples, distances) and the action button beside it */
 .gf-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 2.9em; }
@@ -42,18 +44,12 @@ body.bg-transparent { background: transparent; }
 .gf-f.on { background: var(--c); border-color: var(--c); }
 .gf-f.on b, .gf-f.on small { color: #fff; }
 
-/* how the picture is stylised, in the top left corner of the 3D view */
-.gf-note { position: absolute; left: 8px; top: 10px; z-index: 3; max-width: calc(100% - 252px); padding: 1px 4px; border-radius: 4px; background: color-mix(in srgb, var(--page) 82%, transparent); font-size: 12.5px; line-height: 1.35; color: var(--ink-2); pointer-events: none; text-wrap: balance; }
-/* the picture moved left of the corner buttons (short frames): the note goes under the buttons */
-.gf.gf-note-right .gf-note { left: auto; right: 6px; top: 52px; max-width: 172px; text-align: right; }
-
 /* labels on the 3D: placed by the figure, so no leader lines; one with no free place is hidden for the moment */
 .gf .pvc-anno-lines { display: none; }
 .gf .pvc-anno.gf-off { visibility: hidden !important; }
 .gf .pvc-anno-callout { font-size: 14px; padding: 1px 8px; }
 .gf .pvc-anno { font-size: 13.5px; padding: 1px 8px; }
 .gf.gf-compact .pvc-anno, .gf.gf-compact .pvc-anno-callout { font-size: 12.5px; padding: 0 6px; }
-.gf.gf-compact .gf-note { font-size: 11.5px; }
 
 /* the test: short phrases or arrows as answers */
 .gf .pvc-opt .gf-opt { font-size: 14.5px; line-height: 1.25; white-space: normal; font-weight: 600; }
@@ -61,28 +57,35 @@ body.bg-transparent { background: transparent; }
 .gf .pvc-q-text { min-height: 2.8em; }
 .gf .pvc-q-feedback { min-height: 4.35em; }
 
-/* wide frames: the panel stays low (two lines are enough for the sentence and for the worked answer) */
-@container pvc (min-width: 720px) {
-  .gf-idea { min-height: 3em; }
+/* wide frames with the panel below: it stays low (two lines are enough for the sentence and for the worked answer) */
+@container pvc (min-width: 720px) and (min-height: 461px) {
+  .gf-idea { min-height: 4.5em; } /* three lines: the Earth's sentence and its note */
   .gf .pvc-q-feedback { min-height: 2.9em; }
   .gf .pvc-q-text { min-height: 1.4em; }
 }
 @container pvc (max-width: 560px) {
   .gf-stops { align-self: stretch; grid-template-columns: repeat(5, minmax(0, 1fr)); }
   .gf-stops button { height: 38px; padding: 0 4px; font-size: 15px; }
-  .gf-idea { font-size: 15.5px; min-height: 6em; }
-  .gf-fact { font-size: 13.5px; min-height: 4.35em; } /* three lines: the apples' pull and the Earth's comparison */
-  .gf-note { max-width: calc(100% - 226px); font-size: 12px; }
+  .gf-idea { font-size: 15px; line-height: 1.42; min-height: 5.68em; } /* four lines: the book's sentence and the note */
+  .gf-fact { font-size: 13.5px; min-height: 2.9em; } /* two lines: the apples' pull and the Earth's comparison */
+  .gf-forces-k { font-size: 11.5px; line-height: 1.2; }
+  .gf-f { padding: 1px 4px; }
   .gf .pvc-opt .gf-opt { font-size: 14px; }
+  /* a tighter test: the 3D view keeps about 55 % of a phone held upright */
+  .gf .pvc-q-ask { gap: 6px; }
+  .gf .pvc-opt { height: 44px; }
+  .gf .pvc-q-text { font-size: 15.5px; line-height: 1.27; min-height: 2.54em; }
+  .gf .pvc-q-feedback { font-size: 13.5px; line-height: 1.32; min-height: 3.96em; }
+  .gf .pvc-q-options { gap: 5px; }
 }
 /* short phones: the panel gives the 3D view a little more room */
 @container pvc (max-width: 560px) and (max-height: 600px) {
   .gf-stops button { height: 34px; }
-  .gf-idea { font-size: 13px; line-height: 1.45; min-height: 4.35em; }
+  .gf-idea { font-size: 13px; line-height: 1.45; min-height: 5.8em; }
   .gf-row { min-height: 2.6em; }
   .gf-act { height: 34px; padding: 0 12px; font-size: 14.5px; }
   .gf-forces { display: none; } /* the 3D view needs the room more */
-  .gf-fact { min-height: 4.35em; }
+  .gf-fact { min-height: 2.9em; }
   /* the test sets the panel's height here: a tighter test gives the 3D view about 20 px more */
   .gf .pvc-q-feedback { font-size: 13px; line-height: 1.35; min-height: 4.05em; }
   .gf .pvc-q-text { font-size: 15px; line-height: 1.3; min-height: 2.6em; }
@@ -94,12 +97,14 @@ body.bg-transparent { background: transparent; }
 @container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
   .gf-stops { align-self: stretch; grid-template-columns: repeat(5, auto); }
   .gf-stops button { height: 34px; padding: 0 3px; font-size: 12.5px; }
-  .gf-idea { font-size: 14px; line-height: 1.45; min-height: 7.25em; }
+  .gf-idea { font-size: 14px; line-height: 1.45; min-height: 10.15em; } /* seven lines: the sentence and the note */
   .gf-row { flex-wrap: wrap; min-height: 0; }
-  .gf-fact { font-size: 13px; min-height: 2.9em; flex-basis: 100%; } /* beside the 3D view: its height never moves it */
+  .gf-fact { font-size: 13px; min-height: 4.35em; flex-basis: 100%; } /* beside the 3D view: room for the apples' three lines */
   .gf-act { height: 34px; }
-  .gf-forces-k { display: none; } /* the coloured pills say it; the side panel needs the room */
-  .gf-ladder { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .gf .pvc-q-feedback { font-size: 13.5px; min-height: 5.8em; }
+  .gf-forces { display: none; } /* as on short phones: the sentence, the note and the action need the room */
+  .gf .pvc-q-text { font-size: 14.5px; line-height: 1.35; min-height: 4.05em; } /* three lines */
+  .gf .pvc-q-feedback { font-size: 13px; line-height: 1.38; min-height: 6.9em; } /* five lines */
+  .gf .pvc-q-ask { gap: 6px; }
+  .gf .pvc-opt { height: 42px; }
   .gf .pvc-opt .gf-opt { font-size: 13.5px; }
 }

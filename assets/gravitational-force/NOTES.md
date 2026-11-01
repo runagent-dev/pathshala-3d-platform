@@ -48,14 +48,15 @@ arrows (মহাকর্ষ বল, the colour the four force figures share), 
   speed (Newton's first law, page 64), for about 3 s (the Earth 4–5 s) until it reaches the edge of the picture (or the
   corner buttons or the note); there the dashed path ends in an arrowhead with "সরলরেখায় চলতেই থাকবে", and it stays
   gone until the student taps "টান ফিরিয়ে দাও".
-- **গ্যালাক্সি**: a spiral galaxy drawn as dots (a printed-diagram look on the white page), its arms trailing behind the
+- **গ্যালাক্সি**: a spiral galaxy drawn as glowing dots in the night sky, its arms trailing behind the
   turning disc as real arms do, our Sun marked about half-way out on an arm with its pull towards the centre.
   "পাল্লা অসীম".
 
 A strip at the foot of the learn panel shows the four fundamental forces weakest to strongest with their ranges
-(অসীম, 10⁻¹⁸ m, অসীম, 10⁻¹⁵ m), মহাকর্ষ highlighted (left out at 390×520, where the 3D view needs the room).
+(অসীম, 10⁻¹⁸ m, অসীম, 10⁻¹⁵ m), মহাকর্ষ highlighted (left out at 390×520 and in the side panel of short, wide frames, where the sentence, the note and
+the action need the room).
 
-Honest notes in the corner: people and apples drawn much bigger, the fall twice as slow; force arrows drawn many times
+Honest notes after the book's sentence in the panel (never on the 3D view): people and apples drawn much bigger, the fall twice as slow; force arrows drawn many times
 bigger; sizes, distances and time not to scale; the galaxy's Sun drawn bigger and time much faster. The galaxy turns as
 a whole (stylised: real galaxies turn faster near the middle).
 
@@ -95,3 +96,50 @@ in `test/unit/gravitational-force.test.mjs`), the models in `globe.js`, `people.
 - The fourth chip is called "পৃথিবী" (people on the Earth); "আমরা" was the other choice.
 - The strip's heading "চার মৌলিক বল (সবচেয়ে দুর্বল → সবচেয়ে শক্তিশালী)" is the one all four force figures use (the page
   itself says "চার ধরনের বল" on p69).
+
+## Polish pass (2026-11-01, v0.2.0)
+The owner's standard for every figure (docs/agents/polish-pass.md).
+- **Layout.** 3D on top, the panel below (beside it only on short, wide frames, as the kit does): no figure CSS moves
+  it. On a phone held upright the 3D view has 388 of 700 px (55 %, was 354): the test sheet is a little tighter there
+  (44 px answers, 15.5 px question, 13.5 px worked answer) and the apples' line is two lines instead of three (the
+  distance itself is the label on the table). The panel keeps one height in every state at all six sizes (every
+  stop, the drop, the flight, every question; checked with every text, Bangla and English). The wide-frame rules no
+  longer reach the side panel of a phone held sideways, where the test's question had room for one line only. The
+  strip of four forces is left out in the side panel too (as at 390×520): the sentence, the note and the action need
+  the room.
+- **Text on the 3D view.** Labels only: তুমি, মাধ্যাকর্ষণ বল / মহাকর্ষ বল, পৃথিবীর কেন্দ্র, the bodies' names and the
+  distances. The stylisation note moved from the corner of the view into the panel, after the book's sentence (in
+  brackets, smaller, grey). The Moon's distance label is now `প্রায় ৩.৮৪ লক্ষ কিমি` (the long form stays in the panel);
+  English labels shortened to 24 characters. Text on the view 86 characters in 4 boxes → 33 in 3.
+- **Setting and colour.** No more white page. The apples lie on a wooden table (a grained top, legs and apron) in a
+  room: blue plastered walls with a dark skirting and a window onto a sky and trees, a red-oxide tiled floor, a warm
+  ceiling; the turned camera stays in front of the table, above the floor and inside the walls. The Earth, the Moon,
+  the Sun and the galaxy are in a night sky (a deep blue gradient and two clouds of stars, thick along a Milky Way
+  band); the Earth has a soft blue atmosphere at its edge; the galaxy's dots glow (pale blue arms, a warm bulge with a
+  soft glow), our Sun in a white ring.
+- **Arrows and marks.** Every pull is a bold violet arrow inside a white outline, drawn over the picture, so it stays
+  clear on the blue ocean, the dark sky and the brown table (only the violet part is exported). The dashed lines to
+  the Earth's centre and along the table are dark dashes in a white rim (clear on ice, sea, land and wood); in the sky
+  the lines between bodies are light dashes in a dark rim, the path a pale ring and the straight path without the pull
+  white. The apples' arrows are thicker (they still leave a gap between them at 20 cm).
+- **Smooth, with the detail kept.**
+  - Each person is one mesh (clothes, skin, hair and eyes in vertex colours, one shared material), each apple two
+    (skin, and stem with a two-faced leaf on the people's material), each boat one; the twelve faint copies of the
+    falling apples are one instanced mesh. The table's legs and apron, the room's skirting and window frame are one
+    mesh each.
+  - Shadows (the apples stop only): soft VSM at 512 px in a box fitted round the places the apples can be, with
+    `updateProjectionMatrix()` (before, the 1024 px box was never applied); only the apples cast, only the table top
+    receives.
+  - The Earth's map is 1024 px instead of 2048 px (side by side at 1280×800 they look the same; the outlines and the
+    clouds scale with the map). No `createMaterials` (it drew a dozen kit textures the figure never used).
+  - No per-frame allocation in the label layouts, the straight path or the falling apples; the panel's text is
+    written only when it changes.
+- **Numbers** (headless Chromium, software GL, shadows on, 390×700; before → after): draw calls avg 106 / max 128 →
+  66 / 88; triangles max 54k → 58k (the room and the stars added); texture memory 14 MB (largest 2048 px) → 8 MB
+  (largest 1024 px); time to ready 760 ms in the brief's quiet run, 1565 → 1265 ms on the same loaded machine; frames
+  drawn while idle 0, as before (the orbits turn by themselves while playing, which is the lesson).
+- **Bugs fixed.** The shadow box was never applied (no `updateProjectionMatrix()`); at 800×500 the 3D view jumped by
+  22 px between the Earth and the other stops (the Earth's sentence takes a third line there) and in the test; in the
+  side panel of a phone held sideways the wide-frame rules reserved one line for the test's questions, which take two
+  or three, so the sheet changed height from question to question; on phones the English worked answers, two
+  questions and several panel lines ran past their room, so the 3D view changed height in English (shortened).
