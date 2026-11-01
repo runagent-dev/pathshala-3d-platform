@@ -27,11 +27,11 @@ same দ্রুতি while its বেগ keeps changing, because its দি�
   (blue, "দূরত্ব ÷ সময়", result "দিক নেই") and a row for বেগ (orange). Rows and the sentence sit at the top of the
   panel, the chips and the main button at the bottom.
 - **পাথর**: a student whirls a stone on a jute rope over the head (radius 1 m, 4 m/s; the rope hangs as a conical
-  pendulum: tan = g r / v², the stone g r² / v² below the hand). Shown 3 times slower (a note says so). The বেগ is an
+  pendulum: tan = g r / v², the stone g r² / v² below the hand). Shown 3 times slower (the panel says so). The বেগ is an
   orange arrow along the circle; faint copies of it are left every quarter turn and fade within a turn, so the arrow
   is seen to keep its length but not its direction. Panel: দ্রুতি = ৬.২৮ m / ১.৫৭ s = ৪ m/s (দিক নেই); বেগ (ভেক্টর: মান
   ও দিক) = ৪ m/s and the direction as a turning arrow and a compass word that changes every 45°. A compass is drawn
-  on the grass; the pond's label says the goal: পাথরটি পুকুরে ফেলো.
+  on a pale plate on the ground; the panel gives the goal under the sentence: পাথরটি পুকুরে ফেলো.
 - **দড়ি ছেড়ে দাও** (panel button, or touch the student's hand or the stone; it acts as the finger goes down, so
   timing is fair; a second tap within 0.45 s is a double tap and does not take the throw back): the stone flies
   straight on along the বেগ it had at that moment (the tangent), falling honestly (g = 9.8 m/s², it lands about
@@ -64,3 +64,44 @@ same দ্রুতি while its বেগ keeps changing, because its দি�
 - The book writes km/h? The figure uses km/h and m/s symbols (as the page writes m/s), minutes as মিনিট.
 - Stylised on purpose: the stone (17 cm), the road (70 m wide) and the cyclist are drawn bigger than they would be,
   so they show on a phone; the stone scene runs 3 times slower than real time (both are said in the figure or here).
+
+## Polish pass (2026-11-01)
+- **Layout**: the kit's frame everywhere. The figure's own rule that widened the side panel on short, wide frames is
+  gone (the rows were tightened to fit the kit's 36 % column instead). On wide frames (800×500, 1280×800) the chips
+  and the button sit beside the rows, so the 3D view is 55 % of the height there and at 390×700 (it was 50 % and
+  54 %). The panel keeps one height in every state.
+- **Text on the 3D view**: only labels now (বেগ, পুকুর, A, B, দূরত্ব, সরণ, the quiz letters). The time note (সময় ৩ গুণ
+  ধীর…, ২০ মিনিটের যাত্রা…) and the goal (পাথরটি পুকুরে ফেলো) moved into the panel, as a small line under the
+  sentence. After a throw the hint line only says পুকুরে পড়েছে! / পুকুরে পড়েনি; the why is in the panel's sentence.
+  Text on the view: 46 characters in 3 boxes → 8 in 2.
+- **Setting and colour**: the pale grass fading to white is gone. The stone is whirled on a school field of trodden
+  earth (a tiling canvas texture: patches, grit, pebbles, dry grass), with trees and bushes round the edge, reeds at
+  the pond, the school behind, a sky when the view is turned; the compass is drawn on a pale cement plate in dark
+  ink. The road map lies on a patchwork of fields (ploughed, ripening, mustard, young paddy) with villages under
+  their trees and ponds; the km numbers sit on white milestone discs. Every arrow (বেগ, its faint copies, the quiz
+  choices, the twin, সরণ) has a white outline; the road travelled (দূরত্ব) has a white edge; the stone's circle is
+  chalk white; the quiz trail is dark so it shows on the white circle.
+- **Performance**: soft VSM shadows at 2048 → PCF at 1024 with the shadow camera fitted to each example; only the
+  student, the stone, its rope and the cyclist cast shadows (the arrows did too). The student and the cyclist are
+  merged into one mesh per material (14 → 5 and 18 → 6 draw calls); the plants are merged per colour with the
+  stone's shader (no new shader to compile); arrow geometries are shared; the countryside is drawn only when the road
+  is first shown; nothing is allocated per frame while the stone goes round (scratch vectors), and the panel's
+  direction arrow is rewritten only when it turns a whole degree.
+- **Determinism (the visual comparison flake)**: the stone goes round all the time (the figure's point), and the
+  বেগ label follows it; CI's picture was taken while it moved, so the label landed a pixel or two apart from run to
+  run (about 150 px of difference). New URL parameter `angle`: the stone is held still there when the figure opens,
+  with the faint copies of the last turn. The poster (and so the visual comparison) uses `angle=215`: nothing moves,
+  nothing is drawn while idle, and four runs in a row give identical pixels. Students still see it going round.
+- **Bugs**: a turn of the phone during a camera move no longer leaves the old framing (the resize reframes at once);
+  with the stone held still (the poster, `set({ whirl: false })`), the button and a touch on the hand now let go of
+  the rope as the button says (they whirled it again).
+- **Numbers** (headless Chromium, software GL, shadows on; the before row is main at kit 1.3.0):
+
+  | | draw calls avg / max | triangles max | texture memory | ready (median of 8) | text on 3D |
+  |---|---|---|---|---|---|
+  | before | 77 / 145 | 35k | 55.3 MB (2048) | 945 ms | 46 / 3 |
+  | after | 64 / 124 | 67k | 19.1 MB (1024) | 1030 ms | 8 / 2 |
+
+  Frames per second while the stone goes round went from about 9 to about 23 in software GL (each frame is cheaper);
+  with `angle` set nothing is drawn while idle. The triangles are the plants and the school (still far under 300k).
+

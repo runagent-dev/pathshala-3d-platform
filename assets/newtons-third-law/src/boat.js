@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { createPerson } from './person.js';
 import { BOAT, boatAt } from './physics.js';
+import { mergeStatic } from './merge.js';
+import { createRiverSetting } from './setting.js';
 const v = (x, y, z = 0) => new THREE.Vector3(x, y, z);
 const material = (name, color, roughness = 0.6) => new THREE.MeshPhysicalMaterial({ name, color, roughness, clearcoat: 0.2 });
 function woodTexture() {
@@ -101,25 +103,17 @@ export function createBoatScene() {
   person.root.name = 'Boy';
   person.root.scale.setScalar(0.9);
   root.add(person.root);
-  const waterGeo = new THREE.PlaneGeometry(12, 10, 100, 60);
-  waterGeo.rotateX(-Math.PI / 2);
-  const p = waterGeo.attributes.position;
-  for (let i = 0; i < p.count; i++) p.setY(i, 0.025 * Math.sin(p.getX(i) * 3.5 + p.getZ(i) * 2) + 0.012 * Math.sin(p.getZ(i) * 8));
-  waterGeo.computeVertexNormals();
-  const water = new THREE.Mesh(waterGeo, new THREE.MeshPhongMaterial({ name: 'RiverWater', color: 0x087caa, specular: 0x38a8c4, shininess: 55 }));
-  water.position.y = -0.13;
-  water.receiveShadow = true;
-  root.add(water);
+  const setting = createRiverSetting();
+  root.add(setting);
   const dock = new THREE.Group();
   dock.name = 'Jetty';
   root.add(dock);
-  for (let i = 0; i < 18; i++) {
+  for (let i = 0; i < 34; i++) {
     const plank = new THREE.Mesh(new THREE.BoxGeometry(0.155, 0.1, 1.55), wood);
     plank.position.set(1.78 + i * 0.16, BOAT.dockY - 0.05, 0);
-    plank.receiveShadow = true;
     dock.add(plank);
   }
-  for (const x of [1.9, 3.1, 4.3])
+  for (const x of [1.9, 3.1, 4.3, 5.5, 6.7])
     for (const z of [-0.64, 0.64]) {
       const post = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.065, 0.8, 12), dark);
       post.position.set(x, -0.12, z);
@@ -142,13 +136,21 @@ export function createBoatScene() {
   hit.position.y = 0.8;
   hit.userData.noExport = true;
   person.root.add(hit);
-  root.traverse((o) => {
-    if (o instanceof THREE.Mesh && o !== water) o.castShadow = true;
-  });
+  // Fewer draw calls, the same boat: the hull and seats, the rim and strakes, the floor planks and the footboard are
+  // one mesh each (they move together); the jetty is two (planks, posts). Only the boat and the boy cast shadows
+  // (onto the water and the jetty), which is all that is seen.
+  mergeStatic(boat);
+  mergeStatic(dock);
+  mergeStatic(wake);
+  // every mesh that shares a material also shares its shadow settings (three.js changes the program per object
+  // otherwise); the boat receives the boy's shadow on its floor too
+  for (const mesh of boat.children) mesh.castShadow = mesh.receiveShadow = true;
+  for (const mesh of dock.children) mesh.receiveShadow = true;
   const personBounds = new THREE.Box3();
   return {
     root,
     boat,
+    setting,
     personBounds,
     person: person.root,
     hit,

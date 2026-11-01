@@ -12,12 +12,17 @@ const SEAT_Y = BENCH.top + STAND.h; // the ring the sphere rests on
 /** The height of a sphere's centre resting on its ring stand. */
 export const centreY = (R) => SEAT_Y + Math.sqrt(Math.max(0, R * R - STAND.seat * STAND.seat));
 
-/** The bench's metre scale: ticks every 10 cm, longer every 50 cm, numbers every 50 cm (Bangla digits via N). */
+/**
+ * The bench's metre scale: ticks every 10 cm, longer every 50 cm, numbers every 50 cm (Bangla digits via N). 2048 px
+ * along the bench's 3.24 m (about 630 px a metre: sharper than the screen shows it at every size; a 4536 px canvas
+ * before), so it fits every phone's texture limit and costs a fifth of the memory.
+ */
 function scaleTexture(N, unit, aniso) {
   const len = BENCH.x1 - BENCH.x0;
-  const pxPerM = 1400;
-  const W = Math.round(len * pxPerM);
+  const W = 2048;
+  const pxPerM = W / len;
   const H = Math.round(BENCH.top * pxPerM);
+  const px = pxPerM / 1400; // the drawing was made at 1400 px a metre: its sizes scaled to this one
   const c = document.createElement('canvas');
   c.width = W;
   c.height = H;
@@ -25,7 +30,7 @@ function scaleTexture(N, unit, aniso) {
   g.fillStyle = '#f7f3e8';
   g.fillRect(0, 0, W, H);
   g.fillStyle = '#d9cfb4';
-  g.fillRect(0, H - 6, W, 6);
+  g.fillRect(0, H - 6 * px, W, 6 * px);
   g.fillStyle = '#20262e';
   g.textAlign = 'center';
   g.textBaseline = 'alphabetic';
@@ -35,7 +40,8 @@ function scaleTexture(N, unit, aniso) {
     const half = i % 5 === 0;
     const whole = i % 10 === 0;
     const len = whole ? 0.36 : half ? 0.28 : 0.15;
-    g.fillRect(x - (whole ? 4 : 3), 0, whole ? 8 : 6, H * len);
+    const w = Math.max(2, (whole ? 8 : 6) * px);
+    g.fillRect(x - w / 2, 0, w, H * len);
     if (half && i >= 0 && i <= 20) g.fillText(N(String(i / 10)), x, H * 0.86);
   }
   g.textAlign = 'left';

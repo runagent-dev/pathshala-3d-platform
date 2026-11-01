@@ -10,10 +10,10 @@
 // time ("পরের ধাপ"), with the student's numbers.
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
-import { createArrow } from '@shared/arrow.js';
 import { createMaterials } from '@shared/student/materials.js';
 import { ICONS } from '@shared/student/icons.js';
 import { BENCH, STRING_Y, createApparatus } from './apparatus.js';
+import { boldArrow } from './arrows.js';
 import { fitPose } from './camera.js';
 import { BOOK, EX_LIMITS, G, plain, runAt, runTime, solve, travel } from './reading.js';
 
@@ -119,15 +119,17 @@ export function createExample({ root, t, now = () => performance.now(), onChange
     stage.controls.enableZoom = false;
     stage.controls.enablePan = false;
     stage.controls.enableRotate = false;
-    // a warm classroom wall behind, a little darker at the floor
+    // a cool slate-blue classroom wall behind, darker towards the floor: the orange T, the purple weights and the teal a
+    // all stand out from it (a warm wall swallowed the orange arrows)
     const c = document.createElement('canvas');
     c.width = 4;
     c.height = 256;
     const ctx = /** @type {CanvasRenderingContext2D} */ (c.getContext('2d'));
     const g = ctx.createLinearGradient(0, 0, 0, 256);
-    g.addColorStop(0, '#f7c98b');
-    g.addColorStop(0.6, '#f2a86a');
-    g.addColorStop(1, '#d9824a');
+    g.addColorStop(0, '#dbe6f0');
+    g.addColorStop(0.55, '#b9cbdc');
+    g.addColorStop(0.86, '#93a8bd');
+    g.addColorStop(1, '#6f8296');
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, 4, 256);
     const bg = new THREE.CanvasTexture(c);
@@ -138,8 +140,9 @@ export function createExample({ root, t, now = () => performance.now(), onChange
     stage.scene.add(sun, new THREE.HemisphereLight('#fff1dc', '#a8683a', 0.7));
     const ap = createApparatus({ materials: createMaterials(stage.renderer) });
     stage.scene.add(ap.root);
+    // bold arrows in a white outline, drawn over the bench and the weights (arrows.js, as on the well)
     const mk = (name, color) => {
-      const a = createArrow({ color, radius: 0.0065, head: 0.04, headRadius: 0.0175, name });
+      const a = boldArrow(name, color, 0.011);
       stage.scene.add(a.root);
       return a;
     };
@@ -212,11 +215,17 @@ export function createExample({ root, t, now = () => performance.now(), onChange
     labels();
     stage.invalidate();
   }
-  /** Small labels at the arrows' heads (DOM, placed each frame): T, Mg, a with their numbers. */
+  /** Small labels at the arrows' heads (DOM): T, Mg, a with their numbers; rebuilt when the words change, moved each frame. */
+  const lp = new THREE.Vector3();
+  let lblKey = '';
+  /** @type {{ el: HTMLElement, arrow: any, side: number, w: number, h: number, dx: number, dy: number }[]} */
+  let lbls = [];
   function labels() {
     const layer = $('.wl-ex-anno');
     if (!view || st.phase === 'ready') {
-      layer.innerHTML = '';
+      if (lblKey) layer.innerHTML = '';
+      lblKey = '';
+      lbls = [];
       return;
     }
     const { A, stage } = view;
@@ -234,17 +243,33 @@ export function createExample({ root, t, now = () => performance.now(), onChange
           [A.rW, `Mg = ${n(sol.W)} N`, 'W', -1],
           [A.ba, `a = ${n(sol.a)}`, 'a', 0],
         ];
-    const p = new THREE.Vector3();
-    layer.innerHTML = list
-      .map(([arrow, html, c, side]) => {
-        p.copy(arrow.tip).project(stage.camera);
-        const x = (p.x * 0.5 + 0.5) * stage.width;
-        const y = (-p.y * 0.5 + 0.5) * stage.height;
-        const dx = side < 0 ? -8 : side > 0 ? 8 : 0;
-        const dy = c === 'a' ? 14 : c === 'W' ? 0 : -14;
-        return `<span class="wl-ex-lbl k-${c} s${side}" style="left:${(x + dx).toFixed(1)}px;top:${(y + dy).toFixed(1)}px">${html}</span>`;
-      })
-      .join('');
+    const key = list.map((x) => x[1]).join('|');
+    if (key !== lblKey) {
+      lblKey = key;
+      layer.innerHTML = list.map(([, html, c, side]) => `<span class="wl-ex-lbl k-${c} s${side}">${html}</span>`).join('');
+      const els = /** @type {HTMLElement[]} */ ([...layer.children]);
+      lbls = list.map(([arrow, , c, side], i) => ({
+        side,
+        w: els[i].offsetWidth,
+        h: els[i].offsetHeight,
+        el: els[i],
+        arrow,
+        dx: side < 0 ? -10 : side > 0 ? 10 : 0,
+        dy: c === 'a' ? 16 : c === 'W' ? 0 : -16,
+      }));
+    }
+    // each label stays inside the picture (its anchor is its right edge, left edge or middle, by side)
+    const W = stage.width;
+    const H = stage.height;
+    for (const l of lbls) {
+      lp.copy(l.arrow.tip).project(stage.camera);
+      const lo = l.side < 0 ? l.w + 4 : l.side > 0 ? 4 : l.w / 2 + 4;
+      const hi = l.side < 0 ? W - 4 : l.side > 0 ? W - l.w - 4 : W - l.w / 2 - 4;
+      const x = Math.min(Math.max((lp.x * 0.5 + 0.5) * W + l.dx, lo), Math.max(lo, hi));
+      const y = Math.min(Math.max((-lp.y * 0.5 + 0.5) * H + l.dy, l.h / 2 + 2), Math.max(l.h / 2 + 2, H - l.h / 2 - 2));
+      l.el.style.left = `${x.toFixed(1)}px`;
+      l.el.style.top = `${y.toFixed(1)}px`;
+    }
   }
   function tick() {
     if (st.phase !== 'run') return false;
@@ -291,7 +316,7 @@ export function createExample({ root, t, now = () => performance.now(), onChange
     }
     return L.map(
       (l, i) =>
-        `<li class="wl-ex-line${i === L.length - 1 ? ' res' : ''}${i < st.part ? ' in' : ''}"${i < st.part ? '' : ' aria-hidden="true"'}><span class="f">${l.f}</span><span class="n">${l.n}</span></li>`,
+        `<li class="wl-ex-line${i === L.length - 1 ? ' res' : ''}${i < st.part ? ' in' : ''}${i === st.part - 1 ? ' cur' : ''}"${i < st.part ? '' : ' aria-hidden="true"'}><span class="f">${l.f}</span><span class="n">${l.n}</span></li>`,
     ).join('');
   }
 

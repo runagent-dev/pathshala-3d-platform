@@ -4,6 +4,7 @@
 // matching SPRING.m in motion.js). The ground (table) is y = 0.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { mergeStatic } from './merge.js';
 import { SPRING, springStretch } from './motion.js';
 
 export const TOP = 0.82; // m: where the spring hangs from the arm
@@ -76,6 +77,8 @@ export function createSpringStand({ materials: M }) {
   hit.position.y = -0.04;
   hit.userData.noExport = true;
   mass.add(hit);
+  mergeStatic(mass, { keep: [hit] });
+  mergeStatic(root, { keep: [coil, mass] });
 
   function setOffset(x) {
     const y = EQUILIBRIUM + x;

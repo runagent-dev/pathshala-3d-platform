@@ -1,19 +1,27 @@
-/* Saturated scene, readable white lesson panel; pink ends, gold equilibrium and speed, cyan path. */
+/* The 3D on top and the panel below (the kit's shell; beside it only in the kit's short-and-wide frame). The panel:
+   the speed and the rule in one row, the graph of one period (the same height for both examples, so switching never
+   moves the 3D view), the note, then the buttons. Pink ends, gold equilibrium and speed, cyan path. */
 html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
 #app { position: fixed; inset: 0; }
 body.bg-transparent { background: transparent; }
-.pvc { --c-pos: #157ca0; --c-spd: #a75c00; }
+.pvc { --c-pos: #157ca0; --c-spd: #a75c00; --trip-h: 120px; }
 .shm button { touch-action: manipulation; }
-.shm .pvc-learn { gap: 8px; }
-.shm-main { gap: 2px 22px; }
+.shm .pvc-learn { justify-content: flex-start; gap: 6px; }
+
+/* the reading and the rule */
+.shm-main { flex-wrap: nowrap; align-items: center; gap: 4px 12px; }
+.shm-speed { flex: none; gap: 6px; }
 .shm-speed .k { display: inline-flex; align-items: center; gap: 6px; color: var(--c-spd); font-weight: 600; }
-.shm-speed .v { color: var(--c-spd); min-width: 2.4em; }
+.shm .shm-speed .v { color: var(--c-spd); min-width: 2.2em; font-size: 27px; }
+.shm .shm-speed .u { font-size: 15px; }
 .shm-arrow-ic { display: inline-block; width: 18px; height: 3px; background: var(--c-spd); position: relative; border-radius: 2px; }
 .shm-arrow-ic::after { content: ''; position: absolute; right: -4px; top: -4px; border: 5.5px solid transparent; border-left: 7px solid var(--c-spd); border-right: 0; }
-/* Two humps are speed (always positive), one complete back-and-forth. */
-.shm-trip { display: flex; flex-direction: column; gap: 4px; padding: 0 3px; }
-.shm-graph { position: relative; height: 72px; background: #173b51; border-radius: 5px; border-bottom: 2px solid #40798c; }
-.pvc .shm-graph svg { position: absolute; inset: 13px 0 2px; width: 100%; height: calc(100% - 15px); overflow: visible; }
+.shm-state { flex: 1; min-width: 0; margin: 0; min-height: 2.7em; display: flex; align-items: center; padding-left: 8px; border-left: 3px solid #16806e; color: #125f53; font-size: 13.5px; font-weight: 600; line-height: 1.35; }
+
+/* one period: the graph (or the spring's graphs), the five moments under it, the period */
+.shm-trip { flex: none; height: var(--trip-h); display: flex; flex-direction: column; gap: 3px; padding: 0 3px; }
+.shm-graph { position: relative; flex: 1; min-height: 0; background: #173b51; border-radius: 5px; border-bottom: 2px solid #40798c; }
+.pvc .shm-graph svg { position: absolute; inset: 15px 0 2px; width: 100%; height: calc(100% - 17px); overflow: visible; }
 .pvc .shm-graph .shm-area { fill: #ffd04d; fill-opacity: 0.13; stroke: none; }
 .pvc .shm-graph .shm-grid { stroke: #6b9baa; stroke-width: 1; stroke-dasharray: 3 3; fill: none; }
 .pvc .shm-graph .shm-curve { stroke: #ffd04d; stroke-width: 2.5; fill: none; }
@@ -21,25 +29,26 @@ body.bg-transparent { background: transparent; }
 .shm-graph-k { left: 6px; color: #ffe16a; }
 .shm-graph-t { right: 6px; color: #e0f6ff; }
 .shm-dot { position: absolute; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; background: #ffcd3e; border: 2px solid #fff; box-shadow: 0 0 0 1px #cc8700; }
-.shm-stops { position: relative; height: 38px; }
-.shm-stops button { position: absolute; top: 0; transform: translateX(-50%); height: 36px; width: 66px; padding: 2px; border: 1px solid transparent; border-radius: 4px; background: #fff; color: #a52c4c; font-size: 12px; line-height: 1.25; white-space: nowrap; }
-.shm-stops button:first-child { transform: none; text-align: left; width: 30px; }
-.shm-stops button:last-child { transform: translateX(-100%); text-align: right; width: 30px; }
+.shm-stops { position: relative; flex: none; height: 28px; }
+.shm-stops button { position: absolute; top: 0; transform: translateX(-50%); height: 28px; width: min(74px, calc(25% - 6px)); padding: 1px 0; border: 1px solid transparent; border-radius: 4px; background: #fff; color: #a52c4c; font-size: 12.5px; line-height: 1.2; white-space: nowrap; }
+.shm-stops button:first-child { transform: none; text-align: left; width: min(40px, calc(12.5% + 2px)); padding-left: 2px; }
+.shm-stops button:last-child { transform: translateX(-100%); text-align: right; width: min(40px, calc(12.5% + 2px)); padding-right: 2px; }
 .shm-stops button b, .shm-stops button small { display: block; font-size: inherit; }
-.shm-stops button small { font-size: 11px; font-weight: 500; }
+.shm-stops button small { display: none; font-size: 11px; font-weight: 500; }
 .shm-stops [data-stop='mid'] { color: #805300; }
 .shm-stops button.on { background: #fff1d0; border-color: #cd8a19; }
 .shm-stops button:hover { border-color: currentColor; }
 .shm-stops button:focus-visible { outline: 2px solid #156fa5; outline-offset: 1px; }
-.shm-span { display: flex; align-items: center; gap: 6px; height: 18px; font-size: 12px; line-height: 1; color: var(--ink-2); }
+.shm-span { flex: none; display: flex; align-items: center; gap: 6px; height: 16px; font-size: 12px; line-height: 1; color: var(--ink-2); }
 .shm-span b { color: var(--ink); font-weight: 700; }
 .shm-span .tx { white-space: nowrap; }
 .shm-span i { position: relative; flex: 1; height: 1.5px; background: var(--ink-3); }
 .shm-span i::before { content: ''; position: absolute; top: -4px; border: 5px solid transparent; }
 .shm-span i:first-child::before { left: -2px; border-right: 7px solid var(--ink-3); border-left: 0; }
 .shm-span i:last-child::before { right: -2px; border-left: 7px solid var(--ink-3); border-right: 0; }
-.shm-state { margin: 0; min-height: 2.8em; padding-left: 8px; border-left: 3px solid #16806e; color: #125f53; font-size: 14px; font-weight: 600; line-height: 1.4; }
-.shm-extra { margin: 0; min-height: 3em; font-size: 13px; line-height: 1.5; color: var(--ink-2); }
+
+/* the note and the buttons */
+.shm-extra { margin: 0; min-height: 2.7em; font-size: 12.5px; line-height: 1.35; color: var(--ink-2); }
 .shm-extra b { color: #135f81; font-weight: 600; }
 .shm-acts { display: flex; gap: 6px; }
 .shm-acts .pvc-btn, .shm .pvc-learn-foot .pvc-btn { height: 38px; padding: 0 12px; font-size: 15px; }
@@ -48,79 +57,35 @@ body.bg-transparent { background: transparent; }
 .shm-acts [data-act='play'] svg { color: #fff; }
 .shm-acts [data-act='slow'].on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
 .shm-ex button { height: 36px; padding: 0 12px; font-size: 15px; }
-.shm-badge { position: absolute; left: 10px; top: 10px; z-index: 5; padding: 3px 10px; border-radius: 6px; background: #fff; color: #125f53; font-size: 13.5px; font-weight: 500; pointer-events: none; }
-.shm .pvc-anno-part { padding: 3px 8px; border: 0; background: #fffdf4; font-size: 13px; line-height: 1.35; text-align: center; }
+
+/* on the 3D view: the slowed-time chip and the labels (solid chips) */
+.shm-badge { position: absolute; left: 10px; top: 10px; z-index: 5; padding: 3px 10px; border-radius: 6px; background: #fff; color: #125f53; font-size: 13.5px; font-weight: 600; pointer-events: none; box-shadow: 0 1px 3px rgba(20, 30, 45, 0.25); }
+.shm .pvc-anno-part { padding: 3px 8px; border: 1px solid #c9b48a; background: #fffdf4; font-size: 13px; line-height: 1.35; text-align: center; box-shadow: 0 1px 3px rgba(20, 30, 45, 0.3); }
 .shm-l-place, .shm-l-speed { display: block; font-weight: 600; }
 .shm-l-place.end { color: #b52c4c; }
 .shm-l-place.middle { color: #855200; }
 .shm-l-speed { color: #183e50; }
-.shm .pvc-anno-callout { min-width: 26px; text-align: center; border-radius: 13px; font-size: 15px; }
+.shm .pvc-anno-callout { min-width: 26px; text-align: center; border-radius: 13px; font-size: 15px; background: #fff; }
+
+/* the test */
 .shm .pvc-q-text { min-height: 2.8em; }
 .shm .pvc-q-feedback { min-height: 2.9em; }
 .shm-opt { font-size: 15.5px; font-weight: 600; line-height: 1.25; }
 .shm .pvc-opt { padding: 0 8px; }
-/* Wide boards keep the swing large, with its graph and controls in a side panel. */
-@container pvc (min-width: 720px) {
-  .shm .pvc-shell { grid-template-rows: minmax(0, 1fr); grid-template-columns: minmax(0, 1fr) clamp(270px, 34%, 350px); }
-  .shm .pvc-panel { display: flex; align-items: stretch; border-top: 0; border-left: 1px solid var(--line); padding: 12px; gap: 10px; overflow: hidden; }
-  .shm .pvc-tabs { grid-template-columns: 1fr 1fr; max-width: none; }
-  .shm .pvc-tabs button + button { border-top: 0; border-left: 1px solid var(--line-2); }
-  .shm .pvc-learn { justify-content: flex-start; gap: 12px; }
-  .shm-extra { min-height: 6em; }
-}
-@container pvc-panel (max-width: 330px) {
-  .shm-stops button { width: 52px; font-size: 11px; }
-  .shm-stops button:first-child, .shm-stops button:last-child { width: 30px; }
-  .shm .pvc-learn-foot { flex-wrap: nowrap; gap: 6px; }
-  .shm-acts { gap: 4px; }
-  .shm-acts [data-act='play'] { min-width: 34px; padding: 0 8px; }
-  .shm-acts [data-act='play'] .tx { display: none; }
-  .shm .pvc-learn-foot .pvc-btn { padding: 0 8px; font-size: 13px; }
-  .shm-ex button { padding: 0 9px; font-size: 13px; }
-  .shm-opt { font-size: 14px; }
-}
-@container pvc (max-width: 560px) and (max-height: 600px) {
-  .shm .pvc-learn { gap: 5px; }
-  .shm-graph { height: 48px; }
-  .shm-stops { height: 32px; }
-  .shm-stops button { height: 30px; font-size: 11px; }
-  .shm-state { min-height: 1.4em; font-size: 12.5px; }
-  .shm-extra { min-height: 3em; font-size: 12px; }
-  .shm-speed .v { font-size: 28px; }
-}
-@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
-  .shm .pvc-panel { overflow: hidden; }
-  .shm .pvc-learn { gap: 6px; }
-  .shm-speed .v { font-size: 26px; }
-  .shm-graph { height: 46px; }
-  .shm-stops { height: 32px; }
-  .shm-stops button { height: 30px; }
-  .shm-state { font-size: 13px; }
-  .shm-extra { min-height: 4.5em; font-size: 12px; }
-  .shm-opt { font-size: 14px; }
-  .shm .pvc-q-text { min-height: 0; }
-}
-@container pvc (min-width: 1000px) and (min-height: 601px) {
-  .shm .pvc-anno-part { font-size: 16px; padding: 5px 10px; }
-  .shm .pvc-learn { gap: 16px; }
-  .shm-graph { height: 112px; }
-  .shm-stops button { width: 68px; font-size: 13px; }
-  .shm-stops button:first-child, .shm-stops button:last-child { width: 40px; }
-  .shm-state { font-size: 16px; }
-  .shm-extra { font-size: 15px; }
-}
-/* The spring keeps its own bright lab scene and two coordinated graph views. */
-.shm[data-example='spring'] .shm-main, .shm[data-example='spring'] .shm-graph, .shm[data-example='spring'] .shm-extra { display: none; }
-.shm[data-example='spring'] .pvc-learn { gap: 8px; }
-.shm-spring-graphs { --gx: #ffbd60; --gv: #62d9ff; --ga: #d6a0ff; --gk: #ffdb62; --gu: #ff829c; color: #f5efff; }
-.sg-switch { display: flex; gap: 5px; margin-bottom: 6px; }
-.sg-switch button { height: 30px; flex: 1; border: 1px solid #417e95; border-radius: 5px; color: #14526b; background: #fff; font-size: 13px; font-weight: 600; }
+
+/* the spring: its two views (গতি: x, v, a; শক্তি: K, U, E) with the buttons for them on the left */
+.shm[data-example='spring'] .shm-graph { display: none; }
+.shm-spring-graphs { --gx: #ffbd60; --gv: #62d9ff; --ga: #d6a0ff; --gk: #ffdb62; --gu: #ff829c; flex: 1; min-height: 0; display: flex; gap: 6px; color: #f5efff; }
+.sg-switch { flex: none; display: flex; flex-direction: column; gap: 4px; width: 58px; }
+.sg-switch button { flex: 1; min-height: 24px; padding: 0 4px; border: 1px solid #417e95; border-radius: 5px; color: #14526b; background: #fff; font-size: 13px; font-weight: 600; }
 .sg-switch button[aria-pressed='true'] { background: #146e87; color: #fff; border-color: #146e87; }
-.sg-body { position: relative; height: 138px; padding: 6px 8px; border-radius: 6px; background: #122f43; }
-.sg-motion { height: 100%; display: grid; grid-template-rows: repeat(3, 1fr); gap: 3px; }
-.sg-row { display: grid; grid-template-columns: 90px minmax(0, 1fr); align-items: center; gap: 7px; min-height: 0; }
-.sg-label b, .sg-energy-values b { display: block; font-size: 12px; line-height: 1.25; font-weight: 600; }
-.sg-value { display: block; font-size: 11.5px; line-height: 1.3; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sg-body { position: relative; flex: 1; min-width: 0; min-height: 0; padding: 3px 8px; border-radius: 6px; background: #122f43; }
+.sg-motion { height: 100%; display: grid; grid-template-columns: max-content minmax(0, 1fr); grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 2px 6px; }
+/* each row takes the columns of the whole (the widest label sets them), so the three curves line up */
+.sg-row { grid-column: 1 / -1; display: grid; grid-template-columns: 112px minmax(0, 1fr); grid-template-columns: subgrid; align-items: center; min-height: 0; }
+.sg-label { display: flex; align-items: baseline; gap: 5px; min-width: 0; white-space: nowrap; }
+.sg-label b, .sg-energy-values b { font-size: 12px; line-height: 1.25; font-weight: 600; }
+.sg-value { font-size: 11.5px; line-height: 1.25; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .sg-value sup { font-size: 0.7em; line-height: 0; }
 .sg-row svg, .sg-energy-plot svg { width: 100%; height: 100%; min-height: 0; overflow: visible; }
 .sg-grid { fill: none; stroke: #5d8b9a; stroke-width: 0.6; stroke-dasharray: 3 4; vector-effect: non-scaling-stroke; }
@@ -133,59 +98,87 @@ body.bg-transparent { background: transparent; }
 .sg-curve.sg-v, .sg-marker.sg-v { stroke: var(--gv); }.sg-marker.sg-v { fill: var(--gv); }
 .sg-curve.sg-a, .sg-marker.sg-a { stroke: var(--ga); }.sg-marker.sg-a { fill: var(--ga); }
 .sg-curve.sg-k, .sg-marker.sg-k { stroke: var(--gk); }.sg-marker.sg-k { fill: var(--gk); }
-.sg-curve.sg-u, .sg-marker.sg-u { stroke: var(--gu); }.sg-marker.sg-u { fill: var(--gu); }
-.sg-energy { height: 100%; display: grid; grid-template-rows: 76px minmax(0, 1fr); gap: 4px; }
-.sg-energy-share { display: flex; gap: 8px; align-items: center; }
-.shm .sg-donut { width: 74px; height: 74px; flex: none; }
+.sg-curve.sg-u, .sg-marker.sg-u { stroke: var(--gu); stroke-dasharray: 4 2; }.sg-marker.sg-u { fill: var(--gu); }
+.sg-energy { height: 100%; display: flex; align-items: center; gap: 8px; }
+.sg-energy-share { flex: none; height: 100%; display: flex; align-items: center; gap: 6px; }
+.shm .sg-donut { height: 100%; max-height: 80px; width: auto; aspect-ratio: 1; flex: none; }
 .sg-donut circle { fill: none; stroke-width: 14; }
 .sg-ring-u { stroke: var(--gu); }.sg-ring-k { stroke: var(--gk); }
-.sg-energy-values { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 4px 6px; }
-.sg-energy-values > .sg-e { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 8px; }
-.sg-total { fill: none; stroke: #fff; stroke-width: 1; stroke-dasharray: 5 3; vector-effect: non-scaling-stroke; }
-.sg-time { margin-top: 2px; color: #3a6171; font-size: 11px; text-align: right; height: 15px; line-height: 15px; }
-.sg-hint { margin: 4px 0 0; min-height: 42px; font-size: 12px; line-height: 14px; color: #345768; }
-.sg-held { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 14px; }
-.sg-body.is-held .sg-motion, .sg-body.is-held .sg-energy { visibility: hidden; }
-@container pvc (max-width: 560px) and (max-height: 600px) {
-  .shm[data-example='spring'] .pvc-learn { gap: 4px; }
-  .sg-body { height: 96px; padding: 4px 6px; }
-  .sg-row { grid-template-columns: 83px minmax(0, 1fr); }
-  .sg-label b, .sg-energy-values b { font-size: 11.5px; }
-  .sg-value { font-size: 11px; }
-  .sg-energy { grid-template-rows: 57px minmax(0, 1fr); }
-  .shm .sg-donut { width: 55px; height: 55px; }
-  .sg-switch { margin-bottom: 4px; }
-  .sg-switch button { height: 28px; }
-  .sg-hint { font-size: 11.5px; min-height: 28px; }
-}
-@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
-  .shm[data-example='spring'] .pvc-learn { gap: 5px; }
-  .sg-body { height: 108px; padding: 4px 6px; }
-  .sg-row { grid-template-columns: 83px minmax(0, 1fr); }
-  .sg-energy { grid-template-rows: 64px minmax(0, 1fr); }
-  .shm .sg-donut { width: 62px; height: 62px; }
-  .sg-hint { font-size: 11.5px; }
-}
-@container pvc (min-width: 1000px) and (min-height: 601px) {
-  .sg-body { height: 210px; padding: 8px 10px; }
-  .sg-row { grid-template-columns: 100px minmax(0, 1fr); }
-  .sg-label b, .sg-energy-values b { font-size: 14px; }
-  .sg-value { font-size: 13px; }
-  .sg-energy { grid-template-rows: 100px minmax(0, 1fr); gap: 12px; }
-  .shm .sg-donut { width: 96px; height: 96px; }
-  .sg-switch button { height: 36px; font-size: 15px; }
-  .sg-hint { font-size: 13px; line-height: 17px; min-height: 51px; }
-}
-
-.shm[data-example='spring'] .shm-span { display: none; }
-@container pvc (max-width: 560px) and (max-height: 600px) {
-  .shm[data-example='spring'] .shm-state { display: none; }
-  .shm[data-example='spring'] .pvc-panel { padding-top: 6px; padding-bottom: 8px; }
-}
-.sg-curve.sg-u { stroke-dasharray: 4 2; }
+.sg-energy-values { flex: none; width: max-content; display: grid; grid-template-columns: minmax(0, 1fr); gap: 1px; }
+.sg-energy-values > span { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; }
+.sg-energy-values b { white-space: nowrap; }
 .sg-energy-values b::before { content: ''; display: inline-block; width: 10px; margin-right: 4px; border-top: 2px solid currentColor; vertical-align: middle; }
 .sg-energy-values .sg-u b::before { border-top-style: dashed; }
 .sg-energy-values .sg-e b::before { border-top-style: dotted; }
-.sg-energy-values { grid-template-columns: minmax(0, 1fr); }
-.sg-energy-values > span { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; }
-.sg-energy-values b { white-space: nowrap; }
+.sg-energy-plot { flex: 1; min-width: 0; height: 100%; padding: 4px 0; box-sizing: border-box; }
+.sg-total { fill: none; stroke: #fff; stroke-width: 1; stroke-dasharray: 5 3; vector-effect: non-scaling-stroke; }
+.sg-held { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.sg-body.is-held .sg-motion, .sg-body.is-held .sg-energy { visibility: hidden; }
+
+/* phones: a narrow panel */
+@container pvc-panel (max-width: 330px) {
+  .shm-stops button { font-size: 11.5px; }
+  .shm .pvc-learn-foot { flex-wrap: nowrap; gap: 6px; }
+  .shm-acts { gap: 4px; }
+  .shm-acts [data-act='play'] { min-width: 38px; padding: 0 9px; }
+  .shm-acts [data-act='play'] .tx { display: none; }
+  .shm .pvc-learn-foot .pvc-btn { padding: 0 8px; font-size: 13.5px; }
+  .shm-ex button { padding: 0 9px; font-size: 13.5px; }
+  .shm-opt { font-size: 14px; }
+  .shm .sg-donut { display: none; }
+  .sg-label b, .sg-energy-values b { font-size: 11.5px; }
+  .sg-value { font-size: 11px; }
+}
+/* phones: answers a little lower, so the test is no taller than the lesson */
+@container pvc (max-width: 560px) and (min-height: 601px) {
+  .shm .pvc-opt { height: 44px; }
+}
+/* phones that are not very tall: a lower graph, so the 3D keeps its room */
+@container pvc (max-width: 560px) and (max-height: 600px) {
+  .shm .pvc-shell { --trip-h: 100px; }
+  .shm .pvc-learn { gap: 4px; }
+  .shm .shm-speed .v { font-size: 24px; }
+  .shm-state { font-size: 12.5px; }
+  .shm-stops, .shm-stops button { height: 26px; }
+  .shm-span { height: 14px; }
+  .shm-extra { font-size: 12px; }
+  .sg-switch button { font-size: 12px; }
+}
+/* short and wide (the kit puts the panel on the right): the reading above the rule */
+@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
+  .shm .pvc-shell { --trip-h: 116px; }
+  .shm .pvc-panel { overflow: hidden; }
+  .shm .pvc-learn { gap: 6px; }
+  .shm-main { flex-direction: column; align-items: stretch; gap: 4px; }
+  .shm .shm-speed .v { font-size: 24px; }
+  .shm-state { min-height: 2.7em; font-size: 13px; }
+  .shm-extra { min-height: 4.05em; font-size: 12px; }
+  .shm-opt { font-size: 14px; }
+  .shm .pvc-q-text { min-height: 0; }
+}
+/* wide frames (the panel below, the kit's tabs on its left): the words on the left, the period on the right */
+@container pvc (min-width: 720px) and (min-height: 461px) {
+  .shm .pvc-shell { --trip-h: 136px; }
+  .shm .pvc-learn { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); grid-template-areas: 'main trip' 'extra trip' 'foot trip'; grid-template-rows: auto 1fr auto; gap: 6px 22px; align-items: start; }
+  .shm-main { grid-area: main; flex-direction: column; align-items: stretch; gap: 4px; }
+  .shm-trip { grid-area: trip; }
+  .shm-extra { grid-area: extra; }
+  .shm .pvc-learn-foot { grid-area: foot; }
+}
+/* large boards: more room for the graph and larger words */
+@container pvc (min-width: 1000px) and (min-height: 700px) {
+  .shm .pvc-shell { --trip-h: 176px; }
+  .shm .pvc-anno-part { font-size: 15px; padding: 4px 10px; }
+  .shm .shm-speed .v { font-size: 32px; }
+  .shm-state { font-size: 15.5px; }
+  .shm-extra { font-size: 14.5px; }
+  .shm-stops, .shm-stops button { height: 38px; }
+  .shm-stops button { width: 84px; font-size: 13.5px; }
+  .shm-stops button small { display: block; }
+  .shm-stops button:first-child, .shm-stops button:last-child { width: 46px; }
+  .shm-span { height: 18px; font-size: 13px; }
+  .sg-switch { width: 70px; }
+  .sg-switch button { font-size: 14.5px; }
+  .sg-label b, .sg-energy-values b { font-size: 14px; }
+  .sg-value { font-size: 13px; }
+}

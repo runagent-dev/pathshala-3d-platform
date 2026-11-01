@@ -59,9 +59,11 @@ Page 100 writes **উপর** (not ওপর). Units as Latin symbols per `docs/
   (counting d, adding, using d, F × time, the newton or kg m/s as the unit), each with its own note.
 
 ## Look
-Vivid on purpose (the owner asked for it, 2026-10-29): a deep-blue-to-turquoise backdrop, saffron floor tiles, a white
-metre tape, a red brick wall, colour-tinted steppers on a warm panel. The front view is turned 20° toward the person
-(when the view is not much wider than the trip), so the person and crate come out bigger on phones.
+Vivid on purpose (the owner asked for it, 2026-10-29), set in a house's courtyard since the polish pass: saffron floor
+tiles, a teal boundary wall with cream pillars, an iron gate with globe lamps and the guard's (দারোয়ান) stool beside
+it, flower pots, houses with water tanks and trees over the wall, a morning sky; a white metre tape, a red brick wall
+for the second example, colour-tinted steppers on a warm panel. The front view is turned 20° toward the person (when
+the view is not much wider than the trip), so the person and crate come out bigger on phones.
 
 ## Stylised on purpose (stated honestly)
 - After the release the crate always slides d = s / 2, and every push takes the same time for the same s (the
@@ -71,6 +73,30 @@ metre tape, a red brick wall, colour-tinted steppers on a warm panel. The front 
 - The angle case (force and displacement in different directions) is left out on purpose: the page says
   "তোমাদের এই বইয়ে আমরা শুধু একই দিকে প্রয়োগ করা বল এবং অতিক্রান্ত দূরত্বের বিষয়টি আলোচনা করব।"
 - The dimension [W] = ML²T⁻² is in the rule after the first push, not in the test (one idea).
+
+## Polish pass (2026-11-01)
+- **Layout:** the panel stays under the 3D view except the kit's short-and-wide frame. Tighter lines on phones and a
+  tighter test (shorter questions and worked answers in both languages), so the 3D view gets 56 % of 390 × 700 (52 %
+  before) and keeps its height in every state and when the test starts (it shrank by 24 px before). On 800 × 500 and
+  wider the steppers and the action share a row (3D 57 %, 46 % before). English stepper words hide on phones (they
+  overflowed); the outcome line fits the narrow side panel.
+- **Text on the 3D view:** still labels only (0 characters at rest; `F = 50 N`, `s = 1.1 m`, `d = 1 m (F নেই)` while
+  they apply). The s label sat at the arrow's tail (its point was overwritten by the s = 0 label's): now at its middle.
+  Label text in darker shades of the arrows' colours on white chips (F orange #c2410c, 5.2 : 1).
+- **Setting and arrows:** the flat blue gradient became a house's courtyard (see "Look"). F, s and d are bold arrows
+  in an outline drawn over everything: F white-edged (over the teal wall and the red bricks, where the old orange
+  arrow melted in), s and d dark-edged on the white tape.
+- **Smooth:** person 84 meshes → 22 (upper body, hands and shoes merged in vertex colours), crate 29 → 3, the tape's
+  23 meshes (ticks, numbers) → one picture, the brick wall 6 face draws → 2, scenery merged per material. PCF
+  1024 × 512 in a box fitted to where the person, crate and wall go, instead of VSM 2048 (looks the same); the light
+  rebalanced so the shadow actually shows. No allocation per frame in the pose; the steppers write the DOM only on
+  change.
+- **Fixed:** the s label position; the test made the 3D view jump; English stepper row overflowed at 390 px; the
+  watt choice's note said "W is the symbol of work" (now: the watt is the unit of power).
+- **Measured** (headless Chromium, software GL, shadows on, 390 × 700): draw calls avg 300 / max 322 → 85 / 107,
+  triangles 78k → 86k, texture memory 55 MB → 15.3 MB, frames while idle 0 → 0, text on the 3D view 0/0 → 0/0.
+  Time to ready was the same as main's under the same machine load (6.5–10 s for both at load 40; 0.7 s for main on
+  a quiet machine).
 
 ## Open questions
 - Colours for chapter 4 (none yet in `docs/book-notes.md`): F orange #ff6a13 (the chapter-3 push, brightened for the

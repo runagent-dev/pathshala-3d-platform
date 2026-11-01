@@ -56,8 +56,8 @@ test('newtons-second-law: F = ma for the handcart, and the direction of the chan
   expect(await text('.ns-math-dialog')).toContain('Δp/Δt');
   expect(await text('.ns-math-dialog')).toContain('F = ১০০ N, m = ১০০ kg');
   await fig.frame.locator('[data-act="maths-close"]').click();
-  // the push is over: the words on the view say why the velocity stays
-  expect(await text('.pvc-anno-layer')).toContain('ঠেলা শেষ: লব্ধি বল শূন্য, তাই বেগ বদলায় না');
+  // the push is over: the label where the force's arrow was says it is gone, so the velocity stays
+  expect(await text('.pvc-anno-layer')).toContain('লব্ধি বল F = ০');
   // rolling on at 2 m/s (no force): 0.5 s later still 2 m/s
   await fig.advance(500);
   expect(await fig.call('get')).toMatchObject({ phase: 'coast', speed: 2 });
@@ -157,14 +157,14 @@ test('second law, slow: the arrows grow in, half speed, held at each whole secon
   // half speed: 1 s of the run in 2 s
   await fig.advance(400 + 1000);
   expect((await fig.call('get')).time).toBeCloseTo(0.5, 1);
-  // held at 1 s: the velocity 1 m/s stamped, the clock says so, the row of velocities each second has 0 → 1
+  // held at 1 s: the velocity 1 m/s stamped, the clock says so, the rule's velocities each second have 0 → 1
   await fig.advance(1500);
   let s = await fig.call('get');
   expect(s).toMatchObject({ phase: 'push', time: 1, speed: 1 });
   expect(s.held).toBeCloseTo(1, 6);
   expect(await text('.ns-clock')).toContain('t = ১.০ s');
   expect(await text('.ns-clock')).toContain('থামানো');
-  expect(await text('.ns-ladder')).toBe('প্রতি সেকেন্ডে বেগ: ০ → ১ m/s');
+  expect(await text('.pvc-rule .ns-ladder')).toBe('০ → ১ m/s');
   expect(await text('.pvc-anno-layer')).toContain('১ s: v = ১ m/s');
   expect(await text('.pvc-outcome')).toBe('t = ১.০ s: বেগ v = u + at = ০ + ১ × ১.০ = ১.০০ m/s');
   // the graph: its line drawn to 1 s, one step of 1 s across and +1 up, the dot ringed while held
@@ -185,7 +185,7 @@ test('second law, slow: the arrows grow in, half speed, held at each whole secon
   s = await fig.call('get');
   expect(s).toMatchObject({ phase: 'push', force: 100, speed: 2 });
   expect(s.held).toBeCloseTo(2, 6);
-  expect(await text('.ns-ladder')).toBe('প্রতি সেকেন্ডে বেগ: ০ → ১ → ২ m/s');
+  expect(await text('.pvc-rule .ns-ladder')).toBe('০ → ১ → ২ m/s');
   expect(await text('.pvc-outcome')).toBe('t = ২.০ s: বেগ v = u + at = ০ + ১ × ২.০ = ২.০০ m/s');
   // then the result
   await fig.advance(1100);
@@ -212,9 +212,9 @@ test('second law, slow: the arrows grow in, half speed, held at each whole secon
   s = await fig.call('get');
   expect(s).toMatchObject({ phase: 'brake', force: -100 });
   expect(s.held).toBeCloseTo(2.3, 6);
-  expect(await text('.ns-ladder')).toBe('প্রতি সেকেন্ডে বেগ: ২ m/s');
+  expect(await fig.frame.locator('.ns-ladder').count()).toBe(0);
   await fig.advance(2 * 1100 + 4000);
-  expect(await text('.ns-ladder')).toBe('প্রতি সেকেন্ডে বেগ: ২ → ১ → ০ m/s');
+  expect(await text('.pvc-rule .ns-ladder')).toBe('২ → ১ → ০ m/s');
   // the first push's line stays, faint and tagged, under the line going down
   expect(await fig.frame.locator('.ns-graph .g-past').count()).toBe(1);
   expect(await text('.ns-graph')).toContain('a = ১');

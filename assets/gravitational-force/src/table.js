@@ -1,24 +1,27 @@
-// The apples stop: two 200 g apples on a wooden table, in real centimetres. The left one stays put; the student
-// drags the right one along the table. Their pulls on each other (violet arrows from their near sides, equal) are
-// drawn very much bigger than real, in proportion to the pull, so they shrink to a small arrowhead far apart but
-// never vanish. A dimension line on the table in front gives the distance between their centres.
+// The apples stop: two 200 g apples on a wooden table in a room (./setting.js), in real centimetres. The left one
+// stays put; the student drags the right one along the table. Their pulls on each other (violet arrows from their
+// near sides, equal) are drawn very much bigger than real, in proportion to the pull, so they shrink to a small
+// arrowhead far apart but never vanish. A dimension line on the table in front gives the distance between their
+// centres (dark dashes in a white rim: clear on the wood).
 import * as THREE from 'three';
-import { createArrow, createDashes } from './draw.js';
+import { createArrow, createDashes, ink } from './draw.js';
 import { appleMaterials, createApple } from './people.js';
 import { FACTS, GAP } from './physics.js';
+import { createRoom, createTableModel } from './setting.js';
 
 export const LEFT_X = -18; // cm: where the left apple stands
 const R = FACTS.apple.radius;
-const ARROW_AT_START = 6; // cm: each arrow's length at the starting (and smallest) distance; in proportion to the pull
+const ARROW_AT_START = 5.5; // cm: each arrow's length at the starting (and smallest) distance, in proportion to the pull; the
+// two arrows leave a little room between them (the apples' near sides are 13 cm apart there)
 const LINE_Z = R + 3.2; // the dimension line, in front of the apples
 
-export function createTable({ materials }) {
+export function createTable({ room = true } = {}) {
   const root = new THREE.Group();
   root.name = 'TwoApples';
-  const top = new THREE.Mesh(new THREE.BoxGeometry(120, 2.6, 46), materials.wood);
-  top.name = 'TableTop';
-  top.position.set(8, -1.3, 0);
-  root.add(top);
+  const { top, frame } = createTableModel();
+  root.add(top, frame);
+  const setting = room ? createRoom() : null;
+  if (setting) root.add(setting);
 
   const M = appleMaterials();
   const left = createApple(R, M);
@@ -30,21 +33,28 @@ export function createTable({ materials }) {
   right.position.set(LEFT_X + GAP.start, y, 0);
   root.add(left, right);
 
-  const onLeft = createArrow({ radius: 0.2, head: 1.1, headRadius: 0.5, name: 'PullOnLeftApple' });
-  const onRight = createArrow({ radius: 0.2, head: 1.1, headRadius: 0.5, name: 'PullOnRightApple' });
+  const onLeft = createArrow({ radius: 0.3, head: 1.7, headRadius: 0.75, name: 'PullOnLeftApple' });
+  const onRight = createArrow({ radius: 0.3, head: 1.7, headRadius: 0.75, name: 'PullOnRightApple' });
   root.add(onLeft.root, onRight.root);
 
   // the dimension line: dashes between two short end marks, lying on the table
-  const dim = createDashes({ radius: 0.09, dash: 0.7, gap: 0.5, top: false, name: 'Distance' });
+  const dim = createDashes({ radius: 0.1, dash: 0.7, gap: 0.5, color: '#1d2733', rim: '#ffffff', top: false, name: 'Distance' });
   root.add(dim.mesh);
-  const tickGeo = new THREE.CylinderGeometry(0.09, 0.09, 1.8, 6);
-  const tickMat = new THREE.MeshBasicMaterial({ color: '#5c6672', toneMapped: false });
-  const ticks = [new THREE.Mesh(tickGeo, tickMat), new THREE.Mesh(tickGeo, tickMat)];
-  for (const t of ticks) {
+  const tickGeo = new THREE.CylinderGeometry(0.1, 0.1, 1.8, 6);
+  const tickRim = new THREE.CylinderGeometry(0.2, 0.2, 2, 6);
+  const tickMat = ink('#1d2733', { top: false });
+  const rimMat = ink('#ffffff', { top: false });
+  const ticks = [0, 1].map(() => {
+    const t = new THREE.Mesh(tickGeo, tickMat);
+    const w = new THREE.Mesh(tickRim, rimMat);
+    t.renderOrder = 15;
+    w.renderOrder = 14;
+    t.add(w);
     t.rotation.x = Math.PI / 2;
     t.userData.noExport = true;
     root.add(t);
-  }
+    return t;
+  });
 
   // a generous invisible target round the right apple (a finger on a phone)
   const hit = new THREE.Mesh(new THREE.SphereGeometry(R * 2, 12, 8), new THREE.MeshBasicMaterial({ visible: false }));
@@ -58,6 +68,8 @@ export function createTable({ materials }) {
   let arrowLen = ARROW_AT_START;
   return {
     root,
+    setting,
+    top,
     left,
     right,
     hit,

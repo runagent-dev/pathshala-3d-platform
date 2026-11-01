@@ -36,7 +36,7 @@ test('spring-potential-energy: F = kx, V = ½kx², twice x gives four times V', 
   await fig.advance(1500);
   const s2 = await fig.call('get');
   expect(s2).toMatchObject({ x: 10, F: 20, V: 1, compare: { times: 2, F: 2, V: 4 } });
-  expect(await text('.pvc-rule')).toContain('বল ২ গুণ (১০ → ২০ N)');
+  expect(await text('.pvc-rule')).toContain('বল ২ গুণ (১০ → ২০ N, তীরও ২ গুণ লম্বা)');
   expect(await text('.pvc-rule')).toContain('বিভব শক্তি ৪ গুণ (০.২৫ → ১ J)');
   expect(s2.next.step).toBe(3);
 

@@ -43,7 +43,7 @@ export const DEFAULTS = {
 };
 
 const K_ARROW = 0.052; // m of arrow per newton (the push and the friction share it)
-const Y_PUSH = DIM.block.h + 0.14; // the push arrow lies along the rod
+const Y_PUSH = DIM.block.h + 0.3; // the pull arrow above the crate, clear of the weights on it
 const Z_PUSH = DIM.block.d / 2 + 0.12; // in front of the pad
 const Y_FRIC = 0.035; // the friction arrow lies on the table at the block's front
 const Z_FRIC = DIM.block.d / 2 + 0.12;
@@ -76,45 +76,51 @@ export function createApp(root, options = {}) {
     }),
   });
   const sheet = bindCleanSheet(ui.learn);
+  // the reading box: rope tension and friction with their values, the result line (what the scene shows now), and the
+  // switch for the enlarged contact with its note (not to scale), so nothing but labels sits on the 3D view
+  const outcomeEl = ui.$('.pvc-outcome');
   const live = document.createElement('section');
   live.className = 'ff-live';
-  live.innerHTML = `<button type="button" data-act="lens-toggle"><b>${t('live_title')}</b><span>${t('inside_view')}</span></button><div class="ff-live-values"></div>`;
-  ui.$('.pvc-outcome').after(live);
+  live.innerHTML = `<div class="ff-live-values"><div class="ff-force pull"><span class="ff-dir" aria-hidden="true"></span><span>${t('pull_force')}</span><b></b></div><div class="ff-force friction"><span class="ff-dir" aria-hidden="true"></span><span>${t('l_fric')}</span><b></b></div></div><div class="ff-lens-row"><button type="button" data-act="lens-toggle" aria-pressed="false"><span class="ff-check" aria-hidden="true"></span>${t('inside_view')}</button><span class="ff-lens-note">${t('lens_note')}</span></div>`;
+  outcomeEl.after(live);
+  live.querySelector('.ff-live-values').after(outcomeEl);
+  const liveEls = {
+    pullDir: live.querySelector('.ff-force.pull .ff-dir'),
+    pullVal: live.querySelector('.ff-force.pull b'),
+    fricDir: live.querySelector('.ff-force.friction .ff-dir'),
+    fricVal: live.querySelector('.ff-force.friction b'),
+    lensBtn: live.querySelector('[data-act="lens-toggle"]'),
+    note: live.querySelector('.ff-lens-note'),
+  };
 
   for (const l of LOADS.filter(Boolean)) ui.$(`[data-example="w${l}"] .pvc-ex-word`).textContent = t('chip_w', { n: l });
-  const outcomeEl = ui.$('.pvc-outcome');
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
-  const stage = createStage(ui.canvasHost, { fov: 32, near: 0.02, far: 40, environment: 'studio-light' });
+  // a softer studio fill than the default, so the shadows on the floor show
+  const stage = createStage(ui.canvasHost, { fov: 32, near: 0.02, far: 40, environment: 'studio-light', environmentIntensity: 0.4 });
   const { camera, controls, scene } = stage;
-  const bgCanvas = document.createElement('canvas');
-  bgCanvas.width = 16;
-  bgCanvas.height = 256;
-  const bgContext = bgCanvas.getContext('2d'),
-    gradient = bgContext.createLinearGradient(0, 0, 0, 256);
-  gradient.addColorStop(0, '#192251');
-  gradient.addColorStop(1, '#125e77');
-  bgContext.fillStyle = gradient;
-  bgContext.fillRect(0, 0, 16, 256);
-  const background = new THREE.CanvasTexture(bgCanvas);
-  background.colorSpace = THREE.SRGBColorSpace;
-  scene.background = o.bg === 'transparent' ? null : background;
-  scene.add(new THREE.HemisphereLight(0xe5f6ff, 0x17314c, 0.85));
-  const mainLight = new THREE.DirectionalLight(0xffead0, 1.1);
-  mainLight.position.set(-3, 4, 4);
-  scene.add(mainLight);
-  const rimLight = new THREE.DirectionalLight(0x89ceff, 0.55);
-  rimLight.position.set(2, 3, -3);
-  scene.add(rimLight);
+  // the store room's light: daylight from the high windows behind (it casts the shadows, forward onto the floor
+  // where they are seen), the sky's fill, and a warm lamp from the front left on the faces turned to the student
+  scene.add(new THREE.HemisphereLight(0xeaf6ff, 0x5a5146, 0.65));
+  const mainLight = new THREE.DirectionalLight(0xfff4e2, 2.2);
+  mainLight.position.set(-2.2, 5, -2.6);
+  scene.add(mainLight, mainLight.target);
+  const lamp = new THREE.DirectionalLight(0xffe2c0, 1.3);
+  lamp.position.set(-3, 4, 4);
+  scene.add(lamp);
 
   controls.enablePan = false;
   controls.enableZoom = false;
   controls.enableRotate = false;
+  // turning stays in front of the wall and above the floor, and zooming stays inside the room
+  Object.assign(controls, { minAzimuthAngle: -1.15, maxAzimuthAngle: 1.15, minPolarAngle: 0.4, maxPolarAngle: 1.5, minDistance: 2, maxDistance: 18 });
   ui.canvasHost.setAttribute('role', 'img');
   ui.canvasHost.setAttribute('aria-label', t('aria_stage'));
   const aniso = Math.min(8, stage.renderer.capabilities.getMaxAnisotropy());
   const rig = createRig({ t, aniso });
   scene.add(rig.root);
+  scene.background = o.bg === 'transparent' ? null : rig.background;
+  if (o.bg === 'transparent') rig.room.visible = false; // only the crate, the floor and the people on a transparent page
   const arrows = {
     push: createVector(COLORS.push, 'PullForce'),
     fric: createVector(COLORS.friction, 'FrictionForce'),
@@ -129,26 +135,48 @@ export function createApp(root, options = {}) {
   stage.addTicker((dt) => tweener.tick(dt));
   const audio = createAudio(o.sound);
 
-  let sun = null;
+  // Soft shadows on the floor only (the one surface where they are seen), from the crate, the weights and the people.
+  // The shadow camera is fitted round where they stand and where their shadows fall, so a 1024 × 1024 PCF map is
+  // as crisp as a much larger one on a loose box. Small parts (ropes, laces, labels, arrows) cast none.
+  // The daylight casts them, so a shadow is a real absence of its light.
   if (o.shadow && o.bg !== 'transparent') {
     stage.renderer.shadowMap.enabled = true;
-    stage.renderer.shadowMap.type = THREE.VSMShadowMap;
-    sun = new THREE.DirectionalLight(0xffffff, 0.45);
-    sun.position.set(-0.5, 1.6, 1.2);
-    sun.target.position.set(0, 0, 0);
-    sun.castShadow = true;
-    sun.shadow.mapSize.set(1024, 1024);
-    Object.assign(sun.shadow.camera, { left: -0.8, right: 0.8, top: 0.8, bottom: -0.8, near: 0.5, far: 4 });
-    sun.shadow.radius = 5;
-    sun.shadow.bias = -0.0005;
-    scene.add(sun, sun.target);
+    stage.renderer.shadowMap.type = THREE.PCFShadowMap;
+    mainLight.castShadow = true;
+    mainLight.shadow.mapSize.set(1024, 1024);
+    mainLight.shadow.radius = 3;
+    mainLight.shadow.bias = -0.0004;
+    mainLight.shadow.normalBias = 0.01;
+    fitShadow(mainLight, new THREE.Box3(new THREE.Vector3(-2.8, 0, -0.5), new THREE.Vector3(3.6, 1.85, 2.4)));
     rig.table.traverse((m) => {
       if (m instanceof THREE.Mesh) m.receiveShadow = true;
     });
+    rig.room.traverse((m) => {
+      if (m instanceof THREE.Mesh) m.castShadow = m.receiveShadow = false;
+    });
     for (const g of [rig.block, ...rig.weights, rig.pushers[1], rig.pushers[-1]])
       g.traverse((m) => {
-        if (m instanceof THREE.Mesh && m.material && !m.material.transparent && m.material.visible !== false) m.castShadow = true;
+        if (!(m instanceof THREE.Mesh)) return;
+        const solid = m.material && !m.material.transparent && m.material.visible !== false; // labels are transparent
+        m.castShadow = solid && !['TensionRope', 'RopeGrip', 'Strap'].includes(m.name);
       });
+  }
+  /** Fits a directional light's shadow camera tightly round a world box (seen from the light). */
+  function fitShadow(light, worldBox) {
+    const cam = light.shadow.camera;
+    light.updateMatrixWorld();
+    light.target.updateMatrixWorld();
+    cam.position.copy(light.position);
+    cam.lookAt(light.target.position);
+    cam.updateMatrixWorld();
+    const inv = cam.matrixWorldInverse.copy(cam.matrixWorld).invert();
+    const b = new THREE.Box3();
+    const p = new THREE.Vector3();
+    for (const x of [worldBox.min.x, worldBox.max.x])
+      for (const y of [worldBox.min.y, worldBox.max.y])
+        for (const z of [worldBox.min.z, worldBox.max.z]) b.expandByPoint(p.set(x, y, z).applyMatrix4(inv));
+    Object.assign(cam, { left: b.min.x, right: b.max.x, bottom: b.min.y, top: b.max.y, near: Math.max(0.05, -b.max.z - 0.1), far: -b.min.z + 0.1 });
+    cam.updateProjectionMatrix();
   }
 
   /** @type {ReturnType<typeof createAction> | null} */
@@ -353,18 +381,24 @@ export function createApp(root, options = {}) {
     stage.invalidate();
   }
 
+  const pauseBtn = ui.$('[data-act="pause"]');
+  /** The values in the reading box and the pause and contact switches: the DOM is written only when they change. */
   function updateLive() {
     const m = model();
-    const html = `<div class="ff-force pull"><span>${m.dir > 0 ? '→' : '←'}</span><span>${t('pull_force')}</span><b>${t('force_number', { f: plain(m.F) })}</b></div><div class="ff-force friction"><span>${m.dir > 0 ? '←' : '→'}</span><span>${t('l_fric')}</span><b>${t('force_number', { f: plain(m.f) })}</b></div><small>${t(s.hideHeat || s.heat < 0.08 ? 'heat_cool' : m.rubbing ? 'heat_rising' : 'heat_warm')}</small>`;
-    if (html !== lastLive) {
-      live.querySelector('.ff-live-values').innerHTML = html;
-      lastLive = html;
-    }
-    const pause = ui.$('[data-act="pause"]');
-    pause.disabled = !s.run && !s.rub;
-    pause.innerHTML = s.pausedAt != null ? ICONS.play : ICONS.pause;
-    pause.setAttribute('aria-label', t(s.pausedAt != null ? 'act_resume' : 'act_pause'));
-    ui.$('[data-act="lens-toggle"]').setAttribute('aria-pressed', String(s.lens));
+    const key = `${m.dir}|${plain(m.F)}|${plain(m.f)}|${s.pausedAt != null}|${Boolean(s.run || s.rub)}|${s.lens}`;
+    if (key === lastLive) return;
+    lastLive = key;
+    liveEls.pullDir.textContent = m.dir > 0 ? '→' : '←';
+    liveEls.fricDir.textContent = m.dir > 0 ? '←' : '→';
+    liveEls.pullVal.textContent = t('force_number', { f: plain(m.F) });
+    liveEls.fricVal.textContent = t('force_number', { f: plain(m.f) });
+    pauseBtn.disabled = !s.run && !s.rub;
+    const pauseWord = t(s.pausedAt != null ? 'act_resume' : 'act_pause');
+    pauseBtn.innerHTML = `${s.pausedAt != null ? ICONS.play : ICONS.pause}<span>${pauseWord}</span>`;
+    pauseBtn.setAttribute('aria-label', pauseWord);
+    pauseBtn.title = pauseWord;
+    liveEls.lensBtn.setAttribute('aria-pressed', String(s.lens));
+    liveEls.note.classList.toggle('off', !s.lens);
   }
 
   // ── placing everything each frame ───────────────────────────────────────────
@@ -395,7 +429,12 @@ export function createApp(root, options = {}) {
 
   const grid = (ys, xs) => ys.flatMap((dy) => xs.map((dx) => ({ dx, dy })));
   const pushSpots = (side) => grid([-28, -48, -68, -88], [0, side * 25, -side * 25, side * 55, -side * 55, side * 90]);
-  const fricSpots = (side) => grid([28, 48, 68, -28], [0, side * 25, -side * 25, side * 55, -side * 55]);
+  // friction's label: first beside the tail, outside the crate (above it, it would cover the crate's 2 kg)
+  const fricSpots = (side) => [
+    { dx: side * 58, dy: -6 },
+    { dx: side * 62, dy: 20 },
+    ...grid([28, 48, 68, -28], [0, side * 25, -side * 25, side * 55, -side * 55]),
+  ];
   let labelSide = 0;
   let labelWording = '';
   function labelsFor(m) {
@@ -432,34 +471,37 @@ export function createApp(root, options = {}) {
     labelWording = wording;
   }
 
-  let lensCaption = null;
+  /** The enlarged contact window along the bottom of the view (its note, "not to scale", is in the panel). */
+  function lensHeight() {
+    return Math.min(160, Math.max(78, stage.height * 0.3));
+  }
+  let lensKey = '';
+  /** Places the window for this frame; true when it moved or changed size (after a resize, a camera move). */
   function placeLens(m) {
     const k = s.lensK;
     contactPoint.set(m.x, 0, BD / 2);
     if (k <= 0.01) {
       lens.place({ cx: 0, cy: 0, d: 100, from: { x: 0, y: 0 }, k: 0 });
-      lensCaption?.classList.remove('on');
-      return;
+      const changed = lensKey !== 'off';
+      lensKey = 'off';
+      return changed;
     }
-    const from = project(contactPoint),
-      w = stage.width - 24,
-      h = Math.min(160, Math.max(78, stage.height * 0.3));
+    camera.updateMatrixWorld();
+    // a wide strip, but never wider than the enlarged surfaces (about 4.6 × its height): centred on wide frames
+    const h = lensHeight(),
+      from = project(contactPoint),
+      w = Math.min(stage.width - 24, Math.round(h * 4.6));
     const cx = stage.width / 2,
-      cy = stage.height - 24 - h / 2;
+      cy = stage.height - 12 - h / 2;
     lens.place({ cx, cy, w, h, from, k });
-    lens.set({ bite: s.bite, shear: s.shear, weight: weightOf(s.load), heat: s.hideHeat ? 0 : s.heat, labels: h >= 86, time: now() / 1000 });
-    if (!lensCaption) {
-      lensCaption = document.createElement('div');
-      lensCaption.className = 'ff-lens-cap';
-      lensCaption.innerHTML = `<b>${t('lens_cap')}</b><span>${t('lens_note')}</span>`;
-      ui.annoLayer.append(lensCaption);
-    }
-    lensCaption.style.width = `${w}px`;
-    lensCaption.style.top = `${cy + h / 2 + 5}px`;
-    lensCaption.style.left = '12px';
-    lensCaption.classList.toggle('on', k > 0.9);
+    lens.set({ bite: s.bite, shear: s.shear, weight: weightOf(s.load), heat: s.hideHeat ? 0 : s.heat, labels: h >= 96, time: now() / 1000 });
+    const key = `${w}|${h}|${Math.round(from.x)}|${Math.round(from.y)}|${k}`;
+    const changed = key !== lensKey;
+    lensKey = key;
+    return changed;
   }
 
+  let placedOnce = false;
   function step(dt) {
     if (s.pausedAt != null) dt = 0;
     const m = model();
@@ -486,7 +528,7 @@ export function createApp(root, options = {}) {
       rig.placePusher(sd, m.padX, m.dir === sd && m.F > 0 ? clamp(m.F / m.limit, 0, 1) : 0, Boolean(m.pads[sd]), m.kind === 'rub');
     placeArrows(m);
     rig.setHeat(s.hideHeat ? 0 : s.heat, -RUB.amplitude, RUB.amplitude);
-    placeLens(m);
+    const lensMoved = placeLens(m);
     labelsFor(m);
     refresh();
     if (m.kind === 'push' && m.phase === 'done' && s.run && !s.run.ended) {
@@ -497,7 +539,13 @@ export function createApp(root, options = {}) {
       s.rub.ended = true;
       emitChange();
     }
-    return busy(m) || s.heat !== h0 || Math.abs(db) > 0.002 || Math.abs(ds) > 0.002 || (s.lensK > 0 && s.lensK < 1) || s.drop > 0 || s.hold != null;
+    // draw again only while something moves (a held pull is a still scene), and once whenever the placing changed
+    // what is drawn: the first frame, the window after a resize
+    const first = !placedOnce;
+    placedOnce = true;
+    return (
+      first || lensMoved || busy(m) || s.heat !== h0 || Math.abs(db) > 0.002 || Math.abs(ds) > 0.002 || (s.lensK > 0 && s.lensK < 1) || s.drop > 0
+    );
   }
   stage.addTicker(step);
 
@@ -720,7 +768,7 @@ export function createApp(root, options = {}) {
       d = s.side;
     box.min.set(both ? -2.05 : d > 0 ? -0.9 : -2.05, -0.14, -0.4);
     box.max.set(both ? 2.05 : d > 0 ? 2.05 : 0.9, 1.72, 0.7);
-    const bottom = s.lens ? Math.min(160, Math.max(78, stage.height * 0.3)) + 48 : 42;
+    const bottom = s.lens ? lensHeight() + 34 : 42;
     return fitPose({
       box,
       dir: view === '3d' ? OBLIQUE : FRONT,
@@ -769,6 +817,9 @@ export function createApp(root, options = {}) {
   stage.onResize(() => {
     if (!s.userMovedCamera) flyTo(viewPose(), 0);
     lastPanel = '';
+    // place everything for the new size now: the stage draws at once after a resize (no blank frame), and the
+    // contact window has to be drawn where it now goes
+    step(0);
     refresh(true);
   });
 
@@ -1165,7 +1216,10 @@ export function createApp(root, options = {}) {
       if (p.at != null && s.mode !== 'quiz') await push({ force: true, at: Math.max(0, Number(p.at) || 0) });
       else if (p.push && s.mode !== 'quiz') await push({ force: true });
       if (p.rub === true && s.mode !== 'quiz') await rubIt({ force: true });
-      else if (typeof p.rub === 'number' && s.mode !== 'quiz') await rubIt({ force: true, at: p.rub });
+      else if (typeof p.rub === 'number' && s.mode !== 'quiz') {
+        await rubIt({ force: true, at: p.rub });
+        s.heat = clamp(p.rub / RUB.warm, 0, 1); // rubbed that long: as warm as the URL's rub=… makes it
+      }
       if (p.paused != null && s.mode !== 'quiz') setPaused(Boolean(p.paused));
       refresh(true);
       emitChange();

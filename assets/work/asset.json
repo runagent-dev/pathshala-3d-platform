@@ -5,7 +5,7 @@
   "title": "Work (কাজ)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "book": "physics-9-10",
   "page": 100,
   "topic": "4.1",
@@ -13,7 +13,7 @@
   "order": 1,
   "maintainers": ["RadeenXALNW"],
   "units": "m",
-  "description": "Interactive 3D figure for textbook topic 4.1 (কাজ, Work), page 100. A realistic person leans on a wooden crate and pushes it s metres with a force F, then lets go; the crate slides d = s/2 more and stops, the book's own example. The orange F arrow shows only while the hands push, the blue s arrow grows with the crate and W = Fs counts up live; over the grey d the force is gone and W stays put. A second example pushes the crate against a brick wall: s = 0, so W = 0 (the book's guard). A small calculator with tap steppers for F (10–100 N) and s (1–4 m) works W = Fs out in J (জুল); a metre tape on the floor lets the test read s off the picture. Five tap questions: where F did work, W from the tape, the wall, F from W, the unit. The person, crate, floor, wall and arrows export as GLB in metres. Offline, in Bangla and English.",
+  "description": "Interactive 3D figure for textbook topic 4.1 (কাজ, Work), page 100. In a house's tiled courtyard (a teal boundary wall, the guard's gate and stool), a realistic person leans on a wooden crate and pushes it s metres with a force F, then lets go; the crate slides d = s/2 more and stops, the book's own example. The orange F arrow shows only while the hands push, the blue s arrow grows with the crate and W = Fs counts up live; over the grey d the force is gone and W stays put. A second example pushes the crate against a brick wall: s = 0, so W = 0 (the book's guard). A small calculator with tap steppers for F (10–100 N) and s (1–4 m) works W = Fs out in J (জুল); a metre tape on the floor lets the test read s off the picture. Five tap questions: where F did work, W from the tape, the wall, F from W, the unit. The person, crate, floor, wall and arrows export as GLB in metres. Offline, in Bangla and English.",
   "tags": ["work", "force", "displacement", "joule", "energy", "push", "bangla"],
   "params": [
     {

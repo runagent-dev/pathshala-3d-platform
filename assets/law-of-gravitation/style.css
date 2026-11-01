@@ -42,20 +42,18 @@ body.bg-transparent { background: transparent; }
 .lg .lg-book { display: none; }
 .lg .lg-book i { color: inherit; }
 
-/* on the view: the honest note, top left (the corner buttons are top right) */
-.lg-note { position: absolute; left: 10px; top: 10px; z-index: 5; max-width: calc(100% - 240px); color: #5c6672; font-size: 13px; font-weight: 500; line-height: 1.4; pointer-events: none; }
-.lg-note.below { top: 54px; max-width: calc(100% - 20px); }
-.lg-note.hide { display: none; }
+/* the honest note (the arrows and the weight are drawn much bigger than life): a quiet grey line under the result */
+.lg .pvc-outcome .lg-scale { display: block; margin-top: 1px; color: #5c6672; font-size: 13px; font-weight: 500; line-height: 1.4; }
 
 /* the labels: masses written on the iron balls, the arrows' names beside them (no leader lines), the rest as parts */
-.lg .pvc-anno-ball { padding: 0; border: 0; background: none; color: var(--c-mass-on-iron); font-size: clamp(8.5px, calc(var(--lg-ball, 72) * 0.19px), 13.5px); font-weight: 600; text-align: center; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55); transition: none; }
+.lg .pvc-anno-ball { padding: 0 0.3em; border: 0; border-radius: 4px; background: rgba(22, 26, 32, 0.62); color: var(--c-mass-on-iron); font-size: clamp(8.5px, calc(var(--lg-ball, 72) * 0.19px), 13.5px); font-weight: 600; text-align: center; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55); transition: none; }
 .lg .pvc-anno-ball i { font-size: 1.35em; line-height: 1.1; }
 .lg .pvc-anno-ball small { display: block; font-size: 0.92em; line-height: 1.25; white-space: nowrap; }
-.lg .pvc-anno-flat { padding: 0 4px; border: 0; background: rgba(255, 255, 255, 0.82); border-radius: 4px; color: var(--c, var(--ink)); font-size: 15px; font-weight: 700; transition: none; }
+.lg .pvc-anno-flat { padding: 0 5px; border: 1.5px solid color-mix(in srgb, var(--c, var(--ink)) 55%, #fff); background: #fff; border-radius: 5px; color: var(--c, var(--ink)); font-size: 15px; font-weight: 700; box-shadow: 0 1px 3px rgba(15, 25, 40, 0.3); transition: none; }
 .lg .pvc-anno-flat i { font-size: 1.12em; }
 .lg .pvc-anno-lines .k-ball, .lg .pvc-anno-lines .k-flat, .lg .pvc-anno-lines .k-rdim { display: none; }
 /* r: written on the bench top between the stands, small enough for the thin top of a wide, short view */
-.lg .pvc-anno-rdim { padding: 1px 6px; border: 0; border-radius: 4px; background: rgba(255, 255, 255, 0.88); color: var(--ink); font-size: 12.5px; font-weight: 700; line-height: 1.25; transition: none; }
+.lg .pvc-anno-rdim { padding: 1px 6px; border: 1.5px solid color-mix(in srgb, var(--c-dist) 55%, #fff); border-radius: 4px; background: #fff; color: var(--ink); font-size: 12.5px; font-weight: 700; line-height: 1.25; transition: none; }
 .lg .pvc-anno-rdim i { font-size: 1.1em; }
 .lg .pvc-anno-part { font-size: 13.5px; }
 .lg[data-short='1'] .pvc-anno-part { font-size: 11.5px; padding: 1px 6px; }
@@ -95,7 +93,7 @@ body.bg-transparent { background: transparent; }
 }
 /* desktop frames: the doing (words, button, result) on the left, the idea in large type on the right, so the panel
    stays low and the picture keeps its height */
-@container pvc (min-width: 900px) and (min-height: 520px) {
+@container pvc (min-width: 900px) and (min-height: 461px) {
   .lg .pvc-learn { display: grid; grid-template-columns: clamp(360px, 40%, 500px) minmax(0, 1fr); column-gap: 36px; row-gap: 10px; align-content: start; justify-content: stretch; }
   .lg .pvc-examples { grid-column: 1; grid-row: 1; max-width: none; }
   .lg .pvc-examples .pvc-ex-word { font-size: 17px; }
@@ -106,8 +104,7 @@ body.bg-transparent { background: transparent; }
   .lg .pvc-rule { grid-column: 2; grid-row: 1 / span 3; --pvc-rule-lines: 4; align-self: start; padding: 4px 0 0 28px; border-left: 3px solid #e6defc; font-size: 20px; line-height: 1.6; }
   .lg .lg-line { margin-top: 8px; }
   .lg .lg-book { display: block; margin-top: 10px; color: #7a8591; font-size: 14px; font-weight: 500; line-height: 1.5; }
-  /* the picture is big here: its labels and the note grow with it */
-  .lg-note { font-size: 15px; }
+  /* the picture is big here: its labels grow with it */
   .lg .pvc-anno-ball { font-size: clamp(8.5px, calc(var(--lg-ball, 72) * 0.19px), 20px); }
   .lg .pvc-anno-flat { font-size: 18px; }
   .lg .pvc-anno-rdim { font-size: 15px; }
@@ -120,7 +117,7 @@ body.bg-transparent { background: transparent; }
 @container pvc (min-width: 1180px) and (min-height: 520px) {
   .lg .pvc-act-row .pvc-quiet > span { display: inline; }
   .lg .pvc-outcome { --pvc-outcome-lines: 3; }
-  .lg .pvc-outcome .lg-exact { display: block; margin: 0; font-size: 0.82em; line-height: 1.5; }
+  .lg .pvc-outcome .lg-exact, .lg .pvc-outcome :is(small, b) + .lg-exact { display: block; margin: 0; font-size: 0.82em; line-height: 1.5; }
 }
 /* short and wide (phone held sideways): the panel is beside the scene */
 @container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
@@ -130,4 +127,69 @@ body.bg-transparent { background: transparent; }
   .lg .pvc-q-text { font-size: 14.5px; }
   .lg .pvc-opt { font-size: 14px; height: 44px; }
   .lg .pvc-q-feedback { font-size: 13px; }
+}
+
+/* phones held upright: tighter rows, so the 3D view keeps at least 55 % of the height (390 × 700). The result keeps
+   two lines in every state (the first picture's sentence, or the comparison and the honest note under it) */
+@container pvc (max-width: 560px) {
+  .lg .pvc-panel { gap: 8px; padding-top: 8px; }
+  .lg .pvc-learn { gap: 4px; }
+  .lg .pvc-examples button { min-height: 40px; padding-top: 2px; padding-bottom: 3px; }
+  .lg .pvc-act-row { --pvc-act-lines: 1; min-height: 46px; }
+  .lg .pvc-act { min-height: 44px; padding-top: 3px; padding-bottom: 3px; }
+  .lg .pvc-act-row .pvc-quiet { min-height: 44px; height: 44px; }
+  .lg .pvc-outcome { --pvc-outcome-lines: 2; font-size: 15px; line-height: 1.6; }
+  .lg .pvc-outcome b { font-size: 1.35em; }
+  .lg .pvc-rule { --pvc-rule-lines: 3; font-size: 14px; line-height: 1.45; }
+  .lg .lg-line { margin-top: 2px; }
+  /* the formula a little narrower, so it stays on one row under "সব মিলিয়ে" in both languages */
+  .lg .lg-formula, .lg .lg-grp { gap: 0 0.3em; }
+  .lg .lg-sym { padding: 0 0.12em; }
+  .lg .pvc-q-ask { gap: 6px; }
+  .lg .pvc-q-head { min-height: 32px; }
+  .lg .pvc-q-head .pvc-btn { height: 32px; }
+  .lg .pvc-q-text { font-size: 15px; line-height: 1.35; }
+  .lg .pvc-q-options { gap: 6px; }
+  .lg .pvc-opt { height: 42px; font-size: 15px; }
+  .lg-opt-words { font-size: 14.5px; }
+  .lg .pvc-q-feedback { font-size: 13.5px; line-height: 1.38; }
+}
+/* wide but not tall, and not wide enough for the desktop columns (800 × 500): the doing on the left, the rule on the
+   right in its own column, so the panel stays low and the 3D view keeps more than half the frame */
+@container pvc (min-width: 720px) and (max-width: 899px) and (min-height: 461px) {
+  .lg .pvc-panel { padding-top: 8px; padding-bottom: 8px; }
+  .lg .pvc-learn { display: grid; grid-template-columns: minmax(0, 352px) minmax(0, 1fr); column-gap: 18px; row-gap: 4px; align-content: start; justify-content: stretch; }
+  .lg .pvc-examples { grid-column: 1; grid-row: 1; max-width: none; }
+  .lg .pvc-examples button { min-height: 40px; padding-top: 2px; padding-bottom: 3px; }
+  .lg .pvc-act-row { grid-column: 1; grid-row: 2; --pvc-act-lines: 1; min-height: 46px; }
+  .lg .pvc-act { min-height: 44px; padding-top: 3px; padding-bottom: 3px; font-size: 15.5px; }
+  .lg .pvc-act-row .pvc-quiet > span { display: none; }
+  .lg .pvc-outcome .lg-scale { font-size: 12.5px; }
+  .lg .pvc-outcome { grid-column: 1; grid-row: 3; --pvc-outcome-lines: 2; font-size: 15.5px; line-height: 1.55; }
+  .lg .pvc-outcome b { font-size: 1.35em; }
+  .lg .pvc-rule { grid-column: 2; grid-row: 1 / span 3; --pvc-rule-lines: 4; align-self: start; padding: 2px 0 0 16px; border-left: 3px solid #e6defc; font-size: 15px; line-height: 1.5; }
+  .lg .lg-sumword { flex: 0 0 100%; line-height: 1.4; }
+  .lg .pvc-q-ask { gap: 6px; }
+  .lg .pvc-q-head { min-height: 32px; }
+  .lg .pvc-q-head .pvc-btn { height: 32px; }
+  .lg .pvc-q-text { font-size: 16px; line-height: 1.35; }
+  .lg .pvc-opt { height: 44px; }
+  .lg .pvc-q-feedback { --pvc-q-feedback-min: 2lh; font-size: 14.5px; line-height: 1.4; }
+}
+/* the shortest phone (390 × 520): the test's rows a little tighter still */
+@container pvc (max-width: 560px) and (max-height: 600px) {
+  .lg .pvc-panel { padding-top: 6px; gap: 6px; }
+  .lg .pvc-q-ask { gap: 5px; }
+  .lg .pvc-q-head { min-height: 30px; }
+  .lg .pvc-q-head .pvc-btn { height: 30px; }
+  .lg .pvc-q-options { gap: 5px; }
+  .lg .pvc-opt { height: 40px; }
+  .lg .pvc-q-feedback { font-size: 13px; line-height: 1.36; }
+  /* what was found stays in the result and the rule: the small words under the examples are left out here */
+  .lg .pvc-examples .pvc-ex-res, .lg .pvc-examples[data-results] .pvc-ex-res:empty { display: none; }
+  .lg .pvc-examples button { min-height: 38px; }
+  .lg .pvc-rule { line-height: 1.38; }
+  .lg .lg-sumword { line-height: 1.25; }
+  .lg .lg-line { margin-top: 0; }
+  .lg .lg-term small { margin-top: 1px; line-height: 1.1; }
 }

@@ -7,8 +7,11 @@
 // The group's origin is on the ground under the delivery port; `outlet` and `inlet` are the ports' ends (local),
 // `cableIn` the terminal box's cable gland (on the side `cableSide`, -1 = local -z).
 import * as THREE from 'three';
+import { bake } from './build.js';
 
 const PLINTH_H = 0.1;
+const SHARED = new Map(); // the materials both pumps share after baking (cast iron, steel, …)
+let common = null;
 
 /** A dark slotted grille texture for the fan cover. */
 function grilleTexture() {
@@ -58,14 +61,18 @@ export function createPump({ color, size = 1, name = 'Pump', cableSide = -1 }) {
   const body = new THREE.Group(); // shakes while running
   root.add(body);
 
-  const paint = new THREE.MeshStandardMaterial({ color, metalness: 0.35, roughness: 0.38 });
-  const castIron = new THREE.MeshStandardMaterial({ color: '#5a6066', metalness: 0.55, roughness: 0.5 });
-  const steel = new THREE.MeshStandardMaterial({ color: '#b9c0c6', metalness: 0.85, roughness: 0.28 });
-  const dark = new THREE.MeshStandardMaterial({ color: '#2b2f33', metalness: 0.4, roughness: 0.55 });
-  const brass = new THREE.MeshStandardMaterial({ color: '#c99a3c', metalness: 0.9, roughness: 0.3 });
-  const concrete = new THREE.MeshStandardMaterial({ color: '#b9b2a6', roughness: 0.95 });
-  const grille = new THREE.MeshStandardMaterial({ map: grilleTexture(), metalness: 0.3, roughness: 0.6 });
-  const plate = new THREE.MeshStandardMaterial({ map: plateTexture(), metalness: 0.6, roughness: 0.35 });
+  const paint = new THREE.MeshStandardMaterial({ name: 'Paint', color, metalness: 0.35, roughness: 0.38 });
+  // made once for both pumps (and their two textures drawn once)
+  common ||= {
+    castIron: new THREE.MeshStandardMaterial({ name: 'CastIron', color: '#5a6066', metalness: 0.55, roughness: 0.5 }),
+    steel: new THREE.MeshStandardMaterial({ name: 'Steel', color: '#b9c0c6', metalness: 0.85, roughness: 0.28 }),
+    dark: new THREE.MeshStandardMaterial({ name: 'Dark', color: '#2b2f33', metalness: 0.4, roughness: 0.55 }),
+    brass: new THREE.MeshStandardMaterial({ name: 'Brass', color: '#c99a3c', metalness: 0.9, roughness: 0.3 }),
+    concrete: new THREE.MeshStandardMaterial({ name: 'Plinth', color: '#b9b2a6', roughness: 0.95 }),
+    grille: new THREE.MeshStandardMaterial({ name: 'FanCover', map: grilleTexture(), metalness: 0.3, roughness: 0.6 }),
+    plate: new THREE.MeshStandardMaterial({ name: 'RatingPlate', map: plateTexture(), metalness: 0.6, roughness: 0.35 }),
+  };
+  const { castIron, steel, dark, brass, concrete, grille, plate } = common;
   const lampOff = new THREE.MeshStandardMaterial({ color: '#2f5a33', roughness: 0.3 });
   const lamp = new THREE.MeshStandardMaterial({ color: '#2f5a33', emissive: '#000000', roughness: 0.3 });
 
@@ -77,19 +84,22 @@ export function createPump({ color, size = 1, name = 'Pump', cableSide = -1 }) {
   const X = (v) => new THREE.Mesh(v, paint);
   const alongX = (g) => g.rotateZ(Math.PI / 2);
 
-  // the plinth and the base plate (stay still)
+  // the plinth and the base plate (in the body: its hum is far under a millimetre)
   const plinthL = LEN + HL + 0.26 * size;
   const plinth = new THREE.Mesh(new THREE.BoxGeometry(plinthL, PLINTH_H, 0.32 * size + 0.08), concrete);
   plinth.position.set(-plinthL / 2 + HL + 0.08, PLINTH_H / 2, 0);
-  root.add(plinth);
+  body.add(plinth);
+  const stand = [plinth]; // left out of the box the action's ring goes round
   const base = new THREE.Mesh(new THREE.BoxGeometry(LEN + HL + 0.08, 0.016, 0.2 * size), dark);
   base.position.set(-(LEN + HL) / 2 + HL / 2 + 0.01, PLINTH_H + 0.008, 0);
-  root.add(base);
+  body.add(base);
+  stand.push(base);
   for (const bx of [base.position.x - (LEN + HL) / 2 + 0.01, base.position.x + (LEN + HL) / 2 - 0.01])
     for (const bz of [-0.075 * size, 0.075 * size]) {
       const bolt = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.012, 6), steel);
       bolt.position.set(bx, PLINTH_H + 0.022, bz);
-      root.add(bolt);
+      body.add(bolt);
+      stand.push(bolt);
     }
 
   // the motor: body, fins, end bells, fan cover
@@ -197,7 +207,23 @@ export function createPump({ color, size = 1, name = 'Pump', cableSide = -1 }) {
   hit.userData.noExport = true;
   root.add(hit);
 
+  // the motor and the head, for the ring round the pumps (local: the group sits at the origin until it is placed)
+  const ringBox = new THREE.Box3();
+  for (const c of body.children) if (!stand.includes(/** @type {any} */ (c))) ringBox.expandByObject(c);
+
+  // the body, the head and the plinth cast the pump's shadow and take the pipes' (the small bits add nothing)
+  const casters = new Set([paint, castIron, concrete]);
+  body.traverse((o) => {
+    const mesh = /** @type {THREE.Mesh} */ (o);
+    if (!mesh.isMesh) return;
+    mesh.castShadow = mesh.receiveShadow = casters.has(/** @type {any} */ (mesh.material));
+  });
+  // every still part in one mesh per material (about 60 parts become 11 draw calls), the spinning collar apart
+  bake(body, { keep: [collar, lampMesh], name, materials: SHARED });
+  bake(collar, { name: `${name}_Collar`, materials: SHARED });
+
   let angle = 0;
+  let lit = null;
   return {
     root,
     body,
@@ -208,11 +234,16 @@ export function createPump({ color, size = 1, name = 'Pump', cableSide = -1 }) {
     axis: AXIS,
     /** The visible pump (for the action's ring), without the hit box. */
     visual: body,
+    /** The motor and the head (local), for the action's ring. */
+    ringBox,
     /** Running or not; `dt` seconds of spinning; `phase` drives the tiny shake. */
     run(on, dt = 0, phase = 0) {
-      lamp.emissive.set(on ? '#5cff6b' : '#000000');
-      lamp.emissiveIntensity = on ? 1.6 : 1; // (1 with a black emissive: no glow, and a clean export)
-      lamp.color.set(on ? '#8dff95' : lampOff.color);
+      if (on !== lit) {
+        lit = on;
+        lamp.emissive.set(on ? '#5cff6b' : '#000000');
+        lamp.emissiveIntensity = on ? 1.6 : 1; // (1 with a black emissive: no glow, and a clean export)
+        lamp.color.set(on ? '#8dff95' : lampOff.color);
+      }
       if (on) angle += dt * 60;
       collar.rotation.x = angle;
       body.position.y = on ? Math.sin(phase * 190) * 0.0012 : 0;

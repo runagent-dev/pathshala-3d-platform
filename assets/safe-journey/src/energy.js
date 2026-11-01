@@ -21,15 +21,16 @@ export function createEnergy() {
     opacity: 1,
   });
   const geo = new RoundedBoxGeometry(1, 1, 1, 2, 0.07);
-  const cells = [];
-  for (let j = 0; j < ENERGY.max; j++)
-    for (let i = 0; i < ENERGY.max; i++) {
-      const m = new THREE.Mesh(geo, material);
-      m.name = 'EnergyCube';
-      m.visible = false;
-      root.add(m);
-      cells.push({ i, j, m });
-    }
+  // all the cubes in one draw call: the ones that show are the first `count` instances
+  const cubes = new THREE.InstancedMesh(geo, material, ENERGY.max * ENERGY.max);
+  cubes.name = 'EnergyCubes';
+  cubes.count = 0;
+  cubes.frustumCulled = false; // small, and its bounds change with the side
+  root.add(cubes);
+  const m4 = new THREE.Matrix4();
+  const pos = new THREE.Vector3();
+  const scl = new THREE.Vector3();
+  const q = new THREE.Quaternion();
   let side = 0;
   const step = ENERGY.cube + ENERGY.gap;
   /** The square's width (= height) in metres for a side of s cubes. */
@@ -37,25 +38,29 @@ export function createEnergy() {
 
   /** A square of side s cubes (its area s² is the energy in cubes). */
   function setSide(s) {
-    side = Math.max(0, Math.min(ENERGY.max, s));
+    const next = Math.max(0, Math.min(ENERGY.max, s));
+    if (next === side && cubes.count) return;
+    side = next;
     const half = extent(side) / 2;
-    for (const { i, j, m } of cells) {
-      const w = Math.min(1, side - i);
-      const h = Math.min(1, side - j);
-      if (w <= 1e-3 || h <= 1e-3) {
-        m.visible = false;
-        continue;
+    let n = 0;
+    for (let j = 0; j < ENERGY.max; j++)
+      for (let i = 0; i < ENERGY.max; i++) {
+        const w = Math.min(1, side - i);
+        const h = Math.min(1, side - j);
+        if (w <= 1e-3 || h <= 1e-3) continue;
+        const sx = w * ENERGY.cube;
+        const sy = h * ENERGY.cube;
+        pos.set(-half + i * step + sx / 2, j * step + sy / 2, 0);
+        scl.set(sx, sy, ENERGY.depth);
+        cubes.setMatrixAt(n++, m4.compose(pos, q, scl));
       }
-      m.visible = true;
-      const sx = w * ENERGY.cube;
-      const sy = h * ENERGY.cube;
-      m.scale.set(sx, sy, ENERGY.depth);
-      m.position.set(-half + i * step + sx / 2, j * step + sy / 2, 0);
-    }
+    cubes.count = n;
+    cubes.instanceMatrix.needsUpdate = true;
   }
 
   return {
     root,
+    mesh: cubes,
     material,
     setSide,
     get side() {

@@ -46,25 +46,32 @@ body.bg-transparent { background: transparent; }
 .sv-past .sv-k small { color: var(--c-disp); font-weight: 600; }
 
 .sv-extra { margin: 2px 0 0; min-height: 4.5em; font-size: 13.5px; line-height: 1.5; color: var(--ink-2); } /* 3 lines: the 3D view keeps its size */
+/* under it: the goal and how time is shown (the picture is slowed down or sped up) */
+.sv-aside { display: block; margin-top: 1px; font-size: 12px; line-height: 1.4; color: var(--ink-3); }
 .sv-scenes button { height: 38px; padding: 0 14px; font-size: 15px; font-weight: 600; }
 .sv-act { min-width: 8.6em; }
-
-/* how time is shown (slowed down, sped up): a small note at the top left of the picture */
-.sv-note { position: absolute; left: 8px; top: 8px; z-index: 3; max-width: max(100px, min(40%, calc(100% - 268px))); padding: 2px 7px; border-radius: 4px; background: rgba(255, 255, 255, 0.82); font-size: 12.5px; line-height: 1.35; color: var(--ink-2); pointer-events: none; }
 
 /* the test: room for two lines of question and two of worked answer, so the 3D view keeps its size */
 .sv .pvc-q-text { min-height: 2.8em; }
 .sv .pvc-q-feedback { min-height: 2.9em; }
-.pvc[data-mode='quiz'] .sv-note { visibility: hidden; }
 /* the test: answers in words */
 .pvc-opt .sv-opt { font-size: 14.5px; line-height: 1.25; font-weight: 600; white-space: normal; text-align: center; }
 
+/* wide frames (the kit puts the tabs in a column on the left): the chips and the button beside the rows, so the
+   panel is lower and the 3D view taller */
+@container pvc (min-width: 720px) {
+  .sv .pvc-learn { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 28px; row-gap: 4px; align-content: start; }
+  .sv-rows, .sv-extra { grid-column: 1; }
+  .sv .sv-foot { grid-column: 2; grid-row: 1 / span 2; flex-direction: column; align-items: stretch; justify-content: center; margin-top: 0; }
+  .sv-extra { min-height: 3em; }
+}
 /* phones and narrow columns */
 @container pvc (max-width: 420px) {
   .sv-k b { font-size: 15px; }
   .sv-frac { font-size: 18px; }
   .sv-res b, .sv-row .pvc-t b { font-size: 19px; }
   .sv-row { min-height: 56px; }
+  .sv .pvc-opt { height: 44px; }
 }
 /* phone embeds that are not very tall: a little smaller, so the 3D view keeps more room */
 @container pvc (max-width: 560px) and (max-height: 600px) {
@@ -77,20 +84,25 @@ body.bg-transparent { background: transparent; }
   .sv-res b, .sv-row .pvc-t b { font-size: 17px; }
   .sv-extra { font-size: 12.5px; min-height: 3em; }
 }
-/* short and wide (phone held sideways): a wider panel beside the picture, so each row stays on one line */
+/* short and wide (phone held sideways): the kit puts the panel beside the picture; each row stays on one line */
 @container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
-  .sv .pvc-shell { grid-template-columns: minmax(0, 1fr) clamp(280px, 40%, 350px); }
+  .sv .pvc-learn { display: flex; gap: 4px; }
+  .sv .sv-foot { flex-direction: row; align-items: center; justify-content: space-between; margin-top: auto; }
   .sv-rows { gap: 2px; }
-  .sv-row { gap: 4px; min-height: 46px; }
+  .sv-row { gap: 3px; min-height: 44px; }
   .sv-k { min-width: 0; }
-  .sv-k b { font-size: 14.5px; }
-  .sv-frac { font-size: 15.5px; min-width: 0; }
+  .sv-k b { font-size: 14px; }
+  .sv-k small { white-space: normal; max-width: 6.2em; font-size: 11px; }
+  .sv-frac { font-size: 15px; min-width: 0; }
   .sv-res { min-width: 0; }
-  .sv-res b, .sv-row .pvc-t b { font-size: 16.5px; }
-  .sv-row > i { font-size: 16px; }
+  .sv-res b, .sv-row .pvc-t b { font-size: 16px; }
+  .sv-res small { font-size: 11px; }
+  .sv-row > i { font-size: 15px; }
   .sv-dirt b { min-width: 0; }
-  .sv-row .sv-dirt { margin-left: 4px; }
-  .sv-k small { white-space: normal; max-width: 6.5em; }
-  .sv-extra { font-size: 12.5px; min-height: 5.6em; }
-  .sv .sv-foot { flex-wrap: wrap; }
+  .sv-row .sv-dirt { margin-left: 3px; }
+  .sv-extra { font-size: 12.5px; line-height: 1.45; min-height: 5.8em; }
+  .sv-aside { font-size: 11.5px; }
+  .sv .sv-foot { gap: 6px; }
+  .sv-scenes button { padding: 0 10px; font-size: 14px; }
+  .sv-act { min-width: 0; padding: 0 10px; font-size: 14px; }
 }

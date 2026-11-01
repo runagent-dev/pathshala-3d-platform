@@ -2,6 +2,7 @@
 // saddle, hands on the grips, feet on the pedals (two-bone reach for arms and legs). Metres; local +x forward, in the
 // bicycle's own space (bike.js).
 import * as THREE from 'three';
+import { bake } from './bake.js';
 
 const HIP_DROP = 0.07; // m: the hip joints sit this far below the pelvis centre
 const NECK = 0.56; // m above the pelvis: the head turns about here
@@ -288,11 +289,12 @@ export function createRider({ shirt = '#1f8fd1', trousers = '#253552', helmet = 
     side,
     thigh: tube(M.trousers, root),
     shin: tube(M.trousers, root),
-    foot: new THREE.Mesh(shoeGeometry, M.shoe),
+    foot: new THREE.Group(), // the shoe and its sole, heel, tread and laces: placed by pose()
     knee: ball(0.063, M.trousers, root),
   }));
   for (const l of legs) {
     root.add(l.foot);
+    l.foot.add(new THREE.Mesh(shoeGeometry, M.shoe));
     l.thigh.geometry = thighGeometry;
     l.shin.geometry = calfGeometry;
     const sole = new THREE.Mesh(soleGeometry, M.sole);
@@ -339,13 +341,14 @@ export function createRider({ shirt = '#1f8fd1', trousers = '#253552', helmet = 
   helmetShell.rotation.z = 0.12;
   helmetShell.name = 'Helmet';
   face.add(helmetShell);
-  const rim = new THREE.Mesh(new THREE.TorusGeometry(0.128, 0.008, 6, 40), mat('HelmetRim', '#22282e', 0.6));
+  const helmetDark = mat('HelmetTrim', '#1f252b', 0.65); // the rim, the vents and the strap
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(0.128, 0.008, 6, 40), helmetDark);
   rim.rotation.x = Math.PI / 2;
   rim.position.copy(helmetShell.position);
   rim.scale.set(1.2, 0.96, 1);
   face.add(rim);
   for (let k = -1; k <= 1; k++) {
-    const vent = new THREE.Mesh(new THREE.CapsuleGeometry(0.01, 0.09, 3, 8), mat('HelmetVent', '#1b2026', 0.7));
+    const vent = new THREE.Mesh(new THREE.CapsuleGeometry(0.01, 0.09, 3, 8), helmetDark);
     vent.position.set(0.0, 0.795, k * 0.045);
     vent.rotation.z = Math.PI / 2;
     vent.scale.set(1, 1, 0.5);
@@ -356,7 +359,7 @@ export function createRider({ shirt = '#1f8fd1', trousers = '#253552', helmet = 
   peak.rotation.z = -0.25;
   face.add(peak);
   for (const side of [1, -1]) {
-    const strap = new THREE.Mesh(new THREE.CylinderGeometry(0.003, 0.003, 0.11, 6), mat('Strap', '#1f2226'));
+    const strap = new THREE.Mesh(new THREE.CylinderGeometry(0.003, 0.003, 0.11, 6), helmetDark);
     strap.position.set(0.02, 0.6, side * 0.085);
     strap.rotation.z = -0.25;
     face.add(strap);
@@ -434,9 +437,16 @@ export function createRider({ shirt = '#1f8fd1', trousers = '#253552', helmet = 
     root.updateMatrixWorld(true);
   }
 
+  // only the parts whose shadow shows on the road cast one (not eyes, lips, seams or laces)
+  const casts = new Set([M.shirt, M.trousers, M.skin, M.shoe, helmetMat]);
   root.traverse((o) => {
-    if (o instanceof THREE.Mesh) o.castShadow = true;
+    if (o instanceof THREE.Mesh) o.castShadow = casts.has(/** @type {THREE.Material} */ (o.material));
   });
+  // what never moves inside the head, the trunk, each hand and each shoe: one mesh per material
+  bake(face);
+  bake(upper, { skip: [headPivot] });
+  for (const arm of arms) bake(arm.hand);
+  for (const leg of legs) bake(leg.foot);
 
   return { root, pose, materials: M };
 }

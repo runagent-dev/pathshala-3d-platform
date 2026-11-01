@@ -52,6 +52,9 @@ test('pressure: the same force, four times the pressure under the heel', async (
 });
 
 test('pressure: one tap stands them on the sand, the next lifts them; the camera visits each shoe', async ({ page }) => {
+  // About 2 minutes on a laptop and 2.8 to over 3 on a GitHub runner, two tests at once: while the clay gives way each frame
+  // re-shapes it and draws about 230,000 triangles in software 3D (a frame takes about 6 times as long as in power)
+  test.setTimeout(540_000);
   await page.setViewportSize({ width: 390, height: 700 });
   const log = await preparePage(page);
   const fig = await openFigure(page, 'pressure');

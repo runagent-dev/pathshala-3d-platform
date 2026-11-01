@@ -10,7 +10,6 @@
 // Built on the shared student kit (@shared/student/…).
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
-import { createArrow } from '@shared/arrow.js';
 import { createTweener, ease } from '@shared/tween.js';
 import { createAudio } from '@shared/student/audio.js';
 import { createAnnotations } from '@shared/student/annotations.js';
@@ -18,6 +17,7 @@ import { bindCleanSheet, buildStudentShell, cleanSheet } from '@shared/student/s
 import { createAction } from '@shared/student/action.js';
 import { createQuiz } from '@shared/student/quiz.js';
 import { ICONS } from '@shared/student/icons.js';
+import { boldArrow } from './arrows.js';
 import { createI18n } from './i18n.js';
 import { BUCKET_SIZE, KNOT, createBucket } from './bucket.js';
 import { fitPose } from './camera.js';
@@ -124,25 +124,21 @@ export function createApp(root, options = {}) {
     <div class="wl-steps">${stepper('T', 'N')}${stepper('M', 'kg')}</div>
     <div class="wl-law" aria-label="${t('law_label')}">
       <button type="button" class="wl-term c-T" data-term="T">T</button><span class="wl-op">−</span><button type="button" class="wl-term c-W" data-term="W">M<i>g</i></button><span class="wl-op">=</span><button type="button" class="wl-term c-M" data-term="M">M</button><button type="button" class="wl-term c-a" data-term="a">a</button>
+      <span class="wl-key">${t('key_up')}</span>
       <span class="wl-sum"></span>
     </div>`;
   $('.pvc-act-row').after(eq);
   const sumEl = /** @type {HTMLElement} */ (eq.querySelector('.wl-sum'));
 
-  // the notes (top left): what is drawn and how, and the sign rule; a chip (bottom right) with the bucket's velocity
-  // during a run and what it did after it
-  const notes = document.createElement('div');
-  notes.className = 'wl-notes';
-  const note = document.createElement('div');
-  note.className = 'wl-note';
-  const sign = document.createElement('div');
-  sign.className = 'wl-sign';
+  // under the rule (not on phones): what the picture leaves out (the cut, the light rope) and the arrows' scale; on the
+  // picture only a chip at the bottom right with the bucket's velocity and the time of the run (slowed SLOW times)
+  const meta = document.createElement('p');
+  meta.className = 'wl-meta';
+  meta.innerHTML = `<span>${t('meta_cut')}</span> <span>${t('meta_rope')}</span> <span class="wl-meta-scale">${t('meta_scale')}</span>`;
+  $('.pvc-rule').after(meta);
   const speed = document.createElement('div');
   speed.className = 'wl-speed';
-  notes.append(note, sign);
-  const scaleNote = document.createElement('div');
-  scaleNote.className = 'wl-scale';
-  ui.stage.append(notes, speed, scaleNote);
+  ui.stage.append(speed);
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 30, near: 0.05, far: 90, environment: 'studio-light' });
@@ -190,11 +186,11 @@ export function createApp(root, options = {}) {
   scene.add(fill);
   if (o.shadow && o.bg !== 'transparent') {
     stage.renderer.shadowMap.enabled = true;
-    stage.renderer.shadowMap.type = THREE.VSMShadowMap;
+    stage.renderer.shadowMap.type = THREE.PCFShadowMap;
     sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
+    sun.shadow.mapSize.set(1024, 1024);
     Object.assign(sun.shadow.camera, { left: -4.5, right: 4.5, top: 4, bottom: -3, near: 1, far: 20 });
-    sun.shadow.radius = 5;
+    sun.shadow.radius = 4;
     sun.shadow.bias = -0.0005;
   }
 
@@ -211,38 +207,8 @@ export function createApp(root, options = {}) {
 
   const tmp = new THREE.Vector3();
   const tmp2 = new THREE.Vector3();
-  // the arrows are the point of the picture: thick, flat colour in a white outline, drawn over the scenery
-  const flat = (color) =>
-    new THREE.MeshBasicMaterial({ color, transparent: true, depthTest: false, depthWrite: false, fog: false, toneMapped: false });
-  const OUTLINE_FROM = new THREE.Vector3();
+  // the arrows are the point of the picture: thick, flat colour in a white outline, drawn over the scenery (arrows.js)
   let thick = 1; // the arrows get thicker (not longer) on a small stage, so they stay at least about 4 px wide
-  function boldArrow(name, color, r = 0.03) {
-    const core = createArrow({ name, radius: r, head: r * 5.2, headRadius: r * 2.7, material: flat(color) });
-    const pad = r * 0.6;
-    const outline = createArrow({
-      name: `${name}Outline`,
-      radius: r + pad,
-      head: r * 5.2 + pad * 2.8,
-      headRadius: r * 2.7 + pad * 2,
-      material: flat('#ffffff'),
-    });
-    core.root.add(outline.root);
-    core.root.renderOrder = 21;
-    outline.root.renderOrder = 20;
-    return {
-      ...core,
-      /** Thickness × k, everything × p (the pulse of a tapped symbol). */
-      scale(p = 1) {
-        core.root.scale.set(thick * p, p, thick * p);
-      },
-      set(from, dir, length) {
-        core.set(from, dir, length);
-        OUTLINE_FROM.set(0, -pad, 0);
-        if (length > 1e-9) outline.set(OUTLINE_FROM, UPV, length + pad * 2.2);
-        else outline.hide();
-      },
-    };
-  }
   const A = {
     T: boldArrow('TensionOnBucket', COLORS.T),
     W: boldArrow('WeightOfBucket', COLORS.W),
@@ -390,6 +356,9 @@ export function createApp(root, options = {}) {
   const lineB = new THREE.Vector3();
   const knot = new THREE.Vector3();
   const off = new THREE.Vector3();
+  const handA = new THREE.Vector3();
+  const handB = new THREE.Vector3();
+  const hands = [handA, handB];
   function syncScene() {
     const w = where();
     const y = w.y;
@@ -423,10 +392,12 @@ export function createApp(root, options = {}) {
     rope.update({ knot, grips: firstA ? [lineA, lineB] : [lineB, lineA], run });
     well.spin(run);
     // his fists (in his own frame), his lean: further back the harder he pulls, a little sway with each stroke
+    man.root.worldToLocal(handA.copy(gripA));
+    man.root.worldToLocal(handB.copy(gripB));
     const pullK = Math.min(1, (moving() ? s.T : s.sol.W) / 180);
     const sway = moving() && Math.abs(w.v) > 0.01 ? Math.sin(Math.PI * strokeAt(p)) * 0.03 : 0;
     man.pose({
-      hands: [man.root.worldToLocal(gripA.clone()), man.root.worldToLocal(gripB.clone())],
+      hands,
       rope: tmp2.copy(ropeDir).negate().applyAxisAngle(UPV, Math.PI), // towards the wheel, in his frame
       lean: 0.16 + 0.12 * pullK + sway,
       hipX: -0.04 - 0.05 * pullK,
@@ -441,7 +412,7 @@ export function createApp(root, options = {}) {
     for (const a of Object.values(A)) a.hide();
     const perPx = (2 * camera.position.distanceTo(controls.target) * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))) / Math.max(1, stage.height);
     thick = Math.min(1.8, Math.max(1, (4.2 * perPx) / 0.03));
-    for (const a of Object.values(A)) a.scale(1); // a pulse (pulseFocus) scales it again on the next frame
+    for (const a of Object.values(A)) a.scale(thick); // a pulse (pulseFocus) scales it again on the next frame
     if (!arrowsOn()) return;
     const { sol } = s;
     const kf = Math.min(FORCE_SCALE, ARROW_MAX / Math.max(sol.T, sol.W, 1));
@@ -458,14 +429,9 @@ export function createApp(root, options = {}) {
     if (sol.T > 0.01) {
       const first = lineA.distanceTo(PULLEY_C) <= lineB.distanceTo(PULLEY_C) ? lineA : lineB;
       tmp2.copy(ropeDir).negate();
-      A.H.set(
-        tmp
-          .copy(first)
-          .addScaledVector(tmp2, 0.06)
-          .add(new THREE.Vector3(0, 0.0, 0.22)),
-        tmp2,
-        sol.T * kf,
-      );
+      tmp.copy(first).addScaledVector(tmp2, 0.06);
+      tmp.z += 0.22; // in front of his fists, so nothing hides it
+      A.H.set(tmp, tmp2, sol.T * kf);
     }
   }
   const PULLEY_C = new THREE.Vector3(PULLEY.x, PULLEY.y, PULLEY.z);
@@ -474,7 +440,7 @@ export function createApp(root, options = {}) {
   function pulseFocus() {
     const k = s.focus ? 1 + 0.25 * Math.sin(((now() - s.focusAt) / 1000) * Math.PI * 4) : 1;
     const map = { T: [A.T, A.H], W: [A.W], a: [A.a, A.F], M: [] };
-    for (const [key, list] of Object.entries(map)) for (const a of list) a.scale(s.focus === key ? k : 1);
+    for (const [key, list] of Object.entries(map)) for (const a of list) a.scale(thick, s.focus === key ? k : 1);
     bucket.root.scale.setScalar(s.focus === 'M' ? k * 0.97 + 0.03 : 1);
     stage.invalidate();
   }
@@ -500,17 +466,6 @@ export function createApp(root, options = {}) {
     return `${head} ${res}`;
   }
 
-  /** What the bucket does, in words (during and after the run). */
-  function outcomeHtml() {
-    const { a } = s.sol;
-    const dir = Math.abs(a) < 1e-9 ? 'still' : a > 0 ? 'up' : 'down';
-    if (s.phase === 'done') {
-      const end = bucketAt(a, runSeconds(a)).end;
-      return t(end === 'top' ? 'out_top' : end === 'water' ? 'out_water' : 'out_still', { a: N(signed(a)) });
-    }
-    return t(`out_run_${dir}`);
-  }
-
   /** The rule: one idea at a time, growing with what the student has found; the book's words. */
   function ruleHtml() {
     const { a } = s.sol;
@@ -522,7 +477,6 @@ export function createApp(root, options = {}) {
     return t('rule_one_rope');
   }
 
-  let lastNote = '';
   function refresh() {
     sheet.choose(s.custom ? null : s.id);
     for (const id of IDS) sheet.result(id, found(id) ? t('res_a', { a: N(signed(s.results[id])) }) : '');
@@ -547,30 +501,21 @@ export function createApp(root, options = {}) {
       if (s.phase === 'ready' && s.hold == null) action.show('run');
       else action.hide('run');
     }
-    const text = stage.width < 480 ? t('note_body_short', { k: SLOW }) : `<b>${t('note_head')}</b> <span>${t('note_body', { k: SLOW })}</span>`;
-    if (text !== lastNote) {
-      note.innerHTML = text;
-      lastNote = text;
-    }
-    sign.innerHTML = t('sign');
-    scaleNote.textContent = arrowsOn() && stage.width >= 600 ? t('note_scale') : '';
     speedChip();
     syncLabels();
     stage.invalidate();
   }
 
-  /** On a chip at the bottom: what the bucket does, its velocity (it grows by a each second) and the time. */
+  /** On a chip at the bottom: the bucket's velocity (it grows by a each second) and the time, during and after a run. */
   let lastSpeed = '';
   function speedChip() {
     let html = '';
-    if (stage.height < 240)
-      html = ''; // a very short picture: the labels need the room
-    else if (s.mode === 'explore' && moving()) {
+    if (stage.height >= 240 && s.mode === 'explore' && (moving() || s.phase === 'done')) {
       const w = where();
       const v = Math.abs(w.v);
-      const arrow = v < 0.005 ? '' : w.v > 0 ? ' ↑' : ' ↓';
-      html = Math.abs(s.sol.a) < 1e-9 ? outcomeHtml() : t('speed', { v: v.toFixed(1), dir: arrow, t: runTime().toFixed(1) });
-    } else if (s.mode === 'explore' && s.phase === 'done') html = outcomeHtml();
+      const arrow = v < 0.005 ? '' : `${NBSP}${w.v > 0 ? '↑' : '↓'}`;
+      html = t('speed', { v: v.toFixed(1), dir: arrow, t: runTime().toFixed(1), k: SLOW });
+    }
     if (html !== lastSpeed) {
       speed.innerHTML = html;
       lastSpeed = html;
@@ -597,22 +542,32 @@ export function createApp(root, options = {}) {
     }
     return list;
   }
-  const corners = Array.from({ length: 8 }, () => new THREE.Vector3());
+  const corner = new THREE.Vector3();
   function screenBox(b3) {
     if (b3.isEmpty()) return null;
-    let i = 0;
+    let left = Number.POSITIVE_INFINITY;
+    let top = Number.POSITIVE_INFINITY;
+    let right = Number.NEGATIVE_INFINITY;
+    let bottom = Number.NEGATIVE_INFINITY;
     for (const x of [b3.min.x, b3.max.x])
-      for (const y of [b3.min.y, b3.max.y]) for (const z of [b3.min.z, b3.max.z]) corners[i++].set(x, y, z).project(camera);
-    const xs = corners.map((c) => (c.x * 0.5 + 0.5) * stage.width);
-    const ys = corners.map((c) => (-c.y * 0.5 + 0.5) * stage.height);
-    return { left: Math.min(...xs), top: Math.min(...ys), right: Math.max(...xs), bottom: Math.max(...ys) };
+      for (const y of [b3.min.y, b3.max.y])
+        for (const z of [b3.min.z, b3.max.z]) {
+          corner.set(x, y, z).project(camera);
+          const sx = (corner.x * 0.5 + 0.5) * stage.width;
+          const sy = (-corner.y * 0.5 + 0.5) * stage.height;
+          left = Math.min(left, sx);
+          right = Math.max(right, sx);
+          top = Math.min(top, sy);
+          bottom = Math.max(bottom, sy);
+        }
+    return { left, top, right, bottom };
   }
   /** The bucket and the man on the screen (labels keep off them). */
   const bodyBoxes = () => [screenBox(bucket.box()), screenBox(man.box())].filter(Boolean);
   const anno = createAnnotations({
     stage,
     layer: ui.annoLayer,
-    avoid: [ui.corner, ui.hint, notes, speed, scaleNote, arrowBoxes, () => action?.box(), () => action?.ringBox()],
+    avoid: [ui.corner, ui.hint, speed, arrowBoxes, () => action?.box(), () => action?.ringBox()],
   });
   const spot = (dx, dy) => ({ dx, dy });
   const RIGHT_OF = [spot(14, 0), spot(14, 18), spot(14, -18), spot(14, 36), spot(14, -36)];
@@ -763,7 +718,7 @@ export function createApp(root, options = {}) {
     label: 'act_hold',
     target: () => bucket.box(),
     pad: 8,
-    avoid: [ui.corner, ui.hint, notes, speed, scaleNote, () => anno.boxes()],
+    avoid: [ui.corner, ui.hint, speed, () => anno.boxes()],
     pulse: o.coach,
     onAct: () => {
       audio.unlock();
@@ -1057,11 +1012,13 @@ export function createApp(root, options = {}) {
     refresh();
     emitChange();
   }
+  let focusTimer = 0;
   function focusTerm(k) {
     s.focus = k;
     s.focusAt = now();
     for (const b of eq.querySelectorAll('[data-term]')) b.classList.toggle('on', /** @type {HTMLElement} */ (b).dataset.term === k);
-    setTimeout(() => {
+    clearTimeout(focusTimer);
+    focusTimer = setTimeout(() => {
       for (const b of eq.querySelectorAll('[data-term]')) b.classList.remove('on');
     }, 1600);
     if (!arrowsOn() && k !== 'M') showHint(t('hint_arrows'), { duration: 2400 });

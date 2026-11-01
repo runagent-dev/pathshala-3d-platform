@@ -5,36 +5,31 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { textMesh } from '@shared/student/materials.js';
 import { TABLE } from './motion.js';
-
-/** A light, cool tablecloth with a faint check (made here, no image file), so the card, the coin and the hand stand out. */
-function clothTexture() {
-  const c = document.createElement('canvas');
-  c.width = c.height = 64;
-  const ctx = c.getContext('2d');
-  ctx.fillStyle = '#e6edf3';
-  ctx.fillRect(0, 0, 64, 64);
-  ctx.fillStyle = 'rgba(120, 150, 180, 0.16)';
-  ctx.fillRect(0, 0, 64, 10);
-  ctx.fillRect(0, 0, 10, 64);
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-  tex.repeat.set(18, 10);
-  return tex;
-}
+import { tableTexture, wallTexture } from './textures.js';
 
 export function createTable({ t }) {
   const { glass: G, card: C, coin: K } = TABLE;
   const root = new THREE.Group();
   root.name = 'CoinAndCard';
 
-  // the table, under a light tablecloth
-  const cloth = new THREE.MeshStandardMaterial({ name: 'Tablecloth', map: clothTexture(), roughness: 0.95 });
-  const board = new THREE.Mesh(new RoundedBoxGeometry(0.9, 0.03, 0.5, 2, 0.006), cloth);
+  // a wooden table top (the card, the coin and the glass stand out on its warm brown), against a plastered wall
+  const woodMap = tableTexture();
+  woodMap.repeat.set(1.4 / 0.5, 0.8 / 0.5);
+  const wood = new THREE.MeshStandardMaterial({ name: 'TableTop', map: woodMap, roughness: 0.6 });
+  const board = new THREE.Mesh(new RoundedBoxGeometry(1.4, 0.03, 0.8, 2, 0.006), wood);
   board.name = 'Table';
-  board.position.set(0.18, -0.015, 0.1);
+  board.position.set(0.18, -0.015, 0.2);
   board.receiveShadow = true;
   root.add(board);
+  const wall = new THREE.Mesh(
+    new THREE.PlaneGeometry(2.4, 1.2),
+    new THREE.MeshStandardMaterial({ name: 'Wall', map: wallTexture(), roughness: 0.95 }),
+  );
+  wall.name = 'Wall';
+  wall.rotation.y = Math.PI; // it faces the camera (which looks along +z)
+  wall.position.set(0.18, 0.5, 0.62);
+  wall.userData.noExport = true;
+  root.add(wall);
 
   // the glass: one turned outline (outside, rim, inside, thick base), see-through
   const r0 = G.r - 0.004;
@@ -89,7 +84,7 @@ export function createTable({ t }) {
   root.add(coin);
 
   // the hand that flicks the card, coming in from the right of the picture: a fist with the forefinger out, and a
-  // white shirt cuff (so it reads as a hand on the light cloth)
+  // white shirt cuff (so it reads as a hand against the wooden table)
   const skin = new THREE.MeshStandardMaterial({ name: 'Skin', color: 0xa86f47, roughness: 0.6 });
   const hand = new THREE.Group();
   hand.name = 'Hand';

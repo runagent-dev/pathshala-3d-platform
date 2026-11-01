@@ -11,7 +11,7 @@
 // surroundings.js.
 // +x to the right, +y up, the camera looks from +z; the house's front wall is the plane z = 0, the ground y = 0.
 import * as THREE from 'three';
-import { cable, parts, pipeRun, rod } from './build.js';
+import { bake, cable, merged, parts, pipeRun, rod, tint } from './build.js';
 import { H } from './power.js';
 import { createSurroundings } from './surroundings.js';
 import { TANK } from './tank.js';
@@ -24,7 +24,7 @@ import {
   plasterTexture,
   seeded,
   wheelTexture,
-  windowTexture,
+  windowAtlas,
 } from './textures.js';
 
 export const ROOF = H - TANK.FLOOR; // m: the roof slab's top (the tank stands on it, its floor at h = H)
@@ -177,11 +177,11 @@ export function createScene({ pumps, tanks }) {
   house.add(rain.mesh(greyPvc, 'RainPipes'));
 
   // ── windows: casements behind glass, an iron grill, a surround, a sill and a sunshade ──
+  // the three windows and the stair room's drawn in one texture (one material for all of them)
+  const windows = windowAtlas([0, 1, 2, 4]);
+  const windowMat = new THREE.MeshStandardMaterial({ name: 'Windows', map: windows.texture, roughness: 0.35, metalness: 0.1 });
   WINDOWS.forEach((wx, i) => {
-    const win = new THREE.Mesh(
-      new THREE.PlaneGeometry(1.2, 1.2),
-      new THREE.MeshStandardMaterial({ map: windowTexture(i), roughness: 0.35, metalness: 0.1 }),
-    );
+    const win = new THREE.Mesh(windows.uv(i, new THREE.PlaneGeometry(1.2, 1.2)), windowMat);
     win.position.set(wx, 1.45, 0.006);
     house.add(win);
     const surround = parts();
@@ -315,12 +315,15 @@ export function createScene({ pumps, tanks }) {
   const bulbHit = new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 6), new THREE.MeshBasicMaterial({ visible: false }));
   bulbHit.userData.noExport = true;
   bulbGroup.add(bulbHit);
+  let bulbOn = null;
   function setBulb(on) {
+    if (on === bulbOn) return;
+    bulbOn = on;
     glass.emissive.set(on ? '#ffd27a' : glassOff.emissive);
     glass.emissiveIntensity = on ? 2.2 : 1; // (1 with a black emissive: no glow, and a clean export)
     glass.color.set(on ? '#fff6dc' : glassOff.color);
     glow.visible = on;
-    bulbLight.intensity = on ? 7 : 0;
+    bulbLight.intensity = on ? 2.4 : 0; // a warm pool on the wall and the door, in daylight (not a floodlight)
   }
 
   // ── the hatch of the underground tank ─────────────────────────────────────
@@ -502,6 +505,7 @@ export function createScene({ pumps, tanks }) {
   elec.add(board);
   const rockers = {};
   const lamps = {};
+  const lampMeshes = [];
   for (const [id, dx] of /** @type {const} */ ([
     ['small', -0.07],
     ['big', 0.07],
@@ -518,6 +522,7 @@ export function createScene({ pumps, tanks }) {
     lamp.position.set(BOARD.x + dx, BOARD.y + 0.065, 0.044);
     elec.add(lamp);
     lamps[id] = lampMat;
+    lampMeshes.push(lamp);
   }
   // from the board down to the bottom of the wall, along it to each pump, a junction box, a flexible cable
   conduit.push(rod(new THREE.Vector3(BOARD.x, BOARD.y - 0.11, 0.02), new THREE.Vector3(BOARD.x, JUNCTION_Y, 0.02), 0.011, 8));
@@ -552,7 +557,10 @@ export function createScene({ pumps, tanks }) {
   elec.add(conduit.mesh(new THREE.MeshStandardMaterial({ color: '#e9ebe8', roughness: 0.5 }), 'Conduit'));
   elec.add(cables.mesh(pvcBlack, 'Cables'));
   elec.add(clips.mesh(boxMat, 'Clips'));
+  const switched = {};
   function switches(id, on) {
+    if (switched[id] === on) return;
+    switched[id] = on;
     rockers[id].rotation.x = on ? -0.3 : 0.3;
     lamps[id].emissive.set(on ? '#ff4d2e' : '#000000');
     lamps[id].emissiveIntensity = on ? 2 : 1;
@@ -581,7 +589,7 @@ export function createScene({ pumps, tanks }) {
   );
   sDoor.position.set(-0.5, 0.9, 1.21);
   stair.add(sDoor);
-  const sWin = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.5), new THREE.MeshStandardMaterial({ map: windowTexture(4), roughness: 0.35 }));
+  const sWin = new THREE.Mesh(windows.uv(3, new THREE.PlaneGeometry(0.5, 0.5)), windowMat);
   sWin.position.set(0.55, 1.3, 1.205);
   stair.add(sWin);
   const dishMat = new THREE.MeshStandardMaterial({ color: '#e9ecef', roughness: 0.4, side: THREE.DoubleSide });
@@ -612,11 +620,9 @@ export function createScene({ pumps, tanks }) {
     ['#e8590c', 0.4, 0.5],
   ];
   let cz = lz0 + 0.5;
+  const clothMat = new THREE.MeshStandardMaterial({ name: 'Washing', roughness: 0.85, side: THREE.DoubleSide, vertexColors: true });
   for (const [c, w, h] of clothes) {
-    const cloth = new THREE.Mesh(
-      new THREE.PlaneGeometry(w, h, 4, 1),
-      new THREE.MeshStandardMaterial({ color: c, roughness: 0.85, side: THREE.DoubleSide }),
-    );
+    const cloth = new THREE.Mesh(tint(new THREE.PlaneGeometry(w, h, 4, 1), c), clothMat);
     const t = (cz + w / 2 - lz0) / (lz1 - lz0);
     cloth.position.set(lx, ly - 0.14 * Math.sin(Math.PI * t) - h / 2 - 0.01, cz + w / 2);
     cloth.rotation.y = Math.PI / 2 + 0.12 * Math.sin(cz * 3);
@@ -626,13 +632,12 @@ export function createScene({ pumps, tanks }) {
   near.add(line);
 
   // ── props in the courtyard: flower pots, the tubewell, a bicycle ──────────
-  const potMat = new THREE.MeshStandardMaterial({ color: '#b5522f', roughness: 0.85 });
-  const leafMat = new THREE.MeshStandardMaterial({ color: '#35562a', roughness: 0.8 });
-  const flowerMats = { marigold: '#f08c00', bougainvillea: '#d6336c', hibiscus: '#e03131', white: '#fff4e6' };
-  const pots = parts();
-  const leaves = parts();
+  // pots, leaves and flowers painted, one mesh for all of them
+  const flowerColors = { marigold: '#f08c00', bougainvillea: '#d6336c', hibiscus: '#e03131', white: '#fff4e6' };
+  const pots = parts('#b5522f');
+  const leaves = parts('#35562a');
   /** @type {Record<string, ReturnType<typeof parts>>} */
-  const flowers = Object.fromEntries(Object.keys(flowerMats).map((k) => [k, parts()]));
+  const flowers = Object.fromEntries(Object.entries(flowerColors).map(([k, c]) => [k, parts(c)]));
   const rand = seeded(23);
   for (const [px, pz, s, kind] of /** @type {const} */ ([
     [-5.05, 0.5, 1, 'bougainvillea'],
@@ -663,9 +668,7 @@ export function createScene({ pumps, tanks }) {
       );
     }
   }
-  near.add(pots.mesh(potMat, 'Pots'), leaves.mesh(leafMat, 'PotLeaves'));
-  for (const [k, p] of Object.entries(flowers))
-    if (p.count) near.add(p.mesh(new THREE.MeshStandardMaterial({ color: flowerMats[k], roughness: 0.6 }), `Flowers_${k}`));
+  near.add(merged([pots, leaves, ...Object.values(flowers)], new THREE.MeshStandardMaterial({ name: 'FlowerPots', roughness: 0.75 }), 'FlowerPots'));
 
   // the tubewell on its platform, a bucket and an aluminium pitcher under the spout
   const tw = new THREE.Group();
@@ -764,5 +767,32 @@ export function createScene({ pumps, tanks }) {
   near.add(bike);
 
   root.add(near, decor);
-  return { root, decor, bulb: { group: bulbGroup, mesh: bulbMesh, hit: bulbHit, set: setBulb }, yard, switches };
+
+  // shadows: the house, the courtyard and the plumbing take them; only what throws a shadow that is seen casts one (the pumps' and pipes'
+  // on the wall and the bricks, the grills' and sunshades' on the wall, the pots' and the bicycle's), not the flat
+  // or far things (the walls' faces, the windows, the door, the stair room and the washing at the back)
+  const flat = new Set([yard, apron, pit, shine, doormat]);
+  const quietMats = new Set([frontMat, sideMat, windowMat, doorMesh.material, parMat, roofTop, plinthMat, meterFace.material, clothMat]);
+  const quiet = (o) => isIn(o, stair) || isIn(o, line) || o.name === 'Sandals' || o === drop;
+  root.traverse((o) => {
+    const mesh = /** @type {THREE.Mesh} */ (o);
+    if (!mesh.isMesh || isIn(o, decor)) return;
+    const mat = /** @type {THREE.Material} */ (mesh.material);
+    const mats = Array.isArray(mesh.material) ? mesh.material : [mat];
+    // (soft VSM shadows draw every receiver into the shadow map too, so the props by the wall, which nothing
+    // shades, do not take them; the ground under them does)
+    mesh.receiveShadow = !isIn(o, near) || flat.has(mesh) || mat === wetMat;
+    mesh.castShadow = !flat.has(mesh) && !mats.some((x) => x.transparent || quietMats.has(x)) && !quiet(o);
+  });
+  // the still parts in one mesh per material (a few hundred parts become a few dozen draw calls, every detail kept);
+  // what moves or lights up stays apart: the bulb's glass, the switches' rockers and lamps
+  bake(bulbGroup, { keep: [bulbMesh], name: 'Bulb' });
+  bake(root, { keep: [bulbGroup, ...Object.values(rockers), ...lampMeshes], name: 'House' });
+  bake(near, { name: 'Props' });
+  return { root, decor, bulb: { group: bulbGroup, mesh: bulbMesh, hit: bulbHit, set: setBulb }, switches };
+}
+
+function isIn(o, group) {
+  for (let a = o; a; a = a.parent) if (a === group) return true;
+  return false;
 }

@@ -1,5 +1,6 @@
 // Detailed car and teaching markers. Coordinates and wheel dynamics match motion.js.
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { DOT_KEYS, DOT_NORMALS, DOTS, WHEEL_DOT } from './motion.js';
 import { buildVehicle } from './vehicle.js';
 export const DOT_R = 0.15;
@@ -64,6 +65,45 @@ export function createCar({ materials: M, colors, ghost = null }) {
       if (!w?.visible) return;
       w.parent.getWorldQuaternion(q).invert();
       w.quaternion.copy(q).multiply(camera.quaternion);
+    },
+  };
+}
+
+/**
+ * A faint copy of the car where it started: its body's outer shapes in one mesh and each wheel in one, all with
+ * `material`, made from the car's own merged geometries (nothing is built twice).
+ */
+export function createGhost(car, material) {
+  const root = new THREE.Group();
+  root.name = 'StartOutline';
+  const model = new THREE.Group();
+  model.position.copy(car.model.position);
+  root.add(model);
+  const outer = ['PearlWhitePaint', 'TintedGlass', 'SatinBlackTrim', 'RedAccent'];
+  const body = car.model.children.filter((m) => m instanceof THREE.Mesh && outer.includes(m.material.name) && m.visible);
+  model.add(new THREE.Mesh(mergeGeometries(body.map((m) => m.geometry)), material));
+  const hubs = {};
+  const wheelGeo = new Map();
+  for (const key of ['rl', 'rr', 'fl', 'fr']) {
+    const src = car.model.getObjectByName(`Wheel_${key}`);
+    const spin = src.getObjectByName(`WheelSpin_${key}`);
+    const side = Math.sign(src.position.z);
+    if (!wheelGeo.has(side)) {
+      const parts = spin.children.filter((m) => m instanceof THREE.Mesh && ['TyreRubber', 'MachinedAlloy'].includes(m.material.name));
+      wheelGeo.set(side, mergeGeometries(parts.map((m) => m.geometry)));
+    }
+    const hub = new THREE.Group();
+    hub.position.copy(src.position);
+    hub.add(new THREE.Mesh(wheelGeo.get(side), material));
+    model.add(hub);
+    hubs[key] = hub;
+  }
+  return {
+    root,
+    /** Steers the front wheels (as the car's at the start). */
+    setSteering(steering) {
+      hubs.fl.rotation.y = steering.left;
+      hubs.fr.rotation.y = steering.right;
     },
   };
 }

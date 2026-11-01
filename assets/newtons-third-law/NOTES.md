@@ -153,3 +153,45 @@ keep all apple-scene labels clear of the real apple, Earth, start-position ghost
 Tight frames hide optional scene cards instead of placing them over another arrow; the lesson's named force
 legend remains available. Tall studio frames reserve horizontal room for the cards. Physics and lesson flow
 are unchanged; both force arrows retain equal length and their solid/dashed distinction.
+
+## Polish pass (2026-11-01)
+Against `docs/agents/polish-pass.md`, version 1.2.0.
+- **Layout.** The figure's own rule that put the panel beside the 3D view from 720 px wide is gone: the panel is under
+  the view at every size but the kit's short-and-wide one (844×390, 640×400). On wide frames (800×500, 1280×800) the
+  sheet is two columns (the examples, the action and the result line on the left; the force-pair box and the rule on
+  the right; the apple's three lesson steps shown there only). পূর্ণ হিসাব is now a quiet button beside the action (an
+  icon only where the panel is narrow). The force-pair box has one height for both examples and every lesson step,
+  and the action row one height, so the 3D view never changes size (it used to be 335 px for the boat and 270 px for
+  the apple at 390×700). 390×700 gives the view 386 px (55 %, 48 % before).
+- **Text on the view.** The corner note ("অনুভূমিক ধাক্কার বল · জলের বাধা উপেক্ষিত · সময় ২ গুণ ধীর", "আকার ও দূরত্ব
+  প্রকৃত অনুপাতে নয় · সময় ৬ গুণ ধীর") moved into the box's small line in the panel. The boat's box now names both
+  forces like the apple's (solid → "নৌকা ঠেলে ছেলেকে ৩০০ N", dashed ← "ছেলে ঠেলে নৌকাকে ৩০০ N"). On the view only
+  short labels with values: "ছেলে ৫০ kg", "নৌকা ১৫০ kg", "আপেল m = ১ kg", "ছেলের ওপর বল / F = ৩০০ N", the gravity
+  pair as "আপেলের ওপর বল" and "পৃথিবীর ওপর বল" (who pulls whom stays in the box's rows), "ছেলের বেগ" / "নৌকার বেগ"
+  (was "গতি", with arrow characters). The force labels are placed before the part names, so on a phone they find
+  room first (at 390×700 both boat force labels now show; before, neither did).
+- **Setting and arrows.** The boat no longer floats on a flat blue gradient: a river ghat on a clear morning, with a
+  sky dome (deep blue to a warm haze), a far mud bank with a green fringe and footpath, seven village houses under tin
+  and thatch, round trees and betel-nut palms in the haze, a moored boat and a sail boat; the water is calm and light
+  in the distance and deeper with small waves in front. The apple and Earth have stars (two sizes, slightly tinted) and
+  a faint Milky Way band behind them. Every force arrow is its colour inside a dark edge inside a white halo, and the
+  outline follows each dash and the head. The velocity arrows are white inside a navy edge (the chapter's blue would
+  vanish over the river; cyan did nearly), their labels navy on white. Labels are solid white chips.
+- **Smooth.** The boy is five meshes instead of about 27 (the upper body one vertex-coloured mesh; limbs, hands and hips
+  two instanced meshes; two sneakers), with exactly the same shapes; the boat's hull and seats, rim and strakes, floor
+  and footboard are three meshes, the jetty two, the wake one; the scenery is one material for the banks and three
+  instanced tree meshes. Only the boat and the boy cast shadows, onto the water, the boat and the jetty; the sun comes
+  from the left (the shadows fall in view, beside the boat and on the jetty, not behind them) and leads the light at
+  the river, so they read; PCF 1024 on a shadow box fitted round the whole jump, with `updateProjectionMatrix()` (the
+  box was the default 10 × 10 before). Earth 64 × 48 segments (was 96 × 64). Nothing is allocated per frame: arrow
+  starts, label points and the gravity cards' anchors reuse vectors, labels are placed once and later only get new
+  words, the panel's corner note is gone, and the arrows' colours are set only when the example changes.
+- **Bugs.** The fall trail and the R guide made a new GPU buffer every frame (`computeLineDistances`), now updated in
+  place; the trail could be culled once it grew (its bounds were the first, empty ones); labels were given their spots
+  again every frame, so they could jump between spots; the 3D view changed height between the boat and the apple; the
+  boat's force labels never showed on a phone.
+- **Numbers** (headless Chromium, software GL, shadows on, 390×700 / 844×390, measured back to back with main on a
+  busy machine): draw calls avg 167 / max 196 → 41–61 / 70; triangles max 64k → 81k–114k (the new scenery and the
+  stars); texture memory 14.3 MB (largest 1024 px) unchanged; frames drawn while idle 0–0.3/s either way; time to ready
+  0.85–2.5 s before and 1.2–3.6 s after (noisy; a few more shaders to compile); text on the 3D view 62 characters in
+  3 boxes → 21 in 2 at rest.

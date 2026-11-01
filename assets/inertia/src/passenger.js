@@ -4,6 +4,7 @@
 // middle of the soles, under the ankles; the legs are a little apart (±z), the arms at the shoulders' sides.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { mergeStatic } from './merge.js';
 import { SEG, skeleton } from './motion.js';
 
 const Y = new THREE.Vector3(0, 1, 0);
@@ -112,6 +113,9 @@ export function createPassenger() {
     bag.add(strap);
   }
   root.add(bag);
+  // the head's and the bag's parts never move against each other: one mesh per material each
+  mergeStatic(head, { prefix: 'Head' });
+  mergeStatic(bag, { prefix: 'Bag' });
 
   // a big invisible box round the body: a tap on the passenger plays the event too
   const hit = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.9, 0.7), new THREE.MeshBasicMaterial({ visible: false }));

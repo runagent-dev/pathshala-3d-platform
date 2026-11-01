@@ -136,7 +136,7 @@ export function createApp(root, options = {}) {
         </span>
       </div>
       <div class="pl-law" role="group" aria-label="${t('law_label')}">
-        ${term('P', t('s_P'), 'c-P')}<span class="pl-op">=</span><span class="pl-frac">${term('F1', t('s_F1'), 'c-F')}${term('A1', t('s_A1'), 'c-A')}</span><span class="pl-op">=</span><span class="pl-frac">${term('F2', t('s_F2'), 'c-F')}${term('A2', t('s_A2'), 'c-A')}</span>
+        ${term('P', t('s_P'), 'c-P')}<span class="pl-op">=</span><span class="pl-frac">${term('F1', t('s_F1'), 'c-F')}<span class="pl-slash">/</span>${term('A1', t('s_A1'), 'c-A')}</span><span class="pl-op">=</span><span class="pl-frac">${term('F2', t('s_F2'), 'c-F')}<span class="pl-slash">/</span>${term('A2', t('s_A2'), 'c-A')}</span>
       </div>
     </div>
     <div class="pl-sums">
@@ -145,16 +145,6 @@ export function createApp(root, options = {}) {
       <div class="pl-sum pl-w" data-sum="W"></div>
     </div>`;
   $('.pvc-act-row').after(eq);
-
-  // notes on the stage: the cut and the scale (top left; the buttons are top right), what the arrows mean (bottom)
-  const notes = document.createElement('div');
-  notes.className = 'pl-notes';
-  const cutNote = document.createElement('div');
-  cutNote.className = 'pl-note';
-  notes.append(cutNote);
-  const arrowNote = document.createElement('div');
-  arrowNote.className = 'pl-note pl-note-low';
-  ui.stage.append(notes, arrowNote);
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 30, near: 0.004, far: 60, environment: 'studio-light' });
@@ -166,6 +156,8 @@ export function createApp(root, options = {}) {
   controls.enableRotate = false;
   controls.minPolarAngle = 0.4;
   controls.maxPolarAngle = Math.PI * 0.52;
+  controls.minAzimuthAngle = -1.0; // turning stays in front of the workshop's wall
+  controls.maxAzimuthAngle = 1.1;
   if (o.bg !== 'transparent') scene.background = new THREE.Color('#0d5966');
   scene.add(new THREE.HemisphereLight('#fff1d6', '#3a4a5c', 0.85));
   const sun = new THREE.DirectionalLight('#ffe7c4', 2.0);
@@ -180,13 +172,49 @@ export function createApp(root, options = {}) {
     stage.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     sun.castShadow = true;
     sun.shadow.mapSize.set(1024, 1024);
-    Object.assign(sun.shadow.camera, { left: -2, right: 2, top: 2, bottom: -1, near: 1, far: 9 });
+    sun.shadow.radius = 3;
     sun.shadow.bias = -0.0006;
     sun.shadow.normalBias = 0.01;
   }
   if (o.bg !== 'transparent') scene.add(createGarage().root);
   const lift = createLift({ ratios: RATIOS, num: N });
   scene.add(lift.root);
+  if (sun.castShadow) fitShadow();
+
+  /**
+   * The sun's shadow box fitted round what casts: the lift with the car at its highest (the workshop's props have soft
+   * contact shadows of their own). Its depth reaches the wall and the floor behind, where the shadows fall.
+   */
+  function fitShadow() {
+    const cam = sun.shadow.camera;
+    cam.position.copy(sun.position);
+    cam.lookAt(sun.target.position);
+    cam.updateMatrixWorld(true);
+    const inv = cam.matrixWorldInverse.copy(cam.matrixWorld).invert();
+    const b = new THREE.Box3(
+      new THREE.Vector3(GEO.xS - 0.2, 0, -GEO.PLAT_D / 2),
+      new THREE.Vector3(GEO.xB + GEO.PLAT_W / 2 + 0.1, lift.carTop() + 0.26, GEO.PLAT_D / 2),
+    );
+    const lo = new THREE.Vector3(Infinity, Infinity, Infinity);
+    const hi = new THREE.Vector3(-Infinity, -Infinity, -Infinity);
+    const p = new THREE.Vector3();
+    for (const x of [b.min.x, b.max.x])
+      for (const y of [b.min.y, b.max.y])
+        for (const z of [b.min.z, b.max.z]) {
+          p.set(x, y, z).applyMatrix4(inv);
+          lo.min(p);
+          hi.max(p);
+        }
+    Object.assign(cam, {
+      left: lo.x - 0.05,
+      right: hi.x + 0.05,
+      bottom: lo.y - 0.05,
+      top: hi.y + 0.05,
+      near: Math.max(0.1, -hi.z - 0.2),
+      far: -lo.z + 2.5,
+    });
+    cam.updateProjectionMatrix();
+  }
 
   // ── arrows and marks ────────────────────────────────────────────────────────
   // the forces: thick, flat colour in a white outline with a dark rim, drawn over the scenery
@@ -223,11 +251,12 @@ export function createApp(root, options = {}) {
   }
   const arrows = { F1: boldArrow('ForceF1', COLORS.F, 0.011), F2: boldArrow('ForceF2', COLORS.F, 0.016), W: boldArrow('WeightW', COLORS.W, 0.016) };
 
-  // the pressure: flat arrows on the cut face, all P_LEN long, tip on the wall or piston they press on
+  // the pressure: flat arrows on the cut face, all P_LEN long, tip on the wall or piston they press on; red inside a
+  // white outline with a thin dark rim, so they read on the golden oil and on the grey walls alike
   const pGeo = (() => {
     const head = 0.028;
-    const hw = 0.017;
-    const sw = 0.0065;
+    const hw = 0.018;
+    const sw = 0.0072;
     const core = new THREE.Shape([
       new THREE.Vector2(0, -sw),
       new THREE.Vector2(P_LEN - head, -sw),
@@ -247,28 +276,59 @@ export function createApp(root, options = {}) {
       new THREE.Vector2(P_LEN - head - p * 0.4, sw + p),
       new THREE.Vector2(-p, sw + p),
     ]);
-    // the arrow points along +x with its tip at the origin
-    return { core: new THREE.ShapeGeometry(core).translate(-P_LEN, 0, 0), pad: new THREE.ShapeGeometry(pad).translate(-P_LEN, 0, 0) };
+    const q = 0.0022;
+    const rim = new THREE.Shape([
+      new THREE.Vector2(-p - q, -sw - p - q),
+      new THREE.Vector2(P_LEN - head - (p + q) * 0.4, -sw - p - q),
+      new THREE.Vector2(P_LEN - head - (p + q) * 0.4, -hw - (p + q) * 1.6),
+      new THREE.Vector2(P_LEN + (p + q) * 1.9, 0),
+      new THREE.Vector2(P_LEN - head - (p + q) * 0.4, hw + (p + q) * 1.6),
+      new THREE.Vector2(P_LEN - head - (p + q) * 0.4, sw + p + q),
+      new THREE.Vector2(-p - q, sw + p + q),
+    ]);
+    // the arrow points along +x with its tip at the origin; the layers a little apart in z
+    const g = (shape, z) => new THREE.ShapeGeometry(shape).translate(-P_LEN, 0, z);
+    return { rim: g(rim, 0), pad: g(pad, 0.0003), core: g(core, 0.0006) };
   })();
-  const pCore = flat(COLORS.P, { depthTest: true });
-  const pPad = flat('#ffffff', { depthTest: true });
+  const P_COUNT = 18;
   const pArrows = new THREE.Group();
   pArrows.name = 'PressureArrows';
   pArrows.userData.noExport = true;
   scene.add(pArrows);
-  const P_COUNT = 18;
-  const pList = Array.from({ length: P_COUNT }, () => {
-    const g = new THREE.Group();
-    const pad = new THREE.Mesh(pGeo.pad, pPad);
-    const core = new THREE.Mesh(pGeo.core, pCore);
-    pad.renderOrder = 10;
-    core.renderOrder = 11;
-    core.position.z = 0.0004;
-    g.add(pad, core);
-    g.visible = false;
-    pArrows.add(g);
-    return g;
+  // one instanced mesh per layer: 3 draw calls for all 18 arrows
+  const pLayers = [
+    [pGeo.rim, '#1b1e24', 9],
+    [pGeo.pad, '#ffffff', 10],
+    [pGeo.core, COLORS.P, 11],
+  ].map(([geo, color, order]) => {
+    const m = new THREE.InstancedMesh(/** @type {THREE.BufferGeometry} */ (geo), flat(/** @type {string} */ (color), { depthTest: true }), P_COUNT);
+    m.renderOrder = /** @type {number} */ (order);
+    m.count = 0;
+    m.frustumCulled = false;
+    pArrows.add(m);
+    return m;
   });
+  let pShown = 0; // how many pressure arrows show (their places are in SPOT_POOL)
+  const SPOT_POOL = Array.from({ length: P_COUNT }, () => ({ x: 0, y: 0, a: 0 }));
+  const pM = new THREE.Matrix4();
+  const pQ = new THREE.Quaternion();
+  const pP = new THREE.Vector3();
+  const pS = new THREE.Vector3();
+  const Z_AXIS = new THREE.Vector3(0, 0, 1);
+  function placePressure(scale = 1) {
+    pS.setScalar(scale);
+    for (let i = 0; i < pShown; i++) {
+      const sp = SPOT_POOL[i];
+      pP.set(sp.x, sp.y, ZA);
+      pQ.setFromAxisAngle(Z_AXIS, sp.a);
+      pM.compose(pP, pQ, pS);
+      for (const m of pLayers) m.setMatrixAt(i, pM);
+    }
+    for (const m of pLayers) {
+      m.count = pShown;
+      m.instanceMatrix.needsUpdate = true;
+    }
+  }
 
   // the areas: a teal bar under each piston's face; the distances: blue brackets with end ticks
   const tealMat = flat(COLORS.A, { depthTest: true });
@@ -322,8 +382,15 @@ export function createApp(root, options = {}) {
   }
   const marks = { d1: bracket('StrokeD1'), d2: bracket('RiseD2') };
 
+  // the scene's moves (they redraw shadows too) and the camera's flights (only the view changes: controls.update()
+  // marks the frame for drawing, the shadows stay as they are)
   const tweener = createTweener();
   stage.addTicker((dt) => tweener.tick(dt));
+  const camTween = createTweener();
+  stage.addTicker((dt) => {
+    camTween.tick(dt);
+    return false;
+  });
   const audio = createAudio(o.sound);
   /** @type {ReturnType<typeof createAction> | null} */
   let action = null;
@@ -365,6 +432,7 @@ export function createApp(root, options = {}) {
   const tmpA = new THREE.Vector3();
   const tmpB = new THREE.Vector3();
   let pxSize = 0.004; // metres per screen pixel at the lift (set from the camera)
+  let pulseK = 1; // the pulse of a symbol's arrows (1 when none)
   function measure() {
     const d = camera.position.distanceTo(controls.target);
     pxSize = (2 * d * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))) / Math.max(1, stage.height);
@@ -376,7 +444,7 @@ export function createApp(root, options = {}) {
     stage.invalidate();
   }
 
-  /** Where each pressure arrow goes: { x, y, angle } of its tip, the angle it points in (radians from +x). */
+  /** Where each pressure arrow goes (into SPOT_POOL): its tip x, y and the angle it points in (radians from +x). */
   function pressureSpots() {
     const { xS, xB, r1, YB, PIPE } = GEO;
     const r2 = lift.r2;
@@ -388,30 +456,35 @@ export function createApp(root, options = {}) {
     const Dn = -Math.PI / 2;
     const pipe0 = xS + r1;
     const pipe1 = xB - r2;
-    const spots = [
-      // the small cylinder: both walls, its floor, under the piston
-      { x: xS - r1, y: PIPE + (y1 - PIPE) * 0.3, a: L },
-      { x: xS - r1, y: PIPE + (y1 - PIPE) * 0.72, a: L },
-      { x: xS + r1, y: PIPE + (y1 - PIPE) * 0.5, a: R },
-      { x: xS + r1, y: PIPE + (y1 - PIPE) * 0.9, a: R },
-      { x: xS - r1 * 0.2, y: YB, a: Dn },
-      { x: xS + r1 * 0.35, y: y1, a: U },
-      // the pipe: top and bottom
-      { x: pipe0 + (pipe1 - pipe0) * 0.3, y: PIPE, a: U },
-      { x: pipe0 + (pipe1 - pipe0) * 0.72, y: PIPE, a: U },
-      { x: pipe0 + (pipe1 - pipe0) * 0.12, y: YB, a: Dn },
-      { x: pipe0 + (pipe1 - pipe0) * 0.52, y: YB, a: Dn },
-      { x: pipe0 + (pipe1 - pipe0) * 0.9, y: YB, a: Dn },
-      // the lift cylinder: both walls, its floor, under the piston
-      { x: xB - r2, y: PIPE + (y2 - PIPE) * 0.55, a: L },
-      { x: xB + r2, y: YB + (y2 - YB) * 0.35, a: R },
-      { x: xB + r2, y: YB + (y2 - YB) * 0.78, a: R },
-      { x: xB - r2 * 0.35, y: YB, a: Dn },
-      { x: xB + r2 * 0.4, y: YB, a: Dn },
-      { x: xB - r2 * 0.55, y: y2, a: U },
-      { x: xB + r2 * 0.1, y: y2, a: U },
-    ];
-    return spots;
+    let n = 0;
+    const at = (x, y, a) => {
+      const sp = SPOT_POOL[n++];
+      sp.x = x;
+      sp.y = y;
+      sp.a = a;
+    };
+    // the small cylinder: both walls, its floor, under the piston
+    at(xS - r1, PIPE + (y1 - PIPE) * 0.3, L);
+    at(xS - r1, PIPE + (y1 - PIPE) * 0.72, L);
+    at(xS + r1, PIPE + (y1 - PIPE) * 0.5, R);
+    at(xS + r1, PIPE + (y1 - PIPE) * 0.9, R);
+    at(xS - r1 * 0.2, YB, Dn);
+    at(xS + r1 * 0.35, y1, U);
+    // the pipe: top and bottom
+    at(pipe0 + (pipe1 - pipe0) * 0.3, PIPE, U);
+    at(pipe0 + (pipe1 - pipe0) * 0.72, PIPE, U);
+    at(pipe0 + (pipe1 - pipe0) * 0.12, YB, Dn);
+    at(pipe0 + (pipe1 - pipe0) * 0.52, YB, Dn);
+    at(pipe0 + (pipe1 - pipe0) * 0.9, YB, Dn);
+    // the lift cylinder: both walls, its floor, under the piston
+    at(xB - r2, PIPE + (y2 - PIPE) * 0.55, L);
+    at(xB + r2, YB + (y2 - YB) * 0.35, R);
+    at(xB + r2, YB + (y2 - YB) * 0.78, R);
+    at(xB - r2 * 0.35, YB, Dn);
+    at(xB + r2 * 0.4, YB, Dn);
+    at(xB - r2 * 0.55, y2, U);
+    at(xB + r2 * 0.1, y2, U);
+    return n;
   }
 
   function layoutMarks() {
@@ -436,14 +509,8 @@ export function createApp(root, options = {}) {
     if (s.show.W) arrows.W.set(tmpA.set(ax, lift.platTop() + 0.008 + LW, GEO.CAR_W / 2 + 0.08), DOWN, LW);
     else arrows.W.hide();
     // the pressure arrows
-    const spots = on && s.show.P ? pressureSpots() : [];
-    pList.forEach((g, i) => {
-      const sp = spots[i];
-      g.visible = Boolean(sp);
-      if (!sp) return;
-      g.position.set(sp.x, sp.y, ZA);
-      g.rotation.z = sp.a;
-    });
+    pShown = on && s.show.P ? pressureSpots() : 0;
+    placePressure(s.focus === 'P' ? pulseK : 1);
     // the areas: under each piston's face
     const bw = Math.max(0.006, 3 * pxSize);
     areaBars.A1.visible = s.show.A;
@@ -579,6 +646,8 @@ export function createApp(root, options = {}) {
       emit('pump', snapshotSetup());
       emitChange();
       if (s.phase === 'top') showHint(t('hint_top'), { duration: 2600 });
+      // a jump (the book's set, the poster) never flew the camera up with the car: frame it now
+      if (jump && !s.userMovedCamera) flyTo(viewPose(), 0);
       return true;
     };
     if (jump) return Promise.resolve(finish());
@@ -673,7 +742,8 @@ export function createApp(root, options = {}) {
       if (token !== s.run) return;
     }
   }
-  const wait = (sec) => tweener.animate({ key: 'wait', duration: sec, onUpdate: () => {} }).finished;
+  // a pause is a timer, not a tween: a still camera draws no frames while the tour waits
+  const wait = (sec) => new Promise((done) => setTimeout(done, sec * 1000));
 
   // ── the panel ───────────────────────────────────────────────────────────────
   function plan() {
@@ -688,6 +758,9 @@ export function createApp(root, options = {}) {
       case 'push':
         return t('out_push');
       case 'pushed':
+        // the close looks say what they show (the red arrows' meaning, the tiny rise); the whole lift, the result
+        if (s.look === 'inside' && s.show.P) return t('out_inside');
+        if (s.look === 'rim') return t('out_rim', { D: D(s.last.D), d: D(s.last.d) });
         return t('out_up', { F2: f2, D: D(s.last.D), d: D(s.last.d) });
       case 'stuck':
         return t('out_stuck', { F2: f2, W: G(W) });
@@ -700,7 +773,7 @@ export function createApp(root, options = {}) {
       case 'lower':
         return t('out_lower');
       default:
-        return t('out_ready', { W: G(W) });
+        return t('out_ready');
     }
   }
 
@@ -732,7 +805,6 @@ export function createApp(root, options = {}) {
     cmp.innerHTML = `${up ? ICONS.check : ICONS.close}<span>${t('s_F2')} ${t(up ? 'cmp_more' : 'cmp_less')} ${t('s_W')}</span>`;
   }
 
-  let lastNotes = '';
   function refresh() {
     sheet.choose(String(s.ratio));
     sheet.outcome(outcomeHtml());
@@ -756,15 +828,6 @@ export function createApp(root, options = {}) {
     insideBtn.setAttribute('aria-label', t(insideKey));
     insideBtn.title = t(insideKey);
     insideBtn.querySelector('span').textContent = t(insideKey);
-    const key = `${t.lang}|${pressing()}|${s.phase}|${s.look}|${stage.width < 560}|${stage.height}`;
-    if (key !== lastNotes) {
-      cutNote.innerHTML = s.look === 'all' ? t('note_cut') : t('note_zoom');
-      let low = '';
-      if (s.phase === 'pump') low = t('note_fast');
-      else if (pressing() && s.show.P && s.look !== 'rim') low = s.look === 'all' && s.show.F2 ? t('note_scale') : t('note_arrows');
-      arrowNote.innerHTML = stage.height >= 230 ? low : '';
-      lastNotes = key;
-    }
     syncLabels();
     stage.invalidate();
   }
@@ -779,37 +842,53 @@ export function createApp(root, options = {}) {
     out.y = (-tmp.y * 0.5 + 0.5) * stage.height;
     return out;
   }
+  // the boxes the labels keep off, reused (the placement asks for them on every frame that moves)
+  const ARROW_LIST = [arrows.F1, arrows.F2, arrows.W];
+  const ARROW_BOXES = ARROW_LIST.map(() => ({ left: 0, top: 0, right: 0, bottom: 0 }));
+  const arrowOut = [];
   function arrowBoxes() {
-    const list = [];
-    for (const a of [arrows.F1, arrows.F2, arrows.W]) {
-      if (!a.root.visible) continue;
+    arrowOut.length = 0;
+    ARROW_LIST.forEach((a, i) => {
+      if (!a.root.visible) return;
       toScreen(a.root.position, S0);
       toScreen(a.tip, S1);
-      list.push({ left: Math.min(S0.x, S1.x) - 9, top: Math.min(S0.y, S1.y) - 9, right: Math.max(S0.x, S1.x) + 9, bottom: Math.max(S0.y, S1.y) + 9 });
-    }
-    return list;
+      const b = ARROW_BOXES[i];
+      b.left = Math.min(S0.x, S1.x) - 9;
+      b.top = Math.min(S0.y, S1.y) - 9;
+      b.right = Math.max(S0.x, S1.x) + 9;
+      b.bottom = Math.max(S0.y, S1.y) + 9;
+      arrowOut.push(b);
+    });
+    return arrowOut;
   }
-  const corners = Array.from({ length: 8 }, () => new THREE.Vector3());
+  const corner = new THREE.Vector3();
   const bbox = new THREE.Box3();
-  function screenBox(b3) {
-    let i = 0;
-    for (const x of [b3.min.x, b3.max.x])
-      for (const y of [b3.min.y, b3.max.y]) for (const z of [b3.min.z, b3.max.z]) corners[i++].set(x, y, z).project(camera);
-    const xs = corners.map((c) => (c.x * 0.5 + 0.5) * stage.width);
-    const ys = corners.map((c) => (-c.y * 0.5 + 0.5) * stage.height);
-    return { left: Math.min(...xs), top: Math.min(...ys), right: Math.max(...xs), bottom: Math.max(...ys) };
+  const HANDLE_BOX = { left: 0, top: 0, right: 0, bottom: 0 };
+  function screenBox(b3, out) {
+    out.left = out.top = Number.POSITIVE_INFINITY;
+    out.right = out.bottom = Number.NEGATIVE_INFINITY;
+    for (let i = 0; i < 8; i++) {
+      corner.set(i & 1 ? b3.max.x : b3.min.x, i & 2 ? b3.max.y : b3.min.y, i & 4 ? b3.max.z : b3.min.z).project(camera);
+      const x = (corner.x * 0.5 + 0.5) * stage.width;
+      const y = (-corner.y * 0.5 + 0.5) * stage.height;
+      out.left = Math.min(out.left, x);
+      out.right = Math.max(out.right, x);
+      out.top = Math.min(out.top, y);
+      out.bottom = Math.max(out.bottom, y);
+    }
+    return out;
   }
   /** The handle and the small cylinder's top on the screen (labels keep off them). */
   function handleBox() {
     const { xS } = GEO;
     bbox.min.set(xS - 0.14, s.y1 + GEO.P1H, -0.02);
     bbox.max.set(xS + 0.14, lift.handleY() + 0.03, 0.02);
-    return screenBox(bbox);
+    return screenBox(bbox, HANDLE_BOX);
   }
   const anno = createAnnotations({
     stage,
     layer: ui.annoLayer,
-    avoid: [ui.corner, ui.hint, notes, arrowNote, arrowBoxes, handleBox, () => action?.box(), () => action?.ringBox()],
+    avoid: [ui.corner, ui.hint, arrowBoxes, handleBox, () => action?.box(), () => action?.ringBox()],
   });
   const spot = (dx, dy) => ({ dx, dy });
   const LEFT = [spot(-14, 0), spot(-14, -18), spot(-14, 18), spot(-14, -34)];
@@ -952,7 +1031,7 @@ export function createApp(root, options = {}) {
     const p0 = camera.position.clone();
     const t0 = controls.target.clone();
     if (!duration) {
-      tweener.cancel('camera');
+      camTween.cancel('camera');
       camera.position.copy(position);
       controls.target.copy(aim);
       controls.update();
@@ -965,7 +1044,7 @@ export function createApp(root, options = {}) {
     const d1 = position.distanceTo(aim);
     const dir0 = p0.clone().sub(t0).normalize();
     const dir1 = position.clone().sub(aim).normalize();
-    return tweener
+    return camTween
       .animate({
         key: 'camera',
         duration,
@@ -976,9 +1055,7 @@ export function createApp(root, options = {}) {
           controls.target.lerpVectors(t0, aim, kk);
           tmpB.copy(dir0).lerp(dir1, k).normalize();
           camera.position.copy(controls.target).addScaledVector(tmpB, d);
-          controls.update();
-          layoutMarks();
-          stage.invalidate();
+          controls.update(); // a 'change': the frame is drawn (the marks follow in its listener)
         },
       })
       .finished.then((done) => {
@@ -989,10 +1066,7 @@ export function createApp(root, options = {}) {
   /** Where the camera looks: the whole lift, the oil close up, or the scale on the lift cylinder. */
   function setLook(look, { animate = true, tour: fromTour = false } = {}) {
     if (!LOOKS.includes(look)) return Promise.resolve(false);
-    if (!fromTour) {
-      s.run += busy() ? 0 : 1; // a word the student taps stops the tour (never a push half way)
-      tweener.cancel('wait');
-    }
+    if (!fromTour) s.run += busy() ? 0 : 1; // a word the student taps stops the tour (never a push half way)
     s.look = look;
     s.userMovedCamera = false;
     refresh();
@@ -1011,7 +1085,7 @@ export function createApp(root, options = {}) {
   }
   controls.addEventListener('start', () => {
     s.userMovedCamera = true;
-    tweener.cancel('camera');
+    camTween.cancel('camera');
   });
   controls.addEventListener('change', () => {
     layoutMarks();
@@ -1048,7 +1122,7 @@ export function createApp(root, options = {}) {
       return handleBox3;
     },
     pad: 6,
-    avoid: [ui.corner, ui.hint, notes, arrowNote, () => anno.boxes()],
+    avoid: [ui.corner, ui.hint, () => anno.boxes()],
     pulse: o.coach,
     onAct: () => {
       audio.unlock();
@@ -1114,7 +1188,8 @@ export function createApp(root, options = {}) {
     const k = on ? 1 + 0.35 * Math.sin(((now() - s.focusAt) / 1000) * Math.PI * 4) : 1;
     arrows.F1.root.scale.setScalar(s.focus === 'F1' ? k : 1);
     arrows.F2.root.scale.setScalar(s.focus === 'F2' ? k : 1);
-    for (const g of pList) g.scale.setScalar(s.focus === 'P' ? k : 1);
+    pulseK = k;
+    if (s.focus === 'P' || !on) placePressure(s.focus === 'P' ? k : 1);
     areaBars.A1.scale.y = Math.max(0.006, 3 * pxSize) * (s.focus === 'A1' ? 1 + 2 * (k - 0.65) : 1);
     areaBars.A2.scale.y = Math.max(0.006, 3 * pxSize) * (s.focus === 'A2' ? 1 + 2 * (k - 0.65) : 1);
     if (!on) {
@@ -1254,7 +1329,6 @@ export function createApp(root, options = {}) {
         learnSaved = { F1: s.F1, ratio: s.ratio, pressed: pressing(), look: s.look };
         s.mode = 'quiz';
         s.locked = true;
-        tweener.cancel('wait');
         hintOff();
         syncUI();
       },

@@ -4,11 +4,16 @@
 // height; the red button on the release box (on top of the scale) opens both shutters at once. Between the tubes a centimetre scale counts the
 // height fallen downward from the start (h, as the book writes it). Plus the marks of a fall: faint pictures of the
 // bodies every 0.1 s, a dashed line at each, and the speed arrows (বেগ). Colours carry meaning (style.css too).
+// The still parts are merged into one mesh per material (src/merge.js); the materials and the scale's face are the
+// figure's own (small canvases), not the kit's set of brushed-metal textures built for instruments.
 import * as THREE from 'three';
-import { textMesh } from '@shared/student/materials.js';
+import { FONT } from '@shared/student/materials.js';
+import { outlinedArrow } from './arrows.js';
 import { H, STEPS } from './fall.js';
+import { mergeStatic } from './merge.js';
 
-export const COLORS = { v: '#1c6fd9', h: '#d9480f', t: '#6741d9', ghost: '#7f8fa3', ghostEdge: '#4f5d6e' };
+/** The pictures are pale, so they read on the dark board behind the glass; their edges paler still. */
+export const COLORS = { v: '#1c6fd9', h: '#e8590c', t: '#6741d9', ghost: '#dfe5ec', ghostEdge: '#f4f7fa' };
 
 /** Tube centres at ±x; glass outer and inner radius; the felt pad's top (the floor of a fall). */
 export const TUBE = { x: 0.145, r: 0.08, rIn: 0.076, floor: 0.024, foot: 0.016 };
@@ -30,6 +35,8 @@ export const BASE = { w: 0.56, h: 0.036, d: 0.2 };
 /** The release box sits on top of the scale, between the tubes, wired to both shutters; its red button faces the student. */
 export const BOX = { w: 0.064, h: 0.03, d: 0.034, y: Y0 + 0.018 };
 export const BUTTON = { x: 0, y: BOX.y + BOX.h / 2, z: BOX.d / 2 };
+/** Where the vacuum pump's hose meets the valve on the empty tube's cap (the end of the valve's nozzle). */
+export const VALVE_NOZZLE = new THREE.Vector3(TUBE.x + 0.03, TOP + 0.014, -0.047);
 
 function rand(seed) {
   let s = seed >>> 0;
@@ -59,7 +66,7 @@ function pebbleGeometry(r, seed, { flat = 0.82, bump = 0.07, detail = 2 } = {}) 
 
 /** A crumpled ball of paper: an icosphere with sharp random dents, drawn flat-shaded so the creases show. */
 function crumpledGeometry(r, seed) {
-  const g = new THREE.IcosahedronGeometry(r, 1).toNonIndexed();
+  const g = new THREE.IcosahedronGeometry(r, 1); // a polyhedron is non-indexed: each face keeps its own corners
   const pos = g.attributes.position;
   const rnd = rand(seed);
   const jitter = new Map();
@@ -101,63 +108,118 @@ function paperTexture() {
   return t;
 }
 
-/** A 3D arrow (round shaft, cone head) pointing along `dir`; set(from, dir, length) places it. */
-export function createArrow({ color, radius = 0.0036, head = 0.017, headRadius = 0.0095, name = 'Arrow' }) {
-  const mat = new THREE.MeshStandardMaterial({
-    name: `${name}Material`,
-    color,
-    roughness: 0.45,
-    emissive: new THREE.Color(color).multiplyScalar(0.25),
-  });
-  const root = new THREE.Group();
-  root.name = name;
-  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, 1, 12).translate(0, 0.5, 0), mat);
-  const tip = new THREE.Mesh(new THREE.ConeGeometry(headRadius, head, 20).translate(0, head / 2, 0), mat);
-  root.add(shaft, tip);
-  root.visible = false;
-  const up = new THREE.Vector3(0, 1, 0);
-  const d = new THREE.Vector3();
-  return {
-    root,
-    set(from, dir, length) {
-      d.copy(dir).normalize();
-      root.position.copy(from);
-      root.quaternion.setFromUnitVectors(up, d);
-      const body = Math.max(0.0005, length - head);
-      shaft.scale.set(1, body, 1);
-      tip.position.y = body;
-      root.visible = length > 0.002;
-    },
-  };
+/** Light wood for the base, along x (repeats). */
+function woodTexture() {
+  const W = 256;
+  const H = 128;
+  const c = document.createElement('canvas');
+  c.width = W;
+  c.height = H;
+  const ctx = c.getContext('2d');
+  const r = rand(11);
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, '#be8049');
+  grad.addColorStop(1, '#ab6c3b');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+  for (let i = 0; i < 46; i++) {
+    const y0 = r() * H;
+    const amp = 2 + r() * 5;
+    const freq = 0.01 + r() * 0.02;
+    const phase = r() * 10;
+    ctx.strokeStyle = `rgba(${90 + r() * 30},${48 + r() * 20},22,${0.15 + r() * 0.3})`;
+    ctx.lineWidth = 0.8 + r() * 2;
+    ctx.beginPath();
+    for (let x = 0; x <= W; x += 4) {
+      const y = y0 + Math.sin(x * freq + phase) * amp + Math.sin(x * freq * 3.1) * amp * 0.25;
+      x ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+    }
+    ctx.stroke();
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.anisotropy = 8;
+  return t;
 }
 
-export function createApparatus({ materials: M, t }) {
+/**
+ * The scale's face in one picture: cream, the millimetre ticks, the numbers every 10 cm (0 at the release level,
+ * counting down) and the unit. x across the face (0 at its left edge), y in world metres from `bottom` to `top`.
+ */
+function scaleTexture({ width, top, bottom, N, unit }) {
+  const W = 128;
+  const Hpx = 1024;
+  const c = document.createElement('canvas');
+  c.width = W;
+  c.height = Hpx;
+  const ctx = c.getContext('2d');
+  const kx = W / width; // px per metre across
+  const ky = Hpx / (top - bottom); // px per metre down (the picture is stretched back on the face)
+  const py = (y) => (top - y) * ky;
+  ctx.fillStyle = '#fbfaf3';
+  ctx.fillRect(0, 0, W, Hpx);
+  ctx.fillStyle = '#1d2733';
+  const cm = Math.floor(H * 100 + 1e-6);
+  for (let i = 0; i <= cm; i++) {
+    const len = i % 10 === 0 ? 0.026 : i % 5 === 0 ? 0.017 : 0.01;
+    const th = i % 10 === 0 ? 0.0016 : 0.0011;
+    ctx.fillRect(W - len * kx, py(Y0 - i / 100) - (th * ky) / 2, len * kx, th * ky);
+  }
+  /** Text `size` m high, its left edge x m from the face's left edge, its middle at height y. */
+  const text = (s, x, y, size, weight, color) => {
+    ctx.save();
+    ctx.setTransform(kx / ky, 0, 0, 1, x * kx, py(y));
+    ctx.font = `${weight} ${Math.round(size * ky)}px ${FONT}`;
+    ctx.fillStyle = color;
+    ctx.textBaseline = 'middle';
+    ctx.fillText(s, 0, size * ky * 0.05);
+    ctx.restore();
+  };
+  for (let i = 0; i <= cm; i += 10) text(N(String(i)), 0.006, Y0 - i / 100, 0.03, 700, '#14171c');
+  text(unit, 0.006, TUBE.floor + 0.004, 0.018, 600, '#4b5766');
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 8;
+  return t;
+}
+
+export function createApparatus({ t }) {
   const root = new THREE.Group();
   root.name = 'FallingBodies';
   const N = t.num;
 
   // ── materials ─────────────────────────────────────────────────────────────
+  // polished steel and brass take their look from the room's reflections; the wood is a small canvas
+  const M = {
+    steel: new THREE.MeshStandardMaterial({ name: 'Steel', color: 0xd2d7dd, metalness: 1, roughness: 0.34 }),
+    brass: new THREE.MeshStandardMaterial({ name: 'Brass', color: 0xd7a94b, metalness: 1, roughness: 0.3 }),
+    wood: new THREE.MeshStandardMaterial({ name: 'Wood', map: woodTexture(), roughness: 0.62 }),
+  };
+  M.wood.map.repeat.set(2, 1);
   const glass = new THREE.MeshPhysicalMaterial({
     name: 'Glass',
-    color: 0xcfe8f7,
+    color: 0xd8eef9,
     metalness: 0,
     roughness: 0.06,
     transparent: true,
-    opacity: 0.2,
+    opacity: 0.1,
     depthWrite: false,
     side: THREE.DoubleSide,
   });
   const rimGlass = new THREE.MeshPhysicalMaterial({ name: 'GlassRim', color: 0xa9cde4, roughness: 0.1, transparent: true, opacity: 0.55 });
-  const felt = new THREE.MeshStandardMaterial({ name: 'Felt', color: 0x2f6b52, roughness: 1 });
-  const dark = new THREE.MeshStandardMaterial({ name: 'Housing', color: 0x2d3540, roughness: 0.55, metalness: 0.2 });
+  const felt = new THREE.MeshStandardMaterial({ name: 'Felt', color: 0x6e2a2a, roughness: 1 });
+  // the release box is pale enamel and its wires cream, so they show on the dark board behind them
+  const dark = new THREE.MeshStandardMaterial({ name: 'Housing', color: 0xb9c1cb, roughness: 0.45, metalness: 0.2 });
+  const wireMat = new THREE.MeshStandardMaterial({ name: 'Wire', color: 0xe9e1cc, roughness: 0.6 });
+  const lever = new THREE.MeshStandardMaterial({ name: 'Lever', color: 0x3a4250, roughness: 0.5, metalness: 0.3 });
   const red = new THREE.MeshStandardMaterial({ name: 'Button', color: 0xd63a2f, roughness: 0.35, emissive: 0x3a0804 });
   const stoneMat = new THREE.MeshStandardMaterial({ name: 'Stone', color: 0x8f877d, roughness: 0.92 });
   const paperMat = new THREE.MeshStandardMaterial({ name: 'Paper', map: paperTexture(), roughness: 0.9, side: THREE.DoubleSide });
   const paperEdge = new THREE.MeshStandardMaterial({ name: 'PaperEdge', color: 0xb9b3a3, roughness: 0.9 });
   const paperOutline = new THREE.LineBasicMaterial({ name: 'PaperOutline', color: 0x4a4436 });
   const crumpledMat = new THREE.MeshStandardMaterial({ name: 'CrumpledPaper', color: 0xe6dfc9, roughness: 0.85, flatShading: true });
-  const rulerFace = new THREE.MeshStandardMaterial({ name: 'Scale', color: 0xfbfaf3, roughness: 0.7 });
-  const rulerInk = new THREE.MeshBasicMaterial({ name: 'ScaleInk', color: 0x1d2733, toneMapped: false });
+  const rulerSide = new THREE.MeshStandardMaterial({ name: 'ScaleEdge', color: 0xe8e4d6, roughness: 0.7 });
 
   // ── the base ──────────────────────────────────────────────────────────────
   const base = new THREE.Mesh(new THREE.BoxGeometry(BASE.w, BASE.h, BASE.d), M.wood);
@@ -177,7 +239,7 @@ export function createApparatus({ materials: M, t }) {
   for (const side of [-1, 1]) {
     const a = new THREE.Vector3(side * (BOX.w / 2), BOX.y + 0.008, -0.006);
     const b = new THREE.Vector3(side * (TUBE.x - TUBE.r - 0.004), Y0 - 0.007, -0.006);
-    const wire = new THREE.Mesh(new THREE.CylinderGeometry(0.0016, 0.0016, a.distanceTo(b), 6), dark);
+    const wire = new THREE.Mesh(new THREE.CylinderGeometry(0.0018, 0.0018, a.distanceTo(b), 6), wireMat);
     wire.name = 'ReleaseWire';
     wire.position.copy(a).add(b).multiplyScalar(0.5);
     wire.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize());
@@ -221,10 +283,14 @@ export function createApparatus({ materials: M, t }) {
       const valve = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.022, 16), M.brass);
       valve.position.set(0.03, TOP + 0.017, -0.02);
       valve.name = 'Valve';
-      const lever = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.004, 0.006), dark);
-      lever.position.set(0.03, TOP + 0.03, -0.02);
-      lever.name = 'ValveLever';
-      g.add(cap, valve, lever);
+      const handle = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.004, 0.006), lever);
+      handle.position.set(0.03, TOP + 0.03, -0.02);
+      handle.name = 'ValveLever';
+      // the nozzle out of the back of the valve, where the pump's hose is pushed on
+      const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(0.0035, 0.0045, 0.022, 12).rotateX(Math.PI / 2), M.brass);
+      nozzle.position.set(VALVE_NOZZLE.x - TUBE.x, VALVE_NOZZLE.y, VALVE_NOZZLE.z + 0.011);
+      nozzle.name = 'ValveNozzle';
+      g.add(cap, valve, handle, nozzle);
     }
     const pad = new THREE.Mesh(new THREE.CylinderGeometry(TUBE.rIn - 0.002, TUBE.rIn - 0.002, 0.012, 40), felt);
     pad.position.y = TUBE.floor - 0.006;
@@ -270,7 +336,20 @@ export function createApparatus({ materials: M, t }) {
   ruler.name = 'Scale';
   const rulerTop = BOX.y;
   const rulerBottom = TUBE.floor - 0.012;
-  const board = new THREE.Mesh(new THREE.BoxGeometry(RULER.w, rulerTop - rulerBottom, 0.008), rulerFace);
+  // the face (+z) carries the ticks, the numbers and the unit in one picture; the edges are plain
+  const face = new THREE.MeshStandardMaterial({
+    name: 'Scale',
+    map: scaleTexture({ width: RULER.w, top: rulerTop, bottom: rulerBottom, N, unit: t('u_cm') }),
+    roughness: 0.7,
+  });
+  const board = new THREE.Mesh(new THREE.BoxGeometry(RULER.w, rulerTop - rulerBottom, 0.008), [
+    rulerSide,
+    rulerSide,
+    rulerSide,
+    rulerSide,
+    face,
+    rulerSide,
+  ]);
   board.position.set(0, (rulerTop + rulerBottom) / 2, 0);
   board.name = 'ScaleBoard';
   ruler.add(board);
@@ -278,25 +357,6 @@ export function createApparatus({ materials: M, t }) {
   frame.position.set(0, 0.006, 0);
   frame.name = 'ScaleFoot';
   ruler.add(frame);
-  const cm = Math.floor(H * 100 + 1e-6);
-  const ticks = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 0.0006), rulerInk, cm + 1);
-  const m4 = new THREE.Matrix4();
-  for (let i = 0; i <= cm; i++) {
-    const len = i % 10 === 0 ? 0.026 : i % 5 === 0 ? 0.017 : 0.01;
-    const th = i % 10 === 0 ? 0.0016 : 0.0011;
-    m4.compose(new THREE.Vector3(RULER.w / 2 - len / 2, Y0 - i / 100, 0.0043), new THREE.Quaternion(), new THREE.Vector3(len, th, 1));
-    ticks.setMatrixAt(i, m4);
-  }
-  ticks.name = 'ScaleTicks';
-  ruler.add(ticks);
-  for (let i = 0; i <= cm; i += 10) {
-    const label = textMesh(N(String(i)), 0.03, { weight: 700, align: 'left' });
-    label.position.set(-RULER.w / 2 + 0.005, Y0 - i / 100, 0.0045);
-    ruler.add(label);
-  }
-  const unit = textMesh(t('u_cm'), 0.018, { weight: 600, align: 'left', color: '#4b5766' });
-  unit.position.set(-RULER.w / 2 + 0.005, TUBE.floor + 0.004, 0.0045);
-  ruler.add(unit);
   root.add(ruler);
 
   // ── the bodies ────────────────────────────────────────────────────────────
@@ -374,10 +434,10 @@ export function createApparatus({ materials: M, t }) {
     color: COLORS.ghost,
     roughness: 0.6,
     transparent: true,
-    opacity: 0.38,
+    opacity: 0.42,
     depthWrite: false,
   });
-  const ghostLine = new THREE.LineBasicMaterial({ color: COLORS.ghostEdge, transparent: true, opacity: 0.85 });
+  const ghostLine = new THREE.LineBasicMaterial({ color: COLORS.ghostEdge, transparent: true, opacity: 0.9 });
   /** Faint pictures of the stone and the paper at 0, 0.1 and 0.2 s (at 0.3 s they are on the floor). */
   const ghosts = Array.from({ length: STEPS }, (_, i) => {
     const g = new THREE.Group();
@@ -411,7 +471,11 @@ export function createApparatus({ materials: M, t }) {
   const x1 = TUBE.x + TUBE.r + 0.012;
   const perLine = Math.ceil((x1 - x0) / (DASH + GAP));
   const lineMat = new THREE.MeshBasicMaterial({ name: 'PictureLine', color: COLORS.h, toneMapped: false });
-  const dashes = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 0.0024, 0.0024), lineMat, perLine * STEPS);
+  const dashes = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 0.003, 0.003), lineMat, perLine * STEPS);
+  const m4 = new THREE.Matrix4();
+  const dashAt = new THREE.Vector3();
+  const dashSize = new THREE.Vector3();
+  const noTurn = new THREE.Quaternion();
   dashes.count = 0;
   dashes.frustumCulled = false;
   dashes.name = 'PictureLines';
@@ -423,7 +487,7 @@ export function createApparatus({ materials: M, t }) {
       const y = Y0 - d + 0.0012;
       for (let x = x0; x < x1 - 1e-6; x += DASH + GAP) {
         const w = Math.min(DASH, x1 - x);
-        m4.compose(new THREE.Vector3(x + w / 2, y, 0.006), new THREE.Quaternion(), new THREE.Vector3(w, 1, 1));
+        m4.compose(dashAt.set(x + w / 2, y, 0.006), noTurn, dashSize.set(w, 1, 1));
         dashes.setMatrixAt(n++, m4);
       }
     }
@@ -433,7 +497,7 @@ export function createApparatus({ materials: M, t }) {
 
   // speed arrows: each ends at the height of its picture (the speed the bodies have as they get there)
   const arrows = Array.from({ length: STEPS }, (_, i) => {
-    const a = createArrow({ color: COLORS.v, name: `Speed${i + 1}` });
+    const a = outlinedArrow(`Speed${i + 1}`, COLORS.v, { radius: 0.0036, head: 0.017, headRadius: 0.0092, pad: 0.0021 });
     root.add(a.root);
     return a;
   });
@@ -442,15 +506,13 @@ export function createApparatus({ materials: M, t }) {
   function setArrow(i, d, v) {
     const len = ARROW.k * v;
     if (!(len > 0)) {
-      arrows[i].root.visible = false;
+      arrows[i].hide();
       return;
     }
     from.set(ARROW.x, Y0 - d + len, 0);
     arrows[i].set(from, down, len);
   }
-  const hideArrow = (i) => {
-    arrows[i].root.visible = false;
-  };
+  const hideArrow = (i) => arrows[i].hide();
 
   // ── things a finger can press (invisible, bigger than what you see) ───────
   const hitMat = new THREE.MeshBasicMaterial({ visible: false });
@@ -470,6 +532,33 @@ export function createApparatus({ materials: M, t }) {
   function pressButton(on) {
     button.position.z = buttonRest - (on ? 0.005 : 0);
   }
+
+  // the still parts (the base, the release box and its wires, the tubes' collars, caps, valve, pads and glass, the
+  // scale's foot) become one mesh per material; what moves, what is pressed and what is drawn over stays apart
+  const keep = [
+    button,
+    ruler,
+    dashes,
+    ...hits,
+    ...Object.values(tubes).flatMap((tb) => tb.leaves),
+    ...Object.values(bodies).flatMap((b) => [b.stone, b.paper]),
+    ...ghosts.map((g) => g.group),
+    ...arrows.map((a) => a.root),
+  ];
+  // shadows: what is seen to cast one (the base, the collars, the scale, the box, the bodies); not the glass, the
+  // wires, the pads or the marks of a fall
+  const casterMats = new Set([M.wood, M.steel, M.brass, dark, red, rulerSide]);
+  root.traverse((m) => {
+    if (m instanceof THREE.Mesh && !m.userData.noExport && casterMats.has(m.material)) m.castShadow = true;
+  });
+  for (const b of Object.values(bodies)) for (const o of [b.stone, ...b.flat.children, b.ball]) o.castShadow = true;
+  board.castShadow = true;
+  board.receiveShadow = true;
+  // and what is seen to receive one: the base and the pads (the bodies' shadows when they land)
+  root.traverse((m) => {
+    if (m instanceof THREE.Mesh && (m.material === M.wood || m.material === felt)) m.receiveShadow = true;
+  });
+  mergeStatic(root, { keep });
 
   const v3 = new THREE.Vector3();
   return {

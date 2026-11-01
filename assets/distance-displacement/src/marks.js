@@ -16,61 +16,65 @@ const STRIPES = [
   { pass: 2, from: 42, to: 64 },
 ];
 
-/** The ridden road. mark(from, to) adds a piece ridden (km); clear() empties it. */
+/** The ridden road. mark(from, to) adds a piece ridden (km); clear() empties it. One mesh for all four stripes. */
 export function createTrail() {
   const group = new THREE.Group();
   group.name = 'Trail (distance)';
   const material = new THREE.MeshBasicMaterial({ name: 'Distance', color: COLORS.distance, toneMapped: false, side: THREE.DoubleSide });
   // passes over each piece of road, going out (km growing) and coming back
   const passes = { out: new Uint8Array(LAST), back: new Uint8Array(LAST) };
-  const stripes = [];
+  const stripes = []; // { way, pass, base: its first vertex }
+  const pos = new Float32Array(4 * COUNT * 2 * 3);
   for (const way of ['out', 'back']) {
     // on the rider's left: −right going out, +right coming back
     const s = way === 'out' ? -1 : 1;
     for (const { pass, from, to } of STRIPES) {
-      const pos = new Float32Array(COUNT * 2 * 3);
+      const base = stripes.length * COUNT * 2;
       for (let i = 0; i < COUNT; i++) {
         for (const [k, f] of [from, to].entries()) {
-          const at = (2 * i + k) * 3;
+          const at = (base + 2 * i + k) * 3;
           pos[at] = FRAME.cx[i] + FRAME.rx[i] * s * f;
           pos[at + 1] = ROAD_Y + 1.5;
           pos[at + 2] = FRAME.cz[i] + FRAME.rz[i] * s * f;
         }
       }
-      const geo = new THREE.BufferGeometry();
-      geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-      const index = new THREE.BufferAttribute(new Uint16Array(LAST * 6), 1);
-      index.setUsage(THREE.DynamicDrawUsage);
-      geo.setIndex(index);
-      geo.setDrawRange(0, 0);
-      geo.computeBoundingSphere();
-      const mesh = new THREE.Mesh(geo, material);
-      mesh.name = `Trail ${way} ${pass}`;
-      mesh.frustumCulled = false;
-      mesh.visible = false;
-      group.add(mesh);
-      stripes.push({ way, pass, mesh, geo, index });
+      stripes.push({ way, pass, base });
     }
   }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const index = new THREE.BufferAttribute(new Uint32Array(4 * LAST * 6), 1);
+  index.setUsage(THREE.DynamicDrawUsage);
+  geo.setIndex(index);
+  geo.setDrawRange(0, 0);
+  geo.computeBoundingSphere();
+  const mesh = new THREE.Mesh(geo, material);
+  mesh.name = 'Trail';
+  mesh.frustumCulled = false;
+  mesh.visible = false;
+  group.add(mesh);
 
-  function rebuild(stripe) {
-    const count = passes[stripe.way];
-    const a = stripe.index.array;
+  /** Write the index of every piece ridden, each stripe in turn. */
+  function rebuild() {
+    const a = index.array;
     let n = 0;
-    for (let i = 0; i < LAST; i++) {
-      if (count[i] < stripe.pass) continue;
-      const p = 2 * i;
-      a[n++] = p;
-      a[n++] = p + 1;
-      a[n++] = p + 2;
-      a[n++] = p + 1;
-      a[n++] = p + 3;
-      a[n++] = p + 2;
+    for (const { way, pass, base } of stripes) {
+      const count = passes[way];
+      for (let i = 0; i < LAST; i++) {
+        if (count[i] < pass) continue;
+        const p = base + 2 * i;
+        a[n++] = p;
+        a[n++] = p + 1;
+        a[n++] = p + 2;
+        a[n++] = p + 1;
+        a[n++] = p + 3;
+        a[n++] = p + 2;
+      }
     }
     a.fill(0, n); // nothing left over past the draw range (the GLB export reads the whole index)
-    stripe.index.needsUpdate = true;
-    stripe.geo.setDrawRange(0, n);
-    stripe.mesh.visible = n > 0;
+    index.needsUpdate = true;
+    geo.setDrawRange(0, n);
+    mesh.visible = n > 0;
   }
 
   return {
@@ -87,91 +91,136 @@ export function createTrail() {
       const hi = Math.max(a, b) / STEP - 0.5;
       const first = Math.max(0, way === 'out' ? Math.floor(lo) + 1 : Math.ceil(lo));
       const last = Math.min(LAST - 1, way === 'out' ? Math.floor(hi) : Math.ceil(hi) - 1);
-      const grew = [false, false];
+      let grew = false;
       for (let i = first; i <= last; i++) {
         if (count[i] < 255) count[i]++;
-        if (count[i] <= 2) grew[count[i] - 1] = true;
+        if (count[i] <= 2) grew = true;
       }
-      for (const stripe of stripes) if (stripe.way === way && grew[stripe.pass - 1]) rebuild(stripe);
+      if (grew) rebuild();
     },
     clear() {
       passes.out.fill(0);
       passes.back.fill(0);
-      for (const stripe of stripes) rebuild(stripe);
+      rebuild();
     },
   };
 }
 
-/** The displacement arrow from A to the cyclist, lying flat a little above the fields, with a white rim. */
+/**
+ * The displacement arrow from A to the cyclist, lying flat a little above the fields: orange inside a white rim and a
+ * thin dark edge, so it stands out on the pale stubble, the road and the blue path alike; a dot at its tail (at A)
+ * shows where it starts even when it is zero. One mesh (vertex colours): the layers are written in order, dark
+ * edge, white rim, orange, and drawn after the scenery without writing depth, so each covers the one before.
+ */
 export function createArrow() {
   const group = new THREE.Group();
   group.name = 'Arrow (displacement)';
   const Y = ROAD_Y + 9;
-  const make = (color, name, y, order) => {
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(7 * 3), 3));
-    geo.setIndex([0, 1, 2, 0, 2, 3, 4, 5, 6]);
-    const mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ name, color, toneMapped: false, side: THREE.DoubleSide }));
-    mesh.name = name;
-    mesh.position.y = y;
-    mesh.renderOrder = order;
-    mesh.frustumCulled = false;
-    group.add(mesh);
-    return mesh;
-  };
-  const rim = make('#ffffff', 'ArrowRim', Y - 0.5, 1);
-  const body = make(COLORS.displacement, 'Displacement', Y, 2);
-  // the tail at A: a dot, so a zero displacement still shows where it starts
-  const dot = new THREE.Mesh(
-    new THREE.CircleGeometry(34, 28),
-    new THREE.MeshBasicMaterial({ name: 'DisplacementTail', color: COLORS.displacement, toneMapped: false }),
-  );
-  dot.name = 'Displacement tail';
-  dot.rotation.x = -Math.PI / 2;
-  dot.position.y = Y + 0.2;
-  const dotRim = new THREE.Mesh(
-    new THREE.CircleGeometry(44, 28),
-    new THREE.MeshBasicMaterial({ name: 'DisplacementTailRim', color: '#ffffff', toneMapped: false }),
-  );
-  dotRim.name = 'Displacement tail rim';
-  dotRim.rotation.x = -Math.PI / 2;
-  dotRim.position.y = Y - 0.6;
-  group.add(dotRim, dot);
-
-  /** Write an arrow of length L (m) along +x into a mesh, grown by pad on every side. */
-  function shape(mesh, L, pad) {
-    const head = Math.min(150, L * 0.55);
-    const halfHead = Math.max(head * 0.47, 10);
-    const half = 21;
-    const shaft = L - head;
-    const p = mesh.geometry.attributes.position;
-    const a = p.array;
-    const tip = L + pad * 1.9;
-    const set = (i, x, z) => {
-      a[i * 3] = x;
-      a[i * 3 + 1] = 0;
-      a[i * 3 + 2] = z;
-    };
-    set(0, -pad, -half - pad);
-    set(1, shaft + pad * 0.2, -half - pad);
-    set(2, shaft + pad * 0.2, half + pad);
-    set(3, -pad, half + pad);
-    set(4, shaft - pad * 0.9, -halfHead - pad * 1.6);
-    set(5, tip, 0);
-    set(6, shaft - pad * 0.9, halfHead + pad * 1.6);
-    p.needsUpdate = true;
+  const DOT = 28; // segments round the tail dot
+  const LAYERS = [
+    { color: '#3b2312', pad: 15 }, // the dark edge
+    { color: '#ffffff', pad: 9 }, // the white rim
+    { color: COLORS.displacement, pad: 0 },
+  ];
+  const ARROW_V = 7; // a shaft (4) and a head (3)
+  const DOT_V = DOT + 1;
+  const count = LAYERS.length * (ARROW_V + DOT_V);
+  const pos = new Float32Array(count * 3);
+  const col = new Float32Array(count * 3);
+  const index = [];
+  const c = new THREE.Color();
+  const dotAt = (k) => k * DOT_V;
+  const arrowAt = (k) => LAYERS.length * DOT_V + k * ARROW_V;
+  for (const [k, layer] of LAYERS.entries()) {
+    c.set(layer.color);
+    for (let i = 0; i < DOT_V; i++) c.toArray(col, (dotAt(k) + i) * 3);
+    for (let i = 0; i < ARROW_V; i++) c.toArray(col, (arrowAt(k) + i) * 3);
   }
+  // layer by layer (the dot and the arrow together), so the dark edge and the white rim go round both as one shape
+  for (const k of LAYERS.keys()) {
+    const d = dotAt(k);
+    for (let i = 0; i < DOT; i++) index.push(d, d + 1 + i, d + 1 + ((i + 1) % DOT));
+    const o = arrowAt(k);
+    index.push(o, o + 1, o + 2, o, o + 2, o + 3, o + 4, o + 5, o + 6);
+  }
+  const geo = new THREE.BufferGeometry();
+  const posAttr = new THREE.BufferAttribute(pos, 3);
+  posAttr.setUsage(THREE.DynamicDrawUsage);
+  geo.setAttribute('position', posAttr);
+  geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  geo.setIndex(index);
+  const mesh = new THREE.Mesh(
+    geo,
+    new THREE.MeshBasicMaterial({ name: 'Displacement', vertexColors: true, toneMapped: false, side: THREE.DoubleSide, depthWrite: false }),
+  );
+  mesh.name = 'Displacement';
+  mesh.position.y = Y;
+  mesh.renderOrder = 3; // after the road, the trail and the fields
+  mesh.frustumCulled = false;
+  group.add(mesh);
+
+  let thick = 1;
+  const to = { x: 0, z: 0 };
+  const put = (i, x, z) => {
+    pos[i * 3] = x;
+    pos[i * 3 + 1] = 0;
+    pos[i * 3 + 2] = z;
+  };
+  /** Write every layer: the dots round A, and the arrow of length L along the angle `turn` (or nothing if L < 1). */
+  function write() {
+    const L = Math.hypot(to.x, to.z);
+    const f = thick;
+    for (const [k, layer] of LAYERS.entries()) {
+      const r = 34 * f + layer.pad * f;
+      const o = dotAt(k);
+      put(o, 0, 0);
+      for (let i = 0; i < DOT; i++) put(o + 1 + i, r * Math.cos((i / DOT) * Math.PI * 2), r * Math.sin((i / DOT) * Math.PI * 2));
+    }
+    const cs = L >= 1 ? to.x / L : 1;
+    const sn = L >= 1 ? to.z / L : 0;
+    // the head at most 0.55 of a short arrow, less when the arrow is drawn thicker (else it becomes a wedge)
+    const head = Math.min(150 * f, L * (0.55 - 0.1 * Math.min(1, (f - 1) / 1.4)));
+    const halfHead = Math.max(head * 0.47, 10 * f);
+    const half = 21 * f;
+    const shaft = L - head;
+    for (const [k, layer] of LAYERS.entries()) {
+      const o = arrowAt(k);
+      if (L < 1) {
+        for (let i = 0; i < ARROW_V; i++) put(o + i, 0, 0);
+        continue;
+      }
+      const pad = layer.pad * f;
+      // along the arrow (u) and across it (v), turned to point at the cyclist
+      const at = (i, u, v) => put(o + i, u * cs - v * sn, u * sn + v * cs);
+      at(0, -pad, -half - pad);
+      at(1, shaft + pad * 0.2, -half - pad);
+      at(2, shaft + pad * 0.2, half + pad);
+      at(3, -pad, half + pad);
+      at(4, shaft - pad * 0.9, -halfHead - pad * 1.6);
+      at(5, L + pad * 1.9, 0);
+      at(6, shaft - pad * 0.9, halfHead + pad * 1.6);
+    }
+    posAttr.needsUpdate = true;
+  }
+  write();
 
   return {
     group,
-    /** Point the arrow from A (the origin) to the scene point (x, z); hidden when it is shorter than 1 m. */
+    /** Point the arrow from A (the origin) to the scene point (x, z); none when it is shorter than 1 m. */
     set(x, z) {
-      const L = Math.hypot(x, z);
-      body.visible = rim.visible = L >= 1;
-      if (L < 1) return;
-      shape(body, L, 0);
-      shape(rim, L, 9);
-      body.rotation.y = rim.rotation.y = Math.atan2(-z, x);
+      if (x === to.x && z === to.z) return;
+      to.x = x;
+      to.z = z;
+      write();
+    },
+    /**
+     * Thicker (not longer) by f ≥ 1, so the arrow stays a few px wide on a small map. Returns true if it changed.
+     */
+    thick(f) {
+      if (Math.abs(f - thick) < 0.02) return false;
+      thick = f;
+      write();
+      return true;
     },
   };
 }

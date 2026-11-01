@@ -9,15 +9,15 @@ const GAP = 8; // px between a value and what it stands beside (the arrow is a f
 
 /** layer: the stage's label layer; colors: { distance, displacement }. */
 export function createValueTags(layer, colors) {
-  const make = (color) => {
+  const make = (color, kind) => {
     const el = document.createElement('div');
-    el.className = 'pvc-anno pvc-anno-callout dd-tag';
+    el.className = `pvc-anno pvc-anno-callout dd-tag ${kind}`;
     el.style.setProperty('--c', color);
     layer.appendChild(el);
     return { el, text: '', w: 0, h: 0, shown: false, pick: -1, x: 0, y: 0 };
   };
-  const dist = make(colors.distance);
-  const disp = make(colors.displacement);
+  const dist = make(colors.distance, 'd');
+  const disp = make(colors.displacement, 's');
 
   /** The text to show, or null to hide it. Measures it when it changes. */
   function setText(tag, text) {

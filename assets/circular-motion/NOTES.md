@@ -39,9 +39,9 @@ the chosen example (for the Moon: "চাঁদকে কোনো কিছু 
   space plays/pauses, 1/2/3 choose the example, F/V the view.
 - Labels move with the example and keep clear of it: the distance rides beside the dashed line and steps aside
   from the Earth, the Moon, the hub and the other labels.
-- Honest stylisation, written in the corner of the 3D view: the fan is shown much slower (অনেক ধীর করে দেখানো),
-  the clock faster (সময় দ্রুত করে দেখানো), and for the Moon sizes, distance and time are not in real proportion
-  (আকার, দূরত্ব, সময় প্রকৃত অনুপাতে নয়).
+- Honest stylisation, said quietly after the book's line in the panel (until v0.2.0 it was a note in the corner of
+  the 3D view): the fan turns much slower in the picture (ছবিতে পাখা অনেক ধীরে ঘোরে), the clock's time runs faster
+  (ছবিতে সময় দ্রুত চলে), and for the Moon sizes, distance and time are not to scale (আকার, দূরত্ব, সময় মাপমতো নয়).
 - Real numbers: a 56-inch (1400 mm) fan, the mark near the blade tip 70 cm from the axis; a 31 cm clock, the mark on
   the second hand 12 cm from the pin; the Moon about 3,84,400 km = 3.84 lakh km from the Earth's centre, always
   with "প্রায়" (the real orbit is slightly elliptical, 3.63–4.06 lakh km; the book's circle model is enough here).
@@ -63,11 +63,54 @@ the chosen example (for the Moon: "চাঁদকে কোনো কিছু 
 ## Open questions
 - Should the fan have a speed regulator (the fan turns faster, the distance stays the same)? Left out to keep it
   simple.
-- The Earth's own spin is not shown (it would turn 27 times per lunar turn); the corner note says the time is not in
-  real proportion.
+- The Earth's own spin is not shown (it would turn 27 times per lunar turn); the panel's aside says the time is not
+  to scale.
 
 ## Owner colour update (0.1.1)
 The owner explicitly requested vivid backgrounds and strong object contrast, overriding the usual white scene.
 The learning panel stays white; transparent embeds and explicit capture backgrounds remain supported.
 
 Navy/teal backdrop, turquoise fan blades and copper-orange hub/clock rim; bright scene paths retain darker matching label inks.
+(Replaced in v0.2.0 by a setting for each example, below.)
+
+## Polish pass (2026-11-01, v0.2.0)
+The owner's standard for every figure (docs/agents/polish-pass.md).
+- **Layout.** 3D on top, the panel below (beside it only on short, wide frames, as the kit does); no figure CSS moves
+  it. On a phone held upright the 3D view has 389 of 700 px (56 %, was 376): the test sheet is a little tighter
+  there (44 px answers, 16 px question), so the panel is 311 px. The panel keeps one height in every state: every
+  line was filled with every text it can show (Bangla and English) at all six sizes; the English lines that ran to
+  an extra line were shortened.
+- **Text on the 3D view.** Labels only: নির্দিষ্ট বিন্দু, the distance (`? সেমি`, `৭০ সেমি`, `প্রায় ৩.৮৪ লক্ষ কিমি`) and
+  বৃত্তাকার পথ. The corner note moved into the panel, after the book's line; the Moon's fixed-point label lost its
+  "পৃথিবীর কেন্দ্র" (32 characters), which now heads the measurements instead ("পৃথিবীর কেন্দ্র থেকে দূরত্ব").
+- **Setting and colour.** No more flat navy backdrop. The fan hangs from the warm plastered ceiling of a room
+  (lighter towards the window, darker in the corners, its faint soft shadow beside it), with two wooden beams, blue
+  walls with a picture rail and a window, a red-oxide floor; the camera stays under the ceiling. The clock hangs on
+  that blue plastered wall (lighter towards the lamp). The Moon goes round the Earth in a night sky of stars, thick
+  along a Milky Way band. The motor is now dark copper, so the orange distance line stands out on it.
+- **Arrows and marks.** Every mark is in its panel colour inside a white rim: the blue path, the orange dashed
+  distance, the measured lines and their dots, the ring of the test's "after half a turn". Before, pale inks made
+  for the navy backdrop (a yellow dashed line, a light blue path) were hard to see on the clock's white face. Orange
+  text (labels, panel words, measured numbers) uses the darker #c2410c (5.2:1 on white; #e8590c was 3.6:1).
+- **Smooth, with the detail kept.**
+  - Shadows: soft VSM at 512 px in a box fitted round the casters (the fan's motor, rod and blades; the clock's frame),
+    instead of 2048 px over a loose box with every part casting; at this softness they look the same.
+  - The clock's dial (60 ticks and 12 numerals) is drawn once into one 1024 px texture: one draw call instead of 14.
+  - The room is one inside-out box, one ceiling, one merged woodwork mesh, all on one shader (plaster map and vertex
+    shading); the plaster grain is one 512 px array computed in a few milliseconds and shared by every surface (a
+    canvas-drawn version held the start up for seconds on a slow device). No anisotropic filtering on it (software
+    rendering drew three times slower with it).
+  - The stars are two point clouds; every overlay dot shares one sphere.
+  - Label placement allocates nothing per frame (it runs every frame while the example turns).
+  - A moment after the start, the other examples' shaders are compiled and their textures uploaded, so the first tap
+    on ঘড়ির কাঁটা or চাঁদ does not stall.
+  - The turning itself is the lesson (the fan, the clock and the Moon go round by themselves until paused), so the
+    figure keeps drawing while it plays; paused, it draws nothing.
+- **Numbers** (headless Chromium, software GL, shadows on, 390×700; before → after): draw calls avg 37 / max 79 →
+  40 / 81 (the room, rims and stars added; the dial's 13 calls saved); triangles max 36k → 35k; texture memory
+  54 MB (largest 2048 px) → 16.5 MB (largest 1024 px, all three examples' textures included); time to first frame
+  about the same (1.6–3.4 s before, 2.3–2.8 s after on the same loaded machine); text on the 3D view 41 characters
+  in 3 boxes → 22 in 2; frames drawn while it turns about 9 a second, as before.
+- **Bugs fixed.** The pale inks on the clock's white face; the English test's longest questions and answers ran to a
+  third line on phones, so the 3D view shrank mid-test (shortened); a transparent capture now leaves the setting
+  out. Turning the view now keeps the camera under the ceiling and in front of the clock's wall.

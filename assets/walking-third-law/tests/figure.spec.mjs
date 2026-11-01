@@ -29,6 +29,7 @@ test('walking-third-law: push, hold, F and −F, three grounds, the rule grows, 
   await expect(frame.locator('.pvc-outcome')).toContainText('স্থির দাঁড়িয়ে আছে');
   await expect(frame.locator('.pvc-rule')).toContainText('কেউ আমাদের ধাক্কা দেয় না');
   await expect(frame.locator('.wtl-note')).toBeHidden();
+  await expect(frame.locator('.pvc-stage .wtl-note')).toHaveCount(0); // how time is shown is in the panel, not on the picture
 
   // firm ground: the big button pushes; slowed down, then held at the telling moment
   await frame.locator('.pvc-act').click();
@@ -52,11 +53,11 @@ test('walking-third-law: push, hold, F and −F, three grounds, the rule grows, 
     tried: { hard: true },
   });
   await expect(frame.locator('.wtl-note')).toContainText('থামিয়ে দেখানো');
-  // both pushes, in plain words where they act (the symbols F and −F come only when all three grounds are found)
+  // both pushes, whose push and how big, where they act (the symbols F and −F come only when all three grounds are found)
   const labels = frame.locator('.pvc-anno-force');
   await expect(labels).toHaveCount(2);
-  await expect(labels.nth(0)).toHaveText('পা মাটিকে ধাক্কা দিচ্ছে');
-  await expect(labels.nth(1)).toHaveText('মাটি মানুষটিকে ধাক্কা দিচ্ছে');
+  await expect(labels.nth(0)).toHaveText('পায়ের ধাক্কা ১০০ নিউটন');
+  await expect(labels.nth(1)).toHaveText('মাটির ধাক্কা ১০০ নিউটন');
   await expect(frame.locator('.pvc-outcome')).toContainText('পা মাটিকে ধাক্কা দিল, মাটি মানুষটিকে ধাক্কা দিল');
   await expect(frame.locator('.pvc-outcome b')).toHaveText('১০০ নিউটন');
   await expect(frame.locator('[data-example="hard"] .pvc-ex-res')).toHaveText('১০০ নিউটন');
@@ -105,8 +106,8 @@ test('walking-third-law: push, hold, F and −F, three grounds, the rule grows, 
   // book's names F and −F (same colours, same places)
   await expect(frame.locator('.pvc-rule')).toContainText('ঘর্ষণ খুব কম');
   await expect(frame.locator('.pvc-rule')).toContainText('বিপরীত এবং সমান বল পাওয়া যায়');
-  await expect(labels.nth(0)).toHaveText('F পা মাটিকে ধাক্কা দিচ্ছে');
-  await expect(labels.nth(1)).toHaveText('−F মাটি মানুষটিকে ধাক্কা দিচ্ছে');
+  await expect(labels.nth(0)).toHaveText('F পায়ের ধাক্কা ২০ নিউটন');
+  await expect(labels.nth(1)).toHaveText('−F মাটির ধাক্কা ২০ নিউটন');
   // the action replays, without a number
   expect(st.next).toEqual({ ground: 'slip', step: '' });
   await expect(frame.locator('.pvc-act')).toContainText('আবার ধাক্কা দাও');
@@ -118,7 +119,7 @@ test('walking-third-law: push, hold, F and −F, three grounds, the rule grows, 
   // the slippery floor on its own (found first): its own sentence, no symbols yet
   await fig.call('set', { ground: 'slip', tried: [], at: 'hold', animate: false });
   await expect(frame.locator('.pvc-rule')).toContainText('ঘর্ষণ খুব কম');
-  await expect(frame.locator('.pvc-anno-force').nth(0)).toHaveText('পা মাটিকে ধাক্কা দিচ্ছে');
+  await expect(frame.locator('.pvc-anno-force').nth(0)).toHaveText('পায়ের ধাক্কা ২০ নিউটন');
   await expect(frame.locator('.pvc-rule')).not.toContainText('বিপরীত এবং সমান বল পাওয়া যায়');
 
   // a tap on the student pushes too (the ring lets the touch through)
@@ -278,10 +279,18 @@ test('walking: detailed lesson and explanations fit six frames in Bangla and Eng
             overlap: labels.some((r) => overlap(r, corner)) || (labels.length === 2 && overlap(labels[0], labels[1])),
             overflow: document.querySelector('.pvc-panel').scrollHeight - document.querySelector('.pvc-panel').clientHeight,
             stage: document.querySelector('.pvc-stage').getBoundingClientRect().height,
+            // the panel is under the 3D view, except in the kit's short-and-wide frame (a phone on its side)
+            below:
+              document.querySelector('.pvc-panel').getBoundingClientRect().top >=
+              document.querySelector('.pvc-stage').getBoundingClientRect().bottom - 1,
+            longest: Math.max(0, ...[...document.querySelectorAll('.pvc-anno')].map((e) => e.textContent.length)),
           };
         });
         expect(report, `${lang} ${width}x${height} ${JSON.stringify(state)}`).toMatchObject({ bad: [], overlap: false, overflow: 0 });
         expect(report.stage).toBeGreaterThan(145);
+        expect(report.below, `${lang} ${width}x${height} panel below`).toBe(!(height <= 460 && width / height >= 1.5));
+        if (width === 390 && height === 700) expect(report.stage).toBeGreaterThanOrEqual(0.55 * height - 1);
+        expect(report.longest, `${lang} ${width}x${height} labels only on the view`).toBeLessThanOrEqual(28);
       }
       await fig.frame.locator('[data-act="explain"]').click();
       for (const tab of ['pair', 'grip']) {

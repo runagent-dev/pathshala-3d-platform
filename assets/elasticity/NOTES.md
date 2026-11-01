@@ -28,9 +28,10 @@ but only up to the elastic limit: past it the graph bends and a permanent stretc
   (৪) more weights up to and past the limit, (৫) all off (a permanent set), then a new spring. A stepper (W − n N +)
   hangs or removes one at a time; the quiet ⟲ takes a new spring.
 - The পীড়ন–বিকৃতি graph on the stage gets a point per load and a line for the order they happened. It shows more as
-  the student finds it: Hooke's line (after two weights), the elastic limit (dashed line and ring), hatched "সীমার
-  ভেতরে" and dotted "সীমার বাইরে" bands (named in words, and points past the limit are squares, not circles), and the
-  permanent set on the strain axis.
+  the student finds it: Hooke's line (after two weights), the elastic limit (dashed line and ring, the one name on the
+  card), hatched "সীমার ভেতরে" and dotted "সীমার বাইরে" bands (points past the limit are squares, not circles), and the
+  permanent set on the strain axis. What the lines, bands and marks mean is the গ্রাফ row in the panel: a key with the
+  same little pictures, newest first, as many as fit on the line.
 - The numbers: 1 N each; within the limit 2 cm per newton (strain 0.1 per N); A = 10 mm² = 0.00001 m², so each
   newton is 1 লাখ Pa and stress ÷ strain = 10 লাখ Pa. Limit 4 N. Five weights stretch 13 cm (not 10), six 19 cm; off
   after five it keeps 3 cm, after six 7 cm; loaded again it stretches along a straight line from that set.
@@ -51,3 +52,37 @@ Words the figure adds: ওজন (the brass weights), দৈর্ঘ্য ব�
 - The reference curve's points A–E (proportional limit, yield points, breaking stress, fracture) are not on p147–148,
   so the figure names only the elastic limit, Hooke's law and the permanent strain; the spring does not break.
 - ∝ is drawn as a small picture in the panel (the bundled font has no ∝); the graph says হুকের সূত্র instead.
+
+## Polish pass (2026-11-01)
+
+- **Layout.** The panel stays under the 3D view everywhere except the kit's short-and-wide frame (844×390, 640×400),
+  as before. On a phone held upright the panel is tighter (smaller action, sums and gaps; a two-line question and a
+  three-line worked answer), so the 3D view goes from 49 % to 55 % of 390×700 (43 % of 390×520, was 39 %; 57 % of
+  800×500, was 49 %). The result line is back at 390×520. The test sheet is never taller than the learn sheet, and
+  every changing line fits its kept room at all six sizes in both languages, so the 3D view never changes height
+  (checked with a script over every outcome, rule, question and worked answer with every wrong choice).
+- **Text on the 3D view.** The caption "প্রতিটি ওজন ১ N · তারের প্রস্থচ্ছেদ A = ১০ mm²" moved into the result line;
+  the graph's words "হুকের সূত্র", "সীমার ভেতরে", "সীমার বাইরে" and "স্থায়ী বিকৃতি" moved into a new গ্রাফ row in the
+  panel, a key with the graph's own little pictures; the strain axis is numbered every 0.4 (the limit is at 0.4).
+  The graph keeps its axes, its points and lines and the one name "স্থিতিস্থাপক সীমা"; the scene keeps L₀, x, T and W
+  with their values. Text on the view: 48 characters in 12 boxes → 32 in 10 (390×700), 94 in 17 → 41 in 12 (844×390).
+- **Colour and arrows.** The workshop (red brick, deep blue pegboard, oak bench) stays. The arrows were already bold
+  and white-outlined; the labels now sit on solid white chips with a shadow, their text a shade darker than the arrow
+  (T #c2410c, x #c92a2a, W #6741d9) so each reads at 4.5 : 1 or more.
+- **Smooth.** The workshop and the apparatus share one set of materials (the oak texture and the rule's canvas were
+  made twice); the stand is three meshes (one per material) instead of ten, and the pegboard, bench and rule draw
+  one call per material instead of one per face; the small dark stand parts cast no shadow. The rule's face is
+  128 × 2048 (was 160 × 3360) and the pegboard 1024² (was 1024 × 1280), drawn in the same layout. Camera moves and
+  the pauses between steps no longer ask for the scene (and, on kit 1.4, its shadows) to be redrawn; the arrows
+  reuse one vector. Draw calls 109 / 131 → 80 / 102 (average / max), triangles 61 k → 60 k, texture memory
+  26.1 MB → 24 MB (largest 3360 → 2048 px), still 0 frames while idle, 1288 → 1290 KB loaded. Time to ready
+  (headless, software GL) stayed in the same range, 0.6–2 s for both versions on a busy machine; the difference is
+  within the noise.
+- **Bugs.** The metre rule's face was 2 % too long for its texture, so the pointer read about 0.4 cm short at 20 cm
+  and 0.8 cm short at 39 cm: the face is now exactly as long as its marks (the pointer reads 20, 22 … 39 on the
+  marks). The last question's answers overflowed their buttons (three lines in a two-line box) and several worked
+  answers took four lines, moving the 3D view: all shortened. The Hooke question's late reveal could unhide the
+  next question's answer if the student moved on within 0.6 s: it now checks it is still the same question. The
+  "∝" picture no longer makes its line taller. The action's badge could sit on the T label (800×500, the poster):
+  the labels are placed again when it does, and T has spots farther out on wide frames.
+

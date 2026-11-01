@@ -92,12 +92,13 @@ test('friction-force: friction matches the push, turns round, grows with weight,
   expect(await text('[data-example="w1"] .pvc-ex-res')).toBe('সরাতে ১৪.৭ নিউটন');
   expect(await text('.pvc-rule')).toContain('ওজন বসালে ঘর্ষণ আরও বাড়ে');
 
-  // step 4: the zoom-in opens; the note says it is not to scale
+  // step 4: the zoom-in opens; the note in the panel (not on the 3D view) says it is not to scale
   await fig.frame.locator('.pvc-act').click();
   await run(1500);
   expect((await fig.call('get')).lens).toBe(true);
   expect(await text('.pvc-rule')).toContain('উঁচুনিচু');
-  expect(await text('.ff-lens-cap')).toContain('আকার প্রকৃত অনুপাতে নয়');
+  expect(await text('.ff-lens-note:not(.off)')).toContain('আকার প্রকৃত অনুপাতে নয়');
+  expect(await fig.frame.locator('[data-act="lens-toggle"]').getAttribute('aria-pressed')).toBe('true');
   // the first look names what is there and asks for the comparison; the comparison comes once the weight is changed
   expect(await text('.pvc-outcome')).toContain('ওজন বদলে দেখো');
   expect(await text('.pvc-outcome')).not.toContain('আরও');
@@ -226,7 +227,7 @@ test('friction-force: pause freezes the rubbing and heat, reset restores the con
   expect(log.errors).toEqual([]);
 });
 
-test('friction-force: both languages keep the panel and contact caption visible across frames and lesson states', async ({ page }) => {
+test('friction-force: both languages keep the panel and the contact note visible across frames and lesson states', async ({ page }) => {
   test.setTimeout(240_000);
   const log = await preparePage(page);
   for (const lang of ['bn', 'en']) {
@@ -252,7 +253,7 @@ test('friction-force: both languages keep the panel and contact caption visible 
         const report = await fig.frame.evaluate(() => {
           const panel = document.querySelector('.pvc-panel');
           const stage = document.querySelector('.pvc-stage').getBoundingClientRect();
-          const visible = [...document.querySelectorAll('.pvc-panel button, .pvc-rule, .ff-live, .ff-lens-cap.on')].filter(
+          const visible = [...document.querySelectorAll('.pvc-panel button, .pvc-rule, .ff-live, .pvc-outcome, .ff-lens-note:not(.off)')].filter(
             (el) => el.getClientRects().length && !el.closest('[hidden]') && getComputedStyle(el).visibility !== 'hidden',
           );
           return {

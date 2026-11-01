@@ -5,7 +5,7 @@
   "title": "How we walk: the third law (হাঁটা ও নিউটনের তৃতীয় সূত্র)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "book": "physics-9-10",
   "page": 86,
   "topic": "3.8",
@@ -13,7 +13,7 @@
   "order": 1,
   "maintainers": ["RadeenXALNW"],
   "units": "m",
-  "description": "Vivid live 3D walking lesson for Newton’s third law (topic 3.8, page 86). A fully articulated student pushes off while an enlarged live view of the same shoe shows equal opposite forces on the ground and the person. Firm ground, loose sand and a slippery floor change grip, forward motion and backward slip. A scrubbable slowed timeline and pause control let students inspect the simultaneous force pair. Live force accounting gives a = F/m for the person; an illustrated explanation separates the two receiving bodies and explains static friction and why the pair does not cancel. The existing five scene-based questions remain. Horizontal forces only; a simplified initial push-off with example numbers, offline in Bangla and English.",
+  "description": "Live 3D walking lesson for Newton’s third law (topic 3.8, page 86), set in a school yard. A fully articulated student pushes off while an enlarged live view of the same shoe shows equal opposite forces on the ground and the person. Firm ground, loose sand and a slippery floor change grip, forward motion and backward slip. A scrubbable slowed timeline and pause control let students inspect the simultaneous force pair. Live force accounting gives a = F/m for the person; an illustrated explanation separates the two receiving bodies and explains static friction and why the pair does not cancel. The existing five scene-based questions remain. Horizontal forces only; a simplified initial push-off with example numbers, offline in Bangla and English.",
   "tags": ["force", "newtons-laws", "third-law", "action-reaction", "walking", "friction", "bangla"],
   "params": [
     {

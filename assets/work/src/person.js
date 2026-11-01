@@ -1,6 +1,9 @@
 // Detailed human adapted from walking-third-law: the palms reach the crate or trolley handle,
 // while a two-bone gait keeps stance shoes planted as the root advances. Metres; local +x forward.
+// Drawn in 22 meshes whatever the pose: the upper body (torso, head, face, hair: parts that never move against each
+// other), each hand and each shoe are merged into one mesh each in vertex colours; the limbs stay separate tubes.
 import * as THREE from 'three';
+import { mergeStatic } from './merge.js';
 
 const HIP_Y = 0.86; // the pelvis (the upper body leans about it)
 const HIP_JOINT = 0.78; // where the legs start
@@ -281,7 +284,7 @@ export function createPusher({ shirt = '#e8e3d6', trousers = '#3e4452' } = {}) {
     side,
     thigh: tube(M.trousers, root),
     shin: tube(M.trousers, root),
-    foot: new THREE.Mesh(shoeGeometry, M.shoe),
+    foot: new THREE.Group().add(new THREE.Mesh(shoeGeometry, M.shoe)),
     knee: ball(0.063, M.trousers, root),
   }));
   for (const l of legs) {
@@ -403,7 +406,7 @@ export function createPusher({ shirt = '#e8e3d6', trousers = '#3e4452' } = {}) {
       arm.cuff.quaternion.setFromUnitVectors(UP, tmp3.subVectors(elbow, shoulder).normalize());
       arm.cuff.scale.set(1.06, 0.16, 1.06);
       arm.hand.position.copy(hand);
-      arm.hand.quaternion.setFromUnitVectors(UP, new THREE.Vector3().subVectors(hand, elbow).normalize());
+      arm.hand.quaternion.setFromUnitVectors(UP, tmp3.subVectors(hand, elbow).normalize());
       const j = joints.arms[arm.side > 0 ? 0 : 1];
       j.shoulder = (j.shoulder || new THREE.Vector3()).copy(shoulder);
       j.elbow = (j.elbow || new THREE.Vector3()).copy(elbow);
@@ -444,6 +447,23 @@ export function createPusher({ shirt = '#e8e3d6', trousers = '#3e4452' } = {}) {
   }
   pose();
 
+  // fewer draw calls, the same picture: what never moves against each other becomes one mesh in vertex colours
+  const headAt = new THREE.Object3D();
+  headAt.name = 'AnatomicalHead';
+  headAt.position.copy(head.position);
+  const neckAt = new THREE.Object3D();
+  neckAt.name = 'Neck';
+  neckAt.position.copy(neck.position);
+  upper.add(headAt, neckAt);
+  head.name = 'Head';
+  const paint = {
+    from: [M.shirt, M.skin, M.hair, M.shoe, M.sole, M.eye, M.white, M.lips, M.seam, M.soleSide, M.belt],
+    material: new THREE.MeshStandardMaterial({ name: 'PersonBody', vertexColors: true, roughness: 0.72, metalness: 0 }),
+  };
+  mergeStatic(upper, { paint });
+  for (const arm of arms) mergeStatic(arm.hand, { paint });
+  for (const l of legs) mergeStatic(l.foot, { paint });
+
   root.traverse((o) => {
     if (o instanceof THREE.Mesh && o !== hit) o.castShadow = true;
   });
@@ -477,10 +497,10 @@ export function createPusher({ shirt = '#e8e3d6', trousers = '#3e4452' } = {}) {
       }
       for (const j of joints.arms) out.push([at(j.shoulder), at(j.elbow), 0.05, 'arm'], [at(j.elbow), at(j.hand), 0.045, 'arm']);
       const mid = new THREE.Vector3();
-      neck.getWorldPosition(mid);
+      neckAt.getWorldPosition(mid);
       out.push([at(new THREE.Vector3(0, HIP_Y, 0)), mid, 0.14, 'trunk']);
       const h = new THREE.Vector3();
-      head.getWorldPosition(h);
+      headAt.getWorldPosition(h);
       out.push([h, h.clone(), 0.115, 'head']);
       return out;
     },

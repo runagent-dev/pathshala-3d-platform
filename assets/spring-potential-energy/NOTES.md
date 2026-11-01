@@ -49,8 +49,10 @@ position; it grows with x (F = kx), and the energy grows faster: twice x, twice 
 "জমা", "শক্ত স্প্রিং" (large k), "নরম স্প্রিং" (small k); the book's words in the rule's bold lines.
 
 ## How the figure works
-- **The scene (metres, `units: "m"`).** A light blue studio (0.2.0, the owner's request): a soft sky-blue sweep behind a
-  white table with a light blue-grey edge; a navy wall with the diagonal hatching that marks a fixed wall in physics
+- **The scene (metres, `units: "m"`).** A school physics laboratory (0.3.0, the polish pass; `src/scenery.js`): a long
+  honey-coloured wooden lab bench with blue-grey drawers against a sky-blue wall, pale blue tiles behind the bench, a
+  window onto a blue sky and the school building, a pegboard with the lab's springs, a spring balance and slotted
+  weights, a clock and a shelf of bottles; a navy wall with the diagonal hatching that marks a fixed wall in physics
   drawings, rising out of the frame, with a steel plate; a magenta coil spring (13 turns, 4.4 cm across, 30 cm long at
   rest) screwed to it, rebuilt as a real helix every time its length changes, so
   its coils spread when pulled and bunch when pushed; a steel end cap with a wooden handle bar; a realistic right hand (palm,
@@ -60,7 +62,7 @@ position; it grows with x (F = kx), and the energy grows faster: twice x, twice 
 - **The owner's reference picture, in 3D**: a dashed navy line at **x = ০**; the orange **x** bracket from it to the end,
   with a thin orange line down to the ruler (so x reads on the ruler without parallax); the hand's force **F<sub>P</sub>**
   (green) and the spring's force **F<sub>S</sub>** (blue) from the end, equal and opposite, drawn to scale (4 mm per newton,
-  "তীরের দৈর্ঘ্য বলের সমানুপাতিক" in the corner), F<sub>S</sub> always toward x = 0. The stored energy **V** (purple, the
+  "তীরের দৈর্ঘ্য বলের সমানুপাতিক" in the F explanation, no longer a note on the view), F<sub>S</sub> always toward x = 0. The stored energy **V** (purple, the
   energy figure's বিভব শক্তি colour) labels the spring.
 - **Numbers.** k = 100, 200, 300 or 400 N/m (a spring a hand can squeeze: 10 cm takes 10–40 N); x from 10 cm pushed in to
   10 cm pulled out in whole centimetres. Default k = 200 N/m, x = 0 (the book's picture (a)); the page has no worked example.
@@ -102,6 +104,12 @@ position; it grows with x (F = kx), and the energy grows faster: twice x, twice 
   pulled out 10 cm (F 20 N, V 1 J).
 
 ## Look
+0.3.0 (the polish pass): the light blue studio became a school physics laboratory that keeps the owner's blue: a
+sky-blue wall, pale blue tiles and a window onto a blue sky, with a warm wooden bench so the magenta spring, the yellow
+ruler and the outlined arrows stand out. The arrows are bold and white-outlined, the x = ০ line has a white rim, and
+the labels sit on solid white chips with text in a dark tone of their colour (F<sub>P</sub> #237a35, F<sub>S</sub>
+#1864d6, x #c2410c, V #6741d9, k #c2255c: 4.5:1 or more).
+
 0.2.0, after the owner's look at 0.1.0: "light blue background, beautiful vivid contrast, interactive formula
 understanding". Only the 3D scene is light blue (#74c0fc → #a5d8ff → #e7f5ff, a soft white glow behind the spring); the
 panel stays the kit's white sheet. Vivid against it: a magenta spring (the reference picture's colour), a hatched navy
@@ -110,6 +118,32 @@ F<sub>S</sub> #1864d6 (as the owner's reference picture (b)), x #f76707, V #7048
 `energy`'s বিভব শক্তি), k #c2255c (the spring's magenta, text), ½ #364fc7.
 
 0.1.0 had a deep-blue-to-sky backdrop, a yellow wall board and a wooden bench, and the result as two plain lines.
+
+## Polish pass (2026-11-01)
+The standard in `docs/agents/polish-pass.md`, version 0.3.0.
+- **Layout.** The panel stays under the 3D view except in the kit's short-and-wide frame (844 × 390, 640 × 400). On
+  phones held upright the rows are tighter and the energies under the state words are left out (they are in the formula
+  and on the spring), so the 3D view grows from 47 % to 55 % of 390 × 700 (331 → 384 px) and from 42 % to 43 % of
+  390 × 520; at 800 × 500 from 47 % to 55 %. The panel keeps one height in every state, the test included, in both
+  languages (the longest English feedback lines were shortened; x² and F<sub>S</sub> no longer make a line taller).
+- **Text on the 3D view.** The corner note "তীরের দৈর্ঘ্য বলের সমানুপাতিক" moved into the F explanation (and "তীরও ২
+  গুণ লম্বা" into the twice-as-far rule); the locked-test hint is one short line. Only the short labels with values stay:
+  13 characters in 2 boxes at rest → 5 in 1.
+- **Setting and arrows.** The near-white light blue studio became a school physics laboratory (`src/scenery.js`): a
+  wooden bench with drawers, a sky-blue wall, pale blue tiles, a window, a pegboard of springs, a shelf and a clock. The
+  force arrows and the x bracket are bold, flat and white-outlined (`src/arrows.js`, from `hanging-weight-pull`); a lit
+  letter turns its arrows' outline yellow. The x = ০ line has a white rim. Labels sit on solid white chips with text
+  in a dark tone of their colour (4.5:1 or more; the orange x text was 3:1).
+- **Smooth.** The spring's tube is built once and its vertices rewritten in place (it was a new `TubeGeometry` every
+  frame of a drag); the hand's 30 parts are posed as a hidden rig and written into three meshes only when the grip
+  changes; the wall plate, screws and hub, the end cap and rod, and the 20 dashes of the x = ০ line are one mesh each;
+  the ruler is one material; PCF 1024 in a box fitted round what casts instead of VSM 2048; only the bench and the ruler
+  receive shadows; canvas textures at 1024 px or less; the panel writes the DOM only when a value changes.
+  Headless Chromium, software GL, shadows on: draw calls avg 159 / max 181 → 64 / 86, triangles max 66k → 68k, texture
+  memory 55.8 MB → 18.3 MB, ready 1282 → about 1370 ms (the room's canvases), frames while idle 0 → 0.
+- **Bugs.** The shadow camera's fitted box never reached the renderer (no `updateProjectionMatrix`), so shadows were
+  drawn from the default 10 m box and hardly showed; the key light and the shadow light are now one light, so the
+  shadows read. The test's feedback could make the panel 2 px taller (a margin on the mistake note).
 
 ## Stylised on purpose
 - The ½ explanation (average force × distance) is not on the page; it follows the page's own argument (work done by a

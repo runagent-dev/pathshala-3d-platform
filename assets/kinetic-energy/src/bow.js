@@ -2,6 +2,7 @@
 // of its group: the grip at the origin, +x towards the target. Its limbs bend back as the string is drawn; the
 // string runs from the top tip to the nock and down to the bottom tip.
 import * as THREE from 'three';
+import { bake, colourGeometry, paint } from './bake.js';
 
 export const BRACE = 0.21; // m: string to grip at rest
 export const ARROW_LEN = 0.76;
@@ -52,14 +53,30 @@ const curve = new THREE.CatmullRomCurve3(
   false,
   'centripetal',
 );
+curve.arcLengthDivisions = 64; // the limb is short: 64 steps measure it well, and are quick to redo as it bends
 const P = new THREE.Vector3();
 const T = new THREE.Vector3();
+// the four corners of the section (across ±n in the plane, ±z) and each side's normal, in order round the limb
+const CORNER = [
+  [1, 1],
+  [1, -1],
+  [-1, -1],
+  [-1, 1],
+];
+const SIDE_N = [
+  [1, 0],
+  [0, -1],
+  [-1, 0],
+  [0, 1],
+];
+/** Bend a limb in place (no new objects): k = 0 at rest … 1 at full draw; sign = +1 upper, −1 lower. */
 function bendLimb(geometry, k, sign) {
   for (let i = 0; i < 5; i++) {
     const [x0, y0] = LIMB_REST[i];
     const [x1, y1] = LIMB_BENT[i];
     curve.points[i].set(x0 + (x1 - x0) * k, sign * (y0 + (y1 - y0) * k), 0);
   }
+  curve.needsUpdate = true; // the shape changed: measure its length again, so the samples stay evenly spaced
   const pos = geometry.attributes.position.array;
   const nor = geometry.attributes.normal.array;
   for (let i = 0; i < SAMPLES; i++) {
@@ -70,25 +87,18 @@ function bendLimb(geometry, k, sign) {
     const ny = T.x; // in-plane normal
     const w = 0.024 - 0.013 * u; // half width (z)
     const th = 0.0075 - 0.0035 * u; // half thickness
-    const corners = [
-      [nx * th, ny * th, w],
-      [nx * th, ny * th, -w],
-      [-nx * th, -ny * th, -w],
-      [-nx * th, -ny * th, w],
-    ];
-    const normals = [
-      [nx, ny, 0],
-      [0, 0, -1],
-      [-nx, -ny, 0],
-      [0, 0, 1],
-    ];
     for (let side = 0; side < 4; side++) {
-      const c0 = corners[side];
-      const c1 = corners[(side + 1) % 4];
       const o = (i * 8 + side * 2) * 3;
-      pos.set([P.x + c0[0], P.y + c0[1], c0[2], P.x + c1[0], P.y + c1[1], c1[2]], o);
-      const n = normals[side];
-      nor.set([...n, ...n], o);
+      for (let e = 0; e < 2; e++) {
+        const [a, b] = CORNER[(side + e) % 4];
+        pos[o + e * 3] = P.x + a * nx * th;
+        pos[o + e * 3 + 1] = P.y + a * ny * th;
+        pos[o + e * 3 + 2] = b * w;
+        const [na, nz] = SIDE_N[side];
+        nor[o + e * 3] = na * nx;
+        nor[o + e * 3 + 1] = na * ny;
+        nor[o + e * 3 + 2] = nz;
+      }
     }
   }
   geometry.attributes.position.needsUpdate = true;
@@ -136,7 +146,7 @@ export function createBow({ wood }) {
     bevelThickness: 0.004,
     bevelSize: 0.004,
     bevelSegments: 2,
-    curveSegments: 48,
+    curveSegments: 12, // per point of the spline: 180 points round the riser
   });
   riserGeo.translate(0, 0, -0.042);
   const riser = new THREE.Mesh(riserGeo, M.riser);
@@ -162,8 +172,9 @@ export function createBow({ wood }) {
     return { sign, g, mesh, tip, at: new THREE.Vector3() };
   });
 
+  const stringGeo = new THREE.CylinderGeometry(1, 1, 1, 8);
   const strings = [0, 1].map(() => {
-    const s = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 8), M.string);
+    const s = new THREE.Mesh(stringGeo, M.string);
     s.name = 'String';
     root.add(s);
     return s;
@@ -180,7 +191,12 @@ export function createBow({ wood }) {
    * Bend the bow: k = draw / full draw (0 … 1, with a little overshoot past 0 allowed as the limbs spring back),
    * nockX = where the string is pulled to (x, at the arrow's height).
    */
+  let lastK = Number.NaN;
+  let lastNock = Number.NaN;
   function set(k, nockX) {
+    if (k === lastK && nockX === lastNock) return; // nothing moved: no work
+    lastK = k;
+    lastNock = nockX;
     for (const l of limbs) {
       const end = bendLimb(l.g, k, l.sign);
       l.at.set(end.x, end.y, 0);
@@ -202,9 +218,11 @@ export function createBow({ wood }) {
   }
   set(0, -BRACE);
 
-  root.traverse((o) => {
-    if (o instanceof THREE.Mesh) o.castShadow = true;
-  });
+  // the riser, the grip and the arrow shelf never move in the bow: one mesh each; only the riser and the limbs cast a
+  // shadow you can see (the string, the tips and the shelf are too thin)
+  riser.castShadow = true;
+  for (const l of limbs) l.mesh.castShadow = true;
+  bake(root, { skip: [...limbs.map((l) => l.mesh), ...limbs.map((l) => l.tip), ...strings, serving] });
   return {
     root,
     set,
@@ -223,15 +241,18 @@ export const ARROW_KINDS = {
   0.04: { shaft: '#b07a43', metal: 0, rough: 0.65, r: 0.007, point: '#c9a227', pointLen: 0.045, vane: '#ffffff', cock: '#2f9e44' },
 };
 
-/** An arrow along +x, its nock (back end) at the origin. */
-export function createArrowMesh(m) {
+/** One finished arrow of each kind, built once; every arrow shot is a copy sharing its geometry and materials. */
+const ARROW_TEMPLATES = new Map();
+function arrowTemplate(m) {
   const kind = ARROW_KINDS[m] || ARROW_KINDS[0.02];
+  if (ARROW_TEMPLATES.has(kind)) return ARROW_TEMPLATES.get(kind);
   const root = new THREE.Group();
-  root.name = `Arrow_${Math.round(m * 1000)}g`;
   const shaftM = mat('Shaft', kind.shaft, kind.rough, kind.metal);
   const pointM = mat('Point', kind.point, 0.3, 0.9);
-  const vaneM = mat('Vanes', kind.vane, 0.7, 0, { side: THREE.DoubleSide });
-  const cockM = mat('CockVane', kind.cock, 0.6, 0, { side: THREE.DoubleSide });
+  // the nock and the three vanes: plain colours, one vertex-coloured material
+  const fletchM = mat('Fletching', '#ffffff', 0.65, 0, { side: THREE.DoubleSide, vertexColors: true });
+  const vaneC = new THREE.Color(kind.vane);
+  const cockC = new THREE.Color(kind.cock);
   const len = ARROW_LEN - kind.pointLen;
   const shaft = new THREE.Mesh(new THREE.CylinderGeometry(kind.r, kind.r, len - 0.012, 10), shaftM);
   shaft.rotation.z = -Math.PI / 2;
@@ -241,7 +262,7 @@ export function createArrowMesh(m) {
   point.rotation.z = -Math.PI / 2;
   point.position.x = len + kind.pointLen / 2;
   root.add(point);
-  const nockMesh = new THREE.Mesh(new THREE.CylinderGeometry(kind.r * 1.05, kind.r * 0.9, 0.016, 10), cockM);
+  const nockMesh = new THREE.Mesh(colourGeometry(new THREE.CylinderGeometry(kind.r * 1.05, kind.r * 0.9, 0.016, 10), cockC), fletchM);
   nockMesh.rotation.z = -Math.PI / 2;
   nockMesh.position.x = 0.008;
   root.add(nockMesh);
@@ -253,14 +274,23 @@ export function createArrowMesh(m) {
   const vaneGeo = new THREE.ShapeGeometry(vane, 6);
   vaneGeo.translate(0.03, kind.r, 0);
   for (let i = 0; i < 3; i++) {
-    const v = new THREE.Mesh(vaneGeo, i === 0 ? cockM : vaneM);
+    const v = new THREE.Mesh(colourGeometry(vaneGeo, i === 0 ? cockC : vaneC), fletchM);
     v.rotation.x = Math.PI / 2 + (i * 2 * Math.PI) / 3; // the first one points +z
     root.add(v);
   }
-  root.traverse((o) => {
-    if (o instanceof THREE.Mesh) o.castShadow = true;
-  });
-  return { root, kind, materials: [shaftM, pointM, vaneM, cockM] };
+  for (const o of root.children) o.castShadow = true;
+  bake(root);
+  const t = { root, kind, materials: [shaftM, pointM, fletchM] };
+  ARROW_TEMPLATES.set(kind, t);
+  return t;
+}
+
+/** An arrow along +x, its nock (back end) at the origin: three meshes (shaft, point, fletching) shared by kind. */
+export function createArrowMesh(m) {
+  const t = arrowTemplate(m);
+  const root = t.root.clone();
+  root.name = `Arrow_${Math.round(m * 1000)}g`;
+  return { root, kind: t.kind, materials: t.materials };
 }
 
 // ── the straw bale, cut open along the arrows' plane to show how deep they go ──
@@ -299,13 +329,20 @@ export function createBale({ cutZ }) {
   const side = mat('Straw', '#ffffff', 0.95, 0, { map: strawTexture(false) });
   const cut = mat('StrawCut', '#ffffff', 0.95, 0, { map: strawTexture(true) });
   side.map.repeat.set(2, 2);
-  // faces: +x, −x, +y, −y, +z (the cut, to the camera), −z
-  const bale = new THREE.Mesh(new THREE.BoxGeometry(BALE.depth, BALE.h, half), [side, side, side, side, cut, side]);
+  // faces: +x, −x, +y, −y, +z (the cut, to the camera), −z; the index reordered so the five straw sides draw at once
+  // and the cut face after them (two draws, not six)
+  const baleGeo = new THREE.BoxGeometry(BALE.depth, BALE.h, half);
+  const idx = Array.from(baleGeo.index.array);
+  baleGeo.setIndex([...idx.slice(0, 24), ...idx.slice(30, 36), ...idx.slice(24, 30)]);
+  baleGeo.clearGroups();
+  baleGeo.addGroup(0, 30, 0);
+  baleGeo.addGroup(30, 6, 1);
+  const bale = new THREE.Mesh(baleGeo, [side, cut]);
   bale.position.set(BALE.x + BALE.depth / 2, BALE.y + BALE.h / 2, cutZ - half / 2);
   bale.castShadow = true;
   bale.receiveShadow = true;
   root.add(bale);
-  // two baling twines round it
+  // two baling twines round it; the twine and the wooden stand share one vertex-coloured material (one draw)
   const twineM = mat('Twine', '#2f9e44', 0.7);
   for (const dy of [-0.2, 0.2]) {
     const tw = new THREE.Mesh(new THREE.BoxGeometry(BALE.depth + 0.008, 0.012, half + 0.004), twineM);
@@ -334,6 +371,8 @@ export function createBale({ cutZ }) {
   shelf.position.set(BALE.x + BALE.depth / 2, BALE.y - 0.02, cutZ - half / 2);
   shelf.castShadow = true;
   root.add(shelf);
+  paint(root, [twineM, woodM], mat('BaleStand', '#ffffff', 0.7, 0, { vertexColors: true }));
+  bake(root, { skip: [bale, ghost] });
   return { root, body: bale };
 }
 
@@ -511,28 +550,35 @@ export function createFace({ cutZ, y }) {
 export function createRange() {
   const root = new THREE.Group();
   root.name = 'Hall';
+  const floor = new THREE.Group();
+  floor.name = 'HallFloor';
+  root.add(floor);
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(50, 16), mat('MapleFloor', '#ffffff', 0.32, 0, { map: mapleTexture() }));
   ground.rotation.x = -Math.PI / 2;
   ground.position.set(2, 0, -4);
   ground.receiveShadow = true;
-  root.add(ground);
-  const tape = (name, color, w, l, x, z, along = 'z') => {
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(along === 'z' ? w : l, along === 'z' ? l : w), mat(name, color, 0.55));
+  floor.add(ground);
+  // the painted lines: plain colours, one vertex-coloured material (one draw for all of them)
+  const paintM = mat('FloorLines', '#ffffff', 0.55, 0, { vertexColors: true });
+  const C = (hex) => new THREE.Color(hex);
+  const tape = (color, w, l, x, z, along = 'z') => {
+    const m = new THREE.Mesh(colourGeometry(new THREE.PlaneGeometry(along === 'z' ? w : l, along === 'z' ? l : w), C(color)), paintM);
     m.rotation.x = -Math.PI / 2;
     m.position.set(x, 0.002, z);
     m.receiveShadow = true;
-    root.add(m);
+    floor.add(m);
     return m;
   };
-  const line = tape('ShootingLine', '#ffffff', 0.05, 5, 0, -1.6); // across the lanes, where the archer stands
-  tape('WaitingLine', '#ffd43b', 0.05, 5, -3, -1.6); // 3 m behind it: where archers wait
+  tape('#ffffff', 0.05, 5, 0, -1.6); // the shooting line, across the lanes, where the archer stands
+  tape('#ffd43b', 0.05, 5, -3, -1.6); // the waiting line, 3 m behind it
   // the hall's own court lines, painted on the floor along the long side
-  tape('CourtRed', '#e03131', 0.05, 30, 2, -2.4, 'x');
-  tape('CourtBlue', '#1971c2', 0.05, 30, 2, -3.3, 'x');
-  const arc = new THREE.Mesh(new THREE.RingGeometry(1.775, 1.825, 64, 1, Math.PI * 0.08, Math.PI * 0.84), mat('CourtArc', '#e03131', 0.55));
+  tape('#e03131', 0.05, 30, 2, -2.4, 'x');
+  tape('#1971c2', 0.05, 30, 2, -3.3, 'x');
+  const arc = new THREE.Mesh(colourGeometry(new THREE.RingGeometry(1.775, 1.825, 64, 1, Math.PI * 0.08, Math.PI * 0.84), C('#e03131')), paintM);
   arc.rotation.x = -Math.PI / 2;
   arc.position.set(-4.2, 0.002, -2.4);
-  root.add(arc);
+  floor.add(arc);
+  bake(floor);
 
   const backdrop = new THREE.Group();
   backdrop.name = 'HallWalls';
@@ -541,46 +587,49 @@ export function createRange() {
   const PAD = 1.2; // m of padding
   const pad = new THREE.Mesh(new THREE.BoxGeometry(50, PAD, 0.06), mat('WallPadding', '#ffffff', 0.55, 0, { map: padTexture() }));
   pad.position.set(2, PAD / 2, WALL_Z + 0.03);
-  pad.receiveShadow = true;
-  const cap = new THREE.Mesh(new THREE.BoxGeometry(50, 0.04, 0.08), mat('PadCap', '#5c2a0c', 0.5));
+  // plain painted trim (the padding's cap, the window frames, the blue band): one vertex-coloured material
+  const trimM = mat('WallTrim', '#ffffff', 0.55, 0, { vertexColors: true });
+  const trim = (geo, color) => new THREE.Mesh(colourGeometry(geo, C(color)), trimM);
+  const cap = trim(new THREE.BoxGeometry(50, 0.04, 0.08), '#5c2a0c');
   cap.position.set(2, PAD, WALL_Z + 0.04);
   const brick = new THREE.Mesh(new THREE.PlaneGeometry(50, 7), mat('Brick', '#ffffff', 0.9, 0, { map: brickTexture() }));
   brick.position.set(2, 3.5, WALL_Z);
-  brick.receiveShadow = true;
   backdrop.add(pad, cap, brick);
   // high windows: a row of daylight panes in white frames
   const glassM = mat('Windows', '#cfe9ff', 0.2, 0, { emissive: '#bfe2ff', emissiveIntensity: 0.9 });
-  const frameM = mat('WindowFrames', '#f1f3f5', 0.5);
+  const frameGeo = new THREE.BoxGeometry(1.7, 1.1, 0.05);
+  const glassGeo = new THREE.PlaneGeometry(1.56, 0.96);
+  const barGeo = new THREE.BoxGeometry(0.05, 0.96, 0.03);
   for (let i = 0; i < 22; i++) {
     const x = -20 + i * 2.2;
-    const frame = new THREE.Mesh(new THREE.BoxGeometry(1.7, 1.1, 0.05), frameM);
+    const frame = trim(frameGeo, '#f1f3f5');
     frame.position.set(x, 4.35, WALL_Z + 0.02);
-    const glass = new THREE.Mesh(new THREE.PlaneGeometry(1.56, 0.96), glassM);
+    const glass = new THREE.Mesh(glassGeo, glassM);
     glass.position.set(x, 4.35, WALL_Z + 0.05);
-    const bar = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.96, 0.03), frameM);
+    const bar = trim(barGeo, '#f1f3f5');
     bar.position.set(x, 4.35, WALL_Z + 0.06);
     backdrop.add(frame, glass, bar);
   }
   // a blue band under the windows, as gyms often have
-  const band = new THREE.Mesh(new THREE.PlaneGeometry(50, 0.18), mat('WallBand', '#1c5fd0', 0.6));
+  const band = trim(new THREE.PlaneGeometry(50, 0.18), '#1c5fd0');
   band.position.set(2, 3.0, WALL_Z + 0.01);
   backdrop.add(band);
-  // the roof: a steel truss line and hanging LED lamps
-  const steelM = mat('Truss', '#6c7686', 0.5, 0.6);
-  const beam = new THREE.Mesh(new THREE.BoxGeometry(50, 0.2, 0.2), steelM);
+  // the roof: a steel truss line and hanging LED lamps (steel and the lamp shades: one vertex-coloured material)
+  const fixtureM = mat('Fixtures', '#ffffff', 0.5, 0.5, { vertexColors: true, side: THREE.DoubleSide });
+  const beam = new THREE.Mesh(colourGeometry(new THREE.BoxGeometry(50, 0.2, 0.2), C('#6c7686')), fixtureM);
   beam.position.set(2, 5.6, -2.5);
   backdrop.add(beam);
   const lampM = mat('Lamps', '#ffffff', 0.4, 0, { emissive: '#fff7e0', emissiveIntensity: 1.4 });
+  const rodGeo = colourGeometry(new THREE.CylinderGeometry(0.01, 0.01, 0.5, 6), C('#6c7686'));
+  const shadeGeo = colourGeometry(new THREE.CylinderGeometry(0.16, 0.26, 0.14, 20, 1, true), C('#4a5260'));
+  const glowGeo = new THREE.CircleGeometry(0.25, 20);
   for (let i = 0; i < 6; i++) {
     const x = -4 + i * 2.6;
-    const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.5, 6), steelM);
+    const rod = new THREE.Mesh(rodGeo, fixtureM);
     rod.position.set(x, 5.25, -2.5);
-    const shade = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.16, 0.26, 0.14, 20, 1, true),
-      mat('LampShade', '#4a5260', 0.5, 0.4, { side: THREE.DoubleSide }),
-    );
+    const shade = new THREE.Mesh(shadeGeo, fixtureM);
     shade.position.set(x, 4.95, -2.5);
-    const glow = new THREE.Mesh(new THREE.CircleGeometry(0.25, 20), lampM);
+    const glow = new THREE.Mesh(glowGeo, lampM);
     glow.rotation.x = Math.PI / 2;
     glow.position.set(x, 4.885, -2.5);
     backdrop.add(rod, shade, glow);
@@ -592,8 +641,12 @@ export function createRange() {
   );
   net.rotation.y = -Math.PI / 2;
   net.position.set(BALE.x + 1.1, 2.8, WALL_Z + 3.2);
-  net.receiveShadow = true;
   backdrop.add(net);
-  for (const o of root.children) if (o !== ground && o !== line) o.userData.noExport = true;
-  return { root, ground, backdrop };
+  // the walls take no shadow (the lamps throw them down onto the floor, well in front of the wall), so they are
+  // never drawn into the shadow map; the still parts become one mesh per material: seven draws for the whole hall
+  bake(backdrop, { skip: [net] });
+  root.traverse((o) => {
+    o.userData.noExport = true;
+  });
+  return { root, ground: floor, backdrop };
 }

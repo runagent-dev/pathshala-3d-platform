@@ -15,16 +15,31 @@ body.bg-transparent { background: transparent; }
 .wk-step.c-F { --c: var(--c-F); }
 .wk-step.c-s { --c: var(--c-s); }
 .wk-name { font-size: 14px; font-weight: 600; color: var(--c); white-space: nowrap; margin-right: 2px; }
-.wk-btn { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 38px; padding: 0; border-radius: 8px; border: 1.5px solid color-mix(in srgb, var(--c) 55%, #fff); background: color-mix(in srgb, var(--c) 13%, #fff); color: var(--c); cursor: pointer; }
+.wk-btn { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 36px; padding: 0; border-radius: 8px; border: 1.5px solid color-mix(in srgb, var(--c) 55%, #fff); background: color-mix(in srgb, var(--c) 13%, #fff); color: var(--c); cursor: pointer; }
 .wk-btn svg { width: 18px; height: 18px; stroke-width: 2.4; }
 .wk-btn:hover:not(:disabled) { background: color-mix(in srgb, var(--c) 24%, #fff); }
 .wk-btn:disabled { opacity: 0.35; cursor: default; }
-.wk-val { min-width: 3.4em; text-align: center; font-size: 17px; font-weight: 700; color: var(--c); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.wk-val { min-width: 3em; text-align: center; font-size: 17px; font-weight: 700; color: var(--c); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .wk-step.fixed .wk-val { opacity: 0.75; }
 
 /* a warm, lightly tinted panel under the vivid scene */
 .wk .pvc-panel { background: linear-gradient(180deg, #fff6e6, #fffdf8 60%); }
 
+/* the sheet on a phone held upright: every line as tight as it reads well, so the 3D view gets 55 % of 390 × 700 */
+.wk .pvc-learn { gap: 6px; }
+.wk .pvc-examples button { min-height: 40px; padding: 2px 3px 3px; }
+.wk .pvc-ex-word { font-size: 15.5px; }
+.wk .pvc-ex-res { font-size: 12px; line-height: 1.25; }
+.wk .pvc-examples[data-results] .pvc-ex-res:empty { min-height: 1.25em; }
+.wk .pvc-act-row { min-height: 46px; }
+.wk .pvc-act { min-height: 46px; }
+.wk .pvc-outcome { line-height: 1.6; min-height: 1.6em; }
+.wk .pvc-rule { font-size: 14px; line-height: 1.45; min-height: calc(var(--pvc-rule-lines, 3) * 1.45em); }
+
+/* English words are longer: on a phone-wide panel the steppers show the letters F and s only (named in aria-label) */
+@container pvc-panel (max-width: 440px) {
+  .wk:lang(en) .wk-word { display: none; }
+}
 /* a narrow panel (beside the scene): the letters F and s only, the steppers keep their size */
 @container pvc-panel (max-width: 350px) {
   .wk-word { display: none; }
@@ -35,6 +50,7 @@ body.bg-transparent { background: transparent; }
 }
 /* narrower still (640 × 400): F and s one under the other */
 @container pvc-panel (max-width: 290px) {
+  .wk .pvc-learn .pvc-outcome { font-size: 13.5px; }
   .wk-calc { flex-direction: column; align-items: stretch; gap: 3px; }
   .wk-step { justify-content: space-between; }
   .wk-btn { height: 32px; }
@@ -49,19 +65,35 @@ body.bg-transparent { background: transparent; }
 .wk .pvc-anno { transition: none; font-size: 14px; font-weight: 700; color: var(--c); border-color: color-mix(in srgb, var(--c) 45%, var(--line)); padding: 1px 7px; }
 .wk .pvc-anno small { font-size: 0.82em; font-weight: 500; color: var(--ink-2); }
 
-/* the test: answers in words (two lines allowed), the mistake note under the worked answer */
-.wk .pvc-opt { font-size: 14.5px; line-height: 1.25; }
+/* the test: answers in words (two lines allowed), the mistake note under the worked answer; as tight as the sheet
+   above, so the 3D view keeps its height when the test starts */
+.wk .pvc-q-ask { gap: 6px; }
+.wk .pvc-q-head { min-height: 34px; }
+.wk .pvc-q-head .pvc-btn { height: 34px; }
+.wk .pvc-q-options { gap: 6px; }
+.wk .pvc-opt { height: 44px; font-size: 14.5px; line-height: 1.25; }
 .wk-opt { display: block; white-space: normal; text-align: center; }
-.wk-why { display: block; margin-top: 2px; color: var(--ink-2); }
-.wk .pvc-q-text { font-size: 15.5px; }
-.wk .pvc-q-feedback { font-size: 13.5px; line-height: 1.45; }
+.wk-why { display: block; margin-top: 1px; color: var(--ink-2); }
+.wk .pvc-q-text { font-size: 15px; line-height: 1.3; }
+.wk .pvc-q-feedback { --pvc-q-feedback-min: calc(3lh + 2px); font-size: 13px; line-height: 1.4; }
 
-/* wide frames (tabs beside the sheet) */
+/* wide frames (tabs beside the sheet): the steppers and the action share a row, so the 3D view keeps its height */
 @container pvc (min-width: 720px) and (min-height: 461px) {
-  .wk .pvc-learn { gap: 9px; }
-  .wk .pvc-examples, .wk-calc { max-width: 520px; }
-  .wk-calc { justify-content: flex-start; gap: 28px; }
-  .wk .pvc-rule { --pvc-rule-lines: 2; }
+  .wk .pvc-learn { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: 'ex ex' 'calc act' 'out out' 'rule rule'; align-content: start; align-items: center; gap: 6px 28px; }
+  .wk .pvc-examples { grid-area: ex; max-width: 560px; }
+  .wk-calc { grid-area: calc; justify-content: flex-start; gap: 20px; }
+  .wk .pvc-act-row { grid-area: act; }
+  .wk .pvc-outcome { grid-area: out; }
+  .wk .pvc-rule { grid-area: rule; --pvc-rule-lines: 2; max-width: 860px; }
+}
+/* 800 × 500 and the like: the letters F and s only, the reset button as its icon */
+@container pvc (min-width: 720px) and (max-width: 1000px) and (min-height: 461px) {
+  .wk-word { display: none; }
+  .wk .pvc-act-row .pvc-quiet > span { display: none; }
+  .wk .pvc-act-row .pvc-quiet { padding: 0; }
+  .wk .pvc-learn { column-gap: 16px; }
+  .wk-calc { gap: 12px; }
+  .wk-btn { width: 36px; }
 }
 /* the tightest phone (390 × 520): smaller steps and lines */
 @container pvc (max-width: 560px) and (max-height: 600px) {
@@ -71,7 +103,7 @@ body.bg-transparent { background: transparent; }
   .wk .pvc-examples button { min-height: 32px; padding-top: 1px; padding-bottom: 1px; }
   .wk .pvc-ex-word { font-size: 13.5px; }
   .wk .pvc-ex-res { font-size: 10.5px; min-height: 12px; }
-  .wk .pvc-act-row { min-height: 38px; }
+  .wk .pvc-act-row { min-height: 44px; }
   .wk .pvc-act { min-height: 36px; font-size: 14px; }
   .wk-btn { width: 40px; height: 34px; }
   .wk-val { font-size: 15.5px; min-width: 3.2em; }
@@ -82,9 +114,13 @@ body.bg-transparent { background: transparent; }
   .wk .pvc-opt { font-size: 13px; height: 38px; }
   .wk .pvc-q-feedback { font-size: 12.5px; line-height: 1.4; }
 }
-/* short and wide (phone held sideways): the panel is beside the scene */
+/* short and wide (phone held sideways): the panel is beside the scene (the kit's rule); room for the longest
+   question and answer, as the panel is the frame's full height anyway */
 @container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
   .wk .pvc-learn { gap: 5px; }
+  .wk .pvc-act-row { min-height: 48px; }
+  .wk .pvc-q-text { --pvc-q-text-min: 3lh; }
+  .wk .pvc-q-feedback { --pvc-q-feedback-min: calc(5lh + 2px); }
   .wk-btn { width: 40px; height: 34px; }
   .wk-val { font-size: 15px; min-width: 3.1em; }
   .wk-name { font-size: 13px; }

@@ -31,7 +31,7 @@ export const STRINGS = {
     idea_wheel: 'চাকার কিনারেও একটি বিন্দু আছে। গাড়ি চালিয়ে দেখো, এটি কোন পথে কত দূর যায়।',
     idea_turn: 'এবার গাড়িটি বাঁক নেবে। দেখো, প্রতিটি বিন্দু কোন দিকে কত দূর যায়।',
     see_straight: 'সব বিন্দু একই সময় একই দিকে একই দূরত্ব অতিক্রম করেছে: সোজা এগিয়ে যাওয়া গাড়ির গতি চলন গতি।',
-    see_wheel: 'গাড়ির গায়ের সব বিন্দু একই দূরত্ব অতিক্রম করেছে, কিন্তু চাকার বিন্দুটি ওঠা-নামা করে বেশি পথ গেছে। তাই ঘূর্ণায়মান চাকা বিবেচনায় না আনলে গাড়ির গতি চলন গতি।',
+    see_wheel: 'গাড়ির গায়ের সব বিন্দু একই দূরত্ব গেছে, কিন্তু চাকার বিন্দুটি ওঠা-নামা করে বেশি পথ গেছে। তাই ঘূর্ণায়মান চাকা বিবেচনায় না আনলে গাড়ির গতি চলন গতি।',
     see_turn: 'বাঁক নেওয়ার সময় প্রতিটি বিন্দু আলাদা দূরত্ব যায়, আর একই সময় আলাদা দিকে যায়। তাই এটি চলন গতি নয়।',
 
     act_drive: 'চালাও',
@@ -46,7 +46,7 @@ export const STRINGS = {
     q_count: 'প্রশ্ন {i} / {n}',
     q_score: 'সঠিক: {right}',
     // 1. a distance from two marks
-    q_dist: '{given} বিন্দু {start} মিটার দাগ থেকে {end} মিটার দাগে গেছে। {asked} বিন্দু কত মিটার গেছে?',
+    q_dist: '{given} বিন্দু {start} থেকে {end} মিটার দাগে গেল। {asked} বিন্দু কত মিটার গেল?',
     dist_why: '{end} − {start} = <b>{d} মিটার</b>; সব বিন্দু একই দূরত্ব যায়, তাই {asked} বিন্দুও {d} মিটার।',
     dist_end: '{end} হলো {given} বিন্দু শেষে যে দাগে আছে, দূরত্ব নয়: {end} − {start} = <b>{d} মিটার</b>।',
     dist_start: '{start} হলো যে দাগ থেকে শুরু, দূরত্ব নয়: {end} − {start} = <b>{d} মিটার</b>, সব বিন্দুর।',
@@ -152,7 +152,7 @@ export const STRINGS = {
 
     q_count: 'Question {i} / {n}',
     q_score: 'Right: {right}',
-    q_dist: 'The {given} point went from the {start} m mark to the {end} m mark. How far did the {asked} point go?',
+    q_dist: 'The {given} point went from the {start} to the {end} m mark. How far did the {asked} point go?',
     dist_why: '{end} − {start} = <b>{d} m</b>; every point goes the same distance, so the {asked} point too, {d} m.',
     dist_end: '{end} is the mark where the {given} point ends up, not the distance: {end} − {start} = <b>{d} m</b>.',
     dist_start: '{start} is the mark it started from, not the distance: {end} − {start} = <b>{d} m</b>, for every point.',

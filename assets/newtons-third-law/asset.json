@@ -5,7 +5,7 @@
   "title": "Newton's third law of motion (নিউটনের তৃতীয় গতি সূত্র)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "book": "physics-9-10",
   "page": 84,
   "topic": "3.8",
@@ -13,7 +13,7 @@
   "order": 1,
   "maintainers": ["RadeenXALNW"],
   "units": "m",
-  "description": "Newton's third law (Physics 9–10, topic 3.8, pp84–86): a boy jumps from a wooden boat onto a jetty while the boat recoils. Equal, opposite horizontal contact forces act on two different bodies only while his feet push on the boat; after takeoff, separate velocity arrows show the motion. The apple–Earth lesson has three paused steps: a six-times-slower fall with a ghost start and trail, an equal-force comparison naming who pulls whom, and an in-lesson mass-versus-force question with specific feedback before acceleration results. The example shows the complete NASA Blue Marble globe, a red apple, equal and opposite gravitational forces, centre-to-centre distance R and the textbook equations F = GmM/R² = mg, a_m = g and a_M = F/M = (m/M)g ≈ 1.64×10^-24 m/s² for m = 1 kg and M = 5.98×10^24 kg. Sizes and separation are explicitly not to scale. Five tap questions connect the pictures to the force-pair principle. Offline, Bangla/English, with self-contained GLB exports. Version 1.0 replaces the equal/unequal skater example IDs with boat; apple remains apple.",
+  "description": "Newton's third law (Physics 9–10, topic 3.8, pp84–86): at a river ghat with a village on the far bank, a boy jumps from a wooden boat onto a jetty while the boat recoils. Equal, opposite horizontal contact forces act on two different bodies only while his feet push on the boat; after takeoff, separate velocity arrows show the motion. The apple–Earth lesson has three paused steps: a six-times-slower fall with a ghost start and trail, an equal-force comparison naming who pulls whom, and an in-lesson mass-versus-force question with specific feedback before acceleration results. The example shows the complete NASA Blue Marble globe against stars, a red apple, equal and opposite gravitational forces, centre-to-centre distance R and the textbook equations F = GmM/R² = mg, a_m = g and a_M = F/M = (m/M)g ≈ 1.64×10^-24 m/s² for m = 1 kg and M = 5.98×10^24 kg. Sizes and separation are explicitly not to scale. Five tap questions connect the pictures to the force-pair principle. Offline, Bangla/English, with self-contained GLB exports. Version 1.0 replaces the equal/unequal skater example IDs with boat; apple remains apple.",
   "tags": ["force", "newtons-laws", "action-reaction", "third-law", "acceleration", "bangla"],
   "params": [
     {

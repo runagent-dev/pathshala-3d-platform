@@ -13,10 +13,8 @@
 // words and the forces added tip to tail (the chain closes when the resultant is zero). Then a short test. Built on the
 // shared student kit (@shared/student/…).
 import * as THREE from 'three';
-import { createArrow } from '@shared/arrow.js';
 import { createStage } from '@shared/stage.js';
 import { createTweener, ease } from '@shared/tween.js';
-import { createMaterials } from '@shared/student/materials.js';
 import { createAudio } from '@shared/student/audio.js';
 import { buildStudentShell } from '@shared/student/shell.js';
 import { createAnnotations } from '@shared/student/annotations.js';
@@ -25,7 +23,9 @@ import { createQuiz } from '@shared/student/quiz.js';
 import { capturePointer, releasePointer } from '@shared/student/pointer.js';
 import { ICONS, svg } from '@shared/student/icons.js';
 import { createI18n } from './i18n.js';
+import { outlinedArrow } from './arrows.js';
 import { COLORS, createBookRig, createHand, createPendulum } from './models.js';
+import { createRoom } from './scenery.js';
 import { drawSum } from './sum.js';
 import {
   ALPHA,
@@ -108,7 +108,7 @@ export function createApp(root, options = {}) {
           <div class="bf-read">
             <svg class="bf-sum" role="img" aria-label="${t('sum_aria')}"></svg>
             <div class="bf-state"><b class="bf-word" aria-live="polite"></b><span class="bf-res"></span></div>
-            <small class="bf-cap">${t('sum_caption')}</small>
+            <small class="bf-cap"><span class="bf-cap-1"></span><span class="bf-cap-2">${t('sum_caption')}</span></small>
           </div>
           <p class="bf-say"></p>
           <div class="pvc-learn-foot bf-acts">
@@ -116,49 +116,40 @@ export function createApp(root, options = {}) {
             <button class="pvc-btn" data-act="a2"><i class="ic"></i><span></span></button>
           </div>`,
   });
-  const note = document.createElement('div');
-  note.className = 'bf-note';
-  ui.stage.append(note);
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
-  const stage = createStage(ui.canvasHost, { fov: 26, near: 0.02, far: 40, environment: 'studio-light' });
+  const stage = createStage(ui.canvasHost, { fov: 26, near: 0.02, far: 40, environment: 'studio-light', environmentIntensity: 0.55 });
   const { camera, controls, scene } = stage;
   controls.minDistance = 0.4;
   controls.maxDistance = 6;
   controls.enablePan = false;
-  const M = createMaterials(stage.renderer);
   const world = new THREE.Group();
   world.name = 'BalancedForces';
   scene.add(world);
+  // the laboratory round both examples (src/scenery.js); with bg=transparent only the figure
+  const transparent = o.bg === 'transparent';
+  if (!transparent) {
+    const room = createRoom();
+    scene.add(room.root);
+    scene.background = room.background;
+  }
+  // a soft fill from the room (sky above, the wooden bench below); the studio reflections turned down so shadows read
+  const fill = new THREE.HemisphereLight(0xf1f5ff, 0x7a5c44, 1.25);
+  scene.add(fill);
 
-  const pend = createPendulum({ materials: M });
-  const rig = createBookRig({ materials: M });
+  const pend = createPendulum();
+  const rig = createBookRig();
   world.add(pend.root, rig.root);
-  const holder = createHand({ materials: M, grip: 'ball' });
+  const holder = createHand({ grip: 'ball' });
   const holderMount = new THREE.Group();
   holderMount.name = 'HoldingHand';
   holderMount.add(holder.root);
   holderMount.visible = false;
   pend.root.add(holderMount);
 
-  // force arrows are drawn over everything (like a diagram on the picture): from the body's surface outwards, so they
-  // never cover it, and over the bench while the ball falls
-  const arrowMaterial = (color) =>
-    new THREE.MeshStandardMaterial({
-      color,
-      roughness: 0.45,
-      metalness: 0,
-      emissive: color,
-      emissiveIntensity: 0.2,
-      transparent: true,
-      depthTest: false,
-      depthWrite: false,
-    });
-  const arrowOf = (color, name, size = ARROW) => {
-    const a = createArrow({ color, name, material: arrowMaterial(color), ...size });
-    a.root.traverse((m) => (m.renderOrder = 5));
-    return a;
-  };
+  // force arrows are drawn over everything (like a diagram on the picture), bold and outlined in white: from the
+  // body's surface outwards, so they never cover it, and over the bench while the ball falls
+  const arrowOf = (color, name) => outlinedArrow(name, color, ARROW);
   const arrows = {
     T: arrowOf(COLORS.pull, 'PullArrow'),
     T2: arrowOf(COLORS.pull, 'PullArrow2'),
@@ -170,49 +161,65 @@ export function createApp(root, options = {}) {
   for (const a of Object.values(arrows)) world.add(a.root);
   // the test's four directions to choose from
   const cands = Array.from({ length: 4 }, (_, i) =>
-    createArrow({ color: '#8a939e', name: `Choice${i}`, radius: 0.0042, head: 0.026, headRadius: 0.0115 }),
+    outlinedArrow(`Choice${i}`, '#495057', { radius: 0.0045, head: 0.026, headRadius: 0.0115, own: true, order: 8 }),
   );
   for (const a of cands) {
     a.root.userData.noExport = true;
     world.add(a.root);
   }
-  // the marks a falling ball leaves every 0.04 s
-  const markGeo = new THREE.SphereGeometry(0.0055, 12, 8);
-  const markMat = new THREE.MeshBasicMaterial({ color: '#868e96' });
+  // the marks a falling ball leaves every 0.04 s: dark dots ringed in white (they read on the wall and the bench),
+  // two instanced meshes (the white ring is a larger dot drawn first, both over the picture)
+  const MAX_MARKS = 12;
+  const markOf = (r, color, order) => {
+    const m = new THREE.InstancedMesh(
+      new THREE.SphereGeometry(r, 12, 8),
+      new THREE.MeshBasicMaterial({ color, depthTest: false, depthWrite: false, transparent: true, toneMapped: false }),
+      MAX_MARKS,
+    );
+    m.count = 0;
+    m.renderOrder = order;
+    m.frustumCulled = false;
+    return m;
+  };
   const marks = new THREE.Group();
   marks.name = 'Marks';
   marks.userData.noExport = true;
+  const markDots = markOf(0.0048, '#212529', 4);
+  const markRims = markOf(0.0072, '#ffffff', 3);
+  marks.add(markRims, markDots);
   pend.root.add(marks);
+  const markM = new THREE.Matrix4();
+  const clearMarks = () => {
+    markDots.count = markRims.count = 0;
+  };
 
   const tweener = createTweener();
   stage.addTicker((dt) => tweener.tick(dt));
   const audio = createAudio(o.sound);
 
-  if (o.shadow && o.bg !== 'transparent') {
+  // daylight from a window behind the viewer, high on the right: shadows fall back onto the bench and the wall
+  const sun = new THREE.DirectionalLight(0xfff4e2, 2.1);
+  sun.position.set(0.75, 1.25, 2.4);
+  sun.target.position.set(-0.08, 0.02, -0.1);
+  scene.add(sun, sun.target);
+  if (o.shadow && !transparent) {
+    // PCF in a box fitted round what casts (the stand, the ball and its swing, the book, its rope and the hand), seen
+    // from the light: 1024 px for about a metre
     stage.renderer.shadowMap.enabled = true;
-    stage.renderer.shadowMap.type = THREE.VSMShadowMap;
-    const sun = new THREE.DirectionalLight(0xffffff, 0.45);
-    sun.position.set(0.5, 2.2, 1.6);
-    sun.target.position.set(0, -0.2, 0);
+    stage.renderer.shadowMap.type = THREE.PCFShadowMap;
     sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
-    Object.assign(sun.shadow.camera, { left: -0.9, right: 0.9, top: 0.9, bottom: -0.9, near: 0.5, far: 5 });
-    sun.shadow.radius = 6;
-    sun.shadow.bias = -0.0005;
-    scene.add(sun, sun.target);
-    pend.table.receiveShadow = true;
+    sun.shadow.mapSize.set(1024, 1024);
+    Object.assign(sun.shadow.camera, { left: -0.5, right: 0.5, top: 0.48, bottom: -0.48, near: 1.6, far: 4.2 });
+    sun.shadow.radius = 3;
+    sun.shadow.bias = -0.0004;
+    sun.shadow.normalBias = 0.002;
+    // only the parts whose shadow is seen cast one: the ball, the cord, the hand that holds the ball, the book and
+    // its rope (the stand's shadow is set where it is built)
     const casts = (obj) =>
       obj.traverse((m) => {
-        if (m instanceof THREE.Mesh && m.material && !m.material.transparent && m.material.visible !== false && m !== pend.table) m.castShadow = true;
+        if (m instanceof THREE.Mesh && !m.userData.noExport && m.material?.visible !== false) m.castShadow = true;
       });
-    casts(pend.root);
-    // the book scene has no bench: a faint shadow of the book (not of the arms) on an invisible wall behind it
-    for (const obj of rig.shadowCasters) casts(obj);
-    const wall = new THREE.Mesh(new THREE.PlaneGeometry(4, 4), new THREE.ShadowMaterial({ opacity: 0.08 }));
-    wall.position.set(0, 0, -0.35);
-    wall.receiveShadow = true;
-    wall.userData.noExport = true;
-    rig.root.add(wall);
+    for (const obj of [pend.ball, pend.root.getObjectByName('Cord'), holderMount, ...rig.shadowCasters]) if (obj) casts(obj);
   }
 
   const listeners = new Map();
@@ -384,7 +391,7 @@ export function createApp(root, options = {}) {
     }
     return boxes;
   }
-  const anno = createAnnotations({ stage, layer: ui.annoLayer, avoid: [ui.corner, ui.hint, note, sceneBoxes] });
+  const anno = createAnnotations({ stage, layer: ui.annoLayer, avoid: [ui.corner, ui.hint, sceneBoxes] });
   /** Places to try round an arrow's tip, best first: beyond it, then beside it (canvas px offsets). */
   function spotsFor(a) {
     const p0 = toScreen(a.root.position);
@@ -589,6 +596,7 @@ export function createApp(root, options = {}) {
     word: $('.bf-word'),
     res: $('.bf-res'),
     say: $('.bf-say'),
+    cap1: $('.bf-cap-1'),
     a1: $('[data-act="a1"]'),
     a2: $('[data-act="a2"]'),
   };
@@ -652,11 +660,10 @@ export function createApp(root, options = {}) {
       }
       b.disabled = off || s.locked;
     });
-    // the note in the corner: the scale of the arrows, and the slowed-down fall
+    // the quiet line under the state: the arrows' scale, or (the fall) the slowed time and the marks
     const slow = s.scene === 'pendulum' && (s.phase === 'fall' || s.phase === 'landed');
     const text = slow ? t('note_slow', { k: SLOW, dt: MARK_DT }) : t('note_scale');
-    if (note.textContent !== text) note.textContent = text;
-    note.dataset.at = s.scene === 'book' ? 'bottom' : 'top'; // the book's hands are at the top
+    if (el.cap1.textContent !== text) el.cap1.textContent = text;
   }
 
   // ── one refresh for everything that shows the state ─────────────────────────
@@ -745,7 +752,7 @@ export function createApp(root, options = {}) {
     s.carry = 0;
     s.cut = null;
     s.frozen = false;
-    marks.clear();
+    clearMarks();
     nudge(false);
     refresh();
     followFrame(animate ? 0.5 : 0);
@@ -770,9 +777,13 @@ export function createApp(root, options = {}) {
     return true;
   }
   function addMark(y) {
-    const m = new THREE.Mesh(markGeo, markMat);
-    m.position.set(0, -y, 0.04);
-    marks.add(m);
+    const i = markDots.count;
+    if (i >= MAX_MARKS) return;
+    markM.makeTranslation(0, -y, 0.04);
+    markDots.setMatrixAt(i, markM);
+    markRims.setMatrixAt(i, markM);
+    markDots.count = markRims.count = i + 1;
+    markDots.instanceMatrix.needsUpdate = markRims.instanceMatrix.needsUpdate = true;
   }
   /** The fall, `dt` s of screen time later. */
   function stepFall(dt) {
@@ -950,7 +961,9 @@ export function createApp(root, options = {}) {
   stage.onResize(() => {
     if (!s.userMovedCamera) flyTo(viewPose(s.view), 0);
     spotKey.clear();
+    // the small drawing is drawn at its own pixel size: a turned phone gives it another box, so draw it again now
     sumKey = '';
+    refreshPanel(forcesNow());
   });
 
   // ── touch and mouse on the 3D ───────────────────────────────────────────────
@@ -1160,7 +1173,7 @@ export function createApp(root, options = {}) {
     s.phase = 'rest';
     s.theta = 0;
     s.omega = 0;
-    marks.clear();
+    clearMarks();
     anno.clear();
     spotKey.clear();
     s.show = show;
@@ -1217,7 +1230,7 @@ export function createApp(root, options = {}) {
         s.phase = 'rest';
         s.theta = 0;
         s.omega = 0;
-        marks.clear();
+        clearMarks();
         anno.clear();
         spotKey.clear();
         s.alpha = saved.alpha;
@@ -1349,7 +1362,7 @@ export function createApp(root, options = {}) {
             await wait(1000 * (SLOW * Math.sqrt((2 * DROP) / G) + 1.4));
             if (!alive()) return;
             s.cut = null;
-            marks.clear();
+            clearMarks();
             s.phase = 'rest';
             cutCord(0.45, { animate: false });
             runFor(SLOW * 0.11);
@@ -1616,7 +1629,17 @@ export function createApp(root, options = {}) {
       await setView('front');
     },
     startPractice: () => quiz.start(),
-    capture: (opts) => stage.capture(opts),
+    capture(opts = {}) {
+      // a caller that asks for its own background gets the figure without the room's sky behind it
+      const background = scene.background;
+      if (opts.background !== undefined) scene.background = null;
+      try {
+        return stage.capture(opts);
+      } finally {
+        scene.background = background;
+        stage.invalidate();
+      }
+    },
     // the scene shown, its arrows and the hand: not the pick targets, the marks, the sleeves or the test's choices
     exportRoot: () => world,
   };

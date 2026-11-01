@@ -10,6 +10,7 @@ import { createArrow, createDashes, createDot } from './draw.js';
 import { earthTexture } from './maps.js';
 import { appleMaterials, createPerson } from './people.js';
 import { FALL_MOMENTS, PEOPLE, placeAt, rimPoint } from './physics.js';
+import { createHalo } from './setting.js';
 
 export const R = 20; // cm: a desk globe
 export const H = 8; // cm: the people, drawn very much bigger than real
@@ -34,7 +35,7 @@ export function createGlobe({ renderer, map: sharedMap }) {
   );
   globe.name = 'Earth';
   globe.rotation.y = -Math.PI / 2; // longitude 0° faces +z (the viewer), 90° E faces +x (right)
-  root.add(globe);
+  root.add(globe, createHalo(R));
 
   const appleM = appleMaterials();
   const ids = /** @type {const} */ (['you', 'north', 'south', 'far']);
@@ -42,32 +43,39 @@ export function createGlobe({ renderer, map: sharedMap }) {
   const tmp = new THREE.Vector3();
   for (const id of ids) {
     const person = createPerson({ H, clothes: CLOTHES[id], apple: appleM, name: id === 'you' ? 'You' : `Person_${id}` });
-    const arrow = createArrow({ radius: H * 0.042, head: H * 0.22, headRadius: H * 0.1, top: true, name: `Pull_${id}` });
-    const line = createDashes({ radius: 0.15, dash: 0.95, gap: 0.65, color: '#1d2733', opacity: 0.75, name: `ToCentre_${id}` });
+    const arrow = createArrow({ radius: H * 0.042, head: H * 0.22, headRadius: H * 0.1, name: `Pull_${id}` });
+    const line = createDashes({ radius: 0.13, dash: 0.95, gap: 0.65, color: '#1d2733', rim: '#ffffff', opacity: 0.9, name: `ToCentre_${id}` });
     root.add(person.root, arrow.root, line.mesh);
     people[id] = { id, person, arrow, line, theta: PEOPLE[id], fall: null };
   }
   const centre = createDot(0.55, '#1d2733');
   root.add(centre);
-  // the faint copies of the falling apples (a drawing, not exported)
+  // the faint copies of the falling apples (a drawing, not exported): one instanced mesh for all of them
   const ghostMat = new THREE.MeshStandardMaterial({
     name: 'AppleGhost',
     color: '#e03131',
     roughness: 0.6,
     transparent: true,
-    opacity: 0.32,
+    opacity: 0.38,
     depthWrite: false,
   });
-  for (const id of ids) {
-    const r = people[id].person.appleR;
-    people[id].ghosts = FALL_MOMENTS.map(() => {
-      const m = new THREE.Mesh(new THREE.SphereGeometry(r * 0.92, 18, 12), ghostMat);
-      m.visible = false;
-      m.userData.noExport = true;
-      m.renderOrder = 5;
-      root.add(m);
-      return m;
-    });
+  const ghostR = people.you.person.appleR * 0.92;
+  const ghosts = new THREE.InstancedMesh(new THREE.SphereGeometry(ghostR, 18, 12), ghostMat, ids.length * FALL_MOMENTS.length);
+  ghosts.name = 'AppleGhosts';
+  ghosts.userData.noExport = true;
+  ghosts.renderOrder = 5;
+  ghosts.frustumCulled = false;
+  ghosts.count = 0;
+  ghosts.visible = false;
+  root.add(ghosts);
+  const ghostAt = {}; // id → the ghost positions (null: none shown)
+  const gm = new THREE.Matrix4();
+  function syncGhosts() {
+    let n = 0;
+    for (const id of ids) for (const p of ghostAt[id] ?? []) ghosts.setMatrixAt(n++, gm.makeTranslation(p.x, p.y, p.z));
+    ghosts.count = n;
+    ghosts.visible = n > 0;
+    ghosts.instanceMatrix.needsUpdate = true;
   }
 
   const v = new THREE.Vector3();
@@ -93,6 +101,7 @@ export function createGlobe({ renderer, map: sharedMap }) {
 
   // ── the apples fall ───────────────────────────────────────────────────────
   const wHand = new THREE.Vector3();
+  const fp = { start: new THREE.Vector3(), dir: new THREE.Vector3(), drop: 0 };
   const wNow = new THREE.Vector3();
   /** Where person `id`'s apple starts (in the hand) and lands (on the ground under it), in the globe's frame. */
   function fallPath(id) {
@@ -103,7 +112,10 @@ export function createGlobe({ renderer, map: sharedMap }) {
     root.worldToLocal(wHand);
     const r0 = wHand.length();
     const ground = R + person.lift + person.appleR * 0.86;
-    return { start: wHand.clone(), dir: wHand.clone().normalize().negate(), drop: r0 - ground };
+    fp.start.copy(wHand);
+    fp.dir.copy(wHand).normalize().negate();
+    fp.drop = r0 - ground;
+    return fp;
   }
   /**
    * Put the apple of `id` k of the way down its fall (0 = in the hand, 1 = on the ground), straight towards the
@@ -114,7 +126,10 @@ export function createGlobe({ renderer, map: sharedMap }) {
     const { person } = p;
     if (k <= 0) {
       person.apple.position.copy(person.appleRest);
-      for (const gh of p.ghosts) gh.visible = false;
+      if (ghostAt[id]?.length) {
+        ghostAt[id] = [];
+        syncGhosts();
+      }
       return;
     }
     const f = fallPath(id);
@@ -122,10 +137,13 @@ export function createGlobe({ renderer, map: sharedMap }) {
     root.localToWorld(wNow);
     person.body.worldToLocal(wNow);
     person.apple.position.copy(wNow);
-    p.ghosts.forEach((gh, i) => {
-      gh.visible = k >= FALL_MOMENTS[i];
-      gh.position.copy(f.start).addScaledVector(f.dir, f.drop * FALL_MOMENTS[i]);
-    });
+    const list = (ghostAt[id] ??= []);
+    const shown = FALL_MOMENTS.filter((m) => k >= m).length;
+    if (list.length !== shown) {
+      list.length = 0;
+      for (let i = 0; i < shown; i++) list.push(f.start.clone().addScaledVector(f.dir, f.drop * FALL_MOMENTS[i]));
+      syncGhosts();
+    }
   }
 
   return {

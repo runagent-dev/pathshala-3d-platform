@@ -3,8 +3,8 @@
 // of buildings in the haze, flame trees (krishnachura) in flower, coconut palms, an electric pole on the lane with its
 // wires, clouds. Few greens on purpose: the picture's colour belongs to the house, the pumps and the water.
 import * as THREE from 'three';
-import { cable, parts, rod } from './build.js';
-import { cementTexture, cloudTexture, earthTexture, facadeTexture, frondTexture, seeded, wallBrickTexture } from './textures.js';
+import { bake, cable, merged, parts, rod, tint } from './build.js';
+import { atlas, cementTexture, cloudAtlas, earthTexture, facadeAtlas, frondTexture, seeded, wallBrickTexture } from './textures.js';
 
 const FACADES = ['#efe2c6', '#f2b9a1', '#d9dde3', '#c3d6ec', '#f4cf9e', '#ece6dc', '#d99a78', '#e8c9d6'];
 
@@ -48,22 +48,43 @@ export function createSurroundings() {
   g.add(walls.mesh(brickMat, 'BoundaryWalls'), caps.mesh(coping, 'Coping'));
 
   // ── the neighbours' houses: near ones in detail, a far row in the haze ─────
-  const roofMat = new THREE.MeshStandardMaterial({ map: cementTexture('#bfb8ab', 44), roughness: 0.95 });
-  const tankBlack = new THREE.MeshStandardMaterial({ color: '#25282b', roughness: 0.5 });
-  const tankWhite = new THREE.MeshStandardMaterial({ color: '#e9e4d6', roughness: 0.55 });
-  const parapetP = parts();
-  const tanksB = parts();
-  const tanksW = parts();
-  const slabs = parts();
+  // every façade is made of bays (4 m × 3 m, one floor) drawn from one texture of bays in 8 colours, two kinds each,
+  // so all the buildings are one material and one draw call, and no two bays in a row need be the same
+  const bays = facadeAtlas(FACADES);
+  const facadeMat = new THREE.MeshStandardMaterial({ name: 'Facades', map: bays.texture, roughness: 0.9 });
+  const facades = parts();
+  const roofs = parts();
+  /** A box's four sides in bays of colour `ci` (no floor, no roof: the roof is apart). */
+  function bayBox(x, y0, z, w, h, d, ci, r) {
+    const floors = Math.max(1, Math.round(h / 3));
+    for (const [len, px, pz, ry] of [
+      [w, 0, d / 2, 0],
+      [w, 0, -d / 2, Math.PI],
+      [d, w / 2, 0, Math.PI / 2],
+      [d, -w / 2, 0, -Math.PI / 2],
+    ]) {
+      const n = Math.max(1, Math.round(len / 4));
+      for (let f = 0; f < floors; f++)
+        for (let k = 0; k < n; k++) {
+          const geo = bays.uv(ci * 2 + (r() < 0.5 ? 0 : 1), new THREE.PlaneGeometry(len / n, h / floors));
+          const along = -len / 2 + (k + 0.5) * (len / n);
+          facades.add(geo, x + px + Math.cos(ry) * along, y0 + (f + 0.5) * (h / floors), z + pz - Math.sin(ry) * along, 0, ry, 0);
+        }
+    }
+    roofs.add(new THREE.PlaneGeometry(w, d), x, y0 + h, z, -Math.PI / 2);
+  }
+  const roofMat = new THREE.MeshStandardMaterial({ name: 'Roofs', map: cementTexture('#bfb8ab', 44), roughness: 0.95 });
+  // the parapets, floor bands and roof tanks (black and white) in one painted mesh
+  const parapetP = parts('#e2dbcd');
+  const tanksB = parts('#25282b');
+  const tanksW = parts('#e9e4d6');
+  const slabs = parts('#d6d0c4');
   /** One building: a box with a façade of floors and bays, a parapet, water tanks and maybe a stair room on top. */
   function building(x, z, w, d, floors, color, seed) {
     const h = floors * 3;
-    const tex = facadeTexture(color, seed);
-    tex.repeat.set(Math.max(1, Math.round(w / 4)), floors);
-    const wall = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.9 });
-    const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), [wall, wall, roofMat, wall, wall, wall]);
-    b.position.set(x, h / 2, z);
-    g.add(b);
+    const ci = FACADES.indexOf(color);
+    const br = seeded(seed);
+    bayBox(x, 0, z, w, h, d, ci, br);
     for (const [pw, pd, px, pz] of [
       [w, 0.15, 0, d / 2],
       [w, 0.15, 0, -d / 2],
@@ -81,11 +102,7 @@ export function createSurroundings() {
       target.add(new THREE.SphereGeometry(0.45, 20, 8, 0, Math.PI * 2, 0, Math.PI / 2), tx, h + 1.3, tz);
       slabs.add(new THREE.BoxGeometry(1.1, 0.2, 1.1), tx, h + 0.1, tz);
     }
-    if (rand() < 0.5) {
-      const sr = new THREE.Mesh(new THREE.BoxGeometry(2.4, 2.4, 2.4), wall);
-      sr.position.set(x + w * 0.3 * (rand() < 0.5 ? -1 : 1), h + 1.2, z - d * 0.2);
-      g.add(sr);
-    }
+    if (rand() < 0.5) bayBox(x + w * 0.3 * (rand() < 0.5 ? -1 : 1), h, z - d * 0.2, 2.4, 2.4, 2.4, ci, br); // a stair room
   }
   // behind the house: lower ones behind the tanks, taller to the sides
   building(-24, -27, 10, 9, 4, FACADES[3], 3);
@@ -100,27 +117,22 @@ export function createSurroundings() {
   building(-17, 13, 8, 10, 2, FACADES[2], 29);
   building(17.5, 13, 8, 10, 3, FACADES[0], 31);
   g.add(
-    parapetP.mesh(new THREE.MeshStandardMaterial({ color: '#e2dbcd', roughness: 0.9 }), 'NeighbourParapets'),
-    slabs.mesh(new THREE.MeshStandardMaterial({ color: '#d6d0c4', roughness: 0.9 }), 'NeighbourSlabs'),
-    tanksB.mesh(tankBlack, 'NeighbourTanksBlack'),
-    tanksW.mesh(tankWhite, 'NeighbourTanksWhite'),
+    merged([parapetP, slabs, tanksB, tanksW], new THREE.MeshStandardMaterial({ name: 'NeighbourRoofTops', roughness: 0.8 }), 'NeighbourRoofTops'),
   );
   // the far row, pale in the haze
   for (let i = 0; i < 11; i++) {
     const w = 8 + rand() * 7;
     const floors = 2 + Math.floor(rand() * 3);
     const h = floors * 3;
-    const tex = facadeTexture(FACADES[i % FACADES.length], 50 + i);
-    tex.repeat.set(Math.round(w / 4), floors);
-    const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, 8), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.9 }));
-    b.position.set(-70 + i * 14 + rand() * 4, h / 2, -52 - rand() * 12);
-    g.add(b);
+    const fx = -70 + i * 14 + rand() * 4;
+    bayBox(fx, 0, -52 - rand() * 12, w, h, 8, i % FACADES.length, seeded(50 + i));
   }
+  g.add(facades.mesh(facadeMat, 'NeighbourFacades'), roofs.mesh(roofMat, 'NeighbourRoofs'));
 
   // ── flame trees in flower, a mango tree, coconut palms ─────────────────────
-  const bark = new THREE.MeshStandardMaterial({ color: '#5b4636', roughness: 0.95 });
-  const trunks = parts();
-  const blossom = { '#e8461e': parts(), '#f2701f': parts(), '#c9341b': parts(), '#4f6b2c': parts(), '#3e5a2a': parts() };
+  // trunks, blossom and leaves painted, one mesh for all the trees
+  const trunks = parts('#5b4636');
+  const blossom = Object.fromEntries(['#e8461e', '#f2701f', '#c9341b', '#4f6b2c', '#3e5a2a'].map((c) => [c, parts(c)]));
   function flameTree(x, z, s, seed) {
     const r = seeded(seed);
     trunks.push(rod(new THREE.Vector3(x, 0, z), new THREE.Vector3(x, 2.4 * s, z), 0.22 * s, 10));
@@ -161,15 +173,26 @@ export function createSurroundings() {
       4 + rand() * 2.2,
       -14 + (rand() - 0.5) * 3,
     );
-  g.add(trunks.mesh(bark, 'TreeTrunks'));
-  for (const [c, p] of Object.entries(blossom))
-    g.add(p.mesh(new THREE.MeshStandardMaterial({ color: c, roughness: 0.85, flatShading: true }), `Canopy_${c}`));
+  g.add(merged([trunks, ...Object.values(blossom)], new THREE.MeshStandardMaterial({ name: 'Trees', roughness: 0.88, flatShading: true }), 'Trees'));
 
-  const trunkTexMat = new THREE.MeshStandardMaterial({ color: '#8a6c4a', roughness: 0.95 });
-  const frondMats = [0, 1].map(
-    (dry) => new THREE.MeshStandardMaterial({ map: frondTexture(dry), transparent: true, alphaTest: 0.35, side: THREE.DoubleSide, roughness: 0.75 }),
+  // the palms' trunks and coconuts painted in one material, green and dry fronds drawn in one texture
+  const palmMat = new THREE.MeshStandardMaterial({ name: 'Palms', roughness: 0.85, vertexColors: true });
+  const frondArt = atlas(
+    [0, 1].map((dry) => {
+      const tx = frondTexture(dry);
+      tx.dispose();
+      return /** @type {HTMLCanvasElement} */ (tx.image);
+    }),
+    1,
   );
-  const nutMat = new THREE.MeshStandardMaterial({ color: '#7a6a2a', roughness: 0.6 });
+  const frondMat = new THREE.MeshStandardMaterial({
+    name: 'Fronds',
+    map: frondArt.texture,
+    transparent: true,
+    alphaTest: 0.35,
+    side: THREE.DoubleSide,
+    roughness: 0.75,
+  });
   function palm(x, z, height, lean, seed) {
     const p = new THREE.Group();
     const curve = new THREE.CatmullRomCurve3([
@@ -178,13 +201,14 @@ export function createSurroundings() {
       new THREE.Vector3(lean * 0.7, height * 0.7, 0.1),
       new THREE.Vector3(lean, height, 0.15),
     ]);
-    p.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 24, 0.13, 10), trunkTexMat));
+    p.add(new THREE.Mesh(tint(new THREE.TubeGeometry(curve, 24, 0.13, 10), '#8a6c4a'), palmMat));
     const top = curve.getPoint(1);
     const r = seeded(seed);
-    const fronds = [parts(), parts()];
+    const fronds = parts();
     for (let i = 0; i < 12; i++) {
       const len = 2.2 + r() * 0.8;
-      const geo = new THREE.PlaneGeometry(len, 0.55, 12, 1);
+      const dry = i % 4 === 3 ? 1 : 0;
+      const geo = frondArt.uv(dry, new THREE.PlaneGeometry(len, 0.55, 12, 1));
       const pos = geo.attributes.position;
       for (let k = 0; k < pos.count; k++) {
         const u = (pos.getX(k) + len / 2) / len;
@@ -192,29 +216,27 @@ export function createSurroundings() {
         pos.setZ(k, -u * u * 0.9 * len * 0.5);
       }
       geo.computeVertexNormals();
-      const dry = i % 4 === 3 ? 1 : 0;
       geo.rotateX(-Math.PI / 2 + 0.25 + r() * 0.3 + dry * 0.5);
       geo.rotateY((i / 12) * Math.PI * 2 + r() * 0.3);
       geo.translate(top.x, top.y, top.z);
-      fronds[dry].push(geo);
+      fronds.push(geo);
     }
-    p.add(fronds[0].mesh(frondMats[0], 'Fronds'), fronds[1].mesh(frondMats[1], 'DryFronds'));
-    const nuts = parts();
+    p.add(fronds.mesh(frondMat, 'Fronds'));
+    const nuts = parts('#7a6a2a');
     for (let i = 0; i < 6; i++) {
       const a = (i / 6) * Math.PI * 2;
       nuts.add(new THREE.SphereGeometry(0.11, 12, 10), top.x + Math.cos(a) * 0.16, top.y - 0.16, top.z + Math.sin(a) * 0.16);
     }
-    p.add(nuts.mesh(nutMat, 'Coconuts'));
+    p.add(nuts.mesh(palmMat, 'Coconuts'));
     p.position.set(x, 0, z);
     return p;
   }
   g.add(palm(-7.75, 1.9, 7.2, 0.9, 31), palm(9.6, -2.5, 8.4, -0.7, 37), palm(-10.4, -12, 9, 0.5, 43));
 
   // ── the electric pole on the right lane and its wires ──────────────────────
-  const poleMat = new THREE.MeshStandardMaterial({ color: '#a7a39b', roughness: 0.9 });
-  const poles = parts();
-  const insul = parts();
-  const wires = parts();
+  const poles = parts('#a7a39b');
+  const insul = parts('#8a5a3c');
+  const wires = parts('#202224');
   const poleZ = [-14, -1.2, 11.6];
   for (const z of poleZ) {
     poles.add(new THREE.BoxGeometry(0.22, 8.4, 0.22), 11.2, 4.2, z);
@@ -239,20 +261,34 @@ export function createSurroundings() {
         ),
       );
     }
-  const transformer = new THREE.Mesh(
-    new THREE.BoxGeometry(0.7, 0.9, 0.5),
-    new THREE.MeshStandardMaterial({ color: '#7d8790', metalness: 0.4, roughness: 0.5 }),
-  );
-  transformer.position.set(11.2, 5.8, -14.4);
-  g.add(poles.mesh(poleMat, 'Poles'), insul.mesh(new THREE.MeshStandardMaterial({ color: '#8a5a3c', roughness: 0.4 }), 'Insulators'));
-  g.add(wires.mesh(new THREE.MeshStandardMaterial({ color: '#202224', roughness: 0.6 }), 'Wires'), transformer);
+  const transformer = parts('#7d8790');
+  transformer.add(new THREE.BoxGeometry(0.7, 0.9, 0.5), 11.2, 5.8, -14.4);
+  g.add(merged([poles, insul, wires, transformer], new THREE.MeshStandardMaterial({ name: 'Poles', roughness: 0.7 }), 'PolesAndWires'));
 
-  // ── clouds ─────────────────────────────────────────────────────────────────
+  // ── clouds: four shapes in one texture, one mesh; each faces the house (the camera never goes far from it) ──
+  const sky = cloudAtlas();
+  const clouds = parts();
+  const look = new THREE.Object3D();
   for (let i = 0; i < 7; i++) {
-    const cl = new THREE.Sprite(new THREE.SpriteMaterial({ map: cloudTexture(50 + i), transparent: true, depthWrite: false, fog: false }));
-    cl.scale.set(18 + rand() * 10, 8 + rand() * 3, 1);
-    cl.position.set(-60 + i * 20 + rand() * 8, 17 + rand() * 10, -75);
-    g.add(cl);
+    const geo = sky.uv(i % 4, new THREE.PlaneGeometry(18 + rand() * 10, 8 + rand() * 3));
+    look.position.set(-60 + i * 20 + rand() * 8, 17 + rand() * 10, -75);
+    look.lookAt(0, look.position.y * 0.6, 0);
+    look.updateMatrix();
+    clouds.push(geo.applyMatrix4(look.matrix));
   }
+  const cloudMesh = clouds.mesh(new THREE.MeshBasicMaterial({ map: sky.texture, transparent: true, depthWrite: false, fog: false }), 'Clouds');
+  cloudMesh.renderOrder = -1; // over the sky, under everything else
+  g.add(cloudMesh);
+
+  // shadows: only the ground, the lanes and the boundary walls are where shadows fall (or are cast) in view
+  for (const m of [ground]) m.receiveShadow = true;
+  g.traverse((o) => {
+    const mesh = /** @type {THREE.Mesh} */ (o);
+    if (!mesh.isMesh) return;
+    if (mesh.material === laneMat) mesh.receiveShadow = true;
+    if (mesh.material === brickMat || mesh.material === coping) mesh.castShadow = mesh.receiveShadow = true;
+  });
+  // one mesh per material: the lanes, the palms' trunks, fronds and nuts, the poles…
+  bake(g, { name: 'Surroundings' });
   return g;
 }

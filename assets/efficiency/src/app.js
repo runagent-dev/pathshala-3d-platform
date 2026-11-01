@@ -44,7 +44,9 @@ export const DEFAULTS = {
 const VIEW_FRONT = new THREE.Vector3(0.34, 0.24, 0.9).normalize();
 const VIEW_3D = new THREE.Vector3(-0.5, 0.42, 0.76).normalize();
 const DOUBLE_TAP = 400; // ms
-const COLORS = { input: '#1c6fd9', work: '#2b8a3e', waste: '#e8590c' };
+// label text on its white chip, each at least 4.5 : 1 (the flow's colours, a shade darker where needed)
+const RING = { input: '#1864c7', work: '#237032', waste: '#c2410c' }; // the term rings' colour behind white words
+const LABEL = { input: '#1864c7', work: '#237032', heat: '#c2410c', friction: '#c92a2a', sound: '#6741d9' };
 const SWAP_ICON =
   '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h14l-4-4M20 16H6l4 4"/></svg>';
 const PAGE_ICON =
@@ -76,19 +78,28 @@ export function createApp(root, options = {}) {
   const sheet = bindCleanSheet(ui.learn);
   ui.canvasHost.setAttribute('aria-label', t('aria_stage'));
   const flow = createFlow(/** @type {HTMLElement} */ (ui.$('.pvc-outcome')), t);
+  const ruleEl = /** @type {HTMLElement} */ (ui.$('.pvc-rule'));
+  // the flow is drawn at its own width (one unit a pixel): drawn again when the panel's layout changes it
+  let flowW = 0;
+  new ResizeObserver(([entry]) => {
+    const w = Math.round(entry.contentRect.width);
+    if (w === flowW) return;
+    flowW = w;
+    refresh();
+  }).observe(/** @type {HTMLElement} */ (ui.$('.pvc-outcome')));
 
-  // on the view: the honest note (top left) and the height of the load (a gauge on the right)
-  const note = document.createElement('div');
-  note.className = 'ef-note';
-  note.textContent = t('note');
+  // on the view: the height of the load (a gauge on the right); the note that the waste's split is approximate is in
+  // the panel (the ≈ on the flow's parts and the rule while it runs)
   const gauge = document.createElement('div');
   gauge.className = 'ef-gauge';
   gauge.setAttribute('aria-hidden', 'true');
   gauge.innerHTML = `<span class="ef-gauge-name">${t('gauge')}</span><span class="ef-gauge-bar"><i></i><b></b></span><span class="ef-gauge-h"></span>`;
+  const gaugeH = /** @type {HTMLElement} */ (gauge.querySelector('.ef-gauge-h'));
+  let gaugeK = '';
   const ring = document.createElement('div');
   ring.className = 'ef-ring';
   ring.hidden = true;
-  ui.stage.append(note, gauge, ring);
+  ui.stage.append(gauge, ring);
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 30, near: 0.05, far: 700, environment: 'studio-light' });
@@ -102,10 +113,13 @@ export function createApp(root, options = {}) {
   scene.add(sun, sun.target);
   if (o.shadow && o.bg !== 'transparent') {
     stage.renderer.shadowMap.enabled = true;
-    stage.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    // soft PCF (three's PCFSoftShadowMap is now PCF with a radius); the frustum fitted round the winch and its shadow
+    // on the roof (3.5 m across), so 512 px looks the same as 1024 on the old ±2.2 m fit
+    stage.renderer.shadowMap.type = THREE.PCFShadowMap;
     sun.castShadow = true;
-    sun.shadow.mapSize.set(1024, 1024);
-    Object.assign(sun.shadow.camera, { left: -2.2, right: 2.2, top: 2.2, bottom: -2.2, near: 1, far: 20 });
+    sun.shadow.mapSize.set(512, 512);
+    sun.shadow.radius = 2;
+    Object.assign(sun.shadow.camera, { left: -1.75, right: 1.75, top: 1.6, bottom: -1.45, near: 5, far: 13 });
     sun.shadow.bias = -0.0006;
     sun.shadow.normalBias = 0.02;
   }
@@ -120,11 +134,13 @@ export function createApp(root, options = {}) {
   const machine = createMachine({ maxHeight: 20 });
   scene.add(site, machine.root);
   if (o.shadow) {
-    machine.root.traverse((m) => {
-      if (/** @type {THREE.Mesh} */ (m).isMesh) m.castShadow = m.receiveShadow = true;
-    });
-    site.traverse((m) => {
-      if (/** @type {THREE.Mesh} */ (m).isMesh) m.receiveShadow = true;
+    // the winch's parts cast and receive; labels on it (its screen, the mass tag) and the thin ropes do not cast. The
+    // site's roof-level parts receive (set in site.js); the street and the houses, far outside the shadow, do not.
+    machine.root.traverse((o3) => {
+      const m = /** @type {THREE.Mesh} */ (o3);
+      if (!m.isMesh) return;
+      m.receiveShadow = true;
+      m.castShadow = !m.userData.noShadow && !(/** @type {any} */ (m.material).isMeshBasicMaterial);
     });
   }
   const effects = createEffects({ points: machine.points, curves: machine.curves, camera });
@@ -199,11 +215,11 @@ export function createApp(root, options = {}) {
       g.fillStyle = '#0d2a1f';
       g.fillRect(0, 0, w, h);
       g.fillStyle = s.phase === 'run' ? '#7dff9a' : '#5fbf78';
-      g.font = '700 66px "Noto Sans Bengali", sans-serif';
+      g.font = `700 ${Math.round(h * 0.26)}px "Noto Sans Bengali", sans-serif`;
       g.textBaseline = 'middle';
-      g.fillText(p, 26, h * 0.3);
+      g.fillText(p, h * 0.1, h * 0.3);
       g.fillStyle = '#ffe066';
-      g.fillText(time, 26, h * 0.74);
+      g.fillText(time, h * 0.1, h * 0.74);
     });
   }
   let lastDisplay = '';
@@ -252,7 +268,6 @@ export function createApp(root, options = {}) {
   controls.addEventListener('start', () => {
     s.userMovedCamera = true;
   });
-  controls.addEventListener('change', () => stage.invalidate());
 
   // ── screen boxes ────────────────────────────────────────────────────────────
   const corners = Array.from({ length: 8 }, () => new THREE.Vector3());
@@ -274,11 +289,14 @@ export function createApp(root, options = {}) {
     return out;
   }
   const P = machine.parts;
-  const TERM_PARTS = { input: [P.battery, P.cables], work: [P.load], waste: [P.motor, P.gearGroup, P.wheel] };
+  const BX = machine.boxes;
+  const TERM_PARTS = { input: [BX.battery, BX.cables], work: [P.load], waste: [BX.motor, P.gearGroup, P.wheelGroup] };
+  const ringBox = new THREE.Box3();
+  /** The box round some parts: fixed boxes (the battery, the motor, the cables) and moving ones (the load, gears). */
   function boxOf(list) {
-    const b = new THREE.Box3();
-    for (const obj of list) b.union(tmpBox.setFromObject(obj));
-    return b;
+    ringBox.makeEmpty();
+    for (const obj of list) ringBox.union(/** @type {any} */ (obj).isBox3 ? obj : tmpBox.setFromObject(obj));
+    return ringBox;
   }
   const loadVisible = () => machine.points.hook.y > frame.min.y - 0.2;
   function loadBox() {
@@ -294,12 +312,13 @@ export function createApp(root, options = {}) {
   const anno = createAnnotations({
     stage,
     layer: ui.annoLayer,
-    avoid: [ui.corner, ui.hint, note, gauge, () => action?.ringBox(), () => action?.box(), () => loadBox()],
+    avoid: [ui.corner, ui.hint, gauge, () => action?.ringBox(), () => action?.box(), () => loadBox()],
   });
   const grid = (dys, dxs) => dys.flatMap((dy) => dxs.map((dx) => ({ dx, dy })));
   const SPOTS = {
     up: grid([-34, -54, -74], [0, 30, -30, 60, -60]),
-    side: grid([0, -24, 24, -48], [-70, 70, -110, 110]),
+    side: grid([-10, -34, 14], [60, 90, 40, -70, -100]),
+    rub: grid([40, 60, 24], [30, 60, -30, 90, -60]),
     low: grid([46, 66, 30], [-70, -100, -130, 90, 120]),
     work: grid([34, 54, 14, -20], [-80, -110, -140, -50]),
   };
@@ -311,6 +330,12 @@ export function createApp(root, options = {}) {
     work: new THREE.Vector3(),
     motor: new THREE.Vector3(),
     load: new THREE.Vector3(),
+  };
+  const OFF = {
+    input: new THREE.Vector3(0, 0.02, -0.1),
+    heat: new THREE.Vector3(0, 0.22, 0),
+    sound: new THREE.Vector3(0.25, 0.25, 0),
+    motor: new THREE.Vector3(0, 0.1, 0),
   };
   function label(id, show, opts) {
     if (!show) {
@@ -326,42 +351,42 @@ export function createApp(root, options = {}) {
     const M = machine.points;
     const live = s.phase !== 'idle' && !s.quiz;
     const running = s.phase === 'run';
-    pts.input.copy(M.battery).add(new THREE.Vector3(0, 0.02, -0.1));
-    pts.heat.copy(M.motorTop).add(new THREE.Vector3(0, 0.22, 0));
+    pts.input.copy(M.battery).add(OFF.input);
+    pts.heat.copy(M.motorTop).add(OFF.heat);
     pts.friction.copy(M.wormMesh);
-    pts.sound.copy(M.gears).add(new THREE.Vector3(0.25, 0.25, 0));
+    pts.sound.copy(M.gears).add(OFF.sound);
     const hookY = M.hook.y;
     // on the load once it is in view, else on the rope near the bottom of the view
     pts.work.set(ROPE_X - 0.1, Math.max(hookY - 0.62, frame.min.y + 0.45), AT.pulley.z + 0.15);
-    label('input', live, { text: t('l_input'), color: COLORS.input, point: () => pts.input, kind: 'part', spots: SPOTS.up, optional: true });
+    label('input', live, { text: t('l_input'), color: LABEL.input, point: () => pts.input, kind: 'part', spots: SPOTS.up, optional: true });
     const roomy = stage.height >= 260; // a short view keeps only the two labels of the formula's terms
     label('heat', roomy && live && (running || s.cooling < 6), {
       text: t('l_heat'),
-      color: '#d9480f',
+      color: LABEL.heat,
       point: () => pts.heat,
       kind: 'part',
       spots: SPOTS.up,
       optional: true,
     });
-    label('friction', roomy && running, {
+    label('friction', roomy && running && !s.quiz, {
       text: t('l_friction'),
-      color: '#c92a2a',
+      color: LABEL.friction,
       point: () => pts.friction,
       kind: 'part',
-      spots: SPOTS.down,
+      spots: SPOTS.rub,
       optional: true,
     });
-    label('sound', roomy && running, {
+    label('sound', roomy && running && !s.quiz, {
       text: t('l_sound'),
-      color: '#6741d9',
+      color: LABEL.sound,
       point: () => pts.sound,
       kind: 'part',
       spots: SPOTS.side,
       optional: true,
     });
     label('work', live, {
-      text: t(s.phase === 'done' ? 'l_work_done' : 'l_work', { h: s.run.h }),
-      color: COLORS.work,
+      text: t('l_work'),
+      color: LABEL.work,
       point: () => pts.work,
       kind: 'part',
       spots: SPOTS.work,
@@ -371,17 +396,17 @@ export function createApp(root, options = {}) {
     const q = s.quiz?.labels || [];
     const e = energy();
     pts.load.set(ROPE_X, hookY - 0.45, AT.pulley.z);
-    pts.motor.copy(M.motorTop).add(new THREE.Vector3(0, 0.1, 0));
+    pts.motor.copy(M.motorTop).add(OFF.motor);
     label('q_input', q.includes('input'), {
       text: t('l_q_input', { e: groupJ(e.input) }),
-      color: COLORS.input,
+      color: LABEL.input,
       point: () => pts.input,
       kind: 'callout',
       spots: SPOTS.up,
     });
     label('q_work', q.includes('work'), {
       text: t('l_q_work', { e: groupJ(e.work) }),
-      color: COLORS.work,
+      color: LABEL.work,
       point: () => pts.load,
       kind: 'callout',
       spots: grid([-30, 0, 30, -60], [-110, -140, -170]),
@@ -405,6 +430,7 @@ export function createApp(root, options = {}) {
     emit('term', { term });
     stage.invalidate();
   }
+  let ringCss = '';
   function ringTo() {
     if (!s.term || performance.now() > s.termUntil || s.mode === 'quiz') {
       if (!ring.hidden) {
@@ -421,19 +447,25 @@ export function createApp(root, options = {}) {
     const R = Math.min(stage.width - 4, b.right + pad);
     const B = Math.min(stage.height - 4, b.bottom + pad);
     ring.hidden = false;
-    ring.style.cssText = `left:${L}px;top:${T}px;width:${Math.max(20, R - L)}px;height:${Math.max(20, B - T)}px;--c:${COLORS[s.term]}`;
-    ring.dataset.label = t(`term_ring_${s.term}`);
+    const css = `left:${L.toFixed(1)}px;top:${T.toFixed(1)}px;width:${Math.max(20, R - L).toFixed(1)}px;height:${Math.max(20, B - T).toFixed(1)}px;--c:${RING[s.term]}`;
+    if (css !== ringCss) {
+      ringCss = css;
+      ring.style.cssText = css;
+    }
+    const lab = t(`term_ring_${s.term}`);
+    if (ring.dataset.label !== lab) ring.dataset.label = lab;
     return true;
   }
 
   // ── the panel ───────────────────────────────────────────────────────────────
   const fr = (top, bottom) => `<span class="fr"><span>${top}</span><span>${bottom}</span></span>`;
   const term = (k, text = t(`f_${k}`)) => `<button type="button" class="ef-term ${k}${s.term === k ? ' on' : ''}" data-term="${k}">${text}</button>`;
+  // the rule is written again only when its words change (phase, form, motor, the lit term); the growing numbers go
+  // into their own spans, so a focused term button is never replaced while the motor runs
   function formula() {
-    const e = energy();
-    const done = s.phase === 'done';
     const known = s.phase !== 'idle';
-    const val = (j, k) => `<span class="v ${k}">${!known ? t('f_none') : done ? J(j) : t('f_j', { e: groupJ(liveJ(j)) })}</span>`;
+    const val = (_j, k) => `<span class="v ${k}" data-v="${k}"></span>`;
+    const e = { work: 0, input: 0, waste: 0 };
     const r = solve(s.run);
     const eff = `<b class="ef-eff">${known ? `${N(pct(r.eff))}%` : '?'}</b>`;
     // the book's first form: each term with its number; the second: input − waste over input (in words, with the
@@ -458,7 +490,7 @@ export function createApp(root, options = {}) {
     const e = energy();
     const done = s.phase === 'done';
     const shown = known ? Object.fromEntries(Object.entries(e).map(([k, v]) => [k, done ? v : liveJ(v)])) : null;
-    flow.draw({ e: shown, shares: shares(), flowing: s.phase === 'run' && !s.frozen, J, G });
+    flow.draw({ e: shown, shares: shares(), flowing: s.phase === 'run' && !s.frozen && !s.held, J, G });
     const cond = CONDITIONS[s.cond] ? s.cond : null;
     sheet.choose(cond);
     for (const id of CONDITION_IDS) sheet.result(id, s.found[id] ? t('res_eff', { e: pct(solve(runOf(id)).eff) }) : '');
@@ -471,14 +503,21 @@ export function createApp(root, options = {}) {
             Object.values(s.found).filter(Boolean).length >= 2 ? t('rule_plant', { p: PLANT }) : t('rule_never', { c: 100 })
           }`;
     sheet.rule(`${formula()}<span class="ef-say">${say}</span>`);
+    for (const el of ruleEl.querySelectorAll('[data-v]')) {
+      const j = e[/** @type {'work' | 'input' | 'waste'} */ (/** @type {HTMLElement} */ (el).dataset.v)];
+      const text = !known ? t('f_none') : done ? J(j) : t('f_j', { e: groupJ(liveJ(j)) });
+      if (el.textContent !== text) el.textContent = text;
+    }
     const n = next();
     action?.set({ step: stepOf(n), label: n.label, icon: n.kind === 'again' ? ICONS.reset : ICONS.hand, enabled: n.enabled && !s.locked });
     // the gauge
-    const k = s.run.h > 0 ? e.height / s.run.h : 0;
-    gauge.style.setProperty('--k', k.toFixed(4));
-    /** @type {HTMLElement} */ (gauge.querySelector('.ef-gauge-h')).textContent = t('gauge_h', {
-      h: done ? s.run.h : (Math.floor(e.height * 10 + 1e-6) / 10).toFixed(1),
-    });
+    const k = (s.run.h > 0 ? e.height / s.run.h : 0).toFixed(3);
+    if (k !== gaugeK) {
+      gaugeK = k;
+      gauge.style.setProperty('--k', k);
+    }
+    const gh = t('gauge_h', { h: done ? s.run.h : (Math.floor(e.height * 10 + 1e-6) / 10).toFixed(1) });
+    if (gaugeH.textContent !== gh) gaugeH.textContent = gh;
     labels();
     stage.invalidate();
   }
@@ -540,6 +579,13 @@ export function createApp(root, options = {}) {
     if (s.phase === 'done' && CONDITIONS[s.cond]) s.found[s.cond] = true;
     place();
     display();
+    refresh();
+  }
+  /** A part-way start kept still (pictures): the waste's effects drawn at a lively moment, then nothing moves. */
+  function hold() {
+    s.held = true;
+    s.fx = 1.3;
+    place();
     refresh();
   }
   function start() {
@@ -612,7 +658,8 @@ export function createApp(root, options = {}) {
       s.cooling += dt;
       moving = true;
     }
-    const animate = moving || (s.phase === 'run' && !s.frozen) || (s.frozen && s.phase === 'run');
+    // a running motor animates (also a frozen one in the test, its waste still showing); a held start waits still
+    const animate = moving || (s.phase === 'run' && !s.held);
     if (animate) {
       s.fx += dt;
       place();
@@ -641,7 +688,7 @@ export function createApp(root, options = {}) {
     label: 'act_run',
     target: () => machine.points.switch,
     radius: 22,
-    avoid: [ui.corner, ui.hint, note, gauge, () => anno.boxes()],
+    avoid: [ui.corner, ui.hint, gauge, () => anno.boxes()],
     pulse: o.coach,
     onAct: () => {
       audio.unlock();
@@ -659,7 +706,7 @@ export function createApp(root, options = {}) {
       const r = stage.canvas.getBoundingClientRect();
       ndc.set(((e.clientX - r.left) / stage.width) * 2 - 1, -((e.clientY - r.top) / stage.height) * 2 + 1);
       raycaster.setFromCamera(ndc, camera);
-      if (raycaster.intersectObjects([P.battery, P.motor], true).length === 0) return;
+      if (!raycaster.ray.intersectsBox(BX.battery) && !raycaster.ray.intersectsBox(BX.motor)) return;
       e.stopPropagation();
       e.preventDefault();
       doAction();
@@ -738,7 +785,7 @@ export function createApp(root, options = {}) {
     audio,
     questions: 5,
     action,
-    lines: { text: 3, feedback: 3 },
+    lines: { text: 2, feedback: 3 },
     hooks: {
       enter() {
         learnSaved = { cond: s.cond, run: { ...s.run }, phase: s.phase, time: s.time, taken: s.taken, found: { ...s.found } };
@@ -930,7 +977,7 @@ export function createApp(root, options = {}) {
   setup(s.cond);
   fitCamera();
   jumpTo(o.phase, o.at);
-  if (o.hold && s.phase === 'run') s.held = true;
+  if (o.hold && s.phase === 'run') hold();
   controls.enableRotate = controls.enableZoom = s.view === '3d';
   fitCamera();
   syncUI();
@@ -975,7 +1022,10 @@ export function createApp(root, options = {}) {
           s.taken = 0;
           jumpTo(p.phase, p.at);
         }
-        if (p.hold != null) s.held = Boolean(p.hold) && s.phase === 'run';
+        if (p.hold != null) {
+          s.held = false;
+          if (p.hold && s.phase === 'run') hold();
+        }
         if (p.home) goHome();
         if (p.form === 1 || p.form === 2) s.form = p.form;
         if (p.term) lightTerm(p.term);

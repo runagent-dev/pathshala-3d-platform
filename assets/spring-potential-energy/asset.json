@@ -5,7 +5,7 @@
   "title": "Potential energy of a spring (বিভব শক্তি)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "book": "physics-9-10",
   "page": 106,
   "topic": "4.3.2",
@@ -13,7 +13,7 @@
   "order": 1,
   "maintainers": ["RadeenXALNW"],
   "units": "m",
-  "description": "Interactive 3D figure for textbook topic 4.3.2 (বিভব শক্তি, Potential Energy), page 106, with the box V = ½kx² on page 107. In a light blue studio, a magenta coil spring (a real helix whose coils spread and bunch) is screwed to a hatched navy wall on a white table; a realistic hand holds the wooden handle at its free end. The student drags the handle (or taps steppers, or the big button's three steps: pull 5 cm, twice as far, now push in) to stretch or compress it by x, read on a yellow centimetre ruler against the dashed x = 0 line, with an orange x bracket. The hand's force F_P and the spring's force F_S are drawn equal and opposite, to scale with F = kx, and F_S always points back toward x = 0. The panel shows the two formulas F = kx and V = ½kx² with the student's numbers, live; every letter is a button that lights its part of the picture (k the spring, x the bracket, F the arrows, V the stored energy) and explains it, including why ½ (the average force) and why x² (twice x, four times the energy), and a bar under each formula grows with the force evenly and with the energy as x². Five tap questions: the direction of F_S, F and V from the ruler, x doubled or tripled, stretched versus squeezed. The table, wall, spring, handle and hand export as GLB in metres. Offline, in Bangla and English.",
+  "description": "Interactive 3D figure for textbook topic 4.3.2 (বিভব শক্তি, Potential Energy), page 106, with the box V = ½kx² on page 107. In a school physics laboratory (a wooden lab bench against a sky-blue wall with a window, a pegboard of springs and a shelf), a magenta coil spring (a real helix whose coils spread and bunch) is screwed to a hatched navy wall on the bench; a realistic hand holds the wooden handle at its free end. The student drags the handle (or taps steppers, or the big button's three steps: pull 5 cm, twice as far, now push in) to stretch or compress it by x, read on a yellow centimetre ruler against the dashed x = 0 line, with an orange x bracket. The hand's force F_P and the spring's force F_S are drawn equal and opposite, to scale with F = kx, and F_S always points back toward x = 0. The panel shows the two formulas F = kx and V = ½kx² with the student's numbers, live; every letter is a button that lights its part of the picture (k the spring, x the bracket, F the arrows, V the stored energy) and explains it, including why ½ (the average force) and why x² (twice x, four times the energy), and a bar under each formula grows with the force evenly and with the energy as x². Five tap questions: the direction of F_S, F and V from the ruler, x doubled or tripled, stretched versus squeezed. The table, wall, spring, handle and hand export as GLB in metres. Offline, in Bangla and English.",
   "tags": ["potential energy", "spring", "spring constant", "elastic", "energy", "force", "hooke", "bangla"],
   "params": [
     {

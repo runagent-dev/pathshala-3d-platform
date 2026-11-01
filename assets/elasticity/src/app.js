@@ -17,7 +17,7 @@ import { createQuiz } from '@shared/student/quiz.js';
 import { ICONS } from '@shared/student/icons.js';
 import { createI18n } from './i18n.js';
 import { fitPose } from './camera.js';
-import { createGraph } from './graph.js';
+import { createGraph, keySwatch } from './graph.js';
 import { DIM_X, HANGER, TOP, TRAY, WEIGHT, createApparatus, createWorkshop } from './apparatus.js';
 import {
   AREA_M2,
@@ -62,6 +62,8 @@ export const DEFAULTS = {
 };
 
 const COLORS = { T: '#e8590c', W: '#7048e8', x: '#e03131', L0: '#1f2430' };
+// the labels' text: the same hues, a shade darker, so each reads at 4.5 : 1 or more on its white chip
+const INK = { T: '#c2410c', W: '#6741d9', x: '#c92a2a', L0: '#1f2430' };
 const CM = 0.01; // m per cm
 const FORCE_LEN = 0.02; // m of arrow per newton
 const SLOT = WEIGHT.h + 0.0016; // one weight's place on the stack
@@ -118,13 +120,10 @@ export function createApp(root, options = {}) {
       <div class="el-sum"><span class="el-q">${t('s_strain')}</span><span class="el-calc" data-sum="strain"></span></div>
       <div class="el-sum"><span class="el-q">${t('s_stress')}</span><span class="el-calc" data-sum="stress"></span></div>
       <div class="el-sum"><span class="el-q">${t('s_ratio')}</span><span class="el-calc" data-sum="ratio"></span></div>
+      <div class="el-sum el-keyrow"><span class="el-q">${t('g_key')}</span><span class="el-calc el-key"></span></div>
     </div>`;
   $('.pvc-act-row').before(eq);
-
-  // a note on the stage: what each weight is, the wire's cross-section
-  const note = document.createElement('div');
-  note.className = 'el-note';
-  ui.stage.append(note);
+  const keyEl = /** @type {HTMLElement} */ (eq.querySelector('.el-key'));
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 30, near: 0.02, far: 30, environment: 'studio-light' });
@@ -157,10 +156,9 @@ export function createApp(root, options = {}) {
     lamp.shadow.radius = 3;
   }
 
-  const workshop = createWorkshop(N);
-  if (o.bg !== 'transparent') scene.add(workshop.root);
   const app = createApparatus(N, L0 * CM);
   scene.add(app.root);
+  if (o.bg !== 'transparent') scene.add(createWorkshop(N, app.materials).root);
   const { spring, hanger, weights } = app;
 
   // the marks drawn over the scene: L₀ (dark) and x (red) on one line just left of the rule, L₀'s level across
@@ -223,8 +221,19 @@ export function createApp(root, options = {}) {
   xCap.renderOrder = 25;
   marks.add(xCap);
 
+  // what moves in the scene (the weights, the spring) keeps the frames coming; the camera and the pauses do not ask for
+  // a redraw of the scene (the camera's own change does, without drawing the shadows again on kit 1.4)
   const tweener = createTweener();
   stage.addTicker((dt) => tweener.tick(dt));
+  const quiet = createTweener();
+  stage.addTicker((dt) => {
+    quiet.tick(dt);
+    return false;
+  });
+  const cancel = (k) => {
+    tweener.cancel(k);
+    quiet.cancel(k);
+  };
   const audio = createAudio(o.sound);
   /** @type {ReturnType<typeof createAction> | null} */
   let action = null;
@@ -283,6 +292,7 @@ export function createApp(root, options = {}) {
     stage.invalidate();
   }
 
+  const FROM = new THREE.Vector3();
   function layoutArrows() {
     const perPx = (2 * camera.position.distanceTo(controls.target) * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))) / Math.max(1, stage.height);
     thick = Math.min(2.6, Math.max(1, (3.4 * perPx) / 0.0048));
@@ -292,12 +302,12 @@ export function createApp(root, options = {}) {
     arrowW.hide();
     if (F > 0 && s.look !== 'close') {
       // T in the spring, up from its end; W down from the hanger's plate: the same length (they balance at rest)
-      arrowT.set(new THREE.Vector3(0, y + 0.004, 0.024), UPV, F * FORCE_LEN);
-      arrowW.set(new THREE.Vector3(0, y + hanger.plateBottom - 0.003, 0.03), DOWN, F * FORCE_LEN);
+      arrowT.set(FROM.set(0, y + 0.004, 0.024), UPV, F * FORCE_LEN);
+      arrowW.set(FROM.set(0, y + hanger.plateBottom - 0.003, 0.03), DOWN, F * FORCE_LEN);
     }
     const x = s.L - L0;
     if (x > 0.05) {
-      arrowX.set(new THREE.Vector3(DIM_X, TOP - L0 * CM, 0.03), DOWN, x * CM);
+      arrowX.set(FROM.set(DIM_X, TOP - L0 * CM, 0.03), DOWN, x * CM);
       xCap.visible = true;
       xCap.position.set(DIM_X + 0.002, y, 0.03);
     } else {
@@ -410,7 +420,7 @@ export function createApp(root, options = {}) {
   function settleNow() {
     if (!s.moving) return;
     s.run++;
-    for (const k of ['spring', 'off', ...weights.map((_, i) => `w${i}`)]) tweener.cancel(k);
+    for (const k of ['spring', 'off', ...weights.map((_, i) => `w${i}`)]) cancel(k);
     for (let i = 0; i < MAX_N; i++) s.hanging[i] = i < s.n ? 'hanger' : 'tray';
     s.L = lengthOf(s.spring, s.n);
     s.moving = false;
@@ -523,7 +533,7 @@ export function createApp(root, options = {}) {
   function newSpring() {
     s.run++;
     s.tour++;
-    for (const k of ['spring', 'off', 'wait', ...weights.map((_, i) => `w${i}`)]) tweener.cancel(k);
+    for (const k of ['spring', 'off', 'wait', ...weights.map((_, i) => `w${i}`)]) cancel(k);
     s.n = 0;
     s.spring = { ...FRESH };
     s.L = L0;
@@ -539,7 +549,7 @@ export function createApp(root, options = {}) {
     s.look = 'all';
   }
 
-  const wait = (sec) => tweener.animate({ key: 'wait', duration: sec, onUpdate: () => {} }).finished;
+  const wait = (sec) => quiet.animate({ key: 'wait', duration: sec }).finished;
 
   /** The camera goes close to the stretch for a moment, then back to the whole spring. */
   async function visitClose() {
@@ -549,7 +559,7 @@ export function createApp(root, options = {}) {
     refresh();
     await flyTo(viewPose('close'), 0.8);
     if (tour !== s.tour) return;
-    await tweener.animate({ key: 'visit', duration: CLOSE_HOLD, onUpdate: () => {} }).finished;
+    await quiet.animate({ key: 'visit', duration: CLOSE_HOLD }).finished;
     if (tour !== s.tour || s.userMovedCamera) return;
     s.look = 'all';
     refresh();
@@ -578,7 +588,7 @@ export function createApp(root, options = {}) {
     if (n === 0) {
       if (sp.set > 0) return t('out_set', { L: N(lengthOf(sp, 0)), s: N(round(sp.set * L0, 2)) });
       if (s.found.back && s.path.length > 2) return t('out_back', { L0: N(L0) });
-      return t('out_rest', { L0: N(L0), W: N(W1) });
+      return t('out_rest', { L0: N(L0), W: N(W1), A: N(AREA_MM2) });
     }
     if (sp.set > 0 && n <= sp.peak && !beyond(n)) return t('out_set_some', { n: N(n), x: N(x), s: N(round(sp.set * L0, 2)) });
     if (beyond(n)) return t('out_beyond', { n: N(n), x: N(x), xx: N(round(x1 * n, 2)) });
@@ -613,7 +623,6 @@ export function createApp(root, options = {}) {
     return out;
   }
 
-  let lastNote = '';
   function refresh() {
     $('.el-val').textContent = N(s.n * W1);
     for (const b of eq.querySelectorAll('[data-step]')) {
@@ -641,11 +650,6 @@ export function createApp(root, options = {}) {
       const p = plan();
       action.set({ step: p.step, label: p.label });
     }
-    const noteHtml = t(stage.width < 480 ? 'note_W_short' : 'note_W', { W: N(W1), A: N(AREA_MM2) });
-    if (noteHtml !== lastNote) {
-      note.innerHTML = noteHtml;
-      lastNote = noteHtml;
-    }
     drawGraph();
     syncLabels();
     stage.invalidate();
@@ -657,12 +661,6 @@ export function createApp(root, options = {}) {
     axisE: t('g_axisE'),
     limit: t('g_limit'),
     limit2: t('g_limit2').split('|'),
-    set: t('g_set'),
-    hooke: t('g_hooke'),
-    inside: t('g_inside'),
-    inside2: t('g_inside2').split('|'),
-    outside: t('g_outside'),
-    outside2: t('g_outside2').split('|'),
   };
   const graph = createGraph(ui.stage, { N, text: graphText });
   const G = { x: 0, y: 0, w: 1, h: 1, side: 0 };
@@ -690,22 +688,40 @@ export function createApp(root, options = {}) {
     const inQuiz = s.mode === 'quiz';
     const words = s.show.graphWords;
     const dots = s.show.graphPoints;
+    const show = {
+      hooke: words && (inQuiz || f.double),
+      limit: words && (inQuiz || f.beyond || (f.limit && f.back)),
+      bands: words && (inQuiz || f.beyond),
+      set: words && dots && sp.set > 0 && n === 0,
+    };
     graph.draw({
       path: dots ? s.path : [],
       // in the test every point is a circle until the answer (a square would show where the limit is)
       loads: dots ? (words ? s.loads : s.loads.map((p) => ({ ...p, beyond: false }))) : [],
       now: dots && (n > 0 || sp.set > 0) ? point(n, sp) : null,
-      show: {
-        hooke: words && (inQuiz || f.double),
-        limit: words && (inQuiz || f.beyond || (f.limit && f.back)),
-        bands: words && (inQuiz || f.beyond),
-        set: words && dots && sp.set > 0 && n === 0,
-      },
+      show,
       limit: point(LIMIT_N, FRESH),
       set: sp.set,
       marks: s.marks,
     });
     graph.label(t('g_aria', { k: N(s.loads.length) }));
+    drawKey(show);
+  }
+
+  // the graph's key in the panel: what its marks mean, the newest first; as many as fit on the line
+  let lastKey = '';
+  function drawKey(show) {
+    const kinds = show.set ? ['set', 'out', 'in', 'hooke'] : show.bands ? ['in', 'out', 'hooke'] : show.hooke ? ['hooke', 'point'] : ['point'];
+    const want = `${kinds.join()}|${keyEl.clientWidth}`;
+    if (want === lastKey) return;
+    lastKey = want;
+    const html = (list) => list.map((k) => `<span class="el-k">${keySwatch(k)}${t(`k_${k}`)}</span>`).join('');
+    keyEl.innerHTML = html(kinds);
+    while (kinds.length > 1 && keyEl.scrollWidth > keyEl.clientWidth + 1) {
+      kinds.pop();
+      keyEl.innerHTML = html(kinds);
+    }
+    keyEl.setAttribute('aria-label', kinds.map((k) => t(`k_${k}`)).join(', '));
   }
 
   // ── labels on the picture ───────────────────────────────────────────────────
@@ -751,7 +767,7 @@ export function createApp(root, options = {}) {
   const anno = createAnnotations({
     stage,
     layer: ui.annoLayer,
-    avoid: [ui.corner, ui.hint, note, graph.el, arrowBoxes, bodyBoxes, () => action?.box(), () => action?.ringBox()],
+    avoid: [ui.corner, ui.hint, graph.el, arrowBoxes, bodyBoxes, () => action?.box(), () => action?.ringBox()],
   });
   const spot = (dx, dy) => ({ dx, dy });
   const LEFT = [spot(-12, 0), spot(-12, -16), spot(-12, 16), spot(-12, -32), spot(-12, 32)];
@@ -767,7 +783,7 @@ export function createApp(root, options = {}) {
       text: t('lbl_L0', { v: N(L0) }),
       point: () => pts.L0.set(DIM_X, TOP - (L0 * CM) / 2, 0.03),
       spots: LEFT,
-      color: COLORS.L0,
+      color: INK.L0,
       optional: true, // close to x its middle is off the view
     });
     if (x > 0.3 && s.show.xLabel)
@@ -779,21 +795,32 @@ export function createApp(root, options = {}) {
             : t('lbl_x', { v: N(round(x, 1)) }),
         point: () => pts.x.set(DIM_X, TOP - (L0 + (s.L - L0) / 2) * CM, 0.03),
         spots: LEFT,
-        color: COLORS.x,
+        color: INK.x,
       });
     if (F > 0 && steady && settledF > 0 && s.look !== 'close') {
       want.set('T', {
         text: s.show.numbers ? t('lbl_T', { v: N(settledF) }) : 'T',
         point: () => pts.T.copy(arrowT.tip),
-        spots: [spot(22, -4), spot(22, -20), spot(-22, -4), spot(22, 12), spot(-22, -20), spot(0, -24)],
-        color: COLORS.T,
+        spots: [
+          spot(22, -4),
+          spot(22, -20),
+          spot(-22, -4),
+          spot(22, 12),
+          spot(-22, -20),
+          spot(0, -24),
+          spot(48, -4),
+          spot(-48, -4),
+          spot(48, -24),
+          spot(-48, -24),
+        ],
+        color: INK.T,
         optional: true,
       });
       want.set('W', {
         text: s.show.numbers ? t('lbl_W', { v: N(settledF) }) : 'W',
         point: () => pts.W.copy(arrowW.root.position).addScaledVector(DOWN, (settledF * FORCE_LEN) / 2),
         spots: [spot(-16, 0), spot(16, 0), spot(-16, -14), spot(16, -14), spot(-16, 14), spot(16, 14)],
-        color: COLORS.W,
+        color: INK.W,
         optional: true,
       });
     }
@@ -842,7 +869,7 @@ export function createApp(root, options = {}) {
     const p0 = camera.position.clone();
     const t0 = controls.target.clone();
     if (!duration) {
-      tweener.cancel('camera');
+      quiet.cancel('camera');
       camera.position.copy(position);
       controls.target.copy(aim);
       controls.update();
@@ -850,7 +877,7 @@ export function createApp(root, options = {}) {
       stage.invalidate();
       return Promise.resolve(true);
     }
-    return tweener
+    return quiet
       .animate({
         key: 'camera',
         duration,
@@ -858,9 +885,8 @@ export function createApp(root, options = {}) {
         onUpdate: (k) => {
           camera.position.lerpVectors(p0, position, k);
           controls.target.lerpVectors(t0, aim, k);
-          controls.update();
+          controls.update(); // its change event asks for the frame
           layoutArrows();
-          stage.invalidate();
         },
       })
       .finished.then((done) => {
@@ -887,7 +913,7 @@ export function createApp(root, options = {}) {
   controls.addEventListener('start', () => {
     s.userMovedCamera = true;
     s.tour++;
-    tweener.cancel('camera');
+    quiet.cancel('camera');
   });
   controls.addEventListener('change', () => layoutArrows());
   stage.onResize(() => {
@@ -927,12 +953,20 @@ export function createApp(root, options = {}) {
       return ringBox;
     },
     pad: 6,
-    avoid: [ui.corner, ui.hint, note, graph.el, () => anno.boxes(), arrowBoxes, () => bodyBoxes()[0]],
+    avoid: [ui.corner, ui.hint, graph.el, () => anno.boxes(), arrowBoxes, () => bodyBoxes()[0]],
     pulse: o.coach,
     onAct: () => {
       audio.unlock();
       doAction();
     },
+  });
+
+  // the badge is placed after the labels (it keeps clear of them where it can); if it still had to sit on one, the
+  // labels are placed again at once, now keeping clear of the badge (a label moves to its next spot)
+  const overlaps = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+  stage.onAfterRender(() => {
+    const b = action?.box();
+    if (b && anno.boxes().some((r) => overlaps(b, r))) anno.update();
   });
 
   const raycaster = new THREE.Raycaster();
@@ -1061,7 +1095,7 @@ export function createApp(root, options = {}) {
   async function scene_({ n, history = [], show = {}, look = 'all', marks = [] }) {
     s.run++;
     s.tour++;
-    for (const k of ['spring', 'off', 'wait', 'visit', ...weights.map((_, i) => `w${i}`)]) tweener.cancel(k);
+    for (const k of ['spring', 'off', 'wait', 'visit', ...weights.map((_, i) => `w${i}`)]) cancel(k);
     s.spring = { ...FRESH };
     s.path = [{ e: 0, s: 0 }];
     s.loads = [];
@@ -1115,7 +1149,7 @@ export function createApp(root, options = {}) {
         s.locked = false;
         s.run++;
         s.tour++;
-        for (const k of ['spring', 'off', 'wait', 'visit', ...weights.map((_, i) => `w${i}`)]) tweener.cancel(k);
+        for (const k of ['spring', 'off', 'wait', 'visit', ...weights.map((_, i) => `w${i}`)]) cancel(k);
         const saved = learnSaved;
         s.show = { numbers: true, graphWords: true, graphPoints: true, xLabel: true };
         s.marks = [];
@@ -1204,7 +1238,11 @@ export function createApp(root, options = {}) {
         if (k === 'hooke') {
           // the picture shows it: n weights on the same spring
           const n = question.n;
-          scene_({ n }).then(() => revealAll());
+          const shown = scene_({ n });
+          const token = s.run; // a question after this one must not get this reveal
+          shown.then(() => {
+            if (token === s.run) revealAll();
+          });
           const x1 = stretchOf(FRESH, 1);
           return (
             t('why_hooke', { v: N(round(x1 * n, 2)), n: N(n), x: N(x1) }) +

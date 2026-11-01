@@ -5,7 +5,7 @@
   "title": "Speed and velocity (দ্রুতি এবং বেগ)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "book": "physics-9-10",
   "page": 40,
   "topic": "2.5",
@@ -43,6 +43,14 @@
       "type": "select",
       "options": [["explore", "learn"], ["quiz", "test"]],
       "default": "explore"
+    },
+    {
+      "name": "angle",
+      "label": "Stone held still at (deg from east)",
+      "type": "number",
+      "default": "",
+      "placeholder": "deg",
+      "help": "empty: the stone goes round"
     },
     { "name": "coach", "label": "First-use pointers", "type": "boolean", "default": "1" },
     {
@@ -85,10 +93,7 @@
     "practice-end"
   ],
   "export": {
-    "poster": {
-      "params": { "coach": "0" },
-      "setup": [{ "command": "set", "payload": { "angle": 215, "whirl": false, "animate": false } }]
-    },
+    "poster": { "params": { "coach": "0", "angle": "215" } },
     "glb": [
       {
         "name": "default",

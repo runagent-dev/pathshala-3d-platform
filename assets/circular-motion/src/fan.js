@@ -1,5 +1,5 @@
 // A ceiling fan (বৈদ্যুতিক পাখা) as seen lying on a bed and looking up, in centimetres: a 56-inch (1400 mm sweep)
-// fan with three blades, a brown motor, a down-rod and the canopy on the ceiling. The blades turn anticlockwise
+// fan with three turquoise blades, a dark copper motor, a down-rod and the canopy on the ceiling. The blades turn anticlockwise
 // seen from below, as ceiling fans in Bangladesh do.
 // Built in the plane of the blades: +z points down (towards the viewer below), angle 0 (+y) is "up" on the screen.
 import * as THREE from 'three';
@@ -41,14 +41,15 @@ export function createFan({ materials: M }) {
   );
   root.add(plane);
 
-  const body = new THREE.MeshPhysicalMaterial({ name: 'FanBody', color: 0xee761b, roughness: 0.32, clearcoat: 0.7, clearcoatRoughness: 0.2 });
-  // glossy cream paint, as on the metal blades of the fans sold in Bangladesh
+  // dark copper paint (it stands out on the warm ceiling, and the orange distance line stands out on it)
+  const body = new THREE.MeshPhysicalMaterial({ name: 'FanBody', color: 0x8c3f1d, roughness: 0.3, clearcoat: 0.7, clearcoatRoughness: 0.2 });
+  // glossy enamel paint on the metal blades
   const paint = new THREE.MeshPhysicalMaterial({
     name: 'Blade',
     color: 0x22c4aa,
-    roughness: 0.26,
-    clearcoat: 0.8,
-    clearcoatRoughness: 0.15,
+    roughness: 0.38,
+    clearcoat: 0.3,
+    clearcoatRoughness: 0.3,
     side: THREE.DoubleSide,
   });
   const steel = new THREE.MeshPhysicalMaterial({ name: 'BladeIron', color: 0xd9dde3, metalness: 1, roughness: 0.28 });
@@ -108,21 +109,14 @@ export function createFan({ materials: M }) {
   hit.position.z = 1;
   spin.add(hit);
 
-  // light from a lamp low on the left of the room, and the white ceiling catching the blades' soft shadow beside
-  // them (with soft shadows on; neither is exported)
+  // light from a lamp low on the left of the room; with soft shadows on, the blades' shadow falls on the ceiling
+  // beside them (the room is in setting.js; neither is exported)
   const lamp = new THREE.DirectionalLight(0xffffff, 1.4);
   lamp.position.set(-130, -420, 30);
   lamp.target.position.set(0, FAN.ceiling, 0);
   lamp.userData.noExport = true;
   lamp.target.userData.noExport = true;
   root.add(lamp, lamp.target);
-  const ceiling = new THREE.Mesh(new THREE.CircleGeometry(150, 64), new THREE.ShadowMaterial({ opacity: 0.07 }));
-  ceiling.name = 'CeilingShadow';
-  ceiling.position.z = -FAN.ceiling - 0.2;
-  ceiling.receiveShadow = true;
-  ceiling.userData.noExport = true;
-  ceiling.visible = false;
-  plane.add(ceiling);
 
   // a point of a part, in the world (written into `out`, so labels that follow it every frame allocate nothing)
   const local =
@@ -142,9 +136,10 @@ export function createFan({ materials: M }) {
     views: { front: new THREE.Vector3(0, -0.96, 0.28).normalize(), '3d': new THREE.Vector3(0.58, -0.5, 0.64).normalize() },
     grab: [hit],
     lights: [lamp],
-    shadowReceiver: ceiling,
-    shadowSize: 190, // the light's shadow box: the whole ceiling disc
-    shadowBlur: 22, // a fan's shadow on the ceiling is very soft
+    // the parts whose shadow shows on the ceiling, and the light's shadow box fitted round them: half its width,
+    // its depth along the light, how soft and how dark (a fan's shadow on a lit ceiling is soft and faint)
+    casters: [rod, top, shell, ...blades],
+    shadow: { size: 92, near: 380, far: 530, blur: 10, strength: 0.4 },
     setAngle(deg) {
       spin.rotation.z = THREE.MathUtils.degToRad(deg);
     },

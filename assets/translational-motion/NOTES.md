@@ -23,7 +23,7 @@ In চলন গতি every particle (every point) of the body moves the same d
   one turn of a wheel = 2 m) on a road with metre marks (numbered from where the rear bumper starts). Four painted
   points (stickers) at four clearly different heights, so no two trails run close together: সামনের বাম্পার
   (0.49 m), পেছনের দিক (0.72 m, the rear corner by the tail lamp), জানালা (1.15 m, the front window), ছাদ (1.475 m).
-  One hue each (dark on white labels and the panel, bright on the blue scene), and their names on labels while the car stands at the
+  One hue each (dark on white labels and the panel, at least 4.5:1; bright, with a dark outline, for the trails in the scene), and their names on labels while the car stands at the
   start (colour is never the only way to tell them apart).
 - The student drags the car along the road (or taps it, or presses চালাও; arrow keys too). Each point leaves a
   trail with an arrowhead from a ring where it started; a faint outline stays where the car started. The panel
@@ -80,3 +80,41 @@ drives there), `wheel` (the straight road), `playing`, `view`. Events: `change`,
 - Four treaded tyres have split-spoke alloys, brake discs, wheel bolts and red calipers. Calipers stay fixed to the steering hubs while tyres and wheels rotate.
 - The original dimensions, axle centres, rolling radius, marker coordinates and motion equations remain authoritative. Bright trails retain the marker hue, names and numeric distances for recognition without relying on colour alone.
 - A Bangladeshi vehicle (CNG, bus) was considered, but the book uses গাড়ি.
+
+## Polish pass (2026-11-01, v0.3.0)
+- **Setting.** The flat deep-blue backdrop is now a town street on an afternoon (`src/setting.js`): textured asphalt,
+  raised concrete kerbs, paved footpaths in a running bond, compacted earth beyond, a red-brick boundary wall with
+  plastered pillars and copings, trees and street lamps behind it, a row of three- and four-storey houses with
+  windows and balconies, a sky dome and haze. The bend has its own version (kerbs and footpaths follow the curve; the
+  wall, trees and houses leave a gap where the road turns through). Nothing tall stands between the camera and the
+  car or its trails. A transparent embed (`bg=transparent`) still shows only the road and the car.
+- **Arrows and labels.** Every trail, arrowhead and start ring has a dark outline (an inverted hull, sharing the
+  trail's draw range), and the trails are a little thicker: they read on the white car, the dark road and the
+  footpath alike. The metre numbers have a dark outline too. The window and roof colours are darker (#237a35,
+  #c2410c) so every label chip and panel number is at least 4.5:1 on white. The points' names choose the first clear
+  spot from a list (kit annotations `spots`/`avoid`): clear of each other, the corner buttons, the hint and the metre
+  numbers; on short phones they are a little smaller so all four fit (at 390×520 the roof's name sat under the
+  corner buttons).
+- **Layout.** Already the standard (3D on top, the panel beside it only in short, wide frames). The test's first
+  question was 3 lines on a phone, so the 3D view shrank by 23 px during it: it is shorter now (2 lines), and the
+  test sheet is a little lower on tall phones, so the 3D view has 390 of 700 px (56 %, was 376) and keeps that size
+  in every state and question. No panel scrolls at any of the six sizes, with the longest strings.
+- **Performance, detail kept.** The car's static parts are merged into one mesh per material and each wheel into
+  one mesh per material (geometries shared by the wheels on a side); rounded boxes use 2–3 corner segments; the
+  start outline is made from the car's own merged geometries (nothing built twice); the kit's unused instrument
+  materials (a brushed-steel canvas) are no longer made. The street is merged too and unlit (its light painted into
+  vertex colours), drawn after the road so only visible pixels are shaded: five draw calls per path. Only the car
+  casts a shadow, so the shadow box is fitted round the car and follows it: a 1024 map over 6.4 m (sharper than the
+  2048 map over 18 m before). The metre marks are one mesh, the numbers one mesh of camera-facing quads on one
+  texture (were 20 meshes and 10 textures). Front view: no pinch or wheel zoom (it broke the camera's fit).
+- **Numbers** (headless Chromium, software GL, shadows on, 390×700; ready time depends on the machine's load):
+
+  | | before | after |
+  |---|---|---|
+  | draw calls (avg / max) | 439 / 461 | 115 / 137 |
+  | triangles (max) | 334 k | 220 k |
+  | texture memory | 55.1 MB (largest 2048) | 24.5 MB (largest 1024) |
+  | time to ready | 1.3–2.0 s | 1.2–1.3 s |
+  | 3D view height at 390×700 | 376 px (shrank to 352 in the test) | 390 px in every state |
+  | text on the 3D view | 4 short names (33 characters) | the same 4 names |
+

@@ -52,14 +52,6 @@ export const STRINGS = {
     more_M: 'পানি বাড়াও',
     law_label: 'বালতির জন্য নিউটনের দ্বিতীয় গতিসূত্র: T − Mg = Ma',
 
-    // the result line: what the bucket does with these numbers
-    out_run_still: '<b>বালতি স্থির,</b> ত্বরণ নেই',
-    out_run_up: '<b>বালতি উপরে উঠছে</b>',
-    out_run_down: '<b>বালতি নিচে নামছে</b>',
-    out_top: '<b>বালতি উঠে এল</b> (a = {a} {u_a})',
-    out_water: '<b>বালতি পানিতে নেমে গেল</b> (a = {a} {u_a})',
-    out_still: '<b>বালতি যেখানে ছিল সেখানেই আছে</b> (a = {a})',
-
     // the rule: the book's words, one idea at a time
     rule_start: '<b>একটি সুতায় একটি মাত্র টান বল কাজ করে:</b> লোকটির হাতে আর বালতিতে দড়ির টান একই, T।',
     rule_still: '<b>T = Mg হলে লব্ধি বল শূন্য:</b> বালতির ত্বরণ নেই, তাই হাতে ধরা বালতি স্থির থাকে।',
@@ -80,13 +72,12 @@ export const STRINGS = {
     sym_a: 'a',
     lbl_M: 'M = {m} kg',
 
-    // the notes on the stage
-    note_head: 'কূপটি অর্ধেক কেটে দেখানো।',
-    note_body: 'দড়ি হালকা, কপিকল মসৃণ ধরা হয়েছে · সময় {k} গুণ ধীর',
-    note_body_short: 'সময় {k} গুণ ধীর',
-    sign: '<b>↑</b> উপরের দিক ধনাত্মক',
-    note_scale: 'তীরের দৈর্ঘ্য বলের সমানুপাতিক; ত্বরণের তীর আলাদা মাপে',
-    speed: 'বেগ <b>{v} m/s{dir}</b> · সময় {t} s',
+    // the sign rule in the law, the notes under the rule (not on phones), the chip on the picture
+    key_up: '<b>↑</b> <span class="wl-key-long">উপরের দিক</span> ধনাত্মক',
+    meta_cut: 'কূপটি অর্ধেক কেটে দেখানো।',
+    meta_rope: 'দড়ি হালকা, কপিকল মসৃণ।',
+    meta_scale: 'তীরের দৈর্ঘ্য বলের সমানুপাতিক; ত্বরণের তীর আলাদা মাপে।',
+    speed: 'v = <b>{v} m/s{dir}</b> · t = {t} s <small>({k} গুণ ধীরে)</small>',
 
     hint_wait: 'দেখো বালতির কী হয়।',
     hint_arrows: 'টানো বোতাম চাপলে ছবিতে এর তীর দেখা যাবে।',
@@ -217,13 +208,6 @@ export const STRINGS = {
     more_M: 'More water',
     law_label: 'Newton’s second law for the bucket: T − Mg = Ma',
 
-    out_run_still: '<b>The bucket stays still,</b> no acceleration',
-    out_run_up: '<b>The bucket rises</b>',
-    out_run_down: '<b>The bucket sinks</b>',
-    out_top: '<b>The bucket came up</b> (a = {a} {u_a})',
-    out_water: '<b>The bucket went down into the water</b> (a = {a} {u_a})',
-    out_still: '<b>The bucket stayed where it was</b> (a = {a})',
-
     rule_start: '<b>One string carries one tension:</b> the rope pulls the man’s hands and the bucket with the same T.',
     rule_still: '<b>T = Mg: the resultant force is zero.</b> No acceleration, so a bucket held still stays still.',
     rule_one_rope:
@@ -243,12 +227,11 @@ export const STRINGS = {
     sym_a: 'a',
     lbl_M: 'M = {m} kg',
 
-    note_head: 'The well is shown cut in half.',
-    note_body: 'Light rope, smooth pulley · time slowed {k} times',
-    note_body_short: 'Time slowed {k} times',
-    sign: '<b>↑</b> up is positive',
-    note_scale: 'Force arrows are drawn to scale; the acceleration arrow has its own scale',
-    speed: 'velocity <b>{v} m/s{dir}</b> · time {t} s',
+    key_up: '<b>↑</b> <span class="wl-key-long">up is</span> positive',
+    meta_cut: 'The well is shown cut in half.',
+    meta_rope: 'Light rope, smooth pulley.',
+    meta_scale: 'Force arrows to scale; the acceleration arrow has its own scale.',
+    speed: 'v = <b>{v} m/s{dir}</b> · t = {t} s <small>(slowed {k}×)</small>',
 
     hint_wait: 'Watch what the bucket does.',
     hint_arrows: 'Press Pull to see its arrow in the picture.',

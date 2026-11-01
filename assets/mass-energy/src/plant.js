@@ -36,20 +36,36 @@ export function poolBackground() {
   const c = canvas(W, H);
   const g = c.getContext('2d');
   const r = rng(3);
+  // the water: light from the surface at the top, a deep clear blue below (no longer near-white: the red and grey
+  // nucleons, the white "+" and the warm glow of the split all stand out on it)
   const lg = g.createLinearGradient(0, 0, 0, H);
-  lg.addColorStop(0, '#f2fbff');
-  lg.addColorStop(0.35, '#bfe9f8');
-  lg.addColorStop(0.72, '#6cc4ea');
-  lg.addColorStop(1, '#2d8fcb');
+  lg.addColorStop(0, '#5fb9e2');
+  lg.addColorStop(0.25, '#3394cc');
+  lg.addColorStop(0.55, '#1e76b6');
+  lg.addColorStop(0.82, '#135893');
+  lg.addColorStop(1, '#0c4478');
   g.fillStyle = lg;
   g.fillRect(0, 0, W, H);
+  // the pool's lined wall far behind: steel plates, their seams faint through the water
+  g.strokeStyle = 'rgba(200,235,255,0.07)';
+  g.lineWidth = 2;
+  g.beginPath();
+  for (let x = 0; x <= W; x += 128) {
+    g.moveTo(x, H * 0.18);
+    g.lineTo(x, H);
+  }
+  for (let y = H * 0.18; y <= H; y += 96) {
+    g.moveTo(0, y);
+    g.lineTo(W, y);
+  }
+  g.stroke();
   // light rays from the surface
   for (let i = 0; i < 14; i++) {
     const x = r() * W;
     const w = 30 + r() * 90;
     const ray = g.createLinearGradient(0, 0, 0, H * 0.9);
-    ray.addColorStop(0, 'rgba(255,255,255,0.32)');
-    ray.addColorStop(1, 'rgba(255,255,255,0)');
+    ray.addColorStop(0, 'rgba(225,248,255,0.26)');
+    ray.addColorStop(1, 'rgba(225,248,255,0)');
     g.fillStyle = ray;
     g.beginPath();
     g.moveTo(x, 0);
@@ -60,7 +76,7 @@ export function poolBackground() {
     g.fill();
   }
   // ripples of light near the surface
-  g.strokeStyle = 'rgba(255,255,255,0.35)';
+  g.strokeStyle = 'rgba(235,250,255,0.32)';
   g.lineWidth = 2;
   for (let i = 0; i < 70; i++) {
     const x = r() * W;
@@ -75,25 +91,25 @@ export function poolBackground() {
   for (let i = 0; i < 9; i++) {
     const x0 = 40 + i * 112 + r() * 10;
     const glow = g.createRadialGradient(x0 + 40, base + 30, 4, x0 + 40, base + 30, 120);
-    glow.addColorStop(0, 'rgba(150,235,255,0.75)');
-    glow.addColorStop(1, 'rgba(90,190,255,0)');
+    glow.addColorStop(0, 'rgba(130,230,255,0.7)');
+    glow.addColorStop(1, 'rgba(60,170,255,0)');
     g.fillStyle = glow;
     g.fillRect(x0 - 90, base - 100, 260, 260);
     for (let k = 0; k < 7; k++) {
       const x = x0 + k * 12;
       const rod = g.createLinearGradient(0, base - 10, 0, H);
-      rod.addColorStop(0, 'rgba(225,250,255,0.9)');
-      rod.addColorStop(1, 'rgba(120,200,240,0.4)');
+      rod.addColorStop(0, 'rgba(215,248,255,0.9)');
+      rod.addColorStop(1, 'rgba(90,185,240,0.45)');
       g.fillStyle = rod;
       g.fillRect(x, base - 10 + (k % 2) * 6, 6, H);
     }
-    g.fillStyle = 'rgba(40,90,130,0.55)';
+    g.fillStyle = 'rgba(10,45,80,0.7)';
     g.fillRect(x0 - 4, base - 22, 92, 10);
   }
-  // a soft vignette, so the middle (where the nuclei are) stays the brightest
+  // a soft vignette: the middle (where the nuclei are) a little lighter, the corners deeper
   const v = g.createRadialGradient(W / 2, H * 0.45, W * 0.2, W / 2, H * 0.45, W * 0.75);
-  v.addColorStop(0, 'rgba(255,255,255,0.28)');
-  v.addColorStop(1, 'rgba(0,40,80,0.12)');
+  v.addColorStop(0, 'rgba(160,220,255,0.12)');
+  v.addColorStop(1, 'rgba(0,25,60,0.3)');
   g.fillStyle = v;
   g.fillRect(0, 0, W, H);
   return tex(c);
@@ -101,10 +117,18 @@ export function poolBackground() {
 
 // ── noise and pictures drawn pixel by pixel ────────────────────────────────────────────────────────────────────
 /** Smooth value noise in [0, 1], seeded; px, py: the period in cells, so a texture made from it tiles. */
+const noiseTables = new Map();
 function tileNoise(seed) {
   const N = 512;
-  const r = rng(seed);
-  const v = Float32Array.from({ length: N * N }, () => r());
+  // one table per seed while the plant is built, filled with a plain loop (Float32Array.from with a function took
+  // most of the build's time)
+  let v = noiseTables.get(seed);
+  if (!v) {
+    const r = rng(seed);
+    v = new Float32Array(N * N);
+    for (let i = 0; i < v.length; i++) v[i] = r();
+    noiseTables.set(seed, v);
+  }
   const at = (x, y, px, py) => v[(((y % py) + py) % py) * N + (((x % px) + px) % px)];
   return (x, y, px = N, py = px) => {
     const xi = Math.floor(x);
@@ -189,8 +213,9 @@ export const HAZE = '#e9b597';
  * from below.
  */
 export function duskSky() {
-  const W = 2048;
-  const H = 1024;
+  const W = 1024;
+  const H = 512;
+  const k = W / 2048; // the sizes below were drawn for a 2048 px sky
   const c = canvas(W, H);
   const g = c.getContext('2d');
   const yAt = (deg) => (0.5 - deg / 180) * H;
@@ -217,8 +242,8 @@ export function duskSky() {
     const e = 3 + r() ** 1.4 * 34;
     const y = yAt(e);
     const x = r() * W;
-    const len = (70 + r() * 300) * (1.4 - e / 50);
-    const th = 2 + r() * 7;
+    const len = (70 + r() * 300) * (1.4 - e / 50) * k;
+    const th = (2 + r() * 7) * k;
     const dx = Math.min(Math.abs(x - su), W - Math.abs(x - su)) / W;
     const warm = Math.exp(-dx * 5);
     for (const ox of [-W, 0, W]) {
@@ -237,24 +262,24 @@ export function duskSky() {
     g.save();
     g.translate(su + ox, yAt(1));
     g.scale(4.5, 1);
-    const band = g.createRadialGradient(0, 0, 0, 0, 0, 150);
+    const band = g.createRadialGradient(0, 0, 0, 0, 0, 150 * k);
     band.addColorStop(0, 'rgba(255,214,160,0.75)');
     band.addColorStop(1, 'rgba(255,190,150,0)');
     g.fillStyle = band;
-    g.fillRect(-150, -150, 300, 300);
+    g.fillRect(-150 * k, -150 * k, 300 * k, 300 * k);
     g.restore();
-    const big = g.createRadialGradient(su + ox, sv, 0, su + ox, sv, 300);
+    const big = g.createRadialGradient(su + ox, sv, 0, su + ox, sv, 300 * k);
     big.addColorStop(0, 'rgba(255,236,190,0.95)');
     big.addColorStop(0.25, 'rgba(255,196,140,0.45)');
     big.addColorStop(1, 'rgba(255,160,130,0)');
     g.fillStyle = big;
-    g.fillRect(su + ox - 300, sv - 300, 600, 600);
-    const disc = g.createRadialGradient(su + ox, sv, 0, su + ox, sv, 16);
+    g.fillRect(su + ox - 300 * k, sv - 300 * k, 600 * k, 600 * k);
+    const disc = g.createRadialGradient(su + ox, sv, 0, su + ox, sv, 16 * k);
     disc.addColorStop(0, 'rgba(255,255,245,1)');
     disc.addColorStop(0.7, 'rgba(255,244,214,1)');
     disc.addColorStop(1, 'rgba(255,230,190,0)');
     g.fillStyle = disc;
-    g.fillRect(su + ox - 16, sv - 16, 32, 32);
+    g.fillRect(su + ox - 16 * k, sv - 16 * k, 32 * k, 32 * k);
   }
   const t = tex(c);
   t.mapping = THREE.EquirectangularReflectionMapping;
@@ -262,19 +287,19 @@ export function duskSky() {
 }
 
 // ── surfaces ──────────────────────────────────────────────────────────────────────────────────────────────────
-const FIELD_M = 420; // the metres one picture of the fields covers (it repeats beyond, in the haze)
+const FIELD_M = 210; // the metres one picture of the fields covers (it repeats beyond, in the haze)
 /**
  * Paddy at harvest, seen from the air: small plots on a jittered grid, many cut into long strips, divided by
  * earth bunds. Most are ripe gold; some are cut to stubble, ploughed, yellow with mustard, or flooded.
  */
 function fieldTexture(repeat) {
-  const S = 2048;
+  const S = 1024; // 4.9 px a metre, as before at 2048 px over 420 m
   const c = canvas(S, S);
   const g = c.getContext('2d');
   const r = rng(21);
   g.fillStyle = '#8f6c46';
   g.fillRect(0, 0, S, S);
-  const N = 26;
+  const N = 13;
   const cell = S / N;
   const J = Array.from({ length: N }, () => Array.from({ length: N }, () => [(r() - 0.5) * cell * 0.45, (r() - 0.5) * cell * 0.45]));
   const at = (i, j) => {
@@ -658,6 +683,154 @@ function frondTexture() {
 
 const mat = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.75, metalness: 0, ...extra });
 
+// ── drawing it cheaply: still parts merged by material, sprites as one mesh per kind ──────────────────────────
+/** A material that is only a colour (no picture, opaque, not glowing): a vertex colour can stand for it. */
+const isPlain = (m) =>
+  m.type === 'MeshStandardMaterial' &&
+  !m.map &&
+  !m.normalMap &&
+  !m.emissiveMap &&
+  !m.transparent &&
+  !m.vertexColors &&
+  !m.alphaTest &&
+  m.emissive.getHex() === 0;
+
+/** One geometry per material group of a multi-material mesh (a box with a different top, …). */
+function splitByGroups(geo) {
+  const out = new Map();
+  for (const gr of geo.groups) {
+    const g = new THREE.BufferGeometry();
+    for (const name of ['position', 'normal', 'uv']) if (geo.attributes[name]) g.setAttribute(name, geo.attributes[name].clone());
+    if (geo.index) g.setIndex(Array.from(geo.index.array.slice(gr.start, gr.start + gr.count)));
+    else g.setIndex(Array.from({ length: gr.count }, (_, i) => gr.start + i));
+    if (!out.has(gr.materialIndex)) out.set(gr.materialIndex, []);
+    out.get(gr.materialIndex).push(g);
+  }
+  return out;
+}
+
+/**
+ * Merges the still meshes under `group` into one mesh per material, in the group's frame: the plant's ~700 parts
+ * become a few dozen draw calls with every detail kept. Plain colours of about the same finish share one material
+ * with vertex colours. Parts that cast a shadow are kept apart from those that don't, so the shadow pass draws only
+ * what casts. Left as they are: `keep` (and what is under them), sprites, lights, instanced meshes.
+ */
+function bake(group, keep = []) {
+  group.updateMatrixWorld(true);
+  const inv = new THREE.Matrix4().copy(group.matrixWorld).invert();
+  const m = new THREE.Matrix4();
+  const bins = new Map();
+  const add = (material, geo, mesh) => {
+    const plain = isPlain(material);
+    const key = `${plain ? `p${Math.round(material.roughness / 0.15)}|${Math.round(material.metalness / 0.3)}|${material.side}` : material.uuid}|${mesh.castShadow}|${mesh.receiveShadow}`;
+    let b = bins.get(key);
+    if (!b) {
+      const mt = plain
+        ? new THREE.MeshStandardMaterial({ vertexColors: true, roughness: material.roughness, metalness: material.metalness, side: material.side })
+        : material;
+      b = { mat: mt, geos: [], cast: mesh.castShadow, receive: mesh.receiveShadow };
+      bins.set(key, b);
+    }
+    for (const name of Object.keys(geo.attributes)) if (!['position', 'normal', 'uv'].includes(name)) geo.deleteAttribute(name);
+    if (!geo.attributes.normal) geo.computeVertexNormals();
+    if (!geo.attributes.uv) geo.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(geo.attributes.position.count * 2), 2));
+    if (plain) {
+      const c = material.color; // linear, as vertex colours are
+      const a = new Float32Array(geo.attributes.position.count * 3);
+      for (let i = 0; i < a.length; i += 3) {
+        a[i] = c.r;
+        a[i + 1] = c.g;
+        a[i + 2] = c.b;
+      }
+      geo.setAttribute('color', new THREE.BufferAttribute(a, 3));
+    }
+    geo.clearGroups();
+    b.geos.push(geo);
+  };
+  const visit = (o) => {
+    for (const c of [...o.children]) {
+      if (keep.includes(c) || !c.visible) continue;
+      if (c.isMesh && !c.isInstancedMesh && !c.children.length) {
+        m.multiplyMatrices(inv, c.matrixWorld);
+        if (Array.isArray(c.material)) {
+          for (const [i, list] of splitByGroups(c.geometry)) for (const g of list) add(c.material[i], g.applyMatrix4(m), c);
+        } else add(c.material, c.geometry.clone().applyMatrix4(m), c);
+        o.remove(c);
+      } else if (!c.isMesh && !c.isLight && !c.isSprite) visit(c);
+    }
+  };
+  visit(group);
+  for (const b of bins.values()) {
+    const all = b.geos.every((g) => g.index) ? b.geos : b.geos.map((g) => (g.index ? g.toNonIndexed() : g));
+    const mesh = new THREE.Mesh(mergeGeometries(all), b.mat);
+    mesh.castShadow = b.cast;
+    mesh.receiveShadow = b.receive;
+    group.add(mesh);
+  }
+}
+
+/**
+ * Many soft sprites of one picture as one mesh (one draw call): each turned to the camera in the vertex shader,
+ * with its own place, size, opacity and turn. set(i, x, y, z, size, opacity, turn), then update().
+ */
+function createSprites(map, count, { additive = false, color = '#ffffff', fog = true } = {}) {
+  const geo = new THREE.InstancedBufferGeometry();
+  const quad = new THREE.PlaneGeometry(1, 1);
+  geo.index = quad.index;
+  geo.setAttribute('position', quad.attributes.position);
+  geo.setAttribute('uv', quad.attributes.uv);
+  const at = new THREE.InstancedBufferAttribute(new Float32Array(count * 3), 3);
+  const look = new THREE.InstancedBufferAttribute(new Float32Array(count * 3), 3); // size, opacity, turn
+  at.setUsage(THREE.DynamicDrawUsage);
+  look.setUsage(THREE.DynamicDrawUsage);
+  geo.setAttribute('aAt', at);
+  geo.setAttribute('aLook', look);
+  geo.instanceCount = count;
+  const material = new THREE.ShaderMaterial({
+    uniforms: { ...THREE.UniformsUtils.clone(THREE.UniformsLib.fog), map: { value: map }, color: { value: new THREE.Color(color) } },
+    vertexShader: `attribute vec3 aAt; attribute vec3 aLook; varying vec2 vUv; varying float vAlpha;
+      #include <fog_pars_vertex>
+      void main() {
+        vUv = uv; vAlpha = aLook.y;
+        vec4 mvPosition = modelViewMatrix * vec4(aAt, 1.0);
+        float c = cos(aLook.z), s = sin(aLook.z);
+        vec2 p = position.xy * aLook.x;
+        mvPosition.xy += vec2(c * p.x - s * p.y, s * p.x + c * p.y);
+        gl_Position = projectionMatrix * mvPosition;
+        #include <fog_vertex>
+      }`,
+    fragmentShader: `uniform sampler2D map; uniform vec3 color; varying vec2 vUv; varying float vAlpha;
+      #include <fog_pars_fragment>
+      void main() {
+        vec4 t = texture2D(map, vUv);
+        gl_FragColor = vec4(color * t.rgb, t.a * vAlpha);
+        if (gl_FragColor.a < 0.004) discard;
+        #include <tonemapping_fragment>
+        #include <colorspace_fragment>
+        #include <fog_fragment>
+      }`,
+    transparent: true,
+    depthWrite: false,
+    fog,
+    blending: additive ? THREE.AdditiveBlending : THREE.NormalBlending,
+  });
+  const mesh = new THREE.Mesh(geo, material);
+  mesh.frustumCulled = false;
+  mesh.renderOrder = 1; // after the glassy steam line and the water, which they sit in
+  mesh.userData.noExport = true;
+  return {
+    mesh,
+    set(i, x, y, z, size, opacity, turn = 0) {
+      at.setXYZ(i, x, y, z);
+      look.setXYZ(i, size, opacity, turn);
+    },
+    update() {
+      at.needsUpdate = true;
+      look.needsUpdate = true;
+    },
+  };
+}
+
 // ── pieces ────────────────────────────────────────────────────────────────────────────────────────────────────
 /** A cylindrical wall (two shells, a top rim and the cut faces) with a wedge open toward the viewer. */
 function cutCylinder({ r, h, wall, open, at, material, inner, face = mat('#cfc6b6') }) {
@@ -818,11 +991,22 @@ function palmGeometry() {
   return { trunk, fronds: mergeGeometries(fronds) };
 }
 
+/** The power plant, built at once (see buildPlant). */
+export function createPlant() {
+  const steps = buildPlant();
+  for (;;) {
+    const r = steps.next();
+    if (r.done) return r.value;
+  }
+}
+
 /**
- * The power plant. Returns { root, set(power, dt), anchors: { core, steam, turbine, generator, lines, town }, box }.
+ * The power plant, built a piece at a time: each `yield` is a place to stop, so the figure can build it in the
+ * browser's idle moments after the start instead of holding the first picture up. Returns { root, set(power, dt),
+ * anchors: { core, steam, turbine, generator, lines, town }, box }.
  * power: 0 (off) … 1 (running): the control rods rise, the core glows, steam runs, the turbine spins, the town lights.
  */
-export function createPlant() {
+export function* buildPlant() {
   const root = new THREE.Group();
   root.name = 'PowerPlant';
   const r = rng(31);
@@ -866,6 +1050,7 @@ export function createPlant() {
   road.position.set(30, 0.05, -30);
   road.receiveShadow = true;
   root.add(road);
+  yield;
 
   // ── the containment building, cut open toward the viewer ─────────────────────────────────────────────────
   const RX = -15;
@@ -879,6 +1064,7 @@ export function createPlant() {
     map: concreteTexture({ rows: 6, cols: 28, seed: 15, streaks: 70, grime: 0 }),
     roughness: 0.85,
   });
+  yield;
   const cutFace = mat('#c9c1b2', { roughness: 0.95 });
   const liner = mat('#b7c0ba', { roughness: 0.55, metalness: 0.2 });
   const reactor = new THREE.Group();
@@ -1082,6 +1268,7 @@ export function createPlant() {
     root.add(tank, lid);
   }
 
+  yield;
   // ── steam line: from the steam generator, out through the wall, into the turbine hall ─────────────────────
   const steamPts = [
     new THREE.Vector3(RX - 4.2, 9.2, RZ - 1.8),
@@ -1097,16 +1284,11 @@ export function createPlant() {
   );
   steamPipe.name = 'SteamLine';
   root.add(steamPipe);
-  const puffs = [];
-  const puffMat = new THREE.SpriteMaterial({ map: glowTex('rgba(255,255,255,1)', 'rgba(255,255,255,0.7)'), transparent: true, depthWrite: false });
-  for (let i = 0; i < 26; i++) {
-    const s = new THREE.Sprite(puffMat.clone());
-    s.userData.noExport = true;
-    s.scale.setScalar(1.2);
-    puffs.push(s);
-    root.add(s);
-  }
+  const PUFFS = 26;
+  const puffs = createSprites(glowTex('rgba(255,255,255,1)', 'rgba(255,255,255,0.7)'), PUFFS);
+  root.add(puffs.mesh);
 
+  yield;
   // ── turbine hall: back wall, ends and half a roof on its trusses; the crane; the turbine and generator ─────
   const hall = new THREE.Group();
   hall.position.set(10, 0.3, -4);
@@ -1262,6 +1444,7 @@ export function createPlant() {
   }
   root.add(trafo);
 
+  yield;
   // ── the cooling tower behind: a hyperbolic concrete shell on a ring of legs, its plume of vapour ───────────
   const TX = -3;
   const TZ = -30;
@@ -1279,6 +1462,7 @@ export function createPlant() {
     outerPts.push(new THREE.Vector2(towerR(y), y));
     innerPts.push(new THREE.Vector2(towerR(y) - 0.35, y));
   }
+  yield;
   const towerTex = concreteTexture({ base: '#ddd7cb', W: 1024, H: 1024, rows: 22, cols: 48, seed: 29, streaks: 220, grime: 0.18, ties: false });
   const tower = new THREE.Group();
   tower.position.set(TX, 0.3, TZ);
@@ -1310,17 +1494,11 @@ export function createPlant() {
   );
   basinWall.position.y = 0.35;
   tower.add(basin, basinWall);
-  const plume = [];
-  const cloudMap = cloudTex();
-  for (let i = 0; i < 22; i++) {
-    const s = new THREE.Sprite(
-      new THREE.SpriteMaterial({ map: cloudMap, transparent: true, depthWrite: false, color: '#fff3ee', rotation: i * 1.7 }),
-    );
-    s.userData.noExport = true;
-    plume.push(s);
-    root.add(s);
-  }
+  const PLUME = 22;
+  const plume = createSprites(cloudTex(), PLUME, { color: '#fff3ee' });
+  root.add(plume.mesh);
 
+  yield;
   // ── power lines to the town ──────────────────────────────────────────────────────────────────────────────
   const pylonAt = [new THREE.Vector3(27, 0, -15), new THREE.Vector3(25, 0, -32), new THREE.Vector3(22, 0, -49)];
   const tipsAll = [];
@@ -1347,20 +1525,10 @@ export function createPlant() {
   };
   for (let w = 0; w < 3; w++) for (let s = 0; s < chain.length - 1; s++) sagCable(chain[s][w], chain[s + 1][w], true);
   for (let s = 0; s < peaks.length - 1; s++) sagCable(peaks[s], peaks[s + 1], false);
-  const sparkMat = new THREE.SpriteMaterial({
-    map: glowTex('rgba(255,255,230,1)', 'rgba(255,214,90,0.9)'),
-    transparent: true,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
-  });
-  const sparks = cables.map(() => {
-    const s = new THREE.Sprite(sparkMat.clone());
-    s.userData.noExport = true;
-    s.scale.setScalar(1.6);
-    root.add(s);
-    return s;
-  });
+  const sparks = createSprites(glowTex('rgba(255,255,230,1)', 'rgba(255,214,90,0.9)'), cables.length, { additive: true });
+  root.add(sparks.mesh);
 
+  yield;
   // ── the town: blocks of flats with water tanks on their roofs; their windows light up when the power comes ─
   const town = new THREE.Group();
   town.position.set(22, 0, -72);
@@ -1380,8 +1548,12 @@ export function createPlant() {
     ['#e9c8c0', 105, false],
     ['#e4e4dc', 106, true],
   ].map(([wall, seed, balc]) => ({ map: flatsTexture(wall, seed, false, balc), lit: flatsTexture(wall, seed, true) }));
+  yield;
   const roofMatTown = mat('#a29d94', { roughness: 0.95 });
-  const windows = [];
+  // the buildings of one style are one mesh; each building's windows light at its own moment, read in the shader
+  // from a number on its vertices (they used to be 24 materials, 48 draw calls)
+  const facades = styles.map(() => []);
+  const roofGeos = [];
   const tankSpots = [];
   for (let i = 0; i < 24; i++) {
     const col = i % 6;
@@ -1403,31 +1575,44 @@ export function createPlant() {
         uv.setXY(j, uv.getX(j) * (across / 12) + ou, uv.getY(j) * (h / 12) + ov);
       }
     }
-    const m = new THREE.MeshStandardMaterial({ map: st.map, emissiveMap: st.lit, emissive: '#ffffff', emissiveIntensity: 0, roughness: 0.85 });
-    const b = new THREE.Mesh(geo, [m, m, roofMatTown, roofMatTown, m, m]);
     const x = col * 9.5 - 24 + r() * 1.5;
     const z = row * 10.5 - 14 + r() * 1.5;
-    b.position.set(x, h / 2, z);
-    town.add(b);
-    windows.push({ m, at: 0.55 + 0.4 * (Math.abs(col - 2.5) / 2.5) * 0.6 + r() * 0.15 });
+    const at = 0.55 + 0.4 * (Math.abs(col - 2.5) / 2.5) * 0.6 + r() * 0.15;
+    geo.translate(x, h / 2, z);
+    for (const [mi, list] of splitByGroups(geo))
+      for (const g of list) {
+        if (mi === 2 || mi === 3) roofGeos.push(g);
+        else {
+          g.setAttribute('aAt', new THREE.BufferAttribute(new Float32Array(g.attributes.position.count).fill(at), 1));
+          facades[styles.indexOf(st)].push(g);
+        }
+      }
     for (let k = 0; k < 1 + Math.floor(r() * 2); k++) tankSpots.push([x + (r() - 0.5) * (w - 2), h, z + (r() - 0.5) * (d - 2)]);
   }
+  const lit = { value: 0 };
+  const facadeMeshes = styles.map((st, k) => {
+    const mesh = new THREE.Mesh(mergeGeometries(facades[k]), facadeMaterial(st, lit));
+    town.add(mesh);
+    return mesh;
+  });
+  town.add(new THREE.Mesh(mergeGeometries(roofGeos), roofMatTown));
   const tanks = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.55, 0.55, 1.2, 12), mat('#2a2e33', { roughness: 0.6 }), tankSpots.length);
   for (const [i, [x, y, z]] of tankSpots.entries()) tanks.setMatrixAt(i, m4.makeTranslation(x, y + 0.6, z));
   town.add(tanks);
-  const lamps = [];
+  // the street lamps: one shared bulb material (they light together), merged into one mesh below
+  const lampMat = new THREE.MeshStandardMaterial({ color: '#fff4d6', emissive: '#ffc94d', emissiveIntensity: 0 });
+  const poleMat = mat('#4a4f55', { metalness: 0.5, roughness: 0.5 });
+  const poleGeo = new THREE.CylinderGeometry(0.08, 0.1, 5, 6);
+  const bulbGeo = new THREE.SphereGeometry(0.3, 12, 8);
   for (let i = 0; i < 9; i++) {
-    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 5, 6), mat('#4a4f55', { metalness: 0.5, roughness: 0.5 }));
+    const pole = new THREE.Mesh(poleGeo, poleMat);
     pole.position.set(-26 + i * 6.5, 2.5, 22);
-    const bulb = new THREE.Mesh(
-      new THREE.SphereGeometry(0.3, 12, 8),
-      new THREE.MeshStandardMaterial({ color: '#fff4d6', emissive: '#ffc94d', emissiveIntensity: 0 }),
-    );
+    const bulb = new THREE.Mesh(bulbGeo, lampMat);
     bulb.position.set(-26 + i * 6.5, 5.1, 22);
     town.add(pole, bulb);
-    lamps.push(bulb.material);
   }
 
+  yield;
   // ── trees: along the bank, round the yard, homesteads among the fields, a line of trees in the haze ─────────
   const keepOut = (x, z) =>
     (x > -36 && x < 40 && z > -50 && z < 15) || // the plant
@@ -1500,7 +1685,7 @@ export function createPlant() {
     plant(x, z, 7 + r() * 5, far);
   }
   const greens = ['#4d7a33', '#3e6a2c', '#5b8436', '#46722f', '#6a8a3a', '#3a6230'];
-  const place = (list, crown, palm = false) => {
+  const place = (list, crown, palm = false, cast = true) => {
     if (!list.length) return;
     const top = new THREE.InstancedMesh(palm ? palmGeo.fronds : crown, palm ? frondMat : leafMat, list.length);
     const stem = new THREE.InstancedMesh(palm ? palmGeo.trunk : trunkGeo, palm ? palmBark : barkMat, list.length);
@@ -1525,6 +1710,8 @@ export function createPlant() {
     }
     top.computeBoundingSphere();
     stem.computeBoundingSphere();
+    top.castShadow = stem.castShadow = cast;
+    top.receiveShadow = stem.receiveShadow = true;
     root.add(top, stem);
     return top;
   };
@@ -1532,7 +1719,7 @@ export function createPlant() {
   const frondMat = new THREE.MeshStandardMaterial({ map: frondTexture(), alphaTest: 0.45, side: THREE.DoubleSide, roughness: 0.85 });
   const palmBark = mat('#857563', { roughness: 0.95 });
   place(near, crownNear);
-  place(far, crownFar);
+  place(far, crownFar, false, false); // in the haze, beyond the shadows' reach
   place(palms, null, true);
   // the houses: walls of mud, brick or painted tin; roofs of corrugated tin that catch the low sun
   const hutBody = new THREE.BoxGeometry(1, 1, 1);
@@ -1558,8 +1745,10 @@ export function createPlant() {
   }
   bodies.computeBoundingSphere();
   roofs.computeBoundingSphere();
+  bodies.receiveShadow = roofs.receiveShadow = true;
   root.add(bodies, roofs);
 
+  yield;
   // ── country boats on the river, one under a patched sail ───────────────────────────────────────────────────
   const wood = mat('#4e3626', { roughness: 0.8 });
   const sailTex = (() => {
@@ -1619,6 +1808,23 @@ export function createPlant() {
     root.add(boat);
   }
 
+  yield;
+  // ── shadows, then the still parts merged ─────────────────────────────────────────────────────────────────
+  // everything takes shadows; what is big enough for its shadow to be seen casts one (not the ground, floors, water,
+  // the thin wires, the far houses and decals)
+  const flat = new Set([ground, river, bank, yard, road, floor, water, hallFloor, bed, gravel, townGround, basin, steamPipe]);
+  const thin = new Set([wireMat, yardDecal, lampMat, poleMat]);
+  root.traverse((o) => {
+    if (!o.isMesh || o.isInstancedMesh || o.userData.noExport) return;
+    o.receiveShadow = o !== water && o !== steamPipe;
+    o.castShadow = !flat.has(o) && !thin.has(o.material);
+  });
+  for (const m of facadeMeshes) m.castShadow = m.receiveShadow = true;
+  bake(ctrl);
+  bake(rotor);
+  bake(root, [ctrl, rotor, generator, ...facadeMeshes, puffs.mesh, plume.mesh, sparks.mesh]);
+  noiseTables.clear();
+
   // ── running it ────────────────────────────────────────────────────────────────────────────────────────────
   let spin = 0;
   let clock = 0;
@@ -1637,33 +1843,44 @@ export function createPlant() {
     coreLight.intensity = 60 * smooth(0.05, 0.5, k);
     coreGlow.material.opacity = 0.25 + 0.75 * smooth(0.05, 0.5, k);
     const steam = smooth(0.25, 0.6, k);
-    for (const [i, s] of puffs.entries()) {
-      const u = (i / puffs.length + clock * 0.22) % 1;
-      steamCurve.getPointAt(u, s.position);
-      s.material.opacity = steam * 0.85 * Math.sin(Math.PI * Math.min(1, u * 1.15));
-      s.visible = steam > 0.01;
+    puffs.mesh.visible = steam > 0.01;
+    if (puffs.mesh.visible) {
+      for (let i = 0; i < PUFFS; i++) {
+        const u = (i / PUFFS + clock * 0.22) % 1;
+        steamCurve.getPointAt(u, tmpV);
+        puffs.set(i, tmpV.x, tmpV.y, tmpV.z, 1.2, steam * 0.85 * Math.sin(Math.PI * Math.min(1, u * 1.15)));
+      }
+      puffs.update();
     }
     spin += dt * 9 * smooth(0.35, 0.8, k);
     rotor.rotation.x = spin;
     generator.rotation.x = spin;
     const elec = smooth(0.6, 0.85, k);
-    for (const [i, s] of sparks.entries()) {
-      const u = (clock * 0.45 + i * 0.137) % 1;
-      cables[i].getPoint(u, s.position);
-      s.visible = elec > 0.01;
-      s.material.opacity = elec;
+    sparks.mesh.visible = elec > 0.01;
+    if (sparks.mesh.visible) {
+      for (const [i, cable] of cables.entries()) {
+        cable.getPoint((clock * 0.45 + i * 0.137) % 1, tmpV);
+        sparks.set(i, tmpV.x, tmpV.y, tmpV.z, 1.6, elec);
+      }
+      sparks.update();
     }
-    for (const w of windows) w.m.emissiveIntensity = 1.1 * smooth(w.at, w.at + 0.12, k);
-    for (const l of lamps) l.emissiveIntensity = 2 * smooth(0.7, 0.85, k);
+    lit.value = k; // each building's windows light at their own moment (in the facade shader)
+    lampMat.emissiveIntensity = 2 * smooth(0.7, 0.85, k);
     // the cooling tower's vapour: always a little, a full billowing plume drifting with the wind when running
     const vap = 0.3 + 0.7 * smooth(0.3, 0.8, k);
-    for (const [i, s] of plume.entries()) {
-      const u = (i / plume.length + clock * 0.05) % 1;
-      s.position.set(towerTop.x + Math.sin(i * 1.7) * 2.2 + u * u * 16, towerTop.y + 1 + u * 20, towerTop.z + Math.cos(i * 2.3) * 2.2 - u * 4);
-      s.scale.setScalar((9 + u * 16) * (0.7 + 0.3 * vap));
-      s.material.opacity = vap * 0.85 * Math.sin(Math.PI * Math.min(1, u * 1.25 + 0.08)) ** 0.7;
-      s.material.rotation = i * 1.7 + clock * 0.03;
+    for (let i = 0; i < PLUME; i++) {
+      const u = (i / PLUME + clock * 0.05) % 1;
+      plume.set(
+        i,
+        towerTop.x + Math.sin(i * 1.7) * 2.2 + u * u * 16,
+        towerTop.y + 1 + u * 20,
+        towerTop.z + Math.cos(i * 2.3) * 2.2 - u * 4,
+        (9 + u * 16) * (0.7 + 0.3 * vap),
+        vap * 0.85 * Math.sin(Math.PI * Math.min(1, u * 1.25 + 0.08)) ** 0.7,
+        i * 1.7 + clock * 0.03,
+      );
     }
+    plume.update();
   }
   set(0, 0);
 
@@ -1683,6 +1900,21 @@ export function createPlant() {
     /** What the camera frames: the reactor, the hall, the tower's top and the first pylon. */
     box: new THREE.Box3(new THREE.Vector3(-24, 0, -32), new THREE.Vector3(32, 31, 6)),
   };
+}
+
+/** The flats' walls, their windows lit as the power comes: smoothstep(at, at + 0.12, power) per building. */
+function facadeMaterial(st, lit) {
+  const m = new THREE.MeshStandardMaterial({ map: st.map, emissiveMap: st.lit, emissive: '#ffffff', emissiveIntensity: 1.1, roughness: 0.85 });
+  m.onBeforeCompile = (shader) => {
+    shader.uniforms.uLit = lit;
+    shader.vertexShader = `attribute float aAt;\nvarying float vAt;\n${shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvAt = aAt;')}`;
+    shader.fragmentShader = `uniform float uLit;\nvarying float vAt;\n${shader.fragmentShader.replace(
+      '#include <emissivemap_fragment>',
+      '#include <emissivemap_fragment>\ntotalEmissiveRadiance *= smoothstep(vAt, vAt + 0.12, uLit);',
+    )}`;
+  };
+  m.customProgramCacheKey = () => 'me-facade';
+  return m;
 }
 
 function glowTex(inner, outer) {

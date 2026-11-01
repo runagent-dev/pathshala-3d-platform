@@ -372,6 +372,75 @@ export function windowTexture(seed = 1) {
   );
 }
 
+/**
+ * Several drawings in one texture (one material, one draw call for all the meshes that use them): `tiles` canvases of
+ * equal size laid out in `cols` columns. `uv(i, geo)` moves a geometry's 0…1 texture coordinates onto tile i, a
+ * hair inside its edges so its neighbours never bleed in.
+ * @param {HTMLCanvasElement[]} tiles
+ */
+export function atlas(tiles, cols, { repeat = false } = {}) {
+  const tw = tiles[0].width;
+  const th = tiles[0].height;
+  const rows = Math.ceil(tiles.length / cols);
+  const tex = canvasTexture(
+    tw * cols,
+    th * rows,
+    (ctx) => tiles.forEach((c, i) => ctx.drawImage(c, (i % cols) * tw, Math.floor(i / cols) * th)),
+    repeat,
+  );
+  const W = tw * cols;
+  const H = th * rows;
+  const inset = 1.5;
+  /** @param {number} i @param {THREE.BufferGeometry} geo */
+  function uv(i, geo) {
+    const u0 = ((i % cols) * tw + inset) / W;
+    const du = (tw - 2 * inset) / W;
+    // canvas rows go down, texture v goes up (flipY)
+    const v0 = 1 - (Math.floor(i / cols) * th + th - inset) / H;
+    const dv = (th - 2 * inset) / H;
+    const a = geo.attributes.uv;
+    for (let k = 0; k < a.count; k++) a.setXY(k, u0 + a.getX(k) * du, v0 + a.getY(k) * dv);
+    a.needsUpdate = true;
+    return geo;
+  }
+  return { texture: tex, uv };
+}
+
+/** The windows (the house's three and the stair room's) in one texture: tile i is windowTexture(seeds[i]). */
+export function windowAtlas(seeds) {
+  const tiles = seeds.map((sd) => {
+    const t = windowTexture(sd);
+    const c = /** @type {HTMLCanvasElement} */ (t.image);
+    t.dispose();
+    return c;
+  });
+  return atlas(tiles, 2);
+}
+
+/** The neighbours' façade bays (8 colours × 2 kinds) in one texture, for one material on every building. */
+export function facadeAtlas(colors) {
+  const tiles = [];
+  colors.forEach((color, ci) => {
+    for (let k = 0; k < 2; k++) {
+      const t = facadeTexture(color, 3 + ci * 7 + k * 31);
+      tiles.push(/** @type {HTMLCanvasElement} */ (t.image));
+      t.dispose();
+    }
+  });
+  return atlas(tiles, 4);
+}
+
+/** Clouds in one texture (4 shapes), for one mesh of all the clouds. */
+export function cloudAtlas() {
+  const tiles = [0, 1, 2, 3].map((i) => {
+    const t = cloudTexture(50 + i);
+    const c = /** @type {HTMLCanvasElement} */ (t.image);
+    t.dispose();
+    return c;
+  });
+  return atlas(tiles, 2);
+}
+
 function shade(hex, k) {
   const c = new THREE.Color(hex);
   c.multiplyScalar(k);
