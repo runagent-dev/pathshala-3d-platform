@@ -14,6 +14,9 @@ across all figures before merging a kit change (`npm run test:visual`).
   figure styled for a phone-wide panel looks right beside the 3D without changes.
 - On a touch phone held upright, a card asks the student to turn it sideways ("turn it" goes fullscreen and locks
   landscape where the browser allows; "stay" keeps the stacked layout). `?rotate=0` (or `coach=0`) skips it.
+- No more "front / rotate" buttons: the view starts from the front and turns when the student drags it. The
+  shell has one `[data-view="front"]` icon button, hidden; a figure shows it once the view was turned (back to the
+  front). Figures must allow rotating in the front view.
 - New figure strings for the shell: `panel_hide`, `panel_show`, `rotate_title`, `rotate_body`, `rotate_go`, `rotate_stay` (added to every figure and template).
 
 ## 1.4.0 (2026-11-01)
