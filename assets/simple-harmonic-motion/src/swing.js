@@ -3,10 +3,11 @@
 // sitting on it. The ropes, the seat and the girl hang from the top pole and swing in the x–y plane about it (the
 // z axis through PIVOT); setAngle(θ) turns them (θ > 0 swings toward +x), setPlait(lean) lets her plait trail.
 // The legs of the frame splay wide, so that seen from the side none of them ever passes in front of the girl at
-// 25°. The ground is y = 0.
+// 25°. The ground is y = 0. The parts of the frame, the girl and the ropes and seat are each merged by material.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { mergeStatic } from './merge.js';
 import { SWING } from './motion.js';
 
 const L = SWING.R; // m: from the middle of the top pole to the middle of the seat (the ropes)
@@ -206,6 +207,10 @@ export function createSwing({ materials: M }) {
   ropeHit.position.y = -0.2 - (L - 0.5) / 2;
   ropeHit.userData.noExport = true;
   arm.add(hit, ropeHit);
+  // fewer draw calls, the same picture: what never moves relative to its group is one mesh per material
+  mergeStatic(frame);
+  mergeStatic(girl, { keep: [plait] });
+  mergeStatic(arm, { keep: [girl, hit, ropeHit] });
 
   return {
     root,
@@ -232,9 +237,9 @@ export function createSwing({ materials: M }) {
     },
     /**
      * The points the camera keeps in view: the top pole (seen end-on), the swing out at either end with room for
-     * the end labels, and the space under the seat for the speed arrow and the সাম্যবিন্দু label. The legs of the
+     * the end labels, and the space under the seat for the speed arrow and, below it, the সাম্যবিন্দু label. The legs of the
      * frame run off the edges.
      */
-    fit: [v3(0, PIVOT.y + TOP_R + 0.01, -0.5), v3(0, PIVOT.y + TOP_R + 0.01, 0.5), v3(-1.3, 0.62, 0), v3(1.3, 0.62, 0), v3(0, 0, 0)],
+    fit: [v3(0, PIVOT.y + TOP_R + 0.01, -0.5), v3(0, PIVOT.y + TOP_R + 0.01, 0.5), v3(-1.3, 0.62, 0), v3(1.3, 0.62, 0), v3(0, -0.3, 0)],
   };
 }

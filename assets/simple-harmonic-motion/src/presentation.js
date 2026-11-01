@@ -1,37 +1,27 @@
-// Saturated studio colours separate the moving object from the fixed support. No external textures or images.
+// The setting of each example (src/scenery.js: a village courtyard for the swing, a laboratory bench for the spring),
+// its sky or room behind, and the lights. With bg=transparent there is no setting, only the lights.
 import * as THREE from 'three';
+import { createCourtyard, createLab } from './scenery.js';
+
 export function createPresentation(stage, transparent) {
-  const backgrounds = {};
-  for (const [example, colours] of Object.entries({ swing: ['#163650', '#12616c', '#207357'], spring: ['#092b48', '#0b5368', '#127f79'] })) {
-    if (transparent) break;
-    const canvas = document.createElement('canvas');
-    canvas.width = 32;
-    canvas.height = 512;
-    const ctx = canvas.getContext('2d');
-    const gradient = ctx.createLinearGradient(0, 0, 0, 512);
-    gradient.addColorStop(0, colours[0]);
-    gradient.addColorStop(0.62, colours[1]);
-    gradient.addColorStop(1, colours[2]);
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, 32, 512);
-    if (example === 'spring') {
-      const glow = ctx.createRadialGradient(18, 245, 0, 18, 245, 280);
-      glow.addColorStop(0, 'rgba(39, 167, 170, 0.22)');
-      glow.addColorStop(1, 'rgba(39, 167, 170, 0)');
-      ctx.fillStyle = glow;
-      ctx.fillRect(0, 0, 32, 512);
-    }
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.colorSpace = THREE.SRGBColorSpace;
-    backgrounds[example] = texture;
-  }
-  const fill = new THREE.HemisphereLight(0xe4f6ff, 0x6c9a66, 1);
-  const key = new THREE.DirectionalLight(0xffedd0, 1.5);
-  key.position.set(-3, 5, 5);
+  const makers = { swing: createCourtyard, spring: createLab };
+  /** @type {Record<string, { root: THREE.Object3D, background: THREE.Texture | null }>} */
+  const sets = {}; // each setting is made the first time its example is shown
+  // a sun high on the left (it casts the shadows) and a soft sky above the clay; the stage's studio reflections are
+  // turned down (createStage, environmentIntensity) so the shadows read
+  const fill = new THREE.HemisphereLight(0xdcefff, 0x8a6a4c, 0.6);
+  const key = new THREE.DirectionalLight(0xfff0d8, 2.7);
+  key.position.set(-2.5, 7, 4);
   stage.scene.add(fill, key);
   return {
+    key,
     setExample(example) {
-      if (!transparent) stage.scene.background = backgrounds[example];
+      if (!transparent && !sets[example] && makers[example]) {
+        sets[example] = makers[example]();
+        stage.scene.add(sets[example].root);
+      }
+      for (const [name, set] of Object.entries(sets)) set.root.visible = name === example;
+      if (sets[example]) stage.scene.background = sets[example].background;
       stage.invalidate();
     },
     capture(options = {}) {

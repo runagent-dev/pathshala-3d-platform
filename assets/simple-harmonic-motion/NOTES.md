@@ -100,3 +100,38 @@ is greatest, then falls to zero at the other end; one full back-and-forth takes 
 Peacock blue/teal replaces the violet backdrop; the support has coral enamel, an ink-blue base and blue clamp.
 The silver coil and satin brass weights have distinct metallic finishes. Matching deep-blue graph panels and
 teal selectors complete the palette while retaining the quantity colours, labels and motion/energy behaviour.
+
+## Polish pass (2026-11-01, v0.4.0)
+- **Layout.** The wide-frame rule that put the panel beside the 3D on every frame from 720 px up (desktop and 800×500
+  included) is gone: the 3D is on top and the panel below everywhere except the kit's short-and-wide frame. The panel
+  is one standard frame: the speed with the rule beside it (প্রান্তের দিকে গেলে দ্রুতি কমে…), the graph of one period
+  with its five moments and the period, the note, the buttons; on wide frames the words sit on the left and the graph
+  on the right. The graph region has the same height for the swing and the spring (and the test is no taller), so
+  switching example or tab never moves the 3D: before, 390×700 had 388 px of panel for the swing and 441 px for the
+  spring. The spring's গতি/শক্তি buttons sit beside its graphs, its period uses the swing's bracket, and its note
+  takes the swing's note line. 390×700: the 3D from 45 % (37 % with the spring) to 55 %; 390×520: 40 % to 43 %.
+- **Text on the 3D.** Only the labels (প্রান্ত / দ্রুতি শূন্য, সাম্যবিন্দু / দ্রুতি সর্বোচ্চ, solid chips with a rim and a
+  shadow) and the slowed-time chip; the dots' meaning and the spring's notes were already in the panel. The middle
+  label keeps out of the band the speed arrow sweeps through (the camera leaves room under it).
+- **Setting.** The navy-to-green gradient became a village courtyard: swept clay with pebbles and broom strokes, the
+  ground worn bare under the swing, a house of blue-painted corrugated tin on a clay plinth (a wooden door, a barred
+  window with open shutters, rusty tin roof on posts, two clay pots, a stool), a sky dome with clouds and far trees.
+  The spring stands on a wooden bench in front of a slate blackboard (chalk dust, a chalk wave, chalk on the ledge)
+  on a blue-grey wall. A stronger sun and weaker fill so the frame's shadows show on the clay.
+- **Arrows and marks.** The speed arrow is gold inside a dark outline (it crosses clay and blackboard), the path is
+  cyan in a dark edge and every dot has a dark rim, so pink ends, the gold middle and the cyan steps read on the clay;
+  the test's arrowhead has the same outline.
+- **Smooth, same detail.** Static parts merged by material (`src/merge.js`: the frame, the girl, the ropes and seat,
+  the stand, the hanger, the house); PCF shadows at 1024 in a box fitted round the example from the light, instead
+  of VSM at 2048; the spring's setting is made only when the spring is first shown; no instancing or blending shaders
+  for the helpers (they share the path's and the outline's), an opaque worn patch instead of a blended decal, a sky
+  dome instead of a background the renderer turns into a cube map: the first frame compiles 9 shaders (12 before).
+  The moment buttons and the spring readouts are written only when they change.
+- **Bugs fixed.** The panel height changed with the example (the 3D jumped); the moment buttons overlapped each other
+  in the 640×400 side panel; English spring labels overflowed; the keys 1/2 left the new example paused (the buttons
+  start it); reset left the spring on its energy view.
+- **Numbers** (headless Chromium, software GL, shadows on, 390×700): draw calls avg 97 / max 188 → 61 / 116;
+  triangles max 56k → 74k (the house, the rims); texture memory 55.1 MB (largest 2048) → 20.5 MB (largest 1024);
+  text on the 3D 64 characters in 6 boxes before and after (labels only); time to ready 0.65–1.8 s before and
+  0.8–1.5 s after on the same loaded machine. The figure plays by itself, so it keeps drawing while it swings; paused,
+  it draws nothing.

@@ -24,7 +24,6 @@ export const STRINGS = {
     unit_velocity: 'm/s',
     unit_acceleration: 'm/s<sup>2</sup>',
     unit_energy: 'J',
-    trace_time: 'এক পর্যায়কাল: {zero} → {T} s',
     motion_hint: 'সাম্যবিন্দু থেকে ওপর (+), নিচ (−)। বেগে দিক থাকে; দ্রুতি বেগের মান।',
     energy_hint: 'মোট E = K + U অপরিবর্তিত। U: স্প্রিং ও অভিকর্ষ মিলিয়ে, সাম্যবিন্দুতে শূন্য।',
     energy_graph: 'সময়ের সাথে গতিশক্তি, বিভব শক্তি ও অপরিবর্তিত মোট শক্তি',
@@ -49,7 +48,7 @@ export const STRINGS = {
     state_mid: 'সাম্যবিন্দুতে: দ্রুতি সর্বোচ্চ।',
     state_in: 'সাম্যবিন্দুর দিকে গেলে দ্রুতি বাড়ে।',
     state_out: 'প্রান্তের দিকে গেলে দ্রুতি কমে।',
-    state_held: 'ধরে আছ — ছেড়ে দিলে স্পন্দন শুরু হবে।',
+    state_held: 'ছেড়ে দিলে স্পন্দন শুরু হবে।',
     graph_label: 'এক পর্যায়কালে দ্রুতি: দুই প্রান্তে শূন্য, সাম্যবিন্দুতে সর্বোচ্চ',
     graph_time: 'সময় →',
     period_span: 'এক পর্যায়কাল = <b>{T}</b> সেকেন্ড',
@@ -61,7 +60,7 @@ export const STRINGS = {
     who_spring: 'বস্তুটি',
 
     idea: '<b>নীল বিন্দু: প্রতি {dt} সেকেন্ডে অবস্থান।</b> প্রান্তে ঘন, মাঝখানে দূরে — তাই মাঝখানে দ্রুতি বেশি।',
-    idea_drag: '<b>এবার ছেড়ে দাও!</b> যেখান থেকে ছাড়বে সেটিই হবে একটি প্রান্ত: সেখানে দ্রুতি শূন্য, সেখান থেকেই স্পন্দন শুরু।',
+    idea_drag: '<b>এবার ছেড়ে দাও!</b> যেখান থেকে ছাড়বে সেটিই একটি প্রান্ত: সেখানে দ্রুতি শূন্য।',
     coach_drag: 'টেনে ছেড়ে দাও',
 
     q_count: 'প্রশ্ন {i} / {n}',
@@ -127,7 +126,6 @@ export const STRINGS = {
     unit_velocity: 'm/s',
     unit_acceleration: 'm/s<sup>2</sup>',
     unit_energy: 'J',
-    trace_time: 'One period: {zero} → {T} s',
     motion_hint: 'From equilibrium: up (+), down (−). Velocity includes direction; speed is its magnitude.',
     energy_hint: 'E = K + U stays constant. U combines spring and gravity potential, zero at equilibrium.',
     energy_graph: 'Kinetic, potential and constant total energy over time',
