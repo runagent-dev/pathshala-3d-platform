@@ -12,7 +12,7 @@ body.bg-transparent { background: transparent; }
 .el .pvc-outcome { font-size: 15px; line-height: 1.6; }
 .el .pvc-outcome b { font-size: 1.3em; color: var(--c-x); }
 .el .pvc-rule { font-size: 14.5px; line-height: 1.45; }
-.el-prop { display: inline-block; width: 1.05em; height: 0.66em; vertical-align: -0.02em; }
+.el-prop { display: inline-block; width: 1.05em; height: 0.66em; margin-block: -0.3em; vertical-align: -0.02em; }
 
 /* ── the stepper with L₀ and L, then the three sums ── */
 .el-eq { display: flex; flex-direction: column; gap: 5px; }
@@ -39,8 +39,11 @@ body.bg-transparent { background: transparent; }
 .el-calc { color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .el-calc small { font-size: 0.86em; color: var(--ink-2); }
 
-/* the note on the stage (top left; the buttons are top right) */
-.el-note { position: absolute; left: 8px; top: 8px; z-index: 3; max-width: calc(100% - 240px); min-width: 110px; padding: 2px 8px; border-radius: 6px; background: rgba(255, 255, 255, 0.92); font-size: 12.5px; line-height: 1.4; color: var(--ink-2); pointer-events: none; }
+/* the graph's key: its little pictures and their names on one line (as many as fit, newest first) */
+.el-sum.el-keyrow .el-q { color: var(--ink-2); font-weight: 600; }
+.el .el-key { display: flex; align-items: center; gap: 2px 12px; white-space: nowrap; overflow: hidden; font-size: 0.93em; color: var(--ink-2); }
+.el-k { display: inline-flex; align-items: center; gap: 4px; flex: none; }
+.el-sw { flex: none; width: 20px; height: 13px; overflow: hidden; }
 
 /* the graph: a white card on the stage */
 .el-graph { position: absolute; z-index: 3; border-radius: 10px; background: #fff; box-shadow: 0 2px 10px rgba(40, 20, 10, 0.28), 0 0 0 1px rgba(0, 0, 0, 0.06); pointer-events: none; overflow: hidden; }
@@ -50,7 +53,7 @@ body.bg-transparent { background: transparent; }
 @media (prefers-reduced-motion: reduce) { .el-now { animation: none; } }
 
 /* labels on the picture: the symbol and its number in its colour */
-.pvc-anno-force { --c: var(--ink); padding: 0 6px; border: 1.5px solid var(--c); border-radius: 5px; background: rgba(255, 255, 255, 0.95); color: var(--c); font-size: 13.5px; font-weight: 700; line-height: 1.5; white-space: nowrap; transition: none; }
+.pvc-anno-force { --c: var(--ink); padding: 0 6px; border: 1.5px solid var(--c); border-radius: 5px; background: #fff; color: var(--c); font-size: 13.5px; font-weight: 700; line-height: 1.5; white-space: nowrap; transition: none; box-shadow: 0 1px 3px rgba(15, 25, 40, 0.3); }
 .pvc-anno-lines .k-force { display: none; }
 
 /* the test: answers in words or numbers, room kept for the question and the worked answer */
@@ -59,16 +62,33 @@ body.bg-transparent { background: transparent; }
 .el .pvc-q-text { font-size: 15px; }
 .el .pvc-q-feedback { font-size: 14px; }
 
-/* phones */
+/* phones held upright: the panel kept low, so the 3D view keeps about 55 % of a 390 × 700 phone; the test sheet no
+   taller than the learn sheet (they share one cell) */
+@container pvc (max-width: 560px) {
+  .el .pvc-learn { gap: 5px; }
+  .el-eq { gap: 3px; }
+  .el-ctl { height: 36px; }
+  .el-sums { line-height: 1.36; }
+  .el .pvc-act-row { min-height: 42px; }
+  .el .pvc-act { min-height: 42px; padding: 3px 14px 3px 5px; font-size: 15.5px; gap: 8px; }
+  .el .pvc-act-num { width: 32px; height: 32px; font-size: 17px; }
+  .el .pvc-outcome { line-height: 1.5; min-height: 1lh; }
+  .el .pvc-rule { line-height: 1.4; min-height: 3lh; }
+  .el .pvc-q-ask { gap: 6px; }
+  .el .pvc-q-head { min-height: 32px; }
+  .el .pvc-q-head .pvc-btn { height: 34px; }
+  .el .pvc-q-text { font-size: 15px; line-height: 1.35; --pvc-q-text-min: 2lh; }
+  .el .pvc-opt { height: 42px; }
+  .el .pvc-q-feedback { font-size: 13.5px; line-height: 1.4; }
+}
 @container pvc (max-width: 420px) {
   .el-top { gap: 8px; }
   .el-pm { width: 38px; }
   .el-len { font-size: 13.5px; }
   .el-sums { font-size: 13.5px; column-gap: 8px; }
   .el-f { display: none; }
-  .el .pvc-rule { font-size: 13.5px; }
+  .el .pvc-rule { font-size: 13px; }
   .el .pvc-outcome { font-size: 14px; }
-  .el-note { font-size: 11.5px; }
 }
 /* phones that are not tall: everything a little smaller */
 @container pvc (max-width: 560px) and (max-height: 600px) {
@@ -78,7 +98,7 @@ body.bg-transparent { background: transparent; }
   .el-ctl { height: 32px; }
   .el-pm { width: 34px; }
   .el-sums { font-size: 12.5px; line-height: 1.4; }
-  .el .pvc-outcome { display: none; }
+  .el .pvc-outcome { font-size: 13.5px; }
   .el .pvc-rule { font-size: 12.5px; line-height: 1.35; --pvc-rule-lines: 2; }
   .el .pvc-q-text { font-size: 13.5px; }
   .el .pvc-opt { font-size: 13px; }
@@ -106,6 +126,9 @@ body.bg-transparent { background: transparent; }
   .el-eq { grid-area: eq; align-self: start; }
   .el .pvc-outcome { grid-area: out; }
   .el .pvc-rule { grid-area: rule; --pvc-rule-lines: 2; }
+  /* the wide test sheet has room for a question and a worked answer in two lines each: the 3D view gets the rest */
+  .el .pvc-q-text { --pvc-q-text-min: 2lh; }
+  .el .pvc-q-feedback { --pvc-q-feedback-min: 2lh; }
 }
 @container pvc-panel (max-width: 330px) {
   .el-top { gap: 6px; }

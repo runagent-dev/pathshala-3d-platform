@@ -4,10 +4,18 @@
 // the hanger; a wooden metre rule beside it reads the spring's length L from the top hook (0 cm). The spring is built
 // once as a tube along a helix; setLength moves its vertices down along the coil (no new geometry while it moves).
 import * as THREE from 'three';
+import { mergeGeometries, mergeGroups } from 'three/addons/utils/BufferGeometryUtils.js';
 import { FONT } from '@shared/student/materials.js';
 
 export const TOP = 0.68; // m: the spring's top hook (the rule's 0)
 export const RULER = { x: -0.09, width: 0.034, z: -0.006, cm: 52 }; // its left edge, width, face, length
+// the rule's face texture: 2048 px tall (sharp enough close up, half the memory of 64 px per cm), a margin above 0 and
+// below the last mark; the face is exactly as long as the texture, so its marks are true centimetres in the scene
+const RULE_PX = 2048;
+const RULE_PAD = 16; // px above 0 and below the last mark
+const RULE_PXCM = (RULE_PX - 2 * RULE_PAD) / RULER.cm;
+const RULE_TOP = RULE_PAD / RULE_PXCM / 100; // m of face above the 0 mark
+const RULE_LEN = RULER.cm / 100 + 2 * RULE_TOP; // m: the face's length
 export const COIL = { radius: 0.016, wire: 0.0019, turns: 34 };
 const END = 0.018; // m from each end of the spring (where it hooks) to its coils
 const LOOP = 0.0075; // the end loops' radius
@@ -74,7 +82,9 @@ function brickTexture() {
 
 /** A deep blue pegboard with rows of holes and painted outlines where the tools hang. */
 function pegboardTexture(num) {
-  const { c, ctx } = canvas2d(1024, 1280);
+  // drawn in a 1024 × 1280 layout (the board's shape) onto a 1024² canvas: the board stretches it back
+  const { c, ctx } = canvas2d(1024, 1024);
+  ctx.scale(1, 1024 / 1280);
   const g = ctx.createLinearGradient(0, 0, 1024, 1280);
   g.addColorStop(0, '#24467f');
   g.addColorStop(1, '#183463');
@@ -194,17 +204,20 @@ function oakTexture() {
 
 /** The metre rule's face: cm marks on its left edge (toward the spring), a number at every cm, bold every 5. */
 function rulerTexture(num) {
+  // drawn at 160 px across and 64 px per cm (the shapes as designed), scaled onto a 128 × 2048 canvas
   const pxcm = 64;
-  const { c, ctx } = canvas2d(160, RULER.cm * pxcm + 32);
+  const pad = (RULE_PAD * pxcm) / RULE_PXCM;
+  const { c, ctx } = canvas2d(128, RULE_PX);
+  ctx.scale(128 / 160, RULE_PXCM / pxcm);
   const g = ctx.createLinearGradient(0, 0, 160, 0);
   g.addColorStop(0, '#fbe3a4');
   g.addColorStop(1, '#f1c96c');
   ctx.fillStyle = g;
-  ctx.fillRect(0, 0, c.width, c.height);
+  ctx.fillRect(0, 0, 160, RULER.cm * pxcm + 2 * pad);
   ctx.fillStyle = '#1b1f2a';
   ctx.textBaseline = 'middle';
   for (let mm = 0; mm <= RULER.cm * 10; mm += 5) {
-    const y = 16 + (mm / 10) * pxcm;
+    const y = pad + (mm / 10) * pxcm;
     const whole = mm % 10 === 0;
     const five = mm % 50 === 0;
     const w = five ? 70 : whole ? 50 : 26;
@@ -218,7 +231,7 @@ function rulerTexture(num) {
   }
   ctx.font = `700 28px ${FONT}`;
   ctx.textAlign = 'left';
-  ctx.fillText('cm', 8, 16 + 2.5 * pxcm);
+  ctx.fillText('cm', 8, pad + 2.5 * pxcm);
   return tex(c);
 }
 
@@ -262,8 +275,15 @@ function makeMaterials(num) {
   };
 }
 
-/** The room: the brick wall, the pegboard behind the stand, the bench. Not exported. */
-export function createWorkshop(num) {
+/** A box whose faces use only `mats` (face i → mats[map[i]]), one draw call per material instead of one per face. */
+function box(w, h, d, mats, map) {
+  const geo = new THREE.BoxGeometry(w, h, d);
+  geo.groups.forEach((gr, i) => (gr.materialIndex = map[i]));
+  return new THREE.Mesh(mergeGroups(geo), mats);
+}
+
+/** The room: the brick wall, the pegboard behind the stand, the bench (its oak shared with the apparatus). Not exported. */
+export function createWorkshop(num, mats) {
   const root = new THREE.Group();
   root.name = 'Workshop';
   const wall = new THREE.Mesh(
@@ -272,25 +292,19 @@ export function createWorkshop(num) {
   );
   wall.position.set(0, 1.0, -0.42);
   wall.receiveShadow = true;
-  const board = new THREE.Mesh(new THREE.BoxGeometry(0.78, 0.98, 0.012), [
-    new THREE.MeshStandardMaterial({ color: '#13284d', roughness: 0.6 }),
-    new THREE.MeshStandardMaterial({ color: '#13284d', roughness: 0.6 }),
-    new THREE.MeshStandardMaterial({ color: '#13284d', roughness: 0.6 }),
-    new THREE.MeshStandardMaterial({ color: '#13284d', roughness: 0.6 }),
-    new THREE.MeshStandardMaterial({ name: 'Pegboard', map: pegboardTexture(num), roughness: 0.55 }),
-    new THREE.MeshStandardMaterial({ color: '#13284d', roughness: 0.6 }),
-  ]);
+  const board = box(
+    0.78,
+    0.98,
+    0.012,
+    [
+      new THREE.MeshStandardMaterial({ name: 'PegboardEdge', color: '#13284d', roughness: 0.6 }),
+      new THREE.MeshStandardMaterial({ name: 'Pegboard', map: pegboardTexture(num), roughness: 0.55 }),
+    ],
+    [0, 0, 0, 0, 1, 0],
+  );
   board.position.set(0.0, 0.5, -0.33);
   board.receiveShadow = true;
-  const mats = makeMaterials(num);
-  const top = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.04, 0.7), [
-    mats.woodEdge,
-    mats.woodEdge,
-    mats.wood,
-    mats.woodEdge,
-    mats.wood,
-    mats.woodEdge,
-  ]);
+  const top = box(1.8, 0.04, 0.7, [mats.woodEdge, mats.wood], [0, 0, 1, 0, 1, 0]);
   top.position.set(0, -0.02, -0.06);
   top.receiveShadow = true;
   root.add(wall, board, top);
@@ -330,17 +344,33 @@ function createStand(m) {
   // the rule hangs from a clamp on the arm
   const clamp = new THREE.Mesh(new THREE.BoxGeometry(RULER.width + 0.008, 0.02, 0.018), m.iron);
   clamp.position.set(RULER.x + RULER.width / 2, TOP + 0.016, RULER.z);
-  g.add(base, bevel, pillar, boss, screw, knob, arm, stem, hook, clamp);
+  // still parts: one mesh per material (the small dark screw, knob and hook cast no shadow worth drawing)
+  const parts = [
+    [m.iron, [base, bevel, boss, clamp], true],
+    [m.chrome, [pillar, arm], true],
+    [m.darkSteel, [screw, knob, stem, hook], false],
+  ];
+  for (const [mat, list, cast] of parts) {
+    const geos = list.map((o) => {
+      o.updateMatrix();
+      return o.geometry.clone().applyMatrix4(o.matrix);
+    });
+    const merged = new THREE.Mesh(mergeGeometries(geos), mat);
+    merged.name = `Stand_${mat.name}`;
+    merged.castShadow = cast;
+    merged.receiveShadow = true;
+    g.add(merged);
+    for (const o of list) o.geometry.dispose();
+    for (const geo of geos) if (geo !== merged.geometry) geo.dispose();
+  }
   return g;
 }
 
 /** The metre rule: its top (0 cm) level with the spring's top hook. */
 function createRuler(m) {
-  const len = RULER.cm / 100 + 0.016;
-  const geo = new THREE.BoxGeometry(RULER.width, len, 0.006);
-  const rule = new THREE.Mesh(geo, [m.rulerEdge, m.rulerEdge, m.rulerEdge, m.rulerEdge, m.ruler, m.rulerEdge]);
-  // the texture starts 16 px (0.25 cm) above 0: put the face's top there
-  rule.position.set(RULER.x + RULER.width / 2, TOP + 0.0025 - len / 2, RULER.z);
+  const rule = box(RULER.width, RULE_LEN, 0.006, [m.rulerEdge, m.ruler], [0, 0, 0, 0, 1, 0]);
+  // the texture's margin is above 0: the face's top goes there, so its 0 is level with the hook
+  rule.position.set(RULER.x + RULER.width / 2, TOP + RULE_TOP - RULE_LEN / 2, RULER.z);
   rule.name = 'MetreRule';
   return rule;
 }
@@ -541,9 +571,7 @@ export function createApparatus(num, L0m) {
   block.position.set(TRAY.x, 0.008, TRAY.z);
   block.castShadow = true;
   root.add(stand, ruler, spring.root, hanger.root, block, ...weights.map((w) => w.root));
-  for (const o of [...stand.children, ruler]) {
-    o.castShadow = true;
-    o.receiveShadow = true;
-  }
+  ruler.castShadow = true;
+  ruler.receiveShadow = true;
   return { root, stand, ruler, spring, hanger, weights, materials: m, trayTop: TRAY.y + 0.016 };
 }

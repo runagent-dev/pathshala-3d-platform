@@ -1,13 +1,14 @@
 // The পীড়ন–বিকৃতি graph on a white card over the stage, drawn as SVG: a point for every load the spring has carried,
 // joined in the order they happened (so taking weights off shows as a line coming back down). As the student finds
 // things out it shows more: Hooke's straight line from the origin, the elastic limit (a dashed line across, with a
-// hatched band before it and a dotted band after it, each named in words, never by colour alone) and the permanent
-// set left on the axis. Labels are placed where they are clear of each other, the line and the points.
+// hatched band before it and a dotted band after it; points past it are squares, never told apart by colour alone)
+// and the permanent set left on the axis. On the card itself only the axes and the elastic limit are named: what the
+// lines, bands and marks mean is the key in the panel (keySwatch draws its little pictures, in the same colours).
 import { FONT } from '@shared/student/materials.js';
 
 const NS = 'http://www.w3.org/2000/svg';
-export const AXES = { e: 1, eStep: 0.2, s: 8, sStep: 1, sLabel: 2 }; // strain 0…1, stress 0…8 lakh Pa
-const C = {
+export const AXES = { e: 1, eStep: 0.2, eLabel: 0.4, s: 8, sStep: 1, sLabel: 2 }; // strain 0…1, stress 0…8 lakh Pa
+export const C = {
   ink: '#1f2430',
   ink2: '#4a5262',
   grid: '#e7eaf0',
@@ -29,6 +30,26 @@ function textWidth(text, size, weight = 600) {
   if (!measureCtx) measureCtx = /** @type {CanvasRenderingContext2D} */ (document.createElement('canvas').getContext('2d'));
   measureCtx.font = `${weight} ${size}px ${FONT}`;
   return measureCtx.measureText(text).width;
+}
+
+/**
+ * A little picture for the key in the panel, drawn as on the graph: 'point' (a load within the limit), 'hooke' (the
+ * dashed straight line), 'in' (the hatched band with a circle), 'out' (the dotted band with a square), 'set' (the bar
+ * on the strain axis).
+ * @param {'point' | 'hooke' | 'in' | 'out' | 'set'} kind
+ */
+export function keySwatch(kind) {
+  const svg = (body) => `<svg class="el-sw" viewBox="0 0 22 14" aria-hidden="true">${body}</svg>`;
+  if (kind === 'point') return svg(`<circle cx="11" cy="7" r="4.6" fill="${C.line}" stroke="#fff" stroke-width="1.4"/>`);
+  if (kind === 'hooke') return svg(`<line x1="1" y1="12" x2="21" y2="2" stroke="${C.line}" stroke-width="2" stroke-dasharray="5 3"/>`);
+  if (kind === 'set') return svg(`<line x1="3" y1="10" x2="19" y2="10" stroke="${C.set}" stroke-width="5" stroke-linecap="round"/>`);
+  if (kind === 'in')
+    return svg(
+      `<rect x="0.5" y="0.5" width="21" height="13" rx="2" fill="#eef5ff" stroke="#b9d3f5"/><path d="M-2 10 6-2M4 16 16-2M12 16 24-2" stroke="#b9d3f5" stroke-width="2"/><circle cx="11" cy="7" r="3.8" fill="${C.line}" stroke="#fff" stroke-width="1.2"/>`,
+    );
+  return svg(
+    `<rect x="0.5" y="0.5" width="21" height="13" rx="2" fill="#fff6ee" stroke="#f2b38c"/><g fill="#f2b38c"><circle cx="4" cy="4" r="1.1"/><circle cx="4" cy="10" r="1.1"/><circle cx="18" cy="4" r="1.1"/><circle cx="18" cy="10" r="1.1"/></g><rect x="7.4" y="3.4" width="7.2" height="7.2" fill="${C.beyond}" stroke="#fff" stroke-width="1.1"/>`,
+  );
 }
 
 /**
@@ -105,9 +126,8 @@ export function createGraph(host, { N, text }) {
       const tx = el('text', { x: X0 - 5, y: yOf(s) + fs * 0.36, 'text-anchor': 'end' }, ticks);
       tx.textContent = N(s);
     }
-    for (let i = 0; i * AXES.eStep <= AXES.e + 1e-9; i++) {
-      const e = +(i * AXES.eStep).toFixed(1);
-      if (compact && i % 2 && i * AXES.eStep < AXES.e - 1e-9) continue;
+    for (let i = 0; i * AXES.eLabel <= AXES.e + 1e-9; i++) {
+      const e = +(i * AXES.eLabel).toFixed(1);
       const tx = el('text', { x: xOf(e), y: Y0 + fs + 3, 'text-anchor': 'middle' }, ticks);
       tx.textContent = N(e);
     }
@@ -229,8 +249,7 @@ export function createGraph(host, { N, text }) {
       );
     }
 
-    // the words, most important first
-    const mid = (a, b) => (a + b) / 2;
+    // the one name on the plot: the elastic limit
     if (g.show.limit) {
       const x = xOf(g.limit.e);
       const y = yOf(g.limit.s);
@@ -244,55 +263,6 @@ export function createGraph(host, { N, text }) {
           { x: X0 + 4, y: Y1 + ls + 2, align: 'start' },
         ],
         { color: C.limit, force: true, lead: { x, y: y - 8 } },
-      );
-    }
-    if (g.show.set && g.set > 0) {
-      const xs = xOf(g.set);
-      label(
-        text.set,
-        [
-          { x: mid(xOf(0), xs), y: Y0 - 7, align: 'middle' },
-          { x: xs + 6, y: Y0 - 7, align: 'start' },
-          { x: X0 + 4, y: Y0 - 7, align: 'start' },
-          { x: xs + 6, y: Y0 - 7 - ls * 1.4, align: 'start' },
-          { x: X1 - 2, y: Y0 - 7, align: 'end' },
-        ],
-        { color: C.set, force: true, lead: { x: mid(xOf(0), xs), y: Y0 - 2 } },
-      );
-    }
-    if (g.show.hooke) {
-      const e = g.limit.e * 0.62;
-      const x = xOf(e);
-      const y = yOf(g.limit.s * 0.62);
-      label(
-        text.hooke,
-        [
-          { x: x - 6, y: y - 8, align: 'end' },
-          { x: x + 8, y: y + ls + 2, align: 'start' },
-          { x: xOf(g.limit.e * 0.4) + 8, y: yOf(g.limit.s * 0.4) + ls + 2, align: 'start' },
-          { x: xOf(g.limit.e * 0.85) - 6, y: yOf(g.limit.s * 0.85) - 8, align: 'end' },
-        ],
-        { color: C.line, size: ls - 0.5 },
-      );
-    }
-    if (g.show.bands) {
-      const xl = xOf(g.limit.e);
-      const inside = [];
-      for (const f of [0.18, 0.34, 0.5, 0.66]) {
-        const y = Y1 + f * (Y0 - Y1);
-        inside.push({ x: X0 + 3, y, align: 'start' }, { x: xl - 3, y, align: 'end' }, { x: mid(X0, xl), y, align: 'middle' });
-      }
-      inside.push({ x: xl - 3, y: Y0 - 8 - ls * (compact ? 1.2 : 0), align: 'end' });
-      label(compact ? text.inside2 : [text.inside], inside, { color: '#1d4f91', size: ls - 1, weight: 600 });
-      label(
-        compact ? text.outside2 : [text.outside],
-        [
-          { x: X1 - 3, y: Y0 - 8 - ls * (compact ? 1.2 : 0), align: 'end' },
-          { x: X1 - 3, y: mid(Y0, Y1) + ls, align: 'end' },
-          { x: X1 - 3, y: Y1 + ls + 2, align: 'end' },
-          { x: X1 - 3, y: yOf(2), align: 'end' },
-        ],
-        { color: '#9a3412', size: ls - 1, weight: 600 },
       );
     }
   }
