@@ -50,7 +50,7 @@ body.bg-transparent { background: transparent; }
 .mo-foot { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 12px; }
 .mo-acts { display: flex; gap: 8px; }
 .mo-acts .pvc-btn { height: 44px; font-size: 16px; padding: 0 14px; }
-.mo-acts .pvc-btn.primary { min-width: 128px; }
+.mo-acts .pvc-btn.primary { min-width: 142px; } /* room for its longest word (আবার চালাও): it never changes size */
 .mo-acts .pvc-btn.primary svg { color: #fff; }
 .mo-acts .pvc-btn.primary.is-busy { opacity: 0.75; }
 .mo-acts .pvc-btn svg { color: var(--accent); }
@@ -75,7 +75,7 @@ body.bg-transparent { background: transparent; }
 .mo .pvc-q-feedback { font-size: 14px; }
 .mo .pvc-q-feedback .mo-vec, .mo .pvc-q-feedback b { white-space: nowrap; }
 
-/* wide frames: the table and the actions side by side */
+/* wide frames (the panel below, its tabs on the left): the table and the actions side by side */
 @container pvc (min-width: 720px) and (min-height: 461px) {
   .mo .pvc-learn { display: grid; grid-template-columns: minmax(0, auto) minmax(0, 1fr); grid-template-areas: 'top top' 'tab foot' 'say say'; align-content: start; align-items: center; gap: 6px 26px; }
   .mo-top { grid-area: top; justify-content: flex-start; gap: 4px 28px; }
@@ -88,55 +88,89 @@ body.bg-transparent { background: transparent; }
   .mo-dot { display: none; }
   .mo .pvc-anno, .mo .pvc-anno-callout { font-size: 15px; }
   .mo .pvc-anno small { font-size: 13px; }
+  .mo .pvc-q-ask { gap: 6px; }
+  .mo .pvc-q-feedback { font-size: 14px; line-height: 1.4; }
 }
-/* phones */
+/* a wide frame that is not very wide (800 × 500): the two buttons share a narrow column */
+@container pvc (min-width: 720px) and (max-width: 900px) and (min-height: 461px) {
+  .mo-acts .pvc-btn { font-size: 15px; padding: 0 12px; }
+  .mo-acts .pvc-btn:not(.primary) svg { display: none; }
+  .mo-acts .pvc-btn.primary { min-width: 136px; }
+}
+/* phones held upright: every row one line high, so the 3D view keeps more than half the height */
 @container pvc (max-width: 560px) {
-  .mo-tab tbody td b { font-size: 20px; }
+  .mo-top { flex-wrap: nowrap; gap: 8px; }
+  .mo-idea { flex-direction: row; align-items: baseline; gap: 8px; font-size: 15px; }
+  .mo-formula { font-size: 17px; }
+  .mo-step .pvc-btn { width: 40px; height: 38px; }
+  .mo-step-v { min-width: 3.7em; font-size: 18px; }
+  .mo-tab thead th { font-size: 12.5px; }
+  .mo-tab thead th small { display: inline; margin-left: 3px; font-size: 11.5px; }
+  .mo-tab tbody th { white-space: nowrap; max-width: none; font-size: 14px; }
+  .mo-tab tbody td b { line-height: 1.25; }
+  .mo-say { font-size: 14px; line-height: 1.4; min-height: 4.2em; }
+  .mo-foot { flex-wrap: nowrap; gap: 8px; }
+  .mo-acts .pvc-btn { font-size: 15px; padding: 0 12px; }
+  .mo-acts .pvc-btn:not(.primary) svg { display: none; }
+  .mo-acts .pvc-btn.primary { min-width: 130px; }
+  .mo-box { flex-direction: column; font-size: 12.5px; line-height: 1.35; padding: 2px 7px; }
+  .mo-of { display: none; } /* "একক kg m/s": the table's head says it is momentum's */
+  .mo-dot { display: none; }
+  .mo-tab th, .mo-tab td { padding: 0 2px; }
+  .mo-tab tbody td b { font-size: 18px; }
+  .mo .pvc-q-ask { gap: 6px; }
+  .mo .pvc-q-text { font-size: 15px; }
+  .mo .pvc-opt { height: 44px; }
+  .mo .pvc-q-feedback { font-size: 13px; line-height: 1.38; }
 }
 /* the tightest: a short phone embed */
 @container pvc (max-width: 560px) and (max-height: 600px) {
-  .mo-idea { flex-direction: row; align-items: baseline; gap: 10px; font-size: 14px; }
-  .mo-formula { font-size: 16px; }
-  .mo-tab tbody th { white-space: nowrap; max-width: none; }
-  .mo-step .pvc-btn { width: 40px; height: 36px; }
-  .mo-step-v { font-size: 17px; }
-  .mo-tab thead th { font-size: 12px; }
-  .mo-tab thead th small { display: inline; margin-left: 3px; font-size: 12px; }
-  .mo-tab .mo-cap { font-size: 12px; }
+  .mo-idea { font-size: 13.5px; }
+  .mo-formula { font-size: 15.5px; }
+  .mo-step .pvc-btn { height: 34px; }
+  .mo-step-v { font-size: 16px; }
+  .mo-tab thead th { font-size: 11.5px; }
+  .mo-tab thead th small { font-size: 11px; }
+  .mo-tab .mo-cap { font-size: 11.5px; }
   .mo-tab tbody th { font-size: 13px; }
   .mo-tab tbody td b { font-size: 16.5px; line-height: 1.2; }
-  .mo-say { font-size: 13px; }
-  .mo-acts .pvc-btn { height: 36px; font-size: 14.5px; padding: 0 10px; }
-  .mo-acts .pvc-btn.primary { min-width: 112px; }
-  .mo-box { font-size: 13px; padding: 0 7px; }
+  .mo-say { font-size: 13px; line-height: 1.35; }
+  .mo-acts .pvc-btn { height: 38px; font-size: 14.5px; padding: 0 10px; }
+  .mo-acts .pvc-btn.primary { min-width: 126px; }
+  .mo-box { font-size: 12px; }
   .mo .pvc-q-text { font-size: 14.5px; }
+  .mo .pvc-opt { height: 42px; }
   .mo-opt { font-size: 13px; }
   .mo .pvc-q-feedback { font-size: 13px; }
   .mo .pvc-anno, .mo .pvc-anno-callout { font-size: 12.5px; }
 }
-/* short and wide (phone held sideways): the panel is beside the scene */
+/* short and wide (phone held sideways): the kit puts the panel beside the scene; the formula with the stepper, the
+   words of it in the table's head */
 @container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
-  .mo-top { gap: 4px 6px; }
-  .mo-idea { font-size: 14.5px; }
+  .mo-top { flex-wrap: nowrap; gap: 6px; }
+  .mo-idea > span:first-child { display: none; }
   .mo-formula { font-size: 17px; }
-  .mo-step .pvc-btn { width: 40px; height: 36px; }
-  .mo-step-v { font-size: 16.5px; min-width: 4em; }
-  .mo-tab thead th { font-size: 12px; }
-  .mo-tab thead th small { font-size: 12px; }
-  .mo-tab .mo-cap { font-size: 12px; }
-  .mo-tab tbody th { font-size: 13px; }
-  .mo-tab tbody td b { font-size: 17px; line-height: 1.25; }
-  .mo-say { font-size: 13.5px; line-height: 1.4; min-height: 5.6em; }
-  .mo-acts .pvc-btn { height: 38px; font-size: 14.5px; padding: 0 9px; }
-  .mo-acts .pvc-btn.primary { min-width: 104px; }
-  .mo-box { flex-direction: column; font-size: 13px; padding: 0 7px; }
+  .mo-step .pvc-btn { width: 38px; height: 36px; }
+  .mo-step-v { font-size: 16.5px; min-width: 3.7em; }
+  .mo-tab th, .mo-tab td { padding: 0 2px; }
+  .mo-tab thead th { font-size: 11.5px; line-height: 1.2; }
+  .mo-tab thead th small { font-size: 11px; }
+  .mo-tab .mo-cap { font-size: 11px; }
+  .mo-tab tbody th { font-size: 12.5px; max-width: 5.6em; }
+  .mo-tab tbody td b { font-size: 16px; line-height: 1.25; }
+  .mo-tab .op { font-size: 15px; }
+  .mo-say { font-size: 13px; line-height: 1.35; min-height: 5.4em; }
+  .mo-foot { gap: 6px; }
+  .mo-acts { gap: 6px; }
+  .mo-acts .pvc-btn { height: 38px; font-size: 14.5px; padding: 0 10px; }
+  .mo-acts .pvc-btn.primary { min-width: 126px; }
+  .mo-box { flex-direction: column; font-size: 12px; line-height: 1.35; padding: 1px 7px; }
   .mo-dot { display: none; }
   .mo .pvc-q-text { font-size: 14px; }
   .mo-opt { font-size: 12.5px; }
-  .mo .pvc-q-feedback { font-size: 12.5px; }
+  .mo .pvc-q-feedback { font-size: 12.5px; line-height: 1.35; }
 }
 /* a narrow side panel: the flip button without its picture */
 @container pvc-panel (max-width: 290px) {
-  .mo-acts .pvc-btn svg { display: none; }
-  .mo-acts .pvc-btn.primary svg { display: inline; }
+  .mo-acts .pvc-btn:not(.primary) svg { display: none; }
 }

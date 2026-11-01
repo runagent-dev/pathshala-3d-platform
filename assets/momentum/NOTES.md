@@ -26,7 +26,9 @@ locked hint "পরীক্ষার সময় … বদলানো যা
 
 ## How it works
 - **The book's thought experiment, run by the student.** A town street of three lanes (kerbs painted black and white,
-  tiled footpaths, a whitewashed wall). In the far lane a loaded Bangladeshi truck (mustard cab, painted crown over
+  footpaths of warm concrete pavers, a row of two-storey shops in terracotta, mustard, salmon and sand plaster along
+  the far side, each with its signboard, a striped awning and goods on its shelves or a half-raised shutter; red brick
+  paving and a low wall along the near side; a sky behind the turned view). In the far lane a loaded Bangladeshi truck (mustard cab, painted crown over
   the cab, wooden body, khaki tarp), in the near lane a black roadster bicycle with its rider; each heads for a red
   small car parked 5 m ahead in its lane. The middle lane stays empty: the bicycle's labels live there, so nothing of
   one lane sits over the other.
@@ -40,8 +42,9 @@ locked hint "পরীক্ষার সময় … বদলানো যা
   the same length (0.32 m per m/s); the front view uses a long lens (8°) and lengthens the far lane's arrows by its
   depth (about 3%), so equal vectors are equally long on the screen. **Both p⃗ arrows are on one scale** (1 m per
   200 kg m/s): the bicycle's is 2 m at 5 m/s, the truck's would be 250 m, so it runs off the screen; its one-line
-  label sits over the arrow at the edge ("p⃗ = ৫০,০০০ kg m/s →"); the panel line says the arrow doesn't fit (a wide
-  view adds "তীরটি সাইকেলের তীরের ১২৫ গুণ লম্বা" to the label). Nothing is stretched or broken: the picture is honest.
+  label sits over the arrow at the edge ("p⃗ = ৫০,০০০ kg m/s →"); the panel line says the arrow doesn't fit and is
+  125 times as long. Every arrow has a white rim, so it stands out over the asphalt, the shop fronts and the bodies;
+  on a small view the arrows get thicker (never longer). Nothing is stretched or broken: the picture is honest.
   In a small view (under 17 px per metre, e.g. 390×520) the labels carry just the symbols v⃗ and p⃗; the numbers are
   in the table next to it. A pixel check (labels hidden, the scene under each label) found no label over a vehicle,
   a parked car or the cyclist in any phase, direction or speed at the six sizes.
@@ -87,6 +90,35 @@ locked hint "পরীক্ষার সময় … বদলানো যা
      −m ÷ v / +m ÷ v.
   Every wrong choice gets its own line on that mistake. During the test the scene keys and taps rest, with the
   locked hint at the top of the view.
+
+## Polish pass (2026-11-01)
+Against `docs/agents/polish-pass.md`, version 0.2.0.
+- **Layout.** The panel stays below the 3D view at every size but the short-and-wide one (the kit's rule). On a phone
+  held upright every row is one line high (the formula and the stepper; the table with its units in its head, which
+  now reads ভরবেগ p⃗ = ভর m × বেগ v⃗; the line; the two buttons with the book's box beside them), so the 3D view has
+  55 % of 390×700 (46 % before). The side panel (844×390, 640×400) shows the formula beside the stepper, and the
+  table no longer runs off its right edge at 640×400. The play button keeps one width for চালাও / চলছে / আবার চালাও,
+  so nothing jumps; the stage keeps one height through every state and test question at all six sizes.
+- **Text on the view.** Only labels with values remain. The sentence "তীরটি সাইকেলের তীরের ১২৫ গুণ লম্বা" left the
+  edge label (the panel's line says it).
+- **Setting and arrows.** The whitewashed wall and the near-white ground are gone: a row of two-storey shops in warm
+  plaster (signboards without words, striped awnings, goods on shelves, a half-raised shutter, windows with
+  grilles), warm concrete pavers, yellow edge lines, red brick paving and a low wall on the near side, a sky behind
+  the turned view (drawn only there). No blue or green in the setting. Every arrow has a white rim and is a little
+  brighter; on a small view the arrows get thicker (never longer).
+- **Smooth, detail kept.** Static parts merged by material (truck body, car shells, bicycle frame, heads, the
+  runner); wheels, limbs, cranks and pedals drawn as InstancedMesh; the street is nine meshes (kerbs and footpaths
+  merged); one blob-shadow texture; a single-mesh arrow whose vertices are moved in place; shadows from a box fitted
+  to the road in view at 1024 (was 2048 on a loose box), radius 3, and only from parts whose shadows are seen; the
+  cyclist's pose allocates nothing per frame.
+- **Bugs.** The table overflowed the side panel at 640×400; on a phone the foot row overflowed with আবার চালাও; the
+  play button changed width between its words.
+- **Numbers** (headless Chromium, software GL, shadows on, 390×700): draw calls avg 649 → 189, max 836 → 222 (a
+  steady frame: 85 in view + 23 into the shadow map); triangles max 76k → 64k; texture memory 55.3 → 23.8 MB; frames
+  drawn while idle 0 → 0; text on the view 67/9 → 84/10 at 390×700 (the truck's mass tag now has room to show), 84/10
+  → 84/10 at 844×390. Time to ready could not be compared fairly (the machine's load average was about 50: the old
+  version took 1.7 s and this one 1.9–3.2 s in the same runs); this version compiles 19 shader programs instead of 12
+  (instancing and the arrows' rim), a one-time cost.
 
 ## Open questions
 - The photon remark (no mass, yet momentum) is left out of the figure on purpose (one idea; it is in the text next
