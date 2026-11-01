@@ -15,7 +15,6 @@
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
 import { createTweener, ease } from '@shared/tween.js';
-import { createArrow } from '@shared/arrow.js';
 import { createMaterials } from '@shared/student/materials.js';
 import { createAudio } from '@shared/student/audio.js';
 import { createAnnotations } from '@shared/student/annotations.js';
@@ -27,6 +26,8 @@ import { createI18n } from './i18n.js';
 import { BENCH, createSpheres } from './spheres.js';
 import { createEarth, LIFT, WEIGHT } from './earth.js';
 import { fitPose } from './camera.js';
+import { boldArrow } from './arrows.js';
+import { createLab, createStars, gradientTexture } from './setting.js';
 import {
   BASES,
   EARTH,
@@ -60,6 +61,7 @@ export const DEFAULTS = {
 };
 
 const GRAVITY = '#7048e8'; // মহাকর্ষ বল: the same violet as gravitational-force and the weight in chapter 3
+const GRAVITY_BEFORE = '#ab98f0'; // the faint arrows of the moment before: a pale violet, opaque, inside the same white outline
 const DIST = 0x0b7285; // দূরত্ব: one colour for the distance, on the bench's r line, in the sentences and in the formula
 const MINUS = '−';
 const LANE = { above: 0.14, gap: 0.17 }; // m: the arrows' lanes above the taller sphere, the lower one for m₁'s arrow
@@ -70,6 +72,7 @@ const DOUBLE_TAP = 450; // ms: a second action this soon after one is ignored
 const ELEVATION = [26, 22]; // degrees: the spheres seen from above as steeply as a tall stage allows (portrait), a little lower on wide ones (the bench top must stay deep enough for the r label)
 const EARTH_DIR = new THREE.Vector3(0, Math.sin(THREE.MathUtils.degToRad(20)), Math.cos(THREE.MathUtils.degToRad(20)));
 const VIEW_3D = new THREE.Vector3(0.55, 0.42, 0.9).normalize();
+const X_AXIS = new THREE.Vector3(1, 0, 0);
 
 /** Integers with Bangladeshi commas: 1,000 · 63,70,000. */
 function groupBD(n) {
@@ -161,10 +164,6 @@ export function createApp(root, options = {}) {
   });
   const sheet = bindCleanSheet(ui.learn);
   const outcomeEl = ui.$('.pvc-outcome');
-  // the honest note, top left of the view (the buttons are top right)
-  const note = document.createElement('div');
-  note.className = 'lg-note';
-  ui.stage.append(note);
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 26, near: 0.05, far: 100, environment: 'studio-light' });
@@ -173,7 +172,12 @@ export function createApp(root, options = {}) {
   controls.enableRotate = false;
   controls.enableZoom = false;
   controls.minDistance = 1.5;
-  controls.maxDistance = 20;
+  controls.maxDistance = 12;
+  // turning the view keeps the camera in the room: in front of the wall and above the table
+  controls.minAzimuthAngle = -1.05;
+  controls.maxAzimuthAngle = 1.05;
+  controls.minPolarAngle = 0.3;
+  controls.maxPolarAngle = 1.42;
   const M = createMaterials(stage.renderer);
   const tweener = createTweener();
   stage.addTicker((dt) => tweener.tick(dt));
@@ -184,9 +188,9 @@ export function createApp(root, options = {}) {
   const sphereScene = new THREE.Group();
   sphereScene.name = 'LawOfGravitation';
   sphereScene.add(spheres.root);
-  const arrowOpts = { color: GRAVITY, radius: 0.019, head: 0.1, headRadius: 0.046 };
-  const pull = [createArrow({ ...arrowOpts, name: 'PullOnM1' }), createArrow({ ...arrowOpts, name: 'PullOnM2' })];
-  const ghost = [0, 1].map((i) => createArrow({ ...arrowOpts, opacity: 0.34, name: `Before${i + 1}` }));
+  // bold violet arrows in a white outline, drawn over everything; the faint arrows of the moment before under them
+  const pull = [boldArrow('PullOnM1', GRAVITY, 0.02, { order: 22 }), boldArrow('PullOnM2', GRAVITY, 0.02, { order: 22 })];
+  const ghost = [0, 1].map((i) => boldArrow(`Before${i + 1}`, GRAVITY_BEFORE, 0.016, { order: 18 }));
   for (const a of [...pull, ...ghost]) sphereScene.add(a.root);
   for (const a of ghost) a.root.userData.noExport = true;
   // each arrow is tied to its own sphere: a violet cord from the sphere's top to the arrow's tail, with a dot where it
@@ -222,36 +226,39 @@ export function createApp(root, options = {}) {
   const earthScene = new THREE.Group();
   earthScene.name = 'EarthScene';
   earthScene.add(earth.root);
-  const eOpts = { color: GRAVITY, radius: 0.011, head: 0.055, headRadius: 0.027 };
-  const wArrow = createArrow({ ...eOpts, name: 'Weight' });
-  const eArrow = createArrow({ ...eOpts, name: 'PullOnEarth' });
-  const wGhost = createArrow({ ...eOpts, opacity: 0.22, name: 'WeightBefore' });
-  const eGhost = createArrow({ ...eOpts, opacity: 0.22, name: 'PullOnEarthBefore' });
-  for (const a of [wArrow, eArrow, wGhost, eGhost]) {
-    a.root.traverse((m) => {
-      if (m instanceof THREE.Mesh) {
-        m.material.depthTest = false; // drawn over the weight and the cut faces (a drawing on the picture)
-        m.renderOrder = 10;
-      }
-    });
-    earthScene.add(a.root);
-  }
+  // drawn over the weight and the cut faces (a drawing on the picture), white-outlined like the spheres' pulls
+  const wArrow = boldArrow('Weight', GRAVITY, 0.0115, { order: 22 });
+  const eArrow = boldArrow('PullOnEarth', GRAVITY, 0.0115, { order: 22 });
+  const wGhost = boldArrow('WeightBefore', GRAVITY_BEFORE, 0.0095, { order: 18 });
+  const eGhost = boldArrow('PullOnEarthBefore', GRAVITY_BEFORE, 0.0095, { order: 18 });
+  for (const a of [wArrow, eArrow, wGhost, eGhost]) earthScene.add(a.root);
   wGhost.root.userData.noExport = true;
   eGhost.root.userData.noExport = true;
-  /** A dimension line: a bar from a to b with a short tick across each end (on the cut face it is drawn on). */
+  /** A dimension line: a bar from a to b with a short tick across each end, in a white rim (drawn over the cut face). */
+  const rimMat = new THREE.MeshBasicMaterial({ color: 0xffffff, depthTest: false, depthWrite: false, toneMapped: false });
+  const barGeo = new THREE.CylinderGeometry(0.0065, 0.0065, 1, 8).translate(0, 0.5, 0);
+  const barRimGeo = new THREE.CylinderGeometry(0.0115, 0.0115, 1, 8).translate(0, 0.5, 0);
+  const tickGeo = new THREE.BoxGeometry(0.05, 0.009, 0.009);
+  const tickRimGeo = new THREE.BoxGeometry(0.06, 0.019, 0.019);
   function dimLine(name, color = 0x1d2733) {
     const g = new THREE.Group();
     g.name = name;
     g.userData.noExport = true;
-    const mat = new THREE.MeshBasicMaterial({ color, depthTest: false });
-    const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 1, 8).translate(0, 0.5, 0), mat);
-    const ticks = [0, 1].map(() => new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.008, 0.008), mat));
+    const mat = new THREE.MeshBasicMaterial({ color, depthTest: false, depthWrite: false, toneMapped: false });
+    const bar = new THREE.Mesh(barGeo, mat);
+    bar.add(Object.assign(new THREE.Mesh(barRimGeo, rimMat), { renderOrder: 8 }));
+    const ticks = [0, 1].map(() => {
+      const tk = new THREE.Mesh(tickGeo, mat);
+      tk.add(Object.assign(new THREE.Mesh(tickRimGeo, rimMat), { renderOrder: 8 }));
+      return tk;
+    });
     g.add(bar, ...ticks);
     for (const m of [bar, ...ticks]) m.renderOrder = 9;
     g.visible = false;
     earthScene.add(g);
     const up = new THREE.Vector3(0, 1, 0);
     const d = new THREE.Vector3();
+    const tq = new THREE.Quaternion();
     return {
       group: g,
       /** From a to b (world), ticks across along `across`, k: how much of it is drawn (it grows from a). */
@@ -262,7 +269,7 @@ export function createApp(root, options = {}) {
         bar.position.copy(a);
         bar.quaternion.setFromUnitVectors(up, d.normalize());
         bar.scale.set(1, Math.max(1e-4, len), 1);
-        const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(1, 0, 0), across);
+        const q = tq.setFromUnitVectors(X_AXIS, across);
         ticks[0].position.copy(a);
         ticks[1].position.copy(a).addScaledVector(d, len);
         for (const tk of ticks) tk.quaternion.copy(q);
@@ -283,28 +290,66 @@ export function createApp(root, options = {}) {
   scene.add(earthScene);
   earthScene.visible = false;
 
-  // soft shadows on a white page under the bench
-  let sun = null;
-  if (o.shadow && o.bg !== 'transparent') {
+  // the settings: the spheres in a school physics room, the Earth in a starry night sky (left out on a transparent
+  // background, and never exported)
+  const opaque = o.bg !== 'transparent';
+  const backgrounds = opaque ? { spheres: gradientTexture('#c49a58', '#8a6a44'), earth: gradientTexture('#050a1f', '#18204b') } : null;
+  if (opaque) {
+    sphereScene.add(createLab({ wood: M.wood.map }));
+    earthScene.add(createStars());
+  }
+
+  // soft shadows of the bench, the stands and the spheres on the table and the bench top, in a box fitted round them
+  const sun = new THREE.DirectionalLight(0xffffff, 0.45);
+  sun.position.set(0.6, 4, 2.4);
+  sun.target.position.set(1, 0, 0);
+  scene.add(sun, sun.target);
+  const shadows = Boolean(o.shadow && opaque);
+  if (shadows) {
     stage.renderer.shadowMap.enabled = true;
-    stage.renderer.shadowMap.type = THREE.VSMShadowMap;
-    sun = new THREE.DirectionalLight(0xffffff, 0.45);
-    sun.position.set(0.6, 4, 2.4);
-    sun.target.position.set(1, 0, 0);
+    stage.renderer.shadowMap.type = THREE.PCFShadowMap;
     sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
-    Object.assign(sun.shadow.camera, { left: -2.6, right: 2.6, top: 2.2, bottom: -2.2, near: 0.5, far: 9 });
-    sun.shadow.radius = 6;
-    sun.shadow.bias = -0.0004;
-    scene.add(sun, sun.target);
-    const page = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.ShadowMaterial({ opacity: 0.12 }));
-    page.rotation.x = -Math.PI / 2;
-    page.userData.noExport = true;
-    page.receiveShadow = true;
-    sphereScene.add(page);
+    sun.shadow.mapSize.set(1024, 1024);
+    sun.shadow.radius = 3;
+    sun.shadow.bias = -0.0005;
+    sun.shadow.normalBias = 0.004;
+    // casters: the bench, the stands and every sphere a learn step or a test question can show (to x = 2.62, up to
+    // 1.15 m); receivers: the bench top and the table behind it, to the wall
+    const cam = new THREE.PerspectiveCamera();
+    cam.position.copy(sun.position);
+    cam.lookAt(sun.target.position);
+    cam.updateMatrixWorld(true);
+    const inv = cam.matrixWorldInverse;
+    const p = new THREE.Vector3();
+    const b = { l: Infinity, r: -Infinity, b: Infinity, t: -Infinity, n: Infinity, f: -Infinity };
+    const take = (x, y, z, caster) => {
+      p.set(x, y, z).applyMatrix4(inv);
+      if (caster) {
+        b.l = Math.min(b.l, p.x);
+        b.r = Math.max(b.r, p.x);
+        b.b = Math.min(b.b, p.y);
+        b.t = Math.max(b.t, p.y);
+      }
+      b.n = Math.min(b.n, -p.z);
+      b.f = Math.max(b.f, -p.z);
+    };
+    for (const x of [BENCH.x0 - 0.05, BENCH.x1 + 0.05])
+      for (const z of [-BENCH.depth / 2 - 0.05, BENCH.depth / 2 + 0.05]) {
+        for (const y of [-0.01, 1.15]) take(x, y, z, true);
+        take(x, 0, -1.1, false);
+      }
+    Object.assign(sun.shadow.camera, {
+      left: b.l - 0.05,
+      right: b.r + 0.05,
+      bottom: b.b - 0.05,
+      top: b.t + 0.05,
+      near: Math.max(0.05, b.n - 0.2),
+      far: b.f + 0.2,
+    });
+    sun.shadow.camera.updateProjectionMatrix(); // three never calls it for a directional light's shadow camera
     spheres.root.traverse((m) => {
       if (m instanceof THREE.Mesh) {
-        m.castShadow = true;
+        m.castShadow = !m.name.endsWith('Pointer') && m.name !== 'MetreScale';
         m.receiveShadow = m.name === 'BenchTop';
       }
     });
@@ -396,17 +441,21 @@ export function createApp(root, options = {}) {
   // ── the Earth's scene each frame ───────────────────────────────────────────
   const tB = new THREE.Vector3();
   const tC = new THREE.Vector3();
+  const eC = new THREE.Vector3();
+  const eTail = new THREE.Vector3();
+  const E_OFF = new THREE.Vector3(0, 0, 0.035);
+  const E_SIDE = new THREE.Vector3(0.05, 0, 0);
   function placeEarth() {
     earth.setPlaced(s.placed);
     earth.setLift(s.lift);
     earth.setCount(s.kg === 2 || s.dropping ? 2 : 1);
     const q = s.quizScene;
     const arrowsOn = s.placed > 0.001 && (!q || q.arrows);
-    const c = earth.bodyCentre(tB).clone();
-    const off = new THREE.Vector3(0, 0, 0.035);
+    const c = earth.bodyCentre(eC);
+    const off = E_OFF;
     const L = W_ARROW * s.kg * s.pullK;
     // a weight held far above the ground: its arrow starts at its underside (a short one would hide inside it)
-    const tail = c.clone().add(off);
+    const tail = eTail.copy(c).add(off);
     if (s.lift > 0.5) tail.y = c.y - (WEIGHT.h * s.kg) / 2;
     if (arrowsOn) {
       wArrow.set(tail, DOWN, L);
@@ -416,14 +465,13 @@ export function createApp(root, options = {}) {
       eArrow.hide();
     }
     if (arrowsOn && s.ghostKg != null && !s.busy) {
-      const side = new THREE.Vector3(0.05, 0, 0);
-      wGhost.set(tail.clone().add(side), DOWN, W_ARROW * s.ghostKg);
-      eGhost.set(off.clone().add(side), UP, W_ARROW * s.ghostKg);
+      wGhost.set(tC.copy(tail).add(E_SIDE), DOWN, W_ARROW * s.ghostKg);
+      eGhost.set(tC.copy(off).add(E_SIDE), UP, W_ARROW * s.ghostKg);
     } else {
       wGhost.hide();
       eGhost.hide();
     }
-    if (s.rGrow > 0.001) RLine.set(tC.copy(R_OFF), c.clone().add(R_OFF), LEFT_U, s.rGrow);
+    if (s.rGrow > 0.001) RLine.set(tC.copy(R_OFF), tB.copy(c).add(R_OFF), LEFT_U, s.rGrow);
     else RLine.hide();
     if (q?.radius) radiusLine.set(tC.set(0, 0, 0).addScaledVector(RIGHT_N, 0.008), tB.copy(RIGHT_U).addScaledVector(RIGHT_N, 0.008), UP);
     else radiusLine.hide();
@@ -440,7 +488,6 @@ export function createApp(root, options = {}) {
     layer: ui.annoLayer,
     avoid: [
       ui.corner,
-      note,
       () => (ui.hint.classList.contains('show') ? hintBox() : null),
       () => action?.ringBox(),
       () => action?.box(),
@@ -490,6 +537,7 @@ export function createApp(root, options = {}) {
     lift: new THREE.Vector3(),
     gh: new THREE.Vector3(),
   };
+  const tLab = new THREE.Vector3();
   const ballPoint = (i) => () => pts.ball[i].copy(spheres.centre(i));
   // the masses written on the balls follow the balls' size on the screen (--lg-ball: the smaller ball's width in px)
   const bp = [new THREE.Vector3(), new THREE.Vector3()];
@@ -555,13 +603,14 @@ export function createApp(root, options = {}) {
    * true when the new arrow is the longer one (the faint one is the short one under it), else the faint one shows
    * beyond the new arrow's tip. Null when there is nothing to name.
    */
+  const ghostAt = new THREE.Vector3();
   function ghostLabelAt() {
     if (s.ghostF == null || s.busy) return null;
     const L = arrowLength(F());
     const Lg = arrowLength(s.ghostF);
     if (Math.abs(Lg - L) < 0.05) return null;
     const y1 = lanes()[1];
-    return { at: new THREE.Vector3(s.r - Lg, y1 - GHOST_DROP, 0), grew: Lg < L };
+    return { at: ghostAt.set(s.r - Lg, y1 - GHOST_DROP, 0), grew: Lg < L };
   }
   function labelsFor() {
     const q = s.quizScene;
@@ -653,7 +702,7 @@ export function createApp(root, options = {}) {
       const L = W_ARROW * s.kg * s.pullK;
       label('w', {
         text: t('l_weight'),
-        point: () => pts.w.copy(earth.bodyCentre()).add(new THREE.Vector3(0, -L * 0.62, 0.035)),
+        point: () => pts.w.copy(earth.bodyCentre()).add(tLab.set(0, -L * 0.62, 0.035)),
         kind: 'flat',
         color: GRAVITY,
         spots: [
@@ -679,7 +728,7 @@ export function createApp(root, options = {}) {
     if (!q && s.placed > 0.999 && (s.kg === 2 || s.dropping))
       label('mw', {
         text: t('l_weight_total', { kg: '2' }),
-        point: () => pts.mw.copy(earth.bodyCentre()).add(new THREE.Vector3(0, 0, 0.1)),
+        point: () => pts.mw.copy(earth.bodyCentre()).add(tLab.set(0, 0, 0.1)),
         kind: 'flat',
         spots: [
           { dx: -30, dy: 0 },
@@ -785,7 +834,16 @@ export function createApp(root, options = {}) {
   /** The exact pull, quiet and grey, no power of ten ("আসল মান ০.০০০০৬৬৭ নিউটন"). */
   const exactHtml = (f) => t('out_exact', { f: decimal(f) });
   const block = (html) => `<span class="lg-line">${html}</span>`;
+  /** The result, then the honest note as a quiet grey line of its own (once there is a pull or a weight to be honest about). */
   function outcomeHtml() {
+    const main = outcomeMain();
+    let note = '';
+    if (sceneOf(s.example) === 'spheres') {
+      if (s.ghostF != null) note = 'note_spheres'; // with a comparison (a one-line result)
+    } else if (s.placed > 0.999 && s.acting !== 'place' && (s.kg === 1 || s.acting === 'add')) note = 'note_earth';
+    return note ? `${main}<span class="lg-scale">${t(note)}</span>` : main;
+  }
+  function outcomeMain() {
     if (sceneOf(s.example) === 'spheres') {
       const f = targetForce();
       if (s.ghostF == null) return `${t(s.example === 'mass' ? 'out_start_mass' : 'out_start', { two: '2', mass: SYM.mass })} ${exactHtml(f)}`;
@@ -829,8 +887,22 @@ export function createApp(root, options = {}) {
     return t('rule_earth2', { ...v, gv: plain(roundTo(gravity(), 1), 1) }) + earthLaw;
   }
 
+  /** The light, the shadows and the background follow the scene on the view (the Earth casts no shadow anywhere). */
+  let settingOf = '';
+  function syncSetting() {
+    const kind = earthScene.visible ? 'earth' : 'spheres';
+    if (kind === settingOf) return;
+    settingOf = kind;
+    const isEarth = kind === 'earth';
+    if (backgrounds) scene.background = backgrounds[kind];
+    sun.position.set(isEarth ? -1.2 : 0.6, 4, isEarth ? 3 : 2.4);
+    sun.target.position.set(isEarth ? 0 : 1, 0, 0);
+    sun.castShadow = shadows && !isEarth;
+  }
+
   let lastKind = '';
   function refresh() {
+    syncSetting();
     if (sceneNow() === 'spheres') placeSpheres();
     else placeEarth();
     if (s.mode === 'explore') {
@@ -852,13 +924,6 @@ export function createApp(root, options = {}) {
         if (s.busy) action.hide('run');
         else action.show('run');
       }
-    }
-    const text = sceneNow() === 'earth' ? t('note_earth') : t('note_spheres');
-    const noteWaits = sceneNow() === 'spheres' && s.mode !== 'quiz' && s.ghostF == null && !Object.values(s.found).some(Boolean);
-    note.style.visibility = noteWaits ? 'hidden' : '';
-    if (note.dataset.text !== text) {
-      note.textContent = text;
-      note.dataset.text = text;
     }
     root.dataset.short = stage.height < 250 ? '1' : ''; // a short view: the part labels get smaller
     labelsFor();
@@ -957,10 +1022,6 @@ export function createApp(root, options = {}) {
     const swap = () => {
       earthScene.visible = isEarth;
       sphereScene.visible = !isEarth;
-      if (sun) {
-        sun.position.set(isEarth ? -1.2 : 0.6, 4, isEarth ? 3 : 2.4);
-        sun.target.position.set(isEarth ? 0 : 1, 0, 0);
-      }
       refresh();
       flyTo(viewPose(), 0);
     };
@@ -1124,13 +1185,7 @@ export function createApp(root, options = {}) {
     target: actionTarget,
     worldRadius: 0.36,
     // the masses written on the balls sit inside the ring: the badge keeps clear of the other labels and the arrows
-    avoid: [
-      ui.corner,
-      note,
-      ui.hint,
-      () => [...labelText.keys()].filter((id) => id !== 'm0' && id !== 'm1').map((id) => anno.box(id)),
-      () => arrowBoxes(),
-    ],
+    avoid: [ui.corner, ui.hint, () => [...labelText.keys()].filter((id) => id !== 'm0' && id !== 'm1').map((id) => anno.box(id)), () => arrowBoxes()],
     pulse: Boolean(o.coach),
     onAct: () => {
       audio.unlock();
@@ -1146,7 +1201,7 @@ export function createApp(root, options = {}) {
     const R = Math.max(spheres.radius(0), spheres.radius(1), 0.3925, s.quizScene?.maxMass ? sphereRadius(s.quizScene.maxMass) : 0);
     const top = Math.max(lanes()[1], 0.62 + R + LANE.above + LANE.gap);
     box.min.set(-R - 0.06, 0.02, -0.15);
-    // room above the arrows for their names (under the note, on a narrow stage)
+    // room above the arrows for their names
     box.max.set(2 + R + 0.06, top + (s.quizScene ? 0.1 : 0.3), BENCH.depth / 2);
     return box;
   }
@@ -1169,21 +1224,7 @@ export function createApp(root, options = {}) {
     const earthNow = s.quizScene ? s.quizScene.scene === 'earth' : sceneOf(s.example) === 'earth';
     const b = earthNow ? earthBox() : sphereBox();
     const dir = view === '3d' ? VIEW_3D : earthNow ? EARTH_DIR : sphereDir();
-    return fitPose({ box: b, dir, camera, width: stage.width, height: stage.height, margin: { ...MARGIN, top: MARGIN.top + noteRoom() } });
-  }
-  /**
-   * The note sits top left, beside the corner buttons; when it would need more than two lines there (a long note on a
-   * narrow stage) it goes under them instead, the full width, and the camera leaves room for it.
-   */
-  function noteRoom() {
-    note.classList.remove('below', 'hide');
-    const below = (note.offsetHeight || 0) > 40;
-    note.classList.toggle('below', below);
-    // a short view in the test keeps its room for the picture: the note waits until the learn tab
-    const hide = below && stage.height < 250 && s.mode === 'quiz';
-    note.classList.toggle('hide', hide);
-    if (!below || hide) return 0;
-    return Math.max(1, Math.round(note.offsetHeight / 18)) * 18;
+    return fitPose({ box: b, dir, camera, width: stage.width, height: stage.height, margin: MARGIN });
   }
   function flyTo({ position, target }, duration = 0.8) {
     if (!duration) {
