@@ -65,7 +65,8 @@ async function shoot(browser, baseUrl, id, viewport, root) {
     const entry = `/assets/${id}/${manifest.entry || 'index.html'}`; // the entry page of this checkout, which a rename may have changed
     const fig = await openFigure(page, id, { base: baseUrl, path: entry, params, harness: false });
     await fig.advance(SETTLE_MS);
-    const png = await page.screenshot({ animations: 'disabled' });
+    // a heavy figure's poster (e.g. efficiency, its motor running) can take over 30 s to draw in software 3D on a CI runner
+    const png = await page.screenshot({ animations: 'disabled', timeout: 120_000 });
     return { png, errors: [...log.errors, ...log.external.map((u) => `external: ${u}`)] };
   } finally {
     await page.close();
