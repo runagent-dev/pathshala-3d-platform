@@ -97,6 +97,7 @@ export function createApp(root, options = {}) {
   const row = (id, name) =>
     `<tr data-row="${id}"><th scope="row">${t(name)}</th><td class="c-p"><b data-v="p"></b></td><td class="op">=</td><td class="c-m"><b data-v="m"></b></td><td class="op">×</td><td class="c-v"><b data-v="v"></b></td></tr>`;
   const ui = buildStudentShell(root, t, {
+    layout: 'side',
     learnAlign: 'start',
     learn: `
           <div class="mo-choice">
