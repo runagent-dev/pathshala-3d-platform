@@ -61,7 +61,7 @@ export function createApp(root, options = {}) {
   root.lang = t.lang;
   root.tabIndex = 0;
   const term = (cls) => `<span class="pvc-t ${cls}"><b>0</b><small></small></span>`;
-  // the panel, top to bottom: the four events (the kit's row of example words), the two speeds with how much time
+  // the panel, top to bottom: the four events (the kit's row of example words), the action (play / pause / again), the two speeds with how much time
   // is slowed, what happens or why (the book's words), and the book's definition
   const ui = buildStudentShell(root, t, {
     learnAlign: 'start',
@@ -69,6 +69,7 @@ export function createApp(root, options = {}) {
           <div class="pvc-examples in-evs" role="radiogroup" aria-label="${t('events')}">
             ${EVENT_KEYS.map((ev, i) => `<button type="button" role="radio" aria-checked="false" tabindex="${i ? -1 : 0}" data-example="${ev}" title="${t(`ev_${ev}`)}"><span class="pvc-ex-word">${t(`ex_${ev}`)}</span></button>`).join('')}
           </div>
+          <div class="pvc-act-row"><button type="button" class="pvc-act in-play" data-act="play"></button></div>
           <div class="in-speeds">
             <span class="in-k"></span>
             ${term('lower')}${term('upper')}
@@ -79,12 +80,8 @@ export function createApp(root, options = {}) {
           <p class="in-idea">${t('idea')}</p>`,
   });
   const sheet = bindCleanSheet(ui.learn);
-  // top left of the view: play / pause / again
-  const tl = document.createElement('div');
-  tl.className = 'in-tl';
-  tl.innerHTML = `<button class="pvc-tool icon-only in-play" data-act="play"></button>`;
-  ui.stage.append(tl);
-  const playBtn = tl.querySelector('.in-play');
+  // the action under the events: play / pause / again (a tap on the view does the same)
+  const playBtn = ui.$('.in-play');
   const slowNote = ui.$('.in-slow');
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
@@ -207,9 +204,10 @@ export function createApp(root, options = {}) {
   function syncPlay() {
     const end = s.t >= dur() - 1e-6;
     const [icon, label] = s.playing ? [ICONS.pause, 'act_pause'] : end ? [ICONS.reset, 'act_replay'] : [ICONS.play, 'act_play'];
-    playBtn.innerHTML = icon;
-    playBtn.setAttribute('aria-label', t(label));
-    playBtn.title = t(label);
+    if (playBtn.dataset.k !== label) {
+      playBtn.dataset.k = label;
+      playBtn.innerHTML = `<span class="pvc-act-num">${icon}</span><span>${t(label)}</span>`;
+    }
     const slow = t('slow_badge', { k: ev().slow });
     if (slowNote.textContent !== slow) slowNote.textContent = slow;
     sheet.choose(s.event === 'gentle' ? null : s.event);
@@ -269,7 +267,7 @@ export function createApp(root, options = {}) {
     stage,
     layer: ui.annoLayer,
     obstacles: () => {
-      const list = [domBox(ui.corner), domBox(tl)];
+      const list = [domBox(ui.corner)];
       if (ui.hint.classList.contains('show')) list.push(domBox(ui.hint, ui.hintText.textContent));
       if (sceneOf() === 'bus') list.push(passengerBox());
       else list.push(objectBox(table.coin), objectBox(table.card), objectBox(table.glass));
@@ -852,7 +850,7 @@ export function createApp(root, options = {}) {
     },
     grabbable: (p) => pick(p),
   };
-  if (o.coach) coach = createCoach({ stage, layer: ui.coachLayer, t, loupe: null, tweener, avoid: [ui.corner, tl, ui.hint], object: coachObject });
+  if (o.coach) coach = createCoach({ stage, layer: ui.coachLayer, t, loupe: null, tweener, avoid: [ui.corner, ui.hint], object: coachObject });
 
   // ── buttons, keys ───────────────────────────────────────────────────────────
   function syncUI() {

@@ -29,9 +29,7 @@ body.bg-transparent { background: transparent; }
 .in-idea b { font-weight: 700; }
 
 /* top left of the view: play / pause / again */
-.in-tl { position: absolute; left: 10px; top: 10px; z-index: 5; display: flex; align-items: center; gap: 8px; pointer-events: none; }
-.in-tl .pvc-tool { pointer-events: auto; height: 38px; width: 38px; padding: 0; justify-content: center; color: var(--accent); }
-.in-tl .pvc-tool svg { width: 20px; height: 20px; }
+.in .in-play .pvc-act-num svg { width: 18px; height: 18px; }
 
 /* labels on the scene: which part (coloured) and what it does, on a solid white chip */
 .in-tag { position: absolute; left: 0; top: 0; padding: 2px 8px 3px; border-radius: 5px; background: #fff; border: 1.5px solid var(--c); box-shadow: 0 1px 3px rgba(20, 30, 45, 0.22); font-size: 12.5px; line-height: 1.28; color: var(--ink); white-space: nowrap; will-change: transform; pointer-events: none; }
@@ -49,17 +47,6 @@ body.bg-transparent { background: transparent; }
 .in-opt b { font-weight: 700; }
 .in-opt small { font-size: 12px; font-weight: 500; color: inherit; opacity: 0.85; }
 
-/* wide frames: one full-width row each (the events, the speeds with the time note, the words, the definition) */
-@container pvc (min-width: 720px) and (min-height: 461px) {
-  .in-extra { min-height: 2.9em; font-size: 14px; }
-  .in-idea { font-size: 14.5px; }
-  .in .pvc-q-text { min-height: 2.8em; }
-  .in .pvc-q-options { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .in .pvc-opt { height: 46px; }
-  .in .pvc-q-feedback { min-height: 2.9em; }
-  .in-tag { font-size: 13.5px; }
-  .in-tag b { font-size: 14px; }
-}
 /* phones held upright: a compact test (two-line questions, 44 px answers), so the 3D view keeps 55 % or more */
 @container pvc (max-width: 560px) {
   .in .pvc-q-ask { gap: 6px; }
@@ -81,19 +68,6 @@ body.bg-transparent { background: transparent; }
   .in .pvc-opt { height: 40px; }
   .in-opt { font-size: 13px; }
   .in .pvc-q-feedback { min-height: 2.72em; font-size: 12.5px; line-height: 1.36; }
-  .in-tl .pvc-tool { height: 34px; width: 34px; }
-}
-/* phone sideways: the panel is a narrow column beside the view */
-@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
-  .in .pvc-learn { gap: 6px; }
-  .in-idea { font-size: 12.5px; line-height: 1.36; }
-  .in-speeds { gap: 2px 10px; }
-  .in-speeds .pvc-t b { font-size: 19px; }
-  .in-extra { min-height: 4.15em; font-size: 12.5px; line-height: 1.38; }
-  .in .pvc-q-text { min-height: 0; font-size: 14.5px; }
-  .in .pvc-opt { height: 52px; }
-  .in-opt { font-size: 12.5px; line-height: 1.16; }
-  .in .pvc-q-feedback { font-size: 12.5px; line-height: 1.36; min-height: 5.5em; }
 }
 /* a narrow side panel: the events in two rows, the name of the two speeds on its own line with the time note */
 @container pvc-panel (max-width: 300px) {
@@ -117,7 +91,10 @@ body.bg-transparent { background: transparent; }
   .in:lang(en) .pvc-q-text { min-height: 4.1em; }
   .in:lang(en) .pvc-q-feedback { min-height: 4.1em; }
 }
-@container pvc (min-width: 720px) and (min-height: 461px) {
-  .in:lang(en) .in-extra { min-height: 4.35em; }
-  .in:lang(en) .pvc-opt { height: 58px; }
+/* a phone held upright: the action row is a little tighter, so the 3D view keeps 55 % of the height */
+@container pvc (max-aspect-ratio: 1/1) and (min-height: 640px) {
+  .in .pvc-learn { gap: 4px; }
+  .in .pvc-act-row { min-height: 44px; }
+  .in .pvc-act { min-height: 42px; padding-top: 3px; padding-bottom: 3px; }
+  .in .pvc-act-num { width: 32px; height: 32px; }
 }
