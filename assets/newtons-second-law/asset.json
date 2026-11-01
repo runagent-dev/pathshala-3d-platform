@@ -5,7 +5,7 @@
   "title": "Newton's second law of motion (নিউটনের দ্বিতীয় গতি সূত্র)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "book": "physics-9-10",
   "page": 75,
   "topic": "3.6",
@@ -13,7 +13,7 @@
   "order": 1,
   "maintainers": ["RadeenXALNW"],
   "units": "m",
-  "description": "Vivid live 3D Newton second-law lesson for textbook topic 3.6, pages 75–76. A child rides a coral wagon pushed by an adult or two children; wheels turn, pushers walk and cargo changes the total mass. A live 3D free-body diagram shows individual pushes, friction, ground support and weight. Students can compare a smooth floor with a constant 20 N resisting force. By default the run plays at half speed (said on the view): the force and acceleration arrows grow in before the cart moves, a clock shows t, and at each whole second of the push the run holds while the velocity is stamped on the floor, so the equal steps of v (0 → 1 → 2 m/s) show the acceleration; a button switches to real time. Beside F = ma a live velocity–time graph draws the push with a step of +a each second, keeping the lines of the examples tried so their steepness compares (double force: twice as steep; double mass: half); bars give the force (one piece per person), the mass (one piece per sack) and a = F ÷ m, all from the same motion state; a separate calculation sheet connects them to the textbook momentum derivation at constant mass in SI units. Cart 80 kg + passenger 20 kg form the 100 kg unloaded system; cargo adds 50 kg per sack. Four examples and five scene-based tap questions are retained. Offline, Bangla/English, with GLB export.",
+  "description": "Vivid live 3D Newton second-law lesson for textbook topic 3.6, pages 75–76. A child rides a coral wagon pushed by an adult or two children across the polished floor of a rice godown; wheels turn, pushers walk and cargo changes the total mass. A live 3D free-body diagram shows individual pushes, friction, ground support and weight. Students can compare a smooth floor with a constant 20 N resisting force. By default the run plays at half speed (the clock on the view says so): the force and acceleration arrows grow in before the cart moves, a clock shows t, and at each whole second of the push the run holds while the velocity is stamped on the floor, so the equal steps of v (0 → 1 → 2 m/s) show the acceleration; a button switches to real time. Beside F = ma a live velocity–time graph draws the push with a step of +a each second, keeping the lines of the examples tried so their steepness compares (double force: twice as steep; double mass: half); bars give the force (one piece per person), the mass (one piece per sack) and a = F ÷ m, all from the same motion state; a separate calculation sheet connects them to the textbook momentum derivation at constant mass in SI units. Cart 80 kg + passenger 20 kg form the 100 kg unloaded system; cargo adds 50 kg per sack. Four examples and five scene-based tap questions are retained. Offline, Bangla/English, with GLB export.",
   "tags": ["force", "newtons-laws", "second-law", "acceleration", "momentum", "f-ma", "bangla"],
   "params": [
     {

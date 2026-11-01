@@ -70,6 +70,10 @@ export function createGraph(el, { t, N, colors }) {
     out += `<path class="g-axis" d="M${x0} ${y1}V${y0}H${x1}"/>`;
     out += `<text class="g-name" x="${X(T_MAX * 0.75)}" y="${y0 + f * 1.1}" text-anchor="middle" font-size="${f}">${esc(t('graph_t'))}</text>`;
     out += `<text class="g-name" x="0" y="${f * 0.95}" font-size="${f}">${esc(t('graph_v'))}</text>`;
+    // the graph's name over the plot, at its right (the axis's name is at its left), where there is room for both
+    const name = t('graph_name');
+    if (x1 > f * (0.55 * (t('graph_v').length + name.length) + 1.2))
+      out += `<text class="g-title" x="${x1}" y="${f * 0.95}" text-anchor="end" font-size="${f}">${esc(name)}</text>`;
 
     const tags = []; // in the right margin: { y, text, cls }
     for (const l of past) {
