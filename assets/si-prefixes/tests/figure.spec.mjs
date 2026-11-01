@@ -4,7 +4,7 @@
 import { expect, test } from '@playwright/test';
 import { openFigure, preparePage } from '../../../scripts/lib/export/driver.mjs';
 
-const frames = (fig) => fig.frame.evaluate(() => window.figure._internals.stage.renderer.info.render.frame);
+const frames = (fig) => fig.frame.evaluate(() => /** @type {any} */ (window).figure._internals.stage.renderer.info.render.frame);
 
 test('si-prefixes: plays, pauses without drawing, flies to a chosen stop', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 700 });
