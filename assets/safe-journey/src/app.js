@@ -69,6 +69,7 @@ export function createApp(root, options = {}) {
   root.lang = t.lang;
   root.tabIndex = 0;
   const ui = buildStudentShell(root, t, {
+    layout: 'side',
     learn: cleanSheet(t, {
       examples: { label: 'speeds', results: true, items: SPEEDS.map((v) => ({ id: String(v), label: 'speed' })) },
       quiet: [{ act: 'home', label: 'act_home', icon: ICONS.reset }],
