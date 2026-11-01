@@ -79,7 +79,8 @@ Styles: `student/student.css` (link it before the figure's `style.css`; set `roo
   corner, hint, hintText, hintAct, learn, quiz }`: the 3D area (with the view and full-screen buttons) and the panel
   with the শেখো and পরীক্ষা tabs. On landscape frames (aspect ≥ 1, ≥ 600 px wide) the panel is beside the 3D, full
   height, with a hide/show tab on the 3D's edge (`.pvc-shell[data-panel="closed"]`); it is then also a container
-  named `pvc`, so the figure's `@container pvc` rules for the sheet measure the panel. Portrait frames keep it below;
+  named `pvc`, so the figure's `@container pvc` rules for the sheet measure the panel. The view starts from the front and turns when dragged (no front/rotate buttons); the hidden
+  `[data-view="front"]` icon button is shown by the figure once the view was turned. Portrait frames keep it below;
   a touch phone held upright gets a "turn it sideways" card (`?rotate=0` or `coach=0` skips it). Strings:
   `panel_hide`, `panel_show`, `rotate_title`, `rotate_body`, `rotate_go`, `rotate_stay`. Both sheets share one place, so the panel never changes height; it is as tall as
   the taller sheet. `learnAlign: 'start'` keeps the শেখো content together at the top (default `'spread'`: its first
