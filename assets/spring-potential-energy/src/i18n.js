@@ -58,7 +58,7 @@ export const STRINGS = {
     sym_V: 'V: বিভব শক্তি',
     // what a tapped letter means, with the student's numbers
     why_F:
-      '<b>F = kx = {k} × {xm} = {F} N</b>: হাত যে বলে টানছে বা চাপছে (সবুজ তীর F<sub>P</sub>)। স্প্রিংও সমান বলে উল্টো দিকে টানে (নীল তীর F<sub>S</sub>)। x যত বড়, বল তত বড়।',
+      '<b>F = kx = {k} × {xm} = {F} N</b>: হাত যে বলে টানছে বা চাপছে (সবুজ তীর F<sub>P</sub>)। স্প্রিংও সমান বলে উল্টো দিকে টানে (নীল তীর F<sub>S</sub>)। x যত বড়, বল তত বড়; তীরের দৈর্ঘ্য বলের সমানুপাতিক।',
     why_k: '<b>k = {k} N/m</b>: স্প্রিংয়ের ধ্রুবক, স্প্রিংটি কত শক্ত। শক্ত স্প্রিংয়ে k বড়: একই x-এ বেশি বল লাগে, শক্তিও বেশি জমে। k-এর + − বোতামে বদলে দেখো।',
     why_x: '<b>x = {x} cm = {xm} m</b>: স্থির অবস্থা (x = {z} রেখা) থেকে স্প্রিংয়ের মাথা কত দূর সরেছে (কমলা দাগ)। টানা বা চাপা, x একটি দূরত্ব; সূত্রে মিটারে বসাও।',
     why_sq:
@@ -76,7 +76,8 @@ export const STRINGS = {
       'হাত বাইরে টানছে (F<sub>P</sub>), স্প্রিং উল্টো দিকে ভেতরে টানছে (F<sub>S</sub>): <b>দুটো বল সমান, বিপরীত</b>। স্প্রিং সবসময় x = {z}-তে ফিরতে চায়। টানতে যে কাজ হলো, তা স্প্রিংয়ে জমা আছে।',
     rule_compressed:
       'চাপলে স্প্রিং উল্টো দিকে, বাইরে ঠেলে (F<sub>S</sub>)। হাত বা স্প্রিং কোনোটাই নড়ছে না, তবু ভেতরে শক্তি লুকিয়ে আছে: <b>এই সঞ্চিত শক্তিকে বলে বিভব শক্তি</b>।',
-    rule_times: 'x {n} গুণ ({x1} → {x2} cm): বল <b>{n} গুণ</b> ({F1} → {F2} N), কিন্তু বিভব শক্তি <b>{nn} গুণ</b> ({V1} → {V2} J), কারণ {n} × {n} = {nn}।',
+    rule_times:
+      'x {n} গুণ ({x1} → {x2} cm): বল <b>{n} গুণ</b> ({F1} → {F2} N, তীরও {n} গুণ লম্বা), কিন্তু বিভব শক্তি <b>{nn} গুণ</b> ({V1} → {V2} J), কারণ {n} × {n} = {nn}।',
     rule_law:
       '<b>স্প্রিংয়ের ধ্রুবক k, স্থির অবস্থার সাপেক্ষে x দূরত্ব: সঞ্চিত শক্তি V = {half}kx<sup>{two}</sup></b>। x দ্বিগুণ হলে শক্তি চার গুণ; শক্ত স্প্রিংয়ে (k বড়) বেশি শক্তি।',
 
@@ -88,8 +89,6 @@ export const STRINGS = {
     l_FP_only: 'F<sub>P</sub>',
     l_V: 'V = {V} J',
     l_k: 'k = {k} N/m',
-    note: 'তীরের দৈর্ঘ্য বলের সমানুপাতিক',
-    note_short: 'তীর ∝ বল',
 
     // the test
     q_count: 'প্রশ্ন {i} / {n}',
@@ -104,7 +103,7 @@ export const STRINGS = {
     q_good: 'ভালো হয়েছে!',
     q_try: 'আরেকবার চেষ্টা করো।',
     q_again: 'আবার পরীক্ষা দাও',
-    q_locked: 'পরীক্ষার সময় দৃশ্যটি আটকানো থাকে। ছবি দেখে উত্তর বেছে নাও।',
+    q_locked: 'পরীক্ষার সময় দৃশ্যটি আটকানো থাকে',
 
     // 1: which way the spring's force points
     q_dir: 'হাত স্প্রিংটিকে চেপে ধরে আছে (সবুজ তীর)। স্প্রিংয়ের নিজের বল কোন দিকে?',
@@ -142,9 +141,9 @@ export const STRINGS = {
 
     // 5: stretched or squeezed by the same x
     q_same: 'টেনে {x} cm লম্বা করায় ছবির স্প্রিংয়ে {V} J শক্তি সঞ্চিত। একই {x} cm চেপে সংকুচিত করলে কত হবে?',
-    r_same: '<b>{V} J, একই</b>: V = {half}kx<sup>{two}</sup>-এ x-এর বর্গ; টানা বা চাপা, x সমান হলে শক্তিও সমান।',
+    r_same: '<b>{V} J, একই</b>: V = {half}kx<sup>{two}</sup>; টানা বা চাপা, x সমান হলে শক্তিও সমান।',
     m_neg: 'চাপলে দিক উল্টো, কিন্তু x<sup>{two}</sup> সবসময় ধনাত্মক; সঞ্চিত শক্তিও ধনাত্মক।',
-    m_zero: 'চাপতেও কাজ করতে হয়; বই বলছে, সংকুচিত স্প্রিংয়ের ভেতর শক্তি লুকিয়ে থাকে।',
+    m_zero: 'চাপতেও কাজ করতে হয়; সংকুচিত স্প্রিংয়ের ভেতরেও শক্তি লুকিয়ে থাকে।',
     m_twice: 'একই k, একই x: শক্তি একই, দ্বিগুণ নয়।',
   },
   en: {
@@ -196,7 +195,7 @@ export const STRINGS = {
     sym_sq: 'x squared',
     sym_V: 'V: the potential energy',
     why_F:
-      '<b>F = kx = {k} × {xm} = {F} N</b>: the hand’s pull or push (green arrow F<sub>P</sub>); the spring pulls back just as hard (blue arrow F<sub>S</sub>). Larger x, larger force.',
+      '<b>F = kx = {k} × {xm} = {F} N</b>: the hand’s pull or push (green arrow F<sub>P</sub>); the spring pulls back just as hard (blue arrow F<sub>S</sub>). Arrow lengths are proportional to the forces.',
     why_k:
       '<b>k = {k} N/m</b>: the spring constant, how stiff the spring is. A stiffer spring (larger k) needs more force for the same x and stores more energy.',
     why_x:
@@ -218,7 +217,7 @@ export const STRINGS = {
     rule_compressed:
       'Pushed in, the spring pushes back out (F<sub>S</sub>). Nothing moves, yet energy hides inside: <b>this stored energy is called potential energy</b>.',
     rule_times:
-      'x is {n} times ({x1} → {x2} cm): the force is <b>{n} times</b> ({F1} → {F2} N), but the potential energy is <b>{nn} times</b> ({V1} → {V2} J), because {n} × {n} = {nn}.',
+      'x is {n} times ({x1} → {x2} cm): the force is <b>{n} times</b> ({F1} → {F2} N, the arrows {n} times as long), but the potential energy is <b>{nn} times</b> ({V1} → {V2} J), because {n} × {n} = {nn}.',
     rule_law:
       '<b>A spring of constant k, moved x from its rest position, stores V = {half}kx<sup>{two}</sup></b>. Twice x, four times the energy; a stiffer spring (larger k) stores more.',
 
@@ -229,8 +228,6 @@ export const STRINGS = {
     l_FP_only: 'F<sub>P</sub>',
     l_V: 'V = {V} J',
     l_k: 'k = {k} N/m',
-    note: 'Arrow lengths are proportional to the forces',
-    note_short: 'Arrow ∝ force',
 
     q_count: 'Question {i} of {n}',
     q_score: 'Correct: {right}',
@@ -244,18 +241,17 @@ export const STRINGS = {
     q_good: 'Well done!',
     q_try: 'Have another go.',
     q_again: 'Try again',
-    q_locked: 'The scene stays put during the test. Read the picture and pick an answer.',
+    q_locked: 'The scene stays put during the test',
 
     q_dir: 'The hand holds the spring pushed in (green arrow). Which way does the spring’s force point?',
     c_out: 'Outward, toward the hand',
     c_in: 'Inward, toward the wall',
     c_none: 'Nowhere, all is still',
     c_down: 'Down, toward the bench',
-    r_dir:
-      '<b>Outward, toward the hand</b> (F<sub>S</sub>): the spring’s force always points toward x = {z}. Pushed in, it pushes out; pulled out, it pulls in.',
-    m_in: 'The hand pushes toward the wall (F<sub>P</sub>); the spring’s force is the opposite.',
-    m_none: 'All is still because the two forces are equal and opposite; the forces are there.',
-    m_down: 'The spring’s force acts along its length, not up or down.',
+    r_dir: '<b>Outward, toward the hand</b> (F<sub>S</sub>): the spring’s force always points toward x = {z}.',
+    m_in: 'The hand pushes toward the wall (F<sub>P</sub>); the spring pushes back.',
+    m_none: 'All is still because the two forces balance; both are still there.',
+    m_down: 'The spring’s force acts along its length.',
 
     q_F: 'This spring has k = {k} N/m. Read x in the picture: how hard does the hand pull?',
     r_F: '<b>{F} N</b>: x = {x} cm = {xm} m, so F = kx = {k} × {xm} = {F} N.',
@@ -272,15 +268,15 @@ export const STRINGS = {
     m_cmV: 'Turn x into metres first ({h} cm = {one} m).',
 
     q_times: 'Pushed in {x1} cm, this spring stores {V1} J. Look at x in the picture: how much does it store now?',
-    r_times: '<b>{V2} J</b>: x = {x2} cm, {n} times as much; the energy is {n} × {n} = {nn} times: {V1} × {nn} = {V2} J.',
-    m_lin: 'The force goes as x, but the energy as x<sup>{two}</sup>: {n} times x is {nn} times the energy.',
+    r_times: '<b>{V2} J</b>: x = {x2} cm, {n} times as much; the energy {n} × {n} = {nn} times: {V1} × {nn} = {V2} J.',
+    m_lin: 'Force goes as x, energy as x<sup>{two}</sup>: {n} times x, {nn} times the energy.',
     m_cube: 'x<sup>{two}</sup>, not x<sup>{three}</sup>: {nn} times the energy.',
     m_same: 'x grew, so the stored energy grew too.',
 
-    q_same: 'Pulled out {x} cm, the spring in the picture stores {V} J. Pushed in the same {x} cm, how much?',
-    r_same: '<b>{V} J, the same</b>: V = {half}kx<sup>{two}</sup> has x squared; pulled or pushed, the same x stores the same energy.',
-    m_neg: 'Pushing reverses the direction, but x<sup>{two}</sup> is always positive, and so is the stored energy.',
-    m_zero: 'Pushing in also takes work; the book says energy hides inside a squeezed spring.',
+    q_same: 'Pulled out {x} cm, this spring stores {V} J. Pushed in the same {x} cm, how much?',
+    r_same: '<b>{V} J, the same</b>: x is squared, so pulled or pushed, the same x stores the same energy.',
+    m_neg: 'Pushing reverses the force, but x<sup>{two}</sup> and the energy stay positive.',
+    m_zero: 'Pushing in also takes work; a squeezed spring stores energy too.',
     m_twice: 'Same k, same x: the same energy, not twice.',
   },
 };

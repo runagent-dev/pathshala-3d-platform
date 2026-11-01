@@ -7,7 +7,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
 #app { position: fixed; inset: 0; }
 body.bg-transparent { background: transparent; }
 
-.sp { --c-FP: #237a35; --c-FS: #1864d6; --c-x: #d9480f; --c-V: #6741d9; --c-k: #c2255c; }
+.sp { --c-FP: #237a35; --c-FS: #1864d6; --c-x: #c2410c; --c-V: #6741d9; --c-k: #c2255c; }
 .sp i { font-style: italic; font-size: 1.05em; }
 
 /* the book's ½, stacked */
@@ -16,6 +16,10 @@ body.bg-transparent { background: transparent; }
 .sp-fr > span:first-child { border-bottom: 1.2px solid currentColor; padding: 0 1px; }
 .sp sup { font-size: 0.68em; line-height: 0; }
 .sp sub { font-size: 0.7em; line-height: 0; }
+/* raised and lowered by position, so an x² or F_S never makes its line taller (the sheet keeps its height) */
+.sp :is(.pvc-rule, .pvc-q-text, .pvc-q-feedback, .pvc-opt) :is(sub, sup) { vertical-align: baseline; position: relative; }
+.sp :is(.pvc-rule, .pvc-q-text, .pvc-q-feedback, .pvc-opt) sub { top: 0.28em; }
+.sp :is(.pvc-rule, .pvc-q-text, .pvc-q-feedback, .pvc-opt) sup { top: -0.48em; }
 
 /* the calculator: x and k with tap steppers, side by side */
 .sp-calc { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
@@ -72,17 +76,15 @@ body.bg-transparent { background: transparent; }
 /* a label on the picture whose letter is lit in the formula: filled with its colour */
 .sp .pvc-anno:has(.sp-hot) { background: var(--c); color: #fff; border-color: var(--c); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 30%, transparent); }
 
-/* the note in the corner: the arrows are drawn to scale */
-.sp-note { position: absolute; left: 8px; top: 8px; z-index: 5; max-width: calc(100% - 120px); padding: 2px 8px; border-radius: 6px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.9); font-size: 12.5px; line-height: 1.45; color: var(--ink-2); pointer-events: none; }
-.sp[data-mode='quiz'] .sp-note { display: none; }
-
-/* labels on the picture: at once (a fading label would lag the spring) */
-.sp .pvc-anno { transition: none; font-size: 14px; font-weight: 700; color: var(--c); border-color: color-mix(in srgb, var(--c) 45%, var(--line)); padding: 1px 7px; }
+/* labels on the picture: at once (a fading label would lag the spring); a solid white chip ringed in the label's
+   colour, its text in a dark tone of that colour (4.5:1 or more), lifted off the picture by a soft shadow */
+.sp .pvc-anno { transition: none; font-size: 14px; font-weight: 700; color: var(--c); background: #fff; border: 1.5px solid var(--c); padding: 0 7px; line-height: 1.5; box-shadow: 0 1px 3px rgba(15, 25, 40, 0.3); }
+.sp .pvc-anno sub { font-size: 0.72em; line-height: 0; }
 
 /* the test: answers in words (two lines allowed), the mistake note under the worked answer */
 .sp .pvc-opt { font-size: 14.5px; line-height: 1.25; }
 .sp-opt { display: block; white-space: normal; text-align: center; }
-.sp-why { display: block; margin-top: 2px; color: var(--ink-2); }
+.sp-why { display: block; color: var(--ink-2); }
 .sp .pvc-q-text { font-size: 15px; }
 .sp .pvc-q-feedback { font-size: 13.5px; line-height: 1.45; }
 
@@ -137,6 +139,43 @@ body.bg-transparent { background: transparent; }
   .sp .pvc-act-row { --pvc-act-lines: 2; } /* the big button may take two lines beside the steppers */
   .sp .pvc-act-row .pvc-quiet > span { display: none; }
   .sp .pvc-act-row .pvc-quiet { padding: 0; }
+}
+/* phones held upright: tighter rows so the 3D view keeps at least 55 % of the height (the states' energies are in
+   the formula and on the spring, so the words under the state names are left out) */
+@container pvc (max-width: 560px) {
+  .sp .pvc-learn { gap: 4px; }
+  .sp .pvc-examples button { min-height: 36px; padding-top: 2px; padding-bottom: 3px; }
+  .sp .pvc-examples .pvc-ex-res, .sp .pvc-examples[data-results] .pvc-ex-res:empty { display: none; }
+  .sp .pvc-act-row { min-height: 40px; }
+  .sp .pvc-act { min-height: 38px; padding-top: 3px; padding-bottom: 3px; }
+  .sp .pvc-act-num { width: 32px; height: 32px; font-size: 17px; }
+  .sp-btn { height: 34px; }
+  .sp-s { height: 24px; }
+  .sp-bar { height: 3px; margin-bottom: 2px; }
+  .sp .pvc-outcome { font-size: 14px; }
+  .sp .pvc-rule { font-size: 13px; line-height: 1.4; --pvc-rule-lines: 2.8; } /* three lines of 1.4 */
+  .sp .pvc-act-row .pvc-quiet { min-height: 40px; height: 40px; }
+  .sp .pvc-q-ask { gap: 6px; }
+  .sp .pvc-q-head { min-height: 32px; }
+  .sp .pvc-q-head .pvc-btn { height: 32px; }
+  .sp .pvc-q-text { font-size: 14px; }
+  .sp .pvc-q-options { gap: 6px; }
+  .sp .pvc-opt { font-size: 13.5px; height: 40px; }
+  .sp .pvc-q-feedback { font-size: 13px; line-height: 1.38; }
+}
+/* wide but not tall (800 × 500): the same, so the 3D view keeps half the frame */
+@container pvc (min-width: 720px) and (min-height: 461px) and (max-height: 600px) {
+  .sp .pvc-panel { padding-top: 8px; padding-bottom: 8px; }
+  .sp .pvc-learn { row-gap: 6px; }
+  .sp .pvc-examples button { min-height: 36px; padding-top: 2px; padding-bottom: 3px; }
+  .sp .pvc-examples .pvc-ex-res, .sp .pvc-examples[data-results] .pvc-ex-res:empty { display: none; }
+  .sp .pvc-act-row { min-height: 44px; }
+  .sp .pvc-act { min-height: 42px; padding-top: 3px; padding-bottom: 3px; }
+  .sp .pvc-act-num { width: 32px; height: 32px; font-size: 17px; }
+  .sp-btn { height: 34px; }
+  .sp-s { height: 24px; }
+  .sp-bar { height: 3px; margin-bottom: 2px; }
+  .sp .pvc-rule { font-size: 14px; line-height: 1.4; --pvc-rule-lines: 1.87; }
 }
 /* the tightest phone (390 × 520): smaller steps and lines */
 @container pvc (max-width: 560px) and (max-height: 600px) {
