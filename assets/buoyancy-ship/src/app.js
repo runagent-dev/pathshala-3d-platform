@@ -136,7 +136,7 @@ export function createApp(root, options = {}) {
   const line1 = /** @type {HTMLElement} */ (eq.querySelector('[data-line="1"]'));
   const line2 = /** @type {HTMLElement} */ (eq.querySelector('[data-line="2"]'));
 
-  // notes on the stage: the water's numbers (top left); "imagine" while the water is weighed
+  // the water's numbers and, while the water is weighed, "imagine": in the panel, under the sums
   const notes = document.createElement('div');
   notes.className = 'by-notes';
   const dataNote = document.createElement('div');
@@ -144,14 +144,14 @@ export function createApp(root, options = {}) {
   const extraNote = document.createElement('div');
   extraNote.className = 'by-note by-note-x';
   notes.append(dataNote, extraNote);
-  ui.stage.append(notes);
+  eq.append(notes);
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 32, near: 0.3, far: 2000, environment: false, exposure: 1.0 });
   const { camera, controls, scene } = stage;
   controls.enablePan = false;
   controls.enableZoom = false;
-  controls.enableRotate = false;
+  controls.enableRotate = true;
   controls.minDistance = 8;
   controls.maxDistance = 120;
   // in the 3D view the camera stays on the cut-away side, above the water
@@ -640,7 +640,7 @@ export function createApp(root, options = {}) {
   const anno = createAnnotations({
     stage,
     layer: ui.annoLayer,
-    avoid: [ui.corner, ui.hint, notes, arrowBoxes, () => action?.box(), () => action?.ringBox()],
+    avoid: [ui.corner, ui.hint, arrowBoxes, () => action?.box(), () => action?.ringBox()],
   });
   const spot = (dx, dy) => ({ dx, dy });
   const RIGHT_OF = [spot(14, 0), spot(14, 16), spot(14, -16), spot(14, 30)];
@@ -874,7 +874,6 @@ export function createApp(root, options = {}) {
   }
   function setView(view, { animate = true } = {}) {
     s.view = view === '3d' ? '3d' : 'front';
-    controls.enableRotate = s.view === '3d';
     s.userMovedCamera = false;
     syncUI();
     emit('view', { view: s.view });
@@ -882,6 +881,10 @@ export function createApp(root, options = {}) {
     return flyTo(viewPose(), animate ? 0.7 : 0);
   }
   controls.addEventListener('start', () => {
+    if (s.view !== '3d') {
+      s.view = '3d';
+      syncUI();
+    }
     s.userMovedCamera = true;
     tweener.cancel('camera');
   });
@@ -1165,7 +1168,7 @@ export function createApp(root, options = {}) {
       return ringBox;
     },
     pad: 6,
-    avoid: [ui.corner, ui.hint, notes, () => anno.boxes()],
+    avoid: [ui.corner, ui.hint, () => anno.boxes()],
     pulse: o.coach,
     onAct: () => {
       audio.unlock();
@@ -1410,7 +1413,8 @@ export function createApp(root, options = {}) {
 
   // ── buttons, keys ───────────────────────────────────────────────────────────
   function syncUI() {
-    for (const b of ui.$$('[data-view]')) b.classList.toggle('on', b.dataset.view === s.view);
+    const front = ui.$('[data-view="front"]');
+    if (front) front.hidden = s.view !== '3d';
     root.dataset.mode = s.mode === 'quiz' ? 'quiz' : 'explore';
     for (const b of ui.$$('[data-mode]')) {
       const on = b.dataset.mode === root.dataset.mode;
@@ -1489,7 +1493,6 @@ export function createApp(root, options = {}) {
 
   // ── start ───────────────────────────────────────────────────────────────────
   syncUI();
-  controls.enableRotate = s.view === '3d';
   sceneFor(s.step, 0);
   flyTo(viewPose(), 0);
   syncScene();
