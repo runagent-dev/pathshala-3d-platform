@@ -656,7 +656,7 @@ export function createApp(root, options = {}) {
   function setView(view, { animate = true } = {}) {
     if (s.mode === 'quiz') return Promise.resolve(false);
     s.view = view === '3d' ? '3d' : 'front';
-    controls.enableRotate = controls.enableZoom = s.view === '3d';
+    controls.enableRotate = controls.enableZoom = !s.locked; // the test keeps the view still
     s.userMovedCamera = false;
     syncUI();
     emit('view', { view: s.view });
@@ -666,6 +666,18 @@ export function createApp(root, options = {}) {
   controls.addEventListener('start', () => {
     s.userMovedCamera = true;
     tweener.cancel('camera');
+    turning = true;
+  });
+  // the view starts from the front; a drag turns it (the camera really moves: a tap never does), and then the "front"
+  // button appears to come back
+  let turning = false;
+  controls.addEventListener('end', () => {
+    turning = false;
+  });
+  controls.addEventListener('change', () => {
+    if (!turning || s.view === '3d') return;
+    s.view = '3d';
+    syncUI();
   });
   /** A narrow view wraps the labels to two lines; a short one makes them smaller; both made again at their new size. */
   function setCompact() {
@@ -826,6 +838,7 @@ export function createApp(root, options = {}) {
       leave() {
         s.mode = 'explore';
         s.locked = false;
+        controls.enableRotate = controls.enableZoom = true;
         flyTo(viewPose(s.view), 0);
         s.arrows = true;
         s.plain = '';
@@ -918,7 +931,9 @@ export function createApp(root, options = {}) {
 
   // ── buttons, keys ───────────────────────────────────────────────────────────
   function syncUI() {
-    for (const b of ui.$$('[data-view]')) b.classList.toggle('on', b.dataset.view === s.view);
+    const front = ui.$('[data-view="front"]');
+    if (front) front.hidden = s.view !== '3d';
+    if (!s.locked) controls.enableRotate = true; // the test keeps the view still; afterwards a drag turns it again
     root.dataset.mode = s.mode === 'quiz' ? 'quiz' : 'explore';
     for (const b of ui.$$('[data-mode]')) {
       const on = b.dataset.mode === root.dataset.mode;
@@ -1057,7 +1072,7 @@ export function createApp(root, options = {}) {
   }
 
   // ── start ───────────────────────────────────────────────────────────────────
-  controls.enableRotate = controls.enableZoom = s.view === '3d';
+  controls.enableRotate = controls.enableZoom = true;
   setCompact();
   for (const g of String(o.tried || '')
     .split(',')
