@@ -6,6 +6,7 @@
 // (A₂/A₁ exact); the car is drawn smaller than life next to them (the figure says so).
 import * as THREE from 'three';
 import { A1 } from './reading.js';
+import { mergeStatic } from './merge.js';
 
 const TAU = Math.PI * 2;
 const r1 = Math.sqrt(A1 / Math.PI); // 0.0564 m: the small bore
@@ -83,8 +84,8 @@ function liftMaterials() {
       vertexColors: true,
       roughness: 0.18,
       metalness: 0,
-      emissive: '#c76a00',
-      emissiveIntensity: 0.38,
+      emissive: '#b86a00',
+      emissiveIntensity: 0.26,
     }),
     base: new THREE.MeshStandardMaterial({ name: 'BasePaint', color: '#1d4fa3', metalness: 0.25, roughness: 0.45 }),
     grip: new THREE.MeshStandardMaterial({ name: 'Grip', color: '#e8222c', roughness: 0.55 }),
@@ -104,11 +105,11 @@ function shapeUV(geo, scale) {
   return geo;
 }
 
-/** A plane in z = 0 from (x0, y0) to (x1, y1) with an amber gradient (deep at the bottom, golden at the top). */
+/** A plane in z = 0 from (x0, y0) to (x1, y1) with a golden gradient (amber at the bottom, light gold at the top). */
 function oilPlane(x0, x1, y0, y1, mat) {
   const geo = new THREE.PlaneGeometry(x1 - x0, 1).translate((x0 + x1) / 2, 0.5, 0);
-  const deep = new THREE.Color('#c25a00');
-  const gold = new THREE.Color('#ffb128');
+  const deep = new THREE.Color('#e39516');
+  const gold = new THREE.Color('#ffd665');
   const col = new Float32Array(geo.attributes.position.count * 3);
   for (let i = 0; i < geo.attributes.position.count; i++) {
     const c = geo.attributes.position.getY(i) > 0.5 ? gold : deep;
@@ -140,6 +141,8 @@ function halfTube(x, r, t, y0, y1, m, { lip = true } = {}) {
   if (lip) {
     const ring = new THREE.Mesh(new THREE.RingGeometry(r, r + t, 56, 1, 0, Math.PI).rotateX(-Math.PI / 2), m.steel);
     ring.position.set(x, y1, 0);
+    ring.castShadow = true; // with the shell: one mesh
+    ring.receiveShadow = true;
     g.add(ring);
   }
   return g;
@@ -149,8 +152,7 @@ function halfTube(x, r, t, y0, y1, m, { lip = true } = {}) {
 function halfPiston(r, h, m) {
   const g = new THREE.Group();
   const body = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 56, 1, false, Math.PI / 2, Math.PI), m.piston);
-  body.position.y = h / 2;
-  body.castShadow = true;
+  body.position.y = h / 2; // inside its cylinder: no shadow to cast
   const face = new THREE.Mesh(new THREE.PlaneGeometry(2 * r, h), m.pistonCut);
   face.position.set(0, h / 2, 0.0005);
   g.add(body, face);
@@ -216,33 +218,87 @@ function halfPipe(x0, x1, m) {
   const mesh = new THREE.Mesh(geo, m.steel);
   mesh.position.set((x0 + x1) / 2, (YB + PIPE) / 2, 0);
   mesh.castShadow = true;
+  mesh.receiveShadow = true;
   return mesh;
 }
 
-/** A millimetre scale painted on the lift cylinder's cut wall (cm numbers from the big piston's lowest top). */
-function rulerTexture(num) {
-  // the plane is t2 × 0.86 wide and 30 cm tall: the canvas has the same shape, so the digits keep theirs
-  return canvasTexture(
-    Math.round((4096 * GEO.t2 * 0.86) / 0.3),
-    4096,
-    (g, w, h) => {
-      g.fillStyle = '#fbf6e9';
-      g.fillRect(0, 0, w, h);
-      // 30 cm over the texture's height; the scale's 0 (RULER0) is 2 cm above its bottom
-      const pxPerMm = h / 300;
-      g.fillStyle = '#1b1b1b';
-      g.font = `600 ${Math.round(pxPerMm * 4.2)}px "Noto Sans Bengali", sans-serif`;
-      g.textBaseline = 'middle';
-      for (let mm = 0; mm <= 300; mm++) {
-        const y = h - mm * pxPerMm;
-        const k = mm - 20; // mm from the scale's 0
-        const len = k % 10 === 0 ? 0.5 : k % 5 === 0 ? 0.36 : 0.24;
-        g.fillRect(w * (1 - len), y - 1.6, w * len, 3.2); // ticks from the right edge, next to the piston
-        if (k % 10 === 0 && k >= 0) g.fillText(num(k / 10), w * 0.08, y);
-      }
-    },
-    { repeat: [1, 1] },
+/**
+ * The millimetre scale on the lift cylinder's cut wall (cm numbers from the big piston's lowest top): one mesh, made
+ * once and shared by the three lift cylinders. The ticks are thin quads (sharp at the closest look, where a painted
+ * scale would need a 4096 px texture) and the numbers are quads cut from a small atlas of the ten digits; the cream
+ * face and the ink are two plain cells of the same atlas, so it is all one draw call.
+ */
+function createRuler(num) {
+  const W = GEO.t2 * 0.86; // the plane: t2 × 0.86 wide, 30 cm tall, its 0 (RULER0) 2 cm above its bottom
+  const H = 0.3;
+  const CELL = 80;
+  const c = document.createElement('canvas');
+  c.width = 1024;
+  c.height = 128;
+  const g = /** @type {CanvasRenderingContext2D} */ (c.getContext('2d'));
+  g.fillStyle = '#fbf6e9';
+  g.fillRect(0, 0, c.width, c.height);
+  g.fillStyle = '#1b1b1b';
+  g.fillRect(11 * CELL, 0, CELL, c.height); // the ink cell (cell 10 is the cream face)
+  g.font = '600 104px "Noto Sans Bengali", sans-serif';
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  const widths = [];
+  for (let d = 0; d < 10; d++) {
+    const ch = num(d);
+    widths.push(Math.min(CELL - 4, g.measureText(ch).width + 4));
+    g.fillText(ch, d * CELL + CELL / 2, 70);
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 2;
+  const pos = [];
+  const uv = [];
+  const idx = [];
+  const u = (px) => px / c.width;
+  /** A quad from (x0, y0) to (x1, y1) at depth z, with the atlas rectangle (u0, v0)–(u1, v1). */
+  const quad = (x0, y0, x1, y1, z, u0, v0, u1, v1) => {
+    const i = pos.length / 3;
+    pos.push(x0, y0, z, x1, y0, z, x1, y1, z, x0, y1, z);
+    uv.push(u0, v0, u1, v0, u1, v1, u0, v1);
+    idx.push(i, i + 1, i + 2, i, i + 2, i + 3);
+  };
+  const solid = (cell) => [u(cell * CELL + CELL / 2), 0.5, u(cell * CELL + CELL / 2), 0.5];
+  const cream = solid(10);
+  const ink = solid(11);
+  const x0 = -W / 2;
+  quad(x0, -H / 2, W / 2, H / 2, 0, cream[0], cream[1], cream[2], cream[3]);
+  const mm = 0.001;
+  const lineH = 0.00026;
+  const digitH = 5.2 * mm; // a glyph cell's height on the scale (the digit itself is about 4.2 mm)
+  for (let k = 0; k <= 300; k++) {
+    const y = -H / 2 + k * mm;
+    const n = k - 20; // mm from the scale's 0
+    const len = n % 10 === 0 ? 0.5 : n % 5 === 0 ? 0.36 : 0.24;
+    // ticks from the right edge, next to the piston
+    quad(W / 2 - W * len, y - lineH / 2, W / 2, y + lineH / 2, 0.0001, ink[0], ink[1], ink[2], ink[3]);
+    if (n % 10 !== 0 || n < 0) continue;
+    let x = x0 + W * 0.08;
+    for (const ch of String(n / 10)) {
+      const d = Number(ch);
+      const w = (widths[d] / CELL) * digitH * (CELL / 128);
+      const cu = d * CELL + CELL / 2;
+      quad(x, y - digitH / 2, x + w, y + digitH / 2, 0.0001, u(cu - widths[d] / 2), 0, u(cu + widths[d] / 2), 1);
+      x += w;
+    }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setAttribute(
+    'normal',
+    new THREE.Float32BufferAttribute(
+      new Float32Array(pos.length).map((_, i) => (i % 3 === 2 ? 1 : 0)),
+      3,
+    ),
   );
+  geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  geo.setIndex(idx);
+  return { geo, material: new THREE.MeshStandardMaterial({ name: 'Scale', map: tex, roughness: 0.7 }), height: H };
 }
 /** Where the scale's 0 is: the big piston's top with the car down. */
 export const RULER0 = GEO.Y2LOW + GEO.P2H;
@@ -355,6 +411,11 @@ function createCar() {
       wheel.position.set(xs, wr, z * (W / 2 - 0.04));
       car.add(wheel);
     }
+  // the black parts (tyres, hubs, bumpers) all cast: one mesh per material
+  car.traverse((o) => {
+    if (/** @type {THREE.Mesh} */ (o).material === black) o.castShadow = true;
+  });
+  mergeStatic(car);
   return car;
 }
 
@@ -393,8 +454,15 @@ function createPlatform() {
   const top = new THREE.MeshStandardMaterial({ name: 'DiamondPlate', map: plate, metalness: 0.75, roughness: 0.4 });
   const edge = new THREE.MeshStandardMaterial({ name: 'HazardEdge', map: stripes, roughness: 0.5 });
   const side = new THREE.MeshStandardMaterial({ name: 'PlatformSide', color: '#3b4250', metalness: 0.5, roughness: 0.45 });
-  // BoxGeometry faces: +x, −x, +y, −y, +z, −z
-  const box = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), [side, side, top, side, edge, side]);
+  // BoxGeometry faces: +x, −x, +y, −y, +z, −z; the four plain sides are put together, so it is 3 draw calls, not 6
+  const boxGeo = new THREE.BoxGeometry(w, h, d);
+  const face = (f) => Array.from(boxGeo.index.array.slice(f * 6, f * 6 + 6));
+  boxGeo.setIndex([...face(0), ...face(1), ...face(3), ...face(5), ...face(2), ...face(4)]);
+  boxGeo.clearGroups();
+  boxGeo.addGroup(0, 24, 0);
+  boxGeo.addGroup(24, 6, 1);
+  boxGeo.addGroup(30, 6, 2);
+  const box = new THREE.Mesh(boxGeo, [side, top, edge]);
   box.position.y = -h / 2;
   box.castShadow = true;
   box.receiveShadow = true;
@@ -407,6 +475,7 @@ function createPlatform() {
     kerb.position.set(sx * (w / 2 - 0.03), 0.02, 0);
     g.add(kerb);
   }
+  mergeStatic(g, { keep: [box] });
   return g;
 }
 
@@ -460,15 +529,21 @@ export function createLift({ ratios, num }) {
   // the gland on top, where the rod goes in
   const gland = new THREE.Mesh(new THREE.CylinderGeometry(r1 + t1 + 0.006, r1 + t1 + 0.006, 0.022, 40, 1, false, Math.PI / 2, Math.PI), m.steel);
   gland.position.set(xS, Y1TOP + 0.011, 0);
+  gland.castShadow = gland.receiveShadow = true;
   small.add(gland);
   // the oil comes in from the tank under the floor: a thin pipe down into the base, behind the cylinder
   const inlet = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.012, 10, 24, Math.PI / 2), m.steel);
   inlet.position.set(xS - r1 - t1 - 0.06, YB + 0.03, -0.03);
   inlet.rotation.z = -Math.PI / 2;
+  inlet.castShadow = inlet.receiveShadow = true;
   small.add(inlet);
   root.add(small);
+  // one mesh per material: the cylinder's still parts, and the piston with its rod and handle (they move together)
+  mergeStatic(small, { keep: [smallOil, piston1] });
+  mergeStatic(piston1);
 
-  // the three lift cylinders
+  // the three lift cylinders (one scale shared by all three)
+  const scale = createRuler(num);
   const variants = new Map();
   for (const k of ratios) {
     const r2 = r2For(k);
@@ -488,19 +563,17 @@ export function createLift({ ratios, num }) {
     const rodR = Math.min(0.16, Math.max(0.05, r2 * 0.36));
     const rod = new THREE.Mesh(new THREE.CylinderGeometry(rodR, rodR, ROD2, 40), m.chrome);
     rod.position.y = P2H + ROD2 / 2;
-    rod.castShadow = true;
     piston.add(rod);
     piston.position.set(xB, Y2LOW, 0);
     g.add(piston);
     // the scale on the cut of its left wall
-    const rh = 0.3;
-    const ruler = new THREE.Mesh(
-      new THREE.PlaneGeometry(t2 * 0.86, rh),
-      new THREE.MeshStandardMaterial({ name: 'Scale', map: rulerTexture(num), roughness: 0.7 }),
-    );
-    ruler.position.set(xB - r2 - t2 / 2, RULER0 - 0.02 + rh / 2, 0.0016);
+    const ruler = new THREE.Mesh(scale.geo, scale.material);
+    ruler.name = 'Scale';
+    ruler.position.set(xB - r2 - t2 / 2, RULER0 - 0.02 + scale.height / 2, 0.0016);
     ruler.renderOrder = 3;
     g.add(ruler);
+    mergeStatic(piston);
+    mergeStatic(g, { keep: [bigOil, piston] });
     g.visible = false;
     root.add(g);
     variants.set(k, { group: g, r2, rodR, bigOil, pipeOil, piston });
@@ -537,11 +610,10 @@ export function createLift({ ratios, num }) {
     car,
     platform,
     top,
-    handle,
     piston1,
     materials: m,
-    /** The meshes a tap on the pump hits (the handle, its rod and the small piston). */
-    pumpMeshes: [bar, knob, rod1, ...handle.children, ...piston1.children[0].children],
+    /** The meshes a tap on the pump hits (the handle, its rod and the small piston: merged into a few meshes). */
+    pumpMeshes: piston1.children,
     get ratio() {
       return s.ratio;
     },
