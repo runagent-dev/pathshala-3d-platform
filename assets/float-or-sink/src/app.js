@@ -131,7 +131,7 @@ export function createApp(root, options = {}) {
   $('.pvc-act-row').after(row);
   const note = document.createElement('div');
   note.className = 'fs-note';
-  ui.stage.append(note);
+  row.after(note); // in the panel, under the key (never on the 3D view)
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 28, near: 0.02, far: 40, environment: 'studio-light' });
@@ -140,7 +140,7 @@ export function createApp(root, options = {}) {
   controls.maxDistance = 6;
   controls.enablePan = false;
   controls.enableZoom = false;
-  controls.enableRotate = false;
+  controls.enableRotate = true;
   controls.minPolarAngle = 0.5;
   controls.maxPolarAngle = Math.PI * 0.56;
   if (o.bg !== 'transparent') {
@@ -679,7 +679,7 @@ export function createApp(root, options = {}) {
   const anno = createAnnotations({
     stage,
     layer: ui.annoLayer,
-    avoid: [ui.corner, ui.hint, note, () => action?.box(), () => action?.ringBox()],
+    avoid: [ui.corner, ui.hint, () => action?.box(), () => action?.ringBox()],
   });
   const spot = (dx, dy) => ({ dx, dy });
   const BELOW = [spot(16, 8), spot(16, 24), spot(-16, 8), spot(-16, 24), spot(0, 26), spot(16, -8)];
@@ -847,13 +847,16 @@ export function createApp(root, options = {}) {
   }
   function setView(view, { animate = true } = {}) {
     s.view = view === '3d' ? '3d' : 'front';
-    controls.enableRotate = s.view === '3d';
     s.userMovedCamera = false;
     syncUI();
     emitChange();
     return flyTo(viewPose(), animate ? 0.7 : 0);
   }
   controls.addEventListener('start', () => {
+    if (s.view !== '3d') {
+      s.view = '3d';
+      syncUI();
+    }
     s.userMovedCamera = true;
     tweener.cancel('camera');
   });
@@ -1210,7 +1213,7 @@ export function createApp(root, options = {}) {
       return b?.view.root.visible ? (b.id === 'sub' ? subView.root : b.view.meshes[0]) : null;
     },
     pad: 6,
-    avoid: [ui.corner, ui.hint, note, () => anno.boxes(), arrowBoxes],
+    avoid: [ui.corner, ui.hint, () => anno.boxes(), arrowBoxes],
     pulse: o.coach,
     onAct: () => {
       audio.unlock();
@@ -1538,7 +1541,8 @@ export function createApp(root, options = {}) {
 
   // ── buttons, keys ───────────────────────────────────────────────────────────
   function syncUI() {
-    for (const b of ui.$$('[data-view]')) b.classList.toggle('on', b.dataset.view === s.view);
+    const front = ui.$('[data-view="front"]');
+    if (front) front.hidden = s.view !== '3d';
     root.dataset.mode = s.mode === 'quiz' ? 'quiz' : 'explore';
     for (const b of ui.$$('[data-mode]')) {
       const on = b.dataset.mode === root.dataset.mode;
@@ -1641,7 +1645,6 @@ export function createApp(root, options = {}) {
 
   // ── start ───────────────────────────────────────────────────────────────────
   syncUI();
-  controls.enableRotate = s.view === '3d';
   for (const id of CASE_IDS) hold(bodies[id]);
   hold(bodies.block);
   setMaterial(s.mat, { animate: false });
