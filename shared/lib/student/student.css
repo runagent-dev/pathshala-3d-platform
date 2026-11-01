@@ -362,18 +362,31 @@
   .pvc-outcome { font-size: 15px; }
   .pvc-rule { font-size: 14px; }
 }
+/* short and wide (phone held sideways, small embeds): the panel moves beside the caliper */
+@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
+  .pvc-shell:not([data-layout='side']) { grid-template-rows: minmax(0, 1fr); grid-template-columns: minmax(0, 1fr) clamp(260px, 36%, 330px); }
+  .pvc-panel { display: flex; align-items: stretch; border-top: 0; border-left: 1px solid var(--line); overflow-y: auto; padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px)); gap: 8px; }
+  .pvc-tabs { grid-template-columns: 1fr 1fr; max-width: none; }
+  .pvc-tabs button + button { border-top: 0; border-left: 1px solid var(--line-2); }
+  .pvc-tabs button { height: 36px; }
+  .pvc-q-options { grid-template-columns: 1fr 1fr; }
+  .pvc-opt { height: 42px; font-size: 18px; }
+  .pvc-q-text { font-size: 16px; }
+  .pvc-result .v { font-size: 28px; }
+}
+
 /* landscape frames (book page, desktop, phone held sideways): the 3D on the left, the panel beside it, the full
-   height. The panel is a container named pvc too, so a figure's own "@container pvc" rules measure the panel, and a
+   height (figures that ask for layout: 'side'). The panel is a container named pvc too, so a figure's own "@container pvc" rules measure the panel, and a
    figure styled for a narrow phone panel looks right here without changes. The button on the 3D's edge hides it. */
 .pvc-panel-toggle { display: none; }
 @container pvc (min-aspect-ratio: 1/1) and (min-width: 600px) {
-  .pvc-shell { position: relative; grid-template-rows: minmax(0, 1fr); grid-template-columns: minmax(0, 1fr) clamp(280px, 34%, 400px); }
-  .pvc-shell[data-panel='closed'] { grid-template-columns: minmax(0, 1fr) 0; }
-  .pvc-shell[data-panel='closed'] .pvc-panel { display: none; }
-  .pvc-panel { container: pvc pvc-panel / size; display: flex; flex-direction: column; justify-content: flex-start; border-top: 0; border-left: 1px solid var(--line); overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; padding: 12px 14px calc(12px + env(safe-area-inset-bottom, 0px)); gap: 10px; }
-  .pvc-tabs { grid-template-columns: 1fr 1fr; max-width: none; }
-  .pvc-tabs button + button { border-top: 0; border-left: 1px solid var(--line-2); }
-  .pvc-learn { justify-content: flex-start; }
+  .pvc-shell[data-layout='side'] { position: relative; grid-template-rows: minmax(0, 1fr); grid-template-columns: minmax(0, 1fr) clamp(280px, 34%, 400px); }
+  .pvc-shell[data-layout='side'][data-panel='closed'] { grid-template-columns: minmax(0, 1fr) 0; }
+  [data-layout='side'][data-panel='closed'] .pvc-panel { display: none; }
+  [data-layout='side'] .pvc-panel { container: pvc pvc-panel / size; display: flex; flex-direction: column; justify-content: flex-start; border-top: 0; border-left: 1px solid var(--line); overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; padding: 12px 14px calc(12px + env(safe-area-inset-bottom, 0px)); gap: 10px; }
+  [data-layout='side'] .pvc-tabs { grid-template-columns: 1fr 1fr; max-width: none; }
+  [data-layout='side'] .pvc-tabs button + button { border-top: 0; border-left: 1px solid var(--line-2); }
+  [data-layout='side'] .pvc-learn { justify-content: flex-start; }
   .pvc-panel-toggle {
     position: absolute; z-index: 6; right: 0; top: 50%; transform: translateY(-50%);
     display: grid; place-items: center; width: 28px; height: 64px; padding: 0;
@@ -387,9 +400,9 @@
 }
 /* short landscape frames (a phone held sideways): a tighter panel */
 @container pvc (min-aspect-ratio: 1/1) and (min-width: 600px) and (max-height: 460px) {
-  .pvc-panel { padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px)); gap: 8px; }
-  .pvc-tabs button { height: 36px; }
-  .pvc-corner { top: 8px; right: 8px; }
+  [data-layout='side'] .pvc-panel { padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px)); gap: 8px; }
+  [data-layout='side'] .pvc-tabs button { height: 36px; }
+  [data-layout='side'] .pvc-corner { top: 8px; right: 8px; }
 }
 /* a phone held upright: a card asks to turn it (only on touch screens; "stay" keeps the stacked layout) */
 .pvc-rotate { position: absolute; inset: 0; z-index: 20; display: grid; place-items: center; padding: 24px; background: rgba(16, 24, 36, 0.55); }
