@@ -7,8 +7,8 @@
 A self-playing 3D animation (about 98 seconds, loops) with one object for every row of Table 1.05. It needs no
 interaction, but students can choose what to see:
 
-- tap any prefix in Table 1.05 (e.g. মেগা) to fly to its object (পৃথিবী);
-- on phones and short frames, where the table is hidden, a row of buttons along the top does the same (prefix + object);
+- tap a stop in the strip under the view (the rows of Table 1.05, smallest first: prefix, 10ⁿ and object, e.g.
+  মেগা 10⁶ পৃথিবী) to fly to it;
 - tap an object in the picture, or a "… এতটুকু" dot, to fly to it;
 - keyboard: ← smaller, → bigger, space play/pause.
 
@@ -20,12 +20,16 @@ Padma Bridge, the Earth, the Sun, the solar system and the nearest star to a gal
 the value in the book's text). At each stop:
 
 - the size in Bangla with its prefix, and in 10ⁿ m (e.g. "ব্যাস ≈ ১২.৭ মেগামিটার" and "= 1.27 × 10⁷ m");
-- Table 1.05 on the side marks that prefix (wide frames only; the caption always names it);
+- the strip marks that prefix; while zooming, the caption's chip and the strip light up each prefix as it passes;
 - the previous object stays as a dot beside the new one ("পৃথিবী এতটুকু") to compare sizes;
 - a scale bar changes its unit as the zoom runs (সেন্টিমিটার → মিটার → কিলোমিটার → …).
 
-Bangla UI (Noto Sans Bengali, bundled), white page, works offline. Phone portrait, phone sideways, book column and
-full screen are all laid out (tested at 390×700, 844×390, 800×500, 1280×800).
+The 3D view sits on top with only short labels on it (the scale bar and a few pins); the caption and the controls
+are in one strip under it. Each stop has its own coloured backdrop that suits it (a violet particle world, a cell's
+slate, warm plasma, sand, a day sky with clouds, starry space), blending between stops, with motes or stars streaming
+past while zooming. Frames are drawn only while it moves: paused, held at a chosen stop or finished, it draws
+nothing. Bangla UI (Noto Sans Bengali, bundled), works offline, laid out at 390×700, 390×520, 844×390, 640×400,
+800×500 and 1280×800.
 
 ## Embed
 
@@ -45,7 +49,7 @@ full screen are all laid out (tested at 390×700, 844×390, 800×500, 1280×800)
 | `autoplay` | `1` · `0` | `1` | Start playing on load |
 | `loop` | `1` · `0` | `1` | Loop, or stop at the end |
 | `speed` | number | `1` | `1.25` plays faster |
-| `ladder` | `1` · `0` | `1` | Table 1.05 on the side (hidden anyway on narrow or short frames) |
+| `ladder` | `1` · `0` | `1` | Show 10ⁿ on the stop buttons |
 | `start` | `quark` `nucleus` `atom` `dna` `rbc` `ant` `ball` `mango` `student` `bus` `field` `bridge` `earth` `sun` `solar` `star` `galaxy` | `student` | Where to begin |
 | `bg` | `light` · `transparent` | `light` | |
 
@@ -64,12 +68,15 @@ await anim.call('goto', { id: 'earth' }); // jump to a stop and hold there
 
 | Command | Payload | Result |
 |---|---|---|
-| `get` | | `{ time, duration, playing, stop }` |
+| `get` | | `{ time, duration, playing, stop, flyingTo, stops }` |
 | `play` / `pause` | | state |
 | `goto` | `{ id, animate? }` | `true` if the stop exists; flies there and holds (paused) |
+| `seek` | `{ t }` | jumps to `t` seconds (playing or paused as it was); state |
+| `duration` | | the tour's length in seconds |
+| `reset` | | back to the start (playing if `autoplay`); state |
 | `capture` | `{ width, height }` | PNG data URL |
 
-Events: `ready` (with the list of stops), `stop` (`{ id, prefix }` each time a stop comes into focus), `choose` (`{ id }` when the student picks a stop), `play`, `pause`.
+Events: `ready` (`{ asset, version, state }`, the state lists the stops), `stop` (`{ id, prefix }` each time a stop comes into focus), `choose` (`{ id }` when the student picks a stop), `play`, `pause`.
 
 ## The numbers
 
@@ -108,9 +115,11 @@ All words and numbers are in `src/i18n.js` (`STRINGS.bn`, `STRINGS.en`, `STOPS`,
 
 ```
 index.html        entry (iframe target)
-style.css         layout, scoped under .hb
-src/app.js        timeline, camera, captions, Table 1.05, scale bar, pins, public API
-src/objects.js    the 17 objects, one per row of Table 1.05 (procedural three.js)
+style.css         layout, scoped under .hb (tokens and buttons from shared/lib/student/student.css)
+src/main.js       startFigure: URL parameters, bridge
+src/app.js        timeline, camera, caption strip, stops, scale bar, pins, public API
+src/backdrop.js   the coloured backdrop of each stop (one shader quad)
+src/objects.js    the 17 objects, one per row of Table 1.05 (procedural three.js, merged and instanced)
 src/i18n.js       text, sizes, prefixes, order of stops
 src/world.js      country outlines for the Earth
 shared/           three.js, Pathshala helpers, Noto Sans Bengali (added by packaging)
