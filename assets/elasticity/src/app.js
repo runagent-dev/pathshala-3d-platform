@@ -122,7 +122,7 @@ export function createApp(root, options = {}) {
       <div class="el-sum"><span class="el-q">${t('s_ratio')}</span><span class="el-calc" data-sum="ratio"></span></div>
       <div class="el-sum el-keyrow"><span class="el-q">${t('g_key')}</span><span class="el-calc el-key"></span></div>
     </div>`;
-  $('.pvc-act-row').before(eq);
+  $('.pvc-act-row').after(eq); // the readings under the action
   const keyEl = /** @type {HTMLElement} */ (eq.querySelector('.el-key'));
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
@@ -132,7 +132,7 @@ export function createApp(root, options = {}) {
   controls.maxDistance = 4;
   controls.enablePan = false;
   controls.enableZoom = false;
-  controls.enableRotate = false;
+  controls.enableRotate = true;
   controls.minPolarAngle = 0.5;
   controls.maxPolarAngle = Math.PI * 0.56;
   controls.minAzimuthAngle = -1.0;
@@ -158,7 +158,7 @@ export function createApp(root, options = {}) {
 
   const app = createApparatus(N, L0 * CM);
   scene.add(app.root);
-  if (o.bg !== 'transparent') scene.add(createWorkshop(N, app.materials).root);
+  if (o.bg !== 'transparent') scene.add(createWorkshop(app.materials).root);
   const { spring, hanger, weights } = app;
 
   // the marks drawn over the scene: L₀ (dark) and x (red) on one line just left of the rule, L₀'s level across
@@ -664,9 +664,23 @@ export function createApp(root, options = {}) {
   };
   const graph = createGraph(ui.stage, { N, text: graphText });
   const G = { x: 0, y: 0, w: 1, h: 1, side: 0 };
+  // beside the 3D the graph goes into the panel (under the sheet); on a portrait frame, or with the panel hidden, it
+  // stays a card on the 3D view
+  const panelEl = /** @type {HTMLElement} */ (root.querySelector('.pvc-panel'));
+  const shellEl = /** @type {HTMLElement} */ (root.querySelector('.pvc-shell'));
   function placeGraph() {
     const W = stage.width;
     const H = stage.height;
+    const pr = panelEl.getBoundingClientRect();
+    const side = shellEl.dataset.panel !== 'closed' && pr.width > 0 && pr.left >= ui.stage.getBoundingClientRect().right - 2;
+    graph.el.classList.toggle('in-panel', side);
+    if (side) {
+      if (graph.el.parentElement !== panelEl) panelEl.append(graph.el);
+      const w = Math.max(160, Math.round(panelEl.clientWidth - 28));
+      graph.place({ x: 0, y: 0, w, h: Math.round(Math.min(230, w * 0.72)) });
+      return;
+    }
+    if (graph.el.parentElement !== ui.stage) ui.stage.append(graph.el);
     const wide = W / Math.max(1, H) >= 1.15;
     if (wide) {
       G.w = Math.round(Math.min(330, Math.max(170, W * 0.4)));
@@ -903,7 +917,6 @@ export function createApp(root, options = {}) {
   }
   function setView(view, { animate = true } = {}) {
     s.view = view === '3d' ? '3d' : 'front';
-    controls.enableRotate = s.view === '3d';
     s.userMovedCamera = false;
     syncUI();
     emit('view', { view: s.view });
@@ -911,6 +924,10 @@ export function createApp(root, options = {}) {
     return flyTo(viewPose(), animate ? 0.7 : 0);
   }
   controls.addEventListener('start', () => {
+    if (s.view !== '3d') {
+      s.view = '3d';
+      syncUI();
+    }
     s.userMovedCamera = true;
     s.tour++;
     quiet.cancel('camera');
@@ -1263,7 +1280,8 @@ export function createApp(root, options = {}) {
 
   // ── buttons, keys ───────────────────────────────────────────────────────────
   function syncUI() {
-    for (const b of ui.$$('[data-view]')) b.classList.toggle('on', b.dataset.view === s.view);
+    const front = ui.$('[data-view="front"]');
+    if (front) front.hidden = s.view !== '3d';
     root.dataset.mode = s.mode === 'quiz' ? 'quiz' : 'explore';
     for (const b of ui.$$('[data-mode]')) {
       const on = b.dataset.mode === root.dataset.mode;
@@ -1353,7 +1371,6 @@ export function createApp(root, options = {}) {
   s.L = lengthOf(s.spring, s.n);
   s.settled = { n: s.n, spring: { ...s.spring } };
   syncUI();
-  controls.enableRotate = s.view === '3d';
   placeGraph();
   syncScene();
   flyTo(viewPose(), 0);
