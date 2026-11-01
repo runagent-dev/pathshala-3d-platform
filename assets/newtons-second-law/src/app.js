@@ -135,11 +135,14 @@ export function createApp(root, options = {}) {
   root.append(mathDialog);
   let mathResume = false;
   const outcomeEl = ui.$('.pvc-outcome');
-  // the run's clock on the view (t, and that time is slowed): a label with its value, top left
+  // the run's clock (t, and that time is slowed): in the panel, a small line under the result line (never on the view)
   const note = document.createElement('div');
   note.className = 'ns-clock';
   note.setAttribute('aria-live', 'off');
-  ui.stage.append(note);
+  const outRow = document.createElement('div');
+  outRow.className = 'ns-outrow';
+  outcomeEl.before(outRow);
+  outRow.append(outcomeEl, note);
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 26, near: 0.05, far: 120, environment: 'studio-light' });
@@ -591,7 +594,7 @@ export function createApp(root, options = {}) {
   const anno = createAnnotations({
     stage,
     layer: ui.annoLayer,
-    avoid: [ui.corner, ui.hint, note, () => action?.ringBox(), () => action?.box(), () => sceneBlockers()],
+    avoid: [ui.corner, ui.hint, () => action?.ringBox(), () => action?.box(), () => sceneBlockers()],
   });
   const spotsKey = new Map(); // id → the spots last given (a label whose spots change is placed again)
   const label = (id, opts) => {
@@ -1304,7 +1307,7 @@ export function createApp(root, options = {}) {
     label: () => t(`act_${s.example}`, { t: PUSH_TIME }),
     target: () => (s.scene === 'lane' ? cartBox(rig, 0) : null),
     pad: 6,
-    avoid: [ui.corner, ui.hint, note, () => anno.boxes()],
+    avoid: [ui.corner, ui.hint, () => anno.boxes()],
     pulse: Boolean(o.coach),
     onAct: () => {
       audio.unlock();
@@ -1416,8 +1419,8 @@ export function createApp(root, options = {}) {
   }
   function setView(view, { animate = true } = {}) {
     s.view = view === '3d' ? '3d' : 'front';
-    controls.enableRotate = s.view === '3d' && s.scene === 'lane';
-    controls.enableZoom = s.view === '3d';
+    controls.enableRotate = s.scene === 'lane';
+    controls.enableZoom = true;
     s.userMovedCamera = false;
     syncUI();
     emit('view', { view: s.view });
@@ -1427,7 +1430,7 @@ export function createApp(root, options = {}) {
     s.scene = next;
     tweener.cancel('follow');
     s.follow = 0;
-    controls.enableRotate = s.view === '3d' && next === 'lane';
+    controls.enableRotate = next === 'lane';
     s.userMovedCamera = false;
     const flown = flyTo(viewPose(), animate ? 0.7 : 0);
     refresh(); // the clock on the view shows only on the lane
@@ -1436,6 +1439,18 @@ export function createApp(root, options = {}) {
   controls.addEventListener('start', () => {
     s.userMovedCamera = true;
     tweener.cancel('camera');
+    turning = true;
+  });
+  // the view starts from the front; a drag turns it (the camera really moves: a tap never does), and then the "front"
+  // button appears to come back
+  let turning = false;
+  controls.addEventListener('end', () => {
+    turning = false;
+  });
+  controls.addEventListener('change', () => {
+    if (!turning || s.view === '3d') return;
+    s.view = '3d';
+    syncUI();
   });
   stage.onResize(() => {
     outFull.text = ''; // the result line's fit is checked again
@@ -1829,7 +1844,8 @@ export function createApp(root, options = {}) {
 
   // ── buttons, keys ───────────────────────────────────────────────────────────
   function syncUI() {
-    for (const b of ui.$$('[data-view]')) b.classList.toggle('on', b.dataset.view === s.view);
+    const front = ui.$('[data-view="front"]');
+    if (front) front.hidden = s.view !== '3d';
     root.dataset.mode = s.mode === 'quiz' ? 'quiz' : 'explore';
     for (const b of ui.$$('[data-mode]')) {
       const on = b.dataset.mode === root.dataset.mode;

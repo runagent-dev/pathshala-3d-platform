@@ -195,3 +195,12 @@ Against `docs/agents/polish-pass.md`, version 0.5.0.
   the machine's load was 30–50 during the run; side by side in the same runs, the end of the first frame took the
   same time (about 1.0 s old, 1.0 s new), with 17 shader programs compiled instead of 12 (instanced limbs, vertex
   colours).
+
+## Declutter and side panel (0.6.0)
+Only the main objects: the pillars, the high barred windows, the sacks stacked on pallets and the platform scale are
+gone from the godown; the lime-washed wall, the dado, the cement floor with its lane, and the pile of sacks that
+stops the cart stay. The run's clock (t and "সময় ২ গুণ ধীর") left the top left of the view and sits at the right of
+the result line in the panel. Kit 1.5.0 puts the panel beside the 3D, so the rules for a wide panel under the view
+(from 720 and 1000 px) and for the old short-and-wide layout are gone; 390×700 keeps 55 % for the 3D.
+No সামনে / ঘুরিয়ে দেখো buttons (kit): the lab starts from the front, a drag turns it, and the small "front" icon
+then brings it back.
