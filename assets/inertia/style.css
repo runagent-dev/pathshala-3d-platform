@@ -92,7 +92,7 @@ body.bg-transparent { background: transparent; }
   .in:lang(en) .pvc-q-feedback { min-height: 4.1em; }
 }
 /* a phone held upright: the action row is a little tighter, so the 3D view keeps 55 % of the height */
-@container pvc (max-aspect-ratio: 1/1) and (min-height: 640px) {
+@container pvc (max-aspect-ratio: 1/1) and (min-height: 640px) and (min-width: 375px) {
   .in .pvc-learn { gap: 4px; }
   .in .pvc-act-row { min-height: 44px; }
   .in .pvc-act { min-height: 42px; padding-top: 3px; padding-bottom: 3px; }

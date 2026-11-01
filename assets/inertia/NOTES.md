@@ -136,3 +136,5 @@ the old short-and-wide layout are gone.
 The play / pause / again button left the top left of the view and is the panel's action under the events (a tap on
 the view still plays or pauses), so the panel reads in the same order as every lab: events, action, the two speeds,
 what happens, the book's definition. On 390×700 the 3D keeps 55 %.
+No সামনে / ঘুরিয়ে দেখো buttons (kit): the lab starts from the front, a drag turns it, and the small "front" icon
+then brings it back.
