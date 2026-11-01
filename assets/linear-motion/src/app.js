@@ -79,6 +79,7 @@ export function createApp(root, options = {}) {
   root.lang = t.lang;
   root.tabIndex = 0;
   const ui = buildStudentShell(root, t, {
+    layout: 'side', // the panel beside the 3D on landscape frames (kit 1.5.0)
     learn: `
           <div class="lm-chips" role="radiogroup" aria-label="${t('examples')}">${EXAMPLES.map(
             (ex) => `<button role="radio" data-ex="${ex}">${CHIP_ICONS[ex]}<span>${t(`ex_${ex}`)}</span></button>`,
