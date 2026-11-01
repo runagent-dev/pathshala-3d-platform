@@ -72,6 +72,32 @@ const LOOKS = {
 };
 const MARGIN = { top: 50, bottom: 34, side: 6 };
 const QUIZ_X = [-16.5, -5.5, 5.5, 16.5]; // the four painted balls on the bench
+// everything that casts a shadow, wherever it goes: the balls (on the bench, over the rims, in the tanks), the test's
+// balls and rings, and the box of particles at its biggest
+const SHADOW_BOX = new THREE.Box3(new THREE.Vector3(-21, 0, -6), new THREE.Vector3(BOX_X + 4.6, TANK.H + BALL_R + 5, TABLE_Z + 3.5));
+
+/** Fits the sun's shadow camera tightly round a world box (and updates its projection: three.js does not). */
+function fitShadow(light, box) {
+  light.updateMatrixWorld();
+  light.target.updateMatrixWorld();
+  const view = new THREE.Matrix4().lookAt(light.position, light.target.position, new THREE.Vector3(0, 1, 0));
+  view.setPosition(light.position);
+  const inv = view.clone().invert();
+  const lo = new THREE.Vector3(Infinity, Infinity, Infinity);
+  const hi = new THREE.Vector3(-Infinity, -Infinity, -Infinity);
+  const p = new THREE.Vector3();
+  for (const x of [box.min.x, box.max.x])
+    for (const y of [box.min.y, box.max.y])
+      for (const z of [box.min.z, box.max.z]) {
+        p.set(x, y, z).applyMatrix4(inv);
+        lo.min(p);
+        hi.max(p);
+      }
+  const cam = light.shadow.camera;
+  const pad = 1;
+  Object.assign(cam, { left: lo.x - pad, right: hi.x + pad, bottom: lo.y - pad, top: hi.y + pad, near: Math.max(0.5, -hi.z - 4), far: -lo.z + 40 }); // the bench, beyond the casters, must be inside too
+  cam.updateProjectionMatrix();
+}
 
 export function createApp(root, options = {}) {
   const o = { ...DEFAULTS, ...options };
@@ -104,13 +130,8 @@ export function createApp(root, options = {}) {
       <span class="dn-sym c-rho">ρ</span><span class="dn-op">=</span>
       <span class="dn-frac"><span class="dn-sym c-m">m</span><span class="dn-sym c-V">V</span></span>
     </div>
-    <div class="dn-sum" aria-live="polite"><span class="dn-mv"></span><span class="dn-rho"></span><span class="dn-kg"></span></div>`;
+    <div class="dn-sum" aria-live="polite"><span class="dn-l1"><span class="dn-mv"></span> <span class="dn-rho"></span></span><span class="dn-kg"></span></div>`;
   $('.pvc-act-row').after(eq);
-
-  // notes on the stage (top left; the buttons are top right)
-  const notes = document.createElement('div');
-  notes.className = 'dn-notes';
-  ui.stage.append(notes);
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 26, near: 1, far: 900, environment: 'studio-light', exposure: 1.05 });
@@ -123,7 +144,7 @@ export function createApp(root, options = {}) {
   controls.minPolarAngle = 0.3;
   controls.maxPolarAngle = Math.PI * 0.49;
   const bgOn = o.bg !== 'transparent';
-  if (bgOn) scene.background = new THREE.Color('#f3c9a6');
+  if (bgOn) scene.background = new THREE.Color('#eebb8f'); // the wall's own colour, if a turn ever looks past it
   scene.add(new THREE.HemisphereLight('#fff4e6', '#4a5f80', 0.85));
   const sun = new THREE.DirectionalLight('#fff3e0', 1.7);
   sun.position.set(-30, 70, 45);
@@ -134,14 +155,14 @@ export function createApp(root, options = {}) {
   scene.add(fill);
   if (o.shadow && bgOn) {
     stage.renderer.shadowMap.enabled = true;
-    stage.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    stage.renderer.shadowMap.type = THREE.PCFShadowMap;
     sun.castShadow = true;
     sun.shadow.mapSize.set(1024, 1024);
-    Object.assign(sun.shadow.camera, { left: -55, right: 55, top: 45, bottom: -45, near: 20, far: 160 });
+    sun.shadow.radius = 3;
     sun.shadow.bias = -0.0006;
     sun.shadow.normalBias = 0.02;
+    fitShadow(sun, SHADOW_BOX);
   }
-
   const world = createScene({ background: bgOn });
   scene.add(world.root);
   const { tanks, balls, rings, quizBalls, quizRings, box } = world;
@@ -373,7 +394,7 @@ export function createApp(root, options = {}) {
     }
     const w = s.where[s.chosen];
     if (w === 'falling') return t('out_falling');
-    if (w === 'water') return t(`out_${s.chosen}`);
+    if (w === 'water') return t(`out_${s.chosen}`, { r: N(ballDensity(s.chosen)), w: N(WATER.toFixed(2)) });
     return t('out_ready', { V: N(V_BALL) });
   }
 
@@ -386,7 +407,6 @@ export function createApp(root, options = {}) {
     return t('rule_start');
   }
 
-  let lastNotes = '';
   function refresh() {
     sheet.choose(s.chosen);
     for (const id of BALL_IDS) sheet.result(id, s.where[id] === 'water' ? `${N(ballDensity(id))}` : '');
@@ -408,15 +428,6 @@ export function createApp(root, options = {}) {
       if (p.step === '' || falling()) action.hide('scene');
       else action.show('scene');
     }
-    const key = `${part()}|${s.mode}|${s.quiz?.kind || ''}`;
-    if (key !== lastNotes) {
-      lastNotes = key;
-      const quizBox = s.mode === 'quiz' && (s.quiz?.kind === 'box' || s.quiz?.kind === 'heat');
-      if (s.mode === 'quiz' && !quizBox) notes.innerHTML = '';
-      else if (part() === 'box' || quizBox) notes.innerHTML = `<div class="dn-note">${t('note_model')}</div>`;
-      else
-        notes.innerHTML = `<div class="dn-note">${t('note_balls', { V: N(V_BALL) })}</div><div class="dn-note">${t('note_water', { w: N(WATER.toFixed(2)) })}</div>`;
-    }
     syncLabels();
     stage.invalidate();
   }
@@ -425,7 +436,7 @@ export function createApp(root, options = {}) {
   const anno = createAnnotations({
     stage,
     layer: ui.annoLayer,
-    avoid: [ui.corner, ui.hint, notes, () => action?.box(), () => action?.ringBox()],
+    avoid: [ui.corner, ui.hint, () => action?.box(), () => action?.ringBox()],
   });
   const spot = (dx, dy) => ({ dx, dy });
   const BELOW = [spot(0, 20), spot(0, 34), spot(14, 22), spot(-14, 22)];
@@ -622,7 +633,7 @@ export function createApp(root, options = {}) {
       return null;
     },
     pad: 6,
-    avoid: [ui.corner, ui.hint, notes, () => anno.boxes()],
+    avoid: [ui.corner, ui.hint, () => anno.boxes()],
     pulse: o.coach,
     onAct: () => {
       audio.unlock();
