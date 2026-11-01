@@ -86,6 +86,7 @@ export function createApp(root, options = {}) {
   const stopName = (id) =>
     id === 'reach' ? `<span class="wn-long">${t('stop_reach')}</span><span class="wn-short">${t('stop_reach_short')}</span>` : t(`stop_${id}`);
   const ui = buildStudentShell(root, t, {
+    layout: 'side',
     learn: `
           <div class="pvc-seg wn-stops" role="group" aria-label="${t('stops_label')}">
             ${STOP_IDS.map((id) => `<button data-stop="${id}" aria-label="${t(`stop_${id}`)}">${stopName(id)}</button>`).join('')}
