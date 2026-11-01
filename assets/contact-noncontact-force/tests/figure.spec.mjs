@@ -66,7 +66,7 @@ test('contact-noncontact-force: play, hold at the telling moment, see the kind, 
   expect(st).toMatchObject({ example: 'magnet', phase: 'paused', kind: 'noncontact', touching: false, marks: 'gap' });
   expect(st.gap).toBeGreaterThan(0.015);
   expect(st.gap).toBeLessThan(0.03);
-  await expect(frame.locator('.pvc-anno-tag-n')).toContainText('ছোঁয়নি, তবু টানে: অস্পর্শ বল');
+  await expect(frame.locator('.pvc-anno-tag-n')).toContainText('ছোঁয়নি: অস্পর্শ বল');
   await expect(frame.locator('.pvc-anno-tag-n')).toContainText('ফাঁক ২.৩ cm');
   await expect(frame.locator('[data-example="magnet"] .pvc-ex-res')).toHaveText('অস্পর্শ');
   await expect(frame.locator('.pvc-rule')).toContainText('অস্পর্শ বল');
