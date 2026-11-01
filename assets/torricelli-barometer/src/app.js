@@ -114,17 +114,17 @@ export function createApp(root, options = {}) {
   const eqSum = /** @type {HTMLElement} */ (eq.querySelector('.tb-sum'));
   const eqRes = /** @type {HTMLElement} */ (eq.querySelector('.tb-res'));
 
-  // a note on the stage (top left): where the barometer is, what is drawn bigger or faster than life
+  // a note in the panel, under the formula: where the barometer is, what is drawn bigger or faster than life
   const note = document.createElement('div');
   note.className = 'tb-note';
-  ui.stage.append(note);
+  eq.after(note);
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 30, near: 0.02, far: 220, environment: 'studio-light' });
   const { camera, controls, scene } = stage;
   controls.enablePan = false;
   controls.enableZoom = false;
-  controls.enableRotate = false;
+  controls.enableRotate = true;
   controls.minPolarAngle = 0.3;
   controls.maxPolarAngle = Math.PI * 0.53;
 
@@ -628,7 +628,7 @@ export function createApp(root, options = {}) {
       note.innerHTML = n;
       lastNote = n;
     }
-    note.hidden = !n || stage.height < 230;
+    note.hidden = !n;
     syncLabels();
     stage.invalidate();
   }
@@ -680,7 +680,7 @@ export function createApp(root, options = {}) {
   const anno = createAnnotations({
     stage,
     layer: ui.annoLayer,
-    avoid: [ui.corner, ui.hint, note, arrowBoxes, () => action?.box(), () => action?.ringBox()],
+    avoid: [ui.corner, ui.hint, arrowBoxes, () => action?.box(), () => action?.ringBox()],
   });
   const spot = (dx, dy) => ({ dx, dy });
   const RIGHT_OF = [spot(14, 0), spot(14, -16), spot(14, 16), spot(20, -30)];
@@ -922,7 +922,6 @@ export function createApp(root, options = {}) {
   }
   function setView(view, { animate = true } = {}) {
     s.view = view === '3d' ? '3d' : 'front';
-    controls.enableRotate = s.view === '3d';
     s.userMovedCamera = false;
     syncUI();
     emit('view', { view: s.view });
@@ -930,6 +929,10 @@ export function createApp(root, options = {}) {
     return flyTo(viewPose(), animate ? 0.7 : 0);
   }
   controls.addEventListener('start', () => {
+    if (s.view !== '3d') {
+      s.view = '3d';
+      syncUI();
+    }
     s.userMovedCamera = true;
     tweener.cancel('camera');
   });
@@ -1447,7 +1450,7 @@ export function createApp(root, options = {}) {
     target: actionTarget,
     radius: 26,
     pad: 8,
-    avoid: [ui.corner, ui.hint, note, () => anno.boxes()],
+    avoid: [ui.corner, ui.hint, () => anno.boxes()],
     pulse: o.coach,
     onAct: () => {
       audio.unlock();
@@ -1774,7 +1777,8 @@ export function createApp(root, options = {}) {
 
   // ── buttons, keys ───────────────────────────────────────────────────────────
   function syncUI() {
-    for (const b of ui.$$('[data-view]')) b.classList.toggle('on', b.dataset.view === s.view);
+    const front = ui.$('[data-view="front"]');
+    if (front) front.hidden = s.view !== '3d';
     root.dataset.mode = s.mode === 'quiz' ? 'quiz' : 'explore';
     for (const b of ui.$$('[data-mode]')) {
       const on = b.dataset.mode === root.dataset.mode;
@@ -1881,7 +1885,6 @@ export function createApp(root, options = {}) {
     if (found && ph === 'pierced') s.found.pierced = true;
   }
   syncUI();
-  controls.enableRotate = s.view === '3d';
   jumpPhase(PHASES.includes(o.phase) ? o.phase : 'ready');
   savedPhase = s.phase;
   const startEx = s.ex;
