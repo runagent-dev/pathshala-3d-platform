@@ -162,7 +162,7 @@ export function createApp(root, options = {}) {
       '<div class="pvc-act-slot"></div>',
       `<div class="pvc-act-slot"></div><input type="range" class="me-scrub" min="0" max="1000" step="1" value="0" aria-label="${t('scrub')}" title="${t('scrub')}">`,
     );
-  const ui = buildStudentShell(root, t, { learn: sheetHtml, learnAlign: 'start' });
+  const ui = buildStudentShell(root, t, { layout: 'side', learn: sheetHtml, learnAlign: 'start' });
   const sheet = bindCleanSheet(ui.learn);
   const $ = ui.$;
   const el = {
