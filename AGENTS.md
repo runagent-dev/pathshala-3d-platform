@@ -55,8 +55,11 @@ These are checked where possible (`npm run check`, the browser tests); the rest 
   No toolbars full of options; extras go behind `?ui=full`.
 - Phones first. Every figure must work at 390×700, 390×520, 844×390, 640×400, 800×500 and 1280×800: nothing
   scrolls, every control is on screen and at least 24 px. The layout test checks all six.
-- One layout: the 3D view on top, the panel below (beside it only on short, wide frames such as a phone held
-  sideways; the kit's shell does this, a figure never overrides it).
+- One layout: on every landscape frame the panel sits **beside** the 3D, full height, with a tab to hide it; on a
+  portrait frame it goes below, and a touch phone held upright is asked to turn sideways. The kit's shell does this;
+  a figure never overrides it. Style the panel's content for a narrow column (about 280–400 px).
+- Only the main object(s) in the 3D view, big and clear, on a simple coloured setting: no decorative buildings,
+  trees, crowds or extra props (they slow students' phones and distract). Few arrows, few colours.
 - Accessible: keyboard works (arrows move the part), buttons have labels, nothing relies on colour alone.
 
 **Look and language**

@@ -11,21 +11,27 @@ The owner looked at all the figures together and asked for:
 Every figure is checked against this list, fixed, verified and merged in its own pull request. New figures follow it
 from the start.
 
-## 1. Layout: 3D on top, the controls below
+## 1. Layout: the 3D, the panel beside it
 
-- **Where the panel goes.** The kit's shell (`buildStudentShell`) puts the 3D view on top and the panel below at every
-  size.
-  - The one exception is a short, wide frame, such as a phone held sideways (`max-height: 460px` and an aspect of at
-    least 3:2). There the panel sits on the right, because below it the 3D would be too short.
-  - A figure's CSS must never move the panel beside the 3D anywhere else, for example on desktop or on 800×500.
-- **Heights.**
-  - On a phone held upright (390×700), the 3D gets at least about 55 % of the height.
-  - The panel holds the reading, the example words, the action and the rule. If it is taller than that, tighten it:
-    shorter lines, fewer rows, a two-column grid on wide frames. Don't let it scroll.
-- **The same frame everywhere.**
-  - The tabs (শেখো / পরীক্ষা), the action button and the quiet buttons look and sit the same way as in the other
-    figures.
-  - Use the kit's classes before inventing new ones.
+- **Where the panel goes.** The kit's shell (kit 1.5.0) puts the panel beside the 3D on every landscape frame
+  (aspect ≥ 1 and at least 600 px wide: 640×400, 800×500, 844×390, 1280×800), full height, scrolling if needed,
+  with a tab on the 3D's right edge that hides it. On portrait frames (390×700, 390×520) it stays below, and a touch
+  phone held upright gets a card asking to turn it sideways.
+  - A figure's CSS never moves the panel itself. Remove old figure rules that set `.pvc-shell` columns or rows.
+  - The side panel is a container named `pvc`: a figure's `@container pvc (…)` rules for its sheet measure the
+    panel. Write the sheet for a narrow column (280–400 px): one column, no wide two-column grids.
+- **Heights.** On a phone held upright (390×700) the 3D gets at least about 55 % of the height. Beside the 3D the
+  panel may scroll, but the action button and the reading should be visible without scrolling at 844×390.
+- **The 3D framing.** Beside the panel the 3D view is about 2/3 of the width: frame the camera so the main object
+  fills it at 844×390 and 1280×800, and stays whole with the panel hidden.
+- **The same frame everywhere.** Use the kit's classes before inventing new ones.
+
+## 1b. Only the main object
+
+- Keep the object(s) the idea is about, big, and a simple coloured setting (a floor and a soft coloured backdrop or
+  sky gradient; never white or green). Remove decorative buildings, trees, crowds, pots, flags, extra props.
+- Few arrows and few colours: one arrow per force that matters, each outlined so it reads on its background, each
+  with a short label. If three arrows say the same thing, show one.
 
 ## 2. Text on the 3D view: labels only
 

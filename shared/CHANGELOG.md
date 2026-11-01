@@ -5,6 +5,17 @@ student kit). Every zip records it in `PACKAGE.json` as `kit`. Bump it with each
 patch for fixes, minor for additions, major when a figure has to change to keep working. Run the visual comparison
 across all figures before merging a kit change (`npm run test:visual`).
 
+## 1.5.0
+
+- The student shell puts the panel **beside** the 3D on every landscape frame (book page, desktop, phone held
+  sideways), full height and scrolling, with a tab on the 3D's edge to hide it so the 3D fills the frame. Portrait
+  frames keep the panel below.
+- The side panel is also a container named `pvc`, so a figure's own `@container pvc` rules measure the panel: a
+  figure styled for a phone-wide panel looks right beside the 3D without changes.
+- On a touch phone held upright, a card asks the student to turn it sideways ("turn it" goes fullscreen and locks
+  landscape where the browser allows; "stay" keeps the stacked layout). `?rotate=0` (or `coach=0`) skips it.
+- New figure strings for the shell: `panel_hide`, `panel_show`, `rotate_title`, `rotate_body`, `rotate_go`, `rotate_stay` (added to every figure and template).
+
 ## 1.4.0 (2026-11-01)
 
 Butter smooth on phones, with nothing taken out of the picture (the owner heard the figures are heavy). `stage.js`:

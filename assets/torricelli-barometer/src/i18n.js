@@ -13,6 +13,12 @@
 
 export const STRINGS = {
   bn: {
+    panel_hide: 'লেখা লুকাও',
+    panel_show: 'লেখা দেখাও',
+    rotate_title: 'ফোনটি আড়াআড়ি ধরো',
+    rotate_body: 'পাশে ঘোরালে ছবি বড় হয়, লেখা থাকে পাশে।',
+    rotate_go: 'ঘুরিয়ে দেখো',
+    rotate_stay: 'এভাবেই দেখো',
     title: 'টরিসেলির পরীক্ষা: বাতাসের চাপ পারদ স্তম্ভকে ধরে রাখে',
     view: 'দেখার ধরন',
     view_front_short: 'সামনে',
@@ -205,6 +211,12 @@ export const STRINGS = {
     mis_tk_lid: 'ঢাকনা শুধু উপরের বাতাসকে আটকায়, চাপ দেয় না।',
   },
   en: {
+    panel_hide: 'Hide the text',
+    panel_show: 'Show the text',
+    rotate_title: 'Turn your phone sideways',
+    rotate_body: 'Sideways, the picture is bigger and the text sits beside it.',
+    rotate_go: 'Turn it',
+    rotate_stay: 'Stay like this',
     title: "Torricelli's experiment: the air's pressure holds up a column of mercury",
     view: 'View',
     view_front_short: 'Front',

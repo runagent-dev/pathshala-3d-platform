@@ -1,9 +1,11 @@
-// The student view: the 3D figure on top (layers for labels, the magnifier and pointers, a hint line, and the
-// "front / rotate" + fullscreen buttons), and one panel below it (beside it on short, wide frames) with two
+// The student view: the 3D figure (layers for labels, the magnifier and pointers, a hint line, and the
+// "front / rotate" + fullscreen buttons), and one panel beside it on landscape frames (it can be hidden, so the 3D
+// fills the frame) or below it on portrait ones; on a phone held upright a card asks to turn it sideways. Two
 // tabs: শেখো (the reading written as a named sum, or the clean sheet: one action, one result, one rule) and পরীক্ষা
 // (the test, run by ./quiz.js).
 // Styles: ./student.css. Strings come from the figure: view, view_front_short, view_rotate, fullscreen,
-// tab_learn, tab_quiz, reading, q_again (plus the quiz and pointer strings).
+// tab_learn, tab_quiz, reading, q_again, panel_hide, panel_show, rotate_title, rotate_body, rotate_go, rotate_stay
+// (plus the quiz and pointer strings).
 import { ICONS } from './icons.js';
 
 /**
@@ -154,6 +156,7 @@ export function buildStudentShell(root, t, { learn = '', learnAlign = 'spread' }
         </div>
         <button class="pvc-tool icon-only" data-act="fullscreen" title="${t('fullscreen')}" aria-label="${t('fullscreen')}">${ICONS.expand}</button>
       </div>
+      <button class="pvc-panel-toggle" data-act="panel" aria-expanded="true" title="${t('panel_hide')}" aria-label="${t('panel_hide')}">${ICONS.chevR}</button>
     </div>
 
     <div class="pvc-panel">
@@ -184,9 +187,19 @@ ${learn}
         </section>
       </div>
     </div>
+    <div class="pvc-rotate" hidden>
+      <div class="pvc-rotate-card" role="dialog" aria-label="${t('rotate_title')}">
+        <svg class="pvc-rotate-phone" viewBox="0 0 64 64" aria-hidden="true"><rect x="22" y="8" width="20" height="36" rx="4"/><path d="M14 46a20 20 0 0 0 36 0M50 46l-1-7M50 46l-7-1"/></svg>
+        <p class="pvc-rotate-title">${t('rotate_title')}</p>
+        <p class="pvc-rotate-body">${t('rotate_body')}</p>
+        <button class="pvc-btn primary" data-act="rotate-go">${t('rotate_go')}</button>
+        <button class="pvc-quiet" data-act="rotate-stay">${t('rotate_stay')}</button>
+      </div>
+    </div>
   </div>`;
 
   const $ = (s) => root.querySelector(s);
+  wireLayout(root, t);
   return {
     $,
     $$: (s) => [...root.querySelectorAll(s)],
@@ -203,4 +216,44 @@ ${learn}
     learn: $('.pvc-learn'),
     quiz: $('.pvc-quiz'),
   };
+}
+
+/** The hide/show button for the side panel, and the "turn your phone" card for touch phones held upright. */
+function wireLayout(root, t) {
+  const shell = /** @type {HTMLElement} */ (root.querySelector('.pvc-shell'));
+  const toggle = /** @type {HTMLButtonElement} */ (root.querySelector('.pvc-panel-toggle'));
+  toggle.addEventListener('click', () => {
+    const open = shell.dataset.panel === 'closed';
+    if (open) delete shell.dataset.panel;
+    else shell.dataset.panel = 'closed';
+    const word = t(open ? 'panel_hide' : 'panel_show');
+    toggle.title = word;
+    toggle.setAttribute('aria-label', word);
+    toggle.setAttribute('aria-expanded', String(open));
+  });
+
+  const card = /** @type {HTMLElement} */ (root.querySelector('.pvc-rotate'));
+  const params = new URLSearchParams(location.search);
+  const touch = window.matchMedia?.('(pointer: coarse)').matches;
+  let dismissed = params.get('rotate') === '0' || params.get('coach') === '0';
+  const update = () => {
+    const portrait = root.clientHeight > root.clientWidth * 1.15 && root.clientWidth < 600;
+    card.hidden = dismissed || !touch || !portrait;
+  };
+  card.addEventListener('click', async (e) => {
+    const act = /** @type {HTMLElement} */ (e.target).closest('[data-act]')?.getAttribute('data-act');
+    if (act === 'rotate-stay') dismissed = true;
+    if (act === 'rotate-go') {
+      dismissed = true;
+      try {
+        if (!document.fullscreenElement) await root.requestFullscreen?.();
+        await screen.orientation?.lock?.('landscape');
+      } catch {
+        /* iOS and desktop: the student turns the phone by hand */
+      }
+    }
+    if (act) update();
+  });
+  new ResizeObserver(update).observe(root);
+  update();
 }

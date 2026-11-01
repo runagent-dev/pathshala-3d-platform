@@ -28,6 +28,12 @@ const SYMBOLS = {
 
 export const STRINGS = {
   bn: {
+    panel_hide: 'লেখা লুকাও',
+    panel_show: 'লেখা দেখাও',
+    rotate_title: 'ফোনটি আড়াআড়ি ধরো',
+    rotate_body: 'পাশে ঘোরালে ছবি বড় হয়, লেখা থাকে পাশে।',
+    rotate_go: 'ঘুরিয়ে দেখো',
+    rotate_stay: 'এভাবেই দেখো',
     ...SYMBOLS,
     title: 'প্যাসকেলের সূত্র: হাইড্রোলিক গাড়ি তোলার লিফট',
     view: 'দেখার ধরন',
@@ -151,6 +157,12 @@ export const STRINGS = {
     mis_work_half: 'শক্তি অর্ধেক হয় না: দেওয়া শক্তি পুরোটাই ফিরে আসে।',
   },
   en: {
+    panel_hide: 'Hide the text',
+    panel_show: 'Show the text',
+    rotate_title: 'Turn your phone sideways',
+    rotate_body: 'Sideways, the picture is bigger and the text sits beside it.',
+    rotate_go: 'Turn it',
+    rotate_stay: 'Stay like this',
     ...SYMBOLS,
     title: 'Pascal’s law: a hydraulic car lift',
     view: 'View',

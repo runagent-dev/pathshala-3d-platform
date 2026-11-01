@@ -32,6 +32,12 @@ const syms = Object.fromEntries(Object.entries(SYM).map(([k, v]) => [`sym_${k}`,
 
 export const STRINGS = {
   bn: {
+    panel_hide: 'লেখা লুকাও',
+    panel_show: 'লেখা দেখাও',
+    rotate_title: 'ফোনটি আড়াআড়ি ধরো',
+    rotate_body: 'পাশে ঘোরালে ছবি বড় হয়, লেখা থাকে পাশে।',
+    rotate_go: 'ঘুরিয়ে দেখো',
+    rotate_stay: 'এভাবেই দেখো',
     title: 'ভরবেগ এবং শক্তির সংরক্ষণশীলতা',
     ...UNITS,
     ...syms,
@@ -169,6 +175,12 @@ export const STRINGS = {
     mis_s_p2: ' একটির ভরবেগ বাড়ে, অন্যটির কমে; একই থাকে সম্মিলিত ভরবেগ।',
   },
   en: {
+    panel_hide: 'Hide the text',
+    panel_show: 'Show the text',
+    rotate_title: 'Turn your phone sideways',
+    rotate_body: 'Sideways, the picture is bigger and the text sits beside it.',
+    rotate_go: 'Turn it',
+    rotate_stay: 'Stay like this',
     title: 'Conservation of momentum and energy',
     ...UNITS,
     ...syms,

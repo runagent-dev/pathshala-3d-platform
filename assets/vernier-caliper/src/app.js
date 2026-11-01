@@ -23,7 +23,7 @@ import { createQuiz, QUIZ_KINDS } from './quiz.js';
 import { createCoach } from './coach.js';
 import { measure, format, formatSigned, roundTo, LEAST_COUNTS } from './reading.js';
 
-export const VERSION = '0.3.6';
+export const VERSION = '0.3.7';
 
 /** Wait (briefly) for the Bangla webfont, so the numbers engraved on the scales are drawn with it. */
 export function loadFonts(timeout = 2500) {

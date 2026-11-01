@@ -9,6 +9,12 @@ const NB = '\u00a0';
 
 export const STRINGS = {
   bn: {
+    panel_hide: 'লেখা লুকাও',
+    panel_show: 'লেখা দেখাও',
+    rotate_title: 'ফোনটি আড়াআড়ি ধরো',
+    rotate_body: 'পাশে ঘোরালে ছবি বড় হয়, লেখা থাকে পাশে।',
+    rotate_go: 'ঘুরিয়ে দেখো',
+    rotate_stay: 'এভাবেই দেখো',
     box_with_trolley: 'বাক্সসহ ট্রলি',
     explain_forces: 'দিক ও বল',
     explain_formulas: 'ঘর্ষণের সূত্র',
@@ -157,6 +163,12 @@ export const STRINGS = {
     not_floor: 'তল একই থাকে। বদলায় ঘর্ষণের ধরন: পিছলানোর বদলে গড়ানো।',
   },
   en: {
+    panel_hide: 'Hide the text',
+    panel_show: 'Show the text',
+    rotate_title: 'Turn your phone sideways',
+    rotate_body: 'Sideways, the picture is bigger and the text sits beside it.',
+    rotate_go: 'Turn it',
+    rotate_stay: 'Stay like this',
     box_with_trolley: 'Loaded trolley',
     explain_forces: 'Directions & forces',
     explain_formulas: 'Friction formulas',

@@ -11,6 +11,12 @@
 
 export const STRINGS = {
   bn: {
+    panel_hide: 'লেখা লুকাও',
+    panel_show: 'লেখা দেখাও',
+    rotate_title: 'ফোনটি আড়াআড়ি ধরো',
+    rotate_body: 'পাশে ঘোরালে ছবি বড় হয়, লেখা থাকে পাশে।',
+    rotate_go: 'ঘুরিয়ে দেখো',
+    rotate_stay: 'এভাবেই দেখো',
     title: 'বস্তুর ভেসে থাকা বা ডুবে যাওয়া',
     view: 'দেখার ধরন',
     view_front_short: 'সামনে',
@@ -167,6 +173,12 @@ export const STRINGS = {
     mis_sub_keep: 'ওজন প্লবতার সমান থাকলে যেখানে আছে, সেখানেই থাকবে।',
   },
   en: {
+    panel_hide: 'Hide the text',
+    panel_show: 'Show the text',
+    rotate_title: 'Turn your phone sideways',
+    rotate_body: 'Sideways, the picture is bigger and the text sits beside it.',
+    rotate_go: 'Turn it',
+    rotate_stay: 'Stay like this',
     title: 'Floating or sinking',
     view: 'View',
     view_front_short: 'Front',

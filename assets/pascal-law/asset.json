@@ -5,7 +5,7 @@
   "title": "Pascal's law (প্যাসকেলের সূত্র)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "book": "physics-9-10",
   "page": 141,
   "topic": "5.3.3",
