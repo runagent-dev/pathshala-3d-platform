@@ -128,6 +128,7 @@ export function createApp(root, options = {}) {
           ${cleanSheet(t, { quiet: [{ act: 'new', label: 'act_new', icon: ICONS.reset }], lines: { outcome: 2, rule: 3 } })}`,
   });
   const sheet = bindCleanSheet(ui.learn);
+  ui.$('.pvc-act-row').after(ui.$('.dd-key')); // one order in every lab: the action, then what the colours mean and the readings
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 30, near: 40, far: 40000, environment: 'studio-light', exposure: 1.05 });
@@ -156,9 +157,9 @@ export function createApp(root, options = {}) {
     c.height = 256;
     const ctx = /** @type {CanvasRenderingContext2D} */ (c.getContext('2d'));
     const g = ctx.createLinearGradient(0, 0, 0, 256);
-    g.addColorStop(0, '#5aa9e6');
-    g.addColorStop(0.55, '#a3d0f2');
-    g.addColorStop(1, '#d7ecfa');
+    g.addColorStop(0, '#8eb2d4');
+    g.addColorStop(0.55, '#bcd2e5');
+    g.addColorStop(1, '#e7ebee');
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, 4, 256);
     const sky = new THREE.CanvasTexture(c);

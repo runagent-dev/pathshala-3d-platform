@@ -140,3 +140,9 @@ blue path #1c6fd9 and the orange সরণ arrow #e8590c.
   of north: উত্তর). Should C be "উত্তর" or something finer?
 - The book writes km with Latin digits ("4 km"); the figure writes Bangla digits with km ("৪ km"), like the other
   figures.
+
+## Declutter pass (2026-11, 0.5.0)
+- Only the road, the posts, the cyclist and the two marks: the rice-field patchwork, the village homes, the trees and
+  the ponds are gone; the tile is one calm sand colour with a little grain, under a softer, muted sky.
+- Panel in the labs' one order: the action, then the key (what blue and orange mean), the result, the rule. The old
+  wide-frame rules (for the panel under the 3D) are gone.
