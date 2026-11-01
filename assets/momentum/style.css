@@ -19,11 +19,14 @@ body.bg-transparent { background: transparent; }
 .mo-say .mo-vec { padding-top: 0; }
 .mo-say .mo-vec::before, .mo-say .mo-vec::after { top: -0.14em; }
 
-/* the top row: the idea in the book's words with its formula, and the velocity stepper */
-.mo-top { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px 10px; }
-.mo-idea { margin: 0; display: flex; flex-direction: column; font-size: 16px; line-height: 1.3; color: var(--ink-2); white-space: nowrap; }
+/* the panel in the order of every lab: the velocity (the choice), the actions, the table (the readings), the formula,
+   the book's words, the book's box */
+.mo .pvc-learn { gap: 8px; justify-content: flex-start; }
+.mo-choice { display: flex; align-items: center; gap: 10px; }
+.mo-k { font-size: 15px; font-weight: 600; color: var(--c-v); }
+.mo-idea { margin: 0; display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 12px; font-size: 15px; line-height: 1.3; color: var(--ink-2); }
 .mo-idea b { color: var(--c-p); }
-.mo-formula { font-size: 19px; font-weight: 600; color: var(--ink); }
+.mo-formula { font-size: 18px; font-weight: 600; color: var(--ink); }
 .mo-step { display: inline-flex; align-items: center; gap: 4px; }
 .mo-step .pvc-btn { width: 40px; height: 38px; padding: 0; }
 .mo-step .pvc-btn svg { color: var(--c-v); width: 20px; height: 20px; stroke-width: 2.2; }
@@ -47,15 +50,15 @@ body.bg-transparent { background: transparent; }
 /* what it means now: room kept for the longest line (three lines on a phone), so the 3D view never changes size */
 .mo-say { margin: 0; min-height: 4.4em; font-size: 15px; line-height: 1.45; color: var(--ink-2); }
 
-.mo-foot { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 12px; }
-.mo-acts { display: flex; gap: 8px; }
+.mo-acts { display: flex; align-items: center; gap: 8px; }
+.mo-acts [data-act="flip"] { margin-left: auto; }
 .mo-acts .pvc-btn { height: 44px; font-size: 16px; padding: 0 14px; }
 .mo-acts .pvc-btn.primary { min-width: 142px; } /* room for its longest word (আবার চালাও): it never changes size */
 .mo-acts .pvc-btn.primary svg { color: #fff; }
 .mo-acts .pvc-btn.primary.is-busy { opacity: 0.75; }
 .mo-acts .pvc-btn svg { color: var(--accent); }
 /* the book's box: one line where there is room */
-.mo-box { margin: 0; display: flex; flex-wrap: wrap; column-gap: 0; padding: 2px 9px; border: 1.5px solid #8fb3e0; border-radius: 7px; font-size: 14px; line-height: 1.45; color: var(--ink-2); }
+.mo-box { margin: 0; align-self: flex-start; display: flex; flex-wrap: wrap; column-gap: 0; padding: 2px 9px; border: 1.5px solid #8fb3e0; border-radius: 7px; font-size: 14px; line-height: 1.45; color: var(--ink-2); }
 .mo-box span { white-space: nowrap; }
 .mo-dot { margin: 0 0.35em; }
 
@@ -75,32 +78,8 @@ body.bg-transparent { background: transparent; }
 .mo .pvc-q-feedback { font-size: 14px; }
 .mo .pvc-q-feedback .mo-vec, .mo .pvc-q-feedback b { white-space: nowrap; }
 
-/* wide frames (the panel below, its tabs on the left): the table and the actions side by side */
-@container pvc (min-width: 720px) and (min-height: 461px) {
-  .mo .pvc-learn { display: grid; grid-template-columns: minmax(0, auto) minmax(0, 1fr); grid-template-areas: 'top top' 'tab foot' 'say say'; align-content: start; align-items: center; gap: 6px 26px; }
-  .mo-top { grid-area: top; justify-content: flex-start; gap: 4px 28px; }
-  .mo-idea { flex-direction: row; align-items: baseline; gap: 14px; }
-  .mo-tab { grid-area: tab; align-self: start; }
-  .mo-tab tbody th { max-width: none; white-space: nowrap; }
-  .mo-say { grid-area: say; min-height: 2.9em; }
-  .mo-foot { grid-area: foot; justify-content: flex-start; }
-  .mo-box { flex-direction: column; }
-  .mo-dot { display: none; }
-  .mo .pvc-anno, .mo .pvc-anno-callout { font-size: 15px; }
-  .mo .pvc-anno small { font-size: 13px; }
-  .mo .pvc-q-ask { gap: 6px; }
-  .mo .pvc-q-feedback { font-size: 14px; line-height: 1.4; }
-}
-/* a wide frame that is not very wide (800 × 500): the two buttons share a narrow column */
-@container pvc (min-width: 720px) and (max-width: 900px) and (min-height: 461px) {
-  .mo-acts .pvc-btn { font-size: 15px; padding: 0 12px; }
-  .mo-acts .pvc-btn:not(.primary) svg { display: none; }
-  .mo-acts .pvc-btn.primary { min-width: 136px; }
-}
 /* phones held upright: every row one line high, so the 3D view keeps more than half the height */
 @container pvc (max-width: 560px) {
-  .mo-top { flex-wrap: nowrap; gap: 8px; }
-  .mo-idea { flex-direction: row; align-items: baseline; gap: 8px; font-size: 15px; }
   .mo-formula { font-size: 17px; }
   .mo-step .pvc-btn { width: 40px; height: 38px; }
   .mo-step-v { min-width: 3.7em; font-size: 18px; }
@@ -109,7 +88,6 @@ body.bg-transparent { background: transparent; }
   .mo-tab tbody th { white-space: nowrap; max-width: none; font-size: 14px; }
   .mo-tab tbody td b { line-height: 1.25; }
   .mo-say { font-size: 14px; line-height: 1.4; min-height: 4.2em; }
-  .mo-foot { flex-wrap: nowrap; gap: 8px; }
   .mo-acts .pvc-btn { font-size: 15px; padding: 0 12px; }
   .mo-acts .pvc-btn:not(.primary) svg { display: none; }
   .mo-acts .pvc-btn.primary { min-width: 130px; }
@@ -144,33 +122,37 @@ body.bg-transparent { background: transparent; }
   .mo .pvc-q-feedback { font-size: 13px; }
   .mo .pvc-anno, .mo .pvc-anno-callout { font-size: 12.5px; }
 }
-/* short and wide (phone held sideways): the kit puts the panel beside the scene; the formula with the stepper, the
-   words of it in the table's head */
-@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
-  .mo-top { flex-wrap: nowrap; gap: 6px; }
-  .mo-idea > span:first-child { display: none; }
-  .mo-formula { font-size: 17px; }
-  .mo-step .pvc-btn { width: 38px; height: 36px; }
-  .mo-step-v { font-size: 16.5px; min-width: 3.7em; }
+/* the side panel (280–400 px): the table in smaller type, the names on two lines */
+@container pvc-panel (max-width: 400px) {
   .mo-tab th, .mo-tab td { padding: 0 2px; }
-  .mo-tab thead th { font-size: 11.5px; line-height: 1.2; }
-  .mo-tab thead th small { font-size: 11px; }
+  .mo-tab thead th { font-size: 11.5px; line-height: 1.2; white-space: normal; }
+  .mo-tab thead th small { display: block; margin: 0; font-size: 10.5px; }
   .mo-tab .mo-cap { font-size: 11px; }
-  .mo-tab tbody th { font-size: 12.5px; max-width: 5.6em; }
-  .mo-tab tbody td b { font-size: 16px; line-height: 1.25; }
-  .mo-tab .op { font-size: 15px; }
-  .mo-say { font-size: 13px; line-height: 1.35; min-height: 5.4em; }
-  .mo-foot { gap: 6px; }
-  .mo-acts { gap: 6px; }
-  .mo-acts .pvc-btn { height: 38px; font-size: 14.5px; padding: 0 10px; }
-  .mo-acts .pvc-btn.primary { min-width: 126px; }
+  .mo-tab tbody th { font-size: 12.5px; max-width: 5.4em; white-space: normal; }
+  .mo-tab tbody td b { white-space: nowrap; }
+  .mo-tab tbody td b { font-size: 15.5px; line-height: 1.25; }
+  .mo-tab .op { font-size: 14px; }
+  .mo-acts .pvc-btn { height: 40px; font-size: 14.5px; padding: 0 10px; }
+  .mo-acts .pvc-btn.primary { min-width: 120px; }
+  .mo-acts .pvc-btn:not(.primary) svg { display: none; }
   .mo-box { flex-direction: column; font-size: 12px; line-height: 1.35; padding: 1px 7px; }
   .mo-dot { display: none; }
-  .mo .pvc-q-text { font-size: 14px; }
-  .mo-opt { font-size: 12.5px; }
-  .mo .pvc-q-feedback { font-size: 12.5px; line-height: 1.35; }
 }
-/* a narrow side panel: the flip button without its picture */
-@container pvc-panel (max-width: 290px) {
-  .mo-acts .pvc-btn:not(.primary) svg { display: none; }
+/* a phone held upright: the velocity and the actions share one row, the formula and the book's box another, so the
+   3D view keeps 55 % of the height */
+@container pvc (max-aspect-ratio: 1/1) and (min-height: 640px) {
+  .mo .pvc-learn { flex-direction: row; flex-wrap: wrap; align-content: flex-start; align-items: center; gap: 6px 8px; }
+  .mo .pvc-learn > * { flex: 1 1 100%; }
+  .mo .pvc-learn > .mo-choice { flex: 0 0 auto; gap: 6px; }
+  .mo .pvc-learn > .mo-acts { flex: 1 1 0; justify-content: flex-end; }
+  .mo-acts [data-act="flip"] { margin-left: 0; }
+  .mo .pvc-learn > .mo-idea { flex: 1 1 auto; }
+  .mo .pvc-learn > .mo-box { flex: 0 0 auto; }
+  .mo-k { display: none; }
+  .mo-step-v { min-width: 3.4em; font-size: 17px; }
+  .mo-acts .pvc-btn.primary { min-width: 0; }
+  .mo-say { min-height: 4.2em; }
+  .mo-box { flex-direction: row; }
+  .mo-dot { display: inline; }
+  .mo-tab thead th small { display: inline; margin-left: 3px; }
 }

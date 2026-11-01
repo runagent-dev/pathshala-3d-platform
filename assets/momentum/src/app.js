@@ -99,26 +99,25 @@ export function createApp(root, options = {}) {
   const ui = buildStudentShell(root, t, {
     learnAlign: 'start',
     learn: `
-          <div class="mo-top">
-            <p class="mo-idea"><span>${t('idea')}</span><span class="mo-formula">${t('formula')}</span></p>
+          <div class="mo-choice">
+            <span class="mo-k">${t('speed')}</span>
             <div class="mo-step" role="group" aria-label="${t('speed')}">
               <button class="pvc-btn" data-act="slower" aria-label="${t('speed_down')}">${ICONS.minus}</button>
               <b class="mo-step-v" aria-live="polite"></b>
               <button class="pvc-btn" data-act="faster" aria-label="${t('speed_up')}">${ICONS.plus}</button>
             </div>
           </div>
+          <div class="mo-acts">
+            <button class="pvc-btn primary" data-act="play">${ICONS.play}<span></span></button>
+            <button class="pvc-btn" data-act="flip">${FLIP_ICON}<span>${t('act_flip')}</span></button>
+          </div>
           <table class="mo-tab">
             <thead><tr><td class="mo-cap"><span>${t('at_hit')}</span></td><th class="c-p">${t('col_p')}<small>${t('u_p')}</small></th><td class="op">=</td><th class="c-m">${t('col_m')}<small>${t('u_m')}</small></th><td class="op">×</td><th class="c-v">${t('col_v')}<small>${t('u_v')}</small></th></tr></thead>
             <tbody>${row('far', 'name_truck')}${row('near', 'name_bike')}</tbody>
           </table>
+          <p class="mo-idea"><span>${t('idea')}</span><span class="mo-formula">${t('formula')}</span></p>
           <p class="mo-say"></p>
-          <div class="mo-foot">
-            <div class="mo-acts">
-              <button class="pvc-btn" data-act="flip">${FLIP_ICON}<span>${t('act_flip')}</span></button>
-              <button class="pvc-btn primary" data-act="play">${ICONS.play}<span></span></button>
-            </div>
-            <p class="mo-box"><span>${t('box_unit')}</span><span class="mo-dot" aria-hidden="true">·</span><span>${t('box_dim')}</span></p>
-          </div>`,
+          <p class="mo-box"><span>${t('box_unit')}</span><span class="mo-dot" aria-hidden="true">·</span><span>${t('box_dim')}</span></p>`,
   });
   const $ = ui.$;
   const el = {
