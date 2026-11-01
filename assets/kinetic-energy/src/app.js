@@ -101,7 +101,7 @@ export function createApp(root, options = {}) {
     '<p class="pvc-outcome"',
     `<div class="ke-calc" role="group" aria-label="${t('calc')}">${stepper('m', 'calc_m')}${stepper('v', 'calc_v')}</div><p class="pvc-outcome"`,
   );
-  const ui = buildStudentShell(root, t, { learn: sheetHtml, learnAlign: 'start' });
+  const ui = buildStudentShell(root, t, { layout: 'side', learn: sheetHtml, learnAlign: 'start' });
   const sheet = bindCleanSheet(ui.learn);
   const $ = ui.$;
   const el = {
