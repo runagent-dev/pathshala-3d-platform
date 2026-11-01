@@ -119,6 +119,7 @@ export function createApp(root, options = {}) {
   root.lang = t.lang;
   root.tabIndex = 0;
   const ui = buildStudentShell(root, t, {
+    layout: 'side', // the panel beside the 3D on landscape frames (kit 1.5.0)
     learn: `
           <div class="dd-key" role="group" aria-label="${t('key')}">
             <p class="dd-key-item d">${SWATCH_PATH}<span><b>${t('key_dist')}</b><small>${t('key_dist_sub')}</small></span></p>
