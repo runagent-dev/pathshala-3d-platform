@@ -57,12 +57,6 @@ body.bg-transparent { background: transparent; }
 .gf .pvc-q-text { min-height: 2.8em; }
 .gf .pvc-q-feedback { min-height: 4.35em; }
 
-/* wide frames with the panel below: it stays low (two lines are enough for the sentence and for the worked answer) */
-@container pvc (min-width: 720px) and (min-height: 461px) {
-  .gf-idea { min-height: 4.5em; } /* three lines: the Earth's sentence and its note */
-  .gf .pvc-q-feedback { min-height: 2.9em; }
-  .gf .pvc-q-text { min-height: 1.4em; }
-}
 @container pvc (max-width: 560px) {
   .gf-stops { align-self: stretch; grid-template-columns: repeat(5, minmax(0, 1fr)); }
   .gf-stops button { height: 38px; padding: 0 4px; font-size: 15px; }
@@ -91,20 +85,5 @@ body.bg-transparent { background: transparent; }
   .gf .pvc-q-text { font-size: 15px; line-height: 1.3; min-height: 2.6em; }
   .gf .pvc-q-ask { gap: 5px; }
   .gf .pvc-opt { height: 40px; }
-  .gf .pvc-opt .gf-opt { font-size: 13.5px; }
-}
-/* the panel beside the 3D view (a phone held sideways, short embeds) */
-@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
-  .gf-stops { align-self: stretch; grid-template-columns: repeat(5, auto); }
-  .gf-stops button { height: 34px; padding: 0 3px; font-size: 12.5px; }
-  .gf-idea { font-size: 14px; line-height: 1.45; min-height: 10.15em; } /* seven lines: the sentence and the note */
-  .gf-row { flex-wrap: wrap; min-height: 0; }
-  .gf-fact { font-size: 13px; min-height: 4.35em; flex-basis: 100%; } /* beside the 3D view: room for the apples' three lines */
-  .gf-act { height: 34px; }
-  .gf-forces { display: none; } /* as on short phones: the sentence, the note and the action need the room */
-  .gf .pvc-q-text { font-size: 14.5px; line-height: 1.35; min-height: 4.05em; } /* three lines */
-  .gf .pvc-q-feedback { font-size: 13px; line-height: 1.38; min-height: 6.9em; } /* five lines */
-  .gf .pvc-q-ask { gap: 6px; }
-  .gf .pvc-opt { height: 42px; }
   .gf .pvc-opt .gf-opt { font-size: 13.5px; }
 }

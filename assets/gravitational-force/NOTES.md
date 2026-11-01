@@ -143,3 +143,8 @@ The owner's standard for every figure (docs/agents/polish-pass.md).
   side panel of a phone held sideways the wide-frame rules reserved one line for the test's questions, which take two
   or three, so the sheet changed height from question to question; on phones the English worked answers, two
   questions and several panel lines ran past their room, so the 3D view changed height in English (shortened).
+
+## Declutter (2026-11-01, v0.3.0)
+The apples lie on a plain warm table before a soft blue backdrop and a plain floor (no wood grain, tiled floor,
+plastered walls, skirting or window with trees). The panel sits beside the 3D (kit 1.5.0): the old wide-frame and
+sideways-phone rules for the bottom panel are gone.

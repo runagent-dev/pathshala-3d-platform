@@ -1,4 +1,4 @@
-// The apples stop: two 200 g apples on a wooden table in a room (./setting.js), in real centimetres. The left one
+// The apples stop: two 200 g apples on a plain table before a soft backdrop (./setting.js), in real centimetres. The left one
 // stays put; the student drags the right one along the table. Their pulls on each other (violet arrows from their
 // near sides, equal) are drawn very much bigger than real, in proportion to the pull, so they shrink to a small
 // arrowhead far apart but never vanish. A dimension line on the table in front gives the distance between their
