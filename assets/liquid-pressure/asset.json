@@ -1,0 +1,96 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "liquid-pressure",
+  "title": "Pressure in liquids: three jets from a water tank (তরলের ভেতর চাপ)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 134,
+  "topic": "5.3",
+  "placement": "Book page 134, topic 5.3 (তরলের ভেতর চাপ, Pressure in Liquids): next to চিত্র 5.02 (a beaker with an imagined column of liquid of height h above a surface A: 'তরলের উচ্চতার জন্য নিচের পৃষ্ঠে চাপ সৃষ্টি হয়'), the derivation F = mg = (Ahρ)g, P = F/A = hρg, and the sentences on pressure growing with depth and 1 atm = 101325 Pa (the section runs onto page 135 with চিত্র 5.03).",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "Pressure in liquids (page 134, topic 5.3) in a courtyard at sunset: a tall clear glass tank of rich blue water, 1 m deep, stands on a brick stand in front of a saffron lime-plastered wall with a band of cobalt and white tiles and a marigold garland, over terracotta floor tiles. Three brass spouts on its side, 0.2, 0.4 and 0.6 m below the surface, are stopped with corks. Inside the water the book's figure 5.02 is drawn: an imagined dashed column of water above a teal surface A (100 cm²) at the depth h, a purple arrow for its weight F = (Ahρ)g pressing on A, and a blue dimension for h. The student opens the holes one at a time (the big numbered button, or a tap on a spout): the cork pops, a jet of water arcs out to a stone channel on the floor (the deeper the hole, the harder and further: Torricelli's parabola, drawn to scale) and a bold red arrow at the hole shows the pressure there, its length in proportion to P; the first time, the camera goes close to the hole and back. The surface A can be dragged up and down (or moved with the arrow keys) and the panel works out the book's P = hρg live, with ρ = 1000 kg m⁻³ and g = 9.8 m s⁻² and Bangla digits. The rule grows in the book's words: the weight of the column above A, pressure growing with depth in a liquid of a given density (the depth gauge beside the tank fills red, deeper is redder), about one atmosphere (1 atm = 101325 Pa) for every ten metres of water. Test tab: 5 questions (the pressure at a marked hole with its depth read off the gauge; why the bottom jet goes furthest; A lowered to twice the depth; where the pressure on A comes from with the holes closed; the pressure 10 m down), every wrong choice a real mistake with its own note. Phone-first, Bangla and English.",
+  "tags": ["pressure", "liquid", "depth", "density", "hρg", "pascal", "water", "jets", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "h",
+      "label": "Depth of the surface A",
+      "type": "number",
+      "default": "0.2",
+      "placeholder": "m",
+      "help": "0.05 to 0.95 m in steps of 0.05"
+    },
+    {
+      "name": "open",
+      "label": "Holes open at the start",
+      "type": "select",
+      "options": [["none", "all closed"], ["top", "the top hole"], ["top,mid", "top and middle"], ["all", "all three"]],
+      "default": "none"
+    },
+    {
+      "name": "look",
+      "label": "Camera",
+      "type": "select",
+      "options": [["all", "the whole tank and the jets"], ["close", "close to the surface A"]],
+      "default": "all"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring round the next spout pulses", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "open": "top" } },
+    { "name": "set", "payload": { "open": "all", "animate": false } },
+    { "name": "set", "payload": { "h": 0.4 } },
+    { "name": "set", "payload": { "look": "close" } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": [
+    "ready",
+    "change",
+    "open",
+    "look",
+    "view",
+    "dragstart",
+    "dragend",
+    "practice-start",
+    "practice-result",
+    "practice-end"
+  ],
+  "export": {
+    "poster": { "params": { "coach": "0", "open": "all", "h": "0.4" } },
+    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "open": "all", "animate": false } }] }]
+  }
+}
