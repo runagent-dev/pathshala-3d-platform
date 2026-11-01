@@ -21,6 +21,7 @@ import { ICONS } from '@shared/student/icons.js';
 import { createI18n } from './i18n.js';
 import { createWalker } from './walker.js';
 import { createGround } from './ground.js';
+import { createSetting, skyTexture } from './setting.js';
 import { GROUND_IDS, MASS, SHOWN_TIME, SLOW, accelOn, bodyAt, progress, pushOn, realTime, round, slipAt, speedAt } from './reading.js';
 
 export const DEFAULTS = {
@@ -45,9 +46,11 @@ const BALL = 0.03; // the foot touches the ground this far behind the toe's tip:
 const ARROW_Z = 0.22; // in front of the feet, so nothing hides them
 const F_Y = 0.03; // the foot's push lies on the ground
 const MF_Y = 0.118; // the ground's push starts at the shoe
-const TOP_ROOM = 56; // px kept clear at the top of the view for the corner buttons and the note (less on a wide view)
+const TOP_ROOM = 52; // px kept clear at the top of the view for the corner buttons
 const TAP = { move: 10, ms: 600 };
-const FRAME = { min: new THREE.Vector3(-0.82, -0.35, -0.4), max: new THREE.Vector3(3.02, 1.78, 0.5) };
+const FRAME = { min: new THREE.Vector3(-0.82, -0.35, -0.4), max: new THREE.Vector3(3.12, 1.78, 0.5) };
+/** Everything that casts a shadow, over the whole push-off on every ground: the shadow camera is fitted round it. */
+const CASTERS = new THREE.Box3(new THREE.Vector3(-0.75, -0.02, -0.32), new THREE.Vector3(1.3, 1.86, 0.32));
 const DIRS = { front: new THREE.Vector3(0, 0.16, 1).normalize(), '3d': new THREE.Vector3(0.62, 0.34, 1).normalize() };
 
 /** Where the labels may go round their point (px, best first): rows of offsets, nearest row first. */
@@ -64,6 +67,28 @@ const SPOTS = {
   ],
 };
 const toSpots = (list) => list.map(([dx, dy]) => ({ dx, dy }));
+
+/** Fit a directional light's shadow camera tightly round a box (in the light's own view), with a small margin. */
+function fitShadow(light, box) {
+  const cam = light.shadow.camera;
+  light.updateMatrixWorld();
+  light.target.updateMatrixWorld();
+  cam.position.copy(light.position);
+  cam.lookAt(light.target.position);
+  cam.updateMatrixWorld();
+  const inv = cam.matrixWorldInverse.copy(cam.matrixWorld).invert();
+  const p = new THREE.Vector3();
+  const lo = new THREE.Vector3(Infinity, Infinity, Infinity);
+  const hi = new THREE.Vector3(-Infinity, -Infinity, -Infinity);
+  for (let i = 0; i < 8; i++) {
+    p.set(i & 1 ? box.max.x : box.min.x, i & 2 ? box.max.y : box.min.y, i & 4 ? box.max.z : box.min.z).applyMatrix4(inv);
+    lo.min(p);
+    hi.max(p);
+  }
+  const m = 0.08;
+  Object.assign(cam, { left: lo.x - m, right: hi.x + m, bottom: lo.y - m, top: hi.y + m, near: Math.max(0.05, -hi.z - 0.5), far: -lo.z + 4 });
+  cam.updateProjectionMatrix();
+}
 
 export function createApp(root, options = {}) {
   const o = { ...DEFAULTS, ...options };
@@ -87,11 +112,12 @@ export function createApp(root, options = {}) {
   const sheet = bindCleanSheet(ui.learn);
   const timeline = document.createElement('div');
   timeline.className = 'wtl-timeline';
-  timeline.innerHTML = `<div><label for="walk-moment">${t('timeline')}</label><output></output></div><input id="walk-moment" type="range" min="0" max="${SHOWN_TIME}" step="0.02" aria-label="${t('timeline')}"><div class="wtl-steps">${[0, 0.9, SHOWN_TIME].map((at, i) => `<button type="button" data-moment="${at}">${t(`step_${i}`)}</button>`).join('')}</div>`;
+  // the moments (three jumps) and how time is shown on top, the slider and the real time under them
+  timeline.innerHTML = `<div class="wtl-time-head"><div class="wtl-steps">${[0, 0.9, SHOWN_TIME].map((at, i) => `<button type="button" data-moment="${at}">${t(`step_${i}`)}</button>`).join('')}</div><span class="wtl-note" aria-live="polite"></span></div><div class="wtl-time-row"><input id="walk-moment" type="range" min="0" max="${SHOWN_TIME}" step="0.02" aria-label="${t('timeline')}"><output for="walk-moment"></output></div>`;
   ui.$('.pvc-act-row').after(timeline);
   const analysis = document.createElement('section');
   analysis.className = 'wtl-analysis';
-  analysis.innerHTML = `<button type="button" data-act="explain"><b>${t('pair_title')}</b><span>${t('explain_link')}</span></button><div class="wtl-live-values"></div>`;
+  analysis.innerHTML = `<button type="button" data-act="explain"><b>${t('pair_title')}</b><span>${t('explain_link')}</span></button><div class="wtl-live-values"><div class="wtl-pair"><div class="wtl-pair-row foot"><span aria-hidden="true">←</span><span><i class="wtl-by">${t('by_foot')} </i>${t('on_ground')}</span><b></b></div><div class="wtl-pair-row person"><span aria-hidden="true">→</span><span><i class="wtl-by">${t('by_ground')} </i>${t('on_person')}</span><b></b></div></div><div class="wtl-calculation"></div><small class="wtl-motion"></small></div>`;
   ui.$('.pvc-outcome').after(analysis);
   const explainDialog = document.createElement('dialog');
   explainDialog.className = 'wtl-dialog';
@@ -104,26 +130,14 @@ export function createApp(root, options = {}) {
 
   const outcomeEl = /** @type {HTMLElement} */ (ui.$('.pvc-outcome'));
   outcomeEl.setAttribute('aria-live', 'polite');
-  const note = document.createElement('div');
-  note.className = 'wtl-note';
-  ui.stage.append(note);
+  const note = /** @type {HTMLElement} */ (timeline.querySelector('.wtl-note'));
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 30, near: 0.01, far: 100, environment: 'studio-light' });
   const { camera, controls, scene } = stage;
-  const backgroundCanvas = document.createElement('canvas');
-  backgroundCanvas.width = 16;
-  backgroundCanvas.height = 256;
-  const bgContext = backgroundCanvas.getContext('2d');
-  const gradient = bgContext.createLinearGradient(0, 0, 0, 256);
-  gradient.addColorStop(0, '#172653');
-  gradient.addColorStop(1, '#125f73');
-  bgContext.fillStyle = gradient;
-  bgContext.fillRect(0, 0, 16, 256);
-  const background = new THREE.CanvasTexture(backgroundCanvas);
-  background.colorSpace = THREE.SRGBColorSpace;
+  const background = skyTexture();
   scene.background = o.bg === 'transparent' ? null : background;
-  scene.add(new THREE.HemisphereLight(0xe4f7ff, 0x193957, 0.7));
+  scene.add(new THREE.HemisphereLight(0xdcecff, 0x8a7356, 0.75));
   controls.enablePan = false;
   const tweener = createTweener();
   stage.addTicker((dt) => tweener.tick(dt));
@@ -132,31 +146,35 @@ export function createApp(root, options = {}) {
   const world = new THREE.Group();
   world.name = 'WalkingThirdLaw';
   scene.add(world);
-  const ground = createGround({ anisotropy: stage.renderer.capabilities.getMaxAnisotropy() });
+  const anisotropy = Math.min(8, stage.renderer.capabilities.getMaxAnisotropy());
+  const ground = createGround({ anisotropy });
   const walker = createWalker();
-  world.add(ground.root, walker.root);
-  const detail = createContactDetail(walker.rearShoe, COLORS);
+  const setting = createSetting({ anisotropy });
+  setting.root.visible = o.bg !== 'transparent';
+  world.add(setting.root, ground.root, walker.root);
+  const detail = createContactDetail(walker.rearShoe, COLORS, { anisotropy });
   world.add(detail.root, detail.guide);
 
   const shadows = o.shadow && o.bg !== 'transparent';
-  const sun = new THREE.DirectionalLight(0xffecd6, shadows ? 1.1 : 0.9);
-  sun.position.set(1.4, 3.2, 2.2);
+  // the morning sun from the front right: the student's shadow falls behind, on the path and the yard
+  const sun = new THREE.DirectionalLight(0xfff0d8, shadows ? 1.25 : 1.05);
+  sun.position.set(1.6, 3.4, 2.4);
   sun.target.position.set(0.3, 0.5, 0);
   scene.add(sun, sun.target);
-  const rim = new THREE.DirectionalLight(0x85cfff, 0.65);
+  const rim = new THREE.DirectionalLight(0xbfdcff, 0.5);
   rim.position.set(-2, 2, -2);
   scene.add(rim);
   if (shadows) {
+    // soft PCF on a shadow camera fitted round the student over the whole push-off: 1024 px is as sharp as 2048 on
+    // a loose box, and only the casters are drawn into it
     stage.renderer.shadowMap.enabled = true;
-    stage.renderer.shadowMap.type = THREE.VSMShadowMap;
+    stage.renderer.shadowMap.type = THREE.PCFShadowMap;
     sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
-    Object.assign(sun.shadow.camera, { left: -1.6, right: 1.8, top: 2, bottom: -1, near: 0.5, far: 9 });
-    sun.shadow.radius = 6;
-    sun.shadow.blurSamples = 12;
-    sun.shadow.bias = -0.0004;
-    sun.shadow.normalBias = 0.01;
-    sun.shadow.camera.updateProjectionMatrix();
+    sun.shadow.mapSize.set(1024, 1024);
+    sun.shadow.radius = 3;
+    fitShadow(sun, CASTERS);
+    sun.shadow.bias = -0.0005;
+    sun.shadow.normalBias = 0.02;
   }
 
   // the two force arrows: the foot's push on the ground (backward), the ground's push on the student (forward)
@@ -202,6 +220,7 @@ export function createApp(root, options = {}) {
   const FWD = new THREE.Vector3(1, 0, 0);
   const BACK = new THREE.Vector3(-1, 0, 0);
   const pv = new THREE.Vector3();
+  const worldToe = new THREE.Vector3();
   const toScreen = (p) => {
     pv.copy(p).project(camera);
     return { x: (pv.x * 0.5 + 0.5) * stage.width, y: (-pv.y * 0.5 + 0.5) * stage.height };
@@ -235,7 +254,7 @@ export function createApp(root, options = {}) {
     detail.root.visible = detail.guide.visible = s.mode !== 'quiz';
     detail.set({
       toe: walker.toe(),
-      worldToe: walker.toe().clone().add(walker.root.position),
+      worldToe: worldToe.copy(walker.toe()).add(walker.root.position),
       slip: slipAt(t1, s.ground),
       length: len,
       alpha: a,
@@ -264,12 +283,33 @@ export function createApp(root, options = {}) {
     }
     return out;
   }
+  const ends = { a: new THREE.Vector3(), b: new THREE.Vector3() };
+  const shoeBox = new THREE.Box3();
+  /** The enlarged shoe on the card, on screen: the force labels keep off it where there is room (not on a phone). */
+  function detailShoeBox() {
+    if (!detail.root.visible || stage.width < 600) return null;
+    detail.shoeBox(shoeBox);
+    let left = Infinity;
+    let top = Infinity;
+    let right = -Infinity;
+    let bottom = -Infinity;
+    for (let i = 0; i < 8; i++) {
+      const p = toScreen(
+        ends.a.set(i & 1 ? shoeBox.max.x : shoeBox.min.x, i & 2 ? shoeBox.max.y : shoeBox.min.y, i & 4 ? shoeBox.max.z : shoeBox.min.z),
+      );
+      left = Math.min(left, p.x);
+      right = Math.max(right, p.x);
+      top = Math.min(top, p.y);
+      bottom = Math.max(bottom, p.y);
+    }
+    return { left, top, right, bottom };
+  }
   function arrowBoxes() {
     const out = [];
     for (const a of [...Object.values(arrows), ...(detail.root.visible ? Object.values(detail.arrows) : [])]) {
       if (!a.root.visible) continue;
-      const pa = toScreen(a.root.getWorldPosition(new THREE.Vector3()));
-      const pb = toScreen(a.root.parent.localToWorld(a.tip.clone()));
+      const pa = toScreen(a.root.getWorldPosition(ends.a));
+      const pb = toScreen(a.root.parent.localToWorld(ends.b.copy(a.tip)));
       const n = Math.max(1, Math.ceil(Math.hypot(pb.x - pa.x, pb.y - pa.y) / 9));
       for (let i = 0; i <= n; i++) {
         const x = pa.x + ((pb.x - pa.x) * i) / n;
@@ -281,7 +321,7 @@ export function createApp(root, options = {}) {
   }
 
   // ── the labels: each force named where it acts; the start line ──
-  const anno = createAnnotations({ stage, layer: ui.annoLayer, avoid: [ui.corner, note, ui.hint, () => action?.ringBox()] });
+  const anno = createAnnotations({ stage, layer: ui.annoLayer, avoid: [ui.corner, ui.hint, () => action?.ringBox()] });
   const mid = { f: new THREE.Vector3(), mf: new THREE.Vector3() };
   const midOf = (key) => () => {
     if (s.mode !== 'quiz') return detail.point(key);
@@ -292,17 +332,9 @@ export function createApp(root, options = {}) {
   const labelState = { f: '', mf: '', start: false };
   /** The symbols F and −F show only once all three grounds are found: the rule then names them (the book's picture). */
   const symbolsOn = () => s.mode === 'explore' && !s.plain && triedCount() === GROUND_IDS.length;
-  /** The text of a force's label now: who pushes whom in plain words (the symbol later); a letter in a test question. */
+  /** The text of a force's label now: whose push it is and how big (the symbol later); a letter in a test question. */
   function labelText(key) {
-    const words = t(
-      s.mode !== 'quiz' && (stage.height < 260 || stage.width < 480)
-        ? key === 'f'
-          ? 'l_ground_compact'
-          : 'l_person_compact'
-        : key === 'f'
-          ? 'l_f'
-          : 'l_mf',
-    );
+    const words = t(key === 'f' ? 'l_f' : 'l_mf', { n: pushOn(s.ground) });
     if (s.plain) {
       if (!s.numbers) return `<b>${s.letters[key]}</b>`;
       return `${t(key === 'f' ? 'l_f_short' : 'l_mf_short')}: <b>${key === 'f' ? t('e_val', { n: pushOn(s.ground) }) : '?'}</b>`;
@@ -328,9 +360,9 @@ export function createApp(root, options = {}) {
           color,
           spots:
             s.mode !== 'quiz'
-              ? toSpots(rows(key === 'f' ? [28, 46, 64, -28] : [-28, -46, -64, 28], [0, 30, -30, 65, -65, 100, -100]))
+              ? toSpots(rows(key === 'f' ? [28, 46, 64, -28] : [-28, -46, -64, 28], [0, 12, -12, 30, -30, 65, -65, 100, -100]))
               : toSpots(s.plain && !s.numbers ? SPOTS[key].map(([x, y]) => [x * 0.5, y * 0.8]) : SPOTS[key]),
-          avoid: [() => bodyBoxes(), arrowBoxes],
+          avoid: [() => bodyBoxes(), arrowBoxes, detailShoeBox],
           optional: s.mode !== 'quiz',
         });
         labelState[key] = sig;
@@ -344,12 +376,13 @@ export function createApp(root, options = {}) {
         text: t('contact_title'),
         point: () => detail.title(),
         kind: 'detail',
-        dx: 0,
+        dx: 6,
         dy: -12,
         optional: true,
+        // over the card's top-left corner, clear of the two force labels over its right half
         spots: [
-          { dx: 0, dy: -12 },
-          { dx: 0, dy: -30 },
+          { dx: 6, dy: -12 },
+          { dx: 6, dy: -30 },
         ],
       });
     if (s.mode === 'quiz') anno.remove('contact-title');
@@ -404,13 +437,13 @@ export function createApp(root, options = {}) {
     return `${t(`rule_${g}`)}${book}`;
   }
 
+  /** How time is shown, in the timeline's head (in the panel, not on the picture): slowed down, or stopped. */
   let lastNote = '';
   function noteNow() {
-    const html =
-      s.phase === 'push' ? t(s.paused ? 'note_paused' : 'note_slow', { k: SLOW }) : s.phase === 'held' ? `${ICONS.pause}${t('note_held')}` : '';
+    const html = s.phase === 'push' ? t(s.paused ? 'note_paused' : 'note_slow', { k: SLOW }) : s.phase === 'held' ? t('note_held') : '';
     if (html === lastNote) return;
     note.innerHTML = lastNote = html;
-    note.classList.toggle('held', s.phase === 'held');
+    note.classList.toggle('held', s.phase !== 'push' || s.paused);
   }
 
   /** Write the panel and the action (only what changed: it runs on every frame of a run). */
@@ -431,24 +464,39 @@ export function createApp(root, options = {}) {
   }
 
   // ── the run ─────────────────────────────────────────────────────────────────
-  let lastAnalysis = '';
+  // the live values: each written only when its text changes (this runs on every frame of a run)
+  const live = {
+    pair: /** @type {HTMLElement[]} */ ([...analysis.querySelectorAll('.wtl-pair-row b')]),
+    calc: /** @type {HTMLElement} */ (analysis.querySelector('.wtl-calculation')),
+    motion: /** @type {HTMLElement} */ (analysis.querySelector('.wtl-motion')),
+    time: /** @type {HTMLOutputElement} */ (timeline.querySelector('output')),
+    steps: /** @type {HTMLButtonElement[]} */ ([...timeline.querySelectorAll('[data-moment]')]),
+    pause: /** @type {HTMLButtonElement} */ (ui.$('[data-act="pause"]')),
+  };
+  const written = new Map();
+  /** el.innerHTML = html, only when it changed. */
+  const write = (el, html) => {
+    if (written.get(el) === html) return;
+    written.set(el, html);
+    el.innerHTML = html;
+  };
   function updateAnalysis() {
     const active = s.phase !== 'rest' && s.shown > 0;
     const force = active ? pushOn(s.ground) : 0;
-    const html = `<div class="wtl-pair-row foot"><span>←</span><span>${t('on_ground')}</span><b>${t('res_push', { n: force })}</b></div><div class="wtl-pair-row person"><span>→</span><span>${t('on_person')}</span><b>${t('res_push', { n: force })}</b></div><div class="wtl-calculation">${t('live_acceleration', { force, mass: MASS, two: 2, a: active ? round(accelOn(s.ground), 2) : 0 })}</div><small>${t('live_motion', { moved: round(bodyAt(realNow(), s.ground), 2), slip: round(slipAt(realNow(), s.ground), 2) })}</small>`;
-    if (html !== lastAnalysis) {
-      analysis.querySelector('.wtl-live-values').innerHTML = html;
-      lastAnalysis = html;
-    }
-    scrubber.value = String(s.shown);
-    timeline.querySelector('output').textContent = t('timeline_time', { time: round(realNow(), 2) });
+    for (const b of live.pair) write(b, t('res_push', { n: force }));
+    write(live.calc, t('live_acceleration', { force, mass: MASS, two: 2, a: active ? round(accelOn(s.ground), 2) : 0 }));
+    write(live.motion, t('live_motion', { moved: round(bodyAt(realNow(), s.ground), 2), slip: round(slipAt(realNow(), s.ground), 2) }));
+    if (scrubber.value !== String(s.shown)) scrubber.value = String(s.shown);
+    write(live.time, t('timeline_time', { time: round(realNow(), 2) }));
     const phase = s.phase === 'rest' ? 0 : progressNow() < 0.7 ? 1 : 2;
-    for (const b of timeline.querySelectorAll('button'))
-      b.setAttribute('aria-pressed', String(Number(b.dataset.moment) === [0, 0.9, SHOWN_TIME][phase]));
-    const pause = ui.$('[data-act="pause"]');
-    pause.disabled = s.phase !== 'push';
-    pause.innerHTML = s.paused ? ICONS.play : ICONS.pause;
-    pause.setAttribute('aria-label', t(s.paused ? 'act_resume' : 'act_pause'));
+    for (const b of live.steps) {
+      const on = String(Number(b.dataset.moment) === [0, 0.9, SHOWN_TIME][phase]);
+      if (b.getAttribute('aria-pressed') !== on) b.setAttribute('aria-pressed', on);
+    }
+    live.pause.disabled = s.phase !== 'push';
+    write(live.pause, s.paused ? ICONS.play : ICONS.pause);
+    const label = t(s.paused ? 'act_resume' : 'act_pause');
+    if (live.pause.getAttribute('aria-label') !== label) live.pause.setAttribute('aria-label', label);
   }
   let dialogResume = false;
   function closeExplanation() {
@@ -475,11 +523,11 @@ export function createApp(root, options = {}) {
     drawScene();
     refresh();
   }
+  // every way of closing it (the button, Escape, a reset or the test) ends in the dialog's close event: resume there, once
   explainDialog.addEventListener('close', closeExplanation);
   explainDialog.addEventListener('cancel', (e) => {
     e.preventDefault();
     explainDialog.close();
-    closeExplanation();
   });
   let lastAct = -1e9;
   /** A new ground: the student stands still on it, ready to push. */
@@ -694,7 +742,7 @@ export function createApp(root, options = {}) {
     label: `act_${s.ground}`,
     target: () => (s.mode === 'explore' && s.phase === 'rest' ? walker.rearShoe : null),
     pad: 14,
-    avoid: [ui.corner, ui.hint, note, () => anno.boxes(), () => bodyBoxes('rearFoot')],
+    avoid: [ui.corner, ui.hint, () => anno.boxes(), () => bodyBoxes('rearFoot')],
     pulse: o.coach,
     onAct: () => {
       audio.unlock();
@@ -916,7 +964,6 @@ export function createApp(root, options = {}) {
         break;
       case 'explain-close':
         explainDialog.close();
-        closeExplanation();
         break;
       case 'q-next':
         quiz.next();
@@ -939,7 +986,6 @@ export function createApp(root, options = {}) {
       if (e.key === 'Escape') {
         e.preventDefault();
         explainDialog.close();
-        closeExplanation();
       }
       return;
     }
@@ -1076,11 +1122,16 @@ export function createApp(root, options = {}) {
     startPractice: () => quiz.start(),
     capture(opts = {}) {
       const before = scene.background;
-      if (opts.background !== undefined) scene.background = null;
+      const yard = setting.root.visible;
+      if (opts.background !== undefined) {
+        scene.background = null;
+        setting.root.visible = false;
+      }
       try {
         return stage.capture(opts);
       } finally {
         scene.background = before;
+        setting.root.visible = yard;
         stage.invalidate();
       }
     },

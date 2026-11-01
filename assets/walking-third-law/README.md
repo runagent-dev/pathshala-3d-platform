@@ -2,8 +2,9 @@
 
 **Where it goes in the book:** Book page 86, topic 3.8 (example): how we walk. Next to চিত্র ৩.১২ (a person's foot pushing the ground back, the ground pushing the person forward, labelled F and −F).
 
-A vivid 3D lesson for the textbook's walking example. A detailed articulated person pushes off while an enlarged
-live view of the same shoe separates the equal opposite forces on the ground and the person. Firm ground, loose
+A 3D lesson for the textbook's walking example, set in a school yard on a clear morning. A detailed articulated
+person pushes off while an enlarged live view of the same shoe, on a card of its own, separates the equal opposite
+forces on the ground and the person. Firm ground, loose
 sand and a slippery floor change grip, forward motion and backward slip. The two arrows appear simultaneously
 and use one force scale within each view.
 

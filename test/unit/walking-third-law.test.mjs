@@ -155,7 +155,7 @@ describe('walking: every string, both languages', () => {
   it('numbers show Bangla digits, with the book’s unit নিউটন; English keeps N', () => {
     const t = createI18n('bn');
     assert.equal(t('res_push', { n: 100 }), '১০০ নিউটন');
-    assert.equal(t('note_slow', { k: r.SLOW }), 'সময় ৪ গুণ ধীর করে দেখানো');
+    assert.equal(t('note_slow', { k: r.SLOW }), 'সময় ৪ গুণ ধীর');
     assert.ok(t('out_hard', { n: 100 }).includes('<b>১০০ নিউটন</b>'));
     assert.equal(createI18n('en')('res_push', { n: 100 }), '100 N');
   });
@@ -175,9 +175,13 @@ describe('walking: every string, both languages', () => {
       assert.ok(!v.includes('সাবান-পানি'), k);
     }
   });
-  it('the two pushes are named in plain words first: who pushes whom, no symbol', () => {
-    assert.equal(STRINGS.bn.l_f, 'পা মাটিকে ধাক্কা দিচ্ছে');
-    assert.equal(STRINGS.bn.l_mf, 'মাটি মানুষটিকে ধাক্কা দিচ্ছে');
+  it('the two pushes are named in plain words first: whose push and how big, no symbol', () => {
+    const t = createI18n('bn');
+    assert.equal(t('l_f', { n: 100 }), 'পায়ের ধাক্কা ১০০ নিউটন');
+    assert.equal(t('l_mf', { n: 100 }), 'মাটির ধাক্কা ১০০ নিউটন');
+    // short labels only on the view (docs/agents/polish-pass.md): at most about 24 characters with the symbol
+    for (const lang of ['bn', 'en'])
+      for (const k of ['l_f', 'l_mf', 'l_start', 'contact_title']) assert.ok(createI18n(lang)(k, { n: 100 }).length <= 26, `${lang} ${k}`);
     for (const lang of ['bn', 'en']) {
       for (const k of Object.keys(STRINGS[lang]).filter((x) => x !== 'title')) {
         assert.ok(

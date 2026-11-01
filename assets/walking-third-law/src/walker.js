@@ -6,7 +6,12 @@
 // on its toes behind, the front heel landing ahead). It is worked in the hip's own frame, so the same pose fits every
 // ground: the caller moves the root forward by how far the body really went. The rear foot's toe then keeps its place
 // on the ground when the body moves as far as the leg stretches (firm ground) and slides back when it does not.
+//
+// Drawn with few meshes and the detail kept: the parts that move together (the head, the trunk and the collar on the
+// upper body; each hand; each shoe with its sole, tread and laces) are merged once, one mesh per material, the small
+// plain colours sharing one vertex-coloured material.
 import * as THREE from 'three';
+import { mergeStatic } from './merge.js';
 import { PUSH_TIME, stretchAt } from './reading.js';
 
 const HIP_Y = 0.86; // the pelvis (the upper body leans about it)
@@ -44,6 +49,9 @@ export function createWalker({ shirt = '#ff593e', trousers = '#2542a5' } = {}) {
     soleSide: mat('SoleEdge', '#d8b36c'),
     belt: mat('Belt', '#1d2026', 0.5),
   };
+  // the small plain colours (collar, buttons, eyes, lips, hair, belt, shoes and their soles) in one material
+  const paint = new THREE.MeshStandardMaterial({ name: 'StudentPaint', vertexColors: true, roughness: 0.68, metalness: 0 });
+  const painted = [M.hair, M.shoe, M.sole, M.eye, M.white, M.lips, M.seam, M.soleSide, M.belt];
   const limbGeometry = (profile) =>
     new THREE.LatheGeometry(
       profile.map(([y, r]) => new THREE.Vector2(r, y)),
@@ -106,7 +114,7 @@ export function createWalker({ shirt = '#ff593e', trousers = '#2542a5' } = {}) {
     return mesh;
   };
   const ball = (r, m, parent) => {
-    const mesh = new THREE.Mesh(new THREE.SphereGeometry(r, 24, 16), m);
+    const mesh = new THREE.Mesh(new THREE.SphereGeometry(r, r < 0.02 ? 10 : 24, r < 0.02 ? 8 : 16), m);
     parent.add(mesh);
     return mesh;
   };
@@ -152,12 +160,18 @@ export function createWalker({ shirt = '#ff593e', trousers = '#2542a5' } = {}) {
   belt.position.y = 0.04;
   belt.scale.set(0.74, 1, 1);
   upper.add(belt);
-  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.05, 0.08, 10), M.skin);
-  neck.position.y = 0.55;
-  upper.add(neck);
+  const neckMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.05, 0.08, 10), M.skin);
+  neckMesh.position.y = 0.55;
+  upper.add(neckMesh);
   const head = ball(0.1, M.skin, upper);
   head.position.set(0.01, 0.66, 0);
-  head.name = 'AnatomicalHead';
+  // where the neck and the head are, for the boxes labels keep off (the meshes themselves are merged below)
+  const neck = new THREE.Object3D();
+  neck.position.copy(neckMesh.position);
+  const headMark = new THREE.Object3D();
+  headMark.name = 'AnatomicalHead';
+  headMark.position.copy(head.position);
+  upper.add(neck, headMark);
   head.scale.set(0.94, 1.1, 0.85);
   const jaw = ball(0.072, M.skin, upper);
   jaw.position.set(0.034, 0.61, 0);
@@ -234,6 +248,7 @@ export function createWalker({ shirt = '#ff593e', trousers = '#2542a5' } = {}) {
     elbow: ball(0.031, M.skin, root),
     cuff: ball(0.042, M.seam, root),
   }));
+  for (const arm of arms) mergeStatic(arm.hand, { paint: { from: painted, material: paint } });
   const shoeShape = new THREE.Shape();
   shoeShape.moveTo(-0.108, -0.034);
   shoeShape.quadraticCurveTo(-0.12, -0.034, -0.114, 0.026);
@@ -269,11 +284,12 @@ export function createWalker({ shirt = '#ff593e', trousers = '#2542a5' } = {}) {
     side,
     thigh: tube(M.trousers, root),
     shin: tube(M.trousers, root),
-    foot: new THREE.Mesh(shoeGeometry, M.shoe),
+    foot: new THREE.Group(),
     knee: ball(0.051, M.trousers, root),
   }));
   for (const l of legs) {
     root.add(l.foot);
+    l.foot.add(new THREE.Mesh(shoeGeometry, M.shoe));
     l.thigh.geometry = thighGeometry;
     l.shin.geometry = calfGeometry;
     const sole = new THREE.Mesh(soleGeometry, M.sole);
@@ -294,6 +310,8 @@ export function createWalker({ shirt = '#ff593e', trousers = '#2542a5' } = {}) {
       lace.position.set(-0.03 + i * 0.026, FOOT.thick / 2 + 0.001, 0);
       l.foot.add(lace);
     }
+    for (const o of l.foot.children) o.castShadow = true;
+    mergeStatic(l.foot, { paint: { from: painted, material: paint } });
   }
   const hipBall = ball(0.13, M.trousers, root);
   hipBall.scale.set(0.75, 0.55, 1);
@@ -421,6 +439,7 @@ export function createWalker({ shirt = '#ff593e', trousers = '#2542a5' } = {}) {
   root.traverse((o) => {
     if (o instanceof THREE.Mesh && o !== hit) o.castShadow = true;
   });
+  mergeStatic(upper, { paint: { from: painted, material: paint } });
 
   const body = new THREE.Box3();
   return {
@@ -452,7 +471,7 @@ export function createWalker({ shirt = '#ff593e', trousers = '#2542a5' } = {}) {
       neck.getWorldPosition(mid);
       out.push([at(new THREE.Vector3(0, HIP_Y, 0)), mid, 0.14, 'trunk']);
       const h = new THREE.Vector3();
-      head.getWorldPosition(h);
+      headMark.getWorldPosition(h);
       out.push([h, h.clone(), 0.115, 'head']);
       return out;
     },
