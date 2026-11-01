@@ -2,8 +2,12 @@
 // the floor) with low side boards, on four rubber wheels (0.2 m radius) with steel spokes, and two wooden handles
 // that rise behind it to a steel crossbar at 0.88 m, where the people push. Sacks of rice (50 kg each, jute) lie
 // across the bed. Origin: on the floor under the front edge of the bed, +x forward (the way it is pushed), +y up.
+// The parts that never move against each other are merged into one mesh per material (merge.js), the plain colours
+// into one in vertex colours; each wheel is one mesh in the same vertex colours; one sack geometry serves every sack.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { mergeStatic } from './merge.js';
 
 export const CART = {
   length: 1.3, // the bed, from its front edge (x = 0) back
@@ -55,28 +59,80 @@ function juteTexture() {
   });
 }
 
-/** A wheel: tyre, rim, six spokes and a hub, in a group that turns about z. */
-function createWheel(M) {
-  const g = new THREE.Group();
-  g.name = 'Wheel';
-  const R = CART.wheel;
-  const tyre = new THREE.Mesh(new THREE.TorusGeometry(R - 0.035, 0.035, 10, 32), M.tyre);
-  g.add(tyre);
-  const rim = new THREE.Mesh(new THREE.TorusGeometry(R - 0.07, 0.012, 6, 28), M.gold);
-  g.add(rim);
-  const spokeGeo = new THREE.CylinderGeometry(0.007, 0.007, R - 0.07, 6).translate(0, (R - 0.07) / 2, 0);
-  for (let i = 0; i < 6; i++) {
-    const s = new THREE.Mesh(spokeGeo, M.steel);
-    s.rotation.z = (i * Math.PI) / 3;
-    g.add(s);
-  }
-  const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.08, 14).rotateX(Math.PI / 2), M.dark);
-  g.add(hub);
+/** A geometry painted one colour (vertex colours), position/normal/uv only, non-indexed. */
+function paintGeo(geo, color) {
+  const g = geo.index ? geo.toNonIndexed() : geo;
+  for (const name of Object.keys(g.attributes)) if (!['position', 'normal', 'uv'].includes(name)) g.deleteAttribute(name);
+  const c = new THREE.Color(color);
+  const rgb = new Float32Array(g.attributes.position.count * 3);
+  for (let i = 0; i < rgb.length; i += 3) c.toArray(rgb, i);
+  g.setAttribute('color', new THREE.BufferAttribute(rgb, 3));
   return g;
 }
 
+/**
+ * The four wheels, each one mesh in vertex colours (a black tyre, a yellow rim, six steel spokes and an iron hub)
+ * sharing one geometry, placed at `spots` (the wheels' centres) and turned together about z by roll(angle).
+ */
+function createWheels(M, spots) {
+  const R = CART.wheel;
+  const parts = [
+    paintGeo(new THREE.TorusGeometry(R - 0.035, 0.035, 10, 32), '#25282d'),
+    paintGeo(new THREE.TorusGeometry(R - 0.07, 0.012, 6, 28), '#ffbf36'),
+  ];
+  for (let i = 0; i < 6; i++)
+    parts.push(paintGeo(new THREE.CylinderGeometry(0.007, 0.007, R - 0.07, 6).translate(0, (R - 0.07) / 2, 0).rotateZ((i * Math.PI) / 3), '#aab2bb'));
+  parts.push(paintGeo(new THREE.CylinderGeometry(0.035, 0.035, 0.08, 14).rotateX(Math.PI / 2), '#3b4048'));
+  const geo = mergeGeometries(parts, false);
+  for (const g of parts) g.dispose();
+  const meshes = spots.map((p) => {
+    const w = new THREE.Mesh(geo, M.painted);
+    w.name = 'Wheel';
+    w.position.copy(p);
+    return w;
+  });
+  return {
+    meshes,
+    roll(angle) {
+      for (const w of meshes) w.rotation.z = angle;
+    },
+  };
+}
+
+/** Wood grain for parts measured in metres (each face of a plank shows one tile). */
+function woodTexture() {
+  let seed = 7;
+  const rnd = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296;
+  return canvasTexture(256, 128, (ctx, w, h) => {
+    ctx.fillStyle = '#c99257';
+    ctx.fillRect(0, 0, w, h);
+    for (let i = 0; i < 46; i++) {
+      const y0 = rnd() * h;
+      const amp = 1 + rnd() * 3;
+      const f = 0.01 + rnd() * 0.03;
+      const ph = rnd() * 10;
+      ctx.strokeStyle = `rgba(${96 + rnd() * 30},${54 + rnd() * 20},24,${0.12 + rnd() * 0.26})`;
+      ctx.lineWidth = 0.6 + rnd() * 1.6;
+      ctx.beginPath();
+      for (let x = 0; x <= w; x += 8) {
+        const y = y0 + Math.sin(x * f + ph) * amp;
+        x ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+      }
+      ctx.stroke();
+    }
+  });
+}
+
 /** One sack of rice (50 kg), lying with its long side across the cart. */
+let SACK_GEO = null;
 export function createSack(M) {
+  const mesh = new THREE.Mesh(sackGeometry(), M.jute);
+  mesh.name = 'RiceSack';
+  return mesh;
+}
+/** The sack's shape (made once, shared). */
+export function sackGeometry() {
+  if (SACK_GEO) return SACK_GEO;
   const geo = new RoundedBoxGeometry(SACK.x, SACK.y, SACK.z, 3, 0.09);
   // a little sag: the middle of the top is lower, the ends fuller
   const p = geo.attributes.position;
@@ -87,25 +143,25 @@ export function createSack(M) {
     p.setX(i, p.getX(i) * (1 + 0.06 * (1 - z * z)));
   }
   geo.computeVertexNormals();
-  const mesh = new THREE.Mesh(geo, M.jute);
-  mesh.name = 'RiceSack';
-  return mesh;
+  SACK_GEO = geo;
+  return geo;
 }
 
-/** The cart's materials; `kitWood` is the kit's wood (createMaterials().wood), tinted darker for the frame. */
-export function createCartMaterials(kitWood) {
-  const wood = kitWood || mat('CartWood', '#c08a55', 0.75);
+/** The cart's materials (shared by both carts and the pile of sacks); `paint` takes the plain colours, merged. */
+export function createCartMaterials() {
+  const grain = woodTexture();
+  grain.anisotropy = 4;
+  const wood = new THREE.MeshStandardMaterial({ name: 'CartWood', map: grain, roughness: 0.72, metalness: 0 });
   const darkWood = wood.clone();
   darkWood.name = 'CartWoodDark';
   darkWood.color.set('#cf3b47');
   return {
     wood,
     darkWood,
+    painted: new THREE.MeshStandardMaterial({ name: 'CartPaint', vertexColors: true, roughness: 0.48, metalness: 0.12 }),
     paint: mat('CoralWagon', '#f43b4d', 0.36),
-    gold: mat('WheelGold', '#ffbf36', 0.35, 0.45),
     steel: mat('CartSteel', '#9aa3ad', 0.35, 0.8),
     dark: mat('CartIron', '#3b4048', 0.5, 0.6),
-    tyre: mat('Tyre', '#25282d', 0.9),
     jute: new THREE.MeshStandardMaterial({ name: 'Jute', map: juteTexture(), roughness: 0.95, metalness: 0 }),
   };
 }
@@ -162,14 +218,10 @@ export function createCart(M) {
   add(new RoundedBoxGeometry(0.32, 0.055, 0.64, 2, 0.02), M.paint, -0.98, 0.77, 0);
   for (const z of [-0.25, 0.25]) add(new THREE.CylinderGeometry(0.015, 0.015, 0.3, 8), M.steel, -1.1, 0.65, z);
   add(new RoundedBoxGeometry(0.045, 0.24, 0.66, 2, 0.02), M.paint, -1.15, 0.91, 0);
-  const wheels = [];
-  for (const x of CART.wheelX)
-    for (const z of [-CART.wheelZ, CART.wheelZ]) {
-      const w = createWheel(M);
-      w.position.set(x, CART.wheel, z);
-      body.add(w);
-      wheels.push(w);
-    }
+  const spotsW = [];
+  for (const x of CART.wheelX) for (const z of [-CART.wheelZ, CART.wheelZ]) spotsW.push(new THREE.Vector3(x, CART.wheel, z));
+  const wheels = createWheels(M, spotsW);
+  for (const w of wheels.meshes) body.add(w);
 
   // the load: two sacks side by side across the bed, a third on top of them
   const sacks = [];
@@ -185,6 +237,10 @@ export function createCart(M) {
     body.add(s);
     sacks.push(s);
   }
+
+  // the still parts, one mesh per material: the plain colours (paint, iron) share one in vertex colours
+  mergeStatic(body, { keep: [...wheels.meshes, ...sacks], paint: { from: [M.paint, M.dark, M.steel], material: M.painted } });
+  for (const o of body.children) if (/** @type {any} */ (o).isMesh) o.castShadow = true;
 
   const hit = new THREE.Mesh(new THREE.BoxGeometry(L + 0.8, 1.5, W + 0.3), new THREE.MeshBasicMaterial({ visible: false }));
   hit.position.set(-L / 2 - 0.25, 0.7, 0);
@@ -209,7 +265,7 @@ export function createCart(M) {
       });
     },
     roll(d) {
-      for (const w of wheels) w.rotation.z = -d / CART.wheel;
+      wheels.roll(-d / CART.wheel);
     },
     /** The top of the load (m above the floor). */
     top: () => Math.max(1.34, B + load * SACK.y),

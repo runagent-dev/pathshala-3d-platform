@@ -156,3 +156,42 @@ picture with the numbers:
 - The support line "ভূমির বল N = ওজন W = mg" moved from the box to the calculation sheet (কীভাবে এলো?); the diagram
   still labels N and W on the scene. The head's "এই মুহূর্তে" is now the graph's name.
 
+
+## Polish pass (2026-11-01)
+Against `docs/agents/polish-pass.md`, version 0.5.0.
+- **Layout.** The panel is under the 3D view at every size but the kit's short-and-wide one (844×390, 640×400):
+  the figure's own rule that put it beside the view from 720 px wide (800×500, 1280×800) is gone. On a phone held
+  upright every line is one line high (the result line drops "u + at =" when the full working would not fit), the
+  three toggles (বলচিত্র, ঘর্ষণ, ধীরে) sit in the formula box's head beside F = ma, and the bars are one line each
+  (name, bar, value): the 3D view has 55 % of 390×700 (40 % before). At 390×520 the box shows the bars without the
+  graph (too low to read there). On wide frames the examples, the action, the result and the rule are on the left
+  and the formula box on the right (800×500: 56 % for the view). The result line, the rule and the test keep one
+  height in every state, so the view never changes size.
+- **Text on the view.** Only labels with values: the corner note (smooth floor, the clock's sentence, the velocity
+  each second) is now a small clock chip, "t = ১.৫ s সময় ২ গুণ ধীর" ("থামানো" while held); the velocities each
+  second ("০ → ১ → ২ m/s") are in the rule line; "মসৃণ মেঝে, ঘর্ষণ নেই" ends the first rule; the sign convention
+  with friction is in its rule; the coast sentence became the label "লব্ধি বল F = ০" where the force's arrow was;
+  the diagram's scale note is in the rule line, which reads the diagram while it is on (লব্ধি বল F = ১০০ + ১০০ − ২০
+  = ১৮০ N; N = W) and is said once on the hint line when it is turned on. Text on the view: 52/5 → 33/3 (390×700),
+  63/5 → 33/3 (844×390).
+- **Setting and arrows.** The dark navy sky and teal floor are gone: a rice godown (চালের গুদাম) with a polished
+  warm-grey cement floor (mottled, saw-cut joints, the yellow lane and its white metre lines painted on), sand
+  lime-washed walls over a brown dado, square pillars with yellow-and-black feet, high barred windows, jute sacks on
+  wooden pallets and a platform scale. Daylight from the windows behind throws the shadows forward, where they
+  show. Every arrow has a bold white outline; the dark force arrow (it disappeared into the navy sky before) now
+  reads on the sand wall; the force diagram's pale colours became the book's (pushes orange, friction red, support
+  cyan, weight violet) with darker text on their chips; the diagram's dot is dark, ringed in white.
+- **Smooth, detail kept.** Each person is four meshes (the upper body merged in vertex colours, the limbs as three
+  instanced meshes) instead of 27; the cart's still parts are merged per material and each wheel is one mesh; the
+  room is five meshes; shadows come only from the carts, the people and the pile, in PCF at 2048×512 on a box
+  fitted to the lane (VSM 2048×2048 on a loose box before). The kit's materials (with canvases made for millimetre
+  instruments) are no longer built; the cart's wood has its own grain scaled for metres. No new vectors per frame
+  for the label boxes and the diagram's points.
+- **Bugs.** The force arrow was nearly invisible on the dark sky; at 800×500 and 1280×800 the panel was beside the
+  view; the formula box changed height with the toggles' words; the clock showed during the two-cart and close-up
+  test questions.
+- **Numbers** (headless Chromium, software GL, shadows on, at rest): draw calls avg 260 → 62, max 282 → 84;
+  triangles max 54k → 71k (the room); texture memory 56.4 → 15.9 MB; frames drawn while idle 0 → 0. Time to ready:
+  the machine's load was 30–50 during the run; side by side in the same runs, the end of the first frame took the
+  same time (about 1.0 s old, 1.0 s new), with 17 shader programs compiled instead of 12 (instanced limbs, vertex
+  colours).
