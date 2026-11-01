@@ -102,6 +102,7 @@ export function createApp(root, options = {}) {
   root.tabIndex = 0;
   const chip = (id, fig) => `<button role="radio" data-scene="${id}"><b>${t(`chip_${id}`)}</b><small>${t('chip_fig', { n: fig })}</small></button>`;
   const ui = buildStudentShell(root, t, {
+    layout: 'side',
     learnAlign: 'start',
     learn: `
           <div class="bf-chips" role="radiogroup" aria-label="${t('scenes')}">${chip('pendulum', '3.02')}${chip('book', '3.03')}</div>
