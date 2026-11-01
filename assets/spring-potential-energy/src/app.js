@@ -103,7 +103,7 @@ export function createApp(root, options = {}) {
     '<p class="pvc-outcome"',
     `<div class="sp-calc" role="group" aria-label="${t('calc')}">${stepper('x', 'calc_x')}${stepper('k', 'calc_k')}</div><p class="pvc-outcome"`,
   );
-  const ui = buildStudentShell(root, t, { learn: sheetHtml, learnAlign: 'start' });
+  const ui = buildStudentShell(root, t, { layout: 'side', learn: sheetHtml, learnAlign: 'start' });
   const sheet = bindCleanSheet(ui.learn);
   const $ = ui.$;
   // the result line is the book's two formulas, each letter a button tied to its part of the picture (k the spring,
