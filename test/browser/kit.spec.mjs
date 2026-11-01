@@ -881,3 +881,57 @@ test('clean sheet: the action row never wraps; a long verb wraps inside the pill
   expect(r.overflow).toBeLessThanOrEqual(1);
   expect(errors).toEqual([]);
 });
+
+test('stage: shadows follow the scene, not the camera; nothing is drawn while the figure is out of view', async ({ page }) => {
+  const errors = await openKit(page);
+  await shellWithStage(page);
+  const frames = () => page.evaluate(() => new Promise((ok) => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(ok)))));
+  await page.evaluate(() => {
+    const { THREE, stage } = /** @type {any} */ (window).t;
+    stage.renderer.shadowMap.enabled = true;
+    const sun = new THREE.DirectionalLight('#ffffff', 2);
+    sun.position.set(2, 5, 3);
+    sun.castShadow = true;
+    const box = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial());
+    box.castShadow = true;
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshStandardMaterial());
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = -0.5;
+    floor.receiveShadow = true;
+    stage.scene.add(sun, box, floor);
+    const log = [];
+    const draw = stage.renderer.render.bind(stage.renderer);
+    stage.renderer.render = (s, c) => (log.push(stage.renderer.shadowMap.needsUpdate), draw(s, c));
+    /** @type {any} */ (window).t.log = log;
+    stage.invalidate();
+  });
+  await frames();
+  const take = () => page.evaluate(() => /** @type {any} */ (window).t.log.splice(0));
+  expect(await take()).toContain(true); // the first frame draws the shadows
+  await page.evaluate(() => {
+    const { stage } = /** @type {any} */ (window).t;
+    stage.camera.position.set(3, 2, 9);
+    stage.controls.dispatchEvent({ type: 'change' });
+  });
+  await frames();
+  const turned = await take();
+  expect(turned.length).toBeGreaterThan(0);
+  expect(turned).not.toContain(true); // only the camera moved: the shadow maps are kept
+  await page.evaluate(() => /** @type {any} */ (window).t.stage.invalidate());
+  await frames();
+  expect(await take()).toContain(true); // the scene changed: drawn again
+  const shot = await page.evaluate(() => /** @type {any} */ (window).t.stage.capture({ width: 80, height: 50 }));
+  expect(shot.startsWith('data:image/png')).toBe(true);
+  expect(await take()).toEqual([true]); // capture always draws the shadows
+  // out of view: an invalidate draws nothing until the figure is seen again
+  await page.evaluate(() => /** @type {any} */ ((window.t.ui.stage.style.transform = 'translateY(-200vh)')));
+  await frames();
+  await take();
+  await page.evaluate(() => /** @type {any} */ (window).t.stage.invalidate());
+  await frames();
+  expect(await take()).toEqual([]);
+  await shift('');
+  await frames();
+  expect((await take()).length).toBeGreaterThan(0);
+  expect(errors).toEqual([]);
+});

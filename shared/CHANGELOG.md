@@ -5,6 +5,25 @@ student kit). Every zip records it in `PACKAGE.json` as `kit`. Bump it with each
 patch for fixes, minor for additions, major when a figure has to change to keep working. Run the visual comparison
 across all figures before merging a kit change (`npm run test:visual`).
 
+## 1.4.0 (2026-11-01)
+
+Butter smooth on phones, with nothing taken out of the picture (the owner heard the figures are heavy). `stage.js`:
+- **Shadows follow the scene, not the camera.** Shadow maps are drawn again only when the scene changes
+  (`invalidate()`, a ticker returning `true`, a resize, `render()`, `capture()`). A frame where only the camera
+  moved keeps them. With soft VSM shadows (most figures) that saves the casters' depth pass and two full-size blur
+  passes on every frame of turning or zooming the view. `shadows: 'always'` gives the old behaviour. Figures that
+  managed it themselves (`shadowMap.autoUpdate = false` + `needsUpdate` before each render) keep working.
+- **Paused out of view.** Tickers and drawing wait while the figure's container is off screen
+  (IntersectionObserver) or the page is hidden; it draws again when it is seen.
+- **Adaptive resolution.** While something moves, if frames keep coming more than 25 ms apart (over 30 frames),
+  the pixel ratio steps down by 0.25, never below 1. `adaptive: false` turns it off; `stage.pixelRatio` reads it.
+  Tests and exports run at a pixel ratio of 1 on a virtual clock, so their pictures cannot change.
+
+Tested in `test/browser/kit.spec.mjs` (shadows kept while the camera turns, drawn after `invalidate()` and on
+`capture()`, nothing drawn out of view). Visual comparison against `0b922cd`: no figure changed.
+Also `docs/agents/polish-pass.md`: the standard every figure is now held to (layout, labels only on the 3D view,
+colour and clear arrows, six sizes, performance, bugs), and `AGENTS.md` updated to match.
+
 ## 1.3.0 (2026-10-26)
 
 One action, one result, one rule: the owner found the শেখো panels of most figures (chapter 2 especially) too boxy and

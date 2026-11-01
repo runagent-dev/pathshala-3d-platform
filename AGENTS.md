@@ -55,10 +55,15 @@ These are checked where possible (`npm run check`, the browser tests); the rest 
   No toolbars full of options; extras go behind `?ui=full`.
 - Phones first. Every figure must work at 390×700, 390×520, 844×390, 640×400, 800×500 and 1280×800: nothing
   scrolls, every control is on screen and at least 24 px. The layout test checks all six.
+- One layout: the 3D view on top, the panel below (beside it only on short, wide frames such as a phone held
+  sideways; the kit's shell does this, a figure never overrides it).
 - Accessible: keyboard works (arrows move the part), buttons have labels, nothing relies on colour alone.
 
 **Look and language**
-- White page, plain textbook styling. No glassy, dark or neon "generated-looking" UI.
+- Plain textbook styling for the panel and controls; no glassy, dark or neon "generated-looking" UI. Inside the 3D view,
+  a proper coloured, detailed setting: never a white or green background. Arrows stand out from what is behind them
+  (outlined, never red on red) and the 3D view carries only short labels; sentences go in the panel.
+  The standard every figure is held to: `docs/agents/polish-pass.md`.
 - All text the student sees is Bangla, in the book's NCTB terms, with English as the second language. Strings live
   in `src/i18n.js` only (the checker refuses Bangla anywhere else in code); numbers go through `t.num()` so they
   show Bangla digits.

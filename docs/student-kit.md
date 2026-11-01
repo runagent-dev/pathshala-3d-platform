@@ -25,11 +25,17 @@ The postMessage protocol: see `docs/bridge-protocol.md`. Figures normally use `c
 ## 3D
 
 ### `stage.js`
-`createStage(container, { fov, near, far, environment: 'studio' | 'studio-light' | 'room' | false, exposure })`
-returns `{ renderer, scene, camera, controls, canvas, width, height, invalidate(), addTicker(fn), onBeforeRender(fn),
+`createStage(container, { fov, near, far, environment: 'studio' | 'studio-light' | 'room' | false, exposure, shadows,
+adaptive })` returns `{ renderer, scene, camera, controls, canvas, width, height, pixelRatio, invalidate(), addTicker(fn), onBeforeRender(fn),
 onAfterRender(fn), onResize(fn), render(), capture({ width, height, background }), dispose() }`.
 It renders on demand: call `invalidate()` after changing the scene; a ticker `fn(dt, now)` returning `true` keeps it
 drawing while something moves (`dt` is capped at 50 ms).
+Since kit 1.4.0 it also keeps phones smooth without taking anything out of the picture: shadow maps are drawn again
+only when the scene changes (`invalidate()`, a ticker returning `true`, a resize, `render()` or `capture()`), not when
+only the camera moves (`shadows: 'always'` restores every frame); nothing runs while the figure is off screen or the
+page is hidden; and when frames keep coming slower than about 40 a second the pixel ratio steps down by a quarter,
+never below 1 (`adaptive: false` turns this off; `stage.pixelRatio` is the one in use). So: if you move a part that
+casts a shadow, call `invalidate()` (or return `true` from a ticker), as before.
 
 ### `tween.js`
 `createTweener()` → `{ animate({ duration, ease, key, delay, onUpdate(k, p), onComplete }), tick(dt), cancel(key), busy }`.
