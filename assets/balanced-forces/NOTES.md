@@ -173,3 +173,5 @@ clock, and the books and beaker on the bench are gone; the plain blue-grey wall,
 stay. The panel reads in the same order as every lab: the two examples, the two buttons (side by side), the state
 with the drawing, the book's words. The rules for a wide panel under the view and for the old sideways layout are
 gone (kit 1.5.0 puts the panel beside the 3D); the drawing's caption wraps instead of being clipped.
+No সামনে / ঘুরিয়ে দেখো buttons (kit): the lab starts from the front, a drag turns it, and the small "front" icon
+then brings it back.
