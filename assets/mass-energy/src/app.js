@@ -22,7 +22,7 @@ import { bindCleanSheet, buildStudentShell, cleanSheet } from '@shared/student/s
 import { fitPose } from './camera.js';
 import { createI18n } from './i18n.js';
 import { createSystem, PHASE } from './nucleus.js';
-import { createPlant, duskSky, HAZE, poolBackground, SUN } from './plant.js';
+import { buildPlant, duskSky, HAZE, poolBackground, SUN } from './plant.js';
 import {
   C,
   energyPerSplit,
@@ -58,7 +58,7 @@ export const DEFAULTS = {
 };
 
 const SCENES = ['one', 'chain', 'plant'];
-const COLORS = { energy: '#b86200', kr: '#2f6fb0', ba: '#7b3fb8', n: '#4f5864', slow: '#1c6fd9', plant: '#3b4250' };
+const COLORS = { energy: '#a85700', kr: '#2f6fb0', ba: '#7b3fb8', n: '#4f5864', slow: '#1c6fd9', plant: '#3b4250' };
 // the single split: the neutron sets off at 0 s, touches at 1.6 s; the split is over by 6.6 s
 const ONE = { tHit: 1.6, pace: 1, dur: 7 };
 // the chain: faster, each step's neutrons take 1.5 s to reach the next nuclei
@@ -176,18 +176,15 @@ export function createApp(root, options = {}) {
     scrub: /** @type {HTMLInputElement} */ ($('.me-scrub')),
   };
   ui.canvasHost.setAttribute('aria-label', t('aria_stage'));
-  const note = document.createElement('div');
-  note.className = 'me-note';
-  ui.stage.append(note);
-  // the chain's steps: 1 → 3 → 9, each lit when that step's nuclei split
-  const steps = document.createElement('div');
-  steps.className = 'me-steps';
-  steps.setAttribute('aria-label', t('chain_aria'));
-  steps.innerHTML = [1, 3, 9]
+  // the chain's steps: 1 → 3 → 9, each lit when that step's nuclei split (a short label with its values)
+  const gens = document.createElement('div');
+  gens.className = 'me-steps';
+  gens.setAttribute('aria-label', t('chain_aria'));
+  gens.innerHTML = [1, 3, 9]
     .map((n, i) => `${i ? `<span class="me-to">${ICONS.arrowR}</span>` : ''}<b data-gen="${i}">${t('chain_gen', { n })}</b>`)
     .join('');
-  ui.stage.append(steps);
-  const genEls = [...steps.querySelectorAll('[data-gen]')];
+  ui.stage.append(gens);
+  const genEls = [...gens.querySelectorAll('[data-gen]')];
 
   // ── 3D ──────────────────────────────────────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 32, near: 0.5, far: 2000, environment: 'studio-light' });
@@ -197,37 +194,83 @@ export function createApp(root, options = {}) {
   controls.enableZoom = false;
   const transparent = o.bg === 'transparent';
   const bgPool = transparent ? null : poolBackground();
-  // the dusk sky: the plant scene's background and the light its materials reflect (the nuclei keep the studio's)
-  const sky = transparent ? null : duskSky();
   const envStudio = scene.environment;
-  const envDusk = (() => {
-    if (!sky) return envStudio;
-    const pmrem = new THREE.PMREMGenerator(renderer);
-    const env = pmrem.fromEquirectangular(sky).texture;
-    pmrem.dispose();
-    return env;
-  })();
+  const haze = transparent ? null : new THREE.FogExp2(HAZE, 0.0024); // the plant's dusk haze (made once)
   const hemi = new THREE.HemisphereLight('#ffffff', '#9fd2ea', 1.1);
   const key = new THREE.DirectionalLight('#ffffff', 2.2);
   const rim = new THREE.DirectionalLight('#8fe0ff', 1.4);
   scene.add(hemi, key, key.target, rim);
 
   const one = createSystem({ name: 'Fission', max: 1, word: t('star') });
-  const chain = createSystem({ name: 'ChainReaction', max: 13, word: t('star'), flashScale: 0.6, glowScale: 0.9, trails: true, detail: 0.65 });
-  const plant = createPlant();
-  scene.add(one.root, chain.root, plant.root);
+  const chain = createSystem({ name: 'ChainReaction', max: 13, word: t('star'), flashScale: 0.6, glowScale: 0.9, trails: true, detail: 0.45 });
+  scene.add(one.root, chain.root);
+
+  // ── the power plant: built only when it is needed ──────────────────────────────────────────────────────────
+  // It is most of the figure's work (its pictures are painted pixel by pixel), and the figure opens on a nucleus. So
+  // the first picture waits for none of it: a moment after the start the plant is built a piece at a time in the
+  // browser's idle moments, then its sky, then its shaders are compiled and its pictures sent to the GPU, so the
+  // first tap on the power-plant scene shows it at once. Asked for sooner (the scene in the address, the test), it is built
+  // there and then.
+  /** @type {ReturnType<typeof import('./plant.js').createPlant> | null} */
+  let plant = null;
+  let sky = null; // the dusk sky: the plant scene's background and the light its materials reflect
+  let envDusk = envStudio;
+  let steps = null;
+  let built = null;
+  /** One piece of the plant's building (then its sky, then the light the sky gives); true when it is all done. */
+  function plantStep() {
+    if (plant) return true;
+    if (!built) {
+      steps ??= buildPlant();
+      const r = steps.next();
+      if (r.done) built = r.value;
+      return false;
+    }
+    if (!sky && !transparent) {
+      sky = duskSky();
+      return false;
+    }
+    if (sky) {
+      const pmrem = new THREE.PMREMGenerator(renderer);
+      envDusk = pmrem.fromEquirectangular(sky).texture;
+      pmrem.dispose();
+    }
+    plant = built;
+    plant.root.visible = false;
+    scene.add(plant.root);
+    plant.set(s.power, 0);
+    return true;
+  }
+  function ensurePlant() {
+    while (!plantStep());
+    return plant;
+  }
   if (o.shadow && !transparent) {
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    key.shadow.mapSize.set(2048, 2048);
-    Object.assign(key.shadow.camera, { left: -45, right: 50, top: 40, bottom: -30, near: 10, far: 220 });
-    key.shadow.bias = -0.0006;
-    plant.root.traverse((m) => {
-      if (m.isMesh && m.name !== 'ReactorCore') {
-        m.castShadow = true;
-        m.receiveShadow = true;
-      }
-    });
+    renderer.shadowMap.type = THREE.PCFShadowMap; // (PCFSoft is deprecated: it falls back to this, with a warning)
+    // fitted round what is seen of the plant (the yard, the tower, the pylons and the near town), seen from the sun
+    key.shadow.mapSize.set(1024, 1024);
+    key.shadow.radius = 2;
+    key.shadow.bias = -0.0005;
+    key.shadow.normalBias = 0.02;
+  }
+  /** The sun's shadow box: the corners of the lit area, seen from the sun, fitted tightly (once: the sun stays put). */
+  let shadowFitted = false;
+  function fitShadow() {
+    if (shadowFitted) return;
+    shadowFitted = true;
+    const cam = key.shadow.camera;
+    key.updateMatrixWorld();
+    key.target.updateMatrixWorld();
+    cam.position.copy(key.position);
+    cam.lookAt(key.target.position);
+    cam.updateMatrixWorld();
+    const inv = cam.matrixWorldInverse.copy(cam.matrixWorld).invert();
+    const b = new THREE.Box3();
+    const p = new THREE.Vector3();
+    for (const x of [-40, 56]) for (const y of [0, 32]) for (const z of [-100, 22]) b.expandByPoint(p.set(x, y, z).applyMatrix4(inv));
+    Object.assign(cam, { left: b.min.x, right: b.max.x, bottom: b.min.y, top: b.max.y, near: Math.max(1, -b.max.z - 5), far: -b.min.z + 5 });
+    cam.updateProjectionMatrix();
   }
 
   const tweener = createTweener();
@@ -336,16 +379,16 @@ export function createApp(root, options = {}) {
   }
 
   // ── what is shown: the scene's objects, background and lights ─────────────────────────────────────────────────
-  function applyScene() {
-    const sc = s.quizScene?.scene ?? s.scene;
+  function applyScene(sc = s.quizScene?.scene ?? s.scene) {
+    if (sc === 'plant') ensurePlant();
     one.root.visible = sc === 'one';
     chain.root.visible = sc === 'chain';
-    plant.root.visible = sc === 'plant';
+    if (plant) plant.root.visible = sc === 'plant';
     if (sc === 'plant') {
       scene.background = sky;
       scene.environment = envDusk;
       scene.environmentIntensity = 0.75;
-      scene.fog = transparent ? null : new THREE.FogExp2(HAZE, 0.0024);
+      scene.fog = haze;
       hemi.color.set('#aab6ff');
       hemi.groundColor.set('#c4945e');
       hemi.intensity = 0.55;
@@ -354,6 +397,7 @@ export function createApp(root, options = {}) {
       key.target.position.set(5, 0, -10);
       key.position.copy(SUN).multiplyScalar(110).add(key.target.position);
       key.castShadow = renderer.shadowMap.enabled;
+      if (key.castShadow) fitShadow();
       rim.intensity = 0.35;
       rim.color.set('#8f9cff');
       rim.position.set(60, 30, -80);
@@ -374,8 +418,7 @@ export function createApp(root, options = {}) {
       rim.color.set('#8fe0ff');
       rim.position.set(25, -10, -30);
     }
-    note.textContent = sc === 'plant' ? t('note_plant') : t('note_nuc');
-    steps.hidden = sc !== 'chain' || s.labels === 'quiz';
+    gens.hidden = sc !== 'chain' || s.labels === 'quiz';
   }
 
   // ── camera: frames what matters at this moment (pure function of the time, so scrubbing is smooth) ───────────
@@ -383,6 +426,9 @@ export function createApp(root, options = {}) {
   let camK = 1;
   const camBox = new THREE.Box3();
   const bA = new THREE.Box3();
+  const bB = new THREE.Box3();
+  const bV = new THREE.Vector3();
+  const bW = new THREE.Vector3();
   const lerpBox = (a, b, u, out) => {
     out.min.lerpVectors(a.min, b.min, u);
     out.max.lerpVectors(a.max, b.max, u);
@@ -392,7 +438,7 @@ export function createApp(root, options = {}) {
     const q = s.quizScene;
     const sc = q?.scene ?? s.scene;
     const tt = q ? q.t : s.t;
-    if (sc === 'plant') return out.copy(plant.box);
+    if (sc === 'plant') return out.copy(ensurePlant().box);
     if (sc === 'chain') {
       const [b0, b1, b2] = chainBoxes;
       if (tt < 2.5) return out.copy(b0);
@@ -402,9 +448,11 @@ export function createApp(root, options = {}) {
     const T = one.template;
     const n = one.nuclei[0];
     const start = bA.makeEmpty();
-    start.expandByPoint(n.from.clone().add(new THREE.Vector3(-1.5, -T.rU - 1, 0)));
-    start.expandByPoint(new THREE.Vector3(T.rU + 1, T.rU + 1, 0));
-    const close = new THREE.Box3(new THREE.Vector3(-T.rU - 3.2, -T.rU - 3.2, 0), new THREE.Vector3(T.rU + 3.2, T.rU + 3.2, 0));
+    start.expandByPoint(bV.copy(n.from).add(bW.set(-1.5, -T.rU - 1, 0)));
+    start.expandByPoint(bV.set(T.rU + 1, T.rU + 1, 0));
+    const close = bB;
+    close.min.set(-T.rU - 3.2, -T.rU - 3.2, 0);
+    close.max.set(T.rU + 3.2, T.rU + 3.2, 0);
     if (tt < 2.6) return lerpBox(start, close, smooth(1.0, 2.4, tt), out);
     return lerpBox(close, oneBox, smooth(ONE.tHit + 2.15, ONE.tHit + 3.4, tt), out);
   }
@@ -492,7 +540,7 @@ export function createApp(root, options = {}) {
       const target = s.on ? 1 : 0;
       if (s.power !== target || s.on) {
         s.power = THREE.MathUtils.clamp(s.power + (s.on ? dt / 4.5 : -dt / 2), 0, 1);
-        plant.set(s.power, dt);
+        plant?.set(s.power, dt);
         moving = true;
       }
     }
@@ -552,7 +600,7 @@ export function createApp(root, options = {}) {
   const anno = createAnnotations({
     stage,
     layer: ui.annoLayer,
-    avoid: [ui.corner, note, steps, () => action?.ringBox(), () => starBox(), () => neutronBoxes()],
+    avoid: [ui.corner, gens, () => action?.ringBox(), () => starBox(), () => neutronBoxes()],
   });
   const shown = new Map();
   const pts = new Map();
@@ -653,14 +701,14 @@ export function createApp(root, options = {}) {
     );
     label('nin0', !quiz && c0?.phase === 'come' && tt > 0, t('l_n_in'), c0?.incoming ?? tmpP, COLORS.slow, ABOVE, true);
     // the power plant
-    const pl = sc === 'plant';
-    const A = plant.anchors;
-    label('core', pl, t('l_core'), A.core(), COLORS.plant, SIDE);
-    label('steam', pl && !quiz, t('l_steam'), A.steam(), COLORS.plant, ABOVE, true);
-    label('turb', pl && !quiz, t('l_turbine'), A.turbine(), COLORS.plant, ABOVE, true);
-    label('gen', pl && !quiz, t('l_generator'), A.generator(), COLORS.plant, ABOVE, true);
-    label('power', pl && !quiz && s.power > 0.6, t('l_power'), A.town(), COLORS.energy, ABOVE, true);
-    label('fuel', pl && qk === 'calc', t('l_fuel', { m: s.quizScene?.m ?? 1 }), A.core(), COLORS.energy, ABOVE);
+    const pl = sc === 'plant' && Boolean(plant);
+    const A = plant?.anchors;
+    label('core', pl, t('l_core'), pl ? A.core() : tmpP, COLORS.plant, SIDE);
+    label('steam', pl && !quiz, t('l_steam'), pl ? A.steam() : tmpP, COLORS.plant, ABOVE, true);
+    label('turb', pl && !quiz, t('l_turbine'), pl ? A.turbine() : tmpP, COLORS.plant, ABOVE, true);
+    label('gen', pl && !quiz, t('l_generator'), pl ? A.generator() : tmpP, COLORS.plant, ABOVE, true);
+    label('power', pl && !quiz && s.power > 0.6, t('l_power'), pl ? A.town() : tmpP, COLORS.energy, ABOVE, true);
+    label('fuel', pl && qk === 'calc', t('l_fuel', { m: s.quizScene?.m ?? 1 }), pl ? A.core() : tmpP, COLORS.energy, ABOVE);
   }
 
   /** The star of energy on the screen (canvas pixels), so no label covers it. */
@@ -741,14 +789,16 @@ export function createApp(root, options = {}) {
     el.scrub.hidden = !nuc;
     // the right side's mass once the nucleus has split (the balance tips: the left side is heavier)
     const split = s.scene === 'one' ? Boolean(infoOne[0]?.split) : infoChain.some((x) => x.split);
-    el.massR.innerHTML = split ? `${N(RX.right)} ${t('u_u')}` : '&nbsp;';
+    const massR = split ? `${N(RX.right)} ${t('u_u')}` : '\u00a0';
+    if (el.massR.textContent !== massR) el.massR.textContent = massR; // (the DOM is written only when it changes)
     el.scale.classList.toggle('tipped', split);
     if (nuc) {
       const v = String(Math.round((s.t / dur()) * 1000));
       if (el.scrub.value !== v) el.scrub.value = v;
       el.scrub.disabled = s.locked;
     }
-    el.m.textContent = gText(s.m);
+    const mText = gText(s.m);
+    if (el.m.textContent !== mText) el.m.textContent = mText;
     el.mMinus.disabled = s.locked || s.m === MASSES_G[0];
     el.mPlus.disabled = s.locked || s.m === MASSES_G.at(-1);
     for (const b of ui.$$('[data-part]')) {
@@ -790,7 +840,6 @@ export function createApp(root, options = {}) {
     applyScene();
     updateNuclei();
     panel();
-    note.hidden = false;
     stage.invalidate();
   }
 
@@ -808,11 +857,11 @@ export function createApp(root, options = {}) {
       if (s.locked || camK < 1) return null;
       if (s.scene === 'one' && s.t === 0 && !s.playing) return ringPoint.copy(one.nuclei[0].from);
       if (s.scene === 'chain' && s.t === 0 && !s.playing) return ringPoint.copy(chain.nuclei[0].from);
-      if (s.scene === 'plant' && !s.on) return ringPoint.copy(plant.anchors.core());
+      if (s.scene === 'plant' && !s.on) return ringPoint.copy(ensurePlant().anchors.core());
       return null;
     },
     radius: 22,
-    avoid: [ui.corner, ui.hint, note, steps, () => anno.boxes()],
+    avoid: [ui.corner, ui.hint, gens, () => anno.boxes()],
     pulse: Boolean(o.coach),
     onAct: () => act(),
   });
@@ -836,7 +885,7 @@ export function createApp(root, options = {}) {
     s.playing = false;
     if (changed) s.t = 0;
     s.userMovedCamera = false;
-    if (sc === 'plant') plant.set(s.power, 0);
+    if (sc === 'plant') ensurePlant().set(s.power, 0);
     clearLabels();
     draw();
     if (animate && changed) {
@@ -865,7 +914,7 @@ export function createApp(root, options = {}) {
     s.quizScene = q;
     s.playing = false;
     clearLabels();
-    if (q.scene === 'plant') plant.set(q.power ?? 0, 0);
+    if (q.scene === 'plant') ensurePlant().set(q.power ?? 0, 0);
     applyScene();
     stage.invalidate();
   }
@@ -966,7 +1015,7 @@ export function createApp(root, options = {}) {
     emit,
     audio,
     questions: 5,
-    lines: { text: 3, feedback: 3 },
+    lines: { text: 2, feedback: 3 },
     action,
     hooks: {
       enter() {
@@ -986,7 +1035,7 @@ export function createApp(root, options = {}) {
         s.quizScene = null;
         showLast(true);
         clearLabels();
-        if (s.scene === 'plant') plant.set(s.power, 0);
+        if (s.scene === 'plant') plant?.set(s.power, 0);
         camFrom = null;
         camK = 1;
         syncUI();
@@ -1115,7 +1164,7 @@ export function createApp(root, options = {}) {
     s.t = 0;
     s.on = false;
     s.power = 0;
-    plant.set(0, 0);
+    plant?.set(0, 0);
     s.m = 1;
     s.part = 'fission';
     s.userMovedCamera = false;
@@ -1172,11 +1221,39 @@ export function createApp(root, options = {}) {
     s.power = 1;
     s.played.plant = true;
   }
-  plant.set(s.power, 0);
+  plant?.set(s.power, 0);
   draw();
   const ready = (async () => {
     if (o.mode === 'quiz') quiz.start();
   })();
+
+  // A moment after the start, the plant is built in the browser's idle moments (never while the split plays), then
+  // its shaders are compiled (in parallel where the browser can) and its pictures sent to the GPU, so the first tap on
+  // the power-plant scene does not stall. The shaders are compiled with the plant's own light, sky and haze, set for an
+  // instant and put back before the next frame.
+  const idle = window.requestIdleCallback?.bind(window) ?? ((fn) => setTimeout(() => fn({ timeRemaining: () => 8, didTimeout: true }), 16));
+  let warmed = false;
+  function warmPlant() {
+    if (warmed || !plant) return;
+    warmed = true;
+    if ((s.quizScene?.scene ?? s.scene) === 'plant') return; // already drawn
+    applyScene('plant');
+    try {
+      renderer.compileAsync(plant.root, camera, scene).catch(() => {});
+      plant.root.traverse((m) => {
+        for (const mt of [m.material].flat()) for (const map of [mt?.map, mt?.emissiveMap, mt?.normalMap]) if (map) renderer.initTexture(map);
+      });
+    } finally {
+      applyScene();
+    }
+  }
+  function idleBuild(deadline) {
+    if (plant) return idle(warmPlant, { timeout: 3000 });
+    if (s.playing) return idle(idleBuild, { timeout: 3000 });
+    while (!plantStep()) if (deadline.timeRemaining() < 6) return idle(idleBuild, { timeout: 3000 });
+    idle(warmPlant, { timeout: 3000 });
+  }
+  setTimeout(() => idle(idleBuild, { timeout: 3000 }), 1200);
 
   return {
     ready,
@@ -1197,7 +1274,7 @@ export function createApp(root, options = {}) {
         s.on = Boolean(p.run);
         if (p.animate === false) s.power = s.on ? 1 : 0;
         if (s.on) s.played.plant = true;
-        plant.set(s.power, 0);
+        plant?.set(s.power, 0);
       }
       draw();
       emitChange();

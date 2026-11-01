@@ -187,6 +187,14 @@ function plusTexture() {
   g.fill();
   return tex(c);
 }
+/** A plain skin (the neutron's): one colour, so it draws with the same shader as the proton. */
+function skinTexture(color) {
+  const c = canvas(4, 4);
+  const g = c.getContext('2d');
+  g.fillStyle = color;
+  g.fillRect(0, 0, 4, 4);
+  return tex(c);
+}
 /** A soft round glow (white centre fading to the colour, then to nothing). */
 function glowTexture(inner, outer) {
   const S = 256;
@@ -290,22 +298,22 @@ export function createSystem({ name, max, word, flashScale = 1, glowScale = 1, t
   const T = nucleusTemplate();
   const root = new THREE.Group();
   root.name = name;
-  const geo = new THREE.SphereGeometry(R, Math.round(18 * detail), Math.round(13 * detail));
-  const protonMat = new THREE.MeshPhysicalMaterial({
+  const geo = new THREE.SphereGeometry(R, Math.max(8, Math.round(18 * detail)), Math.max(7, Math.round(13 * detail)));
+  // protons and neutrons are one shader (both have a skin; standard, glossy): one compile at the start instead of
+  // two clear-coated ones, which held the first picture up for seconds on a slow device
+  const protonMat = new THREE.MeshStandardMaterial({
     name: 'Proton',
     map: plusTexture(),
-    roughness: 0.34,
-    clearcoat: 0.7,
-    clearcoatRoughness: 0.2,
+    roughness: 0.26,
+    envMapIntensity: 1.25,
     emissive: '#5a0d18',
     emissiveIntensity: 0.25,
   });
-  const neutronMat = new THREE.MeshPhysicalMaterial({
+  const neutronMat = new THREE.MeshStandardMaterial({
     name: 'Neutron',
-    color: COLORS.neutron,
-    roughness: 0.38,
-    clearcoat: 0.6,
-    clearcoatRoughness: 0.22,
+    map: skinTexture(COLORS.neutron),
+    roughness: 0.3,
+    envMapIntensity: 1.25,
     emissive: '#1d2733',
     emissiveIntensity: 0.2,
   });
@@ -365,15 +373,24 @@ export function createSystem({ name, max, word, flashScale = 1, glowScale = 1, t
   streaks.frustumCulled = false;
   streaks.renderOrder = 3;
   fx.add(streaks);
+  // the chain's neutron paths: a pale line inside a dark rim, so it reads on the blue water and over the nuclei
+  const trailGeo = new THREE.CylinderGeometry(1, 1, 1, 8, 1, true).translate(0, 0.5, 0);
   const trailMesh = new THREE.InstancedMesh(
-    new THREE.CylinderGeometry(1, 1, 1, 8, 1, true).translate(0, 0.5, 0),
-    new THREE.MeshBasicMaterial({ color: '#1c6fd9', transparent: true, opacity: 0.55, depthWrite: false, toneMapped: false }),
+    trailGeo,
+    new THREE.MeshBasicMaterial({ color: '#fff4c8', transparent: true, opacity: 0.9, depthWrite: false, toneMapped: false }),
     trails ? max * 3 : 1,
   );
-  trailMesh.frustumCulled = false;
-  trailMesh.count = 0;
-  trailMesh.renderOrder = 2;
-  fx.add(trailMesh);
+  const trailRim = new THREE.InstancedMesh(
+    trailGeo,
+    new THREE.MeshBasicMaterial({ color: '#0a2a4d', transparent: true, opacity: 0.55, depthWrite: false, toneMapped: false }),
+    trails ? max * 3 : 1,
+  );
+  for (const [k, m] of [trailRim, trailMesh].entries()) {
+    m.frustumCulled = false;
+    m.count = 0;
+    m.renderOrder = 2 + k * 0.5;
+    fx.add(m);
+  }
   const light = new THREE.PointLight('#ffd27a', 0, 0, 1.4);
   light.name = `${name}FlashLight`;
   fx.add(light);
@@ -417,6 +434,7 @@ export function createSystem({ name, max, word, flashScale = 1, glowScale = 1, t
 
   function setNuclei(nuclei) {
     list = nuclei.slice(0, max);
+    shownInfo = info.slice(0, list.length);
     for (const [k, p] of per.entries()) {
       if (k >= list.length && p.star) p.star.visible = false;
       if (k < list.length && list[k].star && !p.star) {
@@ -466,6 +484,8 @@ export function createSystem({ name, max, word, flashScale = 1, glowScale = 1, t
   const Y_AXIS = new THREE.Vector3(0, 1, 0);
   const vel = new THREE.Vector3();
   const prev = new THREE.Vector3();
+  const lightPos = new THREE.Vector3();
+  let shownInfo = [];
 
   /** Where free neutron k of nucleus n is at time t (world); null before it flies or after it is gone. */
   function freePos(n, k, t, out) {
@@ -495,7 +515,7 @@ export function createSystem({ name, max, word, flashScale = 1, glowScale = 1, t
     camQ.copy(cameraQuaternion);
     let streakN = 0;
     let lightK = 0;
-    const lightPos = new THREE.Vector3();
+    lightPos.set(0, 0, 0);
     for (let k = 0; k < max; k++) {
       const n = list[k];
       const fxk = per[k];
@@ -661,20 +681,24 @@ export function createSystem({ name, max, word, flashScale = 1, glowScale = 1, t
           const len = vel.length();
           if (len < 0.05) continue;
           streakQ.setFromUnitVectors(Y_AXIS, vel.divideScalar(len));
-          sc.set(0.3, len, 0.3);
+          sc.set(0.26, len, 0.26);
           m4.compose(tmp2, streakQ, sc);
-          trailMesh.setMatrixAt(k2++, m4);
+          trailMesh.setMatrixAt(k2, m4);
+          sc.set(0.5, len, 0.5);
+          m4.compose(tmp2, streakQ, sc);
+          trailRim.setMatrixAt(k2++, m4);
         }
       }
-      trailMesh.count = k2;
+      trailMesh.count = trailRim.count = k2;
       trailMesh.instanceMatrix.needsUpdate = true;
+      trailRim.instanceMatrix.needsUpdate = true;
     }
     streaks.instanceMatrix.needsUpdate = true;
     light.intensity = 900 * lightK * flashScale;
     light.position.copy(lightPos).add(tmp.set(0, 0, 6));
     protons.instanceMatrix.needsUpdate = true;
     neutrons.instanceMatrix.needsUpdate = true;
-    return info.slice(0, list.length);
+    return shownInfo;
   }
 
   function place(idx, p, k) {
