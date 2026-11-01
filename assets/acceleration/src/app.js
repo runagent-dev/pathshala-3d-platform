@@ -1,5 +1,5 @@
 // Acceleration (book pages 43–44, topic 2.6), student view: a CNG auto-rickshaw on a Bangladeshi road.
-//  - সোজা রাস্তা: the student drives it with two pedals on the picture (press and hold: গতি বাড়াও, ব্রেক; nothing
+//  - সোজা রাস্তা: the student drives it with two pedals in the panel (press and hold: গতি বাড়াও, ব্রেক; nothing
 //    pressed = the same speed). Over the CNG the বেগ arrow grows and shrinks, the ত্বরণ arrow points forwards
 //    (ধনাত্মক ত্বরণ), backwards (মন্দন) or is gone (ত্বরণ নেই); the speedometer reads m/s. The panel draws the
 //    বেগ–সময় graph as it goes, each piece lettered (A, B, C…) and coloured by its kind, so the student makes the
@@ -125,6 +125,7 @@ export function createApp(root, options = {}) {
   root.lang = t.lang;
   root.tabIndex = 0;
   const ui = buildStudentShell(root, t, {
+    layout: 'side', // the panel beside the 3D on landscape frames (kit 1.5.0)
     learn: `
           <div class="ac-top">
             <div class="pvc-seg ac-scenes" role="group" aria-label="${t('scenes')}">
@@ -162,7 +163,8 @@ export function createApp(root, options = {}) {
           </div>
           <p class="ac-say"></p>`,
   });
-  // on the picture: the speedometer (top left), the two pedals (bottom corners), the graph card of a test question
+  // in the panel, under the choices: the two pedals and the speed (nothing floats on the 3D view); on the picture
+  // only the graph card of a test question
   const speedoEl = document.createElement('div');
   speedoEl.className = 'ac-speedo';
   const pedalsEl = document.createElement('div');
@@ -174,7 +176,11 @@ export function createApp(root, options = {}) {
   card.className = 'ac-card';
   card.hidden = true;
   card.innerHTML = '<div class="ac-card-graph"></div>';
-  ui.stage.append(speedoEl, pedalsEl, card);
+  const acts = document.createElement('div');
+  acts.className = 'ac-acts';
+  acts.append(pedalsEl, speedoEl);
+  ui.$('.ac-top').after(acts);
+  ui.stage.append(card);
   const pedalBtn = { left: pedalsEl.querySelector('[data-side="left"]'), right: pedalsEl.querySelector('[data-side="right"]') };
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
@@ -188,7 +194,23 @@ export function createApp(root, options = {}) {
   stage.addTicker((dt) => tweener.tick(dt));
   const audio = createAudio(o.sound);
   const annotations = createAnnotations({ stage, layer: ui.annoLayer });
-  scene.fog = new THREE.Fog(0xffffff, 30, 80);
+  // a soft, slightly muted sky (never white), the far ground fading into its haze
+  if (o.bg !== 'transparent') {
+    const c = document.createElement('canvas');
+    c.width = 4;
+    c.height = 256;
+    const g = c.getContext('2d');
+    const grad = g.createLinearGradient(0, 0, 0, 256);
+    grad.addColorStop(0, '#9fbad3');
+    grad.addColorStop(0.6, '#cfdbe5');
+    grad.addColorStop(1, '#e4ded2');
+    g.fillStyle = grad;
+    g.fillRect(0, 0, 4, 256);
+    const sky = new THREE.CanvasTexture(c);
+    sky.colorSpace = THREE.SRGBColorSpace;
+    scene.background = sky;
+  }
+  scene.fog = new THREE.Fog(0xe4ded2, 30, 80);
 
   const street = createStreet();
   const field = createField({ colors: COLORS });
@@ -656,7 +678,7 @@ export function createApp(root, options = {}) {
       const r = el.getBoundingClientRect();
       return r.width ? { l: r.left - c.left - pad, t: r.top - c.top - pad, r: r.right - c.left + pad, b: r.bottom - c.top + pad } : null;
     };
-    const blocks = [rectOf(ui.corner), rectOf(speedoEl), rectOf(pedalBtn.left), rectOf(pedalBtn.right)].filter(Boolean);
+    const blocks = [rectOf(ui.corner)].filter(Boolean);
     // the CNG as the box round its projected corners
     let box = null;
     for (const k of CNG_BOX) {
@@ -1021,7 +1043,7 @@ export function createApp(root, options = {}) {
     });
     const W = stage.width;
     const H = Math.max(stage.height, 120);
-    const boxes = [boxOf(ui.corner), boxOf(speedoEl), boxOf(pedalBtn.left, 4), boxOf(pedalBtn.right, 4)].filter(Boolean);
+    const boxes = [boxOf(ui.corner)].filter(Boolean);
     const tv = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
     const th = tv * camera.aspect;
     const M = 8;

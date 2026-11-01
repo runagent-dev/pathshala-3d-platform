@@ -31,9 +31,9 @@ The pressure at a depth h in a liquid is the weight of the column of liquid abov
 pressure, at a steady rate (twice the depth, twice the pressure), seen as stronger jets from deeper holes.
 
 ## Design
-- A courtyard at sunset: terracotta floor tiles, a saffron lime-plastered wall with a band of cobalt and white tiles and
-  a marigold garland, an evening sky (no green, no white). A clear glass tank, water 1 m deep in a rich blue that darkens
-  towards the bottom, on a brick stand 0.5 m high; a stone channel on the floor catches the jets.
+- A plain courtyard at sunset (declutter, 0.2.0): a muted warm floor, a soft sand-coloured wall, an evening sky (no green, no
+  white). A clear glass tank, water 1 m deep in a rich blue that darkens
+  towards the bottom, on a concrete stand 0.5 m high; a stone channel on the floor catches the jets.
 - Three brass spouts at 0.2, 0.4 and 0.6 m below the surface (1,960, 3,920, 5,880 Pa: 1 : 2 : 3), each with a cork. The
   jets follow Torricelli's parabola to scale (v = √(2gh), landing 2√(h·y) away): with the tank on its stand the deeper
   the hole, the further the jet, as in the owner's picture. The book does not do this sum; the figure only shows it.

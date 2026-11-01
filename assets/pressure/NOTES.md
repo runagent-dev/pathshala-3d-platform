@@ -26,8 +26,8 @@ The same force on a smaller area gives a bigger pressure: P = F/A (in N/m² = Pa
 the heel (50 cm²) four times as deep as the sneaker (200 cm²) under the same force.
 
 ## Design
-- A village yard of soft red clay after rain (a turquoise wall with a yellow band, a blue door, magenta bougainvillea,
-  pots of marigolds, a puddle, a blue sky; no white or green page). The owner asked on 2026-10-31 for something other
+- A village yard of soft red clay after rain in front of a plain turquoise wall (declutter, 0.4.0: the door, bougainvillea,
+  pots, puddle and pebbles are gone; no white or green page). The owner asked on 2026-10-31 for something other
   than sand-coloured ground (and not grass) and chose red clay over a blue foam mat or purple play sand. Two
   lower legs, the same force F on each: a glossy cobalt pump with a pointed toe and a slim heel (a woman in a magenta
   salwar with a golden border, down to the ankle) touching the clay with the front of the sole and the heel's tip,
