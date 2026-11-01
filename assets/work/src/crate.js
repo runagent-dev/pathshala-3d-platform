@@ -1,7 +1,8 @@
 // The wooden crate (metres): 0.8 m long (x, the way it is pushed), 0.9 m high, 0.7 m deep. Planks with a grain drawn on
 // a canvas (no image files), a darker frame on every edge and a cross brace on the two long sides, the way a real
-// shipping crate is nailed together. Origin: on the floor under the middle of the crate, +x forward, +y up.
+// shipping crate is nailed together. Drawn as three meshes (planks, frame, nails). Origin: on the floor under the middle of the crate, +x forward, +y up.
 import * as THREE from 'three';
+import { mergeStatic } from './merge.js';
 
 export const CRATE = { L: 0.8, H: 0.9, D: 0.7 };
 const FRAME = 0.075; // the frame boards' width
@@ -116,6 +117,8 @@ export function createCrate() {
       m.receiveShadow = true;
     }
   });
+  // the crate never comes apart: its planks, frame and nails are drawn as three meshes (one per material)
+  mergeStatic(body);
 
   const bounds = new THREE.Box3();
   return {
