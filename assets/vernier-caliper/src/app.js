@@ -23,7 +23,7 @@ import { createQuiz, QUIZ_KINDS } from './quiz.js';
 import { createCoach } from './coach.js';
 import { measure, format, formatSigned, roundTo, LEAST_COUNTS } from './reading.js';
 
-export const VERSION = '0.3.7';
+export const VERSION = '0.4.0';
 
 /** Wait (briefly) for the Bangla webfont, so the numbers engraved on the scales are drawn with it. */
 export function loadFonts(timeout = 2500) {
@@ -373,10 +373,13 @@ export function createVernierApp(root, userOptions = {}) {
     let y0 = DIM.jawTip - 3;
     const y1 = 39;
     if (s.specimen?.mode === 'depth') x1 = Math.max(x1, DIM.beamEnd + s.specimen.size + 13);
-    // In tall or small frames (phones, side columns) frame the jaws and the scales being read, not the whole beam.
-    else if (camera.aspect < 1.25 || stage.width < 560) {
+    // In tall or very small frames (phones held upright) frame the jaws and the scales being read, not the whole beam.
+    else if (camera.aspect < 1.25 || stage.width < 420) {
       x0 = -24; // crops the end of the beam head, keeps the fixed jaw
       x1 = Math.min(x1, Math.max(s.gap + 66, 92));
+    } else if (stage.width < 900) {
+      // beside the panel: the whole head and jaws, the beam up to past the slider (its far end needs no reading)
+      x1 = Math.min(x1, Math.max(s.gap + 80, 110));
     }
     if (s.specimen?.mode === 'outside') y0 = Math.min(y0, -24 - s.specimen.size / 2 - 3);
     return { cx: (x0 + x1) / 2, cy: (y0 + y1) / 2, w: x1 - x0, h: y1 - y0 };
@@ -435,15 +438,10 @@ export function createVernierApp(root, userOptions = {}) {
   }
 
   function applyControls() {
-    if (s.view === 'front') {
-      controls.enableRotate = false;
-      controls.mouseButtons = { LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN };
-      controls.touches = { ONE: THREE.TOUCH.PAN, TWO: THREE.TOUCH.DOLLY_PAN };
-    } else {
-      controls.enableRotate = true;
-      controls.mouseButtons = { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN };
-      controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
-    }
+    // the front view and the turned view alike: a drag turns the caliper (a drag on the slider moves the slider)
+    controls.enableRotate = true;
+    controls.mouseButtons = { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN };
+    controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
   }
 
   function setView(view, { animate = true } = {}) {
@@ -463,6 +461,10 @@ export function createVernierApp(root, userOptions = {}) {
   }
 
   controls.addEventListener('start', () => {
+    if (s.view !== '3d') {
+      s.view = '3d';
+      syncUI();
+    }
     s.userMovedCamera = true;
     tweener.cancel('camera');
   });
@@ -916,7 +918,8 @@ export function createVernierApp(root, userOptions = {}) {
   }
 
   function syncUI() {
-    for (const b of ui.$$('[data-view]')) b.classList.toggle('on', b.dataset.view === s.view);
+    const front = ui.$('[data-view="front"]');
+    if (front) front.hidden = s.view !== '3d';
     const flags = { magnifier: s.magnifier, guides: s.guides, labels: s.labels, locked: s.locked, sound: s.sound, hidden: s.hidden };
     for (const b of ui.$$('[data-toggle]')) {
       const on = !!flags[b.dataset.toggle];
