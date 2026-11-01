@@ -13,7 +13,7 @@ from the start.
 
 ## 1. Layout: the 3D, the panel beside it
 
-- **Where the panel goes.** The kit's shell (kit 1.5.0) puts the panel beside the 3D on every landscape frame
+- **Where the panel goes.** Call `buildStudentShell(root, t, { layout: 'side', … })`. The kit's shell (kit 1.5.0) then puts the panel beside the 3D on every landscape frame
   (aspect ≥ 1 and at least 600 px wide: 640×400, 800×500, 844×390, 1280×800), full height, scrolling if needed,
   with a tab on the 3D's right edge that hides it. On portrait frames (390×700, 390×520) it stays below, and a touch
   phone held upright gets a card asking to turn it sideways.
