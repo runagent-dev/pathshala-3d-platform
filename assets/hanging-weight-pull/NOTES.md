@@ -144,3 +144,9 @@ pull: less acceleration. In the book's pictures the same law, body by body, give
   in 4 boxes → 9 in 1 (844×390: 102/5 → 9/1); idle frames 0/s before and after. Time to ready is within the noise of
   a loaded machine (1.5–5 s before and after).
 
+
+## Declutter (2026-11-01, v0.5.0)
+Only the well, its frame and pulley, the rope, the bucket and the man pulling: the house, the palm, the fence, the
+haystack and the clay pitchers are gone, and the sky is a calmer blue. The panel sits beside the 3D (kit 1.5.0): the
+old wide-frame grid and sideways-phone rules are gone. No front/turn buttons: a drag turns the view (not during the
+test), a front icon brings it back.

@@ -131,14 +131,14 @@ export function createApp(root, options = {}) {
   const sumEl = /** @type {HTMLElement} */ (eq.querySelector('.wl-sum'));
 
   // under the rule (not on phones): what the picture leaves out (the cut, the light rope) and the arrows' scale; on the
-  // picture only a chip at the bottom right with the bucket's velocity and the time of the run (slowed SLOW times)
+  // panel a line with the bucket's velocity and the time of the run (slowed SLOW times), over the rule
   const meta = document.createElement('p');
   meta.className = 'wl-meta';
   meta.innerHTML = `<span>${t('meta_cut')}</span> <span>${t('meta_rope')}</span> <span class="wl-meta-scale">${t('meta_scale')}</span>`;
   $('.pvc-rule').after(meta);
   const speed = document.createElement('div');
   speed.className = 'wl-speed';
-  ui.stage.append(speed);
+  $('.pvc-rule').before(speed);
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 30, near: 0.05, far: 90, environment: 'studio-light' });
@@ -157,17 +157,17 @@ export function createApp(root, options = {}) {
     c.height = 256;
     const ctx = /** @type {CanvasRenderingContext2D} */ (c.getContext('2d'));
     const g = ctx.createLinearGradient(0, 0, 0, 256);
-    g.addColorStop(0, '#1560c8');
-    g.addColorStop(0.45, '#3f8fe0');
-    g.addColorStop(0.8, '#94c8f0');
-    g.addColorStop(1, '#cfe6f6');
+    g.addColorStop(0, '#5b86b4');
+    g.addColorStop(0.45, '#7fa3c6');
+    g.addColorStop(0.8, '#b3cadd');
+    g.addColorStop(1, '#d3e0ea');
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, 4, 256);
     const sky = new THREE.CanvasTexture(c);
     sky.colorSpace = THREE.SRGBColorSpace;
     scene.background = sky;
-    // a haze over the yard behind the well (the house, the haystack): the well, the bucket and the arrows stand out
-    scene.fog = new THREE.Fog('#d8e9f6', 10, 20);
+    // a haze over the yard behind the well: the well, the bucket and the arrows stand out
+    scene.fog = new THREE.Fog('#d3e0ea', 10, 20);
   }
   function hazeYard() {
     if (!(scene.fog instanceof THREE.Fog)) return;
@@ -681,16 +681,21 @@ export function createApp(root, options = {}) {
   }
   function setView(view, { animate = true } = {}) {
     s.view = view === '3d' ? '3d' : 'front';
-    controls.enableRotate = s.view === '3d';
     s.userMovedCamera = false;
     syncUI();
     emit('view', { view: s.view });
     emitChange();
     return flyTo(viewPose(), animate ? 0.7 : 0);
   }
+  // the view starts from the front; dragging turns it, and then the "front" button appears to come back
   controls.addEventListener('start', () => {
     s.userMovedCamera = true;
     tweener.cancel('camera');
+    if (s.view !== '3d') {
+      s.view = '3d';
+      syncUI();
+      emit('view', { view: s.view });
+    }
   });
   stage.onResize(() => {
     if (!s.userMovedCamera) flyTo(viewPose(), 0);
@@ -993,7 +998,9 @@ export function createApp(root, options = {}) {
 
   // ── buttons, keys ───────────────────────────────────────────────────────────
   function syncUI() {
-    for (const b of ui.$$('[data-view]')) b.classList.toggle('on', b.dataset.view === s.view);
+    const front = ui.$('[data-view="front"]');
+    if (front) front.hidden = s.view !== '3d';
+    controls.enableRotate = !s.locked;
     root.dataset.mode = s.mode === 'quiz' ? 'quiz' : 'explore';
     for (const b of ui.$$('[data-mode]')) {
       const on = b.dataset.mode === root.dataset.mode;
@@ -1104,7 +1111,6 @@ export function createApp(root, options = {}) {
   setNumbers(EXPERIMENTS[s.id].T, EXPERIMENTS[s.id].M, { custom: false });
   syncUI();
   flyTo(viewPose(), 0);
-  controls.enableRotate = s.view === '3d';
   const startAt = o.at === '' || o.at == null ? null : Number(o.at);
   if (startAt != null && Number.isFinite(startAt)) {
     s.phase = 'run';
