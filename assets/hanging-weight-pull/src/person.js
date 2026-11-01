@@ -4,6 +4,7 @@
 // grips the rope with both fists; pose() puts each fist on a point of the rope (two-bone reach for the arms and the
 // legs). Metres. In the root's own frame he faces +x (the root is turned to face the well); +z is his left.
 import * as THREE from 'three';
+import { mergeStatic } from './merge.js';
 
 const HIP_Y = 0.87; // the pelvis (the upper body leans about it)
 const HIP_JOINT = 0.8; // where the legs start
@@ -406,12 +407,30 @@ export function createPerson({ shirt = '#2457c9', trousers = '#4a4f5c' } = {}) {
   hit.userData.noExport = true;
   root.add(hit);
 
+  // the tiny parts (eyes, lips, buttons, the placket) cast no shadow anyone could see
+  const small = new Set([M.eye, M.white, M.lips, M.button, M.shirtDark]);
   root.traverse((o) => {
     if (o instanceof THREE.Mesh && o !== hit) {
-      o.castShadow = true;
+      o.castShadow = !small.has(o.material);
       o.receiveShadow = true;
     }
   });
+  // nor do the elbows, the knees, the trouser rolls and the feet on their sandals (the soles keep theirs)
+  for (const arm of arms) arm.elbow.castShadow = false;
+  for (const leg of legs) {
+    leg.knee.castShadow = false;
+    leg.roll.castShadow = false;
+    leg.foot.traverse((o) => {
+      if (o instanceof THREE.Mesh && o.material !== M.sole) o.castShadow = false;
+    });
+  }
+  // the parts that move together (the head, the trunk, each fist, each foot): one mesh per material each
+  // (the eyes and lips in one vertex-coloured mesh, the buttons and the placket in another)
+  const details = new THREE.MeshStandardMaterial({ name: 'Details', vertexColors: true, roughness: 0.55, metalness: 0 });
+  mergeStatic(headG, { paint: { from: [M.eye, M.white, M.lips], material: details } });
+  mergeStatic(upper, { keep: [headPivot], paint: { from: [M.button, M.shirtDark], material: details } });
+  for (const arm of arms) mergeStatic(arm.fist);
+  for (const leg of legs) mergeStatic(leg.foot);
 
   const box = new THREE.Box3();
   return {
