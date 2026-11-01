@@ -53,6 +53,11 @@ export function createApp(root, options = {}) {
   const term = (cls, label) => `<span class="pvc-t ${cls}"><b>0</b><small>${t(label)}</small></span>`;
   const ui = buildStudentShell(root, t, {
     learn: `
+          <div class="bal-acts">
+            <button class="pvc-btn" data-act="tare">${t('act_tare')}</button>
+            <button class="pvc-btn" data-act="unit"><span></span></button>
+            <button class="pvc-btn" data-act="xray"><span></span></button>
+          </div>
           <div class="pvc-learn-main">
             <div class="pvc-result"><span class="k">${t('reading')}</span><span class="v">0</span><span class="u"></span></div>
             <div class="pvc-sum bal-sum">${term('w', 'w_long')}<i>÷</i>${term('g', 'g_long')}<i>=</i>${term('m', 'm_long')}</div>
@@ -60,11 +65,6 @@ export function createApp(root, options = {}) {
           <p class="pvc-learn-extra bal-extra"></p>
           <div class="pvc-learn-foot">
             <span class="pvc-status"><i></i><span></span></span>
-            <div class="bal-acts">
-              <button class="pvc-btn" data-act="tare">${t('act_tare')}</button>
-              <button class="pvc-btn" data-act="unit"><span></span></button>
-              <button class="pvc-btn" data-act="xray"><span></span></button>
-            </div>
           </div>`,
   });
 
@@ -84,6 +84,26 @@ export function createApp(root, options = {}) {
   const audio = createAudio(o.sound);
   const annotations = createAnnotations({ stage, layer: ui.annoLayer });
 
+  // a simple coloured setting: a soft sky-to-sand backdrop and a warm table (never the white page)
+  if (o.bg !== 'transparent') {
+    const c = document.createElement('canvas');
+    c.width = 4;
+    c.height = 256;
+    const g2 = /** @type {CanvasRenderingContext2D} */ (c.getContext('2d'));
+    const grad = g2.createLinearGradient(0, 0, 0, 256);
+    grad.addColorStop(0, '#c9dbe8');
+    grad.addColorStop(1, '#efe3d0');
+    g2.fillStyle = grad;
+    g2.fillRect(0, 0, 4, 256);
+    const sky = new THREE.CanvasTexture(c);
+    sky.colorSpace = THREE.SRGBColorSpace;
+    scene.background = sky;
+    const desk = new THREE.Mesh(new THREE.CircleGeometry(900, 48), new THREE.MeshStandardMaterial({ color: '#dcc9ad', roughness: 0.8 }));
+    desk.rotation.x = -Math.PI / 2;
+    desk.position.y = -0.5;
+    desk.userData.noExport = true;
+    scene.add(desk);
+  }
   if (o.shadow && o.bg !== 'transparent') {
     stage.renderer.shadowMap.enabled = true;
     stage.renderer.shadowMap.type = THREE.VSMShadowMap;
@@ -94,7 +114,7 @@ export function createApp(root, options = {}) {
     sun.shadow.mapSize.set(2048, 2048);
     Object.assign(sun.shadow.camera, { left: -260, right: 260, top: 260, bottom: -260, near: 200, far: 1000 });
     sun.shadow.radius = 10;
-    const table = new THREE.Mesh(new THREE.PlaneGeometry(3000, 3000), new THREE.ShadowMaterial({ opacity: 0.12 }));
+    const table = new THREE.Mesh(new THREE.PlaneGeometry(3000, 3000), new THREE.ShadowMaterial({ opacity: 0.18 }));
     table.rotation.x = -Math.PI / 2;
     table.receiveShadow = true;
     scene.add(sun, sun.target, table);
@@ -438,13 +458,16 @@ export function createApp(root, options = {}) {
   function setView(view, { animate = true } = {}) {
     if (s.xray) setXray(false, { animate: false });
     s.view = view === '3d' ? '3d' : 'front';
-    controls.enableRotate = s.view === '3d';
     s.userMovedCamera = false;
     syncUI();
     emit('view', { view: s.view, xray: s.xray });
     return flyTo(viewPose(s.view), animate ? 0.8 : 0);
   }
   controls.addEventListener('start', () => {
+    if (s.view !== '3d') {
+      s.view = '3d';
+      syncUI();
+    }
     s.userMovedCamera = true;
     tweener.cancel('camera');
   });
@@ -726,7 +749,8 @@ export function createApp(root, options = {}) {
 
   // ── buttons, keys ───────────────────────────────────────────────────────────
   function syncUI() {
-    for (const b of ui.$$('[data-view]')) b.classList.toggle('on', b.dataset.view === s.view);
+    const front = ui.$('[data-view="front"]');
+    if (front) front.hidden = s.view !== '3d';
     root.dataset.mode = s.mode === 'quiz' ? 'quiz' : 'explore';
     for (const b of ui.$$('[data-mode]')) {
       const on = b.dataset.mode === root.dataset.mode;
