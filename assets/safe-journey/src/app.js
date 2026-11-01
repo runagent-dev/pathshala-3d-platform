@@ -13,7 +13,6 @@
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
 import { createTweener, ease } from '@shared/tween.js';
-import { createArrow } from '@shared/arrow.js';
 import { createAudio } from '@shared/student/audio.js';
 import { bindCleanSheet, buildStudentShell, cleanSheet } from '@shared/student/shell.js';
 import { createAction } from '@shared/student/action.js';
@@ -21,7 +20,8 @@ import { createAnnotations } from '@shared/student/annotations.js';
 import { createQuiz } from '@shared/student/quiz.js';
 import { ICONS } from '@shared/student/icons.js';
 import { createI18n } from './i18n.js';
-import { ROAD, blobShadow, createRoad } from './road.js';
+import { ROAD, SKY, blobShadow, createRoad, skyTexture } from './road.js';
+import { createBoldArrow } from './arrow.js';
 import { TRUCK, createTruck } from './truck.js';
 import { CAR, createCar } from './car.js';
 import { ENERGY, createEnergy } from './energy.js';
@@ -43,7 +43,7 @@ export const DEFAULTS = {
   sound: true,
 };
 
-const COLORS = { velocity: '#1c6fd9', energy: '#b86a00' };
+const COLORS = { velocity: '#1c6fd9', energy: '#9c5a00' }; // both read at 4.5:1 or more on the labels' white chips
 const LANE = ROAD.lane; // z of the lane where they meet
 const ROW_Z = ROAD.half - 0.55; // the velocity arrows lie on the road in front of the vehicles, inside the edge line
 const ROW_Y = 0.2;
@@ -53,6 +53,7 @@ const TRUCK_SHOWN = 3.8; // m of the truck (its cab and the front of its load) a
 const DOUBLE_TAP = 450; // ms: a second tap this soon after one is ignored
 const GROW = 0.7; // s for the energy square to grow or shrink to a new speed
 const VIEW_3D = new THREE.Vector3(0.55, 0.62, 1).normalize();
+const SUN = { x: 6, y: 30, z: 18 }; // the sun's place from the point the camera looks at (it glides with the camera)
 
 export function createApp(root, options = {}) {
   const o = { ...DEFAULTS, ...options };
@@ -79,15 +80,6 @@ export function createApp(root, options = {}) {
     const word = b.querySelector('.pvc-ex-word');
     if (word) word.textContent = t('speed', { v: Number(b.dataset.example) });
   }
-  const note = document.createElement('div');
-  note.className = 'sj-note';
-  note.hidden = true;
-  // after the crash: the book's assumption, said where the result is seen
-  const assume = document.createElement('div');
-  assume.className = 'sj-assume';
-  assume.hidden = true;
-  assume.textContent = t('note_assume');
-  ui.stage.append(note, assume);
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 22, near: 1, far: 600, environment: 'studio-light' });
@@ -97,9 +89,21 @@ export function createApp(root, options = {}) {
   controls.enableZoom = false;
   controls.minDistance = 10;
   controls.maxDistance = 200;
+  controls.maxPolarAngle = THREE.MathUtils.degToRad(84); // the turned view stays above the road
   const world = new THREE.Group();
   world.name = 'SafeJourney';
   scene.add(world);
+  // the sky (seen when the view is turned) and a haze over the far river, the colour of the sky low down
+  if (o.bg !== 'transparent') {
+    scene.background = skyTexture();
+    scene.fog = new THREE.Fog(SKY.haze, 80, 260);
+  }
+  /** The haze starts a little behind the road and thickens toward the far bank, for a camera `d` m from the road. */
+  function fitFog(d) {
+    if (!scene.fog) return;
+    scene.fog.near = d + 12;
+    scene.fog.far = d + 190;
+  }
 
   const road = createRoad();
   const truck = createTruck();
@@ -116,9 +120,10 @@ export function createApp(root, options = {}) {
   car.root.add(carShadow);
   world.add(road.root, truck.root, car.root, energy.root);
 
+  // bold, inside a white rim, so they stand out on the asphalt at every size
   const arrows = {
-    truck: createArrow({ color: COLORS.velocity, radius: 0.085, head: 0.5, headRadius: 0.22, name: 'TruckVelocity' }),
-    car: createArrow({ color: COLORS.velocity, radius: 0.085, head: 0.5, headRadius: 0.22, name: 'CarVelocity' }),
+    truck: createBoldArrow({ color: COLORS.velocity, radius: 0.11, head: 0.56, headRadius: 0.27, rim: 0.045, name: 'TruckVelocity' }),
+    car: createBoldArrow({ color: COLORS.velocity, radius: 0.11, head: 0.56, headRadius: 0.27, rim: 0.045, name: 'CarVelocity' }),
   };
   for (const a of Object.values(arrows)) world.add(a.root);
 
@@ -194,19 +199,20 @@ export function createApp(root, options = {}) {
     stage.renderer.shadowMap.type = THREE.VSMShadowMap;
     sun = new THREE.DirectionalLight(0xffffff, 0.45);
     sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
-    Object.assign(sun.shadow.camera, { left: -22, right: 22, top: 14, bottom: -14, near: 5, far: 80 });
-    sun.shadow.radius = 5;
+    // a tight box round the road in view (fitShadow), so 1024 texels look as sharp as 2048 did on a loose one
+    sun.shadow.mapSize.set(1024, 1024);
+    sun.shadow.radius = 3;
     sun.shadow.bias = -0.0004;
-    sun.position.set(6, 30, 18);
+    sun.position.set(SUN.x, SUN.y, SUN.z);
     sun.target.position.set(0, 0, 0);
     scene.add(sun, sun.target);
-    road.root.traverse((m) => {
-      if (m instanceof THREE.Mesh) m.receiveShadow = true;
-    });
-    for (const obj of [truck.root, car.root, energy.root])
+    // the road and its verges take the shadows (the far scenery lies outside the shadow box)
+    for (const m of road.root.children) if (m instanceof THREE.Mesh) m.receiveShadow = true;
+    // only the parts whose shadows are seen cast them: not lamps, glass, hubs or bolts
+    for (const obj of [truck.root, car.root])
       obj.traverse((m) => {
-        if (m instanceof THREE.Mesh && m.material && !m.material.transparent && m.material.visible !== false) m.castShadow = true;
+        if (m instanceof THREE.Mesh && m.material && !m.material.transparent && m.material.visible !== false && !m.userData.smallPart)
+          m.castShadow = true;
       });
     truckShadow.visible = carShadow.visible = false; // real shadows instead
   }
@@ -248,6 +254,37 @@ export function createApp(root, options = {}) {
       return [start.hi - start.lo, finish.hi - finish.lo];
     }),
   );
+  /**
+   * The shadow box: fitted round the road in view (its shoulders, the vehicles' height) as the sun sees it. The sun
+   * glides with the camera, so the box is the same at every glide and is fitted once.
+   */
+  function fitShadow() {
+    if (!sun) return;
+    const look = new THREE.Matrix4().lookAt(new THREE.Vector3(SUN.x, SUN.y, SUN.z), new THREE.Vector3(), new THREE.Vector3(0, 1, 0));
+    const toLight = look.invert().multiply(new THREE.Matrix4().makeTranslation(-SUN.x, -SUN.y, -SUN.z));
+    const half = VIEW_WIDTH / 2 + 4;
+    const lo = new THREE.Vector3(Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY);
+    const hi = new THREE.Vector3(Number.NEGATIVE_INFINITY, Number.NEGATIVE_INFINITY, Number.NEGATIVE_INFINITY);
+    const p = new THREE.Vector3();
+    for (const x of [-half, half])
+      for (const y of [0, TRUCK.height + 0.2])
+        for (const z of [-(ROAD.half + ROAD.shoulder), ROAD.half + ROAD.shoulder]) {
+          p.set(x, y, z).applyMatrix4(toLight);
+          lo.min(p);
+          hi.max(p);
+        }
+    // the light looks down −z of its own frame: near and far from the depths
+    Object.assign(sun.shadow.camera, {
+      left: lo.x - 0.5,
+      right: hi.x + 0.5,
+      bottom: lo.y - 0.5,
+      top: hi.y + 0.5,
+      near: Math.max(0.5, -hi.z - 2),
+      far: -lo.z + 2,
+    });
+    sun.shadow.camera.updateProjectionMatrix();
+  }
+  fitShadow();
   /** The camera's glide along the road at time tau of a run: 0 at the start, the end's centre once it has ended. */
   function panAt(run, tau) {
     const { p } = run;
@@ -362,7 +399,7 @@ export function createApp(root, options = {}) {
     controls.update();
     s.follow = f;
     if (sun) {
-      sun.position.set(f + 6, 30, 18);
+      sun.position.set(f + SUN.x, SUN.y, SUN.z);
       sun.target.position.set(f, 0, 0);
     }
     stage.invalidate();
@@ -431,7 +468,7 @@ export function createApp(root, options = {}) {
   const anno = createAnnotations({
     stage,
     layer: ui.annoLayer,
-    avoid: [ui.corner, ui.hint, note, assume, () => action?.ringBox() ?? null, () => action?.box() ?? null, () => keBox()],
+    avoid: [ui.corner, ui.hint, () => action?.ringBox() ?? null, () => action?.box() ?? null, () => keBox()],
   });
   const below = [
     { dx: 0, dy: 18 },
@@ -631,7 +668,11 @@ export function createApp(root, options = {}) {
   function outcomeHtml(st) {
     const p = s.run.p;
     if (st.phase === 'ready') return [t('out_ready', { v: p.speed, n: two(cubes(p.speed)) }), 'energy'];
-    if (st.phase === 'approach' || st.phase === 'contact') return [t('out_run', { v: kmh(st.v2 / KMH), w: kmh(st.v1 / KMH) }), 'velocity'];
+    if (st.phase === 'approach' || st.phase === 'contact') {
+      // the honest note about time, in small after the velocities
+      const slow = st.phase === 'contact' ? t('note_contact') : t('note_slow', { n: SLOW });
+      return [t('out_run', { v: kmh(st.v2 / KMH), w: kmh(st.v1 / KMH), slow }), 'velocity'];
+    }
     const vars = { a: kmh(-p.speed), b: kmh(p.kmh.v2), c: kmh(p.kmh.change), k: two((p.v2 + p.u) / p.u) };
     return [t(p.masses === 'real' ? 'out_end_real' : 'out_end', vars), 'velocity'];
   }
@@ -658,11 +699,11 @@ export function createApp(root, options = {}) {
   }
 
   let lastKind = '';
-  let lastNote = '';
+  let chosen = '';
   function refresh() {
     if (!s.run) return;
     const st = current();
-    sheet.choose(String(s.speed));
+    if (chosen !== String(s.speed)) sheet.choose((chosen = String(s.speed))); // the row is written only when it changes
     for (const v of SPEEDS) sheet.result(String(v), s.tried.has(v) ? t('res_cubes', { n: two(cubes(v)) }) : '');
     const [html, kind] = outcomeHtml(st);
     sheet.outcome(html);
@@ -676,14 +717,6 @@ export function createApp(root, options = {}) {
       if (st.phase === 'ready' || st.phase === 'end') action.show('run');
       else action.hide('run');
     }
-    // the honest note about time
-    const text = st.phase === 'approach' || st.phase === 'after' ? t('note_slow', { n: SLOW }) : st.phase === 'contact' ? t('note_contact') : '';
-    if (text !== lastNote) {
-      note.textContent = text;
-      note.hidden = !text;
-      lastNote = text;
-    }
-    assume.hidden = !(st.phase === 'after' || st.phase === 'end');
     settle = 4;
     stage.invalidate();
   }
@@ -778,7 +811,7 @@ export function createApp(root, options = {}) {
     label: 'act_go',
     target: () => (s.run ? carRing() : null),
     pad: 3,
-    avoid: [ui.corner, ui.hint, note, assume, () => anno.boxes(), () => keBox(), () => truckBox()],
+    avoid: [ui.corner, ui.hint, () => anno.boxes(), () => keBox(), () => truckBox()],
     pulse: Boolean(o.coach),
     onAct: () => {
       audio.unlock();
@@ -809,6 +842,7 @@ export function createApp(root, options = {}) {
     }
     pose.position.x += s.follow;
     pose.target.x += s.follow;
+    fitFog(pose.position.distanceTo(pose.target));
     return pose;
   }
   function flyTo({ position, target }, duration = 0.8) {
@@ -1015,7 +1049,7 @@ export function createApp(root, options = {}) {
           const wrong = k === 2 ? [2, 8, 1] : [3, 27, 6];
           const items = [n, ...wrong].map((x) => item(`n${x}`, null, t('c_cubes', { n: x })));
           question = { kind, k, a, b, n, wrong };
-          return ask(t('q_ke', { a, b, k }), textChoices(items, kind, { n }));
+          return ask(t('q_ke', { a, b, k, one: 1 }), textChoices(items, kind, { n }));
         }
         if (kind === 'safe') {
           const v = 60;

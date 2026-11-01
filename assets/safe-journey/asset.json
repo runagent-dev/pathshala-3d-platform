@@ -5,7 +5,7 @@
   "title": "Safe journey: velocity and force (নিরাপদ ভ্রমণ: বেগ ও বল)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "book": "physics-9-10",
   "page": 74,
   "topic": "3.5.2",
@@ -13,7 +13,7 @@
   "order": 1,
   "maintainers": ["RadeenXALNW"],
   "units": "m",
-  "description": "The book's safe-journey example (নিরাপদ ভ্রমণ, pages 74–75, 3.5.2) as a road scene: a heavy truck loaded with stones (m₁) and a small red car (m₂) face each other in one lane of a two-lane highway. The speed is chosen in a row of words (২০, ৪০, ৬০ km/h). Over the car, amber cubes in a square show its kinetic energy ½mv²: one cube is its energy at 20 km/h, so twice the speed makes a square twice as wide, four cubes, and three times nine (\"বেগ দ্বিগুণ করা হলে গতিশক্তি চার গুণ বেড়ে যায়\"). Blue velocity arrows lie on the road in front of each vehicle (u for the truck, −u for the car, to the right positive). The panel is one action, one result, one rule: a big numbered button (\"১ মুখোমুখি চালাও\") whose same badge rings the car plays the head-on crash with time 8 times slower (the contact slower still): the car's front is crushed in proportion to its energy, its velocity goes from −u through zero to 3u (the book's sums with m₂ ≈ 0) and it is flung back while the truck goes on at u; the result line gives the car's change (\"−৪০ থেকে ১২০ km/h: পরিবর্তন ১৬০ km/h\", 4u) and the rule grows from ½mv² through 3u − (−u) = 4u to the book's \"ক্ষতি কমানোর সবচেয়ে সহজ উপায় গতি কম রাখা\". Then the button offers the next speed. Test tab: 5 questions on their own scenes (the cubes at twice or three times the speed, which change lowers the energy most, the car's velocity after the crash, its change read off the picture, why the truck's velocity hardly changes). Phone-first, Bangla.",
+  "description": "The book's safe-journey example (নিরাপদ ভ্রমণ, pages 74–75, 3.5.2) as a road scene: a heavy truck loaded with stones (m₁) and a small red car (m₂) face each other in one lane of a two-lane highway on a river embankment (country boats on the water, white kash grass on the bank). The speed is chosen in a row of words (২০, ৪০, ৬০ km/h). Over the car, amber cubes in a square show its kinetic energy ½mv²: one cube is its energy at 20 km/h, so twice the speed makes a square twice as wide, four cubes, and three times nine (\"বেগ দ্বিগুণ করা হলে গতিশক্তি চার গুণ বেড়ে যায়\"). Blue velocity arrows lie on the road in front of each vehicle (u for the truck, −u for the car, to the right positive). The panel is one action, one result, one rule: a big numbered button (\"১ মুখোমুখি চালাও\") whose same badge rings the car plays the head-on crash with time 8 times slower (the contact slower still): the car's front is crushed in proportion to its energy, its velocity goes from −u through zero to 3u (the book's sums with m₂ ≈ 0) and it is flung back while the truck goes on at u; the result line gives the car's change (\"−৪০ থেকে ১২০ km/h: পরিবর্তন ১৬০ km/h\", 4u) and the rule grows from ½mv² through 3u − (−u) = 4u to the book's \"ক্ষতি কমানোর সবচেয়ে সহজ উপায় গতি কম রাখা\". Then the button offers the next speed. Test tab: 5 questions on their own scenes (the cubes at twice or three times the speed, which change lowers the energy most, the car's velocity after the crash, its change read off the picture, why the truck's velocity hardly changes). Phone-first, Bangla.",
   "tags": ["kinetic-energy", "collision", "momentum", "road-safety", "velocity", "bangla"],
   "params": [
     {

@@ -50,11 +50,16 @@ speed is what makes a journey dangerous, so keep it low.
 km/h, kg, চালাও, শুরুতে ফেরাও, সময় … গুণ ধীর, সংঘর্ষ আরও ধীরে, আসল ভর.
 
 ## How the figure works
-- **Scene** (metres): a two-lane highway (grey asphalt, white edge lines, a dashed centre line, earth shoulders, grass
-  verges, a row of pale roadside trees far behind, white ground like the page). In the near lane, facing each other:
+- **Scene** (metres): a two-lane highway on a river embankment, as so many of the country's highways run: grey
+  asphalt with worn wheel paths, patches and cracks, white edge lines and a dashed centre line; shoulders of brick
+  ballast; verges of dry grass with white guard posts on the far side and a kilometre stone on the near one. Beyond
+  the far verge the embankment slopes to a muddy bank with white kash grass and a few trees (trunks painted white at
+  the foot), then the river (cool teal water, rippled, a haze toward the far bank) with country boats, one under a
+  patched sail; far off, the other bank with trees, tin-roofed houses and a brick kiln's chimney (seen when the view
+  is turned, under a sky). Beyond the near verge, harvested paddy fields and straw stacks. In the near lane, facing each other:
   the loaded Bangladeshi truck of the sister figure `momentum` (mustard cab, painted crown, wooden body), here heaped
   with grey stones above its sides (m₁), and the same red hatchback as in `momentum` (m₂), facing left. Seen from the
-  side and a little above (36° in portrait, 15° on wide frames), with a long lens, so lengths along the road are true.
+  side and a little above (40° in portrait, 15° on wide frames), with a long lens, so lengths along the road are true.
 - **Speed** (the row of words): ২০, ৪০, ৬০ km/h, the same for both (the book's "একই বেগে"). Default 20 km/h.
 - **Kinetic energy**: amber cubes (#f59f00, the kinetic-energy colour of chapter 3) standing in a square over the car,
   labelled গাড়ির গতিশক্তি (the truck's, 20 times the mass, would be 20 times as many). One cube is the car's kinetic
@@ -64,12 +69,13 @@ km/h, kg, চালাও, শুরুতে ফেরাও, সময় … 
   The square shows the energy the car takes into the crash; as they touch it fades to a faint ghost over the car
   (the energy that crushed it). Counts are written "৪টি ঘনক" everywhere. The square floats 1.5 m above the roof, so the dashed ring round the car never touches its bottom row at any of
   the six sizes; a flat slab of a ring, so it hugs the car.
-- **Velocity arrows** (blue #1c6fd9, 0.04 m per km/h) lie on the road just in front of each vehicle, from its middle:
+- **Velocity arrows** (blue #1c6fd9, 0.04 m per km/h, bold inside a white rim) lie on the road just in front of each vehicle, from its middle:
   u to the right for the truck, −u to the left for the car (to the right positive); labelled u, −u before, v₁ = u and
   v₂ = 3u after (live v₂ during the contact). The car's arrow shrinks, vanishes for an instant and grows to the right,
   three times as long as before. Every arrow carries its symbol.
 - **The run** (`src/crash.js`, a pure function of the playback time, unit-tested): the two approach (start gap 4, 6,
-  8 m at 20, 40, 60 km/h) with time 8 times slower than real ("সময় ৮ গুণ ধীর" in the corner); as they touch a pale
+  8 m at 20, 40, 60 km/h) with time 8 times slower than real ("সময় ৮ গুণ ধীর" in small after the velocities in
+  the result line); as they touch a pale
   flash, and the contact itself is shown much slower (1.2 s on screen for 3–9 hundredths of a second; "সংঘর্ষ আরও
   ধীরে"): the relative velocity goes from −2u to 2u as −2u·cos πk (as a very stiff spring would do it), so momentum is
   kept at every instant and half way both move together (when the car is squashed most). The car's front is crushed
@@ -110,9 +116,9 @@ km/h, kg, চালাও, শুরুতে ফেরাও, সময় … 
   Every wrong choice has its own one-line note. During the test the scene is locked (a tap says so).
 
 ## Deliberate choices and kit gaps
-- The stylised time is said in the corner note; after the crash (phases after and end, hidden while the test's
-  "locked" hint shows) a second note, one line, under the buttons says the book's assumption in short ("বইয়ের হিসাবে
-  গতিশক্তি ছাড়া অন্য শক্তি নেই (আসলে ঠিক নয়)"; the book: "গতিশক্তি ছাড়া অন্য কোনো শক্তির আদান প্রদান ঘটেনি, যা আসলে ঠিক
+- The stylised time is said in the result line while they move ("(সময় ৮ গুণ ধীর)", during the contact "(সংঘর্ষ আরও
+  ধীরে)"); after the first crash the rule says the book's assumption in short ("… m₂ ≈ ০ ধরে; গতিশক্তি ছাড়া অন্য
+  শক্তির আদান প্রদান ধরা হয়নি, যা আসলে ঠিক নয়"; the book: "গতিশক্তি ছাড়া অন্য কোনো শক্তির আদান প্রদান ঘটেনি, যা আসলে ঠিক
   নয়"), and the result line ends "(= 4u)". The crumple grows with the
   kinetic energy, the book's "এই শক্তিটির কারণেই গাড়ি ক্ষতিগ্রস্ত হয়", even though the velocities come from the
   elastic sums (no energy lost); the book itself says that assumption "আসলে ঠিক নয়".
@@ -122,7 +128,8 @@ km/h, kg, চালাও, শুরুতে ফেরাও, সময় … 
 - The GLB holds the truck, the car as it is and 40 m of road (no scenery).
 - The book says the car is flung back "চার গুণ বেগে"; by its own sums it leaves at 3u, its velocity *changes* by 4u.
   The figure says "3u বেগে… বেগের পরিবর্তন 4u" and never "চার গুণ বেগে" (a question for the book team, below).
-- No kit gaps: built on createAction, cleanSheet/bindCleanSheet, createAnnotations, createArrow, createQuiz.
+- No kit gaps: built on createAction, cleanSheet/bindCleanSheet, createAnnotations, createQuiz; the bold rimmed arrows
+  (`src/arrow.js`) and the merging helpers (`src/merge.js`) are copies of the sister figure momentum's.
 
 ## Open questions for the book team
 - Page 75: "উল্টোদিকে চার গুণ বেগে ছিটকে যাবে" — by the page's own result the car leaves at 3u (three times the speed);
@@ -131,3 +138,24 @@ km/h, kg, চালাও, শুরুতে ফেরাও, সময় … 
 - "ঘনক" for the cubes of energy is our word; is it clear to a class 9 student, or is "ভাগ"/"একক" better?
 - The book writes "এখনেও" (probably "এখানেও"), "হল" and "উল্টোদিকে"; the figure keeps উল্টোদিকে.
 - Whether to give a student control for the real masses (now only `?masses=real` for the book team).
+
+## Polish pass (2026-11-01)
+- **Layout**: the kit's 3D-on-top layout everywhere (the panel beside the view only in the kit's short-and-wide
+  frames); on phones the lines are tighter and the test's questions are two lines, so the 3D view has 387 of 700 px
+  (55 %, was 341).
+- **Text on the 3D view**: labels only. The corner note about time moved into the result line, in small; the book's
+  assumption, which sat across the top of the view after the crash, moved into the rule after the first crash.
+- **Setting**: no white page or pale grass any more: a highway on a river embankment (see Scene). The arrows' blue
+  and the cubes' amber appear nowhere in it; the cubes stand against the water. The arrows are bold with a white rim;
+  the energy label's amber is darker (#9c5a00, 5:1 on its chip).
+- **Smooth**: the truck's and the car's static parts merged by material (the car's still crumple, merged), wheels,
+  energy cubes, trees, posts, grass, boats and houses instanced, single-mesh arrows moved in place, a fitted 1024
+  shadow box (was a loose 2048), only parts whose shadows are seen cast them, the speed row written only when it
+  changes, canvas textures in powers of two.
+- **Numbers** (headless Chromium, software GL, shadows on, 390×700): draw calls avg 335 → 98, max 544 → 148;
+  triangles max 47k → 106k (the new scenery); texture memory 54.8 → 21.6 MB (largest 2048 → 1024 px); time to
+  ready about 1.0–1.4 s before and 1.4–1.7 s after on a busy machine (noisy: 1.3–8 s for the same build); frames
+  drawn while idle 0–0.7/s, as before; text on the 3D view 22 characters in 7 boxes at the start, as before (the two
+  notes, up to about 70 characters, no longer appear during and after the run).
+- **Bugs**: none found in reset, the test, keys, double taps, tapping a speed or the test tab during a run, or
+  rotating during a run (all checked; no console errors).

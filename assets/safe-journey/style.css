@@ -1,12 +1,12 @@
 /* Safe journey: the page, the colours that carry meaning (বেগ blue #1c6fd9 as the arrows, গতিশক্তি amber #f59f00 as
-   the cubes, its text a darker amber for contrast), the honest note about time on the stage and the test's answers in
-   words. The panel is the kit's clean sheet (one action, one result, one rule: ../../shared/lib/student/student.css,
+   the cubes, its text a darker amber for contrast, 4.5:1 or more on white) and the test's answers in words. The 3D
+   view carries only short labels; the notes about time and the book's assumption are in the panel's lines. The panel is the kit's clean sheet (one action, one result, one rule: ../../shared/lib/student/student.css,
    .pvc-examples, .pvc-act, .pvc-outcome, .pvc-rule). */
 html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
 #app { position: fixed; inset: 0; }
 body.bg-transparent { background: transparent; }
 
-.sj { --c-vel: #1c6fd9; --c-ke: #b86a00; }
+.sj { --c-vel: #1c6fd9; --c-ke: #9c5a00; }
 /* m₁, v₂, ½mv²: sub- and superscripts never make their line taller (the panel keeps its height) */
 .sj sub, .sj sup { line-height: 0; }
 
@@ -16,10 +16,8 @@ body.bg-transparent { background: transparent; }
 .sj .pvc-examples button.on .pvc-ex-res { color: var(--c-ke); }
 .sj .pvc-examples .pvc-ex-res { color: color-mix(in srgb, var(--c-ke) 70%, var(--ink-3)); }
 
-/* on the stage: the honest note about time, top left (the buttons are top right) */
-.sj-note { position: absolute; left: 10px; top: 10px; z-index: 5; max-width: calc(100% - 230px); padding: 3px 9px; border-radius: 6px; border: 1px solid var(--line-2); background: rgba(255, 255, 255, 0.94); color: var(--ink-2); font-size: 13px; font-weight: 600; line-height: 1.4; white-space: nowrap; pointer-events: none; }
-/* after the crash: the book's assumption, under the buttons, across the top of the view */
-.sj-assume { position: absolute; left: 10px; right: 10px; top: 52px; z-index: 5; width: fit-content; max-width: min(560px, calc(100% - 20px)); padding: 3px 9px; border-radius: 6px; border: 1px solid var(--line-2); background: rgba(255, 255, 255, 0.94); color: var(--ink-2); font-size: 13px; line-height: 1.4; text-wrap: balance; pointer-events: none; }
+/* the note about time, after the velocities in the result line */
+.sj .pvc-outcome small { white-space: nowrap; }
 .sj .pvc-anno { font-size: 14px; }
 .sj .pvc-anno-callout { padding: 1px 7px; font-weight: 700; }
 .sj .pvc-anno-part { color: var(--ink-2); font-size: 13px; padding: 1px 6px; }
@@ -47,9 +45,28 @@ body.bg-transparent { background: transparent; }
   .sj .pvc-outcome { grid-area: out; }
   .sj .pvc-rule { grid-area: rule; }
 }
+/* phones held upright: tighter lines, so the 3D view keeps more than half the height (55 % of 390 × 700) */
+@container pvc (max-width: 560px) {
+  .sj .pvc-learn { gap: 6px; }
+  .sj .pvc-examples button { min-height: 42px; padding: 2px 3px 4px; }
+  .sj .pvc-examples .pvc-ex-word { line-height: 1.25; }
+  .sj .pvc-examples .pvc-ex-res { line-height: 1.25; }
+  .sj .pvc-act-row { min-height: 48px; }
+  .sj .pvc-outcome { --pvc-outcome-lines: 2; font-size: 15px; line-height: 1.6; }
+  .sj .pvc-rule { --pvc-rule-lines: 3; font-size: 14px; line-height: 1.42; }
+  .sj .pvc-q-ask { gap: 6px; }
+  .sj .pvc-q-head { min-height: 34px; }
+  .sj .pvc-q-head .pvc-btn { height: 34px; }
+  .sj .pvc-q-text { --pvc-q-text-min: 2lh; font-size: 14.5px; line-height: 1.4; }
+  .sj .pvc-opt { height: 44px; font-size: 14px; }
+  .sj .pvc-q-feedback { --pvc-q-feedback-min: 3lh; font-size: 13.5px; line-height: 1.38; }
+}
 @container pvc (max-width: 560px) and (max-height: 600px) {
-  .sj .pvc-q-text { font-size: 14.5px; }
-  .sj .pvc-opt { font-size: 13.5px; }
+  .sj .pvc-examples button { min-height: 40px; }
+  .sj .pvc-outcome { font-size: 14.5px; line-height: 1.55; }
+  .sj .pvc-rule { font-size: 13.5px; line-height: 1.4; }
+  .sj .pvc-q-text { font-size: 14px; }
+  .sj .pvc-opt { height: 42px; font-size: 13.5px; }
   .sj .pvc-q-feedback { font-size: 13px; }
 }
 /* short and wide (phone held sideways): the panel is beside the scene */
@@ -60,5 +77,3 @@ body.bg-transparent { background: transparent; }
   .sj .pvc-opt { font-size: 13.5px; height: auto; min-height: 42px; }
   .sj .pvc-q-feedback { font-size: 13px; }
 }
-/* the test's locked hint takes the top of the view for a moment: the assumption note gives way */
-.pvc-hint.show ~ .sj-assume { visibility: hidden; }
