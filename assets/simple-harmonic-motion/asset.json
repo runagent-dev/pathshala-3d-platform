@@ -5,7 +5,7 @@
   "title": "Simple harmonic motion (সরল স্পন্দন গতি)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "book": "physics-9-10",
   "page": 37,
   "topic": "2.2",
