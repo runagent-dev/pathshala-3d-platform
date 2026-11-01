@@ -49,7 +49,7 @@ jobs:
       - run: npm ci
       # figures that already passed with exactly these inputs (their files, the kit modules they import, their tests and the
       # test harness) are remembered between runs and left out
-      - uses: actions/cache/restore@v4
+      - uses: actions/cache/restore@v6
         with:
           path: .cache/figure-tests
           key: figure-tests-${{ runner.os }}-${{ github.sha }}
@@ -71,7 +71,7 @@ jobs:
       - if: always() && steps.changed.outputs.figures != ''
         run: node scripts/ci-figures.mjs --record --markers .cache/figure-tests --results playwright-results.json
       - if: always() && steps.changed.outputs.figures != ''
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: .cache/figure-tests
           key: figure-tests-${{ runner.os }}-${{ github.sha }}
@@ -96,14 +96,14 @@ jobs:
       # a picture depends only on the figure's inputs and the renderer: pictures are kept under that hash
       - id: runner
         run: echo "image=${ImageVersion:-unknown}" >> "$GITHUB_OUTPUT"
-      - uses: actions/cache/restore@v4
+      - uses: actions/cache/restore@v6
         with:
           path: .cache/visual-shots
           key: visual-${{ runner.os }}-${{ steps.runner.outputs.image }}-${{ hashFiles('package-lock.json') }}-${{ github.sha }}
           restore-keys: visual-${{ runner.os }}-${{ steps.runner.outputs.image }}-${{ hashFiles('package-lock.json') }}-
       - run: npm run test:visual -- --base origin/${{ github.base_ref }} --changed
       - if: always()
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: .cache/visual-shots
           key: visual-${{ runner.os }}-${{ steps.runner.outputs.image }}-${{ hashFiles('package-lock.json') }}-${{ github.sha }}
