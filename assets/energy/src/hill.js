@@ -1,9 +1,8 @@
 // The landscape: a cycle race track over a smooth hill (the track follows heightAt from energy.js exactly), with
-// red-and-white kerbs, white edge lines and a chequered start line; sandy run-off and orange clay around it, a row of
-// advertising boards, grandstands with spectators and flags; violet hills far away and a few clouds.
+// red-and-white kerbs, white edge lines and a chequered start line, on soft warm sand under the sky: nothing else, so
+// the bicycle on the hill is the one thing to look at.
 // Metres; +x along the track, the camera looks from +z.
 import * as THREE from 'three';
-import { bake } from './bake.js';
 import { HILL, heightAt, START_X } from './energy.js';
 
 const TRACK_HALF = 2; // m: half the asphalt's width (the rider rides in the middle, z = 0)
@@ -143,16 +142,16 @@ export function createLandscape() {
   const root = new THREE.Group();
   root.name = 'Landscape';
 
-  // ── the ground: one grid, coloured by vertex: a narrow sandy run-off beside the track, packed earth on the hill, orange clay further out
+  // ── the ground: one grid, coloured by vertex: a narrow sandy run-off beside the track, packed earth on the hill, soft warm sand further out
   const xs = samples(X0, X1, 0.5, 2.5, -HILL.half - 6, HILL.half + 6);
   const zs = samples(-70, 30, 0.6, 3, -10, 12);
   const pos = new Float32Array(xs.length * zs.length * 3);
   const col = new Float32Array(xs.length * zs.length * 3);
   const uv = new Float32Array(xs.length * zs.length * 2);
-  const clayA = new THREE.Color('#d9692f');
-  const clayB = new THREE.Color('#ee9a45');
-  const sand = new THREE.Color('#f1d29a');
-  const earth = new THREE.Color('#c45a2c');
+  const clayA = new THREE.Color('#c9a27e');
+  const clayB = new THREE.Color('#d6b590');
+  const sand = new THREE.Color('#e6d3b3');
+  const earth = new THREE.Color('#b08462');
   const c = new THREE.Color();
   let i = 0;
   for (const z of zs)
@@ -201,196 +200,7 @@ export function createLandscape() {
   const road = createTrack(-45, 165);
   root.add(road);
 
-  // ── behind the track (never in front of the rider): boards, flags, grandstands ──────────────────────────────────
-  const stands = new THREE.Group();
-  stands.name = 'Grandstands';
-
-  // a row of advertising boards that follows the ground, in bright alternating colours (no words)
-  const BOARD_Z = -6.5;
-  const BOARD_H = 0.8;
-  const boardColors = ['#1f6fd1', '#ffd23f', '#e8333a', '#ffffff', '#7a3fd1', '#ff8a1f'].map((h) => new THREE.Color(h));
-  const boards = new THREE.Mesh(
-    strip(
-      -50,
-      168,
-      (x) => [groundAt(x, BOARD_Z) - 0.1, BOARD_Z, groundAt(x, BOARD_Z) + BOARD_H, BOARD_Z],
-      (s) => boardColors[((Math.floor(s / 3) % 6) + 6) % 6],
-      0.5,
-    ),
-    new THREE.MeshStandardMaterial({ name: 'Boards', vertexColors: true, roughness: 0.6, side: THREE.DoubleSide }),
-  );
-  boards.name = 'Boards';
-  stands.add(boards);
-  const rail = new THREE.Mesh(
-    strip(
-      -50,
-      168,
-      (x) => [groundAt(x, BOARD_Z) + BOARD_H, BOARD_Z + 0.08, groundAt(x, BOARD_Z) + BOARD_H, BOARD_Z - 0.08],
-      () => WHITE,
-      0.5,
-    ),
-    new THREE.MeshStandardMaterial({ name: 'BoardTop', vertexColors: true, roughness: 0.5, side: THREE.DoubleSide }),
-  );
-  stands.add(rail);
-
-  // flags on tall poles
-  const poleMat = new THREE.MeshStandardMaterial({ name: 'Pole', color: '#e9edf2', metalness: 0.4, roughness: 0.4 });
-  const flagMat = new THREE.MeshStandardMaterial({ name: 'Flags', vertexColors: true, roughness: 0.7, side: THREE.DoubleSide });
-  const flagColors = ['#e8333a', '#ffd23f', '#1f6fd1', '#18a058', '#ff8a1f', '#c23fd1'].map((h) => new THREE.Color(h));
-  const flagGeos = [];
-  const poleGeo = new THREE.CylinderGeometry(0.05, 0.06, 6, 8);
-  const flagGeo = new THREE.BufferGeometry();
-  flagGeo.setAttribute(
-    'position',
-    new THREE.Float32BufferAttribute([0, 0, 0, 0, -0.9, 0, 1.6, -0.3, 0.12, 0, -0.9, 0, 1.6, -0.6, 0.12, 1.6, -0.3, 0.12], 3),
-  );
-  flagGeo.computeVertexNormals();
-  let f = 0;
-  for (let x = -46; x <= 160; x += 9) {
-    const z = -11 - 1.5 * hash(x, 3);
-    const base = groundAt(x, z);
-    const pole = new THREE.Mesh(poleGeo, poleMat);
-    pole.position.set(x, base + 3, z);
-    const fc = flagColors[f++ % flagColors.length];
-    const flag = flagGeo.clone();
-    flag.setAttribute('color', new THREE.Float32BufferAttribute(Array.from({ length: 6 }, () => [fc.r, fc.g, fc.b]).flat(), 3));
-    flag.rotateY(0.15 * (hash(x, 9) - 0.5)).translate(x, base + 5.95, z);
-    flagGeos.push(flag);
-    stands.add(pole);
-  }
-  const flags = new THREE.Mesh(mergeFlat(flagGeos), flagMat);
-  flags.name = 'Flags';
-  stands.add(flags);
-
-  // grandstands: stepped rows of coloured seats with spectators, a back wall and a roof on posts
-  const concrete = new THREE.MeshStandardMaterial({ name: 'Concrete', color: '#c9ccd3', roughness: 0.9 });
-  const roofMat = new THREE.MeshStandardMaterial({ name: 'Roof', color: '#e8333a', roughness: 0.6 });
-  const seatColors = ['#1f6fd1', '#ffd23f', '#e8333a', '#18a8c9'];
-  const seatMats = seatColors.map((color) => new THREE.MeshStandardMaterial({ name: 'Seats', color, roughness: 0.6 }));
-  const shirts = ['#ffffff', '#e8333a', '#ffd23f', '#1f6fd1', '#ff8a1f', '#2b2b2b', '#c23fd1', '#18a058'].map((h) => new THREE.Color(h));
-  const box = new THREE.BoxGeometry(1, 1, 1);
-  // spectators are 20 m and more away: a few pixels each, so a lighter capsule and head look the same
-  const person = new THREE.CapsuleGeometry(0.17, 0.32, 2, 8);
-  const headGeo = new THREE.SphereGeometry(0.13, 10, 6);
-  const crowdMat = new THREE.MeshStandardMaterial({ name: 'Spectators', roughness: 0.8 });
-  const headMat = new THREE.MeshStandardMaterial({ name: 'Heads', roughness: 0.7 });
-  const shirtsOf = (x, z) => shirts[Math.floor(hash(x, z) * shirts.length) % shirts.length];
-  const skins = ['#8d5a3b', '#a8714a', '#6e432a', '#c08a60'].map((h) => new THREE.Color(h));
-  const m = new THREE.Matrix4();
-  const crowds = [];
-  const ROWS = 7;
-  const STEP_H = 0.5;
-  const STEP_D = 0.85;
-  const FRONT_Z = -21;
-  for (const [cx, w] of [
-    [-38, 18],
-    [-6, 24],
-    [26, 18],
-    [56, 22],
-    [90, 18],
-    [124, 22],
-    [156, 18],
-  ]) {
-    const stand = new THREE.Group();
-    stand.position.set(cx, groundAt(cx, FRONT_Z) - 0.05, FRONT_Z);
-    const placed = [];
-    for (let r = 0; r < ROWS; r++) {
-      const step = new THREE.Mesh(box, concrete);
-      step.scale.set(w, STEP_H * (r + 1), STEP_D);
-      step.position.set(0, (STEP_H * (r + 1)) / 2, -r * STEP_D - STEP_D / 2);
-      const seats = new THREE.Mesh(box, seatMats[r % seatMats.length]);
-      seats.scale.set(w - 0.2, 0.16, STEP_D * 0.45);
-      seats.position.set(0, STEP_H * (r + 1) + 0.08, -r * STEP_D - STEP_D * 0.62);
-      stand.add(step, seats);
-      for (let px = -w / 2 + 0.4; px < w / 2 - 0.3; px += 0.55)
-        if (hash(px + cx, r) < 0.62)
-          placed.push([cx + px + 0.12 * (hash(px, r + cx) - 0.5), stand.position.y + STEP_H * (r + 1) + 0.38, FRONT_Z - r * STEP_D - STEP_D * 0.55]);
-    }
-    const depth = ROWS * STEP_D;
-    const wall = new THREE.Mesh(box, concrete);
-    wall.scale.set(w, STEP_H * ROWS + 2.6, 0.3);
-    wall.position.set(0, (STEP_H * ROWS + 2.6) / 2, -depth - 0.15);
-    const roof = new THREE.Mesh(box, roofMat);
-    roof.scale.set(w + 1, 0.22, depth + 1.4);
-    roof.position.set(0, STEP_H * ROWS + 2.6, -depth / 2 + 0.4);
-    roof.rotation.x = -0.06;
-    stand.add(wall, roof);
-    for (const px of [-w / 2 + 0.3, 0, w / 2 - 0.3]) {
-      const post = new THREE.Mesh(box, poleMat);
-      post.scale.set(0.16, STEP_H * ROWS + 2.6, 0.16);
-      post.position.set(px, (STEP_H * ROWS + 2.6) / 2, 0.3);
-      stand.add(post);
-    }
-    stands.add(stand);
-    const crowd = new THREE.InstancedMesh(person, crowdMat, placed.length);
-    const heads = new THREE.InstancedMesh(headGeo, headMat, placed.length);
-    for (const [k, [x, y, z]] of placed.entries()) {
-      crowd.setMatrixAt(k, m.makeTranslation(x, y, z));
-      crowd.setColorAt(k, shirtsOf(x, z));
-      heads.setMatrixAt(k, m.makeTranslation(x, y + 0.4, z));
-      heads.setColorAt(k, skins[Math.floor(hash(z, x) * skins.length) % skins.length]);
-    }
-    crowd.name = 'Spectators';
-    heads.name = 'Heads';
-    crowd.computeBoundingSphere();
-    heads.computeBoundingSphere();
-    crowds.push(crowd, heads);
-  }
-  // steps, seats, walls, roofs, posts and poles never move: one mesh per material for all seven stands
-  bake(stands);
-  stands.add(...crowds);
-
-  root.add(stands);
-
-  // ── far hills and clouds: soft, faded by the fog ─────────────────────────────────────────────────────────────────
-  const far = new THREE.Group();
-  far.name = 'FarHills';
-  const farMat = new THREE.MeshStandardMaterial({ name: 'FarHill', color: '#8d7fd0', roughness: 1 });
-  const dome = new THREE.SphereGeometry(1, 40, 14, 0, Math.PI * 2, 0, Math.PI / 2);
-  for (const [x, z, r, h] of [
-    [-70, -120, 60, 14],
-    [10, -150, 80, 20],
-    [90, -125, 65, 15],
-    [170, -140, 70, 18],
-  ]) {
-    const hill = new THREE.Mesh(dome, farMat);
-    hill.position.set(x, -0.5, z);
-    hill.scale.set(r, h, r * 0.45);
-    far.add(hill);
-  }
-  bake(far);
-  root.add(far);
-  const clouds = new THREE.Group();
-  clouds.name = 'Clouds';
-  const cloudMat = new THREE.MeshLambertMaterial({ name: 'Cloud', color: '#ffffff', emissive: '#dfe9f2', emissiveIntensity: 0.55 });
-  const puff = new THREE.SphereGeometry(1, 16, 10);
-  for (const [x, y, z, s] of [
-    [-40, 26, -110, 6],
-    [-8, 31, -130, 8],
-    [30, 24, -105, 5.5],
-    [62, 30, -125, 7],
-    [100, 27, -110, 6],
-    [140, 32, -130, 8],
-  ]) {
-    const cloud = new THREE.Group();
-    cloud.position.set(x, y, z);
-    for (const [px, py, pz, r] of [
-      [0, 0, 0, 1],
-      [1.1, -0.15, 0.1, 0.75],
-      [-1.15, -0.2, 0, 0.7],
-      [0.45, 0.45, -0.1, 0.65],
-      [-0.5, 0.35, 0.1, 0.6],
-    ]) {
-      const p = new THREE.Mesh(puff, cloudMat);
-      p.position.set(px * s, py * s, pz * s);
-      p.scale.set(r * s, r * s * 0.62, r * s * 0.7);
-      cloud.add(p);
-    }
-    clouds.add(cloud);
-  }
-  bake(clouds);
-  root.add(clouds);
-  for (const g of [stands, far, clouds]) g.userData.noExport = true;
+  // nothing else: no stands, crowds, flags, boards, far hills or clouds (the owner: only the main object, big)
 
   // for the GLB: only the hill and a little track at each foot (the long track is for the view)
   const hillRoad = () => createTrack(-HILL.half - 4, HILL.half + 4);

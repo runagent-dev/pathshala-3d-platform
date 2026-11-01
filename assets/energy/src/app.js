@@ -101,7 +101,7 @@ export function createApp(root, options = {}) {
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 30, near: 0.1, far: 400, environment: 'studio-light' });
   const { camera, controls, scene } = stage;
-  const SKY = { top: '#2f8fe0', low: '#bfe4fb' };
+  const SKY = { top: '#86acd2', low: '#d6e5f0' }; // soft and a little muted
   if (o.bg !== 'transparent') {
     const c = document.createElement('canvas');
     c.width = 4;
@@ -110,7 +110,7 @@ export function createApp(root, options = {}) {
     const grad = g.createLinearGradient(0, 0, 0, 256);
     grad.addColorStop(0, SKY.top);
     grad.addColorStop(0.75, SKY.low);
-    grad.addColorStop(1, '#d9f0fc');
+    grad.addColorStop(1, '#efe6d8');
     g.fillStyle = grad;
     g.fillRect(0, 0, 4, 256);
     const tex = new THREE.CanvasTexture(c);
