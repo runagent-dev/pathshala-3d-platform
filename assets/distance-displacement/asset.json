@@ -5,7 +5,7 @@
   "title": "Distance and displacement (দূরত্ব ও সরণ)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "book": "physics-9-10",
   "page": 39,
   "topic": "2.4",
@@ -13,7 +13,7 @@
   "order": 1,
   "maintainers": ["RadeenXALNW"],
   "units": "m",
-  "description": "Interactive 3D countryside with the winding road of the book's Figure 2.04 (page 39, topic 2.4), kilometre posts 0-7 (the road's km scale), the points A, B, C, a compass and a 1 km scale bar. A cyclist rides from A; a blue trail on the road shows the distance travelled (দূরত্ব, a scalar) and a straight orange arrow from A shows the displacement (সরণ, a vector), each named with its value on the map. The panel is the clean sheet: a key that names the blue path and the orange arrow, one numbered action that tells the book's story (১ ride to B, ২ on to C, ৩ back to A; the same number rings the stop on the map, which can be tapped too), one result line comparing the two in their colours (at B: distance 4 km along the road, but displacement 2 km north-east; at C: 6 km against 1.31 km; back at A: displacement 0, distance 6 + 6 = 12 km) and one rule in the book's words that grows (distance a scalar, displacement a vector, the arrow's way is its direction; the displacement is never more than the distance). The cyclist can also be dragged along the road or sent anywhere by a tap. The road and distances are to scale (the same road as the speed figure on page 41); houses, trees and the cyclist are drawn bigger than real, and a note says so. Test tab: 5 questions (how to state the displacement at B, its direction against the way the cycle rides, the distance of an out-and-back ride, the displacement after a round trip, displacement never more than distance), each scene ridden first. Phone-first, Bangla.",
+  "description": "Interactive 3D countryside with the winding road of the book's Figure 2.04 (page 39, topic 2.4), kilometre posts 0-7 (the road's km scale), the points A, B, C, a compass and a 1 km scale bar. A cyclist rides from A; a blue trail on the road shows the distance travelled (দূরত্ব, a scalar) and a straight orange arrow from A shows the displacement (সরণ, a vector), each named with its value on the map. The panel is the clean sheet: a key that names the blue path and the orange arrow, one numbered action that tells the book's story (১ ride to B, ২ on to C, ৩ back to A; the same number rings the stop on the map, which can be tapped too), one result line comparing the two in their colours (at B: distance 4 km along the road, but displacement 2 km north-east; at C: 6 km against 1.31 km; back at A: displacement 0, distance 6 + 6 = 12 km) and one rule in the book's words that grows (distance a scalar, displacement a vector, the arrow's way is its direction; the displacement is never more than the distance). The cyclist can also be dragged along the road or sent anywhere by a tap. The road and distances are to scale (the same road as the speed figure on page 41); houses, trees and the cyclist are drawn bigger than real, and a quiet line under the key says so. Test tab: 5 questions (how to state the displacement at B, its direction against the way the cycle rides, the distance of an out-and-back ride, the displacement after a round trip, displacement never more than distance), each scene ridden first. Phone-first, Bangla.",
   "tags": ["motion", "distance", "displacement", "scalar", "vector", "bangla"],
   "params": [
     {

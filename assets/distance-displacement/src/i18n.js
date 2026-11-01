@@ -17,8 +17,8 @@ export const STRINGS = {
     u_km: 'km',
     north_short: 'উ',
     scale_km: '{n} km',
-    note_scale: 'রাস্তা মাপমতো; সাইকেল, বাড়ি, গাছ বড় করে আঁকা',
-    note_scale_short: 'সাইকেল, বাড়ি বড় করে আঁকা',
+    // under the key: what is to scale on the map and what is not
+    note_scale: 'রাস্তা ও দূরত্ব মাপমতো; সাইকেল, বাড়ি, গাছ বড় করে আঁকা',
 
     // the key: what the two marks on the map are
     key: 'মানচিত্রে কোনটি কী',
@@ -122,8 +122,7 @@ export const STRINGS = {
     u_km: 'km',
     north_short: 'N',
     scale_km: '{n} km',
-    note_scale: 'Road to scale; cycle, homes and trees drawn bigger',
-    note_scale_short: 'Cycle and homes drawn bigger',
+    note_scale: 'Road and distances to scale; cycle, homes and trees drawn bigger',
 
     key: 'What is what on the map',
     key_dist: 'Blue path: distance',
@@ -152,9 +151,8 @@ export const STRINGS = {
     out_start: 'You are at A: <i class="d">distance <b>{z}</b></i>, <i class="s">displacement <b>{z}</b></i> so far.',
     out_move: '<i class="d">distance <b>{dist} {u}</b></i> <span class="dd-dot">·</span> <i class="s">displacement <b>{disp} {u}</b></i>',
     out_stop:
-      'At {at}: along the way, <i class="d">distance <b>{dist} {u}</b></i>, but straight from A, <i class="s">displacement <b>{disp} {u}</b> to the {dir}</i>.',
-    out_here:
-      'Here: along the way, <i class="d">distance <b>{dist} {u}</b></i>; straight from A, <i class="s">displacement <b>{disp} {u}</b> to the {dir}</i>.',
+      'At {at}: <i class="d">distance <b>{dist} {u}</b></i> along the road, but <i class="s">displacement <b>{disp} {u}</b> {dir}</i> from A.',
+    out_here: 'Here: <i class="d">distance <b>{dist} {u}</b></i> along the road; <i class="s">displacement <b>{disp} {u}</b> {dir}</i> from A.',
     out_here0: 'Here: along the way, <i class="d">distance <b>{dist} {u}</b></i>, but <i class="s">displacement <b>{z}</b></i>.',
     out_back: 'Back at A, the <i class="s">displacement is <b>{z}</b></i>, but the <i class="d">distance is <b>{sum} {u}</b></i>.',
 
@@ -180,7 +178,7 @@ export const STRINGS = {
     q_try: 'Try once more.',
     q_again: 'Take the test again',
 
-    q_vec: 'The cycle rode from A along the winding road to B. What is its displacement with respect to point A?',
+    q_vec: 'The cycle rode from A along the winding road to B. What is its displacement from A?',
     opt_vec: '{d} {u}, towards the {dir}',
     opt_only: 'just {d} {u}',
     why_vec: '<b>{d} {u}, towards the {dir}</b>: displacement is a vector, so it needs a size and a direction.',
@@ -204,7 +202,7 @@ export const STRINGS = {
     miss_zero_dist: '{total} {u} is the distance (out + back), not the displacement.',
     miss_zero_half: '{k} {u} is the way out, a distance too.',
     miss_zero_far: '{d} {u} was the displacement at post {k}.',
-    q_rule: 'The cycle rode {k} {u} along the road. Measure with the {one} {u} bar: about how big is the displacement?',
+    q_rule: 'The cycle rode {k} {u} along the road. With the {one} {u} bar, about how big is the displacement?',
     why_rule: '<b>About {d} {u}</b>: the arrow is about {d} times the {one} {u} bar, much less than the distance along the way ({k} {u}).',
     miss_rule_dist: '{k} {u} is the distance along the road (the blue path), not the straight arrow.',
     miss_rule_book: '{book} {u} was the displacement of B in the book; measure this arrow.',
