@@ -24,8 +24,8 @@ test('third law: boat recoil replaces both mass tabs, and the apple–Earth pair
   expect(s.speed.boat).toBeLessThan(0);
   await fig.advance(2500);
   expect(await fig.call('get')).toMatchObject({ phase: 'landed', done: true, playing: false });
-  await expect(fig.frame.locator('.pvc-anno').filter({ hasText: 'ছেলের গতি' })).toHaveCount(0);
-  await expect(fig.frame.locator('.pvc-anno').filter({ hasText: 'নৌকার গতি' })).toHaveCount(1);
+  await expect(fig.frame.locator('.pvc-anno').filter({ hasText: 'ছেলের বেগ' })).toHaveCount(0);
+  await expect(fig.frame.locator('.pvc-anno').filter({ hasText: 'নৌকার বেগ' })).toHaveCount(1);
   await fig.call('set', { example: 'apple', at: 0.2 });
   s = await fig.call('get');
   expect(s).toMatchObject({ example: 'apple', phase: 'fall', force: 9.8, arrows: { onApple: true, onEarth: true } });
@@ -252,7 +252,7 @@ test('third law: a guided fall, equal-force comparison and retryable mass questi
   await expect(fig.frame.locator('[data-reason="mass"]')).toBeFocused();
   expect((await fig.call('get')).arrows).toEqual({ onApple: true, onEarth: true });
   await fig.frame.locator('[data-reason="mass"]').press('Enter');
-  await expect(fig.frame.locator('.nt-reason-feedback')).toContainText('ঠিক');
+  await expect(fig.frame.locator('.pvc-outcome')).toContainText('ঠিক');
   await expect(fig.frame.locator('.nt-lesson-content')).toContainText('a = F/m');
   await expect(fig.frame.locator('.nt-lesson-content')).not.toContainText('−২৪');
   await expect(action).toBeFocused();

@@ -37,12 +37,51 @@ function createApple(r) {
   return { root, body };
 }
 
+/** Stars behind the Earth: two sizes of points on a far sphere, a few warm or blue-white (one draw call each). */
+function stars(pixelRatio) {
+  const group = new THREE.Group();
+  group.name = 'Stars';
+  group.userData.noExport = true;
+  let seed = 11;
+  const rnd = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296;
+  const tints = ['#ffffff', '#dfe9ff', '#fff1d6', '#cfe0ff'].map((c) => new THREE.Color(c));
+  for (const [count, size] of [
+    [700, 1.4],
+    [140, 2.4],
+  ]) {
+    const pos = new Float32Array(count * 3);
+    const col = new Float32Array(count * 3);
+    for (let i = 0; i < count; i++) {
+      // directions behind and around the scene (the camera looks along −z)
+      const z = -0.25 - rnd() * 0.75;
+      const a = rnd() * Math.PI * 2;
+      const r = Math.sqrt(1 - z * z);
+      pos.set([Math.cos(a) * r * 60, Math.sin(a) * r * 60, z * 60], i * 3);
+      tints[Math.floor(rnd() * tints.length)]
+        .clone()
+        .multiplyScalar(0.55 + rnd() * 0.45)
+        .toArray(col, i * 3);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    const points = new THREE.Points(
+      geo,
+      new THREE.PointsMaterial({ name: 'Stars', size: size * pixelRatio, sizeAttenuation: false, vertexColors: true, fog: false, depthWrite: false }),
+    );
+    points.frustumCulled = false;
+    points.renderOrder = -1;
+    group.add(points);
+  }
+  return group;
+}
+
 /** Full Earth and apple, matching the book's diagram. Sizes and separation are deliberately not to scale. */
 export function createEarthScene({ renderer }) {
   const root = new THREE.Group();
   root.name = 'AppleAndEarth';
   const earthMaterial = new THREE.MeshStandardMaterial({ name: 'BlueMarbleEarth', color: 0xffffff, roughness: 0.8, metalness: 0 });
-  const earth = new THREE.Mesh(new THREE.SphereGeometry(EARTH_R, 96, 64), earthMaterial);
+  const earth = new THREE.Mesh(new THREE.SphereGeometry(EARTH_R, 64, 48), earthMaterial);
   earth.name = 'Earth';
   earth.position.y = -EARTH_R;
   earth.rotation.y = 2.3;
@@ -54,12 +93,13 @@ export function createEarthScene({ renderer }) {
     earthMaterial.needsUpdate = true;
   });
   const atmosphere = new THREE.Mesh(
-    new THREE.SphereGeometry(EARTH_R * 1.026, 64, 48),
+    new THREE.SphereGeometry(EARTH_R * 1.026, 48, 32),
     new THREE.MeshBasicMaterial({ color: 0x36b8ff, side: THREE.BackSide, transparent: true, opacity: 0.22 }),
   );
   atmosphere.position.copy(earth.position);
   atmosphere.userData.noExport = true;
   root.add(atmosphere);
+  root.add(stars(renderer.getPixelRatio()));
   const apple = createApple(APPLE_R);
   apple.root.name = 'Apple';
   root.add(apple.root);
@@ -76,6 +116,11 @@ export function createEarthScene({ renderer }) {
   root.add(ghost);
   const trail = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineDashedMaterial({ color: '#d7efff', dashSize: 0.055, gapSize: 0.04 }));
   trail.name = 'FallTrail';
+  const trailEnds = [new THREE.Vector3(-0.4, startY, 0.1), new THREE.Vector3(-0.4, startY, 0.1)];
+  trail.geometry.setFromPoints(trailEnds);
+  const trailDistance = new THREE.Float32BufferAttribute([0, 0], 1);
+  trail.geometry.setAttribute('lineDistance', trailDistance);
+  trail.frustumCulled = false;
   trail.userData.noExport = true;
   root.add(trail);
   const hit = new THREE.Mesh(new THREE.SphereGeometry(0.34, 16, 12), new THREE.MeshBasicMaterial({ visible: false }));
@@ -91,8 +136,12 @@ export function createEarthScene({ renderer }) {
     showTrail(show, fallen) {
       ghost.visible = show && fallen > APPLE_R * 2.1;
       trail.visible = show && fallen > 0.02;
-      trail.geometry.setFromPoints([new THREE.Vector3(-0.4, startY, 0.1), new THREE.Vector3(-0.4, startY - fallen, 0.1)]);
-      trail.computeLineDistances();
+      if (!trail.visible) return;
+      trailEnds[1].y = startY - fallen;
+      trail.geometry.setFromPoints(trailEnds);
+      // the dashes' distances in place (computeLineDistances would make a new GPU buffer every frame)
+      trailDistance.setX(1, fallen);
+      trailDistance.needsUpdate = true;
     },
     setFall(fallen) {
       apple.root.position.set(0, startY - fallen, 0);
