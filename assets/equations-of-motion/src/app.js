@@ -135,6 +135,7 @@ export function createApp(root, options = {}) {
   // the clean sheet (kit 1.3.0): the steppers, the four equations as one row of words, the rule in plain words, the
   // chosen equation large with the student's numbers, and one action (plus the derivation sheet)
   const ui = buildStudentShell(root, t, {
+    layout: 'side', // the panel beside the 3D on landscape frames (kit 1.5.0)
     learnAlign: 'start',
     learn: `
           <div class="eom-steps">${stepper('u')}${stepper('a')}${stepper('t')}</div>
@@ -144,9 +145,9 @@ export function createApp(root, options = {}) {
                 `<button type="button" role="radio" aria-checked="false" tabindex="${i ? -1 : 0}" data-example="${id}"><span class="pvc-ex-word">${colourF(f)}</span><small class="pvc-ex-res"></small></button>`,
             )
             .join('')}</div>
-          <p class="pvc-rule eom-rule" aria-live="polite"></p>
+          <div class="pvc-act-row"><div class="pvc-act-slot"></div><div class="eom-more"><button type="button" class="eom-derive" data-act="derive" aria-label="${t('derive')}">${ICONS.chevR}<span class="l-long">${t('derive')}</span><span class="l-short" aria-hidden="true">${t('derive_short')}</span></button><button type="button" class="eom-derive eom-ex-open-btn" data-act="example">${CAR_ICON}<span>${t('example')}</span></button></div></div>
           <div class="pvc-outcome eom-big"><div class="eom-f"></div><div class="eom-n"></div></div>
-          <div class="pvc-act-row"><div class="pvc-act-slot"></div><div class="eom-more"><button type="button" class="eom-derive" data-act="derive" aria-label="${t('derive')}">${ICONS.chevR}<span class="l-long">${t('derive')}</span><span class="l-short" aria-hidden="true">${t('derive_short')}</span></button><button type="button" class="eom-derive eom-ex-open-btn" data-act="example">${CAR_ICON}<span>${t('example')}</span></button></div></div>`,
+          <p class="pvc-rule eom-rule" aria-live="polite"></p>`,
   });
   const sheet = bindCleanSheet(ui.learn);
   const overlay = document.createElement('canvas');
@@ -182,10 +183,10 @@ export function createApp(root, options = {}) {
     skyAt = f;
     const c = skyCanvas.getContext('2d');
     const g = c.createLinearGradient(0, 0, 0, 256);
-    g.addColorStop(0, '#79c2f2');
-    g.addColorStop(Math.max(0.05, f * 0.6), '#bfe2fa');
-    g.addColorStop(Math.max(0.1, f), '#eaf6fe');
-    g.addColorStop(1, '#ffffff');
+    g.addColorStop(0, '#9dbad4');
+    g.addColorStop(Math.max(0.05, f * 0.6), '#c6d6e3');
+    g.addColorStop(Math.max(0.1, f), '#e1e6e9');
+    g.addColorStop(1, '#ebe5da');
     c.fillStyle = g;
     c.fillRect(0, 0, 2, 256);
     sky.needsUpdate = true;

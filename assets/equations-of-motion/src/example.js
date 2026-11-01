@@ -159,9 +159,9 @@ export function createExample({ root, t, now = () => performance.now(), onChange
     skyCanvas.height = 256;
     const c = /** @type {CanvasRenderingContext2D} */ (skyCanvas.getContext('2d'));
     const g = c.createLinearGradient(0, 0, 0, 256);
-    g.addColorStop(0, '#6fbcf0');
-    g.addColorStop(0.5, '#bfe2fa');
-    g.addColorStop(1, '#eef8fe');
+    g.addColorStop(0, '#9dbad4');
+    g.addColorStop(0.5, '#c6d6e3');
+    g.addColorStop(1, '#e9e5dd');
     c.fillStyle = g;
     c.fillRect(0, 0, 2, 256);
     const sky = new THREE.CanvasTexture(skyCanvas);
