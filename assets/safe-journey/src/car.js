@@ -6,6 +6,7 @@
 // dent is deep. The wheels never bend. roll(m) turns them.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { instancedWheels, mergeByMaterial } from './merge.js';
 
 export const CAR = { length: 3.5, width: 1.62, height: 1.5, wheel: 0.29, axles: [0.66, 2.86] };
 
@@ -99,7 +100,6 @@ export function createCar({ name = 'SmallCar', color = '#c8423a' } = {}) {
     const mesh = new THREE.Mesh(geo, m);
     mesh.name = nm;
     frame.add(mesh);
-    parts.push({ mesh, base: Float32Array.from(geo.attributes.position.array) });
     return mesh;
   };
   addPart(lower, M.paint, 'Body');
@@ -141,22 +141,46 @@ export function createCar({ name = 'SmallCar', color = '#c8423a' } = {}) {
   }
   addPart(new THREE.BoxGeometry(0.02, 0.13, 0.42).translate(L + 0.01, 0.52, 0), M.plate, 'Plate');
 
-  // wheels (they do not bend)
-  const wheels = [];
-  const frontWheels = [];
+  // one mesh per material; the windscreen (it cracks), the front bumper and the plate (they hang loose) stay their own
+  const own = (m) => m === windscreen || m.name === 'FrontBumper' || m.name === 'Plate';
+  mergeByMaterial(frame, { skip: own, prefix: 'Car' });
+  for (const mesh of frame.children) {
+    if (!(mesh instanceof THREE.Mesh)) continue;
+    mesh.userData.smallPart = [M.tail, M.head, M.plate, M.trim].includes(mesh.material); // no shadow seen
+    parts.push({ mesh, base: Float32Array.from(mesh.geometry.attributes.position.array) });
+  }
+
+  // wheels (they do not bend): tyres, hub caps and a spoke bar, each drawn once for the four
   const tyreGeo = new THREE.CylinderGeometry(CAR.wheel, CAR.wheel, 0.2, 24).rotateX(Math.PI / 2);
   const hubGeo = new THREE.CylinderGeometry(0.17, 0.17, 0.21, 16).rotateX(Math.PI / 2);
   const spokeGeo = new THREE.BoxGeometry(0.3, 0.04, 0.22);
-  for (const x of CAR.axles)
-    for (const s of [-1, 1]) {
-      const w = new THREE.Group();
-      w.name = 'Wheel';
-      w.position.set(x, CAR.wheel, s * 0.7);
-      w.add(new THREE.Mesh(tyreGeo, M.tyre), new THREE.Mesh(hubGeo, M.hub), new THREE.Mesh(spokeGeo, M.trim));
-      frame.add(w);
-      wheels.push(w);
-      if (x === CAR.axles[1]) frontWheels.push(w);
+  const spots = [];
+  for (const x of CAR.axles) for (const s of [-1, 1]) spots.push(new THREE.Vector3(x, CAR.wheel, s * 0.7));
+  const front = spots.map((p, i) => (p.x === CAR.axles[1] ? i : -1)).filter((i) => i >= 0);
+  const wheels = instancedWheels(
+    frame,
+    [
+      [tyreGeo, M.tyre],
+      [hubGeo, M.hub],
+      [spokeGeo, M.trim],
+    ],
+    spots,
+    'Wheels',
+  );
+  for (const m of wheels.meshes.slice(1)) m.userData.smallPart = true;
+  let turned = 0; // the wheels' angle now
+  let steer = 0; // the front wheels turned aside by the crash
+  const spin = new THREE.Object3D();
+  /** Every wheel at its spot (a front one pushed back and turned aside by the crash), turned by `turned`. */
+  function placeWheels() {
+    for (let i = 0; i < spots.length; i++) {
+      spin.position.copy(spots[i]);
+      spin.rotation.set(0, front.includes(i) ? steer * Math.sign(spots[i].z) : 0, turned);
+      spin.updateMatrix();
+      for (const m of wheels.meshes) m.setMatrixAt(i, spin.matrix);
     }
+    wheels.commit();
+  }
 
   // a big invisible box round it, for taps
   const hit = new THREE.Mesh(new THREE.BoxGeometry(L + 0.8, 2.2, CAR.width + 0.8), new THREE.MeshBasicMaterial({ visible: false }));
@@ -212,12 +236,11 @@ export function createCar({ name = 'SmallCar', color = '#c8423a' } = {}) {
       mesh.geometry.computeBoundingBox();
     }
     // the front wheels are pushed back with the crushed front (they do not bend)
-    for (const w of frontWheels) {
-      const x = CAR.axles[1];
-      const k = x <= start || c === 0 ? 0 : Math.min(1, (x - start) / span) ** 1.4;
-      w.position.x = x - c * k * 0.8;
-      w.rotation.y = c > 0.3 ? 0.12 * Math.sign(w.position.z) * Math.min(1, c) : 0;
-    }
+    const x = CAR.axles[1];
+    const k = x <= start || c === 0 ? 0 : Math.min(1, (x - start) / span) ** 1.4;
+    for (const i of front) spots[i].x = x - c * k * 0.8;
+    steer = c > 0.3 ? 0.12 * Math.min(1, c) : 0;
+    placeWheels();
     windscreen.material = c > 0.3 ? M.cracked : M.glass;
   }
 
@@ -229,7 +252,10 @@ export function createCar({ name = 'SmallCar', color = '#c8423a' } = {}) {
     crumple,
     /** Turn the wheels for `distance` m driven forward (to the left). */
     roll(distance) {
-      for (const w of wheels) w.rotation.z = -distance / CAR.wheel;
+      const a = -distance / CAR.wheel;
+      if (a === turned) return;
+      turned = a;
+      placeWheels();
     },
     get dent() {
       return Math.max(0, dent);
