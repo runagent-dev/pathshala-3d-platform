@@ -139,11 +139,31 @@ export function bindCleanSheet(learn) {
  * ('spread') its first and last rows go to the top and bottom of the panel, which the পরীক্ষা sheet may make taller.
  * @param {HTMLElement} root
  * @param {(key: string, vars?: object) => string} t
- * @param {{ learn?: string, learnAlign?: 'spread' | 'start' }} [options]
+ * `layout: 'side'` (the standard from kit 1.5.0): the panel beside the 3D on landscape frames with a hide tab, a
+ * turn-sideways card on upright phones, and no front/rotate buttons (a drag turns the view; a hidden "front" icon
+ * button is for the figure to show once it was turned). The default 'stack' keeps the older layout.
+ * @param {{ learn?: string, learnAlign?: 'spread' | 'start', layout?: 'stack' | 'side' }} [options]
  */
-export function buildStudentShell(root, t, { learn = '', learnAlign = 'spread' } = {}) {
+export function buildStudentShell(root, t, { learn = '', learnAlign = 'spread', layout = 'stack' } = {}) {
+  const side = layout === 'side';
+  const viewButtons = side
+    ? `<button class="pvc-tool icon-only" data-view="front" hidden title="${t('view_front_short')}" aria-label="${t('view_front_short')}">${ICONS.reset}</button>`
+    : `<div class="pvc-seg" role="group" aria-label="${t('view')}">
+          <button data-view="front">${t('view_front_short')}</button>
+          <button data-view="3d">${t('view_rotate')}</button>
+        </div>`;
+  const rotateCard = `
+    <div class="pvc-rotate" hidden>
+      <div class="pvc-rotate-card" role="dialog" aria-label="${t('rotate_title')}">
+        <svg class="pvc-rotate-phone" viewBox="0 0 64 64" aria-hidden="true"><rect x="22" y="8" width="20" height="36" rx="4"/><path d="M14 46a20 20 0 0 0 36 0M50 46l-1-7M50 46l-7-1"/></svg>
+        <p class="pvc-rotate-title">${t('rotate_title')}</p>
+        <p class="pvc-rotate-body">${t('rotate_body')}</p>
+        <button class="pvc-btn primary" data-act="rotate-go">${t('rotate_go')}</button>
+        <button class="pvc-quiet" data-act="rotate-stay">${t('rotate_stay')}</button>
+      </div>
+    </div>`;
   root.innerHTML = `
-  <div class="pvc-shell">
+  <div class="pvc-shell"${side ? ' data-layout="side"' : ''}>
     <div class="pvc-stage" data-ui="simple">
       <div class="pvc-canvas"></div>
       <div class="pvc-anno-layer"></div>
@@ -151,10 +171,10 @@ export function buildStudentShell(root, t, { learn = '', learnAlign = 'spread' }
       <div class="pvc-coach-layer"></div>
       <div class="pvc-hint" role="status" aria-live="polite"><span class="pvc-hint-text"></span><button class="pvc-hint-act" hidden></button></div>
       <div class="pvc-corner">
-        <button class="pvc-tool icon-only" data-view="front" hidden title="${t('view_front_short')}" aria-label="${t('view_front_short')}">${ICONS.reset}</button>
+        ${viewButtons}
         <button class="pvc-tool icon-only" data-act="fullscreen" title="${t('fullscreen')}" aria-label="${t('fullscreen')}">${ICONS.expand}</button>
       </div>
-      <button class="pvc-panel-toggle" data-act="panel" aria-expanded="true" title="${t('panel_hide')}" aria-label="${t('panel_hide')}">${ICONS.chevR}</button>
+      ${side ? `<button class="pvc-panel-toggle" data-act="panel" aria-expanded="true" title="${t('panel_hide')}" aria-label="${t('panel_hide')}">${ICONS.chevR}</button>` : ''}
     </div>
 
     <div class="pvc-panel">
@@ -185,19 +205,11 @@ ${learn}
         </section>
       </div>
     </div>
-    <div class="pvc-rotate" hidden>
-      <div class="pvc-rotate-card" role="dialog" aria-label="${t('rotate_title')}">
-        <svg class="pvc-rotate-phone" viewBox="0 0 64 64" aria-hidden="true"><rect x="22" y="8" width="20" height="36" rx="4"/><path d="M14 46a20 20 0 0 0 36 0M50 46l-1-7M50 46l-7-1"/></svg>
-        <p class="pvc-rotate-title">${t('rotate_title')}</p>
-        <p class="pvc-rotate-body">${t('rotate_body')}</p>
-        <button class="pvc-btn primary" data-act="rotate-go">${t('rotate_go')}</button>
-        <button class="pvc-quiet" data-act="rotate-stay">${t('rotate_stay')}</button>
-      </div>
-    </div>
+    ${side ? rotateCard : ''}
   </div>`;
 
   const $ = (s) => root.querySelector(s);
-  wireLayout(root, t);
+  if (side) wireLayout(root, t);
   return {
     $,
     $$: (s) => [...root.querySelectorAll(s)],
