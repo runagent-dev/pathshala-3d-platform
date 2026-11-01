@@ -40,7 +40,7 @@ less than the left, and that missing mass is the energy that comes out.
   then E = mc² = … = 2.78 × 10⁻¹¹ J. The rule grows from the U-235 facts to the book's sentence on the missing mass.
 - Chain: 13 nuclei laid out as a tree (1 → 3 → 9), each first-step neutron leaving a faint trail to the nucleus it
   splits; a small 1 → 3 → 9 counter lights up as each step splits; the panel sums the energy (13 × 2.78 × 10⁻¹¹ J).
-- Power plant at dusk on a river bank, reactor building and turbine hall cut open (said on screen): control rods rise,
+- Power plant at dusk on a river bank, reactor building and turbine hall cut open (said in the rule): control rods rise,
   the core glows blue (Cherenkov light) in its water, steam runs along the steam line, turbine and generator turn,
   power runs along the lines and a town's windows light up; the cooling tower's plume grows. Fuel m: 1 g, 10 g,
   100 g, 1 kg of U-235; "শক্তি হয়": 0.079% (split) or 100% (the book's "if fully converted"). E in J and how long a
@@ -51,9 +51,59 @@ less than the left, and that missing mass is the energy that comes out.
   ventilation stack, lattice pylons with insulator strings, a transformer with its fins and bushings; a town of flats
   with water tanks on the roofs. A dusk sky (low sun in the west) is both the background and what the materials
   reflect.
-- The nucleus scenes stand in the bright water of a reactor pool (painted: light from the surface, fuel assemblies
-  glowing blue at the bottom): the nuclei are in the reactor's fuel. A note says nuclei are shown about 10¹² times
-  bigger and much slower.
+- The nucleus scenes stand in the deep blue water of a reactor pool (painted: light from the surface, the pool's lined
+  wall, fuel assemblies glowing blue at the bottom): the nuclei are in the reactor's fuel. The first result line says
+  nuclei are shown about 10¹² times bigger and much slower.
+
+## Polish pass (2026-11-01, v0.3.0)
+The owner's standard for every figure (docs/agents/polish-pass.md).
+- **Layout.** 3D on top, the panel below (beside it only on short, wide frames, as the kit does). On a phone held
+  upright the 3D view has 386 of 700 px (55 %, was 323): the result keeps two lines and the rule two (the rules were
+  rewritten shorter, in the book's words); in the worked line E = mc² = … the units of the middle step are left out
+  on phones (the answer keeps its unit), so it stays on one line; the test's questions were shortened to two lines.
+  The panel keeps one height in every state, Bangla and English, at all six sizes (checked state by state, the test
+  included).
+- **Text on the 3D view.** Labels only. The corner notes went into the panel: "nuclei shown 10¹² times bigger and much
+  slower" is the first result line of the single split (the action button already says what to do) and of the
+  chain; "cut open to show the inside" is in the power plant's rule. 58 → 19 characters on the view at the start.
+- **Setting and colour.** The reactor pool was a near-white wash; it is now deep clear water, light from the surface
+  above, the pool's lined wall faint behind, the fuel assemblies glowing blue below, darker at the corners. The
+  chain's neutron paths were blue on blue: now a pale line in a dark rim. Labels sit on solid white chips with a
+  soft shadow; the energy colour is #a85700 (5.2:1 on white; #b86200 was 4.4:1). The dusk plant was already a
+  proper setting.
+- **Time to the first picture.** It was the slowest of the chapter (4.3 s on a quiet machine). Why: the whole power
+  plant was built at the start although the figure opens on a nucleus — two dozen pictures painted pixel by pixel
+  (each noise table filled through `Float32Array.from` with a function, about 260 000 calls each, for every
+  texture), a 2048 px sky turned into reflected light, and two clear-coated physical shaders compiled before the
+  first frame. Now: the plant is built in idle moments after the start (never while the split plays), a piece at a
+  time, then its sky, then its shaders are compiled and its pictures uploaded, so the first tap on শক্তিকেন্দ্র is
+  instant; the noise tables are filled with a plain loop and shared while the plant is built; the nucleons are one
+  glossy standard shader (both have a skin), so one compile instead of two heavier ones.
+- **Smooth, with the detail kept.**
+  - The plant's ~700 still parts are merged by material (plain colours of a similar finish share one vertex-coloured
+    material), in two sets: what casts a shadow and what doesn't. Its 24 town buildings are 6 meshes, one per style;
+    each building's windows still light at their own moment, read in the shader from a number on its vertices. The
+    turbine's 54 blades and the 5 control rods are one mesh each; the steam puffs, the plume and the sparks on the
+    lines are one mesh each (sprites turned to the camera in the shader).
+  - Shadows: PCF at 1024 px (was soft at 2048) in a box fitted round what is seen, seen from the sun; only parts
+    whose shadow shows cast one (not the ground, floors, water, wires or decals, nor the far trees in the haze).
+  - The fields' picture is 1024 px over 210 m (same 4.9 px a metre as 2048 px over 420 m); the sky 1024 × 512.
+  - The chain's 13 nuclei use 8 × 7 spheres (each ball is a few pixels across there): 516k → 319k triangles.
+  - Nothing is allocated per frame (camera framing, the flash light, fog, the shadow box); the DOM is written only
+    when a value changes.
+
+- **Measured** (headless Chromium, software GL, shadows on, 390 × 700; the machine was heavily loaded, so times are
+  from back-to-back runs at the same load):
+  | | before | after |
+  |---|---|---|
+  | time to the first picture | 25.6 s and 40.6 s (4.3 s on a quiet machine) | 0.9 s and 2.1 s |
+  | draw calls, one nucleus (avg / max) | 39 / 72 | 27 / 49 |
+  | triangles, one nucleus / chain | 126k / 516k | 126k / 319k |
+  | texture memory at the start | 42.4 MB (largest 2048 px) | 10.4 MB (largest 1024 px) |
+  | power plant running: draw calls (avg / max), triangles, textures | 771 / 1490, 639k, 138 MB | 97 / 104, 278k, 60 MB |
+  | characters on the 3D view at the start | 58 in 4 boxes | 19 in 3 |
+  The plant's textures are uploaded in the warm-up a moment after the start, so a probe that waits a few seconds
+  counts about 50 MB in the nucleus scene too; the reflected light of its sky is made then (a few draw calls once).
 
 ## The numbers (checked)
 - Atomic masses (AME2020, rounded to 4 places): n 1.0087 u, ²³⁵U 235.0439 u, ⁹²Kr 91.9262 u, ¹⁴¹Ba 140.9144 u. Left
