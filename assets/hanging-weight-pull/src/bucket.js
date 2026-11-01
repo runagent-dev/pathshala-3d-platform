@@ -2,6 +2,7 @@
 // whose level shows how much it holds, and drops that fall from it while it rises out of the well. The group's origin
 // is the middle of the bucket's bottom; the rope ties to the top of the handle (KNOT above the origin).
 import * as THREE from 'three';
+import { mergeStatic } from './merge.js';
 import { BUCKET } from './reading.js';
 
 export const BUCKET_SIZE = { rBottom: 0.15, rTop: 0.195, h: 0.37 };
@@ -83,7 +84,7 @@ export function createBucket() {
     new THREE.Vector3(rTop - 0.01, h + 0.06, 0),
     new THREE.Vector3(rTop + 0.016, h - 0.03, 0),
   ]);
-  mesh(new THREE.TubeGeometry(bail, 48, 0.0042, 8, false), steel, 'Bail');
+  mesh(new THREE.TubeGeometry(bail, 48, 0.0042, 8, false), steel, 'Bail').castShadow = false; // a wire: no shadow to see
   const grip = mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.1, 14), plasticDark, 'HandleGrip');
   grip.rotation.z = Math.PI / 2;
   grip.position.y = KNOT - 0.006;
@@ -127,6 +128,8 @@ export function createBucket() {
   hit.position.y = (KNOT + 0.08) / 2 - 0.04;
   hit.userData.noExport = true;
   root.add(hit);
+  // the body, the rim and ribs, the lugs and the grip, the bail: one mesh per material (the water and drops apart)
+  mergeStatic(root, { keep: [water, hit, ...drops.map((d) => d.mesh)] });
 
   return {
     root,

@@ -6,6 +6,7 @@
 // and a corrugated tin roof, a haystack, clay pots, a bamboo fence and a deep blue sky. Everything is procedural
 // (canvas textures, no files), so the figure works offline.
 import * as THREE from 'three';
+import { mergeStatic } from './merge.js';
 
 /** The well: inner and outer radius, the parapet's top, the water's surface and the floor of the cut. */
 export const WELL = { rIn: 0.5, rOut: 0.72, top: 0.72, water: -1.0, floor: -1.75 };
@@ -356,6 +357,7 @@ export function createWell() {
     r.rotation.x = -Math.PI / 2;
     r.position.set(-PULLEY.r, water + 0.004, 0);
     r.userData.noExport = true;
+    r.visible = false;
     root.add(r);
     ripples.push(r);
   }
@@ -386,8 +388,10 @@ export function createWell() {
   // the cement apron: a raised half disc round the parapet, a little wet near the well
   const apron = add(new THREE.CylinderGeometry(1.35, 1.38, 0.05, 56, 1, false, Math.PI / 2, Math.PI), mats.apron, 'Apron');
   apron.position.y = 0.025;
+  apron.castShadow = false;
   mats.apron.map.repeat.set(3, 3);
   const apronEdge = add(new THREE.PlaneGeometry(2.76, 0.05), mats.apron, 'ApronCut');
+  apronEdge.castShadow = false;
   apronEdge.position.set(0, 0.025, 0.001);
   const wet = new THREE.Mesh(
     new THREE.RingGeometry(rOut + 0.02, 1.15, 48, 1, 0, Math.PI),
@@ -396,6 +400,7 @@ export function createWell() {
   wet.rotation.x = -Math.PI / 2;
   wet.position.y = 0.052;
   wet.name = 'WetCement';
+  wet.receiveShadow = true;
   root.add(wet);
 
   // ── the frame: two sal posts on the apron, a beam, an iron pulley hanging from a fork ──────────────────────────────
@@ -478,12 +483,20 @@ export function createWell() {
   root.add(yardItems);
 
   // ── a few things at the well: a clay pitcher (কলসি) and a second bucket on the apron ───────────────────────────────
-  const pot = createPot('#b4532a');
+  const potMats = {
+    clay: new THREE.MeshStandardMaterial({ name: 'Terracotta', color: '#b4532a', roughness: 0.75 }),
+    band: new THREE.MeshStandardMaterial({ name: 'PotBand', color: '#f2d27a', roughness: 0.7 }),
+  };
+  const pot = createPot(potMats);
   pot.position.set(-1.05, 0.05, -0.55);
   root.add(pot);
-  const pot2 = createPot('#a1471f', 0.8);
+  const pot2 = createPot(potMats, 0.8);
   pot2.position.set(-1.35, 0.05, -0.85);
   root.add(pot2);
+
+  // one mesh per material for everything that stands still (the wheel turns, the ripples fade: kept apart)
+  mergeStatic(wheel);
+  mergeStatic(root, { keep: [wheel, yardItems, ...ripples] });
 
   let wheelTurn = 0;
   return {
@@ -501,13 +514,14 @@ export function createWell() {
         const s = 0.08 + p * (rIn - 0.1);
         r.scale.set(s, s, s);
         r.material.opacity = k == null ? 0 : 0.75 * (1 - p);
+        r.visible = k != null && p < 1;
       });
     },
   };
 }
 
 /** A clay pitcher: a lathe of a round belly, a narrow neck and a lip, in terracotta. */
-function createPot(colour, scale = 1) {
+function createPot(mats, scale = 1) {
   const g = new THREE.Group();
   g.name = 'ClayPot';
   const pts = [
@@ -523,14 +537,11 @@ function createPot(colour, scale = 1) {
     [0.09, 0.425],
     [0.065, 0.42],
   ].map(([r, y]) => new THREE.Vector2(r * scale, y * scale));
-  const m = new THREE.Mesh(new THREE.LatheGeometry(pts, 32), new THREE.MeshStandardMaterial({ name: 'Terracotta', color: colour, roughness: 0.75 }));
+  const m = new THREE.Mesh(new THREE.LatheGeometry(pts, 32), mats.clay);
   m.castShadow = m.receiveShadow = true;
   g.add(m);
   // a painted band
-  const band = new THREE.Mesh(
-    new THREE.TorusGeometry(0.188 * scale, 0.006 * scale, 6, 40),
-    new THREE.MeshStandardMaterial({ name: 'PotBand', color: '#f2d27a', roughness: 0.7 }),
-  );
+  const band = new THREE.Mesh(new THREE.TorusGeometry(0.188 * scale, 0.006 * scale, 6, 40), mats.band);
   band.rotation.x = Math.PI / 2;
   band.position.y = 0.17 * scale;
   g.add(band);
@@ -612,6 +623,10 @@ function createYard() {
     }
     add(new THREE.BoxGeometry(0.84, 0.06, 0.08), M.frame, 'Sill', win).position.set(0, -0.42, 0.04);
   }
+  // the doorway and windows are flush with the wall, the frames, panels and bars small: their shadows are not seen
+  g.traverse((o) => {
+    if (o instanceof THREE.Mesh && (o.material === M.dark || o.material === M.frame || o.material === M.pole)) o.castShadow = false;
+  });
   // the roof: a corrugated sheet sloping over the veranda, on bamboo posts
   tin.repeat.set(W / 0.9, 1);
   const roof = add(new THREE.BoxGeometry(W + 0.6, 0.03, 2.2), M.tin, 'TinRoof');
@@ -680,5 +695,7 @@ function createYard() {
     leaf.castShadow = true;
     banana.add(leaf);
   }
-  return g;
+  // one mesh per textured material, and one for all the plain colours (vertex colours)
+  const paint = std('YardPaint', { vertexColors: true });
+  return mergeStatic(g, { paint: { from: [M.plinth, M.frame, M.dark, M.hay, M.hayDark, M.bamboo, M.pole, M.trunk], material: paint } });
 }

@@ -82,14 +82,14 @@ pull: less acceleration. In the book's pictures the same law, body by body, give
   +৩২ N", or "০" beside the bucket when held) and a on its right (teal, the same way as the resultant: F = Ma); the
   bucket's mass under it. The arrows are thick, in flat colour with a white outline, and drawn over the scenery; the
   yard behind the well (house, haystack, banana) sits in a light haze so the well, the bucket and the arrows stand out. Force arrows share
-  one scale, the acceleration has its own (said on wide stages). A chip at the bottom right gives the bucket's velocity and
-  the time (v grows by a each second), and after the run what happened. Top left: the slowed time (and on wide stages the
-  cut, the light rope and the smooth pulley) and "↑ উপরের দিক ধনাত্মক". No arrows while the bucket is simply held at the start
-  (before a run nothing is claimed about the forces).
+  one scale, the acceleration has its own (said under the rule on wide frames). A chip at the bottom right gives the
+  bucket's velocity and the time (v grows by a each second, "৩ গুণ ধীরে"). The sign rule "↑ উপরের দিক ধনাত্মক" sits at the end
+  of the law in the panel; "the well is cut in half, light rope, smooth pulley" is a quiet line under the rule (not on
+  phones). No arrows while the bucket is simply held at the start (before a run nothing is claimed about the forces).
 - **উদাহরণ (বইয়ের উদাহরণ):** a window with two tabs. চিত্র ৩.০৯: a body m on a smooth table pulled by a hanging mass M over
   a pulley (the previous version's bench and iron weight, on a warm background), steppers for M and m (the page has only
   letters; 2 kg and 5 kg to start), and five lines one at a time: T = ma; N − mg = 0; T − Mg = M(−a); a = Mg/(M + m) with the
-  numbers; T = ma, less than Mg. চিত্র ৩.১০: the book's 10 kg and 5 kg, a stepper for m (5 kg to start), and five lines:
+  numbers; T = ma, less than Mg (the bench on a slate-blue classroom wall, so the orange T arrows stand out). চিত্র ৩.১০: the book's 10 kg and 5 kg, a stepper for m (5 kg to start), and five lines:
   T₁ − 5g = 5a; T₁ − T₂ = m(−a); T₂ − 10g = 10(−a); T₁ − T₂ = 15a − 5g; a = 5g/(m + 15) with the numbers. A tap on the bench
   (or ছেড়ে দাও) runs it, slowed 4 times, with arrows and labels.
 - **Test (5 questions, each with its own scene):** a from T and M (the bucket goes up); T when held still (Mg); which way
@@ -113,3 +113,34 @@ pull: less acceleration. In the book's pictures the same law, body by body, give
 - চিত্র ৩.০৯ has no numbers on the page; the window starts at M = 2 kg, m = 5 kg. চিত্র ৩.১০ leaves m as a letter; the window
   starts at 5 kg.
 - Friction: the page assumes none without saying so; the figure says "দড়ি হালকা, কপিকল মসৃণ" and "মসৃণ টেবিল".
+
+## Polish pass (2026-11-01, v0.4.0)
+- **Layout.** The 3D on top and the panel below at every size except a phone held sideways (the kit's rule; nothing in
+  this figure's CSS moves the panel). On phones each stepper's name sits beside it and the law and the sum share one
+  box, so the 3D gets more of the screen: 390×700 from 48 % to 52 % of the height (390×520 from 40 % to 41 %).
+- **Text on the 3D.** The notes in the top left (the cut well, the light rope and smooth pulley, the slowed time, the
+  sign rule, the arrows' scale) left the picture: the sign rule is at the end of the law ("↑ উপরের দিক ধনাত্মক", "↑ ধনাত্মক" in
+  a narrow side panel), the rest a quiet line under the rule on wide frames. On the picture only the labels with their
+  values and one chip with v and t (and "৩ গুণ ধীরে"). The after-run sentence on the chip went (the result is under
+  its word in the row).
+- **Colour and arrows.** The well keeps its v0.3.0 arrows and colours. The book-example window had thin, unoutlined
+  arrows with the orange T on a warm orange wall: now a slate-blue classroom wall and the same bold, white-outlined
+  arrows as the well (`src/arrows.js`), labels on solid white chips. Fixed on the way: the outline was sometimes drawn
+  over its arrow's colour (both had the same draw order).
+- **Smooth, same detail.** Static parts merged into one mesh per material (`src/merge.js`: the well, the frame, the
+  yard, the bucket, the man's head, trunk, fists and feet; the yard's plain colours in one vertex-coloured mesh): 196
+  meshes to 64. Tiny parts (eyes, buttons, the bail, the elbows, the doorway planes…) cast no shadow; PCF shadows at
+  1024 instead of VSM at 2048 (VSM also drew every shadow receiver into the shadow map), the same picture. The rope is
+  rewritten in place (a fixed tube, resampled) instead of a new TubeGeometry every frame; no allocations per frame in
+  the run (the fists, the arrows, the label boxes); the ripples are hidden when still; the example window's labels are
+  rebuilt only when their words change.
+- **Bugs fixed.** In the book-example window on short frames (390×520, 640×400) the worked lines ran under the buttons
+  and over the title: now the words under a sum show only for the newest line there, and the text column never centres
+  past its top; its labels stay inside the picture (T₂ was cut off at 640×400); its steppers no longer squash to a
+  sliver beside the bench. A quick second tap on a symbol of the law no longer cut the first highlight short. On wide
+  frames (800×500) the row of words keeps its own height instead of stretching to the formula's.
+- **Numbers** (headless Chromium, software GL, shadows on, 390×700): draw calls avg 402 / max 424 → 125 / 147;
+  triangles max 129k → 108k; texture memory 58 MB (largest 2048) → 18 MB (largest 1024); text on the 3D 41 characters
+  in 4 boxes → 9 in 1 (844×390: 102/5 → 9/1); idle frames 0/s before and after. Time to ready is within the noise of
+  a loaded machine (1.5–5 s before and after).
+
