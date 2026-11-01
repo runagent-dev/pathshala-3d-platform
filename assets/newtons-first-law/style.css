@@ -36,7 +36,7 @@ body.bg-transparent { background: transparent; }
   .nf .pvc-q-feedback { font-size: 13px; }
 }
 /* a phone held upright: the 3D keeps at least 55 % of the height (the test's lines keep a little less room) */
-@container pvc (max-aspect-ratio: 1/1) and (min-height: 640px) {
+@container pvc (max-aspect-ratio: 1/1) and (min-height: 640px) and (min-width: 375px) {
   .nf .pvc-q-text { min-height: 2.6em; }
   .nf .pvc-q-feedback { min-height: 2.9em; }
   .nf .pvc-learn { gap: 6px; }
