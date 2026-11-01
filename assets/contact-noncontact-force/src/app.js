@@ -97,6 +97,7 @@ export function createApp(root, options = {}) {
   root.lang = t.lang;
   root.tabIndex = 0;
   const ui = buildStudentShell(root, t, {
+    layout: 'side',
     learn: cleanSheet(t, {
       examples: { label: 'ex_label', results: true, items: EXAMPLE_IDS.map((id) => ({ id, label: `ex_${id}` })) },
       lines: { action: 1, outcome: 1, rule: 3 },
