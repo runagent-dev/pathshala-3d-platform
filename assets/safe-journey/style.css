@@ -30,21 +30,6 @@ body.bg-transparent { background: transparent; }
 .sj .pvc-q-text { font-size: 15.5px; }
 .sj .pvc-q-feedback { font-size: 14px; }
 
-/* wide frames (tabs beside the sheet): the lines one under the other, close together; on very wide frames the words
-   and the action side by side */
-@container pvc (min-width: 720px) and (min-height: 461px) {
-  .sj .pvc-learn { justify-content: flex-start; gap: 8px; }
-  .sj .pvc-examples { max-width: 520px; }
-  .sj .pvc-outcome { --pvc-outcome-lines: 1; }
-  .sj .pvc-rule { --pvc-rule-lines: 2; }
-}
-@container pvc (min-width: 1000px) and (min-height: 461px) {
-  .sj .pvc-learn { display: grid; grid-template-columns: minmax(0, 480px) minmax(0, 1fr); grid-template-areas: 'ex act' 'out out' 'rule rule'; align-content: start; align-items: center; gap: 8px 32px; }
-  .sj .pvc-examples { grid-area: ex; }
-  .sj .pvc-act-row { grid-area: act; }
-  .sj .pvc-outcome { grid-area: out; }
-  .sj .pvc-rule { grid-area: rule; }
-}
 /* phones held upright: tighter lines, so the 3D view keeps more than half the height (55 % of 390 × 700) */
 @container pvc (max-width: 560px) {
   .sj .pvc-learn { gap: 6px; }
@@ -69,8 +54,8 @@ body.bg-transparent { background: transparent; }
   .sj .pvc-opt { height: 42px; font-size: 13.5px; }
   .sj .pvc-q-feedback { font-size: 13px; }
 }
-/* short and wide (phone held sideways): the panel is beside the scene */
-@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
+/* a narrow side panel beside the 3D (280–360 px): two lines for the result, four for the rule */
+@container pvc-panel (max-width: 340px) {
   .sj .pvc-outcome { --pvc-outcome-lines: 2; font-size: 15px; line-height: 1.6; }
   .sj .pvc-rule { --pvc-rule-lines: 4; font-size: 14px; line-height: 1.45; }
   .sj .pvc-q-text { font-size: 14px; }
