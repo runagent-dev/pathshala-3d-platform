@@ -18,7 +18,9 @@ import { createI18n } from './i18n.js';
 import { createFan } from './fan.js';
 import { createClock } from './clock.js';
 import { createMoon } from './moon.js';
-import { COLORS, MAX_MARKS, createOverlay } from './overlay.js';
+import { INK, MAX_MARKS, createOverlay } from './overlay.js';
+import { createRoom, createStars, createWall, gradientTexture } from './setting.js';
+import { FAN } from './fan.js';
 import {
   EXAMPLES,
   EXAMPLE_IDS,
@@ -50,9 +52,15 @@ export const DEFAULTS = {
 };
 
 const START = { fan: 25, clock: 0, moon: 35 }; // where the moving point starts (degrees from "up")
+const DEG = Math.PI / 180;
+/** How far the view may be turned round each example (polar from straight up, azimuth from the front). */
+const ORBIT = {
+  fan: { polar: [95 * DEG, Math.PI], azimuth: [-Infinity, Infinity] },
+  clock: { polar: [20 * DEG, 160 * DEG], azimuth: [-75 * DEG, 75 * DEG] },
+  moon: { polar: [0, Math.PI], azimuth: [-Infinity, Infinity] },
+};
 const SAME_PLACE = 20; // degrees: a measurement nearer than this to an earlier one is "the same place"
 const UNIT_CODE = { unit_cm: 'cm', unit_lakh_km: 'lakh km' };
-const hex = (c) => `#${c.toString(16).padStart(6, '0')}`;
 
 export function createApp(root, options = {}) {
   const o = { ...DEFAULTS, ...options };
@@ -83,26 +91,17 @@ export function createApp(root, options = {}) {
             </div>
           </div>`,
   });
-  const note = document.createElement('div');
-  note.className = 'cm-note';
-  ui.stage.append(note);
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 30, near: 1, far: 6000, environment: 'studio-light' });
   const { camera, controls, scene } = stage;
-  // The owner requested a vivid scene; the white learning panel keeps the text readable.
-  const backdropCanvas = document.createElement('canvas');
-  backdropCanvas.width = 8;
-  backdropCanvas.height = 256;
-  const backdropContext = backdropCanvas.getContext('2d');
-  const backdropGradient = backdropContext.createLinearGradient(0, 0, 0, 256);
-  backdropGradient.addColorStop(0, '#122344');
-  backdropGradient.addColorStop(1, '#075d70');
-  backdropContext.fillStyle = backdropGradient;
-  backdropContext.fillRect(0, 0, 8, 256);
-  const backdrop = new THREE.CanvasTexture(backdropCanvas);
-  backdrop.colorSpace = THREE.SRGBColorSpace;
-  scene.background = o.bg === 'transparent' ? null : backdrop;
+  // each example in its own place (setting.js): the fan under a room's ceiling, the clock on its wall, the Moon in
+  // the night sky; what shows past the room when the camera is pulled far back is the room's dusk
+  const opaque = o.bg !== 'transparent';
+  const backgrounds = opaque
+    ? { fan: gradientTexture('#4a5d78', '#2c3a50'), clock: gradientTexture('#4a5d78', '#2c3a50'), moon: gradientTexture('#060a1d', '#151c43') }
+    : null;
+  scene.background = null;
   const M = createMaterials(stage.renderer);
   const world = new THREE.Group();
   world.name = 'CircularMotionScene';
@@ -112,7 +111,10 @@ export function createApp(root, options = {}) {
   const audio = createAudio(o.sound);
   const annotations = createAnnotations({ stage, layer: ui.annoLayer });
 
-  const shadows = o.shadow && o.bg !== 'transparent';
+  // Soft shadows: the fan's on the ceiling, the clock's on its wall (the Moon is in space). Very soft shadows need
+  // few texels, so a small map in a box fitted round the casters looks the same as a big loose one: 512 px, and
+  // only the parts whose shadow shows cast one.
+  const shadows = o.shadow && opaque;
   if (shadows) {
     stage.renderer.shadowMap.enabled = true;
     stage.renderer.shadowMap.type = THREE.VSMShadowMap;
@@ -122,24 +124,27 @@ export function createApp(root, options = {}) {
     clock: createClock({ t }),
     moon: createMoon({ renderer: stage.renderer }),
   };
+  if (opaque) {
+    ex.fan.setting = createRoom({ ceiling: FAN.ceiling });
+    ex.clock.setting = createWall({ z: ex.clock.wallZ });
+    ex.moon.setting = createStars();
+  }
   // where the "circular path" label sits on each circle: lower right on the screen
   const PATH_LABEL_AT = { fan: 225, clock: 135, moon: 225 };
   for (const e of Object.values(ex)) {
-    if (shadows && e.shadowReceiver) {
-      // the fan's shadow falls on the ceiling, the clock's on its wall; the Moon is in space
-      e.root.traverse((m) => {
-        if (m instanceof THREE.Mesh && m.material?.visible !== false && !m.material.transparent && !(m.material instanceof THREE.ShadowMaterial))
-          m.castShadow = true;
-      });
+    if (e.setting) e.root.add(e.setting);
+    if (shadows && e.shadow) {
+      for (const m of e.casters) m.castShadow = true;
       for (const light of e.lights) {
+        const { size: R, near, far, blur } = e.shadow;
         light.castShadow = true;
-        light.shadow.mapSize.set(2048, 2048);
-        const R = e.shadowSize;
-        Object.assign(light.shadow.camera, { left: -R, right: R, top: R, bottom: -R, near: 10, far: 1200 });
-        light.shadow.radius = e.shadowBlur ?? 8;
-        light.shadow.blurSamples = 16;
+        light.shadow.mapSize.set(512, 512);
+        Object.assign(light.shadow.camera, { left: -R, right: R, top: R, bottom: -R, near, far });
+        light.shadow.camera.updateProjectionMatrix();
+        light.shadow.radius = blur;
+        light.shadow.blurSamples = 8;
+        light.shadow.intensity = e.shadow.strength ?? 1;
       }
-      e.shadowReceiver.visible = true;
     }
     e.overlay = createOverlay({ r: e.r, lift: e.lift, pointSize: e.pointSize, guide: e.guide });
     e.plane.add(e.overlay.root);
@@ -311,13 +316,18 @@ export function createApp(root, options = {}) {
     }
     return Math.abs(o.x - x) < (o.w + box.w) / 2 + 3 && Math.abs(o.y - y) < (o.h + box.h) / 2 + 3;
   }
+  const ONE_SIDE = [1];
+  const BOTH_SIDES = [1, -1];
+  const placed = { x: 0, y: 0 }; // besideLine's answer (reused: labels are placed every frame while it turns)
   /**
    * The centre of a label box beside a line from (cx, cy) along (ux, uy), about `along` pixels out, clear of the
-   * obstacles: the nearest free place a little further out along the line or a little further to the side.
+   * first `count` obstacles: the nearest free place a little further out along the line or a little further to the
+   * side.
    */
-  function besideLine(cx, cy, ux, uy, along, box, obstacles, alongMax = along, sides = [1], memo = { side: 1 }) {
+  function besideLine(cx, cy, ux, uy, along, box, obstacles, count, alongMax = along, sides = ONE_SIDE, memo = { side: 1 }) {
     const base = (Math.abs(uy) * box.w + Math.abs(ux) * box.h) / 2 + 5;
-    let best = null;
+    let bestCost = Infinity;
+    let bestSide = 0;
     for (const side of sides) {
       const nx = -uy * side;
       const ny = ux * side;
@@ -325,33 +335,42 @@ export function createApp(root, options = {}) {
         for (let a = along; a <= Math.max(along, alongMax); a += 4) {
           const x = cx + ux * a + nx * off;
           const y = cy + uy * a + ny * off;
-          if (obstacles.some((o) => touches(o, x, y, box))) continue;
+          let blocked = false;
+          for (let i = 0; i < count && !blocked; i++) blocked = touches(obstacles[i], x, y, box);
+          if (blocked) continue;
           // the cost of moving away from the ideal place; changing sides costs extra, so the label does not flicker
           const cost = off - base + (a - along) / 2 + (side === memo.side ? 0 : 20);
-          if (!best || cost < best.cost) best = { x, y, cost, side };
+          if (cost < bestCost) {
+            bestCost = cost;
+            bestSide = side;
+            placed.x = x;
+            placed.y = y;
+          }
           break search;
         }
       }
     }
-    if (!best) return { x: cx + ux * along - uy * base, y: cy + uy * along + ux * base };
-    memo.side = best.side;
-    return best;
+    if (!bestSide) {
+      placed.x = cx + ux * along - uy * base;
+      placed.y = cy + uy * along + ux * base;
+    } else memo.side = bestSide;
+    return placed;
   }
   const distSide = { side: 1 }; // the side of its line the distance is on (it changes sides only when it must)
+  const line = { e: null, len: 1, ux: 0, uy: 1, hub: 0, end: 0 }; // lineOnScreen's answer (reused every frame)
   /** The fixed point and the moving point on the screen, the direction between them, and the bodies' sizes. */
   function lineOnScreen() {
     const e = cur();
     onScreen(e.overlay.centerWorld(wC), sC);
     onScreen(e.overlay.pointWorld(wP), sP);
     const len = Math.hypot(sP.x - sC.x, sP.y - sC.y) || 1;
-    return {
-      e,
-      len,
-      ux: (sP.x - sC.x) / len,
-      uy: (sP.y - sC.y) / len,
-      hub: sizeOnScreen(wC, sC, e.hub),
-      end: sizeOnScreen(wP, sP, e.endSize ?? e.r * (e.pointSize ?? 0.047) * 1.4),
-    };
+    line.e = e;
+    line.len = len;
+    line.ux = (sP.x - sC.x) / len;
+    line.uy = (sP.y - sC.y) / len;
+    line.hub = sizeOnScreen(wC, sC, e.hub);
+    line.end = sizeOnScreen(wP, sP, e.endSize ?? e.r * (e.pointSize ?? 0.047) * 1.4);
+    return line;
   }
   /** How many pixels a ball of radius `size` round world point p (at screen point s) looks, from any view. */
   const camUp = new THREE.Vector3();
@@ -362,23 +381,40 @@ export function createApp(root, options = {}) {
     onScreen(sizeW.copy(p).addScaledVector(camUp, size), sizeS);
     return Math.hypot(sizeS.x - sp.x, sizeS.y - sp.y);
   }
+  // what the distance's label keeps clear of: the hub, the moving end, the other two labels (reused every frame)
+  const obstacles = [
+    { x: 0, y: 0, r: 0 },
+    { x: 0, y: 0, r: 0 },
+    { x: 0, y: 0, w: 0, h: 0 },
+    { x: 0, y: 0, w: 0, h: 0 },
+  ];
+  const setCircle = (o, x, y, r) => {
+    o.x = x;
+    o.y = y;
+    o.r = r;
+  };
+  const setBox = (o, x, y, w, h) => {
+    o.x = x;
+    o.y = y;
+    o.w = w;
+    o.h = h;
+  };
   function distPoint(out) {
     const { e, len, ux, uy, hub, end } = lineOnScreen();
-    const obstacles = [
-      { x: sC.x, y: sC.y, r: hub },
-      { x: sP.x, y: sP.y, r: end },
-    ];
+    setCircle(obstacles[0], sC.x, sC.y, hub);
+    setCircle(obstacles[1], sP.x, sP.y, end);
+    let n = 2;
     if (boxes.center) {
       const c = boxOf('center');
-      obstacles.push({ x: sC.x, y: sC.y + centerDy, w: c.w, h: c.h });
+      setBox(obstacles[n++], sC.x, sC.y + centerDy, c.w, c.h);
     }
     if (annotations.has('path')) {
       // the kit puts a label with dx > 0 to the right of its point: its box starts dx to the right, centred on dy
       const b = boxOf('path');
       onScreen(e.overlay.worldAt(PATH_LABEL_AT[e.id], wPath), sPath);
-      obstacles.push({ x: sPath.x + PATH_DX + b.w / 2, y: sPath.y + PATH_DY, w: b.w, h: b.h });
+      setBox(obstacles[n++], sPath.x + PATH_DX + b.w / 2, sPath.y + PATH_DY, b.w, b.h);
     }
-    const at = besideLine(sC.x, sC.y, ux, uy, len * DIST_AT[e.id], boxOf('dist'), obstacles, len, [1, -1], distSide);
+    const at = besideLine(sC.x, sC.y, ux, uy, len * DIST_AT[e.id], boxOf('dist'), obstacles, n, len, BOTH_SIDES, distSide);
     return besidePx(wC, at.x - sC.x, at.y - sC.y, out);
   }
   /** The Moon's name beyond the Moon (or beside it at the edge of the view), the Earth's on the far side. */
@@ -389,7 +425,8 @@ export function createApp(root, options = {}) {
     let x = sP.x + ux * reach;
     let y = sP.y + uy * reach;
     if (x - box.w / 2 < 4 || x + box.w / 2 > stage.width - 4 || y - box.h / 2 < 4 || y + box.h / 2 > stage.height - 4) {
-      const side = besideLine(sP.x, sP.y, ux, uy, 0, box, [{ x: sP.x, y: sP.y, r: end }]);
+      setCircle(obstacles[0], sP.x, sP.y, end);
+      const side = besideLine(sP.x, sP.y, ux, uy, 0, box, obstacles, 1);
       x = side.x;
       y = side.y;
     }
@@ -416,18 +453,17 @@ export function createApp(root, options = {}) {
     for (const k of LABELS) annotations.remove(k);
     if (!labelsOn) return;
     const e = cur();
-    const id = s.example;
     // just below the hub, so its leader is short and never looks like another radius
     centerDy = (e.hub * radiusOnScreen()) / e.r + 18;
     addLabel('center', {
-      text: t(id === 'moon' ? 'label_center_moon' : 'label_center'),
+      text: t('label_center'),
       point: () => e.overlay.centerWorld(pts.c),
       dx: 0,
       dy: centerDy,
       kind: 'callout',
-      color: hex(COLORS.center),
+      color: INK.center,
     });
-    addLabel('dist', { text: distText(), point: () => distPoint(pts.d), dx: 0, dy: 0, kind: 'callout', color: hex(COLORS.dist) });
+    addLabel('dist', { text: distText(), point: () => distPoint(pts.d), dx: 0, dy: 0, kind: 'callout', color: INK.dist });
     if (coverageFraction(s.cov) >= 0.5) addPathLabel();
   }
   function addPathLabel() {
@@ -439,7 +475,7 @@ export function createApp(root, options = {}) {
       dx: PATH_DX,
       dy: PATH_DY,
       kind: 'callout',
-      color: hex(COLORS.path),
+      color: INK.path,
     });
   }
 
@@ -472,10 +508,11 @@ export function createApp(root, options = {}) {
     if (!ex[id]) return;
     s.example = id;
     for (const e of Object.values(ex)) e.root.visible = e === cur();
+    if (backgrounds) scene.background = backgrounds[id];
     restart(id);
     cur().overlay.setGhost(null);
-    note.textContent = t(`note_${id}`);
-    el.book.innerHTML = t(id === 'moon' ? 'book_moon' : 'book_fan');
+    // the book's line about the example, then how the picture is stylised (a quiet aside, not on the 3D view)
+    el.book.innerHTML = `${t(id === 'moon' ? 'book_moon' : 'book_fan')} <span class="cm-style">${t(`note_${id}`)}</span>`;
     for (const b of el.chips) b.classList.remove('cm-nudge');
     setLabels();
     syncUI();
@@ -496,6 +533,12 @@ export function createApp(root, options = {}) {
     }
     s.userMovedCamera = false;
     intro = 0;
+    // turning the view keeps the camera in the example's place: under the ceiling, in front of the wall
+    const lim = ORBIT[id];
+    controls.minPolarAngle = lim.polar[0];
+    controls.maxPolarAngle = lim.polar[1];
+    controls.minAzimuthAngle = lim.azimuth[0];
+    controls.maxAzimuthAngle = lim.azimuth[1];
     const fit = viewPose();
     controls.minDistance = fit.distance * 0.45;
     controls.maxDistance = fit.distance * 2.5;
@@ -867,7 +910,7 @@ export function createApp(root, options = {}) {
               dx: 0,
               dy: 30,
               kind: 'callout',
-              color: hex(COLORS.dist),
+              color: INK.dist,
             });
           }
           const ex_ = EXAMPLES[id];
@@ -973,7 +1016,7 @@ export function createApp(root, options = {}) {
       t,
       loupe: null,
       tweener,
-      avoid: [ui.corner, ui.hint, note],
+      avoid: [ui.corner, ui.hint],
       object: {
         label: 'coach_tap',
         // the moving point first; near the bottom edge (no room for the hand) a spot further in on the blade or hand
@@ -1103,6 +1146,32 @@ export function createApp(root, options = {}) {
     else coach?.start(intro ? 2600 : 900);
   })();
 
+  // A moment after the start, the other two examples' shaders are compiled (in parallel where the browser can) and
+  // their pictures (the clock's dial, the Earth and the Moon) sent to the GPU, so the first tap on ঘড়ির কাঁটা or চাঁদ
+  // does not stall. Each is compiled alone in a scene with the same lighting, with only its own lamp, as it will be
+  // drawn; it is back in place before the next frame.
+  function warmUp() {
+    const shown = cur();
+    for (const e of Object.values(ex)) {
+      if (e === shown) continue;
+      const alone = new THREE.Scene();
+      alone.environment = scene.environment;
+      alone.environmentIntensity = scene.environmentIntensity;
+      e.root.visible = true;
+      alone.add(e.root);
+      try {
+        stage.renderer.compileAsync(alone, camera).catch(() => {});
+        e.root.traverse((m) => {
+          for (const mat of [m.material].flat()) for (const map of [mat?.map, mat?.emissiveMap]) if (map) stage.renderer.initTexture(map);
+        });
+      } finally {
+        world.add(e.root);
+        e.root.visible = e === cur();
+      }
+    }
+  }
+  setTimeout(warmUp, 1500);
+
   return {
     ready,
     on(type, fn) {
@@ -1157,13 +1226,19 @@ export function createApp(root, options = {}) {
       await setView('front');
     },
     startPractice: () => quiz.start(),
+    /** The view as a picture; with a background given (null: transparent) the example alone, without its setting. */
     capture(opts = {}) {
       const background = scene.background;
-      if (opts.background !== undefined) scene.background = null;
+      const setting = cur().setting;
+      if (opts.background !== undefined) {
+        scene.background = null;
+        if (setting) setting.visible = false;
+      }
       try {
         return stage.capture(opts);
       } finally {
         scene.background = background;
+        if (setting) setting.visible = true;
         stage.invalidate();
       }
     },

@@ -1,13 +1,50 @@
-// A round wall clock (ঘড়ি) in centimetres: 31 cm across, a dark wooden frame, a white face with Bangla numerals,
+// A round wall clock (ঘড়ি) in centimetres: 31 cm across, an orange frame, a white face with Bangla numerals,
 // hour, minute and second hands (ঘড়ির কাঁটা). The second hand turns clockwise; the mark on it is 12 cm from the
 // pin. The face looks along +z; the wall is behind it.
 // The hands live in the plane of the face, built like the other examples: angle 0 (+y) is 12 o'clock and the
 // plane's +z points into the wall, so a positive angle turns clockwise as seen from the front.
 import * as THREE from 'three';
-import { textMesh } from '@shared/student/materials.js';
+import { FONT } from '@shared/student/materials.js';
 import { clockHands } from './reading.js';
 
 export const CLOCK = { r: 12, face: 14, frame: 15.5, start: 10 * 3600 + 10 * 60 }; // the clock shows 10:10:00
+
+/**
+ * The dial drawn once into one canvas: the white face, the minute track (every fifth tick longer and bolder) and
+ * the Bangla numerals 1–12. One texture and one draw call instead of a mesh per numeral.
+ */
+function dialTexture(N, face) {
+  const S = 1024;
+  const k = S / (2 * face); // pixels per cm
+  const c = document.createElement('canvas');
+  c.width = c.height = S;
+  const g = c.getContext('2d');
+  g.fillStyle = '#ffffff';
+  g.fillRect(0, 0, S, S);
+  g.translate(S / 2, S / 2);
+  g.fillStyle = '#22262c';
+  for (let i = 0; i < 60; i++) {
+    const hour = i % 5 === 0;
+    const len = (hour ? 1.05 : 0.55) * k;
+    const w = (hour ? 0.34 : 0.13) * k;
+    g.save();
+    g.rotate((i * Math.PI) / 30);
+    g.fillRect(-w / 2, -13.15 * k, w, len);
+    g.restore();
+  }
+  g.fillStyle = '#1b1e23';
+  g.font = `600 ${Math.round(2.15 * k)}px ${FONT}`;
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  for (let h = 1; h <= 12; h++) {
+    const a = (h * Math.PI) / 6;
+    g.fillText(N(String(h)), Math.sin(a) * 10.15 * k, -Math.cos(a) * 10.15 * k + 0.1 * k);
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 4;
+  return t;
+}
 
 /** A flat hand pointing along +y: from −tail to len, `w` wide, with a pointed end. */
 function handShape(len, w, tail) {
@@ -26,9 +63,17 @@ export function createClock({ t }) {
   const root = new THREE.Group();
   root.name = 'WallClock';
   const wood = new THREE.MeshPhysicalMaterial({ name: 'Frame', color: 0xe76619, roughness: 0.42, clearcoat: 0.6, clearcoatRoughness: 0.25 });
-  const faceMat = new THREE.MeshStandardMaterial({ name: 'Face', color: 0xffffff, roughness: 0.8, emissive: 0xffffff, emissiveIntensity: 0.22 });
+  const dial = dialTexture(N, CLOCK.face + 0.1);
+  // a little self-lit, so the face stays white; the numerals and ticks stay dark (the glow follows the dial)
+  const faceMat = new THREE.MeshStandardMaterial({
+    name: 'Face',
+    map: dial,
+    roughness: 0.8,
+    emissive: 0xffffff,
+    emissiveMap: dial,
+    emissiveIntensity: 0.22,
+  });
   const black = new THREE.MeshStandardMaterial({ name: 'Hands', color: 0x1b1e23, roughness: 0.45, metalness: 0.2 });
-  const tickMat = new THREE.MeshBasicMaterial({ name: 'Ticks', color: 0x22262c, toneMapped: false });
 
   // frame: a rounded rim and a back
   const rim = new THREE.Mesh(new THREE.TorusGeometry(CLOCK.frame - 0.85, 0.85, 20, 96), wood);
@@ -41,30 +86,6 @@ export function createClock({ t }) {
   face.name = 'Face';
   face.position.z = 1.32;
   root.add(rim, back, face);
-
-  // the minute track: 60 ticks, every fifth longer and bolder
-  const tickGeo = new THREE.PlaneGeometry(1, 1);
-  const ticks = new THREE.InstancedMesh(tickGeo, tickMat, 60);
-  ticks.name = 'Ticks';
-  const m = new THREE.Matrix4();
-  const q = new THREE.Quaternion();
-  const zAxis = new THREE.Vector3(0, 0, 1);
-  for (let i = 0; i < 60; i++) {
-    const hour = i % 5 === 0;
-    const len = hour ? 1.05 : 0.55;
-    const a = (-i * Math.PI) / 30; // clockwise from 12
-    const rr = 13.15 - len / 2;
-    q.setFromAxisAngle(zAxis, a);
-    m.compose(new THREE.Vector3(-Math.sin(a) * rr, Math.cos(a) * rr, 1.36), q, new THREE.Vector3(hour ? 0.34 : 0.13, len, 1));
-    ticks.setMatrixAt(i, m);
-  }
-  root.add(ticks);
-  for (let h = 1; h <= 12; h++) {
-    const a = (-h * Math.PI) / 6;
-    const label = textMesh(N(String(h)), 2.15, { color: '#1b1e23', weight: 600 });
-    label.position.set(-Math.sin(a) * 10.15, Math.cos(a) * 10.15, 1.38);
-    root.add(label);
-  }
 
   // the hands, in the plane of the face (local +z into the wall: the nearer hand has the more negative z)
   const plane = new THREE.Group();
@@ -99,18 +120,12 @@ export function createClock({ t }) {
   hit.position.set(0, 6, -0.7);
   spin.add(hit);
 
-  // the wall catches the clock's shadow (not exported)
+  // a lamp up on the left; with soft shadows on, the frame's shadow falls on the wall (setting.js; not exported)
   const lamp = new THREE.DirectionalLight(0xffffff, 0.9);
   lamp.position.set(-90, 160, 260);
   lamp.userData.noExport = true;
   lamp.target.userData.noExport = true;
   root.add(lamp, lamp.target);
-  const wall = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.ShadowMaterial({ opacity: 0.12 }));
-  wall.position.z = -2.35;
-  wall.receiveShadow = true;
-  wall.userData.noExport = true;
-  wall.visible = false;
-  root.add(wall);
 
   const deg = THREE.MathUtils.degToRad;
   // a point of a part, in the world (written into `out`, so labels that follow it every frame allocate nothing)
@@ -130,8 +145,9 @@ export function createClock({ t }) {
     views: { front: new THREE.Vector3(0, 0.1, 1).normalize(), '3d': new THREE.Vector3(0.62, 0.3, 0.72).normalize() },
     grab: [hit],
     lights: [lamp],
-    shadowReceiver: wall,
-    shadowSize: (CLOCK.frame + 0.6) * 1.5,
+    wallZ: -2.35, // where the wall behind it is
+    casters: [rim, back], // the hands' shadows fall only on the face, which takes none
+    shadow: { size: CLOCK.frame + 3, near: 285, far: 345, blur: 3, strength: 0.6 },
     /** The second hand at `deg` (clockwise from 12); the minute and hour hands follow as on a real clock. */
     setAngle(a) {
       const h = clockHands(CLOCK.start + a / 6);

@@ -5,7 +5,8 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
 #app { position: fixed; inset: 0; }
 body.bg-transparent { background: transparent; }
 
-.pvc { --c-ctr: #6741d9; --c-dist: #e8590c; --c-path: #1c6fd9; }
+/* the orange is the drawing's #e8590c made darker for text on white (5.2:1) */
+.pvc { --c-ctr: #6741d9; --c-dist: #c2410c; --c-path: #1c6fd9; }
 .pvc .c-ctr { color: var(--c-ctr); }
 .pvc .c-dist { color: var(--c-dist); }
 .pvc .c-path { color: var(--c-path); }
@@ -17,11 +18,13 @@ body.bg-transparent { background: transparent; }
 @keyframes cm-nudge { 50% { background: var(--accent-soft); color: var(--accent); } }
 @media (prefers-reduced-motion: reduce) { .cm-ex button.cm-nudge { animation: none; } }
 
-/* the book's definition (two lines on a phone), then the book's line about the example (room for two lines) */
+/* the book's definition (two lines on a phone), then the book's line about the example and, quieter, how the
+   picture is stylised (room for two lines) */
 .cm-idea { margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink-2); }
 .cm-idea b { font-weight: 700; color: var(--ink); }
-.cm-book { margin: 0; min-height: 2.9em; font-size: 13px; line-height: 1.45; color: var(--ink-3); }
-.cm-book b { font-weight: 600; color: var(--ink-2); }
+.cm-book { margin: 0; min-height: 2.9em; font-size: 13px; line-height: 1.45; color: var(--ink-2); }
+.cm-book b { font-weight: 600; color: var(--ink); }
+.cm-style { color: var(--ink-3); }
 
 /* the measured distances (? = ? = ? = ? until measured) and the two buttons, side by side where there is room */
 .cm-row { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 8px 18px; }
@@ -45,9 +48,6 @@ body.bg-transparent { background: transparent; }
 .cm-acts .ic { display: inline-flex; }
 .cm-acts [data-act='play'] { min-width: 92px; }
 
-/* how the picture is stylised, in the top left corner of the 3D view (balanced lines: no word alone) */
-.cm-note { position: absolute; left: 12px; top: 12px; z-index: 3; max-width: calc(100% - 236px); font-size: 12.5px; line-height: 1.35; color: var(--ink-3); pointer-events: none; text-wrap: balance; }
-
 /* the test: letters and short phrases as answers */
 .cm .pvc-opt .cm-txt { font-size: 14.5px; line-height: 1.25; white-space: normal; font-weight: 600; }
 .cm .pvc-opt .cm-letter { font-size: 22px; font-weight: 700; }
@@ -56,14 +56,20 @@ body.bg-transparent { background: transparent; }
 .cm .pvc-anno-callout { font-size: 14px; padding: 1px 8px; }
 /* a small 3D view (a short phone): smaller labels, so they do not cover the example */
 .cm.cm-compact .pvc-anno, .cm.cm-compact .pvc-anno-callout { font-size: 12.5px; padding: 0 6px; }
-.cm.cm-compact .cm-note { font-size: 11.5px; }
 
+/* a phone held upright: a little tighter test sheet, so the 3D view keeps 55 % of the height (shorter phones get
+   the kit's own tighter sheet) */
+@container pvc (max-width: 560px) and (min-height: 601px) {
+  .cm .pvc-opt { height: 44px; }
+  .cm .pvc-q-text { font-size: 16px; }
+  .cm .pvc-q-head { min-height: 34px; }
+  .cm .pvc-q-head .pvc-btn { height: 34px; }
+}
 @container pvc (max-width: 560px) {
   .cm-ex { align-self: stretch; display: grid; grid-template-columns: auto auto auto; }
   .cm-ex button { padding: 0 8px; font-size: 14.5px; }
   .cm-idea { font-size: 13.5px; }
   .cm-book { font-size: 12.5px; }
-  .cm-note { max-width: calc(100% - 226px); font-size: 12px; }
 }
 @container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
   .cm-ex { align-self: stretch; display: grid; grid-template-columns: auto auto auto; }
@@ -77,7 +83,3 @@ body.bg-transparent { background: transparent; }
   .cm-acts { margin-left: 0; }
   .cm .pvc-q-feedback { font-size: 13.5px; }
 }
-
-/* An opaque note stays readable over every vivid scene. */
-.cm-note { color: #243448; background: #fff9e9; padding: 4px 7px; border-radius: 5px; }
-.cm-note:empty { display: none; }

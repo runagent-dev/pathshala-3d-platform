@@ -82,7 +82,6 @@ export function createMoon({ renderer }) {
     views: { front: new THREE.Vector3(0, 0.96, 0.28).normalize(), '3d': new THREE.Vector3(0.52, 0.5, 0.69).normalize() },
     grab: [hit],
     lights: [sun],
-    shadowReceiver: null,
     setAngle(deg) {
       spin.rotation.z = THREE.MathUtils.degToRad(deg);
     },
