@@ -61,7 +61,9 @@ body.bg-transparent { background: transparent; }
 .cm-say.hint { color: #7a4a00; font-weight: 600; }
 
 /* the player: play / pause and the time of the run (the collision in yellow) */
-.cm-foot { display: flex; align-items: center; gap: 12px; margin-top: auto; }
+.cm-foot { display: flex; align-items: center; gap: 12px; }
+/* the momentum strip (before / now, tip to tail), drawn by src/ledger.js at the panel's width */
+.cm-stripcv { display: block; width: 100%; height: 86px; }
 .cm .cm-play { flex: none; min-width: 9.2em; height: 42px; font-size: 15.5px; }
 .cm .cm-play .ic { display: inline-flex; }
 .cm .cm-play .ic svg { color: #fff; width: 18px; height: 18px; }
@@ -127,8 +129,8 @@ body.bg-transparent { background: transparent; }
   .cm-opt { font-size: 12.5px; }
   .cm-pair { font-size: 13.5px; }
 }
-/* wide and not tall (phone held sideways, 16:10 book frames): the panel is beside the picture */
-@container pvc (max-height: 620px) and (min-aspect-ratio: 3/2) {
+/* a narrow side panel beside the picture (280–360 px wide): everything compact */
+@container pvc-panel (max-width: 340px) {
   .cm .pvc-learn { gap: 6px; }
   .cm-presets { grid-template-columns: 1fr 1fr; gap: 4px; }
   .cm-presets button { min-height: 0; height: 36px; flex-direction: row; gap: 4px; font-size: 12.5px; }
@@ -151,26 +153,12 @@ body.bg-transparent { background: transparent; }
   .cm .pvc-q-feedback { font-size: 12.5px; }
   .cm .pvc-opt { height: 40px; font-size: 16px; }
 }
-/* phone held sideways: no room for the laws' captions (the sentence names them once the balls have collided) */
-@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
-  .cm .pvc-shell { grid-template-columns: minmax(0, 1fr) clamp(286px, 40%, 360px); }
+/* a phone held upright: no captions over the laws, no strip and no note on the assumption, so the 3D view keeps its
+   share of the height (the sentence names the laws once the balls have collided) */
+@container pvc (max-aspect-ratio: 1/1) and (min-height: 640px) and (min-width: 375px) {
+  .cm .pvc-learn { gap: 5px; }
   .cm-cap { display: none; }
-}
-/* 16:10 book frames (800×500): the kit puts the panel beside the picture only up to 460 px high (a kit gap); here
-   the same, so the track keeps the whole width it needs. Only what undoes the kit's ≥ 720 px panel grid. */
-@container pvc (min-height: 461px) and (max-height: 620px) and (min-aspect-ratio: 3/2) {
-  .cm .pvc-shell { grid-template-rows: minmax(0, 1fr); grid-template-columns: minmax(0, 1fr) clamp(300px, 38%, 380px); }
-  .cm .pvc-panel { display: flex; flex-direction: column; border-top: 0; border-left: 1px solid var(--line); }
-  .cm .pvc-tabs { grid-template-columns: 1fr 1fr; }
-  .cm .pvc-tabs button + button { border-top: 0; border-left: 1px solid var(--line-2); }
-}
-/* wide and tall frames (desktop): the examples and the equations on the left, the sentence beside them, the player
-   under all */
-@container pvc (min-width: 720px) and (min-height: 621px) {
-  .cm .pvc-learn { display: grid; grid-template-columns: minmax(0, 420px) minmax(0, 1fr); grid-template-areas: 'presets say' 'eqs say' 'assume assume' 'foot foot'; gap: 6px 22px; align-content: start; }
-  .cm-presets { grid-area: presets; }
-  .cm-eqs { grid-area: eqs; }
-  .cm-assume { grid-area: assume; margin: 0; }
-  .cm-say { grid-area: say; min-height: 0; font-size: 14.5px; }
-  .cm-foot { grid-area: foot; max-width: 760px; }
+  .cm-presets button { height: 36px; min-height: 0; }
+  .cm-presets .cm-pic { display: none; }
+  .cm-stripcv, .cm-assume { display: none; }
 }
