@@ -18,7 +18,7 @@ import { createGauge, DIM } from './gauge.js';
 import { OBJECTS, OBJECT_KINDS, createObject, randomSize } from './objects.js';
 import { read, format, roundTo, LC, PITCH, DIVISIONS, RANGE } from './reading.js';
 
-export const VERSION = '0.2.4';
+export const VERSION = '0.3.0';
 
 /** Wait (briefly) for the Bangla webfont, so the numbers on the scales are drawn with it. */
 export function loadFonts(timeout = 2500) {
@@ -263,7 +263,7 @@ export function createScrewGaugeApp(root, userOptions = {}) {
 
   // ── camera ──────────────────────────────────────────────────────────────────
   function frameBounds() {
-    const x0 = -18;
+    const x0 = -22; // the frame's left edge (−17) and a margin
     const x1 = DIM.zeroX + DIM.thimbleLen + DIM.ratchetLen + s.gap + 2;
     return { cx: (x0 + x1) / 2, cy: -15, w: x1 - x0, h: 60 };
   }
@@ -320,7 +320,7 @@ export function createScrewGaugeApp(root, userOptions = {}) {
 
   function applyControls() {
     if (s.view === 'front') {
-      controls.enableRotate = false;
+      controls.enableRotate = true;
       controls.mouseButtons = { LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN };
       controls.touches = { ONE: THREE.TOUCH.PAN, TWO: THREE.TOUCH.DOLLY_PAN };
     } else {
@@ -348,6 +348,10 @@ export function createScrewGaugeApp(root, userOptions = {}) {
   }
 
   controls.addEventListener('start', () => {
+    if (s.view !== '3d') {
+      s.view = '3d';
+      syncUI();
+    }
     s.userMovedCamera = true;
     tweener.cancel('camera');
   });
@@ -721,7 +725,8 @@ export function createScrewGaugeApp(root, userOptions = {}) {
 
   // ── buttons, keys ───────────────────────────────────────────────────────────
   function syncUI() {
-    for (const b of ui.$$('[data-view]')) b.classList.toggle('on', b.dataset.view === s.view);
+    const front = ui.$('[data-view="front"]');
+    if (front) front.hidden = s.view !== '3d';
     const quizOn = s.mode === 'quiz';
     root.dataset.mode = quizOn ? 'quiz' : 'explore';
     for (const b of ui.$$('[data-mode]')) {

@@ -101,10 +101,11 @@ export function createPresentation(stage, materials, { theme, shadow }) {
   if (theme === 'light') {
     scene.background = own(
       texture(1024, 1024, (ctx, w, h) => {
-        const base = ctx.createLinearGradient(0, 0, w, h);
-        base.addColorStop(0, '#34485b');
-        base.addColorStop(0.5, '#142b40');
-        base.addColorStop(1, '#071725');
+        // a soft, muted slate blue (not dark): the blue frame and the steel read on it
+        const base = ctx.createLinearGradient(0, 0, 0, h);
+        base.addColorStop(0, '#c3d0dc');
+        base.addColorStop(0.6, '#a9b9c9');
+        base.addColorStop(1, '#93a5b8');
         ctx.fillStyle = base;
         ctx.fillRect(0, 0, w, h);
         const glow = ctx.createRadialGradient(w * 0.03, h * 0.12, 0, w * 0.03, h * 0.12, w * 0.8);
