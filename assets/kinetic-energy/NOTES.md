@@ -158,3 +158,11 @@ Measured (headless Chromium, software GL, shadows on; ready times are noisy, the
 | texture memory | 57.4 MB (largest 2048) | 17.4 MB (largest 1024) |
 | time to ready 390×700 | 7.4 s | 7.1 s |
 | text on the 3D view at rest | 0 / 0 | 0 / 0 (and no sentence while an arrow flies) |
+
+## Declutter (2026-11-01, v0.4.0)
+Only the archer, the bow, the arrow and the target: the sports hall's brick wall, orange padding, windows, blue band,
+roof truss, lamps, court lines and arrow net are gone; a plain warm floor with the shooting line and a soft blue wall
+(two draws instead of seven). The panel follows the order every lab uses: the action, the m and v steppers (one under
+the other in a narrow side panel, where they overflowed before), the formula, the rule (the old wide-frame and
+sideways-phone rules are gone). No front/turn buttons: a drag turns the view (not during the test), a front icon
+brings it back.

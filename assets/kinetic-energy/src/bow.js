@@ -376,9 +376,7 @@ export function createBale({ cutZ }) {
   return { root, body: bale };
 }
 
-// ── the hall: an indoor archery range in a sports hall ──────────────────────
-/** A small seeded random number generator, so every load draws the same planks and bricks. */
-const seeded = (seed) => () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+// ── the hall: a plain floor and a soft wall behind the archer and the target ──────────────────────
 function canvasTexture(w, h, draw, repeat = [1, 1]) {
   const c = document.createElement('canvas');
   c.width = w;
@@ -390,119 +388,6 @@ function canvasTexture(w, h, draw, repeat = [1, 1]) {
   tex.repeat.set(...repeat);
   tex.anisotropy = 8;
   return tex;
-}
-
-/** Maple floor boards (7 cm wide, along the shooting direction), each a slightly different honey tone. */
-function mapleTexture() {
-  return canvasTexture(
-    512,
-    512,
-    (ctx, w, h) => {
-      const r = seeded(17);
-      const board = 32; // px: 8 boards in the 0.56 m the texture covers
-      for (let row = 0; row < h / board; row++) {
-        let x = -r() * 300;
-        while (x < w) {
-          const len = 140 + r() * 260;
-          const l = 60 + r() * 6;
-          ctx.fillStyle = `hsl(${30 + r() * 4}, ${62 + r() * 8}%, ${l}%)`;
-          ctx.fillRect(x, row * board, len, board);
-          // grain
-          for (let g = 0; g < 7; g++) {
-            ctx.strokeStyle = `hsla(28, 55%, ${l - 10 - r() * 8}%, 0.35)`;
-            ctx.lineWidth = 0.6 + r();
-            const y = row * board + 3 + r() * (board - 6);
-            ctx.beginPath();
-            ctx.moveTo(x, y);
-            ctx.bezierCurveTo(x + len * 0.3, y + r() * 3 - 1.5, x + len * 0.7, y + r() * 3 - 1.5, x + len, y);
-            ctx.stroke();
-          }
-          ctx.fillStyle = 'rgba(90, 50, 20, 0.45)'; // the butt joint
-          ctx.fillRect(x, row * board, 1.2, board);
-          x += len;
-        }
-        ctx.fillStyle = 'rgba(90, 50, 20, 0.35)'; // the seam between boards
-        ctx.fillRect(0, row * board, w, 1.2);
-      }
-    },
-    [50 / 0.56, 16 / 0.56],
-  );
-}
-
-/** Red brick in stretcher bond: 215 × 65 mm bricks, 10 mm mortar (the texture covers 0.9 × 0.6 m). */
-function brickTexture() {
-  return canvasTexture(
-    512,
-    512,
-    (ctx, w, h) => {
-      ctx.fillStyle = '#d8cfc2'; // mortar
-      ctx.fillRect(0, 0, w, h);
-      const r = seeded(29);
-      const px = w / 0.9; // px per metre (x); the rows are 75 mm in 0.6 m
-      const bw = 0.215 * px;
-      const bh = (h / 8) * (65 / 75);
-      const gap = 0.01 * px;
-      for (let row = 0; row < 8; row++) {
-        const y = (row * h) / 8 + gap / 2;
-        const shift = row % 2 ? (bw + gap) / 2 : 0;
-        for (let x = -shift; x < w; x += bw + gap) {
-          const hue = 8 + r() * 12;
-          ctx.fillStyle = `hsl(${hue}, ${52 + r() * 18}%, ${36 + r() * 12}%)`;
-          ctx.fillRect(x, y, bw, bh);
-          ctx.fillStyle = `rgba(255, 220, 190, ${0.05 + r() * 0.08})`; // a little texture on each face
-          for (let k = 0; k < 5; k++) ctx.fillRect(x + r() * bw, y + r() * bh, 2 + r() * 6, 1 + r() * 2);
-        }
-      }
-    },
-    [50 / 0.9, 7 / 0.6],
-  );
-}
-
-/** Wall padding: orange vinyl panels 1.2 m wide with a dark seam between them. */
-function padTexture() {
-  return canvasTexture(
-    256,
-    128,
-    (ctx, w, h) => {
-      const g = ctx.createLinearGradient(0, 0, w, 0);
-      g.addColorStop(0, '#e8590c');
-      g.addColorStop(0.5, '#f76707');
-      g.addColorStop(1, '#e8590c');
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, w, h);
-      ctx.fillStyle = '#a63a05';
-      ctx.fillRect(0, 0, 3, h);
-      ctx.fillStyle = 'rgba(255,255,255,0.25)';
-      ctx.fillRect(3, 0, 2, h);
-    },
-    [50 / 1.2, 1],
-  );
-}
-
-/** Arrow-stop netting: a dark knotted mesh you can see through, hanging in soft folds. */
-function netTexture() {
-  return canvasTexture(
-    256,
-    256,
-    (ctx, w, h) => {
-      for (let x = 0; x < w; x++) {
-        // folds: a little denser where the net bunches
-        ctx.fillStyle = `rgba(18, 20, 26, ${0.42 + 0.12 * Math.sin((x / w) * Math.PI * 6)})`;
-        ctx.fillRect(x, 0, 1, h);
-      }
-      ctx.strokeStyle = 'rgba(12, 14, 18, 0.9)';
-      ctx.lineWidth = 1.5;
-      for (let i = -h; i < w + h; i += 16) {
-        ctx.beginPath();
-        ctx.moveTo(i, 0);
-        ctx.lineTo(i + h, h);
-        ctx.moveTo(i, h);
-        ctx.lineTo(i + h, 0);
-        ctx.stroke();
-      }
-    },
-    [4, 3],
-  );
 }
 
 /** A World Archery target face (60 cm): ten rings, gold, red, blue, black and white, 3 cm each. */
@@ -553,98 +438,38 @@ export function createRange() {
   const floor = new THREE.Group();
   floor.name = 'HallFloor';
   root.add(floor);
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(50, 16), mat('MapleFloor', '#ffffff', 0.32, 0, { map: mapleTexture() }));
+  // a plain warm floor and the shooting line where the archer stands (no court lines, no grain)
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(50, 16), mat('Floor', '#c9a67c', 0.6));
   ground.rotation.x = -Math.PI / 2;
   ground.position.set(2, 0, -4);
   ground.receiveShadow = true;
   floor.add(ground);
-  // the painted lines: plain colours, one vertex-coloured material (one draw for all of them)
-  const paintM = mat('FloorLines', '#ffffff', 0.55, 0, { vertexColors: true });
-  const C = (hex) => new THREE.Color(hex);
-  const tape = (color, w, l, x, z, along = 'z') => {
-    const m = new THREE.Mesh(colourGeometry(new THREE.PlaneGeometry(along === 'z' ? w : l, along === 'z' ? l : w), C(color)), paintM);
-    m.rotation.x = -Math.PI / 2;
-    m.position.set(x, 0.002, z);
-    m.receiveShadow = true;
-    floor.add(m);
-    return m;
-  };
-  tape('#ffffff', 0.05, 5, 0, -1.6); // the shooting line, across the lanes, where the archer stands
-  tape('#ffd43b', 0.05, 5, -3, -1.6); // the waiting line, 3 m behind it
-  // the hall's own court lines, painted on the floor along the long side
-  tape('#e03131', 0.05, 30, 2, -2.4, 'x');
-  tape('#1971c2', 0.05, 30, 2, -3.3, 'x');
-  const arc = new THREE.Mesh(colourGeometry(new THREE.RingGeometry(1.775, 1.825, 64, 1, Math.PI * 0.08, Math.PI * 0.84), C('#e03131')), paintM);
-  arc.rotation.x = -Math.PI / 2;
-  arc.position.set(-4.2, 0.002, -2.4);
-  floor.add(arc);
+  const line = new THREE.Mesh(new THREE.PlaneGeometry(0.05, 5), mat('ShootingLine', '#ffffff', 0.55));
+  line.rotation.x = -Math.PI / 2;
+  line.position.set(0, 0.002, -1.6);
+  line.receiveShadow = true;
+  floor.add(line);
   bake(floor);
 
+  // a soft blue wall behind, lighter low down (vertex colours, no texture): one draw
   const backdrop = new THREE.Group();
   backdrop.name = 'HallWalls';
   root.add(backdrop);
   const WALL_Z = -4.6;
-  const PAD = 1.2; // m of padding
-  const pad = new THREE.Mesh(new THREE.BoxGeometry(50, PAD, 0.06), mat('WallPadding', '#ffffff', 0.55, 0, { map: padTexture() }));
-  pad.position.set(2, PAD / 2, WALL_Z + 0.03);
-  // plain painted trim (the padding's cap, the window frames, the blue band): one vertex-coloured material
-  const trimM = mat('WallTrim', '#ffffff', 0.55, 0, { vertexColors: true });
-  const trim = (geo, color) => new THREE.Mesh(colourGeometry(geo, C(color)), trimM);
-  const cap = trim(new THREE.BoxGeometry(50, 0.04, 0.08), '#5c2a0c');
-  cap.position.set(2, PAD, WALL_Z + 0.04);
-  const brick = new THREE.Mesh(new THREE.PlaneGeometry(50, 7), mat('Brick', '#ffffff', 0.9, 0, { map: brickTexture() }));
-  brick.position.set(2, 3.5, WALL_Z);
-  backdrop.add(pad, cap, brick);
-  // high windows: a row of daylight panes in white frames
-  const glassM = mat('Windows', '#cfe9ff', 0.2, 0, { emissive: '#bfe2ff', emissiveIntensity: 0.9 });
-  const frameGeo = new THREE.BoxGeometry(1.7, 1.1, 0.05);
-  const glassGeo = new THREE.PlaneGeometry(1.56, 0.96);
-  const barGeo = new THREE.BoxGeometry(0.05, 0.96, 0.03);
-  for (let i = 0; i < 22; i++) {
-    const x = -20 + i * 2.2;
-    const frame = trim(frameGeo, '#f1f3f5');
-    frame.position.set(x, 4.35, WALL_Z + 0.02);
-    const glass = new THREE.Mesh(glassGeo, glassM);
-    glass.position.set(x, 4.35, WALL_Z + 0.05);
-    const bar = trim(barGeo, '#f1f3f5');
-    bar.position.set(x, 4.35, WALL_Z + 0.06);
-    backdrop.add(frame, glass, bar);
+  const geo = new THREE.PlaneGeometry(50, 7, 1, 6);
+  const low = new THREE.Color('#cfdbe4');
+  const high = new THREE.Color('#87a6c3');
+  const col = new THREE.Color();
+  const pos = geo.attributes.position;
+  const colors = new Float32Array(pos.count * 3);
+  for (let i = 0; i < pos.count; i++) {
+    col.lerpColors(low, high, pos.getY(i) / 7 + 0.5);
+    colors.set([col.r, col.g, col.b], i * 3);
   }
-  // a blue band under the windows, as gyms often have
-  const band = trim(new THREE.PlaneGeometry(50, 0.18), '#1c5fd0');
-  band.position.set(2, 3.0, WALL_Z + 0.01);
-  backdrop.add(band);
-  // the roof: a steel truss line and hanging LED lamps (steel and the lamp shades: one vertex-coloured material)
-  const fixtureM = mat('Fixtures', '#ffffff', 0.5, 0.5, { vertexColors: true, side: THREE.DoubleSide });
-  const beam = new THREE.Mesh(colourGeometry(new THREE.BoxGeometry(50, 0.2, 0.2), C('#6c7686')), fixtureM);
-  beam.position.set(2, 5.6, -2.5);
-  backdrop.add(beam);
-  const lampM = mat('Lamps', '#ffffff', 0.4, 0, { emissive: '#fff7e0', emissiveIntensity: 1.4 });
-  const rodGeo = colourGeometry(new THREE.CylinderGeometry(0.01, 0.01, 0.5, 6), C('#6c7686'));
-  const shadeGeo = colourGeometry(new THREE.CylinderGeometry(0.16, 0.26, 0.14, 20, 1, true), C('#4a5260'));
-  const glowGeo = new THREE.CircleGeometry(0.25, 20);
-  for (let i = 0; i < 6; i++) {
-    const x = -4 + i * 2.6;
-    const rod = new THREE.Mesh(rodGeo, fixtureM);
-    rod.position.set(x, 5.25, -2.5);
-    const shade = new THREE.Mesh(shadeGeo, fixtureM);
-    shade.position.set(x, 4.95, -2.5);
-    const glow = new THREE.Mesh(glowGeo, lampM);
-    glow.rotation.x = Math.PI / 2;
-    glow.position.set(x, 4.885, -2.5);
-    backdrop.add(rod, shade, glow);
-  }
-  // the arrow-stop net behind the targets, from the floor to the roof, across the lanes
-  const net = new THREE.Mesh(
-    new THREE.PlaneGeometry(6.4, 5.6),
-    mat('ArrowNet', '#ffffff', 0.95, 0, { map: netTexture(), side: THREE.DoubleSide, transparent: true, depthWrite: false }),
-  );
-  net.rotation.y = -Math.PI / 2;
-  net.position.set(BALE.x + 1.1, 2.8, WALL_Z + 3.2);
-  backdrop.add(net);
-  // the walls take no shadow (the lamps throw them down onto the floor, well in front of the wall), so they are
-  // never drawn into the shadow map; the still parts become one mesh per material: seven draws for the whole hall
-  bake(backdrop, { skip: [net] });
+  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  const wall = new THREE.Mesh(geo, mat('Wall', '#ffffff', 0.95, 0, { vertexColors: true }));
+  wall.position.set(2, 3.5, WALL_Z);
+  backdrop.add(wall);
   root.traverse((o) => {
     o.userData.noExport = true;
   });

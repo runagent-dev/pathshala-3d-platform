@@ -12,8 +12,8 @@ body.bg-transparent { background: transparent; }
 .ke-frac { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; height: 1em; vertical-align: middle; margin: 0 1px; font-size: 0.76em; line-height: 1.05; font-weight: inherit; }
 .ke-frac > span:first-child { border-bottom: 1.3px solid currentColor; padding: 0 1px; }
 
-/* the steppers: m and v side by side */
-.ke-calc { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+/* the steppers: m and v side by side (one under the other in a narrow side panel) */
+.ke-calc { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 4px 8px; }
 .ke-step { --c: var(--ink); display: inline-flex; align-items: center; gap: 4px; min-width: 0; }
 .ke-step.c-m { --c: var(--c-m); }
 .ke-step.c-v { --c: var(--c-v); }
@@ -43,12 +43,6 @@ body.bg-transparent { background: transparent; }
 .ke .pvc-q-feedback { font-size: 13.5px; line-height: 1.45; }
 .ke-why { color: var(--ink-2); }
 
-/* wide frames (tabs beside the sheet) */
-@container pvc (min-width: 720px) and (min-height: 461px) {
-  .ke .pvc-learn { gap: 9px; }
-  .ke-calc { justify-content: flex-start; gap: 28px; max-width: 560px; }
-  .ke .pvc-rule { --pvc-rule-lines: 2; }
-}
 /* phones held upright: the four answers in one row (they are short numbers), so the 3D view keeps its height */
 @container pvc (max-width: 560px) {
   .ke .pvc-q-options { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
@@ -76,20 +70,4 @@ body.bg-transparent { background: transparent; }
   .ke .pvc-q-text { font-size: 14px; }
   .ke .pvc-opt { font-size: 13px; }
   .ke .pvc-q-feedback { font-size: 12px; line-height: 1.4; }
-}
-/* short and wide (phone held sideways): the panel is beside the scene */
-@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
-  .ke .pvc-learn { gap: 5px; }
-  .ke-calc { flex-wrap: wrap; row-gap: 4px; }
-  .ke-btn { width: 40px; height: 34px; }
-  .ke-val { font-size: 15px; min-width: 4.2em; }
-  .ke-name { font-size: 13px; }
-  .ke .pvc-outcome { font-size: 14px; line-height: 1.5; }
-  .ke-w { font-size: 13px; white-space: normal; }
-  .ke-f { font-size: 14px; line-height: 1.45; }
-  .ke .pvc-outcome { --pvc-outcome-lines: 3; }
-  .ke .pvc-rule { --pvc-rule-lines: 4; font-size: 12.5px; line-height: 1.4; }
-  .ke .pvc-q-text { font-size: 13.5px; }
-  .ke .pvc-opt { font-size: 12.5px; height: 40px; }
-  .ke .pvc-q-feedback { font-size: 12px; }
 }
