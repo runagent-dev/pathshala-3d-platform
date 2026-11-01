@@ -77,7 +77,8 @@ Styles: `student/student.css` (link it before the figure's `style.css`; set `roo
 ### `shell.js`
 - `buildStudentShell(root, t, { learn, learnAlign })` → `{ $, $$, stage, canvasHost, annoLayer, lensLayer, coachLayer,
   corner, hint, hintText, hintAct, learn, quiz }`: the 3D area (with the view and full-screen buttons) and the panel
-  with the শেখো and পরীক্ষা tabs. On landscape frames (aspect ≥ 1, ≥ 600 px wide) the panel is beside the 3D, full
+  with the শেখো and পরীক্ষা tabs. With `layout: 'side'` (the standard; the default `'stack'` is the older
+  layout): on landscape frames (aspect ≥ 1, ≥ 600 px wide) the panel is beside the 3D, full
   height, with a hide/show tab on the 3D's edge (`.pvc-shell[data-panel="closed"]`); it is then also a container
   named `pvc`, so the figure's `@container pvc` rules for the sheet measure the panel. The view starts from the front and turns when dragged (no front/rotate buttons); the hidden
   `[data-view="front"]` icon button is shown by the figure once the view was turned. Portrait frames keep it below;
