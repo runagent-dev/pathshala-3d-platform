@@ -924,7 +924,11 @@ test('stage: shadows follow the scene, not the camera; nothing is drawn while th
   expect(shot.startsWith('data:image/png')).toBe(true);
   expect(await take()).toEqual([true]); // capture always draws the shadows
   // out of view: an invalidate draws nothing until the figure is seen again
-  await page.evaluate(() => /** @type {any} */ ((window.t.ui.stage.style.transform = 'translateY(-200vh)')));
+  const shift = (v) =>
+    page.evaluate((x) => {
+      /** @type {any} */ (window).t.ui.stage.style.transform = x;
+    }, v);
+  await shift('translateY(-200vh)');
   await frames();
   await take();
   await page.evaluate(() => /** @type {any} */ (window).t.stage.invalidate());
