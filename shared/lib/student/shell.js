@@ -1,5 +1,6 @@
 // The student view: the 3D figure (layers for labels, the magnifier and pointers, a hint line, and the
-// "front / rotate" + fullscreen buttons), and one panel beside it on landscape frames (it can be hidden, so the 3D
+// full-screen button; the view starts from the front and turns when the student drags it, and a "front" button
+// appears only after it was turned), and one panel beside it on landscape frames (it can be hidden, so the 3D
 // fills the frame) or below it on portrait ones; on a phone held upright a card asks to turn it sideways. Two
 // tabs: শেখো (the reading written as a named sum, or the clean sheet: one action, one result, one rule) and পরীক্ষা
 // (the test, run by ./quiz.js).
@@ -150,10 +151,7 @@ export function buildStudentShell(root, t, { learn = '', learnAlign = 'spread' }
       <div class="pvc-coach-layer"></div>
       <div class="pvc-hint" role="status" aria-live="polite"><span class="pvc-hint-text"></span><button class="pvc-hint-act" hidden></button></div>
       <div class="pvc-corner">
-        <div class="pvc-seg" role="group" aria-label="${t('view')}">
-          <button data-view="front">${t('view_front_short')}</button>
-          <button data-view="3d">${t('view_rotate')}</button>
-        </div>
+        <button class="pvc-tool icon-only" data-view="front" hidden title="${t('view_front_short')}" aria-label="${t('view_front_short')}">${ICONS.reset}</button>
         <button class="pvc-tool icon-only" data-act="fullscreen" title="${t('fullscreen')}" aria-label="${t('fullscreen')}">${ICONS.expand}</button>
       </div>
       <button class="pvc-panel-toggle" data-act="panel" aria-expanded="true" title="${t('panel_hide')}" aria-label="${t('panel_hide')}">${ICONS.chevR}</button>
