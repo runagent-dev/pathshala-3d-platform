@@ -64,6 +64,7 @@ export function createApp(root, options = {}) {
   // the panel, top to bottom: the four events (the kit's row of example words), the action (play / pause / again), the two speeds with how much time
   // is slowed, what happens or why (the book's words), and the book's definition
   const ui = buildStudentShell(root, t, {
+    layout: 'side',
     learnAlign: 'start',
     learn: `
           <div class="pvc-examples in-evs" role="radiogroup" aria-label="${t('events')}">
