@@ -38,6 +38,7 @@ import {
 } from './motion.js';
 import { createRoad } from './road.js';
 import { ROAD } from './road-data.js';
+import { SKY, skyTexture } from './scenery.js';
 import { COMPASS, createSling } from './sling.js';
 
 export const DEFAULTS = {
@@ -46,6 +47,7 @@ export const DEFAULTS = {
   mode: 'explore', // 'explore' | 'quiz'
   coach: true,
   numerals: null,
+  angle: null, // a number: the stone is held still there when the figure opens (the poster), instead of going round
   lang: 'bn',
   bg: 'light',
   shadow: true,
@@ -57,10 +59,10 @@ const COLORS = {
   distance: '#1c6fd9',
   displacement: '#e8590c',
   velocity: '#e8590c',
-  ghost: '#f3a06b',
-  choice: '#5b6672',
-  path: '#a3adb8',
-  label: '#66717d',
+  ghost: '#f08a4b',
+  choice: '#4a5563',
+  path: '#f7f3ea', // the circle the stone goes round: chalk white over the earth
+  ink: '#26303b', // words drawn on the ground (the compass, the km stones)
 };
 const RIDE_SCREEN = 8; // s on screen for the 20 minutes from A to B
 const DEG_PER_MS = (OMEGA * 180) / Math.PI / STONE.slow / 1000; // how fast the stone goes round on screen
@@ -107,9 +109,6 @@ export function createApp(root, options = {}) {
             <button class="pvc-btn primary sv-act" data-act="main"><span></span></button>
           </div>`,
   });
-  const note = document.createElement('div');
-  note.className = 'sv-note';
-  ui.stage.append(note);
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 30, near: 0.1, far: 200, environment: 'studio-light' });
@@ -122,56 +121,52 @@ export function createApp(root, options = {}) {
   const audio = createAudio(o.sound);
   const annotations = createAnnotations({ stage, layer: ui.annoLayer });
 
-  // the field: pale grass fading into the page
-  {
-    const c = document.createElement('canvas');
-    c.width = c.height = 256;
-    const ctx = c.getContext('2d');
-    const g = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
-    g.addColorStop(0, 'rgba(232, 240, 220, 1)');
-    g.addColorStop(0.55, 'rgba(236, 243, 226, 1)');
-    g.addColorStop(1, 'rgba(240, 245, 233, 0)');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, 256, 256);
-    const tex = new THREE.CanvasTexture(c);
-    tex.colorSpace = THREE.SRGBColorSpace;
-    const m = new THREE.Mesh(
-      new THREE.CircleGeometry(7, 64),
-      new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, toneMapped: false }),
-    );
-    m.rotation.x = -Math.PI / 2;
-    m.renderOrder = -1;
-    m.userData.noExport = true;
-    scene.add(m);
+  // the sky (seen when the view is turned) and a haze over the far trees
+  if (o.bg !== 'transparent') {
+    scene.background = skyTexture();
+    scene.fog = new THREE.Fog(SKY.haze, 24, 70);
   }
 
   const sling = createSling({ t, colors: COLORS });
   const road = createRoad({ N, colors: COLORS });
   scene.add(sling.root, road.root);
 
+  // one sun; only the student, the stone, its rope and the cyclist cast shadows, onto the ground. The shadow camera
+  // is fitted tightly round each example (see fitShadow), so a 1024 map is as sharp as a 2048 one was.
   const shadows = o.shadow && o.bg !== 'transparent';
   sling.useBlobs(!shadows);
+  const sun = new THREE.DirectionalLight(0xffffff, 0.55);
+  const SUN = new THREE.Vector3(2.5, 12, 3.5).normalize();
+  scene.add(sun, sun.target);
   if (shadows) {
     stage.renderer.shadowMap.enabled = true;
-    stage.renderer.shadowMap.type = THREE.VSMShadowMap;
-    const sun = new THREE.DirectionalLight(0xffffff, 0.45);
-    sun.position.set(2.5, 12, 3.5);
+    stage.renderer.shadowMap.type = THREE.PCFShadowMap;
     sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
-    Object.assign(sun.shadow.camera, { left: -5, right: 5, top: 5, bottom: -5, near: 4, far: 20 });
-    sun.shadow.radius = 6;
-    const page = new THREE.Mesh(new THREE.PlaneGeometry(14, 14), new THREE.ShadowMaterial({ opacity: 0.16 }));
-    page.rotation.x = -Math.PI / 2;
-    page.position.y = 0.002;
-    page.receiveShadow = true;
-    page.userData.noExport = true;
-    scene.add(sun, sun.target, page);
-    for (const part of [sling.root, road.cyclist])
-      part.traverse((m) => {
-        if (m instanceof THREE.Mesh && m.material && !m.material.transparent && m.material.visible !== false && !m.userData.noExport)
-          m.castShadow = true;
-      });
-    for (const m of [...sling.chevrons, sling.ring]) m.castShadow = false;
+    sun.shadow.mapSize.set(1024, 1024);
+    sun.shadow.bias = -0.0004;
+    sun.shadow.normalBias = 0.01;
+    sun.shadow.radius = 3;
+  }
+  /** The sun over the example shown, its shadow camera just round what casts and receives shadows there. */
+  function fitShadow() {
+    const onRoad = s.scene === 'road';
+    const centre = onRoad ? at(0.63, 0.73) : at(0.4, 0.3);
+    const half = onRoad ? 1.75 : 3.4; // km on the road map, m in the field
+    const dist = onRoad ? 4 : 12;
+    sun.target.position.copy(centre);
+    sun.position.copy(centre).addScaledVector(SUN, dist);
+    sun.target.updateMatrixWorld();
+    sun.updateMatrixWorld();
+    Object.assign(sun.shadow.camera, {
+      left: -half,
+      right: half,
+      top: half,
+      bottom: -half,
+      near: dist - (onRoad ? 0.6 : 3.5),
+      far: dist + (onRoad ? 0.6 : 3.5),
+    });
+    sun.shadow.camera.updateProjectionMatrix();
+    stage.invalidate();
   }
 
   const listeners = new Map();
@@ -282,7 +277,7 @@ export function createApp(root, options = {}) {
       r.landed = true;
       st.phase = 'done';
       if (s.mode !== 'quiz') {
-        showHint(t(r.thr.wet ? 'hint_wet' : 'hint_dry'), { duration: 5200 });
+        showHint(t(r.thr.wet ? 'hint_wet' : 'hint_dry'), { duration: 3200 });
         if (r.thr.wet) audio.success();
         else audio.error();
       }
@@ -371,7 +366,7 @@ export function createApp(root, options = {}) {
   /** The pond's label: the goal of the game while learning, just its name in the test. */
   function pondLabel() {
     if (s.scene !== 'stone') return;
-    annotations.add('pond', { text: t(s.mode === 'quiz' ? 'lbl_pond' : 'lbl_pond_goal'), point: sling.points.pond, dx: 0, dy: 0, kind: 'part' });
+    annotations.add('pond', { text: t('lbl_pond'), point: sling.points.pond, dx: 0, dy: 0, kind: 'part' });
   }
   function setScene(name, { animate = true, start = true } = {}) {
     const next = name === 'road' ? 'road' : 'stone';
@@ -382,6 +377,7 @@ export function createApp(root, options = {}) {
     }
     if (next !== 'road') s.road.playing = false;
     s.scene = next;
+    if (next === 'road') road.ensureCountry();
     sling.root.visible = s.scene === 'stone';
     road.root.visible = s.scene === 'road';
     annotations.clear();
@@ -398,7 +394,7 @@ export function createApp(root, options = {}) {
       pondLabel();
     } else if (start) rideTo(0, { play: true });
     s.userMovedCamera = false;
-    note.textContent = s.scene === 'stone' ? t('note_slow', { k: STONE.slow }) : t('note_fast', { m: RIDE.minutes, s: RIDE_SCREEN });
+    fitShadow();
     flyTo(poseFor(s.scene, s.view), animate ? 0.8 : 0);
     roadLabels();
     syncUI();
@@ -410,7 +406,7 @@ export function createApp(root, options = {}) {
   function mainAction() {
     if (s.locked) return lockedNudge();
     if (s.scene === 'stone') {
-      if (s.stone.phase === 'whirl') release();
+      if (s.stone.phase === 'whirl' || s.stone.phase === 'still') release();
       else whirlAgain();
       return;
     }
@@ -472,7 +468,11 @@ export function createApp(root, options = {}) {
     const heading = st.rel ? st.rel.thr.heading : st.angle + 90;
     put('vd', `${arrowIcon('sv-dir', 0)}<span>${dirWord(heading)}</span>`);
     const icon = cells.vd?.node.querySelector('.sv-dir');
-    if (icon) icon.style.transform = `rotate(${-heading}deg)`;
+    const turn = `rotate(${-Math.round(heading)}deg)`; // written only when it turns by a whole degree
+    if (icon && icon.dataset.turn !== turn) {
+      icon.dataset.turn = turn;
+      icon.style.transform = turn;
+    }
   }
 
   function refresh() {
@@ -489,7 +489,14 @@ export function createApp(root, options = {}) {
       put('sp-c', t('no_direction'));
       put('vm', `${N(fmt(STONE.v))}${U('u_ms')}`);
       refreshDirection();
-      text('extra', el.extra, past ? t('flew_stone') : t('idea_stone', { c: fmt(CIRCUMFERENCE, 2), p: fmt(PERIOD, 2), v: fmt(STONE.v) }));
+      // the idea (or what happened when it was let go), and under it the goal and how time is shown
+      const slow = t('note_slow', { k: STONE.slow });
+      const main = !past
+        ? t('idea_stone', { v: fmt(STONE.v) })
+        : st.phase === 'done'
+          ? t(st.rel.thr.wet ? 'result_wet' : 'result_dry')
+          : t('flew_stone');
+      text('extra', el.extra, `${main}<small class="sv-aside">${past ? slow : `${t('goal_stone')} · ${slow}`}</small>`);
       text('act', el.act, t(st.phase === 'whirl' || st.phase === 'still' ? 'act_release' : 'act_whirl'));
     } else {
       el.rows.classList.remove('sv-past');
@@ -510,15 +517,12 @@ export function createApp(root, options = {}) {
       put('vm', speed(end ? kmh(ROAD.B.straight, RIDE.minutes) : r.avgVelocity));
       put('vm-c', r.km > 0.02 ? `${arrowIcon('sv-dir small', r.heading)}${t('towards', { d: dirWord(r.heading) })}` : '');
       const straight = r.km > 0.05 && r.displacement / r.distance > STRAIGHT;
-      text(
-        'extra',
-        el.extra,
-        end
-          ? t('done_road', { d: fmt(RIDE.km), s: fmt(ROAD.B.straight), m: RIDE.minutes, h: HOURS[RIDE.minutes] })
-          : straight
-            ? t('straight_road')
-            : t('idea_road', { m: fixed(r.minutes, 1), h: fixed(r.minutes / 60, 2) }),
-      );
+      const main = end
+        ? t('done_road', { d: fmt(RIDE.km), s: fmt(ROAD.B.straight), m: RIDE.minutes, h: HOURS[RIDE.minutes] })
+        : straight
+          ? t('straight_road')
+          : t('idea_road', { m: fixed(r.minutes, 1), h: fixed(r.minutes / 60, 2) });
+      text('extra', el.extra, `${main}<small class="sv-aside">${t('note_fast', { m: RIDE.minutes, s: RIDE_SCREEN })}</small>`);
       text('act', el.act, t(s.road.playing ? 'act_pause' : end ? 'act_replay' : 'act_play'));
     }
     stage.invalidate();
@@ -597,13 +601,11 @@ export function createApp(root, options = {}) {
       pts.push(at(POND_CENTRE.e + r * Math.cos(a), POND_CENTRE.n + r * Math.sin(a), 0)); // the pond and its bank
     }
     pts.push(at(0, 0, STONE.hand + 0.1));
-    for (const [de, dn] of [
-      [-0.95, 0],
-      [0.78, 0],
-      [0, 0.62],
-      [0, -0.5],
-    ])
-      pts.push(at(COMPASS.e + de, COMPASS.n + dn, 0));
+    // the compass plate on the ground
+    for (let k = 0; k < 12; k++) {
+      const a = (k / 12) * Math.PI * 2;
+      pts.push(at(COMPASS.e - 0.04 + 0.8 * Math.cos(a), COMPASS.n - 0.03 + 0.8 * Math.sin(a), 0));
+    }
     const rel = s.stone.rel;
     if (rel && s.zoomedOut) {
       // after letting go: where the stone ends up must show too
@@ -636,7 +638,7 @@ export function createApp(root, options = {}) {
   }
   /**
    * A camera pose that shows the whole scene as big as it can, for this frame's shape: nothing under the buttons
-   * at the top right or the note at the top left (the picture may move down a little to make room).
+   * at the top right (the picture may move down a little to make room).
    */
   function poseFor(name, view) {
     const pts = contentOf(name).map((c) => (c.isVector3 ? { p: c, box: null } : c));
@@ -657,7 +659,7 @@ export function createApp(root, options = {}) {
     });
     const W = stage.width;
     const H = Math.max(stage.height, 120);
-    const boxes = [boxOf(ui.corner), boxOf(note)].filter(Boolean);
+    const boxes = [boxOf(ui.corner)].filter(Boolean);
     const tv = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
     const th = tv * camera.aspect;
     const M = 10; // px from the edges
@@ -728,7 +730,8 @@ export function createApp(root, options = {}) {
     s.userMovedCamera = true;
     tweener.cancel('camera');
   });
-  stage.onResize(() => !s.userMovedCamera && !tweener.busy && flyTo(poseFor(s.scene, s.view), 0));
+  // a turned phone or a resized window: the picture is framed again at once (a camera move under way ends there)
+  stage.onResize(() => !s.userMovedCamera && flyTo(poseFor(s.scene, s.view), 0));
 
   // ── touching the 3D: the hand or the stone lets go of the rope; the cycle can be dragged ──
   const raycaster = new THREE.Raycaster();
@@ -781,7 +784,7 @@ export function createApp(root, options = {}) {
         return;
       }
       // like letting go of a real rope, it happens as the finger goes down
-      if (s.stone.phase === 'whirl') release();
+      if (s.stone.phase === 'whirl' || s.stone.phase === 'still') release();
       else if (s.stone.phase === 'done' || s.stone.phase === 'flying') whirlAgain();
     },
     true,
@@ -864,8 +867,7 @@ export function createApp(root, options = {}) {
   function clearQuizMarks() {
     sling.choiceArrows.forEach((a) => {
       a.root.visible = false;
-      a.material.color.set(COLORS.choice);
-      a.material.emissive.set(0x000000);
+      a.setColor(COLORS.choice);
     });
     sling.twin.group.visible = false;
     sling.ring.material.color.set(COLORS.path);
@@ -1046,8 +1048,7 @@ export function createApp(root, options = {}) {
       reveal() {
         const q = question;
         if (q.kind === 'fly') {
-          const a = sling.choiceArrows[q.expected];
-          a.material.color.set(COLORS.velocity);
+          sling.choiceArrows[q.expected].setColor(COLORS.velocity);
           release({ deg: q.deg });
           return t('why_fly', { l: letters[q.expected] });
         }
@@ -1080,7 +1081,7 @@ export function createApp(root, options = {}) {
       t,
       loupe: null,
       tweener,
-      avoid: [ui.corner, ui.hint, note],
+      avoid: [ui.corner, ui.hint],
       object: {
         label: 'coach_release',
         candidates: () => (s.scene === 'stone' && s.stone.phase === 'whirl' ? [toScreen(sling.points.hand())] : []),
@@ -1163,6 +1164,13 @@ export function createApp(root, options = {}) {
   // ── start ───────────────────────────────────────────────────────────────────
   setView(s.view, { animate: false });
   setScene(s.scene, { animate: false });
+  if (o.angle != null && Number.isFinite(o.angle) && s.scene === 'stone') {
+    // held still at that angle, with the faint copies of the turn before it: nothing moves until the student acts
+    whirlFrom(o.angle, { turned: o.angle + 360 });
+    s.stone.phase = 'still';
+    tickStone();
+    refresh();
+  }
   syncUI();
   const ready = (async () => {
     if (o.mode === 'quiz') quiz.start();

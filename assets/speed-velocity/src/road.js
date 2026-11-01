@@ -3,15 +3,18 @@
 // straight arrow from A to the cyclist (সরণ). Past C (6 km) the road fades out: only A to B matters here.
 // Map coordinates (e = east, n = north, km) become three.js x = e, z = −n, y = height.
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { textMesh } from '@shared/student/materials.js';
 import { createArrow } from './arrow.js';
 import { roadAt } from './motion.js';
 import { ROAD } from './road-data.js';
+import { createCountry } from './scenery.js';
 
 const UP = new THREE.Vector3(0, 1, 0);
 const at = (e, n, h = 0) => new THREE.Vector3(e, h, -n);
 const ROAD_W = 0.07; // map units: the road is drawn about 70 m wide
 const TRAIL_W = 0.042;
+const TRAIL_RIM = 0.016; // the white edge each side of the road travelled
 export const CYCLIST_SCALE = 0.125; // the 1.8 m cyclist is drawn 220 m long
 const FADE = [5.7, 6.9]; // km: the road fades out between these
 
@@ -100,21 +103,41 @@ function createCyclist() {
     g.add(tube(v(-0.1, 0.98, 0.1 * s), v(0.12, 0.62, 0.12 * s), 0.07, trousers));
     g.add(tube(v(0.12, 0.62, 0.12 * s), v(0.02, 0.3, 0.12 * s), 0.055, trousers));
   }
+  // one mesh per material (the cyclist does not pedal): 6 draw calls instead of 22
+  const byMat = new Map();
+  for (const m of [...g.children]) {
+    m.updateMatrix();
+    const geo = m.geometry.clone().applyMatrix4(m.matrix);
+    for (const name of Object.keys(geo.attributes)) if (name !== 'position' && name !== 'normal') geo.deleteAttribute(name);
+    if (!byMat.has(m.material)) byMat.set(m.material, []);
+    byMat.get(m.material).push(geo.index ? geo.toNonIndexed() : geo);
+    g.remove(m);
+  }
+  for (const [material, list] of byMat) {
+    const merged = new THREE.Mesh(mergeGeometries(list), material);
+    merged.name = material.name;
+    merged.castShadow = true;
+    g.add(merged);
+  }
   g.scale.setScalar(CYCLIST_SCALE);
   return g;
 }
 
 /**
- * @param {{ N: (x: string | number) => string, colors: { distance: string, displacement: string, label: string } }} options
+ * @param {{ N: (x: string | number) => string, colors: { distance: string, displacement: string, ink: string } }} options
  */
 export function createRoad({ N, colors }) {
   const root = new THREE.Group();
   root.name = 'RoadMap';
   const pts = ROAD.samples;
+  // the countryside under the map: fields, villages under their trees, ponds (no tree on the road)
+  const shown = pts.slice(0, Math.round(FADE[1] / ROAD.stepKm) + 1);
+  const toRoad = (e, n) => shown.reduce((m, p) => Math.min(m, Math.hypot(p[0] - e, p[1] - n)), Infinity);
+  let country = null; // drawn the first time the road is shown (the figure opens on the stone)
 
   // the road to where it starts to fade, then the fading end (vertex alpha)
-  const asphalt = new THREE.MeshStandardMaterial({ name: 'Road', color: 0xb9bec5, roughness: 0.9 });
-  const edgeMat = new THREE.MeshStandardMaterial({ name: 'RoadEdge', color: 0x8d949c, roughness: 0.9 });
+  const asphalt = new THREE.MeshStandardMaterial({ name: 'Road', color: 0x8e949b, roughness: 0.9 });
+  const edgeMat = new THREE.MeshStandardMaterial({ name: 'RoadEdge', color: 0x4d535a, roughness: 0.9 });
   const cut = Math.round(FADE[0] / ROAD.stepKm);
   const end = Math.round(FADE[1] / ROAD.stepKm);
   const main = pts.slice(0, cut + 1);
@@ -137,8 +160,15 @@ export function createRoad({ N, colors }) {
   // the road travelled so far: a full-length strip, of which only the part behind the cyclist is drawn
   const toB = Math.round(ROAD.B.km / ROAD.stepKm);
   const trailGeo = ribbon(pts.slice(0, toB + 1), TRAIL_W, 0.009);
-  const orig = trailGeo.attributes.position.array.slice();
+  const rimGeo = ribbon(pts.slice(0, toB + 1), TRAIL_W + TRAIL_RIM * 2, 0.0075);
+  const strips = [
+    { geo: trailGeo, w: TRAIL_W, h: 0.009 },
+    { geo: rimGeo, w: TRAIL_W + TRAIL_RIM * 2, h: 0.0075 },
+  ].map((st) => ({ ...st, orig: st.geo.attributes.position.array.slice() }));
   let moved = -1;
+  const rim = new THREE.Mesh(rimGeo, new THREE.MeshBasicMaterial({ name: 'DistanceRim', color: 0xffffff, toneMapped: false }));
+  rim.userData.noExport = true;
+  root.add(rim);
   const trail = new THREE.Mesh(
     trailGeo,
     new THREE.MeshStandardMaterial({
@@ -153,6 +183,8 @@ export function createRoad({ N, colors }) {
 
   // km posts with their numbers, on the outer side of the road (as in the book)
   const postMat = new THREE.MeshStandardMaterial({ name: 'Post', color: 0xf4f5f6, roughness: 0.6 });
+  const posts = [];
+  const discs = [];
   const nearest = (e, n) => pts.reduce((m, p) => Math.min(m, Math.hypot(p[0] - e, p[1] - n)), Infinity);
   const kmPosts = new THREE.Group();
   kmPosts.name = 'KmPosts';
@@ -163,15 +195,26 @@ export function createRoad({ N, colors }) {
     const side = [1, -1]
       .map((s) => ({ s, e: p.e + Math.cos(a) * 0.14 * s, n: p.n + Math.sin(a) * 0.14 * s }))
       .sort((x, y) => nearest(y.e, y.n) - nearest(x.e, x.n))[0];
-    const post = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.04, 0.018), postMat);
-    post.position.copy(at(p.e + Math.cos(a) * 0.055 * side.s, p.n + Math.sin(a) * 0.055 * side.s, 0.02));
-    const label = textMesh(N(k), 0.12, { color: colors.label, weight: 700 });
+    const post = at(p.e + Math.cos(a) * 0.055 * side.s, p.n + Math.sin(a) * 0.055 * side.s, 0.02);
+    posts.push(new THREE.BoxGeometry(0.018, 0.04, 0.018).translate(post.x, post.y, post.z));
+    // the number on a white milestone disc, dark, so it reads on any field
+    const q = at(side.e, side.n, 0.006);
+    discs.push(new THREE.CircleGeometry(0.068, 24).rotateX(-Math.PI / 2).translate(q.x, 0.005, q.z));
+    const label = textMesh(N(k), 0.1, { color: colors.ink, weight: 700 });
     label.rotation.x = -Math.PI / 2;
-    label.position.copy(at(side.e, side.n, 0.006));
-    kmPosts.add(post, label);
+    label.position.copy(q).setY(0.007);
+    kmPosts.add(label);
   }
+  const postMesh = new THREE.Mesh(mergeGeometries(posts), postMat);
+  postMesh.name = 'Posts';
+  const discMesh = new THREE.Mesh(
+    mergeGeometries(discs),
+    new THREE.MeshStandardMaterial({ name: 'Milestones', color: 0xffffff, roughness: 0.7, polygonOffset: true, polygonOffsetFactor: -1 }),
+  );
+  discMesh.name = 'Milestones';
+  kmPosts.add(postMesh, discMesh);
 
-  const displacement = createArrow({ color: colors.displacement, radius: 0.014, head: 0.09, headRadius: 0.036, name: 'Displacement' });
+  const displacement = createArrow({ color: colors.displacement, radius: 0.016, head: 0.1, headRadius: 0.042, name: 'Displacement' });
   root.add(displacement.root);
 
   const cyclist = createCyclist();
@@ -187,6 +230,12 @@ export function createRoad({ N, colors }) {
     root,
     cyclist,
     hits: [cyclistHit],
+    /** Draws the countryside, once (it takes a moment, so not before the road is first shown). */
+    ensureCountry() {
+      if (country) return;
+      country = createCountry({ centre: { e: 0.63, n: 0.73 }, clear: toRoad });
+      root.add(country);
+    },
     /** The km posts and their numbers (hidden for a question whose numbers are not the road's). */
     showKm(on) {
       kmPosts.visible = on;
@@ -199,19 +248,20 @@ export function createRoad({ N, colors }) {
       cyclistHit.position.copy(at(p.e, p.n, 0.07));
       // the trail: the samples up to km, with the next one moved to the cyclist (put back when it is passed)
       const i = Math.min(toB, Math.floor(km / ROAD.stepKm + 1e-9));
-      const pos = trailGeo.attributes.position;
-      if (moved >= 0) pos.array.set(orig.subarray(moved * 6, moved * 6 + 6), moved * 6);
-      moved = -1;
-      if (i < toB) {
-        const a = ((p.heading + 90) * Math.PI) / 180;
-        const le = (Math.cos(a) * TRAIL_W) / 2;
-        const ln = (Math.sin(a) * TRAIL_W) / 2;
-        pos.array.set([p.e + le, 0.009, -(p.n + ln), p.e - le, 0.009, -(p.n - ln)], (i + 1) * 6);
-        moved = i + 1;
+      const a = ((p.heading + 90) * Math.PI) / 180;
+      for (const st of strips) {
+        const pos = st.geo.attributes.position;
+        if (moved >= 0) pos.array.set(st.orig.subarray(moved * 6, moved * 6 + 6), moved * 6);
+        if (i < toB) {
+          const le = (Math.cos(a) * st.w) / 2;
+          const ln = (Math.sin(a) * st.w) / 2;
+          pos.array.set([p.e + le, st.h, -(p.n + ln), p.e - le, st.h, -(p.n - ln)], (i + 1) * 6);
+        }
+        pos.needsUpdate = true;
+        st.geo.setDrawRange(0, (i < toB ? i + 1 : i) * 6);
       }
-      pos.needsUpdate = true;
-      trailGeo.setDrawRange(0, (i < toB ? i + 1 : i) * 6);
-      trail.visible = km > 0.001;
+      moved = i < toB ? i + 1 : -1;
+      trail.visible = rim.visible = km > 0.001;
       tmp.copy(at(p.e, p.n, 0.03)).sub(A);
       displacement.set(A, tmp, tmp.length());
       displacement.root.visible = tmp.length() > 0.02;

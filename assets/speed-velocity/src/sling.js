@@ -3,9 +3,11 @@
 // every quarter turn, show that it keeps its length (the দ্রুতি) but not its direction.
 // Map coordinates (e = east, n = north) become three.js x = e, z = −n, y = height.
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { textMesh } from '@shared/student/materials.js';
 import { createArrow } from './arrow.js';
 import { HEIGHT, POND, POND_CENTRE, STONE, flightAt, flightEnd, pondRadius, stoneAt } from './motion.js';
+import { createField } from './scenery.js';
 
 export const V_LENGTH = 0.9; // m of arrow for the stone's 4 m/s
 export const COMPASS = { e: 1.9, n: -1.06 }; // where the compass is drawn on the grass (south-east of the student)
@@ -72,6 +74,22 @@ function createPerson() {
   const hand = new THREE.Mesh(new THREE.SphereGeometry(0.052, 14, 12), skin);
   hand.position.set(0, STONE.hand, 0);
   g.add(hand);
+  // one mesh per material (the student never bends): 5 draw calls instead of 17
+  const byMat = new Map();
+  for (const m of [...g.children]) {
+    m.updateMatrix();
+    const geo = m.geometry.clone().applyMatrix4(m.matrix);
+    for (const name of Object.keys(geo.attributes)) if (name !== 'position' && name !== 'normal') geo.deleteAttribute(name);
+    if (!byMat.has(m.material)) byMat.set(m.material, []);
+    byMat.get(m.material).push(geo.index ? geo.toNonIndexed() : geo);
+    g.remove(m);
+  }
+  for (const [material, list] of byMat) {
+    const merged = new THREE.Mesh(mergeGeometries(list), material);
+    merged.name = material.name;
+    merged.castShadow = true;
+    g.add(merged);
+  }
   return g;
 }
 
@@ -107,7 +125,7 @@ function pondShape(scale) {
 }
 
 /**
- * @param {{ t: (key: string) => string, colors: { velocity: string, ghost: string, choice: string, path: string, label: string } }} options
+ * @param {{ t: (key: string) => string, colors: { velocity: string, ghost: string, choice: string, path: string, ink: string } }} options
  */
 export function createSling({ t, colors }) {
   const root = new THREE.Group();
@@ -118,7 +136,7 @@ export function createSling({ t, colors }) {
 
   // the circle the stone goes round (in the air, at the stone's height), with arrowheads showing which way
   const pathMat = new THREE.MeshBasicMaterial({ color: colors.path, toneMapped: false });
-  const ring = new THREE.Mesh(new THREE.TorusGeometry(STONE.r, 0.011, 6, 160), pathMat);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(STONE.r, 0.013, 6, 128), pathMat);
   ring.rotation.x = Math.PI / 2;
   ring.position.y = HEIGHT;
   ring.name = 'Path';
@@ -137,11 +155,13 @@ export function createSling({ t, colors }) {
 
   const stoneMat = new THREE.MeshStandardMaterial({ name: 'StoneMaterial', color: 0x8b8f93, roughness: 0.88, flatShading: true });
   const stone = createStone(stoneMat);
+  stone.castShadow = true;
   root.add(stone);
 
   const ropeMat = new THREE.MeshStandardMaterial({ name: 'Jute', color: 0xb08a55, roughness: 0.9 });
   const rope = new THREE.Mesh(new THREE.CylinderGeometry(0.013, 0.013, 1, 6).translate(0, 0.5, 0), ropeMat);
   rope.name = 'Rope';
+  rope.castShadow = true;
   root.add(rope);
 
   const velocity = createArrow({ color: colors.velocity, name: 'Velocity' });
@@ -174,7 +194,7 @@ export function createSling({ t, colors }) {
 
   // four arrows to choose from (the test)
   const choiceArrows = [0, 1, 2, 3].map(() => {
-    const a = createArrow({ color: colors.choice, radius: 0.024, head: 0.15, headRadius: 0.07, name: 'Choice' });
+    const a = createArrow({ color: colors.choice, radius: 0.026, head: 0.16, headRadius: 0.075, name: 'Choice' });
     a.root.visible = false;
     a.root.userData.noExport = true;
     root.add(a.root);
@@ -190,7 +210,7 @@ export function createSling({ t, colors }) {
   const TRAIL = 6;
   const trail = new THREE.InstancedMesh(
     new THREE.SphereGeometry(0.045, 10, 8),
-    new THREE.MeshBasicMaterial({ color: colors.path, toneMapped: false, transparent: true, opacity: 0.8, depthWrite: false }),
+    new THREE.MeshBasicMaterial({ color: colors.ink, toneMapped: false, transparent: true, opacity: 0.85, depthWrite: false }),
     TRAIL,
   );
   trail.visible = false;
@@ -263,11 +283,11 @@ export function createSling({ t, colors }) {
   pond.position.copy(at(POND_CENTRE.e, POND_CENTRE.n));
   const bank = new THREE.Mesh(
     new THREE.ShapeGeometry(pondShape(1.13), 2),
-    new THREE.MeshStandardMaterial({ name: 'Bank', color: 0xcbb98c, roughness: 0.95 }),
+    new THREE.MeshStandardMaterial({ name: 'Bank', color: 0x7f6a4a, roughness: 0.95 }),
   );
   const water = new THREE.Mesh(
     new THREE.ShapeGeometry(pondShape(1), 2),
-    new THREE.MeshStandardMaterial({ name: 'Water', color: 0x6fb2cc, roughness: 0.12, metalness: 0.05 }),
+    new THREE.MeshStandardMaterial({ name: 'Water', color: 0x4f97b6, roughness: 0.1, metalness: 0.05 }),
   );
   for (const [m, y] of [
     [bank, 0.004],
@@ -290,35 +310,44 @@ export function createSling({ t, colors }) {
     return r;
   });
   root.add(pond);
+  // the school field round it all: earth, trees, bushes, reeds at the pond, the school behind
+  root.add(createField({ pond: { x: pond.position.x, z: pond.position.z, r: POND.radius * 1.13 } }));
 
   // a compass on the grass, beside the circle (the panel names the direction of the বেগ with these words)
   const compass = new THREE.Group();
   compass.name = 'Compass';
   compass.position.copy(at(COMPASS.e, COMPASS.n, 0.008));
-  const ink = new THREE.MeshBasicMaterial({ color: colors.label, toneMapped: false });
+  // drawn on a pale cement plate, so the dark words read clearly on the earth
+  const plate = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.74, 0.78, 0.04, 48).translate(-0.04, 0.012, 0.03),
+    new THREE.MeshStandardMaterial({ name: 'Plate', color: 0xe3dccb, roughness: 0.85 }),
+  );
+  plate.receiveShadow = true;
+  compass.add(plate);
+  const ink = new THREE.MeshBasicMaterial({ color: colors.ink, toneMapped: false });
   for (const [deg, len] of [
     [90, 0.24],
     [0, 0.19],
     [180, 0.19],
     [270, 0.19],
   ]) {
-    const arm = new THREE.Mesh(new THREE.BoxGeometry(len, 0.004, deg === 90 ? 0.03 : 0.018).translate(len / 2, 0, 0), ink);
+    const arm = new THREE.Mesh(new THREE.BoxGeometry(len, 0.004, deg === 90 ? 0.03 : 0.018).translate(len / 2, 0.034, 0), ink);
     arm.rotation.y = (deg * Math.PI) / 180;
     compass.add(arm);
   }
   const north = new THREE.Mesh(new THREE.ConeGeometry(0.055, 0.12, 3), ink);
   north.rotation.x = -Math.PI / 2;
-  north.position.set(0, 0, -0.29);
+  north.position.set(0, 0.036, -0.29);
   compass.add(north);
   for (const [key, x, z] of [
-    ['dir_N', 0, -0.5],
-    ['dir_S', 0, 0.39],
-    ['dir_E', 0.5, 0],
-    ['dir_W', -0.6, 0],
+    ['dir_N', 0, -0.48],
+    ['dir_S', 0, 0.38],
+    ['dir_E', 0.46, 0],
+    ['dir_W', -0.5, 0],
   ]) {
-    const m = textMesh(t(key), 0.2, { color: colors.label, weight: 600 });
+    const m = textMesh(t(key), 0.17, { color: colors.ink, weight: 700 });
     m.rotation.x = -Math.PI / 2;
-    m.position.set(x, 0.002, z);
+    m.position.set(x, 0.036, z);
     compass.add(m);
   }
   compass.userData.noExport = true;
@@ -338,6 +367,11 @@ export function createSling({ t, colors }) {
   const compassAt = at(COMPASS.e, COMPASS.n);
   const tmp = new THREE.Vector3();
   const dir = new THREE.Vector3();
+  // scratch vectors, so nothing is made anew in a frame
+  const P = new THREE.Vector3();
+  const V = new THREE.Vector3();
+  const tip = new THREE.Vector3();
+  const set3 = (out, e, n, h = 0) => out.set(e, h, -n);
 
   function placeRope(to) {
     tmp.copy(to).sub(hand);
@@ -347,7 +381,7 @@ export function createSling({ t, colors }) {
   }
   function placeShadow(e, n, h, visible) {
     stoneShadow.visible = visible;
-    stoneShadow.position.copy(at(e, n, 0.006));
+    set3(stoneShadow.position, e, n, 0.006);
     const k = 1 + h * 0.5;
     stoneShadow.scale.setScalar(k);
     stoneShadow.material.opacity = Math.max(0.15, 1 - h * 0.4);
@@ -375,14 +409,14 @@ export function createSling({ t, colors }) {
      */
     setWhirl(deg, { turned = 0, arrow = true, traces = true, trail: withTrail = false } = {}) {
       const s = stoneAt(deg);
-      const p = at(s.e, s.n, HEIGHT);
+      const p = set3(P, s.e, s.n, HEIGHT);
       stone.position.copy(p);
       stone.rotation.set(0, (deg * Math.PI) / 180, 0);
       stone.visible = true;
       stoneHit.position.copy(p);
       placeRope(p);
       rope.visible = true;
-      velocity.set(p, at(s.ve, s.vn), V_LENGTH);
+      velocity.set(p, set3(V, s.ve, s.vn), V_LENGTH);
       velocity.root.visible = arrow;
       kept.root.visible = false;
       dots.count = 0;
@@ -404,7 +438,7 @@ export function createSling({ t, colors }) {
     /** Let go at angle θ, τ real seconds ago: the stone flies (the rope with it, trailing behind). */
     setFlight(deg, tau, thr) {
       const f = flightAt(deg, tau, thr);
-      const p = at(f.e, f.n, f.h);
+      const p = set3(P, f.e, f.n, f.h);
       stone.position.copy(p);
       stone.visible = f.phase !== 'gone';
       stone.rotation.set(tau * 9, (deg * Math.PI) / 180, tau * 5);
@@ -419,7 +453,7 @@ export function createSling({ t, colors }) {
       velocity.root.visible = false;
       trail.visible = false;
       const s0 = stoneAt(deg);
-      kept.set(at(s0.e, s0.n, HEIGHT), at(s0.ve, s0.vn), V_LENGTH);
+      kept.set(set3(tip, s0.e, s0.n, HEIGHT), set3(V, s0.ve, s0.vn), V_LENGTH);
       kept.root.visible = true;
       layDots(deg, thr);
       let n = 0;
@@ -440,7 +474,7 @@ export function createSling({ t, colors }) {
         const k = s - i * 0.22;
         r.visible = k > 0 && k < 1.6;
         if (!r.visible) return;
-        r.position.copy(at(e, n, 0.012));
+        set3(r.position, e, n, 0.012);
         r.scale.setScalar(0.06 + k * 0.32);
         r.material.opacity = 0.85 * (1 - k / 1.6);
       });
@@ -454,8 +488,8 @@ export function createSling({ t, colors }) {
        */
       arrowTip: () => {
         const a = kept.root.visible ? kept.root : velocity.root;
-        const d = new THREE.Vector3(0, 1, 0).applyQuaternion(a.quaternion);
-        if (!kept.root.visible) return a.position.clone().addScaledVector(d, V_LENGTH + 0.22);
+        const d = dir.set(0, 1, 0).applyQuaternion(a.quaternion);
+        if (!kept.root.visible) return tip.copy(a.position).addScaledVector(d, V_LENGTH + 0.22); // every frame: no new vector
         const mid = a.position.clone().addScaledVector(d, V_LENGTH * 0.5);
         const side = new THREE.Vector3(-d.z, 0, d.x).normalize().multiplyScalar(0.55);
         const clear = (p) =>
