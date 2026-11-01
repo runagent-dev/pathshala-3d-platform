@@ -37,50 +37,33 @@ body.bg-transparent { background: transparent; }
 .pm-lap.now { background: color-mix(in srgb, var(--c-per) 14%, var(--panel)); border: 1.5px dashed var(--c-per); }
 .pm-strip-learn { min-height: 26px; }
 
-/* on the 3D view: the shape of the path and the clock (top left), a note on time and scale (bottom left) */
-.pm-cap { position: absolute; left: 12px; top: 10px; z-index: 3; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; pointer-events: none; }
-.pm-tag { padding: 1px 9px; border-radius: 5px; border: 1.5px solid var(--c-path); color: #34404d; background: rgba(255, 255, 255, 0.85); font-size: 14.5px; font-weight: 700; line-height: 1.5; white-space: nowrap; }
-.pm-clock { display: inline-flex; align-items: baseline; gap: 5px; color: var(--c-tot); font-size: 14px; line-height: 1.35; white-space: nowrap; background: rgba(255, 255, 255, 0.85); border-radius: 4px; padding: 0 3px; }
+/* in the panel: the actions, then the path's shape and the clock as the first readings; the note under the sentence */
+.pm-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; }
+.pm-cap { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.pm-tag { padding: 0 8px; border-radius: 5px; border: 1.5px solid var(--c-path); color: #34404d; font-size: 14px; font-weight: 700; line-height: 1.5; white-space: nowrap; }
+.pm-clock { display: inline-flex; align-items: baseline; gap: 5px; color: var(--c-tot); font-size: 14px; line-height: 1.35; white-space: nowrap; }
 .pm-clock svg { align-self: center; width: 17px; height: 17px; }
 .pm-clock-k { font-weight: 600; }
-.pm-clock b { font-size: 19px; font-weight: 700; font-variant-numeric: tabular-nums; min-width: 2.4em; }
-.pm-note { position: absolute; left: 12px; bottom: 8px; z-index: 3; max-width: calc(100% - 24px); padding: 0 4px; border-radius: 4px; background: rgba(255, 255, 255, 0.85); font-size: 12.5px; line-height: 1.5; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+.pm-clock b { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; min-width: 2.4em; }
+.pm-note { margin: 0; font-size: 12.5px; line-height: 1.45; color: var(--ink-3); }
 .pm-strip3d { position: absolute; left: 10px; right: 10px; bottom: 8px; z-index: 3; padding: 4px 8px; border: 1px solid var(--line); border-radius: 6px; background: rgba(255, 255, 255, 0.92); pointer-events: none; }
 .pm-strip3d .pm-strip-k { width: 7em; font-weight: 600; color: var(--ink-2); }
 
 /* text answers in the test: smaller, on up to two lines */
 .pvc-opt .pm-txt { font-size: 15px; font-weight: 600; line-height: 1.25; white-space: normal; text-align: center; }
 
-/* wide frames with the panel under the 3D (book column, desktop): the strip beside the sum, the examples beside
-   the pause button, so the panel stays low */
-@container pvc (min-width: 720px) and (min-height: 461px) {
-  .pm .pvc-learn { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: 'main main' 'strip strip' 'extra extra' 'ex foot'; align-content: space-between; align-items: center; gap: 5px 20px; }
-  .pm .pvc-learn-main { grid-area: main; flex-wrap: nowrap; }
-  .pm .pm-strip-learn { grid-area: strip; max-width: 640px; }
-  .pm .pm-extra { grid-area: extra; min-height: 2.9em; }
-  .pm .pm-examples { grid-area: ex; }
-  .pm .pvc-learn-foot { grid-area: foot; flex-wrap: nowrap; }
-}
 /* the panel beside the 3D (phones held sideways): the sum always on its own row, so nothing jumps */
 @container pvc-panel (max-width: 420px) {
   .pm .pvc-learn-main { flex-direction: column; align-items: flex-start; gap: 0; }
 }
-/* phones held upright: the pause button beside the period; the sum, the strip and the explanation under it */
+/* phones held upright: a little tighter */
 @container pvc (max-width: 560px) {
-  .pm .pvc-learn { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: 'ex ex' 'res act' 'sum sum' 'strip strip' 'extra extra'; align-content: start; align-items: center; gap: 6px 10px; }
-  .pm .pvc-learn-main, .pm .pvc-learn-foot { display: contents; }
-  .pm .pm-examples { grid-area: ex; max-width: none; }
-  .pm .pvc-result { grid-area: res; }
-  .pm .pm-sum { grid-area: sum; }
-  .pm .pm-strip-learn { grid-area: strip; }
-  .pm .pm-extra { grid-area: extra; }
   .pm .pvc-status { display: none; }
-  .pm [data-act='play'] { grid-area: act; height: 38px; font-size: 15px; }
+  .pm [data-act='play'] { height: 38px; font-size: 15px; }
+  .pm .pvc-learn { gap: 6px; }
   /* questions and worked answers of two lines: the panel (and the 3D view) keep their size */
   .pm .pvc-q-text { min-height: 2.8em; }
   .pm .pvc-q-feedback { min-height: 2.9em; }
-  .pm-cap { left: 8px; top: 8px; }
-  .pm-note { left: 8px; bottom: 6px; }
   .pm-ex { font-size: 14px; height: 36px; }
   .pm-tag { font-size: 14px; }
 }
@@ -111,4 +94,8 @@ body.bg-transparent { background: transparent; }
   .pm .pvc-sum { gap: 4px; }
   .pm .pvc-sum i, .pm .pvc-sum .pvc-t b { font-size: 19px; }
   .pvc-opt .pm-txt { font-size: 13.5px; }
+}
+/* phones held upright: the note goes (the 3D keeps more room) */
+@container pvc (max-width: 420px) {
+  .pm-note { display: none; }
 }
