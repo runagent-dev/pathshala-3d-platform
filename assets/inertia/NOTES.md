@@ -30,10 +30,14 @@ is "ছেলেটি / সে" everywhere (the book's "সে"); the book's ge
 ## How the figure works
 - A Dhaka city bus (green and cream, red stripe, white roof), with its left side cut away so the passenger, a
   school student in uniform with a school bag, is seen whole. The camera looks at the bus's left side, where a
-  Bangladeshi bus has its doors (we drive on the left), so the bus drives toward the left of the picture. Through
-  its windows: shops with bright signboards, trees and dark lamp posts every 4.5 m, so one sees the street slide by.
-- Four events (the panel's buttons, keys 1–4); each plays in slow motion (time 3× slower, the coin 10×; said on the
-  view) and stops at the end; a tap anywhere on the view (or the play button, Space) plays, pauses or plays again:
+  Bangladeshi bus has its doors (we drive on the left), so the bus drives toward the left of the picture. Inside: a
+  floor of worn wooden planks, powder-blue laminate lining with a dark kick band, a cream ceiling with strip lights.
+  Through its windows: two-storey shops in warm plaster with signboards, striped awnings, shutters and upper windows,
+  trees and dark lamp posts every 4.5 m under a blue sky, so one sees the street slide by. The road is dark asphalt
+  with red-brick footpaths and black-and-yellow kerbs on both sides.
+- Four events (the panel's row of event words হঠাৎ চলা, হঠাৎ ব্রেক, বাস থেকে নামা, কয়েন-কার্ড, the kit's
+  example row; keys 1–4); each plays in slow motion (time 3× slower, the coin 10×; said in the panel beside the
+  speeds) and stops at the end; a tap anywhere on the view (or the play button, Space) plays, pauses or plays again:
   1. হঠাৎ চলা শুরু: 2.5 m/s² for 1 s (0 → 2.5 m/s). The feet go with the bus; the upper body lags; he leans back
      about 14° (স্থিতি জড়তা). A dashed orange mark on the road's frame shows where his head was when the bus
      started: the head stays at it at first while the feet are carried forward. The event ends once he is upright.
@@ -46,7 +50,7 @@ is "ছেলেটি / সে" everywhere (the book's "সে"); the book's ge
      behind the rear wheel, so only the back of the bus passes him (no wheel rolls past a boy on the road); the
      camera then comes a little lower and closer.
   4. কয়েন ও কার্ড: a finger flicks a card from under a coin on a glass (card 2.2 m/s); the coin stays and drops into
-     the glass (স্থিতি জড়তা). A home experiment, on a light tablecloth, seen from above.
+     the glass (স্থিতি জড়তা). A home experiment, on a wooden table against a plastered wall, seen from above.
 - A blue arrow on the feet (or the card) and an orange arrow at the shoulders (or on the coin) show each part's
   speed along the road (0.28 m of arrow per m/s); the panel shows the two speeds in m/s (one decimal), the book's
   definition, and the event: before it, what is about to happen and what to watch; while it happens, the book's
@@ -79,6 +83,42 @@ is "ছেলেটি / সে" everywhere (the book's "সে"); the book's ge
   0.11 m into the glass (≈ 0.15 s) about 1 cm off centre.
 - All of it is computed once per event with a fixed 1/240 s step (deterministic), unit-tested in
   `test/unit/inertia.test.mjs`.
+
+## Polish pass (2026-11-01)
+Against `docs/agents/polish-pass.md`, version 0.2.0.
+- **Layout.** The panel stays below the 3D view at every size but the short-and-wide one (the kit's rule). The four
+  event buttons (two rows) became the kit's row of example words (হঠাৎ চলা, হঠাৎ ব্রেক, বাস থেকে নামা, কয়েন-কার্ড,
+  full names as their titles), at the top of the sheet; the definition moved under the explanation; every changing
+  text reserves exactly its longest version (three lines of explanation, two of question and of answer on a phone;
+  one more line in English), so the 3D view keeps one height through every event and test question. The 3D view has
+  403 of 700 px at 390×700 (58 %, was 351, 50 %); 244 of 520 at 390×520 (was 217). The wide layout is one full-width
+  row each (it used to let a four-line explanation and a two-line question push the 3D view up by 20–24 px at
+  800×500).
+- **Text on the view.** The slow-motion note (সময় ৩ গুণ ধীর) left the view for a chip beside the speeds. On the view
+  remain only the labels naming each part and what it does, and the head mark, while the event happens.
+- **Setting and arrows.** No near-white interior or pale street any more: a floor of wooden planks, powder-blue
+  laminate lining with a dark kick band, a cream ceiling with strip lights; outside, dark asphalt, red-brick
+  footpaths with black-and-yellow kerbs on both sides, two-storey shops in warm plaster with signboards, striped
+  awnings, shutters over goods and upper windows, under a blue sky. The coin trick stands on a wooden table against
+  an ochre wall (was a pale cloth on white). Both speed arrows are bold with a white rim (the momentum figure's
+  arrow, copied); the head mark's dashes have a white rim too. Label chips are solid white with a shadow; their words
+  use deeper shades of the arrow colours (#1a64c4, #c2410c: 4.5:1 or more on white), as do the panel's speeds.
+- **Smooth, detail kept.** The bus's still parts are merged into one mesh per material, its matte plain-colour parts
+  into one vertex-coloured mesh, and the wheels are three InstancedMeshes; the street likewise (shops, trees, posts,
+  drains: one painted mesh plus a few glossy ones); the head and the bag of the passenger are one mesh per material.
+  Shadows: PCF at 1024 on a 7.2 m box that follows the event (was VSM 2048 on 10 m), radius 3, cast only by the
+  passenger, the seats, the bus body and the coin trick's parts, received only by the floor, lining, seats, road,
+  footpath and table. The head mark is two meshes (was fourteen). Canvas textures are 256 px. Labels write to the DOM
+  only when a value changes, the view's button boxes are read once per size, and the label code allocates nothing
+  per frame.
+- **Bugs.** At 800×500 the explanation after a sudden start (four lines) and a two-line test question made the panel
+  taller and the 3D view shorter mid-event; labels kept their old size after a resize to a wider frame (now measured
+  again); the orange words on the labels and in the panel were 3.6:1 on white.
+- **Numbers** (headless Chromium, software GL, shadows on, same machine and load): draw calls avg 247 → 94, max 269 →
+  116 (844×390: 264 → 94, 286 → 116); triangles max 57k → 80k (the shops' awnings, goods and windows); texture
+  memory 54 → 15.1 MB (largest 2048 → 1024 px); time to ready 2575 → 1601 ms at 390×700, 1984 → 1324 ms at 844×390
+  (the machine's load average was about 50; the brief's earlier run had 669 ms before); frames drawn while idle
+  0 → 0; text on the view 14/1 → 0/0 when idle.
 
 ## Open questions
 - The book's idealisation says the upper body is "তখনো স্থির"; in the model the head moves less than 1 cm from its
