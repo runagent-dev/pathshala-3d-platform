@@ -1,6 +1,7 @@
 // A hybrid bicycle, procedural, in metres: diamond frame, spoked wheels, flat handlebar, cranks and chain, rim
 // brakes whose pads glow while braking. Local +x is forward, y up, the ground at y = 0, the near side is +z.
 import * as THREE from 'three';
+import { bake } from './bake.js';
 
 export const BIKE = {
   wheel: 0.34, // m: wheel radius with the tyre (700c)
@@ -41,6 +42,7 @@ export function createBike({ frame = '#d7362b' } = {}) {
   const v = (x, y, z = 0) => new THREE.Vector3(x, y, z);
 
   // ── wheels: tyre, rim, hub and 32 spokes; they turn about their axles ────────────────────────────────────────────
+  const treadGeo = new THREE.BoxGeometry(0.008, 0.004, 0.02);
   function wheel(at, name) {
     const g = new THREE.Group();
     g.name = name;
@@ -54,7 +56,7 @@ export function createBike({ frame = '#d7362b' } = {}) {
     const tread = new THREE.Group();
     for (let k = 0; k < 36; k++) {
       const a = (k / 36) * Math.PI * 2;
-      const b = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.004, 0.02), M.rubber);
+      const b = new THREE.Mesh(treadGeo, M.rubber);
       b.position.set(Math.cos(a) * (BIKE.wheel - 0.002), Math.sin(a) * (BIKE.wheel - 0.002), 0);
       b.rotation.z = a + Math.PI / 2;
       tread.add(b);
@@ -209,9 +211,15 @@ export function createBike({ frame = '#d7362b' } = {}) {
   hit.name = 'BikeHitBox';
   root.add(hit);
 
+  // the frame, wheels, saddle and drive cast the shadow on the road (not the small grips and pads)
+  const casts = new Set([M.frame, M.rubber, M.alloy, M.dark, M.saddle]);
   root.traverse((o) => {
-    if (o instanceof THREE.Mesh && o !== hit) o.castShadow = true;
+    if (o instanceof THREE.Mesh && o !== hit) o.castShadow = casts.has(/** @type {THREE.Material} */ (o.material));
   });
+  // the parts that never move against the frame, and each wheel's parts, drawn as one mesh per material
+  bake(root, { skip: [rearWheel, frontWheel, hit, ...cranks.map((c) => c.arm)] });
+  bake(rearWheel);
+  bake(frontWheel);
 
   const pedalAt = [new THREE.Vector3(), new THREE.Vector3()];
   let crankAngle = 0;

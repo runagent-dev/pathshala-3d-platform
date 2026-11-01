@@ -55,9 +55,12 @@ export const DEFAULTS = {
 };
 
 const COLORS = { push: '#e8590c', brake: '#c2255c' };
+// label text in the arrow's colour, dark enough for 4.5:1 on the white chip
+const TEXT = { push: '#b8460a', brake: '#b0214f' };
 const VIEW_FRONT = new THREE.Vector3(0, Math.sin(THREE.MathUtils.degToRad(4)), Math.cos(THREE.MathUtils.degToRad(4)));
 const VIEW_3D = new THREE.Vector3(-0.5, 0.38, 0.78).normalize();
 const DOUBLE_TAP = 400; // ms
+const ARROW_R = 0.055; // m: the force arrows' shaft radius (thicker on a small stage)
 const FLAT_X = HILL.half + 1.5; // m: where the brake part starts when chosen from the words
 
 export function createApp(root, options = {}) {
@@ -95,11 +98,6 @@ export function createApp(root, options = {}) {
     thirdText: outcome.querySelector('.en-legend .third b'),
   };
 
-  const note = document.createElement('div');
-  note.className = 'en-note';
-  note.textContent = t('note', { m: MASS });
-  ui.stage.append(note);
-
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 30, near: 0.1, far: 400, environment: 'studio-light' });
   const { camera, controls, scene } = stage;
@@ -127,7 +125,7 @@ export function createApp(root, options = {}) {
     stage.renderer.shadowMap.enabled = true;
     stage.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     sun.castShadow = true;
-    sun.shadow.mapSize.set(1024, 1024);
+    sun.shadow.mapSize.set(512, 512);
     Object.assign(sun.shadow.camera, { left: -2.2, right: 2.2, top: 2.2, bottom: -2.2, near: 1, far: 30 });
     sun.shadow.bias = -0.0005;
     sun.shadow.normalBias = 0.02;
@@ -152,15 +150,39 @@ export function createApp(root, options = {}) {
   cyclist.add(bike.root, rider.root, bike.hit);
   world.add(cyclist);
 
-  // the force on the bicycle (pedal force along the motion, brake force against it) and the height above the road below
-  const arrows = {
-    push: createArrow({ color: COLORS.push, radius: 0.035, name: 'PedalForce' }),
-    brake: createArrow({ color: COLORS.brake, radius: 0.035, name: 'BrakeForce' }),
-  };
-  for (const a of Object.values(arrows)) world.add(a.root);
+  // the force on the bicycle (pedal force along the motion, brake force against it): bold, flat colour in a white
+  // outline with a thin dark rim, drawn over the scenery, so it reads on the clay, the kerbs, the boards and the sky
+  const flat = (color) =>
+    new THREE.MeshBasicMaterial({ color, transparent: true, depthTest: false, depthWrite: false, fog: false, toneMapped: false });
+  const UPV = new THREE.Vector3(0, 1, 0);
+  function boldArrow(name, color, r = ARROW_R) {
+    const core = createArrow({ name, radius: r, head: r * 5, headRadius: r * 2.6, material: flat(color) });
+    core.root.traverse((o) => (o.renderOrder = 32)); // drawn last, over its rims
+    const rims = [
+      [r * 0.55, '#ffffff', 31],
+      [r * 0.85, '#1f2329', 30],
+    ].map(([pad, c, order]) => {
+      const rim = createArrow({ name: `${name}Outline`, radius: r + pad, head: r * 5 + pad * 2.6, headRadius: r * 2.6 + pad * 2, material: flat(c) });
+      core.root.add(rim.root);
+      rim.root.traverse((o) => (o.renderOrder = order));
+      return { rim, pad, from: new THREE.Vector3(0, -pad, 0) };
+    });
+    return {
+      ...core,
+      set(from, dir, length) {
+        core.set(from, dir, length);
+        for (const { rim, pad, from: f } of rims) rim.set(f, UPV, length + pad * 2.2);
+      },
+    };
+  }
+  const arrows = { push: boldArrow('PedalForce', COLORS.push), brake: boldArrow('BrakeForce', COLORS.brake) };
+  for (const a of Object.values(arrows)) {
+    a.root.userData.noExport = true;
+    world.add(a.root);
+  }
   const dashed = (color) =>
     new THREE.LineDashedMaterial({ color, dashSize: 0.18, gapSize: 0.12, depthTest: false, transparent: true, opacity: 0.85 });
-  const heightLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(0, 1, 0)]), dashed('#3b4250'));
+  const heightLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(0, 1, 0)]), dashed('#2b303b'));
   heightLine.renderOrder = 10;
   heightLine.name = 'HeightGuide';
   const baseLine = new THREE.Line(
@@ -205,7 +227,11 @@ export function createApp(root, options = {}) {
   const rearAxle = new THREE.Vector3();
   const frontAxle = new THREE.Vector3();
   const tangent = new THREE.Vector3();
+  const back = new THREE.Vector3();
   const tmp = new THREE.Vector3();
+  const Z = new THREE.Vector3(0, 0, 1);
+  const LIFT = new THREE.Vector3(0, 0.25, 0.5); // the arrows sit a little above the road, on the near side
+  const ankles = [0, 0];
   const axleAt = (x, out) => {
     const k = slopeAt(x);
     const n = 1 / Math.sqrt(1 + k * k);
@@ -220,7 +246,7 @@ export function createApp(root, options = {}) {
     axleAt(s.x + half * c, frontAxle);
     const pitch = Math.atan2(frontAxle.y - rearAxle.y, frontAxle.x - rearAxle.x);
     cyclist.rotation.z = pitch;
-    tmp.copy(BIKE.rear).applyAxisAngle(new THREE.Vector3(0, 0, 1), pitch);
+    tmp.copy(BIKE.rear).applyAxisAngle(Z, pitch);
     cyclist.position.copy(rearAxle).sub(tmp);
     bike.roll(s.wheel);
     bike.setCrank(s.crank);
@@ -232,43 +258,26 @@ export function createApp(root, options = {}) {
     pelvis.copy(BIKE.saddle).add(tmp.set(braking ? -0.05 : -0.025, 0.075, 0));
     grips[0].copy(BIKE.grip);
     grips[1].copy(BIKE.grip).setZ(-BIKE.grip.z);
-    rider.pose({
-      pelvis,
-      lean,
-      grips,
-      pedals,
-      ankles: [0, 1].map((i) => 0.12 + 0.14 * Math.sin(s.crank + i * Math.PI)),
-      look: 0.85,
-    });
+    ankles[0] = 0.12 + 0.14 * Math.sin(s.crank);
+    ankles[1] = 0.12 + 0.14 * Math.sin(s.crank + Math.PI);
+    rider.pose({ pelvis, lean, grips, pedals, ankles, look: 0.85 });
     bike.setHeat(braking ? Math.min(1, s.v / 6 + 0.25) : s.phase === 'stopped' ? 0.15 : 0);
     cyclist.updateMatrixWorld(true);
     // the arrows: along the road, in front while pedalling, behind while braking
     const k = slopeAt(s.x);
     tangent.set(1, k, 0).normalize();
-    if (climbing && heightAt(s.x) < HILL.height - 0.35) {
-      arrows.push.set(
-        tmp
-          .copy(frontAxle)
-          .addScaledVector(tangent, 0.45)
-          .add(new THREE.Vector3(0, 0.25, 0.5)),
-        tangent,
-        1.1,
-      );
-    } else arrows.push.hide();
-    if (braking)
-      arrows.brake.set(
-        tmp
-          .copy(rearAxle)
-          .addScaledVector(tangent, -0.4)
-          .add(new THREE.Vector3(0, 0.25, 0.5)),
-        tangent.clone().negate(),
-        1.1,
-      );
+    if (climbing && heightAt(s.x) < HILL.height - 0.35) arrows.push.set(tmp.copy(frontAxle).addScaledVector(tangent, 0.45).add(LIFT), tangent, 1.1);
+    else arrows.push.hide();
+    if (braking) arrows.brake.set(tmp.copy(rearAxle).addScaledVector(tangent, -0.4).add(LIFT), back.copy(tangent).negate(), 1.1);
     else arrows.brake.hide();
-    // the height above the road below: a dashed line down through the hill to the road's level
+    // the height above the road below: a dashed line down through the hill to the road's level (updated in place)
     const y = heightAt(s.x);
     heightLine.visible = baseLine.visible = y > 0.05;
-    heightLine.geometry.setFromPoints([new THREE.Vector3(s.x, 0.02, 0.9), new THREE.Vector3(s.x, y, 0.9)]);
+    const hp = heightLine.geometry.attributes.position;
+    hp.setXYZ(0, s.x, 0.02, 0.9);
+    hp.setXYZ(1, s.x, y, 0.9);
+    hp.needsUpdate = true;
+    heightLine.geometry.computeBoundingSphere();
     heightLine.computeLineDistances();
     // the sun follows, so the shadow under the bicycle stays sharp
     sun.position.set(s.x + 3, y + 9, 6);
@@ -307,6 +316,10 @@ export function createApp(root, options = {}) {
       controls.target.add(tmp);
     }
     controls.update();
+    // the arrows get thicker (not longer) on a small stage, so their shaft stays about 6 px wide
+    const pxPerM = stage.height / (2 * camera.position.distanceTo(cyclist.position) * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2));
+    const thick = Math.min(2.2, Math.max(1, 6 / (2 * ARROW_R * pxPerM)));
+    for (const a of Object.values(arrows)) a.root.scale.set(thick, 1, thick);
   }
   function setView(view) {
     if (s.mode === 'quiz') return;
@@ -321,7 +334,7 @@ export function createApp(root, options = {}) {
   controls.addEventListener('start', () => {
     s.userMovedCamera = true;
   });
-  controls.addEventListener('change', () => stage.invalidate());
+  // turning the view moves only the camera: the stage redraws by itself, and the shadows stay as they are
 
   // ── labels on the scene ─────────────────────────────────────────────────────
   /** @type {ReturnType<typeof createAction> | null} */
@@ -357,7 +370,6 @@ export function createApp(root, options = {}) {
     avoid: [
       ui.corner,
       ui.hint,
-      note,
       () => action?.ringBox(),
       () => action?.box(),
       () => [
@@ -393,7 +405,7 @@ export function createApp(root, options = {}) {
     if (a) arrowMid.copy(a.root.position).lerp(a.tip, 0.5);
     label('force', Boolean(a), {
       text: t(a === arrows.push ? 'l_push' : 'l_brake'),
-      color: a === arrows.push ? COLORS.push : COLORS.brake,
+      color: a === arrows.push ? TEXT.push : TEXT.brake,
       point: () => arrowMid,
       kind: 'part',
       spots: SPOTS.force,
@@ -411,6 +423,10 @@ export function createApp(root, options = {}) {
   }
 
   // ── the panel ───────────────────────────────────────────────────────────────
+  /** Write to the page only when the value changes (the bar is refreshed ten times a second while it moves). */
+  const write = (obj, key, value) => {
+    if (obj[key] !== value) obj[key] = value;
+  };
   function next() {
     if (s.held) return { label: 'act_go', kind: 'go', enabled: true };
     switch (s.phase) {
@@ -434,21 +450,19 @@ export function createApp(root, options = {}) {
   const stepOf = (n) => (n.kind === 'again' ? '' : Math.max(1, s.taken + (s.phase === 'climb' || s.phase === 'brake' ? 0 : 1)));
   function refresh() {
     const e = energyOf(s);
-    const pct = (j) => `${Math.max(0, Math.min(100, (j / TOTAL) * 100)).toFixed(2)}%`;
-    meter.pe.style.width = pct(e.potential);
-    meter.ke.style.width = pct(e.kinetic);
-    meter.heat.style.width = pct(e.heat);
-    meter.peText.textContent = J(e.potential);
-    meter.keText.textContent = J(e.kinetic);
+    const pct = (j) => `${Math.max(0, Math.min(100, (j / TOTAL) * 100)).toFixed(1)}%`;
     const heat = e.heat > 5;
-    meter.third.className = heat ? 'heat' : 'tot';
-    meter.thirdName.textContent = t(heat ? 'm_heat' : 'm_total');
-    meter.thirdText.textContent = J(heat ? e.heat : e.total);
-    meter.root.setAttribute(
-      'aria-label',
-      t('m_aria', { pe: groupJ(e.potential), ke: groupJ(e.kinetic), total: groupJ(e.total), heat: groupJ(e.heat) }),
-    );
-    sheet.rule(t(`rule_${s.phase}`, { e: groupJ(s.phase === 'stopped' ? e.heat : TOTAL), v: fmt1(speedAt(0)) }));
+    write(meter.pe.style, 'width', pct(e.potential));
+    write(meter.ke.style, 'width', pct(e.kinetic));
+    write(meter.heat.style, 'width', pct(e.heat));
+    write(meter.peText, 'textContent', J(e.potential));
+    write(meter.keText, 'textContent', J(e.kinetic));
+    write(meter.third, 'className', heat ? 'heat' : 'tot');
+    write(meter.thirdName, 'textContent', t(heat ? 'm_heat' : 'm_total'));
+    write(meter.thirdText, 'textContent', J(heat ? e.heat : e.total));
+    const aria = t('m_aria', { pe: groupJ(e.potential), ke: groupJ(e.kinetic), total: groupJ(e.total), heat: groupJ(e.heat) });
+    if (meter.root.getAttribute('aria-label') !== aria) meter.root.setAttribute('aria-label', aria);
+    sheet.rule(t(`rule_${s.phase}`, { e: groupJ(s.phase === 'stopped' ? e.heat : TOTAL), v: fmt1(speedAt(0)), m: MASS }));
     const part = PART_OF[s.phase];
     sheet.choose(part);
     sheet.next(s.phase === 'top' ? 'down' : s.phase === 'flat' ? 'brake' : s.phase === 'stopped' ? 'up' : null);
@@ -626,7 +640,6 @@ export function createApp(root, options = {}) {
     avoid: [
       ui.corner,
       ui.hint,
-      note,
       () => anno.boxes(),
       () => Object.values(arrows).flatMap((a, i) => (a.root.visible ? [screenBox(tmpBox.setFromObject(a.root), arrowBoxes[i])] : [])),
     ],
@@ -708,7 +721,7 @@ export function createApp(root, options = {}) {
     audio,
     questions: 5,
     action,
-    lines: { text: 3, feedback: 3 },
+    lines: { text: 2, feedback: 3 },
     hooks: {
       enter() {
         learnSaved = { phase: s.phase, x: s.x, v: s.v, heat: s.heat, taken: s.taken, found: { ...s.found } };
