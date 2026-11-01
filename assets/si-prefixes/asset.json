@@ -5,7 +5,7 @@
   "title": "SI prefixes: how big is it? (কোনটা কত বড়?)",
   "type": "animation",
   "entry": "index.html",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "book": "physics-9-10",
   "page": 17,
   "topic": "1.5.2",
@@ -13,7 +13,7 @@
   "order": 2,
   "maintainers": ["RadeenXALNW"],
   "units": "m",
-  "description": "Self-playing 3D animation, about 98 s, looping, with one object for every row of Table 1.05: from a student (1.5 m) down through a mango, cricket ball, ant, blood cell, DNA, atom and nucleus to a quark (< 10⁻¹⁸ m), then up through a bus, football field, Padma Bridge, Earth, Sun, solar system and nearest star to a galaxy (6 × 10²⁴ m, the book's value). Each stop shows the size in Bangla with its prefix and 10ⁿ m. Students can tap any prefix in the table (or a stop in the strip on phones, or an object) to fly there; play continues the tour from that stop.",
+  "description": "Self-playing 3D animation, about 98 s, looping, with one object for every row of Table 1.05: from a student (1.5 m) down through a mango, cricket ball, ant, blood cell, DNA, atom and nucleus to a quark (< 10⁻¹⁸ m), then up through a bus, football field, Padma Bridge, Earth, Sun, solar system and nearest star to a galaxy (6 × 10²⁴ m, the book's value). Each stop shows the size in Bangla with its prefix and 10ⁿ m. Under the view, one strip holds the caption and the 17 stops (the rows of Table 1.05, smallest first, with 10ⁿ): tap a stop (or an object) to fly there; play continues the tour from that stop. Each stop has its own coloured backdrop, from a violet particle world through a day sky to starry space.",
   "tags": ["SI prefix", "উপসর্গ", "powers of ten", "scale", "animation", "bangla"],
   "params": [
     {
@@ -32,7 +32,7 @@
       "options": [["0.75", "0.75×"], ["1", "1×"], ["1.25", "1.25×"], ["1.5", "1.5×"]],
       "default": "1"
     },
-    { "name": "ladder", "label": "Show Table 1.05 (wide frames)", "type": "boolean", "default": "1" },
+    { "name": "ladder", "label": "Show 10ⁿ on the stop buttons", "type": "boolean", "default": "1" },
     {
       "name": "start",
       "label": "Start at",
@@ -65,6 +65,9 @@
     { "name": "play", "payload": {} },
     { "name": "pause", "payload": {} },
     { "name": "goto", "payload": { "id": "earth" } },
+    { "name": "seek", "payload": { "t": 20 } },
+    { "name": "duration", "payload": {} },
+    { "name": "reset", "payload": {} },
     { "name": "capture", "payload": { "width": 800, "height": 500 } }
   ],
   "events": ["ready", "stop", "play", "pause", "choose"],

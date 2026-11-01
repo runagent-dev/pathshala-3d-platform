@@ -1,11 +1,15 @@
 // The 17 objects, one for each row of Table 1.05, each drawn about 1 unit wide and centred on the origin (the app scales them to their true size).
-// Plain textbook look: clear shapes and colours on a white page. Each returns
-//   { group, tick?(time, dt, focus), pins?: [{ key, point: Vector3 (model units), facing?: Vector3 }] }
+// Clear shapes and colours that stand out on each stop's coloured backdrop (see BACKDROPS in app.js). Each returns
+//   { group, tick?(time, dt, focus), pins?: [{ key, object, facing? }] }
+// Still parts that share a material are merged into one mesh, and repeated parts (stitches, rungs, piers, legs)
+// are instanced, so each object costs a handful of draw calls.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { LAND, BANGLADESH } from './world.js';
 
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
+const UP = V(0, 1, 0);
 const std = (color, o = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.55, metalness: 0, ...o });
 const mesh = (geo, mat, x = 0, y = 0, z = 0) => {
   const m = new THREE.Mesh(geo, mat);
@@ -13,13 +17,49 @@ const mesh = (geo, mat, x = 0, y = 0, z = 0) => {
   return m;
 };
 
-/** Soft round sprite used for glows and point stars. */
-function radialTexture(stops, size = 128) {
+/** A matrix from a position, an Euler rotation and a scale (a number or [x, y, z]). */
+function mat4(p = [0, 0, 0], r = [0, 0, 0], s = 1) {
+  const sc = typeof s === 'number' ? V(s, s, s) : V(...s);
+  return new THREE.Matrix4().compose(V(...p), new THREE.Quaternion().setFromEuler(new THREE.Euler(...r)), sc);
+}
+/** The matrix that turns a unit cylinder (radius 1, height 1, along y) into a rod of radius r from a to b. */
+function rod(a, b, r) {
+  const d = b.clone().sub(a);
+  return new THREE.Matrix4().compose(
+    a.clone().lerp(b, 0.5),
+    new THREE.Quaternion().setFromUnitVectors(UP, d.clone().normalize()),
+    V(r, d.length(), r),
+  );
+}
+/** Still parts sharing one material, merged into one geometry: a list of [geometry, matrix?]. */
+function merged(parts) {
+  const geos = parts.map(([g, m]) => {
+    const c = g.index ? g.toNonIndexed() : g.clone();
+    if (m) c.applyMatrix4(m);
+    for (const k of Object.keys(c.attributes)) if (k !== 'position' && k !== 'normal' && k !== 'uv') c.deleteAttribute(k);
+    return c;
+  });
+  const out = mergeGeometries(geos);
+  for (const g of geos) g.dispose();
+  for (const [g] of parts) g.dispose();
+  return out;
+}
+/** One instanced mesh from a list of matrices (and colours). */
+function instanced(geo, mat, matrices, colors) {
+  const m = new THREE.InstancedMesh(geo, mat, matrices.length);
+  matrices.forEach((x, i) => m.setMatrixAt(i, x));
+  if (colors) colors.forEach((c, i) => m.setColorAt(i, new THREE.Color(c)));
+  m.computeBoundingSphere();
+  return m;
+}
+
+/** Soft round sprite texture, white; glows tint it with the material colour. Made once, shared. */
+function radialTexture(stops, size) {
   const c = document.createElement('canvas');
   c.width = c.height = size;
   const g = c.getContext('2d');
   const grad = g.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
-  for (const [o, col] of stops) grad.addColorStop(o, col);
+  for (const [o, a] of stops) grad.addColorStop(o, `rgba(255,255,255,${a})`);
   g.fillStyle = grad;
   g.fillRect(0, 0, size, size);
   const tex = new THREE.CanvasTexture(c);
@@ -28,40 +68,63 @@ function radialTexture(stops, size = 128) {
 }
 const DOT = radialTexture(
   [
-    [0, 'rgba(255,255,255,1)'],
-    [0.85, 'rgba(255,255,255,1)'],
-    [1, 'rgba(255,255,255,0)'],
+    [0, 1],
+    [0.85, 1],
+    [1, 0],
   ],
   64,
 );
+const GLOW = radialTexture(
+  [
+    [0, 1],
+    [0.35, 0.45],
+    [1, 0],
+  ],
+  128,
+);
 
 function glow(color, scale, strength = 0.55) {
-  const c = new THREE.Color(color);
-  const rgb = `${Math.round(c.r * 255)},${Math.round(c.g * 255)},${Math.round(c.b * 255)}`;
-  const tex = radialTexture([
-    [0, `rgba(${rgb},${strength})`],
-    [0.35, `rgba(${rgb},${strength * 0.45})`],
-    [1, `rgba(${rgb},0)`],
-  ]);
-  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthWrite: false, transparent: true }));
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: GLOW, color, opacity: strength, depthWrite: false, transparent: true }));
   s.scale.setScalar(scale);
+  s.userData.strength = strength;
   return s;
 }
 
-function points(positions, colors, size, attenuate = false) {
+function points(positions, colors, size, glowing = false) {
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
   geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-  const mat = new THREE.PointsMaterial({ size, sizeAttenuation: attenuate, vertexColors: true, map: DOT, alphaTest: 0.5, transparent: false });
+  const mat = glowing // stars that add up where they crowd, as a galaxy does against the night sky
+    ? new THREE.PointsMaterial({
+        size,
+        sizeAttenuation: false,
+        vertexColors: true,
+        map: GLOW,
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+      })
+    : new THREE.PointsMaterial({ size, sizeAttenuation: false, vertexColors: true, map: DOT, alphaTest: 0.5, transparent: false });
   return new THREE.Points(geo, mat);
+}
+
+/** A glowing rim: brighter where the surface turns away from us (the electron cloud, the Earth's air). */
+function rimMaterial(rgb, base, gain, power, invert) {
+  const f = invert ? '1.0 - clamp(dot(normalize(vN), normalize(vV)), 0.0, 1.0)' : 'clamp(dot(normalize(vN), normalize(vV)), 0.0, 1.0)';
+  return new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    vertexShader: `varying vec3 vN; varying vec3 vV;
+      void main(){ vec4 mv = modelViewMatrix * vec4(position, 1.0); vN = normalize(normalMatrix * normal); vV = normalize(-mv.xyz); gl_Position = projectionMatrix * mv; }`,
+    fragmentShader: `varying vec3 vN; varying vec3 vV;
+      void main(){ float f = ${f}; gl_FragColor = vec4(${rgb}, ${base.toFixed(3)} + ${gain.toFixed(3)} * pow(f, ${power.toFixed(2)})); }`,
+  });
 }
 
 // ── nucleus: 6 protons + 6 neutrons ─────────────────────────────────────────────
 function nucleus() {
   const group = new THREE.Group();
-  const proton = std('#e8590c', { roughness: 0.35 });
-  const neutron = std('#adb5bd', { roughness: 0.35 });
-  const geo = new THREE.SphereGeometry(0.165, 40, 24);
+  const geo = new THREE.SphereGeometry(0.165, 32, 20);
   const ico = new THREE.IcosahedronGeometry(0.2, 0).getAttribute('position');
   const seen = [];
   for (let i = 0; i < ico.count; i++) {
@@ -69,60 +132,57 @@ function nucleus() {
     if (seen.some((q) => q.distanceTo(p) < 1e-3)) continue;
     seen.push(p);
   }
-  seen.forEach((p, i) => group.add(mesh(geo, i % 2 ? neutron : proton, p.x, p.y, p.z)));
-  group.rotation.set(0.4, 0.3, 0);
-  return { group, tick: (t) => (group.rotation.y = 0.3 + t * 0.25) };
+  const at = (odd) => seen.filter((_, i) => i % 2 === odd).map((p) => new THREE.Matrix4().makeTranslation(p.x, p.y, p.z));
+  const balls = new THREE.Group();
+  balls.add(instanced(geo, std('#f76707', { roughness: 0.35 }), at(0)), instanced(geo, std('#ced4da', { roughness: 0.35 }), at(1)));
+  group.add(balls);
+  balls.rotation.set(0.4, 0.3, 0);
+  return { group, tick: (t) => (balls.rotation.y = 0.3 + t * 0.25) };
 }
 
 // ── atom: electron cloud, orbits, a (much enlarged) nucleus ─────────────────────
 function atom() {
   const group = new THREE.Group();
-  const cloud = new THREE.Mesh(
-    new THREE.SphereGeometry(0.45, 64, 32),
-    new THREE.ShaderMaterial({
-      transparent: true,
-      depthWrite: false,
-      vertexShader: `varying vec3 vN; varying vec3 vV;
-        void main(){ vec4 mv = modelViewMatrix * vec4(position, 1.0); vN = normalize(normalMatrix * normal); vV = normalize(-mv.xyz); gl_Position = projectionMatrix * mv; }`,
-      fragmentShader: `varying vec3 vN; varying vec3 vV;
-        void main(){ float f = clamp(dot(normalize(vN), normalize(vV)), 0.0, 1.0); float a = 0.05 + 0.32 * pow(f, 1.6); gl_FragColor = vec4(0.42, 0.62, 0.96, a); }`,
-    }),
+  group.add(new THREE.Mesh(new THREE.SphereGeometry(0.45, 48, 24), rimMaterial('0.55, 0.72, 1.0', 0.06, 0.34, 1.6, false)));
+  const core = instanced(
+    new THREE.SphereGeometry(0.028, 20, 14),
+    std('#ffffff', { roughness: 0.35 }),
+    [
+      [0.018, 0, 0],
+      [-0.016, 0.012, 0.01],
+      [-0.004, -0.018, -0.012],
+      [0.006, 0.014, -0.02],
+    ].map((p) => mat4(p)),
+    ['#f76707', '#ced4da', '#f76707', '#ced4da'],
   );
-  group.add(cloud);
-  const core = new THREE.Group();
-  const cg = new THREE.SphereGeometry(0.028, 24, 16);
-  [
-    ['#e8590c', 0.018, 0, 0],
-    ['#adb5bd', -0.016, 0.012, 0.01],
-    ['#e8590c', -0.004, -0.018, -0.012],
-    ['#adb5bd', 0.006, 0.014, -0.02],
-  ].forEach(([c, x, y, z]) => core.add(mesh(cg, std(c, { roughness: 0.35 }), x, y, z)));
   group.add(core);
-  const ringMat = new THREE.MeshBasicMaterial({ color: '#5c7cfa', transparent: true, opacity: 0.55 });
-  const eMat = std('#1c4fd9', { roughness: 0.3 });
   const orbits = [
     { r: 0.24, tilt: [1.2, 0.2, 0], speed: 1.6 },
     { r: 0.38, tilt: [0.5, -0.6, 0.3], speed: 1.1 },
     { r: 0.38, tilt: [-0.7, 0.5, -0.2], speed: 0.9 },
-  ].map((o) => {
-    const g = new THREE.Group();
-    g.rotation.set(...o.tilt);
-    g.add(new THREE.Mesh(new THREE.TorusGeometry(o.r, 0.0035, 8, 128), ringMat));
-    const e = mesh(new THREE.SphereGeometry(0.026, 20, 14), eMat);
-    g.add(e);
-    group.add(g);
-    return { ...o, e };
-  });
-  return {
-    group,
-    tick(t) {
-      for (const [i, o] of orbits.entries()) {
-        const a = t * o.speed + i * 2.1;
-        o.e.position.set(Math.cos(a) * o.r, Math.sin(a) * o.r, 0);
-      }
-      core.rotation.y = t * 0.4;
-    },
+  ].map((o) => ({ ...o, q: new THREE.Quaternion().setFromEuler(new THREE.Euler(...o.tilt)) }));
+  const rings = merged(orbits.map((o) => [new THREE.TorusGeometry(o.r, 0.004, 6, 128), mat4([0, 0, 0], o.tilt)]));
+  group.add(new THREE.Mesh(rings, new THREE.MeshBasicMaterial({ color: '#a5b4fc', transparent: true, opacity: 0.75 })));
+  const electrons = new THREE.InstancedMesh(
+    new THREE.SphereGeometry(0.028, 20, 14),
+    std('#74c0fc', { roughness: 0.3, emissive: new THREE.Color('#1d4a80') }),
+    orbits.length,
+  );
+  electrons.boundingSphere = new THREE.Sphere(V(0, 0, 0), 0.42);
+  group.add(electrons);
+  const p = new THREE.Vector3();
+  const m = new THREE.Matrix4();
+  const tick = (t) => {
+    for (const [i, o] of orbits.entries()) {
+      const a = t * o.speed + i * 2.1;
+      p.set(Math.cos(a) * o.r, Math.sin(a) * o.r, 0).applyQuaternion(o.q);
+      electrons.setMatrixAt(i, m.makeTranslation(p.x, p.y, p.z));
+    }
+    electrons.instanceMatrix.needsUpdate = true;
+    core.rotation.y = t * 0.4;
   };
+  tick(0);
+  return { group, tick };
 }
 
 // ── DNA: a double helix lying along x ───────────────────────────────────────────
@@ -144,16 +204,17 @@ function dna() {
   const gap = 2.2; // the two backbones are not opposite: that makes the major and minor grooves
   const a = strand(0);
   const b = strand(gap);
-  helix.add(new THREE.Mesh(new THREE.TubeGeometry(a, 480, 0.012, 10), std('#1c6fd9', { roughness: 0.35 })));
-  helix.add(new THREE.Mesh(new THREE.TubeGeometry(b, 480, 0.012, 10), std('#e8590c', { roughness: 0.35 })));
+  helix.add(new THREE.Mesh(new THREE.TubeGeometry(a, 360, 0.012, 8), std('#4dabf7', { roughness: 0.35 })));
+  helix.add(new THREE.Mesh(new THREE.TubeGeometry(b, 360, 0.012, 8), std('#ff922b', { roughness: 0.35 })));
   const pairs = [
-    ['#f59f00', '#12b886'],
-    ['#12b886', '#f59f00'],
-    ['#ae3ec9', '#fa5252'],
-    ['#fa5252', '#ae3ec9'],
+    ['#ffd43b', '#63e6be'],
+    ['#63e6be', '#ffd43b'],
+    ['#e599f7', '#ff8787'],
+    ['#ff8787', '#e599f7'],
   ];
-  const rung = new THREE.CylinderGeometry(0.0065, 0.0065, 1, 8);
   const n = turns * 10;
+  const matrices = [];
+  const colors = [];
   for (let i = 0; i < n; i++) {
     const s = (i + 0.5) / n;
     const pa = a.getPointAt(s);
@@ -161,18 +222,10 @@ function dna() {
     pb.x = pa.x;
     const mid = pa.clone().lerp(pb, 0.5);
     const [ca, cb] = pairs[(i * 7) % 4];
-    for (const [from, col] of [
-      [pa, ca],
-      [pb, cb],
-    ]) {
-      const m = new THREE.Mesh(rung, std(col, { roughness: 0.45 }));
-      const len = from.distanceTo(mid);
-      m.scale.y = len;
-      m.position.copy(from).lerp(mid, 0.5);
-      m.quaternion.setFromUnitVectors(V(0, 1, 0), mid.clone().sub(from).normalize());
-      helix.add(m);
-    }
+    matrices.push(rod(pa, mid, 0.0065), rod(pb, mid, 0.0065));
+    colors.push(ca, cb);
   }
+  helix.add(instanced(new THREE.CylinderGeometry(1, 1, 1, 8), std('#ffffff', { roughness: 0.45 }), matrices, colors));
   group.add(helix);
   group.rotation.z = 0.12;
   return { group, tick: (t) => (helix.rotation.x = t * 0.45) };
@@ -193,7 +246,7 @@ function rbc() {
     const p = i / 40;
     pts.push(new THREE.Vector2(Math.max(1e-4, p * R), -z(p)));
   }
-  const geo = new THREE.LatheGeometry(pts, 96);
+  const geo = new THREE.LatheGeometry(pts, 72);
   geo.computeVertexNormals();
   const mat = new THREE.MeshPhysicalMaterial({
     color: '#c92a2a',
@@ -226,74 +279,75 @@ function rbc() {
 // ── ant ─────────────────────────────────────────────────────────────────────────
 function ant() {
   const group = new THREE.Group();
-  const body = std('#4a1f12', { roughness: 0.3 });
+  const ball = () => new THREE.SphereGeometry(1, 32, 20);
+  // gaster, petiole, thorax, head
+  const body = merged(
+    [
+      [0.17, 0.12, 0.12, -0.24, 0.03, 0, 0.15],
+      [0.035, 0.04, 0.035, -0.06, 0.0, 0, 0],
+      [0.13, 0.06, 0.06, 0.08, 0.02, 0, -0.25],
+      [0.085, 0.075, 0.07, 0.27, 0.06, 0, 0],
+    ].map(([rx, ry, rz, x, y, zz, rot]) => [ball(), mat4([x, y, zz], [0, 0, rot], [rx, ry, rz])]),
+  );
+  group.add(new THREE.Mesh(body, std('#4a1f12', { roughness: 0.3 })));
   const limb = std('#5c2a18', { roughness: 0.4 });
-  const ell = (rx, ry, rz, x, y, zz, rot = 0) => {
-    const m = mesh(new THREE.SphereGeometry(1, 32, 20), body, x, y, zz);
-    m.scale.set(rx, ry, rz);
-    m.rotation.z = rot;
-    group.add(m);
-    return m;
-  };
-  ell(0.17, 0.12, 0.12, -0.24, 0.03, 0, 0.15); // gaster
-  ell(0.035, 0.04, 0.035, -0.06, 0.0, 0); // petiole
-  ell(0.13, 0.06, 0.06, 0.08, 0.02, 0, -0.25); // thorax
-  ell(0.085, 0.075, 0.07, 0.27, 0.06, 0); // head
-  const seg = (a, b, r = 0.0085) => {
-    const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 1, 8), limb);
-    m.scale.y = a.distanceTo(b);
-    m.position.copy(a).lerp(b, 0.5);
-    m.quaternion.setFromUnitVectors(V(0, 1, 0), b.clone().sub(a).normalize());
-    return m;
-  };
-  const legs = [];
-  [0.02, 0.09, 0.16].forEach((x, i) => {
-    for (const side of [1, -1]) {
-      const leg = new THREE.Group();
-      leg.position.set(x, -0.01, side * 0.03);
-      const knee = V((i - 1) * 0.07, 0.08, side * 0.15);
-      const foot = V((i - 1) * 0.16, -0.15, side * 0.25);
-      leg.add(seg(V(0, 0, 0), knee), seg(knee, foot, 0.007));
-      group.add(leg);
-      legs.push({ leg, phase: (i + (side > 0 ? 0 : 1)) % 2 });
-    }
-  });
+  const unit = new THREE.CylinderGeometry(1, 1, 1, 8);
+  const antennae = [];
   for (const side of [1, -1]) {
     const base = V(0.33, 0.1, side * 0.03);
     const elbow = V(0.38, 0.22, side * 0.08);
     const tip = V(0.5, 0.16, side * 0.14);
-    group.add(seg(base, elbow, 0.006), seg(elbow, tip, 0.005));
+    antennae.push([unit.clone(), rod(base, elbow, 0.006)], [unit.clone(), rod(elbow, tip, 0.005)]);
   }
-  group.position.y = 0.02;
-  group.rotation.y = -0.35;
-  return {
-    group,
-    tick(t) {
-      for (const { leg, phase } of legs) leg.rotation.y = Math.sin(t * 7 + phase * Math.PI) * 0.18;
-    },
+  group.add(new THREE.Mesh(merged(antennae), limb));
+  // six legs of two parts each, one instanced mesh; each leg swings about its hip
+  const legs = [];
+  [0.02, 0.09, 0.16].forEach((x, i) => {
+    for (const side of [1, -1]) {
+      const knee = V((i - 1) * 0.07, 0.08, side * 0.15);
+      const foot = V((i - 1) * 0.16, -0.15, side * 0.25);
+      legs.push({
+        hip: V(x, -0.01, side * 0.03),
+        parts: [rod(V(0, 0, 0), knee, 0.0085), rod(knee, foot, 0.007)],
+        phase: (i + (side > 0 ? 0 : 1)) % 2,
+      });
+    }
+  });
+  const legMesh = new THREE.InstancedMesh(unit, limb, legs.length * 2);
+  legMesh.boundingSphere = new THREE.Sphere(V(0.09, -0.05, 0), 0.35);
+  group.add(legMesh);
+  const hipM = new THREE.Matrix4();
+  const rot = new THREE.Matrix4();
+  const out = new THREE.Matrix4();
+  const tick = (t) => {
+    legs.forEach(({ hip, parts, phase }, i) => {
+      rot.makeRotationY(Math.sin(t * 7 + phase * Math.PI) * 0.18);
+      hipM.makeTranslation(hip.x, hip.y, hip.z).multiply(rot);
+      parts.forEach((p, j) => legMesh.setMatrixAt(i * 2 + j, out.multiplyMatrices(hipM, p)));
+    });
+    legMesh.instanceMatrix.needsUpdate = true;
   };
+  tick(0);
+  group.rotation.y = -0.35;
+  return { group, tick };
 }
 
 // ── cricket ball ────────────────────────────────────────────────────────────────
 function ball() {
   const group = new THREE.Group();
   const leather = new THREE.MeshPhysicalMaterial({ color: '#b3261e', roughness: 0.5, clearcoat: 0.35, clearcoatRoughness: 0.4 });
-  const ballMesh = mesh(new THREE.SphereGeometry(0.486, 64, 40), leather);
-  group.add(ballMesh);
+  group.add(mesh(new THREE.SphereGeometry(0.486, 48, 32), leather));
   const seam = new THREE.Group();
-  const thread = std('#f1f3f5', { roughness: 0.7 });
-  seam.add(new THREE.Mesh(new THREE.TorusGeometry(0.487, 0.009, 8, 160), std('#8f1d17', { roughness: 0.6 })));
-  const stitch = new THREE.BoxGeometry(0.02, 0.006, 0.007);
+  seam.add(new THREE.Mesh(new THREE.TorusGeometry(0.487, 0.009, 6, 128), std('#8f1d17', { roughness: 0.6 })));
+  const stitches = [];
   for (const lat of [-0.045, 0.045]) {
     for (let i = 0; i < 72; i++) {
       const a = (i / 72) * Math.PI * 2;
       const r = 0.487 * Math.cos(lat);
-      const m = new THREE.Mesh(stitch, thread);
-      m.position.set(Math.cos(a) * r, Math.sin(a) * r, 0.487 * Math.sin(lat));
-      m.rotation.z = a + Math.PI / 2 + (lat > 0 ? 0.5 : -0.5);
-      seam.add(m);
+      stitches.push(mat4([Math.cos(a) * r, Math.sin(a) * r, 0.487 * Math.sin(lat)], [0, 0, a + Math.PI / 2 + (lat > 0 ? 0.5 : -0.5)]));
     }
   }
+  seam.add(instanced(new THREE.BoxGeometry(0.02, 0.006, 0.007), std('#f1f3f5', { roughness: 0.7 }), stitches));
   seam.rotation.set(0.9, 0.5, 0);
   group.add(seam);
   return { group, tick: (t) => (group.rotation.y = t * 0.35) };
@@ -303,39 +357,51 @@ function ball() {
 function student() {
   const group = new THREE.Group();
   const figure = new THREE.Group();
-  const skin = std('#b98260', { roughness: 0.6 });
-  const shirt = std('#f4f6fa', { roughness: 0.7 });
-  const trousers = std('#2b3a55', { roughness: 0.7 });
-  const dark = std('#1d1d1f', { roughness: 0.5 });
-  const capsule = (r, len, mat, x, y, zz) => mesh(new THREE.CapsuleGeometry(r, len, 8, 16), mat, x, y, zz);
-  // metres, feet at y = 0
-  for (const s of [1, -1]) {
-    figure.add(mesh(new THREE.BoxGeometry(0.085, 0.055, 0.2), dark, s * 0.075, 0.028, 0.03));
-    figure.add(capsule(0.058, 0.62, trousers, s * 0.075, 0.42, 0));
-  }
-  figure.add(capsule(0.12, 0.08, trousers, 0, 0.8, 0)).children;
-  const torso = capsule(0.13, 0.26, shirt, 0, 1.0, 0);
-  torso.scale.set(1.15, 1, 0.78);
-  figure.add(torso);
-  figure.add(mesh(new THREE.CylinderGeometry(0.045, 0.05, 0.08, 16), skin, 0, 1.25, 0));
-  const head = new THREE.Group();
-  head.position.set(0, 1.385, 0);
-  head.add(mesh(new THREE.SphereGeometry(0.105, 40, 28), skin));
-  const hair = mesh(new THREE.SphereGeometry(0.112, 40, 20, 0, Math.PI * 2, 0, Math.PI * 0.52), dark, 0, 0.012, -0.008);
-  hair.rotation.x = -0.25;
-  head.add(hair);
-  for (const s of [1, -1]) head.add(mesh(new THREE.SphereGeometry(0.012, 12, 8), dark, s * 0.036, 0.012, 0.094));
-  figure.add(head);
-  const arms = [1, -1].map((s) => {
-    const pivot = new THREE.Group();
-    pivot.position.set(s * 0.185, 1.2, 0);
-    pivot.add(capsule(0.046, 0.16, shirt, 0, -0.1, 0));
-    pivot.add(capsule(0.038, 0.17, skin, 0, -0.31, 0));
-    pivot.add(mesh(new THREE.SphereGeometry(0.044, 16, 12), skin, 0, -0.43, 0));
-    pivot.rotation.z = s * 0.08;
-    figure.add(pivot);
-    return pivot;
-  });
+  const capsule = (r, len) => new THREE.CapsuleGeometry(r, len, 8, 16);
+  const sphere = (r, w = 16, h = 12, ...rest) => new THREE.SphereGeometry(r, w, h, ...rest);
+  // metres, feet at y = 0. Every part is still except the right arm, so the rest is one mesh per material.
+  const leftArm = mat4([-0.185, 1.2, 0], [0, 0, -0.08]);
+  const inArm = (m, x, y) => m.clone().multiply(mat4([x, y, 0]));
+  const head = [0, 1.385, 0];
+  const dark = [
+    ...[1, -1].map((s) => [new THREE.BoxGeometry(0.085, 0.055, 0.2), mat4([s * 0.075, 0.028, 0.03])]),
+    [sphere(0.112, 32, 16, 0, Math.PI * 2, 0, Math.PI * 0.52), mat4([0, head[1] + 0.012, -0.008], [-0.25, 0, 0])],
+    ...[1, -1].map((s) => [sphere(0.012, 12, 8), mat4([s * 0.036, head[1] + 0.012, 0.094])]),
+  ];
+  const trousers = [...[1, -1].map((s) => [capsule(0.058, 0.62), mat4([s * 0.075, 0.42, 0])]), [capsule(0.12, 0.08), mat4([0, 0.8, 0])]];
+  const shirt = [
+    [capsule(0.13, 0.26), mat4([0, 1.0, 0], [0, 0, 0], [1.15, 1, 0.78])],
+    [capsule(0.046, 0.16), inArm(leftArm, 0, -0.1)],
+  ];
+  const skin = [
+    [new THREE.CylinderGeometry(0.045, 0.05, 0.08, 16), mat4([0, 1.25, 0])],
+    [sphere(0.105, 32, 24), mat4(head)],
+    [capsule(0.038, 0.17), inArm(leftArm, 0, -0.31)],
+    [sphere(0.044), inArm(leftArm, 0, -0.43)],
+  ];
+  const skinMat = std('#b98260', { roughness: 0.6 });
+  const shirtMat = std('#f4f6fa', { roughness: 0.7 });
+  figure.add(
+    new THREE.Mesh(merged(dark), std('#1d1d1f', { roughness: 0.5 })),
+    new THREE.Mesh(merged(trousers), std('#2b3a55', { roughness: 0.7 })),
+    new THREE.Mesh(merged(shirt), shirtMat),
+    new THREE.Mesh(merged(skin), skinMat),
+  );
+  // the right arm waves
+  const arm = new THREE.Group();
+  arm.position.set(0.185, 1.2, 0);
+  arm.add(
+    new THREE.Mesh(merged([[capsule(0.046, 0.16), mat4([0, -0.1, 0])]]), shirtMat),
+    new THREE.Mesh(
+      merged([
+        [capsule(0.038, 0.17), mat4([0, -0.31, 0])],
+        [sphere(0.044), mat4([0, -0.43, 0])],
+      ]),
+      skinMat,
+    ),
+  );
+  arm.rotation.z = 0.08;
+  figure.add(arm);
   figure.scale.setScalar(1 / 0.62); // model units: the framing width (0.62 m) is 1
   figure.position.y = -0.75 / 0.62; // centre the 1.5 m figure (position is in model units, not metres)
   group.add(figure);
@@ -345,7 +411,7 @@ function student() {
     group,
     tick(t, dt, focus) {
       wave += ((focus ? 1 : 0) - wave) * Math.min(1, dt * 4);
-      arms[0].rotation.z = 0.08 + wave * (2.5 + Math.sin(t * 6) * 0.28); // a friendly wave while we look at the student
+      arm.rotation.z = 0.08 + wave * (2.5 + Math.sin(t * 6) * 0.28); // a friendly wave while we look at the student
       figure.position.y = -0.75 / 0.62 + Math.sin(t * 2) * 0.004;
     },
   };
@@ -354,7 +420,7 @@ function student() {
 // ── quark: no measured size, only an upper limit (smaller than 1 attometre) ────
 function quark() {
   const group = new THREE.Group();
-  const R = 0.357; // the grey circle is 1 am across; the frame is 1.4 am
+  const R = 0.357; // the dashed circle is 1 am across; the frame is 1.4 am
   const pts = [];
   for (let i = 0; i <= 128; i++) {
     const a = (i / 128) * Math.PI * 2;
@@ -362,14 +428,14 @@ function quark() {
   }
   const ring = new THREE.Line(
     new THREE.BufferGeometry().setFromPoints(pts),
-    new THREE.LineDashedMaterial({ color: '#868e96', dashSize: 0.03, gapSize: 0.02 }),
+    new THREE.LineDashedMaterial({ color: '#e5dbff', dashSize: 0.03, gapSize: 0.02 }),
   );
   ring.computeLineDistances();
   group.add(ring);
   const q = new THREE.Group();
   q.add(
-    glow('#ff6b6b', 0.28, 0.55),
-    mesh(new THREE.SphereGeometry(0.04, 24, 16), std('#e03131', { roughness: 0.3, emissive: new THREE.Color('#5c0a0a') })),
+    glow('#ff8787', 0.28, 0.6),
+    mesh(new THREE.SphereGeometry(0.04, 24, 16), std('#f03e3e', { roughness: 0.3, emissive: new THREE.Color('#5c0a0a') })),
   );
   group.add(q);
   // Drawn as a point because no size has ever been measured for it.
@@ -379,7 +445,7 @@ function quark() {
 // ── mango (about 10 cm) ─────────────────────────────────────────────────────────
 function mango() {
   const group = new THREE.Group();
-  const geo = new THREE.SphereGeometry(0.5, 72, 48);
+  const geo = new THREE.SphereGeometry(0.5, 64, 40);
   const pos = geo.getAttribute('position');
   const col = [];
   const green = new THREE.Color('#74b816');
@@ -428,34 +494,34 @@ function bus() {
   const b = new THREE.Group();
   const L = 12;
   const W = 2.5;
-  const red = std('#c92a2a', { roughness: 0.45 });
-  const cream = std('#f3ead2', { roughness: 0.5 });
-  const glass = std('#2f3a46', { roughness: 0.15, metalness: 0.2 });
-  const tyre = std('#1e1f22', { roughness: 0.8 });
-  const hub = std('#adb5bd', { roughness: 0.4, metalness: 0.5 });
-  b.add(mesh(new RoundedBoxGeometry(L, 1.25, W, 3, 0.15), red, 0, 1.05, 0));
-  b.add(mesh(new RoundedBoxGeometry(L, 1.5, W - 0.02, 3, 0.2), cream, 0, 2.4, 0));
-  b.add(mesh(new RoundedBoxGeometry(L - 0.25, 0.14, W - 0.2, 2, 0.05), std('#ced4da', { roughness: 0.6 }), 0, 3.2, 0));
-  b.add(mesh(new THREE.BoxGeometry(L + 0.02, 0.12, W + 0.02), std('#2b8a3e', { roughness: 0.5 }), 0, 1.72, 0)); // stripe
+  const box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
+  const at = (x, y, z, r) => mat4([x, y, z], r);
+  const glass = [];
   for (let i = 0; i < 8; i++) {
     const x = -L / 2 + 1.3 + i * 1.2;
-    for (const side of [1, -1]) b.add(mesh(new THREE.BoxGeometry(1.0, 0.85, 0.04), glass, x, 2.45, side * (W / 2)));
+    for (const side of [1, -1]) glass.push([box(1.0, 0.85, 0.04), at(x, 2.45, side * (W / 2))]);
   }
-  b.add(mesh(new THREE.BoxGeometry(0.04, 1.1, W - 0.3), glass, L / 2, 2.35, 0)); // windscreen
-  b.add(mesh(new THREE.BoxGeometry(0.8, 1.9, 0.04), glass, L / 2 - 1.1, 1.85, W / 2)); // door
-  for (const side of [0.8, -0.8])
-    b.add(mesh(new THREE.BoxGeometry(0.05, 0.18, 0.35), std('#fff4c2', { emissive: new THREE.Color('#5c4a00') }), L / 2 + 0.01, 0.85, side));
-  const wheelGeo = new THREE.CylinderGeometry(0.5, 0.5, 0.32, 28);
-  const hubGeo = new THREE.CylinderGeometry(0.22, 0.22, 0.34, 20);
+  glass.push([box(0.04, 1.1, W - 0.3), at(L / 2, 2.35, 0)]); // windscreen
+  glass.push([box(0.8, 1.9, 0.04), at(L / 2 - 1.1, 1.85, W / 2)]); // door
+  const tyres = [];
+  const hubs = [];
   for (const x of [L / 2 - 2.2, -L / 2 + 2.6]) {
     for (const side of [1, -1]) {
-      const w = mesh(wheelGeo, tyre, x, 0.5, side * (W / 2 - 0.12));
-      w.rotation.x = Math.PI / 2;
-      const h = mesh(hubGeo, hub, x, 0.5, side * (W / 2 - 0.1));
-      h.rotation.x = Math.PI / 2;
-      b.add(w, h);
+      tyres.push([new THREE.CylinderGeometry(0.5, 0.5, 0.32, 28), at(x, 0.5, side * (W / 2 - 0.12), [Math.PI / 2, 0, 0])]);
+      hubs.push([new THREE.CylinderGeometry(0.22, 0.22, 0.34, 20), at(x, 0.5, side * (W / 2 - 0.1), [Math.PI / 2, 0, 0])]);
     }
   }
+  const parts = [
+    [[[new RoundedBoxGeometry(L, 1.25, W, 3, 0.15), at(0, 1.05, 0)]], std('#c92a2a', { roughness: 0.45 })],
+    [[[new RoundedBoxGeometry(L, 1.5, W - 0.02, 3, 0.2), at(0, 2.4, 0)]], std('#f3ead2', { roughness: 0.5 })],
+    [[[new RoundedBoxGeometry(L - 0.25, 0.14, W - 0.2, 2, 0.05), at(0, 3.2, 0)]], std('#ced4da', { roughness: 0.6 })],
+    [[[box(L + 0.02, 0.12, W + 0.02), at(0, 1.72, 0)]], std('#2b8a3e', { roughness: 0.5 })], // stripe
+    [glass, std('#2f3a46', { roughness: 0.15, metalness: 0.2 })],
+    [[0.8, -0.8].map((s) => [box(0.05, 0.18, 0.35), at(L / 2 + 0.01, 0.85, s)]), std('#fff4c2', { emissive: new THREE.Color('#5c4a00') })],
+    [tyres, std('#1e1f22', { roughness: 0.8 })],
+    [hubs, std('#adb5bd', { roughness: 0.4, metalness: 0.5 })],
+  ];
+  for (const [list, mat] of parts) b.add(new THREE.Mesh(merged(list), mat));
   b.scale.setScalar(1 / 13); // model units: the framing width (13 m) is 1
   b.position.y = -1.65 / 13; // centre the 3.3 m tall bus (position is in model units, not metres)
   group.add(b);
@@ -465,43 +531,43 @@ function bus() {
 
 // ── football field (about 105 m × 68 m), as a small map block ───────────────────
 function fieldTexture() {
-  const PX = 10; // pixels per metre
   const LEN = 115;
   const WID = 78;
   const c = document.createElement('canvas');
-  c.width = LEN * PX;
-  c.height = WID * PX;
+  c.width = 1024;
+  c.height = 512;
   const g = c.getContext('2d');
+  g.scale(c.width / LEN, c.height / WID); // draw in metres: the texture is stretched back onto the 115 × 78 m plane
   for (let i = 0; i * 7.5 < LEN; i++) {
-    g.fillStyle = i % 2 ? '#6cbf5f' : '#62b356';
-    g.fillRect(i * 7.5 * PX, 0, 7.5 * PX + 1, WID * PX);
+    g.fillStyle = i % 2 ? '#6cbf5f' : '#5fb253';
+    g.fillRect(i * 7.5, 0, 7.6, WID);
   }
-  const ox = 5 * PX;
-  const oy = 5 * PX;
-  const m = (v) => v * PX;
+  const ox = 5;
+  const oy = 5;
   g.strokeStyle = '#ffffff';
-  g.lineWidth = 2.2;
-  g.strokeRect(ox, oy, m(105), m(68));
-  g.beginPath();
-  g.moveTo(ox + m(52.5), oy);
-  g.lineTo(ox + m(52.5), oy + m(68));
-  g.stroke();
-  g.beginPath();
-  g.arc(ox + m(52.5), oy + m(34), m(9.15), 0, Math.PI * 2);
-  g.stroke();
-  for (const end of [0, 1]) {
-    const x0 = end ? ox + m(105) : ox;
-    const dir = end ? -1 : 1;
-    g.strokeRect(Math.min(x0, x0 + dir * m(16.5)), oy + m(34 - 20.16), m(16.5), m(40.32));
-    g.strokeRect(Math.min(x0, x0 + dir * m(5.5)), oy + m(34 - 9.16), m(5.5), m(18.32));
+  g.lineWidth = 0.24;
+  const circle = (x, y, r, a0 = 0, a1 = Math.PI * 2) => {
     g.beginPath();
-    g.arc(x0 + dir * m(11), oy + m(34), m(9.15), end ? Math.PI - 0.93 : -0.93, end ? Math.PI + 0.93 : 0.93);
+    g.arc(x, y, r, a0, a1);
     g.stroke();
+  };
+  g.strokeRect(ox, oy, 105, 68);
+  g.beginPath();
+  g.moveTo(ox + 52.5, oy);
+  g.lineTo(ox + 52.5, oy + 68);
+  g.stroke();
+  circle(ox + 52.5, oy + 34, 9.15);
+  for (const end of [0, 1]) {
+    const x0 = end ? ox + 105 : ox;
+    const dir = end ? -1 : 1;
+    g.strokeRect(Math.min(x0, x0 + dir * 16.5), oy + 34 - 20.16, 16.5, 40.32);
+    g.strokeRect(Math.min(x0, x0 + dir * 5.5), oy + 34 - 9.16, 5.5, 18.32);
+    circle(x0 + dir * 11, oy + 34, 9.15, end ? Math.PI - 0.93 : -0.93, end ? Math.PI + 0.93 : 0.93);
   }
   g.fillStyle = '#ffffff';
   for (const x of [11, 52.5, 94]) {
     g.beginPath();
-    g.arc(ox + m(x), oy + m(34), 3, 0, Math.PI * 2);
+    g.arc(ox + x, oy + 34, 0.32, 0, Math.PI * 2);
     g.fill();
   }
   const tex = new THREE.CanvasTexture(c);
@@ -523,14 +589,13 @@ function field() {
   );
   top.rotation.x = -Math.PI / 2;
   group.add(top);
-  const white = std('#ffffff', { roughness: 0.5 });
-  const post = new THREE.BoxGeometry(0.25 * u, 2.44 * u, 0.25 * u);
-  const bar = new THREE.BoxGeometry(0.25 * u, 0.25 * u, 7.32 * u);
+  const goals = [];
   for (const end of [-1, 1]) {
     const x = end * 52.5 * u;
-    for (const zz of [-3.66, 3.66]) group.add(mesh(post, white, x, 1.22 * u, zz * u));
-    group.add(mesh(bar, white, x, 2.44 * u, 0));
+    for (const zz of [-3.66, 3.66]) goals.push([new THREE.BoxGeometry(0.25 * u, 2.44 * u, 0.25 * u), mat4([x, 1.22 * u, zz * u])]);
+    goals.push([new THREE.BoxGeometry(0.25 * u, 0.25 * u, 7.32 * u), mat4([x, 2.44 * u, 0])]);
   }
+  group.add(new THREE.Mesh(merged(goals), std('#ffffff', { roughness: 0.5 })));
   group.rotation.y = 0.12;
   return { group };
 }
@@ -542,55 +607,58 @@ function bridge() {
   const D = 0.6;
   const T = 0.03;
   const riverW = 6.3 / 8; // the river is about 6 km wide here; the model is 8 km across
-  const earth = std('#c8a97e', { roughness: 0.9 });
-  const block = mesh(new THREE.BoxGeometry(W, T, D), earth, 0, -T / 2, 0);
-  group.add(block);
-  const bank = std('#a9d18e', { roughness: 0.9 });
+  group.add(mesh(new THREE.BoxGeometry(W, T, D), std('#c8a97e', { roughness: 0.9 }), 0, -T / 2, 0));
   const bankW = (W - riverW) / 2;
-  for (const s of [1, -1]) group.add(mesh(new THREE.BoxGeometry(bankW, 0.002, D), bank, s * (riverW / 2 + bankW / 2), 0.001, 0));
-  group.add(mesh(new THREE.BoxGeometry(riverW, 0.001, D), std('#8ec5f5', { roughness: 0.35 }), 0, 0.0005, 0));
+  group.add(
+    new THREE.Mesh(
+      merged([1, -1].map((s) => [new THREE.BoxGeometry(bankW, 0.002, D), mat4([s * (riverW / 2 + bankW / 2), 0.001, 0])])),
+      std('#a9d18e', { roughness: 0.9 }),
+    ),
+  );
+  group.add(mesh(new THREE.BoxGeometry(riverW, 0.001, D), std('#5fa8e8', { roughness: 0.35 }), 0, 0.0005, 0));
   // sand bars, as on the real river
-  for (const [x, zz, sx, sz] of [
+  const bars = [
     [-0.12, -0.16, 0.16, 0.05],
     [0.18, 0.15, 0.12, 0.04],
-  ]) {
-    const bar = mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.0012, 40), std('#e9dcc0', { roughness: 0.95 }), x, 0.0011, zz);
-    bar.scale.set(sx, 1, sz);
-    group.add(bar);
-  }
+  ].map(([x, zz, sx, sz]) => [new THREE.CylinderGeometry(0.5, 0.5, 0.0012, 40), mat4([x, 0.0011, zz], [0, 0, 0], [sx, 1, sz])]);
+  group.add(new THREE.Mesh(merged(bars), std('#e9dcc0', { roughness: 0.95 })));
   const len = 6.15 / 8;
   const deckY = 0.016; // height exaggerated so it can be seen
-  const steel = std('#7d8792', { roughness: 0.45, metalness: 0.3 });
-  group.add(mesh(new THREE.BoxGeometry(len, 0.0035, 0.007), steel, 0, deckY, 0));
-  const pierGeo = new THREE.CylinderGeometry(0.0018, 0.0022, deckY, 8);
-  const concrete = std('#9aa3ab', { roughness: 0.8 });
-  for (let i = 0; i <= 41; i++) group.add(mesh(pierGeo, concrete, -len / 2 + (i / 41) * len, deckY / 2, 0));
+  group.add(mesh(new THREE.BoxGeometry(len, 0.0035, 0.007), std('#7d8792', { roughness: 0.45, metalness: 0.3 }), 0, deckY, 0));
+  const piers = [];
+  for (let i = 0; i <= 41; i++) piers.push(mat4([-len / 2 + (i / 41) * len, deckY / 2, 0]));
+  group.add(instanced(new THREE.CylinderGeometry(0.0018, 0.0022, deckY, 8), std('#9aa3ab', { roughness: 0.8 }), piers));
   // truss on top: a zigzag of thin bars
   const tpts = [];
   for (let i = 0; i <= 82; i++) {
     const x = -len / 2 + (i / 82) * len;
     tpts.push(x, deckY + (i % 2 ? 0.006 : 0.0018), 0);
   }
-  const truss = new THREE.Line(
-    new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(tpts, 3)),
-    new THREE.LineBasicMaterial({ color: '#59636e' }),
+  group.add(
+    new THREE.Line(
+      new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(tpts, 3)),
+      new THREE.LineBasicMaterial({ color: '#59636e' }),
+    ),
   );
-  group.add(truss);
-  const road = std('#868e96', { roughness: 0.8 });
-  for (const s of [1, -1])
-    group.add(mesh(new THREE.BoxGeometry(bankW + (riverW - len) / 2, 0.003, 0.006), road, s * (W / 2 - (bankW + (riverW - len) / 2) / 2), 0.0035, 0));
+  const roadW = bankW + (riverW - len) / 2;
+  group.add(
+    new THREE.Mesh(
+      merged([1, -1].map((s) => [new THREE.BoxGeometry(roadW, 0.003, 0.006), mat4([s * (W / 2 - roadW / 2), 0.0035, 0])])),
+      std('#868e96', { roughness: 0.8 }),
+    ),
+  );
   return { group };
 }
 
 // ── Earth, with real country outlines and Bangladesh marked ─────────────────────
 function earthTexture() {
-  const W = 2048;
-  const H = 1024;
+  const W = 1024;
+  const H = 512;
   const c = document.createElement('canvas');
   c.width = W;
   c.height = H;
   const g = c.getContext('2d');
-  g.fillStyle = '#7cc0ef';
+  g.fillStyle = '#5aa9e6';
   g.fillRect(0, 0, W, H);
   // Outlines that cross the 180° line are unwrapped (no jumps) and drawn three times: −360°, 0, +360°.
   const path = (ring) => {
@@ -619,8 +687,8 @@ function earthTexture() {
     g.fillStyle = Math.abs(lat) > 62 ? '#eef2f5' : '#a7d48c';
     g.fill();
   }
-  g.lineWidth = 1.2;
-  g.strokeStyle = 'rgba(70, 110, 60, 0.35)';
+  g.lineWidth = 0.7;
+  g.strokeStyle = 'rgba(70, 110, 60, 0.4)';
   for (const ring of LAND) {
     path(ring);
     g.stroke();
@@ -629,7 +697,7 @@ function earthTexture() {
     path(ring);
     g.fillStyle = '#2b8a3e';
     g.fill();
-    g.lineWidth = 1.5;
+    g.lineWidth = 1;
     g.strokeStyle = '#1b5e20';
     g.stroke();
   }
@@ -644,22 +712,10 @@ function earth() {
   const globe = new THREE.Group();
   globe.rotation.z = -0.41; // axial tilt, 23.4°
   const r = 0.49;
-  const sphere = mesh(new THREE.SphereGeometry(r, 96, 64), new THREE.MeshStandardMaterial({ map: earthTexture(), roughness: 0.75 }));
+  const sphere = mesh(new THREE.SphereGeometry(r, 64, 48), new THREE.MeshStandardMaterial({ map: earthTexture(), roughness: 0.75 }));
   globe.add(sphere);
   group.add(globe);
-  group.add(
-    new THREE.Mesh(
-      new THREE.SphereGeometry(r * 1.03, 64, 32),
-      new THREE.ShaderMaterial({
-        transparent: true,
-        depthWrite: false,
-        vertexShader: `varying vec3 vN; varying vec3 vV;
-          void main(){ vec4 mv = modelViewMatrix * vec4(position, 1.0); vN = normalize(normalMatrix * normal); vV = normalize(-mv.xyz); gl_Position = projectionMatrix * mv; }`,
-        fragmentShader: `varying vec3 vN; varying vec3 vV;
-          void main(){ float f = 1.0 - clamp(dot(normalize(vN), normalize(vV)), 0.0, 1.0); gl_FragColor = vec4(0.45, 0.68, 0.98, 0.55 * pow(f, 2.5)); }`,
-      }),
-    ),
-  );
+  group.add(new THREE.Mesh(new THREE.SphereGeometry(r * 1.03, 48, 24), rimMaterial('0.45, 0.68, 0.98', 0, 0.6, 2.5, true)));
   // Bangladesh: 90.4° E, 23.7° N, in the sphere's own UV mapping
   const lon = 90.4;
   const lat = 23.7;
@@ -682,7 +738,7 @@ function sun() {
   const group = new THREE.Group();
   const uniforms = { uTime: { value: 0 } };
   const ball = new THREE.Mesh(
-    new THREE.SphereGeometry(0.435, 96, 64),
+    new THREE.SphereGeometry(0.435, 64, 48),
     new THREE.ShaderMaterial({
       uniforms,
       vertexShader: `varying vec3 vP; varying vec3 vN; varying vec3 vV;
@@ -713,32 +769,28 @@ function solar() {
   group.add(plane);
   const AU = [0.387, 0.723, 1, 1.524, 5.203, 9.537, 19.19, 30.07];
   const scale = 0.479 / 30.07;
-  const colors = ['#868e96', '#e8a33d', '#1c6fd9', '#d9480f', '#c8915a', '#d4b46a', '#4fb3bf', '#3b5bdb'];
-  const grey = new THREE.MeshBasicMaterial({ color: '#b8c0c8' });
-  const blue = new THREE.MeshBasicMaterial({ color: '#1c6fd9' });
-  AU.forEach((a, i) => {
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(a * scale, i === 2 ? 0.0016 : 0.0009, 6, 256), i === 2 ? blue : grey);
-    ring.rotation.x = Math.PI / 2;
-    plane.add(ring);
-  });
+  const colors = ['#ced4da', '#ffc078', '#4dabf7', '#ff6b3d', '#e0a872', '#e8cc8a', '#66d9e8', '#748ffc'];
+  const ring = (a, i) => [new THREE.TorusGeometry(a * scale, i === 2 ? 0.0018 : 0.001, 6, 192), mat4([0, 0, 0], [Math.PI / 2, 0, 0])];
+  plane.add(new THREE.Mesh(merged(AU.flatMap((a, i) => (i === 2 ? [] : [ring(a, i)]))), new THREE.MeshBasicMaterial({ color: '#9aa6b8' })));
+  plane.add(new THREE.Mesh(merged([ring(AU[2], 2)]), new THREE.MeshBasicMaterial({ color: '#4dabf7' })));
   plane.add(glow('#ffa94d', 0.05, 0.9), mesh(new THREE.SphereGeometry(0.006, 16, 12), new THREE.MeshBasicMaterial({ color: '#fab005' })));
   const pos = new Float32Array(AU.length * 3);
   const col = [];
-  colors.forEach((c) => col.push(...new THREE.Color(c).toArray()));
+  for (const c of colors) col.push(...new THREE.Color(c).toArray());
   const planets = points(Array.from(pos), col, 7);
   plane.add(planets);
   const phase = AU.map((_, i) => i * 1.7);
-  return {
-    group,
-    tick(t) {
-      const p = planets.geometry.getAttribute('position');
-      AU.forEach((a, i) => {
-        const ang = phase[i] + t * 0.9 * a ** -1.5;
-        p.setXYZ(i, Math.cos(ang) * a * scale, 0, Math.sin(ang) * a * scale);
-      });
-      p.needsUpdate = true;
-    },
+  const tick = (t) => {
+    const p = planets.geometry.getAttribute('position');
+    AU.forEach((a, i) => {
+      const ang = phase[i] + t * 0.9 * a ** -1.5;
+      p.setXYZ(i, Math.cos(ang) * a * scale, 0, Math.sin(ang) * a * scale);
+    });
+    p.needsUpdate = true;
   };
+  tick(0);
+  planets.geometry.boundingSphere = new THREE.Sphere(V(0, 0, 0), 0.5);
+  return { group, tick };
 }
 
 // ── the nearest star: the Sun and Proxima Centauri, 4.2 light-years apart ───────
@@ -750,11 +802,11 @@ function star() {
   sunDot.add(glow('#ffa94d', 0.07, 0.8), mesh(new THREE.SphereGeometry(0.009, 16, 12), new THREE.MeshBasicMaterial({ color: '#fab005' })));
   const proxima = new THREE.Group();
   proxima.position.x = d;
-  proxima.add(glow('#f03e3e', 0.06, 0.75), mesh(new THREE.SphereGeometry(0.0075, 16, 12), new THREE.MeshBasicMaterial({ color: '#e03131' })));
+  proxima.add(glow('#ff6b6b', 0.06, 0.8), mesh(new THREE.SphereGeometry(0.0075, 16, 12), new THREE.MeshBasicMaterial({ color: '#ff6b6b' })));
   group.add(sunDot, proxima);
   const line = new THREE.Line(
     new THREE.BufferGeometry().setFromPoints([V(-d + 0.02, 0, 0), V(d - 0.02, 0, 0)]),
-    new THREE.LineDashedMaterial({ color: '#868e96', dashSize: 0.018, gapSize: 0.012 }),
+    new THREE.LineDashedMaterial({ color: '#c5cdd9', dashSize: 0.018, gapSize: 0.012 }),
   );
   line.computeLineDistances();
   group.add(line);
@@ -789,8 +841,8 @@ function galaxy() {
   const gauss = () => Math.sqrt(-2 * Math.log(rnd() + 1e-9)) * Math.cos(2 * Math.PI * rnd());
   const R = 0.463;
   const arm = (r, k) => k * (Math.PI / 2) + Math.log(r / 0.02) / 0.3;
-  const c = (hex) => new THREE.Color(hex).toArray();
-  const palette = { blue: c('#4c6ef5'), blue2: c('#748ffc'), violet: c('#7950f2'), pink: c('#e64980'), warm: c('#f08c00'), cream: c('#e8a33d') };
+  const c = (hex) => new THREE.Color(hex).multiplyScalar(0.6).toArray();
+  const palette = { blue: c('#5c7cfa'), blue2: c('#91a7ff'), violet: c('#9775fa'), pink: c('#f06595'), warm: c('#ffa94d'), cream: c('#ffd8a8') };
   for (let i = 0; i < 14000; i++) {
     const r = 0.03 + (R - 0.03) * rnd() ** 0.75;
     const a = arm(r, i % 4) + gauss() * (0.22 + 0.25 * (1 - r / R));
@@ -804,7 +856,7 @@ function galaxy() {
     pos.push(Math.cos(a) * r, gauss() * 0.02, Math.sin(a) * r);
     col.push(...(rnd() < 0.6 ? palette.warm : palette.cream));
   }
-  disc.add(points(pos, col, 3));
+  disc.add(points(pos, col, 4.5, true));
   const core = glow('#ffa94d', 0.32, 0.6);
   disc.add(core);
   return {
@@ -812,7 +864,7 @@ function galaxy() {
     tick: (t) => (disc.rotation.y = t * 0.03),
     // Seen from inside (zooming out towards it), it is a field of stars; the core's glow fades in at the end.
     maxK: 30,
-    onView: (k) => (core.material.opacity = Math.min(1, Math.max(0, (6 - k) / 4))),
+    onView: (k) => (core.material.opacity = core.userData.strength * Math.min(1, Math.max(0, (6 - k) / 4))),
   };
 }
 
