@@ -83,5 +83,6 @@ Words the figure adds: ওজন (the brass weights), দৈর্ঘ্য ব�
   marks). The last question's answers overflowed their buttons (three lines in a two-line box) and several worked
   answers took four lines, moving the 3D view: all shortened. The Hooke question's late reveal could unhide the
   next question's answer if the student moved on within 0.6 s: it now checks it is still the same question. The
-  "∝" picture no longer makes its line taller.
+  "∝" picture no longer makes its line taller. The action's badge could sit on the T label (800×500, the poster):
+  the labels are placed again when it does, and T has spots farther out on wide frames.
 
