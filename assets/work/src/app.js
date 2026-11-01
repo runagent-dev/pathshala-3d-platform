@@ -4,7 +4,6 @@
 // book's দারোয়ান). A small calculator (tap steppers for F and s) works W = Fs out with units; a 5-question test.
 // The panel is the kit's clean sheet (one action, one result, one rule): docs/student-kit.md.
 import * as THREE from 'three';
-import { createArrow } from '@shared/arrow.js';
 import { createStage } from '@shared/stage.js';
 import { createTweener, ease } from '@shared/tween.js';
 import { createAction } from '@shared/student/action.js';
@@ -13,11 +12,13 @@ import { createAudio } from '@shared/student/audio.js';
 import { ICONS } from '@shared/student/icons.js';
 import { createQuiz } from '@shared/student/quiz.js';
 import { bindCleanSheet, buildStudentShell, cleanSheet } from '@shared/student/shell.js';
+import { boldArrow } from './arrows.js';
 import { fitPose } from './camera.js';
 import { CRATE, createCrate } from './crate.js';
 import { createFloor, onTape, TAPE, WALL } from './floor.js';
 import { createI18n, group } from './i18n.js';
 import { createPusher } from './person.js';
+import { createScenery } from './scenery.js';
 import {
   choicesFrom,
   clampF,
@@ -54,6 +55,8 @@ export const DEFAULTS = {
 };
 
 const COLORS = { F: '#ff6a13', s: '#1c6fd9', d: '#5f6b7a', W: '#237a35' };
+// the labels' text in the same hues, dark enough to read on their white chips (at least 4.5 : 1)
+const INK = { F: '#c2410c', s: '#1a5fbd', d: '#4f5967' };
 const { L, H } = CRATE;
 const HAND = { x: 0.4, y: 0.84, z: 0.17 }; // the palms on the crate's back, in the person's frame
 const PALM = 0.012; // between the person's reach and the crate's back face
@@ -119,30 +122,17 @@ export function createApp(root, options = {}) {
   };
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
-  const stage = createStage(ui.canvasHost, { fov: 30, near: 0.05, far: 80, environment: 'studio-light' });
+  const stage = createStage(ui.canvasHost, { fov: 30, near: 0.05, far: 80, environment: 'studio-light', environmentIntensity: 0.45 });
   const { camera, controls, scene } = stage;
   controls.minDistance = 1;
   controls.maxDistance = 30;
   controls.enablePan = false;
   controls.enableRotate = false;
-  // a vivid backdrop: deep blue at the top to turquoise at the floor (the orange F reads on it, the blue s on the floor)
-  if (o.bg !== 'transparent') {
-    const c = document.createElement('canvas');
-    c.width = 8;
-    c.height = 256;
-    const ctx = c.getContext('2d');
-    const g = ctx.createLinearGradient(0, 0, 0, 256);
-    g.addColorStop(0, '#13296b');
-    g.addColorStop(0.55, '#1f5fa8');
-    g.addColorStop(1, '#22b3b8');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, 8, 256);
-    const sky = new THREE.CanvasTexture(c);
-    sky.colorSpace = THREE.SRGBColorSpace;
-    scene.background = sky;
-  }
-  scene.add(new THREE.HemisphereLight(0xe8f4ff, 0xc7924a, 0.75));
-  const key = new THREE.DirectionalLight(0xfff1df, 0.9);
+  // the setting: a house's courtyard (teal boundary wall, iron gate, the guard's stool, houses and sky beyond)
+  if (o.bg !== 'transparent') scene.add(createScenery().root);
+  // a soft fill (sky above, the warm tiles below) and the studio reflections turned down, so the sun's shadows read
+  scene.add(new THREE.HemisphereLight(0xe8f4ff, 0xc7924a, 0.5));
+  const key = new THREE.DirectionalLight(0xfff1df, 0.3);
   key.position.set(-3, 5, 4);
   scene.add(key);
 
@@ -154,39 +144,36 @@ export function createApp(root, options = {}) {
   const person = createPusher({ shirt: '#f3efe6', trousers: '#2f3a56' });
   world.add(floor.root, crate.root, person.root);
 
-  const arrowOf = (name, color, radius, head, headRadius) => {
-    const a = createArrow({ name, color, radius, head, headRadius });
-    a.root.traverse((m) => {
-      if (m instanceof THREE.Mesh) m.castShadow = false;
-    });
-    world.add(a.root);
-    return a;
-  };
+  // bold arrows in an outline, drawn over everything: F white-edged (over the wall, the sky, the bricks), s and d
+  // dark-edged (on the white tape)
   const arrows = {
-    F: arrowOf('ForceF', COLORS.F, 0.034, 0.17, 0.085),
-    s: arrowOf('DisplacementS', COLORS.s, 0.022, 0.13, 0.06),
-    d: arrowOf('SlideD', COLORS.d, 0.018, 0.11, 0.05),
+    F: boldArrow('ForceF', COLORS.F, 0.034, { head: 0.17, headR: 0.09, pad: 0.016 }),
+    s: boldArrow('DisplacementS', COLORS.s, 0.024, { head: 0.13, headR: 0.064, outline: '#10213a', pad: 0.009 }),
+    d: boldArrow('SlideD', COLORS.d, 0.02, { head: 0.11, headR: 0.054, outline: '#1d2430', pad: 0.008 }),
   };
+  for (const a of Object.values(arrows)) world.add(a.root);
 
   const tweener = createTweener();
   stage.addTicker((dt) => tweener.tick(dt));
   const audio = createAudio(o.sound);
 
+  // the morning sun, high and in front on the left: the shadows fall back and to the right, where they show.
+  // Soft shadows on the courtyard floor from the person, the crate and the brick wall only, in a box fitted round
+  // everywhere they go (from behind the person at the start to the crate's furthest stop, 6 m, and the wall's depth)
+  const sun = new THREE.DirectionalLight(0xfff6e8, 1.7);
+  sun.position.set(-1.2, 6, 4);
+  sun.target.position.set(2.2, 0, 0);
+  scene.add(sun, sun.target);
   if (o.shadow && o.bg !== 'transparent') {
     stage.renderer.shadowMap.enabled = true;
-    stage.renderer.shadowMap.type = THREE.VSMShadowMap;
-    const sun = new THREE.DirectionalLight(0xffffff, 0.55);
-    sun.position.set(1.2, 6, 3.5);
-    sun.target.position.set(2.2, 0, 0);
+    stage.renderer.shadowMap.type = THREE.PCFShadowMap;
     sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
-    Object.assign(sun.shadow.camera, { left: -5, right: 5, top: 3, bottom: -3, near: 1, far: 14 });
-    sun.shadow.radius = 6;
+    sun.shadow.mapSize.set(1024, 512);
+    Object.assign(sun.shadow.camera, { left: -4.1, right: 4.15, top: 4.1, bottom: -2.8, near: 3.9, far: 10.6 });
+    sun.shadow.camera.updateProjectionMatrix();
+    sun.shadow.radius = 3;
     sun.shadow.bias = -0.0004;
-    scene.add(sun, sun.target);
-    floor.root.traverse((m) => {
-      if (m instanceof THREE.Mesh) m.receiveShadow = true;
-    });
+    sun.shadow.normalBias = 0.01;
   }
 
   const listeners = new Map();
@@ -301,6 +288,7 @@ export function createApp(root, options = {}) {
   const pF = new THREE.Vector3();
   const pS = new THREE.Vector3();
   const pD = new THREE.Vector3();
+  const pS0 = new THREE.Vector3(0.02, ARROW_Y, ARROW_Z); // s = 0 at the wall: the crate's front face on the floor
   // F's label beside its head, ahead of the crate (never over the person's head)
   const TIP = [
     { dx: 14, dy: -18 },
@@ -311,6 +299,7 @@ export function createApp(root, options = {}) {
     { dx: 0, dy: 24 },
     { dx: 0, dy: -24 },
   ];
+  const S0_SPOTS = [{ dx: -40, dy: 20 }, ...BELOW];
   function label(id, on, text, point, color, spots) {
     if (!on) {
       if (shown.has(id)) {
@@ -331,31 +320,36 @@ export function createApp(root, options = {}) {
     const letters = s.labels === 'letters';
     const fLen = forceLength(s.F, s.example === 'wall');
     pF.set((s.example === 'wall' ? 0 : n.x) - L + 0.03 + fLen + 0.05, H + 0.24, 0);
-    label('F', arrows.F.root.visible, t('l_F', { F: s.F }), pF, COLORS.F, TIP);
+    label('F', arrows.F.root.visible, t('l_F', { F: s.F }), pF, INK.F, TIP);
     const sLen = Math.min(n.x, p.s);
     pS.set(sLen / 2, ARROW_Y, ARROW_Z);
     const sText = letters ? t('l_s_only') : t('l_s', { s: s.phase === 'push' ? fixed1(n.sNow) : plain(n.sNow) });
-    label('s', arrows.s.root.visible, sText, pS, COLORS.s, BELOW);
+    label('s', arrows.s.root.visible, sText, pS, INK.s, BELOW);
     pD.set(p.s + Math.max(0, n.x - p.s) / 2, ARROW_Y, ARROW_Z);
     const dText = letters ? t('l_d_only') : t('l_d', { d: s.phase === 'slide' ? fixed1(n.dNow) : plain(n.dNow) });
-    label('d', arrows.d.root.visible && n.x - p.s > 0.12, dText, pD, COLORS.d, BELOW);
-    pS.set(0.02, ARROW_Y, ARROW_Z);
-    label('s0', s.example === 'wall' && s.phase === 'done', t('l_s0'), pS.clone(), COLORS.s, [{ dx: -40, dy: 20 }, ...BELOW]);
+    label('d', arrows.d.root.visible && n.x - p.s > 0.12, dText, pD, INK.d, BELOW);
+    label('s0', s.example === 'wall' && s.phase === 'done', t('l_s0'), pS0, INK.s, S0_SPOTS);
   }
 
   // ── the panel ───────────────────────────────────────────────────────────────
   const outcomeKey = { k: '' };
+  // the steppers: written only when something changes (place() runs every frame of a push)
+  let stepKey = '';
   function panel(n, p) {
-    el.F.textContent = `${N(s.F)} ${t('u_N')}`;
-    el.s.textContent = `${N(s.example === 'wall' ? 0 : s.sPlan)} ${t('u_m')}`;
     const lock = s.locked;
-    el.Fminus.disabled = lock || s.F <= F_RANGE.min;
-    el.Fplus.disabled = lock || s.F >= F_RANGE.max;
     const sFixed = s.example === 'wall';
-    el.sminus.disabled = lock || sFixed || s.sPlan <= S_RANGE.min;
-    el.splus.disabled = lock || sFixed || s.sPlan >= S_RANGE.max;
-    el.sStep.title = sFixed ? t('s_fixed') : '';
-    el.sStep.classList.toggle('fixed', sFixed);
+    const key = `${s.F}|${s.sPlan}|${lock}|${sFixed}`;
+    if (key !== stepKey) {
+      stepKey = key;
+      el.F.textContent = `${N(s.F)} ${t('u_N')}`;
+      el.s.textContent = `${N(sFixed ? 0 : s.sPlan)} ${t('u_m')}`;
+      el.Fminus.disabled = lock || s.F <= F_RANGE.min;
+      el.Fplus.disabled = lock || s.F >= F_RANGE.max;
+      el.sminus.disabled = lock || sFixed || s.sPlan <= S_RANGE.min;
+      el.splus.disabled = lock || sFixed || s.sPlan >= S_RANGE.max;
+      el.sStep.title = sFixed ? t('s_fixed') : '';
+      el.sStep.classList.toggle('fixed', sFixed);
+    }
 
     // the result: W = Fs with the numbers shown (the same 0.1 m number as the s label)
     let out;
