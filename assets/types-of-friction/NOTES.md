@@ -147,3 +147,22 @@ bound to the existing two-bone gait. Both original hand contact positions and st
 palms press the crate; curled fingers hold the trolley bar. Amber clothing and navy trousers contrast with the blue
 scene and golden crate. All three examples use the same person. The rolling resistance and force-arrow scale are
 unchanged; no shared kit or other figure changes.
+
+## Polish and declutter (0.3.0)
+Carried over from the unfinished polish pass (its layout for the old bottom panel left out):
+- **Text on the view.** The corner notes ("সংখ্যাগুলো উদাহরণ", on wheels "the arrows drawn 3 times longer") moved into
+  the live box as a small chip next to the resultant; the view keeps only short labels with values.
+- **Arrows.** Every arrow is its colour inside a dark edge inside a white halo, drawn over the scene; the labels are
+  solid white chips in the arrow's colour.
+- **Smooth.** The person is merged into one mesh per part that moves together, the clothing baked as an indexed mesh
+  (about 21 600 vertices instead of 130 000), a live pose allocates nothing; the crate's bands, the trolley's frame
+  and each wheel are merged; the start outline is one mesh instead of about 140. Shadows: PCF 1024 on a box fitted
+  round the person, crate and trolley (VSM 2048 on a default box before, never applied); only the platform receives.
+- **Bugs.** The contact leader made a new GPU buffer every frame; the live values and the pause button were
+  rewritten every frame; the explanation's close handler ran twice.
+
+Declutter (the owner: only the main objects): a station platform floor with its tactile strip and edge, and behind
+it only the plain station wall (maroon dado, powder-blue lime-wash); no windows, doors, columns, notice boards, lamps
+or suitcases. Kit 1.5.0 puts the panel beside the 3D, so the figure's rules for a wide two-column sheet, 1280 × 800
+type and the old phone-on-its-side layout are gone; 390×700 gives the 3D 59 %. No সামনে / ঘুরিয়ে দেখো buttons: the lab
+starts from the front, a drag turns it, and the small "front" icon then brings it back.
