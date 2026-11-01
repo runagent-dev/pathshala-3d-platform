@@ -67,12 +67,12 @@ body.bg-transparent { background: transparent; }
 .ef-f .v.waste { color: var(--c-ws-text); }
 
 /* ── on the view: the load's height (a solid chip on the right) and the ring a term of the formula lights ── */
-.ef-gauge { --k: 0; position: absolute; right: 8px; bottom: 10px; top: 58px; z-index: 3; width: 38px; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 4px 0; border: 1px solid var(--line-2); border-radius: 8px; background: var(--panel); pointer-events: none; font-size: 10.5px; color: #343a40; }
-.ef-gauge-name { font-weight: 700; }
-.ef-gauge-bar { position: relative; flex: 1 1 auto; width: 8px; border-radius: 4px; background: #e9ecef; outline: 1px solid #adb5bd; }
-.ef-gauge-bar i { position: absolute; left: 0; right: 0; bottom: 0; height: calc(var(--k) * 100%); border-radius: 4px; background: var(--c-wk); }
-.ef-gauge-bar b { position: absolute; left: 50%; bottom: calc(var(--k) * 100%); width: 16px; height: 9px; margin: 0 0 -4px -8px; border-radius: 2px; background: #b5452b; box-shadow: 0 0 0 1.5px #fff, 0 0 0 2.5px #343a40; }
-.ef-gauge-h { font-weight: 700; color: var(--c-wk-text); white-space: nowrap; }
+.ef-gauge { --k: 0; display: flex; align-items: center; gap: 8px; padding: 2px 0; border-bottom: 1px solid var(--line-2); font-size: 13px; color: var(--ink-2); }
+.ef-gauge-name { white-space: nowrap; }
+.ef-gauge-bar { position: relative; flex: 1 1 auto; height: 6px; border-radius: 3px; background: #e9ecef; }
+.ef-gauge-bar i { position: absolute; left: 0; top: 0; bottom: 0; width: calc(var(--k) * 100%); border-radius: 3px; background: var(--c-wk); }
+.ef-gauge-bar b { display: none; }
+.ef-gauge-h { font-weight: 700; color: var(--c-wk-text); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .ef-ring { position: absolute; z-index: 2; border: 3px dashed var(--c); border-radius: 14px; box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85), inset 0 0 0 2px rgba(255, 255, 255, 0.85); pointer-events: none; }
 .ef-ring::after { content: attr(data-label); position: absolute; left: 50%; bottom: calc(100% + 4px); transform: translateX(-50%); padding: 2px 8px; border: 1.5px solid #fff; border-radius: 6px; background: var(--c); color: #fff; font-size: 12.5px; font-weight: 700; white-space: nowrap; box-shadow: 0 1px 3px rgba(20, 30, 45, 0.3); }
 /* labels: short names in their colour on the kit's solid white chip, rimmed in the same colour */
@@ -124,17 +124,6 @@ body.bg-transparent { background: transparent; }
 .ef-ex-btn.primary { border-color: #1c6fd9; background: #1c6fd9; color: #fff; }
 .ef-ex-btn:disabled { opacity: 0.45; cursor: default; }
 
-/* a wide panel (panel below, tabs beside the sheet): the flow and the formula side by side, the book's sentence on
-   one line under both, so the 3D keeps more than half the frame */
-@container pvc-panel (min-width: 600px) {
-  .ef .pvc-learn { display: grid; grid-template-columns: minmax(250px, 0.85fr) minmax(0, 1.15fr); align-items: center; align-content: start; gap: 8px 16px; }
-  .ef .pvc-examples, .ef .pvc-act-row { grid-column: 1 / -1; }
-  .ef .pvc-rule { display: contents; }
-  .ef .ef-f { margin: 0; }
-  .ef .ef-say { grid-column: 1 / -1; min-height: 1.45em; font-size: 13.5px; line-height: 1.45; color: var(--ink-2); }
-  .ef .pvc-outcome, .ef .ef-f { min-height: 62px; }
-  .ef .pvc-q-feedback { min-height: calc(2 * 1.45em); }
-}
 @container pvc-panel (max-width: 899px) {
   .ef .ef-f .ef-nums { display: none; }
   .ef-f.two { gap: 2px 3px; }

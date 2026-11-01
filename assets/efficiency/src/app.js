@@ -65,6 +65,7 @@ export function createApp(root, options = {}) {
   root.lang = t.lang;
   root.tabIndex = 0;
   const ui = buildStudentShell(root, t, {
+    layout: 'side', // the panel beside the 3D on landscape frames (kit 1.5.0)
     learn: cleanSheet(t, {
       examples: { label: 'conds', results: true, items: CONDITION_IDS.map((id) => ({ id, label: `chip_${id}` })) },
       quiet: [
@@ -88,8 +89,8 @@ export function createApp(root, options = {}) {
     refresh();
   }).observe(/** @type {HTMLElement} */ (ui.$('.pvc-outcome')));
 
-  // on the view: the height of the load (a gauge on the right); the note that the waste's split is approximate is in
-  // the panel (the ≈ on the flow's parts and the rule while it runs)
+  // in the panel, first of the readings: the height of the load (a small bar and the value); nothing floats on the
+  // 3D view. The note that the waste's split is approximate is in the panel too (the ≈ on the flow's parts, the rule)
   const gauge = document.createElement('div');
   gauge.className = 'ef-gauge';
   gauge.setAttribute('aria-hidden', 'true');
@@ -99,7 +100,8 @@ export function createApp(root, options = {}) {
   const ring = document.createElement('div');
   ring.className = 'ef-ring';
   ring.hidden = true;
-  ui.stage.append(gauge, ring);
+  ui.$('.pvc-act-row').after(gauge);
+  ui.stage.append(ring);
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 30, near: 0.05, far: 700, environment: 'studio-light' });
@@ -230,7 +232,7 @@ export function createApp(root, options = {}) {
     drawDisplay();
   }
 
-  // ── camera: the machine big, the jib and the edge in view, room on the right for the gauge ────────────────────────
+  // ── camera: the machine big, the jib and the edge in view ────────────────────────
   const frame = new THREE.Box3();
   function viewPose(view = s.view) {
     const tall = stage.width / Math.max(1, stage.height) < 1.05;
@@ -312,7 +314,7 @@ export function createApp(root, options = {}) {
   const anno = createAnnotations({
     stage,
     layer: ui.annoLayer,
-    avoid: [ui.corner, ui.hint, gauge, () => action?.ringBox(), () => action?.box(), () => loadBox()],
+    avoid: [ui.corner, ui.hint, () => action?.ringBox(), () => action?.box(), () => loadBox()],
   });
   const grid = (dys, dxs) => dys.flatMap((dy) => dxs.map((dx) => ({ dx, dy })));
   const SPOTS = {
@@ -688,7 +690,7 @@ export function createApp(root, options = {}) {
     label: 'act_run',
     target: () => machine.points.switch,
     radius: 22,
-    avoid: [ui.corner, ui.hint, gauge, () => anno.boxes()],
+    avoid: [ui.corner, ui.hint, () => anno.boxes()],
     pulse: o.coach,
     onAct: () => {
       audio.unlock();
