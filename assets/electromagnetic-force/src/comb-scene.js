@@ -8,7 +8,10 @@
 import * as THREE from 'three';
 import { boxProjectUV } from '@shared/student/materials.js';
 import { createHand } from './hand.js';
-import { createChargeSymbol } from './charges.js';
+import { createChargeSymbol, createChargeSymbols } from './charges.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { mergeStatic } from './merge.js';
+import { FLOOR_Y } from './room.js';
 
 export const HEAD = new THREE.Vector3(-150, 85, -5); // middle of the head: bent low over the table's left end
 const HEAD_R = 52; // mm, a student's head
@@ -93,6 +96,33 @@ function hairTexture() {
   return t;
 }
 
+/** A painted table top: blue enamel over wood whose grain still shows a little, and a few worn spots. */
+function tableTexture() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 256;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#1f78a8';
+  ctx.fillRect(0, 0, 256, 256);
+  const r = rand(9);
+  for (let i = 0; i < 70; i++) {
+    const y = r() * 256;
+    ctx.strokeStyle = `rgba(${r() < 0.6 ? '8,40,70' : '150,210,240'},${0.05 + r() * 0.07})`;
+    ctx.lineWidth = 1 + r() * 2;
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    for (let x = 0; x <= 256; x += 32) ctx.lineTo(x, y + Math.sin(x / 40 + i) * 3 + (r() - 0.5) * 2);
+    ctx.stroke();
+  }
+  for (let i = 0; i < 1500; i++) {
+    ctx.fillStyle = `rgba(255,255,255,${r() * 0.05})`;
+    ctx.fillRect(r() * 256, r() * 256, 1, 1);
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  return t;
+}
+
 /** The comb's outline: a back with rounded corners, a wide tooth at each end and a row of fine teeth. */
 function combShape() {
   const { end, top, teeth } = COMB_SIZE;
@@ -164,9 +194,11 @@ function bitGeometry(size, r) {
   return new THREE.ShapeGeometry(new THREE.Shape(pts));
 }
 
-/** A strand of hair along +y (bends a little), to be turned from lying down to standing up. */
-function strandGeometry(len, r) {
-  const bend = (r() < 0.5 ? -1 : 1) * (4 + r() * 8);
+/** The loose strand's shape: 13 mm along +y, bending 8 mm sideways (x); each strand is one instance of it, stretched
+ * to its own length along y and turned to its own side along x. */
+const STRAND = { len: 13, bend: 8 };
+function strandGeometry() {
+  const { len, bend } = STRAND;
   const curve = new THREE.CatmullRomCurve3([
     new THREE.Vector3(0, 0, 0),
     new THREE.Vector3(bend * 0.15, len * 0.35, 1),
@@ -181,20 +213,25 @@ export function createCombScene({ colors }) {
   root.name = 'CombScene';
   const r = rand(17);
 
-  // ── the table ──
-  const wood = new THREE.MeshPhysicalMaterial({ name: 'BlueExperimentTable', color: 0x176d9c, roughness: 0.5, clearcoat: 0.2 });
+  // ── the table: a blue painted top (it takes the shadows), four legs down to the floor ──
+  const tableMap = tableTexture();
+  tableMap.repeat.set(1 / 260, 1 / 260);
+  const wood = new THREE.MeshStandardMaterial({ name: 'BlueExperimentTable', color: 0xc8dcea, map: tableMap, roughness: 0.42 });
   const { x0, x1, z0, z1 } = TABLE;
   const desk = new THREE.Mesh(boxProjectUV(new THREE.BoxGeometry(x1 - x0, 24, z1 - z0)), wood);
   desk.name = 'Desk';
   desk.position.set((x0 + x1) / 2, -12, (z0 + z1) / 2);
   desk.receiveShadow = true;
   root.add(desk);
+  const legs = new THREE.Group();
+  const legLen = -24 - FLOOR_Y;
   for (const x of [x0 + 20, x1 - 20])
     for (const z of [z0 + 20, z1 - 20]) {
-      const leg = new THREE.Mesh(new THREE.BoxGeometry(26, 700, 26), wood);
-      leg.position.set(x, -374, z);
-      root.add(leg);
+      const leg = new THREE.Mesh(boxProjectUV(new THREE.BoxGeometry(26, legLen, 26)), wood);
+      leg.position.set(x, -24 - legLen / 2, z);
+      legs.add(leg);
     }
+  root.add(mergeStatic(legs));
 
   // ── the student: head, hair, neck, shoulders (a light blue school shirt) ──
   const skin = new THREE.MeshStandardMaterial({ name: 'Skin', color: 0xdca27d, roughness: 0.6 });
@@ -274,18 +311,52 @@ export function createCombScene({ colors }) {
   const neck = new THREE.Mesh(new THREE.CylinderGeometry(14, 16, 42, 20), skin);
   neck.name = 'Neck';
   neck.position.set(HEAD.x, 15, HEAD.z);
-  const shirt = new THREE.Mesh(
-    new THREE.SphereGeometry(1, 24, 16),
-    new THREE.MeshStandardMaterial({ name: 'BlueShirt', color: 0x2168c5, roughness: 0.7 }),
-  );
+  // the upper body in a blue school shirt: shoulders sloping from the neck, down out of the picture (the student sits
+  // at the table's end), one turned profile, flattened front to back
+  const shirtMat = new THREE.MeshStandardMaterial({ name: 'BlueShirt', color: 0x2168c5, roughness: 0.7 });
+  const profile = [
+    [0, 4],
+    [15, 2],
+    [28, -4],
+    [41, -14],
+    [49, -28],
+    [52, -48],
+    [50, -110],
+    [46, -250],
+    [44, -460],
+  ].map(([x, y]) => new THREE.Vector2(x, y));
+  const shirt = new THREE.Mesh(new THREE.LatheGeometry(profile, 32), shirtMat);
   shirt.name = 'Shoulders';
-  shirt.scale.set(43, 32, 28);
-  shirt.position.set(HEAD.x, -28, HEAD.z);
-  student.add(nose, neck, shirt);
+  shirt.scale.z = 0.64;
+  shirt.position.set(HEAD.x, -6, HEAD.z);
+  // a white collar round the neck
+  const collar = new THREE.Mesh(
+    new THREE.TorusGeometry(17, 3.2, 8, 24),
+    new THREE.MeshStandardMaterial({ name: 'Collar', color: 0xf1f3f5, roughness: 0.7 }),
+  );
+  collar.name = 'Collar';
+  collar.rotation.x = Math.PI / 2 - 0.25;
+  collar.position.set(HEAD.x, 1, HEAD.z + 2);
+  student.add(nose, neck, shirt, collar);
   root.add(student);
 
-  // loose strands on the crown: they lie down, and stand up (towards the comb, when it is near) as the hair is charged
+  // the parts, by name (merged below into one mesh per material: the face's small parts in one, by colour)
+  student.userData.parts = student.children.map((m) => m.name);
+  mergeStatic(student, {
+    paint: {
+      from: [faceInk, eyeWhite, iris, lip, innerEar],
+      material: new THREE.MeshStandardMaterial({ name: 'Face', vertexColors: true, roughness: 0.7 }),
+    },
+  });
+
+  // loose strands on the crown: they lie down, and stand up (towards the comb, when it is near) as the hair is charged;
+  // one instanced mesh, a strand each
   const strandMat = new THREE.MeshStandardMaterial({ name: 'HairStrand', color: 0x221d1a, roughness: 0.5 });
+  const strandMesh = new THREE.InstancedMesh(strandGeometry(), strandMat, 12);
+  strandMesh.name = 'LooseHair';
+  strandMesh.frustumCulled = false;
+  strandMesh.visible = false;
+  student.add(strandMesh);
   const strands = [];
   const UP = new THREE.Vector3(0, 1, 0);
   for (let i = 0; i < 12; i++) {
@@ -299,30 +370,30 @@ export function createCombScene({ colors }) {
       .sub(p)
       .normalize(); // down the slope, away from the crown
     const len = 9 + r() * 8;
-    const g = new THREE.Group();
-    g.position.copy(p);
-    g.add(new THREE.Mesh(strandGeometry(len, r), strandMat));
+    const side = r() < 0.5 ? -1 : 1;
+    r(); // (the bend's size, as before: the same random numbers for the bits of paper below)
+    const scale = new THREE.Vector3(side, len / STRAND.len, 1);
     const rest = new THREE.Quaternion().setFromUnitVectors(UP, down.clone().addScaledVector(normal, 0.15).normalize());
     const upDir = normal
       .clone()
       .multiplyScalar(0.35)
       .add(new THREE.Vector3((r() - 0.5) * 0.45, 0.65, (r() - 0.5) * 0.3))
       .normalize();
-    g.quaternion.copy(rest);
-    strands.push({ group: g, base: p, rest, upDir, weight: 0.55 + r() * 0.45 });
-    student.add(g);
+    strands.push({ base: p, scale, rest, upDir, weight: 0.55 + r() * 0.45 });
   }
   const dir = new THREE.Vector3();
   const toward = new THREE.Vector3();
   const qStand = new THREE.Quaternion();
+  const qNow = new THREE.Quaternion();
+  const strandM = new THREE.Matrix4();
   /**
    * Loose strands stand up as the hair gets charged (k: 0 none … 1 full), leaning towards the comb when it is
    * close (`comb`: a world point on its teeth, or null); lying flat, they are not drawn.
    */
   function setFrizz(k, comb = null) {
-    for (const s of strands) {
-      s.group.visible = k > 0;
-      if (!(k > 0)) continue;
+    strandMesh.visible = k > 0;
+    if (!(k > 0)) return;
+    strands.forEach((s, i) => {
       dir.copy(s.upDir);
       if (comb) {
         toward.copy(comb).sub(s.base);
@@ -330,8 +401,10 @@ export function createCombScene({ colors }) {
         dir.lerp(toward.normalize(), 0.7 * near).normalize();
       }
       qStand.setFromUnitVectors(UP, dir);
-      s.group.quaternion.slerpQuaternions(s.rest, qStand, Math.min(1, 0.9 * k * s.weight));
-    }
+      qNow.slerpQuaternions(s.rest, qStand, Math.min(1, 0.9 * k * s.weight));
+      strandMesh.setMatrixAt(i, strandM.compose(s.base, qNow, s.scale));
+    });
+    strandMesh.instanceMatrix.needsUpdate = true;
   }
 
   // ── the comb, with its charge ──
@@ -352,42 +425,46 @@ export function createCombScene({ colors }) {
   comb.add(combMesh, createHand(skin));
   const discMat = new THREE.MeshBasicMaterial({ name: 'Charge', color: colors.em, toneMapped: false });
   const minusMat = new THREE.MeshBasicMaterial({ name: 'ChargeSign', color: 0xffffff, toneMapped: false });
-  const discGeo = new THREE.CircleGeometry(4.8, 24);
-  const minusGeo = new THREE.PlaneGeometry(5.2, 1.3);
-  const discs = [];
+  // the "−" discs on both faces of the comb: one instanced mesh of discs and one of signs, in the order they fill
+  // (from the middle outwards), two instances (the faces) per disc; `count` shows the first ones
   const zFace = COMB_SIZE.thick / 2 + 0.6;
-  for (let i = 0; i < DISC_SLOTS; i++) {
-    const g = new THREE.Group();
-    g.name = 'ChargeDisc';
-    g.userData.noExport = true;
-    for (const face of [1, -1]) {
-      const d = new THREE.Mesh(discGeo, discMat);
-      const m = new THREE.Mesh(minusGeo, minusMat);
-      d.position.z = face * zFace;
-      m.position.z = face * (zFace + 0.05);
-      if (face < 0) d.rotation.y = m.rotation.y = Math.PI;
-      g.add(d, m);
-    }
-    g.position.set((i - (DISC_SLOTS - 1) / 2) * 10.6, 24, 0);
-    g.visible = false;
-    comb.add(g);
-    discs.push(g);
+  const discs = new THREE.InstancedMesh(new THREE.CircleGeometry(4.8, 24), discMat, 2 * DISC_SLOTS);
+  const minuses = new THREE.InstancedMesh(new THREE.PlaneGeometry(5.2, 1.3), minusMat, 2 * DISC_SLOTS);
+  discs.name = 'ChargeDiscs';
+  minuses.name = 'ChargeSigns';
+  {
+    const m = new THREE.Matrix4();
+    const turn = new THREE.Matrix4().makeRotationY(Math.PI);
+    DISC_ORDER.forEach((slot, k) => {
+      const x = (slot - (DISC_SLOTS - 1) / 2) * 10.6;
+      [1, -1].forEach((face, f) => {
+        m.makeTranslation(x, 24, face * zFace);
+        if (face < 0) m.multiply(turn);
+        discs.setMatrixAt(2 * k + f, m);
+        m.makeTranslation(x, 24, face * (zFace + 0.05));
+        if (face < 0) m.multiply(turn);
+        minuses.setMatrixAt(2 * k + f, m);
+      });
+    });
   }
-  const positiveCharges = Array.from({ length: DISC_SLOTS }, (_, i) => {
-    const marker = createChargeSymbol(true, 4.6);
-    marker.position.copy(onHead(HAIR_R + 3, Math.PI * (0.25 + (i % 5) * 0.125), Math.PI * (i < 5 ? 0.2 : 0.29)));
-    marker.name = 'HairPositiveCharge';
-    marker.visible = false;
-    root.add(marker);
-    return marker;
-  });
+  for (const im of [discs, minuses]) {
+    im.userData.noExport = true;
+    im.frustumCulled = false;
+    im.count = 0;
+    comb.add(im);
+  }
+  // the "+" marks on the hair (as many as "−" on the comb), turned to face the camera
+  const positiveCharges = createChargeSymbols(true, 4.6, DISC_SLOTS);
+  positiveCharges.root.name = 'HairPositiveCharges';
+  DISC_ORDER.forEach((slot, k) =>
+    positiveCharges.place(k, onHead(HAIR_R + 3, Math.PI * (0.25 + (slot % 5) * 0.125), Math.PI * (slot < 5 ? 0.2 : 0.29))),
+  );
+  root.add(positiveCharges.root);
   /** Show equal numbers of positive hair markers and negative comb markers: electrons moved, not created. */
   function setCharge(q) {
     const n = Math.round(Math.min(Math.max(q, 0), 5) * 2);
-    DISC_ORDER.forEach((slot, k) => {
-      discs[slot].visible = k < n;
-      positiveCharges[slot].visible = k < n;
-    });
+    discs.count = minuses.count = 2 * n;
+    positiveCharges.setCount(n);
   }
   // a big invisible box round the comb, so a finger takes it easily
   const combHit = new THREE.Mesh(new THREE.BoxGeometry(240, 58, 35), new THREE.MeshBasicMaterial({ visible: false }));
@@ -397,23 +474,26 @@ export function createCombScene({ colors }) {
   root.add(comb);
 
   // ── the bits of paper ──
+  // one material for all of them: each bit's colour, and its darker edge, are vertex colours
+  const paperMat = new THREE.MeshStandardMaterial({ name: 'Paper', vertexColors: true, roughness: 0.86, side: THREE.DoubleSide });
   const bits = BITS.map(([x, z, size], i) => {
-    const mat = new THREE.MeshStandardMaterial({ name: 'Paper', color: PAPER[i % PAPER.length], roughness: 0.85, side: THREE.DoubleSide });
-    const geo = bitGeometry(size, r);
-    const mesh = new THREE.Mesh(geo, mat);
+    const face = bitGeometry(size, r);
     // the edge: the same shape a little bigger, darker, just behind it
-    const rim = new THREE.Mesh(
-      geo,
-      new THREE.MeshStandardMaterial({
-        name: 'PaperEdge',
-        color: new THREE.Color(PAPER[i % PAPER.length]).multiplyScalar(0.62),
-        roughness: 0.9,
-        side: THREE.DoubleSide,
-      }),
-    );
-    rim.scale.setScalar(1 + 1.6 / size);
-    rim.position.z = -0.12;
-    mesh.add(rim);
+    const rim = face
+      .clone()
+      .scale(1 + 1.6 / size, 1 + 1.6 / size, 1)
+      .translate(0, 0, -0.12);
+    const colour = new THREE.Color(PAPER[i % PAPER.length]);
+    const paint = (g, c) => {
+      const rgb = new Float32Array(g.attributes.position.count * 3);
+      for (let k = 0; k < rgb.length; k += 3) c.toArray(rgb, k);
+      g.setAttribute('color', new THREE.BufferAttribute(rgb, 3));
+      return g;
+    };
+    const geo = mergeGeometries([paint(face, colour), paint(rim, colour.clone().multiplyScalar(0.62))]);
+    face.dispose();
+    rim.dispose();
+    const mesh = new THREE.Mesh(geo, paperMat);
     mesh.name = 'PaperBit';
     const g = new THREE.Group();
     g.add(mesh);
@@ -457,7 +537,7 @@ export function createCombScene({ colors }) {
   const viewNormal = new THREE.Vector3();
   const combPoint = new THREE.Vector3();
   function updateChargeMarkers(camera, showPaper) {
-    for (const marker of positiveCharges) marker.quaternion.copy(camera.quaternion);
+    positiveCharges.face(camera.quaternion);
     positivePaper.visible = negativePaper.visible = showPaper;
     if (!showPaper) return;
     const centre = bits[FEATURED].group.position;
@@ -490,7 +570,7 @@ export function createCombScene({ colors }) {
     setFrizz,
     updateChargeMarkers,
     points: {
-      positive: () => positiveCharges[4].position,
+      positive: () => positiveCharges.at(0),
       discs: () => comb.localToWorld(discsAt.set(0, 24, zFace)),
       hair: () => hairAt,
       /** Points of the face (for framing): forehead, nose tip, chin. */

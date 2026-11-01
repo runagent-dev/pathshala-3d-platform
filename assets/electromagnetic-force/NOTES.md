@@ -134,3 +134,11 @@ a চিরুনি/চুম্বক toggle and a big button. Now:
   to the paper. The symbols face the camera, follow the bit and are hidden during unanswered quiz scenes.
 - Existing lift thresholds, force comparison, keyboard/drag actions and magnetic example are retained. Charge
   symbols, as well as arrows and labels, are omitted from GLB. The actual hand and complete human model are exported.
+
+## Declutter (2026-11-01, v0.4.0)
+- Only the experiment: the comb example stands before a soft blue-grey wall on a plain warm floor (no bookcase, bag,
+  mat, dado or tiles); the magnet example's bench is a plain warm colour instead of a busy wood grain.
+- Smooth: static parts merged per material (`src/merge.js`: the student, the hand, the table legs, the cell, the
+  switch, the wiring, the cart's wheels), bolder outlined arrows; the coil's honest note moved off the 3D view.
+- The panel sits beside the 3D (kit 1.5.0): the old wide-frame and sideways-phone rules are gone. No front/turn
+  buttons: a drag turns the view (not during the test), a front icon brings it back.

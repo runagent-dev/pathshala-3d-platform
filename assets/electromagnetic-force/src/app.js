@@ -16,7 +16,6 @@ import { createStage } from '@shared/stage.js';
 import { createAction } from '@shared/student/action.js';
 import { createAnnotations } from '@shared/student/annotations.js';
 import { createAudio } from '@shared/student/audio.js';
-import { createMaterials } from '@shared/student/materials.js';
 import { capturePointer, releasePointer } from '@shared/student/pointer.js';
 import { createQuiz } from '@shared/student/quiz.js';
 import { bindCleanSheet, buildStudentShell, cleanSheet } from '@shared/student/shell.js';
@@ -31,6 +30,7 @@ import {
   COMB,
   LIFT_HEIGHT,
   MAG,
+  cartAccel,
   STRENGTH_EXP,
   facingPole,
   interaction,
@@ -121,9 +121,8 @@ export function createApp(root, options = {}) {
   const tweener = createTweener();
   stage.addTicker((dt) => tweener.tick(dt));
   const audio = createAudio(o.sound);
-  const M = createMaterials(stage.renderer);
-  const cs = createCombScene({ materials: M, colors: COLORS });
-  const ms = createMagnetScene({ materials: M, colors: COLORS });
+  const cs = createCombScene({ colors: COLORS });
+  const ms = createMagnetScene({ colors: COLORS });
   scene.add(cs.root, ms.root);
   const upArrow = createArrow({ color: COLORS.em, name: 'CombPull', radius: 1.7, head: 8, headRadius: 4.6 });
   const downArrow = createArrow({ color: COLORS.grav, name: 'EarthPull', radius: 1.7, head: 8, headRadius: 4.6 });
@@ -131,21 +130,20 @@ export function createApp(root, options = {}) {
   const coilArrow = createArrow({ color: COLORS.em, name: 'ForceOnCoil', radius: 1.4, head: 7, headRadius: 4 });
   cs.root.add(upArrow.root, downArrow.root);
   ms.root.add(magArrow.root, coilArrow.root);
-  // honest about the coil: in the magnet example, a small note in the corner says its pull is drawn stronger
-  const note = document.createElement('div');
-  note.className = 'ef-note';
-  note.textContent = t('note_coil');
-  ui.stage.append(note);
 
+  // soft shadows on the table tops only (nothing else receives them): PCF in a box fitted round what casts them in
+  // each example, seen from the light, so 1024 px look as sharp as the old 2048 px soft shadows did
   const shadows = o.shadow && o.bg !== 'transparent';
   let sun = null;
   if (shadows) {
     stage.renderer.shadowMap.enabled = true;
-    stage.renderer.shadowMap.type = THREE.VSMShadowMap;
+    stage.renderer.shadowMap.type = THREE.PCFShadowMap;
     sun = new THREE.DirectionalLight(0xffffff, 0.4);
     sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
-    sun.shadow.radius = 8;
+    sun.shadow.mapSize.set(1024, 1024);
+    sun.shadow.radius = 3;
+    sun.shadow.bias = -0.0004;
+    sun.shadow.normalBias = 0.4;
     scene.add(sun, sun.target);
     for (const part of [cs.comb, ...cs.bits.map((b) => b.group), ms.coil, ms.cart, ...Object.values(ms.meshes)])
       part.traverse((m) => {
@@ -153,14 +151,23 @@ export function createApp(root, options = {}) {
           m.castShadow = true;
       });
   }
-  /** The sun's shadow covers the part of the table in the picture. */
+  // the shadow boxes (mm, in the light's frame round its target): the comb from the hair to over the paper and the
+  // bits under it; the cell, the switch, the coil and the cart along its whole track
+  const SUN = {
+    comb: { at: new THREE.Vector3(-40, 0, 0), box: { left: -190, right: 190, top: 150, bottom: -110, near: 260, far: 760 } },
+    magnet: { at: new THREE.Vector3(-10, 0, 10), box: { left: -170, right: 190, top: 110, bottom: -95, near: 330, far: 700 } },
+  };
+  const SUN_FROM = new THREE.Vector3(60, 420, 260);
+  /** The sun's shadow covers what casts one in this example, and no more. */
   function aimSun() {
     if (!sun) return;
-    const c = s.scene === 'comb' ? new THREE.Vector3(-20, 0, 0) : new THREE.Vector3(-30, 0, 0);
-    sun.position.copy(c).add(new THREE.Vector3(60, 420, 260));
-    sun.target.position.copy(c);
-    Object.assign(sun.shadow.camera, { left: -200, right: 200, top: 200, bottom: -200, near: 200, far: 900 });
+    const { at, box } = SUN[s.scene];
+    sun.position.copy(at).add(SUN_FROM);
+    sun.target.position.copy(at);
+    sun.target.updateMatrixWorld();
+    Object.assign(sun.shadow.camera, box);
     sun.shadow.camera.updateProjectionMatrix();
+    sun.shadow.needsUpdate = true;
   }
 
   const listeners = new Map();
@@ -408,7 +415,14 @@ export function createApp(root, options = {}) {
   function tickMagnet(dt) {
     let moving = false;
     const kind = currentForce();
-    if (!mag.hold && !mag.dragging) {
+    // a cart at rest that the force cannot move (held by friction, or against the coil or the block) needs no step
+    const resting =
+      mag.v === 0 &&
+      (!kind ||
+        (kind === 'attract' && mag.gap === 0) ||
+        (kind === 'repel' && mag.gap === MAG.gapMax) ||
+        Math.abs(cartAccel(mag.gap, kind)) <= MAG.friction);
+    if (!mag.hold && !mag.dragging && !resting) {
       const st = stepCart({ gap: mag.gap, v: mag.v }, kind, dt);
       moving = st.v !== 0 || Math.abs(st.gap - mag.gap) > 1e-6;
       if (moving) {
@@ -550,7 +564,7 @@ export function createApp(root, options = {}) {
     label: 'act_comb',
     target: TARGETS.comb,
     pad: 8,
-    avoid: [ui.corner, ui.hint, note, () => anno.boxes()],
+    avoid: [ui.corner, ui.hint, () => anno.boxes()],
     pulse: o.coach,
     onAct: doAction,
   });
@@ -582,7 +596,9 @@ export function createApp(root, options = {}) {
     const kind = currentForce();
     if (!mag.on) return t('out_off');
     if (!kind) return t('out_turn');
-    return kind === 'attract' ? t('out_attract', { a: pole('N'), b: pole('S') }) : t('out_repel', { a: pole('N'), b: pole('N') });
+    // the coil's pull is drawn far stronger than one cell's air-core coil could give (said here, not on the picture)
+    const note = ` <small>${t('note_pull')}</small>`;
+    return (kind === 'attract' ? t('out_attract', { a: pole('N'), b: pole('S') }) : t('out_repel', { a: pole('N'), b: pole('N') })) + note;
   }
   let lastRule = '';
   function ruleHtml() {
@@ -658,7 +674,7 @@ export function createApp(root, options = {}) {
   }
 
   // ── labels in the picture (the kit's annotations: each takes the first clear spot) ──
-  const anno = createAnnotations({ stage, layer: ui.annoLayer, avoid: [ui.corner, ui.hint, note, () => action?.ringBox(), () => action?.box()] });
+  const anno = createAnnotations({ stage, layer: ui.annoLayer, avoid: [ui.corner, ui.hint, () => action?.ringBox(), () => action?.box()] });
   /** Add a label, or change it in place (no fade-in again) if it is there. */
   function label(id, opts) {
     if (anno.has(id)) anno.update(id, opts);
@@ -774,7 +790,6 @@ export function createApp(root, options = {}) {
   /** The labels that belong to this scene and state (the arrows' and the force's follow by themselves). */
   function refreshLabels() {
     const quizzing = s.mode === 'quiz';
-    note.hidden = s.scene !== 'magnet';
     if (s.scene === 'comb') {
       for (const id of ['force', 'poleS', 'poleN', 'current', 'coil', 'magnet', 'switch', 'cell']) anno.remove(id);
       if (s.comb.charge > 0 && s.comb.place === 'hair' && !quizzing)
@@ -973,7 +988,6 @@ export function createApp(root, options = {}) {
   }
   /** A camera pose that shows the example's whole experiment as big as it can, clear of the corner buttons. */
   function poseFor(key) {
-    note.hidden = s.scene !== 'magnet';
     return fitPose({
       points: contentOf(key),
       dir: viewDir(key),
@@ -981,7 +995,7 @@ export function createApp(root, options = {}) {
       aspect: camera.aspect,
       width: stage.width,
       height: stage.height,
-      keepOff: [boxOf(ui.corner), key === 'magnet' ? boxOf(note) : null].filter(Boolean),
+      keepOff: [boxOf(ui.corner)].filter(Boolean),
     });
   }
   function flyTo({ position, target }, duration = 0.8) {
@@ -1009,16 +1023,20 @@ export function createApp(root, options = {}) {
   }
   function setView(view, { animate = true } = {}) {
     s.view = view === '3d' ? '3d' : 'front';
-    controls.enableRotate = s.view === '3d';
-    controls.enableZoom = s.view === '3d';
     s.userMovedCamera = false;
     syncUI();
     emit('view', { view: s.view });
     return flyTo(poseFor(s.scene), animate ? 0.8 : 0);
   }
+  // the view starts from the front; dragging turns it, and then the "front" button appears to come back
   controls.addEventListener('start', () => {
     s.userMovedCamera = true;
     tweener.cancel('camera');
+    if (s.view !== '3d') {
+      s.view = '3d';
+      syncUI();
+      emit('view', { view: s.view });
+    }
   });
   // a turned phone: the picture is framed again at once
   stage.onResize(() => {
@@ -1596,7 +1614,9 @@ export function createApp(root, options = {}) {
 
   // ── buttons, keys ───────────────────────────────────────────────────────────
   function syncUI() {
-    for (const b of ui.$$('[data-view]')) b.classList.toggle('on', b.dataset.view === s.view);
+    const front = ui.$('[data-view="front"]');
+    if (front) front.hidden = s.view !== '3d';
+    controls.enableRotate = controls.enableZoom = !s.locked;
     root.dataset.mode = s.mode === 'quiz' ? 'quiz' : 'explore';
     for (const b of ui.$$('[data-mode]')) {
       const on = b.dataset.mode === root.dataset.mode;

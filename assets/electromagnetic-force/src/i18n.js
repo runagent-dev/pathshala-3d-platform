@@ -68,7 +68,7 @@ export const STRINGS = {
     current_on: 'তড়িৎ চলছে',
     attract: 'আকর্ষণ',
     repel: 'বিকর্ষণ',
-    note_coil: 'কয়েলের টান আসলের চেয়ে বেশি করে দেখানো',
+    note_pull: '(টান বাড়িয়ে দেখানো)',
 
     // labels in the picture
     lbl_charge: 'চিরুনি (−)',
@@ -213,7 +213,7 @@ export const STRINGS = {
     current_on: 'current flowing',
     attract: 'attraction',
     repel: 'repulsion',
-    note_coil: 'The coil’s pull is drawn stronger than a real one',
+    note_pull: '(pull exaggerated)',
 
     lbl_charge: 'Comb (−)',
     lbl_hair_charge: 'Hair (+)',

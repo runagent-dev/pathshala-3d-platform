@@ -26,7 +26,7 @@ body.bg-transparent { background: transparent; }
 /* the four fundamental forces, weakest to strongest, under the exact heading the four figures share: quiet words,
    this one marked by colour, weight and an underline (not colour alone) */
 .ef-forces { margin: 0; font-size: 13px; line-height: 1.5; color: var(--ink-3); }
-.ef-forces-k { font-weight: 600; color: var(--ink-3); white-space: nowrap; }
+.ef-forces-k { font-weight: 600; color: var(--ink-3); white-space: normal; }
 .ef-forces-list { white-space: normal; }
 .ef-forces-list i { font-style: normal; margin: 0 1px; color: var(--line-2); }
 .ef-f { color: var(--ink-3); white-space: nowrap; }
@@ -34,9 +34,6 @@ body.bg-transparent { background: transparent; }
 
 /* the coil's poles in the picture, while the current flows */
 .pvc-anno-pole { background: var(--c); border-color: var(--c); color: #fff; font-weight: 700; padding: 0 8px; }
-
-/* honest about the stylised coil: a small note at the top left of the picture (magnet example only) */
-.ef-note { position: absolute; left: 8px; top: 8px; z-index: 3; max-width: max(110px, min(42%, calc(100% - 270px))); padding: 2px 7px; border-radius: 4px; background: rgba(255, 255, 255, 0.85); font-size: 12px; line-height: 1.35; color: var(--ink-2); pointer-events: none; }
 
 /* in the test the locked hint sits under the corner buttons, not on them */
 .ef[data-mode='quiz'] .pvc-stage[data-ui='simple'] .pvc-hint { top: 54px; }
@@ -46,6 +43,21 @@ body.bg-transparent { background: transparent; }
 .ef .pvc-opt { height: 50px; }
 .ef .pvc-q-feedback { font-size: 14px; }
 
+/* phones held upright: a tighter sheet, so the 3D view gets more than 55 % of the height (the test's sheet too: both
+   share one cell, so the panel keeps one height in every state) */
+@container pvc (max-width: 560px) {
+  .ef .pvc-learn, .ef .pvc-q-ask { gap: 6px; }
+  .ef .pvc-examples button { min-height: 40px; padding: 2px 3px 4px; }
+  .ef .pvc-outcome { font-size: 15px; }
+  .ef .pvc-rule { font-size: 14px; line-height: 1.42; }
+  .ef-forces { font-size: 12px; line-height: 1.35; }
+  .ef .pvc-q-head { min-height: 34px; }
+  .ef .pvc-q-head .pvc-btn { height: 34px; }
+  .ef .pvc-q-text { font-size: 15px; line-height: 1.4; }
+  .ef .pvc-opt { height: 44px; }
+  .ef .pvc-q-options { gap: 6px; }
+  .ef .pvc-q-feedback { font-size: 12.5px; line-height: 1.35; }
+}
 /* phone embeds that are not very tall: a little smaller, so the 3D view keeps more room */
 @container pvc (max-width: 560px) and (max-height: 600px) {
   .ef .pvc-rule { font-size: 13.5px; line-height: 1.42; }
@@ -54,44 +66,4 @@ body.bg-transparent { background: transparent; }
   .ef .pvc-q-feedback { font-size: 12.5px; line-height: 1.35; }
   .ef .pvc-opt { height: 40px; }
   .pvc-opt .ef-opt { font-size: 12.5px; line-height: 1.18; }
-}
-/* wide frames (book page, desktop): the lines close together at the top; the rule on two lines */
-@container pvc (min-width: 720px) and (min-height: 461px) {
-  .ef .pvc-learn { justify-content: flex-start; gap: 8px; }
-  .ef .pvc-examples { max-width: 360px; }
-  .ef .pvc-rule { --pvc-rule-lines: 2; }
-  .ef .pvc-opt { height: 46px; }
-  .pvc-opt .ef-opt { font-size: 12.5px; } /* four answers in a row: still two lines each */
-}
-/* short and wide (phone held sideways): the panel beside the picture */
-@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
-  .ef .pvc-outcome { font-size: 15px; line-height: 1.55; white-space: normal; --pvc-outcome-lines: 2; }
-  .ef .pvc-rule { --pvc-rule-lines: 4; font-size: 14px; line-height: 1.45; }
-  .ef-forces { font-size: 12px; line-height: 1.4; }
-  .ef-forces-k { display: block; white-space: normal; } /* the heading on its own line(s), the list under it */
-  .ef .pvc-q-text { font-size: 14px; }
-  .ef .pvc-q-feedback { font-size: 13px; }
-  .ef .pvc-opt { height: 44px; padding: 0 4px; }
-  .pvc-opt .ef-opt { font-size: 12.5px; line-height: 1.18; }
-}
-/* Keep room for the hand, hair and paper together on a board. */
-@container pvc (min-width: 720px) {
-  .ef .pvc-shell { grid-template-rows: minmax(0, 1fr); grid-template-columns: minmax(0, 1fr) clamp(280px, 35%, 370px); }
-  .ef .pvc-panel { display: flex; align-items: stretch; border-top: 0; border-left: 1px solid var(--line); padding: 12px; gap: 10px; overflow: hidden; }
-  .ef .pvc-tabs { grid-template-columns: 1fr 1fr; max-width: none; }
-  .ef .pvc-tabs button + button { border-top: 0; border-left: 1px solid var(--line-2); }
-  .ef .pvc-outcome { white-space: normal; --pvc-outcome-lines: 2; font-size: 16px; }
-  .ef .pvc-rule { --pvc-rule-lines: 5; font-size: 14px; }
-  .ef .pvc-act-row { --pvc-act-lines: 2; }
-  .ef .pvc-q-options { grid-template-columns: 1fr 1fr; }
-  .ef .pvc-opt { height: 46px; }
-  .ef-forces-k { white-space: normal; }
-}
-@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
-  .ef .pvc-panel { padding: 8px 10px; gap: 6px; }
-  .ef .pvc-learn { gap: 6px; }
-  .ef .pvc-examples button { min-height: 32px; padding: 2px 3px; }
-  .ef .pvc-act-row { min-height: 48px; }
-  .ef .pvc-outcome { min-height: 44px; font-size: 14.5px; line-height: 1.45; }
-  .ef .pvc-rule { min-height: 84px; font-size: 14px; line-height: 1.4; }
 }

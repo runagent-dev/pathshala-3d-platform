@@ -1,5 +1,8 @@
-// A simple original hand gripping the left end of the comb. Rounded forms keep the gesture legible on phones.
+// A simple original hand gripping the left end of the comb. Rounded forms keep the gesture legible on phones. Built
+// from ovals, then merged: one mesh of skin and one of the shirt's cuff.
 import * as THREE from 'three';
+import { mergeStatic } from './merge.js';
+
 export function createHand(skin) {
   const hand = new THREE.Group();
   hand.name = 'HandHoldingComb';
@@ -18,5 +21,6 @@ export function createHand(skin) {
   oval('Palm', -83, 20, 3, 23, 18, 9, skin, 0.15);
   for (let i = 0; i < 4; i++) oval('CurledFinger', -66 - i * 3, 13 - i * 6, 5, 10, 4.6, 5.5, skin, -0.32);
   oval('Thumb', -66, 31, 8, 18, 6.5, 5.5, skin, -0.3);
-  return hand;
+  hand.userData.parts = hand.children.map((m) => m.name);
+  return mergeStatic(hand);
 }
