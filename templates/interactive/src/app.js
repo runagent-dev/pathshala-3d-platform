@@ -47,7 +47,7 @@ export function createApp(root, options = {}) {
   root.lang = t.lang;
   root.tabIndex = 0;
   // the clean sheet: the action's row, one result line, one rule line (room kept so the 3D view keeps its size)
-  const ui = buildStudentShell(root, t, { learn: cleanSheet(t, { lines: { action: 1, outcome: 1, rule: 2 } }) });
+  const ui = buildStudentShell(root, t, { layout: 'side', learn: cleanSheet(t, { lines: { action: 1, outcome: 1, rule: 2 } }) });
   const sheet = bindCleanSheet(ui.learn);
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
