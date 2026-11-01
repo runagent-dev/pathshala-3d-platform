@@ -1,165 +1,176 @@
+/* Newton's third law: the 3D view on top and the panel below at every size but the kit's short-and-wide one (a phone
+   on its side), where the panel sits on the right. The learn sheet, top to bottom: the two examples, the action (with
+   পূর্ণ হিসাব beside it), the result line, the force-pair box (the two forces named with their size and their solid or
+   dashed key, a small line of notes) and the rule. On wide frames the sheet is two columns under the view. The box
+   keeps one height in every state of both examples, so the 3D view never changes size. The student view itself is
+   ../../shared/lib/student/student.css. */
 html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
 #app { position: fixed; inset: 0; }
 body.bg-transparent { background: transparent; }
-.nt { --c-force: #a95100; --c-grav: #7048e8; --c-acc: #0c8599; }
-.nt .pvc-learn { gap: 7px; }
-.nt .pvc-outcome { font-size: 15px; line-height: 1.4; min-height: 2.8em; }
-.nt .pvc-rule { font-size: 14px; line-height: 1.4; min-height: 2.8em; }
-.nt .pvc-act-row { min-height: 44px; }
+.nt { --c-force: #a05000; --c-grav: #6741b5; --c-vel: #0f3a66; }
+.nt sub, .nt sup { font-size: 0.7em; line-height: 0; }
+
+/* labels on the view: solid white chips; a force's label in its arrow's darker colour */
+.nt .pvc-anno { transition: none; background: #fff; padding: 2px 7px; font-size: 13px; line-height: 1.3; box-shadow: 0 1px 3px rgba(12, 30, 52, 0.28); }
+.nt .pvc-anno-part { color: #1d3a50; border-color: #8aa0b2; font-weight: 600; }
+.nt .pvc-anno-callout { font-size: 12.5px; border-width: 1.5px; }
+.nt-key { display: inline-block; width: 13px; margin-right: 4px; border-top: 2.5px solid currentColor; vertical-align: middle; }
+.nt-key.dash { border-top-style: dashed; }
+.nt-gravity-label { display: block; white-space: nowrap; text-align: left; }
+
+/* on a phone-sized view the labels are a little smaller, so the force labels find room beside their arrows */
+@container pvc (max-width: 560px) {
+ .nt .pvc-anno { font-size: 12px; padding: 1px 6px; }
+ .nt .pvc-anno-callout { font-size: 11.5px; }
+}
+
+/* the learn sheet */
+.nt .pvc-learn { gap: 4px; justify-content: flex-start; }
+.nt .pvc-examples button { min-height: 34px; padding: 2px 3px 3px; }
+.nt .pvc-ex-word { font-size: 14.5px; }
+.nt .pvc-act-row { min-height: 44px; height: 44px; }
 .nt .pvc-act { min-height: 42px; padding: 3px 14px 3px 5px; font-size: 15px; }
 .nt .pvc-act-num { width: 32px; height: 32px; font-size: 18px; }
-.nt .pvc-examples button { min-height: 36px; }
-.nt .pvc-ex-word { font-size: 14px; }
-.nt-equations { color: #204b65; font-size: 14px; line-height: 1.6; background: #f0f7fa; border-left: 3px solid #227f99; padding: 5px 9px; }
-.nt-equations > div { white-space: nowrap; }
-.nt-equations small { display: block; color: #4c6676; font-size: 11.5px; line-height: 1.5; }
-.nt-pair { font-weight: 700; color: #82450a; }
-.nt-equations sub { font-size: .7em; line-height: 0; }
-.nt-equations sup { font-size: .7em; line-height: 0; }
-.nt-frac { display: inline-flex; vertical-align: middle; flex-direction: column; align-items: center; margin: 0 3px; font-size: .9em; line-height: 1.15; }
-.nt-frac > span:first-child { border-bottom: 1px solid currentColor; padding: 0 3px; }
-.nt-earth-acc { color: #155f64; }
-.nt-vector { display: inline-block; position: relative; padding-top: .14em; }
-.nt-vector::before { content: '→'; position: absolute; top: -.55em; font-size: .75em; }
-.nt-badge { position: absolute; top: 58px; left: 10px; max-width: calc(100% - 20px); color: #effaff; font-size: 11.5px; font-weight: 500; line-height: 1.3; pointer-events: none; z-index: 4; }
-.nt .pvc-anno { transition: none; background: #fffdf2; padding: 3px 7px; font-size: 13px; line-height: 1.3; }
-.nt .pvc-anno-part { color: #22455c; }
-.nt .pvc-anno-callout { font-size: 12px; }
-.nt-key { display: inline-block; width: 13px; margin-right: 4px; border-top: 2px solid currentColor; vertical-align: middle; }
-.nt-key.dash { border-top-style: dashed; }
-.nt .pvc-opt { font-size: 13px; line-height: 1.25; white-space: normal; }
-.nt .pvc-q-text { font-size: 14px; }
-.nt .pvc-q-feedback { font-size: 13px; }
-.nt .pvc-q-options { gap: 6px; }
-@container pvc (min-width: 720px) {
- .nt .pvc-shell { grid-template-rows: minmax(0,1fr); grid-template-columns: minmax(0,1fr) clamp(300px,36%,390px); }
- .nt .pvc-panel { display: flex; align-items: stretch; border-top: 0; border-left: 1px solid var(--line); padding: 12px; gap: 8px; overflow: hidden; }
- .nt .pvc-tabs { grid-template-columns: 1fr 1fr; max-width: none; }
- .nt .pvc-tabs button + button { border-top: 0; border-left: 1px solid var(--line-2); }
- .nt .pvc-learn { justify-content: flex-start; gap: 10px; }
- .nt .pvc-q-options { grid-template-columns: 1fr 1fr; }
- .nt-equations { font-size: 14px; }
- .nt-equations small { font-size: 11px; }
+.nt .pvc .pvc-act-row .pvc-quiet, .nt .pvc-act-row .pvc-quiet { min-height: 40px; min-width: 40px; padding: 0 6px; gap: 5px; color: #176a80; font-size: 13.5px; font-weight: 600; }
+.nt .pvc-act-row .pvc-quiet svg { width: 19px; height: 19px; }
+@container pvc-panel (min-width: 300px) {
+ .nt .pvc-act-row .pvc-quiet > span { display: inline; }
 }
-@container pvc (max-width: 560px) and (max-height: 600px) {
- .nt .pvc-panel { padding: 6px 12px 8px; gap: 5px; }
- .nt .pvc-learn { gap: 4px; }
- .nt .pvc-outcome { font-size: 12px; min-height: 2.8em; }
- .nt .pvc-rule { font-size: 12px; min-height: 2.8em; }
- .nt .pvc-examples button { min-height: 30px; padding: 2px 3px; }
- .nt .pvc-act-row { min-height: 38px; }
- .nt .pvc-act { min-height: 36px; font-size: 13px; }
- .nt .pvc-act-num { width: 28px; height: 28px; font-size: 16px; }
- .nt-equations { font-size: 12px; line-height: 1.45; padding: 3px 7px; }
- .nt-equations small { font-size: 10.5px; line-height: 1.3; }
- .nt-badge { font-size: 10px; top: 52px; }
-}
-@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
- .nt .pvc-panel { padding: 8px 10px; gap: 6px; overflow: hidden; }
- .nt .pvc-learn { gap: 5px; }
- .nt .pvc-examples button { min-height: 30px; padding: 2px 3px; }
- .nt .pvc-outcome { font-size: 13px; min-height: 2.8em; }
- .nt .pvc-rule { font-size: 13px; min-height: 2.8em; }
- .nt .pvc-act-row { min-height: 38px; }
- .nt .pvc-act { min-height: 36px; font-size: 13px; }
- .nt-equations { font-size: 12px; line-height: 1.45; padding: 3px 7px; }
- .nt-equations small { font-size: 10.5px; line-height: 1.3; }
- .nt .pvc-act-num { width: 28px; height: 28px; font-size: 16px; }
-}
-@container pvc (min-width: 1000px) and (min-height: 601px) {
- .nt-equations { font-size: 16px; line-height: 1.7; padding: 8px 10px; }
- .nt-equations small { font-size: 13px; }
- .nt .pvc-learn { gap: 14px; }
- .nt .pvc-outcome { font-size: 17px; }
- .nt .pvc-rule { font-size: 16px; }
- .nt .pvc-anno { font-size: 15px; }
-}
-.nt-magnitude { display: flex; align-items: center; justify-content: space-between; gap: 5px; }
-.nt-magnitude .nt-pair { font-size: .86em; }
-@container pvc (max-width: 560px) and (max-height: 600px) {
- .nt[data-example='apple'] .pvc-outcome { min-height: 1.4em; }
- .nt[lang='bn'][data-example='apple'] .pvc-rule { min-height: 1.4em; }
- .nt .pvc-q-text { --pvc-q-text-min: 2.5lh; font-size: 13px; }
- .nt .pvc-q-feedback { --pvc-q-feedback-min: 3lh; font-size: 12px; }
- .nt .pvc-opt { height: 38px; font-size: 12.5px; }
- .nt .pvc-q-head { min-height: 30px; }
-}
-.nt-earth-acc { font-size: .94em; }
-/* The main lesson shows only the three useful results; the derivation has its own readable sheet. */
-.nt-simple-row { display: grid; grid-template-columns: 62px minmax(0,1fr); gap: 6px; align-items: baseline; min-height: 27px; }
-.nt-simple-row > span { color: #476879; font-size: .9em; }
-.nt-simple-row strong { font-size: .95em; font-weight: 600; }
-.nt-simple-row:last-of-type strong { font-size: .88em; }
-.nt .nt-simple-boat { white-space: normal; }
-.nt-maths-open { display: block; margin: 5px 0 0 auto; height: 28px; padding: 0 9px; color: #176a80; background: #fff; border: 1px solid #7bafb8; border-radius: 4px; font: inherit; font-size: 12px; font-weight: 600; }
-.nt-math-dialog { width: min(470px,calc(100vw - 24px)); max-height: calc(100vh - 24px); padding: 16px; border: 1px solid #b1c9d3; border-radius: 9px; color: #204b65; background: #fffdf7; }
-.nt-math-dialog::backdrop { background: rgba(10,29,47,.48); }
-.nt-math-dialog h2 { margin: 0 0 13px; font-size: 18px; line-height: 1.4; }
-.nt-dialog-maths { font-size: 16px; line-height: 1.8; }
-.nt-dialog-maths small { display: block; font-size: 12px; line-height: 1.6; color: #526b79; }
-.nt-dialog-maths .nt-magnitude { justify-content: flex-start; gap: 18px; margin: 8px 0; }
-.nt-dialog-maths .nt-earth-acc { font-size: 1em; }
-.nt-dialog-maths sup, .nt-dialog-maths sub { font-size: .7em; line-height: 0; }
-.nt-math-dialog > button { display: block; margin: 14px 0 0 auto; min-height: 36px; }
-@container pvc (max-width: 560px) and (max-height: 600px) {
- .nt-simple-row { min-height: 22px; grid-template-columns: 48px minmax(0,1fr); gap: 5px; }
- .nt-maths-open { height: 26px; font-size: 11.5px; margin-top: 3px; }
- .nt-math-dialog { padding: 14px; }
- .nt-dialog-maths { font-size: 14px; line-height: 1.7; }
- .nt-dialog-maths small { font-size: 11.5px; }
-}
-@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
- .nt-simple-row { min-height: 22px; grid-template-columns: 48px minmax(0,1fr); gap: 5px; }
- .nt-dialog-maths { font-size: 14px; line-height: 1.65; }
- .nt-math-dialog { padding: 12px; }
-}
-.nt[data-example='apple'] .nt-pair { color: #6741b5; }
+.nt .pvc-outcome { font-size: 14px; line-height: 1.4; min-height: 2.8em; }
+.nt .pvc-rule { font-size: 13px; line-height: 1.4; min-height: 2.8em; }
 
-/* Three paused teaching steps share one steady space, before the optional derivation. */
-.nt[data-example='apple'] .nt-equations { padding: 5px 8px; }
-.nt-progress { display: flex; gap: 9px; list-style: none; padding: 0; margin: 0 0 5px; height: 26px; align-items: center; font-size: 12px; color: #617487; }
+/* the force-pair box: the same height for both examples and every step of the apple's lesson */
+.nt-equations { box-sizing: border-box; padding: 4px 9px; border-left: 3px solid var(--c-force); background: #fbf2e7; color: #5a3005; }
+.nt[data-example='apple'] .nt-equations { border-left-color: var(--c-grav); background: #f3effc; color: #3d2777; }
+.nt-progress { display: none; gap: 10px; list-style: none; padding: 0; margin: 0 0 3px; height: 24px; align-items: center; font-size: 12px; color: #5f6f80; }
 .nt-progress li { white-space: nowrap; }
 .nt-progress b { display: inline-grid; place-items: center; width: 20px; height: 20px; border: 1px solid #9aacbc; border-radius: 50%; font-size: 12px; }
 .nt-progress [aria-current] { color: #5531a0; font-weight: 700; }
 .nt-progress [aria-current] b { background: #6741b5; color: #fff; border-color: #6741b5; }
-.nt .nt-lesson-content { height: 96px; white-space: normal; }
-.nt-pull-row { display: grid; grid-template-columns: 24px minmax(0,1fr) auto; gap: 5px; align-items: center; min-height: 29px; font-size: 13px; color: #523387; }
-.nt-pull-key { font-weight: 800; font-size: 22px; border-bottom: 2px solid #7048e8; line-height: 1; text-align: center; }
+.nt .nt-lesson-content { --row: 24px; --cap: 1; display: flex; flex-direction: column; height: calc(2 * var(--row) + var(--cap) * 1.4 * 11px + 3px); white-space: normal; }
+.nt-pull-row { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; gap: 6px; align-items: center; height: var(--row); font-size: 13px; white-space: nowrap; }
+.nt-pull-row > span:nth-child(2) { overflow: hidden; text-overflow: ellipsis; }
+.nt-pull-row b { font-variant-numeric: tabular-nums; }
+.nt-pull-key { font-weight: 800; font-size: 17px; line-height: 1.05; text-align: center; color: var(--c-force); border-bottom: 2.5px solid currentColor; }
+.nt[data-example='apple'] .nt-pull-key { color: var(--c-grav); }
 .nt-pull-key.dash { border-bottom-style: dashed; }
-.nt-equal-caption { margin: 7px 0 0; font-size: 11.5px; line-height: 1.4; white-space: normal; }
+.nt-caption { margin: 3px 0 0; font-size: 11px; line-height: 1.4; color: #55606c; }
 .nt-reasons { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-.nt-reasons button { min-height: 43px; padding: 3px 6px; border: 1px solid #6d65a5; border-radius: 5px; background: #fff; color: #49376c; font: inherit; font-size: 12px; line-height: 1.25; }
+.nt-reasons button { min-height: 38px; padding: 2px 6px; border: 1px solid #6d65a5; border-radius: 6px; background: #fff; color: #49376c; font: inherit; font-size: 12.5px; line-height: 1.25; }
+.nt-reasons button:hover { background: #f7f4ff; }
 .nt-reasons button[aria-pressed='true'] { background: #fff1dc; border-color: #b8791b; }
-.nt-reason-feedback { min-height: 2.7em; margin: 5px 0 0; font-size: 12px; line-height: 1.35; color: #975113; }
-.nt-reason-feedback.correct { color: #245c56; margin: 0 0 3px; }
+.nt-reason-feedback { margin: 4px 0 0; min-height: 1.4em; font-size: 12px; line-height: 1.4; color: #8e4a0f; }
+.nt-simple-row { display: grid; grid-template-columns: 62px minmax(0, 1fr); gap: 6px; align-items: center; height: var(--row); font-size: 13px; }
+.nt-simple-row > span { color: #5a4f78; }
+.nt-simple-row strong { font-weight: 700; }
+
+/* the test: answers in words */
+.nt .pvc-opt { font-size: 13px; line-height: 1.25; white-space: normal; }
+.nt .pvc-q-text { --pvc-q-text-min: 2lh; font-size: 14px; }
+.nt .pvc-q-feedback { --pvc-q-feedback-min: 3lh; font-size: 12.5px; line-height: 1.4; }
+.nt .pvc-q-options { gap: 6px; }
+.nt .pvc-q-ask { gap: 6px; }
+.nt .pvc-q-head { min-height: 32px; }
+.nt .pvc-q-head .pvc-btn { height: 34px; }
+.nt .pvc-opt { height: 42px; }
+
+/* phones that are not very tall (390×520) */
 @container pvc (max-width: 560px) and (max-height: 600px) {
- .nt-progress { height: 21px; font-size: 11px; margin-bottom: 3px; }
- .nt-progress b { width: 18px; height: 18px; font-size: 11px; }
- .nt .nt-lesson-content { height: 79px; }
- .nt-pull-row { min-height: 24px; font-size: 12px; }
- .nt-equal-caption { font-size: 10.5px; margin-top: 4px; }
- .nt-reasons button { min-height: 37px; font-size: 11.5px; }
- .nt-reason-feedback { font-size: 11px; }
- .nt[data-example='apple'] .pvc-outcome, .nt[data-example='apple'] .pvc-rule { min-height: 2.8em; }
- .nt[data-example='apple'] .nt-equations { padding: 3px 6px; }
+ .nt .pvc-panel { padding-top: 6px; gap: 5px; }
+ .nt .pvc-learn { gap: 3px; }
+ .nt .pvc-examples button { min-height: 32px; }
+ .nt .pvc-ex-word { font-size: 14px; }
+ .nt .pvc .pvc-act { min-height: 38px; font-size: 14px; }
+ .nt .pvc-act-num { width: 28px; height: 28px; font-size: 16px; }
+ .nt .pvc-outcome { font-size: 13px; line-height: 1.35; min-height: 2.7em; }
+ .nt .pvc-rule { font-size: 12px; line-height: 1.35; min-height: 2.7em; }
+ .nt .nt-lesson-content { --row: 22px; }
+ .nt-equations { padding: 3px 8px; }
+ .nt-pull-row, .nt-simple-row { font-size: 12.5px; }
+ .nt-reasons button { min-height: 36px; font-size: 12px; }
+ .nt .pvc-q-text { font-size: 13px; }
+ .nt .pvc-q-feedback { font-size: 12px; }
+ .nt .pvc-opt { height: 38px; font-size: 12.5px; }
+ .nt .pvc-q-head { min-height: 30px; }
+ .nt .pvc-q-head .pvc-btn { height: 32px; }
+ .nt .pvc-q-ask { gap: 4px; }
+ .nt .pvc-q-feedback { font-size: 11.5px; }
 }
+
+/* short and wide (a phone on its side): the panel on the right, as the kit puts it */
 @container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
- .nt-progress { font-size: 11px; height: 23px; }
- .nt .nt-lesson-content { height: 85px; }
- .nt-pull-row { font-size: 11.5px; min-height: 25px; }
- .nt-equal-caption { font-size: 10.5px; }
- .nt-reason-feedback { font-size: 11.5px; }
+ .nt .pvc-panel { padding: 8px 10px; gap: 6px; overflow: hidden; }
+ .nt .pvc-learn { gap: 5px; }
+ .nt .pvc-examples button { min-height: 32px; }
+ .nt .pvc-ex-word { font-size: 13.5px; }
+ .nt .pvc-act-row { min-height: 48px; height: 48px; }
+ .nt .pvc .pvc-act { min-height: 38px; font-size: 13.5px; }
+ .nt .pvc-act-num { width: 28px; height: 28px; font-size: 16px; }
+ .nt .pvc-outcome { font-size: 12.5px; line-height: 1.35; min-height: 2.7em; }
+ .nt .pvc-rule { font-size: 12px; line-height: 1.35; min-height: 2.7em; }
+ .nt .nt-lesson-content { --row: 22px; --cap: 2; }
+ .nt-caption { font-size: 10.5px; }
+ .nt-pull-row, .nt-simple-row { font-size: 12px; grid-template-columns: 22px minmax(0, 1fr) auto; }
+ .nt-simple-row { grid-template-columns: 50px minmax(0, 1fr); }
+ .nt-reasons button { min-height: 36px; font-size: 11.5px; }
+ .nt-reason-feedback { font-size: 11px; }
+ .nt .pvc-q-text { font-size: 13px; --pvc-q-text-min: 3lh; }
+ .nt .pvc-q-feedback { font-size: 12px; --pvc-q-feedback-min: 4lh; }
+ .nt .pvc-opt { height: 40px; font-size: 12px; }
 }
 
-@container pvc (max-width: 560px) {
- .nt[data-example='apple'] .nt-badge { max-width: 42%; }
+/* wide frames (book page, desktop): the sheet in two columns under the view, the lesson's steps shown */
+@container pvc (min-width: 720px) and (min-height: 461px) {
+ .nt .pvc-learn { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: 'ex box' 'act box' 'out rule'; grid-template-rows: auto auto 1fr; align-content: start; gap: 6px 20px; }
+ .nt .pvc-examples { grid-area: ex; }
+ .nt .pvc-act-row { grid-area: act; align-self: start; }
+ .nt .pvc-outcome { grid-area: out; }
+ .nt .pvc-rule { grid-area: rule; }
+ .nt-equations { grid-area: box; align-self: start; }
+ .nt .pvc-outcome, .nt .pvc-rule { align-self: start; }
+ .nt-progress { display: flex; }
+ .nt[data-example='boat'] .nt-progress { visibility: hidden; }
+ .nt .pvc-q-options { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+ .nt .pvc-opt { height: 46px; }
+ .nt .pvc-q-feedback { --pvc-q-feedback-min: 2lh; }
 }
-@container pvc (max-width: 560px) and (max-height: 600px) {
- /* The legend and answer feedback already state the rule; leave more room for the fall. */
- .nt[data-example='apple'] .pvc-rule { display: none; }
+@container pvc (min-width: 720px) and (max-width: 999px) and (min-height: 461px) {
+ .nt .pvc-act-row .pvc-quiet > span { display: none; }
+}
+@container pvc (min-width: 1000px) and (min-height: 601px) {
+ .nt .pvc-outcome { font-size: 16px; }
+ .nt .pvc-rule { font-size: 15px; }
+ .nt .nt-lesson-content { --row: 27px; }
+ .nt-pull-row, .nt-simple-row { font-size: 14.5px; }
+ .nt-caption { font-size: 12px; }
+ .nt .nt-lesson-content { height: calc(2 * var(--row) + 1.4 * 12px + 3px); }
+ .nt-reasons button { font-size: 13.5px; min-height: 44px; }
+ .nt .pvc-anno { font-size: 14px; }
+ .nt .pvc-q-text { font-size: 16px; }
+ .nt .pvc-q-feedback { font-size: 14px; }
+ .nt .pvc-opt { font-size: 14px; height: 50px; }
 }
 
-.nt-reason-feedback.correct { min-height: 0; }
-.nt-summary-formula { color: #315e68; font-size: 12px; font-weight: 600; line-height: 1.3; }
-
-.nt-gravity-label { display: block; white-space: normal; text-align: left; }
+/* the full calculation, in its own dialog */
+.nt-math-dialog { width: min(470px, calc(100vw - 24px)); max-height: calc(100vh - 24px); box-sizing: border-box; padding: 16px; border: 1px solid #b1c9d3; border-radius: 9px; color: #204b65; background: #fffdf7; }
+.nt-math-dialog::backdrop { background: rgba(10, 29, 47, 0.48); }
+.nt-math-dialog h2 { margin: 0 0 13px; font-size: 18px; line-height: 1.4; }
+.nt-dialog-maths { font-size: 16px; line-height: 1.8; }
+.nt-dialog-maths > div { white-space: nowrap; }
+.nt-dialog-maths small { display: block; font-size: 12px; line-height: 1.6; color: #526b79; }
+.nt-dialog-maths .nt-magnitude { display: flex; align-items: center; justify-content: flex-start; flex-wrap: wrap; gap: 0 18px; margin: 8px 0; }
+.nt-pair { font-weight: 700; color: #82450a; }
+.nt[data-example='apple'] .nt-pair { color: #6741b5; }
+.nt-earth-acc { color: #155f64; }
+.nt-frac { display: inline-flex; vertical-align: middle; flex-direction: column; align-items: center; margin: 0 3px; font-size: 0.9em; line-height: 1.15; }
+.nt-frac > span:first-child { border-bottom: 1px solid currentColor; padding: 0 3px; }
+.nt-vector { display: inline-block; position: relative; padding-top: 0.14em; }
+.nt-vector::before { content: '→'; position: absolute; top: -0.55em; font-size: 0.75em; }
+.nt-math-dialog > button { display: block; margin: 14px 0 0 auto; min-height: 36px; }
+@container pvc (max-height: 600px) {
+ .nt-math-dialog { padding: 12px; }
+ .nt-math-dialog h2 { margin-bottom: 6px; font-size: 16px; }
+ .nt-dialog-maths { font-size: 14px; line-height: 1.65; }
+ .nt-dialog-maths small { font-size: 11.5px; line-height: 1.45; }
+ .nt-math-dialog > button { margin-top: 8px; }
+}
