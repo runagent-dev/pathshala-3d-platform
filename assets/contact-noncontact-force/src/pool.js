@@ -7,7 +7,9 @@
 import * as THREE from 'three';
 import { createArrow } from './arrow.js';
 import { createPerson } from './person.js';
-import { V, box, canvasTexture, castShadows, glowSpot, groundPatch, mat, placeTube, tube, wheel } from './parts.js';
+import { mergeStatic } from './merge.js';
+import { V, box, canvasTexture, castShadows, glowSpot, groundPatch, mat, placeTube, tube, wheel, woodMaterial } from './parts.js';
+import { skySetting, tableSetting, yardSetting } from './setting.js';
 
 const frac = (x) => x - Math.floor(x);
 const clamp01 = (x) => Math.min(1, Math.max(0, x));
@@ -17,7 +19,7 @@ const smooth = (x) => {
 };
 
 // ── a student pulls a cart with a rope ───────────────────────────────────────────────────────────────────────
-export function createRopeScene({ color, materials }) {
+export function createRopeScene({ color, setting = true }) {
   const root = new THREE.Group();
   root.name = 'RopeScene';
   const model = new THREE.Group();
@@ -30,7 +32,7 @@ export function createRopeScene({ color, materials }) {
   const cart = new THREE.Group();
   cart.position.x = CART_X;
   model.add(cart);
-  box(0.66, 0.3, 0.44, materials.wood, 0, 0.36, 0, cart);
+  box(0.66, 0.3, 0.44, woodMaterial(), 0, 0.36, 0, cart);
   box(0.7, 0.05, 0.48, mat('#6b4a2b', { roughness: 0.7 }), 0, 0.22, 0, cart);
   const wheels = [];
   for (const x of [-0.22, 0.22])
@@ -58,32 +60,43 @@ export function createRopeScene({ color, materials }) {
   const ropeMat = mat('#b08a4a', { roughness: 0.85, name: 'Rope' });
   const rope = tube(V(0, 0, 0), V(1, 0, 0), 0.009, ropeMat, model);
 
-  // a path of flagstones that slides back under them (they stay in the middle of the picture)
-  const tiles = canvasTexture(
-    256,
-    64,
-    (ctx, w, h) => {
-      ctx.fillStyle = '#e6e2da';
-      ctx.fillRect(0, 0, w, h);
-      ctx.strokeStyle = 'rgba(120,110,95,0.35)';
-      ctx.lineWidth = 3;
-      for (let x = 0; x <= w; x += w / 4) {
+  // the school yard's brick path and boundary wall, sliding back past them (they stay in the middle of the picture);
+  // on a transparent page, a strip of flagstones that fades out
+  const yard = setting ? yardSetting() : null;
+  /** @type {{ tex: THREE.Texture, per: number }[]} */
+  const slide = [];
+  if (yard) {
+    root.add(yard.root);
+    yard.slide.forEach((t, i) => slide.push({ tex: t, per: yard.per[i] }));
+  } else {
+    // a path of flagstones that slides back under them (they stay in the middle of the picture)
+    const tiles = canvasTexture(
+      256,
+      64,
+      (ctx, w, h) => {
+        ctx.fillStyle = '#e6e2da';
+        ctx.fillRect(0, 0, w, h);
+        ctx.strokeStyle = 'rgba(120,110,95,0.35)';
+        ctx.lineWidth = 3;
+        for (let x = 0; x <= w; x += w / 4) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, h);
+          ctx.stroke();
+        }
         ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, h);
+        ctx.moveTo(0, h / 2);
+        ctx.lineTo(w, h / 2);
         ctx.stroke();
-      }
-      ctx.beginPath();
-      ctx.moveTo(0, h / 2);
-      ctx.lineTo(w, h / 2);
-      ctx.stroke();
-    },
-    { repeat: [5, 1] },
-  );
-  const ground = groundPatch(5, 1.6, { color: '#e6e2da' });
-  ground.material.map = tiles;
-  ground.material.needsUpdate = true;
-  root.add(ground);
+      },
+      { repeat: [5, 1] },
+    );
+    const ground = groundPatch(5, 1.6, { color: '#e6e2da' });
+    ground.material.map = tiles;
+    ground.material.needsUpdate = true;
+    root.add(ground);
+    slide.push({ tex: tiles, per: 1 });
+  }
   castShadows(model);
 
   const arrow = createArrow({ color, radius: 0.014, head: 0.085, headRadius: 0.036 });
@@ -97,7 +110,7 @@ export function createRopeScene({ color, materials }) {
 
   function update(t, { arrowOn = false, marks = false } = {}) {
     const d = t * SPEED;
-    tiles.offset.x = frac(d / 1) * 1; // 1 m per tile column … repeat 5 over 5 m
+    for (const { tex, per } of slide) tex.offset.x = frac(d / per); // one repeat of the texture is `per` m long
     for (const w of wheels) w.rotation.z = -d / 0.11;
     person.pose({ lean: 0.2, hands: [V(-0.24, 0.88, 0.22), null], walk: (d / 0.3) * Math.PI, stride: 0.24, spread: 0.1 });
     hand.copy(person.handAt(0)).add(person.root.position);
@@ -112,6 +125,7 @@ export function createRopeScene({ color, materials }) {
   return {
     id: 'rope',
     root,
+    background: yard?.background ?? null,
     model,
     hits: [],
     arrow,
@@ -130,7 +144,8 @@ export function createRopeScene({ color, materials }) {
 }
 
 // ── a student under an open parachute ────────────────────────────────────────────────────────────────────────
-export function createParachuteScene({ color }) {
+export function createParachuteScene({ color, setting = true }) {
+  const sky = setting ? skySetting() : null;
   const root = new THREE.Group();
   root.name = 'ParachuteScene';
   const model = new THREE.Group();
@@ -143,10 +158,11 @@ export function createParachuteScene({ color }) {
   const canopy = new THREE.Group();
   canopy.position.y = RIM_Y;
   model.add(canopy);
-  const colorsGore = ['#f08c00', '#fafafa'];
+  const colorsGore = ['#1d3a6b', '#f4f1e8']; // navy and cream: the orange patch on the cloth and the sky both stand out
+  const goreMats = colorsGore.map((c, i) => new THREE.MeshStandardMaterial({ name: `Canopy${i}`, color: c, roughness: 0.7, side: THREE.DoubleSide }));
   for (let i = 0; i < GORES; i++) {
     const geo = new THREE.SphereGeometry(R, 4, 10, (i * Math.PI * 2) / GORES, (Math.PI * 2) / GORES, 0, Math.PI * 0.42);
-    const g = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: colorsGore[i % 2], roughness: 0.7, side: THREE.DoubleSide }));
+    const g = new THREE.Mesh(geo, goreMats[i % 2]);
     g.scale.y = 0.62;
     g.position.y = -R * Math.cos(Math.PI * 0.42) * 0.62;
     canopy.add(g);
@@ -166,7 +182,7 @@ export function createParachuteScene({ color }) {
     lines.push(tube(V(0, 0, 0), V(0, 1, 0), 0.005, lineMat, model));
   }
   // air rushing past (it comes down, so the air goes up past it)
-  const airMat = new THREE.MeshBasicMaterial({ color: '#9fb3c8', transparent: true, opacity: 0.55, depthWrite: false });
+  const airMat = new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.7, depthWrite: false });
   const air = Array.from({ length: 9 }, (_, i) => {
     const m = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.42, 0.012), airMat);
     m.userData.noExport = true;
@@ -176,6 +192,7 @@ export function createParachuteScene({ color }) {
     return m;
   });
   castShadows(model);
+  mergeStatic(canopy); // twelve gores: two meshes, one per colour
 
   const arrow = createArrow({ color, radius: 0.028, head: 0.17, headRadius: 0.07 });
   root.add(arrow.root);
@@ -201,7 +218,6 @@ export function createParachuteScene({ color }) {
     for (const a of air) {
       const p = frac(a.userData.p + t * 0.55);
       a.position.set(a.userData.x, -0.2 + p * 3.8, -0.6);
-      a.material.opacity = 0.55;
       a.visible = Math.abs(a.position.x) > rimR * 0.9 || a.position.y < RIM_Y - 0.4;
     }
     arrow.setOpacity(arrowOn ? 1 : 0);
@@ -215,6 +231,7 @@ export function createParachuteScene({ color }) {
   return {
     id: 'parachute',
     root,
+    background: sky?.background ?? null,
     model,
     hits: [],
     arrow,
@@ -233,7 +250,7 @@ export function createParachuteScene({ color }) {
 }
 
 // ── a comb lifts bits of paper ───────────────────────────────────────────────────────────────────────────────
-export function createCombScene({ color }) {
+export function createCombScene({ color, setting = true }) {
   const root = new THREE.Group();
   root.name = 'CombScene';
   const model = new THREE.Group();
@@ -292,22 +309,28 @@ export function createCombScene({ color }) {
     return mesh;
   });
 
-  const table = groundPatch(0.3, 0.2, {
-    color: '#d6b994', // a plain table top, dark enough for the white bits of paper to show
-    draw: (ctx, w, h) => {
-      for (let i = 0; i < 12; i++) {
-        ctx.strokeStyle = `rgba(150,110,70,${0.04 + Math.random() * 0.04})`;
-        ctx.lineWidth = 2 + Math.random() * 3;
-        ctx.beginPath();
-        const y = Math.random() * h;
-        ctx.moveTo(0, y);
-        ctx.bezierCurveTo(w * 0.33, y + 6, w * 0.66, y - 6, w, y + 3);
-        ctx.stroke();
-      }
-    },
-  });
-  root.add(table);
+  // a teak table top with a book and a pencil (or, on a transparent page, a patch of table that fades out)
+  const desk = setting ? tableSetting() : null;
+  if (desk) root.add(desk.root);
+  else {
+    const table = groundPatch(0.3, 0.2, {
+      color: '#d6b994', // a plain table top, dark enough for the white bits of paper to show
+      draw: (ctx, w, h) => {
+        for (let i = 0; i < 12; i++) {
+          ctx.strokeStyle = `rgba(150,110,70,${0.04 + Math.random() * 0.04})`;
+          ctx.lineWidth = 2 + Math.random() * 3;
+          ctx.beginPath();
+          const y = Math.random() * h;
+          ctx.moveTo(0, y);
+          ctx.bezierCurveTo(w * 0.33, y + 6, w * 0.66, y - 6, w, y + 3);
+          ctx.stroke();
+        }
+      },
+    });
+    root.add(table);
+  }
   castShadows(model);
+  mergeStatic(comb); // the spine and the hand (the teeth are one instanced mesh)
 
   const arrow = createArrow({ color, radius: 0.0011, head: 0.0062, headRadius: 0.0028 });
   root.add(arrow.root);
@@ -349,6 +372,7 @@ export function createCombScene({ color }) {
   return {
     id: 'comb',
     root,
+    background: desk?.background ?? null,
     model,
     hits: [],
     arrow,
