@@ -60,7 +60,7 @@ test('scalar-vector: every quiz scene is locked, five picture questions finish, 
     expect(state.mode).toBe('quiz');
     expect(state.view).toBe('front');
     seen.push(state.question);
-    await expect(fig.frame.locator('[data-view="front"]')).toBeHidden();
+    await expect(fig.frame.locator('[data-view="3d"]')).toBeDisabled();
     await fig.frame.locator('#app').focus();
     await page.keyboard.press('ArrowRight');
     expect((await fig.call('get')).stage).toBe(state.stage);
