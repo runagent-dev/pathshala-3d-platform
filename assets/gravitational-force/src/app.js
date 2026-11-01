@@ -8,7 +8,6 @@
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
 import { createTweener, ease } from '@shared/tween.js';
-import { createMaterials } from '@shared/student/materials.js';
 import { createAudio } from '@shared/student/audio.js';
 import { createAnnotations } from '@shared/student/annotations.js';
 import { buildStudentShell } from '@shared/student/shell.js';
@@ -19,6 +18,7 @@ import { earthTexture } from './maps.js';
 import { createGlobe, R as EARTH_R } from './globe.js';
 import { createGalaxy, createOrbit } from './space.js';
 import { createTable } from './table.js';
+import { createStars, gradientTexture } from './setting.js';
 import { PULL } from './draw.js';
 import { createCamera, framePoints } from './camera.js';
 import { LABEL_SETS, createLabels, layoutApples, layoutEarth, layoutGalaxy, layoutOrbit } from './labels.js';
@@ -107,15 +107,16 @@ export function createApp(root, options = {}) {
             </div>
           </div>`,
   });
-  const note = document.createElement('div');
-  note.className = 'gf-note';
-  ui.stage.append(note);
-
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 24, near: 1, far: 4000, environment: 'studio-light' });
   const { camera, controls, scene, renderer } = stage;
   controls.enablePan = false;
-  const M = createMaterials(renderer);
+  // each stop in its own place (./setting.js): the apples on a table in a room, everything else in a night sky of
+  // stars; on a transparent background the models alone
+  const opaque = o.bg !== 'transparent';
+  const backgrounds = opaque ? { room: gradientTexture('#56687c', '#33404f'), sky: gradientTexture('#060a1d', '#151d47') } : null;
+  const stars = opaque ? createStars() : null;
+  if (stars) scene.add(stars);
   const world = new THREE.Group();
   world.name = 'GravitationalForceScene';
   scene.add(world);
@@ -123,12 +124,12 @@ export function createApp(root, options = {}) {
   stage.addTicker((dt) => tweener.tick(dt));
   const audio = createAudio(o.sound);
   const annotations = createAnnotations({ stage, layer: ui.annoLayer });
-  const cam = createCamera({ stage, controls, tweener, corner: ui.corner, note, root });
+  const cam = createCamera({ stage, controls, tweener, corner: ui.corner });
   const labels = createLabels({ stage, ui, annotations });
 
   const map = earthTexture(Math.min(8, renderer.capabilities.getMaxAnisotropy()));
   const sc = {
-    apples: createTable({ materials: M }),
+    apples: createTable({ room: opaque }),
     earth: createGlobe({ renderer, map }),
     moon: createOrbit({ kind: 'moon', renderer, earthMap: map }),
     sun: createOrbit({ kind: 'sun', renderer, earthMap: map }),
@@ -150,16 +151,19 @@ export function createApp(root, options = {}) {
   sunLight.userData.noExport = true;
   sc.sun.root.add(sunLight);
   const tableLight = light(sc.apples.root, 0xffffff, 0.9, [-30, 90, 60]);
-  if (o.shadow && o.bg !== 'transparent') {
+  if (o.shadow && opaque) {
+    // the apples' soft shadows on the table top, in a box fitted round the places the apples can be (the light is
+    // about 112 cm from the table's middle); only the apples cast, only the table top receives
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.VSMShadowMap;
     tableLight.castShadow = true;
-    tableLight.shadow.mapSize.set(1024, 1024);
-    Object.assign(tableLight.shadow.camera, { left: -60, right: 60, top: 40, bottom: -40, near: 20, far: 220 });
-    tableLight.shadow.radius = 6;
-    tableLight.shadow.blurSamples = 12;
+    tableLight.shadow.mapSize.set(512, 512);
+    Object.assign(tableLight.shadow.camera, { left: -26, right: 30, top: 20, bottom: -14, near: 80, far: 145 });
+    tableLight.shadow.camera.updateProjectionMatrix(); // three.js never does this for a directional light's box
+    tableLight.shadow.radius = 5;
+    tableLight.shadow.blurSamples = 10;
     for (const a of [sc.apples.left, sc.apples.right]) a.traverse((m) => m instanceof THREE.Mesh && (m.castShadow = true));
-    sc.apples.root.children[0].receiveShadow = true; // the table top
+    sc.apples.top.receiveShadow = true;
   }
   for (const id of STOPS) {
     sc[id].root.visible = false;
@@ -232,11 +236,10 @@ export function createApp(root, options = {}) {
     switch (s.stop) {
       case 'apples': {
         // the pull now; then how to move the apple (until it has been moved), or how much stronger the Earth pulls
-        const pull = t('fact_apples', { d: Math.round(s.gap), f: sciHtml(scientific(applePull(s.gap))) });
-        const more = s.appleMoved
-          ? t('fact_apple_earth', { w: Math.round(appleWeight()), k: timesInWords(earthPullTimesCrore(s.gap)) })
-          : t('fact_drag_apple', { m: FACTS.apple.mass * 1000 });
-        return `${pull}<br>${more}`;
+        // (the distance itself is the label on the table)
+        const pull = t('fact_apples', { f: sciHtml(scientific(applePull(s.gap))) });
+        if (!s.appleMoved) return `${pull}<br>${t('fact_drag_apple', { m: FACTS.apple.mass * 1000 })}`;
+        return `${pull}${t('fact_stop')} ${t('fact_apple_earth', { w: Math.round(appleWeight()), k: timesInWords(earthPullTimesCrore(s.gap)) })}`;
       }
       case 'earth':
         if (s.drop?.landed) return t('fact_drop');
@@ -256,18 +259,22 @@ export function createApp(root, options = {}) {
     if (!thousand) return t('times_crore', { a: rest });
     return rest ? t('times_thousand_crore', { a: thousand, b: rest }) : t('times_thousand_crore_even', { a: thousand });
   }
-  function setNote() {
+  /** How the picture is stylised, after the book's sentence (never on the 3D view). */
+  function noteHtml() {
     const key = { apples: 'note_apples', earth: 'note_earth', galaxy: 'note_galaxy' }[s.stop] ?? 'note_space';
-    note.textContent = t(key, { n: SLOW });
+    return `<span class="gf-style">${t(key, { n: SLOW })}</span>`;
   }
+  let lastIdea = '';
+  let lastFact = '';
   function refresh() {
-    el.idea.innerHTML = t(s.free ? `idea_nopull_${s.free.stop}` : `idea_${s.stop}`);
-    el.fact.innerHTML = factHtml();
+    const idea = `${t(s.free ? `idea_nopull_${s.free.stop}` : `idea_${s.stop}`)} ${noteHtml()}`;
+    if (idea !== lastIdea) el.idea.innerHTML = lastIdea = idea;
+    const fact = factHtml();
+    if (fact !== lastFact) el.fact.innerHTML = lastFact = fact;
     const act = s.stop === 'earth' ? 'act_drop' : orbitStop() ? (s.free ? 'act_pull_back' : 'act_nopull') : null;
     el.act.hidden = !act;
     if (act) el.actLabel.textContent = t(act);
     el.act.classList.toggle('primary', act !== 'act_pull_back');
-    setNote();
     if (s.stop === 'apples') labels.text('dist', t('label_dist_apples', { d: Math.round(s.gap) }));
     stage.invalidate();
   }
@@ -361,7 +368,7 @@ export function createApp(root, options = {}) {
 
   // ── "what if there were no pull?" (the Moon and Sun stops) ──────────────────
   // The camera goes back so the circle is small and the straight path has room; the body flies along its tangent
-  // until it reaches the edge of the picture (or the corner buttons or the note), where the dashed path ends in an
+  // until it reaches the edge of the picture (or the corner buttons), where the dashed path ends in an
   // arrowhead: "it goes on in a straight line". It stays gone until the student gives the pull back.
   function noPull() {
     if (s.locked) return lockedNudge();
@@ -376,7 +383,7 @@ export function createApp(root, options = {}) {
     s.free = { stop: s.stop, phi0: s.phase[s.stop], t: 0, end: null, boxes: [] };
     audio.pop();
     refit(0.7);
-    s.free.boxes = cam.boxes(); // where the corner buttons and the note are in the wide view
+    s.free.boxes = cam.boxes(); // where the corner buttons are in the wide view
     emit('nopull', { on: true });
     drawScene();
     refresh();
@@ -492,7 +499,9 @@ export function createApp(root, options = {}) {
     }
     for (const k of STOPS) if (k !== id) sc[k].root.scale.setScalar(1);
     s.userMovedCamera = false;
-    setNote(); // before the camera is fitted: it keeps clear of the note
+    if (backgrounds) scene.background = id === 'apples' ? backgrounds.room : backgrounds.sky;
+    if (stars) stars.visible = id !== 'apples';
+    limitCamera();
     refit(0);
     setLabels();
     drawScene();
@@ -504,8 +513,16 @@ export function createApp(root, options = {}) {
   }
 
   // ── camera ──────────────────────────────────────────────────────────────────
+  /** In the room the turned camera stays in front of the table, above the floor and inside the walls. */
+  function limitCamera() {
+    const room = s.stop === 'apples' && opaque;
+    controls.minAzimuthAngle = room ? -1.35 : -Infinity;
+    controls.maxAzimuthAngle = room ? 1.35 : Infinity;
+    controls.maxPolarAngle = room ? 1.3 : Math.PI;
+    controls.maxDistance = room ? 210 : Infinity;
+  }
   const poseFor = (view = s.view) => cam.pose(VIEWS[s.stop][view], framePoints(s.stop, sc, { wide: Boolean(s.free) && orbitStop() }));
-  /** Frame the stop again (unless the student turned the camera themself); the labels learn where the note went. */
+  /** Frame the stop again (unless the student turned the camera themself); the labels learn where the buttons are. */
   function refit(duration = 0.8) {
     if (s.userMovedCamera) return Promise.resolve(false);
     const pose = poseFor();
@@ -816,7 +833,7 @@ export function createApp(root, options = {}) {
       t,
       loupe: null,
       tweener,
-      avoid: [ui.corner, ui.hint, note],
+      avoid: [ui.corner, ui.hint],
       object: {
         label: 'coach_drag',
         candidates: () => {
@@ -1004,7 +1021,24 @@ export function createApp(root, options = {}) {
       await setView('front');
     },
     startPractice: () => quiz.start(),
-    capture: (opts) => stage.capture(opts),
+    /** The view as a picture; with a background given (null: transparent) the models alone, without their setting. */
+    capture(opts = {}) {
+      const background = scene.background;
+      const plain = opts.background !== undefined;
+      if (plain) {
+        scene.background = null;
+        if (stars) stars.visible = false;
+        if (sc.apples.setting) sc.apples.setting.visible = false;
+      }
+      try {
+        return stage.capture(opts);
+      } finally {
+        scene.background = background;
+        if (stars) stars.visible = s.stop !== 'apples';
+        if (sc.apples.setting) sc.apples.setting.visible = true;
+        stage.invalidate();
+      }
+    },
     exportRoot: () => sc[s.stop].root, // the stop's models and pull arrows: no labels, dashed lines, lights or hit boxes
   };
 }

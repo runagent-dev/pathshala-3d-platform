@@ -4,10 +4,15 @@
 // between their centres); a faint ring is the path. Orbits lie in the x–z plane, anticlockwise seen from above.
 // With its pull taken away, the moving body leaves a dashed straight path, ending in an arrowhead where it left the
 // picture. The Earth is tilted so that its middle latitudes (and Asia), not the white Arctic, face the camera above.
+// They happen in a night sky (./setting.js): the drawing is in light inks (a pale path, light dashes in a dark rim, a
+// white straight path), the arrows violet inside a white outline.
 import * as THREE from 'three';
 import { createArrow, createDashes, createDot, createRing, ink } from './draw.js';
 import { earthTexture, moonTexture, spotTexture, sunTexture } from './maps.js';
 import { orbitPoint } from './physics.js';
+import { createHalo } from './setting.js';
+
+const UP = new THREE.Vector3(0, 1, 0);
 
 /**
  * A body going round a heavier one: { kind: 'moon' } (the Moon round the Earth) or { kind: 'sun' } (the Earth round
@@ -30,6 +35,7 @@ export function createOrbit({ kind, renderer, earthMap }) {
     big = new THREE.Mesh(new THREE.SphereGeometry(S.big, 64, 40), earthMat);
     big.name = 'Earth';
     tilt(big);
+    root.add(createHalo(S.big));
     small = new THREE.Mesh(
       new THREE.SphereGeometry(S.small, 40, 28),
       new THREE.MeshStandardMaterial({ name: 'Moon', map: moonTexture(aniso), roughness: 0.95 }),
@@ -50,6 +56,7 @@ export function createOrbit({ kind, renderer, earthMap }) {
     small = new THREE.Mesh(new THREE.SphereGeometry(S.small, 48, 32), earthMat);
     small.name = 'Earth';
     tilt(small);
+    small.add(createHalo(S.small)); // turns with the Earth: a sphere round its centre looks the same
     // a soft yellow glow round the Sun (a drawing, not exported)
     const glow = new THREE.Sprite(
       new THREE.SpriteMaterial({ map: spotTexture(), color: '#ffd43b', transparent: true, opacity: 0.55, depthWrite: false }),
@@ -61,15 +68,15 @@ export function createOrbit({ kind, renderer, earthMap }) {
   }
   root.add(big, small);
 
-  const ring = createRing(S.r, 0.3);
+  const ring = createRing(S.r, 0.3, '#b8c7e6', 0.55);
   root.add(ring);
-  // the straight path without the pull (drawn thick: it is seen from further away), and its arrowhead
-  const trail = createDashes({ radius: 0.42, dash: 2.4, gap: 1.6, color: '#1d2733', top: false, max: 60, name: 'StraightPath' });
-  const trailHead = new THREE.Mesh(new THREE.ConeGeometry(1.5, 4, 18).translate(0, 2, 0), ink('#1d2733', { top: false }));
+  // the straight path without the pull (drawn thick: it is seen from further away), and its arrowhead, white on the sky
+  const trail = createDashes({ radius: 0.42, dash: 2.4, gap: 1.6, color: '#ffffff', top: false, max: 60, name: 'StraightPath' });
+  const trailHead = new THREE.Mesh(new THREE.ConeGeometry(1.5, 4, 18).translate(0, 2, 0), ink('#ffffff', { top: false }));
   trailHead.userData.noExport = true;
   trail.mesh.visible = trailHead.visible = false;
   root.add(trail.mesh, trailHead);
-  const line = createDashes({ radius: 0.11, dash: 0.9, gap: 0.7, top: false, opacity: 0.85, name: 'Between' });
+  const line = createDashes({ radius: 0.11, dash: 0.9, gap: 0.7, color: '#e9eef8', rim: '#1d2733', top: false, name: 'Between' });
   root.add(line.mesh);
   const onSmall = createArrow({ radius: 0.32, head: 1.9, headRadius: 0.8, name: moon ? 'PullOnMoon' : 'PullOnEarth' });
   const onBig = createArrow({ radius: 0.32, head: 1.9, headRadius: 0.8, name: moon ? 'PullOnEarth' : 'PullOnSun' });
@@ -79,6 +86,9 @@ export function createOrbit({ kind, renderer, earthMap }) {
   const p = new THREE.Vector3();
   const d = new THREE.Vector3();
   const a = new THREE.Vector3();
+  const ta = new THREE.Vector3();
+  const tb = new THREE.Vector3();
+  const tdir = new THREE.Vector3();
   let pulls = true;
   /** The moving body at (x, z); the arrows point along the line between the two centres. */
   function setFree(x, z) {
@@ -114,12 +124,12 @@ export function createOrbit({ kind, renderer, earthMap }) {
       trail.mesh.visible = Boolean(from);
       trailHead.visible = Boolean(from) && head;
       if (!from) return;
-      const a = new THREE.Vector3(from.x, 0, from.z);
-      const b = new THREE.Vector3(to.x, 0, to.z);
-      const dir = b.clone().sub(a).normalize();
-      trail.set(a, b.clone().addScaledVector(dir, head ? -1.5 : 0));
-      trailHead.position.copy(b).addScaledVector(dir, -2.5);
-      trailHead.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+      ta.set(from.x, 0, from.z);
+      tb.set(to.x, 0, to.z);
+      tdir.subVectors(tb, ta).normalize();
+      trailHead.position.copy(tb).addScaledVector(tdir, -2.5);
+      trailHead.quaternion.setFromUnitVectors(UP, tdir);
+      trail.set(ta, tb.addScaledVector(tdir, head ? -1.5 : 0));
     },
     points: {
       big: (out = new THREE.Vector3()) => big.getWorldPosition(out),
@@ -134,9 +144,10 @@ export function createOrbit({ kind, renderer, earthMap }) {
 }
 
 /**
- * A spiral galaxy seen as a printed drawing: a few thousand dots (blue-grey in two trailing arms, warm in the
- * bulge), our Sun marked about half-way out with a ring, its pull towards the centre and a dashed line to the centre.
- * The whole disc turns (setAngle): stylised, real galaxies turn faster near the middle.
+ * A spiral galaxy in the night sky: a few thousand glowing dots (pale blue in two trailing arms, warm in the bulge,
+ * with a soft glow in the middle), our Sun marked about half-way out with a white ring, its pull towards the centre
+ * and a dashed line to the centre. The whole disc turns (setAngle): stylised, real galaxies turn faster near the
+ * middle.
  */
 export function createGalaxy() {
   const root = new THREE.Group();
@@ -151,11 +162,14 @@ export function createGalaxy() {
   const rnd = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296;
   const gauss = () => (rnd() + rnd() + rnd() - 1.5) / 1.5;
   const N = 6000;
+  const spot = spotTexture();
   const pos = new Float32Array(N * 3);
   const col = new Float32Array(N * 3);
-  const cBulge = new THREE.Color('#e8590c');
-  const cArm = new THREE.Color('#364fc7');
-  const cDisc = new THREE.Color('#5c7cfa');
+  const cBulge = new THREE.Color('#ff9f4a');
+  const cBulge2 = new THREE.Color('#ffe2b0');
+  const cArm = new THREE.Color('#6f9bff');
+  const cDisc = new THREE.Color('#c4d4ff');
+  const cDust = new THREE.Color('#7f8fb5');
   const tmp = new THREE.Color();
   for (let i = 0; i < N; i++) {
     let r;
@@ -166,7 +180,7 @@ export function createGalaxy() {
       r = Math.abs(gauss()) * 7.5;
       th = rnd() * Math.PI * 2;
       y = gauss() * 2.2 * (1 - r / 9);
-      tmp.copy(cBulge).lerp(new THREE.Color('#ffa94d'), rnd() * 0.7);
+      tmp.copy(cBulge).lerp(cBulge2, rnd() * 0.8);
     } else if (i < N * 0.82) {
       // two arms (logarithmic spirals) that trail behind the turning disc: they wind clockwise outwards while the
       // disc turns anticlockwise, as real spiral arms do; with scatter
@@ -182,7 +196,7 @@ export function createGalaxy() {
       r = 6 + rnd() * (RG - 4);
       th = rnd() * Math.PI * 2;
       y = gauss() * 0.6;
-      tmp.copy(cDisc).lerp(new THREE.Color('#adb5bd'), 0.5);
+      tmp.copy(cDust).lerp(cDisc, rnd() * 0.4);
     }
     pos[i * 3] = r * Math.cos(th);
     pos[i * 3 + 1] = y;
@@ -197,17 +211,25 @@ export function createGalaxy() {
   const stars = new THREE.Points(
     geo,
     new THREE.PointsMaterial({
-      size: 1.45,
-      map: spotTexture(),
+      size: 1.5,
+      map: spot,
       vertexColors: true,
       transparent: true,
-      opacity: 1,
+      opacity: 0.85,
       depthWrite: false,
+      blending: THREE.AdditiveBlending,
       sizeAttenuation: true,
     }),
   );
   stars.name = 'Stars';
   disc.add(stars);
+  // the bulge's soft glow (a drawing, not exported)
+  const glow = new THREE.Sprite(
+    new THREE.SpriteMaterial({ map: spot, color: '#ffb46b', transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending }),
+  );
+  glow.scale.setScalar(26);
+  glow.renderOrder = 1;
+  root.add(glow);
 
   // our Sun: a bright yellow dot in a dark ring, on an arm
   const sunTh = armAngle(1, SUN_R) + 0.12;
@@ -219,14 +241,14 @@ export function createGalaxy() {
     new THREE.SphereGeometry(0.9, 20, 14),
     new THREE.MeshStandardMaterial({ name: 'SunDot', color: '#fcc419', emissive: '#f59f00', emissiveIntensity: 0.6 }),
   );
-  const mark = new THREE.Mesh(new THREE.TorusGeometry(2, 0.16, 8, 40), new THREE.MeshBasicMaterial({ color: '#1d2733', toneMapped: false }));
+  const mark = new THREE.Mesh(new THREE.TorusGeometry(2, 0.2, 8, 40), new THREE.MeshBasicMaterial({ color: '#ffffff', toneMapped: false }));
   mark.rotation.x = Math.PI / 2;
   mark.userData.noExport = true;
   sun.add(sunBall, mark);
   disc.add(sun);
   const centre = createDot(0.6, '#1d2733');
   root.add(centre);
-  const line = createDashes({ radius: 0.13, dash: 1.1, gap: 0.8, top: false, opacity: 0.9, name: 'ToCentre' });
+  const line = createDashes({ radius: 0.13, dash: 1.1, gap: 0.8, color: '#e9eef8', rim: '#1d2733', top: false, name: 'ToCentre' });
   disc.add(line.mesh);
   const arrow = createArrow({ radius: 0.34, head: 2, headRadius: 0.85, name: 'PullOnSun' });
   disc.add(arrow.root);

@@ -1,6 +1,5 @@
-// The camera: each stop is framed as big as the view allows, clear of the corner buttons and the scale note: in
-// the middle; or moved down below the buttons; or, on short frames where moving down costs much, moved left of
-// them with the note under the buttons. The frame is made from points that do not move (the whole circle a body can
+// The camera: each stop is framed as big as the view allows, clear of the corner buttons: in the middle; or moved
+// down below the buttons; or, on short frames where moving down costs much, moved left of them. The frame is made from points that do not move (the whole circle a body can
 // be on), so the camera never jumps while something moves. "wide" frames an orbit stop from much further back, so
 // a body whose pull is taken away stays in view for seconds on its straight path.
 import * as THREE from 'three';
@@ -33,7 +32,7 @@ export function framePoints(id, sc, { wide = false } = {}) {
   return [...circle((S.r + S.small + 0.6) * (wide ? WIDE : 1)), P(0, S.big, 0), P(0, -S.big, 0)];
 }
 
-export function createCamera({ stage, controls, tweener, corner, note, root }) {
+export function createCamera({ stage, controls, tweener, corner }) {
   const { camera } = stage;
   const f = new THREE.Vector3();
   const r = new THREE.Vector3();
@@ -80,19 +79,19 @@ export function createCamera({ stage, controls, tweener, corner, note, root }) {
     return { target, position: target.clone().addScaledVector(f, D), distance: D };
   }
 
-  /** The corner buttons' and the note's boxes in stage pixels (a little bigger), as they are laid out now. */
+  /** The corner buttons' box in stage pixels (a little bigger), as it is laid out now. */
   function boxes() {
     const sr = stage.canvas.getBoundingClientRect();
-    return [corner, note].map((e) => {
+    return [corner].map((e) => {
       const b = e.getBoundingClientRect();
       return { x0: b.left - sr.left - 6, x1: b.right - sr.left + 6, y0: b.top - sr.top - 6, y1: b.bottom - sr.top + 6, w: b.width };
     });
   }
-  /** Does a stage point fall under the corner buttons or the note? */
+  /** Does a stage point fall under the corner buttons? */
   function underBoxes(x, y, list = boxes()) {
     return list.some((b) => b.w > 0 && x > b.x0 && x < b.x1 && y > b.y0 && y < b.y1);
   }
-  /** Does any of the points land under the corner buttons or the note, seen from this pose? */
+  /** Does any of the points land under the corner buttons, seen from this pose? */
   function hits(pose, pts) {
     camera.position.copy(pose.position);
     camera.lookAt(pose.target);
@@ -104,26 +103,24 @@ export function createCamera({ stage, controls, tweener, corner, note, root }) {
     });
   }
 
-  /** The best pose for these points looking along `dir`; may move the note under the corner buttons. */
+  /** The best pose for these points looking along `dir`. */
   function pose(dir, pts) {
     const side = stage.width < 480 ? 6 : 12;
     const p0 = camera.position.clone();
     const q0 = camera.quaternion.clone();
     const cornerBottom = corner.offsetTop + corner.offsetHeight;
     const tries = [
-      { m: { top: 8, bottom: 6, left: side, right: side }, noteRight: false, gain: 1 },
-      { m: { top: cornerBottom + 8, bottom: 6, left: side, right: side }, noteRight: false, gain: 1 },
-      { m: { top: 8, bottom: 6, left: side, right: corner.offsetWidth + 16 }, noteRight: true, gain: 1.08 },
+      { m: { top: 8, bottom: 6, left: side, right: side }, gain: 1 },
+      { m: { top: cornerBottom + 8, bottom: 6, left: side, right: side }, gain: 1 },
+      { m: { top: 8, bottom: 6, left: side, right: corner.offsetWidth + 16 }, gain: 1.08 },
     ];
     let best = null;
     for (const tr of tries) {
-      root.classList.toggle('gf-note-right', tr.noteRight);
       const pz = fit(dir, pts, tr.m);
       if (hits(pz, pts)) continue;
       if (!best || pz.distance * tr.gain < best.pose.distance) best = { pose: pz, tr };
     }
     best ??= { pose: fit(dir, pts, tries[1].m), tr: tries[1] };
-    root.classList.toggle('gf-note-right', best.tr.noteRight);
     camera.position.copy(p0);
     camera.quaternion.copy(q0);
     return best.pose;
