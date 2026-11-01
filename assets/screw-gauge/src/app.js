@@ -59,6 +59,7 @@ export function createScrewGaugeApp(root, userOptions = {}) {
   root.lang = t.lang;
   root.tabIndex = 0;
   const ui = buildStudentShell(root, t, {
+    layout: 'side',
     learn: learnSheet(t, {
       terms: [
         { cls: 'lin', label: 'lin_long', op: '=' },
