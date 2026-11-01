@@ -113,11 +113,6 @@ export function createApp(root, options = {}) {
     vPlus: $('[data-act="v+"]'),
   };
   ui.canvasHost.setAttribute('aria-label', t('aria_stage'));
-  const note = document.createElement('div');
-  note.className = 'ke-note';
-  note.textContent = t('note', { k: SLOW });
-  note.hidden = true; // shown while an arrow flies (and the cutaway is labelled on the bale)
-  ui.stage.append(note);
 
   // ── 3D: an indoor archery range in a sports hall ─────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 30, near: 0.05, far: 80, environment: 'studio-light' });
@@ -154,13 +149,17 @@ export function createApp(root, options = {}) {
   world.add(stringHit);
 
   if (o.shadow && o.bg !== 'transparent') {
+    // soft PCF shadows, the shadow camera fitted closely round the archer, the bow and the bale (and the floor just
+    // behind them, where their shadows fall): 1024 px on this small box is as sharp as the old 2048 on a loose one
     stage.renderer.shadowMap.enabled = true;
-    stage.renderer.shadowMap.type = THREE.VSMShadowMap;
+    stage.renderer.shadowMap.type = THREE.PCFShadowMap;
     sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
-    Object.assign(sun.shadow.camera, { left: -3.5, right: 3.5, top: 3, bottom: -3, near: 1, far: 14 });
-    sun.shadow.radius = 5;
-    sun.shadow.bias = -0.0004;
+    sun.shadow.mapSize.set(1024, 1024);
+    Object.assign(sun.shadow.camera, { left: -2.3, right: 2.4, top: 2, bottom: -1, near: 3.5, far: 9 });
+    sun.shadow.camera.updateProjectionMatrix();
+    sun.shadow.radius = 4;
+    sun.shadow.bias = -0.0005;
+    sun.shadow.normalBias = 0.01;
   }
 
   const tweener = createTweener();
@@ -209,21 +208,27 @@ export function createApp(root, options = {}) {
   // ── arrows ──────────────────────────────────────────────────────────────────
   // a speed streak behind a flying arrow: longer when it is faster (0.015 s of its real path)
   const streakTex = (() => {
+    // a blue core in a white edge, so it reads on the red brick, the orange padding and the dark net alike
     const c = document.createElement('canvas');
     c.width = 128;
-    c.height = 8;
+    c.height = 16;
     const g = c.getContext('2d');
-    const lg = g.createLinearGradient(0, 0, 128, 0);
-    lg.addColorStop(0, 'rgba(28,111,217,0)');
-    lg.addColorStop(1, 'rgba(28,111,217,0.75)');
-    g.fillStyle = lg;
-    g.fillRect(0, 0, 128, 8);
+    const edge = g.createLinearGradient(0, 0, 128, 0);
+    edge.addColorStop(0, 'rgba(255,255,255,0)');
+    edge.addColorStop(1, 'rgba(255,255,255,0.95)');
+    g.fillStyle = edge;
+    g.fillRect(0, 1, 128, 14);
+    const core = g.createLinearGradient(0, 0, 128, 0);
+    core.addColorStop(0, 'rgba(28,111,217,0)');
+    core.addColorStop(1, 'rgba(28,111,217,1)');
+    g.fillStyle = core;
+    g.fillRect(0, 4, 128, 8);
     const tex = new THREE.CanvasTexture(c);
     tex.colorSpace = THREE.SRGBColorSpace;
     return tex;
   })();
   const streakMat = new THREE.MeshBasicMaterial({ map: streakTex, transparent: true, depthWrite: false });
-  const streakGeo = new THREE.PlaneGeometry(1, 0.03);
+  const streakGeo = new THREE.PlaneGeometry(1, 0.04);
   streakGeo.translate(-0.5, 0, 0);
   function newArrow(m) {
     const a = createArrowMesh(m);
@@ -305,7 +310,6 @@ export function createApp(root, options = {}) {
       a.mesh.streak.visible = s.phase === 'fly';
       a.mesh.streak.scale.x = a.v * 0.015;
     }
-    note.hidden = !flying();
     labels();
     panel();
     stage.invalidate();
@@ -467,7 +471,7 @@ export function createApp(root, options = {}) {
 
   // ── labels on the picture (each only while what it says is true) ────────────
   let action = null;
-  const anno = createAnnotations({ stage, layer: ui.annoLayer, avoid: [ui.corner, note, () => action?.ringBox()] });
+  const anno = createAnnotations({ stage, layer: ui.annoLayer, avoid: [ui.corner, () => action?.ringBox()] });
   const shown = new Map();
   function label(id, on, text, point, color, spots, optional = false) {
     if (!on) {
@@ -544,7 +548,7 @@ export function createApp(root, options = {}) {
   const rText = (x) => (ratioExact(x) ? '' : t('about')) + ratioText(x);
   function words() {
     if (s.phase === 'draw' || s.phase === 'hold' || s.phase === 'held' || (s.phase === 'ready' && s.draw > 0.05)) return t('out_drawn');
-    if (flying()) return t('out_flying', { v: s.shot.v });
+    if (flying()) return t('out_flying', { v: s.shot.v, k: SLOW });
     if (!s.stuck.length) return t('out_start');
     const c = s.last;
     if (!c) return t('out_first');
@@ -568,11 +572,21 @@ export function createApp(root, options = {}) {
     if (vSame) return c.rm.value === 2 || c.rm.value === 0.5 ? tx('rule_m2') : tx('rule_m', { rm: rText(c.rm), rt: rText(c.rt) });
     return tx('rule_mix');
   }
+  let lastPanel = '';
   function panel() {
     if (s.labels !== 'learn') return;
     // during a flight the panel shows that arrow; otherwise the next one (the steppers)
     const shownM = flying() && s.shot ? s.shot.m : s.m;
     const shownV = flying() && s.shot ? s.shot.v : s.v;
+    const actKey = s.stuck.length ? 'act_again' : 'act_shoot';
+    if (action && action.lastKey !== actKey) {
+      action.lastKey = actKey;
+      action.set({ label: actKey, step: s.stuck.length ? '' : 1 });
+    }
+    // the page is written only when something in it changes (place() runs every frame of a shot)
+    const key = [s.m, s.v, s.locked, shownM, shownV, words(), rule()].join('|');
+    if (key === lastPanel) return;
+    lastPanel = key;
     el.m.textContent = `${N(plain(s.m))} ${t('u_kg')}`;
     el.v.textContent = `${N(s.v)} ${t('u_ms')}`;
     const lock = s.locked;
@@ -584,11 +598,6 @@ export function createApp(root, options = {}) {
     el.vPlus.classList.toggle('at-max', s.v >= maxSpeed(s.m));
     sheet.outcome(`<span class="ke-w">${words()}</span>${formula(shownM, shownV)}`);
     sheet.rule(rule());
-    const actKey = s.stuck.length ? 'act_again' : 'act_shoot';
-    if (action && action.lastKey !== actKey) {
-      action.lastKey = actKey;
-      action.set({ label: actKey, step: s.stuck.length ? '' : 1 });
-    }
   }
 
   // ── steppers ────────────────────────────────────────────────────────────────
@@ -638,10 +647,17 @@ export function createApp(root, options = {}) {
   let camK = 1;
   const camBox = new THREE.Box3();
   const tmpBox = new THREE.Box3();
+  let wideFor = '';
+  let wideNow = false;
+  /** Is the stage big enough to show the whole range at once? (Worked out again only when its size changes.) */
   function wide() {
+    const key = `${stage.width}x${stage.height}`;
+    if (key === wideFor) return wideNow;
+    wideFor = key;
     const p = fitPose({ box: BOX.all, dir: VIEW_DIRS.front, camera, width: stage.width, height: stage.height, margin: margins() });
     const scale = stage.height / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) * p.position.distanceTo(p.target));
-    return scale >= 125; // px per metre: big enough to show everything at once
+    wideNow = scale >= 125; // px per metre: big enough to show everything at once
+    return wideNow;
   }
   function margins() {
     return { top: 50, bottom: 10, side: 8 };
@@ -664,9 +680,16 @@ export function createApp(root, options = {}) {
     tmpBox.max.lerpVectors(a.max, b.max, u);
     return tmpBox;
   }
+  const poseBox = new THREE.Box3();
+  const poseFor = { view: '', w: 0, h: 0 };
+  let pose = null;
+  /** The camera pose for what is shown now (worked out again only when the box, the view or the size changes). */
   function poseNow() {
     boxNow(camBox);
-    return fitPose({
+    if (pose && camBox.equals(poseBox) && poseFor.view === s.view && poseFor.w === stage.width && poseFor.h === stage.height) return pose;
+    poseBox.copy(camBox);
+    Object.assign(poseFor, { view: s.view, w: stage.width, h: stage.height });
+    pose = fitPose({
       box: camBox,
       dir: VIEW_DIRS[s.view === '3d' ? '3d' : 'front'],
       camera,
@@ -674,6 +697,7 @@ export function createApp(root, options = {}) {
       height: stage.height,
       margin: margins(),
     });
+    return pose;
   }
   function applyCamera() {
     if (s.userMovedCamera) return;
@@ -689,6 +713,8 @@ export function createApp(root, options = {}) {
     controls.update();
   }
   stage.onBeforeRender(applyCamera);
+  /** A new frame for a camera move only: the scene is as it was, so the shadows need not be drawn again (kit 1.4). */
+  const redrawView = () => controls.dispatchEvent({ type: 'change' });
   /** Glide from where the camera is to the pose for the new phase. */
   function flyCamera(duration = 0.7) {
     camFrom = { position: camera.position.clone(), target: controls.target.clone() };
@@ -698,7 +724,7 @@ export function createApp(root, options = {}) {
       duration,
       onUpdate: (k) => {
         camK = k;
-        stage.invalidate();
+        redrawView();
       },
       onComplete: () => {
         camK = 1;
@@ -839,7 +865,7 @@ export function createApp(root, options = {}) {
     icon: ICONS.drag,
     target: () => (s.phase === 'ready' && camK >= 1 ? ringPoint.set(nockX() - 0.02, NOCK_Y - 0.02, ARROW_Z) : null),
     radius: 30,
-    avoid: [ui.corner, ui.hint, note, () => anno.boxes()],
+    avoid: [ui.corner, ui.hint, () => anno.boxes()],
     pulse: Boolean(o.coach),
     onAct: () => shoot(),
   });
@@ -897,7 +923,6 @@ export function createApp(root, options = {}) {
       a.mesh.streak.visible = s.phase === 'qfly';
       a.mesh.streak.scale.x = a.v * 0.015;
     }
-    note.hidden = s.phase !== 'qfly';
     stage.invalidate();
   }
   function qLabel(id, text, point, color, spots) {
@@ -1028,7 +1053,7 @@ export function createApp(root, options = {}) {
     emit,
     audio,
     questions: 5,
-    lines: { text: 3, feedback: 3 },
+    lines: { text: 2, feedback: 3 },
     action,
     hooks: {
       enter() {
@@ -1066,7 +1091,7 @@ export function createApp(root, options = {}) {
         const done = await tweener.animate({
           key: 'camera',
           duration: 0.6,
-          onUpdate: (k) => ((camK = k), stage.invalidate()),
+          onUpdate: (k) => ((camK = k), redrawView()),
           onComplete: () => (camK = 1),
         }).finished;
         if (!alive()) return null;
@@ -1132,11 +1157,13 @@ export function createApp(root, options = {}) {
   });
   root.addEventListener('keydown', (e) => {
     if (e.target instanceof HTMLButtonElement && (e.key === 'Enter' || e.key === ' ')) return;
-    const dv = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[e.key];
-    if (dv) {
+    // ← → the speed (how far the string is drawn), ↑ ↓ the arrow's mass
+    const dv = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
+    const dm = { ArrowUp: 1, ArrowDown: -1 }[e.key];
+    if (dv || dm) {
       e.preventDefault();
       if (s.mode === 'quiz') return lockedNudge();
-      return stepV(dv);
+      return dv ? stepV(dv) : stepM(dm);
     }
     if (e.key === ' ' || e.key === 'Enter') {
       e.preventDefault();
