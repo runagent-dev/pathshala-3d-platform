@@ -118,3 +118,9 @@ drives there), `wheel` (the straight road), `playing`, `view`. Events: `change`,
   | 3D view height at 390×700 | 376 px (shrank to 352 in the test) | 390 px in every state |
   | text on the 3D view | 4 short names (33 characters) | the same 4 names |
 
+
+## Declutter pass (2026-11, 0.4.0)
+- Only the car and its road: the brick boundary wall, the trees, the street lamps and the town houses are gone; the
+  footpaths are plain (no pavers), the earth beyond is a soft warm colour, the sky is muted.
+- Panel in the labs' one order: the choices (চাকার বিন্দু, বাঁকা পথে), the action (চালাও), the readings (how far each
+  point went), the sentence.

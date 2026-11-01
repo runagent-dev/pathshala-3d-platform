@@ -1,10 +1,6 @@
-// The street round the road (procedural three.js, metres): a paved footpath with kerbs on both sides, compacted
-// earth beyond, a brick boundary wall with plastered pillars on the far side, trees and street lamps behind it, a
-// row of town houses, and an afternoon sky. Built once per path (the bend turns through the far side, so what
-// stands in its way is left out). Everything is static, so it is merged: the textured surfaces share one kind of
-// material (asphalt, pavers, earth, brick, house fronts) and the rest is one mesh coloured per vertex. Five draw
-// calls per path and three shader programs in all; nothing here casts a shadow (only the car does, in a tight
-// shadow box that follows it). The textures are drawn once on canvases with seeded noise.
+// The street round the road (procedural three.js, metres): a plain footpath with kerbs on both sides, compacted
+// earth beyond and a soft afternoon sky, nothing else (the owner: only the main object, big). Everything is static
+// and merged; nothing here casts a shadow (only the car does, in a tight shadow box that follows it).
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { band, centreLine, ROAD_W } from './scene.js';
@@ -12,9 +8,6 @@ import { band, centreLine, ROAD_W } from './scene.js';
 export const SKY_HAZE = '#e6dccb';
 const KERB = { w: 0.2, h: 0.13 };
 const WALK = 2.6; // m: the footpath's width
-const WALL_Z = -(ROAD_W / 2 + KERB.w + WALK + 0.14); // the wall's middle line, just behind the far footpath
-const HOUSES_Z = -9.2; // the houses' fronts
-const FACADE = { w: 12, h: 13 }; // m: one house front in the texture (four bays, four floors and a parapet)
 
 /** A seeded random number generator: the same street every time (tests compare pictures). */
 function rng(seed) {
@@ -78,140 +71,15 @@ export function asphaltTexture() {
   });
 }
 
-/** Concrete pavers in a running bond, each a slightly different warm grey (2 m square). */
-function paverTexture() {
-  const rand = rng(11);
-  return canvasTexture(512, 512, (ctx, w, h) => {
-    ctx.fillStyle = '#5b554d'; // the joints
-    ctx.fillRect(0, 0, w, h);
-    const tones = ['#8d867b', '#968f83', '#837c71', '#9c9487', '#8a8276'];
-    const bw = 128;
-    const bh = 64;
-    for (let row = 0; row < h / bh; row++) {
-      const off = row % 2 ? bw / 2 : 0;
-      for (let col = -1; col < w / bw + 1; col++) {
-        ctx.fillStyle = tones[Math.floor(rand() * tones.length)];
-        ctx.fillRect(col * bw + off + 2, row * bh + 2, bw - 4, bh - 4);
-        ctx.fillStyle = 'rgba(255,255,255,0.10)'; // a worn, lighter top edge
-        ctx.fillRect(col * bw + off + 2, row * bh + 2, bw - 4, 3);
-      }
-    }
-    grain(ctx, w, h, rand, 16, 0.03);
-  });
-}
-
 /** Compacted earth with small stones (4 m square). */
 function earthTexture() {
   const rand = rng(23);
   return canvasTexture(512, 512, (ctx, w, h) => {
-    ctx.fillStyle = '#8f7658';
+    ctx.fillStyle = '#cdbb9f'; // soft warm earth, calm
     ctx.fillRect(0, 0, w, h);
-    blotches(ctx, w, h, rand, 26, 'rgba(70,52,34,0.22)', 'rgba(176,150,112,0.22)', 30, 100);
-    for (let i = 0; i < 260; i++) {
-      ctx.fillStyle = `rgba(${150 + rand() * 60},${135 + rand() * 50},${110 + rand() * 40},0.8)`;
-      ctx.beginPath();
-      ctx.ellipse(rand() * w, rand() * h, 1.5 + rand() * 3, 1 + rand() * 2, rand() * 3, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    grain(ctx, w, h, rand, 22, 0.04);
+    blotches(ctx, w, h, rand, 18, 'rgba(120,96,66,0.08)', 'rgba(240,228,206,0.12)', 30, 100);
+    grain(ctx, w, h, rand, 10, 0.02);
   });
-}
-
-/** Red bricks in mortar for one wall panel (2.5 m × 1 m, both faces). */
-function brickTexture() {
-  const rand = rng(31);
-  return canvasTexture(512, 256, (ctx, w, h) => {
-    ctx.fillStyle = '#b7a58a';
-    ctx.fillRect(0, 0, w, h);
-    const rows = 13;
-    const bh = h / rows;
-    const bw = w / 11;
-    for (let r = 0; r < rows; r++)
-      for (let c = -1; c < 12; c++) {
-        const x = c * bw + (r % 2 ? bw / 2 : 0);
-        const k = rand();
-        ctx.fillStyle = `rgb(${Math.round(140 + k * 40)},${Math.round(62 + k * 22)},${Math.round(44 + k * 14)})`;
-        ctx.fillRect(x + 1.5, r * bh + 1.5, bw - 3, bh - 3);
-      }
-    grain(ctx, w, h, rand, 14, 0.02);
-  });
-}
-
-/** House fronts in four colours side by side: plaster, four bays of windows with frames, sills and balcony rails,
- *  floor bands and a parapet (each FACADE.w × FACADE.h). The top left corner is plain plaster, for the roofs. */
-const HOUSE_COLOURS = ['#efd6a2', '#e7c0b0', '#cbdbe6', '#e3d7bd'];
-function facadeTexture() {
-  const rand = rng(41);
-  return canvasTexture(
-    1024,
-    512,
-    (ctx, w, h) => {
-      const vw = w / HOUSE_COLOURS.length;
-      const floor = (h * 3) / FACADE.h; // 3 m a floor
-      HOUSE_COLOURS.forEach((colour, v) => {
-        const x0 = v * vw;
-        ctx.fillStyle = colour;
-        ctx.fillRect(x0, 0, vw, h);
-        ctx.fillStyle = 'rgba(80,70,60,0.22)'; // the parapet's coping
-        ctx.fillRect(x0, h - 4 * floor - 8, vw, 6);
-        const bay = vw / 4;
-        for (let f = 0; f < 4; f++) {
-          const yFloor = h - (f + 1) * floor; // floor f from the ground up
-          ctx.fillStyle = 'rgba(90,80,70,0.16)';
-          ctx.fillRect(x0, yFloor + floor - 3, vw, 4);
-          for (let b = 0; b < 4; b++) {
-            const x = x0 + b * bay + bay * 0.2;
-            const y = yFloor + floor * 0.2;
-            const ww = bay * 0.6;
-            const wh = floor * 0.5;
-            ctx.fillStyle = 'rgba(60,50,40,0.35)'; // the reveal's shadow
-            ctx.fillRect(x - 2, y - 2, ww + 4, wh + 5);
-            const g = ctx.createLinearGradient(x, y, x + ww, y + wh);
-            g.addColorStop(0, '#6a8ca6');
-            g.addColorStop(0.5, '#33506a');
-            g.addColorStop(1, '#243a4f');
-            ctx.fillStyle = g;
-            ctx.fillRect(x, y, ww, wh);
-            ctx.fillStyle = '#f4f1ea'; // frame and mullion
-            ctx.fillRect(x + ww / 2 - 1, y, 2, wh);
-            ctx.strokeStyle = '#f4f1ea';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(x, y, ww, wh);
-            ctx.fillStyle = 'rgba(70,60,50,0.5)'; // sill
-            ctx.fillRect(x - 3, y + wh + 2, ww + 6, 3);
-            if (f > 0 && rand() < 0.55) {
-              ctx.strokeStyle = 'rgba(55,60,66,0.85)'; // balcony rail
-              ctx.lineWidth = 1.5;
-              const ry = y + wh * 0.6;
-              ctx.strokeRect(x - 4, ry, ww + 8, wh * 0.4 + 5);
-              for (let k = 1; k < 6; k++) {
-                ctx.beginPath();
-                ctx.moveTo(x - 4 + ((ww + 8) * k) / 6, ry);
-                ctx.lineTo(x - 4 + ((ww + 8) * k) / 6, ry + wh * 0.4 + 5);
-                ctx.stroke();
-              }
-            }
-          }
-        }
-      });
-      grain(ctx, w, h, rand, 10, 0.01);
-    },
-    false,
-  );
-}
-
-/** The distance of a point (x, z) from a polyline of (x, z) points. */
-function distanceTo(pts, x, z) {
-  let best = Infinity;
-  for (let i = 1; i < pts.length; i++) {
-    const [ax, az] = pts[i - 1];
-    const [bx, bz] = pts[i];
-    const dx = bx - ax;
-    const dz = bz - az;
-    const k = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz || 1)));
-    best = Math.min(best, Math.hypot(x - ax - k * dx, z - az - k * dz));
-  }
-  return best;
 }
 
 /** World UVs (x, z ÷ size) for a flat or upright strip. */
@@ -279,62 +147,22 @@ function shade(g, colour) {
 /** A part painted one colour (white for the textured ones), moved by m. */
 const painted = (geo, colour = '#ffffff', m = null) => shade(part(geo, m), colour);
 
-const Y = new THREE.Vector3(0, 1, 0);
-const place = (x, y, z, ry = 0, s = 1) =>
-  new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromAxisAngle(Y, ry), new THREE.Vector3(s, s, s));
-
 /** Shared by both paths: the materials and the shapes. */
 function sharedParts() {
   const textured = (name, map) => new THREE.MeshBasicMaterial({ name, map, vertexColors: true });
   const mats = {
-    walk: textured('Footpath', paverTexture()),
+    walk: new THREE.MeshBasicMaterial({ name: 'Footpath', color: '#d6cdbf', vertexColors: true }), // plain, calm
     earth: textured('Earth', earthTexture()),
-    brick: textured('BrickWall', brickTexture()),
-    house: textured('Houses', facadeTexture()),
     painted: new THREE.MeshBasicMaterial({ name: 'StreetFurniture', vertexColors: true }),
   };
-  const rand = rng(53);
-  // a tree: a trunk and a crown of five lumpy, flat-shaded blobs
-  const trunk = new THREE.CylinderGeometry(0.11, 0.17, 2.8, 7);
-  trunk.translate(0, 1.4, 0);
-  const blobs = [];
-  for (const [x, y, z, r] of [
-    [0, 3.4, 0, 1.25],
-    [0.75, 3.0, 0.3, 0.9],
-    [-0.7, 3.1, -0.2, 0.95],
-    [0.1, 4.1, -0.3, 0.85],
-    [-0.2, 2.9, 0.75, 0.8],
-  ]) {
-    const b = new THREE.IcosahedronGeometry(r, 1);
-    const p = b.attributes.position;
-    for (let i = 0; i < p.count; i++)
-      p.setXYZ(i, p.getX(i) * (0.92 + rand() * 0.16), p.getY(i) * (0.85 + rand() * 0.15), p.getZ(i) * (0.92 + rand() * 0.16));
-    b.translate(x, y, z);
-    blobs.push(b);
-  }
-  const crown = mergeGeometries(blobs);
-  crown.computeVertexNormals(); // not indexed: flat shaded, leafy
-  // a street lamp: a grey pole on a base, an arm towards the road, a lamp head with a warm lens
-  const box = (w, h, d, x, y, z) => new THREE.BoxGeometry(w, h, d).translate(x, y, z);
-  const lamp = [
-    [new THREE.CylinderGeometry(0.06, 0.09, 6, 8).translate(0, 3, 0), '#5d6670'],
-    [new THREE.CylinderGeometry(0.16, 0.2, 0.5, 8).translate(0, 0.25, 0), '#4a525b'],
-    [box(0.06, 0.06, 1.3, 0, 5.9, 0.62), '#5d6670'],
-    [box(0.28, 0.12, 0.6, 0, 5.86, 1.2), '#4a525b'],
-    [box(0.22, 0.03, 0.5, 0, 5.795, 1.2), '#ffe9b8'],
-  ];
-  // a wall panel's plaster: the pillar at its start (with a cap) and the coping along its top
-  const plaster = [box(0.36, 1.26, 0.34, -1.25, 0.63, 0), box(0.44, 0.07, 0.42, -1.25, 1.295, 0), box(2.5, 0.06, 0.28, 0, 1.03, 0)];
-  // a brick panel, its uvs over both faces (the ends are hidden by the pillars)
-  const panel = new THREE.BoxGeometry(2.5, 1.0, 0.2).translate(0, 0.5, 0);
-  return { mats, trunk, crown, lamp, plaster, panel };
+  return { mats };
 }
 
 let shared = null;
 
 /**
- * The street for one path: footpaths and kerbs follow the road; the wall, trees, lamps and houses stand only
- * where the road (and its footpath) is not. Returns a group to show with that path's road.
+ * The street for one path: footpaths and kerbs follow the road, nothing else. Returns a group to show with that
+ * path's road.
  */
 export function createSetting(path) {
   shared ||= sharedParts();
@@ -343,9 +171,7 @@ export function createSetting(path) {
   g.name = `Street_${path}`;
   g.userData.noExport = true;
   const pts = centreLine(path);
-  const clear = (x, z, margin) => distanceTo(pts, x, z) > margin;
   const furniture = []; // painted parts, one mesh
-  const bricks = [];
 
   // kerbs (their top and the face towards the road) and the footpaths behind them, at the kerb's height
   const walks = [];
@@ -360,70 +186,14 @@ export function createSetting(path) {
   walk.name = 'Footpaths';
   g.add(walk);
 
-  // the boundary wall: 2.5 m panels of brick with a plastered pillar and coping, where the road is not
-  const behind = -WALL_Z - 0.25; // how far from the road's middle the wall stands (less a little)
-  for (let x = -40; x <= 50; x += 2.5) {
-    if (![-1.3, 0, 1.3].every((dx) => clear(x + dx, WALL_Z, behind))) continue;
-    const m = place(x, 0, WALL_Z);
-    bricks.push(painted(shared.panel, '#ffffff', m));
-    for (const p of shared.plaster) furniture.push(painted(p, '#e2d6bf', m));
-  }
-
-  // trees behind the wall, and street lamps on the far footpath (well away from the car's run)
-  const rand = rng(path === 'turn' ? 67 : 61);
-  const leaf = new THREE.Color();
-  for (let x = -38; x <= 48; x += 5.5 + rand() * 2.5) {
-    const z = WALL_Z - 1.6 - rand() * 1.0;
-    const ry = rand() * Math.PI * 2;
-    const s = 0.85 + rand() * 0.35;
-    leaf.setHSL(0.24 + rand() * 0.06, 0.38 + rand() * 0.12, 0.3 + rand() * 0.08);
-    if (!clear(x, z, behind + 1.2)) continue;
-    const m = place(x, 0, z, ry, s);
-    furniture.push(painted(shared.trunk, '#6a5140', m), painted(shared.crown, leaf.getHex(), m));
-  }
-  const lampZ = -(ROAD_W / 2 + KERB.w + 0.45);
-  for (const x of [-15, 14.5, 27]) {
-    if (!clear(x, lampZ, ROAD_W / 2 + 0.4)) continue;
-    for (const [geo, colour] of shared.lamp) furniture.push(painted(geo, colour, place(x, 0, lampZ)));
-  }
-
-  // town houses: plastered fronts in warm colours with windows and balconies, three or four storeys
-  const houses = [];
-  const hr = rng(71);
-  const variants = HOUSE_COLOURS.length;
-  for (let x = -42; x < 52; ) {
-    const w = 6 + Math.round(hr() * 4);
-    const floors = 3 + Math.round(hr());
-    const d = 8;
-    const z = HOUSES_Z - hr() * 1.2;
-    const v = Math.floor(hr() * variants);
-    const ok = [0, 0.25, 0.5, 0.75, 1].every((k) => clear(x + k * w, z, behind + 1) && clear(x + k * w, z - d, behind + 1));
-    if (ok) {
-      const h = floors * 3 + 0.6;
-      const b = new THREE.BoxGeometry(w, h, d).toNonIndexed().translate(x + w / 2, h / 2, z - d / 2);
-      const p = b.attributes.position;
-      const n = b.attributes.normal;
-      const uv = b.attributes.uv;
-      // within its colour's strip of the texture: across the front, or along the side; the roof is plain plaster
-      const u = (along) => (v + Math.min(0.98, Math.max(0.02, along / FACADE.w))) / variants;
-      for (let i = 0; i < p.count; i++) {
-        if (Math.abs(n.getY(i)) > 0.5) uv.setXY(i, (v + 0.02) / variants, 0.995);
-        else if (Math.abs(n.getZ(i)) > 0.5) uv.setXY(i, u(p.getX(i) - x), p.getY(i) / FACADE.h);
-        else uv.setXY(i, u(z - p.getZ(i)), p.getY(i) / FACADE.h);
-      }
-      houses.push(shade(b, '#ffffff'));
-    }
-    x += w + 0.4;
-  }
+  // nothing beyond the footpaths: no wall, trees, lamps or houses (the owner: only the main object, big)
   const add = (list, material, name) => {
     if (!list.length) return;
     const mesh = new THREE.Mesh(mergeGeometries(list), material);
     mesh.name = name;
     g.add(mesh);
   };
-  add(bricks, mats.brick, 'Wall');
-  add(houses, mats.house, 'Houses');
-  add(furniture, mats.painted, 'KerbsWallTreesLamps');
+  add(furniture, mats.painted, 'Kerbs');
   return g;
 }
 
@@ -444,8 +214,8 @@ export function createSurroundings() {
   const skyGeo = new THREE.SphereGeometry(380, 32, 16);
   const p = skyGeo.attributes.position;
   const col = new Float32Array(p.count * 3);
-  const top = new THREE.Color('#3f7cc0');
-  const mid = new THREE.Color('#8fbbe0');
+  const top = new THREE.Color('#8eaecf');
+  const mid = new THREE.Color('#bdd0e1');
   const low = new THREE.Color(SKY_HAZE);
   const c = new THREE.Color();
   for (let i = 0; i < p.count; i++) {

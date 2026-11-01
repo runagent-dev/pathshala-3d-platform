@@ -128,17 +128,18 @@ export function createApp(root, options = {}) {
   for (const k of KEYS) root.style.setProperty(`--c-${k}`, COLORS[k]);
   const term = (k) => `<span class="pvc-t ${k}"><b>0</b><small>${t(`dot_${k}`)}</small></span>`;
   const ui = buildStudentShell(root, t, {
+    layout: 'side', // the panel beside the 3D on landscape frames (kit 1.5.0)
     learn: `
+          <div class="tm-choices">
+            <button class="pvc-btn tm-toggle tm-wheel-btn" data-act="wheel" aria-pressed="false"><i class="tm-swatch"></i>${t('act_wheel')}</button>
+            <button class="pvc-btn tm-toggle tm-bend-btn" data-act="bend" aria-pressed="false">${BEND_ICON}${t('act_bend')}</button>
+          </div>
+          <div class="tm-acts"><button class="pvc-btn primary" data-act="drive"><i class="tm-ic"></i><span></span></button></div>
           <div class="pvc-learn-main tm-main">
             <div class="tm-head"><span class="tm-cap">${t('dist_head')}</span><span class="tm-verdict"><span class="tm-yes">${ICONS.check}<span></span></span><span class="tm-no">${ICONS.close}${t('verdict_no')}</span></span></div>
             <div class="pvc-sum tm-sum">${DOT_KEYS.map((k, i) => `${i ? '<i class="tm-op">=</i>' : ''}${term(k)}`).join('')}<span class="tm-wheel-part"><i class="tm-op">≠</i>${term('wheel')}</span></div>
           </div>
-          <p class="tm-extra"></p>
-          <div class="pvc-learn-foot tm-foot">
-            <button class="pvc-btn primary" data-act="drive"><i class="tm-ic"></i><span></span></button>
-            <button class="pvc-btn tm-toggle tm-wheel-btn" data-act="wheel" aria-pressed="false"><i class="tm-swatch"></i>${t('act_wheel')}</button>
-            <button class="pvc-btn tm-toggle tm-bend-btn" data-act="bend" aria-pressed="false">${BEND_ICON}${t('act_bend')}</button>
-          </div>`,
+          <p class="tm-extra"></p>`,
   });
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
