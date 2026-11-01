@@ -2,9 +2,9 @@
 // drive on for as long as the student likes (follow(x, z) keeps the pieces round the CNG; the patterns repeat, so
 // nothing jumps):
 //  - the straight road: two lanes of asphalt with a dashed centre line, kerbs painted black and white (as on
-//    Bangladesh's roads), and trees on the far side only, so nothing ever passes in front of the CNG;
-//  - the open field for the bend: mown grass in stripes (so turning and moving show) with trees here and there,
-//    and the CNG's track on the grass, grey where it went straight and coloured where it turned.
+//    Bangladesh's roads), on soft sand, nothing else;
+//  - the open ground for the bend: soft sand in broad stripes (so turning and moving show), nothing else, and the
+//    CNG's track on it, grey where it went straight and coloured where it turned.
 import * as THREE from 'three';
 
 const canvas = (w, h) => {
@@ -27,39 +27,6 @@ const texture = (c, repeatX = 1, repeatY = 1) => {
 };
 
 export const ROAD = { width: 7, lane: -1.75, period: 48, dash: 6 };
-
-/** Trees: a trunk and a round crown, as two instanced meshes (cheap even when there are many). */
-function createTrees(name, spots, { crown = '#79ad63', trunk = '#83664a' } = {}) {
-  const g = new THREE.Group();
-  g.name = name;
-  const trunkGeo = new THREE.CylinderGeometry(0.16, 0.22, 1, 7).translate(0, 0.5, 0);
-  const crownGeo = new THREE.IcosahedronGeometry(1, 1);
-  const trunks = new THREE.InstancedMesh(trunkGeo, new THREE.MeshStandardMaterial({ name: 'Trunk', color: trunk, roughness: 0.9 }), spots.length);
-  const crowns = new THREE.InstancedMesh(
-    crownGeo,
-    new THREE.MeshStandardMaterial({ name: 'Leaves', color: crown, roughness: 0.85, flatShading: true }),
-    spots.length * 3,
-  );
-  const m = new THREE.Matrix4();
-  const q = new THREE.Quaternion();
-  const s = new THREE.Vector3();
-  const p = new THREE.Vector3();
-  const r = rand(5);
-  spots.forEach(([x, z, size], i) => {
-    const h = 2.2 * size;
-    trunks.setMatrixAt(i, m.compose(p.set(x, 0, z), q.identity(), s.set(size, h, size)));
-    for (let k = 0; k < 3; k++) {
-      const a = (k / 3) * Math.PI * 2 + r();
-      const rr = 1.1 * size * (0.85 + 0.3 * r());
-      p.set(x + Math.cos(a) * 0.7 * size, h + 0.9 * size + k * 0.25 * size, z + Math.sin(a) * 0.7 * size);
-      q.setFromEuler(new THREE.Euler(r() * 3, r() * 3, r() * 3));
-      crowns.setMatrixAt(i * 3 + k, m.compose(p, q, s.set(rr, rr * 0.82, rr)));
-    }
-  });
-  trunks.castShadow = crowns.castShadow = true;
-  g.add(trunks, crowns);
-  return g;
-}
 
 export function createStreet() {
   const root = new THREE.Group();
@@ -108,7 +75,7 @@ export function createStreet() {
       root.add(kerb);
     }
   }
-  // shoulders of packed earth, then grass
+  // shoulders of packed earth, then soft sand
   {
     const earth = new THREE.MeshStandardMaterial({ name: 'Earth', color: '#d9c9a8', roughness: 1 });
     for (const z of [-half - 0.95, half + 0.95]) {
@@ -118,53 +85,13 @@ export function createStreet() {
       s.receiveShadow = true;
       root.add(s);
     }
-    const grass = new THREE.Mesh(new THREE.PlaneGeometry(L, 80), new THREE.MeshStandardMaterial({ name: 'Grass', color: '#cfe0bb', roughness: 1 }));
+    const grass = new THREE.Mesh(new THREE.PlaneGeometry(L, 80), new THREE.MeshStandardMaterial({ name: 'Ground', color: '#ddd1b8', roughness: 1 }));
     grass.rotation.x = -Math.PI / 2;
     grass.position.y = -0.01;
     grass.receiveShadow = true;
     root.add(grass);
   }
-  // trees on the far side only (behind the CNG and well back, pale in the haze), at uneven places that repeat
-  // every 48 m
-  {
-    const spots = [];
-    for (let k = -1; k <= 1; k++)
-      for (const [x, z, size] of [
-        [2.3, -26, 2.2],
-        [9.8, -31, 2.5],
-        [18.4, -24, 2],
-        [26.7, -33, 2.6],
-        [34.2, -27, 2.3],
-        [42.5, -30, 2.4],
-      ])
-        spots.push([x + (k - 0.5) * ROAD.period, z, size]);
-    root.add(createTrees('StreetTrees', spots));
-  }
-  // low round bushes along the far shoulder and grass tufts on the near side: nothing that reaches the arrows
-  // over the CNG, and the same every 48 m
-  {
-    const r = rand(17);
-    const bushes = Array.from({ length: 7 }, (_, i) => [(i + r() * 0.6) * (ROAD.period / 7), -half - 3 - r() * 2, 0.32 + r() * 0.2]);
-    const tufts = Array.from({ length: 12 }, (_, i) => [(i + r()) * (ROAD.period / 12), half + 2.2 + r() * 2.5]);
-    const bush = new THREE.InstancedMesh(
-      new THREE.IcosahedronGeometry(1, 1),
-      new THREE.MeshStandardMaterial({ name: 'Bush', color: '#86b56d', roughness: 0.9, flatShading: true }),
-      bushes.length * 3,
-    );
-    const tuft = new THREE.InstancedMesh(
-      new THREE.ConeGeometry(0.22, 0.32, 5).translate(0, 0.16, 0),
-      new THREE.MeshStandardMaterial({ name: 'Tuft', color: '#9fc283', roughness: 1, flatShading: true }),
-      tufts.length * 3,
-    );
-    const m = new THREE.Matrix4();
-    let nb = 0;
-    let nt = 0;
-    for (let k = -1; k <= 1; k++) {
-      for (const [x, z, s] of bushes) bush.setMatrixAt(nb++, m.makeScale(s * 1.3, s * 0.75, s).setPosition(x + (k - 0.5) * ROAD.period, s * 0.45, z));
-      for (const [x, z] of tufts) tuft.setMatrixAt(nt++, m.makeTranslation(x + (k - 0.5) * ROAD.period, 0, z));
-    }
-    root.add(bush, tuft);
-  }
+  // nothing else beside the road (no trees, bushes or tufts): the CNG is the one thing to look at
 
   return {
     root,
@@ -185,15 +112,15 @@ export function createField({ colors }) {
   root.add(ground);
   const S = FIELD.period * 6;
   {
-    const c = canvas(256, 256); // one stripe period (8 m) each way: two bands of mown grass
+    const c = canvas(256, 256); // one stripe period (8 m) each way: two bands of soft sand
     const ctx = c.getContext('2d');
-    ctx.fillStyle = '#d4e7bc';
+    ctx.fillStyle = '#e3d8c2';
     ctx.fillRect(0, 0, 256, 256);
-    ctx.fillStyle = '#bdd7a0';
+    ctx.fillStyle = '#d6c8ad';
     ctx.fillRect(0, 0, 256, 128);
     const r = rand(23);
     for (let i = 0; i < 1800; i++) {
-      ctx.fillStyle = r() < 0.5 ? 'rgba(150,185,120,0.35)' : 'rgba(225,238,205,0.4)';
+      ctx.fillStyle = r() < 0.5 ? 'rgba(150,125,90,0.18)' : 'rgba(245,238,222,0.3)';
       ctx.fillRect(r() * 256, r() * 256, 2, 3);
     }
     const grass = new THREE.Mesh(
@@ -204,24 +131,6 @@ export function createField({ colors }) {
     grass.receiveShadow = true;
     ground.add(grass);
   }
-  // low tufts of grass here and there (nothing tall: the CNG may drive anywhere and must never be hidden)
-  {
-    const PER = 9;
-    const tuft = new THREE.InstancedMesh(
-      new THREE.ConeGeometry(0.2, 0.3, 5).translate(0, 0.15, 0),
-      new THREE.MeshStandardMaterial({ name: 'Tuft', color: '#93ba76', roughness: 1, flatShading: true }),
-      49 * PER,
-    );
-    const m = new THREE.Matrix4();
-    const r = rand(29);
-    const spots = Array.from({ length: PER }, () => [r() * FIELD.period, r() * FIELD.period, 0.8 + r() * 0.7]);
-    let n = 0;
-    for (let i = -3; i <= 3; i++)
-      for (let j = -3; j <= 3; j++)
-        for (const [x, z, k] of spots) tuft.setMatrixAt(n++, m.makeScale(k, k, k).setPosition(x + i * FIELD.period, 0, z + j * FIELD.period));
-    ground.add(tuft);
-  }
-
   // the track: a ribbon on the grass, two corners per point, coloured per point
   const MAX = 900;
   const pos = new Float32Array(MAX * 2 * 3);
