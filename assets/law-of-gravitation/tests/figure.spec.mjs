@@ -96,7 +96,7 @@ test('law-of-gravitation: the panel, a tap on the ringed sphere, the keys and th
   await expect(f.locator('.pvc-outcome')).toContainText('দুটি ভারী গোলক একে অপরকে টানে');
   await expect(f.locator('.pvc-outcome')).toContainText('মহাকর্ষ বল');
   await expect(f.locator('.pvc-rule')).toContainText('সমান জোরে');
-  await expect(f.locator('.lg-note')).toContainText('পিঁপড়া');
+  await expect(f.locator('.pvc-stage')).not.toContainText('পিঁপড়া'); // the honest note is never on the picture
   const panelText = async () => (await f.locator('.pvc-outcome').innerText()) + (await f.locator('.pvc-rule').innerText());
   expect(await panelText()).not.toMatch(/১০|10|⁻/);
   await expect(f.locator('.pvc-rule .lg-formula')).toHaveCount(0);
@@ -112,6 +112,7 @@ test('law-of-gravitation: the panel, a tap on the ringed sphere, the keys and th
   expect(st).toMatchObject({ r: 2, last: 'r2' });
   await expect(f.locator('.pvc-outcome')).toContainText('টান আগের ১/৪');
   await expect(f.locator('.pvc-outcome')).toContainText('৪ ভাগের ১ ভাগ');
+  await expect(f.locator('.pvc-outcome .lg-scale')).toContainText('পিঁপড়া'); // under the result, once there are arrows to compare
   await expect(f.locator('.pvc-rule')).toContainText('দূরত্ব ২ গুণ হলে টান ৪ ভাগের ১ ভাগ');
   await expect(f.locator('[data-example="dist"] .pvc-ex-res')).toContainText('টান ১/৪');
   expect(await panelText()).not.toMatch(/১০|10|⁻/);
