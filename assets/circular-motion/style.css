@@ -27,7 +27,6 @@ body.bg-transparent { background: transparent; }
 .cm-style { color: var(--ink-3); }
 
 /* the measured distances (? = ? = ? = ? until measured) and the two buttons, side by side where there is room */
-.cm-row { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 8px 18px; }
 .cm-meas { display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; }
 .cm-meas-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0 10px; }
 .cm-meas .k { font-size: 13px; color: var(--ink-3); line-height: 1.4; }
@@ -42,7 +41,7 @@ body.bg-transparent { background: transparent; }
 @keyframes cm-flash { 0%, 30% { background: color-mix(in srgb, var(--ok) 18%, transparent); } 100% { background: transparent; } }
 @media (prefers-reduced-motion: reduce) { .cm-slots.flash { animation: none; } }
 
-.cm-acts { display: flex; gap: 6px; margin-left: auto; }
+.cm-acts { display: flex; flex-wrap: wrap; gap: 6px; }
 .cm-acts .pvc-btn { height: 38px; padding: 0 12px; font-size: 15px; }
 .cm-acts .pvc-btn:not(.primary) svg { color: var(--accent); }
 .cm-acts .ic { display: inline-flex; }
@@ -80,6 +79,5 @@ body.bg-transparent { background: transparent; }
   .cm-slots i { font-size: 17px; }
   .cm-slot { font-size: 18px; min-width: 1.8em; padding: 0 2px; }
   .cm-meas-head { flex-direction: column; align-items: flex-start; }
-  .cm-acts { margin-left: 0; }
   .cm .pvc-q-feedback { font-size: 13.5px; }
 }
