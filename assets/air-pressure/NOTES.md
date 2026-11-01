@@ -52,3 +52,16 @@ blue #1971c2 (new); weight purple #7048e8; the 1 m² area teal #0c8599.
 - The book uses কৌটা for a box drawn as a cube; we say টিনের কৌটা. Is a tin box the right picture for Bangladeshi
   classrooms (an oil or ghee tin), or should it be a round can as in the owner's reference?
 - Whether to name চিত্র ৫.০৬ / ৫.০৭ on screen (we do, in the result line).
+
+## Declutter pass (2026-11, 0.2.0)
+The owner found the tin "not clear at all, very very bad, too much objects and colours". Now:
+- **Setting**: the brick yard, the school wall, the flame tree and the marigold pots are gone; a plain soft floor and a
+  gentle, muted sky. The table is one plain colour (no wood grain). The pump and hose are gone (the button pumps).
+- **The tin**: plain silver with a slate band (no golden print or marigold), so the red and blue arrows are the only
+  strong colours.
+- **Arrows**: one red arrow per open face (was four), longer and thicker; one blue arrow (the inside air) on the left
+  face beside the red one, pushing out (was six blue arrows drawn through the tin as a cross). The body: three pairs
+  (was nine).
+- **Text off the 3D**: the note (made simple / imagined) moved from the view into the panel under the rule.
+- **Panel**: the readings are a small list (label left, value right), then the formula, then the rule; the old
+  wide-frame two-column grid is gone (the panel is beside the 3D now).
