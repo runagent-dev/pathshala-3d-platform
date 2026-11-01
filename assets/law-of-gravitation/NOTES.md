@@ -75,3 +75,8 @@ G = 6.67 × 10⁻¹¹ (book); M = 5.98 × 10²⁴ kg, R = 6.37 × 10⁶ m (book)
 - The Bangla wording needs a person's check against the book (গোলক, বাটখারা, "টান" for the pull in sentences with মহাকর্ষ বল named once, "পিঁপড়ার ওজনের মতো"). The page writes উপর, so the figure writes "উপরে রাখো", not "ওপরে".
 - The fraction is written 1/4 in a line (১/৪) next to "৪ ভাগের ১ ভাগ": the bundled font has no ¼, and a stacked fraction made the line uneven.
 - The poster now shows the state after step 3 (both masses doubled, the formula under the result) instead of step 1; the video script is unchanged (five acts).
+
+## Declutter (2026-11-01, v0.4.0)
+The spheres sit on a plain table before a soft blue wall (no window, poster, blackboard, clock, dado or wood grain on
+the room; three merged meshes without textures). No front/turn buttons: a drag turns the view, a front icon brings it back. The panel sits beside the 3D (kit 1.5.0): the bottom-panel grids for
+wide frames and the sideways-phone rules are gone; only the label sizes for a big 3D view stay.
