@@ -3,7 +3,7 @@
 // the reactor's core glows blue in its water, steam runs to the turbine, the turbine turns the generator, and the
 // power runs along the lines to a town whose windows light up. Units: metres, roughly to scale with each other.
 import * as THREE from 'three';
-import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 function canvas(w, h) {
   const c = document.createElement('canvas');
@@ -31,85 +31,22 @@ function rng(seed) {
  * the bottom giving off their blue glow, light rippling down from the surface.
  */
 export function poolBackground() {
-  const W = 1024;
-  const H = 1024;
+  const W = 512;
+  const H = 512;
   const c = canvas(W, H);
   const g = c.getContext('2d');
-  const r = rng(3);
-  // the water: light from the surface at the top, a deep clear blue below (no longer near-white: the red and grey
-  // nucleons, the white "+" and the warm glow of the split all stand out on it)
+  // calm water: a soft muted blue, lighter at the top (the red and grey nucleons, the white "+" and the warm glow of
+  // the split all stand out on it); no rods, rays or ripples to compete with the nuclei
   const lg = g.createLinearGradient(0, 0, 0, H);
-  lg.addColorStop(0, '#5fb9e2');
-  lg.addColorStop(0.25, '#3394cc');
-  lg.addColorStop(0.55, '#1e76b6');
-  lg.addColorStop(0.82, '#135893');
-  lg.addColorStop(1, '#0c4478');
+  lg.addColorStop(0, '#8db1cc');
+  lg.addColorStop(0.5, '#5f88ab');
+  lg.addColorStop(1, '#3f6688');
   g.fillStyle = lg;
   g.fillRect(0, 0, W, H);
-  // the pool's lined wall far behind: steel plates, their seams faint through the water
-  g.strokeStyle = 'rgba(200,235,255,0.07)';
-  g.lineWidth = 2;
-  g.beginPath();
-  for (let x = 0; x <= W; x += 128) {
-    g.moveTo(x, H * 0.18);
-    g.lineTo(x, H);
-  }
-  for (let y = H * 0.18; y <= H; y += 96) {
-    g.moveTo(0, y);
-    g.lineTo(W, y);
-  }
-  g.stroke();
-  // light rays from the surface
-  for (let i = 0; i < 14; i++) {
-    const x = r() * W;
-    const w = 30 + r() * 90;
-    const ray = g.createLinearGradient(0, 0, 0, H * 0.9);
-    ray.addColorStop(0, 'rgba(225,248,255,0.26)');
-    ray.addColorStop(1, 'rgba(225,248,255,0)');
-    g.fillStyle = ray;
-    g.beginPath();
-    g.moveTo(x, 0);
-    g.lineTo(x + w, 0);
-    g.lineTo(x + w * 2.2 + 120, H * 0.9);
-    g.lineTo(x + 120, H * 0.9);
-    g.closePath();
-    g.fill();
-  }
-  // ripples of light near the surface
-  g.strokeStyle = 'rgba(235,250,255,0.32)';
-  g.lineWidth = 2;
-  for (let i = 0; i < 70; i++) {
-    const x = r() * W;
-    const y = r() * H * 0.28;
-    const s = 10 + r() * 34;
-    g.beginPath();
-    g.ellipse(x, y, s, s * 0.35, r() * 0.4, 0, Math.PI * 2);
-    g.stroke();
-  }
-  // the fuel assemblies at the bottom, rows of rods glowing blue (Cherenkov light)
-  const base = H * 0.8;
-  for (let i = 0; i < 9; i++) {
-    const x0 = 40 + i * 112 + r() * 10;
-    const glow = g.createRadialGradient(x0 + 40, base + 30, 4, x0 + 40, base + 30, 120);
-    glow.addColorStop(0, 'rgba(130,230,255,0.7)');
-    glow.addColorStop(1, 'rgba(60,170,255,0)');
-    g.fillStyle = glow;
-    g.fillRect(x0 - 90, base - 100, 260, 260);
-    for (let k = 0; k < 7; k++) {
-      const x = x0 + k * 12;
-      const rod = g.createLinearGradient(0, base - 10, 0, H);
-      rod.addColorStop(0, 'rgba(215,248,255,0.9)');
-      rod.addColorStop(1, 'rgba(90,185,240,0.45)');
-      g.fillStyle = rod;
-      g.fillRect(x, base - 10 + (k % 2) * 6, 6, H);
-    }
-    g.fillStyle = 'rgba(10,45,80,0.7)';
-    g.fillRect(x0 - 4, base - 22, 92, 10);
-  }
   // a soft vignette: the middle (where the nuclei are) a little lighter, the corners deeper
   const v = g.createRadialGradient(W / 2, H * 0.45, W * 0.2, W / 2, H * 0.45, W * 0.75);
-  v.addColorStop(0, 'rgba(160,220,255,0.12)');
-  v.addColorStop(1, 'rgba(0,25,60,0.3)');
+  v.addColorStop(0, 'rgba(200,225,240,0.12)');
+  v.addColorStop(1, 'rgba(20,40,70,0.22)');
   g.fillStyle = v;
   g.fillRect(0, 0, W, H);
   return tex(c);
@@ -652,34 +589,6 @@ function flatsTexture(wall, seed, lit = false, balconies = true) {
   const t = tex(c, { repeat: [1, 1] });
   return t;
 }
-/** A coconut frond: a midrib and its leaflets, transparent between them. */
-function frondTexture() {
-  const W = 128;
-  const H = 512;
-  const c = canvas(W, H);
-  const g = c.getContext('2d');
-  const r = rng(77);
-  g.lineCap = 'round';
-  for (let y = 10; y < H - 6; y += 5) {
-    const t = y / H; // 0 at the tip, 1 at the stalk
-    const len = (W / 2 - 4) * Math.sin(Math.PI * Math.min(1, t * 1.1)) * (0.8 + r() * 0.2);
-    for (const s of [-1, 1]) {
-      g.strokeStyle = `hsl(${88 + r() * 16},${42 + r() * 12}%,${26 + r() * 12}%)`;
-      g.lineWidth = 2.6;
-      g.beginPath();
-      g.moveTo(W / 2, y);
-      g.lineTo(W / 2 + s * len, y - len * 0.55);
-      g.stroke();
-    }
-  }
-  g.strokeStyle = '#8a8a4a';
-  g.lineWidth = 3;
-  g.beginPath();
-  g.moveTo(W / 2, 0);
-  g.lineTo(W / 2, H);
-  g.stroke();
-  return tex(c);
-}
 
 const mat = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.75, metalness: 0, ...extra });
 
@@ -927,68 +836,6 @@ function pylon(h) {
   const glass = new THREE.Mesh(mergeGeometries(insulators), mat('#7fb3a3', { metalness: 0.1, roughness: 0.15 }));
   g.add(steel, glass);
   return { root: g, tips, peak: V(0, h + 1.6, 0) };
-}
-
-/** A broad-leaved crown (mango, jackfruit, rain tree): lumpy blobs merged, shaded darker underneath. Unit size. */
-function crownGeometry(seed, blobs, detail) {
-  const r = rng(seed);
-  const n = tileNoise(seed);
-  const parts = [];
-  const v = new THREE.Vector3();
-  for (let i = 0; i < blobs; i++) {
-    const g = new THREE.IcosahedronGeometry(0.5 + r() * 0.3, detail);
-    g.deleteAttribute('uv');
-    g.deleteAttribute('normal');
-    const p = g.attributes.position;
-    for (let k = 0; k < p.count; k++) {
-      v.fromBufferAttribute(p, k);
-      const d = 1 + 0.32 * (n(v.x * 3 + 9 + i * 7, v.y * 3 + v.z * 2.3 + 5) - 0.5);
-      p.setXYZ(k, v.x * d, v.y * d * 0.85, v.z * d);
-    }
-    const a = (i / blobs) * Math.PI * 2 + r();
-    const rad = i === 0 ? 0 : 0.42 + r() * 0.18;
-    g.translate(Math.cos(a) * rad, i === 0 ? 0.28 : r() * 0.3, Math.sin(a) * rad);
-    parts.push(mergeVertices(g));
-  }
-  const geo = mergeGeometries(parts);
-  geo.computeVertexNormals();
-  geo.computeBoundingBox();
-  const { min, max } = geo.boundingBox;
-  const p = geo.attributes.position;
-  const col = new Float32Array(p.count * 3);
-  for (let k = 0; k < p.count; k++) {
-    const t = (p.getY(k) - min.y) / (max.y - min.y);
-    const s = 0.42 + 0.58 * t ** 0.8 + (r() - 0.5) * 0.12;
-    col[k * 3] = s;
-    col[k * 3 + 1] = s;
-    col[k * 3 + 2] = s;
-  }
-  geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
-  geo.translate(0, -min.y, 0);
-  return geo;
-}
-/** A coconut palm: a gently curved trunk and a crown of drooping fronds. Returns { trunk, fronds } geometry. */
-function palmGeometry() {
-  const top = new THREE.Vector3(0.7, 8.6, 0);
-  const curve = new THREE.CatmullRomCurve3([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0.1, 3, 0), new THREE.Vector3(0.35, 6, 0), top]);
-  const trunk = new THREE.TubeGeometry(curve, 10, 0.16, 6);
-  const fronds = [];
-  const L = 4.2;
-  for (let k = 0; k < 11; k++) {
-    const g = new THREE.PlaneGeometry(1.3, L, 1, 8);
-    const p = g.attributes.position;
-    const up = 0.5 + (k % 3) * 0.25;
-    for (let i = 0; i < p.count; i++) {
-      const w = p.getX(i);
-      const s = p.getY(i) + L / 2; // 0 at the stalk … L at the tip
-      p.setXYZ(i, s, up * s - (0.55 * s * s) / L - Math.abs(w) * 0.25, w);
-    }
-    g.rotateY((k / 11) * Math.PI * 2 + (k % 2) * 0.2);
-    g.translate(top.x, top.y, top.z);
-    fronds.push(g);
-  }
-  // the uv runs from the stalk (v = 0) to the tip (v = 1); the texture has the tip at its top
-  return { trunk, fronds: mergeGeometries(fronds) };
 }
 
 /** The power plant, built at once (see buildPlant). */
@@ -1613,207 +1460,12 @@ export function* buildPlant() {
   }
 
   yield;
-  // ── trees: along the bank, round the yard, homesteads among the fields, a line of trees in the haze ─────────
-  const keepOut = (x, z) =>
-    (x > -36 && x < 40 && z > -50 && z < 15) || // the plant
-    (x > -14 && x < 56 && z > -98 && z < -44) || // the town
-    (z > 16 && z < 48); // the bank and the river
-  const crownNear = crownGeometry(5, 5, 1);
-  const crownFar = crownGeometry(6, 3, 0);
-  const leafMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9 });
-  const barkMat = mat('#6b5240', { roughness: 0.95 });
-  const trunkGeo = new THREE.CylinderGeometry(0.09, 0.14, 1, 6);
-  trunkGeo.translate(0, 0.5, 0);
-  const near = [];
-  const far = [];
-  const palms = [];
-  const huts = [];
-  const plant = (x, z, size, list) => list.push([x, z, size, r() * 6]);
-  for (let i = 0; i < 26; i++) {
-    const x = -90 + i * 7 + r() * 4;
-    const z = 15.5 + r() * 2.5;
-    if (x > -40 && x < 50) continue; // keep the view of the plant open
-    if (r() < 0.4) plant(x, z, 0.9 + r() * 0.3, palms);
-    else plant(x, z, 3 + r() * 2, near);
-  }
-  for (const [x, z] of [
-    [-34, -20],
-    [-33, -34],
-    [-30, -46],
-    [38, -8],
-    [-34, 2],
-    [-20, -48],
-    [8, -50],
-  ])
-    plant(x + r() * 2, z + r() * 2, 3 + r() * 2, near);
-  // homesteads: a clump of trees round a few houses with tin roofs, on a patch of bare earth
-  const yardDecal = new THREE.MeshStandardMaterial({
-    map: glowTex('rgba(150,120,85,1)', 'rgba(150,120,85,0.9)'),
-    transparent: true,
-    depthWrite: false,
-    roughness: 1,
-  });
-  let made = 0;
-  for (let tries = 0; made < 26 && tries < 400; tries++) {
-    const x = -260 + r() * 520;
-    const z = -320 + r() * 330;
-    if (keepOut(x, z) || (x > -60 && x < 70 && z > -110 && z < 15)) continue;
-    made++;
-    const dist = Math.hypot(x - 5, z + 20);
-    const ring = 9 + r() * 7;
-    const decal = new THREE.Mesh(new THREE.PlaneGeometry(ring * 2.6, ring * 2.6), yardDecal);
-    decal.rotation.x = -Math.PI / 2;
-    decal.position.set(x, 0.06, z);
-    root.add(decal);
-    for (let k = 0; k < 14; k++) {
-      const a = r() * Math.PI * 2;
-      const rr = ring * (0.4 + r() * 0.75);
-      const tx = x + Math.cos(a) * rr;
-      const tz = z + Math.sin(a) * rr;
-      if (r() < 0.3) plant(tx, tz, 0.9 + r() * 0.35, palms);
-      else plant(tx, tz, 3.5 + r() * 2.5, dist < 140 ? near : far);
-    }
-    for (let k = 0; k < 2 + Math.floor(r() * 3); k++) huts.push([x + (r() - 0.5) * ring, z + (r() - 0.5) * ring, r() * Math.PI]);
-  }
-  // the tree line in the haze, all round the far side
-  for (let i = 0; i < 240; i++) {
-    const a = Math.PI + (i / 240) * Math.PI * 1.15 - 0.08;
-    const rr = 330 + r() * 160;
-    const x = Math.cos(a) * rr;
-    const z = Math.sin(a) * rr * 0.9 - 40;
-    if (z > 60) continue;
-    plant(x, z, 7 + r() * 5, far);
-  }
-  const greens = ['#4d7a33', '#3e6a2c', '#5b8436', '#46722f', '#6a8a3a', '#3a6230'];
-  const place = (list, crown, palm = false, cast = true) => {
-    if (!list.length) return;
-    const top = new THREE.InstancedMesh(palm ? palmGeo.fronds : crown, palm ? frondMat : leafMat, list.length);
-    const stem = new THREE.InstancedMesh(palm ? palmGeo.trunk : trunkGeo, palm ? palmBark : barkMat, list.length);
-    const q = new THREE.Quaternion();
-    const c = new THREE.Color();
-    for (const [i, [x, z, s, rot]] of list.entries()) {
-      q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), rot);
-      if (palm) {
-        m4.compose(new THREE.Vector3(x, 0, z), q, new THREE.Vector3(s, s, s));
-        top.setMatrixAt(i, m4);
-        stem.setMatrixAt(i, m4);
-        c.setHSL(0.24 + r() * 0.04, 0.35, 0.75 + r() * 0.2);
-      } else {
-        const trunkH = s * 0.55;
-        m4.compose(new THREE.Vector3(x, 0, z), q, new THREE.Vector3(s * 0.7, trunkH, s * 0.7));
-        stem.setMatrixAt(i, m4);
-        m4.compose(new THREE.Vector3(x, trunkH * 0.82, z), q, new THREE.Vector3(s, s * (0.8 + r() * 0.3), s));
-        top.setMatrixAt(i, m4);
-        c.set(greens[Math.floor(r() * greens.length)]).offsetHSL(0, 0, (r() - 0.5) * 0.06);
-      }
-      top.setColorAt(i, c);
-    }
-    top.computeBoundingSphere();
-    stem.computeBoundingSphere();
-    top.castShadow = stem.castShadow = cast;
-    top.receiveShadow = stem.receiveShadow = true;
-    root.add(top, stem);
-    return top;
-  };
-  const palmGeo = palmGeometry();
-  const frondMat = new THREE.MeshStandardMaterial({ map: frondTexture(), alphaTest: 0.45, side: THREE.DoubleSide, roughness: 0.85 });
-  const palmBark = mat('#857563', { roughness: 0.95 });
-  place(near, crownNear);
-  place(far, crownFar, false, false); // in the haze, beyond the shadows' reach
-  place(palms, null, true);
-  // the houses: walls of mud, brick or painted tin; roofs of corrugated tin that catch the low sun
-  const hutBody = new THREE.BoxGeometry(1, 1, 1);
-  hutBody.translate(0, 0.5, 0);
-  const gable = new THREE.Shape([new THREE.Vector2(-0.62, 0), new THREE.Vector2(0.62, 0), new THREE.Vector2(0, 0.48)]);
-  const hutRoof = new THREE.ExtrudeGeometry(gable, { depth: 1, bevelEnabled: false });
-  hutRoof.translate(0, 0, -0.5);
-  const bodies = new THREE.InstancedMesh(hutBody, mat('#ffffff', { roughness: 0.9 }), huts.length);
-  const roofs = new THREE.InstancedMesh(hutRoof, mat('#ffffff', { roughness: 0.32, metalness: 0.65 }), huts.length);
-  const wallCols = ['#b48a62', '#a8653f', '#c9b089', '#7d93a8', '#b9a48a'];
-  const roofCols = ['#b9c0c4', '#a5adb2', '#9a6a4c', '#c7ccd0', '#6f8fa8'];
-  const c = new THREE.Color();
-  for (const [i, [x, z, rot]] of huts.entries()) {
-    const w = 3 + r() * 2;
-    const d = 5 + r() * 3;
-    const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), rot);
-    m4.compose(new THREE.Vector3(x, 0, z), q, new THREE.Vector3(w, 2.3, d));
-    bodies.setMatrixAt(i, m4);
-    m4.compose(new THREE.Vector3(x, 2.3, z), q, new THREE.Vector3(w * 1.08, 2.4, d * 1.08));
-    roofs.setMatrixAt(i, m4);
-    bodies.setColorAt(i, c.set(wallCols[Math.floor(r() * wallCols.length)]));
-    roofs.setColorAt(i, c.set(roofCols[Math.floor(r() * roofCols.length)]));
-  }
-  bodies.computeBoundingSphere();
-  roofs.computeBoundingSphere();
-  bodies.receiveShadow = roofs.receiveShadow = true;
-  root.add(bodies, roofs);
-
-  yield;
-  // ── country boats on the river, one under a patched sail ───────────────────────────────────────────────────
-  const wood = mat('#4e3626', { roughness: 0.8 });
-  const sailTex = (() => {
-    const cv = canvas(128, 128);
-    const g = cv.getContext('2d');
-    const rr = rng(55);
-    const cols = ['#c9a77c', '#b88c62', '#d8c2a0', '#9c6b4f', '#c4b08a', '#a97b5a'];
-    for (let x = 0; x < 128; x += 32)
-      for (let y = 0; y < 128; y += 32) {
-        g.fillStyle = cols[Math.floor(rr() * cols.length)];
-        g.fillRect(x, y, 32, 32);
-      }
-    g.strokeStyle = 'rgba(60,40,30,0.4)';
-    for (let x = 0; x <= 128; x += 32) {
-      g.beginPath();
-      g.moveTo(x, 0);
-      g.lineTo(x, 128);
-      g.moveTo(0, x);
-      g.lineTo(128, x);
-      g.stroke();
-    }
-    return tex(cv);
-  })();
-  for (const [x, z, rot, sail] of [
-    [-42, 29, 0.15, true],
-    [58, 38, -0.2, false],
-    [-80, 41, 0.05, false],
-  ]) {
-    const boat = new THREE.Group();
-    const hull = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 10, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), wood);
-    hull.scale.set(5, 0.9, 1.1);
-    hull.position.y = 0.45;
-    boat.add(hull);
-    const hood = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.95, 0.95, 3.2, 16, 1, true, -Math.PI / 2, Math.PI),
-      mat('#a88552', { roughness: 0.9, side: THREE.DoubleSide }),
-    );
-    hood.rotation.z = Math.PI / 2;
-    hood.position.set(-0.6, 0.5, 0);
-    boat.add(hood);
-    if (sail) {
-      const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 7, 6), wood);
-      mast.position.set(1.4, 3.9, 0);
-      const cloth = new THREE.Mesh(
-        new THREE.PlaneGeometry(4.2, 5, 4, 4),
-        new THREE.MeshStandardMaterial({ map: sailTex, side: THREE.DoubleSide, roughness: 0.9 }),
-      );
-      const p = cloth.geometry.attributes.position;
-      for (let i = 0; i < p.count; i++) p.setZ(i, 0.5 * Math.cos((p.getX(i) / 4.2) * Math.PI)); // the wind fills it
-      cloth.geometry.computeVertexNormals();
-      cloth.rotation.y = Math.PI / 2 + 0.4;
-      cloth.position.set(1.5, 4.4, 0.2);
-      boat.add(mast, cloth);
-    }
-    boat.position.set(x, 0, z);
-    boat.rotation.y = rot;
-    root.add(boat);
-  }
-
   yield;
   // ── shadows, then the still parts merged ─────────────────────────────────────────────────────────────────
   // everything takes shadows; what is big enough for its shadow to be seen casts one (not the ground, floors, water,
   // the thin wires, the far houses and decals)
   const flat = new Set([ground, river, bank, yard, road, floor, water, hallFloor, bed, gravel, townGround, basin, steamPipe]);
-  const thin = new Set([wireMat, yardDecal, lampMat, poleMat]);
+  const thin = new Set([wireMat, lampMat, poleMat]);
   root.traverse((o) => {
     if (!o.isMesh || o.isInstancedMesh || o.userData.noExport) return;
     o.receiveShadow = o !== water && o !== steamPipe;

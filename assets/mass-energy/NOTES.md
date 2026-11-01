@@ -121,3 +121,12 @@ The owner's standard for every figure (docs/agents/polish-pass.md).
 - "চুল্লি" (reactor) and "জেনারেটর/টারবাইন" labels: the page says নিউক্লিয়ার শক্তিকেন্দ্র, টারবাইন, জেনারেটর; চুল্লি is added.
 - The half-life (704 million years) and natural abundance (0.7%) are not shown (the half-life is a test distractor).
 - The power-plant paragraph continues on page 120; this figure shows it as the third scene.
+
+## Declutter (2026-11-01, v0.4.0)
+- The nuclei float in calm, softly lit water (no fuel rods, light rays, ripples or wall plates behind them).
+- The power plant keeps the reactor, the steam, the turbine, the generator, the lines and the town that lights up;
+  the trees, palms, homesteads and boats round it are gone.
+- The panel follows the order every lab uses: the examples, the action, the equation (or the fuel), the result, the
+  rule; the old wide-frame grid is gone and the sideways-phone rules now apply to any narrow side panel (the three
+  example names no longer run together at 844 × 390). No front/turn buttons: a drag turns the view (not during the
+  test), a front icon brings it back.

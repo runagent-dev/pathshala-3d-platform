@@ -81,26 +81,6 @@ body.bg-transparent { background: transparent; }
 .me .pvc-q-feedback { font-size: 13.5px; line-height: 1.45; }
 .me-why { color: var(--ink-2); }
 
-/* wide frames (tabs beside the sheet) */
-@container pvc (min-width: 720px) and (min-height: 461px) {
-  .me .pvc-learn { gap: 6px; }
-  .me .pvc-outcome { line-height: 1.45; }
-  .me .pvc-rule { line-height: 1.45; }
-  /* the equation (or the fuel) and the action share a row, so the 3D view stays tall */
-  .me .pvc-learn { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 20px; align-items: center; }
-  .me .pvc-learn > * { grid-column: 1 / -1; }
-  .me .pvc-learn > .me-calc { grid-column: 1; }
-  .me .pvc-learn > .pvc-act-row { grid-column: 2; }
-  .me .pvc-quiet span { display: none; }
-  .me-eq { width: auto; column-gap: 8px; font-size: 16.5px; }
-  .me-scale { margin-left: 8px; justify-self: start; }
-  .me-scrub { min-width: 44px; }
-  .me .pvc-act-row { --pvc-act-lines: 2; }
-  .me-fuel { justify-content: flex-start; gap: 32px; }
-  .me .pvc-rule { --pvc-rule-lines: 2; }
-  .me-w { font-size: 15.5px; }
-  .me-f { font-size: 16.5px; }
-}
 /* phones: the panel holds two lines of result and two of rule, so the 3D view keeps 55 % of a 390 × 700 frame; the
    units inside the worked line are left out there (the answer keeps its unit) so it stays on one line */
 @container pvc (max-width: 420px) {
@@ -141,8 +121,8 @@ body.bg-transparent { background: transparent; }
   .me .pvc-q-feedback { font-size: 12px; line-height: 1.33; }
   .me-steps { font-size: 12.5px; }
 }
-/* short and wide (phone held sideways): the panel is beside the scene */
-@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
+/* a narrow side panel (280–360 px beside the 3D view) */
+@container pvc-panel (max-width: 360px) {
   .me .pvc-learn { gap: 5px; }
   .me-calc { height: 42px; }
   .me-eq { font-size: 15px; column-gap: 4px; }
