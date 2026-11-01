@@ -47,19 +47,6 @@ test('states-of-matter: five parts, the book’s words, the lens follows the sta
   await fig.call('seek', { t: 71 });
   await fig.advance(300);
   await wordsApart(frame);
-  for (const size of [
-    { width: 640, height: 400 },
-    { width: 844, height: 390 },
-    { width: 390, height: 520 },
-  ]) {
-    await page.setViewportSize(size);
-    await fig.advance(1500);
-    await fig.call('seek', { t: 71 });
-    await fig.advance(300);
-    await wordsApart(frame);
-  }
-  await page.setViewportSize({ width: 390, height: 700 });
-  await fig.advance(500);
 
   // keys: ← → between parts, space plays and pauses
   await fig.call('set', { step: 2 });
@@ -77,6 +64,22 @@ test('states-of-matter: five parts, the book’s words, the lens follows the sta
 
   expect(log.errors).toEqual([]);
 });
+
+// the last part's words at the other crowded sizes, each on a fresh page (as the layout tests do)
+for (const [width, height] of [
+  [640, 400],
+  [844, 390],
+  [390, 520],
+]) {
+  test(`states-of-matter: the cycle's words apart at ${width}×${height}`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await preparePage(page);
+    const fig = await openFigure(page, 'states-of-matter', { params: { autoplay: '0' } });
+    await fig.call('seek', { t: 71 });
+    await fig.advance(300);
+    await wordsApart(frameOf(page));
+  });
+}
 
 test('states-of-matter: English words', async ({ page }) => {
   await page.setViewportSize({ width: 844, height: 390 });
