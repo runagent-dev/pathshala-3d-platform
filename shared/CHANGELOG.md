@@ -7,14 +7,15 @@ across all figures before merging a kit change (`npm run test:visual`).
 
 ## 1.5.0
 
-- The student shell puts the panel **beside** the 3D on every landscape frame (book page, desktop, phone held
+- `buildStudentShell(root, t, { layout: 'side' })` (the new standard; figures opt in one by one, the default
+  `'stack'` is unchanged) puts the panel **beside** the 3D on every landscape frame (book page, desktop, phone held
   sideways), full height and scrolling, with a tab on the 3D's edge to hide it so the 3D fills the frame. Portrait
   frames keep the panel below.
 - The side panel is also a container named `pvc`, so a figure's own `@container pvc` rules measure the panel: a
   figure styled for a phone-wide panel looks right beside the 3D without changes.
 - On a touch phone held upright, a card asks the student to turn it sideways ("turn it" goes fullscreen and locks
   landscape where the browser allows; "stay" keeps the stacked layout). `?rotate=0` (or `coach=0`) skips it.
-- No more "front / rotate" buttons: the view starts from the front and turns when the student drags it. The
+- With `layout: 'side'`, no "front / rotate" buttons: the view starts from the front and turns when the student drags it. The
   shell has one `[data-view="front"]` icon button, hidden; a figure shows it once the view was turned (back to the
   front). Figures must allow rotating in the front view.
 - New figure strings for the shell: `panel_hide`, `panel_show`, `rotate_title`, `rotate_body`, `rotate_go`, `rotate_stay` (added to every figure and template).
