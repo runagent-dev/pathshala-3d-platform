@@ -54,3 +54,10 @@ One temperature, three scales: the same mercury height reads 30 °C, 303.15 K an
 - The first temperature on the screen is 30 °C (the book's room example) before any step is chosen.
 - The other thermometric properties (gas pressure, resistance, thermocouple emf) have no picture in the book and are not drawn.
 - Every Bangla wording needs a person's check against the book.
+
+## Polish pass 0.2.0 (chapter 6 detail pass)
+- Closer to চিত্র ৬.০২: each tube now sits on a glass stem with the fine blue grid the book draws, a glint down the glass, a
+  slightly thicker dark column.
+- Split from `temperature-conversion`: this figure is only the scales (the book's picture, the fixed points, the
+  T_K = T_C + 273.15 shift, absolute zero, triple point); the full relation with Fahrenheit and the worked examples
+  belong to `temperature-conversion` (p165–166). No Fahrenheit sums are shown here.

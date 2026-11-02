@@ -93,8 +93,45 @@ export function createBoard({ materials: M, shadows = false }) {
   const capGeo = new THREE.SphereGeometry(4.4, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2);
   const bulbGlassGeo = new THREE.SphereGeometry(8.6, 24, 16);
   const bulbGeo = new THREE.SphereGeometry(6.4, 20, 14);
-  const colGeo = new THREE.CylinderGeometry(1.8, 1.8, 1, 12);
+  const colGeo = new THREE.CylinderGeometry(2.1, 2.1, 1, 14);
   colGeo.translate(0, 0.5, 0);
+  // the glass stem as the book draws it: a pale sheet with a fine blue grid, and a white glint down the tube
+  const gridCv = document.createElement('canvas');
+  gridCv.width = 64;
+  gridCv.height = 256;
+  const gx = gridCv.getContext('2d');
+  gx.fillStyle = 'rgba(205,230,247,0.55)';
+  gx.fillRect(0, 0, 64, 256);
+  gx.strokeStyle = 'rgba(52,121,190,0.85)';
+  gx.lineWidth = 2;
+  for (let k = 0; k <= 256; k += 8) {
+    gx.beginPath();
+    gx.moveTo(0, k);
+    gx.lineTo(64, k);
+    if (k <= 64) {
+      gx.moveTo(k, 0);
+      gx.lineTo(k, 256);
+    }
+    gx.stroke();
+  }
+  const gridTex = new THREE.CanvasTexture(gridCv);
+  gridTex.colorSpace = THREE.SRGBColorSpace;
+  gridTex.wrapS = gridTex.wrapT = THREE.RepeatWrapping;
+  gridTex.repeat.set(1, (H + 14) / 32);
+  const gridMat = new THREE.MeshBasicMaterial({ map: gridTex, transparent: true, depthWrite: false, toneMapped: false });
+  const stemGeo = new THREE.PlaneGeometry(10.6, H + 14);
+  const glintCv = document.createElement('canvas');
+  glintCv.width = 16;
+  glintCv.height = 16;
+  const lg = glintCv.getContext('2d');
+  const gl = lg.createLinearGradient(0, 0, 16, 0);
+  gl.addColorStop(0, 'rgba(255,255,255,0)');
+  gl.addColorStop(0.5, 'rgba(255,255,255,0.85)');
+  gl.addColorStop(1, 'rgba(255,255,255,0)');
+  lg.fillStyle = gl;
+  lg.fillRect(0, 0, 16, 16);
+  const glintMat = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(glintCv), transparent: true, depthWrite: false, toneMapped: false });
+  const glintGeo = new THREE.PlaneGeometry(2.6, H + 6);
   const pickables = [];
   const groups = [];
   const columns = [];
@@ -129,7 +166,14 @@ export function createBoard({ materials: M, shadows = false }) {
     col.position.set(TUBE_DX, BULB_Y, TUBE_Z);
     tube.castShadow = true;
     bulb.castShadow = false;
-    g.add(plate, ticks, bulb, col, bulbGlass, tube, cap);
+    const stem = new THREE.Mesh(stemGeo, gridMat);
+    stem.position.set(TUBE_DX, BULB_Y + (H + 14) / 2, TUBE_Z - 0.4);
+    stem.renderOrder = 2;
+    const glint = new THREE.Mesh(glintGeo, glintMat);
+    glint.position.set(TUBE_DX - 2.0, BULB_Y + (H + 6) / 2 + 4, TUBE_Z + 4.5);
+    glint.renderOrder = 4;
+    stem.userData.noExport = glint.userData.noExport = true;
+    g.add(plate, ticks, bulb, col, stem, bulbGlass, tube, cap, glint);
     g.position.x = tubeX[i];
     groups.push(g);
     root.add(g);
@@ -277,6 +321,8 @@ export function createBoard({ materials: M, shadows = false }) {
         if (o instanceof THREE.Mesh || o instanceof THREE.InstancedMesh) o.geometry.dispose();
       });
       wallTex.dispose();
+      gridTex.dispose();
+      glintMat.map?.dispose();
     },
   };
 }
