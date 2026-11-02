@@ -76,57 +76,16 @@ body.bg-transparent { background: transparent; }
   .lg .pvc-opt { font-size: 15px; }
   .lg .pvc-q-feedback { font-size: 13px; }
 }
-/* wide frames (tabs beside the sheet): the lines one under the other */
-@container pvc (min-width: 720px) and (min-height: 461px) {
-  .lg .pvc-learn { justify-content: flex-start; gap: 8px; }
-  .lg .pvc-examples { max-width: 520px; }
-  .lg .pvc-outcome { --pvc-outcome-lines: 1; font-size: 17px; }
-  .lg .pvc-outcome .lg-exact { display: none; }
-  .lg .pvc-rule { --pvc-rule-lines: 3; font-size: 16px; }
-  .lg .pvc-q-text { font-size: 17px; }
-  .lg .pvc-opt { font-size: 16.5px; }
-  .lg .pvc-q-feedback { --pvc-q-feedback-min: 2lh; font-size: 15px; }
-}
 /* a narrow panel (a phone, upright or sideways): the formula's "সব মিলিয়ে" on its own line, so the formula has the whole width */
 @container pvc-panel (max-width: 440px) {
   .lg .lg-sumword { flex: 0 0 100%; line-height: 1.4; }
 }
-/* desktop frames: the doing (words, button, result) on the left, the idea in large type on the right, so the panel
-   stays low and the picture keeps its height */
+/* a big 3D view (desktop frames): its labels grow with it */
 @container pvc (min-width: 900px) and (min-height: 461px) {
-  .lg .pvc-learn { display: grid; grid-template-columns: clamp(360px, 40%, 500px) minmax(0, 1fr); column-gap: 36px; row-gap: 10px; align-content: start; justify-content: stretch; }
-  .lg .pvc-examples { grid-column: 1; grid-row: 1; max-width: none; }
-  .lg .pvc-examples .pvc-ex-word { font-size: 17px; }
-  .lg .pvc-examples .pvc-ex-res { font-size: 14px; }
-  .lg .pvc-act-row { grid-column: 1; grid-row: 2; }
-  .lg .pvc-act-row .pvc-quiet > span { display: none; } /* icon only until the column has room for its words */
-  .lg .pvc-outcome { grid-column: 1; grid-row: 3; --pvc-outcome-lines: 2; font-size: 17.5px; line-height: 1.55; }
-  .lg .pvc-rule { grid-column: 2; grid-row: 1 / span 3; --pvc-rule-lines: 4; align-self: start; padding: 4px 0 0 28px; border-left: 3px solid #e6defc; font-size: 20px; line-height: 1.6; }
-  .lg .lg-line { margin-top: 8px; }
-  .lg .lg-book { display: block; margin-top: 10px; color: #7a8591; font-size: 14px; font-weight: 500; line-height: 1.5; }
-  /* the picture is big here: its labels grow with it */
   .lg .pvc-anno-ball { font-size: clamp(8.5px, calc(var(--lg-ball, 72) * 0.19px), 20px); }
   .lg .pvc-anno-flat { font-size: 18px; }
   .lg .pvc-anno-rdim { font-size: 15px; }
   .lg .pvc-anno-part { font-size: 16px; }
-  .lg .pvc-q-text { font-size: 19px; }
-  .lg .pvc-opt { font-size: 17.5px; }
-  .lg .pvc-q-feedback { font-size: 16px; }
-}
-/* big desktop frames: the quiet reset with its words, and the exact pull as a small grey line of its own under the result */
-@container pvc (min-width: 1180px) and (min-height: 520px) {
-  .lg .pvc-act-row .pvc-quiet > span { display: inline; }
-  .lg .pvc-outcome { --pvc-outcome-lines: 3; }
-  .lg .pvc-outcome .lg-exact, .lg .pvc-outcome :is(small, b) + .lg-exact { display: block; margin: 0; font-size: 0.82em; line-height: 1.5; }
-}
-/* short and wide (phone held sideways): the panel is beside the scene */
-@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
-  .lg .pvc-outcome { --pvc-outcome-lines: 2; font-size: 15px; line-height: 1.6; }
-  .lg .pvc-outcome .lg-exact { display: none; }
-  .lg .pvc-rule { --pvc-rule-lines: 5; font-size: 14px; line-height: 1.45; }
-  .lg .pvc-q-text { font-size: 14.5px; }
-  .lg .pvc-opt { font-size: 14px; height: 44px; }
-  .lg .pvc-q-feedback { font-size: 13px; }
 }
 
 /* phones held upright: tighter rows, so the 3D view keeps at least 55 % of the height (390 × 700). The result keeps
@@ -153,28 +112,6 @@ body.bg-transparent { background: transparent; }
   .lg .pvc-opt { height: 42px; font-size: 15px; }
   .lg-opt-words { font-size: 14.5px; }
   .lg .pvc-q-feedback { font-size: 13.5px; line-height: 1.38; }
-}
-/* wide but not tall, and not wide enough for the desktop columns (800 × 500): the doing on the left, the rule on the
-   right in its own column, so the panel stays low and the 3D view keeps more than half the frame */
-@container pvc (min-width: 720px) and (max-width: 899px) and (min-height: 461px) {
-  .lg .pvc-panel { padding-top: 8px; padding-bottom: 8px; }
-  .lg .pvc-learn { display: grid; grid-template-columns: minmax(0, 352px) minmax(0, 1fr); column-gap: 18px; row-gap: 4px; align-content: start; justify-content: stretch; }
-  .lg .pvc-examples { grid-column: 1; grid-row: 1; max-width: none; }
-  .lg .pvc-examples button { min-height: 40px; padding-top: 2px; padding-bottom: 3px; }
-  .lg .pvc-act-row { grid-column: 1; grid-row: 2; --pvc-act-lines: 1; min-height: 46px; }
-  .lg .pvc-act { min-height: 44px; padding-top: 3px; padding-bottom: 3px; font-size: 15.5px; }
-  .lg .pvc-act-row .pvc-quiet > span { display: none; }
-  .lg .pvc-outcome .lg-scale { font-size: 12.5px; }
-  .lg .pvc-outcome { grid-column: 1; grid-row: 3; --pvc-outcome-lines: 2; font-size: 15.5px; line-height: 1.55; }
-  .lg .pvc-outcome b { font-size: 1.35em; }
-  .lg .pvc-rule { grid-column: 2; grid-row: 1 / span 3; --pvc-rule-lines: 4; align-self: start; padding: 2px 0 0 16px; border-left: 3px solid #e6defc; font-size: 15px; line-height: 1.5; }
-  .lg .lg-sumword { flex: 0 0 100%; line-height: 1.4; }
-  .lg .pvc-q-ask { gap: 6px; }
-  .lg .pvc-q-head { min-height: 32px; }
-  .lg .pvc-q-head .pvc-btn { height: 32px; }
-  .lg .pvc-q-text { font-size: 16px; line-height: 1.35; }
-  .lg .pvc-opt { height: 44px; }
-  .lg .pvc-q-feedback { --pvc-q-feedback-min: 2lh; font-size: 14.5px; line-height: 1.4; }
 }
 /* the shortest phone (390 × 520): the test's rows a little tighter still */
 @container pvc (max-width: 560px) and (max-height: 600px) {

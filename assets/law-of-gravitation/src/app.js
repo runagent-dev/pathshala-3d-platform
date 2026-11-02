@@ -156,6 +156,7 @@ export function createApp(root, options = {}) {
   root.lang = t.lang;
   root.tabIndex = 0;
   const ui = buildStudentShell(root, t, {
+    layout: 'side',
     learn: cleanSheet(t, {
       examples: { label: 'ex_label', results: true, items: EXAMPLES.map((id) => ({ id, label: `ex_${id}` })) },
       quiet: [{ act: 'home', label: 'act_home', icon: ICONS.reset }],
@@ -290,12 +291,12 @@ export function createApp(root, options = {}) {
   scene.add(earthScene);
   earthScene.visible = false;
 
-  // the settings: the spheres in a school physics room, the Earth in a starry night sky (left out on a transparent
+  // the settings: the spheres on a plain table before a soft blue wall, the Earth in a starry night sky (left out on a transparent
   // background, and never exported)
   const opaque = o.bg !== 'transparent';
-  const backgrounds = opaque ? { spheres: gradientTexture('#c49a58', '#8a6a44'), earth: gradientTexture('#050a1f', '#18204b') } : null;
+  const backgrounds = opaque ? { spheres: gradientTexture('#7fa3c4', '#b5cde0'), earth: gradientTexture('#050a1f', '#18204b') } : null;
   if (opaque) {
-    sphereScene.add(createLab({ wood: M.wood.map }));
+    sphereScene.add(createLab());
     earthScene.add(createStars());
   }
 
@@ -1251,17 +1252,21 @@ export function createApp(root, options = {}) {
   }
   function setView(view, { animate = true } = {}) {
     s.view = view === '3d' ? '3d' : 'front';
-    controls.enableRotate = s.view === '3d' && !s.locked;
-    controls.enableZoom = s.view === '3d' && !s.locked;
     s.userMovedCamera = false;
     syncUI();
     emit('view', { view: s.view });
     emitChange();
     return flyTo(viewPose(), animate ? 0.8 : 0);
   }
+  // the view starts from the front; dragging turns it, and then the "front" button appears to come back
   controls.addEventListener('start', () => {
     s.userMovedCamera = true;
     tweener.cancel('camera');
+    if (s.view !== '3d') {
+      s.view = '3d';
+      syncUI();
+      emit('view', { view: s.view });
+    }
   });
   stage.onResize(() => {
     if (!s.userMovedCamera) flyTo(viewPose(), 0);
@@ -1359,8 +1364,6 @@ export function createApp(root, options = {}) {
     }
     if (s.view !== 'front') {
       s.view = 'front';
-      controls.enableRotate = false;
-      controls.enableZoom = false;
       syncUI();
     }
     unlabel(...SPHERE_LABELS, ...EARTH_LABELS);
@@ -1592,7 +1595,9 @@ export function createApp(root, options = {}) {
   });
   // ── buttons, keys ───────────────────────────────────────────────────────────
   function syncUI() {
-    for (const b of ui.$$('[data-view]')) b.classList.toggle('on', b.dataset.view === s.view);
+    const front = ui.$('[data-view="front"]');
+    if (front) front.hidden = s.view !== '3d';
+    controls.enableRotate = controls.enableZoom = !s.locked;
     root.dataset.mode = s.mode === 'quiz' ? 'quiz' : 'explore';
     for (const b of ui.$$('[data-mode]')) {
       const on = b.dataset.mode === root.dataset.mode;
@@ -1742,8 +1747,6 @@ export function createApp(root, options = {}) {
       cancelTweens();
       for (const k of Object.keys(s.found)) s.found[k] = false;
       s.view = 'front';
-      controls.enableRotate = false;
-      controls.enableZoom = false;
       syncUI();
       await chooseExample('dist', { animate: false, quiet: true });
       await setView('front', { animate: false });
