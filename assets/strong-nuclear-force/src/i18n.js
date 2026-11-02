@@ -21,10 +21,6 @@ export const STRINGS = {
     reading: 'দূরত্ব',
     unit_m: 'm',
 
-    scenes: 'কী দেখবে',
-    scene_pull: 'প্রোটন টানো',
-    scene_split: 'ভাঙা',
-    scene_join: 'জোড়া দেওয়া',
     act_again: 'আবার',
     act_again_long: 'আবার শুরু করো',
     distance: 'দূরত্ব',
@@ -33,23 +29,10 @@ export const STRINGS = {
     legend_neutron: 'নিউট্রন',
     note_pull: 'ছবি প্রতীকী: তীরের দৈর্ঘ্য মাপমতো নয়',
     note_slow: 'ছবি প্রতীকী: সময় অনেক ধীর করে দেখানো',
-    note_split: 'ছবি প্রতীকী: কণা কম দেখানো, সময় অনেক ধীর',
 
     label_strong: 'সবল নিউক্লীয় বল',
     label_electric: 'তড়িৎ বিকর্ষণ',
     label_reach: 'সবল বলের পাল্লা',
-    label_neutron: 'নিউট্রন',
-    label_big: 'বড় নিউক্লিয়াস',
-    label_small: 'ছোট নিউক্লিয়াস',
-    label_new: 'নতুন নিউক্লিয়াস',
-    label_energy: 'শক্তি',
-
-    eq_big: 'বড় নিউক্লিয়াস',
-    eq_neutron: 'নিউট্রন',
-    eq_neutrons: '{n}টি নিউট্রন',
-    eq_two_small: 'দুটি ছোট নিউক্লিয়াস',
-    eq_new: 'নতুন নিউক্লিয়াস',
-    eq_energy: 'শক্তি',
 
     // the pull scene: one line for each thing that can happen
     say_idle: 'সবল নিউক্লীয় বল সৃষ্টিজগতের সবচেয়ে শক্তিশালী বল, কিন্তু কাজ করে খুবই অল্প দূরত্বে: প্রায় {p} পর্যন্ত (কমলা দাগ)। প্রোটনটি টেনে বের করো।',
@@ -59,10 +42,6 @@ export const STRINGS = {
     say_back: 'ফিরে এসে আবার আটকে গেল: অল্প দূরত্বে সবল নিউক্লীয় বল তড়িৎ চৌম্বক বল থেকেও একশ গুণ বেশি শক্তিশালী।',
     say_away: 'পাল্লার বাইরে সবল নিউক্লীয় বল নেই, তাই অন্য প্রোটনগুলোর তড়িৎ বিকর্ষণ একে দূরে ঠেলে দিল।',
     // energy
-    say_split_go: 'একটি নিউট্রন বড় নিউক্লিয়াসে (যেমন ইউরেনিয়াম) এসে লাগলে নিউক্লিয়াসটি কেঁপে উঠে দুই ভাগ হয়ে যায়, ছিটকে বেরোয় তিনটি নিউট্রন…',
-    say_split_done: 'প্রচণ্ড বলে আটকে থাকায় নিউক্লিয়াসে অনেক শক্তি জমা থাকে; বড় নিউক্লিয়াস ভাঙলে তা বেরিয়ে আসে, যেমন রূপপুর পারমাণবিক বিদ্যুৎকেন্দ্রে।',
-    say_join_go: 'দুটি ছোট নিউক্লিয়াস তড়িৎ বিকর্ষণ ঠেলে প্রচণ্ড বেগে ছুটে আসছে; {p}-এর মধ্যে এলেই সবল নিউক্লীয় বল এদের ধরে ফেলবে…',
-    say_join_done: 'ছোট নিউক্লিয়াস জোড়া দিলেও অনেক শক্তি বের হয়: সূর্যে হাইড্রোজেনের নিউক্লিয়াস জোড়া লেগে হিলিয়াম হয়, সেই শক্তিই সূর্যের আলো ও তাপ।',
 
     // the four fundamental forces, weakest first, and the book's three kinds under them
     forces_title: 'চার মৌলিক বল (দুর্বল → শক্তিশালী)',
@@ -124,21 +103,6 @@ export const STRINGS = {
     why_atom_equal: 'এখানে সবল বল শূন্য, তাই সমান নয়।',
     why_atom_none: 'আধান থাকায় তড়িৎ বিকর্ষণ দূর থেকেও কাজ করে।',
 
-    q_energy_big: 'ছবিতে একটি বড় নিউক্লিয়াস। এর জমা শক্তি বের করার উপায় কোনটি?',
-    q_energy_small: 'ছবিতে দুটি ছোট নিউক্লিয়াস। এদের থেকে অনেক শক্তি পাওয়ার উপায় কোনটি?',
-    opt_split: 'ভেঙে দুই ভাগ করে',
-    opt_join_more: 'আরেকটির সাথে জোড়া দিয়ে',
-    opt_join: 'দুটিকে জোড়া দিয়ে',
-    opt_split_more: 'দুটিকেই আরও ভেঙে',
-    opt_burn: 'আগুনে পুড়িয়ে',
-    opt_none_energy: 'শক্তি পাওয়া যায় না',
-    why_energy_big: '<b>ভেঙে দুই ভাগ করে</b>: বড় নিউক্লিয়াস ভাঙলে জমে থাকা শক্তির কিছুটা বেরিয়ে আসে।',
-    why_energy_small: '<b>দুটিকে জোড়া দিয়ে</b>: ছোট নিউক্লিয়াস জোড়া লাগলে অনেক শক্তি বের হয়, যেমন সূর্যের ভেতরে।',
-    why_energy_join_more: 'বড় নিউক্লিয়াসকে আরও বড় করলে শক্তি বের হয় না।',
-    why_energy_split_more: 'ছোট নিউক্লিয়াস ভাঙলে শক্তি বের হয় না।',
-    why_energy_burn: 'পোড়ানো রাসায়নিক বিক্রিয়া, তাতে নিউক্লিয়াস বদলায় না।',
-    why_energy_none: 'প্রচণ্ড বলে আটকে থাকায় নিউক্লিয়াসে অনেক শক্তি জমা থাকে।',
-
     q_group: 'বলকে তিন ধরনের বললে দুর্বল নিউক্লীয় বল কোন ধরনে পড়ে?',
     opt_ew: 'ইলেকট্রো উইক',
     opt_nuclear: 'নিউক্লিয়ার বল',
@@ -166,10 +130,6 @@ export const STRINGS = {
     reading: 'Distance',
     unit_m: 'm',
 
-    scenes: 'What to see',
-    scene_pull: 'Pull a proton',
-    scene_split: 'Split',
-    scene_join: 'Join',
     act_again: 'Again',
     act_again_long: 'Start again',
     distance: 'Distance',
@@ -178,23 +138,10 @@ export const STRINGS = {
     legend_neutron: 'Neutron',
     note_pull: 'Symbolic: arrows not to scale',
     note_slow: 'Symbolic: much slowed down',
-    note_split: 'Symbolic: fewer particles, slowed down',
 
     label_strong: 'Strong nuclear force',
     label_electric: 'Electric repulsion',
     label_reach: 'Reach of the strong force',
-    label_neutron: 'Neutron',
-    label_big: 'Big nucleus',
-    label_small: 'Small nucleus',
-    label_new: 'New nucleus',
-    label_energy: 'Energy',
-
-    eq_big: 'Big nucleus',
-    eq_neutron: 'neutron',
-    eq_neutrons: '{n} neutrons',
-    eq_two_small: 'two small nuclei',
-    eq_new: 'new nucleus',
-    eq_energy: 'energy',
 
     say_idle:
       'The strong nuclear force is the strongest force in nature, but it acts only over a very short distance: about {p} (the orange line). Pull the proton out.',
@@ -206,12 +153,6 @@ export const STRINGS = {
       'Outside the orange line (farther than about {p}) the strong nuclear force does not act; only the electric repulsion pushes. Let go: it flies away.',
     say_back: 'It came back and stuck: at short distances the strong nuclear force is a hundred times stronger even than the electromagnetic force.',
     say_away: 'Out of range there is no strong nuclear force, so the electric repulsion of the other protons pushed it away.',
-    say_split_go: 'When a neutron hits a big nucleus (such as uranium), the nucleus wobbles and splits in two, and three neutrons fly out…',
-    say_split_done:
-      'Held by a huge force, a nucleus stores a lot of energy; when a big nucleus splits, it comes out, as in the Rooppur nuclear power plant.',
-    say_join_go: 'Two small nuclei rush together, against their electric repulsion; once they are within {p}, the strong nuclear force grabs them…',
-    say_join_done:
-      'Joining small nuclei also gives a lot of energy: in the Sun, hydrogen nuclei join into helium, and that energy is the Sun’s light and heat.',
 
     forces_title: 'Four fundamental forces (weak → strong)',
     f_grav: 'Gravity',
@@ -270,21 +211,6 @@ export const STRINGS = {
     why_atom_strong: 'It is the strongest, but not that far.',
     why_atom_equal: 'The strong force is zero here.',
     why_atom_none: 'Charges repel even from far away.',
-
-    q_energy_big: 'The picture shows a big nucleus. How can the energy stored in it be released?',
-    q_energy_small: 'The picture shows two small nuclei. How can a lot of energy be got from them?',
-    opt_split: 'By splitting it in two',
-    opt_join_more: 'By joining it to another',
-    opt_join: 'By joining the two',
-    opt_split_more: 'By splitting both further',
-    opt_burn: 'By burning',
-    opt_none_energy: 'No energy can be got',
-    why_energy_big: '<b>By splitting it in two</b>: a big nucleus that splits gives out part of its stored energy.',
-    why_energy_small: '<b>By joining the two</b>: small nuclei that join give out a lot of energy, as in the Sun.',
-    why_energy_join_more: 'Making a big nucleus bigger gives no energy.',
-    why_energy_split_more: 'Splitting small nuclei gives no energy.',
-    why_energy_burn: 'Burning does not change the nucleus.',
-    why_energy_none: 'A nucleus stores a lot of energy.',
 
     q_group: 'If forces are said to be of three kinds, which kind is the weak nuclear force?',
     opt_ew: 'Electro-weak',

@@ -1,0 +1,92 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "strong-nuclear-force-energy",
+  "title": "Strong nuclear force: nuclear energy (সবল নিউক্লীয় বল: নিউক্লিয়ার শক্তি)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "1.0.0",
+  "book": "physics-9-10",
+  "page": 69,
+  "topic": "3.2.4",
+  "placement": "Book page 69, topic 3.2.4: সবল নিউক্লীয় বল (Strong Nuclear Force), next to the sentence that splitting a big nucleus or joining small ones releases a lot of energy.",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "cm",
+  "description": "Interactive 3D figure for the book's সবল নিউক্লীয় বল (page 69, 3.2.4): where nuclear energy comes from. Two scenes on a deep night-blue backdrop, chosen with two chips: a slow neutron splits a big nucleus (ভাঙা: 92 + 1 = 45 + 45 + 3 neutrons, as U-235 + n → Ba + Kr + 3n), and hydrogen-2 and hydrogen-3 join into helium-4 (জোড়া দেওয়া), each giving off energy; the panel writes each as a word equation. The panel also shows the four fundamental forces weakest to strongest and the book's three kinds (মহাকর্ষ, ইলেকট্রো উইক, নিউক্লিয়ার বল). Test tab: 4 questions (energy from a big nucleus, from two small ones, which particles the strong force acts between, the three kinds of force). Symbolic where it must be (time, the split's particle count), said so on screen. Phone-first, Bangla. Model units: 1 cm = 1 fm.",
+  "tags": [
+    "force",
+    "fundamental-forces",
+    "strong-nuclear-force",
+    "nucleus",
+    "proton",
+    "neutron",
+    "nuclear-energy",
+    "fission",
+    "fusion",
+    "bangla"
+  ],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "scene",
+      "label": "Scene",
+      "type": "select",
+      "options": [["split", "split (ভাঙা)"], ["join", "join (জোড়া দেওয়া)"]],
+      "default": "split"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "scene": "split" } },
+    { "name": "set", "payload": { "scene": "join", "t": 4.4 } },
+    { "name": "set", "payload": { "t": 2, "play": true } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "scene", "done", "view", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": {
+      "params": { "scene": "split" },
+      "setup": [{ "command": "set", "payload": { "scene": "split", "t": 4.2 } }]
+    },
+    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "scene": "split", "t": 5.6 } }] }],
+    "video": {
+      "kind": "script",
+      "seconds": 12,
+      "fps": 30,
+      "params": {},
+      "script": [
+        { "at": 0.3, "command": "set", "payload": { "scene": "split" } },
+        { "at": 6.5, "command": "set", "payload": { "scene": "join" } }
+      ]
+    }
+  }
+}

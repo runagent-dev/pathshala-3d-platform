@@ -1,16 +1,16 @@
 // Strong nuclear force through the bridge (book p69, topic 3.2.4): a proton held within 10⁻¹⁵ m is pulled back by
 // the strong force (much bigger than the electric push) and snaps back when let go; farther out the strong force
-// is gone and the electric push sends it away; a big nucleus splits and two small ones join, each giving energy.
+// is gone and the electric push sends it away.
 // Runs with `npm run test:figures` (dev-only folder, never packaged).
 import { expect, test } from '@playwright/test';
 import { openFigure, preparePage } from '../../../scripts/lib/export/driver.mjs';
 
-test('strong-nuclear-force: the reach of the strong force, splitting and joining', async ({ page }) => {
+test('strong-nuclear-force: the reach of the strong force', async ({ page }) => {
   await page.setViewportSize({ width: 800, height: 500 });
   const log = await preparePage(page);
   const fig = await openFigure(page, 'strong-nuclear-force');
 
-  expect(await fig.call('get')).toMatchObject({ scene: 'pull', distance: 0, phase: 'seated', arrows: { strong: false, electric: false } });
+  expect(await fig.call('get')).toMatchObject({ distance: 0, phase: 'seated', arrows: { strong: false, electric: false } });
 
   // within reach: the strong pull is far bigger than the electric push, and it snaps back
   const held = await fig.call('set', { pull: 0.6 });
@@ -45,26 +45,18 @@ test('strong-nuclear-force: the reach of the strong force, splitting and joining
   await fig.advance(1500);
   expect(await fig.call('get')).toMatchObject({ distance: 0, phase: 'back' });
 
-  // a big nucleus splits; two small ones join
-  await fig.call('set', { scene: 'split' });
-  expect((await fig.call('get')).energy).toMatchObject({ playing: true });
-  await fig.advance(6500);
-  expect((await fig.call('get')).energy).toMatchObject({ playing: false, phase: 'done', t: 5.6 });
-  const joined = await fig.call('set', { scene: 'join', t: 4.4 });
-  expect(joined).toMatchObject({ scene: 'join', energy: { phase: 'done' } });
-
   await fig.call('reset');
-  expect(await fig.call('get')).toMatchObject({ scene: 'pull', distance: 0, phase: 'seated', view: 'front' });
+  expect(await fig.call('get')).toMatchObject({ distance: 0, phase: 'seated', view: 'front' });
   expect(log.errors).toEqual([]);
 });
 
-test('strong-nuclear-force: the test runs five questions', async ({ page }) => {
+test('strong-nuclear-force: the test runs four questions', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 700 });
   const log = await preparePage(page);
   const fig = await openFigure(page, 'strong-nuclear-force');
   const frame = page.frames().find((f) => f.url().includes('/assets/strong-nuclear-force/'));
   await fig.call('practice');
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 4; i++) {
     await fig.advance(600);
     // the distance scale shows only in the question about letting the proton go (it would answer the others)
     if (i === 0) await expect(frame.locator('.snf-scale')).toBeHidden();
@@ -79,6 +71,6 @@ test('strong-nuclear-force: the test runs five questions', async ({ page }) => {
   // leaving the test gives back the learning view
   await frame.locator('[data-mode="explore"]').click();
   await fig.advance(800);
-  expect(await fig.call('get')).toMatchObject({ mode: 'explore', scene: 'pull', phase: 'seated' });
+  expect(await fig.call('get')).toMatchObject({ mode: 'explore', phase: 'seated' });
   expect(log.errors).toEqual([]);
 });
