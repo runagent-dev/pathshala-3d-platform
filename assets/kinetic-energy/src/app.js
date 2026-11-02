@@ -98,10 +98,10 @@ export function createApp(root, options = {}) {
     quiet: [{ act: 'home', label: 'act_home', icon: ICONS.reset }],
     lines: { action: 1, outcome: 2, rule: 3 },
   }).replace(
-    '<div class="pvc-act-row"',
-    `<div class="ke-calc" role="group" aria-label="${t('calc')}">${stepper('m', 'calc_m')}${stepper('v', 'calc_v')}</div><div class="pvc-act-row"`,
+    '<p class="pvc-outcome"',
+    `<div class="ke-calc" role="group" aria-label="${t('calc')}">${stepper('m', 'calc_m')}${stepper('v', 'calc_v')}</div><p class="pvc-outcome"`,
   );
-  const ui = buildStudentShell(root, t, { learn: sheetHtml, learnAlign: 'start' });
+  const ui = buildStudentShell(root, t, { layout: 'side', learn: sheetHtml, learnAlign: 'start' });
   const sheet = bindCleanSheet(ui.learn);
   const $ = ui.$;
   const el = {
@@ -114,7 +114,7 @@ export function createApp(root, options = {}) {
   };
   ui.canvasHost.setAttribute('aria-label', t('aria_stage'));
 
-  // ── 3D: an indoor archery range in a sports hall ─────────────────────────────
+  // ── 3D: the archer and the target on a plain floor before a soft wall ─────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 30, near: 0.05, far: 80, environment: 'studio-light' });
   const { camera, controls, scene } = stage;
   controls.minDistance = 1;
@@ -123,7 +123,7 @@ export function createApp(root, options = {}) {
   controls.enableRotate = false;
   controls.enableZoom = false;
   // indoors: the roof's underside behind everything, a warm fill from the maple floor, lamps overhead
-  scene.background = o.bg === 'transparent' ? null : new THREE.Color('#7d8796');
+  scene.background = o.bg === 'transparent' ? null : new THREE.Color('#9fb6cc');
   scene.add(new THREE.HemisphereLight('#fff6e6', '#b5793c', 0.95));
   const sun = new THREE.DirectionalLight('#fff4e0', 1.7); // the lamps over the lane
   sun.position.set(0.8, 6, 2.4);
@@ -734,16 +734,21 @@ export function createApp(root, options = {}) {
   }
   function setView(view, { animate = true } = {}) {
     s.view = view === '3d' ? '3d' : 'front';
-    controls.enableRotate = s.view === '3d';
     s.userMovedCamera = false;
     syncUI();
     if (animate) flyCamera(0.8);
     else camK = 1;
     stage.invalidate();
   }
+  // the view starts from the front; dragging turns it, and then the "front" button appears to come back
   controls.addEventListener('start', () => {
     s.userMovedCamera = true;
     tweener.cancel('camera');
+    if (s.view !== '3d') {
+      s.view = '3d';
+      syncUI();
+      emit('view', { view: s.view });
+    }
     camK = 1;
   });
   stage.onResize(() => {
@@ -1116,7 +1121,9 @@ export function createApp(root, options = {}) {
 
   // ── buttons, keys ───────────────────────────────────────────────────────────
   function syncUI() {
-    for (const b of ui.$$('[data-view]')) b.classList.toggle('on', b.dataset.view === s.view);
+    const front = ui.$('[data-view="front"]');
+    if (front) front.hidden = s.view !== '3d';
+    controls.enableRotate = !s.locked;
     root.dataset.mode = s.mode === 'quiz' ? 'quiz' : 'explore';
     for (const b of ui.$$('[data-mode]')) {
       const on = b.dataset.mode === root.dataset.mode;
