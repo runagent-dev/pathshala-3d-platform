@@ -13,8 +13,11 @@ test('comb: complete human model, transferred charge and neutral paper polarizat
         comb = 0;
       root.traverse((part) => {
         names[part.name] = (names[part.name] || 0) + 1;
-        if (part.name === 'HairPositiveCharge' && part.visible) hair++;
-        if (part.name === 'ChargeDisc' && part.visible) comb++;
+        // static parts are merged into one mesh per material; their names are kept in userData.parts
+        for (const n of part.userData.parts || []) names[n] = (names[n] || 0) + 1;
+        // the markers are instanced: "+" discs on the hair (one instance each), "−" discs on both faces of the comb
+        if (part.name === 'HairPositiveCharges' && part.visible) hair += part.children[0].count;
+        if (part.name === 'ChargeDiscs' && part.visible) comb += part.count / 2;
       });
       const positive = root.getObjectByName('PaperPositiveCharge');
       const negative = root.getObjectByName('PaperNegativeCharge');

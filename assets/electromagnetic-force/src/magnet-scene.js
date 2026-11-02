@@ -9,8 +9,10 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { boxProjectUV, textMesh } from '@shared/student/materials.js';
-import { deskWood } from './desk.js';
+import { benchMaterials } from './desk.js';
+import { mergeStatic } from './merge.js';
 import { MAG } from './physics.js';
+import { FLOOR_Y } from './room.js';
 
 /** The coil lies along x; the magnet's left end touches its right end at gap 0. */
 export const COIL = { x0: -95, x1: -95 + MAG.coil, y: 19.5, r: 14.2, tube: 12.4, flange: 19.5 };
@@ -43,17 +45,32 @@ class Helix extends THREE.Curve {
 
 const curveOf = (points) => new THREE.CatmullRomCurve3(points.map(([x, y, z]) => new THREE.Vector3(x, y, z)));
 
-export function createMagnetScene({ materials, colors }) {
+export function createMagnetScene({ colors }) {
   const root = new THREE.Group();
   root.name = 'MagnetScene';
+  const materials = benchMaterials();
 
-  // ── the desk ──
-  const wood = deskWood(materials);
+  // ── the desk: its top takes the shadows; an apron and four legs down to the floor ──
+  const wood = materials.wood;
   const desk = new THREE.Mesh(boxProjectUV(new THREE.BoxGeometry(560, 24, 320)), wood);
   desk.name = 'Desk';
   desk.position.set(0, -12, -40);
   desk.receiveShadow = true;
   root.add(desk);
+  const frame = new THREE.Group();
+  const legLen = -24 - FLOOR_Y;
+  for (const x of [-255, 255])
+    for (const z of [-180, 100]) {
+      const leg = new THREE.Mesh(boxProjectUV(new THREE.BoxGeometry(34, legLen, 34)), wood);
+      leg.position.set(x, -24 - legLen / 2, z);
+      frame.add(leg);
+    }
+  for (const z of [-182, 102]) {
+    const apron = new THREE.Mesh(boxProjectUV(new THREE.BoxGeometry(476, 60, 18)), wood);
+    apron.position.set(0, -54, z);
+    frame.add(apron);
+  }
+  root.add(mergeStatic(frame));
 
   // ── the coil ──
   const coil = new THREE.Group();
@@ -92,7 +109,7 @@ export function createMagnetScene({ materials, colors }) {
   minus.position.set(-10, 0, CELL.r + 0.3);
   cell.add(body, band, nub, cap, plus, minus);
   cell.position.set(CELL.x, CELL.r, FRONT);
-  root.add(cell);
+  root.add(mergeStatic(cell, { keep: [plus, minus] }));
 
   // ── the knife switch between the cell and the coil ──
   const sw = new THREE.Group();
@@ -113,7 +130,7 @@ export function createMagnetScene({ materials, colors }) {
   blade.add(bladeBar, handle);
   sw.add(base, hinge, contact, blade);
   sw.position.set(SWITCH_X, 0, FRONT);
-  root.add(sw);
+  root.add(mergeStatic(sw, { keep: [blade] }));
   /** The blade down on its contact (closed: the current flows) or up (open). k: 0 open … 1 closed. */
   const setBlade = (k) => {
     blade.rotation.z = (1 - k) * 1.0;
@@ -162,11 +179,14 @@ export function createMagnetScene({ materials, colors }) {
       black,
     ],
   ];
+  const wiring = new THREE.Group();
+  wiring.name = 'Wires';
   wires.forEach(([curve, material], i) => {
     const m = new THREE.Mesh(new THREE.TubeGeometry(curve, i ? 40 : 24, 1.4, 8, false), material);
     m.name = 'Wire';
-    root.add(m);
+    wiring.add(m);
   });
+  root.add(mergeStatic(wiring));
 
   // the current: chevrons that run along the wires, from + round to −, while the switch is closed
   const lengths = wires.map(([c]) => c.getLength());
@@ -177,29 +197,34 @@ export function createMagnetScene({ materials, colors }) {
     emissive: new THREE.Color(0xf59f00).multiplyScalar(0.35),
     roughness: 0.4,
   });
-  const chevronGeo = new THREE.ConeGeometry(2.4, 5, 12);
-  const chevrons = Array.from({ length: Math.round(total / CHEVRON_GAP) }, () => {
-    const m = new THREE.Mesh(chevronGeo, chevronMat);
-    m.userData.noExport = true;
-    m.visible = false;
-    root.add(m);
-    return m;
-  });
+  // one instanced mesh, a cone each
+  const n = Math.round(total / CHEVRON_GAP);
+  const chevrons = new THREE.InstancedMesh(new THREE.ConeGeometry(2.4, 5, 12), chevronMat, n);
+  chevrons.name = 'Current';
+  chevrons.userData.noExport = true;
+  chevrons.frustumCulled = false;
+  chevrons.visible = false;
+  root.add(chevrons);
   const UP = new THREE.Vector3(0, 1, 0);
   const tangent = new THREE.Vector3();
+  const at = new THREE.Vector3();
+  const q = new THREE.Quaternion();
+  const one = new THREE.Vector3(1, 1, 1);
+  const m4 = new THREE.Matrix4();
   /** Show the current (on) at time t (s): every chevron a little further along the wires. */
   function setCurrent(on, t = 0) {
-    chevrons.forEach((m, i) => {
-      m.visible = on;
-      if (!on) return;
-      let s = ((((i * total) / chevrons.length + t * CURRENT_SPEED) % total) + total) % total;
+    chevrons.visible = on;
+    if (!on) return;
+    for (let i = 0; i < n; i++) {
+      let s = ((((i * total) / n + t * CURRENT_SPEED) % total) + total) % total;
       let w = 0;
       while (s > lengths[w] && w < lengths.length - 1) s -= lengths[w++];
       const u = Math.min(1, s / lengths[w]);
-      wires[w][0].getPointAt(u, m.position);
+      wires[w][0].getPointAt(u, at);
       wires[w][0].getTangentAt(u, tangent);
-      m.quaternion.setFromUnitVectors(UP, tangent);
-    });
+      chevrons.setMatrixAt(i, m4.compose(at, q.setFromUnitVectors(UP, tangent), one));
+    }
+    chevrons.instanceMatrix.needsUpdate = true;
   }
 
   // the coil's ends turn red (N, facing the magnet) and grey (S) while the current flows; the app names them
@@ -218,17 +243,20 @@ export function createMagnetScene({ materials, colors }) {
   deck.position.y = 9.5;
   const rubber = new THREE.MeshStandardMaterial({ name: 'Rubber', color: 0x26282c, roughness: 0.7 });
   const wheelGeo = new THREE.CylinderGeometry(5, 5, 3.5, 20).rotateX(Math.PI / 2);
-  cart.add(deck);
+  const wheels = new THREE.Group();
+  wheels.name = 'Wheels';
   for (const [x, z] of [
     [-31, 13.5],
     [31, 13.5],
     [-31, -13.5],
     [31, -13.5],
   ]) {
-    const w = new THREE.Mesh(wheelGeo, rubber);
+    const w = new THREE.Mesh(wheelGeo.clone(), rubber);
     w.position.set(x, 5, z);
-    cart.add(w);
+    wheels.add(w);
   }
+  wheelGeo.dispose();
+  cart.add(deck, mergeStatic(wheels));
   const magnet = new THREE.Group(); // turns round for a flip; N at its own +x end
   magnet.name = 'BarMagnet';
   magnet.position.y = 19.5;
