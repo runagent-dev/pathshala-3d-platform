@@ -127,22 +127,6 @@ body.bg-transparent { background: transparent; }
   .pl .pvc-q-feedback { font-size: 12px; line-height: 1.38; min-height: calc(5 * 1.38em); }
   .pl .pvc-examples .pvc-ex-word { font-size: 13px; }
 }
-/* wide frames (tabs beside the sheet): the row and the action on the left, the formula on the right */
-@container pvc (min-width: 720px) and (min-height: 461px) {
-  .pl .pvc-learn { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); grid-template-areas: 'ex eq' 'act eq' 'out out' 'rule rule'; align-content: start; column-gap: 24px; row-gap: 6px; }
-  .pl .pvc-examples { grid-area: ex; }
-  .pl .pvc-act-row { grid-area: act; }
-  .pl-eq { grid-area: eq; align-self: center; }
-  .pl .pvc-outcome { grid-area: out; font-size: 15px; line-height: 1.6; min-height: 1.75em; }
-  .pl .pvc-rule { grid-area: rule; --pvc-rule-lines: 2; }
-  .pl .pvc-q-text { min-height: calc(2 * 1.4em); }
-  .pl .pvc-q-feedback { min-height: calc(2 * 1.45em); }
-}
-@container pvc (min-width: 720px) and (max-width: 1100px) and (min-height: 461px) {
-  .pl .pvc-quiet span { display: none; }
-  .pl-def { display: none; }
-  .pl-w { display: none; } /* the car's weight is on the picture and in the F₂ > W chip */
-}
 /* a narrow panel beside the scene: the formula and the sums smaller, so each sum keeps to one line */
 @container pvc-panel (max-width: 330px) {
   .pl-def { display: none; }
