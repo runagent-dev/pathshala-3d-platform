@@ -88,15 +88,16 @@ export function createApp(root, options = {}) {
   root.lang = t.lang;
   root.tabIndex = 0;
   const ui = buildStudentShell(root, t, {
+    layout: 'side',
     learn: `
           <div class="pvc-seg gf-stops" role="group" aria-label="${t('stop_label')}">
             ${STOPS.map((id) => `<button data-stop="${id}">${t(`stop_${id}`)}</button>`).join('')}
           </div>
-          <p class="gf-idea"></p>
           <div class="gf-row">
-            <p class="gf-fact"></p>
             <button class="pvc-btn primary gf-act" data-act="action"><span></span></button>
+            <p class="gf-fact"></p>
           </div>
+          <p class="gf-idea"></p>
           <div class="gf-forces">
             <span class="gf-forces-k">${t('forces_title')}</span>
             <div class="gf-ladder">
@@ -531,7 +532,6 @@ export function createApp(root, options = {}) {
   }
   function setView(view, { animate = true } = {}) {
     s.view = view === '3d' ? '3d' : 'front';
-    controls.enableRotate = s.view === '3d';
     s.userMovedCamera = false;
     syncUI();
     emit('view', { view: s.view });
@@ -543,9 +543,15 @@ export function createApp(root, options = {}) {
     if (s.locked) return lockedNudge();
     setView(view);
   }
+  // the view starts from the front; dragging turns it, and then the "front" button appears to come back
   controls.addEventListener('start', () => {
     s.userMovedCamera = true;
     tweener.cancel('camera');
+    if (s.view !== '3d') {
+      s.view = '3d';
+      syncUI();
+      emit('view', { view: s.view });
+    }
   });
   stage.onResize(() => {
     root.classList.toggle('gf-compact', stage.height < 300 || stage.width < 340);
@@ -876,7 +882,9 @@ export function createApp(root, options = {}) {
 
   // ── buttons, keys ───────────────────────────────────────────────────────────
   function syncUI() {
-    for (const b of ui.$$('[data-view]')) b.classList.toggle('on', b.dataset.view === s.view);
+    const front = ui.$('[data-view="front"]');
+    if (front) front.hidden = s.view !== '3d';
+    controls.enableRotate = !s.locked; // the test's answers are drawn for the view it sets
     for (const b of ui.$$('[data-stop]')) {
       const on = b.dataset.stop === s.stop;
       b.classList.toggle('on', on);
@@ -953,7 +961,6 @@ export function createApp(root, options = {}) {
   });
 
   // ── start ───────────────────────────────────────────────────────────────────
-  controls.enableRotate = s.view === '3d';
   root.classList.toggle('gf-compact', stage.height < 300 || stage.width < 340);
   setStop(s.stop, { animate: false });
   syncUI();
