@@ -1,0 +1,71 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "heat-flow",
+  "title": "Internal Energy and Flow of Heat (অভ্যন্তরীণ শক্তি ও তাপের প্রবাহ)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 162,
+  "topic": "6.1.1",
+  "placement": "Book page 162, topic 6.1.1: অভ্যন্তরীণ শক্তি ও তাপের প্রবাহ. Next to চিত্র ৬.০১ (two vessels joined by a pipe with a tap) and the paragraph about water height and temperature.",
+  "maintainers": ["RadeenXALNW"],
+  "units": "cm",
+  "description": "The book's চিত্র ৬.০১ (page 162, 6.1.1) brought to life: a tall narrow glass tube and a wide glass vessel hold water at different heights and are joined low down by a pipe with a tap. One tap on the tap (or on the big numbered button, \"১ কলটি খোলো\") opens it: water runs from the higher surface to the lower one, quickly at first and then slower, and stops when the two heights are equal (a dashed level line at each surface and one outlined arrow show the way; the wide vessel holds far more water yet its surface is the lower, so the water goes to it). One chip away, \"তাপের প্রবাহ\" shows the same picture as the book's গরম আলপিন (hot pin: little heat energy, high temperature) touching a glass of water (much heat energy, lower temperature), the water tinted by temperature: the height is the temperature, the volume of water the heat, and heat goes from the higher temperature to the lower until they are equal, whatever amount each holds. The panel is one action, one result, one rule in the book's words. Test tab: 5 questions on the picture (which way the water goes, which way heat goes from the pin to the glass of water, when the flow stops, what is equal then, what temperature measures). Phone-first, Bangla.",
+  "tags": ["heat", "temperature", "internal-energy", "flow-of-heat", "analogy", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "example",
+      "label": "Picture",
+      "type": "select",
+      "options": [["water", "water vessels"], ["heat", "flow of heat (hot pin, glass of water)"]],
+      "default": "water"
+    },
+    {
+      "name": "p",
+      "label": "Start with the tap open and the flow this far (0 to 1)",
+      "type": "number",
+      "default": "",
+      "placeholder": "0 to 1"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on the tap pulses at first", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "example": "heat" } },
+    { "name": "set", "payload": { "open": true } },
+    { "name": "set", "payload": { "p": 1 } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "open", "done", "practice-start", "practice-result", "practice-end"],
+  "export": { "poster": { "params": { "coach": "0", "p": "0.3" } }, "glb": [{ "name": "default" }] }
+}
