@@ -79,18 +79,19 @@ export function createApp(root, options = {}) {
   root.lang = t.lang;
   root.tabIndex = 0;
   const ui = buildStudentShell(root, t, {
+    layout: 'side', // the panel beside the 3D on landscape frames (kit 1.5.0)
     learn: `
           <div class="lm-chips" role="radiogroup" aria-label="${t('examples')}">${EXAMPLES.map(
             (ex) => `<button role="radio" data-ex="${ex}">${CHIP_ICONS[ex]}<span>${t(`ex_${ex}`)}</span></button>`,
           ).join('')}</div>
+          <div class="lm-acts">
+            <button class="pvc-btn primary" data-act="go">${ICONS.play}<span></span></button>
+            <button class="pvc-btn" data-act="clear">${ICONS.reset}<span>${t('act_clear')}</span></button>
+          </div>
           <div class="lm-verdict" data-state="rule" aria-live="polite">
             <span class="lm-path"><small>${t('path_label')}</small><b></b></span><span class="lm-res"><i class="lm-to">→</i><span class="lm-kind"><b></b><em aria-hidden="true"></em></span></span>
           </div>
-          <p class="lm-extra"></p>
-          <div class="pvc-learn-foot lm-acts">
-            <button class="pvc-btn primary" data-act="go">${ICONS.play}<span></span></button>
-            <button class="pvc-btn" data-act="clear">${ICONS.reset}<span>${t('act_clear')}</span></button>
-          </div>`,
+          <p class="lm-extra"></p>`,
   });
   const slowBadge = document.createElement('div');
   slowBadge.className = 'lm-slow';
@@ -101,14 +102,14 @@ export function createApp(root, options = {}) {
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 30, near: 0.02, far: 60, environment: 'studio-light' });
   const { camera, controls, scene } = stage;
-  // The owner requested a vivid scene; the white learning panel keeps the text readable.
+  // A soft, slightly muted backdrop (the owner: vivid means calm and beautiful, never eye-popping).
   const backdropCanvas = document.createElement('canvas');
   backdropCanvas.width = 8;
   backdropCanvas.height = 256;
   const backdropContext = backdropCanvas.getContext('2d');
   const backdropGradient = backdropContext.createLinearGradient(0, 0, 0, 256);
-  backdropGradient.addColorStop(0, '#35154f');
-  backdropGradient.addColorStop(1, '#8f2857');
+  backdropGradient.addColorStop(0, '#c3d1df');
+  backdropGradient.addColorStop(1, '#e8ddcc');
   backdropContext.fillStyle = backdropGradient;
   backdropContext.fillRect(0, 0, 8, 256);
   const backdrop = new THREE.CanvasTexture(backdropCanvas);

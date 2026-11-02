@@ -33,7 +33,7 @@ body.bg-transparent { background: transparent; }
 
 /* the book's sentence, then what the motion showed: room for the longest kept, so nothing moves */
 .lm-extra { margin: 0; min-height: 6em; font-size: 14px; line-height: 1.5; color: var(--ink-2); }
-.lm-acts { justify-content: flex-start; }
+.lm-acts { display: flex; gap: 8px; justify-content: flex-start; }
 .lm-acts .pvc-btn { height: 38px; font-size: 15px; }
 .lm-acts .pvc-btn.primary svg { color: #fff; }
 .lm-acts [data-act='go'] { min-width: 124px; }
@@ -46,16 +46,6 @@ body.bg-transparent { background: transparent; }
 .lm-opt { display: block; white-space: normal; text-align: center; }
 .lm .pvc-q-text { min-height: 2.8em; }
 .lm .pvc-q-feedback { min-height: 2.9em; font-size: 14px; }
-
-/* wide frames: the examples and the actions on one row */
-@container pvc (min-width: 720px) and (min-height: 461px) {
-  .lm .pvc-learn { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: 'chips acts' 'verdict verdict' 'extra extra'; align-content: start; gap: 6px 12px; }
-  .lm-chips { grid-area: chips; }
-  .lm-acts { grid-area: acts; }
-  .lm-verdict { grid-area: verdict; font-size: 21px; }
-  .lm-path small { font-size: 15.5px; }
-  .lm-extra { grid-area: extra; min-height: 3em; font-size: 15.5px; }
-  .lm .pvc-q-text { min-height: 1.4em; } /* every question fits on one line here */
 }
 /* a narrow side panel: the chips without their pictures */
 @container pvc-panel (max-width: 290px) {
