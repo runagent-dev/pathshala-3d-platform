@@ -1,0 +1,75 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "contact-noncontact-force-gravity",
+  "title": "Force: gravity, a non-contact force (বল: মাধ্যাকর্ষণ, অস্পর্শ বল)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "1.0.0",
+  "book": "physics-9-10",
+  "page": 67,
+  "topic": "3.1.2",
+  "placement": "Book page 67, topic 3.1.2: বল (Force). Next to the paragraph that names কোনো কিছু ছেড়ে দিলে মাধ্যাকর্ষণ বলের জন্য নিচে পড়া as a force that needs no touching (অস্পর্শ বল).",
+  "order": 3,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "Interactive 3D figure for force (বল), book page 67, topic 3.1.2, with the page's example কোনো কিছু ছেড়ে দিলে মাধ্যাকর্ষণ বলের জন্য নিচে পড়া: a student holds a football out and lets go; it falls at g, shown 3 × slower. One big numbered action (ফুটবলটি ছেড়ে দাও) plays it; the run holds in the air, 60 cm above the floor: the empty gap below the football, measured in cm, with the tag ছোঁয়নি: অস্পর্শ বল. The panel is the clean sheet: one result line naming the force and its kind, one rule that starts with the book's definition of force and grows into অস্পর্শ বল. Test tab: 3 tap questions (a comb lifting paper, which kind gravity is, what gravity does to the football). Phone-first, Bangla.",
+  "tags": ["force", "non-contact-force", "gravity", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "at",
+      "label": "Start at",
+      "type": "select",
+      "options": [["rest", "at rest"], ["key", "the telling moment"], ["end", "the end"]],
+      "default": "rest"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "Pulse the action's marker", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "play": true } },
+    { "name": "set", "payload": { "act": true } },
+    { "name": "set", "payload": { "at": "key" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "act", "view", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": { "params": { "coach": "0", "at": "key" } },
+    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "at": "rest", "animate": false } }] }],
+    "video": {
+      "kind": "script",
+      "seconds": 6,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [{ "at": 0.6, "command": "set", "payload": { "act": true } }]
+    }
+  }
+}

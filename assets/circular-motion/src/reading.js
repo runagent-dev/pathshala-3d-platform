@@ -4,19 +4,14 @@
 // so its distance from the centre is r whatever a is: the one idea of the figure.
 
 /**
- * The three examples of the book (page 36). r: the circle of the marked point in scene units (cm); value + unit:
+ * The example (book page 36). r: the circle of the marked point in scene units (cm); value + unit:
  * the real distance shown to the student; period: seconds per turn in the figure (stylised: the real fan is much
  * faster, the real clock and Moon much slower).
  */
 export const EXAMPLES = {
   // a 56-inch (1400 mm sweep) ceiling fan: the mark near the blade tip is 70 cm from the axis
   fan: { r: 70, value: 70, unit: 'unit_cm', decimals: 0, period: 6 },
-  // a 31 cm wall clock: the mark on the second hand is 12 cm from the pin; the clock runs 6 times fast
-  clock: { r: 12, value: 12, unit: 'unit_cm', decimals: 0, period: 10 },
-  // the Moon: about 3,84,400 km from the Earth's centre (3.84 lakh km); the scene is not to scale
-  moon: { r: 60, value: 3.844, unit: 'unit_lakh_km', decimals: 2, period: 12 },
 };
-export const EXAMPLE_IDS = /** @type {const} */ (['fan', 'clock', 'moon']);
 
 const RAD = Math.PI / 180;
 export const roundTo = (x, step) => +(Math.round(x / step) * step).toFixed(6);
@@ -98,12 +93,4 @@ export function distanceMistakes(example, fraction) {
     if (out.length === 3) break;
   }
   return out;
-}
-
-/** The hands of a clock at `seconds` after midnight, in degrees clockwise from 12. */
-export function clockHands(seconds) {
-  const s = wrap360(seconds * 6);
-  const m = wrap360(seconds * 0.1);
-  const h = wrap360(seconds / 120);
-  return { hour: h, minute: m, second: s };
 }

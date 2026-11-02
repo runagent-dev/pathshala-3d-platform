@@ -1,0 +1,69 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "solid-thermal-expansion",
+  "title": "Expansion of Solids (কঠিন পদার্থের প্রসারণ)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 167,
+  "topic": "6.3.1",
+  "placement": "Next to চিত্র ৬.০৪ on page 167 (a rod, a plate and a cube heated over flames), with the formulas of pages 168-170 and the examples of pages 168-171, topic 6.3.1 কঠিন পদার্থের প্রসারণ.",
+  "maintainers": ["RadeenXALNW"],
+  "units": "cm",
+  "description": "The book's picture of a rod, a square plate and a cube, each shown cold above and heated below over a flame, a little bigger. Heat them and read the book's numbers: L2 = L1 + αL1(T2 − T1) with the copper rod of the worked example (10 m, 20° C to 120° C, 10.0167 m), A2 with β = 2α, V2 with γ = 3α. A test with the book's examples.",
+  "tags": ["thermal expansion", "solid", "linear expansion", "6.3.1"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "quantity",
+      "label": "Which expansion is read",
+      "type": "select",
+      "options": [["length", "length"], ["area", "area"], ["volume", "volume"]],
+      "default": "length"
+    },
+    {
+      "name": "T2",
+      "label": "Temperature of the heated row (°C)",
+      "type": "number",
+      "default": "20",
+      "placeholder": "20 to 120"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "motion", "label": "Flames flicker", "type": "boolean", "default": "1" },
+    { "name": "coach", "label": "The ring on the flame pulses at first", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "quantity": "area", "T2": 120 } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "practice-start", "practice-result", "practice-end"],
+  "export": { "poster": { "params": { "coach": "0", "T2": "120", "motion": "0" } }, "glb": [{ "name": "default" }] }
+}

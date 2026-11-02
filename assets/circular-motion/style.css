@@ -12,11 +12,6 @@ body.bg-transparent { background: transparent; }
 .pvc .c-path { color: var(--c-path); }
 
 /* the examples; after "always the same" the next one glows twice, so the Moon is not missed */
-.cm-ex { align-self: flex-start; max-width: 100%; }
-.cm-ex button { height: 36px; padding: 0 13px; font-size: 15px; white-space: nowrap; }
-.cm-ex button.cm-nudge:not(.on) { animation: cm-nudge 1.1s ease-in-out 2; }
-@keyframes cm-nudge { 50% { background: var(--accent-soft); color: var(--accent); } }
-@media (prefers-reduced-motion: reduce) { .cm-ex button.cm-nudge { animation: none; } }
 
 /* the book's definition (two lines on a phone), then the book's line about the example and, quieter, how the
    picture is stylised (room for two lines) */
@@ -65,15 +60,11 @@ body.bg-transparent { background: transparent; }
   .cm .pvc-q-head .pvc-btn { height: 34px; }
 }
 @container pvc (max-width: 560px) {
-  .cm-ex { align-self: stretch; display: grid; grid-template-columns: auto auto auto; }
-  .cm-ex button { padding: 0 8px; font-size: 14.5px; }
-  .cm-idea { font-size: 13.5px; }
+      .cm-idea { font-size: 13.5px; }
   .cm-book { font-size: 12.5px; }
 }
 @container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
-  .cm-ex { align-self: stretch; display: grid; grid-template-columns: auto auto auto; }
-  .cm-ex button { height: 34px; padding: 0 6px; font-size: 13.5px; }
-  .cm-idea { font-size: 12.5px; line-height: 1.45; }
+      .cm-idea { font-size: 12.5px; line-height: 1.45; }
   .cm-book { font-size: 12px; min-height: 4.35em; }
   .cm-slots { gap: 4px; }
   .cm-slots i { font-size: 17px; }
