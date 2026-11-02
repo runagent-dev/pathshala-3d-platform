@@ -4,6 +4,7 @@
 // right (the way it is pushed), +y up.
 import * as THREE from 'three';
 import { textMesh } from '@shared/student/materials.js';
+import { mergeStatic } from './merge.js';
 
 export const BLOCK = { L: 0.85, H: 1.0, D: 0.62, mass: 2 };
 const WEIGHT = { r: 0.1, h: 0.1 }; // a 1 kg brass weight
@@ -85,9 +86,12 @@ export function createBlock({ t }) {
     label.position.set(0, WEIGHT.h / 2, WEIGHT.r + 0.0012);
     w.add(cyl, knob, label);
     w.position.y = H + i * (WEIGHT.h + 0.012);
-    w.visible = false;
     weights.add(w);
+    mergeStatic(w); // the brass and its knob in one mesh, the label in another
+    w.visible = false;
   }
+  // the bands and rails in one mesh (the wood stays its own mesh: the action's ring is fitted round it)
+  mergeStatic(body, { keep: [block, weights] });
 
   const hit = new THREE.Mesh(new THREE.BoxGeometry(L + 0.06, H + 0.07, D + 0.05), new THREE.MeshBasicMaterial({ visible: false }));
   hit.position.set(0, (H + 0.07) / 2 - 0.005, 0);

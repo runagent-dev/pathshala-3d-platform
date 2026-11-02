@@ -1,24 +1,37 @@
+// A force or velocity arrow that stands out on every wall and floor: the colour inside a dark edge inside a white halo,
+// drawn over the scene (no depth test), so the orange push never melts into the maroon dado and the red friction
+// stays clear over the grey platform. set(from, dir, length) as the kit's arrow; the edge and the halo reach a little
+// past both ends, so the tip is outlined too.
 import * as THREE from 'three';
 import { createArrow } from '@shared/arrow.js';
+
 const UP = new THREE.Vector3(0, 1, 0);
-const ZERO = new THREE.Vector3();
-export function createVector(color, name, edgeColor = '#132b46') {
-  const material = new THREE.MeshBasicMaterial({ name, color, depthTest: false, depthWrite: false, toneMapped: false });
-  const edgeMaterial = new THREE.MeshBasicMaterial({ color: edgeColor, depthTest: false, depthWrite: false, toneMapped: false });
-  const edge = createArrow({ name: `${name}Outline`, material: edgeMaterial, radius: 0.029, head: 0.09, headRadius: 0.074 });
-  const ink = createArrow({ name, material, radius: 0.019, head: 0.09, headRadius: 0.055 });
+// transparent (even when fully opaque), so the arrows are drawn after everything else in the scene
+const flat = (name, color) =>
+  new THREE.MeshBasicMaterial({ name, color, transparent: true, depthTest: false, depthWrite: false, toneMapped: false, fog: false });
+
+export function createVector(color, name, edgeColor = '#14263c') {
+  const material = flat(name, color);
+  const edgeMaterial = flat(`${name}Edge`, edgeColor);
+  const haloMaterial = flat(`${name}Halo`, '#ffffff');
+  const layers = [
+    // [arrow, padding round the colour (m)]
+    [createArrow({ name: `${name}Halo`, material: haloMaterial, radius: 0.034, head: 0.124, headRadius: 0.088, segments: 12 }), 0.019],
+    [createArrow({ name: `${name}Outline`, material: edgeMaterial, radius: 0.027, head: 0.108, headRadius: 0.072, segments: 12 }), 0.009],
+    [createArrow({ name, material, radius: 0.019, head: 0.09, headRadius: 0.055, segments: 12 }), 0],
+  ];
   const root = new THREE.Group();
   root.name = name;
   root.visible = false;
-  root.add(edge.root, ink.root);
-  edge.root.traverse((o) => {
-    o.renderOrder = 8;
-  });
-  ink.root.traverse((o) => {
-    o.renderOrder = 9;
-  });
+  for (const [i, [arrow]] of layers.entries()) {
+    root.add(arrow.root);
+    arrow.root.traverse((o) => {
+      o.renderOrder = 7 + i;
+    });
+  }
   const tip = new THREE.Vector3();
   const direction = new THREE.Vector3();
+  const start = new THREE.Vector3();
   return {
     root,
     material,
@@ -28,16 +41,8 @@ export function createVector(color, name, edgeColor = '#132b46') {
       root.position.copy(from);
       direction.copy(dir).normalize();
       root.quaternion.setFromUnitVectors(UP, direction);
-      edge.set(ZERO, UP, length);
-      ink.set(ZERO, UP, length);
+      for (const [arrow, pad] of layers) arrow.set(start.set(0, -pad, 0), UP, length + pad * 2.2);
       tip.copy(from).addScaledVector(direction, length);
-    },
-    setOpacity(alpha) {
-      root.visible = alpha > 0.01;
-      for (const m of [material, edgeMaterial]) {
-        m.transparent = alpha < 1;
-        m.opacity = alpha;
-      }
     },
     hide() {
       root.visible = false;

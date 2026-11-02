@@ -15,6 +15,7 @@ import { BLOCK, createBlock } from './block.js';
 import { createTrolley, TROLLEY } from './trolley.js';
 import { createPusher } from './person.js';
 import { createFloor } from './floor.js';
+import { createSetting, skyTexture } from './setting.js';
 import { fitPose } from './camera.js';
 import { MASS, MU, NOTCHES, RATE, RATE_WHEELS_UP, V_STEADY, cruiseGoal, fmtForce, letGo, limits, round, step, weight } from './physics.js';
 
@@ -44,6 +45,32 @@ const DOUBLE_TAP = 350; // ms
 const VIEW_3D = new THREE.Vector3(-0.35, 0.55, 0.8).normalize();
 const ELEVATION = 8; // degrees above the floor for the side view
 const CHIPS = ['static', 'kinetic', 'rolling'];
+/** Everything that casts a shadow (the person, the crate with its weights, the trolley), relative to the crate's x: the
+ * shadow camera is fitted round it once and follows the crate with the sun. */
+const CASTERS = new THREE.Box3(new THREE.Vector3(-1.5, -0.02, -0.42), new THREE.Vector3(0.66, 1.9, 0.42));
+const SUN_OFFSET = new THREE.Vector3(-0.9, 3.2, 1.7); // morning sun from the front left: shadows fall back and right
+
+/** Fit a directional light's shadow camera tightly round a box (in the light's own view), with a small margin. */
+function fitShadow(light, box) {
+  const cam = light.shadow.camera;
+  light.updateMatrixWorld();
+  light.target.updateMatrixWorld();
+  cam.position.copy(light.position);
+  cam.lookAt(light.target.position);
+  cam.updateMatrixWorld();
+  const inv = cam.matrixWorldInverse.copy(cam.matrixWorld).invert();
+  const p = new THREE.Vector3();
+  const lo = new THREE.Vector3(Infinity, Infinity, Infinity);
+  const hi = new THREE.Vector3(-Infinity, -Infinity, -Infinity);
+  for (let i = 0; i < 8; i++) {
+    p.set(i & 1 ? box.max.x : box.min.x, i & 2 ? box.max.y : box.min.y, i & 4 ? box.max.z : box.min.z).applyMatrix4(inv);
+    lo.min(p);
+    hi.max(p);
+  }
+  const m = 0.06;
+  Object.assign(cam, { left: lo.x - m, right: hi.x + m, bottom: lo.y - m, top: hi.y + m, near: Math.max(0.05, -hi.z - 0.3), far: -lo.z + 0.6 });
+  cam.updateProjectionMatrix();
+}
 
 export function createApp(root, options = {}) {
   const o = { ...DEFAULTS, ...options };
@@ -56,6 +83,7 @@ export function createApp(root, options = {}) {
   root.lang = t.lang;
   root.tabIndex = 0;
   const ui = buildStudentShell(root, t, {
+    layout: 'side',
     learn: cleanSheet(t, {
       examples: { label: 'types', results: true, items: CHIPS.map((id) => ({ id, label: `chip_${id}` })) },
       quiet: [
@@ -68,40 +96,45 @@ export function createApp(root, options = {}) {
   const sheet = bindCleanSheet(ui.learn);
   const live = document.createElement('section');
   live.className = 'tf-live';
-  live.innerHTML = `<button type="button" data-act="explain"><b>${t('live_title')}</b><span>${t('explain_link')}</span></button><div class="tf-values"></div>`;
+  // the live forces: the push and the friction side by side, how the box moves, the resultant and a note (the numbers
+  // are examples; on wheels the arrows are drawn longer) that used to sit on the 3D view
+  live.innerHTML = `<div class="tf-live-head"><b>${t('live_title')}</b><button type="button" data-act="explain">${t('explain_link')}</button></div><div class="tf-values"><div class="tf-force-row push"><span aria-hidden="true">→</span><span>${t('human_push')}</span><b></b></div><div class="tf-force-row friction"><span aria-hidden="true">←</span><span>${t('contact_friction')}</span><b></b></div><div class="tf-balance"></div><div class="tf-net"><small></small><span class="tf-note"></span></div></div>`;
   ui.$('.pvc-outcome').after(live);
+  const liveEl = {
+    push: /** @type {HTMLElement} */ (live.querySelector('.push b')),
+    friction: /** @type {HTMLElement} */ (live.querySelector('.friction b')),
+    balance: /** @type {HTMLElement} */ (live.querySelector('.tf-balance')),
+    net: /** @type {HTMLElement} */ (live.querySelector('.tf-net small')),
+    note: /** @type {HTMLElement} */ (live.querySelector('.tf-note')),
+    pause: /** @type {HTMLButtonElement} */ (ui.$('[data-act="pause"]')),
+    explain: /** @type {HTMLButtonElement} */ (live.querySelector('[data-act="explain"]')),
+  };
+  const written = new Map();
+  /** el.innerHTML = html, only when it changed (the panel is refreshed on every frame of a run). */
+  const write = (el, html) => {
+    if (written.get(el) === html) return;
+    written.set(el, html);
+    el.innerHTML = html;
+  };
   const explanation = document.createElement('dialog');
   explanation.className = 'tf-dialog';
   explanation.setAttribute('aria-label', t('explain_title'));
   root.append(explanation);
 
   ui.canvasHost.setAttribute('aria-label', t('aria_stage'));
-  // the honest note on the view: the book gives no numbers
-  const note = document.createElement('div');
-  note.className = 'tf-note';
-  note.textContent = t('note_examples');
-  ui.stage.append(note);
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
-  const stage = createStage(ui.canvasHost, { fov: 32, near: 0.03, far: 80, environment: 'studio-light' });
+  const stage = createStage(ui.canvasHost, { fov: 32, near: 0.03, far: 80, environment: 'studio-light', environmentIntensity: 0.6 });
   const { camera, controls, scene } = stage;
-  const bgCanvas = document.createElement('canvas');
-  bgCanvas.width = 16;
-  bgCanvas.height = 256;
-  const bgContext = bgCanvas.getContext('2d'),
-    bgGradient = bgContext.createLinearGradient(0, 0, 0, 256);
-  bgGradient.addColorStop(0, '#1b245c');
-  bgGradient.addColorStop(1, '#155e79');
-  bgContext.fillStyle = bgGradient;
-  bgContext.fillRect(0, 0, 16, 256);
-  const background = new THREE.CanvasTexture(bgCanvas);
-  background.colorSpace = THREE.SRGBColorSpace;
+  const background = skyTexture();
   scene.background = o.bg === 'transparent' ? null : background;
-  scene.add(new THREE.HemisphereLight(0xe2f4ff, 0x21385a, 0.8));
-  const keyLight = new THREE.DirectionalLight(0xffe8d0, 1.1);
+  scene.add(new THREE.HemisphereLight(0xe6f0ff, 0x8a7a66, 0.75));
+  const shadows = o.shadow && o.bg !== 'transparent';
+  // with shadows the sun (below) carries most of the direct light, so the shadows of the person and the crate show
+  const keyLight = new THREE.DirectionalLight(0xfff0dc, shadows ? 0.35 : 1.25);
   keyLight.position.set(-2, 4, 3);
   scene.add(keyLight);
-  const rimLight = new THREE.DirectionalLight(0x7edcff, 0.6);
+  const rimLight = new THREE.DirectionalLight(0xbfdcff, 0.45);
   rimLight.position.set(2, 2, -3);
   scene.add(rimLight);
 
@@ -113,11 +146,14 @@ export function createApp(root, options = {}) {
   world.name = 'TypesOfFriction';
   scene.add(world);
 
-  const floor = createFloor();
+  const anisotropy = Math.min(8, stage.renderer.capabilities.getMaxAnisotropy());
+  const floor = createFloor({ anisotropy });
+  const setting = createSetting({ anisotropy });
+  setting.root.visible = o.bg !== 'transparent';
   const block = createBlock({ t });
   const trolley = createTrolley();
   const person = createPusher();
-  world.add(floor.root, trolley.root, block.root, person.root);
+  world.add(setting.root, floor.root, trolley.root, block.root, person.root);
   trolley.root.visible = false;
   floor.setStart(0, BLOCK.L, BLOCK.D);
 
@@ -131,14 +167,24 @@ export function createApp(root, options = {}) {
     world.add(a.root);
   }
 
+  // a dashed leader from the palms to the push arrow's tail (two points and their dash distances, updated in place)
+  const leaderGeometry = new THREE.BufferGeometry();
+  leaderGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3));
+  leaderGeometry.setAttribute('lineDistance', new THREE.BufferAttribute(new Float32Array(2), 1));
   const contactLeader = new THREE.Line(
-    new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]),
-    new THREE.LineDashedMaterial({ color: 0xffd36c, dashSize: 0.035, gapSize: 0.025 }),
+    leaderGeometry,
+    new THREE.LineDashedMaterial({ color: 0x7a3300, dashSize: 0.035, gapSize: 0.025, depthTest: false, transparent: true }),
   );
+  contactLeader.renderOrder = 6;
+  contactLeader.frustumCulled = false;
   contactLeader.name = 'PushContactGuide';
   contactLeader.userData.noExport = true;
   world.add(contactLeader);
-  const contactMarker = new THREE.Mesh(new THREE.SphereGeometry(0.018, 16, 10), new THREE.MeshBasicMaterial({ color: 0xffdc7a }));
+  const contactMarker = new THREE.Mesh(
+    new THREE.SphereGeometry(0.02, 16, 10),
+    new THREE.MeshBasicMaterial({ color: 0xffb431, depthTest: false, transparent: true, toneMapped: false }),
+  );
+  contactMarker.renderOrder = 6;
   contactMarker.name = 'PushContactPoint';
   contactMarker.userData.noExport = true;
   world.add(contactMarker);
@@ -146,25 +192,30 @@ export function createApp(root, options = {}) {
   stage.addTicker((dt) => tweener.tick(dt));
   const audio = createAudio(o.sound);
 
+  // soft PCF on a shadow camera fitted round the person, the crate and the trolley: 1024 px is as sharp as 2048 on the
+  // old loose box, and only those are drawn into it (only the platform receives)
   let sun = null;
-  if (o.shadow && o.bg !== 'transparent') {
+  if (shadows) {
     stage.renderer.shadowMap.enabled = true;
-    stage.renderer.shadowMap.type = THREE.VSMShadowMap;
-    sun = new THREE.DirectionalLight(0xffffff, 0.45);
+    stage.renderer.shadowMap.type = THREE.PCFShadowMap;
+    sun = new THREE.DirectionalLight(0xfff4e2, 1.3);
     sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
-    Object.assign(sun.shadow.camera, { left: -0.8, right: 0.8, top: 0.7, bottom: -0.7, near: 0.2, far: 5 });
-    sun.shadow.radius = 5;
-    sun.shadow.bias = -0.0003;
+    sun.shadow.mapSize.set(1024, 1024);
+    sun.shadow.radius = 3;
+    sun.shadow.bias = -0.0005;
+    sun.shadow.normalBias = 0.015;
     scene.add(sun, sun.target);
+    sun.position.copy(SUN_OFFSET);
+    fitShadow(sun, CASTERS);
     for (const obj of [block.root, trolley.root, person.root])
       obj.traverse((m) => {
-        if (m instanceof THREE.Mesh && m.material && !m.material.transparent && m.material.visible !== false) m.castShadow = true;
+        m.castShadow = m instanceof THREE.Mesh && m.material && !m.material.transparent && m.material.visible !== false;
       });
-  }
+  } else for (const obj of [block.root, trolley.root, person.root]) obj.traverse((m) => (m.castShadow = false));
+  /** The sun and its fitted shadow box move with the crate (the box is fitted relative to the crate). */
   function placeSun(x) {
     if (!sun) return;
-    sun.position.set(x + 0.25, 1.7, 0.9);
+    sun.position.set(x + SUN_OFFSET.x, SUN_OFFSET.y, SUN_OFFSET.z);
     sun.target.position.set(x, 0, 0);
   }
 
@@ -272,6 +323,8 @@ export function createApp(root, options = {}) {
   // ── what the person sees: box, trolley, person, arrows ────────────────────
   const tmpA = new THREE.Vector3();
   const pushMid = new THREE.Vector3();
+  const pushTail = new THREE.Vector3();
+  const handsAt = [new THREE.Vector3(), new THREE.Vector3()];
   const XP = new THREE.Vector3(1, 0, 0);
   const XN = new THREE.Vector3(-1, 0, 0);
   function place() {
@@ -294,7 +347,7 @@ export function createApp(root, options = {}) {
       distance: x,
       walking: st.moving,
       grip: handle,
-      hands: resting ? null : [new THREE.Vector3(0.43, contactY, 0.18), new THREE.Vector3(0.43, contactY, -0.18)],
+      hands: resting ? null : [handsAt[0].set(0.43, contactY, 0.18), handsAt[1].set(0.43, contactY, -0.18)],
     });
     // The rolling arrows share a labelled 3× magnification; numbers always stay in newtons.
     const scale = ARROW * (s.trolley ? 3 : 1),
@@ -307,14 +360,20 @@ export function createApp(root, options = {}) {
     pushMid.set(faceX + pushLen / 2, arrowY, z);
     contactMarker.position.set(contactX, contactY, 0.18);
     contactMarker.visible = contactLeader.visible = arrows.push.root.visible;
-    contactLeader.geometry.setFromPoints([contactMarker.position, new THREE.Vector3(faceX, arrowY, z)]);
-    contactLeader.computeLineDistances();
+    if (contactLeader.visible) {
+      pushTail.set(faceX, arrowY, z);
+      const pos = leaderGeometry.attributes.position;
+      pos.setXYZ(0, contactX, contactY, 0.18);
+      pos.setXYZ(1, pushTail.x, pushTail.y, pushTail.z);
+      pos.needsUpdate = true;
+      leaderGeometry.attributes.lineDistance.setX(1, contactMarker.position.distanceTo(pushTail));
+      leaderGeometry.attributes.lineDistance.needsUpdate = true;
+    }
     const fricX = x + (s.trolley ? TROLLEY.wheelX : L * 0.35);
     if (st.friction > 0.01 && !s.busy) arrows.friction.set(tmpA.set(fricX, 0.045, z), XN, fricLen);
     else arrows.friction.hide();
     if (st.moving && !s.busy) arrows.velocity.set(tmpA.set(x + L / 2 + 0.14, s.blockY + H * 0.5, z), XP, 0.5);
     else arrows.velocity.hide();
-    note.textContent = t(s.trolley ? 'note_rolling_scale' : 'note_examples', { k: 3 });
     floor.showStart(!s.locked && st.x > 0.03 && !s.trolley);
     placeSun(x);
   }
@@ -371,7 +430,7 @@ export function createApp(root, options = {}) {
   function setView(view, { animate = true } = {}) {
     if (s.mode_ui === 'quiz') return Promise.resolve(false);
     s.view = view === '3d' ? '3d' : 'front';
-    controls.enableRotate = controls.enableZoom = s.view === '3d';
+    controls.enableRotate = controls.enableZoom = !s.locked; // the test keeps the view still
     s.userMovedCamera = false;
     syncUI();
     return flyTo(viewPose(), animate ? 0.8 : 0);
@@ -379,6 +438,18 @@ export function createApp(root, options = {}) {
   controls.addEventListener('start', () => {
     s.userMovedCamera = true;
     tweener.cancel('camera');
+    turning = true;
+  });
+  // the view starts from the front; a drag turns it (the camera really moves: a tap never does), and then the "front"
+  // button appears to come back
+  let turning = false;
+  controls.addEventListener('end', () => {
+    turning = false;
+  });
+  controls.addEventListener('change', () => {
+    if (!turning || s.view === '3d') return;
+    s.view = '3d';
+    syncUI();
   });
   stage.onResize(() => {
     if (!s.userMovedCamera) flyTo(viewPose(), 0);
@@ -418,7 +489,6 @@ export function createApp(root, options = {}) {
     avoid: [
       ui.corner,
       ui.hint,
-      note,
       () => action?.ringBox(),
       () => action?.box(),
       () =>
@@ -558,24 +628,29 @@ export function createApp(root, options = {}) {
   function motionRule() {
     return t(`rule_${motionPhase()}`);
   }
-  let lastLive = '';
   function updateLive() {
     const st = s.sim,
       net = st.pull - st.friction;
-    const frictionText = s.hideFric ? '?' : t('res_n', { f: forceNow(st.friction) });
-    const html = `<div class="tf-force-row push"><span>→</span><span>${t('human_push')}</span><b>${t('res_n', { f: forceNow(st.pull) })}</b></div><div class="tf-force-row friction"><span>←</span><span>${t('contact_friction')}</span><b>${frictionText}</b></div><div class="tf-balance">${t(`${motionPhase()}_state`, { v: round(st.v, 2) })}</div><small>${t(Math.abs(net) > 1e-8 && Math.abs(net) < 0.05 ? 'net_force_small' : 'net_force', { f: String(round(net, 2)) })}</small>`;
-    if (html !== lastLive) {
-      live.querySelector('.tf-values').innerHTML = html;
-      lastLive = html;
-    }
-    const pause = ui.$('[data-act="pause"]');
-    pause.disabled = s.busy || (s.mode === 'idle' && !st.moving) || s.mode_ui === 'quiz';
-    pause.innerHTML = s.paused ? ICONS.play : ICONS.pause;
-    pause.setAttribute('aria-label', t(s.paused ? 'act_resume' : 'act_pause'));
-    ui.$('[data-act="explain"]').disabled = s.busy;
+    write(liveEl.push, t('res_n', { f: forceNow(st.pull) }));
+    write(liveEl.friction, s.hideFric ? '?' : t('res_n', { f: forceNow(st.friction) }));
+    write(liveEl.balance, t(`${motionPhase()}_state`, { v: round(st.v, 2) }));
+    write(liveEl.net, t(Math.abs(net) > 1e-8 && Math.abs(net) < 0.05 ? 'net_force_small' : 'net_force', { f: String(round(net, 2)) }));
+    write(liveEl.note, t(s.trolley ? 'note_rolling_scale' : 'note_examples', { k: 3 }));
+    const pause = liveEl.pause;
+    const off = s.busy || (s.mode === 'idle' && !st.moving) || s.mode_ui === 'quiz';
+    if (pause.disabled !== off) pause.disabled = off;
+    write(pause, s.paused ? ICONS.play : ICONS.pause);
+    const label = t(s.paused ? 'act_resume' : 'act_pause');
+    if (pause.getAttribute('aria-label') !== label) pause.setAttribute('aria-label', label);
+    if (liveEl.explain.disabled !== s.busy) liveEl.explain.disabled = s.busy;
   }
   let resumeExplanation = false;
+  let explanationShown = false;
+  /** Shut the explanation and resume what it paused: once, however it was closed (button, Escape, reset, the test). */
   function closeExplanation() {
+    if (explanation.open) explanation.close();
+    if (!explanationShown) return;
+    explanationShown = false;
     if (resumeExplanation && s.mode_ui !== 'quiz') s.paused = false;
     resumeExplanation = false;
     refresh();
@@ -598,20 +673,23 @@ export function createApp(root, options = {}) {
     explanationPage = 'forces';
     renderExplanation();
     explanation.showModal();
+    explanationShown = true;
     refresh();
   }
   explanation.addEventListener('close', closeExplanation);
   explanation.addEventListener('cancel', (e) => {
     e.preventDefault();
-    explanation.close();
     closeExplanation();
   });
   const outcomeEl = ui.$('.pvc-outcome');
   let lastRing = null;
+  let lastChip = '';
+  let lastNext = '';
   function refresh() {
     updateLive();
-    sheet.choose(chipOf());
-    sheet.next(s.stage === 'slid' ? 'rolling' : null);
+    if (chipOf() !== lastChip) sheet.choose((lastChip = chipOf()));
+    const next = s.stage === 'slid' ? 'rolling' : '';
+    if (next !== lastNext) sheet.next((lastNext = next) || null);
     for (const id of CHIPS) {
       const v = s.found[id];
       sheet.result(id, v == null ? '' : t(id === 'static' ? 'res_max' : 'res_n', { f: fmt(v) }));
@@ -857,7 +935,7 @@ export function createApp(root, options = {}) {
     label: 'act_push1',
     target: () => block.box(),
     pad: 4,
-    avoid: [ui.corner, ui.hint, note, () => anno.boxes()],
+    avoid: [ui.corner, ui.hint, () => anno.boxes()],
     pulse: o.coach,
     onAct: () => {
       audio.unlock();
@@ -1032,7 +1110,7 @@ export function createApp(root, options = {}) {
         learnSaved = { found: { ...s.found } };
         if (explanation.open) {
           resumeExplanation = false;
-          explanation.close();
+          closeExplanation();
         }
         s.paused = false;
         s.view = 'front';
@@ -1139,7 +1217,9 @@ export function createApp(root, options = {}) {
 
   // ── buttons, keys ───────────────────────────────────────────────────────────
   function syncUI() {
-    for (const b of ui.$$('[data-view]')) b.classList.toggle('on', b.dataset.view === s.view);
+    const front = ui.$('[data-view="front"]');
+    if (front) front.hidden = s.view !== '3d';
+    if (!s.locked) controls.enableRotate = controls.enableZoom = true; // the test keeps the view still
     root.dataset.mode = s.mode_ui === 'quiz' ? 'quiz' : 'explore';
     for (const b of ui.$$('[data-mode]')) {
       const on = b.dataset.mode === root.dataset.mode;
@@ -1176,7 +1256,6 @@ export function createApp(root, options = {}) {
         openExplanation();
         break;
       case 'explain-close':
-        explanation.close();
         closeExplanation();
         break;
       case 'q-next':
@@ -1199,7 +1278,6 @@ export function createApp(root, options = {}) {
     if (explanation.open) {
       if (e.key === 'Escape') {
         e.preventDefault();
-        explanation.close();
         closeExplanation();
       }
       return;
@@ -1247,7 +1325,7 @@ export function createApp(root, options = {}) {
     async set(p = {}) {
       if (explanation.open && (p.stage || p.home || p.chip)) {
         resumeExplanation = false;
-        explanation.close();
+        closeExplanation();
       }
       if (p.view && s.mode_ui !== 'quiz') await setView(p.view, { animate: p.animate !== false });
       if (p.stage && s.mode_ui !== 'quiz') jumpTo(p.stage, { pull: p.pull });
@@ -1265,7 +1343,7 @@ export function createApp(root, options = {}) {
     async reset() {
       if (explanation.open) {
         resumeExplanation = false;
-        explanation.close();
+        closeExplanation();
       }
       quiz.stop();
       s.found = { static: null, kinetic: null, rolling: null };
@@ -1280,11 +1358,16 @@ export function createApp(root, options = {}) {
     startPractice: () => quiz.start(),
     capture(opts = {}) {
       const before = scene.background;
-      if (opts.background !== undefined) scene.background = null;
+      const platform = setting.root.visible;
+      if (opts.background !== undefined) {
+        scene.background = null;
+        setting.root.visible = false;
+      }
       try {
         return stage.capture(opts);
       } finally {
         scene.background = before;
+        setting.root.visible = platform;
         stage.invalidate();
       }
     },

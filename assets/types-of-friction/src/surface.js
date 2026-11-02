@@ -1,4 +1,6 @@
 // Smooth unions for connected clothing. Bake a tetrahedral isosurface once, then deform its bound surface for each live pose.
+// The bake is an indexed mesh: each crossing of the surface with a grid edge is one vertex shared by its triangles
+// (about a sixth of the vertices of a triangle soup), so a live pose moves and uploads far fewer vertices.
 import * as THREE from 'three';
 const TETS = [
   [0, 5, 1, 6],
@@ -35,61 +37,78 @@ export function createSurface(name, material, parent, min, max, spacing = 0.016)
   const sx = (max[0] - min[0]) / (nx - 1),
     sy = (max[1] - min[1]) / (ny - 1),
     sz = (max[2] - min[2]) / (nz - 1);
-  const field = new Float32Array(nx * ny * nz),
-    gradient = new Float32Array(field.length * 3),
-    stride = nx * ny;
+  const stride = nx * ny,
+    cells = nx * ny * nz;
   const geometry = new THREE.BufferGeometry();
-  const capacity = 200000,
-    positions = new Float32Array(capacity * 3),
-    normals = new Float32Array(capacity * 3);
-  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3).setUsage(THREE.DynamicDrawUsage));
-  geometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3).setUsage(THREE.DynamicDrawUsage));
   geometry.boundingBox = new THREE.Box3(new THREE.Vector3(min[0], min[1], min[2]), new THREE.Vector3(max[0], max[1], max[2]));
   geometry.boundingSphere = geometry.boundingBox.getBoundingSphere(new THREE.Sphere());
   const mesh = new THREE.Mesh(geometry, material);
   mesh.name = name;
   parent.add(mesh);
   const offsets = [0, 1, nx + 1, nx, stride, stride + 1, stride + nx + 1, stride + nx];
-  let count = 0;
-  function intersect(a, b) {
-    const t = field[a] / (field[a] - field[b]);
-    const ax = a % nx,
-      ay = Math.floor(a / nx) % ny,
-      az = Math.floor(a / stride);
-    const bx = b % nx,
-      by = Math.floor(b / nx) % ny,
-      bz = Math.floor(b / stride);
-    const nx0 = gradient[a * 3] + t * (gradient[b * 3] - gradient[a * 3]),
-      ny0 = gradient[a * 3 + 1] + t * (gradient[b * 3 + 1] - gradient[a * 3 + 1]),
-      nz0 = gradient[a * 3 + 2] + t * (gradient[b * 3 + 2] - gradient[a * 3 + 2]);
-    const len = Math.hypot(nx0, ny0, nz0) || 1;
-    return [
-      min[0] + (ax + t * (bx - ax)) * sx,
-      min[1] + (ay + t * (by - ay)) * sy,
-      min[2] + (az + t * (bz - az)) * sz,
-      nx0 / len,
-      ny0 / len,
-      nz0 / len,
-    ];
-  }
-  function triangle(a, b, c) {
-    const ux = b[0] - a[0],
-      uy = b[1] - a[1],
-      uz = b[2] - a[2],
-      vx = c[0] - a[0],
-      vy = c[1] - a[1],
-      vz = c[2] - a[2];
-    if ((uy * vz - uz * vy) * a[3] + (uz * vx - ux * vz) * a[4] + (ux * vy - uy * vx) * a[5] < 0) [b, c] = [c, b];
-    if (count + 3 > capacity) throw new Error('Clothing surface exceeded its vertex budget');
-    for (const p of [a, b, c]) {
-      positions.set(p.slice(0, 3), count * 3);
-      normals.set(p.slice(3), count * 3);
-      count++;
-    }
-  }
   return {
     mesh,
+    /** Bake the surface where sample(x, y, z) < 0 (once: live poses deform it with createDeformer). */
     update(sample) {
+      // the bake's scratch (freed when it is done): the field and its gradient on the grid; every crossing of the
+      // surface with a grid edge is one vertex, shared by all its triangles
+      const field = new Float32Array(cells),
+        gradient = new Float32Array(cells * 3),
+        capacity = 120000,
+        positions = new Float32Array(capacity * 3),
+        normals = new Float32Array(capacity * 3),
+        indices = new Uint32Array(capacity * 6),
+        vertexOf = new Map(), // edge (its two grid points) → vertex
+        ids = new Array(8);
+      let count = 0;
+      let triangles = 0;
+      /** The vertex where the surface crosses the grid edge a–b (made once, then shared). */
+      function intersect(p, q) {
+        const a = p < q ? p : q,
+          b = p < q ? q : p,
+          key = a * cells + b;
+        const known = vertexOf.get(key);
+        if (known !== undefined) return known;
+        if (count >= capacity) throw new Error('Clothing surface exceeded its vertex budget');
+        const t = field[a] / (field[a] - field[b]);
+        const ax = a % nx,
+          ay = Math.floor(a / nx) % ny,
+          az = Math.floor(a / stride);
+        const bx = b % nx,
+          by = Math.floor(b / nx) % ny,
+          bz = Math.floor(b / stride);
+        const nx0 = gradient[a * 3] + t * (gradient[b * 3] - gradient[a * 3]),
+          ny0 = gradient[a * 3 + 1] + t * (gradient[b * 3 + 1] - gradient[a * 3 + 1]),
+          nz0 = gradient[a * 3 + 2] + t * (gradient[b * 3 + 2] - gradient[a * 3 + 2]);
+        const len = Math.hypot(nx0, ny0, nz0) || 1;
+        const k = count * 3;
+        positions[k] = min[0] + (ax + t * (bx - ax)) * sx;
+        positions[k + 1] = min[1] + (ay + t * (by - ay)) * sy;
+        positions[k + 2] = min[2] + (az + t * (bz - az)) * sz;
+        normals[k] = nx0 / len;
+        normals[k + 1] = ny0 / len;
+        normals[k + 2] = nz0 / len;
+        vertexOf.set(key, count);
+        return count++;
+      }
+      /** One triangle a, b, c (vertices), turned to face along the surface's normal at a. */
+      function triangle(a, b, c) {
+        const A = a * 3,
+          B = b * 3,
+          C = c * 3;
+        const ux = positions[B] - positions[A],
+          uy = positions[B + 1] - positions[A + 1],
+          uz = positions[B + 2] - positions[A + 2],
+          vx = positions[C] - positions[A],
+          vy = positions[C + 1] - positions[A + 1],
+          vz = positions[C + 2] - positions[A + 2];
+        const flip = (uy * vz - uz * vy) * normals[A] + (uz * vx - ux * vz) * normals[A + 1] + (ux * vy - uy * vx) * normals[A + 2] < 0;
+        if ((triangles + 1) * 3 > indices.length) throw new Error('Clothing surface exceeded its triangle budget');
+        indices[triangles * 3] = a;
+        indices[triangles * 3 + 1] = flip ? c : b;
+        indices[triangles * 3 + 2] = flip ? b : c;
+        triangles++;
+      }
       let index = 0;
       for (let z = 0; z < nz; z++)
         for (let y = 0; y < ny; y++) for (let x = 0; x < nx; x++) field[index++] = sample(min[0] + x * sx, min[1] + y * sy, min[2] + z * sz);
@@ -101,25 +120,27 @@ export function createSurface(name, material, parent, min, max, spacing = 0.016)
             gradient[i * 3 + 1] = (field[i + nx] - field[i - nx]) / (2 * sy);
             gradient[i * 3 + 2] = (field[i + stride] - field[i - stride]) / (2 * sz);
           }
-      count = 0;
+      const inside = [],
+        outside = [];
       for (let z = 0; z < nz - 1; z++)
         for (let y = 0; y < ny - 1; y++)
           for (let x = 0; x < nx - 1; x++) {
-            const base = z * stride + y * nx + x,
-              ids = offsets.map((o) => base + o);
+            const base = z * stride + y * nx + x;
             let mask = 0;
-            for (let i = 0; i < 8; i++) if (field[ids[i]] < 0) mask |= 1 << i;
+            for (let i = 0; i < 8; i++) {
+              ids[i] = base + offsets[i];
+              if (field[ids[i]] < 0) mask |= 1 << i;
+            }
             if (mask === 0 || mask === 255) continue;
             for (const tet of TETS) {
-              const inside = [],
-                outside = [];
+              inside.length = 0;
+              outside.length = 0;
               for (const corner of tet) (field[ids[corner]] < 0 ? inside : outside).push(ids[corner]);
               if (!inside.length || !outside.length) continue;
               if (inside.length === 1 || outside.length === 1) {
                 const one = inside.length === 1 ? inside[0] : outside[0],
                   other = inside.length === 1 ? outside : inside;
-                const points = other.map((p) => intersect(one, p));
-                triangle(points[0], points[1], points[2]);
+                triangle(intersect(one, other[0]), intersect(one, other[1]), intersect(one, other[2]));
               } else {
                 const a = intersect(inside[0], outside[0]),
                   b = intersect(inside[0], outside[1]),
@@ -130,28 +151,33 @@ export function createSurface(name, material, parent, min, max, spacing = 0.016)
               }
             }
           }
-      geometry.setDrawRange(0, count);
-      geometry.attributes.position.needsUpdate = true;
-      geometry.attributes.normal.needsUpdate = true;
+      // a compact indexed mesh of what was baked
+      geometry.setAttribute('position', new THREE.BufferAttribute(positions.slice(0, count * 3), 3));
+      geometry.setAttribute('normal', new THREE.BufferAttribute(normals.slice(0, count * 3), 3));
+      geometry.setIndex(
+        new THREE.BufferAttribute(count < 65536 ? Uint16Array.from(indices.subarray(0, triangles * 3)) : indices.slice(0, triangles * 3), 1),
+      );
     },
   };
 }
 
-// Bake the sculpt once, then use blended rigid bone transforms for inexpensive live poses.
+// Bake the sculpt once, then use blended rigid bone transforms for inexpensive live poses (nothing allocated per pose).
 export function createDeformer(mesh, frames, weightsAt) {
   const g = mesh.geometry,
-    count = g.drawRange.count;
+    count = g.attributes.position.count;
   const restPositions = g.attributes.position.array.slice(0, count * 3),
     restNormals = g.attributes.normal.array.slice(0, count * 3);
   const positions = new Float32Array(restPositions),
     normals = new Float32Array(restNormals),
     weights = new Float32Array(count * frames.length);
   const inverse = frames.map((frame) => frame.clone().invert());
+  const blend = frames.map(() => new THREE.Matrix4());
   for (let i = 0; i < count; i++) weights.set(weightsAt(restPositions[i * 3], restPositions[i * 3 + 1], restPositions[i * 3 + 2]), i * frames.length);
   g.setAttribute('position', new THREE.BufferAttribute(positions, 3).setUsage(THREE.DynamicDrawUsage));
   g.setAttribute('normal', new THREE.BufferAttribute(normals, 3).setUsage(THREE.DynamicDrawUsage));
+  const n = frames.length;
   return (current) => {
-    const matrices = current.map((frame, i) => frame.clone().multiply(inverse[i]).elements);
+    for (let j = 0; j < n; j++) blend[j].multiplyMatrices(current[j], inverse[j]);
     for (let i = 0; i < count; i++) {
       const x = restPositions[i * 3],
         y = restPositions[i * 3 + 1],
@@ -165,10 +191,10 @@ export function createDeformer(mesh, frames, weightsAt) {
         ax = 0,
         ay = 0,
         az = 0;
-      for (let j = 0; j < frames.length; j++) {
-        const w = weights[i * frames.length + j];
+      for (let j = 0; j < n; j++) {
+        const w = weights[i * n + j];
         if (w === 0) continue;
-        const m = matrices[j];
+        const m = blend[j].elements;
         px += w * (m[0] * x + m[4] * y + m[8] * z + m[12]);
         py += w * (m[1] * x + m[5] * y + m[9] * z + m[13]);
         pz += w * (m[2] * x + m[6] * y + m[10] * z + m[14]);

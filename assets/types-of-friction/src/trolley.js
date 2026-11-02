@@ -1,7 +1,11 @@
 // A small flat trolley with four rubber wheels (real size in metres): a steel deck 1.08 m × 0.74 m, its top 0.20 m
 // above the floor, on four wheels of 0.09 m radius. The block is lifted onto it to show rolling friction. Origin: on
 // the floor under the middle of the deck, +x forward. roll(d) turns the wheels for d metres travelled.
+//
+// Drawn with few meshes: the deck, frame and handle are merged once per material; each wheel is two meshes (the rubber
+// and the iron in one vertex-coloured mesh, the brass hub in another).
 import * as THREE from 'three';
+import { mergeStatic } from './merge.js';
 
 export const TROLLEY = { L: 1.08, W: 0.74, top: 0.2, wheel: 0.09, wheelX: 0.38, wheelZ: 0.37 };
 
@@ -59,6 +63,10 @@ export function createTrolley() {
     add(new THREE.BoxGeometry(0.1, 0.035, 0.035), dark, -0.55, top, z, handle);
   }
   add(new THREE.CylinderGeometry(0.028, 0.028, 0.54, 20).rotateX(Math.PI / 2), dark, -0.6, 0.95, 0, handle);
+  const wheelPaint = new THREE.MeshStandardMaterial({ name: 'WheelRubberIron', vertexColors: true, roughness: 0.8, metalness: 0.15 });
+  for (const w of wheels) mergeStatic(w, { paint: { from: [tyre, dark], material: wheelPaint } });
+  mergeStatic(handle);
+  mergeStatic(root, { keep: [...wheels, handle] });
   return {
     root,
     roll(d) {
