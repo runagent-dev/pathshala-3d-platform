@@ -83,3 +83,11 @@ speed is no ত্বরণ (a = (v − u)/t); and because বেগ has a direc
 - Is "গতি বাড়াও" the right word for the accelerator for class 9? (Alternative: "এক্সিলারেটর".) The brake pedal says
   "ব্রেক করো" to match its verb form.
 - The figure says গ্রাফ on screen (as the book does in the উদাহরণ); the aria label says লেখচিত্র.
+
+## Declutter pass (2026-11, 0.2.0)
+- Only the CNG and its road: the trees, bushes and grass tufts are gone; the grass beside the road and the field for
+  the bend are soft sand (never green); the white haze is a soft, slightly muted sky.
+- Nothing floats on the 3D view but labels: the two pedals (ব্রেক করো, গতি বাড়াও) and the speed moved into the panel,
+  under the choices; the camera no longer leaves room for them.
+- Panel in the labs' one order: the choices (+ আবার শুরু), the pedals and the speed, the graph, the sum, the sentence.
+  The figure's rule that widened the side panel is gone.
