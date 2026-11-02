@@ -5,9 +5,9 @@
 import * as THREE from 'three';
 import { ICE, WIRE_R } from './reading.js';
 
-export const GROUND = -0.58; // the floor, below the table's top (y = 0)
-export const TABLE = { x: 0.92, z: 0.7, rail: 0.25, beam: 0.08, thick: 0.04 };
-export const HANG = { slant: 0.12, drop: 0.3, out: 0.05 }; // the wire's bends: down, and out past the block's face
+export const GROUND = -0.42; // the floor, below the table's top (y = 0)
+export const TABLE = { x: 1.0, z: 0.6, rail: 0.25, thick: 0.04 };
+export const HANG = { slant: 0.1, drop: 0.2, out: 0.05 }; // the wire's bends: down, and out past the block's face
 export const WEIGHT = { r: 0.042, h: 0.075 };
 
 const std = (color, o = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.8, metalness: 0, ...o });
@@ -50,8 +50,6 @@ function createTable() {
   };
   const xr = TABLE.x / 2 - TABLE.rail / 2;
   for (const sx of [-1, 1]) box(TABLE.rail, TABLE.thick, TABLE.z, top, sx * xr, -TABLE.thick / 2, 0);
-  const bx = TABLE.x - 2 * TABLE.rail;
-  for (const sz of [-1, 1]) box(bx, TABLE.thick, TABLE.beam, top, 0, -TABLE.thick / 2, sz * (TABLE.z / 2 - TABLE.beam / 2));
   const lh = -GROUND - TABLE.thick;
   for (const sx of [-1, 1])
     for (const sz of [-1, 1]) box(0.05, lh, 0.05, leg, sx * (TABLE.x / 2 - 0.04), -TABLE.thick - lh / 2, sz * (TABLE.z / 2 - 0.04));
@@ -127,13 +125,13 @@ export function createIce() {
   edges.renderOrder = 6;
   root.add(edges);
   // the faint refrozen seam above the wire: from the wire up to the top, across the whole depth
-  const seamMat = new THREE.MeshBasicMaterial({ color: '#f4fbff', transparent: true, opacity: 0.6, depthWrite: false, toneMapped: false });
+  const seamMat = new THREE.MeshBasicMaterial({ color: '#8ee6ee', transparent: true, opacity: 0.6, depthWrite: false, toneMapped: false });
   const seam = new THREE.Mesh(new THREE.BoxGeometry(0.006, 1, ICE.z - 0.004), seamMat);
   seam.renderOrder = 4;
   seam.visible = false;
   root.add(seam);
   // the film of water just under the wire (a bright blue sheet; the pressure melts the ice there)
-  const filmMat = new THREE.MeshBasicMaterial({ color: '#2d9cff', transparent: true, opacity: 0.8, depthWrite: false, toneMapped: false });
+  const filmMat = new THREE.MeshBasicMaterial({ color: '#1c7ed6', transparent: true, opacity: 0.8, depthWrite: false, toneMapped: false });
   const film = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.007, ICE.z - 0.004), filmMat);
   film.renderOrder = 4;
   film.visible = false;
@@ -145,7 +143,7 @@ export function createIce() {
 export function createRig() {
   const root = new THREE.Group();
   root.name = 'WireAndWeights';
-  const wireMat = std('#39414b', { roughness: 0.35, metalness: 0.7, transparent: true });
+  const wireMat = std('#1d2128', { roughness: 0.35, metalness: 0.6, transparent: true });
   const iron = std('#4a4f57', { roughness: 0.4, metalness: 0.65, transparent: true });
   const lid = std('#8a9099', { roughness: 0.35, metalness: 0.75, transparent: true });
   const mats = [wireMat, iron, lid];

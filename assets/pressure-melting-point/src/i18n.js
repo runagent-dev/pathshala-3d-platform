@@ -43,7 +43,7 @@ export const STRINGS = {
     cell_over: 'তারের ওপরে',
     val_under: 'বরফ গলে পানি',
     val_over: 'পানি জমে বরফ',
-    why_under: 'চাপ বেশি, তাই গলনাঙ্ক কমে যায়',
+    why_under: 'চাপ বেশি (লাল তীর), তাই গলনাঙ্ক কমে যায়',
     why_over: 'চাপ সরে গেছে, গলনাঙ্ক আগের মান ফিরে পায়',
     none: '—',
 
@@ -154,7 +154,7 @@ export const STRINGS = {
     cell_over: 'Over the wire',
     val_under: 'ice melts to water',
     val_over: 'water freezes to ice',
-    why_under: 'more pressure, so the melting point falls',
+    why_under: 'more pressure (red arrow), so the melting point falls',
     why_over: 'pressure gone, the melting point returns',
     none: '—',
     rule_start: '<b>When pressure is applied, the melting point of a substance falls.</b> So two pieces of ice can be pressed into one piece.',

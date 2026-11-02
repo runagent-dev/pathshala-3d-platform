@@ -32,8 +32,11 @@ Then "আবার দেখো". The quiet icon goes back to the start.
 পানি, পরিণত, অখণ্ড এক টুকরো বরফ. The page writes ওপর.
 
 ## Choices made
-- The wire runs across the block's narrow side, with a weight at each end (as the book). The camera looks at the end of
-  the block so the wire reads as a line sinking through it and both weights show; dragging turns the view.
+- The wire runs across the block's narrow side, with a weight at each end (as the book). The view is oblique like the
+  book's, framed on the block, the wire and both hanging weights (the table is short and its top is two rails, so
+  nothing hides the weights); dragging turns the view.
+- 0.1.1: bigger block, thicker dark wire, at most three labels (ice, wire, weight); the film of water (blue) and the
+  refrozen seam (pale teal) are named by the panel's two rows, the red arrow above the wire by the first row.
 - No numbers anywhere (the book gives none): the speed is a picture and the panel says so. The wire is drawn thicker
   than a real one.
 - The block is see-through pale blue (no `transmission`); the wire and arrow are drawn so they read inside it.

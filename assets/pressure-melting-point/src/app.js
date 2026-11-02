@@ -38,8 +38,9 @@ const HANG_S = 1.4; // s: the wire and weights come down onto the ice
 const REMOVE_S = 0.9; // s: they are taken away
 const DOUBLE_TAP = 420; // ms
 const MARGIN = { top: 52, bottom: 14, side: 8 };
-const FOCUS = new THREE.Box3(new THREE.Vector3(-0.33, -0.42, -0.3), new THREE.Vector3(0.33, 0.27, 0.3));
-const VIEW_DIRS = { front: new THREE.Vector3(1, 0.3, 0.32), '3d': new THREE.Vector3(0.5, 0.45, 1) };
+const FOCUS = new THREE.Box3(new THREE.Vector3(-0.37, -0.32, -0.3), new THREE.Vector3(0.37, 0.36, 0.3));
+const ARROW_LEN = 0.075; // m: the pressure arrow
+const VIEW_DIRS = { front: new THREE.Vector3(0.85, 0.34, 0.8), '3d': new THREE.Vector3(0.4, 0.45, 1) };
 const DOWN = new THREE.Vector3(0, -1, 0);
 
 export function createApp(root, options = {}) {
@@ -113,7 +114,7 @@ export function createApp(root, options = {}) {
     count: 1,
     color: COLORS.press,
     outline: '#ffffff',
-    radius: 0.0055,
+    radius: 0.0075,
     head: 0.03,
     headRadius: 0.016,
     pad: 0.003,
@@ -168,7 +169,8 @@ export function createApp(root, options = {}) {
       ice.seam.position.y = (yw + WIRE_R + ICE.y) / 2 - ICE.y / 2;
       ice.seamMat.opacity = 0.6 * s.seam;
     }
-    if (inside && s.show.arrow) press.set(0, A0.set(0, yw - WIRE_R - 0.012, 0), DOWN, Math.min(0.075, Math.max(0.02, yw - 0.02)));
+    // the arrow presses down on the wire from just above it (outlined, drawn over the ice)
+    if (inside && s.show.arrow) press.set(0, A0.set(0, yw + WIRE_R + ARROW_LEN + 0.006, 0), DOWN, ARROW_LEN);
     else press.hide(0);
     stage.invalidate();
   }
@@ -219,6 +221,8 @@ export function createApp(root, options = {}) {
   const spot = (dx, dy) => ({ dx, dy });
   const RIGHT = [spot(20, 0), spot(20, -20), spot(20, 20), spot(40, -30), spot(40, 30), spot(60, 0), spot(60, -50), spot(60, 50)];
   const LEFT = [spot(-20, 0), spot(-20, -20), spot(-20, 20), spot(-40, -30), spot(-40, 30), spot(-60, 0), spot(-60, -50), spot(-60, 50)];
+  const UPLEFT = [spot(-30, -30), spot(-48, -40), spot(-62, -22), spot(-24, -50)];
+  const UPRIGHT = [spot(30, -30), spot(48, -40), spot(62, -22), spot(24, -50)];
   const ABOVE = [spot(0, -24), spot(26, -24), spot(-26, -24), spot(0, -44), spot(44, -36), spot(-44, -36)];
   const BELOW = [spot(0, 24), spot(26, 24), spot(-26, 24), spot(0, 44), spot(44, 36), spot(-44, 36)];
   const tmp = new THREE.Vector3();
@@ -273,62 +277,36 @@ export function createApp(root, options = {}) {
     want.clear();
     const ph = phase();
     const L = s.show.labels;
-    const quiz = s.mode === 'quiz';
     const yw = wireY(s.p);
-    const compact = stage.height < 260 || stage.width < 340 || stage.width * stage.height < 170000; // a small view keeps only the labels that matter
     if (L) {
-      if (!compact)
-        want.set('ice', {
-          text: t(ph === 'whole' ? 'lbl_whole' : 'lbl_ice'),
-          point: () => pt('ice').set(-ICE.x * 0.38, ICE.y, ICE.z / 2),
-          spots: [...LEFT, ...ABOVE],
-          color: COLORS.ice,
-        });
+      // at most three short labels, spread round the block: the ice up on the left, the wire to the right, a weight below
+      want.set('ice', {
+        text: t(ph === 'whole' ? 'lbl_whole' : 'lbl_ice'),
+        point: () => pt('ice').set(-ICE.x * 0.4, ICE.y, ICE.z / 2),
+        spots: [...UPLEFT, ...ABOVE, ...LEFT],
+        color: COLORS.ice,
+      });
       if (s.rig > 0.5 && s.off < 0.01) {
-        if (!compact)
-          want.set('wire', {
-            text: t('lbl_wire'),
-            point: () =>
-              pt('wire')
-                .copy(rig.pointOf.wire)
-                .setY(rig.pointOf.wire.y + yw),
-            spots: [...RIGHT, ...ABOVE],
-            color: COLORS.wire,
-            optional: true,
-          });
+        want.set('wire', {
+          text: t('lbl_wire'),
+          point: () =>
+            pt('wire')
+              .copy(rig.pointOf.wire)
+              .setY(rig.pointOf.wire.y + yw),
+          spots: [spot(-34, -2), spot(-44, 14), ...LEFT, ...RIGHT, ...UPRIGHT],
+          color: COLORS.wire,
+        });
         want.set('weight', {
           text: t('lbl_weight'),
           point: () =>
             pt('weight')
               .copy(rig.pointOf.weight)
               .setY(rig.pointOf.weight.y + yw),
-          spots: [...RIGHT, ...BELOW],
+          spots: [...BELOW, ...LEFT, ...RIGHT],
           color: COLORS.weight,
-          optional: true,
         });
       }
-      if (ice.film.visible && s.show.film && !quiz)
-        want.set('melt', {
-          text: t('lbl_melt'),
-          point: () => pt('melt').set(0.02, yw - WIRE_R - 0.005, ICE.z / 2),
-          spots: [...RIGHT, ...BELOW],
-          color: COLORS.melt,
-        });
-      if (ice.seam.visible && !quiz && seamHeight(s.p) > 0.05)
-        want.set('freeze', {
-          text: t('lbl_freeze'),
-          point: () => pt('freeze').set(0, (yw + WIRE_R + ICE.y) / 2, ICE.z / 2),
-          spots: [...LEFT, ...ABOVE],
-          color: COLORS.freeze,
-        });
     }
-    if (press.shown[0] && L && !quiz)
-      want.set('press', {
-        text: t('lbl_press'),
-        point: () => pt('press').copy(press.tips[0]).lerp(press.tails[0], 0.4),
-        spots: [...LEFT, ...BELOW],
-        color: COLORS.press,
-      });
     for (const id of [...labelKey.keys()])
       if (!want.has(id)) {
         anno.remove(id);

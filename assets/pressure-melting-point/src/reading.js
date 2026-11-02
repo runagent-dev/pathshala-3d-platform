@@ -2,8 +2,8 @@
 // size, how high the wire is when it has cut a given part of the way through, and what the sheet says at each step.
 // Lengths in metres. The book gives no numbers for this experiment, so none are invented: the speed is only a picture.
 
-export const ICE = { x: 0.62, y: 0.22, z: 0.26 }; // the block (its bottom is y = 0, resting on the table)
-export const WIRE_R = 0.006; // drawn thick enough to see (a real wire is much thinner)
+export const ICE = { x: 0.7, y: 0.26, z: 0.3 }; // the block (its bottom is y = 0, resting on the table)
+export const WIRE_R = 0.009; // drawn thick enough to see (a real wire is much thinner)
 export const P_HANG = 0.06; // how far the wire has sunk once the weights hang on it (a little way into the top)
 export const P_OUT = 0.97; // from here the wire is clear of the block: no more pressure on the ice
 export const CUT_SECONDS = 7; // the cut, shown fast (the real thing takes a long time)
