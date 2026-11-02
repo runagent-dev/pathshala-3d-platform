@@ -123,3 +123,11 @@ scenery"): the উদাহরণ sheet with the book's worked example and a red
 - The book's picture is a graph only; the train is our own idea (the 2.6 figure uses a street vehicle).
 - The book derives s = ut + ½at² by putting v = u + at into s = (u + v)/2 × t; the sheet shows the area route first
   (as the owner asked) and names the book's route at the end of step ৩. A teacher may prefer the book's order.
+
+## Declutter pass (2026-11, 0.4.0)
+- The railway: the green grass and the row of trees are gone; the tracks lie on soft sand under a muted sky.
+- The worked example's street: the buildings, shops, awnings, trees in planters and the skyline are gone; the road,
+  its footpaths and the street lamps (they show how fast the car goes) stay, under a muted sky.
+- Panel in the labs' one order: the choices (u, a, t and the four equations), the action (চালাও, কীভাবে এল,
+  উদাহরণ), the equation with its numbers, the sentence. The old wide-frame grid and the figure's rule that widened
+  the side panel are gone.

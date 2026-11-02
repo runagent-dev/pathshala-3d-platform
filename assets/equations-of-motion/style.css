@@ -127,7 +127,6 @@ body.bg-transparent { background: transparent; }
 }
 /* short and wide (phone held sideways): a wider panel beside the picture, the steppers one under the other */
 @container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
-  .eom .pvc-shell { grid-template-columns: minmax(0, 1fr) clamp(290px, 43%, 380px); }
   .eom .pvc-learn { gap: 4px; }
   .eom-steps { grid-template-columns: 1fr; gap: 3px; }
   .eom-step { flex-direction: row; align-items: center; justify-content: space-between; gap: 8px; }
@@ -154,17 +153,6 @@ body.bg-transparent { background: transparent; }
   .eom .pvc-opt { font-size: 16px; height: 42px; }
   .eom .pvc-opt small { font-size: 11.5px; }
 }
-/* wide frames (book page, desktop): the steppers in a column beside the equation */
-@container pvc (min-width: 720px) and (min-height: 461px) {
-  .eom .pvc-learn { display: grid; grid-template-columns: minmax(0, 226px) minmax(0, 1fr); grid-template-rows: auto auto auto 1fr; gap: 6px 18px; align-content: start; }
-  .eom .eom-big { flex-wrap: wrap; } /* always two rows here: the equation, then its numbers */
-  .eom-n { flex-basis: 100%; }
-  .eom-steps { grid-column: 1; grid-row: 1 / span 4; grid-template-columns: 1fr; gap: 5px; align-self: start; }
-  .eom-step { flex-direction: row; align-items: center; justify-content: space-between; gap: 10px; }
-  .eom-ctl { width: 124px; flex: none; height: 38px; }
-  .eom .eom-chips, .eom .eom-rule, .eom .eom-big, .eom .pvc-act-row { grid-column: 2; }
-}
-
 /* a narrow panel beside the picture (small landscape embeds): the four equations in two rows, the derivation
    button under the run button (the panel's height does not touch the 3D view there) */
 @container pvc-panel (max-width: 330px) {
