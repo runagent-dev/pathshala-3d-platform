@@ -1,0 +1,63 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "liquid-expansion",
+  "title": "Expansion of liquids (তরল পদার্থের প্রসারণ)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 172,
+  "topic": "6.3.2",
+  "placement": "Book pages 171-173, topic 6.3.2 (তরল পদার্থের প্রসারণ): beside Fig 6.05 (the fever thermometer) and Fig 6.06 (real and apparent expansion), page 172.",
+  "maintainers": ["RadeenXALNW"],
+  "units": "cm",
+  "description": "The fever thermometer (Fig 6.05) and the flask with a narrow neck (Fig 6.06): a liquid expands more than its container, so the level first falls (A to B), then rises (to C); real and apparent expansion, V_a = V_L - V_B.",
+  "tags": ["thermal-expansion", "liquid", "thermometer"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "show",
+      "label": "Start with",
+      "type": "select",
+      "options": [["thermo", "Thermometer"], ["flask", "Flask"]],
+      "default": "thermo"
+    },
+    { "name": "step", "label": "Step", "type": "number", "default": "0", "placeholder": "0-3" },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on the part pulses at first", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "show": "flask", "step": 2 } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "practice-start", "practice-result", "practice-end"],
+  "export": { "poster": { "params": { "coach": "0", "show": "flask", "step": "2" } }, "glb": [{ "name": "default" }] }
+}

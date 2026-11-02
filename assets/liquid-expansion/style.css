@@ -1,0 +1,86 @@
+/* Expansion of liquids: the page, the colours that carry meaning (the container's expansion V_B teal, the liquid's real
+   expansion V_L orange, the apparent expansion V_a violet), the formula under the result, the labels on the picture and
+   the test's answers. The rest of the panel is the kit's clean sheet (../../shared/lib/student/student.css). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.le { --c-vb: #0a7080; --c-vl: #c2410c; --c-va: #5b3fd0; }
+.le sub, .le sup { font-size: 0.72em; line-height: 0; }
+.le .c-vb { color: var(--c-vb); font-weight: 700; }
+.le .c-vl { color: var(--c-vl); font-weight: 700; }
+.le .c-va { color: var(--c-va); font-weight: 700; }
+.le .pvc-outcome { font-size: 15px; line-height: 1.5; }
+.le .pvc-outcome b { font-size: 1.12em; }
+.le .pvc-rule { font-size: 14.5px; line-height: 1.45; }
+
+/* ── the formula: V_a = V_L − V_B, then the sums the student has found ── */
+.le-eq { display: flex; flex-direction: column; gap: 6px; }
+.le-eq[hidden] { display: none; }
+.le-top { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
+.le-law { flex: none; display: flex; align-items: baseline; gap: 6px; padding: 3px 14px; border-radius: 10px; background: #f3f0ff; box-shadow: inset 0 0 0 1.5px #d4cbf7; font-size: 24px; font-style: italic; line-height: 1.3; }
+.le-law .le-op { font-style: normal; font-weight: 600; color: var(--ink-2); }
+.le-rows { display: flex; flex-direction: column; gap: 1px; font-size: 14.5px; line-height: 1.4; font-variant-numeric: tabular-nums; }
+.le-area, .le-row { min-height: 1.4em; opacity: 0; transition: opacity 0.4s; }
+.le-area { min-height: 0; }
+.le-area.on, .le-row.on { opacity: 1; }
+.le-area { color: var(--ink-2); font-size: 13.5px; }
+.le-row b { font-size: 1.08em; }
+
+/* labels on the picture */
+.pvc-anno-letter, .pvc-anno-vb, .pvc-anno-vl, .pvc-anno-part, .pvc-anno-val, .pvc-anno-warm { padding: 1px 7px; border: 1.5px solid #c8ccd2; border-radius: 6px; background: rgba(255, 255, 255, 0.96); font-size: 13.5px; font-weight: 600; line-height: 1.4; text-align: center; transition: opacity 0.25s; }
+.pvc-anno-letter { min-width: 1.1em; padding: 0 6px; font-size: 16px; font-weight: 700; border-color: #b3282d; color: #9d1f24; }
+.pvc-anno-vb { border-color: #0a7080; color: #0a7080; font-weight: 700; }
+.pvc-anno-vl { border-color: #c2410c; color: #c2410c; font-weight: 700; }
+.pvc-anno-val { border-color: #26303b; color: #1b2430; font-weight: 700; font-variant-numeric: tabular-nums; }
+.pvc-anno-warm { border-color: #b4440c; color: #9a3a08; }
+.pvc-anno sub, .pvc-anno sup { font-size: 0.72em; line-height: 0; }
+.pvc-anno-lines .k-letter { stroke: #b3282d; fill: #b3282d; }
+.pvc-anno-lines .k-vb { stroke: #0a7080; fill: #0a7080; stroke-width: 1.5; }
+.pvc-anno-lines .k-vl { stroke: #c2410c; fill: #c2410c; stroke-width: 1.5; }
+.pvc-anno-lines .k-val { stroke: #26303b; fill: #26303b; }
+.pvc-anno-lines .k-warm { stroke: #b4440c; fill: #b4440c; }
+
+/* the test: answers in words or numbers, room kept for the question and the worked answer */
+.le .pvc-opt { font-size: 14.5px; line-height: 1.25; }
+.le-opt { display: block; white-space: normal; text-align: center; }
+.le .pvc-q-text { font-size: 15.5px; }
+.le .pvc-q-feedback { font-size: 14px; }
+
+/* the sums as one short line (a panel below the 3D, which must stay short); the full sums beside the 3D */
+.le-sum { min-height: 1.4em; font-size: 13.5px; line-height: 1.3; font-variant-numeric: tabular-nums; opacity: 0; transition: opacity 0.4s; }
+.le-sum.on { opacity: 1; }
+.le-rows { display: none; }
+
+/* a panel below the 3D (phone held upright, narrow frames): the 3D keeps more than half the height */
+@container pvc (max-width: 560px) {
+  .le .pvc-learn { gap: 5px; }
+  .le .pvc-outcome { display: none; }
+  .le .pvc-rule { font-size: 12.5px; line-height: 1.35; --pvc-rule-lines: 3; }
+  .le-law { font-size: 19px; padding: 0 12px; }
+  .le-area { font-size: 12.5px; }
+  .le .pvc-opt { min-height: 42px; padding: 0 5px; font-size: 13.5px; line-height: 1.2; }
+  .le .pvc-q-text { font-size: 14px; }
+  .le .pvc-q-feedback { font-size: 12.5px; }
+}
+/* the panel beside the 3D (a size container, so a height query matches only there): the result line and every sum */
+@container pvc-panel (min-height: 300px) {
+  .le .pvc-outcome { display: block; font-size: 13.5px; line-height: 1.45; --pvc-outcome-lines: 2; }
+  .le .pvc-rule { font-size: 13.5px; line-height: 1.4; --pvc-rule-lines: 4; }
+  .le-rows { display: flex; font-size: 13.5px; }
+  .le-sum { display: none; }
+  .le-law { font-size: 21px; padding: 1px 12px; }
+}
+/* short frames with the panel beside the 3D (a phone held sideways): the sums as one line, the result on one line */
+@container pvc (max-height: 460px) {
+  .le .pvc-learn { gap: 6px; }
+  .le-rows { display: none; }
+  .le-sum { display: block; }
+  .le .pvc-outcome { font-size: 13px; line-height: 1.4; --pvc-outcome-lines: 1; }
+  .le .pvc-rule { font-size: 12.5px; line-height: 1.35; --pvc-rule-lines: 4; }
+  .le-law { font-size: 19px; padding: 0 12px; }
+  .le-area { font-size: 12.5px; }
+  .le .pvc-opt { min-height: 40px; font-size: 13px; }
+  .le .pvc-q-text { font-size: 14px; }
+  .le .pvc-q-feedback { font-size: 12.5px; }
+}

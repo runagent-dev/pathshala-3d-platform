@@ -1,27 +1,21 @@
-# Force: contact and non-contact (বল: স্পর্শ ও অস্পর্শ বল)
+# Force: a push, a contact force (বল: ধাক্কা, স্পর্শ বল)
 
-**Where it goes in the book:** Book page 67, topic 3.1.2: বল (Force). Next to the paragraphs that define force and divide it into স্পর্শ and অস্পর্শ বল.
+**Where it goes in the book:** Book page 67, topic 3.1.2: বল (Force). Next to the paragraph that names কোনো কিছুকে ধাক্কা দেওয়া as a force that needs touching (স্পর্শ বল).
 
-Interactive 3D figure for the Pathshala book. The page's five examples of force, one at a time (a crane lifting a
-concrete block, a push on a trolley, friction stopping a sliding crate, a football let go, a magnet pulling a nail).
-One big numbered button plays each example (its badge rings the body the force acts on) and the picture holds at the
-telling moment, where it says the kind itself: a contact force lights the patch where the two bodies touch, with the
-tag "ছুঁয়ে আছে: স্পর্শ বল"; a non-contact force shows the gap between them, measured in cm, with the tag "ছোঁয়নি, তবু
-টানে: অস্পর্শ বল". Under the picture: the examples as a row of words (each gets its kind under it), one result line,
-one rule from the book's definition of force to its two kinds. Then a five-question test.
+Interactive 3D figure for the Pathshala book, one of the page's five examples of force: a student pushes a carton on
+a flat trolley (ধাক্কা দাও), real time; it holds with the hands pushing at 0.5 m/s, the palms on the carton lit,
+with the tag "ছুঁয়ে আছে: স্পর্শ বল". The panel beside it has one numbered action, one result line naming the force
+and its kind, and one rule from the book's definition of force to this kind. Then a three-question test.
 
 Notes for the book developer:
-- The scene is in metres, everything real size; the GLB exports (`contact-noncontact-force.glb` the crane, then
-  `-push`, `-friction`, `-fall`, `-magnet`) hold only the objects (no ground, arrows, patches or labels).
-- `get` returns `{ example, scene, phase, time, speed, acting, touching, gap, kind, effect, marks, seen, next, view,
+- The scene is in metres, everything real size; the GLB export (`contact-noncontact-force.glb`) holds only the objects (no ground,
+  arrows, patches or labels).
+- `get` returns `{ example, scene, phase, time, speed, acting, touching, gap, kind, effect, marks, seen, step, view,
   mode }`: `phase` is `rest` | `acting` | `paused` (held at the telling moment, or at a time) | `done`; `speed` is the
-  real speed in m/s (the friction, football and magnet examples are shown 2, 3 and 10 times slower and say so); `gap`
-  is in m (or `null`); `marks` is what the picture shows (`'contact'`: the lit patch, `'gap'`: the measured gap, or
-  `null`); `seen` maps each example seen to `contact` | `noncontact`; `next` is what the big button does now
-  (`{ example, step }`).
-- `set` takes `example`, `seen` (`'all'`, `'none'` or `{ crane: true, … }`), `at` (`'rest'` | `'key'` | `'end'` |
-  seconds), `play: true` (this example to its telling moment), `act: true` (what the big button does), `view`,
-  `animate: false`. For a summary picture use the URL parameters `example=magnet&at=key&seen=1` (the poster).
+  real speed in m/s; `gap` is in m (or `null`); `marks` is what the picture shows (`'contact'`: the lit patch, `'gap'`:
+  the measured gap, or `null`); `seen` is true once the run reached its telling moment.
+- `set` takes `at` (`'rest'` | `'key'` | `'end'` | seconds), `play: true` (to its telling moment), `act: true` (what
+  the big button does), `view`, `animate: false`. For a summary picture use the URL parameter `at=key` (the poster).
 
 ## Embed
 
@@ -46,9 +40,7 @@ To listen to it or control it from the book page, use the helper shipped in the 
 | Param | Meaning | Values | Default |
 |---|---|---|---|
 | `lang` | Language | `bn` বাংলা · `en` English | `bn` |
-| `example` | Example | `crane` crane (ক্রেন) · `push` push (ধাক্কা) · `friction` friction (ঘর্ষণ) · `fall` gravity (মাধ্যাকর্ষণ) · `magnet` magnet (চুম্বক) | `crane` |
 | `at` | Start at | `rest` at rest · `key` the telling moment · `end` the end | `rest` |
-| `seen` | All five already seen | `1` · `0` | `0` |
 | `view` | View | `front` · `3d` | `front` |
 | `mode` | Start in | `explore` learn · `quiz` test | `explore` |
 | `coach` | Pulse the action's marker | `1` · `0` | `1` |
@@ -66,11 +58,11 @@ Every figure answers `ping` with `{ asset, version }`. Send commands with `figur
 | Command | Example payload |
 |---|---|
 | `get` | `{}` |
-| `set` | `{"example":"magnet"}` |
+| `set` | `{"play":true}` |
 | `reset` | `{}` |
 | `practice` | `{}` |
 | `capture` | `{"width":800,"height":500}` |
 | `export-glb` | `{}` |
 
-Events: `ready`, `change`, `example`, `act`, `view`, `practice-start`, `practice-result`, `practice-end`.
+Events: `ready`, `change`, `act`, `view`, `practice-start`, `practice-result`, `practice-end`.
 <!-- /generated:bridge -->

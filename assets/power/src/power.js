@@ -8,9 +8,7 @@ export const G = 9.8; // ms⁻², as the book's worked examples use
 export const H = 3; // m: from the water in the courtyard tank to the roof tanks' floor (a one-storey house)
 export const FULL = 500; // kg (500 L): one roof tank
 export const PUMPS = { small: 490, big: 980 }; // W: the two pumps (ideal; about 0.66 and 1.3 horsepower)
-export const BULB = 100; // W: the book's bulb
-export const BULB_TIME = 10; // s: the bulb is switched on for this long
-export const SPEED = 3; // the pumps' runs are shown this many times faster than life (the bulb runs in real time)
+export const SPEED = 3; // the pumps' runs are shown this many times faster than life
 export const SAME_TIME = 15; // s: in the "same time" example both pumps run this long
 
 /** Round to a step without float dust (0.1 + 0.2 → 0.3). */
@@ -66,13 +64,6 @@ export function readingAt(pump, t) {
   };
 }
 
-/** The bulb `t` seconds after it was switched on: whole seconds, energy used so far E = Pt. */
-export function bulbAt(t, P = BULB, T = BULB_TIME) {
-  const done = t >= T - 1e-9;
-  const sec = done ? T : Math.floor(clamp(t, 0, T) + 1e-9);
-  return { t: sec, E: roundTo(P * sec, 1e-6), on: t > 0 && !done, done };
-}
-
 /** Numbers in sentences without trailing zeros ("2", "1.5"). */
 export const plain = (x) => String(roundTo(x, 0.01));
 
@@ -112,12 +103,4 @@ export const powerMistakes = (m, t, other) => [
   { value: (m * H) / t, why: 'p_noG' },
   { value: workToLift(m) * t, why: 'p_mul' },
   { value: (m * G) / t, why: 'p_noH' },
-];
-
-/** The usual mistakes when finding the energy a bulb of P watts uses in t seconds. */
-export const energyMistakes = (P, t) => [
-  { value: P, why: 'e_one' },
-  { value: P + t, why: 'e_add' },
-  { value: P / t, why: 'e_div' },
-  { value: P * t * 60, why: 'e_min' },
 ];

@@ -4,6 +4,6 @@ import { createApp } from './app.js';
 
 await startFigure({
   create: createApp,
-  events: ['change', 'example', 'measure', 'view', 'dragstart', 'dragend', 'practice-start', 'practice-result', 'practice-end'],
+  events: ['change', 'measure', 'view', 'dragstart', 'dragend', 'practice-start', 'practice-result', 'practice-end'],
   commands: (app) => ({ practice: () => app.startPractice().then(() => true) }),
 });

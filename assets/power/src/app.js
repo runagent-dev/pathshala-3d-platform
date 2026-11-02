@@ -1,9 +1,8 @@
 // Power (ক্ষমতা), book p120, topic 4.7: the student view. Two electric pumps in a sunny courtyard lift water from the
 // underground tank to two tanks on the roof, h = 3 m up. "একই কাজ": both lift 500 kg (the same work W = mgh), the
 // big pump in half the time, so its power is twice as much: P = W/t, live from the stopwatches. "একই সময়": both run
-// 15 s, the big pump does twice the work. "বাতি": the book's 100 W bulb over the door uses 100 J each second (1 W =
-// 1 J/s), next to the book's 1000 MW power plant. The panel is the kit's clean sheet (one action, one result as a small
-// P = W ÷ t table, one rule): docs/student-kit.md. A 5-question test.
+// 15 s, the big pump does twice the work. (The book's 100 W bulb is its own lab, power-bulb.) The panel is the kit's
+// clean sheet (one action, one result as a small P = W ÷ t table, one rule): docs/student-kit.md. A 3-question test.
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
 import { createTweener, ease } from '@shared/tween.js';
@@ -17,11 +16,7 @@ import { parts } from './build.js';
 import { fitPose } from './camera.js';
 import { createI18n, group } from './i18n.js';
 import {
-  BULB,
-  BULB_TIME,
-  bulbAt,
   choicesFrom,
-  energyMistakes,
   FULL,
   G,
   H,
@@ -42,7 +37,7 @@ import { createScene, LAYOUT, ROOF } from './scene.js';
 import { createTank, TANK } from './tank.js';
 
 export const DEFAULTS = {
-  example: 'work', // 'work' (same work, different times) | 'time' (same time, different work) | 'bulb' (100 W bulb)
+  example: 'work', // 'work' (same work, different times) | 'time' (same time, different work)
   at: '', // seconds into the run (scene time), held still (pictures); empty: before the run
   view: 'front', // 'front' | '3d'
   mode: 'explore', // 'explore' | 'quiz'
@@ -54,7 +49,7 @@ export const DEFAULTS = {
   sound: true,
 };
 
-const EXAMPLES = ['work', 'time', 'bulb'];
+const EXAMPLES = ['work', 'time'];
 const IDS = /** @type {const} */ (['small', 'big']);
 const COLORS = { W: '#237a35', t: '#c2255c', P: '#862e9c', h: '#1c6fd9' };
 const PUMP_COLORS = { small: '#1f74c9', big: '#d4382c' };
@@ -145,7 +140,6 @@ export function createApp(root, options = {}) {
   }
   const place3d = createScene({ pumps, tanks });
   world.add(place3d.root);
-  const bulb = place3d.bulb;
 
   // h: a bold arrow up from the courtyard to the roof tanks' floor, with a foot on the ground and a dashed guide back
   // to the tank at the top; a white outline (the inside of a slightly bigger copy) keeps it clear on the yellow wall,
@@ -231,43 +225,37 @@ export function createApp(root, options = {}) {
     paused: false,
     mass: FULL, // kg each pump fills in 'work' (the test changes it)
     T: SAME_TIME, // s each pump runs in 'time' (the test changes it)
-    bulbP: BULB, // W (the test changes it)
-    bulbT: BULB_TIME, // s
-    runs: { work: 0, time: 0, bulb: 0 },
-    labels: 'full', // 'full' | 'noP' (the test: the pumps' powers hidden) | 'noE' (the bulb's energy hidden)
+    runs: { work: 0, time: 0 },
+    labels: 'full', // 'full' | 'noP' (the test: the pumps' powers hidden)
     view: o.view === '3d' ? '3d' : 'front',
     mode: 'explore',
     locked: false,
     userMovedCamera: false,
     lastAct: -1e9,
   };
-  const isBulb = () => s.example === 'bulb';
   const planNow = () => plan(s.example === 'time' ? 'time' : 'work', s.mass, s.T);
-  const total = () => (isBulb() ? s.bulbT : planNow().total);
+  const total = () => planNow().total;
 
-  /** Where everything is now: each pump's reading, the bulb's. */
+  /** Where everything is now: each pump's reading. */
   function now() {
     const p = planNow();
-    const tt = isBulb() || s.phase === 'ready' ? 0 : s.phase === 'done' ? p.total : s.t;
+    const tt = s.phase === 'ready' ? 0 : s.phase === 'done' ? p.total : s.t;
     const pumpsNow = {};
     for (const id of IDS) pumpsNow[id] = { ...readingAt(p[id], tt), P: p[id].P, plan: p[id] };
-    const bt = !isBulb() || s.phase === 'ready' ? 0 : s.phase === 'done' ? s.bulbT : s.t;
-    return { pumps: pumpsNow, bulb: bulbAt(bt, s.bulbP, s.bulbT) };
+    return { pumps: pumpsNow };
   }
 
   // ── what the student sees ──────────────────────────────────────────────────
   let action = null;
   function place(dt = 0, n = now()) {
-    const pumpScene = !isBulb();
     for (const id of IDS) {
       const r = n.pumps[id];
-      tanks[id].setMass(pumpScene ? r.mSmooth : 0);
-      const on = pumpScene && s.phase === 'run' && r.running; // a still held mid-run still shows the water flowing
+      tanks[id].setMass(r.mSmooth);
+      const on = s.phase === 'run' && r.running; // a still held mid-run still shows the water flowing
       tanks[id].pour(on, dt);
       pumps[id].run(on, dt * (s.paused ? 0 : 1), s.t);
-      place3d.switches(id, pumpScene && s.phase === 'run' && r.running);
+      place3d.switches(id, s.phase === 'run' && r.running);
     }
-    bulb.set(isBulb() && s.phase === 'run');
     labels(n);
     panel(n);
     stage.invalidate();
@@ -313,14 +301,12 @@ export function createApp(root, options = {}) {
     tank: { small: new THREE.Vector3(), big: new THREE.Vector3() },
     pump: { small: new THREE.Vector3(), big: new THREE.Vector3() },
     h: new THREE.Vector3(LAYOUT.hArrowX, H * 0.55, LAYOUT.pumpZ),
-    bulb: new THREE.Vector3(),
   };
   for (const id of IDS) {
     pts.tank[id].set(LAYOUT.pumpX[id], ROOF + TANK.FLOOR + TANK.BODY * 0.55, LAYOUT.tankZ + TANK.R);
     // at the pump's outer end (its fan cover), so the name sits outside the action's ring, beside the pump
     pts.pump[id].set(LAYOUT.pumpX[id] + (id === 'small' ? -0.36 : 0.48), 0.24, LAYOUT.pumpZ);
   }
-  bulb.group.getWorldPosition(pts.bulb);
   // the stopwatch labels sit outside the tanks (left of the left one, right of the right one), or above
   const SIDE = {
     small: [
@@ -353,55 +339,31 @@ export function createApp(root, options = {}) {
     ],
   };
   function labels(n) {
-    const pumpScene = !isBulb();
     for (const id of IDS) {
       const r = n.pumps[id];
       const time = `${stopwatchSvg(r.t, COLORS.t)}<b class="pw-l-t">${t('l_time', { t: r.t })}</b>`;
       const mass = `<small class="pw-l-m">${t('l_mass', { m: group(plain(s.phase === 'ready' ? 0 : r.m)) })}</small>`;
-      label(`tank-${id}`, pumpScene, `<span class="pw-l">${time}${mass}</span>`, pts.tank[id], COLORS.t, SIDE[id]);
+      label(`tank-${id}`, true, `<span class="pw-l">${time}${mass}</span>`, pts.tank[id], COLORS.t, SIDE[id]);
       const showP = s.labels === 'full' && s.phase === 'done';
       const name = `${t(`pump_${id}`)}${showP ? ` <b class="pw-l-P">${t('l_P', { P: PUMPS[id] })}</b>` : ''}`;
-      label(`pump-${id}`, pumpScene, name, pts.pump[id], PUMP_COLORS[id], OUTSIDE[id], true);
+      label(`pump-${id}`, true, name, pts.pump[id], PUMP_COLORS[id], OUTSIDE[id], true);
     }
-    label('h', pumpScene, t('l_h', { h: H }), pts.h, COLORS.h, [
+    label('h', true, t('l_h', { h: H }), pts.h, COLORS.h, [
       { dx: -44, dy: 0 },
       { dx: 44, dy: 0 },
     ]);
-    const b = n.bulb;
-    const bulbTime = `${stopwatchSvg(b.t, COLORS.t)}<b class="pw-l-t">${t('l_time', { t: b.t })}</b>`;
-    const energy = s.phase === 'ready' || s.labels === 'noE' ? '' : `<small class="pw-l-E">${t('l_energy', { E: group(b.E) })}</small>`;
-    label(
-      'bulb',
-      isBulb(),
-      `<span class="pw-l"><b class="pw-l-name">${t('l_bulb', { P: s.bulbP })}</b>${bulbTime}${energy}</span>`,
-      pts.bulb,
-      COLORS.P,
-      [
-        { dx: 40, dy: 0 },
-        { dx: -40, dy: 0 },
-        { dx: 0, dy: 90 },
-      ],
-    );
-    hArrow.visible = pumpScene;
   }
 
-  // ── the panel: P = W ÷ t for each pump (or the bulb, and the book's power plant) ──
+  // ── the panel: P = W ÷ t for each pump ──
   const cell = (cls, html) => `<span class="${cls}">${html}</span>`;
-  function row(name, W, tt, P, ghost = false) {
-    const g = ghost ? ' pw-ghost' : '';
-    return `${cell(`pw-name${g}`, name)}${cell(`c-W${g}`, W)}${cell(`pw-op${g}`, '÷')}${cell(`c-t${g}`, tt)}${cell(`pw-op${g}`, '=')}<b class="c-P${g}"${ghost ? ' aria-hidden="true"' : ''}>${P}</b>`;
+  function row(name, W, tt, P) {
+    return `${cell('pw-name', name)}${cell('c-W', W)}${cell('pw-op', '÷')}${cell('c-t', tt)}${cell('pw-op', '=')}<b class="c-P">${P}</b>`;
   }
   const q = (u) => `?${u ? ` ${u}` : ''}`;
   function panel(n) {
     const head = `${cell('pw-name', '')}${cell('pw-h c-W', `${t('col_W')} <i>W</i>`)}${cell('pw-op', '')}${cell('pw-h c-t', `${t('col_t')} <i>t</i>`)}${cell('pw-op', '')}${cell('pw-h c-P', `${t('col_P')} <i>P</i>`)}`;
     let rows = '';
-    if (isBulb()) {
-      const b = n.bulb;
-      const known = s.phase !== 'ready' && b.t > 0;
-      rows += row(t('row_bulb'), known ? `${NG(b.E)} J` : q('J'), known ? `${N(b.t)} s` : q('s'), `${N(s.bulbP)} W`);
-      // the book's power plant once the bulb has shown what a watt is (until then the row is kept, hidden)
-      rows += row(t('row_plant'), `${N(1000)} × ${N('10<sup>6</sup>')} J`, `${N(1)} s`, `${N(1000)} MW`, s.phase !== 'done');
-    } else {
+    {
       const p = planNow();
       for (const id of IDS) {
         const r = n.pumps[id];
@@ -424,10 +386,8 @@ export function createApp(root, options = {}) {
           : ph === 'run'
             ? t('rule_work_run', { k: SPEED })
             : t('rule_work_done');
-    } else if (s.example === 'time') {
-      rule = ph === 'ready' ? t('rule_time_ready', { T: s.T }) : ph === 'run' ? t('rule_time_run', { k: SPEED }) : t('rule_time_done');
     } else {
-      rule = ph === 'ready' ? t('rule_bulb_ready', { P: s.bulbP }) : ph === 'run' ? t('rule_bulb_run', { P: s.bulbP }) : t('rule_bulb_done');
+      rule = ph === 'ready' ? t('rule_time_ready', { T: s.T }) : ph === 'run' ? t('rule_time_run', { k: SPEED }) : t('rule_time_done');
     }
     sheet.rule(rule);
 
@@ -446,7 +406,7 @@ export function createApp(root, options = {}) {
       if (untried) return { label: `act_try_${untried}`, step: tried + 1, example: untried };
       return { label: 'act_again', step: '', example: ex };
     }
-    return { label: ex === 'bulb' ? 'act_bulb' : 'act_run', step: s.runs[ex] === 0 ? tried + 1 : '', example: ex };
+    return { label: 'act_run', step: s.runs[ex] === 0 ? tried + 1 : '', example: ex };
   }
 
   // ── the run ─────────────────────────────────────────────────────────────────
@@ -466,7 +426,6 @@ export function createApp(root, options = {}) {
       T: s.T,
       h: H,
       pumps: pumpsOut,
-      bulb: { P: s.bulbP, t: n.bulb.t, E: n.bulb.E, on: isBulb() && s.phase === 'run' },
       runs: { ...s.runs },
       next: (({ label, step, example }) => ({ label, step, example }))(nextAction()),
       mode: s.mode,
@@ -478,7 +437,7 @@ export function createApp(root, options = {}) {
   let lastEmit = '';
   /** Tells the bridge when a stopwatch has moved on a whole second (or the example or phase changed). */
   function changed(n = now()) {
-    const k = `${s.example}|${s.phase}|${n.pumps.small.t}|${n.pumps.big.t}|${n.bulb.t}`;
+    const k = `${s.example}|${s.phase}|${n.pumps.small.t}|${n.pumps.big.t}`;
     if (k !== lastEmit) {
       lastEmit = k;
       emit('change', snapshot());
@@ -497,7 +456,7 @@ export function createApp(root, options = {}) {
   let lastSec = { small: 0, big: 0 };
   stage.addTicker((dt) => {
     if (s.phase !== 'run' || s.paused) return false;
-    s.t += dt * (isBulb() ? 1 : SPEED);
+    s.t += dt * SPEED;
     if (s.t >= total()) {
       finishRun();
       return false;
@@ -505,7 +464,7 @@ export function createApp(root, options = {}) {
     // a soft tick as each pump's tank fills
     const n = now();
     for (const id of IDS) {
-      if (!isBulb() && n.pumps[id].done && lastSec[id] !== -1) {
+      if (n.pumps[id].done && lastSec[id] !== -1) {
         lastSec[id] = -1;
         audio.tick();
       }
@@ -552,7 +511,7 @@ export function createApp(root, options = {}) {
     changed();
   }
 
-  /** The big button (and a tap on a pump or the bulb). */
+  /** The big button (and a tap on a pump). */
   function act() {
     if (s.locked) return lockedNudge();
     if (performance.now() - s.lastAct < 400) return; // a double tap never undoes the first
@@ -570,26 +529,19 @@ export function createApp(root, options = {}) {
     emit('example', { example: s.example });
   }
 
-  // ── camera: the pumps, the arrow and the tanks; or the bulb over the door ─────
+  // ── camera: the pumps, the arrow and the tanks ────────────────────────────────
   const box = new THREE.Box3();
   function viewPose() {
-    if (isBulb()) {
-      const b = LAYOUT.bulb;
-      // the bulb with the top of the door under it and the wall round it, so it reads as the lamp over the door
-      box.min.set(b.x - 0.6, b.y - 0.95, b.z - 0.2);
-      box.max.set(b.x + 0.6, b.y + 0.3, b.z + 0.1);
-    } else {
-      box.min.set(LAYOUT.hArrowX - 0.25, -0.05, LAYOUT.tankZ - TANK.R);
-      box.max.set(LAYOUT.pumpX.big + 0.75, ROOF + TANK.FLOOR + TANK.BODY + 0.3, LAYOUT.pumpZ + 0.3);
-    }
+    box.min.set(LAYOUT.hArrowX - 0.25, -0.05, LAYOUT.tankZ - TANK.R);
+    box.max.set(LAYOUT.pumpX.big + 0.75, ROOF + TANK.FLOOR + TANK.BODY + 0.3, LAYOUT.pumpZ + 0.3);
     const e = THREE.MathUtils.degToRad(ELEVATION);
     const az = THREE.MathUtils.degToRad(AZIMUTH);
     const dir = s.view === '3d' ? VIEW_3D : new THREE.Vector3(Math.sin(az) * Math.cos(e), Math.sin(e), Math.cos(az) * Math.cos(e));
     // the corner buttons are top right: a wide view keeps the tanks (in the middle) clear of them without a margin
     const wide = stage.width / Math.max(1, stage.height) > 1.6;
-    const top = wide && !isBulb() ? 16 : Math.min(58, stage.height * 0.2);
-    const bottom = wide && !isBulb() ? 12 : isBulb() ? 24 : 34; // room for the pumps' names under them
-    const side = isBulb() ? Math.min(110, stage.width * 0.2) : 14; // room for the bulb's label beside it
+    const top = wide ? 16 : Math.min(58, stage.height * 0.2);
+    const bottom = wide ? 12 : 34; // room for the pumps' names under them
+    const side = 14;
     return fitPose({ box, dir, camera, width: stage.width, height: stage.height, margin: { top, bottom, side } });
   }
   function flyTo({ position, target }, duration = 0.8) {
@@ -640,7 +592,7 @@ export function createApp(root, options = {}) {
     place();
   });
 
-  // ── taps on a pump (or the bulb) do the action ──────────────────────────────
+  // ── taps on a pump do the action ──────────────────────────────
   const raycaster = new THREE.Raycaster();
   const ndc = new THREE.Vector2();
   ui.canvasHost.addEventListener(
@@ -650,7 +602,7 @@ export function createApp(root, options = {}) {
       const r = stage.canvas.getBoundingClientRect();
       ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
       raycaster.setFromCamera(ndc, camera);
-      const pickable = isBulb() ? [bulb.hit] : [pumps.small.hit, pumps.big.hit];
+      const pickable = [pumps.small.hit, pumps.big.hit];
       if (!raycaster.intersectObjects(pickable, false).length) return;
       e.stopPropagation();
       e.preventDefault();
@@ -667,7 +619,7 @@ export function createApp(root, options = {}) {
     audio.error();
   }
 
-  // ── the action: the big button, and its numbered badge in a ring round the pumps (or the bulb) ─
+  // ── the action: the big button, and its numbered badge in a ring round the pumps ─
   const pumpsBox = new THREE.Box3();
   const tmpBox = new THREE.Box3();
   action = createAction({
@@ -680,7 +632,6 @@ export function createApp(root, options = {}) {
     // no ring once the run is over: nothing covers the results (the button offers the next step)
     target: () => {
       if (s.phase === 'done') return null;
-      if (isBulb()) return bulb.mesh;
       pumpsBox.makeEmpty();
       for (const id of IDS) pumpsBox.union(tmpBox.copy(pumps[id].ringBox).applyMatrix4(pumps[id].root.matrixWorld));
       return pumpsBox;
@@ -696,8 +647,8 @@ export function createApp(root, options = {}) {
   const numLabel = (unit) => (c) => `${NG(c.value)}<small> ${unit}</small>`;
   let saved = null;
   /** Set a question's scene at once: the example, its numbers, the run finished, labels. */
-  function questionScene(ex, { mass = FULL, T = SAME_TIME, bulbP = BULB, bulbT = BULB_TIME, labels: lm = 'full' } = {}) {
-    Object.assign(s, { example: ex, mass, T, bulbP, bulbT, labels: lm, userMovedCamera: false });
+  function questionScene(ex, { mass = FULL, T = SAME_TIME, labels: lm = 'full' } = {}) {
+    Object.assign(s, { example: ex, mass, T, labels: lm, userMovedCamera: false });
     holdAt(1e9);
     flyTo(viewPose(), 0);
     relabel();
@@ -731,19 +682,6 @@ export function createApp(root, options = {}) {
       ];
       return { text: t('q_same', { T }), choices, reveal: () => t('r_same', { T, mb: plain(p.big.m), ms: plain(p.small.m) }), after: 'full' };
     },
-    bulb() {
-      const P = pick([40, 60, 100]);
-      const tt = pick([5, 8, 12, 15]);
-      questionScene('bulb', { bulbP: P, bulbT: tt, labels: 'noE' });
-      const choices = choicesFrom(P * tt, energyMistakes(P, tt));
-      return {
-        text: t('q_bulb'),
-        choices,
-        label: numLabel('J'),
-        reveal: () => t('r_bulb', { E: group(P * tt), P, t: tt }),
-        after: 'full',
-      };
-    },
     unit() {
       const id = pick(IDS);
       questionScene('work', { labels: 'full' });
@@ -756,19 +694,8 @@ export function createApp(root, options = {}) {
       ];
       return { text: t('q_unit', { name: t(`of_${id}`), P }), choices, reveal: () => t('r_unit', { P }) };
     },
-    plant() {
-      questionScene('bulb', { labels: 'full' });
-      const MW = 1000;
-      const choices = [
-        { html: t('c_pl_right', { MW }), why: null },
-        { html: t('c_pl_M', { MW }), why: 'm_pl_M' },
-        { html: t('c_pl_k', { MW }), why: 'm_pl_k' },
-        { html: t('c_pl_W', { MW }), why: 'm_pl_W' },
-      ];
-      return { text: t('q_plant', { MW }), choices, reveal: () => t('r_plant', { MW }) };
-    },
   };
-  const ORDER = ['P', 'same', 'bulb', 'unit', 'plant'];
+  const ORDER = ['P', 'same', 'unit'];
   let currentQ = null;
   const quiz = createQuiz({
     ui,
@@ -789,7 +716,7 @@ export function createApp(root, options = {}) {
         s.mode = 'explore';
         s.locked = false;
         currentQ = null;
-        Object.assign(s, { mass: FULL, T: SAME_TIME, bulbP: BULB, bulbT: BULB_TIME, labels: 'full' });
+        Object.assign(s, { mass: FULL, T: SAME_TIME, labels: 'full' });
         if (saved) {
           s.example = saved.example;
           if (saved.phase === 'done') holdAt(1e9);
@@ -899,7 +826,7 @@ export function createApp(root, options = {}) {
     },
     getState: () => snapshot(),
     /**
-     * Change any of: example ('work' | 'time' | 'bulb'), run (true: switch on), at (scene seconds into the run, held
+     * Change any of: example ('work' | 'time'), run (true: switch on), at (scene seconds into the run, held
      * still), done (true: the run finished), home (true: back to the start), paused, view; animate: false jumps.
      */
     async set(p = {}) {
@@ -921,8 +848,8 @@ export function createApp(root, options = {}) {
     },
     async reset() {
       quiz.stop();
-      Object.assign(s, { example: 'work', mass: FULL, T: SAME_TIME, bulbP: BULB, bulbT: BULB_TIME, labels: 'full' });
-      s.runs = { work: 0, time: 0, bulb: 0 };
+      Object.assign(s, { example: 'work', mass: FULL, T: SAME_TIME, labels: 'full' });
+      s.runs = { work: 0, time: 0 };
       toReady();
       await setView('front');
       return snapshot();

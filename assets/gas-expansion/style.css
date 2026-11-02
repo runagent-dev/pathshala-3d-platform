@@ -1,0 +1,128 @@
+/* গ্যাসের প্রসারণ: the page, the colours that carry meaning (T the temperature crimson, V the volume blue: the same in the
+   picture's labels and in the panel), the readings before and after, the book's γ_P fraction, the test's answers.
+   The panel is the kit's clean sheet (../../shared/lib/student/student.css: .pvc-examples, .pvc-act, .pvc-rule); the
+   readings and the formula take the place of its result line. Only the 3D scene is blue; the panel stays the kit's white sheet. */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.gx { --c-T: #b02525; --c-V: #1864d6; --c-g: #0b7285; }
+.gx i { font-style: italic; font-size: 1.05em; }
+.gx sup { font-size: 0.68em; line-height: 0; }
+.gx sub { font-size: 0.7em; line-height: 0; }
+/* raised and lowered by position, so a subscript never makes its line taller (the sheet keeps its height) */
+.gx :is(.pvc-rule, .pvc-q-text, .pvc-q-feedback, .pvc-opt, .pvc-anno, .gx-fx, .gx-read) :is(sub, sup) { vertical-align: baseline; position: relative; }
+.gx :is(.pvc-rule, .pvc-q-text, .pvc-q-feedback, .pvc-opt, .pvc-anno, .gx-fx, .gx-read) sub { top: 0.28em; }
+.gx :is(.pvc-rule, .pvc-q-text, .pvc-q-feedback, .pvc-opt, .pvc-anno, .gx-fx, .gx-read) sup { top: -0.48em; }
+
+/* the readings: PV = nRT in the book's rounded box, then T and V before and after, then what stays the same */
+.gx-read { display: grid; grid-template-columns: max-content 1fr 1fr; align-items: center; column-gap: 8px; row-gap: 3px; font-size: 15px; line-height: 1.25; }
+.gx-box { justify-self: start; padding: 2px 9px 3px; border: 2px solid var(--c-g); border-radius: 9px; font-size: 15px; font-weight: 600; white-space: nowrap; color: var(--ink); }
+.gx-h { text-align: center; font-size: 13px; font-weight: 600; color: var(--ink-3); }
+.gx-k { font-size: 14.5px; font-weight: 600; white-space: nowrap; }
+.gx-t { color: var(--c-T); }
+.gx-v { color: var(--c-V); }
+.gx-n { text-align: center; font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.gx-n small { font-size: 13px; font-weight: 600; }
+.gx-const { grid-column: 1 / -1; font-size: 12.5px; color: var(--ink-2); line-height: 1.35; }
+.gx-const i { font-size: 1em; }
+
+/* (γ_P = in the second row only where the first is hidden) */
+.gx-g2 { display: none; }
+/* the book's γ_P: the fraction, then the student's numbers in it (hidden until the gas has settled after a heating) */
+.gx-fx { display: grid; gap: 2px; margin-top: 2px; font-size: 14px; color: var(--ink); }
+.gx-row { display: flex; align-items: center; gap: 6px; min-height: 40px; white-space: nowrap; }
+.gx-g { color: var(--c-g); font-weight: 700; font-size: 1.05em; }
+.gx-frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.25; }
+.gx-frac > span:first-child { padding: 0 3px 1px; border-bottom: 1.4px solid currentColor; }
+.gx-frac > span:last-child { padding: 1px 3px 0; }
+.gx-frac[hidden] { display: none; }
+.gx-res { font-weight: 700; color: var(--c-g); }
+.gx-row [data-gres] { font-size: 1.05em; }
+
+/* the rule line: the book's words in bold */
+.gx .pvc-rule { font-size: 14.5px; line-height: 1.45; }
+
+/* labels on the picture: a solid white chip, T in crimson, V in blue (dark enough to read, 4.5:1) */
+.gx .pvc-anno { transition: none; font-size: 14px; font-weight: 700; background: #fff; border: 1.5px solid #5b6b7d; padding: 1px 7px; line-height: 1.35; box-shadow: 0 1px 3px rgba(15, 25, 40, 0.3); }
+.gx .gx-lt { color: var(--c-T); }
+.gx .gx-lv { color: var(--c-V); }
+.gx .pvc-anno[data-id='D'], .gx .pvc-anno:has(.gx-dv) { color: var(--c-V); border-color: var(--c-V); }
+
+/* the test: answers in words (two lines allowed), the mistake note under the worked answer */
+.gx .pvc-opt { font-size: 14.5px; line-height: 1.25; }
+.gx-opt { display: block; white-space: normal; text-align: center; }
+.gx-opt small { font-size: 0.85em; font-weight: 600; }
+.gx-why { display: block; color: var(--ink-2); }
+.gx .pvc-q-text { font-size: 15px; }
+.gx .pvc-q-feedback { font-size: 13.5px; line-height: 1.45; }
+
+/* a narrow side panel */
+@container pvc-panel (max-width: 330px) {
+  .gx-read { column-gap: 5px; font-size: 14px; }
+  .gx-k { font-size: 13.5px; }
+  .gx-n { font-size: 16px; }
+  .gx-box { padding: 1px 6px 2px; font-size: 14px; }
+  .gx-const { font-size: 12px; }
+  .gx-fx { font-size: 13.5px; }
+  .gx .pvc-rule { font-size: 13.5px; }
+}
+@container pvc-panel (max-width: 290px) {
+  .gx-read { font-size: 13px; }
+  .gx-k { font-size: 12.5px; }
+  .gx-n { font-size: 15px; }
+  .gx-fx { font-size: 12.5px; }
+  .gx-row { gap: 4px; }
+}
+
+/* phones held upright: tighter rows so the 3D view keeps at least 55 % of the height */
+@container pvc (max-width: 560px) {
+  .gx .pvc-learn { gap: 4px; }
+  .gx .pvc-examples button { min-height: 36px; padding-top: 2px; padding-bottom: 3px; }
+  .gx .pvc-act-row { min-height: 40px; }
+  .gx .pvc-act { min-height: 38px; padding-top: 3px; padding-bottom: 3px; }
+  .gx .pvc-act-num { width: 32px; height: 32px; font-size: 17px; }
+  .gx .pvc-act-row .pvc-quiet { min-height: 40px; height: 40px; }
+  .gx .pvc-examples .pvc-ex-res, .gx .pvc-examples[data-results] .pvc-ex-res:empty { display: none; }
+  .gx-read { row-gap: 0; }
+  .gx-row { min-height: 32px; }
+  .gx-fx { gap: 0; margin-top: 0; }
+  .gx-const { font-size: 12px; }
+  .gx .pvc-rule { font-size: 13px; line-height: 1.4; }
+  .gx .pvc-q-ask { gap: 6px; }
+  .gx .pvc-q-head { min-height: 32px; }
+  .gx .pvc-q-head .pvc-btn { height: 32px; }
+  .gx .pvc-q-text { font-size: 14px; }
+  .gx .pvc-q-options { gap: 6px; }
+  .gx .pvc-opt { font-size: 13.5px; height: 40px; }
+  .gx .pvc-q-feedback { font-size: 13px; line-height: 1.38; }
+}
+/* the tightest phone (390 × 520) */
+@container pvc (max-width: 560px) and (max-height: 600px) {
+  .gx .pvc-panel { padding-top: 6px; padding-bottom: 6px; gap: 5px; }
+  .gx .pvc-tabs button { height: 34px; font-size: 14px; }
+  .gx .pvc-examples button { min-height: 32px; padding-top: 1px; padding-bottom: 1px; }
+  .gx .pvc-ex-word { font-size: 13.5px; }
+  .gx .pvc-ex-res { font-size: 10.5px; min-height: 12px; }
+  .gx .pvc-act-row { min-height: 38px; }
+  .gx .pvc-act { min-height: 36px; font-size: 14px; }
+  .gx-read { font-size: 13px; }
+  .gx-n { font-size: 15px; }
+  .gx-const { font-size: 11.5px; }
+  .gx-row { min-height: 32px; }
+  .gx-fx { font-size: 12.5px; }
+  .gx .pvc-rule { font-size: 12.5px; line-height: 1.4; }
+  .gx .pvc-q-text { font-size: 14px; }
+  .gx .pvc-opt { font-size: 13px; height: 38px; }
+  .gx .pvc-q-feedback { font-size: 12.5px; line-height: 1.4; }
+}
+
+/* a phone held upright: one formula row (the book's fraction until the gas has settled after a heating, then the
+   student's numbers) and no line about P and n (the rule says it), so the 3D view keeps about half of the height */
+@media (orientation: portrait) {
+  .gx-fx .gx-row:nth-child(2), .gx-fx[data-num='1'] .gx-row:nth-child(1) { display: none; }
+  .gx-fx[data-num='1'] .gx-row:nth-child(2) { display: flex; }
+  .gx-fx .gx-row:nth-child(2) .gx-g2 { display: inline; }
+  .gx [data-eq] { display: none; }
+  .gx-const { display: none; }
+}

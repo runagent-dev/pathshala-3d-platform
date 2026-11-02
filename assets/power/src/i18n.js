@@ -26,14 +26,11 @@ export const STRINGS = {
     examples: 'উদাহরণ',
     ex_work: 'একই কাজ',
     ex_time: 'একই সময়',
-    ex_bulb: 'বাতি',
 
     // the action (the big button and the numbered ring on the pumps or the bulb)
     act_run: 'পাম্প দুটি চালু করো',
     act_try_time: 'একই সময় চালিয়ে দেখো',
-    act_try_bulb: 'বাতি জ্বালিয়ে দেখো',
     act_try_work: 'একই কাজে ফিরে দেখো',
-    act_bulb: 'বাতি জ্বালাও',
     act_again: 'আবার চালাও',
     act_home: 'শুরুতে ফেরাও',
 
@@ -45,8 +42,6 @@ export const STRINGS = {
     pump_big: 'বড় পাম্প',
     of_small: 'ছোট পাম্পের',
     of_big: 'বড় পাম্পের',
-    row_bulb: 'বাতি',
-    row_plant: 'বিদ্যুৎকেন্দ্র',
     calc: 'ক্ষমতার হিসাব: P = W ÷ t',
 
     // the rule line: the book's words in <b>, growing with what the student has found out
@@ -57,17 +52,12 @@ export const STRINGS = {
     rule_time_ready: 'এবার দুটি পাম্পই <b>একই সময়</b>, {T} s করে চলবে। কোনটি বেশি পানি তোলে, মানে বেশি কাজ করে, দেখো।',
     rule_time_run: 'একই সময়ে বড় পাম্পের ট্যাংকে পানি দ্বিগুণ দ্রুত উঠছে (সময় {k} গুণ দ্রুত দেখানো)।',
     rule_time_done: 'একই সময়ে বড় পাম্প দ্বিগুণ পানি তুলল, <b>দ্বিগুণ কাজ</b>। কাজ করা মানে শক্তির রূপান্তর, তাই <b>ক্ষমতা হচ্ছে শক্তির রূপান্তরের হার।</b>',
-    rule_bulb_ready: 'বাতির গায়ে লেখা {P} W। জ্বালালে প্রতি সেকেন্ডে কত শক্তি ব্যয় হয়, দেখো।',
-    rule_bulb_run: 'বাতিতে <b>প্রতি সেকেন্ডে {P} J</b> বিদ্যুৎশক্তি ব্যয় হচ্ছে, আলো আর তাপ হয়ে (সময় প্রকৃত)।',
-    rule_bulb_done: '<b>ক্ষমতার একক W (ওয়াট):</b> প্রতি সেকেন্ডে {one} J কাজ বা শক্তির রূপান্তর হলে ক্ষমতা {one} W। মাত্রা [P] = ML<sup>2</sup>T<sup>−3</sup>।',
 
     // labels on the picture
     l_h: 'h = {h} m',
     l_time: '{t} s',
     l_mass: '{m} kg পানি',
     l_P: '{P} W',
-    l_bulb: '{P} W বাতি',
-    l_energy: '{E} J',
 
     // the test
     q_count: 'প্রশ্ন {i}/{n}',
@@ -102,8 +92,6 @@ export const STRINGS = {
     m_same_work: 'উচ্চতা সমান, কিন্তু পানির ভর আলাদা: W = mgh।',
     m_same_half: 'একই সময়ে দ্বিগুণ কাজ মানে দ্বিগুণ হার, দ্বিগুণ ক্ষমতা।',
 
-    q_bulb: 'বাতিটি স্টপওয়াচের সময় ধরে জ্বলেছে। বাতিতে কত শক্তি ব্যয় হয়েছে?',
-    r_bulb: '<b>{E} J</b>: {P} W বাতিতে প্রতি সেকেন্ডে {P} J শক্তি ব্যয় হয়; {t} s-এ {P} × {t} = {E} J।',
     e_one: 'এটা মাত্র {one} সেকেন্ডের শক্তি; t সেকেন্ডে P × t।',
     e_add: 'ক্ষমতা আর সময় যোগ করা হয়েছে; শক্তি = P × t।',
     e_div: 'ক্ষমতাকে সময় দিয়ে ভাগ করা হয়েছে; শক্তি = P × t।',
@@ -118,16 +106,6 @@ export const STRINGS = {
     m_u_total: 'W (ওয়াট) হার বোঝায়: প্রতি সেকেন্ডে কত J, সব মিলিয়ে নয়।',
     m_u_kg: 'J শক্তির একক, kg ভরের; প্রতি সেকেন্ডে কত পানি ওঠে তা উচ্চতা h-এর উপরও নির্ভর করে।',
     m_u_time: 'W সময়ের একক নয়; সময় লাগে কাজ ÷ ক্ষমতা।',
-
-    q_plant: 'দেশে {MW} MW নিউক্লিয়ার বিদ্যুৎকেন্দ্র হবে। সেটি প্রতি সেকেন্ডে কত বিদ্যুৎশক্তি উৎপন্ন করবে?',
-    c_pl_right: '{MW} × {p6} J',
-    c_pl_M: '{MW} J',
-    c_pl_k: '{MW} × {p3} J',
-    c_pl_W: '{MW} × {p6} W',
-    r_plant: '<b>{MW} × {p6} J</b>: M (মেগা) মানে {p6}, তাই {MW} MW = {MW} × {p6} W, অর্থাৎ প্রতি সেকেন্ডে {MW} × {p6} J।',
-    m_pl_M: 'M (মেগা) বাদ পড়েছে: M মানে {p6}।',
-    m_pl_k: 'M (মেগা) মানে {p6}; {p3} হলো k (কিলো)।',
-    m_pl_W: 'প্রতি সেকেন্ডের শক্তি J-এ; W হলো ক্ষমতার একক।',
   },
 
   en: {
@@ -149,13 +127,10 @@ export const STRINGS = {
     examples: 'Examples',
     ex_work: 'Same work',
     ex_time: 'Same time',
-    ex_bulb: 'Bulb',
 
     act_run: 'Switch both pumps on',
     act_try_time: 'Now run them for the same time',
-    act_try_bulb: 'Now switch the bulb on',
     act_try_work: 'Back to the same work',
-    act_bulb: 'Switch the bulb on',
     act_again: 'Run again',
     act_home: 'Back to the start',
 
@@ -166,8 +141,6 @@ export const STRINGS = {
     pump_big: 'Big pump',
     of_small: 'small pump',
     of_big: 'big pump',
-    row_bulb: 'Bulb',
-    row_plant: 'Power plant',
     calc: 'Working out the power: P = W ÷ t',
 
     rule_work_ready:
@@ -179,17 +152,11 @@ export const STRINGS = {
     rule_time_run: 'In the same time, the big pump’s tank fills twice as fast (time shown {k} times faster).',
     rule_time_done:
       'In the same time the big pump lifted twice the water: <b>twice the work</b>. Doing work means converting energy, so <b>power is the rate of converting energy.</b>',
-    rule_bulb_ready: 'The bulb says {P} W. Switch it on and see how much energy it uses each second.',
-    rule_bulb_run: 'The bulb uses <b>{P} J of electrical energy each second</b>, as light and heat (real time).',
-    rule_bulb_done:
-      '<b>The unit of power is the W (watt):</b> {one} J of work, or of energy converted, each second is a power of {one} W. Dimension [P] = ML<sup>2</sup>T<sup>−3</sup>.',
 
     l_h: 'h = {h} m',
     l_time: '{t} s',
     l_mass: '{m} kg water',
     l_P: '{P} W',
-    l_bulb: '{P} W bulb',
-    l_energy: '{E} J',
 
     q_count: 'Question {i} of {n}',
     q_score: 'Correct: {right}',
@@ -223,8 +190,6 @@ export const STRINGS = {
     m_same_work: 'The height is the same, but not the mass of water: W = mgh.',
     m_same_half: 'Twice the work in the same time is twice the rate: twice the power.',
 
-    q_bulb: 'The bulb was on for the time on its stopwatch. How much energy did it use?',
-    r_bulb: '<b>{E} J</b>: a {P} W bulb uses {P} J each second; in {t} s, {P} × {t} = {E} J.',
     e_one: 'That is the energy of just {one} second; in t seconds it is P × t.',
     e_add: 'Power and time were added; energy = P × t.',
     e_div: 'Power was divided by time; energy = P × t.',
@@ -239,16 +204,6 @@ export const STRINGS = {
     m_u_total: 'The watt is a rate: joules each second, not in all.',
     m_u_kg: 'J is energy, kg is mass; how much water rises each second also depends on the height h.',
     m_u_time: 'W is not a unit of time; the time taken is work ÷ power.',
-
-    q_plant: 'A {MW} MW nuclear power plant: how much electrical energy does it produce each second?',
-    c_pl_right: '{MW} × {p6} J',
-    c_pl_M: '{MW} J',
-    c_pl_k: '{MW} × {p3} J',
-    c_pl_W: '{MW} × {p6} W',
-    r_plant: '<b>{MW} × {p6} J</b>: M (mega) means {p6}, so {MW} MW = {MW} × {p6} W, that is {MW} × {p6} J each second.',
-    m_pl_M: 'The M (mega) was left out: M means {p6}.',
-    m_pl_k: 'M (mega) means {p6}; {p3} is k (kilo).',
-    m_pl_W: 'Energy each second is in J; the W is the unit of power.',
   },
 };
 

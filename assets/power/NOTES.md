@@ -143,3 +143,9 @@ the windows, the door and its steps, mat and sandals, the stair room, the clothe
 flower pots and the whole neighbourhood (houses, trees, poles, clouds) are gone; a calmer sky. The panel sits beside
 the 3D (kit 1.5.0): the old wide-frame grid and sideways-phone rules are gone. No front/turn buttons: a drag turns
 the view (not during the test), a front icon brings it back.
+
+## Split (1.0.0)
+One lab per setting (the owner): একই কাজ and একই সময় stay here as two example words (same pumps, same tanks, other
+values); the 100 W bulb and the power plant are their own lab, `power-bulb`. Removed here: the বাতি word, the bulb's
+label, light, test questions and strings, `example=bulb` (URL and `set`). The bulb over the door stays as part of the
+house, switched off. The test now has 3 questions (a pump's power, same time, what a watt means).

@@ -6,10 +6,8 @@ Interactive 3D figure for the Pathshala book. A small nucleus of protons (red, +
 pulls one proton out. A soft orange shell with a dashed edge about 10⁻¹⁵ m outside the nucleus shows the strong
 force's reach. Inside it the strong nuclear force (orange arrow) pulls the proton back far harder than the electric
 push of the other protons (blue arrow), and it snaps back when let go; outside it the strong force is gone and the
-push sends it away. Two more scenes show where nuclear energy comes from: a big nucleus split by a neutron (ভাঙা)
-and two small nuclei joining (জোড়া দেওয়া). The panel shows the four fundamental forces weakest to strongest and the
-book's three kinds (মহাকর্ষ, ইলেকট্রো উইক, নিউক্লিয়ার বল); a 5-question test follows. Arrow lengths, time and the
-split's particle count are symbolic, and the figure says so on screen. Model units: 1 cm in the GLB = 1 fm.
+push sends it away. Splitting and joining are their own lab (`strong-nuclear-force-energy`). The panel shows the four fundamental forces weakest to strongest and the
+book's three kinds (মহাকর্ষ, ইলেকট্রো উইক, নিউক্লিয়ার বল); a 4-question test follows. Arrow lengths and time are symbolic, and the figure says so on screen. Model units: 1 cm in the GLB = 1 fm.
 
 State (`get`, the `change` event): `scene`, `distance` (× 10⁻¹⁵ m, the gap between the proton and the nucleus), `phase` (`seated`, `held`, `returning`, `back`,
 `flying`, `gone`), `inRange`, `verdict` (`back` | `away`), `forces` (N, the model's), `arrows`, `energy` (split/join:
@@ -39,7 +37,6 @@ To listen to it or control it from the book page, use the helper shipped in the 
 | Param | Meaning | Values | Default |
 |---|---|---|---|
 | `lang` | Language | `bn` বাংলা · `en` English | `bn` |
-| `scene` | Scene | `pull` pull a proton · `split` split (ভাঙা) · `join` join (জোড়া দেওয়া) | `pull` |
 | `pull` | Proton held out (fm) (Hold the proton this many × 10⁻¹⁵ m out of the nucleus at the start, e.g. 0.6 (the poster)) | number | `0` |
 | `view` | View | `front` · `3d` | `front` |
 | `mode` | Start in | `explore` learn · `quiz` test | `explore` |
@@ -64,5 +61,5 @@ Every figure answers `ping` with `{ asset, version }`. Send commands with `figur
 | `capture` | `{"width":800,"height":500}` |
 | `export-glb` | `{}` |
 
-Events: `ready`, `change`, `scene`, `release`, `done`, `view`, `dragstart`, `dragend`, `practice-start`, `practice-result`, `practice-end`.
+Events: `ready`, `change`, `release`, `view`, `dragstart`, `dragend`, `practice-start`, `practice-result`, `practice-end`.
 <!-- /generated:bridge -->

@@ -1,0 +1,243 @@
+// The test's new cases (not on the page), each a small scene that keeps moving: update(t) draws it at time t (s),
+// looping. Real size, metres. Each has the same marks as the book's examples, shown with the answer: the contact
+// patch (marks: true in update) or gap() for the measured gap.
+//  - rope: a student pulls a cart with a rope (the student never touches the cart; the rope does).
+//  - parachute: a student comes down under an open parachute; the air below the canopy holds it back.
+import * as THREE from 'three';
+import { createArrow } from './arrow.js';
+import { createPerson } from './person.js';
+import { mergeStatic } from './merge.js';
+import { V, box, canvasTexture, castShadows, glowSpot, groundPatch, mat, placeTube, tube, wheel, woodMaterial } from './parts.js';
+import { skySetting, yardSetting } from './setting.js';
+
+const frac = (x) => x - Math.floor(x);
+// ── a student pulls a cart with a rope ───────────────────────────────────────────────────────────────────────
+export function createRopeScene({ color, setting = true }) {
+  const root = new THREE.Group();
+  root.name = 'RopeScene';
+  const model = new THREE.Group();
+  model.name = 'StudentPullingCart';
+  root.add(model);
+  const SPEED = 0.8; // m/s
+  const CART_X = -0.72;
+  const PERSON_X = 0.62;
+
+  const cart = new THREE.Group();
+  cart.position.x = CART_X;
+  model.add(cart);
+  box(0.66, 0.3, 0.44, woodMaterial(), 0, 0.36, 0, cart);
+  box(0.7, 0.05, 0.48, mat('#6b4a2b', { roughness: 0.7 }), 0, 0.22, 0, cart);
+  const wheels = [];
+  for (const x of [-0.22, 0.22])
+    for (const z of [0.27, -0.27]) {
+      const w = wheel(0.11, 0.05, { rim: '#9aa3ad' });
+      w.position.set(x, 0.11, z);
+      cart.add(w);
+      wheels.push(w);
+    }
+  const steel = mat('#9aa3ad', { roughness: 0.35, metalness: 0.7 });
+  const RING = V(0.37, 0.3, 0);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.03, 0.008, 8, 18), steel);
+  ring.position.copy(RING);
+  ring.rotation.y = Math.PI / 2;
+  cart.add(ring);
+  // a sack in the cart
+  const sack = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 12), mat('#d8c39a', { roughness: 0.95 }));
+  sack.scale.set(1.2, 0.7, 0.9);
+  sack.position.set(0, 0.55, 0);
+  cart.add(sack);
+
+  const person = createPerson({ shirt: '#f4f6f8' });
+  person.root.position.x = PERSON_X;
+  model.add(person.root);
+  const ropeMat = mat('#b08a4a', { roughness: 0.85, name: 'Rope' });
+  const rope = tube(V(0, 0, 0), V(1, 0, 0), 0.009, ropeMat, model);
+
+  // the school yard's brick path and boundary wall, sliding back past them (they stay in the middle of the picture);
+  // on a transparent page, a strip of flagstones that fades out
+  const yard = setting ? yardSetting() : null;
+  /** @type {{ tex: THREE.Texture, per: number }[]} */
+  const slide = [];
+  if (yard) {
+    root.add(yard.root);
+    yard.slide.forEach((t, i) => slide.push({ tex: t, per: yard.per[i] }));
+  } else {
+    // a path of flagstones that slides back under them (they stay in the middle of the picture)
+    const tiles = canvasTexture(
+      256,
+      64,
+      (ctx, w, h) => {
+        ctx.fillStyle = '#e6e2da';
+        ctx.fillRect(0, 0, w, h);
+        ctx.strokeStyle = 'rgba(120,110,95,0.35)';
+        ctx.lineWidth = 3;
+        for (let x = 0; x <= w; x += w / 4) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, h);
+          ctx.stroke();
+        }
+        ctx.beginPath();
+        ctx.moveTo(0, h / 2);
+        ctx.lineTo(w, h / 2);
+        ctx.stroke();
+      },
+      { repeat: [5, 1] },
+    );
+    const ground = groundPatch(5, 1.6, { color: '#e6e2da' });
+    ground.material.map = tiles;
+    ground.material.needsUpdate = true;
+    root.add(ground);
+    slide.push({ tex: tiles, per: 1 });
+  }
+  castShadows(model);
+
+  const arrow = createArrow({ color, radius: 0.014, head: 0.085, headRadius: 0.036 });
+  root.add(arrow.root);
+  // the contact patch: where the rope is tied to the cart's ring
+  const spot = glowSpot(color, 0.16);
+  root.add(spot);
+  const hand = new THREE.Vector3();
+  const ringW = new THREE.Vector3();
+  const dir = new THREE.Vector3();
+
+  function update(t, { arrowOn = false, marks = false } = {}) {
+    const d = t * SPEED;
+    for (const { tex, per } of slide) tex.offset.x = frac(d / per); // one repeat of the texture is `per` m long
+    for (const w of wheels) w.rotation.z = -d / 0.11;
+    person.pose({ lean: 0.2, hands: [V(-0.24, 0.88, 0.22), null], walk: (d / 0.3) * Math.PI, stride: 0.24, spread: 0.1 });
+    hand.copy(person.handAt(0)).add(person.root.position);
+    ringW.copy(RING).add(cart.position);
+    placeTube(rope, ringW, hand, 0.009);
+    arrow.setOpacity(arrowOn ? 1 : 0);
+    if (arrowOn) arrow.set(ringW, dir.subVectors(hand, ringW).normalize(), 0.36);
+    spot.position.copy(ringW);
+    spot.visible = marks;
+  }
+
+  return {
+    id: 'rope',
+    root,
+    background: yard?.background ?? null,
+    model,
+    hits: [],
+    arrow,
+    fit: { min: V(-1.2, -0.02, -0.4), max: V(1.0, 1.7, 0.4) },
+    views: { front: V(0.15, 0.18, 1).normalize(), '3d': V(0.75, 0.5, 0.8).normalize() },
+    shadow: { center: V(0, 0, 0), r: 2 },
+    update,
+    /** Where the pull reaches the cart: the rope in its ring. */
+    contact: () => ringW,
+    gap: () => null,
+    bodies: () => [
+      { min: V(CART_X - 0.35, 0, -0.25), max: V(CART_X + 0.35, 0.7, 0.25) },
+      { min: V(PERSON_X - 0.3, 0, -0.25), max: V(PERSON_X + 0.3, 1.62, 0.25) },
+    ],
+  };
+}
+
+// ── a student under an open parachute ────────────────────────────────────────────────────────────────────────
+export function createParachuteScene({ color, setting = true }) {
+  const sky = setting ? skySetting() : null;
+  const root = new THREE.Group();
+  root.name = 'ParachuteScene';
+  const model = new THREE.Group();
+  model.name = 'Parachute';
+  root.add(model);
+  const R = 1.35; // canopy radius
+  const RIM_Y = 3.05;
+  const GORES = 12;
+
+  const canopy = new THREE.Group();
+  canopy.position.y = RIM_Y;
+  model.add(canopy);
+  const colorsGore = ['#1d3a6b', '#f4f1e8']; // navy and cream: the orange patch on the cloth and the sky both stand out
+  const goreMats = colorsGore.map((c, i) => new THREE.MeshStandardMaterial({ name: `Canopy${i}`, color: c, roughness: 0.7, side: THREE.DoubleSide }));
+  for (let i = 0; i < GORES; i++) {
+    const geo = new THREE.SphereGeometry(R, 4, 10, (i * Math.PI * 2) / GORES, (Math.PI * 2) / GORES, 0, Math.PI * 0.42);
+    const g = new THREE.Mesh(geo, goreMats[i % 2]);
+    g.scale.y = 0.62;
+    g.position.y = -R * Math.cos(Math.PI * 0.42) * 0.62;
+    canopy.add(g);
+  }
+  const rimR = R * Math.sin(Math.PI * 0.42);
+  const top = R * 0.62 * (1 - Math.cos(Math.PI * 0.42));
+
+  const person = createPerson({ shirt: '#f4f6f8' });
+  person.root.rotation.y = -Math.PI / 2; // facing the viewer
+  model.add(person.root);
+  const lineMat = mat('#4b5563', { roughness: 0.6 });
+  const lines = [];
+  const anchors = [];
+  for (let i = 0; i < GORES; i += 1) {
+    const a = (i * Math.PI * 2) / GORES;
+    anchors.push(V(Math.cos(a) * rimR, RIM_Y, Math.sin(a) * rimR));
+    lines.push(tube(V(0, 0, 0), V(0, 1, 0), 0.005, lineMat, model));
+  }
+  // air rushing past (it comes down, so the air goes up past it)
+  const airMat = new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.7, depthWrite: false });
+  const air = Array.from({ length: 9 }, (_, i) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.42, 0.012), airMat);
+    m.userData.noExport = true;
+    m.userData.x = -1.5 + (i * 3) / 8 + (i % 2 ? 0.12 : -0.08);
+    m.userData.p = (i * 0.37) % 1;
+    root.add(m);
+    return m;
+  });
+  castShadows(model);
+  mergeStatic(canopy); // twelve gores: two meshes, one per colour
+
+  const arrow = createArrow({ color, radius: 0.028, head: 0.17, headRadius: 0.07 });
+  root.add(arrow.root);
+  // the contact patch: the canopy's cloth, which the air below it touches
+  const spot = glowSpot(color, 0.95);
+  root.add(spot);
+  const hands = [V(0.05, 1.72, 0.2), V(0.05, 1.72, -0.2)];
+  const handW = new THREE.Vector3();
+  const v = new THREE.Vector3();
+  const touch = new THREE.Vector3();
+
+  function update(t, { arrowOn = false, marks = false } = {}) {
+    const sway = Math.sin(t * 1.3) * 0.035;
+    model.rotation.z = sway;
+    person.pose({ lean: 0, hands, walk: Math.PI / 2, stride: 0.06, spread: 0.08, lift: 0.03 });
+    model.updateMatrixWorld(true);
+    for (let i = 0; i < lines.length; i++) {
+      handW.copy(person.handAt(i % 2 ? 1 : 0));
+      person.root.localToWorld(handW);
+      model.worldToLocal(handW);
+      placeTube(lines[i], anchors[i], handW, 0.005);
+    }
+    for (const a of air) {
+      const p = frac(a.userData.p + t * 0.55);
+      a.position.set(a.userData.x, -0.2 + p * 3.8, -0.6);
+      a.visible = Math.abs(a.position.x) > rimR * 0.9 || a.position.y < RIM_Y - 0.4;
+    }
+    arrow.setOpacity(arrowOn ? 1 : 0);
+    if (arrowOn)
+      arrow.set(v.set(-Math.sin(sway) * (RIM_Y + top), Math.cos(sway) * (RIM_Y + top) + 0.02, 0), V(-Math.sin(sway), Math.cos(sway), 0), 0.75);
+    touch.set(0, RIM_Y + top * 0.35, rimR * 0.5).applyMatrix4(model.matrixWorld);
+    spot.position.copy(touch);
+    spot.visible = marks;
+  }
+
+  return {
+    id: 'parachute',
+    root,
+    background: sky?.background ?? null,
+    model,
+    hits: [],
+    arrow,
+    fit: { min: V(-1.5, -0.05, -0.5), max: V(1.5, RIM_Y + top + 0.85, 0.5) },
+    views: { front: V(0.1, 0.05, 1).normalize(), '3d': V(0.7, 0.3, 0.8).normalize() },
+    shadow: { center: V(0, 1.5, 0), r: 2.5 },
+    update,
+    /** The canopy's underside, where the air pushes on it. */
+    contact: () => touch,
+    gap: () => null,
+    bodies: () => [
+      { min: V(-rimR, RIM_Y - 0.1, -rimR), max: V(rimR, RIM_Y + top, rimR) },
+      { min: V(-0.3, 0, -0.3), max: V(0.3, 1.75, 0.3) },
+    ],
+  };
+}
