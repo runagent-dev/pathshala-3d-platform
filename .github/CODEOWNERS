@@ -3,12 +3,20 @@
 # No platform owners yet: add GitHub usernames to .github/owners.json, then run npm run generate.
 
 /assets/acceleration/ @RadeenXALNW
+/assets/acceleration-bend/ @RadeenXALNW
 /assets/air-pressure/ @RadeenXALNW
 /assets/balanced-forces/ @RadeenXALNW
 /assets/buoyancy-ship/ @RadeenXALNW
+/assets/calorie-joule/ @RadeenXALNW
 /assets/circular-motion/ @RadeenXALNW
+/assets/circular-motion-clock/ @RadeenXALNW
+/assets/circular-motion-moon/ @RadeenXALNW
 /assets/conservation-of-momentum/ @RadeenXALNW
 /assets/contact-noncontact-force/ @RadeenXALNW
+/assets/contact-noncontact-force-crane/ @RadeenXALNW
+/assets/contact-noncontact-force-friction/ @RadeenXALNW
+/assets/contact-noncontact-force-gravity/ @RadeenXALNW
+/assets/contact-noncontact-force-magnet/ @RadeenXALNW
 /assets/density/ @RadeenXALNW
 /assets/digital-balance/ @RadeenXALNW
 /assets/distance-displacement/ @RadeenXALNW
@@ -22,13 +30,16 @@
 /assets/friction-force/ @RadeenXALNW
 /assets/gravitational-force/ @RadeenXALNW
 /assets/hanging-weight-pull/ @RadeenXALNW
+/assets/heat-molecules/ @RadeenXALNW
 /assets/inertia/ @RadeenXALNW
 /assets/inertia-coin-card/ @RadeenXALNW
 /assets/kinetic-energy/ @RadeenXALNW
 /assets/law-of-gravitation/ @RadeenXALNW
 /assets/linear-motion/ @RadeenXALNW
+/assets/linear-motion-ball/ @RadeenXALNW
 /assets/liquid-pressure/ @RadeenXALNW
 /assets/mass-energy/ @RadeenXALNW
+/assets/mass-energy-plant/ @RadeenXALNW
 /assets/momentum/ @RadeenXALNW
 /assets/newtons-first-law/ @RadeenXALNW
 /assets/newtons-second-law/ @RadeenXALNW
