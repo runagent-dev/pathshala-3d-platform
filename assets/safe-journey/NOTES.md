@@ -159,3 +159,11 @@ km/h, kg, চালাও, শুরুতে ফেরাও, সময় … 
   notes, up to about 70 characters, no longer appear during and after the run).
 - **Bugs**: none found in reset, the test, keys, double taps, tapping a speed or the test tab during a run, or
   rotating during a run (all checked; no console errors).
+
+## Declutter and side panel (0.3.0)
+Only the main objects: the guard posts, the kilometre stone, the kash grass, the country boats, the far bank with its
+trees, houses and kiln, the trees on the slope and the straw stacks are gone; the highway, its verges, the slope, the
+river and the fields stay as a calm setting for the truck, the car and the energy cubes. Kit 1.5.0 puts the panel
+beside the 3D, so the rules for a wide sheet under the view are gone, and the old phone-on-its-side rule now serves
+any narrow side panel (≤ 340 px). No সামনে / ঘুরিয়ে দেখো buttons: the lab starts from the front, a drag turns it,
+and the small "front" icon then brings it back.
