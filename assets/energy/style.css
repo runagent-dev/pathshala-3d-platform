@@ -43,12 +43,6 @@ body.bg-transparent { background: transparent; }
 /* the bar is its own height (no room kept for two lines of text) */
 .en .pvc-outcome { min-height: 0; }
 
-/* wide frames (panel below, tabs beside the sheet): two lines are enough for the rule and the worked answer */
-@container pvc (min-width: 720px) and (min-height: 461px) {
-  .en .pvc-learn { justify-content: flex-start; }
-  .en .pvc-rule { --pvc-rule-lines: 2; }
-  .en .pvc-q-feedback { min-height: calc(2 * 1.45em); }
-}
 /* phone portrait: a little tighter, so the 3D keeps more than half the height */
 @container pvc (max-width: 560px) {
   .en .pvc-q-ask { gap: 6px; }

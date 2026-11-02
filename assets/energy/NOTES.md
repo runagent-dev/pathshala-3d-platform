@@ -118,3 +118,9 @@ Measured (headless Chromium, software GL, shadows on, 390×700):
 | text on the 3D view | 58 characters in 1 box | 0 at rest (labels only while they apply) |
 
 Time to ready is the same within noise: measured back to back against main on a busy machine, 7.9–13.5 s for both.
+
+## Declutter pass (2026-11, 0.4.0)
+- The owner: "in each lab there are too much thing". The grandstands, the crowd, the flags, the coloured advertising
+  boards, the far violet hills and the clouds are gone; the track and the hill stand on soft warm sand (the orange
+  clay is muted) under a gentle, muted sky. The bicycle on the hill is the one thing to look at.
+- The old wide-frame panel rule (for the panel under the 3D) is gone: the panel is beside the 3D now.
