@@ -1,0 +1,71 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "gas-expansion",
+  "title": "Expansion of gas (গ্যাসের প্রসারণ)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 173,
+  "topic": "6.3.3",
+  "placement": "Book page 173, topic 6.3.3 গ্যাসের প্রসারণ. Next to চিত্র ৬.০৭ (two cylinders with a weighted piston, the right one heated by a flame) and the formulas PV = nRT and γ_P = 1/T₁ on page 174.",
+  "maintainers": ["RadeenXALNW"],
+  "units": "cm",
+  "description": "Interactive 3D figure for textbook topic 6.3.3 (গ্যাসের প্রসারণ, Expansion of gas), pages 173-174, after চিত্র ৬.০৭. Two glass cylinders stand side by side on lab tripods, each with a striped piston and a fixed weight (a grey trapezoid with a ring) on it, as in the book; the right one is heated by a burner under it. The same 36 molecules spread out as the piston rises, so the same gas taking more room can be seen. The student picks the starting temperature T1 (200, 300 or 400 K), taps the burner (or the big button) to heat the gas by 100 K, and reads T and V before and after (V = nRT/P with n = 0.12 mol and P = 100,000 Pa fixed). The panel shows the book's PV = nRT and the coefficient of volume expansion γ_P = ((V2 - V1)/V1)/(T2 - T1) = 1/T1 with the student's own numbers, and the rule that the lower the temperature the more the gas expands (the rise in litres is the same, but a smaller V1 gives a bigger ratio). Five tap questions. The cylinders, pistons, tripods and burner export as GLB in metres. Offline, in Bangla and English.",
+  "tags": ["gas", "expansion", "ideal gas", "PV=nRT", "volume expansion", "charles law", "heat", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "t1",
+      "label": "Starting temperature T1",
+      "type": "select",
+      "options": ["200", "300", "400"],
+      "default": "300",
+      "help": "K"
+    },
+    {
+      "name": "t2",
+      "label": "Temperature T2 of the heated gas",
+      "type": "number",
+      "default": "",
+      "placeholder": "K",
+      "help": "above T1, up to 520 K; empty: not heated yet"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on the part pulses at first", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "t1": 300, "t2": 400 } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "practice-start", "practice-result", "practice-end"],
+  "export": { "poster": { "params": { "coach": "0", "t1": "300", "t2": "400" } }, "glb": [{ "name": "default" }] }
+}
