@@ -20,88 +20,21 @@ same দ্রুতি while its বেগ keeps changing, because its দি�
 ভেক্টর, দিক, মান (বেগের মান), সরল রৈখিক গতি; m, s, m/s, km, মিনিট, km/h. Compass words: উত্তর, দক্ষিণ, পূর্ব,
 পশ্চিম, উত্তর-পূর্ব …
 
-## How it works
-- Two examples, two chips in the panel: **পাথর** (first) and **সাইকেল**. View: উপর থেকে (from above but tilted, north
-  up, so the student stands and the stone's height and fall show) or ঘুরিয়ে দেখো (orbit).
-- The panel writes both quantities as fractions, as the book does (v = 100 m / 20 s = 5 m/s): a row for দ্রুতি
-  (blue, "দূরত্ব ÷ সময়", result "দিক নেই") and a row for বেগ (orange). Rows and the sentence sit at the top of the
-  panel, the chips and the main button at the bottom.
-- **পাথর**: a student whirls a stone on a jute rope over the head (radius 1 m, 4 m/s; the rope hangs as a conical
-  pendulum: tan = g r / v², the stone g r² / v² below the hand). Shown 3 times slower (the panel says so). The বেগ is an
-  orange arrow along the circle; faint copies of it are left every quarter turn and fade within a turn, so the arrow
-  is seen to keep its length but not its direction. Panel: দ্রুতি = ৬.২৮ m / ১.৫৭ s = ৪ m/s (দিক নেই); বেগ (ভেক্টর: মান
-  ও দিক) = ৪ m/s and the direction as a turning arrow and a compass word that changes every 45°. A compass is drawn
-  on a pale plate on the ground; the panel gives the goal under the sentence: পাথরটি পুকুরে ফেলো.
-- **দড়ি ছেড়ে দাও** (panel button, or touch the student's hand or the stone; it acts as the finger goes down, so
-  timing is fair; a second tap within 0.45 s is a double tap and does not take the throw back): the stone flies
-  straight on along the বেগ it had at that moment (the tangent), falling honestly (g = 9.8 m/s², it lands about
-  0.5 s and 2 m on, then slides 0.7 m to a stop or sinks in the pond). The বেগ at the moment of letting go stays
-  drawn there, and dots mark the way it went; the panel rows then say "ঘোরার সময়" and "ছাড়ার মুহূর্তে" (greyed).
-  The camera moves back only if the stone ends up out of the picture. The game: land it in the pond. It works only
-  if you let go when the বেগ arrow points at the pond; letting go when the stone is between the student and the pond
-  (thinking it flies outwards) misses by a quarter turn, and the hint says why.
-- **সাইকেল**: the road of চিত্র ২.০৪ as a small 3D map (traced from the book; km posts ০–৬, A and B; the road fades out
-  after C). The cyclist rides A→B at a steady 12 km/h (the 20-minute ride shown in 8 s), or can be dragged along the
-  road (a hint says so once, at B). The road travelled is drawn blue (দূরত্ব), the straight arrow from A orange
-  (সরণ). Panel, live: গড় দ্রুতি = দূরত্ব / সময় and গড় বেগ = সরণ / সময় with the time in hours (minutes = hours in the
-  sentence), the direction of the গড় বেগ beside it; at B: ৪ km / ১/৩ h = ১২ km/h and ২ km / ১/৩ h = ৬ km/h,
-  উত্তর-পূর্ব দিকে. On the first, nearly straight stretch the sentence points out that here গড় বেগের মান ≈ গড় দ্রুতি
-  (সরল রৈখিক গতিতে বেগের মানই দ্রুতি).
-- Colours: দূরত্ব and দ্রুতি blue, সরণ and বেগ orange, সময় purple, in the panel and the 3D.
-- Test (৫ questions, tap answers, the 3D sets each one up): which arrow (ক–ঘ) the stone goes along if let go now
-  (a short trail behind it shows which way it goes round; tangent forwards; wrong: outwards, half-way out, backwards),
-  then it is let go; the stone at two places: same দ্রুতি, different বেগ (four combinations); দ্রুতি or বেগের মান from
-  book-style numbers with both a distance travelled and a displacement (wrong: the other one, divided the wrong way,
-  the two added; the map shows "পথ ধরে" and "সোজা" without its km numbers); গড় দ্রুতি or গড় বেগ on the road in
-  10/20/40 minutes (wrong: the other quantity, 20 minutes taken as 0.2 hour, minutes not turned into hours);
-  the average velocity of a whole turn (0 m/s; wrong: the speed, the diameter or the radius ÷ the time).
-- Keys: space/enter let go / whirl again / ride or pause, 1 and 2 the examples, ← → move the cycle, f/v views (the
-  examples and the cycle do not change during the test).
-
-## Open questions
-- The screenshot of page 41 is cut off after "গড় দ্রুতি = মোট অতিক্রান্ত দূরত্ব/মোট সময়": check how the book
-  finishes the sum (km/h or m/s, and whether it gives গড় বেগ = 6 km/h towards B) and match the panel.
-- The book writes km/h? The figure uses km/h and m/s symbols (as the page writes m/s), minutes as মিনিট.
-- Stylised on purpose: the stone (17 cm), the road (70 m wide) and the cyclist are drawn bigger than they would be,
-  so they show on a phone; the stone scene runs 3 times slower than real time (both are said in the figure or here).
-
-## Polish pass (2026-11-01)
-- **Layout**: the kit's frame everywhere. The figure's own rule that widened the side panel on short, wide frames is
-  gone (the rows were tightened to fit the kit's 36 % column instead). On wide frames (800×500, 1280×800) the chips
-  and the button sit beside the rows, so the 3D view is 55 % of the height there and at 390×700 (it was 50 % and
-  54 %). The panel keeps one height in every state.
-- **Text on the 3D view**: only labels now (বেগ, পুকুর, A, B, দূরত্ব, সরণ, the quiz letters). The time note (সময় ৩ গুণ
-  ধীর…, ২০ মিনিটের যাত্রা…) and the goal (পাথরটি পুকুরে ফেলো) moved into the panel, as a small line under the
-  sentence. After a throw the hint line only says পুকুরে পড়েছে! / পুকুরে পড়েনি; the why is in the panel's sentence.
-  Text on the view: 46 characters in 3 boxes → 8 in 2.
-- **Setting and colour**: the pale grass fading to white is gone. The stone is whirled on a school field of trodden
-  earth (a tiling canvas texture: patches, grit, pebbles, dry grass), with trees and bushes round the edge, reeds at
-  the pond, the school behind, a sky when the view is turned; the compass is drawn on a pale cement plate in dark
-  ink. The road map lies on a patchwork of fields (ploughed, ripening, mustard, young paddy) with villages under
-  their trees and ponds; the km numbers sit on white milestone discs. Every arrow (বেগ, its faint copies, the quiz
-  choices, the twin, সরণ) has a white outline; the road travelled (দূরত্ব) has a white edge; the stone's circle is
-  chalk white; the quiz trail is dark so it shows on the white circle.
-- **Performance**: soft VSM shadows at 2048 → PCF at 1024 with the shadow camera fitted to each example; only the
-  student, the stone, its rope and the cyclist cast shadows (the arrows did too). The student and the cyclist are
-  merged into one mesh per material (14 → 5 and 18 → 6 draw calls); the plants are merged per colour with the
-  stone's shader (no new shader to compile); arrow geometries are shared; the countryside is drawn only when the road
-  is first shown; nothing is allocated per frame while the stone goes round (scratch vectors), and the panel's
-  direction arrow is rewritten only when it turns a whole degree.
-- **Determinism (the visual comparison flake)**: the stone goes round all the time (the figure's point), and the
-  বেগ label follows it; CI's picture was taken while it moved, so the label landed a pixel or two apart from run to
-  run (about 150 px of difference). New URL parameter `angle`: the stone is held still there when the figure opens,
-  with the faint copies of the last turn. The poster (and so the visual comparison) uses `angle=215`: nothing moves,
-  nothing is drawn while idle, and four runs in a row give identical pixels. Students still see it going round.
-- **Bugs**: a turn of the phone during a camera move no longer leaves the old framing (the resize reframes at once);
-  with the stone held still (the poster, `set({ whirl: false })`), the button and a touch on the hand now let go of
-  the rope as the button says (they whirled it again).
-- **Numbers** (headless Chromium, software GL, shadows on; the before row is main at kit 1.3.0):
-
-  | | draw calls avg / max | triangles max | texture memory | ready (median of 8) | text on 3D |
-  |---|---|---|---|---|---|
-  | before | 77 / 145 | 35k | 55.3 MB (2048) | 945 ms | 46 / 3 |
-  | after | 64 / 124 | 67k | 19.1 MB (1024) | 1030 ms | 8 / 2 |
-
-  Frames per second while the stone goes round went from about 9 to about 23 in software GL (each frame is cheaper);
-  with `angle` set nothing is drawn while idle. The triangles are the plants and the school (still far under 300k).
-
+## How it works (1.0.0: rebuilt simple, as the owner asked: "we have to make it simple")
+- Two boys on a plain sandy field (a sky behind when the view is turned), nothing else. They start side by side on a
+  chalk start line and run for the same 20 s (shown in 6 s on screen) when the student taps দৌড়াও.
+- ১ম জন (blue shirt) runs a zig-zag path of exactly 100 m; the part run is drawn blue (দূরত্ব), the rest faint.
+  Panel: দ্রুতি = দূরত্ব ÷ সময় = 100 m ÷ 20 s = 5 m/s, "দিক নেই".
+- ২য় জন (orange shirt) runs 50 m straight; the part run is drawn orange (সরণ) and an outlined orange বেগ arrow goes
+  ahead of him, labelled "বেগ ২.৫ m/s". A dashed east line (পূর্ব) and an arc with the angle (৪০°) show his direction.
+  Panel: বেগ = সরণ ÷ সময় = 50 m ÷ 20 s = 2.5 m/s, with "৪০°, উত্তর-পূর্ব".
+- The student turns boy 2 with ◀ ▶ in the panel (15° a press), the arrow keys, or by dragging the বেগ arrow (5°
+  steps); a new direction puts both back on the start line. Reset (the quiet icon) also does.
+- Panel, in the labs' one structure: choices (boy 2's direction), the action (+ reset), the readings (দ্রুতি, বেগ),
+  the two formulas with the numbers live, the rule.
+- Stylised on purpose: 1 drawing unit = 5 m and the boys are drawn 3.2 units tall, so they show on a phone.
+- Test (৫ questions, tap answers): the direction of boy 2's বেগ (set on the 3D, the angle hidden until the answer);
+  then, shuffled, দ্রুতি or বেগের মান from book-style numbers with both a distance and a displacement; which quantity
+  has a direction (বেগ); same দ্রুতি east and north (বেগ ভিন্ন); a run round the field back to the start (গড় বেগ 0).
+- Keys: space/enter run, ← → (↑ ↓) turn boy 2, F front view, V turned view. Dragging off the arrow turns the view.
+- URL parameters: angle (boy 2's direction), time (0–20 s shown; the poster uses 20).
