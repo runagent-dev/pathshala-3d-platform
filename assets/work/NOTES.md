@@ -105,3 +105,10 @@ the view is not much wider than the trip), so the person and crate come out bigg
 - The book uses s both as "দূরত্ব" and "সরণ"; the figure says সরণ s for the stepper and দূরত্ব in sentences, as the page.
 - The wall example is not on the page; it stands for the দারোয়ান (effort, but nothing moved along the force).
 - Whether the book wants the dimension ML²T⁻² shown on screen.
+
+## Declutter (2026-11-01, v0.3.0)
+Only the person, the crate, the tape and (second example) the wall: the courtyard's boundary wall, pillars, gate,
+lamps, stool, flower pots, houses, trees and clouds are gone; a soft blue backdrop and a calm sky over plain ground,
+and calmer floor tiles. The panel follows the order every lab uses: the examples, the action, the F and s steppers,
+the formula line, the rule (the old wide-frame grid and sideways-phone rules are gone). No front/turn buttons: a drag
+turns the view (not during the test), a front icon brings it back.
