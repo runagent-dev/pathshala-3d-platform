@@ -7,6 +7,7 @@ import { createArrow } from './arrow.js';
 import { createPerson } from './person.js';
 import { FALL } from './motion.js';
 import { V, blob, canvasTexture, castShadows, groundPatch, hitBox } from './parts.js';
+import { classroomSetting } from './setting.js';
 
 const R = 0.11; // ball radius
 const FACE = THREE.MathUtils.degToRad(62); // the student turns this far from the viewer, to the left
@@ -52,7 +53,7 @@ function footballTexture() {
   });
 }
 
-export function createFallScene({ color }) {
+export function createFallScene({ color, setting = true }) {
   const root = new THREE.Group();
   root.name = 'FallScene';
   const model = new THREE.Group();
@@ -76,31 +77,36 @@ export function createFallScene({ color }) {
   shade.position.set(HELD.x, 0.003, HELD.z);
   root.add(shade);
 
-  const floor = groundPatch(2.8, 2.2, {
-    color: '#eceef0',
-    draw: (ctx, w, h) => {
-      ctx.strokeStyle = 'rgba(140,150,160,0.22)';
-      ctx.lineWidth = 2;
-      for (let x = 0; x <= w; x += w / 5.6) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, h);
-        ctx.stroke();
-      }
-      for (let y = 0; y <= h; y += h / 4.4) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(w, y);
-        ctx.stroke();
-      }
-    },
-  });
-  floor.position.set(-0.1, 0, 0.1);
-  root.add(floor);
+  // a classroom (or, on a transparent page, a patch of floor that fades out)
+  const room = setting ? classroomSetting() : null;
+  if (room) root.add(room.root);
+  else {
+    const floor = groundPatch(2.8, 2.2, {
+      color: '#eceef0',
+      draw: (ctx, w, h) => {
+        ctx.strokeStyle = 'rgba(140,150,160,0.22)';
+        ctx.lineWidth = 2;
+        for (let x = 0; x <= w; x += w / 5.6) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, h);
+          ctx.stroke();
+        }
+        for (let y = 0; y <= h; y += h / 4.4) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(w, y);
+          ctx.stroke();
+        }
+      },
+    });
+    floor.position.set(-0.1, 0, 0.1);
+    root.add(floor);
+  }
   castShadows(model);
 
   const hits = [hitBox(0.5, 0.5, 0.5, 0, 0, 0, ball), hitBox(0.6, 1.7, 0.6, 0, 0.85, 0, person.root)];
-  const arrow = createArrow({ color, radius: 0.011, head: 0.07, headRadius: 0.03, onTop: true });
+  const arrow = createArrow({ color, radius: 0.011, head: 0.07, headRadius: 0.03 });
   root.add(arrow.root);
 
   const v = new THREE.Vector3();
@@ -130,6 +136,7 @@ export function createFallScene({ color }) {
   return {
     id: 'fall',
     root,
+    background: room?.background ?? null,
     model,
     hits,
     arrow,

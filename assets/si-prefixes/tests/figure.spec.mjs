@@ -85,13 +85,13 @@ test('si-prefixes: with loop off it stops at the end', async ({ page }) => {
   const f0 = await frames(fig);
   await fig.advance(1500);
   expect(await frames(fig)).toBe(f0);
-  // the strip sits under the view, not over it
+  // the panel sits beside the view (landscape) or under it (portrait), never over it
   const [stage, panel] = await fig.frame.evaluate(() =>
     ['.hb-stage', '.hb-panel'].map((q) => {
       const r = document.querySelector(q).getBoundingClientRect();
-      return { top: r.top, bottom: r.bottom };
+      return { top: r.top, bottom: r.bottom, left: r.left, right: r.right };
     }),
   );
-  expect(panel.top).toBeGreaterThanOrEqual(stage.bottom - 1);
+  expect(panel.top >= stage.bottom - 1 || panel.left >= stage.right - 1).toBe(true);
   expect(log.errors).toEqual([]);
 });
