@@ -126,3 +126,15 @@ Against `docs/agents/polish-pass.md`, version 0.2.0.
   half the feet's speed. The labels
   say "স্থির থাকতে চায়" (wants to stay at rest), which is true; the numbers show the lag honestly.
 - The 4th button (coin and card) is not in the book's text; it is the classic home experiment for স্থিতি জড়তা.
+
+## Declutter and side panel (0.3.0)
+The owner asked for only the main objects. The street behind the bus lost its shops (plaster fronts, signboards,
+awnings, shutters, goods, windows) and its trees; lamp posts 6 m apart stay as the one thing that shows the bus
+moving through its windows, under the blue sky. The footpaths are plain paving instead of bricks. Kit 1.5.0 puts the
+panel beside the 3D on landscape frames, so the figure's rules for a wide panel under the view (from 720 px) and for
+the old short-and-wide layout are gone.
+The play / pause / again button left the top left of the view and is the panel's action under the events (a tap on
+the view still plays or pauses), so the panel reads in the same order as every lab: events, action, the two speeds,
+what happens, the book's definition. On 390×700 the 3D keeps 55 %.
+No সামনে / ঘুরিয়ে দেখো buttons (kit): the lab starts from the front, a drag turns it, and the small "front" icon
+then brings it back.
