@@ -42,9 +42,11 @@ body.bg-transparent { background: transparent; }
 .wn-strength { margin: 0; font-size: 13px; line-height: 1.45; color: var(--ink-2); }
 .wn-strength b { font-weight: 700; }
 
-/* the zoom's three stops and the β button (the reach chip has a short name for small panels) */
-.wn-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
-.wn-stops button { height: 36px; padding: 0 10px; font-size: 14.5px; white-space: nowrap; }
+/* the zoom's three stops (one row, the width of the panel), then the β button (the reach chip has a short name for
+   small panels) */
+.wn-stops { display: grid; grid-template-columns: auto auto auto; align-self: stretch; }
+.wn-foot { display: flex; align-items: center; gap: 8px; }
+.wn-stops button { height: 36px; padding: 0 6px; font-size: 14px; white-space: nowrap; }
 .wn-stops .wn-short { display: none; }
 .wn-foot [data-act='beta'] { height: 38px; min-width: 132px; font-size: 15px; }
 .wn-foot [data-act='beta'].is-busy { opacity: 0.55; }
@@ -53,7 +55,8 @@ body.bg-transparent { background: transparent; }
 @keyframes wn-nudge { 50% { background: var(--accent-soft); color: var(--accent); } }
 @media (prefers-reduced-motion: reduce) { .wn-stops button.wn-nudge { animation: none; } }
 
-/* on the 3D view */
+/* on the 3D view: a soft blue backdrop (not on a transparent background) */
+.wn:not([data-theme='transparent']) .pvc-stage { background: radial-gradient(ellipse at 45% 40%, #dbe5ee 0%, #b9cadb 65%, #a3b7cb 100%); }
 .wn-note { position: absolute; left: 10px; top: 10px; z-index: 3; max-width: calc(100% - 248px); padding: 1px 3px; border-radius: 4px; background: rgb(255 255 255 / 0.72); font-size: 12.5px; line-height: 1.35; color: var(--ink-3); pointer-events: none; text-wrap: balance; }
 /* the note and the scale stay readable when the zoom passes over the big balls */
 .wn-scale span { padding: 0 3px; border-radius: 3px; background: rgb(255 255 255 / 0.72); }
@@ -73,11 +76,6 @@ body.bg-transparent { background: transparent; }
 .wn .pvc-q-text { min-height: 2.8em; }
 .wn .pvc-q-feedback { min-height: 4.35em; font-size: 14px; }
 
-/* wide frames (tabs beside the sheet): the line is long, so bigger type and room for two lines */
-@container pvc (min-width: 720px) {
-  .wn-idea { font-size: 15.5px; min-height: 3em; }
-  .wn-strength { font-size: 14px; }
-}
 /* phones in portrait: the β button fills its row */
 @container pvc (max-width: 560px) {
   .wn-idea { font-size: 13.5px; }
@@ -91,23 +89,7 @@ body.bg-transparent { background: transparent; }
   .wn-idea { font-size: 13px; line-height: 1.45; min-height: 4.35em; }
   .wn-strength { font-size: 12.5px; line-height: 1.4; }
   .wn .pvc-learn, .wn-forces { gap: 4px; }
-  .wn-foot { gap: 6px; flex-wrap: nowrap; }
   .wn-stops .wn-long { display: none; }
   .wn-stops .wn-short { display: inline; }
-  .wn-foot [data-act='beta'] { min-width: 0; }
   .wn .pvc-q-feedback { font-size: 13px; }
-}
-/* short and wide: the panel is beside the view */
-@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
-  .wn-idea { font-size: 12.5px; line-height: 1.45; min-height: 5.8em; }
-  .wn-forces-head { font-size: 12.5px; }
-  .wn-f b { font-size: 12px; }
-  .wn-f small { font-size: 11.5px; }
-  .wn-strength { font-size: 12px; }
-  .wn-stops { align-self: stretch; display: grid; grid-template-columns: auto auto auto; }
-  .wn-stops button { height: 34px; padding: 0 5px; font-size: 13px; }
-  .wn-foot [data-act='beta'] { width: 100%; height: 36px; }
-  /* the narrow side panel: room for the longest question (3 lines) and worked answer (5 lines) */
-  .wn .pvc-q-text { min-height: 4.2em; }
-  .wn .pvc-q-feedback { font-size: 13px; min-height: 7.25em; }
 }

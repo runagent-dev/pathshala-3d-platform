@@ -75,3 +75,9 @@ Also used, from the students' chemistry: প্রোটন, নিউট্র�
   later edition say "an electron (and a very light particle)"?
 - The book writes 10⁻¹⁸ m with Latin digits; the figure follows the repo rule (Bangla digits, ১০⁻¹⁸ m). A person
   should confirm that this reads naturally.
+
+## Declutter (2026-11-01, v0.2.0)
+A soft blue backdrop behind the nucleus instead of the white page. The panel sits beside the 3D (kit 1.5.0) in the
+order every lab uses: the three stops (one row), the β button, the sentence, then the four forces (the old wide-frame
+and sideways-phone rules are gone). No front/turn buttons: a drag turns the view (not during the test), a front icon
+brings it back.

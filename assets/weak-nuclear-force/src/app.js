@@ -86,18 +86,19 @@ export function createApp(root, options = {}) {
   const stopName = (id) =>
     id === 'reach' ? `<span class="wn-long">${t('stop_reach')}</span><span class="wn-short">${t('stop_reach_short')}</span>` : t(`stop_${id}`);
   const ui = buildStudentShell(root, t, {
+    layout: 'side',
     learn: `
+          <div class="pvc-seg wn-stops" role="group" aria-label="${t('stops_label')}">
+            ${STOP_IDS.map((id) => `<button data-stop="${id}" aria-label="${t(`stop_${id}`)}">${stopName(id)}</button>`).join('')}
+          </div>
+          <div class="wn-foot">
+            <button class="pvc-btn primary" data-act="beta"><span></span></button>
+          </div>
           <p class="wn-idea" aria-live="polite"></p>
           <div class="wn-forces">
             <div class="wn-forces-head"><b>${t('forces_title')}</b></div>
             <ol class="wn-ladder">${ladder}</ol>
             <p class="wn-strength">${t('strength_book')}</p>
-          </div>
-          <div class="wn-foot">
-            <div class="pvc-seg wn-stops" role="group" aria-label="${t('stops_label')}">
-              ${STOP_IDS.map((id) => `<button data-stop="${id}" aria-label="${t(`stop_${id}`)}">${stopName(id)}</button>`).join('')}
-            </div>
-            <button class="pvc-btn primary" data-act="beta"><span></span></button>
           </div>`,
   });
   // on the 3D view: how it is stylised (top left), the scale bar (bottom left), the inside of the neutron (behind)
@@ -572,7 +573,6 @@ export function createApp(root, options = {}) {
   }
   function setView(view, { animate = true } = {}) {
     s.view = view === '3d' ? '3d' : 'front';
-    controls.enableRotate = s.view === '3d';
     s.userMovedCamera = false;
     syncUI();
     emit('view', { view: s.view });
@@ -585,6 +585,7 @@ export function createApp(root, options = {}) {
       return done;
     });
   }
+  // the view starts from the front; dragging turns it, and then the "front" button appears to come back
   controls.addEventListener('start', () => {
     s.userMovedCamera = true;
     s.rotating = true;
@@ -1211,7 +1212,9 @@ export function createApp(root, options = {}) {
 
   // ── buttons, keys ───────────────────────────────────────────────────────────
   function syncUI() {
-    for (const b of ui.$$('[data-view]')) b.classList.toggle('on', b.dataset.view === s.view);
+    const front = ui.$('[data-view="front"]');
+    if (front) front.hidden = s.view !== '3d';
+    controls.enableRotate = !s.locked;
     root.dataset.mode = s.mode === 'quiz' ? 'quiz' : 'explore';
     for (const b of ui.$$('[data-mode]')) {
       const on = b.dataset.mode === root.dataset.mode;
@@ -1275,7 +1278,6 @@ export function createApp(root, options = {}) {
   });
 
   // ── start ───────────────────────────────────────────────────────────────────
-  controls.enableRotate = s.view === '3d';
   root.classList.toggle('wn-compact', stage.height < 300 || stage.width < 360);
   flyCam(viewPose(VIEW_DIRS[s.view]), 0);
   // the first time (with the pointers on) the zoom starts at the whole atom and goes into the nucleus
