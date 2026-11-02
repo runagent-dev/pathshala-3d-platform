@@ -5,7 +5,9 @@
 import * as THREE from 'three';
 import { createArrow } from './arrow.js';
 import { createPerson } from './person.js';
+import { mergeStatic } from './merge.js';
 import { V, box, canvasTexture, castShadows, glowSpot, groundPatch, hitBox, mat, wheel } from './parts.js';
+import { corridorSetting } from './setting.js';
 
 const CARTON = { w: 0.66, h: 0.78, d: 0.58 };
 const DECK_Y = 0.17; // top of the trolley's deck
@@ -13,7 +15,7 @@ const HAND_Y = 0.82;
 const PERSON_BACK = 0.52; // the student's hips are this far behind the carton's back face
 const LEAN = 0.42; // radians, pushing
 
-export function createPushScene({ color }) {
+export function createPushScene({ color, setting = true }) {
   const root = new THREE.Group();
   root.name = 'PushScene';
   const model = new THREE.Group();
@@ -55,28 +57,34 @@ export function createPushScene({ color }) {
   const person = createPerson();
   model.add(person.root);
 
-  const floor = groundPatch(6.5, 3.2, {
-    color: '#eceef0',
-    draw: (ctx, w, h) => {
-      ctx.strokeStyle = 'rgba(140,150,160,0.22)';
-      ctx.lineWidth = 2;
-      for (let x = 0; x <= w; x += w / 13) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, h);
-        ctx.stroke();
-      }
-      for (let y = 0; y <= h; y += h / 6.4) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(w, y);
-        ctx.stroke();
-      }
-    },
-  });
-  floor.position.set(0.25, 0, 0);
-  root.add(floor);
+  // a school corridor (or, on a transparent page, a patch of floor that fades out)
+  const corridor = setting ? corridorSetting() : null;
+  if (corridor) root.add(corridor.root);
+  else {
+    const floor = groundPatch(6.5, 3.2, {
+      color: '#eceef0',
+      draw: (ctx, w, h) => {
+        ctx.strokeStyle = 'rgba(140,150,160,0.22)';
+        ctx.lineWidth = 2;
+        for (let x = 0; x <= w; x += w / 13) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, h);
+          ctx.stroke();
+        }
+        for (let y = 0; y <= h; y += h / 6.4) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(w, y);
+          ctx.stroke();
+        }
+      },
+    });
+    floor.position.set(0.25, 0, 0);
+    root.add(floor);
+  }
   castShadows(model);
+  mergeStatic(trolley, { keep: wheels }); // the deck, the castors' forks, the carton and its tape: one mesh each
 
   const hits = [hitBox(1.1, 1.2, 0.9, 0, 0.55, 0, trolley), hitBox(0.7, 1.7, 0.6, 0, 0.85, 0, person.root)];
   const arrow = createArrow({ color, radius: 0.016, head: 0.1, headRadius: 0.042 });
@@ -124,6 +132,7 @@ export function createPushScene({ color }) {
   return {
     id: 'push',
     root,
+    background: corridor?.background ?? null,
     model,
     hits,
     arrow,
