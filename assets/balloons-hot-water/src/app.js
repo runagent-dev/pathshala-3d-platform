@@ -186,7 +186,7 @@ export function createApp(root, options = {}) {
   const tPoint = new THREE.Vector3(G.W / 2 - 1, G.H, 0);
   const labelHtml = (which, x) => {
     const pct = which === 'air' ? x.air.pct : x.water.pct;
-    const second = s.hidePct ? '?' : s.Tw > T0 + 0.5 ? t('lab_pct', { p: pct }) : '';
+    const second = s.hidePct ? '?' : s.Tw > T0 + 0.5 ? t('lab_pct', { p: pct }) : `${t.num(V0)} ${t('u_mL')}`;
     return `<span class="bh-l-${which}">${t(`lab_${which}`)}</span><br><span class="bh-l-pct">${second || '&nbsp;'}</span>`;
   };
   const x0 = readings(T0);
