@@ -123,3 +123,10 @@ says a position could not be given by the distance alone, its direction was need
 - বেগ and বল are named as vectors (the book does), but they are only introduced in the next chapter.
 - Units: distances use the Latin symbol m as chapter 2 does (page 39 writes km; docs/book-notes.md), the words round
   them Bangla ("২৫ m দূরে", "২৫ m, উত্তর-পূর্ব দিকে"), with a no-break space so a number never parts from its unit.
+
+## Declutter pass (2026-11, 0.5.0)
+- The green grass, the pond and the trees are gone: the path lies on soft warm sand; the second part (equal vectors)
+  is on a pale blue-grey instead of dark navy.
+- No words on the 3D view but the labels: the heading (একটি পথ, দুই রাশি) and the note (symbolic trees and pond) are
+  gone; the compass moved to the bottom right, clear of the start and end labels.
+- The old figure rule that set the shell's columns on wide frames is gone (the kit puts the panel beside the 3D).

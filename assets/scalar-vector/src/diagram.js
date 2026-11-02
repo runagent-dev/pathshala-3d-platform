@@ -1,9 +1,9 @@
-// A quiet illustrated map: one winding path, one straight vector, a pond and a few trees. One illustrated walker follows the route.
+// A quiet illustrated map on soft sand: one winding path and one straight vector. One illustrated walker follows the route.
 import * as THREE from 'three';
 import { JOURNEY, pointAt } from './journey.js';
 import { createWalker } from './walker.js';
 
-export const COLORS = { grass: '#35a06c', scalar: '#1452a0', vector: '#d84f42', equal: '#18846c', other: '#7351bd', ink: '#203e35' };
+export const COLORS = { grass: '#e2d5bc', scalar: '#1452a0', vector: '#d84f42', equal: '#18846c', other: '#7351bd', ink: '#203e35' };
 export const point3 = ([x, y], height = 0.5) => new THREE.Vector3(x, height, -y);
 const paint = (color, options = {}) => new THREE.MeshBasicMaterial({ color, toneMapped: false, ...options });
 
@@ -69,40 +69,6 @@ function placeArrow(root, tail, length, angle, color) {
   root.rotation.y = THREE.MathUtils.degToRad(angle);
 }
 
-function tree(x, y, size) {
-  const group = new THREE.Group();
-  const shade = disk(2.1, '#4b9264', 0.02);
-  shade.scale.set(1, 1, 0.55);
-  shade.position.z = 0.8;
-  group.add(shade);
-  const shape = new THREE.Shape();
-  const outline = [
-    [0, 3.1],
-    [-0.9, 1.5],
-    [-0.5, 1.5],
-    [-1.5, 0],
-    [-0.9, 0],
-    [-2, -1.6],
-    [2, -1.6],
-    [0.9, 0],
-    [1.5, 0],
-    [0.5, 1.5],
-    [0.9, 1.5],
-  ];
-  outline.forEach(([px, py], i) => (i ? shape.lineTo(px, py) : shape.moveTo(px, py)));
-  shape.closePath();
-  group.add(shapeMesh(shape, '#145f48', 0.11));
-  const inside = shapeMesh(shape, '#249d60', 0.13);
-  inside.scale.set(0.79, 1, 0.79);
-  group.add(inside);
-  const trunk = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.12, 1.2), paint('#7e5737'));
-  trunk.position.set(0, 0.1, 1.8);
-  group.add(trunk);
-  group.position.copy(point3([x, y], 0));
-  group.scale.setScalar(size);
-  return group;
-}
-
 export function createDiagram() {
   const root = new THREE.Group();
   root.name = 'ScalarVectorDiagram';
@@ -112,25 +78,8 @@ export function createDiagram() {
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(62, 58).rotateX(-Math.PI / 2), paint(COLORS.grass));
   map.add(ground);
 
-  const pond = new THREE.Shape();
-  pond.moveTo(-4.9, -1);
-  pond.bezierCurveTo(-5.7, 3, -1, 5.8, 2.5, 3.9);
-  pond.bezierCurveTo(6.3, 1.6, 5.6, -3.9, 2, -4.9);
-  pond.bezierCurveTo(-1, -6.2, -4, -4.2, -4.9, -1);
-  const bank = shapeMesh(pond, '#238c77', 0.03);
-  bank.position.add(point3([7, -5], 0));
-  bank.scale.set(1.12, 1, 1.12);
-  const water = shapeMesh(pond, '#22bbdf', 0.06);
-  water.position.add(point3([7, -5], 0));
-  map.add(bank, water);
-  for (const [x, y, size] of [
-    [-7, 0, 1],
-    [-2, 10, 0.9],
-    [12, 3, 0.8],
-  ])
-    map.add(tree(x, y, size));
-
-  map.add(ribbon(JOURNEY.points, 2.1, '#89ad79', 0.1));
+  // nothing else on the map (no pond or trees): the path, the walker and the arrows are the things to look at
+  map.add(ribbon(JOURNEY.points, 2.1, '#c3ad86', 0.1));
   map.add(ribbon(JOURNEY.points, 1.7, '#fff3d8', 0.12));
   for (let d = 0; d < JOURNEY.length - 0.3; d += 2.1)
     map.add(ribbon([pointAt(d / JOURNEY.length), pointAt(Math.min(JOURNEY.length, d + 1.15) / JOURNEY.length)], 0.3, COLORS.scalar, 0.16));
