@@ -42,7 +42,7 @@ test('torricelli-barometer: the one button fills, turns over and releases the tu
   expect((await fig.call('get')).phase).toBe('dipped');
 
   await act.click();
-  await fig.advance(2800);
+  await fig.advance(4200); // the thumb, the camera coming close, the fall, a pause
   expect(await fig.call('get')).toMatchObject({ phase: 'settled', column: 76, found: true, next: 'again' });
 
   await act.click();
