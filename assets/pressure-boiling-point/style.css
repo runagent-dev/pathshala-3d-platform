@@ -1,0 +1,68 @@
+/* Pressure and boiling point: the page, the colours that carry meaning (the pressure red as the arrows, the boiling
+   point teal as its label), the three readings under the action, the note under the rule, labels and the test's
+   answers. The rest of the panel is the kit's clean sheet (../../shared/lib/student/student.css). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.pb { --c-p: #c92a2a; --c-bp: #0b7285; --c-cook: #5f3dc4; }
+.pb .pvc-outcome { font-size: 15px; line-height: 1.6; }
+.pb .pvc-outcome b { font-size: 1.2em; color: var(--c-bp); }
+.pb .pvc-rule { font-size: 14.5px; line-height: 1.45; }
+
+/* ── the readings: three rows (a word, its value) ── */
+.pb-read { display: flex; flex-direction: column; gap: 2px; }
+.pb-row { --c: var(--ink-3); display: flex; align-items: baseline; gap: 6px; min-width: 0; padding: 3px 0 4px; border-bottom: 1.5px solid color-mix(in srgb, var(--c) 30%, #fff); opacity: 0.55; transition: opacity 0.3s; }
+.pb-row.on { opacity: 1; }
+.pb-row.k-p.on { --c: var(--c-p); }
+.pb-row.k-bp.on { --c: var(--c-bp); }
+.pb-row.k-cook.on { --c: var(--c-cook); }
+.pb-dot { flex: none; align-self: center; width: 10px; height: 10px; border-radius: 50%; background: var(--c); }
+.pb-k { font-size: 13px; color: var(--ink-2); white-space: nowrap; }
+.pb-v { margin-left: auto; font-size: 15.5px; font-weight: 700; white-space: nowrap; color: var(--c); font-variant-numeric: tabular-nums; }
+
+.pb-note { margin: 0; min-height: 2.8em; font-size: 12.5px; line-height: 1.4; color: var(--ink-3); }
+.pb-note:empty { visibility: hidden; }
+
+/* labels on the picture: the words in their colour, in a white box with a coloured edge */
+.pvc-anno-force { --c: var(--ink); padding: 0 6px; border: 1.5px solid var(--c); border-radius: 5px; background: rgba(255, 255, 255, 0.95); color: var(--c); font-size: 13px; font-weight: 700; line-height: 1.5; white-space: nowrap; transition: none; }
+.pvc-anno-lines .k-force { stroke: #2b2f36; stroke-width: 1.5; }
+
+/* the test: answers in words, room kept for the question and the worked answer */
+.pb .pvc-q-options { grid-template-columns: 1fr 1fr; }
+.pb .pvc-opt { height: auto; min-height: 50px; padding: 5px 8px; font-size: 14px; line-height: 1.3; }
+.pb-opt { display: block; white-space: normal; text-align: center; }
+.pb .pvc-q-text { font-size: 15px; }
+.pb .pvc-q-feedback { font-size: 13.5px; }
+
+/* phones */
+@container pvc (max-width: 420px) {
+  .pb-k { font-size: 12px; }
+  .pb-v { font-size: 14.5px; }
+  .pb .pvc-rule { font-size: 13.5px; --pvc-rule-lines: 3; }
+  .pb .pvc-outcome { display: none; }
+  .pb-note { display: none; }
+  .pb .pvc-q-text { --pvc-q-text-min: 2lh; font-size: 14px; }
+  .pb .pvc-q-feedback { --pvc-q-feedback-min: 4lh; font-size: 12.5px; line-height: 1.4; }
+  .pb .pvc-opt { min-height: 42px; font-size: 12.5px; padding: 3px 6px; }
+}
+/* phones that are not tall */
+@container pvc (max-width: 560px) and (max-height: 600px) {
+  .pb-row { padding: 1px 0 2px; }
+  .pb .pvc-rule { font-size: 12.5px; line-height: 1.35; --pvc-rule-lines: 2; }
+  .pb .pvc-q-text { font-size: 13.5px; }
+  .pb .pvc-opt { font-size: 12.5px; min-height: 38px; }
+  .pb .pvc-q-feedback { font-size: 12.5px; }
+}
+/* short and wide (phone held sideways): the panel is beside the scene */
+@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
+  .pb-row { padding: 1px 0 2px; }
+  .pb-k { font-size: 12px; }
+  .pb-v { font-size: 14px; }
+  .pb-note { display: none; }
+  .pb .pvc-outcome { font-size: 13px; line-height: 1.45; }
+  .pb .pvc-rule { font-size: 12.5px; line-height: 1.35; }
+  .pb .pvc-q-text { font-size: 13.5px; }
+  .pb .pvc-opt { font-size: 12.5px; min-height: 42px; padding: 3px 6px; }
+  .pb .pvc-q-feedback { font-size: 12.5px; }
+}

@@ -1,0 +1,69 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "pressure-boiling-point",
+  "title": "Pressure and boiling point: mountain and pressure cooker (চাপের ফলে স্ফুটনাঙ্ক)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 182,
+  "topic": "6.7",
+  "placement": "Book page 182, topic 6.7 (গলনাঙ্ক এবং স্ফুটনাঙ্কের ওপর চাপের প্রভাব): beside the paragraphs 'চাপের কারণে স্ফুটনাঙ্কের পরিবর্তন হয়…' (cooking high on a mountain, the pressure cooker, and the gas liquefied under pressure), which have no picture of their own.",
+  "order": 2,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "Pressure and the boiling point (page 182, topic 6.7), the book's own examples in one setting: a pot of water you can see into, on a stove, with a thermometer standing in it (100° C marked). A row of three words picks the place: an open pot (the usual air pressure), high on a mountain (low pressure: climbers' food takes longer to cook) and a pressure cooker (steam shut in raises the pressure: cooking is quicker). Red arrows press down on the water, short on the mountain and long in the cooker. One big button lights the fire; the water heats, bubbles, and the thermometer's red thread stops at that case's boiling point. The panel gives the pressure on the pot, the boiling point and the cooking time, and the rule in the book's words ('চাপ কম হলে স্ফুটনাঙ্ক কমে যায়, চাপ বেশি হলে স্ফুটনাঙ্ক বেড়ে যায়'), with the book's last sentence about gases turned to liquid by pressure. The book gives no temperatures: 90 and 120 are round figures marked 'about'. Test tab: 5 questions with a note for every wrong choice. Phone-first, Bangla and English.",
+  "tags": ["boiling point", "pressure", "pressure cooker", "mountain", "thermometer", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "case",
+      "label": "Where the water boils",
+      "type": "select",
+      "options": [["plain", "open pot"], ["mountain", "high on a mountain"], ["cooker", "pressure cooker"]],
+      "default": "plain"
+    },
+    { "name": "boil", "label": "Start with the water boiling", "type": "boolean", "default": "0" },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring round the pot pulses", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "case": "mountain", "animate": false } },
+    { "name": "set", "payload": { "case": "cooker", "boil": true, "animate": false } },
+    { "name": "set", "payload": { "view": "3d", "animate": false } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": { "params": { "coach": "0", "case": "cooker", "boil": "1" } },
+    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "case": "cooker", "animate": false } }] }]
+  }
+}
