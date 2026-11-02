@@ -1,0 +1,71 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "heat-molecules",
+  "title": "Heat and temperature: molecules of a solid, a liquid and a gas (তাপ ও তাপমাত্রা)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 161,
+  "topic": "6.1",
+  "placement": "Book page 161, topic 6.1 (তাপ ও তাপমাত্রা): the page has no picture, so this goes next to the paragraphs that ask the student to imagine the molecules ('আমরা যদি আণবিক পর্যায়ে দেখতে পেতাম…': a solid's molecules shake in their places, a liquid's roam among each other, a gas's are free), after the opening paragraph that names তাপশক্তি.",
+  "maintainers": ["RadeenXALNW"],
+  "units": "cm",
+  "description": "Heat and temperature (page 161, topic 6.1) on a lab bench with a slate-blue top in front of a warm beige wall: 60 glossy molecules in a glass container on a steel stand over a row of burner flames, with a thermometer beside it. One button, তাপ দাও, gives heat one step at a time (six steps): a solid's molecules shake about their fixed places, shake more when heated, break free of the forces between them into a liquid (darting about among each other, faster when hotter), then are free of the molecular bonds as a gas, faster still; the molecules go from cobalt blue to vermilion as they warm and the thermometer rises. The words কঠিন, তরল and গ্যাস jump to a state. The panel gives the book's sentence for each step, the formula (তাপশক্তি = অণুগুলোর সম্মিলিত গতিশক্তি) and the rule (তাপ এক ধরনের শক্তি; তাপমাত্রা বলে পদার্থের তাপীয় অবস্থা). Test tab: 5 questions (what the molecules do in a solid, a liquid and a gas shown in the picture; what more heat does to their speed and kinetic energy; the name of the energy from the molecules' motion), every wrong choice a real mistake with its own note. Phone-first, Bangla and English. The units (joule, calorie) are in the sister figure.",
+  "tags": ["heat", "temperature", "molecules", "kinetic energy", "solid", "liquid", "gas", "particles", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "step",
+      "label": "Starting step of the heat button",
+      "type": "number",
+      "default": "0",
+      "placeholder": "0 to 5",
+      "help": "0 and 1 solid, 2 and 3 liquid, 4 and 5 gas"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    {
+      "name": "motion",
+      "label": "The molecules move (off: drawn settled and still)",
+      "type": "boolean",
+      "default": "1"
+    },
+    { "name": "coach", "label": "The ring on what to tap pulses", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "step": 3 } },
+    { "name": "set", "payload": { "state": "gas" } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "heat", "view", "practice-start", "practice-result", "practice-end"],
+  "export": { "poster": { "params": { "coach": "0", "step": "3", "motion": "0" } }, "glb": [{ "name": "default" }] }
+}
