@@ -47,7 +47,13 @@ export function createApp(root, options = {}) {
   root.tabIndex = 0;
   const term = (cls, label) => `<span class="pvc-t ${cls}"><b>0</b><small>${t(label)}</small></span>`;
   const ui = buildStudentShell(root, t, {
+    layout: 'side',
     learn: `
+          <div class="sw-acts">
+            <button class="pvc-btn primary" data-act="startstop"><span></span></button>
+            <button class="pvc-btn" data-act="reset">${t('act_reset')}</button>
+            <button class="pvc-btn" data-act="lamp"><span></span></button>
+          </div>
           <div class="pvc-learn-main">
             <div class="pvc-result"><span class="k">${t('reading')}</span><span class="v">0</span><span class="u">${t('unit_s')}</span></div>
             <div class="pvc-sum sw-sum">${term('min', 'min_long')}<i>× ${N('60')} +</i>${term('sec', 'sec_long')}<i>=</i>${term('tot', 'total_long')}</div>
@@ -55,17 +61,27 @@ export function createApp(root, options = {}) {
           <p class="pvc-learn-extra sw-extra"></p>
           <div class="pvc-learn-foot">
             <span class="pvc-status"><i></i><span></span></span>
-            <div class="sw-acts">
-              <button class="pvc-btn primary" data-act="startstop"><span></span></button>
-              <button class="pvc-btn" data-act="reset">${t('act_reset')}</button>
-              <button class="pvc-btn" data-act="lamp"><span></span></button>
-            </div>
           </div>`,
   });
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 26, near: 5, far: 6000, environment: 'studio-light' });
   const { camera, controls, scene } = stage;
+  // a simple coloured setting: a soft sky-to-sand backdrop (never the white page)
+  if (o.bg !== 'transparent') {
+    const c = document.createElement('canvas');
+    c.width = 4;
+    c.height = 256;
+    const g2 = /** @type {CanvasRenderingContext2D} */ (c.getContext('2d'));
+    const grad = g2.createLinearGradient(0, 0, 0, 256);
+    grad.addColorStop(0, '#c9dbe8');
+    grad.addColorStop(1, '#efe3d0');
+    g2.fillStyle = grad;
+    g2.fillRect(0, 0, 4, 256);
+    const sky = new THREE.CanvasTexture(c);
+    sky.colorSpace = THREE.SRGBColorSpace;
+    scene.background = sky;
+  }
   controls.minDistance = 80;
   controls.maxDistance = 1500;
   const M = createMaterials(stage.renderer);
@@ -384,13 +400,16 @@ export function createApp(root, options = {}) {
   }
   function setView(view, { animate = true } = {}) {
     s.view = view === '3d' ? '3d' : 'front';
-    controls.enableRotate = s.view === '3d';
     s.userMovedCamera = false;
     syncUI();
     emit('view', { view: s.view });
     return flyTo(viewPose(s.view), animate ? 0.8 : 0);
   }
   controls.addEventListener('start', () => {
+    if (s.view !== '3d') {
+      s.view = '3d';
+      syncUI();
+    }
     s.userMovedCamera = true;
     tweener.cancel('camera');
   });
@@ -661,7 +680,8 @@ export function createApp(root, options = {}) {
 
   // ── buttons, keys ───────────────────────────────────────────────────────────
   function syncUI() {
-    for (const b of ui.$$('[data-view]')) b.classList.toggle('on', b.dataset.view === s.view);
+    const front = ui.$('[data-view="front"]');
+    if (front) front.hidden = s.view !== '3d';
     root.dataset.mode = s.mode === 'quiz' ? 'quiz' : 'explore';
     for (const b of ui.$$('[data-mode]')) {
       const on = b.dataset.mode === root.dataset.mode;

@@ -1,6 +1,7 @@
-// Small pieces the scenes share: materials by colour, a tube between two points, a wheel, a ground patch with a
-// soft edge (so each scene stands on the white page), a canvas texture, an invisible tap target, and the glowing
-// contact patches (a spot where two bodies touch at a point, a flat patch under a body on a floor).
+// Small pieces the scenes share: materials by colour, a wood material, a tube between two points, a wheel, a ground
+// patch with a soft edge (so a scene stands on a transparent page, bg=transparent; otherwise each has its setting,
+// setting.js), a canvas texture, an invisible tap target, and the glowing contact patches (a spot where two bodies
+// touch at a point, a flat patch under a body on a floor).
 import * as THREE from 'three';
 
 const UP = new THREE.Vector3(0, 1, 0);
@@ -11,6 +12,33 @@ export function mat(color, { roughness = 0.7, metalness = 0, name } = {}) {
   const key = `${color}|${roughness}|${metalness}`;
   if (!cache.has(key)) cache.set(key, new THREE.MeshStandardMaterial({ name: name || `Paint ${color}`, color, roughness, metalness }));
   return cache.get(key);
+}
+
+let wood = null;
+/** Plain wood (the crate's battens, the cart): one material and one 256 px canvas for the figure. */
+export function woodMaterial() {
+  if (!wood) {
+    const map = canvasTexture(256, 256, (ctx, w, h) => {
+      ctx.fillStyle = '#a0703f';
+      ctx.fillRect(0, 0, w, h);
+      let seed = 7;
+      const r = () => {
+        seed = (seed * 16807) % 2147483647;
+        return seed / 2147483647;
+      };
+      for (let i = 0; i < 60; i++) {
+        const y = r() * h;
+        ctx.strokeStyle = r() < 0.5 ? `rgba(70,40,18,${0.1 + r() * 0.15})` : `rgba(205,160,110,${0.08 + r() * 0.1})`;
+        ctx.lineWidth = 1 + r() * 2.5;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.bezierCurveTo(w * 0.35, y + (r() - 0.5) * 8, w * 0.65, y + (r() - 0.5) * 8, w, y);
+        ctx.stroke();
+      }
+    });
+    wood = new THREE.MeshStandardMaterial({ name: 'Wood', map, roughness: 0.72, metalness: 0 });
+  }
+  return wood;
 }
 
 const unitTube = new THREE.CylinderGeometry(1, 1, 1, 12);
