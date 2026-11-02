@@ -97,28 +97,28 @@ export function createApp(root, options = {}) {
   const row = (id, name) =>
     `<tr data-row="${id}"><th scope="row">${t(name)}</th><td class="c-p"><b data-v="p"></b></td><td class="op">=</td><td class="c-m"><b data-v="m"></b></td><td class="op">×</td><td class="c-v"><b data-v="v"></b></td></tr>`;
   const ui = buildStudentShell(root, t, {
+    layout: 'side',
     learnAlign: 'start',
     learn: `
-          <div class="mo-top">
-            <p class="mo-idea"><span>${t('idea')}</span><span class="mo-formula">${t('formula')}</span></p>
+          <div class="mo-choice">
+            <span class="mo-k">${t('speed')}</span>
             <div class="mo-step" role="group" aria-label="${t('speed')}">
               <button class="pvc-btn" data-act="slower" aria-label="${t('speed_down')}">${ICONS.minus}</button>
               <b class="mo-step-v" aria-live="polite"></b>
               <button class="pvc-btn" data-act="faster" aria-label="${t('speed_up')}">${ICONS.plus}</button>
             </div>
           </div>
+          <div class="mo-acts">
+            <button class="pvc-btn primary" data-act="play">${ICONS.play}<span></span></button>
+            <button class="pvc-btn" data-act="flip">${FLIP_ICON}<span>${t('act_flip')}</span></button>
+          </div>
           <table class="mo-tab">
             <thead><tr><td class="mo-cap"><span>${t('at_hit')}</span></td><th class="c-p">${t('col_p')}<small>${t('u_p')}</small></th><td class="op">=</td><th class="c-m">${t('col_m')}<small>${t('u_m')}</small></th><td class="op">×</td><th class="c-v">${t('col_v')}<small>${t('u_v')}</small></th></tr></thead>
             <tbody>${row('far', 'name_truck')}${row('near', 'name_bike')}</tbody>
           </table>
+          <p class="mo-idea"><span>${t('idea')}</span><span class="mo-formula">${t('formula')}</span></p>
           <p class="mo-say"></p>
-          <div class="mo-foot">
-            <div class="mo-acts">
-              <button class="pvc-btn" data-act="flip">${FLIP_ICON}<span>${t('act_flip')}</span></button>
-              <button class="pvc-btn primary" data-act="play">${ICONS.play}<span></span></button>
-            </div>
-            <p class="mo-box"><span>${t('box_unit')}</span><span class="mo-dot" aria-hidden="true">·</span><span>${t('box_dim')}</span></p>
-          </div>`,
+          <p class="mo-box"><span>${t('box_unit')}</span><span class="mo-dot" aria-hidden="true">·</span><span>${t('box_dim')}</span></p>`,
   });
   const $ = ui.$;
   const el = {
@@ -934,8 +934,8 @@ export function createApp(root, options = {}) {
   }
   function setView(view, { animate = true } = {}) {
     s.view = view === '3d' ? '3d' : 'front';
-    controls.enableRotate = s.view === '3d';
-    controls.enableZoom = s.view === '3d';
+    controls.enableRotate = !s.locked; // the test keeps the view still
+    controls.enableZoom = true;
     controls.maxDistance = 2000; // the 3D view's own limit comes once the camera is there
     s.userMovedCamera = false;
     syncUI();
@@ -960,6 +960,18 @@ export function createApp(root, options = {}) {
   controls.addEventListener('start', () => {
     s.userMovedCamera = true;
     tweener.cancel('camera');
+    turning = true;
+  });
+  // the view starts from the front; a drag turns it (the camera really moves: a tap never does), and then the "front"
+  // button appears to come back
+  let turning = false;
+  controls.addEventListener('end', () => {
+    turning = false;
+  });
+  controls.addEventListener('change', () => {
+    if (!turning || s.view === '3d') return;
+    s.view = '3d';
+    syncUI();
   });
   stage.onResize(() => {
     if (s.view === 'front') {
@@ -1312,7 +1324,9 @@ export function createApp(root, options = {}) {
         makePlans();
         showRunAt(0);
         syncUI();
-        frameNow();
+        frameNow().then(() => {
+          controls.enableRotate = controls.enableZoom = true;
+        });
         emitChange();
       },
       prepare,
@@ -1364,7 +1378,9 @@ export function createApp(root, options = {}) {
 
   // ── buttons, keys ───────────────────────────────────────────────────────────
   function syncUI() {
-    for (const b of ui.$$('[data-view]')) b.classList.toggle('on', b.dataset.view === s.view);
+    const front = ui.$('[data-view="front"]');
+    if (front) front.hidden = s.view !== '3d';
+    if (!s.locked) controls.enableRotate = true; // the test keeps the view still; afterwards a drag turns it again
     root.dataset.mode = s.mode === 'quiz' ? 'quiz' : 'explore';
     for (const b of ui.$$('[data-mode]')) {
       const on = b.dataset.mode === root.dataset.mode;

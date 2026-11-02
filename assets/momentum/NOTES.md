@@ -126,3 +126,13 @@ Against `docs/agents/polish-pass.md`, version 0.2.0.
 - Words the figure adds that aren't on the page: আরোহীসহ, দৌড়বিদ, উল্টো দিকে, দুমড়ে, টোল খেয়ে, সরেছে প্রায়, প্রায়
   সরেনি, ব্রেক কষে, আঘাতের মুহূর্তে, মান. Please check.
 - The Bangla wording needs a person's check against the book.
+
+## Declutter and side panel (0.3.0)
+Only the main objects: the row of shops (façade, awnings, roofs) behind the far footpath is now a low sand-coloured
+wall, and the herringbone brick strip is plain paving; the truck, the bicycle, the two parked cars they run into and
+the road stay. The panel reads in the order of every lab: the velocity stepper, the actions (চালাও, then উল্টো দিকে
+at the right), the table p⃗ = m × v⃗, the formula, the book's words and the book's box. The rules for a wide panel
+under the view and for the old sideways layout are gone (kit 1.5.0 puts the panel beside the 3D); in the side panel
+the table's heads and names wrap so nothing is cut off. On 390×700 the 3D keeps 55 %.
+No সামনে / ঘুরিয়ে দেখো buttons (kit): the lab starts from the front, a drag turns it, and the small "front" icon
+then brings it back.
