@@ -45,3 +45,8 @@ Then "আবার দেখো". The quiet icon goes back to the start.
 ## Open questions
 - Should the boiling paragraphs and the gas sentence live in this figure's panel? They have no picture, so they are in
   `pressure-boiling-point`.
+
+## Polish pass 0.2.0
+- The ice is now a rounded, lumpy block with a wavy top and a milky core (like the pale, uneven block of চিত্র ৬.০৯),
+  instead of a sharp glass box; the table has end aprons and low stretchers between its legs as the book's table.
+- Bangla strings re-checked against pages 181–182: no change needed.
