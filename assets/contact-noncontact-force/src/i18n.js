@@ -79,9 +79,10 @@ export const STRINGS = {
     eff_change: 'এখানে বলের প্রয়োগে <b>গতিশীল বস্তুর বেগের পরিবর্তন</b> হচ্ছে: বেগ কমছে।',
     eff_both: 'এখানে <b>স্থির বস্তু চলতে শুরু করল</b>, তার বেগও বাড়ছে।',
 
-    // in the 3D view: the tag at the contact patch or the gap, the force's name beside its arrow, the time note
+    // in the 3D view: the tag at the contact patch or the gap, the force's name beside its arrow; in the panel's
+    // action row: how time is shown
     tag_contact: 'ছুঁয়ে আছে: স্পর্শ বল',
-    tag_noncontact: 'ছোঁয়নি, তবু টানে: অস্পর্শ বল',
+    tag_noncontact: 'ছোঁয়নি: অস্পর্শ বল',
     tag_gap: 'ফাঁক {d} cm',
     f_crane: 'ক্রেনের টান',
     f_push: 'ধাক্কা',
@@ -92,7 +93,7 @@ export const STRINGS = {
     f_parachute: 'বাতাসের বাধা',
     f_comb: 'চিরুনির টান',
     f_this: 'এই বল',
-    note_slow: 'সময় {k} গুণ ধীর করে দেখানো',
+    note_slow: 'সময় {k} গুণ ধীর',
     note_real: 'আসল সময়ে',
     note_held: 'থামিয়ে দেখানো',
     q_locked: 'পরীক্ষার সময় উদাহরণ বদলানো যায় না।',
@@ -234,7 +235,7 @@ export const STRINGS = {
     eff_both: 'Here <b>a body at rest starts moving</b>, and goes faster and faster.',
 
     tag_contact: 'Touching: contact force',
-    tag_noncontact: 'Not touching, still pulls: non-contact force',
+    tag_noncontact: 'Not touching: non-contact force',
     tag_gap: 'Gap {d} cm',
     f_crane: 'Pull of the crane',
     f_push: 'Push',
@@ -245,7 +246,7 @@ export const STRINGS = {
     f_parachute: 'Air resistance',
     f_comb: 'Pull of the comb',
     f_this: 'This force',
-    note_slow: 'Shown {k} times slower',
+    note_slow: '{k} times slower',
     note_real: 'Real time',
     note_held: 'Paused to show',
     q_locked: 'The example cannot be changed during the test.',

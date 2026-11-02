@@ -140,23 +140,25 @@ export function createApp(root, options = {}) {
     `<div class="cm-row ${kind}" role="row"><span class="cm-name"><b>${t(`row_${kind}`)}</b><small>${t(kind === 'p' ? 'u_p' : 'u_j_long')}</small></span>` +
     `${term(`${kind}_u1`)}<i>+</i>${term(`${kind}_u2`)}<i class="eq">=</i>${term(`${kind}_v1`)}<i>+</i>${term(`${kind}_v2`)}</div>`;
   const ui = buildStudentShell(root, t, {
+    layout: 'side',
     learnAlign: 'start',
     learn: `
           <div class="cm-presets" role="radiogroup" aria-label="${t('presets')}">${PRESET_IDS.map(
             (id) =>
               `<button role="radio" data-preset="${id}" aria-label="${presetAria(id)}">${pictogram(PRESETS[id])}<span>${t(`preset_${id}`)}</span></button>`,
           ).join('')}</div>
+          <div class="cm-foot">
+            <button class="pvc-btn primary cm-play" data-act="play"><span class="ic"></span><span class="lb"></span></button>
+            <div class="cm-scrub"><input type="range" min="0" max="1000" step="1" value="0" aria-label="${t('scrub')}" /></div>
+          </div>
+          <canvas class="cm-stripcv" aria-hidden="true"></canvas>
           <div class="cm-eqs" role="table">
             <div class="cm-head" role="row"><span class="b">${t('col_before')}</span><span class="a">${t('col_after')}</span></div>
             ${row('p')}
             ${row('k')}
           </div>
           <p class="cm-assume">${t('say_assume')}</p>
-          <p class="cm-say" aria-live="polite"></p>
-          <div class="cm-foot">
-            <button class="pvc-btn primary cm-play" data-act="play"><span class="ic"></span><span class="lb"></span></button>
-            <div class="cm-scrub"><input type="range" min="0" max="1000" step="1" value="0" aria-label="${t('scrub')}" /></div>
-          </div>`,
+          <p class="cm-say" aria-live="polite"></p>`,
   });
   const note = document.createElement('div');
   note.className = 'cm-note';
@@ -188,6 +190,20 @@ export function createApp(root, options = {}) {
   controls.minDistance = 0.8;
   controls.maxDistance = 12;
   controls.enablePan = false;
+  // a soft blue-grey backdrop, lighter at the top (never the white page)
+  if (o.bg !== 'transparent') {
+    const bc = document.createElement('canvas');
+    bc.width = 4;
+    bc.height = 256;
+    const bctx = bc.getContext('2d');
+    const bg = bctx.createLinearGradient(0, 0, 0, 256);
+    bg.addColorStop(0, '#c7d6e4');
+    bg.addColorStop(1, '#93a9bf');
+    bctx.fillStyle = bg;
+    bctx.fillRect(0, 0, 4, 256);
+    scene.background = new THREE.CanvasTexture(bc);
+    scene.background.colorSpace = THREE.SRGBColorSpace;
+  }
   const world = new THREE.Group();
   world.name = 'Collision';
   scene.add(world);
@@ -390,17 +406,12 @@ export function createApp(root, options = {}) {
     }
   }
 
-  // ── layout: the 3D picture above, the momentum strip below it ───────────────
-  const L = { strip: { left: 0, top: 0, right: 0, bottom: 0 }, stripH: 86 };
+  // ── layout: the 3D picture fills the view; the momentum strip is drawn in the panel (stripCanvas) ─────────
+  const L = { strip: { left: 0, top: 0, right: 0, bottom: 0 }, stripH: 0 };
   function layout() {
     const W = stage.width;
     const H = stage.height;
-    L.stripH = stripHeight(W, H);
-    const w = Math.min(W - 16, 640);
-    const x = (W - w) / 2;
-    const y = H - L.stripH - 8;
-    L.box = { x, y, w, h: L.stripH };
-    L.strip = { left: x, top: y, right: x + w, bottom: y + L.stripH };
+    L.strip = { left: W / 2, top: H, right: W / 2, bottom: H };
   }
 
   function viewPose(v = s.view) {
@@ -451,8 +462,8 @@ export function createApp(root, options = {}) {
   }
   function setView(v, { animate = true } = {}) {
     s.view = v === '3d' ? '3d' : 'front';
-    controls.enableRotate = s.view === '3d';
-    controls.enableZoom = s.view === '3d'; // in the front view a pinch never moves the picture
+    controls.enableRotate = !s.locked; // the test keeps the view still
+    controls.enableZoom = true;
     s.userMovedCamera = false;
     syncUI();
     emit('view', { view: s.view });
@@ -461,6 +472,18 @@ export function createApp(root, options = {}) {
   controls.addEventListener('start', () => {
     s.userMovedCamera = true;
     tweener.cancel('camera');
+    turning = true;
+  });
+  // the view starts from the front; a drag turns it (the camera really moves: a tap never does), and then the "front"
+  // button appears to come back
+  let turning = false;
+  controls.addEventListener('end', () => {
+    turning = false;
+  });
+  controls.addEventListener('change', () => {
+    if (!turning || s.view === '3d') return;
+    s.view = '3d';
+    syncUI();
   });
   stage.onResize(() => {
     layout();
@@ -526,7 +549,27 @@ export function createApp(root, options = {}) {
       const size = Math.max(9, Math.min(18, pxPerMetre(flashAt) * 0.05));
       drawFlash(ctx, sa.x, sa.y, size, w.k);
     }
-    if (!s.hide.strip) drawStrip(ctx, L.box, stripData(w));
+    drawPanelStrip(w);
+  }
+  /** The momentum strip in the panel, under the play row: drawn at the canvas's own width. */
+  const stripBox = { x: 0, y: 0, w: 0, h: 0 };
+  function drawPanelStrip(w) {
+    const cv = el.strip;
+    const sw = cv.clientWidth;
+    if (!sw) return;
+    const sh = stripHeight(sw, 400);
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    if (cv.width !== Math.round(sw * dpr) || cv.height !== Math.round(sh * dpr)) {
+      cv.width = Math.round(sw * dpr);
+      cv.height = Math.round(sh * dpr);
+      cv.style.height = `${sh}px`;
+    }
+    const sctx = cv.getContext('2d');
+    sctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    sctx.clearRect(0, 0, sw, sh);
+    stripBox.w = sw;
+    stripBox.h = sh;
+    if (!s.hide.strip) drawStrip(sctx, stripBox, stripData(w));
   }
   stage.onAfterRender(drawOverlay);
 
@@ -539,6 +582,7 @@ export function createApp(root, options = {}) {
     playIcon: $('[data-act="play"] .ic'),
     playLabel: $('[data-act="play"] .lb'),
     scrub: /** @type {HTMLInputElement} */ ($('.cm-scrub input')),
+    strip: /** @type {HTMLCanvasElement} */ ($('.cm-stripcv')),
     eqs: $('.cm-eqs'),
   };
   let panelKey = '';
@@ -1309,7 +1353,7 @@ export function createApp(root, options = {}) {
         },
         grabbable: (p) => pick(p) === 1,
         labelAt: coachWords,
-        inset: { bottom: L.stripH + 20 },
+        inset: { bottom: 20 },
         // the arrow grows by 1 m/s and back, as if dragged
         async demo(alive) {
           const u = s.setup.u1;
@@ -1391,7 +1435,9 @@ export function createApp(root, options = {}) {
 
   // ── buttons, keys ───────────────────────────────────────────────────────────
   function syncUI() {
-    for (const b of ui.$$('[data-view]')) b.classList.toggle('on', b.dataset.view === s.view);
+    const front = ui.$('[data-view="front"]');
+    if (front) front.hidden = s.view !== '3d';
+    if (!s.locked) controls.enableRotate = true; // the test keeps the view still; afterwards a drag turns it again
     root.dataset.mode = s.mode === 'quiz' ? 'quiz' : 'explore';
     for (const b of ui.$$('[data-mode]')) {
       const on = b.dataset.mode === root.dataset.mode;
