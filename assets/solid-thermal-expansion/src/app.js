@@ -431,7 +431,7 @@ export function createApp(root, options = {}) {
     },
     {
       q: 'area',
-      long: true,
+      long: false,
       text: () => t('q5_text'),
       work: () => t('q5_w'),
       choices: () => [0, 1, 2, 3].map((i) => ({ label: t(`q5_c${i}`), note: i ? t(`q5_n${i}`) : '' })),

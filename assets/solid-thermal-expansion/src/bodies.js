@@ -1,5 +1,5 @@
 // The book's চিত্র ৬.০৪: a rod, a square plate and a cube, each shown twice, cold above (T₁) and heated below (T₂)
-// over a flame, the heated one a little bigger. All three are copper (the book's worked example). Units are
+// over a flame, the heated one a little bigger. The bodies are the page's light blue with dark edges. Units are
 // centimetres; the bench top is y = 0. The heated bodies are drawn `drawnScale` times (reading.js) too big, else
 // the growth could not be seen. A thin amber frame, drawn over the heated body, marks the cold size.
 import * as THREE from 'three';
@@ -30,12 +30,12 @@ export function createBodies() {
   root.name = 'Bodies';
   const unit = new THREE.BoxGeometry(1, 1, 1);
   const edges = new THREE.EdgesGeometry(unit);
-  const copperCold = new THREE.MeshStandardMaterial({ name: 'Copper', color: '#dc8d5c', metalness: 0.85, roughness: 0.34 });
+  const copperCold = new THREE.MeshStandardMaterial({ name: 'Solid', color: '#86bfe9', metalness: 0.3, roughness: 0.38 });
   const copperHot = copperCold.clone();
-  copperHot.name = 'CopperHot';
+  copperHot.name = 'SolidHot';
   copperHot.emissive = new THREE.Color('#ff4a0e');
   copperHot.emissiveIntensity = 0;
-  const edgeMat = new THREE.LineBasicMaterial({ color: '#5a2d14', transparent: true, opacity: 0.55 });
+  const edgeMat = new THREE.LineBasicMaterial({ color: '#0d2540', transparent: true, opacity: 0.9 });
   const frameMat = new THREE.MeshBasicMaterial({ name: 'ColdSize', color: '#f2a516', depthTest: false, transparent: true, opacity: 0.95 });
 
   const groups = {};
@@ -72,7 +72,7 @@ export function createBodies() {
   function update(t2, time, chosen) {
     const heat = Math.min(1, Math.max(0, (t2 - T1) / (T2_MAX - T1)));
     const s = drawnScale(t2);
-    copperHot.emissiveIntensity = 0.38 * heat;
+    copperHot.emissiveIntensity = 0.07 * heat;
     for (const q of QUANTITIES) {
       const G = groups[q];
       const [w, h, d] = G.dims;
