@@ -34,7 +34,7 @@ body.bg-transparent { background: transparent; }
 .fb-laws span { color: var(--c); white-space: nowrap; }
 .fb-eqs { margin: 0; font-size: 13px; line-height: 1.4; color: var(--ink-2); }
 
-.fb-acts { justify-content: flex-start; gap: 6px; flex-wrap: nowrap; }
+.fb-acts { display: flex; justify-content: flex-start; gap: 6px; flex-wrap: wrap; }
 .fb-acts .pvc-btn { height: 38px; padding: 0 11px; font-size: 15px; }
 .fb-acts .pvc-btn.primary svg { color: #fff; }
 .fb-acts [data-act='go'] { min-width: 112px; }
@@ -55,18 +55,6 @@ body.bg-transparent { background: transparent; }
 .fb .pvc-q-text { min-height: 2.8em; font-size: 16px; }
 .fb .pvc-q-feedback { min-height: 4.35em; font-size: 14px; }
 
-/* wide frames (book page, desktop): what happened on top, the table beside the laws and the actions */
-@container pvc (min-width: 720px) and (min-height: 461px) {
-  .fb .pvc-learn { display: grid; grid-template-columns: minmax(0, 420px) auto; grid-template-areas: 'say say' 'table laws' 'table eqs' 'table acts'; align-content: start; align-items: center; justify-content: start; gap: 4px 28px; }
-  .fb-say { grid-area: say; min-height: 3em; font-size: 16px; }
-  .fb .pvc-q-feedback { min-height: 2.9em; }
-  .fb-table { grid-area: table; gap: 2px 10px; }
-  .fb-laws { grid-area: laws; font-size: 15px; }
-  .fb-eqs { grid-area: eqs; font-size: 14px; }
-  .fb-acts { grid-area: acts; flex-wrap: wrap; }
-  .fb-k b { font-size: 15px; }
-  .fb-c b { font-size: 20px; }
-}
 /* phones: a little tighter, so the 3D view gets at least 55 % of the height */
 @container pvc (max-width: 560px) {
   .fb-say { line-height: 1.42; min-height: calc(3 * 1.42em); }

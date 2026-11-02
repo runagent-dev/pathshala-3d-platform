@@ -90,3 +90,9 @@ Against `docs/agents/polish-pass.md`.
 - **Bugs.** A three.js warning at every load (a polyhedron made non-indexed twice) is gone. The English test no
   longer changes the 3D view's height between questions; its two-line choices no longer overflow their buttons on a
   phone held sideways.
+
+## Declutter pass (2026-11, 0.3.0)
+- Only the two tubes, the scale and the desk: the blackboard with its chalk sketches, the ledge, chalk and duster,
+  the vacuum pump and its hose are gone; the wall is plain and soft, the room beyond a soft warm grey.
+- Panel in the labs' one order: the actions (ছেড়ে দাও, ০.১ s, কাগজ দলা পাকাও), the table of readings, the laws and
+  equations, the sentence. The old wide-frame grid (for the panel under the 3D) is gone.
