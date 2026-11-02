@@ -102,7 +102,7 @@ export function createApp(root, options = {}) {
   fill.position.set(40, 20, 40);
   scene.add(fill);
 
-  const bench = createBench({ N, unitL: 'L' });
+  const bench = createBench({ N, unitL: t('unit_L') });
   scene.add(bench.root);
   if (o.shadow && o.bg !== 'transparent') {
     stage.renderer.shadowMap.enabled = true;

@@ -30,7 +30,7 @@ test("calorimetry: the book's ice example gives about 20 °C (p180)", () => {
 test("calorimetry: the book's two-waters example gives 56.67 °C (the book prints 56.6, p181)", () => {
   const r = solve(EXAMPLES.water);
   close(r.T, (75 * 2 + 20) / 3, 1e-9);
-  assert.equal(tempText(r.T), '56.7');
+  assert.equal(tempText(r.T), '56.6');
 });
 
 test("calorimetry: the book's iron example gives 30.1 °C (p181)", () => {

@@ -1,5 +1,5 @@
 // The calorimetry figure through the bridge (book pp179-181, topic 6.6): the three worked examples end at the book's
-// temperatures (ice 20 °C, two waters 56.7 °C where the book prints 56.6, iron 30.1 °C), the heat given equals the heat
+// temperatures (ice 20 °C, two waters 56.6 °C as the book prints (exactly 56.67), iron 30.1 °C), the heat given equals the heat
 // taken, the sum shows the student's numbers once it has run, the test has five questions, reset brings it all back.
 // Runs with `npm run test:figures` (dev-only folder, never packaged).
 import { expect, test } from '@playwright/test';
@@ -34,13 +34,13 @@ test('calorimetry: the book examples end at the book temperatures', async ({ pag
   expect(await text('.pvc-rule')).toContain('ঠিক ততটুকু তাপ');
   expect(await text('[data-example="ice"] .pvc-ex-res')).toBe('২০°C');
 
-  // two waters: 2 L at 75 °C and 1 L at 20 °C make 3 L at 56.7 °C
+  // two waters: 2 L at 75 °C and 1 L at 20 °C make 3 L at 56.6 °C
   await fig.frame.locator('[data-example="water"]').click();
   expect(await fig.call('get')).toMatchObject({ example: 'water', k: 0, T: 75 });
   expect(await text('.cal-list')).toContain('৭৫°C');
   await fig.call('set', { k: 1 });
   expect(await fig.call('get')).toMatchObject({ example: 'water', done: true, litres: 3 });
-  expect(await text('.pvc-outcome')).toContain('৫৬.৭°C');
+  expect(await text('.pvc-outcome')).toContain('৫৬.৬°C');
   expect(await text('.pvc-outcome')).toContain('১,৫৪,০০০ J');
 
   // the hot iron: 30.1 °C, and a few joules (about 405 J) move
