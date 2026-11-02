@@ -1,21 +1,8 @@
-// The maths of assets/mass-energy (book p119, topic 4.6): the book's reaction, E = mc², the fuel and the bulb.
+// The maths of assets/mass-energy and mass-energy-plant (book p119, topic 4.6): the book's reaction, E = mc², the fuel and the bulb.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import {
-  C,
-  chainSplits,
-  energy,
-  energyPerSplit,
-  fissionFraction,
-  fuel,
-  indianParts,
-  MASS,
-  NUCLEUS,
-  reaction,
-  sci,
-  sigRound,
-  U_KG,
-} from '../../assets/mass-energy/src/reading.js';
+import { C, chainSplits, energy, energyPerSplit, MASS, NUCLEUS, reaction, sci, U_KG } from '../../assets/mass-energy/src/reading.js';
+import { fissionFraction, fuel, indianParts, sigRound } from '../../assets/mass-energy-plant/src/reading.js';
 
 test('the book: c = 3 × 10⁸ m/s, so 1 g fully turned into energy gives 9 × 10¹³ J', () => {
   assert.equal(C, 3e8);
