@@ -1,0 +1,78 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "electromagnetic-force-magnet",
+  "title": "Electromagnet and a bar magnet (তড়িৎ চুম্বক ও দণ্ড চুম্বক)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "1.0.0",
+  "book": "physics-9-10",
+  "page": 68,
+  "topic": "3.2.2",
+  "placement": "Book page 68, topic 3.2.2: তড়িৎ চৌম্বক বল, beside the sentence on magnets attracting and repelling each other (after the comb-and-paper lab electromagnetic-force).",
+  "order": 3,
+  "maintainers": ["RadeenXALNW"],
+  "units": "mm",
+  "description": "Electromagnetic force, the magnets (Physics 9–10, page 68, topic 3.2.2), one scene: a cell, a switch and a coil of copper wire on a wooden bench, and a red-and-grey bar magnet on a little cart. One big button in two steps: switch on, and the coil becomes a magnet that pulls the cart in (unlike poles attract); turn the magnet round, and it is pushed away (like poles repel); turned back, it is pulled in again from the far end (the range is infinite). One outlined blue force arrow, the poles labelled N and S, one result line and the book's rule: electric and magnetic forces are one force, the electromagnetic force. Test tab: short tap questions. The comb and the bits of paper are the lab electromagnetic-force. Model units mm; GLB exports in metres.",
+  "tags": ["force", "fundamental-forces", "electromagnetic-force", "magnet", "electromagnet", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "First-use pointers", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "on": true } },
+    { "name": "set", "payload": { "facing": "N" } },
+    { "name": "set", "payload": { "gap": 20 } },
+    { "name": "set", "payload": { "on": true, "facing": "S", "gap": 60, "animate": false } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "switch", "flip", "snap", "view", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": { "params": { "coach": "0" } },
+    "glb": [
+      {
+        "name": "default",
+        "setup": [{ "command": "set", "payload": { "on": true, "facing": "N", "gap": 30, "animate": false } }]
+      }
+    ],
+    "video": {
+      "kind": "script",
+      "seconds": 10,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 0.8, "command": "set", "payload": { "on": true } },
+        { "at": 3.5, "command": "set", "payload": { "facing": "N" } },
+        { "at": 6.5, "command": "set", "payload": { "facing": "S" } }
+      ]
+    }
+  }
+}

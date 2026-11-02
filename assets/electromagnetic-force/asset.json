@@ -5,7 +5,7 @@
   "title": "Electromagnetic force (তড়িৎ চৌম্বক বল)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "0.4.0",
+  "version": "1.0.0",
   "book": "physics-9-10",
   "page": 68,
   "topic": "3.2.2",
@@ -13,18 +13,8 @@
   "order": 2,
   "maintainers": ["RadeenXALNW"],
   "units": "mm",
-  "description": "Interactive electromagnetic force lesson (Physics 9–10, page 68, topic 3.2.2). A complete, compact human head with face, ears, hair, neck and shoulders, and a hand holding a coral-red comb, make the two-step experiment easy to follow: rub the hair, then bring the charged comb near vivid paper pieces on a blue table. A blue/teal background keeps the objects distinct. Equal positive hair and negative comb markers illustrate electron transfer; paired +/− markers on a paper bit show polarization without net charge. Paper rises when the comb's electric pull beats the Earth's gravity, with blue and purple force arrows. The magnet example retains its cell, switch, coil and bar magnet: current turns the coil into a magnet, unlike poles attract and like poles repel. Bangla-first instructions, five tap questions, a four-fundamental-forces strip, offline packaging and GLB exports. The book's 10^36 comparison remains separate from the demonstration's force ratio. Model units mm; GLB exports in metres; illustrative charge markers and force arrows are omitted from GLB.",
-  "tags": [
-    "force",
-    "fundamental-forces",
-    "electromagnetic-force",
-    "static-electricity",
-    "comb",
-    "magnet",
-    "electromagnet",
-    "gravity",
-    "bangla"
-  ],
+  "description": "Interactive electromagnetic force lesson (Physics 9–10, page 68, topic 3.2.2). A complete, compact human head with face, ears, hair, neck and shoulders, and a hand holding a coral-red comb, make the two-step experiment easy to follow: rub the hair, then bring the charged comb near vivid paper pieces on a blue table. A blue/teal background keeps the objects distinct. Equal positive hair and negative comb markers illustrate electron transfer; paired +/− markers on a paper bit show polarization without net charge. Paper rises when the comb's electric pull beats the Earth's gravity, with blue and purple force arrows. The coil and the bar magnet are a lab of their own (electromagnetic-force-magnet). Bangla-first instructions, five tap questions, a four-fundamental-forces strip, offline packaging and GLB exports. The book's 10^36 comparison remains separate from the demonstration's force ratio. Model units mm; GLB exports in metres; illustrative charge markers and force arrows are omitted from GLB.",
+  "tags": ["force", "fundamental-forces", "electromagnetic-force", "static-electricity", "comb", "gravity", "bangla"],
   "params": [
     {
       "name": "lang",
@@ -32,13 +22,6 @@
       "type": "select",
       "options": [["bn", "বাংলা"], ["en", "English"]],
       "default": "bn"
-    },
-    {
-      "name": "scene",
-      "label": "Example",
-      "type": "select",
-      "options": [["comb", "comb and paper"], ["magnet", "coil and magnet"]],
-      "default": "comb"
     },
     {
       "name": "charge",
@@ -76,60 +59,33 @@
   ],
   "commands": [
     { "name": "get", "payload": {} },
-    { "name": "set", "payload": { "scene": "comb" } },
     { "name": "set", "payload": { "strokes": 5 } },
     { "name": "set", "payload": { "charge": 4 } },
     { "name": "set", "payload": { "place": "paper" } },
     { "name": "set", "payload": { "place": "paper", "height": 30, "animate": false } },
     { "name": "set", "payload": { "again": true } },
-    { "name": "set", "payload": { "scene": "magnet" } },
-    { "name": "set", "payload": { "on": true } },
-    { "name": "set", "payload": { "facing": "N" } },
-    { "name": "set", "payload": { "gap": 20 } },
-    { "name": "set", "payload": { "on": true, "facing": "S", "gap": 60, "animate": false } },
     { "name": "reset", "payload": {} },
     { "name": "practice", "payload": {} },
     { "name": "capture", "payload": { "width": 800, "height": 500 } },
     { "name": "export-glb", "payload": {} }
   ],
-  "events": [
-    "ready",
-    "change",
-    "scene",
-    "charge",
-    "lift",
-    "switch",
-    "flip",
-    "snap",
-    "view",
-    "practice-start",
-    "practice-result",
-    "practice-end"
-  ],
+  "events": ["ready", "change", "charge", "lift", "view", "practice-start", "practice-result", "practice-end"],
   "export": {
     "poster": { "params": { "coach": "0", "charge": "5", "place": "paper" } },
     "glb": [
       {
         "name": "default",
         "setup": [{ "command": "set", "payload": { "charge": 4, "place": "paper", "animate": false } }]
-      },
-      {
-        "name": "magnets",
-        "setup": [{ "command": "set", "payload": { "on": true, "facing": "N", "gap": 30, "animate": false } }]
       }
     ],
     "video": {
       "kind": "script",
-      "seconds": 20,
+      "seconds": 10,
       "fps": 30,
       "params": { "coach": "0" },
       "script": [
         { "at": 0.6, "command": "set", "payload": { "strokes": 5 } },
-        { "at": 3.6, "command": "set", "payload": { "place": "paper" } },
-        { "at": 9.5, "command": "set", "payload": { "scene": "magnet" } },
-        { "at": 11, "command": "set", "payload": { "on": true } },
-        { "at": 13.5, "command": "set", "payload": { "facing": "N" } },
-        { "at": 16.5, "command": "set", "payload": { "facing": "S" } }
+        { "at": 3.6, "command": "set", "payload": { "place": "paper" } }
       ]
     }
   }

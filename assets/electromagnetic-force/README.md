@@ -40,7 +40,6 @@ To listen to it or control it from the book page, use the helper shipped in the 
 | Param | Meaning | Values | Default |
 |---|---|---|---|
 | `lang` | Language | `bn` বাংলা · `en` English | `bn` |
-| `scene` | Example | `comb` comb and paper · `magnet` coil and magnet | `comb` |
 | `charge` | Charge on the comb at the start (strokes) | number | `0` |
 | `place` | Comb at the start | `hair` in the hair · `paper` over the paper | `hair` |
 | `view` | View | `front` · `3d` | `front` |
@@ -60,11 +59,11 @@ Every figure answers `ping` with `{ asset, version }`. Send commands with `figur
 | Command | Example payload |
 |---|---|
 | `get` | `{}` |
-| `set` | `{"scene":"comb"}` |
+| `set` | `{"strokes":5}` |
 | `reset` | `{}` |
 | `practice` | `{}` |
 | `capture` | `{"width":800,"height":500}` |
 | `export-glb` | `{}` |
 
-Events: `ready`, `change`, `scene`, `charge`, `lift`, `switch`, `flip`, `snap`, `view`, `practice-start`, `practice-result`, `practice-end`.
+Events: `ready`, `change`, `charge`, `lift`, `view`, `practice-start`, `practice-result`, `practice-end`.
 <!-- /generated:bridge -->

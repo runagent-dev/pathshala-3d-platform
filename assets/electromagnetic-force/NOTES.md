@@ -142,3 +142,9 @@ a চিরুনি/চুম্বক toggle and a big button. Now:
   switch, the wiring, the cart's wheels), bolder outlined arrows; the coil's honest note moved off the 3D view.
 - The panel sits beside the 3D (kit 1.5.0): the old wide-frame and sideways-phone rules are gone. No front/turn
   buttons: a drag turns the view (not during the test), a front icon brings it back.
+
+## Split (1.0.0)
+This lab had two examples behind chips (comb and paper; coil and bar magnet). The owner wants one scene per lab, so
+the coil and the bar magnet are now `electromagnetic-force-magnet`. Here only the comb, the hair and the bits of
+paper remain; the `scene` URL parameter, the `on`/`facing`/`gap` set fields and the `scene`, `switch`, `flip`,
+`snap` events are gone.

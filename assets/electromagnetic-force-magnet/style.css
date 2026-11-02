@@ -1,0 +1,65 @@
+/* Electromagnetic force: the page, the colours that carry meaning (the four forces as in the other figures of 3.2:
+   তড়িৎ চৌম্বক blue, মহাকর্ষ / মাধ্যাকর্ষণ purple, দুর্বল নিউক্লীয় green, সবল নিউক্লীয় orange; the magnet's poles as
+   painted: N red, S grey, not blue, which is the force's colour; the same as the 3D), the quiet strip of the four
+   forces, the honest note on the stage and the test's answers in words. The panel is the kit's clean sheet (one
+   action, one result, one rule: ../../shared/lib/student/student.css, .pvc-examples, .pvc-act, .pvc-outcome,
+   .pvc-rule). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.pvc { --c-em: #1c7ed6; --c-grav: #7048e8; --c-weak: #2b8a3e; --c-strong: #e8590c; --c-n: #e03131; --c-s: #5c6670; }
+.pvc sup { font-size: 0.68em; line-height: 0; vertical-align: 0.52em; }
+.ef button { touch-action: manipulation; }
+
+/* the result line: the force in the magnets, the poles in their painted colours */
+.ef .pvc-outcome { white-space: nowrap; }
+.ef .pvc-outcome[data-k='magnet'] b { color: var(--c-em); }
+.ef-pole { display: inline-grid; place-items: center; min-width: 1.45em; height: 1.45em; padding: 0 2px; border-radius: 4px; color: #fff; font-size: 0.9em; font-weight: 700; line-height: 1; vertical-align: 0.05em; }
+.ef-pole.n { background: var(--c-n); }
+.ef-pole.s { background: var(--c-s); }
+
+/* the four fundamental forces, weakest to strongest, under the exact heading the four figures share: quiet words,
+   this one marked by colour, weight and an underline (not colour alone) */
+.ef-forces { margin: 0; font-size: 13px; line-height: 1.5; color: var(--ink-3); }
+.ef-forces-k { font-weight: 600; color: var(--ink-3); white-space: normal; }
+.ef-forces-list { white-space: normal; }
+.ef-forces-list i { font-style: normal; margin: 0 1px; color: var(--line-2); }
+.ef-f { color: var(--ink-3); white-space: nowrap; }
+.ef-f.on { color: var(--c-em); font-weight: 700; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+
+/* the coil's poles in the picture, while the current flows */
+.pvc-anno-pole { background: var(--c); border-color: var(--c); color: #fff; font-weight: 700; padding: 0 8px; }
+
+/* in the test the locked hint sits under the corner buttons, not on them */
+.ef[data-mode='quiz'] .pvc-stage[data-ui='simple'] .pvc-hint { top: 54px; }
+
+/* the test: answers in words (two lines allowed) */
+.pvc-opt .ef-opt { display: block; font-size: 14px; line-height: 1.22; font-weight: 600; white-space: normal; text-align: center; }
+.ef .pvc-opt { height: 50px; }
+.ef .pvc-q-feedback { font-size: 14px; }
+
+/* phones held upright: a tighter sheet, so the 3D view gets more than 55 % of the height (the test's sheet too: both
+   share one cell, so the panel keeps one height in every state) */
+@container pvc (max-width: 560px) {
+  .ef .pvc-learn, .ef .pvc-q-ask { gap: 6px; }
+  .ef .pvc-examples button { min-height: 40px; padding: 2px 3px 4px; }
+  .ef .pvc-outcome { font-size: 15px; }
+  .ef .pvc-rule { font-size: 14px; line-height: 1.42; }
+  .ef-forces { font-size: 12px; line-height: 1.35; }
+  .ef .pvc-q-head { min-height: 34px; }
+  .ef .pvc-q-head .pvc-btn { height: 34px; }
+  .ef .pvc-q-text { font-size: 15px; line-height: 1.4; }
+  .ef .pvc-opt { height: 44px; }
+  .ef .pvc-q-options { gap: 6px; }
+  .ef .pvc-q-feedback { font-size: 12.5px; line-height: 1.35; }
+}
+/* phone embeds that are not very tall: a little smaller, so the 3D view keeps more room */
+@container pvc (max-width: 560px) and (max-height: 600px) {
+  .ef .pvc-rule { font-size: 13.5px; line-height: 1.42; }
+  .ef-forces { font-size: 12px; line-height: 1.4; }
+  .ef .pvc-q-text { font-size: 14px; line-height: 1.35; }
+  .ef .pvc-q-feedback { font-size: 12.5px; line-height: 1.35; }
+  .ef .pvc-opt { height: 40px; }
+  .pvc-opt .ef-opt { font-size: 12.5px; line-height: 1.18; }
+}
