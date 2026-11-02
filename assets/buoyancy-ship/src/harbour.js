@@ -1,5 +1,5 @@
-// The harbour round the ship: a warm afternoon sky with the sun and a few clouds, a far shore with hills, sheds,
-// cranes and a lighthouse, and the water. The water's surface is y = 0 and ends at x = XC, where it is cut away: a
+// The harbour round the ship: a warm afternoon sky with the sun and a few clouds, a far shore of low hills (nothing
+// else, so the ship stands out), and the water. The water's surface is y = 0 and ends at x = XC, where it is cut away: a
 // glass-like face of blue water, paler at the top and deeper below, lets the student see the hull under the water
 // (everything below the surface behind it is tinted by it). A sandy bottom 7 m down. All procedural, no image files;
 // nothing moves (renders on demand). Lighting and an environment map made from the same sky, so the water and the
@@ -250,15 +250,6 @@ export function createHarbour(scene, renderer, { transparent = false, shadow = t
   const floor = new THREE.Mesh(floorGeo, new THREE.MeshStandardMaterial({ map: sand, roughness: 1, vertexColors: true }));
   floor.name = 'HarbourBottom';
   root.add(floor);
-  const rocks = new THREE.MeshStandardMaterial({ color: '#7d7466', roughness: 0.95, flatShading: true });
-  const rr = rng(5);
-  for (let i = 0; i < 9; i++) {
-    const r = 0.25 + rr() * 0.55;
-    const m = new THREE.Mesh(new THREE.DodecahedronGeometry(r, 0), rocks);
-    m.position.set(XC - 1.5 - rr() * 18, FLOOR + r * 0.4, -22 + rr() * 40);
-    m.rotation.set(rr() * 3, rr() * 3, rr() * 3);
-    root.add(m);
-  }
   const ground = new THREE.Mesh(
     new THREE.PlaneGeometry(SIZE, 14),
     new THREE.MeshBasicMaterial({
@@ -301,58 +292,10 @@ export function createHarbour(scene, renderer, { transparent = false, shadow = t
     hills.rotation.y = Math.PI / 2;
     hills.position.set(X - 60, 0, 0);
     shore.add(hills);
-    // a strip of land and sheds in bright colours (one instanced mesh)
+    // a strip of sandy land (no buildings: the ship is what matters)
     const land = new THREE.Mesh(new THREE.BoxGeometry(40, 3, 1800), new THREE.MeshLambertMaterial({ color: '#c9b48a' }));
     land.position.set(X, 1.5, 0);
     shore.add(land);
-    const shedColors = ['#e8e1d3', '#d9480f', '#1c7ed6', '#f2b705', '#c92a2a', '#dee2e6', '#5c7cfa', '#e8590c'];
-    const sheds = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial(), 46);
-    const m4 = new THREE.Matrix4();
-    const q = new THREE.Quaternion();
-    const c = new THREE.Color();
-    for (let i = 0; i < 46; i++) {
-      const w = 14 + r() * 26;
-      const h = 5 + r() * 14;
-      m4.compose(new THREE.Vector3(X + 4 + r() * 14, 3 + h / 2, -560 + i * 24 + r() * 8), q, new THREE.Vector3(10 + r() * 10, h, w));
-      sheds.setMatrixAt(i, m4);
-      sheds.setColorAt(i, c.set(shedColors[i % shedColors.length]));
-    }
-    shore.add(sheds);
-    // harbour cranes: red-orange gantries with a jib
-    const craneMat = new THREE.MeshLambertMaterial({ color: '#e8590c' });
-    for (const z of [-150, -95, 40, 105]) {
-      const g = new THREE.Group();
-      for (const dz of [-6, 6])
-        for (const dx of [-5, 5]) {
-          const leg = new THREE.Mesh(new THREE.BoxGeometry(1.2, 30, 1.2), craneMat);
-          leg.position.set(dx, 15, dz);
-          g.add(leg);
-        }
-      const beam = new THREE.Mesh(new THREE.BoxGeometry(12, 2.5, 14), craneMat);
-      beam.position.set(0, 30, 0);
-      const jib = new THREE.Mesh(new THREE.BoxGeometry(60, 1.8, 2), craneMat);
-      jib.position.set(22, 33, 0);
-      const cab = new THREE.Mesh(new THREE.BoxGeometry(6, 4, 6), new THREE.MeshLambertMaterial({ color: '#f1f3f5' }));
-      cab.position.set(0, 34, 0);
-      g.add(beam, jib, cab);
-      g.position.set(X + 12, 3, z);
-      shore.add(g);
-    }
-    // a lighthouse on a breakwater, nearer, to one side
-    const wall = new THREE.Mesh(new THREE.BoxGeometry(220, 2.4, 7), new THREE.MeshLambertMaterial({ color: '#9aa1a8' }));
-    wall.position.set(-230, 1.2, 150);
-    shore.add(wall);
-    const stripes = canvas(4, 64, (ctx) => {
-      for (let i = 0; i < 4; i++) {
-        ctx.fillStyle = i % 2 ? '#ffffff' : '#d6402f';
-        ctx.fillRect(0, i * 16, 4, 16);
-      }
-    });
-    const tower = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 3, 22, 20), new THREE.MeshLambertMaterial({ map: stripes }));
-    tower.position.set(-130, 13, 150);
-    const lamp = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2.6, 3, 16), new THREE.MeshLambertMaterial({ color: '#2b2f33' }));
-    lamp.position.set(-130, 25.5, 150);
-    shore.add(tower, lamp);
     root.add(shore);
   }
 
