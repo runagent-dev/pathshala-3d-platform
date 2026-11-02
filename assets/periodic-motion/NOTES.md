@@ -93,3 +93,11 @@ the generic fan export). Heart views at all six frame sizes and rotated close-up
 In stacked portrait layouts the ECG callout sits beside the chart, keeping it off the heart apex.
 The chart is lowered in stacked layouts so the enlarged heart apex has a clear gap above its frame; a browser
 regression checks both vertical and horizontal model/chart separation.
+
+## Declutter pass (2026-11, 0.3.0)
+- The dark navy-to-teal backdrop is now a soft, slightly muted sky-blue to warm sand gradient; the path, the mark,
+  the velocity arrow and the particle have calm, darker colours that read on it (they were neon for the dark).
+- Nothing floats on the 3D view but labels: the path's shape and the clock moved into the panel beside the pause
+  button, the note on time (shown 10 times slower …) under the sentence; the camera no longer leaves room for them.
+- Panel in the labs' one order: the examples, the action (+ the path and the clock), the readings, the sentence. The
+  old wide-frame and portrait grids (for the panel under the 3D) are gone.

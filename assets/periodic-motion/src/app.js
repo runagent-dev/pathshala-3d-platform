@@ -68,23 +68,24 @@ export function createApp(root, options = {}) {
   root.tabIndex = 0;
   const term = (cls, label) => `<span class="pvc-t ${cls}"><b>0</b><small>${t(label)}</small></span>`;
   const ui = buildStudentShell(root, t, {
+    layout: 'side', // the panel beside the 3D on landscape frames (kit 1.5.0)
     learn: `
           <div class="pm-examples" role="group" aria-label="${t('examples')}">
             ${EXAMPLE_IDS.map((id) => `<button class="pm-ex" data-ex="${id}" aria-pressed="false">${t(`ex_${id}`)}</button>`).join('')}
+          </div>
+          <div class="pm-acts">
+            <span class="pvc-status"><i></i><span></span></span>
+            <button class="pvc-btn" data-act="play"><span class="pm-ic"></span><span class="pm-lb"></span></button>
           </div>
           <div class="pvc-learn-main">
             <div class="pvc-result"><span class="k">${t('reading')}</span><span class="v">–</span><span class="u"></span></div>
             <div class="pvc-sum pm-sum"><i>=</i>${term('tot', 'total_long')}<i>÷</i>${term('cnt', 'count_long')}</div>
           </div>
           <div class="pm-strip-learn"></div>
-          <p class="pvc-learn-extra pm-extra"></p>
-          <div class="pvc-learn-foot">
-            <span class="pvc-status"><i></i><span></span></span>
-            <button class="pvc-btn" data-act="play"><span class="pm-ic"></span><span class="pm-lb"></span></button>
-          </div>`,
+          <p class="pvc-learn-extra pm-extra"></p>`,
   });
-  // on the 3D view: the shape of the path and the clock (top left), a note on time and scale (bottom left), and
-  // in the test about the fan switched off, the strip of its turns (bottom)
+  // in the panel, nothing floating on the 3D view: the shape of the path and the clock (the first readings), the note
+  // on time and scale (under the sentence); on the view only the strip of turns in the test about the fan switched off
   const cap = document.createElement('div');
   cap.className = 'pm-cap';
   cap.setAttribute('aria-live', 'off');
@@ -94,7 +95,9 @@ export function createApp(root, options = {}) {
   const strip3d = document.createElement('div');
   strip3d.className = 'pm-strip3d';
   strip3d.hidden = true;
-  ui.stage.append(cap, note, strip3d);
+  ui.$('.pm-acts').append(cap); // beside the pause button: the path's shape and the clock
+  ui.$('.pm-extra').after(note);
+  ui.stage.append(strip3d);
   const learnStrip = createLapStrip(ui.$('.pm-strip-learn'), '');
   const stageStrip = createLapStrip(strip3d, '');
 
@@ -106,8 +109,8 @@ export function createApp(root, options = {}) {
   backdropCanvas.height = 256;
   const backdropContext = backdropCanvas.getContext('2d');
   const backdropGradient = backdropContext.createLinearGradient(0, 0, 0, 256);
-  backdropGradient.addColorStop(0, '#122344');
-  backdropGradient.addColorStop(1, '#075d70');
+  backdropGradient.addColorStop(0, '#c4d1de');
+  backdropGradient.addColorStop(1, '#e7ded1');
   backdropContext.fillStyle = backdropGradient;
   backdropContext.fillRect(0, 0, 8, 256);
   const backdrop = new THREE.CanvasTexture(backdropCanvas);
@@ -352,10 +355,10 @@ export function createApp(root, options = {}) {
     if (!counter.count) return t('mark_start');
     return t(s.example === 'heart' ? 'beat_n' : 'mark_n', { n: counter.count });
   }
-  /** Rectangles (stage pixels) a label must keep off: the caption, the corner buttons, the note. */
+  /** Rectangles (stage pixels) a label must keep off: the corner buttons, the strip in the test. */
   function keepOff() {
     const sr = ui.stage.getBoundingClientRect();
-    return [cap, ui.corner, note, strip3d]
+    return [ui.corner, strip3d]
       .filter((node) => !node.hidden)
       .map((node) => {
         const r = node.getBoundingClientRect();
@@ -637,11 +640,11 @@ export function createApp(root, options = {}) {
     const tanV = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
     const tanH = tanV * camera.aspect;
     const H = Math.max(stage.height, 120);
-    // keep the picture off the caption and the buttons at the top, and the note or the strip at the bottom
+    // keep the picture off the buttons at the top, and the strip (in the test) at the bottom
     const sr = ui.stage.getBoundingClientRect();
     const edge = (node, side) => (node.hidden ? 0 : node.getBoundingClientRect()[side] - sr.top);
-    const top = Math.min(H * 0.34, Math.max(edge(cap, 'bottom'), edge(ui.corner, 'bottom')) + 6);
-    const lowest = Math.min(...[note, strip3d].filter((n) => !n.hidden).map((n) => edge(n, 'top')), H);
+    const top = Math.min(H * 0.34, edge(ui.corner, 'bottom') + 6);
+    const lowest = Math.min(...[strip3d].filter((n) => !n.hidden).map((n) => edge(n, 'top')), H);
     const bottom = Math.min(H * 0.25, H - lowest + 4);
     const usable = (H - top - bottom) / H;
     let d = 0;
