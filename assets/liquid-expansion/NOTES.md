@@ -49,3 +49,9 @@ One figure, two words to choose from (the page's two pictures), each a short gui
 - p173 writes "উচ্চতা B তে নেমে এসেছে" for the level; the figure says "তল" (level) in the panel and keeps the book's letters.
 - "°C" is printed with a space before the unit in the figure ("৩৯.০ °C"); p171 writes "1000°C".
 - Every Bangla line needs a person's check against the book.
+
+## Polish pass (0.2.0)
+- The fever thermometer is now long and thin like the page's চিত্র ৬.০৫ (stem radius 0.62 cm, 11.6 cm tall, the bulb only
+  a little wider, the narrow bend just above it, the scale along the stem); before it was a stubby tube.
+- The Bangla strings were checked against pp172–173; they already use the book's words (সূক্ষ্ম/সরু বক্রতা, আপাত, প্রকৃত,
+  ঝাঁকিয়ে নামাতে হয়), no English words in Bangla text.

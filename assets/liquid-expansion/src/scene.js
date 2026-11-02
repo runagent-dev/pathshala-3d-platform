@@ -11,7 +11,7 @@ import { NECK_AREA, THERMO } from './reading.js';
 export const BENCH_Y = -10.5;
 export const FLASK_GEO = { R: 4.2, neckOuter: 1.0, neckInner: Math.sqrt(NECK_AREA / Math.PI), neckBottom: 3.4, neckTop: 12.2, A: 8.0 };
 /** Thermometer geometry: where the 35 °C mark is and how far one degree is drawn (cm). */
-export const THERMO_GEO = { y35: 3.0, perDeg: 0.9, pinchY: 2.0, stemTop: 10.3, bulbR: 1.05, bulbRy: 1.35, dip: -4.6, rest: BENCH_Y + 6.9 };
+export const THERMO_GEO = { y35: 3.0, perDeg: 0.9, pinchY: 2.0, stemTop: 11.6, bulbR: 0.9, bulbRy: 1.3, stemR: 0.62, dip: -4.6, rest: BENCH_Y + 6.9 };
 export const thermoY = (T) => THERMO_GEO.y35 + (T - THERMO.T0) * THERMO_GEO.perDeg;
 
 function canvas(w, h) {
@@ -298,6 +298,7 @@ export function createScene({ background = true } = {}) {
   thermo.name = 'Thermometer';
   thermoRig.add(thermo);
   // the glass in one lathe: bulb, the narrow bend, the stem, a rounded top
+  const SR = T.stemR; // a fever thermometer is a long thin stem with a bulb only a little wider
   const profile = [new THREE.Vector2(0.001, -T.bulbRy)];
   for (let i = 1; i <= 12; i++) {
     const a = -Math.PI / 2 + (i / 12) * (Math.PI / 2 + 0.95);
@@ -307,28 +308,25 @@ export function createScene({ background = true } = {}) {
   const rb = profile[profile.length - 1].x;
   for (let i = 1; i <= 8; i++) {
     const k = i / 8; // into the pinch
-    profile.push(new THREE.Vector2(rb + (0.48 - rb) * Math.sin((k * Math.PI) / 2), yb + (T.pinchY - yb) * k));
+    profile.push(new THREE.Vector2(rb + (SR * 0.5 - rb) * Math.sin((k * Math.PI) / 2), yb + (T.pinchY - yb) * k));
   }
   for (let i = 1; i <= 8; i++) {
     const k = i / 8; // out of the pinch to the stem
-    profile.push(new THREE.Vector2(0.48 + (0.95 - 0.48) * (1 - Math.cos((k * Math.PI) / 2)), T.pinchY + 1.1 * k));
+    profile.push(new THREE.Vector2(SR * 0.5 + (SR - SR * 0.5) * (1 - Math.cos((k * Math.PI) / 2)), T.pinchY + 1.1 * k));
   }
-  profile.push(new THREE.Vector2(0.95, T.stemTop - 0.95));
+  profile.push(new THREE.Vector2(SR, T.stemTop - SR));
   for (let i = 1; i <= 8; i++) {
     const a = (i / 8) * (Math.PI / 2);
-    profile.push(new THREE.Vector2(0.95 * Math.cos(a), T.stemTop - 0.95 + 0.95 * Math.sin(a)));
+    profile.push(new THREE.Vector2(SR * Math.cos(a), T.stemTop - SR + SR * Math.sin(a)));
   }
   const tGlass = new THREE.Mesh(new THREE.LatheGeometry(profile, 36), mat.glassThin);
   tGlass.renderOrder = 2;
   const scale = scaleTexture();
-  const strip = new THREE.Mesh(
-    new THREE.PlaneGeometry(1.15, scale.y1 - scale.y0),
-    new THREE.MeshStandardMaterial({ map: scale.map, roughness: 0.6 }),
-  );
-  strip.position.set(0, (scale.y0 + scale.y1) / 2, -0.42);
+  const strip = new THREE.Mesh(new THREE.PlaneGeometry(1.0, scale.y1 - scale.y0), new THREE.MeshStandardMaterial({ map: scale.map, roughness: 0.6 }));
+  strip.position.set(0, (scale.y0 + scale.y1) / 2, -0.36);
   const hgBulb = new THREE.Mesh(new THREE.SphereGeometry(1, 28, 20), mat.mercury);
   hgBulb.scale.set(T.bulbR - 0.14, T.bulbRy - 0.14, T.bulbR - 0.14);
-  const unit = new THREE.CylinderGeometry(0.15, 0.15, 1, 12);
+  const unit = new THREE.CylinderGeometry(0.17, 0.17, 1, 12);
   const hgFoot = new THREE.Mesh(unit, mat.mercury); // the mercury from the bulb up to the narrow bend
   const hgColumn = new THREE.Mesh(unit, mat.mercury); // the thread in the stem
   thermo.add(strip, hgBulb, hgFoot, hgColumn, tGlass);
@@ -347,8 +345,8 @@ export function createScene({ background = true } = {}) {
     const s = 1 - 0.035 * gap;
     hgBulb.scale.set((T.bulbR - 0.14) * s, (T.bulbRy - 0.14) * s, (T.bulbR - 0.14) * s);
   }
-  const thermoStand = createStand(mat, { x: -7.5, armY: T.rest + T.stemTop - 2.4, reachX: -0.95, rodTop: T.rest + T.stemTop - 0.4 });
-  const clampT = new THREE.Mesh(new THREE.TorusGeometry(1.15, 0.2, 8, 24), mat.black);
+  const thermoStand = createStand(mat, { x: -7.5, armY: T.rest + T.stemTop - 2.4, reachX: -0.8, rodTop: T.rest + T.stemTop - 0.4 });
+  const clampT = new THREE.Mesh(new THREE.TorusGeometry(0.85, 0.2, 8, 24), mat.black);
   clampT.rotation.x = Math.PI / 2;
   clampT.position.y = T.stemTop - 2.4;
   thermo.add(clampT);
@@ -398,9 +396,9 @@ export function createScene({ background = true } = {}) {
     flaskNeckAt: (y, out) => out.set(F.neckOuter, y, 0),
     barAt: (id, y, out) => out.set(barX[id], y, 0.1),
     lampAt: (out) => out.set(0, FLAME_BASE + 1.5, 0),
-    thermoAt: (Tc, out) => out.set(0.95, thermo.position.y + thermoY(Tc), 0),
+    thermoAt: (Tc, out) => out.set(T.stemR, thermo.position.y + thermoY(Tc), 0),
     bulbAt: (out) => out.set(T.bulbR, thermo.position.y, 0),
-    pinchAt: (out) => out.set(0.5, thermo.position.y + T.pinchY, 0),
+    pinchAt: (out) => out.set(T.stemR * 0.5, thermo.position.y + T.pinchY, 0),
     beakerAt: (out) => out.set(3.3, BENCH_Y + 1.8, 0),
     pickable: { flask: [lampBody, bulbGlass, neck], thermo: [tGlass, beakerGlass] },
     show(which) {
