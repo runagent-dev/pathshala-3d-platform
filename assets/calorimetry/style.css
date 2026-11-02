@@ -1,0 +1,103 @@
+/* Calorimetry: the page, the colours that carry meaning (the hot body orange-brown, the cold body blue, the final
+   temperature T violet: the same on the labels and in the readings), the readings list, the book's sum and the test's
+   answers. The rest of the panel is the kit's clean sheet (../../shared/lib/student/student.css). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.cal { --c-hot: #c2410c; --c-cold: #1864ab; --c-T: #5f3dc4; }
+.cal sub, .cal sup { font-size: 0.72em; line-height: 0; }
+
+/* ── the readings: the book's givens, one per row, a coloured dot for the hot and the cold body ── */
+.cal-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; font-size: 14px; line-height: 1.4; color: var(--ink-2); }
+.cal-list li { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; align-items: baseline; gap: 6px; min-height: 22px; }
+.cal-list i { width: 8px; height: 8px; border-radius: 50%; background: #adb5bd; align-self: center; }
+.cal-list .hot i { background: var(--c-hot); }
+.cal-list .cold i { background: var(--c-cold); }
+.cal-list .nm { min-width: 0; }
+.cal-list .vl { font-weight: 700; color: var(--ink); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.cal-list .s .vl { font-weight: 600; font-size: 0.93em; }
+.cal-list .hot .vl { color: var(--c-hot); }
+.cal-list .cold .vl { color: var(--c-cold); }
+
+/* ── the sum (result line): the balance, the equation, T, then the numbers ── */
+.cal .pvc-outcome { display: block; font-size: 14.5px; line-height: 1.5; }
+.cal-line { display: block; }
+.cal-say { font-size: 13px; color: var(--ink-3); }
+.cal-eq { font-weight: 600; color: var(--ink); }
+.cal-T { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 5px; margin-top: 2px; color: var(--ink); }
+.cal-T b { font-size: 1.2em; color: var(--c-T); }
+.cal-heat { margin-top: 3px; font-size: 13.5px; color: var(--ink-2); }
+.cal-heat b { font-size: 1em; color: var(--ink); }
+.cal-short { display: none; }
+@container pvc-panel (max-width: 339px) {
+  .cal-long { display: none; }
+  .cal-short { display: inline-flex; }
+}
+.cal .fr { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; line-height: 1.25; }
+.cal .fr > span { display: block; padding: 0 3px; white-space: nowrap; }
+.cal .fr > span:first-child { border-bottom: 1.5px solid currentColor; padding-bottom: 1px; }
+.cal .pvc-rule { font-size: 14px; line-height: 1.45; }
+.cal .pvc-rule small { display: block; margin-top: 2px; font-size: 12.5px; color: var(--ink-3); }
+
+/* ── labels on the picture: short, on a solid chip rimmed in their colour ── */
+.pvc-anno-name { padding: 0 7px; border: 1.5px solid var(--c, #343a40); border-radius: 6px; background: rgba(255, 255, 255, 0.96); color: var(--c, #343a40); font-size: 13px; font-weight: 700; line-height: 1.55; white-space: nowrap; transition: none; }
+.pvc-anno-lines .k-name { stroke-width: 1.8; }
+
+/* ── the test ── */
+.cal .pvc-opt { font-size: 14px; line-height: 1.25; }
+.cal-opt { display: block; white-space: normal; text-align: center; }
+.cal .pvc-q-text { font-size: 14.5px; }
+.cal .pvc-q-feedback { font-size: 13.5px; }
+.cal-why { display: block; margin-top: 2px; color: var(--ink-2); }
+
+/* a narrow panel (a phone, the panel beside the 3D): a little tighter */
+@container pvc-panel (max-width: 330px) {
+  .cal-list { font-size: 12.5px; }
+  .cal-list li { gap: 4px; }
+  .cal .pvc-outcome { font-size: 13px; }
+  .cal-say { font-size: 12px; }
+  .cal-heat { font-size: 12.5px; }
+  .cal .pvc-rule { font-size: 12.5px; line-height: 1.38; }
+  .cal .pvc-examples .pvc-ex-word { font-size: 13px; }
+  .cal .pvc-act { font-size: 14px; }
+}
+/* the panel below the 3D (a phone held upright; src/app.js sets data-stacked): the 3D keeps as much height as it can */
+.cal[data-stacked='1'] .cal-say { display: none; }
+.cal[data-stacked='1'][data-done='1'] .cal-sym { display: none; }
+.cal[data-stacked='1'][data-done='1'] .cal-r1 { display: none; }
+.cal[data-stacked='1'] .cal-list { font-size: 12.5px; }
+.cal[data-stacked='1'] .cal-list li { min-height: 18px; }
+.cal[data-stacked='1'] .cal-list li.s { display: none; }
+.cal[data-stacked='1'] .pvc-outcome { --pvc-outcome-lines: 3; font-size: 13px; line-height: 1.4; }
+.cal[data-stacked='1'] .pvc-rule { --pvc-rule-lines: 2.3; font-size: 12.5px; line-height: 1.35; }
+.cal[data-stacked='1'] .pvc-rule small { display: none; }
+.cal[data-stacked='1'] .pvc-panel { gap: 4px; }
+.cal[data-stacked='1'] .pvc-learn { gap: 4px; }
+.cal[data-stacked='1'] .pvc-opt { height: 38px; font-size: 13px; line-height: 1.2; }
+.cal[data-stacked='1'] .pvc-q-options { gap: 6px; }
+.cal[data-stacked='1'] .pvc-q-text { font-size: 13.5px; --pvc-q-text-min: 2.4lh; }
+.cal[data-stacked='1'] .pvc-q-feedback { font-size: 12.5px; line-height: 1.35; --pvc-q-feedback-min: 4lh; }
+/* ... and not tall: the readings go (the masses and temperatures are on the picture, the specific heats in the sum) */
+@container pvc (max-height: 600px) {
+  .cal[data-stacked='1'] .cal-list { display: none; }
+  .cal[data-stacked='1'] .pvc-examples .pvc-ex-res { display: none; }
+  .cal[data-stacked='1'] .pvc-examples button { min-height: 34px; }
+  .cal[data-stacked='1'] .pvc-panel { padding-top: 6px; }
+}
+/* the panel beside the 3D on a short screen (a phone held sideways): here the panel is the container named pvc */
+@container pvc (max-height: 540px) {
+  .cal[data-stacked='0'] .pvc-learn { gap: 4px; }
+  .cal[data-stacked='0'] .pvc-panel { gap: 6px; }
+  .cal[data-stacked='0'] .cal-list { font-size: 12.5px; gap: 0; }
+  .cal[data-stacked='0'] .cal-list li { min-height: 18px; }
+  .cal[data-stacked='0'] .pvc-outcome { --pvc-outcome-lines: 0; font-size: 13px; line-height: 1.4; }
+  .cal[data-stacked='0'] .cal-say { display: none; }
+  .cal[data-stacked='0'][data-done='1'] .cal-sym { display: none; }
+  .cal[data-stacked='0'][data-done='1'] .cal-r1 { display: none; }
+  .cal[data-stacked='0'] .pvc-rule { --pvc-rule-lines: 0; font-size: 12.5px; line-height: 1.35; }
+  .cal[data-stacked='0'] .pvc-rule small { display: none; }
+  .cal[data-stacked='0'] .pvc-opt { font-size: 12.5px; height: 40px; }
+  .cal[data-stacked='0'] .pvc-q-text { font-size: 13px; }
+  .cal[data-stacked='0'] .pvc-q-feedback { font-size: 12px; }
+}
