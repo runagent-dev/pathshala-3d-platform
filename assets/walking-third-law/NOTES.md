@@ -150,3 +150,10 @@ Against `docs/agents/polish-pass.md`, version 0.3.0.
   triangles max 95k → 87k; texture memory 54.3 MB (largest 2048 px) → 17.8 MB (1024 px); frames drawn while idle 0/s;
   text on the view 30/2 at rest (unchanged: "শুরু" and the card's name; held: two short force labels instead of two
   sentences). Time to ready is the same within noise (about 6 s in a fresh software-GL browser either way).
+
+## Declutter and side panel (0.4.0)
+Only the main objects: the school building, its parapet and the three trees are gone, and the boundary wall is a
+plain plastered wall with a grey coping (no bricks, no yellow pillars); the cement yard, the soil cross-section, the
+student and the magnified contact stay. Kit 1.5.0 puts the panel beside the 3D, so the rules for a wide two-column
+sheet under the view (720 and 1000 px) and for the old phone-on-its-side layout are gone. No সামনে / ঘুরিয়ে দেখো
+buttons: the lab starts from the front, a drag turns it, and the small "front" icon then brings it back.
