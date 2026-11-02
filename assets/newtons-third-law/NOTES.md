@@ -195,3 +195,11 @@ Against `docs/agents/polish-pass.md`, version 1.2.0.
   stars); texture memory 14.3 MB (largest 1024 px) unchanged; frames drawn while idle 0–0.3/s either way; time to ready
   0.85–2.5 s before and 1.2–3.6 s after (noisy; a few more shaders to compile); text on the 3D view 62 characters in
   3 boxes → 21 in 2 at rest.
+
+## Declutter and side panel (1.3.0)
+Only the main objects: the far bank keeps its mud face, green fringe and footpath, but the village houses, the
+trees and palms, the moored boat and the sail boat are gone; the river is a calmer, slightly muted blue. Kit 1.5.0
+puts the panel beside the 3D on landscape frames, so the two-column sheet for wide frames is gone and the old
+phone-on-its-side rule now serves any narrow side panel (≤ 340 px; the box's caption on two lines, not clipped).
+No সামনে / ঘুরিয়ে দেখো buttons: the lab starts from the front, a drag turns it, and the small "front" icon then
+brings it back.

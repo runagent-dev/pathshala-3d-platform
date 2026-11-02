@@ -52,6 +52,7 @@ export function createApp(root, options = {}) {
   root.dataset.theme = o.bg;
   root.tabIndex = 0;
   const ui = buildStudentShell(root, t, {
+    layout: 'side',
     learn: cleanSheet(t, {
       examples: { label: 'pairs', items: IDS.map((id) => ({ id, label: `chip_${id}` })) },
       quiet: [{ act: 'maths-open', label: 'maths_open', icon: CALC_ICON }],
@@ -247,11 +248,31 @@ export function createApp(root, options = {}) {
   stage.onResize(setCamera);
   function setView(view) {
     s.view = view === '3d' ? '3d' : 'front';
-    controls.enableRotate = s.view === '3d';
-    ui.$$('[data-view]').forEach((b) => b.classList.toggle('on', b.dataset.view === s.view));
+    controls.enableRotate = controls.enableZoom = true;
+    syncFront();
     setCamera();
     emit('view', { view: s.view });
   }
+  /** The "front" icon shows only once the view was turned. */
+  function syncFront() {
+    const front = ui.$('[data-view="front"]');
+    if (front) front.hidden = s.view !== '3d';
+  }
+  // the view starts from the front; a drag turns it (the camera really moves: a tap never does), and then the "front"
+  // button appears to come back
+  let turning = false;
+  controls.addEventListener('start', () => {
+    turning = true;
+  });
+  controls.addEventListener('end', () => {
+    turning = false;
+  });
+  controls.addEventListener('change', () => {
+    if (!turning || s.view === '3d') return;
+    s.view = '3d';
+    syncFront();
+    emit('view', { view: s.view });
+  });
   function fullEquationHtml() {
     if (s.example === 'boat')
       return `<div class="nt-pair">${t('pair_formula')}</div><small>${t('boat_masses', { m: BOAT.personMass, M: BOAT.boatMass })}</small>`;
