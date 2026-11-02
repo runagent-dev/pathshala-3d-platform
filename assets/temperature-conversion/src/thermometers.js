@@ -76,6 +76,22 @@ function chipMesh(text, h, bg) {
   return mesh;
 }
 
+/** A plate with rounded corners, `d` deep, front face at z = d (centred on x and y). */
+function roundedPlate(w, h, d, r) {
+  const sh = new THREE.Shape();
+  const [x0, y0, x1, y1] = [-w / 2, -h / 2, w / 2, h / 2];
+  sh.moveTo(x0 + r, y0);
+  sh.lineTo(x1 - r, y0);
+  sh.quadraticCurveTo(x1, y0, x1, y0 + r);
+  sh.lineTo(x1, y1 - r);
+  sh.quadraticCurveTo(x1, y1, x1 - r, y1);
+  sh.lineTo(x0 + r, y1);
+  sh.quadraticCurveTo(x0, y1, x0, y1 - r);
+  sh.lineTo(x0, y0 + r);
+  sh.quadraticCurveTo(x0, y0, x0 + r, y0);
+  return new THREE.ExtrudeGeometry(sh, { depth: d, bevelEnabled: false, curveSegments: 6 });
+}
+
 function box(w, h, d, x, y, z) {
   const g = new THREE.BoxGeometry(w, h, d);
   g.translate(x, y, z);
@@ -164,7 +180,19 @@ export function createThermometers({ materials: M, digits, names }) {
   });
   const fixedMat = new THREE.MeshBasicMaterial({ name: 'Fixed', color: '#5b4a2c', transparent: true, opacity: 0.5, toneMapped: false });
 
+  const screwMat = new THREE.MeshStandardMaterial({ name: 'Screws', color: '#b08d3c', roughness: 0.35, metalness: 0.8 });
+  const shineMat = new THREE.MeshBasicMaterial({
+    name: 'Glint',
+    color: '#ffffff',
+    transparent: true,
+    opacity: 0.45,
+    toneMapped: false,
+    depthWrite: false,
+  });
+  const barMat = {};
   const liquids = {};
+  const domes = {};
+  const bars = {}; // from the lower fixed mark up to the liquid: T − (the lower fixed mark), in the scale's colour
   const plates = {};
   const tops = {}; // world points above each plate, where the number chips are pinned
   for (const id of SCALE_IDS) {
@@ -174,9 +202,21 @@ export function createThermometers({ materials: M, digits, names }) {
     root.add(g);
     plates[id] = g;
 
-    const plate = new THREE.Mesh(new THREE.BoxGeometry(PLATE_W, PLATE_Y[1] - PLATE_Y[0], FRONT), plateMat);
+    const plate = new THREE.Mesh(roundedPlate(PLATE_W, PLATE_Y[1] - PLATE_Y[0], FRONT, 7), plateMat);
     plate.name = 'Plate';
-    plate.position.set(0, (PLATE_Y[0] + PLATE_Y[1]) / 2, FRONT / 2);
+    plate.position.set(0, (PLATE_Y[0] + PLATE_Y[1]) / 2, 0);
+    // two brass screws that hold the plate to the board
+    const screwGeo = mergeGeometries(
+      [-1, 1].map((sx) => {
+        const sg = new THREE.CylinderGeometry(2.6, 2.6, 1.6, 16);
+        sg.rotateX(Math.PI / 2);
+        sg.translate(sx * (PLATE_W / 2 - 9), PLATE_Y[1] - 3.6, FRONT + 0.6);
+        return sg;
+      }),
+    );
+    const screws = new THREE.Mesh(screwGeo, screwMat);
+    screws.name = 'Screws';
+    g.add(screws);
     plate.castShadow = true;
     plate.receiveShadow = true;
     g.add(plate);
@@ -241,8 +281,22 @@ export function createThermometers({ materials: M, digits, names }) {
       new THREE.MeshBasicMaterial({ color: '#c9b98f', toneMapped: false }),
     );
     slot.position.set(TUBE_DX, (BULB_Y + TUBE_TOP) / 2, FRONT + 0.05);
-    g.add(slot, bulb, col, tube, cap, bulbGlass);
+    // the meniscus on top of the column, a glint along the glass and on the bulb
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(3.4, 14, 8), liquidMat);
+    dome.scale.y = 0.55;
+    dome.position.set(TUBE_DX, BULB_Y, FRONT + 7);
+    const glint = new THREE.Mesh(new THREE.PlaneGeometry(1.5, TUBE_TOP - BULB_Y - 10), shineMat);
+    glint.position.set(TUBE_DX - 2.4, (BULB_Y + TUBE_TOP) / 2, FRONT + 12.7);
+    const spot = new THREE.Mesh(new THREE.CircleGeometry(3, 14), shineMat);
+    spot.position.set(TUBE_DX - 5, BULB_Y + 5, FRONT + 19.8);
+    barMat[id] = new THREE.MeshBasicMaterial({ name: `Distance ${id}`, color: COLORS[id], toneMapped: false });
+    const bar = new THREE.Mesh(new THREE.BoxGeometry(4.2, 1, 1), barMat[id]);
+    bar.position.set(TUBE_DX + 8.8, 0, FRONT + 0.6);
+    bar.renderOrder = 2;
+    g.add(slot, bar, bulb, col, dome, tube, cap, bulbGlass, glint, spot);
     liquids[id] = col;
+    domes[id] = dome;
+    bars[id] = bar;
     tops[id] = new THREE.Vector3(X[id], PLATE_Y[1] + 2, FRONT);
   }
 
@@ -282,13 +336,18 @@ export function createThermometers({ materials: M, digits, names }) {
     for (const id of SCALE_IDS) {
       liquids[id].scale.y = len;
       liquids[id].position.y = y0 + len / 2;
+      domes[id].position.y = y;
+      const y00 = yOf(0);
+      const span = Math.max(0.01, Math.abs(y - y00));
+      bars[id].scale.y = span;
+      bars[id].position.y = (y + y00) / 2;
     }
     levelLine.position.y = y;
   }
 
   /** In the test, the liquid of a scale the question asks about waits (and the level line with it) until the answer. */
   function hideLiquid(ids) {
-    for (const id of SCALE_IDS) liquids[id].visible = !ids.includes(id);
+    for (const id of SCALE_IDS) liquids[id].visible = domes[id].visible = bars[id].visible = !ids.includes(id);
     levelLine.visible = ids.length === 0;
   }
 
