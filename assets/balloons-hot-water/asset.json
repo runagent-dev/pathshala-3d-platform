@@ -1,0 +1,64 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "balloons-hot-water",
+  "title": "Balloons in hot water (বেলুন গরম পানিতে)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 175,
+  "topic": "6.3.3",
+  "placement": "Book page 175, the \"নিজে করো\" box at the end of topic 6.3.3 (two balloons, one of water and one of air, kept in hot water).",
+  "maintainers": ["RadeenXALNW"],
+  "units": "cm",
+  "description": "Interactive 3D figure for the 'নিজে করো' (do it yourself) box on page 175, the end of textbook topic 6.3.3 (গ্যাসের প্রসারণ). A glass tank of water stands on a lab bench with two balloons of the same volume (1 L) under the surface, each tied to a small weight on the floor: a rose one filled with air and a blue one filled with water. The student picks how hot the water is (50, 70 or 90 °C) and taps the big button to keep both in the hot water: the balloon of water stays about the same size, the balloon of air swells (its volume follows V = V1 T2/T1 in kelvin, +7, +13 or +20 %; water grows only +1 to +3 %). The picture draws the swelling's radius about 3 times too big, with a dashed ring at the starting size, and says so; the numbers are real. The panel shows both volumes before and after and the book's two sentences (heat does not expand a liquid that much; it expands a gas much more). Three tap questions, one of them using gamma_P = 1/T1 from page 174. The tank, the balloons and the weights export as GLB in metres. Offline, in Bangla and English.",
+  "tags": ["gas", "liquid", "expansion", "balloon", "hot water", "heat", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "hot",
+      "label": "Hot water temperature",
+      "type": "select",
+      "options": ["50", "70", "90"],
+      "default": "90",
+      "help": "°C"
+    },
+    { "name": "heated", "label": "Start with both balloons in the hot water", "type": "boolean", "default": "0" },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on the part pulses at first", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "hot": 70, "heated": true } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "practice-start", "practice-result", "practice-end"],
+  "export": { "poster": { "params": { "coach": "0", "hot": "90", "heated": "1" } }, "glb": [{ "name": "default" }] }
+}
