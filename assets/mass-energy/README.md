@@ -1,8 +1,8 @@
-# Relation between mass and energy (ভর ও শক্তির সম্পর্ক)
+# Relation between mass and energy: the split (ভর ও শক্তির সম্পর্ক: নিউক্লিয়াস ভাঙা)
 
-**Where it goes in the book:** Book page 119, topic 4.6: ৪.৬ ভর ও শক্তির সম্পর্ক (Relation between mass and energy). Next to চিত্র ৪.০৬ (নিউক্লিয়ার বিক্রিয়ায় শক্তি উৎপাদন) and the equation ¹₀n + ²³⁵₉₂U → ⁹²₃₆Kr + ¹⁴¹₅₆Ba + 3¹₀n, with the paragraphs on E = mc², the chain reaction and the power plant.
+**Where it goes in the book:** Book page 119, topic 4.6: ৪.৬ ভর ও শক্তির সম্পর্ক (Relation between mass and energy). Next to চিত্র ৪.০৬ (নিউক্লিয়ার বিক্রিয়ায় শক্তি উৎপাদন) and the equation ¹₀n + ²³⁵₉₂U → ⁹²₃₆Kr + ¹⁴¹₅₆Ba + 3¹₀n, with the paragraphs on E = mc² and the chain reaction.
 
-Interactive 3D figure for the Pathshala book: a slow neutron splits a glowing uranium-235 nucleus into ⁹²Kr, ¹⁴¹Ba and three neutrons with a flash of energy, as in the book's চিত্র ৪.০৬; the panel compares the masses of the two sides of the book's equation and works E = mc² out with the mass that went missing. Two more scenes show the chain reaction (1 → 3 → 9) and a cut-open nuclear power plant, where the student picks the fuel's mass and sees the energy in joules and as years of a 100 W bulb.
+Interactive 3D figure for the Pathshala book: a slow neutron splits a glowing uranium-235 nucleus into ⁹²Kr, ¹⁴¹Ba and three neutrons with a flash of energy, as in the book's চিত্র ৪.০৬; the panel compares the masses of the two sides of the book's equation and works E = mc² out with the mass that went missing. A second scene in the same pool shows the chain reaction (1 → 3 → 9). The power plant is its own lab (`mass-energy-plant`).
 
 ## Embed
 
@@ -27,11 +27,8 @@ To listen to it or control it from the book page, use the helper shipped in the 
 | Param | Meaning | Values | Default |
 |---|---|---|---|
 | `lang` | Language | `bn` বাংলা · `en` English | `bn` |
-| `scene` | Scene | `one` one nucleus splits · `chain` chain reaction · `plant` power plant | `one` |
+| `scene` | Scene | `one` one nucleus splits · `chain` chain reaction | `one` |
 | `t` | Time into the split or chain (for pictures: 0 to 7 s (one nucleus), 0 to 12 s (chain)) | number | `0` |
-| `m` | Fuel mass (power plant) | `1` 1 g · `10` 10 g · `100` 100 g · `1000` 1 kg | `1` |
-| `part` | Mass that becomes energy | `fission` split (0.079%) · `full` all of it | `fission` |
-| `run` | Power plant running | `1` · `0` | `0` |
 | `view` | View | `front` · `3d` | `front` |
 | `mode` | Start in | `explore` learn · `quiz` test | `explore` |
 | `coach` | The ring on the neutron pulses at first | `1` · `0` | `1` |
