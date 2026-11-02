@@ -20,7 +20,7 @@ test('contact-noncontact-force-gravity: play, hold at the telling moment, see th
   await fig.call('reset');
   await frame.locator('.pvc-act').click();
   await fig.advance(2000);
-  let st = await fig.call('get');
+  const st = await fig.call('get');
   expect(st).toMatchObject({ phase: 'paused', acting: true, touching: false, marks: 'gap', seen: true, step: '' });
   expect(st.speed).toBeCloseTo(2.94, 2);
   await expect(frame.locator('.pvc-anno-tag-n')).toContainText('ছোঁয়নি: অস্পর্শ বল');

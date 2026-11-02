@@ -26,7 +26,7 @@ test('contact-noncontact-force-friction: play, hold at the telling moment, see t
   await fig.call('reset');
   await frame.locator('.pvc-act').click();
   await fig.advance(1600);
-  let st = await fig.call('get');
+  const st = await fig.call('get');
   expect(st).toMatchObject({ phase: 'paused', acting: true, touching: true, marks: 'contact', seen: true, step: '' });
   expect(st.speed).toBeCloseTo(1.12, 2);
   await expect(frame.locator('.pvc-anno-tag-c')).toContainText('ছুঁয়ে আছে: স্পর্শ বল');

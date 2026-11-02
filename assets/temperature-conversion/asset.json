@@ -1,0 +1,57 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "temperature-conversion",
+  "title": "Relation between temperature scales (ভিন্ন স্কেলের মাঝে সম্পর্ক)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 165,
+  "topic": "6.2.1",
+  "placement": "Book pages 165–166, topic 6.2.1 (ভিন্ন স্কেলের মাঝে সম্পর্ক): next to the relation T_C/100 = (T_K − 273.15)/100 = (T_F − 32)/180 and the four উদাহরণ (C = F at −40°, K = F at 574.59 K, 98.4° F in Celsius, C and K never equal). The page has no picture; this is the one the formulas describe.",
+  "maintainers": ["RadeenXALNW"],
+  "units": "mm",
+  "description": "Three thermometers on one wooden board, the same liquid at the same height in all of them: a Celsius, a Kelvin and a Fahrenheit scale (the book's order, with the formula's two fixed marks 0/100, 273.15/373.15 and 32/212 on the same two levels). The student drags the top of the liquid, or taps the numbered button for the book's four examples (C = F at −40°, K = F at 574.59 K, a healthy body at 98.4° F, C and K never equal); the three readings move together and the two relations T_C = T_K − 273.15° and T_C = 5/9 (T_F − 32°) are worked with the student's own numbers. Then a five-question test. The drawn scale spans −50° to 310° C so that every example fits.",
+  "tags": ["temperature", "celsius", "kelvin", "fahrenheit", "thermometer", "scale", "conversion", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    { "name": "value", "label": "Starting temperature (° C)", "type": "number", "default": "30", "placeholder": "° C" },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on the part pulses at first", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "value": 37 } },
+    { "name": "set", "payload": { "example": "cf" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "example", "dragstart", "dragend", "practice-start", "practice-result", "practice-end"],
+  "export": { "poster": { "params": { "coach": "0", "value": "30" } }, "glb": [{ "name": "default" }] }
+}
