@@ -104,10 +104,10 @@ export function createApp(root, options = {}) {
     quiet: [{ act: 'home', label: 'act_home', icon: ICONS.reset }],
     lines: { action: 1, outcome: 1, rule: 3 },
   }).replace(
-    '<div class="pvc-act-row"',
-    `<div class="wk-calc" role="group" aria-label="${t('calc')}">${stepper('F', 'calc_F')}${stepper('s', 'calc_s')}</div><div class="pvc-act-row"`,
+    '<p class="pvc-outcome"',
+    `<div class="wk-calc" role="group" aria-label="${t('calc')}">${stepper('F', 'calc_F')}${stepper('s', 'calc_s')}</div><p class="pvc-outcome"`,
   );
-  const ui = buildStudentShell(root, t, { learn: sheetHtml, learnAlign: 'start' });
+  const ui = buildStudentShell(root, t, { layout: 'side', learn: sheetHtml, learnAlign: 'start' });
   const sheet = bindCleanSheet(ui.learn);
   const $ = ui.$;
   const el = {
@@ -128,7 +128,7 @@ export function createApp(root, options = {}) {
   controls.maxDistance = 30;
   controls.enablePan = false;
   controls.enableRotate = false;
-  // the setting: a house's courtyard (teal boundary wall, iron gate, the guard's stool, houses and sky beyond)
+  // the setting: a calm sky over plain ground round the courtyard floor
   if (o.bg !== 'transparent') scene.add(createScenery().root);
   // a soft fill (sky above, the warm tiles below) and the studio reflections turned down, so the sun's shadows read
   scene.add(new THREE.HemisphereLight(0xe8f4ff, 0xc7924a, 0.5));
@@ -585,16 +585,20 @@ export function createApp(root, options = {}) {
   }
   function setView(view, { animate = true } = {}) {
     s.view = view === '3d' ? '3d' : 'front';
-    controls.enableRotate = s.view === '3d';
-    controls.enableZoom = s.view === '3d';
     s.userMovedCamera = false;
     syncUI();
     emit('view', { view: s.view });
     return flyTo(viewPose(), animate ? 0.8 : 0);
   }
+  // the view starts from the front; dragging turns it, and then the "front" button appears to come back
   controls.addEventListener('start', () => {
     s.userMovedCamera = true;
     tweener.cancel('camera');
+    if (s.view !== '3d') {
+      s.view = '3d';
+      syncUI();
+      emit('view', { view: s.view });
+    }
   });
   stage.onResize(() => {
     if (!s.userMovedCamera) flyTo(viewPose(), 0);
@@ -786,7 +790,9 @@ export function createApp(root, options = {}) {
 
   // ── buttons, keys ───────────────────────────────────────────────────────────
   function syncUI() {
-    for (const b of ui.$$('[data-view]')) b.classList.toggle('on', b.dataset.view === s.view);
+    const front = ui.$('[data-view="front"]');
+    if (front) front.hidden = s.view !== '3d';
+    controls.enableRotate = controls.enableZoom = !s.locked;
     root.dataset.mode = s.mode === 'quiz' ? 'quiz' : 'explore';
     for (const b of ui.$$('[data-mode]')) {
       const on = b.dataset.mode === root.dataset.mode;
