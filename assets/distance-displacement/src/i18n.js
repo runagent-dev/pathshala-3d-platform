@@ -24,7 +24,7 @@ export const STRINGS = {
     north_short: 'উ',
     scale_km: '{n} km',
     // under the key: what is to scale on the map and what is not
-    note_scale: 'রাস্তা ও দূরত্ব মাপমতো; সাইকেল, বাড়ি, গাছ বড় করে আঁকা',
+    note_scale: 'রাস্তা ও দূরত্ব মাপমতো; সাইকেল ও খুঁটি বড় করে আঁকা',
 
     // the key: what the two marks on the map are
     key: 'মানচিত্রে কোনটি কী',
@@ -134,7 +134,7 @@ export const STRINGS = {
     u_km: 'km',
     north_short: 'N',
     scale_km: '{n} km',
-    note_scale: 'Road and distances to scale; cycle, homes and trees drawn bigger',
+    note_scale: 'Road and distances to scale; the cycle and the posts drawn bigger',
 
     key: 'What is what on the map',
     key_dist: 'Blue path: distance',

@@ -1,11 +1,11 @@
-// The countryside of চিত্র ২.০৪ as a 3D tile: rice fields, ponds, village homes and trees round the winding road,
-// the kilometre posts 0–7 with the book's points A, B and C, and a compass. The road and its kilometres are to
-// scale; the houses, trees and posts are drawn bigger than real so that they can be seen at all.
+// The road of চিত্র ২.০৪ as a 3D tile: one calm sand-coloured ground (nothing else grows on it), the winding road,
+// the kilometre posts 0–7 with the book's points A, B and C, a compass and a scale bar. The road and its kilometres
+// are to scale; the posts are drawn bigger than real so that they can be seen at all.
 // Scene units: metres. x = east, z = south (north is −z), y = up. A is at the origin.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { FONT } from '@shared/student/materials.js';
-import { COUNT, END, POSTS, ROAD, ROAD_END, STEP, STOPS, headingAt, pointAt } from './road.js';
+import { COUNT, POSTS, ROAD, STOPS, headingAt, pointAt } from './road.js';
 
 /** metres in a kilometre (the road data is in km, the scene in m) */
 export const KM = 1000;
@@ -43,27 +43,10 @@ export const FRAME = (() => {
 })();
 
 // ── where things may stand (km) ─────────────────────────────────────────────────
-/** Distance from (x, n) to the road, km. */
-function roadClear(x, n) {
-  let d = Infinity;
-  for (let i = 0; i < COUNT; i++) d = Math.min(d, Math.hypot(ROAD[2 * i] - x, ROAD[2 * i + 1] - n));
-  return d;
-}
 /**
  * Distance from (x, n) to the ground the displacement arrow can lie on (every straight line from A to a point of
  * the road the cyclist can reach), km. Trees and houses stay out of it, so the arrow is never hidden.
  */
-function fanClear(x, n) {
-  let d = Infinity;
-  for (let i = 1, last = Math.round(END / STEP); i <= last; i++) {
-    const bx = ROAD[2 * i];
-    const by = ROAD[2 * i + 1];
-    const f = Math.max(0, Math.min(1, (x * bx + n * by) / (bx * bx + by * by)));
-    d = Math.min(d, Math.hypot(bx * f - x, by * f - n));
-  }
-  return d;
-}
-const onBoard = (x, n, margin) => x > BOARD.x0 + margin && x < BOARD.x1 - margin && n > BOARD.n0 + margin && n < BOARD.n1 - margin;
 
 /** A small seeded random generator, so the village looks the same every time. */
 function rand(seed) {
@@ -71,17 +54,6 @@ function rand(seed) {
   return () => (s = (s * 1664525 + 1013904223) >>> 0) / 4294967296;
 }
 
-// Village homes (বাড়ি): a courtyard with a few houses, trees round it and a pond. Centres in km.
-const HOMES = [
-  { x: -0.56, n: -0.42, pond: [0.17, 0.12] },
-  { x: -0.62, n: 0.5, pond: [0.12, -0.18] },
-  { x: 1.52, n: -0.4, pond: [0.18, -0.12] },
-  { x: 0.3, n: 2.32, pond: [0.2, -0.08] },
-  { x: 1.28, n: 2.28, pond: [-0.06, 0.2] },
-  { x: 1.92, n: 1.95, pond: null },
-  { x: -0.2, n: 2.6, pond: null },
-  { x: 1.95, n: -0.12, pond: null },
-];
 /** The compass and the scale bar lie in the south-east corner, where nothing else is. km. */
 const COMPASS_AT = { x: 2.0, n: -0.6 };
 const SCALE_BAR = { x0: 0.85, x1: 1.85, n: -0.84 };
@@ -100,18 +72,7 @@ function postSpots() {
   });
 }
 
-// ── the ground: fields, ponds, paths, the road's verge (one painted texture) ────────
-// A spring countryside: mustard (সরিষা) in flower, ripe paddy, ploughed earth, a little lilac khesari. The ground the
-// orange arrow sweeps is pale harvested stubble, so the arrow (and the blue path on the road) stay the clearest things.
-const FIELDS_CALM = ['#ebd192', '#e7c985', '#efd9a0', '#e9cf8c'];
-const FIELDS_ALL = [
-  ...['#f2c230', '#efb920', '#f4cc45', '#f2c230', '#efb920', '#f4cc45'], // mustard
-  ...['#dba53a', '#d39a3a', '#dba53a', '#d39a3a'], // ripe paddy
-  ...['#b9805a', '#a9714f', '#b9805a'], // ploughed earth
-  '#b896cc', // khesari, here and there
-];
-
-function groundTexture(renderer, homes, ponds) {
+function groundTexture(renderer) {
   // drawn in a W × H frame with square pixels, stored squeezed into 1024 × 1024 (a power of two; the tile's UVs
   // stretch it back)
   const W = 1024;
@@ -123,98 +84,18 @@ function groundTexture(renderer, homes, ponds) {
   const g = /** @type {CanvasRenderingContext2D} */ (c.getContext('2d'));
   g.scale(1, 1024 / H);
   const P = (x, n) => [(x - BOARD.x0) * sx, (BOARD.n1 - n) * sx];
-  g.fillStyle = '#e6c46a';
+  g.fillStyle = '#d8cbb0';
   g.fillRect(0, 0, W, H);
 
-  // fields on a slightly turned, jittered grid; the ground the arrow sweeps stays calm, pale stubble
+  // one calm ground, a soft warm sand with a little grain (no patchwork of fields, homes or ponds: the road and the
+  // arrow are the things to look at)
   const r = rand(21);
-  const a = 0.18;
-  const U = [Math.cos(a) * 0.17, Math.sin(a) * 0.17];
-  const V = [-Math.sin(a) * 0.115, Math.cos(a) * 0.115];
-  const jit = new Map();
-  const lattice = (i, j) => {
-    const key = `${i},${j}`;
-    if (!jit.has(key)) jit.set(key, [(r() - 0.5) * 0.05, (r() - 0.5) * 0.04]);
-    const [jx, jy] = jit.get(key);
-    return [BOARD.x0 + i * U[0] + j * V[0] + jx, BOARD.n0 + i * U[1] + j * V[1] + jy];
-  };
-  g.lineJoin = 'round';
-  for (let i = -8; i < 24; i++) {
-    for (let j = -4; j < 40; j++) {
-      const q = [lattice(i, j), lattice(i + 1, j), lattice(i + 1, j + 1), lattice(i, j + 1)];
-      const mx = (q[0][0] + q[2][0]) / 2;
-      const mn = (q[0][1] + q[2][1]) / 2;
-      if (mx < BOARD.x0 - 0.2 || mx > BOARD.x1 + 0.2 || mn < BOARD.n0 - 0.2 || mn > BOARD.n1 + 0.2) continue;
-      const calm = fanClear(mx, mn) < 0.05;
-      const list = calm ? FIELDS_CALM : FIELDS_ALL;
-      g.fillStyle = list[Math.floor(r() * list.length)];
-      g.beginPath();
-      for (const [k, [x, n]] of q.entries()) g[k ? 'lineTo' : 'moveTo'](...P(x, n));
-      g.closePath();
-      g.fill();
-      g.strokeStyle = 'rgba(150, 105, 60, 0.45)'; // the ridges (আইল) between fields
-      g.lineWidth = 1.6;
-      g.stroke();
-    }
+  for (let i = 0; i < 2200; i++) {
+    g.fillStyle = r() < 0.5 ? 'rgba(120, 96, 60, 0.07)' : 'rgba(255, 250, 235, 0.1)';
+    const sz = 2 + r() * 5;
+    g.fillRect(r() * W, r() * H, sz, sz);
   }
 
-  // homes: a patch of swept, shaded earth under the trees, a courtyard, a path to the road
-  for (const h of homes) {
-    const [x, y] = P(h.x, h.n);
-    const grad = g.createRadialGradient(x, y, 0, x, y, 0.24 * sx);
-    grad.addColorStop(0, 'rgba(176, 116, 66, 0.95)');
-    grad.addColorStop(0.7, 'rgba(196, 140, 84, 0.75)');
-    grad.addColorStop(1, 'rgba(196, 140, 84, 0)');
-    g.fillStyle = grad;
-    g.beginPath();
-    g.arc(x, y, 0.24 * sx, 0, Math.PI * 2);
-    g.fill();
-  }
-  g.strokeStyle = '#d8b47a';
-  g.lineCap = 'round';
-  g.lineWidth = 0.018 * sx;
-  for (const h of homes) {
-    let best = 0;
-    let bestD = Infinity;
-    for (let i = 0; i < COUNT; i++) {
-      const d = Math.hypot(ROAD[2 * i] - h.x, ROAD[2 * i + 1] - h.n);
-      if (d < bestD && fanClear((ROAD[2 * i] + h.x) / 2, (ROAD[2 * i + 1] + h.n) / 2) > 0.04) {
-        bestD = d;
-        best = i;
-      }
-    }
-    if (bestD > 0.7) continue;
-    g.beginPath();
-    g.moveTo(...P(h.x, h.n));
-    g.lineTo(...P(ROAD[2 * best], ROAD[2 * best + 1]));
-    g.stroke();
-  }
-  for (const h of homes) {
-    const [x, y] = P(h.x, h.n);
-    g.fillStyle = '#e8cf98';
-    g.beginPath();
-    g.arc(x, y, 0.055 * sx, 0, Math.PI * 2);
-    g.fill();
-  }
-  // ponds (পুকুর)
-  for (const p of ponds) {
-    const [x, y] = P(p.x, p.n);
-    g.save();
-    g.translate(x, y);
-    g.rotate(p.turn);
-    g.fillStyle = '#35a7d6';
-    g.strokeStyle = '#c9a46e';
-    g.lineWidth = 0.012 * sx;
-    g.beginPath();
-    g.roundRect((-p.w / 2) * sx, (-p.h / 2) * sx, p.w * sx, p.h * sx, 0.025 * sx);
-    g.fill();
-    g.stroke();
-    g.fillStyle = 'rgba(255, 255, 255, 0.22)';
-    g.beginPath();
-    g.roundRect((-p.w / 2 + 0.015) * sx, (-p.h / 2 + 0.012) * sx, (p.w - 0.03) * sx, 0.02 * sx, 0.01 * sx);
-    g.fill();
-    g.restore();
-  }
   // the road's dusty verge (the road itself is a mesh on top)
   g.strokeStyle = '#e2c48e';
   g.lineWidth = 0.14 * sx;
@@ -300,183 +181,6 @@ function roadMesh() {
   mesh.name = 'Road';
   mesh.receiveShadow = true;
   return mesh;
-}
-
-// ── trees and houses (instanced) ────────────────────────────────────────────────
-function placeVillage(ponds, posts) {
-  const r = rand(5);
-  const round = []; // { x, n, s }
-  const palms = [];
-  const houses = []; // { x, n, turn, kind }
-  const busy = (x, n, gap) =>
-    ponds.some((p) => Math.hypot(p.x - x, p.n - n) < Math.max(p.w, p.h) / 2 + gap) ||
-    posts.some((p) => Math.hypot(p.x - x, p.n - n) < gap + 0.03) ||
-    [...round, ...palms].some((t) => Math.hypot(t.x - x, t.n - n) < 0.045) ||
-    houses.some((h) => Math.hypot(h.x - x, h.n - n) < 0.07);
-  const free = (x, n, gap) => onBoard(x, n, 0.05) && roadClear(x, n) > gap + 0.045 && fanClear(x, n) > gap + 0.035 && !busy(x, n, gap);
-
-  for (const h of HOMES) {
-    const turn0 = r() * Math.PI * 2;
-    for (let k = 0; k < 3; k++) {
-      const t = turn0 + (k * Math.PI * 2) / 3 + (r() - 0.5) * 0.5;
-      const x = h.x + Math.cos(t) * 0.075;
-      const n = h.n + Math.sin(t) * 0.075;
-      if (free(x, n, 0.045)) houses.push({ x, n, turn: t, kind: Math.floor(r() * 4) });
-    }
-    for (let k = 0; k < 26; k++) {
-      const t = r() * Math.PI * 2;
-      const d = 0.12 + r() * 0.13;
-      const x = h.x + Math.cos(t) * d;
-      const n = h.n + Math.sin(t) * d;
-      const palm = r() < 0.3;
-      if (free(x, n, 0.04)) (palm ? palms : round).push({ x, n, s: 0.8 + r() * 0.45 });
-    }
-  }
-  // trees here and there along the road and the field ridges, never on the arrow's ground
-  for (let km = 0.3; km < ROAD_END; km += 0.22) {
-    const p = pointAt(km);
-    const hd = headingAt(km);
-    const side = r() < 0.5 ? 1 : -1;
-    const x = p.x + hd.y * side * 0.1;
-    const n = p.y - hd.x * side * 0.1;
-    if (r() < 0.55 && free(x, n, 0.04)) (r() < 0.25 ? palms : round).push({ x, n, s: 0.75 + r() * 0.4 });
-  }
-  for (let k = 0; k < 160; k++) {
-    const x = BOARD.x0 + r() * (BOARD.x1 - BOARD.x0);
-    const n = BOARD.n0 + r() * (BOARD.n1 - BOARD.n0);
-    if (r() < 0.45 && free(x, n, 0.05)) (r() < 0.3 ? palms : round).push({ x, n, s: 0.7 + r() * 0.5 });
-  }
-  return { round, palms, houses };
-}
-
-// flowering trees (shimul, jarul…) and some dark mango: no orange-red, which would read like the orange arrow
-const TREE_CROWNS = ['#c92a3c', '#d6406f', '#8a46bf', '#9a52cf', '#c92a3c', '#2f6b3a', '#3b7a3f', '#2f6b3a'];
-const PALMS = ['#4d7a2e', '#466f2a', '#557f34'];
-const WALLS = ['#e9e2d2', '#cfa77d', '#b9c0c6', '#ddd2b8'];
-const ROOFS = ['#8e979f', '#a65a3f', '#3b6fb0', '#b04a3c'];
-
-function villageMeshes(v) {
-  const group = new THREE.Group();
-  group.name = 'Village';
-  const m = new THREE.Matrix4();
-  const q = new THREE.Quaternion();
-  const s = new THREE.Vector3();
-  const p = new THREE.Vector3();
-  const c = new THREE.Color();
-  const r = rand(9);
-  const up = new THREE.Vector3(0, 1, 0);
-  const instanced = (geo, mat, count, name) => {
-    const mesh = new THREE.InstancedMesh(geo, mat, Math.max(1, count));
-    mesh.count = count;
-    mesh.name = name;
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    group.add(mesh);
-    return mesh;
-  };
-  const plain = (name) => new THREE.MeshStandardMaterial({ name, color: '#ffffff', roughness: 0.9, metalness: 0 });
-
-  // round trees (mango, jackfruit…): a lumpy crown on a trunk
-  const crownGeo = new THREE.IcosahedronGeometry(1, 1);
-  crownGeo.translate(0, 0.9, 0);
-  const trunkGeo = new THREE.CylinderGeometry(0.09, 0.13, 1, 6);
-  trunkGeo.translate(0, 0.5, 0);
-  const crowns = instanced(crownGeo, plain('TreeCrown'), v.round.length, 'Trees');
-  const trunks = instanced(
-    trunkGeo,
-    new THREE.MeshStandardMaterial({ name: 'Trunk', color: '#7a5a3c', roughness: 0.9 }),
-    v.round.length + v.palms.length,
-    'Trunks',
-  );
-  for (const [i, t] of v.round.entries()) {
-    const size = 42 * t.s;
-    q.setFromAxisAngle(up, r() * 6.28);
-    m.compose(toScene(t.x, t.n, 28 * t.s, p), q, s.set(size, size * (0.85 + r() * 0.25), size));
-    crowns.setMatrixAt(i, m);
-    crowns.setColorAt(i, c.set(TREE_CROWNS[Math.floor(r() * TREE_CROWNS.length)]));
-    m.compose(toScene(t.x, t.n, 0, p), q.identity(), s.set(size * 0.9, 34 * t.s, size * 0.9));
-    trunks.setMatrixAt(i, m);
-  }
-  // palms (coconut, betel nut): a tall thin trunk and a crown of fronds
-  const fronds = [];
-  for (let k = 0; k < 7; k++) {
-    const leaf = new THREE.ConeGeometry(0.16, 1.1, 4, 1);
-    leaf.scale(1, 1, 0.25);
-    leaf.translate(0, 0.55, 0);
-    leaf.rotateZ(-1.15 - (k % 2) * 0.25);
-    leaf.rotateY((k * Math.PI * 2) / 7);
-    fronds.push(leaf);
-  }
-  const frondGeo = mergeGeometries(fronds);
-  const palmCrowns = instanced(frondGeo, plain('PalmFronds'), v.palms.length, 'Palms');
-  for (const [i, t] of v.palms.entries()) {
-    const h = 105 * t.s;
-    const lean = new THREE.Quaternion().setFromEuler(new THREE.Euler((r() - 0.5) * 0.18, 0, (r() - 0.5) * 0.18));
-    m.compose(toScene(t.x, t.n, 0, p), lean, s.set(20 * t.s, h, 20 * t.s));
-    trunks.setMatrixAt(v.round.length + i, m);
-    const top = new THREE.Vector3(0, h, 0).applyQuaternion(lean).add(toScene(t.x, t.n));
-    q.setFromAxisAngle(up, r() * 6.28);
-    m.compose(top, q, s.setScalar(58 * t.s));
-    palmCrowns.setMatrixAt(i, m);
-    palmCrowns.setColorAt(i, c.set(PALMS[Math.floor(r() * PALMS.length)]));
-  }
-  // houses with tin roofs (টিনের চালা)
-  const wallGeo = new THREE.BoxGeometry(1, 1, 1);
-  wallGeo.translate(0, 0.5, 0);
-  const roofGeo = (() => {
-    const L = 0.56;
-    const W = 0.42;
-    const H = 0.3;
-    const v3 = [
-      // two slopes
-      [-L, 0, W],
-      [L, 0, W],
-      [L, H, 0],
-      [-L, 0, W],
-      [L, H, 0],
-      [-L, H, 0],
-      [L, 0, -W],
-      [-L, 0, -W],
-      [-L, H, 0],
-      [L, 0, -W],
-      [-L, H, 0],
-      [L, H, 0],
-      // gable ends
-      [-L, 0, -W],
-      [-L, 0, W],
-      [-L, H, 0],
-      [L, 0, W],
-      [L, 0, -W],
-      [L, H, 0],
-    ].flat();
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.Float32BufferAttribute(v3, 3));
-    geo.computeVertexNormals();
-    geo.translate(0, 1, 0);
-    return geo;
-  })();
-  const walls = instanced(wallGeo, plain('Walls'), v.houses.length, 'Houses');
-  const roofs = instanced(
-    roofGeo,
-    new THREE.MeshStandardMaterial({ name: 'Roofs', color: '#ffffff', roughness: 0.55, metalness: 0.25, side: THREE.DoubleSide }),
-    v.houses.length,
-    'Roofs',
-  );
-  for (const [i, h] of v.houses.entries()) {
-    q.setFromAxisAngle(up, -h.turn + Math.PI / 2);
-    m.compose(toScene(h.x, h.n, 0, p), q, s.set(70, 34, 50));
-    walls.setMatrixAt(i, m);
-    walls.setColorAt(i, c.set(WALLS[h.kind]));
-    m.compose(toScene(h.x, h.n, 0, p), q, s.set(70 * 1.05, 34, 50 * 1.12));
-    roofs.setMatrixAt(i, m);
-    roofs.setColorAt(i, c.set(ROOFS[(h.kind + i) % ROOFS.length]));
-  }
-  for (const mesh of group.children) {
-    mesh.instanceMatrix.needsUpdate = true;
-    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-    mesh.computeBoundingSphere();
-  }
-  return group;
 }
 
 // ── labels that always face the viewer and keep their size on screen ────────────────
@@ -727,24 +431,16 @@ export function createCountryside({ renderer, t, N }) {
   const root = new THREE.Group();
   root.name = 'Countryside';
 
-  const ponds = HOMES.filter((h) => h.pond).map((h, i) => ({
-    x: h.x + h.pond[0],
-    n: h.n + h.pond[1],
-    w: 0.13 + (i % 3) * 0.02,
-    h: 0.085,
-    turn: (i * 0.7) % 1.2,
-  }));
   const spots = postSpots();
   // nothing grows on the posts, the compass or the scale bar
   const clear = [...spots, { x: COMPASS_AT.x, n: COMPASS_AT.n }];
   for (let x = SCALE_BAR.x0; x <= SCALE_BAR.x1 + 1e-9; x += 0.1) clear.push({ x, n: SCALE_BAR.n }, { x, n: SCALE_BAR.n + 0.08 });
-  const village = placeVillage(ponds, clear);
 
   // the tile: fields on top, soil on the sides
   const w = (BOARD.x1 - BOARD.x0) * KM;
   const d = (BOARD.n1 - BOARD.n0) * KM;
   const soil = new THREE.MeshStandardMaterial({ name: 'Soil', vertexColors: true, roughness: 1 });
-  const fields = new THREE.MeshStandardMaterial({ name: 'Fields', map: groundTexture(renderer, HOMES, ponds), roughness: 1, metalness: 0 });
+  const fields = new THREE.MeshStandardMaterial({ name: 'Fields', map: groundTexture(renderer), roughness: 1, metalness: 0 });
   const tile = new THREE.Mesh(tileGeometry(w, d), [soil, fields]);
   tile.name = 'Fields';
   tile.position.copy(toScene((BOARD.x0 + BOARD.x1) / 2, (BOARD.n0 + BOARD.n1) / 2, 0));
@@ -753,7 +449,6 @@ export function createCountryside({ renderer, t, N }) {
 
   const road = roadMesh();
   root.add(road);
-  root.add(villageMeshes(village));
 
   const labels = createLabels();
   const letters = Object.fromEntries(Object.entries(STOPS).map(([k, v]) => [v, k]));
