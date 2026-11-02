@@ -34,7 +34,7 @@ To listen to it or control it from the book page, use the helper shipped in the 
 | `space` | The body in space | `1` · `0` | `0` |
 | `view` | View | `front` · `3d` | `front` |
 | `mode` | Start in | `explore` learn · `quiz` test | `explore` |
-| `coach` | The ring round the pump pulses | `1` · `0` | `1` |
+| `coach` | The ring round the tin pulses | `1` · `0` | `1` |
 | `numerals` | Digits | (empty) follow language · `bn` Bangla · `latin` Latin |  |
 | `bg` | Background | `light` · `transparent` | `light` |
 | `shadow` | Soft shadow | `1` · `0` | `1` |

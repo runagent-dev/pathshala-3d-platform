@@ -1,5 +1,5 @@
 /* Density: the page, the colours that carry meaning (mass m maroon, volume V orange, as in the owner's reference; the
-   density ρ in ink), the formula under the action (ρ = m/V and the sum with the numbers), the notes on the stage, the
+   density ρ in ink), the formula under the action (ρ = m/V and the sum with the numbers), the
    labels on the picture and the test's answers. The rest of the panel is the kit's clean sheet
    (../../shared/lib/student/student.css). */
 html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
@@ -28,12 +28,9 @@ body.bg-transparent { background: transparent; }
 .dn-frac .dn-sym { padding: 0 6px; }
 .dn-frac .dn-sym:first-child { border-bottom: 2.5px solid var(--ink); }
 .dn-sum { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 0; font-size: 15px; line-height: 1.38; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dn-l1 { display: flex; flex-wrap: wrap; column-gap: 0.3em; }
 .dn-rho, .dn-kg { color: var(--ink-2); }
 .dn-rho b { color: var(--c-rho); font-size: 1.12em; }
-
-/* notes on the stage (top left; the buttons are top right) */
-.dn-notes { position: absolute; left: 8px; top: 8px; z-index: 3; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; max-width: max(120px, calc(100% - 232px)); pointer-events: none; }
-.dn-note { padding: 2px 8px; border-radius: 6px; background: rgba(255, 255, 255, 0.9); font-size: 12.5px; line-height: 1.4; color: var(--ink-2); }
 
 /* labels on the picture */
 .pvc-anno-tag, .pvc-anno-mass, .pvc-anno-volume { padding: 1px 7px; border: 1.5px solid #c8ccd2; border-radius: 6px; background: rgba(255, 255, 255, 0.95); font-size: 13.5px; font-weight: 600; line-height: 1.4; text-align: center; transition: opacity 0.25s; }
@@ -52,11 +49,15 @@ body.bg-transparent { background: transparent; }
 .dn .pvc-q-feedback { font-size: 14px; }
 
 /* phones */
+/* a phone held upright: the 3D keeps more than half the height (the result line shows beside the 3D only) */
 @container pvc (max-width: 420px) {
+  .dn .pvc-learn { gap: 6px; }
   .dn-eq { gap: 10px; }
   .dn-sum { font-size: 14.5px; }
-  .dn .pvc-rule { font-size: 13.5px; }
-  .dn .pvc-outcome { font-size: 14px; }
+  .dn .pvc-rule { font-size: 13px; line-height: 1.4; }
+  .dn .pvc-outcome { display: none; }
+  .dn .pvc-q-options { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+  .dn .pvc-opt { height: 46px; padding: 0 3px; font-size: 13.5px; line-height: 1.2; }
   .dn .pvc-ex-word { font-size: 14px; }
 }
 /* phones that are not tall: the formula smaller, the result line folded into the sum */
@@ -71,7 +72,6 @@ body.bg-transparent { background: transparent; }
   .dn .pvc-q-text { font-size: 14px; }
   .dn .pvc-opt { font-size: 13.5px; }
   .dn .pvc-q-feedback { font-size: 13px; }
-  .dn-note { font-size: 11.5px; }
   .pvc-anno-tag, .pvc-anno-mass, .pvc-anno-volume { font-size: 12px; padding: 0 5px; }
 }
 /* short and wide (phone held sideways): the panel is beside the scene; the action may take two lines there */
@@ -87,20 +87,11 @@ body.bg-transparent { background: transparent; }
   .dn .pvc-q-text { font-size: 14px; }
   .dn .pvc-opt { font-size: 13px; height: 42px; }
   .dn .pvc-q-feedback { font-size: 12.5px; }
-  .dn-note { font-size: 11.5px; }
   .pvc-anno-tag, .pvc-anno-mass, .pvc-anno-volume { font-size: 12px; padding: 0 5px; }
 }
-/* wide frames (tabs beside the sheet): the row and the action on the left, the formula on the right */
-@container pvc (min-width: 720px) and (min-height: 461px) {
-  .dn .pvc-learn { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: 'ex eq' 'act eq' 'out out' 'rule rule'; align-content: start; column-gap: 28px; row-gap: 6px; }
-  .dn .pvc-examples { grid-area: ex; }
-  .dn .pvc-act-row { grid-area: act; }
-  .dn-eq { grid-area: eq; align-self: center; }
-  .dn .pvc-outcome { grid-area: out; }
-  .dn .pvc-rule { grid-area: rule; --pvc-rule-lines: 2; }
-}
-@container pvc (min-width: 720px) and (max-width: 1100px) and (min-height: 461px) {
-  .dn .pvc-quiet span { display: none; }
+/* the panel beside the 3D (a size container, so a height query matches only there): room for the result line */
+@container pvc-panel (min-height: 300px) {
+  .dn .pvc-outcome { display: block; font-size: 13.5px; line-height: 1.45; }
 }
 /* a narrow panel beside the scene: the sum smaller so each line stays whole */
 @container pvc-panel (max-width: 330px) {

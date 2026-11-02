@@ -55,12 +55,11 @@ export const STRINGS = {
     sum_label: 'চাপ = গভীরতা × ঘনত্ব × অভিকর্ষজ ত্বরণ',
 
     // the rule: the book's words, one idea at a time
-    rule_start: '<b>তরলের গভীরে গেলে চাপ অনুভব করা যায়।</b> উপরে তরলের যে স্তম্ভটুকু থাকে, তার ওজন থেকেই চাপ। একটি ছিদ্র খুলে দেখো।',
-    rule_column:
-      '<b>A পৃষ্ঠের উপরের তরলটুকুর আয়তন Ah,</b> তার ওজন বা বল F = (Ahρ)g = {F}&nbsp;{u_N}। কাজেই চাপ P = F/A = hρg: A যত বড়ই হোক, একই তরলে চাপ শুধু গভীরতার উপর নির্ভর করে।',
-    rule_depth: '<b>নির্দিষ্ট ঘনত্বের তরলে গভীরতার সাথে সাথে চাপ বাড়তে থাকে:</b> গভীরতা দ্বিগুণ হলে চাপও দ্বিগুণ। যে ছিদ্র যত গভীরে, তার পানি তত জোরে বের হয়।',
+    rule_start: '<b>তরলের গভীরে গেলে চাপ অনুভব করা যায়।</b> উপরের তরলের স্তম্ভের ওজন থেকেই এই চাপ। একটি ছিদ্র খোলো, বা A পৃষ্ঠটি টেনে সরাও।',
+    rule_column: '<b>A পৃষ্ঠের উপরের তরলের আয়তন Ah,</b> ওজন বা বল F = (Ahρ)g = {F}&nbsp;{u_N}। কাজেই P = F/A = hρg। লাল তীর ছিদ্রে চাপ দেখায়।',
+    rule_depth: '<b>নির্দিষ্ট ঘনত্বের তরলে গভীরতার সাথে সাথে চাপ বাড়তে থাকে:</b> h দ্বিগুণ হলে চাপও দ্বিগুণ। গভীর ছিদ্রে লাল তীর লম্বা, পানিও জোরে বের হয়।',
     rule_atm:
-      '<b>পানির বেলায় আনুমানিক প্রতি দশ মিটার গভীরতায় বাতাসের চাপের সমপরিমাণ চাপ বেড়ে যায়:</b> {ten}&nbsp;{u_m} পানির নিচে hρg = {P10}&nbsp;{u_Pa}, আর ভূপৃষ্ঠে বায়ুমণ্ডলের চাপ 1 atm = {atm}&nbsp;{u_Pa}।',
+      '<b>পানির বেলায় আনুমানিক প্রতি দশ মিটার গভীরতায় বাতাসের চাপের সমপরিমাণ চাপ বেড়ে যায়:</b> {ten}&nbsp;{u_m} গভীরে hρg = {P10}&nbsp;{u_Pa}, আর 1 atm = {atm}&nbsp;{u_Pa}।',
 
     // the graph (the book's figure 5.03, for this tank)
     g_x: 'গভীরতা h (m)',
@@ -69,7 +68,6 @@ export const STRINGS = {
 
     // notes on the stage
     note_drag: 'A পৃষ্ঠটি টেনে উপরে-নিচে সরাও',
-    note_arrows: 'লাল তীর যত লম্বা, চাপ তত বেশি',
 
     // labels on the picture
     lbl_h: 'h = {v}&nbsp;{u_m}',
@@ -78,7 +76,6 @@ export const STRINGS = {
     lbl_A: 'A = {v}&nbsp;{u_cm2}',
     lbl_F: 'F = {v}&nbsp;{u_N}',
     lbl_column: 'তরলের স্তম্ভ',
-    lbl_grow: 'গভীরতা বাড়লে চাপ বাড়ে',
     lbl_gauge: 'গভীরতা ({u_m})',
     lbl_this: 'এই ছিদ্র',
 
@@ -100,30 +97,30 @@ export const STRINGS = {
     q_locked: 'পরীক্ষার সময় দৃশ্যটি আটকানো থাকে। ছবি দেখে উত্তর বেছে নাও।',
 
     q_hole: 'চিহ্নিত ছিদ্রের গভীরতায় পানির চাপ কত? গভীরতা বাম পাশের স্কেল থেকে পড়ো।',
-    why_hole: '<b>{P}&nbsp;{u_Pa}</b>: ছিদ্রটি {h}&nbsp;{u_m} গভীরে, তাই P = hρg = {h} × {rho} × {g} = {P}&nbsp;{u_Pa}।',
-    mis_no_g: 'এখানে g দিয়ে গুণ করা হয়নি: তরলের ওজন = ভর × g।',
-    mis_cm: 'গভীরতা মিটারে নিতে হবে: {cm}&nbsp;cm = {h}&nbsp;{u_m}।',
-    mis_other: 'এটি অন্য একটি ছিদ্রের গভীরতার চাপ।',
+    why_hole: '<b>{P}&nbsp;{u_Pa}</b>: ছিদ্রটি {h}&nbsp;{u_m} গভীরে, P = hρg = {h} × {rho} × {g}।',
+    mis_no_g: 'এখানে g দিয়ে গুণ করা হয়নি।',
+    mis_cm: 'গভীরতা মিটারে নাও: {cm}&nbsp;cm = {h}&nbsp;{u_m}।',
+    mis_other: 'এটি অন্য ছিদ্রের চাপ।',
 
-    q_far: 'তিনটি ছিদ্রই একই মাপের। নিচের ছিদ্রের পানি সবচেয়ে জোরে বের হয়ে সবচেয়ে দূরে পড়ছে কেন?',
+    q_far: 'নিচের ছিদ্রের পানি সবচেয়ে জোরে বের হয়ে সবচেয়ে দূরে পড়ছে কেন?',
     c_deep: 'তার উপরে তরলের স্তম্ভ সবচেয়ে উঁচু',
     c_denser: 'নিচের দিকের পানির ঘনত্ব বেশি',
     c_gravity: 'নিচের পানির উপর g বেশি',
     c_air: 'নিচে বাতাসের চাপ বেশি',
-    why_far: '<b>উপরের তরল স্তম্ভ সবচেয়ে উঁচু:</b> h সবচেয়ে বেশি, তাই চাপ P = hρg সবচেয়ে বেশি; বেশি চাপ পানিকে বেশি জোরে ঠেলে বের করে।',
-    mis_denser: 'বই বলছে, তরলকে চাপ দিয়ে সংকুচিত করা যায় না, তাই ঘনত্ব একই থাকে।',
+    why_far: '<b>উপরের তরল স্তম্ভ সবচেয়ে উঁচু:</b> h সবচেয়ে বেশি, তাই P = hρg সবচেয়ে বেশি, পানি সবচেয়ে জোরে বের হয়।',
+    mis_denser: 'তরলকে চাপ দিয়ে সংকুচিত করা যায় না, তাই ঘনত্ব একই থাকে।',
     mis_gravity: 'g সব জায়গায় একই, {g}&nbsp;{u_g}।',
-    mis_air: 'ট্যাংকের সব জায়গায় বাতাসের চাপ প্রায় একই; পার্থক্য পানির স্তম্ভে।',
+    mis_air: 'বাতাসের চাপ সব ছিদ্রে প্রায় একই; পার্থক্য পানির স্তম্ভে।',
 
     q_double: 'A পৃষ্ঠটিকে {h1}\u00a0{u_m} থেকে {h2}\u00a0{u_m} গভীরে নামালে তার উপর পানির চাপ কী হবে?',
     c_twice: 'দ্বিগুণ হবে',
     c_half: 'অর্ধেক হবে',
     c_same: 'একই থাকবে',
     c_four: 'চার গুণ হবে',
-    why_double: '<b>দ্বিগুণ হবে</b>: P = hρg, তাই h দ্বিগুণ হলে চাপও দ্বিগুণ ({P1}&nbsp;{u_Pa} থেকে {P2}&nbsp;{u_Pa})।',
-    mis_half: 'গভীরে নামলে উপরের স্তম্ভ লম্বা হয়, তাই চাপ বাড়ে।',
-    mis_same: 'A একই থাকলেও উপরের স্তম্ভের ওজন দ্বিগুণ হয়।',
-    mis_four: 'চাপ h-এর সাথে সমান হারে বাড়ে, h<sup>2</sup>-এর সাথে নয়।',
+    why_double: '<b>দ্বিগুণ হবে</b>: P = hρg, h দ্বিগুণ হলে চাপও দ্বিগুণ ({P1} থেকে {P2}&nbsp;{u_Pa})।',
+    mis_half: 'গভীরে নামলে উপরের স্তম্ভ লম্বা হয়, চাপ বাড়ে।',
+    mis_same: 'উপরের স্তম্ভের ওজন দ্বিগুণ হয়।',
+    mis_four: 'চাপ h-এর সমান হারে বাড়ে, h<sup>2</sup>-এর নয়।',
 
     q_column: 'ছিদ্রগুলো বন্ধ। A পৃষ্ঠের উপর পানির চাপ কীসের জন্য তৈরি হয়?',
     c_weight: 'A-এর উপরের তরল স্তম্ভের ওজনের জন্য',
@@ -131,14 +128,14 @@ export const STRINGS = {
     c_below: 'A-এর নিচের পানির ওজনের জন্য',
     c_hole: 'ছিদ্র বন্ধ, তাই কোনো চাপ নেই',
     why_column: '<b>উপরের তরল স্তম্ভের ওজনের জন্য</b>: F = (Ahρ)g, তাই P = F/A = hρg। ছিদ্র বন্ধ থাকলেও এই চাপ থাকে।',
-    mis_wall: 'দেয়াল শুধু পানিকে আটকে রাখে; চাপ আসে উপরের তরলের ওজন থেকে।',
-    mis_below: 'বই বলছে, A-এর উপরের স্তম্ভটুকুর ওজন থেকেই চাপ; নিচের পানি নয়।',
-    mis_hole: 'ছিদ্র বন্ধ থাকলেও চাপ থাকে; ছিদ্র খুললে সেই চাপ পানিকে বাইরে ঠেলে দেয়।',
+    mis_wall: 'দেয়াল শুধু পানিকে আটকে রাখে।',
+    mis_below: 'চাপ আসে A-এর উপরের স্তম্ভ থেকে, নিচের পানি থেকে নয়।',
+    mis_hole: 'ছিদ্র খুললে এই চাপই পানিকে ঠেলে বের করে।',
 
     q_ten: 'এই ট্যাংকের পানি যদি {d}\u00a0{u_m} গভীর হতো, তলায় শুধু পানির জন্য চাপ কত হতো?',
-    why_ten: '<b>{P}&nbsp;{u_Pa}</b>: hρg = {d} × {rho} × {g}। বই বলছে, প্রতি দশ মিটারে বাতাসের চাপের (1 atm = {atm}&nbsp;{u_Pa}) প্রায় সমান চাপ বাড়ে।',
-    mis_one_m: 'এটি {one}&nbsp;{u_m} গভীরের চাপ (এখনকার ট্যাংকের তলা)।',
-    mis_no_g10: 'এখানে g দিয়ে গুণ করা হয়নি।',
+    why_ten: '<b>{P}&nbsp;{u_Pa}</b>: hρg = {d} × {rho} × {g}, প্রায় 1 atm ({atm}&nbsp;{u_Pa})।',
+    mis_one_m: 'এটি {one}&nbsp;{u_m} গভীরের চাপ।',
+    mis_no_g10: 'g দিয়ে গুণ করা হয়নি।',
     mis_hundred: 'এটি {hundred}&nbsp;{u_m} গভীরের চাপ।',
   },
   en: {
@@ -182,20 +179,20 @@ export const STRINGS = {
     sum: '<i>P</i> = <i>hρg</i> = {h}&nbsp;{u_m} × {rho}&nbsp;{u_rho} × {g}&nbsp;{u_g} = <b>{P}&nbsp;{u_Pa}</b>',
     sum_label: 'pressure = depth × density × acceleration due to gravity',
 
-    rule_start: '<b>Deep in a liquid you feel a pressure.</b> It comes from the weight of the column of liquid above you. Open a hole and see.',
+    rule_start:
+      '<b>Deep in a liquid you feel a pressure.</b> It comes from the weight of the column of liquid above. Open a hole, or drag the surface A.',
     rule_column:
-      '<b>The liquid above the surface A has the volume Ah</b> and its weight, the force F = (Ahρ)g = {F}&nbsp;{u_N}. So the pressure is P = F/A = hρg: whatever the size of A, in one liquid the pressure depends only on the depth.',
+      '<b>The liquid above A has the volume Ah,</b> its weight, the force F = (Ahρ)g = {F}&nbsp;{u_N}. So P = F/A = hρg. A red arrow shows the pressure at a hole.',
     rule_depth:
-      '<b>In a liquid of a given density the pressure grows with depth:</b> twice the depth, twice the pressure. The deeper a hole, the harder its water comes out.',
+      '<b>In a liquid of a given density the pressure grows with depth:</b> twice h, twice the pressure. A deeper hole: a longer red arrow, a harder jet.',
     rule_atm:
-      '<b>In water, about every ten metres of depth add a pressure equal to the air’s:</b> {ten}&nbsp;{u_m} under water hρg = {P10}&nbsp;{u_Pa}, and the atmosphere’s pressure at the ground is 1 atm = {atm}&nbsp;{u_Pa}.',
+      '<b>In water, every ten metres of depth add about the air’s pressure:</b> {ten}&nbsp;{u_m} down hρg = {P10}&nbsp;{u_Pa}; 1 atm = {atm}&nbsp;{u_Pa}.',
 
     g_x: 'depth h (m)',
     g_y: 'pressure P (Pa)',
     graph_label: 'Pressure–depth graph: the pressure grows at a steady rate with the depth',
 
     note_drag: 'Drag the surface A up and down',
-    note_arrows: 'The longer the red arrow, the more the pressure',
 
     lbl_h: 'h = {v}&nbsp;{u_m}',
     lbl_h_q: 'h = ?',
@@ -203,7 +200,6 @@ export const STRINGS = {
     lbl_A: 'A = {v}&nbsp;{u_cm2}',
     lbl_F: 'F = {v}&nbsp;{u_N}',
     lbl_column: 'column of liquid',
-    lbl_grow: 'deeper, more pressure',
     lbl_gauge: 'depth ({u_m})',
     lbl_this: 'this hole',
 
@@ -223,47 +219,45 @@ export const STRINGS = {
     q_again: 'Take the test again',
     q_locked: 'The picture is locked during the test. Pick an answer from the picture.',
 
-    q_hole: 'What is the water’s pressure at the depth of the marked hole? Read the depth off the scale on the left.',
-    why_hole: '<b>{P}&nbsp;{u_Pa}</b>: the hole is {h}&nbsp;{u_m} deep, so P = hρg = {h} × {rho} × {g} = {P}&nbsp;{u_Pa}.',
-    mis_no_g: 'This leaves out g: the liquid’s weight = mass × g.',
+    q_hole: 'What is the water’s pressure at the marked hole? Read its depth off the scale.',
+    why_hole: '<b>{P}&nbsp;{u_Pa}</b>: the hole is {h}&nbsp;{u_m} deep, P = hρg = {h} × {rho} × {g}.',
+    mis_no_g: 'This leaves out g.',
     mis_cm: 'Take the depth in metres: {cm}&nbsp;cm = {h}&nbsp;{u_m}.',
-    mis_other: 'This is the pressure at another hole’s depth.',
+    mis_other: 'That is another hole’s pressure.',
 
-    q_far: 'The three holes are the same size. Why does the water from the bottom hole come out hardest and land furthest?',
-    c_deep: 'The column of liquid above it is the tallest',
+    q_far: 'Why does the water from the bottom hole come out hardest and land furthest?',
+    c_deep: 'The column above it is the tallest',
     c_denser: 'The water lower down is denser',
-    c_gravity: 'g is bigger on the lower water',
-    c_air: 'The air’s pressure is bigger down there',
-    why_far:
-      '<b>The column of liquid above it is the tallest:</b> h is the biggest, so P = hρg is the biggest; more pressure pushes the water out harder.',
-    mis_denser: 'The book says a liquid cannot be squeezed by pressure, so its density stays the same.',
+    c_gravity: 'A bigger g lower down',
+    c_air: 'More air pressure down there',
+    why_far: '<b>The column above it is the tallest:</b> the biggest h, so the biggest P = hρg.',
+    mis_denser: 'A liquid cannot be squeezed: its density stays the same.',
     mis_gravity: 'g is the same everywhere, {g}&nbsp;{u_g}.',
-    mis_air: 'The air’s pressure is about the same all round the tank; the difference is the column of water.',
+    mis_air: 'The air’s pressure is about the same at every hole.',
 
-    q_double: 'The surface A is lowered from {h1}\u00a0{u_m} to {h2}\u00a0{u_m} deep. What happens to the water’s pressure on it?',
+    q_double: 'A is lowered from {h1}\u00a0{u_m} to {h2}\u00a0{u_m} deep. What happens to the water’s pressure on it?',
     c_twice: 'It doubles',
     c_half: 'It halves',
     c_same: 'It stays the same',
     c_four: 'It becomes four times',
-    why_double: '<b>It doubles</b>: P = hρg, so twice h is twice the pressure ({P1}&nbsp;{u_Pa} to {P2}&nbsp;{u_Pa}).',
-    mis_half: 'Lower down the column above is taller, so the pressure grows.',
-    mis_same: 'A stays the same, but the weight of the column above it doubles.',
-    mis_four: 'The pressure grows in step with h, not with h<sup>2</sup>.',
+    why_double: '<b>It doubles</b>: P = hρg, twice h is twice the pressure ({P1} to {P2}&nbsp;{u_Pa}).',
+    mis_half: 'Lower down the column above is taller.',
+    mis_same: 'The column above A weighs twice as much.',
+    mis_four: 'P grows in step with h, not h<sup>2</sup>.',
 
     q_column: 'The holes are closed. What makes the water’s pressure on the surface A?',
-    c_weight: 'The weight of the column of liquid above A',
+    c_weight: 'The weight of the liquid above A',
     c_wall: 'The push of the tank’s wall',
     c_below: 'The weight of the water below A',
-    c_hole: 'Nothing: the holes are closed, so there is no pressure',
-    why_column: '<b>The weight of the column of liquid above A</b>: F = (Ahρ)g, so P = F/A = hρg. It is there with the holes closed too.',
-    mis_wall: 'The wall only holds the water in; the pressure comes from the weight of the liquid above.',
-    mis_below: 'The book says the pressure comes from the weight of the column above A, not the water below.',
-    mis_hole: 'The pressure is there with the holes closed; open a hole and it pushes the water out.',
+    c_hole: 'Nothing: the holes are closed',
+    why_column: '<b>The weight of the column above A</b>: F = (Ahρ)g, so P = F/A = hρg, holes closed or not.',
+    mis_wall: 'The wall only holds the water in.',
+    mis_below: 'It comes from the column above A, not the water below.',
+    mis_hole: 'Open a hole and this pressure pushes the water out.',
 
-    q_ten: 'If the water in this tank were {d}\u00a0{u_m} deep, what would the pressure of the water alone be at the bottom?',
-    why_ten:
-      '<b>{P}&nbsp;{u_Pa}</b>: hρg = {d} × {rho} × {g}. The book says every ten metres add about the air’s pressure (1 atm = {atm}&nbsp;{u_Pa}).',
-    mis_one_m: 'This is the pressure {one}&nbsp;{u_m} down (the bottom of this tank now).',
+    q_ten: 'If this tank’s water were {d}\u00a0{u_m} deep, what would the water’s own pressure be at the bottom?',
+    why_ten: '<b>{P}&nbsp;{u_Pa}</b>: hρg = {d} × {rho} × {g}, about 1 atm ({atm}&nbsp;{u_Pa}).',
+    mis_one_m: 'That is the pressure {one}&nbsp;{u_m} down.',
     mis_no_g10: 'This leaves out g.',
     mis_hundred: 'This is the pressure {hundred}&nbsp;{u_m} down.',
   },
