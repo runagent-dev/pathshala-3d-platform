@@ -40,3 +40,10 @@ The book's gas sentence appears as a small note after the cooker has been seen.
 
 ## Open questions
 - Keep the round figures 90 and 120 (marked "প্রায়"), or show only the direction (lower / higher) with no numbers?
+
+## Polish pass 0.2.0
+- The pot looks like a real one: a steel band at the rim, bracketed black side grips; the cooker lid is a domed steel
+  lid with a clamp handle across it, a vent weight with its cap and the seal for the thermometer.
+- The red pressure arrows are drawn over the lid (x-ray) so they read on the opaque cooker lid.
+- Page 182 gives no picture and no temperatures for boiling (only words), so there are no book values to use: 100° C is
+  the usual value; 90 and 120 stay as round figures marked "প্রায়". Strings re-checked against the page: unchanged.
