@@ -101,6 +101,7 @@ export function createApp(root, options = {}) {
   root.lang = t.lang;
   root.tabIndex = 0;
   const ui = buildStudentShell(root, t, {
+    layout: 'side',
     learn: cleanSheet(t, {
       examples: { label: 'ratios', results: false, items: RATIOS.map((k) => ({ id: String(k), label: `chip_${k}` })) },
       quiet: [
@@ -153,7 +154,7 @@ export function createApp(root, options = {}) {
   controls.maxDistance = 12;
   controls.enablePan = false;
   controls.enableZoom = false;
-  controls.enableRotate = false;
+  controls.enableRotate = true;
   controls.minPolarAngle = 0.4;
   controls.maxPolarAngle = Math.PI * 0.52;
   controls.minAzimuthAngle = -1.0; // turning stays in front of the workshop's wall
@@ -1076,14 +1077,18 @@ export function createApp(root, options = {}) {
   }
   function setView(view, { animate = true } = {}) {
     s.view = view === '3d' ? '3d' : 'front';
-    controls.enableRotate = s.view === '3d';
     s.userMovedCamera = false;
     syncUI();
     emit('view', { view: s.view });
     emitChange();
     return flyTo(viewPose(), animate ? 0.7 : 0);
   }
+  // the view starts from the front; dragging turns it, and then the "front" button appears to come back
   controls.addEventListener('start', () => {
+    if (s.view !== '3d') {
+      s.view = '3d';
+      syncUI();
+    }
     s.userMovedCamera = true;
     camTween.cancel('camera');
   });
@@ -1439,7 +1444,9 @@ export function createApp(root, options = {}) {
 
   // ── buttons, keys ───────────────────────────────────────────────────────────
   function syncUI() {
-    for (const b of ui.$$('[data-view]')) b.classList.toggle('on', b.dataset.view === s.view);
+    const front = ui.$('[data-view="front"]');
+    if (front) front.hidden = s.view !== '3d';
+    controls.enableRotate = controls.enableZoom = !s.locked;
     root.dataset.mode = s.mode === 'quiz' ? 'quiz' : 'explore';
     for (const b of ui.$$('[data-mode]')) {
       const on = b.dataset.mode === root.dataset.mode;
@@ -1522,7 +1529,6 @@ export function createApp(root, options = {}) {
 
   // ── start ───────────────────────────────────────────────────────────────────
   syncUI();
-  controls.enableRotate = s.view === '3d';
   lift.setRatio(s.ratio);
   if (o.phase === 'pushed') {
     s.found.push = true;

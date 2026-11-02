@@ -58,10 +58,10 @@ export const STRINGS = {
     // the result line
     out_ready: 'তিনটি বলের আয়তন সমান, <b class="c-V">{V}&nbsp;{u_cc}</b>; ভর আলাদা',
     out_falling: 'দেখো বলটি পানিতে কোথায় থামে…',
-    out_cork: 'কর্কের বল <b>ভাসে</b>: বেশির ভাগটাই পানির উপরে',
-    out_wood: 'কাঠের বল <b>ভাসে</b>, তবে প্রায় অর্ধেক ডুবে থাকে',
-    out_iron: 'লোহার বল <b>ডুবে যায়</b>: তলায় গিয়ে থামে',
-    out_box: '{n}টি কণা, ভর <b class="c-m">{m}&nbsp;{u_gm}</b>: কণা বা ভর বদলাবে না',
+    out_cork: 'কর্ক <b>ভাসে</b>: ঘনত্ব পানির ({w}&nbsp;{u_gcc}) চেয়ে অনেক কম',
+    out_wood: 'কাঠ <b>ভাসে</b>, প্রায় অর্ধেক ডুবে: ঘনত্ব পানির চেয়ে কম',
+    out_iron: 'লোহা <b>ডুবে যায়</b>: ঘনত্ব পানির ({w}&nbsp;{u_gcc}) চেয়ে বেশি',
+    out_box: '{n}টি কণা (বড় করে আঁকা), ভর <b class="c-m">{m}&nbsp;{u_gm}</b>',
     out_squeezing: 'কণাগুলো কাছাকাছি আসছে…',
     out_expanding: 'কণাগুলো ছড়িয়ে যাচ্ছে…',
     out_half: 'ভর একই, আয়তন অর্ধেক: ঘনত্ব <b>দ্বিগুণ</b>',
@@ -78,11 +78,6 @@ export const STRINGS = {
     rule_squeeze:
       '<b>ভর একই থাকলে আয়তন কমলে ঘনত্ব বাড়ে:</b> আয়তন অর্ধেক হলে ঘনত্ব দ্বিগুণ। বই বলে, তাপমাত্রা বাড়লে বা কমলে আয়তন বদলায় কিন্তু ভর বদলায় না, তাই ঘনত্ব তাপমাত্রার সাথে বদলায়।',
 
-    // notes on the stage
-    note_balls: 'প্রতিটি বল: <b class="c-V">V = {V}&nbsp;{u_cc}</b>',
-    note_water: 'পানি: ρ = {w}&nbsp;{u_gcc}',
-    note_model: 'কণাগুলো বড় করে আঁকা',
-
     // labels on the picture
     lbl_ball: '{name}<br><span class="c-m">{m}&nbsp;{u_gm}</span>',
     lbl_m: 'm = {m}&nbsp;{u_gm}',
@@ -92,7 +87,7 @@ export const STRINGS = {
     letters: 'ক,খ,গ,ঘ',
 
     hint_wait: 'বলটি পানিতে থামা পর্যন্ত দেখো।',
-    hint_in: 'এই বলটি পানিতেই আছে। শুরুতে ফেরাও বোতামে বলগুলো আবার উঠে আসে।',
+    hint_in: 'বলটি পানিতেই আছে; শুরুতে ফেরাও চাপলে উঠে আসে।',
 
     // the test
     q_count: 'প্রশ্ন {i} / {n}',
@@ -183,10 +178,10 @@ export const STRINGS = {
 
     out_ready: 'The three balls have the same volume, <b class="c-V">{V}&nbsp;{u_cc}</b>; their masses differ',
     out_falling: 'Watch where the ball stops in the water…',
-    out_cork: 'The cork ball <b>floats</b>: most of it stays above the water',
-    out_wood: 'The wooden ball <b>floats</b>, but about half of it is under water',
-    out_iron: 'The iron ball <b>sinks</b>: it stops on the bottom',
-    out_box: '{n} particles, mass <b class="c-m">{m}&nbsp;{u_gm}</b>: the particles and the mass stay the same',
+    out_cork: 'Cork <b>floats</b>: far less dense than water ({w}&nbsp;{u_gcc})',
+    out_wood: 'Wood <b>floats</b>, about half under: less dense than water',
+    out_iron: 'Iron <b>sinks</b>: denser than water ({w}&nbsp;{u_gcc})',
+    out_box: '{n} particles (drawn large), mass <b class="c-m">{m}&nbsp;{u_gm}</b>',
     out_squeezing: 'The particles are coming closer…',
     out_expanding: 'The particles are spreading out…',
     out_half: 'The same mass in half the volume: <b>twice</b> the density',
@@ -204,10 +199,6 @@ export const STRINGS = {
     rule_squeeze:
       '<b>For the same mass, less volume means more density:</b> half the volume, twice the density. The book says: heating or cooling changes a substance’s volume but not its mass, so its density changes with temperature.',
 
-    note_balls: 'Each ball: <b class="c-V">V = {V}&nbsp;{u_cc}</b>',
-    note_water: 'Water: ρ = {w}&nbsp;{u_gcc}',
-    note_model: 'The particles are drawn large',
-
     lbl_ball: '{name}<br><span class="c-m">{m}&nbsp;{u_gm}</span>',
     lbl_m: 'm = {m}&nbsp;{u_gm}',
     lbl_V: 'V = {V}&nbsp;{u_cc}',
@@ -216,7 +207,7 @@ export const STRINGS = {
     letters: 'A,B,C,D',
 
     hint_wait: 'Watch until the ball stops in the water.',
-    hint_in: 'This ball is already in the water. “Back to the start” brings the balls back out.',
+    hint_in: 'It is in the water already; “Back to the start” brings it out.',
 
     q_count: 'Question {i} / {n}',
     q_score: 'Right: {right}',
