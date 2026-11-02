@@ -170,3 +170,10 @@ The standard in `docs/agents/polish-pass.md`, version 0.3.0.
    branch can be closed if this one is taken.
 6. The ½ explanation ("the force grows from ০ to kx, ½kx on average; work = average force × distance") is not on the
    page. Is it welcome as the tap-to-see reason, or should the ½ only be named?
+
+## Declutter (2026-11-01, v0.4.0)
+Only the spring, its support, the ruler and the hand: the window with its view, the pegboard of springs and weights,
+the clock, the tiles, the shelf of bottles and flasks and the wood grain are gone; a plain bench before a soft blue
+wall (four meshes, no textures). The panel follows the order every lab uses: the states, the action, the x and k
+steppers, the formula lines, the rule (the old wide-frame and sideways-phone rules are gone). No front/turn buttons:
+a drag turns the view (not during the test), a front icon brings it back.

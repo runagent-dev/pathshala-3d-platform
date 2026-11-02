@@ -100,10 +100,10 @@ export function createApp(root, options = {}) {
     quiet: [{ act: 'home', label: 'act_home', icon: ICONS.reset }],
     lines: { action: 1, outcome: 2, rule: 3 },
   }).replace(
-    '<div class="pvc-act-row"',
-    `<div class="sp-calc" role="group" aria-label="${t('calc')}">${stepper('x', 'calc_x')}${stepper('k', 'calc_k')}</div><div class="pvc-act-row"`,
+    '<p class="pvc-outcome"',
+    `<div class="sp-calc" role="group" aria-label="${t('calc')}">${stepper('x', 'calc_x')}${stepper('k', 'calc_k')}</div><p class="pvc-outcome"`,
   );
-  const ui = buildStudentShell(root, t, { learn: sheetHtml, learnAlign: 'start' });
+  const ui = buildStudentShell(root, t, { layout: 'side', learn: sheetHtml, learnAlign: 'start' });
   const sheet = bindCleanSheet(ui.learn);
   const $ = ui.$;
   // the result line is the book's two formulas, each letter a button tied to its part of the picture (k the spring,
@@ -140,8 +140,8 @@ export function createApp(root, options = {}) {
   controls.maxDistance = 4;
   controls.enablePan = false;
   controls.enableRotate = false;
-  // a school physics laboratory in daylight (src/scenery.js): a wooden bench against a sky-blue wall with a window,
-  // the lab's springs on a pegboard and a shelf; with bg=transparent only the bench's middle (the GLB's table)
+  // a plain bench before a soft blue wall (src/scenery.js);
+  // with bg=transparent only the bench's middle (the GLB's table)
   const world = new THREE.Group();
   world.name = 'SpringPotentialEnergy';
   scene.add(world);
@@ -716,16 +716,20 @@ export function createApp(root, options = {}) {
   }
   function setView(view, { animate = true } = {}) {
     s.view = view === '3d' ? '3d' : 'front';
-    controls.enableRotate = s.view === '3d';
-    controls.enableZoom = s.view === '3d';
     s.userMovedCamera = false;
     syncUI();
     emit('view', { view: s.view });
     return flyTo(viewPose(), animate ? 0.8 : 0);
   }
+  // the view starts from the front; dragging turns it, and then the "front" button appears to come back
   controls.addEventListener('start', () => {
     s.userMovedCamera = true;
     tweener.cancel('camera');
+    if (s.view !== '3d') {
+      s.view = '3d';
+      syncUI();
+      emit('view', { view: s.view });
+    }
   });
   stage.onResize(() => {
     if (!s.userMovedCamera) flyTo(viewPose(), 0);
@@ -1036,7 +1040,9 @@ export function createApp(root, options = {}) {
 
   // ── buttons, keys ───────────────────────────────────────────────────────────
   function syncUI() {
-    for (const b of ui.$$('[data-view]')) b.classList.toggle('on', b.dataset.view === s.view);
+    const front = ui.$('[data-view="front"]');
+    if (front) front.hidden = s.view !== '3d';
+    controls.enableRotate = controls.enableZoom = !s.locked;
     root.dataset.mode = s.mode === 'quiz' ? 'quiz' : 'explore';
     for (const b of ui.$$('[data-mode]')) {
       const on = b.dataset.mode === root.dataset.mode;
