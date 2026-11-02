@@ -1,0 +1,44 @@
+/* Evaporation: the page, the two bars that say how much liquid is left in each vessel, the time bar under them, the
+   names on the vessels and the test's answers. The rest of the panel is the kit's clean sheet
+   (../../shared/lib/student/student.css). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.ev { --c-liquid: #1c6fd9; --c-time: #c2410c; --pvc-outcome-lines: 2; --pvc-rule-lines: 3; }
+.ev .pvc-outcome { font-size: 15px; line-height: 1.45; }
+.ev .pvc-rule { font-size: 14.5px; line-height: 1.45; }
+.ev .pvc-rule b { color: var(--c-time); }
+.ev .pvc-outcome b { color: var(--c-time); }
+
+/* the six words of the list in one row (two if the panel is very narrow), the chosen one underlined (the kit's examples row) */
+.ev .pvc-examples { flex-wrap: wrap; row-gap: 2px; }
+.ev .pvc-examples button { min-height: 40px; padding: 4px 2px 6px; }
+.ev .pvc-examples .pvc-ex-word { font-size: 14px; }
+
+/* ── the liquid left in each vessel, and the time ── */
+.ev-read { display: grid; gap: 6px; }
+.ev-row { display: grid; grid-template-columns: 2.6em 1fr 3.6em; align-items: center; gap: 8px; min-height: 22px; }
+.ev-name { font-size: 14px; font-weight: 600; color: var(--ink-3); }
+.ev-bar { position: relative; height: 12px; border-radius: 6px; background: var(--soft-2); box-shadow: inset 0 0 0 1px var(--line-2); overflow: hidden; }
+.ev-bar i { position: absolute; left: 0; top: 0; bottom: 0; width: 100%; background: linear-gradient(#5aa8f0, var(--c-liquid)); border-radius: 6px; }
+.ev-pct { font-size: 15px; font-weight: 800; color: var(--c-liquid); text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ev-row.is-dry .ev-pct { color: var(--ink-3); font-weight: 600; }
+.ev-time { position: relative; height: 24px; margin-top: 2px; cursor: pointer; touch-action: none; }
+.ev-time::before { content: ''; position: absolute; left: 0; right: 0; top: 9px; height: 6px; border-radius: 3px; background: var(--soft-2); box-shadow: inset 0 0 0 1px var(--line-2); }
+.ev-time i { position: absolute; left: 0; top: 9px; height: 6px; border-radius: 3px; background: var(--c-time); }
+.ev-time i::after { content: ''; position: absolute; right: -9px; top: -6px; width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 3px solid var(--c-time); box-sizing: border-box; }
+.ev-time:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+/* names on the vessels: plain chips */
+.pvc-anno-name { padding: 0 8px; border-radius: 6px; background: rgba(255, 248, 235, 0.96); color: #3b2b1d; font-size: 14px; font-weight: 700; line-height: 1.5; white-space: nowrap; transition: none; }
+
+/* the test: answers in words */
+.ev .pvc-opt { font-size: 14.5px; line-height: 1.25; }
+
+/* a phone held upright: a shorter panel so the 3D keeps its height */
+@media (max-aspect-ratio: 1/1), (max-width: 599px) {
+  .ev { --pvc-rule-lines: 3; }
+  .ev .pvc-rule { font-size: 14px; line-height: 1.4; }
+  .ev .pvc-q-text { --pvc-q-text-min: 2lh; }
+}
