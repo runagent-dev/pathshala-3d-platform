@@ -1,8 +1,7 @@
-// Linear motion (book page 36, topic 2.2), student view: a carrom board and a cricket ball on a stand. Push the
-// striker on the flat board (drag out from it and let go, or ধাক্কা দাও), let the ball go (ছেড়ে দাও), or throw it
-// sideways (ছুড়ে দাও). Each motion leaves faint pictures at equal time steps and a dotted path, then a dashed
-// straight line is laid through its ends: the push and the free fall lie on it (সরলরৈখিক গতি), the sideways throw
-// curves away from it (not linear). Then a short test. Built on the shared student kit (@shared/student/…).
+// Linear motion (book page 36, topic 2.2), student view: a carrom board. Push the striker on the flat board (drag
+// out from it and let go, or ধাক্কা দাও). The motion leaves faint pictures at equal time steps and a dotted path,
+// then a dashed straight line is laid through its ends: the path lies on it (সরলরৈখিক গতি), even though the
+// striker slows down. Then a short test. Built on the shared student kit (@shared/student/…).
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
 import { createTweener, ease } from '@shared/tween.js';
@@ -12,22 +11,17 @@ import { buildStudentShell } from '@shared/student/shell.js';
 import { createCoach } from '@shared/student/coach.js';
 import { createQuiz } from '@shared/student/quiz.js';
 import { createAnnotations } from '@shared/student/annotations.js';
-import { ICONS, svg } from '@shared/student/icons.js';
+import { ICONS } from '@shared/student/icons.js';
 import { createI18n } from './i18n.js';
 import { createCarrom } from './carrom.js';
-import { createBall, createStand } from './stand.js';
 import { COLORS, createArrow, createOptionPath, createTrace } from './trace.js';
 import { fitPose } from './camera.js';
 import {
-  BALL,
   BOARD,
   STRIKER,
   angleOf,
   candidatePaths,
   dirFromAngle,
-  fallTime,
-  farthestIndex,
-  flightAt,
   isStraight,
   maxDeviation,
   pushFrom,
@@ -38,7 +32,6 @@ import {
 } from './motion.js';
 
 export const DEFAULTS = {
-  example: 'push', // 'push' | 'drop' | 'throw'
   view: 'front', // 'front' | '3d'
   mode: 'explore', // 'explore' | 'quiz'
   coach: true,
@@ -49,25 +42,17 @@ export const DEFAULTS = {
   sound: true,
 };
 
-const EXAMPLES = ['push', 'drop', 'throw'];
 const AIM_FULL = 0.2; // m of finger drag on the board for a full-strength push
 const AIM_MIN = 0.015; // a shorter drag is not a push
-// how each example is looked at: the front view's elevation follows the stage's shape (degrees, portrait … wide: a
+// how the board is looked at: the front view's elevation follows the stage's shape (degrees, portrait … wide: a
 // wide, short stage looks lower, so the board fills more of its height); the rotate view starts from the side
-const ELEVATION = { push: [52, 38], fall: [23, 15] };
-const VIEW_3D = { push: new THREE.Vector3(0.8, 1.05, 0.95), fall: new THREE.Vector3(0.62, 0.55, 0.9) };
+const ELEVATION = [52, 38];
+const VIEW_3D = new THREE.Vector3(0.8, 1.05, 0.95);
 // what must be in the frame (a short stage lets the far rail run into the margin)
 const BOXES = {
   push: new THREE.Box3(new THREE.Vector3(-0.445, 0, -0.445), new THREE.Vector3(0.445, 0.04, 0.445)),
   pushShort: new THREE.Box3(new THREE.Vector3(-0.41, 0, -0.39), new THREE.Vector3(0.41, 0.04, 0.445)),
-  fall: new THREE.Box3(new THREE.Vector3(-0.47, 0, -0.3), new THREE.Vector3(0.445, BOARD.surface + BALL.height + 0.08, 0.445)),
 };
-const CHIP_ICONS = {
-  push: svg('<circle cx="6.5" cy="12" r="3.5"/><path d="M12 12h8.5M17.5 9l3 3-3 3"/>'),
-  drop: svg('<circle cx="12" cy="5.5" r="3"/><path d="M12 11v9.5M9 17.5l3 3 3-3"/>'),
-  throw: svg('<circle cx="5.5" cy="6" r="3"/><path d="M10 6c5 0 8.6 4.6 9 13.5M16.6 17l2.4 3 2.2-3.1"/>'),
-};
-const sceneOf = (ex) => (ex === 'push' ? 'push' : 'fall');
 
 export function createApp(root, options = {}) {
   const o = { ...DEFAULTS, ...options };
@@ -81,9 +66,6 @@ export function createApp(root, options = {}) {
   const ui = buildStudentShell(root, t, {
     layout: 'side', // the panel beside the 3D on landscape frames (kit 1.5.0)
     learn: `
-          <div class="lm-chips" role="radiogroup" aria-label="${t('examples')}">${EXAMPLES.map(
-            (ex) => `<button role="radio" data-ex="${ex}">${CHIP_ICONS[ex]}<span>${t(`ex_${ex}`)}</span></button>`,
-          ).join('')}</div>
           <div class="lm-acts">
             <button class="pvc-btn primary" data-act="go">${ICONS.play}<span></span></button>
             <button class="pvc-btn" data-act="clear">${ICONS.reset}<span>${t('act_clear')}</span></button>
@@ -93,11 +75,6 @@ export function createApp(root, options = {}) {
           </div>
           <p class="lm-extra"></p>`,
   });
-  const slowBadge = document.createElement('div');
-  slowBadge.className = 'lm-slow';
-  slowBadge.textContent = t('slow', { k: BALL.slow });
-  slowBadge.hidden = true;
-  ui.stage.append(slowBadge);
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 30, near: 0.02, far: 60, environment: 'studio-light' });
@@ -123,26 +100,17 @@ export function createApp(root, options = {}) {
   world.name = 'LinearMotion';
   scene.add(world);
   const carrom = createCarrom({ materials: M });
-  const stand = createStand({ materials: M });
-  const ball = createBall();
-  world.add(carrom.root, stand.root, ball.root);
-  ball.root.position.copy(stand.ballHome);
+  world.add(carrom.root);
   const striker = carrom.striker;
 
   const strikerGhost = carrom.ghostGeometry;
-  const ballGhost = new THREE.SphereGeometry(BALL.r, 20, 14);
   const traces = {
     push: createTrace({ name: 'PushTrace', ghostGeometry: strikerGhost, maxGhosts: 16, lineLift: STRIKER.h + 0.002 }),
-    drop: createTrace({ name: 'DropTrace', ghostGeometry: ballGhost, maxGhosts: 12 }),
-    throw: createTrace({ name: 'ThrowTrace', ghostGeometry: ballGhost, maxGhosts: 12 }),
   };
   for (const tr of Object.values(traces)) world.add(tr.group);
   const aimArrow = createArrow();
-  const throwArrow = createArrow();
-  for (const a of [aimArrow, throwArrow]) {
-    a.group.userData.noExport = true;
-    world.add(a.group);
-  }
+  aimArrow.group.userData.noExport = true;
+  world.add(aimArrow.group);
   const options4 = Array.from({ length: 4 }, () => createOptionPath());
   for (const op of options4) {
     op.mesh.userData.noExport = true;
@@ -171,10 +139,9 @@ export function createApp(root, options = {}) {
     floor.userData.noExport = true;
     scene.add(sun, sun.target, floor);
   }
-  for (const obj of [carrom.root, stand.root, ball.root])
-    obj.traverse((m) => {
-      if (m instanceof THREE.Mesh && m.material && !m.material.transparent && m.material.visible !== false) m.castShadow = true;
-    });
+  carrom.root.traverse((m) => {
+    if (m instanceof THREE.Mesh && m.material && !m.material.transparent && m.material.visible !== false) m.castShadow = true;
+  });
 
   const listeners = new Map();
   function emit(type, payload) {
@@ -182,12 +149,10 @@ export function createApp(root, options = {}) {
   }
 
   const s = {
-    example: EXAMPLES.includes(o.example) ? o.example : 'push',
     view: o.view === '3d' ? '3d' : 'front',
     mode: 'explore',
     locked: false,
-    runs: { push: null, drop: null, throw: null }, // the last motion of each example (see makeRun)
-    ballFrom: null, // the example whose motion moved the ball off its holder (null: the ball is on the holder)
+    runs: { push: null }, // the last push (see makeRun)
     aim: null, // a push being aimed: { angle, strength }
     userMovedCamera: false,
   };
@@ -209,28 +174,15 @@ export function createApp(root, options = {}) {
     let centre; // (t, out) → the object's centre
     let mark; // (t, out) → the point of the path drawn (on the board for the striker)
     let step;
-    let slow = 1;
-    let push = null;
-    if (kind === 'push') {
-      push = pushFrom(from, angle, strength);
+    const slow = 1;
+    const push = pushFrom(from, angle, strength);
+    {
       T = push.T;
       step = STRIKER.step;
       const at = (tt) => slideAt(tt, push);
       centre = (tt, out) => out.set(from.x + push.dir.x * at(tt), strikerY + STRIKER.h / 2, from.z + push.dir.z * at(tt));
       mark = (tt, out) => onBoard(from.x + push.dir.x * at(tt), from.z + push.dir.z * at(tt), out);
       place = (tt) => striker.position.set(from.x + push.dir.x * at(tt), strikerY, from.z + push.dir.z * at(tt));
-    } else {
-      const vx = kind === 'throw' ? BALL.vx : 0;
-      const home = stand.ballHome;
-      T = fallTime();
-      step = BALL.step;
-      slow = BALL.slow;
-      centre = (tt, out) => {
-        const f = flightAt(tt, vx);
-        return out.set(home.x + f.x, home.y + f.y, home.z);
-      };
-      mark = centre;
-      place = (tt) => centre(tt, ball.root.position);
     }
     const ghosts = strobeTimes(T, step).map((tt) => ({ t: tt, p: centre(tt, new THREE.Vector3()) }));
     // the dotted path: dense samples in time, kept about every centimetre along the path
@@ -253,21 +205,6 @@ export function createApp(root, options = {}) {
       end,
     );
     const linear = isStraight(dots.map((d) => d.p));
-    // the widest gap from the line, for the bracket of a curved path
-    let far = null;
-    let foot = null;
-    if (!linear) {
-      far =
-        dots[
-          farthestIndex(
-            dots.map((d) => d.p),
-            start,
-            end,
-          )
-        ].p.clone();
-      const dir = new THREE.Vector3().subVectors(end, start).normalize();
-      foot = start.clone().addScaledVector(dir, new THREE.Vector3().subVectors(far, start).dot(dir));
-    }
     let landed;
     return {
       kind,
@@ -281,8 +218,6 @@ export function createApp(root, options = {}) {
       end,
       deviation,
       linear,
-      far,
-      foot,
       t0: 0,
       state: 'ready', // 'ready' | 'moving' | 'landed' | 'judged'
       judge: true,
@@ -302,20 +237,19 @@ export function createApp(root, options = {}) {
       distance: round(run.start.distanceTo(run.end), 3), // m from start to end
       pictures: run.path.ghosts.length,
       step: run.step,
-      ...(run.push ? { angle: round(run.push.angle, 1), strength: round(run.push.strength, 2) } : {}),
+      angle: round(run.push.angle, 1),
+      strength: round(run.push.strength, 2),
     };
   }
 
   function snapshot() {
-    const run = s.runs[s.example];
+    const run = s.runs.push;
     return {
-      example: s.example,
       phase: s.aim ? 'aiming' : !run ? 'ready' : run.state === 'judged' ? 'done' : run.state, // 'moving' | 'landed'
       path: run?.state === 'judged' ? (run.linear ? 'straight' : 'curved') : null,
       linear: run?.state === 'judged' ? run.linear : null,
       striker: { x: round(striker.position.x, 3), z: round(striker.position.z, 3) },
-      ball: { x: round(ball.root.position.x, 3), y: round(ball.root.position.y - BOARD.surface, 3), onHolder: s.ballFrom == null },
-      runs: { push: summary(s.runs.push), drop: summary(s.runs.drop), throw: summary(s.runs.throw) },
+      runs: { push: summary(s.runs.push) },
       view: s.view,
       mode: s.mode,
     };
@@ -324,33 +258,10 @@ export function createApp(root, options = {}) {
   let lastEmitted = '';
   function emitChange() {
     const snap = snapshot();
-    const key = JSON.stringify([snap.example, snap.phase, snap.runs]);
+    const key = JSON.stringify([snap.phase, snap.runs]);
     if (key === lastEmitted) return;
     lastEmitted = key;
     emit('change', snap);
-  }
-
-  /** Puts the ball back on its holder (door closed, plunger in); animated, it pops up there. */
-  function ballHome({ animate = false } = {}) {
-    s.ballFrom = null;
-    for (const key of ['door', 'plunger', 'plunger-back']) tweener.cancel(key);
-    stand.setDoor(0);
-    stand.setPlunger(0);
-    ball.root.position.copy(stand.ballHome);
-    if (!animate) {
-      ball.root.scale.setScalar(1);
-      stage.invalidate();
-      return Promise.resolve(true);
-    }
-    return tweener.animate({
-      key: 'ball-home',
-      duration: 0.3,
-      ease: ease.outBack,
-      onUpdate: (k) => {
-        ball.root.scale.setScalar(Math.max(0.001, k));
-        stage.invalidate();
-      },
-    }).finished;
   }
 
   function strikerHome() {
@@ -358,30 +269,22 @@ export function createApp(root, options = {}) {
     stage.invalidate();
   }
 
-  /** Forgets an example's motion and its marks (the object stays where it is). */
+  /** Forgets the push and its marks (the striker stays where it is). */
   function forget(kind) {
     s.runs[kind]?.resolveLanded();
     s.runs[kind] = null;
     traces[kind].clear();
   }
-  /** Forgets an example's motion: its marks go, its object goes back. */
+  /** Forgets the push: its marks go, the striker goes back. */
   function clearRun(kind) {
-    const moving = s.runs[kind]?.state === 'moving';
     forget(kind);
-    if (kind === 'push') strikerHome();
-    else if (s.ballFrom === kind || moving) ballHome();
+    strikerHome();
   }
 
   /** Starts a motion (the object must already be where it starts). judge: lay the straight line when it lands. */
   function startRun(kind, opts = {}, { judge = true, animate = true } = {}) {
     const old = s.runs[kind];
     if (old) old.resolveLanded();
-    if (kind !== 'push') {
-      // the ball has one holder: a drop and a throw cannot both be in the air
-      const other = kind === 'drop' ? 'throw' : 'drop';
-      if (s.runs[other]?.state === 'moving') land(s.runs[other], { animate: false });
-      s.ballFrom = kind;
-    }
     const run = makeRun(kind, opts);
     run.judge = judge;
     s.runs[kind] = run;
@@ -394,16 +297,6 @@ export function createApp(root, options = {}) {
     }
     run.state = 'moving';
     run.t0 = now();
-    if (kind !== 'push') {
-      // the door swings down at once, faster than the ball falls (the ball is let go); a throw also gets the plunger's push
-      tweener.animate({ key: 'door', duration: 0.22, ease: ease.outCubic, onUpdate: (k) => stand.setDoor(k) });
-      if (kind === 'throw') {
-        // the plunger keeps pace with the slowed-down ball (in real time its push lasts about 0.07 s)
-        tweener.animate({ key: 'plunger', duration: 0.07 * run.slow, ease: ease.outCubic, onUpdate: (k) => stand.setPlunger(k) });
-        tweener.animate({ key: 'plunger-back', delay: 1, duration: 0.4, onUpdate: (k) => stand.setPlunger(1 - k) });
-        showThrowArrow(0.7);
-      }
-    }
     audio.pop();
     emit('start', { example: kind, ...summary(run) });
     refresh();
@@ -415,28 +308,22 @@ export function createApp(root, options = {}) {
   function land(run, { animate = true } = {}) {
     run.place(run.T);
     traces[run.kind].show(Number.POSITIVE_INFINITY);
-    if (run.kind !== 'push') {
-      stand.setDoor(1);
-      if (run.kind === 'throw') stand.setPlunger(0);
-    }
     run.state = 'landed';
     run.resolveLanded();
-    if (animate && run.kind !== 'push') audio.contact();
     if (run.judge) judgeRun(run, { animate });
     refresh();
     emitChange();
   }
 
-  /** Lays the dashed straight line through the path's ends; a curved path also gets its widest gap marked. */
+  /** Lays the dashed straight line through the path's ends. */
   function judgeRun(run, { animate = true } = {}) {
     if (run.state === 'judged') return Promise.resolve(true);
     const tr = traces[run.kind];
     const finish = () => {
       if (s.runs[run.kind] !== run) return;
       tr.line(1);
-      if (!run.linear) tr.gap(run.far, run.foot);
       run.state = 'judged';
-      if (run.kind === s.example) showLabels();
+      showLabels();
       if (animate) (run.linear ? audio.success : audio.tick)();
       emit('done', { example: run.kind, ...summary(run) });
       refresh();
@@ -460,45 +347,40 @@ export function createApp(root, options = {}) {
   }
 
   stage.addTicker(() => {
-    let busy = false;
-    for (const kind of EXAMPLES) {
-      const run = s.runs[kind];
-      if (run?.state !== 'moving') continue;
-      const tt = (now() - run.t0) / 1000 / run.slow;
-      if (tt >= run.T) {
-        land(run);
-        continue;
-      }
-      run.place(tt);
-      const n = traces[kind].show(tt);
-      if (n > run.shown) {
-        run.shown = n;
-        audio.tick();
-      }
-      busy = true;
+    const run = s.runs.push;
+    if (run?.state !== 'moving') return false;
+    const tt = (now() - run.t0) / 1000 / run.slow;
+    if (tt >= run.T) {
+      land(run);
+      return false;
     }
-    return busy;
+    run.place(tt);
+    const n = traces.push.show(tt);
+    if (n > run.shown) {
+      run.shown = n;
+      audio.tick();
+    }
+    return true;
   });
 
   // ── what the student does ───────────────────────────────────────────────────
   const randomPush = () => ({ angle: Math.round(-35 + Math.random() * 70), strength: round(0.6 + Math.random() * 0.35, 2) });
 
   /**
-   * The main action of an example: push the striker (from where it lies, or from the base line with from: 'start'),
-   * let the ball go, or throw it. animate: false jumps to the end (line drawn). quiet: the test does it (not the
+   * The main action: push the striker (from where it lies, or from the base line with from: 'start').
+   * animate: false jumps to the end (line drawn). quiet: the test does it (not the
    * student); aimed: the student already showed the push with a finger. Returns the motion (null if overtaken).
    */
   let goToken = 0;
-  async function go(kind = s.example, { angle, strength, from, animate = true, judge = true, quiet = false, aimed = false } = {}) {
+  async function go({ angle, strength, from, animate = true, judge = true, quiet = false, aimed = false } = {}) {
     if (s.locked && !quiet) return lockedNudge();
     const my = ++goToken;
     // still wanted after a wait? (not overtaken, not cancelled, and the student's own action not now inside the test)
     const wanted = () => my === goToken && (quiet || !s.locked);
     if (!quiet) coach?.objectUsed();
-    for (const k of EXAMPLES)
-      if (s.runs[k]?.state === 'moving' && (k === kind || (k !== 'push' && kind !== 'push'))) land(s.runs[k], { animate: false });
+    if (s.runs.push?.state === 'moving') land(s.runs.push, { animate: false });
     let run;
-    if (kind === 'push') {
+    {
       const pick = angle == null ? randomPush() : { angle, strength: strength ?? 0.8 };
       if (from === 'start' || angle == null) clearRun('push');
       // a push straight into the nearby frame would not move it: first bring it where there is room that way
@@ -515,19 +397,11 @@ export function createApp(root, options = {}) {
       run = startRun('push', { ...pick, from: p }, { judge, animate });
       if (animate) setTimeout(() => my === goToken && hideAim(), 220);
       else hideAim();
-    } else {
-      forget(kind);
-      if (s.ballFrom != null) {
-        await ballHome({ animate });
-        if (animate) await wait(250);
-        if (!wanted()) return null;
-      }
-      run = startRun(kind, {}, { judge, animate });
     }
     if (!quiet) coach?.objectReleased();
     return run;
   }
-  /** Calls off a push or a drop still winding up (its arrow, or the ball going back on its holder). */
+  /** Calls off a push still winding up (its arrow). */
   function cancelPending() {
     goToken++;
     if (s.aim && !drag) hideAim();
@@ -574,90 +448,36 @@ export function createApp(root, options = {}) {
     stage.invalidate();
   }
 
-  /** The plunger's push on the ball, as an arrow for a moment. */
-  let throwArrowTimer = 0;
-  const throwTail = new THREE.Vector3();
-  function showThrowArrow(seconds) {
-    // at the ball's height, just in front of the plunger, pointing at the ball
-    const tip = stand.plungerTip;
-    throwTail.set(tip.x - 0.085, tip.y, tip.z + BALL.r + 0.012);
-    throwArrow.set(throwTail, new THREE.Vector3(1, 0, 0), 0.08);
-    anno.add('throw-push', { text: t('label_push'), point: () => throwTail, dx: -6, dy: 24, kind: 'callout', color: COLORS.push });
-    clearTimeout(throwArrowTimer);
-    throwArrowTimer = setTimeout(() => {
-      throwArrow.hide();
-      anno.remove('throw-push');
-      stage.invalidate();
-    }, seconds * 1000);
-  }
-
   // ── labels on the scene ─────────────────────────────────────────────────────
   const labelPoints = {
     surface: new THREE.Vector3(-0.2, BOARD.surface, -0.2),
     line: new THREE.Vector3(),
-    gap: new THREE.Vector3(),
   };
   function removeLabels() {
-    for (const id of ['surface', 'line', 'gap']) anno.remove(id);
+    for (const id of ['surface', 'line']) anno.remove(id);
   }
-  /** The labels of the current example: the flat surface before a push, the straight line (and gap) after. */
-  /** The gap's label, right of the bracket (dx > 0) or left of it. */
-  function addGapLabel(dx) {
-    const run = s.runs.throw;
-    anno.add('gap', {
-      text: `<span class="lm-gap">${t('label_gap', { cm: Math.round(run.deviation * 100) })}</span>`,
-      point: () => labelPoints.gap,
-      dx,
-      dy: -10,
-      kind: 'callout',
-      color: COLORS.gap,
-    });
-  }
-  // on small stages the gap's label can land under the slow-motion note: then it goes left of the bracket
-  let gapLeft = false;
-  stage.onAfterRender(() => {
-    if (gapLeft || flying || slowBadge.hidden || !anno.has('gap')) return;
-    const label = ui.annoLayer.querySelector('.lm-gap')?.parentElement?.getBoundingClientRect();
-    const note = slowBadge.getBoundingClientRect();
-    if (!label?.width) return;
-    if (label.right > note.left && label.left < note.right && label.bottom > note.top && label.top < note.bottom) {
-      gapLeft = true;
-      addGapLabel(-54);
-    }
-  });
+  /** The flat surface's label before a push, the straight line's after. */
   function showLabels() {
     removeLabels();
-    gapLeft = false;
-    const run = s.runs[s.example];
+    const run = s.runs.push;
     if (!run) {
-      if (s.example === 'push' && s.mode !== 'quiz')
-        anno.add('surface', { text: t('label_surface'), point: () => labelPoints.surface, dx: -8, dy: -36, kind: 'part' });
+      if (s.mode !== 'quiz') anno.add('surface', { text: t('label_surface'), point: () => labelPoints.surface, dx: -8, dy: -36, kind: 'part' });
       return;
     }
     if (run.state !== 'judged' || run.noLabel) return;
     const dir = new THREE.Vector3().subVectors(run.end, run.start).normalize();
-    if (run.kind === 'push') {
+    {
       // beside the middle of the line, on the side away from where it leans (the far end may be under the buttons)
       labelPoints.line.lerpVectors(run.start, run.end, 0.6);
       const sideways = Math.abs(dir.x) > Math.abs(dir.z);
       const dx = sideways ? 0 : dir.x < 0 ? 58 : -58;
       anno.add('line', { text: t('label_line'), point: () => labelPoints.line, dx, dy: sideways ? -32 : 0, kind: 'callout', color: COLORS.line });
-    } else if (run.kind === 'drop') {
-      labelPoints.line.lerpVectors(run.start, run.end, 0.3);
-      anno.add('line', { text: t('label_line'), point: () => labelPoints.line, dx: 64, dy: 0, kind: 'callout', color: COLORS.line });
-    } else {
-      // the chord's label right of where the ball lands (left of the chord is the drop's line)
-      labelPoints.line.lerpVectors(run.start, run.end, 0.93);
-      anno.add('line', { text: t('label_line'), point: () => labelPoints.line, dx: 50, dy: 14, kind: 'callout', color: COLORS.line });
-      labelPoints.gap.lerpVectors(run.far, run.foot, 0.5);
-      addGapLabel(54);
     }
   }
 
   // ── the panel ───────────────────────────────────────────────────────────────
   const $ = ui.$;
   const el = {
-    chips: ui.$$('[data-ex]'),
     verdict: $('.lm-verdict'),
     path: $('.lm-path b'),
     kind: $('.lm-kind b'),
@@ -667,72 +487,40 @@ export function createApp(root, options = {}) {
   };
 
   function refresh() {
-    const run = s.runs[s.example];
+    const run = s.runs.push;
     const state = !run ? 'rule' : run.state !== 'judged' ? 'moving' : run.linear ? 'straight' : 'curved';
     el.verdict.dataset.state = state;
     el.path.textContent = t({ rule: 'rule_path', moving: 'path_moving', straight: 'path_straight', curved: 'path_curved' }[state]);
     el.kind.textContent = state === 'moving' ? '' : t({ rule: 'rule_kind', straight: 'kind_linear', curved: 'kind_not' }[state]);
     el.mark.textContent = state === 'straight' ? '✓' : state === 'curved' ? '✗' : '';
-    const dt = s.example === 'push' ? STRIKER.step : BALL.step;
-    el.extra.textContent =
-      state === 'straight' || state === 'curved' ? t(`done_${s.example}`, { dt, cm: Math.round(run.deviation * 100) }) : t(`say_${s.example}`);
-    el.goLabel.textContent = t(`act_${s.example}`);
-    for (const c of el.chips) {
-      const on = c.dataset.ex === s.example;
-      c.classList.toggle('on', on);
-      c.setAttribute('aria-checked', String(on));
-    }
-    slowBadge.hidden = s.example === 'push';
+    const dt = STRIKER.step;
+    el.extra.textContent = state === 'straight' || state === 'curved' ? t('done_push', { dt, cm: Math.round(run.deviation * 100) }) : t('say_push');
+    el.goLabel.textContent = t('act_push');
     stage.invalidate();
   }
 
-  /** Switches the example: the camera goes to it; a motion still running jumps to its end. */
-  async function setExample(ex, { animate = true } = {}) {
-    if (!EXAMPLES.includes(ex)) return;
+  /** The board in view: a push still running jumps to its end, the camera goes to the board. */
+  function showScene({ animate = true } = {}) {
     cancelPending();
-    for (const kind of EXAMPLES) if (s.runs[kind]?.state === 'moving') land(s.runs[kind], { animate: false });
+    if (s.runs.push?.state === 'moving') land(s.runs.push, { animate: false });
     if (s.aim) hideAim();
-    const changed = ex !== s.example;
-    s.example = ex;
-    // each example shows its own marks; the stand and the ball belong to the two falls. The throw keeps the drop's
-    // marks, greyed, for comparison (same ball, same height: straight vs curved)
-    const fall = ex !== 'push';
-    stand.root.visible = ball.root.visible = fall;
-    traces.push.group.visible = ex === 'push';
-    traces.drop.group.visible = fall;
-    traces.throw.group.visible = ex === 'throw';
-    traces.drop.faded(ex === 'throw');
-    // the ball goes back on its holder unless it lies where this example's motion left it
-    if (ex !== 'push' && s.ballFrom !== null && s.ballFrom !== ex) ballHome({ animate });
     showLabels();
     refresh();
-    if (changed) {
-      emit('example', { example: ex });
-      emitChange();
-      if (coach?.step === 'object') {
-        // the first-use pointer moves to this example's object, with its words
-        coach.setMode('none');
-        coach.setMode(s.mode);
-      }
-    }
     s.userMovedCamera = false;
     return flyTo(viewPose(), animate ? 0.8 : 0);
   }
 
   // ── camera ──────────────────────────────────────────────────────────────────
-  function viewDir(k, view) {
-    if (view === '3d') return VIEW_3D[k];
+  function viewDir(view) {
+    if (view === '3d') return VIEW_3D;
     const wide = Math.min(1, Math.max(0, (stage.width / Math.max(1, stage.height) - 0.95) / 0.75)); // 0 portrait … 1 wide
-    const [tall, flat] = ELEVATION[k];
+    const [tall, flat] = ELEVATION;
     const e = THREE.MathUtils.degToRad(tall + (flat - tall) * wide);
     return new THREE.Vector3(0, Math.sin(e), Math.cos(e));
   }
-  function viewPose(view = s.view, ex = s.example) {
-    const k = sceneOf(ex);
-    const box = k === 'push' && stage.height < 340 ? BOXES.pushShort : BOXES[k];
-    const fit = (margin) => fitPose({ box, dir: viewDir(k, view), camera, width: stage.width, height: stage.height, margin });
-    // the fall's tall parts (the stand, the ball's path) are on the left: the corner buttons on the right leave them be
-    if (k === 'fall' && view === 'front') return fit({ top: 22, bottom: 16, side: 12 });
+  function viewPose(view = s.view) {
+    const box = stage.height < 340 ? BOXES.pushShort : BOXES.push;
+    const fit = (margin) => fitPose({ box, dir: viewDir(view), camera, width: stage.width, height: stage.height, margin });
     // little room on top, unless the corner buttons would then cover the object (narrow frames)
     const loose = fit({ top: 16, bottom: 16, side: 12 });
     return underCorner(loose, box) ? fit() : loose;
@@ -758,7 +546,6 @@ export function createApp(root, options = {}) {
         }
     return false;
   }
-  let flying = false; // the camera is on its way (labels are not where they will be)
   function flyTo({ position, target }, duration = 0.8) {
     const p0 = camera.position.clone();
     const t0 = controls.target.clone();
@@ -770,8 +557,7 @@ export function createApp(root, options = {}) {
       stage.invalidate();
       return Promise.resolve(true);
     }
-    flying = true;
-    const flight = tweener.animate({
+    return tweener.animate({
       key: 'camera',
       duration,
       onUpdate: (k) => {
@@ -781,11 +567,6 @@ export function createApp(root, options = {}) {
         stage.invalidate();
       },
     }).finished;
-    flight.then(() => {
-      flying = false;
-      stage.invalidate();
-    });
-    return flight;
   }
   function setView(view, { animate = true } = {}) {
     s.view = view === '3d' ? '3d' : 'front';
@@ -801,7 +582,7 @@ export function createApp(root, options = {}) {
   });
   stage.onResize(() => !s.userMovedCamera && flyTo(viewPose(), 0));
 
-  // ── touching the scene: aim the push on the striker, or tap the ball ────────
+  // ── touching the scene: aim the push on the striker ──────────────────────────
   const raycaster = new THREE.Raycaster();
   const ndc = new THREE.Vector2();
   const aimPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -(BOARD.surface + STRIKER.h));
@@ -814,11 +595,10 @@ export function createApp(root, options = {}) {
     raycaster.setFromCamera(ndc, camera);
     return raycaster;
   }
-  /** What a finger at canvas point p takes: 'striker' (push example), 'ball' (the others) or null. */
+  /** What a finger at canvas point p takes: 'striker' or null. */
   function pick(p) {
     rayAt(p);
-    if (s.example === 'push') return raycaster.intersectObject(carrom.strikerHit, false).length ? 'striker' : null;
-    return raycaster.intersectObject(stand.hit, false).length || raycaster.intersectObject(ball.root, true).length ? 'ball' : null;
+    return raycaster.intersectObject(carrom.strikerHit, false).length ? 'striker' : null;
   }
   const planeHit = new THREE.Vector3();
   function boardPoint(p) {
@@ -838,10 +618,6 @@ export function createApp(root, options = {}) {
       e.stopPropagation();
       e.preventDefault();
       if (s.locked) return lockedNudge();
-      if (what === 'ball') {
-        go(s.example); // it acts as the finger goes down
-        return;
-      }
       if (s.runs.push?.state === 'moving') return;
       const start = boardPoint(p);
       if (!start) return;
@@ -881,7 +657,7 @@ export function createApp(root, options = {}) {
       if (!cancelled) showHint(t('hint_aim'), { duration: 3500 });
       return;
     }
-    go('push', { angle: round(angle, 1), strength: round(strength, 2), aimed: true });
+    go({ angle: round(angle, 1), strength: round(strength, 2), aimed: true });
   }
   ui.canvasHost.addEventListener('pointerup', (e) => endDrag(e));
   ui.canvasHost.addEventListener('pointercancel', (e) => endDrag(e, true));
@@ -892,7 +668,7 @@ export function createApp(root, options = {}) {
     const p = canvasPoint(e);
     requestAnimationFrame(() => {
       hoverQueued = false;
-      ui.canvasHost.style.cursor = pick(p) ? (s.locked ? 'not-allowed' : s.example === 'push' ? 'grab' : 'pointer') : '';
+      ui.canvasHost.style.cursor = pick(p) ? (s.locked ? 'not-allowed' : 'grab') : '';
     });
   });
 
@@ -922,18 +698,10 @@ export function createApp(root, options = {}) {
     }
     return list;
   };
-  const pickOne = (list) => list[Math.floor(Math.random() * list.length)];
   const letters = [...t('letters')];
   // the right answer first; the others are the usual mistakes
-  const WATCH = {
-    push: ['c_yes_straight', 'c_no_slows', 'c_no_not_ahead', 'c_yes_same_speed'],
-    drop: ['c_yes_straight', 'c_no_faster', 'c_no_down', 'c_yes_fast'],
-    throw: ['c_no_curved', 'c_yes_thrown_straight', 'c_yes_lands', 'c_no_faster'],
-  };
-  const SPACING = {
-    drop: ['sp_faster_linear', 'sp_faster_not', 'sp_slower_linear', 'sp_curved_not'],
-    push: ['sp_slower_linear', 'sp_slower_not', 'sp_faster_linear', 'sp_curved_not'],
-  };
+  const WATCH = ['c_yes_straight', 'c_no_slows', 'c_no_not_ahead', 'c_yes_same_speed'];
+  const SPACING = ['sp_slower_linear', 'sp_slower_not', 'sp_faster_linear', 'sp_curved_not'];
   const LINEAR = ['mango', 'car', 'box', 'lift'];
   const NOT_LINEAR = ['fan', 'swing', 'clock', 'catch'];
   const DEFINE = ['df_line', 'df_speed', 'df_down', 'df_round'];
@@ -992,8 +760,7 @@ export function createApp(root, options = {}) {
   }
   function clearAll() {
     cancelPending();
-    for (const kind of EXAMPLES) clearRun(kind);
-    ballHome();
+    clearRun('push');
     hideAim();
     clearOptions();
     removeLabels();
@@ -1023,8 +790,7 @@ export function createApp(root, options = {}) {
         s.locked = false;
         clearAll();
         syncUI();
-        setExample('push');
-        showLabels();
+        showScene();
         refresh();
         emitChange();
       },
@@ -1033,21 +799,20 @@ export function createApp(root, options = {}) {
         clearAll(); // no marks from an earlier question
         refresh();
         if (kind === 'watch') {
-          const ex = pickOne(EXAMPLES);
-          await setExample(ex);
+          await showScene();
           if (!alive()) return null;
           say(t('q_look'));
           await wait(300);
           if (!alive()) return null;
           const angle = (Math.random() < 0.5 ? -1 : 1) * Math.round(25 + Math.random() * 15);
-          const run = await go(ex, { angle, strength: 0.9, from: 'start', judge: false, quiet: true });
+          const run = await go({ angle, strength: 0.9, from: 'start', judge: false, quiet: true });
           await run?.landed;
           if (!alive()) return null;
-          question = { kind, ex, run };
-          return { text: t('q_watch'), ...textChoices(WATCH[ex], kind, { example: ex }) };
+          question = { kind, run };
+          return { text: t('q_watch'), ...textChoices(WATCH, kind) };
         }
         if (kind === 'predict') {
-          await setExample('push');
+          await showScene();
           if (!alive()) return null;
           const angle = (Math.random() < 0.5 ? -1 : 1) * Math.round(20 + Math.random() * 14);
           const push = pushFrom(STRIKER.start, angle, 0.75);
@@ -1080,18 +845,17 @@ export function createApp(root, options = {}) {
           };
         }
         if (kind === 'spacing') {
-          const ex = pickOne(['drop', 'push']);
-          await setExample(ex);
+          await showScene();
           if (!alive()) return null;
           say(t('q_look'));
           await wait(300);
           if (!alive()) return null;
           // it plays, so the student sees which way it goes
-          const run = await go(ex, { angle: Math.round(-15 + Math.random() * 30), strength: 0.95, from: 'start', judge: false, quiet: true });
+          const run = await go({ angle: Math.round(-15 + Math.random() * 30), strength: 0.95, from: 'start', judge: false, quiet: true });
           await run?.landed;
           if (!alive()) return null;
-          question = { kind, ex, run };
-          return { text: t('q_spacing'), ...textChoices(SPACING[ex], kind, { example: ex }) };
+          question = { kind, run };
+          return { text: t('q_spacing'), ...textChoices(SPACING, kind) };
         }
         if (kind === 'everyday') {
           const is = Math.random() < 0.5;
@@ -1108,7 +872,7 @@ export function createApp(root, options = {}) {
         const q = question;
         if (q.kind === 'watch') {
           judgeRun(q.run);
-          return t(q.run.linear ? 'why_straight' : 'why_curved');
+          return t('why_straight');
         }
         if (q.kind === 'predict') {
           options4.forEach((op, j) => {
@@ -1116,12 +880,12 @@ export function createApp(root, options = {}) {
           });
           for (let j = 0; j < 4; j++) if (j !== q.expected) anno.remove(`opt${j}`);
           hideAim();
-          go('push', { angle: q.angle, strength: 0.75, from: 'start', quiet: true }).then((run) => run && (run.noLabel = true));
+          go({ angle: q.angle, strength: 0.75, from: 'start', quiet: true }).then((run) => run && (run.noLabel = true));
           return t('why_predict', { k: letters[q.expected] });
         }
         if (q.kind === 'spacing') {
           judgeRun(q.run);
-          return t(`why_spacing_${q.ex}`);
+          return t('why_spacing_push');
         }
         if (q.kind === 'everyday') return t('why_everyday', { item: t(q.right), why: t(`${q.right}_why`) });
         return t('why_define');
@@ -1133,7 +897,7 @@ export function createApp(root, options = {}) {
     },
   });
 
-  // ── first-use pointer: on the striker (or the ball) ─────────────────────────
+  // ── first-use pointer: on the striker ──────────────────────────────────────
   let coach = null;
   if (o.coach) {
     const v = new THREE.Vector3();
@@ -1144,21 +908,17 @@ export function createApp(root, options = {}) {
       t,
       loupe: null,
       tweener,
-      avoid: [ui.corner, ui.hint, slowBadge],
+      avoid: [ui.corner, ui.hint],
       object: {
-        get label() {
-          return s.example === 'push' ? 'coach_push' : 'coach_ball';
-        },
+        label: 'coach_push',
         candidates: () => {
-          if (s.example === 'push') v.copy(demoTip ?? striker.position).setY(BOARD.surface + STRIKER.h);
-          else v.copy(ball.root.position);
+          v.copy(demoTip ?? striker.position).setY(BOARD.surface + STRIKER.h);
           v.project(camera);
           return [{ x: (v.x * 0.5 + 0.5) * stage.width, y: (-v.y * 0.5 + 0.5) * stage.height }];
         },
         grabbable: (p) => demoTip != null || pick(p) != null,
         // the hand pulls a short push arrow out of the striker, twice
         async demo(alive) {
-          if (s.example !== 'push') return;
           for (let i = 0; i < 2 && alive(); i++) {
             const done = await tweener.animate({
               key: 'coach-aim',
@@ -1208,7 +968,6 @@ export function createApp(root, options = {}) {
     if (!b || !root.contains(b)) return;
     audio.unlock();
     if (b.dataset.view) setView(b.dataset.view);
-    if (b.dataset.ex) setExample(b.dataset.ex);
     if (b.dataset.mode === 'quiz' && s.mode !== 'quiz') quiz.start();
     if (b.dataset.mode === 'explore') quiz.stop();
     if (b.dataset.q != null) quiz.choose(Number(b.dataset.q));
@@ -1220,11 +979,11 @@ export function createApp(root, options = {}) {
         quiz.start();
         break;
       case 'go':
-        go(s.example, { from: 'start' });
+        go({ from: 'start' });
         break;
       case 'clear':
         cancelPending();
-        clearRun(s.example);
+        clearRun('push');
         showLabels();
         refresh();
         emitChange();
@@ -1239,27 +998,24 @@ export function createApp(root, options = {}) {
   function keyPush(screenAngle) {
     const look = new THREE.Vector3().subVectors(controls.target, camera.position);
     const facing = Math.abs(look.x) + Math.abs(look.z) > 1e-6 ? angleOf({ x: look.x, z: look.z }) : 0;
-    go('push', { angle: round(facing + screenAngle, 1), strength: 0.7 });
+    go({ angle: round(facing + screenAngle, 1), strength: 0.7 });
   }
   root.addEventListener('keydown', (e) => {
     const target = /** @type {Element} */ (e.target);
     if (target.closest('input, textarea, select') || e.metaKey || e.ctrlKey || e.altKey) return;
     const k = e.key;
     const arrows = { ArrowUp: 0, ArrowRight: 90, ArrowDown: 180, ArrowLeft: -90 };
-    const sceneKey = ['1', '2', '3', 'r', 'R'].includes(k) || k in arrows || ((k === ' ' || k === 'Enter') && !target.closest('button'));
+    const sceneKey = ['r', 'R'].includes(k) || k in arrows || ((k === ' ' || k === 'Enter') && !target.closest('button'));
     if (sceneKey && s.mode === 'quiz') {
       // in the test the scene runs by itself; only the view keys work
       if (quiz.active && !quiz.revealed) lockedNudge();
       return;
     }
-    if (['1', '2', '3'].includes(k)) setExample(EXAMPLES[Number(k) - 1]);
-    else if ((k === ' ' || k === 'Enter') && !target.closest('button')) go(s.example, { from: 'start' });
-    else if (k in arrows) {
-      if (s.example === 'push') keyPush(arrows[k]);
-      else go(s.example);
-    } else if (k === 'r' || k === 'R') {
+    if ((k === ' ' || k === 'Enter') && !target.closest('button')) go({ from: 'start' });
+    else if (k in arrows) keyPush(arrows[k]);
+    else if (k === 'r' || k === 'R') {
       cancelPending();
-      clearRun(s.example);
+      clearRun('push');
       showLabels();
       refresh();
       emitChange();
@@ -1272,7 +1028,7 @@ export function createApp(root, options = {}) {
 
   // ── start ───────────────────────────────────────────────────────────────────
   setView(s.view, { animate: false });
-  setExample(s.example, { animate: false });
+  showScene({ animate: false });
   syncUI();
   refresh();
   const ready = (async () => {
@@ -1289,22 +1045,20 @@ export function createApp(root, options = {}) {
     },
     getState: snapshot,
     /**
-     * Change any of: example ('push' | 'drop' | 'throw'), run (true: do the example's motion; for a push also
-     * angle in degrees from straight ahead, + to the right, and strength 0…1, from the base line), clear (true:
-     * forget the example's motion), view; animate: false jumps (a motion straight to its end, line drawn).
+     * Change any of: run (true: push the striker from the base line; with angle in degrees from straight ahead,
+     * + to the right, and strength 0…1), clear (true: forget the push), view; animate: false jumps (the push
+     * straight to its end, line drawn).
      */
     async set(p = {}) {
       const animate = p.animate !== false;
       if (p.view) await setView(p.view, { animate });
-      if (p.example) await setExample(p.example, { animate });
       if (p.clear) {
-        clearRun(s.example);
+        clearRun('push');
         showLabels();
         refresh();
       }
       if (p.run || p.angle != null) {
-        const pushParams = s.example === 'push' ? { angle: Number(p.angle ?? 0), strength: Number(p.strength ?? 0.8) } : {};
-        await go(s.example, { ...pushParams, from: 'start', animate });
+        await go({ angle: Number(p.angle ?? 0), strength: Number(p.strength ?? 0.8), from: 'start', animate });
       }
       emitChange();
       return snapshot();
@@ -1315,8 +1069,7 @@ export function createApp(root, options = {}) {
       s.view = 'front';
       controls.enableRotate = false;
       syncUI();
-      await setExample('push');
-      showLabels();
+      await showScene();
       refresh();
       emitChange();
     },
@@ -1331,14 +1084,7 @@ export function createApp(root, options = {}) {
         stage.invalidate();
       }
     },
-    /** The board, the striker, the stand, the ball and any marks the motions left (the stand even in the push). */
-    exportRoot() {
-      const copy = world.clone(true);
-      for (const name of ['Stand', 'CricketBall', 'PushTrace', 'DropTrace', 'ThrowTrace']) {
-        const ob = copy.getObjectByName(name);
-        if (ob) ob.visible = true;
-      }
-      return copy;
-    },
+    /** The board, the striker and any marks the push left. */
+    exportRoot: () => world.clone(true),
   };
 }

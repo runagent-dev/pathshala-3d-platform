@@ -3,7 +3,7 @@
    momentum), অস্পর্শ বল violet (gravity's colour). Never colour alone: a solid tag "ছুঁয়ে আছে" at a lit patch vs a
    dashed tag "ছোঁয়নি" at a measured gap, and the words. In the test the arrow
    is a plain grey "এই বল" until the answer. The panel is the kit's clean sheet (one action, one result, one rule:
-   ../../shared/lib/student/student.css, .pvc-examples, .pvc-act, .pvc-outcome, .pvc-rule), linked first. */
+   ../../shared/lib/student/student.css, .pvc-act, .pvc-outcome, .pvc-rule), linked first. */
 html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
 #app { position: fixed; inset: 0; }
 body.bg-transparent { background: transparent; }
@@ -11,10 +11,6 @@ body.bg-transparent { background: transparent; }
 .pvc { --c-contact: #e8590c; --c-noncontact: #7048e8; --c-test: #4b5766; }
 .pvc .c-contact { color: var(--c-contact); }
 .pvc .c-noncontact { color: var(--c-noncontact); }
-
-/* the kind under each example once seen: the quiet tally of the two kinds */
-.cnf .pvc-examples .pvc-ex-res[data-kind='contact'] { color: var(--c-contact); }
-.cnf .pvc-examples .pvc-ex-res[data-kind='noncontact'] { color: var(--c-noncontact); }
 
 /* a replay has no step number: the verb keeps the pill's even padding instead of the badge's slot */
 .cnf .pvc-act:has(> .pvc-act-num[hidden]) { padding-left: 18px; }
@@ -84,8 +80,6 @@ body.bg-transparent { background: transparent; }
   .cnf .pvc-act-row { --pvc-act-lines: 2; }
   .cnf .pvc-outcome { --pvc-outcome-lines: 2; font-size: 14.5px; line-height: 1.5; }
   .cnf .pvc-rule { --pvc-rule-lines: 5; font-size: 13.5px; line-height: 1.45; }
-  .cnf .pvc-examples .pvc-ex-word { font-size: 14px; }
-  .cnf .pvc-examples .pvc-ex-res { font-size: 12px; }
   .cnf .pvc-q-text { font-size: 14px; line-height: 1.4; --pvc-q-text-min: 3lh; }
   .cnf .pvc-opt { height: 58px; padding: 2px 4px; }
   .cnf .pvc-opt .cnf-opt { font-size: 12.5px; line-height: 1.2; }

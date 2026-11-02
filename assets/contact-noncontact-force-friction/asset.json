@@ -1,0 +1,75 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "contact-noncontact-force-friction",
+  "title": "Force: friction, a contact force (বল: ঘর্ষণ, স্পর্শ বল)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "1.0.0",
+  "book": "physics-9-10",
+  "page": 67,
+  "topic": "3.1.2",
+  "placement": "Book page 67, topic 3.1.2: বল (Force). Next to the paragraph that names চলতে চলতে ঘর্ষণের জন্য চলন্ত বস্তুর থেমে যাওয়া as a force that needs touching (স্পর্শ বল).",
+  "order": 2,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "Interactive 3D figure for force (বল), book page 67, topic 3.1.2, with the page's example চলতে চলতে ঘর্ষণের জন্য চলন্ত বস্তুর থেমে যাওয়া: a wooden crate slides on a board floor at 2 m/s and friction (μ ≈ 0.2) slows it, shown 2 × slower. One big numbered action (পিছলে যেতে দাও) plays it; the run holds at about 1.1 m/s, still sliding: the floor under the crate lights up with the tag ছুঁয়ে আছে: স্পর্শ বল. The panel is the clean sheet: one result line naming the force and its kind, one rule that starts with the book's definition of force (গতিশীল বস্তুর বেগের পরিবর্তন) and grows into স্পর্শ বল. Test tab: 3 tap questions (a parachute, friction with nobody pushing, what friction does to the crate). Phone-first, Bangla.",
+  "tags": ["force", "contact-force", "friction", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "at",
+      "label": "Start at",
+      "type": "select",
+      "options": [["rest", "at rest"], ["key", "the telling moment"], ["end", "the end"]],
+      "default": "rest"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "Pulse the action's marker", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "play": true } },
+    { "name": "set", "payload": { "act": true } },
+    { "name": "set", "payload": { "at": "key" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "act", "view", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": { "params": { "coach": "0", "at": "key" } },
+    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "at": "rest", "animate": false } }] }],
+    "video": {
+      "kind": "script",
+      "seconds": 6,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [{ "at": 0.6, "command": "set", "payload": { "act": true } }]
+    }
+  }
+}
