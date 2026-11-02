@@ -1,5 +1,4 @@
-// The world around the box, in metres: a school yard paved with red bricks at golden hour, the school's ochre wall
-// with green shutters, a flame tree (কৃষ্ণচূড়া) in bloom, pots of marigolds, the wooden lab table (its top is y = 0),
+// The world around the box, in metres: a plain soft floor under a gentle sky, a plain table (its top is y = 0),
 // the air column standing on a 1 m × 1 m square of the yard, an elephant beside it for the book's comparison, and a
 // student standing in the yard (for "why we don't feel it"). Everything procedural and modest in triangles.
 import * as THREE from 'three';
@@ -37,45 +36,14 @@ function rng(seed) {
   };
 }
 
-/** Red bricks in a running bond, with pale mortar. One tile of the pattern; repeated over the yard. */
-function brickTexture() {
-  return canvasTex(
-    512,
-    512,
-    (g) => {
-      const r = rng(7);
-      g.fillStyle = '#d9c3a5';
-      g.fillRect(0, 0, 512, 512);
-      const bw = 64;
-      const bh = 32;
-      const tones = ['#b5482c', '#c4552f', '#a83f27', '#cf6236', '#b84f33', '#9e3a24'];
-      for (let row = -2; row < 18; row++)
-        for (let col = -2; col < 10; col++) {
-          const x0 = col * bw + (row % 2) * 32;
-          const y0 = row * bh;
-          const w = bw - 4;
-          const h = bh - 4;
-          g.fillStyle = tones[Math.floor(r() * tones.length)];
-          g.fillRect(x0 + 2, y0 + 2, w, h);
-          g.fillStyle = `rgba(255,220,180,${0.05 + r() * 0.08})`;
-          g.fillRect(x0 + 4, y0 + 4, w - 6, 5);
-          g.fillStyle = `rgba(40,10,0,${0.05 + r() * 0.1})`;
-          g.fillRect(x0 + 2, y0 + h - 3, w, 4);
-        }
-    },
-    { repeat: [10, 10] },
-  );
-}
-
-/** The sky behind everything: deep blue high up, warm gold at the horizon (screen space). */
+/** The sky behind everything: a soft, slightly muted blue to a warm haze at the horizon (screen space). */
 export function skyTexture() {
   return canvasTex(4, 256, (g) => {
     const s = g.createLinearGradient(0, 0, 0, 256);
-    s.addColorStop(0, '#1d5fd6');
-    s.addColorStop(0.38, '#4f95ec');
-    s.addColorStop(0.66, '#a9cff5');
-    s.addColorStop(0.84, '#ffd9a8');
-    s.addColorStop(1, '#ffc27a');
+    s.addColorStop(0, '#7ea6cf');
+    s.addColorStop(0.45, '#a9c6e2');
+    s.addColorStop(0.8, '#dfe6ec');
+    s.addColorStop(1, '#efe3d2');
     g.fillStyle = s;
     g.fillRect(0, 0, 4, 256);
   });
@@ -99,50 +67,11 @@ export function spaceTexture() {
   });
 }
 
-function windowGlass() {
-  return canvasTex(64, 128, (g) => {
-    const s = g.createLinearGradient(0, 0, 64, 128);
-    s.addColorStop(0, '#bfe0ff');
-    s.addColorStop(0.5, '#5d9fe0');
-    s.addColorStop(1, '#2a5f9e');
-    g.fillStyle = s;
-    g.fillRect(0, 0, 64, 128);
-    g.fillStyle = 'rgba(255,255,255,0.35)';
-    g.beginPath();
-    g.moveTo(8, 0);
-    g.lineTo(26, 0);
-    g.lineTo(4, 60);
-    g.lineTo(-14, 60);
-    g.fill();
-  });
-}
-
 /** The wooden lab table: a warm oiled top with a darker edge, four legs to the yard. */
 function createTable() {
   const g = new THREE.Group();
   g.name = 'Table';
-  const grain = canvasTex(
-    512,
-    256,
-    (c) => {
-      const r = rng(3);
-      c.fillStyle = '#9c5a2c';
-      c.fillRect(0, 0, 512, 256);
-      for (let i = 0; i < 90; i++) {
-        c.strokeStyle = `rgba(${60 + r() * 40},${25 + r() * 20},10,${0.12 + r() * 0.2})`;
-        c.lineWidth = 1 + r() * 3;
-        const y = r() * 256;
-        c.beginPath();
-        c.moveTo(0, y);
-        c.bezierCurveTo(170, y + (r() - 0.5) * 22, 340, y + (r() - 0.5) * 22, 512, y + (r() - 0.5) * 10);
-        c.stroke();
-      }
-      c.fillStyle = 'rgba(255,200,140,0.08)';
-      c.fillRect(0, 0, 512, 256);
-    },
-    { repeat: [1, 1] },
-  );
-  const top = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.045, 0.72), std('#ffffff', { map: grain, roughness: 0.48 }));
+  const top = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.045, 0.72), std('#a08470', { roughness: 0.6 }));
   top.position.set(-0.05, -0.0225, -0.02);
   top.receiveShadow = true;
   top.castShadow = true;
@@ -158,123 +87,6 @@ function createTable() {
   const rail = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.07, 0.62), legMat);
   rail.position.set(-0.05, -0.08, -0.02);
   g.add(rail);
-  return g;
-}
-
-/** The school's wall: warm ochre with a terracotta plinth, tall windows with open green shutters, a blue door. */
-function createBuilding() {
-  const g = new THREE.Group();
-  g.name = 'SchoolWall';
-  const z = -5.6;
-  const h = 3.4;
-  const wall = new THREE.Mesh(new THREE.BoxGeometry(30, h, 0.3), std('#f0b44c', { roughness: 0.92 }));
-  wall.position.set(0, GROUND + h / 2, z);
-  wall.receiveShadow = true;
-  g.add(wall);
-  const plinth = new THREE.Mesh(new THREE.BoxGeometry(30, 0.55, 0.36), std('#b5532f'));
-  plinth.position.set(0, GROUND + 0.275, z + 0.04);
-  g.add(plinth);
-  const cornice = new THREE.Mesh(new THREE.BoxGeometry(30, 0.22, 0.5), std('#fbe3b4'));
-  cornice.position.set(0, GROUND + h - 0.1, z + 0.1);
-  g.add(cornice);
-  const glass = std('#ffffff', { map: windowGlass(), roughness: 0.15, metalness: 0.3 });
-  const frame = std('#fff6e6');
-  const shutter = std('#2f9e6e', { roughness: 0.7 });
-  for (let i = -6; i <= 6; i++) {
-    const x = i * 2.1 + 0.4;
-    if (Math.abs(x - 0.4) < 0.5) {
-      const door = new THREE.Mesh(new THREE.BoxGeometry(1.1, 2.3, 0.08), std('#2459b8', { roughness: 0.55 }));
-      door.position.set(x, GROUND + 1.15, z + 0.17);
-      g.add(door);
-      continue;
-    }
-    const y = GROUND + 1.75;
-    const f = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.6, 0.06), frame);
-    f.position.set(x, y, z + 0.16);
-    const gl = new THREE.Mesh(new THREE.PlaneGeometry(0.84, 1.44), glass);
-    gl.position.set(x, y, z + 0.195);
-    g.add(f, gl);
-    for (const s of [-1, 1]) {
-      const sh = new THREE.Mesh(new THREE.BoxGeometry(0.46, 1.56, 0.04), shutter);
-      sh.position.set(x + s * 0.74, y, z + 0.3);
-      sh.rotation.y = s * 0.45;
-      g.add(sh);
-    }
-  }
-  return g;
-}
-
-/** A flame tree in bloom: a brown trunk and branches, a crown of green leaf clumps and red-orange flower clumps. */
-function createFlameTree(at) {
-  const g = new THREE.Group();
-  g.name = 'FlameTree';
-  g.position.copy(at);
-  const bark = std('#5c3a24', { roughness: 0.95 });
-  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.26, 2.6, 12), bark);
-  trunk.position.y = 1.3;
-  trunk.castShadow = true;
-  g.add(trunk);
-  for (const [rx, rz, len] of [
-    [0.8, 0.2, 1.6],
-    [-0.9, -0.3, 1.5],
-    [0.2, 0.9, 1.3],
-  ]) {
-    const b = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.12, len, 8).translate(0, len / 2, 0), bark);
-    b.position.y = 2.3;
-    b.rotation.set(rz, 0, -rx);
-    g.add(b);
-  }
-  const r = rng(5);
-  const blob = new THREE.IcosahedronGeometry(1, 1);
-  const leaves = new THREE.InstancedMesh(blob, std('#3f8f3a', { roughness: 0.9, flatShading: true }), 46);
-  const flowers = new THREE.InstancedMesh(blob, std('#f0471f', { roughness: 0.75, flatShading: true }), 70);
-  const m = new THREE.Matrix4();
-  const q = new THREE.Quaternion();
-  const s = new THREE.Vector3();
-  const p = new THREE.Vector3();
-  const place = (mesh, n, size, lift) => {
-    for (let i = 0; i < n; i++) {
-      const a = r() * Math.PI * 2;
-      const rad = Math.sqrt(r()) * 2.0;
-      p.set(Math.cos(a) * rad, 3.3 + lift + (r() - 0.4) * 0.9 - rad * 0.18, Math.sin(a) * rad * 0.8);
-      q.setFromEuler(new THREE.Euler(r() * 3, r() * 3, r() * 3));
-      const k = size * (0.7 + r() * 0.6);
-      s.set(k, k * 0.75, k);
-      mesh.setMatrixAt(i, m.compose(p, q, s));
-    }
-  };
-  place(leaves, 46, 0.55, 0);
-  place(flowers, 70, 0.36, 0.25);
-  leaves.castShadow = flowers.castShadow = true;
-  g.add(leaves, flowers);
-  return g;
-}
-
-/** Clay pots of marigolds along the wall. */
-function createPots() {
-  const g = new THREE.Group();
-  g.name = 'Marigolds';
-  const clay = std('#b85a32');
-  const leaf = std('#3a8a3c', { flatShading: true });
-  const bloom = std('#ff9f1a', { roughness: 0.7, flatShading: true });
-  const r = rng(9);
-  for (const x of [-5.2, -4.1, 1.6, 3.4, 6.2, 7.3]) {
-    const pot = new THREE.Group();
-    pot.position.set(x, GROUND, -5.1);
-    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.17, 0.4, 16), clay);
-    body.position.y = 0.2;
-    const bush = new THREE.Mesh(new THREE.IcosahedronGeometry(0.3, 1), leaf);
-    bush.position.y = 0.55;
-    bush.scale.set(1, 0.7, 1);
-    pot.add(body, bush);
-    for (let i = 0; i < 9; i++) {
-      const f = new THREE.Mesh(new THREE.IcosahedronGeometry(0.075, 0), bloom);
-      const a = r() * Math.PI * 2;
-      f.position.set(Math.cos(a) * 0.2, 0.62 + r() * 0.12, Math.sin(a) * 0.2);
-      pot.add(f);
-    }
-    g.add(pot);
-  }
   return g;
 }
 
@@ -481,11 +293,11 @@ export function createWorld() {
   const outdoors = new THREE.Group();
   outdoors.name = 'Outdoors';
   root.add(outdoors);
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(40, 40).rotateX(-Math.PI / 2), std('#ffffff', { map: brickTexture(), roughness: 0.88 }));
+  // a plain, soft floor: nothing round the box but the table it stands on (the owner: one clear object)
+  const ground = new THREE.Mesh(new THREE.CircleGeometry(30, 48).rotateX(-Math.PI / 2), std('#c9b8a3', { roughness: 0.95 }));
   ground.position.y = GROUND;
   ground.receiveShadow = true;
   outdoors.add(ground);
-  outdoors.add(createBuilding(), createFlameTree(new THREE.Vector3(3.6, GROUND, -4.3)), createPots());
   const table = createTable();
   outdoors.add(table);
   const column = createColumn();

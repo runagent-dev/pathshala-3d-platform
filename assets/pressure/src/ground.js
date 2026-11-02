@@ -175,28 +175,6 @@ function crop(geo, keep) {
   return copy;
 }
 
-/** Plain-coloured parts merged into one mesh: each part's colour baked into a vertex colour, its placement baked in. */
-function mergeColoured(parts, material, name) {
-  const list = parts.map(({ geo, color, matrix }) => {
-    const g = (geo.index ? geo.toNonIndexed() : geo.clone()).applyMatrix4(matrix);
-    for (const n of Object.keys(g.attributes)) if (n !== 'position' && n !== 'normal') g.deleteAttribute(n);
-    const c = new THREE.Color(color);
-    const col = new Float32Array(g.attributes.position.count * 3);
-    for (let k = 0; k < col.length; k += 3) col.set([c.r, c.g, c.b], k);
-    g.setAttribute('color', new THREE.BufferAttribute(col, 3));
-    return g;
-  });
-  const geo = mergeGeometries(list);
-  for (const g of list) g.dispose();
-  const m = new THREE.Mesh(geo, material);
-  m.name = name;
-  return m;
-}
-
-/**
- * feet: [{ x (where the foot's frame is along the yard), footprint: { sdf, box } }] (two of them). Returns { root,
- * setDepth(i, d), setDepths(list), depth(i), near() }.
- */
 export function createGround(feet) {
   const root = new THREE.Group();
   root.name = 'ClayYard';
@@ -432,32 +410,15 @@ export function createGround(feet) {
   yard.name = 'Yard';
   root.add(yard);
 
-  // ── behind: a puddle, a turquoise wall with a yellow band, a blue door, bougainvillea, pots of marigolds ──
-  // (plain-coloured parts merged into one matte and one glazed mesh: a handful of draw calls for the whole yard)
+  // ── behind: only a plain turquoise wall over the far clay (a soft coloured backdrop, nothing to distract) ──
   const far = new THREE.Group();
   far.name = 'Yard';
   far.userData.noExport = true;
-  const plain = [];
-  const glazed = [];
-  const M4 = new THREE.Matrix4();
-  const Q = new THREE.Quaternion();
-  const EU = new THREE.Euler();
-  const place = (x, y, z, { rx = 0, ry = 0, rz = 0, s = [1, 1, 1] } = {}) =>
-    M4.clone().compose(new THREE.Vector3(x, y, z), Q.clone().setFromEuler(EU.set(rx, ry, rz)), new THREE.Vector3(...s));
   const farClay = new THREE.Mesh(new THREE.PlaneGeometry(60, 30), matte(new THREE.MeshStandardMaterial({ color: '#a84a2a', roughness: 0.6 }), 'far'));
   farClay.rotation.x = -Math.PI / 2;
   farClay.position.set(0, -0.01, -9 - 15 + 0.01);
   far.add(farClay);
-  // a puddle from the rain, the sky in it
-  const puddle = new THREE.Mesh(
-    new THREE.CircleGeometry(1, 40),
-    new THREE.MeshStandardMaterial({ color: '#5a8fd6', roughness: 0.06, metalness: 0.2 }),
-  );
-  puddle.rotation.x = -Math.PI / 2;
-  puddle.scale.set(0.7, 0.32, 1);
-  puddle.position.set(0.95, 0.006, -1.9);
-  far.add(puddle);
-  // the wall: turquoise plaster, a yellow band along the top, a terracotta coping
+  // the wall: turquoise plaster
   const WALL = { z: -3.6, h: 1.7 };
   const wallTex = canvasTexture(512, 128, (ctx, w, h) => {
     ctx.fillStyle = '#16a2b5';
@@ -482,75 +443,6 @@ export function createGround(feet) {
   );
   wall.position.set(0, WALL.h / 2, WALL.z);
   far.add(wall);
-  plain.push({ geo: new THREE.BoxGeometry(16, 0.16, 0.27), color: '#ffc21a', matrix: place(0, WALL.h - 0.2, WALL.z) });
-  plain.push({ geo: new THREE.BoxGeometry(16.1, 0.08, 0.34), color: '#b5452a', matrix: place(0, WALL.h + 0.04, WALL.z) });
-  // a blue wooden door with an orange lintel
-  const door = { x: -1.7, z: WALL.z + 0.13 };
-  plain.push({ geo: new THREE.BoxGeometry(1.0, 1.45, 0.06), color: '#1c4fc4', matrix: place(door.x, 0.725, door.z) });
-  for (const dx of [-0.25, 0.25])
-    plain.push({ geo: new THREE.BoxGeometry(0.36, 0.9, 0.02), color: '#2f6ae6', matrix: place(door.x + dx, 0.62, door.z + 0.04) });
-  plain.push({ geo: new THREE.BoxGeometry(1.1, 0.1, 0.08), color: '#f76707', matrix: place(door.x, 1.5, door.z + 0.01) });
-  // bougainvillea over the wall: magenta and pink clusters on dark stems
-  const rand = rng(11);
-  const petal = ['#d6197a', '#f0459a', '#b5179e'];
-  const stemGeo = new THREE.CylinderGeometry(0.02, 0.03, 1.3, 8);
-  const vine = (cx, spread, n) => {
-    for (let i = 0; i < 3; i++)
-      plain.push({
-        geo: stemGeo,
-        color: '#5c3320',
-        matrix: place(cx - spread * 0.3 + i * spread * 0.3, WALL.h - 0.3, WALL.z + 0.2, { rz: (i - 1) * 0.35 }),
-      });
-    for (let i = 0; i < n; i++) {
-      const r = 0.12 + rand() * 0.16;
-      const a = rand() * Math.PI;
-      const x = cx + Math.cos(a) * spread * rand();
-      const y = WALL.h - 0.25 + Math.sin(a) * 0.5 * rand() + rand() * 0.35;
-      const z = WALL.z + 0.12 + rand() * 0.25;
-      plain.push({ geo: new THREE.IcosahedronGeometry(r, 1), color: petal[i % 3], matrix: place(x, y, z, { s: [1, 0.75, 1] }) });
-    }
-  };
-  vine(1.4, 1.1, 26);
-  vine(-4.2, 0.9, 18);
-  vine(4.6, 0.8, 14);
-  // glazed pots of orange and yellow marigolds at the foot of the wall: cobalt, yellow, white with blue
-  const potColors = ['#1d4fc4', '#ffc21a', '#1d4fc4', '#f4efe6'];
-  const flowers = ['#ff8c00', '#ffb703', '#f76707'];
-  const potBody = new THREE.CylinderGeometry(0.22, 0.15, 0.36, 24).translate(0, 0.18, 0);
-  const potRim = new THREE.TorusGeometry(0.22, 0.03, 8, 24).rotateX(Math.PI / 2).translate(0, 0.36, 0);
-  let potN = 0;
-  const pot = (x, s) => {
-    const color = potColors[potN++ % potColors.length];
-    const at = place(x, 0, WALL.z + 0.45, { s: [s, s, s] });
-    glazed.push({ geo: potBody, color, matrix: at }, { geo: potRim, color, matrix: at });
-    for (let i = 0; i < 9; i++) {
-      const a = (i / 9) * Math.PI * 2;
-      const r = i === 0 ? 0 : 0.12;
-      const g = new THREE.IcosahedronGeometry(0.07 + rand() * 0.03, 1).translate(Math.cos(a) * r, 0.44 + rand() * 0.08, Math.sin(a) * r);
-      plain.push({ geo: g, color: flowers[i % 3], matrix: at });
-    }
-  };
-  pot(-0.6, 1);
-  pot(-0.05, 0.85);
-  pot(2.8, 1.1);
-  pot(-3.2, 0.95);
-  far.add(mergeColoured(plain, matte(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.72 }), 'things'), 'YardMatte'));
-  far.add(mergeColoured(glazed, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.27 }), 'YardPots'));
-  // a few pebbles near the feet (their small shadows show)
-  const pebbleColors = ['#8d7b6a', '#d9c6a5', '#5c4a3d'];
-  const pebbleList = [];
-  const r2 = rng(5);
-  for (let i = 0; i < 18; i++) {
-    const x = -0.9 + r2() * 1.8;
-    const z = -0.2 - r2() * 1.2;
-    if (Math.abs(x) < 0.38 && z > -0.2) continue;
-    const geo = new THREE.IcosahedronGeometry(0.005 + r2() * 0.007, 1);
-    const matrix = place(x, 0.001, z, { rx: r2(), ry: r2() * 6, s: [1, 0.6, 1] });
-    pebbleList.push({ geo, color: pebbleColors[i % 3], matrix });
-  }
-  const pebbles = mergeColoured(pebbleList, matte(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.68 }), 'pebbles'), 'Pebbles');
-  pebbles.castShadow = true;
-  root.add(pebbles);
   root.add(far);
 
   // ── the clay gives way: a uniform, read by the vertex shaders ──

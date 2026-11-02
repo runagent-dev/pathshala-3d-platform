@@ -60,7 +60,7 @@ export const crumpleFor = (dP) => {
 };
 
 /** The length of a pressure arrow (m) for a pressure (Pa): the outside air's 1,00,000 Pa → 4 cm. */
-export const ARROW_PER_PA = 0.04 / P_AIR;
+export const ARROW_PER_PA = 0.06 / P_AIR;
 export const arrowLength = (P) => Math.max(0, P) * ARROW_PER_PA;
 
 /**

@@ -5,12 +5,14 @@
 // contact patch is the floor under the crate, lit a little wider than the crate, with its touching front edge.
 import * as THREE from 'three';
 import { createArrow } from './arrow.js';
-import { V, box, canvasTexture, castShadows, glowPatch, groundPatch, hitBox } from './parts.js';
+import { mergeStatic } from './merge.js';
+import { V, box, canvasTexture, castShadows, glowPatch, groundPatch, hitBox, woodMaterial } from './parts.js';
+import { storeSetting } from './setting.js';
 
 const CRATE = { w: 0.6, h: 0.48, d: 0.5 };
 const X0 = -0.98; // the crate's middle at the start
 
-export function createFrictionScene({ color, materials }) {
+export function createFrictionScene({ color, setting = true }) {
   const root = new THREE.Group();
   root.name = 'FrictionScene';
   const model = new THREE.Group();
@@ -42,7 +44,7 @@ export function createFrictionScene({ color, materials }) {
     }),
   });
   box(CRATE.w, CRATE.h, CRATE.d, boards, 0, CRATE.h / 2, 0, crate);
-  const batten = materials.wood;
+  const batten = woodMaterial();
   for (const [x, z] of [
     [-1, -1],
     [-1, 1],
@@ -72,24 +74,30 @@ export function createFrictionScene({ color, materials }) {
   scuff.userData.noExport = true;
   root.add(scuff);
 
-  const floor = groundPatch(4.2, 2.4, {
-    color: '#e7d2b4',
-    draw: (ctx, w, h) => {
-      const n = 9;
-      for (let i = 0; i < n; i++) {
-        const y = (i * h) / n;
-        ctx.fillStyle = i % 2 ? 'rgba(160,110,60,0.10)' : 'rgba(255,255,255,0.08)';
-        ctx.fillRect(0, y, w, h / n);
-        ctx.fillStyle = 'rgba(110,70,35,0.35)';
-        ctx.fillRect(0, y, w, 2);
-        const off = (i * 137) % w;
-        for (let x = off; x < w + off; x += w / 2.2) ctx.fillRect(x % w, y, 2, h / n);
-      }
-    },
-  });
-  floor.position.set(-0.45, 0, 0);
-  root.add(floor);
+  // a store room (or, on a transparent page, a patch of boards that fades out)
+  const store = setting ? storeSetting() : null;
+  if (store) root.add(store.root);
+  else {
+    const floor = groundPatch(4.2, 2.4, {
+      color: '#e7d2b4',
+      draw: (ctx, w, h) => {
+        const n = 9;
+        for (let i = 0; i < n; i++) {
+          const y = (i * h) / n;
+          ctx.fillStyle = i % 2 ? 'rgba(160,110,60,0.10)' : 'rgba(255,255,255,0.08)';
+          ctx.fillRect(0, y, w, h / n);
+          ctx.fillStyle = 'rgba(110,70,35,0.35)';
+          ctx.fillRect(0, y, w, 2);
+          const off = (i * 137) % w;
+          for (let x = off; x < w + off; x += w / 2.2) ctx.fillRect(x % w, y, 2, h / n);
+        }
+      },
+    });
+    floor.position.set(-0.45, 0, 0);
+    root.add(floor);
+  }
   castShadows(model);
+  mergeStatic(crate); // the boards and the battens: one mesh each
 
   const hits = [hitBox(0.95, 0.85, 0.85, 0, 0.35, 0, crate)];
   const arrow = createArrow({ color, radius: 0.013, head: 0.085, headRadius: 0.036 });
@@ -139,6 +147,7 @@ export function createFrictionScene({ color, materials }) {
   return {
     id: 'friction',
     root,
+    background: store?.background ?? null,
     model,
     hits,
     arrow,

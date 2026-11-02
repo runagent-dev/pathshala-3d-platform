@@ -38,8 +38,8 @@ describe('air-pressure: the pump and the box', () => {
   });
 
   it('draws a pressure arrow in proportion to the pressure', () => {
-    assert.equal(r.arrowLength(r.P_AIR), 0.04);
-    assert.equal(r.arrowLength(r.P_AIR / 2), 0.02);
+    assert.equal(r.arrowLength(r.P_AIR), 0.06);
+    assert.equal(r.arrowLength(r.P_AIR / 2), 0.03);
     assert.equal(r.arrowLength(-5), 0);
   });
 });
