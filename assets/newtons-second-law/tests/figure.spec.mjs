@@ -339,16 +339,23 @@ test('second law: motion, live diagrams and calculation sheet fit every required
         await fig.advance(150);
         const report = await fig.frame.evaluate(() => {
           const bad = [];
+          // kit 1.5.0: on landscape frames the panel sits beside the 3D and may scroll (its lines are checked for width)
+          const side = innerWidth >= innerHeight && innerWidth >= 600;
           for (const e of document.querySelectorAll('.pvc-learn button,.ns-formula-values,.ns-formula-values>div,.pvc-outcome,.pvc-rule,.pvc-anno')) {
             const cs = getComputedStyle(e);
             if (cs.visibility === 'hidden' || cs.display === 'none' || Number(cs.opacity) === 0) continue;
             const r = e.getBoundingClientRect();
             if (!r.width || !r.height) continue;
-            if (r.left < -1 || r.right > innerWidth + 1 || r.top < -1 || r.bottom > innerHeight + 1 || e.scrollWidth > e.clientWidth + 1)
+            const low = r.bottom > innerHeight + 1 && !(side && e.closest('.pvc-panel'));
+            if (r.left < -1 || r.right > innerWidth + 1 || r.top < -1 || low || e.scrollWidth > e.clientWidth + 1)
               bad.push({ text: e.textContent, right: r.right, bottom: r.bottom, overflow: e.scrollWidth - e.clientWidth });
           }
           const p = document.querySelector('.pvc-panel');
-          return { bad, overflow: p.scrollHeight - p.clientHeight, stage: document.querySelector('.pvc-stage').getBoundingClientRect().height };
+          return {
+            bad,
+            overflow: side ? 0 : p.scrollHeight - p.clientHeight,
+            stage: document.querySelector('.pvc-stage').getBoundingClientRect().height,
+          };
         });
         expect(report.bad, `${lang} ${width}×${height} ${JSON.stringify(state)}`).toEqual([]);
         expect(report.overflow).toBeLessThanOrEqual(1);

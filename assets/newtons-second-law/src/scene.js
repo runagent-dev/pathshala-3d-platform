@@ -2,15 +2,14 @@
 //  - createFloor(): a rice godown (চালের গুদাম): a smooth, polished cement floor (warm grey, mottled, saw-cut joints),
 //    the lane painted on it (yellow edges, a white line across it every metre), and at its far end a low pile of rice
 //    sacks that stops the rolling cart (BUFFER_X). Round it, the room: sand-coloured lime-washed walls over a brown
-//    dado, square pillars with a yellow-and-black foot, high barred windows, jute sacks stacked on wooden pallets and
-//    a platform scale. Warm neutrals only, so every arrow (dark, teal, blue, green, orange) stands out against it.
+//    dado and nothing else (only the main objects). Warm neutrals only, so every arrow (dark, teal, blue, green, orange) stands out against it.
 //    Everything that never moves is merged into a few meshes, one per material.
 //  - createMarks(): the marks the cart's front leaves on the floor every second (thin dark bars across the lane).
 //  - createRig(): one handcart with up to two people behind it (who push) and one in front of it (who pushes back),
 //    placed from the run of physics.js by place(plan, t).
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { CART, createCart, createSack, SACK, sackGeometry } from './cart.js';
+import { CART, createCart, createSack, SACK } from './cart.js';
 import { createPerson } from './person.js';
 import { BUFFER_X, CATCH_X, catcherAt, pusherAt, runAt, START_X } from './physics.js';
 
@@ -198,75 +197,13 @@ export function createFloor(cartM) {
   room.add(merged([back, left, right], wallMat, 'Walls'));
 
   // the painted and plain parts of the room, one mesh in vertex colours
-  const rnd = rng(21);
   const parts = [];
   const zw = FLOOR.z0;
   // a dark skirting along the back wall
   parts.push(box(W, 0.1, 0.03, (FLOOR.x0 + FLOOR.x1) / 2, 0.05, zw + 0.015, '#4a3d33'));
-  // square pillars: plaster above, the dado colour below, a yellow-and-black foot
-  const PILLARS = [-5.8, -1.9, 2.0, 5.9, 9.8];
-  for (const x of PILLARS) {
-    const z = zw + 0.2;
-    parts.push(box(0.42, WALL_H - 1.05, 0.4, x, 1.05 + (WALL_H - 1.05) / 2, z, '#dcc39a'));
-    parts.push(box(0.43, 1.05 - 0.36, 0.41, x, 0.36 + (1.05 - 0.36) / 2, z, '#8c745c'));
-    for (let k = 0; k < 4; k++) parts.push(box(0.44, 0.09, 0.42, x, 0.045 + k * 0.09, z, k % 2 ? '#f2b705' : '#22252a'));
-  }
-  // high windows between the pillars: a dark frame and four bars each; the glass is its own mesh (bright)
-  const glass = [];
-  const WINDOWS = [-7.75, -3.85, 0.05, 3.95, 7.85, 11.6];
-  for (const x of WINDOWS) {
-    const y = 3.1;
-    glass.push(new THREE.PlaneGeometry(1.36, 0.8).translate(x, y, zw + 0.012));
-    parts.push(box(1.5, 0.07, 0.06, x, y + 0.435, zw + 0.03, '#3a4048'));
-    parts.push(box(1.56, 0.08, 0.14, x, y - 0.44, zw + 0.07, '#9a8466'));
-    for (const dx of [-0.72, 0.72]) parts.push(box(0.07, 0.9, 0.06, x + dx, y, zw + 0.03, '#3a4048'));
-    for (let k = 1; k < 6; k++) parts.push(box(0.022, 0.8, 0.022, x - 0.68 + (k * 1.36) / 6, y, zw + 0.04, '#2c3036'));
-  }
-  // wooden pallets with jute sacks stacked on them, against the back wall (and a short stack at the far end)
-  const sacks = [];
-  const sackGeo = sackGeometry();
-  const mtx = new THREE.Matrix4();
-  const quat = new THREE.Quaternion();
-  const one = new THREE.Vector3(1, 1, 1);
-  const pallet = (x, z) => {
-    for (const dz of [-0.4, 0, 0.4]) parts.push(box(1.2, 0.08, 0.1, x, 0.04, z + dz, '#7a5a3a'));
-    for (let k = 0; k < 7; k++) parts.push(box(0.12, 0.025, 0.9, x - 0.54 + k * 0.18, 0.0925, z, k % 2 ? '#9c7a52' : '#8f6d47'));
-  };
-  const stack = (x, z, layers, across = 2) => {
-    pallet(x, z);
-    for (let l = 0; l < layers; l++)
-      for (let i = 0; i < across; i++) {
-        if (l === layers - 1 && rnd() < 0.3) continue;
-        const sx = x + (i - (across - 1) / 2) * (SACK.x + 0.04) + (rnd() - 0.5) * 0.04;
-        const sy = 0.105 + SACK.y / 2 + l * (SACK.y - 0.035);
-        quat.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, (rnd() - 0.5) * 0.12 + (l % 2 ? 0.05 : -0.04));
-        const g = sackGeo.clone().applyMatrix4(mtx.compose(new THREE.Vector3(sx, sy, z + (rnd() - 0.5) * 0.05), quat, one));
-        sacks.push(g);
-      }
-  };
-  stack(-4.0, zw + 0.6, 4);
-  stack(-7.7, zw + 0.6, 3);
-  stack(3.95, zw + 0.6, 3);
-  stack(7.9, zw + 0.6, 4);
-  stack(11.6, zw + 0.6, 2);
-  stack(11.0, zw + 2.2, 3); // beside the lane's far end
-  // a platform scale against the wall (base, column, dial)
-  {
-    const x = 9.2;
-    const z = zw + 0.5;
-    parts.push(box(0.62, 0.08, 0.5, x, 0.04, z, '#4b5763'));
-    parts.push(box(0.56, 0.015, 0.44, x, 0.0875, z, '#7c8894'));
-    parts.push(paint(new THREE.CylinderGeometry(0.025, 0.03, 0.95, 10).translate(x, 0.55, z - 0.2), '#4b5763'));
-    parts.push(paint(new THREE.CylinderGeometry(0.15, 0.15, 0.06, 24).rotateX(Math.PI / 2).translate(x, 1.1, z - 0.2), '#3a4048'));
-    parts.push(paint(new THREE.CircleGeometry(0.125, 24).translate(x, 1.1, z - 0.165), '#f4ecd8'));
-    parts.push(box(0.012, 0.1, 0.004, x + 0.02, 1.13, z - 0.162, '#c0392b'));
-  }
+  // nothing else against the wall (the owner: only the main objects): no pillars, windows, sacks on pallets or scale
   const roomPaint = new THREE.MeshStandardMaterial({ name: 'GodownPaint', vertexColors: true, roughness: 0.78, metalness: 0 });
   room.add(merged(parts, roomPaint, 'GodownParts'));
-  const glassMat = new THREE.MeshBasicMaterial({ name: 'WindowLight', color: '#cfe6f3', toneMapped: false });
-  room.add(merged(glass, glassMat, 'WindowGlass'));
-  const stacked = merged(sacks, cartM.jute, 'SackStacks');
-  room.add(stacked);
   group.add(room);
 
   // the pile of sacks at the end of the floor: two on the floor, one on top
