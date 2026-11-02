@@ -7,7 +7,7 @@ import { STRINGS, createI18n } from '../../assets/evaporation/src/i18n.js';
 
 describe('evaporation: the six things it depends on', () => {
   it('lists them in the book’s order and has a case for each', () => {
-    assert.deepEqual(r.FACTORS, ['wind', 'area', 'liquid', 'pressure', 'warm', 'dry']);
+    assert.deepEqual(r.FACTORS, ['wind', 'area', 'liquid', 'warm', 'dry']);
     for (const f of r.FACTORS) assert.ok(r.CASES[f].plain && r.CASES[f].changed, f);
   });
 
@@ -45,14 +45,13 @@ describe('evaporation: how much is left', () => {
   it('empties the faster vessels before the end of the run, and not the slow ones', () => {
     assert.equal(r.dryAt(r.CASES.wind.changed), 6);
     assert.equal(r.dryAt(r.CASES.liquid.changed), 4.5);
-    assert.equal(r.dryAt(r.CASES.pressure.changed), 3);
     assert.equal(r.dryAt(r.CASES.wind.plain), null);
-    assert.equal(r.remaining(r.CASES.pressure.changed, 5), 0);
-    assert.equal(r.percentLeft(r.CASES.pressure.changed, 10), 0);
+    assert.equal(r.remaining(r.CASES.liquid.changed, 5), 0);
+    assert.equal(r.percentLeft(r.CASES.liquid.changed, 10), 0);
   });
 
   it('never goes below nothing, and stops the clock at the end of the run', () => {
-    assert.equal(r.remaining(r.CASES.pressure.changed, 99), 0);
+    assert.equal(r.remaining(r.CASES.liquid.changed, 99), 0);
     assert.equal(r.remaining(r.CASES.wind.plain, 99), r.remaining(r.CASES.wind.plain, r.T_END));
     assert.equal(r.remaining(r.CASES.wind.plain, -4), r.V0);
   });
@@ -78,7 +77,7 @@ describe('evaporation: the vapour drawn', () => {
   it('is strongest for the fastest case and none once a vessel is dry', () => {
     const fastest = Math.max(...r.FACTORS.map((f) => r.vapour(r.CASES[f].changed, 0)));
     assert.equal(fastest, 1);
-    assert.equal(r.vapour(r.CASES.pressure.changed, 5), 0);
+    assert.equal(r.vapour(r.CASES.liquid.changed, 5), 0);
     assert.ok(r.vapour(r.CASES.wind.plain, 0) < r.vapour(r.CASES.wind.changed, 0));
   });
 

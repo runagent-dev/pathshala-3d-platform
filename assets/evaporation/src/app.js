@@ -422,11 +422,10 @@ export function createApp(root, options = {}) {
       meta: {},
     };
   }
-  const KINDS = ['first', 'factor', 'cloth', 'pump', 'vol'];
+  const KINDS = ['first', 'factor', 'cloth', 'vol', 'factor'];
   // the book's examples: the first answer of each is the right one
   const SETS = {
     cloth: { factor: 'dry', q: 'q_cloth', prefix: 'c_cloth_', keys: ['humid', 'press', 'area', 'vol'] },
-    pump: { factor: 'pressure', q: 'q_pump', prefix: 'c_pump_', keys: ['right', 'cold', 'stop', 'heat'] },
     vol: { factor: 'liquid', q: 'q_vol', prefix: 'c_vol_', keys: ['right', 'water', 'high', 'cold'] },
   };
   const quiz = createQuiz({
@@ -500,7 +499,6 @@ export function createApp(root, options = {}) {
         }
         if (question.kind === 'factor') return t('why_factor', { name: t(`fn_${question.factor}`) }) + note('mis_factor');
         if (question.kind === 'cloth') return t('why_cloth') + note('mis_cloth');
-        if (question.kind === 'pump') return t('why_pump') + note('mis_pump');
         return t('why_vol') + note('mis_vol');
       },
       done() {

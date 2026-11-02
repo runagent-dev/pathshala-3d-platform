@@ -43,3 +43,9 @@ real seconds. The test mirrors the vessels at random.
 - The pages have no picture; the vessels, fan, bell jar and warm plate are the figure's own setting.
 - The humid mist is a simple stand-in for "ভেজা বাতাস"; the book gives no picture for it.
 - The rate numbers (3×, 4×, 6×, …) are chosen so the differences read clearly; the book gives none.
+
+## 0.2.0 polish decisions
+- The book's sixth-of-six list has **five** cases in the figure now: the air pressure case (a bell jar and a pump, a
+  different setup from the open vessels) was removed so the lab is one setup: two open vessels on the bench with one
+  thing changed. The page's air-pressure sentence is not shown; the owner may want it back as its own figure.
+- Vessels and the fan are closer together so the vessels read bigger.

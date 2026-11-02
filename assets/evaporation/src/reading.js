@@ -8,21 +8,19 @@ export const V0 = 90; // cc of liquid in each vessel at the start
 export const T_END = 10; // the run lasts this many time units
 const LOSS = 0.1; // cc lost per time unit, per cm² of surface, at k = 1
 
-/** The factors in the order of the book (page 177–178). */
-export const FACTORS = ['wind', 'area', 'liquid', 'pressure', 'warm', 'dry'];
+/** The factors of the book's list (page 177–178) that fit one setup, two open vessels on the bench (the book's air pressure, with a bell jar and a pump, is left out). */
+export const FACTORS = ['wind', 'area', 'liquid', 'warm', 'dry'];
 
 /**
  * What differs in each case: the plain vessel (left) and the changed one (right), each with the area of its surface
  * (cm²) and the relative rate k (per cm²).
  *  - wind: a fan blows across the right vessel; - area: the same liquid in a glass and in a wide plate;
- *  - liquid: water and a volatile liquid (a low boiling point); - pressure: the right vessel under a bell jar with the
- *  air pumped out; - warm: the right vessel on a warm plate; - dry: humid air round the left vessel, dry round the right.
+ *  - liquid: water and a volatile liquid (a low boiling point); - warm: the right vessel on a warm plate; - dry: humid air round the left vessel, dry round the right.
  */
 export const CASES = {
   wind: { plain: { A: 50, k: 1 }, changed: { A: 50, k: 3 } },
   area: { plain: { A: 30, k: 1 }, changed: { A: 120, k: 1 } },
   liquid: { plain: { A: 50, k: 1 }, changed: { A: 50, k: 4 } },
-  pressure: { plain: { A: 50, k: 1 }, changed: { A: 50, k: 6 } },
   warm: { plain: { A: 50, k: 1 }, changed: { A: 50, k: 3 } },
   dry: { plain: { A: 50, k: 0.5 }, changed: { A: 50, k: 1.5 } },
 };

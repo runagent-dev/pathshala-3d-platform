@@ -17,8 +17,8 @@ test('evaporation: each factor loses liquid faster in the changed vessel', async
   // the book's glass and plate: a glass loses little, the wide plate runs dry at 7.5
   expect(await fig.call('set', { factor: 'area', time: 5 })).toMatchObject({ factor: 'area', left: 83, right: 33 });
   expect(await fig.call('set', { time: 8 })).toMatchObject({ right: 0 });
-  // under the bell jar the right vessel is dry by 3
-  expect(await fig.call('set', { factor: 'pressure', time: 3 })).toMatchObject({ left: 83, right: 0 });
+  // the volatile liquid on the right is dry by 4.5
+  expect(await fig.call('set', { factor: 'liquid', time: 5 })).toMatchObject({ left: 72, right: 0 });
   for (const factor of ['liquid', 'warm', 'dry']) {
     const s = await fig.call('set', { factor, time: 4 });
     expect(s.right).toBeLessThan(s.left);
