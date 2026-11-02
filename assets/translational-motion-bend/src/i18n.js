@@ -1,0 +1,176 @@
+// Every string the figure shows, in Bangla (in the book's words, page 36, 2.2: চলন গতি, কণা, একই সময়, একই দিক,
+// একই দূরত্ব, অতিক্রম করে, সোজা এগিয়ে যাওয়া, বিন্দু) and English. Use t('key') in code, and t.num()
+// for numbers (Bangla digits when the language is Bangla).
+
+export const STRINGS = {
+  bn: {
+    panel_hide: 'লেখা লুকাও',
+    panel_show: 'লেখা দেখাও',
+    rotate_title: 'ফোনটি আড়াআড়ি ধরো',
+    rotate_body: 'পাশে ঘোরালে ছবি বড় হয়, লেখা থাকে পাশে।',
+    rotate_go: 'ঘুরিয়ে দেখো',
+    rotate_stay: 'এভাবেই দেখো',
+    title: 'বাঁক নেওয়া গাড়ি',
+    view: 'দেখার ধরন',
+    view_front_short: 'সামনে',
+    view_rotate: 'ঘুরিয়ে দেখো',
+    fullscreen: 'পূর্ণ পর্দা',
+    tab_learn: 'শেখো',
+    tab_quiz: 'পরীক্ষা',
+    reading: 'দূরত্ব',
+    unit_m: 'মিটার',
+
+    dist_head: 'প্রতিটি বিন্দু কত দূর গেল (মিটার)',
+    dot_front: 'সামনের বাম্পার',
+    dot_window: 'জানালা',
+    dot_roof: 'ছাদ',
+    dot_back: 'পেছনের দিক',
+    verdict_no: 'চলন গতি নয়',
+    idea_turn: 'চলন গতিতে সকল কণা একই সময় একই দিকে একই দূরত্ব যায়। এই গাড়িটি বাঁক নেবে: চালিয়ে দেখো, প্রতিটি বিন্দু কোন দিকে কত দূর যায়।',
+    see_turn: 'বাঁক নেওয়ার সময় প্রতিটি বিন্দু আলাদা দূরত্ব যায়, আর একই সময় আলাদা দিকে যায়। তাই এটি চলন গতি নয়।',
+
+    act_drive: 'চালাও',
+    act_pause: 'থামাও',
+    act_again: 'আবার চালাও',
+    coach_drag: 'টেনে গাড়ি চালাও',
+    hint_locked: 'পরীক্ষার সময় গাড়ি আটকানো থাকে। ভেবে উত্তর বেছে নাও।',
+
+    q_count: 'প্রশ্ন {i} / {n}',
+    q_score: 'সঠিক: {right}',
+    // which motion (look-alike pairs)
+    q_which: 'নিচের কোনটি চলন গতি?',
+    q_which_not: 'নিচের কোনটি চলন গতি নয়?',
+    ex_drawer: 'ড্রয়ার টেনে খোলা',
+    ex_box: 'ঢালে বাক্সের পিছলে নামা',
+    ex_lift: 'লিফটের উপরে ওঠা',
+    ex_door: 'দরজা খোলা',
+    ex_ball: 'ঢালে বলের গড়িয়ে নামা',
+    ex_turn: 'বাঁক নেওয়া গাড়ি',
+    ex_cycle: 'চলন্ত সাইকেলের চাকা',
+    why_ex_drawer: 'ড্রয়ারের সব বিন্দু একই সময় একই দিকে একই দূরত্ব যায়: চলন গতি।',
+    why_ex_box: 'পিছলে নামে, গড়ায় না: বাক্সের সব বিন্দু একই দিকে একই দূরত্ব যায়।',
+    why_ex_lift: 'লিফটের মেঝে, ছাদ, সব বিন্দু একসাথে একই দূরত্ব ওঠে: চলন গতি।',
+    why_ex_door: 'দরজার কব্জার কাছের অংশ প্রায় নড়ে না, দূরের প্রান্ত অনেক দূর যায়।',
+    why_ex_ball: 'বল গড়ায়: এর গায়ের একটি বিন্দু ওঠে আর নামে, সব বিন্দু একই দিকে যায় না।',
+    why_ex_turn: 'বাঁকের সময় গাড়ির বিন্দুগুলো আলাদা দূরত্ব যায়, আলাদা দিকে।',
+    why_ex_cycle: 'চাকার একেক বিন্দু একেক দিকে যায়; উপরের বিন্দু নিচেরটির চেয়ে বেশি দূর যায়।',
+    // the bend
+    q_turn: 'বাঁক নেওয়া এই গাড়ির গতি কি চলন গতি?',
+    turn_no_dist: 'না, দূরত্ব সমান নয়',
+    turn_yes_together: 'হ্যাঁ, সব বিন্দু একসাথে চলে',
+    turn_yes_forward: 'হ্যাঁ, গাড়ি সামনে এগোয়',
+    turn_no_wheel: 'না, কারণ চাকা ঘোরে',
+    why_turn_no_dist: 'সামনের বাম্পার <b>{a}</b>, ছাদ <b>{b} মিটার</b> গেছে: দূরত্ব সমান নয়, দিকও আলাদা।',
+    why_turn_yes_together: 'একসাথে চললেই হয় না: সামনের বাম্পার <b>{a}</b>, ছাদ <b>{b} মিটার</b> গেছে।',
+    why_turn_yes_forward: 'এগোলেই হয় না: সামনের বাম্পার <b>{a}</b>, ছাদ <b>{b} মিটার</b> গেছে, সমান নয়।',
+    why_turn_no_wheel: 'চাকা তো সোজা চলার সময়ও ঘোরে; আসল কারণ: সামনের বাম্পার <b>{a}</b>, ছাদ <b>{b} মিটার</b>।',
+    // which point went farthest
+    q_far: 'বাঁক শেষে কোন বিন্দুটি সবচেয়ে বেশি দূরত্ব অতিক্রম করেছে?',
+    why_far: 'সামনের বাম্পার বাঁকের কেন্দ্র থেকে সবচেয়ে দূরে, তাই সবচেয়ে বড় বৃত্তে ঘোরে: <b>{a} মিটার</b>; ছাদ মাত্র <b>{b} মিটার</b>।',
+    why_far_wrong: '{k} নয়: সামনের বাম্পার বাঁকের কেন্দ্র থেকে সবচেয়ে দূরে, সবচেয়ে বড় বৃত্তে ঘোরে, তাই সবচেয়ে বেশি (<b>{a} মিটার</b>)।',
+    q_hint: 'ভেবে সঠিক উত্তরটি বেছে নাও।',
+    q_right: 'ঠিক হয়েছে!',
+    q_wrong: 'হয়নি।',
+    q_next: 'পরের প্রশ্ন',
+    q_finish: 'ফলাফল দেখো',
+    q_result: '{total}টির মধ্যে {right}টি সঠিক',
+    q_great: 'দারুণ! সবগুলো সঠিক।',
+    q_good: 'ভালো হয়েছে!',
+    q_try: 'আরেকবার চেষ্টা করো।',
+    q_again: 'আবার পরীক্ষা দাও',
+  },
+  en: {
+    panel_hide: 'Hide the text',
+    panel_show: 'Show the text',
+    rotate_title: 'Turn your phone sideways',
+    rotate_body: 'Sideways, the picture is bigger and the text sits beside it.',
+    rotate_go: 'Turn it',
+    rotate_stay: 'Stay like this',
+    title: 'A car taking a bend',
+    view: 'View',
+    view_front_short: 'Front',
+    view_rotate: 'Rotate',
+    fullscreen: 'Full screen',
+    tab_learn: 'Learn',
+    tab_quiz: 'Test',
+    reading: 'Distance',
+    unit_m: 'metres',
+
+    dist_head: 'How far each point went (metres)',
+    dot_front: 'front bumper',
+    dot_window: 'window',
+    dot_roof: 'roof',
+    dot_back: 'rear corner',
+    verdict_no: 'Not translational',
+    idea_turn:
+      'In translational motion all particles go the same distance in the same direction at the same time. This car takes a bend: drive it and see which way and how far each point goes.',
+    see_turn: 'Round a bend each point goes its own distance, and in its own direction at the same moment. So this is not translational motion.',
+
+    act_drive: 'Drive',
+    act_pause: 'Stop',
+    act_again: 'Drive again',
+    coach_drag: 'Drag the car to drive it',
+    hint_locked: 'The car is locked during the test. Think, and pick an answer.',
+
+    q_count: 'Question {i} / {n}',
+    q_score: 'Right: {right}',
+    q_which: 'Which of these is translational motion?',
+    q_which_not: 'Which of these is not translational motion?',
+    ex_drawer: 'A drawer pulled out',
+    ex_box: 'A box sliding down a slope',
+    ex_lift: 'A lift going up',
+    ex_door: 'A door opening',
+    ex_ball: 'A ball rolling down a slope',
+    ex_turn: 'A car taking a bend',
+    ex_cycle: 'A moving bicycle’s wheel',
+    why_ex_drawer: 'Every point of the drawer goes the same distance in the same direction at the same time: translational.',
+    why_ex_box: 'The box slides, it does not roll: every point goes the same way, the same distance.',
+    why_ex_lift: 'The floor, the roof, every point of the lift rises the same distance together: translational.',
+    why_ex_door: 'Near the hinges the door hardly moves; its far edge goes a long way.',
+    why_ex_ball: 'The ball rolls: a point on it goes up and down; its points do not all go the same way.',
+    why_ex_turn: 'Round a bend the car’s points go different distances, in different directions.',
+    why_ex_cycle: 'Each point of the wheel goes its own way; the top goes farther than the bottom.',
+    q_turn: 'Is this car, taking a bend, in translational motion?',
+    turn_no_dist: 'No, the distances differ',
+    turn_yes_together: 'Yes, all points move together',
+    turn_yes_forward: 'Yes, the car moves forward',
+    turn_no_wheel: 'No, because the wheels turn',
+    why_turn_no_dist: 'The front bumper went <b>{a}</b>, the roof <b>{b} m</b>: not the same distance, nor direction.',
+    why_turn_yes_together: 'Moving together is not enough: the front bumper went <b>{a}</b>, the roof <b>{b} m</b>.',
+    why_turn_yes_forward: 'Moving forward is not enough: the front bumper went <b>{a}</b>, the roof <b>{b} m</b>.',
+    why_turn_no_wheel: 'The wheels turn when going straight too; the reason: front bumper <b>{a}</b>, roof <b>{b} m</b>.',
+    q_far: 'At the end of the bend, which point has gone the farthest?',
+    why_far: 'The front bumper is farthest from the bend’s centre, so it goes round the biggest circle: <b>{a} m</b>; the roof only <b>{b} m</b>.',
+    why_far_wrong:
+      'Not the {k}: the front bumper is farthest from the bend’s centre and goes round the biggest circle, so the farthest (<b>{a} m</b>).',
+    q_hint: 'Think, and pick the right answer.',
+    q_right: 'Right!',
+    q_wrong: 'Not quite.',
+    q_next: 'Next question',
+    q_finish: 'See the result',
+    q_result: '{right} of {total} right',
+    q_great: 'Excellent! All right.',
+    q_good: 'Well done!',
+    q_try: 'Try once more.',
+    q_again: 'Take the test again',
+  },
+};
+
+const BN_DIGITS = '০১২৩৪৫৬৭৮৯';
+export const toBanglaDigits = (s) => String(s).replace(/[0-9]/g, (d) => BN_DIGITS[d]);
+
+/** t(key, vars) with t.num and t.lang. Missing Bangla falls back to English, a missing key shows the key. */
+export function createI18n(lang = 'bn', { numerals = null } = {}) {
+  const code = STRINGS[lang] ? lang : 'bn';
+  const dict = { ...STRINGS.en, ...STRINGS[code] };
+  const bangla = (numerals || (code === 'bn' ? 'bn' : 'latin')) === 'bn';
+  const num = (x) => (bangla ? toBanglaDigits(x) : String(x));
+  function t(key, vars) {
+    let s = dict[key] ?? key;
+    if (vars) s = s.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? num(vars[k]) : m));
+    return s;
+  }
+  t.num = num;
+  t.lang = code;
+  return t;
+}

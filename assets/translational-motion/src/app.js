@@ -1,8 +1,8 @@
 // Translational motion (book page 36, topic 2.2: চলন গতি), student view: a car on a road with four painted points.
 // Drag the car (or press চালাও) and every point leaves a trail: straight ahead, all four trails are the same length
-// and point the same way (চলন গতি). Two contrasts from the book's own sentence: a point on the rotating wheel
-// (ঘূর্ণায়মান চাকা) goes up and down along a longer path, and a car taking a bend is not in translational motion
-// (each point goes its own distance, in its own direction). Then a short test. Built on the shared student kit.
+// and point the same way (চলন গতি). The contrast from the book's own sentence: a point on the rotating wheel
+// (ঘূর্ণায়মান চাকা) goes up and down along a longer path. (The car taking a bend is its own lab,
+// translational-motion-bend.) Then a short test. Built on the shared student kit.
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
 import { createTweener, ease } from '@shared/tween.js';
@@ -11,7 +11,7 @@ import { buildStudentShell } from '@shared/student/shell.js';
 import { createCoach } from '@shared/student/coach.js';
 import { createQuiz } from '@shared/student/quiz.js';
 import { createAnnotations } from '@shared/student/annotations.js';
-import { ICONS, svg } from '@shared/student/icons.js';
+import { ICONS } from '@shared/student/icons.js';
 import { createI18n } from './i18n.js';
 import { createCar, createGhost, DOT_R, WHEEL_DOT_R } from './car.js';
 import { createRoad, createRuler, createTrail, outlineMaterial, RULER, smoothNormals } from './scene.js';
@@ -26,7 +26,6 @@ import {
   dotDistance,
   fmtM,
   lengthAt,
-  PATHS,
   pointAt,
   pose,
   roundTo,
@@ -37,8 +36,9 @@ import {
   wheelTurn,
 } from './motion.js';
 
+const PATH = 'straight'; // the car drives straight ahead (motion.js also knows the bend)
+
 export const DEFAULTS = {
-  path: 'straight', // 'straight' | 'turn'
   distance: 0, // m the car has already gone at the start
   wheel: false, // show the point on the wheel (straight road only)
   view: 'front', // 'front' | '3d'
@@ -60,8 +60,8 @@ const TRAIL_R = 0.065; // m: thick enough to see on a phone
 const OUTLINE = 0.018; // m: the dark rim round each trail, arrowhead and ring
 const STEP = { body: 0.02, wheel: 0.01 }; // m of the car's travel between trail samples
 const ARROW = { len: 0.32, r: 0.115 }; // the arrowhead stops just short of its point
-const SPEED = { straight: 1.6, turn: 2.2 }; // m/s at the most (a car creeping off), with a gentle start and stop
-const MOVED = 0.5; // m: from here the panel draws its conclusion (round the bend the numbers differ by then)
+const SPEED = 1.6; // m/s at the most (a car creeping off), with a gentle start and stop
+const MOVED = 0.5; // m: from here the panel draws its conclusion
 const LABELS_UNTIL = 0.4; // m: the points' names show at the start, and go once the car has moved
 const FRONT_AXLE = CAR.rearAxle + CAR.wheelbase;
 const HUBS = {
@@ -112,7 +112,6 @@ const LABEL_SPOTS = {
     [58, -6],
   ],
 };
-const BEND_ICON = svg('<path d="M6 20v-6a6 6 0 0 1 6-6h7"/><path d="M15 4l4 4-4 4"/>');
 
 export function createApp(root, options = {}) {
   const o = { ...DEFAULTS, ...options };
@@ -132,7 +131,6 @@ export function createApp(root, options = {}) {
     learn: `
           <div class="tm-choices">
             <button class="pvc-btn tm-toggle tm-wheel-btn" data-act="wheel" aria-pressed="false"><i class="tm-swatch"></i>${t('act_wheel')}</button>
-            <button class="pvc-btn tm-toggle tm-bend-btn" data-act="bend" aria-pressed="false">${BEND_ICON}${t('act_bend')}</button>
           </div>
           <div class="tm-acts"><button class="pvc-btn primary" data-act="drive"><i class="tm-ic"></i><span></span></button></div>
           <div class="pvc-learn-main tm-main">
@@ -175,12 +173,10 @@ export function createApp(root, options = {}) {
   });
 
   const asphalt = asphaltTexture();
-  const roads = Object.fromEntries(PATHS.map((p) => [p, createRoad(p, asphalt)]));
-  for (const [path, r] of Object.entries(roads)) {
-    r.userData.noExport = true;
-    if (street) r.add(createSetting(path)); // the street goes with its road
-    world.add(r);
-  }
+  const road = createRoad(PATH, asphalt);
+  road.userData.noExport = true;
+  if (street) road.add(createSetting(PATH)); // the street goes with its road
+  world.add(road);
   if (street) world.add(createSurroundings());
   const ruler = createRuler({ digits: N, unit: t('unit_m') });
   ruler.group.userData.noExport = true;
@@ -245,26 +241,23 @@ export function createApp(root, options = {}) {
   );
   // every trail, arrowhead and ring has a dark outline: it stands out on the white car, the road and the footpath
   const outlines = [outlineMaterial({ width: OUTLINE }), outlineMaterial({ width: OUTLINE, depthTest: false })];
-  const trails = {}; // path → key → { samples, tube }
-  const wheelExact = {}; // path → samples of the tyre point itself (its distance has no simple formula)
-  for (const path of PATHS) {
-    trails[path] = {};
-    for (const k of KEYS) {
-      const fn = k === 'wheel' ? (d) => wheelDotAt(path, d, { out: WHEEL_DOT.out + LIFT }) : (d) => pointAt(path, lifted(k), d);
-      const samples = sampleTrail(fn, D_MAX[path], k === 'wheel' ? STEP.wheel : STEP.body);
-      const tube = createTrail(samples.points, {
-        radius: TRAIL_R,
-        radial: k === 'wheel' ? 6 : 8,
-        material: trailMats[k],
-        outline: outlines[k === 'wheel' ? 1 : 0],
-      });
-      tube.mesh.name = `Trail_${path}_${k}`;
-      if (k === 'wheel') tube.mesh.renderOrder = 5;
-      world.add(tube.mesh);
-      trails[path][k] = { samples, tube };
-    }
-    wheelExact[path] = sampleTrail((d) => wheelDotAt(path, d), D_MAX[path], 0.005);
+  const trails = {}; // key → { samples, tube }
+  for (const k of KEYS) {
+    const fn = k === 'wheel' ? (d) => wheelDotAt(PATH, d, { out: WHEEL_DOT.out + LIFT }) : (d) => pointAt(PATH, lifted(k), d);
+    const samples = sampleTrail(fn, D_MAX[PATH], k === 'wheel' ? STEP.wheel : STEP.body);
+    const tube = createTrail(samples.points, {
+      radius: TRAIL_R,
+      radial: k === 'wheel' ? 6 : 8,
+      material: trailMats[k],
+      outline: outlines[k === 'wheel' ? 1 : 0],
+    });
+    tube.mesh.name = `Trail_${PATH}_${k}`;
+    if (k === 'wheel') tube.mesh.renderOrder = 5;
+    world.add(tube.mesh);
+    trails[k] = { samples, tube };
   }
+  // samples of the tyre point itself (its distance has no simple formula)
+  const wheelExact = sampleTrail((d) => wheelDotAt(PATH, d), D_MAX[PATH], 0.005);
   const coneGeo = new THREE.ConeGeometry(ARROW.r, ARROW.len, 18);
   coneGeo.translate(0, -ARROW.len / 2, 0); // tip at the origin, pointing +y
   const coneRim = smoothNormals(coneGeo);
@@ -311,12 +304,12 @@ export function createApp(root, options = {}) {
     world.add(ring);
     rings[k] = ring;
   }
-  // where the tyre point starts, on the road (its wheel is steered on the bend), for its ring
-  const wheelStart = Object.fromEntries(PATHS.map((p) => [p, wheelDotAt(p, 0, { out: WHEEL_DOT.out + 0.01 })]));
-  // the rings sit where each point was at the start (the car starts at the same place on both paths)
+  // where the tyre point starts, on the road, for its ring
+  const wheelStart = wheelDotAt(PATH, 0, { out: WHEEL_DOT.out + 0.01 });
+  // the rings sit where each point was at the start
   for (const k of DOT_KEYS) {
     const n = DOT_NORMALS[k];
-    const [x, y, z] = pointAt('straight', lifted(k), 0);
+    const [x, y, z] = pointAt(PATH, lifted(k), 0);
     rings[k].position.set(x, y, z);
     if (n[1]) rings[k].rotation.x = -Math.PI / 2;
   }
@@ -333,9 +326,8 @@ export function createApp(root, options = {}) {
   }
 
   const s = {
-    path: PATHS.includes(o.path) ? o.path : 'straight',
     d: 0,
-    wheel: Boolean(o.wheel) && o.path !== 'turn', // the tyre point belongs to the straight road
+    wheel: Boolean(o.wheel),
     playing: false,
     view: o.view === '3d' ? '3d' : 'front',
     mode: 'explore',
@@ -348,20 +340,19 @@ export function createApp(root, options = {}) {
 
   const distances = () => {
     const out = {};
-    for (const k of DOT_KEYS) out[k] = dotDistance(s.path, k, s.d);
-    out.wheel = lengthAt(wheelExact[s.path], s.d);
+    for (const k of DOT_KEYS) out[k] = dotDistance(PATH, k, s.d);
+    out.wheel = lengthAt(wheelExact, s.d);
     return out;
   };
-  const atEnd = () => s.d >= D_MAX[s.path] - 0.01;
+  const atEnd = () => s.d >= D_MAX[PATH] - 0.01;
 
   function snapshot() {
     const ds = distances();
     const r2 = (v) => roundTo(v, 0.01);
     return {
-      path: s.path,
       distance: r2(s.d),
       distances: Object.fromEntries(KEYS.map((k) => [k, r2(ds[k])])),
-      translational: s.path === 'straight', // the body does not turn: every point moves alike, all the way
+      translational: true, // the body does not turn: every point moves alike, all the way
       wheel: s.wheel,
       playing: s.playing,
       view: s.view,
@@ -406,46 +397,37 @@ export function createApp(root, options = {}) {
   }
 
   function applyPose() {
-    const p = pose(s.path, s.d);
+    const p = pose(PATH, s.d);
     car.root.position.set(p.x, 0, p.z);
     car.root.rotation.y = p.heading;
     const turns = {};
-    for (const [k, hub] of Object.entries(HUBS)) turns[k] = wheelTurn(s.path, hub, s.d);
-    car.setWheels(turns, steer(s.path));
-    const p0 = pose(s.path, 0);
+    for (const [k, hub] of Object.entries(HUBS)) turns[k] = wheelTurn(PATH, hub, s.d);
+    car.setWheels(turns, steer(PATH));
+    const p0 = pose(PATH, 0);
     ghost.root.position.set(p0.x, 0, p0.z);
     ghost.root.rotation.y = p0.heading;
-    ghost.setSteering(steer(s.path));
+    ghost.setSteering(steer(PATH));
     ghostMat.opacity = 0.28 * THREE.MathUtils.smoothstep(s.d, 0.25, 1.4);
     if (sun) {
       // the shadow box follows the car's middle
-      const [cx, , cz] = pointAt(s.path, [CAR.length / 2, 0, 0], s.d);
+      const [cx, , cz] = pointAt(PATH, [CAR.length / 2, 0, 0], s.d);
       sun.target.position.set(cx, 0, cz);
       sun.position.copy(sun.target.position).add(SUN);
       sun.target.updateMatrixWorld();
     }
     ghost.root.visible = ghostMat.opacity > 0.002;
 
-    for (const path of PATHS) {
-      for (const k of KEYS) {
-        const tr = trails[path][k];
-        const on = path === s.path && (k !== 'wheel' || s.wheel);
-        tr.tube.mesh.visible = on;
-        if (!on) continue;
-        tr.tube.show(placeArrow(k, tr.samples, lengthAt(tr.samples, s.d)));
-      }
-    }
     for (const k of KEYS) {
+      const tr = trails[k];
       const on = k !== 'wheel' || s.wheel;
-      if (!on) arrows[k].visible = false;
+      tr.tube.mesh.visible = on;
+      if (on) tr.tube.show(placeArrow(k, tr.samples, lengthAt(tr.samples, s.d)));
+      else arrows[k].visible = false;
       rings[k].visible = on && s.d > 0.18;
     }
     car.dots.wheel.visible = s.wheel;
     for (const k of DOT_KEYS) trailMats[k].color.copy(shades[k][s.wheel ? 1 : 0]);
-    rings.wheel.position.fromArray(wheelStart[s.path]);
-    roads.straight.visible = s.path === 'straight';
-    roads.turn.visible = s.path === 'turn';
-    ruler.group.visible = s.path === 'straight';
+    rings.wheel.position.fromArray(wheelStart);
     startLabels();
     stage.invalidate();
   }
@@ -489,7 +471,6 @@ export function createApp(root, options = {}) {
     driveIc: $('[data-act="drive"] .tm-ic'),
     driveLabel: $('[data-act="drive"] span'),
     wheelBtn: $('[data-act="wheel"]'),
-    bendBtn: $('[data-act="bend"]'),
     wheelPart: $('.tm-wheel-part'),
   };
 
@@ -507,7 +488,6 @@ export function createApp(root, options = {}) {
 
   /** The panel's line: the idea at first, then what the student sees (the tyre point's, once it is ahead). */
   function extraKey(ds) {
-    if (s.path === 'turn') return s.d >= MOVED ? 'see_turn' : 'idea_turn';
     if (s.wheel) return ds.wheel > ds.front + 0.05 ? 'see_wheel' : 'idea_wheel'; // it starts behind, then overtakes
     return s.d >= MOVED ? 'see_straight' : 'idea';
   }
@@ -519,7 +499,7 @@ export function createApp(root, options = {}) {
     el.ops.forEach((op, i) => put(op, `op${i}`, fmtM(ds[KEYS[i]]) === fmtM(ds[KEYS[i + 1]]) ? '=' : '≠', text));
     el.wheelPart.hidden = !s.wheel;
     // the verdict, once the car has gone far enough to tell (the first-use hand never moves it that far)
-    el.verdict.dataset.state = s.d >= MOVED ? (s.path === 'straight' ? 'yes' : 'no') : '';
+    el.verdict.dataset.state = s.d >= MOVED ? 'yes' : '';
     put(el.verdictYes, 'yes', t(s.wheel ? 'verdict_yes_wheel' : 'verdict_yes'), text);
     put(el.extra, 'extra', t(extraKey(ds)), text);
     const act = s.playing ? 'act_pause' : atEnd() ? 'act_again' : 'act_drive';
@@ -527,27 +507,22 @@ export function createApp(root, options = {}) {
     put(el.driveIc, 'driveIcon', act, (node, v) => {
       node.innerHTML = DRIVE_ICONS[v];
     });
-    for (const [b, on] of [
-      [el.wheelBtn, s.wheel],
-      [el.bendBtn, s.path === 'turn'],
-    ]) {
-      b.classList.toggle('on', on);
-      b.setAttribute('aria-pressed', String(on));
-    }
+    el.wheelBtn.classList.toggle('on', s.wheel);
+    el.wheelBtn.setAttribute('aria-pressed', String(s.wheel));
     stage.invalidate();
   }
 
   let lastEmitted = '';
   function emitChange() {
     const snap = snapshot();
-    const key = `${snap.path}|${fmtM(snap.distance)}|${snap.wheel}|${snap.playing}`;
+    const key = `${fmtM(snap.distance)}|${snap.wheel}|${snap.playing}`;
     if (key === lastEmitted) return;
     lastEmitted = key;
     emit('change', snap);
   }
 
   function setD(d) {
-    const v = clampD(s.path, d);
+    const v = clampD(PATH, d);
     if (v === s.d) return;
     s.d = v;
     applyPose();
@@ -557,9 +532,9 @@ export function createApp(root, options = {}) {
 
   // ── driving ─────────────────────────────────────────────────────────────────
   /** Drives from where the car is to `to` with a gentle start and stop (the virtual clock moves it in tests). */
-  function drive(to = D_MAX[s.path], { from = s.d } = {}) {
+  function drive(to = D_MAX[PATH], { from = s.d } = {}) {
     stopDrive();
-    const target = clampD(s.path, to);
+    const target = clampD(PATH, to);
     if (from !== s.d) setD(from);
     const span = target - s.d;
     if (Math.abs(span) < 1e-6) return Promise.resolve(true);
@@ -567,9 +542,9 @@ export function createApp(root, options = {}) {
     s.playing = true;
     refresh();
     emitChange();
-    emit('drive', { path: s.path, from: start, to: target });
+    emit('drive', { from: start, to: target });
     // with a sine speed profile the top speed is π/2 × the average
-    const duration = 0.4 + ((Math.PI / 2) * Math.abs(span)) / SPEED[s.path];
+    const duration = 0.4 + ((Math.PI / 2) * Math.abs(span)) / SPEED;
     return tweener.animate({
       key: 'drive',
       duration,
@@ -596,37 +571,15 @@ export function createApp(root, options = {}) {
     coach?.objectUsed();
     if (s.playing) return stopDrive();
     audio.pop();
-    if (atEnd()) return drive(D_MAX[s.path], { from: 0 });
+    if (atEnd()) return drive(D_MAX[PATH], { from: 0 });
     return drive();
   }
 
-  /** Straight road or the bend (the tyre point belongs to the straight road). autoplay: then drive it. */
-  async function setPath(path, { animate = true, autoplay = false } = {}) {
-    const my = ++request;
-    const p = PATHS.includes(path) ? path : 'straight';
-    stopDrive();
-    const changed = p !== s.path;
-    s.path = p;
-    if (p === 'turn') s.wheel = false;
-    s.d = 0;
-    applyPose();
-    refresh();
-    emitChange();
-    if (changed) emit('path', { path: p });
-    if (!s.userMovedCamera) await flyTo(viewPose(s.view), animate ? 0.8 : 0);
-    if (autoplay && my === request && !s.locked) await drive();
-  }
-
-  /** Shows or hides the tyre point (on the straight road; the camera turns more to the side). autoplay: drive. */
+  /** Shows or hides the tyre point (the camera turns more to the side). autoplay: drive. */
   async function setWheel(on, { animate = true, autoplay = false } = {}) {
     const my = ++request;
     stopDrive();
     s.wheel = Boolean(on);
-    if (s.wheel && s.path !== 'straight') {
-      s.path = 'straight';
-      s.d = 0;
-      emit('path', { path: 'straight' });
-    }
     if (s.wheel && autoplay) s.d = 0;
     applyPose();
     refresh();
@@ -644,33 +597,28 @@ export function createApp(root, options = {}) {
   const corners = [];
   for (const x of [-0.1, CAR.length + 0.1])
     for (const y of [0, CAR.height + 0.05]) for (const z of [-CAR.width / 2, CAR.width / 2]) corners.push([x, y, z]);
-  /** The car's corners all along its path (the bend's real shape, not a box round it). */
-  const pathPoints = Object.fromEntries(
-    PATHS.map((path) => {
-      const pts = [];
-      for (let i = 0; i <= 16; i++) for (const c of corners) pts.push(new THREE.Vector3(...pointAt(path, c, (i / 16) * D_MAX[path])));
-      return [path, pts];
-    }),
-  );
+  /** The car's corners all along its path. */
+  const pathPoints = [];
+  for (let i = 0; i <= 16; i++) for (const c of corners) pathPoints.push(new THREE.Vector3(...pointAt(PATH, c, (i / 16) * D_MAX[PATH])));
   // with the tyre point on a tall frame: the front wheel's path (its arches start at 2.86 m) and the car at the end,
   // seen almost from the side, so each 2 m arch is as big as the phone allows
   const wheelPoints = [];
   for (const x of [2.75, CAR.length + D_MAX.straight + 0.1])
     for (const y of [0, CAR.height + 0.05]) for (const z of [-CAR.width / 2, CAR.width / 2]) wheelPoints.push(new THREE.Vector3(x, y, z));
-  const tallWheel = () => s.path === 'straight' && s.wheel && camera.aspect < 1.1;
+  const tallWheel = () => s.wheel && camera.aspect < 1.1;
   const deg = THREE.MathUtils.degToRad;
   /** Where the camera looks from: straight, more from the side on wide frames and more from the front corner on
-   *  tall ones (the drive then fills a phone held upright); the bend, from higher up so its arcs show. */
+   *  tall ones (the drive then fills a phone held upright). */
   function viewDir(view) {
     const k = THREE.MathUtils.clamp((camera.aspect - 0.75) / (1.9 - 0.75), 0, 1);
     const lerp = (a, b) => THREE.MathUtils.lerp(a, b, k);
     // with the wheel point, more from the side: its arches stand in the plane of the car's side
-    const side = s.path === 'straight' && s.wheel;
-    let az = s.path === 'turn' ? 26 : tallWheel() ? 12 : side ? lerp(30, 8) : lerp(54, 16);
-    let el = s.path === 'turn' ? lerp(58, 50) : tallWheel() ? 18 : side ? lerp(26, 14) : lerp(40, 20);
+    const side = s.wheel;
+    let az = tallWheel() ? 12 : side ? lerp(30, 8) : lerp(54, 16);
+    let el = tallWheel() ? 18 : side ? lerp(26, 14) : lerp(40, 20);
     if (view === '3d') {
       // free turning starts from behind the car's right side, a little higher: the side, the roof and the back
-      az = s.path === 'turn' ? -24 : -32;
+      az = -32;
       el += 8;
     }
     return new THREE.Vector3(Math.sin(deg(az)) * Math.cos(deg(el)), Math.sin(deg(el)), Math.cos(deg(az)) * Math.cos(deg(el)));
@@ -683,7 +631,7 @@ export function createApp(root, options = {}) {
     right.crossVectors(fwd, up).normalize();
     upv.crossVectors(right, fwd);
     const tall = tallWheel();
-    const pts = tall ? wheelPoints : pathPoints[s.path];
+    const pts = tall ? wheelPoints : pathPoints;
     const lo = [Infinity, Infinity, Infinity];
     const hi = [-Infinity, -Infinity, -Infinity];
     const take = (p) => {
@@ -694,20 +642,18 @@ export function createApp(root, options = {}) {
       }
     };
     for (const p of pts) take(p);
-    if (s.path === 'straight') {
-      // the metre numbers sit just under their pegs on the screen, the unit under the last one (see createRuler)
-      for (let i = tall ? 3 : 0; i <= RULER.max; i++) {
-        const c = tv.set(i, 0, RULER.z).addScaledVector(upv, -RULER.below);
-        for (const [dr, du] of [
-          [-0.2, -RULER.digit * 0.6],
-          [0.2, RULER.digit * 0.6],
-        ])
-          take(c.clone().addScaledVector(right, dr).addScaledVector(upv, du));
-      }
-      const u = tv.set(RULER.max, 0, RULER.z).addScaledVector(upv, -(RULER.below + RULER.unitBelow + RULER.unit * 0.6));
-      take(u.clone().addScaledVector(right, 0.45));
-      take(u.clone().addScaledVector(right, -0.45));
+    // the metre numbers sit just under their pegs on the screen, the unit under the last one (see createRuler)
+    for (let i = tall ? 3 : 0; i <= RULER.max; i++) {
+      const c = tv.set(i, 0, RULER.z).addScaledVector(upv, -RULER.below);
+      for (const [dr, du] of [
+        [-0.2, -RULER.digit * 0.6],
+        [0.2, RULER.digit * 0.6],
+      ])
+        take(c.clone().addScaledVector(right, dr).addScaledVector(upv, du));
     }
+    const u = tv.set(RULER.max, 0, RULER.z).addScaledVector(upv, -(RULER.below + RULER.unitBelow + RULER.unit * 0.6));
+    take(u.clone().addScaledVector(right, 0.45));
+    take(u.clone().addScaledVector(right, -0.45));
     const centre = new THREE.Vector3()
       .addScaledVector(right, (lo[0] + hi[0]) / 2)
       .addScaledVector(upv, (lo[1] + hi[1]) / 2)
@@ -785,9 +731,9 @@ export function createApp(root, options = {}) {
   const pb = new THREE.Vector3();
   function pathOnScreen() {
     const mid = [CAR.length / 2, 0.6, 0];
-    const d0 = Math.min(s.d, D_MAX[s.path] - 0.1);
-    pa.fromArray(pointAt(s.path, mid, d0)).project(camera);
-    pb.fromArray(pointAt(s.path, mid, d0 + 0.1)).project(camera);
+    const d0 = Math.min(s.d, D_MAX[PATH] - 0.1);
+    pa.fromArray(pointAt(PATH, mid, d0)).project(camera);
+    pb.fromArray(pointAt(PATH, mid, d0 + 0.1)).project(camera);
     const dx = ((pb.x - pa.x) / 2) * stage.width;
     const dy = (-(pb.y - pa.y) / 2) * stage.height;
     const len = Math.hypot(dx, dy) || 1;
@@ -904,11 +850,10 @@ export function createApp(root, options = {}) {
   let picked = -1; // the choice the student tapped (its worked answer names that mistake)
   let saved = null; // the student's own state, given back after the test
   /** Puts the car somewhere for a question, without the student's camera moves in the way. */
-  async function stageFor({ path = 'straight', wheel = false, to = 0, labels = [] }) {
+  async function stageFor({ wheel = false, to = 0, labels = [] }) {
     request++;
     stopDrive();
     s.wheel = wheel;
-    s.path = path;
     s.d = 0;
     applyPose();
     refresh();
@@ -930,17 +875,17 @@ export function createApp(root, options = {}) {
     t,
     emit,
     audio,
-    questions: 5,
+    questions: 4,
     hooks: {
       enter() {
-        saved = { path: s.path, d: s.d, wheel: s.wheel };
+        saved = { d: s.d, wheel: s.wheel };
         s.mode = 'quiz';
         s.locked = true;
         startNames = false;
         annotations.clear();
         stopDrive();
         hideHint();
-        kinds = ['dist', ...shuffle(['which', 'wheel', 'turn', 'same'])];
+        kinds = ['dist', ...shuffle(['which', 'wheel', 'same'])];
         syncUI();
       },
       leave() {
@@ -951,7 +896,6 @@ export function createApp(root, options = {}) {
         if (saved) {
           request++;
           stopDrive();
-          s.path = saved.path;
           s.wheel = saved.wheel;
           s.d = saved.d;
           flyTo(viewPose(s.view), 0.6);
@@ -972,7 +916,7 @@ export function createApp(root, options = {}) {
           const end = mark(start + d);
           const askedEnd = mark(DOTS[asked][0] + d);
           say(t('q_dist', { given: of(given), start, end, asked: of(asked) }));
-          await stageFor({ path: 'straight', to: d, labels: [given, asked] });
+          await stageFor({ to: d, labels: [given, asked] });
           if (!alive()) return null;
           question = { kind, d, given, asked, start, end, askedEnd };
           return {
@@ -990,7 +934,7 @@ export function createApp(root, options = {}) {
           if (!not && PAIR[right]) wrong = [PAIR[right], ...wrong]; // the look-alike is always there
           const keys = shuffle([right, ...wrong]);
           say(t(not ? 'q_which_not' : 'q_which'));
-          await stageFor({ path: 'straight' });
+          await stageFor({});
           if (!alive()) return null;
           question = { kind, not, right, keys };
           return { choices: [0, 1, 2, 3], expected: keys.indexOf(right), tolerance: 0.5, label: words(keys), meta: { kind, not, answer: right } };
@@ -998,25 +942,17 @@ export function createApp(root, options = {}) {
         if (kind === 'wheel') {
           const keys = shuffle(['wheel_wave', 'wheel_straight', 'wheel_circle', 'wheel_loop']);
           say(t('q_wheel'));
-          await stageFor({ path: 'straight', wheel: true });
+          await stageFor({ wheel: true });
           if (!alive()) return null;
           showLabels(['wheel'], () => t('this_point'));
           question = { kind, keys };
           return { choices: [0, 1, 2, 3], expected: keys.indexOf('wheel_wave'), tolerance: 0.5, label: words(keys), meta: { kind } };
         }
-        if (kind === 'turn') {
-          const keys = shuffle(['turn_no_dist', 'turn_yes_together', 'turn_yes_forward', 'turn_no_wheel']);
-          say(t('q_turn'));
-          await stageFor({ path: 'turn', to: D_MAX.turn });
-          if (!alive()) return null;
-          question = { kind, keys };
-          return { choices: [0, 1, 2, 3], expected: keys.indexOf('turn_no_dist'), tolerance: 0.5, label: words(keys), meta: { kind } };
-        }
         // the whole definition: the same time, the same direction, the same distance
         const d = 3;
         const keys = shuffle(['same_all', 'same_roof', 'same_first', 'same_dir']);
         say(t('q_same'));
-        await stageFor({ path: 'straight', to: d, labels: ['roof', 'front'] });
+        await stageFor({ to: d, labels: ['roof', 'front'] });
         if (!alive()) return null;
         question = { kind, keys, d };
         return { choices: [0, 1, 2, 3], expected: keys.indexOf('same_all'), tolerance: 0.5, label: words(keys), meta: { kind } };
@@ -1043,16 +979,6 @@ export function createApp(root, options = {}) {
           drive(D_MAX.straight, { from: 0 });
           const item = choice == null ? 'wheel_wave' : Q.keys[choice];
           return t(`why_${item}`);
-        }
-        if (Q.kind === 'turn') {
-          // finish the bend if the student answered while it was still going, so the numbers are the end's
-          if (!atEnd()) {
-            stopDrive();
-            setD(D_MAX.turn);
-          }
-          showLabels(['front', 'roof']);
-          const vars = { a: fmtM(dotDistance('turn', 'front', D_MAX.turn)), b: fmtM(dotDistance('turn', 'roof', D_MAX.turn)) };
-          return t(`why_${choice == null ? 'turn_no_dist' : Q.keys[choice]}`, vars);
         }
         return t(`why_${choice == null ? 'same_all' : Q.keys[choice]}`, { d: Q.d });
       },
@@ -1082,14 +1008,14 @@ export function createApp(root, options = {}) {
         label: 'coach_drag',
         candidates: () =>
           spots.map((c) => {
-            v.fromArray(pointAt(s.path, c, s.d)).project(camera);
+            v.fromArray(pointAt(PATH, c, s.d)).project(camera);
             return { x: (v.x * 0.5 + 0.5) * stage.width, y: (-v.y * 0.5 + 0.5) * stage.height };
           }),
         grabbable: (p) => pick(p),
         // the car rolls forward a little and back, as if dragged: not so far that the panel draws its conclusion
         async demo(alive) {
           const from = s.d;
-          const to = Math.min(D_MAX[s.path], from + Math.min(0.35, LABELS_UNTIL - 0.05));
+          const to = Math.min(D_MAX[PATH], from + Math.min(0.35, LABELS_UNTIL - 0.05));
           for (let i = 0; i < 2 && alive() && !s.playing; i++) {
             await tweener.animate({ key: 'coach-car', duration: 0.6, ease: ease.inOutCubic, onUpdate: (k) => setD(from + (to - from) * k) }).finished;
             if (!alive()) break;
@@ -1116,11 +1042,6 @@ export function createApp(root, options = {}) {
   }
   const fullscreenBtn = ui.$('[data-act="fullscreen"]');
   if (fullscreenBtn && !document.fullscreenEnabled) fullscreenBtn.hidden = true;
-  const toggleBend = () => {
-    if (s.locked) return;
-    coach?.objectUsed();
-    setPath(s.path === 'turn' ? 'straight' : 'turn', { autoplay: true });
-  };
   const toggleWheel = () => {
     if (s.locked) return;
     coach?.objectUsed();
@@ -1150,9 +1071,6 @@ export function createApp(root, options = {}) {
       case 'wheel':
         toggleWheel();
         break;
-      case 'bend':
-        toggleBend();
-        break;
       case 'fullscreen':
         if (document.fullscreenElement) document.exitFullscreen?.();
         else root.requestFullscreen?.().catch(() => {});
@@ -1174,10 +1092,9 @@ export function createApp(root, options = {}) {
     if (k === 'ArrowRight' || k === 'ArrowUp') nudge(step);
     else if (k === 'ArrowLeft' || k === 'ArrowDown') nudge(-step);
     else if (k === 'Home') nudge(-s.d);
-    else if (k === 'End') nudge(D_MAX[s.path] - s.d);
+    else if (k === 'End') nudge(D_MAX[PATH] - s.d);
     else if ((k === ' ' || k === 'Enter') && !target.closest('button')) toggleDrive();
     else if (k === 'w' || k === 'W') toggleWheel();
-    else if (k === 'b' || k === 'B') toggleBend();
     else if (k === 'f') setView('front');
     else if (k === 'v') setView('3d');
     else if (k === 'Escape') hideHint();
@@ -1196,7 +1113,7 @@ export function createApp(root, options = {}) {
     }
     if (widest) el.drive.style.minWidth = `${Math.ceil(widest)}px`;
   }
-  s.d = clampD(s.path, o.distance);
+  s.d = clampD(PATH, o.distance);
   applyPose();
   setView(s.view, { animate: false });
   syncUI();
@@ -1215,14 +1132,12 @@ export function createApp(root, options = {}) {
     },
     getState: snapshot,
     /**
-     * Change any of: path ('straight' | 'turn': the car goes back to the start; the bend hides the tyre point),
-     * wheel (show the tyre point: the straight road), distance (m the car has gone; animate: false jumps there,
+     * Change any of: wheel (show the tyre point), distance (m the car has gone; animate: false jumps there,
      * otherwise it drives there), playing (true drives on to the end, false stops), view.
      */
     async set(p = {}) {
       const animate = p.animate !== false;
       if (p.view) await setView(p.view, { animate });
-      if (p.path) await setPath(p.path, { animate });
       if (p.wheel != null) setWheel(p.wheel, { animate });
       if (p.distance != null) {
         if (animate) drive(Number(p.distance));
@@ -1231,7 +1146,7 @@ export function createApp(root, options = {}) {
           setD(Number(p.distance));
         }
       }
-      if (p.playing === true && !s.playing) drive(D_MAX[s.path], atEnd() ? { from: 0 } : {});
+      if (p.playing === true && !s.playing) drive(D_MAX[PATH], atEnd() ? { from: 0 } : {});
       if (p.playing === false) stopDrive();
       return snapshot();
     },
@@ -1240,7 +1155,6 @@ export function createApp(root, options = {}) {
       request++;
       stopDrive();
       s.wheel = false;
-      s.path = 'straight';
       s.d = 0;
       applyPose();
       refresh();

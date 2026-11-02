@@ -26,17 +26,15 @@ body.bg-transparent { background: transparent; }
 .tm-wheel-part { display: flex; align-items: flex-start; gap: 3px; margin-left: 4px; padding-left: 6px; border-left: 1px dashed var(--line-2); }
 /* the longest text is 3 lines on a phone: the line keeps that height, so the 3D view keeps its size */
 .tm-extra { margin: 0; min-height: 4.5em; font-size: 13.5px; line-height: 1.5; color: var(--ink-2); }
-/* চালাও, then the two contrasts from the book's sentence (the wheel, the bend) as on/off buttons; the drive button
+/* চালাও, then the contrast from the book's sentence (the wheel) as an on/off button; the drive button
    keeps the width of its longest label (set from src/app.js) */
 .tm-choices, .tm-acts { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 6px; }
 .tm-acts .pvc-btn.primary { min-width: 9em; }
 .tm-choices .pvc-btn, .tm-acts .pvc-btn { height: 40px; padding: 0 11px; font-size: 15px; gap: 5px; }
 .tm-ic { display: inline-flex; font-style: normal; }
 .pvc-learn-foot .tm-ic svg { color: #fff; }
-.pvc-learn-foot .tm-bend-btn svg { width: 17px; height: 17px; stroke-width: 2; color: currentColor; }
 .tm-swatch { width: 12px; height: 12px; border-radius: 50%; background: var(--c-wheel); border: 2px solid #fff; box-shadow: 0 0 0 1px var(--c-wheel); }
 .tm-wheel-btn.on { border-color: var(--c-wheel); color: var(--c-wheel); background: color-mix(in srgb, var(--c-wheel) 8%, var(--panel)); }
-.tm-bend-btn.on { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
 /* the test's word answers: up to two short lines in a choice */
 .tm-opt { font-size: 14.5px; font-weight: 600; line-height: 1.25; white-space: normal; text-align: center; }
 /* questions and worked answers are at most two lines on a phone: the test keeps one height, so the 3D view does

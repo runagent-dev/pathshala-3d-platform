@@ -37,9 +37,7 @@ In চলন গতি every particle (every point) of the body moves the same d
     side (on a tall phone it frames the front wheel's path, each arch about 120 px wide); the body's trails turn
     lighter so the arches stand out. The tyre point's marker faces the camera and is drawn over the road, like its
     trail. The tyre point belongs to the straight road (seen from above on the bend it is a meaningless sawtooth).
-  - **বাঁকা পথে** (সোজা এগিয়ে যাওয়া): the same car takes a bend (rear axle radius 5 m, a quarter turn), turning as it
-    goes; each point follows its own circle: ১০.৪ ≠ ৯.৪ ≠ ৮.০ ≠ ৯.৩ মিটার, ✗ চলন গতি নয়. Same car, same points, only
-    the motion changes: চলন গতি is about how a body moves, not what it is.
+  - The bend (সোজা এগিয়ে যাওয়া is the book's condition) is its own lab since v1.0.0: `translational-motion-bend`.
 - The camera is a long lens from far away (field of view 10°), almost a parallel projection, so equal trails look
   equal on screen wherever they are. It fits the car's real path (sampled points, not a box round it) to the frame's
   shape: from the front corner on tall phones, more from the side on wide frames, from higher up for the bend.
@@ -48,7 +46,7 @@ In চলন গতি every particle (every point) of the body moves the same d
 - Every request (button, drag, key) gets a number; a drive that waits for a camera move starts only if nothing newer
   came, even when a phone turning mid-move cuts the camera move short.
 
-## The test (5 questions, 4 tap choices each, a worked answer naming the student's own mistake)
+## The test (4 questions, 4 tap choices each, a worked answer naming the student's own mistake)
 1. `dist` (always first): the car drives d m; "the front bumper's point went from the 3.8 m mark to the 6.3 m mark;
    how far did the window's point go?" Wrong choices: the end mark, the start mark, where the asked point ends up.
    Worked answer: 6.3 − 3.8 = 2.5 m, every point the same.
@@ -58,16 +56,14 @@ In চলন গতি every particle (every point) of the body moves the same d
 3. `wheel`: which path does this point on the wheel take (a label points at it); the worked answer drives the car and
    draws the arches. Wrong choices: straight with the car (the book's warning), a circle in one place (the view from
    inside the car), looping round (it never goes back: it stops for an instant on the road).
-4. `turn`: the car takes the bend; is it চলন গতি? Wrong choices include "no, because the wheels turn" (they turn going
-   straight too). If answered mid-drive, the bend is finished so the numbers are the end's.
-5. `same`: the roof's point and the front bumper's point (labelled) of a car going straight: same time, same
+4. `same`: the roof's point and the front bumper's point (labelled) of a car going straight: same time, same
    direction, same distance ✓ vs the roof goes farther / the front arrives first / different directions.
 
 ## Bridge
-`get` → `{ path, distance, distances: { front, window, roof, back, wheel }, translational, wheel, playing, view, mode }`
-(metres, 2 decimals; `distance` is how far the rear axle has gone; `translational` is true on the straight road).
-`set` takes `path` (the bend hides the tyre point), `distance` (with `animate: false` it jumps, otherwise the car
-drives there), `wheel` (the straight road), `playing`, `view`. Events: `change`, `drive`, `path`, `view`,
+`get` → `{ distance, distances: { front, window, roof, back, wheel }, translational, wheel, playing, view, mode }`
+(metres, 2 decimals; `distance` is how far the rear axle has gone; `translational` is always true here).
+`set` takes `distance` (with `animate: false` it jumps, otherwise the car
+drives there), `wheel`, `playing`, `view`. Events: `change`, `drive`, `view`,
 `dragstart`, `dragend`, `practice-*`. GLB: the car with its painted points (metres).
 
 ## Open questions
@@ -124,3 +120,8 @@ drives there), `wheel` (the straight road), `playing`, `view`. Events: `change`,
   footpaths are plain (no pavers), the earth beyond is a soft warm colour, the sky is muted.
 - Panel in the labs' one order: the choices (চাকার বিন্দু, বাঁকা পথে), the action (চালাও), the readings (how far each
   point went), the sentence.
+
+## Split (v1.0.0)
+- One scene per lab: this lab keeps the straight road (with the চাকার বিন্দু contrast); the car taking a bend moved
+  to its own lab, `translational-motion-bend`. Removed: the বাঁকা পথে button, the `path` URL parameter and bridge
+  field, the `path` event, the bend question (the test has 4 questions now).

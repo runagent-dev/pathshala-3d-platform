@@ -1,0 +1,86 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "translational-motion-bend",
+  "title": "Car taking a bend (বাঁক নেওয়া গাড়ি)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "1.0.0",
+  "book": "physics-9-10",
+  "page": 36,
+  "topic": "2.2",
+  "placement": "Book page 36, topic 2.2: চলন গতি (Translational Motion), next to that paragraph, after the translational-motion lab: the contrast to the book's সোজা এগিয়ে যাওয়া গাড়ি (the page has no picture for it).",
+  "order": 4,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "Detailed pearl-white 3D car with red accents on a plain curved street (asphalt road, footpaths with kerbs, soft earth and sky, nothing else; real size, metres) for the contrast in চলন গতি (translational motion), book page 36, topic 2.2: the book's example is a car going straight ahead, so a car taking a bend is not translational. Four painted, labelled points on the body (front bumper, rear corner, window, roof). The student drags the car or presses চালাও: the car takes a quarter turn (rear axle radius 5 m) and each point leaves a bold outlined trail with an arrowhead along its own circle; the panel shows how far each point went (10.4 ≠ 9.4 ≠ 8.0 ≠ 9.3 m) and ✗ চলন গতি নয়. Test tab: 3 questions (is the bend translational, which point went farthest, which motion is translational with look-alike pairs), each worked answer naming the student's mistake. Phone-first, Bangla.",
+  "tags": ["motion", "translational-motion", "rigid-body", "car", "bend", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "distance",
+      "label": "Distance already driven",
+      "type": "number",
+      "default": "0",
+      "placeholder": "m",
+      "help": "0 to 7.85 m round the bend"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "First-use pointers", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "distance": 7.85, "animate": false } },
+    { "name": "set", "payload": { "playing": true } },
+    { "name": "set", "payload": { "playing": false } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": [
+    "ready",
+    "change",
+    "drive",
+    "view",
+    "dragstart",
+    "dragend",
+    "practice-start",
+    "practice-result",
+    "practice-end"
+  ],
+  "export": {
+    "poster": { "params": { "coach": "0", "distance": "7.85" } },
+    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "distance": 0, "animate": false } }] }],
+    "video": {
+      "kind": "script",
+      "seconds": 8,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [{ "at": 0.6, "command": "set", "payload": { "playing": true } }]
+    }
+  }
+}
