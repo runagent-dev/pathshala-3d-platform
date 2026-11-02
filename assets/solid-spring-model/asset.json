@@ -1,0 +1,62 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "solid-spring-model",
+  "title": "Solid as Atoms and Springs (কঠিন পদার্থের আণবিক মডেল)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 167,
+  "topic": "6.3.1",
+  "placement": "Next to চিত্র ৬.০৩ on page 167 (the cube of atoms joined by springs), topic 6.3.1 কঠিন পদার্থের প্রসারণ.",
+  "maintainers": ["RadeenXALNW"],
+  "units": "cm",
+  "description": "A cube of atoms joined by springs, as in the book's picture: heat it and the atoms shake more widely, and because the special spring lets them go further out than in, the whole solid grows a little.",
+  "tags": ["thermal expansion", "solid", "atoms", "6.3.1"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "level",
+      "label": "Temperature",
+      "type": "select",
+      "options": [["cold", "cold"], ["warm", "heated"], ["hot", "heated more"]],
+      "default": "cold"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "motion", "label": "Atoms keep shaking", "type": "boolean", "default": "1" },
+    { "name": "coach", "label": "The ring on the burner pulses at first", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "level": "hot" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "practice-start", "practice-result", "practice-end"],
+  "export": { "poster": { "params": { "coach": "0", "level": "hot", "motion": "0" } }, "glb": [{ "name": "default" }] }
+}

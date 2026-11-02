@@ -5,7 +5,7 @@
   "title": "Strong nuclear force (সবল নিউক্লীয় বল)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "book": "physics-9-10",
   "page": 69,
   "topic": "3.2.4",
@@ -13,7 +13,7 @@
   "order": 1,
   "maintainers": ["RadeenXALNW"],
   "units": "cm",
-  "description": "Interactive 3D nucleus for the book's সবল নিউক্লীয় বল (page 69, 3.2.4). A carbon-12 nucleus of protons (red, +) and neutrons (grey): the student pulls one proton out. A soft orange shell with a dashed edge about 10⁻¹⁵ m outside the nucleus shows the strong force's reach. Inside it an orange arrow (the strong nuclear force) pulls the proton back far harder than the blue electric push of the other protons, and it snaps back when let go; outside it the strong force is gone and the electric push sends it away. A scale from the nucleus's surface reads the gap in 10⁻¹⁵ m. Two more scenes show where nuclear energy comes from: a big nucleus split by a neutron (ভাঙা: 45 + 45 + 3 neutrons) and two small nuclei joining (জোড়া দেওয়া), each giving off energy. The panel shows the four fundamental forces weakest to strongest and the book's three kinds (মহাকর্ষ, ইলেকট্রো উইক, নিউক্লিয়ার বল). Test tab: 5 questions (which particles it acts between, what a let-go proton does, two protons an atom apart, splitting or joining, the three kinds of force). Symbolic where it must be (arrow lengths, time, the split's particle count), said so on screen. Phone-first, Bangla. Model units: 1 cm = 1 fm.",
+  "description": "Interactive 3D nucleus for the book's সবল নিউক্লীয় বল (page 69, 3.2.4). A carbon-12 nucleus of protons (red, +) and neutrons (grey): the student pulls one proton out. A soft orange shell with a dashed edge about 10⁻¹⁵ m outside the nucleus shows the strong force's reach. Inside it an orange arrow (the strong nuclear force) pulls the proton back far harder than the blue electric push of the other protons, and it snaps back when let go; outside it the strong force is gone and the electric push sends it away. A scale from the nucleus's surface reads the gap in 10⁻¹⁵ m. The panel shows the four fundamental forces weakest to strongest and the book's three kinds (মহাকর্ষ, ইলেকট্রো উইক, নিউক্লিয়ার বল). Test tab: 4 questions (which particles it acts between, what a let-go proton does, two protons an atom apart, the three kinds of force). Splitting and joining are their own lab (strong-nuclear-force-energy). Symbolic where it must be (arrow lengths, time), said so on screen. Phone-first, Bangla. Model units: 1 cm = 1 fm.",
   "tags": [
     "force",
     "fundamental-forces",
@@ -33,13 +33,6 @@
       "type": "select",
       "options": [["bn", "বাংলা"], ["en", "English"]],
       "default": "bn"
-    },
-    {
-      "name": "scene",
-      "label": "Scene",
-      "type": "select",
-      "options": [["pull", "pull a proton"], ["split", "split (ভাঙা)"], ["join", "join (জোড়া দেওয়া)"]],
-      "default": "pull"
     },
     {
       "name": "pull",
@@ -74,8 +67,6 @@
     { "name": "set", "payload": { "pull": 0.6 } },
     { "name": "set", "payload": { "pull": 1.8 } },
     { "name": "set", "payload": { "release": true } },
-    { "name": "set", "payload": { "scene": "split" } },
-    { "name": "set", "payload": { "scene": "join", "t": 4.4 } },
     { "name": "set", "payload": { "view": "3d" } },
     { "name": "reset", "payload": {} },
     { "name": "practice", "payload": {} },
@@ -85,9 +76,7 @@
   "events": [
     "ready",
     "change",
-    "scene",
     "release",
-    "done",
     "view",
     "dragstart",
     "dragend",
@@ -100,7 +89,7 @@
     "glb": [{ "name": "default" }],
     "video": {
       "kind": "script",
-      "seconds": 20,
+      "seconds": 9,
       "fps": 30,
       "params": { "coach": "0" },
       "script": [
@@ -111,9 +100,7 @@
         { "at": 4.4, "command": "set", "payload": { "pull": 0.7 } },
         { "at": 5.1, "command": "set", "payload": { "pull": 1.3 } },
         { "at": 5.8, "command": "set", "payload": { "pull": 2 } },
-        { "at": 7, "command": "set", "payload": { "release": true } },
-        { "at": 9, "command": "set", "payload": { "scene": "split" } },
-        { "at": 15.2, "command": "set", "payload": { "scene": "join" } }
+        { "at": 7, "command": "set", "payload": { "release": true } }
       ]
     }
   }

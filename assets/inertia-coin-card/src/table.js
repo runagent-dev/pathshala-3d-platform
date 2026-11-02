@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { textMesh } from '@shared/student/materials.js';
 import { TABLE } from './motion.js';
-import { tableTexture, wallTexture } from './textures.js';
+import { cardTexture, tableTexture, wallTexture } from './textures.js';
 
 export function createTable({ t }) {
   const { glass: G, card: C, coin: K } = TABLE;
@@ -65,47 +65,94 @@ export function createTable({ t }) {
   base.name = 'GlassBase';
   root.add(base);
 
-  // the card (a stiff index card) and the coin (৫ টাকা, steel)
-  const card = new THREE.Mesh(
-    new THREE.BoxGeometry(C.w, C.th, C.d),
-    new THREE.MeshStandardMaterial({ name: 'Card', color: 0xf6e3a3, roughness: 0.85 }),
-  );
+  // the card (a stiff ruled index card: printed top, plain cream edges) and the coin (৫ টাকা, steel: a raised rim,
+  // a reeded edge and the figure 5 standing up from the face)
+  const edge = new THREE.MeshStandardMaterial({ name: 'CardEdge', color: 0xeadcb2, roughness: 0.9 });
+  const face = new THREE.MeshStandardMaterial({ name: 'Card', map: cardTexture(), roughness: 0.85 });
+  const card = new THREE.Mesh(new THREE.BoxGeometry(C.w, C.th, C.d), [edge, edge, face, edge, edge, edge]);
   card.name = 'Card';
   root.add(card);
   const coin = new THREE.Group();
   coin.name = 'Coin';
   const steel = new THREE.MeshStandardMaterial({ name: 'CoinSteel', color: 0xcfd3d8, roughness: 0.32, metalness: 0.85 });
-  coin.add(new THREE.Mesh(new THREE.CylinderGeometry(K.r, K.r, K.th, 40), steel));
+  const ribs = 60; // the reeded edge: a ring of shallow grooves
+  const ring = [];
+  for (let i = 0; i <= ribs * 2; i++) {
+    const a = (i / (ribs * 2)) * Math.PI * 2;
+    ring.push(new THREE.Vector2(Math.cos(a), Math.sin(a)).multiplyScalar(i % 2 ? K.r * 0.985 : K.r));
+  }
+  const body = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(new THREE.Shape(ring), { depth: K.th * 0.8, bevelEnabled: false, curveSegments: 1 })
+      .rotateX(-Math.PI / 2)
+      .translate(0, -K.th * 0.4, 0),
+    steel,
+  );
+  const lip = new THREE.Mesh(new THREE.TorusGeometry(K.r * 0.9, K.th * 0.16, 6, 48).rotateX(Math.PI / 2), steel);
+  lip.position.y = K.th * 0.4;
+  coin.add(body, lip);
   const five = textMesh(t.num('5'), K.r * 0.95, { color: '#6c737b', weight: 700 });
   five.rotation.x = -Math.PI / 2;
   five.rotation.z = Math.PI; // read from the camera's side
-  five.position.y = K.th / 2 + 0.0002;
+  five.position.y = K.th * 0.4 + 0.0002;
   coin.add(five);
   root.add(coin);
 
-  // the hand that flicks the card, coming in from the right of the picture: a fist with the forefinger out, and a
+  // the hand that flicks the card, coming in from the right of the picture: the forefinger out (three phalanges, a
+  // nail, knuckle creases), the other three fingers curled under the palm, the thumb along the side, a wrist and a
   // white shirt cuff (so it reads as a hand against the wooden table)
   const skin = new THREE.MeshStandardMaterial({ name: 'Skin', color: 0xa86f47, roughness: 0.6 });
+  const crease = new THREE.MeshStandardMaterial({ name: 'Crease', color: 0x8a5634, roughness: 0.7 });
   const hand = new THREE.Group();
   hand.name = 'Hand';
-  const finger = new THREE.Mesh(new THREE.CapsuleGeometry(0.0085, 0.036, 4, 12).rotateZ(Math.PI / 2), skin);
-  finger.position.x = -0.0265; // its tip at the group's origin
+  const along = (r, len) => new THREE.CapsuleGeometry(r, len, 4, 12).rotateZ(Math.PI / 2);
+  const phal = [
+    [0.0078, 0.014, -0.011],
+    [0.0083, 0.016, -0.032],
+    [0.0088, 0.02, -0.056],
+  ]; // radius, length, centre x (the tip is at the group's origin)
+  for (const [r, len, x] of phal) {
+    const p = new THREE.Mesh(along(r, len), skin);
+    p.position.x = x;
+    hand.add(p);
+  }
+  for (const x of [-0.021, -0.043]) {
+    const c = new THREE.Mesh(new THREE.TorusGeometry(0.0083, 0.0007, 4, 16, Math.PI).rotateY(Math.PI / 2), crease);
+    c.position.x = x;
+    hand.add(c);
+  }
   const nail = new THREE.Mesh(
     new THREE.SphereGeometry(0.0075, 12, 8),
     new THREE.MeshStandardMaterial({ name: 'Nail', color: 0xe6bfa2, roughness: 0.35 }),
   );
-  nail.scale.set(1.3, 0.45, 0.9);
-  nail.position.set(-0.009, 0.0068, 0);
-  const fist = new THREE.Mesh(new RoundedBoxGeometry(0.075, 0.045, 0.07, 3, 0.02), skin);
-  fist.position.set(-0.085, 0.004, 0.012);
-  const thumb = new THREE.Mesh(new THREE.CapsuleGeometry(0.009, 0.03, 4, 10).rotateZ(Math.PI / 2), skin);
-  thumb.position.set(-0.06, -0.006, -0.026);
+  nail.scale.set(1.2, 0.4, 0.85);
+  nail.position.set(-0.008, 0.0062, 0);
+  const palm = new THREE.Mesh(new RoundedBoxGeometry(0.08, 0.034, 0.075, 3, 0.014), skin);
+  palm.position.set(-0.104, 0.008, 0.016);
+  hand.add(nail, palm);
+  for (let i = 0; i < 3; i++) {
+    // the curled fingers: a knuckle row under the palm's front edge
+    const f = new THREE.Mesh(new THREE.CapsuleGeometry(0.0085, 0.012, 4, 10), skin);
+    f.rotation.x = Math.PI / 2;
+    f.position.set(-0.07, -0.006, 0.014 + i * 0.019);
+    f.rotation.z = 0.3;
+    hand.add(f);
+  }
+  const thumb = new THREE.Mesh(along(0.0092, 0.034), skin);
+  thumb.position.set(-0.078, -0.004, -0.024);
+  thumb.rotation.y = 0.35;
+  const wrist = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.028, 0.05, 20).rotateZ(Math.PI / 2), skin);
+  wrist.position.set(-0.16, 0.008, 0.016);
   const cuff = new THREE.Mesh(
     new THREE.CylinderGeometry(0.034, 0.036, 0.06, 20).rotateZ(Math.PI / 2),
     new THREE.MeshStandardMaterial({ name: 'Cuff', color: 0xf4f6f8, roughness: 0.8 }),
   );
-  cuff.position.set(-0.15, 0.006, 0.014);
-  hand.add(finger, nail, fist, thumb, cuff);
+  cuff.position.set(-0.205, 0.008, 0.016);
+  const button = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.004, 0.004, 0.002, 12).rotateX(Math.PI / 2),
+    new THREE.MeshStandardMaterial({ name: 'Button', color: 0xdfe3e6, roughness: 0.4 }),
+  );
+  button.position.set(-0.2, 0.012, -0.019);
+  hand.add(thumb, wrist, cuff, button);
   root.add(hand);
 
   // a big invisible box round the glass and the card: a tap there flicks the card

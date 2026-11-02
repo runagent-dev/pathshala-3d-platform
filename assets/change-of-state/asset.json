@@ -1,0 +1,69 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "change-of-state",
+  "title": "Change of State: ice to water to steam (পদার্থের অবস্থার পরিবর্তনে তাপের প্রভাব)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 175,
+  "topic": "6.4",
+  "placement": "Book page 175–176, topic 6.4 (পদার্থের অবস্থার পরিবর্তনে তাপের প্রভাব): in place of figure ৬.০৮ (the temperature of a solid heated to a gas stays flat at the melting point and at the boiling point), with the paragraphs on গলন, গলনাঙ্ক, গলনের সুপ্ততাপ, বাষ্পীভবন, স্ফুটনাঙ্ক, বাষ্পীভবনের সুপ্ততাপ and, on pages 176–177, the reverse: ঘনীভবন and কঠিনীভবন.",
+  "maintainers": ["RadeenXALNW"],
+  "units": "cm",
+  "description": "Effect of heat in a change of state (topic 6.4, pages 175-177) in a school lab: a spirit lamp under a tripod and wire gauze heats a glass beaker of ice with a rod thermometer in it, in front of a tiled wall; on the wall hangs the book's figure 6.08, the temperature-time graph (same grid, -20 to 120 degrees C, same curve with its two flat parts). One numbered button runs the next part of the curve: the ice warms (the thermometer rises), melts (flat at 0 degrees C: the melting point and the latent heat of melting), the water warms, boils (flat at 100 degrees C: the boiling point and the latent heat of vaporisation), and the steam warms; bubbles and steam come from the water. A finger dragged along the graph goes to any moment. A choice, take heat away, runs the same curve the other way (lamp out): the steam turns to water (liquification) and the water to ice (solidification), with the book's definitions. The panel shows the state, the temperature, what the heat is doing, the states and the processes between them, and the rule in the book's words. Test tab: 5 questions (what the temperature does when ice reaches 0 degrees C, which states are present, which process is going on, what the thermometer reading is called, why the body feels cool in the open air after sweating: the book's own example), every wrong choice a real mistake with its own note. Phone-first, Bangla and English.",
+  "tags": ["heat", "change of state", "melting", "boiling", "latent heat", "heating curve", "temperature", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "time",
+      "label": "Time on the graph (0 to 8 squares)",
+      "type": "number",
+      "default": "0",
+      "placeholder": "0-8"
+    },
+    {
+      "name": "flow",
+      "label": "Heat",
+      "type": "select",
+      "options": [["heat", "add heat"], ["cool", "take heat away"]],
+      "default": "heat"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring round the lamp pulses at first", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "time": 4, "flow": "heat" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "practice-start", "practice-result", "practice-end"],
+  "export": { "poster": { "params": { "coach": "0", "time": "6" } }, "glb": [{ "name": "default" }] }
+}
