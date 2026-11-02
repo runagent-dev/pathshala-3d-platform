@@ -64,13 +64,17 @@ function stripedTexture() {
   ctx.fillStyle = '#e4e7ea';
   ctx.fillRect(0, 0, 128, 8);
   // the book's piston: light with darker vertical bands
-  ctx.fillStyle = '#9ba2a9';
-  for (const x of [4, 28, 52, 76, 100]) ctx.fillRect(x, 0, 12, 8);
-  ctx.fillStyle = '#c3c8cd';
-  for (const x of [18, 42, 66, 90, 114]) ctx.fillRect(x, 0, 5, 8);
+  ctx.fillStyle = '#868e96';
+  for (const x of [4, 28, 52, 76, 100]) ctx.fillRect(x, 0, 14, 8);
+  ctx.fillStyle = '#b6bcc2';
+  for (const x of [19, 43, 67, 91, 115]) ctx.fillRect(x, 0, 4, 8);
+  ctx.fillStyle = '#f4f5f6';
+  for (const x of [23, 47, 71, 95, 119]) ctx.fillRect(x, 0, 5, 8);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.wrapS = THREE.RepeatWrapping;
+  tex.repeat.x = 2.2; // about a dozen bands round the piston, as the book's picture
+  tex.anisotropy = 4;
   return tex;
 }
 
@@ -123,6 +127,24 @@ export function createRig({ renderOrder = 1 } = {}) {
     new THREE.CylinderGeometry(2.3, 4.0, G.WH, 28).translate(0, G.PT + G.WH / 2, 0),
     new THREE.TorusGeometry(0.78, 0.2, 8, 20).translate(0, G.PT + G.WH + 0.62, 0),
   ]);
+  // the litre scale on the glass: a short tick every half litre (V = nRT/P, 1 L = 2.7 cm), a long one every litre
+  const scaleGeo = (() => {
+    const parts = [];
+    const a = -0.62; // a little left of the front
+    for (let i = 1; i <= 11; i++) {
+      const major = i % 2 === 0;
+      const len = major ? 2.0 : 1.1;
+      const b = new THREE.BoxGeometry(len, 0.12, 0.1);
+      // x runs along the tick, so it lies on the glass's front like a ruler's mark
+      b.translate(-len / 2, 0, 0);
+      b.rotateY(a);
+      b.translate(Math.sin(a) * (G.R_OUT + 0.04), GAS_BOTTOM + i * 1.35, Math.cos(a) * (G.R_OUT + 0.04));
+      parts.push(b);
+    }
+    const m = mergeGeometries(parts);
+    for (const p of parts) p.dispose();
+    return m;
+  })();
   const moleculeGeo = new THREE.SphereGeometry(0.55, 12, 9);
   const places = molecules();
   const dummy = new THREE.Object3D();
@@ -150,6 +172,8 @@ export function createRig({ renderOrder = 1 } = {}) {
     tube.name = `${name}Glass`;
     tube.renderOrder = renderOrder + 3;
     const rim = new THREE.Mesh(rimGeo, dark);
+    const scale = new THREE.Mesh(scaleGeo, dark);
+    scale.name = `${name}Scale`;
     const base = new THREE.Mesh(baseGeo, steel);
     base.name = `${name}Base`;
     const piston = new THREE.Group();
@@ -159,7 +183,7 @@ export function createRig({ renderOrder = 1 } = {}) {
     const weight = new THREE.Mesh(weightGeo, weightMat);
     weight.name = `${name}Weight`;
     piston.add(body, seals, weight);
-    g.add(base, gas, mol, piston, tube, rim);
+    g.add(base, gas, mol, piston, tube, rim, scale);
     for (const m of [body, seals, weight, base, rim]) m.castShadow = true;
     let lastT = null;
     const out = {
