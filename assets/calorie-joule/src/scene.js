@@ -12,7 +12,7 @@ export const THERMO = { x: 5.7, z: 0.4, yBase: 2.3, span: 9.6 }; // the scale: 0
 export const SCALE_Y0 = THERMO.yBase + 0.8;
 export const degY = (d) => SCALE_Y0 + (d / MAX_STEPS) * THERMO.span;
 export const FLAME_X = [-1.9, 0, 1.9];
-const FLAME_Y = 1.25;
+const FLAME_Y = 1.35;
 
 function canvas(w, h) {
   const c = document.createElement('canvas');
@@ -135,10 +135,41 @@ export function createScene({ background = true, digits = (x) => String(x) } = {
     for (const sz of [-1, 1]) legGeo.push(new THREE.CylinderGeometry(0.2, 0.2, PLATE_Y, 10).translate(BEAKER.x + sx * 4.2, PLATE_Y / 2, sz * 3));
   const legs = new THREE.Mesh(mergeGeometries(legGeo), steel);
   const plate = new THREE.Mesh(box(9.6, 0.3, 7.2, BEAKER.x, PLATE_Y, 0), steel);
-  const burner = new THREE.Mesh(box(6.4, 1.15, 1.3, BEAKER.x, 0.575, 0), dark);
-  const strip = new THREE.Mesh(box(6.5, 0.13, 1.4, BEAKER.x, 1.15, 0), brass);
+  // a ribbon burner: base, tapered body, brass cap with port rings, gas pipe and a knob at the front
+  const bx = BEAKER.x;
+  const burner = new THREE.Mesh(
+    mergeGeometries([box(7.4, 0.3, 2.4, bx, 0.15, 0), box(6.4, 0.55, 1.4, bx, 0.575, 0), box(6.0, 0.25, 0.95, bx, 1.0, 0)]),
+    dark,
+  );
+  const brassGeo = [box(6.2, 0.1, 1.2, bx, 1.15, 0)];
+  for (const x of FLAME_X) brassGeo.push(new THREE.CylinderGeometry(0.4, 0.44, 0.2, 18).translate(bx + x, 1.25, 0));
+  brassGeo.push(new THREE.CylinderGeometry(0.28, 0.28, 1.3, 12).rotateX(Math.PI / 2).translate(bx - 2.2, 0.5, 1.7));
+  brassGeo.push(new THREE.CylinderGeometry(0.56, 0.56, 0.3, 20).rotateX(Math.PI / 2).translate(bx - 2.2, 0.5, 2.45));
+  const strip = new THREE.Mesh(mergeGeometries(brassGeo), brass);
   for (const m of [legs, plate, burner, strip]) m.castShadow = true;
   root.add(legs, plate, burner, strip);
+  // a wire gauze under the beaker: a thin grey disc with a fine grid
+  const gauzeTex = (() => {
+    const { c, ctx } = canvas(128, 128);
+    ctx.fillStyle = '#9aa1ab';
+    ctx.fillRect(0, 0, 128, 128);
+    ctx.strokeStyle = '#5a616b';
+    ctx.lineWidth = 2;
+    for (let k = 0; k <= 128; k += 8) {
+      ctx.beginPath();
+      ctx.moveTo(k, 0);
+      ctx.lineTo(k, 128);
+      ctx.moveTo(0, k);
+      ctx.lineTo(128, k);
+      ctx.stroke();
+    }
+    return tex(c, [2, 2]);
+  })();
+  const gauze = new THREE.Mesh(
+    new THREE.CylinderGeometry(BEAKER.r + 0.7, BEAKER.r + 0.7, 0.06, 40).translate(bx, PLATE_Y + 0.18, 0),
+    new THREE.MeshStandardMaterial({ map: gauzeTex, roughness: 0.6, metalness: 0.5, transparent: true, opacity: 0.8 }),
+  );
+  root.add(gauze);
 
   // ── the flames ─────────────────────────────────────────────────────────────
   const drop = (r, h) => {
@@ -179,7 +210,7 @@ export function createScene({ background = true, digits = (x) => String(x) } = {
 
   // ── the beaker with a little water ─────────────────────────────────────────
   const beaker = new THREE.Group();
-  beaker.position.set(BEAKER.x, PLATE_Y + 0.15, 0);
+  beaker.position.set(BEAKER.x, PLATE_Y + 0.21, 0);
   const glassMat = new THREE.MeshPhysicalMaterial({
     color: '#d4e8f0',
     transparent: true,
@@ -201,9 +232,28 @@ export function createScene({ background = true, digits = (x) => String(x) } = {
     new THREE.CircleGeometry(BEAKER.r - 0.15, 40).rotateX(-Math.PI / 2).translate(0, 0.25 + BEAKER.water + 0.01, 0),
     new THREE.MeshStandardMaterial({ color: '#9fd3f2', roughness: 0.2, transparent: true, opacity: 0.8 }),
   );
+  // graduation marks on the front of the beaker (every 1/8 of the height; the long ones at the quarters)
+  const marks = [];
+  for (let i = 1; i <= 7; i++) {
+    const long = i % 2 === 0;
+    const w = long ? 1.6 : 0.9;
+    const a = -0.5;
+    const g = new THREE.BoxGeometry(w, 0.06, 0.05).rotateY(a);
+    g.translate(Math.sin(a) * (BEAKER.r + 0.02), 0.25 + (i / 8) * (BEAKER.h - 0.6), Math.cos(a) * (BEAKER.r + 0.02));
+    marks.push(g);
+  }
+  const markMesh = new THREE.Mesh(mergeGeometries(marks), new THREE.MeshBasicMaterial({ color: '#46515c' }));
+  const spout = new THREE.Mesh(
+    new THREE.ConeGeometry(0.5, 0.5, 10, 1, true)
+      .rotateZ(Math.PI / 2)
+      .rotateY(0)
+      .translate(BEAKER.r + 0.1, BEAKER.h - 0.1, 0),
+    glassMat,
+  );
+  spout.renderOrder = 3;
   for (const m of [wall, base, lip]) m.renderOrder = 3;
   water.renderOrder = 2;
-  beaker.add(water, surface, wall, base, lip);
+  beaker.add(water, surface, wall, base, lip, markMesh, spout);
   root.add(beaker);
 
   // ── the thermometer: an enamel plate with a numbered scale, a glass tube and a red column ─
