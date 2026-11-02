@@ -1,0 +1,131 @@
+/* Specific heat: the page, the readings of the chosen one (m, Q, T₁, T₂, T₂ − T₁), the formula with its numbers, the
+   labels on the picture and the test's answers. Water is blue, gold is dark amber; the rest of the panel is the kit's
+   clean sheet (../../shared/lib/student/student.css). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.sh { --c-water: #1864ab; --c-gold: #8a5a00; --c-s: #1b2a4a; }
+.sh sub, .sh sup { font-size: 0.72em; line-height: 0; }
+.sh .pvc-outcome { font-size: 14px; line-height: 1.5; }
+.sh .pvc-outcome b { font-size: 1.15em; }
+.sh .pvc-rule { font-size: 14px; line-height: 1.45; }
+.sh .pvc-ex-res { font-variant-numeric: tabular-nums; }
+
+/* ── the readings of the one chosen ── */
+.sh-rd { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
+.sh-cell { min-width: 0; display: flex; flex-direction: column; justify-content: center; padding: 3px 7px; border-radius: 8px; background: #f3f5f8; box-shadow: inset 0 0 0 1px #dfe4ea; line-height: 1.2; }
+.sh-cell small { font-size: 11.5px; font-weight: 500; color: var(--ink-2); white-space: nowrap; }
+.sh-cell span { font-size: 15px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sh-name { flex-direction: row; align-items: center; justify-content: center; gap: 7px; background: #fff; box-shadow: inset 0 0 0 2px var(--c, var(--c-water)); }
+.sh-name b { font-size: 16px; color: var(--c, var(--c-water)); }
+.sh-dot { flex: none; width: 11px; height: 11px; border-radius: 50%; background: var(--c, var(--c-water)); }
+
+/* ── the formula: s = Q / m(T₂ − T₁), then the sum ── */
+.sh-eq { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 12px; }
+.sh-law { flex: none; display: flex; align-items: center; gap: 4px; padding: 3px 11px; border-radius: 10px; background: #eef4fb; box-shadow: inset 0 0 0 1.5px #bcd3ee; }
+.sh-sym { font-style: italic; font-weight: 700; font-size: 20px; line-height: 1.1; text-align: center; color: var(--c-s); white-space: nowrap; }
+.sh-law > .sh-sym { font-size: 26px; font-style: normal; }
+.sh-op { font-size: 21px; font-weight: 600; color: var(--ink-2); padding: 0 2px; }
+.sh-frac { display: inline-flex; flex-direction: column; align-items: stretch; }
+.sh-frac .sh-sym { padding: 0 6px; }
+.sh-frac .sh-sym:first-child { border-bottom: 2.5px solid var(--ink); }
+.sh-sum { flex: 1 1 150px; min-width: 0; display: flex; flex-direction: column; gap: 0; font-size: 14px; line-height: 1.4; font-variant-numeric: tabular-nums; color: var(--ink-2); }
+.sh-sum b { color: var(--c-s); font-size: 1.12em; }
+.sh-l1, .sh-l2 { display: block; }
+.sh-l2:empty { display: none; }
+.sh-C { font-style: italic; font-weight: 700; color: var(--c-s); }
+
+/* labels on the picture */
+.pvc-anno-tag { padding: 1px 8px; border: 1.5px solid #c8ccd2; border-radius: 6px; background: rgba(255, 255, 255, 0.96); font-size: 13.5px; font-weight: 500; line-height: 1.3; text-align: center; transition: opacity 0.25s; }
+.pvc-anno-tag b { color: var(--ink); font-weight: 700; }
+.pvc-anno-tag .sh-q { color: #b4470a; font-weight: 700; }
+.pvc-anno-lines .k-tag { display: none; }
+.pvc-anno-callout { background: rgba(255, 255, 255, 0.96); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* the test: answers in words or numbers, room kept for the question and the worked answer */
+.sh .pvc-opt { font-size: 15px; line-height: 1.25; }
+.sh-opt { display: block; white-space: normal; text-align: center; }
+.sh-opt small { font-size: 0.78em; }
+.sh .pvc-q-text { font-size: 15.5px; }
+.sh .pvc-q-feedback { font-size: 14px; }
+
+/* a phone held upright: the 3D keeps more than half the height (the result line shows beside the 3D only) */
+@container pvc (max-width: 420px) {
+  .sh .pvc-learn { gap: 6px; }
+  .sh .pvc-outcome { display: none; }
+  .sh-rd { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 3px; }
+  .sh-name { display: none; }
+  .sh-cell { padding: 2px 3px; align-items: center; text-align: center; }
+  .sh-cell span { font-size: 13.5px; }
+  .sh-cell small { font-size: 10px; letter-spacing: -0.2px; }
+  .sh-sym { font-size: 17px; }
+  .sh-law { padding: 1px 9px; }
+  .sh-law > .sh-sym { font-size: 21px; }
+  .sh-sum { font-size: 13px; line-height: 1.3; }
+  .sh .pvc-rule { font-size: 13px; line-height: 1.4; --pvc-rule-lines: 3; }
+  .sh .pvc-examples button { min-height: 38px; padding-bottom: 4px; }
+  .sh .pvc-q-options { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .sh .pvc-opt { height: 42px; padding: 0 3px; font-size: 13.5px; line-height: 1.2; }
+  .sh .pvc-ex-word { font-size: 14px; }
+}
+/* the panel beside the 3D (landscape frames): room for the name and the readings in two rows of three */
+@container pvc-panel (min-width: 1px) {
+  .sh-rd { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
+  .sh-name { display: flex; }
+  .sh-cell { padding: 3px 7px; align-items: flex-start; text-align: left; }
+  .sh-cell span { font-size: 15px; }
+  .sh-cell small { font-size: 11.5px; letter-spacing: 0; }
+  .sh-name { align-items: center; justify-content: center; }
+}
+/* phones that are not tall: everything a little smaller */
+@container pvc (max-width: 560px) and (max-height: 600px) {
+  .sh-cell { padding: 1px 3px; }
+  .sh-law { padding: 0 9px; }
+  .sh-sym { font-size: 16px; }
+  .sh-law > .sh-sym { font-size: 20px; }
+  .sh-op { font-size: 17px; }
+  .sh-sum { font-size: 12.5px; line-height: 1.3; }
+  .sh .pvc-rule { font-size: 12.5px; line-height: 1.35; --pvc-rule-lines: 3; }
+  .sh .pvc-q-text { font-size: 14px; }
+  .sh .pvc-opt { font-size: 13.5px; }
+  .sh .pvc-q-feedback { font-size: 13px; }
+  .pvc-anno-tag { font-size: 12px; padding: 0 5px; }
+}
+/* short and wide (phone held sideways): the panel is beside the scene */
+@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
+  .sh .pvc-act-row { --pvc-act-lines: 2; }
+  .sh-rd { gap: 4px; }
+  .sh-cell { padding: 1px 6px; }
+  .sh-cell span { font-size: 13.5px; }
+  .sh-cell small { font-size: 10.5px; }
+  .sh-law { padding: 0 8px; }
+  .sh-sym { font-size: 16px; }
+  .sh-law > .sh-sym { font-size: 20px; }
+  .sh-op { font-size: 17px; }
+  .sh-sum { font-size: 12.5px; line-height: 1.3; }
+  .sh .pvc-outcome { font-size: 13px; line-height: 1.4; }
+  .sh .pvc-rule { font-size: 12.5px; line-height: 1.35; }
+  .sh .pvc-q-text { font-size: 14px; }
+  .sh .pvc-opt { font-size: 13px; height: 42px; }
+  .sh .pvc-q-feedback { font-size: 12.5px; }
+  .pvc-anno-tag { font-size: 12px; padding: 0 5px; }
+}
+/* the panel beside the 3D (a size container, so a height query matches only there): room for the result line */
+@container pvc-panel (min-height: 520px) {
+  .sh .pvc-outcome { display: block; font-size: 13.5px; line-height: 1.45; }
+}
+/* a narrow panel beside the scene: the formula smaller so each line stays whole */
+@container pvc-panel (max-width: 330px) {
+  .sh-eq { gap: 4px 8px; }
+  .sh-law { padding: 0 6px; }
+  .sh-sum { font-size: 12.5px; }
+  .sh .pvc-examples .pvc-ex-word { font-size: 14px; }
+}
+
+/* a narrow window that is not tall (390 × 520): the readings are in the sum and on the thermometers, so only the formula,
+   the sum and the rule stay under the action; the 3D keeps room */
+@media (max-aspect-ratio: 1/1) and (max-height: 600px) {
+  .sh-rd { display: none; }
+  .sh .pvc-examples button { min-height: 34px; }
+}

@@ -1,18 +1,17 @@
 // Acceleration through the bridge (book pages 43–44, topic 2.6): the CNG speeds up at +2 ms⁻² with the gas held,
-// keeps its speed with nothing pressed, slows at −2 ms⁻² with the brake, and the graph's pieces give a = (v − u) ÷ t;
-// on the bend its speed stays 2.5 m/s while it turns, with an acceleration only while turning. Runs with
-// `npm run test:figures` (dev-only folder, never packaged).
+// keeps its speed with nothing pressed, slows at −2 ms⁻² with the brake, and the graph's pieces give a = (v − u) ÷ t.
+// Runs with `npm run test:figures` (dev-only folder, never packaged).
 import { expect, test } from '@playwright/test';
 import { openFigure, preparePage } from '../../../scripts/lib/export/driver.mjs';
 
-test('acceleration: drive, read the graph, turn', async ({ page }) => {
+test('acceleration: drive, read the graph', async ({ page }) => {
   await page.setViewportSize({ width: 800, height: 500 });
   const log = await preparePage(page);
   const fig = await openFigure(page, 'acceleration');
 
   // standing, nothing drawn; the brake does not start the trip
   let s = await fig.call('get');
-  expect(s).toMatchObject({ scene: 'line', pedal: 'none', line: { started: false, speed: 0, kind: 'none', stretches: [] } });
+  expect(s).toMatchObject({ pedal: 'none', line: { started: false, speed: 0, kind: 'none', stretches: [] } });
   await fig.call('set', { pedal: 'brake' });
   await fig.advance(1000);
   expect((await fig.call('get')).line.started).toBe(false);
@@ -89,30 +88,18 @@ test('acceleration: drive, read the graph, turn', async ({ page }) => {
   await fig.advance(1000);
   expect((await fig.call('get')).line).toMatchObject({ done: true, time: 30, speed: 8, kind: 'none' });
 
-  // the bend: 2.5 m/s all the time; turning left changes the direction, with an acceleration v²/r
-  s = await fig.call('set', { scene: 'turn' });
-  expect(s).toMatchObject({ scene: 'turn', turn: { speed: 2.5, direction: 'E', turning: 'none', acceleration: 0 } });
-  await fig.call('set', { pedal: 'left' });
-  await fig.advance(1900); // 0.83 rad/s for about 2 s: about 95°, now heading north
-  s = await fig.call('get');
-  expect(s.turn).toMatchObject({ speed: 2.5, turning: 'left', direction: 'N' });
-  expect(s.turn.acceleration).toBeCloseTo(6.25 / 3, 3);
-  await fig.call('set', { pedal: 'none' });
-  await fig.advance(500);
-  expect((await fig.call('get')).turn).toMatchObject({ speed: 2.5, turning: 'none', acceleration: 0, direction: 'N' });
-
   await fig.call('reset');
   await fig.advance(1000);
-  expect(await fig.call('get')).toMatchObject({ scene: 'line', view: 'front', line: { started: false, stretches: [] } });
+  expect(await fig.call('get')).toMatchObject({ view: 'front', line: { started: false, stretches: [] } });
   expect(log.errors).toEqual([]);
 });
 
-test('acceleration: the test runs by itself through five questions', async ({ page }) => {
+test('acceleration: the test runs by itself through four questions', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 700 });
   const log = await preparePage(page);
   const fig = await openFigure(page, 'acceleration');
   await fig.call('practice');
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 4; i++) {
     await fig.advance(800);
     await fig.frame.locator('.pvc-opt[data-q="0"]').click();
     await fig.advance(300);
@@ -123,6 +110,6 @@ test('acceleration: the test runs by itself through five questions', async ({ pa
   await expect(fig.frame.locator('.pvc-quiz')).toHaveClass(/is-done/);
   await fig.frame.locator('[data-mode="explore"]').click();
   await fig.advance(800);
-  expect(await fig.call('get')).toMatchObject({ mode: 'explore', scene: 'line', line: { started: false } });
+  expect(await fig.call('get')).toMatchObject({ mode: 'explore', line: { started: false } });
   expect(log.errors).toEqual([]);
 });

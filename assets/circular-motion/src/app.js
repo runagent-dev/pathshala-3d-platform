@@ -1,8 +1,8 @@
-// Circular motion (book page 36, topic 2.2), student view: three examples from the book (a ceiling fan, a clock's
-// second hand, the Moon round the Earth) turn by themselves. Each shows the fixed point, a dashed line to a point
-// that goes round, and the circular path that point traces. The student touches the moving point (or drags it
-// round) to measure its distance from the fixed point; after four measurements at different places the panel
-// shows the same number four times: the distance is always the same. Then a short test.
+// Circular motion (book page 36, topic 2.2), student view: the book's first example, a ceiling fan seen from
+// below, turns by itself. It shows the fixed point, a dashed line to a point near the blade tip that goes round, and
+// the circular path that point traces. The student touches the moving point (or drags it round) to measure its
+// distance from the fixed point; after four measurements at different places the panel shows the same number four
+// times: the distance is always the same. Then a short test.
 // Built on the shared student kit (@shared/student/…).
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
@@ -15,15 +15,11 @@ import { createCoach } from '@shared/student/coach.js';
 import { createQuiz } from '@shared/student/quiz.js';
 import { ICONS } from '@shared/student/icons.js';
 import { createI18n } from './i18n.js';
-import { createFan } from './fan.js';
-import { createClock } from './clock.js';
-import { createMoon } from './moon.js';
+import { FAN, createFan } from './fan.js';
 import { INK, MAX_MARKS, createOverlay } from './overlay.js';
-import { createRoom, createStars, createWall, gradientTexture } from './setting.js';
-import { FAN } from './fan.js';
+import { createRoom, gradientTexture } from './setting.js';
 import {
   EXAMPLES,
-  EXAMPLE_IDS,
   angleBetween,
   angleOf,
   chord,
@@ -39,7 +35,6 @@ import {
 } from './reading.js';
 
 export const DEFAULTS = {
-  example: 'fan', // 'fan' | 'clock' | 'moon'
   play: true, // turning at the start
   view: 'front', // 'front' | '3d'
   mode: 'explore', // 'explore' | 'quiz'
@@ -51,14 +46,11 @@ export const DEFAULTS = {
   sound: true,
 };
 
-const START = { fan: 25, clock: 0, moon: 35 }; // where the moving point starts (degrees from "up")
+const ID = 'fan'; // the example (reading.js)
+const START = 25; // where the moving point starts (degrees from "up")
 const DEG = Math.PI / 180;
-/** How far the view may be turned round each example (polar from straight up, azimuth from the front). */
-const ORBIT = {
-  fan: { polar: [95 * DEG, Math.PI], azimuth: [-Infinity, Infinity] },
-  clock: { polar: [20 * DEG, 160 * DEG], azimuth: [-75 * DEG, 75 * DEG] },
-  moon: { polar: [0, Math.PI], azimuth: [-Infinity, Infinity] },
-};
+/** How far the view may be turned (polar from straight up, azimuth from the front). */
+const ORBIT = { polar: [95 * DEG, Math.PI], azimuth: [-Infinity, Infinity] };
 const SAME_PLACE = 20; // degrees: a measurement nearer than this to an earlier one is "the same place"
 const UNIT_CODE = { unit_cm: 'cm', unit_lakh_km: 'lakh km' };
 
@@ -76,9 +68,6 @@ export function createApp(root, options = {}) {
   const ui = buildStudentShell(root, t, {
     layout: 'side', // the panel beside the 3D on landscape frames (kit 1.5.0)
     learn: `
-          <div class="pvc-seg cm-ex" role="group" aria-label="${t('ex_label')}">
-            ${EXAMPLE_IDS.map((id) => `<button data-ex="${id}">${t(`ex_${id}`)}</button>`).join('')}
-          </div>
           <div class="cm-acts">
             <button class="pvc-btn primary" data-act="measure">${ICONS.target}<span>${t('act_measure')}</span></button>
             <button class="pvc-btn" data-act="play"><span class="ic"></span><span class="lb"></span></button>
@@ -97,9 +86,7 @@ export function createApp(root, options = {}) {
   // each example in its own place (setting.js): the fan under a room's ceiling, the clock on its wall, the Moon in
   // the night sky; what shows past the room when the camera is pulled far back is the room's dusk
   const opaque = o.bg !== 'transparent';
-  const backgrounds = opaque
-    ? { fan: gradientTexture('#4a5d78', '#2c3a50'), clock: gradientTexture('#4a5d78', '#2c3a50'), moon: gradientTexture('#060a1d', '#151c43') }
-    : null;
+  const background = opaque ? gradientTexture('#4a5d78', '#2c3a50') : null;
   scene.background = null;
   const M = createMaterials(stage.renderer);
   const world = new THREE.Group();
@@ -118,19 +105,12 @@ export function createApp(root, options = {}) {
     stage.renderer.shadowMap.enabled = true;
     stage.renderer.shadowMap.type = THREE.VSMShadowMap;
   }
-  const ex = {
-    fan: createFan({ materials: M }),
-    clock: createClock({ t }),
-    moon: createMoon({ renderer: stage.renderer }),
-  };
-  if (opaque) {
-    ex.fan.setting = createRoom({ ceiling: FAN.ceiling });
-    ex.clock.setting = createWall({ z: ex.clock.wallZ });
-    ex.moon.setting = createStars();
-  }
-  // where the "circular path" label sits on each circle: lower right on the screen
-  const PATH_LABEL_AT = { fan: 225, clock: 135, moon: 225 };
-  for (const e of Object.values(ex)) {
+  const ex = createFan({ materials: M });
+  if (opaque) ex.setting = createRoom({ ceiling: FAN.ceiling });
+  // where the "circular path" label sits on the circle: lower right on the screen
+  const PATH_LABEL_AT = 225;
+  {
+    const e = ex;
     if (e.setting) e.root.add(e.setting);
     if (shadows && e.shadow) {
       for (const m of e.casters) m.castShadow = true;
@@ -147,7 +127,6 @@ export function createApp(root, options = {}) {
     }
     e.overlay = createOverlay({ r: e.r, lift: e.lift, pointSize: e.pointSize, guide: e.guide });
     e.plane.add(e.overlay.root);
-    e.root.visible = false;
     world.add(e.root);
   }
 
@@ -157,7 +136,6 @@ export function createApp(root, options = {}) {
   }
 
   const s = {
-    example: EXAMPLE_IDS.includes(o.example) ? o.example : 'fan',
     angle: 0, // degrees the moving point has turned from "up", continuous (it grows turn after turn)
     playing: o.play !== false,
     from: 0, // where the path began to be traced
@@ -175,8 +153,8 @@ export function createApp(root, options = {}) {
     userMovedCamera: false,
   };
   let intro = 0; // the first look at the fan: 1 waiting at the side view, 2 flying under the fan
-  const cur = () => ex[s.example];
-  const unitKey = () => EXAMPLES[s.example].unit;
+  const cur = () => ex;
+  const unitKey = () => EXAMPLES[ID].unit;
 
   // ── the distance, measured on the model ─────────────────────────────────────
   const vA = new THREE.Vector3();
@@ -186,13 +164,12 @@ export function createApp(root, options = {}) {
     const e = cur();
     e.root.worldToLocal(e.overlay.worldAt(deg, vA));
     e.root.worldToLocal(e.overlay.centerWorld(vB));
-    return realDistance(s.example, vA.distanceTo(vB));
+    return realDistance(ID, vA.distanceTo(vB));
   }
 
   function snapshot() {
     const marks = s.marks.map((a) => ({ angle: roundTo(wrap360(a), 0.1), distance: measuredDistance(a) }));
     return {
-      example: s.example,
       angle: roundTo(wrap360(s.angle), 0.1),
       playing: s.playing,
       distance: measuredDistance(s.angle),
@@ -207,7 +184,7 @@ export function createApp(root, options = {}) {
   let lastEmitted = '';
   function emitChange() {
     const snap = snapshot();
-    const key = JSON.stringify([snap.example, snap.playing, snap.marks.length, snap.marks.at(-1)?.angle, snap.view, s.drag ? 0 : snap.angle]);
+    const key = JSON.stringify([snap.playing, snap.marks.length, snap.marks.at(-1)?.angle, snap.view, s.drag ? 0 : snap.angle]);
     if (key === lastEmitted) return;
     lastEmitted = key;
     emit('change', snap);
@@ -220,7 +197,6 @@ export function createApp(root, options = {}) {
     slotRow: $('.cm-slots'),
     distLabel: $('.cm-meas .k'),
     book: $('.cm-book'),
-    chips: ui.$$('[data-ex]'),
     status: $('.pvc-status span'),
     statusDot: $('.pvc-status'),
     playIcon: $('[data-act="play"] .ic'),
@@ -242,18 +218,17 @@ export function createApp(root, options = {}) {
     drawScene();
     el.slots.forEach((b, i) => {
       const a = s.marks[i];
-      b.textContent = a == null ? '?' : N(fmt(s.example, measuredDistance(a)));
+      b.textContent = a == null ? '?' : N(fmt(ID, measuredDistance(a)));
       b.classList.toggle('on', a != null);
     });
-    const moon = s.example === 'moon'; // the real Moon's distance changes a little: "about" the same
-    el.distLabel.textContent = t(moon ? 'dist_k_moon' : 'dist_k', { u: t(unitKey()) });
+    el.distLabel.textContent = t('dist_k', { u: t(unitKey()) });
     el.playIcon.innerHTML = s.playing ? ICONS.pause : ICONS.play;
     el.playLabel.textContent = t(s.playing ? 'act_pause' : 'act_play');
     const n = s.marks.length;
     const status = s.locked
       ? ['status_locked', 'locked']
       : n >= MAX_MARKS
-        ? [moon ? 'status_same_moon' : 'status_same', 'contact']
+        ? ['status_same', 'contact']
         : n
           ? ['status_more', 'idle']
           : ['status_start', 'idle'];
@@ -277,7 +252,7 @@ export function createApp(root, options = {}) {
   const ndcV = new THREE.Vector3();
   let labelsOn = true;
   const LABELS = ['center', 'dist', 'path'];
-  const DIST_AT = { fan: 0.55, clock: 0.55, moon: 0.62 }; // where along the dashed line its number sits
+  const DIST_AT = 0.55; // where along the dashed line its number sits
   const boxes = {}; // label id → { el, w, h }: the size of its box, read once it is laid out
   let centerDy = 0;
 
@@ -410,43 +385,20 @@ export function createApp(root, options = {}) {
     if (annotations.has('path')) {
       // the kit puts a label with dx > 0 to the right of its point: its box starts dx to the right, centred on dy
       const b = boxOf('path');
-      onScreen(e.overlay.worldAt(PATH_LABEL_AT[e.id], wPath), sPath);
+      onScreen(e.overlay.worldAt(PATH_LABEL_AT, wPath), sPath);
       setBox(obstacles[n++], sPath.x + PATH_DX + b.w / 2, sPath.y + PATH_DY, b.w, b.h);
     }
-    const at = besideLine(sC.x, sC.y, ux, uy, len * DIST_AT[e.id], boxOf('dist'), obstacles, n, len, BOTH_SIDES, distSide);
+    const at = besideLine(sC.x, sC.y, ux, uy, len * DIST_AT, boxOf('dist'), obstacles, n, len, BOTH_SIDES, distSide);
     return besidePx(wC, at.x - sC.x, at.y - sC.y, out);
   }
-  /** The Moon's name beyond the Moon (or beside it at the edge of the view), the Earth's on the far side. */
-  function moonNamePoint(out) {
-    const { ux, uy, end } = lineOnScreen();
-    const box = boxOf('moon');
-    const reach = (Math.abs(ux) * box.w + Math.abs(uy) * box.h) / 2 + end + 6;
-    let x = sP.x + ux * reach;
-    let y = sP.y + uy * reach;
-    if (x - box.w / 2 < 4 || x + box.w / 2 > stage.width - 4 || y - box.h / 2 < 4 || y + box.h / 2 > stage.height - 4) {
-      setCircle(obstacles[0], sP.x, sP.y, end);
-      const side = besideLine(sP.x, sP.y, ux, uy, 0, box, obstacles, 1);
-      x = side.x;
-      y = side.y;
-    }
-    return besidePx(wC, x - sC.x, y - sC.y, out);
-  }
-  function earthNamePoint(out) {
-    const { ux, uy, hub } = lineOnScreen();
-    const box = boxOf('earth');
-    const reach = (Math.abs(ux) * box.w + Math.abs(uy) * box.h) / 2 + hub + 6;
-    return besidePx(wC, -ux * reach, -uy * reach, out);
-  }
-
   function radiusOnScreen() {
     const { distance } = viewPose();
     return (cur().r / (distance * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2))) * (stage.height / 2);
   }
   /** The distance on the dashed line: "? cm" until the student has measured it once. */
   function distText() {
-    const id = s.example;
     if (!s.distKnown) return t('label_dist', { d: '?', u: t(unitKey()) });
-    return t(id === 'moon' ? 'label_dist_about' : 'label_dist', { d: fmt(id, EXAMPLES[id].value), u: t(unitKey()) });
+    return t('label_known', { d: fmt(ID, EXAMPLES[ID].value), u: t(unitKey()) });
   }
   function setLabels() {
     for (const k of LABELS) annotations.remove(k);
@@ -467,7 +419,7 @@ export function createApp(root, options = {}) {
   }
   function addPathLabel() {
     const e = cur();
-    const at = PATH_LABEL_AT[s.example];
+    const at = PATH_LABEL_AT;
     addLabel('path', {
       text: t('label_path'),
       point: () => e.overlay.worldAt(at, pts.p),
@@ -486,12 +438,12 @@ export function createApp(root, options = {}) {
   }
   stage.addTicker((dt) => {
     if (!s.playing || s.drag || s.hold) return false;
-    turnTo(s.angle + turned(dt, EXAMPLES[s.example].period));
+    turnTo(s.angle + turned(dt, EXAMPLES[ID].period));
     return true;
   });
 
-  /** Start an example afresh: the point at its start, nothing traced or measured yet. */
-  function restart(id, angle = START[id]) {
+  /** Start afresh: the point at its start, nothing traced or measured yet. */
+  function restart(angle = START) {
     s.angle = angle;
     s.from = angle;
     s.cov = { lo: angle, hi: angle };
@@ -503,16 +455,12 @@ export function createApp(root, options = {}) {
     tweener.cancel('turn');
   }
 
-  function setExample(id, { animate = true } = {}) {
-    if (!ex[id]) return;
-    s.example = id;
-    for (const e of Object.values(ex)) e.root.visible = e === cur();
-    if (backgrounds) scene.background = backgrounds[id];
-    restart(id);
+  function showScene({ animate = true } = {}) {
+    if (background) scene.background = background;
+    restart();
     cur().overlay.setGhost(null);
     // the book's line about the example, then how the picture is stylised (a quiet aside, not on the 3D view)
-    el.book.innerHTML = `${t(id === 'moon' ? 'book_moon' : 'book_fan')} <span class="cm-style">${t(`note_${id}`)}</span>`;
-    for (const b of el.chips) b.classList.remove('cm-nudge');
+    el.book.innerHTML = `${t('book')} <span class="cm-style">${t('note')}</span>`;
     setLabels();
     syncUI();
     const e = cur();
@@ -533,7 +481,7 @@ export function createApp(root, options = {}) {
     s.userMovedCamera = false;
     intro = 0;
     // turning the view keeps the camera in the example's place: under the ceiling, in front of the wall
-    const lim = ORBIT[id];
+    const lim = ORBIT;
     controls.minPolarAngle = lim.polar[0];
     controls.maxPolarAngle = lim.polar[1];
     controls.minAzimuthAngle = lim.azimuth[0];
@@ -544,7 +492,6 @@ export function createApp(root, options = {}) {
     flyTo(fit, animate ? 0.6 : 0);
     hideHint();
     refresh();
-    emit('example', { example: id });
     emitChange();
   }
 
@@ -592,12 +539,9 @@ export function createApp(root, options = {}) {
         el.slotRow.classList.remove('flash');
         void el.slotRow.offsetWidth;
         el.slotRow.classList.add('flash');
-        // and the next example's chip glows: there is more to see (the Moon above all)
-        const next = EXAMPLE_IDS[(EXAMPLE_IDS.indexOf(s.example) + 1) % EXAMPLE_IDS.length];
-        for (const b of el.chips) b.classList.toggle('cm-nudge', b.dataset.ex === next);
       }
     } else if (s.marks.length === 2 && !s.dragged && !silent) showHint(t('hint_drag'), { duration: 3600 });
-    emit('measure', { example: s.example, angle: roundTo(wrap360(s.angle), 0.1), distance: d, unit: UNIT_CODE[unitKey()] });
+    emit('measure', { angle: roundTo(wrap360(s.angle), 0.1), distance: d, unit: UNIT_CODE[unitKey()] });
     refresh();
     emitChange();
   }
@@ -803,15 +747,14 @@ export function createApp(root, options = {}) {
   // each letter on its own side of its point, so letters on parts that line up (two hands) never pile up
   const TAG_OFFSET = { center: [-26, 26], tip: [26, -26], mid: [-28, 18], other: [24, 28] };
 
-  const QUIZ_LABELS = ['tag0', 'tag1', 'tag2', 'tag3', 'after', 'earth', 'moon'];
+  const QUIZ_LABELS = ['tag0', 'tag1', 'tag2', 'tag3', 'after'];
   /**
-   * The scene for a question: an example (afresh, at `angle`), turning or not, with or without the drawing and
+   * The scene for a question: afresh, at `angle`, turning or not, with or without the drawing and
    * labels; known: the dashed line shows its number (otherwise "?" until the answer).
    */
-  function setupQuestion({ id, playing = true, angle, overlay = true, labels = true, known = true }) {
+  function setupQuestion({ playing = true, angle, overlay = true, labels = true, known = true }) {
     for (const k of QUIZ_LABELS) annotations.remove(k);
-    if (id !== s.example) setExample(id);
-    restart(id, angle ?? s.angle);
+    restart(angle ?? s.angle);
     s.distKnown = known;
     s.playing = playing;
     s.hold = false;
@@ -836,14 +779,14 @@ export function createApp(root, options = {}) {
     t,
     emit,
     audio,
-    questions: 5,
+    questions: 4,
     hooks: {
       enter() {
         s.mode = 'quiz';
         s.locked = true;
         s.drag = null;
         hideHint();
-        kinds = shuffle(['center', 'turn', 'same', 'life', 'moon']);
+        kinds = shuffle(['center', 'turn', 'same', 'life']);
         syncUI();
         refresh();
       },
@@ -855,7 +798,7 @@ export function createApp(root, options = {}) {
         tweener.cancel('turn');
         cur().overlay.setGhost(null);
         for (const k of QUIZ_LABELS) annotations.remove(k);
-        restart(s.example, s.angle);
+        restart(s.angle);
         cur().overlay.setVisible();
         labelsOn = true;
         setLabels();
@@ -865,10 +808,9 @@ export function createApp(root, options = {}) {
       prepare(i, _alive, say) {
         const kind = kinds[i % kinds.length];
         if (kind === 'center') {
-          // which of four points is the fixed one? While it turns, three of them go round. The clock's second hand
-          // starts well away from the minute hand.
-          const id = pickOne(['fan', 'clock']);
-          setupQuestion({ id, angle: id === 'clock' ? 200 : 30 * Math.floor(Math.random() * 12), overlay: false, labels: false });
+          // which of four points is the fixed one? While it turns, three of them go round.
+          const id = ID;
+          setupQuestion({ angle: 30 * Math.floor(Math.random() * 12), overlay: false, labels: false });
           const keys = shuffle(['center', 'tip', 'mid', 'other']);
           const e = cur();
           const tagPts = keys.map(() => new THREE.Vector3());
@@ -895,11 +837,11 @@ export function createApp(root, options = {}) {
         }
         if (kind === 'turn') {
           // how far from the fixed point after half a turn (or one turn)? The distance from the start and the path
-          // walked are the traps. Fan or clock only: the Moon's distance is only "about" the same.
-          const id = pickOne(['fan', 'clock']);
+          // walked are the traps.
+          const id = ID;
           const angle = 30 + 30 * Math.floor(Math.random() * 10);
           const fraction = Math.random() < 0.65 ? 0.5 : 1;
-          setupQuestion({ id, playing: false, angle });
+          setupQuestion({ playing: false, angle });
           if (fraction === 0.5) {
             cur().overlay.setGhost(angle + 180);
             const g = new THREE.Vector3();
@@ -926,41 +868,26 @@ export function createApp(root, options = {}) {
         }
         if (kind === 'same') {
           // the dashed line says "?": the number comes with the answer
-          const id = pickOne(['fan', 'clock']);
-          setupQuestion({ id, known: false });
+          const id = ID;
+          setupQuestion({ known: false });
           const keys = shuffle(['same_dist', 'same_place', 'same_dir', 'same_start']);
           say(t('q_same', { who: t(`who_${id}`) }));
           question = { kind, id };
           return { choices: [0, 1, 2, 3], expected: keys.indexOf('same_dist'), tolerance: 0.5, label: textLabel(keys), meta: { kind, example: id } };
         }
-        if (kind === 'life') {
+        {
           // about everyday things: the fan just turns, with nothing drawn on it
           const right = pickOne(['life_pinwheel', 'life_stone']);
           const keys = shuffle([right, 'life_ball', 'life_car', 'life_box']);
-          setupQuestion({ id: 'fan', overlay: false, labels: false });
+          setupQuestion({ overlay: false, labels: false });
           say(t('q_everyday'));
           question = { kind, right };
           return { choices: [0, 1, 2, 3], expected: keys.indexOf(right), tolerance: 0.5, label: textLabel(keys), meta: { kind } };
         }
-        // the Moon: what kind of motion (the page's own names)? Or: where is its fixed point?
-        const variant = pickOne(['kind', 'center']);
-        setupQuestion({ id: 'moon', overlay: variant === 'kind', labels: variant === 'kind' });
-        if (variant === 'center') {
-          addLabel('earth', { text: t('label_earth'), point: () => earthNamePoint(pts.e), dx: 0, dy: 0, kind: 'part' });
-          addLabel('moon', { text: t('label_moon'), point: () => moonNamePoint(pts.m), dx: 0, dy: 0, kind: 'part' });
-        }
-        const keys =
-          variant === 'kind'
-            ? shuffle(['kind_rotation', 'kind_linear', 'kind_translation', 'kind_shm'])
-            : shuffle(['moon_c_earth', 'moon_c_moon', 'moon_c_surface', 'moon_c_middle']);
-        const right = variant === 'kind' ? 'kind_rotation' : 'moon_c_earth';
-        say(t(variant === 'kind' ? 'q_moon_kind' : 'q_moon_center'));
-        question = { kind, variant };
-        return { choices: [0, 1, 2, 3], expected: keys.indexOf(right), tolerance: 0.5, label: textLabel(keys), meta: { kind, variant } };
       },
       reveal() {
         const q = question;
-        const id = s.example;
+        const id = ID;
         const d = fmt(id, EXAMPLES[id].value);
         const u = t(EXAMPLES[id].unit);
         if (q.kind === 'center') {
@@ -992,11 +919,7 @@ export function createApp(root, options = {}) {
           showDrawing();
           return t('same_why', { d, u });
         }
-        if (q.kind === 'life') return t(q.right === 'life_pinwheel' ? 'life_why_pinwheel' : 'life_why_stone');
-        annotations.remove('earth');
-        annotations.remove('moon');
-        showDrawing();
-        return q.variant === 'kind' ? t('moon_kind_why') : t('moon_center_why', { d, u });
+        return t(q.right === 'life_pinwheel' ? 'life_why_pinwheel' : 'life_why_stone');
       },
       done() {
         s.locked = false;
@@ -1051,11 +974,6 @@ export function createApp(root, options = {}) {
   // ── buttons, keys ───────────────────────────────────────────────────────────
   function syncUI() {
     for (const b of ui.$$('[data-view]')) b.classList.toggle('on', b.dataset.view === s.view);
-    for (const b of ui.$$('[data-ex]')) {
-      const on = b.dataset.ex === s.example;
-      b.classList.toggle('on', on);
-      b.setAttribute('aria-pressed', String(on));
-    }
     root.dataset.mode = s.mode === 'quiz' ? 'quiz' : 'explore';
     for (const b of ui.$$('[data-mode]')) {
       const on = b.dataset.mode === root.dataset.mode;
@@ -1073,7 +991,6 @@ export function createApp(root, options = {}) {
     if (!b || !root.contains(b)) return;
     audio.unlock();
     if (b.dataset.view) setView(b.dataset.view);
-    if (b.dataset.ex && b.dataset.ex !== s.example) setExample(b.dataset.ex);
     if (b.dataset.mode === 'quiz' && s.mode !== 'quiz') quiz.start();
     if (b.dataset.mode === 'explore') quiz.stop();
     if (b.dataset.q != null) quiz.choose(Number(b.dataset.q));
@@ -1111,9 +1028,7 @@ export function createApp(root, options = {}) {
     else if (k === ' ' && !target.closest('button')) setPlaying(!s.playing);
     else if (k === 'm') measure();
     else if (k === 'p') setPlaying(!s.playing);
-    else if (k === '1' || k === '2' || k === '3') {
-      if (s.mode !== 'quiz') setExample(EXAMPLE_IDS[Number(k) - 1]);
-    } else if (k === 'f') setView('front');
+    else if (k === 'f') setView('front');
     else if (k === 'v') setView('3d');
     else if (k === 'escape') hideHint();
     else return;
@@ -1123,12 +1038,12 @@ export function createApp(root, options = {}) {
   // ── start ───────────────────────────────────────────────────────────────────
   controls.enableRotate = s.view === '3d';
   root.classList.toggle('cm-compact', stage.height < 300 || stage.width < 340);
-  setExample(s.example, { animate: false });
+  showScene({ animate: false });
   syncUI();
   refresh();
   // the first time (with the pointers on) the camera starts beside the fan, so it reads as a ceiling fan with its
   // rod and canopy, then flies under it, where the circle is round
-  if (o.coach && o.mode !== 'quiz' && s.example === 'fan' && s.view === 'front') {
+  if (o.coach && o.mode !== 'quiz' && s.view === 'front') {
     intro = 1;
     flyTo(viewPose('3d'), 0);
     setTimeout(() => {
@@ -1145,32 +1060,6 @@ export function createApp(root, options = {}) {
     else coach?.start(intro ? 2600 : 900);
   })();
 
-  // A moment after the start, the other two examples' shaders are compiled (in parallel where the browser can) and
-  // their pictures (the clock's dial, the Earth and the Moon) sent to the GPU, so the first tap on ঘড়ির কাঁটা or চাঁদ
-  // does not stall. Each is compiled alone in a scene with the same lighting, with only its own lamp, as it will be
-  // drawn; it is back in place before the next frame.
-  function warmUp() {
-    const shown = cur();
-    for (const e of Object.values(ex)) {
-      if (e === shown) continue;
-      const alone = new THREE.Scene();
-      alone.environment = scene.environment;
-      alone.environmentIntensity = scene.environmentIntensity;
-      e.root.visible = true;
-      alone.add(e.root);
-      try {
-        stage.renderer.compileAsync(alone, camera).catch(() => {});
-        e.root.traverse((m) => {
-          for (const mat of [m.material].flat()) for (const map of [mat?.map, mat?.emissiveMap]) if (map) stage.renderer.initTexture(map);
-        });
-      } finally {
-        world.add(e.root);
-        e.root.visible = e === cur();
-      }
-    }
-  }
-  setTimeout(warmUp, 1500);
-
   return {
     ready,
     on(type, fn) {
@@ -1180,14 +1069,13 @@ export function createApp(root, options = {}) {
     },
     getState: snapshot,
     /**
-     * Change any of: example ('fan' | 'clock' | 'moon', starts it afresh), playing, angle (degrees from "up" in the
+     * Change any of: playing, angle (degrees from "up" in the
      * way it turns; the path starts again there), trail (0…1: that much of the path already traced, ending at the
      * point), marks (angles where the distance was measured), measure (true: measure now), view;
      * animate: false jumps.
      */
     async set(p = {}) {
       const animate = p.animate !== false;
-      if (p.example && (p.example !== s.example || !cur().root.visible)) setExample(p.example, { animate });
       if (p.view) await setView(p.view, { animate });
       if (p.playing != null) s.playing = Boolean(p.playing);
       if (p.angle != null && Number.isFinite(Number(p.angle))) {
@@ -1221,7 +1109,7 @@ export function createApp(root, options = {}) {
       hideHint();
       s.playing = o.play !== false;
       s.dragged = false;
-      setExample(EXAMPLE_IDS.includes(o.example) ? o.example : 'fan', { animate: false });
+      showScene({ animate: false });
       await setView('front');
     },
     startPractice: () => quiz.start(),

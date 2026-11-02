@@ -1,16 +1,16 @@
-# Circular motion (ঘূর্ণন গতি)
+# Circular motion: the fan (ঘূর্ণন গতি: বৈদ্যুতিক পাখা)
 
-**Where it goes in the book:** Book page 36, topic 2.2: ঘূর্ণন গতি (Circular Motion), next to that paragraph (the page has no picture for it).
+**Where it goes in the book:** Book page 36, topic 2.2: ঘূর্ণন গতি (Circular Motion), next to that paragraph (the page has no picture for it); the first of three labs (fan, clock hand, Moon).
 
-Interactive 3D figure for the Pathshala book. The book's three examples of circular motion turn by themselves (a
-ceiling fan seen from below, a wall clock's second hand, the Moon round the Earth); the student touches the moving
-point to measure its distance from the fixed point, and sees the same number every time. Then a five-question test.
+Interactive 3D figure for the Pathshala book. The book's first example of circular motion, a ceiling fan seen
+from below, turns by itself; the student touches the moving point to measure its distance from the fixed point, and
+sees the same number every time. Then a four-question test. The clock hand and the Moon are their own labs
+(`circular-motion-clock`, `circular-motion-moon`).
 
 Notes for the book developer:
-- The scene is in centimetres; the GLB exports (`circular-motion.glb` fan, `-clock`, `-moon`) are in metres. The
-  fan (1.44 m sweep) and the clock (31 cm) are real size; the Earth and Moon are a stylised model, not to scale.
-- `get` returns `{ example, angle, playing, distance, unit, marks: [{ angle, distance }], same, traced, view, mode }`;
-  `distance` is in `unit` (`cm`, or `lakh km` for the Moon: 3.84 lakh km = 3,84,000 km).
+- The scene is in centimetres; the GLB export is in metres. The fan (1.44 m sweep) is real size.
+- `get` returns `{ angle, playing, distance, unit, marks: [{ angle, distance }], same, traced, view, mode }`;
+  `distance` is in `unit` (`cm`).
 
 ## Embed
 
@@ -35,7 +35,6 @@ To listen to it or control it from the book page, use the helper shipped in the 
 | Param | Meaning | Values | Default |
 |---|---|---|---|
 | `lang` | Language | `bn` বাংলা · `en` English | `bn` |
-| `example` | Example | `fan` fan (পাখা) · `clock` clock hand (ঘড়ির কাঁটা) · `moon` Moon (চাঁদ) | `fan` |
 | `play` | Turning at the start | `1` · `0` | `1` |
 | `view` | View | `front` · `3d` | `front` |
 | `mode` | Start in | `explore` learn · `quiz` test | `explore` |
@@ -54,11 +53,11 @@ Every figure answers `ping` with `{ asset, version }`. Send commands with `figur
 | Command | Example payload |
 |---|---|
 | `get` | `{}` |
-| `set` | `{"example":"clock"}` |
+| `set` | `{"playing":false,"angle":45}` |
 | `reset` | `{}` |
 | `practice` | `{}` |
 | `capture` | `{"width":800,"height":500}` |
 | `export-glb` | `{}` |
 
-Events: `ready`, `change`, `example`, `measure`, `view`, `dragstart`, `dragend`, `practice-start`, `practice-result`, `practice-end`.
+Events: `ready`, `change`, `measure`, `view`, `dragstart`, `dragend`, `practice-start`, `practice-result`, `practice-end`.
 <!-- /generated:bridge -->

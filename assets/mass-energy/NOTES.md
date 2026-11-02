@@ -25,9 +25,10 @@ less than the left, and that missing mass is the energy that comes out.
 চেইন রি-অ্যাকশন (Chain Reaction), তাপশক্তি, বাষ্প, টারবাইন, জেনারেটর, বিদ্যুৎ, চিত্র ৪.০৬.
 
 ## How the figure works
-- Three scenes from one row of words (the kit's clean sheet): **একটি নিউক্লিয়াস** (default), **চেইন রি-অ্যাকশন**,
-  **শক্তিকেন্দ্র**. One big action button: নিউট্রন ছোড়ো / একটি নিউট্রন ছোড়ো / শক্তিকেন্দ্র চালু করো; its numbered badge
-  rings the waiting neutron (or the reactor). The split and the chain are pure functions of time: replayed by the
+- Two scenes in the same reactor pool, from one row of words (the kit's clean sheet): **একটি নিউক্লিয়াস** (default)
+  and **চেইন রি-অ্যাকশন** (the same nuclei, one split leading to more). The power plant is its own lab since 1.0.0
+  (`mass-energy-plant`). One big action button: নিউট্রন ছোড়ো / একটি নিউট্রন ছোড়ো; its numbered badge rings the
+  waiting neutron. The split and the chain are pure functions of time: replayed by the
   button, scrubbed by the slider beside it or the arrow keys.
 - The nucleus is 236 balls (U-235 plus the neutron it takes) packed once (seeded). The top 141 become ¹⁴¹Ba (56 p),
   the bottom 92 become ⁹²Kr (36 p), three in the neck are the new neutrons: every ball is accounted for, as in the
@@ -40,17 +41,6 @@ less than the left, and that missing mass is the energy that comes out.
   then E = mc² = … = 2.78 × 10⁻¹¹ J. The rule grows from the U-235 facts to the book's sentence on the missing mass.
 - Chain: 13 nuclei laid out as a tree (1 → 3 → 9), each first-step neutron leaving a faint trail to the nucleus it
   splits; a small 1 → 3 → 9 counter lights up as each step splits; the panel sums the energy (13 × 2.78 × 10⁻¹¹ J).
-- Power plant at dusk on a river bank, reactor building and turbine hall cut open (said in the rule): control rods rise,
-  the core glows blue (Cherenkov light) in its water, steam runs along the steam line, turbine and generator turn,
-  power runs along the lines and a town's windows light up; the cooling tower's plume grows. Fuel m: 1 g, 10 g,
-  100 g, 1 kg of U-235; "শক্তি হয়": 0.079% (split) or 100% (the book's "if fully converted"). E in J and how long a
-  100 W bulb would glow on it.
-- The plant is drawn to look real (v0.2.0), all procedural: golden paddy at harvest to the horizon haze, homesteads of
-  trees and tin-roofed houses, a mud bank and country boats on the river; weathered concrete containment with its
-  polar crane, steam generator, pressuriser and coolant pump; a hyperbolic cooling tower on its ring of legs; the
-  ventilation stack, lattice pylons with insulator strings, a transformer with its fins and bushings; a town of flats
-  with water tanks on the roofs. A dusk sky (low sun in the west) is both the background and what the materials
-  reflect.
 - The nucleus scenes stand in the deep blue water of a reactor pool (painted: light from the surface, the pool's lined
   wall, fuel assemblies glowing blue at the bottom): the nuclei are in the reactor's fuel. The first result line says
   nuclei are shown about 10¹² times bigger and much slower.
@@ -120,7 +110,7 @@ The owner's standard for every figure (docs/agents/polish-pass.md).
 - "u" (পারমাণবিক ভর একক) is not on this page; the figure uses it for the two sides' masses. Should it be glossed?
 - "চুল্লি" (reactor) and "জেনারেটর/টারবাইন" labels: the page says নিউক্লিয়ার শক্তিকেন্দ্র, টারবাইন, জেনারেটর; চুল্লি is added.
 - The half-life (704 million years) and natural abundance (0.7%) are not shown (the half-life is a test distractor).
-- The power-plant paragraph continues on page 120; this figure shows it as the third scene.
+- The power-plant paragraph continues on page 120; it is the `mass-energy-plant` lab.
 
 ## Declutter (2026-11-01, v0.4.0)
 - The nuclei float in calm, softly lit water (no fuel rods, light rays, ripples or wall plates behind them).
@@ -130,3 +120,8 @@ The owner's standard for every figure (docs/agents/polish-pass.md).
   rule; the old wide-frame grid is gone and the sideways-phone rules now apply to any narrow side panel (the three
   example names no longer run together at 844 × 390). No front/turn buttons: a drag turns the view (not during the
   test), a front icon brings it back.
+
+## Split (2026-11, 1.0.0)
+One 3D setting per lab: the power plant (and its fuel, `m`, `part` and `run`) moved to `mass-energy-plant`; the
+one-nucleus and chain scenes stay together (same pool, same nuclei). The `scene` parameter keeps `one` and `chain`.
+The test has four questions (the neutrons, the missing mass, the chain, why so much energy).

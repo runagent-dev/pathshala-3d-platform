@@ -1,0 +1,72 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "temperature-scales",
+  "title": "Temperature scales: Celsius, Kelvin and Fahrenheit (তাপমাত্রার স্কেল)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 163,
+  "topic": "6.2",
+  "placement": "Book pages 163–164, topic 6.2 (পদার্থের তাপমাত্রিক ধর্ম): in place of চিত্র ৬.০২ (সেলসিয়াস, কেলভিন এবং ফারেনহাইট তাপমাত্রার স্কেল), next to the paragraphs on the Celsius and Kelvin scales, absolute zero and the triple point of water.",
+  "maintainers": ["RadeenXALNW"],
+  "units": "mm",
+  "description": "Figure 6.02 of the book (pages 163–164, topic 6.2) brought to life: three glass thermometers side by side on a pale blue board standing on a bench, the Celsius, the Kelvin and the Fahrenheit one, each with its own graduations and a dark mercury column that rises to the same height in all three. Lines run across at the fixed points as in the book (0 °C = 273.15 K = 32 °F and 100 °C = 373.15 K = 212 °F) and a crimson line marks the temperature now. One big button walks through the book's own temperatures in the book's order: melting ice, boiling water, a room at 30 °C (30 + 273.15 = 303.15 K), absolute zero (the tubes then show the whole way down to -273.15 °C = 0 K) and the triple point of water (0.01 °C = 273.16 K); a drag on the mercury sets any other temperature (whole degrees, never below absolute zero). The panel shows the three readings, T_K = T_C + 273.15 with the student's numbers, 'saying 10 °C rose is the same as saying 10 K rose' as soon as the mercury has moved, and the rule in the book's words (thermometric property and substance, the fixed points, absolute zero, the triple point). Test tab: 5 questions (Celsius to Kelvin, Kelvin to Celsius, a rise in K, absolute zero in °C, boiling or melting in °F), every wrong choice a real mistake with its own note. Phone-first, Bangla and English.",
+  "tags": ["temperature", "celsius", "kelvin", "fahrenheit", "absolute zero", "triple point", "thermometer", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "step",
+      "label": "Start at",
+      "type": "select",
+      "options": [
+        ["", "the start (30 °C)"],
+        ["ice", "melting ice"],
+        ["boil", "boiling water"],
+        ["room", "room, 30 °C"],
+        ["abs", "absolute zero"],
+        ["triple", "triple point of water"]
+      ],
+      "default": ""
+    },
+    { "name": "T", "label": "Starting temperature", "type": "number", "default": "30", "placeholder": "°C" },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on the part pulses at first", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "step": "boil" } },
+    { "name": "set", "payload": { "T": 50 } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "dragstart", "dragend", "practice-start", "practice-result", "practice-end"],
+  "export": { "poster": { "params": { "coach": "0" } }, "glb": [{ "name": "default" }] }
+}

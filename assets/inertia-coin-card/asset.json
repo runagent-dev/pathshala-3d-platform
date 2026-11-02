@@ -1,0 +1,78 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "inertia-coin-card",
+  "title": "Inertia: the coin and the card (জড়তা: কয়েন ও কার্ড)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "1.0.0",
+  "book": "physics-9-10",
+  "page": 64,
+  "topic": "3.1.1",
+  "placement": "Book pages 64–65, topic 3.1.1: জড়তা (Inertia). Next to the definition of জড়তা and স্থিতি জড়তা, as a home experiment for inertia of rest.",
+  "order": 3,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "Interactive 3D figure for inertia of rest (স্থিতি জড়তা), book pages 64–65, topic 3.1.1: the classic coin-and-card trick. A card lies on a glass on a wooden table with a ৫ টাকা coin on it; the student taps the card and a finger flicks it hard (shown 10x slower, said in the panel). The card shoots away at 2.2 m/s; friction (μ = 0.25) acts on the coin only while the card slides under it (a few hundredths of a second), so the coin gets only a few cm/s, stays where it was and drops straight into the glass. A white-rimmed blue arrow on the card and an orange one on the coin show each one's speed along the table; the panel gives both speeds in m/s and the book's explanation; labels say what each does while it is true. Test tab: 3 questions (what the coin does, which inertia it is and why, which one moves fast just after the flick); after each answer the scene plays on and shows it. Phone-first, Bangla.",
+  "tags": ["force", "newtons-laws", "inertia", "inertia-of-rest", "coin-and-card", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "at",
+      "label": "Show this moment (s of event time, paused)",
+      "type": "number",
+      "default": "",
+      "placeholder": "e.g. 1.05"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "First-use pointers", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "t": 0.26 } },
+    { "name": "set", "payload": { "playing": true } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "end", "view", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": {
+      "params": { "coach": "0", "at": "0.26" },
+      "setup": [{ "command": "set", "payload": { "t": 0.26, "animate": false } }]
+    },
+    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "t": 0.1, "animate": false } }] }],
+    "video": {
+      "kind": "script",
+      "seconds": 8,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [{ "at": 0.3, "command": "set", "payload": { "t": 0, "playing": true } }]
+    }
+  }
+}
