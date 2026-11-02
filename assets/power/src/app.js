@@ -92,7 +92,7 @@ export function createApp(root, options = {}) {
     quiet: [{ act: 'home', label: 'act_home', icon: ICONS.reset }],
     lines: { action: 1, rule: 3 }, // the result's table keeps its own height (a header and two rows)
   });
-  const ui = buildStudentShell(root, t, { learn: sheetHtml, learnAlign: 'start' });
+  const ui = buildStudentShell(root, t, { layout: 'side', learn: sheetHtml, learnAlign: 'start' });
   const sheet = bindCleanSheet(ui.learn);
   const $ = ui.$;
   const outcomeEl = $('.pvc-outcome');
@@ -106,23 +106,23 @@ export function createApp(root, options = {}) {
   controls.enablePan = false;
   controls.enableRotate = false;
   controls.maxPolarAngle = Math.PI * 0.49; // never under the courtyard
-  // a vivid sunny sky: deep blue at the top, pale near the horizon
+  // a calm sky: soft blue at the top, pale near the horizon
   if (o.bg !== 'transparent') {
     const c = document.createElement('canvas');
     c.width = 4;
     c.height = 256;
     const ctx = c.getContext('2d');
     const g = ctx.createLinearGradient(0, 0, 0, 256);
-    g.addColorStop(0, '#1d6fd1');
-    g.addColorStop(0.5, '#4fa3e8');
-    g.addColorStop(0.85, '#a9d8f6');
-    g.addColorStop(1, '#d8eefb');
+    g.addColorStop(0, '#5f87b3');
+    g.addColorStop(0.5, '#87a7c6');
+    g.addColorStop(0.85, '#b9cddd');
+    g.addColorStop(1, '#d3e0ea');
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, 4, 256);
     const sky = new THREE.CanvasTexture(c);
     sky.colorSpace = THREE.SRGBColorSpace;
     scene.background = sky;
-    scene.fog = new THREE.Fog('#d3e8f6', 16, 95); // a little haze on the neighbourhood, none on the house
+    scene.fog = new THREE.Fog('#d3e0ea', 16, 95); // a little haze far off, none on the house
   }
   scene.add(new THREE.HemisphereLight('#dff0ff', '#b98a55', 0.9));
   const key = new THREE.DirectionalLight('#fff3dc', 1.25);
@@ -620,16 +620,20 @@ export function createApp(root, options = {}) {
   }
   function setView(view, { animate = true } = {}) {
     s.view = view === '3d' ? '3d' : 'front';
-    controls.enableRotate = s.view === '3d';
-    controls.enableZoom = s.view === '3d';
     s.userMovedCamera = false;
     syncUI();
     emit('view', { view: s.view });
     return flyTo(viewPose(), animate ? 0.8 : 0);
   }
+  // the view starts from the front; dragging turns it, and then the "front" button appears to come back
   controls.addEventListener('start', () => {
     s.userMovedCamera = true;
     tweener.cancel('camera');
+    if (s.view !== '3d') {
+      s.view = '3d';
+      syncUI();
+      emit('view', { view: s.view });
+    }
   });
   stage.onResize(() => {
     if (!s.userMovedCamera) flyTo(viewPose(), 0);
@@ -828,7 +832,9 @@ export function createApp(root, options = {}) {
 
   // ── buttons, keys ───────────────────────────────────────────────────────────
   function syncUI() {
-    for (const b of ui.$$('[data-view]')) b.classList.toggle('on', b.dataset.view === s.view);
+    const front = ui.$('[data-view="front"]');
+    if (front) front.hidden = s.view !== '3d';
+    controls.enableRotate = controls.enableZoom = !s.locked;
     root.dataset.mode = s.mode === 'quiz' ? 'quiz' : 'explore';
     for (const b of ui.$$('[data-mode]')) {
       const on = b.dataset.mode === root.dataset.mode;
