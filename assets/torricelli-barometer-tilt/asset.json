@@ -1,0 +1,69 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "torricelli-barometer-tilt",
+  "title": "Torricelli's tube tilted (হেলানো টরিসেলির নল)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "1.0.0",
+  "book": "physics-9-10",
+  "page": 145,
+  "topic": "5.4.1",
+  "placement": "Book page 146, topic 5.4.1 (টরিসেলির পরীক্ষা): beside চিত্র ৫.১০, after the paragraph on the 76 cm column, as a check that the column's height is vertical.",
+  "order": 3,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "Torricelli's tube tilted (page 146, topic 5.4.1) in a plain school lab (a teak bench, a blue-grey wall): one barometer, a glass tube standing in a dish of silvery mercury at 76 cm with a vacuum above, beside a cream scale in cm. One button tilts the tube 10° at a time to 40° (then stands it upright again; the arrow keys step too): the mercury fills more of the tube, but a dashed orange line from its top to the scale stays at 76; the vertical height is drawn in orange, one outlined blue air-pressure arrow presses on the dish. The panel shows one short line, the vertical height and the length along the tube, and the rule (pressure depends on the vertical height, P = hρg). Test tab: 3 questions (the vertical height at two tilts, read off the scale; why it stays the same), every wrong choice with its own note. Split from torricelli-barometer. Phone-first, Bangla and English.",
+  "tags": ["air pressure", "barometer", "torricelli", "mercury", "vertical height", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "tilt",
+      "label": "Tilt",
+      "type": "number",
+      "default": "0",
+      "placeholder": "°",
+      "help": "0, 10, 20, 30 or 40"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on the part pulses at first", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "tilt": 30 } },
+    { "name": "set", "payload": { "tilt": 0, "animate": false } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "view", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": { "params": { "coach": "0", "tilt": "30" } },
+    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "tilt": 30, "animate": false } }] }]
+  }
+}

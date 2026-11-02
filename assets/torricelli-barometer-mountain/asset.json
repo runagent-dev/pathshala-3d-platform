@@ -1,0 +1,69 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "torricelli-barometer-mountain",
+  "title": "A barometer up a mountain (পাহাড়ে ব্যারোমিটার)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "1.0.0",
+  "book": "physics-9-10",
+  "page": 145,
+  "topic": "5.4.1",
+  "placement": "Book page 146, topic 5.4.1 (টরিসেলির পরীক্ষা): after চিত্র ৫.১০ and the sentence that the instrument that measures the air's pressure is the ব্যারোমিটার.",
+  "order": 4,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "A barometer up a mountain (page 146, topic 5.4.1) in a plain school lab (a teak bench, a blue-grey wall, a window): one Torricelli barometer, a glass tube in a dish of silvery mercury beside a cream scale in cm. One button takes it 1000 m higher at a time to 3000 m (then back to the sea; the arrow keys step too): the window's view changes from plains to snowy peaks, the outlined blue air-pressure arrow on the dish shortens and the column falls from 76 to about 67, 60 and 53 cm, its height drawn in orange. The panel shows one short line, the height and the column, and the rule (less air overhead, less pressure, a lower column). Test tab: 3 questions (what happens higher up, the column read off the scale, why), every wrong choice with its own note. Split from torricelli-barometer. Phone-first, Bangla and English.",
+  "tags": ["air pressure", "atmospheric pressure", "barometer", "altitude", "mercury", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "alt",
+      "label": "Height above the sea",
+      "type": "number",
+      "default": "0",
+      "placeholder": "m",
+      "help": "0, 1000, 2000 or 3000"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on the part pulses at first", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "alt": 2000 } },
+    { "name": "set", "payload": { "alt": 0, "animate": false } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "view", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": { "params": { "coach": "0", "alt": "2000" } },
+    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "alt": 2000, "animate": false } }] }]
+  }
+}
