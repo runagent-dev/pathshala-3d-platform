@@ -1,4 +1,4 @@
-# Notes: Circular motion (ঘূর্ণন গতি)
+# Notes: Circular motion: the fan (ঘূর্ণন গতি: বৈদ্যুতিক পাখা)
 
 Book: physics-9-10 › 2.2 › p36 (second of three figures on the page: সরলরৈখিক গতি, ঘূর্ণন গতি, চলন গতি)
 
@@ -21,11 +21,10 @@ its three key terms in the colours of the drawing: নির্দিষ্ট �
 the chosen example (for the Moon: "চাঁদকে কোনো কিছু দিয়ে পৃথিবীর সাথে বেঁধে রাখা নেই, তবু …").
 
 ## How the figure works
-- Three chips switch between the book's examples: a ceiling fan seen from below (as from a bed), a wall clock's
-  second hand, and the Moon going round the Earth. Each turns by itself (the right way: the fan anticlockwise seen
-  from below, the clock clockwise, the Moon anticlockwise seen from above the North Pole, always the same face to
-  the Earth). The first time (with the pointers on) the camera starts beside the fan, so it reads as a ceiling fan
-  with its rod and canopy, then settles under it, where its circle is round.
+- One example per lab (split in v1.0.0): this lab is the ceiling fan seen from below (as from a bed), turning
+  anticlockwise by itself. The clock hand and the Moon are their own labs (`circular-motion-clock`,
+  `circular-motion-moon`). The first time (with the pointers on) the camera starts beside the fan, so it reads as a
+  ceiling fan with its rod and canopy, then settles under it, where its circle is round.
 - Each shows the fixed point (purple dot, labelled just below the hub), a dashed orange line from it to the moving
   point, and the blue circular path the point traces (labelled once half of it is drawn). For the Moon the whole
   orbit is also drawn faintly from the start, since in empty space nothing else shows the circle.
@@ -33,10 +32,10 @@ the chosen example (for the Moon: "চাঁদকে কোনো কিছু 
   the turning blade/hand/Moon, not the motor): it stops under the finger and its distance is measured. A thin line
   is left there, the number appears on the dashed line and goes into the panel: `৭০ = ৭০ = ৭০ = ৭০`. Four
   measurements at four different places (a second one at the same place does not count) give the finding:
-  "দূরত্ব সবসময় সমান!" (for the Moon "দূরত্ব প্রায় সমান!"), the numbers flash, and the next example's chip glows.
+  "দূরত্ব সবসময় সমান!" and the numbers flash.
   Dragging turns the example round by hand (the point can only move along its circle); letting go measures there.
   The panel's দূরত্ব মাপো measures on pointerdown; থামাও/চালাও pauses and plays. Keys: arrows turn it, M measures,
-  space plays/pauses, 1/2/3 choose the example, F/V the view.
+  space plays/pauses, F/V the view.
 - Labels move with the example and keep clear of it: the distance rides beside the dashed line and steps aside
   from the Earth, the Moon, the hub and the other labels.
 - Honest stylisation, said quietly after the book's line in the panel (until v0.2.0 it was a note in the corner of
@@ -46,17 +45,15 @@ the chosen example (for the Moon: "চাঁদকে কোনো কিছু 
   the second hand 12 cm from the pin; the Moon about 3,84,400 km = 3.84 lakh km from the Earth's centre, always
   with "প্রায়" (the real orbit is slightly elliptical, 3.63–4.06 lakh km; the book's circle model is enough here).
   The distances are measured on the model (the point's position relative to the fixed point), not typed in.
-- Test (5 questions, order shuffled), each with a worked answer:
-  1. which of four lettered points is the fixed point (the example keeps turning, so three letters go round and one
-     stays; the clock's minute-hand tip is a slow trap; each letter sits on its own side of its point);
-  2. the distance from the fixed point after half a turn or one turn, fan or clock (wrong answers: the distance from
-     the start, the length of path walked, half the radius or the diameter); the answer then plays as an animation;
+- Test (4 questions, order shuffled), each with a worked answer, all on the fan:
+  1. which of four lettered points is the fixed point (the fan keeps turning, so three letters go round and one
+     stays);
+  2. the distance from the fixed point after half a turn or one turn (wrong answers: the distance from the start,
+     the length of path walked, half the radius or the diameter); the answer then plays as an animation;
   3. what does not change (distance from the fixed point vs position, direction of motion, distance from the start;
      the dashed line shows "?" until the answer);
   4. which everyday motion is circular (a paper pinwheel's tip or a stone on a string vs the book's straight-line
-     examples), over the plain turning fan;
-  5. the Moon: what kind of motion it is (ঘূর্ণন, সরলরৈখিক, চলন, সরল স্পন্দন), or where its fixed point is (Earth's
-     centre, surface, the Moon's centre, halfway), the Earth's and the Moon's names on the far sides of the bodies.
+     examples), over the plain turning fan.
 - Period (পর্যায়কাল) and periodic motion are not taught here: they are the next figure (page 37). That is also why
   "পর্যায়বৃত্ত গতি" is not a choice in the Moon question: by page 37 the Moon's motion is periodic too.
 
@@ -119,3 +116,8 @@ The owner's standard for every figure (docs/agents/polish-pass.md).
 - The scenes were already one object each (the fan, the clock, the Moon); nothing was taken out.
 - Panel in the labs' one order: the examples, the actions (দূরত্ব মাপো, থামাও), the measured distances, the
   definition and the book's sentence.
+
+## Split (2026-11, 1.0.0)
+One 3D scene per lab: the clock hand and the Moon moved to `circular-motion-clock` and `circular-motion-moon`. The
+example chips, the `example` URL parameter and `set({ example })`, the `example` event, keys 1/2/3, and the Moon
+question went; the test has four questions.

@@ -1,0 +1,95 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "linear-motion-ball",
+  "title": "Linear motion: the falling ball (সরলরৈখিক গতি: মুক্তভাবে পড়া)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "1.0.0",
+  "book": "physics-9-10",
+  "page": 36,
+  "topic": "2.2",
+  "placement": "Book page 36, topic 2.2: সরলরৈখিক গতি (Linear Motion), next to the sentence about a ball let go from above (একটা বলকে উপর থেকে ছেড়ে দিলে…); the second of two labs (the push, the falling ball).",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "Interactive 3D scene for সরলরৈখিক গতি (linear motion, page 36, 2.2): a cricket ball on a lab stand over a carrom board. The student lets the ball go (ছেড়ে দাও) or throws it sideways (ছুড়ে দাও). Each motion leaves faint pictures every 0.05 s (shown 4 times slower) and a dotted path, then a dashed straight line is laid through its ends: the free fall lies on it (সরলরৈখিক গতি, even though the ball speeds up), the sideways throw curves up to 9 cm away from it (not linear); the throw keeps the drop's marks, greyed, for comparison. Test tab: 4 questions (is a motion just watched linear, with the right reason; what the strobe spacing means; which everyday motion is or is not linear; the definition). Phone-first, Bangla.",
+  "tags": ["motion", "linear-motion", "straight-line", "free-fall", "strobe", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "example",
+      "label": "Example at the start",
+      "type": "select",
+      "options": [["drop", "free fall"], ["throw", "sideways throw"]],
+      "default": "drop"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "First-use pointers", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "example": "drop", "run": true, "animate": false } },
+    { "name": "set", "payload": { "example": "throw", "run": true } },
+    { "name": "set", "payload": { "clear": true } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "example", "start", "done", "view", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": {
+      "params": { "coach": "0" },
+      "setup": [
+        { "command": "set", "payload": { "example": "drop", "run": true, "animate": false } },
+        { "command": "set", "payload": { "example": "throw", "run": true, "animate": false } }
+      ]
+    },
+    "glb": [
+      { "name": "default" },
+      {
+        "name": "paths",
+        "setup": [
+          { "command": "set", "payload": { "example": "drop", "run": true, "animate": false } },
+          { "command": "set", "payload": { "example": "throw", "run": true, "animate": false } }
+        ]
+      }
+    ],
+    "video": {
+      "kind": "script",
+      "seconds": 12,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 0.8, "command": "set", "payload": { "run": true } },
+        { "at": 5.4, "command": "set", "payload": { "example": "throw" } },
+        { "at": 6.4, "command": "set", "payload": { "run": true } }
+      ]
+    }
+  }
+}
