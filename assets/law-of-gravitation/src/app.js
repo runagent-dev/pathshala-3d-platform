@@ -2,14 +2,13 @@
 // across) rest on stands on a bench with a metre scale; above each one a violet arrow, tied to its sphere, shows the
 // pull on it (মহাকর্ষ বল, the colour gravity has in every figure): two equal arrows pointing at each other, drawn to
 // one scale (the pull between two 1,000 kg spheres 1 m apart, 6.67 × 10⁻⁵ N, is 1 m long; in words: the weight of an
-// ant). The student does five things, each changing one thing from the picture before, the old arrows left faint so
+// ant). The student does three things, each changing one thing from the picture before, the old arrows left faint so
 // the change shows, and every change said first as a comparison ("টান ৪ ভাগের ১ ভাগ", "২ গুণ", "৪ গুণ"), never as a
 // power of ten: doubles the distance (the arrows shrink to a quarter), doubles the left mass (they double, on both
 // spheres: the small one pulls the big one just as hard), doubles the right mass (four times, and now, last, the
-// formula F = Gm₁m₂/r² with each symbol in the colour of what the student changed); then, on the Earth cut open to
-// its centre, puts a 1 kg weight on the ground (its weight, about 9.8 N: the Earth's pull; R from the Earth's centre)
-// and a second one (twice the weight, the same 9.8 N for each kg: g). Then a short test. The panel is the kit's clean
-// sheet (one action, one result, one rule): the examples দূরত্ব · ভর · পৃথিবী as one row of words with what was found
+// formula F = Gm₁m₂/r² with each symbol in the colour of what the student changed). (The Earth's pull, the weight, is
+// its own figure: law-of-gravitation-earth.) Then a short test. The panel is the kit's clean
+// sheet (one action, one result, one rule): the examples দূরত্ব · ভর as one row of words with what was found
 // under each, one big numbered action whose same badge rings the part to touch, one result line (how the pull compares
 // with the start; the exact force only as a quiet grey note), one short rule. Built on the shared student kit.
 import * as THREE from 'three';
@@ -24,32 +23,14 @@ import { createQuiz } from '@shared/student/quiz.js';
 import { ICONS } from '@shared/student/icons.js';
 import { createI18n } from './i18n.js';
 import { BENCH, createSpheres } from './spheres.js';
-import { createEarth, LIFT, WEIGHT } from './earth.js';
 import { fitPose } from './camera.js';
 import { boldArrow } from './arrows.js';
-import { createLab, createStars, gradientTexture } from './setting.js';
-import {
-  BASES,
-  EARTH,
-  EXAMPLES,
-  STEPS,
-  arrowLength,
-  decimal,
-  distanceFactors,
-  force,
-  gravity,
-  heightChoices,
-  massFactors,
-  radiusChoices,
-  roundTo,
-  sphereRadius,
-  stateAfter,
-  weight,
-} from './physics.js';
+import { createLab, gradientTexture } from './setting.js';
+import { BASES, EXAMPLES, STEPS, arrowLength, decimal, distanceFactors, force, massFactors, roundTo, sphereRadius, stateAfter } from './physics.js';
 
 export const DEFAULTS = {
-  example: 'dist', // 'dist' | 'mass' | 'earth': where to start
-  steps: 0, // 0 … 5: start with that many of the student's steps already done (for pictures)
+  example: 'dist', // 'dist' | 'mass': where to start
+  steps: 0, // 0 … 3: start with that many of the student's steps already done (for pictures)
   view: 'front', // 'front' | '3d'
   mode: 'explore', // 'explore' | 'quiz'
   coach: true, // the numbered ring pulses (false: it stays still)
@@ -66,13 +47,9 @@ const DIST = 0x0b7285; // দূরত্ব: one colour for the distance, on th
 const MINUS = '−';
 const LANE = { above: 0.14, gap: 0.17 }; // m: the arrows' lanes above the taller sphere, the lower one for m₁'s arrow
 const GHOST_DROP = 0.06; // m: the faint arrow of the moment before runs just under its arrow
-const LIFT_2R = 1 - WEIGHT.h / 2; // Earth radii above the ground that put the weight's centre two radii from the Earth's centre
-const W_ARROW = 0.3; // Earth radii of arrow per kg of the weight (drawn: the scale is the Earth scene's own)
 const DOUBLE_TAP = 450; // ms: a second action this soon after one is ignored
 const ELEVATION = [26, 22]; // degrees: the spheres seen from above as steeply as a tall stage allows (portrait), a little lower on wide ones (the bench top must stay deep enough for the r label)
-const EARTH_DIR = new THREE.Vector3(0, Math.sin(THREE.MathUtils.degToRad(20)), Math.cos(THREE.MathUtils.degToRad(20)));
 const VIEW_3D = new THREE.Vector3(0.55, 0.42, 0.9).normalize();
-const X_AXIS = new THREE.Vector3(1, 0, 0);
 
 /** Integers with Bangladeshi commas: 1,000 · 63,70,000. */
 function groupBD(n) {
@@ -94,16 +71,11 @@ export function createApp(root, options = {}) {
   const SYM = {
     F: '<i class="lg-qf">F</i>',
     G: '<i>G</i>',
-    M: '<i class="lg-qm">M</i>',
-    R: '<i class="lg-qd">R</i>',
     r: '<i class="lg-qd">r</i>',
-    g: '<i class="lg-qf">g</i>',
     m: '<i class="lg-qm">m</i>',
     m1: '<i class="lg-qm">m</i><sub class="lg-qm">1</sub>',
     m2: '<i class="lg-qm">m</i><sub class="lg-qm">2</sub>',
     r2: '<i class="lg-qd">r</i><sup class="lg-qd">2</sup>',
-    R2: '<i class="lg-qd">R</i><sup class="lg-qd">2</sup>',
-    ms2: `ms<sup>${MINUS}2</sup>`,
     four: '4',
     one: '1',
     two: '2',
@@ -128,24 +100,12 @@ export function createApp(root, options = {}) {
       grp('×', term('lg-qm', SYM.m2, t('cap_mass'))),
       grp('÷', term('lg-qd', SYM.r2, t('cap_dist2'))),
     ].join('')}</span>`;
-  /** The same law for a body on the Earth, for each kg: g = G × M ÷ R². */
-  const earthLawHtml = () =>
-    `<span class="lg-formula">${[
-      grp('', term('lg-qf', SYM.g)),
-      grp('=', term('lg-qg', SYM.G, t('cap_G'))),
-      grp('×', term('lg-qm', SYM.M, t('cap_earth_mass'))),
-      grp('÷', term('lg-qd', SYM.R2, t('cap_centre_dist2'))),
-    ].join('')}</span>`;
   /** a × 10ⁿ as HTML: only in the quiet "book values" line, never in a first view. */
   const pow10 = (m, e) => `${m}\u00a0×\u00a010<sup>${e < 0 ? MINUS : ''}${Math.abs(e)}</sup>`;
   const BOOK = {
     G: SYM.G,
     Gv: pow10('6.67', -11),
     Gu: `N\u00a0m<sup>2</sup>\u00a0kg<sup>${MINUS}2</sup>`,
-    M: SYM.M,
-    Mv: pow10('5.98', 24),
-    R: SYM.R,
-    Rv: pow10('6.37', 6),
   };
   /** The book's numbers as a small grey line after a formula, on frames with room for it (CSS: ≥ 900 px). */
   const bookHtml = (key) => `<span class="lg-line lg-book">${t(key, BOOK)}</span>`;
@@ -222,82 +182,12 @@ export function createApp(root, options = {}) {
   sphereScene.add(rLine);
   scene.add(sphereScene);
 
-  // the Earth, cut open to its centre, the weight, the two pulls, the R line (and the test's radius and height lines)
-  const earth = createEarth({ renderer: stage.renderer, kg: `${N('1')} kg` });
-  const earthScene = new THREE.Group();
-  earthScene.name = 'EarthScene';
-  earthScene.add(earth.root);
-  // drawn over the weight and the cut faces (a drawing on the picture), white-outlined like the spheres' pulls
-  const wArrow = boldArrow('Weight', GRAVITY, 0.0115, { order: 22 });
-  const eArrow = boldArrow('PullOnEarth', GRAVITY, 0.0115, { order: 22 });
-  const wGhost = boldArrow('WeightBefore', GRAVITY_BEFORE, 0.0095, { order: 18 });
-  const eGhost = boldArrow('PullOnEarthBefore', GRAVITY_BEFORE, 0.0095, { order: 18 });
-  for (const a of [wArrow, eArrow, wGhost, eGhost]) earthScene.add(a.root);
-  wGhost.root.userData.noExport = true;
-  eGhost.root.userData.noExport = true;
-  /** A dimension line: a bar from a to b with a short tick across each end, in a white rim (drawn over the cut face). */
-  const rimMat = new THREE.MeshBasicMaterial({ color: 0xffffff, depthTest: false, depthWrite: false, toneMapped: false });
-  const barGeo = new THREE.CylinderGeometry(0.0065, 0.0065, 1, 8).translate(0, 0.5, 0);
-  const barRimGeo = new THREE.CylinderGeometry(0.0115, 0.0115, 1, 8).translate(0, 0.5, 0);
-  const tickGeo = new THREE.BoxGeometry(0.05, 0.009, 0.009);
-  const tickRimGeo = new THREE.BoxGeometry(0.06, 0.019, 0.019);
-  function dimLine(name, color = 0x1d2733) {
-    const g = new THREE.Group();
-    g.name = name;
-    g.userData.noExport = true;
-    const mat = new THREE.MeshBasicMaterial({ color, depthTest: false, depthWrite: false, toneMapped: false });
-    const bar = new THREE.Mesh(barGeo, mat);
-    bar.add(Object.assign(new THREE.Mesh(barRimGeo, rimMat), { renderOrder: 8 }));
-    const ticks = [0, 1].map(() => {
-      const tk = new THREE.Mesh(tickGeo, mat);
-      tk.add(Object.assign(new THREE.Mesh(tickRimGeo, rimMat), { renderOrder: 8 }));
-      return tk;
-    });
-    g.add(bar, ...ticks);
-    for (const m of [bar, ...ticks]) m.renderOrder = 9;
-    g.visible = false;
-    earthScene.add(g);
-    const up = new THREE.Vector3(0, 1, 0);
-    const d = new THREE.Vector3();
-    const tq = new THREE.Quaternion();
-    return {
-      group: g,
-      /** From a to b (world), ticks across along `across`, k: how much of it is drawn (it grows from a). */
-      set(a, b, across, k = 1) {
-        d.subVectors(b, a);
-        const len = d.length() * k;
-        g.visible = len > 1e-4;
-        bar.position.copy(a);
-        bar.quaternion.setFromUnitVectors(up, d.normalize());
-        bar.scale.set(1, Math.max(1e-4, len), 1);
-        const q = tq.setFromUnitVectors(X_AXIS, across);
-        ticks[0].position.copy(a);
-        ticks[1].position.copy(a).addScaledVector(d, len);
-        for (const tk of ticks) tk.quaternion.copy(q);
-        ticks[1].visible = k > 0.999;
-      },
-      hide: () => (g.visible = false),
-    };
-  }
-  const RLine = dimLine('RLine', DIST); // the distance R in the distance's colour
-  const radiusLine = dimLine('RadiusLine', DIST);
-  const liftLine = dimLine('HeightLine');
-  // the R line runs on the left cut face, beside the edge from the weight to the centre; the radius on the right face
-  const LEFT_U = new THREE.Vector3(-1, 0, 1).normalize();
-  const LEFT_N = new THREE.Vector3(1, 0, 1).normalize();
-  const RIGHT_U = new THREE.Vector3(1, 0, 1).normalize();
-  const RIGHT_N = new THREE.Vector3(-1, 0, 1).normalize();
-  const R_OFF = new THREE.Vector3().addScaledVector(LEFT_U, 0.11).addScaledVector(LEFT_N, 0.008);
-  scene.add(earthScene);
-  earthScene.visible = false;
-
-  // the settings: the spheres on a plain table before a soft blue wall, the Earth in a starry night sky (left out on a transparent
-  // background, and never exported)
+  // the setting: the spheres on a plain table before a soft blue wall (left out on a transparent background, and never
+  // exported)
   const opaque = o.bg !== 'transparent';
-  const backgrounds = opaque ? { spheres: gradientTexture('#7fa3c4', '#b5cde0'), earth: gradientTexture('#050a1f', '#18204b') } : null;
   if (opaque) {
     sphereScene.add(createLab());
-    earthScene.add(createStars());
+    scene.background = gradientTexture('#7fa3c4', '#b5cde0');
   }
 
   // soft shadows of the bench, the stands and the spheres on the table and the bench top, in a box fitted round them
@@ -373,40 +263,28 @@ export function createApp(root, options = {}) {
     m1: 1000,
     m2: 1000,
     r: 1,
-    placed: 0, // 0 … 1: the weight on its way down (1: on the ground)
-    kg: 1, // weights on the Earth
-    lift: 0, // the test: held above the ground, in Earth radii
-    pullK: 1, // the pull on the weight as a part of its weight at the ground (a quarter two radii out), for the arrows
-    rGrow: 0, // 0 … 1: the R line drawn so far
     ghostF: null, // the pull before the last change (its faint arrows), or null
-    ghostKg: null, // the weight before the last change, or null
-    last: null, // the change just made: 'r2' | 'm1' | 'm2' | 'place' | 'add' | null
+    last: null, // the change just made: 'r2' | 'm1' | 'm2' | null
     busy: false, // a change is being animated
     acting: null, // the change being animated
-    dropping: false, // the second weight is on its way down
-    found: { r2: false, m1: false, m2: false, place: false, add: false },
+    found: { r2: false, m1: false, m2: false },
     view: o.view === '3d' ? '3d' : 'front',
     mode: 'explore',
     locked: false,
-    quizScene: null, // what a test question shows: { arrows: bool, R: bool, radius: bool, lift: bool, M: bool }
+    quizScene: null, // what a test question shows: { m1, m2, r, arrows: bool, maxMass }
     userMovedCamera: false,
   };
-  const sceneOf = (ex) => (ex === 'earth' ? 'earth' : 'spheres');
   const now = () => performance.now();
   const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   let token = 0; // bumped by anything that calls off what is pending
   let lastAct = Number.NEGATIVE_INFINITY;
 
   const F = () => force(s.m1, s.m2, s.r);
-  /** The scene on the view now: a test question's, else the example's. */
-  const sceneNow = () => (s.quizScene ? s.quizScene.scene : sceneOf(s.example));
 
   // ── the spheres' scene each frame: sizes, places, arrows on their lanes, faint arrows, stalks, r line ──────────
   const tA = new THREE.Vector3();
   const XP = new THREE.Vector3(1, 0, 0);
   const XN = new THREE.Vector3(-1, 0, 0);
-  const UP = new THREE.Vector3(0, 1, 0);
-  const DOWN = new THREE.Vector3(0, -1, 0);
   /** The lanes' heights: above the taller sphere (m₁'s arrow lower, m₂'s higher). */
   function lanes() {
     const top = Math.max(spheres.top(0).y, spheres.top(1).y);
@@ -439,49 +317,6 @@ export function createApp(root, options = {}) {
     rEnds[1].position.x = s.r;
   }
 
-  // ── the Earth's scene each frame ───────────────────────────────────────────
-  const tB = new THREE.Vector3();
-  const tC = new THREE.Vector3();
-  const eC = new THREE.Vector3();
-  const eTail = new THREE.Vector3();
-  const E_OFF = new THREE.Vector3(0, 0, 0.035);
-  const E_SIDE = new THREE.Vector3(0.05, 0, 0);
-  function placeEarth() {
-    earth.setPlaced(s.placed);
-    earth.setLift(s.lift);
-    earth.setCount(s.kg === 2 || s.dropping ? 2 : 1);
-    const q = s.quizScene;
-    const arrowsOn = s.placed > 0.001 && (!q || q.arrows);
-    const c = earth.bodyCentre(eC);
-    const off = E_OFF;
-    const L = W_ARROW * s.kg * s.pullK;
-    // a weight held far above the ground: its arrow starts at its underside (a short one would hide inside it)
-    const tail = eTail.copy(c).add(off);
-    if (s.lift > 0.5) tail.y = c.y - (WEIGHT.h * s.kg) / 2;
-    if (arrowsOn) {
-      wArrow.set(tail, DOWN, L);
-      eArrow.set(off, UP, L);
-    } else {
-      wArrow.hide();
-      eArrow.hide();
-    }
-    if (arrowsOn && s.ghostKg != null && !s.busy) {
-      wGhost.set(tC.copy(tail).add(E_SIDE), DOWN, W_ARROW * s.ghostKg);
-      eGhost.set(tC.copy(off).add(E_SIDE), UP, W_ARROW * s.ghostKg);
-    } else {
-      wGhost.hide();
-      eGhost.hide();
-    }
-    if (s.rGrow > 0.001) RLine.set(tC.copy(R_OFF), tB.copy(c).add(R_OFF), LEFT_U, s.rGrow);
-    else RLine.hide();
-    if (q?.radius) radiusLine.set(tC.set(0, 0, 0).addScaledVector(RIGHT_N, 0.008), tB.copy(RIGHT_U).addScaledVector(RIGHT_N, 0.008), UP);
-    else radiusLine.hide();
-    if (q?.liftLine) {
-      const x = -(WEIGHT.r0 + 0.05); // left of the weight (the weight's label is on the right)
-      liftLine.set(tC.set(x, 1, 0.01), tB.set(x, earth.bodyBottom().y, 0.01), XP);
-    } else liftLine.hide();
-  }
-
   // ── labels on the 3D view ───────────────────────────────────────────────────
   let anno = null;
   anno = createAnnotations({
@@ -500,7 +335,7 @@ export function createApp(root, options = {}) {
   const arrowBox = new THREE.Box3();
   function arrowBoxes() {
     const out = [];
-    for (const a of [...pull, ...ghost, wArrow, eArrow, wGhost, eGhost]) {
+    for (const a of [...pull, ...ghost]) {
       if (!a.root.visible || !a.root.parent?.visible) continue;
       arrowBox.setFromObject(a.root);
       if (arrowBox.isEmpty()) continue;
@@ -529,16 +364,8 @@ export function createApp(root, options = {}) {
     ball: [new THREE.Vector3(), new THREE.Vector3()],
     arrow: [new THREE.Vector3(), new THREE.Vector3()],
     r: new THREE.Vector3(),
-    centre: new THREE.Vector3(0, 0, 0),
-    w: new THREE.Vector3(),
-    e: new THREE.Vector3(),
-    mw: new THREE.Vector3(),
-    R: new THREE.Vector3(),
-    radius: new THREE.Vector3(),
-    lift: new THREE.Vector3(),
     gh: new THREE.Vector3(),
   };
-  const tLab = new THREE.Vector3();
   const ballPoint = (i) => () => pts.ball[i].copy(spheres.centre(i));
   // the masses written on the balls follow the balls' size on the screen (--lg-ball: the smaller ball's width in px)
   const bp = [new THREE.Vector3(), new THREE.Vector3()];
@@ -598,7 +425,6 @@ export function createApp(root, options = {}) {
     }
   }
   const SPHERE_LABELS = ['m0', 'm1', 'F0', 'F1', 'r', 'gh'];
-  const EARTH_LABELS = ['centre', 'w', 'e', 'mw', 'R', 'radius', 'lift'];
   /**
    * Where the faint arrow of the moment before is named: at its tip on m₂'s lane (that arrow points left). `grew` is
    * true when the new arrow is the longer one (the faint one is the short one under it), else the faint one shows
@@ -615,8 +441,7 @@ export function createApp(root, options = {}) {
   }
   function labelsFor() {
     const q = s.quizScene;
-    if (sceneNow() === 'spheres') {
-      unlabel(...EARTH_LABELS);
+    {
       // plain first: "১,০০০ kg" on a sphere, "দূরত্ব = ১ m" on the bench; m₁, m₂ and r (same colours) come with the formula
       const symbols = formulaShown();
       for (const i of [0, 1])
@@ -673,140 +498,23 @@ export function createApp(root, options = {}) {
               ],
         });
       else unlabel('gh');
-      return;
     }
-    unlabel(...SPHERE_LABELS);
-    label('centre', {
-      text: t('l_centre'),
-      point: () => pts.centre,
-      kind: 'part',
-      // on a short view the label goes to the right of the centre, under the Earth's F (the R label is on the left)
-      spots:
-        stage.height < 250
-          ? q?.R2
-            ? [
-                { dx: -14, dy: 18 },
-                { dx: 14, dy: 20 },
-              ]
-            : [
-                { dx: 14, dy: 20 },
-                { dx: -14, dy: 20 },
-              ]
-          : [
-              { dx: -60, dy: 26 },
-              { dx: 60, dy: 30 },
-              { dx: -70, dy: -10 },
-            ],
-    });
-    const arrowsOn = s.placed > 0.001 && (!q || q.arrows);
-    if (arrowsOn) {
-      const L = W_ARROW * s.kg * s.pullK;
-      label('w', {
-        text: t('l_weight'),
-        point: () => pts.w.copy(earth.bodyCentre()).add(tLab.set(0, -L * 0.62, 0.035)),
-        kind: 'flat',
-        color: GRAVITY,
-        spots: [
-          { dx: 36, dy: 0 },
-          { dx: 40, dy: 10 },
-          { dx: -36, dy: 0 },
-        ],
-      });
-      label('e', {
-        text: t(stage.height < 250 ? 'l_on_earth_short' : 'l_on_earth'),
-        point: () => pts.e.set(0, L * 0.6, 0.035),
-        kind: 'flat',
-        color: GRAVITY,
-        spots: [
-          { dx: 22, dy: 0 },
-          { dx: -22, dy: 0 },
-          { dx: 24, dy: -16 },
-          { dx: -24, dy: -16 },
-        ],
-      });
-    } else unlabel('w', 'e');
-    // the two weights together (each weight has its own "১ kg" plate)
-    if (!q && s.placed > 0.999 && (s.kg === 2 || s.dropping))
-      label('mw', {
-        text: t('l_weight_total', { kg: '2' }),
-        point: () => pts.mw.copy(earth.bodyCentre()).add(tLab.set(0, 0, 0.1)),
-        kind: 'flat',
-        spots: [
-          { dx: -30, dy: 0 },
-          { dx: -42, dy: -12 },
-          { dx: 30, dy: 0 },
-        ],
-      });
-    else unlabel('mw');
-    const small = stage.height < 250;
-    if (s.rGrow > 0.999 && (!q || q.R))
-      label('R', {
-        text: q?.R2
-          ? t('l_r2R', { r: SYM.r, R: SYM.R, two: '2' })
-          : small
-            ? t('l_R_short', { R: SYM.R })
-            : t('l_R', { R: SYM.R, v: groupBD(EARTH.R / 1000) }),
-        point: () => pts.R.copy(R_OFF).setY(earth.bodyCentre().y * (q?.R2 ? 0.74 : 0.42)),
-        kind: 'part',
-        spots: [
-          { dx: -70, dy: 0 },
-          { dx: -60, dy: -30 },
-          { dx: -60, dy: 30 },
-        ],
-      });
-    else unlabel('R');
-    if (q?.radius)
-      label('radius', {
-        text: q.R2
-          ? small
-            ? t('l_R_short', { R: SYM.R })
-            : t('l_R', { R: SYM.R, v: groupBD(EARTH.R / 1000) })
-          : t('l_radius', { v: groupBD(EARTH.R / 1000) }),
-        point: () => pts.radius.copy(RIGHT_U).multiplyScalar(0.62),
-        kind: 'part',
-        spots: small
-          ? [
-              { dx: 12, dy: 6 },
-              { dx: 12, dy: -12 },
-            ]
-          : [
-              { dx: 50, dy: 34 },
-              { dx: 30, dy: 50 },
-              { dx: 60, dy: -30 },
-            ],
-      });
-    else unlabel('radius');
-    if (q?.liftLine)
-      label('lift', {
-        text: t('l_lift', { h: '1' }),
-        point: () => pts.lift.set(-(WEIGHT.r0 + 0.05), 1 + 0.04, 0.01),
-        kind: 'flat',
-        spots: [
-          { dx: -14, dy: 0 },
-          { dx: -16, dy: -16 },
-        ],
-      });
-    else unlabel('lift');
   }
 
   // ── the panel: one action, one result, one rule ─────────────────────────────
   const ORDER = EXAMPLES;
-  const ACT_KEY = { r2: 'act_double_r', m1: 'act_double_m1', m2: 'act_double_m2', place: 'act_place', add: 'act_add', again: 'act_again' };
-  const FIRST = { dist: 'r2', mass: 'm1', earth: 'place' };
+  const ACT_KEY = { r2: 'act_double_r', m1: 'act_double_m1', m2: 'act_double_m2', again: 'act_again' };
+  const FIRST = { dist: 'r2', mass: 'm1' };
   /** The change the example offers next from the state now (null: nothing more here). */
   function nextHere(ex = s.example) {
     if (ex === 'dist') return s.m1 === 1000 && s.m2 === 1000 && s.r < 1.5 ? 'r2' : null;
-    if (ex === 'mass') {
-      if (s.r < 1.5) return null;
-      if (s.m1 < 2000) return 'm1';
-      if (s.m2 < 2000) return 'm2';
-      return null;
-    }
-    if (s.placed < 0.5) return 'place';
-    return s.kg < 2 ? 'add' : null;
+    if (s.r < 1.5) return null;
+    if (s.m1 < 2000) return 'm1';
+    if (s.m2 < 2000) return 'm2';
+    return null;
   }
-  const doneOf = (ex) => (ex === 'dist' ? s.found.r2 : ex === 'mass' ? s.found.m1 && s.found.m2 : s.found.place && s.found.add);
-  /** The student's own step: what they have found so far + 1 (never more than five); a step done before keeps its own number. */
+  const doneOf = (ex) => (ex === 'dist' ? s.found.r2 : s.found.m1 && s.found.m2);
+  /** The student's own step: what they have found so far + 1 (never more than three); a step done before keeps its own number. */
   const stepNo = (act) =>
     s.found[act] ? STEPS.findIndex((x) => x.act === act) + 1 : Math.min(STEPS.length, Object.values(s.found).filter(Boolean).length + 1);
   /**
@@ -838,31 +546,21 @@ export function createApp(root, options = {}) {
   /** The result, then the honest note as a quiet grey line of its own (once there is a pull or a weight to be honest about). */
   function outcomeHtml() {
     const main = outcomeMain();
-    let note = '';
-    if (sceneOf(s.example) === 'spheres') {
-      if (s.ghostF != null) note = 'note_spheres'; // with a comparison (a one-line result)
-    } else if (s.placed > 0.999 && s.acting !== 'place' && (s.kg === 1 || s.acting === 'add')) note = 'note_earth';
+    const note = s.ghostF != null ? 'note_spheres' : ''; // with a comparison (a one-line result)
     return note ? `${main}<span class="lg-scale">${t(note)}</span>` : main;
   }
   function outcomeMain() {
-    if (sceneOf(s.example) === 'spheres') {
-      const f = targetForce();
-      if (s.ghostF == null) return `${t(s.example === 'mass' ? 'out_start_mass' : 'out_start', { two: '2', mass: SYM.mass })} ${exactHtml(f)}`;
-      // the comparison with the faint arrow: "শুরুর ¼ (৪ ভাগের ১ ভাগ)" or "শুরুর ২ গুণ"
-      const k = f / s.ghostF;
-      if (k >= 1) return `${t('out_vs_times', { k: plain(k, 1) })} ${exactHtml(f)}`;
-      const n = roundTo(1 / k, 1);
-      return `${t('out_vs_part', { frac: frac(1, n), a: n, b: 1 })} ${exactHtml(f)}`;
-    }
-    if (s.placed < 0.999 || s.acting === 'place') return t('out_earth0');
-    // g is rounded first (9.8), so that two weights read exactly twice one: 9.8 and 19.6 newtons
-    const g1 = roundTo(gravity(), 1);
-    if (s.kg === 1 || s.acting === 'add') return t('out_weight', { kg: '1', w: plain(g1, 1) });
-    return t('out_weight2', { kg: '2', w: plain(g1 * 2, 1), one: '1', two: '2' });
+    const f = targetForce();
+    if (s.ghostF == null) return `${t(s.example === 'mass' ? 'out_start_mass' : 'out_start', { two: '2', mass: SYM.mass })} ${exactHtml(f)}`;
+    // the comparison with the faint arrow: "শুরুর ¼ (৪ ভাগের ১ ভাগ)" or "শুরুর ২ গুণ"
+    const k = f / s.ghostF;
+    if (k >= 1) return `${t('out_vs_times', { k: plain(k, 1) })} ${exactHtml(f)}`;
+    const n = roundTo(1 / k, 1);
+    return `${t('out_vs_part', { frac: frac(1, n), a: n, b: 1 })} ${exactHtml(f)}`;
   }
   /** The law is on the screen: every effect met (distance, then the masses), and the rule is the last one or a summary. */
   function formulaShown() {
-    if (s.quizScene || sceneOf(s.example) !== 'spheres') return false;
+    if (s.quizScene) return false;
     const f = s.found;
     return Boolean(f.r2 && f.m1 && f.m2 && (s.last == null || s.last === 'm2'));
   }
@@ -871,52 +569,25 @@ export function createApp(root, options = {}) {
     const f = s.found;
     const all = f.r2 && f.m1 && f.m2; // every effect met: now, last, the law with the same colours
     const law = () => block(lawHtml()) + bookHtml('book_G');
-    if (sceneOf(s.example) === 'spheres') {
-      if (s.last === 'r2') return t('rule_dist', v);
-      if (s.last === 'm1') return t('rule_m1', v);
-      if (s.last === 'm2') return t('rule_m2', v) + (all ? law() : t('rule_hint_dist', v));
-      if (all) return t('rule_all', v) + law();
-      if (f.r2 && f.m1) return t('rule_sum_both', v);
-      if (f.r2) return t('rule_sum_dist', v);
-      if (f.m1) return t('rule_sum_mass', v);
-      return t('rule_start', v);
-    }
-    if (s.placed < 0.999 || s.acting === 'place' || !f.place) return t('rule_earth0', v);
-    if (s.kg === 1 || s.acting === 'add') return t('rule_earth1', { ...v, km: groupBD(EARTH.R / 1000) });
-    // g = G × M ÷ R² only after the law for two spheres (so "G" has been met), else the sentence alone
-    const earthLaw = all ? block(earthLawHtml()) + bookHtml('book_earth') : '';
-    return t('rule_earth2', { ...v, gv: plain(roundTo(gravity(), 1), 1) }) + earthLaw;
-  }
-
-  /** The light, the shadows and the background follow the scene on the view (the Earth casts no shadow anywhere). */
-  let settingOf = '';
-  function syncSetting() {
-    const kind = earthScene.visible ? 'earth' : 'spheres';
-    if (kind === settingOf) return;
-    settingOf = kind;
-    const isEarth = kind === 'earth';
-    if (backgrounds) scene.background = backgrounds[kind];
-    sun.position.set(isEarth ? -1.2 : 0.6, 4, isEarth ? 3 : 2.4);
-    sun.target.position.set(isEarth ? 0 : 1, 0, 0);
-    sun.castShadow = shadows && !isEarth;
+    if (s.last === 'r2') return t('rule_dist', v);
+    if (s.last === 'm1') return t('rule_m1', v);
+    if (s.last === 'm2') return t('rule_m2', v) + (all ? law() : t('rule_hint_dist', v));
+    if (all) return t('rule_all', v) + law();
+    if (f.r2 && f.m1) return t('rule_sum_both', v);
+    if (f.r2) return t('rule_sum_dist', v);
+    if (f.m1) return t('rule_sum_mass', v);
+    return t('rule_start', v);
   }
 
   let lastKind = '';
   function refresh() {
-    syncSetting();
-    if (sceneNow() === 'spheres') placeSpheres();
-    else placeEarth();
+    placeSpheres();
     if (s.mode === 'explore') {
       sheet.choose(s.example);
       sheet.result('dist', s.found.r2 ? t('res_part', { a: '4', b: '1' }) : '');
       sheet.result('mass', s.found.m2 ? t('res_times', { k: '4' }) : s.found.m1 ? t('res_times', { k: '2' }) : '');
-      sheet.result(
-        'earth',
-        s.found.add ? t('res_g', { g: plain(gravity(), 1) }) : s.found.place ? t('res_weight', { w: plain(roundTo(gravity(), 1), 1) }) : '',
-      );
       sheet.outcome(outcomeHtml());
-      const kind = sceneOf(s.example);
-      if (kind !== lastKind) outcomeEl.dataset.k = lastKind = kind;
+      if (lastKind !== 'spheres') outcomeEl.dataset.k = lastKind = 'spheres';
       sheet.rule(ruleHtml());
       if (action) {
         const p = plan();
@@ -936,18 +607,11 @@ export function createApp(root, options = {}) {
     const f = F();
     return {
       example: s.example,
-      scene: s.quizScene ? s.quizScene.scene : sceneOf(s.example),
       m1: s.m1, // kg
       m2: s.m2, // kg
       r: roundTo(s.r, 3), // m, centre to centre
       force: f, // N
       before: s.ghostF, // N: the pull before the last change (its faint arrows), or null
-      earth: {
-        placed: s.placed > 0.999,
-        kg: s.kg,
-        weight: roundTo(weight(s.kg), 2), // N
-        g: roundTo(gravity(), 2), // m s⁻²
-      },
       found: { ...s.found },
       last: s.last,
       busy: s.busy,
@@ -959,7 +623,7 @@ export function createApp(root, options = {}) {
   let lastEmitted = '';
   function emitChange() {
     const snap = snapshot();
-    const key = JSON.stringify([snap.example, snap.m1, snap.m2, snap.r, snap.earth, snap.found, snap.mode, snap.busy]);
+    const key = JSON.stringify([snap.example, snap.m1, snap.m2, snap.r, snap.found, snap.mode, snap.busy]);
     if (key === lastEmitted) return;
     lastEmitted = key;
     emit('change', snap);
@@ -999,46 +663,13 @@ export function createApp(root, options = {}) {
     if (act === 'r2') s.r = 2;
     else if (act === 'm1') s.m1 = 2000;
     else if (act === 'm2') s.m2 = 2000;
-    else if (act === 'place') {
-      s.kg = 1;
-      s.placed = 1;
-      s.rGrow = 1;
-    } else if (act === 'add') s.kg = 2;
     s.found[act] = true;
     s.last = act;
   }
   function cancelTweens() {
-    for (const k of ['m1', 'm2', 'r', 'placed', 'kg', 'lift', 'rGrow', 'fade']) tweener.cancel(k);
+    for (const k of ['m1', 'm2', 'r']) tweener.cancel(k);
     s.busy = false;
     s.acting = null;
-    s.dropping = false;
-    earth.weights.children[1].position.y = WEIGHT.h;
-    ui.canvasHost.style.opacity = '1';
-  }
-
-  /** The scene (spheres or Earth) on the view: a short fade through white, the camera framed for it. */
-  async function showScene(kind, { animate = true } = {}) {
-    const isEarth = kind === 'earth';
-    if (earthScene.visible === isEarth && sphereScene.visible === !isEarth) return true;
-    const swap = () => {
-      earthScene.visible = isEarth;
-      sphereScene.visible = !isEarth;
-      refresh();
-      flyTo(viewPose(), 0);
-    };
-    if (!animate) {
-      swap();
-      return true;
-    }
-    const host = ui.canvasHost;
-    const fade = (a, b) =>
-      tweener.animate({ key: 'fade', duration: 0.22, ease: ease.inOutCubic, onUpdate: (k) => (host.style.opacity = String(a + (b - a) * k)) })
-        .finished;
-    if (!(await fade(1, 0))) return false; // called off: whoever called it off shows its own scene
-    swap();
-    const ok = await fade(0, 1);
-    host.style.opacity = '1';
-    return ok;
   }
 
   /** Back to an example's start (no faint arrows, nothing just changed). Resolves true unless called off. */
@@ -1050,30 +681,16 @@ export function createApp(root, options = {}) {
     const changed = ex !== s.example;
     s.example = ex;
     s.ghostF = null;
-    s.ghostKg = null;
     s.last = null;
     s.quizScene = null;
     if (changed) emit('example', { example: ex });
-    if (ex === 'earth') {
-      s.placed = 0;
-      s.kg = 1;
-      s.rGrow = 0;
-      s.lift = 0;
+    const base = BASES[ex];
+    if (animate) {
+      s.busy = true;
       refresh();
-      await showScene('earth', { animate });
-    } else {
-      const base = BASES[ex];
-      const wasEarth = earthScene.visible;
-      if (wasEarth) {
-        Object.assign(s, base);
-        await showScene('spheres', { animate });
-      } else if (animate) {
-        s.busy = true;
-        refresh();
-        await Promise.all([tweenTo('m1', base.m1, 0.5), tweenTo('m2', base.m2, 0.5), tweenTo('r', base.r, 0.6)]);
-        if (my === token) s.busy = false;
-      } else Object.assign(s, base);
-    }
+      await Promise.all([tweenTo('m1', base.m1, 0.5), tweenTo('m2', base.m2, 0.5), tweenTo('r', base.r, 0.6)]);
+      if (my === token) s.busy = false;
+    } else Object.assign(s, base);
     if (my !== token) return false;
     refresh();
     emitChange();
@@ -1086,8 +703,7 @@ export function createApp(root, options = {}) {
     const dur = (x) => (animate ? x : 0);
     // a mass doubled is compared with where the mass example starts (both 1,000 kg, 2 m apart): step 2 twice, step 3 four times
     const massStart = force(BASES.mass.m1, BASES.mass.m2, BASES.mass.r);
-    s.ghostF = sceneOf(s.example) === 'spheres' ? (act === 'm1' || act === 'm2' ? massStart : F()) : null;
-    s.ghostKg = act === 'add' ? s.kg : null;
+    s.ghostF = act === 'm1' || act === 'm2' ? massStart : F();
     s.busy = animate;
     s.acting = act;
     refresh();
@@ -1096,30 +712,7 @@ export function createApp(root, options = {}) {
     if (act === 'r2') done = await tweenTo('r', 2, dur(1.1));
     else if (act === 'm1') done = await tweenTo('m1', 2000, dur(0.8));
     else if (act === 'm2') done = await tweenTo('m2', 2000, dur(0.8));
-    else if (act === 'place') {
-      s.kg = 1;
-      done = await tweenTo('placed', 1, dur(0.75), ease.inCubic);
-      if (done && my === token && animate) audio.contact();
-      if (done && my === token) done = await tweenTo('rGrow', 1, dur(0.6));
-    } else if (act === 'add' && animate) {
-      // the second weight comes down onto the first; the pulls count it once it has landed
-      s.dropping = true;
-      const w2 = earth.weights.children[1];
-      done = await tweener.animate({
-        key: 'kg',
-        duration: 0.6,
-        ease: ease.inCubic,
-        onUpdate: (k) => {
-          w2.position.y = WEIGHT.h + 0.9 * (1 - k);
-          refresh();
-        },
-      }).finished;
-      w2.position.y = WEIGHT.h;
-      s.dropping = false;
-      if (done && my === token) audio.contact();
-    }
     if (my !== token) return false;
-    if (done && act === 'add') s.kg = 2;
     s.busy = false;
     s.acting = null;
     if (done) {
@@ -1159,8 +752,8 @@ export function createApp(root, options = {}) {
 
   // the big button in the panel and the numbered ring on the part it changes (taps on the ring go through to it)
   /**
-   * Where the action's ring goes: round the sphere the next change works on, the spot on the ground where the weight
-   * will stand, or the weight (a circle: { at, radius } in scene units); null when the next change needs a new scene.
+   * Where the action's ring goes: round the sphere the next change works on (a circle: { at, radius } in scene units);
+   * null when the next change needs a new start.
    */
   const ringAt = new THREE.Vector3();
   function actionRing() {
@@ -1171,8 +764,6 @@ export function createApp(root, options = {}) {
       const i = p.act === 'm1' ? 0 : 1;
       return { at: ringAt.copy(spheres.centre(i)), radius: spheres.radius(i) + 0.05 };
     }
-    if (p.act === 'place') return { at: ringAt.set(0, 1 + WEIGHT.h / 2, 0), radius: WEIGHT.h * 0.95 };
-    if (p.act === 'add') return { at: ringAt.copy(earth.bodyCentre()), radius: WEIGHT.h * 0.95 };
     return null;
   }
   const actionTarget = () => actionRing()?.at ?? null;
@@ -1206,13 +797,6 @@ export function createApp(root, options = {}) {
     box.max.set(2 + R + 0.06, top + (s.quizScene ? 0.1 : 0.3), BENCH.depth / 2);
     return box;
   }
-  function earthBox() {
-    // the centre to the top of two stacked weights (or of the weight held two radii out in a test question)
-    const top = s.quizScene?.R2 ? 2 + WEIGHT.h / 2 + 0.2 : 1 + WEIGHT.h * 2 + 0.2;
-    box.min.set(-0.66, -0.1, -0.3);
-    box.max.set(0.66, top, 0.7);
-    return box;
-  }
   const MARGIN = { top: 58, bottom: 10, side: 8 };
   /** 0 for a portrait stage … 1 for a wide one. */
   const wideness = () => THREE.MathUtils.clamp((stage.width / Math.max(1, stage.height) - 0.9) / 0.9, 0, 1);
@@ -1222,10 +806,8 @@ export function createApp(root, options = {}) {
     return new THREE.Vector3(0, Math.sin(e), Math.cos(e));
   }
   function viewPose(view = s.view) {
-    const earthNow = s.quizScene ? s.quizScene.scene === 'earth' : sceneOf(s.example) === 'earth';
-    const b = earthNow ? earthBox() : sphereBox();
-    const dir = view === '3d' ? VIEW_3D : earthNow ? EARTH_DIR : sphereDir();
-    return fitPose({ box: b, dir, camera, width: stage.width, height: stage.height, margin: MARGIN });
+    const dir = view === '3d' ? VIEW_3D : sphereDir();
+    return fitPose({ box: sphereBox(), dir, camera, width: stage.width, height: stage.height, margin: MARGIN });
   }
   function flyTo({ position, target }, duration = 0.8) {
     if (!duration) {
@@ -1273,7 +855,7 @@ export function createApp(root, options = {}) {
     refresh();
   });
 
-  // ── touching the scene: the ringed sphere or the weight does the action ────
+  // ── touching the scene: the ringed sphere does the action ───────────────────
   const raycaster = new THREE.Raycaster();
   const ndc = new THREE.Vector2();
   const hitBall = new THREE.Sphere();
@@ -1283,7 +865,7 @@ export function createApp(root, options = {}) {
     raycaster.setFromCamera(ndc, camera);
     const ring = actionRing();
     if (!ring) return false;
-    // a little bigger than the ball or the weight, for a finger
+    // a little bigger than the ball, for a finger
     hitBall.set(ring.at, ring.radius + 0.06);
     return raycaster.ray.intersectsSphere(hitBall);
   }
@@ -1343,33 +925,21 @@ export function createApp(root, options = {}) {
   let question = null;
   let picked = -1;
 
-  /** A question's picture: the spheres with these masses and distance, or the Earth; nothing left from before. */
+  /** A question's picture: the spheres with these masses and distance; nothing left from before. */
   async function setQuizScene(sc) {
     ++token;
     cancelTweens();
     s.ghostF = null;
-    s.ghostKg = null;
     s.last = null;
     s.quizScene = sc;
-    if (sc.scene === 'spheres') {
-      s.m1 = sc.m1;
-      s.m2 = sc.m2;
-      s.r = sc.r;
-    } else {
-      s.placed = 1;
-      s.kg = 1;
-      s.lift = sc.lift || 0;
-      s.pullK = 1;
-      s.rGrow = sc.R ? 1 : 0;
-    }
+    s.m1 = sc.m1;
+    s.m2 = sc.m2;
+    s.r = sc.r;
     if (s.view !== 'front') {
       s.view = 'front';
       syncUI();
     }
-    unlabel(...SPHERE_LABELS, ...EARTH_LABELS);
-    const isEarth = sc.scene === 'earth';
-    earthScene.visible = isEarth;
-    sphereScene.visible = !isEarth;
+    unlabel(...SPHERE_LABELS);
     refresh();
     s.userMovedCamera = false;
     await flyTo(viewPose(), 0);
@@ -1388,7 +958,7 @@ export function createApp(root, options = {}) {
     t,
     emit,
     audio,
-    questions: 5,
+    questions: 3,
     lines: { text: 2, feedback: 3 },
     action,
     hooks: {
@@ -1399,20 +969,16 @@ export function createApp(root, options = {}) {
           m1: s.m1,
           m2: s.m2,
           r: s.r,
-          placed: s.placed,
-          kg: s.kg,
-          rGrow: s.rGrow,
           found: { ...s.found },
           last: s.last,
           ghostF: s.ghostF,
-          ghostKg: s.ghostKg,
         };
         ++token;
         cancelTweens();
         s.mode = 'quiz';
         s.locked = true;
         hintOff();
-        kinds = [...shuffle(['mass', 'dist', 'equal']), 'radius', 'g'];
+        kinds = shuffle(['mass', 'dist', 'equal']);
         syncUI();
       },
       leave() {
@@ -1421,25 +987,9 @@ export function createApp(root, options = {}) {
         s.mode = 'explore';
         s.locked = false;
         s.quizScene = null;
-        unlabel(...SPHERE_LABELS, ...EARTH_LABELS);
-        const saved = learnSaved || {
-          example: 'dist',
-          ...BASES.dist,
-          placed: 0,
-          kg: 1,
-          rGrow: 0,
-          found: { ...s.found },
-          last: null,
-          ghostF: null,
-          ghostKg: null,
-        };
+        unlabel(...SPHERE_LABELS);
+        const saved = learnSaved || { example: 'dist', ...BASES.dist, found: { ...s.found }, last: null, ghostF: null };
         Object.assign(s, saved, { found: { ...saved.found } });
-        s.lift = 0;
-        s.pullK = 1;
-        earth.weights.children[1].position.y = WEIGHT.h;
-        const isEarth = sceneOf(s.example) === 'earth';
-        earthScene.visible = isEarth;
-        sphereScene.visible = !isEarth;
         syncUI();
         setView(s.view, { animate: false });
         refresh();
@@ -1464,7 +1014,7 @@ export function createApp(root, options = {}) {
           ]);
           const now = start.side === 'left' ? start.m1 : start.m2;
           const k = start.to / now;
-          await setQuizScene({ scene: 'spheres', m1: start.m1, m2: start.m2, r: 2, arrows: true, maxMass: Math.max(start.to, start.m1, start.m2) });
+          await setQuizScene({ m1: start.m1, m2: start.m2, r: 2, arrows: true, maxMass: Math.max(start.to, start.m1, start.m2) });
           if (!alive()) return null;
           const f = F();
           const list = massFactors(k); // by how many times the pull changes: right, squared, divided, unchanged
@@ -1481,7 +1031,7 @@ export function createApp(root, options = {}) {
         }
         if (kind === 'dist') {
           const far = pickOne([false, true]); // false: 1 m, doubled; true: 2 m, halved
-          await setQuizScene({ scene: 'spheres', m1: 1000, m2: 1000, r: far ? 2 : 1, arrows: true });
+          await setQuizScene({ m1: 1000, m2: 1000, r: far ? 2 : 1, arrows: true });
           if (!alive()) return null;
           const f = F();
           const list = distanceFactors(far ? 0.5 : 2);
@@ -1498,7 +1048,7 @@ export function createApp(root, options = {}) {
         }
         if (kind === 'equal') {
           const bigLeft = pickOne([true, false]);
-          await setQuizScene({ scene: 'spheres', m1: bigLeft ? 4000 : 1000, m2: bigLeft ? 1000 : 4000, r: 2, arrows: false });
+          await setQuizScene({ m1: bigLeft ? 4000 : 1000, m2: bigLeft ? 1000 : 4000, r: 2, arrows: false });
           if (!alive()) return null;
           const keys = ['eq_same', 'eq_less', 'eq_more', 'eq_none'];
           const order = shuffle([0, 1, 2, 3]);
@@ -1512,37 +1062,7 @@ export function createApp(root, options = {}) {
             meta: { kind, answer: 'same' },
           };
         }
-        if (kind === 'radius') {
-          await setQuizScene({ scene: 'earth', arrows: true, R: false, radius: true, lift: LIFT, liftLine: true });
-          if (!alive()) return null;
-          const list = radiusChoices();
-          const order = shuffle([0, 1, 2, 3]);
-          question = { kind, list, order };
-          ask(t('q_radius', { h: '1', R: SYM.R }));
-          // all four are written alike (a number and its unit, the radius in km), so none gives the answer away by its look
-          const lab = [`${groupBD(list[0] / 1000)}\u00a0km`, '1\u00a0m', `${groupBD(list[2] / 1000)}\u00a0km`, `${groupBD(list[3])}\u00a0m`];
-          return {
-            choices: order,
-            expected: 0, // the choices are the items' numbers in a shuffled order; item 0 is right
-            tolerance: 0.5,
-            label: (j) => optText(N(lab[j])),
-            meta: { kind, answer: list[0] },
-          };
-        }
-        // the weight two radii from the Earth's centre: needs r read off the picture and squared
-        await setQuizScene({ scene: 'earth', arrows: false, R: true, R2: true, radius: true, lift: LIFT_2R });
-        if (!alive()) return null;
-        const list = heightChoices(2);
-        const order = shuffle([0, 1, 2, 3]);
-        question = { kind: 'h', list, order };
-        ask(t('q_h', { kg: '1', two: '2', R: SYM.R, w0: plain(roundTo(gravity(), 1), 1) }));
-        return {
-          choices: order,
-          expected: 0, // the choices are the items' numbers in a shuffled order; item 0 is right
-          tolerance: 0.5,
-          label: (j) => optText(`${N(plain(list[j], 1))}\u00a0${t('newton')}`),
-          meta: { kind: 'h', answer: list[0] },
-        };
+        return null;
       },
       reveal(_q, correct) {
         const q = question;
@@ -1568,24 +1088,7 @@ export function createApp(root, options = {}) {
           refresh();
           return t('why_equal', SYM) + mistake({ 1: 'not_eq_less', 2: 'not_eq_more', 3: 'not_eq_none' });
         }
-        if (q.kind === 'radius') {
-          s.quizScene = { ...s.quizScene, R: true };
-          tweenTo('rGrow', 1, 0.7);
-          const km = groupBD(EARTH.R / 1000);
-          return (
-            t('why_radius', { ...SYM, km, h: '1' }) +
-            mistake({ 1: 'not_rad_height', 2: 'not_rad_diam', 3: 'not_rad_km' }, { km, m: km, kmm: plain(EARTH.R / 1e6, 2) })
-          );
-        }
-        // the pull two radii out: a quarter of the weight at the ground (the faint arrows keep the weight at the ground)
-        s.quizScene = { ...s.quizScene, arrows: true };
-        s.pullK = 0.25;
-        s.ghostKg = 1;
-        refresh();
-        return (
-          t('why_h', { ...SYM, ans: plain(q.list[0], 1), w0: plain(roundTo(gravity(), 1), 1) }) +
-          mistake({ 1: 'not_h_nosq', 2: 'not_h_same', 3: 'not_h_more' })
-        );
+        return '';
       },
       done() {
         s.locked = false;
@@ -1671,9 +1174,6 @@ export function createApp(root, options = {}) {
     s.m1 = st.m1;
     s.m2 = st.m2;
     s.r = st.r;
-    s.placed = st.placed ? 1 : 0;
-    s.kg = st.kg;
-    s.rGrow = st.placed ? 1 : 0;
     for (const k of Object.keys(s.found)) s.found[k] = false;
     STEPS.slice(0, n).forEach((step) => {
       s.found[step.act] = true;
@@ -1682,26 +1182,18 @@ export function createApp(root, options = {}) {
     s.last = lastStep && lastStep.example === s.example ? lastStep.act : null;
     // the faint arrows of the moment before the last step
     s.ghostF = null;
-    s.ghostKg = null;
-    if (lastStep && sceneOf(lastStep.example) === 'spheres') {
+    if (lastStep) {
       const before = stateAfter(n - 1);
       s.ghostF = force(before.m1, before.m2, before.r);
       if (lastStep.example === 'mass') s.ghostF = force(BASES.mass.m1, BASES.mass.m2, BASES.mass.r);
     }
-    if (lastStep?.act === 'add') s.ghostKg = 1;
-    earthScene.visible = sceneOf(s.example) === 'earth';
-    sphereScene.visible = !earthScene.visible;
   }
 
   const steps = Math.max(0, Math.min(STEPS.length, Math.round(Number(o.steps) || 0)));
   if (steps > 0) applySteps(steps);
   else {
     s.example = EXAMPLES.includes(o.example) ? o.example : 'dist';
-    if (s.example === 'earth') {
-      s.placed = 0;
-      earthScene.visible = true;
-      sphereScene.visible = false;
-    } else Object.assign(s, BASES[s.example]);
+    Object.assign(s, BASES[s.example]);
   }
   syncUI();
   refresh();
@@ -1719,7 +1211,7 @@ export function createApp(root, options = {}) {
     },
     getState: snapshot,
     /**
-     * Change any of: example ('dist' | 'mass' | 'earth': back to its start), steps (0…5: the state after that many of
+     * Change any of: example ('dist' | 'mass': back to its start), steps (0…3: the state after that many of
      * the student's steps), act (true: the big button's next change), view; animate: false jumps.
      */
     async set(p = {}) {
@@ -1755,7 +1247,7 @@ export function createApp(root, options = {}) {
     },
     startPractice: () => quiz.start(),
     capture: (opts) => stage.capture(opts),
-    /** The bench, the two spheres where they are now and their pulls, in metres (or the Earth and the weight). */
-    exportRoot: () => (earthScene.visible ? earthScene : sphereScene),
+    /** The bench, the two spheres where they are now and their pulls, in metres. */
+    exportRoot: () => sphereScene,
   };
 }

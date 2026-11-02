@@ -1,0 +1,79 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "law-of-gravitation-earth",
+  "title": "The Earth's pull and weight (পৃথিবীর টান ও ওজন)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "1.0.0",
+  "book": "physics-9-10",
+  "page": 78,
+  "topic": "3.7",
+  "placement": "Book page 79, topic 3.7: মহাকর্ষ বল, beside the second half of the page, the Earth's pull on a body on its surface (F = GMm/R², g = GM/R², R from the Earth's centre).",
+  "order": 2,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "The Earth's pull and weight (page 79, topic 3.7), one scene: the Earth cut open like an orange to its centre (inner core, outer core, mantle, crust; Dhaka at the top) in a starry sky, with an iron 1 kg bazaar weight drawn very much bigger than life. One big button in two steps: put the weight on the ground (two equal outlined violet arrows: its weight, about 9.8 N, and its pull on the Earth; R drawn from the Earth's centre), then a second weight on top (twice the weight, the same 9.8 N for each kg: g = GM/R², with the book's values). One result line, one rule. Test tab: 3 tap questions (does the weight pull the Earth, R for a weight 1 m up, the weight two radii from the centre). The two iron spheres on a bench are the lab law-of-gravitation. Phone-first, Bangla and English.",
+  "tags": ["force", "gravitation", "weight", "g", "earth", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "steps",
+      "label": "Steps already done",
+      "type": "number",
+      "default": "0",
+      "placeholder": "0–2",
+      "help": "the state after that many of the student's steps: 1 a 1 kg weight on the Earth, 2 a second weight"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The numbered ring pulses", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "act": true } },
+    { "name": "set", "payload": { "steps": 2, "animate": false } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "act", "view", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": { "params": { "coach": "0", "steps": "2" } },
+    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "steps": 2, "animate": false } }] }],
+    "video": {
+      "kind": "script",
+      "seconds": 8,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 1.2, "command": "set", "payload": { "act": true } },
+        { "at": 4.4, "command": "set", "payload": { "act": true } }
+      ]
+    }
+  }
+}

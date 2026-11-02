@@ -12,9 +12,6 @@ export const force = (m1, m2, r) => (G * m1 * m2) / (r * r);
 /** g = GM/R² (m s⁻²): the acceleration the Earth's pull gives any body at distance R from its centre. */
 export const gravity = (M = EARTH.M, R = EARTH.R) => (G * M) / (R * R);
 
-/** The Earth's pull on a body of mass m kg on its surface: F = GMm/R², the body's weight (newtons). */
-export const weight = (m, M = EARTH.M, R = EARTH.R) => (G * M * m) / (R * R);
-
 /** The radius (m) of a solid sphere of mass m kg (iron unless another density is given). */
 export const sphereRadius = (m, rho = IRON) => Math.cbrt((3 * m) / (4 * Math.PI * rho));
 
@@ -33,32 +30,28 @@ export const BASES = {
   dist: { m1: 1000, m2: 1000, r: 1 }, // two 1,000 kg spheres 1 m apart: F = G × 10⁶ = 6.67 × 10⁻⁵ N
   mass: { m1: 1000, m2: 1000, r: 2 }, // the distance example ends here, so the mass example goes on from it
 };
-export const EXAMPLES = ['dist', 'mass', 'earth'];
+export const EXAMPLES = ['dist', 'mass'];
 
 /**
- * The student's five steps in the book's order of ideas: double the distance (the pull drops to a quarter), double
- * m₁ (it doubles), double m₂ too (four times), then put a 1 kg weight on the Earth (its weight GMm/R², R to the
- * centre) and a second one (twice the weight, the same g). Each step changes one thing from the state before it.
+ * The student's three steps in the book's order of ideas: double the distance (the pull drops to a quarter), double
+ * m₁ (it doubles), double m₂ too (four times). Each step changes one thing from the state before it. (The weight on
+ * the Earth is its own figure, law-of-gravitation-earth.)
  */
 export const STEPS = [
   { example: 'dist', act: 'r2' },
   { example: 'mass', act: 'm1' },
   { example: 'mass', act: 'm2' },
-  { example: 'earth', act: 'place' },
-  { example: 'earth', act: 'add' },
 ];
 
-/** The state after the first n of the natural steps (n = 0…5). */
+/** The state after the first n of the natural steps (n = 0…3). */
 export function stateAfter(n) {
-  const s = { example: 'dist', ...BASES.dist, placed: false, kg: 1 };
+  const s = { example: 'dist', ...BASES.dist };
   for (const step of STEPS.slice(0, Math.max(0, Math.min(STEPS.length, n)))) {
     if (step.example !== s.example && step.example === 'mass') Object.assign(s, BASES.mass);
     s.example = step.example;
     if (step.act === 'r2') s.r = 2;
     if (step.act === 'm1') s.m1 = 2000;
     if (step.act === 'm2') s.m2 = 2000;
-    if (step.act === 'place') s.placed = true;
-    if (step.act === 'add') s.kg = 2;
   }
   return s;
 }
@@ -97,20 +90,4 @@ export function massFactors(k = 2) {
 /** What the force is multiplied by when r is multiplied by k (2 or ½): right (1/k²), the square forgotten, the wrong way, the wrong way squared. */
 export function distanceFactors(k = 2) {
   return [1 / (k * k), 1 / k, k, k * k];
-}
-
-/**
- * g at a place k Earth radii from the centre (k = 2: a weight one radius above the ground), with the usual slips: g
- * = GM/(kR)² is right; the distance not squared; g unchanged (as if height did not matter); the wrong way squared.
- * Every choice starts from the g the question states (9.8, rounded to one decimal), so 4 × 9.8 = 39.2 is the last one,
- * not 4 × 9.83.
- */
-export function heightChoices(k = 2, M = EARTH.M, R = EARTH.R) {
-  const g0 = roundTo(gravity(M, R), 1);
-  return [g0 / (k * k), g0 / k, g0, g0 * k * k];
-}
-
-/** R for a body 1 m above the ground: about the Earth's radius; the height above the ground; the diameter; km read as m. */
-export function radiusChoices(R = EARTH.R, h = 1) {
-  return [R + h, h, 2 * R, R / 1000];
 }

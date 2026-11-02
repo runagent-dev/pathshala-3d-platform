@@ -80,3 +80,10 @@ G = 6.67 × 10⁻¹¹ (book); M = 5.98 × 10²⁴ kg, R = 6.37 × 10⁶ m (book)
 The spheres sit on a plain table before a soft blue wall (no window, poster, blackboard, clock, dado or wood grain on
 the room; three merged meshes without textures). No front/turn buttons: a drag turns the view, a front icon brings it back. The panel sits beside the 3D (kit 1.5.0): the bottom-panel grids for
 wide frames and the sideways-phone rules are gone; only the label sizes for a big 3D view stay.
+
+## Split (1.0.0)
+This lab had three examples behind word chips (দূরত্ব · ভর · পৃথিবী). The owner wants one scene per lab: the
+distance and the mass stay here (the same spheres on the same bench), the Earth cut open with the 1 kg weight is now
+`law-of-gravitation-earth`. The `earth` value of `example`, steps 4–5, the Earth questions of the test (R for a
+weight 1 m up, the weight two radii out) and the Earth's files (earth.js, maps.js, the stars) are gone; the test has
+three questions.

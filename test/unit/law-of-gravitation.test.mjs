@@ -1,7 +1,7 @@
 // The maths of the law-of-gravitation figure (book pages 78–79, topic 3.7): F = Gm₁m₂/r² with the book's G (twice a
-// mass, twice the force; twice the distance, a quarter), the iron spheres' sizes, the Earth's g = GM/R² ≈ 9.8 m s⁻²
-// from the book's M and R, the plain words that replace powers of ten (a force written out, "the weight of an ant"),
-// the student's five steps (each one change, the arrows never longer than the figure's scale), the test's right
+// mass, twice the force; twice the distance, a quarter), the iron spheres' sizes, g ≈ 9.8 m s⁻² (for "the weight of an ant"),
+// the plain words that replace powers of ten (a force written out, "the weight of an ant"),
+// the student's three steps (each one change, the arrows never longer than the figure's scale), the test's right
 // answers with their usual mistakes (as "how many times"), and the strings: no power of ten in a sentence.
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
@@ -47,16 +47,11 @@ describe('law of gravitation: the iron spheres', () => {
   });
 });
 
-describe('law of gravitation: the Earth', () => {
+describe('law of gravitation: the Earth’s g (for the ant comparison)', () => {
   it('g = GM/R² from the book’s numbers is about 9.8 m s⁻²', () => {
     assert.deepEqual(lg.EARTH, { M: 5.98e24, R: 6.37e6 });
     close(lg.gravity(), 9.83, 1e-3);
     assert.equal(lg.roundTo(lg.gravity(), 1), 9.8);
-  });
-  it('the weight of a body is GMm/R² = mg: twice the mass, twice the weight, the same g', () => {
-    close(lg.weight(1), lg.gravity());
-    close(lg.weight(2), 2 * lg.gravity());
-    close(lg.weight(2) / 2, lg.weight(1));
   });
 });
 
@@ -85,17 +80,17 @@ describe('law of gravitation: plain words instead of powers of ten', () => {
   });
 });
 
-describe('law of gravitation: the student’s five steps', () => {
+describe('law of gravitation: the student’s three steps', () => {
   it('start with two 1,000 kg spheres 1 m apart, and each step changes one thing', () => {
-    assert.deepEqual(lg.stateAfter(0), { example: 'dist', m1: 1000, m2: 1000, r: 1, placed: false, kg: 1 });
-    const keys = ['m1', 'm2', 'r', 'placed', 'kg'];
+    assert.deepEqual(lg.stateAfter(0), { example: 'dist', m1: 1000, m2: 1000, r: 1 });
+    const keys = ['m1', 'm2', 'r'];
     for (let n = 1; n <= lg.STEPS.length; n++) {
       const a = lg.stateAfter(n - 1);
       const b = lg.stateAfter(n);
       const changed = keys.filter((k) => a[k] !== b[k]);
       assert.equal(changed.length, 1, `step ${n} changes ${changed.join(', ')}`);
     }
-    assert.deepEqual(lg.stateAfter(5), { example: 'earth', m1: 2000, m2: 2000, r: 2, placed: true, kg: 2 });
+    assert.deepEqual(lg.stateAfter(3), { example: 'mass', m1: 2000, m2: 2000, r: 2 });
   });
   it('the distance doubled gives a quarter; then the masses double it, then double it again', () => {
     const F = (n) => {
@@ -144,37 +139,12 @@ describe('law of gravitation: the test’s choices (right answer first, then the
     distinct(c);
     close(lg.force(1000, 1000, 1) / lg.force(1000, 1000, 2), c[0]);
   });
-  it('the weight two radii from the centre: a quarter; the distance not squared; unchanged; the wrong way squared', () => {
-    // every choice starts from the 9.8 the question states, so the last one is 4 × 9.8 = 39.2 (not 4 × 9.83)
-    const g0 = 9.8;
-    const c = lg.heightChoices(2);
-    close(c[0], g0 / 4);
-    close(c[1], g0 / 2);
-    close(c[2], g0);
-    close(c[3], g0 * 4);
-    assert.equal(lg.roundTo(c[0], 1), 2.5);
-    assert.equal(lg.roundTo(c[1], 1), 4.9);
-    assert.equal(lg.roundTo(c[3], 1), 39.2);
-    assert.equal(new Set(c.map((x) => lg.roundTo(x, 1))).size, 4, 'four different choices on the screen');
-    // and the true answer from M and R agrees with the shown one: GM/(2R)² = 2.46, shown as 2.5
-    assert.equal(lg.roundTo(lg.gravity(lg.EARTH.M, 2 * lg.EARTH.R), 1), lg.roundTo(c[0], 1));
-  });
   it('one mass made 3 times as big: 3; squared by mistake 9; a third; unchanged', () => {
     const c = lg.massFactors(3);
     assert.deepEqual([c[0], c[1], c[3]], [3, 9, 1]);
     close(c[2], 1 / 3);
     close(lg.force(3000, 1000, 2) / lg.force(1000, 1000, 2), c[0]);
     assert.equal(new Set(c).size, 4);
-  });
-  it('R for a weight 1 m up: about the Earth’s radius; the height; the diameter; km read as m', () => {
-    const c = lg.radiusChoices();
-    close(c[0], 6.37e6 + 1);
-    assert.equal(c[1], 1);
-    close(c[2], 1.274e7);
-    close(c[3], 6370);
-    // the figure writes them in km (6,370 km · 1 m · 12,740 km · 6,370 m): four different numbers with their units
-    assert.equal(Math.round(c[0] / 1000), 6370);
-    assert.equal(Math.round(c[2] / 1000), 12740);
   });
 });
 
