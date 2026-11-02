@@ -81,7 +81,7 @@ export function createApp(root, options = {}) {
   scene.add(sun);
 
   const lattice = createLattice({ centre: CENTRE });
-  const burner = createBurner({ height: 1.3, flame: 1.5 });
+  const burner = createBurner({ height: 2.3, flame: 1.9 });
   burner.root.userData.noExport = true; // the burner is the book's heat, not the model
   model.add(lattice.root, burner.root);
 
@@ -163,7 +163,7 @@ export function createApp(root, options = {}) {
   }
 
   // ── camera ──────────────────────────────────────────────────────────────────
-  const BOX = new THREE.Box3(new THREE.Vector3(-3.3, 1.7, -3.3), new THREE.Vector3(3.3, 9.6, 3.3));
+  const BOX = new THREE.Box3(new THREE.Vector3(-3.1, 2.6, -3.1), new THREE.Vector3(3.1, 9.2, 3.1));
   const viewPose = (view) =>
     fitPose({ box: BOX, dir: VIEW_DIRS[view], camera, width: stage.width, height: stage.height, margin: { top: 56, bottom: 14, side: 14 } });
   function flyTo({ position, target }, duration = 0.8) {
