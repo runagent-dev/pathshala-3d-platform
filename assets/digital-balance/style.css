@@ -18,3 +18,8 @@ body.bg-transparent { background: transparent; }
 @container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
   .bal-extra { font-size: 12.5px; }
 }
+/* a narrow panel beside the 3D: the three buttons on one line */
+@container pvc (max-width: 330px) {
+  .bal-acts { gap: 4px; flex-wrap: nowrap; }
+  .bal-acts .pvc-btn { flex: 1 1 auto; min-width: 0; padding: 0 6px; font-size: 13px; white-space: nowrap; }
+}
