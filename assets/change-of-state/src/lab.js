@@ -417,12 +417,15 @@ export function createLab({ materials: M }) {
   foot.rotation.x = Math.PI / 2;
   foot.position.y = BEAKER.y0 + 0.2;
   foot.renderOrder = 4;
-  // a few graduation marks on the glass (an engraved scale: 3 short lines at the front)
+  // the beaker's printed scale: a short tick every 1 cm of height, a long one every second (dark ink, on the glass's front)
   const marks = new THREE.Group();
-  const markMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.8, toneMapped: false, depthWrite: false });
-  for (let i = 1; i <= 5; i++) {
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(i % 2 ? 1.1 : 1.8, 0.07), markMat);
-    m.position.set(-2.4 - (i % 2 ? 0 : 0.35), BEAKER.y0 + 0.5 + i * 1.7, BEAKER.r - 0.05);
+  const markMat = new THREE.MeshBasicMaterial({ color: 0x20303f, transparent: true, opacity: 0.7, toneMapped: false, depthWrite: false });
+  for (let i = 1; i <= 8; i++) {
+    const long = i % 2 === 0;
+    const len = long ? 1.7 : 1.0;
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(len, 0.07), markMat);
+    m.position.set(2.3 - len / 2, BEAKER.y0 + 0.6 + i * 1.0, Math.sqrt((BEAKER.r - 0.05) ** 2 - 2.0 ** 2));
+    m.rotation.y = 0.43;
     m.renderOrder = 4;
     marks.add(m);
   }

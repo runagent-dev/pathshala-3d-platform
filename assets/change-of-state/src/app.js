@@ -36,10 +36,10 @@ export const DEFAULTS = {
 };
 
 const NBSP = ' ';
-const BOARD_AT = new THREE.Vector3(19.8, 13.4, -10.1); // the chart on the wall
+const BOARD_AT = new THREE.Vector3(18.6, 13.4, -10.1); // the chart on the wall
 const FRONT = new THREE.Vector3(0, 0.3, 1).normalize();
 const SIDE = new THREE.Vector3(0.5, 0.42, 1).normalize();
-const SHOT = new THREE.Box3(new THREE.Vector3(-8.6, 0, -10.5), new THREE.Vector3(31.4, 25, 6)); // what the camera keeps in view
+const SHOT = new THREE.Box3(new THREE.Vector3(-6.6, 0, -10.5), new THREE.Vector3(30.2, 25, 6)); // what the camera keeps in view
 
 const shuffle = (list) => {
   for (let i = list.length - 1; i > 0; i--) {
