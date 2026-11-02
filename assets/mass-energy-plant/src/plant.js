@@ -1,4 +1,4 @@
-// The scenery (procedural three.js, nothing loaded): the reactor pool behind the nuclei, and a nuclear power plant
+// The scenery (procedural three.js, nothing loaded): a nuclear power plant
 // (নিউক্লিয়ার শক্তিকেন্দ্র) on a river bank among paddy fields at dusk, cut open to show the book's chain from heat to electricity:
 // the reactor's core glows blue in its water, steam runs to the turbine, the turbine turns the generator, and the
 // power runs along the lines to a town whose windows light up. Units: metres, roughly to scale with each other.
@@ -24,32 +24,6 @@ function tex(c, { repeat = null, anisotropy = 4, data = false } = {}) {
 function rng(seed) {
   let s = seed >>> 0;
   return () => (s = (s * 1664525 + 1013904223) >>> 0) / 4294967296;
-}
-
-/**
- * The water of the reactor pool, behind the nuclei: bright at the top, deeper blue below, the fuel assemblies at
- * the bottom giving off their blue glow, light rippling down from the surface.
- */
-export function poolBackground() {
-  const W = 512;
-  const H = 512;
-  const c = canvas(W, H);
-  const g = c.getContext('2d');
-  // calm water: a soft muted blue, lighter at the top (the red and grey nucleons, the white "+" and the warm glow of
-  // the split all stand out on it); no rods, rays or ripples to compete with the nuclei
-  const lg = g.createLinearGradient(0, 0, 0, H);
-  lg.addColorStop(0, '#8db1cc');
-  lg.addColorStop(0.5, '#5f88ab');
-  lg.addColorStop(1, '#3f6688');
-  g.fillStyle = lg;
-  g.fillRect(0, 0, W, H);
-  // a soft vignette: the middle (where the nuclei are) a little lighter, the corners deeper
-  const v = g.createRadialGradient(W / 2, H * 0.45, W * 0.2, W / 2, H * 0.45, W * 0.75);
-  v.addColorStop(0, 'rgba(200,225,240,0.12)');
-  v.addColorStop(1, 'rgba(20,40,70,0.22)');
-  g.fillStyle = v;
-  g.fillRect(0, 0, W, H);
-  return tex(c);
 }
 
 // ── noise and pictures drawn pixel by pixel ────────────────────────────────────────────────────────────────────

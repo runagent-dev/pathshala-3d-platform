@@ -27,9 +27,8 @@ To listen to it or control it from the book page, use the helper shipped in the 
 | Param | Meaning | Values | Default |
 |---|---|---|---|
 | `lang` | Language | `bn` বাংলা · `en` English | `bn` |
-| `scene` | Example | `line` straight road · `turn` turning at a steady speed | `line` |
 | `trip` | Start with | (empty) the CNG standing, an empty graph · `book` the book's graph driven (A, B, C, D), braking now |  |
-| `view` | View | `front` from the side / from above · `3d` 3d | `front` |
+| `view` | View | `front` from the side · `3d` 3d | `front` |
 | `mode` | Start in | `explore` learn · `quiz` test | `explore` |
 | `coach` | First-use pointers | `1` · `0` | `1` |
 | `numerals` | Digits | (empty) follow language · `bn` Bangla · `latin` Latin |  |
@@ -52,5 +51,5 @@ Every figure answers `ping` with `{ asset, version }`. Send commands with `figur
 | `capture` | `{"width":800,"height":500}` |
 | `export-glb` | `{}` |
 
-Events: `ready`, `change`, `scene`, `pedal`, `start`, `done`, `view`, `practice-start`, `practice-result`, `practice-end`.
+Events: `ready`, `change`, `pedal`, `start`, `done`, `view`, `practice-start`, `practice-result`, `practice-end`.
 <!-- /generated:bridge -->

@@ -9,7 +9,7 @@ test('inertia: each event shows the right kind of inertia', async ({ page }) => 
 
   // the bus starts: the feet go with the bus, the upper body lags, he leans back (inertia of rest)
   let s = await fig.call('set', { event: 'start', t: 1.1, animate: false });
-  expect(s).toMatchObject({ event: 'start', scene: 'bus', inertia: 'rest', phase: 'act', playing: false });
+  expect(s).toMatchObject({ event: 'start', inertia: 'rest', phase: 'act', playing: false });
   expect(s.lean).toBeGreaterThan(5);
   expect(s.lowerSpeed).toBeGreaterThan(s.upperSpeed + 0.3);
 
@@ -23,12 +23,6 @@ test('inertia: each event shows the right kind of inertia', async ({ page }) => 
   s = await fig.call('set', { event: 'alight', t: 1.05, animate: false });
   expect(s).toMatchObject({ inertia: 'motion', landed: true, lowerSpeed: 0 });
   expect(s.upperSpeed).toBeGreaterThan(2);
-
-  // the coin and the card: the card flies off, the coin hardly moves sideways
-  s = await fig.call('set', { event: 'coin', t: 0.26, animate: false });
-  expect(s).toMatchObject({ scene: 'coin', inertia: 'rest' });
-  expect(s.lowerSpeed).toBeGreaterThan(2);
-  expect(s.upperSpeed).toBeLessThan(0.15);
   expect(log.errors).toEqual([]);
 });
 
@@ -52,7 +46,7 @@ test('inertia: it plays in slow motion, stops at the end, and the view keeps its
   expect(s.t).toBeCloseTo(s.duration, 5);
 
   // every event, and the test, leave the 3D view the same size
-  for (const event of ['brake', 'alight', 'coin']) {
+  for (const event of ['brake', 'alight']) {
     await fig.call('set', { event, t: 1, animate: false });
     await fig.advance(200);
     expect(await canvasHeight(), event).toBe(h0);
@@ -63,7 +57,7 @@ test('inertia: it plays in slow motion, stops at the end, and the view keeps its
   expect(log.errors).toEqual([]);
 });
 
-test('inertia: the test has five answerable questions and locks the scene while one is asked', async ({ page }) => {
+test('inertia: the test has four answerable questions and locks the scene while one is asked', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 700 });
   const log = await preparePage(page);
   const fig = await openFigure(page, 'inertia');
@@ -77,8 +71,8 @@ test('inertia: the test has five answerable questions and locks the scene while 
   await fig.frame.evaluate(() => document.querySelector('.pvc').dispatchEvent(new KeyboardEvent('keydown', { key: '2', bubbles: true })));
   await fig.advance(200);
   expect((await fig.call('get')).event).toBe(before.event);
-  for (let i = 0; i < 5; i++) {
-    // choices 1, 2, 3, 0, 1: mostly wrong answers, whose worked answer and mistake line are the longest
+  for (let i = 0; i < 4; i++) {
+    // choices 1, 2, 3, 0: mostly wrong answers, whose worked answer and mistake line are the longest
     await fig.frame.locator(`.pvc-opt[data-q="${(i + 1) % 4}"]`).click();
     await fig.advance(600);
     await expect(fig.frame.locator('.pvc-q-feedback')).not.toHaveAttribute('data-tone', '');
@@ -86,6 +80,6 @@ test('inertia: the test has five answerable questions and locks the scene while 
     await fig.frame.locator('[data-act="q-next"]').click();
     await fig.advance(1500);
   }
-  await expect(fig.frame.locator('.pvc-q-result')).toContainText('৫');
+  await expect(fig.frame.locator('.pvc-q-result')).toContainText('৪টির');
   expect(log.errors).toEqual([]);
 });

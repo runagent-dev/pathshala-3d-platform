@@ -11,8 +11,6 @@
 // Stepping off a moving bus: the passenger hops down from the door step; in the air the whole body keeps the
 // bus's speed; on landing friction stops the feet, and the body turns forward about them with the angular
 // momentum it had (m v L = I ω) and gravity, until the hands reach the road (হুমড়ি খেয়ে পড়া).
-// The coin on a card: a flick moves the card away in a few hundredths of a second, so friction can give the coin
-// only a few cm/s; with the card gone the coin falls straight into the glass (স্থিতি জড়তা).
 // Everything is computed once per event with a fixed small step (deterministic) and sampled by time.
 
 export const G = 9.8; // m/s²
@@ -56,22 +54,11 @@ export const EVENTS = {
   brake: { scene: 'bus', v0: 4.5, pushes: [{ at: 0.6, until: 99, a: -3, ramp: 0.08 }], duration: 4.5, slow: 3, inertia: 'motion' },
   alight: { scene: 'bus', v0: 3, pushes: [], duration: 2.6, slow: 3, inertia: 'motion' },
   gentle: { scene: 'bus', v0: 0, pushes: [{ at: 0.5, until: 3.6, a: 0.45, ramp: 1.5 }], duration: 3.8, slow: 3, inertia: 'rest' },
-  coin: { scene: 'coin', duration: 0.62, slow: 10, inertia: 'rest' },
 };
-export const EVENT_KEYS = ['start', 'brake', 'alight', 'coin']; // the four the student chooses from
+export const EVENT_KEYS = ['start', 'brake', 'alight']; // the three the student chooses from
 
 /** The step off the bus: crouch on the door step, push off, fly, land, fall forward, end on hands and knees. */
 export const HOP = { crouch: 0.42, off: 0.58, handsAt: 1.12, kneel: 0.4 };
-
-/** The glass, the card and the coin (a ৫ টাকা coin), m; the flick (s, m/s); μ between card and coin. */
-export const TABLE = {
-  glass: { r: 0.034, h: 0.115, wall: 0.0025, base: 0.008 },
-  card: { w: 0.1, d: 0.065, th: 0.0012 },
-  coin: { r: 0.013, th: 0.002 },
-  flick: 0.22, // s: the finger hits the card
-  cardSpeed: 2.2, // m/s
-  mu: 0.25,
-};
 
 export const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
 const smooth = (x) => {
@@ -185,7 +172,7 @@ export function simulate(kind) {
   if (cache.has(kind)) return cache.get(kind);
   const ev = EVENTS[kind];
   if (!ev) throw new Error(`no event "${kind}"`);
-  const table = ev.scene === 'coin' ? simulateCoin(ev) : simulateBus(kind, ev);
+  const table = simulateBus(kind, ev);
   cache.set(kind, table);
   return table;
 }
@@ -395,89 +382,10 @@ function keyMoment(kind, T) {
   return roundTo(at, 0.01);
 }
 
-function simulateCoin(ev) {
-  const { glass, card, coin, flick, cardSpeed, mu } = TABLE;
-  const n = Math.round(ev.duration / DT) + 1;
-  const cols = ['cardX', 'cardY', 'cardTilt', 'cardV', 'coinX', 'coinY', 'coinV', 'finger'];
-  const T = { kind: 'coin', scene: 'coin', dt: DT, n, duration: ev.duration };
-  for (const c of cols) T[c] = new Float64Array(n);
-  const rim = glass.h; // the card lies on the rim
-  const cardY0 = rim + card.th / 2;
-  const coinY0 = rim + card.th + coin.th / 2;
-  const floorY = glass.base + coin.th / 2;
-  let cx = 0;
-  let cy = cardY0;
-  let cvx = 0;
-  let cvy = 0;
-  let tilt = 0;
-  let px = 0; // coin
-  let py = coinY0;
-  let pvx = 0;
-  let pvy = 0;
-  let onCard = true;
-  let dropT = null;
-  let landT = null;
-  let bounced = 0;
-  for (let i = 0; i < n; i++) {
-    const t = i * DT;
-    // the finger: comes in, strikes the card's edge at `flick`, follows through a little, stops
-    const edge = -card.w / 2; // the card's back edge (the finger is behind it, at −x)
-    T.finger[i] = t < flick ? edge - 0.03 * (1 - smooth(t / flick)) - 0.001 : edge + Math.min(0.025, (t - flick) * cardSpeed * 0.6);
-    // the card: struck at `flick`, it shoots off along +x; past the rim it falls and turns; on the table it slides
-    // to a stop
-    const onTable = cy <= card.th / 2 + 1e-4;
-    if (t >= flick && !onTable) cvx = Math.max(cvx, cardSpeed * smooth((t - flick) / 0.006));
-    const offRim = cx - card.w / 2 > glass.r * 0.2; // its middle is past the glass: nothing holds it up
-    if (onTable) {
-      cy = card.th / 2;
-      cvy = 0;
-      tilt = Math.max(0, tilt - 20 * DT);
-      cvx = Math.max(0, cvx - 0.4 * G * DT);
-    } else if (offRim) {
-      cvy -= G * DT;
-      tilt = Math.min(0.9, tilt + 6 * DT);
-    }
-    T.cardX[i] = cx;
-    T.cardY[i] = cy;
-    T.cardTilt[i] = tilt;
-    T.cardV[i] = cvx;
-    // the coin: friction drags it while the card slides under it, then it falls into the glass
-    if (onCard && Math.abs(px - cx) > card.w / 2) {
-      onCard = false;
-      dropT = t;
-    }
-    if (onCard) {
-      if (cvx > pvx) pvx = Math.min(cvx, pvx + mu * G * DT);
-    } else if (landT == null || bounced < 2) {
-      pvy -= G * DT;
-    }
-    T.coinX[i] = px;
-    T.coinY[i] = py;
-    T.coinV[i] = pvx;
-    cx += cvx * DT;
-    cy = Math.max(card.th / 2, cy + cvy * DT);
-    px += pvx * DT;
-    py += pvy * DT;
-    if (!onCard && py <= floorY) {
-      py = floorY;
-      if (landT == null) landT = t;
-      pvy = bounced < 1 ? -pvy * 0.25 : 0;
-      bounced++;
-      pvx *= 0.3;
-      if (bounced >= 2) pvx = 0;
-    }
-  }
-  T.dropT = dropT;
-  T.landT = landT;
-  T.act = [flick, landT ?? ev.duration];
-  T.key = roundTo(flick + 0.035, 0.001);
-  return T;
-}
-
 /**
  * The state of an event at time t (s, clamped to the event): the bus (busX, busV, busA), the passenger (rootX/Y/Z
  * where the ankles are, pose, theta), the two speeds the figure compares (feetV: the lower body, upV: the upper
- * body; for the coin: cardV and coinV), camX (where the camera looks), and phase ('before' | 'act' | 'after').
+ * body), camX (where the camera looks), and phase ('before' | 'act' | 'after').
  */
 export function sampleAt(kind, t) {
   const T = simulate(kind);
@@ -487,24 +395,6 @@ export function sampleAt(kind, t) {
   const k = clamp(f - i, 0, 1);
   const lerp = (col) => T[col][i] + (T[col][i + 1] - T[col][i]) * k;
   const phase = tt < T.act[0] ? 'before' : tt <= T.act[1] ? 'act' : 'after';
-  if (T.scene === 'coin') {
-    return {
-      kind,
-      t: tt,
-      phase,
-      cardX: lerp('cardX'),
-      cardY: lerp('cardY'),
-      cardTilt: lerp('cardTilt'),
-      coinX: lerp('coinX'),
-      coinY: lerp('coinY'),
-      finger: lerp('finger'),
-      lowerV: lerp('cardV'),
-      upperV: lerp('coinV'),
-      // the card has gone from under it, and it has visibly started to fall (1 cm)
-      dropped: T.dropT != null && tt >= T.dropT && lerp('coinY') < T.coinY[0] - 0.01,
-      landed: T.landT != null && tt >= T.landT,
-    };
-  }
   return {
     kind,
     t: tt,
