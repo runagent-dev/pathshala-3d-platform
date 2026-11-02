@@ -1,5 +1,5 @@
-// The school lab (procedural, no image files): a warm teak bench, a painted blue-grey wall with a big slate chalkboard
-// behind the apparatus, and a window on the right whose view changes with the height above the sea (the plains and a
+// The school lab (procedural, no image files): a warm teak bench, a plain painted blue-grey wall (nothing else on it),
+// and a window on the right whose view changes with the height above the sea (the plains and a
 // river at the sea, green hills at 1000 m, pine ridges at 2000 m, snowy peaks over the clouds at 3000 m). Units: m.
 // The bench top is at y = 0; the wall is at z = WALL_Z.
 import * as THREE from 'three';
@@ -84,41 +84,6 @@ function plaster() {
   return texture(c, { repeat: [6, 3] });
 }
 
-/** A slate chalkboard, wiped but not clean: soft smudges and faint old lines. */
-function slate() {
-  const W = 1024;
-  const H = 512;
-  const c = canvas(W, H);
-  const ctx = c.getContext('2d');
-  const r = rand(19);
-  const g = ctx.createLinearGradient(0, 0, W, H);
-  g.addColorStop(0, '#2c3d47');
-  g.addColorStop(1, '#25343d');
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, W, H);
-  for (let i = 0; i < 40; i++) {
-    const x = r() * W;
-    const y = r() * H;
-    const rad = 40 + r() * 140;
-    const sg = ctx.createRadialGradient(x, y, 0, x, y, rad);
-    sg.addColorStop(0, `rgba(220,230,235,${0.03 + r() * 0.05})`);
-    sg.addColorStop(1, 'rgba(220,230,235,0)');
-    ctx.fillStyle = sg;
-    ctx.fillRect(x - rad, y - rad, rad * 2, rad * 2);
-  }
-  // wiping strokes
-  ctx.strokeStyle = 'rgba(220,230,235,0.035)';
-  for (let i = 0; i < 26; i++) {
-    ctx.lineWidth = 18 + r() * 30;
-    ctx.beginPath();
-    const y = r() * H;
-    ctx.moveTo(r() * 200, y);
-    ctx.bezierCurveTo(W * 0.3, y + 40 * (r() - 0.5), W * 0.6, y + 40 * (r() - 0.5), W - r() * 200, y + 20 * (r() - 0.5));
-    ctx.stroke();
-  }
-  return texture(c, { aniso: 4 });
-}
-
 /** The view out of the window at a height above the sea (m). Drawn into the given canvas. */
 function drawView(c, z) {
   const ctx = c.getContext('2d');
@@ -194,7 +159,7 @@ function drawView(c, z) {
     cloud(W * 0.25, H * 0.22, 70);
     cloud(W * 0.62, H * 0.3, 50, 0.85);
     ridge(H * 0.58, 6, '#7aa7c9', 2, 0.4);
-    const fields = ['#5cae3c', '#7cc242', '#4f9e35', '#a3cf4c', '#69b53f'];
+    const fields = ['#9a9a62', '#b0a874', '#8a8d5a', '#c0b282', '#a19d68']; // muted, ripe fields (not a bright green)
     for (let i = 0; i < 8; i++) {
       ctx.fillStyle = fields[i % fields.length];
       const y = H * 0.6 + i * i * 4.6;
@@ -292,38 +257,6 @@ export function createLab() {
   skirt.position.set(0, 0.03, WALL_Z + 0.01);
   root.add(skirt);
 
-  // the chalkboard behind the apparatus, in a wooden frame with a chalk ledge
-  const board = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 1.12), new THREE.MeshStandardMaterial({ name: 'Slate', map: slate(), roughness: 0.92 }));
-  board.position.set(-0.42, 0.86, WALL_Z + 0.012);
-  board.receiveShadow = true;
-  const frameMat = new THREE.MeshStandardMaterial({ name: 'BoardFrame', color: '#8a4f22', roughness: 0.6 });
-  const fw = 0.04;
-  for (const [w, h, x, y] of [
-    [1.5 + fw * 2, fw, -0.42, 0.86 + 0.56 + fw / 2],
-    [1.5 + fw * 2, fw, -0.42, 0.86 - 0.56 - fw / 2],
-    [fw, 1.12, -0.42 - 0.75 - fw / 2, 0.86],
-    [fw, 1.12, -0.42 + 0.75 + fw / 2, 0.86],
-  ]) {
-    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.03), frameMat);
-    m.position.set(x, y, WALL_Z + 0.015);
-    m.castShadow = true;
-    root.add(m);
-  }
-  const ledge = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.018, 0.06), frameMat);
-  ledge.position.set(-0.42, 0.86 - 0.56 - fw - 0.009, WALL_Z + 0.03);
-  root.add(board, ledge);
-  // two sticks of chalk on the ledge
-  const chalk = new THREE.MeshStandardMaterial({ color: '#f4f1e6', roughness: 0.9 });
-  for (const [x, len] of [
-    [-0.9, 0.06],
-    [-0.8, 0.04],
-  ]) {
-    const c = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, len, 10), chalk);
-    c.rotation.z = Math.PI / 2;
-    c.position.set(x, ledge.position.y + 0.014, WALL_Z + 0.035);
-    root.add(c);
-  }
-
   // the window: the view (unlit, so it glows like daylight), a green-painted frame with a cross bar and a sill
   const view = canvas(512, 640);
   drawView(view, 0);
@@ -351,38 +284,14 @@ export function createLab() {
     m.castShadow = true;
     root.add(m);
   }
-  // the iron grille of a Bangladeshi window: thin vertical bars
-  const grille = new THREE.MeshStandardMaterial({ color: '#1f2a30', roughness: 0.4, metalness: 0.6 });
-  for (let i = 1; i < 8; i++) {
-    const g = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, y1 - y0, 6), grille);
-    g.position.set(x0 + ((x1 - x0) * i) / 8, (y0 + y1) / 2, WALL_Z + 0.03);
-    root.add(g);
-  }
   const sill = new THREE.Mesh(new THREE.BoxGeometry(x1 - x0 + 0.12, 0.025, 0.08), winMat);
   sill.position.set((x0 + x1) / 2, y0 - bar - 0.012, WALL_Z + 0.04);
   root.add(sill);
 
-  // a pot of marigolds on the sill: colour by the window
-  const pot = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.045, 0.034, 0.07, 20),
-    new THREE.MeshStandardMaterial({ color: '#b5532a', roughness: 0.8 }),
-  );
-  pot.position.set(x1 - 0.1, sill.position.y + 0.047, WALL_Z + 0.05);
-  root.add(pot);
-  const petal = new THREE.MeshStandardMaterial({ color: '#ff9f1a', roughness: 0.7 });
-  const leaf = new THREE.MeshStandardMaterial({ color: '#3f8a2e', roughness: 0.8 });
-  const rr = rand(31);
-  for (let i = 0; i < 7; i++) {
-    const a = (i / 7) * Math.PI * 2;
-    const f = new THREE.Mesh(new THREE.SphereGeometry(0.017 + rr() * 0.006, 12, 8), i % 3 ? petal : leaf);
-    f.position.set(pot.position.x + Math.cos(a) * 0.03, pot.position.y + 0.06 + rr() * 0.03, pot.position.z + Math.sin(a) * 0.02);
-    root.add(f);
-  }
-
   let height = 0;
   return {
     root,
-    shadowCatchers: [top, wall, board],
+    shadowCatchers: [top, wall],
     setHeight(z) {
       if (z === height) return;
       height = z;

@@ -28,3 +28,9 @@ body.bg-transparent { background: transparent; }
   .sw-sum { gap: 4px; }
   .sw-sum i, .sw-sum .pvc-t b { font-size: 19px; }
 }
+/* a narrow panel beside the 3D: the three buttons on one line */
+@container pvc (max-width: 330px) {
+  .sw-acts { gap: 4px; flex-wrap: nowrap; }
+  .sw-acts .pvc-btn { flex: 1 1 auto; min-width: 0; padding: 0 6px; font-size: 13px; white-space: nowrap; }
+  .sw-acts [data-act='startstop'] { min-width: 0; }
+}

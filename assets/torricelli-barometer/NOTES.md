@@ -64,8 +64,8 @@ water tank.
 The page writes উপর / উপরে. From 5.3: P = hρg; from 5.4: 10⁵ N/m², বাতাসের স্তম্ভ.
 
 ## Look
-A school lab, never white: a warm teak bench, a blue-grey plaster wall, a slate chalkboard behind the tube (the
-mercury and the glass read against it), a green window with an iron grille and marigolds. Mercury is mirror-bright
+A plain school lab, never white (declutter, 0.2.0: no chalkboard, grille, marigolds or yard trees): a warm teak bench,
+a blue-grey plaster wall, a window whose view shows the height. Mercury is mirror-bright
 silver (its own reflection map of a small room, so a column shows the bands of a liquid metal). Arrows are flat
 colour in a white outline with a thin dark edge, drawn over everything: air's pressure blue (as the owner's picture),
 the column's pressure red, heights orange (dotted, as চিত্র ৫.১০). The tube is drawn thicker than a real one
