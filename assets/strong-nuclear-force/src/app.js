@@ -14,7 +14,7 @@ import { createCoach } from '@shared/student/coach.js';
 import { createQuiz } from '@shared/student/quiz.js';
 import { ICONS } from '@shared/student/icons.js';
 import { createI18n } from './i18n.js';
-import { COLORS, createNucleonMaterials } from './models.js';
+import { COLORS, createBackdrop, createNucleonMaterials } from './models.js';
 import { buildJoinScene, buildPullScene, buildSplitScene } from './scenes.js';
 import { createTags } from './tags.js';
 import { MAX_PULL, R_NUCLEON, STEP, clamp, electricArrowLength, flightStep, fmt, forcesAt, roundTo, strongArrowLength } from './reading.js';
@@ -56,6 +56,7 @@ export function createApp(root, options = {}) {
   root.lang = t.lang;
   root.tabIndex = 0;
   const ui = buildStudentShell(root, t, {
+    layout: 'side',
     learn: `
           <div class="snf-scenes" role="radiogroup" aria-label="${t('scenes')}">${SCENES.map(
             (k) => `<button role="radio" data-scene="${k}">${t(`scene_${k}`)}</button>`,
@@ -66,6 +67,7 @@ export function createApp(root, options = {}) {
             <button class="pvc-btn snf-again" data-act="again" aria-label="${t('act_again_long')}">${ICONS.reset}<span>${t('act_again')}</span></button>
           </div>
           <p class="snf-say" aria-live="polite"></p>
+          <p class="snf-key"><span class="snf-legend"><span><i class="dot p">+</i>${t('legend_proton')}</span><span><i class="dot n"></i>${t('legend_neutron')}</span></span><span class="snf-note"></span></p>
           <div class="snf-forces" role="img" aria-label="${t('forces_aria')}">
             <span class="snf-ft">${t('forces_title')}</span>
             <span class="snf-fl">
@@ -75,14 +77,9 @@ export function createApp(root, options = {}) {
             </span>
           </div>`,
   });
-  // one line at the bottom left: what the balls are, what is symbolic (and, while things move on their own, that
-  // time is slowed down); the top of the view stays free for the scene
-  const note = document.createElement('div');
-  note.className = 'snf-note';
-  note.innerHTML = `<span class="snf-legend"><span><i class="dot p">+</i>${t('legend_proton')}</span><span><i class="dot n"></i>${t('legend_neutron')}</span></span><span class="txt"><span class="sym"></span><span class="slow"></span></span>`;
-  ui.stage.append(note);
-  const slowLine = note.querySelector('.slow');
-  const symLine = note.querySelector('.sym');
+  // the panel's small print: what the balls are, what is symbolic (and, while things move on their own, that time
+  // is slowed down); nothing of it on the 3D view
+  const noteEl = ui.$('.snf-note');
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 26, near: 0.5, far: 400, environment: 'studio-light' });
@@ -97,24 +94,47 @@ export function createApp(root, options = {}) {
   const scenes = { pull, split, join };
   for (const sc of Object.values(scenes)) scene.add(sc.root);
   const key = new THREE.DirectionalLight(0xffffff, 1.1);
-  key.position.set(-14, 22, 30);
+  const KEY_DIR = new THREE.Vector3(-14, 22, 30).normalize();
+  key.position.copy(KEY_DIR).multiplyScalar(40);
   const fill = new THREE.DirectionalLight(0xffffff, 0.35);
   fill.position.set(18, -6, 20);
-  scene.add(key, fill, new THREE.AmbientLight(0xffffff, 0.25));
+  // a cool light from behind and above: a thin bright rim that lifts the balls off the dark backdrop
+  const rim = new THREE.DirectionalLight(0xc9c2ff, 0.9);
+  rim.position.set(6, 14, -22);
+  scene.add(key, key.target, fill, rim, new THREE.AmbientLight(0xffffff, 0.25));
+  // the setting: deep inside the atom (a transparent background keeps the models alone)
+  const backdrop = o.bg === 'transparent' ? null : createBackdrop();
+  if (backdrop) {
+    scene.background = backdrop.texture;
+    backdrop.fit(stage.width, stage.height);
+    stage.onResize((w, h) => backdrop.fit(w, h));
+  } else pull.rail.onWhite();
   if (o.shadow && o.bg !== 'transparent') {
-    // the balls shade each other a little: the nucleus reads as a round cluster
+    // the balls shade each other a little: the nucleus reads as a round cluster (only the balls cast and receive)
     stage.renderer.shadowMap.enabled = true;
-    stage.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    stage.renderer.shadowMap.type = THREE.PCFShadowMap;
     key.castShadow = true;
     key.shadow.mapSize.set(1024, 1024);
+    key.shadow.radius = 3;
     key.shadow.bias = -0.0015;
     key.shadow.normalBias = 0.02;
-    Object.assign(key.shadow.camera, { left: -16, right: 16, top: 16, bottom: -16, near: 5, far: 90 });
     for (const sc of [pull.nucleus, split.balls, join.balls]) {
       sc.protons.castShadow = sc.protons.receiveShadow = true;
       sc.neutrons.castShadow = sc.neutrons.receiveShadow = true;
     }
     pull.proton.castShadow = pull.proton.receiveShadow = true;
+  }
+  /** The shadow box: tight round where each scene's balls are (centre x, half size in fm). */
+  const SHADOW_FIT = { pull: [2, 6.2], split: [0, 11.2], join: [0, 7.2] };
+  function fitShadow(name) {
+    if (!key.castShadow) return;
+    const [cx, r] = SHADOW_FIT[name];
+    key.target.position.set(cx, 0, 0);
+    key.position.copy(key.target.position).addScaledVector(KEY_DIR, 40);
+    key.target.updateMatrixWorld();
+    Object.assign(key.shadow.camera, { left: -r, right: r, top: r, bottom: -r, near: 39 - r, far: 41 + r });
+    key.shadow.camera.updateProjectionMatrix(); // three.js never does this for a directional light
+    key.shadow.needsUpdate = true;
   }
   // the scale's numbers and unit: labels on the page (readable at every size), placed under the 3D ticks
   const scaleEl = document.createElement('div');
@@ -125,17 +145,28 @@ export function createApp(root, options = {}) {
   const numEls = [...scaleEl.querySelectorAll('.n')];
   const unitEl = scaleEl.querySelector('.u');
   const tmpS = new THREE.Vector3();
-  stage.onAfterRender(() => {
+  // their widths, read once (and again when the font or the size changes), never between writes
+  let scaleW = null;
+  const measureScale = () => (scaleW = { n: numEls.map((el) => el.offsetWidth), u: unitEl.offsetWidth });
+  stage.onResize(() => (scaleW = null));
+  document.fonts?.ready.then(() => {
+    scaleW = null;
+    stage.invalidate();
+  });
+  let scaleShownNow = null;
+  // placed after the labels have read the layout (registered below, after them), so nothing forces a layout
+  const placeScale = () => {
     const show = s.scene === 'pull' && s.scaleShown;
-    scaleEl.hidden = !show;
+    if (show !== scaleShownNow) scaleEl.hidden = !(scaleShownNow = show);
     if (!show) return;
+    if (!scaleW?.u) measureScale();
     numEls.forEach((el, n) => {
       const q = toScreen(pull.tick(n, tmpS));
-      el.style.transform = `translate(${Math.round(q.x - el.offsetWidth / 2)}px, ${Math.round(q.y + 2)}px)`;
+      el.style.transform = `translate(${Math.round(q.x - scaleW.n[n] / 2)}px, ${Math.round(q.y + 2)}px)`;
     });
     const u = toScreen(pull.unitAt(tmpS));
-    unitEl.style.transform = `translate(${Math.round(u.x - unitEl.offsetWidth)}px, ${Math.round(u.y + 20)}px)`;
-  });
+    unitEl.style.transform = `translate(${Math.round(u.x - scaleW.u)}px, ${Math.round(u.y + 20)}px)`;
+  };
   const tweener = createTweener();
   stage.addTicker((dt) => tweener.tick(dt));
   const audio = createAudio(o.sound);
@@ -247,8 +278,11 @@ export function createApp(root, options = {}) {
     }
     // splitting and joining are always shown slowed down; the pulled proton only while it moves by itself
     const moving = isPull ? s.phase === 'flying' || s.phase === 'returning' : !s.still;
-    slowLine.style.visibility = moving ? 'visible' : 'hidden';
-    symLine.style.visibility = moving ? 'hidden' : 'visible';
+    const nk = NOTES[s.scene][moving ? 1 : 0];
+    if (noteEl.dataset.k !== nk) {
+      noteEl.dataset.k = nk;
+      noteEl.textContent = t(nk);
+    }
     stage.invalidate();
   }
 
@@ -391,8 +425,7 @@ export function createApp(root, options = {}) {
     const changed = next !== s.scene;
     s.scene = next;
     for (const [k, sc] of Object.entries(scenes)) sc.root.visible = k === next;
-    symLine.textContent = t(NOTES[next][0]);
-    slowLine.textContent = t(NOTES[next][1]);
+    fitShadow(next);
     s.phase = 'seated';
     s.d = 0;
     s.t = 0;
@@ -424,10 +457,11 @@ export function createApp(root, options = {}) {
   const tags = createTags({
     stage,
     layer: ui.annoLayer,
-    avoid: () => [ui.corner, note, ui.hint.classList.contains('show') ? ui.hint : null],
+    avoid: () => [ui.corner, ui.hint.classList.contains('show') ? ui.hint : null],
     keep: keepBoxes,
     soft: softBoxes,
   });
+  stage.onAfterRender(placeScale);
   const reachPoint = new THREE.Vector3();
   const above = (dy = 8) => ({ x: 0, y: -dy, ax: 0.5, ay: 1 });
   const below = (dy = 8) => ({ x: 0, y: dy, ax: 0.5, ay: 0 });
@@ -439,7 +473,7 @@ export function createApp(root, options = {}) {
       // the strong force's name above the proton, off the nucleus, with a short leader to its arrow
       tags.add('strong', {
         html: t('label_strong'),
-        color: COLORS.strong,
+        color: COLORS.strongInk,
         kind: 'force',
         leader: true,
         priority: 3,
@@ -456,7 +490,7 @@ export function createApp(root, options = {}) {
       });
       tags.add('electric', {
         html: t('label_electric'),
-        color: COLORS.electric,
+        color: COLORS.electricInk,
         kind: 'force',
         priority: 2,
         point: () => (ea.root.visible ? ea.mid : null),
@@ -647,7 +681,7 @@ export function createApp(root, options = {}) {
   }
   /**
    * A camera pose that shows the whole scene (all of its animation, with room for its labels) as big as it can,
-   * for this frame's shape: nothing under the buttons at the top right, the legend or the note.
+   * for this frame's shape: nothing under the buttons at the top right.
    */
   function poseFor(name, view) {
     const pts = scenes[name].frame();
@@ -667,7 +701,7 @@ export function createApp(root, options = {}) {
     });
     const W = stage.width;
     const H = Math.max(stage.height, 120);
-    const boxes = [boxOf(ui.corner), boxOf(note, 4)].filter(Boolean);
+    const boxes = [boxOf(ui.corner)].filter(Boolean);
     const tv = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
     const th = tv * camera.aspect;
     const MX = 8;
@@ -732,15 +766,20 @@ export function createApp(root, options = {}) {
   }
   function setView(view, { animate = true } = {}) {
     s.view = view === '3d' ? '3d' : 'front';
-    controls.enableRotate = s.view === '3d';
     s.userMovedCamera = false;
     syncUI();
     emit('view', { view: s.view });
     return flyTo(poseFor(s.scene, s.view), animate ? 0.8 : 0);
   }
+  // the view starts from the front; dragging turns it, and then the "front" button appears to come back
   controls.addEventListener('start', () => {
     s.userMovedCamera = true;
     tweener.cancel('camera');
+    if (s.view !== '3d') {
+      s.view = '3d';
+      syncUI();
+      emit('view', { view: s.view });
+    }
   });
   stage.onResize(() => {
     if (!s.userMovedCamera) flyTo(poseFor(s.scene, s.view), 0);
@@ -1006,7 +1045,7 @@ export function createApp(root, options = {}) {
       t,
       loupe: null,
       tweener,
-      avoid: [ui.corner, ui.hint, note],
+      avoid: [ui.corner, ui.hint],
       object: {
         label: 'coach_pull',
         candidates: () => {
@@ -1043,7 +1082,9 @@ export function createApp(root, options = {}) {
 
   // ── buttons, keys ───────────────────────────────────────────────────────────
   function syncUI() {
-    for (const b of ui.$$('[data-view]')) b.classList.toggle('on', b.dataset.view === s.view);
+    const front = ui.$('[data-view="front"]');
+    if (front) front.hidden = s.view !== '3d';
+    controls.enableRotate = !s.locked;
     root.dataset.mode = s.mode === 'quiz' ? 'quiz' : 'explore';
     for (const b of ui.$$('[data-mode]')) {
       const on = b.dataset.mode === root.dataset.mode;
@@ -1119,7 +1160,6 @@ export function createApp(root, options = {}) {
   });
 
   // ── start ───────────────────────────────────────────────────────────────────
-  controls.enableRotate = s.view === '3d';
   setScene(s.scene, { animate: false, start: true });
   if (s.scene === 'pull' && Number(o.pull) > 0) hold(Number(o.pull));
   syncUI();

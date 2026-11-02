@@ -10,7 +10,7 @@
 // split and join are pure functions of their time, render(t), so seeking and the video are exact.
 import * as THREE from 'three';
 import { COLORS, createArrow, createEnergyBurst, createNucleons, createRail, createReach } from './models.js';
-import { MAX_PULL, RANGE, R_NUCLEON, chooseProtons, clamp, clusterRadius, electricArrowLength, packCluster, strongArrowLength } from './reading.js';
+import { MAX_PULL, RANGE, R_NUCLEON, chooseProtons, clamp, clusterRadius, electricArrowLength, packCluster } from './reading.js';
 
 const smooth = (a, b, x) => {
   const k = clamp((x - a) / (b - a), 0, 1);
@@ -83,10 +83,6 @@ export function buildPullScene(M) {
   const top = new THREE.Vector3();
   const label = new THREE.Vector3();
 
-  // the leftmost point any orange arrow tip reaches: the picture shows the nucleus from there on
-  let tipMin = Infinity;
-  for (let d = 0; d <= MAX_PULL + 1e-9; d += 0.05) tipMin = Math.min(tipMin, surface + d - 0.06 - strongArrowLength(d));
-
   return {
     root,
     nucleus,
@@ -124,27 +120,20 @@ export function buildPullScene(M) {
       reach.face(cq);
     },
     /**
-     * What the camera must show: the right part of the nucleus (from the farthest orange arrow tip on; the rest
-     * may run off the left edge), the reach's edge on that side, the proton's whole path with its push arrow,
-     * the scale with its numbers and unit (screen labels, so given in pixels).
+     * What the camera must show: the whole nucleus, the reach's dashed edge (all but its far left, which may run
+     * off a narrow view), the proton's whole path with its push arrow and the room for their labels, the scale
+     * with its numbers and unit (screen labels, so given in pixels).
      */
     frame() {
-      // a band round the pulling line: the proton, its arrows and labels, the scale with its numbers and unit;
-      // the nucleus is shown from the farthest orange arrow tip on (its far side and top may run off a short view)
       const R = R_NUCLEON;
-      const xMin = tipMin - 0.25;
-      const yTop = 2.5;
-      const yLow = -2.1;
       const out = [];
-      for (const p of pts)
-        for (const o of BALL_EDGES) {
-          const e = new THREE.Vector3(p[0] + o[0] * R, p[1] + o[1] * R, 0);
-          if (e.x >= xMin && e.y <= yTop && e.y >= yLow) out.push({ p: e });
-        }
-      for (const y of [yTop, yLow]) out.push({ p: new THREE.Vector3(xMin, y, 0) }, { p: new THREE.Vector3(surface + 1, y, 0) });
+      for (const p of pts) for (const o of BALL_EDGES) out.push({ p: new THREE.Vector3(p[0] + o[0] * R, p[1] + o[1] * R, p[2]) }); // at its depth: a near ball looks bigger
+      out.push(...ring(0, 0, surface + RANGE, 20, -125, 125));
       const far = seat.clone().add(new THREE.Vector3(MAX_PULL, 0, 0));
       out.push({ p: far.clone().add(new THREE.Vector3(R + 0.06 + electricArrowLength(MAX_PULL) + 0.12, 0, 0)) });
-      out.push({ p: far.clone().setY(R + 0.05) });
+      // room above the pulled proton for the two force names
+      out.push({ p: seat.clone().setY(R), box: [-20, -64, 20, 0] });
+      out.push({ p: far.clone().setY(R), box: [-20, -40, 20, 0] });
       for (let n = 0; n <= MAX_PULL; n++) out.push({ p: new THREE.Vector3(surface + n, RAIL_Y - 0.3, 0), box: [-8, 0, 8, 20] });
       out.push({ p: new THREE.Vector3(surface + rail.length, RAIL_Y - 0.3, 0), box: [-84, 18, 2, 36] });
       return out;

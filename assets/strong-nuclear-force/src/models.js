@@ -2,6 +2,7 @@
 // exported as 1 cm): protons and neutrons as glossy balls (a proton carries a "+"), force arrows, the
 // distance scale under the pulled proton, and the calm burst of energy of a split or a join.
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { MAX_PULL, R_NUCLEON } from './reading.js';
 
 /** One colour per meaning (the four forces as in the other fundamental-force figures). */
@@ -11,10 +12,23 @@ export const COLORS = {
   strong: '#e8590c', // সবল নিউক্লীয় বল
   electric: '#1c7ed6', // তড়িৎ চৌম্বক বল
   energy: '#f59f00', // শক্তি
-  ink: '#46505c',
-  energyInk: '#b86200', // the word শক্তি (darker, to read on white)
-  strongInk: '#c4470a', // words in the strong force's colour
+  rail: '#e6ebf2', // the scale: pale, to read on the dark backdrop
+  energyInk: '#a35200', // the word শক্তি on its cream chip (5.3:1)
+  strongInk: '#c4470a', // words in the strong force's colour, on a white chip (4.9:1)
+  electricInk: '#1864ab', // words in the electric force's colour, on a white chip (6.1:1)
 };
+
+/** A small seeded random generator (the backdrop is the same on every load, so pictures compare). */
+function seeded(seed) {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
 
 function canvas(w, h) {
   const c = document.createElement('canvas');
@@ -49,24 +63,31 @@ function plusTexture() {
   return t;
 }
 
+/** The neutron's skin: one colour (so both balls share one shader program; a 4 px texture costs nothing). */
+function plainTexture(color) {
+  const c = canvas(4, 4);
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = color;
+  ctx.fillRect(0, 0, 4, 4);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+/**
+ * Glossy balls: a standard material with a low roughness gives the same wet highlight as the clear coat it
+ * replaces, with a much cheaper shader (it compiles in a fraction of the time in software GL).
+ */
 export function createNucleonMaterials() {
-  const proton = new THREE.MeshPhysicalMaterial({
-    name: 'Proton',
-    map: plusTexture(),
-    roughness: 0.36,
-    metalness: 0,
-    clearcoat: 0.6,
-    clearcoatRoughness: 0.22,
-  });
-  const neutron = new THREE.MeshPhysicalMaterial({
+  const proton = new THREE.MeshStandardMaterial({ name: 'Proton', map: plusTexture(), roughness: 0.3, metalness: 0, envMapIntensity: 1.15 });
+  const neutron = new THREE.MeshStandardMaterial({
     name: 'Neutron',
-    color: COLORS.neutron,
-    roughness: 0.4,
+    map: plainTexture(COLORS.neutron),
+    roughness: 0.33,
     metalness: 0,
-    clearcoat: 0.5,
-    clearcoatRoughness: 0.25,
+    envMapIntensity: 1.15,
   });
-  return { proton, neutron, geometry: new THREE.SphereGeometry(R_NUCLEON, 22, 16) };
+  return { proton, neutron, geometry: new THREE.SphereGeometry(R_NUCLEON, 28, 18) };
 }
 
 /**
@@ -134,20 +155,20 @@ export function createNucleons(name, isProton, M) {
 // ── force arrows ─────────────────────────────────────────────────────────────────────────────────────────────
 const Y = new THREE.Vector3(0, 1, 0);
 const HEAD = 0.5;
-/** A flat-coloured arrow drawn over the scene (with a thin white edge so it reads over the balls). */
+/** A bold flat-coloured arrow drawn over the scene, in a white outline (it reads over the balls and the dark backdrop). */
 export function createArrow(name, color) {
   const root = new THREE.Group();
   root.name = name;
   root.userData.noExport = true;
   const mk = (c, order, grow) => {
     const mat = new THREE.MeshBasicMaterial({ color: c, toneMapped: false, depthTest: false, depthWrite: false, transparent: true });
-    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.075 + grow, 0.075 + grow, 1, 12).translate(0, 0.5, 0), mat);
-    const head = new THREE.Mesh(new THREE.ConeGeometry(0.22 + grow * 1.6, HEAD + grow * 2, 20).translate(0, (HEAD + grow * 2) / 2, 0), mat);
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.085 + grow, 0.085 + grow, 1, 12).translate(0, 0.5, 0), mat);
+    const head = new THREE.Mesh(new THREE.ConeGeometry(0.24 + grow * 1.6, HEAD + grow * 2, 20).translate(0, (HEAD + grow * 2) / 2, 0), mat);
     shaft.renderOrder = head.renderOrder = order;
     root.add(shaft, head);
     return { shaft, head, mat, grow };
   };
-  const parts = [mk('#ffffff', 20, 0.045), mk(color, 21, 0)];
+  const parts = [mk('#ffffff', 20, 0.055), mk(color, 21, 0)];
   const tip = new THREE.Vector3();
   const mid = new THREE.Vector3();
   const tail = new THREE.Vector3();
@@ -189,33 +210,38 @@ export function createArrow(name, color) {
 /**
  * A thin scale from the nucleus's surface (its origin, the 0 mark) outward, with ticks every 0.5 fm and a small
  * marker at the proton's near edge. Its numbers and unit are labels on the page (always readable), not 3D text.
+ * The line and its ticks are one mesh.
  */
 export function createRail() {
   const root = new THREE.Group();
   root.name = 'DistanceScale';
   root.userData.noExport = true;
-  const ink = new THREE.MeshBasicMaterial({ color: COLORS.ink, toneMapped: false });
+  const ink = new THREE.MeshBasicMaterial({ color: COLORS.rail, toneMapped: false });
   const L = MAX_PULL + 0.12;
-  const line = new THREE.Mesh(new THREE.BoxGeometry(L, 0.045, 0.02), ink);
-  line.position.x = L / 2;
-  root.add(line);
+  const parts = [new THREE.BoxGeometry(L, 0.05, 0.02).translate(L / 2, 0, 0)];
   for (let k = 0; k <= Math.round(MAX_PULL * 2); k++) {
     const major = k % 2 === 0;
-    const tick = new THREE.Mesh(new THREE.BoxGeometry(0.04, major ? 0.3 : 0.18, 0.02), ink);
-    tick.position.set(k / 2, major ? -0.13 : -0.07, 0);
-    root.add(tick);
+    parts.push(new THREE.BoxGeometry(0.045, major ? 0.3 : 0.18, 0.02).translate(k / 2, major ? -0.13 : -0.07, 0));
   }
-  // the reading: a small dark triangle at the proton's near edge, drawn over everything
+  const line = new THREE.Mesh(mergeGeometries(parts), ink);
+  for (const g of parts) g.dispose();
+  root.add(line);
+  // the reading: a small white triangle at the proton's near edge, drawn over everything
   const marker = new THREE.Mesh(
-    new THREE.ConeGeometry(0.13, 0.22, 3),
-    new THREE.MeshBasicMaterial({ color: '#1d2733', toneMapped: false, depthTest: false, transparent: true }),
+    new THREE.ConeGeometry(0.14, 0.24, 3),
+    new THREE.MeshBasicMaterial({ color: '#ffffff', toneMapped: false, depthTest: false, transparent: true }),
   );
   marker.renderOrder = 15;
-  marker.position.y = 0.13;
+  marker.position.y = 0.14;
   root.add(marker);
   return {
     root,
     length: L,
+    /** On a white page (a transparent background) the scale is drawn in dark ink instead. */
+    onWhite() {
+      ink.color.set('#46505c');
+      marker.material.color.set('#1d2733');
+    },
     setMarker(d) {
       marker.visible = d >= -0.01 && d <= L + 0.01;
       marker.position.x = Math.max(0, d);
@@ -229,12 +255,12 @@ function haloTexture(inner) {
   const c = canvas(S, S);
   const ctx = c.getContext('2d');
   const g = ctx.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2);
-  // transparent inside the nucleus, pale orange from its surface, fading out past the dashed line
-  g.addColorStop(0, 'rgba(232, 89, 12, 0)');
-  g.addColorStop(Math.max(0, inner - 0.02), 'rgba(232, 89, 12, 0)');
-  g.addColorStop(inner, 'rgba(232, 89, 12, 0.2)');
-  g.addColorStop(0.86, 'rgba(232, 89, 12, 0.13)');
-  g.addColorStop(1, 'rgba(232, 89, 12, 0)');
+  // transparent inside the nucleus, a warm orange glow from its surface, fading out past the dashed line
+  g.addColorStop(0, 'rgba(255, 120, 40, 0)');
+  g.addColorStop(Math.max(0, inner - 0.02), 'rgba(255, 120, 40, 0)');
+  g.addColorStop(inner, 'rgba(255, 120, 40, 0.3)');
+  g.addColorStop(0.86, 'rgba(255, 120, 40, 0.17)');
+  g.addColorStop(1, 'rgba(255, 120, 40, 0)');
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, S, S);
   const t = new THREE.CanvasTexture(c);
@@ -254,16 +280,15 @@ export function createReach(r, reach) {
     new THREE.MeshBasicMaterial({ map: haloTexture(r / outer), transparent: true, depthWrite: false, toneMapped: false }),
   );
   halo.renderOrder = -1;
-  // the dashed edge: short arcs of a thin ring through the nucleus's middle, facing the viewer; the pulled proton
-  // hides the part behind it, nothing else covers it (no ball reaches past the nucleus's edge)
-  const dashMat = new THREE.MeshBasicMaterial({ color: COLORS.strong, toneMapped: false, side: THREE.DoubleSide });
+  // the dashed edge: short arcs of a thin ring through the nucleus's middle, facing the viewer, all in one mesh;
+  // the pulled proton hides the part behind it, nothing else covers it (no ball reaches past the nucleus's edge)
+  const dashMat = new THREE.MeshBasicMaterial({ color: '#ff7a2e', toneMapped: false, side: THREE.DoubleSide });
   const DASHES = 84;
-  const w = 0.03;
-  const dash = new THREE.Group();
-  for (let i = 0; i < DASHES; i++) {
-    const seg = new THREE.Mesh(new THREE.RingGeometry(R - w, R + w, 4, 1, (i / DASHES) * Math.PI * 2, (Math.PI * 2 * 0.58) / DASHES), dashMat);
-    dash.add(seg);
-  }
+  const w = 0.035;
+  const segs = [];
+  for (let i = 0; i < DASHES; i++) segs.push(new THREE.RingGeometry(R - w, R + w, 4, 1, (i / DASHES) * Math.PI * 2, (Math.PI * 2 * 0.58) / DASHES));
+  const dash = new THREE.Mesh(mergeGeometries(segs), dashMat);
+  for (const g of segs) g.dispose();
   root.add(halo, dash);
   return {
     root,
@@ -299,10 +324,11 @@ function glowTexture() {
   t.colorSpace = THREE.SRGBColorSpace;
   return t;
 }
+let GLOW = null; // one glow texture for both bursts
 
 /**
  * Wavy rays going out from a point, and a glow behind them: set(k) with k from 0 (just released) to 1 (spread
- * out). `angles` in degrees in the picture's plane.
+ * out). `angles` in degrees in the picture's plane. The rays are one instanced mesh (a wave and its head each).
  */
 export function createEnergyBurst(name, { angles, from = 0.8, to = 3.2, length = 1.5 } = {}) {
   const root = new THREE.Group();
@@ -317,23 +343,28 @@ export function createEnergyBurst(name, { angles, from = 0.8, to = 3.2, length =
   }
   const tube = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 60, 0.095, 8);
   const head = new THREE.ConeGeometry(0.26, 0.44, 16).rotateZ(-Math.PI / 2).translate(length - 0.2, 0, 0);
-  const rays = angles.map((deg) => {
-    const g = new THREE.Group();
-    g.rotation.z = THREE.MathUtils.degToRad(deg);
-    const ray = new THREE.Group();
-    const a = new THREE.Mesh(tube, mat);
-    const b = new THREE.Mesh(head, mat);
-    a.renderOrder = b.renderOrder = 12;
-    ray.add(a, b);
-    g.add(ray);
-    root.add(g);
-    return ray;
+  const ray = mergeGeometries([tube, head]);
+  tube.dispose();
+  head.dispose();
+  const rays = new THREE.InstancedMesh(ray, mat, angles.length);
+  rays.name = `${name}Rays`;
+  rays.renderOrder = 12;
+  root.add(rays);
+  const turn = angles.map((deg) => new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), THREE.MathUtils.degToRad(deg)));
+  const dirs = angles.map((deg) => {
+    const a = THREE.MathUtils.degToRad(deg);
+    return new THREE.Vector3(Math.cos(a), Math.sin(a), 0);
   });
-  const glowMat = new THREE.MeshBasicMaterial({ map: glowTexture(), transparent: true, depthWrite: false, toneMapped: false });
+  const m = new THREE.Matrix4();
+  const at = new THREE.Vector3();
+  const one = new THREE.Vector3(1, 1, 1);
+  GLOW ??= glowTexture();
+  const glowMat = new THREE.MeshBasicMaterial({ map: GLOW, transparent: true, depthWrite: false, toneMapped: false });
   const glow = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), glowMat);
   glow.renderOrder = 11;
   root.add(glow);
   const label = new THREE.Vector3();
+  let lastR = Number.NaN;
   return {
     root,
     glow,
@@ -342,18 +373,108 @@ export function createEnergyBurst(name, { angles, from = 0.8, to = 3.2, length =
     set(k, opacity = 1) {
       root.visible = opacity > 0.01;
       const r = from + (to - from) * k;
-      for (const ray of rays) ray.position.x = r;
+      if (r !== lastR) {
+        lastR = r;
+        for (let i = 0; i < dirs.length; i++) rays.setMatrixAt(i, m.compose(at.copy(dirs[i]).multiplyScalar(r), turn[i], one));
+        rays.instanceMatrix.needsUpdate = true;
+        rays.computeBoundingSphere();
+      }
       mat.opacity = opacity;
       // a short bright flash as it is released, then a softer glow that stays
       const flash = Math.max(0, 1 - k / 0.3);
       glowMat.opacity = opacity * (0.6 + 0.4 * flash);
       glow.scale.setScalar(1.6 + 2.4 * k + 1.6 * flash);
-      const a = THREE.MathUtils.degToRad(angles[0]);
-      label.set(Math.cos(a) * (r + length), Math.sin(a) * (r + length), 0);
+      label.copy(dirs[0]).multiplyScalar(r + length);
       root.localToWorld(label);
     },
     face(q) {
       glow.quaternion.copy(q);
+    },
+  };
+}
+
+// ── the backdrop: inside the atom, far round the nucleus ────────────────────────────────────────────────────
+/**
+ * A deep indigo picture behind the scene: lighter round the middle, the faint haze of the electron cloud far
+ * away, a few specks, darker corners. Painted once (1024 × 512), shown cover-fitted behind everything; fit(w, h)
+ * crops it to the view's shape. Blue arrows still stand out: they are lighter and white-outlined.
+ */
+export function createBackdrop() {
+  const W = 1024;
+  const H = 512;
+  const c = canvas(W, H);
+  const ctx = c.getContext('2d');
+  const rnd = seeded(31);
+  // the ground: deep indigo, lighter violet round the middle
+  const g = ctx.createRadialGradient(W / 2, H * 0.48, 0, W / 2, H * 0.5, W * 0.62);
+  g.addColorStop(0, '#463d7e');
+  g.addColorStop(0.35, '#2f2961');
+  g.addColorStop(0.7, '#1c1942');
+  g.addColorStop(1, '#100e29');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+  // the electron cloud far away: soft lavender and blue puffs in a wide band round the middle
+  ctx.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < 70; i++) {
+    const a = rnd() * Math.PI * 2;
+    const rr = 0.18 + rnd() * 0.36;
+    const x = W / 2 + Math.cos(a) * rr * W * 0.62;
+    const y = H / 2 + Math.sin(a) * rr * H * 0.85;
+    const r = 40 + rnd() * 130;
+    const blue = rnd() < 0.5;
+    const al = 0.025 + rnd() * 0.035;
+    const pg = ctx.createRadialGradient(x, y, 0, x, y, r);
+    pg.addColorStop(0, blue ? `rgba(120, 150, 255, ${al})` : `rgba(190, 150, 255, ${al})`);
+    pg.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = pg;
+    ctx.fillRect(x - r, y - r, r * 2, r * 2);
+  }
+  // a few far specks
+  for (let i = 0; i < 160; i++) {
+    const x = rnd() * W;
+    const y = rnd() * H;
+    const r = 0.5 + rnd() * 1.1;
+    ctx.fillStyle = `rgba(220, 215, 255, ${0.12 + rnd() * 0.3})`;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalCompositeOperation = 'source-over';
+  // darker corners
+  const v = ctx.createRadialGradient(W / 2, H / 2, H * 0.45, W / 2, H / 2, W * 0.6);
+  v.addColorStop(0, 'rgba(6, 5, 20, 0)');
+  v.addColorStop(1, 'rgba(6, 5, 20, 0.45)');
+  ctx.fillStyle = v;
+  ctx.fillRect(0, 0, W, H);
+  // a fine grain, so the dark gradient shows no bands
+  const tile = canvas(64, 64);
+  const tx = tile.getContext('2d');
+  const img = tx.createImageData(64, 64);
+  for (let i = 0; i < img.data.length; i += 4) {
+    const n = rnd() * 255;
+    img.data[i] = img.data[i + 1] = img.data[i + 2] = n;
+    img.data[i + 3] = 10;
+  }
+  tx.putImageData(img, 0, 0);
+  ctx.fillStyle = ctx.createPattern(tile, 'repeat');
+  ctx.fillRect(0, 0, W, H);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.minFilter = THREE.LinearFilter;
+  tex.generateMipmaps = false;
+  return {
+    texture: tex,
+    /** Crop it to a view of w × h (cover: no stretching). */
+    fit(w, h) {
+      const view = w / Math.max(1, h);
+      const pic = W / H;
+      if (view > pic) {
+        tex.repeat.set(1, pic / view);
+        tex.offset.set(0, (1 - pic / view) / 2);
+      } else {
+        tex.repeat.set(view / pic, 1);
+        tex.offset.set((1 - view / pic) / 2, 0);
+      }
     },
   };
 }

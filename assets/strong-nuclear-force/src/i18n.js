@@ -52,21 +52,20 @@ export const STRINGS = {
     eq_energy: 'শক্তি',
 
     // the pull scene: one line for each thing that can happen
-    say_idle:
-      'সবল নিউক্লীয় বল সৃষ্টিজগতের সবচেয়ে শক্তিশালী বল, কিন্তু কাজ করে খুবই অল্প দূরত্বে: নিউক্লিয়াসের বাইরে প্রায় {p} (কমলা দাগ) পর্যন্ত। ডানের প্রোটনটি টেনে বের করো।',
-    say_in: 'পাশের প্রোটন ও নিউট্রনগুলো সবল নিউক্লীয় বল দিয়ে একে ভেতরের দিকে প্রচণ্ড জোরে টানছে; তড়িৎ বিকর্ষণ তার কাছে খুবই ছোট। ছেড়ে দিলে ফিরে যাবে।',
+    say_idle: 'সবল নিউক্লীয় বল সৃষ্টিজগতের সবচেয়ে শক্তিশালী বল, কিন্তু কাজ করে খুবই অল্প দূরত্বে: প্রায় {p} পর্যন্ত (কমলা দাগ)। প্রোটনটি টেনে বের করো।',
+    say_in: 'পাশের প্রোটন ও নিউট্রনগুলো সবল নিউক্লীয় বল দিয়ে একে প্রচণ্ড জোরে ভেতরে টানছে; তড়িৎ বিকর্ষণ তার কাছে খুব ছোট। ছেড়ে দিলে ফিরে যাবে।',
     say_edge: 'কমলা দাগের কাছে, প্রায় {p} দূরে, সবল নিউক্লীয় বল দ্রুত কমে যাচ্ছে, তবু এখনো তড়িৎ বিকর্ষণের চেয়ে বড়। ছেড়ে দিলে ফিরে যাবে।',
-    say_out: 'প্রায় {p}-এর চেয়ে দূরে (কমলা দাগের বাইরে) সবল নিউক্লীয় বল কাজ করে না; শুধু অন্য প্রোটনগুলোর তড়িৎ বিকর্ষণ ঠেলছে। ছেড়ে দিলে দূরে চলে যাবে।',
+    say_out: 'কমলা দাগের বাইরে (প্রায় {p}-এর বেশি দূরে) সবল নিউক্লীয় বল কাজ করে না; শুধু তড়িৎ বিকর্ষণ ঠেলছে। ছেড়ে দিলে দূরে চলে যাবে।',
     say_back: 'ফিরে এসে আবার আটকে গেল: অল্প দূরত্বে সবল নিউক্লীয় বল তড়িৎ চৌম্বক বল থেকেও একশ গুণ বেশি শক্তিশালী।',
     say_away: 'পাল্লার বাইরে সবল নিউক্লীয় বল নেই, তাই অন্য প্রোটনগুলোর তড়িৎ বিকর্ষণ একে দূরে ঠেলে দিল।',
     // energy
     say_split_go: 'একটি নিউট্রন বড় নিউক্লিয়াসে (যেমন ইউরেনিয়াম) এসে লাগলে নিউক্লিয়াসটি কেঁপে উঠে দুই ভাগ হয়ে যায়, ছিটকে বেরোয় তিনটি নিউট্রন…',
-    say_split_done: 'প্রচণ্ড বলে আটকে থাকায় নিউক্লিয়াসে অনেক শক্তি জমা থাকে; বড় নিউক্লিয়াস ভাঙলে তা বেরিয়ে আসে। পারমাণবিক বিদ্যুৎকেন্দ্রে (যেমন রূপপুর) এভাবে শক্তি পাওয়া যায়।',
+    say_split_done: 'প্রচণ্ড বলে আটকে থাকায় নিউক্লিয়াসে অনেক শক্তি জমা থাকে; বড় নিউক্লিয়াস ভাঙলে তা বেরিয়ে আসে, যেমন রূপপুর পারমাণবিক বিদ্যুৎকেন্দ্রে।',
     say_join_go: 'দুটি ছোট নিউক্লিয়াস তড়িৎ বিকর্ষণ ঠেলে প্রচণ্ড বেগে ছুটে আসছে; {p}-এর মধ্যে এলেই সবল নিউক্লীয় বল এদের ধরে ফেলবে…',
-    say_join_done: 'ছোট নিউক্লিয়াস জোড়া দিলেও অনেক শক্তি বের হয়। সূর্যের ভেতরেও হাইড্রোজেনের নিউক্লিয়াস জোড়া লেগে হিলিয়াম হয়; সেই শক্তিই সূর্যের আলো আর তাপ।',
+    say_join_done: 'ছোট নিউক্লিয়াস জোড়া দিলেও অনেক শক্তি বের হয়: সূর্যে হাইড্রোজেনের নিউক্লিয়াস জোড়া লেগে হিলিয়াম হয়, সেই শক্তিই সূর্যের আলো ও তাপ।',
 
     // the four fundamental forces, weakest first, and the book's three kinds under them
-    forces_title: 'চার মৌলিক বল (সবচেয়ে দুর্বল → সবচেয়ে শক্তিশালী)',
+    forces_title: 'চার মৌলিক বল (দুর্বল → শক্তিশালী)',
     f_grav: 'মহাকর্ষ',
     f_weak: 'দুর্বল নিউক্লীয়',
     f_em: 'তড়িৎ চৌম্বক',
@@ -177,9 +176,9 @@ export const STRINGS = {
 
     legend_proton: 'Proton',
     legend_neutron: 'Neutron',
-    note_pull: 'Symbolic: arrow lengths not to scale',
-    note_slow: 'Symbolic: shown very much slowed down',
-    note_split: 'Symbolic: fewer particles, very slowed down',
+    note_pull: 'Symbolic: arrows not to scale',
+    note_slow: 'Symbolic: much slowed down',
+    note_split: 'Symbolic: fewer particles, slowed down',
 
     label_strong: 'Strong nuclear force',
     label_electric: 'Electric repulsion',
@@ -198,24 +197,23 @@ export const STRINGS = {
     eq_energy: 'energy',
 
     say_idle:
-      'The strong nuclear force is the strongest force in the universe, but it acts only over a very short distance: about {p} outside the nucleus (the orange line). Pull out the proton on the right.',
+      'The strong nuclear force is the strongest force in nature, but it acts only over a very short distance: about {p} (the orange line). Pull the proton out.',
     say_in:
-      'The neighbouring protons and neutrons pull it inward very hard with the strong nuclear force; the electric repulsion is tiny next to it. Let go and it comes back.',
+      'Its neighbouring protons and neutrons pull it in very hard with the strong nuclear force; the electric repulsion is tiny next to it. Let go: it comes back.',
     say_edge:
-      'Near the orange line, about {p} away, the strong nuclear force is falling fast, but it is still bigger than the electric repulsion. Let go and it comes back.',
+      'Near the orange line, about {p} out, the strong nuclear force falls fast, but it is still bigger than the electric repulsion. Let go: it comes back.',
     say_out:
-      'Farther than about {p} (outside the orange line) the strong nuclear force does not act; only the electric repulsion of the other protons pushes. Let go and it flies away.',
+      'Outside the orange line (farther than about {p}) the strong nuclear force does not act; only the electric repulsion pushes. Let go: it flies away.',
     say_back: 'It came back and stuck: at short distances the strong nuclear force is a hundred times stronger even than the electromagnetic force.',
     say_away: 'Out of range there is no strong nuclear force, so the electric repulsion of the other protons pushed it away.',
     say_split_go: 'When a neutron hits a big nucleus (such as uranium), the nucleus wobbles and splits in two, and three neutrons fly out…',
     say_split_done:
-      'Held by a huge force, a nucleus stores a lot of energy; when a big nucleus splits, it comes out. Nuclear power plants (such as Rooppur) get their energy this way.',
-    say_join_go:
-      'Two small nuclei rush together very fast, against their electric repulsion; as soon as they are within {p}, the strong nuclear force will grab them…',
+      'Held by a huge force, a nucleus stores a lot of energy; when a big nucleus splits, it comes out, as in the Rooppur nuclear power plant.',
+    say_join_go: 'Two small nuclei rush together, against their electric repulsion; once they are within {p}, the strong nuclear force grabs them…',
     say_join_done:
-      'Joining small nuclei also gives a lot of energy. Inside the Sun, too, hydrogen nuclei join into helium; that energy is the Sun’s light and heat.',
+      'Joining small nuclei also gives a lot of energy: in the Sun, hydrogen nuclei join into helium, and that energy is the Sun’s light and heat.',
 
-    forces_title: 'Four fundamental forces (weakest → strongest)',
+    forces_title: 'Four fundamental forces (weak → strong)',
     f_grav: 'Gravity',
     f_weak: 'Weak nuclear',
     f_em: 'Electromagnetic',
@@ -248,30 +246,29 @@ export const STRINGS = {
     opt_who_ep: 'Electrons and protons',
     opt_who_p: 'Only between protons',
     opt_who_n: 'Only between neutrons',
-    why_who: '<b>All protons and neutrons</b>: the book says this force acts between the protons and neutrons of the nucleus.',
-    why_who_ep: 'Electrons are outside the nucleus, where this force does not reach.',
-    why_who_p: 'Neutrons pull and are pulled by it too.',
-    why_who_n: 'Protons pull with it too, not only neutrons.',
+    why_who: '<b>All protons and neutrons</b>: it acts between the protons and neutrons of the nucleus.',
+    why_who_ep: 'Electrons are far outside the nucleus.',
+    why_who_p: 'Neutrons pull and are pulled too.',
+    why_who_n: 'Protons pull with it too.',
 
     q_release: 'The proton is held {d} from the nucleus. What happens if it is let go?',
     opt_back: 'It comes back',
     opt_away: 'It moves away',
     opt_stay: 'It stays where it is',
     opt_break: 'The nucleus breaks',
-    why_release_in:
-      '<b>It comes back</b>: {d} is inside the reach of the strong force (about {p}), so it still pulls, much harder than the repulsion.',
-    why_release_out: '<b>It moves away</b>: at {d} the strong nuclear force does not reach (range about {p}); only the repulsion pushes.',
-    why_release_stay: 'A force acts on it, so it will not stay still.',
-    why_release_break: 'One proton does not break the whole nucleus.',
+    why_release_in: '<b>It comes back</b>: {d} is within the strong force’s reach (about {p}).',
+    why_release_out: '<b>It moves away</b>: beyond the reach (about {p}) only the repulsion acts.',
+    why_release_stay: 'A force acts on it: it cannot stay.',
+    why_release_break: 'One proton does not break the nucleus.',
 
     q_atom: 'Two protons are {d} apart (about the size of an atom). Which force between them is bigger?',
     opt_atom_em: 'Electric repulsion',
     opt_atom_strong: 'Strong nuclear force',
     opt_atom_equal: 'Both the same',
     opt_atom_none: 'No force at all',
-    why_atom: '<b>Electric repulsion</b>: {d} is a hundred thousand times the strong force’s reach (about {p}); that far it does not act.',
-    why_atom_strong: 'It is the strongest, but it does not reach that far.',
-    why_atom_equal: 'The strong force is zero here, so they are not equal.',
+    why_atom: '<b>Electric repulsion</b>: the strong force reaches only about {p}, not {d}.',
+    why_atom_strong: 'It is the strongest, but not that far.',
+    why_atom_equal: 'The strong force is zero here.',
     why_atom_none: 'Charges repel even from far away.',
 
     q_energy_big: 'The picture shows a big nucleus. How can the energy stored in it be released?',
@@ -282,22 +279,22 @@ export const STRINGS = {
     opt_split_more: 'By splitting both further',
     opt_burn: 'By burning',
     opt_none_energy: 'No energy can be got',
-    why_energy_big: '<b>By splitting it in two</b>: when a big nucleus splits, part of the energy stored in it comes out.',
-    why_energy_small: '<b>By joining the two</b>: when small nuclei join, a lot of energy comes out, as inside the Sun.',
-    why_energy_join_more: 'Making a big nucleus bigger gives no energy; joining works for small ones.',
-    why_energy_split_more: 'Splitting small nuclei gives no energy; splitting works for big ones.',
-    why_energy_burn: 'Burning is a chemical reaction; it does not change the nucleus.',
-    why_energy_none: 'Held by a huge force, a nucleus stores a lot of energy.',
+    why_energy_big: '<b>By splitting it in two</b>: a big nucleus that splits gives out part of its stored energy.',
+    why_energy_small: '<b>By joining the two</b>: small nuclei that join give out a lot of energy, as in the Sun.',
+    why_energy_join_more: 'Making a big nucleus bigger gives no energy.',
+    why_energy_split_more: 'Splitting small nuclei gives no energy.',
+    why_energy_burn: 'Burning does not change the nucleus.',
+    why_energy_none: 'A nucleus stores a lot of energy.',
 
     q_group: 'If forces are said to be of three kinds, which kind is the weak nuclear force?',
     opt_ew: 'Electro-weak',
     opt_nuclear: 'Nuclear force',
     opt_grav: 'Gravitational force',
     opt_none: 'None of them',
-    why_group: '<b>Electro-weak</b>: the electromagnetic and weak nuclear forces are explained by one theory.',
-    why_group_nuclear: 'It has "nuclear" in its name, but it is part of the electro-weak force.',
-    why_group_grav: 'Gravity has not yet been joined with the others in one theory.',
-    why_group_none: 'It was not left out; it joined with the electromagnetic force.',
+    why_group: '<b>Electro-weak</b>: one theory explains the electromagnetic and weak nuclear forces.',
+    why_group_nuclear: 'The name says nuclear, but it is electro-weak.',
+    why_group_grav: 'Gravity has not been joined with the others yet.',
+    why_group_none: 'It joined with the electromagnetic force.',
   },
 };
 
