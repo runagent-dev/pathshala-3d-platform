@@ -17,19 +17,7 @@ import { createI18n } from './i18n.js';
 import { createMoon } from './moon.js';
 import { INK, MAX_MARKS, createOverlay } from './overlay.js';
 import { createStars, gradientTexture } from './setting.js';
-import {
-  EXAMPLES,
-  angleBetween,
-  angleOf,
-  coverageFraction,
-  extendCoverage,
-  fmt,
-  realDistance,
-  roundTo,
-  turned,
-  unwrap,
-  wrap360,
-} from './reading.js';
+import { EXAMPLES, angleBetween, angleOf, coverageFraction, extendCoverage, fmt, realDistance, roundTo, turned, unwrap, wrap360 } from './reading.js';
 
 export const DEFAULTS = {
   play: true, // turning at the start

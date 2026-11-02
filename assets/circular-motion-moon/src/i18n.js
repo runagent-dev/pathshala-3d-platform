@@ -130,7 +130,6 @@ export const STRINGS = {
     label_earth: 'Earth',
     label_moon: 'Moon',
 
-
     hint_drag: 'Drag to turn it: the point never leaves the circular path.',
     hint_elsewhere: 'You measured here already. Measure somewhere else.',
 

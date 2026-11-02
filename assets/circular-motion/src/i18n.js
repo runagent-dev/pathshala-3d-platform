@@ -122,7 +122,6 @@ export const STRINGS = {
     label_dist: '{d} {u}',
     label_after_half: 'After half a turn',
 
-
     hint_drag: 'Drag to turn it: the point never leaves the circular path.',
     hint_elsewhere: 'You measured here already. Measure somewhere else.',
 

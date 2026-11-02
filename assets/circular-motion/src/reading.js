@@ -94,4 +94,3 @@ export function distanceMistakes(example, fraction) {
   }
   return out;
 }
-
