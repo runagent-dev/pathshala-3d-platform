@@ -93,6 +93,7 @@ export function createApp(root, options = {}) {
   root.lang = t.lang;
   root.tabIndex = 0;
   const ui = buildStudentShell(root, t, {
+    layout: 'side',
     learn: cleanSheet(t, {
       examples: { label: 'views', results: false, items: VIEWS.map((id) => ({ id, label: `chip_${id}` })) },
       quiet: [{ act: 'home', label: 'act_home', icon: ICONS.reset }],
@@ -133,7 +134,7 @@ export function createApp(root, options = {}) {
   controls.maxDistance = 6;
   controls.enablePan = false;
   controls.enableZoom = false;
-  controls.enableRotate = false;
+  controls.enableRotate = true;
   controls.minPolarAngle = 0.35;
   controls.maxPolarAngle = Math.PI * 0.5;
   if (o.bg !== 'transparent') {
@@ -707,7 +708,6 @@ export function createApp(root, options = {}) {
   }
   function setView(view, { animate = true } = {}) {
     s.view = view === '3d' ? '3d' : 'front';
-    controls.enableRotate = s.view === '3d';
     s.userMovedCamera = false;
     syncUI();
     emit('view', { view: s.view });
@@ -715,6 +715,10 @@ export function createApp(root, options = {}) {
     return flyTo(viewPose(), animate ? 0.7 : 0);
   }
   controls.addEventListener('start', () => {
+    if (s.view !== '3d') {
+      s.view = '3d';
+      syncUI();
+    }
     s.userMovedCamera = true;
     tweener.cancel('camera');
   });
@@ -1068,7 +1072,8 @@ export function createApp(root, options = {}) {
 
   // ── buttons, keys ───────────────────────────────────────────────────────────
   function syncUI() {
-    for (const b of ui.$$('[data-view]')) b.classList.toggle('on', b.dataset.view === s.view);
+    const front = ui.$('[data-view="front"]');
+    if (front) front.hidden = s.view !== '3d';
     root.dataset.mode = s.mode === 'quiz' ? 'quiz' : 'explore';
     for (const b of ui.$$('[data-mode]')) {
       const on = b.dataset.mode === root.dataset.mode;
@@ -1145,7 +1150,6 @@ export function createApp(root, options = {}) {
 
   // ── start ───────────────────────────────────────────────────────────────────
   syncUI();
-  controls.enableRotate = s.view === '3d';
   if (o.phase === 'stand' || o.phase === 'lift') {
     for (const id of SHOE_IDS) s.y[id] = -target(id);
     s.phase = 'stand';

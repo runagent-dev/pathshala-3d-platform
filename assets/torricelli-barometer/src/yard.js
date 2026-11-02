@@ -1,4 +1,4 @@
-// The schoolyard (book page 145's 10.3 m): a three-storey school building, a brick yard, a palm and a mango tree, and
+// The schoolyard (book page 145's 10.3 m): a three-storey school building, a brick yard (no trees: the pipe and the building matter), and
 // against a pilaster of the building a glass pipe about 11 m tall standing in a tub of water: with water instead of
 // mercury the column the air holds up is 10.3 m, about to the roof. A small mercury barometer (76 cm) stands at its
 // foot for comparison, and a red-and-white measuring staff marks the metres. Metres; the yard's ground is y = 0, the
@@ -140,7 +140,7 @@ export function createYard(mats, { num = String } = {}) {
   const root = new THREE.Group();
   root.name = 'Yard';
 
-  // the ground: bricks near the building, grass beyond
+  // the ground: bricks near the building, sandy earth beyond
   const ground = new THREE.Mesh(
     new THREE.PlaneGeometry(30, 30),
     new THREE.MeshStandardMaterial({ name: 'Bricks', map: brickTexture(), roughness: 0.9 }),
@@ -148,7 +148,7 @@ export function createYard(mats, { num = String } = {}) {
   ground.rotation.x = -Math.PI / 2;
   ground.position.set(0, 0, 10);
   ground.receiveShadow = true;
-  const grass = new THREE.Mesh(new THREE.PlaneGeometry(80, 40), new THREE.MeshStandardMaterial({ color: '#4f9a3a', roughness: 1 }));
+  const grass = new THREE.Mesh(new THREE.PlaneGeometry(80, 40), new THREE.MeshStandardMaterial({ color: '#c9b48e', roughness: 1 }));
   grass.rotation.x = -Math.PI / 2;
   grass.position.set(0, -0.01, 30);
   root.add(ground, grass);
@@ -175,43 +175,6 @@ export function createYard(mats, { num = String } = {}) {
     slab.receiveShadow = true;
     root.add(slab);
   }
-
-  // trees: a coconut palm on the right, a round mango tree on the left
-  const trunkMat = new THREE.MeshStandardMaterial({ color: '#7a5b3a', roughness: 0.9 });
-  const palmPath = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(4.6, 0, 1.5),
-    new THREE.Vector3(4.9, 3, 1.4),
-    new THREE.Vector3(5.5, 6.5, 1.3),
-    new THREE.Vector3(6.2, 9.2, 1.2),
-  ]);
-  const trunk = new THREE.Mesh(new THREE.TubeGeometry(palmPath, 20, 0.16, 10, false), trunkMat);
-  trunk.castShadow = true;
-  root.add(trunk);
-  const frondMat = new THREE.MeshStandardMaterial({ color: '#3f8f2f', roughness: 0.8, side: THREE.DoubleSide });
-  const crown = new THREE.Vector3(6.2, 9.2, 1.2);
-  for (let i = 0; i < 9; i++) {
-    const a = (i / 9) * Math.PI * 2;
-    const frond = new THREE.Mesh(new THREE.ConeGeometry(0.32, 3.2, 4, 1).translate(0, 1.6, 0), frondMat);
-    frond.scale.set(1, 1, 0.12);
-    frond.position.copy(crown);
-    frond.rotation.set(Math.sin(a) * 1.7, a, Math.cos(a) * 1.7 + 0.15);
-    frond.castShadow = true;
-    root.add(frond);
-  }
-  const leafMat = new THREE.MeshStandardMaterial({ color: '#2f7d32', roughness: 0.9 });
-  const rr = rand(41);
-  const mango = new THREE.Group();
-  const mTrunk = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.28, 3, 10), trunkMat);
-  mTrunk.position.y = 1.5;
-  mango.add(mTrunk);
-  for (let i = 0; i < 9; i++) {
-    const blob = new THREE.Mesh(new THREE.IcosahedronGeometry(1.2 + rr() * 0.6, 1), leafMat);
-    blob.position.set((rr() - 0.5) * 2.6, 3.6 + rr() * 2, (rr() - 0.5) * 1.6);
-    blob.castShadow = true;
-    mango.add(blob);
-  }
-  mango.position.set(-6, 0, 2.2);
-  root.add(mango);
 
   // the tub of water
   const tubMat = new THREE.MeshStandardMaterial({ name: 'Tub', color: '#2f7fd0', roughness: 0.4 });
