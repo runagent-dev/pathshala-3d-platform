@@ -1,0 +1,75 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "contact-noncontact-force-magnet",
+  "title": "Force: a magnet’s pull, a non-contact force (বল: চুম্বকের আকর্ষণ, অস্পর্শ বল)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "1.0.0",
+  "book": "physics-9-10",
+  "page": 67,
+  "topic": "3.1.2",
+  "placement": "Book page 67, topic 3.1.2: বল (Force). Next to the paragraph that names চুম্বকের আকর্ষণ as a force that needs no touching (অস্পর্শ বল).",
+  "order": 4,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "Interactive 3D figure for force (বল), book page 67, topic 3.1.2, with the page's example চুম্বকের আকর্ষণ: a hand brings a bar magnet near an iron nail, which rushes to the magnet's N pole faster and faster, shown 10 × slower. One big numbered action (পেরেকের কাছে চুম্বক আনো) plays it; the run holds with 2.3 cm still to go: the empty gap between the nail and the magnet, measured in cm, with the tag ছোঁয়নি: অস্পর্শ বল. The panel is the clean sheet: one result line naming the force and its kind, one rule that starts with the book's definition of force and grows into অস্পর্শ বল. Test tab: 3 tap questions (a comb lifting paper, which kind the magnet's pull is, what it does to the nail). Phone-first, Bangla.",
+  "tags": ["force", "non-contact-force", "magnet", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "at",
+      "label": "Start at",
+      "type": "select",
+      "options": [["rest", "at rest"], ["key", "the telling moment"], ["end", "the end"]],
+      "default": "rest"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "Pulse the action's marker", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "play": true } },
+    { "name": "set", "payload": { "act": true } },
+    { "name": "set", "payload": { "at": "key" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "act", "view", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": { "params": { "coach": "0", "at": "key" } },
+    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "at": "rest", "animate": false } }] }],
+    "video": {
+      "kind": "script",
+      "seconds": 6,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [{ "at": 0.6, "command": "set", "payload": { "act": true } }]
+    }
+  }
+}
