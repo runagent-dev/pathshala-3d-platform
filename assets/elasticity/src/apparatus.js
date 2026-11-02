@@ -1,5 +1,5 @@
-// The workshop and the apparatus (metres; y up, the bench top at y = 0, the spring's top hook at TOP): a warm brick
-// wall with a deep blue pegboard of tools behind a heavy lab stand on an oak bench. A polished steel spring hangs
+// The workshop and the apparatus (metres; y up, the bench top at y = 0, the spring's top hook at TOP): a plain
+// soft slate-blue wall behind a heavy lab stand on an oak bench (nothing else). A polished steel spring hangs
 // from the stand's arm; a hanger with a pointer hooks on its lower loop and brass slotted weights of 1 N each stack on
 // the hanger; a wooden metre rule beside it reads the spring's length L from the top hook (0 cm). The spring is built
 // once as a tube along a helix; setLength moves its vertices down along the coil (no new geometry while it moves).
@@ -48,135 +48,17 @@ const rnd = () => {
   return (seed - 1) / 2147483646;
 };
 
-/** Old red brick in a running bond with pale mortar, each brick a little different. */
-function brickTexture() {
-  seed = 7;
-  const { c, ctx } = canvas2d(1024, 1024);
-  ctx.fillStyle = '#d9c3a5';
-  ctx.fillRect(0, 0, 1024, 1024);
-  const bw = 128;
-  const bh = 46;
-  const m = 7;
-  const hues = ['#b4492c', '#a83f27', '#c25a35', '#9c3a24', '#b85134', '#c96a3f', '#8f3520'];
-  for (let row = 0; row * bh < 1024 + bh; row++) {
-    const off = row % 2 ? bw / 2 : 0;
-    for (let col = -1; col * bw < 1024 + bw; col++) {
-      const x = col * bw + off + m / 2;
-      const y = row * bh + m / 2;
-      ctx.fillStyle = hues[Math.floor(rnd() * hues.length)];
-      ctx.fillRect(x, y, bw - m, bh - m);
-      // soot and wear
-      const g = ctx.createLinearGradient(x, y, x, y + bh);
-      g.addColorStop(0, 'rgba(255, 220, 190, 0.12)');
-      g.addColorStop(1, 'rgba(40, 10, 0, 0.18)');
-      ctx.fillStyle = g;
-      ctx.fillRect(x, y, bw - m, bh - m);
-      for (let k = 0; k < 26; k++) {
-        ctx.fillStyle = rnd() < 0.5 ? 'rgba(60, 15, 5, 0.22)' : 'rgba(255, 210, 170, 0.16)';
-        ctx.fillRect(x + rnd() * (bw - m - 4), y + rnd() * (bh - m - 3), 1 + rnd() * 4, 1 + rnd() * 2);
-      }
-    }
-  }
-  return tex(c, { repeat: [3, 2] });
-}
-
-/** A deep blue pegboard with rows of holes and painted outlines where the tools hang. */
-function pegboardTexture(num) {
-  // drawn in a 1024 × 1280 layout (the board's shape) onto a 1024² canvas: the board stretches it back
-  const { c, ctx } = canvas2d(1024, 1024);
-  ctx.scale(1, 1024 / 1280);
-  const g = ctx.createLinearGradient(0, 0, 1024, 1280);
-  g.addColorStop(0, '#24467f');
-  g.addColorStop(1, '#183463');
+/** The wall behind the stand: a soft slate blue, lighter up high (the silver spring and the yellow rule read on it). */
+function wallTexture() {
+  const { c, ctx } = canvas2d(4, 256);
+  const g = ctx.createLinearGradient(0, 0, 0, 256);
+  g.addColorStop(0, '#aebfcf');
+  g.addColorStop(1, '#7f93a8');
   ctx.fillStyle = g;
-  ctx.fillRect(0, 0, 1024, 1280);
-  ctx.fillStyle = '#0d1d3a';
-  for (let y = 24; y < 1280; y += 40)
-    for (let x = 24; x < 1024; x += 40) {
-      ctx.beginPath();
-      ctx.arc(x, y, 5.5, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  // tools at the edges (the middle stays calm behind the spring): a spanner, pliers, a hammer, a set square
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  const tool = (fn) => {
-    ctx.save();
-    fn();
-    ctx.restore();
-  };
-  tool(() => {
-    // spanner, top left
-    ctx.translate(120, 250);
-    ctx.rotate(-0.25);
-    ctx.fillStyle = '#c9ced6';
-    ctx.fillRect(-12, -150, 24, 300);
-    ctx.beginPath();
-    ctx.arc(0, -165, 36, 0, Math.PI * 2);
-    ctx.arc(0, 165, 30, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#183463';
-    ctx.fillRect(-12, -215, 24, 46);
-    ctx.beginPath();
-    ctx.arc(0, 165, 14, 0, Math.PI * 2);
-    ctx.fill();
-  });
-  tool(() => {
-    // hammer, bottom left
-    ctx.translate(140, 980);
-    ctx.rotate(0.12);
-    ctx.fillStyle = '#d08a3c';
-    ctx.fillRect(-14, -40, 28, 260);
-    ctx.fillStyle = '#9aa3ad';
-    ctx.fillRect(-70, -90, 140, 56);
-    ctx.fillStyle = '#7a838e';
-    ctx.fillRect(40, -90, 30, 56);
-  });
-  tool(() => {
-    // pliers, top right
-    ctx.translate(900, 280);
-    ctx.rotate(0.2);
-    ctx.strokeStyle = '#e03131';
-    ctx.lineWidth = 26;
-    ctx.beginPath();
-    ctx.moveTo(-40, 180);
-    ctx.quadraticCurveTo(-10, 40, 0, -20);
-    ctx.moveTo(40, 180);
-    ctx.quadraticCurveTo(10, 40, 0, -20);
-    ctx.stroke();
-    ctx.strokeStyle = '#aab2bc';
-    ctx.lineWidth = 18;
-    ctx.beginPath();
-    ctx.moveTo(-6, -20);
-    ctx.lineTo(-14, -130);
-    ctx.moveTo(6, -20);
-    ctx.lineTo(14, -130);
-    ctx.stroke();
-  });
-  tool(() => {
-    // a yellow set square, bottom right
-    ctx.translate(840, 940);
-    ctx.fillStyle = '#f2b51f';
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(150, 0);
-    ctx.lineTo(0, 210);
-    ctx.closePath();
-    ctx.fill();
-    ctx.fillStyle = '#1d3d73';
-    ctx.beginPath();
-    ctx.moveTo(26, 26);
-    ctx.lineTo(90, 26);
-    ctx.lineTo(26, 116);
-    ctx.closePath();
-    ctx.fill();
-  });
-  // a small stencilled label on the board
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-  ctx.font = `700 34px ${FONT}`;
-  ctx.textAlign = 'right';
-  ctx.fillText(num('5.5'), 990, 1250);
-  return tex(c);
+  ctx.fillRect(0, 0, 4, 256);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
 }
 
 /** Warm oak planks along the bench. */
@@ -282,33 +164,18 @@ function box(w, h, d, mats, map) {
   return new THREE.Mesh(mergeGroups(geo), mats);
 }
 
-/** The room: the brick wall, the pegboard behind the stand, the bench (its oak shared with the apparatus). Not exported. */
-export function createWorkshop(num, mats) {
+/** The room: a plain wall and the bench (its oak shared with the apparatus). Not exported. */
+export function createWorkshop(mats) {
   const root = new THREE.Group();
   root.name = 'Workshop';
-  const wall = new THREE.Mesh(
-    new THREE.PlaneGeometry(4, 2.6),
-    new THREE.MeshStandardMaterial({ name: 'Brick', map: brickTexture(), roughness: 0.9 }),
-  );
+  const wall = new THREE.Mesh(new THREE.PlaneGeometry(4, 2.6), new THREE.MeshStandardMaterial({ name: 'Wall', map: wallTexture(), roughness: 0.9 }));
   wall.position.set(0, 1.0, -0.42);
   wall.receiveShadow = true;
-  const board = box(
-    0.78,
-    0.98,
-    0.012,
-    [
-      new THREE.MeshStandardMaterial({ name: 'PegboardEdge', color: '#13284d', roughness: 0.6 }),
-      new THREE.MeshStandardMaterial({ name: 'Pegboard', map: pegboardTexture(num), roughness: 0.55 }),
-    ],
-    [0, 0, 0, 0, 1, 0],
-  );
-  board.position.set(0.0, 0.5, -0.33);
-  board.receiveShadow = true;
   const top = box(1.8, 0.04, 0.7, [mats.woodEdge, mats.wood], [0, 0, 1, 0, 1, 0]);
   top.position.set(0, -0.02, -0.06);
   top.receiveShadow = true;
-  root.add(wall, board, top);
-  for (const m of [wall, board, top]) m.userData.noExport = true;
+  root.add(wall, top);
+  for (const m of [wall, top]) m.userData.noExport = true;
   return { root };
 }
 
