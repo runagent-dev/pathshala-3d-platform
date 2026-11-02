@@ -1,0 +1,88 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "calorimetry",
+  "title": "Calorimetry: mixing and the balance of heat (ক্যালোরিমিতির মূলনীতি)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 179,
+  "topic": "6.6",
+  "placement": "Book pages 179-181, section 6.6 ক্যালোরিমিতির মূলনীতি (Fundamental Principles of Calorimetry): next to the two rules (i) and (ii) and the three worked examples (ice in 1 liter of 30°C water, 2 liter of 75°C water with 1 liter of 20°C water, a 10 gm piece of 120°C iron in 1 kg of 30°C water).",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "cm",
+  "description": "The principle of calorimetry (ক্যালোরিমিতির মূলনীতি, pages 179-181, 6.6) on a lab bench: a 3 litre glass beaker of water with a pen thermometer in it, and on the left what the book adds to it. Three examples as the row of words, exactly the book's: বরফ (a 100 gm piece of ice at 0°C let go in 1 liter of 30°C water; L = 334 kJ/kg; T = 20°C), দুই পানি (a mug of 1 liter at 20°C poured into 2 liter at 75°C; T = 56.6°C) and লোহা (a 10 gm piece of iron at 120°C, glowing, let go in 1 kg of 30°C water; s = 0.45 × 10³ and 4.2 × 10³; T = 30.1°C). One action, one result, one rule: the big numbered button adds the thing (the ice is lifted over the beaker and let go, floats and melts; the mug is tipped about its lip and the stream raises the level; the iron drops to the bottom, bubbles, and stops glowing) while the thermometer's screen follows the temperature of the mixture and the water's tint turns from warm to cool; the ring and the same badge on the thing to add show what to touch. The panel is in the lab's order: the readings are the book's givens (masses with m₁ and m₂ as the book's equation uses them, temperatures, specific heats, L), then the book's balance equation and T written out as the book does (and with the student's numbers once it ran), the heat given and taken (equal, about 41,800 J; 1,54,000 J; 405 J), and the book's two rules: (i) the hotter body keeps giving heat until the temperatures are equal, (ii) the hot body gives exactly as much as the cold body takes (nothing is lost). Test tab: 5 tap questions on frozen scenes (which way the heat goes, the final temperature of two waters with the usual wrong averages, the heat to melt 100 gm of ice, why a little hot iron barely warms 1 kg of water, the ice's whole heat m₁L + m₁sT). Phone-first, Bangla.",
+  "tags": ["calorimetry", "heat", "temperature", "specific-heat", "latent-heat", "mixture", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "example",
+      "label": "Example",
+      "type": "select",
+      "options": [
+        ["ice", "ice in water (p179-180)"],
+        ["water", "two waters (p180-181)"],
+        ["iron", "hot iron in water (p181)"]
+      ],
+      "default": "ice"
+    },
+    {
+      "name": "k",
+      "label": "How far it has mixed (0 to 1)",
+      "type": "number",
+      "default": "0",
+      "placeholder": "0",
+      "help": "for pictures: 0 before, 1 mixed"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on the thing to add pulses", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "example": "water" } },
+    { "name": "set", "payload": { "run": true } },
+    { "name": "set", "payload": { "k": 1 } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "action", "done", "example", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": { "params": { "coach": "0", "example": "water", "k": "0.6" } },
+    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "k": 0 } }] }],
+    "video": {
+      "kind": "script",
+      "seconds": 10,
+      "fps": 30,
+      "params": { "coach": "0", "example": "water" },
+      "script": [{ "at": 0.6, "command": "set", "payload": { "run": true } }]
+    }
+  }
+}
