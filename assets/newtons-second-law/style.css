@@ -11,8 +11,10 @@ body.bg-transparent { background: transparent; }
 .ns sup, .ns sub { font-size: 0.68em; line-height: 0; }
 
 /* the clock on the view: t and how fast time runs (a label with its value, top left, clear of the corner buttons) */
-.ns-clock { position: absolute; left: 10px; top: 10px; z-index: 4; pointer-events: none; display: flex; align-items: baseline; gap: 6px; padding: 3px 9px; border: 1px solid var(--line-2); border-radius: 6px; background: var(--panel); color: var(--ink-2); font-size: 12.5px; line-height: 1.35; white-space: nowrap; }
-.ns-clock b { font-size: 15px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+.ns-outrow { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; }
+.ns-outrow .pvc-outcome { align-self: stretch; min-width: 0; }
+.ns-clock { flex: none; display: flex; align-items: baseline; gap: 5px; padding: 0 5px; border: 1px solid var(--line-2); border-radius: 5px; background: var(--panel); color: var(--ink-2); font-size: 11.5px; line-height: 1.25; white-space: nowrap; }
+.ns-clock b { font-size: 14px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
 .ns-clock.held { border-color: #c9a400; background: #fff6c4; }
 
 /* labels on the scene */
@@ -157,76 +159,18 @@ body.bg-transparent { background: transparent; }
   .ns-math-dialog { font-size: 13px; padding: 12px; }
   .ns-math-dialog p { font-size: 11.5px; }
 }
-/* wide frames (the panel under the 3D view, its tabs on the left): the examples across the top, then the action,
-   the result and the rule on the left and the formula box on the right */
-@container pvc (min-width: 720px) and (min-height: 461px) {
-  .ns .pvc-learn { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); grid-template-areas: 'ex box' 'act box' 'out box' 'rule box'; grid-template-rows: auto auto auto 1fr; align-content: start; gap: 5px 18px; }
-  .ns .pvc-examples { grid-area: ex; }
-  .ns .pvc-act-row { grid-area: act; }
-  .ns .pvc-outcome { grid-area: out; white-space: normal; height: 2.9em; min-height: 0; }
-  .ns .pvc-rule { grid-area: rule; min-height: 4.2em; }
-  .ns-formula { grid-area: box; align-self: start; }
-  .ns .pvc-act-row .pvc-quiet > span { display: none; }
-  .ns .pvc-act-row .pvc-quiet { padding: 0; min-width: 40px; }
-  .ns .pvc-act { font-size: 14px; gap: 7px; padding-right: 13px; }
-  .ns .pvc-ex-word { font-size: 12.5px; }
-  .ns .pvc-rule { min-height: 4.2em; }
-  .ns .pvc-q-text { --pvc-q-text-min: 2lh; }
-  .ns .pvc-q-feedback { --pvc-q-feedback-min: 2lh; }
-  .ns .pvc-q-options { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-}
-/* big frames (1280 × 800): larger type and a taller graph */
-@container pvc (min-width: 1000px) and (min-height: 700px) {
-  .ns .pvc-ex-word { font-size: 15px; }
-  .ns .pvc-ex-res { font-size: 12.5px; }
-  .ns .pvc-act { font-size: 16px; min-height: 44px; }
-  .ns .pvc-act-row { min-height: 46px; }
-  .ns .pvc-outcome { font-size: 15.5px; }
-  .ns .pvc-rule { font-size: 14.5px; }
-  .ns-graph { min-height: 120px; }
-  .ns-formula { font-size: 14px; padding: 6px 10px 8px; }
-  .ns-extras button { font-size: 13px; min-height: 30px; }
-  .ns-row-name, .ns-row-val { font-size: 13.5px; }
-  .ns-row .ns-bar { height: 8px; }
-  .ns-formula .ns-row small { font-size: 11px; }
-  .ns-formula-values { gap: 6px; }
-  .ns .pvc-anno { font-size: 14px; }
-  .ns-clock { font-size: 13.5px; }
-  .ns-clock b { font-size: 16px; }
-}
-/* short and wide (a phone on its side, small embeds): the kit's panel on the right, every line compact */
-@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
-  .ns .pvc-panel { padding: 7px 9px; gap: 4px; overflow: hidden; }
+/* a phone held upright: the graph a little lower and the lines closer, so the 3D view keeps 55 % of the height */
+@container pvc (max-aspect-ratio: 1/1) and (min-height: 640px) and (min-width: 375px) {
   .ns .pvc-learn { gap: 4px; }
-  .ns .pvc-ex-word { font-size: 11px; }
-  .ns .pvc-ex-res { font-size: 10px; min-height: 13px; }
-  .ns .pvc-examples button { min-height: 33px; }
-  .ns .pvc-act-row { min-height: 35px; }
-  .ns .pvc-act { min-height: 33px; font-size: 12px; gap: 6px; padding-right: 10px; }
-  .ns .pvc-act-icon { display: none; }
-  .ns .pvc-act-row { gap: 4px; }
-  .ns .pvc-act-row .pvc-quiet { min-width: 34px; min-height: 34px; padding: 0; }
-  .ns .pvc-act-num { width: 25px; height: 25px; font-size: 15px; }
-  .ns .pvc-outcome { font-size: 11.5px; line-height: 1.35; white-space: normal; height: auto; min-height: 2.7em; }
-  .ns .pvc-rule { font-size: 11.5px; line-height: 1.35; min-height: 4.05em; }
-  .ns-formula { padding: 3px 6px; font-size: 11px; }
-  .ns-extras { flex: 1 1 100%; }
-  .ns-extras button { flex: 1 1 auto; min-height: 25px; padding: 1px 4px; font-size: 11px; }
-  .ns-maths b { font-size: 16px; }
-  .ns-maths span { font-size: 10px; }
-  .ns-graph { min-height: 60px; }
-  .ns-row { line-height: 1.12; }
-  .ns-row-name { font-size: 11px; }
-  .ns-row-val { font-size: 11.5px; }
-  .ns-formula .ns-row small { font-size: 9.5px; }
-  .ns-formula-values { gap: 2px; }
-  .ns .pvc-q-text { font-size: 12.5px; }
-  .ns .pvc-q-feedback { font-size: 11.5px; }
-  .ns .pvc-opt { font-size: 12px; height: 38px; }
-  .ns .pvc-anno { font-size: 11.5px; }
-  .ns-clock { font-size: 11px; padding: 2px 7px; }
+  .ns-graph { min-height: 48px; }
+  .ns-formula { padding-top: 3px; padding-bottom: 3px; }
+  .ns-formula-values { gap: 1px; }
+  .ns-outrow { gap: 0; }
+  .ns-clock { line-height: 1.1; }
   .ns-clock b { font-size: 13px; }
-  .ns-math-dialog { font-size: 12px; line-height: 1.5; padding: 10px; }
-  .ns-math-dialog p { font-size: 11px; margin: 5px 0; }
-  .ns-math-dialog small { font-size: 10.5px; margin: 4px 0; }
+}
+/* the side panel beside the 3D (280–380 px): the result line may take two lines (the working of v = u + at) */
+@container pvc-panel (max-width: 380px) {
+  .ns .pvc-outcome { --pvc-outcome-lines: 2; white-space: normal; height: auto; }
+  .ns-formula-head { flex-wrap: wrap; }
 }
