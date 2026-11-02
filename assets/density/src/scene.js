@@ -5,6 +5,7 @@
 // mass, less volume). Modest geometry, no per-frame rebuilds: moving a ball, raising the water and squeezing the box
 // only change transforms.
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { BALL_IDS, BOX_START, boxSide, capVolume, particleLayout, radiusOf, V_BALL } from './reading.js';
 
 export const TANK = { R: 6, H: 17, base: 0.6, wall: 0.25, depth: 11 }; // cm: inner radius, height, glass, water depth
@@ -100,37 +101,17 @@ function benchTexture() {
   return tex(c, { repeat: [6, 3] });
 }
 
-/** The splash-back behind the bench: terracotta tiles with pale grout. */
-function tileTexture() {
-  const { c, ctx } = canvas(256, 128);
-  const r = seeded(21);
-  ctx.fillStyle = '#f3e3cf';
-  ctx.fillRect(0, 0, 256, 128);
-  for (let row = 0; row < 2; row++)
-    for (let col = 0; col < 4; col++) {
-      const k = r();
-      ctx.fillStyle = `rgb(${196 + k * 22},${88 + k * 18},${58 + k * 12})`;
-      ctx.fillRect(col * 64 + 2, row * 64 + 2, 60, 60);
-      const g = ctx.createLinearGradient(col * 64, row * 64, col * 64 + 64, row * 64 + 64);
-      g.addColorStop(0, 'rgba(255,255,255,0.16)');
-      g.addColorStop(1, 'rgba(0,0,0,0.08)');
-      ctx.fillStyle = g;
-      ctx.fillRect(col * 64 + 2, row * 64 + 2, 60, 60);
-    }
-  return tex(c, { repeat: [22, 1] });
-}
-
-/** The wall: warm apricot, lighter up high where the window light falls, a darker band behind the bench. */
+/** The wall: a soft apricot backdrop, lighter up high where the window light falls, deeper behind the bench. */
 function wallTexture() {
   const { c, ctx } = canvas(512, 512);
   const g = ctx.createLinearGradient(0, 0, 0, 512);
-  g.addColorStop(0, '#fbe6cf');
-  g.addColorStop(0.55, '#f6cfaa');
-  g.addColorStop(1, '#eeb48c');
+  g.addColorStop(0, '#f4cfa8');
+  g.addColorStop(0.6, '#eebb8f');
+  g.addColorStop(1, '#e3a172');
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, 512, 512);
   const glow = ctx.createRadialGradient(170, 170, 10, 170, 170, 330);
-  glow.addColorStop(0, 'rgba(255,248,232,0.75)');
+  glow.addColorStop(0, 'rgba(255,236,210,0.45)');
   glow.addColorStop(1, 'rgba(255,248,232,0)');
   ctx.fillStyle = glow;
   ctx.fillRect(0, 0, 512, 512);
@@ -206,12 +187,12 @@ function createTank(mat, name) {
   bottom.rotation.x = -Math.PI / 2;
   bottom.position.y = base;
   bottom.renderOrder = -1;
-  const rim = new THREE.Mesh(new THREE.TorusGeometry(R + wall / 2, wall * 0.75, 8, 64), mat.rim);
-  rim.rotation.x = Math.PI / 2;
-  rim.position.y = H;
-  const foot = new THREE.Mesh(new THREE.TorusGeometry(R + wall / 2, wall * 0.9, 8, 64), mat.rim);
-  foot.rotation.x = Math.PI / 2;
-  foot.position.y = wall * 0.9;
+  // the rim on top and the foot below, one mesh (the same glass)
+  const rimGeo = new THREE.TorusGeometry(R + wall / 2, wall * 0.75, 8, 64).rotateX(Math.PI / 2).translate(0, H, 0);
+  const footGeo = new THREE.TorusGeometry(R + wall / 2, wall * 0.9, 8, 64).rotateX(Math.PI / 2).translate(0, wall * 0.9, 0);
+  const rim = new THREE.Mesh(mergeGeometries([rimGeo, footGeo]), mat.rim);
+  rimGeo.dispose();
+  footGeo.dispose();
   // the water: a body (its height set by scale) with a lighter top and a bright blue line where it meets the glass
   const water = new THREE.Group();
   water.name = `${name}Water`;
@@ -231,8 +212,7 @@ function createTank(mat, name) {
   contact.renderOrder = 0;
   contact.visible = false;
   contact.userData.noExport = true;
-  root.add(glass, bottom, rim, foot, water, contact);
-  for (const m of [glass, bottom, rim, foot]) m.castShadow = false;
+  root.add(glass, bottom, rim, water, contact);
   let level = 0;
   function setLevel(y) {
     level = y;
@@ -287,13 +267,10 @@ export function createScene({ background = true } = {}) {
     const wall = new THREE.Mesh(new THREE.PlaneGeometry(520, 160), new THREE.MeshStandardMaterial({ map: wallTexture(), roughness: 0.95 }));
     wall.position.set(15, 78, -35);
     wall.receiveShadow = true;
-    // a terracotta tiled splash-back behind the bench, with a teal edge on top
-    const splash = new THREE.Mesh(new THREE.PlaneGeometry(520, 13), new THREE.MeshStandardMaterial({ map: tileTexture(), roughness: 0.35 }));
-    splash.position.set(15, 6.5, -34.9);
     const lineM = new THREE.MeshStandardMaterial({ color: '#1f7a86', roughness: 0.4 });
     const band = new THREE.Mesh(new THREE.BoxGeometry(520, 1, 0.5), lineM);
-    band.position.set(15, 13.4, -34.7);
-    room.add(top, edge, wall, splash, band);
+    band.position.set(15, 0.5, -34.7);
+    room.add(top, edge, wall, band);
   }
   root.add(room);
   // the tanks and everything on the bench in front of them (the box of particles is the other part)
@@ -365,23 +342,12 @@ function createParticleBox(mat) {
   root.name = 'ParticleBox';
   const glass = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), mat.boxGlass);
   glass.renderOrder = 3;
-  const edges = new THREE.Group();
-  const edgeGeo = new THREE.CylinderGeometry(0.075, 0.075, 1, 8);
-  const edgeMeshes = [];
-  for (let i = 0; i < 12; i++) {
-    const e = new THREE.Mesh(edgeGeo, mat.edge);
-    e.castShadow = true;
-    edges.add(e);
-    edgeMeshes.push(e);
-  }
-  const corners = new THREE.Group();
-  const cornerGeo = new THREE.SphereGeometry(0.11, 10, 8);
-  const cornerMeshes = [];
-  for (let i = 0; i < 8; i++) {
-    const c = new THREE.Mesh(cornerGeo, mat.edge);
-    corners.add(c);
-    cornerMeshes.push(c);
-  }
+  // the 12 edges and the 8 corners, each one instanced mesh
+  const edges = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.075, 0.075, 1, 8), mat.edge, 12);
+  edges.name = 'BoxEdges';
+  edges.castShadow = true;
+  const corners = new THREE.InstancedMesh(new THREE.SphereGeometry(0.11, 10, 8), mat.edge, 8);
+  corners.name = 'BoxCorners';
   // the starting box, faint, so a squeezed box can be compared with it
   const ghost = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(1, 1, 1)), mat.ghost);
   const s0 = boxSide(BOX_START);
@@ -399,8 +365,9 @@ function createParticleBox(mat) {
   const v = new THREE.Vector3();
   const q = new THREE.Quaternion();
   const one = new THREE.Vector3(1, 1, 1);
-  const Z = new THREE.Vector3(0, 0, 1);
-  const X = new THREE.Vector3(1, 0, 0);
+  const sc = new THREE.Vector3();
+  const qZ = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI / 2);
+  const qX = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2);
   let side = 0;
   function setVolume(V) {
     side = boxSide(V);
@@ -409,29 +376,21 @@ function createParticleBox(mat) {
     glass.position.y = h;
     // the 12 edges: 4 upright, 4 along x, 4 along z
     let i = 0;
-    for (const x of [-h, h])
-      for (const z of [-h, h]) {
-        const e = edgeMeshes[i++];
-        e.rotation.set(0, 0, 0);
-        e.scale.set(1, side, 1);
-        e.position.set(x, h, z);
-      }
-    for (const y of [0, side])
-      for (const z of [-h, h]) {
-        const e = edgeMeshes[i++];
-        e.quaternion.setFromAxisAngle(Z, Math.PI / 2);
-        e.scale.set(1, side, 1);
-        e.position.set(0, y, z);
-      }
-    for (const y of [0, side])
-      for (const x of [-h, h]) {
-        const e = edgeMeshes[i++];
-        e.quaternion.setFromAxisAngle(X, Math.PI / 2);
-        e.scale.set(1, side, 1);
-        e.position.set(x, y, 0);
-      }
-    let k = 0;
-    for (const x of [-h, h]) for (const y of [0, side]) for (const z of [-h, h]) cornerMeshes[k++].position.set(x, y, z);
+    const put = (mesh, x, y, z, rot, len) => {
+      v.set(x, y, z);
+      sc.set(1, len, 1);
+      m4.compose(v, rot, sc);
+      mesh.setMatrixAt(i++, m4);
+    };
+    for (const x of [-h, h]) for (const z of [-h, h]) put(edges, x, h, z, q, side);
+    for (const y of [0, side]) for (const z of [-h, h]) put(edges, 0, y, z, qZ, side);
+    for (const y of [0, side]) for (const x of [-h, h]) put(edges, x, y, 0, qX, side);
+    i = 0;
+    for (const x of [-h, h]) for (const y of [0, side]) for (const z of [-h, h]) put(corners, x, y, z, q, 1);
+    edges.instanceMatrix.needsUpdate = true;
+    corners.instanceMatrix.needsUpdate = true;
+    edges.computeBoundingSphere();
+    corners.computeBoundingSphere();
     const inner = side - 2 * PARTICLE_R - 0.12;
     layout.forEach((p, j) => {
       v.set(p[0] * inner, h + p[1] * inner, p[2] * inner);

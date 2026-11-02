@@ -103,3 +103,15 @@ Bangla digits. The balls are called "ভর" / "m₁ ভরটি" as the book d
 - Whether a stuck-together (inelastic) example, where momentum is kept but kinetic energy is not, belongs here or in
   the energy chapter (not built; the book's 3.5.1 assumes the energy is kept; the pairs question names it once).
 - The Bangla wording needs a person's check against the book.
+
+## Declutter and side panel (0.2.0)
+The 3D view is only the track and the two balls with their tags, on a soft blue-grey backdrop instead of the white
+page. The momentum strip (before / now, tip to tail) left the bottom of the view and is drawn in the panel under the
+play row, at the panel's width (src/ledger.js unchanged); on a phone held upright it is left out, with the laws'
+captions and the note on the assumption, so the 3D keeps 55 % of 390×700 (the table still carries every number).
+The panel reads in the order of every lab: the four examples, play and the time slider, the strip, the equations,
+the assumption, the sentence. Kit 1.5.0 puts the panel beside the 3D, so the figure's own `.pvc-shell` rules (for
+16:10 frames and phones on their side) and the wide two-column sheet are gone; a narrow side panel (≤ 340 px) keeps
+the compact type.
+No সামনে / ঘুরিয়ে দেখো buttons (kit): the lab starts from the front, a drag turns it, and the small "front" icon
+then brings it back.
