@@ -4,7 +4,9 @@
 // cable, from the block's top where the ring is; the contact patch lights the hook in the ring.
 import * as THREE from 'three';
 import { createArrow } from './arrow.js';
+import { mergeStatic } from './merge.js';
 import { V, blob, box, canvasTexture, castShadows, glowSpot, groundPatch, hitBox, mat, tube, wheel } from './parts.js';
+import { siteSetting } from './setting.js';
 
 const BOOM_PIVOT = V(-0.45, 1.95, 0);
 const BOOM_ANGLE = THREE.MathUtils.degToRad(35);
@@ -14,7 +16,7 @@ const CABLE_X = TIP.x + 0.2; // the cable leaves the far side of the pulley
 const LOAD = { w: 1.5, h: 1.0, d: 1.0 };
 const RING_H = 0.17;
 
-export function createCraneScene({ color }) {
+export function createCraneScene({ color, setting = true }) {
   const root = new THREE.Group();
   root.name = 'CraneScene';
   const model = new THREE.Group();
@@ -116,19 +118,28 @@ export function createCraneScene({ color }) {
   shade.scale.y = 0.8;
   shade.position.set(CABLE_X, 0.004, 0);
 
-  // ── ground: a site of packed earth ──
-  const ground = groundPatch(13, 7.5, {
-    color: '#ece7dc',
-    draw: (ctx, w, h) => {
-      for (let i = 0; i < 900; i++) {
-        ctx.fillStyle = `rgba(150,130,100,${0.05 + Math.random() * 0.08})`;
-        ctx.fillRect(Math.random() * w, Math.random() * h, 3, 2);
-      }
-    },
-  });
-  ground.position.set(0.3, 0, 0);
-  root.add(ground, shade);
+  // ── ground: a building site of packed earth under the sky (or, on a transparent page, a patch that fades out) ──
+  const site = setting ? siteSetting() : null;
+  if (site) root.add(site.root);
+  else {
+    const ground = groundPatch(13, 7.5, {
+      color: '#ece7dc',
+      draw: (ctx, w, h) => {
+        for (let i = 0; i < 900; i++) {
+          ctx.fillStyle = `rgba(150,130,100,${0.05 + Math.random() * 0.08})`;
+          ctx.fillRect(Math.random() * w, Math.random() * h, 3, 2);
+        }
+      },
+    });
+    ground.position.set(0.3, 0, 0);
+    root.add(ground);
+  }
+  root.add(shade);
   castShadows(model);
+  // the truck never moves: its parts become one mesh per material (the cable, the hook block and the load move)
+  mergeStatic(model, { keep: [cable, hookBlock, load] });
+  mergeStatic(hookBlock);
+  mergeStatic(load);
 
   // big targets: the block (it moves with the block) and the truck
   const hits = [hitBox(2.1, 2.2, 1.6, 0, 0.95, 0, load), hitBox(3.2, 2.6, 2.6, -1.4, 1.4, 0, model)];
@@ -165,6 +176,7 @@ export function createCraneScene({ color }) {
   return {
     id: 'crane',
     root,
+    background: site?.background ?? null,
     model,
     hits,
     arrow,

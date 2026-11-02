@@ -22,7 +22,7 @@ body.bg-transparent { background: transparent; }
 .tb-res b { font-size: 1.12em; color: var(--c-air); }
 
 /* the note on the stage (top left; the buttons are top right) */
-.tb-note { position: absolute; left: 8px; top: 8px; z-index: 3; max-width: max(130px, min(56%, calc(100% - 236px))); padding: 2px 8px; border-radius: 6px; background: rgba(255, 255, 255, 0.92); font-size: 12.5px; line-height: 1.4; color: var(--ink-2); pointer-events: none; }
+.tb-note { font-size: 12.5px; line-height: 1.4; color: var(--ink-2); }
 .tb-note:empty, .tb-note[hidden] { display: none; }
 
 /* labels on the picture: the words in their colour on a white chip */
@@ -75,22 +75,19 @@ body.bg-transparent { background: transparent; }
   .tb .pvc-examples .pvc-ex-word { font-size: 13px; }
   .pvc-anno-force { font-size: 12px; }
 }
-/* wide frames (tabs beside the sheet): the row and the action on the left, the formula on the right */
-@container pvc (min-width: 720px) and (min-height: 461px) {
-  .tb .pvc-learn { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: 'ex ex' 'act eq' 'out eq' 'rule rule'; align-content: start; column-gap: 24px; row-gap: 4px; }
-  .tb .pvc-examples { grid-area: ex; }
-  .tb .pvc-act-row { grid-area: act; }
-  .tb-eq { grid-area: eq; align-self: center; }
-  .tb-sum { font-size: 13.5px; }
-  .tb .pvc-outcome { grid-area: out; font-size: 14.5px; line-height: 1.5; }
-  .tb .pvc-rule { grid-area: rule; --pvc-rule-lines: 2; }
-  .tb .pvc-q-text { --pvc-q-text-min: 2lh; }
-  .tb .pvc-q-feedback { --pvc-q-feedback-min: 2lh; }
+/* a phone held upright: the note only beside the 3D, so the 3D keeps more than half the height */
+@container pvc (max-width: 420px) {
+  .tb-note { display: none; }
+  .tb .pvc-learn { gap: 6px; }
+  .tb .pvc-q-options { gap: 6px; }
+  .tb .pvc-opt { height: 40px; font-size: 13.5px; line-height: 1.2; }
+  .tb .pvc-q-text { font-size: 14.5px; --pvc-q-text-min: calc(2 * 1.4em); }
+  .tb .pvc-q-feedback { font-size: 13px; --pvc-q-feedback-min: calc(2 * 1.45em); }
 }
-@container pvc (min-width: 720px) and (max-width: 1100px) and (min-height: 461px) {
-  .tb .pvc-quiet span { display: none; }
+@container pvc-panel (min-height: 300px) {
+  .tb-note { display: block; }
+  .tb-note:empty, .tb-note[hidden] { display: none; }
 }
-/* a narrow panel beside the scene */
 @container pvc-panel (max-width: 330px) {
   .tb .pvc-rule { --pvc-rule-lines: 5; }
   .tb-sum { font-size: 11.5px; }
