@@ -1,7 +1,7 @@
 // Torricelli's barometer (procedural three.js, metres; the bench top is y = 0): a glass dish of mercury, a glass tube
 // closed at one end (its pose set by the app: upright on the bench to be filled, turned over, its mouth under the
 // mercury, tilted), the mercury inside it (a column scaled to its length, never rebuilt, with mercury's convex
-// meniscus), a thumb that seals the mouth, a hole that can be made at the top, and a cream scale in cm whose 0 touches
+// meniscus), a thumb that seals the mouth, and a cream scale in cm whose 0 touches
 // the dish's surface, held by a retort stand. The tube is drawn a little thicker than a real one so it reads on a
 // phone.
 import * as THREE from 'three';
@@ -215,15 +215,6 @@ export function createBarometer(mats, { num = String, scale = true, name = 'Baro
   thumb.visible = false;
   tube.add(thumb);
 
-  // the hole at the top (a dark ring with a chipped bright edge), shown once it is made
-  const hole = new THREE.Group();
-  hole.name = 'Hole';
-  const holeRing = new THREE.Mesh(new THREE.TorusGeometry(0.0028, 0.0011, 8, 18), new THREE.MeshBasicMaterial({ color: '#1a1a1a' }));
-  const holeDot = new THREE.Mesh(new THREE.CircleGeometry(0.0024, 18), new THREE.MeshBasicMaterial({ color: '#4a5560' }));
-  hole.add(holeDot, holeRing);
-  hole.position.set(0, L - 0.035, ro + 0.0004);
-  hole.visible = false;
-  tube.add(hole);
   root.add(tube);
 
   /** The tube's pose: its mouth at (x, y) and turned by `angle` about z (0: upright, mouth down; π: mouth up). */
@@ -285,6 +276,11 @@ export function createBarometer(mats, { num = String, scale = true, name = 'Baro
       marks.setMatrixAt(cm, M);
     }
     scaleGroup.add(marks);
+    // the book's 76 cm, marked in the heights' orange across the scale
+    const mark76 = new THREE.Mesh(new THREE.BoxGeometry(SCALE.width, 0.003, 0.001), new THREE.MeshBasicMaterial({ color: '#e8590c' }));
+    mark76.name = 'Mark76';
+    mark76.position.set(SCALE.x + SCALE.width / 2, SURFACE_Y + 0.76, SCALE.z + 0.0006);
+    scaleGroup.add(mark76);
     for (let cm = 0; cm <= 100; cm += 10) {
       const label = textMesh(num(String(cm)), 0.0125, { color: '#1b1f24', weight: 700, align: 'left' });
       label.position.set(SCALE.x + 0.029, SURFACE_Y + cm / 100, SCALE.z + 0.0004);
@@ -324,7 +320,6 @@ export function createBarometer(mats, { num = String, scale = true, name = 'Baro
     dish,
     pool,
     thumb,
-    hole,
     scale: scaleGroup,
     setPose,
     setColumn,

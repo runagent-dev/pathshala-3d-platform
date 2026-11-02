@@ -1,0 +1,64 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "torricelli-water-barometer",
+  "title": "A water barometer (পানির ব্যারোমিটার)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "1.0.0",
+  "book": "physics-9-10",
+  "page": 145,
+  "topic": "5.4.1",
+  "placement": "Book page 145, topic 5.4.1 (টরিসেলির পরীক্ষা): beside the paragraph on the 10.3 m of cold drink ('কোল্ড ড্রিংকসটা 10.3 মিটার পর্যন্ত উঠে হঠাৎ করে থেমে গেছে') and the 13.6 times denser mercury.",
+  "order": 5,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "Water instead of mercury (page 145, topic 5.4.1) in a schoolyard: one tall glass pipe standing in a tub of water against a three-storey school, beside a small 76 cm mercury barometer and a red-and-white measuring staff. One button fills it the Torricelli way: the water rises to 10.3 m, nearly to the roof (the camera follows it up), and stops with a vacuum above; one outlined blue air-pressure arrow presses on the tub and the column's height is drawn in orange. The panel shows one short line, the water's and the mercury's columns, and the rule (mercury is 13.6 times as dense as water: 76 cm × 13.6 ≈ 10.3 m). Test tab: 3 questions (how high the water stands, why so high, what is above it), every wrong choice with its own note. Split from torricelli-barometer. Phone-first, Bangla and English.",
+  "tags": ["air pressure", "atmospheric pressure", "barometer", "water", "density", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on the part pulses at first", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "water": "done" } },
+    { "name": "set", "payload": { "water": "ready", "animate": false } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "view", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": {
+      "params": { "coach": "0" },
+      "setup": [{ "command": "set", "payload": { "water": "done", "animate": false } }]
+    },
+    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "water": "done", "animate": false } }] }]
+  }
+}

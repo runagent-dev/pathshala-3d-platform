@@ -1,7 +1,6 @@
 // The arrows are the point of the picture: thick flat colour in a white outline with a thin dark edge, drawn over the
 // glass and the scenery so they read on the dark chalkboard, the silver mercury and the bright sky alike. A straight
-// arrow (the kit's createArrow, three layers) and a curved one (the air's pressure passed down through the mercury,
-// under the tube's mouth and up into the column: a tube along a fixed path, built once).
+// arrow (the kit's createArrow, three layers).
 import * as THREE from 'three';
 import { createArrow } from '@shared/arrow.js';
 
@@ -72,60 +71,6 @@ export function boldArrow(name, color, r, { order = 30 } = {}) {
     },
     hide() {
       core.hide();
-    },
-  };
-}
-
-/**
- * A curved arrow along `points` (m), its head at the last point: three layers like boldArrow. `show(k)` draws the
- * first k (0…1) of it, so it can grow along its path; `setOpacity(a)`.
- */
-export function curvedArrow(name, color, r, points, { order = 30 } = {}) {
-  const curve = new THREE.CatmullRomCurve3(points, false, 'centripetal');
-  const root = new THREE.Group();
-  root.name = name;
-  root.userData.noExport = true;
-  const SEG = 48;
-  const layers = [
-    { color: EDGE, r: r * 2.12, head: 1.9 },
-    { color: '#ffffff', r: r * 1.7, head: 1.62 },
-    { color, r, head: 1 },
-  ].map((L, i) => {
-    const mat = flat(L.color);
-    const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, SEG, L.r, 10, false), mat);
-    const hr = r * 2.6 * L.head;
-    const hl = r * 4.6 * (0.6 + 0.4 * L.head);
-    const cone = new THREE.Mesh(new THREE.ConeGeometry(hr, hl, 20).translate(0, hl / 2, 0), mat);
-    // a round end at the tail
-    const cap = new THREE.Mesh(new THREE.SphereGeometry(L.r, 12, 8), mat);
-    tube.renderOrder = cone.renderOrder = cap.renderOrder = order + i;
-    root.add(tube, cone, cap);
-    return { mat, tube, cone, cap, hl };
-  });
-  const p = new THREE.Vector3();
-  const d = new THREE.Vector3();
-  function show(k = 1) {
-    const f = Math.min(1, Math.max(0, k));
-    root.visible = f > 0.02;
-    if (!root.visible) return;
-    const count = Math.max(1, Math.round(SEG * f));
-    curve.getPointAt(Math.min(1, f), p);
-    curve.getTangentAt(Math.min(1, f), d);
-    for (const L of layers) {
-      // draw only the first `count` segments of the tube (10 radial segments × 6 indices per quad)
-      L.tube.geometry.setDrawRange(0, count * 10 * 6);
-      L.cone.position.copy(p);
-      L.cone.quaternion.setFromUnitVectors(UP, d);
-      curve.getPointAt(0, L.cap.position);
-    }
-  }
-  show(1);
-  return {
-    root,
-    show,
-    setOpacity(a) {
-      for (const L of layers) L.mat.opacity = a;
-      root.visible = a > 0.01;
     },
   };
 }

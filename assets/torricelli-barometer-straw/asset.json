@@ -1,0 +1,58 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "torricelli-barometer-straw",
+  "title": "A straw and the air's pressure (স্ট্র ও বাতাসের চাপ)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "1.0.0",
+  "book": "physics-9-10",
+  "page": 145,
+  "topic": "5.4.1",
+  "placement": "Book page 145, topic 5.4.1 (টরিসেলির পরীক্ষা): beside the paragraph on drinking a cold drink through a straw ('আসলে ব্যাপারটি ঘটে বাতাসের চাপের জন্য'), before চিত্র ৫.১০.",
+  "order": 2,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "Drinking through a straw (page 145, topic 5.4.1) in a plain school lab (a teak bench, a blue-grey wall): one bottle of cold drink with a clear straw bending into a child's mouth (a head from the side, the inside of the mouth shown through a cut). One outlined blue arrow shows the outside air's pressure on the drink, one the air's pressure in the mouth. With no sucking they are equal and the drink in the straw stays at the bottle's level; one button, চুমুক দাও, shortens the mouth's arrow and the outside air pushes the drink up to the mouth (the difference is exaggerated). The panel shows one short line, the mouth's pressure against the outside air's and the rule (a cold drink never rises more than 10.3 m). Test tab: 3 questions (why nothing rises without sucking, why it rises when you suck, how high at most), every wrong choice with its own note. Split from torricelli-barometer. Phone-first, Bangla and English.",
+  "tags": ["air pressure", "atmospheric pressure", "straw", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on the part pulses at first", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "suck": true } },
+    { "name": "set", "payload": { "suck": false, "animate": false } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "view", "practice-start", "practice-result", "practice-end"],
+  "export": { "poster": { "params": { "coach": "0" } }, "glb": [{ "name": "default", "setup": [] }] }
+}

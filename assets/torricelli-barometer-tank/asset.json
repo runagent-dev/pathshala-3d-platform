@@ -1,0 +1,61 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "torricelli-barometer-tank",
+  "title": "A tank with a hole (ছিদ্রওয়ালা ট্যাংক)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "1.0.0",
+  "book": "physics-9-10",
+  "page": 145,
+  "topic": "5.4.1",
+  "placement": "Book page 146, topic 5.4.1 (টরিসেলির পরীক্ষা): after চিত্র ৫.১০, as a second example of 'নলের উপরে কোনো ফুটো নেই, তাই সেদিক দিয়ে বাতাস চাপ দিতে পারছে না' (the owner's third picture).",
+  "order": 6,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "A tank with a hole (the owner's third picture, beside page 146, topic 5.4.1) in a plain school lab (a teak bench, a blue-grey wall): one glass tank of water with a screw lid and a red cork in a hole near the bottom. One button steps through it: pull the cork with the lid on: a few drops come and stop, and an outlined blue arrow shows the outside air pressing on the hole, as in Torricelli's tube; take off the lid: the arrow moves to the water's surface, a jet spurts out and, as the tank drains (shown faster), the depth h above the hole (orange) falls and the jet weakens; then refill. The panel shows one short line, h and the rule. Test tab: 3 questions (lid on, lid off, the tank draining), every wrong choice with its own note. Split from torricelli-barometer. Phone-first, Bangla and English.",
+  "tags": ["air pressure", "liquid pressure", "tank", "jet", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on the part pulses at first", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "tank": "stopped" } },
+    { "name": "set", "payload": { "tank": "open" } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "view", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": { "params": { "coach": "0" }, "setup": [{ "command": "set", "payload": { "tank": "open" } }] },
+    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "tank": "open" } }] }]
+  }
+}
