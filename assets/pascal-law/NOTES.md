@@ -26,8 +26,8 @@ The pressure a push makes in a closed liquid is the same everywhere (P = F₁/A�
 force, F₂ = F₁(A₂/A₁); but it moves as many times less (d₂ = d₁ A₁/A₂), so it multiplies force, not energy.
 
 ## Design
-- A hydraulic car lift in a workshop: a red brick wall over a deep teal dado with an orange band, a pegboard of tools,
-  a window of blue sky, a red tool chest, a stack of tyres, a blue oil drum, a blue-grey epoxy floor with yellow safety
+- A hydraulic car lift in a plain workshop (declutter, 0.3.0: no bricks, pegboard, window, chest, tyres or drum): a soft
+  plaster wall over a muted teal dado, a blue-grey epoxy floor with yellow safety
   lines. The lift stands on a blue base plate, **cut open along its middle** ("সামনের অংশ কেটে দেখানো"): hatched steel
   walls, polished steel shells behind, golden hydraulic oil (amber at the bottom, light gold at the top; it was deep orange until the polish pass, too close to the red pressure arrows).
 - The small (pump) cylinder: A₁ = 0.01 m² (a bore of 11.3 cm), a chrome rod and a T-handle with red grips, pushed
