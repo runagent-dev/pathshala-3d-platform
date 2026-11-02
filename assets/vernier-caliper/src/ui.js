@@ -30,7 +30,7 @@ function buildSimpleUI(root, t) {
       { cls: 'ze', label: 'ze_long', op: '−', wrap: 'pvc-ze-part' },
     ],
   });
-  return buildStudentShell(root, t, { learn });
+  return buildStudentShell(root, t, { learn, layout: 'side' });
 }
 
 export function buildUI(root, t, { ui = 'simple', kinds }) {
