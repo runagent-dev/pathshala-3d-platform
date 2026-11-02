@@ -27,8 +27,8 @@ To listen to it or control it from the book page, use the helper shipped in the 
 | Param | Meaning | Values | Default |
 |---|---|---|---|
 | `lang` | Language | `bn` বাংলা · `en` English | `bn` |
-| `example` | Example | `work` same work, different times · `time` same time, different work · `bulb` the 100 W bulb | `work` |
-| `at` | Held at (seconds into the run (scene time; the pumps' runs take 30 s and 15 s, the bulb 10 s), held still (pictures); empty: before the run) | number |  |
+| `example` | Example | `work` same work, different times · `time` same time, different work | `work` |
+| `at` | Held at (seconds into the run (scene time; the pumps' runs take 30 s and 15 s), held still (pictures); empty: before the run) | number |  |
 | `view` | View | `front` · `3d` | `front` |
 | `mode` | Start in | `explore` learn · `quiz` test | `explore` |
 | `coach` | The ring on the pumps pulses | `1` · `0` | `1` |
