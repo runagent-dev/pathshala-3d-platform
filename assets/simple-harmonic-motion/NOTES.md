@@ -135,3 +135,11 @@ teal selectors complete the palette while retaining the quantity colours, labels
   text on the 3D 64 characters in 6 boxes before and after (labels only); time to ready 0.65–1.8 s before and
   0.8–1.5 s after on the same loaded machine. The figure plays by itself, so it keeps drawing while it swings; paused,
   it draws nothing.
+
+## Declutter (2026-11-01, v0.5.0)
+Only the swing and the girl (or the spring and its stand): the tin house with its door, window, roof, pots and stool,
+the clouds and the far trees are gone (a calm sky fading to pale clay); the lab's blackboard with its chalk wave and
+the bench's grain are now a plain soft blue wall and a plain bench. The panel follows the order every lab uses: the
+examples and the play/slow buttons in one row, the speed, the graph, the sentence (the old wide-frame grid and
+sideways-phone rules are gone; the graph's height still follows the frame). No front/turn buttons: a drag turns the
+view (not during the test), a front icon brings it back.

@@ -144,41 +144,19 @@ body.bg-transparent { background: transparent; }
   .shm-extra { font-size: 12px; }
   .sg-switch button { font-size: 12px; }
 }
-/* short and wide (the kit puts the panel on the right): the reading above the rule */
+/* the graph's height follows the frame (set on the shell, so these rules measure the whole figure) */
 @container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
   .shm .pvc-shell { --trip-h: 116px; }
-  .shm .pvc-panel { overflow: hidden; }
-  .shm .pvc-learn { gap: 6px; }
-  .shm-main { flex-direction: column; align-items: stretch; gap: 4px; }
-  .shm .shm-speed .v { font-size: 24px; }
-  .shm-state { min-height: 2.7em; font-size: 13px; }
-  .shm-extra { min-height: 4.05em; font-size: 12px; }
-  .shm-opt { font-size: 14px; }
-  .shm .pvc-q-text { min-height: 0; }
 }
-/* wide frames (the panel below, the kit's tabs on its left): the words on the left, the period on the right */
 @container pvc (min-width: 720px) and (min-height: 461px) {
   .shm .pvc-shell { --trip-h: 136px; }
-  .shm .pvc-learn { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); grid-template-areas: 'main trip' 'extra trip' 'foot trip'; grid-template-rows: auto 1fr auto; gap: 6px 22px; align-items: start; }
-  .shm-main { grid-area: main; flex-direction: column; align-items: stretch; gap: 4px; }
-  .shm-trip { grid-area: trip; }
-  .shm-extra { grid-area: extra; }
-  .shm .pvc-learn-foot { grid-area: foot; }
 }
-/* large boards: more room for the graph and larger words */
+/* large boards: more room for the graph, larger labels on the 3D view */
 @container pvc (min-width: 1000px) and (min-height: 700px) {
   .shm .pvc-shell { --trip-h: 176px; }
   .shm .pvc-anno-part { font-size: 15px; padding: 4px 10px; }
-  .shm .shm-speed .v { font-size: 32px; }
-  .shm-state { font-size: 15.5px; }
-  .shm-extra { font-size: 14.5px; }
-  .shm-stops, .shm-stops button { height: 38px; }
-  .shm-stops button { width: 84px; font-size: 13.5px; }
-  .shm-stops button small { display: block; }
-  .shm-stops button:first-child, .shm-stops button:last-child { width: 46px; }
-  .shm-span { height: 18px; font-size: 13px; }
-  .sg-switch { width: 70px; }
-  .sg-switch button { font-size: 14.5px; }
-  .sg-label b, .sg-energy-values b { font-size: 14px; }
-  .sg-value { font-size: 13px; }
+}
+/* the narrow side panel: the reading above its sentence */
+@container pvc-panel (max-width: 360px) {
+  .shm-main { flex-direction: column; align-items: stretch; gap: 4px; }
 }

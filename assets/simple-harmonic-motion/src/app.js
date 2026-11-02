@@ -141,7 +141,17 @@ export function createApp(root, options = {}) {
     )
     .join('');
   const ui = buildStudentShell(root, t, {
+    layout: 'side',
     learn: `
+          <div class="pvc-learn-foot">
+            <div class="pvc-seg shm-ex" role="group" aria-label="${t('examples')}">
+              ${EXAMPLES.map((ex) => `<button data-ex="${ex}">${t(`ex_${ex}`)}</button>`).join('')}
+            </div>
+            <div class="shm-acts">
+              <button class="pvc-btn primary" data-act="play"><span class="ic"></span><span class="tx"></span></button>
+              <button class="pvc-btn" data-act="slow" aria-pressed="false">${t('act_slow')}</button>
+            </div>
+          </div>
           <div class="pvc-learn-main shm-main">
             <div class="pvc-result shm-speed"><span class="k"><i class="shm-arrow-ic"></i>${t('speed')}</span><span class="v">0</span><span class="u">${t('unit_speed')}</span></div>
             <p class="shm-state" role="status" aria-live="off"></p>
@@ -161,16 +171,7 @@ export function createApp(root, options = {}) {
             <div class="shm-stops" role="group" aria-label="${t('inspect_label')}">${stops}</div>
             <div class="shm-span"><i></i><span class="tx"></span><i></i></div>
           </div>
-          <p class="pvc-learn-extra shm-extra"></p>
-          <div class="pvc-learn-foot">
-            <div class="shm-acts">
-              <button class="pvc-btn primary" data-act="play"><span class="ic"></span><span class="tx"></span></button>
-              <button class="pvc-btn" data-act="slow" aria-pressed="false">${t('act_slow')}</button>
-            </div>
-            <div class="pvc-seg shm-ex" role="group" aria-label="${t('examples')}">
-              ${EXAMPLES.map((ex) => `<button data-ex="${ex}">${t(`ex_${ex}`)}</button>`).join('')}
-            </div>
-          </div>`,
+          <p class="pvc-learn-extra shm-extra"></p>`,
   });
   const badge = document.createElement('div');
   badge.className = 'shm-badge';
@@ -726,15 +727,20 @@ export function createApp(root, options = {}) {
   }
   function setView(view, { animate = true } = {}) {
     s.view = view === '3d' ? '3d' : 'front';
-    controls.enableRotate = s.view === '3d';
     s.userMovedCamera = false;
     syncUI();
     emit('view', { view: s.view });
     return flyTo(viewPose(s.view), animate ? 0.8 : 0);
   }
+  // the view starts from the front; dragging turns it, and then the "front" button appears to come back
   controls.addEventListener('start', () => {
     s.userMovedCamera = true;
     tweener.cancel('camera');
+    if (s.view !== '3d') {
+      s.view = '3d';
+      syncUI();
+      emit('view', { view: s.view });
+    }
   });
   stage.onResize(() => !s.userMovedCamera && flyTo(viewPose(s.view), 0));
 
@@ -1085,7 +1091,9 @@ export function createApp(root, options = {}) {
 
   // ── buttons, keys ───────────────────────────────────────────────────────────
   function syncUI() {
-    for (const b of ui.$$('[data-view]')) b.classList.toggle('on', b.dataset.view === s.view);
+    const front = ui.$('[data-view="front"]');
+    if (front) front.hidden = s.view !== '3d';
+    controls.enableRotate = controls.enableZoom = !s.locked;
     root.dataset.mode = s.mode === 'quiz' ? 'quiz' : 'explore';
     for (const b of ui.$$('[data-mode]')) {
       const on = b.dataset.mode === root.dataset.mode;
