@@ -38,3 +38,7 @@ one and receive).
   heat) in the "তাপের প্রবাহ" chip.
 - Heights in cm are shown only in the water picture; the heat picture says "বেশি / কম / সমান" (no invented temperatures).
 - Every figure's Bangla wording needs a person's check against the book.
+
+## Polish pass 0.2.0 (chapter 6 detail pass)
+- Checked every Bangla string against p162; the book's own words kept; "বাঁ" became "বাম" (book-notes).
+- Water tops now carry ripples (the page draws the vessel's surface wavy) and a thin meniscus ring where water meets glass.
