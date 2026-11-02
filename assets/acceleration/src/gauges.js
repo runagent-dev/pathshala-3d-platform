@@ -1,5 +1,5 @@
 // The flat drawings next to the 3D view, as SVG: the বেগ–সময় graph the student draws by driving (the book's
-// চিত্র ২.০৬ made live), the compass of the বেগ's direction on the bend, and the CNG's speedometer.
+// চিত্র ২.০৬ made live), and the CNG's speedometer.
 import { TICK, TRIP, VMAX, lettersOf } from './drive.js';
 
 const NS = 'http://www.w3.org/2000/svg';
@@ -124,43 +124,6 @@ export function createGraph(el, { t, N, colors, text = colors }) {
 
   new ResizeObserver(() => draw()).observe(el);
   return { draw, pick, svg };
-}
-
-/**
- * The compass of the বেগ on the bend: north up (as the view from above), the বেগ arrow from the middle (its length
- * is the speed, the same all the time), and the ত্বরণ arrow when the CNG turns.
- */
-export function createCompass(el, { t, colors }) {
-  const svg = document.createElementNS(NS, 'svg');
-  svg.setAttribute('viewBox', '-50 -50 100 100');
-  svg.setAttribute('class', 'ac-compass-svg');
-  svg.setAttribute('role', 'img');
-  svg.setAttribute('aria-label', t('compass_aria'));
-  const ticks = Array.from({ length: 8 }, (_, i) => {
-    const a = (i * Math.PI) / 4;
-    const r0 = i % 2 ? 40 : 37;
-    return `<line class="c-tick" x1="${Math.cos(a) * r0}" y1="${Math.sin(a) * r0}" x2="${Math.cos(a) * 43}" y2="${Math.sin(a) * 43}"/>`;
-  }).join('');
-  svg.innerHTML = `<circle class="c-ring" r="43"/>${ticks}
-    <text class="c-dir" x="0" y="-31" text-anchor="middle">${esc(t('dir_N_short'))}</text>
-    <text class="c-dir" x="31" y="4" text-anchor="middle">${esc(t('dir_E_short'))}</text>
-    <text class="c-dir" x="0" y="38" text-anchor="middle">${esc(t('dir_S_short'))}</text>
-    <text class="c-dir" x="-31" y="4" text-anchor="middle">${esc(t('dir_W_short'))}</text>
-    <g class="c-acc" fill="${colors.turn}" stroke="${colors.turn}"><line x1="0" y1="0" x2="15" y2="0"/><path d="M22 0L13 -5L13 5Z"/></g>
-    <g class="c-vel" fill="${colors.velocity}" stroke="${colors.velocity}"><line x1="0" y1="0" x2="22" y2="0"/><path d="M31 0L20 -6.5L20 6.5Z"/></g>
-    <circle class="c-hub" r="3.2"/>`;
-  el.append(svg);
-  const vel = svg.querySelector('.c-vel');
-  const acc = svg.querySelector('.c-acc');
-  return {
-    /** heading: rad from east, anticlockwise; steer: +1 left, −1 right, 0 straight. */
-    set(heading, steer) {
-      const deg = (-heading * 180) / Math.PI;
-      vel.setAttribute('transform', `rotate(${deg.toFixed(2)})`);
-      acc.style.display = steer ? '' : 'none';
-      if (steer) acc.setAttribute('transform', `rotate(${(deg - steer * 90).toFixed(2)})`);
-    },
-  };
 }
 
 /** The speedometer (দ্রুতি in m/s): a dial with a needle, and the reading. */

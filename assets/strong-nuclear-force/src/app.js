@@ -1,9 +1,9 @@
 // Strong nuclear force (book page 69, topic 3.2.4), student view. A small nucleus of protons (+) and neutrons:
 // the student pulls one proton out. Within about 10⁻¹⁵ m the strong nuclear force pulls it back very hard (an
 // orange arrow, far bigger than the blue electric push of the other protons) and it snaps back when let go;
-// a little farther the strong force is gone and the electric push sends it away. Two more scenes show where
-// nuclear energy comes from: a big nucleus splitting (ভাঙা) and two small nuclei joining (জোড়া দেওয়া). The
-// panel names the four fundamental forces in order and how two of them became one (ইলেকট্রো উইক). Then a
+// a little farther the strong force is gone and the electric push sends it away. (Where nuclear energy comes
+// from, splitting and joining, is its own lab: strong-nuclear-force-energy.) The panel names the four
+// fundamental forces in order and how two of them became one (ইলেকট্রো উইক). Then a
 // short test. Built on the shared student kit (@shared/student/…).
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
@@ -15,12 +15,11 @@ import { createQuiz } from '@shared/student/quiz.js';
 import { ICONS } from '@shared/student/icons.js';
 import { createI18n } from './i18n.js';
 import { COLORS, createBackdrop, createNucleonMaterials } from './models.js';
-import { buildJoinScene, buildPullScene, buildSplitScene } from './scenes.js';
+import { buildPullScene } from './scenes.js';
 import { createTags } from './tags.js';
 import { MAX_PULL, R_NUCLEON, STEP, clamp, electricArrowLength, flightStep, fmt, forcesAt, roundTo, strongArrowLength } from './reading.js';
 
 export const DEFAULTS = {
-  scene: 'pull', // 'pull' | 'split' | 'join'
   pull: 0, // fm: hold the proton this far out at the start (the poster shows 0.6)
   view: 'front', // 'front' | '3d'
   mode: 'explore', // 'explore' | 'quiz'
@@ -32,7 +31,6 @@ export const DEFAULTS = {
   sound: true,
 };
 
-const SCENES = ['pull', 'split', 'join'];
 const VIEW_DIRS = {
   front: new THREE.Vector3(0, 0.13, 1).normalize(),
   '3d': new THREE.Vector3(0.55, 0.42, 0.72).normalize(),
@@ -58,12 +56,8 @@ export function createApp(root, options = {}) {
   const ui = buildStudentShell(root, t, {
     layout: 'side',
     learn: `
-          <div class="snf-scenes" role="radiogroup" aria-label="${t('scenes')}">${SCENES.map(
-            (k) => `<button role="radio" data-scene="${k}">${t(`scene_${k}`)}</button>`,
-          ).join('')}</div>
           <div class="snf-read">
             <div class="snf-dist"><span class="k">${t('distance')}</span><b class="v">0</b><span class="u">× ${RANGE_HTML}</span></div>
-            <div class="snf-eq" hidden></div>
             <button class="pvc-btn snf-again" data-act="again" aria-label="${t('act_again_long')}">${ICONS.reset}<span>${t('act_again')}</span></button>
           </div>
           <p class="snf-say" aria-live="polite"></p>
@@ -89,10 +83,7 @@ export function createApp(root, options = {}) {
   controls.enablePan = false;
   const M = createNucleonMaterials();
   const pull = buildPullScene(M);
-  const split = buildSplitScene(M);
-  const join = buildJoinScene(M);
-  const scenes = { pull, split, join };
-  for (const sc of Object.values(scenes)) scene.add(sc.root);
+  scene.add(pull.root);
   const key = new THREE.DirectionalLight(0xffffff, 1.1);
   const KEY_DIR = new THREE.Vector3(-14, 22, 30).normalize();
   key.position.copy(KEY_DIR).multiplyScalar(40);
@@ -118,17 +109,14 @@ export function createApp(root, options = {}) {
     key.shadow.radius = 3;
     key.shadow.bias = -0.0015;
     key.shadow.normalBias = 0.02;
-    for (const sc of [pull.nucleus, split.balls, join.balls]) {
-      sc.protons.castShadow = sc.protons.receiveShadow = true;
-      sc.neutrons.castShadow = sc.neutrons.receiveShadow = true;
-    }
+    pull.nucleus.protons.castShadow = pull.nucleus.protons.receiveShadow = true;
+    pull.nucleus.neutrons.castShadow = pull.nucleus.neutrons.receiveShadow = true;
     pull.proton.castShadow = pull.proton.receiveShadow = true;
   }
-  /** The shadow box: tight round where each scene's balls are (centre x, half size in fm). */
-  const SHADOW_FIT = { pull: [2, 6.2], split: [0, 11.2], join: [0, 7.2] };
-  function fitShadow(name) {
+  /** The shadow box: tight round the balls (centre x, half size in fm). */
+  function fitShadow() {
     if (!key.castShadow) return;
-    const [cx, r] = SHADOW_FIT[name];
+    const [cx, r] = [2, 6.2];
     key.target.position.set(cx, 0, 0);
     key.position.copy(key.target.position).addScaledVector(KEY_DIR, 40);
     key.target.updateMatrixWorld();
@@ -156,7 +144,7 @@ export function createApp(root, options = {}) {
   let scaleShownNow = null;
   // placed after the labels have read the layout (registered below, after them), so nothing forces a layout
   const placeScale = () => {
-    const show = s.scene === 'pull' && s.scaleShown;
+    const show = s.scaleShown;
     if (show !== scaleShownNow) scaleEl.hidden = !(scaleShownNow = show);
     if (!show) return;
     if (!scaleW?.u) measureScale();
@@ -171,7 +159,7 @@ export function createApp(root, options = {}) {
   stage.addTicker((dt) => tweener.tick(dt));
   const audio = createAudio(o.sound);
   // every ball turns to the viewer (a proton shows its "+")
-  stage.onBeforeRender(() => scenes[s.scene].face(camera.quaternion));
+  stage.onBeforeRender(() => pull.face(camera.quaternion));
 
   const listeners = new Map();
   function emit(type, payload) {
@@ -179,7 +167,6 @@ export function createApp(root, options = {}) {
   }
 
   const s = {
-    scene: SCENES.includes(o.scene) ? o.scene : 'pull',
     view: o.view === '3d' ? '3d' : 'front',
     mode: 'explore',
     locked: false,
@@ -194,19 +181,12 @@ export function createApp(root, options = {}) {
     forcesShown: true, // the arrows (hidden while a test question asks about them)
     scaleShown: true, // the distance scale (hidden in test questions it would answer)
     reachShown: true, // the orange shell of the strong force's reach
-    // split / join
-    t: 0,
-    playing: false,
-    still: false, // the test shows the start without the incoming neutron
-    prevScene: 'pull',
   };
 
   // ── the state ───────────────────────────────────────────────────────────────
   function snapshot() {
     const f = forcesAt(s.d);
-    const sc = scenes[s.scene];
     return {
-      scene: s.scene,
       view: s.view,
       mode: s.mode,
       distance: f.d,
@@ -215,13 +195,12 @@ export function createApp(root, options = {}) {
       verdict: f.verdict,
       forces: { strong: Math.round(f.strong), electric: Math.round(f.electric) },
       arrows: { strong: pull.strongArrow.root.visible, electric: pull.electricArrow.root.visible },
-      energy: s.scene === 'pull' ? null : { t: roundTo(s.t, 0.01), duration: sc.end, playing: s.playing, phase: sc.state.phase },
     };
   }
   let lastEmitted = '';
   function emitChange() {
     const snap = snapshot();
-    const k = `${snap.scene}|${snap.mode}|${snap.distance}|${snap.phase}|${snap.energy?.phase}|${snap.energy?.playing}`;
+    const k = `${snap.mode}|${snap.distance}|${snap.phase}`;
     if (k === lastEmitted) return;
     lastEmitted = k;
     emit('change', snap);
@@ -232,21 +211,12 @@ export function createApp(root, options = {}) {
   const el = {
     dist: $('.snf-dist'),
     value: $('.snf-dist .v'),
-    eq: $('.snf-eq'),
     say: $('.snf-say'),
     again: $('[data-act="again"]'),
   };
-  const plus = '<i>+</i>';
-  const energyTerm = `<b class="c-energy">${t('eq_energy')}</b>`;
-  const eqHtml = {
-    split: `<span>${t('eq_big')} ${plus} ${t('eq_neutron')} <i>→</i></span> <span>${t('eq_two_small')}</span> <span>${plus} ${t('eq_neutrons', { n: 3 })} ${plus} ${energyTerm}</span>`,
-    join: `<span>${t('eq_two_small')} <i>→</i></span> <span>${t('eq_new')}</span> <span>${plus} ${t('eq_neutron')} ${plus} ${energyTerm}</span>`,
-  };
-  const NOTES = { pull: ['note_pull', 'note_slow'], split: ['note_split', 'note_split'], join: ['note_slow', 'note_slow'] };
+  const NOTES = ['note_pull', 'note_slow'];
   let sayKey = '';
   function sayLine() {
-    if (s.scene === 'split') return s.t >= split.end ? 'say_split_done' : 'say_split_go';
-    if (s.scene === 'join') return s.t >= join.end ? 'say_join_done' : 'say_join_go';
     if (s.demo) return 'say_idle';
     if (s.phase === 'held') {
       const f = forcesAt(s.d);
@@ -258,27 +228,15 @@ export function createApp(root, options = {}) {
     return 'say_idle';
   }
   function refresh() {
-    for (const b of ui.$$('[data-scene]')) {
-      const on = b.dataset.scene === s.scene;
-      b.classList.toggle('on', on);
-      b.setAttribute('aria-checked', String(on));
-    }
-    const isPull = s.scene === 'pull';
-    el.dist.hidden = !isPull;
-    el.eq.hidden = isPull;
-    if (isPull) el.value.textContent = s.phase === 'gone' ? '—' : N(fmt(Math.max(0, s.d)));
-    else if (el.eq.dataset.scene !== s.scene) {
-      el.eq.innerHTML = eqHtml[s.scene];
-      el.eq.dataset.scene = s.scene;
-    }
+    el.value.textContent = s.phase === 'gone' ? '—' : N(fmt(Math.max(0, s.d)));
     const k = sayLine();
     if (k !== sayKey) {
       sayKey = k;
       el.say.innerHTML = t(k, { p: RANGE_HTML });
     }
-    // splitting and joining are always shown slowed down; the pulled proton only while it moves by itself
-    const moving = isPull ? s.phase === 'flying' || s.phase === 'returning' : !s.still;
-    const nk = NOTES[s.scene][moving ? 1 : 0];
+    // time is slowed down only while the proton moves by itself
+    const moving = s.phase === 'flying' || s.phase === 'returning';
+    const nk = NOTES[moving ? 1 : 0];
     if (noteEl.dataset.k !== nk) {
       noteEl.dataset.k = nk;
       noteEl.textContent = t(nk);
@@ -368,7 +326,7 @@ export function createApp(root, options = {}) {
   // the flight: pushed off by the electric force alone, in slow motion
   const tmp = new THREE.Vector3();
   stage.addTicker((dt) => {
-    if (s.scene !== 'pull' || s.phase !== 'flying') return false;
+    if (s.phase !== 'flying') return false;
     const step = flightStep(s.d, s.v, dt);
     s.v = step.v;
     const sp = toScreen(pull.at(step.d, tmp));
@@ -383,74 +341,26 @@ export function createApp(root, options = {}) {
     return true;
   });
 
-  // ── split / join ────────────────────────────────────────────────────────────
-  function seek(time) {
-    const sc = scenes[s.scene];
-    if (s.scene === 'pull' || !sc) return;
-    s.t = clamp(time, 0, sc.end);
-    sc.render(s.t, { incoming: !s.still });
-    refresh();
-  }
-  function play(from = 0) {
-    if (s.scene === 'pull') return;
-    s.still = false;
-    s.playing = true;
-    seek(from);
-    emitChange();
-  }
-  stage.addTicker((dt) => {
-    if (!s.playing || s.scene === 'pull') return false;
-    const sc = scenes[s.scene];
-    const before = sc.state.phase;
-    seek(s.t + dt);
-    if (sc.state.phase !== before && sc.state.phase === 'apart') audio.pop();
-    if (sc.state.phase !== before && sc.state.phase === 'joining') audio.pop();
-    if (s.t >= sc.end) {
-      s.playing = false;
-      emit('done', { scene: s.scene });
-      refresh();
-    }
-    emitChange();
-    return true;
-  });
-
-  // ── scenes ──────────────────────────────────────────────────────────────────
-  function setScene(name, { animate = true, start = true } = {}) {
-    const next = SCENES.includes(name) ? name : 'pull';
+  // ── start afresh ────────────────────────────────────────────────────────────
+  function setScene({ animate = true } = {}) {
     s.run++;
     tweener.cancel('pull');
     s.dragging = false;
     drag = null;
-    s.playing = false;
-    const changed = next !== s.scene;
-    s.scene = next;
-    for (const [k, sc] of Object.entries(scenes)) sc.root.visible = k === next;
-    fitShadow(next);
+    fitShadow();
     s.phase = 'seated';
     s.d = 0;
-    s.t = 0;
-    if (next === 'pull') showProton(0);
-    else {
-      showProton(0);
-      seek(0);
-    }
+    showProton(0);
     addTags();
-    if (changed || !s.userMovedCamera) {
-      s.userMovedCamera = false;
-      flyTo(poseFor(next, s.view), animate && changed ? 0.7 : 0);
-    }
-    if (next !== 'pull' && start) play(0);
+    if (!s.userMovedCamera) flyTo(poseFor(s.view), animate ? 0.7 : 0);
     refresh();
-    emit('scene', { scene: next });
     emitChange();
   }
 
   function again() {
     if (s.locked) return lockedNudge();
-    if (s.scene === 'pull') {
-      s.run++;
-      seat();
-    } else play(0);
+    s.run++;
+    seat();
   }
 
   // ── labels on the scene ─────────────────────────────────────────────────────
@@ -467,7 +377,7 @@ export function createApp(root, options = {}) {
   const below = (dy = 8) => ({ x: 0, y: dy, ax: 0.5, ay: 0 });
   function addTags() {
     tags.clear();
-    if (s.scene === 'pull') {
+    {
       const sa = pull.strongArrow;
       const ea = pull.electricArrow;
       // the strong force's name above the proton, off the nucleus, with a short leader to its arrow
@@ -530,90 +440,7 @@ export function createApp(root, options = {}) {
               ],
         ),
       });
-      return;
     }
-    const sc = scenes[s.scene];
-    const P = sc.points;
-    // a nucleus's name goes above it (its point is the top of the nucleus), never over it
-    const nameSpots = [
-      ...[18, 34].flatMap((dy) => [above(dy), { x: 16, y: -dy, ax: 0, ay: 1 }, { x: -16, y: -dy, ax: 1, ay: 1 }]),
-      { x: -22, y: 6, ax: 1, ay: 0.5 }, // beside the top, where the ball curves away
-      { x: 22, y: 6, ax: 0, ay: 0.5 },
-    ];
-    if (s.scene === 'split') {
-      // the slow neutron before it arrives; after the split, one of the three freed neutrons
-      const around = [26, 38].flatMap((r) => [above(r), below(r), { x: r, y: 0, ax: 0, ay: 0.5 }, { x: -r, y: 0, ax: 1, ay: 0.5 }]);
-      tags.add('neutron', {
-        html: t('label_neutron'),
-        priority: 2,
-        point: () => (s.t < 1.5 ? (s.still ? null : P.neutron) : s.t >= 3.6 ? P.freed[0] : null),
-        spots: around,
-      });
-      tags.add('big', {
-        html: t('label_big'),
-        priority: 3,
-        point: () => (sc.state.phase === 'before' || sc.state.phase === 'wobble' ? P.big : null),
-        spots: nameSpots,
-      });
-      // each piece named above it, else below it
-      const pieceSpots = (j) => [
-        ...nameSpots,
-        ...[18, 34].map((dy) => ({ ...below(dy), pt: () => P.piecesLow[j] })),
-        { x: j ? -8 : 8, y: 0, ax: j ? 1 : 0, ay: 0.5, pt: () => P.piecesInner[j] }, // beside it, toward the middle
-      ];
-      tags.add('small0', {
-        html: t('label_small'),
-        priority: 3,
-        leadFrom: 'spot',
-        point: () => (s.t >= 3.3 ? P.pieces[0] : null),
-        spots: pieceSpots(0),
-      });
-      tags.add('small1', {
-        html: t('label_small'),
-        priority: 3,
-        leadFrom: 'spot',
-        point: () => (s.t >= 3.3 ? P.pieces[1] : null),
-        spots: pieceSpots(1),
-      });
-    } else {
-      tags.add('small0', { html: t('label_small'), priority: 3, point: () => (s.t < 1.6 ? P.small[0] : null), spots: nameSpots });
-      tags.add('small1', { html: t('label_small'), priority: 3, point: () => (s.t < 1.6 ? P.small[1] : null), spots: nameSpots });
-      tags.add('new', {
-        html: t('label_new'),
-        priority: 3,
-        point: () => (s.t >= 1.95 ? P.joined : null),
-        spots: [below(16), { x: 18, y: 14, ax: 0, ay: 0 }, { x: -18, y: 14, ax: 1, ay: 0 }],
-      });
-      tags.add('neutron', {
-        html: t('label_neutron'),
-        priority: 1,
-        point: () => (s.t >= 2.3 ? P.neutron : null),
-        spots: [28, 42].flatMap((r) => [
-          { x: r, y: 0, ax: 0, ay: 0.5 },
-          below(r),
-          { x: -r, y: 0, ax: 1, ay: 0.5 },
-          above(r),
-          { x: r * 0.75, y: r * 0.75, ax: 0, ay: 0 },
-          { x: -r * 0.75, y: r * 0.75, ax: 1, ay: 0 },
-        ]),
-      });
-    }
-    tags.add('energy', {
-      html: t('label_energy'),
-      color: COLORS.energyInk,
-      cls: 'snf-energy',
-      priority: 4, // the payoff: placed first
-      point: () => (sc.burst.root.visible ? P.energy() : null),
-      spots: [
-        { x: 8, y: -6, ax: 0, ay: 1 },
-        { x: -8, y: -6, ax: 1, ay: 1 },
-        above(10),
-        { x: 10, y: 0, ax: 0, ay: 0.5 },
-        { x: -10, y: 0, ax: 1, ay: 0.5 },
-        below(10),
-        { x: 8, y: 6, ax: 0, ay: 0 },
-      ],
-    });
   }
   const toScreen = (p, out = { x: 0, y: 0 }) => {
     const q = tmpP.copy(p).project(camera);
@@ -630,19 +457,7 @@ export function createApp(root, options = {}) {
     const b = toScreen(offR);
     return Math.hypot(b.x - a.x, b.y - a.y);
   }
-  /** A box round a ball (a neutron on its way) that no label may cover. */
-  function ballBox(p, k = 1) {
-    const c = toScreen(p);
-    const r = pxAt(p, R_NUCLEON) * k;
-    return { l: c.x - r, t: c.y - r, r: c.x + r, b: c.y + r };
-  }
   function keepBoxes() {
-    if (s.scene === 'split') {
-      const out = split.state.phase === 'before' && !s.still ? [ballBox(split.points.neutron)] : [];
-      if (s.t >= 3.3) for (const p of split.points.freed) out.push(ballBox(p));
-      return out;
-    }
-    if (s.scene === 'join') return s.t > 1.6 ? [ballBox(join.points.neutron)] : [];
     const out = [];
     if (pull.proton.visible) {
       const c = toScreen(pull.proton.position);
@@ -664,7 +479,6 @@ export function createApp(root, options = {}) {
   }
   const tmpA = new THREE.Vector3();
   function softBoxes() {
-    if (s.scene !== 'pull') return [];
     const c = toScreen(tmpA.set(0, 0, 0));
     const r = pxAt(tmpA, pull.surface);
     return [{ l: c.x - r, t: c.y - r, r: c.x + r, b: c.y + r }];
@@ -683,8 +497,8 @@ export function createApp(root, options = {}) {
    * A camera pose that shows the whole scene (all of its animation, with room for its labels) as big as it can,
    * for this frame's shape: nothing under the buttons at the top right.
    */
-  function poseFor(name, view) {
-    const pts = scenes[name].frame();
+  function poseFor(view) {
+    const pts = pull.frame();
     const lo = new THREE.Vector3(Infinity, Infinity, Infinity);
     const hi = new THREE.Vector3(-Infinity, -Infinity, -Infinity);
     for (const { p } of pts) {
@@ -769,7 +583,7 @@ export function createApp(root, options = {}) {
     s.userMovedCamera = false;
     syncUI();
     emit('view', { view: s.view });
-    return flyTo(poseFor(s.scene, s.view), animate ? 0.8 : 0);
+    return flyTo(poseFor(s.view), animate ? 0.8 : 0);
   }
   // the view starts from the front; dragging turns it, and then the "front" button appears to come back
   controls.addEventListener('start', () => {
@@ -782,7 +596,7 @@ export function createApp(root, options = {}) {
     }
   });
   stage.onResize(() => {
-    if (!s.userMovedCamera) flyTo(poseFor(s.scene, s.view), 0);
+    if (!s.userMovedCamera) flyTo(poseFor(s.view), 0);
   });
 
   // ── pulling the proton ──────────────────────────────────────────────────────
@@ -794,7 +608,7 @@ export function createApp(root, options = {}) {
   };
   /** Does a finger at this canvas point take the proton? */
   function onProton(p) {
-    if (s.scene !== 'pull' || !pull.proton.visible || s.phase === 'flying') return false;
+    if (!pull.proton.visible || s.phase === 'flying') return false;
     ndc.set((p.x / stage.width) * 2 - 1, -(p.y / stage.height) * 2 + 1);
     raycaster.setFromCamera(ndc, camera);
     if (raycaster.intersectObject(pull.hit, false).length) return true;
@@ -907,7 +721,6 @@ export function createApp(root, options = {}) {
   }
   /** The pull scene, the proton in its place, nothing drawn on it. */
   function quietPull() {
-    if (s.scene !== 'pull') setScene('pull', { animate: false, start: false });
     s.run++;
     s.forcesShown = false;
     s.scaleShown = false;
@@ -919,10 +732,9 @@ export function createApp(root, options = {}) {
     t,
     emit,
     audio,
-    questions: 5,
+    questions: 4,
     hooks: {
       enter() {
-        s.prevScene = s.scene;
         s.mode = 'quiz';
         s.locked = true;
         s.run++;
@@ -930,7 +742,7 @@ export function createApp(root, options = {}) {
         s.dragging = false;
         s.demo = false;
         hideHint();
-        kinds = ['who', 'release', 'atom', 'energy', 'group'];
+        kinds = ['who', 'release', 'atom', 'group'];
         syncUI();
       },
       leave() {
@@ -939,9 +751,8 @@ export function createApp(root, options = {}) {
         s.forcesShown = true;
         s.scaleShown = true;
         s.reachShown = true;
-        s.still = false;
         syncUI();
-        setScene(s.prevScene, { animate: false, start: true });
+        setScene({ animate: false });
       },
       async prepare(i, alive, say) {
         const kind = kinds[i % kinds.length];
@@ -973,19 +784,6 @@ export function createApp(root, options = {}) {
           question = { kind, ...c };
           return { ...c, meta: { kind } };
         }
-        if (kind === 'energy') {
-          const big = Math.random() < 0.5;
-          s.still = true;
-          setScene(big ? 'split' : 'join', { animate: false, start: false });
-          s.still = true;
-          seek(0);
-          say(t(big ? 'q_energy_big' : 'q_energy_small'));
-          const c = wordChoices(
-            big ? ['opt_split', 'opt_join_more', 'opt_burn', 'opt_none_energy'] : ['opt_join', 'opt_split_more', 'opt_burn', 'opt_none_energy'],
-          );
-          question = { kind, big, ...c };
-          return { ...c, meta: { kind, nucleus: big ? 'big' : 'small' } };
-        }
         // group
         quietPull();
         say(t('q_group'));
@@ -1016,17 +814,6 @@ export function createApp(root, options = {}) {
           const m = { opt_atom_strong: 'why_atom_strong', opt_atom_equal: 'why_atom_equal', opt_atom_none: 'why_atom_none' }[chose];
           return why('why_atom', { d: ATOM_HTML }) + extra(m && why(m));
         }
-        if (Q.kind === 'energy') {
-          const my = s.run;
-          setTimeout(() => my === s.run && quiz.active && play(0), 500);
-          const m = {
-            opt_join_more: 'why_energy_join_more',
-            opt_split_more: 'why_energy_split_more',
-            opt_burn: 'why_energy_burn',
-            opt_none_energy: 'why_energy_none',
-          }[chose];
-          return why(Q.big ? 'why_energy_big' : 'why_energy_small') + extra(m && why(m));
-        }
         const m = { opt_nuclear: 'why_group_nuclear', opt_grav: 'why_group_grav', opt_none: 'why_group_none' }[chose];
         return why('why_group') + extra(m && why(m));
       },
@@ -1049,7 +836,7 @@ export function createApp(root, options = {}) {
       object: {
         label: 'coach_pull',
         candidates: () => {
-          if (s.scene !== 'pull' || !pull.proton.visible) return [];
+          if (!pull.proton.visible) return [];
           const c = toScreen(pull.proton.position);
           const r = pxAt(pull.proton.position, R_NUCLEON);
           return [
@@ -1060,7 +847,7 @@ export function createApp(root, options = {}) {
         grabbable: (p) => onProton(p),
         // the proton comes out a little and snaps back (well inside the reach: the panel keeps its first line)
         async demo(alive) {
-          if (s.scene !== 'pull' || s.phase !== 'seated' || s.locked) return;
+          if (s.phase !== 'seated' || s.locked) return;
           s.demo = true;
           s.phase = 'held';
           const ok = await tweener.animate({ key: 'pull', duration: 0.7, onUpdate: (k) => showProton(0.35 * k) }).finished;
@@ -1095,12 +882,6 @@ export function createApp(root, options = {}) {
     ui.quiz.inert = s.mode !== 'quiz';
     coach?.setMode(s.mode);
   }
-  function chooseScene(name) {
-    if (s.locked) return lockedNudge();
-    hideHint();
-    if (name === s.scene) return again();
-    setScene(name);
-  }
   const fullscreenBtn = ui.$('[data-act="fullscreen"]');
   if (fullscreenBtn && !document.fullscreenEnabled) fullscreenBtn.hidden = true;
   root.addEventListener('click', (e) => {
@@ -1114,7 +895,6 @@ export function createApp(root, options = {}) {
       picked = Number(b.dataset.q);
       quiz.choose(picked);
     }
-    if (b.dataset.scene) chooseScene(b.dataset.scene);
     switch (b.dataset.act) {
       case 'q-next':
         quiz.next();
@@ -1138,8 +918,6 @@ export function createApp(root, options = {}) {
     const step = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[k];
     if (step) {
       if (s.locked) return lockedNudge();
-      if (target.closest('[role="radiogroup"]')) return; // arrows move between the chips there
-      if (s.scene !== 'pull') setScene('pull');
       if (s.phase === 'flying' || s.phase === 'gone') seat();
       coach?.objectUsed();
       s.run++;
@@ -1148,10 +926,9 @@ export function createApp(root, options = {}) {
       hold(base + step * (e.shiftKey ? 0.5 : STEP));
     } else if ((k === ' ' || k === 'Enter') && !target.closest('button')) {
       if (s.locked) return lockedNudge();
-      if (s.scene === 'pull' && s.phase === 'held') release();
+      if (s.phase === 'held') release();
       else again();
-    } else if (k === '1' || k === '2' || k === '3') chooseScene(SCENES[Number(k) - 1]);
-    else if (k.toLowerCase() === 'r') again();
+    } else if (k.toLowerCase() === 'r') again();
     else if (k.toLowerCase() === 'f') setView('front');
     else if (k.toLowerCase() === 'v') setView('3d');
     else if (k === 'Escape') hideHint();
@@ -1160,8 +937,8 @@ export function createApp(root, options = {}) {
   });
 
   // ── start ───────────────────────────────────────────────────────────────────
-  setScene(s.scene, { animate: false, start: true });
-  if (s.scene === 'pull' && Number(o.pull) > 0) hold(Number(o.pull));
+  setScene({ animate: false });
+  if (Number(o.pull) > 0) hold(Number(o.pull));
   syncUI();
   refresh();
   const ready = (async () => {
@@ -1178,32 +955,18 @@ export function createApp(root, options = {}) {
     },
     getState: snapshot,
     /**
-     * Change any of: scene ('pull' | 'split' | 'join'; split and join play from the start unless play: false),
-     * pull (fm: hold the proton this far out), release (true: let it go), t (s: show split/join at this time),
-     * play (true plays split/join from t, false stops), view; animate: false jumps.
+     * Change any of: pull (fm: hold the proton this far out), release (true: let it go), view; animate: false
+     * jumps.
      */
     async set(p = {}) {
       const animate = p.animate !== false;
       if (p.view) await setView(p.view, { animate });
-      if (p.scene && (p.scene !== s.scene || p.t == null)) setScene(p.scene, { animate, start: p.play !== false && p.t == null });
       if (p.pull != null) {
-        if (s.scene !== 'pull') setScene('pull', { animate });
         s.run++;
         s.demo = false;
         hold(Number(p.pull) || 0);
       }
       if (p.release) release({ animate });
-      if (p.t != null && s.scene !== 'pull') {
-        s.playing = false;
-        seek(Number(p.t) || 0);
-        emitChange();
-      }
-      if (p.play === true && s.scene !== 'pull' && p.t != null) play(s.t);
-      if (p.play === false) s.playing = false;
-      if (!animate && s.scene !== 'pull' && s.playing) {
-        s.playing = false;
-        seek(scenes[s.scene].end);
-      }
       return snapshot();
     },
     async reset() {
@@ -1211,12 +974,11 @@ export function createApp(root, options = {}) {
       s.forcesShown = true;
       s.scaleShown = true;
       s.reachShown = true;
-      setScene('pull', { animate: false, start: false });
-      seat();
+      setScene({ animate: false });
       await setView('front', { animate: false });
     },
     startPractice: () => quiz.start(),
     capture: (opts) => stage.capture(opts),
-    exportRoot: () => scenes[s.scene].root,
+    exportRoot: () => pull.root,
   };
 }

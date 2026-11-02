@@ -1,12 +1,9 @@
-// The maths of the power figure (book p120, 4.7): W = mgh, P = W/t, the two examples (same work, same time), the
+// The maths of the power figures (power and power-bulb, book p120, 4.7): W = mgh, P = W/t, the two examples (same work, same time), the
 // stopwatch readings and the work shown from the same whole second, the bulb, and the test's choices.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
-  BULB,
-  bulbAt,
   choicesFrom,
-  energyMistakes,
   FULL,
   H,
   massLifted,
@@ -18,6 +15,7 @@ import {
   timeToLift,
   workToLift,
 } from '../../assets/power/src/power.js';
+import { BULB, bulbAt, energyMistakes } from '../../assets/power-bulb/src/power.js';
 
 test('power: W = mgh and P = W/t with the book’s g = 9.8', () => {
   assert.equal(H, 3);

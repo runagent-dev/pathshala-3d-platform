@@ -1,4 +1,4 @@
-# Notes: Linear motion (সরলরৈখিক গতি)
+# Notes: Linear motion: the push (সরলরৈখিক গতি: ধাক্কা)
 
 Book: physics-9-10 › 2.2 › p36 (first of three figures on the page; `order: 1`)
 
@@ -10,42 +10,30 @@ Section ২.২ (kinds of motion), the first paragraph, **সরলরৈখি�
 (পর্যায়বৃত্ত গতি, সরল স্পন্দন গতি) are other figures. Screenshot: `reference/page-36.png`.
 
 ## The one idea to teach
-If something moves along a straight line, its motion is সরলরৈখিক গতি: a push on a flat surface and a ball falling
-freely both trace straight lines, whatever the speed does on the way.
+If something moves along a straight line, its motion is সরলরৈখিক গতি: a push on a flat surface traces a straight
+line, even though the striker slows down. (The falling ball is its own lab, `linear-motion-ball`.)
 
 ## Terms (as in the book)
 সরলরৈখিক গতি, রৈখিক গতি, সরল রেখা, সমতলপৃষ্ঠ, ধাক্কা, মুক্তভাবে (পড়া). দ্রুতি is used the way page 37 uses it.
-Our own words: স্ট্রাইকার, বল, পথ, বাঁকা, অবস্থান, হালকা ছবি (the strobe pictures).
+Our own words: স্ট্রাইকার, বল, পথ, বাঁক## How it works
+- One scene: a carrom board (74 cm square, units in metres), looked at lower on wide, short stages so the board fills
+  the height. Since 1.0.0 the falling ball and the sideways throw are their own lab (`linear-motion-ball`).
+- Drag out from the striker (an orange push arrow grows; longer = harder) and let go, or tap ধাক্কা দাও (a random push
+  from the base line), or the arrow keys. It slides with friction (μ = 0.12, evenly slowing) and stops short of the
+  frame. Real time. A push toward a frame that is too close first moves the striker to open space (with a hint), so a
+  push always slides at least 12 cm. মুছে ফেলো clears the marks.
+- The push leaves blue faint pictures every 0.1 s and a dotted path; when it stops, a green dashed straight line is
+  laid through its ends (labelled সরল রেখা). The panel then says "পথ সরল রেখা → সরলরৈখিক গতি ✓" and a line on what the
+  pictures show (the striker slows, the path stays straight).
+- Test (৫ questions, one of each, in random order, each on a clean board): watch a push and say if it is linear *with
+  the right reason* (wrong ones: "slows down so no", "not straight ahead so no", "same speed so yes"); which of four
+  paths ক–ঘ a pushed striker takes; what the strobe gaps mean; which everyday motion is (or is not) linear; the
+  definition. During the test the scene keys and taps rest (the view keys work).
+- Keys: space/Enter push from the base line, arrows push that way, r again, f/v views.
 
-## How it works
-- One scene: a carrom board (74 cm square, units in metres). Three example chips: **ধাক্কা**, **মুক্তভাবে পড়া**,
-  **পাশে ছোড়া**; the camera goes to each (looking lower on wide, short stages so the board fills the height). The
-  stand with the ball (clamped to the left rail) shows only in the two falls, so the push view is just the board,
-  large. Each example shows its own marks; the throw keeps the drop's, greyed, for comparison.
-- **ধাক্কা**: drag out from the striker (an orange push arrow grows; longer = harder) and let go, or tap ধাক্কা দাও
-  (a random push from the base line), or the arrow keys. It slides with friction (μ = 0.12, evenly slowing) and
-  stops short of the frame. Real time. A push toward a frame that is too close first moves the striker to open space
-  (with a hint), so a push always slides at least 12 cm. মুছে ফেলো clears the example's marks.
-- **মুক্তভাবে পড়া**: tap the ball or ছেড়ে দাও: the trapdoor drops away and the ball falls 0.76 m (0.39 s), shown
-  4 times slower (badge "৪ গুণ ধীর করে দেখানো").
-- **পাশে ছোড়া** (our contrast, not in the book): the same ball from the same height; the door drops and a plunger
-  gives a 1 m/s sideways push; the ball falls on a parabola and lands 39.5 cm to the side. The reviewer and I keep
-  it: a definition needs a non-example, and only the sideways push changes (so the path decides, not falling).
-- Every motion leaves blue faint pictures at equal times (0.1 s striker, 0.05 s ball) and a dotted path; when it
-  stops, a green dashed straight line is laid through its ends (labelled সরল রেখা). The panel then says
-  "পথ সরল রেখা → সরলরৈখিক গতি ✓" or "পথ বাঁকা → সরলরৈখিক গতি নয় ✗", and a line on what the pictures show
-  (striker slows, ball speeds up, the path stays straight; the throw is up to ৯ সেমি off the line, marked by a
-  purple bracket). The drop's marks stay when the throw is shown: equal heights at equal times, straight vs curved.
-- Test (৫ questions, one of each, in random order, each on a clean scene): watch a motion and say if it is linear
-  *with the right reason* (every choice gives a reason; wrong ones: "slows down so no", "not straight ahead so no",
-  "same speed so yes", "falls down so no"…); which of four paths ক–ঘ a pushed striker takes (along the push; straight
-  ahead ignoring the arrow; along the push then turning straight ahead; curving out; the striker then really
-  slides); what the strobe gaps mean (the motion plays first, so its direction is seen); which everyday motion is
-  (or is not) linear; the definition. During the test the scene keys and taps rest (the view keys work).
-- Keys: 1/2/3 examples, space/Enter the action, arrows push (or let go), r again, f/v views.
+arrows push (or let go), r again, f/v views.
 
 ## Open questions
-- পাশে ছোড়া is not in the book's paragraph; it is the contrast (a curved path). Kept after review (see above).
 - The everyday items avoid motions that are both periodic and linear (a mass on a spring, page 37) so the "which is
   not linear" question has one answer.
 
@@ -59,3 +47,7 @@ Berry/plum backdrop, a teal carrom frame and stand, an orange ball, and brighter
 - The dark purple-to-magenta backdrop is now a soft, slightly muted sky-blue to warm sand gradient (vivid means calm).
 - Panel in the labs' one order: the examples, the actions (ধাক্কা দাও, মুছে ফেলো), then the path and its kind, then
   the sentence. The old wide-frame grid (for the panel under the 3D) is gone: the panel is beside the 3D now.
+
+## Split (2026-11, 1.0.0)
+One 3D scene per lab: the ball on its stand (free fall and the sideways throw) moved to `linear-motion-ball`. The
+example chips, the `example` URL parameter and `set({ example })`, the `example` event and keys 1/2/3 went.

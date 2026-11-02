@@ -5,16 +5,17 @@
 Interactive 3D figure for the Pathshala book. A Dhaka bus, with its left side cut away, with a school student
 standing inside. The student picks an event and watches it in slow motion: the bus starts suddenly (the feet go with
 the bus, the upper body stays: he leans back, স্থিতি জড়তা), brakes suddenly (he leans forward, গতি জড়তা), or he steps
-off the moving bus (the feet stop on the road, the upper body runs on: he tumbles forward, গতি জড়তা); a fourth event
-is the coin-and-card trick on a glass (স্থিতি জড়তা). A blue arrow on the feet (the card) and an orange arrow on the
-shoulders (the coin) show each part's speed along the road (table); a dashed mark shows where the head was when the bus started. A tap anywhere on the view plays or pauses; then a 5-question test. Units: metres (the GLB too).
+off the moving bus (the feet stop on the road, the upper body runs on: he tumbles forward, গতি জড়তা). A blue arrow on
+the feet and an orange arrow on the shoulders show each part's speed along the road; a dashed mark shows where the
+head was when the bus started. A tap anywhere on the view plays or pauses; then a 4-question test. Units: metres (the
+GLB too). The coin-and-card trick is its own figure, `inertia-coin-card`.
 
-`get` returns `{ event ('start' | 'brake' | 'alight' | 'coin', or 'gentle' in the test), scene ('bus' | 'coin'), t (s
-of event time), duration, playing, phase ('before' | 'act' | 'after'), slow (times slower), inertia ('rest' | 'motion'),
-lowerSpeed, upperSpeed (m/s along the road: feet and shoulders, or card and coin), lean (degrees, > 0 back), landed, key (the
-moment that shows it best), view, mode }`; `set` takes `event` (starts it from the beginning, or at `t`), `t` (shown
-paused), `playing`, `view`, and `animate: false` to jump. The URL parameters `event` and `at` show one moment, paused
-(the poster uses `event=start&at=1.05`).
+`get` returns `{ event ('start' | 'brake' | 'alight', or 'gentle' in the test), t (s of event time), duration,
+playing, phase ('before' | 'act' | 'after'), slow (times slower), inertia ('rest' | 'motion'), lowerSpeed, upperSpeed
+(m/s along the road: feet and shoulders), lean (degrees, > 0 back), landed, key (the moment that shows it best), view,
+mode }`; `set` takes `event` (starts it from the beginning, or at `t`), `t` (shown paused), `playing`, `view`, and
+`animate: false` to jump. The URL parameters `event` and `at` show one moment, paused (the poster uses
+`event=start&at=1.05`).
 
 ## Embed
 
@@ -39,7 +40,7 @@ To listen to it or control it from the book page, use the helper shipped in the 
 | Param | Meaning | Values | Default |
 |---|---|---|---|
 | `lang` | Language | `bn` বাংলা · `en` English | `bn` |
-| `event` | Event | `start` sudden start (হঠাৎ চলা শুরু) · `brake` sudden brake (হঠাৎ ব্রেক) · `alight` off a moving bus (চলন্ত বাস থেকে নামা) · `coin` coin and card (কয়েন ও কার্ড) | `start` |
+| `event` | Event | `start` sudden start (হঠাৎ চলা শুরু) · `brake` sudden brake (হঠাৎ ব্রেক) · `alight` off a moving bus (চলন্ত বাস থেকে নামা) | `start` |
 | `at` | Show this moment (s of event time, paused) | number |  |
 | `view` | View | `front` · `3d` | `front` |
 | `mode` | Start in | `explore` learn · `quiz` test | `explore` |

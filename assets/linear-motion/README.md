@@ -1,11 +1,11 @@
-# Linear motion (সরলরৈখিক গতি)
+# Linear motion: the push (সরলরৈখিক গতি: ধাক্কা)
 
-**Where it goes in the book:** Book page 36, topic 2.2: সরলরৈখিক গতি (Linear Motion), next to that paragraph (the page has no picture for it).
+**Where it goes in the book:** Book page 36, topic 2.2: সরলরৈখিক গতি (Linear Motion), next to the sentence about pushing something on a flat surface (সমতলপৃষ্ঠে ধাক্কা দিয়ে ছেড়ে দিলে…); the first of two labs (the push, the falling ball).
 
-Interactive 3D figure for the Pathshala book: a carrom board and a cricket ball on a stand. The student pushes the
-striker on the flat board, lets the ball fall freely, or throws it sideways; each motion leaves faint pictures at equal
-time steps and a dotted path, then a dashed straight line shows whether the path is straight (সরলরৈখিক গতি) or curved.
-Then a five-question test. Units: metres (the GLB is in metres).
+Interactive 3D figure for the Pathshala book: a carrom board. The student pushes the striker on the flat board; the
+motion leaves faint pictures at equal time steps and a dotted path, then a dashed straight line shows the path is
+straight (সরলরৈখিক গতি) even though the striker slows down. Then a five-question test. Units: metres (the GLB is in
+metres). The falling ball is its own lab (`linear-motion-ball`).
 
 ## Embed
 
@@ -30,7 +30,6 @@ To listen to it or control it from the book page, use the helper shipped in the 
 | Param | Meaning | Values | Default |
 |---|---|---|---|
 | `lang` | Language | `bn` বাংলা · `en` English | `bn` |
-| `example` | Example at the start | `push` push (striker) · `drop` free fall · `throw` sideways throw | `push` |
 | `view` | View | `front` · `3d` | `front` |
 | `mode` | Start in | `explore` learn · `quiz` test | `explore` |
 | `coach` | First-use pointers | `1` · `0` | `1` |
@@ -48,13 +47,13 @@ Every figure answers `ping` with `{ asset, version }`. Send commands with `figur
 | Command | Example payload |
 |---|---|
 | `get` | `{}` |
-| `set` | `{"example":"push","angle":-15,"strength":0.85}` |
+| `set` | `{"angle":-15,"strength":0.85}` |
 | `reset` | `{}` |
 | `practice` | `{}` |
 | `capture` | `{"width":800,"height":500}` |
 | `export-glb` | `{}` |
 
-Events: `ready`, `change`, `example`, `start`, `done`, `view`, `practice-start`, `practice-result`, `practice-end`.
+Events: `ready`, `change`, `start`, `done`, `view`, `practice-start`, `practice-result`, `practice-end`.
 <!-- /generated:bridge -->
 
 ## State (`get`)

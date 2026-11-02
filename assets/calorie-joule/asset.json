@@ -1,0 +1,64 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "calorie-joule",
+  "title": "Heat units: calorie and joule (তাপের একক: ক্যালরি ও জুল)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 161,
+  "topic": "6.1",
+  "placement": "Book page 161, topic 6.1 (তাপ ও তাপমাত্রা): the page has no picture, so this goes next to the paragraph on the units of heat ('তাপের আরো একটি একক আছে, তার নাম ক্যালরি (cal)। 1 gm পানির তাপমাত্রা 1°C বাড়াতে হলে যে পরিমাণ তাপের দরকার সেটা হচ্ছে 1 ক্যালরি। 1 ক্যালরি হচ্ছে 4.2 J এর সমান') and the food-calorie remark after it.",
+  "maintainers": ["RadeenXALNW"],
+  "units": "cm",
+  "description": "The units of heat (page 161, topic 6.1) on a lab bench with a slate-blue top in front of a warm beige wall: a small glass beaker of water (one gram) on a steel stand over three burner flames, and a big thermometer beside it whose enamel scale counts how many °C the water has risen (0 to 5, in Bangla digits). One button gives 1 calorie of heat at a time (up to 5): the flames flare, the red column rises exactly 1°C per calorie, and the panel keeps the sum (n cal = n × 4.2 J, calories orange, joules violet) with the book's equation 1 ক্যালরি (cal) = 4.2 জুল (J) under it. The rule grows in the book's words: the heat that raises 1 gm of water by 1°C is 1 calorie; heat is energy so its unit is the joule, another unit is the calorie; the food calorie is k cal, that is 1000 calories. Test tab: 5 questions (1 calorie in joules; the heat for 1 gm of water 1°C; calories and joules for the temperature rise read off the thermometer; the food calorie in calories), every wrong choice a real mistake with its own note. Phone-first, Bangla and English. The molecules of heat are in the sister figure heat-molecules.",
+  "tags": ["heat", "calorie", "joule", "units", "energy", "water", "thermometer", "food calorie", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "cal",
+      "label": "Calories of heat given at the start",
+      "type": "number",
+      "default": "0",
+      "placeholder": "0 to 5",
+      "help": "1 gm of water rises 1°C for each calorie"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on what to tap pulses", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "cal": 3 } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "heat", "view", "practice-start", "practice-result", "practice-end"],
+  "export": { "poster": { "params": { "coach": "0", "cal": "3" } }, "glb": [{ "name": "default" }] }
+}

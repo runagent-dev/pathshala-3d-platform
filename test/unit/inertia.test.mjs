@@ -1,5 +1,5 @@
 // The physics of the inertia figure (assets/inertia/src/motion.js): the bus, the standing passenger's lean, stepping
-// off a moving bus, and the coin on a card. Pure code, no browser.
+// off a moving bus. Pure code, no browser.
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import * as m from '../../assets/inertia/src/motion.js';
@@ -117,22 +117,6 @@ describe('inertia: stepping off a moving bus', () => {
     assert.ok(j.head.x > 0.8, 'the head is well ahead of the feet');
     assert.ok(j.knee.y < 0.1 && j.hand.y < 0.08, `knees ${j.knee.y} and hands ${j.hand.y} on the road`);
     near(end.upperV, 0, 0.05, 'at rest');
-  });
-});
-
-describe('inertia: the coin on the card', () => {
-  const T = m.simulate('coin');
-  it('the flicked card shoots off while the coin hardly moves sideways', () => {
-    const s = m.sampleAt('coin', T.dropT);
-    assert.ok(s.lowerV > 2, 'card speed');
-    assert.ok(s.upperV < 0.1, `coin speed ${s.upperV} m/s`);
-  });
-  it('the coin drops into the glass (inside the wall) and comes to rest on its bottom', () => {
-    const end = m.sampleAt('coin', m.EVENTS.coin.duration);
-    const { glass, coin } = m.TABLE;
-    assert.ok(Math.abs(end.coinX) + coin.r < glass.r - glass.wall, `coin at ${end.coinX} m`);
-    near(end.coinY, glass.base + coin.th / 2, 1e-6, 'on the bottom');
-    assert.ok(T.landT - T.dropT < 0.2, 'falls about 0.11 m in under 0.2 s');
   });
 });
 

@@ -1,15 +1,12 @@
-// Relation between mass and energy (ভর ও শক্তির সম্পর্ক), book p119, topic 4.6: the student view. Three scenes, picked
-// from one row of words:
+// Relation between mass and energy (ভর ও শক্তির সম্পর্ক), book p119, topic 4.6: the student view. Two scenes in the
+// same reactor pool, picked from one row of words:
 //   একটি নিউক্লিয়াস  the book's চিত্র ৪.০৬: a slow neutron goes into a glowing ²³⁵U nucleus, which wobbles, stretches and
 //                    splits into ⁹²Kr and ¹⁴¹Ba with three fast neutrons and a flash of শক্তি. The panel shows the book's
 //                    equation with each side's mass, and works E = mc² out with the mass that went missing.
 //   চেইন রি-অ্যাকশন   the three neutrons, slowed, split three more nuclei, whose nine neutrons split nine more.
-//   শক্তিকেন্দ্র        a nuclear power plant at dusk, cut open: the core glows, steam turns the turbine, the generator
-//                    lights a town. The student picks the fuel's mass (1 g … 1 kg) and whether it is split (0.079% of
-//                    the mass becomes energy) or, as the book's E = mc² says, turned fully into energy; the panel gives
-//                    E in J and how long it would light a 100 W bulb.
-// The split and the chain are pure functions of time: the student replays them and scrubs them with a slider (or
-// the arrow keys). The panel is the kit's clean sheet (one action, one result, one rule). A 5-question test.
+// (The power plant is its own lab, mass-energy-plant.) The split and the chain are pure functions of time: the
+// student replays them and scrubs them with a slider (or the arrow keys). The panel is the kit's clean sheet (one
+// action, one result, one rule). A 4-question test.
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
 import { createTweener, ease } from '@shared/tween.js';
@@ -22,31 +19,12 @@ import { bindCleanSheet, buildStudentShell, cleanSheet } from '@shared/student/s
 import { fitPose } from './camera.js';
 import { createI18n } from './i18n.js';
 import { createSystem, PHASE } from './nucleus.js';
-import { buildPlant, duskSky, HAZE, poolBackground, SUN } from './plant.js';
-import {
-  C,
-  energyPerSplit,
-  fissionFraction,
-  fuel,
-  indianParts,
-  MASS,
-  MASSES_G,
-  NUCLEUS,
-  reaction,
-  round,
-  sci,
-  shuffle,
-  sigRound,
-  BULB_W,
-  U_KG,
-} from './reading.js';
+import { poolBackground } from './pool.js';
+import { C, energyPerSplit, MASS, NUCLEUS, reaction, round, sci, shuffle, U_KG } from './reading.js';
 
 export const DEFAULTS = {
-  scene: 'one', // 'one' | 'chain' | 'plant'
+  scene: 'one', // 'one' | 'chain'
   t: 0, // s: how far into the split or the chain (for pictures)
-  m: 1, // g of uranium-235 in the power-plant scene
-  part: 'fission', // 'fission' | 'full'
-  run: false, // the power plant running (for pictures)
   view: 'front', // 'front' | '3d'
   mode: 'explore', // 'explore' | 'quiz'
   coach: true, // the numbered ring on the neutron pulses at first
@@ -57,8 +35,8 @@ export const DEFAULTS = {
   sound: true,
 };
 
-const SCENES = ['one', 'chain', 'plant'];
-const COLORS = { energy: '#a85700', kr: '#2f6fb0', ba: '#7b3fb8', n: '#4f5864', slow: '#1c6fd9', plant: '#3b4250' };
+const SCENES = ['one', 'chain'];
+const COLORS = { energy: '#a85700', kr: '#2f6fb0', ba: '#7b3fb8', n: '#4f5864', slow: '#1c6fd9' };
 // the single split: the neutron sets off at 0 s, touches at 1.6 s; the split is over by 6.6 s
 const ONE = { tHit: 1.6, pace: 1, dur: 7 };
 // the chain: faster, each step's neutrons take 1.5 s to reach the next nuclei
@@ -67,10 +45,7 @@ const splitAt = (tHit, pace) => tHit + PHASE.split / pace;
 const CH_T1 = splitAt(CH.hit0, CH.pace) + CH.travel; // the second step's nuclei are hit
 const CH_T2 = splitAt(CH_T1, CH.pace) + CH.travel;
 const CH_DUR = splitAt(CH_T2, CH.pace) + (PHASE.fly - PHASE.split) / CH.pace + 0.3;
-const VIEW_DIRS = {
-  nuc: { front: new THREE.Vector3(0, 0.04, 1).normalize(), '3d': new THREE.Vector3(0.55, 0.35, 0.8).normalize() },
-  plant: { front: new THREE.Vector3(0.36, 0.42, 1).normalize(), '3d': new THREE.Vector3(0.95, 0.85, 0.75).normalize() },
-};
+const VIEW_DIRS = { front: new THREE.Vector3(0, 0.04, 1).normalize(), '3d': new THREE.Vector3(0.55, 0.35, 0.8).normalize() };
 const smooth = (a, b, x) => {
   const u = Math.min(1, Math.max(0, (x - a) / (b - a)));
   return u * u * (3 - 2 * u);
@@ -80,7 +55,6 @@ export function createApp(root, options = {}) {
   const o = { ...DEFAULTS, ...options };
   const t = createI18n(o.lang, { numerals: o.numerals });
   const N = t.num;
-  const bn = t.lang === 'bn';
 
   // ── formula pieces (the font has no ² or ⁻: powers are <sup>) ───────────────────────────────────────────────
   const sup = (x) => `<sup>${N(x)}</sup>`;
@@ -101,29 +75,13 @@ export function createApp(root, options = {}) {
   /** A nuclide as the book writes it: mass number over atomic number, before the symbol. */
   const nuc = (sym, A, Z, k = '') =>
     `<span class="me-nuc">${k ? `<span class="me-k">${N(k)}</span>` : ''}<span class="me-az"><span>${N(A)}</span><span>${N(Z)}</span></span>${sym}</span>`;
-  /** Years the bulb glows, said the way people say big numbers. */
-  function yearsText(y) {
-    const n = sigRound(y, 2);
-    if (!bn) return t('years', { n: n >= 1e6 ? `${+(n / 1e6).toPrecision(2)} million` : n.toLocaleString('en-US') });
-    if (n < 1000) return t('years', { n });
-    const p = indianParts(n);
-    const parts = [];
-    if (p.crore) parts.push(t('w_crore', { n: p.crore }));
-    if (p.lakh) parts.push(t('w_lakh', { n: p.lakh }));
-    if (p.thousand) parts.push(t('w_thousand', { n: p.thousand }));
-    if (p.rest) parts.push(N(p.rest));
-    return t('years', { n: parts.join(' ') });
-  }
-  const gText = (g) => (g >= 1000 ? `${N(g / 1000)} ${t('u_kg')}` : `${N(g)} ${t('u_g')}`);
-  const pct = () => round(fissionFraction() * 100, 3);
-
   root.classList.add('pvc', 'me');
   root.dataset.theme = o.bg;
   root.dataset.ui = 'simple';
   root.lang = t.lang;
   root.tabIndex = 0;
 
-  // ── the panel: the scenes, the book's equation (or the fuel), one action and the scrubber, one result, one rule ──
+  // ── the panel: the scenes, the book's equation, one action and the scrubber, one result, one rule ──
   const RX = reaction();
   const eqHtml = `<div class="me-eq" role="group" aria-label="${t('eq_aria')}">
       <span class="me-side l">${nuc('n', 1, 0)}<span class="me-op">+</span>${nuc('U', 235, 92)}</span>
@@ -133,31 +91,18 @@ export function createApp(root, options = {}) {
       <b class="me-mass r" data-v="R"></b>
       <span class="me-scale" aria-hidden="true"><svg viewBox="0 0 48 34"><path class="post" d="M24 9 V30 M16 31 H32"/><g class="beam"><path d="M5 9 H43"/><path class="pan" d="M5 9 L1 19 H11 Z"/><path class="pan r" d="M43 9 L37 19 H48 Z"/></g><circle cx="24" cy="9" r="2.4"/></svg></span>
     </div>`;
-  const fuelHtml = `<div class="me-fuel" role="group" aria-label="${t('calc')}">
-      <div class="me-step" role="group" aria-label="${t('calc_m')}">
-        <span class="me-name"><i>m</i></span>
-        <button type="button" class="me-btn" data-act="m-" aria-label="${t('m_down')}">${ICONS.minus}</button>
-        <b class="me-val" data-v="m" aria-live="polite"></b>
-        <button type="button" class="me-btn" data-act="m+" aria-label="${t('m_up')}">${ICONS.plus}</button>
-      </div>
-      <div class="me-seg" role="radiogroup" aria-label="${t('part')}">
-        <button type="button" role="radio" data-part="fission" aria-label="${t('part_fission', { p: pct() })}">${N(pct())}%</button>
-        <button type="button" role="radio" data-part="full" aria-label="${t('part_full')}">${N(100)}%</button>
-      </div>
-    </div>`;
   const sheetHtml = cleanSheet(t, {
     examples: {
       label: 'ex_label',
       items: [
         { id: 'one', label: 'ex_one' },
         { id: 'chain', label: 'ex_chain' },
-        { id: 'plant', label: 'ex_plant' },
       ],
     },
     quiet: [{ act: 'home', label: 'act_home', icon: ICONS.reset }],
     lines: { action: 1, outcome: 2, rule: 3 },
   })
-    .replace('<p class="pvc-outcome"', `<div class="me-calc">${eqHtml}${fuelHtml}</div><p class="pvc-outcome"`)
+    .replace('<p class="pvc-outcome"', `<div class="me-calc">${eqHtml}</div><p class="pvc-outcome"`)
     .replace(
       '<div class="pvc-act-slot"></div>',
       `<div class="pvc-act-slot"></div><input type="range" class="me-scrub" min="0" max="1000" step="1" value="0" aria-label="${t('scrub')}" title="${t('scrub')}">`,
@@ -167,12 +112,8 @@ export function createApp(root, options = {}) {
   const $ = ui.$;
   const el = {
     eq: $('.me-eq'),
-    fuel: $('.me-fuel'),
     massR: $('[data-v="R"]'),
     scale: $('.me-scale'),
-    m: $('[data-v="m"]'),
-    mMinus: $('[data-act="m-"]'),
-    mPlus: $('[data-act="m+"]'),
     scrub: /** @type {HTMLInputElement} */ ($('.me-scrub')),
   };
   ui.canvasHost.setAttribute('aria-label', t('aria_stage'));
@@ -188,14 +129,12 @@ export function createApp(root, options = {}) {
 
   // ── 3D ──────────────────────────────────────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 32, near: 0.5, far: 2000, environment: 'studio-light' });
-  const { camera, controls, scene, renderer } = stage;
+  const { camera, controls, scene } = stage;
   controls.enablePan = false;
   controls.enableRotate = false;
   controls.enableZoom = false;
   const transparent = o.bg === 'transparent';
   const bgPool = transparent ? null : poolBackground();
-  const envStudio = scene.environment;
-  const haze = transparent ? null : new THREE.FogExp2(HAZE, 0.0024); // the plant's dusk haze (made once)
   const hemi = new THREE.HemisphereLight('#ffffff', '#9fd2ea', 1.1);
   const key = new THREE.DirectionalLight('#ffffff', 2.2);
   const rim = new THREE.DirectionalLight('#8fe0ff', 1.4);
@@ -204,74 +143,6 @@ export function createApp(root, options = {}) {
   const one = createSystem({ name: 'Fission', max: 1, word: t('star') });
   const chain = createSystem({ name: 'ChainReaction', max: 13, word: t('star'), flashScale: 0.6, glowScale: 0.9, trails: true, detail: 0.45 });
   scene.add(one.root, chain.root);
-
-  // ── the power plant: built only when it is needed ──────────────────────────────────────────────────────────
-  // It is most of the figure's work (its pictures are painted pixel by pixel), and the figure opens on a nucleus. So
-  // the first picture waits for none of it: a moment after the start the plant is built a piece at a time in the
-  // browser's idle moments, then its sky, then its shaders are compiled and its pictures sent to the GPU, so the
-  // first tap on the power-plant scene shows it at once. Asked for sooner (the scene in the address, the test), it is built
-  // there and then.
-  /** @type {ReturnType<typeof import('./plant.js').createPlant> | null} */
-  let plant = null;
-  let sky = null; // the dusk sky: the plant scene's background and the light its materials reflect
-  let envDusk = envStudio;
-  let steps = null;
-  let built = null;
-  /** One piece of the plant's building (then its sky, then the light the sky gives); true when it is all done. */
-  function plantStep() {
-    if (plant) return true;
-    if (!built) {
-      steps ??= buildPlant();
-      const r = steps.next();
-      if (r.done) built = r.value;
-      return false;
-    }
-    if (!sky && !transparent) {
-      sky = duskSky();
-      return false;
-    }
-    if (sky) {
-      const pmrem = new THREE.PMREMGenerator(renderer);
-      envDusk = pmrem.fromEquirectangular(sky).texture;
-      pmrem.dispose();
-    }
-    plant = built;
-    plant.root.visible = false;
-    scene.add(plant.root);
-    plant.set(s.power, 0);
-    return true;
-  }
-  function ensurePlant() {
-    while (!plantStep());
-    return plant;
-  }
-  if (o.shadow && !transparent) {
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFShadowMap; // (PCFSoft is deprecated: it falls back to this, with a warning)
-    // fitted round what is seen of the plant (the yard, the tower, the pylons and the near town), seen from the sun
-    key.shadow.mapSize.set(1024, 1024);
-    key.shadow.radius = 2;
-    key.shadow.bias = -0.0005;
-    key.shadow.normalBias = 0.02;
-  }
-  /** The sun's shadow box: the corners of the lit area, seen from the sun, fitted tightly (once: the sun stays put). */
-  let shadowFitted = false;
-  function fitShadow() {
-    if (shadowFitted) return;
-    shadowFitted = true;
-    const cam = key.shadow.camera;
-    key.updateMatrixWorld();
-    key.target.updateMatrixWorld();
-    cam.position.copy(key.position);
-    cam.lookAt(key.target.position);
-    cam.updateMatrixWorld();
-    const inv = cam.matrixWorldInverse.copy(cam.matrixWorld).invert();
-    const b = new THREE.Box3();
-    const p = new THREE.Vector3();
-    for (const x of [-40, 56]) for (const y of [0, 32]) for (const z of [-100, 22]) b.expandByPoint(p.set(x, y, z).applyMatrix4(inv));
-    Object.assign(cam, { left: b.min.x, right: b.max.x, bottom: b.min.y, top: b.max.y, near: Math.max(1, -b.max.z - 5), far: -b.min.z + 5 });
-    cam.updateProjectionMatrix();
-  }
 
   const tweener = createTweener();
   stage.addTicker((dt) => tweener.tick(dt));
@@ -286,11 +157,7 @@ export function createApp(root, options = {}) {
     scene: SCENES.includes(o.scene) ? o.scene : 'one',
     t: 0, // s into the split (one) or the chain
     playing: false,
-    played: { one: false, chain: false, plant: false }, // what the student has done (the action's step, the rule)
-    m: MASSES_G.includes(Number(o.m)) ? Number(o.m) : 1,
-    part: o.part === 'full' ? 'full' : 'fission',
-    on: false, // the plant switched on
-    power: 0, // the plant's power now, 0 … 1
+    played: { one: false, chain: false }, // what the student has done (the action's step, the rule)
     layout: 'tall', // 'tall' | 'wide': which way the nucleus splits, so it fits the frame
     view: o.view === '3d' ? '3d' : 'front',
     mode: 'explore',
@@ -379,45 +246,17 @@ export function createApp(root, options = {}) {
   }
 
   // ── what is shown: the scene's objects, background and lights ─────────────────────────────────────────────────
+  scene.background = bgPool;
+  hemi.groundColor.set('#8ccbe8');
+  hemi.intensity = 1.15;
+  key.color.set('#fffaf0');
+  key.intensity = 2.3;
+  key.position.set(-20, 30, 40);
+  rim.intensity = 1.5;
+  rim.position.set(25, -10, -30);
   function applyScene(sc = s.quizScene?.scene ?? s.scene) {
-    if (sc === 'plant') ensurePlant();
     one.root.visible = sc === 'one';
     chain.root.visible = sc === 'chain';
-    if (plant) plant.root.visible = sc === 'plant';
-    if (sc === 'plant') {
-      scene.background = sky;
-      scene.environment = envDusk;
-      scene.environmentIntensity = 0.75;
-      scene.fog = haze;
-      hemi.color.set('#aab6ff');
-      hemi.groundColor.set('#c4945e');
-      hemi.intensity = 0.55;
-      key.color.set('#ffc28a');
-      key.intensity = 3.1;
-      key.target.position.set(5, 0, -10);
-      key.position.copy(SUN).multiplyScalar(110).add(key.target.position);
-      key.castShadow = renderer.shadowMap.enabled;
-      if (key.castShadow) fitShadow();
-      rim.intensity = 0.35;
-      rim.color.set('#8f9cff');
-      rim.position.set(60, 30, -80);
-    } else {
-      scene.background = bgPool;
-      scene.environment = envStudio;
-      scene.environmentIntensity = 1;
-      scene.fog = null;
-      hemi.color.set('#ffffff');
-      hemi.groundColor.set('#8ccbe8');
-      hemi.intensity = 1.15;
-      key.color.set('#fffaf0');
-      key.intensity = 2.3;
-      key.position.set(-20, 30, 40);
-      key.target.position.set(0, 0, 0);
-      key.castShadow = false;
-      rim.intensity = 1.5;
-      rim.color.set('#8fe0ff');
-      rim.position.set(25, -10, -30);
-    }
     gens.hidden = sc !== 'chain' || s.labels === 'quiz';
   }
 
@@ -438,7 +277,6 @@ export function createApp(root, options = {}) {
     const q = s.quizScene;
     const sc = q?.scene ?? s.scene;
     const tt = q ? q.t : s.t;
-    if (sc === 'plant') return out.copy(ensurePlant().box);
     if (sc === 'chain') {
       const [b0, b1, b2] = chainBoxes;
       if (tt < 2.5) return out.copy(b0);
@@ -462,9 +300,7 @@ export function createApp(root, options = {}) {
   }
   function poseNow() {
     boxNow(camBox);
-    const sc = s.quizScene?.scene ?? s.scene;
-    const dirs = sc === 'plant' ? VIEW_DIRS.plant : VIEW_DIRS.nuc;
-    return fitPose({ box: camBox, dir: dirs[s.view], camera, width: stage.width, height: stage.height, margin: margins() });
+    return fitPose({ box: camBox, dir: VIEW_DIRS[s.view], camera, width: stage.width, height: stage.height, margin: margins() });
   }
   function applyCamera() {
     if (s.userMovedCamera) return;
@@ -540,15 +376,6 @@ export function createApp(root, options = {}) {
       if (s.t >= dur()) finish();
       moving = true;
     }
-    const plantShown = (s.quizScene?.scene ?? s.scene) === 'plant';
-    if (plantShown && !s.quizScene) {
-      const target = s.on ? 1 : 0;
-      if (s.power !== target || s.on) {
-        s.power = THREE.MathUtils.clamp(s.power + (s.on ? dt / 4.5 : -dt / 2), 0, 1);
-        plant?.set(s.power, dt);
-        moving = true;
-      }
-    }
     if (moving) draw();
     return moving;
   });
@@ -588,18 +415,6 @@ export function createApp(root, options = {}) {
     draw();
     emitChange();
   }
-  function setPlant(on) {
-    if (s.locked) return lockedNudge();
-    audio.unlock();
-    s.on = on;
-    if (on) {
-      s.played.plant = true;
-      audio.success();
-    } else audio.tick();
-    draw();
-    emitChange();
-  }
-
   // ── labels on the picture (each only while what it says is true) ──────────────────────────────────────────────
   let action = null;
   const anno = createAnnotations({
@@ -705,15 +520,6 @@ export function createApp(root, options = {}) {
       SIDE,
     );
     label('nin0', !quiz && c0?.phase === 'come' && tt > 0, t('l_n_in'), c0?.incoming ?? tmpP, COLORS.slow, ABOVE, true);
-    // the power plant
-    const pl = sc === 'plant' && Boolean(plant);
-    const A = plant?.anchors;
-    label('core', pl, t('l_core'), pl ? A.core() : tmpP, COLORS.plant, SIDE);
-    label('steam', pl && !quiz, t('l_steam'), pl ? A.steam() : tmpP, COLORS.plant, ABOVE, true);
-    label('turb', pl && !quiz, t('l_turbine'), pl ? A.turbine() : tmpP, COLORS.plant, ABOVE, true);
-    label('gen', pl && !quiz, t('l_generator'), pl ? A.generator() : tmpP, COLORS.plant, ABOVE, true);
-    label('power', pl && !quiz && s.power > 0.6, t('l_power'), pl ? A.town() : tmpP, COLORS.energy, ABOVE, true);
-    label('fuel', pl && qk === 'calc', t('l_fuel', { m: s.quizScene?.m ?? 1 }), pl ? A.core() : tmpP, COLORS.energy, ABOVE);
   }
 
   /** The star of energy on the screen (canvas pixels), so no label covers it. */
@@ -766,51 +572,30 @@ export function createApp(root, options = {}) {
       const f = a?.split ? t('f_E', { emc: F.emc, kg: sciH(dmKg), c: cH, two: 2, E: sciH(E1) }) : t('f_left', { n: MASS.n, U: MASS.U, L: RX.left });
       return `<span class="me-w">${w}</span><span class="me-f">${f}</span>`;
     }
-    if (s.scene === 'chain') {
+    {
       const n = infoChain.filter((x) => x.split).length;
       const done = n === 13;
       const w = n === 0 ? t('out_chain_start') : done ? t('out_chain_done', { a: 1, b: 3, c: 9, n }) : t('out_chain_run', { n });
       const f = n === 0 ? t('f_chain_start', { e1: sciH(E1) }) : t('f_chain', { n, e1: sciH(E1), E: sciH(n * E1) });
       return `<span class="me-w">${w}</span><span class="me-f">${f}</span>`;
     }
-    const fu = fuel(s.m, s.part);
-    const w = t(s.part === 'full' ? 'out_plant_full' : 'out_plant', { m: gText(s.m), p: pct(), kg: sciH(fu.kg) });
-    const f = t('f_E', { emc: F.emc, kg: sciH(fu.kg), c: cH, two: 2, E: sciH(fu.E) });
-    return `<span class="me-w">${w}</span><span class="me-f">${f}</span>`;
   }
   function rule() {
     if (s.scene === 'one') return infoOne[0]?.split ? t('rule_split', { emc: F.emc, c2: F.c2, cc: ccH, two: 2 }) : t('rule_start');
-    if (s.scene === 'chain') return infoChain.length && infoChain.every((x) => x.split) ? t('rule_chain_done') : t('rule_chain');
-    const fu = fuel(s.m, s.part);
-    return t(s.on ? 'rule_plant_on' : 'rule_plant_off', { W: BULB_W, years: yearsText(fu.years) });
+    return infoChain.length && infoChain.every((x) => x.split) ? t('rule_chain_done') : t('rule_chain');
   }
   function panel() {
     if (s.labels !== 'learn') return;
     sheet.choose(s.scene);
-    sheet.next(!s.played.one ? null : !s.played.chain ? 'chain' : !s.played.plant ? 'plant' : null);
-    const nuc = s.scene !== 'plant';
-    el.eq.hidden = !nuc;
-    el.fuel.hidden = nuc;
-    el.scrub.hidden = !nuc;
+    sheet.next(!s.played.one ? null : !s.played.chain ? 'chain' : null);
     // the right side's mass once the nucleus has split (the balance tips: the left side is heavier)
     const split = s.scene === 'one' ? Boolean(infoOne[0]?.split) : infoChain.some((x) => x.split);
     const massR = split ? `${N(RX.right)} ${t('u_u')}` : '\u00a0';
     if (el.massR.textContent !== massR) el.massR.textContent = massR; // (the DOM is written only when it changes)
     el.scale.classList.toggle('tipped', split);
-    if (nuc) {
-      const v = String(Math.round((s.t / dur()) * 1000));
-      if (el.scrub.value !== v) el.scrub.value = v;
-      el.scrub.disabled = s.locked;
-    }
-    const mText = gText(s.m);
-    if (el.m.textContent !== mText) el.m.textContent = mText;
-    el.mMinus.disabled = s.locked || s.m === MASSES_G[0];
-    el.mPlus.disabled = s.locked || s.m === MASSES_G.at(-1);
-    for (const b of ui.$$('[data-part]')) {
-      const on = b.dataset.part === s.part;
-      b.classList.toggle('on', on);
-      b.setAttribute('aria-checked', String(on));
-    }
+    const v = String(Math.round((s.t / dur()) * 1000));
+    if (el.scrub.value !== v) el.scrub.value = v;
+    el.scrub.disabled = s.locked;
     sheet.outcome(outcome());
     sheet.rule(rule());
     // the chain's steps light up as each step's nuclei split
@@ -822,11 +607,9 @@ export function createApp(root, options = {}) {
     const done = s.played[s.scene];
     const used = Object.values(s.played).filter(Boolean).length;
     const step = done ? '' : used + 1;
-    let lab = s.scene === 'plant' ? 'act_plant_on' : 'act_shoot';
-    if (s.scene === 'plant' && s.on) lab = 'act_plant_off';
-    else if (s.scene !== 'plant' && (done || s.t > 0)) lab = 'act_again';
-    const numbered = lab === 'act_shoot' || lab === 'act_plant_on';
-    const icon = s.scene === 'plant' ? (s.on ? ICONS.pause : ICONS.play) : s.t > 0 ? ICONS.reset : ICONS.hand;
+    const lab = done || s.t > 0 ? 'act_again' : 'act_shoot';
+    const numbered = lab === 'act_shoot';
+    const icon = s.t > 0 ? ICONS.reset : ICONS.hand;
     const keyNow = `${lab}|${step}|${icon.length}|${lab === 'act_again'}`;
     if (action && action.lastKey !== keyNow) {
       action.lastKey = keyNow;
@@ -848,7 +631,7 @@ export function createApp(root, options = {}) {
     stage.invalidate();
   }
 
-  // ── the action: one big button; its badge on the waiting neutron (or the reactor) ─────────────────────────────
+  // ── the action: one big button; its badge on the waiting neutron ─────────────────────────────
   const ringPoint = new THREE.Vector3();
   action = createAction({
     stage,
@@ -862,7 +645,6 @@ export function createApp(root, options = {}) {
       if (s.locked || camK < 1) return null;
       if (s.scene === 'one' && s.t === 0 && !s.playing) return ringPoint.copy(one.nuclei[0].from);
       if (s.scene === 'chain' && s.t === 0 && !s.playing) return ringPoint.copy(chain.nuclei[0].from);
-      if (s.scene === 'plant' && !s.on) return ringPoint.copy(ensurePlant().anchors.core());
       return null;
     },
     radius: 22,
@@ -876,7 +658,6 @@ export function createApp(root, options = {}) {
     const now = performance.now();
     if (now - lastAct < 400) return;
     lastAct = now;
-    if (s.scene === 'plant') return setPlant(!s.on);
     play();
   }
 
@@ -890,13 +671,12 @@ export function createApp(root, options = {}) {
     s.playing = false;
     if (changed) s.t = 0;
     s.userMovedCamera = false;
-    if (sc === 'plant') ensurePlant().set(s.power, 0);
     clearLabels();
     draw();
     if (animate && changed) {
       camFrom = null;
       camK = 1;
-      // a quick fade between scenes of very different size
+      // a quick fade between scenes of different size
       ui.stage.classList.remove('me-fade');
       void ui.stage.offsetWidth;
       ui.stage.classList.add('me-fade');
@@ -905,7 +685,7 @@ export function createApp(root, options = {}) {
   }
 
   // ── the test ────────────────────────────────────────────────────────────────────────────────────────────────
-  const QUESTIONS = ['neutrons', 'mass', 'calc', 'chain', 'why'];
+  const QUESTIONS = ['neutrons', 'mass', 'chain', 'why'];
   let order = QUESTIONS;
   let qCurrent = null;
   const plainU = (x) => `${N(x)} ${t('u_u')}`;
@@ -919,7 +699,6 @@ export function createApp(root, options = {}) {
     s.quizScene = q;
     s.playing = false;
     clearLabels();
-    if (q.scene === 'plant') ensurePlant().set(q.power ?? 0, 0);
     applyScene();
     stage.invalidate();
   }
@@ -957,28 +736,6 @@ export function createApp(root, options = {}) {
         reveal: t('a_mass', { dm, L: RX.left, R: RX.right, emc: F.emc }),
       };
     }
-    if (kind === 'calc') {
-      const m = shuffle([1, 2, 5])[0];
-      quizScene({ kind, scene: 'plant', power: 0, m });
-      const kg = m / 1000;
-      const E = kg * C * C;
-      const wrong = [m * C * C, kg * C, kg * 2 * C];
-      const J = (x) => `${sciH(x)} ${t('u_J')}`;
-      return {
-        text: t('q_calc', { m, c: cH }),
-        answer: E,
-        wrong,
-        tolerance: E * 1e-6,
-        label: J,
-        html: true,
-        notes: notesOf([
-          [wrong[0], t('n_calc_g', { m, kg: N(kg) })],
-          [wrong[1], t('n_calc_c', { c2: F.c2 })],
-          [wrong[2], t('n_calc_2c', { c2: F.c2, two: 2 })],
-        ]),
-        reveal: t('a_calc', { E: sciH(E), emc: F.emc, kg: N(kg), c: cH, two: 2 }),
-      };
-    }
     if (kind === 'chain') {
       quizScene({ kind, scene: 'chain', t: splitAt(CH_T1, CH.pace) + 0.75, hideLast: true });
       return {
@@ -995,7 +752,7 @@ export function createApp(root, options = {}) {
       };
     }
     // why so much energy: the answers are words (values are their indices)
-    quizScene({ kind, scene: 'plant', power: 1 });
+    quizScene({ kind, scene: 'one', t: ONE.dur });
     const words = [t('c_why_c2', { c2: F.c2 }), t('c_why_more'), t('c_why_half'), t('c_why_n')];
     return {
       text: t('q_why'),
@@ -1019,7 +776,7 @@ export function createApp(root, options = {}) {
     t,
     emit,
     audio,
-    questions: 5,
+    questions: 4,
     lines: { text: 2, feedback: 3 },
     action,
     hooks: {
@@ -1029,7 +786,7 @@ export function createApp(root, options = {}) {
         s.locked = true;
         s.playing = false;
         // the neutrons' count first (every later scene of the split shows them); the why question last
-        order = ['neutrons', ...shuffle(['mass', 'calc', 'chain']), 'why'];
+        order = ['neutrons', ...shuffle(['mass', 'chain']), 'why'];
         clearLabels();
         syncUI();
       },
@@ -1040,7 +797,6 @@ export function createApp(root, options = {}) {
         s.quizScene = null;
         showLast(true);
         clearLabels();
-        if (s.scene === 'plant') plant?.set(s.power, 0);
         camFrom = null;
         camK = 1;
         syncUI();
@@ -1098,23 +854,6 @@ export function createApp(root, options = {}) {
     hint(t('q_locked'));
     audio.error();
   }
-  function stepM(dir) {
-    if (s.locked) return lockedNudge();
-    const i = MASSES_G.indexOf(s.m) + dir;
-    if (i < 0 || i >= MASSES_G.length) return;
-    audio.tick();
-    s.m = MASSES_G[i];
-    draw();
-    emitChange();
-  }
-  function setPart(part) {
-    if (s.locked) return lockedNudge();
-    if (part === s.part) return;
-    audio.tick();
-    s.part = part === 'full' ? 'full' : 'fission';
-    draw();
-    emitChange();
-  }
   const fullscreenBtn = ui.$('[data-act="fullscreen"]');
   if (fullscreenBtn && !document.fullscreenEnabled) fullscreenBtn.hidden = true;
   let lastTap = { what: '', at: 0 };
@@ -1123,7 +862,7 @@ export function createApp(root, options = {}) {
     if (!b) return;
     audio.unlock();
     // a second tap within 120 ms on the same button is a bounce, not a second tap
-    const what = b.dataset.act || b.dataset.example || b.dataset.part || '';
+    const what = b.dataset.act || b.dataset.example || '';
     const now = performance.now();
     if (what && what === lastTap.what && now - lastTap.at < 120) return;
     lastTap = { what, at: now };
@@ -1132,13 +871,10 @@ export function createApp(root, options = {}) {
     if (b.dataset.mode === 'explore') quiz.stop();
     if (b.dataset.q != null) quiz.choose(Number(b.dataset.q));
     if (b.dataset.example) choose(b.dataset.example);
-    if (b.dataset.part) setPart(b.dataset.part);
     const a = b.dataset.act;
     if (a === 'q-next') quiz.next();
     if (a === 'q-again') quiz.start();
     if (a === 'home') home();
-    if (a === 'm-') stepM(-1);
-    if (a === 'm+') stepM(1);
     if (a === 'fullscreen') {
       if (document.fullscreenElement) document.exitFullscreen?.();
       else root.requestFullscreen?.().catch(() => {});
@@ -1155,7 +891,6 @@ export function createApp(root, options = {}) {
     if (d) {
       e.preventDefault();
       if (s.locked) return lockedNudge();
-      if (s.scene === 'plant') return stepM(d);
       return seekTo(s.t + d * 0.25, { user: true });
     }
     if (e.key === ' ' || e.key === 'Enter') {
@@ -1169,11 +904,6 @@ export function createApp(root, options = {}) {
     s.token += 1;
     s.playing = false;
     s.t = 0;
-    s.on = false;
-    s.power = 0;
-    plant?.set(0, 0);
-    s.m = 1;
-    s.part = 'fission';
     s.userMovedCamera = false;
     clearLabels();
     draw();
@@ -1183,7 +913,6 @@ export function createApp(root, options = {}) {
   // ── state for the book ────────────────────────────────────────────────────────────────────────────────────────
   function snapshot() {
     const split = s.scene === 'chain' ? chain.render(s.t, camera.quaternion).filter((x) => x.split).length : 0;
-    const fu = fuel(s.m, s.part);
     return {
       scene: s.scene,
       t: +s.t.toFixed(3),
@@ -1195,13 +924,6 @@ export function createApp(root, options = {}) {
       energyPerSplit: +E1.toPrecision(4),
       split: s.scene === 'one' ? s.t >= splitAt(ONE.tHit, ONE.pace) : split > 0,
       splits: s.scene === 'chain' ? split : s.t >= splitAt(ONE.tHit, ONE.pace) ? 1 : 0,
-      m: s.m,
-      part: s.part,
-      convertedKg: +fu.kg.toPrecision(4),
-      E: +fu.E.toPrecision(4),
-      bulbYears: +fu.years.toPrecision(4),
-      on: s.on,
-      power: +s.power.toFixed(3),
       mode: s.mode,
       locked: s.locked,
       view: s.view,
@@ -1210,7 +932,7 @@ export function createApp(root, options = {}) {
   let lastEmit = '';
   function emitChange() {
     const snap = snapshot();
-    const k = JSON.stringify([snap.scene, snap.split, snap.splits, snap.m, snap.part, snap.on, snap.playing]);
+    const k = JSON.stringify([snap.scene, snap.split, snap.splits, snap.playing]);
     if (k !== lastEmit) {
       lastEmit = k;
       emit('change', snap);
@@ -1221,46 +943,12 @@ export function createApp(root, options = {}) {
   relayout();
   syncUI();
   setView(s.view, { animate: false });
-  if (s.scene !== 'plant' && Number(o.t) > 0) s.t = THREE.MathUtils.clamp(Number(o.t), 0, dur());
+  if (Number(o.t) > 0) s.t = THREE.MathUtils.clamp(Number(o.t), 0, dur());
   if (s.t >= dur() - 1e-6) s.played[s.scene] = true;
-  if (o.run) {
-    s.on = true;
-    s.power = 1;
-    s.played.plant = true;
-  }
-  plant?.set(s.power, 0);
   draw();
   const ready = (async () => {
     if (o.mode === 'quiz') quiz.start();
   })();
-
-  // A moment after the start, the plant is built in the browser's idle moments (never while the split plays), then
-  // its shaders are compiled (in parallel where the browser can) and its pictures sent to the GPU, so the first tap on
-  // the power-plant scene does not stall. The shaders are compiled with the plant's own light, sky and haze, set for an
-  // instant and put back before the next frame.
-  const idle = window.requestIdleCallback?.bind(window) ?? ((fn) => setTimeout(() => fn({ timeRemaining: () => 8, didTimeout: true }), 16));
-  let warmed = false;
-  function warmPlant() {
-    if (warmed || !plant) return;
-    warmed = true;
-    if ((s.quizScene?.scene ?? s.scene) === 'plant') return; // already drawn
-    applyScene('plant');
-    try {
-      renderer.compileAsync(plant.root, camera, scene).catch(() => {});
-      plant.root.traverse((m) => {
-        for (const mt of [m.material].flat()) for (const map of [mt?.map, mt?.emissiveMap, mt?.normalMap]) if (map) renderer.initTexture(map);
-      });
-    } finally {
-      applyScene();
-    }
-  }
-  function idleBuild(deadline) {
-    if (plant) return idle(warmPlant, { timeout: 3000 });
-    if (s.playing) return idle(idleBuild, { timeout: 3000 });
-    while (!plantStep()) if (deadline.timeRemaining() < 6) return idle(idleBuild, { timeout: 3000 });
-    idle(warmPlant, { timeout: 3000 });
-  }
-  setTimeout(() => idle(idleBuild, { timeout: 3000 }), 1200);
 
   return {
     ready,
@@ -1273,23 +961,15 @@ export function createApp(root, options = {}) {
     async set(p = {}) {
       if (p.view) setView(p.view, { animate: p.animate !== false });
       if (p.scene && SCENES.includes(p.scene) && p.scene !== s.scene) choose(p.scene, { animate: p.animate !== false });
-      if (p.m != null && MASSES_G.includes(Number(p.m))) s.m = Number(p.m);
-      if (p.part) s.part = p.part === 'full' ? 'full' : 'fission';
       if (p.t != null) seekTo(Number(p.t));
       if (p.play) play();
-      if (p.run != null) {
-        s.on = Boolean(p.run);
-        if (p.animate === false) s.power = s.on ? 1 : 0;
-        if (s.on) s.played.plant = true;
-        plant?.set(s.power, 0);
-      }
       draw();
       emitChange();
       return snapshot();
     },
     async reset() {
       quiz.stop();
-      s.played = { one: false, chain: false, plant: false };
+      s.played = { one: false, chain: false };
       setView('front', { animate: false });
       s.scene = 'one';
       home();
