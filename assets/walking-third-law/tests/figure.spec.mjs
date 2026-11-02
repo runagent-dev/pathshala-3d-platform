@@ -279,7 +279,7 @@ test('walking: detailed lesson and explanations fit six frames in Bangla and Eng
             overlap: labels.some((r) => overlap(r, corner)) || (labels.length === 2 && overlap(labels[0], labels[1])),
             overflow: document.querySelector('.pvc-panel').scrollHeight - document.querySelector('.pvc-panel').clientHeight,
             stage: document.querySelector('.pvc-stage').getBoundingClientRect().height,
-            // the panel is under the 3D view, except in the kit's short-and-wide frame (a phone on its side)
+            // kit 1.5.0: the panel is beside the 3D on landscape frames (at least 600 px wide), under it on portrait ones
             below:
               document.querySelector('.pvc-panel').getBoundingClientRect().top >=
               document.querySelector('.pvc-stage').getBoundingClientRect().bottom - 1,
@@ -288,7 +288,7 @@ test('walking: detailed lesson and explanations fit six frames in Bangla and Eng
         });
         expect(report, `${lang} ${width}x${height} ${JSON.stringify(state)}`).toMatchObject({ bad: [], overlap: false, overflow: 0 });
         expect(report.stage).toBeGreaterThan(145);
-        expect(report.below, `${lang} ${width}x${height} panel below`).toBe(!(height <= 460 && width / height >= 1.5));
+        expect(report.below, `${lang} ${width}x${height} panel below`).toBe(!(width >= height && width >= 600));
         if (width === 390 && height === 700) expect(report.stage).toBeGreaterThanOrEqual(0.55 * height - 1);
         expect(report.longest, `${lang} ${width}x${height} labels only on the view`).toBeLessThanOrEqual(28);
       }
