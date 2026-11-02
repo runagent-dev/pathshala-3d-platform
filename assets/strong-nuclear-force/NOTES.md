@@ -25,7 +25,7 @@ writes "দুর্বল নিউক্লিয়ার বল" in the clos
 নিউক্লিয়ার বল. Other words used: বিকর্ষণ (as in 3.2.2's আকর্ষণ-বিকর্ষণ), পাল্লা (as in 3.2.1/3.2.2's "বলের পাল্লা").
 
 ## How the figure works
-- **প্রোটন টানো** (default): a carbon-12 nucleus (6 protons red with "+", 6 neutrons grey), seen from the front.
+- One scene (since 1.0.0; splitting and joining are the lab `strong-nuclear-force-energy`): a carbon-12 nucleus (6 protons red with "+", 6 neutrons grey), seen from the front.
   One proton sits on the outside, touching the outermost ball, so the gap between it and the nucleus is exactly
   how far it has been pulled. The student drags it straight out (or presses → / ←, Space lets go). Two arrows act
   on it: orange = সবল নিউক্লীয় বল (pulling inward), blue = তড়িৎ বিকর্ষণ (the other protons pushing out).
@@ -35,25 +35,14 @@ writes "দুর্বল নিউক্লিয়ার বল" in the clos
   the same number. Within 1 × 10⁻¹⁵ m the orange arrow is far bigger; from 0.6 to 1.0 it visibly shrinks (still
   bigger than the blue one, so it snaps back when let go); from 1.1 on it is gone and the proton flies away (slow
   motion, said so). The wording says "প্রায়" (about) for the edge, as the book does.
-- **ভাঙা**: a slow neutron reaches a big nucleus (symbolic, 92 balls, "যেমন ইউরেনিয়াম"), it wobbles, stretches and
-  splits into two smaller nuclei (45 + 45) and three neutrons (the one that came in and two more), with a flash and
-  amber rays labelled শক্তি: 92 + 1 = 45 + 45 + 3, as U-235 + n → Ba + Kr + 3n. The panel: "বড় নিউক্লিয়াস + নিউট্রন
-  → দুটি ছোট নিউক্লিয়াস + ৩টি নিউট্রন + শক্তি" and the book's reason (energy stored by the huge force), with nuclear power
-  plants (Rooppur) as the example. The note says fewer particles are shown.
-- **জোড়া দেওয়া**: hydrogen-2 and hydrogen-3 rush together against their electric repulsion (they must come within
-  10⁻¹⁵ m for the strong force to grab them) and join into helium-4, giving off a neutron and energy
-  (2p + 3n = 2p + 2n + n); the Sun as the example.
 - The panel's last row: the four fundamental forces, weakest → strongest (order only, no numbers), in the shared
   colours, সবল নিউক্লীয় highlighted with its range; brackets under them name the book's three kinds: মহাকর্ষ |
   ইলেকট্রো উইক (দুর্বল নিউক্লীয় + তড়িৎ চৌম্বক) | নিউক্লিয়ার বল.
-- The test (5): between which particles the strong force acts (all protons and neutrons, from the book); a proton
+- The test (4): between which particles the strong force acts (all protons and neutrons, from the book); a proton
   held clearly inside (0.2–0.6) or clearly outside (1.6–2.4 × 10⁻¹⁵ m) the reach, what happens when let go (then
-  it is let go); two protons an atom apart (10⁻¹⁰ m), which force is bigger; how to get energy from the big
-  nucleus (or the two small ones) shown (then it plays); which of the three kinds the weak nuclear force belongs
-  to. Wrong choices are the usual mistakes (only protons, neutrons as the glue, electrons, "the strongest always
-  wins", joining a big nucleus, splitting small ones, burning, "নিউক্লিয়ার" because of the name …) and each worked
-  answer starts with the right option's words and names the mistake. The scale and the reach are hidden in the
-  questions they would answer.
+  it is let go); two protons an atom apart (10⁻¹⁰ m), which force is bigger; which of the three kinds the weak
+  nuclear force belongs to. Wrong choices are the usual mistakes and each worked answer names the mistake. The
+  scale and the reach are hidden in the questions they would answer.
 
 ## The model behind the arrows (src/reading.js, unit-tested)
 - Electric push: Coulomb's law, k·e² = 230.7 N·fm², from the other 5 protons at an effective 2.4 fm: about
@@ -81,3 +70,8 @@ writes "দুর্বল নিউক্লিয়ার বল" in the clos
   the energy rays one instanced mesh, one glow texture for both bursts.
 - The panel sits beside the 3D (kit 1.5.0): the wide-frame grid and the sideways-phone rules for the old bottom panel
   are gone. No front/turn buttons: a drag turns the view (not during the test), a front icon brings it back.
+
+## Split (2026-11, 1.0.0)
+One 3D scene per lab: splitting and joining moved to `strong-nuclear-force-energy`. The scene chips, the `scene`
+URL parameter, `set({ scene, t, play })`, the `scene` and `done` events and keys 1/2/3 went; the test has four
+questions.
