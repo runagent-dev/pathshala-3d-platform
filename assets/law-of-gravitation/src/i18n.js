@@ -34,19 +34,14 @@ export const STRINGS = {
     ex_label: 'কী বদলে দেখবে',
     ex_dist: 'দূরত্ব',
     ex_mass: 'ভর',
-    ex_earth: 'পৃথিবী',
     res_part: 'টান {b}/{a}',
     res_times: 'টান {k} গুণ',
-    res_g: 'g প্রায় {g}',
-    res_weight: 'ওজন {w} নিউটন',
     cmp_times: '{k} গুণ',
 
     // the action: the big button, and the same numbered badge on the sphere or the weight
     act_double_r: 'দূরত্ব {two} গুণ করো',
     act_double_m1: 'বাম গোলকের ভর {two} গুণ করো',
     act_double_m2: 'ডান গোলকের ভরও {two} গুণ করো',
-    act_place: 'বাটখারাটি পৃথিবীতে রাখো',
-    act_add: 'আরেকটি বাটখারা উপরে রাখো',
     act_again: 'আবার প্রথম থেকে দেখো',
     act_home: 'শুরুতে ফেরাও',
 
@@ -57,20 +52,9 @@ export const STRINGS = {
     l_pull_cmp: 'টান {k}',
     l_r: '{r} = {v} m',
     l_dist: '{dist} = {v} m',
-    l_weight: 'ওজন',
-    l_on_earth: 'পৃথিবীর উপর টান',
-    l_on_earth_short: 'টান',
-    l_centre: 'পৃথিবীর কেন্দ্র',
-    l_R: '{R} = {v} km',
-    l_radius: 'পৃথিবীর ব্যাসার্ধ {v} km',
-    l_lift: '{h} m',
     l_before: 'আগে',
-    l_weight_total: 'মোট {kg} kg',
-    l_R_short: '{R}',
-    l_r2R: '{r} = {two}{R}',
     // the honest notes: a quiet grey line under the result (never on the picture)
     note_spheres: 'আসল টান পিঁপড়ার ওজনের মতো ছোট; তীর অনেক বড় করে আঁকা',
-    note_earth: 'পৃথিবীর তুলনায় বাটখারা অনেক বড় করে আঁকা',
 
     // the result line: what happened, as a comparison; the number that matters in <b>
     out_start: 'দুটি ভারী গোলক একে অপরকে টানে: এই টানের নাম <b>মহাকর্ষ বল</b>।',
@@ -78,9 +62,6 @@ export const STRINGS = {
     out_vs_part: 'টান আগের <b>{frac}</b> <small>({a} ভাগের {b} ভাগ)</small>',
     out_vs_times: 'টান আগের <b>{k} গুণ</b>',
     out_exact: '<small class="lg-exact">আসল মান {f} নিউটন</small>',
-    out_earth0: 'পৃথিবীও একটা বিশাল গোলক।',
-    out_weight: '{kg} kg বাটখারার ওজন প্রায় <b>{w} নিউটন</b>',
-    out_weight2: '{kg} kg বাটখারার ওজন প্রায় <b>{w} নিউটন</b> <small>({one} kg-এর {two} গুণ)</small>',
 
     // the rule line: one short idea; the quantity just changed in its colour
     rule_start: '<b>দুটি গোলকই সমান জোরে টানে,</b> তাই দুটি তীর সমান লম্বা।',
@@ -92,9 +73,6 @@ export const STRINGS = {
     rule_sum_mass: '<b>ভারী হলে টান বাড়ে।</b> {dist} বদলালে কী হয়, দেখো।',
     rule_sum_both: '<b>{mass} বাড়লে টান বাড়ে, {dist} বাড়লে টান কমে।</b>',
     rule_all: '<b>{mass} বাড়লে টান বাড়ে, {dist} বাড়লে টান কমে।</b>',
-    rule_earth0: 'পৃথিবী বাটখারাকে নিজের কেন্দ্রের দিকে টানে: এই টানকেই আমরা <b>ওজন</b> বলি।',
-    rule_earth1: '<b>দূরত্ব {R} মাপা হয় পৃথিবীর কেন্দ্র থেকে</b> (প্রায় {km} km), পৃষ্ঠ থেকে নয়: পৃথিবীর সব ভর যেন কেন্দ্রে জমা।',
-    rule_earth2: '<b>তাই প্রতি {one} kg-এ টান একই: {gv} নিউটন।</b> ছেড়ে দিলে ত্বরণ {g} = {gv} {ms2}।',
 
     // the formula: last, each symbol with the word for what the student changed, in the same colour
     sum_word: 'সব মিলিয়ে',
@@ -102,10 +80,7 @@ export const STRINGS = {
     cap_G: 'স্থির সংখ্যা',
     cap_mass: 'ভর',
     cap_dist2: 'দূরত্ব × দূরত্ব',
-    cap_earth_mass: 'পৃথিবীর ভর',
-    cap_centre_dist2: 'দূরত্ব × দূরত্ব',
     book_G: 'বইয়ের মান: মহাকর্ষীয় ধ্রুবক {G} = {Gv} {Gu}',
-    book_earth: 'বইয়ের মান: {G} = {Gv} {Gu}, {M} = {Mv} kg, {R} = {Rv} m',
 
     // the test
     q_count: 'প্রশ্ন {i} / {n}',
@@ -153,18 +128,6 @@ export const STRINGS = {
     not_eq_less: 'টান নির্ভর করে দুটি ভরের উপর, সেটি দুই গোলকের জন্য একই।',
     not_eq_more: 'ছোট গোলকটি বেশি টান পায় না: একই দুটি ভর, একই টান।',
     not_eq_none: 'ভর আছে এমন যেকোনো বস্তু অন্য বস্তুকে টানে।',
-
-    q_radius: 'বাটখারাটি মাটি থেকে {h} m উপরে। হিসাবে দূরত্ব {R} কত ধরবে?',
-    why_radius: '<b>প্রায় {km} km:</b> {R} মাপা হয় পৃথিবীর কেন্দ্র থেকে। মাটি থেকে {h} m উপরে হলেও তা প্রায় পৃথিবীর ব্যাসার্ধ।',
-    not_rad_height: 'মাটি থেকে দূরত্ব নয়: কেন্দ্র থেকে।',
-    not_rad_diam: 'এটি পৃথিবীর ব্যাস; {R} মাপা হয় কেন্দ্র থেকে, মানে ব্যাসার্ধ।',
-    not_rad_km: '{m} m মানে মাত্র {kmm} km; ব্যাসার্ধ {km} km।',
-
-    q_h: 'ছবিতে {kg} kg বাটখারাটি পৃথিবীর কেন্দ্র থেকে {two}{R} দূরে। পৃষ্ঠে এর ওজন {w0} নিউটন; এখানে কত?',
-    why_h: '<b>প্রায় {ans} নিউটন:</b> দূরত্ব {two} গুণ, তাই টান {four} ভাগের {one} ভাগ: {w0} ÷ {four} = প্রায় {ans}।',
-    not_h_nosq: 'দূরত্ব {two} গুণ হলে টান {four} ভাগের {one} ভাগ হয়, অর্ধেক নয়।',
-    not_h_same: 'দূরে গেলে ওজন কমে, একই থাকে না।',
-    not_h_more: 'দূরে গেলে ওজন কমে, বাড়ে না।',
   },
   en: {
     panel_hide: 'Hide the text',
@@ -189,18 +152,13 @@ export const STRINGS = {
     ex_label: 'What to change',
     ex_dist: 'Distance',
     ex_mass: 'Mass',
-    ex_earth: 'Earth',
     res_part: 'pull {b}/{a}',
     res_times: 'pull × {k}',
-    res_g: 'g about {g}',
-    res_weight: 'weight {w} N',
     cmp_times: '{k} times',
 
     act_double_r: 'Double the distance',
     act_double_m1: 'Double the left mass',
     act_double_m2: 'Double the right mass too',
-    act_place: 'Put the weight on the Earth',
-    act_add: 'Put another weight on top',
     act_again: 'Start again',
     act_home: 'Back to the start',
 
@@ -210,28 +168,14 @@ export const STRINGS = {
     l_pull_cmp: 'pull {k}',
     l_r: '{r} = {v} m',
     l_dist: '{dist} = {v} m',
-    l_weight: 'weight',
-    l_on_earth: 'pull on the Earth',
-    l_on_earth_short: 'pull',
-    l_centre: "Earth's centre",
-    l_R: '{R} = {v} km',
-    l_radius: "Earth's radius {v} km",
-    l_lift: '{h} m',
     l_before: 'before',
-    l_weight_total: 'total {kg} kg',
-    l_R_short: '{R}',
-    l_r2R: '{r} = {two}{R}',
     note_spheres: 'The real pull is an ant’s weight; arrows drawn far bigger',
-    note_earth: 'The weight is drawn far bigger than the Earth allows',
 
     out_start: 'Two heavy spheres pull each other: this pull is called <b>gravitational force</b>.',
     out_start_mass: 'The spheres are now {two} m apart: what does a change of {mass} do?',
     out_vs_part: 'Pull <b>{frac}</b> of before <small>(one part in {a})</small>',
     out_vs_times: 'Pull <b>{k} times</b> before',
     out_exact: '<small class="lg-exact">real value {f} N</small>',
-    out_earth0: 'The Earth is a huge sphere too.',
-    out_weight: 'The {kg} kg weight weighs about <b>{w} N</b>',
-    out_weight2: '{kg} kg weighs about <b>{w} N</b> <small>({two} times {one} kg)</small>',
 
     rule_start: '<b>Each pulls the other equally hard,</b> so the two arrows are equally long.',
     rule_dist: '<b>Farther apart, much less pull:</b> {dist} {two} times as big, pull {one}/{four}, because the distance counts twice: {sq}.',
@@ -242,20 +186,13 @@ export const STRINGS = {
     rule_sum_mass: '<b>Heavier, more pull.</b> What does the {dist} do?',
     rule_sum_both: '<b>More {mass}, more pull; more {dist}, less pull.</b>',
     rule_all: '<b>More {mass}, more pull; more {dist}, less pull.</b>',
-    rule_earth0: 'The Earth pulls the weight towards its own centre: we call this pull its <b>weight</b>.',
-    rule_earth1:
-      '<b>The distance {R} is measured from the Earth’s centre</b> (about {km} km), not from the surface: the Earth pulls as if all its mass were at its centre.',
-    rule_earth2: '<b>So the pull on each {one} kg is the same: {gv} N.</b> Let go, and the acceleration is {g} = {gv} {ms2}.',
 
     sum_word: 'All together',
     cap_pull: 'pull',
     cap_G: 'constant',
     cap_mass: 'mass',
     cap_dist2: 'dist. × dist.',
-    cap_earth_mass: 'Earth’s mass',
-    cap_centre_dist2: 'dist. × dist.',
     book_G: 'Book value: gravitational constant {G} = {Gv} {Gu}',
-    book_earth: 'Book values: {G} = {Gv} {Gu}, {M} = {Mv} kg, {R} = {Rv} m',
 
     q_count: 'Question {i} of {n}',
     q_score: 'Correct: {right}',
@@ -301,18 +238,6 @@ export const STRINGS = {
     not_eq_less: 'The pull depends on both masses: the same pair for both spheres.',
     not_eq_more: 'The small sphere is not pulled harder: same two masses, same pull.',
     not_eq_none: 'Any body with mass pulls any other.',
-
-    q_radius: 'The weight is {h} m above the ground. Which distance {R} goes in the sum?',
-    why_radius: '<b>About {km} km:</b> {R} is from the Earth’s centre; {h} m up is still about the Earth’s radius.',
-    not_rad_height: 'Not from the ground: from the centre.',
-    not_rad_diam: 'That is the diameter; {R} is from the centre, the radius.',
-    not_rad_km: '{m} m is only {kmm} km; the radius is {km} km.',
-
-    q_h: 'The {kg} kg weight is {two}{R} from the Earth’s centre. At the surface it weighs {w0} N; here?',
-    why_h: '<b>About {ans} N:</b> distance {two} times, pull {one}/{four}: {w0} ÷ {four} = about {ans}.',
-    not_h_nosq: 'Twice as far, the pull is {one}/{four}, not a half.',
-    not_h_same: 'Farther away, the weight is less, not the same.',
-    not_h_more: 'Farther away, the weight is less, not more.',
   },
 };
 

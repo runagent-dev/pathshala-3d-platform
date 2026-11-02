@@ -1,14 +1,8 @@
-// Where the two scenes are: the spheres on a plain table before a soft blue wall, and the Earth in a starry night
-// sky. None of it is exported (noExport) and none of it is drawn on a transparent background. Cheap on purpose: the
-// room is three merged meshes without textures, the stars two point clouds. In metres for the room (the table's top
-// at y = 0, the bench's front at z = 0.22); in Earth radii for the sky.
+// Where the spheres are: a plain table before a soft blue wall. None of it is exported (noExport) and none of it is
+// drawn on a transparent background. Cheap on purpose: three merged meshes without textures. In metres (the table's
+// top at y = 0, the bench's front at z = 0.22).
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-
-function rand(seed) {
-  let s = seed >>> 0;
-  return () => (s = (s * 1664525 + 1013904223) >>> 0) / 4294967296;
-}
 
 function canvasTexture(w, h, draw) {
   const c = document.createElement('canvas');
@@ -42,7 +36,6 @@ function merged(name, parts, material, fn = () => 1) {
   return mesh;
 }
 
-/** The planets going round the Sun (a school poster, no words): a dark sky, the Sun at the left, orbits, planets. */
 /**
  * The setting round the bench: a plain table top (y = 0, from the wall at z = −1.1 to z = 1.5) before a soft blue
  * wall, lighter low down, and a plain floor beyond (seen only when the view is turned). No pictures or props: only
@@ -70,55 +63,6 @@ export function createLab() {
   table.receiveShadow = true; // the bench's and the spheres' shadows on the table
   const floor = merged('Floor', [new THREE.PlaneGeometry(W, 14).rotateX(-Math.PI / 2).translate(XC, -0.82, WALL_Z + 7)], std('Floor', 0x8f5a48, 0.8));
   root.add(wall, table, floor);
-  return root;
-}
-
-/** The night sky round the Earth: dim stars thick along a Milky Way band, and a few bright ones. */
-export function createStars(radius = 60) {
-  const root = new THREE.Group();
-  root.name = 'Stars';
-  root.userData.noExport = true;
-  const map = canvasTexture(32, 32, (g) => {
-    const grad = g.createRadialGradient(16, 16, 0, 16, 16, 16);
-    grad.addColorStop(0, 'rgba(255,255,255,1)');
-    grad.addColorStop(0.35, 'rgba(255,255,255,0.8)');
-    grad.addColorStop(1, 'rgba(255,255,255,0)');
-    g.fillStyle = grad;
-    g.fillRect(0, 0, 32, 32);
-  });
-  map.colorSpace = THREE.NoColorSpace;
-  const r = rand(23);
-  const band = new THREE.Vector3(0.35, 0.8, -0.48).normalize();
-  const v = new THREE.Vector3();
-  const tints = [
-    [1, 1, 1],
-    [0.78, 0.86, 1],
-    [1, 0.9, 0.74],
-  ];
-  function cloud(count, size, bright, inBand) {
-    const pos = new Float32Array(count * 3);
-    const col = new Float32Array(count * 3);
-    for (let i = 0; i < count; i++) {
-      do v.set(r() * 2 - 1, r() * 2 - 1, r() * 2 - 1);
-      while (v.lengthSq() > 1 || v.lengthSq() < 0.01);
-      v.normalize();
-      if (r() < inBand) v.addScaledVector(band, -v.dot(band) * (0.75 + r() * 0.25)).normalize();
-      pos.set([v.x * radius, v.y * radius, v.z * radius], i * 3);
-      const t = tints[Math.floor(r() * tints.length)];
-      const k = bright * (0.45 + r() * 0.55);
-      col.set([t[0] * k, t[1] * k, t[2] * k], i * 3);
-    }
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
-    const pts = new THREE.Points(
-      geo,
-      new THREE.PointsMaterial({ size, map, vertexColors: true, sizeAttenuation: false, transparent: true, depthWrite: false, toneMapped: false }),
-    );
-    pts.frustumCulled = false;
-    return pts;
-  }
-  root.add(cloud(1400, 3, 0.85, 0.55), cloud(140, 5, 1, 0.2));
   return root;
 }
 

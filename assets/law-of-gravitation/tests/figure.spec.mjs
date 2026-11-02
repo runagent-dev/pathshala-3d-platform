@@ -1,7 +1,6 @@
-// Law of gravitation through the bridge (book pages 78–79, topic 3.7): the student's five steps with the big button
+// Law of gravitation through the bridge (book pages 78–79, topic 3.7): the student's three steps with the big button
 // (the distance doubled: a quarter of the force; the left mass doubled: twice; the right mass too: four times and
-// now, last, the formula; a 1 kg weight on the Earth: its weight GMm/R² ≈ 9.8 N; a second one: twice the weight, the
-// same g), the example words, a tap on the ringed sphere doing the same as the button, the keys, the test, and the
+// now, last, the formula), the example words, a tap on the ringed sphere doing the same as the button, the keys, the test, and the
 // reset. The words come first and are plain: বাম/ডান গোলক, টান, ২ গুণ, ৪ ভাগের ১ ভাগ, never a power of ten. Runs
 // with `npm run test:figures` (dev-only folder, never packaged).
 import { expect, test } from '@playwright/test';
@@ -10,7 +9,7 @@ import { openFigure, preparePage } from '../../../scripts/lib/export/driver.mjs'
 const G = 6.67e-11;
 const F = (m1, m2, r) => (G * m1 * m2) / (r * r);
 
-test('law-of-gravitation: double the distance, a quarter; double a mass, twice; the weight on the Earth', async ({ page }) => {
+test('law-of-gravitation: double the distance, a quarter; double a mass, twice; the formula', async ({ page }) => {
   test.setTimeout(240000);
   await page.setViewportSize({ width: 800, height: 500 });
   const log = await preparePage(page);
@@ -40,31 +39,19 @@ test('law-of-gravitation: double the distance, a quarter; double a mass, twice; 
   expect(st).toMatchObject({ example: 'mass', m1: 2000, m2: 2000, last: 'm2' });
   expect(st.force / st.before).toBeCloseTo(4, 6); // compared with where the mass example starts: four times
   expect(st.force).toBeCloseTo(F(1000, 1000, 1), 14);
-  expect(st.next).toEqual({ example: 'earth', act: 'place', step: 4 });
-
-  // step 4: the Earth, a 1 kg weight on the ground: its weight about 9.8 N
-  st = await fig.call('set', { act: true });
-  expect(st).toMatchObject({ example: 'earth', scene: 'earth', last: 'place', earth: { placed: true, kg: 1 } });
-  expect(st.earth.weight).toBeCloseTo(9.83, 2);
-  expect(st.earth.g).toBeCloseTo(9.83, 2);
-
-  // step 5: a second weight: twice the weight, the same g; then the button starts again (no number)
-  st = await fig.call('set', { act: true });
-  expect(st).toMatchObject({ last: 'add', earth: { placed: true, kg: 2 } });
-  expect(st.earth.weight).toBeCloseTo(2 * 9.83, 1);
   expect(Object.values(st.found).every(Boolean)).toBe(true);
   expect(st.next).toEqual({ example: 'dist', act: 'again', step: '' });
   st = await fig.call('set', { act: true });
-  expect(st).toMatchObject({ example: 'dist', scene: 'spheres', r: 1, m1: 1000, m2: 1000, before: null });
-  // starting again is a real restart: nothing found, the numbering begins at 1 once more (never a step 6)
+  expect(st).toMatchObject({ example: 'dist', r: 1, m1: 1000, m2: 1000, before: null });
+  // starting again is a real restart: nothing found, the numbering begins at 1 once more (never a step 4)
   expect(Object.values(st.found).some(Boolean)).toBe(false);
   expect(st.next).toEqual({ example: 'dist', act: 'r2', step: 1 });
   st = await fig.call('set', { act: true });
   expect(st.next).toEqual({ example: 'mass', act: 'm1', step: 2 });
-  // a step done before keeps its own number when it is done again (the quiet reset on the Earth: step 4, not 6)
-  await fig.call('set', { steps: 5, animate: false });
-  st = await fig.call('set', { example: 'earth' });
-  expect(st.next).toEqual({ example: 'earth', act: 'place', step: 4 });
+  // a step done before keeps its own number when it is done again (the mass example again: step 2, not 4)
+  await fig.call('set', { steps: 3, animate: false });
+  st = await fig.call('set', { example: 'mass' });
+  expect(st.next).toEqual({ example: 'mass', act: 'm1', step: 2 });
 
   // the example words: the mass example starts with both 1,000 kg 2 m apart
   st = await fig.call('set', { example: 'mass' });
@@ -134,7 +121,7 @@ test('law-of-gravitation: the panel, a tap on the ringed sphere, the keys and th
   // the right mass too: four times, and now, last, the formula with each symbol in the colour of what was changed
   await f.locator('.pvc-act').click();
   await fig.advance(2500);
-  await expect(f.locator('.pvc-act')).toContainText('৪'); // the next step is the Earth: step ৪
+  await expect(f.locator('.pvc-act')).toContainText('আবার প্রথম থেকে'); // all three found: the button starts again
   await expect(f.locator('.pvc-outcome')).toContainText('টান আগের ৪ গুণ');
   await expect(f.locator('.pvc-rule .lg-formula')).toHaveCount(1);
   await expect(f.locator('.pvc-rule .lg-formula')).toContainText('সব মিলিয়ে');
@@ -147,33 +134,12 @@ test('law-of-gravitation: the panel, a tap on the ringed sphere, the keys and th
   await expect(f.locator('.pvc-anno-ball').first()).toContainText('m');
   await expect(f.locator('.pvc-anno-rdim i.lg-qd')).toHaveCount(1);
 
-  // keys: 3 chooses the Earth, Space puts the weight down
-  await f.locator('.pvc').focus();
-  await page.keyboard.press('3');
-  await fig.advance(1500);
-  expect((await fig.call('get')).example).toBe('earth');
-  await expect(f.locator('.pvc-outcome')).toContainText('পৃথিবীও একটা বিশাল গোলক');
-  await expect(f.locator('.pvc-rule')).toContainText('ওজন');
-  await page.keyboard.press('Space');
-  await fig.advance(3000);
-  st = await fig.call('get');
-  expect(st.earth).toMatchObject({ placed: true, kg: 1 });
-  await expect(f.locator('.pvc-outcome')).toContainText('৯.৮ নিউটন');
-  await expect(f.locator('.pvc-rule')).toContainText('পৃথিবীর কেন্দ্র থেকে'); // R: from the centre, about ৬,৩৭০ km
-  await expect(f.locator('.pvc-rule')).toContainText('৬,৩৭০ km');
-  await page.keyboard.press('Space');
-  await fig.advance(3000);
-  await expect(f.locator('.pvc-outcome')).toContainText('১৯.৬ নিউটন');
-  await expect(f.locator('.pvc-rule')).toContainText('প্রতি ১ kg-এ টান একই');
-  await expect(f.locator('.pvc-rule .lg-formula')).toHaveCount(1); // g = G × M ÷ R²
-  await fig.call('set', { steps: 4, animate: false }); // back to one weight, for the test that follows
-
-  // the test: five questions, each answered; the scene is locked meanwhile; leaving it restores the learn state
+  // the test: three questions, each answered; the scene is locked meanwhile; leaving it restores the learn state
   await fig.call('practice');
   await fig.advance(1500);
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 3; i++) {
     await expect(f.locator('.pvc-opt[data-q]')).toHaveCount(4);
-    // plain words in the question and the choices (২ গুণ, ৪ ভাগের ১ ভাগ, সমান জোরে, km): no power of ten
+    // plain words in the question and the choices (২ গুণ, ৪ ভাগের ১ ভাগ, সমান জোরে): no power of ten
     const asked = (await f.locator('.pvc-q-text').innerText()) + (await f.locator('.pvc-opt[data-q]').allInnerTexts()).join(' ');
     expect(asked, `question ${i + 1}: ${asked}`).not.toMatch(/১০|10|⁻/);
     await f.locator('.pvc-opt[data-q]').first().click();
@@ -182,15 +148,15 @@ test('law-of-gravitation: the panel, a tap on the ringed sphere, the keys and th
     await f.locator('[data-act="q-next"]').click();
     await fig.advance(1500);
   }
-  await expect(f.locator('.pvc-q-result')).toContainText('৫টির মধ্যে');
+  await expect(f.locator('.pvc-q-result')).toContainText('৩টির মধ্যে');
   await f.locator('[data-mode="explore"]').click();
   await fig.advance(800);
   st = await fig.call('get');
-  expect(st).toMatchObject({ mode: 'explore', example: 'earth', earth: { placed: true, kg: 1 } });
+  expect(st).toMatchObject({ mode: 'explore' });
   expect(log.errors).toEqual([]);
 });
 
-test('law-of-gravitation: the test started in the middle of a step, and the Earth before the spheres', async ({ page }) => {
+test('law-of-gravitation: the test started in the middle of a step', async ({ page }) => {
   test.setTimeout(240000);
   await page.setViewportSize({ width: 390, height: 700 });
   const log = await preparePage(page);
@@ -204,33 +170,11 @@ test('law-of-gravitation: the test started in the middle of a step, and the Eart
   await fig.advance(1500);
   await f.locator('[data-mode="explore"]').click();
   await fig.advance(1000);
-  let st = await fig.call('get');
+  const st = await fig.call('get');
   expect(st).toMatchObject({ example: 'dist', r: 2, last: 'r2', busy: false, mode: 'explore' });
   expect(st.found.r2).toBe(true);
   await expect(f.locator('.pvc-outcome')).toContainText('টান আগের ১/৪');
   await expect(f.locator('.pvc-anno-rdim')).toContainText('২ m');
 
-  // the same for the weight on the Earth
-  await fig.call('set', { example: 'earth', animate: false });
-  await f.locator('.pvc-act').click();
-  await fig.advance(300);
-  await f.locator('[data-mode="quiz"]').click();
-  await fig.advance(1500);
-  await f.locator('[data-mode="explore"]').click();
-  await fig.advance(1000);
-  st = await fig.call('get');
-  expect(st).toMatchObject({ example: 'earth', busy: false, earth: { placed: true, kg: 1 } });
-  expect(st.found.place).toBe(true);
-
-  // the Earth before the spheres: the sentence about g comes, the law g = G × M ÷ R² waits until the sphere law is met
-  await fig.call('reset');
-  await fig.call('set', { example: 'earth', animate: false });
-  await f.locator('.pvc-act').click();
-  await fig.advance(3000);
-  await f.locator('.pvc-act').click();
-  await fig.advance(3000);
-  await expect(f.locator('.pvc-rule')).toContainText('প্রতি ১ kg-এ টান একই');
-  await expect(f.locator('.pvc-rule')).toContainText('ত্বরণ');
-  await expect(f.locator('.pvc-rule .lg-formula')).toHaveCount(0);
   expect(log.errors).toEqual([]);
 });

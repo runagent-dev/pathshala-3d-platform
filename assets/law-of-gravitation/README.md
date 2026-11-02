@@ -27,8 +27,8 @@ To listen to it or control it from the book page, use the helper shipped in the 
 | Param | Meaning | Values | Default |
 |---|---|---|---|
 | `lang` | Language | `bn` বাংলা · `en` English | `bn` |
-| `example` | Start at | `dist` distance (1 m apart) · `mass` mass (2 m apart) · `earth` the Earth | `dist` |
-| `steps` | Steps already done (the state after that many of the student's steps: 1 distance doubled, 2 left mass doubled, 3 right mass doubled, 4 weight on the Earth, 5 a second weight) | number | `0` |
+| `example` | Start at | `dist` distance (1 m apart) · `mass` mass (2 m apart) | `dist` |
+| `steps` | Steps already done (the state after that many of the student's steps: 1 distance doubled, 2 left mass doubled, 3 right mass doubled) | number | `0` |
 | `view` | View | `front` · `3d` | `front` |
 | `mode` | Start in | `explore` learn · `quiz` test | `explore` |
 | `coach` | The numbered ring pulses | `1` · `0` | `1` |

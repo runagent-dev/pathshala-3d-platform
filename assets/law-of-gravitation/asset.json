@@ -5,16 +5,16 @@
   "title": "Law of gravitation (মহাকর্ষ বল)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "0.4.0",
+  "version": "1.0.0",
   "book": "physics-9-10",
   "page": 78,
   "topic": "3.7",
-  "placement": "Book pages 78–79, topic 3.7: মহাকর্ষ বল (Gravitational Force). Next to চিত্র ৩.০৭ (two masses m₁ and m₂ at distance r), F = Gm₁m₂/r² and the Earth's g = GM/R².",
+  "placement": "Book pages 78–79, topic 3.7: মহাকর্ষ বল (Gravitational Force). Next to চিত্র ৩.০৭ (two masses m₁ and m₂ at distance r), F = Gm₁m₂/r². (The Earth's g = GM/R² is the lab law-of-gravitation-earth.)",
   "order": 1,
   "maintainers": ["RadeenXALNW"],
   "units": "m",
-  "description": "Newton's law of gravitation (মহাকর্ষ বল, pages 78–79, topic 3.7) explained in plain words first. Two solid iron spheres (1,000 kg is a ball 62 cm across) rest on stands on a bench with a metre scale, on a teak table in a school physics room; above each one a violet arrow, tied to its own sphere, shows the pull on it, the two arrows equal and pointing at each other, drawn to one honest scale (a grey line under the result says the real pull is about an ant's weight, 6.67 × 10⁻⁵ N, so the arrows are drawn much bigger). The panel is one action, one result, one rule: the examples দূরত্ব · ভর · পৃথিবী as a row of words, one big numbered button whose same badge rings the sphere to touch, one result line that says how the pull compares with the start (টান ১/৪, ২ গুণ, ৪ গুণ; the exact force only as a quiet grey note on big frames) and one short rule in everyday words. The student doubles the distance (the arrows shrink to a quarter, the faint arrows of the moment before stay), doubles the left mass (the pull doubles on both spheres: the small sphere pulls the big one just as hard) and the right mass too (four times); then, last, the formula F = Gm₁m₂/r² with each symbol over its word in the colour of what was changed. Then the Earth in a starry night sky, cut open to its centre: a 1 kg bazaar weight comes down on Dhaka, the pull on it is its weight (about 9.8 N), the distance R is measured from the Earth's centre (about 6,370 km), and a second weight doubles the weight and leaves the pull on each kg, g = GM/R² ≈ 9.8, the same (the book's M = 5.98 × 10²⁴ kg, R = 6.37 × 10⁶ m). Test tab: 5 questions on their own scenes, in plain choices (২ গুণ, ৪ ভাগের ১ ভাগ, সমান জোরে, km): one mass doubled; the distance doubled or halved; whether a small sphere pulls a big one as hard; which distance R for a weight 1 m above the ground; the weight two Earth radii from the centre; each wrong answer named. Phone-first, Bangla.",
-  "tags": ["force", "gravitation", "newtons-law-of-gravitation", "inverse-square", "weight", "g", "earth", "bangla"],
+  "description": "Newton's law of gravitation (মহাকর্ষ বল, pages 78–79, topic 3.7) explained in plain words first. Two solid iron spheres (1,000 kg is a ball 62 cm across) rest on stands on a bench with a metre scale, on a teak table in a school physics room; above each one a violet arrow, tied to its own sphere, shows the pull on it, the two arrows equal and pointing at each other, drawn to one honest scale (a grey line under the result says the real pull is about an ant's weight, 6.67 × 10⁻⁵ N, so the arrows are drawn much bigger). The panel is one action, one result, one rule: the examples দূরত্ব · ভর as a row of words, one big numbered button whose same badge rings the sphere to touch, one result line that says how the pull compares with the start (টান ১/৪, ২ গুণ, ৪ গুণ; the exact force only as a quiet grey note on big frames) and one short rule in everyday words. The student doubles the distance (the arrows shrink to a quarter, the faint arrows of the moment before stay), doubles the left mass (the pull doubles on both spheres: the small sphere pulls the big one just as hard) and the right mass too (four times); then, last, the formula F = Gm₁m₂/r² with each symbol over its word in the colour of what was changed. Test tab: 3 questions on their own scenes, in plain choices (২ গুণ, ৪ ভাগের ১ ভাগ, সমান জোরে): one mass doubled; the distance doubled or halved; whether a small sphere pulls a big one as hard; each wrong answer named. The Earth and a weight are the lab law-of-gravitation-earth. Phone-first, Bangla.",
+  "tags": ["force", "gravitation", "newtons-law-of-gravitation", "inverse-square", "bangla"],
   "params": [
     {
       "name": "lang",
@@ -27,7 +27,7 @@
       "name": "example",
       "label": "Start at",
       "type": "select",
-      "options": [["dist", "distance (1 m apart)"], ["mass", "mass (2 m apart)"], ["earth", "the Earth"]],
+      "options": [["dist", "distance (1 m apart)"], ["mass", "mass (2 m apart)"]],
       "default": "dist"
     },
     {
@@ -35,8 +35,8 @@
       "label": "Steps already done",
       "type": "number",
       "default": "0",
-      "placeholder": "0–5",
-      "help": "the state after that many of the student's steps: 1 distance doubled, 2 left mass doubled, 3 right mass doubled, 4 weight on the Earth, 5 a second weight"
+      "placeholder": "0–3",
+      "help": "the state after that many of the student's steps: 1 distance doubled, 2 left mass doubled, 3 right mass doubled"
     },
     { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
     {
@@ -62,7 +62,6 @@
     { "name": "get", "payload": {} },
     { "name": "set", "payload": { "act": true } },
     { "name": "set", "payload": { "example": "mass" } },
-    { "name": "set", "payload": { "example": "earth" } },
     { "name": "set", "payload": { "steps": 3, "animate": false } },
     { "name": "set", "payload": { "view": "3d" } },
     { "name": "reset", "payload": {} },
@@ -76,15 +75,13 @@
     "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "example": "dist", "animate": false } }] }],
     "video": {
       "kind": "script",
-      "seconds": 22,
+      "seconds": 13,
       "fps": 30,
       "params": { "coach": "0" },
       "script": [
         { "at": 1.2, "command": "set", "payload": { "act": true } },
         { "at": 5.2, "command": "set", "payload": { "act": true } },
-        { "at": 8.8, "command": "set", "payload": { "act": true } },
-        { "at": 12.4, "command": "set", "payload": { "act": true } },
-        { "at": 17.2, "command": "set", "payload": { "act": true } }
+        { "at": 8.8, "command": "set", "payload": { "act": true } }
       ]
     }
   }
