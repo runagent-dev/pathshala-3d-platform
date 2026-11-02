@@ -8,14 +8,14 @@ import * as THREE from 'three';
 import { textMesh } from '@shared/student/materials.js';
 import { TUBE } from './reading.js';
 
-export const DISH = { r: 0.1, h: 0.075, wall: 0.005, floor: 0.006 };
+export const DISH = { r: 0.16, h: 0.08, wall: 0.007, floor: 0.008 };
 /** The mercury's surface in the dish (world y). The scale's 0 is here. */
 export const SURFACE_Y = 0.055;
 /** The tube's mouth when it stands in the dish (world y): TUBE.mouthDepth under the surface. */
 export const MOUTH_Y = SURFACE_Y - TUBE.mouthDepth;
-export const TUBE_R = { outer: 0.0135, inner: 0.0098 };
+export const TUBE_R = { outer: 0.028, inner: 0.02 }; // drawn thick (a real one is about 1 cm across): the glass wall shows
 /** Where the scale is (world x of its left edge, its z). */
-export const SCALE = { x: 0.017, z: -0.024, width: 0.07, top: 1.0 };
+export const SCALE = { x: 0.034, z: -0.036, width: 0.12, top: 1.0 };
 
 /**
  * What the mercury mirrors: a small room drawn as an equirectangular picture (a dark room, a bright window to the
@@ -68,8 +68,8 @@ export function barometerMaterials() {
       metalness: 1,
       roughness: 0.1,
       envMap: mercuryReflection(),
-      envMapIntensity: 1.6,
-      emissive: '#3a4148',
+      envMapIntensity: 2.2,
+      emissive: '#262c33',
       emissiveIntensity: 1,
     }),
     glass: new THREE.MeshPhysicalMaterial({
@@ -148,6 +148,8 @@ export function createBarometer(mats, { num = String, scale = true, name = 'Baro
   // the dish and its mercury
   const dishGlass = mats.glass.clone();
   dishGlass.side = THREE.DoubleSide;
+  dishGlass.opacity = 0.22;
+  dishGlass.color.set('#cfe8f7');
   const dish = new THREE.Mesh(dishGeometry(), dishGlass);
   dish.name = 'Dish';
   dish.renderOrder = 6;
@@ -175,7 +177,8 @@ export function createBarometer(mats, { num = String, scale = true, name = 'Baro
   // the tube's glass on both sides (inside and out), faint, so the vacuum looks empty but the tube still shows
   const tubeGlass = mats.glass.clone();
   tubeGlass.side = THREE.DoubleSide;
-  tubeGlass.opacity = 0.09;
+  tubeGlass.opacity = 0.16;
+  tubeGlass.color.set('#d6ecfa');
   const glass = new THREE.Mesh(tubeGeometry(L, ri, ro), tubeGlass);
   glass.name = 'TubeGlass';
   glass.renderOrder = 8;
@@ -211,7 +214,8 @@ export function createBarometer(mats, { num = String, scale = true, name = 'Baro
   nail.position.set(-0.012, -0.0105, 0);
   nail.rotation.x = Math.PI;
   thumb.add(pad, nail);
-  thumb.position.y = -0.0115;
+  thumb.position.y = -0.019;
+  thumb.scale.setScalar(1.6); // the tube is drawn thick: so is the thumb that seals it
   thumb.visible = false;
   tube.add(thumb);
 
@@ -268,8 +272,8 @@ export function createBarometer(mats, { num = String, scale = true, name = 'Baro
     const s = new THREE.Vector3();
     const p = new THREE.Vector3();
     for (let cm = 0; cm <= 100; cm++) {
-      const len = cm % 10 === 0 ? 0.024 : cm % 5 === 0 ? 0.015 : 0.009;
-      const thick = cm % 10 === 0 ? 0.0016 : 0.0011;
+      const len = cm % 10 === 0 ? 0.038 : cm % 5 === 0 ? 0.025 : 0.014;
+      const thick = cm % 10 === 0 ? 0.0022 : 0.0014;
       p.set(SCALE.x + len / 2, SURFACE_Y + cm / 100, SCALE.z + 0.0002);
       s.set(len, thick, 1);
       M.compose(p, q, s);
@@ -277,34 +281,38 @@ export function createBarometer(mats, { num = String, scale = true, name = 'Baro
     }
     scaleGroup.add(marks);
     // the book's 76 cm, marked in the heights' orange across the scale
-    const mark76 = new THREE.Mesh(new THREE.BoxGeometry(SCALE.width, 0.003, 0.001), new THREE.MeshBasicMaterial({ color: '#e8590c' }));
+    const mark76 = new THREE.Mesh(new THREE.BoxGeometry(SCALE.width, 0.005, 0.001), new THREE.MeshBasicMaterial({ color: '#e8590c' }));
     mark76.name = 'Mark76';
     mark76.position.set(SCALE.x + SCALE.width / 2, SURFACE_Y + 0.76, SCALE.z + 0.0006);
     scaleGroup.add(mark76);
     for (let cm = 0; cm <= 100; cm += 10) {
-      const label = textMesh(num(String(cm)), 0.0125, { color: '#1b1f24', weight: 700, align: 'left' });
-      label.position.set(SCALE.x + 0.029, SURFACE_Y + cm / 100, SCALE.z + 0.0004);
+      if (cm === 70 || cm === 80) continue; // room for the orange ৭৬
+      const label = textMesh(num(String(cm)), 0.026, { color: '#1b1f24', weight: 700, align: 'left' });
+      label.position.set(SCALE.x + 0.045, SURFACE_Y + cm / 100, SCALE.z + 0.0004);
       scaleGroup.add(label);
     }
-    const unit = textMesh('cm', 0.012, { color: '#1b1f24', weight: 700, align: 'left' });
-    unit.position.set(SCALE.x + 0.029, SURFACE_Y + 1.022, SCALE.z + 0.0004);
+    const n76 = textMesh(num('76'), 0.032, { color: '#d9480f', weight: 800, align: 'left' });
+    n76.position.set(SCALE.x + 0.045, SURFACE_Y + 0.76, SCALE.z + 0.0008);
+    scaleGroup.add(n76);
+    const unit = textMesh('cm', 0.024, { color: '#1b1f24', weight: 700, align: 'left' });
+    unit.position.set(SCALE.x + 0.045, SURFACE_Y + 1.024, SCALE.z + 0.0004);
     scaleGroup.add(unit);
     // the retort stand behind the dish: a cast-iron foot, a steel rod, two clamps to the board
     const foot = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.014, 0.13), mats.iron);
-    foot.position.set(0.19, 0.007, -0.1);
+    foot.position.set(0.25, 0.007, -0.1);
     foot.castShadow = true;
     foot.receiveShadow = true;
     const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.0065, 0.0065, 1.14, 16), mats.steel);
-    rod.position.set(0.16, 0.57, -0.1);
+    rod.position.set(0.22, 0.57, -0.1);
     rod.castShadow = true;
     scaleGroup.add(foot, rod);
     for (const y of [0.32, 0.9]) {
       const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.0045, 0.0045, 0.13, 10), mats.steel);
       arm.rotation.z = Math.PI / 2;
       arm.rotation.y = -0.85;
-      arm.position.set(0.122, y, -0.062);
+      arm.position.set(0.19, y, -0.068);
       const boss = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.024, 0.022), mats.iron);
-      boss.position.set(0.16, y, -0.1);
+      boss.position.set(0.22, y, -0.1);
       const jaw = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.03, 0.016), mats.iron);
       jaw.position.set(SCALE.x + SCALE.width + 0.004, y, SCALE.z - 0.006);
       arm.castShadow = boss.castShadow = jaw.castShadow = true;

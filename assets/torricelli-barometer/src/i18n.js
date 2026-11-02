@@ -54,7 +54,11 @@ export const STRINGS = {
 
     // labels on the picture
     lbl_air: 'বাতাসের চাপ',
-    lbl_vacuum: 'শূন্যতা',
+    lbl_vacuum: 'টরিসেলির শূন্যস্থান',
+    lbl_tube: 'কাচের নল',
+    lbl_hg: 'পারদ',
+    lbl_dish: 'পাত্র',
+    lbl_scale: 'স্কেল',
     lbl_h: '{h}&nbsp;{u_cm}',
 
     hint_wait: 'একটু দাঁড়াও, দেখো কী হয়।',
@@ -139,7 +143,11 @@ export const STRINGS = {
       '<b>There is no air above the mercury, so nothing presses from above.</b> The air pressing on the mercury in the dish holds up the {h}&nbsp;{u_cm} column. This is a barometer.',
 
     lbl_air: "air's pressure",
-    lbl_vacuum: 'vacuum',
+    lbl_vacuum: 'Torricelli’s vacuum',
+    lbl_tube: 'glass tube',
+    lbl_hg: 'mercury',
+    lbl_dish: 'dish',
+    lbl_scale: 'scale',
     lbl_h: '{h}&nbsp;{u_cm}',
 
     hint_wait: 'Wait a moment and watch.',

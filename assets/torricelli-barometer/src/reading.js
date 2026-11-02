@@ -27,7 +27,7 @@ export const waterColumn = () => round(H_HG * RATIO, 3);
 
 // ── the tube ────────────────────────────────────────────────────────────────
 /** The glass tube (m): its inside length from the open mouth to the closed top, and how deep its mouth is. */
-export const TUBE = { length: 1.05, mouthDepth: 0.025 };
+export const TUBE = { length: 1.0, mouthDepth: 0.025 };
 
 /** The vacuum left at the top of a tilted tube (m along the tube; 0 if the mercury fills it). */
 export function vacuumLength(h, deg) {

@@ -16,7 +16,7 @@ test('torricelli-barometer: 76 cm of mercury, a vacuum above', async ({ page }) 
 
   const settled = await fig.call('set', { phase: 'settled', animate: false });
   expect(settled).toMatchObject({ phase: 'settled', column: 76, P: 101293, next: 'again', found: true });
-  expect(settled.vacuum).toBeGreaterThan(20);
+  expect(settled.vacuum).toBeGreaterThan(15);
 
   await fig.call('reset');
   const reset = await fig.call('get');

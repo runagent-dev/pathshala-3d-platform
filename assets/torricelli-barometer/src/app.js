@@ -17,7 +17,7 @@ import { createI18n } from './i18n.js';
 import { fitPose } from './camera.js';
 import { boldArrow, dimensionLine } from './arrows.js';
 import { createLab } from './lab.js';
-import { SURFACE_Y, MOUTH_Y, TUBE_R, barometerMaterials, createBarometer } from './barometer.js';
+import { DISH, SCALE, SURFACE_Y, MOUTH_Y, TUBE_R, barometerMaterials, createBarometer } from './barometer.js';
 import { H_HG, H_WATER, RATIO, RHO, TUBE, columnPressure, round, toCm, waterChoices } from './reading.js';
 
 const PHASES = ['ready', 'full', 'dipped', 'settled'];
@@ -38,11 +38,13 @@ const COLORS = { air: '#1c7ed6', h: '#e8590c', ink: '#1d2733' };
 const L = TUBE.length;
 const MD = TUBE.mouthDepth;
 const H = H_HG; // the column's height when it stands (m)
-const FILL_X = -0.19; // where the tube stands to be filled
+const FILL_X = -0.24; // where the tube stands to be filled
 const UP_Y = L - TUBE_R.inner + TUBE_R.outer + 0.0008; // the mouth's height when the tube stands on its closed end
 const AIR_LEN = 0.085; // the air arrow on the dish (m)
 const DOUBLE_TAP = 420; // ms
-const MARGIN = { top: 50, bottom: 12, side: 6 };
+const MARGIN = { top: 44, bottom: 10, side: 6 };
+const AIR_X = -0.1; // the air arrow, on the dish's mercury left of the tube
+const DIM_X = -(DISH.r + 0.03); // the 76 cm line, just left of the dish
 const DOWN = new THREE.Vector3(0, -1, 0);
 const V = (x, y, z = 0) => new THREE.Vector3(x, y, z);
 const box3 = (x0, y0, x1, y1, z = 0.08) => [V(x0, y0, -z), V(x1, y1, z)];
@@ -183,7 +185,7 @@ export function createApp(root, options = {}) {
       bar.setColumn(0, Math.min(s.col, L - TUBE_R.inner), { top: full ? 'dome' : 'meniscus' });
     }
     bar.thumb.visible = s.thumb.on;
-    bar.thumb.position.set(s.thumb.x, -0.0115 + s.thumb.y, 0);
+    bar.thumb.position.set(s.thumb.x, -0.019 + s.thumb.y, 0);
     layoutArrows();
     stage.invalidate();
   }
@@ -196,10 +198,10 @@ export function createApp(root, options = {}) {
     airArrow.hide();
     dimH.hide();
     if (inDish()) {
-      airArrow.set(V(-0.058, SURFACE_Y + AIR_LEN, 0.03), DOWN, AIR_LEN);
+      airArrow.set(V(AIR_X, SURFACE_Y + AIR_LEN, 0.03), DOWN, AIR_LEN);
       airArrow.scale(Math.min(3, Math.max(1, (2.6 * perPixel()) / 0.0034)));
     }
-    if (s.phase === 'settled' && s.show.h) dimH.set(-0.122, SURFACE_Y, SURFACE_Y + H, 0.02);
+    if (s.phase === 'settled' && s.show.h) dimH.set(DIM_X, SURFACE_Y, SURFACE_Y + H, 0.02);
   }
 
   // ── the panel ───────────────────────────────────────────────────────────────
@@ -278,18 +280,39 @@ export function createApp(root, options = {}) {
   function syncLabels() {
     const want = new Map();
     const settled = s.phase === 'settled';
+    // the parts named while the student works (not in the test, not at the end: then the vacuum and 76 cm matter)
+    if (s.show.labels && s.mode === 'explore' && !settled && !s.busy) {
+      const mid = () => {
+        const a = s.pose.a;
+        return V(s.pose.x - Math.sin(a) * L * 0.62, s.pose.y + Math.cos(a) * L * 0.62, TUBE_R.outer);
+      };
+      want.set('tube', { text: t('lbl_tube'), point: mid, spots: [...LEFT_OF, ...RIGHT_OF], color: COLORS.ink });
+      want.set('hg', {
+        text: t('lbl_hg'),
+        point: () => V(0.06, SURFACE_Y, DISH.r * 0.6),
+        spots: [spot(0, 22), spot(20, 24), ...RIGHT_OF],
+        color: COLORS.ink,
+      });
+      want.set('dish', { text: t('lbl_dish'), point: () => V(-DISH.r, 0.03, 0.02), spots: [spot(-14, 10), ...LEFT_OF], color: COLORS.ink });
+      want.set('scale', {
+        text: t('lbl_scale'),
+        point: () => V(SCALE.x + SCALE.width, SURFACE_Y + 0.45, SCALE.z),
+        spots: RIGHT_OF,
+        color: COLORS.ink,
+      });
+    }
     if (s.show.labels) {
       if (airArrow.visible)
         want.set('air', {
           text: t('lbl_air'),
-          point: () => V(-0.058, SURFACE_Y + AIR_LEN * 0.75, 0.03),
+          point: () => V(AIR_X, SURFACE_Y + AIR_LEN * 0.75, 0.03),
           spots: [...LEFT_OF, ...ABOVE],
           color: COLORS.air,
         });
       if (settled && s.show.h)
         want.set('h', {
           text: t('lbl_h', { h: N(toCm(H)) }),
-          point: () => V(-0.122, SURFACE_Y + H * 0.5, 0.02),
+          point: () => V(DIM_X, SURFACE_Y + H * 0.5, 0.02),
           spots: [...LEFT_OF, ...RIGHT_OF],
           color: COLORS.h,
         });
@@ -321,9 +344,9 @@ export function createApp(root, options = {}) {
   const bbox = new THREE.Box3();
   const DIR = V(0.12, 0.16, 1);
   function lookBox() {
-    if (s.wide) return box3(-0.66, -0.01, 0.48, 1.16);
-    if (!inDish()) return box3(-0.26, -0.01, 0.11, 1.16, 0.1);
-    return box3(-0.16, -0.01, 0.11, 1.15, 0.1);
+    if (s.wide) return box3(-0.66, -0.01, 0.48, 1.12);
+    if (!inDish()) return box3(-0.3, -0.01, 0.2, 1.08, 0.12);
+    return box3(-0.22, -0.01, 0.2, 1.08, 0.12);
   }
   function viewPose() {
     const b = lookBox();
