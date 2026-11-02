@@ -28,8 +28,9 @@ body.bg-transparent { background: transparent; }
 .tm-extra { margin: 0; min-height: 4.5em; font-size: 13.5px; line-height: 1.5; color: var(--ink-2); }
 /* চালাও, then the two contrasts from the book's sentence (the wheel, the bend) as on/off buttons; the drive button
    keeps the width of its longest label (set from src/app.js) */
-.tm-foot { justify-content: flex-start; gap: 6px; }
-.tm-foot .pvc-btn { height: 40px; padding: 0 11px; font-size: 15px; gap: 5px; }
+.tm-choices, .tm-acts { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 6px; }
+.tm-acts .pvc-btn.primary { min-width: 9em; }
+.tm-choices .pvc-btn, .tm-acts .pvc-btn { height: 40px; padding: 0 11px; font-size: 15px; gap: 5px; }
 .tm-ic { display: inline-flex; font-style: normal; }
 .pvc-learn-foot .tm-ic svg { color: #fff; }
 .pvc-learn-foot .tm-bend-btn svg { width: 17px; height: 17px; stroke-width: 2; color: currentColor; }
@@ -60,6 +61,6 @@ body.bg-transparent { background: transparent; }
    its longest text there too, so the buttons under it never move */
 @container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
   .tm-extra { min-height: 6em; }
-  .tm-foot .pvc-btn { height: 38px; }
+  .tm-choices .pvc-btn, .tm-acts .pvc-btn { height: 38px; }
   .tm-opt { font-size: 14px; }
 }
