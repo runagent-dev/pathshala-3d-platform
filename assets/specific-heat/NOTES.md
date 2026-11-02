@@ -42,3 +42,8 @@ Units: J kg⁻¹K⁻¹, J K⁻¹, kg, K, °C (the example in 6.6 writes °C).
 ## Open questions
 - The book writes "প্রায় 20 গুণ" for 42,000 / 2,300 (= 18.3). Kept as the book says it; confirm with the book team.
 - Temperatures T₁ and T₂ are drawn in °C on the thermometers, the difference T₂ − T₁ in K (the same number).
+
+## Polish pass 0.2.0
+- The gold bar has a raised rim round a stamped panel (fineness and mass) and a glossier finish.
+- Bangla strings re-checked against pages 178–179: they follow the book. The "প্রায় 20 গুণ" sentence stays as the
+  book writes it; the panel's own numbers show 42,000 ÷ 2,300 = 18.3.
