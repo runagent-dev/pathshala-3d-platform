@@ -157,12 +157,12 @@ export function createApp(root, options = {}) {
     quiet: [{ act: 'home', label: 'act_home', icon: ICONS.reset }],
     lines: { action: 1, outcome: 2, rule: 3 },
   })
-    .replace('<div class="pvc-act-row"', `<div class="me-calc">${eqHtml}${fuelHtml}</div><div class="pvc-act-row"`)
+    .replace('<p class="pvc-outcome"', `<div class="me-calc">${eqHtml}${fuelHtml}</div><p class="pvc-outcome"`)
     .replace(
       '<div class="pvc-act-slot"></div>',
       `<div class="pvc-act-slot"></div><input type="range" class="me-scrub" min="0" max="1000" step="1" value="0" aria-label="${t('scrub')}" title="${t('scrub')}">`,
     );
-  const ui = buildStudentShell(root, t, { learn: sheetHtml, learnAlign: 'start' });
+  const ui = buildStudentShell(root, t, { layout: 'side', learn: sheetHtml, learnAlign: 'start' });
   const sheet = bindCleanSheet(ui.learn);
   const $ = ui.$;
   const el = {
@@ -497,16 +497,21 @@ export function createApp(root, options = {}) {
   }
   function setView(view, { animate = true } = {}) {
     s.view = view === '3d' ? '3d' : 'front';
-    controls.enableRotate = s.view === '3d';
     s.userMovedCamera = false;
     syncUI();
     if (animate) flyCamera(0.8);
     else camK = 1;
     stage.invalidate();
   }
+  // the view starts from the front; dragging turns it, and then the "front" button appears to come back
   controls.addEventListener('start', () => {
     s.userMovedCamera = true;
     tweener.cancel('camera');
+    if (s.view !== '3d') {
+      s.view = '3d';
+      syncUI();
+      emit('view', { view: s.view });
+    }
     camK = 1;
   });
   stage.onResize(() => {
@@ -1070,7 +1075,9 @@ export function createApp(root, options = {}) {
 
   // ── buttons, keys ─────────────────────────────────────────────────────────────────────────────────────────────
   function syncUI() {
-    for (const b of ui.$$('[data-view]')) b.classList.toggle('on', b.dataset.view === s.view);
+    const front = ui.$('[data-view="front"]');
+    if (front) front.hidden = s.view !== '3d';
+    controls.enableRotate = !s.locked;
     root.dataset.mode = s.mode === 'quiz' ? 'quiz' : 'explore';
     for (const b of ui.$$('[data-mode]')) {
       const on = b.dataset.mode === root.dataset.mode;
