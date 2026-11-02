@@ -1,0 +1,73 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "specific-heat",
+  "title": "Specific heat (আপেক্ষিক তাপ)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 178,
+  "topic": "6.5",
+  "placement": "Book pages 178–179, topic 6.5: next to the paragraph that defines specific heat (s = Q/m(T₂ − T₁), unit J kg⁻¹K⁻¹) and the gold-and-water example of heat capacity C = ms.",
+  "maintainers": ["RadeenXALNW"],
+  "units": "cm",
+  "description": "The book's own example for 6.5 আপেক্ষিক তাপ: 10 kg of gold (s = 230) and 10 kg of water (s = 4200) on one stove. One tap gives both the same heat (42,000 J) and two thermometers on one scale show the gold rising about 18 K while the water rises 1 K. The panel works s = Q/m(T2 − T1) and C = ms from the readings, with the rule in the book's words, then a five-question test.",
+  "tags": ["heat", "specific heat", "heat capacity", "temperature", "chapter 6"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "steps",
+      "label": "Times the stove was turned on at the start",
+      "type": "number",
+      "default": "0",
+      "placeholder": "0 to 4",
+      "help": "Each turn gives both 42,000 J"
+    },
+    {
+      "name": "show",
+      "label": "Which one the panel works out",
+      "type": "select",
+      "options": [["water", "water"], ["gold", "gold"]],
+      "default": "water"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on the stove knob pulses at first", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "steps": 1 } },
+    { "name": "set", "payload": { "show": "gold" } },
+    { "name": "set", "payload": { "steps": 4, "animate": false } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "choose", "heat", "view", "practice-start", "practice-result", "practice-end"],
+  "export": { "poster": { "params": { "coach": "0" } }, "glb": [{ "name": "default" }] }
+}
