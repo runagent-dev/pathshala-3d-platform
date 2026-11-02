@@ -20,7 +20,7 @@ Hang twice the weight and the spring stretches twice as far (পীড়ন ∝
 but only up to the elastic limit: past it the graph bends and a permanent stretch stays.
 
 ## How the figure works
-- A workshop (red brick wall, deep blue pegboard with tools, an oak bench), a lab stand with a polished steel
+- A plain room (declutter, 0.3.0: a soft slate-blue wall and an oak bench; the graph sits in the panel beside the 3D), a lab stand with a polished steel
   spring (L₀ = 20 cm), a metre rule whose 0 is the spring's top hook (so the pointer reads L), a hanger and six brass
   slotted weights of 1 N each. A dark line marks L₀ and a red arrow the stretch x = L − L₀ (the reference picture's
   "0, x, 2x"); a bold orange arrow is T in the spring, a purple one W under the weights, the same length.
