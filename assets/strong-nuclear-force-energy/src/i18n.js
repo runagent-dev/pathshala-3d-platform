@@ -47,9 +47,9 @@ export const STRINGS = {
 
     // the pull scene: one line for each thing that can happen
     // energy
-    say_split_go: 'একটি নিউট্রন বড় নিউক্লিয়াসে (যেমন ইউরেনিয়াম) এসে লাগলে নিউক্লিয়াসটি কেঁপে উঠে দুই ভাগ হয়ে যায়, ছিটকে বেরোয় তিনটি নিউট্রন…',
+    say_split_go: 'একটি নিউট্রন লাগলে বড় নিউক্লিয়াস (যেমন ইউরেনিয়াম) দুই ভাগ হয়, ছিটকে বেরোয় তিনটি নিউট্রন।',
     say_split_done: 'প্রচণ্ড বলে আটকে থাকায় নিউক্লিয়াসে অনেক শক্তি জমা থাকে; বড় নিউক্লিয়াস ভাঙলে তা বেরিয়ে আসে, যেমন রূপপুর পারমাণবিক বিদ্যুৎকেন্দ্রে।',
-    say_join_go: 'দুটি ছোট নিউক্লিয়াস তড়িৎ বিকর্ষণ ঠেলে প্রচণ্ড বেগে ছুটে আসছে; {p}-এর মধ্যে এলেই সবল নিউক্লীয় বল এদের ধরে ফেলবে…',
+    say_join_go: 'দুটি ছোট নিউক্লিয়াস তড়িৎ বিকর্ষণ ঠেলে ছুটে আসছে; {p}-এর মধ্যে এলেই সবল নিউক্লীয় বল এদের ধরে ফেলবে।',
     say_join_done: 'ছোট নিউক্লিয়াস জোড়া দিলেও অনেক শক্তি বের হয়: সূর্যে হাইড্রোজেনের নিউক্লিয়াস জোড়া লেগে হিলিয়াম হয়, সেই শক্তিই সূর্যের আলো ও তাপ।',
 
     // the four fundamental forces, weakest first, and the book's three kinds under them
@@ -157,10 +157,10 @@ export const STRINGS = {
     eq_new: 'new nucleus',
     eq_energy: 'energy',
 
-    say_split_go: 'When a neutron hits a big nucleus (such as uranium), the nucleus wobbles and splits in two, and three neutrons fly out…',
+    say_split_go: 'A neutron hits a big nucleus (such as uranium): it splits in two and three neutrons fly out.',
     say_split_done:
       'Held by a huge force, a nucleus stores a lot of energy; when a big nucleus splits, it comes out, as in the Rooppur nuclear power plant.',
-    say_join_go: 'Two small nuclei rush together, against their electric repulsion; once they are within {p}, the strong nuclear force grabs them…',
+    say_join_go: 'Two small nuclei rush together, against their electric repulsion; once they are within {p}, the strong nuclear force grabs them.',
     say_join_done:
       'Joining small nuclei also gives a lot of energy: in the Sun, hydrogen nuclei join into helium, and that energy is the Sun’s light and heat.',
 
