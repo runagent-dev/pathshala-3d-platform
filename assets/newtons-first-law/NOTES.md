@@ -146,3 +146,11 @@ handle is included in camera/label bounds. Student labels and both quiz language
 The coefficients are illustrative contact-pad values, not measurements for a particular manufactured slider.
 
 Plum backdrop with the red slider, yellow handle/corner guards and existing material-specific floor textures.
+
+## Declutter and side panel (0.4.0)
+Kit 1.5.0 puts the panel beside the 3D on landscape frames. The figure's old rules for a wide panel under the view
+(two-column sheet from 720/1000 px, the short-and-wide rule) are gone; the sheet is one narrow column. On a phone
+held upright the test's lines keep a little less room, so the 3D has 55 % of 390×700 (was 51 %). The scene was
+already only the launcher, the slider, the floor and the tape on a plum backdrop.
+No সামনে / ঘুরিয়ে দেখো buttons (kit): the lab starts from the front, a drag turns it, and the small "front" icon
+then brings it back.
