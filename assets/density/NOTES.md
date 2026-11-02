@@ -24,7 +24,7 @@ Density is mass per unit volume, ρ = m/V (gm/cc or kg/m³): at the same volume 
 < iron, and what is less dense than water floats); with the same mass less volume means more density.
 
 ## Design
-- A lab bench with a slate-blue top in front of terracotta tiles with a teal edge and a warm apricot wall (no white or
+- A lab bench with a slate-blue top, a teal skirting and a soft apricot wall, nothing else (declutter, 0.2.0; no white or
   green page). Three clear glass tanks of blue water; in front of each, on a small white ring, a ball of 100 cc
   (5.8 cm across): a golden cork ball with pores, a varnished wooden ball with grain, a polished iron ball. The book
   names লোহা in its table, so the owner's "metal" is iron here.

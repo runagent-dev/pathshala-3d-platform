@@ -8,6 +8,7 @@ import * as THREE from 'three';
 import { Line2 } from 'three/addons/lines/Line2.js';
 import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { AREA_CM2, H, HOLES, HOLE_IDS, STAND, holeHeight, jetDrop, jetReach, toM2 } from './reading.js';
 
 export const R = 0.24; // the glass's inner radius
@@ -165,33 +166,37 @@ export function createTank() {
     transparent: true,
     opacity: 0.9,
   });
+  const dropGeo = new THREE.SphereGeometry(0.0085, 10, 8);
+  const ringGeo = new THREE.RingGeometry(0.025, 0.05, 28);
   const splashMat = new THREE.MeshBasicMaterial({ name: 'Splash', color: '#e3f4ff', transparent: true, opacity: 0.85, depthWrite: false });
+  brass.side = THREE.DoubleSide; // the open tube is seen from inside too
   const holes = {};
   const pickable = [];
   const P = new THREE.Vector3();
+  // the three spouts never move: their brass (tube, flange, lip) is one mesh and their dark mouths another
+  const brassParts = [];
+  const mouthParts = [];
+  const M = new THREE.Matrix4();
+  const E = new THREE.Euler();
+  const placed = (geo, x, y, rx, ry, rz) => geo.applyMatrix4(M.makeRotationFromEuler(E.set(rx, ry, rz)).setPosition(x, y, 0));
+  const plugGeo = new THREE.CylinderGeometry(0.016, 0.0205, 0.036, 20);
+  const hitGeo = new THREE.SphereGeometry(0.06, 12, 8);
+  const hitMat = new THREE.MeshBasicMaterial({ visible: false });
   for (const id of HOLE_IDS) {
     const y = holeY(id);
     const g = new THREE.Group();
     g.name = `Spout_${id}`;
-    const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.021, 0.021, NOZZLE + 0.012, 24, 1, true), brass);
-    tube.rotation.z = -Math.PI / 2;
-    tube.position.set(R + (NOZZLE - 0.012) / 2, y, 0);
-    tube.material.side = THREE.DoubleSide;
-    const flange = new THREE.Mesh(new THREE.TorusGeometry(0.025, 0.006, 10, 28), brass);
-    flange.rotation.y = Math.PI / 2;
-    flange.position.set(R + 0.006, y, 0);
-    const lip = new THREE.Mesh(new THREE.TorusGeometry(0.0212, 0.0038, 8, 24), brass);
-    lip.rotation.y = Math.PI / 2;
-    lip.position.set(R + NOZZLE, y, 0);
-    const inside = new THREE.Mesh(new THREE.CircleGeometry(0.0182, 20), dark);
-    inside.rotation.y = Math.PI / 2;
-    inside.position.set(R + NOZZLE - 0.004, y, 0);
-    const plug = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.0205, 0.036, 20), cork);
+    brassParts.push(
+      placed(new THREE.CylinderGeometry(0.021, 0.021, NOZZLE + 0.012, 24, 1, true), R + (NOZZLE - 0.012) / 2, y, 0, 0, -Math.PI / 2),
+      placed(new THREE.TorusGeometry(0.025, 0.006, 10, 28), R + 0.006, y, 0, Math.PI / 2, 0),
+      placed(new THREE.TorusGeometry(0.0212, 0.0038, 8, 24), R + NOZZLE, y, 0, Math.PI / 2, 0),
+    );
+    mouthParts.push(placed(new THREE.CircleGeometry(0.0182, 20), R + NOZZLE - 0.004, y, 0, Math.PI / 2, 0));
+    const plug = new THREE.Mesh(plugGeo, cork);
     plug.rotation.z = Math.PI / 2;
     plug.name = `Cork_${id}`;
     plug.castShadow = true;
-    g.add(tube, flange, lip, inside, plug);
-    for (const m of [tube, flange]) m.castShadow = true;
+    g.add(plug);
 
     // the jet: x from the spout, y = y0 − x²/4h (Torricelli), down to the ground; a little thinner as it falls
     const h = HOLES[id];
@@ -224,11 +229,11 @@ export function createTank() {
     const land = new THREE.Vector3(x0 + reach, 0, 0);
     const splash = new THREE.Group();
     splash.name = `Splash_${id}`;
-    const ring = new THREE.Mesh(new THREE.RingGeometry(0.025, 0.05, 28), splashMat);
+    const ring = new THREE.Mesh(ringGeo, splashMat);
     ring.rotation.x = -Math.PI / 2;
     ring.position.set(land.x, 0.012, 0);
     ring.scale.set(1.5, 1, 1);
-    const drops = new THREE.InstancedMesh(new THREE.SphereGeometry(0.0085, 10, 8), dropMat, 9);
+    const drops = new THREE.InstancedMesh(dropGeo, dropMat, 9);
     const m4 = new THREE.Matrix4();
     for (let i = 0; i < 9; i++) {
       const a = (i / 9) * Math.PI * 2 + 0.4;
@@ -240,7 +245,7 @@ export function createTank() {
     splash.add(ring, drops);
     splash.visible = false;
     // a touch target round the spout's mouth (generous: fingers)
-    const hit = new THREE.Mesh(new THREE.SphereGeometry(0.06, 12, 8), new THREE.MeshBasicMaterial({ visible: false }));
+    const hit = new THREE.Mesh(hitGeo, hitMat);
     hit.position.set(R + NOZZLE * 0.6, y, 0);
     hit.name = `Hit_${id}`;
     hit.userData = { hole: id, noExport: true };
@@ -258,6 +263,13 @@ export function createTank() {
       mouth: new THREE.Vector3(R + NOZZLE, y, 0),
     };
   }
+  const spouts = new THREE.Mesh(mergeGeometries(brassParts), brass);
+  spouts.name = 'Spouts';
+  spouts.castShadow = true;
+  const mouths = new THREE.Mesh(mergeGeometries(mouthParts), dark);
+  mouths.name = 'SpoutMouths';
+  for (const geo of [...brassParts, ...mouthParts]) geo.dispose();
+  root.add(spouts, mouths);
   const PLUG_X = R + NOZZLE + 0.004;
 
   /** A cork: k = 0 in the spout, 1 flown out and gone (it pops out and falls). */
@@ -334,31 +346,49 @@ export function createTank() {
   plate.add(plateHit);
   root.add(column, plate);
 
-  let lastDepth = -1;
+  // the dashed outline: the top circle, down one side, the bottom circle, up the other side. The same 85 points at
+  // every depth, so a drag rewrites the line's buffers in place instead of building a new geometry each frame.
+  const RING = 40;
+  const NPTS = 2 * (RING + 1) + 3;
+  const pts = new Float32Array(NPTS * 3);
+  const outline = (yb) => {
+    let k = 0;
+    const put = (x, y, z) => {
+      pts[k++] = x;
+      pts[k++] = y;
+      pts[k++] = z;
+    };
+    for (let i = 0; i <= RING; i++) put(Math.cos((i / RING) * Math.PI * 2) * COLUMN_R, SURFACE, Math.sin((i / RING) * Math.PI * 2) * COLUMN_R);
+    put(COLUMN_R, yb, 0);
+    for (let i = 0; i <= RING; i++) put(Math.cos((i / RING) * Math.PI * 2) * COLUMN_R, yb, Math.sin((i / RING) * Math.PI * 2) * COLUMN_R);
+    put(-COLUMN_R, yb, 0);
+    put(-COLUMN_R, SURFACE, 0);
+  };
+  outline(SURFACE - HOLES.top);
+  dashes.geometry.setPositions(pts);
+  dashes.computeLineDistances();
+  const segBuf = /** @type {any} */ (dashes.geometry.getAttribute('instanceStart')).data;
+  const distBuf = /** @type {any} */ (dashes.geometry.getAttribute('instanceDistanceStart')).data;
+  let lastDepth = HOLES.top;
   /** Put A at the depth h (m) and stretch the column above it up to the surface. */
   function setDepth(h) {
     plate.position.y = SURFACE - h - 0.007;
     colBody.scale.y = h;
     if (Math.abs(h - lastDepth) < 1e-6) return;
     lastDepth = h;
-    // the dashed outline: the top and bottom circles and the two sides
-    const pts = [];
-    const ring = (y, from, to) => {
-      for (let i = 0; i <= 40; i++) {
-        const a = from + ((to - from) * i) / 40;
-        pts.push(Math.cos(a) * COLUMN_R, y, Math.sin(a) * COLUMN_R);
-      }
-    };
-    const yb = SURFACE - h;
-    ring(SURFACE, 0, Math.PI * 2);
-    pts.push(COLUMN_R, yb, 0);
-    ring(yb, 0, Math.PI * 2);
-    pts.push(-COLUMN_R, yb, 0, -COLUMN_R, SURFACE, 0);
-    const geo = new LineGeometry();
-    geo.setPositions(pts);
-    dashes.geometry.dispose();
-    dashes.geometry = geo;
-    dashes.computeLineDistances();
+    outline(SURFACE - h);
+    const seg = segBuf.array;
+    const dist = distBuf.array;
+    let d = 0;
+    for (let i = 0; i < NPTS - 1; i++) {
+      const a = i * 3;
+      for (let j = 0; j < 6; j++) seg[i * 6 + j] = pts[a + j];
+      dist[i * 2] = d;
+      d += Math.hypot(pts[a + 3] - pts[a], pts[a + 4] - pts[a + 1], pts[a + 5] - pts[a + 2]);
+      dist[i * 2 + 1] = d;
+    }
+    segBuf.needsUpdate = true;
+    distBuf.needsUpdate = true;
   }
   setDepth(HOLES.top);
 

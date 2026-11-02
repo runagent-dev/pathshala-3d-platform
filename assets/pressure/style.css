@@ -111,20 +111,6 @@ body.bg-transparent { background: transparent; }
   .pr .pvc-opt { font-size: 13px; height: 42px; }
   .pr .pvc-q-feedback { font-size: 12.5px; line-height: 1.4; }
 }
-/* wide frames (tabs beside the sheet, the panel below the 3D): the row and the action on the left, the formula on
-   the right; the result and the rule under both, two lines each at most */
-@container pvc (min-width: 720px) and (min-height: 461px) {
-  .pr .pvc-learn { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); grid-template-areas: 'ex eq' 'act eq' 'out out' 'rule rule'; align-content: start; column-gap: 28px; row-gap: 6px; }
-  .pr .pvc-examples { grid-area: ex; }
-  .pr .pvc-act-row { grid-area: act; }
-  .pr-eq { grid-area: eq; align-self: center; }
-  .pr .pvc-outcome { grid-area: out; }
-  .pr .pvc-rule { grid-area: rule; --pvc-rule-lines: 2; }
-  .pr .pvc-q-feedback { --pvc-q-feedback-min: 2lh; }
-}
-@container pvc (min-width: 720px) and (max-width: 1100px) and (min-height: 461px) {
-  .pr .pvc-quiet span { display: none; }
-}
 /* a narrow panel beside the scene: the formula and the sums smaller, so each sum keeps to one line */
 @container pvc-panel (max-width: 330px) {
   .pr-top { gap: 6px; }
