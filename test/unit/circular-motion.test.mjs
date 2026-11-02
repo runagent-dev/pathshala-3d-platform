@@ -4,6 +4,8 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import * as cm from '../../assets/circular-motion/src/reading.js';
+import * as clock from '../../assets/circular-motion-clock/src/reading.js';
+import * as moon from '../../assets/circular-motion-moon/src/reading.js';
 
 const close = (a, b, eps = 1e-9) => assert.ok(Math.abs(a - b) < eps, `${a} ≈ ${b}`);
 
@@ -44,7 +46,7 @@ describe('circular motion: a point on the circle', () => {
   });
   it('turns 360° per period', () => {
     assert.equal(cm.turned(6, cm.EXAMPLES.fan.period), 360);
-    assert.equal(cm.turned(2.5, cm.EXAMPLES.clock.period), 90);
+    assert.equal(cm.turned(2.5, clock.EXAMPLES.clock.period), 90);
   });
 });
 
@@ -68,8 +70,8 @@ describe('circular motion: the traced path', () => {
 describe('circular motion: distances and the test', () => {
   it('the real distances of the book examples', () => {
     assert.equal(cm.realDistance('fan', 70), 70);
-    assert.equal(cm.realDistance('clock', 12), 12);
-    assert.equal(cm.realDistance('moon', 60), 3.84); // 3,84,400 km = 3.84 lakh km
+    assert.equal(clock.realDistance('clock', 12), 12);
+    assert.equal(moon.realDistance('moon', 60), 3.84); // 3,84,400 km = 3.84 lakh km
   });
   it('the distance from the start changes: 0 → r√2 → 2r → 0', () => {
     close(cm.chord(70, 0), 0);
@@ -84,23 +86,25 @@ describe('circular motion: distances and the test', () => {
   it('wrong answers from real mistakes: from the start, the path walked, half or double', () => {
     assert.deepEqual(cm.distanceMistakes('fan', 0.5), [140, 220, 35]);
     assert.deepEqual(cm.distanceMistakes('fan', 1), [0, 440, 140]);
-    assert.deepEqual(cm.distanceMistakes('clock', 0.5), [24, 38, 6]);
-    assert.deepEqual(cm.distanceMistakes('clock', 1), [0, 75, 24]);
-    for (const id of cm.EXAMPLE_IDS)
-      for (const f of [0.5, 1]) {
-        const w = cm.distanceMistakes(id, f);
-        assert.equal(new Set(w.map(String)).size, 3);
-        assert.ok(!w.includes(cm.EXAMPLES[id].value));
-      }
+    assert.deepEqual(clock.distanceMistakes('clock', 0.5), [24, 38, 6]);
+    assert.deepEqual(clock.distanceMistakes('clock', 1), [0, 75, 24]);
+    const check = (w, right) => {
+      assert.equal(new Set(w.map(String)).size, 3);
+      assert.ok(!w.includes(right));
+    };
+    for (const f of [0.5, 1]) {
+      check(cm.distanceMistakes('fan', f), cm.EXAMPLES.fan.value);
+      check(clock.distanceMistakes('clock', f), clock.EXAMPLES.clock.value);
+    }
   });
   it('writes distances in the example’s decimals', () => {
     assert.equal(cm.fmt('fan', 70), '70');
-    assert.equal(cm.fmt('moon', 3.844), '3.84');
-    assert.equal(cm.fmt('moon', 0), '0');
+    assert.equal(moon.fmt('moon', 3.844), '3.84');
+    assert.equal(moon.fmt('moon', 0), '0');
   });
   it('clock hands at 10:10:00 and 15 s later', () => {
-    assert.deepEqual(cm.clockHands(10 * 3600 + 10 * 60), { hour: 305, minute: 60, second: 0 });
-    const later = cm.clockHands(10 * 3600 + 10 * 60 + 15);
+    assert.deepEqual(clock.clockHands(10 * 3600 + 10 * 60), { hour: 305, minute: 60, second: 0 });
+    const later = clock.clockHands(10 * 3600 + 10 * 60 + 15);
     assert.equal(later.second, 90);
     close(later.minute, 61.5);
   });

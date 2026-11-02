@@ -162,30 +162,6 @@ export function hitBox(w, h, d, x, y, z, parent) {
   return mesh;
 }
 
-/** A soft round shadow blob (for things in the air, so their height reads). */
-export function blob(r, opacity = 0.35) {
-  const tex = canvasTexture(
-    64,
-    64,
-    (ctx) => {
-      const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
-      g.addColorStop(0, `rgba(20, 28, 38, ${opacity})`);
-      g.addColorStop(1, 'rgba(20, 28, 38, 0)');
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, 64, 64);
-    },
-    { srgb: false },
-  );
-  tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
-  const mesh = new THREE.Mesh(
-    new THREE.PlaneGeometry(2 * r, 2 * r),
-    new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, toneMapped: false }),
-  );
-  mesh.rotation.x = -Math.PI / 2;
-  mesh.userData.noExport = true;
-  return mesh;
-}
-
 /**
  * The contact patch where two bodies touch, seen from anywhere: a disc facing the camera, a bright rim round a light
  * fill, in the colour of contact, drawn over what it marks (the hook in its ring, the palms on the carton stay seen
@@ -231,49 +207,6 @@ export function glowSpot(color, diameter, { minPx = 40 } = {}) {
     }
   };
   return sprite;
-}
-
-/**
- * The contact patch of a body lying on a floor: a flat glow a little larger than its footprint (w × d m), bright at
- * the edges that show round the body, in the colour of contact. Not exported.
- */
-export function glowPatch(w, d, color) {
-  const tex = canvasTexture(
-    128,
-    128,
-    (ctx, W, H) => {
-      const img = ctx.createImageData(W, H);
-      for (let y = 0; y < H; y++)
-        for (let x = 0; x < W; x++) {
-          const e = Math.min(x + 0.5, W - x - 0.5, y + 0.5, H - y - 0.5) / W; // 0 at the edge … 0.5 in the middle
-          const a = e < 0.04 ? e / 0.04 : e < 0.16 ? 1 : 0.45;
-          const i = (y * W + x) * 4;
-          img.data[i] = img.data[i + 1] = img.data[i + 2] = 255;
-          img.data[i + 3] = Math.round(255 * a);
-        }
-      ctx.putImageData(img, 0, 0);
-    },
-    { srgb: false },
-  );
-  tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
-  const mesh = new THREE.Mesh(
-    new THREE.PlaneGeometry(w, d),
-    new THREE.MeshBasicMaterial({
-      map: tex,
-      color,
-      transparent: true,
-      depthWrite: false,
-      toneMapped: false,
-      polygonOffset: true,
-      polygonOffsetFactor: -2,
-    }),
-  );
-  mesh.rotation.x = -Math.PI / 2;
-  mesh.name = 'ContactPatch';
-  mesh.renderOrder = 2;
-  mesh.userData.noExport = true;
-  mesh.visible = false;
-  return mesh;
 }
 
 /** Cast shadows from every opaque mesh under root. */
