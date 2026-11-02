@@ -1,15 +1,11 @@
-// Force: contact and non-contact (book page 67, topic 3.1.2: বল), student view. The page's five examples, one at a
-// time: a crane lifts a heavy block, a student pushes a trolley, friction stops a sliding crate, a football let go
-// falls, a magnet pulls a nail. One big action plays the example (ক্রেন দিয়ে তোলো, ধাক্কা দাও, …; its numbered badge
-// rings the body the force acts on): the force acts, the body starts moving (or slows), and the run holds at the
-// telling moment, where the picture itself says which kind of force it is. A contact force lights the patch where
-// the two bodies touch (the hook in the ring, the palms on the carton, the floor under the crate) with the tag
-// "ছুঁয়ে আছে: স্পর্শ বল"; a non-contact force shows the empty gap between them, measured ("ফাঁক ৬০ cm"), with the tag
-// "ছোঁয়নি, তবু টানে: অস্পর্শ বল". The arrow and the tag carry the kind's colour and words. The panel is the kit's clean
-// sheet: the five examples as one row of words (each gets its kind under it once seen), the action, one result line
-// naming the force and its kind, one rule that starts with the book's definition of force and grows into the two
-// kinds. Then a short test with new cases (a rope, a parachute, a comb) and the usual confusions (friction with
-// nobody pushing, gravity with nothing touching). Built on the shared student kit.
+// Force: contact and non-contact (book page 67, topic 3.1.2: বল), student view: one of the page's examples. One big
+// action plays it (its numbered badge rings the body the force acts on): the force acts, the body starts moving (or
+// slows), and the run holds at the telling moment, where the picture itself says which kind of force it is. A
+// contact force lights the patch where the two bodies touch with the tag "ছুঁয়ে আছে: স্পর্শ বল"; a non-contact force
+// shows the empty gap between them, measured ("ফাঁক ৬০ cm"), with the tag "ছোঁয়নি: অস্পর্শ বল". The arrow and the tag
+// carry the kind's colour and words. The panel is the kit's clean sheet: the action, one result line naming the
+// force and its kind, one rule that starts with the book's definition of force and grows into this force's kind.
+// Then a short test about this example and a new case or two. Built on the shared student kit.
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
 import { createTweener, ease } from '@shared/tween.js';
@@ -21,12 +17,8 @@ import { createQuiz } from '@shared/student/quiz.js';
 import { ICONS } from '@shared/student/icons.js';
 import { createI18n } from './i18n.js';
 import { createGapMark } from './marks.js';
-import { createCraneScene } from './crane.js';
 import { createPushScene } from './push.js';
-import { createFrictionScene } from './friction.js';
-import { createFallScene } from './fall.js';
-import { createMagnetScene } from './magnet.js';
-import { createCombScene, createParachuteScene, createRopeScene } from './pool.js';
+import { createRopeScene } from './pool.js';
 import {
   CASES,
   CHOICE_KIND,
@@ -34,11 +26,12 @@ import {
   EFFECT,
   EFFECT_CHOICES,
   EFFECT_RIGHT,
-  EXAMPLE_IDS,
+  EFFECT_SHOW,
+  EXAMPLE,
   KEY,
   KIND,
   KIND_CHOICES,
-  QUESTION_KINDS,
+  QUESTIONS,
   SLOW,
   actionAt,
   gapCm,
@@ -48,9 +41,7 @@ import {
 } from './motion.js';
 
 export const DEFAULTS = {
-  example: 'crane', // the first example shown
   at: 'rest', // 'rest' | 'key' | 'end': where it starts (key: held at the telling moment)
-  seen: false, // all five already seen (their kinds under the words; a summary for the book page)
   view: 'front', // 'front' | '3d'
   mode: 'explore', // 'explore' | 'quiz'
   coach: true, // the action's marker pulses when it appears
@@ -72,14 +63,8 @@ const TAP = { move: 10, ms: 600 }; // a tap on the picture: the finger comes up 
  * or the middle of the gap, the force's name round its arrow (at `along` from its tail to its head).
  */
 const SPOTS = {
-  crane: { tag: '-26,-58 -46,-40 -56,0 -46,44 26,-72 -26,62 56,0', force: '24,0 24,-30 24,30 -24,0' },
   push: { tag: '0,-66 34,-62 -34,-62 40,-46 -50,-30 40,46 -50,40', force: '30,-54 54,-62 0,-60 0,76 96,24' },
-  friction: { tag: '0,50 34,48 -34,48 62,0 0,-74', force: '-14,0 -14,-24 -14,24 0,26 0,-26', along: 1 },
-  fall: { tag: '-18,0 -18,-44 -18,44 18,0 18,-44', force: '34,0 34,24 34,-26 -34,0' },
-  magnet: { tag: '0,50 26,50 -26,50 0,-58', force: '0,-36 -30,-34 30,-34 0,-52 0,40' },
   rope: { tag: '0,-62 -34,-54 34,-54 0,62', force: '0,-24 0,24 24,0' },
-  parachute: { tag: '0,74 64,0 -64,0 0,-74', force: '24,0 -24,0 24,26' },
-  comb: { tag: '0,62 -30,58 30,58 -34,0 34,0 0,-74', force: '-22,0 22,0 0,24' },
 };
 const spotsOf = (id, which) =>
   SPOTS[id][which].split(' ').map((p) => {
@@ -98,13 +83,9 @@ export function createApp(root, options = {}) {
   root.tabIndex = 0;
   const ui = buildStudentShell(root, t, {
     layout: 'side',
-    learn: cleanSheet(t, {
-      examples: { label: 'ex_label', results: true, items: EXAMPLE_IDS.map((id) => ({ id, label: `ex_${id}` })) },
-      lines: { action: 1, outcome: 1, rule: 3 },
-    }),
+    learn: cleanSheet(t, { lines: { action: 1, outcome: 1, rule: 3 } }),
   });
   const sheet = bindCleanSheet(ui.learn);
-  const resultEls = Object.fromEntries(sheet.words.map((b) => [b.dataset.example, /** @type {HTMLElement} */ (b.querySelector('.pvc-ex-res'))]));
   const outcomeEl = /** @type {HTMLElement} */ (ui.$('.pvc-outcome'));
   outcomeEl.setAttribute('aria-live', 'polite');
   // how time is shown (held, slowed down, real) sits in the panel, at the end of the action's row, not on the view
@@ -135,14 +116,8 @@ export function createApp(root, options = {}) {
   }
 
   const make = {
-    crane: createCraneScene,
     push: createPushScene,
-    friction: createFrictionScene,
-    fall: createFallScene,
-    magnet: createMagnetScene,
     rope: createRopeScene,
-    parachute: createParachuteScene,
-    comb: createCombScene,
   };
   const isPool = (id) => id in CASES;
   const kindOf = (id) => KIND[id] || CASES[id];
@@ -157,7 +132,7 @@ export function createApp(root, options = {}) {
     }
     return scenes[id];
   }
-  for (const id of EXAMPLE_IDS) sceneOf(id);
+  sceneOf(EXAMPLE);
 
   const listeners = new Map();
   function emit(type, payload) {
@@ -165,13 +140,13 @@ export function createApp(root, options = {}) {
   }
 
   const s = {
-    example: EXAMPLE_IDS.includes(o.example) ? o.example : 'crane',
-    scene: '', // what the 3D shows: an example, or a test case (rope, parachute, comb)
+    example: EXAMPLE,
+    scene: '', // what the 3D shows: the example, or a test case
     phase: 'rest', // 'rest' | 'acting' | 'paused' (held at the telling moment, or at a time) | 'done'
     time: 0, // s along the example's action
     playing: false,
     stopAt: Number.POSITIVE_INFINITY, // the run holds here (the telling moment)
-    seen: /** @type {Record<string, string>} */ ({}), // example → its kind, once its run reached the telling moment
+    seen: false, // its run has reached the telling moment once
     view: o.view === '3d' ? '3d' : 'front',
     mode: 'explore',
     locked: false,
@@ -375,27 +350,8 @@ export function createApp(root, options = {}) {
   }
 
   // ── the panel: the row of words, the action, the result, the rule ─────────────
-  const seenCount = () => Object.keys(s.seen).length;
-  /** The next example not seen yet, after `from` in the page's order (or null when all five are seen). */
-  function nextUnseen(from) {
-    const i = EXAMPLE_IDS.indexOf(from);
-    for (let k = 1; k <= EXAMPLE_IDS.length; k++) {
-      const id = EXAMPLE_IDS[(i + k) % EXAMPLE_IDS.length];
-      if (!s.seen[id]) return id;
-    }
-    return null;
-  }
-  /**
-   * What the big action does now: play this example (from rest), or once it has been seen, go on to the next one not
-   * seen yet. Its step counts the student's own steps (the examples seen so far, plus one); a replay has none.
-   */
-  function plan() {
-    const id = s.example;
-    if (s.phase === 'rest' || s.phase === 'acting')
-      return s.seen[id] ? { id, label: `again_${id}`, step: '' } : { id, label: `act_${id}`, step: seenCount() + 1 };
-    const next = nextUnseen(id);
-    return next ? { id: next, label: `act_${next}`, step: seenCount() + 1 } : { id, label: `again_${id}`, step: '' };
-  }
+  /** What the big action does now: play the example from rest; its step 1 until it has been seen, then a replay. */
+  const plan = () => ({ label: `${s.seen ? 'again' : 'act'}_${s.example}`, step: s.seen ? '' : 1 });
 
   /** The result line: the example in the book's words at rest, what is being set up, then the force and its kind. */
   function outcomeHtml(m) {
@@ -405,15 +361,12 @@ export function createApp(root, options = {}) {
     if (!moved(id, m)) return t(`pre_${id}`);
     return t(`out_${id}`);
   }
-  /** The rule: the book's definition of force, then the kinds found so far and what this force does to its body. */
+  /** The rule: the book's definition of force, then this force's kind and what it does to its body. */
   function ruleHtml(m) {
     const id = s.example;
     const played = s.phase !== 'rest' && s.phase !== 'done' && moved(id, m);
-    const kinds = new Set(Object.values(s.seen));
-    if (played) kinds.add(KIND[id]);
-    const all = seenCount() === EXAMPLE_IDS.length;
-    if (!kinds.size) return t('rule_start');
-    const head = all ? 'kinds_all' : kinds.size === 2 ? 'kinds_both' : kinds.has('contact') ? 'kinds_contact' : 'kinds_noncontact';
+    if (!played && !s.seen) return t('rule_start');
+    const head = `kinds_${KIND[id]}`;
     return played ? `${t(head)} ${t(`eff_${EFFECT[id]}`)}` : t(head);
   }
 
@@ -423,16 +376,9 @@ export function createApp(root, options = {}) {
     if (s.mode === 'quiz') return;
     const id = s.example;
     const m = actionAt(id, s.time);
-    sheet.choose(id);
-    for (const x of EXAMPLE_IDS) {
-      sheet.result(x, s.seen[x] ? t(`res_${s.seen[x]}`) : '');
-      const k = s.seen[x] || '';
-      if (resultEls[x] && resultEls[x].dataset.kind !== k) resultEls[x].dataset.kind = k;
-    }
     sheet.outcome(outcomeHtml(m));
     sheet.rule(ruleHtml(m));
     const p = plan();
-    sheet.next(p.id !== id ? p.id : null);
     action?.set({ step: p.step, label: p.label, enabled: s.phase !== 'acting' });
     noteNow();
   }
@@ -449,10 +395,8 @@ export function createApp(root, options = {}) {
 
   // ── the action ──────────────────────────────────────────────────────────────
   let lastAct = -1e9;
-  /** Choose an example: it starts afresh, at rest. */
-  function setExample(id, { animate = true } = {}) {
-    if (!EXAMPLE_IDS.includes(id)) return;
-    s.example = id;
+  /** The example starts afresh, at rest. */
+  function setExample(id = EXAMPLE, { animate = true } = {}) {
     s.time = 0;
     s.phase = 'rest';
     s.playing = false;
@@ -460,7 +404,6 @@ export function createApp(root, options = {}) {
     showScene(id, { animate });
     hideHint();
     refresh();
-    emit('example', { example: id });
     emitChange();
   }
 
@@ -480,21 +423,18 @@ export function createApp(root, options = {}) {
     emitChange();
   }
 
-  /** The big action (its button, its badge, Space/Enter): play this example, or go on to the next one not seen yet. */
+  /** The big action (its button, its badge, Space/Enter): play the example from rest. */
   function doAction() {
     if (s.locked) return lockedNudge();
     if (s.phase === 'acting' || performance.now() - lastAct < 400) return; // a double tap is not a second action
-    const p = plan();
-    if (p.id !== s.example) setExample(p.id);
     play();
   }
 
   /** The run has reached its telling moment (or a time it was sent to): it is seen. */
   function arrived() {
-    if (s.mode !== 'quiz' && s.phase === 'paused' && Math.abs(s.time - KEY[s.scene]) < 1e-6) s.seen[s.scene] = KIND[s.scene];
+    if (s.mode !== 'quiz' && s.phase === 'paused' && Math.abs(s.time - KEY[s.scene]) < 1e-6) s.seen = true;
   }
 
-  let lastTouch = false;
   stage.addTicker((dt) => {
     if (isPool(s.scene)) {
       if (s.poolFrozen) return false;
@@ -521,9 +461,6 @@ export function createApp(root, options = {}) {
       arrived();
       if (s.mode !== 'quiz') audio.tick();
     }
-    const m = actionAt(id, s.time);
-    if (id === 'magnet' && m.touching && !lastTouch) audio.contact(); // the nail clicks onto the magnet
-    lastTouch = Boolean(m.touching);
     drawScene();
     refresh();
     if (held) emitChange();
@@ -712,7 +649,6 @@ export function createApp(root, options = {}) {
   });
 
   // ── the test ────────────────────────────────────────────────────────────────
-  const pickOne = (list) => list[Math.floor(Math.random() * list.length)];
   const textLabel = (keys) => (j) => `<span class="cnf-opt">${t(keys[j])}</span>`;
   let order = [];
 
@@ -738,7 +674,7 @@ export function createApp(root, options = {}) {
     t,
     emit,
     audio,
-    questions: 5,
+    questions: QUESTIONS.length,
     lines: { text: 2, feedback: 3 },
     action,
     hooks: {
@@ -755,34 +691,29 @@ export function createApp(root, options = {}) {
         s.reveal = false;
         question = null;
         syncUI();
-        setExample(s.example, { animate: false });
+        setExample(EXAMPLE, { animate: false });
       },
       prepare(i, _alive, say) {
         // a new round (also "take the test again"): a new order
-        if (i === 0) order = shuffle(QUESTION_KINDS);
-        const kind = order[i % order.length];
-        let set;
-        if (kind === 'case' || kind === 'comb') {
-          set = kind === 'comb' ? 'comb' : pickOne(['rope', 'parachute']);
-          questionCase(set);
-        } else if (kind === 'friction' || kind === 'gravity') {
-          set = kind === 'friction' ? 'crate' : 'ball';
-          questionExample(kind === 'friction' ? 'friction' : 'fall');
-        } else {
-          // what the magnet's pull does to the nail: the book's definition of force (no kind asked, no marks)
-          questionExample('magnet');
+        if (i === 0) order = shuffle(QUESTIONS);
+        const { kind, set } = order[i % order.length];
+        if (kind === 'effect') {
+          // what this force does to its body: the book's definition of force (no kind asked, no marks)
+          questionExample(EXAMPLE);
           const keys = shuffle(EFFECT_CHOICES);
-          question = { kind, id: 'magnet', set: 'magnet', keys, marks: false };
+          question = { kind, id: EXAMPLE, set: EXAMPLE, keys, marks: false };
           drawScene();
-          say(t('q_eff_magnet'));
+          say(t('q_eff'));
           return {
             choices: [0, 1, 2, 3],
-            expected: keys.indexOf(EFFECT_RIGHT.magnet),
+            expected: keys.indexOf(EFFECT_RIGHT),
             tolerance: 0.5,
             label: textLabel(keys),
-            meta: { kind, example: 'magnet' },
+            meta: { kind, example: EXAMPLE },
           };
         }
+        if (kind === 'case') questionCase(set);
+        else questionExample(EXAMPLE);
         const keys = shuffle(KIND_CHOICES[set]);
         question = { kind, id: s.scene, set, keys, marks: true };
         drawScene();
@@ -800,19 +731,15 @@ export function createApp(root, options = {}) {
         // the worked answer leads with the answer and, after a wrong tap, speaks to that very mistake
         const missed = correct ? null : q.keys[picked.value];
         if (q.kind === 'effect') {
-          // it goes on to the end: the answer happens, the nail rushes on faster and clicks onto the magnet
-          s.stopAt = Number.POSITIVE_INFINITY;
+          // it goes on: the answer happens before the student's eyes
+          s.stopAt = EFFECT_SHOW;
           s.playing = true;
           s.phase = 'acting';
           drawScene();
-          return t(missed ? `miss_${missed}_magnet` : 'why_eff_magnet');
+          return t(missed ? `miss_${missed}` : 'why_eff');
         }
         s.reveal = true;
-        if (q.set === 'comb') {
-          // held where one bit is on its way up and others still lie on the table: the gap stays to be seen
-          s.poolTime = 1.75;
-          s.poolFrozen = true;
-        } else if (!isPool(s.scene)) {
+        if (!isPool(s.scene)) {
           // held at the telling moment, so the numbers in the answer are the ones in the picture
           s.time = KEY[s.scene];
           s.playing = false;
@@ -848,10 +775,6 @@ export function createApp(root, options = {}) {
     if (!b || !root.contains(b)) return;
     audio.unlock();
     if (b.dataset.view) setView(b.dataset.view);
-    if (b.dataset.example) {
-      if (s.locked) lockedNudge();
-      else if (b.dataset.example !== s.example || s.phase !== 'rest') setExample(b.dataset.example);
-    }
     if (b.dataset.mode === 'quiz' && s.mode !== 'quiz') quiz.start();
     if (b.dataset.mode === 'explore') quiz.stop();
     if (b.dataset.q != null) quiz.choose(Number(b.dataset.q));
@@ -872,18 +795,7 @@ export function createApp(root, options = {}) {
     const target = /** @type {Element} */ (e.target);
     if (target.closest('input, textarea, select') || e.metaKey || e.ctrlKey || e.altKey) return;
     const k = e.key.toLowerCase();
-    const n = Number(k);
-    if (n >= 1 && n <= EXAMPLE_IDS.length) {
-      if (s.locked) lockedNudge();
-      else setExample(EXAMPLE_IDS[n - 1]);
-    } else if (k === 'arrowright' || k === 'arrowleft') {
-      // (on the row of words the kit's radio group takes the arrows itself)
-      if (s.locked) lockedNudge();
-      else {
-        const i = EXAMPLE_IDS.indexOf(s.example) + (k === 'arrowright' ? 1 : -1);
-        setExample(EXAMPLE_IDS[(i + EXAMPLE_IDS.length) % EXAMPLE_IDS.length]);
-      }
-    } else if ((k === ' ' || k === 'enter') && !target.closest('button')) doAction();
+    if ((k === ' ' || k === 'enter') && !target.closest('button')) doAction();
     else if (k === 'f') setView('front');
     else if (k === 'v') setView('3d');
     else if (k === 'escape') hideHint();
@@ -893,8 +805,8 @@ export function createApp(root, options = {}) {
 
   // ── state for the book ──────────────────────────────────────────────────────
   function snapshot() {
-    const id = isPool(s.scene) ? s.example : s.scene || s.example;
-    const m = actionAt(id, s.time);
+    const id = s.example;
+    const m = actionAt(id, isPool(s.scene) ? 0 : s.time);
     const p = plan();
     const g = gapNow();
     return {
@@ -909,8 +821,8 @@ export function createApp(root, options = {}) {
       kind: KIND[id],
       effect: EFFECT[id],
       marks: g ? 'gap' : marksNow() ? 'contact' : null, // what the picture shows: the contact patch, the measured gap
-      seen: { ...s.seen },
-      next: { example: p.id, step: p.step }, // what the big action does now
+      seen: s.seen,
+      step: p.step, // the big action's number (1 until the example has been seen)
       view: s.view,
       mode: s.mode,
     };
@@ -918,13 +830,13 @@ export function createApp(root, options = {}) {
   let lastEmitted = '';
   function emitChange() {
     const snap = snapshot();
-    const key = JSON.stringify([snap.example, snap.phase, snap.seen, snap.view, snap.mode]);
+    const key = JSON.stringify([snap.phase, snap.seen, snap.view, snap.mode]);
     if (key === lastEmitted) return;
     lastEmitted = key;
     emit('change', snap);
   }
 
-  /** Jump the current example to 'rest', 'key' or 'end' (or a time in s), held there. */
+  /** Jump the example to 'rest', 'key' or 'end' (or a time in s), held there. */
   function jump(at) {
     const id = s.example;
     s.playing = false;
@@ -945,8 +857,7 @@ export function createApp(root, options = {}) {
   // ── start ───────────────────────────────────────────────────────────────────
   controls.enableRotate = controls.enableZoom = true;
   root.classList.toggle('cnf-compact', stage.height < 300 || stage.width < 360);
-  if (o.seen) for (const id of EXAMPLE_IDS) s.seen[id] = KIND[id];
-  setExample(s.example, { animate: false });
+  setExample(EXAMPLE, { animate: false });
   if (o.at === 'key' || o.at === 'end') jump(o.at);
   syncUI();
   refresh();
@@ -963,19 +874,11 @@ export function createApp(root, options = {}) {
     },
     getState: snapshot,
     /**
-     * Change any of: example ('crane' | 'push' | 'friction' | 'fall' | 'magnet', starts afresh at rest), seen ('all' |
-     * 'none' | { id: true }), at ('rest' | 'key' | 'end' | seconds: jump there, held), play (true: play this example
-     * to its telling moment), act (true: what the big button does now), view; animate: false jumps.
+     * Change any of: at ('rest' | 'key' | 'end' | seconds: jump there, held), play (true: play the example to its
+     * telling moment), act (true: what the big button does), view; animate: false jumps.
      */
     async set(p = {}) {
       const animate = p.animate !== false;
-      if (p.seen === 'all') for (const id of EXAMPLE_IDS) s.seen[id] = KIND[id];
-      else if (p.seen === 'none') s.seen = {};
-      else if (p.seen && typeof p.seen === 'object') {
-        s.seen = {};
-        for (const [id, on] of Object.entries(p.seen)) if (EXAMPLE_IDS.includes(id) && on) s.seen[id] = KIND[id];
-      }
-      if (p.example && s.mode !== 'quiz') setExample(p.example, { animate });
       if (p.view) await setView(p.view, { animate });
       if (p.at != null && s.mode !== 'quiz') jump(p.at);
       if (p.play) play({ silent: true });
@@ -988,9 +891,8 @@ export function createApp(root, options = {}) {
     async reset() {
       quiz.stop();
       hideHint();
-      s.seen = {};
-      if (o.seen) for (const id of EXAMPLE_IDS) s.seen[id] = KIND[id];
-      setExample(EXAMPLE_IDS.includes(o.example) ? o.example : 'crane', { animate: false });
+      s.seen = false;
+      setExample(EXAMPLE, { animate: false });
       await setView('front');
     },
     startPractice: () => quiz.start(),

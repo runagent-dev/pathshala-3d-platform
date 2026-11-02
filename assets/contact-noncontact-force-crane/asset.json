@@ -1,0 +1,75 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "contact-noncontact-force-crane",
+  "title": "Force: a crane’s pull, a contact force (বল: ক্রেনের টান, স্পর্শ বল)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "1.0.0",
+  "book": "physics-9-10",
+  "page": 67,
+  "topic": "3.1.2",
+  "placement": "Book page 67, topic 3.1.2: বল (Force). Next to the paragraph that names ক্রেন দিয়ে ভারী জিনিস তোলা as a force that needs touching (স্পর্শ বল).",
+  "order": 5,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "Interactive 3D figure for force (বল), book page 67, topic 3.1.2, with the page's example ক্রেন দিয়ে ভারী জিনিস তোলা: a truck crane lifts a concrete block (1.5 m × 1 m × 1 m) by its steel ring at up to 0.5 m/s, real time. One big numbered action (ক্রেন দিয়ে তোলো) plays it; the run holds half a metre up: the glowing patch where the hook holds the ring and the tag ছুঁয়ে আছে: স্পর্শ বল. The panel is the clean sheet: one result line naming the force and its kind, one rule that starts with the book's definition of force and grows into স্পর্শ বল. Test tab: 3 tap questions (which kind the crane's pull is, a rope pulling a cart, a parachute). Phone-first, Bangla.",
+  "tags": ["force", "contact-force", "crane", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "at",
+      "label": "Start at",
+      "type": "select",
+      "options": [["rest", "at rest"], ["key", "the telling moment"], ["end", "the end"]],
+      "default": "rest"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "Pulse the action's marker", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "play": true } },
+    { "name": "set", "payload": { "act": true } },
+    { "name": "set", "payload": { "at": "key" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "act", "view", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": { "params": { "coach": "0", "at": "key" } },
+    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "at": "rest", "animate": false } }] }],
+    "video": {
+      "kind": "script",
+      "seconds": 6,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [{ "at": 0.6, "command": "set", "payload": { "act": true } }]
+    }
+  }
+}

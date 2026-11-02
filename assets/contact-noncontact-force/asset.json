@@ -2,28 +2,19 @@
   "$schema": "../../schemas/asset.schema.json",
   "schemaVersion": 2,
   "id": "contact-noncontact-force",
-  "title": "Force: contact and non-contact (বল: স্পর্শ ও অস্পর্শ বল)",
+  "title": "Force: a push, a contact force (বল: ধাক্কা, স্পর্শ বল)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "0.2.1",
+  "version": "1.0.0",
   "book": "physics-9-10",
   "page": 67,
   "topic": "3.1.2",
-  "placement": "Book page 67, topic 3.1.2: বল (Force). Next to the paragraphs that define force and divide it into স্পর্শ and অস্পর্শ বল.",
+  "placement": "Book page 67, topic 3.1.2: বল (Force). Next to the paragraph that names কোনো কিছুকে ধাক্কা দেওয়া as a force that needs touching (স্পর্শ বল).",
   "order": 1,
   "maintainers": ["RadeenXALNW"],
   "units": "m",
-  "description": "Interactive 3D figure for force (বল) and its two kinds, স্পর্শ বল and অস্পর্শ বল, book page 67, topic 3.1.2. The page's five examples, one at a time, real size: a truck crane lifts a concrete block (ক্রেন দিয়ে ভারী জিনিস তোলা), a student pushes a trolley (ধাক্কা দেওয়া), friction stops a sliding crate (ঘর্ষণ), a football let go falls (মাধ্যাকর্ষণ বল) and a magnet pulls an iron nail (চুম্বকের আকর্ষণ). One big numbered action plays the example (its badge rings the body the force acts on); the run holds at the telling moment, where the picture says the kind: a contact force lights the patch where the two bodies touch (the hook in the ring, the palms on the carton, the floor under the crate) with the tag ছুঁয়ে আছে: স্পর্শ বল; a non-contact force shows the empty gap between them, measured in cm, with the tag ছোঁয়নি, তবু টানে: অস্পর্শ বল. The arrow and the tag carry the kind's colour and words. The panel is the clean sheet: the examples as one row of words with each one's kind under it once seen, one result line naming the force and its kind, one rule that starts with the book's definition of force and grows into the two kinds. Slowed-down and held pictures say so. Test tab: 5 questions with the scene set up for each (a rope pulling a cart or a parachute, a comb lifting paper, friction with nobody pushing, gravity with nothing touching, what the magnet's pull does to the nail); the answer lights the patch or measures the gap. Phone-first, Bangla.",
-  "tags": [
-    "force",
-    "contact-force",
-    "non-contact-force",
-    "friction",
-    "gravity",
-    "magnet",
-    "newtons-first-law",
-    "bangla"
-  ],
+  "description": "Interactive 3D figure for force (বল), book page 67, topic 3.1.2, with the page's example কোনো কিছুকে ধাক্কা দেওয়া: a student pushes a carton on a flat trolley, real size and real time. One big numbered action (ধাক্কা দাও) plays it; the run holds at the telling moment, with the hands pushing and the trolley at 0.5 m/s: the glowing patch where the palms touch the carton and the tag ছুঁয়ে আছে: স্পর্শ বল. The panel is the clean sheet: one result line naming the force and its kind, one rule that starts with the book's definition of force and grows into স্পর্শ বল. Test tab: 3 tap questions (a rope pulling a cart, which kind the push is, what the push does to the trolley). Phone-first, Bangla.",
+  "tags": ["force", "contact-force", "push", "bangla"],
   "params": [
     {
       "name": "lang",
@@ -33,26 +24,12 @@
       "default": "bn"
     },
     {
-      "name": "example",
-      "label": "Example",
-      "type": "select",
-      "options": [
-        ["crane", "crane (ক্রেন)"],
-        ["push", "push (ধাক্কা)"],
-        ["friction", "friction (ঘর্ষণ)"],
-        ["fall", "gravity (মাধ্যাকর্ষণ)"],
-        ["magnet", "magnet (চুম্বক)"]
-      ],
-      "default": "crane"
-    },
-    {
       "name": "at",
       "label": "Start at",
       "type": "select",
       "options": [["rest", "at rest"], ["key", "the telling moment"], ["end", "the end"]],
       "default": "rest"
     },
-    { "name": "seen", "label": "All five already seen", "type": "boolean", "default": "0" },
     { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
     {
       "name": "mode",
@@ -75,38 +52,24 @@
   ],
   "commands": [
     { "name": "get", "payload": {} },
-    { "name": "set", "payload": { "example": "magnet" } },
     { "name": "set", "payload": { "play": true } },
     { "name": "set", "payload": { "act": true } },
     { "name": "set", "payload": { "at": "key" } },
-    { "name": "set", "payload": { "seen": "all", "example": "fall", "at": "key" } },
     { "name": "reset", "payload": {} },
     { "name": "practice", "payload": {} },
     { "name": "capture", "payload": { "width": 800, "height": 500 } },
     { "name": "export-glb", "payload": {} }
   ],
-  "events": ["ready", "change", "example", "act", "view", "practice-start", "practice-result", "practice-end"],
+  "events": ["ready", "change", "act", "view", "practice-start", "practice-result", "practice-end"],
   "export": {
-    "poster": { "params": { "coach": "0", "example": "magnet", "at": "key", "seen": "1" } },
-    "glb": [
-      { "name": "default", "setup": [{ "command": "set", "payload": { "example": "crane", "animate": false } }] },
-      { "name": "push", "setup": [{ "command": "set", "payload": { "example": "push", "animate": false } }] },
-      { "name": "friction", "setup": [{ "command": "set", "payload": { "example": "friction", "animate": false } }] },
-      { "name": "fall", "setup": [{ "command": "set", "payload": { "example": "fall", "animate": false } }] },
-      { "name": "magnet", "setup": [{ "command": "set", "payload": { "example": "magnet", "animate": false } }] }
-    ],
+    "poster": { "params": { "coach": "0", "at": "key" } },
+    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "at": "rest", "animate": false } }] }],
     "video": {
       "kind": "script",
-      "seconds": 20,
+      "seconds": 6,
       "fps": 30,
       "params": { "coach": "0" },
-      "script": [
-        { "at": 0.6, "command": "set", "payload": { "act": true } },
-        { "at": 4, "command": "set", "payload": { "act": true } },
-        { "at": 7.2, "command": "set", "payload": { "act": true } },
-        { "at": 10.4, "command": "set", "payload": { "act": true } },
-        { "at": 14.2, "command": "set", "payload": { "act": true } }
-      ]
+      "script": [{ "at": 0.6, "command": "set", "payload": { "act": true } }]
     }
   }
 }
