@@ -114,3 +114,8 @@ The owner's standard for every figure (docs/agents/polish-pass.md).
 - **Bugs fixed.** The pale inks on the clock's white face; the English test's longest questions and answers ran to a
   third line on phones, so the 3D view shrank mid-test (shortened); a transparent capture now leaves the setting
   out. Turning the view now keeps the camera under the ceiling and in front of the clock's wall.
+
+## Declutter pass (2026-11, 0.3.0)
+- The scenes were already one object each (the fan, the clock, the Moon); nothing was taken out.
+- Panel in the labs' one order: the examples, the actions (দূরত্ব মাপো, থামাও), the measured distances, the
+  definition and the book's sentence.
