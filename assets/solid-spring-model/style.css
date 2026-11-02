@@ -1,0 +1,7 @@
+/* The page. The student view itself is ../../shared/lib/student/student.css (linked first): the clean sheet's
+   .pvc-act, .pvc-outcome, .pvc-rule. */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.pvc-rule small { color: #5b6470; }

@@ -2,7 +2,7 @@
 // school student standing inside. Choose an event and watch it in slow motion: the bus starts suddenly (the feet
 // go with the bus, the upper body stays: he leans back, স্থিতি জড়তা), brakes suddenly (the feet stop, the upper
 // body runs on: he leans forward, গতি জড়তা), or he steps off the moving bus (the feet stop on the road, the upper
-// body runs on: he tumbles forward, গতি জড়তা); and the coin-and-card trick on a glass (স্থিতি জড়তা). A blue
+// body runs on: he tumbles forward, গতি জড়তা). (The coin-and-card trick is its own lab, inertia-coin-card.) A blue
 // arrow on the feet and an orange one at the shoulders show how fast each part moves along the road, the panel gives
 // the two speeds, and labels say what each part does. Then a short test. Built on the shared student kit.
 import * as THREE from 'three';
@@ -17,14 +17,13 @@ import { ICONS } from '@shared/student/icons.js';
 import { createI18n } from './i18n.js';
 import { createBus, createStreet } from './bus.js';
 import { createPassenger } from './passenger.js';
-import { createTable } from './table.js';
 import { createArrow, createTags } from './marks.js';
 import { mergePlaced } from './merge.js';
 import { skyTexture } from './textures.js';
-import { BUS, EVENT_KEYS, EVENTS, TABLE, clamp, sampleAt, simulate } from './motion.js';
+import { BUS, EVENT_KEYS, EVENTS, clamp, sampleAt, simulate } from './motion.js';
 
 export const DEFAULTS = {
-  event: 'start', // 'start' | 'brake' | 'alight' | 'coin'
+  event: 'start', // 'start' | 'brake' | 'alight'
   at: null, // s: show this moment of the event, paused (the poster); null: the beginning, ready to play
   view: 'front', // 'front' | '3d'
   mode: 'explore', // 'explore' | 'quiz'
@@ -39,16 +38,14 @@ export const DEFAULTS = {
 // the arrows' colours, and deeper shades of them for words on a white chip or the panel (4.5:1 or more)
 const COLOR = { lower: '#1c6fd9', upper: '#e8590c' };
 const INK = { lower: '#1a64c4', upper: '#c2410c' };
-const ARROW = { bus: { scale: 0.28, r: 0.036 }, coin: { scale: 0.05, r: 0.0022 } }; // m of arrow per m/s
+const ARROW = { bus: { scale: 0.28, r: 0.036 } }; // m of arrow per m/s
 // the camera looks at the bus's left side from a little above (the doors are on the left in Bangladesh)
 const DIRS = {
   bus: { front: new THREE.Vector3(0, 0.13, -1).normalize(), '3d': new THREE.Vector3(0.55, 0.3, -0.78).normalize() },
   // stepping off: a little higher, so the road he lands on (and its seams streaming past) shows
   alight: { front: new THREE.Vector3(0, 0.24, -1).normalize(), '3d': new THREE.Vector3(0.55, 0.36, -0.76).normalize() },
-  // the coin and card from higher up, so the card, the coin and the inside of the glass show
-  coin: { front: new THREE.Vector3(0, 0.6, -1).normalize(), '3d': new THREE.Vector3(0.5, 0.65, -0.62).normalize() },
 };
-const QUIZ_KINDS = ['start', 'brake', 'alight', 'coin', 'gentle'];
+const QUIZ_KINDS = ['start', 'brake', 'alight', 'gentle'];
 
 export function createApp(root, options = {}) {
   const o = { ...DEFAULTS, ...options };
@@ -61,7 +58,7 @@ export function createApp(root, options = {}) {
   root.lang = t.lang;
   root.tabIndex = 0;
   const term = (cls) => `<span class="pvc-t ${cls}"><b>0</b><small></small></span>`;
-  // the panel, top to bottom: the four events (the kit's row of example words), the action (play / pause / again), the two speeds with how much time
+  // the panel, top to bottom: the three events (the kit's row of example words), the action (play / pause / again), the two speeds with how much time
   // is slowed, what happens or why (the book's words), and the book's definition
   const ui = buildStudentShell(root, t, {
     layout: 'side',
@@ -88,9 +85,8 @@ export function createApp(root, options = {}) {
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 28, near: 0.02, far: 120, environment: 'studio-light' });
   const { camera, controls, scene } = stage;
-  // a blue sky over the street (the coin trick has its own wall behind the table)
+  // a blue sky over the street
   const sky = o.bg === 'transparent' ? null : skyTexture();
-  const room = new THREE.Color(0xc8955c); // round the table: the warm room (only seen past the wall when turned)
   scene.background = sky;
   controls.enablePan = false;
   controls.minDistance = 0.15;
@@ -104,8 +100,6 @@ export function createApp(root, options = {}) {
   busScene.add(bus.root, passenger.root);
   const street = createStreet();
   scene.add(street.root);
-  const table = createTable({ materials: M, t });
-  scene.add(table.root);
   const tweener = createTweener();
   stage.addTicker((dt) => tweener.tick(dt));
   const audio = createAudio(o.sound);
@@ -118,8 +112,8 @@ export function createApp(root, options = {}) {
   if (o.shadow && o.bg !== 'transparent') {
     // soft PCF on a shadow box fitted round what is in view (it goes with the event): 1024 px on a 7 m box is as
     // sharp as the 2048 px on a 10 m box before. Only parts whose shadows are seen cast them: the passenger, the
-    // seats and the bus's body (its shadow on the road, the roof's on the floor); the coin trick's card, coin and
-    // hand. Only the floor, the lining, the road, the footpath and the table receive them.
+    // seats and the bus's body (its shadow on the road, the roof's on the floor). Only the floor, the lining, the
+    // road and the footpath receive them.
     stage.renderer.shadowMap.enabled = true;
     stage.renderer.shadowMap.type = THREE.PCFShadowMap;
     sun.castShadow = true;
@@ -128,10 +122,9 @@ export function createApp(root, options = {}) {
     sun.shadow.bias = -0.0005;
     sun.shadow.normalBias = 0.01;
     const solid = (m) => m instanceof THREE.Mesh && m.material?.visible !== false && !m.material?.transparent;
-    for (const obj of [passenger.root, table.root])
-      obj.traverse((m) => {
-        if (solid(m) && m.name !== 'Wall') m.castShadow = true;
-      });
+    passenger.root.traverse((m) => {
+      if (solid(m)) m.castShadow = true;
+    });
     const CAST = /^Bus(BusPaint|SeatFrame|Trim)$|^WheelsTyre$/;
     const RECEIVE = /^Bus(Floor|BusInside|BusPaint)$/;
     for (const m of bus.root.children) {
@@ -141,12 +134,9 @@ export function createApp(root, options = {}) {
     }
   }
 
-  // the two velocity arrows: the lower body (feet) or the card in blue, the upper body (shoulders) or the coin in orange
-  const arrows = {
-    bus: { lower: createArrow(COLOR.lower, ARROW.bus.r), upper: createArrow(COLOR.upper, ARROW.bus.r) },
-    coin: { lower: createArrow(COLOR.lower, ARROW.coin.r), upper: createArrow(COLOR.upper, ARROW.coin.r) },
-  };
-  for (const set of Object.values(arrows)) scene.add(set.lower.group, set.upper.group);
+  // the two velocity arrows: the lower body (feet) in blue, the upper body (shoulders) in orange
+  const A = { lower: createArrow(COLOR.lower, ARROW.bus.r), upper: createArrow(COLOR.upper, ARROW.bus.r) };
+  scene.add(A.lower.group, A.upper.group);
 
   const listeners = new Map();
   function emit(type, payload) {
@@ -166,7 +156,6 @@ export function createApp(root, options = {}) {
   };
   const ev = () => EVENTS[s.event];
   const dur = (kind = s.event) => simulate(kind).duration; // s (a start or a brake ends when he is upright)
-  const sceneOf = (kind = s.event) => EVENTS[kind].scene;
   let sample = sampleAt(s.event, 0);
 
   // ── the panel ───────────────────────────────────────────────────────────────
@@ -174,25 +163,17 @@ export function createApp(root, options = {}) {
   const el = {
     lower: $('.pvc-t.lower b'),
     upper: $('.pvc-t.upper b'),
-    lowerLab: $('.pvc-t.lower small'),
-    upperLab: $('.pvc-t.upper small'),
-    speedK: $('.in-k'),
     extra: $('.in-extra'),
   };
-  const shown = { lower: '', upper: '', extra: '', labs: '' };
+  $('.pvc-t.lower small').textContent = t('part_lower');
+  $('.pvc-t.upper small').textContent = t('part_upper');
+  $('.in-k').textContent = t('speed_k_bus');
+  const shown = { lower: '', upper: '', extra: '' };
   function panel() {
     const lo = N(Math.abs(sample.lowerV).toFixed(1));
     const up = N(Math.abs(sample.upperV).toFixed(1));
     if (lo !== shown.lower) el.lower.textContent = shown.lower = lo;
     if (up !== shown.upper) el.upper.textContent = shown.upper = up;
-    const coin = sceneOf() === 'coin';
-    const labs = coin ? 'coin' : 'bus';
-    if (labs !== shown.labs) {
-      shown.labs = labs;
-      el.lowerLab.textContent = t(coin ? 'part_card' : 'part_lower');
-      el.upperLab.textContent = t(coin ? 'part_coin' : 'part_upper');
-      el.speedK.textContent = t(coin ? 'speed_k_coin' : 'speed_k_bus');
-    }
     // before the push: what is about to happen; while it happens: why; afterwards (start, brake), what happened and
     // how he straightens up again (the upper body then moves faster, or slower, than the feet)
     const after = s.phase === 'after' && t.has(`after_${s.event}`);
@@ -270,35 +251,14 @@ export function createApp(root, options = {}) {
     obstacles: () => {
       const list = [domBox(ui.corner)];
       if (ui.hint.classList.contains('show')) list.push(domBox(ui.hint, ui.hintText.textContent));
-      if (sceneOf() === 'bus') list.push(passengerBox());
-      else list.push(objectBox(table.coin), objectBox(table.card), objectBox(table.glass));
-      for (const a of Object.values(arrows[sceneOf()])) {
+      list.push(passengerBox());
+      for (const a of Object.values(A)) {
         const b = arrowBox(a);
         if (b) list.push(b);
       }
       return list;
     },
   });
-  const box3 = new THREE.Box3();
-  const corner = new THREE.Vector3();
-  function objectBox(obj) {
-    box3.setFromObject(obj);
-    const { min: a, max: b } = box3;
-    let x0 = Infinity;
-    let y0 = Infinity;
-    let x1 = -Infinity;
-    let y1 = -Infinity;
-    for (let i = 0; i < 8; i++) {
-      const p = corner.set(i & 1 ? b.x : a.x, i & 2 ? b.y : a.y, i & 4 ? b.z : a.z).project(camera);
-      const x = (p.x * 0.5 + 0.5) * stage.width;
-      const y = (-p.y * 0.5 + 0.5) * stage.height;
-      x0 = Math.min(x0, x);
-      x1 = Math.max(x1, x);
-      y0 = Math.min(y0, y);
-      y1 = Math.max(y1, y);
-    }
-    return { x: x0 - 6, y: y0 - 6, w: x1 - x0 + 12, h: y1 - y0 + 12 };
-  }
   tags.add('upper', { color: COLOR.upper, ink: INK.upper, prefer: ['above-left', 'above', 'above-right', 'left', 'right'] });
   tags.add('lower', { color: COLOR.lower, ink: INK.lower, prefer: ['below-left', 'below', 'left', 'below-right', 'right'] });
   tags.add('mark', {
@@ -333,18 +293,13 @@ export function createApp(root, options = {}) {
   }
   scene.add(headMark);
   const markTop = new THREE.Vector3();
-  // what each part does; once the card has gone from under it, the coin falls straight down
-  const tagHtml = (part, kind) => {
-    const which = part === 'part_upper' || part === 'part_coin' ? 'upper' : 'lower';
-    const key = kind === 'coin' && which === 'upper' && sample.dropped ? 'tag_coin_upper_drop' : `tag_${kind}_${which}`;
-    return `<b>${t(part)}</b><span>${t(key)}</span>`;
-  };
+  // what each part does
+  const tagHtml = (which, kind) => `<b>${t(`part_${which}`)}</b><span>${t(`tag_${kind}_${which}`)}</span>`;
 
   // anchor points of the labels: the middle of each arrow, or the body part itself while its arrow is short
   const anchorLower = new THREE.Vector3();
   const anchorUpper = new THREE.Vector3();
-  const aim = (a, fallback, out) =>
-    a.group.visible && a.length > 0.12 * (sceneOf() === 'coin' ? 0.05 : 1) ? a.pointAt(0.55, out) : out.copy(fallback);
+  const aim = (a, fallback, out) => (a.group.visible && a.length > 0.12 ? a.pointAt(0.55, out) : out.copy(fallback));
   const feetPoint = new THREE.Vector3();
   const upperPoint = new THREE.Vector3();
 
@@ -353,63 +308,38 @@ export function createApp(root, options = {}) {
   function pose() {
     const kind = s.event;
     sample = sampleAt(kind, s.t);
-    const coin = sceneOf() === 'coin';
-    busScene.visible = street.root.visible = !coin;
-    table.root.visible = coin;
-    if (sky) scene.background = coin ? room : sky;
-    const A = arrows[coin ? 'coin' : 'bus'];
-    const other = arrows[coin ? 'bus' : 'coin'];
-    other.lower.set(0, 1);
-    other.upper.set(0, 1);
-    if (!coin) {
-      bus.setX(sample.busX);
-      passenger.root.position.set(sample.rootX, sample.rootY, sample.rootZ);
-      passenger.setPose(sample.pose);
-      passenger.root.updateMatrixWorld(true);
-      const j = passenger.joints;
-      const r = passenger.root.position;
-      const z = r.z - 0.26; // the arrows run just in front of the body (nearer the camera), so it never hides them
-      const dl = sample.lowerV < -0.05 ? -1 : 1;
-      feetPoint.set(r.x + 0.06 + dl * 0.14, r.y + 0.05, z);
-      A.lower.group.position.copy(feetPoint);
-      // the upper body's arrow starts at the shoulders (whose speed it shows), in front of or behind the trunk
-      const du = sample.upperV < -0.05 ? -1 : 1;
-      upperPoint.set(r.x + j.shoulder.x + du * 0.17, r.y + j.shoulder.y - 0.07, z);
-      A.upper.group.position.copy(upperPoint);
-      // where the head was when the bus started, marked on the road's frame: the head stays at the mark at first
-      const markOn = s.helpers && sample.headMark != null && sample.phase === 'act';
-      headMark.visible = markOn;
-      if (markOn) headMark.position.set(sample.headMark, 0, r.z + 0.12);
-      const k = s.helpers ? ARROW.bus.scale : 0;
-      A.lower.set(sample.lowerV, k);
-      A.upper.set(sample.upperV, k);
-      focusX = sample.camX;
-      focusLift = sample.camLift;
-      focusZoom = sample.camZoom;
-      aimSun(focusX, 8, { left: -3.6, right: 3.6, top: 3.6, bottom: -3.6, near: 4, far: 17 });
-    } else {
-      table.setState(sample);
-      table.root.updateMatrixWorld(true);
-      const { card: C, coin: K } = TABLE;
-      feetPoint.set(sample.cardX + C.w / 2 + 0.003, sample.cardY, -C.d / 2 - 0.004);
-      A.lower.group.position.copy(feetPoint);
-      upperPoint.set(sample.coinX + K.r + 0.003, sample.coinY, -0.02);
-      A.upper.group.position.copy(upperPoint);
-      const k = s.helpers ? ARROW.coin.scale : 0;
-      A.lower.set(sample.lowerV, k);
-      A.upper.set(sample.upperV, k);
-      focusX = 0;
-      focusLift = 0;
-      focusZoom = 1;
-      aimSun(0, 1, { left: -0.32, right: 0.32, top: 0.32, bottom: -0.32, near: 0.4, far: 2.2 });
-    }
+    bus.setX(sample.busX);
+    passenger.root.position.set(sample.rootX, sample.rootY, sample.rootZ);
+    passenger.setPose(sample.pose);
+    passenger.root.updateMatrixWorld(true);
+    const j = passenger.joints;
+    const r = passenger.root.position;
+    const z = r.z - 0.26; // the arrows run just in front of the body (nearer the camera), so it never hides them
+    const dl = sample.lowerV < -0.05 ? -1 : 1;
+    feetPoint.set(r.x + 0.06 + dl * 0.14, r.y + 0.05, z);
+    A.lower.group.position.copy(feetPoint);
+    // the upper body's arrow starts at the shoulders (whose speed it shows), in front of or behind the trunk
+    const du = sample.upperV < -0.05 ? -1 : 1;
+    upperPoint.set(r.x + j.shoulder.x + du * 0.17, r.y + j.shoulder.y - 0.07, z);
+    A.upper.group.position.copy(upperPoint);
+    // where the head was when the bus started, marked on the road's frame: the head stays at the mark at first
+    const markOn = s.helpers && sample.headMark != null && sample.phase === 'act';
+    headMark.visible = markOn;
+    if (markOn) headMark.position.set(sample.headMark, 0, r.z + 0.12);
+    const k = s.helpers ? ARROW.bus.scale : 0;
+    A.lower.set(sample.lowerV, k);
+    A.upper.set(sample.upperV, k);
+    focusX = sample.camX;
+    focusLift = sample.camLift;
+    focusZoom = sample.camZoom;
+    aimSun(focusX, 8, { left: -3.6, right: 3.6, top: 3.6, bottom: -3.6, near: 4, far: 17 });
     A.lower.group.updateMatrixWorld(true);
     A.upper.group.updateMatrixWorld(true);
     // labels: while the event happens (the "act"), each part says what it does
     const phase = sample.phase;
     const showTags = s.helpers && phase === 'act';
-    tags.set('lower', showTags ? tagHtml(coin ? 'part_card' : 'part_lower', kind) : null, () => aim(A.lower, feetPoint, anchorLower));
-    tags.set('upper', showTags ? tagHtml(coin ? 'part_coin' : 'part_upper', kind) : null, () => aim(A.upper, upperPoint, anchorUpper));
+    tags.set('lower', showTags ? tagHtml('lower', kind) : null, () => aim(A.lower, feetPoint, anchorLower));
+    tags.set('upper', showTags ? tagHtml('upper', kind) : null, () => aim(A.upper, upperPoint, anchorUpper));
     tags.set('mark', headMark.visible ? t('mark_head') : null, () => markTop.set(headMark.position.x, BUS.floor + 0.12, headMark.position.z));
     if (s.playing) sounds(lastT, s.t);
     lastT = s.t;
@@ -431,7 +361,7 @@ export function createApp(root, options = {}) {
     sun.shadow.camera.updateProjectionMatrix();
   }
 
-  /** A sound as something lands: the passenger's feet on the road, his hands; the coin in the glass. */
+  /** A sound as something lands: the passenger's feet on the road, his hands. */
   function sounds(from, to) {
     const T = simulate(s.event);
     const crossed = (at) => at != null && from < at && to >= at;
@@ -458,16 +388,15 @@ export function createApp(root, options = {}) {
     const T = simulate(s.event);
     return {
       event: s.event,
-      scene: sceneOf(),
       t: Math.round(s.t * 1000) / 1000,
       duration: dur(),
       playing: s.playing,
       phase: s.phase,
       slow: ev().slow,
       inertia: ev().inertia, // 'rest' (স্থিতি জড়তা) | 'motion' (গতি জড়তা)
-      lowerSpeed: Math.round(sample.lowerV * 100) / 100, // m/s along the road (the feet, or the card)
-      upperSpeed: Math.round(sample.upperV * 100) / 100, // m/s along the road (the shoulders, or the coin)
-      lean: sceneOf() === 'bus' ? Math.round(THREE.MathUtils.radToDeg(sample.theta || 0) * 10) / 10 : null, // ° (> 0 back)
+      lowerSpeed: Math.round(sample.lowerV * 100) / 100, // m/s along the road (the feet)
+      upperSpeed: Math.round(sample.upperV * 100) / 100, // m/s along the road (the shoulders)
+      lean: Math.round(THREE.MathUtils.radToDeg(sample.theta || 0) * 10) / 10, // ° (> 0 back)
       landed: Boolean(sample.landed),
       key: T.key,
       view: s.view,
@@ -508,23 +437,16 @@ export function createApp(root, options = {}) {
   function selectEvent(kind, { run = false, at = 0, animate = true } = {}) {
     if (!EVENTS[kind]) return;
     const changed = kind !== s.event;
-    const sceneChanged = sceneOf(kind) !== sceneOf();
     s.event = kind;
     s.t = clamp(Number(at) || 0, 0, dur(kind));
     lastT = s.t;
     s.playing = false;
     s.phase = '';
-    if (coach) {
-      // the pointer says what to tap in this scene (also when it is already showing)
-      coachObject.label = sceneOf() === 'coin' ? 'coach_card' : 'coach_bus';
-      const shownLabel = ui.coachLayer.querySelector('.pvc-coach-label');
-      if (shownLabel && coach.step === 'object') shownLabel.textContent = t(coachObject.label);
-    }
     pose();
-    if (changed || sceneChanged || !animate) {
-      // between bus events the camera glides to the new framing; to and from the table it cuts (another scale)
+    if (changed || !animate) {
+      // between events the camera glides to the new framing
       s.userMovedCamera = false;
-      flyTo(viewPose(s.view), animate && !sceneChanged ? 0.7 : 0);
+      flyTo(viewPose(s.view), animate ? 0.7 : 0);
     }
     syncPlay();
     if (changed) emit('event', { event: kind });
@@ -561,16 +483,8 @@ export function createApp(root, options = {}) {
 
   const UP = new THREE.Vector3(0, 1, 0);
   const tmp = new THREE.Vector3();
-  /** The points the view must hold (relative to focusX): the passenger with room for the arrows, or the glass. */
+  /** The points the view must hold (relative to focusX): the passenger with room for the arrows. */
   function fitPoints() {
-    if (sceneOf() === 'coin')
-      // the glass, the card on it (and room ahead for it to fly), the finger and the hand behind it
-      return [
-        new THREE.Vector3(-0.19, 0, 0.035),
-        new THREE.Vector3(0.15, 0, 0.035),
-        new THREE.Vector3(-0.19, 0.125, -0.035),
-        new THREE.Vector3(0.15, 0.125, -0.035),
-      ];
     const hw = 1.15;
     // stepping off: from the road in front of where he lands (and the kerb) to above his head on the door step
     if (s.event === 'alight')
@@ -590,7 +504,7 @@ export function createApp(root, options = {}) {
     ];
   }
   function viewPose(view) {
-    const dir = DIRS[s.event === 'alight' ? 'alight' : sceneOf()][view];
+    const dir = DIRS[s.event === 'alight' ? 'alight' : 'bus'][view];
     const pts = fitPoints();
     const target = new THREE.Box3().setFromPoints(pts).getCenter(new THREE.Vector3());
     const right = new THREE.Vector3().crossVectors(UP, dir).normalize();
@@ -659,7 +573,7 @@ export function createApp(root, options = {}) {
   });
   stage.onResize(() => !s.userMovedCamera && flyTo(viewPose(s.view), 0));
 
-  // ── tapping the bus, the passenger or the card ──────────────────────────────
+  // ── tapping the bus or the passenger ────────────────────────────────────────
   const raycaster = new THREE.Raycaster();
   const ndc = new THREE.Vector2();
   const canvasPoint = (e) => {
@@ -669,8 +583,7 @@ export function createApp(root, options = {}) {
   function pick(p) {
     ndc.set((p.x / stage.width) * 2 - 1, -(p.y / stage.height) * 2 + 1);
     raycaster.setFromCamera(ndc, camera);
-    const hits = sceneOf() === 'coin' ? [table.hit] : [bus.hit, passenger.hit];
-    return raycaster.intersectObjects(hits, false).length > 0;
+    return raycaster.intersectObjects([bus.hit, passenger.hit], false).length > 0;
   }
   let down = null;
   ui.canvasHost.addEventListener(
@@ -758,7 +671,7 @@ export function createApp(root, options = {}) {
     t,
     emit,
     audio,
-    questions: 5,
+    questions: 4,
     hooks: {
       enter() {
         before = { event: s.event };
@@ -816,10 +729,6 @@ export function createApp(root, options = {}) {
           selectEvent('alight', { at: 0.8 });
           return wordQuestion(t('q_alight'), ['o_fall_fwd', 'o_fall_back', 'o_fall_down', 'o_fall_bus'], { kind, qid: 'alight' });
         }
-        if (kind === 'coin') {
-          selectEvent('coin', { at: 0.12 });
-          return wordQuestion(t('q_coin'), ['o_coin_glass', 'o_coin_with', 'o_coin_back', 'o_coin_float'], { kind, qid: 'coin' });
-        }
         selectEvent('gentle', { at: 0.2 });
         return wordQuestion(t('q_gentle'), ['o_g_little', 'o_g_more', 'o_g_same', 'o_g_fwd'], { kind, qid: 'gentle' });
       },
@@ -849,10 +758,6 @@ export function createApp(root, options = {}) {
         v3.copy(p).project(camera);
         out.push({ x: (v3.x * 0.5 + 0.5) * stage.width, y: (-v3.y * 0.5 + 0.5) * stage.height });
       };
-      if (sceneOf() === 'coin') {
-        add(new THREE.Vector3(-0.02, TABLE.glass.h, 0));
-        return out;
-      }
       const r = passenger.root.position;
       // the bus just behind the passenger, at hip height (the label then falls on the bus, clear of him), or just
       // ahead of him; then his chest
@@ -918,7 +823,7 @@ export function createApp(root, options = {}) {
     const target = /** @type {Element} */ (e.target);
     if (target.closest('input, textarea, select') || e.metaKey || e.ctrlKey || e.altKey) return;
     const k = e.key;
-    const changes = ['ArrowLeft', 'ArrowRight', '1', '2', '3', '4'];
+    const changes = ['ArrowLeft', 'ArrowRight', '1', '2', '3'];
     if (changes.includes(k) && s.locked) {
       e.preventDefault();
       return lockedNudge();
@@ -927,7 +832,7 @@ export function createApp(root, options = {}) {
       if (s.mode === 'quiz' && !quiz.revealed) lockedNudge();
       else toggle();
     } else if (k === 'ArrowRight' || k === 'ArrowLeft') step(k === 'ArrowRight' ? 1 : -1);
-    else if (['1', '2', '3', '4'].includes(k)) selectEvent(EVENT_KEYS[Number(k) - 1], { run: true });
+    else if (['1', '2', '3'].includes(k)) selectEvent(EVENT_KEYS[Number(k) - 1], { run: true });
     else if (k === 'f' || k === 'F') setView('front');
     else if (k === 'v' || k === 'V') setView('3d');
     else if (k === 'Escape') ui.hint.classList.remove('show');
@@ -954,7 +859,7 @@ export function createApp(root, options = {}) {
     },
     getState: snapshot,
     /**
-     * Change any of: event ('start' | 'brake' | 'alight' | 'coin'; it starts again from the beginning), t (s of
+     * Change any of: event ('start' | 'brake' | 'alight'; it starts again from the beginning), t (s of
      * event time, shown paused unless playing: true), playing, view; animate: false jumps.
      */
     async set(p = {}) {
@@ -982,6 +887,6 @@ export function createApp(root, options = {}) {
     },
     startPractice: () => quiz.start(),
     capture: (opts) => stage.capture(opts),
-    exportRoot: () => (sceneOf() === 'coin' ? table.root : busScene), // the bus and the passenger (or the glass, card and coin), no arrows
+    exportRoot: () => busScene, // the bus and the passenger, no arrows
   };
 }

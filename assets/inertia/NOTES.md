@@ -138,3 +138,8 @@ the view still plays or pauses), so the panel reads in the same order as every l
 what happens, the book's definition. On 390×700 the 3D keeps 55 %.
 No সামনে / ঘুরিয়ে দেখো buttons (kit): the lab starts from the front, a drag turns it, and the small "front" icon
 then brings it back.
+
+## Split (1.0.0)
+One lab per setting (the owner): the three bus events stay here as chips (same bus, same street); the coin-and-card
+trick on a glass is its own lab, `inertia-coin-card`. Removed here: the coin chip, the table, the coin's arrows,
+strings and test question, the `coin` value of `event` (URL and `set`), key 4. The test now has 4 questions.
