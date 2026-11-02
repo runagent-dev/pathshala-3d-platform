@@ -166,3 +166,12 @@ Against `docs/agents/polish-pass.md`.
   while idle 0/s before and after; text on the 3D 87/4 → 35/3. Time to ready 0.5–0.7 s before on a quiet moment and
   1.0–1.4 s after with the machine's load at 27–37 (one run at 6–9 s while other agents' tests ran): within the noise
   here.
+
+## Declutter and side panel (0.3.0)
+Only the main objects: the blackboard with its chalk drawing, the notice board, the shelf of bottles and flasks, the
+clock, and the books and beaker on the bench are gone; the plain blue-grey wall, the dado, the bench and the floor
+stay. The panel reads in the same order as every lab: the two examples, the two buttons (side by side), the state
+with the drawing, the book's words. The rules for a wide panel under the view and for the old sideways layout are
+gone (kit 1.5.0 puts the panel beside the 3D); the drawing's caption wraps instead of being clipped.
+No সামনে / ঘুরিয়ে দেখো buttons (kit): the lab starts from the front, a drag turns it, and the small "front" icon
+then brings it back.

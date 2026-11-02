@@ -47,7 +47,7 @@ body.bg-transparent { background: transparent; }
 .fs-gauge-v { font-size: 15px; font-weight: 700; color: #1864ab; white-space: nowrap; font-variant-numeric: tabular-nums; min-width: 4.6em; }
 
 /* the note on the stage, bottom left (over the table: the bodies hang at the top) */
-.fs-note { position: absolute; left: 8px; bottom: 6px; z-index: 3; max-width: calc(100% - 16px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 2px 8px; border-radius: 6px; background: rgba(255, 255, 255, 0.9); font-size: 12.5px; line-height: 1.4; color: var(--ink-2); pointer-events: none; }
+.fs-note { margin-top: -4px; font-size: 12.5px; line-height: 1.4; color: var(--ink-2); }
 .fs-note:empty { display: none; }
 
 /* labels on the picture: the force and its number in its colour; names of the bodies plain */
@@ -62,11 +62,17 @@ body.bg-transparent { background: transparent; }
 .fs .pvc-q-text { font-size: 15px; }
 .fs .pvc-q-feedback { font-size: 14px; }
 
-/* phones */
+/* a phone held upright: the note shows beside the 3D only, the test tighter, so the 3D keeps more than half the height */
 @container pvc (max-width: 420px) {
+  .fs .pvc-learn { gap: 6px; }
+  .fs-note { display: none; }
+  .fs .pvc-q-options { gap: 6px; }
+  .fs .pvc-opt { height: 40px; font-size: 13.5px; line-height: 1.2; }
+  .fs .pvc-q-text { font-size: 14.5px; --pvc-q-text-min: calc(2 * 1.4em); }
+  .fs .pvc-q-feedback { font-size: 13px; --pvc-q-feedback-min: calc(2 * 1.45em); }
   .fs-key { font-size: 13px; }
-  .fs .pvc-rule { font-size: 13.5px; }
-  .fs .pvc-outcome { font-size: 14px; }
+  .fs .pvc-rule { font-size: 13px; line-height: 1.4; }
+  .fs .pvc-outcome { font-size: 14px; line-height: 1.45; --pvc-outcome-lines: 1; }
   .fs-mat span { font-size: 14px; }
 }
 /* phones that are not tall: the rule shorter, the row and the sheet tighter */
@@ -94,23 +100,10 @@ body.bg-transparent { background: transparent; }
   .fs .pvc-opt { font-size: 13px; height: 42px; }
   .fs .pvc-q-feedback { font-size: 12.5px; }
 }
-/* wide frames (tabs beside the sheet): the steps and the action on the left, the row beside the action */
-@container pvc (min-width: 720px) and (min-height: 461px) {
-  .fs .pvc-learn { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: 'ex ex' 'act row' 'out out' 'rule rule'; align-content: start; column-gap: 24px; row-gap: 6px; }
-  .fs .pvc-examples { grid-area: ex; }
-  .fs .pvc-act-row { grid-area: act; }
-  .fs-row { grid-area: row; align-self: center; }
-  .fs .pvc-outcome { grid-area: out; --pvc-outcome-lines: 1; }
-  .fs .pvc-rule { grid-area: rule; --pvc-rule-lines: 2; }
-  .fs .pvc-q-text { --pvc-q-text-min: 2lh; }
-  .fs .pvc-q-feedback { --pvc-q-feedback-min: 2lh; }
+/* the panel beside the 3D (a size container, so a height query matches only there) */
+@container pvc-panel (min-height: 300px) {
+  .fs-note { display: block; }
 }
-@container pvc (min-width: 720px) and (max-width: 1100px) and (min-height: 461px) {
-  .fs .pvc-quiet span { display: none; }
-  .fs-mat { flex-direction: row; gap: 4px; min-height: 36px; }
-  .fs-mat::before { display: none; }
-}
-/* a narrow panel beside the scene */
 @container pvc-panel (max-width: 330px) {
   .fs-pane[data-pane='cases'] { flex-wrap: wrap; row-gap: 0; }
   .fs-mats { gap: 4px; }
