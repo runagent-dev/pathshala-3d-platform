@@ -93,8 +93,8 @@ export const STRINGS = {
     rule_full: '<b>বোঝাই রেখা (প্লিমসল দাগ):</b> পানি এই দাগ ছুঁলে আর মাল তোলা নিরাপদ নয়। খালি থেকে পুরো বোঝাই: h বাড়ল, প্লবতাও ঠিক ততটা বাড়ল।',
 
     // notes on the stage
-    note_data: 'পানির ঘনত্ব ρ = {rho} kg m<sup>−3</sup><br>g = {g} m s<sup>−2</sup>',
-    note_imagine: 'কল্পনা: সরানো পানি তুলে নিক্তিতে ওজন',
+    note_data: 'পানির ঘনত্ব ρ = {rho} kg m<sup>−3</sup>, g = {g} m s<sup>−2</sup>',
+    note_imagine: 'কল্পনা করো: সরানো পানি তুলে নিক্তিতে ওজন',
 
     // labels on the picture
     lbl_P2: 'P<sub>2</sub> = {v}&nbsp;{u_Pa}',
@@ -259,7 +259,7 @@ export const STRINGS = {
     rule_full:
       '<b>The load line (Plimsoll mark):</b> once the water reaches it, loading more is unsafe. From empty to full: h grew, and the buoyancy grew just as much.',
 
-    note_data: 'Water density ρ = {rho} kg m<sup>−3</sup><br>g = {g} m s<sup>−2</sup>',
+    note_data: 'Water density ρ = {rho} kg m<sup>−3</sup>, g = {g} m s<sup>−2</sup>',
     note_imagine: 'Imagine: the water pushed aside, lifted and weighed',
 
     lbl_P2: 'P<sub>2</sub> = {v}&nbsp;{u_Pa}',

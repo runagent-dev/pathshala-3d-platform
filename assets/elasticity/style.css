@@ -47,6 +47,7 @@ body.bg-transparent { background: transparent; }
 
 /* the graph: a white card on the stage */
 .el-graph { position: absolute; z-index: 3; border-radius: 10px; background: #fff; box-shadow: 0 2px 10px rgba(40, 20, 10, 0.28), 0 0 0 1px rgba(0, 0, 0, 0.06); pointer-events: none; overflow: hidden; }
+.el-graph.in-panel { position: relative; left: auto !important; top: auto !important; flex: none; box-shadow: 0 0 0 1px var(--line); }
 .el .el-graph svg.el-graph-svg { display: block; width: 100%; height: 100%; max-width: none; fill: #1f2430; stroke: none; stroke-width: 1; }
 .el-now { animation: el-pulse 1.4s ease-in-out 3; transform-box: fill-box; transform-origin: center; }
 @keyframes el-pulse { 50% { transform: scale(1.35); opacity: 0.6; } }
@@ -119,26 +120,13 @@ body.bg-transparent { background: transparent; }
   .el .pvc-opt { font-size: 12.5px; height: 42px; }
   .el .pvc-q-feedback { font-size: 12.5px; }
 }
-/* wide frames: the formula block on the right of the action, the result and rule under both */
-@container pvc (min-width: 720px) and (min-height: 461px) {
-  .el .pvc-learn { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); grid-template-areas: 'act eq' 'out eq' 'rule rule'; align-content: start; column-gap: 28px; row-gap: 6px; }
-  .el .pvc-act-row { grid-area: act; }
-  .el-eq { grid-area: eq; align-self: start; }
-  .el .pvc-outcome { grid-area: out; }
-  .el .pvc-rule { grid-area: rule; --pvc-rule-lines: 2; }
-  /* the wide test sheet has room for a question and a worked answer in two lines each: the 3D view gets the rest */
-  .el .pvc-q-text { --pvc-q-text-min: 2lh; }
-  .el .pvc-q-feedback { --pvc-q-feedback-min: 2lh; }
-}
 @container pvc-panel (max-width: 330px) {
   .el-top { gap: 6px; }
   .el-sums { font-size: 12px; column-gap: 6px; }
   .el-calc { white-space: normal; overflow: visible; }
   .el-len { font-size: 12.5px; white-space: normal; line-height: 1.25; }
 }
-/* wide but not very wide: the quiet button an icon, the sums without their formula part, so nothing is cut */
-@container pvc (min-width: 720px) and (max-width: 1100px) and (min-height: 461px) {
-  .el .pvc-quiet span { display: none; }
-  .el-f { display: none; }
-  .el-len { white-space: normal; line-height: 1.25; font-size: 13.5px; }
+/* the panel beside the 3D (a size container, so a height query matches only there): the weight stepper always shows */
+@container pvc-panel (min-height: 300px) {
+  .el-top { display: flex; }
 }
