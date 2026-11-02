@@ -1,0 +1,76 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "pressure-melting-point",
+  "title": "Pressure and melting point: a wire through ice (চাপের ফলে গলনাঙ্ক)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 181,
+  "topic": "6.7",
+  "placement": "Book page 181–182, topic 6.7 (গলনাঙ্ক এবং স্ফুটনাঙ্কের ওপর চাপের প্রভাব): in place of or next to চিত্র ৬.০৯ (a block of ice across a table, a wire over it and a weight on each side: the wire cuts the ice but the block stays one piece), after the paragraph 'চাপ দেওয়া হলে পদার্থের গলনাঙ্ক কমে যায়…'.",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "Pressure and the melting point (page 181–182, topic 6.7, চিত্র ৬.০৯), as the book draws it: a see-through block of ice laid across a pink table, a thin wire over it and a weight on each side. One guided sequence with one big button: hang the wire and two weights on the ice (one red arrow shows the pressure under the wire and a bright film of water appears there: the melting point falls); let time pass (the wire sinks through the ice while the water above it freezes again, shown as a faint seam; time is sped up and the panel says so); take the wire and weights away (the block is still one whole piece, as the book says). The panel gives, in the book's words, what happens under and over the wire and the rule 'চাপ দেওয়া হলে পদার্থের গলনাঙ্ক কমে যায়; চাপ সরিয়ে নিলে গলনাঙ্ক আগের মান ফিরে পায়'. No invented numbers. Test tab: 5 questions with a note for every wrong choice. Phone-first, Bangla and English.",
+  "tags": ["melting point", "pressure", "ice", "regelation", "wire", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "step",
+      "label": "Steps done",
+      "type": "number",
+      "default": "0",
+      "help": "0 (a block of ice), 1 (wire and weights hung), 2 (the wire cut through), 3 (the wire and weights taken away)"
+    },
+    {
+      "name": "progress",
+      "label": "How far the wire has sunk (with step 2)",
+      "type": "number",
+      "default": "",
+      "help": "0 (on top) to 1 (out of the bottom); empty: all the way"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring round the ice pulses", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "step": 1, "animate": false } },
+    { "name": "set", "payload": { "step": 2, "progress": 0.5, "animate": false } },
+    { "name": "set", "payload": { "step": 3, "animate": false } },
+    { "name": "set", "payload": { "view": "3d", "animate": false } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": { "params": { "coach": "0", "step": "2", "progress": "0.5" } },
+    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "step": 1, "animate": false } }] }]
+  }
+}
