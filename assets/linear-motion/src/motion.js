@@ -1,9 +1,7 @@
-// The physics of the figure's three motions, in metres and seconds, as pure functions (unit-tested in
+// The physics of the push, in metres and seconds, as pure functions (unit-tested in
 // test/unit/linear-motion.test.mjs). Axes: x to the right, y up, z toward the student; the carrom board's playing
 // surface is the square |x|, |z| ≤ BOARD.half at height BOARD.surface.
 //   push:  a striker pushed on the flat board slides in a straight line and slows down evenly (friction μ·g);
-//   drop:  a ball let go from rest falls freely, straight down (½·g·t²);
-//   throw: the same ball pushed sideways falls on a curve (x = v·t, y = ½·g·t²): not a straight line.
 
 export const G = 9.8; // m/s²
 
@@ -12,15 +10,6 @@ export const BOARD = { half: 0.37, frame: 0.075, surface: 0.016 };
 
 /** The striker (4.1 cm across), on the near base line; strobe pictures every 0.1 s; the board is powdered (μ ≈ 0.12). */
 export const STRIKER = { r: 0.0206, h: 0.0045, mu: 0.12, start: { x: 0, z: 0.255 }, step: 0.1, margin: 0.025, minDist: 0.12 };
-
-/**
- * A cricket ball (7.2 cm across) held over the board on a stand: its centre `height` above the surface. Strobe
- * pictures every 0.05 s; shown 4 times slower than real time (a real fall takes 0.4 s). A throw leaves at 1 m/s.
- */
-export const BALL = { r: 0.036, x: -0.2, z: 0, height: 0.8, step: 0.05, slow: 4, vx: 1 };
-
-/** The fall height of the ball's centre (from the holder until it touches the board). */
-export const FALL = BALL.height - BALL.r;
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 /** Rounded without binary leftovers: round(0.1 + 0.2, 3) → 0.3. */
@@ -77,20 +66,6 @@ export function pushFrom(p, angle, strength) {
   const dist = Math.min(room, Math.max(STRIKER.minDist, clamp(strength, 0, 1) * room));
   const slide = slideFor(dist);
   return { ...slide, angle, strength: clamp(strength, 0, 1), start: { ...p }, dir, end: { x: p.x + dir.x * dist, z: p.z + dir.z * dist } };
-}
-
-// ── drop and throw: free fall ─────────────────────────────────────────────────
-
-/** Time to fall h m from rest: T = √(2h / g). */
-export const fallTime = (h = FALL) => Math.sqrt((2 * h) / G);
-
-/** Drop after t s of fall (½·g·t², no further than h). */
-export const fallAt = (t, h = FALL) => Math.min(h, 0.5 * G * Math.max(0, t) ** 2);
-
-/** The ball's offset from where it was let go, t s later, for a sideways speed vx (0: a plain drop). */
-export function flightAt(t, vx = 0, h = FALL) {
-  const tt = clamp(t, 0, fallTime(h));
-  return { x: vx * tt, y: -fallAt(tt, h) };
 }
 
 // ── strobe pictures and straightness ──────────────────────────────────────────

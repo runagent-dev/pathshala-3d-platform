@@ -2,6 +2,7 @@
 // freely or thrown sideways, the strobe times, and the straight-line check. Pure code, no browser.
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
+import * as b from '../../assets/linear-motion-ball/src/motion.js';
 import * as m from '../../assets/linear-motion/src/motion.js';
 
 const close = (a, b, tol = 1e-9) => assert.ok(Math.abs(a - b) <= tol, `${a} ≉ ${b}`);
@@ -52,32 +53,32 @@ describe('linear motion: the striker slides with friction', () => {
 
 describe('linear motion: the ball falls freely', () => {
   it('takes √(2h/g) to fall (0.39 s from the holder)', () => {
-    close(m.fallTime(m.FALL), Math.sqrt((2 * m.FALL) / m.G));
-    close(m.round(m.fallTime(), 3), 0.395);
+    close(b.fallTime(b.FALL), Math.sqrt((2 * b.FALL) / m.G));
+    close(m.round(b.fallTime(), 3), 0.395);
   });
   it('drops ½·g·t², never below the board', () => {
-    close(m.fallAt(0.1), 0.5 * m.G * 0.01);
-    close(m.fallAt(10), m.FALL);
-    close(m.fallAt(-1), 0);
+    close(b.fallAt(0.1), 0.5 * m.G * 0.01);
+    close(b.fallAt(10), b.FALL);
+    close(b.fallAt(-1), 0);
   });
   it('covers more and more in equal times (the strobe gaps grow)', () => {
-    const times = m.strobeTimes(m.fallTime(), m.BALL.step);
-    const gaps = times.slice(1).map((t, i) => m.fallAt(t) - m.fallAt(times[i]));
+    const times = m.strobeTimes(b.fallTime(), b.BALL.step);
+    const gaps = times.slice(1).map((t, i) => b.fallAt(t) - b.fallAt(times[i]));
     for (let i = 1; i < gaps.length; i++) assert.ok(gaps[i] > gaps[i - 1]);
   });
   it('a drop goes straight down; a sideways throw moves x = v·t as it falls and lands v·T away', () => {
-    const T = m.fallTime();
-    close(m.flightAt(0.2, 0).x, 0);
-    close(m.flightAt(0.2, 1).x, 0.2);
-    close(m.flightAt(0.2, 1).y, -m.fallAt(0.2));
-    close(m.flightAt(5, 1).x, T); // stops where it lands
+    const T = b.fallTime();
+    close(b.flightAt(0.2, 0).x, 0);
+    close(b.flightAt(0.2, 1).x, 0.2);
+    close(b.flightAt(0.2, 1).y, -b.fallAt(0.2));
+    close(b.flightAt(5, 1).x, T); // stops where it lands
   });
 });
 
 describe('linear motion: strobe pictures and the straight-line check', () => {
   it('strobe times are exact multiples of the step', () => {
     assert.deepEqual(m.strobeTimes(1, 0.1), [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]);
-    assert.deepEqual(m.strobeTimes(m.fallTime(), 0.05), [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35]);
+    assert.deepEqual(m.strobeTimes(b.fallTime(), 0.05), [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35]);
   });
   it('points on a line are 0 m from it; a point off it by its perpendicular distance', () => {
     const a = { x: 0, y: 0, z: 0 };
@@ -86,13 +87,13 @@ describe('linear motion: strobe pictures and the straight-line check', () => {
     close(m.maxDeviation([{ x: 1, y: 0, z: 0 }], a, b), Math.SQRT1_2, 1e-12);
   });
   it('the drop is straight; the throw is curved, at most h/4 · R/√(R²+h²) from the chord (≈ 9 cm)', () => {
-    const T = m.fallTime();
-    const sample = (vx) => Array.from({ length: 201 }, (_, i) => m.flightAt((T * i) / 200, vx));
+    const T = b.fallTime();
+    const sample = (vx) => Array.from({ length: 201 }, (_, i) => b.flightAt((T * i) / 200, vx));
     assert.ok(m.isStraight(sample(0)));
-    const thrown = sample(m.BALL.vx);
+    const thrown = sample(b.BALL.vx);
     assert.ok(!m.isStraight(thrown));
-    const h = m.FALL;
-    const R = m.BALL.vx * T;
+    const h = b.FALL;
+    const R = b.BALL.vx * T;
     const dev = m.maxDeviation(thrown, thrown[0], thrown[200]);
     close(dev, (h / 4) * (R / Math.hypot(R, h)), 1e-4);
     assert.equal(Math.round(dev * 100), 9);
