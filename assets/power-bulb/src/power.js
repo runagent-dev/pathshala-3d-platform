@@ -1,8 +1,6 @@
 // The maths of the figure, kept apart from the 3D so it can be unit-tested (book p120, 4.7: P = W / t).
 // The book's 100 W bulb uses 100 J each second: E = Pt. (G, H and FULL size the house and its roof tanks.)
 
-export const H = 3; // m: from the water in the courtyard tank to the roof tanks' floor (a one-storey house)
-export const FULL = 500; // kg (500 L): one roof tank
 export const BULB = 100; // W: the book's bulb
 export const BULB_TIME = 10; // s: the bulb is switched on for this long
 

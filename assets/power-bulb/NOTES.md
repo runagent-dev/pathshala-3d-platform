@@ -46,8 +46,9 @@ properly. vivid color with color background and very very realistic".
 The page spells রূপান্তর. Units as Latin symbols per `docs/book-notes.md`: kg, m, s, J, W, ms⁻²; MW in the book's example.
 
 ## How the figure works
-- The house front of the lab `power` (the same wall, door and courtyard), framed close on the 100 W bulb in its holder
-  over the door; the pumps and tanks are off screen and still.
+- Only a piece of the house's front wall under the roof slab's edge, and the 100 W bulb (a real-size A60 lamp: brass
+  B22 cap, glass stem, coiled filament) in a bakelite holder on its bracket, framed close. Nothing off screen is built
+  (1.0.1: the pumps, tanks, pipes and courtyard of `power` were removed, to save draw calls on phones).
 - শেখো: one action (বাতি জ্বালাও), the result as a small table (কাজ W ÷ সময় t = ক্ষমতা P), one rule. The bulb glows
   for 10 s in real time, its label counting whole seconds and the joules (100 J each second). At the end the table
   adds the book's power plant, 1000 × 10⁶ J ÷ 1 s = 1000 MW. Rule: the unit box (1 W = 1 J each second,

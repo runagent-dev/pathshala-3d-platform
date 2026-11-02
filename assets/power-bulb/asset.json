@@ -5,7 +5,7 @@
   "title": "Power: the 100 W bulb (ক্ষমতা: ১০০ W বাতি)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "book": "physics-9-10",
   "page": 120,
   "topic": "4.7",
@@ -13,7 +13,7 @@
   "order": 2,
   "maintainers": ["RadeenXALNW"],
   "units": "m",
-  "description": "Interactive 3D figure for textbook topic 4.7 (ক্ষমতা, Power), page 120: what a watt means. The book's 100 W bulb in its holder over the door of a sunny Bangladeshi house; the student switches it on for 10 s (real time) and a stopwatch and the energy used so far go beside it: 100 J each second (1 W = 1 J/s), worked out live in a small W ÷ t = P table, then the book's 1000 MW power plant (1000 × 10⁶ J each second) joins the table. Three tap questions about the bulb's energy, what a watt means and the power plant. The house and the bulb export as GLB in metres. Offline, in Bangla and English. The two pumps (same work, same time) are the figure power.",
+  "description": "Interactive 3D figure for textbook topic 4.7 (ক্ষমতা, Power), page 120: what a watt means. The book's 100 W bulb in its holder on the front wall of a Bangladeshi house; the student switches it on for 10 s (real time) and a stopwatch and the energy used so far go beside it: 100 J each second (1 W = 1 J/s), worked out live in a small W ÷ t = P table, then the book's 1000 MW power plant (1000 × 10⁶ J each second) joins the table. Three tap questions about the bulb's energy, what a watt means and the power plant. The wall and the bulb export as GLB in metres. Offline, in Bangla and English. The two pumps (same work, same time) are the figure power.",
   "tags": ["power", "work", "energy", "watt", "pump", "rate", "bangla"],
   "params": [
     {

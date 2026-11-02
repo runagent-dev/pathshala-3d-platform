@@ -28,7 +28,7 @@ test('contact-noncontact-force-magnet: play, hold at the telling moment, see the
   await fig.call('reset');
   await frame.locator('.pvc-act').click();
   await fig.advance(2600);
-  let st = await fig.call('get');
+  const st = await fig.call('get');
   expect(st).toMatchObject({ phase: 'paused', acting: true, touching: false, marks: 'gap', seen: true, step: '' });
   await expect(frame.locator('.pvc-anno-tag-n')).toContainText('ছোঁয়নি: অস্পর্শ বল');
   await expect(frame.locator('.pvc-anno-tag-n')).toContainText('ফাঁক ২.৩ cm');

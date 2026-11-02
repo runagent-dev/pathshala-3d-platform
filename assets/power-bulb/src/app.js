@@ -14,9 +14,7 @@ import { bindCleanSheet, buildStudentShell, cleanSheet } from '@shared/student/s
 import { fitPose } from './camera.js';
 import { createI18n, group } from './i18n.js';
 import { BULB, BULB_TIME, bulbAt, choicesFrom, energyMistakes, roundTo, shuffle } from './power.js';
-import { createPump } from './pump.js';
-import { createScene, LAYOUT, ROOF } from './scene.js';
-import { createTank } from './tank.js';
+import { createScene, LAYOUT } from './scene.js';
 
 export const DEFAULTS = {
   at: '', // seconds since the bulb went on, held still (pictures); empty: before
@@ -30,10 +28,7 @@ export const DEFAULTS = {
   sound: true,
 };
 
-const IDS = /** @type {const} */ (['small', 'big']);
 const COLORS = { t: '#c2255c', P: '#862e9c' };
-const PUMP_COLORS = { small: '#1f74c9', big: '#d4382c' };
-const PUMP_SIZE = { small: 1, big: 1.32 };
 const ELEVATION = 2; // degrees: the front view stands in the courtyard and looks up a little
 const AZIMUTH = -9; // degrees: from a little to the left, so the wall shows its depth
 const VIEW_3D = new THREE.Vector3(-0.55, 0.32, 0.9).normalize();
@@ -103,18 +98,7 @@ export function createApp(root, options = {}) {
   const world = new THREE.Group();
   world.name = 'Power';
   scene.add(world);
-  const pumps = {};
-  const tanks = {};
-  for (const id of IDS) {
-    pumps[id] = createPump({ color: PUMP_COLORS[id], size: PUMP_SIZE[id], name: `Pump_${id}`, cableSide: id === 'big' ? 1 : -1 }); // cables from the wall
-    // the small pump's suction faces right (+x) toward the hatch, the big one's left
-    pumps[id].root.position.set(LAYOUT.pumpX[id], 0, LAYOUT.pumpZ);
-    if (id === 'big') pumps[id].root.rotation.y = Math.PI;
-    tanks[id] = createTank({ name: `RoofTank_${id}`, accent: PUMP_COLORS[id] });
-    tanks[id].root.position.set(LAYOUT.pumpX[id], ROOF, LAYOUT.tankZ);
-    world.add(pumps[id].root, tanks[id].root);
-  }
-  const place3d = createScene({ pumps, tanks });
+  const place3d = createScene();
   world.add(place3d.root);
   const bulb = place3d.bulb;
 
@@ -123,21 +107,27 @@ export function createApp(root, options = {}) {
   const audio = createAudio(o.sound);
 
   if (o.shadow && o.bg !== 'transparent') {
-    // soft sun shadows, the shadow camera fitted closely round what casts and takes them in view (the house front,
-    // the courtyard, the props by the walls), so a 1024 map is as sharp as a 2048 one on the old loose fit. Which
-    // parts cast and take shadows is set where they are built (the ground and the far scenery only take them, or not).
+    // soft sun shadows, the shadow camera fitted closely round the bulb and the wall behind it: the bulb, its holder
+    // and bracket cast (not its see-through glass), the wall and the slab take them
     stage.renderer.shadowMap.enabled = true;
     stage.renderer.shadowMap.type = THREE.VSMShadowMap;
     const sun = new THREE.DirectionalLight('#ffffff', 0.7);
     sun.position.set(-5, 11, 8);
-    sun.target.position.set(0, 1.5, 0);
+    sun.target.position.copy(LAYOUT.bulb);
     sun.castShadow = true;
     sun.shadow.mapSize.set(1024, 1024);
     sun.shadow.radius = 3;
     sun.shadow.blurSamples = 8;
     sun.shadow.bias = -0.0005;
     scene.add(sun, sun.target);
-    fitShadow(sun, new THREE.Box3(new THREE.Vector3(-7.6, -0.1, -1.6), new THREE.Vector3(7.6, ROOF + 1.7, 4.6)));
+    const b = LAYOUT.bulb;
+    fitShadow(sun, new THREE.Box3(new THREE.Vector3(b.x - 0.6, b.y - 0.6, -0.05), new THREE.Vector3(b.x + 0.6, b.y + 0.4, b.z + 0.1)));
+    world.traverse((m) => {
+      if (!(/** @type {THREE.Mesh} */ (m).isMesh)) return;
+      const mat = /** @type {THREE.Material} */ (/** @type {THREE.Mesh} */ (m).material);
+      m.receiveShadow = !m.parent || m.parent === place3d.root;
+      m.castShadow = m.parent !== place3d.root && !mat.transparent;
+    });
   }
 
   const listeners = new Map();
@@ -145,7 +135,7 @@ export function createApp(root, options = {}) {
     for (const fn of listeners.get(type) || []) fn(payload);
   }
 
-  // ── the state: every line, label, tank and pump is drawn from it ─────────────
+  // ── the state: the bulb, its label and the panel are drawn from it ───────────
   const s = {
     phase: 'ready', // 'ready' | 'run' | 'done'
     t: 0, // seconds since the switch went on
@@ -170,7 +160,6 @@ export function createApp(root, options = {}) {
 
   // ── what the student sees ──────────────────────────────────────────────────
   let action = null;
-  for (const id of IDS) tanks[id].setMass(0); // the pumps rest (they are the lab "power")
   function place(n = now()) {
     bulb.set(s.phase === 'run');
     labels(n);
