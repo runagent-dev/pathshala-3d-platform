@@ -1,0 +1,84 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "acceleration-bend",
+  "title": "Acceleration on a bend (বাঁকে ত্বরণ)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "1.0.0",
+  "book": "physics-9-10",
+  "page": 43,
+  "topic": "2.6",
+  "placement": "Book page 43, topic 2.6: ত্বরণ (Acceleration). Next to the paragraph on a winding path and চিত্র ২.০৫ (a stone whirled on a string): at the same speed, a change of direction is ত্বরণ too; after the acceleration lab.",
+  "order": 2,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "Acceleration at a steady speed (ত্বরণ, page 43, 2.6): the book says every turn on a winding path changes the বেগ even at সমদ্রুতি, so it is ত্বরণ. A CNG auto-rickshaw goes at a steady 2.5 m/s on open sand (striped, nothing else); the student turns it with বাঁয়ে and ডানে (press and hold) on a 3 m circle. The speedometer stays at 2.5, but the blue বেগ arrow (and a compass in the panel) turns; while it turns, the circle and its middle (বাঁকের কেন্দ্র) are drawn, a purple ত্বরণ arrow points at that middle and the track turns purple; going straight, the track is grey and the label says ত্বরণ নেই. Seen from above, tilted, north up. Test: 3 tap questions (is turning at the same speed ত্বরণ; which way the ত্বরণ points; is going straight at the same speed ত্বরণ), each worked answer naming the mistake. Phone-first, Bangla. GLB: the CNG auto-rickshaw at real size, in metres.",
+  "tags": ["motion", "acceleration", "velocity", "vector", "circular-motion", "cng", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "view",
+      "label": "View",
+      "type": "select",
+      "options": [["front", "from above"], ["3d", "3d"]],
+      "default": "front"
+    },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "First-use pointers", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "pedal": "left" } },
+    { "name": "set", "payload": { "pedal": "right" } },
+    { "name": "set", "payload": { "pedal": "none" } },
+    { "name": "set", "payload": { "drive": [["none", 1], ["left", 1.2]] } },
+    { "name": "set", "payload": { "restart": true } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "pedal", "view", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": {
+      "params": { "coach": "0" },
+      "setup": [{ "command": "set", "payload": { "drive": [["none", 1], ["left", 1.2]] } }]
+    },
+    "glb": [{ "name": "default" }],
+    "video": {
+      "kind": "script",
+      "seconds": 10,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 1, "command": "set", "payload": { "pedal": "left" } },
+        { "at": 5, "command": "set", "payload": { "pedal": "none" } },
+        { "at": 6.5, "command": "set", "payload": { "pedal": "right" } },
+        { "at": 9.5, "command": "set", "payload": { "pedal": "none" } }
+      ]
+    }
+  }
+}

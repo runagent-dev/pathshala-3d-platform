@@ -1,8 +1,7 @@
-// Where each example is: the fan under the ceiling of a room in an old house (plastered ceiling between wooden
-// rafters, blue walls, a window, a red-oxide floor), the clock on that room's blue plastered wall, and the Moon in
-// the starry sky. None of it is exported (noExport) and none of it is drawn on a transparent background.
-// Cheap on purpose: the room is one box (three materials), its wood one merged mesh, the stars two point clouds;
-// one small plaster canvas (512 px) shared by every surface through its own repeat.
+// Where the fan is: under the ceiling of a room in an old house (plastered ceiling between wooden rafters, blue
+// walls, a window, a red-oxide floor). None of it is exported (noExport) and none of it is drawn on a transparent
+// background. Cheap on purpose: the room is one box (three materials), its wood one merged mesh; one small plaster
+// canvas (512 px) shared by every surface through its own repeat.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
@@ -167,81 +166,6 @@ export function createRoom({ ceiling }) {
   );
   glass.position.set(wx, wy, wz - 1.5);
   root.add(glass);
-  return root;
-}
-
-/** The clock's wall: blue plaster, a little lighter towards the lamp (upper left) and darker at the far edges. */
-export function createWall({ z }) {
-  const W = 420;
-  const H = 320;
-  const geo = new THREE.PlaneGeometry(W, H, 12, 10);
-  const pos = geo.attributes.position;
-  const colors = new Float32Array(pos.count * 3);
-  for (let i = 0; i < pos.count; i++) {
-    const lit = 1.06 - Math.hypot(pos.getX(i) + 40, pos.getY(i) - 50) / 420; // brighter round the lamp's side
-    colors.set([lit, lit, lit], i * 3);
-  }
-  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-  const wall = new THREE.Mesh(
-    geo,
-    new THREE.MeshStandardMaterial({ name: 'Wall', color: 0x86a6c4, map: plaster(W, H, 110), vertexColors: true, roughness: 0.95 }),
-  );
-  wall.name = 'Wall';
-  wall.position.set(0, -20, z);
-  wall.receiveShadow = true; // the clock's soft shadow
-  wall.userData.noExport = true;
-  return wall;
-}
-
-/** The night sky round the Earth and the Moon: dim stars thick along a Milky Way band, and a few bright ones. */
-export function createStars() {
-  const root = new THREE.Group();
-  root.name = 'Stars';
-  root.userData.noExport = true;
-  const dot = document.createElement('canvas');
-  dot.width = dot.height = 32;
-  const g = dot.getContext('2d');
-  const grad = g.createRadialGradient(16, 16, 0, 16, 16, 16);
-  grad.addColorStop(0, 'rgba(255,255,255,1)');
-  grad.addColorStop(0.35, 'rgba(255,255,255,0.8)');
-  grad.addColorStop(1, 'rgba(255,255,255,0)');
-  g.fillStyle = grad;
-  g.fillRect(0, 0, 32, 32);
-  const map = new THREE.CanvasTexture(dot);
-  const r = rand(23);
-  const band = new THREE.Vector3(0.35, 0.8, -0.48).normalize(); // the band's pole
-  const v = new THREE.Vector3();
-  const tints = [
-    [1, 1, 1],
-    [0.78, 0.86, 1],
-    [1, 0.9, 0.74],
-  ];
-  function cloud(count, size, bright, inBand) {
-    const pos = new Float32Array(count * 3);
-    const col = new Float32Array(count * 3);
-    for (let i = 0; i < count; i++) {
-      // uniform on the sphere; a share pulled towards the band's great circle
-      do {
-        v.set(r() * 2 - 1, r() * 2 - 1, r() * 2 - 1);
-      } while (v.lengthSq() > 1 || v.lengthSq() < 0.01);
-      v.normalize();
-      if (r() < inBand) v.addScaledVector(band, -v.dot(band) * (0.75 + r() * 0.25)).normalize();
-      pos.set([v.x * 3000, v.y * 3000, v.z * 3000], i * 3);
-      const t = tints[Math.floor(r() * tints.length)];
-      const k = bright * (0.45 + r() * 0.55);
-      col.set([t[0] * k, t[1] * k, t[2] * k], i * 3);
-    }
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
-    const pts = new THREE.Points(
-      geo,
-      new THREE.PointsMaterial({ size, map, vertexColors: true, sizeAttenuation: false, transparent: true, depthWrite: false, toneMapped: false }),
-    );
-    pts.frustumCulled = false;
-    return pts;
-  }
-  root.add(cloud(1600, 3.2, 0.85, 0.55), cloud(160, 5.5, 1, 0.2));
   return root;
 }
 
