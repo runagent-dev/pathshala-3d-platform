@@ -1,0 +1,49 @@
+/* Change of state: the page, the colours that carry meaning (a change of temperature blue, a change of state, where the
+   temperature stays flat, orange: the same as the ribbon on the chart in src/board.js), the readings and the row of
+   states under the action, and the labels on the picture. The rest of the panel is the kit's clean sheet
+   (../../shared/lib/student/student.css). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.cs { --c-slope: #1c5fb8; --c-flat: #c2410c; --pvc-outcome-lines: 2; }
+.cs .pvc-outcome { font-size: 15px; line-height: 1.45; }
+.cs .pvc-rule { font-size: 14.5px; line-height: 1.45; }
+.cs .pvc-rule b { color: var(--c-flat); }
+
+/* ── the readings: the temperature (the number that matters) and the state, on one line ── */
+.cs-extra { display: grid; gap: 8px; }
+.cs-read { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 16px; min-height: 28px; }
+.cs-read > div { display: block; }
+.cs-read dt { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); } /* read out, not shown */
+.cs-read dd { margin: 0; font-size: 15px; line-height: 1.35; font-weight: 600; color: var(--ink); }
+.cs-read dd.big { font-size: 22px; line-height: 1.2; font-weight: 800; color: var(--c-slope); font-variant-numeric: tabular-nums; }
+
+/* ── the three states and the two processes between them, the one going on lit ── */
+.cs-strip { display: flex; align-items: flex-end; justify-content: space-between; gap: 2px; padding: 6px 4px 4px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.cs-strip > span { white-space: nowrap; color: var(--ink-3); font-weight: 600; font-size: 14px; line-height: 1.3; }
+.cs-strip .st { padding: 2px 8px; border-radius: 12px; border: 1.5px solid transparent; }
+.cs-strip .st.on { color: var(--c-slope); border-color: var(--c-slope); background: color-mix(in srgb, var(--c-slope) 9%, #fff); }
+.cs-strip .pr { position: relative; flex: 1 1 auto; text-align: center; font-size: 12.5px; padding: 0 8px 7px; min-width: 0; }
+.cs-strip .pr::after { content: ''; position: absolute; left: 2px; right: 8px; bottom: 1px; height: 2px; background: currentColor; opacity: 0.55; }
+.cs-strip .pr::before { content: ''; position: absolute; right: 2px; bottom: -2px; border: 4px solid transparent; border-left: 7px solid currentColor; opacity: 0.55; }
+.cs-strip .pr.on { color: var(--c-flat); }
+.cs-strip .pr.on::after, .cs-strip .pr.on::before { opacity: 1; }
+.cs-strip .pr.on::after { height: 3px; }
+
+/* labels on the picture: the temperature (the number that matters) and what is in the beaker, plain chips */
+.pvc-anno-temp { padding: 0 8px; border: 2px solid #1c5fb8; border-radius: 6px; background: rgba(255, 255, 255, 0.97); color: #123a73; font-size: 15px; font-weight: 800; line-height: 1.5; white-space: nowrap; font-variant-numeric: tabular-nums; transition: none; }
+.pvc-anno-name { padding: 0 8px; border-radius: 6px; background: rgba(255, 248, 235, 0.96); color: #3b2b1d; font-size: 14px; font-weight: 700; line-height: 1.5; white-space: nowrap; transition: none; }
+.pvc-anno-cold { padding: 0 8px; border: 1.5px solid #1c5fb8; border-radius: 6px; background: #e7f1ff; color: #123a73; font-size: 13.5px; font-weight: 700; line-height: 1.5; white-space: nowrap; transition: none; }
+
+/* the test: answers in words */
+.cs .pvc-opt { font-size: 14.5px; line-height: 1.25; }
+
+/* a phone held upright (the panel goes under the 3D): keep it short so the 3D stays as tall as it can: no strip of
+   states (the rule says it) and a shorter rule */
+@media (max-aspect-ratio: 1/1), (max-width: 599px) {
+  .cs { --pvc-rule-lines: 3; }
+  .cs-strip { display: none; }
+  .cs .pvc-rule { font-size: 14px; line-height: 1.4; }
+  .cs .pvc-q-text { --pvc-q-text-min: 2lh; }
+}
