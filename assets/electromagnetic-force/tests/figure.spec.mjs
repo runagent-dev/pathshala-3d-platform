@@ -1,11 +1,10 @@
 // Electromagnetic force through the bridge and the panel (book page 68, topic 3.2.2): the one action in two steps
 // (comb the hair, then bring the comb to the paper: the bits jump up because its pull beats the Earth's), an
-// uncharged comb lifts nothing; the coil is a magnet only with the current on, unlike poles attract and like poles
-// repel. Runs with `npm run test:figures` (dev only, never packaged).
+// uncharged comb lifts nothing. Runs with `npm run test:figures` (dev only, never packaged).
 import { expect, test } from '@playwright/test';
 import { openFigure, preparePage } from '../../../scripts/lib/export/driver.mjs';
 
-test('electromagnetic-force: comb and paper in two steps, coil and magnet', async ({ page }) => {
+test('electromagnetic-force: comb and paper in two steps', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 700 });
   const log = await preparePage(page);
   const fig = await openFigure(page, 'electromagnetic-force');
@@ -14,7 +13,7 @@ test('electromagnetic-force: comb and paper in two steps, coil and magnet', asyn
 
   // at the start: the comb in the hair, no charge; the action is step 1, comb the hair
   let s = await fig.call('get');
-  expect(s).toMatchObject({ scene: 'comb', comb: { charge: 0, place: 'hair', lifted: 0, wins: false }, next: { action: 'comb', step: 1 } });
+  expect(s).toMatchObject({ comb: { charge: 0, place: 'hair', lifted: 0, wins: false }, next: { action: 'comb', step: 1 } });
   await expect(frame.locator('.pvc-outcome')).toContainText('নেই');
 
   // step 1: a few strokes charge the comb fully; the action becomes step 2, bring it to the paper
@@ -50,22 +49,6 @@ test('electromagnetic-force: comb and paper in two steps, coil and magnet', asyn
   expect(s.comb).toMatchObject({ place: 'paper', charge: 0, lifted: 0, pull: 0, wins: false });
   expect(s.next).toMatchObject({ action: 'again', step: 1 }); // "১ চিরুনি দিয়ে চুল আঁচড়াও", not "আবার …"
 
-  // a step 2 cut short (the other example chosen while the comb comes down) offers step 2 again: down it comes
-  await fig.call('set', { again: true, animate: false });
-  await fig.call('set', { charge: 5 });
-  await act.click();
-  await fig.advance(1300);
-  await frame.locator('[data-example="magnet"]').click();
-  await fig.advance(300);
-  await frame.locator('[data-example="comb"]').click();
-  await fig.advance(800);
-  s = await fig.call('get');
-  expect(s.comb).toMatchObject({ place: 'paper', lifted: 0 });
-  expect(s.next).toMatchObject({ action: 'lower', step: 2, busy: false });
-  await act.click();
-  await fig.advance(3500);
-  expect((await fig.call('get')).comb).toMatchObject({ lifted: 7, wins: true, height: 60 });
-
   // held high, nothing jumps; lowered to its reach, it does
   await fig.call('set', { again: true, animate: false });
   await fig.call('set', { charge: 5 });
@@ -73,31 +56,6 @@ test('electromagnetic-force: comb and paper in two steps, coil and magnet', asyn
   expect(s.comb).toMatchObject({ lifted: 0, wins: false, reach: 45 });
   s = await fig.call('set', { place: 'paper', height: 30, animate: false });
   expect(s.comb.lifted).toBeGreaterThan(5);
-
-  // the magnets, from the row of words: step 1 switches on and the coil pulls the magnet in (unlike poles)
-  await frame.locator('[data-example="magnet"]').click();
-  await fig.advance(800);
-  s = await fig.call('get');
-  expect(s).toMatchObject({ scene: 'magnet', magnet: { on: false, facing: 'S', force: null }, next: { action: 'on', step: 1 } });
-  await act.click();
-  await fig.advance(2500);
-  s = await fig.call('get');
-  expect(s.magnet).toMatchObject({ on: true, force: 'attract', gap: 0, moving: false });
-  expect(s.next).toMatchObject({ action: 'flip', step: 2 });
-  // step 2 turns it round: like poles, it is pushed to the end of its track
-  await act.click();
-  await fig.advance(3000);
-  s = await fig.call('get');
-  expect(s.magnet).toMatchObject({ facing: 'N', force: 'repel', gap: 60, moving: false });
-  await expect(frame.locator('.pvc-outcome')).toContainText('বিকর্ষণ');
-  // turned back from the far end, the pull still brings it in: the range is infinite
-  await act.click();
-  await fig.advance(3500);
-  expect((await fig.call('get')).magnet).toMatchObject({ force: 'attract', gap: 0 });
-  await expect(frame.locator('.pvc-rule')).toContainText('পাল্লা অসীম');
-  // switched off, it stays where it is put
-  s = await fig.call('set', { on: false, gap: 25, animate: false });
-  expect(s.magnet).toMatchObject({ on: false, gap: 25, force: null });
 
   // the test hides the marker; leaving it brings the comb back
   await frame.locator('[data-mode="quiz"]').click();
@@ -108,6 +66,6 @@ test('electromagnetic-force: comb and paper in two steps, coil and magnet', asyn
 
   await fig.call('reset');
   await fig.advance(1000);
-  expect(await fig.call('get')).toMatchObject({ scene: 'comb', view: 'front', comb: { charge: 0, place: 'hair' }, magnet: { on: false } });
+  expect(await fig.call('get')).toMatchObject({ view: 'front', comb: { charge: 0, place: 'hair' } });
   expect(log.errors).toEqual([]);
 });

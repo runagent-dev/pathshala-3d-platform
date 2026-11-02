@@ -1,6 +1,6 @@
 /* Electromagnetic force: the page, the colours that carry meaning (the four forces as in the other figures of 3.2:
-   তড়িৎ চৌম্বক blue, মহাকর্ষ / মাধ্যাকর্ষণ purple, দুর্বল নিউক্লীয় green, সবল নিউক্লীয় orange; the magnet's poles as
-   painted: N red, S grey, not blue, which is the force's colour; the same as the 3D), the quiet strip of the four
+   তড়িৎ চৌম্বক blue, মহাকর্ষ / মাধ্যাকর্ষণ purple, দুর্বল নিউক্লীয় green, সবল নিউক্লীয় orange; the same as the 3D), the
+   quiet strip of the four
    forces, the honest note on the stage and the test's answers in words. The panel is the kit's clean sheet (one
    action, one result, one rule: ../../shared/lib/student/student.css, .pvc-examples, .pvc-act, .pvc-outcome,
    .pvc-rule). */
@@ -8,20 +8,16 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
 #app { position: fixed; inset: 0; }
 body.bg-transparent { background: transparent; }
 
-.pvc { --c-em: #1c7ed6; --c-grav: #7048e8; --c-weak: #2b8a3e; --c-strong: #e8590c; --c-n: #e03131; --c-s: #5c6670; }
+.pvc { --c-em: #1c7ed6; --c-grav: #7048e8; --c-weak: #2b8a3e; --c-strong: #e8590c }
 .pvc sup { font-size: 0.68em; line-height: 0; vertical-align: 0.52em; }
 .ef button { touch-action: manipulation; }
 
-/* the result line: the two pulls in their arrows' colours, the sign between them large; the force in the magnets */
+/* the result line: the two pulls in their arrows' colours, the sign between them large */
 .ef .pvc-outcome { white-space: nowrap; }
 .ef-em { color: var(--c-em); font-weight: 700; }
 .ef-grav { color: var(--c-grav); font-weight: 700; }
 .ef .pvc-outcome[data-k='pull'] b { color: var(--ink); padding: 0 2px; }
 .ef .pvc-outcome[data-k='charge'] b { color: var(--c-em); }
-.ef .pvc-outcome[data-k='magnet'] b { color: var(--c-em); }
-.ef-pole { display: inline-grid; place-items: center; min-width: 1.45em; height: 1.45em; padding: 0 2px; border-radius: 4px; color: #fff; font-size: 0.9em; font-weight: 700; line-height: 1; vertical-align: 0.05em; }
-.ef-pole.n { background: var(--c-n); }
-.ef-pole.s { background: var(--c-s); }
 
 /* the four fundamental forces, weakest to strongest, under the exact heading the four figures share: quiet words,
    this one marked by colour, weight and an underline (not colour alone) */
