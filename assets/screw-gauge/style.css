@@ -21,3 +21,6 @@ body.bg-transparent { background: transparent; }
 @container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
   .pvc-learn-extra { font-size: 12.5px; }
 }
+/* one order in every lab: the action (with the status) first, then the reading, the sum and the rule */
+.pvc-learn { justify-content: flex-start; }
+.pvc-learn > .pvc-learn-foot { order: -1; }
