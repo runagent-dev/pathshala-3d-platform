@@ -15,9 +15,6 @@ export const NUCLEUS = {
   Ba: { A: 141, Z: 56 },
   n: { A: 1, Z: 0 },
 };
-export const BULB_W = 100; // W: the bulb the energy is compared with
-export const YEAR_S = 365.25 * 24 * 3600;
-export const MASSES_G = [1, 10, 100, 1000]; // g: the fuel the student picks in the power-plant scene
 
 /** Round to n decimals without binary leftovers (0.1 + 0.2 → 0.3). */
 export const round = (x, n = 4) => +(Math.round(x * 10 ** n) / 10 ** n).toFixed(n);
@@ -34,20 +31,6 @@ export const energy = (kg) => kg * C * C;
 
 /** The energy (J) of one split, from the missing mass. */
 export const energyPerSplit = () => energy(reaction().defect * U_KG);
-
-/** How much of the uranium's own mass becomes energy when it splits (a fraction: 7.9 × 10⁻⁴, i.e. 0.079%). */
-export const fissionFraction = () => reaction().defect / MASS.U;
-
-/**
- * The fuel of the power-plant scene: `grams` of uranium-235, split (part 'fission') or, as the book's E = mc² says,
- * turned fully into energy (part 'full'). Returns the mass that becomes energy (kg), E (J) and how many years a
- * 100 W bulb would glow on it.
- */
-export function fuel(grams, part = 'fission') {
-  const kg = (grams / 1000) * (part === 'full' ? 1 : fissionFraction());
-  const E = energy(kg);
-  return { kg, E, years: E / BULB_W / YEAR_S };
-}
 
 /** Nuclei split in a chain reaction after `steps` steps when each split's three neutrons each split one more. */
 export const chainSplits = (steps) => (3 ** steps - 1) / 2;
@@ -66,28 +49,6 @@ export function sci(x, sig = 3) {
     e += 1;
   }
   return { m: String(+m.toPrecision(sig)), e };
-}
-
-/** Round to `sig` significant figures (for sentences: 22.56 → 23, 28 519 → 29 000). */
-export function sigRound(x, sig = 2) {
-  if (x === 0) return 0;
-  const e = Math.floor(Math.log10(Math.abs(x))) - sig + 1;
-  return e >= 0 ? Math.round(x / 10 ** e) * 10 ** e : round(x, -e);
-}
-
-/**
- * A whole number cut the way Bangladesh says big numbers: { crore, lakh, thousand, rest } (2 85 00 000 → 2 crore
- * 85 lakh). Crores are not split further (1 000 crore stays 1000 crore).
- */
-export function indianParts(n) {
-  let x = Math.round(n);
-  const crore = Math.floor(x / 1e7);
-  x -= crore * 1e7;
-  const lakh = Math.floor(x / 1e5);
-  x -= lakh * 1e5;
-  const thousand = Math.floor(x / 1e3);
-  x -= thousand * 1e3;
-  return { crore, lakh, thousand, rest: x };
 }
 
 /** Fisher–Yates shuffle (in place). */
