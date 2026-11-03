@@ -51,7 +51,7 @@ const TAP = { move: 10, ms: 600 };
 const FRAME = { min: new THREE.Vector3(-0.82, -0.35, -0.4), max: new THREE.Vector3(3.12, 1.78, 0.5) };
 /** Everything that casts a shadow, over the whole push-off on every ground: the shadow camera is fitted round it. */
 const CASTERS = new THREE.Box3(new THREE.Vector3(-0.75, -0.02, -0.32), new THREE.Vector3(1.3, 1.86, 0.32));
-const DIRS = { front: new THREE.Vector3(0, 0.16, 1).normalize(), '3d': new THREE.Vector3(0.62, 0.34, 1).normalize() };
+const DIRS = { front: new THREE.Vector3(0.4, 0.3, 1).normalize(), '3d': new THREE.Vector3(0.62, 0.34, 1).normalize() };
 
 /** Where the labels may go round their point (px, best first): rows of offsets, nearest row first. */
 const rows = (dys, dxs) => dys.flatMap((dy) => dxs.map((dx) => [dx, dy]));
