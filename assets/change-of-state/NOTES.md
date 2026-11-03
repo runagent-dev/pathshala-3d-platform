@@ -43,3 +43,5 @@ latent heats are not in that ratio and the figure does not claim they are.
 - The balloon "নিজে করো" at the top of p175: confirm it goes with the previous topic (thermal expansion of gases).
 - The spirit lamp, beaker and thermometer are not drawn in the book; they are the figure's own setting for ৬.০৮.
 - Evaporation (p177–178) is left for a second figure.
+
+- 0.2.0 polish: the page prints "(Liquification)" and "(Solidification)" in Latin letters; kept as in the book. Camera and chart moved closer so the chart is about 10% bigger on a phone.
