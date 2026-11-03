@@ -52,7 +52,7 @@ export const DEFAULTS = {
 const DOUBLE_TAP = 450; // ms
 const HEAT_SECONDS = 2.4;
 const VIEW_DIRS = {
-  front: new THREE.Vector3(0, 0.46, 1).normalize(),
+  front: new THREE.Vector3(0.38, 0.46, 1).normalize(),
   '3d': new THREE.Vector3(0.62, 0.52, 0.85).normalize(),
 };
 const LOOK_BOX = [new THREE.Vector3(-40, 0, -8), new THREE.Vector3(40, 47, 22)];
