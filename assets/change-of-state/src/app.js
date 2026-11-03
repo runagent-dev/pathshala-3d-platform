@@ -37,8 +37,8 @@ export const DEFAULTS = {
 
 const NBSP = ' ';
 const BOARD_AT = new THREE.Vector3(18.6, 13.4, -10.1); // the chart on the wall
-const FRONT = new THREE.Vector3(0, 0.3, 1).normalize();
-const SIDE = new THREE.Vector3(0.5, 0.42, 1).normalize();
+const FRONT = new THREE.Vector3(0.26, 0.32, 1).normalize();
+const SIDE = new THREE.Vector3(0.7, 0.5, 1).normalize();
 const SHOT = new THREE.Box3(new THREE.Vector3(-6.6, 0, -10.5), new THREE.Vector3(30.2, 25, 6)); // what the camera keeps in view
 
 const shuffle = (list) => {
