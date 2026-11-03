@@ -54,8 +54,8 @@ const IDS = /** @type {const} */ (['small', 'big']);
 const COLORS = { W: '#237a35', t: '#c2255c', P: '#862e9c', h: '#1c6fd9' };
 const PUMP_COLORS = { small: '#1f74c9', big: '#d4382c' };
 const PUMP_SIZE = { small: 1, big: 1.32 };
-const ELEVATION = 2; // degrees: the front view stands in the courtyard and looks up a little at the roof tanks
-const AZIMUTH = -9; // degrees: from a little to the left, so the pumps and tanks show their depth
+const ELEVATION = 11; // degrees: the front view looks from a little above, so the pumps, tanks and wall show depth
+const AZIMUTH = -20; // degrees: from the left, so the pumps and tanks show their sides
 const VIEW_3D = new THREE.Vector3(-0.55, 0.32, 0.9).normalize();
 
 /** A stopwatch drawn in SVG for a label (the font has no clock glyph); its hand at `sec` on a 60 s dial. */
