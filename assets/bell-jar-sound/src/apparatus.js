@@ -10,6 +10,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { GAUGE_MAX } from './reading.js';
+import { plainMap } from './setting.js';
 
 /** Where the parts are (m). */
 export const PLATE_Y = 0.05; // the steel plate's top, where the jar stands
@@ -82,16 +83,16 @@ function rng(seed) {
 
 /** A copper coil's winding: fine turns round a cylinder (u along the turns, v along the axis). */
 function windingTexture() {
-  return canvasTex(64, 256, (g, W, H) => {
+  return canvasTex(16, 128, (g, W, H) => {
     g.fillStyle = '#b0612e';
     g.fillRect(0, 0, W, H);
-    for (let y = 0; y < H; y += 4) {
-      const gr = g.createLinearGradient(0, y, 0, y + 4);
+    for (let y = 0; y < H; y += 2) {
+      const gr = g.createLinearGradient(0, y, 0, y + 2);
       gr.addColorStop(0, '#6e3110');
       gr.addColorStop(0.45, '#e9a06b');
       gr.addColorStop(1, '#7a3a16');
       g.fillStyle = gr;
-      g.fillRect(0, y, W, 4);
+      g.fillRect(0, y, W, 2);
     }
   });
 }
@@ -114,41 +115,41 @@ function turnedTexture() {
   });
 }
 
-/** Hammered paint (the base, the pump): a fine mottled bump. */
+/** Hammered paint (the base, the pump): a fine, low-contrast mottle, near white so it only tints the paint. */
 function hammeredTexture() {
   return canvasTex(
     256,
     256,
     (g, W, H) => {
       const r = rng(11);
-      g.fillStyle = '#808080';
+      g.fillStyle = '#e6e6e6';
       g.fillRect(0, 0, W, H);
-      for (let i = 0; i < 900; i++) {
+      for (let i = 0; i < 420; i++) {
         const x = r() * W;
         const y = r() * H;
         const rad = 2 + r() * 6;
         const gr = g.createRadialGradient(x, y, 0, x, y, rad);
-        const v = 100 + r() * 70;
-        gr.addColorStop(0, `rgba(${v},${v},${v},0.6)`);
-        gr.addColorStop(1, 'rgba(128,128,128,0)');
+        const v = 205 + r() * 50;
+        gr.addColorStop(0, `rgba(${v},${v},${v},0.5)`);
+        gr.addColorStop(1, 'rgba(230,230,230,0)');
         g.fillStyle = gr;
         g.fillRect(x - rad, y - rad, 2 * rad, 2 * rad);
       }
     },
-    { repeat: [3, 3], srgb: false },
+    { repeat: [3, 3] },
   );
 }
 
 /** The ground steel plate: fine circular lapping marks. */
 function lappedTexture() {
-  return canvasTex(512, 512, (g, W, H) => {
+  return canvasTex(256, 256, (g, W, H) => {
     g.fillStyle = '#b9bfc6';
     g.fillRect(0, 0, W, H);
     const r = rng(5);
-    for (let i = 0; i < 220; i++) {
+    for (let i = 0; i < 70; i++) {
       const rad = r() * W * 0.5;
       g.strokeStyle = `rgba(${r() < 0.5 ? '255,255,255' : '70,78,88'},${0.05 + r() * 0.08})`;
-      g.lineWidth = 0.6 + r() * 1.4;
+      g.lineWidth = 0.4 + r() * 0.9;
       g.beginPath();
       g.arc(W / 2, H / 2, rad, 0, Math.PI * 2);
       g.stroke();
@@ -194,62 +195,41 @@ function dialTexture(num, unit) {
   });
 }
 
-/** The materials of the apparatus. */
-export function apparatusMaterials(kit) {
+/**
+ * The materials of the apparatus. Only MeshStandardMaterial (never Physical: its shader is the slow one to compile on
+ * a phone), and as few kinds as possible: plain, textured, and transparent, so the renderer builds a handful of
+ * programs instead of one for every combination of bump, clearcoat and roughness map.
+ */
+export function apparatusMaterials() {
   const hammer = hammeredTexture();
+  const std = (name, color, metalness, roughness, extra = {}) =>
+    new THREE.MeshStandardMaterial({ name, color, metalness, roughness, map: plainMap, ...extra });
   return {
-    steel: kit.steel,
-    chrome: kit.chrome,
-    brass: kit.brass,
-    plate: new THREE.MeshPhysicalMaterial({ name: 'GroundSteel', map: lappedTexture(), metalness: 0.85, roughness: 0.36, clearcoat: 0.3 }),
-    base: new THREE.MeshStandardMaterial({ name: 'CastIron', color: '#34495e', metalness: 0.45, roughness: 0.55, bumpMap: hammer, bumpScale: 0.6 }),
-    pump: new THREE.MeshStandardMaterial({ name: 'PumpPaint', color: '#5b6f86', metalness: 0.4, roughness: 0.5, bumpMap: hammer, bumpScale: 0.5 }),
-    motor: new THREE.MeshStandardMaterial({ name: 'MotorBlack', color: '#24272c', metalness: 0.5, roughness: 0.45 }),
-    rubber: new THREE.MeshStandardMaterial({ name: 'Rubber', color: '#1c1d20', metalness: 0, roughness: 0.8 }),
-    hose: new THREE.MeshStandardMaterial({ name: 'Hose', color: '#3a3d42', metalness: 0, roughness: 0.62 }),
-    stopper: new THREE.MeshStandardMaterial({ name: 'RubberStopper', color: '#b4532a', metalness: 0, roughness: 0.75 }),
-    bakelite: new THREE.MeshPhysicalMaterial({ name: 'Bakelite', color: '#4a2a1c', metalness: 0, roughness: 0.32, clearcoat: 0.6 }),
-    iron: new THREE.MeshStandardMaterial({ name: 'SoftIron', color: '#5d6168', metalness: 0.85, roughness: 0.42 }),
-    coil: new THREE.MeshStandardMaterial({ name: 'CopperWinding', map: windingTexture(), metalness: 0.7, roughness: 0.32 }),
-    fibre: new THREE.MeshStandardMaterial({ name: 'FibreCap', color: '#26201c', metalness: 0, roughness: 0.6 }),
-    gong: new THREE.MeshStandardMaterial({
-      name: 'TurnedNickel',
-      map: turnedTexture(),
-      color: '#d3d7dc',
-      metalness: 0.85,
-      roughness: 0.42,
-      envMapIntensity: 0.8,
-    }),
-    gongRim: new THREE.MeshStandardMaterial({ name: 'NickelRim', color: '#9aa1a9', metalness: 0.9, roughness: 0.35 }),
-    red: new THREE.MeshStandardMaterial({ name: 'RedWire', color: '#c92a2a', metalness: 0, roughness: 0.5 }),
-    black: new THREE.MeshStandardMaterial({ name: 'BlackWire', color: '#212529', metalness: 0, roughness: 0.5 }),
-    lever: new THREE.MeshStandardMaterial({ name: 'ValveLever', color: '#d6336c', metalness: 0.1, roughness: 0.45 }),
-    battery: new THREE.MeshStandardMaterial({ name: 'BatteryBox', color: '#2b2f36', metalness: 0.1, roughness: 0.55 }),
-    cell: new THREE.MeshStandardMaterial({ name: 'Cell', color: '#e8930c', metalness: 0.3, roughness: 0.4 }),
-    needle: new THREE.MeshStandardMaterial({ name: 'Needle', color: '#c2255c', metalness: 0.2, roughness: 0.4 }),
-    glass: new THREE.MeshPhysicalMaterial({
-      name: 'Glass',
-      color: '#e6f4ff',
-      metalness: 0,
-      roughness: 0.04,
-      transparent: true,
-      opacity: 0.16,
-      depthWrite: false,
-      side: THREE.DoubleSide,
-      envMapIntensity: 1.6,
-      specularIntensity: 1,
-    }),
-    glassEdge: new THREE.MeshPhysicalMaterial({
-      name: 'GlassEdge',
-      color: '#d4ecfa',
-      metalness: 0,
-      roughness: 0.05,
-      transparent: true,
-      opacity: 0.55,
-      depthWrite: false,
-      envMapIntensity: 2,
-    }),
-    light: new THREE.MeshStandardMaterial({ name: 'PumpLight', color: '#2b3a2e', emissive: '#000000', roughness: 0.3 }),
+    steel: std('Steel', '#cfd4da', 1, 0.42),
+    chrome: std('Chrome', '#f2f4f7', 1, 0.1),
+    brass: std('Brass', '#d7a94b', 1, 0.3),
+    plate: std('GroundSteel', '#ffffff', 0.85, 0.34, { map: lappedTexture() }),
+    base: std('CastIron', '#3a5169', 0.4, 0.55, { map: hammer }),
+    pump: std('PumpPaint', '#62778f', 0.35, 0.5, { map: hammer }),
+    motor: std('MotorBlack', '#24272c', 0.5, 0.45),
+    rubber: std('Rubber', '#1c1d20', 0, 0.8),
+    hose: std('Hose', '#3a3d42', 0, 0.62),
+    stopper: std('RubberStopper', '#b4532a', 0, 0.75),
+    bakelite: std('Bakelite', '#4a2a1c', 0, 0.26),
+    iron: std('SoftIron', '#5d6168', 0.85, 0.42),
+    coil: std('CopperWinding', '#ffffff', 0.7, 0.32, { map: windingTexture() }),
+    fibre: std('FibreCap', '#26201c', 0, 0.6),
+    gong: std('TurnedNickel', '#d3d7dc', 0.85, 0.42, { map: turnedTexture() }),
+    gongRim: std('NickelRim', '#9aa1a9', 0.9, 0.35),
+    red: std('RedWire', '#c92a2a', 0, 0.5),
+    black: std('BlackWire', '#212529', 0, 0.5),
+    lever: std('ValveLever', '#d6336c', 0.1, 0.45),
+    battery: std('BatteryBox', '#2b2f36', 0.1, 0.55),
+    cell: std('Cell', '#e8930c', 0.3, 0.4),
+    needle: std('Needle', '#c2255c', 0.2, 0.4),
+    glass: std('Glass', '#e6f4ff', 0, 0.04, { transparent: true, opacity: 0.16, depthWrite: false, envMapIntensity: 1.6 }),
+    glassEdge: std('GlassEdge', '#d4ecfa', 0, 0.05, { transparent: true, opacity: 0.55, depthWrite: false, envMapIntensity: 2 }),
+    light: std('PumpLight', '#2b3a2e', 0, 0.3, { emissive: '#000000' }),
   };
 }
 
@@ -281,11 +261,11 @@ function jarProfile(offset = 0) {
   const R = r + offset;
   const pts = [V2(R + 0.013, 0), V2(R + 0.013, 0.012), V2(R, 0.018)];
   const shoulder = h - 0.075;
-  for (let i = 0; i <= 8; i++) pts.push(V2(R, 0.018 + ((shoulder - 0.018) * i) / 8));
+  for (let i = 0; i <= 3; i++) pts.push(V2(R, 0.018 + ((shoulder - 0.018) * i) / 3));
   // a dome from the wall to the neck (a quarter ellipse)
   const dr = R - (neckR + offset);
-  for (let i = 1; i <= 14; i++) {
-    const a = (i / 14) * (Math.PI / 2);
+  for (let i = 1; i <= 10; i++) {
+    const a = (i / 10) * (Math.PI / 2);
     pts.push(V2(neckR + offset + dr * Math.cos(a), shoulder + 0.05 * Math.sin(a)));
   }
   pts.push(V2(neckR + offset, h - 0.006), V2(neckR + offset + 0.004, h - 0.003), V2(neckR + offset + 0.004, h));
@@ -301,26 +281,26 @@ function createJar(m) {
   // one closed profile: outside up, inside down
   const prof = [...pts, ...inner.slice(2).reverse()];
   prof.push(V2(JAR.r - JAR.wall, 0), V2(JAR.r + 0.013, 0));
-  const glass = mesh(new THREE.LatheGeometry(prof, 64), m.glass, 'Glass');
+  const glass = mesh(new THREE.LatheGeometry(prof, 56), m.glass, 'Glass');
   glass.renderOrder = 4;
   g.add(glass);
-  const rim = mesh(new THREE.LatheGeometry(pts, 64), fresnelMaterial(), 'GlassRim');
+  const rim = mesh(new THREE.LatheGeometry(pts, 56), fresnelMaterial(), 'GlassRim');
   rim.renderOrder = 5;
   rim.userData.noExport = true;
   g.add(rim);
-  const flange = mesh(new THREE.TorusGeometry(JAR.r + 0.008, 0.0065, 8, 64), m.glassEdge, 'Flange');
+  const flange = mesh(new THREE.TorusGeometry(JAR.r + 0.008, 0.0065, 8, 56), m.glassEdge, 'Flange');
   flange.rotation.x = Math.PI / 2;
   flange.position.y = 0.008;
   flange.scale.z = 0.9;
   flange.renderOrder = 4;
   g.add(flange);
-  const lip = mesh(new THREE.TorusGeometry(JAR.neckR + 0.003, 0.003, 8, 40), m.glassEdge, 'Lip');
+  const lip = mesh(new THREE.TorusGeometry(JAR.neckR + 0.003, 0.003, 6, 32), m.glassEdge, 'Lip');
   lip.rotation.x = Math.PI / 2;
   lip.position.y = JAR.h - 0.002;
   lip.renderOrder = 4;
   g.add(lip);
   // the rubber stopper: a taper in the neck, its top above the lip
-  const stopper = mesh(new THREE.CylinderGeometry(JAR.neckR + 0.004, JAR.neckR - 0.004, 0.04, 28), m.stopper, 'Stopper');
+  const stopper = mesh(new THREE.CylinderGeometry(JAR.neckR + 0.004, JAR.neckR - 0.004, 0.04, 24), m.stopper, 'Stopper');
   stopper.position.y = JAR.h + 0.008;
   g.add(stopper);
   g.position.y = PLATE_Y;
@@ -336,7 +316,7 @@ function createPlate(m) {
   base.castShadow = base.receiveShadow = true;
   g.add(base);
   // a bevelled top edge on the base
-  const bevel = mesh(new THREE.CylinderGeometry(0.162, 0.168, 0.006, 48), m.base, 'BaseCollar');
+  const bevel = mesh(new THREE.CylinderGeometry(0.162, 0.168, 0.006, 40), m.base, 'BaseCollar');
   bevel.position.y = 0.039;
   g.add(bevel);
   for (const [x, z] of [
@@ -349,11 +329,11 @@ function createPlate(m) {
     foot.position.set(x, 0.003, z);
     g.add(foot);
   }
-  const disc = mesh(new THREE.CylinderGeometry(0.15, 0.15, PLATE_Y - 0.042, 64), [m.steel, m.plate, m.steel], 'Plate');
+  const disc = mesh(new THREE.CylinderGeometry(0.15, 0.15, PLATE_Y - 0.042, 56), [m.steel, m.plate, m.steel], 'Plate');
   disc.position.y = (PLATE_Y + 0.042) / 2;
   disc.receiveShadow = true;
   g.add(disc);
-  const seal = mesh(new THREE.TorusGeometry(JAR.r + 0.006, 0.0042, 8, 64), m.rubber, 'Seal');
+  const seal = mesh(new THREE.TorusGeometry(JAR.r + 0.006, 0.0042, 6, 56), m.rubber, 'Seal');
   seal.rotation.x = Math.PI / 2;
   seal.position.y = PLATE_Y + 0.001;
   seal.scale.z = 0.6;
@@ -371,7 +351,7 @@ function createPlate(m) {
 /** A tube along points (a pipe, a wire, the hose). */
 function tube(points, r, mat, name, seg = 48) {
   const curve = new THREE.CatmullRomCurve3(points, false, 'centripetal');
-  return mesh(new THREE.TubeGeometry(curve, seg, r, 10, false), mat, name);
+  return mesh(new THREE.TubeGeometry(curve, seg, r, 8, false), mat, name);
 }
 
 /**
@@ -456,24 +436,24 @@ function createBell(m) {
   g.add(arm);
   const dome = [];
   const { r, depth } = GONG;
-  for (let i = 0; i <= 18; i++) {
-    const a = (i / 18) * (Math.PI / 2);
+  for (let i = 0; i <= 12; i++) {
+    const a = (i / 12) * (Math.PI / 2);
     dome.push(V2(Math.max(1e-4, r * Math.sin(a)), depth * Math.cos(a)));
   }
   dome.push(V2(r - 0.003, -0.002));
-  for (let i = 18; i >= 0; i--) {
-    const a = (i / 18) * (Math.PI / 2);
+  for (let i = 12; i >= 0; i--) {
+    const a = (i / 12) * (Math.PI / 2);
     dome.push(V2(Math.max(1e-4, (r - 0.003) * Math.sin(a)), (depth - 0.003) * Math.cos(a) - 0.002));
   }
   const gong = new THREE.Group();
   gong.name = 'Gong';
   gong.position.set(GONG.x, GONG.y, GONG.z - 0.004);
   g.add(gong);
-  const shell = mesh(new THREE.LatheGeometry(dome, 56), m.gong, 'GongDome');
+  const shell = mesh(new THREE.LatheGeometry(dome, 44), m.gong, 'GongDome');
   shell.rotation.x = Math.PI / 2;
   shell.castShadow = true;
   gong.add(shell);
-  const rim = mesh(new THREE.TorusGeometry(r - 0.0005, 0.0022, 10, 56), m.gongRim, 'GongRim');
+  const rim = mesh(new THREE.TorusGeometry(r - 0.0005, 0.0022, 8, 44), m.gongRim, 'GongRim');
   gong.add(rim);
   const boss = mesh(new THREE.CylinderGeometry(0.008, 0.0095, 0.004, 28), m.gongRim, 'GongBoss');
   boss.rotation.x = Math.PI / 2;
@@ -505,7 +485,7 @@ function createBell(m) {
   stem.rotation.x = Math.PI / 2;
   stem.position.set(0, -rodLen, ballZ / 2);
   pivot.add(stem);
-  const knob = mesh(new THREE.SphereGeometry(BALL_R, 22, 16), m.brass, 'HammerBall');
+  const knob = mesh(new THREE.SphereGeometry(BALL_R, 18, 12), m.brass, 'HammerBall');
   knob.position.set(0, -rodLen, ballZ);
   pivot.add(knob);
   // the flat spring above the hinge and its block; the contact screw on its pillar touching the armature
@@ -561,16 +541,16 @@ function createGaugeAndValve(m, num, unit, dir) {
   head.position.set(GAUGE.x, GAUGE.y, GAUGE.z);
   head.rotation.y = Math.atan2(dir.x, dir.z) * 0.85;
   g.add(head);
-  const caseGeo = new THREE.CylinderGeometry(GAUGE.r + 0.004, GAUGE.r + 0.004, 0.022, 48);
+  const caseGeo = new THREE.CylinderGeometry(GAUGE.r + 0.004, GAUGE.r + 0.004, 0.022, 40);
   const gcase = mesh(caseGeo, m.chrome, 'GaugeCase');
   gcase.rotation.x = Math.PI / 2;
   gcase.castShadow = true;
   head.add(gcase);
-  const bezel = mesh(new THREE.TorusGeometry(GAUGE.r + 0.002, 0.003, 10, 48), m.chrome, 'Bezel');
+  const bezel = mesh(new THREE.TorusGeometry(GAUGE.r + 0.002, 0.003, 8, 40), m.chrome, 'Bezel');
   bezel.position.z = 0.011;
   head.add(bezel);
   const dial = mesh(
-    new THREE.CircleGeometry(GAUGE.r, 48),
+    new THREE.CircleGeometry(GAUGE.r, 40),
     new THREE.MeshStandardMaterial({ name: 'Dial', map: dialTexture(num, unit), roughness: 0.6 }),
     'Dial',
   );
@@ -591,7 +571,7 @@ function createGaugeAndValve(m, num, unit, dir) {
   hub.rotation.x = Math.PI / 2;
   hub.position.z = 0.001;
   needle.add(hub);
-  const lens = mesh(new THREE.CircleGeometry(GAUGE.r + 0.001, 48), m.glass, 'GaugeGlass');
+  const lens = mesh(new THREE.CircleGeometry(GAUGE.r + 0.001, 40), m.glass, 'GaugeGlass');
   lens.position.z = 0.0142;
   lens.renderOrder = 4;
   head.add(lens);
@@ -633,20 +613,20 @@ function createPump(m) {
   blockTop.rotation.y = Math.PI / 2;
   blockTop.position.set(-0.07, 0.122, 0);
   g.add(blockTop);
-  const motor = mesh(new THREE.CylinderGeometry(0.052, 0.052, 0.13, 32), m.motor, 'Motor');
+  const motor = mesh(new THREE.CylinderGeometry(0.052, 0.052, 0.13, 28), m.motor, 'Motor');
   motor.rotation.z = Math.PI / 2;
   motor.position.set(0.05, 0.068, 0);
   motor.castShadow = true;
   g.add(motor);
   const ribs = [];
   for (let i = 0; i < 9; i++) {
-    const rib = new THREE.TorusGeometry(0.053, 0.0025, 6, 32);
+    const rib = new THREE.TorusGeometry(0.053, 0.0025, 5, 28);
     rib.rotateY(Math.PI / 2);
     rib.translate(0.0 + i * 0.012, 0.068, 0);
     ribs.push(rib);
   }
   g.add(mesh(mergeGeometries(ribs), m.motor, 'MotorFins'));
-  const fan = mesh(new THREE.CylinderGeometry(0.05, 0.054, 0.03, 32), m.pump, 'FanCover');
+  const fan = mesh(new THREE.CylinderGeometry(0.05, 0.054, 0.03, 28), m.pump, 'FanCover');
   fan.rotation.z = Math.PI / 2;
   fan.position.set(0.13, 0.068, 0);
   g.add(fan);
@@ -697,6 +677,39 @@ function createBattery(m) {
   g.rotation.y = 0.35;
   g.updateMatrixWorld(true);
   return { root: g, left: g.localToWorld(new THREE.Vector3(-0.05, 0.03, 0)), right: g.localToWorld(new THREE.Vector3(0.05, 0.03, 0)) };
+}
+
+/**
+ * Merges the apparatus's still, opaque, indexed meshes into one mesh per material (and shadow flags), baked into the
+ * root's frame: a hundred small parts become about twenty draw calls. What moves (the hammer, the needle, the valve
+ * lever), what is transparent, textured on several faces or drawn in a set order stays as it is.
+ */
+function mergeStatic(root, moving) {
+  root.updateMatrixWorld(true);
+  const inv = new THREE.Matrix4().copy(root.matrixWorld).invert();
+  const bins = new Map();
+  const m4 = new THREE.Matrix4();
+  root.traverse((o) => {
+    const mat = /** @type {THREE.MeshStandardMaterial} */ (o.material);
+    if (!o.isMesh || Array.isArray(mat) || !mat.isMeshStandardMaterial || mat.transparent || o.renderOrder || !o.geometry.index) return;
+    for (let p = o; p; p = p.parent) if (moving.includes(p)) return;
+    const key = `${mat.uuid}|${+o.castShadow}${+o.receiveShadow}`;
+    if (!bins.has(key)) bins.set(key, { mat, cast: o.castShadow, receive: o.receiveShadow, parts: [], meshes: [] });
+    const bin = bins.get(key);
+    const g = o.geometry.clone();
+    for (const name of Object.keys(g.attributes)) if (!['position', 'normal', 'uv'].includes(name)) g.deleteAttribute(name);
+    g.applyMatrix4(m4.multiplyMatrices(inv, o.matrixWorld));
+    bin.parts.push(g);
+    bin.meshes.push(o);
+  });
+  for (const { mat, cast, receive, parts, meshes } of bins.values()) {
+    const merged = mesh(mergeGeometries(parts), mat, mat.name);
+    merged.castShadow = cast;
+    merged.receiveShadow = receive;
+    root.add(merged);
+    for (const o of meshes) o.removeFromParent();
+    for (const g of parts) g.dispose();
+  }
 }
 
 /**
@@ -752,9 +765,10 @@ export function createApparatus(m, { num, unit, dir }) {
       new THREE.Vector3(end.x + 0.01, end.y + 0.04, end.z),
       end,
     ];
-    const w = tube(pts, 0.0013, mat, 'Wire', 96);
+    const w = tube(pts, 0.0013, mat, 'Wire', 56);
     root.add(w);
   }
+  mergeStatic(root, [bell.hammer, gv.needle, gv.lever]);
   return {
     root,
     jar,

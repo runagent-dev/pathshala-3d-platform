@@ -1,20 +1,17 @@
-// The setting, in metres (the bench top is y = 0): a soft dusk-plum backdrop (screen space) and a lab bench of dark
-// oiled iroko with a rounded front edge; the bench's far part fades into the backdrop. Nothing else: no shelves or
-// props. Procedural, no image files.
+// The setting, in metres (the bench top is y = 0): a calm light backdrop (blue-grey above, warm grey low, in screen
+// space, like the chapter's other figures) and a lab bench of pale oak boards with a rounded front edge; the bench's far
+// part fades into the backdrop (the fade is in the texture's alpha). Nothing else: no shelves or props. Procedural, no
+// image files; one 1024×512 texture, made once, not repeated.
 import * as THREE from 'three';
 
-function canvasTex(w, h, draw, { repeat = null } = {}) {
+function canvasTex(w, h, draw) {
   const c = document.createElement('canvas');
   c.width = w;
   c.height = h;
   draw(/** @type {CanvasRenderingContext2D} */ (c.getContext('2d')), w, h);
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
-  if (repeat) {
-    t.wrapS = t.wrapT = THREE.RepeatWrapping;
-    t.repeat.set(repeat[0], repeat[1]);
-  }
-  t.anisotropy = 8;
+  t.anisotropy = 4;
   return t;
 }
 
@@ -26,60 +23,83 @@ function rng(seed) {
   };
 }
 
-/** The backdrop: a deep slate-plum at the top to a warm dusky rose low down. */
+/**
+ * One white 1×1 map, shared by every material that has no picture of its own: with a map on all of them, the opaque
+ * parts share one shader program and the transparent ones another (two to compile instead of four; the compile is
+ * what makes the first picture slow on a phone).
+ */
+export const plainMap = (() => {
+  const t = new THREE.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1);
+  t.name = 'Plain';
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.needsUpdate = true;
+  return t;
+})();
+
+/** The backdrop: soft blue-grey at the top to a warm light grey low down. */
 export function backdropTexture() {
   return canvasTex(4, 256, (g) => {
     const s = g.createLinearGradient(0, 0, 0, 256);
-    s.addColorStop(0, '#2c2f4a');
-    s.addColorStop(0.45, '#4a4566');
-    s.addColorStop(0.8, '#7b6a83');
-    s.addColorStop(1, '#8e7b8c');
+    s.addColorStop(0, '#8ea6bd');
+    s.addColorStop(0.45, '#b4c4d2');
+    s.addColorStop(0.8, '#d7d6d0');
+    s.addColorStop(1, '#ddd7cb');
     g.fillStyle = s;
     g.fillRect(0, 0, 4, 256);
   });
 }
 
-/** Oiled iroko planks, seen from above, running left to right. */
-function iroko() {
-  return canvasTex(
-    1024,
-    512,
-    (ctx, W, H) => {
-      const r = rng(17);
-      const rows = 5;
-      for (let p = 0; p < rows; p++) {
-        const y0 = (p * H) / rows;
-        ctx.fillStyle = `hsl(${24 + r() * 5}, ${38 + r() * 8}%, ${27 + r() * 5}%)`;
-        ctx.fillRect(0, y0, W, H / rows);
-        for (let i = 0; i < 22; i++) {
-          const y = y0 + r() * (H / rows);
-          ctx.strokeStyle = `rgba(${r() < 0.3 ? '190,120,70' : '40,18,6'},${0.08 + r() * 0.18})`;
-          ctx.lineWidth = 0.6 + r() * 1.8;
+/**
+ * Pale oak boards seen from above, running left to right, with butt joints and fine grain; the far part fades to
+ * nothing (alpha), the top of the picture being the far side of the bench.
+ */
+function oakTop() {
+  return canvasTex(1024, 512, (ctx, W, H) => {
+    const r = rng(17);
+    const rows = 11;
+    const rh = H / rows;
+    for (let p = 0; p < rows; p++) {
+      const y0 = p * rh;
+      // each board is cut in two lengths, so the joints do not line up
+      const cut = W * (0.25 + r() * 0.5);
+      for (const [x0, x1] of [
+        [0, cut],
+        [cut, W],
+      ]) {
+        ctx.fillStyle = `hsl(${31 + r() * 4}, ${26 + r() * 8}%, ${45 + r() * 7}%)`;
+        ctx.fillRect(x0, y0, x1 - x0, rh);
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(x0, y0, x1 - x0, rh);
+        ctx.clip();
+        for (let i = 0; i < 16; i++) {
+          const y = y0 + r() * rh;
+          ctx.strokeStyle = r() < 0.35 ? `rgba(255,236,205,${0.1 + r() * 0.12})` : `rgba(96,62,32,${0.1 + r() * 0.2})`;
+          ctx.lineWidth = 0.5 + r() * 1.1;
           ctx.beginPath();
           const ph = r() * 6;
-          for (let x = 0; x <= W; x += 16) {
-            const yy = y + Math.sin(x * 0.006 + ph) * 3 + Math.sin(x * 0.02 + i) * 0.8;
-            x ? ctx.lineTo(x, yy) : ctx.moveTo(x, yy);
+          const am = 1 + r() * 2.2;
+          for (let x = x0; x <= x1 + 12; x += 12) {
+            const yy = y + Math.sin(x * 0.007 + ph) * am + Math.sin(x * 0.03 + i) * 0.5;
+            if (x === x0) ctx.moveTo(x, yy);
+            else ctx.lineTo(x, yy);
           }
           ctx.stroke();
         }
-        ctx.fillStyle = 'rgba(20,8,2,0.55)';
-        ctx.fillRect(0, y0, W, 2);
+        ctx.restore();
+        ctx.fillStyle = 'rgba(70,44,22,0.5)';
+        ctx.fillRect(x0, y0, 1, rh);
       }
-    },
-    { repeat: [2, 1.4] },
-  );
-}
-
-/** How the bench fades into the backdrop far behind (alpha). */
-function fadeAlpha() {
-  return canvasTex(4, 256, (g) => {
-    const s = g.createLinearGradient(0, 0, 0, 256);
-    s.addColorStop(0, '#000');
-    s.addColorStop(0.35, '#fff');
-    s.addColorStop(1, '#fff');
-    g.fillStyle = s;
-    g.fillRect(0, 0, 4, 256);
+      ctx.fillStyle = 'rgba(70,44,22,0.55)';
+      ctx.fillRect(0, y0, W, 1.5);
+    }
+    // the far part fades into the backdrop
+    ctx.globalCompositeOperation = 'destination-out';
+    const fade = ctx.createLinearGradient(0, 0, 0, H * 0.42);
+    fade.addColorStop(0, 'rgba(0,0,0,1)');
+    fade.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = fade;
+    ctx.fillRect(0, 0, W, H * 0.42);
   });
 }
 
@@ -87,10 +107,9 @@ export function createSetting() {
   const root = new THREE.Group();
   root.name = 'Setting';
   root.userData.noExport = true;
-  const wood = iroko();
   const top = new THREE.Mesh(
     new THREE.PlaneGeometry(3.2, 1.8),
-    new THREE.MeshStandardMaterial({ name: 'BenchTop', map: wood, alphaMap: fadeAlpha(), transparent: true, roughness: 0.55, metalness: 0 }),
+    new THREE.MeshStandardMaterial({ name: 'BenchTop', map: oakTop(), transparent: true, roughness: 0.62, metalness: 0 }),
   );
   top.rotation.x = -Math.PI / 2;
   top.position.set(0.1, 0, -0.35);
@@ -100,7 +119,7 @@ export function createSetting() {
   // the bench's rounded front edge and its face
   const edge = new THREE.Mesh(
     new THREE.CylinderGeometry(0.02, 0.02, 3.2, 16, 1, false, 0, Math.PI),
-    new THREE.MeshStandardMaterial({ name: 'BenchEdge', map: wood, color: '#d9c6b8', roughness: 0.5 }),
+    new THREE.MeshStandardMaterial({ name: 'BenchEdge', map: plainMap, color: '#a97f55', roughness: 0.55 }),
   );
   edge.rotation.z = Math.PI / 2;
   edge.rotation.x = Math.PI;
@@ -108,7 +127,7 @@ export function createSetting() {
   root.add(edge);
   const face = new THREE.Mesh(
     new THREE.PlaneGeometry(3.2, 0.5),
-    new THREE.MeshStandardMaterial({ name: 'BenchFace', color: '#3d2416', roughness: 0.7 }),
+    new THREE.MeshStandardMaterial({ name: 'BenchFace', map: plainMap, color: '#8a6643', roughness: 0.7 }),
   );
   face.position.set(0.1, -0.27, 0.57);
   root.add(face);

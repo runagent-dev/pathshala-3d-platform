@@ -10,9 +10,9 @@ import * as THREE from 'three';
 import { BALL_R, BELL, GONG, GONG_W, JAR, PLATE_Y, STRIKE_W, worldToBell } from './apparatus.js';
 
 /** How many air particles a full jar shows. */
-export const PARTICLES = 380;
+export const PARTICLES = 900;
 /** The rings: how fast they spread (m/s, slowed), how far they go (m), their half width (m), how many at once. */
-export const RING = { speed: 0.24, reach: 0.25, width: 0.0028, count: 10 };
+export const RING = { speed: 0.24, reach: 0.25, width: 0.0016, count: 10 };
 
 function rng(seed) {
   let s = seed >>> 0;
@@ -44,7 +44,11 @@ function inJar(x, y, z) {
   return true;
 }
 
-/** The air particles: an instanced mesh; `update(f, time)` shows the share f of them, jiggling. */
+/**
+ * The air particles: one instanced mesh of small camera-facing beads (a soft, slightly translucent, slate-blue disc with
+ * a pale highlight, so it shows on a light backdrop as well as against the bell). Each jiggles about its place in the
+ * vertex shader, so a frame costs one draw call and no matrices are rewritten. `update(f, time)` shows the share f.
+ */
 export function createAir() {
   const r = rng(29);
   const base = [];
@@ -52,38 +56,65 @@ export function createAir() {
     const x = (r() * 2 - 1) * JAR.r;
     const z = (r() * 2 - 1) * JAR.r;
     const y = PLATE_Y + r() * JAR.h;
-    if (inJar(x, y, z)) base.push({ x, y, z, p: r() * 6.283, q: r() * 6.283, w: 1.6 + r() * 2.2, s: 0.8 + r() * 0.5 });
+    if (inJar(x, y, z)) base.push({ x, y, z, s: 0.75 + r() * 0.55 });
   }
-  const geo = new THREE.IcosahedronGeometry(0.0022, 1);
-  const mat = new THREE.MeshStandardMaterial({ name: 'AirParticle', color: '#f1f3f5', emissive: '#8fa3b8', emissiveIntensity: 0.35, roughness: 0.5 });
-  const mesh = new THREE.InstancedMesh(geo, mat, PARTICLES);
+  const mat = new THREE.ShaderMaterial({
+    name: 'AirMolecule',
+    transparent: true,
+    depthWrite: false,
+    uniforms: {
+      radius: { value: 0.002 },
+      time: { value: 0 },
+      amp: { value: 0.0035 },
+      tint: { value: new THREE.Color(0.2, 0.34, 0.45) },
+      shine: { value: new THREE.Color(0.72, 0.84, 0.92) },
+      alpha: { value: 0.7 },
+    },
+    vertexShader: `uniform float radius; uniform float time; uniform float amp; varying vec2 vP;
+      void main() {
+        vP = position.xy;
+        vec3 c = (modelMatrix * instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
+        float k = dot(c, vec3(311.7, 127.1, 523.3));
+        float w = 1.6 + 2.2 * fract(sin(k) * 43758.5453);
+        float a = time * w + k;
+        c += amp * vec3(sin(a), sin(a * 1.3 + 2.0), cos(a * 0.9 + 1.0));
+        vec4 mv = viewMatrix * vec4(c, 1.0);
+        mv.xy += position.xy * radius * length(instanceMatrix[0].xyz);
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: `uniform vec3 tint; uniform vec3 shine; uniform float alpha; varying vec2 vP;
+      void main() {
+        float d = length(vP);
+        if (d > 1.0) discard;
+        float h = clamp(1.0 - length(vP - vec2(-0.3, 0.35)) * 0.95, 0.0, 1.0);
+        vec3 c = mix(tint, shine, h * h);
+        gl_FragColor = vec4(c, alpha * (1.0 - smoothstep(0.7, 1.0, d)));
+      }`,
+  });
+  const mesh = new THREE.InstancedMesh(new THREE.PlaneGeometry(2, 2), mat, PARTICLES);
   mesh.name = 'AirParticles';
   mesh.userData.noExport = true;
   mesh.frustumCulled = false;
   mesh.renderOrder = 1;
   const m4 = new THREE.Matrix4();
-  const amp = 0.003;
+  base.forEach((b, i) => {
+    m4.makeScale(b.s, b.s, b.s).setPosition(b.x, b.y, b.z);
+    mesh.setMatrixAt(i, m4);
+  });
+  mesh.instanceMatrix.needsUpdate = true;
   return {
     mesh,
     /** f: the share of air left (0–1); time in s. The particles kept are spread through the jar (a random order). */
     update(f, time) {
-      const n = Math.round(PARTICLES * Math.max(0, Math.min(1, f)));
-      mesh.count = n;
-      for (let i = 0; i < n; i++) {
-        const b = base[i];
-        const a = time * b.w;
-        m4.makeScale(b.s, b.s, b.s);
-        m4.setPosition(b.x + amp * Math.sin(a + b.p), b.y + amp * Math.sin(a * 1.3 + b.q), b.z + amp * Math.cos(a * 0.9 + b.p + b.q));
-        mesh.setMatrixAt(i, m4);
-      }
-      mesh.instanceMatrix.needsUpdate = true;
+      mesh.count = Math.round(PARTICLES * Math.max(0, Math.min(1, f)));
+      mat.uniforms.time.value = time;
     },
   };
 }
 
 /**
- * One ring as a shader on a camera-facing square: a band of a fixed width in metres at radius R, dark teal in a thin
- * white outline, with a light teal rarefaction just inside it. The square is sized to the ring every frame.
+ * One ring as a shader on a camera-facing square: a thin teal line of a fixed width in metres at radius R, a faint pale
+ * outline on both sides and a lighter, softer band just inside it (the rarefaction behind each compression).
  */
 function ringMaterial() {
   return new THREE.ShaderMaterial({
@@ -96,14 +127,14 @@ function ringMaterial() {
     fragmentShader: `varying vec2 vP; uniform float R; uniform float W; uniform float opacity;
       void main() {
         float x = (length(vP) - R) / W;
-        float core = 1.0 - smoothstep(0.7, 1.0, abs(x));
-        float edge = (1.0 - smoothstep(1.25, 1.5, abs(x))) * (1.0 - core);
-        float rare = smoothstep(-5.0, -3.0, x) * (1.0 - smoothstep(-2.2, -1.4, x));
-        vec3 dark = vec3(0.031, 0.392, 0.455);
-        vec3 light = vec3(0.6, 0.914, 0.949);
-        vec3 c = dark * core + vec3(1.0) * edge + light * rare * max(0.0, 1.0 - core - edge);
-        float a = max(core, max(edge * 0.95, rare * 0.4));
+        float core = exp(-x * x * 1.6);
+        float outline = smoothstep(0.9, 1.9, abs(x)) * (1.0 - smoothstep(1.9, 3.0, abs(x)));
+        float rare = smoothstep(-9.0, -3.0, x) * (1.0 - smoothstep(-3.0, -1.2, x));
+        float wc = core * 0.92;
+        float wp = max(outline * 0.4, rare * 0.2);
+        float a = max(wc, wp);
         if (a < 0.01) discard;
+        vec3 c = mix(vec3(0.82, 0.95, 0.97), vec3(0.05, 0.47, 0.57), wc / (wc + wp + 1e-4));
         gl_FragColor = vec4(c, a * opacity);
       }`,
   });
@@ -162,14 +193,14 @@ export function createRings() {
         }
         r.mesh.visible = true;
         r.mesh.quaternion.copy(camera.quaternion);
-        const size = rad + RING.width * 2;
+        const size = rad + RING.width * 3.5;
         r.mesh.scale.setScalar(size);
         const u = r.mesh.material.uniforms;
         u.R.value = rad;
         u.size.value = size;
-        // full strength through the jar and the glass, fading only over the last third of the way
-        const fade = Math.min(1, (RING.reach - rad) / (RING.reach * 0.35));
-        u.opacity.value = 0.85 * strength * fade;
+        // strong at the gong, thinning out with the distance, gone at the end of the reach
+        const fade = Math.max(0, (RING.reach - rad) / (RING.reach - GONG.r * 1.4)) ** 1.3;
+        u.opacity.value = 0.9 * strength * fade;
       }
     },
   };

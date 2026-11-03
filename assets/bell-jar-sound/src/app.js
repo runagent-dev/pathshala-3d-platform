@@ -11,7 +11,6 @@ import { createTweener } from '@shared/tween.js';
 import { createAudio } from '@shared/student/audio.js';
 import { createAnnotations } from '@shared/student/annotations.js';
 import { ICONS } from '@shared/student/icons.js';
-import { createMaterials } from '@shared/student/materials.js';
 import { bindCleanSheet, buildStudentShell, cleanSheet } from '@shared/student/shell.js';
 import { createAction } from '@shared/student/action.js';
 import { createQuiz } from '@shared/student/quiz.js';
@@ -32,7 +31,7 @@ import {
   bellToWorld,
   createApparatus,
 } from './apparatus.js';
-import { backdropTexture, createSetting } from './setting.js';
+import { backdropTexture, createSetting, plainMap } from './setting.js';
 import { createAir, createRings, createStrikeCue } from './waves.js';
 import { createBellSound } from './bellsound.js';
 import { STRIKES, airOf, hammerSwing, letIn, loudWord, loudness, needleAngle, kPaShown, percent, pressure, pumpOut, strikesBy } from './reading.js';
@@ -119,7 +118,7 @@ export function createApp(root, options = {}) {
   controls.maxAzimuthAngle = 1.3;
 
   if (o.bg !== 'transparent') scene.background = backdropTexture();
-  scene.add(new THREE.HemisphereLight('#e9ecff', '#5a3a28', 0.9));
+  scene.add(new THREE.HemisphereLight('#eef2f8', '#8a735c', 0.9));
   const sun = new THREE.DirectionalLight('#fff1dc', 2.2);
   sun.position.set(0.9, 1.6, 1.1);
   sun.target.position.set(0.05, 0.1, 0);
@@ -142,8 +141,7 @@ export function createApp(root, options = {}) {
 
   const setting = createSetting();
   scene.add(setting.root);
-  const kit = createMaterials(stage.renderer);
-  const mats = apparatusMaterials(kit);
+  const mats = apparatusMaterials();
   const app = createApparatus(mats, { num: N, unit: t('u_kpa'), dir: DIR });
   scene.add(app.root);
   const air = createAir();
@@ -157,6 +155,7 @@ export function createApp(root, options = {}) {
     new THREE.CylinderGeometry(JAR.r - 0.006, JAR.r - 0.006, 0.215, 48),
     new THREE.MeshStandardMaterial({
       name: 'Water',
+      map: plainMap,
       color: '#2f86d6',
       emissive: '#0b4f8a',
       emissiveIntensity: 0.4,
@@ -168,7 +167,15 @@ export function createApp(root, options = {}) {
   );
   const waterTop = new THREE.Mesh(
     new THREE.CircleGeometry(JAR.r - 0.006, 48),
-    new THREE.MeshStandardMaterial({ name: 'WaterSurface', color: '#a5d8ff', transparent: true, opacity: 0.7, roughness: 0.1, depthWrite: false }),
+    new THREE.MeshStandardMaterial({
+      name: 'WaterSurface',
+      map: plainMap,
+      color: '#a5d8ff',
+      transparent: true,
+      opacity: 0.7,
+      roughness: 0.1,
+      depthWrite: false,
+    }),
   );
   waterTop.rotation.x = -Math.PI / 2;
   waterTop.position.y = 0.215 / 2 + 0.0005;
