@@ -68,6 +68,22 @@ The page writes "উপরে".
   geophone the depths under it ("processing", not shown). The base of the reservoir also reflects in reality;
   only the book's three echoes are drawn. No direct (ground-roll) wave on the seismogram.
 
+## Weight (0.1.2, measured with the forced render with shadows, 844×390, poster state)
+| | 0.1.1 | 0.1.2 |
+|---|---|---|
+| draw calls (main + shadow pass) | 140 | 64 |
+| triangles | 89,288 | 74,400 |
+| GLB | 3.4 MB (2.4 MB of it PNG textures) | 1.27 MB (the same pictures as JPEG, 0.17 MB) |
+| shader programs | 17 | 16 |
+| ready (software GL, machine under load 20+, so only roughly comparable) | 3.6–5.6 s | 4.4–6.6 s before / 5.3–6.3 s after in the same run |
+
+What changed: the truck is 6 meshes (one per material) instead of 20; the geophone's case, cap, takeout and spike are
+one instanced mesh (vertex colours) instead of three, with 20 sides instead of 24–28 (a few pixels wide on a phone);
+the five boundary lines are one `LineSegments`; the shot hole's two pieces are one mesh; the wave planes are not drawn
+while no wave shows. The GLB's rock and soil textures are JPEG (the live ones stay canvases of 512 and 1024 px); the
+GLB keeps the five rock layers with their bedding and grain. Pictures differ from 0.1.1 by under 0.05 % of pixels
+(the geophones' edges).
+
 ## Kit gap
 - A figure cannot tell the portrait panel from the side panel by size alone (both are ~280–400 px wide). The
   figure uses `@container pvc-panel (min-height: 1px)`, which only the side panel (a size container) matches; the

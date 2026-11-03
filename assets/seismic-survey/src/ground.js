@@ -392,24 +392,28 @@ export function createGround({ anisotropy = 4 } = {}) {
   root.add(top);
   // a dark edge along the boundaries on the cut faces (thin bands, so the layers read at a glance)
   const edgeMat = keep(new THREE.LineBasicMaterial({ color: '#2a2622', transparent: true, opacity: 0.55 }));
-  const edges = new THREE.Group();
-  edges.name = 'boundary-edges';
+  // all five lines are one LineSegments (one draw call): pairs of points along the front and the right face
+  const segs = [];
   for (let k = -1; k < 4; k++) {
-    const pts = [];
     const n = 72;
     const run = [
       [X0, Z1, X1, Z1],
       [X1, Z1, X1, Z0],
     ];
+    let prev = null;
     for (const [ax, az, bx, bz] of run)
       for (let j = 0; j <= n; j++) {
         const x = ax + ((bx - ax) * j) / n;
         const z = az + ((bz - az) * j) / n;
-        pts.push(new THREE.Vector3(x + (bx === X1 && ax === X1 ? 0.6 : 0), k < 0 ? 0.5 : boundaryY(k, x, z), z + (az === Z1 && bz === Z1 ? 0.6 : 0)));
+        const p = [x + (bx === X1 && ax === X1 ? 0.6 : 0), k < 0 ? 0.5 : boundaryY(k, x, z), z + (az === Z1 && bz === Z1 ? 0.6 : 0)];
+        if (prev) segs.push(...prev, ...p);
+        prev = p;
       }
-    const line = new THREE.Line(keep(new THREE.BufferGeometry().setFromPoints(pts)), edgeMat);
-    edges.add(line);
   }
+  const edgeGeo = keep(new THREE.BufferGeometry());
+  edgeGeo.setAttribute('position', new THREE.Float32BufferAttribute(segs, 3));
+  const edges = new THREE.LineSegments(edgeGeo, edgeMat);
+  edges.name = 'boundary-edges';
   root.add(edges);
 
   // the waves: one plane on the cut face, one just over the surface
@@ -425,6 +429,7 @@ export function createGround({ anisotropy = 4 } = {}) {
   for (const m of [wf, wt]) {
     m.userData.noExport = true;
     m.frustumCulled = false;
+    m.visible = false; // drawn only while the waves show (setWave)
     root.add(m);
   }
 
@@ -582,6 +587,8 @@ export function createGround({ anisotropy = 4 } = {}) {
       m.uniforms.uR.value = R;
       m.uniforms.uOn.value = on ? 1 : 0;
     }
+    wf.visible = on; // off: not even drawn
+    wt.visible = on;
   }
 
   return {

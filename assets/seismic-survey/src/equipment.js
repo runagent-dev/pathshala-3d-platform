@@ -5,7 +5,7 @@
 // boundaries it mapped). Instanced where things repeat.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { boundaryY, DEPTHS, FRONT, GEOPHONES, ROWS, SOURCE } from './reading.js';
 
 /** The geophone's size (m in the scene): drawn about 150 times bigger than life. */
@@ -15,10 +15,35 @@ const TRUNK_X = -798; // the main cable runs along the left of the grid, past th
 export const TRUCK = { x: -905, z: 205, len: 330, wid: 124, scale: 1.45 };
 /** How high the geophone's case stands on its spike (m in the scene), so the spike shows. */
 const LIFT = 15;
+/** Sides of the geophone's round parts: at a few pixels wide on a phone, more cannot be seen. */
+const SEG = 20;
 
 function tube(points, r, seg = 4) {
   const curve = new THREE.CatmullRomCurve3(points);
   return new THREE.TubeGeometry(curve, Math.max(8, points.length * 6), r, seg, false);
+}
+
+/**
+ * Folds the meshes that are direct children of `group` into one mesh per material (their own position and rotation
+ * baked in), named by `names` (material name → mesh name). Fewer draw calls, the same picture and the same GLB parts.
+ */
+function mergeByMaterial(group, names = {}) {
+  const by = new Map();
+  for (const m of [...group.children]) {
+    if (!m.isMesh) continue;
+    m.updateMatrix();
+    if (!by.has(m.material)) by.set(m.material, []);
+    const geo = m.geometry.index ? m.geometry.clone() : mergeVertices(m.geometry); // (the rounded boxes have no index)
+    by.get(m.material).push(geo.applyMatrix4(m.matrix));
+    group.remove(m);
+  }
+  for (const [material, geos] of by) {
+    const mesh = new THREE.Mesh(mergeGeometries(geos), material);
+    for (const g of geos) g.dispose();
+    mesh.name = names[material.name] ?? material.name;
+    mesh.castShadow = true;
+    group.add(mesh);
+  }
 }
 
 export function createEquipment() {
@@ -30,9 +55,8 @@ export function createEquipment() {
     return x;
   };
   const M = {
-    caseM: keep(new THREE.MeshStandardMaterial({ color: '#f2b705', roughness: 0.45, metalness: 0.05, name: 'geophone-case' })),
+    caseM: keep(new THREE.MeshStandardMaterial({ color: '#ffffff', vertexColors: true, roughness: 0.48, metalness: 0.06, name: 'geophone-case' })),
     dark: keep(new THREE.MeshStandardMaterial({ color: '#23262b', roughness: 0.55, metalness: 0.1, name: 'rubber' })),
-    steel: keep(new THREE.MeshStandardMaterial({ color: '#b9c0c8', roughness: 0.32, metalness: 0.85, name: 'steel' })),
     band: keep(new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.4, metalness: 0, name: 'geophone-light' })),
     cable: keep(new THREE.MeshStandardMaterial({ color: '#2f3a44', roughness: 0.6, name: 'cable' })),
     fire: keep(new THREE.MeshStandardMaterial({ color: '#c92a2a', roughness: 0.55, name: 'firing-line' })),
@@ -72,18 +96,29 @@ export function createEquipment() {
     new THREE.Vector2(r * 0.9, h - 2),
     new THREE.Vector2(0, h - 2),
   ];
-  instanced(new THREE.LatheGeometry(casePts, 28), M.caseM, 'geophone-case');
-  const capGeo = new THREE.CylinderGeometry(r * 0.78, r * 0.86, 7, 24);
+  // the case (yellow), its cap with the cable takeout (dark) and the spike (steel) are one mesh, told apart by vertex colour
+  const paint = (geo, hex) => {
+    const c = new THREE.Color(hex);
+    const n = geo.attributes.position.count;
+    const a = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) c.toArray(a, i * 3);
+    geo.setAttribute('color', new THREE.BufferAttribute(a, 3));
+    return geo;
+  };
+  const caseGeo = new THREE.LatheGeometry(casePts, SEG);
+  const capGeo = new THREE.CylinderGeometry(r * 0.78, r * 0.86, 7, SEG);
   capGeo.translate(0, h + 1.2, 0);
-  const takeout = new THREE.CylinderGeometry(2.6, 3.2, 12, 10);
+  const takeout = new THREE.CylinderGeometry(2.6, 3.2, 12, 8);
   takeout.rotateZ(Math.PI / 2);
   takeout.translate(r * 0.7, h - 1, 0);
-  instanced(mergeGeometries([capGeo, takeout]), M.dark, 'geophone-cap');
-  const spikeGeo = new THREE.ConeGeometry(3.4, spike, 12);
+  // and the steel spike under it (its last 15 m show above the ground)
+  const spikeGeo = new THREE.ConeGeometry(3.4, spike, 8);
   spikeGeo.rotateX(Math.PI);
   spikeGeo.translate(0, -spike / 2 + 2, 0); // from under the case down into the ground
-  instanced(spikeGeo, M.steel, 'geophone-spike', false);
-  const bandGeo = new THREE.CylinderGeometry(r * 1.0, r * 1.0, 6, 28, 1, true);
+  const body = mergeGeometries([paint(caseGeo, '#f2b705'), paint(capGeo, '#23262b'), paint(takeout, '#23262b'), paint(spikeGeo, '#9aa2ab')]);
+  for (const g of [caseGeo, capGeo, takeout, spikeGeo]) g.dispose();
+  instanced(body, M.caseM, 'geophone-case');
+  const bandGeo = new THREE.CylinderGeometry(r * 1.0, r * 1.0, 6, SEG, 1, true);
   bandGeo.translate(0, h * 0.55, 0);
   const band = instanced(bandGeo, M.band, 'geophone-light', false);
   const BAND_IDLE = new THREE.Color('#3b3f45');
@@ -139,6 +174,12 @@ export function createEquipment() {
   const holeTop = new THREE.Mesh(keep(new THREE.CircleGeometry(7.5, 16, 0, Math.PI)), M.hole);
   holeTop.rotation.x = -Math.PI / 2;
   holeTop.position.set(SOURCE.x, 0.6, FRONT);
+  for (const m of [hole, holeTop]) m.updateMatrix();
+  const holeBoth = new THREE.Mesh(
+    keep(mergeGeometries([hole.geometry.clone().applyMatrix4(hole.matrix), holeTop.geometry.clone().applyMatrix4(holeTop.matrix)])),
+    M.hole,
+  );
+  holeBoth.name = 'hole';
   const charge = new THREE.Mesh(keep(new THREE.CylinderGeometry(5.2, 5.2, 16, 16)), M.charge);
   charge.position.set(SOURCE.x, SOURCE.y - 4, FRONT - 1);
   const stakeGeo = keep(new THREE.BoxGeometry(5, 80, 5));
@@ -162,7 +203,7 @@ export function createEquipment() {
   ];
   const fire = new THREE.Mesh(keep(tube(firePts, 2.2)), M.fire);
   fire.name = 'firing-line';
-  shot.add(hole, holeTop, charge, stake, flag, fire);
+  shot.add(holeBoth, charge, stake, flag, fire);
   root.add(shot);
 
   // ── the recording truck (where the geophones' signals are recorded) ─────────────────────────────────────
@@ -202,8 +243,13 @@ export function createEquipment() {
       hub.position.copy(tyre.position);
       truck.add(tyre, hub);
     }
-  truck.traverse((o) => {
-    if (o.isMesh) o.castShadow = true;
+  mergeByMaterial(truck, {
+    'truck-body': 'truck-body',
+    'truck-cab': 'truck-cab',
+    rubber: 'truck-chassis',
+    glass: 'truck-glass',
+    tyre: 'truck-tyres',
+    hub: 'truck-hubs',
   });
   truck.position.set(TRUCK.x, 0, TRUCK.z);
   truck.rotation.y = -Math.PI / 2; // the cab toward the front

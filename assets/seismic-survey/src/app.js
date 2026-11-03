@@ -87,6 +87,20 @@ function backdrop() {
   return tex;
 }
 
+/** The same picture as a JPEG texture for the GLB (a fifth of the PNG's weight, and no visible change). */
+function jpegTexture(tex) {
+  const c = document.createElement('canvas');
+  c.width = tex.image.width;
+  c.height = tex.image.height;
+  c.getContext('2d').drawImage(tex.image, 0, 0);
+  const out = new THREE.CanvasTexture(c);
+  out.colorSpace = tex.colorSpace;
+  out.wrapS = tex.wrapS;
+  out.wrapT = tex.wrapT;
+  out.userData.mimeType = 'image/jpeg';
+  return out;
+}
+
 export function createApp(root, options = {}) {
   const o = { ...DEFAULTS, ...options };
   const t = createI18n(o.lang, { numerals: o.numerals });
@@ -168,6 +182,20 @@ export function createApp(root, options = {}) {
     for (const x of [-1000, 1000]) for (const y of [-40, 160]) for (const z of [-700, 700]) b.expandByPoint(p.set(x, y, z).applyMatrix4(inv));
     Object.assign(cam, { left: b.min.x, right: b.max.x, bottom: b.min.y, top: b.max.y, near: -b.max.z - 20, far: -b.min.z + 20 });
     cam.updateProjectionMatrix();
+  }
+
+  // the model for the GLB: the same, with the rock and soil pictures as JPEG (about 1.3 MB, not 3.4)
+  const lightTextures = new Map();
+  function lightModel() {
+    const copy = model.clone(true);
+    copy.traverse((o) => {
+      const map = o.isMesh && !Array.isArray(o.material) ? o.material.map : null;
+      if (!map || !(map.image instanceof HTMLCanvasElement) || map.image.width < 256) return;
+      if (!lightTextures.has(map)) lightTextures.set(map, jpegTexture(map));
+      o.material = o.material.clone();
+      o.material.map = lightTextures.get(map);
+    });
+    return copy;
   }
 
   // ── lines: the rays (as চিত্র ৭.১৩), the depth's measure, the chosen boundary on the cut face ────────────
@@ -1163,6 +1191,6 @@ export function createApp(root, options = {}) {
         stage.invalidate();
       }
     },
-    exportRoot: () => model,
+    exportRoot: lightModel,
   };
 }

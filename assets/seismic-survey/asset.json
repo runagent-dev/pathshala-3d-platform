@@ -5,7 +5,7 @@
   "title": "3D seismic survey (ত্রিমাত্রিক সিসমিক সার্ভে)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "book": "physics-9-10",
   "page": 203,
   "topic": "7.3.3",
