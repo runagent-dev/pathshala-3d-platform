@@ -12,6 +12,7 @@
 // - the stand: a cast-iron base, a chrome rod, a boss head and an arm that ends in the jaw (rope) or the peg (spring).
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { WAVE, amplitude, displacement, spacing } from './reading.js';
 import { canvasTex, rng } from './setting.js';
 
@@ -109,46 +110,42 @@ function makeTube(n, radial, radius, { alongRepeat = 1 } = {}) {
   return { geo, update, radial };
 }
 
-/** Three twisted strands of manila: stripes along (x) and round (y) that wrap both ways (one lay per tile). */
+/**
+ * Three twisted strands of manila, each of many fine fibres. The tile is one lay along x (36 mm of rope) and the
+ * whole way round in y; strands run diagonally (3 per tile) and the fibres inside each strand run at a shallower
+ * angle, which is what a twisted rope looks like close up. Everything is periodic, so tiles join without a seam.
+ * Colour and bump come from one pass.
+ */
 function ropeTextures() {
-  const W = 128;
-  const H = 128;
+  const W = 256;
+  const H = 512;
   const r = rng(3);
-  const fibres = Array.from({ length: 220 }, () => [r(), r(), r()]);
-  const draw = (bump) => (ctx) => {
-    const img = ctx.createImageData(W, H);
-    for (let y = 0; y < H; y++)
-      for (let x = 0; x < W; x++) {
-        const ph = (3 * (y / H - x / W) + 3) % 1; // where we are across a strand (0 … 1)
-        const s = Math.sin(Math.PI * ph); // rounded strand: bright in its middle, dark in the grooves
-        const fib = 0.5 + 0.5 * Math.sin((x / W) * 2 * Math.PI * 9 + (y / H) * 2 * Math.PI * 21);
-        const k = bump ? 255 * (0.15 + 0.8 * s ** 0.7 + 0.05 * fib) : 0;
-        const o = (y * W + x) * 4;
-        if (bump) {
-          img.data[o] = img.data[o + 1] = img.data[o + 2] = Math.min(255, k);
-        } else {
-          const l = 0.42 + 0.5 * s ** 0.6 + 0.08 * fib;
-          img.data[o] = 214 * l;
-          img.data[o + 1] = 172 * l;
-          img.data[o + 2] = 108 * l;
-        }
-        img.data[o + 3] = 255;
-      }
-    ctx.putImageData(img, 0, 0);
-    if (!bump) {
-      // a few darker loose fibres
-      ctx.strokeStyle = 'rgba(90,60,25,0.35)';
-      ctx.lineWidth = 0.7;
-      for (const [a, b, c] of fibres) {
-        ctx.beginPath();
-        ctx.moveTo(a * W, b * H);
-        ctx.lineTo(a * W + 6 + c * 6, b * H - 6 - c * 6);
-        ctx.stroke();
-      }
+  const cells = Float32Array.from({ length: 24 }, () => r());
+  const col = new Uint8ClampedArray(W * H * 4);
+  const hgt = new Uint8ClampedArray(W * H * 4);
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++) {
+      const fx = x / W;
+      const fy = y / H;
+      const ph = (3 * (fy - fx) + 3) % 1; // across a strand: 0 … 1
+      const s = Math.sin(Math.PI * ph); // rounded strand: full in its middle, dark in the groove
+      const u = ph * 24 + fx * 24; // along the fibres' own, shallower lay
+      const cell = ((Math.floor(u) % 24) + 24) % 24;
+      const fine = 0.5 + 0.5 * Math.sin(u * 2 * Math.PI); // each fibre a little ridge
+      const grain = ((((x * 374761393 + y * 668265263) ^ (x * y)) >>> 0) % 255) / 255; // pixel fuzz
+      const tone = 0.34 + 0.5 * s ** 0.55 + 0.16 * (cells[cell] - 0.5) + 0.1 * (fine - 0.5) + 0.07 * (grain - 0.5);
+      const o = (y * W + x) * 4;
+      col[o] = Math.min(255, 218 * tone);
+      col[o + 1] = Math.min(255, 176 * tone);
+      col[o + 2] = Math.min(255, 112 * tone);
+      col[o + 3] = 255;
+      const hv = 255 * (0.1 + 0.72 * s ** 0.7 + 0.14 * fine + 0.04 * grain);
+      hgt[o] = hgt[o + 1] = hgt[o + 2] = Math.min(255, hv);
+      hgt[o + 3] = 255;
     }
-  };
-  const map = canvasTex(W, H, draw(false), { repeat: [1, 1] });
-  const bump = canvasTex(W, H, draw(true), { repeat: [1, 1], color: false });
+  const put = (data) => (ctx) => ctx.putImageData(new ImageData(data, W, H), 0, 0);
+  const map = canvasTex(W, H, put(col), { repeat: [1, 1] });
+  const bump = canvasTex(W, H, put(hgt), { repeat: [1, 1], color: false });
   return { map, bump };
 }
 
@@ -156,17 +153,18 @@ function ropeTextures() {
 export function mediumMaterials() {
   const rope = ropeTextures();
   return {
-    rope: new THREE.MeshStandardMaterial({ name: 'Manila', map: rope.map, bumpMap: rope.bump, bumpScale: 2.2, roughness: 0.92, metalness: 0 }),
-    steel: new THREE.MeshStandardMaterial({ name: 'SpringSteel', color: '#c9ced6', metalness: 0.95, roughness: 0.3 }),
+    rope: new THREE.MeshStandardMaterial({ name: 'Manila', map: rope.map, bumpMap: rope.bump, bumpScale: 2.4, roughness: 0.95, metalness: 0 }),
+    // polished spring steel and chrome: all mirror (the studio environment is what they show), a touch of blur
+    steel: new THREE.MeshStandardMaterial({ name: 'SpringSteel', color: '#d3d9e0', metalness: 1, roughness: 0.2, envMapIntensity: 1.25 }),
     green: new THREE.MeshStandardMaterial({ name: 'MarkGreen', color: COLORS.mark, roughness: 0.45, metalness: 0.1 }),
-    chrome: new THREE.MeshStandardMaterial({ name: 'Chrome', color: '#eef1f5', metalness: 1, roughness: 0.14 }),
-    case: new THREE.MeshStandardMaterial({ name: 'DriverCase', color: '#2f3440', roughness: 0.55, metalness: 0.25 }),
-    grille: new THREE.MeshStandardMaterial({ name: 'Grille', color: '#16191f', roughness: 0.8, metalness: 0.3 }),
-    rubber: new THREE.MeshStandardMaterial({ name: 'Rubber', color: '#141414', roughness: 0.95 }),
+    chrome: new THREE.MeshStandardMaterial({ name: 'Chrome', color: '#eef1f5', metalness: 1, roughness: 0.12 }),
+    case: new THREE.MeshStandardMaterial({ name: 'DriverCase', color: '#37404e', roughness: 0.5, metalness: 0.35 }),
+    face: new THREE.MeshStandardMaterial({ name: 'FacePlate', color: '#b9c0c8', roughness: 0.4, metalness: 0.85 }),
+    cone: new THREE.MeshStandardMaterial({ name: 'SpeakerCone', color: '#2a2d33', roughness: 0.62, metalness: 0.1, side: THREE.DoubleSide }),
+    rubber: new THREE.MeshStandardMaterial({ name: 'Rubber', color: '#17181a', roughness: 0.9 }),
     bronze: new THREE.MeshStandardMaterial({ name: 'Bronze', color: '#b08a4a', roughness: 0.32, metalness: 1 }),
     iron: new THREE.MeshStandardMaterial({ name: 'CastIron', color: '#2e3a4f', roughness: 0.6, metalness: 0.4 }),
-    plate: new THREE.MeshStandardMaterial({ name: 'Plate', color: '#dfe3e8', roughness: 0.35, metalness: 0.9 }),
-    label: new THREE.MeshStandardMaterial({ name: 'Badge', color: '#c9a227', roughness: 0.35, metalness: 0.8 }),
+    plate: new THREE.MeshStandardMaterial({ name: 'Plate', color: '#dfe3e8', roughness: 0.28, metalness: 1 }),
   };
 }
 
@@ -335,6 +333,51 @@ export function createDensityStrip() {
   return { mesh, update };
 }
 
+/** The rating plate's face: brushed aluminium with a sine symbol, a small scale and two sockets engraved in it. */
+function plateTexture() {
+  return canvasTex(256, 128, (ctx, W, H) => {
+    const r = rng(7);
+    ctx.fillStyle = '#c9ced4';
+    ctx.fillRect(0, 0, W, H);
+    for (let i = 0; i < 180; i++) {
+      ctx.fillStyle = `rgba(${r() > 0.5 ? '255,255,255' : '90,96,104'},${0.05 + r() * 0.08})`;
+      ctx.fillRect(0, r() * H, W, 0.8);
+    }
+    ctx.strokeStyle = '#2b3038';
+    ctx.fillStyle = '#2b3038';
+    ctx.lineWidth = 3;
+    ctx.beginPath(); // the sine symbol
+    for (let x = 0; x <= 90; x += 2) {
+      const y = H * 0.36 + Math.sin((x / 90) * Math.PI * 4) * 16;
+      x ? ctx.lineTo(18 + x, y) : ctx.moveTo(18 + x, y);
+    }
+    ctx.stroke();
+    ctx.lineWidth = 2; // a scale with ticks
+    ctx.beginPath();
+    ctx.moveTo(18, H * 0.78);
+    ctx.lineTo(120, H * 0.78);
+    for (let i = 0; i <= 10; i++) {
+      ctx.moveTo(18 + i * 10.2, H * 0.78);
+      ctx.lineTo(18 + i * 10.2, H * 0.78 - (i % 5 ? 7 : 13));
+    }
+    ctx.stroke();
+    for (const cx of [170, 218]) {
+      // two sockets
+      ctx.beginPath();
+      ctx.arc(cx, H * 0.55, 17, 0, Math.PI * 2);
+      ctx.fillStyle = '#20242b';
+      ctx.fill();
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = '#8b929b';
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(cx, H * 0.55, 5, 0, Math.PI * 2);
+      ctx.fillStyle = '#9aa1aa';
+      ctx.fill();
+    }
+  });
+}
+
 // ── the wave driver ───────────────────────────────────────────────────────────
 export function createDriver(mats) {
   const root = new THREE.Group();
@@ -343,24 +386,102 @@ export function createDriver(mats) {
   const W = 0.16;
   const H = 0.13;
   const D = 0.13;
-  const box = new THREE.Mesh(new RoundedBoxGeometry(W, H, D, 4, 0.012), mats.case);
+  const box = new THREE.Mesh(new RoundedBoxGeometry(W, H, D, 3, 0.014), mats.case);
   box.position.y = H / 2 + 0.008;
   box.castShadow = true;
   box.name = 'Case';
-  // the grille on its front (+z), a knob and a small badge
-  const grille = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.038, 0.004, 32).rotateX(Math.PI / 2), mats.grille);
-  grille.position.set(-0.025, H / 2 + 0.008, D / 2 + 0.001);
-  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.039, 0.003, 8, 40), mats.chrome);
-  ring.position.copy(grille.position);
-  const knob = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.012, 0.012, 24).rotateX(Math.PI / 2), mats.rubber);
-  knob.position.set(0.048, H / 2 + 0.03, D / 2 + 0.005);
-  const lamp = new THREE.Mesh(
-    new THREE.SphereGeometry(0.004, 12, 8),
-    new THREE.MeshStandardMaterial({ color: '#ffb02e', emissive: '#ff8a00', emissiveIntensity: 0.0 }),
+  const cy = H / 2 + 0.008;
+  const zf = D / 2; // the front (+z)
+  // the front: a 12 mm brushed-aluminium panel with a round opening for the loudspeaker, and four screws
+  const FACE = 0.012;
+  const fw = W - 0.02;
+  const fh = H - 0.02;
+  const shape = new THREE.Shape();
+  const rr = 0.006;
+  shape.moveTo(-fw / 2 + rr, -fh / 2);
+  shape.lineTo(fw / 2 - rr, -fh / 2);
+  shape.quadraticCurveTo(fw / 2, -fh / 2, fw / 2, -fh / 2 + rr);
+  shape.lineTo(fw / 2, fh / 2 - rr);
+  shape.quadraticCurveTo(fw / 2, fh / 2, fw / 2 - rr, fh / 2);
+  shape.lineTo(-fw / 2 + rr, fh / 2);
+  shape.quadraticCurveTo(-fw / 2, fh / 2, -fw / 2, fh / 2 - rr);
+  shape.lineTo(-fw / 2, -fh / 2 + rr);
+  shape.quadraticCurveTo(-fw / 2, -fh / 2, -fw / 2 + rr, -fh / 2);
+  const hole = new THREE.Path();
+  hole.absarc(-0.026, 0, 0.0375, 0, Math.PI * 2, true);
+  shape.holes.push(hole);
+  const face = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(shape, {
+      depth: FACE - 0.003,
+      bevelEnabled: true,
+      bevelThickness: 0.0015,
+      bevelSize: 0.0013,
+      bevelSegments: 2,
+      curveSegments: 14,
+    }),
+    mats.face,
   );
-  lamp.position.set(0.048, H / 2 - 0.012, D / 2 + 0.002);
-  const badge = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.008, 0.002), mats.label);
-  badge.position.set(0.048, H / 2 - 0.035, D / 2 + 0.001);
+  face.position.set(0, cy, zf + 0.0015);
+  face.castShadow = true;
+  const zo = zf + FACE - 0.003; // the panel's front surface is at zo + 0.003
+  const screwGeo = new THREE.CylinderGeometry(0.0033, 0.0033, 0.0018, 14).rotateX(Math.PI / 2);
+  const screws = [];
+  for (const sx of [-1, 1])
+    for (const sy of [-1, 1]) {
+      const sc = new THREE.Mesh(screwGeo, mats.chrome);
+      sc.position.set(sx * (W / 2 - 0.0135), cy + sy * (H / 2 - 0.0135), zo + 0.0045);
+      screws.push(sc);
+    }
+  // the loudspeaker-style coil: a ribbed paper cone sunk behind a chrome bezel, its rubber surround and a dust cap
+  const spk = new THREE.Group();
+  spk.position.set(-0.026, cy, zo + 0.003);
+  const prof = [
+    [0.034, 0],
+    [0.0325, -0.0015],
+    [0.029, -0.0028],
+    [0.0262, -0.0048],
+    [0.0235, -0.0062],
+    [0.02, -0.0092],
+    [0.0172, -0.0104],
+    [0.0135, -0.0128],
+    [0.0105, -0.0138],
+    [0.0078, -0.0165],
+    [0.0052, -0.0172],
+    [0.0, -0.018],
+  ].map(([radius, zz]) => new THREE.Vector2(radius, zz * 0.55));
+  const cone = new THREE.Mesh(new THREE.LatheGeometry(prof, 32).rotateX(Math.PI / 2), mats.cone);
+  const surround = new THREE.Mesh(new THREE.TorusGeometry(0.0345, 0.0034, 10, 44).scale(1, 1, 0.55), mats.rubber);
+  surround.position.z = -0.0005;
+  const bezel = new THREE.Mesh(new THREE.TorusGeometry(0.0405, 0.0032, 12, 48), mats.chrome);
+  bezel.position.z = 0.0008;
+  const cap = new THREE.Mesh(new THREE.SphereGeometry(0.0072, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2).rotateX(Math.PI / 2), mats.face);
+  cap.position.z = -0.0172 * 0.55;
+  spk.add(cone, surround, bezel, cap);
+  // the rating plate: an engraved aluminium label (no words: a sine symbol, a scale and two sockets)
+  const ratingPlate = new THREE.Mesh(
+    new THREE.BoxGeometry(0.044, 0.02, 0.0016),
+    new THREE.MeshStandardMaterial({ name: 'RatingPlate', map: plateTexture(), roughness: 0.4, metalness: 0.6 }),
+  );
+  ratingPlate.position.set(0.048, cy - 0.033, zo + 0.0038);
+  // a knurled control knob with its pointer, and the pilot lamp
+  const knob = new THREE.Mesh(new THREE.CylinderGeometry(0.0115, 0.0125, 0.013, 28).rotateX(Math.PI / 2), mats.rubber);
+  knob.position.set(0.048, cy + 0.02, zo + 0.0105);
+  const knobCap = new THREE.Mesh(new THREE.CylinderGeometry(0.0085, 0.0085, 0.002, 24).rotateX(Math.PI / 2), mats.face);
+  knobCap.position.set(0.048, cy + 0.02, zo + 0.0175);
+  const pointer = new THREE.Mesh(new THREE.BoxGeometry(0.0018, 0.0075, 0.0012), mats.chrome);
+  pointer.position.set(0.048, cy + 0.0245, zo + 0.0188);
+  pointer.rotation.z = -0.5;
+  const lamp = new THREE.Mesh(
+    new THREE.SphereGeometry(0.0042, 14, 10),
+    new THREE.MeshStandardMaterial({ color: '#ffb02e', emissive: '#ff8a00', emissiveIntensity: 0.0, roughness: 0.3 }),
+  );
+  lamp.position.set(0.048, cy - 0.007, zo + 0.005);
+  const lampRing = new THREE.Mesh(new THREE.TorusGeometry(0.0052, 0.0013, 8, 20), mats.chrome);
+  lampRing.position.copy(lamp.position);
+  // cooling slots on both sides, merged into one mesh
+  const slotParts = [];
+  for (let i = 0; i < 6; i++) slotParts.push(new THREE.BoxGeometry(0.0012, 0.05, 0.0032).translate(-(W / 2 + 0.0002), cy, -0.032 + i * 0.0085));
+  const slots = new THREE.Mesh(mergeGeometries(slotParts), mats.rubber);
   const feet = [];
   for (const x of [-W / 2 + 0.02, W / 2 - 0.02])
     for (const z of [-D / 2 + 0.02, D / 2 - 0.02]) {
@@ -368,7 +489,7 @@ export function createDriver(mats) {
       f.position.set(x, 0.004, z);
       feet.push(f);
     }
-  body.add(box, grille, ring, knob, lamp, badge, ...feet);
+  body.add(box, face, ...screws, spk, ratingPlate, knob, knobCap, pointer, lamp, lampRing, slots, ...feet);
   // the bronze bush the rod slides in, and the rod with its clamp / plate
   const bush = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.014, 0.018, 24), mats.bronze);
   const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.0045, 0.0045, 1, 16).translate(0, 0.5, 0), mats.chrome);

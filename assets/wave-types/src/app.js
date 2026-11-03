@@ -19,7 +19,7 @@ import { ICONS } from '@shared/student/icons.js';
 import { createI18n } from './i18n.js';
 import { fitPose } from './camera.js';
 import { boldArrow, doubleArrow } from './arrows.js';
-import { backdropTexture, createSetting } from './setting.js';
+import { backdropTexture, createSetting, halfTexture } from './setting.js';
 import {
   COLORS,
   ROPE_Y,
@@ -127,7 +127,7 @@ export function createApp(root, options = {}) {
   controls.maxPolarAngle = Math.PI * 0.49;
 
   if (o.bg !== 'transparent') scene.background = backdropTexture();
-  scene.add(new THREE.HemisphereLight('#f1ecff', '#6a4a36', 1.0));
+  scene.add(new THREE.HemisphereLight('#f3f6fa', '#8a7a6c', 1.0));
   const sun = new THREE.DirectionalLight('#fff1dc', 2.2);
   sun.position.set(1.2, 4, 3);
   sun.target.position.set(0, 0, 0);
@@ -975,8 +975,22 @@ export function createApp(root, options = {}) {
       const bench = setting.top.clone();
       g.add(bench);
       for (const part of [rope.root, spring.root, driver.root, stand.root]) if (part.visible) g.add(part.clone(true));
+      // the GLB keeps the look at a light size: textures at half (the bench's at a quarter) resolution, no bump maps (glTF has none)
+      const small = new Map();
+      const lighter = (m) => {
+        if (!m.map && !m.bumpMap) return m;
+        if (!small.has(m)) {
+          const c = m.clone();
+          c.bumpMap = null;
+          if (m.map?.image?.width > 128) c.map = halfTexture(m.map, m.map.image.width > 512 ? 2 : 1);
+          small.set(m, c);
+        }
+        return small.get(m);
+      };
       g.traverse((c) => {
-        if (c.isMesh && c.geometry?.attributes?.position?.usage === THREE.DynamicDrawUsage) c.geometry = c.geometry.clone();
+        if (!c.isMesh) return;
+        if (c.geometry?.attributes?.position?.usage === THREE.DynamicDrawUsage) c.geometry = c.geometry.clone();
+        c.material = Array.isArray(c.material) ? c.material.map(lighter) : lighter(c.material);
       });
       return g;
     },

@@ -114,3 +114,23 @@ The book does not use তরঙ্গশীর্ষ / তরঙ্গপাদ 
 Rope: 260 × 15 vertices, spring: 1 629 × 11 vertices, rebuilt in place each frame into reused buffers (no allocations
 per frame); about 45 k triangles in all, about 40 draw calls, one 1024 shadow map fitted to the bench. Idle: nothing
 draws (the ticker returns false when paused).
+
+## Polish pass (0.2.1): a real setting, bench and instrument
+- Setting: the purple noise-texture floor and dusk backdrop are gone. A soft light blue-grey gradient backdrop (as the
+  other chapter-7 figures), a plain pale floor (smooth radial tone, no repeating texture) and a baked soft pool under
+  the bench instead of stray shadows.
+- Bench: oak boards, a 1024 × 512 grain (fine lines, pores, board joints) with a matching bump map, a rounded 50 mm
+  top with bevelled edges over an apron and legs.
+- Driver: a case with bevelled edges, a 12 mm brushed-aluminium front panel with screws, a loudspeaker-style ribbed
+  cone with a rubber surround, chrome bezel and dust cap, a knurled knob with pointer, a pilot lamp, an engraved
+  rating plate (no words), side cooling slots.
+- Steel: spring steel and chrome are full metal (metalness 1, roughness 0.12–0.2) and show the studio environment.
+- Rope: a 256 × 512 texture of three twisted strands, each of many fine fibres at a shallower lay, with a matching bump.
+- GLB: textures at half (bench: a quarter) size and no bump maps for the export, so the file stays under 1 MB.
+- Measured (one forced render with shadows; software rendering; the machine was busy with other builders, so the
+  ready times are noisy):
+
+  | | draw calls | triangles | ready | GLB |
+  |---|---|---|---|---|
+  | before (0.2.0) | 65 | 71 944 | 2.7 s | 700 KB |
+  | after (0.2.1) | 72 | 77 806 | 3.8–6.4 s (texture drawing itself costs about 8 ms) | 850 KB |
