@@ -43,7 +43,8 @@ const LIFT = 0.32; // m: the block is lifted this high to slip the trolley under
 const TROLLEY_FROM = 2.3; // m: where the trolley comes from (out of sight on the left)
 const DOUBLE_TAP = 350; // ms
 const VIEW_3D = new THREE.Vector3(-0.35, 0.55, 0.8).normalize();
-const ELEVATION = 8; // degrees above the floor for the side view
+const ELEVATION = 18; // degrees above the floor for the launch view
+const YAW = THREE.MathUtils.degToRad(-22); // turned a little to the side, so the box, the trolley and the floor show depth
 const CHIPS = ['static', 'kinetic', 'rolling'];
 /** Everything that casts a shadow (the person, the crate with its weights, the trolley), relative to the crate's x: the
  * shadow camera is fitted round it once and follows the crate with the sun. */
@@ -387,7 +388,7 @@ export function createApp(root, options = {}) {
     sideBox.min.set(-1.65, -0.12, -0.42);
     sideBox.max.set(1.55, Math.max(1.78, block.top() + TROLLEY.top + 0.15), 0.8);
     const e = THREE.MathUtils.degToRad(ELEVATION);
-    const pose = fit(sideBox, view === '3d' ? VIEW_3D : new THREE.Vector3(0, Math.sin(e), Math.cos(e)));
+    const pose = fit(sideBox, view === '3d' ? VIEW_3D : new THREE.Vector3(Math.cos(e) * Math.sin(YAW), Math.sin(e), Math.cos(e) * Math.cos(YAW)));
     pose.position.x += s.follow;
     pose.target.x += s.follow;
     return pose;
