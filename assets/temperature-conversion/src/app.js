@@ -31,7 +31,7 @@ export const DEFAULTS = {
   sound: true,
 };
 
-const FRONT_DIR = new THREE.Vector3(0, 0.02, 1).normalize();
+const FRONT_DIR = new THREE.Vector3(0.25, 0.18, 1).normalize(); // a mild three-quarter view: depth shows, the scales stay easy to read
 const VIEW_DIRS = { front: FRONT_DIR, '3d': new THREE.Vector3(0.62, 0.3, 1).normalize() };
 const GRIP_Z = 10; // the glass tube's front, where the liquid is seen
 
