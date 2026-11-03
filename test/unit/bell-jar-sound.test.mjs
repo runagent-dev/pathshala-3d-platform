@@ -1,6 +1,6 @@
 // The bell-jar experiment (book page 199, topic 7.3): the pump empties the jar slowly and reaches zero, the valve
 // fills it again, the gauge's pressure and the percentage agree, the sound follows the air, the hammer keeps striking
-// at the same rate, the gauge question's choices are all different, and every string exists in both languages. Pure
+// at the same rate and every string exists in both languages. Pure
 // code, no browser.
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
@@ -39,10 +39,7 @@ describe('bell-jar-sound: the maths', () => {
     assert.equal(r.pressure(1), r.P_ATM);
     assert.equal(r.kPaShown(1), 101);
     assert.equal(r.kPaShown(0), 0);
-    for (const v of r.GAUGE_ASK) {
-      const f = v / r.P_ATM;
-      assert.equal(r.kPaShown(f), v);
-    }
+    assert.equal(r.kPaShown(0.3), 30);
   });
 
   it('makes the sound follow the air: loud, soft, faint, none', () => {
@@ -60,10 +57,10 @@ describe('bell-jar-sound: the maths', () => {
     assert.ok(r.hammerSwing(1 / r.STRIKES) < 1e-6);
   });
 
-  it('turns the needle from −135° at 0 to +135° at 100 kPa', () => {
+  it('turns the needle from −135° at 0 to +135° at 120 kPa, a full jar inside the scale', () => {
     assert.ok(Math.abs(r.needleAngle(0) + (135 * Math.PI) / 180) < 1e-9);
-    assert.ok(Math.abs(r.needleAngle(100) - (135 * Math.PI) / 180) < 1e-9);
-    assert.ok(r.needleAngle(101) > r.needleAngle(100));
+    assert.ok(Math.abs(r.needleAngle(120) - (135 * Math.PI) / 180) < 1e-9);
+    assert.ok(r.needleAngle(r.P_ATM) < r.needleAngle(120));
   });
 
   it('reads air amounts by name, fraction or percentage', () => {
@@ -72,14 +69,6 @@ describe('bell-jar-sound: the maths', () => {
     assert.equal(r.airOf(0.3), 0.3);
     assert.equal(r.airOf(40), 0.4);
     assert.equal(r.airOf('x'), 1);
-  });
-
-  it('gives the gauge question four different choices', () => {
-    for (const v of r.GAUGE_ASK) {
-      const vs = r.gaugeChoices(v).map((c) => c.v);
-      assert.equal(new Set(vs).size, 4, `choices for ${v}: ${vs}`);
-      assert.equal(vs[0], v);
-    }
   });
 });
 
@@ -91,6 +80,6 @@ describe('bell-jar-sound: the words', () => {
     const t = createI18n('bn');
     assert.equal(t('lbl_gauge', { p: 101 }), 'চাপ ১০১&nbsp;kPa');
     assert.ok(t('note', { c: 330 }).includes('৩৩০'));
-    assert.ok(!/[0-9]/.test(t('why_gauge', { v: 30, pa: 101, z: 0 }).replace(/kPa|&nbsp;/g, '')));
+    assert.ok(!/[0-9]/.test(t('why_water', { cw: 1493 }).replace(/m\/s|&nbsp;/g, '')));
   });
 });

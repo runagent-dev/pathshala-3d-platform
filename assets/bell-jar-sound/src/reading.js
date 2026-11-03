@@ -8,7 +8,7 @@
 /** The room's air pressure (kPa), what the gauge reads with the jar full. */
 export const P_ATM = 101;
 /** The gauge's scale: 0 to this (kPa). */
-export const GAUGE_MAX = 100;
+export const GAUGE_MAX = 120;
 /** How often the hammer strikes the gong (per second): the same with or without air. */
 export const STRIKES = 8;
 /** The pump: seconds for the air left to fall by e (the share part), and the steady part (per second). */
@@ -83,24 +83,8 @@ export function hammerSwing(t, rate = STRIKES) {
 /** How many strikes have happened by time `t` (s). */
 export const strikesBy = (t, rate = STRIKES) => Math.floor(t * rate);
 
-/** The gauge needle's angle (radians, clockwise from straight up) for a pressure: 0 kPa at −135°, 100 kPa at +135°. */
+/** The gauge needle's angle (radians, clockwise from straight up) for a pressure: 0 kPa at −135°, 120 kPa at +135°. */
 export function needleAngle(kPa) {
-  const k = Math.max(0, Math.min(1.1 * GAUGE_MAX, kPa)) / GAUGE_MAX; // a full jar's 101 kPa just past the 100 mark
+  const k = Math.max(0, Math.min(GAUGE_MAX, kPa)) / GAUGE_MAX;
   return ((-135 + 270 * k) * Math.PI) / 180;
 }
-
-/**
- * The test's gauge question: the pressure to read and its four choices (the answer first). The wrong ones: read
- * from the other end of the scale, "the jar is still full", "the jar is empty".
- */
-export function gaugeChoices(kPa) {
-  return [
-    { key: 'right', v: kPa },
-    { key: 'flip', v: GAUGE_MAX - kPa },
-    { key: 'full', v: P_ATM },
-    { key: 'empty', v: 0 },
-  ];
-}
-
-/** The pressures the gauge question uses (away from the ends and the middle, so no wrong choice equals the answer). */
-export const GAUGE_ASK = [20, 30, 70];

@@ -22,44 +22,63 @@ though its hammer is still seen striking the gong; let the air back in and the s
 শব্দ তরঙ্গ. Added by the figure (not on the page): ভালভ, গেজ / চাপ (kPa), হাতুড়ি, বাতাসের কণা, শব্দের জোর.
 
 ## How the figure works
-- The apparatus at real size (metres): a painted cast-iron pump plate with a ground steel disc, a rubber seal and the
+- The apparatus at real size (metres), except the bell, drawn 1.3 times life size and turned a little so the gong's
+  dome shows its profile (said in the panel's note): a painted cast-iron pump plate with a ground steel disc, a rubber seal and the
   port; a 30 cm thick-glass bell jar (flange, dome, neck, rubber stopper; a Fresnel rim so the glass reads on a phone);
   a real electric calling bell inside (bakelite board, two copper-wound coils on an iron yoke, a soft-iron armature on
-  a flat spring, the contact screw, the hammer rod and ball, a nickel gong), hung from the stopper on a steel rod, its
-  red and black wires out through the stopper to a battery box with a push switch; a side pipe with a 0–100 kPa vacuum
+  a flat spring, the contact screw, the hammer rod and ball, a turned nickel gong with a rolled rim, a boss and its fixing screw), hung from the stopper on a steel rod, its
+  red and black wires out through the stopper to a battery box with a push switch; a side pipe with a 0–120 kPa vacuum
   gauge (needle) and the air-in valve (a red lever), a rubber hose to a rotary vane pump with a running light. A dark
   iroko lab bench and a dusk-plum backdrop; no other props.
-- The hammer strikes the gong 8 times a second all the time (|sin| swing, a hit and a bounce); it never changes with
-  the air. 380 small particles stand for the jar's air and jiggle in place; teal rings (a dark compression with a
+- The hammer strikes the gong 8 times a second all the time (|sin| swing of 0.46 rad, a hit and a bounce: the ball
+  moves about 3.5 cm away from the rim and back); it never changes with the air. Each strike shows a short yellow flash
+  where the ball hits and amber vibration arcs round the gong (the book: the bell "কাঁপতে থাকে" in the vacuum). 380 small particles stand for the jar's air and jiggle in place; teal rings (a dark compression with a
   lighter rarefaction behind, the chapter's shading) leave the gong every other strike, cross the glass and fade in the
-  room. Their strength, the particles' number and the synthesized bell's loudness all follow the air left.
-- One action (createAction, badge on the gauge, then on the valve): "পাম্প চালিয়ে বায়ু বের করো" → the pump runs (a tap
-  stops it half way: "আরও বায়ু বের করো" continues) → no air → "ভালভ খুলে বায়ু ঢোকাও" → the sound returns. The pump
+  room, drawn with a fixed line weight in a thin white outline. Their strength (15–100 % opacity while there is any
+  air, none without), the particles' number and the synthesized bell's loudness all follow the air left.
+- One action (createAction, badge on the gauge, then on the valve): "বায়ু বের করো" → the pump runs ("পাম্প থামাও"
+  stops it half way: "আরও বায়ু বের করো" continues) → no air → "বায়ু ঢোকাও" ("ভালভ বন্ধ করো" while it fills) → the
+  sound returns. The button keeps one width and one line for every verb. The pump
   takes a share of the air left every second and a little more (`reading.js`: empties in about 7.4 s, slowly at the
   end, "ধীরে ধীরে"); the valve fills it in about 2 s.
-- Panel: two meters (air in the jar with its kPa, the sound outside: জোরে / মৃদু / খুব মৃদু / শোনা যায় না), one result
+- Panel: two meters (air in the jar, the sound outside: জোরে / মৃদু / খুব মৃদু / শোনা যায় না), one result
   line, one rule growing from "একটা মাধ্যমের দরকার" to the book's two sentences and then the law (মাধ্যম ছাড়া শব্দ যেতে পারে
   না; যান্ত্রিক তরঙ্গ, স্থিতিস্থাপক মাধ্যম); an honest note (dots = air particles, rings = the sound wave, much slowed;
-  330 m/s in air). On wide panels (≥ 1000×680) a small graph: the loudness heard at each amount of air, as the student
-  goes.
+  330 m/s in air). In the side panel a graph fills the room under the rule (y from ০ to ১, x from 100 % to 0): the
+  loudness heard at each amount of air, as the student goes; titled "মোটামুটি হিসাব" (it is the figure's model).
 - Keys: Space/Enter/→ the action, ↓/↑ 10 % less/more air at once, R reset. Taps on the gauge, the valve or the pump do
   the action too.
-- Test (5): read the gauge (a close-up; 20, 30 or 70 kPa; wrong: read from the other end, "still full" 101, "empty"
-  0); why softer at half the air (hammer weaker, pump noise, battery); the hammer with no air (stopped, glass blocks,
-  no current); water instead of air (yes; "yes but slower", "only air", "no vibration in water"); the Moon (nothing;
-  faint, as on Earth, later). Each wrong choice has its own note.
+- Test (5), each read off its own scene: (1) few air particles left (12 %): how does the bell sound (very faint but
+  heard; wrong: not at all, as loud, louder); (2) half the air: why softer (hammer weaker, pump noise, battery);
+  (3) no air: look at the hammer (stopped, glass blocks, no current); (4) the jar full of water, no rings until the
+  answer (yes and faster; yes but slower, only air, vibrations die in water); (5) almost no air and the valve's red
+  lever open, a wider view: what is heard a few seconds later (loud again; nothing, faint only, only the hiss); the
+  answer lets the air in. Each wrong choice has its own note.
+
+## Round 2 (review of 0.1.0)
+- Hammer: swing 0.16 → 0.46 rad, bigger ball and rod, the hammer now hangs beside the gong (no clash with the coils);
+  a strike flash and vibration arcs. Proved by two frames half a period apart (swing 0 and 0.99) at 844×390 and 390×700.
+- Gong: matte turned nickel with turning lines, rim, boss and screw; the bell 1.3× and turned −0.26 rad; the camera
+  frames the jar closely (plate and pump run off the edges; the pump is named only where it shows).
+- Rings: a shader band of fixed width with a white outline, from just outside the gong, through the glass, fading only
+  over their last third; at least 15 % strength while there is any air.
+- Action verbs shortened and the button given one width; the graph in the side panel with a y scale; the note under
+  it; the gauge 0–120 kPa; the test's gauge, water (no picture) and Moon questions replaced by picture questions.
+- 3D share of the height in portrait: 55 % at 390×700 (was 53 %), 51 % at 390×520 (was 48 %; the panel there is the
+  test sheet's five rows at its smallest readable size).
 
 ## Simplifications (said honestly)
 - Loudness outside is modelled as in proportion to the air left (the panel's "শব্দের জোর" and the graph are this
   model, not a measurement). In a real lab a little sound still leaks through the hanging wires and the plate; the
   book says none is heard, and so does the figure.
 - The sound rings are slowed enormously (said in the note) and drawn every other strike so they stay apart.
-- 101 kPa for the room's air; the gauge reads absolute pressure from 0.
+- 101 kPa for the room's air; the gauge reads absolute pressure from 0 to 120 kPa.
+- The bell is drawn 1.3 times life size, and the gong word গং (for the bell's dome) is not on the page.
 
 ## Open questions
 - The figure's title: the book has no heading for this experiment; "শব্দ সঞ্চালনে মাধ্যম" comes from page 200's
   "সঞ্চালনের জন্য … মাধ্যমের দরকার". Confirm.
-- kPa on the gauge is not used on this page (chapter 5 uses Pa); is a gauge in kPa acceptable, or should it read %?
+- kPa on the gauge is not used on this page (chapter 5 uses Pa); the learn panel shows only % now, the gauge kPa.
 - The book's picture has no gauge, valve or battery; they are added so the student sees why the needle and the sound
   fall together, and where the bell's power comes from.
 - The Bangla needs a person's check against the book.

@@ -15,16 +15,47 @@ import { GAUGE_MAX } from './reading.js';
 export const PLATE_Y = 0.05; // the steel plate's top, where the jar stands
 export const JAR = { r: 0.105, wall: 0.005, h: 0.3, neckR: 0.026, flangeR: 0.118 };
 export const JAR_TOP = PLATE_Y + JAR.h; // the neck's lip
-export const GONG = { x: 0, y: 0.152, z: 0.012, r: 0.043, depth: 0.026 };
-/** The bell's parts in the bell's own frame are placed in world coordinates (the bell faces +z). */
-export const BELL = { y0: 0.176, y1: 0.285, w: 0.084 };
 export const GAUGE = { x: 0.215, y: 0.142, z: 0.02, r: 0.042 };
 export const VALVE_X = 0.262;
 export const PUMP = { x: 0.43, z: -0.2 };
 export const BATTERY = { x: -0.25, z: -0.13 };
-/** The hammer's hinge (the flat spring) and its ball at the gong (world). */
-const HINGE = new THREE.Vector2(-0.035, 0.232);
-const BALL_AT = new THREE.Vector2(0.03, 0.187);
+
+// The calling bell, in its own frame (a real bell's size, facing +z): the gong, the base board, the hammer's hinge
+// (where the flat spring holds it) and its ball resting on the gong's rim.
+export const GONG = { x: 0, y: 0.152, z: 0.012, r: 0.043, depth: 0.026 };
+export const BELL = { y0: 0.176, y1: 0.285, w: 0.084 };
+export const BALL_R = 0.0085;
+const FRONT = -0.0135; // the board's front face
+const HINGE = new THREE.Vector2(0.047, 0.236);
+// the ball's centre at rest: on the gong's rim, straight below the hinge
+const BALL_AT = new THREE.Vector2(HINGE.x, GONG.y + Math.sqrt((GONG.r + BALL_R - 0.002) ** 2 - HINGE.x ** 2));
+const TERMINALS = [-0.03, 0.03];
+/** How the bell's frame sits in the jar: 1.3 times larger than life about BELL_C, turned a little (radians). */
+export const BELL_S = 1.3;
+export const BELL_C = new THREE.Vector3(0, 0.205, -0.01);
+export const BELL_ROT = -0.26;
+const BELL_M = new THREE.Matrix4()
+  .compose(BELL_C, new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), BELL_ROT), new THREE.Vector3(BELL_S, BELL_S, BELL_S))
+  .multiply(new THREE.Matrix4().makeTranslation(-BELL_C.x, -BELL_C.y, -BELL_C.z));
+const BELL_INV = BELL_M.clone().invert();
+/** A point of the bell's frame in the world. */
+export const bellToWorld = (x, y, z, out = new THREE.Vector3()) => out.set(x, y, z).applyMatrix4(BELL_M);
+/** A world point in the bell's frame. */
+export const worldToBell = (p, out = new THREE.Vector3()) => out.copy(p).applyMatrix4(BELL_INV);
+/** The gong's centre (world), where the sound rings start, and where the ball strikes it. */
+export const GONG_W = bellToWorld(GONG.x, GONG.y, GONG.z + 0.008);
+export const STRIKE_W = bellToWorld(HINGE.x - BALL_R * 0.8, BALL_AT.y - BALL_R * 0.5, GONG.z + 0.006);
+/** The hammer ball's resting place (world). */
+export const BALL_W = bellToWorld(BALL_AT.x, BALL_AT.y, GONG.z + 0.003);
+/** The bell's corners (world), for labels to keep clear of it. */
+export const BELL_BOX_W = [
+  bellToWorld(-BELL.w / 2, GONG.y - GONG.r, 0.03),
+  bellToWorld(BELL.w / 2 + 0.01, GONG.y - GONG.r, 0.03),
+  bellToWorld(-BELL.w / 2, BELL.y1, 0.0),
+  bellToWorld(BELL.w / 2, BELL.y1, 0.0),
+];
+/** The top of the bell (world), where its hanging rod starts. */
+const BELL_TOP_W = bellToWorld(0, BELL.y1 + 0.004, -0.018);
 
 function canvasTex(w, h, draw, { repeat = null, srgb = true } = {}) {
   const c = document.createElement('canvas');
@@ -61,6 +92,24 @@ function windingTexture() {
       gr.addColorStop(1, '#7a3a16');
       g.fillStyle = gr;
       g.fillRect(0, y, W, 4);
+    }
+  });
+}
+
+/** Turning marks on the gong (the lathe's v runs from the dome's top to its rim): fine concentric rings. */
+function turnedTexture() {
+  return canvasTex(8, 512, (g, W, H) => {
+    const r = rng(23);
+    g.fillStyle = '#c4c8cd';
+    g.fillRect(0, 0, W, H);
+    for (let y = 0; y < H; y += 3) {
+      const v = 150 + r() * 80;
+      g.fillStyle = `rgba(${v},${v + 4},${v + 8},0.6)`;
+      g.fillRect(0, y, W, 1.5);
+    }
+    for (const y of [0.12, 0.3, 0.46]) {
+      g.fillStyle = 'rgba(70,76,84,0.55)';
+      g.fillRect(0, y * H, W, 3);
     }
   });
 }
@@ -107,7 +156,7 @@ function lappedTexture() {
   });
 }
 
-/** The gauge's dial: 0–100 kPa, a long mark every 20, a short one every 10, the numbers in the book's digits. */
+/** The gauge's dial: 0–120 kPa, a long mark every 20, a short one every 10, the numbers in the book's digits. */
 function dialTexture(num, unit) {
   return canvasTex(512, 512, (g, W) => {
     const c = W / 2;
@@ -134,10 +183,10 @@ function dialTexture(num, unit) {
       g.lineTo(c + Math.cos(a) * 214, c + Math.sin(a) * 214);
       g.stroke();
       if (long) {
-        g.font = '600 50px "Noto Sans Bengali", Arial, sans-serif';
+        g.font = '700 60px "Noto Sans Bengali", Arial, sans-serif';
         g.textAlign = 'center';
         g.textBaseline = 'middle';
-        g.fillText(num(v), c + Math.cos(a) * 132, c + Math.sin(a) * 132);
+        g.fillText(num(v), c + Math.cos(a) * 128, c + Math.sin(a) * 128);
       }
     }
     g.font = '600 44px "Noto Sans Bengali", Arial, sans-serif';
@@ -163,7 +212,15 @@ export function apparatusMaterials(kit) {
     iron: new THREE.MeshStandardMaterial({ name: 'SoftIron', color: '#5d6168', metalness: 0.85, roughness: 0.42 }),
     coil: new THREE.MeshStandardMaterial({ name: 'CopperWinding', map: windingTexture(), metalness: 0.7, roughness: 0.32 }),
     fibre: new THREE.MeshStandardMaterial({ name: 'FibreCap', color: '#26201c', metalness: 0, roughness: 0.6 }),
-    nickel: new THREE.MeshPhysicalMaterial({ name: 'NickelGong', color: '#e6e9ed', metalness: 1, roughness: 0.14, clearcoat: 0.4 }),
+    gong: new THREE.MeshStandardMaterial({
+      name: 'TurnedNickel',
+      map: turnedTexture(),
+      color: '#d3d7dc',
+      metalness: 0.85,
+      roughness: 0.42,
+      envMapIntensity: 0.8,
+    }),
+    gongRim: new THREE.MeshStandardMaterial({ name: 'NickelRim', color: '#9aa1a9', metalness: 0.9, roughness: 0.35 }),
     red: new THREE.MeshStandardMaterial({ name: 'RedWire', color: '#c92a2a', metalness: 0, roughness: 0.5 }),
     black: new THREE.MeshStandardMaterial({ name: 'BlackWire', color: '#212529', metalness: 0, roughness: 0.5 }),
     lever: new THREE.MeshStandardMaterial({ name: 'ValveLever', color: '#d6336c', metalness: 0.1, roughness: 0.45 }),
@@ -318,12 +375,21 @@ function tube(points, r, mat, name, seg = 48) {
 }
 
 /**
- * The electric calling bell, facing +z, at its real size (about 11 cm tall): returns the group and the hammer's pivot
- * (turn it about z to swing the hammer).
+ * The electric calling bell, built in its own frame at its real size (about 11 cm tall, facing +z), then drawn 1.3
+ * times larger than a real one beside this jar (so it reads on a phone; the panel's note says the picture is not to
+ * scale) and turned a little to the viewer's left so the gong's dome shows its profile. The hammer hangs from a flat
+ * spring to the right of the coils: at rest the magnet holds the armature up and the ball on the gong's rim; it swings
+ * out to the right (turn its pivot about z) and back, hitting the gong at every stroke.
  */
 function createBell(m) {
+  const outer = new THREE.Group();
+  outer.name = 'CallingBell';
+  outer.position.copy(BELL_C);
+  outer.scale.setScalar(BELL_S);
+  outer.rotation.y = BELL_ROT;
   const g = new THREE.Group();
-  g.name = 'CallingBell';
+  g.position.copy(BELL_C).multiplyScalar(-1);
+  outer.add(g);
   const { y0, y1, w } = BELL;
   const cy = (y0 + y1) / 2;
   // the base board, with rounded corners
@@ -355,18 +421,18 @@ function createBell(m) {
   board.position.set(0, cy, -0.022);
   board.castShadow = true;
   g.add(board);
-  const front = -0.0135; // the board's front face
+  const front = FRONT;
   // the electromagnet: an iron yoke across the top, two coils hanging from it
-  const yoke = mesh(new THREE.BoxGeometry(0.05, 0.007, 0.012), m.iron, 'Yoke');
-  yoke.position.set(0.002, 0.27, front + 0.012);
+  const yoke = mesh(new THREE.BoxGeometry(0.048, 0.007, 0.012), m.iron, 'Yoke');
+  yoke.position.set(-0.001, 0.27, front + 0.012);
   g.add(yoke);
   const bracket = mesh(new THREE.BoxGeometry(0.008, 0.012, 0.012), m.iron, 'YokeBracket');
-  bracket.position.set(0.002, 0.27, front + 0.004);
+  bracket.position.set(-0.001, 0.27, front + 0.004);
   g.add(bracket);
   const coilGeo = new THREE.CylinderGeometry(0.0105, 0.0105, 0.026, 28, 1, true);
   const capGeo = new THREE.CylinderGeometry(0.0125, 0.0125, 0.0025, 28);
-  const coreGeo = new THREE.CylinderGeometry(0.0045, 0.0045, 0.034, 16);
-  for (const x of [-0.013, 0.017]) {
+  const coreGeo = new THREE.CylinderGeometry(0.0045, 0.0045, 0.033, 16);
+  for (const x of [-0.016, 0.014]) {
     const coil = mesh(coilGeo, m.coil, 'Coil');
     coil.position.set(x, 0.252, front + 0.012);
     coil.castShadow = true;
@@ -377,93 +443,97 @@ function createBell(m) {
       g.add(cap);
     }
     const core = mesh(coreGeo, m.iron, 'Core');
-    core.position.set(x, 0.25, front + 0.012);
+    core.position.set(x, 0.2505, front + 0.012);
     g.add(core);
   }
-  // the gong's post and the gong: a nickel dome, its open side to the board
+  // the gong: a turned nickel dome on a post, its open side to the board, a rolled rim, a boss and its fixing screw
   const post = mesh(new THREE.CylinderGeometry(0.0035, 0.0035, 0.03, 12), m.steel, 'GongPost');
   post.rotation.x = Math.PI / 2;
   post.position.set(GONG.x, GONG.y, front + 0.006);
   g.add(post);
   const arm = mesh(new THREE.BoxGeometry(0.008, 0.03, 0.004), m.iron, 'GongArm');
-  arm.position.set(GONG.x, GONG.y + 0.017, front + 0.0);
+  arm.position.set(GONG.x, GONG.y + 0.017, front);
   g.add(arm);
   const dome = [];
   const { r, depth } = GONG;
-  for (let i = 0; i <= 16; i++) {
-    const a = (i / 16) * (Math.PI / 2);
+  for (let i = 0; i <= 18; i++) {
+    const a = (i / 18) * (Math.PI / 2);
     dome.push(V2(Math.max(1e-4, r * Math.sin(a)), depth * Math.cos(a)));
   }
-  dome.push(V2(r + 0.002, -0.002), V2(r - 0.002, -0.003));
-  for (let i = 16; i >= 0; i--) {
-    const a = (i / 16) * (Math.PI / 2);
-    dome.push(V2(Math.max(1e-4, (r - 0.003) * Math.sin(a)), (depth - 0.003) * Math.cos(a) - 0.003));
+  dome.push(V2(r - 0.003, -0.002));
+  for (let i = 18; i >= 0; i--) {
+    const a = (i / 18) * (Math.PI / 2);
+    dome.push(V2(Math.max(1e-4, (r - 0.003) * Math.sin(a)), (depth - 0.003) * Math.cos(a) - 0.002));
   }
-  const gong = mesh(new THREE.LatheGeometry(dome, 48), m.nickel, 'Gong');
-  gong.rotation.x = Math.PI / 2;
+  const gong = new THREE.Group();
+  gong.name = 'Gong';
   gong.position.set(GONG.x, GONG.y, GONG.z - 0.004);
-  gong.castShadow = true;
   g.add(gong);
-  const nut = mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.004, 6), m.chrome, 'GongNut');
-  nut.rotation.x = Math.PI / 2;
-  nut.position.set(GONG.x, GONG.y, GONG.z + depth - 0.002);
-  g.add(nut);
-  // the hammer: a pivot at the flat spring; the armature, the rod and the ball turn with it
+  const shell = mesh(new THREE.LatheGeometry(dome, 56), m.gong, 'GongDome');
+  shell.rotation.x = Math.PI / 2;
+  shell.castShadow = true;
+  gong.add(shell);
+  const rim = mesh(new THREE.TorusGeometry(r - 0.0005, 0.0022, 10, 56), m.gongRim, 'GongRim');
+  gong.add(rim);
+  const boss = mesh(new THREE.CylinderGeometry(0.008, 0.0095, 0.004, 28), m.gongRim, 'GongBoss');
+  boss.rotation.x = Math.PI / 2;
+  boss.position.z = depth + 0.0012;
+  gong.add(boss);
+  const screw = mesh(new THREE.CylinderGeometry(0.0042, 0.0042, 0.0025, 20), m.brass, 'GongScrew');
+  screw.rotation.x = Math.PI / 2;
+  screw.position.z = depth + 0.004;
+  gong.add(screw);
+  const slot = mesh(new THREE.BoxGeometry(0.0065, 0.0011, 0.0012), m.motor, 'GongScrewSlot');
+  slot.position.z = depth + 0.0055;
+  slot.rotation.z = 0.5;
+  gong.add(slot);
+  // the hammer: a pivot at the flat spring; the armature (to the left, under the coils), the rod and the ball turn with it
   const pivot = new THREE.Group();
   pivot.name = 'Hammer';
   pivot.position.set(HINGE.x, HINGE.y, front + 0.012);
   g.add(pivot);
-  const armLen = 0.058;
+  const armLen = HINGE.x + 0.03;
   const armature = mesh(new THREE.BoxGeometry(armLen, 0.004, 0.012), m.iron, 'Armature');
-  armature.position.set(armLen / 2, 0, 0);
+  armature.position.set(-armLen / 2, -0.004, 0);
   pivot.add(armature);
-  const end = V2(armLen - 0.002, 0);
-  const ball = V2(BALL_AT.x - HINGE.x, BALL_AT.y - HINGE.y);
-  const rodLen = end.distanceTo(ball);
-  const rod = mesh(new THREE.CylinderGeometry(0.0016, 0.0016, rodLen, 10), m.steel, 'HammerRod');
-  rod.position.set((end.x + ball.x) / 2, (end.y + ball.y) / 2, 0);
-  rod.rotation.z = Math.atan2(ball.y - end.y, ball.x - end.x) - Math.PI / 2;
+  const ballZ = GONG.z + 0.003 - (front + 0.012);
+  const rodLen = HINGE.y - BALL_AT.y;
+  const rod = mesh(new THREE.CylinderGeometry(0.0024, 0.0024, rodLen, 10), m.steel, 'HammerRod');
+  rod.position.set(0, -rodLen / 2, 0);
   pivot.add(rod);
-  const knob = mesh(new THREE.SphereGeometry(0.0062, 20, 14), m.brass, 'HammerBall');
-  knob.position.set(ball.x, ball.y, GONG.z + 0.004 - (front + 0.012));
+  const stem = mesh(new THREE.CylinderGeometry(0.0022, 0.0022, Math.abs(ballZ), 8), m.steel, 'HammerStem');
+  stem.rotation.x = Math.PI / 2;
+  stem.position.set(0, -rodLen, ballZ / 2);
+  pivot.add(stem);
+  const knob = mesh(new THREE.SphereGeometry(BALL_R, 22, 16), m.brass, 'HammerBall');
+  knob.position.set(0, -rodLen, ballZ);
   pivot.add(knob);
-  const knobRod = mesh(new THREE.CylinderGeometry(0.0016, 0.0016, Math.abs(knob.position.z), 8), m.steel, 'HammerStem');
-  knobRod.rotation.x = Math.PI / 2;
-  knobRod.position.set(ball.x, ball.y, knob.position.z / 2);
-  pivot.add(knobRod);
-  // the flat spring and its block; the contact screw on its pillar touching the spring
-  const spring = mesh(new THREE.BoxGeometry(0.0012, 0.022, 0.01), m.steel, 'FlatSpring');
-  spring.position.set(HINGE.x - 0.001, HINGE.y - 0.011, front + 0.012);
+  // the flat spring above the hinge and its block; the contact screw on its pillar touching the armature
+  const spring = mesh(new THREE.BoxGeometry(0.0012, 0.024, 0.01), m.steel, 'FlatSpring');
+  spring.position.set(HINGE.x + 0.001, HINGE.y + 0.012, front + 0.012);
   g.add(spring);
-  const block = mesh(new THREE.BoxGeometry(0.008, 0.008, 0.016), m.iron, 'SpringBlock');
-  block.position.set(HINGE.x - 0.002, HINGE.y - 0.024, front + 0.008);
+  const block = mesh(new THREE.BoxGeometry(0.009, 0.008, 0.016), m.iron, 'SpringBlock');
+  block.position.set(HINGE.x + 0.002, HINGE.y + 0.026, front + 0.008);
   g.add(block);
-  const pillar = mesh(new THREE.BoxGeometry(0.006, 0.016, 0.006), m.brass, 'ContactPillar');
-  pillar.position.set(HINGE.x - 0.009, HINGE.y - 0.008, front + 0.003);
+  const pillar = mesh(new THREE.BoxGeometry(0.005, 0.016, 0.006), m.brass, 'ContactPillar');
+  pillar.position.set(0.033, 0.258, front + 0.003);
   g.add(pillar);
-  const screw = mesh(new THREE.CylinderGeometry(0.0018, 0.0018, 0.012, 10), m.brass, 'ContactScrew');
-  screw.rotation.z = Math.PI / 2;
-  screw.position.set(HINGE.x - 0.005, HINGE.y - 0.008, front + 0.012);
-  g.add(screw);
-  const screwHead = mesh(new THREE.CylinderGeometry(0.0034, 0.0034, 0.0025, 14), m.brass, 'ContactScrewHead');
-  screwHead.rotation.z = Math.PI / 2;
-  screwHead.position.set(HINGE.x - 0.012, HINGE.y - 0.008, front + 0.012);
-  g.add(screwHead);
-  // two screw terminals at the top, where the wires come in
-  for (const x of [-0.03, 0.032]) {
+  const cscrew = mesh(new THREE.CylinderGeometry(0.0016, 0.0016, 0.016, 10), m.brass, 'ContactScrew');
+  cscrew.position.set(0.033, 0.243, front + 0.012);
+  g.add(cscrew);
+  const cHead = mesh(new THREE.CylinderGeometry(0.0032, 0.0032, 0.0025, 14), m.brass, 'ContactScrewHead');
+  cHead.position.set(0.033, 0.252, front + 0.012);
+  g.add(cHead);
+  for (const x of TERMINALS) {
     const term = mesh(new THREE.CylinderGeometry(0.0035, 0.0035, 0.005, 12), m.brass, 'Terminal');
     term.rotation.x = Math.PI / 2;
     term.position.set(x, y1 - 0.008, front + 0.002);
     g.add(term);
   }
-  // the steel rod it hangs from (up to the stopper)
-  const hang = mesh(new THREE.CylinderGeometry(0.0018, 0.0018, JAR_TOP - y1 - 0.01, 10), m.steel, 'HangingRod');
-  hang.position.set(0, (JAR_TOP + y1) / 2 - 0.004, -0.018);
-  g.add(hang);
   const hook = mesh(new THREE.BoxGeometry(0.014, 0.005, 0.01), m.steel, 'HangClamp');
   hook.position.set(0, y1 + 0.0015, -0.018);
   g.add(hook);
-  return { root: g, hammer: pivot, ball: knob, gong };
+  return { root: outer, hammer: pivot, ball: knob, gong };
 }
 
 /** The side pipe from the base, the vacuum gauge on its tee, the air-in valve and its lever. */
@@ -643,6 +713,11 @@ export function createApparatus(m, { num, unit, dir }) {
   const pump = createPump(m);
   const battery = createBattery(m);
   root.add(plate, jar, bell.root, gv.root, pump.root, battery.root);
+  // the steel rod the bell hangs from, up to the stopper
+  const rodLen = JAR_TOP - 0.008 - BELL_TOP_W.y;
+  const hang = mesh(new THREE.CylinderGeometry(0.0022, 0.0022, rodLen, 10), m.steel, 'HangingRod');
+  hang.position.set(BELL_TOP_W.x, BELL_TOP_W.y + rodLen / 2, BELL_TOP_W.z);
+  root.add(hang);
   // the hose: from the valve's end along the bench to the pump's inlet
   const hoseStart = new THREE.Vector3(VALVE_X + 0.03, 0.02, 0.02);
   const inlet = pump.inletTop;
@@ -668,8 +743,8 @@ export function createApparatus(m, { num, unit, dir }) {
   ]) {
     const end = i < 0 ? battery.right : battery.left;
     const pts = [
-      new THREE.Vector3(i * 0.031, BELL.y1 - 0.008, -0.01),
-      new THREE.Vector3(i * 0.02, BELL.y1 + 0.02, -0.012),
+      bellToWorld(TERMINALS[i < 0 ? 0 : 1], BELL.y1 - 0.008, FRONT + 0.004),
+      bellToWorld(i * 0.024, BELL.y1 + 0.016, -0.008),
       new THREE.Vector3(i * 0.004, JAR_TOP - 0.02, -0.006),
       new THREE.Vector3(i * 0.004, top, -0.004),
       new THREE.Vector3(i * 0.004 - 0.03, top + 0.04, -0.03),
@@ -696,4 +771,4 @@ export function createApparatus(m, { num, unit, dir }) {
 }
 
 /** The angle the hammer turns away from the gong at full swing (radians). */
-export const HAMMER_SWING = 0.16;
+export const HAMMER_SWING = 0.46;

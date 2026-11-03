@@ -17,27 +17,25 @@ import { createAction } from '@shared/student/action.js';
 import { createQuiz } from '@shared/student/quiz.js';
 import { createI18n } from './i18n.js';
 import { fitPose } from './camera.js';
-import { BELL, GAUGE, GONG, HAMMER_SWING, JAR, JAR_TOP, PLATE_Y, PUMP, VALVE_X, apparatusMaterials, createApparatus } from './apparatus.js';
-import { backdropTexture, createSetting } from './setting.js';
-import { createAir, createRings } from './waves.js';
-import { createBellSound } from './bellsound.js';
 import {
-  GAUGE_ASK,
-  P_ATM,
-  STRIKES,
-  airOf,
-  gaugeChoices,
-  hammerSwing,
-  letIn,
-  loudWord,
-  loudness,
-  needleAngle,
-  kPaShown,
-  percent,
-  pressure,
-  pumpOut,
-  strikesBy,
-} from './reading.js';
+  BALL_W,
+  BELL,
+  BELL_BOX_W,
+  GAUGE,
+  HAMMER_SWING,
+  JAR,
+  JAR_TOP,
+  PLATE_Y,
+  PUMP,
+  VALVE_X,
+  apparatusMaterials,
+  bellToWorld,
+  createApparatus,
+} from './apparatus.js';
+import { backdropTexture, createSetting } from './setting.js';
+import { createAir, createRings, createStrikeCue } from './waves.js';
+import { createBellSound } from './bellsound.js';
+import { STRIKES, airOf, hammerSwing, letIn, loudWord, loudness, needleAngle, kPaShown, percent, pressure, pumpOut, strikesBy } from './reading.js';
 
 export const DEFAULTS = {
   air: 1,
@@ -50,16 +48,16 @@ export const DEFAULTS = {
   sound: true,
 };
 
-const COLORS = { ink: '#1d2733', teal: '#0b7285', gauge: '#a61e4d' };
+const COLORS = { ink: '#1d2733', hammer: '#a34a00', gauge: '#a61e4d' };
 const DOUBLE_TAP = 420; // ms
 const MARGIN = { top: 44, bottom: 10, side: 8 };
 const V = (x, y, z = 0) => new THREE.Vector3(x, y, z);
 /** A gentle three-quarter view from the front right, a little above (lessons.md 42). */
 const DIR = V(0.5, 0.36, 1).normalize();
 /** The box the camera frames: the jar on its plate, the gauge and valve; the pump and the battery run off the edges. */
-const BOX = { min: V(-0.13, 0.02, -0.04), max: V(0.26, JAR_TOP + 0.03, 0.1) };
-/** A closer look at the gauge (its test question), with the jar's side beside it. */
-const GAUGE_BOX = { min: V(0.12, 0.085, 0.0), max: V(0.27, 0.2, 0.05) };
+const BOX = { min: V(-0.115, 0.075, -0.03), max: V(0.255, JAR_TOP + 0.012, 0.08) };
+/** The valve question's view: a little wider, so the valve's red lever shows whole. */
+const BOX_VALVE = { min: V(-0.115, 0.03, -0.03), max: V(0.33, JAR_TOP + 0.012, 0.08) };
 const CLOSED = -Math.PI / 2; // the valve lever across the pipe (to the front): closed; along it: open
 const clamp01 = (x) => Math.max(0, Math.min(1, x));
 
@@ -77,7 +75,7 @@ export function createApp(root, options = {}) {
     layout: 'side',
     learn: cleanSheet(t, {
       quiet: [{ act: 'reset', label: 'act_reset', icon: ICONS.reset }],
-      lines: { action: 2, outcome: 2, rule: 4 },
+      lines: { action: 1, outcome: 2, rule: 4 },
     }),
     learnAlign: 'start',
   });
@@ -97,13 +95,17 @@ export function createApp(root, options = {}) {
   const soundVal = /** @type {HTMLElement} */ (meters.querySelector('.bj-m-sound .bj-m-v'));
   const note = document.createElement('p');
   note.className = 'bj-note';
-  note.innerHTML = t('note', { c: 330 });
-  $('.pvc-rule').after(note);
+  note.innerHTML = `<span class="bj-note-long">${t('note', { c: 330 })}</span><span class="bj-note-short">${t('note_short')}</span>`;
   const graphBox = document.createElement('figure');
   graphBox.className = 'bj-graph';
   graphBox.innerHTML = `<figcaption>${t('g_title')}</figcaption><canvas role="img" aria-label="${t('g_aria')}"></canvas>`;
-  note.after(graphBox);
+  $('.pvc-rule').after(graphBox);
+  graphBox.after(note);
   const graph = /** @type {HTMLCanvasElement} */ (graphBox.querySelector('canvas'));
+  if (typeof ResizeObserver === 'function')
+    new ResizeObserver(() => {
+      lastMeters = '';
+    }).observe(graph);
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 30, near: 0.02, far: 30, environment: 'studio-light' });
@@ -148,6 +150,34 @@ export function createApp(root, options = {}) {
   scene.add(air.mesh);
   const rings = createRings();
   scene.add(rings.root);
+  const cue = createStrikeCue();
+  scene.add(cue.root);
+  // the test's jar of water (instead of air)
+  const water = new THREE.Mesh(
+    new THREE.CylinderGeometry(JAR.r - 0.006, JAR.r - 0.006, 0.215, 48),
+    new THREE.MeshStandardMaterial({
+      name: 'Water',
+      color: '#2f86d6',
+      emissive: '#0b4f8a',
+      emissiveIntensity: 0.4,
+      transparent: true,
+      opacity: 0.5,
+      roughness: 0.15,
+      depthWrite: false,
+    }),
+  );
+  const waterTop = new THREE.Mesh(
+    new THREE.CircleGeometry(JAR.r - 0.006, 48),
+    new THREE.MeshStandardMaterial({ name: 'WaterSurface', color: '#a5d8ff', transparent: true, opacity: 0.7, roughness: 0.1, depthWrite: false }),
+  );
+  waterTop.rotation.x = -Math.PI / 2;
+  waterTop.position.y = 0.215 / 2 + 0.0005;
+  water.add(waterTop);
+  water.position.y = PLATE_Y + 0.003 + 0.215 / 2;
+  water.renderOrder = 3;
+  water.visible = false;
+  water.userData.noExport = true;
+  scene.add(water);
 
   // big invisible hit boxes: the gauge and valve, the pump
   const hitMat = new THREE.MeshBasicMaterial({ visible: false });
@@ -185,8 +215,10 @@ export function createApp(root, options = {}) {
     lever: CLOSED,
     found: { pumped: false, vacuum: false, back: false },
     userMovedCamera: false,
-    show: { gauge: true },
-    closeUp: false, // the test's gauge question looks closer
+    show: { gauge: true, rings: true },
+    water: false, // the test's water question: the jar full of water
+    valveOpenShown: false, // the test's valve question: the lever drawn open
+    wideView: false, // ... and its wider view
   };
   const now = () => performance.now();
   let lastAct = Number.NEGATIVE_INFINITY;
@@ -199,17 +231,19 @@ export function createApp(root, options = {}) {
   function syncScene() {
     app.hammer.rotation.z = HAMMER_SWING * hammerSwing(s.time);
     app.needle.rotation.z = -needleAngle(pressure(s.f));
-    app.lever.rotation.y = s.lever;
+    app.lever.rotation.y = s.valveOpenShown ? 0 : s.lever;
     mats.light.emissive.copy(s.dir < 0 ? lightOn : lightOff);
-    air.update(s.f, s.time);
-    rings.update(s.time, s.f, camera);
-    bell.setLevel(loudness(s.f));
+    air.update(s.water ? 0 : s.f, s.time);
+    rings.update(s.time, s.water ? 1 : s.f, camera);
+    cue.update(s.time, s.strikes / STRIKES, camera);
+    water.visible = s.water;
+    bell.setLevel(s.water ? (s.show.rings ? 1 : 0) : loudness(s.f));
   }
   /** Rings as if the bell had been ringing a while (after a jump, at the start). */
   function prefill() {
     rings.clear();
     const n = strikesBy(s.time);
-    for (let k = n - (n % 2) - 16; k <= n; k += 2) rings.strike(k / STRIKES, s.f);
+    for (let k = n - (n % 2) - 16; k <= n; k += 2) rings.strike(k / STRIKES, s.water ? 1 : s.f);
   }
 
   stage.addTicker((dt) => {
@@ -244,7 +278,7 @@ export function createApp(root, options = {}) {
     const n = strikesBy(s.time);
     if (n !== s.strikes) {
       s.strikes = n;
-      if (n % 2 === 0) rings.strike(s.time, s.f); // a ring for every other strike, so they stay apart
+      if (n % 2 === 0) rings.strike(s.time, s.water ? 1 : s.f); // a ring for every other strike, so they stay apart
       bell.strike();
     }
     seen[percent(s.f)] = loudness(s.f);
@@ -281,7 +315,7 @@ export function createApp(root, options = {}) {
     if (key !== lastMeters) {
       lastMeters = key;
       airBar.style.width = `${p}%`;
-      airVal.innerHTML = `<b>${N(p)}%</b> <span class="bj-kpa">${N(kPaShown(s.f))}&nbsp;${t('u_kpa')}</span>`;
+      airVal.innerHTML = `<b>${N(p)}%</b>`;
       soundBar.style.width = `${Math.round(100 * loudness(s.f))}%`;
       soundVal.innerHTML = `<b>${t(`w_${w}`)}</b>`;
       meters.dataset.sound = w;
@@ -313,7 +347,7 @@ export function createApp(root, options = {}) {
     const g = /** @type {CanvasRenderingContext2D} */ (graph.getContext('2d'));
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.clearRect(0, 0, W, H);
-    const L = 34;
+    const L = 40;
     const R = 10;
     const T = 8;
     const B = 30;
@@ -339,18 +373,33 @@ export function createApp(root, options = {}) {
     g.lineTo(L, H - B);
     g.lineTo(W - R, H - B);
     g.stroke();
-    g.save();
-    g.translate(12, (T + H - B) / 2);
-    g.rotate(-Math.PI / 2);
+    // the y scale: 0 (not heard) to 1 (as loud as with a full jar)
+    g.textAlign = 'right';
     g.textBaseline = 'middle';
-    g.fillText(t('g_y'), 0, 0);
-    g.restore();
+    for (const v of [0, 0.5, 1]) {
+      g.strokeStyle = v ? '#e9ecef' : '#495057';
+      g.beginPath();
+      g.moveTo(L - 4, y(v));
+      g.lineTo(v ? W - R : L, y(v));
+      g.stroke();
+      if (v !== 0.5) g.fillText(N(v), L - 6, y(v));
+    }
+    g.textAlign = 'center';
+    g.strokeStyle = '#495057';
+    if (H >= 130) {
+      g.save();
+      g.translate(10, (T + H - B) / 2);
+      g.rotate(-Math.PI / 2);
+      g.textBaseline = 'middle';
+      g.fillText(t('g_y'), 0, 0);
+      g.restore();
+    }
     // what has been heard: teal dots
     g.fillStyle = 'rgba(12,133,153,0.75)';
     for (let pc = 0; pc <= 100; pc++)
       if (seen[pc] >= 0) {
         g.beginPath();
-        g.arc(x(pc), y(seen[pc]), 2.2, 0, Math.PI * 2);
+        g.arc(x(pc), y(seen[pc]), 2.6, 0, Math.PI * 2);
         g.fill();
       }
     // now
@@ -388,12 +437,15 @@ export function createApp(root, options = {}) {
     }
     return { left: l - pad, top: tp - pad, right: r + pad, bottom: b + pad };
   }
-  const BELL_PTS = [
-    V(-BELL.w / 2, GONG.y - GONG.r, 0.02),
-    V(BELL.w / 2, GONG.y - GONG.r, 0.02),
-    V(-BELL.w / 2, BELL.y1, 0.02),
-    V(BELL.w / 2, BELL.y1, 0.02),
-  ];
+  const BELL_PTS = BELL_BOX_W;
+  const HAMMER_LBL = BALL_W.clone().add(V(0.004, -0.016, 0));
+  const BELL_LBL = bellToWorld(-BELL.w / 2, BELL.y1 - 0.012, -0.012);
+  const PUMP_LBL = V(PUMP.x - 0.08, 0.2, PUMP.z + 0.03);
+  /** Is a point well inside the view (px from the edges)? */
+  const inView = (p, m) => {
+    toScreen(p, A);
+    return A.x > m && A.x < stage.width - m && A.y > m && A.y < stage.height - m;
+  };
   const GAUGE_PTS = [V(GAUGE.x - GAUGE.r, GAUGE.y - GAUGE.r, GAUGE.z), V(GAUGE.x + GAUGE.r, GAUGE.y + GAUGE.r, GAUGE.z)];
   const anno = createAnnotations({
     stage,
@@ -407,7 +459,7 @@ export function createApp(root, options = {}) {
   const labelState = new Map();
   function wantLabels() {
     const want = new Map();
-    if (s.closeUp) return want; // the gauge's close-up: the dial alone
+    if (s.water) return want; // the test's jar of water: the picture alone
     want.set('jar', {
       text: t('lbl_jar'),
       point: () => V(-JAR.r * 0.98, PLATE_Y + 0.12, 0.01),
@@ -416,7 +468,7 @@ export function createApp(root, options = {}) {
     });
     want.set('bell', {
       text: t('lbl_bell'),
-      point: () => V(-BELL.w / 2, BELL.y1 - 0.01, -0.012),
+      point: () => BELL_LBL,
       spots: [spot(-30, -16), spot(-34, 0), spot(-30, -34), ...ABOVE],
       color: COLORS.ink,
     });
@@ -427,19 +479,15 @@ export function createApp(root, options = {}) {
         spots: [spot(16, -18), ...ABOVE, ...RIGHT, spot(10, 46)],
         color: COLORS.gauge,
       });
-    want.set('pump', {
-      text: t('lbl_pump'),
-      point: () => V(PUMP.x - 0.08, 0.2, PUMP.z + 0.03),
-      spots: [...ABOVE, ...RIGHT],
-      color: COLORS.ink,
-      optional: true,
-    });
+    // the pump: named only where enough of it shows to read
+    if (inView(PUMP_LBL, 70))
+      want.set('pump', { text: t('lbl_pump'), point: () => PUMP_LBL, spots: [...ABOVE, ...LEFT], color: COLORS.ink, optional: true });
     if (s.f <= 0.03 && s.mode === 'explore')
       want.set('hammer', {
         text: t('lbl_hammer'),
-        point: () => V(0.03, 0.19, GONG.z + 0.01),
-        spots: [spot(64, 14), spot(64, -6), spot(-70, 40), spot(64, 32), spot(30, 54)],
-        color: COLORS.teal,
+        point: () => HAMMER_LBL,
+        spots: [spot(56, 18), spot(56, -4), spot(56, 36), spot(-80, 46), spot(30, 58)],
+        color: COLORS.hammer,
       });
     if ((s.dir > 0 || plan().label === 'act_in') && s.mode === 'explore')
       want.set('valve', {
@@ -471,8 +519,8 @@ export function createApp(root, options = {}) {
 
   // ── camera ──────────────────────────────────────────────────────────────────
   const bbox = new THREE.Box3(BOX.min, BOX.max);
-  const gaugeBox = new THREE.Box3(GAUGE_BOX.min, GAUGE_BOX.max);
-  const viewPose = () => fitPose({ box: s.closeUp ? gaugeBox : bbox, dir: DIR, camera, width: stage.width, height: stage.height, margin: MARGIN });
+  const bboxValve = new THREE.Box3(BOX_VALVE.min, BOX_VALVE.max);
+  const viewPose = () => fitPose({ box: s.wideView ? bboxValve : bbox, dir: DIR, camera, width: stage.width, height: stage.height, margin: MARGIN });
   function place(pose) {
     camera.position.copy(pose.position);
     controls.target.copy(pose.target);
@@ -615,6 +663,7 @@ export function createApp(root, options = {}) {
       valve: s.dir > 0 ? 'open' : 'closed',
       strikesPerSecond: STRIKES,
       hammer: 'striking', // always: the bell rings throughout
+      swing: round(hammerSwing(s.time), 2), // 0 on the gong, 1 fully back
       rings: rings.visibleCount(),
       particles: air.mesh.count,
       found: { ...s.found },
@@ -664,11 +713,43 @@ export function createApp(root, options = {}) {
     };
   }
   const words = (keys) => keys.map((key) => ({ key }));
-  /** The five questions: read the gauge; why softer (half the air); the hammer with no air; water; the Moon. */
-  const KINDS = ['gauge', 'fade', 'hammer', 'water', 'moon'];
+  /**
+   * The five questions, each read off its own scene: how the bell sounds with few air particles left; why softer at
+   * half the air; the hammer with no air; the jar full of water (no rings until the answer); the valve opened.
+   */
+  const KINDS = ['dots', 'fade', 'hammer', 'water', 'valve'];
+  const CHOICES = {
+    dots: ['c_d_right', 'c_d_none', 'c_d_same', 'c_d_louder'],
+    fade: ['c_fade_right', 'c_fade_weak', 'c_fade_pump', 'c_fade_cell'],
+    hammer: ['c_ham_right', 'c_ham_stop', 'c_ham_glass', 'c_ham_power'],
+    water: ['c_w_right', 'c_w_slow', 'c_w_air', 'c_w_vib'],
+    valve: ['c_v_right', 'c_v_stop', 'c_v_faint', 'c_v_hiss'],
+  };
+  const NOTES = {
+    dots: { c_d_none: 'mis_d_none', c_d_same: 'mis_d_same', c_d_louder: 'mis_d_louder' },
+    fade: { c_fade_weak: 'mis_fade_weak', c_fade_pump: 'mis_fade_pump', c_fade_cell: 'mis_fade_cell' },
+    hammer: { c_ham_stop: 'mis_ham_stop', c_ham_glass: 'mis_ham_glass', c_ham_power: 'mis_ham_power' },
+    water: { c_w_slow: 'mis_w_slow', c_w_air: 'mis_w_air', c_w_vib: 'mis_w_vib' },
+    valve: { c_v_stop: 'mis_v_stop', c_v_faint: 'mis_v_faint', c_v_hiss: 'mis_v_hiss' },
+  };
   let learnSaved = null;
   let question = null;
   let picked = -1;
+  /** A test scene: the air (or water) in the jar, the valve drawn open or not, the rings shown or not. */
+  function testScene({ f, water = false, valve = false, rings: ringsOn = true }) {
+    s.water = water;
+    s.valveOpenShown = valve;
+    s.show = { gauge: false, rings: ringsOn };
+    rings.setHidden(!ringsOn);
+    jumpAir(f);
+  }
+  function clearTestScene() {
+    s.water = false;
+    s.wideView = false;
+    s.valveOpenShown = false;
+    s.show = { gauge: true, rings: true };
+    rings.setHidden(false);
+  }
   const quiz = createQuiz({
     ui,
     t,
@@ -688,8 +769,8 @@ export function createApp(root, options = {}) {
       leave() {
         s.mode = 'explore';
         s.locked = false;
-        s.show = { gauge: true };
-        s.closeUp = false;
+        clearTestScene();
+        s.dir = 0;
         if (learnSaved) {
           s.found = learnSaved.found;
           jumpAir(learnSaved.f);
@@ -703,46 +784,35 @@ export function createApp(root, options = {}) {
       async prepare(i, alive) {
         picked = -1;
         const kind = KINDS[i % KINDS.length];
-        question = { kind, v: 0 };
-        s.show = { gauge: kind !== 'gauge' };
-        const closeUp = kind === 'gauge';
-        const fly = closeUp !== s.closeUp || s.userMovedCamera;
-        s.closeUp = closeUp;
-        if (kind === 'gauge') {
-          question.v = GAUGE_ASK[Math.floor(Math.random() * GAUGE_ASK.length)];
-          jumpAir(question.v / P_ATM);
-        } else if (kind === 'fade') jumpAir(0.5);
-        else if (kind === 'hammer' || kind === 'moon') jumpAir(0);
-        else jumpAir(1);
+        question = { kind };
+        if (kind === 'dots') testScene({ f: 0.12 });
+        else if (kind === 'fade') testScene({ f: 0.5 });
+        else if (kind === 'hammer') testScene({ f: 0 });
+        else if (kind === 'water') testScene({ f: 0, water: true, rings: false });
+        else testScene({ f: 0.03, valve: true });
+        const wide = kind === 'valve';
+        const fly = s.userMovedCamera || wide !== s.wideView;
+        s.wideView = wide;
         if (fly) await homeView(true);
         if (!alive()) return null;
         anno.update();
-        if (kind === 'gauge') {
-          const kpa = (v) => `${N(v)}&nbsp;${t('u_kpa')}`;
-          return { text: t('q_gauge'), ...choicesOf(gaugeChoices(question.v), kind, (x) => kpa(x.v)) };
-        }
-        if (kind === 'fade')
-          return { text: t('q_fade'), ...choicesOf(words(['c_fade_right', 'c_fade_weak', 'c_fade_pump', 'c_fade_cell']), kind, (x) => t(x.key)) };
-        if (kind === 'hammer')
-          return { text: t('q_hammer'), ...choicesOf(words(['c_ham_right', 'c_ham_stop', 'c_ham_glass', 'c_ham_power']), kind, (x) => t(x.key)) };
-        if (kind === 'water')
-          return { text: t('q_water'), ...choicesOf(words(['c_w_right', 'c_w_slow', 'c_w_air', 'c_w_vib']), kind, (x) => t(x.key)) };
-        return { text: t('q_moon'), ...choicesOf(words(['c_m_right', 'c_m_soft', 'c_m_loud', 'c_m_late']), kind, (x) => t(x.key)) };
+        return { text: t(`q_${kind}`), ...choicesOf(words(CHOICES[kind]), kind, (x) => t(x.key)) };
       },
       reveal(q, correct) {
         const k = question.kind;
         const wrongKey = correct ? null : q.list?.[picked]?.key;
-        const v = { v: question.v, pa: P_ATM, z: 0, cw: 1493 };
-        const noteOf = (map) => (wrongKey && map[wrongKey] ? ` ${t(map[wrongKey], v)}` : '');
-        if (k === 'gauge') {
-          s.show = { gauge: true };
-          return t('why_gauge', v) + noteOf({ flip: 'mis_g_flip', full: 'mis_g_full', empty: 'mis_g_empty' });
+        const v = { cw: 1493 };
+        const note = wrongKey && NOTES[k][wrongKey] ? ` ${t(NOTES[k][wrongKey], v)}` : '';
+        // the answer on the picture
+        if (k === 'water') {
+          s.show.rings = true;
+          rings.setHidden(false);
+          prefill();
+        } else if (k === 'valve') {
+          s.valveOpenShown = false;
+          s.dir = 1; // the air comes in, the sound returns
         }
-        if (k === 'fade') return t('why_fade') + noteOf({ c_fade_weak: 'mis_fade_weak', c_fade_pump: 'mis_fade_pump', c_fade_cell: 'mis_fade_cell' });
-        if (k === 'hammer')
-          return t('why_hammer') + noteOf({ c_ham_stop: 'mis_ham_stop', c_ham_glass: 'mis_ham_glass', c_ham_power: 'mis_ham_power' });
-        if (k === 'water') return t('why_water', v) + noteOf({ c_w_slow: 'mis_w_slow', c_w_air: 'mis_w_air', c_w_vib: 'mis_w_vib' });
-        return t('why_moon') + noteOf({ c_m_soft: 'mis_m_soft', c_m_loud: 'mis_m_loud', c_m_late: 'mis_m_late' });
+        return t(`why_${k}`, v) + note;
       },
       done() {
         s.locked = false;
