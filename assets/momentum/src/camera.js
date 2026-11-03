@@ -26,9 +26,11 @@ export function frontFit({ camera, width, height, uMin, uMax, minSpan, margin = 
 }
 
 /** Camera position and target for the front view centred on road x = xc. */
-export function frontPose(fit, xc, elev) {
+export function frontPose(fit, xc, elev, yaw = 0) {
   const target = new THREE.Vector3(xc, fit.uc * Math.cos(elev), -fit.uc * Math.sin(elev));
-  const position = target.clone().add(new THREE.Vector3(0, Math.sin(elev), Math.cos(elev)).multiplyScalar(fit.d));
+  // `yaw` turns the camera a little to the side, round the target, so the road and the vehicles show their depth
+  const dir = new THREE.Vector3(Math.sin(yaw) * Math.cos(elev), Math.sin(elev), Math.cos(yaw) * Math.cos(elev));
+  const position = target.clone().add(dir.multiplyScalar(fit.d));
   return { position, target };
 }
 

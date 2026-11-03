@@ -56,6 +56,7 @@ export const DEFAULTS = {
 };
 
 const ELEV = THREE.MathUtils.degToRad(33); // the front view looks down on the road from 33° above
+const YAW = THREE.MathUtils.degToRad(16); // and a little to the side, so the launch view reads as 3D
 const FOV = { front: 8, '3d': 26 };
 // arrows in the chapter's colours; the p⃗ words in a darker green that reads well as small text (as the sister figure)
 const COLOR = { v: '#1c6fd9', p: '#2f9e44', pText: '#237a35' };
@@ -488,12 +489,15 @@ export function createApp(root, options = {}) {
         if (!a.root.visible) continue;
         const p0 = toScreen(a.root.position);
         const p1 = toScreen(a.tip);
-        boxCache.push({
-          left: Math.min(p0.x, p1.x) - 4,
-          right: Math.max(p0.x, p1.x) + 4,
-          top: Math.min(p0.y, p1.y) - 6,
-          bottom: Math.max(p0.y, p1.y) + 6,
-        });
+        // a slanted arrow is a row of small boxes along it (one box round all of it would cover half the screen)
+        const len = Math.min(Math.hypot(p1.x - p0.x, p1.y - p0.y), 2 * (stage.width + stage.height));
+        const n = Math.max(1, Math.ceil(len / 24));
+        const k = len / Math.max(1e-6, Math.hypot(p1.x - p0.x, p1.y - p0.y));
+        for (let i = 0; i <= n; i++) {
+          const x = p0.x + ((p1.x - p0.x) * k * i) / n;
+          const y = p0.y + ((p1.y - p0.y) * k * i) / n;
+          boxCache.push({ left: x - 16, right: x + 16, top: y - 8, bottom: y + 8 });
+        }
       }
       const bodies = Object.values(lane.bodies)
         .filter((b) => b.wrap.visible)
@@ -510,6 +514,8 @@ export function createApp(root, options = {}) {
           r.top = Math.min(r.top, q.y);
           r.bottom = Math.max(r.bottom, q.y);
         }
+        r.own = lane.id;
+        r.body = true;
         boxCache.push(r);
       }
     }
@@ -523,6 +529,8 @@ export function createApp(root, options = {}) {
     return { left: Math.min(a.x, b.x) - 4, right: Math.max(a.x, b.x) + 4, top: Math.min(a.y, b.y) - 9, bottom: Math.max(a.y, b.y) + 9 };
   }
   const avoidScene = [() => sceneBoxes(), () => markBox()];
+  // a body's own name tag may sit right under it: turned a little, the box round a body reaches lower than the body
+  const avoidOthers = (id) => [() => sceneBoxes().filter((r) => !(r.body && r.own === id)), () => markBox()];
 
   /** Where the p arrow leaves the screen (its tip is off it): the point on the shaft 12 px in from the edge. */
   const edgePoint = new THREE.Vector3();
@@ -623,6 +631,9 @@ export function createApp(root, options = {}) {
       { dx: side, dy: 26 },
       { dx: -side, dy: 26 },
       { dx: 0, dy: roof },
+      { dx: 0, dy: 38 }, // turned a little, a body's box reaches lower on the screen
+      { dx: -side / 2, dy: 38 },
+      { dx: side / 2, dy: 38 },
       { dx: 0, dy: 50 },
     ];
   }
@@ -686,7 +697,7 @@ export function createApp(root, options = {}) {
       const point = () => tmpTag[lane.id].set(lane.cur.x - (lane.cur.facing * b.info.len) / 2, 0, lane.z + b.info.half);
       const spots = besideSpots(lane, b.info.len, b.info.top);
       const optional = s.mode !== 'quiz';
-      if (!anno.has(id)) anno.add(id, { text, point, kind: 'part', spots, avoid: avoidScene, optional });
+      if (!anno.has(id)) anno.add(id, { text, point, kind: 'part', spots, avoid: avoidOthers(lane.id), optional });
       else anno.update(id, { text, point, spots, optional });
     }
     syncMoved();
@@ -847,7 +858,8 @@ export function createApp(root, options = {}) {
   function computeFit() {
     const ids = s.scene === 'run' ? LANE_IDS : s.frame?.lanes || LANE_IDS;
     const { uMin, uMax } = uRange(ids);
-    const minSpan = s.scene === 'run' ? W_MIN : Math.max(7, (s.frame?.x1 ?? 4) - (s.frame?.x0 ?? -4));
+    const minSpan0 = s.scene === 'run' ? W_MIN : Math.max(7, (s.frame?.x1 ?? 4) - (s.frame?.x0 ?? -4));
+    const minSpan = minSpan0 * (1 + 0.9 * Math.sin(YAW)); // turned a little, the road looks shorter across
     // room for the corner buttons and the labels over the top arrow (always), and for the labels under the lowest
     // body (less in a short view, so the scene is not too small: there they go beside it)
     const h = stage.height;
@@ -859,7 +871,7 @@ export function createApp(root, options = {}) {
     thickness(s.view === 'front' ? THREE.MathUtils.clamp(4.4 / (pxm * 2 * ARROW.r), 1, 2.2) : 1);
     // the long lens is not quite flat: a lane further back looks a little smaller, so its arrows are drawn longer by
     // as much (and the near lane's shorter), and equal vectors are equally long on the screen
-    const n = { y: Math.sin(ELEV), z: Math.cos(ELEV) };
+    const n = { y: Math.sin(ELEV), z: Math.cos(ELEV) * Math.cos(YAW) };
     const T = { y: s.fit.uc * Math.cos(ELEV), z: -s.fit.uc * Math.sin(ELEV) };
     for (const id of LANE_IDS) {
       const k = kindsIn(id)[0];
@@ -890,7 +902,7 @@ export function createApp(root, options = {}) {
   }
   function frontView() {
     if (!s.fit) computeFit();
-    return frontPose(s.fit, frontX(), ELEV);
+    return frontPose(s.fit, frontX(), ELEV, YAW);
   }
   function placeFront() {
     const { position, target } = frontView();
