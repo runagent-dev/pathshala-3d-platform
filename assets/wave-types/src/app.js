@@ -22,7 +22,6 @@ import { boldArrow, doubleArrow } from './arrows.js';
 import { backdropTexture, createSetting } from './setting.js';
 import {
   COLORS,
-  ROPE_R,
   ROPE_Y,
   SPRING,
   SPRING_Y,
@@ -968,21 +967,6 @@ export function createApp(root, options = {}) {
       emitChange();
     },
     startPractice: () => quiz.start(),
-    /** Dev only (measure scripts): sizes on screen in CSS px. */
-    measure() {
-      const at = (p) => ({ ...toScreen(p, { x: 0, y: 0 }) });
-      const dist = (p, q) => Math.round(Math.hypot(at(p).x - at(q).x, at(p).y - at(q).y));
-      const xm = X0 + markedX();
-      return {
-        stage: { w: stage.width, h: stage.height },
-        springDiameter: dist(V(xm, SPRING_Y - SPRING.R, 0), V(xm, SPRING_Y + SPRING.R, 0)),
-        ropeBandLength: dist(V(xm - 0.045, ROPE_Y, 0), V(xm + 0.045, ROPE_Y, 0)),
-        ropeBandDiameter: dist(V(xm, ROPE_Y - ROPE_R * 1.55, 0), V(xm, ROPE_Y + ROPE_R * 1.55, 0)),
-        ropeSwing: dist(V(xm, ROPE_Y - amplitude('rope'), 0), V(xm, ROPE_Y + amplitude('rope'), 0)),
-        swingArrow: swing.visible ? dist(swing.a.tip, swing.b.tip) : 0,
-        labels: anno.boxes?.() ?? [],
-      };
-    },
     capture: (opts) => stage.capture(opts),
     /** The medium as it is now, the driver and the stand, in metres. */
     exportRoot() {
