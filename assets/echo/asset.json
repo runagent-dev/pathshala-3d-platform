@@ -61,7 +61,7 @@
       "params": { "coach": "0" },
       "setup": [
         { "command": "set", "payload": { "d": 25, "animate": false } },
-        { "command": "set", "payload": { "tau": 0.118 } }
+        { "command": "set", "payload": { "tau": 0.145 } }
       ]
     },
     "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "d": 20, "animate": false } }] }],
