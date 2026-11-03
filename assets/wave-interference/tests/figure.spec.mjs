@@ -7,7 +7,8 @@ import { openFigure, preparePage } from '../../../scripts/lib/export/driver.mjs'
 const frameOf = (page) => page.frames().find((f) => f.url().includes('/assets/wave-interference/'));
 
 test('wave-interference: one button walks 1st, 2nd and both, then calms the water', async ({ page }) => {
-  await page.setViewportSize({ width: 800, height: 500 });
+  // a smaller window: these long runs render many software frames and passed CI's 3-minute limit at 800×500; they only read state
+  await page.setViewportSize({ width: 480, height: 300 });
   const log = await preparePage(page);
   const fig = await openFigure(page, 'wave-interference');
   const frame = frameOf(page);
@@ -58,7 +59,7 @@ test('wave-interference: set, pause, gap and reset', async ({ page }) => {
 });
 
 test('wave-interference: a second tap within a moment does not skip a case', async ({ page }) => {
-  await page.setViewportSize({ width: 640, height: 400 });
+  await page.setViewportSize({ width: 480, height: 300 });
   const log = await preparePage(page);
   const fig = await openFigure(page, 'wave-interference');
   const frame = frameOf(page);
@@ -70,7 +71,8 @@ test('wave-interference: a second tap within a moment does not skip a case', asy
 });
 
 test('wave-interference: the test runs five questions and leaves the learn state as it was', async ({ page }) => {
-  await page.setViewportSize({ width: 800, height: 500 });
+  // a smaller window: these long runs render many software frames and passed CI's 3-minute limit at 800×500; they only read state
+  await page.setViewportSize({ width: 480, height: 300 });
   const log = await preparePage(page);
   const fig = await openFigure(page, 'wave-interference');
   const frame = frameOf(page);
