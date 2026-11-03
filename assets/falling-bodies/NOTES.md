@@ -25,8 +25,10 @@ ms⁻², m, cm (one place: `UNITS` in `src/i18n.js`); Bangla words stay in sente
   one open (বাতাস আছে) and one sealed with a valve (বাতাসহীন, "the air was pumped out"). Each holds a small stone
   (6.8 cm pebble) and a piece of exercise-book paper (7 cm square) on a shutter at the same height. The red button on
   the release box on top of the scale (or a tap on a tube's top, or ছেড়ে দাও) opens both shutters at once.
-- The camera frames the falls only (felt pads to the bodies): the wooden base and the valve may run off the edges, so
-  the bodies are big on a phone (stone about 37 px wide at 390×700, 20 px at 390×520, 40 px at 844×390).
+- The camera shows the whole apparatus (the base, both tubes with their collars and lids, the scale with the release
+  box, the speed arrows) with a margin, from 22° to the right and 12° above (the "front" pose it launches in), so the
+  round glass, the lids and the base read as 3D; a drag turns it (the corner's front button brings it back). Bodies at
+  the start: the stone about 30 px wide at 844×390 and 390×700, 15 px at 390×520 (the price of the whole apparatus).
 - Real physics, shown 8 times slower (the note says so): without air both bodies fall freely (h = ½gt², down in
   exactly 0.3 s); in air the drag ½ρCAv² gives h = (vt²/g)·ln cosh(gt/vt) with terminal speeds 47 m/s (stone: lands
   0.1 ms later, invisible) and 1 m/s (flat paper, which also flutters: lands at 0.51 s). The crumpled paper (same
@@ -34,9 +36,9 @@ ms⁻², m, cm (one place: `UNITS` in `src/i18n.js`); Bangla words stay in sente
   unit-tested.
 - In the empty tube a faint picture of both bodies is left every 0.1 s, with an orange dashed line across the
   centimetre scale (h read on the scale: 4.9, 19.6, 44.1 cm) and a blue velocity arrow ending at each line (lengths
-  1 : 2 : 3, labelled "বেগ v"). The panel's table fills in t, v = gt and h = ½gt² with "×1 ×2 ×3" and "×1 ×4 ×9";
-  under it the book's laws ("দ্বিতীয় সূত্র: v ∝ t", "তৃতীয় সূত্র: h ∝ t²") and equations (v = u + gt,
-  h = ut + ½gt², u = 0 from rest); after landing the panel states the first law.
+  1 : 2 : 3, labelled "বেগ v"). The panel's plain table fills in t, v and h with small grey "×1 ×2 ×3" and "×1 ×4 ×9"; under it one plain line,
+  "v ∝ t, h ∝ t² (v = gt, h = ½gt²)", the book's second and third laws; then one or two short sentences per state;
+  after landing the panel states the first law.
 - Actions: ছেড়ে দাও / থামাও / চালাও / আবার ছেড়ে দাও; "০.১ সে" plays one 0.1 s step and stops (arrow keys step
   forward and back); কাগজ দলা পাকাও swaps both papers for crumpled ones (and back), marked in the panel as a
   "বাড়তি পরীক্ষা" (an extra the book doesn't do).
@@ -96,3 +98,14 @@ Against `docs/agents/polish-pass.md`.
   the vacuum pump and its hose are gone; the wall is plain and soft, the room beyond a soft warm grey.
 - Panel in the labs' one order: the actions (ছেড়ে দাও, ০.১ s, কাগজ দলা পাকাও), the table of readings, the laws and
   equations, the sentence. The old wide-frame grid (for the panel under the 3D) is gone.
+
+## View and panel (2026-11, 0.4.0)
+The owner: "Is this not 3D? … too much zoomed in. And the formulation is bold … too much text."
+- The camera launches in a three-quarter view (22° to the side, 12° down) fitted to points on the whole apparatus's
+  outline (`fitPose({ points })` in `src/camera.js`), with margins that grow a little on big stages; nothing is cut
+  off at any of the six sizes. A drag turns it at once (it used to need the "3d" view); the test brings it back.
+- Glass: a slight blue-green tint, clearcoat and stronger reflections, and a Fresnel term that makes the glass more
+  opaque edge-on, so the round tubes show their sides; brighter rim rings.
+- Panel: the table is plain weight (numbers 15 px, regular), the ratios small and grey; the formula sub-labels, the
+  ∝ at the row ends, the bold "দ্বিতীয় সূত্র … তৃতীয় সূত্র …" line and the long equations line are gone, replaced by one
+  plain line; every state's sentence is one or two short sentences.

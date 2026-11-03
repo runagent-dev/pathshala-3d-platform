@@ -197,17 +197,38 @@ export function createApparatus({ t }) {
     wood: new THREE.MeshStandardMaterial({ name: 'Wood', map: woodTexture(), roughness: 0.62 }),
   };
   M.wood.map.repeat.set(2, 1);
+  // glass: clear with a slight blue-green tint, glossy (it takes the room's reflections), and more opaque where it is
+  // seen edge-on (a Fresnel term), so the round tube shows its sides and depth like real glass without hiding the bodies
   const glass = new THREE.MeshPhysicalMaterial({
     name: 'Glass',
-    color: 0xd8eef9,
+    color: 0xcfe9ec,
     metalness: 0,
-    roughness: 0.06,
+    roughness: 0.04,
+    clearcoat: 1,
+    clearcoatRoughness: 0.05,
+    envMapIntensity: 1.6,
     transparent: true,
     opacity: 0.1,
     depthWrite: false,
     side: THREE.DoubleSide,
   });
-  const rimGlass = new THREE.MeshPhysicalMaterial({ name: 'GlassRim', color: 0xa9cde4, roughness: 0.1, transparent: true, opacity: 0.55 });
+  glass.onBeforeCompile = (shader) => {
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <normal_fragment_maps>',
+      `#include <normal_fragment_maps>
+      float glassEdge = pow(1.0 - clamp(abs(dot(normalize(vViewPosition), normal)), 0.0, 1.0), 2.5);
+      diffuseColor.a = mix(diffuseColor.a, 0.62, glassEdge);`,
+    );
+  };
+  glass.customProgramCacheKey = () => 'fb-glass-edge';
+  const rimGlass = new THREE.MeshPhysicalMaterial({
+    name: 'GlassRim',
+    color: 0xe4f4f8,
+    roughness: 0.05,
+    clearcoat: 1,
+    transparent: true,
+    opacity: 0.85,
+  });
   const felt = new THREE.MeshStandardMaterial({ name: 'Felt', color: 0x6e2a2a, roughness: 1 });
   // the release box is pale enamel and its wires cream, so they show on the dark board behind them
   const dark = new THREE.MeshStandardMaterial({ name: 'Housing', color: 0xb9c1cb, roughness: 0.45, metalness: 0.2 });

@@ -15,7 +15,7 @@ import { createCoach } from '@shared/student/coach.js';
 import { createQuiz } from '@shared/student/quiz.js';
 import { ICONS, svg } from '@shared/student/icons.js';
 import { createI18n } from './i18n.js';
-import { ARROW, BOX, TUBE, Y0, createApparatus } from './apparatus.js';
+import { ARROW, BASE, BOX, TOP, TUBE, Y0, createApparatus } from './apparatus.js';
 import { DESK_Y, createClassroom } from './scenery.js';
 import { createLabels } from './labels.js';
 import { fitPose } from './camera.js';
@@ -57,14 +57,27 @@ const T_VAC = landTime(); // 0.3 s: everything without air
 const T_STONE = landTime(BODIES.stone.vt); // the stone in air: 0.3001 s
 const SHUTTER = 0.03; // s for the shutters to fold away (faster than the bodies fall)
 const SETTLE = 0.04; // s for a landed paper to lie flat
-const VIEW_3D = new THREE.Vector3(0.55, 0.3, 0.78).normalize();
-const FRONT_ELEVATION = THREE.MathUtils.degToRad(7);
-// what must be in the frame: the falls in both tubes (felt pads to the bodies on their shutters, the release box) and
-// the speed arrows; the wooden base below and the valve above may run off the edges, so the bodies are big on a phone
-const FRAME = new THREE.Box3(
-  new THREE.Vector3(-TUBE.x - TUBE.r - 0.008, 0, -TUBE.r - 0.008),
-  new THREE.Vector3(ARROW.x + 0.012, Y0 + 0.054, TUBE.r + 0.008),
-);
+// the launch view ("front"): a gentle three-quarter look from the right and a little above, so the round glass, the
+// lids and the base read as solid things; "3d" turns further
+const FRONT_AZIMUTH = THREE.MathUtils.degToRad(22);
+const FRONT_ELEVATION = THREE.MathUtils.degToRad(12);
+const VIEW_3D = new THREE.Vector3(0.62, 0.36, 0.7).normalize();
+// what must be in the frame: the whole apparatus (the wooden base, both tubes with their collars round, the sealed
+// tube's cap and valve, the scale with the release box on top, the speed arrows), as points on its outline
+const FRAME = (() => {
+  const pts = [];
+  for (const x of [-BASE.w / 2, BASE.w / 2])
+    for (const y of [-BASE.h, 0]) for (const z of [-BASE.d / 2, BASE.d / 2]) pts.push(new THREE.Vector3(x, y, z));
+  const r = TUBE.r + 0.008;
+  for (const side of [-1, 1])
+    for (let k = 0; k < 16; k++) {
+      const a = (k / 16) * Math.PI * 2;
+      pts.push(new THREE.Vector3(side * TUBE.x + r * Math.cos(a), TOP + 0.007, r * Math.sin(a)));
+    }
+  pts.push(new THREE.Vector3(TUBE.x + 0.03, TOP + 0.033, -0.02)); // the valve's lever
+  pts.push(new THREE.Vector3(ARROW.x + 0.014, Y0, 0));
+  return pts;
+})();
 const STEP_ICON = svg('<path d="M6 6l7 6-7 6z" class="fill"/><path d="M17 6v12" stroke-width="2.4"/>');
 
 /**
@@ -124,12 +137,11 @@ export function createApp(root, options = {}) {
             <button class="pvc-btn" data-act="paper"><span></span></button>
           </div>
           <div class="fb-table">
-            <span class="fb-k fb-t"><b>${t('row_t')}</b></span>${cells('t')}<span class="fb-u">${t('u_s')}</span>
-            <span class="fb-k fb-v"><b>${t('row_v')}</b><small>${t('eq_v')}</small></span>${cells('v')}<span class="fb-u">${t('u_ms')}<em>${t('law_v_short')}</em></span>
-            <span class="fb-k fb-h"><b>${t('row_h')}</b><small>${t('eq_h')}</small></span>${cells('h')}<span class="fb-u">${t('u_cm')}<em>${t('law_h_short')}</em></span>
+            <span class="fb-k fb-t">${t('row_t')}</span>${cells('t')}<span class="fb-u">${t('u_s')}</span>
+            <span class="fb-k fb-v">${t('row_v')}</span>${cells('v')}<span class="fb-u">${t('u_ms')}</span>
+            <span class="fb-k fb-h">${t('row_h')}</span>${cells('h')}<span class="fb-u">${t('u_cm')}</span>
           </div>
-          <p class="fb-laws"><span class="fb-v">${t('law_2')}</span><span class="fb-h">${t('law_3')}</span></p>
-          <p class="fb-eqs">${t('eqs', { z: 0 })}</p>
+          <p class="fb-law">${t('law')}</p>
           <p class="fb-say" aria-live="polite"></p>`,
   });
 
@@ -590,7 +602,8 @@ export function createApp(root, options = {}) {
   // ── camera ──────────────────────────────────────────────────────────────────
   function viewDir(view) {
     if (view === '3d') return VIEW_3D;
-    return new THREE.Vector3(0, Math.sin(FRONT_ELEVATION), Math.cos(FRONT_ELEVATION));
+    const c = Math.cos(FRONT_ELEVATION);
+    return new THREE.Vector3(Math.sin(FRONT_AZIMUTH) * c, Math.sin(FRONT_ELEVATION), Math.cos(FRONT_AZIMUTH) * c);
   }
   const probe = new THREE.PerspectiveCamera();
   const probePoint = new THREE.Vector3();
@@ -622,13 +635,20 @@ export function createApp(root, options = {}) {
   }
   /** The closest pose that shows everything, with as little room on top as the corner buttons allow. */
   function viewPose(view = s.view) {
-    const fit = (top) =>
-      fitPose({ box: FRAME, dir: viewDir(view), camera, width: stage.width, height: stage.height, margin: { top, bottom: 22, left: 10, right: 60 } });
-    for (const top of [12, 20, 28, 36, 44]) {
+    // a comfortable margin round the whole apparatus, a little more on a big stage
+    const { width, height } = stage;
+    const extra = Math.max(0, 0.065 * height - 20);
+    const margin = {
+      bottom: Math.max(24, 0.075 * height),
+      left: Math.max(18, 0.04 * width),
+      right: width > height ? Math.max(60, 0.06 * width) : 18,
+    }; // the panel's tab beside it
+    const fit = (top) => fitPose({ points: FRAME, dir: viewDir(view), camera, width, height, margin: { ...margin, top: top + extra } });
+    for (const top of [20, 28, 36, 44]) {
       const pose = fit(top);
       if (!blocked(pose)) return pose;
     }
-    return fit(54);
+    return fit(56);
   }
   function flyTo({ position, target }, duration = 0.8) {
     const p0 = camera.position.clone();
@@ -654,15 +674,20 @@ export function createApp(root, options = {}) {
   }
   function setView(view, { animate = true } = {}) {
     s.view = view === '3d' ? '3d' : 'front';
-    controls.enableRotate = s.view === '3d';
     s.userMovedCamera = false;
     syncUI();
     emit('view', { view: s.view });
     return flyTo(viewPose(), animate ? 0.8 : 0);
   }
+  // the view starts in the framed three-quarter pose; a drag turns it, and then the corner's "front" button appears
   controls.addEventListener('start', () => {
     s.userMovedCamera = true;
     tweener.cancel('camera');
+    if (s.view !== '3d') {
+      s.view = '3d';
+      syncUI();
+      emit('view', { view: s.view });
+    }
   });
   // on the smallest stage the speed arrows are named by their symbol only (there is room for "v", not for "বেগ v")
   const noteText = () => labels.setText('vel', stage.width < 480 && stage.height < 300 ? 'v' : t('lbl_velocity'));
@@ -800,6 +825,7 @@ export function createApp(root, options = {}) {
         if (s.paper !== 'flat') setPaper('flat', { animate: false });
         toStart();
         kinds = shuffle(['where', 'why', 'speed', 'height', pickOne(['ratio', 'mass'])]);
+        if (s.view !== 'front' || s.userMovedCamera) setView('front');
         syncUI();
       },
       leave() {
@@ -1007,6 +1033,7 @@ export function createApp(root, options = {}) {
       },
       done() {
         s.locked = false;
+        syncUI();
         refresh();
       },
     },
@@ -1069,6 +1096,9 @@ export function createApp(root, options = {}) {
   // ── buttons, keys ───────────────────────────────────────────────────────────
   function syncUI() {
     for (const b of ui.$$('[data-view]')) b.classList.toggle('on', b.dataset.view === s.view);
+    const front = ui.$('[data-view="front"]');
+    if (front) front.hidden = s.view !== '3d';
+    controls.enableRotate = !s.locked; // the test keeps the view it sets
     root.dataset.mode = s.mode === 'quiz' ? 'quiz' : 'explore';
     for (const b of ui.$$('[data-mode]')) {
       const on = b.dataset.mode === root.dataset.mode;
