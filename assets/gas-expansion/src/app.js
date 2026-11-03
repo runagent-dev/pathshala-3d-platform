@@ -36,8 +36,8 @@ export const DEFAULTS = {
 const BLUE = '#1c6fd9'; // the volume V: the arrow and the dashed level
 const UP = new THREE.Vector3(0, 1, 0);
 const VIEW_DIRS = {
-  front: new THREE.Vector3(0, 0.15, 1).normalize(),
-  '3d': new THREE.Vector3(0.6, 0.38, 0.8).normalize(),
+  front: new THREE.Vector3(0.3, 0.28, 1).normalize(),
+  '3d': new THREE.Vector3(0.7, 0.4, 0.7).normalize(),
 };
 const ARROW_X = -3.6; // the ΔV arrow stands in the gap between the cylinders
 const FRONT_Z = G.R_OUT + 0.5;
