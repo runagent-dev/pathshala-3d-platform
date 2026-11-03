@@ -90,8 +90,9 @@ const CAR_ICON =
 // where the camera looks from (towards the camera from the railway): from the front a little above, so the car's
 // side shows and both tracks; "rotate" starts from the front left
 const elev = THREE.MathUtils.degToRad(28);
+const AZ = THREE.MathUtils.degToRad(11);
 const VIEW_DIRS = {
-  front: new THREE.Vector3(0, Math.sin(elev), Math.cos(elev)),
+  front: new THREE.Vector3(Math.sin(AZ) * Math.cos(elev), Math.sin(elev), Math.cos(AZ) * Math.cos(elev)), // a little from the side, so the train shows depth
   '3d': new THREE.Vector3(-0.42, 0.45, 0.79).normalize(),
 };
 // m of track the picture shows: the 16 m train and the widest gap to the V-train (|a|t²/8 ≤ 18.75 m) always fit
