@@ -36,8 +36,8 @@ export const DEFAULTS = {
 
 const EXAMPLES = ['water', 'heat'];
 const VIEW_DIRS = {
-  front: new THREE.Vector3(0, 0.14, 1).normalize(), // nearly level, so a surface and its dashed line stay together
-  '3d': new THREE.Vector3(0.62, 0.34, 0.8).normalize(),
+  front: new THREE.Vector3(0.3, 0.2, 1).normalize(), // a gentle three-quarter view; the dashed levels are drawn in 3D so they stay with their surfaces
+  '3d': new THREE.Vector3(0.7, 0.4, 0.7).normalize(),
 };
 const FLOW_ARROW_MIN = 2.2; // cm: below this height difference the arrow is too small to read and goes
 const DOUBLE_TAP = 400; // ms: a second tap this soon after one is ignored
