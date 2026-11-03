@@ -140,11 +140,20 @@ function createPot() {
   const rim = new THREE.Mesh(new THREE.TorusGeometry(POT.r, 0.004, 8, 48).rotateX(Math.PI / 2), steel);
   rim.position.y = POT.h;
   root.add(rim);
+  // a steel band round the top of the glass, and the two side handles: a steel bracket and a black grip each
+  const band = new THREE.Mesh(new THREE.CylinderGeometry(POT.r + 0.002, POT.r + 0.002, 0.016, 48, 1, true), steel);
+  band.material = steel.clone();
+  band.material.side = THREE.DoubleSide;
+  band.position.y = POT.h - 0.008;
+  root.add(band);
+  const grip = std('#1f2227', { roughness: 0.55 });
   for (const s of [-1, 1]) {
-    const handle = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.012, 0.018), std('#23262b', { roughness: 0.6 }));
-    handle.position.set(s * (POT.r + 0.024), POT.h - 0.02, 0);
+    const bracket = new THREE.Mesh(new THREE.BoxGeometry(0.016, 0.014, 0.024), steel);
+    bracket.position.set(s * (POT.r + 0.006), POT.h - 0.022, 0);
+    const handle = new THREE.Mesh(new THREE.CapsuleGeometry(0.0085, 0.05, 4, 12).rotateZ(Math.PI / 2), grip);
+    handle.position.set(s * (POT.r + 0.04), POT.h - 0.022, 0);
     handle.castShadow = true;
-    root.add(handle);
+    root.add(bracket, handle);
   }
   // the water
   const waterMat = new THREE.MeshStandardMaterial({ color: '#4c9fdb', transparent: true, opacity: 0.55, roughness: 0.1, depthWrite: false });
@@ -202,20 +211,44 @@ function createPot() {
   const lid = new THREE.Group();
   lid.name = 'Lid';
   lid.position.y = POT.h;
-  const lidBody = new THREE.Mesh(new THREE.CylinderGeometry(POT.r * 0.55, POT.r + 0.008, 0.024, 48), steel);
-  lidBody.position.y = 0.012;
+  const R = POT.r + 0.008;
+  const lidBody = new THREE.Mesh(
+    new THREE.LatheGeometry(
+      [
+        [R, 0],
+        [R + 0.003, 0.004],
+        [R, 0.009],
+        [R * 0.9, 0.013],
+        [R * 0.7, 0.02],
+        [R * 0.45, 0.026],
+        [R * 0.2, 0.029],
+        [0, 0.03],
+      ].map(([x, y]) => new THREE.Vector2(x, y)),
+      48,
+    ),
+    steel,
+  );
   lidBody.castShadow = true;
   lid.add(lidBody);
-  const knob = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.014, 0.02), std('#23262b', { roughness: 0.6 }));
-  knob.position.set(-0.01, 0.031, -0.03);
+  // the clamp handle across the lid (black, on two steel posts)
+  const grip2 = std('#1f2227', { roughness: 0.55 });
+  const knob = new THREE.Mesh(new THREE.CapsuleGeometry(0.009, 0.1, 4, 12).rotateZ(Math.PI / 2), grip2);
+  knob.position.set(0, 0.046, -0.035);
   lid.add(knob);
-  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.02, 10), steel);
+  for (const sx of [-0.04, 0.04]) {
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.0045, 0.0055, 0.02, 10), steel);
+    post.position.set(sx, 0.036, -0.035);
+    lid.add(post);
+  }
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.0045, 0.006, 0.014, 12), steel);
   stem.position.set(-0.05, 0.034, 0.03);
-  const weight = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.014, 20), std('#2b2e34', { roughness: 0.4, metalness: 0.6 }));
-  weight.position.set(-0.05, 0.051, 0.03);
-  lid.add(stem, weight);
+  const weight = new THREE.Mesh(new THREE.CylinderGeometry(0.013, 0.015, 0.016, 24), std('#2b2e34', { roughness: 0.4, metalness: 0.6 }));
+  weight.position.set(-0.05, 0.049, 0.03);
+  const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.006, 12), steel);
+  cap.position.set(-0.05, 0.059, 0.03);
+  lid.add(stem, weight, cap);
   const seal = new THREE.Mesh(new THREE.CylinderGeometry(0.0095, 0.012, 0.012, 14), std('#15171a', { roughness: 0.9 }));
-  seal.position.set(THERM.x, 0.028, THERM.z);
+  seal.position.set(THERM.x, 0.022, THERM.z);
   lid.add(seal);
   lid.visible = false;
   root.add(lid);

@@ -132,6 +132,7 @@ export function createApp(root, options = {}) {
     head: 0.026,
     headRadius: 0.0145,
     pad: 0.0028,
+    xray: true,
     name: 'Pressure',
   });
   scene.add(arrows.root);
