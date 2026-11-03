@@ -33,7 +33,7 @@ export const DEFAULTS = {
 };
 
 const VIEW_DIRS = {
-  front: new THREE.Vector3(0, 0.16, 1).normalize(),
+  front: new THREE.Vector3(0.38, 0.26, 0.9).normalize(),
   '3d': new THREE.Vector3(0.6, 0.38, 0.8).normalize(),
 };
 
