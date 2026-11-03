@@ -609,7 +609,7 @@ export function createApp(root, options = {}) {
   const V = (x, y, z = 0) => new THREE.Vector3(x, y, z);
   function viewDir() {
     const el = deg(ELEVATION + (s.view === '3d' ? 12 : 0));
-    const az = s.view === '3d' ? deg(32) : 0;
+    const az = deg(s.view === '3d' ? 40 : 24);
     return new THREE.Vector3(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el));
   }
   /** What a view must show: points, some with a box round them on the screen (px from the point). */
