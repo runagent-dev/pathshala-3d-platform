@@ -49,6 +49,7 @@ const LANE = { above: 0.14, gap: 0.17 }; // m: the arrows' lanes above the talle
 const GHOST_DROP = 0.06; // m: the faint arrow of the moment before runs just under its arrow
 const DOUBLE_TAP = 450; // ms: a second action this soon after one is ignored
 const ELEVATION = [26, 22]; // degrees: the spheres seen from above as steeply as a tall stage allows (portrait), a little lower on wide ones (the bench top must stay deep enough for the r label)
+const FRONT_YAW = 14; // degrees to the side, so the launch view shows depth and the sides of the spheres and bench
 const VIEW_3D = new THREE.Vector3(0.55, 0.42, 0.9).normalize();
 
 /** Integers with Bangladeshi commas: 1,000 · 63,70,000. */
@@ -803,7 +804,8 @@ export function createApp(root, options = {}) {
   /** The spheres' view: from the front, looking down more on a tall stage (the bench's top fills the room). */
   function sphereDir() {
     const e = THREE.MathUtils.degToRad(THREE.MathUtils.lerp(ELEVATION[0], ELEVATION[1], wideness()));
-    return new THREE.Vector3(0, Math.sin(e), Math.cos(e));
+    const yaw = THREE.MathUtils.degToRad(FRONT_YAW);
+    return new THREE.Vector3(Math.sin(yaw) * Math.cos(e), Math.sin(e), Math.cos(yaw) * Math.cos(e));
   }
   function viewPose(view = s.view) {
     const dir = view === '3d' ? VIEW_3D : sphereDir();
