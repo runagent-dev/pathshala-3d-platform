@@ -34,8 +34,8 @@ export const DEFAULTS = {
 
 const DURATION = { ice: 7, water: 8.5, iron: 6 }; // seconds of the run
 const COLORS = { hot: '#c2410c', cold: '#1864ab', T: '#5f3dc4' };
-const VIEW_DIR = new THREE.Vector3(0, 0.44, 1).normalize();
-const FRAME = new THREE.Box3(new THREE.Vector3(-26, 0, -10), new THREE.Vector3(12, 29.5, 10));
+const VIEW_DIR = new THREE.Vector3(0.4, 0.38, 1).normalize();
+const FRAME = new THREE.Box3(new THREE.Vector3(-26, 0, -14), new THREE.Vector3(16, 29.5, 14));
 
 // where the added thing's label may go (best first): above its ring, then beside it, then below
 const ITEM_SPOTS = [
