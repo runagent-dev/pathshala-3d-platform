@@ -57,20 +57,27 @@ describe('the pulse', () => {
 });
 
 describe('the test’s answers', () => {
-  it('“heard on its own?” has four different answers, one right', () => {
-    for (const d of [6, 10, 12, 25, 30]) {
+  it('“heard on its own?” has four different answers, exactly one right', () => {
+    for (const d of [5, 10, 12, 25, 30, 35]) {
       const list = r.hearChoices(d);
-      assert.equal(list.length, 4);
-      const keys = new Set(list.map((c) => `${c.yes}|${c.t}`));
-      assert.equal(keys.size, 4, `distinct at ${d} m`);
-      assert.equal(list[0].yes, r.separate(d));
+      assert.equal(new Set(list.map((c) => `${c.yes}|${c.after}`)).size, 4, `distinct at ${d} m`);
+      // right: the verdict and its reason are both true
+      const ok = list.filter((c) => c.yes === r.separate(d) && c.after === r.separate(d));
+      assert.deepEqual(
+        ok.map((c) => c.key),
+        ['right'],
+      );
+      // no give-away: each verdict and each reason appears twice
+      assert.equal(list.filter((c) => c.yes).length, 2);
+      assert.equal(list.filter((c) => c.after).length, 2);
     }
   });
-  it('“how far is the wall?” has four different distances, the right one first', () => {
-    for (const t of [0.2, 0.15, 0.24]) {
+  it('“how far is the cliff?” has four different distances, the right one first', () => {
+    for (const t of r.FAR_TIMES) {
       const list = r.distanceChoices(t);
-      assert.equal(new Set(list.map((c) => c.d)).size, 4);
+      assert.equal(new Set(list.map((c) => c.d)).size, 4, `distinct at ${t} s`);
       close(list[0].d, (330 * t) / 2, 1e-6);
+      assert.ok(list[0].d <= r.D_MAX);
     }
   });
 });

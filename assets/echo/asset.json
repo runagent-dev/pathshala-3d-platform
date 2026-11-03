@@ -5,7 +5,7 @@
   "title": "Echo (প্রতিধ্বনি)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "book": "physics-9-10",
   "page": 201,
   "topic": "7.3.1",
@@ -13,7 +13,7 @@
   "order": 1,
   "maintainers": ["RadeenXALNW"],
   "units": "m",
-  "description": "Echo (page 201, topic 7.3.1). A class-9 student stands on flat dry ground in front of a tall sandstone cliff (খাড়া পাহাড়), on a yellow measuring tape that starts at the cliff's foot. The student is dragged (or a distance word 5, 10, 20, 35 m is tapped) and claps: a short teal sound pulse (compressions darker, rarefactions lighter) spreads to the cliff, is reflected, and the echo spreads back as a sphere centred on the image of the hands behind the cliff face, slowed 20 times (said in the panel). A time line in the panel shows the clap at 0, the echo at t = 2d ÷ 330 m/s and the shaded 0.1 s during which we still hear the clap: inside it the two sounds merge (গমগম), beyond it the echo is heard on its own. The result line works the sum with the student's distance; the rule grows from 'sound is a wave, so it can be reflected' to the 0.1 s and then 0.1 s × 330 m/s = 33 m, half of it 16.5 m, which is then marked on the tape. With sound on, the real clap and its echo play at the real delay. Test: five questions (what the returning sound is called, the least time gap, the cliff's distance from a clock reading, whether an echo is heard where the student stands, what a bat learns from its echo), each wrong choice with its own note. Phone-first, Bangla and English.",
+  "description": "Echo (page 201, topic 7.3.1). A class-9 student stands on flat dry ground in front of a tall sandstone cliff (খাড়া পাহাড়), on a yellow measuring tape that starts at the cliff's foot. The student is dragged (or a distance word 5, 10, 20, 35 m is tapped) and claps: a short teal sound pulse (compressions darker, rarefactions lighter; the lower part of each spherical front drawn as an upright band, with its rings on the ground and air particles moving in place) spreads to the cliff, is reflected, and the echo spreads back to the student as a sphere centred on the image of the hands behind the cliff face, slowed 20 times (said in the corner of the view). A time line in the panel shows the clap at 0, the echo at t = 2d ÷ 330 m/s and the shaded 0.1 s during which we still hear the clap: inside it the two sounds merge (গমগম), beyond it the echo is heard on its own. The result line works the sum with the student's distance; the rule grows from 'sound is a wave, so it can be reflected' to the 0.1 s and then 0.1 s × 330 m/s = 33 m, half of it 16.5 m, which is then marked on the tape. Side panels also show the book's chain 0.1 s → 33 m → 16.5 m and the distances tried. With sound on, the real clap and its echo play at the real delay. Test: five questions (what the returning sound is called, the least time gap, the cliff's distance from the time written above the student, whether an echo is heard where the student stands, what a bat learns from its echo), each wrong choice with its own note. Phone-first, Bangla and English.",
   "tags": ["sound", "echo", "reflection", "wave", "speed of sound", "0.1 s", "16.5 m", "bangla"],
   "params": [
     {

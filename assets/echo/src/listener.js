@@ -8,7 +8,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 const mat = (name, color, o = {}) => new THREE.MeshStandardMaterial({ name, color, roughness: 0.8, metalness: 0, ...o });
 
 const HEAD = { y: 1.5, rx: 0.084, ry: 0.11, rz: 0.098 };
-const SHOULDER = { x: 0.175, y: 1.34 };
+const SHOULDER = { x: 0.188, y: 1.34 };
 const UPPER = 0.29; // shoulder to elbow
 const FORE = 0.25; // elbow to wrist
 const HIP = { x: 0.088, y: 0.86 };
@@ -45,10 +45,10 @@ function builder() {
   const sc = new THREE.Vector3();
   const at = new THREE.Vector3();
   function add(geo, material, { x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, sx = 1, sy = 1, sz = 1 } = {}) {
-    let g = geo.index ? geo.toNonIndexed() : geo.clone();
+    // indexed shapes stay indexed (half the size in the GLB)
+    const g = geo.clone();
     for (const name of Object.keys(g.attributes)) if (!['position', 'normal'].includes(name)) g.deleteAttribute(name);
     g.applyMatrix4(m4.compose(at.set(x, y, z), q.setFromEuler(e.set(rx, ry, rz)), sc.set(sx, sy, sz)));
-    g = g.toNonIndexed();
     if (!byMat.has(material)) byMat.set(material, []);
     byMat.get(material).push(g);
   }
@@ -79,6 +79,9 @@ export function createListener() {
     hair: mat('Hair', '#14100d', { roughness: 0.6 }),
     dark: mat('Eye', '#1b1512', { roughness: 0.3 }),
     lips: mat('Lips', '#6e3d2e', { roughness: 0.6 }),
+    button: mat('Button', '#f4f6f8', { roughness: 0.3 }),
+    pocket: mat('Pocket', '#bfd3ea', { roughness: 0.85 }),
+    badge: mat('Badge', '#1f4e8c', { roughness: 0.6 }),
   };
   const sph = new THREE.SphereGeometry(1, 24, 16);
   const sphS = new THREE.SphereGeometry(1, 12, 8);
@@ -87,7 +90,22 @@ export function createListener() {
   const body = builder();
   // legs, shoes
   for (const s of [-1, 1]) {
-    body.add(pill(0.05, 0.078, HIP.y - 0.06), M.trousers, { x: s * HIP.x, y: 0.06, rz: s * 0.015 });
+    // a trouser leg: straight-cut, a little wider at the thigh, a crease of shade from the lathe's facets
+    body.add(
+      lathe(
+        [
+          [0, 0.056],
+          [0.1, 0.058],
+          [0.38, 0.063],
+          [0.48, 0.068],
+          [0.68, 0.082],
+          [HIP.y - 0.06, 0.09],
+        ],
+        20,
+      ),
+      M.trousers,
+      { x: s * HIP.x, y: 0.06, rz: s * 0.015 },
+    );
     body.add(sph, M.shoe, { x: s * (HIP.x + 0.01), y: 0.048, z: 0.045, sx: 0.052, sy: 0.045, sz: 0.13 });
     body.add(box, M.shoe, { x: s * (HIP.x + 0.01), y: 0.012, z: 0.045, sx: 0.1, sy: 0.024, sz: 0.26 });
   }
@@ -107,20 +125,23 @@ export function createListener() {
   body.add(
     lathe([
       [0.97, 0],
-      [0.97, 0.145],
-      [1.06, 0.15],
-      [1.18, 0.164],
-      [1.28, 0.172],
-      [1.34, 0.158],
-      [1.38, 0.1],
-      [1.4, 0.05],
+      [0.97, 0.15],
+      [1.06, 0.156],
+      [1.18, 0.174],
+      [1.28, 0.186],
+      [1.335, 0.176],
+      [1.375, 0.12],
+      [1.4, 0.055],
       [1.41, 0],
     ]),
     M.shirt,
     { sz: 0.62 },
   );
   body.add(new THREE.TorusGeometry(0.056, 0.016, 6, 20).rotateX(Math.PI / 2), M.shirt, { y: 1.405, z: 0.004, sz: 0.85 });
-  body.add(box, M.shirt, { y: 1.18, z: 0.106, sx: 0.012, sy: 0.4, sz: 0.006 }); // the placket
+  body.add(box, M.shirt, { y: 1.18, z: 0.11, sx: 0.014, sy: 0.4, sz: 0.006 }); // the placket
+  for (let k = 0; k < 4; k++) body.add(sphS, M.button, { y: 1.04 + k * 0.1, z: 0.114, sx: 0.006, sy: 0.006, sz: 0.003 });
+  body.add(box, M.pocket, { x: 0.075, y: 1.25, z: 0.104, rx: -0.12, sx: 0.07, sy: 0.08, sz: 0.004 }); // the pocket
+  body.add(box, M.badge, { x: -0.075, y: 1.27, z: 0.104, rx: -0.12, sx: 0.045, sy: 0.03, sz: 0.004 }); // a school badge
   body.add(new THREE.CylinderGeometry(0.043, 0.047, 0.1, 16), M.skin, { y: 1.42 });
   // the head: skull, jaw, ears, hair, eyes, brows, nose, mouth (calm)
   body.add(sph, M.skin, { y: HEAD.y, sx: HEAD.rx, sy: HEAD.ry, sz: HEAD.rz });
@@ -154,7 +175,8 @@ export function createListener() {
     shoulder.rotation.set(0.32, 0, s * 0.06); // the upper arm a little forward
     const upper = builder();
     upper.add(sph, M.shirt, { y: -0.01, sx: 0.06, sy: 0.06, sz: 0.06 });
-    upper.add(pill(0.044, 0.056, UPPER), M.shirt, { y: -UPPER, sx: 1, sz: 1 });
+    upper.add(pill(0.05, 0.06, UPPER * 0.78), M.shirt, { y: -UPPER * 0.78 }); // the half sleeve
+    upper.add(pill(0.036, 0.042, UPPER), M.skin, { y: -UPPER }); // the arm below the sleeve
     shoulder.add(upper.build(`UpperArm${s}`));
     const elbow = new THREE.Group();
     elbow.position.set(0, -UPPER + 0.02, 0);

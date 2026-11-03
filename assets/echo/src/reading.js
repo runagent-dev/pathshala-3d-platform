@@ -55,30 +55,33 @@ export function pulseAt(d, tau) {
 }
 
 /**
- * The four answers to "is the echo heard on its own at d m?": the right one, the opposite verdict with the right time
- * (the 0.1 s rule misread), the verdict from the one-way time (forgot the way back), and "at any distance".
- * Each: { key, yes, t } (t: s, or null).
+ * The four answers to "is the echo heard on its own at d m?", each a verdict with a reason about the echo's time:
+ * yes/no × "it comes back after 0.1 s" / "before 0.1 s". One is right; 'flip' keeps the true time but turns the rule
+ * round; 'time' has the time wrong (the verdict follows from it); 'reason' has the right verdict with a false reason.
+ * Each: { key, yes, after } (after: the reason says the echo comes back 0.1 s or more after the clap).
  */
 export function hearChoices(d) {
-  const t = round(echoTime(d), 3);
-  const oneWay = round(d / V_SOUND, 3);
-  const yes = separate(d);
+  const after = separate(d);
   return [
-    { key: 'right', yes, t },
-    { key: 'flip', yes: !yes, t },
-    { key: 'oneway', yes: oneWay >= GAP, t: oneWay },
-    { key: 'any', yes: true, t: null },
+    { key: 'right', yes: after, after },
+    { key: 'flip', yes: !after, after },
+    { key: 'time', yes: !after, after: !after },
+    { key: 'reason', yes: after, after: !after },
   ];
 }
 
-/** The four answers to "the echo came back after t s: how far is the wall?": right, not halved, 0.1 s's 16.5 m, v ÷ t. */
+/** The times the test's "how far is the cliff?" uses (s): every slip below gives a different distance. */
+export const FAR_TIMES = [0.16, 0.18, 0.22, 0.24];
+
+/**
+ * The four answers to "the echo came back after t s: how far is the cliff?": right (v t ÷ 2), not halved (v t), halved
+ * twice (v t ÷ 4), and the book's 16.5 m (the least distance, not this cliff's).
+ */
 export function distanceChoices(t) {
-  const d = round(distanceFromTime(t), 2);
-  const list = [
-    { key: 'right', d },
+  return [
+    { key: 'right', d: round(distanceFromTime(t), 2) },
     { key: 'whole', d: round(V_SOUND * t, 2) },
+    { key: 'quarter', d: round((V_SOUND * t) / 4, 2) },
     { key: 'gap', d: MIN_D },
-    { key: 'divide', d: round(V_SOUND / t / 2, 2) },
   ];
-  return list;
 }

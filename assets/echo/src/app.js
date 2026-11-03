@@ -18,13 +18,14 @@ import { createQuiz } from '@shared/student/quiz.js';
 import { capturePointer, releasePointer } from '@shared/student/pointer.js';
 import { createI18n } from './i18n.js';
 import { fitPose } from './camera.js';
-import { CLIFF, HAZE, TAPE, createSetting, skyTexture } from './setting.js';
+import { CLIFF, HAZE, TAPE, createCliff, createSetting, skyTexture } from './setting.js';
 import { HANDS_Y, HANDS_Z, createListener } from './listener.js';
 import { createPulse } from './pulse.js';
 import { createTimeline } from './timeline.js';
 import {
   D_STEP,
   EXAMPLES,
+  FAR_TIMES,
   GAP,
   GAP_PATH,
   MIN_D,
@@ -53,13 +54,22 @@ export const DEFAULTS = {
 const COLORS = { ink: '#1d2733', teal: '#0b7285', time: '#c2255c' };
 const TAIL = 6; // m the echo travels past the listener before it fades
 const DOUBLE_TAP = 400; // ms
-const MARGIN = { top: 50, bottom: 12, side: 10 };
+const MARGIN = { top: 44, bottom: 10, side: 10 };
 const V = (x, y, z = 0) => new THREE.Vector3(x, y, z);
-const DIR = V(0.62, 0.17, 0.77).normalize(); // a three-quarter view from behind the student's right, a little above
-const FACING = -Math.PI / 2 + 0.35; // the student faces the cliff (−x), turned a little toward the camera
-const SPAN_Z = TAPE.z - TAPE.width / 2 - 0.16; // the d bar, just in front of the tape's near edge
-const MIN_FRAME = 14; // m: the view always shows at least this much ground in front of the cliff
 const clamp01 = (x) => Math.max(0, Math.min(1, x));
+// the view: from behind the student's right, low (about 9° above the ground), 20–30° off the line to the cliff (less
+// on a narrow frame), so the student is near and big, the tape runs away to the cliff and the cliff fills the back
+// with its top running off the frame
+const ELEV = 0.2;
+const viewDir = (aspect) => {
+  const az = THREE.MathUtils.degToRad(19 + 11 * clamp01((aspect - 0.9) / 0.9));
+  return V(Math.cos(az), ELEV, Math.sin(az)).normalize();
+};
+const FACING = -Math.PI / 2 + 0.8; // the student faces the cliff (−x), turned toward the camera so we see the face
+const ROW_Z = -0.5; // the air particles' row on the ground, beside the student's line
+const EAR = 0.012; // s (real): how long the "heard" ring round the head lasts
+const SPAN_Z = TAPE.z - TAPE.width / 2 - 0.16; // the d bar, just in front of the tape's near edge
+const MIN_FRAME = 6; // m: the view frames at least this much ground in front of the cliff
 
 export function createApp(root, options = {}) {
   const o = { ...DEFAULTS, ...options };
@@ -88,10 +98,31 @@ export function createApp(root, options = {}) {
   tlHost.className = 'ec-tl-host';
   $('.pvc-outcome').after(tlHost);
   const timeline = createTimeline(tlHost, t, N, { gap: GAP });
+  // wide panels only (style.css): the book's chain 0.1 s → 33 m → 16.5 m as it is found, and the distances tried
+  const chain = document.createElement('div');
+  chain.className = 'ec-chain';
+  chain.setAttribute('role', 'img');
+  chain.setAttribute('aria-label', t('ch_aria', { gap: N(GAP), path: N(GAP_PATH), min: N(MIN_D) }).replace(/&nbsp;/g, ' '));
+  /** The chain with what is found so far: a step not yet found shows "?" (the rule says the same). */
+  function chainHTML(step) {
+    const v = (k, html) => (step >= k ? html : '<span class="ec-q">?</span>');
+    return `
+    <span class="ec-ch"><b class="ec-c-time">${v(1, `${N(GAP)}&nbsp;${t('u_s')}`)}</b><small>${t('ch_gap')}</small></span>
+    <span class="ec-ch-op">× ${N(V_SOUND)}&nbsp;${t('u_ms')}<i>→</i></span>
+    <span class="ec-ch"><b>${v(2, `${N(GAP_PATH)}&nbsp;${t('u_m')}`)}</b><small>${t('ch_path')}</small></span>
+    <span class="ec-ch-op">÷ ${N(2)}<i>→</i></span>
+    <span class="ec-ch"><b>${v(2, `${N(MIN_D)}&nbsp;${t('u_m')}`)}</b><small>${t('ch_min')}</small></span>`;
+  }
+  tlHost.after(chain);
+  const tried = document.createElement('div');
+  tried.className = 'ec-tried';
+  tried.innerHTML = `<div class="ec-tr-head">${t('tr_head')}</div><ol></ol><p class="ec-tr-empty">${t('tr_empty')}</p>`;
+  chain.after(tried);
+  const triedList = /** @type {HTMLOListElement} */ (tried.querySelector('ol'));
   // honest time: a small note in the 3D view's top-left corner (the buttons are top right)
   const note = document.createElement('div');
   note.className = 'ec-note';
-  note.textContent = t('note_slow', { k: N(SLOW) });
+  note.textContent = t(o.sound ? 'note_slow_sound' : 'note_slow', { k: N(SLOW) });
   ui.stage.appendChild(note);
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
@@ -124,7 +155,7 @@ export function createApp(root, options = {}) {
   }
   sun.target.updateMatrixWorld();
 
-  const setting = createSetting(N);
+  const setting = createSetting();
   scene.add(setting.root);
   const listener = createListener();
   listener.root.rotation.y = FACING;
@@ -140,8 +171,28 @@ export function createApp(root, options = {}) {
   // the distance d drawn on the ground beside the tape: a dark bar from the cliff's foot to the student, end ticks
   const span = dSpan();
   scene.add(span.root);
-  const pulse = createPulse({ cliffTop: CLIFF.height - 1.5 });
+  const pulse = createPulse({ cliffTop: CLIFF.height - 1.5, rowZ: ROW_Z });
   scene.add(pulse.root);
+  // the moment the echo reaches the student: a teal ring round the head spreads once
+  const ear = new THREE.Mesh(
+    new THREE.TorusGeometry(0.2, 0.022, 8, 40).rotateX(Math.PI / 2),
+    new THREE.MeshBasicMaterial({ color: COLORS.teal, transparent: true, depthWrite: false }),
+  );
+  ear.userData.noExport = true;
+  ear.renderOrder = 8;
+  scene.add(ear);
+  // the tape's numbers every 5 m: upright words in the label layer, placed on the screen (style.css .ec-num)
+  const numLayer = document.createElement('div');
+  numLayer.className = 'ec-nums';
+  ui.stage.appendChild(numLayer);
+  const nums = [];
+  for (let m = 0; m <= 40; m += 5) {
+    const e = document.createElement('span');
+    e.className = 'ec-num';
+    e.textContent = N(m);
+    numLayer.appendChild(e);
+    nums.push({ m, el: e, box: null, w: 0, h: 0 });
+  }
 
   const tweener = createTweener();
   stage.addTicker((dt) => tweener.tick(dt));
@@ -165,6 +216,7 @@ export function createApp(root, options = {}) {
     frozen: false, // the pulse held at a moment by the bridge (set tau)
     found: { near: false, far: false },
     results: new Map(), // example id → its time (s)
+    tried: /** @type {number[]} */ ([]), // distances clapped at, the latest first
     frameD: 0, // the distance the camera frames
     userMovedCamera: false,
     dragging: false,
@@ -182,10 +234,6 @@ export function createApp(root, options = {}) {
     return listener.root.localToWorld(out.set(0, HANDS_Y, HANDS_Z));
   }
   const tmp = new THREE.Vector3();
-  function perPixelAt(p) {
-    const dist = tmp.copy(p).sub(camera.position).dot(camera.getWorldDirection(new THREE.Vector3()));
-    return (2 * Math.max(0.5, dist) * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))) / Math.max(1, stage.height);
-  }
   function syncScene() {
     listener.root.position.set(s.d, 0, 0);
     slideMark.position.set(s.d, 0.03, 0);
@@ -198,19 +246,55 @@ export function createApp(root, options = {}) {
       const r = V_SOUND * s.tau;
       const back = r > src.x ? r : 0;
       const fade = clamp01(1 - (r - 2 * s.d) / TAIL);
-      pulse.set(src, r, back, 1, fade);
+      pulse.set(src, r, back, 1, fade, s.d - 0.35);
+    }
+    const kE = s.tau == null ? -1 : (s.tau - echoTime(s.d)) / EAR;
+    ear.visible = kE >= 0 && kE < 1;
+    if (ear.visible) {
+      ear.position.set(s.d, listener.height - 0.1, 0);
+      ear.scale.setScalar(1 + 1.6 * kE);
+      ear.material.opacity = 1 - kE;
     }
     // the clap: hands together for a moment at τ = 0 (the app tweens s.clap)
     listener.setClap(s.clap ?? 0);
-    // the tape's numbers, upright and a steady size on the screen
-    for (const m of setting.tape.numbers) {
-      m.visible = s.show.tape;
-      m.quaternion.copy(camera.quaternion);
-      m.scale.setScalar(THREE.MathUtils.clamp(15 * perPixelAt(m.position), 0.12, 2.2));
-    }
+    placeNumbers();
     setting.tape.mark.visible = s.found.near && s.found.far && s.mode === 'explore';
     stage.invalidate();
   }
+
+  /** The tape's numbers on the screen, just beyond the tape's near edge; one that would touch the student, the
+   * action's ring or a nearer number is left out (the tape's ticks are still there). */
+  const numAt = new THREE.Vector3();
+  const scr = { x: 0, y: 0 };
+  function placeNumbers() {
+    numLayer.hidden = !s.show.tape;
+    if (!s.show.tape) return;
+    const keep = [personBox()];
+    const ring = action?.ringBox?.();
+    if (ring) keep.push(ring);
+    const hitsAny = (b) => keep.some((r) => b.left < r.right + 2 && b.right > r.left - 2 && b.top < r.bottom + 2 && b.bottom > r.top - 2);
+    // nearest first: the numbers near the camera are the ones to keep
+    for (let i = nums.length - 1; i >= 0; i--) {
+      const n = nums[i];
+      if (!n.w) {
+        n.el.style.display = '';
+        n.w = n.el.offsetWidth;
+        n.h = n.el.offsetHeight;
+      }
+      numAt.set(n.m, 0, TAPE.z + TAPE.width / 2 + 0.05);
+      tmp.copy(numAt).project(camera);
+      toScreen(numAt, scr);
+      const box = { left: scr.x - n.w / 2, right: scr.x + n.w / 2, top: scr.y + 1, bottom: scr.y + 1 + n.h };
+      const on = tmp.z < 1 && box.left > 2 && box.right < stage.width - 2 && box.bottom < stage.height - 2 && box.top > 30 && !hitsAny(box);
+      n.box = on ? box : null;
+      n.el.style.display = on ? '' : 'none';
+      if (on) {
+        n.el.style.transform = `translate(${Math.round(box.left)}px, ${Math.round(box.top)}px)`;
+        keep.push(box);
+      }
+    }
+  }
+  const numBoxes = () => nums.map((n) => n.box).filter(Boolean);
 
   // ── the panel ───────────────────────────────────────────────────────────────
   const sumVars = (d) => {
@@ -249,6 +333,23 @@ export function createApp(root, options = {}) {
     }
     sheet.next(s.mode === 'explore' ? next : null);
     for (const x of EXAMPLES) sheet.result(exId(x), s.results.has(exId(x)) ? `${N(s.results.get(exId(x)))} s` : '');
+    // the chain (wide panels): its first step once the 0.1 s is known, the rest once both sides are found
+    const step = f.near && f.far ? 2 : f.near || f.far ? 1 : 0;
+    if (chain.dataset.step !== String(step)) {
+      chain.dataset.step = String(step);
+      chain.innerHTML = chainHTML(step);
+    }
+    const rows = s.tried
+      .map((x) => {
+        const sep = separate(x);
+        return `<li><span>d = ${N(x)}&nbsp;${t('u_m')}</span><span class="ec-c-time">${N(round(echoTime(x), 3))}&nbsp;${t('u_s')}</span><span class="${sep ? 'ec-yes' : 'ec-no'}">${t(sep ? 'tr_sep' : 'tr_merge')}</span></li>`;
+      })
+      .join('');
+    if (triedList.dataset.rows !== rows) {
+      triedList.dataset.rows = rows;
+      triedList.innerHTML = rows;
+    }
+    tried.dataset.empty = String(!s.tried.length);
     // the time line
     timeline.set({
       cursor: (s.playing || s.frozen) && s.tau != null ? Math.min(s.tau, echoTime(d)) : null,
@@ -283,7 +384,7 @@ export function createApp(root, options = {}) {
   const anno = createAnnotations({
     stage,
     layer: ui.annoLayer,
-    avoid: [ui.corner, ui.hint, note, personBox, () => action?.box(), () => action?.ringBox()],
+    avoid: [ui.corner, ui.hint, note, personBox, () => action?.box(), () => action?.ringBox(), numBoxes],
   });
   const spot = (dx, dy) => ({ dx, dy });
   const ABOVE = [spot(0, -28), spot(24, -30), spot(-24, -30), spot(0, -50)];
@@ -305,7 +406,7 @@ export function createApp(root, options = {}) {
     }
     want.set('cliff', {
       text: t('lbl_cliff'),
-      point: () => V(0.2, CLIFF.height * 0.6, -3),
+      point: () => V(0.3, CLIFF.height * 0.34, -3),
       spots: [spot(40, -10), ...SIDE, ...ABOVE],
       color: COLORS.ink,
       optional: true,
@@ -314,8 +415,8 @@ export function createApp(root, options = {}) {
     if (s.found.near && s.found.far && s.mode === 'explore' && Math.abs(s.d - MIN_D) > 2.5 && Math.abs(s.d / 2 - MIN_D) > 6)
       want.set('min', {
         text: t('lbl_min', { min: N(MIN_D) }),
-        point: () => V(MIN_D, 0.02, TAPE.z + 0.3),
-        spots: BELOW,
+        point: () => V(MIN_D, 0.03, TAPE.z - TAPE.width / 2),
+        spots: ABOVE,
         color: COLORS.time,
         optional: true,
       });
@@ -372,9 +473,19 @@ export function createApp(root, options = {}) {
   /** The points the view must show: the student (with room for the label above), the tape's start, the cliff's face. */
   function viewPose(d = s.frameD || Math.max(MIN_FRAME, s.d)) {
     const points = [];
-    for (const x of [d - 0.7, d + 0.7]) for (const y of [0, 2.3]) for (const z of [-0.7, TAPE.z + 0.5]) points.push(V(x, y, z));
-    points.push(V(-0.2, 0, TAPE.z + 0.4), V(-0.2, 0, -3), V(0, 9, -2), V(0, 9, TAPE.z));
-    return fitPose({ points, bias: 0.85, dir: DIR, camera, width: stage.width, height: stage.height, margin: MARGIN });
+    // the student (with room for the labels above the head and the tape beside the feet) …
+    for (const x of [d - 0.8, d + 0.9]) for (const y of [0, 2.25]) for (const z of [ROW_Z - 0.3, TAPE.z + 0.45]) points.push(V(x, y, z));
+    // … the tape's start at the cliff's foot and a little of the face above it
+    points.push(V(0, 0, TAPE.z + 0.5), V(0, 0, ROW_Z - 0.5), V(0, 3.2, 0));
+    return fitPose({
+      points,
+      bias: 0.6,
+      dir: viewDir(stage.width / Math.max(1, stage.height)),
+      camera,
+      width: stage.width,
+      height: stage.height,
+      margin: MARGIN,
+    });
   }
   function place(pose) {
     camera.position.copy(pose.position);
@@ -509,7 +620,6 @@ export function createApp(root, options = {}) {
         syncScene();
       },
     });
-    let echoed = false;
     const ok = await tweener.animate({
       key: 'run',
       duration: tEnd(d) * SLOW,
@@ -517,10 +627,6 @@ export function createApp(root, options = {}) {
       onUpdate: (k) => {
         if (token !== s.run) return;
         s.tau = k * tEnd(d);
-        if (!echoed && arrived()) {
-          echoed = true;
-          audio.pop?.();
-        }
         syncScene();
         refresh();
       },
@@ -533,14 +639,13 @@ export function createApp(root, options = {}) {
   function finishClap(d) {
     s.playing = false;
     s.tau = tEnd(d);
-    const firstTime = !s.found.near && !s.found.far;
     if (separate(d)) s.found.far = true;
     else s.found.near = true;
     if (EXAMPLES.includes(d)) s.results.set(exId(d), round(echoTime(d), 3));
+    if (s.mode === 'explore') s.tried = [d, ...s.tried.filter((x) => x !== d)].slice(0, 6);
     syncScene();
     refresh();
     emitChange();
-    if (firstTime && s.mode === 'explore') showHint(t('hint_drag'), { duration: 3500 });
   }
   function doClap() {
     if (s.locked) return lockedNudge();
@@ -740,16 +845,16 @@ export function createApp(root, options = {}) {
         question = { kind };
         if (kind === 'what') {
           const d = pick([18, 20, 22]);
-          testScene(d, (1.45 * d) / V_SOUND, { labels: false });
+          testScene(d, (1.75 * d) / V_SOUND, { labels: false });
         } else if (kind === 'gap') {
           testScene(20, (1.6 * 20) / V_SOUND, {});
         } else if (kind === 'far') {
-          const tt = pick([0.2, 0.24, 0.16, 0.18]);
+          const tt = pick(FAR_TIMES);
           question.t = tt;
           question.d = round((V_SOUND * tt) / 2, 2);
           testScene(question.d, tt, { labels: false, tape: false, time: true });
         } else if (kind === 'hear') {
-          question.d = pick([5, 10, 25, 30, 35]);
+          question.d = pick([5, 10, 12, 25, 30, 35]);
           testScene(question.d, null, { dLabel: false });
         } else {
           testScene(22, (1.5 * 22) / V_SOUND, {});
@@ -780,12 +885,15 @@ export function createApp(root, options = {}) {
             ),
           };
         if (kind === 'far')
-          return { text: t('q_far', { v: N(V_SOUND) }), ...choicesOf(distanceChoices(question.t), kind, (x) => `${N(x.d)}&nbsp;m`) };
+          return {
+            text: t('q_far', { v: N(V_SOUND) }).replace(/&nbsp;/g, '\u00a0'),
+            ...choicesOf(distanceChoices(question.t), kind, (x) => `${N(x.d)}&nbsp;m`),
+          };
         if (kind === 'hear') {
           const items = hearChoices(question.d);
           return {
             text: t('q_hear'),
-            ...choicesOf(items, kind, (x) => (x.t == null ? t('c_hear_any') : t(x.yes ? 'c_hear_yes' : 'c_hear_no', { t: N(x.t) }))),
+            ...choicesOf(items, kind, (x) => t(`c_hear_${x.yes ? 'yes' : 'no'}_${x.after ? 'after' : 'before'}`, { gap: N(GAP) })),
           };
         }
         return {
@@ -816,7 +924,7 @@ export function createApp(root, options = {}) {
           s.show = { labels: true, tape: true, dLabel: true, time: true };
           syncScene();
           refresh();
-          return t('why_far', v) + note({ whole: 'mis_far_whole', gap: 'mis_far_gap', divide: 'mis_far_divide' }, v);
+          return t('why_far', v) + note({ whole: 'mis_far_whole', gap: 'mis_far_gap', quarter: 'mis_far_quarter' }, v);
         }
         if (k === 'hear') {
           const d = question.d;
@@ -826,7 +934,7 @@ export function createApp(root, options = {}) {
           refresh();
           const v = { ...sumVars(d) };
           const why = t(separate(d) ? 'why_hear_yes' : 'why_hear_no', v);
-          return why + note({ flip: 'mis_hear_flip', oneway: 'mis_hear_oneway', any: 'mis_hear_any' }, v);
+          return why + note({ flip: 'mis_hear_flip', time: 'mis_hear_time', reason: 'mis_hear_reason' }, v);
         }
         return t('why_bat', { f: N(100) }) + note({ c_bat_color: 'mis_bat_color', c_bat_speed: 'mis_bat_speed', c_bat_heavy: 'mis_bat_heavy' });
       },
@@ -857,6 +965,7 @@ export function createApp(root, options = {}) {
     s.tau = null;
     s.found = { near: false, far: false };
     s.results.clear();
+    s.tried = [];
     s.userMovedCamera = false;
     hintOff();
     syncUI();
@@ -918,9 +1027,8 @@ export function createApp(root, options = {}) {
   place(viewPose());
   syncScene();
   refresh();
-  const ready = (async () => {
-    if (o.mode === 'quiz') quiz.start();
-  })();
+  if (o.mode === 'quiz') quiz.start();
+  const ready = Promise.resolve();
 
   return {
     ready,
@@ -930,6 +1038,11 @@ export function createApp(root, options = {}) {
       return () => listeners.get(type).delete(fn);
     },
     getState: snapshot,
+    /** For the builder's checks: the student's height on the screen (px) and the stage's size. */
+    measure() {
+      const b = personBox();
+      return { student: Math.round(b.bottom - b.top - 8), width: stage.width, height: stage.height };
+    },
     /**
      * d: the student's distance from the cliff (m, 4–40, in 0.5 m steps); clap: true plays the clap (animate: false
      * lands at once on its result); tau: holds the pulse that many real seconds after a clap; found: { near, far } sets what the student has found (the rule's stage).
@@ -977,7 +1090,8 @@ export function createApp(root, options = {}) {
     exportRoot() {
       const g = new THREE.Group();
       g.name = 'Echo';
-      g.add(setting.cliff.clone(true), listener.root.clone(true));
+      // the cliff cropped to its middle (the scene's runs off every frame)
+      g.add(createCliff(CLIFF.exportWidth, 0.6).root, listener.root.clone(true));
       const tape = setting.tape.root.clone(true);
       tape.children = tape.children.filter((c) => !c.userData.noExport && c.visible);
       g.add(tape);
