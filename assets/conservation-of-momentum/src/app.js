@@ -63,14 +63,20 @@ export const DEFAULTS = {
 };
 
 const COLORS = { velocity: '#1c6fd9', momentum: '#2f9e44', energy: '#f59f00' };
-const fromFront = (deg) => new THREE.Vector3(0, Math.sin(THREE.MathUtils.degToRad(deg)), Math.cos(THREE.MathUtils.degToRad(deg)));
+// a direction from the track's middle towards the camera: raised by deg above the front, turned a little to the side (a three-quarter view)
+const FRONT_TURN = 15;
+const fromFront = (deg) => {
+  const el = THREE.MathUtils.degToRad(deg);
+  const az = THREE.MathUtils.degToRad(FRONT_TURN);
+  return new THREE.Vector3(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el));
+};
 const VIEW_DIRS = {
-  front: fromFront(13),
-  '3d': new THREE.Vector3(0.5, 0.5, 0.72).normalize(),
+  front: fromFront(18),
+  '3d': new THREE.Vector3(0.62, 0.5, 0.6).normalize(),
 };
 // the front view looks down a little more where the frame has height to spare (the track's top, the সমতল, shows),
 // as long as the balls keep their size
-const FRONT_TILTS = [13, 18, 23, 28].map(fromFront);
+const FRONT_TILTS = [18, 22, 26, 30].map(fromFront);
 // the arrows' heights above the taller ball: m₂'s just above it, m₁'s a little higher, so they never overlap
 const LANE_GAP = [0.075, 0.03];
 const LANE_TOP = 2 * radiusOf(3) + LANE_GAP[0]; // the framing keeps room for this (the examples' biggest ball)
