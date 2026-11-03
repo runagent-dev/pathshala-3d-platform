@@ -90,7 +90,7 @@ const look = (azDeg, elDeg) => {
   const el = THREE.MathUtils.degToRad(elDeg);
   return new THREE.Vector3(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el));
 };
-const VIEWS = { front: look(0, 12), '3d': look(38, 22) };
+const VIEWS = { front: look(24, 17), '3d': look(48, 26) };
 
 export function createApp(root, options = {}) {
   const o = { ...DEFAULTS, ...options };
