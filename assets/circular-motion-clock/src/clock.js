@@ -142,7 +142,7 @@ export function createClock({ t }) {
     lift: -1.1, // the path is drawn just in front of the hands
     hub: 1.4, // the pin and the hands' roots round the fixed point
     fit: { radius: CLOCK.frame + 0.6, depth: 2 },
-    views: { front: new THREE.Vector3(0, 0.1, 1).normalize(), '3d': new THREE.Vector3(0.62, 0.3, 0.72).normalize() },
+    views: { front: new THREE.Vector3(0.34, 0.3, 1).normalize(), '3d': new THREE.Vector3(0.62, 0.3, 0.72).normalize() },
     grab: [hit],
     lights: [lamp],
     wallZ: -2.35, // where the wall behind it is
