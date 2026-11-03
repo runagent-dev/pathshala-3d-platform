@@ -156,6 +156,7 @@ export function createApp(root, options = {}) {
     busy: false, // an animation the student started is running
     run: 0, // a token: every new action, reset or question bumps it
     wide: false, // the camera steps back while the tube turns over
+    close: false, // the camera comes close to the top of the column while the mercury falls
     userMovedCamera: false,
     phase: 'ready', // 'ready' | 'filling' | 'full' | 'turning' | 'dipped' | 'falling' | 'settled'
     fill: 0, // 0…1 of the tube filled (upright, mouth up)
@@ -197,7 +198,7 @@ export function createApp(root, options = {}) {
   function layoutArrows() {
     airArrow.hide();
     dimH.hide();
-    if (inDish()) {
+    if (inDish() && !s.close) {
       airArrow.set(V(AIR_X, SURFACE_Y + AIR_LEN, 0.03), DOWN, AIR_LEN);
       airArrow.scale(Math.min(3, Math.max(1, (2.6 * perPixel()) / 0.0034)));
     }
@@ -345,6 +346,7 @@ export function createApp(root, options = {}) {
   const DIR = V(0.12, 0.16, 1);
   function lookBox() {
     if (s.wide) return box3(-0.66, -0.01, 0.48, 1.12);
+    if (s.close) return box3(-0.13, 0.64, 0.17, 1.08); // the top of the column, close, while the mercury falls
     if (!inDish()) return box3(-0.3, -0.01, 0.2, 1.08, 0.12);
     return box3(-0.22, -0.01, 0.2, 1.08, 0.12);
   }
@@ -419,6 +421,7 @@ export function createApp(root, options = {}) {
     for (const k of ['wait', 'tube', 'thumb', 'col']) tweener.cancel(k);
     s.busy = false;
     s.wide = false;
+    s.close = false;
     beaker.visible = false;
     stream.visible = false;
   }
@@ -539,6 +542,10 @@ export function createApp(root, options = {}) {
     });
     s.thumb.on = false;
     if (!ok || token !== s.run) return;
+    // the camera comes close to the top of the tube, to see the empty space open up
+    s.close = true;
+    ok = await frame(0.7);
+    if (!ok || token !== s.run) return;
     // the mercury falls and bobs to rest at 76 cm
     const target = MD + H;
     const A = L - target;
@@ -554,6 +561,11 @@ export function createApp(root, options = {}) {
       ease.linear,
     );
     if (!ok || token !== s.run) return;
+    ok = await wait(0.6);
+    if (!ok || token !== s.run) return;
+    // then steps back to show the whole 76 cm
+    s.close = false;
+    frame(0.9);
     tubeSettled();
     s.busy = false;
     s.found = true;
