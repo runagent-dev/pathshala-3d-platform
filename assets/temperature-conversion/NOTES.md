@@ -49,3 +49,12 @@ always differ by 273.15.
   says only "কখনোই না।"); it follows from T_C = T_K − 273.15°.
 - Colours for the three scales (C blue, K violet, F orange) are this figure's own; other chapter-6 figures may want to
   reuse them.
+
+## Polish pass (0.2.0)
+- Sets this lab apart from `temperature-scales`: that lab is the scales themselves (fixed points, one reading); this one
+  is the book's relation. A coloured bar beside each tube runs from the lower fixed level (0° C = 273.15 K = 32° F) to
+  the liquid, and the panel shows the page's own form (T_C − 0)/100 = (T_K − 273.15)/100 = (T_F − 32)/180 with the
+  student's numbers, so the three fractions are seen to be equal.
+- Each example shows the book's প্রশ্ন sentence word for word; fractions are stacked like the page's.
+- Plates are rounded, with screws; the liquid has a meniscus and the glass a glint.
+- The book writes 574.59 K for example 2 and 36.89° for example 3 (≈ 37° C), as before.

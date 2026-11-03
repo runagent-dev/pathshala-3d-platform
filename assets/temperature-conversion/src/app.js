@@ -65,12 +65,12 @@ export function createApp(root, options = {}) {
       (id) =>
         `<div class="ts-row k-${id}"><span class="ts-name">${t(`sc_${id}`)} <i>T<sub>${id}</sub></i></span><b class="ts-val" data-val="${id}"></b></div>`,
     ).join('')}</div>
-    <div class="ts-eq"><div class="ts-law">${law()}</div><div class="ts-sum" data-sum="k"></div><div class="ts-sum" data-sum="f"></div></div>`;
+    <div class="ts-eq"><div class="ts-law">${law()}</div><div class="ts-law ts-nums" data-nums></div><div class="ts-sum" data-sum="k"></div><div class="ts-sum" data-sum="f"></div></div>`;
   ui.$('.pvc-act-row').after(mid);
   const valEls = Object.fromEntries(SCALE_IDS.map((id) => [id, ui.$(`[data-val="${id}"]`)]));
   const sumK = ui.$('[data-sum="k"]');
   const sumF = ui.$('[data-sum="f"]');
-  const lawEl = ui.$('.ts-law');
+  const numsEl = ui.$('[data-nums]');
   const readEl = ui.$('.ts-read');
 
   /** The book's relation as printed: T_C / 100 = (T_K − 273.15) / 100 = (T_F − 32) / 180. */
@@ -78,6 +78,12 @@ export function createApp(root, options = {}) {
     const f = (n, d) => `<span class="ts-f"><span>${n}</span><span>${d}</span></span>`;
     const c = 'T<sub>C</sub>';
     return `${f(c, N(100))}<i>=</i>${f(`T<sub>K</sub> − ${N('273.15')}`, N(100))}<i>=</i>${f(`T<sub>F</sub> − ${N(32)}`, N(180))}`;
+  }
+
+  /** The same relation with the student's numbers: (T_C − 0)/100 = (T_K − 273.15)/100 = (T_F − 32)/180. */
+  function lawNums(r) {
+    const f = (n, d) => `<span class="ts-f"><span>${n}</span><span>${d}</span></span>`;
+    return `${f(N(fmt(r.c)), N(100))}<i>=</i>${f(N(fmt(r.k - K0)), N(100))}<i>=</i>${f(N(fmt(r.f - 32)), N(180))}`;
   }
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
@@ -183,6 +189,7 @@ export function createApp(root, options = {}) {
       for (const id of SCALE_IDS) valEls[id].textContent = unit(id, r[id.toLowerCase()]);
       const sk = `<span class="nw">${t('eq_c_k', { d: fmt(K0) })}</span> <span class="nw">= ${N(fmt(r.k))} − ${N(fmt(K0))} = <b>${N(fmt(r.c))}°</b></span>`;
       const sf = `<span class="nw">${t('eq_c_f')}</span> <span class="nw">= ${t('frac59')} (${N(fmt(r.f))} − ${N(32)}) = <b>${N(fmt(r.c))}°</b></span>`;
+      numsEl.innerHTML = lawNums(r);
       sumK.innerHTML = sk;
       sumF.innerHTML = sf;
       const aria = t('thermometer_aria', { c: fmt(r.c), k: fmt(r.k), f: fmt(r.f) });
@@ -195,7 +202,7 @@ export function createApp(root, options = {}) {
       if (row.classList.contains('same') !== on) row.classList.toggle('same', on);
     }
     sheet.outcome(outcomeHtml(r));
-    sheet.rule(t('rule_intro'));
+    sheet.rule(s.example && !q ? t(`ask_${s.example}`, { f: 98.4 }) : t('rule_intro'));
     therm.grip(s.c, grip);
     stage.invalidate();
   }
