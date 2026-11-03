@@ -1,0 +1,103 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "wave-interference",
+  "title": "Superposition of water waves (তরঙ্গের উপরিপাতন)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.2.1",
+  "book": "physics-9-10",
+  "page": 192,
+  "topic": "7.2.1",
+  "placement": "Book pages 192–193, topic 7.2.1 তরঙ্গের বৈশিষ্ট্য, item (v) উপরিপাতন: next to চিত্র ৭.০৩ and the নিজে করো with a plate of water.",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "Superposition of water waves (page 192, topic 7.2.1 (v), চিত্র ৭.০৩) in a real ripple tank on a lab bench: a vibrator bar hung on two helical springs, with a small motor and its eccentric weight, drives two point dippers in step, and each sends circular ripples (f = 5 Hz, v = 0.25 m/s, λ = 5 cm, falling off as 1/√r) across a deep blue water surface computed on the GPU, whose colour follows its height, with pale foam beaches so nothing reflects. Where the waves cancel the water turns a calm grey-blue and faint dashed lines mark the still lines (স্থির রেখা). Two floating corks show the idea: কর্ক ক on the centre line (crest meets crest) bobs twice as high, কর্ক খ on a still line (paths differ by 1½λ: crest meets trough) stays almost still, though each wave alone makes it bob. One row of words (১ম তরঙ্গ · ২য় তরঙ্গ · দুটো একসাথে) and one numbered action walk the three cases; a live চিত্র ৭.০৩ in the panel draws, for each cork, the 1st wave, the 2nd wave and their sum against time; the result line gives the two amplitudes in a, the rule the book's sentence, and a line the book's (ii): amplitude 2a → four times the energy. Waves are drawn 12 times taller and 5 times slower (said on the picture). A quiet pause and start-over. Test tab: 5 questions (crest meets trough, which cork bobs most, one source lifted, a cork's amplitude read off the water, double amplitude gives four times the energy), each wrong choice a real mistake with its own note. Phone-first, Bangla and English.",
+  "tags": ["waves", "superposition", "interference", "ripple tank", "water waves", "amplitude", "energy", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "example",
+      "label": "Start with",
+      "type": "select",
+      "options": [
+        ["calm", "still water"],
+        ["one", "the 1st source only"],
+        ["two", "the 2nd source only"],
+        ["both", "both sources (the pattern formed)"]
+      ],
+      "default": "calm"
+    },
+    {
+      "name": "gap",
+      "label": "Distance between the dippers",
+      "type": "select",
+      "options": [["10", "10 cm (2λ)"], ["15", "15 cm (3λ)"], ["20", "20 cm (4λ)"]],
+      "default": "15"
+    },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The numbered badge on the picture pulses at first", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "example": "one" } },
+    { "name": "set", "payload": { "example": "both", "animate": false } },
+    { "name": "set", "payload": { "gap": 20 } },
+    { "name": "set", "payload": { "paused": true } },
+    { "name": "set", "payload": { "example": "calm" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": {
+      "params": { "coach": "0" },
+      "setup": [{ "command": "set", "payload": { "example": "both", "animate": false } }]
+    },
+    "glb": [
+      {
+        "name": "default",
+        "setup": [
+          { "command": "set", "payload": { "example": "both", "animate": false } },
+          { "command": "set", "payload": { "paused": true } }
+        ]
+      }
+    ],
+    "video": {
+      "kind": "script",
+      "seconds": 20,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 0.5, "command": "set", "payload": { "example": "one" } },
+        { "at": 6.5, "command": "set", "payload": { "example": "two" } },
+        { "at": 11, "command": "set", "payload": { "example": "both" } }
+      ]
+    }
+  }
+}
