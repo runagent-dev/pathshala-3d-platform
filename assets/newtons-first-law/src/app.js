@@ -66,9 +66,10 @@ const PUSH_ARROW = 0.34; // m: the push (15 m/s²) is the biggest force, so the 
 const BRAKE_ACC = 4; // m/s²: the steady force that stops the book in one test question
 const PASS_ICE = stopDistance(SURFACES.ice.mu) + 0.4; // m: past the ice's stop, the view pulls back
 const DOUBLE_TAP = 450; // ms: a second push request this soon after one is ignored
-const LANE_LEFT = -PUSH.stroke - BOOK.length - 0.12; // the side view starts here (room for the ring left of the paddle)
+const LANE_LEFT = -PUSH.stroke - BOOK.length - 0.3; // the side view starts here (room for the ring left of the paddle)
 const FOLLOW_SHARE = 0.66; // once followed, the book's front stays this far across the view (room for both arrows)
-const ELEVATION = [58, 18]; // degrees: the side view looks down as steeply as the frame allows, within these
+const SIDE_YAW = 14; // degrees: the side view looks along the lane a little, from behind the launcher, so it shows depth
+const ELEVATION = [40, 18]; // degrees: the side view looks down as steeply as the frame allows, within these
 const VIEW_3D = new THREE.Vector3(-0.62, 0.62, 0.82).normalize();
 // down the lane from behind the launcher (portrait frames), more from the side on wide ones (the lane fills the width)
 const OVERVIEW_DIRS = [new THREE.Vector3(-1, 0.95, 0.5).normalize(), new THREE.Vector3(-0.42, 0.8, 1).normalize()];
@@ -827,7 +828,8 @@ export function createApp(root, options = {}) {
   /** The side view from `deg` degrees above the floor. */
   function sideDir(deg) {
     const e = THREE.MathUtils.degToRad(deg);
-    return new THREE.Vector3(0, Math.sin(e), Math.cos(e));
+    const yaw = THREE.MathUtils.degToRad(SIDE_YAW);
+    return new THREE.Vector3(-Math.sin(yaw) * Math.cos(e), Math.sin(e), Math.cos(yaw) * Math.cos(e));
   }
   const probe = new THREE.PerspectiveCamera();
   // the side view lets the far edge of the floor run under the corner buttons (nothing there to read); the view from
