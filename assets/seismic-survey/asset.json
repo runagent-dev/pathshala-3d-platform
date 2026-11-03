@@ -1,0 +1,90 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "seismic-survey",
+  "title": "3D seismic survey (ত্রিমাত্রিক সিসমিক সার্ভে)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 203,
+  "topic": "7.3.3",
+  "placement": "Book page 203, topic 7.3.3 শব্দের ব্যবহার, the part ত্রিমাত্রিক সিসমিক সার্ভে (3D Seismic Survey): next to চিত্র ৭.১৩.",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "Interactive 3D figure for textbook topic 7.3.3 (page 203), the 3D seismic survey next to চিত্র ৭.১৩: a block of ground cut open (five rock layers, gently folded, a dome under the middle), a grid of 30 geophones on top with cables to a recording truck, a shot hole with its charge on the front edge. The student sets off the blast: the wave goes down the cut face, each of three boundaries sends an echo back up (on the cut face and as circles across the surface), the geophones light as it passes and the panel's seismogram records the front row's six traces (time slowed 6×). Tapping an echo gives its time at the first geophone and depth = vt ÷ 2 with an assumed 2500 m/s in rock. Then the 3D picture: the rock above fades, each geophone's depths drop as probes, the mapped boundaries appear and the dome holds gas over oil. Equipment drawn much larger than life (said on the view). Five test questions (what a geophone does, why sound comes back, which echo comes last, depth from t and v, why a grid). Offline, Bangla and English.",
+  "tags": ["sound", "echo", "reflection", "seismic-survey", "geophone", "oil", "gas", "waves", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    { "name": "fire", "label": "Blast already recorded", "type": "boolean", "default": "0" },
+    {
+      "name": "layer",
+      "label": "Echo chosen",
+      "type": "select",
+      "options": [["0", "none"], ["1", "layer 1"], ["2", "layer 2"], ["3", "layer 3"]],
+      "default": "0"
+    },
+    { "name": "image", "label": "3D picture made", "type": "boolean", "default": "0" },
+    { "name": "wave", "label": "Waves frozen at (s after the blast; -1 = off)", "type": "number", "default": "-1" },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on the shot hole pulses at first", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    {
+      "name": "bg",
+      "label": "Background",
+      "type": "select",
+      "options": [["light", "coloured setting"], ["transparent", "transparent"]],
+      "default": "light"
+    },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "fire": true } },
+    { "name": "set", "payload": { "layer": 2 } },
+    { "name": "set", "payload": { "wave": 0.45 } },
+    { "name": "set", "payload": { "image": true, "animate": false } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "view", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": { "params": { "coach": "0", "wave": "0.5" } },
+    "glb": [{ "name": "default" }],
+    "video": {
+      "kind": "script",
+      "seconds": 19,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 0.5, "command": "set", "payload": { "fire": true } },
+        { "at": 8.5, "command": "set", "payload": { "layer": 2 } },
+        { "at": 10, "command": "set", "payload": { "layer": 3 } },
+        { "at": 12, "command": "set", "payload": { "image": true } }
+      ]
+    }
+  }
+}
