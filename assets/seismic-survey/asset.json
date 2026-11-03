@@ -5,7 +5,7 @@
   "title": "3D seismic survey (ত্রিমাত্রিক সিসমিক সার্ভে)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "book": "physics-9-10",
   "page": 203,
   "topic": "7.3.3",
@@ -13,7 +13,7 @@
   "order": 1,
   "maintainers": ["RadeenXALNW"],
   "units": "m",
-  "description": "Interactive 3D figure for textbook topic 7.3.3 (page 203), the 3D seismic survey next to চিত্র ৭.১৩: a block of ground cut open (five rock layers, gently folded, a dome under the middle), a grid of 30 geophones on top with cables to a recording truck, a shot hole with its charge on the front edge. The student sets off the blast: the wave goes down the cut face, each of three boundaries sends an echo back up (on the cut face and as circles across the surface), the geophones light as it passes and the panel's seismogram records the front row's six traces (time slowed 6×). Tapping an echo gives its time at the first geophone and depth = vt ÷ 2 with an assumed 2500 m/s in rock. Then the 3D picture: the rock above fades, each geophone's depths drop as probes, the mapped boundaries appear and the dome holds gas over oil. Equipment drawn much larger than life (said on the view). Five test questions (what a geophone does, why sound comes back, which echo comes last, depth from t and v, why a grid). Offline, Bangla and English.",
+  "description": "Interactive 3D figure for textbook topic 7.3.3 (page 203), the 3D seismic survey next to চিত্র ৭.১৩: a block of ground cut open (five rock layers, gently folded, a dome near the right face, its arch seen on that face), a grid of 30 geophones on top with cables to a recording truck, a shot hole with its charge on the front edge. The student sets off the blast: the wave goes down the cut face, each of three boundaries (সীমানা) sends an echo back up (on the cut face and as circles across the surface), the geophones light as it passes and the panel's seismogram records the front row's six traces (time slowed 6×). Tapping an echo gives its time at the first geophone and depth = vt ÷ 2 with an assumed 2500 m/s in rock. Then the 3D picture: the rock above fades, each geophone's depths drop as probes, the mapped boundaries appear and the dome's top shows where gas and oil lie under it, and the arch on the right face shows gas over oil. Equipment drawn much larger than life (said on the view). Five test questions (what a geophone does, why sound comes back, which echo comes last, depth from t and v, why a grid). Offline, Bangla and English.",
   "tags": ["sound", "echo", "reflection", "seismic-survey", "geophone", "oil", "gas", "waves", "bangla"],
   "params": [
     {
@@ -72,7 +72,7 @@
   ],
   "events": ["ready", "change", "view", "practice-start", "practice-result", "practice-end"],
   "export": {
-    "poster": { "params": { "coach": "0", "wave": "0.5" } },
+    "poster": { "params": { "coach": "0", "fire": "1", "layer": "2" } },
     "glb": [{ "name": "default" }],
     "video": {
       "kind": "script",

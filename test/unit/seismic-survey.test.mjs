@@ -54,7 +54,11 @@ describe('the rays and the layers', () => {
   });
   it('the boundaries are flat on the cut face in front (where the rays are drawn), folded behind', () => {
     for (let k = 0; k < 3; k++) for (const x of [-900, 0, 900]) assert.ok(Math.abs(r.depthAt(k, x, r.FRONT) - r.DEPTHS[k]) < 12, `${k} ${x}`);
-    assert.ok(r.depthAt(2, r.DOME.x, r.DOME.z) < 860, 'the dome rises under the grid');
+    for (let k = 0; k < 4; k++)
+      for (const x of [-900, 0, 500, 900])
+        assert.equal(r.depthAt(k, x, r.FRONT), k < 3 ? r.DEPTHS[k] : r.BASE_DEPTH, 'exactly flat on the front face');
+    assert.ok(r.depthAt(2, r.DOME.x, r.DOME.z) < 700, 'the dome rises under the grid');
+    assert.ok(r.depthAt(2, 1000, r.DOME.z) < r.GOC, 'the right cut face shows the arch with gas in it');
   });
   it('the dome holds gas over oil: its crest is above the gas–oil contact, which is above the oil–water one', () => {
     const crest = r.depthAt(2, r.DOME.x, r.DOME.z);

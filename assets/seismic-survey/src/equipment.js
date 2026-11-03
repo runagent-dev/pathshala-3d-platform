@@ -10,8 +10,11 @@ import { boundaryY, DEPTHS, FRONT, GEOPHONES, ROWS, SOURCE } from './reading.js'
 
 /** The geophone's size (m in the scene): drawn about 150 times bigger than life. */
 export const PHONE = { r: 19, h: 50, spike: 46 };
-const TRUNK_X = -890; // the main cable runs along the left edge to the truck
-export const TRUCK = { x: -800, z: -625, len: 330, wid: 124 };
+const TRUNK_X = -798; // the main cable runs along the left of the grid, past the truck
+/** The recording truck, along the left edge near the front (its model is 330 × 124, drawn 1.45 times that). */
+export const TRUCK = { x: -905, z: 205, len: 330, wid: 124, scale: 1.45 };
+/** How high the geophone's case stands on its spike (m in the scene), so the spike shows. */
+const LIFT = 15;
 
 function tube(points, r, seg = 4) {
   const curve = new THREE.CatmullRomCurve3(points);
@@ -52,7 +55,7 @@ export function createEquipment() {
     m.name = name;
     m.castShadow = shadow;
     const mx = new THREE.Matrix4();
-    for (const g of GEOPHONES) m.setMatrixAt(g.i, mx.makeTranslation(g.x, 0, g.z));
+    for (const g of GEOPHONES) m.setMatrixAt(g.i, mx.makeTranslation(g.x, LIFT, g.z));
     m.instanceMatrix.needsUpdate = true;
     root.add(m);
     parts.push(m);
@@ -78,7 +81,7 @@ export function createEquipment() {
   instanced(mergeGeometries([capGeo, takeout]), M.dark, 'geophone-cap');
   const spikeGeo = new THREE.ConeGeometry(3.4, spike, 12);
   spikeGeo.rotateX(Math.PI);
-  spikeGeo.translate(0, -spike / 2 + 2, 0);
+  spikeGeo.translate(0, -spike / 2 + 2, 0); // from under the case down into the ground
   instanced(spikeGeo, M.steel, 'geophone-spike', false);
   const bandGeo = new THREE.CylinderGeometry(r * 1.0, r * 1.0, 6, 28, 1, true);
   bandGeo.translate(0, h * 0.55, 0);
@@ -105,10 +108,19 @@ export function createEquipment() {
     cableGeos.push(tube(pts, 3.2));
   }
   const trunk = [];
-  for (let z = ROWS[0] - 20; z >= TRUCK.z + TRUCK.wid / 2 + 30; z -= 80) trunk.push(new THREE.Vector3(TRUNK_X + wob(z, 0, 2) * 0.6, 2.5, z));
-  trunk.push(new THREE.Vector3(TRUNK_X + 20, 2.5, TRUCK.z + TRUCK.wid / 2 + 8));
-  trunk.push(new THREE.Vector3(TRUCK.x + 30, 18, TRUCK.z + TRUCK.wid / 2 - 6));
+  for (let z = ROWS[0] - 20; z >= ROWS.at(-1) - 40; z -= 80) trunk.push(new THREE.Vector3(TRUNK_X + wob(z, 0, 2) * 0.4, 2.5, z));
   cableGeos.push(tube(trunk, 4.2));
+  const halfW = (TRUCK.wid / 2) * TRUCK.scale;
+  cableGeos.push(
+    tube(
+      [
+        new THREE.Vector3(TRUNK_X, 2.5, TRUCK.z - 40),
+        new THREE.Vector3(TRUNK_X - 8, 3, TRUCK.z - 50),
+        new THREE.Vector3(TRUCK.x + halfW - 2, 30, TRUCK.z - 60),
+      ],
+      4.2,
+    ),
+  );
   const cables = new THREE.Mesh(keep(mergeGeometries(cableGeos)), M.cable);
   cables.name = 'cables';
   cables.receiveShadow = true;
@@ -140,12 +152,14 @@ export function createEquipment() {
   flag.position.set(SOURCE.x + 28.5, 68, FRONT - 22);
   flag.rotation.y = -0.5;
   flag.castShadow = true;
-  const firePts = [new THREE.Vector3(SOURCE.x, 1.5, FRONT - 6)];
-  for (let z = FRONT - 40; z > ROWS[0] - 60; z -= 40) firePts.push(new THREE.Vector3(SOURCE.x - 25 - (FRONT - z) * 0.3, 2, z));
-  firePts.push(new THREE.Vector3(TRUNK_X + 12, 2, ROWS[0] - 70));
-  for (let z = ROWS[0] - 140; z > TRUCK.z + TRUCK.wid / 2 + 30; z -= 120) firePts.push(new THREE.Vector3(TRUNK_X + 14, 2, z));
-  firePts.push(new THREE.Vector3(TRUCK.x - 20, 2, TRUCK.z + TRUCK.wid / 2 + 14));
-  firePts.push(new THREE.Vector3(TRUCK.x - 40, 14, TRUCK.z + TRUCK.wid / 2 - 4));
+  const front = TRUCK.z + (TRUCK.len / 2) * TRUCK.scale;
+  const firePts = [
+    new THREE.Vector3(SOURCE.x, 1.5, FRONT - 6),
+    new THREE.Vector3(SOURCE.x - 25, 2, FRONT - 50),
+    new THREE.Vector3(SOURCE.x - 55, 2, FRONT - 120),
+    new THREE.Vector3(TRUCK.x + 20, 2, front + 40),
+    new THREE.Vector3(TRUCK.x + 30, 22, front - 8),
+  ];
   const fire = new THREE.Mesh(keep(tube(firePts, 2.2)), M.fire);
   fire.name = 'firing-line';
   shot.add(hole, holeTop, charge, stake, flag, fire);
@@ -192,6 +206,8 @@ export function createEquipment() {
     if (o.isMesh) o.castShadow = true;
   });
   truck.position.set(TRUCK.x, 0, TRUCK.z);
+  truck.rotation.y = -Math.PI / 2; // the cab toward the front
+  truck.scale.setScalar(TRUCK.scale);
   root.add(truck);
 
   // ── the blast: a flash at the charge, dust thrown up from the hole ───────────────────────────────────────
@@ -254,7 +270,7 @@ export function createEquipment() {
   const dotMat = keep(new THREE.MeshBasicMaterial({ color: '#ffffff' }));
   const dots = new THREE.InstancedMesh(dotGeo, dotMat, n * DEPTHS.length);
   dots.renderOrder = 7;
-  const ECHO = ['#0b7da0', '#7048e8', '#d9480f'];
+  const ECHO = ['#2b8a3e', '#7048e8', '#d9480f'];
   for (const g of GEOPHONES) for (let k = 0; k < DEPTHS.length; k++) dots.setColorAt(g.i * DEPTHS.length + k, new THREE.Color(ECHO[k]));
   probes.add(sticks, dots);
   probes.visible = false;
@@ -288,7 +304,7 @@ export function createEquipment() {
     blast,
     setProbes,
     /** The top of geophone i (for labels and the action's ring). */
-    phoneTop: (i, target = new THREE.Vector3()) => target.set(GEOPHONES[i].x, PHONE.h + 6, GEOPHONES[i].z),
+    phoneTop: (i, target = new THREE.Vector3()) => target.set(GEOPHONES[i].x, PHONE.h + LIFT + 6, GEOPHONES[i].z),
     dispose() {
       for (const d of disposables) d.dispose?.();
     },

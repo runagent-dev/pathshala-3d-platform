@@ -63,7 +63,7 @@ const dirFrom = (az, el) => {
   const e = THREE.MathUtils.degToRad(el);
   return new THREE.Vector3(Math.sin(a) * Math.cos(e), Math.sin(e), Math.cos(a) * Math.cos(e)).normalize();
 };
-const VIEW_DIRS = { front: dirFrom(26, 30), image: dirFrom(22, 40) };
+const VIEW_DIRS = { front: dirFrom(26, 30), image: dirFrom(50, 32) }; // the picture: turned toward the right face (the arch)
 const INK = '#2b3138';
 const DIM_X = 860; // the depth measure: on the right of the cut face, clear of the rays
 const RAY_TO = [0, 2, 4]; // the geophones of the front row the rays are drawn to (as চিত্র ৭.১৩: three rays)
@@ -104,7 +104,9 @@ export function createApp(root, options = {}) {
     examples: { label: 'ex_label', results: true, items: DEPTHS.map((_, k) => ({ id: `e${k}`, label: t('ex', { n: k + 1 }) })) },
     quiet: [{ act: 'home', label: 'act_home', icon: ICONS.reset }],
     lines: { action: 1, outcome: 2, rule: 3 },
-  }).replace('<div class="pvc-act-row"', '<div class="ss-seis"></div><div class="pvc-act-row"');
+  })
+    .replace('<div class="pvc-act-row"', '<div class="ss-seis"></div><div class="pvc-act-row"')
+    .concat(`<p class="ss-book">${t('book_line')}</p>`);
   const ui = buildStudentShell(root, t, { layout: 'side', learn: sheetHtml, learnAlign: 'start' });
   const sheet = bindCleanSheet(ui.learn);
   const $ = ui.$;
@@ -220,6 +222,7 @@ export function createApp(root, options = {}) {
   overlay.add(dim.root, edge.root);
   const up = new THREE.Vector3(0, 1, 0);
   const zf = FRONT + 4;
+  const rayPts = [];
   function showRays(k, quizMode = false) {
     const d = DEPTHS[k];
     const S = new THREE.Vector3(SOURCE.x, SOURCE.y, zf);
@@ -228,6 +231,7 @@ export function createApp(root, options = {}) {
       const P = new THREE.Vector3(reflectionX(gx, d), boundaryY(k, reflectionX(gx, d), FRONT), zf);
       const G = new THREE.Vector3(gx, 0, zf);
       rays[j].set([S, P, G], ECHO_COLORS[k]);
+      rayPts[j] = [S, P, G];
       // arrow heads half way down and half way up
       for (const [m, a, b] of [
         [heads[j * 2], S, P],
@@ -256,6 +260,26 @@ export function createApp(root, options = {}) {
       new THREE.Vector3(DIM_X + 24, yd, zf),
     ]);
     if (quizMode) edge.hide();
+  }
+  /** Small boxes along the drawn rays (canvas pixels), for labels to keep off. */
+  const pv = new THREE.Vector3();
+  function rayBoxes() {
+    const out = [];
+    rays.forEach((r, j) => {
+      if (!r.root.visible || !rayPts[j]) return;
+      const [S, P, G] = rayPts[j];
+      for (const [a, b] of [
+        [S, P],
+        [P, G],
+      ])
+        for (let i = 0; i <= 10; i++) {
+          pv.lerpVectors(a, b, i / 10).project(camera);
+          const x = ((pv.x + 1) / 2) * stage.width;
+          const y = ((1 - pv.y) / 2) * stage.height;
+          out.push({ left: x - 4, top: y - 4, right: x + 4, bottom: y + 4 });
+        }
+    });
+    return out;
   }
   function hideRays() {
     for (const r of rays) r.hide();
@@ -312,7 +336,7 @@ export function createApp(root, options = {}) {
           }
         });
       }
-      const marked = s.quiz?.kind === 'phone' && g.i === s.quiz.phone;
+      const marked = s.quiz?.kind === 'role' && s.quiz.part === 'phone' && g.i === s.quiz.phone;
       gear.light(g.i, marked ? '#ffffff' : ECHO_COLORS[kb], marked ? 1 : best);
     }
     // the picture
@@ -428,8 +452,23 @@ export function createApp(root, options = {}) {
     lastAct = now;
     audio.unlock();
     if (s.running) return;
+    // while the picture is being made, the action (or a tap on the view) shows it at once; a quick second tap of a
+    // double tap does nothing
+    if (s.imageOn && s.image < 1) {
+      if (now - imageStart > 700) skipImage();
+      return;
+    }
     if (s.done && !s.imageOn) return makeImage();
     fire();
+  }
+  let imageStart = -1e9;
+  function skipImage() {
+    ++token;
+    tweener.cancel('image');
+    s.image = 1;
+    audio.success();
+    draw();
+    emitChange();
   }
   /** The blast: the waves start from the charge; an earlier picture is put away first. */
   function fire() {
@@ -475,6 +514,7 @@ export function createApp(root, options = {}) {
     const my = ++token;
     s.imageOn = true;
     s.played = 2;
+    imageStart = performance.now();
     if (!animate) {
       s.image = 1;
       camK = 1;
@@ -526,7 +566,7 @@ export function createApp(root, options = {}) {
   const anno = createAnnotations({ stage, layer: ui.annoLayer, avoid: [ui.corner, note, () => action?.ringBox()] });
   const shown = new Map();
   const pts = new Map();
-  function label(id, on, text, point, color, spots, optional = false) {
+  function label(id, on, text, point, color, spots, optional = false, avoid = []) {
     if (!on) {
       if (shown.has(id)) {
         anno.remove(id);
@@ -537,7 +577,7 @@ export function createApp(root, options = {}) {
     if (!pts.has(id)) pts.set(id, new THREE.Vector3());
     pts.get(id).copy(point);
     if (!shown.has(id)) {
-      anno.add(id, { text, point: () => pts.get(id), color, spots, kind: 'part', optional });
+      anno.add(id, { text, point: () => pts.get(id), color, spots, kind: 'part', optional, avoid });
       shown.set(id, text);
     } else if (shown.get(id) !== text) {
       anno.setText(id, text);
@@ -562,26 +602,38 @@ export function createApp(root, options = {}) {
   ];
   const LEFT = [
     { dx: -70, dy: 0 },
-    { dx: -70, dy: 24 },
-    { dx: -70, dy: -24 },
+    { dx: -70, dy: 26 },
+    { dx: -70, dy: -26 },
+    { dx: -70, dy: 52 },
     { dx: 70, dy: 30 },
   ];
   const tmp = new THREE.Vector3();
   const pSource = new THREE.Vector3(SOURCE.x + 30, 82, FRONT - 22);
   const LETTERS = t('letters').split(',');
-  const pTruck = new THREE.Vector3(TRUCK.x - 40, 150, TRUCK.z);
+  const pTruck = new THREE.Vector3(TRUCK.x, 225, TRUCK.z);
+  // the boundaries' tags keep clear of the depth's label (it matters more; they hide if there is no room)
+  const depthBox = [() => (shown.has('depth') ? anno.box('depth') : null)];
+  const NUM_SPOTS = [
+    { dx: 0, dy: -24 },
+    { dx: -16, dy: -22 },
+    { dx: 16, dy: -22 },
+  ];
   function labels() {
     const q = s.quiz;
     const qk = q?.kind;
     const img = s.image > 0.6;
     const learn = !q;
-    label('source', learn && !img, t('l_source'), pSource, INK, ABOVE, true);
-    label('geophone', learn && !img, t('l_geophone'), gear.phoneTop(LINE[3].i, tmp), INK, ABOVE, true);
-    label('truck', learn && !img && !s.done && !s.running, t('l_truck'), pTruck, INK, ABOVE, true);
+    const heard = s.done || s.running;
+    label('source', learn && !img && !heard, t('l_source'), pSource, INK, ABOVE, true);
+    label('geophone', learn && !img && !heard, t('l_geophone'), gear.phoneTop(LINE[3].i, tmp), INK, ABOVE, true);
+    label('truck', learn && !img && !heard, t('l_truck'), pTruck, INK, ABOVE, true);
+    // the front row's geophones, numbered as the seismogram's traces
+    for (let i = 0; i < LINE.length; i++)
+      label(`g${i}`, learn && heard && !img, `<span class="ss-gnum">${N(i + 1)}</span>`, gear.phoneTop(LINE[i].i, tmp), INK, NUM_SPOTS, true);
     for (let k = 0; k < DEPTHS.length; k++) {
-      const on = (learn && (s.done || s.running)) || (qk === 'later' && true);
+      const on = (learn && heard && !img) || qk === 'later';
       const text = qk === 'later' ? t('l_letter', { x: LETTERS[q.letters[k]] }) : t('l_layer', { n: k + 1 });
-      label(`layer${k}`, on, text, ground.frontPoint(k, 985, tmp), ECHO_COLORS[k], RIGHT, learn);
+      label(`layer${k}`, on, text, ground.frontPoint(k, 985, tmp), ECHO_COLORS[k], RIGHT, learn, depthBox);
     }
     const dimOn = s.done && s.sel >= 0 && s.image === 0 && (learn || qk === 'depth');
     const yd = s.sel >= 0 ? boundaryY(s.sel, DIM_X, FRONT) : 0;
@@ -589,13 +641,16 @@ export function createApp(root, options = {}) {
       'depth',
       dimOn,
       qk === 'depth' ? t('l_depth_q') : s.sel >= 0 ? t('l_depth', { d: measure(s.sel).d }) : '',
-      tmp.set(DIM_X, yd / 2, FRONT),
+      tmp.set(DIM_X, yd * 0.75, FRONT),
       INK,
       LEFT,
+      false,
+      [rayBoxes],
     );
     label('time', qk === 'depth', q ? t('l_t', { t: fix2(readTime(q.k)) }) : '', gear.phoneTop(LINE[0].i, tmp), '#c2255c', ABOVE);
-    label('this', qk === 'phone', t('l_this'), gear.phoneTop(q?.phone ?? 0, tmp), INK, ABOVE);
-    label('gas', s.image > 0.85, t('l_gas'), ground.gasPoint, '#c92a2a', ABOVE);
+    const partAt = { phone: () => gear.phoneTop(q.phone, tmp), source: () => tmp.copy(pSource), truck: () => tmp.copy(pTruck) };
+    label('this', qk === 'role', t('l_this'), qk === 'role' ? partAt[q.part]() : tmp, INK, ABOVE);
+    label('gas', s.image > 0.85, t('l_gas'), ground.gasPoint, '#c92a2a', RIGHT);
     label('oil', s.image > 0.85, t('l_oil'), ground.oilPoint, '#5c3d12', RIGHT);
   }
 
@@ -640,6 +695,9 @@ export function createApp(root, options = {}) {
     } else if (s.done && !s.imageOn) {
       lab = 'act_image';
       step = s.played >= 2 ? '' : 2;
+    } else if (s.imageOn && s.image < 1) {
+      lab = 'act_skip';
+      step = '';
     } else if (s.imageOn || s.played >= 1 || s.freeze) {
       lab = 'act_again';
       step = '';
@@ -666,7 +724,7 @@ export function createApp(root, options = {}) {
     step: 1,
     label: 'act_blast',
     target: () => {
-      if (s.locked || camK < 1 || s.running) return null;
+      if (s.locked || camK < 1 || s.running || (s.imageOn && s.image < 1)) return null;
       if (s.done && !s.imageOn) return ringPoint.set(0, 10, 85);
       return ringPoint.set(SOURCE.x + 10, 12, FRONT - 10);
     },
@@ -701,6 +759,8 @@ export function createApp(root, options = {}) {
       if (!s.running && (!s.done || s.imageOn)) act();
       return;
     }
+    // a tap on the view while the picture is being made shows it at once
+    if (s.imageOn && s.image < 1) return act();
     const hit = ray.ray.intersectPlane(frontPlane, new THREE.Vector3());
     if (hit && Math.abs(hit.x) <= 1000 && hit.y < -5 && hit.y > -1300 && s.done && s.image === 0) {
       // the nearest boundary to the tap
@@ -737,21 +797,21 @@ export function createApp(root, options = {}) {
   }
   function prepare(i) {
     const kind = order[i];
-    if (kind === 'phone') {
+    if (kind === 'role') {
+      // one part of the survey is marked (the blast's hole, a geophone, or the truck): what does it do?
+      const PARTS = ['source', 'phone', 'truck'];
+      const which = Math.floor(Math.random() * 3);
       const phone = LINE[1 + Math.floor(Math.random() * 4)].i;
-      quizScene({ kind, phone });
-      const words = [t('c_phone_ok'), t('c_phone_blast'), t('c_phone_pump'), t('c_phone_loud')];
+      quizScene({ kind, part: PARTS[which], phone });
+      const words = [t('c_role_0'), t('c_role_1'), t('c_role_2'), t('c_role_3')];
+      const wrong = [0, 1, 2, 3].filter((x) => x !== which);
       return {
-        text: t('q_phone'),
-        answer: 0,
-        wrong: [1, 2, 3],
+        text: t('q_role'),
+        answer: which,
+        wrong,
         label: (x) => words[x],
-        notes: notesOf([
-          [1, t('n_phone_blast')],
-          [2, t('n_phone_pump')],
-          [3, t('n_phone_loud')],
-        ]),
-        reveal: t('a_phone'),
+        notes: notesOf(wrong.map((x) => [x, t(`n_role_${x}`)])),
+        reveal: t(`a_role_${which}`),
       };
     }
     if (kind === 'why') {
@@ -840,7 +900,7 @@ export function createApp(root, options = {}) {
         s.mode = 'quiz';
         s.locked = true;
         // the scenes never show a later answer: the 3D picture (why a grid) comes last
-        order = [...shuffle(['phone', 'why']), ...shuffle(['later', 'depth']), 'grid'];
+        order = [...shuffle(['role', 'why']), ...shuffle(['later', 'depth']), 'grid'];
         clearLabels();
         syncUI();
       },
@@ -984,7 +1044,8 @@ export function createApp(root, options = {}) {
       t: m ? m.t : null,
       depth: m ? m.d : null,
       measured: [...s.visited].sort().map((k) => ({ layer: k + 1, t: measure(k).t, depth: measure(k).d })),
-      image: s.imageOn && s.image >= 1,
+      image: s.imageOn,
+      mapped: s.imageOn && s.image >= 1,
       v: V,
       mode: s.mode,
       locked: s.locked,

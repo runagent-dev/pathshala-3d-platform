@@ -30,7 +30,7 @@ test('seismic-survey: echoes give the depths, then the 3D picture', async ({ pag
   expect(st.measured.map((m) => m.depth)).toEqual([350, 700, 1000]);
   // the 3D picture
   st = await fig.call('set', { image: true, animate: false });
-  expect(st.image).toBe(true);
+  expect(st).toMatchObject({ image: true, mapped: true });
   // the test starts, an answer is marked
   await fig.call('practice');
   await fig.advance(2000);

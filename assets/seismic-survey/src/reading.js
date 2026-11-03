@@ -23,14 +23,16 @@ export const ROWS = [685, 385, 85, -215, -515];
 export const GEOPHONES = ROWS.flatMap((z, r) => COLS.map((x, c) => ({ x, z, row: r, col: c, i: r * COLS.length + c })));
 /** The record: how long the geophones listen (s). */
 export const RECORD = 1.15;
-/** The structure: a dome (anticline) under the middle of the grid, with gas in its top and oil below. */
-export const DOME = { x: 150, z: -250, sigma: 380 };
-const DOME_H = [22, 70, 170, 130]; // how far each boundary rises over the dome (m)
+/** The structure: a dome (anticline) under the right of the grid, cut by the block's right face (so that face shows
+ * the arch), with gas in its top and oil below it. Like the folds, it fades out before the front face, which stays
+ * flat: there the echoes and rays are exact for flat boundaries. */
+export const DOME = { x: 800, z: -200, sigma: 330 };
+const DOME_H = [80, 250, 360, 280]; // how far each boundary rises over the dome's crest (m)
 const FOLD_A = [26, 34, 14, 22]; // gentle folds, fading out toward the front face
 export const BASE_DEPTH = 1250; // the boundary under the reservoir rock
 /** Gas–oil and oil–water contacts (depths, m): gas on top of the dome, oil below it, water further down. */
-export const GOC = 900;
-export const OWC = 960;
+export const GOC = 780;
+export const OWC = 880;
 
 const smooth = (a, b, x) => {
   const k = Math.min(1, Math.max(0, (x - a) / (b - a)));
@@ -41,8 +43,9 @@ export const domeAt = (x, z) => Math.exp(-((x - DOME.x) ** 2 + (z - DOME.z) ** 2
 /** The height y (negative, m) of boundary k (0, 1, 2 = the three reflectors; 3 = the base of the reservoir) at (x, z). */
 export function boundaryY(k, x, z) {
   const d = k < 3 ? DEPTHS[k] : BASE_DEPTH;
-  const fold = FOLD_A[k] * (1 - smooth(FRONT - 520, FRONT - 60, z)) * Math.sin((x + 300 + 140 * k) / 260) * Math.cos((z - 90 * k) / 340);
-  return -d + fold + DOME_H[k] * domeAt(x, z);
+  const inside = 1 - smooth(FRONT - 520, FRONT - 60, z); // 0 on the front face
+  const fold = FOLD_A[k] * inside * Math.sin((x + 300 + 140 * k) / 260) * Math.cos((z - 90 * k) / 340);
+  return -d + inside * (fold + DOME_H[k] * domeAt(x, z));
 }
 /** The depth (m, positive) of boundary k under a point of the surface. */
 export const depthAt = (k, x, z) => -boundaryY(k, x, z);

@@ -4,7 +4,7 @@
 // wave going down, each boundary's echo coming back up, exactly where t = √(x² + (2d)²) / v puts it), and the mapped
 // boundaries of the "ত্রিমাত্রিক ছবি" step. Procedural: no image files.
 import * as THREE from 'three';
-import { BASE_DEPTH, BOTTOM, boundaryY, DEPTH_Z, DEPTHS, DOME, FRONT, GOC, OWC, SOURCE, V, WIDTH } from './reading.js';
+import { BASE_DEPTH, BOTTOM, boundaryY, DEPTH_Z, DEPTHS, DOME, domeAt, FRONT, GOC, OWC, SOURCE, V, WIDTH } from './reading.js';
 
 const X0 = -WIDTH / 2;
 const X1 = WIDTH / 2;
@@ -20,8 +20,8 @@ export const ROCKS = [
   { key: 'rock_shale', base: '#5a5f69', kind: 'shale' },
 ];
 /** The three reflecting boundaries' colours (also in the seismogram and the panel): each echo has its own. */
-export const ECHO_COLORS = ['#0b7da0', '#7048e8', '#d9480f'];
-export const WAVE_COLOR = '#22b8cf';
+export const ECHO_COLORS = ['#2b8a3e', '#7048e8', '#d9480f'];
+export const WAVE_COLOR = '#0c8599';
 export const GAS_COLOR = '#ff4d4f';
 export const OIL_COLOR = '#5a3a10';
 
@@ -182,16 +182,20 @@ function soilTexture() {
   return tex;
 }
 
-/** Contour lines for the mapped boundary: white with a dark line at the edge, repeated along the depth. */
+/** Contour lines for the mapped dome: u = how much of the dome is felt there (lines only on the dome, so flat ground
+ * near a contour's depth is never painted dark), v = depth / step (a dark line at each step). */
 function contourTexture() {
-  const c = canvas(4, 64);
+  const c = canvas(32, 64);
   const g = c.getContext('2d');
   g.fillStyle = '#ffffff';
-  g.fillRect(0, 0, 4, 64);
-  g.fillStyle = '#26303a';
-  g.fillRect(0, 0, 4, 4);
+  g.fillRect(0, 0, 32, 64);
+  const gr = g.createLinearGradient(8, 0, 20, 0);
+  gr.addColorStop(0, 'rgba(38,48,58,0)');
+  gr.addColorStop(1, 'rgba(38,48,58,1)');
+  g.fillStyle = gr;
+  g.fillRect(0, 0, 32, 3);
   const tex = new THREE.CanvasTexture(c);
-  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapS = THREE.ClampToEdgeWrapping;
   tex.wrapT = THREE.RepeatWrapping;
   tex.magFilter = THREE.LinearFilter;
   return tex;
@@ -269,54 +273,6 @@ function heightField(f, { x0 = X0, x1 = X1, z0 = Z0, z1 = Z1, nx = 64, nz = 46, 
   geo.setIndex(idx);
   geo.computeVertexNormals();
   return geo;
-}
-
-/** A lens (gas or oil) round the dome: top y = top(x, z) (clamped to its flat bottom), a flat bottom. Polar grid. */
-function lens(top, bottomY, rMax, color, rough) {
-  const nr = 18;
-  const na = 56;
-  const pos = [];
-  const idx = [];
-  const at = (rk, a) => {
-    const r = rMax * rk;
-    const x = DOME.x + r * Math.cos(a);
-    const z = DOME.z + r * Math.sin(a);
-    return [x, Math.max(bottomY, top(x, z)), z];
-  };
-  // top: centre, then rings
-  pos.push(...at(0, 0));
-  for (let i = 1; i <= nr; i++) for (let j = 0; j < na; j++) pos.push(...at(i / nr, (j / na) * Math.PI * 2));
-  const ring = (i, j) => 1 + (i - 1) * na + (j % na);
-  for (let j = 0; j < na; j++) idx.push(0, ring(1, j + 1), ring(1, j));
-  for (let i = 1; i < nr; i++)
-    for (let j = 0; j < na; j++) idx.push(ring(i, j), ring(i, j + 1), ring(i + 1, j), ring(i + 1, j), ring(i, j + 1), ring(i + 1, j + 1));
-  // bottom: a flat disc
-  const b0 = pos.length / 3;
-  pos.push(DOME.x, bottomY, DOME.z);
-  for (let j = 0; j < na; j++) {
-    const a = (j / na) * Math.PI * 2;
-    pos.push(DOME.x + rMax * Math.cos(a), bottomY - 0.5, DOME.z + rMax * Math.sin(a));
-  }
-  for (let j = 0; j < na; j++) idx.push(b0, b0 + 1 + j, b0 + 1 + ((j + 1) % na));
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-  geo.setIndex(idx);
-  geo.computeVertexNormals();
-  const mat = new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: 0, transparent: true, opacity: 0 });
-  const mesh = new THREE.Mesh(geo, mat);
-  mesh.visible = false;
-  return mesh;
-}
-/** The largest distance from the dome's axis where the lens (top above bottomY) still has thickness. */
-function lensRadius(top, bottomY) {
-  let rMax = 0;
-  for (let a = 0; a < 64; a++)
-    for (let r = 0; r < 900; r += 5) {
-      const x = DOME.x + r * Math.cos((a / 64) * Math.PI * 2);
-      const z = DOME.z + r * Math.sin((a / 64) * Math.PI * 2);
-      if (top(x, z) > bottomY) rMax = Math.max(rMax, r);
-    }
-  return rMax + 8;
 }
 
 // ── the waves: drawn on the cut face and on the surface by one shader ───────────────────────────────────────────
@@ -472,48 +428,54 @@ export function createGround({ anisotropy = 4 } = {}) {
     root.add(m);
   }
 
-  // ── the 3D picture: the mapped boundaries, gas and oil ────────────────────────────────────────────────────
+  // ── the 3D picture: the mapped boundaries; the dome's top shaded and coloured by what lies under it; gas and
+  // oil in the arch on the right cut face ───────────────────────────────────────────────────────────────────
   const mapped = new THREE.Group();
   mapped.name = 'mapped';
   const contours = keep(contourTexture());
-  // the mapped top of the reservoir: pale where it is high (the dome's crest), deeper tones down its flanks
-  const ramp = [
-    [820, new THREE.Color('#fff4e6')],
-    [900, new THREE.Color('#ffe8cc')],
-    [960, new THREE.Color('#ffc9a3')],
-    [1010, new THREE.Color('#e8a07a')],
+  const PALE = [
+    [600, new THREE.Color('#fff1dc')],
+    [800, new THREE.Color('#f3d9b5')],
+    [1010, new THREE.Color('#c99d73')],
   ];
+  const GAS_C = new THREE.Color(GAS_COLOR);
+  const OIL_C = new THREE.Color(OIL_COLOR);
+  let deepBase = null; // the dome top's colours without and with the gas and oil under it
+  let deepFluid = null;
   const sheets = DEPTHS.map((_, k) => {
     const deep = k === 2;
     const geo = keep(
       heightField((x, z) => boundaryY(k, x, z) + 0.5, {
-        nx: deep ? 72 : 40,
-        nz: deep ? 52 : 28,
-        uv: (_x, y) => [0.5, -y / 20],
+        nx: deep ? 96 : 40,
+        nz: deep ? 68 : 28,
+        uv: (x, y, z) => [Math.min(0.98, 0.02 + domeAt(x, z) * 3), -y / 25],
       }),
     );
     if (deep) {
-      // colour by depth (shallower = warmer): the dome shows as a bright patch with rings of contour lines
-      const cols = [];
+      // pale where it is high, darker down the flanks; red where gas lies under it, brown where oil does
       const p = geo.attributes.position;
+      deepBase = new Float32Array(p.count * 3);
+      deepFluid = new Float32Array(p.count * 3);
       const c = new THREE.Color();
       for (let i = 0; i < p.count; i++) {
         const d = -p.getY(i);
-        let j = 0;
-        while (j < ramp.length - 2 && d > ramp[j + 1][0]) j++;
-        const [d0, c0] = ramp[j];
-        const [d1, c1] = ramp[j + 1];
+        const j = d < PALE[1][0] ? 0 : 1;
+        const [d0, c0] = PALE[j];
+        const [d1, c1] = PALE[j + 1];
         c.copy(c0).lerp(c1, THREE.MathUtils.clamp((d - d0) / (d1 - d0), 0, 1));
-        cols.push(c.r, c.g, c.b);
+        c.toArray(deepBase, i * 3);
+        if (d < GOC) c.copy(GAS_C);
+        else if (d < OWC) c.copy(OIL_C);
+        c.toArray(deepFluid, i * 3);
       }
-      geo.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
+      geo.setAttribute('color', new THREE.BufferAttribute(deepBase.slice(), 3));
     }
     const mat = keep(
       new THREE.MeshStandardMaterial({
         color: deep ? '#ffffff' : ECHO_COLORS[k],
         vertexColors: deep,
         map: deep ? contours : null,
-        roughness: 0.7,
+        roughness: deep ? 0.55 : 0.7,
         transparent: true,
         opacity: 0,
         depthWrite: false,
@@ -521,31 +483,54 @@ export function createGround({ anisotropy = 4 } = {}) {
       }),
     );
     const mesh = new THREE.Mesh(geo, mat);
-    mesh.name = `mapped-boundary-${k + 1}`;
+    mesh.name = deep ? 'mapped-dome-top' : `mapped-boundary-${k + 1}`;
     mesh.renderOrder = 3 - k;
-    mesh.userData.full = deep ? 0.45 : 0.16;
+    mesh.userData.full = deep ? 1 : 0.13;
     mapped.add(mesh);
     return mesh;
   });
-  const capTop = (x, z) => boundaryY(2, x, z) - 3;
-  const gasTop = capTop;
-  const oilTop = (x, z) => Math.min(capTop(x, z), -GOC);
-  const gas = lens(gasTop, -GOC, lensRadius(gasTop, -GOC), GAS_COLOR, 0.45);
-  gas.material.emissive.set('#5c0f12');
-  const oil = lens(oilTop, -OWC, lensRadius(oilTop, -OWC), OIL_COLOR, 0.3);
-  gas.name = 'gas';
-  oil.name = 'oil';
-  for (const m of [gas, oil]) {
-    keep(m.geometry);
-    keep(m.material);
+  /** A band on the right cut face (x = X1) between top(z) and bottom(z), clamped so it vanishes where top < bottom. */
+  function faceBand(top, bottom, color, name) {
+    const n = 140;
+    const pos = [];
+    const idx = [];
+    for (let j = 0; j <= n; j++) {
+      const z = Z1 - ((Z1 - Z0) * j) / n;
+      const yb = bottom(z);
+      pos.push(X1 + 1.5, Math.max(yb, top(z)), z, X1 + 1.5, yb, z);
+    }
+    for (let j = 0; j < n; j++) {
+      const q = j * 2;
+      idx.push(q, q + 1, q + 2, q + 2, q + 1, q + 3);
+    }
+    const geo = keep(new THREE.BufferGeometry());
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    geo.setIndex(idx);
+    geo.computeVertexNormals();
+    const m = new THREE.Mesh(
+      geo,
+      keep(new THREE.MeshStandardMaterial({ color, roughness: 0.5, transparent: true, opacity: 0, side: THREE.DoubleSide })),
+    );
+    m.name = name;
+    m.visible = false;
+    m.renderOrder = 2;
     mapped.add(m);
+    return m;
   }
+  const cap = (z) => boundaryY(2, X1, z);
+  const gas = faceBand(cap, () => -GOC, GAS_COLOR, 'gas');
+  gas.material.emissive.set('#4a0b0d');
+  const oil = faceBand(
+    (z) => Math.min(cap(z), -GOC),
+    () => -OWC,
+    OIL_COLOR,
+    'oil',
+  );
   root.add(mapped);
 
-  /** Where the gas and the oil are seen best (for their labels). */
-  const gasPoint = new THREE.Vector3(DOME.x, boundaryY(2, DOME.x, DOME.z) - 20, DOME.z);
-  const oilR = lensRadius(oilTop, -OWC) * 0.82;
-  const oilPoint = new THREE.Vector3(DOME.x + oilR * 0.55, -OWC + 18, DOME.z + oilR * 0.83);
+  /** Where the gas and the oil are seen best (for their labels): in the arch on the right face. */
+  const gasPoint = new THREE.Vector3(X1, (cap(DOME.z) - GOC) / 2, DOME.z);
+  const oilPoint = new THREE.Vector3(X1, -(GOC + OWC) / 2, DOME.z + 230);
 
   // how see-through the rock above the oil is (1: solid; the 3D picture fades it)
   /** A material made see-through (or solid again); recompiled only when that changes. */
@@ -568,11 +553,20 @@ export function createGround({ anisotropy = 4 } = {}) {
     top.renderOrder = a > 0 ? 5 : 0;
     edgeMat.opacity = 0.55 * (1 - 0.5 * a);
   }
+  let fluidShown = -1;
   /** The mapped boundaries (0 … 1), then the gas and oil (0 … 1). */
   function setMapped(k, fluids) {
     for (const s of sheets) {
       s.visible = k > 0;
-      s.material.opacity = s.userData.full * k;
+      seeThrough(s.material, s.userData.full * k);
+    }
+    // the dome's top takes the colours of the gas and oil under it
+    const col = sheets[2].geometry.attributes.color;
+    const f = THREE.MathUtils.clamp(fluids, 0, 1);
+    if (fluidShown !== f) {
+      fluidShown = f;
+      for (let i = 0; i < col.array.length; i++) col.array[i] = deepBase[i] + (deepFluid[i] - deepBase[i]) * f;
+      col.needsUpdate = true;
     }
     for (const m of [gas, oil]) {
       m.visible = fluids > 0;
