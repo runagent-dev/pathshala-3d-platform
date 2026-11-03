@@ -210,7 +210,7 @@ export function createApp(root, options = {}) {
   // ── camera ──────────────────────────────────────────────────────────────────
   const bbox = new THREE.Box3(V(-0.17, 0.05, -0.08), V(0.15, 0.56, 0.08));
   function viewPose() {
-    const d = V(0.12, 0.16, 1);
+    const d = V(0.35, 0.26, 1);
     if (s.view === '3d') d.add(V(0.7, 0.25, 0));
     return fitPose({ box: bbox, dir: d.normalize(), camera, width: stage.width, height: stage.height, margin: MARGIN });
   }
