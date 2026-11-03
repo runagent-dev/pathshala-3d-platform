@@ -52,6 +52,7 @@ const GHOST = 0.2; // after the crash the cubes stay as a faint ghost over the c
 const TRUCK_SHOWN = 3.8; // m of the truck (its cab and the front of its load) always in the picture
 const DOUBLE_TAP = 450; // ms: a second tap this soon after one is ignored
 const GROW = 0.7; // s for the energy square to grow or shrink to a new speed
+const YAW = THREE.MathUtils.degToRad(22); // the launch view is turned a little to the side, so the road and the vehicles show depth
 const VIEW_3D = new THREE.Vector3(0.55, 0.62, 1).normalize();
 const SUN = { x: 6, y: 30, z: 18 }; // the sun's place from the point the camera looks at (it glides with the camera)
 
@@ -828,8 +829,8 @@ export function createApp(root, options = {}) {
     const top = KE_Y + energy.extent(SPEEDS[SPEEDS.length - 1] / BASE) + 0.4;
     viewBox.min.set(-VIEW_WIDTH / 2, 0, LANE - TRUCK.width / 2 - 0.3);
     viewBox.max.set(VIEW_WIDTH / 2, top, ROW_Z + 0.5);
-    const e = THREE.MathUtils.degToRad(THREE.MathUtils.lerp(40, 15, wideness()));
-    const dir = view === '3d' ? VIEW_3D : new THREE.Vector3(0, Math.sin(e), Math.cos(e));
+    const e = THREE.MathUtils.degToRad(THREE.MathUtils.lerp(42, 24, wideness()));
+    const dir = view === '3d' ? VIEW_3D : new THREE.Vector3(Math.cos(e) * Math.sin(YAW), Math.sin(e), Math.cos(e) * Math.cos(YAW));
     const fit = (top) => fitPose({ box: viewBox, dir, camera, width: stage.width, height: stage.height, margin: { top, bottom: 34, side: 6 } });
     let pose = fit(50);
     if (view !== '3d') {
