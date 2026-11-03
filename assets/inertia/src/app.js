@@ -41,9 +41,9 @@ const INK = { lower: '#1a64c4', upper: '#c2410c' };
 const ARROW = { bus: { scale: 0.28, r: 0.036 } }; // m of arrow per m/s
 // the camera looks at the bus's left side from a little above (the doors are on the left in Bangladesh)
 const DIRS = {
-  bus: { front: new THREE.Vector3(0, 0.13, -1).normalize(), '3d': new THREE.Vector3(0.55, 0.3, -0.78).normalize() },
+  bus: { front: new THREE.Vector3(0.42, 0.28, -1).normalize(), '3d': new THREE.Vector3(0.8, 0.4, -0.6).normalize() },
   // stepping off: a little higher, so the road he lands on (and its seams streaming past) shows
-  alight: { front: new THREE.Vector3(0, 0.24, -1).normalize(), '3d': new THREE.Vector3(0.55, 0.36, -0.76).normalize() },
+  alight: { front: new THREE.Vector3(0.42, 0.34, -1).normalize(), '3d': new THREE.Vector3(0.8, 0.45, -0.6).normalize() },
 };
 const QUIZ_KINDS = ['start', 'brake', 'alight', 'gentle'];
 
