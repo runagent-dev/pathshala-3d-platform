@@ -261,7 +261,7 @@ export function createApp(root, options = {}) {
     const b = lookBox();
     bbox.min.copy(b[0]);
     bbox.max.copy(b[1]);
-    const d = V(0.18, 0.06, 1);
+    const d = V(0.42, 0.22, 1);
     if (s.view === '3d') d.add(V(0.7, 0.25, 0));
     return fitPose({ box: bbox, dir: d.normalize(), camera, width: stage.width, height: stage.height, margin: MARGIN });
   }

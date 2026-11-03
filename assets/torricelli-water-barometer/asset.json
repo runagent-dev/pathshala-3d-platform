@@ -5,7 +5,7 @@
   "title": "A water barometer (পানির ব্যারোমিটার)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "book": "physics-9-10",
   "page": 145,
   "topic": "5.4.1",
