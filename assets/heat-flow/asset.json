@@ -5,7 +5,7 @@
   "title": "Internal Energy and Flow of Heat (অভ্যন্তরীণ শক্তি ও তাপের প্রবাহ)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "book": "physics-9-10",
   "page": 162,
   "topic": "6.1.1",
