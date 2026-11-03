@@ -6,28 +6,25 @@ import * as THREE from 'three';
 const WORLD_UP = new THREE.Vector3(0, 1, 0);
 
 /**
- * box: THREE.Box3 to show; dir: unit vector from the target toward the camera; camera: its fov is used;
+ * box: THREE.Box3 to show (or points: the outline of the object, a closer fit for round parts); dir: unit vector from the target toward the camera; camera: its fov is used;
  * width/height: the stage in pixels; margin: { top, bottom, left, right } in pixels. Returns { position, target }.
  */
-export function fitPose({ box, dir, camera, width, height, margin = {} }) {
+export function fitPose({ box, points, dir, camera, width, height, margin = {} }) {
   const { top = 56, bottom = 16, left = 12, right = 12 } = margin;
   const look = dir.clone().normalize().negate();
   const across = new THREE.Vector3().crossVectors(look, WORLD_UP).normalize();
   const up = new THREE.Vector3().crossVectors(across, look).normalize();
-  const centre = box.getCenter(new THREE.Vector3());
+  const pts = points ?? boxCorners(box);
+  const centre = new THREE.Box3().setFromPoints(pts).getCenter(new THREE.Vector3());
   const tanV = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
   const tanH = tanV * (width / Math.max(1, height));
   // the usable part of the frame on each side of its middle, in NDC
   const ndc = (m, size) => Math.max(0.2, 1 - (2 * m) / size);
   const [t, b, l, r] = [ndc(top, height), ndc(bottom, height), ndc(left, width), ndc(right, width)];
-  const corners = [];
-  const p = new THREE.Vector3();
-  for (const x of [box.min.x, box.max.x])
-    for (const y of [box.min.y, box.max.y])
-      for (const z of [box.min.z, box.max.z]) {
-        p.set(x, y, z).sub(centre);
-        corners.push({ x: p.dot(across), y: p.dot(up), z: p.dot(look) });
-      }
+  const corners = pts.map((q) => {
+    const p = q.clone().sub(centre);
+    return { x: p.dot(across), y: p.dot(up), z: p.dot(look) };
+  });
   // The camera sits `d` back from (centre + across·sx + up·sy); for a given d, find shifts that fit every corner.
   const shiftsFor = (d) => {
     let xlo = Number.NEGATIVE_INFINITY;
@@ -55,4 +52,12 @@ export function fitPose({ box, dir, camera, width, height, margin = {} }) {
   const s = shiftsFor(far) ?? { sx: 0, sy: 0 };
   const target = centre.clone().addScaledVector(across, s.sx).addScaledVector(up, s.sy);
   return { target, position: target.clone().addScaledVector(look, -far) };
+}
+
+/** @param {THREE.Box3} box */
+function boxCorners(box) {
+  const out = [];
+  for (const x of [box.min.x, box.max.x])
+    for (const y of [box.min.y, box.max.y]) for (const z of [box.min.z, box.max.z]) out.push(new THREE.Vector3(x, y, z));
+  return out;
 }
