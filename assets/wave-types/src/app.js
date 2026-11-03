@@ -22,6 +22,7 @@ import { boldArrow, doubleArrow } from './arrows.js';
 import { backdropTexture, createSetting } from './setting.js';
 import {
   COLORS,
+  ROPE_R,
   ROPE_Y,
   SPRING,
   SPRING_Y,
@@ -53,10 +54,13 @@ const V = (x, y, z = 0) => new THREE.Vector3(x, y, z);
 const RIGHT = V(1, 0, 0);
 const UP = V(0, 1, 0);
 /** The boxes the camera frames per medium: [x0, y0, x1, y1, z]. */
+// A window round the green particle (the driver at its left edge); the far end runs off the right edge. Tall frames
+// get a narrower window, so the medium is big there too.
 const BOX = {
-  rope: [X0 - 0.1, 0.02, X0 + WAVE.L - 0.06, ROPE_Y + 0.15, 0.05],
-  spring: [X0 - 0.25, 0.0, X0 + WAVE.L - 0.02, 0.2, 0.08],
+  rope: [X0 - 0.12, 0.02, X0 + 1.3, ROPE_Y + 0.13, 0.05],
+  spring: [X0 - 0.16, 0.0, X0 + 1.3, 0.2, 0.09],
 };
+const TALL_X1 = X0 + 0.96;
 /** Where the green particle has settled into its full swing (s). */
 const SETTLE = WAVE.marked / speed() + period();
 
@@ -103,7 +107,13 @@ export function createApp(root, options = {}) {
     (m) =>
       `<div class="wt-cmp-row" data-m="${m}">${arrowSvg(m)}<div class="wt-cmp-text"><span class="wt-cmp-line"></span><span class="wt-cmp-kind"></span></div></div>`,
   ).join('')}<div class="wt-cmp-key"><span class="wt-key-g">${t('cmp_particle')}</span><span class="wt-key-b">${t('cmp_wave')}</span></div>`;
-  $('.pvc-rule').after(cmp);
+  // a live strip under the rule: the medium's particles seen from the side, the green one marked (as the book's dots)
+  const stripBox = document.createElement('div');
+  stripBox.className = 'wt-strip';
+  stripBox.innerHTML = `<div class="wt-strip-head">${t('strip_head')}</div><canvas aria-hidden="true"></canvas>`;
+  const stripCanvas = stripBox.querySelector('canvas');
+  $('.pvc-rule').after(stripBox);
+  stripBox.after(cmp);
   const note = document.createElement('p');
   note.className = 'wt-note';
   cmp.after(note);
@@ -151,8 +161,8 @@ export function createApp(root, options = {}) {
   scene.add(rope.root, spring.root, strip.mesh, driver.root, stand.root, marks.root);
 
   // the arrows: the particle's swing (green, both ways) and the wave's direction (blue)
-  const swing = doubleArrow('ParticleSwing', COLORS.mark, 0.0042);
-  const waveArrow = boldArrow('WaveDirection', COLORS.wave, 0.0055);
+  const swing = doubleArrow('ParticleSwing', COLORS.mark, 0.006);
+  const waveArrow = boldArrow('WaveDirection', COLORS.wave, 0.0065);
   scene.add(swing.root, waveArrow.root);
   // the test's mark round one place of the paused spring: a dark ring with a white rim, drawn over the coils
   const which = new THREE.Group();
@@ -200,12 +210,14 @@ export function createApp(root, options = {}) {
 
   // ── the scene from the state ────────────────────────────────────────────────
   const P = new THREE.Vector3();
+  const WAVE_LEN = 0.3;
+  const waveFrom = (m) => V(X0 + markedX() + 0.12, 0.008, m === 'rope' ? 0.1 : SPRING.R + 0.1);
   function syncScene() {
     const m = s.medium;
     const a = amplitude(m);
     rope.root.visible = m === 'rope';
     spring.root.visible = m === 'spring';
-    strip.mesh.visible = m === 'spring' && s.t > 0 && !s.show.feature;
+    strip.mesh.visible = m === 'spring' && s.t > 0 && (!s.show.feature || s.show.answer === true);
     which.visible = Boolean(s.show.feature) && m === 'spring';
     if (which.visible) spring.at(s.show.feature.x, s.t, which.position);
     driver.setMedium(m);
@@ -221,14 +233,13 @@ export function createApp(root, options = {}) {
     // the green particle's swing, at its rest place, once it swings fully
     const xm = markedX();
     if (s.show.swing && s.t > 0 && settled(xm, s.t)) {
-      if (m === 'rope') swing.set(V(X0 + xm + 0.045, ROPE_Y, 0.02), UP, a + 0.012);
-      else swing.set(V(X0 + xm, SPRING_Y + SPRING.R + 0.06, 0), RIGHT, a + 0.04);
+      if (m === 'rope') swing.set(V(X0 + xm + 0.07, ROPE_Y, 0.02), UP, a + 0.015);
+      else swing.set(V(X0 + xm, SPRING_Y + SPRING.R + 0.07, 0), RIGHT, a + 0.04);
     } else swing.hide();
-    // the wave's direction, beyond the green particle, once the wave has gone past it
-    if (s.show.labels && front(s.t) > xm + 0.15) {
-      const y = m === 'rope' ? ROPE_Y + a + 0.075 : SPRING_Y + SPRING.R + 0.05;
-      waveArrow.set(V(X0 + 0.98, y, 0), RIGHT, 0.32);
-    } else waveArrow.hide();
+    // the wave's direction: lying on the bench in front of the medium, beyond the green particle, once the wave has
+    // gone past it
+    if (s.show.labels && front(s.t) > xm + 0.15) waveArrow.set(waveFrom(m), RIGHT, WAVE_LEN);
+    else waveArrow.hide();
     stage.invalidate();
   }
 
@@ -286,7 +297,86 @@ export function createApp(root, options = {}) {
       else action.hide('scene');
     }
     syncLabels();
+    drawStrip();
     stage.invalidate();
+  }
+
+  /** The strip: dots at the particles' places now (across for the rope, along for the spring), rest ticks for the green one. */
+  function drawStrip() {
+    const cw = stripCanvas.clientWidth;
+    const ch = stripCanvas.clientHeight;
+    if (!cw || !ch) return;
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    if (stripCanvas.width !== Math.round(cw * dpr) || stripCanvas.height !== Math.round(ch * dpr)) {
+      stripCanvas.width = Math.round(cw * dpr);
+      stripCanvas.height = Math.round(ch * dpr);
+    }
+    const g = stripCanvas.getContext('2d');
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.clearRect(0, 0, cw, ch);
+    const m = s.medium;
+    const a = amplitude(m);
+    const span = WAVE.L - WAVE.taper; // the part that swings fully
+    const pad = 8;
+    const k = (cw - 2 * pad - 14) / span; // px per metre along
+    const mid = ch / 2;
+    const across = (ch / 2 - 6) / a; // px per metre across (rope)
+    g.strokeStyle = '#ced4da';
+    g.lineWidth = 1;
+    g.setLineDash([3, 3]);
+    g.beginPath();
+    g.moveTo(pad, mid);
+    g.lineTo(cw - pad, mid);
+    g.stroke();
+    g.setLineDash([]);
+    const n = m === 'rope' ? 30 : 36;
+    const xm = markedX();
+    g.fillStyle = '#5c6670';
+    for (let i = 0; i < n; i++) {
+      const x = (i / (n - 1)) * span;
+      const d = displacement(x, s.t, a);
+      const px = pad + x * k + (m === 'spring' ? d * k : 0);
+      const py = mid - (m === 'rope' ? d * across : 0);
+      g.beginPath();
+      g.arc(px, py, 2.4, 0, Math.PI * 2);
+      g.fill();
+    }
+    // the green particle and its rest place
+    const d = displacement(xm, s.t, a);
+    const rx = pad + xm * k;
+    g.strokeStyle = '#868e96';
+    g.lineWidth = 1.5;
+    g.beginPath();
+    if (m === 'rope') {
+      g.moveTo(rx - 6, mid);
+      g.lineTo(rx + 6, mid);
+    } else {
+      g.moveTo(rx, mid - 9);
+      g.lineTo(rx, mid + 9);
+    }
+    g.stroke();
+    g.fillStyle = COLORS.mark;
+    g.strokeStyle = '#ffffff';
+    g.lineWidth = 1.5;
+    g.beginPath();
+    g.arc(rx + (m === 'spring' ? d * k : 0), mid - (m === 'rope' ? d * across : 0), 5, 0, Math.PI * 2);
+    g.fill();
+    g.stroke();
+    // the wave's direction, small, at the right
+    const ax = cw - pad;
+    g.strokeStyle = COLORS.wave;
+    g.fillStyle = COLORS.wave;
+    g.lineWidth = 2.5;
+    g.beginPath();
+    g.moveTo(ax - 14, 7);
+    g.lineTo(ax - 4, 7);
+    g.stroke();
+    g.beginPath();
+    g.moveTo(ax, 7);
+    g.lineTo(ax - 6, 3);
+    g.lineTo(ax - 6, 11);
+    g.closePath();
+    g.fill();
   }
 
   // ── labels on the picture ───────────────────────────────────────────────────
@@ -356,7 +446,7 @@ export function createApp(root, options = {}) {
     if (s.show.feature) {
       const f = s.show.feature;
       want.set('which', {
-        text: t('lbl_which'),
+        text: s.show.answer ? t(f.kind === 'compression' ? 'lbl_comp' : 'lbl_rare') : t('lbl_which'),
         point: () =>
           spring
             .at(f.x, s.t, P)
@@ -364,7 +454,7 @@ export function createApp(root, options = {}) {
             .setY(SPRING_Y - SPRING.R - 0.012)
             .setZ(SPRING.R * 0.6),
         spots: BELOW,
-        color: '#1d2733',
+        color: s.show.answer ? COLORS.tealText : '#1d2733',
       });
       return want;
     }
@@ -372,22 +462,34 @@ export function createApp(root, options = {}) {
     if (swing.visible)
       want.set('particle', {
         text: t('lbl_particle'),
-        point: () => (m === 'rope' ? V(X0 + xm + 0.045, ROPE_Y + amplitude(m) + 0.01, 0.02) : V(X0 + xm, SPRING_Y + SPRING.R + 0.065, 0)),
+        point: () => (m === 'rope' ? V(X0 + xm + 0.07, ROPE_Y + amplitude(m) + 0.02, 0.02) : V(X0 + xm, SPRING_Y + SPRING.R + 0.075, 0)),
         spots: m === 'rope' ? [...ABOVE, ...RIGHT_OF] : ABOVE,
         color: COLORS.markText,
       });
     if (waveArrow.visible)
       want.set('wave', {
         text: t('lbl_wave'),
-        point: () => V(X0 + 1.14, m === 'rope' ? ROPE_Y + amplitude(m) + 0.075 : SPRING_Y + SPRING.R + 0.05, 0),
-        spots: ABOVE,
+        point: () => waveFrom(m).addScaledVector(RIGHT, WAVE_LEN * 0.55),
+        spots: [...BELOW, ...ABOVE],
         color: COLORS.waveText,
       });
     if (m === 'spring' && s.t > 0) {
-      const fs = features(s.t, { from: 0.25, to: WAVE.L - WAVE.taper });
+      const fs = features(s.t, { from: 0.12, to: 1.0 });
       if (fs.some((f) => f.kind === 'compression') && fs.some((f) => f.kind === 'rarefaction')) {
-        want.set('comp', { text: t('lbl_comp'), point: featPoint('compression', 1.0), spots: BELOW, color: COLORS.tealText, optional: true });
-        want.set('rare', { text: t('lbl_rare'), point: featPoint('rarefaction', 0.42), spots: BELOW, color: COLORS.tealText, optional: true });
+        want.set('comp', {
+          text: t('lbl_comp'),
+          point: featPoint('compression', 0.3),
+          spots: [...ABOVE, ...BELOW],
+          color: COLORS.tealText,
+          optional: true,
+        });
+        want.set('rare', {
+          text: t('lbl_rare'),
+          point: featPoint('rarefaction', 0.82),
+          spots: [...ABOVE, ...BELOW],
+          color: COLORS.tealText,
+          optional: true,
+        });
       }
     }
     return want;
@@ -414,14 +516,14 @@ export function createApp(root, options = {}) {
   const bbox = new THREE.Box3();
   const dir = new THREE.Vector3();
   function viewPose() {
-    const [x0, y0, x1, y1, z] = BOX[s.medium];
+    const [x0, y0, x1w, y1, z] = BOX[s.medium];
+    const aspect = stage.width / Math.max(1, stage.height);
+    const x1 = aspect < 1.25 ? TALL_X1 : x1w;
     bbox.min.set(x0, y0, -z);
     bbox.max.set(x1, y1, z);
-    // a three-quarter view from the front left (the driver near), about 19° above; turned a little more along the
-    // medium in taller frames, so the long medium uses the height too
-    const aspect = stage.width / Math.max(1, stage.height);
-    const yaw = THREE.MathUtils.degToRad(Math.max(25, Math.min(40, 25 + (2.1 - aspect) * 15)));
-    dir.set(-Math.sin(yaw), 0.36, Math.cos(yaw)).normalize();
+    // a gentle three-quarter view from the front left (25° to the side, about 13° above), so the axis uses the width
+    const yaw = THREE.MathUtils.degToRad(25);
+    dir.set(-Math.sin(yaw), 0.24, Math.cos(yaw)).normalize();
     return fitPose({ box: bbox, dir, camera, width: stage.width, height: stage.height, margin: MARGIN });
   }
   function place(pose) {
@@ -454,12 +556,22 @@ export function createApp(root, options = {}) {
     syncUI();
     return flyTo(viewPose(), animate ? 0.7 : 0);
   }
+  // only a real turn of the view counts as moving the camera (a tap on the driver starts the controls too)
+  let dragging = false;
   controls.addEventListener('start', () => {
-    s.userMovedCamera = true;
-    tweener.cancel('camera');
-    syncUI();
+    dragging = true;
   });
-  controls.addEventListener('change', () => stage.invalidate());
+  controls.addEventListener('end', () => {
+    dragging = false;
+  });
+  controls.addEventListener('change', () => {
+    if (dragging && !s.userMovedCamera) {
+      s.userMovedCamera = true;
+      tweener.cancel('camera');
+      syncUI();
+    }
+    stage.invalidate();
+  });
   stage.onResize(() => {
     if (!s.userMovedCamera) place(viewPose());
     syncScene();
@@ -513,7 +625,7 @@ export function createApp(root, options = {}) {
     t,
     step: 1,
     label: 'act_rope',
-    target: () => (s.mode === 'explore' ? driver.body : null),
+    target: () => (s.mode !== 'explore' ? null : s.medium === 'rope' ? driver.body : driver.end),
     pad: 8,
     avoid: [ui.corner, ui.hint, () => anno.boxes()],
     pulse: o.coach,
@@ -570,6 +682,13 @@ export function createApp(root, options = {}) {
   }
 
   // ── state for the book ──────────────────────────────────────────────────────
+  const DA = { x: 0, y: 0 };
+  function driverAt() {
+    driver.hit.updateMatrixWorld();
+    hitBox.setFromObject(driver.hit);
+    toScreen(hitBox.getCenter(tmp), DA);
+    return { x: Math.round(DA.x), y: Math.round(DA.y) };
+  }
   function snapshot() {
     const a = amplitude(s.medium);
     const xm = markedX();
@@ -586,6 +705,7 @@ export function createApp(root, options = {}) {
       frequency: WAVE.f,
       speed: round(speed(), 3),
       seen: MEDIA.filter((m) => s.seen[m]),
+      driverAt: driverAt(), // where the driver is on the 3D view (CSS px from its top left), for a tap
       next: plan().label.replace('act_', ''),
       mode: s.mode,
     };
@@ -618,7 +738,36 @@ export function createApp(root, options = {}) {
     };
   }
   /** The five questions: the rope's particle, the spring's coil after a while, a place on the paused spring, sound, water. */
-  const KINDS = ['rope', 'where', 'feature', 'sound', 'water'];
+  // The five, each set up on the picture: how the rope's particle moves, how the spring's coil moves, a ringed place on
+  // the paused spring, and the rope's and then the spring's wave named with its reason (each reveal shows its answer on
+  // the picture; no earlier scene names a later answer).
+  const KINDS = ['rope', 'spring', 'feature', 'typeRope', 'typeSpring'];
+  const Q = {
+    rope: {
+      text: 'q_rope',
+      keys: ['c1_updown', 'c1_along', 'c1_carried', 'c1_wavy'],
+      why: 'why_rope',
+      mis: { c1_along: 'mis1_along', c1_carried: 'mis1_carried', c1_wavy: 'mis1_wavy' },
+    },
+    spring: {
+      text: 'q_spring',
+      keys: ['c2_along', 'c2_updown', 'c2_carried', 'c2_stuck'],
+      why: 'why_spring',
+      mis: { c2_updown: 'mis2_updown', c2_carried: 'mis2_carried', c2_stuck: 'mis2_stuck' },
+    },
+    typeRope: {
+      text: 'q_type_rope',
+      keys: ['c4_trans', 'c4_moves', 'c4_long', 'c4_both'],
+      why: 'why_type_rope',
+      mis: { c4_moves: 'mis4_moves', c4_long: 'mis4_long', c4_both: 'mis4_both' },
+    },
+    typeSpring: {
+      text: 'q_type_spring',
+      keys: ['c5_long', 'c5_lying', 'c5_round', 'c5_both'],
+      why: 'why_type_spring',
+      mis: { c5_lying: 'mis5_lying', c5_round: 'mis5_round', c5_both: 'mis5_both' },
+    },
+  };
   let learnSaved = null;
   let question = null;
   let picked = -1;
@@ -664,49 +813,43 @@ export function createApp(root, options = {}) {
         const kind = KINDS[i % KINDS.length];
         question = { kind };
         if (kind === 'rope') setScene('rope', { time: SETTLE + 0.3, running: true, show: { labels: false, swing: false } });
-        else if (kind === 'where') setScene('spring', { time: 14.2, running: true, show: { labels: false, swing: false } });
+        else if (kind === 'spring') setScene('spring', { time: 14.2, running: true, show: { labels: false, swing: false } });
         else if (kind === 'feature') {
           const time = 6.1 + Math.random() * 0.6;
           const want = Math.random() < 0.5 ? 'compression' : 'rarefaction';
-          const f = nearest(time, want, 0.45 + Math.random() * 0.45);
+          // a place clear of the green coil (its tag would be a distraction), well inside the view
+          const near = Math.random() < 0.5 ? 0.24 + Math.random() * 0.12 : 0.74 + Math.random() * 0.1;
+          const f = nearest(time, want, near);
           question.feature = f;
           setScene('spring', { time, running: false, show: { labels: false, swing: false, feature: f } });
-        } else setScene('rope', { time: 0, running: false, show: { labels: false, swing: false } });
+        } else if (kind === 'typeRope') setScene('rope', { time: SETTLE + 2.1, running: true, show: { labels: true, swing: true } });
+        else setScene('spring', { time: SETTLE + 2.1, running: true, show: { labels: false, swing: true } });
         await flyTo(viewPose(), 0.6);
         if (!alive()) return null;
-        if (kind === 'rope') return { text: t('q_rope'), ...choicesOf(['c_updown', 'c_along', 'c_carried', 'c_still']) };
-        if (kind === 'where') return { text: t('q_where'), ...choicesOf(['c_home', 'c_far', 'c_back', 'c_stuck']) };
         if (kind === 'feature') {
           const right = question.feature.kind === 'compression' ? 'c_comp' : 'c_rare';
           const wrong = right === 'c_comp' ? 'c_rare' : 'c_comp';
-          return { text: t('q_feature'), ...choicesOf([right, wrong, 'c_lambda', 'c_amp']) };
+          return { text: t('q_feature'), ...choicesOf([right, wrong, 'c_rest', 'c_notyet']) };
         }
-        if (kind === 'sound') return { text: t('q_sound', { fig: '7.04' }), ...choicesOf(['c_long', 'c_trans', 'c_nowave', 'c_both']) };
-        return { text: t('q_water'), ...choicesOf(['c_trans', 'c_long', 'c_nowave', 'c_both']) };
+        return { text: t(Q[kind].text), ...choicesOf(Q[kind].keys) };
       },
       reveal(q, correct) {
         const k = question.kind;
         const wrongKey = correct ? null : q.list?.[picked];
         const noteOf = (map) => (wrongKey && map[wrongKey] ? ` ${t(map[wrongKey])}` : '');
-        // the answer shown on the picture: the marks and labels come back
-        if (k === 'rope' || k === 'where') {
-          s.show = { labels: true, swing: true, feature: null };
-          syncScene();
-          refresh();
-        } else if (k === 'feature') {
-          s.show = { labels: true, swing: false, feature: null };
-          syncScene();
-          refresh();
-        } else if (k === 'sound') setScene('spring', { time: SETTLE + 0.5, running: true });
-        else setScene('rope', { time: SETTLE + 0.5, running: true });
-        if (k === 'rope') return t('why_rope') + noteOf({ c_along: 'mis_along', c_carried: 'mis_carried', c_still: 'mis_still' });
-        if (k === 'where') return t('why_where') + noteOf({ c_far: 'mis_far', c_back: 'mis_back', c_stuck: 'mis_stuck' });
+        // the answer shown on the picture: the ring names its place and the bands come back; elsewhere the arrows and
+        // labels come back
         if (k === 'feature') {
+          s.show = { labels: false, swing: false, feature: question.feature, answer: true };
+          syncScene();
+          refresh();
           const comp = question.feature.kind === 'compression';
-          return t(comp ? 'why_comp' : 'why_rare') + noteOf({ c_comp: 'mis_swap', c_rare: 'mis_swap', c_lambda: 'mis_lambda', c_amp: 'mis_amp' });
+          return t(comp ? 'why_comp' : 'why_rare') + noteOf({ c_comp: 'mis_swap', c_rare: 'mis_swap', c_rest: 'mis_rest', c_notyet: 'mis_notyet' });
         }
-        if (k === 'sound') return t('why_sound') + noteOf({ c_trans: 'mis_trans_sound', c_nowave: 'mis_nowave', c_both: 'mis_both' });
-        return t('why_water') + noteOf({ c_long: 'mis_long_water', c_nowave: 'mis_nowave', c_both: 'mis_both' });
+        s.show = { labels: true, swing: true, feature: null };
+        syncScene();
+        refresh();
+        return t(Q[k].why) + noteOf(Q[k].mis);
       },
       done() {
         s.running = false;
@@ -825,6 +968,21 @@ export function createApp(root, options = {}) {
       emitChange();
     },
     startPractice: () => quiz.start(),
+    /** Dev only (measure scripts): sizes on screen in CSS px. */
+    measure() {
+      const at = (p) => ({ ...toScreen(p, { x: 0, y: 0 }) });
+      const dist = (p, q) => Math.round(Math.hypot(at(p).x - at(q).x, at(p).y - at(q).y));
+      const xm = X0 + markedX();
+      return {
+        stage: { w: stage.width, h: stage.height },
+        springDiameter: dist(V(xm, SPRING_Y - SPRING.R, 0), V(xm, SPRING_Y + SPRING.R, 0)),
+        ropeBandLength: dist(V(xm - 0.045, ROPE_Y, 0), V(xm + 0.045, ROPE_Y, 0)),
+        ropeBandDiameter: dist(V(xm, ROPE_Y - ROPE_R * 1.55, 0), V(xm, ROPE_Y + ROPE_R * 1.55, 0)),
+        ropeSwing: dist(V(xm, ROPE_Y - amplitude('rope'), 0), V(xm, ROPE_Y + amplitude('rope'), 0)),
+        swingArrow: swing.visible ? dist(swing.a.tip, swing.b.tip) : 0,
+        labels: anno.boxes?.() ?? [],
+      };
+    },
     capture: (opts) => stage.capture(opts),
     /** The medium as it is now, the driver and the stand, in metres. */
     exportRoot() {

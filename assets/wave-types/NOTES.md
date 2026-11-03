@@ -31,14 +31,15 @@ The book does not use তরঙ্গশীর্ষ / তরঙ্গপাদ 
   in a bronze bush), the medium, and a retort stand at the far end (cast-iron base, chrome rod, boss head, arm, a bronze
   jaw for the rope or a peg through the spring's end loop). No hands, no people (the chapter's "no extra scenery").
 - **The two media, the book's two examples**, chosen by one row of words দড়ি · স্প্রিং:
-  - the rope: a 28 mm three-strand manila rope (twisted-fibre texture + bump), stretched 0.3 m above the bench; the
+  - the rope: a 36 mm three-strand manila rope (twisted-fibre texture + bump), stretched 0.3 m above the bench; the
     driver's rod shakes its end up and down;
-  - the spring: a long steel helical spring (72 coils of 5.6 mm wire, 10 cm across, 1.6 m) lying on the bench, its
+  - the spring: a long steel helical spring (44 coils of 9 mm wire, 13 cm across, 1.6 m, pitch 36 mm) lying on the bench, its
     first coil on the driver's round plate, its far end bent into a crossover loop over the stand's peg; the driver
     pushes and pulls its end along the axis.
 - **Physics** (`src/reading.js`, unit-tested in `test/unit/wave-types.test.mjs`): one travelling wave
   displacement = a sin(kx − ωt) with λ = 0.5 m, f = 1.25 Hz (v = fλ = 0.625 m/s, not taught here: 7.2.3's
-  `wave-quantities` does), a = 7 cm across the rope, a = 3.5 cm along the spring (a·k ≈ 0.44, so coils never cross).
+  `wave-quantities` does), a = 9 cm across the rope, a = 5 cm along the spring (a·k ≈ 0.63: the 36 mm pitch never closes below 13 mm, the wire
+  is 9 mm, so coils never cross).
   The driver's amplitude eases up over its first period, so the wave has a clean front moving at v and nothing ahead
   of it moves. The spring's coils are each displaced along the axis by s(x, t), so compressions (ds/dx < 0) and
   rarefactions travel; their places are computed exactly (cos(kx − ωt) = ∓1) for the labels and the test.
@@ -55,12 +56,51 @@ The book does not use তরঙ্গশীর্ষ / তরঙ্গপাদ 
   প্রান্তে ঝাঁকুনি দাও / স্প্রিংয়ের প্রান্ত ঠেলো আর টানো, then থামাও / আবার চালাও; the same numbered badge rings the driver,
   and a tap on the driver does it), one result line naming the wave and how the particle moves, one rule in the book's
   sentences that grows (start → rope or spring → both: কণা নিজের জায়গায় কাঁপে, এগিয়ে যায় তরঙ্গ (শক্তি)). On frames at
-  least 470 px tall the side panel also shows a two-row comparison (green particle arrow vs blue wave arrow, লম্ব /
+  least 620 px tall the side panel also shows a two-row comparison (green particle arrow vs blue wave arrow, লম্ব /
   একই দিকে, the wave's name once found). Keys: Space/Enter start-pause, ← rope, → spring, R start again.
-- **Test** (5): which way the rope's green particle vibrates (running, arrows hidden); where the spring's green coil is
-  after a long time (running); the name of a ringed place on the paused spring (compression or rarefaction at random,
-  bands hidden); sound (the book's sentence) and water waves (the book's example). Each wrong choice has its own note.
-  Only one question per medium shows it running, so no scene gives away a later answer.
+- **Camera**: a gentle three-quarter view (25° to the side, about 13° above) of a window round the green particle
+  (0.55 m from the driver), the driver at the left edge and the far end running off the right edge, so the medium is big
+  on a phone; tall frames get a narrower window. The wave's direction arrow lies on the bench in front of the medium.
+- **Live strip** (side panel, landscape): the medium's particles seen from the side as dots (the book's চিত্র ৭.০৪
+  style), in sync with the 3D, the green one with its rest tick.
+- **Test** (5), every one set up on the picture, every wrong choice a real mistake with its own note, choices of
+  parallel length:
+  1. the rope running (arrows hidden): how the green particle moves (in place up-down ✓ / in place back-forth / carried
+     right / up-down and right as well);
+  2. the spring running a long time: how the green coil moves (in place back-forth ✓ / up-down / carried right / moved
+     a little and stopped);
+  3. the paused spring, a ringed place clear of the green coil, bands hidden: compression or rarefaction (at random) /
+     the other / সাম্যাবস্থা (no displacement: true for the middle coil of a compression, but the gaps are unequal) /
+     the wave has not arrived;
+  4. the rope running with its arrows: what kind of wave and why (অনুপ্রস্থ: rises and falls ✓ / অনুদৈর্ঘ্য: the wave
+     moves forward / অনুদৈর্ঘ্য: the rope is long / both kinds);
+  5. the spring running with its green arrow: what kind and why (অনুদৈর্ঘ্য ✓ / অনুপ্রস্থ because it lies down /
+     because the coils turn / both kinds, as there are compressions and rarefactions).
+  Reveals show the answer on the picture (the arrows and labels come back; the ring is named and the bands return).
+  Questions 1 and 2 don't name the wave's kind, so they don't give 4 and 5 away. Sound and water waves stay in the rule.
+
+## Round 2 (0.2.0, after the independent review of 0.1.0)
+- The media were far too small on phones. Now: chunkier spring (44 coils, 13 cm across, 9 mm wire), thicker rope
+  (36 mm) with a larger green sleeve, a = 9 cm / 5 cm; the camera frames a window round the green particle at 25°
+  yaw and a lower elevation instead of fitting the whole 1.6 m.
+- Measured (`window.figure.measure()`, dev only), while running:
+
+  | frame | spring diameter | green arrow (spring) | rope band | rope swing | green arrow (rope) |
+  |---|---|---|---|---|---|
+  | 390×700 | 38 px | 51 px | 25 × 17 px | 56 px | 67 px |
+  | 390×520 | 28 px | 39 px | 19 × 13 px | 41 px | 49 px |
+  | 844×390 | 43 px | 59 px | 29 × 19 px | 62 px | 75 px |
+  | 640×400 | 36 px | 47 px | 24 × 16 px | 53 px | 63 px |
+  | 800×500 | 52 px | 68 px | 34 × 24 px | 76 px | 91 px |
+  | 1280×800 | 88 px | 117 px | 59 × 40 px | 130 px | 156 px |
+
+  The 3D keeps its height in every state and test question at all six sizes; no label overlaps, none off the view.
+- The test was rewritten (above): no filler choices, no give-aways, every scene carries its question.
+- The side panel is filled: the live strip, larger comparison rows on big screens.
+- The wave's direction arrow lies on the bench, no longer in mid-air. The teal bands keep a steady opacity (no
+  patches near neutral points). The floor has no grid; canvas textures use mipmaps and full anisotropy.
+- A bug: the bands showed during question 3 (`visible` was `undefined`, which three.js draws); fixed.
+- A tap on the driver no longer counts as turning the view.
 
 ## Open questions for the book team
 - The book's examples are a spring and a rope; the figure drives both with a lab wave driver instead of a hand (no
@@ -71,6 +111,6 @@ The book does not use তরঙ্গশীর্ষ / তরঙ্গপাদ 
 - The marked particle is called a কণা for the spring too (one coil stands for a particle of the medium).
 
 ## Performance
-Rope: 260 × 13 vertices, spring: 2 061 × 9 vertices, rebuilt in place each frame into reused buffers (no allocations
+Rope: 260 × 15 vertices, spring: 1 629 × 11 vertices, rebuilt in place each frame into reused buffers (no allocations
 per frame); about 45 k triangles in all, about 40 draw calls, one 1024 shadow map fitted to the bench. Idle: nothing
 draws (the ticker returns false when paused).

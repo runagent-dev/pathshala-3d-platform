@@ -1,10 +1,10 @@
 // The two media and what drives them, in metres (the bench's top is y = 0; the medium runs along x from X0, the driven
 // end, to X0 + L, the far post). Procedural three.js, every moving shape rebuilt in place each frame into reused
 // buffers (no allocations per frame):
-// - the rope: a 22 mm three-strand manila rope (a twisted-fibre texture and bump), stretched 0.3 m above the bench,
+// - the rope: a 36 mm three-strand manila rope (a twisted-fibre texture and bump), stretched 0.3 m above the bench,
 //   held by the wave driver's clamp at one end and a jaw clamp on a retort stand at the other; one green band marks
 //   one particle of it;
-// - the spring: a long steel helical spring (72 coils of 5.6 mm wire, 10 cm across) lying on the bench, its first
+// - the spring: a long steel helical spring (44 coils of 9 mm wire, 13 cm across) lying on the bench, its first
 //   coil fixed to the driver's round plate, its far end bent into a crossover loop over the stand's steel peg; one
 //   coil is painted green;
 // - the wave driver: a mechanical vibrator (a charcoal case with a grille, a knob and rubber feet; a steel drive rod
@@ -17,8 +17,8 @@ import { canvasTex, rng } from './setting.js';
 
 export const X0 = -0.9;
 export const ROPE_Y = 0.3;
-export const ROPE_R = 0.014;
-export const SPRING = { R: 0.05, wire: 0.0028, coils: 72 };
+export const ROPE_R = 0.018;
+export const SPRING = { R: 0.065, wire: 0.0045, coils: 44 };
 export const SPRING_Y = SPRING.R + SPRING.wire;
 export const COLORS = { mark: '#2b8a3e', markText: '#237a35', wave: '#1c6fd9', waveText: '#1864ab', teal: '#0c8599', tealText: '#0b7285' };
 
@@ -173,7 +173,7 @@ export function mediumMaterials() {
 // ── the rope ──────────────────────────────────────────────────────────────────
 export function createRope(mats) {
   const N = 260;
-  const tube = makeTube(N, 12, ROPE_R, { alongRepeat: 1 / 0.028 }); // one lay every 28 mm
+  const tube = makeTube(N, 14, ROPE_R, { alongRepeat: 1 / 0.036 }); // one lay every 36 mm
   const P = new Float32Array(N * 3);
   const R = new Float32Array(N * 3);
   const arc = new Float32Array(N);
@@ -183,7 +183,7 @@ export function createRope(mats) {
   mesh.castShadow = true;
   mesh.frustumCulled = false;
   // the green band round one particle
-  const band = new THREE.Mesh(new THREE.CylinderGeometry(ROPE_R * 1.4, ROPE_R * 1.4, 0.04, 24), mats.green);
+  const band = new THREE.Mesh(new THREE.CylinderGeometry(ROPE_R * 1.55, ROPE_R * 1.55, 0.09, 28), mats.green);
   band.name = 'MarkedParticle';
   band.castShadow = true;
   const root = new THREE.Group();
@@ -217,11 +217,11 @@ export function createRope(mats) {
 // ── the spring ────────────────────────────────────────────────────────────────
 export function createSpring(mats) {
   const { R: RAD, coils } = SPRING;
-  const PER = 28; // points per coil
+  const PER = 36; // points per coil
   const HELIX = coils * PER + 1;
   const LOOP = 44; // the crossover loop at the far end
   const N = HELIX + LOOP;
-  const tube = makeTube(N, 8, SPRING.wire);
+  const tube = makeTube(N, 10, SPRING.wire);
   const P = new Float32Array(N * 3);
   const Rf = new Float32Array(N * 3);
   const arc = new Float32Array(N);
@@ -263,7 +263,7 @@ export function createSpring(mats) {
   tube.geo.addGroup(a0, a1 - a0, 1);
   tube.geo.addGroup(a1, all - a1, 0);
   // a green tag tied to the top of the green coil (as in a class demonstration), so it reads from afar
-  const tag = new THREE.Mesh(new THREE.BoxGeometry(0.006, 0.034, 0.03).translate(0, 0.017, 0), mats.green);
+  const tag = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.045, 0.04).translate(0, 0.0225, 0), mats.green);
   tag.name = 'MarkedTag';
   tag.castShadow = true;
   const root = new THREE.Group();
@@ -328,7 +328,7 @@ export function createDensityStrip() {
       data[o] = light[0] + (dark[0] - light[0]) * k;
       data[o + 1] = light[1] + (dark[1] - light[1]) * k;
       data[o + 2] = light[2] + (dark[2] - light[2]) * k;
-      data[o + 3] = Math.abs(c) < 0.02 ? 0 : 40 + 150 * Math.abs(c);
+      data[o + 3] = 150; // steady: the colour alone goes from light (spread) to dark (crowded)
     }
     tex.needsUpdate = true;
   }
@@ -385,7 +385,7 @@ export function createDriver(mats) {
   clamp.add(jaw, screw, screwHead, plate);
   root.add(body, bush, rod, clamp);
   let medium = 'rope';
-  const ROD = 0.12;
+  const ROD = 0.07;
   function setMedium(m) {
     medium = m;
     const rope = m === 'rope';
@@ -432,12 +432,13 @@ export function createDriver(mats) {
   root.add(hit);
   function placeHit() {
     if (medium === 'rope') hit.position.set(X0, 0.18, 0);
-    else hit.position.set(X0 - ROD / 2 - 0.02, 0.08, 0);
+    else hit.position.set(X0 - 0.06, 0.08, 0);
     hit.scale.set(1, medium === 'rope' ? 1 : 0.45, 1);
   }
   return {
     root,
     body,
+    end: clamp,
     hit,
     setMedium(m) {
       setMedium(m);

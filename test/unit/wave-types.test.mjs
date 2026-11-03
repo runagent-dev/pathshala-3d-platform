@@ -35,8 +35,10 @@ describe('the travelling wave', () => {
   it('the far end is still (the absorbing end)', () => {
     for (let t = 0; t < 10; t += 0.1) close(w.displacement(WAVE.L, t, 0.08), 0, 1e-12);
   });
-  it('coils never cross in the spring (spacing stays above 0)', () => {
-    for (let t = 2; t < 6; t += 0.05) for (let x = 0; x < WAVE.L; x += 0.01) assert.ok(w.spacing(x, t, WAVE.aSpring) > 0.5);
+  it('coils never cross in the spring: the 36 mm pitch stays above 13 mm (the wire is 9 mm thick)', () => {
+    let min = 9;
+    for (let t = 2; t < 6; t += 0.05) for (let x = 0; x < WAVE.L; x += 0.01) min = Math.min(min, w.spacing(x, t, WAVE.aSpring));
+    assert.ok(min > 0.36 && (min * WAVE.L) / 44 > 0.013, `spacing ${min}`);
   });
 });
 

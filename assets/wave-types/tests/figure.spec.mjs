@@ -37,7 +37,7 @@ test('wave-types: shake the rope, then push the spring; the particles only swing
   await fig.advance(4500);
   st = await fig.call('get');
   expect(st.seen).toEqual(['rope', 'spring']);
-  expect(Math.abs(st.particle)).toBeLessThanOrEqual(0.035 + 1e-9);
+  expect(Math.abs(st.particle)).toBeLessThanOrEqual(st.amplitude + 1e-9);
   expect(['ahead', 'back', 'still']).toContain(st.heading);
 
   expect(await fig.call('set', { medium: 'rope', t: 4, running: false, animate: false })).toMatchObject({ medium: 'rope', t: 4, running: false });
@@ -56,6 +56,31 @@ test('wave-types: a second tap within the double-tap time does not undo the firs
   await frame.locator('.pvc-act').click();
   await fig.advance(300);
   expect((await fig.call('get')).running).toBe(true);
+  expect(log.errors).toEqual([]);
+});
+
+test('wave-types: a tap on the driver in the 3D view starts it, a second tap pauses it', async ({ page }) => {
+  await page.setViewportSize({ width: 844, height: 390 });
+  const log = await preparePage(page);
+  const fig = await openFigure(page, 'wave-types');
+  const frame = frameOf(page);
+  const canvas = await frame.locator('canvas').first().boundingBox();
+  const tap = async () => {
+    const { driverAt } = await fig.call('get');
+    await page.mouse.click(canvas.x + driverAt.x, canvas.y + driverAt.y);
+  };
+  await tap();
+  await fig.advance(1500);
+  expect((await fig.call('get')).running).toBe(true);
+  await tap();
+  await fig.advance(300);
+  const st = await fig.call('get');
+  expect(st.running).toBe(false);
+  expect(st.t).toBeGreaterThan(1);
+  await fig.call('set', { medium: 'spring', animate: false });
+  await tap();
+  await fig.advance(600);
+  expect(await fig.call('get')).toMatchObject({ medium: 'spring', running: true });
   expect(log.errors).toEqual([]);
 });
 

@@ -12,10 +12,10 @@ export const WAVE = {
   L: 1.6, // the medium's length between the driver and the far post (m)
   lambda: 0.5, // wavelength (m)
   f: 1.25, // the driver's frequency (Hz)
-  aRope: 0.07, // amplitude across the rope (m)
-  aSpring: 0.035, // amplitude along the spring (m): a·k ≈ 0.44 < 1, so coils never cross
+  aRope: 0.09, // amplitude across the rope (m)
+  aSpring: 0.05, // amplitude along the spring (m): a·k ≈ 0.63 < 1, so the 36 mm pitch never closes below 13 mm
   taper: 0.25, // the absorbing end's length (m)
-  marked: 0.72, // where the green particle / coil rests (m from the driver)
+  marked: 0.55, // where the green particle / coil rests (m from the driver)
 };
 export const MEDIA = ['rope', 'spring'];
 export const KIND = { rope: 'transverse', spring: 'longitudinal' };

@@ -13,7 +13,9 @@ export function canvasTex(w, h, draw, { repeat = null, color = true } = {}) {
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
     t.repeat.set(repeat[0], repeat[1]);
   }
-  t.anisotropy = 8;
+  t.anisotropy = 16; // the stage clamps it to what the device has; with mipmaps, no stair-steps at a high DPR
+  t.generateMipmaps = true;
+  t.minFilter = THREE.LinearMipmapLinearFilter;
   return t;
 }
 
@@ -83,11 +85,8 @@ function slate() {
         const d = 2 + r() * 7;
         ctx.fillRect(r() * W, r() * H, d, d);
       }
-      ctx.strokeStyle = 'rgba(20,16,30,0.5)';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(1, 1, W - 2, H - 2);
     },
-    { repeat: [30, 30] },
+    { repeat: [12, 12] },
   );
 }
 function fade() {
