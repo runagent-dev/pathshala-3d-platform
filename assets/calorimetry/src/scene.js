@@ -107,8 +107,8 @@ function glowTexture() {
 const STOPS = [
   [0, new THREE.Color('#3b95e0')],
   [30, new THREE.Color('#4aa6dc')],
-  [50, new THREE.Color('#98b8c4')],
-  [75, new THREE.Color('#ee9a5c')],
+  [42, new THREE.Color('#5eb0cf')],
+  [60, new THREE.Color('#e6a672')],
   [100, new THREE.Color('#e8744e')],
 ];
 /** The water's tint at T °C: cool blue, neutral in the middle, warm peach when hot (the thermometer carries the number). */

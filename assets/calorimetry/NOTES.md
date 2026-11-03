@@ -42,8 +42,8 @@ the book's sum (balance, T in symbols; after the run T with the numbers, and the
 - p181 two-waters example: the text says "1 liter পানির ভর m₁ = 1 kg, 2 liter পানির ভর m₂ = 2 kg", but the equation
   m₁s(75°C − T) = m₂s(T − 20°C) and the sum (75×2 + 20)/(2+1) use m₁ = 2 kg (the 75°C water) and m₂ = 1 kg. The
   figure follows the equation and the sum (m₁ = 2 kg at 75°C, m₂ = 1 kg at 20°C).
-- p181: (75×2 + 20)/(2 + 1) = 56.67, which the book prints as 56.6°C; correct rounding is 56.7°C, and the figure shows
-  56.7°C. p180: the exact answer is 20.04°C (the book rounds to 20°C; the figure shows "২০°C" and "প্রায়" for the heats).
+- p181: (75×2 + 20)/(2 + 1) = 56.67, which the book prints as 56.6°C; correct rounding is 56.7°C, but the figure shows
+  56.6°C exactly as the book prints it (0.2.0; the true value 56.67 is in the unit tests). p180: the exact answer is 20.04°C (the book rounds to 20°C; the figure shows "২০°C" and "প্রায়" for the heats).
 - p179: the extra (ii)-note "(আমরা ধরে নিয়েছি … কোনো তাপ নষ্ট হচ্ছে না)" is shown after the first run, as the book gives it.
 - The page has no picture, so the bench, beaker, mug, ice and iron are the figure's own; please confirm they suit the
   book's style.
@@ -51,3 +51,10 @@ the book's sum (balance, T in symbols; after the run T with the numbers, and the
 
 ## Measured (polish pass numbers)
 See the PR description (draw calls, triangles, time to ready) once measured.
+
+## Polish pass 0.2.0
+- Shows the book's printed answers: 20, 56.6 (book truncates 56.67), 30.1 °C, everywhere (labels, thermometer, sums, test).
+- "liter" in Bangla text is now "লিটার"; the beaker's marks read "লি."; the Bangla title is the book's heading only.
+- Two-waters labels: the page's list says m₁ = 1 kg (1 liter) and m₂ = 2 kg (2 liter), but its equation and sum use m₁ = 2
+  (the 75°C water). The figure keeps the equation's labels on every line (m₁ = 2 kg at 75°C, m₂ = 1 kg at 20°C).
+- The water tint turns warm earlier, so 56.6°C water no longer looks grey.

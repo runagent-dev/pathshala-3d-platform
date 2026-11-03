@@ -96,8 +96,14 @@ export function round3(x) {
   return Math.round(x / p) * p;
 }
 
-/** The temperature as the figure shows it: one decimal, no trailing ".0" ("20", "56.7", "30.1"). */
+/** The temperature as the figure shows it: the book's printed answers for its three examples ("20", "56.6", "30.1"),
+ * otherwise one decimal, no trailing ".0". */
 export function tempText(T) {
+  // the book's own printed answers (56.67 is printed 56.6 on p181): show exactly what the page shows
+  for (const ex of EXAMPLE_IDS) {
+    const e = EXAMPLES[ex];
+    if (Math.abs(T - solve(e).T) < 1e-6) return e.bookT;
+  }
   const r = Math.round(T * 10) / 10;
   return Number.isInteger(r) ? String(r) : r.toFixed(1);
 }
