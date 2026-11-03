@@ -63,6 +63,11 @@ export const STRINGS = {
     lbl_blow: 'ফুঁ',
     lbl_lambda: 'λ ≈ {l}&nbsp;{u_m}',
     lbl_bead: 'বাতাসের একটি কণা',
+    g_y: 'চাপ',
+    g_x: 'উৎস থেকে দূরত্ব (m)',
+    g_c: 'সংকোচন',
+    g_r: 'প্রসারণ',
+    g_aria: 'বাতাসের চাপ আর উৎস থেকে দূরত্বের গ্রাফ: সংকোচনে চাপ বেশি, প্রসারণে কম; পাশাপাশি দুটি সংকোচনের দূরত্ব তরঙ্গদৈর্ঘ্য λ।',
 
     hint_locked: 'পরীক্ষার সময় ছবিটি দেখো, উত্তর বেছে নাও।',
 
@@ -83,13 +88,13 @@ export const STRINGS = {
 
     q_what: 'ছবিতে কাগজে ফুঁ দেওয়া হচ্ছে। কোনটি কেঁপে শব্দ তৈরি করছে?',
     c_what_flaps: 'কাগজের কাটা টুকরো দুটো',
-    c_what_fingers: 'কাগজ ধরে রাখা আঙুল দুটো',
+    c_what_fingers: 'কাগজ ধরে রাখা ক্লিপটি',
     c_what_breath: 'ফুঁয়ের বাতাস, কাগজ কাঁপে না',
     c_what_sheet: 'পুরো কাগজটা একসাথে',
     why_what: '<b>কাটা টুকরো দুটো</b>: এরা ভোকাল কর্ডের মতো খোলে আর বন্ধ হয়; প্রতিবার খুললে বাতাসে একটা ধাক্কা লাগে।',
-    mis_what_fingers: 'আঙুল কাগজটা স্থির ধরে রাখে, কাঁপে না।',
+    mis_what_fingers: 'ক্লিপ কাগজটা স্থির ধরে রাখে, কাঁপে না।',
     mis_what_breath: 'না কেটে ফুঁ দিলে এই শব্দ হয় না; টুকরো দুটোর কম্পনই শব্দের উৎস।',
-    mis_what_sheet: 'কাগজের বড় অংশ আঙুলে আটকানো, প্রায় স্থির; কাঁপে শুধু কাটা টুকরো দুটো।',
+    mis_what_sheet: 'কাগজের বড় অংশ প্রায় স্থির থাকে; কাঁপে শুধু কাটা টুকরো দুটো, যাদের মাঝ দিয়ে বাতাস যায়।',
 
     q_bead: 'সবুজটি বাতাসের একটি কণা। শব্দ তরঙ্গ চলার সময় কণাটি কী করছে?',
     c_bead_swing: 'নিজের জায়গায় সামনে-পিছে দুলছে',
@@ -125,7 +130,7 @@ export const STRINGS = {
     c_need_right: 'উৎস, মাধ্যম ও রিসিভার',
     c_need_light: 'উৎস, আলো ও রিসিভার',
     c_need_nore: 'উৎস, মাধ্যম ও আলো',
-    c_need_parts: 'কাগজ, আঙুল ও ফুঁ',
+    c_need_parts: 'কাগজ, ক্লিপ ও ফুঁ',
     why_need: '<b>উৎস, মাধ্যম ও রিসিভার</b>: এখানে উৎস কাঁপা টুকরো দুটো, মাধ্যম বাতাস, রিসিভার তোমার কান।',
     mis_need_light: 'শব্দের জন্য আলো লাগে না; অন্ধকারেও শব্দ শোনা যায়, কিন্তু বাতাসের মতো মাধ্যম লাগে।',
     mis_need_nore: 'শব্দ গ্রহণ করতে রিসিভার (যেমন কান) লাগে; আলো লাগে না।',
@@ -184,6 +189,12 @@ export const STRINGS = {
     lbl_blow: 'blow',
     lbl_lambda: 'λ ≈ {l}&nbsp;{u_m}',
     lbl_bead: 'one air particle',
+    g_y: 'pressure',
+    g_x: 'distance from the source (m)',
+    g_c: 'compression',
+    g_r: 'rarefaction',
+    g_aria:
+      'Graph of the air pressure against the distance from the source: high at compressions, low at rarefactions; two neighbouring compressions are one wavelength λ apart.',
 
     hint_locked: 'During the test, look at the picture and pick an answer.',
 
@@ -203,13 +214,13 @@ export const STRINGS = {
 
     q_what: 'Someone is blowing on the paper. What vibrates and makes the sound?',
     c_what_flaps: 'The two cut flaps',
-    c_what_fingers: 'The two fingers holding the paper',
+    c_what_fingers: 'The clip holding the paper',
     c_what_breath: 'The blown air; the paper does not vibrate',
     c_what_sheet: 'The whole sheet at once',
     why_what: '<b>The two cut flaps</b>: they open and shut like vocal cords, and each opening gives the air a push.',
-    mis_what_fingers: 'The fingers hold the paper still; they do not vibrate.',
+    mis_what_fingers: 'The clip holds the paper still; it does not vibrate.',
     mis_what_breath: 'Blowing on uncut paper does not make this sound; the flaps’ vibration is the source.',
-    mis_what_sheet: 'Most of the sheet is held by the fingers and hardly moves; only the cut flaps vibrate.',
+    mis_what_sheet: 'Most of the sheet hardly moves; only the two cut flaps vibrate, with the air passing between them.',
 
     q_bead: 'The green dot is one particle of air. What does it do while the sound wave passes?',
     c_bead_swing: 'Swings to and fro in its place',
@@ -248,7 +259,7 @@ export const STRINGS = {
     c_need_right: 'A source, a medium and a receiver',
     c_need_light: 'A source, light and a receiver',
     c_need_nore: 'A source, a medium and light',
-    c_need_parts: 'Paper, fingers and a breath',
+    c_need_parts: 'Paper, a clip and a breath',
     why_need: '<b>A source, a medium and a receiver</b>: here the source is the vibrating flaps, the medium the air, the receiver your ear.',
     mis_need_light: 'Sound needs no light (we hear in the dark), but it needs a medium such as air.',
     mis_need_nore: 'A receiver (such as an ear) is needed to take in the sound; light is not.',

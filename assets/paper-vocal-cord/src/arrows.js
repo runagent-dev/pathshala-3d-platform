@@ -1,5 +1,5 @@
 // Arrows over the picture: thick flat colour in a white outline with a thin dark edge, so they read on the paper,
-// the skin and the warm backdrop alike (after torricelli-water-barometer). The blown air's arrow, and the λ bracket.
+// the clip and the backdrop alike (after torricelli-water-barometer). The blown air's arrow, and the λ bracket.
 // The kit's createArrow, three layers.
 import * as THREE from 'three';
 import { createArrow } from '@shared/arrow.js';
@@ -71,54 +71,6 @@ export function boldArrow(name, color, r, { order = 30 } = {}) {
     },
     hide() {
       core.hide();
-    },
-  };
-}
-
-const Q = new THREE.Quaternion();
-const D = new THREE.Vector3();
-
-/**
- * A length on the picture (λ): a bar from a to b with an arrow head at each end, drawn over the scene in a white
- * halo. `set(a, b)`, `hide()`; `r` is the bar's radius.
- */
-export function bracket(name, color, r, { order = 26 } = {}) {
-  const root = new THREE.Group();
-  root.name = name;
-  root.userData.noExport = true;
-  const mat = flat(color);
-  const halo = flat('#ffffff');
-  halo.opacity = 0.9;
-  const bar = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 1, 8).translate(0, 0.5, 0), mat);
-  const barHalo = new THREE.Mesh(new THREE.CylinderGeometry(r * 2.2, r * 2.2, 1, 8).translate(0, 0.5, 0), halo);
-  const hl = r * 6;
-  const hr = r * 2.8;
-  const head0 = new THREE.Mesh(new THREE.ConeGeometry(hr, hl, 12).translate(0, -hl / 2, 0), mat);
-  const head1 = head0.clone();
-  head0.rotation.x = Math.PI;
-  barHalo.renderOrder = order;
-  for (const m of [bar, head0, head1]) m.renderOrder = order + 1;
-  const inner = new THREE.Group();
-  inner.add(barHalo, bar, head0, head1);
-  root.add(inner);
-  return {
-    root,
-    /** From a to b. */
-    set(a, b) {
-      D.subVectors(b, a);
-      const len = D.length();
-      root.visible = len > 1e-6;
-      if (!root.visible) return;
-      root.position.copy(a);
-      Q.setFromUnitVectors(UP, D.normalize());
-      inner.quaternion.copy(Q);
-      bar.scale.y = len;
-      barHalo.scale.y = len;
-      head1.position.y = len;
-      head0.position.y = 0;
-    },
-    hide() {
-      root.visible = false;
     },
   };
 }

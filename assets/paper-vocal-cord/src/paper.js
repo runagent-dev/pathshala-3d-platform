@@ -1,16 +1,19 @@
 // The paper vocal cord of চিত্র ৭.১০, in millimetres: a page of a ruled exercise book (খাতা) folded in half, the fold
 // standing upright at x = 0, the two halves opening toward the mouth (−x) at ±ALPHA like a half-open book. At the fold
-// a slit was cut along the crease and two short cuts across it, so each half has a flap (the কাটা টুকরো) held at its
-// hinge (L mm back from the fold) and free at the fold. The two free edges meet at the crease like the two vocal
-// cords; blown air pushes them outward, the slot opens, a puff escapes, the paper springs back and shuts it again.
+// a slit was cut down the crease from the top edge (14 mm) and a short cut across at its foot, L mm into each half:
+// so each half has a flap (the কাটা টুকরো) still held along a line L mm back from the crease (its hinge) and free at
+// the crease, its top edge the paper's top edge. Seen from above, the two flaps are the tip of the V. The two free
+// edges meet at the crease like the two vocal cords; blown air pushes them outward, the slot opens, a puff escapes,
+// the paper springs back and shuts it again.
 //
-// Real proportions: a 44 × 70 mm folded strip, 0.3 mm thick as drawn (writing paper is 0.1 mm; drawn a little thicker
-// so its edge reads), flaps 34 mm tall, the cut 0.5 mm wide. Procedural: an extruded outline per half (the notch the
-// flap sits in), a rounded crease above and below the slit, and each flap a thin slab bent as a cantilever every frame.
+// Real proportions: a 52 × 60 mm strip of writing paper folded in half (0.1 mm thick; drawn 0.3 mm so its
+// edge reads), flaps 14 mm tall, the cut drawn 0.9 mm wide so it reads. A faint ghost of each flap at its widest swing shows how far it moves (like motion blur).
+// Procedural: an extruded outline per half (the notch the flap sits in), a rounded crease below the slit, and each
+// flap a thin slab bent as a cantilever every frame.
 import * as THREE from 'three';
 import { bendShape } from './reading.js';
 
-export const SHEET = { W: 44, H: 70, T: 0.3, alpha: THREE.MathUtils.degToRad(30), h: 34, kerf: 0.5, gap: 0.3 };
+export const SHEET = { W: 26, H: 60, T: 0.3, alpha: THREE.MathUtils.degToRad(40), h: 14, kerf: 0.9, gap: 0.45 };
 /** How far the free edge swings out at full opening, as a share of the flap's length. */
 const SWING = 0.4;
 const Y = new THREE.Vector3(0, 1, 0);
@@ -76,18 +79,18 @@ function paperTextures() {
 function halfShape(L) {
   const { W, H, h, kerf } = SHEET;
   const s = new THREE.Shape();
-  const top = h / 2 + kerf;
+  const low = H / 2 - h - kerf; // the cut across, under the flap
   s.moveTo(0, -H / 2);
   s.lineTo(W, -H / 2);
   s.lineTo(W, H / 2);
-  s.lineTo(0, H / 2);
-  s.lineTo(0, top);
-  s.lineTo(L, top);
-  s.lineTo(L, -top);
-  s.lineTo(0, -top);
+  s.lineTo(L, H / 2);
+  s.lineTo(L, low);
+  s.lineTo(0, low);
   s.closePath();
   return s;
 }
+/** The middle of the flaps' height (mm): the slot the air goes through. */
+export const SLOT_Y = SHEET.H / 2 - SHEET.h / 2;
 
 /**
  * The folded paper. `setCut(L)` makes flaps L mm long; `setOpen(k)` bends both flaps (0 shut … 1 wide open);
@@ -108,6 +111,7 @@ export function createPaper() {
     metalness: 0,
   });
   const edgeMat = new THREE.MeshStandardMaterial({ name: 'PaperEdge', color: '#e9e3d4', roughness: 0.95 });
+  const ghostMat = new THREE.MeshBasicMaterial({ color: '#6f7d8c', transparent: true, opacity: 0.22, depthWrite: false, side: THREE.DoubleSide });
 
   const halves = [1, -1].map((side) => {
     // the half's frame: s along u (crease → edge), y up, w = u × y through the paper
@@ -124,53 +128,58 @@ export function createPaper() {
     leaf.castShadow = true;
     leaf.receiveShadow = true;
     // the flap: a thin slab, 16 pieces along its length, bent every frame
-    const flapGeo = new THREE.BoxGeometry(1, h - 2 * kerf, 1, 16, 1, 1);
+    const flapGeo = new THREE.BoxGeometry(1, h, 1, 16, 1, 1);
     const base = flapGeo.attributes.position.array.slice();
     const flap = new THREE.Mesh(flapGeo, [mat, mat, mat, mat, mat, mat]);
     flap.name = side > 0 ? 'NearFlap' : 'FarFlap';
     flap.castShadow = true;
     flap.receiveShadow = true;
-    g.add(leaf, flap);
-    return { side, u, w, out, sign, g, leaf, flap, base };
+    // the ghost: the same flap at its widest swing, faint
+    const ghost = new THREE.Mesh(flapGeo.clone(), ghostMat);
+    ghost.name = 'FlapSwing';
+    ghost.userData.noExport = true;
+    ghost.renderOrder = 2;
+    ghost.visible = false;
+    g.add(leaf, flap, ghost);
+    return { side, u, w, out, sign, g, leaf, flap, ghost, base };
   });
 
-  // the crease, rounded, above and below the slit
-  const creaseLen = H / 2 - h / 2 - kerf;
-  const creaseGeo = new THREE.CylinderGeometry(T * 0.62, T * 0.62, creaseLen, 10);
-  for (const y of [-(H / 2 - creaseLen / 2), H / 2 - creaseLen / 2]) {
-    const c = new THREE.Mesh(creaseGeo, edgeMat);
-    c.name = 'Crease';
-    c.position.set(T * 0.25, y, 0);
-    root.add(c);
-  }
+  // the crease, rounded, below the slit
+  const creaseLen = H - h - kerf;
+  const c = new THREE.Mesh(new THREE.CylinderGeometry(T * 0.62, T * 0.62, creaseLen, 10), edgeMat);
+  c.name = 'Crease';
+  c.position.set(T * 0.25, -H / 2 + creaseLen / 2, 0);
+  root.add(c);
 
   let L = 10;
   let open = 0;
 
-  function bendFlaps() {
-    const A = SWING * L * open;
-    for (const hv of halves) {
-      const pos = hv.flap.geometry.attributes.position;
-      const uv = hv.flap.geometry.attributes.uv;
-      const a = pos.array;
-      const b = hv.base;
-      for (let i = 0; i < pos.count; i++) {
-        const sigma = b[i * 3] + 0.5; // 0 at the hinge … 1 at the free edge
-        const s = L - sigma * (L - gap);
-        const d = A * bendShape(sigma);
-        // a little shortening as it bends keeps the strip's length (an inextensible sheet)
-        const shorten = (A * A * sigma) / (2.4 * L);
-        a[i * 3] = s + shorten;
-        a[i * 3 + 1] = b[i * 3 + 1];
-        a[i * 3 + 2] = b[i * 3 + 2] * T + hv.sign * d;
-        uv.array[i * 2] = s;
-        uv.array[i * 2 + 1] = b[i * 3 + 1];
-      }
-      pos.needsUpdate = true;
-      uv.needsUpdate = true;
-      hv.flap.geometry.computeVertexNormals();
-      hv.flap.geometry.computeBoundingSphere();
+  /** Bends one flap's slab (geometry `geo`) to the opening k. */
+  function bend(hv, geo, k) {
+    const A = SWING * L * k;
+    const pos = geo.attributes.position;
+    const uv = geo.attributes.uv;
+    const a = pos.array;
+    const b = hv.base;
+    for (let i = 0; i < pos.count; i++) {
+      const sigma = b[i * 3] + 0.5; // 0 at the hinge … 1 at the free edge
+      const s = L - sigma * (L - gap);
+      const d = A * bendShape(sigma);
+      // a little shortening as it bends keeps the strip's length (an inextensible sheet)
+      const shorten = (A * A * sigma) / (2.4 * L);
+      a[i * 3] = s + shorten;
+      a[i * 3 + 1] = b[i * 3 + 1] + SLOT_Y;
+      a[i * 3 + 2] = b[i * 3 + 2] * T + hv.sign * d;
+      uv.array[i * 2] = s;
+      uv.array[i * 2 + 1] = b[i * 3 + 1] + SLOT_Y;
     }
+    pos.needsUpdate = true;
+    uv.needsUpdate = true;
+    geo.computeVertexNormals();
+    geo.computeBoundingSphere();
+  }
+  function bendFlaps() {
+    for (const hv of halves) bend(hv, hv.flap.geometry, open);
   }
 
   function setCut(len) {
@@ -180,6 +189,7 @@ export function createPaper() {
     for (const hv of halves) {
       hv.leaf.geometry?.dispose();
       hv.leaf.geometry = hv === halves[0] ? geo : geo.clone();
+      bend(hv, hv.ghost.geometry, 1);
     }
     bendFlaps();
   }
@@ -194,14 +204,14 @@ export function createPaper() {
   function edgePoint(side, outV = new THREE.Vector3()) {
     const hv = side > 0 ? halves[0] : halves[1];
     const A = SWING * L * open;
-    P.set(gap + (A * A) / (2.4 * L), 0, hv.sign * A);
+    P.set(gap + (A * A) / (2.4 * L), SLOT_Y, hv.sign * A);
     root.updateWorldMatrix(true, true);
     return outV.copy(P).applyMatrix4(hv.g.matrixWorld);
   }
   function hingePoint(side, outV = new THREE.Vector3()) {
     const hv = side > 0 ? halves[0] : halves[1];
     root.updateWorldMatrix(true, true);
-    return outV.set(L, 0, 0).applyMatrix4(hv.g.matrixWorld);
+    return outV.set(L, SLOT_Y, 0).applyMatrix4(hv.g.matrixWorld);
   }
   /** A point on a half's outer face at (s, y), and that face's outward normal. */
   function onFace(side, s, y) {
@@ -214,8 +224,15 @@ export function createPaper() {
     return { point: p, normal: hv.out.clone(), along: hv.u.clone() };
   }
 
+  /** The faint ghosts at the widest swing (while the paper vibrates). */
+  function setGhost(a) {
+    ghostMat.opacity = 0.22 * a;
+    for (const hv of halves) hv.ghost.visible = a > 0.01;
+  }
+
   setCut(L);
   return {
+    setGhost,
     root,
     halves,
     flaps: halves.map((hv) => hv.flap),
@@ -229,6 +246,10 @@ export function createPaper() {
     },
     get swing() {
       return SWING * L * open;
+    },
+    /** How far a free edge swings out at its widest (mm). */
+    get maxSwing() {
+      return SWING * L * 1.15;
     },
   };
 }

@@ -1,18 +1,23 @@
-// Camera framing: the closest camera pose, looking from a given direction, that shows a whole box inside the
-// stage with margins in pixels (room for the corner buttons on top and the hint line below), for any aspect.
+// Camera framing: the closest camera pose, looking from a given direction, that shows a whole box (or a list of
+// points) inside the stage with margins in pixels (room for the corner buttons on top and the hint line below), for
+// any aspect.
 import * as THREE from 'three';
 
 const WORLD_UP = new THREE.Vector3(0, 1, 0);
 
 /**
- * box: THREE.Box3 to show; dir: unit vector from the target toward the camera; camera: its fov is used;
+ * box: THREE.Box3 to show, or points: the THREE.Vector3s to show (tighter for things that lie across the box); dir: unit vector from the target toward the camera; camera: its fov is used;
  * width/height: the stage in pixels; margin: { top, bottom, side } in pixels. Returns { position, target }.
  */
-export function fitPose({ box, dir, camera, width, height, margin = { top: 56, bottom: 16, side: 12 } }) {
+export function fitPose({ box, points, dir, camera, width, height, margin = { top: 56, bottom: 16, side: 12 } }) {
   const look = dir.clone().normalize().negate();
   const right = new THREE.Vector3().crossVectors(look, WORLD_UP).normalize();
   const up = new THREE.Vector3().crossVectors(right, look).normalize();
-  const centre = box.getCenter(new THREE.Vector3());
+  const list = points ?? [];
+  if (!points)
+    for (const x of [box.min.x, box.max.x])
+      for (const y of [box.min.y, box.max.y]) for (const z of [box.min.z, box.max.z]) list.push(new THREE.Vector3(x, y, z));
+  const centre = new THREE.Box3().setFromPoints(list).getCenter(new THREE.Vector3());
   const tanV = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
   const tanH = tanV * (width / Math.max(1, height));
   const top = Math.max(0.3, 1 - (2 * margin.top) / height); // usable part of the frame, in NDC
@@ -20,12 +25,10 @@ export function fitPose({ box, dir, camera, width, height, margin = { top: 56, b
   const side = Math.max(0.3, 1 - (2 * margin.side) / width);
   const corners = [];
   const p = new THREE.Vector3();
-  for (const x of [box.min.x, box.max.x])
-    for (const y of [box.min.y, box.max.y])
-      for (const z of [box.min.z, box.max.z]) {
-        p.set(x, y, z).sub(centre);
-        corners.push({ x: p.dot(right), y: p.dot(up), z: p.dot(look) });
-      }
+  for (const q of list) {
+    p.copy(q).sub(centre);
+    corners.push({ x: p.dot(right), y: p.dot(up), z: p.dot(look) });
+  }
   // The camera sits `d` back from (centre + up·shift); for a given d, find a vertical shift that fits every corner.
   const shiftFor = (d) => {
     let lo = Number.NEGATIVE_INFINITY;
