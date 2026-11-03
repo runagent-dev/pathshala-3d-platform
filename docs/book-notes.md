@@ -80,6 +80,21 @@ before designing; reviewers check against it. When a new decision is taken for a
 - The book's words: বল প্রয়োগকারী ক্ষেত্রফল, "সমান পরিমাণ বল প্রয়োগ করলেও চাপ কিন্তু হবে ভিন্ন", "ক্ষেত্রফল দ্বিগুণ … চাপ
   অর্ধেক", চাপ স্কেলার রাশি ("এর কোনো দিক নেই"); the page writes উপর.
 
+## Waves and sound (chapter 7, pages 188–205)
+
+- Units as the book: m, s, Hz (হার্টজ glossed once), kHz, m/s, kg, N/m, J; axes "সময় (s)", "দূরত্ব (m)",
+  "বিচ্যুতি (m)". Speed of sound in air 330 m/s (the echo and seismic text; p201's example uses 334), water 1493 m/s,
+  iron 5130 m/s; `seismic-survey` assumes 2500 m/s in rock and says so.
+- One colour per quantity: amplitude/displacement a green #2b8a3e; wavelength λ orange #e8590c; time/period T crimson
+  #c2255c; frequency f grape #862e9c; velocity v blue #1c6fd9; kinetic energy amber #e8930c, potential violet #6741d9;
+  sound: সংকোচন dark and প্রসারণ light shades of teal #0c8599 (teal is only ever the outgoing sound).
+- Terms exactly as the book: সরল স্পন্দন গতি, সাম্যাবস্থা, বিস্তার, দোলনকাল/পর্যায়কাল, কম্পাঙ্ক, দশা, তরঙ্গদৈর্ঘ্য,
+  অনুপ্রস্থ/অনুদৈর্ঘ্য তরঙ্গ, সংকোচন, প্রসারণ, উপরিপাতন, প্রতিধ্বনি, জিওফোন. Added by the figures (not on the
+  page): শীর্ষ (+)/খাদ (−), স্থির রেখা, কর্ক (a floating ball is never "বল"), সীমানা for a boundary between rock layers.
+- Open questions for the book team: 330 vs 334 m/s; p198 says men's vocal cords are "শক্ত" so lower-pitched, but a
+  stiffer cord vibrates faster (men's are longer and heavier; `paper-vocal-cord` quotes only the conclusion);
+  `bell-jar-sound` adds a gauge (kPa), valve and battery not in চিত্র ৭.১১; `wave-quantities` has a 6-question test.
+
 ## Open questions for the book team
 
 - The strength numbers in 3.2.2 vs 3.2.4 (above).
