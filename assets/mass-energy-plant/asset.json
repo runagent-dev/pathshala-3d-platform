@@ -5,14 +5,14 @@
   "title": "Relation between mass and energy: the power plant (ভর ও শক্তির সম্পর্ক: শক্তিকেন্দ্র)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "book": "physics-9-10",
   "page": 119,
   "topic": "4.6",
   "placement": "Book page 119, topic 4.6: ৪.৬ ভর ও শক্তির সম্পর্ক (Relation between mass and energy), next to the paragraph on the নিউক্লিয়ার শক্তিকেন্দ্র (heat, steam, turbine, generator; continued on page 120).",
   "maintainers": ["RadeenXALNW"],
   "units": "m",
-  "description": "Interactive 3D figure for textbook topic 4.6 (page 119): a nuclear power plant on a river bank at dusk, cut open: the control rods rise, the core glows blue in its water, steam runs to the turbine, the turbine and generator turn, power runs along the lines and a town's windows light up. The student picks the fuel's mass (1 g to 1 kg of uranium-235) and whether it is split (0.079% of its mass becomes energy) or turned fully into energy as E = mc² says; the panel gives E in J (c = 3 × 10⁸ m/s, as the book) and how long it would light a 100 W bulb. Sizes are not to scale (said in the panel). Three test questions (E = mc² for a few grams, which part makes the electricity, why so much energy). Offline, Bangla and English.",
+  "description": "Interactive 3D figure for textbook topic 4.6 (page 119): a nuclear power plant at dusk, cut open: the control rods rise, the core glows blue in its water, steam runs to the turbine, the turbine and generator turn, power runs away along the lines. The student picks the fuel's mass (1 g to 1 kg of uranium-235) and whether it is split (0.079% of its mass becomes energy) or turned fully into energy as E = mc² says; the panel gives E in J (c = 3 × 10⁸ m/s, as the book) and how long it would light a 100 W bulb. Sizes are not to scale (said in the panel). Three test questions (E = mc² for a few grams, which part makes the electricity, why so much energy). Offline, Bangla and English.",
   "tags": ["mass-energy", "e-mc2", "nuclear", "fission", "uranium", "chain-reaction", "power-plant", "energy", "bangla"],
   "params": [
     {

@@ -31,7 +31,7 @@ a few grams of uranium-235.
   rule (how long a 100 W bulb would glow).
 - Power plant at dusk on a river bank, reactor building and turbine hall cut open (said in the rule): control rods rise,
   the core glows blue (Cherenkov light) in its water, steam runs along the steam line, turbine and generator turn,
-  power runs along the lines and a town's windows light up; the cooling tower's plume grows. Fuel m: 1 g, 10 g,
+  power runs away along the lines; the cooling tower's plume grows. Fuel m: 1 g, 10 g,
   100 g, 1 kg of U-235; "শক্তি হয়": 0.079% (split) or 100% (the book's "if fully converted"). E in J and how long a
   100 W bulb would glow on it.
 - The plant is drawn to look real (v0.2.0), all procedural: golden paddy at harvest to the horizon haze, homesteads of
@@ -42,3 +42,8 @@ a few grams of uranium-235.
   reflect.
 - Test (3 questions): E = mc² for a few grams fully converted (wrong answers: grams not kilograms, c not c², 2c);
   which part makes the electricity (চুল্লি, বাষ্প, টারবাইন, জেনারেটর); why so much energy from so little mass (last).
+
+## Declutter (1.1.0)
+The owner asked to remove the scenery that isn't needed: the town of flats, the river and its bank, and the road are
+gone; the plant, its cooling tower and the pylons with the electricity running along them stay. The "বিদ্যুৎ" label
+now sits on the lines. Fewer triangles and textures, so it renders faster (the library's poster timed out before).

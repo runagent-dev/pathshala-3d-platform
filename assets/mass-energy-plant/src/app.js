@@ -1,6 +1,6 @@
 // Relation between mass and energy: the power plant (ভর ও শক্তির সম্পর্ক: শক্তিকেন্দ্র), book p119, topic 4.6: the
-// student view. A nuclear power plant at dusk, cut open: the core glows, steam turns the turbine, the generator lights
-// a town. The student picks the fuel's mass (1 g … 1 kg) and whether it is split (0.079% of the mass becomes energy)
+// student view. A nuclear power plant at dusk, cut open: the core glows, steam turns the turbine, the generator sends
+// electricity along the lines. The student picks the fuel's mass (1 g … 1 kg) and whether it is split (0.079% of the mass becomes energy)
 // or, as the book's E = mc² says, turned fully into energy; the panel gives E in J and how long it would light a
 // 100 W bulb. The panel is the kit's clean sheet (one action, one result, one rule). A 3-question test.
 import * as THREE from 'three';
@@ -155,7 +155,7 @@ export function createApp(root, options = {}) {
   if (o.shadow && !transparent) {
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFShadowMap; // (PCFSoft is deprecated: it falls back to this, with a warning)
-    // fitted round what is seen of the plant (the yard, the tower, the pylons and the near town), seen from the sun
+    // fitted round what is seen of the plant (the yard, the tower and the pylons), seen from the sun
     key.shadow.mapSize.set(1024, 1024);
     key.shadow.radius = 2;
     key.shadow.bias = -0.0005;
@@ -365,7 +365,7 @@ export function createApp(root, options = {}) {
     label('steam', pl && !quiz, t('l_steam'), pl ? A.steam() : tmpP, COLORS.plant, ABOVE, true);
     label('turb', pl && !quiz, t('l_turbine'), pl ? A.turbine() : tmpP, COLORS.plant, ABOVE, true);
     label('gen', pl && !quiz, t('l_generator'), pl ? A.generator() : tmpP, COLORS.plant, ABOVE, true);
-    label('power', pl && !quiz && s.power > 0.6, t('l_power'), pl ? A.town() : tmpP, COLORS.energy, ABOVE, true);
+    label('power', pl && !quiz && s.power > 0.6, t('l_power'), pl ? A.lines() : tmpP, COLORS.energy, ABOVE, true);
     label('fuel', pl && qk === 'calc', t('l_fuel', { m: s.quizScene?.m ?? 1 }), pl ? A.core() : tmpP, COLORS.energy, ABOVE);
   }
 

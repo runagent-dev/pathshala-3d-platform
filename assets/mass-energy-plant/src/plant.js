@@ -1,7 +1,7 @@
 // The scenery (procedural three.js, nothing loaded): a nuclear power plant
-// (নিউক্লিয়ার শক্তিকেন্দ্র) on a river bank among paddy fields at dusk, cut open to show the book's chain from heat to electricity:
+// (নিউক্লিয়ার শক্তিকেন্দ্র) among paddy fields at dusk, cut open to show the book's chain from heat to electricity:
 // the reactor's core glows blue in its water, steam runs to the turbine, the turbine turns the generator, and the
-// power runs along the lines to a town whose windows light up. Units: metres, roughly to scale with each other.
+// power runs away along the lines. Units: metres, roughly to scale with each other.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
@@ -93,23 +93,6 @@ function mottle(S, cells, seed, lo = 0.8, hi = 1, oct = 4) {
     const k = Math.round(255 * (lo + (hi - lo) * fbm(n, u * cells, v * cells, cells, cells, oct)));
     return [k, k, k];
   });
-}
-/** A tangent-space normal map of small waves, longer across the river than along it. Tiles. */
-function waveNormals(W, H, cx, cy, seed, k = 7) {
-  const n = tileNoise(seed);
-  const h = new Float32Array(W * H);
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) h[y * W + x] = fbm(n, (x / W) * cx, (y / H) * cy, cx, cy, 4);
-  const at = (x, y) => h[((y + H) % H) * W + ((x + W) % W)];
-  const c = pixels(W, H, (u, v) => {
-    const x = Math.round(u * W);
-    const y = Math.round(v * H);
-    const nx = (at(x - 1, y) - at(x + 1, y)) * k;
-    const ny = (at(x, y + 1) - at(x, y - 1)) * k;
-    const l = Math.hypot(nx, ny, 1);
-    return [((nx / l) * 0.5 + 0.5) * 255, ((ny / l) * 0.5 + 0.5) * 255, ((1 / l) * 0.5 + 0.5) * 255];
-  });
-  const t = tex(c, { repeat: [1, 1], data: true });
-  return t;
 }
 
 // ── the sky ───────────────────────────────────────────────────────────────────────────────────────────────────
@@ -401,38 +384,7 @@ function yardTexture() {
   g.fillRect(0, H * 0.93, W, 4);
   return tex(c, { anisotropy: 8 });
 }
-/** Asphalt with white edge lines and a dashed centre line; 7 m wide, 56 m long per repeat. */
-function roadTexture(repeat) {
-  const W = 128;
-  const H = 1024;
-  const c = canvas(W, H);
-  const g = c.getContext('2d');
-  g.fillStyle = '#55595e';
-  g.fillRect(0, 0, W, H);
-  g.globalCompositeOperation = 'multiply';
-  g.drawImage(mottle(128, 16, 8, 0.8, 1, 3), 0, 0, W, H);
-  g.globalCompositeOperation = 'source-over';
-  g.fillStyle = 'rgba(240,240,235,0.85)';
-  g.fillRect(8, 0, 4, H);
-  g.fillRect(W - 12, 0, 4, H);
-  g.fillStyle = 'rgba(245,205,90,0.9)';
-  for (let y = 0; y < H; y += 120) g.fillRect(W / 2 - 2, y, 4, 60);
-  return tex(c, { repeat: [1, repeat], anisotropy: 8 });
-}
-/** The river's mud bank: dry and pale on the land side, dark and wet at the water. */
-function bankTexture() {
-  const c = canvas(256, 64);
-  const g = c.getContext('2d');
-  const lg = g.createLinearGradient(0, 0, 0, 64);
-  lg.addColorStop(0, '#b89a6c');
-  lg.addColorStop(0.55, '#8b6d4a');
-  lg.addColorStop(1, '#55432f');
-  g.fillStyle = lg;
-  g.fillRect(0, 0, 256, 64);
-  g.globalCompositeOperation = 'multiply';
-  g.drawImage(mottle(128, 8, 12, 0.75, 1), 0, 0, 256, 64);
-  return tex(c, { repeat: [200, 1] });
-}
+
 /** Ribbed metal cladding with a band of high windows and a concrete plinth (the turbine hall). */
 function claddingTexture() {
   const W = 1024;
@@ -478,90 +430,6 @@ function claddingTexture() {
     g.fillRect(x, wy + wh, 2 + r() * 4, 320);
   }
   return tex(c);
-}
-/**
- * A storey-and-bay grid of a town's flats (12 × 12 m per repeat): plastered walls, windows with grilles,
- * balconies, stains. `lit`: only the lit windows, warm and cool (the emissive map).
- */
-function flatsTexture(wall, seed, lit = false, balconies = true) {
-  const S = 512;
-  const c = canvas(S, S);
-  const g = c.getContext('2d');
-  const r = rng(seed);
-  const bay = S / 4;
-  if (lit) {
-    g.fillStyle = '#000000';
-    g.fillRect(0, 0, S, S);
-  } else {
-    g.fillStyle = wall;
-    g.fillRect(0, 0, S, S);
-    g.globalCompositeOperation = 'multiply';
-    g.drawImage(mottle(256, 6, seed, 0.8, 1), 0, 0, S, S);
-    g.globalCompositeOperation = 'source-over';
-  }
-  for (let f = 0; f < 4; f++)
-    for (let b = 0; b < 4; b++) {
-      const x = b * bay + bay * 0.22;
-      const y = f * bay + bay * 0.2;
-      const w = bay * 0.56;
-      const h = bay * 0.5;
-      if (lit) {
-        const roll = r();
-        if (roll < 0.68) {
-          const col = roll < 0.45 ? [255, 196, 110] : roll < 0.6 ? [255, 236, 200] : [170, 205, 255];
-          const lg = g.createLinearGradient(0, y, 0, y + h);
-          lg.addColorStop(0, `rgb(${col[0] * 0.75},${col[1] * 0.75},${col[2] * 0.75})`);
-          lg.addColorStop(1, `rgb(${col[0]},${col[1]},${col[2]})`);
-          g.fillStyle = lg;
-          g.fillRect(x, y, w, h);
-          if (r() < 0.4) {
-            g.fillStyle = 'rgba(0,0,0,0.55)';
-            g.fillRect(x + w * (r() < 0.5 ? 0 : 0.55), y, w * 0.45, h);
-          }
-        }
-      } else {
-        const gl = g.createLinearGradient(0, y, 0, y + h);
-        gl.addColorStop(0, '#5d6a78');
-        gl.addColorStop(1, '#27313b');
-        g.fillStyle = gl;
-        g.fillRect(x, y, w, h);
-        g.strokeStyle = 'rgba(40,40,40,0.55)';
-        g.lineWidth = 1.2;
-        g.beginPath();
-        for (let k = 1; k < 6; k++) {
-          g.moveTo(x + (w * k) / 6, y);
-          g.lineTo(x + (w * k) / 6, y + h);
-        }
-        g.stroke();
-        g.fillStyle = 'rgba(0,0,0,0.18)';
-        g.fillRect(x - 3, y - 6, w + 6, 5); // the sunshade over the window
-        // stains under the sill
-        const sg = g.createLinearGradient(0, y + h, 0, y + h + bay * 0.4);
-        sg.addColorStop(0, 'rgba(70,60,50,0.22)');
-        sg.addColorStop(1, 'rgba(70,60,50,0)');
-        g.fillStyle = sg;
-        g.fillRect(x + w * 0.1, y + h, w * 0.8, bay * 0.4);
-        if (balconies && b % 2 === 0) {
-          g.fillStyle = 'rgba(255,255,255,0.4)';
-          g.fillRect(x - bay * 0.08, y + h * 0.62, w + bay * 0.16, 3);
-          g.fillStyle = 'rgba(60,60,60,0.35)';
-          g.fillRect(x - bay * 0.08, y + h * 0.62 + 3, w + bay * 0.16, h * 0.38 + bay * 0.1);
-          g.strokeStyle = 'rgba(230,230,230,0.5)';
-          g.beginPath();
-          for (let k = 0; k < 10; k++) {
-            g.moveTo(x - bay * 0.08 + (k * (w + bay * 0.16)) / 10, y + h * 0.62 + 3);
-            g.lineTo(x - bay * 0.08 + (k * (w + bay * 0.16)) / 10, y + h + bay * 0.1);
-          }
-          g.stroke();
-        }
-      }
-    }
-  if (!lit) {
-    g.fillStyle = 'rgba(0,0,0,0.12)';
-    for (let f = 0; f < 4; f++) g.fillRect(0, f * bay + bay - 4, S, 4); // the floor slabs
-  }
-  const t = tex(c, { repeat: [1, 1] });
-  return t;
 }
 
 const mat = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.75, metalness: 0, ...extra });
@@ -824,15 +692,14 @@ export function createPlant() {
 /**
  * The power plant, built a piece at a time: each `yield` is a place to stop, so the figure can build it in the
  * browser's idle moments after the start instead of holding the first picture up. Returns { root, set(power, dt),
- * anchors: { core, steam, turbine, generator, lines, town }, box }.
- * power: 0 (off) … 1 (running): the control rods rise, the core glows, steam runs, the turbine spins, the town lights.
+ * anchors: { core, steam, turbine, generator, lines }, box }.
+ * power: 0 (off) … 1 (running): the control rods rise, the core glows, steam runs, the turbine spins, sparks run along the lines.
  */
 export function* buildPlant() {
   const root = new THREE.Group();
   root.name = 'PowerPlant';
-  const r = rng(31);
 
-  // ── the land: paddy to the haze, the river and its mud bank, the plant's yard and the road ─────────────────
+  // ── the land: paddy to the haze and the plant's yard ─────────────────────────────────────────────────────
   const ground = new THREE.Mesh(
     new THREE.PlaneGeometry(1600, 1600),
     new THREE.MeshStandardMaterial({ map: fieldTexture(1600 / FIELD_M), roughness: 1 }),
@@ -840,19 +707,6 @@ export function* buildPlant() {
   ground.rotation.x = -Math.PI / 2;
   ground.receiveShadow = true;
   root.add(ground);
-  const waves = waveNormals(256, 128, 8, 4, 41);
-  waves.repeat.set(120, 4);
-  const river = new THREE.Mesh(
-    new THREE.PlaneGeometry(1600, 26),
-    new THREE.MeshStandardMaterial({ color: '#5d7480', roughness: 0.07, metalness: 0, normalMap: waves, normalScale: new THREE.Vector2(0.45, 0.45) }),
-  );
-  river.rotation.x = -Math.PI / 2;
-  river.position.set(0, 0.03, 34);
-  const bank = new THREE.Mesh(new THREE.PlaneGeometry(1600, 5), new THREE.MeshStandardMaterial({ map: bankTexture(), roughness: 0.6 }));
-  bank.rotation.x = -Math.PI / 2;
-  bank.position.set(0, 0.025, 19);
-  bank.receiveShadow = true;
-  root.add(river, bank);
   const kerb = mat('#b3ada3', { roughness: 0.9 });
   const yard = new THREE.Mesh(new THREE.BoxGeometry(62, 0.3, 34), [
     kerb,
@@ -865,12 +719,6 @@ export function* buildPlant() {
   yard.position.set(2, 0.15, -6);
   yard.receiveShadow = true;
   root.add(yard);
-  const road = new THREE.Mesh(new THREE.PlaneGeometry(7, 160), new THREE.MeshStandardMaterial({ map: roadTexture(160 / 56), roughness: 0.85 }));
-  road.rotation.x = -Math.PI / 2;
-  road.rotation.z = 0.5;
-  road.position.set(30, 0.05, -30);
-  road.receiveShadow = true;
-  root.add(road);
   yield;
 
   // ── the containment building, cut open toward the viewer ─────────────────────────────────────────────────
@@ -1077,7 +925,7 @@ export function* buildPlant() {
     stack.add(band);
   }
   root.add(stack);
-  // two water tanks by the road
+  // two water tanks in the yard
   for (const [x, z, rad, ht] of [
     [14, -18, 2.6, 6],
     [20, -19.5, 2, 5],
@@ -1320,14 +1168,14 @@ export function* buildPlant() {
   root.add(plume.mesh);
 
   yield;
-  // ── power lines to the town ──────────────────────────────────────────────────────────────────────────────
+  // ── power lines carrying the electricity away ──────────────────────────────────────────────────────────────────────────────
   const pylonAt = [new THREE.Vector3(27, 0, -15), new THREE.Vector3(25, 0, -32), new THREE.Vector3(22, 0, -49)];
   const tipsAll = [];
   const peaks = [];
   for (const p of pylonAt) {
     const py = pylon(17);
     py.root.position.copy(p);
-    py.root.rotation.y = Math.atan2(1, -0.15); // the arms across the line, which runs back toward the town
+    py.root.rotation.y = Math.atan2(1, -0.15); // the arms across the line, which runs away from the plant
     root.add(py.root);
     py.root.updateMatrixWorld(true);
     tipsAll.push(py.tips.map((tp) => tp.clone().applyMatrix4(py.root.matrixWorld)));
@@ -1350,105 +1198,20 @@ export function* buildPlant() {
   root.add(sparks.mesh);
 
   yield;
-  // ── the town: blocks of flats with water tanks on their roofs; their windows light up when the power comes ─
-  const town = new THREE.Group();
-  town.position.set(22, 0, -72);
-  root.add(town);
-  const townGround = new THREE.Mesh(
-    new THREE.PlaneGeometry(64, 46),
-    new THREE.MeshStandardMaterial({ map: tex(mottle(256, 12, 61, 0.7, 1), { repeat: [2, 2] }), color: '#a39a8a', roughness: 1 }),
-  );
-  townGround.rotation.x = -Math.PI / 2;
-  townGround.position.set(0, 0.04, 2);
-  town.add(townGround);
-  const styles = [
-    ['#efe6d6', 101, true],
-    ['#f2d7b8', 102, true],
-    ['#d9e2e4', 103, false],
-    ['#f0e1a8', 104, true],
-    ['#e9c8c0', 105, false],
-    ['#e4e4dc', 106, true],
-  ].map(([wall, seed, balc]) => ({ map: flatsTexture(wall, seed, false, balc), lit: flatsTexture(wall, seed, true) }));
-  yield;
-  const roofMatTown = mat('#a29d94', { roughness: 0.95 });
-  // the buildings of one style are one mesh; each building's windows light at its own moment, read in the shader
-  // from a number on its vertices (they used to be 24 materials, 48 draw calls)
-  const facades = styles.map(() => []);
-  const roofGeos = [];
-  const tankSpots = [];
-  for (let i = 0; i < 24; i++) {
-    const col = i % 6;
-    const row = Math.floor(i / 6);
-    const w = 6 + Math.floor(r() * 2) * 3;
-    const d = 6 + Math.floor(r() * 2) * 3;
-    const floors = 2 + Math.floor(r() * (row === 0 ? 3 : 4)) + (i % 7 === 3 ? 2 : 0);
-    const h = floors * 3;
-    const st = styles[i % styles.length];
-    const geo = new THREE.BoxGeometry(w, h, d);
-    // the facade's uv in metres / 12, so storeys and windows keep their size; shifted per building by whole bays
-    const uv = geo.attributes.uv;
-    const ou = Math.floor(r() * 4) * 0.25;
-    const ov = Math.floor(r() * 4) * 0.25;
-    for (let f = 0; f < 6; f++) {
-      const across = f < 2 ? d : w;
-      for (let k = 0; k < 4; k++) {
-        const j = f * 4 + k;
-        uv.setXY(j, uv.getX(j) * (across / 12) + ou, uv.getY(j) * (h / 12) + ov);
-      }
-    }
-    const x = col * 9.5 - 24 + r() * 1.5;
-    const z = row * 10.5 - 14 + r() * 1.5;
-    const at = 0.55 + 0.4 * (Math.abs(col - 2.5) / 2.5) * 0.6 + r() * 0.15;
-    geo.translate(x, h / 2, z);
-    for (const [mi, list] of splitByGroups(geo))
-      for (const g of list) {
-        if (mi === 2 || mi === 3) roofGeos.push(g);
-        else {
-          g.setAttribute('aAt', new THREE.BufferAttribute(new Float32Array(g.attributes.position.count).fill(at), 1));
-          facades[styles.indexOf(st)].push(g);
-        }
-      }
-    for (let k = 0; k < 1 + Math.floor(r() * 2); k++) tankSpots.push([x + (r() - 0.5) * (w - 2), h, z + (r() - 0.5) * (d - 2)]);
-  }
-  const lit = { value: 0 };
-  const facadeMeshes = styles.map((st, k) => {
-    const mesh = new THREE.Mesh(mergeGeometries(facades[k]), facadeMaterial(st, lit));
-    town.add(mesh);
-    return mesh;
-  });
-  town.add(new THREE.Mesh(mergeGeometries(roofGeos), roofMatTown));
-  const tanks = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.55, 0.55, 1.2, 12), mat('#2a2e33', { roughness: 0.6 }), tankSpots.length);
-  for (const [i, [x, y, z]] of tankSpots.entries()) tanks.setMatrixAt(i, m4.makeTranslation(x, y + 0.6, z));
-  town.add(tanks);
-  // the street lamps: one shared bulb material (they light together), merged into one mesh below
-  const lampMat = new THREE.MeshStandardMaterial({ color: '#fff4d6', emissive: '#ffc94d', emissiveIntensity: 0 });
-  const poleMat = mat('#4a4f55', { metalness: 0.5, roughness: 0.5 });
-  const poleGeo = new THREE.CylinderGeometry(0.08, 0.1, 5, 6);
-  const bulbGeo = new THREE.SphereGeometry(0.3, 12, 8);
-  for (let i = 0; i < 9; i++) {
-    const pole = new THREE.Mesh(poleGeo, poleMat);
-    pole.position.set(-26 + i * 6.5, 2.5, 22);
-    const bulb = new THREE.Mesh(bulbGeo, lampMat);
-    bulb.position.set(-26 + i * 6.5, 5.1, 22);
-    town.add(pole, bulb);
-  }
-
-  yield;
   yield;
   // ── shadows, then the still parts merged ─────────────────────────────────────────────────────────────────
   // everything takes shadows; what is big enough for its shadow to be seen casts one (not the ground, floors, water,
   // the thin wires, the far houses and decals)
-  const flat = new Set([ground, river, bank, yard, road, floor, water, hallFloor, bed, gravel, townGround, basin, steamPipe]);
-  const thin = new Set([wireMat, lampMat, poleMat]);
+  const flat = new Set([ground, yard, floor, water, hallFloor, bed, gravel, basin, steamPipe]);
+  const thin = new Set([wireMat]);
   root.traverse((o) => {
     if (!o.isMesh || o.isInstancedMesh || o.userData.noExport) return;
     o.receiveShadow = o !== water && o !== steamPipe;
     o.castShadow = !flat.has(o) && !thin.has(o.material);
   });
-  for (const m of facadeMeshes) m.castShadow = m.receiveShadow = true;
   bake(ctrl);
   bake(rotor);
-  bake(root, [ctrl, rotor, generator, ...facadeMeshes, puffs.mesh, plume.mesh, sparks.mesh]);
+  bake(root, [ctrl, rotor, generator, puffs.mesh, plume.mesh, sparks.mesh]);
   noiseTables.clear();
 
   // ── running it ────────────────────────────────────────────────────────────────────────────────────────────
@@ -1490,8 +1253,6 @@ export function* buildPlant() {
       }
       sparks.update();
     }
-    lit.value = k; // each building's windows light at their own moment (in the facade shader)
-    lampMat.emissiveIntensity = 2 * smooth(0.7, 0.85, k);
     // the cooling tower's vapour: always a little, a full billowing plume drifting with the wind when running
     const vap = 0.3 + 0.7 * smooth(0.3, 0.8, k);
     for (let i = 0; i < PLUME; i++) {
@@ -1521,26 +1282,10 @@ export function* buildPlant() {
       turbine: anchor(hall, new THREE.Vector3(-4.5, 5.4, 0)),
       generator: anchor(hall, new THREE.Vector3(6.6, 5.5, 0)),
       lines: () => tmpV.copy(tipsAll[0][2]),
-      town: anchor(town, new THREE.Vector3(-6, 8, 0)),
     },
     /** What the camera frames: the reactor, the hall, the tower's top and the first pylon. */
     box: new THREE.Box3(new THREE.Vector3(-24, 0, -32), new THREE.Vector3(32, 31, 6)),
   };
-}
-
-/** The flats' walls, their windows lit as the power comes: smoothstep(at, at + 0.12, power) per building. */
-function facadeMaterial(st, lit) {
-  const m = new THREE.MeshStandardMaterial({ map: st.map, emissiveMap: st.lit, emissive: '#ffffff', emissiveIntensity: 1.1, roughness: 0.85 });
-  m.onBeforeCompile = (shader) => {
-    shader.uniforms.uLit = lit;
-    shader.vertexShader = `attribute float aAt;\nvarying float vAt;\n${shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvAt = aAt;')}`;
-    shader.fragmentShader = `uniform float uLit;\nvarying float vAt;\n${shader.fragmentShader.replace(
-      '#include <emissivemap_fragment>',
-      '#include <emissivemap_fragment>\ntotalEmissiveRadiance *= smoothstep(vAt, vAt + 0.12, uLit);',
-    )}`;
-  };
-  m.customProgramCacheKey = () => 'me-facade';
-  return m;
 }
 
 function glowTex(inner, outer) {
