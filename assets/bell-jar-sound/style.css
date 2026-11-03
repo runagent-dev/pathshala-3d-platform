@@ -1,0 +1,96 @@
+/* Sound needs a medium: the page, the two meters under the button (air in the jar, sound outside: teal, the sound's
+   colour on the picture), the small note, the graph (wide panels only), the labels on the picture and the test's
+   answers. The rest of the panel is the kit's clean sheet (../../shared/lib/student/student.css). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.bj { --c-air: #5c6b7e; --c-sound: #0b7285; }
+.bj .pvc-outcome { font-size: 15px; line-height: 1.45; }
+.bj .pvc-outcome b { font-size: 1.15em; color: var(--c-sound); }
+.bj .pvc-rule { font-size: 14px; line-height: 1.45; }
+.bj .pvc-rule b { color: var(--ink); }
+
+/* the two meters */
+.bj-meters { display: grid; grid-template-columns: auto 1fr auto; gap: 3px 10px; align-items: center; font-size: 13.5px; line-height: 1.35; color: var(--ink); }
+.bj-m { display: contents; }
+.bj-m-k { color: #495057; white-space: nowrap; }
+.bj-bar { position: relative; height: 10px; border-radius: 5px; background: #e9ecef; box-shadow: inset 0 0 0 1px #ced4da; overflow: hidden; min-width: 60px; }
+.bj-bar i { position: absolute; inset: 0 auto 0 0; width: 100%; border-radius: 5px; background: var(--c-air); }
+.bj-m-sound .bj-bar i { background: var(--c-sound); }
+.bj-m-v { white-space: nowrap; font-variant-numeric: tabular-nums; min-width: 7em; }
+.bj-m-v b { font-weight: 700; }
+.bj-m-sound .bj-m-v b { color: var(--c-sound); }
+.bj-meters[data-sound="none"] .bj-m-sound .bj-m-v b { color: #c2255c; }
+
+/* the action keeps one line and one width whatever its verb, so the panel never changes height */
+.bj .pvc-act { white-space: nowrap; min-width: 12.9em; }
+
+/* honest picture: dots and rings stand for what can't be seen */
+.bj-note { margin: 0; font-size: 12px; line-height: 1.3; color: #5b6472; }
+
+/* the graph: in the side panel, filling the room under the rule (hidden in the panel below the 3D) */
+.bj-graph { display: none; margin: 0; }
+.bj-graph figcaption { font-size: 12.5px; font-weight: 600; color: #343a40; margin-bottom: 2px; }
+.bj-graph canvas { display: block; width: 100%; height: 100%; min-height: 0; }
+.bj-note-short { display: none; }
+@container pvc-panel (min-height: 340px) {
+  .bj .pvc-sheets { flex: 1 1 auto; }
+  .bj .pvc-learn { height: 100%; }
+  .bj-graph { display: grid; grid-template-rows: auto minmax(0, 1fr); flex: 1 1 0; min-height: 80px; max-height: 300px; }
+}
+/* a short side panel (a phone held sideways): the short note */
+@container pvc-panel (max-height: 460px) {
+  .bj-note-long { display: none; }
+  .bj-note-short { display: inline; }
+}
+
+/* labels on the picture: the words in their colour on a white chip */
+.pvc-anno-force { --c: var(--ink); padding: 0 6px; border: 1.5px solid var(--c); border-radius: 5px; background: rgba(255, 255, 255, 0.96); color: var(--c); font-size: 13px; font-weight: 600; line-height: 1.5; white-space: nowrap; transition: none; }
+.pvc-anno-lines .k-force { stroke: rgba(255, 255, 255, 0.85); stroke-width: 1.5; }
+
+/* the test */
+.bj .pvc-opt { font-size: 14px; line-height: 1.2; padding: 0 4px; }
+.bj-opt { display: block; white-space: normal; text-align: center; }
+.bj .pvc-q-text { font-size: 15px; }
+.bj .pvc-q-feedback { font-size: 13.5px; }
+
+/* phones held upright: tighter, so the 3D keeps more than half the height */
+@container pvc (max-width: 420px) {
+  .bj .pvc-learn { gap: 6px; }
+  .bj .pvc-outcome { font-size: 14px; }
+  .bj .pvc-rule { font-size: 13px; line-height: 1.4; --pvc-rule-lines: 3; }
+  .bj-meters { font-size: 12.5px; }
+  .bj .pvc-q-options { gap: 6px; }
+  .bj .pvc-opt { height: 40px; font-size: 13px; }
+  .bj .pvc-q-text { font-size: 14px; }
+  .bj .pvc-q-feedback { font-size: 12.5px; }
+  .bj .pvc-q-text { --pvc-q-text-min: 2lh; }
+  .bj-note-long { display: none; }
+  .bj-note-short { display: inline; }
+}
+/* phones that are not tall, held upright (not the side panel, which is narrower) */
+@container pvc (min-width: 370px) and (max-width: 560px) and (max-height: 600px) {
+  .bj .pvc-outcome { font-size: 13px; line-height: 1.3; }
+  .bj .pvc-rule { font-size: 12px; line-height: 1.3; }
+  .bj-meters { font-size: 12px; line-height: 1.2; gap: 1px 8px; }
+  .bj-note { display: none; }
+  .bj .pvc-learn { gap: 4px; }
+  .bj .pvc-q-ask { gap: 4px; }
+  .bj .pvc-q-head .pvc-btn { height: 30px; }
+  .bj .pvc-q-options { gap: 4px; }
+  .bj .pvc-opt { font-size: 12px; height: 31px; line-height: 1.15; }
+  .bj .pvc-q-text { font-size: 12.5px; line-height: 1.3; --pvc-q-text-min: 2lh; }
+  .bj .pvc-q-feedback { font-size: 11.5px; line-height: 1.3; --pvc-q-feedback-min: 3lh; }
+  .pvc-anno-force { font-size: 12px; }
+}
+/* short and wide (a phone held sideways): the panel is beside the scene */
+@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
+  .bj .pvc-outcome { font-size: 13.5px; line-height: 1.4; --pvc-outcome-lines: 3; }
+  .bj .pvc-rule { font-size: 12.5px; line-height: 1.35; --pvc-rule-lines: 5; }
+  .bj .pvc-opt { font-size: 12.5px; height: 44px; }
+  .bj .pvc-q-text { font-size: 13.5px; }
+  .bj .pvc-q-feedback { font-size: 12.5px; --pvc-q-feedback-min: 4lh; }
+  .bj-meters { font-size: 12.5px; }
+  .pvc-anno-force { font-size: 12px; }
+}
