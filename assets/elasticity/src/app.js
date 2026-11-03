@@ -73,7 +73,7 @@ const SETTLE_S = 1.35; // s: the spring bounces and settles
 const GIVE_S = 1.7; // s: past the limit it gives way slowly
 const OFF_S = 1.0; // s: the weights come off
 const CLOSE_HOLD = 1.9; // s the camera stays close to the stretch after a step
-const VIEW_DIR = new THREE.Vector3(0.1, 0.1, 1).normalize();
+const VIEW_DIR = new THREE.Vector3(0.4, 0.25, 1).normalize();
 const UPV = new THREE.Vector3(0, 1, 0);
 const DOWN = new THREE.Vector3(0, -1, 0);
 
