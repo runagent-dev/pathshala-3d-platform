@@ -16,7 +16,7 @@ body.bg-transparent { background: transparent; }
 /* the colour key of the air: two swatches */
 .pv-key { margin: -2px 0 0; font-size: 12.5px; line-height: 1.4; color: #3d4652; }
 .pv-key i + * , .pv-key .pv-note { white-space: nowrap; }
-.pv-key .pv-note { color: #5b6472; }
+.pv-key .pv-note { color: #5b6472; font-size: 0.95em; }
 .pv-sw { display: inline-block; width: 11px; height: 11px; border-radius: 50%; margin: 0 5px -1px 0; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25); }
 .pv-sw + * { margin-left: 0; }
 .pv-dark { background: var(--c-dark); }

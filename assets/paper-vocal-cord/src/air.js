@@ -1,6 +1,7 @@
 // The air round the paper, in millimetres.
-// - The sound: a slice of the spreading sound in the upright plane through the slot that faces the camera, a fan from
-//   the slot up and to the side, above the paper (never over the flaps). Only air particles, fine and many, evenly
+// - The sound: a slice of the spreading sound in the upright plane through the slot that faces the camera (so in front
+//   of the far half of the paper), a fan round the slot, to the side and up, that leaves the flaps clear (a hole the
+//   shape of the far flap) and stays inside the frame. Only air particles, fine and many, evenly
 //   spread at rest: each swings to and fro along the line from the slot in its own place (ξ = −a·sin ω(t − r/v)), so
 //   they bunch into darker teal shells (সংকোচন) and thin out into lighter ones (প্রসারণ), and the shells travel out.
 //   Air at rest is not drawn (it would read as dirt on the sky): the particles show only where the wave is.
@@ -11,11 +12,25 @@ import * as THREE from 'three';
 import { SHEET, SLOT_Y } from './paper.js';
 import { airAt } from './reading.js';
 
-/** The fan: radii (mm), its angles in its plane from the axis (rad, + toward `up`), the slab's thickness, the spacing. */
-export const FAN = { r0: 3, r1: 58, from: THREE.MathUtils.degToRad(24), to: THREE.MathUtils.degToRad(108), depth: 0.5, step: 0.8 };
-/** Where the sound leaves: in the slot, a little above its middle. */
-export const SOUND_Y = SLOT_Y + 3;
-export const ORIGIN = new THREE.Vector3(0.6, SOUND_Y, 0);
+/**
+ * The fan: radii (mm, r1 the furthest any wave reaches), its angles in its plane from the axis (rad, + toward `up`), how
+ * high and how low it may reach from the slot (mm, flat limits, so the longest wave stays in the frame too), the slab's
+ * thickness, the spacing.
+ */
+export const FAN = {
+  r0: 3,
+  r1: 46,
+  from: THREE.MathUtils.degToRad(-42),
+  to: THREE.MathUtils.degToRad(62),
+  top: 11.5,
+  foot: -16,
+  depth: 0.5,
+  step: 0.6,
+};
+/** Where the sound leaves: the middle of the slot. */
+export const ORIGIN = new THREE.Vector3(1.6, SLOT_Y, 0);
+/** How the fan keeps clear of the flap: the flap's top and foot from the slot (mm). */
+const CLEAR = { top: 7.4, foot: -7.6 };
 export const TEAL = { dark: new THREE.Color('#06535d'), mid: new THREE.Color('#2a8f9c'), light: new THREE.Color('#9fdbe2') };
 export const GREEN = '#2b8a3e';
 
@@ -86,7 +101,10 @@ export function createAir(axis = new THREE.Vector3(1, 0, 0), up = new THREE.Vect
   const rest = new Float32Array(n * 3);
   const dirs = new Float32Array(n * 3); // the way the sound goes at each particle
   const radius = new Float32Array(n);
-  const fade = new Float32Array(n); // softer toward the fan's edges, so it has no hard rim
+  const sx = new Float32Array(n); // where it is in the fan's plane, from the slot (mm)
+  const sy = new Float32Array(n);
+  const edge = new Float32Array(n); // softer toward the fan's sides, so it has no hard rim
+  const fade = new Float32Array(n); // all of the fan's limits together (setReach)
   const D = new THREE.Vector3();
   for (let i = 0; i < n; i++) {
     const [r, th, z] = spots[i];
@@ -96,18 +114,26 @@ export function createAir(axis = new THREE.Vector3(1, 0, 0), up = new THREE.Vect
     rest[i * 3] = ORIGIN.x + r * D.x + z * across.x;
     rest[i * 3 + 1] = ORIGIN.y + r * D.y + z * across.y;
     rest[i * 3 + 2] = ORIGIN.z + r * D.z + z * across.z;
-    const edge = Math.min(th - from, to - th) / (to - from);
-    fade[i] = smooth(0, 0.16, edge) * smooth(FAN.r1, FAN.r1 * 0.7, r) * smooth(FAN.r0, FAN.r0 + 2, r);
+    sx[i] = r * Math.cos(th);
+    sy[i] = r * Math.sin(th);
+    edge[i] =
+      smooth(0, 0.14, Math.min(th - from, to - th) / (to - from)) * smooth(FAN.top, FAN.top - 1.4, sy[i]) * smooth(FAN.foot, FAN.foot + 1.4, sy[i]);
+  }
+  /** How far the wave reaches (mm), and how far the far flap reaches from the slot along the axis (the fan keeps clear of it). */
+  function setReach(end, flap) {
+    for (let i = 0; i < n; i++) {
+      const out = Math.max(sx[i] - flap - 0.6, sy[i] - CLEAR.top, CLEAR.foot - sy[i]);
+      fade[i] = edge[i] * smooth(end, end - 1.2, radius[i]) * smooth(0, 1.2, out);
+    }
   }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(rest.slice(), 3));
   const colors = new Float32Array(n * 4);
   geo.setAttribute('color', new THREE.BufferAttribute(colors, 4));
-  const mid = ORIGIN.clone().addScaledVector(dirOf((from + to) / 2, D), FAN.r1 / 2);
-  geo.boundingSphere = new THREE.Sphere(mid, FAN.r1);
+  geo.boundingSphere = new THREE.Sphere(ORIGIN.clone(), FAN.r1 + 2);
   const mat = new THREE.PointsMaterial({
     name: 'AirParticles',
-    size: 1.05,
+    size: 1.15,
     sizeAttenuation: true,
     vertexColors: true,
     map: dotTexture(),
@@ -122,8 +148,8 @@ export function createAir(axis = new THREE.Vector3(1, 0, 0), up = new THREE.Vect
 
   // the one particle we follow: a green bead (on a low ray of the fan, a little in front of it) and a thin mark across
   // the way it swings, where it rests
-  const followAt = THREE.MathUtils.degToRad(30); // a low ray: on screen it swings mostly sideways, along its ray
-  const followR = 13;
+  const followAt = THREE.MathUtils.degToRad(-14); // a low ray: on screen it swings mostly sideways, along its ray
+  const followR = 15.5;
   const followDir = dirOf(followAt, new THREE.Vector3());
   const bead = new THREE.Mesh(
     new THREE.SphereGeometry(0.85, 24, 16),
@@ -143,7 +169,14 @@ export function createAir(axis = new THREE.Vector3(1, 0, 0), up = new THREE.Vect
   const sn = 18;
   const lanes = [];
   for (let i = 0; i < sn; i++)
-    lanes.push({ y: SLOT_Y + (rand() * 2 - 1) * 5, z: rand() * 2 - 1, q: rand(), sp: 0.8 + rand() * 0.4, len: 3 + rand() * 3, out: rand() * 2 - 1 });
+    lanes.push({
+      y: SLOT_Y + (rand() * 2 - 1) * 3.5,
+      z: rand() * 2 - 1,
+      q: rand(),
+      sp: 0.8 + rand() * 0.4,
+      len: 3 + rand() * 3,
+      out: rand() * 2 - 1,
+    });
   const sPos = new Float32Array(sn * 2 * 3);
   const sCol = new Float32Array(sn * 2 * 4);
   const sgeo = new THREE.BufferGeometry();
@@ -165,9 +198,9 @@ export function createAir(axis = new THREE.Vector3(1, 0, 0), up = new THREE.Vect
   function breathAt(p, q, out) {
     if (q < 0.75) {
       const k = q / 0.75;
-      const x = -32 + k * 31.4;
-      const y = SLOT_Y + (p.y - SLOT_Y) * (1 - 0.6 * k) + 16 * (1 - k) ** 2;
-      out.set(x, y, p.z * Math.max(0, -x) * tanA * 0.5);
+      const x = -21 + k * 20.4;
+      const y = SLOT_Y + (p.y - SLOT_Y) * (1 - 0.6 * k) + 7 * (1 - k) ** 2;
+      out.set(x, y, p.z * Math.max(0, -x) * tanA * 0.3);
     } else {
       const k = (q - 0.75) / 0.25;
       out.set(-0.6 + k * 8, SLOT_Y + (p.y - SLOT_Y) * 0.4, p.out * k * 3);
@@ -184,6 +217,10 @@ export function createAir(axis = new THREE.Vector3(1, 0, 0), up = new THREE.Vect
   function update(t, wave, on) {
     const pos = geo.attributes.position.array;
     for (let i = 0; i < n; i++) {
+      if (fade[i] === 0) {
+        colors[i * 4 + 3] = 0;
+        continue;
+      }
       const r = radius[i];
       const { shift, squeeze } = airAt(r, t, wave, on, at);
       const fall = fallOf(r);
@@ -196,7 +233,7 @@ export function createAir(axis = new THREE.Vector3(1, 0, 0), up = new THREE.Vect
       colors[i * 4] = c.r;
       colors[i * 4 + 1] = c.g;
       colors[i * 4 + 2] = c.b;
-      colors[i * 4 + 3] = Math.min(1, on(t - r / wave.speed) * 1.4) * fade[i] * (0.58 + 0.42 * q);
+      colors[i * 4 + 3] = Math.min(1, on(t - r / wave.speed) * 1.4) * fade[i] * (0.56 + 0.34 * q);
     }
     geo.attributes.position.needsUpdate = true;
     geo.attributes.color.needsUpdate = true;
@@ -226,5 +263,5 @@ export function createAir(axis = new THREE.Vector3(1, 0, 0), up = new THREE.Vect
     sgeo.attributes.color.needsUpdate = true;
   }
 
-  return { root, points, bead, beadRest, mark, breath, update, updateBreath, followR, followDir, axis };
+  return { root, points, bead, beadRest, mark, breath, update, updateBreath, setReach, followR, followDir, axis };
 }

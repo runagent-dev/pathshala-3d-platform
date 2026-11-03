@@ -29,17 +29,21 @@ export function fitPose({ box, points, dir, camera, width, height, margin = { to
     p.copy(q).sub(centre);
     corners.push({ x: p.dot(right), y: p.dot(up), z: p.dot(look) });
   }
-  // The camera sits `d` back from (centre + up·shift); for a given d, find a vertical shift that fits every corner.
+  // The camera sits `d` back from (centre + up·shift + right·across); for a given d, find the shifts that fit every corner.
   const shiftFor = (d) => {
     let lo = Number.NEGATIVE_INFINITY;
     let hi = Number.POSITIVE_INFINITY;
+    let left = Number.NEGATIVE_INFINITY;
+    let right_ = Number.POSITIVE_INFINITY;
     for (const c of corners) {
       const depth = d + c.z;
-      if (depth <= 1e-3 || Math.abs(c.x) > side * depth * tanH) return null;
+      if (depth <= 1e-3) return null;
       lo = Math.max(lo, c.y - top * depth * tanV);
       hi = Math.min(hi, c.y + bottom * depth * tanV);
+      left = Math.max(left, c.x - side * depth * tanH);
+      right_ = Math.min(right_, c.x + side * depth * tanH);
     }
-    return lo <= hi ? (lo + hi) / 2 : null;
+    return lo <= hi && left <= right_ ? { up: (lo + hi) / 2, across: (left + right_) / 2 } : null;
   };
   let near = 0;
   let far = 1;
@@ -49,6 +53,7 @@ export function fitPose({ box, points, dir, camera, width, height, margin = { to
     if (shiftFor(mid) == null) near = mid;
     else far = mid;
   }
-  const target = centre.clone().addScaledVector(up, shiftFor(far) ?? 0);
+  const shift = shiftFor(far) ?? { up: 0, across: 0 };
+  const target = centre.clone().addScaledVector(up, shift.up).addScaledVector(right, shift.across);
   return { target, position: target.clone().addScaledVector(look, -far) };
 }

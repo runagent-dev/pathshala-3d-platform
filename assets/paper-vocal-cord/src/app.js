@@ -45,31 +45,31 @@ const BREATH = 8;
 /** How long the blowing takes to start and to stop (s). */
 const RAMP = 0.3;
 const DOUBLE_TAP = 420; // ms
-/** The clip is a 15 mm binder clip (the model is drawn at 19 mm). */
-const CLIP_SCALE = 15 / 19;
-const MARGIN = { top: 50, bottom: 12, side: 10 };
+/** The top margin is small: only the fan and the arrow reach up, and both stay left of the corner button. */
+const MARGIN = { top: 12, bottom: 8, side: 8 };
 const V = (x, y, z = 0) => new THREE.Vector3(x, y, z);
 /**
- * The view: a gentle three-quarter view of the whole folded strip, standing like a half-open book with its spine (the
- * crease) toward the student and a little to the right, seen a little from above: the near half's outer face, the far
- * half receding, the cut at the top of the crease with both flaps and the slit between them toward the camera, the
- * clip under the crease's foot standing on the bench. The open back of the fold, where the breath goes in, is behind
- * the paper on the upper left; the sound rises from the slot to the upper right.
+ * The view: close and low, a gentle three-quarter view of the folded strip with its spine (the crease) toward the
+ * student, turned 18° round and seen 14° from above, so both halves show and the two flaps stand side by side as two
+ * paper tongues with the slit between them, the clip under the paper on the bench. The open back of the fold, where the
+ * breath goes in, is behind the paper on the upper left; the sound fills the space to the right of the slot.
  */
-const DIR = new THREE.Vector3().setFromSphericalCoords(1, THREE.MathUtils.degToRad(68), THREE.MathUtils.degToRad(58));
+const DIR = new THREE.Vector3().setFromSphericalCoords(1, THREE.MathUtils.degToRad(76), THREE.MathUtils.degToRad(72));
 /** The fan of sound lies in the upright plane through the slot that faces the camera: its "right" and up. */
 const AXIS = new THREE.Vector3(DIR.z, 0, -DIR.x).normalize();
 const PLANE = V(0, 1, 0);
 /**
- * The λ bracket: along a steep ray from the slot, up and a little to the right (above the bead), from one compression centre to the
- * next (it rides with the wave and starts again one λ back each period); its label stays put beside the far end of its
- * reach.
+ * The λ bracket: along a ray from the slot, a little up and to the right (above the bead), from one compression centre
+ * to the next (it rides with the wave and starts again one λ back each period); its label stays put beside the far end
+ * of its reach.
  */
-const LAMBDA_AT = { r: 2.5, turn: THREE.MathUtils.degToRad(52) };
+const LAMBDA_AT = { turn: THREE.MathUtils.degToRad(14) };
 const LAMBDA_DIR = AXIS.clone().multiplyScalar(Math.cos(LAMBDA_AT.turn)).addScaledVector(PLANE, Math.sin(LAMBDA_AT.turn));
 /** The breath comes from behind the paper, above the open back of the fold, and goes down into it. */
-const BLOW_FROM = V(-24, SLOT_Y + 10, 0);
-const BLOW_TO = V(-11, SLOT_Y + 4.5, 0);
+const BLOW_FROM = V(-18, SLOT_Y + 7.6, 0);
+const BLOW_TO = V(-9, SLOT_Y + 4.4, 0);
+/** How far the wave reaches from the slot (mm): at least this on a wide stage, and on a squarer one. */
+const REACH = { wide: 31, square: 22 };
 
 export function createApp(root, options = {}) {
   const o = { ...DEFAULTS, ...options };
@@ -143,15 +143,11 @@ export function createApp(root, options = {}) {
 
   const paper = createPaper();
   scene.add(paper.root);
-  // the clip stands on its folded-down handles, mouth up, pinching the foot of the crease (a binder clip used as a
-  // stand): its jaws run across the crease, between the two halves inside the fold, so it holds only the fold's foot
-  const clip = createClip({ bottom: 0 });
-  clip.root.rotation.z = -Math.PI / 2;
-  clip.root.scale.setScalar(CLIP_SCALE);
-  clip.root.position.set((-CLIP.width / 2) * CLIP_SCALE, -SHEET.H / 2 + 3 + CLIP.mouth * CLIP_SCALE, 0);
+  // the clip grips the paper's bottom edge, mouth up, its spine on the bench: the front jaw on the crease, the back jaw
+  // across the two halves at the clip's ends, so the foot of the V is inside the jaws
+  const clip = createClip({ top: -SHEET.H / 2 + CLIP.bite, front: SHEET.T * 1.2, back: -(CLIP.width / 2 + 0.2) / Math.tan(SHEET.alpha) - SHEET.T });
   scene.add(clip.root);
-  // the bench under it, at the foot of the folded-down handles
-  const benchY = clip.root.position.y - (CLIP.spine + 7 + 1 + CLIP.wire) * CLIP_SCALE;
+  const benchY = clip.bottom;
   if (o.bg !== 'transparent') scene.add(createBench(benchY));
   const air = createAir(AXIS, PLANE);
   scene.add(air.root);
@@ -216,7 +212,19 @@ export function createApp(root, options = {}) {
   function moving() {
     if (blowing()) return true;
     const last = s.blows[s.blows.length - 1];
-    return Boolean(last) && s.clock < last.b + RAMP + FAN.r1 / wave.speed + 0.2;
+    return Boolean(last) && s.clock < last.b + RAMP + reach().end / wave.speed + 0.2;
+  }
+
+  /**
+   * Where the wave starts and ends along the λ bracket's ray and the axis (mm): `flap` how far the far flap reaches
+   * from the slot, `start` just past it, `end` so that two wavelengths fit after the start (the bracket's far end rides
+   * up to start + 2λ), further where the stage is wide.
+   */
+  function reach() {
+    const flap = paper.halves[1].u.dot(AXIS) * CUTS[s.cut].L + 0.4;
+    const start = (flap + 1) / Math.cos(LAMBDA_AT.turn);
+    const end = Math.max(start + 2.05 * wave.lambda, stage.width > 1.25 * stage.height ? REACH.wide : REACH.square);
+    return { flap, start, end: Math.min(FAN.r1, end) };
   }
 
   // ── the scene from the state ────────────────────────────────────────────────
@@ -246,7 +254,8 @@ export function createApp(root, options = {}) {
     } else blowArrow.hide();
     // λ: from a compression centre to the next one, once the wave fills that stretch
     const lam = wave.lambda;
-    const rc = LAMBDA_AT.r + ((((wave.speed * s.clock - lam / 2 - LAMBDA_AT.r) % lam) + lam) % lam);
+    const r0 = reach().start;
+    const rc = r0 + ((((wave.speed * s.clock - lam / 2 - r0) % lam) + lam) % lam);
     const filled = on(s.clock - (rc + lam) / wave.speed) > 0.6 && on(s.clock - rc / wave.speed) > 0.6;
     if (filled && s.show.lambda) {
       lamA.copy(ORIGIN).addScaledVector(LAMBDA_DIR, rc);
@@ -318,6 +327,7 @@ export function createApp(root, options = {}) {
       s.cut = id;
       wave = drawnWave(freq());
       paper.setCut(CUTS[id].L);
+      setReach();
       if (!s.userMovedCamera) flyTo(viewPose(), 0.6);
     }
     if (blow) startBlow({ steady });
@@ -436,7 +446,7 @@ export function createApp(root, options = {}) {
         text: t('lbl_blow'),
         // at the arrow's tail, below it, never on the shaft
         point: () => blowFrom(),
-        spots: [spot(0, 22), spot(-26, 16), spot(26, 16), spot(-30, 0)],
+        spots: [spot(34, -6), spot(-30, -6), spot(0, 22), spot(26, 16)],
         color: COLORS.blowText,
       });
     if (lamBracket.visible)
@@ -444,7 +454,7 @@ export function createApp(root, options = {}) {
         text: t('lbl_lambda', { l: N(wavelength(freq())) }),
         // beside the far half of the bracket's reach (it rides with the wave, its far end between r + λ and r + 2λ),
         // above the ray: never over the bracket (which the labels also avoid)
-        point: () => ORIGIN.clone().addScaledVector(LAMBDA_DIR, LAMBDA_AT.r + 1.6 * wave.lambda),
+        point: () => ORIGIN.clone().addScaledVector(LAMBDA_DIR, reach().start + 1.6 * wave.lambda),
         spots: [spot(-6, -30), spot(-24, -30), spot(10, -32), spot(-40, -10)],
         color: COLORS.lambdaText,
       });
@@ -478,17 +488,18 @@ export function createApp(root, options = {}) {
   }
 
   // ── camera ──────────────────────────────────────────────────────────────────
-  // the box the camera frames (mm): the paper's front half with the flaps, and the first part of the air, out to the
-  // end of the λ bracket (a longer wave needs more room)
-  /** The points the camera frames (mm). */
+  function setReach() {
+    const { end, flap } = reach();
+    air.setReach(end, flap);
+  }
+  /** The points the camera frames (mm): the strip, the clip with its handles' feet, the arrow's tail and the wave's reach. */
   function framePoints() {
     const pts = [];
-    // the whole folded strip, both halves, and the clip on the crease
     for (const side of [1, -1]) pts.push(...paper.corners(side));
-    pts.push(V(0, benchY, 0));
-    // the green particle and the far end of the λ bracket
-    pts.push(ORIGIN.clone().addScaledVector(air.followDir, air.followR + 2.5));
-    pts.push(ORIGIN.clone().addScaledVector(LAMBDA_DIR, LAMBDA_AT.r + 2 * wave.lambda + 0.5), BLOW_FROM);
+    pts.push(...clip.feet, BLOW_FROM);
+    const { end } = reach();
+    const onFan = (x, y) => ORIGIN.clone().addScaledVector(AXIS, x).addScaledVector(PLANE, y);
+    pts.push(onFan(end, 0), onFan(Math.sqrt(end * end - FAN.top * FAN.top), FAN.top));
     return pts;
   }
   function viewPose() {
@@ -534,6 +545,7 @@ export function createApp(root, options = {}) {
     stage.invalidate();
   });
   stage.onResize(() => {
+    setReach();
     if (!s.userMovedCamera) place(viewPose());
     syncScene();
     refresh();
@@ -807,6 +819,7 @@ export function createApp(root, options = {}) {
   paper.setCut(CUTS[s.cut].L);
   wave = drawnWave(freq());
   syncUI();
+  setReach();
   place(viewPose());
   if (o.blow) startBlow({ steady: true });
   syncScene();

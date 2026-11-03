@@ -50,7 +50,8 @@ export const STRINGS = {
     voice_deep: 'মোটা',
     voice_middle: 'মাঝারি',
     voice_shrill: 'তীক্ষ্ণ',
-    key_line: '<i class="pv-sw pv-dark"></i>সংকোচন <i class="pv-sw pv-light"></i>প্রসারণ <span class="pv-note">সময় {k} গুণ ধীর, λ ছোট করে আঁকা</span>',
+    key_line:
+      '<i class="pv-sw pv-dark"></i>সংকোচন <i class="pv-sw pv-light"></i>প্রসারণ <span class="pv-note">সময় {k} গুণ ধীর, কম্পন বড় ও λ ছোট করে দেখানো</span>',
 
     // the rule, growing
     rule_0: '<b>ফুঁ দিলে কাগজের কাটা টুকরো দুটো ভোকাল কর্ডের মতো কাঁপে।</b> আমাদের স্বরযন্ত্রে দুটো পর্দা ঠিক এভাবে খোলে আর বন্ধ হয়।',
@@ -176,7 +177,7 @@ export const STRINGS = {
     voice_middle: 'middle',
     voice_shrill: 'shrill',
     key_line:
-      '<i class="pv-sw pv-dark"></i>compression <i class="pv-sw pv-light"></i>rarefaction <span class="pv-note">time {k}× slower, λ drawn shorter</span>',
+      '<i class="pv-sw pv-dark"></i>compression <i class="pv-sw pv-light"></i>rarefaction <span class="pv-note">time {k}× slower, swing larger, λ shorter</span>',
 
     rule_0: '<b>Blow, and the two cut flaps vibrate like vocal cords.</b> In our larynx two membranes open and shut just like this.',
     rule_1:

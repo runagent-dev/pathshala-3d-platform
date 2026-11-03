@@ -5,18 +5,22 @@
 // the crease, its top edge the paper's top edge. The two free edges meet at the crease like the two vocal cords; blown
 // air pushes them outward, a thin slit opens between them, a puff escapes, the paper springs back and shuts it again.
 //
-// Real proportions: a 40 × 27 mm strip of writing paper folded in half (0.1 mm thick; drawn 0.3 mm so its cut edges
-// read), flaps 14 mm tall, the cuts 0.6 mm wide, the free edge swinging out up to 0.14·L. The paper is a soft physical material: a fibre texture with faint blue
-// rules, a fibre bump, and a faint warm glow where light comes through it (cheap translucency, no
-// transmission pass). While it vibrates a faint copy of each flap at its widest swing shows the motion.
+// Real proportions: a 31 × 24 mm strip of writing paper folded in half (0.1 mm thick; drawn 0.3 mm so its cut edges
+// read), flaps 14 mm tall, the cuts 0.6 mm wide. The swing is drawn large (0.2·L; a paper reed moves far less) so the
+// two tongues are seen opening into a V, a little wider at the top than at the foot; the panel says it is enlarged.
+// The paper is a soft physical material: a fibre texture with faint blue rules, a fibre bump, and a faint warm glow
+// where light comes through it (cheap translucency, no transmission pass). While it vibrates a faint copy of each flap
+// at its widest swing shows the motion.
 // Procedural: an extruded outline per half (the notch the flap sits in), a rounded crease below the slit, each flap a
 // thin slab bent as a cantilever every frame, and the slit a thin dark strip between the two free edges.
 import * as THREE from 'three';
 import { bendShape } from './reading.js';
 
-export const SHEET = { W: 20, H: 27, T: 0.3, alpha: THREE.MathUtils.degToRad(58), h: 14, kerf: 0.6, gap: 0.2 };
-/** How far the free edge swings out at full opening, as a share of the flap's length (a paper reed moves little). */
-const SWING = 0.14;
+export const SHEET = { W: 15.4, H: 24, T: 0.3, alpha: THREE.MathUtils.degToRad(62), h: 14, kerf: 0.6, gap: 0.2 };
+/** How far the free edge swings out at full opening, as a share of the flap's length (drawn large, see above). */
+const SWING = 0.2;
+/** The free edge swings a little further at the top (free) corner than at the foot: yn is −1 at the foot, +1 at the top. */
+const taper = (yn) => 0.92 + 0.2 * yn;
 /** At rest the two free edges stay a hair apart, like lips (a share of the full opening). */
 const LIPS = 0.03;
 const Y = new THREE.Vector3(0, 1, 0);
@@ -151,7 +155,7 @@ export function createPaper() {
   // the flaps a hair warmer than the walls (handled, bent paper), so the two cut pieces read as their own shapes
   const flapMat = mat.clone();
   flapMat.name = 'PaperFlap';
-  flapMat.color.set('#fbf1de');
+  flapMat.color.set('#f7e8cb');
   // the cut across under each flap: a thin dark gap (the shade inside the fold seen through it)
   const kerfMat = new THREE.MeshBasicMaterial({ name: 'Cut', color: '#4a4136' });
   const ghostMat = new THREE.MeshBasicMaterial({ color: '#fbf6ea', transparent: true, opacity: 0.2, depthWrite: false, side: THREE.DoubleSide });
@@ -171,7 +175,11 @@ export function createPaper() {
     leaf.castShadow = true;
     leaf.receiveShadow = true;
     // the flap: a thin slab, 16 pieces along its length, bent every frame (faces: the cut edges, then the two sides)
-    const flapGeo = new THREE.BoxGeometry(1, h, 1, 16, 1, 1);
+    const flapGeo = new THREE.BoxGeometry(1, h, 1, 16, 4, 1);
+    // bend() maps the box's x backward (hinge at +L, free edge near 0), which mirrors it: turn the triangles so its faces
+    // stay outward (inside out, the slab would shadow itself)
+    const tri = flapGeo.index.array;
+    for (let i = 0; i < tri.length; i += 3) [tri[i + 1], tri[i + 2]] = [tri[i + 2], tri[i + 1]];
     const base = flapGeo.attributes.position.array.slice();
     const flap = new THREE.Mesh(flapGeo, [edgeMat, edgeMat, edgeMat, edgeMat, flapMat, flapMat]);
     flap.name = side > 0 ? 'NearFlap' : 'FarFlap';
@@ -207,7 +215,7 @@ export function createPaper() {
   slitGeo.setIndex(slitIndex);
   const slit = new THREE.Mesh(
     slitGeo,
-    new THREE.MeshBasicMaterial({ name: 'Slit', color: '#2b2621', transparent: true, opacity: 0.85, side: THREE.DoubleSide, depthWrite: false }),
+    new THREE.MeshBasicMaterial({ name: 'Slit', color: '#352d25', transparent: true, opacity: 0.82, side: THREE.DoubleSide, depthWrite: false }),
   );
   slit.name = 'Slit';
   slit.userData.noExport = true;
@@ -216,8 +224,8 @@ export function createPaper() {
   const E = new THREE.Vector3();
   const F = new THREE.Vector3();
   const M = new THREE.Vector3();
-  /** The dark core's width as a share of the gap between the free edges. */
-  const SLIT = 0.4;
+  /** The dark strip's width as a share of the gap between the free edges. */
+  const SLIT = 0.96;
 
   let L = 10;
   let open = 0;
@@ -237,7 +245,7 @@ export function createPaper() {
       const s = along(sigma, A);
       a[i * 3] = s;
       a[i * 3 + 1] = b[i * 3 + 1] + SLOT_Y;
-      a[i * 3 + 2] = b[i * 3 + 2] * T + hv.sign * A * bendShape(sigma);
+      a[i * 3 + 2] = b[i * 3 + 2] * T + hv.sign * A * taper((2 * b[i * 3 + 1]) / h) * bendShape(sigma);
       // the same texture as the rest of the half, so the rules run on across the cut
       uv.array[i * 2] = L - sigma * (L - gap);
       uv.array[i * 2 + 1] = b[i * 3 + 1] + SLOT_Y;
@@ -256,10 +264,10 @@ export function createPaper() {
     const x0 = along(1, A);
     for (let i = 0; i <= ROWS; i++) {
       const y = SLOT_Y + h / 2 - 0.15 - (i / ROWS) * (h - 0.3);
-      // between the two free edges, a little behind them: the dark core of the gap (its sides show the lit inside of
-      // the fold), so it reads as the thin slit it is
-      E.set(x0, y, halves[0].sign * A).applyMatrix4(halves[0].g.matrix);
-      F.set(x0, y, halves[1].sign * A).applyMatrix4(halves[1].g.matrix);
+      // between the two free edges, a little behind them: the dark of the inside of the fold seen through the gap
+      const Ay = A * taper((2 * (y - SLOT_Y)) / h);
+      E.set(x0, y, halves[0].sign * Ay).applyMatrix4(halves[0].g.matrix);
+      F.set(x0, y, halves[1].sign * Ay).applyMatrix4(halves[1].g.matrix);
       M.lerpVectors(E, F, 0.5);
       E.lerp(M, 1 - SLIT);
       F.lerp(M, 1 - SLIT);
@@ -294,7 +302,7 @@ export function createPaper() {
   function edgePoint(side, outV = new THREE.Vector3()) {
     const hv = side > 0 ? halves[0] : halves[1];
     const A = SWING * L * open;
-    P.set(along(1, A), SLOT_Y, hv.sign * A);
+    P.set(along(1, A), SLOT_Y, hv.sign * A * taper(0));
     root.updateWorldMatrix(true, true);
     return outV.copy(P).applyMatrix4(hv.g.matrixWorld);
   }
