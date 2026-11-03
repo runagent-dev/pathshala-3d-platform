@@ -144,7 +144,7 @@ export function createCombScene({ color, setting = true }) {
     hits: [],
     arrow,
     fit: { min: V(-0.072, -0.002, -0.026), max: V(0.1, 0.12, 0.026) },
-    views: { front: V(0.05, 0.3, 1).normalize(), '3d': V(0.7, 0.5, 0.8).normalize() },
+    views: { front: V(0.3, 0.3, 1).normalize(), '3d': V(0.7, 0.5, 0.8).normalize() },
     shadow: { center: V(0, 0, 0), r: 0.2 },
     update,
     contact: () => null,
