@@ -71,8 +71,8 @@ const MARGIN = { top: 50, bottom: 12, side: 6 };
 const UPV = new THREE.Vector3(0, 1, 0);
 const DOWN = new THREE.Vector3(0, -1, 0);
 const RIGHT = new THREE.Vector3(1, 0, 0);
-const LOOK_DIR = new THREE.Vector3(0.1, 0.24, 1).normalize();
-const CLOSE_DIR = new THREE.Vector3(0.18, 0.26, 1).normalize();
+const LOOK_DIR = new THREE.Vector3(0.3, 0.3, 1).normalize();
+const CLOSE_DIR = new THREE.Vector3(0.3, 0.3, 1).normalize();
 
 const parseOpen = (v) => {
   if (Array.isArray(v)) return HOLE_IDS.filter((id) => v.includes(id));
