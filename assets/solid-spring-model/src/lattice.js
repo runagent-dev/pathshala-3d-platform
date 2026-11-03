@@ -7,9 +7,9 @@ import { amplitude, swing } from './reading.js';
 
 export const EDGE = 4;
 const ATOM_R = 0.55;
-const TURNS = 15;
-const COIL_R = 0.21;
-const WIRE_R = 0.05;
+const TURNS = 24;
+const COIL_R = 0.2;
+const WIRE_R = 0.036;
 const OMEGA = [9.3, 11.1, 7.9]; // rad/s per axis: not the same, so the shake looks natural, never a straight line
 
 class Helix extends THREE.Curve {
@@ -29,8 +29,15 @@ export function createLattice({ centre = new THREE.Vector3() } = {}) {
   root.position.copy(centre);
 
   const atomGeo = new THREE.SphereGeometry(ATOM_R, 32, 20);
-  const atomMat = new THREE.MeshStandardMaterial({ name: 'Atom', color: '#2f8ee0', roughness: 0.2, metalness: 0.05 });
-  const springGeo = new THREE.TubeGeometry(new Helix(), TURNS * 10, WIRE_R, 6, false);
+  const atomMat = new THREE.MeshPhysicalMaterial({
+    name: 'Atom',
+    color: '#2f8ee0',
+    roughness: 0.18,
+    metalness: 0.0,
+    clearcoat: 1,
+    clearcoatRoughness: 0.12,
+  });
+  const springGeo = new THREE.TubeGeometry(new Helix(), TURNS * 8, WIRE_R, 5, false);
   const springMat = new THREE.MeshStandardMaterial({ name: 'Spring', color: '#a5b1bd', roughness: 0.3, metalness: 0.85 });
 
   const atoms = [];

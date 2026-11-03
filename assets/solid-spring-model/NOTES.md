@@ -37,3 +37,9 @@ screen), প্রসারিত, সংকুচিত, বিশেষ ধর
 ## Performance
 Draw calls: 8 atoms + 12 springs + burner (4) + bench, wall ≈ 28; triangles ≈ 30 k. One shared geometry per kind, no
 allocation per frame, the ticker returns false while the lattice is cold and still.
+
+## Polish pass (0.2.0)
+- Springs finer (24 turns, thinner wire) and atoms glossier, nearer the page's picture; the camera frames the cube and the
+  flame tighter, and the burner is taller so its flame reaches the cube as in চিত্র ৬.০৪.
+- The panel's cold caption is the book's চিত্র ৬.০৩ caption word for word; the cold and hot rules follow the page's
+  sentences ("কল্পনা করতে পারি", "প্রসারিত হয়ে গেছে বলে মনে হবে").
