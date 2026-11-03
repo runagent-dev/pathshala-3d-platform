@@ -79,7 +79,7 @@ export function createMoon({ renderer }) {
     hub: MOON.earth, // the Earth round the fixed point
     guide: true, // the whole orbit drawn faintly from the start: in empty space the circle has nothing else to show it
     fit: { radius: MOON.r + MOON.moon + 2, depth: 14 },
-    views: { front: new THREE.Vector3(0, 0.96, 0.28).normalize(), '3d': new THREE.Vector3(0.52, 0.5, 0.69).normalize() },
+    views: { front: new THREE.Vector3(0.3, 0.8, 0.5).normalize(), '3d': new THREE.Vector3(0.52, 0.5, 0.69).normalize() },
     grab: [hit],
     lights: [sun],
     setAngle(deg) {
