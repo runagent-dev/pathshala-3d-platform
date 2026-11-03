@@ -37,6 +37,25 @@ Every figure from page 36 on was built by a builder agent, reviewed by an indepe
 touch-tested (see `docs/agents/`). The ones from page 36 on are at studio status "idea": the owner moves them to
 "review" in the studio when reviewers should see them. Their Bangla still needs a person's check against the book.
 
+## Chapter 7, তরঙ্গ ও শব্দ (merged 2026-11-04, #318–#325)
+
+| Page | Topic | Figure | Title |
+|---|---|---|---|
+| 189 | 7.1 | `spring-mass-oscillation` | সরল স্পন্দন গতি: স্প্রিংয়ে ঝোলানো ভর |
+| 192 | 7.2.1 | `wave-interference` | তরঙ্গের উপরিপাতন (ripple tank) |
+| 194 | 7.2.2 | `wave-types` | অনুপ্রস্থ ও অনুদৈর্ঘ্য তরঙ্গ |
+| 195 | 7.2.3 | `wave-quantities` | তরঙ্গ-সংশ্লিষ্ট রাশি |
+| 199 | 7.3 | `paper-vocal-cord` | কাগজের ভোকাল কর্ড (চিত্র ৭.১০) |
+| 199 | 7.3 | `bell-jar-sound` | শব্দ সঞ্চালনে মাধ্যম (চিত্র ৭.১১) |
+| 201 | 7.3.1 | `echo` | প্রতিধ্বনি |
+| 203 | 7.3.3 | `seismic-survey` | ত্রিমাত্রিক সিসমিক সার্ভে |
+
+Each was built by a builder agent, reviewed by an independent reviewer agent, fixed, then given a final polish pass
+(real materials, ≤150 draw calls, GLB ≤1.5 MB, measured before/after in each NOTES.md). Not made on purpose: 7.3.2
+(speed of sound in media), 7.3.4 (musical sound), 7.3.5 (noise), the চিত্র ৭.০৫ paper-disc model. Chapter 7 (like 5
+and 6) is not in `books/books.json` yet. CI note: long state tests in software rendering can pass the 3-minute limit;
+`bell-jar-sound` and `wave-interference` run theirs in a 480×300 window.
+
 ## In progress (2026-10-26; builders and reviewers are Sonnet agents, one builder and one reviewer per figure)
 
 - **Batch 4, pages 74–90** (images `P-75…P-90` in the studio's `images/`), each on the clean panel from the start:
