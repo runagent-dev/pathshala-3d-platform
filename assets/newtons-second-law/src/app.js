@@ -86,6 +86,7 @@ const DP_LEN = 0.7; // m: the change of momentum's arrow (its direction is what 
 const V_SCALE = 0.25; // m of arrow per m/s (4 m/s: 1 m)
 const Z_NEAR = 0.6; // the velocity arrow on the cart's near side
 const V_Y = 0.12; // the velocity arrow: in front of the cart, low, on its near side (below the feet of anyone there)
+const SIDE_YAW = 20; // degrees: the side view is turned a little (from behind the pusher), so it shows depth
 const DIR_WINDOW = 4.5; // m of the lane in view for the question about the direction (the person in front is in it)
 const STOP_SHOW = 1.6; // s the words for the sacks stopping the cart stay
 const COAST_MIN = 0.6; // s: a coast shorter than this is too quick to need words
@@ -1365,7 +1366,8 @@ export function createApp(root, options = {}) {
       );
     const box = lane ? laneBox : BOXES[s.scene];
     const e = THREE.MathUtils.degToRad(38 - 20 * wideness());
-    const dir = view === '3d' && lane ? VIEW_3D : new THREE.Vector3(0, Math.sin(e), Math.cos(e));
+    const yaw = THREE.MathUtils.degToRad(SIDE_YAW);
+    const dir = view === '3d' && lane ? VIEW_3D : new THREE.Vector3(-Math.sin(yaw) * Math.cos(e), Math.sin(e), Math.cos(yaw) * Math.cos(e));
     const pose = fitPose({ box, dir, camera, width: stage.width, height: stage.height, margin: { top: 44, bottom: 8, side: 4 } });
     if (lane) {
       pose.position.x += s.follow;
