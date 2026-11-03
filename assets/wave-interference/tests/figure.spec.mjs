@@ -1,5 +1,5 @@
 // This figure's own behaviour, through the bridge (runs with `npm run test:figures`; dev only, never packaged): the
-// one action walks the three cases (1st source, 2nd source, both) and then calms the water; ball ক bobs with 2a and
+// one action walks the three cases (1st source, 2nd source, both) and then calms the water; cork ক bobs with 2a and
 // খ is almost still only when both run; set, pause and reset; the five-question test.
 import { expect, test } from '@playwright/test';
 import { openFigure, preparePage } from '../../../scripts/lib/export/driver.mjs';
@@ -44,7 +44,9 @@ test('wave-interference: set, pause, gap and reset', async ({ page }) => {
   const log = await preparePage(page);
   const fig = await openFigure(page, 'wave-interference');
   let st = await fig.call('set', { example: 'both', animate: false });
-  expect(st).toMatchObject({ example: 'both', sources: [true, true], settled: true });
+  // the action never offers a case that is already running (the poster's state): it calms the water next
+  expect(st).toMatchObject({ example: 'both', sources: [true, true], settled: true, next: 'calm' });
+  await expect(frameOf(page).locator('.pvc-act')).not.toContainText('১ম');
   expect(st.amplitudeA).toBeCloseTo(2, 1);
   st = await fig.call('set', { gap: 20 });
   expect(st).toMatchObject({ gap: 20, example: 'both', settled: true });

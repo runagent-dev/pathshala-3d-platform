@@ -1,7 +1,7 @@
 // Superposition of water waves (book pages 192–193, topic 7.2.1 (v), চিত্র ৭.০৩), student view. A real ripple tank
 // on a lab bench: a vibrator bar on springs with a small motor drives two point dippers in step; each sends circular
-// ripples across a fine, shaded water surface (src/water.js) and two floating cork balls show what the water does at
-// two places: ক on the centre line (equal paths: crest meets crest, it bobs twice as high) and খ on a still line (paths
+// ripples across a fine water surface drawn on the GPU (src/water.js), with dashed still lines where the waves cancel,
+// and two floating corks show what the water does at two places: ক on the centre line (equal paths: crest meets crest, it bobs twice as high) and খ on a still line (paths
 // differ by 1½λ: crest meets trough, almost still). The panel: one row of words (১ম তরঙ্গ · ২য় তরঙ্গ · দুটো একসাথে),
 // one action that walks them in order, a live চিত্র ৭.০৩ (each ball's 1st wave + 2nd wave = sum against time), one
 // result line (the two amplitudes in a), one rule in the book's words; a five-question test. Built on the shared kit.
@@ -95,6 +95,10 @@ export function createApp(root, options = {}) {
   const graphHostQ = document.createElement('div');
   graphHostQ.className = 'wi-graph-host wi-graph-q';
   ui.quiz.querySelector('.pvc-q-text')?.after(graphHostQ);
+  const energy = document.createElement('p');
+  energy.className = 'wi-energy';
+  energy.innerHTML = t('energy', NUMS);
+  graphHost.after(energy);
   const note = document.createElement('p');
   note.className = 'wi-note';
   note.textContent = t('note', { l: N(LAMBDA * 100), f: N(F) });
@@ -168,6 +172,7 @@ export function createApp(root, options = {}) {
     balls: defaultBalls(gapOf(o.gap)),
     names: ['lbl_a', 'lbl_b'],
     hideSum: false,
+    showLines: true, // the dashed still lines on the water (hidden while a question asks for what they show)
   };
   const now = () => performance.now();
   let lastAct = Number.NEGATIVE_INFINITY;
@@ -193,7 +198,7 @@ export function createApp(root, options = {}) {
   // ── the scene from the state ────────────────────────────────────────────────
   function syncScene() {
     tank.setGap(s.gap);
-    water.update(s.sim, s.on, s.off, s.gap, s.gain);
+    water.update(s.sim, s.on, s.off, s.gap, s.gain, refA(), s.showLines ? 1 : 0);
     for (const i of [0, 1]) tank.setLift(i, liftOf(i));
     const shaking = dipping(0) || dipping(1);
     const w = 2 * Math.PI * F * s.sim;
@@ -204,6 +209,7 @@ export function createApp(root, options = {}) {
     graph.draw(s.sim);
     stage.invalidate();
   }
+  let wasSettled = false;
   stage.addTicker((dt) => {
     if (s.paused) return false;
     const live = wavesAlive() || s.on.some((x) => x != null && s.sim < x);
@@ -211,11 +217,18 @@ export function createApp(root, options = {}) {
     s.sim += dt / SLOW;
     syncScene();
     refreshOutcome();
+    const ok = settled();
+    if (ok !== wasSettled) {
+      wasSettled = ok;
+      syncLabels(); // the still line's label comes once the pattern has formed
+    }
     return true;
   });
 
   // ── the graph: displacement at each ball against time ───────────────────────
   const aRef = () => amplitudeAt(distances(s.balls[0].x, s.balls[0].z, s.gap)[0]);
+  /** One wave's amplitude at ক's own place (the water's colour scale; the same in every test scene). */
+  const refA = () => amplitudeAt(distances(0, BALL_Z, s.gap)[0]);
   function sampleAt(ball, row, time) {
     const b = s.balls[ball];
     const [r1, r2] = distances(b.x, b.z, s.gap);
@@ -227,6 +240,7 @@ export function createApp(root, options = {}) {
     t,
     labels: [t('g_ball', { n: t('lbl_a') }), t('g_ball', { n: t('lbl_b') })],
     rowLabels: [t('g_row1'), t('g_row2'), t('g_sum')],
+    axes: { y: t('g_y'), t: t('g_t') },
     sample: sampleAt,
     ref: amplitudeAt(0.27) * 2,
     window: 3 / F,
@@ -278,11 +292,15 @@ export function createApp(root, options = {}) {
     const [a, b] = amps();
     sheet.outcome(t('out_amp', { a: ampText(a), b: ampText(b) }));
   }
+  /**
+   * The next step follows what is on the water now (1st → 2nd → both → calm), so the button never offers a case
+   * that is already running; each case keeps its own number (১ 1st, ২ 2nd, ৩ both), calming has none.
+   */
+  const AFTER = { one: 'two', two: 'both', both: 'calm' };
   function plan() {
-    const next = EXAMPLES.find((id) => !s.found.has(id));
-    if (next) return { id: next, label: `act_${next}`, step: s.found.size + 1 };
-    if (s.example === 'calm') return { id: 'both', label: 'act_both', step: '' };
-    return { id: 'calm', label: 'act_calm', step: '' };
+    const id = s.example === 'calm' ? (EXAMPLES.find((x) => !s.found.has(x)) ?? 'both') : AFTER[s.example];
+    if (id === 'calm') return { id, label: 'act_calm', step: '' };
+    return { id, label: `act_${id}`, step: EXAMPLES.indexOf(id) + 1 };
   }
   function refresh() {
     sheet.choose(s.example === 'calm' ? null : s.example);
@@ -320,7 +338,7 @@ export function createApp(root, options = {}) {
       toScreen(v, p);
       out.push({ left: p.x - r, right: p.x + r, top: p.y - r, bottom: p.y + r });
     };
-    for (const b of tank.balls) add(b.position, 12);
+    for (const b of tank.balls) add(b.position, 15);
     for (const i of [0, 1]) add(tank.beadTop(i, V3(0, 0, 0)), 12);
     return out;
   }
@@ -333,6 +351,11 @@ export function createApp(root, options = {}) {
   const AROUND_BALL = [spot(0, -26), spot(22, -18), spot(-22, -18), spot(24, 0), spot(-24, 0), spot(0, 24)];
   const AROUND_SRC = [spot(32, -4), spot(32, -22), spot(46, 8), spot(20, -38)]; // outward: right of the 2nd, left of the 1st
   const labelState = new Map();
+  // a point on খ's still line (paths differ by 1½λ), nearer the front of the tank than খ
+  const STILL_Z = 0.19;
+  const stillPoint = V3(0, 0, STILL_Z);
+  const placeStill = () => stillPoint.set(pointOnLine(1.5, STILL_Z, s.gap) ?? 0.16, 0.002, STILL_Z);
+  placeStill();
   function wantLabels() {
     const want = new Map();
     s.balls.forEach((_, i) => {
@@ -343,6 +366,14 @@ export function createApp(root, options = {}) {
         cls: 'ball',
       });
     });
+    if (s.mode === 'explore' && s.showLines && dipping(0) && dipping(1) && settled())
+      want.set('still', {
+        text: t('lbl_still'),
+        point: () => stillPoint,
+        spots: [spot(0, 22), spot(26, 16), spot(-26, 16), spot(30, 0), spot(0, -22)],
+        optional: true,
+        cls: 'still',
+      });
     if (s.mode === 'explore')
       for (const i of [0, 1])
         want.set(`src${i}`, {
@@ -366,7 +397,7 @@ export function createApp(root, options = {}) {
         anno.add(id, {
           text: w.text,
           point: w.point,
-          kind: w.cls === 'ball' ? 'ball' : 'part',
+          kind: w.cls === 'ball' ? 'ball' : w.cls === 'still' ? 'still' : 'part',
           color: LABEL_INK,
           spots: w.spots,
           optional: w.optional,
@@ -614,12 +645,13 @@ export function createApp(root, options = {}) {
       meta: { kind, answer: items[0].key },
     };
   }
-  const KINDS = ['meet', 'which', 'one', 'move', 'energy'];
+  const KINDS = ['meet', 'which', 'one', 'read', 'energy'];
   let question = null;
   let picked = -1;
   let learnSaved = null;
-  function testScene(example, balls = defaultBalls(s.gap), names = ['lbl_a', 'lbl_b']) {
+  function testScene(example, balls = defaultBalls(s.gap), names = ['lbl_a', 'lbl_b'], lines = true) {
     tweener.cancel('calm');
+    s.showLines = lines;
     s.balls = balls;
     s.names = names;
     s.paused = false;
@@ -649,6 +681,7 @@ export function createApp(root, options = {}) {
         s.mode = 'explore';
         s.locked = false;
         s.hideSum = false;
+        s.showLines = true;
         graph.setHideSum(false);
         s.balls = defaultBalls(s.gap);
         s.names = ['lbl_a', 'lbl_b'];
@@ -664,7 +697,7 @@ export function createApp(root, options = {}) {
         picked = -1;
         const kind = KINDS[i % KINDS.length];
         question = { kind };
-        s.hideSum = kind !== 'move' && kind !== 'energy';
+        s.hideSum = kind !== 'energy';
         graph.setHideSum(s.hideSum);
         if (kind === 'which') {
           // two balls on a new row: one on a strong line, one on a still line, named at random
@@ -674,8 +707,18 @@ export function createApp(root, options = {}) {
           const loudFirst = Math.random() < 0.5;
           const balls = loudFirst ? [loud, quiet] : [quiet, loud];
           question.loud = loudFirst ? 0 : 1;
-          testScene('both', balls);
-        } else if (kind === 'meet' || kind === 'move') testScene('one');
+          testScene('both', balls, ['lbl_a', 'lbl_b'], false);
+        } else if (kind === 'read') {
+          // cork গ on a new row, on a strong line (paths differ by λ) or on a still line (1½λ), either side;
+          // the still lines are not drawn until the answer
+          const z = BALL_Z - 0.03 + Math.random() * 0.06;
+          const loud = Math.random() < 0.5;
+          const n = loud ? 1 : 1.5; // (½λ would sit right beside ক)
+          const c = { x: (Math.random() < 0.5 ? -1 : 1) * (pointOnLine(n, z, s.gap) ?? 0.05), z };
+          const balls = [defaultBalls(s.gap)[0], c];
+          question.loud = steadyAmplitude(c.x, c.z, [true, true], s.gap) / refA() > 1;
+          testScene('both', balls, ['lbl_a', 'lbl_c'], false);
+        } else if (kind === 'meet') testScene('one');
         else testScene('both');
         if (!s.userMovedCamera) await homeView(true);
         if (!alive()) return null;
@@ -697,18 +740,20 @@ export function createApp(root, options = {}) {
             text: t('q_one'),
             ...choicesOf([{ key: 'c_one_bob' }, { key: 'c_one_still' }, { key: 'c_one_double' }, { key: 'c_one_drift' }], kind),
           };
-        if (kind === 'move')
+        if (kind === 'read') {
+          const [right, other] = question.loud ? ['c_read_2', 'c_read_0'] : ['c_read_0', 'c_read_2'];
           return {
-            text: t('q_move'),
-            ...choicesOf([{ key: 'c_move_bob' }, { key: 'c_move_drift' }, { key: 'c_move_back' }, { key: 'c_move_circle' }], kind),
+            text: t('q_read', NUMS),
+            ...choicesOf([{ key: right }, { key: other }, { key: 'c_read_1' }, { key: 'c_read_4' }], kind),
           };
+        }
         return {
           text: t('q_energy', NUMS),
           ...choicesOf(
             [
               { key: 'c_energy_4', vars: { n: 4 } },
               { key: 'c_energy_2', vars: { n: 2 } },
-              { key: 'c_energy_1' },
+              { key: 'c_energy_root', vars: { n: '1.4' } },
               { key: 'c_energy_8', vars: { n: 8 } },
             ],
             kind,
@@ -721,10 +766,12 @@ export function createApp(root, options = {}) {
         const note = (map) => (wrongKey && map[wrongKey] ? ` ${t(map[wrongKey], NUMS)}` : '');
         s.hideSum = false;
         graph.setHideSum(false);
+        s.showLines = true;
+        syncScene();
         if (k === 'meet') {
           // show it: both sources, the still ball খ
           testScene('both');
-          return t('why_meet', NUMS) + note({ c_meet_double: 'mis_meet_double', c_meet_one: 'mis_meet_one', c_meet_flow: 'mis_meet_flow' });
+          return t('why_meet', NUMS) + note({ c_meet_double: 'mis_meet_double', c_meet_one: 'mis_meet_one', c_meet_low: 'mis_meet_low' });
         }
         if (k === 'which') {
           const w = t(s.names[question.loud]);
@@ -739,11 +786,14 @@ export function createApp(root, options = {}) {
           s.locked = false;
           setExample('one');
           s.locked = true;
-          return t('why_one', NUMS) + note({ c_one_still: 'mis_one_still', c_one_double: 'mis_one_double', c_one_drift: 'mis_one_drift' });
+          return t('why_one', NUMS) + note({ c_one_still: 'mis_one_still', c_one_double: 'mis_one_double', c_one_once: 'mis_one_once' });
         }
-        if (k === 'move')
-          return t('why_move') + note({ c_move_drift: 'mis_move_drift', c_move_back: 'mis_move_back', c_move_circle: 'mis_move_circle' });
-        return t('why_energy', NUMS) + note({ c_energy_2: 'mis_energy_2', c_energy_1: 'mis_energy_1', c_energy_8: 'mis_energy_8' });
+        if (k === 'read')
+          return (
+            t(question.loud ? 'why_read_2' : 'why_read_0', NUMS) +
+            note({ c_read_1: 'mis_read_1', c_read_4: 'mis_read_4', c_read_2: 'mis_read_2', c_read_0: 'mis_read_0' })
+          );
+        return t('why_energy', NUMS) + note({ c_energy_2: 'mis_energy_2', c_energy_root: 'mis_energy_root', c_energy_8: 'mis_energy_8' });
       },
       done() {
         s.locked = false;
@@ -861,6 +911,7 @@ export function createApp(root, options = {}) {
       if (p.gap != null) {
         s.gap = gapOf(p.gap);
         s.balls = defaultBalls(s.gap);
+        placeStill();
         if (s.example !== 'calm') setExample(s.example, { animate: false });
       }
       if (p.example != null) {
@@ -889,8 +940,7 @@ export function createApp(root, options = {}) {
     exportRoot() {
       const g = new THREE.Group();
       g.name = 'RippleTank';
-      g.add(tank.root.clone(true), water.mesh.clone(false));
-      g.children[1].geometry = water.mesh.geometry.clone();
+      g.add(tank.root.clone(true), water.bake(s.sim, s.on, s.off, s.gap, s.gain, refA()));
       return g;
     },
     /** For tests: where each source is, and the sources' row. */

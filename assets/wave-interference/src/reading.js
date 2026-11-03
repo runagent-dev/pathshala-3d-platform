@@ -21,7 +21,7 @@ export const GAPS = [0.1, 0.15, 0.2];
 export const GAP = 0.15;
 /** A ripple's height 1 cm from a dipper (m, real) and the distance over which it falls off as 1/√r. */
 export const A0 = 0.0012;
-const R0 = 0.04;
+export const R0 = 0.04;
 /** Where the two floating balls sit by default: the same row, one on the centre line, one on a still line. */
 export const BALL_Z = 0.11;
 

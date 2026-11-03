@@ -77,6 +77,21 @@ describe('wave-interference: the maths', () => {
     assert.equal(r.energyRatio(2), 4);
   });
 
+  it('places the test’s cork গ clearly on a strong line (λ) or a still line (1½λ) on every row it may use', () => {
+    const ref = r.amplitudeAt(r.distances(0, r.BALL_Z)[0]);
+    for (const z of [r.BALL_Z - 0.03, r.BALL_Z, r.BALL_Z + 0.03]) {
+      const loud = r.pointOnLine(1, z);
+      const still = r.pointOnLine(1.5, z);
+      assert.ok(loud != null && still != null);
+      for (const sx of [-1, 1]) {
+        const a = r.steadyAmplitude(sx * loud, z) / ref;
+        const b = r.steadyAmplitude(sx * still, z) / ref;
+        assert.ok(a > 1.6, `loud ${a} at z ${z}`);
+        assert.ok(b < 0.3, `still ${b} at z ${z}`);
+      }
+    }
+  });
+
   it('writes ratios for the panel without trailing zeros, with "about" when rounded', () => {
     assert.deepEqual(r.ratioText(2), { value: '2', about: false });
     assert.deepEqual(r.ratioText(1.98), { value: '2', about: false });
@@ -99,5 +114,12 @@ describe('wave-interference: the strings', () => {
     const all = Object.values(STRINGS.bn).join(' ');
     for (const w of ['উপরিপাতন', 'বিস্তার', 'নিঃশেষ', 'মাধ্যমের কণাগুলো নিজ অবস্থানে থেকে শুধু স্পন্দিত হয়', 'বিস্তারের বর্গের সমানুপাতিক'])
       assert.ok(all.includes(w), w);
+  });
+  it('never calls the floats বল (in this book বল means force): they are কর্ক', () => {
+    const words = Object.values(STRINGS.bn)
+      .join(' ')
+      .split(/[\s,;:।()<>/]+/);
+    assert.ok(!words.includes('বল'));
+    assert.ok(words.includes('কর্ক'));
   });
 });

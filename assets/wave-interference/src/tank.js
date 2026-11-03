@@ -2,7 +2,7 @@
 // sloped foam beaches inside its rim (they swallow the ripples, so nothing reflects back), standing on rubber feet
 // on a lab bench; a vibrator above it (two steel uprights clamped to the frame, a crossbar, two helical springs, a flat
 // aluminium bar with a small motor and its eccentric weight); two point dippers (white plastic beads on steel rods)
-// clamped to the bar; two floating cork balls. The water itself is src/water.js. Procedural, no image files.
+// clamped to the bar; two floating corks (painted orange, so they read on the blue water). The water itself is src/water.js. Procedural, no image files.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
@@ -17,7 +17,7 @@ export const BENCH_Y = -0.05; // the bench top
 export const BAR_Y = 0.15; // the vibrator bar's underside at rest
 const ROD_LEN = 0.155; // a dipper's rod, bar to bead centre
 export const BEAD_R = 0.0075;
-export const BALL_R = 0.0105;
+export const BALL_R = 0.015;
 const POST_X = OUTER.w / 2 + 0.018;
 const CROSS_Y = 0.255;
 const SPRING_X = 0.135;
@@ -52,10 +52,10 @@ function rng(seed) {
 export function backdropTexture() {
   return canvasTex(4, 256, (g) => {
     const s = g.createLinearGradient(0, 0, 0, 256);
-    s.addColorStop(0, '#3d5a73');
-    s.addColorStop(0.45, '#6f8799');
-    s.addColorStop(0.8, '#b8a58a');
-    s.addColorStop(1, '#c9b494');
+    s.addColorStop(0, '#7f9bb3');
+    s.addColorStop(0.45, '#a9bccb');
+    s.addColorStop(0.8, '#d6c7ab');
+    s.addColorStop(1, '#ddcfb4');
     g.fillStyle = s;
     g.fillRect(0, 0, 4, 256);
   });
@@ -87,19 +87,19 @@ function benchTexture() {
   });
 }
 
-/** Grey open-cell foam (the beaches). */
+/** Pale grey open-cell foam (the beaches): fine, even pores of low contrast, so the edge reads clean. */
 function foamTexture() {
   return canvasTex(
     256,
     256,
     (ctx, W, H) => {
       const r = rng(5);
-      ctx.fillStyle = '#5d6168';
+      ctx.fillStyle = '#c9ced3';
       ctx.fillRect(0, 0, W, H);
-      for (let i = 0; i < 2600; i++) {
-        ctx.fillStyle = r() < 0.5 ? `rgba(30,32,36,${0.25 + r() * 0.4})` : `rgba(150,155,162,${0.15 + r() * 0.3})`;
+      for (let i = 0; i < 3200; i++) {
+        ctx.fillStyle = r() < 0.55 ? `rgba(120,128,138,${0.12 + r() * 0.14})` : `rgba(245,247,249,${0.25 + r() * 0.3})`;
         ctx.beginPath();
-        ctx.arc(r() * W, r() * H, 0.6 + r() * 1.8, 0, Math.PI * 2);
+        ctx.arc(r() * W, r() * H, 0.5 + r() * 1.1, 0, Math.PI * 2);
         ctx.fill();
       }
     },
@@ -158,7 +158,7 @@ export function createTank() {
     foam: new THREE.MeshStandardMaterial({ name: 'Foam', map: foamTexture(), roughness: 0.95 }),
     bench: new THREE.MeshStandardMaterial({ name: 'Bench', map: benchTexture(), roughness: 0.62 }),
     floor: new THREE.MeshStandardMaterial({ name: 'TankFloor', map: floorTexture(), roughness: 0.7 }),
-    ball: new THREE.MeshPhysicalMaterial({ name: 'CorkBall', color: 0xf08c2e, roughness: 0.45, clearcoat: 0.3 }),
+    ball: new THREE.MeshPhysicalMaterial({ name: 'Cork', color: 0xf08c2e, roughness: 0.55, clearcoat: 0.2 }),
   };
 
   // ── the bench ──
@@ -339,7 +339,7 @@ export function createTank() {
   // the floating cork balls
   const balls = [0, 1].map((i) => {
     const b = new THREE.Mesh(new THREE.SphereGeometry(BALL_R, 32, 20), M.ball);
-    b.name = `Ball${i + 1}`;
+    b.name = `Cork${i + 1}`;
     b.castShadow = true;
     root.add(b);
     return b;

@@ -10,7 +10,7 @@ const AXIS = '#adb5bd';
  * host: the element to fill; t: i18n; sample(ball, wave, time) → displacement (m, real) of wave 0/1 at the ball,
  * or the sum when wave = 2; ref: the height drawn as the full half-row; window: seconds shown.
  */
-export function createGraph(host, { t, labels, rowLabels, sample, ref, window: span }) {
+export function createGraph(host, { t, labels, rowLabels, sample, ref, window: span, axes = null }) {
   const wrap = document.createElement('div');
   wrap.className = 'wi-graph';
   const canvas = document.createElement('canvas');
@@ -52,8 +52,20 @@ export function createGraph(host, { t, labels, rowLabels, sample, ref, window: s
     const labelW = Math.ceil(Math.max(...rowLabels.map((x) => ctx.measureText(x).width))) + 8;
     const gap = 10;
     const head = 18;
+    const roomy = axes && H >= 130; // a tall panel: the axis words too
+    const foot = roomy ? 18 : 0;
     const colW = (W - labelW - gap) / 2;
-    const rowH = (H - head) / 3;
+    const rowH = (H - head - foot) / 3;
+    if (roomy) {
+      ctx.font = `600 11.5px ${font}`;
+      ctx.fillStyle = '#5b6472';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(`${axes.y} ↕`, 0, 8);
+      ctx.fillStyle = '#c2255c'; // the chapter's colour for time
+      ctx.textAlign = 'right';
+      ctx.fillText(axes.t, W - 2, H - foot / 2);
+    }
     ctx.textBaseline = 'middle';
     // the row names
     ctx.font = `600 12px ${font}`;
