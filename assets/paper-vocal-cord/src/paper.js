@@ -7,7 +7,9 @@
 // the paper springs back and shuts it again.
 //
 // Real proportions: a 52 × 60 mm strip of writing paper folded in half (0.1 mm thick; drawn 0.3 mm so its
-// edge reads), flaps 14 mm tall, the cut drawn 0.9 mm wide so it reads. A faint ghost of each flap at its widest swing shows how far it moves (like motion blur).
+// edge reads), flaps 14 mm tall, the cut drawn 0.9 mm wide so it reads. While the paper vibrates, a faint
+// paper-coloured trail with a thin outline shows each flap at its widest swing (like motion blur), and the slot between
+// the two free edges shows as a dark gap that opens and shuts.
 // Procedural: an extruded outline per half (the notch the flap sits in), a rounded crease below the slit, and each
 // flap a thin slab bent as a cantilever every frame.
 import * as THREE from 'three';
@@ -15,7 +17,9 @@ import { bendShape } from './reading.js';
 
 export const SHEET = { W: 26, H: 60, T: 0.3, alpha: THREE.MathUtils.degToRad(40), h: 14, kerf: 0.9, gap: 0.45 };
 /** How far the free edge swings out at full opening, as a share of the flap's length. */
-const SWING = 0.4;
+const SWING = 0.6;
+/** At rest the two free edges stay a hair apart, like lips (a share of the full opening). */
+const LIPS = 0.04;
 const Y = new THREE.Vector3(0, 1, 0);
 
 function rng(seed) {
@@ -111,7 +115,8 @@ export function createPaper() {
     metalness: 0,
   });
   const edgeMat = new THREE.MeshStandardMaterial({ name: 'PaperEdge', color: '#e9e3d4', roughness: 0.95 });
-  const ghostMat = new THREE.MeshBasicMaterial({ color: '#6f7d8c', transparent: true, opacity: 0.22, depthWrite: false, side: THREE.DoubleSide });
+  const ghostMat = new THREE.MeshBasicMaterial({ color: '#fbf5e6', transparent: true, opacity: 0.3, depthWrite: false, side: THREE.DoubleSide });
+  const trailMat = new THREE.LineBasicMaterial({ color: '#7a6c55', transparent: true, opacity: 0.75, depthWrite: false });
 
   const halves = [1, -1].map((side) => {
     // the half's frame: s along u (crease → edge), y up, w = u × y through the paper
@@ -140,8 +145,17 @@ export function createPaper() {
     ghost.userData.noExport = true;
     ghost.renderOrder = 2;
     ghost.visible = false;
-    g.add(leaf, flap, ghost);
-    return { side, u, w, out, sign, g, leaf, flap, ghost, base };
+    // its outline (top edge, free edge, foot), on the flap's own bent surface
+    const trail = new THREE.Line(
+      new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Float32Array(51 * 3), 3)),
+      trailMat,
+    );
+    trail.name = 'FlapSwingEdge';
+    trail.userData.noExport = true;
+    trail.renderOrder = 3;
+    trail.visible = false;
+    g.add(leaf, flap, ghost, trail);
+    return { side, u, w, out, sign, g, leaf, flap, ghost, trail, base };
   });
 
   // the crease, rounded, below the slit
@@ -150,6 +164,20 @@ export function createPaper() {
   c.name = 'Crease';
   c.position.set(T * 0.25, -H / 2 + creaseLen / 2, 0);
   root.add(c);
+
+  // the slot: a dark gap between the two free edges, just behind them, that opens and shuts with the flaps
+  const slotGeo = new THREE.BufferGeometry();
+  slotGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(12), 3));
+  slotGeo.setIndex([0, 1, 2, 0, 2, 3]);
+  const slot = new THREE.Mesh(
+    slotGeo,
+    new THREE.MeshBasicMaterial({ name: 'Slot', color: '#22303b', transparent: true, opacity: 0.72, side: THREE.DoubleSide, depthWrite: false }),
+  );
+  slot.name = 'Slot';
+  slot.userData.noExport = true;
+  slot.renderOrder = 1;
+  root.add(slot);
+  const E = new THREE.Vector3();
 
   let L = 10;
   let open = 0;
@@ -178,8 +206,46 @@ export function createPaper() {
     geo.computeVertexNormals();
     geo.computeBoundingSphere();
   }
+  /** The outline of a flap bent to the opening k: along the top edge, down the free edge, back along the foot. */
+  function outline(hv, k) {
+    const A = SWING * L * k;
+    const a = hv.trail.geometry.attributes.position.array;
+    const top = SLOT_Y + h / 2;
+    const foot = SLOT_Y - h / 2;
+    const at = (i, sigma, y) => {
+      a[i * 3] = L - sigma * (L - gap) + (A * A * sigma) / (2.4 * L);
+      a[i * 3 + 1] = y;
+      a[i * 3 + 2] = hv.sign * (A * bendShape(sigma) + T / 2 + 0.05);
+    };
+    for (let i = 0; i <= 16; i++) at(i, i / 16, top);
+    for (let i = 0; i <= 16; i++) at(17 + i, 1, top - (i / 16) * h);
+    for (let i = 0; i <= 16; i++) at(34 + i, 1 - i / 16, foot);
+    hv.trail.geometry.attributes.position.needsUpdate = true;
+    hv.trail.geometry.computeBoundingSphere();
+  }
+
   function bendFlaps() {
     for (const hv of halves) bend(hv, hv.flap.geometry, open);
+    // the slot's corners: each free edge's top and foot (world = the paper's frame), pushed a little behind
+    root.updateWorldMatrix(true, true);
+    const a = slotGeo.attributes.position.array;
+    const A = SWING * L * open;
+    const corners = [
+      [halves[0], SLOT_Y + h / 2],
+      [halves[1], SLOT_Y + h / 2],
+      [halves[1], SLOT_Y - h / 2],
+      [halves[0], SLOT_Y - h / 2],
+    ];
+    corners.forEach(([hv, y], i) => {
+      E.set(gap + (A * A) / (2.4 * L), y, hv.sign * A).applyMatrix4(hv.g.matrix);
+      a[i * 3] = E.x + 0.35;
+      a[i * 3 + 1] = E.y;
+      a[i * 3 + 2] = E.z;
+    });
+    slotGeo.attributes.position.needsUpdate = true;
+    // darker the wider it opens: at rest only a thin shadow between the lips
+    slot.material.opacity = 0.72 * Math.min(1, open / 0.3);
+    slotGeo.computeBoundingSphere();
   }
 
   function setCut(len) {
@@ -190,12 +256,13 @@ export function createPaper() {
       hv.leaf.geometry?.dispose();
       hv.leaf.geometry = hv === halves[0] ? geo : geo.clone();
       bend(hv, hv.ghost.geometry, 1);
+      outline(hv, 1);
     }
     bendFlaps();
   }
 
   function setOpen(k) {
-    open = Math.max(0, Math.min(1.15, k));
+    open = LIPS + (1 - LIPS) * Math.max(0, Math.min(1.15, k));
     bendFlaps();
   }
 
@@ -224,10 +291,11 @@ export function createPaper() {
     return { point: p, normal: hv.out.clone(), along: hv.u.clone() };
   }
 
-  /** The faint ghosts at the widest swing (while the paper vibrates). */
+  /** The faint trails at the widest swing (while the paper vibrates). */
   function setGhost(a) {
-    ghostMat.opacity = 0.22 * a;
-    for (const hv of halves) hv.ghost.visible = a > 0.01;
+    ghostMat.opacity = 0.3 * a;
+    trailMat.opacity = 0.75 * a;
+    for (const hv of halves) hv.ghost.visible = hv.trail.visible = a > 0.01;
   }
 
   setCut(L);

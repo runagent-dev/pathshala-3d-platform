@@ -36,21 +36,27 @@ writes উপরে.
   drawn (writing paper is 0.1 mm). From the top edge a slit runs 14 mm down the crease with a short cut across at its
   foot, L mm into each half: each half has a flap 14 mm tall, hinged L mm back from the fold and free at the crease,
   where the two free edges meet like the two vocal cords. Each flap is a 16-piece slab bent every frame as a cantilever
-  (zero at the hinge), slightly shortened as it bends; while it vibrates a faint grey ghost shows it at its widest swing.
-  The cuts are drawn 0.9 mm wide so they read. A small black binder clip (19 mm, spring steel with rolled jaws and two
+  (zero at the hinge), slightly shortened as it bends; its free edge swings out up to 0.6·L (drawn bigger than a real
+  paper reed, so the motion reads). While it vibrates, a faint paper-coloured trail with a thin outline shows each flap
+  at its widest swing, and the slot between the two free edges shows as a dark gap that opens and shuts (darker the
+  wider it is). At rest the two free edges stay a hair apart, like lips. The cuts are drawn 0.9 mm wide so they read. A small black binder clip (19 mm, spring steel with rolled jaws and two
   chrome wire handles) holds the foot of the crease; it replaces the first version's fingers, which looked cartoonish.
-- **The view**: 58° from above, from behind the open back of the fold and 8° inside its near half, looking down into
-  the cut the way a doctor's mirror looks down on the real vocal cords: the far flap is seen face-on as a paper tongue,
-  the near one nearly edge-on beside it, and the sound spreads up and to the right of the tip. The camera frames the
-  cut, the green particle and the λ bracket (a list of points, `src/camera.js`), so the cut is large at every size;
-  the bottom of the strip and the clip run off the lower edge. Backdrop: a calm blue-grey to pale warm-stone gradient.
+- **The view** (0.3.0): 35° up, from straight behind the open back of the fold (2° to one side, so it is not quite
+  flat). The two halves are the walls of a V and at its tip the two flaps, the two "vocal cords", stand left and right
+  of the crease, parting with a dark slot between them, as the real vocal cords look from above. The breath arrow goes
+  down the middle of the V into the slot; the sound spreads up the picture beyond it. The camera frames the two flaps
+  at their widest swing, the green particle and the λ bracket's farthest reach (a list of points, `src/camera.js`); the
+  rest of the strip runs off the edges and the clip is hidden behind the crease. Flap pair, measured: 41 % of the 3D
+  width at 844 × 390 (227 of 557 px), 229 × 238 px at 390 × 700, 114 × 121 px at 390 × 520, about 60 % at 640 × 400,
+  800 × 500 and 1280 × 800. Backdrop: a calm blue-grey to pale warm-stone gradient.
 - **ফুঁ দাও** (the one action; also a tap on the paper, Space or Enter): one breath of 8 s (picture time). An outlined
-  blue arrow "ফুঁ" and pale streaks go down the middle of the fold; the streaks wait at the shut slot and rush through
-  when it opens. The flaps open and shut once a period (`opening = ½ − ½ cos ωt`), slowed 100 times. In front of the
+  blue arrow "ফুঁ" and pale streaks go down the middle of the fold into the slot; the streaks wait at the shut slot and
+  rush through when it opens. The flaps open and shut once a period (`opening = ½ − ½ cos ωt`), slowed 100 times. In front of the
   slot a level half-disc of air (in the upper part of the slot, so the flaps never hide it) shows the slice of the sound
   in two layers: a smooth surface coloured by how squeezed the air is (darker teal সংকোচন, lighter প্রসারণ), so the
   compressions are clear curved bands centred on the slot, and about 3 400 small particles over it, each swinging in
-  place along the way the sound goes, ξ = −a·sin ω(t − r/v), so they bunch in the dark bands. The wave front leaves the
+  place along the way the sound goes, ξ = −a·sin ω(t − r/v), so they bunch in the dark bands. The particles (and the
+  green one) show only where the wave is: air at rest is not drawn, so the idle sky stays clean. The wave front leaves the
   slot when the blowing starts and the tail leaves when it stops; a compression leaves when the flaps are most open.
   One green particle with a mark at its resting place shows it only swings. An orange bracket along a ray from the slot
   spans exactly one λ between two compression centres (it rides with the wave; drawn 0.01 of real; its label gives the
@@ -58,7 +64,8 @@ writes উপরে.
 - **The graph** (`src/graph.js`, only where the side panel has room: 800 × 500 and 1280 × 800): the air's pressure
   against the distance from the source, 0–4 m in real metres, live and in step with the 3D; সংকোচন over a peak,
   প্রসারণ over a trough, and λ between two peaks with its value. With one range for every cut, the long flaps' waves are
-  long and the short flaps' crowd together.
+  long and the short flaps' crowd together. Not at 844 × 390 or 640 × 400: there the side panel is full (action, result,
+  key and rule) and a graph squeezed under them would be too small to read; the λ label on the picture stays.
 - **The row of words** cuts the flaps long (14 mm), medium (10 mm) or short (7 mm). The camera widens a little for the
   long wave. The action's next suggestion (dotted word) walks medium → short → long.
 - **The honest model** (`src/reading.js`, unit-tested): each flap is a cantilever, f = (1.875²/2π)(t/L²)√(E/12ρ) with
@@ -73,9 +80,14 @@ writes উপরে.
   medium, receiver and particles swinging in place → short = high and তীক্ষ্ণ, long = low and মোটা, λ shorter → the
   book's sentence on men's and women's voices.
 - **Labels on the picture**: কাটা টুকরো, λ ≈ … m, বাতাসের একটি কণা.
-- **The test** (5 questions, choices shuffled, a note for each wrong choice): what vibrates (the flap label hidden);
-  what the green particle does; what a shorter cut does (then the short flaps are shown); why men's voices are deep
-  (the long flaps); what sound needs.
+- **The test** (5 questions, choices shuffled, a note for each wrong choice; 0.3.0 replaced two text-only questions
+  with two read off the scene): what vibrates (the flap label hidden); what the green particle does; what a shorter cut
+  does (then the short flaps are shown); what comes out of the slot when the flaps are open widest (a compression; the
+  λ bracket hidden); what distance the orange λ mark shows (two neighbouring compressions). The book's sentence on
+  men's and women's voices stays in the rule.
+- **Stills**: `set({ blow: true, animate: false })` moves the picture's clock to a moment that has the flaps open widest
+  1.6 s later (the exports and verify wait 1.5 s after their setup, the bridge call 0.1 s), so the poster and the
+  pictures show the vocal cords open.
 - **Bridge**: `get` → `{ cut, flapLength, frequency, wavelength, voice, blowing, opening, tried, next, mode }`;
   `set({ cut, blow, animate })` (`animate: false`: steady blowing, the air already full of the wave, until stopped);
   `reset`, `practice`, `capture`, `export-glb` (the paper as bent now and the clip, in mm → metres).
@@ -101,6 +113,16 @@ particles (one `Points` object; positions and colours of particles and bands upd
 8 textures (all canvas-made: paper, its bump, the backdrop, the dot). Ready in about 3.9 s in headless software
 rendering. An idle figure draws nothing: the ticker runs only while the flaps vibrate or the last wave is still crossing
 the picture. (First version: 60 calls, 19 000 triangles, 6 200 particles, ready in 3.4 s.)
+
+## 0.3.0: two vocal cords, flapping
+
+After the independent review of 0.2.0 ("the picture doesn't yet show two vocal cords flapping"): a symmetric view from
+behind the open fold shows both flaps as a pair; a bigger swing (0.6·L), a paper-coloured trail instead of grey fins,
+a dark slot between the free edges and lips a hair apart at rest; the breath arrow ends in the slot; air particles only
+where the wave is; the "ফুঁ" and other labels 14 px on phones held upright; the clip's steel lighter with a visible
+bevel (it is now mostly hidden behind the crease); two scene questions replace "why men's voices are deep" and "what
+sound needs"; wrong choices that were filler now name real mistakes; "ছোট টুকরো শক্ত" removed from a note (it
+contradicted the book's শক্ত remark below); the rule says why a short flap is fast ("দৈর্ঘ্য কম, তাই দ্রুত কাঁপে").
 
 ## 0.2.0: the redesign
 

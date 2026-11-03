@@ -24,7 +24,7 @@ import { SHEET, SLOT_Y, createPaper } from './paper.js';
 import { FAN, ORIGIN, createAir } from './air.js';
 import { createBuzz } from './sound.js';
 import { backdropTexture } from './setting.js';
-import { CUT_IDS, CUTS, SLOW, drawnWave, opening, shownFrequency, voiceOf, wavelength } from './reading.js';
+import { CUT_IDS, CUTS, SLOW, V_SOUND, drawnWave, opening, shownFrequency, voiceOf, wavelength } from './reading.js';
 
 export const DEFAULTS = {
   cut: 'mid',
@@ -47,13 +47,12 @@ const DOUBLE_TAP = 420; // ms
 const MARGIN = { top: 50, bottom: 12, side: 10 };
 const V = (x, y, z = 0) => new THREE.Vector3(x, y, z);
 /**
- * The view: 58° up, from behind the open back of the fold and 8° inside its near half, looking down into the cut the
- * way a doctor's mirror looks down on the real vocal cords: the folded paper is a V (its open back toward the lower
- * left, where the breath comes in) and its tip is the two flaps: the far one a paper tongue seen face-on, the near one
- * nearly edge-on beside it, opening and shutting at the crease. The sound spreads up and to the right of the tip (the
- * slot faces +x).
+ * The view: 35° up, from straight behind the open back of the fold (2° to the near side, so it is not quite flat):
+ * the two halves are the walls of a V and at its tip the two flaps, the two "vocal cords", stand left and right of
+ * the crease, opening and shutting with a dark slot between them. The breath goes down the middle of the V into the
+ * slot; the sound spreads up the picture beyond it (the slot faces +x).
  */
-const DIR = new THREE.Vector3().setFromSphericalCoords(1, THREE.MathUtils.degToRad(32), THREE.MathUtils.degToRad(-58));
+const DIR = new THREE.Vector3().setFromSphericalCoords(1, THREE.MathUtils.degToRad(55), THREE.MathUtils.degToRad(-88));
 /** The way the sound goes from the slot (the half-disc's middle), and the other way in its level plane. */
 const AXIS = V(1, 0, 0);
 const PLANE = V(0, 0, 1);
@@ -144,10 +143,10 @@ export function createApp(root, options = {}) {
   const lamR = boldArrow('WavelengthR', COLORS.lambda, 0.32);
   // the breath: an outlined arrow coming in through the open back of the fold, along its middle, toward the slot
   const blowArrow = boldArrow('Breath', COLORS.blow, 0.3);
-  const BLOW_Y = SHEET.H / 2 + 1;
-  /** The breath's arrow ends just before the flaps (it moves with the cut). */
-  const BLOW_LEN = 12;
-  const blowTo = () => V(-paper.length - 2.5, BLOW_Y, 0);
+  const BLOW_Y = SHEET.H / 2 - 4;
+  /** The breath's arrow runs down the middle of the V and ends in the slot, between the two flaps. */
+  const BLOW_LEN = 14;
+  const blowTo = () => V(-1, BLOW_Y, 0);
   const blowFrom = () => blowTo().addScaledVector(AXIS, -BLOW_LEN);
   scene.add(lamL.root, lamR.root, blowArrow.root);
 
@@ -246,8 +245,10 @@ export function createApp(root, options = {}) {
       lamL.hide();
       lamR.hide();
     }
-    air.bead.visible = s.show.bead;
-    air.mark.visible = s.show.bead;
+    // the green particle shows once the wave reaches it (before, the air is drawn only where the wave is)
+    const beadOn = s.show.bead && on(s.clock - air.followR / wave.speed) > 0.01;
+    air.bead.visible = beadOn;
+    air.mark.visible = beadOn;
     graph.draw(s.clock, wave, on, wavelength(freq()), N);
     stage.invalidate();
   }
@@ -270,7 +271,14 @@ export function createApp(root, options = {}) {
   function startBlow({ steady = false } = {}) {
     if (blowing()) return;
     s.blows = s.blows.filter((x) => s.clock < x.b + RAMP + FAN.r1 / wave.speed + 0.5).slice(-2);
-    // steady: as if blowing for a while already (the whole fan filled), for the book, the poster and the test
+    // steady: as if blowing for a while already (the whole fan filled), for the book, the poster and the test. The
+    // picture's clock is moved on to a moment that has the flaps open widest 1.6 s later: the exports and pictures
+    // wait 1.5 s after their setup, and the bridge call itself takes 0.1 s, so the stills catch the vocal cords open
+    // (the phase is arbitrary otherwise).
+    if (steady) {
+      const T = 1 / wave.fShow;
+      s.clock += (((0.5 * T - 1.6 - s.clock) % T) + T) % T;
+    }
     s.blows.push({ a: steady ? s.clock - 30 : s.clock, b: Number.POSITIVE_INFINITY });
     s.tried.add(s.cut);
     wasMoving = true;
@@ -465,17 +473,16 @@ export function createApp(root, options = {}) {
   /** The points the camera frames (mm). */
   function framePoints() {
     const pts = [];
-    // the cut: both flaps' free edges at their widest swing and shut, top and foot, and their hinges
+    // the cut: both flaps at their widest swing, top and foot of the free edges and of the hinges
     for (const side of [1, -1]) {
       const hv = paper.halves[side > 0 ? 0 : 1];
       for (const y of [SHEET.H / 2, SHEET.H / 2 - SHEET.h])
-        for (const s0 of [0, paper.length + 2]) {
+        for (const s0 of [0, paper.length]) {
           const f = paper.onFace(side, s0, y).point;
           pts.push(f, f.clone().addScaledVector(hv.out, s0 === 0 ? paper.maxSwing : 0));
         }
     }
-    // the tip of the breath's arrow, the slot's first rings of sound out past the green particle, the λ bracket
-    pts.push(blowTo().addScaledVector(AXIS, -3));
+    // the green particle and the far end of the λ bracket (the sound is never cut off at the top)
     pts.push(ORIGIN.clone().addScaledVector(AXIS, air.followR + 2.5));
     pts.push(ORIGIN.clone().addScaledVector(LAMBDA_DIR, LAMBDA_AT.r + 2 * wave.lambda + 1.5));
     return pts;
@@ -627,8 +634,8 @@ export function createApp(root, options = {}) {
     { kind: 'what', q: 'q_what', choices: ['c_what_flaps', 'c_what_fingers', 'c_what_breath', 'c_what_sheet'], why: 'why_what' },
     { kind: 'bead', q: 'q_bead', choices: ['c_bead_swing', 'c_bead_fly', 'c_bead_updown', 'c_bead_still'], why: 'why_bead' },
     { kind: 'short', q: 'q_short', choices: ['c_short_up', 'c_short_down', 'c_short_same', 'c_short_mixed'], why: 'why_short' },
-    { kind: 'men', q: 'q_men', choices: ['c_men_low', 'c_men_high', 'c_men_none', 'c_men_air'], why: 'why_men' },
-    { kind: 'need', q: 'q_need', choices: ['c_need_right', 'c_need_light', 'c_need_nore', 'c_need_parts'], why: 'why_need' },
+    { kind: 'widest', q: 'q_widest', choices: ['c_widest_comp', 'c_widest_rare', 'c_widest_fly', 'c_widest_both'], why: 'why_widest' },
+    { kind: 'lambda', q: 'q_lambda', choices: ['c_lambda_cc', 'c_lambda_cr', 'c_lambda_amp', 'c_lambda_flap'], why: 'why_lambda' },
   ];
   const mistake = (c) => c.replace(/^c_/, 'mis_');
   let learnSaved = null;
@@ -646,7 +653,7 @@ export function createApp(root, options = {}) {
     syncScene();
     refresh();
   }
-  const fVars = () => ({ fs: N(shownFrequency('short')), fm: N(shownFrequency('mid')), fl: N(shownFrequency('long')) });
+  const fVars = () => ({ fs: N(shownFrequency('short')), fm: N(shownFrequency('mid')), lm: N(wavelength(shownFrequency('mid'))), v: N(V_SOUND) });
 
   const quiz = createQuiz({
     ui,
@@ -688,7 +695,7 @@ export function createApp(root, options = {}) {
         if (q.kind === 'what') scene_('mid', { flap: false, lambda: false });
         else if (q.kind === 'bead') scene_('mid', { flap: false });
         else if (q.kind === 'short') scene_('mid', {});
-        else if (q.kind === 'men') scene_('long', {});
+        else if (q.kind === 'widest') scene_('mid', { lambda: false });
         else scene_('mid', {});
         await new Promise((r) => setTimeout(r, 0));
         if (!alive()) return null;
@@ -710,7 +717,6 @@ export function createApp(root, options = {}) {
         // the answer shown on the picture
         if (kind === 'what' || kind === 'bead') scene_('mid', {});
         else if (kind === 'short') scene_('short', {});
-        else if (kind === 'men') scene_('long', {});
         return t(item.why, fVars()) + (wrong && wrong !== item.choices[0] ? ` ${t(mistake(wrong))}` : '');
       },
       done() {

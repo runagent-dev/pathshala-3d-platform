@@ -58,6 +58,7 @@ body.bg-transparent { background: transparent; }
   .pv .pvc-q-options { gap: 6px; }
   .pv .pvc-q-text { font-size: 14px; }
   .pv .pvc-q-feedback { font-size: 12.5px; }
+  .pvc-anno-tag { font-size: 14px; }
 }
 /* a short phone held upright (390 × 520): smaller still */
 @media (max-aspect-ratio: 1/1) and (max-height: 600px) {
@@ -83,5 +84,5 @@ body.bg-transparent { background: transparent; }
   .pv .pvc-opt { font-size: 12.5px; height: 44px; }
   .pv .pvc-q-feedback { font-size: 12.5px; --pvc-q-feedback-min: 4lh; }
   .pv-key { font-size: 12px; }
-  .pvc-anno-tag { font-size: 12px; }
+  .pvc-anno-tag { font-size: 12.5px; }
 }

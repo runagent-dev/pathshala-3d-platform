@@ -152,8 +152,9 @@ export function createAir(axis = new THREE.Vector3(1, 0, 0), up = new THREE.Vect
   }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(rest.slice(), 3));
-  const colors = new Float32Array(n * 3);
-  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  // colour and opacity: the particles show only where the wave is (at rest they would read as dirt on the sky)
+  const colors = new Float32Array(n * 4);
+  geo.setAttribute('color', new THREE.BufferAttribute(colors, 4));
   const mid = ORIGIN.clone().addScaledVector(axis, FAN.r1 / 2);
   geo.boundingSphere = new THREE.Sphere(mid, FAN.r1);
   bandGeo.boundingSphere = new THREE.Sphere(mid.clone(), FAN.r1);
@@ -163,7 +164,8 @@ export function createAir(axis = new THREE.Vector3(1, 0, 0), up = new THREE.Vect
     sizeAttenuation: true,
     vertexColors: true,
     map: dot,
-    alphaTest: 0.35,
+    transparent: true,
+    depthWrite: false,
     toneMapped: false,
   });
   const points = new THREE.Points(geo, mat);
@@ -224,7 +226,7 @@ export function createAir(axis = new THREE.Vector3(1, 0, 0), up = new THREE.Vect
       const { squeeze } = airAt(r, t, wave, on, at);
       const env = on(t - r / wave.speed);
       const fall = fallOf(r);
-      shade(squeeze * Math.min(1, fall * 1.2), c);
+      shade(squeeze * Math.min(1, fall * 1.6), c);
       const a = 0.62 * env * smooth(FAN.r1, FAN.r1 * 0.72, r) * smooth(FAN.r0, FAN.r0 + 2.5, r);
       for (let i = 0; i <= NT; i++) {
         const k = (j * (NT + 1) + i) * 4;
@@ -247,9 +249,10 @@ export function createAir(axis = new THREE.Vector3(1, 0, 0), up = new THREE.Vect
       pos[i * 3 + 2] = rest[i * 3 + 2] + d * dirs[i * 3 + 2];
       // the particles stay a darker teal than the band under them, so they read on both shades
       shade(0.35 + 0.65 * squeeze * fall, c);
-      colors[i * 3] = c.r;
-      colors[i * 3 + 1] = c.g;
-      colors[i * 3 + 2] = c.b;
+      colors[i * 4] = c.r;
+      colors[i * 4 + 1] = c.g;
+      colors[i * 4 + 2] = c.b;
+      colors[i * 4 + 3] = Math.min(1, on(t - r / wave.speed) * 1.4);
     }
     geo.attributes.position.needsUpdate = true;
     geo.attributes.color.needsUpdate = true;

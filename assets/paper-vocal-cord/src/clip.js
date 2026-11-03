@@ -11,11 +11,11 @@ export function createClip({ bottom }) {
   root.name = 'BinderClip';
   const black = new THREE.MeshPhysicalMaterial({
     name: 'ClipSteel',
-    color: '#1c1e22',
-    roughness: 0.38,
-    metalness: 0.2,
-    clearcoat: 0.7,
-    clearcoatRoughness: 0.25,
+    color: '#2a2f37',
+    roughness: 0.32,
+    metalness: 0.35,
+    clearcoat: 1,
+    clearcoatRoughness: 0.15,
   });
   const chrome = new THREE.MeshStandardMaterial({ name: 'ClipWire', color: '#d9dde2', roughness: 0.18, metalness: 1 });
 
@@ -31,7 +31,7 @@ export function createClip({ bottom }) {
   s.lineTo(mouth + 0.35, lip - steel);
   s.closePath();
   const body = new THREE.Mesh(
-    new THREE.ExtrudeGeometry(s, { depth: width, bevelEnabled: true, bevelThickness: 0.15, bevelSize: 0.12, bevelSegments: 2, curveSegments: 1 }),
+    new THREE.ExtrudeGeometry(s, { depth: width, bevelEnabled: true, bevelThickness: 0.3, bevelSize: 0.25, bevelSegments: 3, curveSegments: 1 }),
     black,
   );
   // the profile is in the shape's x–y plane: turn it so its y is the world's z and the extrusion runs up (world y)
