@@ -458,6 +458,12 @@ export function createApp(root, options = {}) {
 
   // ── labels in the picture (the kit's annotations: each takes the first clear spot) ──
   const anno = createAnnotations({ stage, layer: ui.annoLayer, avoid: [ui.corner, ui.hint, () => action?.ringBox(), () => action?.box()] });
+  // Right after the frame changes size (a turned phone) the stage may still draw at the old size for a moment: the
+  // labels, placed for that size, would sit outside the new one, so they wait for the stage to catch up.
+  stage.onAfterRender(() => {
+    const c = stage.canvas;
+    ui.annoLayer.style.display = Math.abs(c.clientWidth - stage.width) > 1 || Math.abs(c.clientHeight - stage.height) > 1 ? 'none' : '';
+  });
   /** Add a label, or change it in place (no fade-in again) if it is there. */
   function label(id, opts) {
     if (anno.has(id)) anno.update(id, opts);
@@ -609,7 +615,7 @@ export function createApp(root, options = {}) {
   const V = (x, y, z = 0) => new THREE.Vector3(x, y, z);
   function viewDir() {
     const el = deg(ELEVATION + (s.view === '3d' ? 12 : 0));
-    const az = s.view === '3d' ? deg(32) : 0;
+    const az = deg(s.view === '3d' ? 40 : 24);
     return new THREE.Vector3(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el));
   }
   /** What a view must show: points, some with a box round them on the screen (px from the point). */
