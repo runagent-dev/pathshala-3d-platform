@@ -47,3 +47,9 @@ A solid grows in length, area and volume when heated, and the growth per degree 
 Draw calls ≈ 6 bodies (+6 edge sets) + 3 burners × 4 + bench, wall + 1 frame ≈ 30; a few hundred triangles besides
 the flames. No allocation per frame; the ticker returns false when the lower row is cold or the flames are still
 (`?motion=0`).
+
+## Polish pass (0.2.0)
+- The bodies are the page's চিত্র ৬.০৪ look (light blue with dark edges) instead of copper; the copper α stays in the
+  panel as "(তামার দণ্ড)", the book's worked example. A faint warm glow is the only extra on the heated bodies.
+- The last test question's answers are short (two columns), so the upright phone's panel is shorter and the 3D taller.
+- The upright phone hides the rule sentence (the formula and the three readings stay).

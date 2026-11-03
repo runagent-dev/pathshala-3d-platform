@@ -35,5 +35,6 @@ body.bg-transparent { background: transparent; }
   .pvc-q-text { font-size: 14.5px; }
   .pvc-q-feedback { font-size: 13.5px; }
   .pvc-opt { font-size: 14px; min-height: 36px; }
-  .pvc-rule { --pvc-rule-lines: 2; font-size: 13.5px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+  .pvc-rule { display: none; }
+  .pvc-rule-x { --pvc-rule-lines: 2; font-size: 13.5px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
 }
