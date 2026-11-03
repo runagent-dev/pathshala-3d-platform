@@ -125,3 +125,7 @@ Secondary actions are quiet icons. `assets/newtons-first-law/` shows it.
 41. The machine is shared and can be very loaded (load 50 on 12 cores): run browser tests with
     `PATHSHALA_TEST_WORKERS=1`, give screenshots generous timeouts (90–180 s), and re-run a step that timed out
     before you suspect the figure. Never run two verifies on the same test port.
+42. **Open in a view that reads as 3D** (owner, Nov 2026): a lab opens from a gentle three-quarter angle, about
+    20–30° to the side and 10–20° from above, like `efficiency`, never dead straight from the front or straight down,
+    which looks like a flat picture. Where a face must be read (a clock, a map, a printed scale, a chart), use a
+    milder 10–15° that still shows depth and thickness. This is the pose the "front" icon returns to.

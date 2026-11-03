@@ -58,6 +58,8 @@ These are checked where possible (`npm run check`, the browser tests); the rest 
 - One layout: on every landscape frame the panel sits **beside** the 3D, full height, with a tab to hide it; on a
   portrait frame it goes below, and a touch phone held upright is asked to turn sideways. The kit's shell does this with
   `buildStudentShell(root, t, { layout: 'side' })`; a figure never overrides it. Style the panel's content for a narrow column (about 280–400 px).
+- The 3D view opens from a gentle three-quarter angle that reads as 3D (like `efficiency`), never a flat straight-on
+  front or top view.
 - Only the main object(s) in the 3D view, big and clear, on a simple coloured setting: no decorative buildings,
   trees, crowds or extra props (they slow students' phones and distract). Few arrows, few colours.
 - Accessible: keyboard works (arrows move the part), buttons have labels, nothing relies on colour alone.
