@@ -33,7 +33,7 @@ export const STRINGS = {
     act_home: 'আবার শুরু থেকে',
 
     // the readings: both balloons, before → after
-    rd: 'দুটি বেলুনের আয়তন',
+    rd: 'দুটি বেলুনের আয়তন (মিলিলিটার)',
     rd_air: 'বাতাস ভরা',
     rd_water: 'পানি ভরা',
     rd_T: 'তাপমাত্রা',

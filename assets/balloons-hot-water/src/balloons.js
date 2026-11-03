@@ -28,10 +28,10 @@ export function createBalloons() {
   // the tank: five thin glass faces and its twelve edges in steel
   const glassMat = new THREE.MeshStandardMaterial({
     name: 'Glass',
-    color: '#cfe8f2',
+    color: '#c2e4e0',
     roughness: 0.05,
     transparent: true,
-    opacity: 0.12,
+    opacity: 0.17,
     side: THREE.DoubleSide,
     depthWrite: false,
   });
@@ -73,11 +73,38 @@ export function createBalloons() {
   const water = new THREE.Mesh(new THREE.BoxGeometry(G.W - 0.6, G.LEVEL, G.D - 0.6).translate(0, G.LEVEL / 2 + 0.3, 0), waterMat);
   water.name = 'Water';
   water.renderOrder = 4;
-  root.add(water, glass, frame);
+  // the water's surface: a brighter sheet with a thin meniscus line where it meets the glass
+  const surfaceMat = new THREE.MeshStandardMaterial({
+    name: 'WaterSurface',
+    color: '#e6f4fb',
+    roughness: 0.05,
+    metalness: 0.1,
+    transparent: true,
+    opacity: 0.38,
+    depthWrite: false,
+  });
+  const surface = new THREE.Mesh(new THREE.PlaneGeometry(G.W - 0.6, G.D - 0.6).rotateX(-Math.PI / 2).translate(0, G.LEVEL + 0.3, 0), surfaceMat);
+  surface.name = 'WaterSurface';
+  surface.renderOrder = 5;
+  const lineMat = new THREE.MeshBasicMaterial({ color: '#f4fbff', transparent: true, opacity: 0.8 });
+  const ly = G.LEVEL + 0.32;
+  const meniscus = new THREE.Mesh(
+    mergeGeometries([
+      new THREE.BoxGeometry(G.W - 0.5, 0.18, 0.16).translate(0, ly, Z - 0.3),
+      new THREE.BoxGeometry(G.W - 0.5, 0.18, 0.16).translate(0, ly, -Z + 0.3),
+      new THREE.BoxGeometry(0.16, 0.18, G.D - 0.5).translate(-T + 0.3, ly, 0),
+      new THREE.BoxGeometry(0.16, 0.18, G.D - 0.5).translate(T - 0.3, ly, 0),
+    ]),
+    lineMat,
+  );
+  meniscus.name = 'Meniscus';
+  meniscus.renderOrder = 6;
+  root.add(water, surface, meniscus, glass, frame);
 
   // a balloon: a sphere, a small knot under it and a string down to a weight
   const sphere = new THREE.SphereGeometry(1, 40, 28);
   const knotGeo = new THREE.ConeGeometry(0.55, 1.3, 14).translate(0, -0.65, 0);
+  const lipGeo = new THREE.TorusGeometry(0.5, 0.2, 8, 16).rotateX(Math.PI / 2);
   const stringGeo = new THREE.CylinderGeometry(0.06, 0.06, 1, 6).translate(0, -0.5, 0);
   const weightGeo = new THREE.CylinderGeometry(1.1, 1.4, 0.9, 16).translate(0, 0.75, 0);
   const stringMat = new THREE.MeshStandardMaterial({ color: '#2d3640', roughness: 0.7 });
@@ -100,8 +127,9 @@ export function createBalloons() {
     body.name = `${name}Body`;
     body.scale.set(1, 1.08, 1); // a balloon is a little taller than wide
     const knot = new THREE.Mesh(knotGeo, mat);
+    const lip = new THREE.Mesh(lipGeo, mat); // the rolled rim of the balloon's neck, where the string is tied
     const str = new THREE.Mesh(stringGeo, stringMat);
-    g.add(body, knot, str);
+    g.add(body, knot, lip, str);
     const weight = new THREE.Mesh(weightGeo, weightMat);
     weight.position.set(x, 0.3, 0);
     weight.castShadow = true;
@@ -117,6 +145,7 @@ export function createBalloons() {
         out.r = r;
         body.scale.set(r, r * 1.08, r);
         knot.position.y = -r * 1.08 * 0.96;
+        lip.position.y = knot.position.y - 1.25;
         str.position.y = knot.position.y - 1.3;
         str.scale.y = Math.max(0.1, G.CY + str.position.y - 1.2);
         out.top.set(x, G.CY + r * 1.08, 0);
