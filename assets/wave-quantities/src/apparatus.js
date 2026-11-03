@@ -1,7 +1,7 @@
 // The apparatus, in metres (the bench top is y = 0): a long teak lab bench; on it a mechanical wave driver at x = 0
 // (a powder-coated body with a speaker grille, a chrome drive shaft and a brass clamp holding the rope's end), fed by
 // a signal generator behind it (its display shows the frequency); the rope (a braided cord whose surface is rebuilt
-// every frame from y = a cos(kx − ωt)); a graph board behind the rope (0–3 m in tenths, ±0.1 m, the rest line) that is
+// every frame from y = a cos(kx − ωt)); a graph board behind the rope (0–2 m in tenths, ±0.1 m, the rest line) that is
 // the metre scale; at the far end two foam pads that soak up the wave (so it does not come back), a pulley clamped on
 // the bench's end and a slotted mass that keeps the rope taut. Procedural, no image files, modest in triangles.
 import * as THREE from 'three';
@@ -11,7 +11,7 @@ import { textMesh } from '@shared/student/materials.js';
 import { LENGTH } from './reading.js';
 
 export const Y0 = 0.3; // the rope's rest line above the bench top
-export const BOARD = { x0: -0.06, x1: LENGTH + 0.16, y0: Y0 - 0.25, y1: Y0 + 0.17, z: -0.07 };
+export const BOARD = { x0: -0.06, x1: LENGTH + 0.16, y0: Y0 - 0.305, y1: Y0 + 0.17, z: -0.07 };
 export const DAMP = { x0: LENGTH + 0.06, x1: LENGTH + 0.26 }; // the foam pads
 export const PULLEY = { x: LENGTH + 0.5, r: 0.035 };
 const BENCH = { x0: -0.75, x1: LENGTH + 0.42, z0: -0.5, z1: 0.32, t: 0.05 };
@@ -167,7 +167,7 @@ export function apparatusMaterials() {
     gridBold: new THREE.LineBasicMaterial({ color: '#7f9fbd' }),
     rest: new THREE.LineBasicMaterial({ color: '#33475b' }),
     bead: new THREE.MeshStandardMaterial({ color: '#2b8a3e', roughness: 0.35, emissive: '#0b3d17', emissiveIntensity: 0.4 }),
-    light: new THREE.MeshStandardMaterial({ map: braid('#2a2f37', '#4c5561', '#c9d1db', 3), roughness: 0.75 }),
+    light: new THREE.MeshStandardMaterial({ map: braid('#353c47', '#5a6472', '#e4e9ef', 3), roughness: 0.75 }),
     heavy: new THREE.MeshStandardMaterial({ map: braid('#7a5a30', '#a07a45', '#f0dcae', 5), roughness: 0.9 }),
   };
 }
@@ -260,12 +260,12 @@ function createBoard(m, N) {
   const numbers = new THREE.Group();
   numbers.name = 'ScaleNumbers';
   for (let i = 0; i <= LENGTH * 2; i++) {
-    const n = textMesh(N(i / 2), 0.034, { color: '#22303d', weight: 700 });
-    n.position.set(i / 2, sy - 0.052, zz + 0.001);
+    const n = textMesh(N(i / 2), 0.07, { color: '#1a2633', weight: 700 });
+    n.position.set(i / 2, sy - 0.08, zz + 0.001);
     numbers.add(n);
   }
-  const unit = textMesh('m', 0.03, { color: '#22303d', weight: 700 });
-  unit.position.set(LENGTH + 0.09, sy - 0.05, zz + 0.001);
+  const unit = textMesh('m', 0.06, { color: '#1a2633', weight: 700 });
+  unit.position.set(LENGTH + 0.1, sy - 0.08, zz + 0.001);
   numbers.add(unit);
   // the displacement marks at the right end
   for (const [v, label] of [
@@ -273,7 +273,7 @@ function createBoard(m, N) {
     [0, N(0)],
     [-0.1, `−${N(0.1)}`],
   ]) {
-    const n = textMesh(label, 0.026, { color: '#22303d', weight: 600, align: 'left' });
+    const n = textMesh(label, 0.045, { color: '#1a2633', weight: 700, align: 'left' });
     n.position.set(LENGTH + 0.02, Y0 + v, zz + 0.001);
     numbers.add(n);
   }

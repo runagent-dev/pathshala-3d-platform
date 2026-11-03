@@ -61,19 +61,32 @@ test('wave-quantities: a second tap mid-period does not skip it; play runs on', 
   expect(log.errors).toEqual([]);
 });
 
-test('wave-quantities: the test runs five questions and returns to learn', async ({ page }) => {
+test('wave-quantities: the test runs six questions; the right answers are marked right', async ({ page }) => {
   await page.setViewportSize({ width: 640, height: 400 });
   const log = await preparePage(page);
   const fig = await openFigure(page, 'wave-quantities');
   const frame = frameOf(page);
   await fig.call('practice');
-  for (let i = 0; i < 5; i++) {
+  // the answers that do not depend on the rope the question picks
+  const known = { 'দুই দোলনকাল': '১ m', 'কোন দুটি বিন্দুতে': 'A ও C', 'কম্পাঙ্ক ৫ Hz থেকে': 'λ অর্ধেক হবে, v একই থাকবে' };
+  let checked = 0;
+  for (let i = 0; i < 6; i++) {
     await fig.advance(1200);
     await expect(frame.locator('[data-q]')).toHaveCount(4);
-    await frame.locator('[data-q]').first().click();
-    await fig.advance(300);
+    const text = await frame.locator('.pvc-q-text').textContent();
+    const key = Object.keys(known).find((k) => text.includes(k));
+    if (key) {
+      await frame.locator('[data-q]', { hasText: new RegExp(`^${known[key].replace(/ /g, '\\s')}$`) }).click();
+      await fig.advance(300);
+      await expect(frame.locator('.pvc-q-feedback')).toHaveAttribute('data-tone', 'ok');
+      checked++;
+    } else {
+      await frame.locator('[data-q]').first().click();
+      await fig.advance(300);
+    }
     await frame.locator('[data-act="q-next"]').click();
   }
+  expect(checked).toBe(3);
   await fig.advance(500);
   await frame.locator('[data-mode="explore"]').click();
   await fig.advance(500);

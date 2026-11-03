@@ -1,17 +1,14 @@
-// Wave quantities (book pages 195–197, topic 7.2.3), student view. A wave driver at one end of a 3 m rope on a lab
+// Wave quantities (book pages 195–197, topic 7.2.3), student view. A wave driver at one end of a 2 m rope on a lab
 // bench makes a transverse wave, y = a cos(kx − ωt); a graph board behind the rope is the metre scale. The rope opens
 // still, like the book's চিত্র ৭.০৮ in 3D: λ (orange, crest to crest), a (green, rest line to crest) and a marked
 // particle (a green bead). The one action, "এক দোলনকাল চালাও", runs time for exactly one period T (shown slowed ten
-// times): the driver goes once up and down, the bead once round, a crimson clock counts t up to T, and a blue arrow
-// follows the first crest, which ends exactly one λ further on, where the faint copy of the start shape shows the
-// wave looks the same again. So v = λ/T = fλ. The row of words changes f (৫ / ১০ / ২.৫ Hz on the same rope: λ
-// changes, v stays 5 m/s) or the rope (a heavy rope at 5 Hz: v = 2.5 m/s, λ = 0.5 m). The panel draws the
-// displacement–distance and displacement–time graphs live, the result v = f × λ and the book's rule as it grows;
-// a five-question test reads a, λ, phase and v off the picture. Built on the shared kit.
+// times): the driver goes once up and down, the bead once round, and the crest that starts at the driver (a hollow
+// blue ring stays there) is followed by a blue dot and arrow until it stands exactly one λ on, over the end of the
+// orange λ mark. So v = λ/T = fλ. The row of words changes f (৫ / ১০ / ২.৫ Hz on the same rope: λ changes, v stays
+// 5 m/s) or the rope (a heavy rope at the same tension and 5 Hz: v = 2.5 m/s, λ = 0.5 m). The panel draws the
+// displacement–distance and displacement–time graphs live, the result v = f × λ and the book's rule as it grows; a
+// six-question test reads a, λ, the crest after 2T, phase and v off the picture. Built on the shared kit.
 import * as THREE from 'three';
-import { Line2 } from 'three/addons/lines/Line2.js';
-import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
-import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { createStage } from '@shared/stage.js';
 import { createTweener, ease } from '@shared/tween.js';
 import { createAudio } from '@shared/student/audio.js';
@@ -30,6 +27,7 @@ import {
   EXAMPLES,
   LENGTH,
   PHASE_EXAMPLE,
+  TRAVEL_EXAMPLE,
   PHASE_POINTS,
   ROPES,
   SLOW,
@@ -45,6 +43,7 @@ import {
   round,
   slope,
   speedChoices,
+  travelChoices,
   travelled,
 } from './reading.js';
 
@@ -63,15 +62,17 @@ export const DEFAULTS = {
 
 const TEXT = { a: '#237a35', lambda: '#c2410c', T: '#c2255c', f: '#862e9c', v: '#1864ab', ink: '#1d2733' };
 const DOUBLE_TAP = 400; // ms
-const MARGIN = { top: 50, bottom: 30, side: 10 };
+const MARGIN = { top: 46, bottom: 26, side: 6 };
 const V = (x, y, z = 0) => new THREE.Vector3(x, y, z);
-const DIR = V(0.4, 0.27, 1).normalize(); // a gentle three-quarter view from the front right, a little above
+// a mild three-quarter view (about 14° from the right, 11° from above): the board is a printed scale that must be
+// read, so the milder angle of lessons.md 42, which still shows the depth of the bench, the driver and the board
+const DIR = V(0.25, 0.2, 1).normalize();
 const UPV = V(0, 1, 0);
 const DOWNV = V(0, -1, 0);
 const RIGHTV = V(1, 0, 0);
 const LEFTV = V(-1, 0, 0);
-/** The box the camera frames: the generator, the driver, the rope and the board. */
-const FRAME_BOX = new THREE.Box3(V(-0.34, Y0 - 0.27, -0.08), V(LENGTH + 0.17, Y0 + 0.19, 0.04));
+/** The box the camera frames: the driver, the rope and the board with its scale (the generator may run off the edge). */
+const FRAME_BOX = new THREE.Box3(V(-0.1, Y0 - 0.3, -0.07), V(LENGTH + 0.15, Y0 + 0.18, 0.03));
 const BRACKET_Y = Y0 - A - 0.045; // the λ bracket, under the troughs
 const ARROW_Y = Y0 + A + 0.045; // the blue arrow, over the crests
 
@@ -88,7 +89,7 @@ export function createApp(root, options = {}) {
   const ui = buildStudentShell(root, t, {
     layout: 'side',
     learn: cleanSheet(t, {
-      examples: { label: 'examples', results: true, items: EXAMPLES.map((e) => ({ id: e.id, label: `ex_${e.id}` })) },
+      examples: { label: 'examples', results: true, items: EXAMPLES.map((e) => ({ id: e.id, label: e.rope === 'light' ? 'ex_f' : `ex_${e.id}` })) },
       quiet: [
         { act: 'play', label: 'act_play', icon: ICONS.play },
         { act: 'reset', label: 'act_reset', icon: ICONS.reset },
@@ -154,24 +155,30 @@ export function createApp(root, options = {}) {
   const app3d = createApparatus(mats, N);
   scene.add(app3d.root);
 
-  // the ghost: the rope's shape when the period began (thin, on the board side of the rope)
-  const GHOST_N = 160;
-  const ghostPts = new Float32Array((GHOST_N + 1) * 3);
-  const ghostGeo = new LineGeometry();
-  ghostGeo.setPositions(ghostPts);
-  const ghostMat = new LineMaterial({ color: '#7a8aa0', linewidth: 0.006, worldUnits: true, transparent: true, opacity: 0.85, depthWrite: false });
-  const ghost = new Line2(ghostGeo, ghostMat);
-  ghost.userData.noExport = true;
-  ghost.visible = false;
-  ghost.renderOrder = 5;
-  scene.add(ghost);
+  // the crest that is followed for one period: a hollow blue ring where it started (at the driver) and a solid blue
+  // dot on it as it moves, each in a white rim so they read on the rope and the board
+  const flat = (color) => new THREE.MeshBasicMaterial({ color, depthTest: false, transparent: true });
+  function marker(geo, rimGeo) {
+    const g = new THREE.Group();
+    const rim = new THREE.Mesh(rimGeo, flat('#ffffff'));
+    const core = new THREE.Mesh(geo, flat(COLORS.v));
+    rim.renderOrder = 32;
+    core.renderOrder = 33;
+    g.add(rim, core);
+    g.userData.noExport = true;
+    g.visible = false;
+    scene.add(g);
+    return g;
+  }
+  const startRing = marker(new THREE.TorusGeometry(0.024, 0.0045, 10, 40), new THREE.TorusGeometry(0.024, 0.008, 10, 40));
+  const crestDot = marker(new THREE.CircleGeometry(0.017, 32), new THREE.CircleGeometry(0.024, 32));
 
   // the marks: λ (an orange double arrow under the troughs with ticks up to the crests), a (green), the crest's
   // travel (blue)
   const lamL = boldArrow('LambdaLeft', COLORS.lambda, 0.0045);
   const lamR = boldArrow('LambdaRight', COLORS.lambda, 0.0045);
   const ampArrow = boldArrow('Amplitude', COLORS.a, 0.0045);
-  const goArrow = boldArrow('CrestTravel', COLORS.v, 0.006);
+  const goArrow = boldArrow('CrestTravel', COLORS.v, 0.008);
   const tickMat = new THREE.MeshBasicMaterial({ color: COLORS.lambda, transparent: true, opacity: 0.9, depthTest: false });
   const tickGeo = new THREE.CylinderGeometry(0.0022, 0.0022, 1, 6).translate(0, 0.5, 0);
   const ticks = [new THREE.Mesh(tickGeo, tickMat), new THREE.Mesh(tickGeo, tickMat)];
@@ -220,8 +227,9 @@ export function createApp(root, options = {}) {
     shown: null,
     measured: new Set(),
     userMovedCamera: false,
-    show: { marks: true, points: false, labels: true },
+    show: { marks: true, points: false, labels: true, start: false },
     token: 0,
+    revealed: false, // the test's answer is shown (the scale chips step aside)
   };
   let q = quantities(s.ex);
   const now = () => performance.now();
@@ -263,27 +271,20 @@ export function createApp(root, options = {}) {
       lamR.hide();
       for (const m of ticks) m.visible = false;
     }
-    const am = still && !s.run && s.show.marks ? ampMark(q, s.tau) : null;
+    const am = still && !s.run && !s.shown && s.show.marks ? ampMark(q, s.tau) : null;
     if (am) ampArrow.set(tmpB.set(am.x, Y0, 0.02), am.up ? UPV : DOWNV, A - 0.004);
     else ampArrow.hide();
-    // the crest's travel during and after one period
+    // the crest's travel during and after one period: start ring ○ at the driver, the crest ● one λ later at the end
     const r = s.run && !s.run.ff ? s.run : s.shown;
-    if (r && !s.playing) {
-      const d = Math.min(q.lambda, travelled(q, s.tau - r.from));
-      if (d > 0.004) goArrow.set(tmpA.set(0, ARROW_Y, 0.02), RIGHTV, d);
-      else goArrow.hide();
-    } else goArrow.hide();
-    // the ghost
-    ghost.visible = Boolean(r) && !s.playing;
-    if (ghost.visible) {
-      for (let i = 0; i <= GHOST_N; i++) {
-        const x = (i / GHOST_N) * LENGTH;
-        ghostPts[3 * i] = x;
-        ghostPts[3 * i + 1] = Y0 + displacement(q, x, r.from);
-        ghostPts[3 * i + 2] = -0.012;
-      }
-      ghostGeo.setPositions(ghostPts);
-    }
+    const follow = r && !s.playing;
+    const d = follow ? travelled(q, Math.min(s.tau, r.to) - r.from) : 0;
+    if (follow && d > 0.004) goArrow.set(tmpA.set(0, ARROW_Y, 0.02), RIGHTV, d);
+    else goArrow.hide();
+    startRing.visible = Boolean(follow) || s.show.start;
+    startRing.position.set(0, Y0 + A, 0.03);
+    crestDot.visible = Boolean(follow);
+    crestDot.position.set(d, Y0 + displacement(q, d, s.tau), 0.03);
+    for (const m of [startRing, crestDot]) m.quaternion.copy(camera.quaternion);
     // the quiz's points
     PHASE_POINTS.forEach((p, i) => {
       const m = pointMeshes[i];
@@ -425,8 +426,8 @@ export function createApp(root, options = {}) {
     const still = !s.playing && !s.run?.ff;
     want.set('f', {
       text: t('lbl_f', { f: fmt(q.f) }),
-      point: () => V(-0.36, 0.16, -0.12),
-      spots: [spot(-10, -26), spot(0, -30), spot(-20, 22)],
+      point: () => V(0.04, 0.06, 0.076),
+      spots: [spot(-8, 30), spot(26, 30), spot(-22, 0)],
       color: TEXT.f,
     });
     if (still && s.show.marks) {
@@ -438,7 +439,7 @@ export function createApp(root, options = {}) {
           spots: BELOW,
           color: TEXT.lambda,
         });
-      const am = !s.run ? ampMark(q, s.tau) : null;
+      const am = !s.run && !s.shown ? ampMark(q, s.tau) : null;
       if (am)
         want.set('a', {
           text: t('lbl_a', { v: fmt(A) }),
@@ -447,26 +448,29 @@ export function createApp(root, options = {}) {
           color: TEXT.a,
         });
     }
-    if (s.show.marks)
+    const r = s.run && !s.run.ff ? s.run : s.shown;
+    const following = Boolean(r) && !s.playing;
+    if (s.show.marks && !following)
       want.set('particle', {
         text: t('lbl_particle'),
         point: () => app3d.bead.position,
-        spots: [spot(0, 26), spot(0, -26), spot(24, 24), spot(24, -24), spot(-24, 26)],
+        spots: [spot(0, -26), spot(24, -24), spot(-24, -24), spot(0, 26)],
         color: TEXT.a,
         optional: true,
       });
-    const r = s.run && !s.run.ff ? s.run : s.shown;
-    if (r && !s.playing) {
-      const el = Math.min(q.T, s.tau - r.from);
+    if (following) {
+      const el = Math.min(r.to, s.tau) - r.from;
       const done = !s.run && s.shown;
-      want.set('time', {
-        text: done ? t('lbl_time_T', { t: fmt(q.T) }) : t('lbl_time', { t: fmt(el) }),
-        point: () => V(0, Y0 + A + 0.02, 0),
-        optional: true,
-        spots: [spot(-30, -14), spot(-14, -30), spot(-30, 14), spot(0, -34)],
-        color: TEXT.T,
-      });
-      const d = Math.min(q.lambda, travelled(q, el));
+      // the clock on the picture only where there is room (the result line always says t and T)
+      if (stage.width >= 700)
+        want.set('time', {
+          text: done ? t('lbl_time_T', { t: fmt(q.T) }) : t('lbl_time', { t: fmt(el) }),
+          point: () => V(0, Y0 + A + 0.02, 0),
+          optional: true,
+          spots: [spot(-30, -14), spot(-14, -30), spot(-30, 14), spot(0, -34)],
+          color: TEXT.T,
+        });
+      const d = travelled(q, el);
       if (d > 0.05)
         want.set('went', {
           text: t('lbl_went', { d: fmt(d) }),
@@ -482,15 +486,30 @@ export function createApp(root, options = {}) {
           point: () => pointMeshes[i].position,
           spots:
             p.id === 'D'
-              ? [spot(-12, 20), spot(-20, 0), ...SIDE]
+              ? [spot(-18, -4), spot(-16, 8), ...SIDE]
               : p.id === 'E'
-                ? [spot(12, 20), spot(20, 0), ...SIDE]
+                ? [spot(18, -4), spot(16, 8), ...SIDE]
                 : displacement(q, p.x, s.tau) >= 0
                   ? [spot(0, -18), ...SIDE]
                   : [spot(0, 18), ...SIDE],
           color: TEXT.ink,
         });
       });
+    // in the test: the board's numbers as big chips, so the scale reads on a phone
+    if (s.mode === 'quiz' && !s.revealed && s.show.scale !== false) {
+      for (let i = 0; i <= LENGTH * 2; i++)
+        want.set(`sx${i}`, {
+          text: `${N(i / 2)}${i === LENGTH * 2 ? '&nbsp;m' : ''}`,
+          point: () => V(i / 2, Y0 - 0.25, 0),
+          kind: 'scale',
+          color: TEXT.ink,
+        });
+      for (const [k, y, txt] of [
+        ['sy1', A, N(0.1)],
+        ['sy2', -A, `−${N(0.1)}`],
+      ])
+        want.set(k, { text: `${txt}${k === 'sy1' ? '&nbsp;m' : ''}`, point: () => V(LENGTH + 0.06, Y0 + y, 0), kind: 'scale', color: TEXT.ink });
+    }
     return want;
   }
   function syncLabels() {
@@ -502,7 +521,8 @@ export function createApp(root, options = {}) {
       }
     for (const [id, w] of want) {
       if (!labelState.has(id) || !anno.has(id)) {
-        anno.add(id, { text: w.text, point: w.point, kind: 'force', color: w.color, spots: w.spots, optional: w.optional, avoid: [ropeBoxes] });
+        if (w.kind === 'scale') anno.add(id, { text: w.text, point: w.point, kind: 'scale', color: w.color, dx: 0, dy: 0 });
+        else anno.add(id, { text: w.text, point: w.point, kind: 'force', color: w.color, spots: w.spots, optional: w.optional, avoid: [ropeBoxes] });
         labelState.set(id, w.text);
       } else if (labelState.get(id) !== w.text) {
         anno.update(id, { text: w.text, point: w.point, spots: w.spots });
@@ -551,6 +571,9 @@ export function createApp(root, options = {}) {
     syncUI();
   });
   controls.addEventListener('change', () => stage.invalidate());
+  stage.onBeforeRender(() => {
+    for (const m of [startRing, crestDot]) m.quaternion.copy(camera.quaternion);
+  });
   stage.onResize(() => {
     if (!s.userMovedCamera) place(viewPose());
     syncScene();
@@ -573,7 +596,7 @@ export function createApp(root, options = {}) {
     if (!r) return;
     s.tau = r.to;
     s.run = null;
-    s.shown = { from: r.from };
+    s.shown = { from: r.from, to: r.to };
     s.measured.add(s.ex);
     audio.success();
     syncScene();
@@ -633,7 +656,7 @@ export function createApp(root, options = {}) {
     s.token++;
     s.measured.clear();
     s.playing = false;
-    s.show = { marks: true, points: false, labels: true };
+    s.show = { marks: true, points: false, labels: true, start: false };
     chooseExample('f5');
     homeView(false);
   }
@@ -691,7 +714,7 @@ export function createApp(root, options = {}) {
       tau: round(s.tau, 4),
       playing: s.playing,
       running: Boolean(s.run),
-      travelled: s.shown ? round(q.lambda, 3) : s.run && !s.run.ff ? round(travelled(q, s.tau - s.run.from), 3) : 0,
+      travelled: s.shown ? round(travelled(q, s.shown.to - s.shown.from), 3) : s.run && !s.run.ff ? round(travelled(q, s.tau - s.run.from), 3) : 0,
       measured: EXAMPLES.map((e) => e.id).filter((id) => s.measured.has(id)),
       mode: s.mode,
     };
@@ -726,7 +749,8 @@ export function createApp(root, options = {}) {
   }
   const mVal = (x) => `${fmt(x, 3)}&nbsp;m`;
   const msVal = (x) => `${fmt(x, 3)}&nbsp;m/s`;
-  const KINDS = ['amp', 'lambda', 'phase', 'speed', 'double'];
+  const KINDS = ['amp', 'lambda', 'travel', 'phase', 'speed', 'double'];
+  let lambdaEx = 'f2';
   let learnSaved = null;
   let question = null;
   let picked = -1;
@@ -739,7 +763,7 @@ export function createApp(root, options = {}) {
     s.ex = ex;
     q = quantities(ex);
     s.tau = 0;
-    s.show = { marks: false, points: false, labels: true, ...show };
+    s.show = { marks: false, points: false, labels: true, start: false, ...show };
     s.userMovedCamera = false;
     syncUI();
     syncScene();
@@ -764,7 +788,7 @@ export function createApp(root, options = {}) {
       leave() {
         s.mode = 'explore';
         s.locked = false;
-        s.show = { marks: true, points: false, labels: true };
+        s.show = { marks: true, points: false, labels: true, start: false };
         s.measured = learnSaved?.measured ?? s.measured;
         chooseExample(learnSaved?.ex ?? 'f5');
         syncUI();
@@ -774,18 +798,24 @@ export function createApp(root, options = {}) {
       },
       async prepare(i, alive) {
         picked = -1;
+        s.revealed = false;
         const kind = KINDS[i % KINDS.length];
         const pick = (ids) => ids[Math.floor(Math.random() * ids.length)];
-        if (kind === 'amp') sceneFor(pick(['f5', 'f10']), {});
-        else if (kind === 'lambda') sceneFor(pick(['f2', 'f10', 'heavy']), {});
+        if (kind === 'amp') sceneFor(pick(['f5', 'f2']), {});
+        else if (kind === 'lambda') {
+          lambdaEx = pick(['f2', 'heavy']);
+          sceneFor(lambdaEx, {});
+        } else if (kind === 'travel') sceneFor(TRAVEL_EXAMPLE, { start: true });
         else if (kind === 'phase') sceneFor(PHASE_EXAMPLE, { points: true });
-        else if (kind === 'speed') sceneFor(pick(['f2', 'heavy']), {});
-        else sceneFor('f5', { marks: true });
+        else if (kind === 'speed')
+          sceneFor(lambdaEx === 'f2' ? 'heavy' : 'f2', {}); // never the rope whose λ was just shown
+        else sceneFor('f5', { marks: true, scale: false }); // a question on the idea: λ shown, no scale needed
         await flyTo(viewPose(), 0.6);
         if (!alive()) return null;
         question = { kind, ex: s.ex };
         if (kind === 'amp') return { text: t('q_amp'), ...choicesOf(ampChoices(q), kind, (c) => mVal(c.v)) };
         if (kind === 'lambda') return { text: t('q_lambda'), ...choicesOf(lambdaChoices(q), kind, (c) => mVal(c.v)) };
+        if (kind === 'travel') return { text: t('q_travel'), ...choicesOf(travelChoices(q), kind, (c) => mVal(c.v)) };
         if (kind === 'phase')
           return {
             text: t('q_phase'),
@@ -799,32 +829,43 @@ export function createApp(root, options = {}) {
         return {
           text: t('q_double', { f1: fmt(q.f), f2: fmt(q.f * 2) }),
           ...choicesOf(
-            ['right', 'lambda2', 'v2', 'both'].map((k) => ({ key: k })),
+            ['right', 'lambda2', 'v2', 'halfv'].map((k) => ({ key: k })),
             kind,
             (c) => t(`c_dbl_${c.key}`),
           ),
         };
       },
       reveal(qq, correct) {
+        s.revealed = true;
+        syncLabels();
         const k = question.kind;
         const wrongKey = correct ? null : qq.list?.[picked]?.key;
         const v = vars();
         const noteOf = (prefix, map = null) => (wrongKey && wrongKey !== 'right' ? ` ${t(map?.[wrongKey] ?? `${prefix}${wrongKey}`, v)}` : '');
         if (k === 'amp') {
-          s.show = { marks: true, points: false, labels: true };
+          s.show = { marks: true, points: false, labels: true, start: false };
           syncScene();
           refresh();
           return t('why_amp', v) + (wrongKey === 'half' ? ` ${t('mis_amp_half', { c: fmt(0.025, 3) })}` : noteOf('mis_amp_'));
         }
         if (k === 'lambda') {
-          s.show = { marks: true, points: false, labels: true };
+          s.show = { marks: true, points: false, labels: true, start: false };
           syncScene();
           refresh();
           return t('why_lambda', v) + noteOf('mis_lambda_');
         }
+        if (k === 'travel') {
+          // the answer on the picture: the crest two periods on, two λ from where it started
+          s.show = { marks: true, points: false, labels: true, start: true };
+          s.shown = { from: 0, to: 2 * q.T };
+          s.tau = 2 * q.T;
+          syncScene();
+          refresh();
+          return t('why_travel', { lambda: fmt(q.lambda), d: fmt(2 * q.lambda) }) + noteOf('mis_travel_');
+        }
         if (k === 'phase') return t('why_phase', { fig: '7.09' }) + (wrongKey && wrongKey !== 'AC' ? ` ${t(`mis_phase_${wrongKey}`)}` : '');
         if (k === 'speed') {
-          s.show = { marks: true, points: false, labels: true };
+          s.show = { marks: true, points: false, labels: true, start: false };
           syncScene();
           refresh();
           return t('why_speed', v) + noteOf('mis_speed_');
@@ -970,11 +1011,12 @@ export function createApp(root, options = {}) {
     },
     startPractice: () => quiz.start(),
     capture: (opts) => stage.capture(opts),
-    /** The apparatus as it stands (rope in its current shape), in metres. */
+    /** The apparatus as it stands (the rope in its current shape), without the bench, in metres. */
     exportRoot() {
       const g = new THREE.Group();
       g.name = 'WaveQuantities';
-      g.add(app3d.root.clone(true));
+      // the rope as it stands, the driver, the generator, the board and the far end; not the bench or the floor
+      for (const part of app3d.root.children) if (part.name !== 'Bench' && part.visible) g.add(part.clone(true));
       return g;
     },
   };

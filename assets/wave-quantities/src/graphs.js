@@ -1,5 +1,5 @@
 // The two graphs in the panel, as the book's চিত্র ৭.০৮ draws them side by side: the rope's বিচ্যুতি–দূরত্ব
-// (displacement–distance, the shape now, 0–3 m) with λ (orange) and a (green) marked and the marked particle (green
+// (displacement–distance, the shape now, 0–2 m) with λ (orange) and a (green) marked and the marked particle (green
 // dot); and that particle's বিচ্যুতি–সময় (displacement–time, 0–0.8 s) with T (crimson) marked and a dot at the
 // moment shown (during "one period" the part already run is drawn thick in crimson). Live, in sync with the 3D,
 // drawn on one canvas (crisp at the device's pixel ratio). Pure drawing: the app passes the state.
@@ -117,8 +117,9 @@ export function createGraphs(host, t) {
     const every = w / (xMax / xStep) < 22 ? 2 : 1;
     let i = 0;
     for (let v = xStep; v <= xMax + 1e-9; v += xStep, i++) if ((i + 1) % every === 0) ctx.fillText(N(+v.toFixed(2)), sx(v), y + h + 2);
+
     ctx.textAlign = 'left';
-    ctx.fillText(xLabel, x, y + h + 14);
+    if (xLabel) ctx.fillText(xLabel, x, y + h + 14);
     ctx.textBaseline = 'top';
     ctx.font = font(10.5, 700);
     ctx.fillStyle = '#33404d';
@@ -133,12 +134,19 @@ export function createGraphs(host, t) {
     ctx.clearRect(0, 0, W, H);
     const gap = 36;
     const left = 26;
-    const top = 36;
-    const bottom = 28;
+    // short graphs (phones) leave out the axis captions under the numbers; the y caption stays
+    const compact = H < 100;
+    const top = compact ? 32 : 36;
+    const bottom = compact ? 14 : 28;
     const pw = (W - left - gap - 8) / 2;
     const ph = Math.max(20, H - top - bottom);
     // ── displacement–distance ──
-    const g1 = frame(left, top, pw, ph, { xMax: LENGTH, xStep: 0.5, xLabel: t('g_x_axis'), title: t('g_y') });
+    const g1 = frame(left, top, pw, ph, {
+      xMax: LENGTH,
+      xStep: 0.5,
+      xLabel: compact ? '' : t('g_x_axis'),
+      title: compact ? t('g_x_short') : t('g_y'),
+    });
     ctx.save();
     ctx.beginPath();
     ctx.rect(left, top, pw, ph);
@@ -192,7 +200,7 @@ export function createGraphs(host, t) {
     }
     // ── displacement–time of the marked particle ──
     const ox = left + pw + gap;
-    const g2 = frame(ox, top, pw, ph, { xMax: WINDOW, xStep: 0.1, xLabel: t('g_t_axis'), title: t('g_y') });
+    const g2 = frame(ox, top, pw, ph, { xMax: WINDOW, xStep: 0.1, xLabel: compact ? '' : t('g_t_axis'), title: compact ? t('g_t_short') : t('g_y') });
     ctx.save();
     ctx.beginPath();
     ctx.rect(ox, top, pw, ph);

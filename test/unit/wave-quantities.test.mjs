@@ -96,6 +96,12 @@ describe('the marks', () => {
 });
 
 describe('the test', () => {
+  it('two periods move a crest two wavelengths, still on the board', () => {
+    const q = w.quantities(w.TRAVEL_EXAMPLE);
+    close(w.travelled(q, 2 * q.T), 2 * q.lambda);
+    assert.ok(2 * q.lambda <= w.LENGTH);
+    for (const c of w.travelChoices(q)) assert.ok(c.v <= w.LENGTH, `${c.key} on the board`);
+  });
   it('the phase points: A and C in phase, A and B opposite, D and E equal but not in phase', () => {
     const q = w.quantities(w.PHASE_EXAMPLE);
     const P = Object.fromEntries(w.PHASE_POINTS.map((p) => [p.id, p.x]));
@@ -112,6 +118,7 @@ describe('the test', () => {
         [w.lambdaChoices(q), q.lambda],
         [w.ampChoices(q), q.a],
         [w.speedChoices(q), q.v],
+        [w.travelChoices(q), 2 * q.lambda],
       ]) {
         assert.equal(list[0].key, 'right');
         close(list[0].v, right);

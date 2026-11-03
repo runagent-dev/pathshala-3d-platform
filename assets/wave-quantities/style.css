@@ -31,41 +31,70 @@ body.bg-transparent { background: transparent; }
 .wq .pvc-q-text { font-size: 15px; }
 .wq .pvc-q-feedback { font-size: 13.5px; }
 
-/* the side panel on a short landscape phone */
-@media (min-aspect-ratio: 1/1) and (max-height: 460px) {
+/* every side panel (landscape): the action's row is always two lines tall, whatever its words */
+@media (min-aspect-ratio: 1/1) {
   .wq .pvc-act { font-size: 15px; padding-right: 12px; gap: 8px; }
   .wq .pvc-act-row { --pvc-act-lines: 2; }
-  .wq .pvc-outcome { font-size: 13.5px; line-height: 1.4; --pvc-outcome-lines: 3; }
-  .wq .pvc-rule { font-size: 12.5px; line-height: 1.38; --pvc-rule-lines: 4; }
-  .wq-graph { height: 96px; }
-  .wq .pvc-q-text { font-size: 13.5px; }
-  .wq .pvc-opt { font-size: 12.5px; height: 42px; }
-  .wq .pvc-q-feedback { font-size: 12.5px; --pvc-q-feedback-min: 4lh; }
+  .wq .pvc-act .pvc-act-icon { display: none; }
+  .wq .pvc-act-row .pvc-quiet { min-width: 40px; width: 40px; height: 40px; padding: 0; }
+  .wq .pvc-outcome { font-size: 14px; line-height: 1.4; min-height: calc(2 * 1.4em); }
+  .wq .pvc-rule { font-size: 13px; line-height: 1.4; min-height: calc(3 * 1.4em); }
+  .wq-graph { height: 112px; }
+}
+/* the side panel on a short landscape phone (844×390, 640×400): everything fits without scrolling */
+@media (min-aspect-ratio: 1/1) and (max-height: 460px) {
+  .wq .pvc-panel { gap: 6px; padding-top: 8px; padding-bottom: 6px; }
+  .wq .pvc-examples button { min-height: 36px; padding: 1px 2px 2px; }
+  .wq .pvc-examples .pvc-ex-word { font-size: 14px; }
+  .wq .pvc-examples .pvc-ex-res { font-size: 11px; }
+  .wq .pvc-act { min-height: 44px; font-size: 14px; }
+  .wq .pvc-act-row { min-height: 46px; }
+  .wq .pvc-outcome { font-size: 12.5px; line-height: 1.36; min-height: calc(2 * 1.36em); }
+  .wq .pvc-rule { font-size: 12px; line-height: 1.36; min-height: calc(3 * 1.36em); }
+  .wq-graph { height: 82px; }
+  .wq .pvc-q-text { font-size: 13px; }
+  .wq .pvc-opt { font-size: 12.5px; height: 40px; }
+  .wq .pvc-q-feedback { font-size: 12px; --pvc-q-feedback-min: 4lh; }
   .pvc-anno-force { font-size: 12px; }
 }
-/* a phone held upright: the panel below, tight, so the 3D keeps more than half the height */
+/* a phone held upright: the panel below, tight, so the 3D keeps about 60 % of the height */
 @media (max-aspect-ratio: 1/1) {
-  .wq .pvc-learn { gap: 4px; }
-  .wq .pvc-panel { padding-top: 6px; gap: 6px; }
-  .wq-graph { height: 74px; }
-  .wq .pvc-outcome { min-height: calc(2 * 1.38em); }
-  .wq .pvc-rule { min-height: calc(3 * 1.36em); }
-  .wq .pvc-examples button { min-height: 36px; padding: 1px 3px 3px; }
+  .wq .pvc-learn { gap: 3px; }
+  .wq .pvc-panel { padding-top: 5px; padding-bottom: 6px; gap: 5px; }
+  .wq .pvc-tabs button { height: 34px; }
+  .wq .pvc-act-num { width: 30px; height: 30px; font-size: 16px; }
+  .wq-graph { height: 58px; }
+  .wq .pvc-examples button { min-height: 34px; padding: 1px 3px 2px; }
+  .wq .pvc-examples .pvc-ex-word { font-size: 14.5px; }
   .wq .pvc-examples[data-results] .pvc-ex-res { display: none; }
-  .wq .pvc-outcome { font-size: 13px; line-height: 1.38; }
-  .wq .pvc-rule { font-size: 12px; line-height: 1.36; }
-  .wq .pvc-q-options { gap: 6px; }
-  .wq .pvc-opt { height: 40px; font-size: 13px; }
-  .wq .pvc-q-text { font-size: 14px; }
-  .wq .pvc-q-feedback { font-size: 12.5px; }
+  .wq .pvc-act { min-height: 42px; font-size: 15px; }
+  .wq .pvc-act-row { min-height: 42px; }
+  .wq .pvc-act-row .pvc-quiet { width: 40px; min-width: 40px; height: 40px; }
+  .wq .pvc-outcome { font-size: 12.5px; line-height: 1.34; min-height: calc(2 * 1.34em); }
+  .wq .pvc-rule { font-size: 12px; line-height: 1.34; min-height: calc(2 * 1.34em); }
+  .wq .pvc-q-options { gap: 5px; }
+  .wq .pvc-opt { height: 38px; font-size: 13px; }
+  .wq .pvc-q-text { font-size: 13.5px; }
+  .wq .pvc-q-feedback { font-size: 12px; line-height: 1.3; --pvc-q-feedback-min: calc(3 * 1.3em); }
+  .wq .pvc-q-ask { gap: 5px; }
+  .wq .pvc-q-text { line-height: 1.35; }
 }
-/* the tightest (390×520): a shorter graph */
+/* the tightest (390×520): no graphs */
 @media (max-aspect-ratio: 1/1) and (max-height: 560px) {
   .wq-graph { display: none; }
 }
-/* the wide frame (1280×800): bigger graphs */
-@media (min-width: 1100px) and (min-height: 700px) {
-  .wq-graph { height: 210px; }
-  .wq .pvc-outcome { font-size: 16px; }
-  .wq .pvc-rule { font-size: 15px; }
+/* 800×500: taller graphs */
+@media (min-aspect-ratio: 1/1) and (min-height: 480px) {
+  .wq-graph { height: 150px; }
+  .wq .pvc-outcome { font-size: 15px; }
+  .wq .pvc-rule { font-size: 14px; }
 }
+/* the wide frame (1280×800): big graphs and type */
+@media (min-width: 1100px) and (min-height: 700px) {
+  .wq-graph { height: 280px; }
+  .wq .pvc-act { font-size: 16.5px; }
+  .wq .pvc-outcome { font-size: 17px; line-height: 1.5; }
+  .wq .pvc-rule { font-size: 16px; line-height: 1.5; }
+}
+.pvc-anno-scale { padding: 0 5px; border-radius: 5px; background: rgba(255, 255, 255, 0.95); box-shadow: 0 0 0 1.5px #1d2733; color: #1d2733; font-size: 14px; font-weight: 700; line-height: 1.45; white-space: nowrap; transition: none; }
+.pvc-anno-lines .k-scale { display: none; }

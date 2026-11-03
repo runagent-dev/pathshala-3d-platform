@@ -110,6 +110,17 @@ export function ampChoices(q) {
     { key: 'lambda', v: q.lambda },
   ]);
 }
+/** The test's "two periods" question: the 10 Hz wave (λ = 0.5 m), the crest at the driver now. */
+export const TRAVEL_EXAMPLE = 'f10';
+/** Choices for "where is the crest after 2T?": 2λ, then the usual mistakes. */
+export function travelChoices(q) {
+  return uniq([
+    { key: 'right', v: 2 * q.lambda },
+    { key: 'one', v: q.lambda }, // one period only
+    { key: 'half', v: q.lambda / 2 }, // crest to trough taken as λ
+    { key: 'four', v: 4 * q.lambda }, // doubled twice
+  ]);
+}
 /** Choices for "what is v?" from f on the generator and λ on the board. */
 export function speedChoices(q) {
   return uniq([
