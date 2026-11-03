@@ -34,7 +34,7 @@ export const DEFAULTS = {
 };
 
 const SECONDS = 7.5; // the whole run
-const FRONT = new THREE.Vector3(0, 0.34, 1).normalize();
+const FRONT = new THREE.Vector3(0.3, 0.36, 1).normalize();
 const SIDE_VIEW = new THREE.Vector3(0.5, 0.45, 1).normalize();
 
 const shuffle = (list) => {
