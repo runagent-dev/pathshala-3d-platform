@@ -262,8 +262,10 @@ export function createPrefixApp(root, userOptions = {}) {
     const vfov = THREE.MathUtils.degToRad(camera.fov);
     const tanH = Math.tan(vfov / 2) * camera.aspect;
     const D = 5 / tanH;
-    const p = THREE.MathUtils.degToRad(v.pitch);
-    camera.position.set(0, D * Math.sin(p), D * Math.cos(p));
+    // a gentle three-quarter view (turned 22° to the side, never lower than 16° above), so the objects show depth
+    const p = THREE.MathUtils.degToRad(Math.max(v.pitch, 16));
+    const yaw = THREE.MathUtils.degToRad(22);
+    camera.position.set(D * Math.cos(p) * Math.sin(yaw), D * Math.sin(p), D * Math.cos(p) * Math.cos(yaw));
     controls.target.set(0, 0, 0);
     camera.lookAt(0, 0, 0);
     camera.near = D * 0.02;
