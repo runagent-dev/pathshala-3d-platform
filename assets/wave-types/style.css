@@ -1,0 +1,90 @@
+/* Transverse and longitudinal waves: the page, the colours that carry meaning (the green particle and its swing
+   #2b8a3e, the wave's direction blue #1c6fd9, compressions/rarefactions teal #0c8599, as the chapter's sister figures),
+   the comparison under the rule, the labels on the picture and the test's answers. The rest of the panel is the kit's
+   clean sheet (../../shared/lib/student/student.css). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.wt { --c-g: #237a35; --c-b: #1864ab; --c-teal: #0b7285; }
+.wt .wt-g { color: var(--c-g); }
+.wt .wt-b { color: var(--c-b); }
+.wt .pvc-outcome { font-size: 15px; line-height: 1.45; }
+.wt .pvc-outcome > b:first-child { font-size: 1.12em; color: var(--ink); }
+.wt .pvc-rule { font-size: 14.5px; line-height: 1.45; }
+.wt .pvc-rule b { color: var(--ink); }
+.wt .pvc-examples .pvc-ex-res { font-size: 12.5px; }
+
+/* the comparison: one row per medium, its arrows (green: the particle, blue: the wave) and what it shows */
+.wt-cmp { display: grid; gap: 4px; padding-top: 8px; border-top: 1px solid var(--line); }
+.wt-cmp-head { font-size: 13px; font-weight: 600; color: #5b6472; }
+.wt-cmp-row { display: grid; grid-template-columns: 68px 1fr; align-items: center; gap: 8px; padding: 2px 6px 2px 2px; border-radius: 8px; opacity: 0.55; }
+.wt-cmp-row.on { opacity: 1; background: #f3f6fa; }
+.wt-cmp-row:not(.seen) svg { filter: grayscale(1); opacity: 0.6; }
+.wt-cmp-text { display: flex; flex-direction: column; font-size: 13.5px; line-height: 1.35; color: var(--ink); }
+.wt-cmp-kind { font-weight: 700; min-height: 1.35em; }
+.wt-cmp-key { display: flex; gap: 14px; font-size: 12px; color: #5b6472; padding-left: 4px; }
+.wt-cmp-key span::before { content: ''; display: inline-block; width: 14px; height: 4px; margin-right: 5px; vertical-align: middle; border-radius: 2px; }
+.wt-key-g::before { background: #2b8a3e; }
+.wt-key-b::before { background: #1c6fd9; }
+
+.wt-note { margin: 0; font-size: 12px; line-height: 1.3; color: #5b6472; min-height: 1.3em; }
+
+/* labels on the picture: the words in their colour on a white chip */
+.pvc-anno-force { --c: var(--ink); padding: 0 6px; border: 1.5px solid var(--c); border-radius: 5px; background: rgba(255, 255, 255, 0.96); color: var(--c); font-size: 13px; font-weight: 600; line-height: 1.5; white-space: nowrap; transition: none; }
+.pvc-anno-lines .k-force { stroke: rgba(255, 255, 255, 0.85); stroke-width: 1.5; }
+
+/* the test */
+.wt .pvc-opt { font-size: 13.5px; line-height: 1.2; padding: 0 4px; }
+.wt-opt { display: block; white-space: normal; text-align: center; }
+.wt .pvc-q-text { font-size: 15px; }
+.wt .pvc-q-feedback { font-size: 13.5px; }
+
+/* a phone held upright: the panel is below and short; the comparison waits for a wider panel */
+@container pvc (max-width: 420px) {
+  .wt .pvc-learn { gap: 6px; }
+  .wt .pvc-outcome { font-size: 14px; }
+  .wt .pvc-rule { font-size: 13.5px; }
+  .wt .pvc-q-options { gap: 6px; }
+  .wt .pvc-opt { height: 44px; font-size: 13px; }
+  .wt .pvc-q-text { font-size: 14px; }
+  .wt .pvc-q-feedback { font-size: 12.5px; }
+}
+@container pvc (max-width: 560px) and (max-height: 600px) {
+  .wt .pvc-outcome { font-size: 13.5px; line-height: 1.4; }
+  .wt .pvc-rule { font-size: 12.5px; line-height: 1.35; }
+  .wt .pvc-q-text { font-size: 13.5px; }
+  .wt .pvc-opt { font-size: 12.5px; }
+  .pvc-anno-force { font-size: 12px; }
+}
+/* short and wide (a phone held sideways): the panel is beside the scene */
+@container pvc (max-height: 460px) {
+  .wt .pvc-outcome { font-size: 13.5px; line-height: 1.4; --pvc-outcome-lines: 2; }
+  .wt .pvc-rule { font-size: 12.5px; line-height: 1.35; --pvc-rule-lines: 5; }
+  .wt .pvc-q-text { font-size: 13.5px; }
+  .wt .pvc-opt { font-size: 12.5px; height: 44px; }
+  .wt .pvc-q-feedback { font-size: 12.5px; --pvc-q-feedback-min: 4lh; }
+  .wt-cmp-text { font-size: 12.5px; }
+  .pvc-anno-force { font-size: 12px; }
+}
+/* the comparison only where there is room: beside the 3D on a frame at least 470 px tall */
+@media (max-aspect-ratio: 1/1), (max-width: 599px), (max-height: 470px) {
+  .wt-cmp { display: none; }
+}
+@media (max-aspect-ratio: 1/1), (max-width: 599px) {
+  .wt-note { display: none; }
+}
+/* a big screen: bigger type in the side panel */
+@media (min-width: 1100px) and (min-height: 700px) {
+  .wt .pvc-outcome { font-size: 17px; }
+  .wt .pvc-rule { font-size: 16px; line-height: 1.5; }
+  .wt-cmp { gap: 8px; padding-top: 12px; }
+  .wt-cmp-head { font-size: 14.5px; }
+  .wt-cmp-text { font-size: 15px; }
+  .wt-cmp-key { font-size: 13.5px; }
+  .wt-note { font-size: 13.5px; }
+  .wt .pvc-q-text { font-size: 16.5px; }
+  .wt .pvc-opt { font-size: 15px; }
+  .wt .pvc-q-feedback { font-size: 15px; }
+}
+.wt-cmp-row svg { display: block; width: 68px; height: 42px; }

@@ -1,0 +1,532 @@
+// The two media and what drives them, in metres (the bench's top is y = 0; the medium runs along x from X0, the driven
+// end, to X0 + L, the far post). Procedural three.js, every moving shape rebuilt in place each frame into reused
+// buffers (no allocations per frame):
+// - the rope: a 22 mm three-strand manila rope (a twisted-fibre texture and bump), stretched 0.3 m above the bench,
+//   held by the wave driver's clamp at one end and a jaw clamp on a retort stand at the other; one green band marks
+//   one particle of it;
+// - the spring: a long steel helical spring (72 coils of 5.6 mm wire, 10 cm across) lying on the bench, its first
+//   coil fixed to the driver's round plate, its far end bent into a crossover loop over the stand's steel peg; one
+//   coil is painted green;
+// - the wave driver: a mechanical vibrator (a charcoal case with a grille, a knob and rubber feet; a steel drive rod
+//   that slides in and out of a bronze bush), turned so its rod moves up and down (rope) or along the spring;
+// - the stand: a cast-iron base, a chrome rod, a boss head and an arm that ends in the jaw (rope) or the peg (spring).
+import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { WAVE, amplitude, displacement, spacing } from './reading.js';
+import { canvasTex, rng } from './setting.js';
+
+export const X0 = -0.9;
+export const ROPE_Y = 0.3;
+export const ROPE_R = 0.014;
+export const SPRING = { R: 0.05, wire: 0.0028, coils: 72 };
+export const SPRING_Y = SPRING.R + SPRING.wire;
+export const COLORS = { mark: '#2b8a3e', markText: '#237a35', wave: '#1c6fd9', waveText: '#1864ab', teal: '#0c8599', tealText: '#0b7285' };
+
+/** A tube along n points with `radial` sides, its vertices rewritten in place by update(points, ref). */
+function makeTube(n, radial, radius, { alongRepeat = 1 } = {}) {
+  const verts = n * (radial + 1);
+  const pos = new Float32Array(verts * 3);
+  const nor = new Float32Array(verts * 3);
+  const uv = new Float32Array(verts * 2);
+  const idx = new Uint32Array((n - 1) * radial * 6);
+  let q = 0;
+  for (let i = 0; i < n - 1; i++)
+    for (let j = 0; j < radial; j++) {
+      const a = i * (radial + 1) + j;
+      const b = a + radial + 1;
+      idx[q++] = a;
+      idx[q++] = b;
+      idx[q++] = a + 1;
+      idx[q++] = b;
+      idx[q++] = b + 1;
+      idx[q++] = a + 1;
+    }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3).setUsage(THREE.DynamicDrawUsage));
+  geo.setAttribute('normal', new THREE.BufferAttribute(nor, 3).setUsage(THREE.DynamicDrawUsage));
+  geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  geo.setIndex(new THREE.BufferAttribute(idx, 1));
+  const cosJ = new Float32Array(radial + 1);
+  const sinJ = new Float32Array(radial + 1);
+  for (let j = 0; j <= radial; j++) {
+    cosJ[j] = Math.cos((j / radial) * Math.PI * 2);
+    sinJ[j] = Math.sin((j / radial) * Math.PI * 2);
+  }
+  /**
+   * P: Float32Array of n centre points (x, y, z); R: Float32Array of n reference directions (roughly at right angles
+   * to the tube); arc: Float32Array of n arc lengths (for the texture along the tube).
+   */
+  function update(P, R, arc) {
+    for (let i = 0; i < n; i++) {
+      const i0 = Math.max(0, i - 1) * 3;
+      const i1 = Math.min(n - 1, i + 1) * 3;
+      let tx = P[i1] - P[i0];
+      let ty = P[i1 + 1] - P[i0 + 1];
+      let tz = P[i1 + 2] - P[i0 + 2];
+      const tl = Math.hypot(tx, ty, tz) || 1;
+      tx /= tl;
+      ty /= tl;
+      tz /= tl;
+      // N = ref without its part along T; B = T × N
+      let nx = R[i * 3];
+      let ny = R[i * 3 + 1];
+      let nz = R[i * 3 + 2];
+      const d = nx * tx + ny * ty + nz * tz;
+      nx -= d * tx;
+      ny -= d * ty;
+      nz -= d * tz;
+      const nl = Math.hypot(nx, ny, nz) || 1;
+      nx /= nl;
+      ny /= nl;
+      nz /= nl;
+      const bx = ty * nz - tz * ny;
+      const by = tz * nx - tx * nz;
+      const bz = tx * ny - ty * nx;
+      const cx = P[i * 3];
+      const cy = P[i * 3 + 1];
+      const cz = P[i * 3 + 2];
+      for (let j = 0; j <= radial; j++) {
+        const ox = cosJ[j] * nx + sinJ[j] * bx;
+        const oy = cosJ[j] * ny + sinJ[j] * by;
+        const oz = cosJ[j] * nz + sinJ[j] * bz;
+        const v = (i * (radial + 1) + j) * 3;
+        pos[v] = cx + radius * ox;
+        pos[v + 1] = cy + radius * oy;
+        pos[v + 2] = cz + radius * oz;
+        nor[v] = ox;
+        nor[v + 1] = oy;
+        nor[v + 2] = oz;
+        const u = (i * (radial + 1) + j) * 2;
+        uv[u] = arc[i] * alongRepeat;
+        uv[u + 1] = j / radial;
+      }
+    }
+    geo.attributes.position.needsUpdate = true;
+    geo.attributes.normal.needsUpdate = true;
+    geo.attributes.uv.needsUpdate = true;
+    geo.computeBoundingSphere();
+  }
+  return { geo, update, radial };
+}
+
+/** Three twisted strands of manila: stripes along (x) and round (y) that wrap both ways (one lay per tile). */
+function ropeTextures() {
+  const W = 128;
+  const H = 128;
+  const r = rng(3);
+  const fibres = Array.from({ length: 220 }, () => [r(), r(), r()]);
+  const draw = (bump) => (ctx) => {
+    const img = ctx.createImageData(W, H);
+    for (let y = 0; y < H; y++)
+      for (let x = 0; x < W; x++) {
+        const ph = (3 * (y / H - x / W) + 3) % 1; // where we are across a strand (0 … 1)
+        const s = Math.sin(Math.PI * ph); // rounded strand: bright in its middle, dark in the grooves
+        const fib = 0.5 + 0.5 * Math.sin((x / W) * 2 * Math.PI * 9 + (y / H) * 2 * Math.PI * 21);
+        const k = bump ? 255 * (0.15 + 0.8 * s ** 0.7 + 0.05 * fib) : 0;
+        const o = (y * W + x) * 4;
+        if (bump) {
+          img.data[o] = img.data[o + 1] = img.data[o + 2] = Math.min(255, k);
+        } else {
+          const l = 0.42 + 0.5 * s ** 0.6 + 0.08 * fib;
+          img.data[o] = 214 * l;
+          img.data[o + 1] = 172 * l;
+          img.data[o + 2] = 108 * l;
+        }
+        img.data[o + 3] = 255;
+      }
+    ctx.putImageData(img, 0, 0);
+    if (!bump) {
+      // a few darker loose fibres
+      ctx.strokeStyle = 'rgba(90,60,25,0.35)';
+      ctx.lineWidth = 0.7;
+      for (const [a, b, c] of fibres) {
+        ctx.beginPath();
+        ctx.moveTo(a * W, b * H);
+        ctx.lineTo(a * W + 6 + c * 6, b * H - 6 - c * 6);
+        ctx.stroke();
+      }
+    }
+  };
+  const map = canvasTex(W, H, draw(false), { repeat: [1, 1] });
+  const bump = canvasTex(W, H, draw(true), { repeat: [1, 1], color: false });
+  return { map, bump };
+}
+
+/** The materials the media share. */
+export function mediumMaterials() {
+  const rope = ropeTextures();
+  return {
+    rope: new THREE.MeshStandardMaterial({ name: 'Manila', map: rope.map, bumpMap: rope.bump, bumpScale: 2.2, roughness: 0.92, metalness: 0 }),
+    steel: new THREE.MeshStandardMaterial({ name: 'SpringSteel', color: '#c9ced6', metalness: 0.95, roughness: 0.3 }),
+    green: new THREE.MeshStandardMaterial({ name: 'MarkGreen', color: COLORS.mark, roughness: 0.45, metalness: 0.1 }),
+    chrome: new THREE.MeshStandardMaterial({ name: 'Chrome', color: '#eef1f5', metalness: 1, roughness: 0.14 }),
+    case: new THREE.MeshStandardMaterial({ name: 'DriverCase', color: '#2f3440', roughness: 0.55, metalness: 0.25 }),
+    grille: new THREE.MeshStandardMaterial({ name: 'Grille', color: '#16191f', roughness: 0.8, metalness: 0.3 }),
+    rubber: new THREE.MeshStandardMaterial({ name: 'Rubber', color: '#141414', roughness: 0.95 }),
+    bronze: new THREE.MeshStandardMaterial({ name: 'Bronze', color: '#b08a4a', roughness: 0.32, metalness: 1 }),
+    iron: new THREE.MeshStandardMaterial({ name: 'CastIron', color: '#2e3a4f', roughness: 0.6, metalness: 0.4 }),
+    plate: new THREE.MeshStandardMaterial({ name: 'Plate', color: '#dfe3e8', roughness: 0.35, metalness: 0.9 }),
+    label: new THREE.MeshStandardMaterial({ name: 'Badge', color: '#c9a227', roughness: 0.35, metalness: 0.8 }),
+  };
+}
+
+// ── the rope ──────────────────────────────────────────────────────────────────
+export function createRope(mats) {
+  const N = 260;
+  const tube = makeTube(N, 12, ROPE_R, { alongRepeat: 1 / 0.028 }); // one lay every 28 mm
+  const P = new Float32Array(N * 3);
+  const R = new Float32Array(N * 3);
+  const arc = new Float32Array(N);
+  for (let i = 0; i < N; i++) R[i * 3 + 2] = 1; // the rope moves in the x–y plane: z is always across it
+  const mesh = new THREE.Mesh(tube.geo, mats.rope);
+  mesh.name = 'Rope';
+  mesh.castShadow = true;
+  mesh.frustumCulled = false;
+  // the green band round one particle
+  const band = new THREE.Mesh(new THREE.CylinderGeometry(ROPE_R * 1.4, ROPE_R * 1.4, 0.04, 24), mats.green);
+  band.name = 'MarkedParticle';
+  band.castShadow = true;
+  const root = new THREE.Group();
+  root.name = 'RopeMedium';
+  root.add(mesh, band);
+  const UPV = new THREE.Vector3(0, 1, 0);
+  const T = new THREE.Vector3();
+  const a = amplitude('rope');
+  /** The particle's place now (world). */
+  const at = (x, t, out) => out.set(X0 + x, ROPE_Y + displacement(x, t, a), 0);
+  function update(t) {
+    let s = 0;
+    for (let i = 0; i < N; i++) {
+      const x = (i / (N - 1)) * WAVE.L;
+      P[i * 3] = X0 + x;
+      P[i * 3 + 1] = ROPE_Y + displacement(x, t, a);
+      P[i * 3 + 2] = 0;
+      if (i) s += Math.hypot(P[i * 3] - P[i * 3 - 3], P[i * 3 + 1] - P[i * 3 - 2]);
+      arc[i] = s;
+    }
+    tube.update(P, R, arc);
+    const xm = WAVE.marked;
+    band.position.set(X0 + xm, ROPE_Y + displacement(xm, t, a), 0);
+    const h = 1e-3;
+    T.set(2 * h, displacement(xm + h, t, a) - displacement(xm - h, t, a), 0).normalize();
+    band.quaternion.setFromUnitVectors(UPV, T);
+  }
+  return { root, mesh, band, update, at };
+}
+
+// ── the spring ────────────────────────────────────────────────────────────────
+export function createSpring(mats) {
+  const { R: RAD, coils } = SPRING;
+  const PER = 28; // points per coil
+  const HELIX = coils * PER + 1;
+  const LOOP = 44; // the crossover loop at the far end
+  const N = HELIX + LOOP;
+  const tube = makeTube(N, 8, SPRING.wire);
+  const P = new Float32Array(N * 3);
+  const Rf = new Float32Array(N * 3);
+  const arc = new Float32Array(N);
+  // the far end's loop, fixed: from the last coil's top a quarter curve to the axis, then a loop in the x–y plane
+  const loopR = RAD * 0.82;
+  const loopCx = X0 + WAVE.L + RAD * 0.35 + loopR;
+  for (let i = 0; i < LOOP; i++) {
+    const k = (i + 1) / LOOP;
+    let x;
+    let y;
+    if (k < 0.25) {
+      const q = k / 0.25; // the crossover: from the top of the last coil down to the loop's left side
+      x = X0 + WAVE.L + RAD * 0.35 * Math.sin((q * Math.PI) / 2);
+      y = SPRING_Y + RAD * Math.cos((q * Math.PI) / 2);
+    } else {
+      const ph = Math.PI + ((k - 0.25) / 0.75) * (Math.PI * 2 - 0.35); // round the loop, starting at its left side
+      x = loopCx + loopR * Math.cos(ph);
+      y = SPRING_Y - loopR * Math.sin(ph);
+    }
+    const o = (HELIX + i) * 3;
+    P[o] = x;
+    P[o + 1] = y;
+    P[o + 2] = 0;
+    Rf[o + 2] = 1;
+  }
+  const mesh = new THREE.Mesh(tube.geo, [mats.steel, mats.green]);
+  mesh.name = 'Spring';
+  mesh.castShadow = true;
+  mesh.frustumCulled = false;
+  // the green coil: the one whose rest place is nearest the marked x
+  const pitch = WAVE.L / coils;
+  const mc = Math.round(WAVE.marked / pitch - 0.5);
+  const markedX = (mc + 0.5) * pitch; // its middle, at rest
+  const quad = tube.radial * 6;
+  const a0 = mc * PER * quad;
+  const a1 = (mc + 1) * PER * quad;
+  const all = (N - 1) * quad;
+  tube.geo.addGroup(0, a0, 0);
+  tube.geo.addGroup(a0, a1 - a0, 1);
+  tube.geo.addGroup(a1, all - a1, 0);
+  // a green tag tied to the top of the green coil (as in a class demonstration), so it reads from afar
+  const tag = new THREE.Mesh(new THREE.BoxGeometry(0.006, 0.034, 0.03).translate(0, 0.017, 0), mats.green);
+  tag.name = 'MarkedTag';
+  tag.castShadow = true;
+  const root = new THREE.Group();
+  root.name = 'SpringMedium';
+  root.add(mesh, tag);
+  const a = amplitude('spring');
+  function update(t) {
+    let s = 0;
+    for (let i = 0; i < HELIX; i++) {
+      const u = i / (HELIX - 1);
+      const x = u * WAVE.L;
+      const th = u * coils * Math.PI * 2;
+      const c = Math.cos(th);
+      const sn = Math.sin(th);
+      P[i * 3] = X0 + x + displacement(x, t, a);
+      P[i * 3 + 1] = SPRING_Y + RAD * c;
+      P[i * 3 + 2] = RAD * sn;
+      Rf[i * 3] = 0; // the radial direction: square to both the axis and the wire's way round
+      Rf[i * 3 + 1] = c;
+      Rf[i * 3 + 2] = sn;
+    }
+    for (let i = 1; i < N; i++) {
+      s += Math.hypot(P[i * 3] - P[i * 3 - 3], P[i * 3 + 1] - P[i * 3 - 2], P[i * 3 + 2] - P[i * 3 - 1]);
+      arc[i] = s;
+    }
+    tube.update(P, Rf, arc);
+    tag.position.set(X0 + markedX + displacement(markedX, t, a), SPRING_Y + RAD + SPRING.wire * 0.5, 0);
+  }
+  /** The marked coil's middle now (world), on its top. */
+  const at = (x, t, out) => out.set(X0 + x + displacement(x, t, a), SPRING_Y, 0);
+  return { root, mesh, update, at, markedX, loop: { x: loopCx, y: SPRING_Y }, a };
+}
+
+// ── the bands on the bench under the spring: darker teal where crowded (সংকোচন), lighter where spread (প্রসারণ) ──
+export function createDensityStrip() {
+  const W = 256;
+  const data = new Uint8Array(W * 4);
+  const tex = new THREE.DataTexture(data, W, 1);
+  tex.magFilter = THREE.LinearFilter;
+  tex.minFilter = THREE.LinearFilter;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const mesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(WAVE.L, SPRING.R * 2.9).rotateX(-Math.PI / 2),
+    new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, toneMapped: false }),
+  );
+  mesh.position.set(X0 + WAVE.L / 2, 0.0012, 0);
+  mesh.renderOrder = 1;
+  mesh.name = 'DensityBands';
+  mesh.userData.noExport = true;
+  const dark = [11, 114, 133]; // #0b7285
+  const light = [153, 233, 242]; // #99e9f2
+  function update(t, aSpring) {
+    for (let i = 0; i < W; i++) {
+      const xw = (i + 0.5) / W; // along the strip, where the coils are now: find the rest x whose coil is here
+      // the strip is in world x; a coil resting at x sits at x + s(x). One fixed-point step is plenty (a·k < 0.5).
+      let x = xw * WAVE.L;
+      for (let n = 0; n < 3; n++) x = xw * WAVE.L - displacement(x, t, aSpring);
+      const sp = spacing(x, t, aSpring); // < 1 crowded, > 1 spread
+      const c = Math.max(-1, Math.min(1, (1 - sp) / (aSpring * ((2 * Math.PI) / WAVE.lambda))));
+      const k = (c + 1) / 2; // 1 at the most crowded
+      const o = i * 4;
+      data[o] = light[0] + (dark[0] - light[0]) * k;
+      data[o + 1] = light[1] + (dark[1] - light[1]) * k;
+      data[o + 2] = light[2] + (dark[2] - light[2]) * k;
+      data[o + 3] = Math.abs(c) < 0.02 ? 0 : 40 + 150 * Math.abs(c);
+    }
+    tex.needsUpdate = true;
+  }
+  return { mesh, update };
+}
+
+// ── the wave driver ───────────────────────────────────────────────────────────
+export function createDriver(mats) {
+  const root = new THREE.Group();
+  root.name = 'WaveDriver';
+  const body = new THREE.Group(); // the case, turned per medium
+  const W = 0.16;
+  const H = 0.13;
+  const D = 0.13;
+  const box = new THREE.Mesh(new RoundedBoxGeometry(W, H, D, 4, 0.012), mats.case);
+  box.position.y = H / 2 + 0.008;
+  box.castShadow = true;
+  box.name = 'Case';
+  // the grille on its front (+z), a knob and a small badge
+  const grille = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.038, 0.004, 32).rotateX(Math.PI / 2), mats.grille);
+  grille.position.set(-0.025, H / 2 + 0.008, D / 2 + 0.001);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.039, 0.003, 8, 40), mats.chrome);
+  ring.position.copy(grille.position);
+  const knob = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.012, 0.012, 24).rotateX(Math.PI / 2), mats.rubber);
+  knob.position.set(0.048, H / 2 + 0.03, D / 2 + 0.005);
+  const lamp = new THREE.Mesh(
+    new THREE.SphereGeometry(0.004, 12, 8),
+    new THREE.MeshStandardMaterial({ color: '#ffb02e', emissive: '#ff8a00', emissiveIntensity: 0.0 }),
+  );
+  lamp.position.set(0.048, H / 2 - 0.012, D / 2 + 0.002);
+  const badge = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.008, 0.002), mats.label);
+  badge.position.set(0.048, H / 2 - 0.035, D / 2 + 0.001);
+  const feet = [];
+  for (const x of [-W / 2 + 0.02, W / 2 - 0.02])
+    for (const z of [-D / 2 + 0.02, D / 2 - 0.02]) {
+      const f = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.01, 0.008, 16), mats.rubber);
+      f.position.set(x, 0.004, z);
+      feet.push(f);
+    }
+  body.add(box, grille, ring, knob, lamp, badge, ...feet);
+  // the bronze bush the rod slides in, and the rod with its clamp / plate
+  const bush = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.014, 0.018, 24), mats.bronze);
+  const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.0045, 0.0045, 1, 16).translate(0, 0.5, 0), mats.chrome);
+  rod.castShadow = true;
+  const clamp = new THREE.Group(); // at the rod's end: a bronze block with a screw (rope) or a round plate (spring)
+  const jaw = new THREE.Mesh(new RoundedBoxGeometry(0.03, 0.026, 0.03, 2, 0.004), mats.bronze);
+  jaw.castShadow = true;
+  const screw = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.03, 12).rotateX(Math.PI / 2), mats.chrome);
+  screw.position.z = 0.022;
+  const screwHead = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.006, 20).rotateX(Math.PI / 2), mats.chrome);
+  screwHead.position.z = 0.037;
+  const plate = new THREE.Mesh(new THREE.CylinderGeometry(SPRING.R - 0.004, SPRING.R - 0.004, 0.006, 48).rotateZ(Math.PI / 2), mats.plate);
+  plate.castShadow = true;
+  clamp.add(jaw, screw, screwHead, plate);
+  root.add(body, bush, rod, clamp);
+  let medium = 'rope';
+  const ROD = 0.12;
+  function setMedium(m) {
+    medium = m;
+    const rope = m === 'rope';
+    jaw.visible = screw.visible = screwHead.visible = rope;
+    plate.visible = !rope;
+    if (rope) {
+      // standing on the bench under the rope's end, the rod straight up
+      body.rotation.set(0, 0, 0);
+      body.position.set(X0, 0, 0);
+      bush.rotation.set(0, 0, 0);
+      bush.position.set(X0, H + 0.008 + 0.009, 0);
+      rod.rotation.set(0, 0, 0);
+    } else {
+      // lying on its side behind the spring's end, the rod along the spring's axis
+      body.rotation.set(0, 0, 0);
+      body.position.set(X0 - ROD - W / 2 + 0.01, 0, 0);
+      bush.rotation.set(0, 0, -Math.PI / 2);
+      bush.position.set(X0 - ROD + 0.012, SPRING_Y, 0);
+      rod.rotation.set(0, 0, -Math.PI / 2);
+    }
+  }
+  /** d: the driven end's displacement now (m), up for the rope, along +x for the spring. */
+  function setDisp(d) {
+    if (medium === 'rope') {
+      const topY = ROPE_Y + d;
+      const baseY = H + 0.008;
+      rod.position.set(X0, baseY - 0.02, 0);
+      rod.scale.set(1, topY - baseY + 0.02 - 0.013, 1);
+      clamp.position.set(X0, topY, 0);
+    } else {
+      const endX = X0 + d - 0.003;
+      rod.position.set(X0 - ROD - 0.02, SPRING_Y, 0);
+      rod.scale.set(1, endX - (X0 - ROD - 0.02), 1);
+      clamp.position.set(endX, SPRING_Y, 0);
+    }
+  }
+  /** The lamp glows while it runs. */
+  function setOn(on) {
+    lamp.material.emissiveIntensity = on ? 2.2 : 0;
+  }
+  /** A box round the case, for the action's ring and taps. */
+  const hit = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.42, 0.2), new THREE.MeshBasicMaterial({ visible: false }));
+  hit.userData.noExport = true;
+  root.add(hit);
+  function placeHit() {
+    if (medium === 'rope') hit.position.set(X0, 0.18, 0);
+    else hit.position.set(X0 - ROD / 2 - 0.02, 0.08, 0);
+    hit.scale.set(1, medium === 'rope' ? 1 : 0.45, 1);
+  }
+  return {
+    root,
+    body,
+    hit,
+    setMedium(m) {
+      setMedium(m);
+      placeHit();
+    },
+    setDisp,
+    setOn,
+  };
+}
+
+// ── the stand at the far end ──────────────────────────────────────────────────
+export function createStand(mats, spring) {
+  const root = new THREE.Group();
+  root.name = 'Stand';
+  const Z = -0.16; // behind the medium
+  const base = new THREE.Mesh(new RoundedBoxGeometry(0.2, 0.018, 0.12, 3, 0.006), mats.iron);
+  base.position.set(0, 0.009, 0);
+  base.castShadow = true;
+  const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.52, 20), mats.chrome);
+  rod.position.set(0.05, 0.26 + 0.018, 0);
+  rod.castShadow = true;
+  const post = new THREE.Group(); // base and rod, placed at the far end, behind
+  post.add(base, rod);
+  const boss = new THREE.Mesh(new RoundedBoxGeometry(0.03, 0.03, 0.03, 2, 0.004), mats.iron);
+  const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.0055, 0.0055, 1, 16).rotateX(Math.PI / 2).translate(0, 0, 0.5), mats.chrome);
+  arm.castShadow = true;
+  const jaw = new THREE.Mesh(new RoundedBoxGeometry(0.034, 0.03, 0.03, 2, 0.004), mats.bronze);
+  jaw.castShadow = true;
+  const knob = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.008, 20), mats.chrome);
+  root.add(post, boss, arm, jaw, knob);
+  function setMedium(m) {
+    const rope = m === 'rope';
+    const x = rope ? X0 + WAVE.L + 0.02 : spring.loop.x;
+    const y = rope ? ROPE_Y : spring.loop.y + 0.004;
+    post.position.set(x - 0.05, 0, Z);
+    boss.position.set(x, y, Z);
+    arm.position.set(x, y, Z);
+    arm.scale.set(1, 1, rope ? -Z : -Z + 0.04);
+    jaw.visible = knob.visible = rope;
+    jaw.position.set(x, y, 0);
+    knob.position.set(x, y + 0.019, 0);
+  }
+  return { root, setMedium };
+}
+
+// ── the rest marks: where the green particle sits when nothing moves ───────────
+export function createRestMarks(spring) {
+  const root = new THREE.Group();
+  root.name = 'RestMarks';
+  root.userData.noExport = true;
+  // the rope's rest line (সাম্যাবস্থা): a light dashed line along it, behind it a little
+  const dashes = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(1, 0.0025, 0.0025),
+    new THREE.MeshBasicMaterial({ color: '#f8f9fa', transparent: true, opacity: 0.85, toneMapped: false }),
+    80,
+  );
+  const M = new THREE.Matrix4();
+  const q = new THREE.Quaternion();
+  const sc = new THREE.Vector3(0.012, 1, 1);
+  const p = new THREE.Vector3();
+  let n = 0;
+  for (let x = 0.02; x < WAVE.L - 0.02; x += 0.026) {
+    dashes.setMatrixAt(n++, M.compose(p.set(X0 + x, ROPE_Y, -0.03), q, sc));
+  }
+  dashes.count = n;
+  // the marked particle's rest place: a small ring on the rope's rest line
+  const ring = new THREE.Mesh(
+    new THREE.TorusGeometry(0.016, 0.0028, 8, 32),
+    new THREE.MeshBasicMaterial({ color: '#ffffff', toneMapped: false, transparent: true, opacity: 0.95 }),
+  );
+  ring.position.set(X0 + WAVE.marked, ROPE_Y, -0.03);
+  const rope = new THREE.Group();
+  rope.add(dashes, ring);
+  // the spring's: a strip of white tape on the bench in front of the spring with a dark tick at the green coil's rest
+  const tape = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.05, 0.05).rotateX(-Math.PI / 2),
+    new THREE.MeshStandardMaterial({ color: '#f4f1e8', roughness: 0.8 }),
+  );
+  tape.position.set(X0 + spring.markedX, 0.0015, SPRING.R + 0.045);
+  const tick = new THREE.Mesh(new THREE.BoxGeometry(0.003, 0.0008, 0.044), new THREE.MeshBasicMaterial({ color: '#1d2733' }));
+  tick.position.set(X0 + spring.markedX, 0.002, SPRING.R + 0.045);
+  const springMarks = new THREE.Group();
+  springMarks.add(tape, tick);
+  root.add(rope, springMarks);
+  return {
+    root,
+    setMedium(m) {
+      rope.visible = m === 'rope';
+      springMarks.visible = m === 'spring';
+    },
+  };
+}

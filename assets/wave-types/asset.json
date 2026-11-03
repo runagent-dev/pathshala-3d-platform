@@ -1,0 +1,105 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "wave-types",
+  "title": "Transverse and longitudinal waves (অনুপ্রস্থ ও অনুদৈর্ঘ্য তরঙ্গ)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 194,
+  "topic": "7.2.2",
+  "placement": "Book pages 194–195, topic 7.2.2 (তরঙ্গের প্রকারভেদ): beside the paragraph that sets the wave on a spring (সংকোচন এবং প্রসারণ, অনুদৈর্ঘ্য তরঙ্গ) against the rope shaken at one end (ওঠা এবং নামা লম্ব, অনুপ্রস্থ তরঙ্গ), just above চিত্র ৭.০৫ (the paper model of a longitudinal wave).",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "Transverse and longitudinal waves (pages 194–195, topic 7.2.2) on a long teak lab bench under a dusk backdrop. A mechanical wave driver sends one travelling wave, y = a sin(kx − ωt) (λ = 0.6 m, f = 1.25 Hz), along the medium the book uses: a two-word row chooses a stretched three-strand manila rope (the driver's rod shakes its end up and down: অনুপ্রস্থ তরঙ্গ) or a long steel helical spring lying on the bench, its far end bent into a crossover loop over a stand's peg (the driver pushes and pulls its end: অনুদৈর্ঘ্য তরঙ্গ, with সংকোচন and প্রসারণ that travel, shaded darker and lighter teal on the bench and labelled). One particle is green (a band on the rope, a painted coil) with a white mark at its rest place; once the wave reaches it, an outlined green double arrow shows it only swings in place, at right angles to the outlined blue arrow of the wave's direction on the rope, along it on the spring. One big button (and the numbered badge on the driver) starts and pauses it; the result line names the wave and how the particle moves; the rule grows with the book's sentences (water waves; sound is longitudinal); a comparison of the two fills the side panel. The far end absorbs the wave (no reflection, said in a note). Test: five questions (which way the rope's particle moves, where the spring's coil is after a long time, a marked place on the paused spring, sound, water waves), each wrong choice with its own note. Phone-first, Bangla and English.",
+  "tags": [
+    "wave",
+    "transverse wave",
+    "longitudinal wave",
+    "compression",
+    "rarefaction",
+    "rope",
+    "spring",
+    "slinky",
+    "medium",
+    "particle vibration",
+    "bangla"
+  ],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "medium",
+      "label": "Medium",
+      "type": "select",
+      "options": [["rope", "rope (transverse)"], ["spring", "spring (longitudinal)"]],
+      "default": "rope"
+    },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The numbered badge on the driver pulses at first", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "medium": "spring" } },
+    { "name": "set", "payload": { "running": true } },
+    { "name": "set", "payload": { "medium": "rope", "t": 4, "running": false } },
+    { "name": "set", "payload": { "tap": true } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": {
+      "params": { "coach": "0" },
+      "setup": [
+        { "command": "set", "payload": { "medium": "spring", "animate": false, "seen": ["rope"] } },
+        { "command": "set", "payload": { "t": 5.25, "running": false } }
+      ]
+    },
+    "glb": [
+      {
+        "name": "default",
+        "setup": [
+          { "command": "set", "payload": { "medium": "spring", "animate": false } },
+          { "command": "set", "payload": { "t": 5.25, "running": false } }
+        ]
+      }
+    ],
+    "video": {
+      "kind": "script",
+      "seconds": 20,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 0.8, "command": "set", "payload": { "tap": true } },
+        { "at": 8.5, "command": "set", "payload": { "medium": "spring" } },
+        { "at": 9.5, "command": "set", "payload": { "tap": true } }
+      ]
+    }
+  }
+}
