@@ -59,7 +59,7 @@ export const DEFAULTS = {
 };
 
 const VIEW_DIRS = {
-  front: new THREE.Vector3(0, 0.04, 1).normalize(),
+  front: new THREE.Vector3(0.25, 0.2, 1).normalize(),
   '3d': new THREE.Vector3(0.62, 0.32, 0.82).normalize(),
 };
 const MARGIN = { top: 74, bottom: 14, side: 10 };
