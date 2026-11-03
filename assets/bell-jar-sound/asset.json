@@ -1,0 +1,83 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "bell-jar-sound",
+  "title": "Sound needs a medium (শব্দ সঞ্চালনে মাধ্যম)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 199,
+  "topic": "7.3",
+  "placement": "Book page 199, topic 7.3: চিত্র ৭.১১, the bell-jar experiment (বেলজার থেকে বাতাস পাম্প করে সরিয়ে নিলে কলিং বেলে শব্দটি আর শোনা যাবে না), beside the paragraph 'মাধ্যম ছাড়া যে শব্দ যেতে পারে না…'",
+  "order": 2,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "The bell-jar experiment (page 199, topic 7.3, চিত্র ৭.১১): sound needs a medium. A real electric calling bell (bakelite board, two copper-wound electromagnet coils, a soft-iron armature on a flat spring, the contact screw, the hammer and a nickel gong) hangs by its wires from the rubber stopper of a thick glass bell jar on a ground-steel pump plate; the wires go out to a battery box, a side pipe carries a 0–100 kPa vacuum gauge and an air-in valve, and a hose leads to a rotary vacuum pump, on a dark wooden lab bench under a soft dusk backdrop. The hammer strikes eight times a second throughout; the jar is full of small air particles and teal sound rings (compressions dark, rarefactions light) leave the gong and cross the glass into the room, with a real synthesized bell sound. One big button runs the pump: the particles thin out, the needle falls, the rings and the sound fade (meters for the air in the jar and the sound outside; a small loudness–air graph on wide panels); with no air the hammer still strikes but nothing is heard. The same button then opens the valve and the sound returns. The rule grows to the book's sentences (মাধ্যম ছাড়া শব্দ যেতে পারে না). Test tab: five questions (read the gauge, why softer, the hammer in a vacuum, water as a medium, the Moon), each wrong choice with its own note. Phone-first, Bangla and English.",
+  "tags": ["sound", "medium", "vacuum", "bell jar", "calling bell", "mechanical wave", "pump", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "air",
+      "label": "Air in the jar at the start",
+      "type": "select",
+      "options": [["full", "full"], ["half", "half"], ["vacuum", "none (vacuum)"]],
+      "default": "full"
+    },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The numbered badge on the picture pulses at first", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "pump": "out" } },
+    { "name": "set", "payload": { "pump": "off" } },
+    { "name": "set", "payload": { "air": 0.5, "animate": true } },
+    { "name": "set", "payload": { "air": "vacuum", "animate": false } },
+    { "name": "set", "payload": { "pump": "in" } },
+    { "name": "set", "payload": { "air": "full", "animate": false } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": {
+      "params": { "coach": "0" },
+      "setup": [{ "command": "set", "payload": { "air": 0.45, "animate": false } }]
+    },
+    "glb": [{ "name": "default" }],
+    "video": {
+      "kind": "script",
+      "seconds": 22,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 1.5, "command": "set", "payload": { "pump": "out" } },
+        { "at": 14, "command": "set", "payload": { "pump": "in" } }
+      ]
+    }
+  }
+}
