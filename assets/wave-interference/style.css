@@ -14,7 +14,9 @@ body.bg-transparent { background: transparent; }
 /* the graph: three rows for each ball; a fixed height so the 3D view never changes size */
 .wi-graph-host { flex: none; }
 .wi-graph { position: relative; height: 104px; font-family: "Noto Sans Bengali", sans-serif; }
-.wi-graph canvas { position: absolute; inset: 0; display: block; }
+.wi-graph svg { position: absolute; inset: 0; display: block; overflow: visible; }
+/* not an icon: undo the kit's icon style (18 px, stroked in the text colour) */
+.pvc .wi-graph svg { width: 100%; height: 100%; stroke: none; stroke-width: 1; fill: none; }
 
 /* the book's (ii): energy goes as the amplitude squared */
 .wi-energy { margin: 0; font-size: 13.5px; line-height: 1.4; color: var(--ink); }

@@ -6,6 +6,7 @@
 // one action that walks them in order, a live চিত্র ৭.০৩ (each ball's 1st wave + 2nd wave = sum against time), one
 // result line (the two amplitudes in a), one rule in the book's words; a five-question test. Built on the shared kit.
 import * as THREE from 'three';
+import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { createStage } from '@shared/stage.js';
 import { createTweener, ease } from '@shared/tween.js';
 import { createAudio } from '@shared/student/audio.js';
@@ -940,7 +941,12 @@ export function createApp(root, options = {}) {
     exportRoot() {
       const g = new THREE.Group();
       g.name = 'RippleTank';
-      g.add(tank.root.clone(true), water.bake(s.sim, s.on, s.off, s.gap, s.gain, refA()));
+      const parts = tank.root.clone(true);
+      // the merged parts are drawn unindexed; in the file, shared corners are stored once (about half the size)
+      parts.traverse((m) => {
+        if (m instanceof THREE.Mesh && !m.geometry.index) m.geometry = mergeVertices(m.geometry, 1e-6);
+      });
+      g.add(parts, water.bake(s.sim, s.on, s.off, s.gap, s.gain, refA()));
       return g;
     },
     /** For tests: where each source is, and the sources' row. */

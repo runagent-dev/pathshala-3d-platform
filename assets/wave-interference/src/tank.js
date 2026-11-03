@@ -11,7 +11,9 @@ import { SOURCE_Z, TANK } from './reading.js';
 const BEACH = 0.03; // foam beach width round the water
 const WALL = 0.014; // frame thickness
 const RIM_Y = 0.016; // top of the frame above the water
-const FLOOR_Y = -0.0064; // the tank's glass floor (6.4 mm deep: v = √(gh) ≈ 0.25 m/s)
+// The tank's glass floor. The real water is 6.4 mm deep (v = √(gh) ≈ 0.25 m/s), but the ripples are drawn 12 times
+// taller (up to about 2 cm), so the floor is drawn lower: a drawn trough never reaches it.
+const FLOOR_Y = -0.026;
 export const OUTER = { w: TANK.w + 2 * (BEACH + WALL), d: TANK.d + 2 * (BEACH + WALL) };
 export const BENCH_Y = -0.05; // the bench top
 export const BAR_Y = 0.15; // the vibrator bar's underside at rest
@@ -127,6 +129,27 @@ function floorTexture() {
   });
 }
 
+/** Brushed aluminium: fine lengthwise streaks of a slightly lighter and darker metal (a satin grain along each rail).
+ * A colour map, not a roughness map: it shares the bench's and foam's shader, so nothing extra compiles at start. */
+function brushedTexture() {
+  const t = canvasTex(
+    512,
+    512,
+    (ctx, W, H) => {
+      const r = rng(17);
+      ctx.fillStyle = '#ececec';
+      ctx.fillRect(0, 0, W, H);
+      for (let i = 0; i < 900; i++) {
+        const v = 205 + Math.round(r() * 50);
+        ctx.fillStyle = `rgba(${v},${v},${v},${0.25 + r() * 0.35})`;
+        ctx.fillRect(r() * W - 60, r() * H, 80 + r() * 300, 0.6 + r() * 1.2);
+      }
+    },
+    [3, 3],
+  );
+  return t;
+}
+
 /** A helix (spring) from y0 down to y1 at x, z, with end hooks. */
 function springGeometry(turns, radius, wire, length) {
   const pts = [];
@@ -148,14 +171,14 @@ export function createTank() {
   root.name = 'RippleTank';
 
   const M = {
-    alu: new THREE.MeshPhysicalMaterial({ name: 'Aluminium', color: 0xc9ced4, metalness: 0.85, roughness: 0.38, clearcoat: 0.2 }),
+    alu: new THREE.MeshStandardMaterial({ name: 'Aluminium', color: 0xc4c9cf, metalness: 1, roughness: 0.36, map: brushedTexture() }),
     steel: new THREE.MeshPhysicalMaterial({ name: 'Steel', color: 0xd8dde3, metalness: 1, roughness: 0.25 }),
     dark: new THREE.MeshStandardMaterial({ name: 'BlackPlastic', color: 0x22252a, roughness: 0.55, metalness: 0.1 }),
     rubber: new THREE.MeshStandardMaterial({ name: 'Rubber', color: 0x1b1c1f, roughness: 0.9 }),
     bead: new THREE.MeshPhysicalMaterial({ name: 'Dipper', color: 0xf7f7f2, roughness: 0.28, clearcoat: 0.6 }),
     motor: new THREE.MeshPhysicalMaterial({ name: 'Motor', color: 0x2c5f9e, metalness: 0.5, roughness: 0.35, clearcoat: 0.5 }),
     brass: new THREE.MeshPhysicalMaterial({ name: 'Brass', color: 0xd2a24c, metalness: 1, roughness: 0.3 }),
-    foam: new THREE.MeshStandardMaterial({ name: 'Foam', map: foamTexture(), roughness: 0.95 }),
+    foam: new THREE.MeshStandardMaterial({ name: 'Foam', map: foamTexture(), roughness: 1, metalness: 0 }),
     bench: new THREE.MeshStandardMaterial({ name: 'Bench', map: benchTexture(), roughness: 0.62 }),
     floor: new THREE.MeshStandardMaterial({ name: 'TankFloor', map: floorTexture(), roughness: 0.7 }),
     ball: new THREE.MeshPhysicalMaterial({ name: 'Cork', color: 0xf08c2e, roughness: 0.55, clearcoat: 0.2 }),
@@ -202,7 +225,7 @@ export function createTank() {
   const feetMesh = new THREE.Mesh(merge(feet), M.rubber);
   feetMesh.name = 'Feet';
   root.add(feetMesh);
-  // a floor just under the water (seen only at the beaches' foot)
+  // the floor under the water (seen faintly through the shallows by the beaches)
   const floor = new THREE.Mesh(new THREE.BoxGeometry(ow - 2 * WALL, 0.004, od - 2 * WALL), M.floor);
   floor.position.y = FLOOR_Y - 0.002;
   floor.name = 'TankFloor';

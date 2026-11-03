@@ -77,6 +77,27 @@ at most. Round 2 moved the water to the GPU: before, about 30 k vertex updates (
 The figure draws nothing when the water is calm or paused. On a slow device the time step is capped (the kit's 50 ms),
 so the waves slow rather than jump.
 
+### Polish 0.2.1 (measured with the chapter's perf script, 844×390, shadows on, software rendering)
+| | before (0.2.0) | after (0.2.1) |
+|---|---|---|
+| draw calls / triangles (one capture, main + shadow pass) | 126 / 251 k | 126 / 251 k |
+| ms per animated frame (the measure) | 53–55 | 1–2 |
+| time to ready | 2.6–3.4 s | 2.7–2.9 s (same, within the machine's noise) |
+| GLB (verify's export-glb) | 2.4 MB | 769 KB |
+
+- The 53 ms was not JavaScript (a CPU profile shows about 1 ms of script a frame). The live graph was a 2D canvas, and
+  every redraw of a 2D canvas waits for the GPU to finish the 3D view's previous frame (in software rendering, tens of
+  ms). The graph is now SVG: built once per layout, and a frame moves six paths and six dots, so nothing waits.
+- The water's wave sum (height, slope, steady swing) is now worked out once per vertex instead of once per pixel;
+  the fragment shader only colours (and finds the dashed still lines, which need a pixel's own path difference).
+- The look: the white blobs were the tank's floor showing through the troughs (the drawn ripples, 12 times taller, dipped
+  below the 6.4 mm floor). The floor is now drawn 2.6 cm down, under any drawn trough. The water is clear and dark (low
+  albedo, as real water), deeper-looking toward the middle, the pale floor faintly through the shallows by the beaches;
+  Fresnel reflection of the studio environment and a small, sharp highlight (roughness 0.06) carry the ridges; no
+  colour stripes painted from the height beyond a light tint. Brushed aluminium frame (fine lengthwise grain, a colour
+  map so it shares the bench's shader and adds no start-up compile), matte foam (roughness 1).
+- GLB: the water baked on an 8 mm grid (6 to a wavelength), and the tank's merged parts stored indexed in the file.
+
 ## Round 2 (after the independent review)
 - Water on the GPU (above), deep saturated blue; no white glare round the dippers; pale, fine foam beaches; a lighter
   backdrop (blue-grey to sand).
