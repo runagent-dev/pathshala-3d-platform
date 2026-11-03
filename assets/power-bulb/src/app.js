@@ -29,8 +29,8 @@ export const DEFAULTS = {
 };
 
 const COLORS = { t: '#c2255c', P: '#862e9c' };
-const ELEVATION = 2; // degrees: the front view stands in the courtyard and looks up a little
-const AZIMUTH = -9; // degrees: from a little to the left, so the wall shows its depth
+const ELEVATION = 10; // degrees: the front view looks from a little above, so the bulb and its holder show depth
+const AZIMUTH = -22; // degrees: from the left, so the wall and the holder show their sides
 const VIEW_3D = new THREE.Vector3(-0.55, 0.32, 0.9).normalize();
 
 /** A stopwatch drawn in SVG for a label (the font has no clock glyph); its hand at `sec` on a 60 s dial. */
@@ -337,7 +337,7 @@ export function createApp(root, options = {}) {
     const b = LAYOUT.bulb;
     // the bulb close, big and clear in its holder on the wall (a hint of the door frame below)
     box.min.set(b.x - 0.13, b.y - 0.1, b.z - 0.05);
-    box.max.set(b.x + 0.13, b.y + 0.14, b.z + 0.05);
+    box.max.set(b.x + 0.13, b.y + 0.2, b.z + 0.05);
     const e = THREE.MathUtils.degToRad(ELEVATION);
     const az = THREE.MathUtils.degToRad(AZIMUTH);
     const dir = s.view === '3d' ? VIEW_3D : new THREE.Vector3(Math.sin(az) * Math.cos(e), Math.sin(e), Math.cos(az) * Math.cos(e));
