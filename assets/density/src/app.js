@@ -67,7 +67,7 @@ const AREA = Math.PI * TANK.R ** 2;
 const TOP_Y = TANK.H + BALL_R + 1.2; // a dropped ball passes over the tank's rim here
 // what the camera shows for each part of the figure (world boxes), and from where
 const LOOKS = {
-  balls: { box: [new THREE.Vector3(-21.6, 0, -6), new THREE.Vector3(21.6, TANK.H + 1, TABLE_Z + 3.4)], dir: new THREE.Vector3(0, 0.42, 1) },
+  balls: { box: [new THREE.Vector3(-21.6, 0, -6), new THREE.Vector3(21.6, TANK.H + 1, TABLE_Z + 3.4)], dir: new THREE.Vector3(0.38, 0.46, 1) },
   box: { box: [new THREE.Vector3(BOX_X - 4.6, 0, -4), new THREE.Vector3(BOX_X + 4.6, 8.4, 4)], dir: new THREE.Vector3(0.4, 0.34, 1) },
 };
 const MARGIN = { top: 50, bottom: 34, side: 6 };
