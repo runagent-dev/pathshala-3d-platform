@@ -5,15 +5,15 @@
   "title": "Evaporation: what it depends on (বাষ্পায়ন)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "book": "physics-9-10",
   "page": 177,
   "topic": "6.4",
-  "placement": "Book pages 177–178, topic 6.4, the part on বাষ্পায়ন (Evaporation) and বাষ্পায়নের নির্ভরশীলতা: after the paragraph that says drying up is the evaporation of a liquid's molecules at any temperature, next to the list of what it depends on (বাতাসের প্রবাহ, তরলের উপরিভাগের ক্ষেত্রফল, তরলের প্রকৃতি, বাতাসের চাপ, উষ্ণতা, বায়ুর শুষ্কতা).",
+  "placement": "Book pages 177–178, topic 6.4, the part on বাষ্পায়ন (Evaporation) and বাষ্পায়নের নির্ভরশীলতা: after the paragraph that says drying up is the evaporation of a liquid's molecules at any temperature, next to the list of what it depends on (বাতাসের প্রবাহ, তরলের উপরিভাগের ক্ষেত্রফল, তরলের প্রকৃতি, বাতাসের চাপ (এই ছবিতে নেই), উষ্ণতা, বায়ুর শুষ্কতা).",
   "maintainers": ["RadeenXALNW"],
   "units": "cm",
-  "description": "Evaporation and what it depends on (topic 6.4, pages 177-178) on a lab bench in front of a tiled wall: two vessels with the same amount of liquid, one thing different about the second, chosen in a row of the six words of the book's list (air flow, area of the surface, kind of liquid, air pressure, temperature, dryness of the air). Air flow: a fan blows across the right vessel; area: the same water in a glass and in a big plate (the book's own example); kind of liquid: water and a volatile liquid; pressure: the right vessel under a bell jar with a hose to a pump; temperature: the right vessel on a warm plate; dryness: humid mist round the left vessel, dry air round the right. One big button lets time pass: the liquid goes down faster in one vessel (a white ring marks where it started), vapour rising from each in proportion, and the panel shows the share of liquid left in each (a model: relative, not a measurement). A time bar can be slid to any moment. The rule is the book's sentence for the chosen factor. Test tab: 5 questions (which vessel dries first, what differs between the vessels, the book's examples: wet clothes in the rains, pumping air out to dry food, which liquid evaporates most), the vessels mirrored at random, every wrong choice a real mistake with its own note. Phone-first, Bangla and English.",
-  "tags": ["heat", "evaporation", "liquid", "pressure", "temperature", "bangla"],
+  "description": "Evaporation and what it depends on (topic 6.4, pages 177-178) on a lab bench in front of a tiled wall: two vessels with the same amount of liquid, one thing different about the second, chosen in a row of the five words of the book's list (air flow, area of the surface, kind of liquid, temperature, dryness of the air; the book's air pressure needs a bell jar and a pump, a different setup, and is left out). Air flow: a fan blows across the right vessel; area: the same water in a glass and in a big plate (the book's own example); kind of liquid: water and a volatile liquid; temperature: the right vessel on a warm plate; dryness: humid mist round the left vessel, dry air round the right. One big button lets time pass: the liquid goes down faster in one vessel (a white ring marks where it started), vapour rising from each in proportion, and the panel shows the share of liquid left in each (a model: relative, not a measurement). A time bar can be slid to any moment. The rule is the book's sentence for the chosen factor. Test tab: 5 questions (which vessel dries first, what differs between the vessels, the book's examples: wet clothes in the rains, which liquid evaporates most), the vessels mirrored at random, every wrong choice a real mistake with its own note. Phone-first, Bangla and English.",
+  "tags": ["heat", "evaporation", "liquid", "temperature", "bangla"],
   "params": [
     {
       "name": "lang",
@@ -30,7 +30,6 @@
         ["wind", "air flow"],
         ["area", "area"],
         ["liquid", "kind of liquid"],
-        ["pressure", "air pressure"],
         ["warm", "temperature"],
         ["dry", "dryness of the air"]
       ],

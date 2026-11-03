@@ -27,7 +27,7 @@ To listen to it or control it from the book page, use the helper shipped in the 
 | Param | Meaning | Values | Default |
 |---|---|---|---|
 | `lang` | Language | `bn` বাংলা · `en` English | `bn` |
-| `factor` | What is different | `wind` air flow · `area` area · `liquid` kind of liquid · `pressure` air pressure · `warm` temperature · `dry` dryness of the air | `wind` |
+| `factor` | What is different | `wind` air flow · `area` area · `liquid` kind of liquid · `warm` temperature · `dry` dryness of the air | `wind` |
 | `time` | Time (0 to 10) | number | `0` |
 | `view` | View | `front` · `3d` | `front` |
 | `mode` | Start in | `explore` learn · `quiz` test | `explore` |

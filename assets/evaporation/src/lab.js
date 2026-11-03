@@ -1,12 +1,12 @@
 // The apparatus: two vessels of liquid on a lab bench in front of a tiled wall, one thing different about the second
-// (a fan, a wide plate instead of a glass, a volatile liquid, a bell jar with the air pumped out, a warm plate, dry
+// (a fan, a wide plate instead of a glass, a volatile liquid, a warm plate, dry
 // instead of humid air). The liquid's depth follows reading.js; vapour rises from each vessel in proportion to how
 // fast it is evaporating. Units: centimetres, the bench top is y = 0, the vessels stand at x = ∓9 on z = 0. The
 // whole set can be mirrored (swap) so the changed vessel is on either side.
 import * as THREE from 'three';
 import { CASES, depth, radiusOf, vapour } from './reading.js';
 
-export const SIDE = 9; // distance of each vessel from the middle
+export const SIDE = 8.2; // distance of each vessel from the middle
 export const WALL_Z = -10.5;
 
 function rng(seed = 7) {
@@ -328,60 +328,8 @@ export function createLab() {
   streaks.visible = false;
   streaks.frustumCulled = false;
 
-  // the bell jar with the air pumped out, its hose and the pump
-  const jar = new THREE.Group();
-  let dome = null;
-  {
-    dome = new THREE.Mesh(
-      lathe(
-        [
-          [0, 12],
-          [3, 11.7],
-          [5.4, 9.6],
-          [6.2, 6],
-          [6.3, 0.2],
-        ],
-        36,
-      ),
-      glassMat(0.2),
-    );
-    dome.renderOrder = 4;
-    const flange = new THREE.Mesh(new THREE.CylinderGeometry(7.2, 7.2, 0.5, 40), std(0xaab3bc, { metalness: 0.7, roughness: 0.35 }));
-    flange.position.y = 0.25;
-    const knob = new THREE.Mesh(new THREE.SphereGeometry(0.6, 12, 10), std(0x37424e));
-    knob.position.y = 12.3;
-    const hose = new THREE.Mesh(
-      new THREE.TubeGeometry(
-        new THREE.CatmullRomCurve3([
-          new THREE.Vector3(0, 12.3, 0),
-          new THREE.Vector3(3.5, 14.6, 0),
-          new THREE.Vector3(10, 14, 0),
-          new THREE.Vector3(14, 8, 0),
-          new THREE.Vector3(15.5, 3.8, 0),
-        ]),
-        28,
-        0.26,
-        8,
-      ),
-      std(0x2b2f36, { roughness: 0.6 }),
-    );
-    const pump = new THREE.Group();
-    const pbody = new THREE.Mesh(new THREE.BoxGeometry(5.4, 3.6, 4.4), std(0x4d6f95, { roughness: 0.45, metalness: 0.3 }));
-    pbody.position.y = 1.8;
-    const dial = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 0.2, 24), std(0xfbf7ea));
-    dial.rotation.x = Math.PI / 2;
-    dial.position.set(0, 2.1, 2.3);
-    const needle = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.8, 0.05), std(0xd62f25));
-    needle.position.set(-0.25, 2.2, 2.42);
-    needle.rotation.z = 0.8;
-    pump.add(pbody, dial, needle);
-    pump.position.set(15.5, 0, 0);
-    jar.add(dome, flange, knob, hose, pump);
-  }
-  jar.visible = false;
-
   fan.add(streaks); // the streaks leave the front of the fan
-  stations.add(mats[0], mats[1], plate, fan, jar, puffs[0].points, puffs[1].points, mist.points);
+  stations.add(mats[0], mats[1], plate, fan, puffs[0].points, puffs[1].points, mist.points);
 
   // what is built for the factor now
   const cur = { factor: 'wind', swap: false, vessels: [null, null], time: 0, play: 0 };
@@ -422,16 +370,13 @@ export function createLab() {
       v.body.userData.side = i ? 'changed' : 'plain';
       pickable.push(v.body);
     });
-    if (factor === 'pressure' && dome) pickable.push(dome); // a tap on the jar counts too
     plate.position.set(SIDE, 0, 0);
     plate.visible = factor === 'warm';
     glow.intensity = factor === 'warm' ? 14 : 0;
-    fan.position.set(SIDE + 12.5, 0, -5);
+    fan.position.set(SIDE + 10, 0, -5);
     fan.rotation.y = 0.56; // turned toward the front so the blades show, blowing across the right vessel
     fan.visible = factor === 'wind';
     streaks.visible = factor === 'wind';
-    jar.position.set(SIDE, 0.3, 0);
-    jar.visible = factor === 'pressure';
     mist.points.position.set(-SIDE, 0, 0);
     mist.points.visible = factor === 'dry';
     mist.uniforms.uInt.value = factor === 'dry' ? 1 : 0;
@@ -453,31 +398,23 @@ export function createLab() {
     ].forEach(([k, i]) => {
       const v = cur.vessels[i];
       const x = worldX(xs[i]);
-      const jarred = factor === 'pressure' && i === 1; // under the bell jar: the name goes above its knob
-      if (jarred) anchors[k].set(x, 12.9, 0);
-      else anchors[k].set(x, tops[i] + 4.2, 0);
-      spots[k] = jarred
-        ? [
-            { dx: 0, dy: -24 },
-            { dx: -70, dy: -8 },
-          ]
-        : [
-            { dx: 0, dy: -30 },
-            { dx: 0, dy: -62 },
-          ];
-      const w = factor === 'pressure' && i === 1 ? 5.4 : v.r + 0.6; // the ring goes round the dish inside the jar
-      const hgt = factor === 'pressure' && i === 1 ? 5.2 : tops[i] + 0.2;
+      anchors[k].set(x, tops[i] + 4.2, 0);
+      spots[k] = [
+        { dx: 0, dy: -30 },
+        { dx: 0, dy: -62 },
+      ];
+      const w = v.r + 0.6;
+      const hgt = tops[i] + 0.2;
       boxes[k].set(new THREE.Vector3(x - w, 0, -w), new THREE.Vector3(x + w, hgt, w));
     });
     // the camera's box: both vessels and this factor's apparatus (mirrored with the set)
     const leftExt = SIDE + cur.vessels[0].r + 1.4;
     let rightExt = SIDE + cur.vessels[1].r + 1.4;
-    if (factor === 'wind') rightExt = SIDE + 16;
-    if (factor === 'pressure') rightExt = SIDE + 19.5;
+    if (factor === 'wind') rightExt = SIDE + 13.4;
     if (factor === 'warm') rightExt = Math.max(rightExt, SIDE + 7.8);
     const lo = swap ? -rightExt : -leftExt;
     const hi = swap ? leftExt : rightExt;
-    frame.set(new THREE.Vector3(lo, 0, -7), new THREE.Vector3(hi, factor === 'pressure' ? 15.8 : 13.5, 6));
+    frame.set(new THREE.Vector3(lo, 0, -7), new THREE.Vector3(hi, 13.5, 6));
     update(cur.time);
   }
 
