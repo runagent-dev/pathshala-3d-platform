@@ -274,7 +274,7 @@ export function createScene({ background = true } = {}) {
   const goldMat = new THREE.MeshStandardMaterial({
     color: '#e3b232',
     metalness: 1,
-    roughness: 0.28,
+    roughness: 0.22,
     emissive: new THREE.Color('#c2480a'),
     emissiveIntensity: 0,
   });
@@ -283,10 +283,28 @@ export function createScene({ background = true } = {}) {
   gold.position.set(PLATE_X.gold, PLATE_TOP, 0);
   gold.castShadow = true;
   gold.receiveShadow = true;
-  const stamp = new THREE.Mesh(new THREE.PlaneGeometry(9.5, 3.2), std('#b8891b', { metalness: 1, roughness: 0.4 }));
+  // a stamped panel on top: a shallow raised rim round a darker recess carrying the fineness and a hallmark
+  const panelCanvas = document.createElement('canvas');
+  panelCanvas.width = 256;
+  panelCanvas.height = 96;
+  const pg = /** @type {CanvasRenderingContext2D} */ (panelCanvas.getContext('2d'));
+  pg.fillStyle = '#a97a14';
+  pg.fillRect(0, 0, 256, 96);
+  pg.fillStyle = '#d9a82a';
+  pg.font = 'bold 40px sans-serif';
+  pg.textAlign = 'center';
+  pg.textBaseline = 'middle';
+  pg.fillText('Au 999.9', 128, 36);
+  pg.font = 'bold 22px sans-serif';
+  pg.fillText('10 kg', 128, 72);
+  const panelTex = new THREE.CanvasTexture(panelCanvas);
+  panelTex.colorSpace = THREE.SRGBColorSpace;
+  const rim = new THREE.Mesh(new THREE.BoxGeometry(11, 0.5, 4.2), std('#f0c43e', { metalness: 1, roughness: 0.2 }));
+  rim.position.set(0, IN.hy + 0.2, 0);
+  const stamp = new THREE.Mesh(new THREE.PlaneGeometry(9.6, 3.0), std('#ffffff', { map: panelTex, metalness: 0.9, roughness: 0.4 }));
   stamp.rotation.x = -Math.PI / 2;
-  stamp.position.set(0, IN.hy + 0.02, 0);
-  gold.add(stamp);
+  stamp.position.set(0, IN.hy + 0.46, 0);
+  gold.add(rim, stamp);
   root.add(gold);
 
   // ── two glass thermometers with the same scale ─────────────────────────────
