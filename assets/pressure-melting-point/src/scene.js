@@ -3,6 +3,7 @@
 // water under the wire and a faint refrozen seam above it. A plain muted wall and a soft floor, nothing else.
 // Everything is procedural and modest in triangles.
 import * as THREE from 'three';
+import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { ICE, WIRE_R } from './reading.js';
 
 export const GROUND = -0.42; // the floor, below the table's top (y = 0)
@@ -53,6 +54,12 @@ function createTable() {
   const lh = -GROUND - TABLE.thick;
   for (const sx of [-1, 1])
     for (const sz of [-1, 1]) box(0.05, lh, 0.05, leg, sx * (TABLE.x / 2 - 0.04), -TABLE.thick - lh / 2, sz * (TABLE.z / 2 - 0.04));
+  // aprons under the ends of the top, and low stretchers between the legs (as the book's table)
+  const apron = std('#c98171', { roughness: 0.6 });
+  for (const sx of [-1, 1]) {
+    box(0.03, 0.06, TABLE.z - 0.1, apron, sx * (TABLE.x / 2 - 0.04), -TABLE.thick - 0.03, 0);
+    box(0.03, 0.035, TABLE.z - 0.1, apron, sx * (TABLE.x / 2 - 0.04), -0.3, 0);
+  }
   return g;
 }
 
@@ -96,14 +103,46 @@ function frostMap() {
   return t;
 }
 
+/** A rounded, slightly lumpy slab (a real block of ice is never a sharp box). Stays inside the ICE box; flat underneath. */
+function lumpyBlock() {
+  const r = 0.03;
+  const hx = ICE.x / 2;
+  const hy = ICE.y / 2;
+  const hz = ICE.z / 2;
+  let g = new THREE.BoxGeometry(ICE.x, ICE.y, ICE.z, 14, 6, 8);
+  g.deleteAttribute('normal');
+  g.deleteAttribute('uv');
+  g = mergeVertices(g, 1e-5);
+  const pos = g.attributes.position;
+  const v = new THREE.Vector3();
+  const c = new THREE.Vector3();
+  const n = new THREE.Vector3();
+  for (let i = 0; i < pos.count; i++) {
+    v.fromBufferAttribute(pos, i);
+    c.set(Math.max(-hx + r, Math.min(hx - r, v.x)), Math.max(-hy + r, Math.min(hy - r, v.y)), Math.max(-hz + r, Math.min(hz - r, v.z)));
+    n.subVectors(v, c).normalize();
+    v.copy(c).addScaledVector(n, r);
+    // gentle lumps and a wavy top, never beyond the box
+    const bump = 0.007 * Math.sin(v.x * 23 + v.z * 11) * Math.sin(v.z * 17 - v.x * 5) + 0.004 * Math.sin(v.x * 51 + v.y * 37);
+    if (v.y > -hy + 0.02) v.addScaledVector(n, bump);
+    if (v.y > hy - 0.02) v.y -= 0.006 + 0.008 * (0.5 + 0.5 * Math.sin(v.x * 14 + 1) * Math.cos(v.z * 19));
+    v.x = Math.max(-hx, Math.min(hx, v.x));
+    v.z = Math.max(-hz, Math.min(hz, v.z));
+    v.y = Math.max(-hy, Math.min(hy, v.y));
+    pos.setXYZ(i, v.x, v.y, v.z);
+  }
+  g.computeVertexNormals();
+  return g;
+}
+
 /** The block of ice: pale see-through blue with bright edges (it casts no shadow of its own), and its two effects. */
 export function createIce() {
   const root = new THREE.Group();
   root.name = 'Ice';
   root.position.y = ICE.y / 2;
-  const geo = new THREE.BoxGeometry(ICE.x, ICE.y, ICE.z);
+  const geo = lumpyBlock();
   const mat = new THREE.MeshPhysicalMaterial({
-    color: '#bfe0fa',
+    color: '#b4dcf8',
     transparent: true,
     opacity: 0.85,
     alphaMap: frostMap(),
@@ -118,12 +157,14 @@ export function createIce() {
   const block = new THREE.Mesh(geo, mat);
   block.renderOrder = 5;
   root.add(block);
-  const edges = new THREE.LineSegments(
-    new THREE.EdgesGeometry(geo),
-    new THREE.LineBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.9, toneMapped: false }),
+  // a milky, whiter core gives the ice depth (the real thing is cloudy inside)
+  const core = new THREE.Mesh(
+    new THREE.BoxGeometry(ICE.x * 0.8, ICE.y * 0.55, ICE.z * 0.78),
+    new THREE.MeshBasicMaterial({ color: '#e8f6ff', transparent: true, opacity: 0.22, depthWrite: false, toneMapped: false }),
   );
-  edges.renderOrder = 6;
-  root.add(edges);
+  core.position.y = -ICE.y * 0.04;
+  core.renderOrder = 4;
+  root.add(core);
   // the faint refrozen seam above the wire: from the wire up to the top, across the whole depth
   const seamMat = new THREE.MeshBasicMaterial({ color: '#8ee6ee', transparent: true, opacity: 0.6, depthWrite: false, toneMapped: false });
   const seam = new THREE.Mesh(new THREE.BoxGeometry(0.006, 1, ICE.z - 0.004), seamMat);
