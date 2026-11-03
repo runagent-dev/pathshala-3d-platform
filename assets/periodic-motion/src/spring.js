@@ -106,7 +106,7 @@ export function createSpring(M) {
     arrowThickness: 0.0026,
     velocityScale: 0.17,
     views: {
-      front: new THREE.Vector3(0, 0.08, 1).normalize(),
+      front: new THREE.Vector3(0.32, 0.22, 1).normalize(),
       '3d': new THREE.Vector3(0.62, 0.34, 0.7).normalize(),
     },
     bounds: new THREE.Box3(new THREE.Vector3(-0.115, 0, -0.055), new THREE.Vector3(0.07, 0.425, 0.055)),

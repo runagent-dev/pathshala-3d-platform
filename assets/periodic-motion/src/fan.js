@@ -188,7 +188,7 @@ export function createFan(M) {
     arrowThickness: 0.0095,
     velocityScale: 0.07, // m of arrow per (m per period)
     views: {
-      front: new THREE.Vector3(0, -0.96, 0.28).normalize(),
+      front: new THREE.Vector3(0.36, -0.82, 0.5).normalize(),
       '3d': new THREE.Vector3(0.5, -0.62, 0.6).normalize(),
     },
     bounds: new THREE.Box3(new THREE.Vector3(-FAN_SPAN, -0.09, -FAN_SPAN), new THREE.Vector3(FAN_SPAN, 0.47, FAN_SPAN)),
