@@ -1,7 +1,7 @@
 // This figure's own behaviour, through the bridge (runs with `npm run test:figures`; dev only, never packaged): each
 // stroke of the pump takes 20,000 Pa out of the box and leaves F = ΔP × A on each face (1,000 N with no air left), the
-// box crumples more and more, the "only from the top" ghost and the real crush, the air column's weight over 1 m², the
-// body in space, and the test runs five questions.
+// box crumples more and more, the "only from the top" ghost and the real crush; the body's guided sequence (the Earth,
+// space without a suit, the pressure suit, then again), and the test runs four questions.
 import { expect, test } from '@playwright/test';
 import { openFigure, preparePage } from '../../../scripts/lib/export/driver.mjs';
 
@@ -27,21 +27,21 @@ test('air-pressure: pumping the air out leaves the outside pressure unbalanced',
   const real = await fig.call('set', { whatIf: false, animate: false });
   expect(real).toMatchObject({ whatIf: false, crumple: 1, next: 'new' });
 
-  // the air column: 10⁵ N over 1 m²
-  const column = await fig.call('set', { part: 'column', weigh: true, animate: false });
-  expect(column).toMatchObject({ part: 'column', weighed: true, columnWeight: 100000 });
-
-  // the body, in space
-  const space = await fig.call('set', { part: 'body', space: true, animate: false });
-  expect(space).toMatchObject({ part: 'body', space: true, next: 'earth' });
+  // the body: on the Earth the outside and inside pressures are equal; in space nothing presses from outside; the suit
+  const earth = await fig.call('set', { part: 'body', animate: false });
+  expect(earth).toMatchObject({ part: 'body', step: 'earth', space: false, bodyOut: 100000, bodyIn: 100000, next: 'space' });
+  const space = await fig.call('set', { space: true, animate: false });
+  expect(space).toMatchObject({ step: 'space', space: true, suit: false, bodyOut: 0, bodyIn: 100000, next: 'suit' });
+  const suit = await fig.call('set', { space: 'suit', animate: false });
+  expect(suit).toMatchObject({ step: 'suit', suit: true, bodyOut: 100000, next: 'again' });
 
   await fig.call('reset');
   const reset = await fig.call('get');
-  expect(reset).toMatchObject({ part: 'can', strokes: 0, whatIf: false, weighed: false, space: false, view: 'front' });
+  expect(reset).toMatchObject({ part: 'can', strokes: 0, whatIf: false, step: 'earth', space: false, view: 'front' });
   expect(log.errors).toEqual([]);
 });
 
-test('air-pressure: each tap is one stroke; the row of words changes the part; the test', async ({ page }) => {
+test('air-pressure: each tap is one stroke; the body is one guided sequence; the test', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 700 });
   const log = await preparePage(page);
   const fig = await openFigure(page, 'air-pressure');
@@ -56,15 +56,26 @@ test('air-pressure: each tap is one stroke; the row of words changes the part; t
   await frame.locator('.pvc-act').click();
   await fig.advance(1800);
   expect((await fig.call('get')).strokes).toBe(2);
-  await frame.locator('[data-example="column"]').click();
+  // the body: one button takes it to space, puts on the suit, and starts again
+  await frame.locator('[data-example="body"]').click();
   await fig.advance(1500);
-  expect((await fig.call('get')).part).toBe('column');
+  expect(await fig.call('get')).toMatchObject({ part: 'body', step: 'earth' });
   await frame.locator('.pvc-act').click();
-  await fig.advance(300);
-  expect((await fig.call('get')).weighed).toBe(true);
-  // the test: five questions, each answered
+  await fig.advance(600);
+  expect(await fig.call('get')).toMatchObject({ step: 'space', busy: 'space' });
+  await fig.advance(1500);
+  expect(await fig.call('get')).toMatchObject({ step: 'space', busy: '', bodyOut: 0 });
+  await frame.locator('.pvc-act').click();
+  await fig.advance(2800);
+  expect(await fig.call('get')).toMatchObject({ step: 'suit', busy: '', bodyOut: 100000 });
+  await frame.locator('.pvc-act').click();
+  await fig.advance(600);
+  expect(await fig.call('get')).toMatchObject({ step: 'earth', space: false });
+  await frame.locator('.pvc-act').click();
+  await fig.advance(2200);
+  // the test: four questions, each answered
   await fig.call('practice');
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 4; i++) {
     await fig.advance(1500);
     await frame.locator('[data-q]').first().click();
     await fig.advance(300);
@@ -74,6 +85,6 @@ test('air-pressure: each tap is one stroke; the row of words changes the part; t
   await frame.locator('[data-mode="explore"]').click();
   await fig.advance(800);
   const back = await fig.call('get');
-  expect(back).toMatchObject({ mode: 'explore', part: 'column', strokes: 2 });
+  expect(back).toMatchObject({ mode: 'explore', part: 'body', step: 'space', strokes: 2 });
   expect(log.errors).toEqual([]);
 });

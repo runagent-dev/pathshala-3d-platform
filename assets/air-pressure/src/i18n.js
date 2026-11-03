@@ -1,8 +1,8 @@
 // Every string the figure shows, in Bangla and English. The book's words on pages 142–143 (topic 5.4): বাতাসের চাপ
 // (Air Pressure), "বাতাসের একটা চাপ আছে", "আমাদের শরীরের ভেতর থেকেও বাইরে একটি চাপ দেওয়া হচ্ছে", "দুটো চাপ একটা
 // আরেকটিকে কাটাকাটি করে দেয়", মহাকাশ, মহাকাশচারী, "চাপ নিরোধক স্পেস স্যুট", "পৃথিবী পৃষ্ঠে বাতাসের এই চাপ 10⁵ N/m²",
-// "1 m² ক্ষেত্রফলের", বাতাসের স্তম্ভ, "তার ওজন 10⁵ N, এটা মোটামুটিভাবে একটা হাতির ওজন", "ওজন হচ্ছে বল এবং এই বলটি নিচের
-// দিকে কাজ করে", "চাপ ভেক্টর নয়, তার কোনো দিক নেই তাই যেকোনো জায়গায় চারদিকে চাপ সমান", "পাতলা টিন অথবা
+// "মহাকাশে বাতাস নেই, তাই বাতাসের চাপও নেই", "শরীরের ভেতরের চাপকে কাটাকাটি করার জন্য কিছু নেই", "এ রকম পরিবেশে মানুষের
+// শরীর তার ভেতরকার চাপে বিস্ফোরিত হয়ে যেতে পারে", "ওজন হচ্ছে বল এবং এই বলটি নিচের দিকে কাজ করে", "চাপ ভেক্টর নয়, তার কোনো দিক নেই তাই যেকোনো জায়গায় চারদিকে চাপ সমান", "পাতলা টিন অথবা
 // অ্যালুমিনিয়ামের তৈরি কোনো নিশ্ছিদ্র কৌটা", বায়ুশূন্য, দুমড়েমুচড়ে, "বাইরের বাতাসের চাপকে কৌটার ভেতরের বাতাসের পাল্টা চাপ
 // দিয়ে একটা সমতা বজায় রেখেছিল", "ভেতরের বাতাস পাম্প করে সরিয়ে নেবার পর ভেতরে বাইরের বাতাসের চাপ প্রতিহত করার মতো কিছু
 // নেই", "চাপ যদি শুধু উপর থেকে আসত, তাহলে কৌটাটা শুধু উপর থেকে দুমড়েমুচড়ে যেত", চ্যাপ্টা, সংকুচিত, চিত্র ৫.০৬, চিত্র ৫.০৭.
@@ -19,7 +19,36 @@ export const STRINGS = {
     rotate_body: 'পাশে ঘোরালে ছবি বড় হয়, লেখা থাকে পাশে।',
     rotate_go: 'ঘুরিয়ে দেখো',
     rotate_stay: 'এভাবেই দেখো',
-    title: 'বাতাসের চাপ: টিনের কৌটা দুমড়েমুচড়ে যায়',
+    title: 'বাতাসের চাপ: টিনের কৌটা আর আমাদের শরীর',
+    act_space: 'মহাকাশে নিয়ে যাও',
+    act_suit: 'স্পেস স্যুট পরাও',
+    act_again: 'আবার দেখো',
+    cell_suit: 'স্যুটের চাপ',
+    cell_body_in: 'শরীরের ভেতরের চাপ',
+    out_earth: 'বাইরে = ভেতরে: <b>সমান চাপ, কাটাকাটি</b>',
+    out_going: 'মহাকাশে যাচ্ছে…',
+    out_space: 'বাইরে চাপ <b>{zero}</b>: কাটাকাটি করার কিছু নেই',
+    out_suiting: 'স্পেস স্যুট পরানো হচ্ছে…',
+    out_suit: 'স্যুট = ভেতরে: <b>আবার সমান, কাটাকাটি</b>',
+    rule_earth: '<b>আমাদের শরীরের ভেতর থেকেও বাইরে একটি চাপ দেওয়া হচ্ছে।</b> তাই দুটো চাপ একটা আরেকটিকে কাটাকাটি করে দেয়, আমরা বাতাসের চাপ আলাদাভাবে অনুভব করি না।',
+    rule_space: '<b>মহাকাশে বাতাস নেই, তাই বাতাসের চাপও নেই।</b> সেখানে শরীরের ভেতরের চাপকে কাটাকাটি করার জন্য কিছু নেই।',
+    rule_suit: '<b>সে জন্য মহাকাশচারীরা সব সময়ই চাপ নিরোধক স্পেস স্যুট পরে থাকেন।</b> স্যুট শরীরের চারপাশে চাপ ধরে রাখে, তাই দুটো চাপ আবার কাটাকাটি করে দেয়।',
+    note_burst: 'এ রকম পরিবেশে মানুষের শরীর তার ভেতরকার চাপে বিস্ফোরিত হয়ে যেতে পারে।',
+    note_suit: 'সহজ করে দেখানো: আসল স্যুটে চাপ এর চেয়ে কিছুটা কম রাখা হয়',
+    lbl_air: 'বাইরের বাতাসের চাপ',
+    lbl_suit: 'স্যুটের চাপ',
+    lbl_body_in: 'শরীরের ভেতরের চাপ',
+    hint_watch: 'দেখো কী হয়।',
+    q_space: 'মহাকাশে বাতাস নেই (ছবি)। মহাকাশচারীরা সব সময় চাপ নিরোধক স্পেস স্যুট পরেন কেন?',
+    c_cancel: 'ভেতরের চাপকে কাটাকাটি করতে',
+    c_morepush: 'মহাকাশে বাতাসের চাপ অনেক বেশি বলে',
+    c_stopair: 'বাইরের বাতাস যেন শরীরে চাপ না দেয়',
+    c_float: 'ভারী স্যুটে শরীর যেন ভেসে না যায়',
+    why_space:
+      '<b>ভেতরের চাপকে কাটাকাটি করতে</b>: মহাকাশে বাতাস নেই, তাই বাইরে থেকে কোনো চাপ নেই; স্যুট শরীরের চারপাশে চাপ ধরে রাখে, না হলে শরীর ভেতরের চাপে বিস্ফোরিত হয়ে যেতে পারে।',
+    mis_morepush: 'মহাকাশে বাতাসই নেই, তাই বাতাসের চাপও নেই।',
+    mis_stopair: 'মহাকাশে বাইরে কোনো বাতাস নেই যে চাপ দেবে; উল্টো, স্যুট নিজেই শরীরে চাপ দেয়।',
+    mis_float: 'স্যুট শরীরকে ভারী করার জন্য নয়; স্যুট শরীরের চারপাশে চাপ ধরে রাখে।',
     view: 'দেখার ধরন',
     view_front_short: 'সামনে',
     view_rotate: 'ঘুরিয়ে দেখো',
@@ -37,8 +66,7 @@ export const STRINGS = {
     // the row of words: the three parts
     parts: 'কী দেখবে',
     chip_can: 'টিনের কৌটা',
-    chip_column: 'বাতাসের স্তম্ভ',
-    chip_body: 'শরীর',
+    chip_body: 'আমাদের শরীর',
 
     // the action and the quiet button
     act_pump: 'পাম্প করে বাতাস সরাও',
@@ -46,25 +74,14 @@ export const STRINGS = {
     act_whatif: 'যদি শুধু উপর থেকে চাপ দিত?',
     act_real: 'আসলে কী হয় দেখো',
     act_new: 'নতুন কৌটা নাও',
-    act_weigh: 'স্তম্ভের ওজন দেখো',
-    act_weigh_again: 'আবার দেখো',
-    act_space: 'মহাকাশে হলে?',
-    act_earth: 'পৃথিবীতে ফেরো',
     act_home: 'শুরুতে ফেরাও',
 
     // the readout under the action
     cell_out: 'বাইরের চাপ',
     cell_in: 'ভেতরের চাপ',
-    cell_W: 'স্তম্ভের ওজন',
-    cell_A: 'ক্ষেত্রফল',
     val_Pa: '{v}&nbsp;{u_Pa}',
-    val_W: '≈&nbsp;{p5}&nbsp;{u_N}',
-    val_A: '{v}&nbsp;{u_m2}',
     sum_can: 'এক পাশে বল = পার্থক্য × A = {dP}&nbsp;{u_Pa} × {A}&nbsp;{u_m2} = <b>{F}&nbsp;{u_N}</b>',
     sum_can_short: 'F = {dP}&nbsp;{u_Pa} × {A}&nbsp;{u_m2} = <b>{F}&nbsp;{u_N}</b>',
-    sum_column: 'P = F/A = {p5}&nbsp;{u_N} ÷ {one}&nbsp;{u_m2} = <b>{p5}&nbsp;{u_Nm2}</b>',
-    sum_body: 'পার্থক্য = <b>{dP}&nbsp;{u_Pa}</b>: কাটাকাটি',
-    sum_space: 'পার্থক্য = <b>{dP}&nbsp;{u_Pa}</b>: ভেতর থেকে ঠেলা',
 
     // the result line
     out_can_start: 'ভেতরে আর বাইরে সমান চাপ: কৌটা যেমন ছিল তেমনই',
@@ -73,10 +90,6 @@ export const STRINGS = {
     out_vacuum: 'বায়ুশূন্য! প্রতি পাশে <b>{F}&nbsp;{u_N}</b>: চারদিক থেকে দুমড়েমুচড়ে গেল',
     out_whatif: 'চাপ শুধু উপর থেকে এলে কৌটা <b>চ্যাপ্টা</b> হয়ে যেত (চিত্র ৫.০৭ b)',
     out_real: 'আসলে চারদিক থেকে চাপ আসে: কৌটা <b>সংকুচিত</b> হয় (চিত্র ৫.০৭ c)',
-    out_column: '{one}&nbsp;{u_m2} জায়গার উপরে বাতাসের একটা স্তম্ভ (চিত্র ৫.০৬)',
-    out_weighed: 'স্তম্ভের ওজন <b>{p5}&nbsp;{u_N}</b>: মোটামুটি একটা হাতির ওজন!',
-    out_body: 'বাইরে আর ভেতরে সমান চাপ: দুটো চাপ <b>কাটাকাটি</b>',
-    out_space: 'মহাকাশে বাইরে চাপ <b>{zero}</b>: কাটাকাটি করার কিছু নেই',
 
     // the rule: the book's words, one idea at a time
     rule_can_start: '<b>বাতাসের একটা চাপ আছে।</b> কৌটার ভেতরের বাতাসের পাল্টা চাপ বাইরের বাতাসের চাপের সাথে একটা সমতা বজায় রাখে।',
@@ -84,18 +97,10 @@ export const STRINGS = {
     rule_vacuum: '<b>চাপ ভেক্টর নয়, তার কোনো দিক নেই,</b> তাই যেকোনো জায়গায় চারদিকে চাপ সমান: কৌটা শুধু উপর দিক থেকে নয়, চারদিক থেকে দুমড়েমুচড়ে যায়।',
     rule_whatif: '<b>চাপ যদি শুধু উপর থেকে আসত,</b> তাহলে কৌটাটা শুধু উপর থেকে দুমড়েমুচড়ে চ্যাপ্টা হয়ে যেত। কিন্তু তা হয় না।',
     rule_real: '<b>চাপ যেহেতু চারদিকেই সমান,</b> তাই চাপটা চারদিক থেকেই আসছে এবং টিনের কৌটাটা চারদিক থেকে দুমড়েমুচড়ে যাচ্ছে।',
-    rule_column: '<b>বাতাসের চাপটি আসে বাতাসের স্তম্ভের ওজন থেকে।</b> পৃথিবী পৃষ্ঠে {one}&nbsp;{u_m2} জায়গার উপরে যে বাতাসের স্তম্ভ রয়েছে, তার ওজন কত?',
-    rule_weighed:
-      '<b>পৃথিবী পৃষ্ঠে বাতাসের চাপ {p5}&nbsp;{u_Nm2}।</b> ওজন হচ্ছে বল এবং এই বলটি নিচের দিকে কাজ করে, কিন্তু চাপ ভেক্টর নয়: যেকোনো জায়গায় চারদিকে চাপ সমান।',
-    rule_body: '<b>আমাদের শরীরের ভেতর থেকেও বাইরে একটি চাপ দেওয়া হচ্ছে।</b> তাই দুটো চাপ একটা আরেকটিকে কাটাকাটি করে দেয়, আমরা বাতাসের চাপ আলাদাভাবে অনুভব করি না।',
-    rule_space: '<b>মহাকাশে বাতাস নেই, তাই বাতাসের চাপও নেই।</b> শরীরের ভেতরের চাপকে কাটাকাটি করার কিছু নেই, তাই মহাকাশচারীরা সব সময় চাপ নিরোধক স্পেস স্যুট পরে থাকেন।',
 
     // notes on the stage
     note_steps: 'সহজ করে: প্রতি টানে {v}&nbsp;{u_Pa} কমে',
     note_whatif: 'কল্পনা: আসলে এমন হয় না',
-    note_column: 'স্তম্ভটি আসলে বহু কিলোমিটার উঁচু',
-    note_body: 'সমান লম্বা তীর: সমান চাপ',
-    note_space: 'মহাকাশ: বাইরে বাতাস নেই',
 
     // labels on the picture
     lbl_out: 'বাইরের চাপ',
@@ -104,14 +109,8 @@ export const STRINGS = {
     lbl_in_v: 'ভেতরের চাপ {v}&nbsp;{u_Pa}',
     lbl_top_only: 'শুধু উপর থেকে চাপ',
     lbl_ghost: 'চ্যাপ্টা (কল্পনা)',
-    lbl_column: 'বাতাসের স্তম্ভ',
-    lbl_1m: '{one}&nbsp;m',
-    lbl_W: 'ওজন ≈ {p5}&nbsp;{u_N}',
-    lbl_elephant: 'হাতির ওজন ≈ {p5}&nbsp;{u_N}',
-    lbl_body_in: 'শরীরের ভেতরের চাপ',
 
     hint_wait: 'দেখো কৌটার কী হয়।',
-    hint_part: 'আগে "{part}" বেছে নাও।',
 
     // the test
     q_count: 'প্রশ্ন {i} / {n}',
@@ -135,16 +134,6 @@ export const STRINGS = {
     mis_inside: 'এটি ভেতরের চাপ × A; নিতে হবে বাইরের আর ভেতরের চাপের পার্থক্য।',
     mis_cm2: '{u_cm2}-কে {u_m2} না করে গুণ করা হয়েছে; {c}&nbsp;{u_cm2} = {A}&nbsp;{u_m2}।',
 
-    q_top: 'ধরো, বাতাসের চাপ শুধু উপর থেকে আসে (ছবির তীরের মতো)। ভেতরের বাতাস সরালে কৌটাটা কেমন হতো?',
-    c_flat: 'উচ্চতা কমে চ্যাপ্টা হয়ে যেত',
-    c_inward: 'চার পাশের দেয়াল ভেতরে ঢুকে যেত',
-    c_nothing: 'কৌটার কোনো বদলই হতো না',
-    c_swell: 'কৌটাটা ফুলে বড় হয়ে যেত',
-    why_top: '<b>উচ্চতা কমে চ্যাপ্টা হয়ে যেত</b>: বই বলে, চাপ যদি শুধু উপর থেকে আসত, তাহলে কৌটাটা শুধু উপর থেকে দুমড়েমুচড়ে যেত (চিত্র ৫.০৭ b)।',
-    mis_inward: 'পাশ থেকে চাপ এলে তবেই দেয়াল ভেতরে ঢুকত; এখানে ধরা হয়েছে চাপ শুধু উপর থেকে আসে।',
-    mis_nothing: 'ভেতরের পাল্টা চাপ না থাকলে উপরের চাপ কৌটাকে চেপে দেবে।',
-    mis_swell: 'কৌটা ফোলে ভেতরের চাপ বেশি হলে; এখানে ভেতরের চাপ কমেছে।',
-
     q_all: 'ভেতরের বাতাস সরালে কৌটাটা আসলে চারদিক থেকে দুমড়েমুচড়ে যায় (ছবি)। কেন?',
     c_nodir: 'চাপ চারদিকে সমান, তার কোনো দিক নেই',
     c_pump: 'পাম্প ভেতর থেকে দেয়ালগুলো টেনে নেয়',
@@ -154,17 +143,6 @@ export const STRINGS = {
     mis_pump: 'পাম্প শুধু ভেতরের বাতাস সরিয়ে নেয়; কৌটাকে চাপ দেয় বাইরের বাতাস।',
     mis_weight: 'ওজন নিচের দিকে কাজ করে, কিন্তু চাপ ভেক্টর নয়: যেকোনো জায়গায় চারদিকে চাপ সমান।',
     mis_piles: 'বাতাস কোনো এক পাশে জমে না; সব পাশে বাতাসের চাপ সমান।',
-
-    q_column: 'ছবির {one} m × {one} m জায়গার উপরে বাতাসের স্তম্ভের ওজন প্রায় কত?',
-    c_w5: '{p5}&nbsp;{u_N}',
-    c_p5: '{p5}&nbsp;{u_Nm2}',
-    c_w1: '{p1}&nbsp;{u_N}',
-    c_w3: '{p3}&nbsp;{u_N}',
-    why_column:
-      '<b>{p5}&nbsp;{u_N}</b>: পৃথিবী পৃষ্ঠে বাতাসের চাপ {p5}&nbsp;{u_Nm2}; তাই {one}&nbsp;{u_m2} জায়গার উপরের স্তম্ভের ওজন = {p5}&nbsp;{u_Nm2} × {one}&nbsp;{u_m2} = {p5}&nbsp;{u_N}, মোটামুটি একটা হাতির ওজন।',
-    mis_p5: '{u_Nm2} চাপের একক; ওজন একটি বল, তার একক {u_N}।',
-    mis_w1: 'বাতাস হালকা মনে হলেও স্তম্ভটি বহু কিলোমিটার উঁচু, তাই তার ওজন অনেক বেশি।',
-    mis_w3: 'এটি {p5}&nbsp;{u_N}-এর একশো ভাগের এক ভাগ; বই বলছে ওজনটা প্রায় একটা হাতির ওজন।',
 
     q_body: 'বাইরের বাতাস তোমার শরীরে চারদিক থেকে চাপ দিচ্ছে (লাল তীর)। তবু তুমি এই চাপ টের পাও না কেন?',
     c_inside: 'শরীরের ভেতর থেকেও বাইরে সমান চাপ পড়ে',
@@ -183,7 +161,37 @@ export const STRINGS = {
     rotate_body: 'Sideways, the picture is bigger and the text sits beside it.',
     rotate_go: 'Turn it',
     rotate_stay: 'Stay like this',
-    title: 'Air pressure: a tin box crumples',
+    title: 'Air pressure: a tin box and our body',
+    act_space: 'Take him to space',
+    act_suit: 'Put on the space suit',
+    act_again: 'See it again',
+    cell_suit: 'Suit’s pressure',
+    cell_body_in: 'Inside the body',
+    out_earth: 'Outside = inside: <b>equal, they cancel</b>',
+    out_going: 'Going to space…',
+    out_space: 'Outside <b>{zero}</b>: nothing to cancel it',
+    out_suiting: 'Putting on the space suit…',
+    out_suit: 'Suit = inside: <b>equal again, they cancel</b>',
+    rule_earth: '<b>Our body pushes outward from inside too.</b> So the two pressures cancel each other, and we don’t feel the air’s pressure.',
+    rule_space: '<b>In space there is no air, so no air pressure.</b> There is nothing to cancel the pressure inside the body.',
+    rule_suit:
+      '<b>That is why astronauts always wear pressure suits.</b> The suit keeps a pressure all round the body, so the two pressures cancel again.',
+    note_burst: 'In such a place a person’s body could burst from the pressure inside it.',
+    note_suit: 'Made simple: a real suit keeps a somewhat lower pressure',
+    lbl_air: 'Outside air’s pressure',
+    lbl_suit: 'Suit’s pressure',
+    lbl_body_in: 'Pressure from inside',
+    hint_watch: 'Watch what happens.',
+    q_space: 'There is no air in space (picture). Why do astronauts always wear pressure suits?',
+    c_cancel: 'To cancel the pressure inside',
+    c_morepush: 'Air pressure in space is very high',
+    c_stopair: 'To keep the outside air from pressing',
+    c_float: 'A heavy suit keeps the body from floating',
+    why_space:
+      '<b>To cancel the pressure inside</b>: there is no air in space, so nothing presses from outside; the suit keeps a pressure all round the body, or the body could burst from the pressure inside.',
+    mis_morepush: 'There is no air in space at all, so no air pressure.',
+    mis_stopair: 'There is no outside air in space to press; it is the suit that presses on the body.',
+    mis_float: 'The suit is not there to make the body heavy; it keeps a pressure all round the body.',
     view: 'View',
     view_front_short: 'Front',
     view_rotate: 'Rotate',
@@ -200,32 +208,20 @@ export const STRINGS = {
 
     parts: 'What to look at',
     chip_can: 'Tin box',
-    chip_column: 'Air column',
-    chip_body: 'Body',
+    chip_body: 'Our body',
 
     act_pump: 'Pump the air out',
     act_pump_more: 'Pump out more air',
     act_whatif: 'What if only from the top?',
     act_real: 'See what really happens',
     act_new: 'Take a new box',
-    act_weigh: 'Show its weight',
-    act_weigh_again: 'Show it again',
-    act_space: 'And in space?',
-    act_earth: 'Back to the Earth',
     act_home: 'Back to the start',
 
     cell_out: 'Outside',
     cell_in: 'Inside',
-    cell_W: 'Column’s weight',
-    cell_A: 'Area',
     val_Pa: '{v}&nbsp;{u_Pa}',
-    val_W: '≈&nbsp;{p5}&nbsp;{u_N}',
-    val_A: '{v}&nbsp;{u_m2}',
     sum_can: 'Force on one face = difference × A = {dP}&nbsp;{u_Pa} × {A}&nbsp;{u_m2} = <b>{F}&nbsp;{u_N}</b>',
     sum_can_short: 'F = {dP}&nbsp;{u_Pa} × {A}&nbsp;{u_m2} = <b>{F}&nbsp;{u_N}</b>',
-    sum_column: 'P = F/A = {p5}&nbsp;{u_N} ÷ {one}&nbsp;{u_m2} = <b>{p5}&nbsp;{u_Nm2}</b>',
-    sum_body: 'Difference = <b>{dP}&nbsp;{u_Pa}</b>: they cancel',
-    sum_space: 'Difference = <b>{dP}&nbsp;{u_Pa}</b>: pushing out',
 
     out_can_start: 'The same pressure inside and outside: the box stays as it is',
     out_pumping: 'The air inside is going out…',
@@ -233,10 +229,6 @@ export const STRINGS = {
     out_vacuum: 'No air inside! <b>{F}&nbsp;{u_N}</b> on each face: crushed from every side',
     out_whatif: 'Pushed only from the top, the box would be <b>flattened</b> (fig. 5.07 b)',
     out_real: 'Pressure really comes from every side: the box <b>shrinks inward</b> (fig. 5.07 c)',
-    out_column: 'A column of air over {one}&nbsp;{u_m2} of ground (fig. 5.06)',
-    out_weighed: 'The column weighs <b>{p5}&nbsp;{u_N}</b>: roughly an elephant’s weight!',
-    out_body: 'The same pressure outside and inside: the two <b>cancel</b>',
-    out_space: 'In space the outside pressure is <b>{zero}</b>: nothing to cancel',
 
     rule_can_start: '<b>Air has a pressure.</b> The air inside the box pushes back on the outside air’s pressure and keeps a balance.',
     rule_pump: '<b>Once the air inside is pumped out,</b> nothing inside resists the outside air’s pressure, so the box crumples.',
@@ -244,19 +236,9 @@ export const STRINGS = {
       '<b>Pressure is not a vector: it has no direction,</b> so at any place it is the same in every direction. The box crumples from every side, not only from the top.',
     rule_whatif: '<b>If pressure came only from the top,</b> the box would crumple from the top only and be flattened. But that is not what happens.',
     rule_real: '<b>Since pressure is the same in every direction,</b> it comes from every side, and the tin box crumples from every side.',
-    rule_column:
-      '<b>Air pressure comes from the weight of the air column.</b> How much does the column of air over {one}&nbsp;{u_m2} of the Earth’s surface weigh?',
-    rule_weighed:
-      '<b>Air pressure at the Earth’s surface is {p5}&nbsp;{u_Nm2}.</b> Weight is a force and acts downward, but pressure is not a vector: at any place it is the same in every direction.',
-    rule_body: '<b>Our body pushes outward from inside too.</b> So the two pressures cancel each other, and we don’t feel the air’s pressure.',
-    rule_space:
-      '<b>In space there is no air, so no air pressure.</b> Nothing cancels the pressure inside the body, so astronauts always wear pressure suits.',
 
     note_steps: 'Made simple: each stroke lowers it by {v}&nbsp;{u_Pa}',
     note_whatif: 'Imagined: this is not what happens',
-    note_column: 'The real column is many kilometres high',
-    note_body: 'Arrows of equal length: equal pressure',
-    note_space: 'Space: no air outside',
 
     lbl_out: 'Outside pressure',
     lbl_in: 'Inside pressure',
@@ -264,14 +246,8 @@ export const STRINGS = {
     lbl_in_v: 'Inside {v}&nbsp;{u_Pa}',
     lbl_top_only: 'Pressure from the top only',
     lbl_ghost: 'Flattened (imagined)',
-    lbl_column: 'Air column',
-    lbl_1m: '{one}&nbsp;m',
-    lbl_W: 'Weight ≈ {p5}&nbsp;{u_N}',
-    lbl_elephant: 'Elephant ≈ {p5}&nbsp;{u_N}',
-    lbl_body_in: 'Pressure from inside',
 
     hint_wait: 'Watch what happens to the box.',
-    hint_part: 'First choose "{part}".',
 
     q_count: 'Question {i} / {n}',
     q_score: 'Right: {right}',
@@ -295,18 +271,6 @@ export const STRINGS = {
     mis_inside: 'That is the inside pressure × A; take the difference between outside and inside.',
     mis_cm2: 'That multiplies by {u_cm2} without changing to {u_m2}; {c}&nbsp;{u_cm2} = {A}&nbsp;{u_m2}.',
 
-    q_top:
-      'Suppose air pressure came only from the top (like the arrows in the picture). If the air inside were taken out, what would the box look like?',
-    c_flat: 'Lower and flattened',
-    c_inward: 'Its four walls pushed in',
-    c_nothing: 'Not changed at all',
-    c_swell: 'Swollen up, bigger',
-    why_top:
-      '<b>Lower and flattened</b>: the book says that if pressure came only from the top, the box would crumple from the top only (fig. 5.07 b).',
-    mis_inward: 'The walls go in only when pressure comes from the sides; here we supposed it comes only from the top.',
-    mis_nothing: 'Without the inside air pushing back, the pressure from the top squashes the box.',
-    mis_swell: 'A box swells when the pressure inside is bigger; here the inside pressure went down.',
-
     q_all: 'With the air inside taken out, the box really crumples from every side (picture). Why?',
     c_nodir: 'Pressure is the same every way: it has no direction',
     c_pump: 'The pump pulls the walls from inside',
@@ -317,17 +281,6 @@ export const STRINGS = {
     mis_pump: 'The pump only takes the inside air away; it is the outside air that presses on the box.',
     mis_weight: 'Weight acts downward, but pressure is not a vector: at any place it is the same in every direction.',
     mis_piles: 'Air does not pile up on one side; its pressure is the same on every side.',
-
-    q_column: 'About how much does the column of air over the {one} m × {one} m square in the picture weigh?',
-    c_w5: '{p5}&nbsp;{u_N}',
-    c_p5: '{p5}&nbsp;{u_Nm2}',
-    c_w1: '{p1}&nbsp;{u_N}',
-    c_w3: '{p3}&nbsp;{u_N}',
-    why_column:
-      '<b>{p5}&nbsp;{u_N}</b>: air pressure at the Earth’s surface is {p5}&nbsp;{u_Nm2}, so the column over {one}&nbsp;{u_m2} weighs {p5}&nbsp;{u_Nm2} × {one}&nbsp;{u_m2} = {p5}&nbsp;{u_N}, roughly an elephant’s weight.',
-    mis_p5: '{u_Nm2} is the unit of pressure; a weight is a force, measured in {u_N}.',
-    mis_w1: 'Air feels light, but the column is many kilometres high, so it weighs a lot.',
-    mis_w3: 'That is a hundredth of {p5}&nbsp;{u_N}; the book says it is about an elephant’s weight.',
 
     q_body: 'The outside air presses on your body from every side (red arrows). Why don’t you feel it?',
     c_inside: 'The body pushes out equally from inside',

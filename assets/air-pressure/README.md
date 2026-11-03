@@ -27,11 +27,10 @@ To listen to it or control it from the book page, use the helper shipped in the 
 | Param | Meaning | Values | Default |
 |---|---|---|---|
 | `lang` | Language | `bn` বাংলা · `en` English | `bn` |
-| `part` | Part | `can` the tin box · `column` the air column · `body` our body | `can` |
+| `part` | Part | `can` the tin box · `body` our body | `can` |
 | `strokes` | Pump strokes done (0 (full of air) to 5 (no air left); each stroke takes out 20,000 Pa) | number | `0` |
 | `whatIf` | The box pressed only from the top (needs 5 strokes) | `1` · `0` | `0` |
-| `weigh` | The column's weight shown | `1` · `0` | `0` |
-| `space` | The body in space | `1` · `0` | `0` |
+| `space` | Our body (needs part = body) | `0` on the Earth · `1` in space, no suit · `suit` in space, in the pressure suit | `0` |
 | `view` | View | `front` · `3d` | `front` |
 | `mode` | Start in | `explore` learn · `quiz` test | `explore` |
 | `coach` | The ring round the tin pulses | `1` · `0` | `1` |

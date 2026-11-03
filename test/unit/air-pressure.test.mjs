@@ -1,6 +1,7 @@
 // The maths of the air-pressure figure (book page 142, topic 5.4): the book's 10⁵ N/m², the pressure left in the box
-// after each stroke, the force left over on one 10 cm × 10 cm face (F = ΔP × A, A in m²), the air column's weight over
-// 1 m², numbers grouped the Bangladeshi way, the test's choices and the strings. Pure code, no browser.
+// after each stroke, the force left over on one 10 cm × 10 cm face (F = ΔP × A, A in m²), the pressures round the body
+// on the Earth, in space and in the suit, numbers grouped the Bangladeshi way, the test's choices and the strings. Pure
+// code, no browser.
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import * as r from '../../assets/air-pressure/src/reading.js';
@@ -44,10 +45,23 @@ describe('air-pressure: the pump and the box', () => {
   });
 });
 
-describe('air-pressure: the air column', () => {
-  it('weighs 10⁵ N over 1 m², so P = F/A = 10⁵ N/m²', () => {
-    assert.equal(r.columnWeight(), 100000);
-    assert.equal(r.pressureOf(r.columnWeight(), r.COLUMN_AREA), r.P_AIR);
+describe('air-pressure: the body', () => {
+  it('has three steps: the Earth, space without a suit, the suit', () => {
+    assert.deepEqual(r.BODY_STEPS, ['earth', 'space', 'suit']);
+    assert.deepEqual(r.PARTS, ['can', 'body']);
+    assert.equal(r.fixBodyStep('0'), 0);
+    assert.equal(r.fixBodyStep(false), 0);
+    assert.equal(r.fixBodyStep('1'), 1);
+    assert.equal(r.fixBodyStep(true), 1);
+    assert.equal(r.fixBodyStep('space'), 1);
+    assert.equal(r.fixBodyStep('suit'), 2);
+    assert.equal(r.fixBodyStep('nonsense'), 0);
+  });
+
+  it('balances on the Earth and in the suit, and leaves the inside pressure alone in space', () => {
+    assert.deepEqual(r.bodyPressures(0), { out: 100000, inside: 100000, left: 0, by: 'air' });
+    assert.deepEqual(r.bodyPressures(1), { out: 0, inside: 100000, left: 100000, by: 'none' });
+    assert.deepEqual(r.bodyPressures('suit'), { out: 100000, inside: 100000, left: 0, by: 'suit' });
   });
 });
 

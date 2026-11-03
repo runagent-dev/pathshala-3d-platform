@@ -1,12 +1,19 @@
-// Air pressure (book page 142, topic 5.4), student view. A thin tin box (a cube 10 cm on a side, like the book's
-// চিত্র ৫.০৭) stands on a plain table, nothing else round it. One outlined red arrow presses on each open face from
-// outside (the air's 10⁵ N/m², the same length everywhere); one blue arrow on the left face pushes back from inside
-// just as hard. Each tap pumps one stroke: the inside pressure drops, the blue arrow shrinks, the red ones stay, and the box crumples in from every side while the camera leans in; the panel
-// works out the force left over on one face, F = (P outside − P inside) × A. Then the book's contrast: "what if air
-// pushed only from the top?" shows the wrong flattening (b) as a ghost, and "what really happens" replays the
-// all-sided crush (c). Two short steps: the air column over 1 m² (চিত্র ৫.০৬) whose weight, 10⁵ N, matches an
-// elephant's; and a student with equal arrows outside and inside (why we don't feel it; in space only the inside ones
-// are left). Then a five-question test. Built on the shared student kit.
+// Air pressure (book page 142, topic 5.4), student view, in two parts.
+//
+// The tin box (চিত্র ৫.০৭): a thin tin box, a cube 10 cm on a side, stands on a plain table. One outlined red arrow
+// presses on each open face from outside (the air's 10⁵ N/m², the same length everywhere); one blue arrow on the left
+// face pushes back from inside just as hard. Each tap pumps one stroke: the inside pressure drops, the blue arrow
+// shrinks, the red ones stay, and the box crumples in from every side while the camera leans in; the panel works out
+// the force left over on one face, F = (P outside − P inside) × A. Then the book's contrast: "what if air pushed only
+// from the top?" shows the wrong flattening (b) as a ghost, and "what really happens" replays the all-sided crush (c).
+//
+// Our body, one guided sequence with one big button: (1) on the Earth a student stands under a blue sky; nine pairs of
+// arrows meet head to head round the body, red (the outside air) pressing in, blue (the inside of the body) pushing
+// out, equally long: they cancel. (2) In space there is no air: the red arrows go, the blue ones grow a little and the
+// body strains gently outward (a slight swell and a warm pulsing glow), with the book's sentence about bursting.
+// (3) A pressure suit closes round the student from the feet up and the helmet comes down; the suit's purple arrows
+// press in again, as long as the blue: balanced again. "আবার দেখো" starts over. Then a four-question test.
+// Built on the shared student kit.
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
 import { createTweener, ease } from '@shared/tween.js';
@@ -20,8 +27,10 @@ import { createI18n } from './i18n.js';
 import { fitPose } from './camera.js';
 import { createArrowSet } from './arrows.js';
 import { FACES, createCan } from './can.js';
-import { COLUMN_AT, ELEPHANT_AT, GROUND, PERSON_AT, createWorld, skyTexture, spaceTexture } from './scene.js';
+import { createPeople, SUIT_TOP } from './person.js';
+import { GROUND, PERSON_AT, bodySkyTexture, createWorld, skyTexture, spaceTexture } from './scene.js';
 import {
+  BODY_STEPS,
   FACE_CM2,
   PARTS,
   P_AIR,
@@ -31,9 +40,10 @@ import {
   STROKES,
   STROKE_PA,
   arrowLength,
-  columnWeight,
+  bodyPressures,
   crumpleFor,
   faceForce,
+  fixBodyStep,
   fixStrokes,
   forceChoices,
   groupBD,
@@ -44,11 +54,10 @@ import {
 } from './reading.js';
 
 export const DEFAULTS = {
-  part: 'can', // 'can' | 'column' | 'body'
+  part: 'can', // 'can' | 'body'
   strokes: 0, // pump strokes done (0 … 5)
   whatIf: false, // the box: show the wrong flattening from the top only
-  space: false, // the body: in space (no air outside)
-  weigh: false, // the column: its weight and the elephant's shown
+  space: '0', // the body: '0' on the Earth, '1' in space without a suit, 'suit' in space in the pressure suit
   view: 'front', // 'front' | '3d'
   mode: 'explore', // 'explore' | 'quiz'
   coach: true,
@@ -59,41 +68,56 @@ export const DEFAULTS = {
   sound: true,
 };
 
-const COLORS = { out: '#e03131', in: '#1971c2', W: '#7048e8', A: '#0c8599' };
+const COLORS = { out: '#e03131', in: '#1971c2', suit: '#ae3ec9' };
 const GAP = 0.0015; // the arrows' tips stop this far off the tin
 const STROKE_S = 1.5; // s: one stroke of the pump
 const SHAPE_S = 1.6; // s: the flattening (b), the replayed crush (c)
+const TO_SPACE_S = 1.8; // s: the body goes to space
+const SUIT_S = 2.4; // s: the suit closes round the body
+const PULSE_S = 1.4; // s: one beat of the strain in space
 const DOUBLE_TAP = 420; // ms
 const NBSP = ' ';
-const MARGIN = { top: 52, bottom: 14, side: 6 };
-const DOWN = new THREE.Vector3(0, -1, 0);
+const MARGIN = { top: 52, bottom: 10, side: 6 };
+// the body's arrows: each pair meets head to head; the inside arrow starts this far off the outline
+const B_LEN = 0.15; // m: one arrow of a pair (outside and inside alike)
+const B_GAP = 0.012;
+const B_GROW = 1.3; // in space the inside arrows grow by this much
+const LIFT = 0.07; // m: in space the student floats this far up
 // where the camera looks for each part (world boxes) and from where
 const LOOKS = {
   can: { box: [new THREE.Vector3(-0.17, -0.004, -0.08), new THREE.Vector3(0.1, 0.19, 0.1)], dir: new THREE.Vector3(-0.5, 0.3, 1) },
   close: { box: [new THREE.Vector3(-0.09, -0.004, -0.09), new THREE.Vector3(0.09, 0.13, 0.09)], dir: new THREE.Vector3(-0.42, 0.3, 1) },
-  column: {
-    box: [new THREE.Vector3(ELEPHANT_AT.x - 1.4, GROUND, ELEPHANT_AT.z - 0.9), new THREE.Vector3(COLUMN_AT.x + 0.7, GROUND + 3.6, COLUMN_AT.z + 0.6)],
-    dir: new THREE.Vector3(0.32, 0.16, 1),
-  },
   body: {
-    box: [new THREE.Vector3(PERSON_AT.x - 0.55, GROUND, PERSON_AT.z - 0.2), new THREE.Vector3(PERSON_AT.x + 0.55, GROUND + 1.78, PERSON_AT.z + 0.3)],
-    dir: new THREE.Vector3(-0.18, 0.1, 1),
+    box: [
+      new THREE.Vector3(PERSON_AT.x - 0.66, GROUND - 0.01, PERSON_AT.z - 0.12),
+      new THREE.Vector3(PERSON_AT.x + 0.66, GROUND + 2.12, PERSON_AT.z + 0.12),
+    ],
+    dir: new THREE.Vector3(-0.1, 0.05, 1),
   },
 };
-// the student's body: points on it where the arrows press (person coordinates) and the way out of the body there
-const BODY_POINTS = [
-  [0, 1.585, 0, 0, 1, 0],
-  [-0.36, 0.9, 0.02, -1, 0.08, 0],
-  [0.36, 0.9, 0.02, 1, 0.08, 0],
-].map(([x, y, z, nx, ny, nz]) => ({ p: new THREE.Vector3(x, y, z).add(PERSON_AT), n: new THREE.Vector3(nx, ny, nz).normalize() }));
-const BODY_LEN = 0.16; // m: the same outside and inside
+
+/** A soft warm oval, bright in the middle and fading out (the glow round the straining body). */
+function haloTexture() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 128;
+  const g = /** @type {CanvasRenderingContext2D} */ (c.getContext('2d'));
+  const r = g.createRadialGradient(64, 64, 6, 64, 64, 64);
+  r.addColorStop(0, 'rgba(255,150,90,0.9)');
+  r.addColorStop(0.45, 'rgba(255,110,60,0.45)');
+  r.addColorStop(1, 'rgba(255,90,40,0)');
+  g.fillStyle = r;
+  g.fillRect(0, 0, 128, 128);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
 
 export function createApp(root, options = {}) {
   const o = { ...DEFAULTS, ...options };
   const t = createI18n(o.lang, { numerals: o.numerals });
   const N = t.num;
   const G = (x) => N(t.lang === 'bn' ? groupBD(x) : groupIntl(x)); // Bangladeshi commas in Bangla (১,০০,০০০)
-  const BASE = { p5: t.pow(10, P_EXP), p1: t.pow(10, 1), p3: t.pow(10, 3), one: 1, zero: 0 };
+  const BASE = { p5: t.pow(10, P_EXP), one: 1, zero: 0 };
   const T = (key, vars = {}) => t(key, { ...BASE, ...vars });
 
   root.classList.add('pvc', 'ap');
@@ -113,7 +137,7 @@ export function createApp(root, options = {}) {
   const sheet = bindCleanSheet(ui.learn);
   const $ = ui.$;
 
-  // the readings: two pressures (or the column's weight and area) as a small list, then the formula
+  // the readings: two pressures as a small list, each with a bar as long as the pressure, then one line under them
   const arrowIn =
     '<svg viewBox="0 0 24 12" aria-hidden="true"><path d="M2 6h13M11 1.5 17 6l-6 4.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 1v10" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>';
   const arrowOut =
@@ -122,13 +146,13 @@ export function createApp(root, options = {}) {
   read.className = 'ap-read';
   read.innerHTML = `
     <div class="ap-cells">
-      <div class="ap-cell" data-cell="a"><span class="ap-ico" data-ico="a"></span><span class="ap-k" data-k="a"></span><b class="ap-v" data-v="a"></b></div>
-      <div class="ap-cell" data-cell="b"><span class="ap-ico" data-ico="b"></span><span class="ap-k" data-k="b"></span><b class="ap-v" data-v="b"></b></div>
+      <div class="ap-cell" data-cell="a"><span class="ap-ico" data-ico="a"></span><span class="ap-k" data-k="a"></span><b class="ap-v" data-v="a"></b><span class="ap-bar"><i data-bar="a"></i></span></div>
+      <div class="ap-cell" data-cell="b"><span class="ap-ico" data-ico="b"></span><span class="ap-k" data-k="b"></span><b class="ap-v" data-v="b"></b><span class="ap-bar"><i data-bar="b"></i></span></div>
     </div>
     <div class="ap-sum" data-sum aria-live="polite"></div>`;
   $('.pvc-act-row').after(read);
 
-  // a small note in the panel, under the rule: what is made simple, or that a picture is imagined (off the 3D view)
+  // a small note in the panel, under the rule: what is made simple, a picture that is imagined, or the book's warning
   const note = document.createElement('p');
   note.className = 'ap-note';
   ui.learn.append(note);
@@ -136,12 +160,14 @@ export function createApp(root, options = {}) {
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 30, near: 0.02, far: 90, environment: 'room', environmentIntensity: 0.55 });
   const { camera, controls, scene } = stage;
+  stage.renderer.localClippingEnabled = true; // the suit closes round the body from the feet up
   controls.enablePan = false;
   controls.enableZoom = false;
   controls.enableRotate = false;
   controls.minPolarAngle = 0.3;
   controls.maxPolarAngle = Math.PI * 0.52;
   const sky = o.bg !== 'transparent' ? skyTexture() : null;
+  let bodySky = null;
   let stars = null;
   scene.background = sky;
   if (sky) scene.fog = new THREE.Fog('#f7d9b2', 6, 60);
@@ -152,7 +178,7 @@ export function createApp(root, options = {}) {
     scene.fog.far = d + 40;
   }
   controls.addEventListener('change', haze);
-  // golden hour: a low warm sun from the front right, a blue sky and warm bricks bouncing light
+  // a warm sun from the front right, a blue sky and a warm floor bouncing light
   const hemi = new THREE.HemisphereLight('#a9d0ff', '#c9784a', 0.85);
   scene.add(hemi);
   const sun = new THREE.DirectionalLight('#ffd49a', 2.5);
@@ -170,16 +196,13 @@ export function createApp(root, options = {}) {
     sun.shadow.bias = -0.0005;
     sun.shadow.normalBias = 0.01;
   }
-  /** The sun's shadow box goes where the camera looks (small and sharp for the box, big for the column). */
+  /** The sun's shadow box goes where the camera looks (small and sharp for the box, bigger for the student). */
   function aimSun(part) {
     const c = new THREE.Vector3();
     let size = 0.42;
-    if (part === 'column') {
-      c.copy(COLUMN_AT).lerp(ELEPHANT_AT, 0.5);
-      size = 4.2;
-    } else if (part === 'body') {
-      c.copy(PERSON_AT).add({ x: 0, y: 0.8, z: 0 });
-      size = 1.4;
+    if (part === 'body') {
+      c.copy(PERSON_AT).add({ x: 0, y: 0.85, z: 0 });
+      size = 1.1;
     } else c.set(-0.06, 0.05, -0.03);
     sun.target.position.copy(c);
     sun.position.copy(c).addScaledVector(SUN_DIR, size * 5);
@@ -192,10 +215,32 @@ export function createApp(root, options = {}) {
   scene.add(world.root);
   const can = createCan();
   scene.add(can.root);
+  const people = createPeople();
+  people.root.position.copy(PERSON_AT);
+  scene.add(people.root);
+  const glowColor = new THREE.Color('#ff7a45');
+  for (const m of people.student.glowMats) m.emissive.copy(glowColor);
+  // the strain in space: a soft warm glow behind the student (one quad, drawn only then)
+  const halo = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.25, 2.1),
+    new THREE.MeshBasicMaterial({
+      map: haloTexture(),
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      toneMapped: false,
+      fog: false,
+    }),
+  );
+  halo.name = 'StrainGlow';
+  halo.userData.noExport = true;
+  halo.position.set(0, 0.86, -0.2);
+  halo.visible = false;
+  people.root.add(halo);
 
-  // the arrows, few and outlined: one red arrow pressing in on each open face (the air outside, every side alike), and
-  // on the face toward the camera one blue arrow beside it pushing out (the air inside), which shrinks as it is pumped
-  // out; the column's and the elephant's weight, the body's
+  // the tin's arrows, few and outlined: one red arrow pressing in on each open face (the air outside, every side
+  // alike), and on the face toward the camera one blue arrow beside it pushing out (the air inside)
   const openFaces = FACES.filter((f) => f.id !== 'ny');
   const outSpots = openFaces.map((face) => ({ face, u: face.id === 'nx' ? -0.55 : 0, v: 0, top: face.id === 'py' }));
   const inSpots = [{ face: FACES.find((f) => f.id === 'nx'), u: 0.55, v: 0 }];
@@ -209,10 +254,13 @@ export function createApp(root, options = {}) {
     headRadius: 0.011,
     name: 'InsidePressure',
   });
-  const wArrows = createArrowSet({ count: 2, color: COLORS.W, radius: 0.04, pad: 0.018, name: 'Weights' });
-  const bodyOut = createArrowSet({ count: BODY_POINTS.length, color: COLORS.out, radius: 0.0095, name: 'BodyOutside' });
-  const bodyIn = createArrowSet({ count: BODY_POINTS.length, color: COLORS.in, outline: '#ffffff', radius: 0.0095, xray: true, name: 'BodyInside' });
-  scene.add(outArrows.root, inArrows.root, wArrows.root, bodyOut.root, bodyIn.root);
+  // the body's arrows: nine pairs round the outline, head to head
+  const NB = people.spots.body.length;
+  const bodyArrow = { radius: 0.0125, head: 0.058, headRadius: 0.032, pad: 0.006 };
+  const bodyOut = createArrowSet({ count: NB, color: COLORS.out, ...bodyArrow, name: 'BodyOutside' });
+  const bodyIn = createArrowSet({ count: NB, color: COLORS.in, outline: '#ffffff', ...bodyArrow, name: 'BodyInside' });
+  const suitIn = createArrowSet({ count: NB, color: COLORS.suit, outline: '#ffffff', ...bodyArrow, name: 'SuitPressure' });
+  scene.add(outArrows.root, inArrows.root, bodyOut.root, bodyIn.root, suitIn.root);
 
   const tweener = createTweener();
   stage.addTicker((dt) => tweener.tick(dt));
@@ -232,17 +280,20 @@ export function createApp(root, options = {}) {
     f: 0, // how flat the ghost is drawn (0 … 1)
     ghost: false, // the box drawn as the ghost of (b)
     whatIf: false,
-    busy: '', // '' | 'pump' | 'flat' | 'real'
-    weighed: false,
-    space: false,
+    busy: '', // '' | 'pump' | 'flat' | 'real' | 'space' | 'suit'
+    step: 0, // the body: 0 on the Earth, 1 in space without a suit, 2 in the suit
+    // the body as drawn (they move during a step): the outside / inside / suit arrows (0 … 1, the inside up to
+    // B_GROW), the suit closed (0 … 1), the helmet down, the arrows moved from the body to the suit, the strain, the lift
+    b: { red: 1, blue: 1, purple: 0, suit: 0, helmet: 0, m: 0, strain: 0, lift: 0 },
+    pulse: 0, // s: the strain's beat
     view: o.view === '3d' ? '3d' : 'front',
     mode: 'explore',
     locked: false,
     zoom: 0, // 0 … 1: how far the camera has leaned in to the box
-    found: { pump: false, vacuum: false, whatIf: false, real: false, weigh: false, body: false, space: false },
+    found: { pump: false, vacuum: false, whatIf: false, real: false, body: false, space: false, suit: false },
     show: { arrows: true, inside: true, values: true, topOnly: false, labels: true }, // the test hides some
     userMovedCamera: false,
-    run: 0, // a token: every new stroke, flattening, part or reset bumps it
+    run: 0, // a token: every new stroke, flattening, step, part or reset bumps it
   };
   const now = () => performance.now();
   let lastAct = Number.NEGATIVE_INFINITY;
@@ -259,6 +310,8 @@ export function createApp(root, options = {}) {
   }
   function layoutArrows() {
     const onCan = s.part === 'can' && s.show.arrows;
+    outArrows.setVisible(onCan);
+    inArrows.setVisible(onCan);
     const topOnly = s.ghost || s.show.topOnly;
     const L = arrowLength(P_AIR);
     outSpots.forEach((sp, i) => {
@@ -274,29 +327,157 @@ export function createApp(root, options = {}) {
       can.pointAt(sp.face, sp.u, sp.v, weights, tmpA).addScaledVector(sp.face.n, GAP);
       inArrows.set(i, tmpA, sp.face.n, Li);
     });
-    // the weights: down through the column, and down in front of the elephant
-    const wOn = s.part === 'column' && s.weighed;
-    if (wOn) {
-      wArrows.set(0, tmpA.copy(COLUMN_AT).add({ x: 0, y: 1.9, z: 0 }), DOWN, 1.8);
-      wArrows.set(1, tmpA.copy(ELEPHANT_AT).add({ x: 0.3, y: 1.15, z: 1.3 }), DOWN, 1.1);
-    } else wArrows.hideAll();
-    // the body: the same length outside and inside (in space, none outside)
-    const bOn = s.part === 'body' && s.show.arrows;
-    BODY_POINTS.forEach((bp, i) => {
-      if (!bOn || s.space) bodyOut.hide(i);
-      else {
-        tmpA.copy(bp.p).addScaledVector(bp.n, 0.006 + BODY_LEN);
-        bodyOut.set(i, tmpA, negN.copy(bp.n).negate(), BODY_LEN);
-      }
-      if (!bOn || !s.show.inside) bodyIn.hide(i);
-      else {
-        tmpA.copy(bp.p).addScaledVector(bp.n, -0.008 - BODY_LEN);
-        bodyIn.set(i, tmpA, bp.n, BODY_LEN);
-      }
-    });
+    layoutBody();
   }
 
-  /** One stroke of the pump: the handle goes up and back, some air goes out, the box gives. */
+  // ── the body and its arrows ─────────────────────────────────────────────────
+  const bP = new THREE.Vector3();
+  const bN = new THREE.Vector3();
+  const bTip = new THREE.Vector3();
+  const bFrom = new THREE.Vector3();
+  const bNeg = new THREE.Vector3();
+  /** Puts the student, the suit and the three sets of arrows where the drawn state `s.b` says. */
+  function layoutBody() {
+    const on = s.part === 'body';
+    people.root.visible = on;
+    const b = s.b;
+    people.root.position.set(PERSON_AT.x, PERSON_AT.y + b.lift, PERSON_AT.z);
+    // the suit: the clipping plane rises from the feet to the collar; the helmet comes down from above
+    const suitOn = on && b.suit > 0;
+    people.suit.body.visible = suitOn;
+    people.clip.constant = PERSON_AT.y + b.lift - 0.02 + (SUIT_TOP + 0.06) * b.suit;
+    people.suit.helmet.visible = on && b.helmet > 0;
+    people.suit.helmet.position.y = (1 - ease.outCubic(b.helmet)) * 0.55;
+    people.student.body.visible = !(b.suit >= 1 && b.helmet >= 1); // inside the suit, once it is closed
+    applyStrain();
+    const arrows = on && s.show.arrows;
+    bodyOut.setVisible(arrows && b.red > 0.001);
+    bodyIn.setVisible(arrows && s.show.inside);
+    suitIn.setVisible(arrows && b.purple > 0.001);
+    bodyOut.setOpacity(Math.min(1, b.red * 1.6));
+    if (!arrows) return;
+    const { body, suit } = people.spots;
+    for (let i = 0; i < NB; i++) {
+      bP.lerpVectors(body[i].p, suit[i].p, b.m).add(people.root.position);
+      bN.lerpVectors(body[i].n, suit[i].n, b.m).normalize();
+      const Lb = B_LEN * b.blue;
+      bFrom.copy(bP).addScaledVector(bN, B_GAP);
+      if (s.show.inside) bodyIn.set(i, bFrom, bN, Lb);
+      bTip.copy(bFrom).addScaledVector(bN, s.show.inside ? Lb : 0); // with no inside arrows the outside ones touch the body
+      bNeg.copy(bN).negate();
+      if (b.red > 0.001) bodyOut.set(i, bFrom.copy(bTip).addScaledVector(bN, B_LEN * b.red), bNeg, B_LEN * b.red);
+      if (b.purple > 0.001) suitIn.set(i, bFrom.copy(bTip).addScaledVector(bN, B_LEN * b.purple), bNeg, B_LEN * b.purple);
+    }
+  }
+  /** The strain in space: the body swells a little and glows warm, with a slow beat (nothing more). */
+  function applyStrain() {
+    const k = s.b.strain;
+    const beat = k > 0 ? k * (0.62 + 0.38 * Math.sin((s.pulse / PULSE_S) * Math.PI * 2)) : 0;
+    const sw = 0.035 * beat;
+    people.student.body.scale.set(1 + sw, 1 + sw * 0.25, 1 + sw);
+    people.student.head.scale.set(1 + sw * 0.6, 1 + sw * 0.6, 1 + sw * 0.6);
+    for (const m of people.student.glowMats) m.emissiveIntensity = 0.12 * beat;
+    halo.visible = beat > 0;
+    halo.material.opacity = 0.75 * beat;
+  }
+  stage.addTicker((dt) => {
+    if (s.part !== 'body' || s.b.strain <= 0) return false;
+    s.pulse = (s.pulse + dt) % PULSE_S;
+    applyStrain();
+    return true;
+  });
+  /** The drawn state of a resting step. */
+  function restOf(step) {
+    if (step === 1) return { red: 0, blue: B_GROW, purple: 0, suit: 0, helmet: 0, m: 0, strain: 1, lift: LIFT };
+    if (step === 2) return { red: 0, blue: 1, purple: 1, suit: 1, helmet: 1, m: 1, strain: 0, lift: LIFT };
+    return { red: 1, blue: 1, purple: 0, suit: 0, helmet: 0, m: 0, strain: 0, lift: 0 };
+  }
+  const part01 = (k, a, b) => Math.min(1, Math.max(0, (k - a) / (b - a)));
+  /** Goes to a step of the body: at once (jump), or animated from the step before. */
+  function bodyTo(step, { jump = false } = {}) {
+    const token = ++s.run;
+    tweener.cancel('body');
+    const prev = s.step;
+    s.step = step;
+    if (s.mode === 'explore') {
+      if (step >= 1) s.found.space = true;
+      if (step === 2) s.found.suit = true;
+    }
+    syncSetting();
+    const to = restOf(step);
+    const from = { ...s.b };
+    const animated = !jump && ((prev === 0 && step === 1) || (prev === 1 && step === 2));
+    if (!animated) {
+      Object.assign(s.b, to);
+      s.busy = '';
+      layoutBody();
+      refresh();
+      emitStep();
+      return Promise.resolve(true);
+    }
+    s.busy = step === 1 ? 'space' : 'suit';
+    if (step === 1) audio.pop();
+    refresh();
+    const lerp = (a, b, k) => a + (b - a) * k;
+    return tweener
+      .animate({
+        key: 'body',
+        duration: step === 1 ? TO_SPACE_S : SUIT_S,
+        ease: ease.linear,
+        onUpdate: (k) => {
+          const b = s.b;
+          if (step === 1) {
+            // the air goes: the red arrows shrink away, the blue ones grow, the body starts to strain
+            b.lift = lerp(from.lift, to.lift, ease.inOutSine(part01(k, 0, 0.6)));
+            b.red = lerp(from.red, 0, ease.inOutCubic(part01(k, 0.08, 0.55)));
+            b.blue = lerp(from.blue, B_GROW, ease.outBack(part01(k, 0.35, 0.85)));
+            b.strain = ease.inOutSine(part01(k, 0.55, 1));
+          } else {
+            // the strain goes, the suit closes from the feet up, the helmet comes down, the purple arrows press in
+            b.strain = lerp(from.strain, 0, part01(k, 0, 0.25));
+            b.suit = ease.inOutSine(part01(k, 0.05, 0.6));
+            b.helmet = part01(k, 0.5, 0.78);
+            b.m = ease.inOutCubic(part01(k, 0.15, 0.6));
+            b.blue = lerp(from.blue, 1, ease.inOutCubic(part01(k, 0.1, 0.6)));
+            b.purple = ease.outBack(part01(k, 0.72, 1));
+          }
+          layoutBody();
+          stage.invalidate();
+        },
+      })
+      .finished.then((done) => {
+        if (!done || token !== s.run) return false;
+        Object.assign(s.b, to);
+        s.busy = '';
+        if (step === 2) audio.contact();
+        layoutBody();
+        refresh();
+        emitStep();
+        return true;
+      });
+  }
+  function emitStep() {
+    emit('space', { step: BODY_STEPS[s.step], space: s.step >= 1, suit: s.step === 2 });
+    emitChange();
+  }
+  /** The setting: the yard under a muted sky for the box, a blue sky for the body on the Earth, space with the Earth. */
+  function syncSetting() {
+    const inSpace = s.part === 'body' && s.step >= 1;
+    world.outdoors.visible = !inSpace;
+    world.earth.visible = inSpace;
+    can.root.visible = s.part === 'can';
+    if (sky) {
+      if (inSpace && !stars) stars = spaceTexture();
+      if (s.part === 'body' && !bodySky) bodySky = bodySkyTexture();
+      scene.background = inSpace ? stars : s.part === 'body' ? bodySky : sky;
+      if (scene.fog instanceof THREE.Fog) scene.fog.color.set(inSpace ? '#0d1b4a' : '#f7d9b2');
+    }
+    hemi.intensity = inSpace ? 0.5 : 0.85;
+    fill.intensity = inSpace ? 0.35 : 0.55;
+    stage.invalidate();
+  }
+
+  /** One stroke of the pump: some air goes out, the box gives. */
   function pumpStroke({ jump = false } = {}) {
     if (s.n >= STROKES) return Promise.resolve(false);
     const token = ++s.run;
@@ -324,7 +505,6 @@ export function createApp(root, options = {}) {
         duration: STROKE_S,
         ease: ease.linear,
         onUpdate: (k) => {
-          // the handle up (0 … 0.42) and back down (… 0.78)
           const kp = ease.inOutCubic(Math.min(1, Math.max(0, (k - 0.05) / 0.45)));
           s.pIn = from.pIn + (to.pIn - from.pIn) * kp;
           // the tin holds, then gives with a little spring (a buckle)
@@ -483,41 +663,33 @@ export function createApp(root, options = {}) {
     s.zoom = 0;
     syncCan();
   }
-
-  // ── the parts: the box, the column, the body ──────────────────────────────
-  function syncParts() {
-    const inSpace = s.part === 'body' && s.space;
-    world.outdoors.visible = !inSpace;
-    world.column.visible = !inSpace;
-    world.elephant.visible = !inSpace;
-    can.root.visible = !inSpace;
-    if (sky) {
-      if (inSpace && !stars) stars = spaceTexture();
-      scene.background = inSpace ? stars : sky;
-      if (scene.fog instanceof THREE.Fog) scene.fog.color.set(inSpace ? '#0d1b4a' : '#f7d9b2');
+  /** Ends whatever was moving where it was going (a part change, the test, set). */
+  function settle() {
+    s.run++;
+    tweener.cancel('shape');
+    tweener.cancel('body');
+    if (s.busy === 'pump' || s.busy === 'real') {
+      s.pIn = insidePressure(s.n);
+      s.c = crumpleFor(pressureDifference(s.n));
     }
-    hemi.intensity = inSpace ? 0.55 : 0.85;
+    if (s.busy === 'flat') s.f = 1;
+    if (s.busy === 'space' || s.busy === 'suit') Object.assign(s.b, restOf(s.step));
+    s.busy = '';
+    s.zoom = 0;
+  }
+
+  // ── the parts: the box, the body ────────────────────────────────────────────
+  function syncParts() {
+    syncSetting();
     aimSun(s.part);
     layoutArrows();
     stage.invalidate();
   }
   function setPart(part, { animate = true } = {}) {
     if (!PARTS.includes(part)) return Promise.resolve(false);
-    s.run++;
-    tweener.cancel('shape');
-    if (s.busy === 'pump' || s.busy === 'real') {
-      // a stroke cut short ends where it was going
-      s.pIn = insidePressure(s.n);
-      s.c = crumpleFor(pressureDifference(s.n));
-    }
-    if (s.busy === 'flat') s.f = 1;
-    s.busy = '';
-    s.zoom = 0;
+    settle();
     s.part = part;
-    if (part !== 'body') s.space = false;
-    if (s.mode === 'explore') {
-      if (part === 'body') s.found.body = true;
-    }
+    if (s.mode === 'explore' && part === 'body') s.found.body = true;
     s.userMovedCamera = false;
     syncCan();
     syncParts();
@@ -526,28 +698,16 @@ export function createApp(root, options = {}) {
     emitChange();
     return flyTo(viewPose(), animate ? 1.3 : 0);
   }
-  function weigh() {
-    s.weighed = true;
-    if (s.mode === 'explore') s.found.weigh = true;
-    audio.pop();
-    layoutArrows();
-    refresh();
-    emitChange();
-  }
-  function setSpace(on) {
-    s.space = Boolean(on);
-    if (s.space && s.mode === 'explore') s.found.space = true;
-    audio.pop();
-    syncParts();
-    refresh();
-    emit('space', { space: s.space });
-    emitChange();
-  }
 
   // ── the panel ───────────────────────────────────────────────────────────────
   function plan() {
-    if (s.part === 'column') return s.weighed ? { label: 'act_weigh_again', step: '' } : { label: 'act_weigh', step: 1 };
-    if (s.part === 'body') return s.space ? { label: 'act_earth', step: '' } : { label: 'act_space', step: s.found.space ? '' : 1 };
+    if (s.part === 'body') {
+      if (s.busy === 'space') return { label: 'act_suit', step: 2 };
+      if (s.busy === 'suit') return { label: 'act_again', step: '' };
+      if (s.step === 0) return { label: 'act_space', step: 1 };
+      if (s.step === 1) return { label: 'act_suit', step: 2 };
+      return { label: 'act_again', step: '' };
+    }
     if (s.busy === 'flat' || (s.whatIf && !s.busy)) return { label: 'act_real', step: s.found.real ? '' : 3 };
     if (s.n < STROKES || s.busy === 'pump') return { label: s.n === 0 ? 'act_pump' : 'act_pump_more', step: s.found.vacuum ? '' : 1 };
     if (!s.found.real) return { label: 'act_whatif', step: 2 };
@@ -555,8 +715,11 @@ export function createApp(root, options = {}) {
   }
 
   function outcomeHtml() {
-    if (s.part === 'column') return s.weighed ? T('out_weighed') : T('out_column');
-    if (s.part === 'body') return s.space ? T('out_space') : T('out_body');
+    if (s.part === 'body') {
+      if (s.busy === 'space') return T('out_going');
+      if (s.busy === 'suit') return T('out_suiting');
+      return T(['out_earth', 'out_space', 'out_suit'][s.step], { zero: G(0) });
+    }
     if (s.busy === 'pump') return T('out_pumping');
     if (s.whatIf) return T('out_whatif');
     if (s.found.real && s.n >= STROKES && s.busy !== 'flat') return T('out_real');
@@ -567,8 +730,7 @@ export function createApp(root, options = {}) {
   }
 
   function ruleHtml() {
-    if (s.part === 'column') return s.weighed ? T('rule_weighed') : T('rule_column');
-    if (s.part === 'body') return s.space ? T('rule_space') : T('rule_body');
+    if (s.part === 'body') return T(['rule_earth', 'rule_space', 'rule_suit'][s.step]);
     if (s.whatIf || s.busy === 'flat') return T('rule_whatif');
     if (s.found.real && s.n >= STROKES) return T('rule_real');
     if (s.n >= STROKES) return T('rule_vacuum');
@@ -577,23 +739,32 @@ export function createApp(root, options = {}) {
   }
 
   function readout() {
-    if (s.part === 'column')
+    if (s.part === 'body') {
+      const p = bodyPressures(s.step);
+      const bySuit = p.by === 'suit';
       return {
-        a: { k: T('cell_W'), v: T('val_W'), cls: 'k-W', ico: '' },
-        b: { k: T('cell_A'), v: T('val_A', { v: N(1) }), cls: 'k-A', ico: '' },
-        sum: T('sum_column'),
+        a: {
+          k: T(bySuit ? 'cell_suit' : 'cell_out'),
+          v: T('val_Pa', { v: G(p.out) }),
+          cls: bySuit ? 'k-suit' : 'k-out',
+          ico: arrowIn,
+          bar: p.out / P_AIR,
+        },
+        b: { k: T('cell_body_in'), v: T('val_Pa', { v: G(p.inside) }), cls: 'k-in', ico: arrowOut, bar: p.inside / P_AIR },
+        sum: '',
+        sumCls: '',
       };
-    const pOut = s.part === 'body' && s.space ? 0 : P_AIR;
-    const pIn = s.part === 'body' ? P_AIR : insidePressure(s.n);
-    const a = { k: T('cell_out'), v: T('val_Pa', { v: G(pOut) }), cls: 'k-out', ico: arrowIn };
-    const b = { k: T('cell_in'), v: T('val_Pa', { v: G(pIn) }), cls: 'k-in', ico: arrowOut };
-    if (s.part === 'body') return { a, b, sum: T(s.space ? 'sum_space' : 'sum_body', { dP: G(Math.abs(pOut - pIn)) }) };
+    }
+    const pIn = insidePressure(s.n);
+    const a = { k: T('cell_out'), v: T('val_Pa', { v: G(P_AIR) }), cls: 'k-out', ico: arrowIn, bar: 1 };
+    const b = { k: T('cell_in'), v: T('val_Pa', { v: G(pIn) }), cls: 'k-in', ico: arrowOut, bar: pIn / P_AIR };
     const dP = pressureDifference(s.n);
     const narrow = read.clientWidth < 420;
     return {
       a,
       b,
       sum: T(narrow ? 'sum_can_short' : 'sum_can', { dP: G(dP), A: N(toM2(FACE_CM2)), F: G(faceForce(dP)) }),
+      sumCls: '',
     };
   }
 
@@ -603,6 +774,8 @@ export function createApp(root, options = {}) {
     sheet.choose(s.part);
     sheet.outcome(outcomeHtml());
     sheet.rule(ruleHtml());
+    root.dataset.part = s.part;
+    root.dataset.step = s.part === 'body' ? BODY_STEPS[s.step] : '';
     const r = readout();
     const key = JSON.stringify(r);
     if (key !== lastRead) {
@@ -613,8 +786,11 @@ export function createApp(root, options = {}) {
         /** @type {HTMLElement} */ (read.querySelector(`[data-k="${id}"]`)).textContent = r[id].k;
         /** @type {HTMLElement} */ (read.querySelector(`[data-v="${id}"]`)).innerHTML = r[id].v;
         /** @type {HTMLElement} */ (read.querySelector(`[data-ico="${id}"]`)).innerHTML = r[id].ico;
+        /** @type {HTMLElement} */ (read.querySelector(`[data-bar="${id}"]`)).style.width = `${Math.round(r[id].bar * 100)}%`;
       }
-      /** @type {HTMLElement} */ (read.querySelector('[data-sum]')).innerHTML = r.sum;
+      const sum = /** @type {HTMLElement} */ (read.querySelector('[data-sum]'));
+      sum.innerHTML = r.sum;
+      sum.className = `ap-sum ${r.sumCls}`;
     }
     if (action) {
       const p = plan();
@@ -630,8 +806,10 @@ export function createApp(root, options = {}) {
         n = T('note_whatif');
         warn = true;
       } else if (s.n > 0 || s.busy) n = T('note_steps', { v: G(STROKE_PA) });
-    } else if (s.part === 'column') n = T('note_column');
-    else n = s.space ? T('note_space') : T('note_body');
+    } else if (s.step === 1 && s.busy !== 'suit') {
+      n = T('note_burst');
+      warn = true;
+    } else if (s.step === 2 && !s.busy) n = T('note_suit');
     const nk = `${n}|${warn}`;
     if (nk !== lastNote) {
       lastNote = nk;
@@ -654,6 +832,7 @@ export function createApp(root, options = {}) {
   }
   /** Each shown arrow as three small boxes along it (one box round a slanting arrow would cover far too much). */
   function setBoxes(set, list, pad = 5) {
+    if (!set.root.visible) return;
     for (let i = 0; i < set.count; i++) {
       if (!set.shown[i]) continue;
       toScreen(set.tails[i], P0);
@@ -672,10 +851,10 @@ export function createApp(root, options = {}) {
     if (s.part === 'can') {
       setBoxes(outArrows, list);
       setBoxes(inArrows, list);
-    } else if (s.part === 'column') setBoxes(wArrows, list, 8);
-    else {
+    } else {
       setBoxes(bodyOut, list);
       setBoxes(bodyIn, list);
+      setBoxes(suitIn, list);
     }
     return list;
   }
@@ -690,7 +869,7 @@ export function createApp(root, options = {}) {
     const ys = corners.map((c) => (-c.y * 0.5 + 0.5) * stage.height);
     return { left: Math.min(...xs), top: Math.min(...ys), right: Math.max(...xs), bottom: Math.max(...ys) };
   }
-  /** The thing the labels keep off: the box (or the ghost), the pump; the column; the student. */
+  /** The thing the labels keep off: the box (or the ghost); the student's head and body (or the suit). */
   function subjectBoxes() {
     const out = [];
     if (s.part === 'can') {
@@ -699,8 +878,16 @@ export function createApp(root, options = {}) {
       bbox.min.set(-can.H * k, 0, -can.H * k);
       bbox.max.set(can.H * k, can.H * (s.ghost ? 0.75 : 2), can.H * k);
       out.push(screenBox(bbox));
-    } else if (s.part === 'body') {
-      bbox.setFromObject(world.person.root);
+    } else {
+      const y = people.root.position.y;
+      const wide = s.b.suit > 0.5 ? 0.3 : 0.22;
+      // the torso and legs, then the head (the arms are thin: a label may sit beside them)
+      bbox.min.set(PERSON_AT.x - wide, y, PERSON_AT.z - 0.1);
+      bbox.max.set(PERSON_AT.x + wide, y + 1.36, PERSON_AT.z + 0.1);
+      out.push(screenBox(bbox));
+      const r = s.b.helmet > 0.5 ? 0.2 : 0.13;
+      bbox.min.set(PERSON_AT.x - r, y + people.headY - r, PERSON_AT.z);
+      bbox.max.set(PERSON_AT.x + r, y + people.headY + r, PERSON_AT.z);
       out.push(screenBox(bbox));
     }
     return out.filter(Boolean);
@@ -726,6 +913,9 @@ export function createApp(root, options = {}) {
   const outIdx = outSpots.findIndex((sp) => sp.face.id === 'nx');
   const topIdx = outSpots.findIndex((sp) => sp.face.id === 'py');
   const inIdx = 0;
+  // the body's labelled arrows: the outside (or suit) one at the right arm, the inside one at the left arm
+  const B_RIGHT_ARM = 4;
+  const B_LEFT_ARM = 3;
   function syncLabels() {
     want.clear();
     const compact = stage.height < 260 || stage.width < 340;
@@ -770,64 +960,32 @@ export function createApp(root, options = {}) {
           });
       }
     }
-    if (s.show.labels && s.part === 'column') {
-      want.set('col', {
-        text: T('lbl_column'),
-        point: () => pt('col').copy(COLUMN_AT).add({ x: 0.5, y: 2.6, z: 0.5 }),
-        spots: [...RIGHT, ...ABOVE],
-        color: '#1c6fd9',
-        own,
-      });
-      want.set('m1', {
-        text: T('lbl_1m'),
-        point: () => pt('m1').copy(COLUMN_AT).add({ x: 0, y: 0, z: 0.52 }),
-        spots: [...BELOW],
-        color: COLORS.A,
-        own,
-        optional: true,
-      });
-      want.set('m2', {
-        text: T('lbl_1m'),
-        point: () => pt('m2').copy(COLUMN_AT).add({ x: 0.52, y: 0, z: 0 }),
-        spots: [spot(22, 10), ...RIGHT, ...BELOW],
-        color: COLORS.A,
-        own,
-        optional: true,
-      });
-      if (s.weighed) {
-        want.set('W', {
-          text: T('lbl_W'),
-          point: () => pt('W').copy(wArrows.tails[0]).lerp(wArrows.tips[0], 0.45),
-          spots: [...RIGHT, ...LEFT],
-          color: COLORS.W,
-          own,
-        });
-        want.set('E', {
-          text: T('lbl_elephant'),
-          point: () => pt('E').copy(wArrows.tips[1]),
-          spots: [...BELOW, ...RIGHT, ...LEFT],
-          color: COLORS.W,
-          own,
-        });
-      }
-    }
-    if (s.show.labels && s.part === 'body' && s.show.arrows) {
-      if (!s.space)
+    if (s.show.labels && s.part === 'body' && s.show.arrows && !s.busy) {
+      const SIDE_R = [spot(10, -34), spot(0, -40), spot(24, -36), spot(10, 34), spot(0, 40), ...RIGHT];
+      const SIDE_L = [spot(-10, -34), spot(0, -40), spot(-24, -36), spot(-10, 34), spot(0, 40), ...LEFT];
+      if (s.step === 0)
         want.set('bout', {
-          text: T('lbl_out'),
-          point: () => pt('bout').copy(bodyOut.tails[0]),
-          spots: [...RIGHT, ...ABOVE, ...LEFT],
+          text: T('lbl_air'),
+          point: () => pt('bout').copy(bodyOut.tails[B_RIGHT_ARM]).lerp(bodyOut.tips[B_RIGHT_ARM], 0.5),
+          spots: SIDE_R,
           color: COLORS.out,
+          own,
+        });
+      if (s.step === 2)
+        want.set('bsuit', {
+          text: T('lbl_suit'),
+          point: () => pt('bsuit').copy(suitIn.tails[B_RIGHT_ARM]).lerp(suitIn.tips[B_RIGHT_ARM], 0.5),
+          spots: SIDE_R,
+          color: COLORS.suit,
           own,
         });
       if (s.show.inside)
         want.set('bin', {
-          text: T('lbl_body_in'),
-          point: () => pt('bin').copy(bodyIn.tips[2]),
-          spots: [...RIGHT, ...BELOW],
+          text: T(s.step === 2 ? 'lbl_in' : 'lbl_body_in'),
+          point: () => pt('bin').copy(bodyIn.tails[B_LEFT_ARM]).lerp(bodyIn.tips[B_LEFT_ARM], 0.5),
+          spots: SIDE_L,
           color: COLORS.in,
           own,
-          optional: compact,
         });
     }
     for (const id of [...labelState.keys()])
@@ -931,14 +1089,16 @@ export function createApp(root, options = {}) {
     refresh();
   });
 
-  // ── the action: the big button, the ring round the pump (or the box, the column, the student) ──
+  // ── the action: the big button, the ring round the box (the body has only the button) ──
   function doAction() {
     if (s.locked) return lockedNudge();
     if (now() - lastAct < DOUBLE_TAP) return;
     lastAct = now();
     hintOff();
-    if (s.part === 'column') return weigh();
-    if (s.part === 'body') return setSpace(!s.space);
+    if (s.part === 'body') {
+      if (s.busy) return showHint(T('hint_watch'), { duration: 1800 });
+      return bodyTo((s.step + 1) % BODY_STEPS.length);
+    }
     if (s.busy === 'pump' || s.busy === 'real') return showHint(T('hint_wait'), { duration: 1800 });
     if (s.busy === 'flat' || s.whatIf) return showReal();
     if (s.n < STROKES) return pumpStroke();
@@ -954,11 +1114,7 @@ export function createApp(root, options = {}) {
     step: 1,
     label: 'act_pump',
     target: () => {
-      if (s.part === 'column')
-        return targetBox
-          .setFromObject(world.column.children[0])
-          .intersect(new THREE.Box3(new THREE.Vector3(-99, GROUND, -99), new THREE.Vector3(99, GROUND + 2.6, 99)));
-      if (s.part === 'body') return s.space ? null : targetBox.setFromObject(world.person.root);
+      if (s.part === 'body') return null; // the whole student is the subject: no ring over the arrows
       return targetBox.setFromObject(s.ghost ? can.ghost.children[0] : can.mesh);
     },
     pad: 6,
@@ -973,6 +1129,7 @@ export function createApp(root, options = {}) {
   const raycaster = new THREE.Raycaster();
   const ndc = new THREE.Vector2();
   const hitCan = [can.mesh];
+  const hitBody = [...people.student.body.children, ...people.student.head.children, ...people.suit.body.children];
   const canvasPoint = (e) => {
     const r = stage.canvas.getBoundingClientRect();
     return { x: e.clientX - r.left, y: e.clientY - r.top };
@@ -980,8 +1137,8 @@ export function createApp(root, options = {}) {
   function pick(p) {
     ndc.set((p.x / stage.width) * 2 - 1, -(p.y / stage.height) * 2 + 1);
     raycaster.setFromCamera(ndc, camera);
-    const list = s.part === 'can' ? hitCan : s.part === 'body' ? world.person.parts : [world.column.children[0]];
-    return raycaster.intersectObjects(list, false).length > 0;
+    const list = s.part === 'can' ? hitCan : hitBody;
+    return raycaster.intersectObjects(list, false).some((h) => h.object.visible);
   }
   ui.canvasHost.addEventListener(
     'pointerdown',
@@ -1024,6 +1181,7 @@ export function createApp(root, options = {}) {
   function snapshot() {
     const dP = pressureDifference(s.n);
     const p = plan();
+    const bp = bodyPressures(s.step);
     return {
       part: s.part,
       strokes: s.n,
@@ -1034,9 +1192,11 @@ export function createApp(root, options = {}) {
       F: faceForce(dP), // N on one face
       crumple: crumpleFor(dP),
       whatIf: s.whatIf,
-      weighed: s.weighed,
-      columnWeight: columnWeight(), // N over 1 m²
-      space: s.space,
+      step: BODY_STEPS[s.step], // the body: 'earth' | 'space' | 'suit'
+      space: s.step >= 1,
+      suit: s.step === 2,
+      bodyOut: bp.out, // Pa pressing on the body from outside (the air, the suit, or nothing)
+      bodyIn: bp.inside, // Pa pushing out from inside the body
       busy: s.busy,
       found: { ...s.found },
       next: p.label.replace('act_', ''),
@@ -1047,7 +1207,7 @@ export function createApp(root, options = {}) {
   let lastEmitted = '';
   function emitChange(force = false) {
     const snap = snapshot();
-    const key = JSON.stringify([snap.part, snap.strokes, snap.whatIf, snap.weighed, snap.space, snap.found, snap.mode, snap.view]);
+    const key = JSON.stringify([snap.part, snap.strokes, snap.whatIf, snap.step, snap.found, snap.mode, snap.view]);
     if (key === lastEmitted && !force) return;
     lastEmitted = key;
     emit('change', snap);
@@ -1074,14 +1234,13 @@ export function createApp(root, options = {}) {
     };
   }
   /** A question's scene: this part and state, these arrows and labels; nothing moving. */
-  async function scene_(part, { n = 0, whatIf = false, show = {}, weighed = false, space = false } = {}) {
-    s.run++;
-    tweener.cancel('shape');
+  async function scene_(part, { n = 0, whatIf = false, show = {}, step = 0 } = {}) {
+    settle();
     s.show = { arrows: true, inside: true, values: true, topOnly: false, labels: true, ...show };
     s.part = part;
-    s.space = space;
-    s.weighed = weighed;
     canTo(n, { whatIf });
+    s.step = step;
+    Object.assign(s.b, restOf(step));
     s.userMovedCamera = false;
     syncParts();
     refresh();
@@ -1089,7 +1248,6 @@ export function createApp(root, options = {}) {
   }
   function revealAll() {
     s.show = { ...s.show, arrows: true, inside: true, values: true, labels: true };
-    if (question?.kind === 'column') s.weighed = true;
     layoutArrows();
     refresh();
   }
@@ -1097,18 +1255,20 @@ export function createApp(root, options = {}) {
   let question = null;
   let picked = -1;
   const nText = (v) => `${G(v)}${NBSP}N`;
+  const KINDS = ['force', 'all', 'body', 'space'];
 
   const quiz = createQuiz({
     ui,
     t,
     emit,
     audio,
-    questions: 5,
+    questions: KINDS.length,
     lines: { text: 3, feedback: 3 },
     action,
     hooks: {
       enter() {
-        learnSaved = { part: s.part, n: s.n, whatIf: s.whatIf, weighed: s.weighed, space: s.space, found: { ...s.found } };
+        settle();
+        learnSaved = { part: s.part, n: s.n, whatIf: s.whatIf, step: s.step, found: { ...s.found } };
         s.mode = 'quiz';
         s.locked = true;
         hintOff();
@@ -1121,9 +1281,9 @@ export function createApp(root, options = {}) {
         s.show = { arrows: true, inside: true, values: true, topOnly: false, labels: true };
         s.found = { ...(saved?.found || s.found) };
         s.part = saved?.part ?? 'can';
-        s.weighed = saved?.weighed ?? false;
-        s.space = saved?.space ?? false;
         canTo(saved?.n ?? 0, { whatIf: saved?.whatIf ?? false });
+        s.step = saved?.step ?? 0;
+        Object.assign(s.b, restOf(s.step));
         syncUI();
         syncParts();
         refresh();
@@ -1132,20 +1292,13 @@ export function createApp(root, options = {}) {
       },
       async prepare(i, alive) {
         picked = -1;
-        const kind = ['force', 'top', 'all', 'column', 'body'][i % 5];
+        const kind = KINDS[i % KINDS.length];
         if (kind === 'force') {
           const n = pickOne(QUIZ_STROKES);
           await scene_('can', { n });
           if (!alive()) return null;
           question = { kind, n };
           return { text: T('q_force', { s: N(SIDE_CM) }), ...choicesOf(forceChoices(n), kind, (x) => nText(x.v)) };
-        }
-        if (kind === 'top') {
-          await scene_('can', { n: 0, show: { topOnly: true, inside: false } });
-          if (!alive()) return null;
-          question = { kind };
-          const items = ['c_flat', 'c_inward', 'c_nothing', 'c_swell'].map((key) => ({ key }));
-          return { text: T('q_top'), ...choicesOf(items, kind, (x) => T(x.key)) };
         }
         if (kind === 'all') {
           await scene_('can', { n: STROKES, show: { arrows: false } });
@@ -1154,29 +1307,24 @@ export function createApp(root, options = {}) {
           const items = ['c_nodir', 'c_pump', 'c_weight', 'c_piles'].map((key) => ({ key }));
           return { text: T('q_all'), ...choicesOf(items, kind, (x) => T(x.key)) };
         }
-        if (kind === 'column') {
-          await scene_('column');
+        if (kind === 'body') {
+          await scene_('body', { show: { inside: false } });
           if (!alive()) return null;
           question = { kind };
-          const items = ['c_w5', 'c_p5', 'c_w1', 'c_w3'].map((key) => ({ key }));
-          return { text: T('q_column'), ...choicesOf(items, kind, (x) => T(x.key)) };
+          const items = ['c_inside', 'c_noweight', 'c_toponly', 'c_tiny'].map((key) => ({ key }));
+          return { text: T('q_body'), ...choicesOf(items, kind, (x) => T(x.key)) };
         }
-        await scene_('body', { show: { inside: false } });
+        await scene_('body', { step: 1, show: { labels: false } });
         if (!alive()) return null;
-        question = { kind: 'body' };
-        const items = ['c_inside', 'c_noweight', 'c_toponly', 'c_tiny'].map((key) => ({ key }));
-        return { text: T('q_body'), ...choicesOf(items, 'body', (x) => T(x.key)) };
+        question = { kind: 'space' };
+        const items = ['c_cancel', 'c_morepush', 'c_stopair', 'c_float'].map((key) => ({ key }));
+        return { text: T('q_space'), ...choicesOf(items, 'space', (x) => T(x.key)) };
       },
       reveal(q, correct) {
         const k = question.kind;
         const wrongKey = correct ? null : q.list?.[picked]?.key;
         const A = toM2(FACE_CM2);
         const note_ = (map) => (wrongKey && map[wrongKey] ? ` ${T(map[wrongKey], { c: N(FACE_CM2), A: N(A), P: G(P_AIR) })}` : '');
-        if (k === 'top') {
-          // the answer: now the ghost flattens, as the book's (b)
-          s.show.topOnly = false;
-          showWhatIf({ jump: true });
-        }
         revealAll();
         if (k === 'force') {
           const n = question.n;
@@ -1186,10 +1334,9 @@ export function createApp(root, options = {}) {
             note_({ outside: 'mis_outside', inside: 'mis_inside', cm2: 'mis_cm2' })
           );
         }
-        if (k === 'top') return T('why_top') + note_({ c_inward: 'mis_inward', c_nothing: 'mis_nothing', c_swell: 'mis_swell' });
         if (k === 'all') return T('why_all') + note_({ c_pump: 'mis_pump', c_weight: 'mis_weight', c_piles: 'mis_piles' });
-        if (k === 'column') return T('why_column') + note_({ c_p5: 'mis_p5', c_w1: 'mis_w1', c_w3: 'mis_w3' });
-        return T('why_body') + note_({ c_noweight: 'mis_noweight', c_toponly: 'mis_toponly', c_tiny: 'mis_tiny' });
+        if (k === 'body') return T('why_body') + note_({ c_noweight: 'mis_noweight', c_toponly: 'mis_toponly', c_tiny: 'mis_tiny' });
+        return T('why_space') + note_({ c_morepush: 'mis_morepush', c_stopair: 'mis_stopair', c_float: 'mis_float' });
       },
       done() {
         s.locked = false;
@@ -1211,9 +1358,10 @@ export function createApp(root, options = {}) {
     ui.quiz.inert = s.mode !== 'quiz';
   }
   function goHome() {
-    s.found = { pump: false, vacuum: false, whatIf: false, real: false, weigh: false, body: false, space: false };
-    s.weighed = false;
-    s.space = false;
+    s.found = { pump: false, vacuum: false, whatIf: false, real: false, body: false, space: false, suit: false };
+    settle();
+    s.step = 0;
+    Object.assign(s.b, restOf(0));
     newCan();
     setPart('can');
   }
@@ -1256,13 +1404,14 @@ export function createApp(root, options = {}) {
     if (tgt.closest('input, textarea, select') || e.metaKey || e.ctrlKey || e.altKey) return;
     const k = e.key;
     const onButton = Boolean(tgt.closest('button'));
-    const sceneKey = ['1', '2', '3', 'r', 'R', 'Home', 'ArrowUp', 'ArrowRight', '+'].includes(k) || ((k === ' ' || k === 'Enter') && !onButton);
+    const sceneKey = ['1', '2', 'r', 'R', 'Home', 'ArrowUp', 'ArrowRight', '+'].includes(k) || ((k === ' ' || k === 'Enter') && !onButton);
     if (sceneKey && s.mode === 'quiz') {
       if (quiz.active && !quiz.revealed) lockedNudge();
       return;
     }
-    if (['1', '2', '3'].includes(k)) setPart(PARTS[Number(k) - 1]);
+    if (['1', '2'].includes(k)) setPart(PARTS[Number(k) - 1]);
     else if ((k === 'ArrowUp' || k === 'ArrowRight' || k === '+') && s.part === 'can' && s.n < STROKES && !s.busy && !s.whatIf) pumpStroke();
+    else if ((k === 'ArrowRight' || k === '+') && s.part === 'body') doAction();
     else if ((k === ' ' || k === 'Enter') && !onButton) doAction();
     else if (k === 'r' || k === 'R' || k === 'Home') goHome();
     else if (k === 'f' || k === 'F') setView('front');
@@ -1282,11 +1431,11 @@ export function createApp(root, options = {}) {
     if (n > 0) s.found.pump = true;
     if (n >= STROKES) s.found.vacuum = true;
     if (whatIf) s.found.whatIf = true;
-    s.weighed = Boolean(o.weigh);
-    s.found.weigh = s.weighed;
-    s.space = s.part === 'body' && Boolean(o.space);
-    s.found.space = s.space;
+    s.step = s.part === 'body' ? fixBodyStep(o.space) : 0;
+    Object.assign(s.b, restOf(s.step));
     s.found.body = s.part === 'body';
+    s.found.space = s.step >= 1;
+    s.found.suit = s.step === 2;
   }
   syncParts();
   flyTo(viewPose(), 0);
@@ -1305,9 +1454,10 @@ export function createApp(root, options = {}) {
     },
     getState: snapshot,
     /**
-     * Change any of: part ('can' | 'column' | 'body'), strokes (0 … 5: the box jumps there, or with animate it pumps
-     * the strokes still to do one by one), whatIf (the box: the wrong flattening from the top only, after 5 strokes),
-     * weigh (the column: show the weights), space (the body: no air outside), view ('front' | '3d'), found.
+     * Change any of: part ('can' | 'body'), strokes (0 … 5: the box jumps there, or with animate it pumps the strokes
+     * still to do one by one), whatIf (the box: the wrong flattening from the top only, after 5 strokes), space (the
+     * body: false / 'earth' on the Earth, true / 'space' in space without a suit, 'suit' in the pressure suit; with
+     * animate the next step plays), view ('front' | '3d'), found.
      */
     async set(p = {}) {
       const animate = p.animate !== false;
@@ -1330,14 +1480,13 @@ export function createApp(root, options = {}) {
         if (p.whatIf) await showWhatIf({ jump: !animate });
         else if (s.whatIf) await showReal({ jump: !animate });
       }
-      if (p.weigh != null && s.part === 'column') {
-        if (p.weigh) weigh();
-        else {
-          s.weighed = false;
-          layoutArrows();
+      if (p.space != null && s.part === 'body') {
+        const step = fixBodyStep(p.space === 'earth' ? 0 : p.space);
+        if (step !== s.step || s.busy) {
+          settle();
+          await bodyTo(step, { jump: !animate || step !== s.step + 1 });
         }
       }
-      if (p.space != null && s.part === 'body') setSpace(p.space);
       if (!s.userMovedCamera) flyTo(viewPose(), 0);
       refresh();
       emitChange();

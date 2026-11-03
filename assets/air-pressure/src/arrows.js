@@ -109,5 +109,9 @@ export function createArrowSet({
       core.opacity = a;
       rim.opacity = a;
     },
+    /** Show or hide the whole set (four draw calls fewer while hidden). */
+    setVisible(on) {
+      root.visible = on;
+    },
   };
 }

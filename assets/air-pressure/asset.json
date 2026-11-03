@@ -2,18 +2,18 @@
   "$schema": "../../schemas/asset.schema.json",
   "schemaVersion": 2,
   "id": "air-pressure",
-  "title": "Air pressure: a tin box crushed from every side (বাতাসের চাপ)",
+  "title": "Air pressure: a tin box crushed from every side, our body in space (বাতাসের চাপ)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "0.1.1",
+  "version": "1.0.0",
   "book": "physics-9-10",
   "page": 142,
   "topic": "5.4",
-  "placement": "Book page 142–143, topic 5.4 (বাতাসের চাপ): next to চিত্র ৫.০৭ (a tin box (a) emptied of air by a pump: (b) what would happen if air pressed only from the top, flattened; (c) what really happens, crushed from every side) and the paragraphs before it: the air column over 1 m² (চিত্র ৫.০৬, 10⁵ N/m², about an elephant's weight), 'চাপ ভেক্টর নয়, তার কোনো দিক নেই তাই যেকোনো জায়গায় চারদিকে চাপ সমান', and why we don't feel the air's pressure (and astronauts wear pressure suits).",
+  "placement": "Book page 142–143, topic 5.4 (বাতাসের চাপ): next to চিত্র ৫.০৭ (a tin box (a) emptied of air by a pump: (b) what would happen if air pressed only from the top, flattened; (c) what really happens, crushed from every side), and the paragraph before চিত্র ৫.০৬ on why we don't feel the air's pressure (the body pushes out from inside too), why a body in space with no air could burst, and why astronauts wear pressure suits (চাপ নিরোধক স্পেস স্যুট).",
   "order": 1,
   "maintainers": ["RadeenXALNW"],
   "units": "m",
-  "description": "Air pressure (page 142, topic 5.4), decluttered: one clear tin on a plain table, a soft floor and a gentle sky, nothing else. The tin box, a cube 10 cm on a side (as the book's চিত্র ৫.০৭), is plain silver with a slate band. One outlined red arrow presses in on each open face (the air's 1,00,000 Pa = 10⁵ N/m², the same everywhere); on the left face a blue arrow beside it pushes out (the air inside) just as hard. Each tap of the big button pumps air out (20,000 Pa a stroke, made simple, said in the panel): the blue arrow shrinks, the red ones stay, and the tin buckles in from every side while the camera leans in. The panel lists the outside and inside pressure and works out the force left over on one face, F = (P outside − P inside) × A with A = 0.01 m² (up to 1,000 N). After five strokes the book's contrast: 'what if air pushed only from the top?' shows the box as a pale ghost flattening (চিত্র ৫.০৭ b, marked as imagined), and 'what really happens' replays the crush from every side (c). The row of words also goes to the air column (চিত্র ৫.০৬): a see-through 1 m × 1 m column whose weight, 10⁵ N, is shown beside an elephant's (P = F/A = 10⁵ N/m²); and to our body: a student with three red arrows pressing in and equal blue arrows pushing out (they cancel); in space only the inside arrows are left (why astronauts wear pressure suits). Test tab: 5 questions with a note for every wrong choice. Phone-first, Bangla and English.",
+  "description": "Air pressure (page 142, topic 5.4), in two parts. The tin box: a thin tin cube 10 cm on a side (as the book's চিত্র ৫.০৭) on a plain table under a soft sky. One outlined red arrow presses in on each open face (the air's 1,00,000 Pa = 10⁵ N/m², the same everywhere); on the left face a blue arrow pushes out (the air inside) just as hard. Each tap of the big button pumps air out (20,000 Pa a stroke, made simple, said in the panel): the blue arrow shrinks, the red ones stay, and the tin buckles in from every side while the camera leans in. The panel lists both pressures with bars and works out the force left over on one face, F = (P outside − P inside) × A with A = 0.01 m² (up to 1,000 N). After five strokes the book's contrast: 'what if air pushed only from the top?' shows the box as a pale ghost flattening (চিত্র ৫.০৭ b, marked as imagined), and 'what really happens' replays the crush from every side (c). Our body, one guided sequence with one big button: (1) a friendly student stands under a blue sky with nine pairs of outlined arrows meeting head to head all round the body, red (the outside air's pressure) pressing in and blue (the pressure inside the body) pushing out, equally long; the panel shows outside 1,00,000 Pa = inside 1,00,000 Pa: they cancel. (2) In space (stars, the Earth below) there is no air: the red arrows go, the blue ones grow a little and the body strains gently outward (a slight swell and a warm pulsing glow, nothing gory), with the book's sentence that a body could burst there. (3) A white pressure suit with gloves, boots, a backpack and a glass helmet closes round the student from the feet up; the suit's purple arrows press in as hard as the blue push out: balanced again, with the book's sentence about the pressure suit. 'আবার দেখো' starts over. Test tab: 4 questions (the force on a face, why every side, why we don't feel it, why the suit) with a note for every wrong choice. Phone-first, Bangla and English.",
   "tags": [
     "air pressure",
     "atmospheric pressure",
@@ -21,9 +21,10 @@
     "vacuum",
     "pascal",
     "scalar",
-    "air column",
     "tin can",
-    "bangla"
+    "bangla",
+    "space suit",
+    "human body"
   ],
   "params": [
     {
@@ -37,7 +38,7 @@
       "name": "part",
       "label": "Part",
       "type": "select",
-      "options": [["can", "the tin box"], ["column", "the air column"], ["body", "our body"]],
+      "options": [["can", "the tin box"], ["body", "our body"]],
       "default": "can"
     },
     {
@@ -53,8 +54,13 @@
       "type": "boolean",
       "default": "0"
     },
-    { "name": "weigh", "label": "The column's weight shown", "type": "boolean", "default": "0" },
-    { "name": "space", "label": "The body in space", "type": "boolean", "default": "0" },
+    {
+      "name": "space",
+      "label": "Our body (needs part = body)",
+      "type": "select",
+      "options": [["0", "on the Earth"], ["1", "in space, no suit"], ["suit", "in space, in the pressure suit"]],
+      "default": "0"
+    },
     { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
     {
       "name": "mode",
@@ -80,8 +86,8 @@
     { "name": "set", "payload": { "strokes": 3, "animate": false } },
     { "name": "set", "payload": { "strokes": 5, "animate": false } },
     { "name": "set", "payload": { "whatIf": true, "animate": false } },
-    { "name": "set", "payload": { "part": "column", "weigh": true, "animate": false } },
     { "name": "set", "payload": { "part": "body", "space": true, "animate": false } },
+    { "name": "set", "payload": { "part": "body", "space": "suit", "animate": false } },
     { "name": "set", "payload": { "view": "3d", "animate": false } },
     { "name": "reset", "payload": {} },
     { "name": "practice", "payload": {} },
