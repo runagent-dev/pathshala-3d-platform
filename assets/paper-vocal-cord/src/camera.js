@@ -1,0 +1,59 @@
+// Camera framing: the closest camera pose, looking from a given direction, that shows a whole box (or a list of
+// points) inside the stage with margins in pixels (room for the corner buttons on top and the hint line below), for
+// any aspect.
+import * as THREE from 'three';
+
+const WORLD_UP = new THREE.Vector3(0, 1, 0);
+
+/**
+ * box: THREE.Box3 to show, or points: the THREE.Vector3s to show (tighter for things that lie across the box); dir: unit vector from the target toward the camera; camera: its fov is used;
+ * width/height: the stage in pixels; margin: { top, bottom, side } in pixels. Returns { position, target }.
+ */
+export function fitPose({ box, points, dir, camera, width, height, margin = { top: 56, bottom: 16, side: 12 } }) {
+  const look = dir.clone().normalize().negate();
+  const right = new THREE.Vector3().crossVectors(look, WORLD_UP).normalize();
+  const up = new THREE.Vector3().crossVectors(right, look).normalize();
+  const list = points ?? [];
+  if (!points)
+    for (const x of [box.min.x, box.max.x])
+      for (const y of [box.min.y, box.max.y]) for (const z of [box.min.z, box.max.z]) list.push(new THREE.Vector3(x, y, z));
+  const centre = new THREE.Box3().setFromPoints(list).getCenter(new THREE.Vector3());
+  const tanV = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
+  const tanH = tanV * (width / Math.max(1, height));
+  const top = Math.max(0.3, 1 - (2 * margin.top) / height); // usable part of the frame, in NDC
+  const bottom = Math.max(0.3, 1 - (2 * margin.bottom) / height);
+  const side = Math.max(0.3, 1 - (2 * margin.side) / width);
+  const corners = [];
+  const p = new THREE.Vector3();
+  for (const q of list) {
+    p.copy(q).sub(centre);
+    corners.push({ x: p.dot(right), y: p.dot(up), z: p.dot(look) });
+  }
+  // The camera sits `d` back from (centre + up·shift + right·across); for a given d, find the shifts that fit every corner.
+  const shiftFor = (d) => {
+    let lo = Number.NEGATIVE_INFINITY;
+    let hi = Number.POSITIVE_INFINITY;
+    let left = Number.NEGATIVE_INFINITY;
+    let right_ = Number.POSITIVE_INFINITY;
+    for (const c of corners) {
+      const depth = d + c.z;
+      if (depth <= 1e-3) return null;
+      lo = Math.max(lo, c.y - top * depth * tanV);
+      hi = Math.min(hi, c.y + bottom * depth * tanV);
+      left = Math.max(left, c.x - side * depth * tanH);
+      right_ = Math.min(right_, c.x + side * depth * tanH);
+    }
+    return lo <= hi && left <= right_ ? { up: (lo + hi) / 2, across: (left + right_) / 2 } : null;
+  };
+  let near = 0;
+  let far = 1;
+  while (shiftFor(far) == null && far < 1e5) far *= 2;
+  for (let i = 0; i < 40; i++) {
+    const mid = (near + far) / 2;
+    if (shiftFor(mid) == null) near = mid;
+    else far = mid;
+  }
+  const shift = shiftFor(far) ?? { up: 0, across: 0 };
+  const target = centre.clone().addScaledVector(up, shift.up).addScaledVector(right, shift.across);
+  return { target, position: target.clone().addScaledVector(look, -far) };
+}

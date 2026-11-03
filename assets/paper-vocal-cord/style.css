@@ -1,0 +1,91 @@
+/* The paper vocal cord: the page, the colours that carry meaning (frequency grape, λ orange, the air's teal shades:
+   docs/book-notes.md and the chapter-7 brief), the colour key and the honest note under the result, the labels on
+   the picture and the test's answers. The rest of the panel is the kit's clean sheet
+   (../../shared/lib/student/student.css). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.pv { --c-f: #862e9c; --c-l: #c2410c; --c-dark: #06535e; --c-light: #bfeef2; --c-mid: #2fa3b0; }
+.pv .pvc-outcome { font-size: 15px; line-height: 1.5; min-height: 3em; }
+.pv .pvc-outcome b { font-size: 1.2em; color: var(--c-f); white-space: nowrap; }
+.pv .pvc-rule { font-size: 14.5px; line-height: 1.45; min-height: 4.35em; }
+.pv .pvc-rule b { color: var(--ink); }
+.pv .pvc-ex-res { color: var(--c-f); font-weight: 600; }
+
+/* the colour key of the air: two swatches */
+.pv-key { margin: -2px 0 0; font-size: 12.5px; line-height: 1.4; color: #3d4652; }
+.pv-key i + * , .pv-key .pv-note { white-space: nowrap; }
+.pv-key .pv-note { color: #5b6472; font-size: 0.95em; }
+.pv-sw { display: inline-block; width: 11px; height: 11px; border-radius: 50%; margin: 0 5px -1px 0; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25); }
+.pv-sw + * { margin-left: 0; }
+.pv-dark { background: var(--c-dark); }
+.pv-light { background: var(--c-light); margin-left: 12px; }
+
+/* the live pressure–distance graph: only where the side panel has room for it (800 × 500, 1280 × 800) */
+.pv-graph { display: none; font-family: inherit; }
+.pv-graph canvas { display: block; width: 100%; height: 100%; }
+@media (min-aspect-ratio: 1/1) and (min-width: 760px) and (min-height: 480px) {
+  .pv .pv-graph { display: block; height: 128px; margin-top: 4px; }
+}
+@media (min-aspect-ratio: 1/1) and (min-width: 1000px) and (min-height: 700px) {
+  .pv .pv-graph { height: 170px; margin-top: 10px; }
+}
+
+/* labels on the picture: the words in their colour on a white chip */
+.pvc-anno-tag { --c: var(--ink); padding: 0 6px; border: 1.5px solid var(--c); border-radius: 5px; background: rgba(255, 255, 255, 0.96); color: var(--c); font-size: 13px; font-weight: 600; line-height: 1.5; white-space: nowrap; transition: none; }
+.pvc-anno-lines .k-tag { stroke: rgba(29, 39, 51, 0.75); stroke-width: 1.3; }
+
+/* the test: answers in words, room kept for the question and the worked answer */
+.pv .pvc-opt { font-size: 14px; line-height: 1.2; padding: 0 4px; }
+.pv-opt { display: block; white-space: normal; text-align: center; }
+.pv .pvc-q-text { font-size: 15px; }
+.pv .pvc-q-feedback { font-size: 13.5px; }
+
+/* a phone held upright (the panel below the 3D): tight, so the 3D keeps more than half the height; the key and the
+   note on one line */
+@media (max-aspect-ratio: 1/1), (max-width: 599px) {
+  .pv .pvc-panel { gap: 6px; padding-top: 8px; }
+  .pv .pvc-learn { gap: 5px; }
+  .pv .pvc-examples button { min-height: 38px; padding: 2px 3px 4px; }
+  .pv .pvc-examples .pvc-ex-word { font-size: 15px; }
+  .pv .pvc-examples .pvc-ex-res { font-size: 12px; }
+  .pv .pvc-outcome { font-size: 13.5px; line-height: 1.4; min-height: 2.8em; }
+  .pv .pvc-rule { font-size: 13px; line-height: 1.4; min-height: 4.2em; }
+  .pv-key { font-size: 11.5px; margin: 0; }
+  .pv-key .pv-note::before { content: '· '; }
+  .pv .pvc-opt { font-size: 13px; height: 40px; line-height: 1.2; }
+  .pv .pvc-q-options { gap: 6px; }
+  .pv .pvc-q-text { font-size: 14px; }
+  .pv .pvc-q-feedback { font-size: 12.5px; }
+  .pvc-anno-tag { font-size: 14px; }
+}
+/* a short phone held upright (390 × 520): smaller still */
+@media (max-aspect-ratio: 1/1) and (max-height: 600px) {
+  .pv .pvc-examples button { min-height: 34px; }
+  .pv .pvc-outcome { font-size: 12.5px; line-height: 1.35; min-height: 2.7em; }
+  .pv .pvc-rule { font-size: 12px; line-height: 1.35; min-height: 4.05em; }
+  .pv-key { font-size: 11px; }
+  .pv .pvc-opt { height: 36px; font-size: 12.5px; }
+  .pv .pvc-q-text { font-size: 13px; }
+  .pv .pvc-q-feedback { font-size: 12px; }
+}
+/* landscape: the panel beside the 3D; the action's words may take two lines ("ছোট টুকরো কেটে ফুঁ দাও"), so the row
+   keeps room for two in every state; the note on its own line */
+@media (min-aspect-ratio: 1/1) and (min-width: 600px) {
+  .pv .pvc-act-row { --pvc-act-lines: 2; }
+  .pv-key .pv-note { display: block; }
+}
+/* short and wide (phone held sideways) */
+@media (min-aspect-ratio: 1/1) and (min-width: 600px) and (max-height: 460px) {
+  .pv .pvc-outcome { font-size: 13.5px; line-height: 1.4; min-height: 2.8em; }
+  .pv .pvc-rule { font-size: 12.5px; line-height: 1.35; min-height: 5.4em; }
+  .pv .pvc-q-text { font-size: 13.5px; }
+  .pv .pvc-opt { font-size: 12.5px; height: 44px; }
+  .pv .pvc-q-feedback { font-size: 12.5px; --pvc-q-feedback-min: 4lh; }
+  .pv-key { font-size: 12px; }
+  .pvc-anno-tag { font-size: 12.5px; }
+}
+
+/* the λ bracket and the flaps' edges, drawn over the picture */
+.pv-bracket { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
