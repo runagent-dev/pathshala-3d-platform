@@ -231,7 +231,27 @@ export function createApparatus({ shadow = true } = {}) {
   });
   const matR = matL.clone();
   matR.name = 'WaterVessel';
-  const surfMat = new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.2, depthWrite: false, toneMapped: false });
+  // the water's top: a pale sheen with small ripples (the page draws the vessel's surface wavy), made once
+  const rip = document.createElement('canvas');
+  rip.width = rip.height = 256;
+  const rc = rip.getContext('2d');
+  rc.fillStyle = 'rgba(255,255,255,0.18)';
+  rc.fillRect(0, 0, 256, 256);
+  rc.strokeStyle = 'rgba(255,255,255,0.75)';
+  rc.lineWidth = 3;
+  for (let row = 0; row < 8; row++) {
+    rc.beginPath();
+    for (let x = 0; x <= 256; x += 4) {
+      const y = 16 + row * 32 + Math.sin((x / 256) * Math.PI * 6 + row) * 5;
+      if (x === 0) rc.moveTo(x, y);
+      else rc.lineTo(x, y);
+    }
+    rc.stroke();
+  }
+  const rippleTex = new THREE.CanvasTexture(rip);
+  rippleTex.colorSpace = THREE.SRGBColorSpace;
+  rippleTex.wrapS = rippleTex.wrapT = THREE.RepeatWrapping;
+  const surfMat = new THREE.MeshBasicMaterial({ map: rippleTex, transparent: true, opacity: 0.55, depthWrite: false, toneMapped: false });
   const column = (r, mat, x, name) => {
     const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 1, 48).translate(0, 0.5, 0), mat);
     m.name = name;
@@ -252,6 +272,13 @@ export function createApparatus({ shadow = true } = {}) {
     s.renderOrder = 3;
     s.userData.noExport = true;
   }
+  // a thin bright ring where the water meets the glass (the meniscus)
+  const ringMat = new THREE.MeshBasicMaterial({ color: '#e8f6ff', transparent: true, opacity: 0.7, depthWrite: false, toneMapped: false });
+  const ringL = new THREE.Mesh(new THREE.TorusGeometry(GEOM.tubeR - 0.03, 0.05, 6, 32).rotateX(Math.PI / 2), ringMat);
+  const ringR = new THREE.Mesh(new THREE.TorusGeometry(GEOM.vesselR - 0.03, 0.06, 6, 56).rotateX(Math.PI / 2), ringMat);
+  ringL.renderOrder = ringR.renderOrder = 3;
+  ringL.userData.noExport = ringR.userData.noExport = true;
+  ringR.position.x = vx;
   // the pipe's water: the tube's colour on the tap's left, the vessel's on its right
   const pipeWater = (mat, x0, x1, name) => {
     const m = new THREE.Mesh(new THREE.CylinderGeometry(pipeR - 0.14, pipeR - 0.14, x1 - x0, 20), mat);
@@ -263,7 +290,7 @@ export function createApparatus({ shadow = true } = {}) {
   };
   const waterPipe = pipeWater(matL, tubeOuter - 0.7, tapX, 'WaterPipe');
   const waterPipeR = pipeWater(matR, tapX, tubeOuter + LAYOUT.gap + 0.7, 'WaterPipeRight');
-  root.add(waterL, waterR, surfL, surfR, waterPipe, waterPipeR);
+  root.add(waterL, waterR, surfL, surfR, ringL, ringR, waterPipe, waterPipeR);
 
   // ── the tap ─────────────────────────────────────────────────────────────────
   const tap = new THREE.Group();
@@ -357,6 +384,8 @@ export function createApparatus({ shadow = true } = {}) {
       waterL.position.y = GEOM.floor;
       waterR.scale.y = Math.max(0.001, right - 0.4);
       waterR.position.y = 0.4;
+      ringL.position.y = left;
+      ringR.position.y = right;
       surfL.position.y = left + 0.005;
       surfR.position.y = right + 0.005;
       spanLine(lineL, tubeOuter + 0.1, vx + GEOM.vesselR, left);

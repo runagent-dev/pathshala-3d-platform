@@ -16,7 +16,7 @@ test('heat-flow: water goes from the higher surface to the lower and stops at eq
   // shut: nothing moves however long we wait
   await fig.advance(3000);
   expect(await fig.call('get')).toMatchObject({ phase: 'rest', left: 22, right: 8 });
-  expect(await text('.pvc-outcome')).toContain('বাঁ নলে ২২ সেমি');
+  expect(await text('.pvc-outcome')).toContain('বাম নলে ২২ সেমি');
   expect(await text('.pvc-act-badge')).toBe('১');
   expect(await text('.pvc-act')).toContain('কলটি খোলো');
 
