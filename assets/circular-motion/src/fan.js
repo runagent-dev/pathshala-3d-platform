@@ -133,7 +133,7 @@ export function createFan({ materials: M }) {
     lift: 3, // the path is drawn just below the blades
     hub: 11.6, // the motor round the fixed point: its label goes just outside
     fit: { radius: FAN.tip + 4, depth: 10 },
-    views: { front: new THREE.Vector3(0, -0.96, 0.28).normalize(), '3d': new THREE.Vector3(0.58, -0.5, 0.64).normalize() },
+    views: { front: new THREE.Vector3(0.36, -0.78, 0.52).normalize(), '3d': new THREE.Vector3(0.58, -0.5, 0.64).normalize() },
     grab: [hit],
     lights: [lamp],
     // the parts whose shadow shows on the ceiling, and the light's shadow box fitted round them: half its width,
