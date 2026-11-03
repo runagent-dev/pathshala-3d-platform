@@ -49,7 +49,7 @@ export const DEFAULTS = {
 const DOUBLE_TAP = 600; // ms
 const LOOK = {
   box: [new THREE.Vector3(-9, 0, -3.8), new THREE.Vector3(9, 14.9, 3.8)],
-  dir: new THREE.Vector3(0.1, 0.24, 1),
+  dir: new THREE.Vector3(0.27, 0.36, 1),
 };
 const MARGIN = { top: 48, bottom: 30, side: 6 };
 const SHADOW_BOX = new THREE.Box3(new THREE.Vector3(-8, 0, -4), new THREE.Vector3(8, 16, 4));
