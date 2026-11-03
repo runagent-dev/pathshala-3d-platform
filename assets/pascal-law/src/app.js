@@ -999,7 +999,7 @@ export function createApp(root, options = {}) {
 
   // ── camera ──────────────────────────────────────────────────────────────────
   const box = new THREE.Box3();
-  const LOOK_DIR = { all: new THREE.Vector3(0.1, 0.17, 1), inside: new THREE.Vector3(0.08, 0.06, 1), rim: new THREE.Vector3(0, 0, 1) };
+  const LOOK_DIR = { all: new THREE.Vector3(0.3, 0.3, 1), inside: new THREE.Vector3(0.14, 0.12, 1), rim: new THREE.Vector3(0, 0, 1) };
   function viewPose(look = s.look) {
     const { xS, xB, r1, t1, t2, Y1TOP } = GEO;
     const r2 = r2For(s.ratio);
