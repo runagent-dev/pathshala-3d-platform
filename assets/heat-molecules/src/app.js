@@ -50,7 +50,7 @@ export const DEFAULTS = {
 const DOUBLE_TAP = 400; // ms
 const LOOK = {
   box: [new THREE.Vector3(-10.4, 0.3, -3.2), new THREE.Vector3(11.8, JAR_TOP + 1.8, 3.2)],
-  dir: new THREE.Vector3(0.12, 0.26, 1),
+  dir: new THREE.Vector3(-0.36, 0.32, 1),
 };
 const MARGIN = { top: 48, bottom: 30, side: 6 };
 const SHADOW_BOX = new THREE.Box3(new THREE.Vector3(-8, 0, -4), new THREE.Vector3(12, 16, 4));
@@ -304,7 +304,7 @@ export function createApp(root, options = {}) {
     fitBox.max.copy(LOOK.box[1]);
     const aspect = stage.width / Math.max(1, stage.height);
     const dir = LOOK.dir.clone();
-    if (aspect > 1.2) dir.y = Math.max(0.16, dir.y - (aspect - 1.2) * 0.1); // wide, short frames: a lower camera
+    if (aspect > 1.2) dir.y = Math.max(0.24, dir.y - (aspect - 1.2) * 0.1); // wide, short frames: a lower camera
     return fitPose({ box: fitBox, dir: dir.normalize(), camera, width: stage.width, height: stage.height, margin: MARGIN });
   }
   function flyTo({ position, target: aim }, duration = 0.8) {
