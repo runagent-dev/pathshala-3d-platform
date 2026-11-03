@@ -215,7 +215,7 @@ export function createMagnetScene({ color, setting = true }) {
     fit: { min: V(-0.066, -0.003, -0.02), max: V(0.055, 0.012, 0.02) },
     // a wide view has room for the whole magnet and the hand that holds it
     fitWide: { min: V(-0.07, -0.003, -0.02), max: V(0.13, 0.03, 0.02) },
-    views: { front: V(0.08, 0.62, 1).normalize(), '3d': V(0.7, 0.75, 0.75).normalize() },
+    views: { front: V(0.3, 0.46, 1).normalize(), '3d': V(0.7, 0.75, 0.75).normalize() },
     shadow: { center: V(0.02, 0, 0), r: 0.14 },
     update,
     /** The body the force acts on (the action's ring goes round it): the nail. */
