@@ -7,7 +7,8 @@ import { openFigure, preparePage } from '../../../scripts/lib/export/driver.mjs'
 const frameOf = (page) => page.frames().find((f) => f.url().includes('/assets/bell-jar-sound/'));
 
 test('bell-jar-sound: pump the air out, the sound fades; let it in, the sound returns', async ({ page }) => {
-  await page.setViewportSize({ width: 800, height: 500 });
+  // a small window: this test only reads state, and ~280 software-rendered frames at 800×500 can pass CI's 3 minutes
+  await page.setViewportSize({ width: 480, height: 300 });
   const log = await preparePage(page);
   const fig = await openFigure(page, 'bell-jar-sound');
   const frame = frameOf(page);
