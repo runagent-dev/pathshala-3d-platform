@@ -35,3 +35,8 @@ figure writes "গ্রাম" in sentences.
 ## Open questions
 - Whether "ফুড ক্যালরি" belongs in the figure at all (the book says it will not be discussed); it is one line of the rule.
 - The page writes "1 gm"; the figure says "১ গ্রাম". Every Bangla line needs a person's check against the page.
+
+## Polish pass 0.2.0 (chapter 6 detail pass)
+- Page 161 has no picture; every Bangla string re-checked against it (unchanged).
+- More realistic apparatus: ribbon burner with brass port rings, gas pipe and knob (as `heat-molecules`); a wire gauze
+  under the beaker; graduation marks and a pouring spout on the beaker.
