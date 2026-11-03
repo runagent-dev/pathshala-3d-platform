@@ -343,7 +343,7 @@ export function createApp(root, options = {}) {
 
   // ── camera ──────────────────────────────────────────────────────────────────
   const bbox = new THREE.Box3();
-  const DIR = V(0.12, 0.16, 1);
+  const DIR = V(0.3, 0.24, 1);
   function lookBox() {
     if (s.wide) return box3(-0.66, -0.01, 0.48, 1.12);
     if (s.close) return box3(-0.13, 0.64, 0.17, 1.08); // the top of the column, close, while the mercury falls
