@@ -1,29 +1,32 @@
-// Speed and velocity (book page 40, topic 2.5), student view. Two boys on a plain field run for the same 20 s:
-//  - ১ম জন runs a zig-zag path, 100 m: দ্রুতি = দূরত্ব ÷ সময় = 100 m ÷ 20 s = 5 m/s, a number with no direction;
-//  - ২য় জন runs 50 m straight, along an outlined বেগ arrow whose angle from east is shown:
-//    বেগ = সরণ ÷ সময় = 50 m ÷ 20 s = 2.5 m/s, in that direction (a vector).
-// The student taps দৌড়াও, and turns boy 2's direction (◀ ▶, the arrow keys, or by dragging the arrow). The panel
-// writes both as fractions, as the book does. Then a short test (tap answers). Physics in motion.js.
+// Speed and velocity (book pages 40–41, topic 2.5), student view: the book's own example, one guided ride. A cycle
+// goes from A to B along the winding road of চিত্র ২.০৪ (4 km of road, a সরণ of 2 km) in 20 minutes:
+//   ১ the cyclist waits at A; "সাইকেল চালাও" rides the road (shown faster than real): the road behind fills blue
+//     (দূরত্ব), the panel counts the distance and the time, and an outlined arrow on the cycle shows the direction of
+//     its বেগ, turning with the road while the speed stays the same;
+//   ২ at B, "সরণ দেখাও" draws the straight সরণ arrow A→B (orange), with its length and direction;
+//   ৩ "তুলনা করো": গড় দ্রুতি = মোট অতিক্রান্ত দূরত্ব ÷ মোট সময় = 12 km/h (no direction) beside গড় বেগ = সরণ ÷ সময় =
+//     6 km/h towards the north-east, and the point: a winding path has a velocity too;
+// then "আবার দেখো". The chip "সোজা পথ" does the same ride on a straight road from A to the same B: দূরত্ব = সরণ, so
+// গড় দ্রুতি = গড় বেগের মান. Then a short test (tap answers). The ride's maths is in ride.js.
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
 import { createTweener } from '@shared/tween.js';
 import { createAnnotations } from '@shared/student/annotations.js';
 import { createAudio } from '@shared/student/audio.js';
 import { createQuiz } from '@shared/student/quiz.js';
-import { capturePointer } from '@shared/student/pointer.js';
-import { buildStudentShell } from '@shared/student/shell.js';
+import { bindCleanSheet, buildStudentShell, cleanSheet } from '@shared/student/shell.js';
 import { createAction } from '@shared/student/action.js';
 import { ICONS } from '@shared/student/icons.js';
 import { createArrow } from './arrow.js';
-import { createField, skyTexture } from './field.js';
+import { createCyclist } from './cyclist.js';
 import { createI18n } from './i18n.js';
-import { DIRS, PATH, RUN, SCALE, START, VELOCITY, dirOf, fixed, fmt, lineAt, pathAt, runAt, wrap } from './motion.js';
-import { createPerson } from './person.js';
+import { B, DISPLACEMENT, MINUTES, PATHS, averages, fixed, headingOn, lengthOf, pointOn, rideAt, short } from './ride.js';
+import { KM, ROAD_Y, createScene, toScene } from './scene.js';
 
 export const DEFAULTS = {
-  angle: 40, // boy 2's direction, degrees from east towards north
-  time: 0, // s of the run shown when the figure opens (20: both at the end, for the poster)
-  view: 'front', // 'front' (from above, tilted) | '3d'
+  path: 'winding', // 'winding' (the book's road) | 'straight' (the same A and B, a straight road)
+  step: 'start', // 'start' | 'displacement' (at B, the সরণ arrow drawn) | 'compare' (the two sums)
+  time: 0, // minutes of the ride shown when the figure opens (0–20; 20 is at B)
   mode: 'explore', // 'explore' | 'quiz'
   coach: true,
   numerals: null,
@@ -33,20 +36,24 @@ export const DEFAULTS = {
   sound: true,
 };
 
-// one colour per quantity: দূরত্ব and দ্রুতি blue, সরণ and বেগ orange, সময় purple (style.css has the same)
-const COLORS = { distance: '#1c6fd9', displacement: '#e8590c', ink: '#3a3f47' };
-const RUN_SCREEN = 6; // s on screen for the 20 s run
-const STEP = 15; // degrees per press of ◀ ▶
-const BOY = 2; // the boys drawn twice as big (see NOTES), so they show on a phone
-const ARROW_LEN = 3.2;
-const VIEWS = { front: new THREE.Vector3(0, 1, 0.62).normalize(), '3d': new THREE.Vector3(-0.55, 0.62, 0.9).normalize() };
-const at = (e, n, h = 0) => new THREE.Vector3(e, h, -n);
+// one colour per quantity, as in distance-displacement: দূরত্ব blue, সরণ orange; the বেগ arrow violet
+const COLORS = { distance: '#1c6fd9', displacement: '#e8590c', velocity: '#7048e8', ink: '#3a3f47' };
+const RIDE_SCREEN = 8; // s on screen for the 20 minutes
+const FAST = (MINUTES * 60) / RIDE_SCREEN; // how many times faster than real (150)
+const CYCLE = 300; // the cycle is drawn this many times bigger than real (see NOTES)
+const VEL_LEN = 460; // m: the বেগ arrow (the same length all the ride: the speed does not change)
+const STEPS = ['start', 'ride', 'end', 'displacement', 'compare'];
+// the starting view: a gentle three-quarter view from the south-south-west, looking down at about 34°
+const VIEW = (() => {
+  const az = THREE.MathUtils.degToRad(-22);
+  const el = THREE.MathUtils.degToRad(34);
+  return new THREE.Vector3(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el));
+})();
 
 export function createApp(root, options = {}) {
   const o = { ...DEFAULTS, ...options };
   const t = createI18n(o.lang, { numerals: o.numerals });
   const N = t.num;
-  const U = (key) => `<span class="sv-u">${t(key)}</span>`;
 
   root.classList.add('pvc', 'sv');
   root.dataset.theme = o.bg;
@@ -54,225 +61,420 @@ export function createApp(root, options = {}) {
   root.lang = t.lang;
   root.tabIndex = 0;
   const ui = buildStudentShell(root, t, {
-    layout: 'side', // the panel beside the 3D on landscape frames (kit 1.5.0)
-    // one structure in every lab: choices, the action (+ reset), the readings, the formula, the rule
-    learn: `
-          <div class="fig-choices sv-turn" role="group" aria-label="${t('turn')}">
-            <span>${t('turn')}</span>
-            <button class="pvc-btn" data-act="left" aria-label="${t('turn_left')}">◀</button>
-            <b class="sv-angle"></b>
-            <button class="pvc-btn" data-act="right" aria-label="${t('turn_right')}">▶</button>
-          </div>
-          <div class="pvc-act-row">
-            <div class="pvc-act-slot"></div>
-            <button type="button" class="pvc-quiet" data-act="reset" aria-label="${t('reset')}" title="${t('reset')}">${ICONS.reset}</button>
-          </div>
-          <dl class="fig-readings">
-            <div class="dist"><dt>${t('boy1')}: ${t('speed')}</dt><dd data-v="sp"></dd></div>
-            <div class="disp"><dt>${t('boy2')}: ${t('velocity')}</dt><dd data-v="ve"></dd></div>
-          </dl>
-          <p class="fig-formula">
-            <span class="dist">${t('speed')} = ${t('cap_speed')} = <b data-v="fs"></b></span>
-            <span class="disp">${t('velocity')} = ${t('cap_velocity')} = <b data-v="fv"></b></span>
-          </p>
-          <p class="pvc-rule sv-rule"></p>`,
+    layout: 'side',
+    learnAlign: 'start',
+    learn: cleanSheet(t, {
+      examples: {
+        label: 'path',
+        items: [
+          { id: 'winding', label: 'path_winding' },
+          { id: 'straight', label: 'path_straight' },
+        ],
+      },
+      quiet: [{ act: 'reset', label: 'reset', icon: ICONS.reset }],
+      lines: { action: 1 },
+    }),
   });
+  const sheet = bindCleanSheet(ui.learn);
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
-  const stage = createStage(ui.canvasHost, { fov: 30, near: 0.5, far: 300, environment: 'studio-light' });
+  const stage = createStage(ui.canvasHost, { fov: 30, near: 50, far: 40000, environment: 'studio-light', exposure: 1.05 });
   const { camera, controls, scene } = stage;
-  controls.minDistance = 6;
-  controls.maxDistance = 70;
-  controls.maxPolarAngle = Math.PI * 0.46;
+  controls.enablePan = false;
+  controls.enableZoom = false; // the framing is worked out for every size; a pinch would break it
+  controls.maxPolarAngle = 1.25;
+  controls.minPolarAngle = 0.15;
   const tweener = createTweener();
   stage.addTicker((dt) => tweener.tick(dt));
   const audio = createAudio(o.sound);
-  const annotations = createAnnotations({ stage, layer: ui.annoLayer, avoid: [ui.corner, ui.hint] });
   const solid = o.bg !== 'transparent';
-  if (solid) scene.background = skyTexture();
 
   const world = new THREE.Group(); // what a GLB export holds
   world.name = 'SpeedVelocity';
   scene.add(world);
-  const field = createField({ colors: COLORS, background: solid });
-  world.add(field.root);
-  const boys = [createPerson({ shirt: '#3d7fe0', trousers: '#2f3d55' }), createPerson({ shirt: '#f08a3c', trousers: '#2f3d55' })];
-  for (const b of boys) {
-    b.root.scale.setScalar(BOY);
-    world.add(b.root);
+  const setting = createScene({ renderer: stage.renderer, colors: COLORS, background: solid });
+  world.add(setting.root);
+  if (setting.sky) {
+    scene.background = setting.sky;
+    scene.fog = new THREE.Fog('#e9dcc2', 9000, 22000);
   }
-  const velArrow = createArrow({ color: COLORS.displacement, radius: 0.2, head: 1, headRadius: 0.5, name: 'Velocity' });
-  world.add(velArrow.root);
+  const cyclist = createCyclist({ scale: CYCLE });
+  world.add(cyclist.root);
+  const velArrow = createArrow({ color: COLORS.velocity, radius: 22, head: 150, headRadius: 62, name: 'Velocity' });
+  // where the বেগ arrow pointed, left behind every kilometre while riding (fainter), so the turning stays in sight
+  const MARKS = [0.5, 1.5, 2.5, 3.5];
+  const marks = MARKS.map((_k, i) =>
+    createArrow({ color: COLORS.velocity, radius: 16, head: 115, headRadius: 46, opacity: 0.72, name: `VelocityEarlier${i + 1}` }),
+  );
+  for (const m of marks) {
+    m.root.visible = false;
+    world.add(m.root);
+  }
+  const dispArrow = createArrow({ color: COLORS.displacement, radius: 17, head: 150, headRadius: 50, name: 'Displacement' });
+  world.add(velArrow.root, dispArrow.root);
+  // the বেগ arrow is drawn over the rider (when the cycle rides away from us, the rider would hide it): its outline
+  // first, then the arrow
+  velArrow.root.traverse((m) => {
+    if (!(m instanceof THREE.Mesh)) return;
+    m.material.depthTest = false;
+    m.renderOrder = m.name.includes('Outline') ? 10 : 11;
+  });
 
-  // one sun; only the boys cast shadows, onto the ground; the shadow box follows the framing
-  const sun = new THREE.DirectionalLight(0xffffff, 0.9);
+  // one sun; the cycle and the two posts cast shadows onto the ground
+  const sun = new THREE.DirectionalLight('#ffffff', 1.5);
   scene.add(sun, sun.target);
-  scene.add(new THREE.HemisphereLight(0xdfeeff, 0xc9a77a, 0.5));
+  scene.add(new THREE.HemisphereLight('#ffffff', '#8a7a5a', 0.85));
   if (o.shadow && solid) {
     stage.renderer.shadowMap.enabled = true;
     stage.renderer.shadowMap.type = THREE.PCFShadowMap;
     sun.castShadow = true;
     sun.shadow.mapSize.set(1024, 1024);
-    sun.shadow.bias = -0.0005;
-    sun.shadow.normalBias = 0.02;
-  } else for (const b of boys) b.root.traverse((m) => (m.castShadow = false));
+    sun.shadow.bias = -0.0006;
+    sun.shadow.normalBias = 1.5;
+  } else world.traverse((m) => (m.castShadow = false));
+  {
+    // the shadow box round the ride (A to B, both roads, up to the rider's head)
+    const mid = toScene(0.95, 0.45);
+    sun.target.position.copy(mid);
+    sun.position.copy(mid).add(new THREE.Vector3(-1500, 4000, 1800));
+    Object.assign(sun.shadow.camera, { left: -1700, right: 1700, top: 1700, bottom: -1700, near: 1000, far: 8000 });
+    sun.shadow.camera.updateProjectionMatrix();
+  }
 
+  /** @type {ReturnType<typeof createAction> | null} */
+  let action = null; // the kit's action (made below, once the scene and the panel exist)
   const listeners = new Map();
   function emit(type, payload) {
     for (const fn of listeners.get(type) || []) fn(payload);
   }
 
+  // ── state ───────────────────────────────────────────────────────────────────
+  const clampTime = (m) => Math.min(Math.max(Number(m) || 0, 0), MINUTES);
   const s = {
-    time: Math.min(Math.max(Number(o.time) || 0, 0), RUN.time),
-    angle: wrap(Math.round(Number.isFinite(Number(o.angle)) ? Number(o.angle) : DEFAULTS.angle)),
+    path: PATHS.includes(o.path) ? o.path : 'winding',
+    time: clampTime(o.time),
     running: false,
-    view: o.view === '3d' ? '3d' : 'front',
+    shown: 0, // at B: 0 nothing more, 1 the সরণ arrow, 2 the two sums
+    grow: 0, // how much of the সরণ arrow is drawn (0…1)
     mode: 'explore',
     locked: false,
     userMovedCamera: false,
-    showAngle: true,
+    labels: true, // the 3D labels for the distance and the displacement (off in some test questions)
   };
+  if (o.step === 'displacement' || o.step === 'compare') {
+    s.time = MINUTES;
+    s.shown = o.step === 'compare' ? 2 : 1;
+    s.grow = 1;
+  }
+  const atB = () => s.time >= MINUTES - 1e-9;
+  /** start (at A) | ride (on the way, or paused) | end (at B) | displacement | compare */
+  function phase() {
+    if (s.running || (s.time > 0 && !atB())) return 'ride';
+    if (s.time <= 0) return 'start';
+    return STEPS[2 + s.shown];
+  }
   const snapshot = () => {
-    const r = runAt(s.time);
+    const r = rideAt(s.path, s.time);
+    const end = atB();
+    const avg = averages(s.path);
     return {
+      path: s.path,
+      step: phase(),
       time: r.time,
-      angle: s.angle,
-      direction: dirOf(s.angle),
       running: s.running,
-      distance: r.distance,
-      displacement: r.displacement,
-      speed: r.speed,
-      velocity: r.velocity,
-      view: s.view,
+      distance: r.km,
+      displacement: Math.hypot(r.x, r.y),
+      direction: r.dir, // of the velocity at this moment (null when standing)
+      speed: end ? avg.speed : null, // গড় দ্রুতি, km/h, once at B
+      velocity: end ? avg.velocity : null, // গড় বেগের মান, km/h
+      velocityDirection: end ? avg.dir : null,
       mode: s.mode,
     };
   };
 
-  // ── the boys and the marks ──────────────────────────────────────────────────
+  // ── the cyclist, the arrows, the trail ──────────────────────────────────────
   const tmp = new THREE.Vector3();
-  const dir = new THREE.Vector3();
-  const hands = boys.map(() => [new THREE.Vector3(), new THREE.Vector3()]);
+  const tmp2 = new THREE.Vector3();
+  const fwd = new THREE.Vector3();
+  const head = { x: 0, y: 1 };
+  const A0 = new THREE.Vector3(0, ROAD_Y + 30, 0);
+  const B0 = toScene(B.x, B.y, ROAD_Y + 30);
+  const dispDir = B0.clone().sub(A0).normalize();
   function place() {
-    const r = runAt(s.time);
-    const p1 = pathAt(r.distance);
-    const p2 = lineAt(r.displacement, s.angle);
-    const moving = s.running && s.time < RUN.time;
-    for (const [i, p, d] of [
-      [0, p1, r.distance],
-      [1, p2, r.displacement],
-    ]) {
-      const b = boys[i];
-      b.root.position.copy(at(p.e, p.n));
-      b.root.rotation.y = (p.heading * Math.PI) / 180;
-      const walk = ((d / SCALE / 2.3) * Math.PI * 2) % (Math.PI * 2);
-      const sw = moving ? Math.sin(walk) : 0;
-      b.pose(
-        moving
-          ? {
-              lean: 0.2,
-              walk,
-              stride: 0.4,
-              lift: 0.2,
-              spread: 0.09,
-              hands: [hands[i][0].set(0.14 - 0.26 * sw, 1.0, 0.24), hands[i][1].set(0.14 + 0.26 * sw, 1.0, -0.24)],
-            }
-          : { lean: 0, walk: 0, stride: 0, lift: 0 },
-      );
-    }
-    field.setAngle(s.angle);
-    field.setRun(r.distance / SCALE, r.displacement / SCALE, RUN.displacement / SCALE);
-    dir.set(Math.cos((s.angle * Math.PI) / 180), 0, -Math.sin((s.angle * Math.PI) / 180));
-    tmp.copy(at(p2.e, p2.n, 0.32)).addScaledVector(dir, 0.55);
-    velArrow.set(tmp, dir, ARROW_LEN);
+    const r = rideAt(s.path, s.time);
+    headingOn(s.path, r.km, head);
+    toScene(r.x, r.y, ROAD_Y, cyclist.root.position);
+    fwd.set(head.x, 0, -head.y);
+    cyclist.root.rotation.y = Math.atan2(fwd.x, fwd.z);
+    cyclist.roll(r.km * KM);
+    for (const p of PATHS) setting.trails[p].show(p === s.path ? r.km : 0);
+    setting.straight.visible = s.path === 'straight';
+    setting.winding.visible = s.path !== 'straight'; // one road at a time: the same A and B
+    // the বেগ arrow: only while the cycle moves (standing at A or at B it has no velocity)
+    const moving = r.time > 0 && !atB();
+    if (moving) {
+      tmp
+        .copy(cyclist.root.position)
+        .addScaledVector(fwd, 190)
+        .setY(ROAD_Y + 70);
+      velArrow.set(tmp, fwd, VEL_LEN);
+    } else velArrow.root.visible = false;
+    // the earlier directions, on the winding road only (on the straight road they would all be the same arrow)
+    const len0 = lengthOf(s.path);
+    marks.forEach((m, i) => {
+      const km = (MARKS[i] / 4) * len0;
+      const show = moving && s.path === 'winding' && r.km > km + 0.45;
+      if (!show) {
+        m.root.visible = false;
+        return;
+      }
+      const p = pointOn(s.path, km);
+      const h = headingOn(s.path, km);
+      tmp2.set(h.x, 0, -h.y);
+      toScene(p.x, p.y, ROAD_Y + 90, tmp).addScaledVector(tmp2, -170);
+      m.set(tmp, tmp2, 340);
+    });
+    // the সরণ arrow, drawn from A to B
+    const len = B0.distanceTo(A0) * s.grow;
+    if (s.shown > 0 && len > 1) dispArrow.set(A0, dispDir, len);
+    else dispArrow.root.visible = false;
+    stage.renderer.shadowMap.needsUpdate = true;
     stage.invalidate();
   }
-  const points = {
-    one: () => boys[0].root.position.clone().setY(3.6),
-    two: () => boys[1].root.position.clone().setY(3.6),
-    tip: () => velArrow.root.position.clone().addScaledVector(dir, ARROW_LEN + 0.1),
+
+  const riderAt = new THREE.Vector3();
+  const riderPoint = () => riderAt.copy(cyclist.root.position).setY(ROAD_Y + 260);
+
+  // ── labels: short, on the view; sentences go in the panel ───────────────────
+  const annotations = createAnnotations({ stage, layer: ui.annoLayer, avoid: [ui.corner, ui.hint, () => action?.ringBox?.()] });
+  const P = {
+    A: () => setting.points.A,
+    B: () => setting.points.B,
+    north: () => setting.points.north,
+    vel: () => velArrow.root.position.clone().addScaledVector(fwd, VEL_LEN),
+    disp: () => A0.clone().lerp(B0, 0.55),
+    dist: () => {
+      const p = pointOn(s.path, lengthOf(s.path) * (s.path === 'straight' ? 0.3 : 0.62));
+      return toScene(p.x, p.y, ROAD_Y + 10);
+    },
   };
-
-  // labels: short, on the view; sentences go in the panel
-  annotations.add('one', { text: t('lbl_one'), point: points.one, dx: 0, dy: -14, kind: 'part' });
-  annotations.add('two', { text: t('lbl_two'), point: points.two, dx: 0, dy: -14, kind: 'part' });
-  annotations.add('vel', {
-    text: t('lbl_velocity', { v: fmt(VELOCITY) }),
-    point: points.tip,
+  const AROUND = [
+    { dx: 18, dy: -18 },
+    { dx: -18, dy: -18 },
+    { dx: 18, dy: 20 },
+    { dx: -18, dy: 20 },
+    { dx: 30, dy: 0 },
+    { dx: -30, dy: 0 },
+    { dx: 0, dy: -30 },
+    { dx: 0, dy: 30 },
+  ];
+  const pa = new THREE.Vector3();
+  const pb = new THREE.Vector3();
+  // the cycle and its rider on the screen: no label sits on them
+  const pc = new THREE.Vector3();
+  function riderBox() {
+    pa.copy(cyclist.root.position).project(camera);
+    pc.copy(cyclist.root.position)
+      .setY(ROAD_Y + 560)
+      .project(camera);
+    const X = (v) => (v.x * 0.5 + 0.5) * stage.width;
+    const Y = (v) => (-v.y * 0.5 + 0.5) * stage.height;
+    const w = Math.abs(Y(pa) - Y(pc)) * 0.75; // a cycle seen from the side is about as long as the rider is tall
+    return { left: X(pa) - w, right: X(pa) + w, top: Math.min(Y(pa), Y(pc)) - 4, bottom: Math.max(Y(pa), Y(pc)) + 8 };
+  }
+  // the বেগ arrow on the screen (its label goes beside it, never on it)
+  function velBox() {
+    if (!velArrow.root.visible) return null;
+    pa.copy(velArrow.root.position).project(camera);
+    pb.copy(velArrow.root.position).addScaledVector(fwd, VEL_LEN).project(camera);
+    const X = (v) => (v.x * 0.5 + 0.5) * stage.width;
+    const Y = (v) => (-v.y * 0.5 + 0.5) * stage.height;
+    return {
+      left: Math.min(X(pa), X(pb)) - 8,
+      right: Math.max(X(pa), X(pb)) + 8,
+      top: Math.min(Y(pa), Y(pb)) - 8,
+      bottom: Math.max(Y(pa), Y(pb)) + 8,
+    };
+  }
+  annotations.add('A', {
+    text: t('lbl_A'),
+    point: P.A,
     spots: [
-      { dx: 14, dy: -16 },
-      { dx: -14, dy: -16 },
-      { dx: 14, dy: 18 },
-      { dx: -14, dy: 18 },
+      { dx: -16, dy: -10 },
+      { dx: -16, dy: 14 },
+      { dx: 0, dy: -18 },
     ],
-    kind: 'callout',
-    color: COLORS.displacement,
+    avoid: [riderBox],
+    kind: 'part',
   });
-  annotations.add('east', { text: t('lbl_east'), point: field.points.east, dx: 12, dy: 0, kind: 'callout', color: COLORS.ink });
-  function angleLabel() {
-    const want = s.showAngle;
-    if (!want) return annotations.has('ang') && annotations.remove('ang');
-    const text = t('lbl_angle', { a: s.angle });
-    if (annotations.has('ang')) annotations.update('ang', { text, point: () => field.points.arc(s.angle) });
-    else annotations.add('ang', { text, point: () => field.points.arc(s.angle), dx: 0, dy: 0, kind: 'callout', color: COLORS.ink });
+  annotations.add('B', {
+    text: t('lbl_B'),
+    point: P.B,
+    spots: [
+      { dx: -18, dy: -6 },
+      { dx: -18, dy: 14 },
+      { dx: 0, dy: -18 },
+      { dx: 18, dy: 16 },
+    ],
+    avoid: [riderBox],
+    kind: 'part',
+  });
+  annotations.add('north', {
+    text: t('lbl_north'),
+    point: P.north,
+    spots: [
+      { dx: 0, dy: -14 },
+      { dx: -18, dy: -10 },
+      { dx: 18, dy: -10 },
+    ],
+    avoid: [riderBox],
+    kind: 'callout',
+    color: COLORS.ink,
+  });
+  const labelsShown = {};
+  function label(id, want, make) {
+    if (!want) {
+      if (labelsShown[id]) annotations.remove(id);
+      labelsShown[id] = '';
+      return;
+    }
+    const spec = make();
+    if (labelsShown[id] === spec.text) return;
+    if (labelsShown[id]) annotations.setText(id, spec.text);
+    else annotations.add(id, spec);
+    labelsShown[id] = spec.text;
+  }
+  function labels() {
+    const r = rideAt(s.path, s.time);
+    const moving = r.time > 0 && !atB();
+    label('vel', moving, () => ({
+      text: t('lbl_velocity'),
+      point: P.vel,
+      spots: AROUND,
+      avoid: [velBox, riderBox],
+      kind: 'callout',
+      color: COLORS.velocity,
+    }));
+    label('disp', s.shown > 0 && s.grow >= 1 && s.labels, () => ({
+      text: t('lbl_disp', { d: short(DISPLACEMENT.km) }),
+      point: P.disp,
+      spots: [
+        { dx: -18, dy: -18 },
+        { dx: 18, dy: 20 },
+        { dx: -18, dy: 20 },
+        { dx: 18, dy: -18 },
+      ],
+      avoid: [riderBox],
+      kind: 'callout',
+      color: COLORS.displacement,
+    }));
+    label('dist', atB() && s.labels, () => ({
+      text: t('lbl_dist', { d: short(lengthOf(s.path)) }),
+      point: P.dist,
+      spots:
+        s.path === 'straight'
+          ? [
+              { dx: 18, dy: 22 },
+              { dx: -18, dy: 22 },
+            ]
+          : [
+              { dx: 20, dy: -12 },
+              { dx: 20, dy: 16 },
+              { dx: -20, dy: -14 },
+            ],
+      avoid: [riderBox],
+      kind: 'callout',
+      color: COLORS.distance,
+    }));
   }
 
-  // ── the panel: the readings, the book's two formulas, the rule ─────────────
-  const $ = ui.$;
-  const cells = {};
-  for (const node of ui.learn.querySelectorAll('[data-v]')) cells[node.dataset.v] = node;
-  const ruleEl = $('.sv-rule');
-  const angleEl = $('.sv-angle');
-  const shown = {};
-  let action = null;
-  function put(k, html, node = cells[k]) {
-    if (!node || shown[k] === html) return;
-    shown[k] = html;
-    node.innerHTML = html;
-  }
-
+  // ── the panel: one action, one result, one rule ─────────────────────────────
+  const outcomeEl = ui.$('.pvc-outcome');
   function refresh() {
-    const r = runAt(s.time);
-    const end = r.time >= RUN.time - 1e-6;
-    const dirText = t('dir_angle', { a: s.angle, d: t(`dir_${dirOf(s.angle)}`) });
-    put('sp', r.speed == null ? '–' : `${N(fmt(r.speed, 2))}${U('u_ms')} <small>${t('no_direction')}</small>`);
-    put('ve', r.velocity == null ? '–' : `${N(fmt(r.velocity, 2))}${U('u_ms')} <small>${dirText}</small>`);
-    const sum = (top, v) =>
-      r.time > 0 ? `${N(fixed(top, 1).replace(/\.0$/, ''))} m ÷ ${N(fixed(r.time, 1).replace(/\.0$/, ''))} s = ${N(fmt(v, 2))} ${t('u_ms')}` : '–';
-    put('fs', sum(r.distance, r.speed));
-    put('fv', sum(r.displacement, r.velocity));
-    put('angle', dirText, angleEl);
-    const idea = end ? t('idea_done') : s.running ? t('idea_running') : t('idea_start', { t: RUN.time, s: RUN_SCREEN });
-    put('rule', idea, ruleEl);
-    const label = end ? 'act_again' : 'act_run';
-    if (shown.act !== label) {
-      shown.act = label;
-      action?.set({ label });
+    const r = rideAt(s.path, s.time);
+    const avg = averages(s.path);
+    const ph = phase();
+    const dirWord = (d) => (d ? t(`dir_${d}`) : '–');
+    sheet.choose(s.path);
+    outcomeEl.classList.toggle('sv-cmp', ph === 'compare');
+    if (ph === 'start') {
+      sheet.outcome(t('out_start', { m: MINUTES }));
+      sheet.rule(t('rule_start'));
+    } else if (ph === 'ride') {
+      sheet.outcome(
+        `<span class="sv-line">${t('out_ride', { d: fixed(r.km, 1), m: fixed(r.time, 0) })}</span><span class="sv-line">${t('out_dir', { dir: dirWord(r.dir) })}</span>`,
+      );
+      sheet.rule(`${t(s.path === 'straight' ? 'rule_ride_straight' : 'rule_ride')} <small class="sv-note">${t('note_fast', { k: FAST })}</small>`);
+    } else if (ph === 'end') {
+      sheet.outcome(t('out_end', { d: short(avg.distance), m: MINUTES }));
+      sheet.rule(t('rule_end'));
+    } else if (ph === 'displacement') {
+      sheet.outcome(t('out_disp', { d: short(avg.displacement), dir: dirWord(avg.dir) }));
+      sheet.rule(t('rule_disp'));
+    } else {
+      sheet.outcome(
+        `<span class="sv-row"><span class="sv-def">${t('cmp_speed')}</span><span class="sv-sum">${t('cmp_speed_sum', { d: short(avg.distance), m: MINUTES, v: short(avg.speed) })}</span></span>` +
+          `<span class="sv-row"><span class="sv-def">${t('cmp_vel')}</span><span class="sv-sum">${t('cmp_vel_sum', { d: short(avg.displacement), m: MINUTES, v: short(avg.velocity), dir: dirWord(avg.dir) })}</span></span>` +
+          `<small class="sv-note">${t('cmp_hour', { m: MINUTES, a: 1, b: 60 / MINUTES })}</small>`,
+      );
+      sheet.rule(t(s.path === 'straight' ? 'rule_compare_straight' : 'rule_compare'));
+    }
+    // the one action
+    const next = {
+      start: { step: 1, label: 'act_ride', enabled: true, target: riderPoint },
+      ride: s.running
+        ? { step: 1, label: 'act_riding', enabled: false, target: () => null }
+        : { step: 1, label: 'act_go_on', enabled: true, target: () => null },
+      end: { step: 2, label: 'act_disp', enabled: true, target: () => B0 },
+      displacement: { step: 3, label: 'act_compare', enabled: true, target: () => null },
+      compare: { step: '', label: 'act_again', enabled: true, target: () => null },
+    }[ph];
+    if (shownAction !== `${ph}|${s.running}`) {
+      shownAction = `${ph}|${s.running}`;
+      action?.set({ ...next, icon: ph === 'compare' ? ICONS.reset : ph === 'start' || ph === 'ride' ? ICONS.play : ICONS.hand });
     }
   }
+  let shownAction = '';
   function update() {
     place();
+    labels();
     refresh();
   }
 
-  // ── the run ─────────────────────────────────────────────────────────────────
-  function run() {
-    if (s.locked) return;
-    if (s.time >= RUN.time) s.time = 0;
+  // ── the steps ───────────────────────────────────────────────────────────────
+  let token = 0; // bumped by anything that changes the plan: a pending step checks it after every wait
+  function stopAll() {
+    token++;
+    tweener.cancel('ride');
+    tweener.cancel('grow');
+    s.running = false;
+  }
+  function ride() {
+    if (s.locked) return lockedNudge();
+    if (atB()) {
+      s.time = 0;
+      s.shown = 0;
+      s.grow = 0;
+    }
+    stopAll();
+    const my = token;
     s.running = true;
     audio.tick?.();
     const t0 = s.time;
     tweener
       .animate({
-        key: 'run',
-        duration: ((RUN.time - t0) / RUN.time) * RUN_SCREEN,
+        key: 'ride',
+        duration: ((MINUTES - t0) / MINUTES) * RIDE_SCREEN,
         ease: (x) => x,
         onUpdate: (k) => {
-          s.time = t0 + (RUN.time - t0) * k;
+          s.time = t0 + (MINUTES - t0) * k;
           update();
         },
       })
       .finished.then((done) => {
+        if (my !== token) return;
         s.running = false;
+        if (done) s.time = MINUTES;
         update();
         if (done) {
           audio.success?.();
@@ -281,67 +483,128 @@ export function createApp(root, options = {}) {
       });
     update();
   }
-  function stopRun() {
-    tweener.cancel('run');
-    s.running = false;
-  }
-  function setAngle(a, { emitChange = true } = {}) {
-    const next = wrap(Math.round(a));
-    if (next === s.angle && s.time === 0) return;
-    stopRun();
-    s.angle = next;
-    s.time = 0; // a new direction: both back on the start line
-    update();
-    angleLabel();
-    fit(true);
-    if (emitChange) emit('change', snapshot());
-  }
-  function turn(step) {
+  function showDisplacement(animate = true) {
     if (s.locked) return lockedNudge();
+    stopAll();
+    s.time = MINUTES;
+    s.shown = 1;
+    if (!animate) {
+      s.grow = 1;
+      update();
+      return;
+    }
+    s.grow = 0;
     audio.tick?.();
-    setAngle(Math.round((s.angle + step) / STEP) * STEP);
+    const my = token;
+    tweener
+      .animate({
+        key: 'grow',
+        duration: 1.1,
+        onUpdate: (k) => {
+          s.grow = k;
+          update();
+        },
+      })
+      .finished.then(() => {
+        if (my !== token) return;
+        s.grow = 1;
+        update();
+      });
+    update();
+  }
+  function compare() {
+    if (s.locked) return lockedNudge();
+    stopAll();
+    s.time = MINUTES;
+    s.shown = 2;
+    s.grow = 1;
+    audio.success?.();
+    update();
+  }
+  function act() {
+    const ph = phase();
+    if (ph === 'start' || ph === 'ride' || ph === 'compare') ride();
+    else if (ph === 'end') showDisplacement();
+    else if (ph === 'displacement') compare();
+    emit('change', snapshot());
+  }
+  function toStart() {
+    stopAll();
+    s.time = 0;
+    s.shown = 0;
+    s.grow = 0;
+    update();
+  }
+  function setPath(path) {
+    if (!PATHS.includes(path)) return;
+    if (s.locked) return lockedNudge();
+    s.path = path;
+    toStart(); // a new road: back to A (never the end of the new plan)
+    emit('change', snapshot());
+  }
+  /** Move the paused cycle along the ride (the arrow keys): one minute a press. */
+  function nudge(minutes) {
+    if (s.locked) return lockedNudge();
+    stopAll();
+    const next = clampTime(Math.round(s.time + minutes));
+    s.time = next;
+    if (!atB()) {
+      s.shown = 0;
+      s.grow = 0;
+    }
+    update();
+    emit('change', snapshot());
   }
 
-  // ── camera: frame the start, boy 1's path and boy 2's line ──────────────────
-  function bounds() {
-    const end = lineAt(RUN.displacement, s.angle);
-    const pts = [...PATH, START.two, end];
-    const box = new THREE.Box3();
-    for (const p of pts) {
-      box.expandByPoint(at(p.e, p.n, 0));
-      box.expandByPoint(at(p.e, p.n, 2.2));
-    }
-    return box.expandByVector(new THREE.Vector3(0.7, 0, 0.7));
-  }
+  // ── camera: the whole ride A→B in frame, in a gentle three-quarter view ──────
+  const box = (() => {
+    const b = new THREE.Box3();
+    for (const p of PATHS)
+      for (let k = 0; k <= 40; k++) {
+        const q = pointOn(p, (lengthOf(p) * k) / 40);
+        b.expandByPoint(toScene(q.x, q.y, 0));
+        b.expandByPoint(toScene(q.x, q.y, 420)); // the rider's head and the labels over him
+      }
+    return b.expandByVector(new THREE.Vector3(170, 0, 170));
+  })();
   const corners = Array.from({ length: 8 }, () => new THREE.Vector3());
-  function viewPose(view) {
-    const box = bounds();
-    const target = box.getCenter(new THREE.Vector3()).setY(0.6);
-    const d0 = VIEWS[view];
+  function viewPose() {
+    const target = box.getCenter(new THREE.Vector3()).setY(0);
     const cam = camera.clone();
-    let d = 30;
-    const topRoom = Math.min(0.3, 60 / Math.max(stage.height, 200)); // the corner buttons
-    for (let i = 0; i < 6; i++) {
-      cam.position.copy(target).addScaledVector(d0, d);
+    let d = 8000;
+    const topRoom = Math.min(0.22, 52 / Math.max(stage.height, 200)); // the corner buttons
+    const right = new THREE.Vector3();
+    const up = new THREE.Vector3();
+    const tanV = Math.tan(THREE.MathUtils.degToRad(cam.fov) / 2);
+    for (let i = 0; i < 10; i++) {
+      cam.position.copy(target).addScaledVector(VIEW, d);
       cam.lookAt(target);
       cam.updateMatrixWorld();
-      let k = 0;
+      let x0 = 1e9;
+      let x1 = -1e9;
+      let y0 = 1e9;
+      let y1 = -1e9;
       let j = 0;
       for (const x of [box.min.x, box.max.x])
         for (const y of [box.min.y, box.max.y])
           for (const z of [box.min.z, box.max.z]) {
             const c = corners[j++].set(x, y, z).project(cam);
-            k = Math.max(k, Math.abs(c.x) / 0.96, c.y > 0 ? c.y / (1 - topRoom * 2) : -c.y / 0.96);
+            x0 = Math.min(x0, c.x);
+            x1 = Math.max(x1, c.x);
+            y0 = Math.min(y0, c.y);
+            y1 = Math.max(y1, c.y);
           }
-      d *= 0.35 + 0.65 * k;
+      // fit the box into x −0.97…0.97 and y −0.97…(1 − room for the buttons), then centre it there
+      const top = 1 - topRoom * 2;
+      const k = Math.max((x1 - x0) / 1.94, (y1 - y0) / (top + 0.97));
+      right.setFromMatrixColumn(cam.matrixWorld, 0);
+      up.setFromMatrixColumn(cam.matrixWorld, 1);
+      const hh = d * tanV;
+      const hw = hh * cam.aspect;
+      target.addScaledVector(right, ((x0 + x1) / 2) * hw).addScaledVector(up, ((y0 + y1) / 2 - (top - 0.97) / 2) * hh);
+      d *= 0.3 + 0.7 * k;
     }
-    // the sun's shadow box round the same area
-    const half = box.getSize(tmp).length() / 2 + 1;
-    sun.target.position.copy(target).setY(0);
-    sun.position.copy(target).add(new THREE.Vector3(-6, 20, 8));
-    Object.assign(sun.shadow.camera, { left: -half, right: half, top: half, bottom: -half, near: 1, far: 50 });
-    sun.shadow.camera.updateProjectionMatrix();
-    return { target, position: target.clone().addScaledVector(d0, d) };
+    return { target, position: target.clone().addScaledVector(VIEW, d) };
   }
   function flyTo({ position, target }, duration = 0.6) {
     const p0 = camera.position.clone();
@@ -363,82 +626,26 @@ export function createApp(root, options = {}) {
       },
     }).finished;
   }
-  function fit(animate) {
-    if (s.userMovedCamera) return;
-    flyTo(viewPose(s.view), animate ? 0.5 : 0);
-  }
-  function setView(view, { animate = true } = {}) {
-    s.view = view === '3d' ? '3d' : 'front';
+  function frontView(animate = true) {
     s.userMovedCamera = false;
     syncUI();
-    emit('view', { view: s.view });
-    return flyTo(viewPose(s.view), animate ? 0.8 : 0);
+    emit('view', { view: 'front' });
+    return flyTo(viewPose(), animate ? 0.7 : 0);
   }
-  // the view starts from the front; dragging turns it, and then the "front" button appears to come back
   controls.addEventListener('start', () => {
-    s.userMovedCamera = true;
     tweener.cancel('camera');
-    if (s.view !== '3d') {
-      s.view = '3d';
+    if (!s.userMovedCamera) {
+      s.userMovedCamera = true;
       syncUI();
-      emit('view', { view: s.view });
+      emit('view', { view: '3d' });
     }
   });
   stage.onResize(() => {
     if (!s.userMovedCamera) {
       tweener.cancel('camera');
-      flyTo(viewPose(s.view), 0);
+      flyTo(viewPose(), 0);
     }
   });
-
-  // ── dragging the বেগ arrow turns boy 2 ──────────────────────────────────────
-  const raycaster = new THREE.Raycaster();
-  const ndc = new THREE.Vector2();
-  const ground = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-  const hit = new THREE.Vector3();
-  function groundPoint(e) {
-    const r = stage.canvas.getBoundingClientRect();
-    ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
-    raycaster.setFromCamera(ndc, camera);
-    return raycaster.ray.intersectPlane(ground, hit);
-  }
-  let drag = null;
-  ui.canvasHost.addEventListener(
-    'pointerdown',
-    (e) => {
-      audio.unlock();
-      const p = groundPoint(e);
-      if (!p || drag) return;
-      // on or near the arrow (or boy 2): turn him
-      const from = velArrow.root.position;
-      const tip = points.tip();
-      const seg = tip.clone().sub(from).setY(0);
-      const rel = p.clone().sub(from).setY(0);
-      const f = THREE.MathUtils.clamp(rel.dot(seg) / seg.lengthSq(), 0, 1);
-      const near = rel.sub(seg.multiplyScalar(f)).length() < 0.9;
-      if (!near) return; // the camera controls take it
-      e.stopPropagation();
-      e.preventDefault();
-      if (s.locked) return lockedNudge();
-      drag = { id: e.pointerId };
-      capturePointer(ui.canvasHost, e.pointerId);
-    },
-    true,
-  );
-  ui.canvasHost.addEventListener('pointermove', (e) => {
-    if (!drag || e.pointerId !== drag.id) return;
-    const p = groundPoint(e);
-    if (!p) return;
-    const a = (Math.atan2(-p.z - START.two.n, p.x - START.two.e) * 180) / Math.PI;
-    if (Math.hypot(p.x - START.two.e, -p.z - START.two.n) > 0.6) setAngle(Math.round(a / 5) * 5, { emitChange: false });
-  });
-  function endDrag(e) {
-    if (!drag || e.pointerId !== drag.id) return;
-    drag = null;
-    emit('change', snapshot());
-  }
-  ui.canvasHost.addEventListener('pointerup', endDrag);
-  ui.canvasHost.addEventListener('pointercancel', endDrag);
 
   let hintTimer = 0;
   function lockedNudge() {
@@ -458,25 +665,41 @@ export function createApp(root, options = {}) {
     return list;
   };
   const pickOne = (list) => list[Math.floor(Math.random() * list.length)];
-  const WALKS = [
-    [100, 50, 20],
-    [120, 80, 40],
-    [60, 30, 12],
-    [90, 45, 15],
-    [200, 120, 50],
-  ];
-  const value = (u) => (v) => `${N(fmt(v, 2))}<small>${t(u)}</small>`;
-  const words = (keys) => (j) => `<span class="sv-opt">${t(keys[j])}</span>`;
+  const kmhLabel = (v) => `${N(short(v))}<small>${t('u_kmh')}</small>`;
+  /** Four different numbers (to the hundredth): the right one and the first three different wrong ones, shuffled. */
   function numericChoices(right, wrong) {
-    const seen = new Set([fmt(right, 2)]);
+    const seen = new Set([short(right)]);
     const list = [right];
     for (const w of wrong) {
       if (list.length === 4) break;
-      if (!(w >= 0) || seen.has(fmt(w, 2))) continue;
-      seen.add(fmt(w, 2));
+      if (!(w >= 0) || seen.has(short(w))) continue;
+      seen.add(short(w));
       list.push(w);
     }
     return shuffle(list);
+  }
+  /** A question of words: keys (the first is right), shuffled; returns the quiz's fields and the order. */
+  function wordChoices(keys) {
+    const order = shuffle(keys.map((_k, i) => i));
+    return {
+      order,
+      q: {
+        choices: [0, 1, 2, 3],
+        expected: order.indexOf(0),
+        tolerance: 0.5,
+        label: (j) => `<span class="sv-opt">${t(keys[order[j]])}</span>`,
+      },
+    };
+  }
+  /** Set up the picture of a question at once (no animation). */
+  function sceneFor({ path = 'winding', time = 0, shown = 0, labels = true }) {
+    stopAll();
+    s.path = path;
+    s.time = time;
+    s.shown = shown;
+    s.grow = shown ? 1 : 0;
+    s.labels = labels;
+    update();
   }
   let kinds = [];
   let question = null;
@@ -486,87 +709,119 @@ export function createApp(root, options = {}) {
     emit,
     audio,
     questions: 5,
-    lines: { text: 3, feedback: 2 },
+    lines: { text: 3, feedback: 3 },
     action: { hide: (r) => action?.hide(r), show: (r) => action?.show(r) },
     hooks: {
       enter() {
         s.mode = 'quiz';
-        stopRun();
-        kinds = ['dir', ...shuffle(['calc', 'vector', 'same', 'round'])];
+        stopAll();
+        // the zig-zag question first (its picture shows no সরণ, so it gives nothing away), the rest shuffled
+        kinds = ['zigzag', ...shuffle(['calc', 'turn', 'straight', 'round'])];
         syncUI();
       },
       leave() {
         s.mode = 'explore';
         s.locked = false;
-        s.showAngle = true;
-        angleLabel();
+        s.labels = true;
+        toStart();
         syncUI();
       },
       async prepare(i, _alive, say) {
         s.locked = false;
-        s.showAngle = true;
         const kind = kinds[i % kinds.length];
-        if (kind === 'dir') {
-          // boy 2 faces one of the eight directions; the angle is hidden, the student names the direction
-          const k = pickOne([1, 2, 3, 5, 6, 7]);
-          s.showAngle = false;
-          setAngle(k * 45);
-          angleLabel();
+        if (kind === 'zigzag') {
+          sceneFor({ time: MINUTES, labels: false });
+          const { order, q } = wordChoices(['z_yes', 'z_no', 'z_straight', 'z_nodir']);
+          question = { kind, order, notes: [null, 'note_z_no', 'note_z_straight', 'note_z_nodir'] };
+          say(t('q_zigzag'));
           s.locked = true;
-          const keys = [DIRS[k], ...shuffle(DIRS.filter((_d, j) => j !== k)).slice(0, 3)].map((d) => `dir_${d}`);
-          const order = shuffle([0, 1, 2, 3]);
-          question = { kind, d: t(keys[0]) };
-          say(t('q_dir'));
+          return { ...q, meta: { kind } };
+        }
+        if (kind === 'calc') {
+          // the picture shows the distance (4 km) and the সরণ (2 km); the question gives a new time
+          sceneFor({ time: MINUTES, shown: 1 });
+          const m = pickOne([10, 15, 30, 40, 60]);
+          const speed = Math.random() < 0.5;
+          const D = lengthOf('winding');
+          const d = DISPLACEMENT.km;
+          const right = ((speed ? D : d) * 60) / m;
+          const other = ((speed ? d : D) * 60) / m;
+          const perMin = (speed ? D : d) / m;
+          const times = ((speed ? D : d) * m) / 60;
+          question = { kind, speed, m, right, other, perMin, times };
+          say(t(speed ? 'q_calc_speed' : 'q_calc_vel', { m }));
+          s.locked = true;
           return {
-            choices: [0, 1, 2, 3],
-            expected: order.indexOf(0),
-            tolerance: 0.5,
-            label: (j) => words(keys)(order[j]),
-            meta: { kind, angle: k * 45 },
+            choices: numericChoices(right, [other, perMin, times, right * 2]),
+            expected: right,
+            tolerance: 0.004,
+            label: kmhLabel,
+            meta: { kind, m, speed },
           };
         }
+        if (kind === 'turn') {
+          // on the big bend (km 2.6–3.4 of the road), the arrow showing the velocity
+          sceneFor({ time: (3.1 / lengthOf('winding')) * MINUTES, labels: false });
+          const { order, q } = wordChoices(['t_change', 't_same', 't_zero', 't_more']);
+          question = { kind, order, notes: [null, 'note_t_same', 'note_t_zero', 'note_t_more'] };
+          say(t('q_turn'));
+          s.locked = true;
+          return { ...q, meta: { kind } };
+        }
+        if (kind === 'straight') {
+          sceneFor({ path: 'straight', time: MINUTES, labels: false });
+          const { order, q } = wordChoices(['st_equal', 'st_speed', 'st_vel', 'st_zero']);
+          question = { kind, order, notes: [null, 'note_st_speed', 'note_st_vel', 'note_st_zero'] };
+          say(t('q_straight'));
+          s.locked = true;
+          return { ...q, meta: { kind } };
+        }
+        // round: there and back again, the cycle back at A
+        sceneFor({ time: 0, labels: false });
+        setting.trails.winding.show(lengthOf('winding'));
+        stage.invalidate();
+        const m = pickOne([30, 40, 60]);
+        const D = 2 * lengthOf('winding');
+        question = { kind, m, D };
+        say(t('q_round', { m }));
         s.locked = true;
-        if (kind === 'calc') {
-          const [D, d, tt] = pickOne(WALKS);
-          const speed = Math.random() < 0.5;
-          say(t(speed ? 'q_calc_speed' : 'q_calc_vel', { t: tt, D, d }));
-          const right = (speed ? D : d) / tt;
-          const wrong = speed ? [d / tt, tt / D, (D + d) / tt] : [D / tt, tt / d, (D + d) / tt];
-          question = { kind, D, d, t: tt, speed, right };
-          return { choices: numericChoices(right, wrong), expected: right, tolerance: 0.004, label: value('u_ms'), meta: { kind, D, d, t: tt } };
-        }
-        if (kind === 'vector') {
-          const keys = shuffle(['opt_velocity', 'opt_speed', 'opt_distance', 'opt_time']);
-          question = { kind };
-          say(t('q_vector'));
-          return { choices: [0, 1, 2, 3], expected: keys.indexOf('opt_velocity'), tolerance: 0.5, label: words(keys), meta: { kind } };
-        }
-        if (kind === 'same') {
-          const keys = shuffle(['opt_same', 'opt_both_same', 'opt_vel_same', 'opt_both_diff']);
-          question = { kind };
-          say(t('q_same'));
-          return { choices: [0, 1, 2, 3], expected: keys.indexOf('opt_same'), tolerance: 0.5, label: words(keys), meta: { kind } };
-        }
-        const [D, tt] = pickOne([
-          [400, 80],
-          [200, 50],
-          [300, 60],
-        ]);
-        question = { kind, D, t: tt };
-        say(t('q_round', { D, t: tt }));
-        return { choices: shuffle([0, D / tt, D / 2 / tt, tt / D]), expected: 0, tolerance: 0.001, label: value('u_ms'), meta: { kind } };
+        const speed = (D * 60) / m;
+        const half = (DISPLACEMENT.km * 60) / (m / 2);
+        return {
+          choices: numericChoices(0, [speed, half, half / 2, speed / 2]),
+          expected: 0,
+          tolerance: 0.001,
+          label: kmhLabel,
+          meta: { kind, m },
+        };
       },
-      reveal() {
+      reveal(_q, correct, picked) {
         const q = question;
-        if (q.kind === 'dir') {
-          s.showAngle = true;
-          angleLabel();
-          return t('why_dir', { d: q.d });
+        const note = (key, vars) => (correct || !key ? '' : ` ${t(key, vars)}`);
+        if (q.kind === 'calc') {
+          const D = q.speed ? lengthOf('winding') : DISPLACEMENT.km;
+          const v = picked?.value;
+          const near = (x) => v != null && Math.abs(v - x) < 0.004;
+          const key = near(q.other)
+            ? q.speed
+              ? 'note_calc_other_speed'
+              : 'note_calc_other_vel'
+            : near(q.perMin)
+              ? 'note_calc_min'
+              : near(q.times)
+                ? 'note_calc_mul'
+                : null;
+          return t(q.speed ? 'why_calc_speed' : 'why_calc_vel', { v: short(q.right), d: short(D), m: q.m, s: 60 }) + note(key, { s: 60 });
         }
-        if (q.kind === 'calc') return t(q.speed ? 'why_calc_speed' : 'why_calc_vel', { D: q.D, d: q.d, t: q.t, r: fmt(q.right, 2) });
-        if (q.kind === 'vector') return t('why_vector');
-        if (q.kind === 'same') return t('why_same');
-        return t('why_round', { D: q.D, t: q.t, v: fmt(q.D / q.t, 2), z: 0 });
+        if (q.kind === 'round') {
+          const v = picked?.value ?? 0;
+          const speed = (q.D * 60) / q.m;
+          const key = Math.abs(v - speed) < 0.004 ? 'note_round_speed' : v > 0 ? 'note_round_half' : null;
+          return t('why_round', { z: 0, d: short(q.D), m: q.m, v: short(speed) }) + note(key, { d: short(q.D), z: 0 });
+        }
+        const why = { zigzag: 'why_zigzag', turn: 'why_turn', straight: 'why_straight' }[q.kind];
+        const chosen = picked ? q.order[picked.index] : 0;
+        return t(why) + note(q.notes[chosen]);
       },
       done() {
         s.locked = false;
@@ -577,7 +832,7 @@ export function createApp(root, options = {}) {
   // ── buttons, keys ───────────────────────────────────────────────────────────
   function syncUI() {
     const front = ui.$('[data-view="front"]');
-    if (front) front.hidden = s.view !== '3d';
+    if (front) front.hidden = !s.userMovedCamera;
     root.dataset.mode = s.mode === 'quiz' ? 'quiz' : 'explore';
     for (const b of ui.$$('[data-mode]')) {
       const on = b.dataset.mode === root.dataset.mode;
@@ -593,11 +848,12 @@ export function createApp(root, options = {}) {
     const b = /** @type {Element} */ (e.target).closest('button');
     if (!b || !root.contains(b)) return;
     audio.unlock();
-    if (b.dataset.view) setView(b.dataset.view);
-    if (b.dataset.mode === 'quiz' && s.mode !== 'quiz') quiz.start();
-    if (b.dataset.mode === 'explore') quiz.stop();
-    if (b.dataset.q != null) quiz.choose(Number(b.dataset.q));
-    switch (b.dataset.act) {
+    if (b instanceof HTMLElement && b.dataset.example) setPath(b.dataset.example);
+    if (b instanceof HTMLElement && b.dataset.view === 'front') frontView();
+    if (b instanceof HTMLElement && b.dataset.mode === 'quiz' && s.mode !== 'quiz') quiz.start();
+    if (b instanceof HTMLElement && b.dataset.mode === 'explore') quiz.stop();
+    if (b instanceof HTMLElement && b.dataset.q != null) quiz.choose(Number(b.dataset.q));
+    switch (b instanceof HTMLElement ? b.dataset.act : null) {
       case 'q-next':
         quiz.next();
         break;
@@ -605,18 +861,11 @@ export function createApp(root, options = {}) {
         quiz.start();
         break;
       case 'reset':
-        if (!s.locked) {
-          stopRun();
-          s.time = 0;
-          update();
+        if (s.locked) lockedNudge();
+        else {
+          toStart();
           emit('change', snapshot());
         }
-        break;
-      case 'left':
-        turn(STEP);
-        break;
-      case 'right':
-        turn(-STEP);
         break;
       case 'fullscreen':
         if (document.fullscreenElement) document.exitFullscreen?.();
@@ -627,35 +876,36 @@ export function createApp(root, options = {}) {
   root.addEventListener('keydown', (e) => {
     const target = /** @type {Element} */ (e.target);
     if (target.closest('input, textarea, select') || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (s.mode === 'quiz') return;
     const k = e.key.toLowerCase();
-    if ((k === ' ' || k === 'enter') && !target.closest('button')) run();
-    else if (k === 'arrowleft' || k === 'arrowup') turn(STEP);
-    else if (k === 'arrowright' || k === 'arrowdown') turn(-STEP);
-    else if (k === 'f') setView('front');
-    else if (k === 'v') setView('3d');
+    if ((k === ' ' || k === 'enter') && !target.closest('button')) {
+      if (!s.running) act();
+    } else if (k === 'arrowright' || k === 'arrowup') nudge(1);
+    else if (k === 'arrowleft' || k === 'arrowdown') nudge(-1);
+    else if (k === 'f') frontView();
     else return;
     e.preventDefault();
   });
 
-  // ── the action: the kit's button in the panel, its badge on the two boys at the start line ─────────────
+  // ── the action: the kit's button in the panel, its badge on the cycle (or on B) ─────────────
   action = createAction({
     stage,
     layer: ui.coachLayer,
     host: ui.$('.pvc-act-slot'),
     t,
     step: 1,
-    label: 'act_run',
+    label: 'act_ride',
     icon: ICONS.play,
-    target: () => null, // the button only: the two boys and their labels keep the start clear
+    target: riderPoint,
+    radius: 34,
     avoid: [ui.corner, ui.hint],
     pulse: Boolean(o.coach),
-    onAct: () => run(),
+    onAct: () => act(),
   });
 
   // ── start ───────────────────────────────────────────────────────────────────
   update();
-  angleLabel();
-  setView(s.view, { animate: false });
+  frontView(false);
   syncUI();
   const ready = (async () => {
     if (o.mode === 'quiz') quiz.start();
@@ -670,34 +920,39 @@ export function createApp(root, options = {}) {
     },
     getState: snapshot,
     /**
-     * Change any of: angle (boy 2's direction, degrees from east towards north; both go back to the start line);
-     * time (0–20 s of the run, stopped); playing (true: run from where they are); view; animate: false jumps.
+     * Change any of: path ('winding' | 'straight': back to A); time (minutes of the ride, 0–20, stopped there);
+     * playing (true: ride on from where the cycle is, or from A); step ('start' | 'displacement' | 'compare'; the last
+     * two at B); view ('front': the starting view); animate: false jumps.
      */
     async set(p = {}) {
       const animate = p.animate !== false;
-      if (p.view) await setView(p.view, { animate });
-      if (p.angle != null) setAngle(Number(p.angle));
+      if (p.view === 'front') await frontView(animate);
+      if (p.path != null) setPath(String(p.path));
       if (p.time != null) {
-        stopRun();
-        s.time = Math.min(Math.max(Number(p.time), 0), RUN.time);
+        stopAll();
+        s.time = clampTime(p.time);
+        if (!atB()) {
+          s.shown = 0;
+          s.grow = 0;
+        }
         update();
       }
-      if (p.playing === true && !s.running) run();
-      if (p.playing === false) {
-        stopRun();
+      if (p.step === 'start') toStart();
+      if (p.step === 'displacement') showDisplacement(animate);
+      if (p.step === 'compare') compare();
+      if (p.playing === true && !s.running) ride();
+      if (p.playing === false && s.running) {
+        stopAll();
         update();
       }
       return snapshot();
     },
     async reset() {
       quiz.stop();
-      stopRun();
-      s.time = 0;
-      s.showAngle = true;
-      setAngle(DEFAULTS.angle, { emitChange: false });
-      update();
-      angleLabel();
-      await setView('front');
+      s.path = 'winding';
+      s.labels = true;
+      toStart();
+      await frontView();
     },
     startPractice: () => quiz.start(),
     capture: (opts) => stage.capture(opts),
