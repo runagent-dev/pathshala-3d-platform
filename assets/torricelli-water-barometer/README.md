@@ -27,9 +27,9 @@ To listen to it or control it from the book page, use the helper shipped in the 
 | Param | Meaning | Values | Default |
 |---|---|---|---|
 | `lang` | Language | `bn` বাংলা · `en` English | `bn` |
-| `view` | View | `front` · `3d` | `front` |
+| `step` | Step | `1` the mercury barometer · `2` water instead (10.3 m) · `3` the two compared (× 13.6) · `4` the 10.5 m straw | `1` |
 | `mode` | Start in | `explore` learn · `quiz` test | `explore` |
-| `coach` | The ring on the part pulses at first | `1` · `0` | `1` |
+| `coach` | The numbered badge on the picture pulses at first | `1` · `0` | `1` |
 | `numerals` | Digits | (empty) follow language · `bn` Bangla · `latin` Latin |  |
 | `bg` | Background | `light` · `transparent` | `light` |
 | `shadow` | Soft shadow | `1` · `0` | `1` |
@@ -44,11 +44,11 @@ Every figure answers `ping` with `{ asset, version }`. Send commands with `figur
 | Command | Example payload |
 |---|---|
 | `get` | `{}` |
-| `set` | `{"water":"done"}` |
+| `set` | `{"step":2}` |
 | `reset` | `{}` |
 | `practice` | `{}` |
 | `capture` | `{"width":800,"height":500}` |
 | `export-glb` | `{}` |
 
-Events: `ready`, `change`, `view`, `practice-start`, `practice-result`, `practice-end`.
+Events: `ready`, `change`, `step`, `practice-start`, `practice-result`, `practice-end`.
 <!-- /generated:bridge -->
