@@ -47,3 +47,8 @@ gas's are free, and the hotter it is, the faster they move (and the more kinetic
   thermometer in the picture at all is the book team's call (it is here to show "hotter" at a glance).
 - The molecules are drawn many times too big and few; the book has no picture to match, so this is the figure's own.
 - Every Bangla line needs a person's check against the page.
+
+## Polish pass 0.2.0 (chapter 6 detail pass)
+- The page has no picture, so fidelity is in the words: checked every string against p161 (terms, sentences unchanged).
+- More realistic apparatus: a ribbon burner (base, body, brass cap with five port rings, gas pipe and knob) instead of a
+  plain black box; the glass container has thick glass base and lid slabs and a rubber stopper; camera framed tighter.

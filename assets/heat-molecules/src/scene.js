@@ -79,7 +79,7 @@ const box = (w, h, d, x, y, z) => new THREE.BoxGeometry(w, h, d).translate(x, y,
 
 // the flames: five in a row on the burner
 export const FLAME_X = [-4, -2, 0, 2, 4];
-const FLAME_Y = 1.35;
+const FLAME_Y = 1.45;
 
 /** The colour of a molecule at heat h: steel-cobalt blue when cold, through a dusty plum, to vermilion when hot. */
 const COLD = new THREE.Color('#2f6bd6');
@@ -118,10 +118,17 @@ export function createScene({ background = true } = {}) {
     for (const sz of [-1, 1]) legGeo.push(new THREE.CylinderGeometry(0.2, 0.2, PLATE_Y, 10).translate(sx * 6.1, PLATE_Y / 2, sz * 2.5));
   const legs = new THREE.Mesh(mergeGeometries(legGeo), steel);
   const plate = new THREE.Mesh(box(13, 0.3, 5.6, 0, PLATE_Y, 0), steel);
-  const burner = new THREE.Mesh(box(9.6, 1.3, 1.4, 0, 0.65, 0), dark);
-  const strip = new THREE.Mesh(box(9.7, 0.14, 1.5, 0, 1.3, 0), brass);
-  for (const m of [legs, plate, burner, strip]) m.castShadow = true;
-  root.add(legs, plate, burner, strip);
+  // a ribbon burner: a base, a tapered body, a brass cap with five port rings, a gas pipe and a knob at the front
+  const burnerGeo = [box(10.8, 0.3, 2.6, 0, 0.15, 0), box(9.6, 0.6, 1.5, 0, 0.6, 0), box(9.2, 0.3, 1.0, 0, 1.05, 0)];
+  const burner = new THREE.Mesh(mergeGeometries(burnerGeo), dark);
+  const brassGeo = [box(9.5, 0.1, 1.3, 0, 1.25, 0)];
+  for (const x of FLAME_X) brassGeo.push(new THREE.CylinderGeometry(0.46, 0.5, 0.2, 18).translate(x, 1.35, 0));
+  brassGeo.push(new THREE.CylinderGeometry(0.3, 0.3, 1.4, 12).rotateX(Math.PI / 2).translate(-3.2, 0.55, 1.9));
+  brassGeo.push(new THREE.CylinderGeometry(0.62, 0.62, 0.32, 20).rotateX(Math.PI / 2).translate(-3.2, 0.55, 2.7));
+  const strip = new THREE.Mesh(mergeGeometries(brassGeo), brass);
+  const legs0 = legs;
+  for (const m of [legs0, plate, burner, strip]) m.castShadow = true;
+  root.add(legs0, plate, burner, strip);
 
   // ── the flames ─────────────────────────────────────────────────────────────
   // a teardrop for a flame: wide near the burner, a soft point at the top
@@ -172,7 +179,7 @@ export function createScene({ background = true } = {}) {
     new THREE.MeshPhysicalMaterial({
       color: '#d4e8f0',
       transparent: true,
-      opacity: 0.16,
+      opacity: 0.2,
       roughness: 0.05,
       metalness: 0,
       depthWrite: false,
@@ -188,7 +195,15 @@ export function createScene({ background = true } = {}) {
   }
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) frame.push(box(e, JAR.h, e, sx * JAR.w * 0.5, JAR.h / 2, sz * JAR.d * 0.5));
   const frameMesh = new THREE.Mesh(mergeGeometries(frame), steel);
-  jar.add(glass, frameMesh);
+  const thick = new THREE.MeshPhysicalMaterial({ color: '#bcd9e3', transparent: true, opacity: 0.55, roughness: 0.08, depthWrite: false });
+  const slabs = new THREE.Mesh(
+    mergeGeometries([box(JAR.w + 0.5, 0.45, JAR.d + 0.5, 0, -0.1, 0), box(JAR.w + 0.5, 0.4, JAR.d + 0.5, 0, JAR.h + 0.1, 0)]),
+    thick,
+  );
+  slabs.renderOrder = 3;
+  const rubber = new THREE.MeshStandardMaterial({ color: '#7a3b2a', roughness: 0.8 });
+  const stopper = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 1.05, 0.9, 20).translate(0, JAR.h + 0.75, 0), rubber);
+  jar.add(glass, frameMesh, slabs, stopper);
   root.add(jar);
 
   // ── the molecules ──────────────────────────────────────────────────────────
@@ -380,7 +395,7 @@ export function createScene({ background = true } = {}) {
   }
 
   const point = {
-    jarTop: () => new THREE.Vector3(0, JAR_TOP, 0),
+    jarTop: () => new THREE.Vector3(0, JAR_TOP + 0.9, 0),
     jarSide: () => new THREE.Vector3(JAR.w / 2, FLOOR_Y + 8, 0),
     thermoTop: () => new THREE.Vector3(THERMO.x, THERMO.yBase + THERMO.span + 0.8, THERMO.z),
     flame: () => new THREE.Vector3(0, FLAME_Y + 1.3, 0),
