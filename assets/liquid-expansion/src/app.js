@@ -34,7 +34,7 @@ export const DEFAULTS = {
 const CHIPS = ['thermo', 'flask'];
 const LAST = { thermo: 3, flask: 2 };
 const VIEW_DIRS = {
-  front: new THREE.Vector3(0, 0.1, 1).normalize(),
+  front: new THREE.Vector3(0.22, 0.24, 1).normalize(),
   '3d': new THREE.Vector3(0.55, 0.3, 0.8).normalize(),
 };
 // what the camera shows for each part of the figure (world boxes); the flask's left is kept free for its labels
@@ -360,7 +360,7 @@ export function createApp(root, options = {}) {
     fitBox.max.copy(LOOKS[chip][1]);
     const dir = VIEW_DIRS[s.view].clone();
     const aspect = stage.width / Math.max(1, stage.height);
-    if (aspect > 1.2) dir.y = Math.max(0.04, dir.y - (aspect - 1.2) * 0.05); // wide frames: a lower camera
+    if (aspect > 1.2) dir.y = Math.max(0.17, dir.y - (aspect - 1.2) * 0.05); // wide frames: a lower camera
     return fitPose({ box: fitBox, dir: dir.normalize(), camera, width: stage.width, height: stage.height, margin: MARGIN });
   }
   function flyTo({ position, target: aim }, duration = 0.8) {
