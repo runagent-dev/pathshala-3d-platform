@@ -22,8 +22,8 @@ test('paper-vocal-cord: blowing makes the flaps vibrate; one button walks the th
     openings.push((await fig.call('get')).opening);
     await fig.advance(40);
   }
-  expect(Math.max(...openings)).toBeGreaterThan(2.5);
-  expect(Math.min(...openings)).toBeLessThan(1);
+  expect(Math.max(...openings)).toBeGreaterThan(1.1);
+  expect(Math.min(...openings)).toBeLessThan(0.5);
   await expect(frame.locator('.pvc-outcome')).toContainText('৩১০');
 
   // one breath, then it stops by itself

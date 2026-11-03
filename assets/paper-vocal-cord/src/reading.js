@@ -17,8 +17,8 @@ export const CUTS = { long: { L: 14 }, mid: { L: 10 }, short: { L: 7 } };
 export const CUT_IDS = /** @type {const} */ (['long', 'mid', 'short']);
 /** The picture slows time this many times (the flaps' flutter and the wave's travel). */
 export const SLOW = 100;
-/** The drawn wavelength is this fraction of the real one (a 1 m wave drawn 10 mm long in a scene in mm). */
-export const LAMBDA_SCALE = 0.01;
+/** The drawn wavelength is this fraction of the real one (a 1 m wave drawn 8 mm long in a scene in mm). */
+export const LAMBDA_SCALE = 0.008;
 
 /** The flap's lowest natural frequency (Hz), for a length L in mm. */
 export function flapFrequency(Lmm, paper = PAPER) {
