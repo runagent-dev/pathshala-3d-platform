@@ -6,7 +6,7 @@
 // edges meet at the crease like the two vocal cords; blown air pushes them outward, the slot opens, a puff escapes,
 // the paper springs back and shuts it again.
 //
-// Real proportions: a 52 × 60 mm strip of writing paper folded in half (0.1 mm thick; drawn 0.3 mm so its
+// Real proportions: a 52 × 44 mm strip of writing paper folded in half (0.1 mm thick; drawn 0.3 mm so its
 // edge reads), flaps 14 mm tall, the cut drawn 0.9 mm wide so it reads. While the paper vibrates, a faint
 // paper-coloured trail with a thin outline shows each flap at its widest swing (like motion blur), and the slot between
 // the two free edges shows as a dark gap that opens and shuts.
@@ -15,9 +15,9 @@
 import * as THREE from 'three';
 import { bendShape } from './reading.js';
 
-export const SHEET = { W: 26, H: 60, T: 0.3, alpha: THREE.MathUtils.degToRad(40), h: 14, kerf: 0.9, gap: 0.45 };
+export const SHEET = { W: 26, H: 44, T: 0.3, alpha: THREE.MathUtils.degToRad(40), h: 14, kerf: 0.9, gap: 0.45 };
 /** How far the free edge swings out at full opening, as a share of the flap's length. */
-const SWING = 0.6;
+const SWING = 0.3;
 /** At rest the two free edges stay a hair apart, like lips (a share of the full opening). */
 const LIPS = 0.04;
 const Y = new THREE.Vector3(0, 1, 0);
@@ -115,6 +115,10 @@ export function createPaper() {
     metalness: 0,
   });
   const edgeMat = new THREE.MeshStandardMaterial({ name: 'PaperEdge', color: '#e9e3d4', roughness: 0.95 });
+  // the flaps a shade warmer than the walls, so the two "cords" read as their own shapes
+  const flapMat = mat.clone();
+  flapMat.name = 'PaperFlap';
+  flapMat.color.set('#f2e2c4');
   const ghostMat = new THREE.MeshBasicMaterial({ color: '#fbf5e6', transparent: true, opacity: 0.3, depthWrite: false, side: THREE.DoubleSide });
   const trailMat = new THREE.LineBasicMaterial({ color: '#7a6c55', transparent: true, opacity: 0.75, depthWrite: false });
 
@@ -135,7 +139,7 @@ export function createPaper() {
     // the flap: a thin slab, 16 pieces along its length, bent every frame
     const flapGeo = new THREE.BoxGeometry(1, h, 1, 16, 1, 1);
     const base = flapGeo.attributes.position.array.slice();
-    const flap = new THREE.Mesh(flapGeo, [mat, mat, mat, mat, mat, mat]);
+    const flap = new THREE.Mesh(flapGeo, [flapMat, flapMat, flapMat, flapMat, flapMat, flapMat]);
     flap.name = side > 0 ? 'NearFlap' : 'FarFlap';
     flap.castShadow = true;
     flap.receiveShadow = true;
@@ -166,9 +170,13 @@ export function createPaper() {
   root.add(c);
 
   // the slot: a dark gap between the two free edges, just behind them, that opens and shuts with the flaps
+  // a lens: ROWS rows from the top of the free edges to their foot, widest in the middle, closed at both ends
+  const ROWS = 16;
   const slotGeo = new THREE.BufferGeometry();
-  slotGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(12), 3));
-  slotGeo.setIndex([0, 1, 2, 0, 2, 3]);
+  slotGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array((ROWS + 1) * 2 * 3), 3));
+  const lensIndex = [];
+  for (let i = 0; i < ROWS; i++) lensIndex.push(2 * i, 2 * i + 1, 2 * i + 2, 2 * i + 1, 2 * i + 3, 2 * i + 2);
+  slotGeo.setIndex(lensIndex);
   const slot = new THREE.Mesh(
     slotGeo,
     new THREE.MeshBasicMaterial({ name: 'Slot', color: '#22303b', transparent: true, opacity: 0.72, side: THREE.DoubleSide, depthWrite: false }),
@@ -178,6 +186,10 @@ export function createPaper() {
   slot.renderOrder = 1;
   root.add(slot);
   const E = new THREE.Vector3();
+  const F = new THREE.Vector3();
+  const M = new THREE.Vector3();
+  /** The lens's width as a share of the gap between the two free edges, at its widest (the rest shows what is behind). */
+  const LENS = 0.34;
 
   let L = 10;
   let open = 0;
@@ -226,25 +238,24 @@ export function createPaper() {
 
   function bendFlaps() {
     for (const hv of halves) bend(hv, hv.flap.geometry, open);
-    // the slot's corners: each free edge's top and foot (world = the paper's frame), pushed a little behind
+    // the slot: a dark lens between the two free edges, a little behind them; the gap round it shows what is beyond
     root.updateWorldMatrix(true, true);
     const a = slotGeo.attributes.position.array;
     const A = SWING * L * open;
-    const corners = [
-      [halves[0], SLOT_Y + h / 2],
-      [halves[1], SLOT_Y + h / 2],
-      [halves[1], SLOT_Y - h / 2],
-      [halves[0], SLOT_Y - h / 2],
-    ];
-    corners.forEach(([hv, y], i) => {
-      E.set(gap + (A * A) / (2.4 * L), y, hv.sign * A).applyMatrix4(hv.g.matrix);
-      a[i * 3] = E.x + 0.35;
-      a[i * 3 + 1] = E.y;
-      a[i * 3 + 2] = E.z;
-    });
+    const x0 = gap + (A * A) / (2.4 * L);
+    for (let i = 0; i <= ROWS; i++) {
+      const y = SLOT_Y + h / 2 - (i / ROWS) * h;
+      E.set(x0, y, halves[0].sign * A).applyMatrix4(halves[0].g.matrix);
+      F.set(x0, y, halves[1].sign * A).applyMatrix4(halves[1].g.matrix);
+      M.lerpVectors(E, F, 0.5);
+      const k = LENS * Math.sin((Math.PI * i) / ROWS) ** 0.7;
+      E.lerp(M, 1 - k);
+      F.lerp(M, 1 - k);
+      a.set([E.x + 0.35, E.y, E.z, F.x + 0.35, F.y, F.z], i * 6);
+    }
     slotGeo.attributes.position.needsUpdate = true;
     // darker the wider it opens: at rest only a thin shadow between the lips
-    slot.material.opacity = 0.72 * Math.min(1, open / 0.3);
+    slot.material.opacity = 0.85 * Math.min(1, open / 0.3);
     slotGeo.computeBoundingSphere();
   }
 
@@ -291,6 +302,24 @@ export function createPaper() {
     return { point: p, normal: hv.out.clone(), along: hv.u.clone() };
   }
 
+  /**
+   * The outline of a flap as it is bent now, in world space, into `out` (51 Vector3s): the top edge from the hinge to
+   * the free edge, down the free edge, back along the foot. The app draws it over the picture as the flap's edge.
+   */
+  function outlineNow(side, out) {
+    const hv = side > 0 ? halves[0] : halves[1];
+    const A = SWING * L * open;
+    root.updateWorldMatrix(true, true);
+    const top = SLOT_Y + h / 2;
+    const foot = SLOT_Y - h / 2;
+    const at = (i, sigma, y) =>
+      out[i].set(L - sigma * (L - gap) + (A * A * sigma) / (2.4 * L), y, hv.sign * (A * bendShape(sigma) + T / 2)).applyMatrix4(hv.g.matrix);
+    for (let i = 0; i <= 16; i++) at(i, i / 16, top);
+    for (let i = 0; i <= 16; i++) at(17 + i, 1, top - (i / 16) * h);
+    for (let i = 0; i <= 16; i++) at(34 + i, 1 - i / 16, foot);
+    return out;
+  }
+
   /** The faint trails at the widest swing (while the paper vibrates). */
   function setGhost(a) {
     ghostMat.opacity = 0.3 * a;
@@ -301,6 +330,7 @@ export function createPaper() {
   setCut(L);
   return {
     setGhost,
+    outlineNow,
     root,
     halves,
     flaps: halves.map((hv) => hv.flap),

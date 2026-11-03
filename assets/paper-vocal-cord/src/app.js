@@ -18,6 +18,7 @@ import { createQuiz } from '@shared/student/quiz.js';
 import { createI18n } from './i18n.js';
 import { fitPose } from './camera.js';
 import { boldArrow } from './arrows.js';
+import { createBracket, createFlapEdges } from './bracket.js';
 import { createClip } from './clip.js';
 import { createGraph } from './graph.js';
 import { SHEET, SLOT_Y, createPaper } from './paper.js';
@@ -47,21 +48,21 @@ const DOUBLE_TAP = 420; // ms
 const MARGIN = { top: 50, bottom: 12, side: 10 };
 const V = (x, y, z = 0) => new THREE.Vector3(x, y, z);
 /**
- * The view: 35° up, from straight behind the open back of the fold (2° to the near side, so it is not quite flat):
+ * The view: 55° up, from straight behind the open back of the fold (2° to the near side, so it is not quite flat):
  * the two halves are the walls of a V and at its tip the two flaps, the two "vocal cords", stand left and right of
  * the crease, opening and shutting with a dark slot between them. The breath goes down the middle of the V into the
  * slot; the sound spreads up the picture beyond it (the slot faces +x).
  */
-const DIR = new THREE.Vector3().setFromSphericalCoords(1, THREE.MathUtils.degToRad(55), THREE.MathUtils.degToRad(-88));
+const DIR = new THREE.Vector3().setFromSphericalCoords(1, THREE.MathUtils.degToRad(35), THREE.MathUtils.degToRad(-88));
 /** The way the sound goes from the slot (the half-disc's middle), and the other way in its level plane. */
 const AXIS = V(1, 0, 0);
 const PLANE = V(0, 0, 1);
 /**
- * The λ bracket: along a ray from the slot 30° toward the far side (above the axis on the screen, clear of the green
- * particle), from one compression centre to the next (it rides with the wave and starts again one λ back each period);
- * its label stays put.
+ * The λ bracket: along a ray from the slot 52° to one side (across the screen, where the view does not foreshorten the
+ * way the sound goes), from one compression centre to the next (it rides with the wave and starts again one λ back
+ * each period); its label stays put beside the far end of its reach.
  */
-const LAMBDA_AT = { r: 2.5, turn: THREE.MathUtils.degToRad(34) };
+const LAMBDA_AT = { r: 4, turn: THREE.MathUtils.degToRad(52) };
 const LAMBDA_DIR = AXIS.clone().multiplyScalar(Math.cos(LAMBDA_AT.turn)).addScaledVector(PLANE, -Math.sin(LAMBDA_AT.turn));
 
 export function createApp(root, options = {}) {
@@ -134,21 +135,29 @@ export function createApp(root, options = {}) {
 
   const paper = createPaper();
   scene.add(paper.root);
-  const clip = createClip({ bottom: -SHEET.H / 2 + 0.5 });
+  // the clip stands under the foot of the crease, its mouth up, pinching the bottom 5 mm of the fold: seen through
+  // the V from behind (a clip on the outside of the crease would hide behind it)
+  const clip = createClip({ bottom: 0 });
+  clip.root.rotation.z = -Math.PI / 2;
+  clip.root.position.set(-9.5, -SHEET.H / 2 + 5 - 2.4, 0);
   scene.add(clip.root);
   const air = createAir(AXIS, PLANE);
   scene.add(air.root);
   // λ: two outlined arrows out from the middle, ↔
-  const lamL = boldArrow('WavelengthL', COLORS.lambda, 0.32);
-  const lamR = boldArrow('WavelengthR', COLORS.lambda, 0.32);
+  // λ: a bracket drawn over the picture between two compression centres (screen space, so it never foreshortens)
+  const lamBracket = createBracket(ui.annoLayer, COLORS.lambda);
+  // the flaps' edges, drawn over the picture (under the labels)
+  const flapEdges = createFlapEdges(ui.annoLayer);
+  const outlineW = [0, 1].map(() => Array.from({ length: 51 }, () => V()));
+  const outlineS = [0, 1].map(() => Array.from({ length: 51 }, () => ({ x: 0, y: 0 })));
   // the breath: an outlined arrow coming in through the open back of the fold, along its middle, toward the slot
   const blowArrow = boldArrow('Breath', COLORS.blow, 0.3);
   const BLOW_Y = SHEET.H / 2 - 4;
   /** The breath's arrow runs down the middle of the V and ends in the slot, between the two flaps. */
-  const BLOW_LEN = 14;
-  const blowTo = () => V(-1, BLOW_Y, 0);
+  const BLOW_LEN = 11;
+  const blowTo = () => V(-2.5, BLOW_Y, 0);
   const blowFrom = () => blowTo().addScaledVector(AXIS, -BLOW_LEN);
-  scene.add(lamL.root, lamR.root, blowArrow.root);
+  scene.add(blowArrow.root);
 
   // a big invisible target round the fold: a tap on the paper blows
   const hit = new THREE.Mesh(new THREE.BoxGeometry(30, SHEET.h + 10, 26), new THREE.MeshBasicMaterial({ visible: false }));
@@ -207,16 +216,14 @@ export function createApp(root, options = {}) {
   // ── the scene from the state ────────────────────────────────────────────────
   const lamA = V();
   const lamB = V();
-  const lamM = V();
-  const NEG_LAMBDA_DIR = LAMBDA_DIR.clone().negate();
+  const SA = { x: 0, y: 0 };
+  const SB = { x: 0, y: 0 };
   let breathDt = 0;
   /** Keeps the arrows a few pixels thick however near the camera is: mm per pixel at the target. */
   function thickness() {
     const mmPerPx =
       (2 * camera.position.distanceTo(controls.target) * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2)) / Math.max(1, stage.height);
     blowArrow.scale((2.6 * mmPerPx) / 0.3);
-    lamL.scale((2.2 * mmPerPx) / 0.32);
-    lamR.scale((2.2 * mmPerPx) / 0.32);
   }
   function syncScene() {
     thickness();
@@ -224,6 +231,11 @@ export function createApp(root, options = {}) {
     const open = opening(wave.omega * s.clock) * e;
     paper.setOpen(open);
     paper.setGhost(e);
+    [1, -1].forEach((side, j) => {
+      paper.outlineNow(side, outlineW[j]);
+      for (let i = 0; i < 51; i++) toScreen(outlineW[j][i], outlineS[j][i]);
+    });
+    flapEdges.set(outlineS);
     air.update(s.clock, wave, on);
     air.updateBreath(breathDt, e, open);
     breathDt = 0;
@@ -238,13 +250,8 @@ export function createApp(root, options = {}) {
     if (filled && s.show.lambda) {
       lamA.copy(ORIGIN).addScaledVector(LAMBDA_DIR, rc);
       lamB.copy(lamA).addScaledVector(LAMBDA_DIR, lam);
-      lamM.lerpVectors(lamA, lamB, 0.5);
-      lamL.set(lamM, NEG_LAMBDA_DIR, lam / 2);
-      lamR.set(lamM, LAMBDA_DIR, lam / 2);
-    } else {
-      lamL.hide();
-      lamR.hide();
-    }
+      lamBracket.set(toScreen(lamA, SA), toScreen(lamB, SB));
+    } else lamBracket.hide();
     // the green particle shows once the wave reaches it (before, the air is drawn only where the wave is)
     const beadOn = s.show.bead && on(s.clock - air.followR / wave.speed) > 0.01;
     air.bead.visible = beadOn;
@@ -404,7 +411,7 @@ export function createApp(root, options = {}) {
   const anno = createAnnotations({
     stage,
     layer: ui.annoLayer,
-    avoid: [ui.corner, ui.hint, flapBox, () => arrowBox(blowArrow), () => action?.box(), () => action?.ringBox()],
+    avoid: [ui.corner, ui.hint, flapBox, () => arrowBox(blowArrow), () => lamBracket.box(), () => action?.box(), () => action?.ringBox()],
   });
   const spot = (dx, dy) => ({ dx, dy });
   const labelState = new Map();
@@ -426,16 +433,18 @@ export function createApp(root, options = {}) {
     if (on(s.clock) > 0.02 && s.show.blow)
       want.set('blow', {
         text: t('lbl_blow'),
-        point: () => blowFrom().lerp(blowTo(), 0.35),
-        spots: [spot(0, -20), spot(-16, -18), spot(16, -22), spot(-22, 4)],
+        // at the arrow's tail, below it, never on the shaft
+        point: () => blowFrom(),
+        spots: [spot(0, 22), spot(-26, 16), spot(26, 16), spot(-30, 0)],
         color: COLORS.blowText,
       });
-    if (lamL.visible)
+    if (lamBracket.visible)
       want.set('lambda', {
         text: t('lbl_lambda', { l: N(wavelength(freq())) }),
-        // the label stays put while the bracket rides with the wave
-        point: () => ORIGIN.clone().addScaledVector(LAMBDA_DIR, LAMBDA_AT.r + wave.lambda),
-        spots: [spot(-6, -26), spot(10, -28), spot(-24, -20), spot(0, -42)],
+        // beside the far half of the bracket's reach (it rides with the wave, its far end between r + λ and r + 2λ),
+        // above the ray: never over the bracket (which the labels also avoid)
+        point: () => ORIGIN.clone().addScaledVector(LAMBDA_DIR, LAMBDA_AT.r + 1.6 * wave.lambda),
+        spots: [spot(-6, -30), spot(-24, -30), spot(10, -32), spot(-40, -10)],
         color: COLORS.lambdaText,
       });
     // the green particle is named once the wave reaches it (before, the action's marker has the room)
@@ -482,9 +491,12 @@ export function createApp(root, options = {}) {
           pts.push(f, f.clone().addScaledVector(hv.out, s0 === 0 ? paper.maxSwing : 0));
         }
     }
+    // enough of the strip to read as a folded strip: the crease down to the top of the clip under its foot (the V's
+    // walls run off the sides)
+    pts.push(V(0, -SHEET.H / 2 - 5, 0));
     // the green particle and the far end of the λ bracket (the sound is never cut off at the top)
     pts.push(ORIGIN.clone().addScaledVector(AXIS, air.followR + 2.5));
-    pts.push(ORIGIN.clone().addScaledVector(LAMBDA_DIR, LAMBDA_AT.r + 2 * wave.lambda + 1.5));
+    pts.push(ORIGIN.clone().addScaledVector(LAMBDA_DIR, LAMBDA_AT.r + 2 * wave.lambda + 0.5));
     return pts;
   }
   function viewPose() {
@@ -525,7 +537,10 @@ export function createApp(root, options = {}) {
     tweener.cancel('camera');
     syncUI();
   });
-  controls.addEventListener('change', () => stage.invalidate());
+  controls.addEventListener('change', () => {
+    syncScene();
+    stage.invalidate();
+  });
   stage.onResize(() => {
     if (!s.userMovedCamera) place(viewPose());
     syncScene();

@@ -86,3 +86,6 @@ body.bg-transparent { background: transparent; }
   .pv-key { font-size: 12px; }
   .pvc-anno-tag { font-size: 12.5px; }
 }
+
+/* the λ bracket and the flaps' edges, drawn over the picture */
+.pv-bracket { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }

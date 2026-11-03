@@ -31,24 +31,29 @@ writes উপরে.
 
 ## How the figure works
 
-- **The object** (`src/paper.js`, `src/clip.js`, millimetres): a 52 × 60 mm strip of a ruled exercise book (fibres,
+- **The object** (`src/paper.js`, `src/clip.js`, millimetres): a 52 × 44 mm strip of a ruled exercise book (fibres,
   faint blue rules every 8 mm, which continue across the flaps) folded in half and opened to a V of 80°, 0.3 mm thick as
   drawn (writing paper is 0.1 mm). From the top edge a slit runs 14 mm down the crease with a short cut across at its
   foot, L mm into each half: each half has a flap 14 mm tall, hinged L mm back from the fold and free at the crease,
   where the two free edges meet like the two vocal cords. Each flap is a 16-piece slab bent every frame as a cantilever
-  (zero at the hinge), slightly shortened as it bends; its free edge swings out up to 0.6·L (drawn bigger than a real
-  paper reed, so the motion reads). While it vibrates, a faint paper-coloured trail with a thin outline shows each flap
-  at its widest swing, and the slot between the two free edges shows as a dark gap that opens and shuts (darker the
-  wider it is). At rest the two free edges stay a hair apart, like lips. The cuts are drawn 0.9 mm wide so they read. A small black binder clip (19 mm, spring steel with rolled jaws and two
-  chrome wire handles) holds the foot of the crease; it replaces the first version's fingers, which looked cartoonish.
-- **The view** (0.3.0): 35° up, from straight behind the open back of the fold (2° to one side, so it is not quite
-  flat). The two halves are the walls of a V and at its tip the two flaps, the two "vocal cords", stand left and right
-  of the crease, parting with a dark slot between them, as the real vocal cords look from above. The breath arrow goes
-  down the middle of the V into the slot; the sound spreads up the picture beyond it. The camera frames the two flaps
-  at their widest swing, the green particle and the λ bracket's farthest reach (a list of points, `src/camera.js`); the
-  rest of the strip runs off the edges and the clip is hidden behind the crease. Flap pair, measured: 41 % of the 3D
-  width at 844 × 390 (227 of 557 px), 229 × 238 px at 390 × 700, 114 × 121 px at 390 × 520, about 60 % at 640 × 400,
-  800 × 500 and 1280 × 800. Backdrop: a calm blue-grey to pale warm-stone gradient.
+  (zero at the hinge), slightly shortened as it bends; its free edge swings out up to 0.3·L (drawn bigger than a real
+  paper reed, so the motion reads). The flaps are a shade warmer than the walls, and each flap's outline is drawn over
+  the picture in a thin warm-brown line with its free edge heavier, so the two cords read as two tongues that move
+  apart and together. While they vibrate, a faint paper-coloured trail shows each flap at its widest swing. Between
+  the two free edges a narrow dark lens (the slot) opens and shuts: widest in the middle, closed at the top and foot,
+  about 14 % of the flap pair's width at its widest, with the backdrop and the sound bands visible round it. At rest
+  the free edges stay a hair apart, like lips. The cuts are drawn 0.9 mm wide so they read. A small black binder clip
+  (19 mm, spring steel with rolled jaws, a bevel and two chrome wire handles) stands under the foot of the crease,
+  mouth up, pinching its bottom 5 mm; it replaces the first version's fingers, which looked cartoonish.
+- **The view** (0.3.1): 55° up, from straight behind the open back of the fold (2° to one side, so it is not quite
+  flat). The student sees the folded strip as an object: the V of its two halves, the clip under the foot of the crease
+  (seen through the V) and, at the tip, the two flaps, the two "vocal cords", standing left and right of the crease
+  with the dark slit between them, as the real vocal cords look from above. The breath arrow goes down the middle of
+  the V into the slit; the sound spreads up the picture beyond it. The camera frames the two flaps at their widest
+  swing, the crease down to the top of the clip, the green particle and the λ bracket's farthest reach (a list of
+  points, `src/camera.js`); the walls run off the sides. Measured at the widest moment: the flap pair is 30 % of the 3D
+  width at 844 × 390 (166 of 557 px), 167 × 172 px at 390 × 700 (43 %) and 85 × 89 px at 390 × 520. Backdrop: a calm
+  blue-grey to pale warm-stone gradient.
 - **ফুঁ দাও** (the one action; also a tap on the paper, Space or Enter): one breath of 8 s (picture time). An outlined
   blue arrow "ফুঁ" and pale streaks go down the middle of the fold into the slot; the streaks wait at the shut slot and
   rush through when it opens. The flaps open and shut once a period (`opening = ½ − ½ cos ωt`), slowed 100 times. In front of the
@@ -58,9 +63,12 @@ writes উপরে.
   place along the way the sound goes, ξ = −a·sin ω(t − r/v), so they bunch in the dark bands. The particles (and the
   green one) show only where the wave is: air at rest is not drawn, so the idle sky stays clean. The wave front leaves the
   slot when the blowing starts and the tail leaves when it stops; a compression leaves when the flaps are most open.
-  One green particle with a mark at its resting place shows it only swings. An orange bracket along a ray from the slot
-  spans exactly one λ between two compression centres (it rides with the wave; drawn 0.01 of real; its label gives the
-  real value). Arrows keep a steady thickness in pixels at every zoom.
+  One green particle with a mark at its resting place shows it only swings. An orange bracket (`src/bracket.js`, drawn
+  over the picture in screen space with a cap and an arrow head at each end, so it never foreshortens into a spike)
+  runs along a ray from the slot 52° to one side, where the view does not squash the way the sound goes, and spans
+  exactly one λ from one dark band's centre to the next (it rides with the wave; drawn 0.01 of real). Its label gives
+  the real value and stays beside the far half of the bracket's reach, never over it. The "ফুঁ" chip sits at the breath
+  arrow's tail. Arrows keep a steady thickness in pixels at every zoom.
 - **The graph** (`src/graph.js`, only where the side panel has room: 800 × 500 and 1280 × 800): the air's pressure
   against the distance from the source, 0–4 m in real metres, live and in step with the 3D; সংকোচন over a peak,
   প্রসারণ over a trough, and λ between two peaks with its value. With one range for every cut, the long flaps' waves are
@@ -113,6 +121,15 @@ particles (one `Points` object; positions and colours of particles and bands upd
 8 textures (all canvas-made: paper, its bump, the backdrop, the dot). Ready in about 3.9 s in headless software
 rendering. An idle figure draws nothing: the ticker runs only while the flaps vibrate or the last wave is still crossing
 the picture. (First version: 60 calls, 19 000 triangles, 6 200 particles, ready in 3.4 s.)
+
+## 0.3.1: two paper vocal cords at a glance
+
+After the owner looked at 0.3.0's poster: the big dark rectangle between the flaps is now a narrow dark lens (about
+14 % of the flap pair at its widest, the swing 0.3·L); the camera pulls back so the folded strip reads as an object
+(the strip shortened to 44 mm so the V, the clip under the crease's foot and the flaps fit with the flaps still 30 %
+of the width at 844 × 390); the flaps are a shade warmer than the walls and outlined, their free edges heavier; the λ
+bracket is a screen-space bracket along a sideways ray from band to band, its label beside its far end; the "ফুঁ" chip
+is at the arrow's tail.
 
 ## 0.3.0: two vocal cords, flapping
 
