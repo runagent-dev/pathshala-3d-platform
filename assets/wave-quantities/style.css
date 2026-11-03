@@ -1,0 +1,71 @@
+/* Wave quantities: the page, the colours that carry meaning (a green, λ orange, T crimson, f grape, v blue: the
+   chapter's colours, the same as the marks on the picture and the graphs, src/graphs.js), the graphs, the note on
+   time, the labels on the picture and the test's answers. The rest of the panel is the kit's clean sheet
+   (../../shared/lib/student/student.css). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.wq { --c-a: #237a35; --c-l: #c2410c; --c-T: #c2255c; --c-f: #862e9c; --c-v: #1864ab; }
+.wq .pvc-outcome { font-size: 15px; line-height: 1.5; font-variant-numeric: tabular-nums; }
+.wq .pvc-outcome b { font-size: 1.2em; color: var(--c-v); white-space: nowrap; }
+.wq .pvc-rule { font-size: 14px; line-height: 1.45; }
+.wq .pvc-rule b { color: var(--ink); }
+.wq .pvc-examples .pvc-ex-res { font-size: 12px; }
+.wq sup, .wq sub { font-size: 0.72em; line-height: 0; }
+
+/* the two graphs (চিত্র ৭.০৮ side by side) */
+.wq-graph { position: relative; height: 128px; flex: 0 0 auto; }
+.wq-graph-canvas { position: absolute; inset: 0; display: block; }
+
+/* honest time: a small note in the view's bottom-left corner */
+.wq-note { position: absolute; left: 10px; bottom: 8px; z-index: 3; padding: 1px 7px; border-radius: 5px; background: rgba(255, 255, 255, 0.9); color: #3b4552; font-size: 12px; font-weight: 600; line-height: 1.5; pointer-events: none; }
+
+/* labels on the picture: the words in their colour on a white chip */
+.pvc-anno-force { --c: var(--ink); padding: 0 6px; border: 1.5px solid var(--c); border-radius: 5px; background: rgba(255, 255, 255, 0.96); color: var(--c); font-size: 13px; font-weight: 600; line-height: 1.5; white-space: nowrap; transition: none; }
+.pvc-anno-lines .k-force { stroke: rgba(255, 255, 255, 0.85); stroke-width: 1.5; }
+
+/* the test */
+.wq .pvc-opt { font-size: 14px; line-height: 1.2; padding: 0 4px; }
+.wq-opt { display: block; white-space: normal; text-align: center; }
+.wq .pvc-q-text { font-size: 15px; }
+.wq .pvc-q-feedback { font-size: 13.5px; }
+
+/* the side panel on a short landscape phone */
+@media (min-aspect-ratio: 1/1) and (max-height: 460px) {
+  .wq .pvc-act { font-size: 15px; padding-right: 12px; gap: 8px; }
+  .wq .pvc-act-row { --pvc-act-lines: 2; }
+  .wq .pvc-outcome { font-size: 13.5px; line-height: 1.4; --pvc-outcome-lines: 3; }
+  .wq .pvc-rule { font-size: 12.5px; line-height: 1.38; --pvc-rule-lines: 4; }
+  .wq-graph { height: 96px; }
+  .wq .pvc-q-text { font-size: 13.5px; }
+  .wq .pvc-opt { font-size: 12.5px; height: 42px; }
+  .wq .pvc-q-feedback { font-size: 12.5px; --pvc-q-feedback-min: 4lh; }
+  .pvc-anno-force { font-size: 12px; }
+}
+/* a phone held upright: the panel below, tight, so the 3D keeps more than half the height */
+@media (max-aspect-ratio: 1/1) {
+  .wq .pvc-learn { gap: 4px; }
+  .wq .pvc-panel { padding-top: 6px; gap: 6px; }
+  .wq-graph { height: 74px; }
+  .wq .pvc-outcome { min-height: calc(2 * 1.38em); }
+  .wq .pvc-rule { min-height: calc(3 * 1.36em); }
+  .wq .pvc-examples button { min-height: 36px; padding: 1px 3px 3px; }
+  .wq .pvc-examples[data-results] .pvc-ex-res { display: none; }
+  .wq .pvc-outcome { font-size: 13px; line-height: 1.38; }
+  .wq .pvc-rule { font-size: 12px; line-height: 1.36; }
+  .wq .pvc-q-options { gap: 6px; }
+  .wq .pvc-opt { height: 40px; font-size: 13px; }
+  .wq .pvc-q-text { font-size: 14px; }
+  .wq .pvc-q-feedback { font-size: 12.5px; }
+}
+/* the tightest (390×520): a shorter graph */
+@media (max-aspect-ratio: 1/1) and (max-height: 560px) {
+  .wq-graph { display: none; }
+}
+/* the wide frame (1280×800): bigger graphs */
+@media (min-width: 1100px) and (min-height: 700px) {
+  .wq-graph { height: 210px; }
+  .wq .pvc-outcome { font-size: 16px; }
+  .wq .pvc-rule { font-size: 15px; }
+}
