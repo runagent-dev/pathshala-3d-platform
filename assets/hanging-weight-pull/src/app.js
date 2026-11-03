@@ -76,7 +76,7 @@ const STROKE = 0.24; // m of rope one fist pulls before the other takes over
 const BUCKET_X = PULLEY.x - PULLEY.r; // the rope hangs from the left of the wheel
 // what the camera shows: from left of the well to behind the man, from the water to the beam
 const VIEW_BOX = [new THREE.Vector3(-0.95, -1.12, -0.3), new THREE.Vector3(2.6, 2.32, 0.3)];
-const VIEW_DIRS = { front: new THREE.Vector3(0, 0.15, 1), '3d': new THREE.Vector3(-0.55, 0.32, 0.78) };
+const VIEW_DIRS = { front: new THREE.Vector3(-0.38, 0.27, 1), '3d': new THREE.Vector3(-0.7, 0.4, 0.7) };
 const MARGIN = { top: 56, bottom: 24, side: 4 };
 const UPV = new THREE.Vector3(0, 1, 0);
 const DOWN = new THREE.Vector3(0, -1, 0);
