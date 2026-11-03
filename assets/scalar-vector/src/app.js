@@ -102,7 +102,7 @@ export function createApp(root, options = {}) {
   });
 
   function fit() {
-    const dir = s.view === '3d' ? new THREE.Vector3(0.12, 1, 0.48).normalize() : new THREE.Vector3(0, 1, 0.0001).normalize();
+    const dir = s.view === '3d' ? new THREE.Vector3(0.12, 1, 0.48).normalize() : new THREE.Vector3(0, 1, 0.45).normalize();
     const pose = fitPose({
       box: diagram.pairs.visible ? new THREE.Box3(new THREE.Vector3(-25, 0, -11), new THREE.Vector3(23, 1, 14)) : FRAME,
       dir,
