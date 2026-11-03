@@ -1,0 +1,137 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "spring-mass-oscillation",
+  "title": "Mass on a spring: simple harmonic motion (সরল স্পন্দন গতি)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.2.0",
+  "book": "physics-9-10",
+  "page": 189,
+  "topic": "7.1",
+  "placement": "Book pages 188–190, topic 7.1 সরল স্পন্দন গতি: next to চিত্র ৭.০১ (a block on a spring, positions 0–9) on page 189.",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "A mass on a vertical spring (pages 188–190, topic 7.1, beside চিত্র ৭.০১): an open-coil steel spring with machine loops hangs from a retort stand's arm, a hanger of slotted brass 250 g masses on it and a metre rule in cm behind, on a teak bench under a light blue-grey backdrop, seen from a three-quarter view 22° above with the stand turned toward the camera. A follow camera keeps a fixed window round the mass and its travel. The student pulls the mass down (a drag, the arrow keys or the big numbered action button) and lets go: it oscillates about its সাম্যাবস্থা (dashed line) between two green lines marked v = 0, with বিস্তার a marked, the coils opening and bunching and an outlined blue velocity arrow beside it; time runs 5 times slower than real (said on the picture). The panel: rows of words for the mass m (0.25, 0.5, 1 kg) and the spring constant k (100, 200, 400 N/m), a live graph of x, v or the acceleration over four periods with a crimson tick at each whole period and a dashed ±a band, K and U bars that trade under their constant dashed total, one result line (T and f) and a rule that grows with what the student finds: T = 2π√(m/k), the same T for another amplitude, a longer T for more mass, a shorter one for a stiffer spring. Test: 5 questions (the energy at an end, read off the x–t graph where v is greatest, when the same phase first returns, read T off a graph and give f, twice the pull), every wrong choice with its own note. Phone-first, Bangla and English.",
+  "tags": [
+    "simple harmonic motion",
+    "spring",
+    "oscillation",
+    "period",
+    "frequency",
+    "amplitude",
+    "phase",
+    "energy",
+    "Hooke",
+    "bangla"
+  ],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "m",
+      "label": "Mass m",
+      "type": "select",
+      "options": [["0.25", "0.25 kg"], ["0.5", "0.5 kg"], ["1", "1 kg"]],
+      "default": "0.5"
+    },
+    {
+      "name": "k",
+      "label": "Spring constant k",
+      "type": "select",
+      "options": [["100", "100 N/m"], ["200", "200 N/m"], ["400", "400 N/m"]],
+      "default": "100"
+    },
+    {
+      "name": "graph",
+      "label": "Graph",
+      "type": "select",
+      "options": [["x", "displacement"], ["v", "velocity"], ["acc", "acceleration"]],
+      "default": "x"
+    },
+    {
+      "name": "start",
+      "label": "Start",
+      "type": "select",
+      "options": [["rest", "at rest"], ["run", "oscillating"]],
+      "default": "rest",
+      "help": "for pictures"
+    },
+    {
+      "name": "a",
+      "label": "Amplitude (for 'oscillating')",
+      "type": "number",
+      "default": "",
+      "placeholder": "cm",
+      "help": "default 5 cm"
+    },
+    {
+      "name": "at",
+      "label": "Seconds after the release (for 'oscillating')",
+      "type": "number",
+      "default": "",
+      "placeholder": "s"
+    },
+    { "name": "hold", "label": "Frozen at that moment", "type": "boolean", "default": "0" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The numbered badge on the picture pulses at first", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "pull": 0.05 } },
+    { "name": "set", "payload": { "m": 1, "k": 200 } },
+    { "name": "set", "payload": { "run": 0.05, "at": 0.555, "hold": true, "animate": false } },
+    { "name": "set", "payload": { "graph": "v" } },
+    { "name": "set", "payload": { "state": "rest" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "dragstart", "dragend", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": {
+      "params": { "coach": "0" },
+      "setup": [{ "command": "set", "payload": { "run": 0.05, "at": 0.555, "hold": true, "animate": false } }]
+    },
+    "glb": [
+      {
+        "name": "default",
+        "setup": [{ "command": "set", "payload": { "run": 0.05, "at": 0.6, "hold": true, "animate": false } }]
+      }
+    ],
+    "video": {
+      "kind": "script",
+      "seconds": 20,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 0.8, "command": "set", "payload": { "pull": 0.05 } },
+        { "at": 8.5, "command": "set", "payload": { "m": 1 } },
+        { "at": 9.6, "command": "set", "payload": { "pull": 0.05 } }
+      ]
+    }
+  }
+}
