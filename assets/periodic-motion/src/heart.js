@@ -167,7 +167,7 @@ export function createHeart() {
     arrowThickness: 0.002,
     velocityScale: 0,
     views: {
-      front: new THREE.Vector3(0, 0.06, 1).normalize(),
+      front: new THREE.Vector3(0.2, 0.16, 1).normalize(),
       '3d': new THREE.Vector3(0.6, 0.28, 0.75).normalize(),
     },
     bounds: TALL.clone(),

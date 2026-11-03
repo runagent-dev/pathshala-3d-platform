@@ -167,7 +167,7 @@ export function createComet() {
     arrowThickness: 0.008,
     velocityScale: 0.02,
     views: {
-      front: new THREE.Vector3(0, 0, 1),
+      front: new THREE.Vector3(0.2, 0.36, 1),
       '3d': new THREE.Vector3(0.18, -0.62, 0.76).normalize(),
     },
     // the orbit, and room for the comet's cloud round it
