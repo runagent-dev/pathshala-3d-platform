@@ -1,9 +1,12 @@
-// Water instead of mercury (book page 145, topic 5.4.1), student view: one object, one button, one idea. In the
-// schoolyard a tall glass pipe stands in a tub of water against a three-storey school, beside a small 76 cm mercury
-// barometer and a measuring staff. One button fills the pipe the Torricelli way: the water rises to 10.3 m, nearly to
-// the roof (the camera follows it up), and stops with a vacuum above. Water is 13.6 times lighter than mercury, so the
-// same air's pressure holds up a column 13.6 times as tall. One outlined air-pressure arrow on the tub. The panel: one
-// short line, the water's and the mercury's columns, the rule. Then a three-question test. Built on the shared kit.
+// A water barometer (book page 145, topic 5.4.1), student view: one guided sequence, one big step button, one short
+// line per step. (1) The mercury barometer as in the owner's picture: a glass tube closed at the top in a dish, the
+// silver column at 76 cm, the vacuum above, an outlined air-pressure arrow on the dish and a 76 cm dimension line.
+// (2) "What if water, not mercury?": the same tube and dish, 11 m tall, with lightly tinted blue water, appear beside
+// it; the camera pulls back while the water rises and stops at 10.3 m with a vacuum above, beside a 0–11 m staff and a
+// person (1.6 m) for the scale; the mercury barometer stays at the foot, tiny. (3) Compare: 13.6 pieces of 76 cm stack
+// up beside the water's column (mercury is 13.6 times as dense: 76 cm × 13.6 ≈ 10.3 m). (4) The book's straw: the
+// tube becomes a 10.5 m straw of cold drink; the drink stops at 10.3 m and the top 0.2 m stays empty. Then "watch
+// again", and a four-question test. Built on the shared kit.
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
 import { createTweener, ease } from '@shared/tween.js';
@@ -15,12 +18,29 @@ import { createQuiz } from '@shared/student/quiz.js';
 import { createI18n } from './i18n.js';
 import { fitPose } from './camera.js';
 import { boldArrow, dimensionLine } from './arrows.js';
-import { SURFACE_Y, MOUTH_Y, barometerMaterials } from './barometer.js';
-import { MINI_X, PIPE, TUB, createYard } from './yard.js';
-import { H_HG, H_WATER, RATIO, round, toCm, waterChoices } from './reading.js';
+import { HG, LIQUID, SURFACE_Y, WATER, barometerMaterials, createBarometer } from './barometer.js';
+import { STAFF, backdropTexture, createSetting, createStack, createStaff } from './setting.js';
+import { createPerson } from './person.js';
+import {
+  H_HG,
+  H_WATER,
+  LONG_STRAW,
+  PERSON_H,
+  RATIO,
+  STEPS,
+  STRAW,
+  peopleTall,
+  round,
+  segments,
+  stepIndex,
+  strawChoices,
+  strawGap,
+  toCm,
+  waterChoices,
+} from './reading.js';
 
 export const DEFAULTS = {
-  view: 'front',
+  step: 1,
   mode: 'explore',
   coach: true,
   numerals: null,
@@ -30,21 +50,43 @@ export const DEFAULTS = {
   sound: true,
 };
 
-const COLORS = { air: '#1c7ed6', h: '#e8590c', ink: '#1d2733' };
-const AIR_LEN = 0.75; // the air arrow on the tub (m)
-const TOP = TUB.water + H_WATER; // the water's top when it stops
+const COLORS = { air: '#1c7ed6', airText: '#1864ab', h: '#e8590c', hText: '#c2410c', ink: '#1d2733' };
+const XM = -0.64; // the mercury barometer (its tube's x)
+const XW = 0; // the water barometer
+const PERSON_X = -1.32;
+const DIM_HG = XM + 0.09; // the 76 cm line, right of the mercury tube
+const DIM_W = XW - 0.3; // the 10.3 m line (and the stack), left of the water tube
+const AIR_HG = XM - 0.115; // the air arrows: on the mercury dish left of its tube, on the water dish right of its tube
+const AIR_W = XW + 0.24;
+const TOP_W = WATER.length - 0.028; // the water tube's closed top above the surface (11 m)
 const DOUBLE_TAP = 420; // ms
-const MARGIN = { top: 50, bottom: 12, side: 6 };
+const MARGIN = { top: 52, bottom: 14, side: 10 };
 const DOWN = new THREE.Vector3(0, -1, 0);
 const V = (x, y, z = 0) => new THREE.Vector3(x, y, z);
-const box3 = (x0, y0, x1, y1, z = 0.3) => [V(x0, y0, -z), V(x1, y1, z)];
+const DIR = V(0.42, 0.2, 1).normalize(); // a gentle three-quarter view from the front right, a little above
+/** Seconds each step's animation takes. */
+const DUR = { water: 7, compare: 5.5, straw: 3.4, again: 1.4 };
+const clamp01 = (x) => Math.max(0, Math.min(1, x));
+const smooth = (x) => {
+  const k = clamp01(x);
+  return k * k * (3 - 2 * k);
+};
+
+/** The boxes the camera frames: [x0, y0, x1, y1, z]. */
+const BOX = {
+  mercury: [XM - 0.42, -0.03, XM + 0.3, 1.13, 0.17],
+  side: [PERSON_X - 0.3, -0.05, STAFF.x + 0.45, 2.3, 0.4],
+  full: [PERSON_X - 0.25, -0.05, STAFF.x + 0.5, TOP_W + 0.35, 0.4],
+  low: [XM - 0.45, -0.05, XW + 0.45, 2.5, 0.4],
+  top: [XW - 0.5, 9.35, STAFF.x + 0.5, TOP_W + 0.15, 0.3],
+};
 
 export function createApp(root, options = {}) {
   const o = { ...DEFAULTS, ...options };
   const t = createI18n(o.lang, { numerals: o.numerals });
   const N = t.num;
 
-  root.classList.add('pvc', 'tb');
+  root.classList.add('pvc', 'wb');
   root.dataset.theme = o.bg;
   root.dataset.ui = 'simple';
   root.lang = t.lang;
@@ -57,47 +99,35 @@ export function createApp(root, options = {}) {
   const sheet = bindCleanSheet(ui.learn);
   const $ = ui.$;
 
-  // the reading under the action: the water's column and the mercury's
+  // the step counter above the button, the two columns under it, a small note at the end
+  const counter = document.createElement('div');
+  counter.className = 'wb-step';
+  $('.pvc-act-row').before(counter);
   const reading = document.createElement('div');
-  reading.className = 'tb-read';
+  reading.className = 'wb-read';
   $('.pvc-act-row').after(reading);
+  const note = document.createElement('p');
+  note.className = 'wb-note';
+  $('.pvc-rule').after(note);
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
-  const stage = createStage(ui.canvasHost, { fov: 30, near: 0.02, far: 220, environment: 'studio-light' });
+  const stage = createStage(ui.canvasHost, { fov: 30, near: 0.05, far: 400, environment: 'studio-light' });
   const { camera, controls, scene } = stage;
   controls.enablePan = false;
   controls.enableZoom = false;
   controls.enableRotate = true;
-  controls.minPolarAngle = 0.3;
-  controls.maxPolarAngle = Math.PI * 0.53;
+  controls.minPolarAngle = 0.5;
+  controls.maxPolarAngle = Math.PI * 0.52;
 
-  // the sky: a blue gradient
-  const skyCanvas = document.createElement('canvas');
-  skyCanvas.width = 4;
-  skyCanvas.height = 256;
-  {
-    const ctx = /** @type {CanvasRenderingContext2D} */ (skyCanvas.getContext('2d'));
-    const g = ctx.createLinearGradient(0, 0, 0, 256);
-    g.addColorStop(0, '#1d5fd1');
-    g.addColorStop(0.45, '#3d8ae8');
-    g.addColorStop(0.8, '#9cc8f3');
-    g.addColorStop(1, '#d6eafb');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, 4, 256);
-  }
-  const skyTex = new THREE.CanvasTexture(skyCanvas);
-  skyTex.colorSpace = THREE.SRGBColorSpace;
-  if (o.bg !== 'transparent') {
-    scene.background = skyTex;
-    scene.fog = new THREE.Fog('#cfe3f7', 30, 120);
-  }
-
-  scene.add(new THREE.HemisphereLight('#e3eeff', '#8a5a34', 0.95));
-  const sun = new THREE.DirectionalLight('#fff0d8', 2.1);
+  if (o.bg !== 'transparent') scene.background = backdropTexture();
+  scene.add(new THREE.HemisphereLight('#e6ecff', '#6b4a32', 1.0));
+  const sun = new THREE.DirectionalLight('#fff1dc', 2.0);
   scene.add(sun, sun.target);
-  const fill = new THREE.DirectionalLight('#d2e2ff', 0.55);
-  fill.position.set(-2, 1.4, 2.6);
+  const fill = new THREE.DirectionalLight('#d4defa', 0.6);
+  fill.position.set(-4, 3, 6);
   scene.add(fill);
+  sun.position.set(4, 12, 7);
+  sun.target.position.set(-0.4, 2, 0);
   if (o.shadow && o.bg !== 'transparent') {
     stage.renderer.shadowMap.enabled = true;
     stage.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -105,22 +135,35 @@ export function createApp(root, options = {}) {
     sun.shadow.mapSize.set(1024, 1024);
     sun.shadow.bias = -0.0006;
     sun.shadow.normalBias = 0.01;
+    sun.shadow.radius = 3;
   }
-  sun.position.set(6, 14, 9);
-  sun.target.position.set(0, 4, 0);
-  Object.assign(sun.shadow.camera, { left: -9, right: 9, top: 9, bottom: -9, near: 1, far: 40 });
+  Object.assign(sun.shadow.camera, { left: -3.2, right: 3.2, top: 3.2, bottom: -3.2, near: 2, far: 24 });
   sun.shadow.camera.updateProjectionMatrix();
   sun.target.updateMatrixWorld();
 
-  const yard = createYard(barometerMaterials(), { num: N });
-  scene.add(yard.root);
-  yard.mini.setPose(0, MOUTH_Y, 0); // the small barometer, settled at 76 cm
-  yard.mini.setColumn(0, SURFACE_Y - MOUTH_Y + H_HG);
+  const setting = createSetting();
+  scene.add(setting.root);
+  const mats = barometerMaterials();
+  const hg = createBarometer(mats, HG, { liquid: mats.mercury, kind: 'mercury', name: 'Mercury', x: XM, glassOpacity: 0.16, edges: 0.3 });
+  const water = createBarometer(mats, WATER, { liquid: mats.water, kind: 'water', name: 'Water', x: XW, glassOpacity: 0.12, edges: 0.4 });
+  hg.setLevel(H_HG);
+  const person = createPerson();
+  person.root.position.set(PERSON_X, 0, 0.05);
+  person.root.rotation.y = Math.atan2(DIR.x, DIR.z) * 0.8;
+  for (const m of person.root.children) m.castShadow = true;
+  const staff = createStaff(N);
+  const stack = createStack(DIM_W, { width: 0.11 });
+  const block = createStack(DIM_HG, { width: 0.05, total: 1 }); // one piece of 76 cm beside the mercury
+  scene.add(hg.root, water.root, person.root, staff.root, stack.root, block.root);
+  hg.column.castShadow = true;
 
-  // ── the arrow and the water's height ────────────────────────────────────────
-  const airArrow = boldArrow('AirOnTub', COLORS.air, 0.028);
-  const dimW = dimensionLine('WaterColumn', COLORS.h, 0.014, { dashed: true, ticks: 0.2 });
-  scene.add(airArrow.root, dimW.root);
+  // the arrows and the heights
+  const airHg = boldArrow('AirOnMercury', COLORS.air, 0.012);
+  const airW = boldArrow('AirOnWater', COLORS.air, 0.012);
+  const dimHg = dimensionLine('MercuryColumn', COLORS.h, 0.004, { dashed: true, ticks: 0.05 });
+  const dimW = dimensionLine('WaterColumn', COLORS.h, 0.004, { dashed: true, ticks: 0.05 });
+  const dimGap = dimensionLine('StrawGap', COLORS.h, 0.004, { ticks: 0.05 });
+  scene.add(airHg.root, airW.root, dimHg.root, dimW.root, dimGap.root);
 
   const tweener = createTweener();
   stage.addTicker((dt) => tweener.tick(dt));
@@ -134,43 +177,123 @@ export function createApp(root, options = {}) {
 
   // ── state ───────────────────────────────────────────────────────────────────
   const s = {
-    view: o.view === '3d' ? '3d' : 'front',
     mode: 'explore',
     locked: false,
     busy: false,
     run: 0,
     userMovedCamera: false,
-    phase: 'ready', // 'ready' | 'rising' | 'done'
-    top: TUB.water, // the water's top in the pipe (world y)
-    look: 'all', // 'all' | 'low' (the tub) | 'follow' (the water going up)
-    found: false,
-    show: { h: true, vacuum: true }, // the test hides some until the answer
+    step: 0, // 0 mercury, 1 water, 2 compare, 3 straw
+    k: 1, // how far the current step's animation has got (1: at rest)
+    found: 0, // the furthest step reached
+    show: { labels: true, vacuum: true, water: true }, // the test hides some until the answer
   };
   const now = () => performance.now();
   let lastAct = Number.NEGATIVE_INFINITY;
+
+  /** The water's column now (m above the surface). */
+  function waterLevel() {
+    if (s.step === 0) return 0;
+    if (s.step === 1) return H_WATER * waterRise(s.k);
+    return H_WATER;
+  }
+  const waterRise = (k) => ease.inOutCubic(clamp01((k - 0.2) / 0.8));
+  /** How far the camera has gone from the mercury toward the whole view, in the water step. */
+  const pullBack = (k) => smooth(k / 0.2);
+  /** How much of the 13.6 pieces of 76 cm show, in the compare step (after a look at the first one). */
+  const stackRise = (k) => ease.inOutCubic(clamp01((k - 0.3) / 0.7));
 
   // ── the scene from the state ────────────────────────────────────────────────
   function perPixel() {
     return (2 * camera.position.distanceTo(controls.target) * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))) / Math.max(1, stage.height);
   }
+  const drinkColor = new THREE.Color();
+  const waterColor = new THREE.Color(LIQUID.water);
+  const colaColor = new THREE.Color(LIQUID.drink);
+  const waterGlow = mats.water.emissive.clone();
+  const colaGlow = new THREE.Color('#3a1806');
   function syncScene() {
-    yard.setWater(s.top);
-    airArrow.set(V(0.29, TUB.water + AIR_LEN + 0.02, 0.1), DOWN, AIR_LEN);
-    airArrow.scale(Math.min(3, Math.max(1, (2.6 * perPixel()) / 0.028)));
-    dimW.hide();
-    if (s.phase === 'done' && s.show.h) dimW.set(-PIPE.r - 0.16, TUB.water, s.top, 0.1);
+    const pp = perPixel();
+    const st = s.step;
+    const k = s.k;
+    // the water barometer, the person and the staff appear in the water step
+    const shown = st === 0 ? 0 : st === 1 ? smooth(k / 0.15) : 1;
+    water.setShown(shown);
+    person.root.visible = shown > 0.3;
+    staff.root.visible = shown > 0.1;
+    const lvl = s.show.water ? waterLevel() : 0;
+    water.setLevel(lvl);
+    // the straw: the tube shortens to 10.5 m and the water becomes a cold drink
+    const sk = st === 3 ? smooth((k - 0.45) / 0.55) : 0;
+    water.setTop(TOP_W + (STRAW - TOP_W) * sk);
+    drinkColor.copy(waterColor).lerp(colaColor, sk);
+    mats.water.color.copy(drinkColor);
+    mats.water.emissive.copy(waterGlow).lerp(colaGlow, sk);
+    mats.water.opacity = 0.9 + 0.06 * sk;
+    // the compare step's stacks
+    const ck = st === 2 ? stackRise(k) : st === 3 ? 1 - smooth(k / 0.3) : 0;
+    stack.setShown(ck);
+    block.setShown((st === 2 && k >= 0.22) || (st === 3 && ck > 0) ? 1 : 0);
+    // the arrows: equal (the same air's pressure), a steady size on the screen
+    const len = Math.min(1.3, Math.max(0.24, 50 * pp));
+    const thick = Math.min(4, Math.max(1, (2 * pp) / 0.012));
+    airHg.set(V(AIR_HG, SURFACE_Y + len + 0.004, 0.03), DOWN, len);
+    airHg.scale(thick);
+    airW.set(V(AIR_W, SURFACE_Y + len + 0.004, 0.06), DOWN, len);
+    airW.scale(thick);
+    if (shown < 0.5) airW.hide();
+    // the heights
+    const dk = Math.min(8, Math.max(1, (1.4 * pp) / 0.004));
+    for (const d of [dimHg, dimW, dimGap]) {
+      d.hide();
+      d.root.scale.set(dk, 1, dk);
+    }
+    if (ck <= 0 && s.show.labels) dimHg.set(DIM_HG, SURFACE_Y, SURFACE_Y + H_HG, 0.03);
+    if ((st === 1 && k >= 1) || (st === 3 && k < 0.3)) if (s.show.labels) dimW.set(DIM_W, SURFACE_Y, SURFACE_Y + H_WATER, 0.05);
+    if (st === 3 && sk >= 1) dimGap.set(DIM_W, SURFACE_Y + H_WATER, SURFACE_Y + STRAW, 0.05);
+    for (const d of [dimHg, dimW, dimGap]) d.root.scale.set(dk, 1, dk);
+    // the staff's numbers: turned to the camera, a steady size on the screen; tenths only close up
+    const nh = 13 * pp;
+    const crowded = 1 / pp < 26; // under 26 px a metre: every other number
+    staff.numbers.forEach((m, i) => {
+      m.quaternion.copy(camera.quaternion);
+      m.scale.setScalar(nh);
+      m.visible = !crowded || i % 2 === 0 || i === STAFF.top;
+    });
+    staff.tenths.visible = pp < 0.012;
     stage.invalidate();
   }
 
   // ── the panel ───────────────────────────────────────────────────────────────
-  const plan = () => (s.phase === 'done' ? { label: 'act_replay', step: '' } : { label: 'act_water', step: s.found ? '' : 1 });
+  const NEXT = ['act_water', 'act_compare', 'act_straw', 'act_again'];
+  function plan() {
+    if (s.busy) return { label: NEXT[s.step], step: s.step < 3 ? s.step + 1 : '' };
+    return { label: NEXT[s.step], step: s.step < 3 && s.found <= s.step ? s.step + 1 : '' };
+  }
+  const vars = () => ({
+    h: N(H_WATER),
+    hHg: N(toCm(H_HG)),
+    k: N(RATIO),
+    L: N(STRAW),
+    gap: N(strawGap()),
+    n: N(peopleTall()),
+  });
   function refresh() {
-    if (s.phase === 'rising') sheet.outcome(t('out_w_rising'));
-    else if (s.phase === 'done') sheet.outcome(t('out_w_done', { h: N(H_WATER) }));
-    else sheet.outcome(t('out_w_ready', { L: N(Math.round(PIPE.top)) }));
-    sheet.rule(s.phase === 'done' ? t('rule_water', { k: N(RATIO), hHg: N(76), h: N(H_WATER) }) : '');
-    const w = s.phase === 'ready' ? '—' : `<b>${N(round(Math.max(0, s.top - TUB.water), 1))}&nbsp;${t('u_m')}</b>`;
-    reading.innerHTML = t('read_water', { w, hg: N(toCm(H_HG)) });
+    const v = vars();
+    const st = s.step;
+    counter.textContent = t('step_of', { i: N(st + 1), n: N(STEPS.length) });
+    if (st === 0) sheet.outcome(t('out_mercury', { h: N(toCm(H_HG)) }));
+    else if (st === 1) sheet.outcome(s.k < 1 ? t('out_rising') : t('out_water', v));
+    else if (st === 2) sheet.outcome(t('out_compare', v));
+    else sheet.outcome(t('out_straw', v));
+    if (st === 0) sheet.rule(t('rule_mercury', { h: N(toCm(H_HG)) }));
+    else if (st === 1) sheet.rule(s.k < 1 ? '' : t('rule_water', v));
+    else if (st === 2) sheet.rule(t('rule_compare', v));
+    else sheet.rule(t('rule_straw', v));
+    note.textContent = st === 0 ? '' : t('note_thick');
+    const lvl = waterLevel();
+    const w = st === 0 ? '—' : `${N(round(lvl, 1))}&nbsp;${t('u_m')}`;
+    const html = t('read_cols', { hg: `${N(toCm(H_HG))}&nbsp;${t('u_cm')}`, w });
+    if (reading.innerHTML !== html) reading.innerHTML = html;
     if (action) {
       const p = plan();
       action.set({ step: p.step, label: p.label, enabled: true });
@@ -191,46 +314,118 @@ export function createApp(root, options = {}) {
     out.y = (-tmp.y * 0.5 + 0.5) * stage.height;
     return out;
   }
-  function arrowBoxes() {
-    toScreen(airArrow.root.position, A0);
-    toScreen(airArrow.tip, A1);
-    return [{ left: Math.min(A0.x, A1.x) - 7, top: Math.min(A0.y, A1.y) - 7, right: Math.max(A0.x, A1.x) + 7, bottom: Math.max(A0.y, A1.y) + 7 }];
+  function arrowBox(a) {
+    if (!a.visible) return null;
+    toScreen(a.root.position, A0);
+    toScreen(a.tip, A1);
+    return { left: Math.min(A0.x, A1.x) - 8, top: Math.min(A0.y, A1.y) - 8, right: Math.max(A0.x, A1.x) + 8, bottom: Math.max(A0.y, A1.y) + 8 };
+  }
+  /** The columns themselves: labels never sit on the mercury or the water. */
+  function columnBoxes() {
+    const out = [];
+    const add = (x, y0, y1, r) => {
+      toScreen(V(x, y0, 0), A0);
+      toScreen(V(x, y1, 0), A1);
+      const w = Math.max(5, Math.abs(toScreen(V(x + r, y0, 0), { x: 0, y: 0 }).x - A0.x));
+      out.push({ left: Math.min(A0.x, A1.x) - w, right: Math.max(A0.x, A1.x) + w, top: Math.min(A0.y, A1.y), bottom: Math.max(A0.y, A1.y) });
+    };
+    add(XM, SURFACE_Y, SURFACE_Y + HG.length, HG.ro);
+    if (s.step > 0) add(XW, SURFACE_Y, SURFACE_Y + TOP_W, WATER.ro);
+    if (person.root.visible) add(PERSON_X, 0, PERSON_H, 0.22);
+    return out;
   }
   const anno = createAnnotations({
     stage,
     layer: ui.annoLayer,
-    avoid: [ui.corner, ui.hint, arrowBoxes, () => action?.box(), () => action?.ringBox()],
+    avoid: [ui.corner, ui.hint, () => arrowBox(airHg), () => arrowBox(airW), columnBoxes, () => action?.box(), () => action?.ringBox()],
   });
   const spot = (dx, dy) => ({ dx, dy });
-  const RIGHT_OF = [spot(14, 0), spot(14, -16), spot(14, 16), spot(20, -30)];
-  const LEFT_OF = [spot(-14, 0), spot(-14, -16), spot(-14, 16), spot(-20, -30)];
-  const ABOVE = [spot(0, -18), spot(16, -18), spot(-16, -18), spot(0, -34)];
+  const RIGHT_OF = [spot(16, 0), spot(16, -18), spot(16, 18), spot(22, -34)];
+  const LEFT_OF = [spot(-16, 0), spot(-16, -18), spot(-16, 18), spot(-22, -34)];
+  const ABOVE = [spot(0, -20), spot(18, -22), spot(-18, -22), spot(0, -38)];
   const labelState = new Map();
-  function syncLabels() {
+  function wantLabels() {
     const want = new Map();
-    if (s.look !== 'follow') {
-      want.set('mini', {
-        text: t('lbl_mini', { h: N(76) }),
-        point: () => V(MINI_X, SURFACE_Y + H_HG * 0.6, 0.15),
-        spots: [...LEFT_OF, ...ABOVE],
+    if (!s.show.labels) return want;
+    const st = s.step;
+    const at = (st === 1 || st === 2) && s.k < 1 ? 'moving' : 'rest';
+    const hgTop = SURFACE_Y + H_HG;
+    const hgVac = (hgTop + SURFACE_Y + HG.length - 0.03) / 2;
+    if (st === 0) {
+      want.set('hg', { text: t('lbl_hg'), point: () => V(XM - HG.ro, SURFACE_Y + 0.42, 0), spots: LEFT_OF, color: COLORS.ink });
+      want.set('hgVac', { text: t('lbl_vacuum'), point: () => V(XM - HG.ro, hgVac, 0), spots: [...LEFT_OF, ...RIGHT_OF], color: COLORS.ink });
+      want.set('hgH', {
+        text: t('lbl_cm', { h: N(toCm(H_HG)) }),
+        point: () => V(DIM_HG, SURFACE_Y + 0.5, 0.03),
+        spots: RIGHT_OF,
+        color: COLORS.hText,
+      });
+      want.set('airHg', { text: t('lbl_air'), point: () => V(AIR_HG, SURFACE_Y + airLen() * 0.7, 0.03), spots: LEFT_OF, color: COLORS.airText });
+      return want;
+    }
+    if (st === 3 && s.k >= 0.6) {
+      const top = SURFACE_Y + STRAW;
+      want.set('straw', {
+        text: t('lbl_straw', { h: N(STRAW) }),
+        point: () => V(XW, top + 0.05, 0),
+        spots: [...ABOVE, ...LEFT_OF],
         color: COLORS.ink,
       });
+      want.set('gap', { text: t('lbl_gap', { h: N(strawGap()) }), point: () => V(DIM_W, top - 0.1, 0.05), spots: LEFT_OF, color: COLORS.hText });
+      want.set('drink', {
+        text: t('lbl_drink', { h: N(H_WATER) }),
+        point: () => V(XW - WATER.ro, SURFACE_Y + H_WATER - 0.55, 0),
+        spots: [spot(-30, 18), spot(-30, 34), ...LEFT_OF],
+        color: COLORS.ink,
+      });
+      return want;
+    }
+    if (st === 3) return want;
+    // the whole view (water, compare): the mercury in one label, the water's
+    want.set('hg', {
+      text: t('lbl_hg_h', { h: N(toCm(H_HG)) }),
+      point: () => V(XM - HG.ro, SURFACE_Y + 0.5, 0),
+      spots: [...LEFT_OF, ...ABOVE],
+      color: COLORS.ink,
+    });
+    if (at === 'rest') {
+      const FAR_LEFT = [spot(-34, 0), spot(-34, 16), spot(-34, -16), spot(-50, 0)];
+      want.set('w', { text: t('lbl_water'), point: () => V(XW - WATER.ro, SURFACE_Y + 7.6, 0), spots: FAR_LEFT, color: COLORS.ink });
+      if (s.show.vacuum)
+        want.set('wVac', {
+          text: t('lbl_vacuum'),
+          point: () => V(XW - WATER.ro, SURFACE_Y + (H_WATER + TOP_W) / 2, 0),
+          spots: FAR_LEFT,
+          color: COLORS.ink,
+        });
       want.set('air', {
         text: t('lbl_air'),
-        point: () => V(0.29, TUB.water + AIR_LEN * 0.8, 0.1),
-        spots: [...RIGHT_OF, ...ABOVE],
-        color: COLORS.air,
+        point: () => V(AIR_W + 0.04, SURFACE_Y + airLen() * 0.8, 0.06),
+        spots: [spot(16, -10), ...RIGHT_OF],
+        color: COLORS.airText,
       });
+      want.set('person', {
+        text: t('lbl_person', { h: N(PERSON_H) }),
+        point: () => V(PERSON_X - 0.12, 1.45, 0),
+        spots: LEFT_OF,
+        color: COLORS.ink,
+        optional: true,
+      });
+      if (st === 1)
+        want.set('wH', { text: t('lbl_m', { h: N(H_WATER) }), point: () => V(DIM_W, SURFACE_Y + 4.2, 0.05), spots: LEFT_OF, color: COLORS.hText });
+      if (st === 2 && s.k >= 0.85)
+        want.set('stack', {
+          text: t('lbl_stack', { k: N(segments()), h: N(toCm(H_HG)) }),
+          point: () => V(DIM_W - 0.06, SURFACE_Y + 4.2, 0),
+          spots: LEFT_OF,
+          color: COLORS.hText,
+        });
     }
-    if (s.phase === 'done' && s.show.h)
-      want.set('water', {
-        text: t('lbl_water', { h: N(H_WATER) }),
-        point: () => V(-PIPE.r - 0.16, TUB.water + H_WATER * 0.55, 0.1),
-        spots: [...LEFT_OF, ...RIGHT_OF],
-        color: COLORS.h,
-      });
-    if (s.phase === 'done' && s.show.vacuum)
-      want.set('vac', { text: t('lbl_vacuum'), point: () => V(0, (s.top + PIPE.top) / 2, 0), spots: [...RIGHT_OF, ...LEFT_OF], color: COLORS.ink });
+    return want;
+  }
+  const airLen = () => Math.min(1.3, Math.max(0.24, 50 * perPixel()));
+  function syncLabels() {
+    const want = wantLabels();
     for (const id of [...labelState.keys()])
       if (!want.has(id)) {
         anno.remove(id);
@@ -238,7 +433,7 @@ export function createApp(root, options = {}) {
       }
     for (const [id, w] of want) {
       if (!labelState.has(id) || !anno.has(id)) {
-        anno.add(id, { text: w.text, point: w.point, kind: 'force', color: w.color, spots: w.spots });
+        anno.add(id, { text: w.text, point: w.point, kind: 'force', color: w.color, spots: w.spots, optional: w.optional });
         labelState.set(id, w.text);
       } else if (labelState.get(id) !== w.text) {
         anno.update(id, { text: w.text, point: w.point, spots: w.spots });
@@ -249,30 +444,39 @@ export function createApp(root, options = {}) {
 
   // ── camera ──────────────────────────────────────────────────────────────────
   const bbox = new THREE.Box3();
+  const lerpBox = (a, b, f) => a.map((x, i) => x + (b[i] - x) * f);
   function lookBox() {
-    if (s.look === 'low') return box3(-1.25, -0.02, 0.75, 2.2);
-    if (s.look === 'follow') {
-      const y = Math.max(1.6, s.top);
-      return box3(-1.0, y - 1.7, 0.75, y + 1.0);
+    const st = s.step;
+    const k = s.k;
+    if (st === 0) return BOX.mercury;
+    if (st === 1) {
+      if (k < 0.2) return lerpBox(BOX.mercury, BOX.side, pullBack(k));
+      const f = waterRise(k);
+      return lerpBox(BOX.side, BOX.full, f);
     }
-    return box3(-1.3, -0.05, 0.9, PIPE.top + 0.5);
+    if (st === 2) {
+      if (k < 0.2) return lerpBox(BOX.full, BOX.low, smooth(k / 0.2));
+      return lerpBox(BOX.low, BOX.full, stackRise(k));
+    }
+    return lerpBox(BOX.full, BOX.top, smooth(k / 0.45));
   }
   function viewPose() {
-    const b = lookBox();
-    bbox.min.copy(b[0]);
-    bbox.max.copy(b[1]);
-    const d = V(0.18, 0.06, 1);
-    if (s.view === '3d') d.add(V(0.7, 0.25, 0));
-    return fitPose({ box: bbox, dir: d.normalize(), camera, width: stage.width, height: stage.height, margin: MARGIN });
+    const [x0, y0, x1, y1, z] = lookBox();
+    bbox.min.set(x0, y0, -z);
+    bbox.max.set(x1, y1, z);
+    return fitPose({ box: bbox, dir: DIR, camera, width: stage.width, height: stage.height, margin: MARGIN });
+  }
+  function place(pose) {
+    camera.position.copy(pose.position);
+    controls.target.copy(pose.target);
+    controls.update();
   }
   function flyTo({ position, target: aim }, duration = 0.8) {
     const p0 = camera.position.clone();
     const t0 = controls.target.clone();
     if (!duration) {
       tweener.cancel('camera');
-      camera.position.copy(position);
-      controls.target.copy(aim);
-      controls.update();
+      place({ position, target: aim });
       syncScene();
       return Promise.resolve(true);
     }
@@ -288,82 +492,87 @@ export function createApp(root, options = {}) {
       },
     }).finished;
   }
-  const frame = (duration = 0.8) => (s.userMovedCamera ? Promise.resolve(true) : flyTo(viewPose(), duration));
-  function setView(view, { animate = true } = {}) {
-    s.view = view === '3d' ? '3d' : 'front';
+  function homeView(animate = true) {
     s.userMovedCamera = false;
     syncUI();
-    emit('view', { view: s.view });
-    emitChange();
     return flyTo(viewPose(), animate ? 0.7 : 0);
   }
   controls.addEventListener('start', () => {
-    if (s.view !== '3d') {
-      s.view = '3d';
-      syncUI();
-    }
     s.userMovedCamera = true;
     tweener.cancel('camera');
+    syncUI();
   });
   controls.addEventListener('change', () => syncScene());
   stage.onResize(() => {
-    if (!s.userMovedCamera) flyTo(viewPose(), 0);
+    if (!s.userMovedCamera) place(viewPose());
+    syncScene();
     refresh();
   });
 
-  // ── the water rises ─────────────────────────────────────────────────────────
+  // ── the steps ───────────────────────────────────────────────────────────────
   const wait = (sec, key = 'wait') => tweener.animate({ key, duration: sec, onUpdate: () => {} }).finished;
   function stopAll() {
     s.run++;
-    for (const k of ['water', 'camera']) tweener.cancel(k);
+    for (const k of ['step', 'camera']) tweener.cancel(k);
     s.busy = false;
-    s.look = 'all';
+    s.k = 1;
   }
-  function setDone() {
-    s.top = TOP;
-    s.phase = 'done';
-    s.found = true;
-  }
-  function setReady() {
-    s.top = TUB.water;
-    s.phase = 'ready';
-  }
-  async function raiseWater(token) {
-    s.phase = 'rising';
-    s.busy = true;
-    s.top = TUB.water;
-    s.look = 'low';
+  /** A step at rest, at once. */
+  function jumpTo(step) {
+    stopAll();
+    s.step = step;
+    s.k = 1;
+    s.found = Math.max(s.found, step);
+    syncScene();
+    if (!s.userMovedCamera) place(viewPose());
     syncScene();
     refresh();
-    await frame(0.8);
-    if (token !== s.run) return;
-    s.look = 'follow';
+    emitChange();
+  }
+  /** Plays a step's animation from where the step before it rests. */
+  async function playStep(step, token) {
+    s.step = step;
+    s.k = 0;
+    s.busy = true;
+    s.userMovedCamera = s.userMovedCamera && step !== 1 ? s.userMovedCamera : false;
+    syncUI();
+    syncScene();
     refresh();
+    emitChange();
+    if (step === 1) audio.pop?.();
     const ok = await tweener.animate({
-      key: 'water',
-      duration: 3.4,
-      ease: ease.inOutCubic,
+      key: 'step',
+      duration: DUR[STEPS[step]],
       onUpdate: (k) => {
-        s.top = TUB.water + H_WATER * k;
-        if (!s.userMovedCamera) {
-          const pose = viewPose();
-          camera.position.copy(pose.position);
-          controls.target.copy(pose.target);
-          controls.update();
-        }
+        s.k = k;
+        if (!s.userMovedCamera) place(viewPose());
         syncScene();
         refresh();
       },
     }).finished;
     if (!ok || token !== s.run) return;
-    setDone();
+    s.k = 1;
     s.busy = false;
-    s.look = 'all';
+    s.found = Math.max(s.found, step);
     audio.success();
     syncScene();
     refresh();
     emitChange();
-    await frame(1.2);
+  }
+  async function again(token) {
+    s.step = 0;
+    s.k = 1;
+    s.busy = true;
+    s.userMovedCamera = false;
+    syncUI();
+    syncScene();
+    refresh();
+    emitChange();
+    const ok = await flyTo(viewPose(), DUR.again);
+    if (!ok || token !== s.run) return;
+    s.busy = false;
+    refresh();
+    emitChange();
   }
 
   // ── the action: the big button, the badge on the part ───────────────────────
@@ -373,7 +582,9 @@ export function createApp(root, options = {}) {
     lastAct = now();
     hintOff();
     if (s.busy) return showHint(t('hint_wait'), { duration: 2000 });
-    return raiseWater(++s.run);
+    const token = ++s.run;
+    if (s.step === 3) return again(token);
+    return playStep(s.step + 1, token);
   }
   action = createAction({
     stage,
@@ -382,7 +593,12 @@ export function createApp(root, options = {}) {
     t,
     step: 1,
     label: 'act_water',
-    target: () => V(0, TUB.water + 0.6, 0.1),
+    target: () => {
+      if (s.step === 0) return V(XM + 0.32, 0.5, 0);
+      if (s.step === 1) return V(XW, SURFACE_Y + 5, 0);
+      if (s.step === 2) return V(XW, SURFACE_Y + 9.5, 0);
+      return null;
+    },
     radius: 26,
     pad: 8,
     avoid: [ui.corner, ui.hint, () => anno.boxes()],
@@ -414,23 +630,25 @@ export function createApp(root, options = {}) {
   // ── state for the book ──────────────────────────────────────────────────────
   function snapshot() {
     return {
-      phase: s.phase,
-      height: round(Math.max(0, s.top - TUB.water), 2), // the water's column (m)
-      mercury: toCm(H_HG), // the small barometer's column (cm)
+      step: STEPS[s.step],
+      stepNumber: s.step + 1,
+      water: round(waterLevel(), 2), // the water's column (m)
+      mercury: toCm(H_HG), // the mercury's column (cm)
+      ratio: RATIO,
       busy: s.busy,
-      found: s.found,
+      found: s.found + 1,
       next: plan().label.replace('act_', ''),
-      view: s.view,
       mode: s.mode,
     };
   }
   let lastEmitted = '';
   function emitChange() {
     const snap = snapshot();
-    const key = JSON.stringify([snap.phase, snap.found, snap.mode, snap.view]);
+    const key = JSON.stringify([snap.step, snap.busy, snap.found, snap.mode]);
     if (key === lastEmitted) return;
     lastEmitted = key;
     emit('change', snap);
+    emit('step', { step: snap.step, stepNumber: snap.stepNumber });
   }
 
   // ── the test ────────────────────────────────────────────────────────────────
@@ -448,17 +666,28 @@ export function createApp(root, options = {}) {
       choices: [0, 1, 2, 3],
       expected: list.indexOf(items[0]),
       tolerance: 0.5,
-      label: (j) => `<span class="tb-opt">${label(list[j])}</span>`,
+      label: (j) => `<span class="wb-opt">${label(list[j])}</span>`,
       meta: { kind, answer: items[0].key },
     };
   }
   let learnSaved = null;
   let question = null;
   let picked = -1;
-  const mText = (v) => (v < 1 ? `${N(toCm(v))}&nbsp;cm` : `${N(v)}&nbsp;m`);
+  const mText = (v) => (v < 1 ? `${N(toCm(v))}&nbsp;${t('u_cm')}` : `${N(v)}&nbsp;${t('u_m')}`);
   const words = (keys) => keys.map((key) => ({ key }));
-  /** The three questions: how high the water stands, why so high, what is above it. */
-  const KINDS = ['water', 'why', 'vacuum'];
+  /** The four questions: how high the water stands, why so high, what is above it, the long straw. */
+  const KINDS = ['water', 'why', 'vac', 'straw'];
+  /** Sets up a scene for the test: a step at rest, some labels hidden. */
+  function scene_(step, show) {
+    stopAll();
+    s.step = step;
+    s.k = 1;
+    s.show = { labels: true, vacuum: true, water: true, ...show };
+    s.userMovedCamera = false;
+    syncUI();
+    syncScene();
+    refresh();
+  }
 
   const quiz = createQuiz({
     ui,
@@ -470,7 +699,7 @@ export function createApp(root, options = {}) {
     action,
     hooks: {
       enter() {
-        learnSaved = { done: s.phase === 'done' || s.phase === 'rising', found: s.found };
+        learnSaved = { step: s.step, found: s.found };
         s.mode = 'quiz';
         s.locked = true;
         hintOff();
@@ -479,51 +708,47 @@ export function createApp(root, options = {}) {
       leave() {
         s.mode = 'explore';
         s.locked = false;
-        s.show = { h: true, vacuum: true };
-        syncUI();
         stopAll();
-        if (learnSaved?.done) setDone();
-        else setReady();
+        s.show = { labels: true, vacuum: true, water: true };
+        s.step = learnSaved?.step ?? 0;
         s.found = learnSaved?.found ?? s.found;
         s.userMovedCamera = false;
+        syncUI();
+        syncScene();
+        place(viewPose());
         syncScene();
         refresh();
         emitChange();
-        flyTo(viewPose(), 0);
       },
       async prepare(i, alive) {
         picked = -1;
         const kind = KINDS[i % KINDS.length];
-        stopAll();
-        if (kind === 'water') setReady();
-        else setDone();
-        s.show = { h: kind !== 'water', vacuum: kind !== 'vacuum' };
-        s.userMovedCamera = false;
-        syncScene();
-        refresh();
-        await flyTo(viewPose(), 0.6);
+        if (kind === 'water' || kind === 'straw') scene_(0, {});
+        else scene_(1, { vacuum: kind !== 'vac' });
+        await flyTo(viewPose(), 0.7);
         if (!alive()) return null;
         question = { kind };
         if (kind === 'water') return { text: t('q_water'), ...choicesOf(waterChoices(), kind, (x) => mText(x.v)) };
         if (kind === 'why')
-          return { text: t('q_w_why'), ...choicesOf(words(['c_ww_right', 'c_ww_wide', 'c_ww_more', 'c_ww_pull']), kind, (x) => t(x.key)) };
-        return { text: t('q_w_vac'), ...choicesOf(words(['c_vac_right', 'c_vac_pull', 'c_vac_air', 'c_vac_press']), kind, (x) => t(x.key)) };
+          return { text: t('q_why'), ...choicesOf(words(['c_why_right', 'c_why_wide', 'c_why_more', 'c_why_pull']), kind, (x) => t(x.key)) };
+        if (kind === 'vac')
+          return { text: t('q_vac'), ...choicesOf(words(['c_vac_right', 'c_vac_pull', 'c_vac_air', 'c_vac_press']), kind, (x) => t(x.key)) };
+        return { text: t('q_straw', { L: N(LONG_STRAW) }), ...choicesOf(strawChoices(), kind, (x) => mText(x.v)) };
       },
       reveal(q, correct) {
         const k = question.kind;
         const wrongKey = correct ? null : q.list?.[picked]?.key;
-        const vars = { k: N(RATIO), hHg: N(76), h: N(H_WATER) };
-        const note = (map) => (wrongKey && map[wrongKey] ? ` ${t(map[wrongKey], vars)}` : '');
-        if (k === 'water') {
-          setDone();
-          s.found = learnSaved?.found ?? s.found;
-        }
-        s.show = { h: true, vacuum: true };
-        syncScene();
-        refresh();
-        if (k === 'water') return t('why_water', vars) + note({ same: 'mis_water_same', divide: 'mis_water_divide', tenth: 'mis_water_tenth' });
-        if (k === 'why') return t('why_ww', vars) + note({ c_ww_wide: 'mis_ww_wide', c_ww_more: 'mis_ww_more', c_ww_pull: 'mis_ww_pull' });
-        return t('why_w_vac') + note({ c_vac_pull: 'mis_ww_pull', c_vac_air: 'mis_w_air', c_vac_press: 'mis_w_press' });
+        const v = vars();
+        const noteOf = (map) => (wrongKey && map[wrongKey] ? ` ${t(map[wrongKey], v)}` : '');
+        // the answer shown on the picture
+        if (k === 'water') scene_(1, {});
+        else if (k === 'straw') scene_(3, {});
+        else scene_(1, {});
+        flyTo(viewPose(), 0.7);
+        if (k === 'water') return t('why_water', v) + noteOf({ same: 'mis_water_same', divide: 'mis_water_divide', tenth: 'mis_water_tenth' });
+        if (k === 'why') return t('why_why', v) + noteOf({ c_why_wide: 'mis_why_wide', c_why_more: 'mis_why_more', c_why_pull: 'mis_why_pull' });
+        if (k === 'vac') return t('why_vac') + noteOf({ c_vac_pull: 'mis_why_pull', c_vac_air: 'mis_vac_air', c_vac_press: 'mis_vac_press' });
+        return t('why_straw', v) + noteOf({ whole: 'mis_straw_whole', mercury: 'mis_straw_mercury', tenth: 'mis_straw_tenth' });
       },
       done() {
         s.locked = false;
@@ -535,8 +760,9 @@ export function createApp(root, options = {}) {
   // ── buttons, keys ───────────────────────────────────────────────────────────
   function syncUI() {
     const front = ui.$('[data-view="front"]');
-    if (front) front.hidden = s.view !== '3d';
+    if (front) front.hidden = !s.userMovedCamera;
     root.dataset.mode = s.mode === 'quiz' ? 'quiz' : 'explore';
+    root.dataset.step = STEPS[s.step];
     for (const b of ui.$$('[data-mode]')) {
       const on = b.dataset.mode === root.dataset.mode;
       b.classList.toggle('on', on);
@@ -546,13 +772,9 @@ export function createApp(root, options = {}) {
     ui.quiz.inert = s.mode !== 'quiz';
   }
   function goHome() {
-    stopAll();
-    setReady();
     s.userMovedCamera = false;
-    syncScene();
-    refresh();
-    emitChange();
-    return flyTo(viewPose(), 0.6);
+    jumpTo(0);
+    syncUI();
   }
   const fullscreenBtn = $('[data-act="fullscreen"]');
   if (fullscreenBtn && !document.fullscreenEnabled) fullscreenBtn.hidden = true;
@@ -560,7 +782,7 @@ export function createApp(root, options = {}) {
     const b = /** @type {HTMLElement} */ (/** @type {Element} */ (e.target).closest('button'));
     if (!b || !root.contains(b)) return;
     audio.unlock();
-    if (b.dataset.view) setView(b.dataset.view);
+    if (b.dataset.view === 'front') homeView();
     if (b.dataset.mode === 'quiz' && s.mode !== 'quiz') quiz.start();
     if (b.dataset.mode === 'explore') quiz.stop();
     if (b.dataset.q != null) {
@@ -579,23 +801,26 @@ export function createApp(root, options = {}) {
     if (tgt.closest('input, textarea, select') || e.metaKey || e.ctrlKey || e.altKey) return;
     const k = e.key;
     const onButton = Boolean(tgt.closest('button'));
-    const sceneKey = ['r', 'R', 'Home'].includes(k) || ((k === ' ' || k === 'Enter') && !onButton);
+    const sceneKey = ['r', 'R', 'Home', 'ArrowRight', 'ArrowLeft'].includes(k) || ((k === ' ' || k === 'Enter') && !onButton);
     if (sceneKey && s.mode === 'quiz') {
       if (quiz.active && !quiz.revealed) lockedNudge();
       return;
     }
-    if ((k === ' ' || k === 'Enter') && !onButton) doAction();
-    else if (k === 'r' || k === 'R' || k === 'Home') goHome();
-    else if (k === 'f' || k === 'F') setView('front');
-    else if (k === 'v' || k === 'V') setView('3d');
+    if (((k === ' ' || k === 'Enter') && !onButton) || k === 'ArrowRight') doAction();
+    else if (k === 'ArrowLeft') {
+      if (!s.busy && s.step > 0) jumpTo(s.step - 1);
+    } else if (k === 'r' || k === 'R' || k === 'Home') goHome();
     else if (k === 'Escape') hintOff();
     else return;
     e.preventDefault();
   });
 
   // ── start ───────────────────────────────────────────────────────────────────
+  s.step = stepIndex(o.step);
+  s.found = s.step;
   syncUI();
-  flyTo(viewPose(), 0);
+  syncScene();
+  place(viewPose());
   syncScene();
   refresh();
   const ready = (async () => {
@@ -604,7 +829,7 @@ export function createApp(root, options = {}) {
 
   /** Waits for whatever the student (or set) started to finish. */
   async function settle() {
-    for (let i = 0; i < 400 && s.busy; i++) await wait(0.05, 'settle');
+    for (let i = 0; i < 600 && s.busy; i++) await wait(0.05, 'settle');
   }
 
   return {
@@ -615,26 +840,24 @@ export function createApp(root, options = {}) {
       return () => listeners.get(type).delete(fn);
     },
     getState: snapshot,
-    /** Change any of: water ('ready' | 'done'), view ('front' | '3d'). animate: false lands at once. */
+    /**
+     * step: 1–4 or 'mercury' | 'water' | 'compare' | 'straw'. With animate (the default) the next step plays from the
+     * one before it; any other step, or animate: false, lands at once.
+     */
     async set(p = {}) {
-      const animate = p.animate !== false;
-      if (p.view) await setView(p.view, { animate });
-      if (p.water === 'done') {
-        stopAll();
-        if (animate) {
+      if (p.step != null) {
+        const to = stepIndex(p.step);
+        const animate = p.animate !== false;
+        if (s.mode === 'quiz') quiz.stop();
+        if (animate && to === s.step + 1 && !s.busy) {
           lastAct = Number.NEGATIVE_INFINITY;
           doAction();
           await settle();
         } else {
-          setDone();
-          syncScene();
-          flyTo(viewPose(), 0);
+          s.userMovedCamera = false;
+          jumpTo(to);
+          syncUI();
         }
-      } else if (p.water === 'ready') {
-        stopAll();
-        setReady();
-        syncScene();
-        flyTo(viewPose(), 0);
       }
       refresh();
       emitChange();
@@ -642,20 +865,20 @@ export function createApp(root, options = {}) {
     },
     async reset() {
       quiz.stop();
-      s.found = false;
-      s.show = { h: true, vacuum: true };
-      await setView('front', { animate: false });
-      await goHome();
+      s.found = 0;
+      s.show = { labels: true, vacuum: true, water: true };
+      goHome();
+      s.found = 0;
       refresh();
       emitChange();
     },
     startPractice: () => quiz.start(),
     capture: (opts) => stage.capture(opts),
-    /** The pipe in its tub, the small barometer and the staff (the yard as it stands), in metres. */
+    /** The two barometers as they stand, the staff and the person, in metres. */
     exportRoot() {
       const g = new THREE.Group();
       g.name = 'WaterBarometer';
-      g.add(yard.root.clone(true));
+      for (const part of [hg.root, water.root, person.root, staff.root]) if (part.visible) g.add(part.clone(true));
       return g;
     },
   };

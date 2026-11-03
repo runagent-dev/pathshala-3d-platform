@@ -14,6 +14,26 @@ describe('torricelli-water-barometer: the maths', () => {
     assert.ok(Math.abs(r.columnFor(r.columnPressure(r.H_HG, r.RHO.mercury), r.RHO.water) - 10.336) < 0.001);
   });
 
+  it('stacks 13.6 pieces of 76 cm, leaves 0.2 m of the 10.5 m straw empty, about 6 people tall', () => {
+    assert.equal(r.segments(), 13.6);
+    assert.equal(r.strawGap(), 0.2);
+    assert.equal(r.peopleTall(), 6);
+  });
+
+  it('reads a step from 1–4 or its name, anything else as the first', () => {
+    assert.equal(r.stepIndex(1), 0);
+    assert.equal(r.stepIndex('4'), 3);
+    assert.equal(r.stepIndex('compare'), 2);
+    assert.equal(r.stepIndex('9'), 0);
+    assert.equal(r.stepIndex(undefined), 0);
+  });
+
+  it('gives four different straw heights, 10.3 m first', () => {
+    const c = r.strawChoices();
+    assert.equal(c[0].v, 10.3);
+    assert.equal(new Set(c.map((x) => x.v)).size, 4);
+  });
+
   it('gives four different water columns, 10.3 m first', () => {
     const c = r.waterChoices();
     assert.equal(c[0].v, 10.3);
@@ -28,16 +48,16 @@ describe('torricelli-water-barometer: strings', () => {
 
   it('writes numbers in Bangla digits through t.num', () => {
     const t = createI18n('bn');
-    assert.ok(!/[0-9]/.test(t('rule_water', { k: 13.6, hHg: 76, h: 10.3 }).replace(/<[^>]+>/g, '')));
+    assert.ok(!/[0-9]/.test(t('out_compare', { k: 13.6, hHg: 76, h: 10.3 }).replace(/<[^>]+>/g, '')));
   });
 
   it('writes the test’s questions as plain text', () => {
     for (const lang of ['bn', 'en'])
-      for (const [k, v] of Object.entries(STRINGS[lang])) if (/^q_(water|w_why|w_vac)$/.test(k)) assert.ok(!/[<&]/.test(v), `${lang} ${k}`);
+      for (const [k, v] of Object.entries(STRINGS[lang])) if (/^q_(water|why|vac|straw)$/.test(k)) assert.ok(!/[<&]/.test(v), `${lang} ${k}`);
   });
 
   it('uses the book’s words', () => {
     const bn = Object.values(STRINGS.bn).join(' ');
-    for (const w of ['ঘনত্ব', 'গুণ', 'শূন্যতা', 'পারদ স্তম্ভ', 'কোল্ড ড্রিংকস']) assert.ok(bn.includes(w), w);
+    for (const w of ['ঘনত্ব', 'গুণ', 'শূন্যতা', 'পারদ স্তম্ভ', 'কোল্ড ড্রিংকস', 'স্ট্র', 'চুমুক', 'বাতাসের চাপ']) assert.ok(bn.includes(w), w);
   });
 });

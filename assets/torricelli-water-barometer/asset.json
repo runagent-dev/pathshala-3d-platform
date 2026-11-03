@@ -5,7 +5,7 @@
   "title": "A water barometer (পানির ব্যারোমিটার)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "book": "physics-9-10",
   "page": 145,
   "topic": "5.4.1",
@@ -13,8 +13,8 @@
   "order": 5,
   "maintainers": ["RadeenXALNW"],
   "units": "m",
-  "description": "Water instead of mercury (page 145, topic 5.4.1) in a schoolyard: one tall glass pipe standing in a tub of water against a three-storey school, beside a small 76 cm mercury barometer and a red-and-white measuring staff. One button fills it the Torricelli way: the water rises to 10.3 m, nearly to the roof (the camera follows it up), and stops with a vacuum above; one outlined blue air-pressure arrow presses on the tub and the column's height is drawn in orange. The panel shows one short line, the water's and the mercury's columns, and the rule (mercury is 13.6 times as dense as water: 76 cm × 13.6 ≈ 10.3 m). Test tab: 3 questions (how high the water stands, why so high, what is above it), every wrong choice with its own note. Split from torricelli-barometer. Phone-first, Bangla and English.",
-  "tags": ["air pressure", "atmospheric pressure", "barometer", "water", "density", "bangla"],
+  "description": "A water barometer (page 145, topic 5.4.1) as one guided sequence with one big step button and one short Bangla line per step, on a round teak platform under a calm evening-blue backdrop. (1) The mercury barometer as in a clean textbook drawing: a glass tube closed at the top standing in a dish, the silver mercury column at 76 cm, the vacuum (শূন্যতা) above it, an outlined blue air-pressure arrow on the dish and an orange 76 cm dimension line. (2) 'What if water, not mercury?': the same tube and dish, 11 m tall, with lightly tinted blue water, appear beside it; the camera pulls back smoothly while the water rises and stops at 10.3 m with a vacuum above, beside a 0–11 m measuring staff and a 1.6 m student for the scale (about six people tall); the mercury barometer stays at the foot, tiny, with an equal air-pressure arrow. (3) Compare: 13.6 orange pieces of 76 cm stack up beside the water's column, one beside the mercury; the panel gives the book's reason (mercury is 13.6 times as dense as water: 76 cm × 13.6 ≈ 10.3 m). (4) The book's straw: the tube becomes a 10.5 m straw of cold drink, the camera rises to its top, and the drink stops at 10.3 m with the top 0.2 m empty, however hard you suck. 'আবার দেখো' starts over. The tubes are drawn thicker than real ones (said in the panel). Test tab: 4 questions (how tall a water column, why so tall, what is above it, a 12 m straw), every wrong choice with its own note. Split from torricelli-barometer. Phone-first, Bangla and English.",
+  "tags": ["air pressure", "atmospheric pressure", "barometer", "water", "mercury", "density", "straw", "bangla"],
   "params": [
     {
       "name": "lang",
@@ -23,7 +23,18 @@
       "options": [["bn", "বাংলা"], ["en", "English"]],
       "default": "bn"
     },
-    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "step",
+      "label": "Step",
+      "type": "select",
+      "options": [
+        ["1", "the mercury barometer"],
+        ["2", "water instead (10.3 m)"],
+        ["3", "the two compared (× 13.6)"],
+        ["4", "the 10.5 m straw"]
+      ],
+      "default": "1"
+    },
     {
       "name": "mode",
       "label": "Start in",
@@ -31,7 +42,7 @@
       "options": [["explore", "learn"], ["quiz", "test"]],
       "default": "explore"
     },
-    { "name": "coach", "label": "The ring on the part pulses at first", "type": "boolean", "default": "1" },
+    { "name": "coach", "label": "The numbered badge on the picture pulses at first", "type": "boolean", "default": "1" },
     {
       "name": "numerals",
       "label": "Digits",
@@ -45,20 +56,21 @@
   ],
   "commands": [
     { "name": "get", "payload": {} },
-    { "name": "set", "payload": { "water": "done" } },
-    { "name": "set", "payload": { "water": "ready", "animate": false } },
-    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "set", "payload": { "step": 2 } },
+    { "name": "set", "payload": { "step": "compare", "animate": false } },
+    { "name": "set", "payload": { "step": 4, "animate": false } },
+    { "name": "set", "payload": { "step": 1, "animate": false } },
     { "name": "reset", "payload": {} },
     { "name": "practice", "payload": {} },
     { "name": "capture", "payload": { "width": 800, "height": 500 } },
     { "name": "export-glb", "payload": {} }
   ],
-  "events": ["ready", "change", "view", "practice-start", "practice-result", "practice-end"],
+  "events": ["ready", "change", "step", "practice-start", "practice-result", "practice-end"],
   "export": {
     "poster": {
       "params": { "coach": "0" },
-      "setup": [{ "command": "set", "payload": { "water": "done", "animate": false } }]
+      "setup": [{ "command": "set", "payload": { "step": "compare", "animate": false } }]
     },
-    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "water": "done", "animate": false } }] }]
+    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "step": "compare", "animate": false } }] }]
   }
 }
