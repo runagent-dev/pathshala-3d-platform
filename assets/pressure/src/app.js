@@ -73,9 +73,9 @@ const TOUR_HOLD = 2.4; // s the camera stays close to each shoe after the first 
 // (the bottom of each box goes lower when the arrows under the soles are longer, the top of 'both' higher when the
 // force's arrows are: see viewPose)
 const LOOKS = {
-  both: { box: [new THREE.Vector3(-0.3, -0.1, -0.05), new THREE.Vector3(0.31, 0.16, 0.05)], dir: new THREE.Vector3(0.1, 0.2, 1) },
-  heel: { box: [new THREE.Vector3(-0.29, -0.09, -0.03), new THREE.Vector3(-0.035, 0.125, 0.03)], dir: new THREE.Vector3(0.25, 0.12, 1) },
-  sneaker: { box: [new THREE.Vector3(0.03, -0.06, -0.03), new THREE.Vector3(0.315, 0.1, 0.03)], dir: new THREE.Vector3(-0.2, 0.12, 1) },
+  both: { box: [new THREE.Vector3(-0.3, -0.1, -0.05), new THREE.Vector3(0.31, 0.16, 0.05)], dir: new THREE.Vector3(0.42, 0.3, 1) },
+  heel: { box: [new THREE.Vector3(-0.29, -0.09, -0.03), new THREE.Vector3(-0.035, 0.125, 0.03)], dir: new THREE.Vector3(0.45, 0.22, 1) },
+  sneaker: { box: [new THREE.Vector3(0.03, -0.06, -0.03), new THREE.Vector3(0.315, 0.1, 0.03)], dir: new THREE.Vector3(-0.45, 0.22, 1) },
 };
 const LIFT_DIR = new THREE.Vector3(0.08, 0.42, 1); // over the prints: from a little higher up
 const MARGIN = { top: 52, bottom: 14, side: 4 };
