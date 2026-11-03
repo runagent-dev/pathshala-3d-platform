@@ -1,39 +1,32 @@
-/* Speed and velocity: the page, the colours of the quantities (দূরত্ব and দ্রুতি blue, সরণ and বেগ orange: the
-   same as the 3D) and the panel in the labs' one structure: choices, the action (+ reset), the readings (label left,
-   value right), the formula, the rule. The student view itself is ../../shared/lib/student/student.css. */
+/* Speed and velocity: the page, the colours of the quantities (দূরত্ব blue, সরণ orange, বেগ violet: the same as the
+   3D) and the clean sheet's lines: the result (two short lines while riding, the two sums when comparing) and the
+   rule. The student view itself is ../../shared/lib/student/student.css. */
 html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
 #app { position: fixed; inset: 0; }
 body.bg-transparent { background: transparent; }
 
-.pvc { --c-dist: #1c6fd9; --c-disp: #c2410c; }
+.pvc { --c-dist: #1c6fd9; --c-disp: #c2410c; --c-vel: #6741d9; }
 .sv .pvc-learn { justify-content: flex-start; gap: 8px; }
 
-/* choices: boy 2's direction */
-.fig-choices { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--ink-2); }
-.fig-choices > span { flex: 1; min-width: 0; }
-.fig-choices .pvc-btn { height: 44px; min-width: 44px; padding: 0 10px; font-size: 16px; }
-.sv-angle { min-width: 7.5em; text-align: center; font-size: 14px; color: var(--c-disp); white-space: nowrap; }
-
-.sv .pvc-act-row { display: flex; align-items: center; gap: 8px; }
-
-
-/* the readings: a small aligned list */
-.fig-readings { margin: 0; display: flex; flex-direction: column; gap: 1px; font-size: 14px; }
-.fig-readings > div { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding: 2px 0; border-bottom: 1px solid var(--line, #e6e8eb); }
-.fig-readings dt { color: var(--ink-2); white-space: nowrap; }
-.fig-readings dd { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
-.fig-readings dd small { font-weight: 500; font-size: 12px; color: var(--ink-3); }
-.fig-readings .dist dd { color: var(--c-dist); }
-.fig-readings .disp dd { color: var(--c-disp); }
-.sv-u { font-size: 0.8em; font-weight: 600; margin-left: 0.15em; }
-
-/* the formula: the book's two lines */
-.fig-formula { margin: 0; display: flex; flex-direction: column; gap: 2px; font-size: 13.5px; line-height: 1.4; color: var(--ink-2); }
-.fig-formula .dist b { color: var(--c-dist); }
-.fig-formula .disp b { color: var(--c-disp); }
-.fig-formula b { white-space: nowrap; }
-
-.sv-rule { margin: 0; font-size: 13.5px; line-height: 1.45; }
+/* the result line: room for the tallest state (the two sums), so the panel never changes height */
+.sv .pvc-outcome { min-height: 7.4em; font-size: 15.5px; line-height: 1.55; }
+.sv .pvc-outcome b { font-size: 1.3em; }
+.sv .pvc-outcome .sv-d { color: var(--c-dist); }
+.sv .pvc-outcome .sv-s { color: var(--c-disp); }
+.sv .pvc-outcome .sv-v { color: var(--c-vel); font-size: 1.15em; }
+.sv-line { display: block; }
+/* comparing: the book's two sums, one under the other */
+.sv .pvc-outcome.sv-cmp { line-height: 1.4; font-size: 14.5px; }
+.sv .pvc-outcome.sv-cmp b { font-size: 1.2em; }
+.sv-row { display: block; margin-bottom: 4px; }
+.sv-def { display: block; color: var(--ink-2); }
+.sv-sum { display: block; padding-left: 0.8em; }
+.sv-note { display: block; font-size: 12.5px; color: var(--ink-3); font-weight: 500; }
+.sv .pvc-rule { min-height: 4.5em; font-size: 14.5px; }
+/* a wide panel (under the 3D on a phone held upright): the rule takes two lines at most */
+@container pvc (min-width: 360px) {
+  .sv .pvc-rule { min-height: 3em; }
+}
 
 /* the test */
 .sv .pvc-q-text { min-height: 2.8em; }
@@ -41,8 +34,19 @@ body.bg-transparent { background: transparent; }
 
 /* short side panels (phone held sideways): a little tighter */
 @container pvc (max-height: 420px) {
-  .sv .pvc-learn { gap: 5px; }
-  .fig-readings { font-size: 13px; }
-  .fig-formula, .sv-rule { font-size: 12.5px; line-height: 1.35; }
-  .fig-choices .pvc-btn { height: 40px; }
+  .sv .pvc-learn { gap: 6px; }
+  .sv .pvc-outcome { font-size: 14px; min-height: 7.2em; }
+  .sv .pvc-outcome.sv-cmp { font-size: 13px; }
+  .sv .pvc-rule { font-size: 13px; line-height: 1.4; min-height: 4.2em; }
+}
+
+/* a short phone held upright (390×520): the panel under the 3D as compact as it can be, so the 3D keeps its room */
+@media (orientation: portrait) and (max-height: 600px) {
+  .sv .pvc-learn { gap: 4px; }
+  .sv .pvc-outcome { font-size: 13px; line-height: 1.35; min-height: 6.6em; }
+  .sv .pvc-outcome.sv-cmp { font-size: 12.5px; line-height: 1.3; }
+  .sv .pvc-outcome.sv-cmp b { font-size: 1.12em; }
+  .sv-row { margin-bottom: 1px; }
+  .sv-note { font-size: 11.5px; }
+  .sv .pvc-rule { font-size: 12.5px; line-height: 1.35; min-height: 2.7em; }
 }

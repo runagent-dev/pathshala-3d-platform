@@ -1,6 +1,6 @@
 # Speed and velocity (দ্রুতি এবং বেগ)
 
-**Where it goes in the book:** Book pages 40–41, topic 2.5: দ্রুতি এবং বেগ. Next to the section text and its example (A to B in 20 minutes on the winding road of চিত্র ২.০৪).
+**Where it goes in the book:** Book pages 40–41, topic 2.5: দ্রুতি এবং বেগ. Next to the section text and the উদাহরণ on page 41 (by cycle from A to B along the winding road of চিত্র ২.০৪ in 20 minutes: গড় দ্রুতি and গড় বেগ).
 
 Interactive 3D figure for the Pathshala book.
 
@@ -27,9 +27,9 @@ To listen to it or control it from the book page, use the helper shipped in the 
 | Param | Meaning | Values | Default |
 |---|---|---|---|
 | `lang` | Language | `bn` বাংলা · `en` English | `bn` |
-| `angle` | Direction of boy 2 (deg from east) | number | `40` |
-| `time` | Time of the run shown (s, 0–20) | number | `0` |
-| `view` | View | `front` from above · `3d` 3d | `front` |
+| `path` | Road | `winding` winding (চিত্র ২.০৪) · `straight` straight | `winding` |
+| `step` | Step shown | `start` at A · `displacement` at B with the displacement · `compare` the two sums | `start` |
+| `time` | Minutes of the ride shown (0–20) | number | `0` |
 | `mode` | Start in | `explore` learn · `quiz` test | `explore` |
 | `coach` | First-use pointers | `1` · `0` | `1` |
 | `numerals` | Digits | (empty) follow language · `bn` Bangla · `latin` Latin |  |
@@ -46,7 +46,7 @@ Every figure answers `ping` with `{ asset, version }`. Send commands with `figur
 | Command | Example payload |
 |---|---|
 | `get` | `{}` |
-| `set` | `{"angle":120}` |
+| `set` | `{"playing":true}` |
 | `reset` | `{}` |
 | `practice` | `{}` |
 | `capture` | `{"width":800,"height":500}` |
