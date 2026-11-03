@@ -73,7 +73,7 @@ const DOUBLE_TAP = 400; // ms
 const CHOICE = 0.12; // m: the test's four arrows
 const BADGE = 0.028; // m past a choice's head: where its letter sits
 const VIEW_DIRS = {
-  front: new THREE.Vector3(0, 0.1, 1).normalize(),
+  front: new THREE.Vector3(0.43, 0.28, 0.86).normalize(),
   '3d': new THREE.Vector3(0.58, 0.32, 0.75).normalize(),
 };
 // what the front view must show (world m): the hook, the ball's whole swing with its arrows and the bench; while it
