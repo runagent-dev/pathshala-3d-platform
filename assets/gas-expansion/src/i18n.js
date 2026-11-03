@@ -33,12 +33,12 @@ export const STRINGS = {
     act_home: 'আবার শুরু থেকে',
 
     // the readings: before and after (the book's picture, চিত্র ৬.০৭)
-    rd: 'আগে আর পরে: তাপমাত্রা আর আয়তন',
+    rd: 'আগে আর পরে: তাপমাত্রা (কেলভিন) আর আয়তন (লিটার)',
     rd_before: 'আগে',
     rd_after: 'পরে',
     rd_T: 'তাপমাত্রা',
     rd_V: 'আয়তন',
-    rd_const: 'চাপ <i>P</i> = {P} Pa আর গ্যাসের পরিমাণ <i>n</i> = {n} মোল একই',
+    rd_const: 'চাপ <i>P</i> = {P} Pa (প্যাসকেল) আর গ্যাসের পরিমাণ <i>n</i> = {n} মোল একই',
     u_K: 'K',
     u_L: 'L',
     u_Pa: 'Pa',
@@ -145,7 +145,7 @@ export const STRINGS = {
     act_cool: 'Cool it again',
     act_home: 'Start again',
 
-    rd: 'Before and after: temperature and volume',
+    rd: 'Before and after: temperature (kelvin) and volume (litres)',
     rd_before: 'Before',
     rd_after: 'After',
     rd_T: 'Temperature',
