@@ -2,8 +2,9 @@
 // box with the book's 10⁵ N/m² (= 1,00,000 Pa). The air inside presses back just as hard, so nothing happens. Each
 // stroke of the pump takes some of the inside air out: the inside pressure drops, the difference ΔP = P(outside) −
 // P(inside) is left over, and on one 10 cm × 10 cm face (A = 0.01 m²) it makes a force F = ΔP × A that crushes the
-// box. The air column: on 1 m² the column of air above weighs 10⁵ N (the book: about an elephant's weight), so
-// P = F/A = 10⁵ N/m². Pure functions, unit-tested in test/unit/air-pressure.test.mjs.
+// box. Our body: the pressure inside pushes out as hard as the air pushes in (they cancel); in space there is no air,
+// so nothing cancels the inside pressure; a pressure suit presses in again. Pure functions, unit-tested in
+// test/unit/air-pressure.test.mjs.
 
 /** The air pressure at the Earth's surface, as the book gives it: 10⁵ N/m² (Pa). */
 export const P_AIR = 100000;
@@ -19,8 +20,28 @@ export const FACE_CM2 = SIDE_CM * SIDE_CM;
 export const STROKE_PA = 20000;
 export const STROKES = P_AIR / STROKE_PA; // 5 strokes: 1,00,000 → 80,000 → … → 0 (বায়ুশূন্য)
 
-/** The parts of the figure (the row of words): the tin box, the air column, our body. */
-export const PARTS = ['can', 'column', 'body'];
+/** The parts of the figure (the row of words): the tin box, our body. */
+export const PARTS = ['can', 'body'];
+
+/** The body's three steps, in order: on the Earth, in space without a suit, in space in the pressure suit. */
+export const BODY_STEPS = ['earth', 'space', 'suit'];
+
+/** A body step from a parameter or a bridge value: 'space' / true / '1' → 1, 'suit' / 2 → 2, anything else → 0. */
+export function fixBodyStep(v) {
+  if (v === 'suit' || v === 2 || v === '2') return 2;
+  if (v === true || v === 'space' || v === 1 || v === '1' || v === 'true') return 1;
+  return 0;
+}
+
+/**
+ * The pressures round the body in a step (Pa): `out` presses in from outside (the air on the Earth, the suit in it;
+ * nothing in space), `inside` pushes out from inside the body (always the same), `left` what is not cancelled.
+ */
+export function bodyPressures(step) {
+  const s = fixBodyStep(step);
+  const out = s === 1 ? 0 : P_AIR;
+  return { out, inside: P_AIR, left: P_AIR - out, by: s === 2 ? 'suit' : s === 1 ? 'none' : 'air' };
+}
 
 /** A number without binary leftovers: round(0.1 + 0.2, 2) = 0.3. */
 export const round = (x, d = 0) => +(Math.round(Number(`${x}e${d}`)) / 10 ** d).toFixed(d);
@@ -42,13 +63,6 @@ export const pressureDifference = (n) => P_AIR - insidePressure(n);
 
 /** F = ΔP × A: the force left over on one face (N), with A in cm² (converted to m² first). */
 export const faceForce = (dP, cm2 = FACE_CM2) => round(dP * toM2(cm2), 6);
-
-/** P = F/A (the book's 5.1): pascal from newtons and m². */
-export const pressureOf = (F, m2) => round(F / m2, 6);
-
-/** The weight of the air column over 1 m² at the Earth's surface (N): P × A = 10⁵ N/m² × 1 m². */
-export const COLUMN_AREA = 1; // m²
-export const columnWeight = (P = P_AIR, m2 = COLUMN_AREA) => round(P * m2, 6);
 
 /**
  * How crumpled the box is (0 = new, 1 = crushed) for a pressure difference: it gives a little at first and more

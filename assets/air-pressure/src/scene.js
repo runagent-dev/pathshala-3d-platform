@@ -1,14 +1,12 @@
-// The world around the box, in metres: a plain soft floor under a gentle sky, a plain table (its top is y = 0),
-// the air column standing on a 1 m × 1 m square of the yard, an elephant beside it for the book's comparison, and a
-// student standing in the yard (for "why we don't feel it"). Everything procedural and modest in triangles.
+// The world, in metres: a plain soft floor under a gentle sky and a plain table (its top is y = 0) for the tin box;
+// far off to the right, where the student stands for the body part, nothing but the same floor; and the Earth seen from
+// space (shown only in the body's space steps). Everything procedural and modest in triangles.
 import * as THREE from 'three';
 
 export const GROUND = -0.76; // the yard, below the table's top
-export const COLUMN_AT = new THREE.Vector3(-2.7, GROUND, -1.5);
-export const COLUMN_H = 7; // drawn this tall, fading out (the real column is many kilometres high)
-export const ELEPHANT_AT = new THREE.Vector3(-6.3, GROUND, -2.4);
-export const PERSON_AT = new THREE.Vector3(2.8, GROUND, 0.55);
-export const PERSON_H = 1.56;
+export const PERSON_AT = new THREE.Vector3(9, GROUND, 0); // far from the table, so it never shows behind the student
+const EARTH_R = 7;
+const EARTH_AT = new THREE.Vector3(PERSON_AT.x + 12, GROUND - EARTH_R - 1.2, PERSON_AT.z - 30);
 
 const std = (color, o = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.85, metalness: 0, ...o });
 
@@ -90,203 +88,81 @@ function createTable() {
   return g;
 }
 
-/**
- * The air column (চিত্র ৫.০৬): a see-through pale blue 1 m × 1 m box standing on a teal square of the yard, fading out
- * upward, with faint specks of air (fewer higher up), and its four edges drawn.
- */
-function createColumn() {
+/** The Earth seen from space, for the body's second and third steps: oceans, land, clouds and a thin blue glow. */
+function createEarth() {
   const g = new THREE.Group();
-  g.name = 'AirColumn';
-  g.position.copy(COLUMN_AT);
-  const fadeUp = canvasTex(
-    4,
-    256,
-    (c) => {
-      const s = c.createLinearGradient(0, 0, 0, 256);
-      s.addColorStop(0, '#000000');
-      s.addColorStop(0.45, '#4a4a4a');
-      s.addColorStop(1, '#ffffff');
-      c.fillStyle = s;
-      c.fillRect(0, 0, 4, 256);
-    },
-    { srgb: false },
-  );
-  const side = new THREE.MeshStandardMaterial({
-    color: '#8fd0ff',
-    emissive: '#3d8fd6',
-    emissiveIntensity: 0.25,
-    transparent: true,
-    opacity: 0.5,
-    alphaMap: fadeUp,
-    depthWrite: false,
-    side: THREE.DoubleSide,
-    roughness: 0.2,
-  });
-  const none = new THREE.MeshBasicMaterial({ visible: false });
-  const box = new THREE.Mesh(new THREE.BoxGeometry(1, COLUMN_H, 1), [side, side, none, none, side, side]);
-  box.position.y = COLUMN_H / 2;
-  box.renderOrder = 3;
-  g.add(box);
-  const edgeMat = new THREE.MeshBasicMaterial({ color: '#1c6fd9', transparent: true, alphaMap: fadeUp, depthWrite: false, toneMapped: false });
-  for (const x of [-0.5, 0.5])
-    for (const z of [-0.5, 0.5]) {
-      const e = new THREE.Mesh(new THREE.BoxGeometry(0.025, COLUMN_H, 0.025), edgeMat);
-      e.position.set(x, COLUMN_H / 2, z);
-      e.renderOrder = 4;
-      g.add(e);
+  g.name = 'Earth';
+  const tex = canvasTex(512, 256, (c, w, h) => {
+    const sea = c.createLinearGradient(0, 0, 0, h);
+    sea.addColorStop(0, '#1d4f91');
+    sea.addColorStop(0.5, '#2a6fb8');
+    sea.addColorStop(1, '#1d4f91');
+    c.fillStyle = sea;
+    c.fillRect(0, 0, w, h);
+    const r = rng(29);
+    // land: clusters of soft blobs, green and brown
+    for (let k = 0; k < 9; k++) {
+      const cx = r() * w;
+      const cy = h * (0.25 + r() * 0.5);
+      for (let i = 0; i < 26; i++) {
+        const x = cx + (r() - 0.5) * 90;
+        const y = cy + (r() - 0.5) * 50;
+        c.fillStyle = r() < 0.65 ? '#4f8a3c' : '#a08452';
+        c.beginPath();
+        c.ellipse(x, y, 6 + r() * 16, 4 + r() * 10, r() * 3, 0, Math.PI * 2);
+        c.fill();
+      }
     }
-  // the 1 m² on the ground: a teal fill in a white painted outline
-  const fill = new THREE.Mesh(
-    new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2),
-    new THREE.MeshBasicMaterial({ color: '#0c8599', transparent: true, opacity: 0.45, depthWrite: false, toneMapped: false }),
+    // clouds
+    c.globalAlpha = 0.7;
+    c.fillStyle = '#ffffff';
+    for (let i = 0; i < 70; i++) {
+      c.beginPath();
+      c.ellipse(r() * w, h * (0.15 + r() * 0.7), 8 + r() * 22, 1.5 + r() * 3, (r() - 0.5) * 0.4, 0, Math.PI * 2);
+      c.fill();
+    }
+    c.globalAlpha = 1;
+  });
+  const globe = new THREE.Mesh(
+    new THREE.SphereGeometry(EARTH_R, 64, 32),
+    new THREE.MeshStandardMaterial({ map: tex, roughness: 0.9, metalness: 0, fog: false }),
   );
-  fill.position.y = 0.004;
-  g.add(fill);
-  const paint = std('#ffffff', { roughness: 0.6 });
-  for (const [x, z, w, d] of [
-    [0, 0.5, 1.05, 0.05],
-    [0, -0.5, 1.05, 0.05],
-    [0.5, 0, 0.05, 1.05],
-    [-0.5, 0, 0.05, 1.05],
-  ]) {
-    const line = new THREE.Mesh(new THREE.BoxGeometry(w, 0.008, d), paint);
-    line.position.set(x, 0.004, z);
-    line.receiveShadow = true;
-    g.add(line);
-  }
-  // specks of air, thinner higher up
-  const r = rng(13);
-  const n = 150;
-  const specks = new THREE.InstancedMesh(
-    new THREE.SphereGeometry(0.018, 6, 4),
-    new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.75, depthWrite: false }),
-    n,
+  globe.rotation.set(1.1, -0.6, 0.1); // the equator toward the camera, not a pole
+  const glow = new THREE.Mesh(
+    new THREE.SphereGeometry(EARTH_R * 1.035, 64, 32),
+    new THREE.MeshBasicMaterial({ color: '#6fb6ff', transparent: true, opacity: 0.35, side: THREE.BackSide, depthWrite: false, fog: false }),
   );
-  const m = new THREE.Matrix4();
-  for (let i = 0; i < n; i++) {
-    const y = -Math.log(1 - r() * 0.93) * 1.6; // more near the ground
-    m.makeTranslation((r() - 0.5) * 0.9, Math.min(COLUMN_H - 0.2, y + 0.05), (r() - 0.5) * 0.9);
-    specks.setMatrixAt(i, m);
-  }
-  specks.renderOrder = 4;
-  g.add(specks);
+  g.add(glow, globe);
+  g.position.copy(EARTH_AT);
   return g;
 }
 
-/** An elephant (grey, wrinkled matt skin), standing on the yard facing the column. About 2.8 m to the top of its back. */
-function createElephant() {
-  const g = new THREE.Group();
-  g.name = 'Elephant';
-  g.position.copy(ELEPHANT_AT);
-  g.rotation.y = Math.PI + 0.4; // the head (its −x) toward the column
-  const skin = std('#8e8a88', { roughness: 0.95 });
-  const dark = std('#6f6a68', { roughness: 0.95 });
-  const ivory = std('#f3ead2', { roughness: 0.4 });
-  const add = (geo, mat, x, y, z, sx = 1, sy = 1, sz = 1) => {
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(x, y, z);
-    mesh.scale.set(sx, sy, sz);
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    g.add(mesh);
-    return mesh;
-  };
-  const sph = new THREE.SphereGeometry(1, 28, 18);
-  add(sph, skin, 0, 1.75, 0, 1.45, 0.98, 0.92); // body
-  add(sph, skin, -0.55, 2.25, 0, 0.75, 0.55, 0.7); // shoulders
-  for (const [x, z] of [
-    [-0.85, 0.5],
-    [-0.85, -0.5],
-    [0.85, 0.5],
-    [0.85, -0.5],
-  ]) {
-    add(new THREE.CylinderGeometry(0.3, 0.33, 1.3, 16), skin, x, 0.65, z);
-    add(new THREE.CylinderGeometry(0.36, 0.36, 0.08, 16), dark, x, 0.04, z);
-  }
-  add(sph, skin, -1.55, 2.25, 0, 0.62, 0.66, 0.6); // head
-  add(sph, skin, -1.62, 2.75, 0, 0.42, 0.25, 0.42); // the domed top of the head
-  for (const s of [-1, 1]) {
-    const ear = add(sph, dark, -1.2, 2.25, s * 0.55, 0.1, 0.62, 0.55);
-    ear.rotation.y = s * 0.5;
-    add(new THREE.SphereGeometry(0.06, 10, 8), std('#1a1a1a', { roughness: 0.3 }), -1.98, 2.38, s * 0.33); // eyes
-    const tusk = new THREE.Mesh(
-      new THREE.TubeGeometry(
-        new THREE.CatmullRomCurve3([
-          new THREE.Vector3(-1.9, 1.95, s * 0.22),
-          new THREE.Vector3(-2.25, 1.75, s * 0.28),
-          new THREE.Vector3(-2.45, 1.9, s * 0.3),
-        ]),
-        12,
-        0.05,
-        8,
-      ),
-      ivory,
-    );
-    tusk.castShadow = true;
-    g.add(tusk);
-  }
-  const trunk = new THREE.Mesh(
-    new THREE.TubeGeometry(
-      new THREE.CatmullRomCurve3([
-        new THREE.Vector3(-2.05, 2.1, 0),
-        new THREE.Vector3(-2.3, 1.6, 0),
-        new THREE.Vector3(-2.35, 1.0, 0),
-        new THREE.Vector3(-2.3, 0.55, 0),
-        new THREE.Vector3(-2.45, 0.35, 0),
-      ]),
-      30,
-      0.15,
-      14,
-    ),
-    skin,
-  );
-  trunk.castShadow = true;
-  g.add(trunk);
-  const tail = add(new THREE.CylinderGeometry(0.03, 0.05, 0.9, 8), dark, 1.5, 1.5, 0);
-  tail.rotation.z = -0.35;
-  return g;
+/** A clear blue sky for the body on the Earth: deeper blue above, pale near the horizon, a few soft clouds. */
+export function bodySkyTexture() {
+  return canvasTex(256, 256, (g, w, h) => {
+    const s = g.createLinearGradient(0, 0, 0, h);
+    s.addColorStop(0, '#4f8fd6');
+    s.addColorStop(0.55, '#8ec0ec');
+    s.addColorStop(0.85, '#d3e8f7');
+    s.addColorStop(1, '#efe6d6');
+    g.fillStyle = s;
+    g.fillRect(0, 0, w, h);
+    const r = rng(5);
+    g.fillStyle = 'rgba(255,255,255,0.55)';
+    for (const [cx, cy, k] of [
+      [40, 60, 1],
+      [205, 40, 0.8],
+      [150, 120, 0.6],
+    ])
+      for (let i = 0; i < 7; i++) {
+        g.beginPath();
+        g.ellipse(cx + (r() - 0.5) * 40 * k, cy + (r() - 0.5) * 8 * k, (12 + r() * 14) * k, (6 + r() * 5) * k, 0, 0, Math.PI * 2);
+        g.fill();
+      }
+  });
 }
 
-/** A student in school uniform (white shirt, navy trousers), standing with the arms a little out from the sides. */
-function createPerson() {
-  const g = new THREE.Group();
-  g.name = 'Student';
-  g.position.copy(PERSON_AT);
-  const skinM = std('#b97a4e', { roughness: 0.7 });
-  const shirt = std('#f8f9fa', { roughness: 0.8 });
-  const navy = std('#23306b', { roughness: 0.8 });
-  const hair = std('#1b1410', { roughness: 0.6 });
-  const shoe = std('#1a1a1a', { roughness: 0.45 });
-  const parts = [];
-  const add = (geo, mat, x, y, z, rz = 0) => {
-    const m = new THREE.Mesh(geo, mat);
-    m.position.set(x, y, z);
-    m.rotation.z = rz;
-    m.castShadow = true;
-    g.add(m);
-    parts.push(m);
-    return m;
-  };
-  for (const s of [-1, 1]) {
-    add(new THREE.CapsuleGeometry(0.068, 0.62, 6, 14), navy, s * 0.09, 0.44, 0);
-    add(new THREE.BoxGeometry(0.11, 0.07, 0.24), shoe, s * 0.09, 0.035, 0.04);
-    add(new THREE.CapsuleGeometry(0.05, 0.27, 6, 12), shirt, s * 0.24, 1.17, 0, s * 0.22);
-    add(new THREE.CapsuleGeometry(0.04, 0.24, 6, 12), skinM, s * 0.31, 0.89, 0.02, s * 0.12);
-    add(new THREE.SphereGeometry(0.048, 12, 10), skinM, s * 0.335, 0.73, 0.03);
-  }
-  add(new THREE.CapsuleGeometry(0.16, 0.36, 8, 18), shirt, 0, 1.08, 0).scale.set(1, 1, 0.66);
-  add(new THREE.CylinderGeometry(0.15, 0.15, 0.1, 18), navy, 0, 0.82, 0).scale.set(1, 1, 0.68);
-  add(new THREE.CylinderGeometry(0.045, 0.05, 0.08, 12), skinM, 0, 1.37, 0);
-  add(new THREE.SphereGeometry(0.11, 22, 16), skinM, 0, 1.47, 0).scale.set(0.92, 1.05, 0.98);
-  const hairCap = add(new THREE.SphereGeometry(0.115, 22, 12, 0, Math.PI * 2, 0, Math.PI * 0.55), hair, 0, 1.49, -0.008);
-  hairCap.rotation.x = -0.25;
-  return { root: g, parts };
-}
-
-/**
- * Everything around the box. `outdoors` holds what goes away in space (the yard, the wall, the tree, the pots, the
- * table); the column, the elephant and the student are their own groups.
- */
+/** Everything round the box and the student. `outdoors` (the floor, the table) goes away in space. */
 export function createWorld() {
   const root = new THREE.Group();
   root.name = 'Yard';
@@ -300,9 +176,8 @@ export function createWorld() {
   outdoors.add(ground);
   const table = createTable();
   outdoors.add(table);
-  const column = createColumn();
-  const elephant = createElephant();
-  const person = createPerson();
-  root.add(column, elephant, person.root);
-  return { root, outdoors, table, column, elephant, person };
+  const earth = createEarth();
+  earth.visible = false;
+  root.add(earth);
+  return { root, outdoors, table, earth };
 }

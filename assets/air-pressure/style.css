@@ -1,12 +1,12 @@
-/* Air pressure: the page, the colours that carry meaning (the outside air's pressure red, the inside air's blue, the
-   weight purple, the area teal: the same as the arrows and the square in the yard, src/app.js), the readings under the
-   action (a small list, then the formula), the note under the rule, the labels on the picture and the test's
-   answers. The rest of the panel is the kit's clean sheet (../../shared/lib/student/student.css). */
+/* Air pressure: the page, the colours that carry meaning (the outside air's pressure red, the inside blue, the space
+   suit's purple: the same as the arrows, src/app.js), the readings under the action (a small list with a bar for each
+   pressure, then one line), the note under the rule (the book's warning in space), the labels on the picture and the
+   test's answers. The rest of the panel is the kit's clean sheet (../../shared/lib/student/student.css). */
 html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
 #app { position: fixed; inset: 0; }
 body.bg-transparent { background: transparent; }
 
-.ap { --c-out: #d42a2a; --c-in: #1864ab; --c-W: #6741d9; --c-A: #0b7a8a; }
+.ap { --c-out: #d42a2a; --c-in: #1864ab; --c-suit: #9c36b5; }
 .ap sub, .ap sup { font-size: 0.72em; line-height: 0; }
 .ap .pvc-outcome { font-size: 15px; line-height: 1.6; }
 .ap .pvc-outcome b { font-size: 1.2em; color: var(--c-out); }
@@ -15,11 +15,14 @@ body.bg-transparent { background: transparent; }
 /* ── the readout: two cells (a word, its value) and the sum ── */
 .ap-read { display: flex; flex-direction: column; gap: 3px; container: apread / inline-size; }
 .ap-cells { display: flex; flex-direction: column; gap: 2px; }
-.ap-cell { --c: var(--ink); display: flex; align-items: baseline; gap: 5px; min-width: 0; padding: 2px 0 3px; border-bottom: 1.5px solid color-mix(in srgb, var(--c) 40%, #fff); color: var(--c); white-space: nowrap; }
+.ap-cell { --c: var(--ink); position: relative; display: flex; align-items: baseline; gap: 5px; min-width: 0; padding: 2px 0 6px; color: var(--c); white-space: nowrap; }
 .ap-cell.k-out { --c: var(--c-out); }
 .ap-cell.k-in { --c: var(--c-in); }
-.ap-cell.k-W { --c: var(--c-W); }
-.ap-cell.k-A { --c: var(--c-A); }
+.ap-cell.k-suit { --c: var(--c-suit); }
+/* a bar as long as the pressure (the full width is the air's 1,00,000 Pa) on a pale track */
+.ap-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; border-radius: 2px; background: color-mix(in srgb, var(--c) 16%, #fff); overflow: hidden; }
+.ap-bar i { display: block; height: 100%; width: 0; border-radius: 2px; background: var(--c); transition: width 0.6s ease; }
+@media (prefers-reduced-motion: reduce) { .ap-bar i { transition: none; } }
 .ap-ico { flex: none; align-self: center; display: inline-grid; width: 22px; height: 11px; }
 .ap-ico:empty { display: none; }
 .ap-ico svg { width: 22px; height: 11px; }
@@ -27,6 +30,8 @@ body.bg-transparent { background: transparent; }
 .ap-v { margin-left: auto; font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .ap-sum { min-height: 1.5em; font-size: 14.5px; line-height: 1.5; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
 .ap-sum b { color: var(--c-out); font-size: 1.08em; }
+.ap-sum.ok b { color: var(--ink); }
+.ap-sum.warn b { color: #b02a2a; }
 
 .ap-note { margin: 0; display: flex; align-items: center; gap: 4px; font-size: 12.5px; line-height: 1.4; color: var(--ink-3); }
 .ap-note:empty { display: none; }
@@ -81,9 +86,18 @@ body.bg-transparent { background: transparent; }
 @container pvc-panel (max-width: 330px) {
   .ap .pvc-examples .pvc-ex-word { font-size: 12.5px; }
 }
-/* phones held upright: the readings say the result, so the result line goes and the 3D keeps more room */
+/* narrow panels (beside the 3D, or under it on a phone held upright): the readings say the result, so the box's
+   result line goes and the 3D keeps more room */
 @container pvc (max-width: 420px) {
   .ap .pvc-outcome { display: none; }
   .ap .pvc-rule { --pvc-rule-lines: 2; }
-  .ap-note { display: none; }
 }
+/* short phones held upright: the small "made simple" note goes (the book's warning in space stays) */
+@media (max-aspect-ratio: 1/1) and (max-height: 600px) {
+  .ap-note:not(.warn) { display: none; }
+}
+/* the body: the result line is the one short line of each step (equal, nothing outside, equal again); no sum line */
+.ap[data-part="body"] .pvc-outcome { display: block; }
+.ap[data-part="body"] .ap-sum { display: none; }
+.ap[data-part="body"] .pvc-outcome b { color: var(--ink); }
+.ap[data-step="space"] .pvc-outcome b { color: #b02a2a; }
