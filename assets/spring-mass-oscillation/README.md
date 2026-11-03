@@ -28,7 +28,7 @@ To listen to it or control it from the book page, use the helper shipped in the 
 |---|---|---|---|
 | `lang` | Language | `bn` বাংলা · `en` English | `bn` |
 | `m` | Mass m | `0.25` 0.25 kg · `0.5` 0.5 kg · `1` 1 kg | `0.5` |
-| `k` | Spring constant k | `25` 25 N/m · `50` 50 N/m · `100` 100 N/m | `50` |
+| `k` | Spring constant k | `100` 100 N/m · `200` 200 N/m · `400` 400 N/m | `100` |
 | `graph` | Graph | `x` displacement · `v` velocity · `acc` acceleration | `x` |
 | `start` | Start (for pictures) | `rest` at rest · `run` oscillating | `rest` |
 | `a` | Amplitude (for 'oscillating') (default 5 cm) | number |  |

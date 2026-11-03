@@ -21,7 +21,7 @@ import { createI18n } from './i18n.js';
 import { fitPose } from './camera.js';
 import { boldArrow } from './arrows.js';
 import { createGraph } from './graph.js';
-import { ARM_Y, DISC, HANGER, RULE, SPRING, backdropTexture, createApparatus, hangerY } from './apparatus.js';
+import { ARM_Y, DISC, HANGER, RULE, SPRING, YAW, backdropTexture, createApparatus, hangerY } from './apparatus.js';
 import {
   A_MAX,
   DEFAULT_A,
@@ -59,13 +59,18 @@ export const DEFAULTS = {
 };
 
 const COLORS = { v: '#1c6fd9', vText: '#1864ab', a: '#2b8a3e', aText: '#237a35', eq: '#1d2733' };
-const DIR = new THREE.Vector3(0.44, 0.2, 1).normalize(); // a gentle three-quarter view from the front right, a little above
-const MARGIN = { top: 54, bottom: 12, side: 12 };
+// a three-quarter view from the front right, 22° above; the stand and the rule are turned 25° toward it (YAW), the
+// bench is not, so its edge runs across the picture and the rule still faces the camera
+const DIR = new THREE.Vector3(Math.sin(0.66) * Math.cos(0.384), Math.sin(0.384), Math.cos(0.66) * Math.cos(0.384));
+const MARGIN = { top: 16, bottom: 6, side: 10 }; // the follow window: only the spring runs under the corner buttons
 const DOUBLE_TAP = 400; // ms
 const LINE_Z = RULE.z + 0.0029; // the level lines lie on the rule's face plane, behind the mass
 const LINE_X0 = RULE.x - RULE.w / 2;
 const LINE_X1 = 0.052;
-const ARROW_X = DISC.R + 0.014;
+const ARROW_OUT = DISC.R + 0.014; // the velocity arrow's distance from the axis, toward the camera's right
+const Y_AXIS = new THREE.Vector3(0, 1, 0);
+/** A point given in the turned frame of the stand and the rule, in the world. */
+const W = (x, y, z) => new THREE.Vector3(x, y, z).applyAxisAngle(Y_AXIS, YAW);
 const V = (x, y, z = 0) => new THREE.Vector3(x, y, z);
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 const discsFor = (m) => Math.max(1, Math.round(m / DISC.kg));
@@ -125,7 +130,15 @@ export function createApp(root, options = {}) {
   );
   const gWords = /** @type {HTMLElement[]} */ ([...$$(ui.learn, '[data-graph]')]);
   const canvas = /** @type {HTMLCanvasElement} */ ($('.sm-canvas'));
-  const graph = createGraph(canvas, { time: t('g_time'), num: N, K: t('g_K'), U: t('g_U') });
+  const gWordsAll = { time: t('g_time'), num: N, K: t('g_K'), U: t('g_U'), total: t('g_total') };
+  const graph = createGraph(canvas, gWordsAll);
+  // the test's graph: drawn on the picture, top left, only for the questions read off a graph
+  const qBox = document.createElement('div');
+  qBox.className = 'sm-qgraph';
+  qBox.hidden = true;
+  qBox.innerHTML = `<p class="sm-qgraph-title">${t('q_graph_title')}</p><canvas role="img" aria-label="${t('q_graph_title')}"></canvas>`;
+  ui.stage.appendChild(qBox);
+  const qGraph = createGraph(/** @type {HTMLCanvasElement} */ (qBox.querySelector('canvas')), gWordsAll, { bars: false });
   // the honest note: time runs slower than real (top left of the picture)
   const slowNote = document.createElement('div');
   slowNote.className = 'sm-slow';
@@ -145,7 +158,7 @@ export function createApp(root, options = {}) {
   scene.add(new THREE.HemisphereLight('#e8eeff', '#6b4a32', 0.9));
   const sun = new THREE.DirectionalLight('#fff3e0', 2.2);
   sun.position.set(0.9, ARM_Y + 1.2, 1.3);
-  sun.target.position.set(-0.03, ARM_Y - 0.35, -0.03);
+  sun.target.position.set(-0.03, ARM_Y - 0.25, -0.03);
   const fill = new THREE.DirectionalLight('#cfdcff', 0.7);
   fill.position.set(-1.2, ARM_Y + 0.4, 1.0);
   scene.add(sun, sun.target, fill);
@@ -157,7 +170,7 @@ export function createApp(root, options = {}) {
     sun.shadow.bias = -0.0004;
     sun.shadow.normalBias = 0.002;
     sun.shadow.radius = 3;
-    Object.assign(sun.shadow.camera, { left: -0.3, right: 0.3, top: 0.5, bottom: -0.5, near: 0.5, far: 4 });
+    Object.assign(sun.shadow.camera, { left: -0.35, right: 0.35, top: 0.4, bottom: -0.4, near: 0.5, far: 4 });
     sun.shadow.camera.updateProjectionMatrix();
   }
   sun.target.updateMatrixWorld();
@@ -185,10 +198,20 @@ export function createApp(root, options = {}) {
       l.position.x = (LINE_X0 + LINE_X1) / 2;
     }
   }
+  // the amplitude: a green bar from the সাম্যাবস্থা down to −a, just left of the rule
+  const aBar = new THREE.Mesh(new THREE.BoxGeometry(0.0018, 1, 0.0008), lineMat(COLORS.a));
+  aBar.position.set(LINE_X0 - 0.003, 0, 0);
+  aBar.userData.noExport = true;
   eqLine.position.z = LINE_Z;
   topLine.position.z = LINE_Z;
   botLine.position.z = LINE_Z;
-  scene.add(eqLine, topLine, botLine);
+  aBar.position.z = LINE_Z;
+  const levels = new THREE.Group();
+  levels.name = 'Levels';
+  levels.rotation.y = YAW;
+  levels.userData.noExport = true;
+  levels.add(eqLine, topLine, botLine, aBar);
+  scene.add(levels);
   const vArrow = boldArrow('Velocity', COLORS.v, 0.0016);
   scene.add(vArrow.root);
 
@@ -221,6 +244,7 @@ export function createApp(root, options = {}) {
     runs: /** @type {{ m: number, k: number, a: number }[]} */ ([]),
     found: { amp: false, mk: false },
     show: { arrow: true, ends: true, labels: true },
+    qgraph: /** @type {object | null} */ (null), // the test's graph on the picture
   };
   s.x0 = staticStretch(s.m, s.k);
   s.discs = discsFor(s.m);
@@ -246,16 +270,21 @@ export function createApp(root, options = {}) {
     return out;
   }
   /** The pointer's height at equilibrium (world y), for the picture's current stretch. */
-  const eqY = () => hangerY(SPRING.closed + s.x0) + HANGER.plateTop - HANGER.plateH / 2;
+  const eqY = () => hangerY(SPRING.L0 + s.x0) + HANGER.plateTop - HANGER.plateH / 2;
+  /** The middle of the discs (world), from the hanger's height (never from a matrix that may be a frame old). */
+  const massCentre = (outV) => outV.set(0, app.hanger.root.position.y + HANGER.plateTop + (s.discs * (DISC.h + DISC.gap)) / 2, 0);
   const amplitudeShown = () => (s.state === 'run' ? s.a : s.state === 'held' ? Math.abs(s.x) : 0);
 
   // ── the scene from the state ────────────────────────────────────────────────
   const tmpV = new THREE.Vector3();
+  const camRight = new THREE.Vector3();
+  let framed = '';
+  let cameraFlying = false;
   const UP = V(0, 1, 0);
   const DOWN = V(0, -1, 0);
   function syncScene() {
     const p = current();
-    const Lb = Math.max(SPRING.closed, SPRING.closed + s.x0 - p.x);
+    const Lb = Math.max(SPRING.solid + 0.002, SPRING.L0 + s.x0 - p.x);
     app.set({ Lb, discs: s.discs });
     const y0 = eqY();
     eqLine.position.y = y0;
@@ -266,13 +295,18 @@ export function createApp(root, options = {}) {
     topLine.position.y = y0 + a;
     botLine.position.y = y0 - a;
     if (s.state === 'held' && s.x > 0) botLine.position.y = y0 + a; // pushed up: the line where it is
-    // the velocity arrow beside the mass, its length in proportion to v (0.16 m on the picture per 1 m/s)
-    const len = Math.min(0.1, Math.abs(p.v) * 0.16);
-    const show = s.show.arrow && s.state === 'run' && len > 0.006;
+    aBar.visible = ends && s.state === 'run';
+    aBar.scale.y = Math.max(0.001, a);
+    aBar.position.y = y0 - a / 2;
+    if (!s.userMovedCamera && !cameraFlying && framed !== `${s.x0}|${stage.width}|${stage.height}`) frameNow();
+    // the velocity arrow beside the mass (on the camera's right), its length in proportion to v within a run: at the
+    // fastest it is 4 cm + 0.35 a long on the picture (about 45–65 px on a phone), so a bigger pull shows a longer one
+    const len = s.a > 0 ? (Math.abs(p.v) / (w() * s.a)) * (0.04 + 0.35 * s.a) : 0;
+    const show = s.show.arrow && s.state === 'run' && len > 0.005;
     if (show) {
-      app.massCentre(tmpV);
-      tmpV.x = ARROW_X;
-      tmpV.z = 0.004;
+      massCentre(tmpV);
+      camRight.setFromMatrixColumn(camera.matrixWorld, 0).setY(0).normalize();
+      tmpV.addScaledVector(camRight, ARROW_OUT);
       tmpV.y -= (Math.sign(p.v) * len) / 2;
       vArrow.set(tmpV, p.v > 0 ? UP : DOWN, len);
     } else vArrow.hide();
@@ -287,7 +321,7 @@ export function createApp(root, options = {}) {
     if (!s.runs.length) return { label: 'act_release', step: 1 };
     if (!s.found.amp) {
       const last = s.runs[s.runs.length - 1].a;
-      return { label: last > 0.03 ? 'act_less' : 'act_more', step: 2 };
+      return { label: last > 0.035 ? 'act_less' : 'act_more', step: 2 };
     }
     if (!s.found.mk) return { label: 'act_mass', step: 3 };
     return { label: 'act_again', step: '' };
@@ -297,7 +331,7 @@ export function createApp(root, options = {}) {
     const T = period(s.m, s.k);
     if (s.state === 'run') sheet.outcome(t('out_run', { T: fixed(T), f: fixed(frequency(s.m, s.k)) }));
     else if (s.state === 'held') sheet.outcome(t('out_held', { a: fmt(Math.abs(s.x) * 100, 1), dir: t(s.x < 0 ? 'dir_down' : 'dir_up') }));
-    else sheet.outcome(t('out_rest', { x0: fmt(staticStretch(s.m, s.k) * 100, 1) }));
+    else sheet.outcome(t('out_rest', { x0: fmt(staticStretch(s.m, s.k) * 100, 2) }));
     const f = s.found;
     let rule = 'rule_start';
     if (f.amp && f.mk) rule = 'rule_all';
@@ -346,7 +380,16 @@ export function createApp(root, options = {}) {
       K: e.K,
       U: e.U,
       E: e.E,
+      Emax: 0.5 * s.k * amax() ** 2,
     });
+  }
+  /** The test's graph on the picture (questions that are read off a graph). */
+  function drawQGraph() {
+    const q = s.qgraph;
+    qBox.hidden = !q;
+    slowNote.hidden = Boolean(q);
+    if (!q) return;
+    qGraph.draw({ show: 'x', run: true, tau: s.tau, a: s.a, w: w(), phase0: 0, x: 0, aScale: A_MAX, K: 0, U: 0, E: 0, Emax: 1, ...q });
   }
 
   // ── labels on the picture ───────────────────────────────────────────────────
@@ -386,14 +429,14 @@ export function createApp(root, options = {}) {
     return { left: Math.min(A0.x, A1.x) - 9, top: Math.min(A0.y, A1.y) - 6, right: Math.max(A0.x, A1.x) + 9, bottom: Math.max(A0.y, A1.y) + 6 };
   }
   function springBox() {
-    toScreen(V(-SPRING.R, ARM_Y, 0), A0);
+    toScreen(V(-SPRING.R, hangerY(SPRING.L0 + s.x0) + A_MAX + 0.04, 0), A0);
     toScreen(V(SPRING.R, app.hanger.root.position.y, 0), A1);
     return { left: Math.min(A0.x, A1.x) - 4, right: Math.max(A0.x, A1.x) + 4, top: Math.min(A0.y, A1.y), bottom: Math.max(A0.y, A1.y) };
   }
   const anno = createAnnotations({
     stage,
     layer: ui.annoLayer,
-    avoid: [ui.corner, ui.hint, slowNote, massBox, arrowBox, springBox, () => action?.box(), () => action?.ringBox()],
+    avoid: [ui.corner, ui.hint, slowNote, qBox, massBox, arrowBox, springBox, () => action?.box(), () => action?.ringBox()],
   });
   const spot = (dx, dy) => ({ dx, dy });
   const LEFT = [spot(-14, 0), spot(-14, -14), spot(-14, 14), spot(-26, -22), spot(-26, 22)];
@@ -404,29 +447,26 @@ export function createApp(root, options = {}) {
     const want = new Map();
     if (!s.show.labels) return want;
     const y0 = () => eqY();
-    want.set('eq', { text: t('lbl_eq'), point: () => V(LINE_X0, y0(), LINE_Z), spots: LEFT, color: COLORS.eq });
+    want.set('eq', { text: t('lbl_eq'), point: () => W(LINE_X0, y0(), LINE_Z), spots: LEFT, color: COLORS.eq });
     const a = amplitudeShown();
     if (s.show.ends && a > 0.0015) {
-      const quiz = s.mode === 'quiz';
       if (s.state === 'run') {
-        want.set('top', {
-          text: t(quiz ? 'lbl_top_q' : 'lbl_top'),
-          point: () => V(LINE_X0, y0() + s.a, LINE_Z),
-          spots: LEFT_UP,
-          color: COLORS.aText,
-          optional: true,
-        });
-        want.set('bot', {
-          text: t(quiz ? 'lbl_bot_q' : 'lbl_bot'),
-          point: () => V(LINE_X0, y0() - s.a, LINE_Z),
-          spots: LEFT_DOWN,
+        // v = 0 at both ends (as চিত্র ৭.০১); not in the test, where it would give answers away
+        if (s.mode !== 'quiz') {
+          want.set('top', { text: t('lbl_v0'), point: () => W(LINE_X0, y0() + s.a, LINE_Z), spots: LEFT_UP, color: COLORS.aText, optional: true });
+          want.set('bot', { text: t('lbl_v0'), point: () => W(LINE_X0, y0() - s.a, LINE_Z), spots: LEFT_DOWN, color: COLORS.aText, optional: true });
+        }
+        want.set('amp', {
+          text: t('lbl_amp'),
+          point: () => W(LINE_X0 - 0.003, y0() - s.a / 2, LINE_Z),
+          spots: [spot(-14, 0), spot(-14, 10), spot(-14, -10)],
           color: COLORS.aText,
           optional: true,
         });
       } else if (s.state === 'held') {
         want.set('pull', {
           text: t('lbl_a', { a: fmt(Math.abs(s.x) * 100, 1) }),
-          point: () => V(LINE_X0, y0() + s.x, LINE_Z),
+          point: () => W(LINE_X0, y0() + s.x, LINE_Z),
           spots: s.x < 0 ? LEFT_DOWN : LEFT_UP,
           color: COLORS.aText,
         });
@@ -461,13 +501,25 @@ export function createApp(root, options = {}) {
   }
   // ── camera ──────────────────────────────────────────────────────────────────
   const bbox = new THREE.Box3();
-  /** The box to frame: from the arm to the lowest the mass can go, for the target m and k. */
+  /**
+   * The follow camera's fixed window, round the equilibrium for the spring's stretch now: the mass at both ends of its
+   * largest travel, the lower part of the spring, the rule's labels on the left and the arrow on the right. The arm
+   * and the top of the spring may leave the frame.
+   */
+  const corner = new THREE.Vector3();
   function lookBox() {
-    const x0 = staticStretch(s.m, s.k);
-    const low = hangerY(SPRING.closed + x0 + amax()) + HANGER.plateTop - 0.012;
-    bbox.min.set(LINE_X0 - 0.03, low, -0.035);
-    bbox.max.set(LINE_X1 + 0.012, ARM_Y + 0.03, 0.035);
+    const yH = hangerY(SPRING.L0 + s.x0);
+    const low = yH + HANGER.plateTop - HANGER.plateH - A_MAX - 0.006;
+    const high = yH + A_MAX + 0.012;
+    bbox.makeEmpty();
+    for (const x of [LINE_X0, DISC.R + 0.02])
+      for (const y of [low, high]) for (const z of [-0.015, 0.02]) bbox.expandByPoint(corner.copy(W(x, y, z)));
     return bbox;
+  }
+  /** Puts the camera on the window at once (the follow camera: called whenever the stretch or the size changes). */
+  function frameNow() {
+    framed = `${s.x0}|${stage.width}|${stage.height}`;
+    place(viewPose());
   }
   const viewPose = () => fitPose({ box: lookBox(), dir: DIR, camera, width: stage.width, height: stage.height, margin: MARGIN });
   function place(pose) {
@@ -481,18 +533,26 @@ export function createApp(root, options = {}) {
     if (!duration) {
       tweener.cancel('camera');
       place({ position, target: aim });
+      framed = `${s.x0}|${stage.width}|${stage.height}`;
       return Promise.resolve(true);
     }
-    return tweener.animate({
-      key: 'camera',
-      duration,
-      ease: ease.inOutCubic,
-      onUpdate: (k) => {
-        camera.position.lerpVectors(p0, position, k);
-        controls.target.lerpVectors(t0, aim, k);
-        controls.update();
-      },
-    }).finished;
+    cameraFlying = true;
+    return tweener
+      .animate({
+        key: 'camera',
+        duration,
+        ease: ease.inOutCubic,
+        onUpdate: (k) => {
+          camera.position.lerpVectors(p0, position, k);
+          controls.target.lerpVectors(t0, aim, k);
+          controls.update();
+        },
+      })
+      .finished.then((ok) => {
+        cameraFlying = false;
+        if (ok) framed = `${s.x0}|${stage.width}|${stage.height}`;
+        return ok;
+      });
   }
   function homeView(animate = true) {
     s.userMovedCamera = false;
@@ -502,11 +562,13 @@ export function createApp(root, options = {}) {
   controls.addEventListener('start', () => {
     s.userMovedCamera = true;
     tweener.cancel('camera');
+    cameraFlying = false;
     syncUI();
   });
   stage.onResize(() => {
-    if (!s.userMovedCamera && !tweener.busy) place(viewPose());
+    if (!s.userMovedCamera && !cameraFlying) frameNow();
     syncScene();
+    drawQGraph();
     refresh();
   });
 
@@ -642,7 +704,6 @@ export function createApp(root, options = {}) {
           })
       : Promise.resolve(true);
     if (!animate) s.x0 = to;
-    if (!s.userMovedCamera) flyTo(viewPose(), animate ? 0.6 : 0);
     syncScene();
     refresh();
     emitChange();
@@ -661,7 +722,7 @@ export function createApp(root, options = {}) {
       return release(s.x);
     }
     const last = s.runs.length ? s.runs[s.runs.length - 1].a : DEFAULT_A;
-    if (p.label === 'act_less') return pullAndRelease(Math.min(0.02, amax() / 2));
+    if (p.label === 'act_less') return pullAndRelease(Math.min(0.025, amax() / 2));
     if (p.label === 'act_more') return pullAndRelease(amax());
     if (p.label === 'act_mass') {
       const ok = await setSpring(nextMass(), s.k);
@@ -690,7 +751,7 @@ export function createApp(root, options = {}) {
   let drag = null;
   /** Pixels per metre, vertically, at the mass. */
   function pxPerMetre() {
-    const c = app.massCentre(new THREE.Vector3());
+    const c = massCentre(new THREE.Vector3());
     toScreen(c, A0);
     toScreen(c.add(V(0, 0.05, 0)), A1);
     return Math.max(1, Math.abs(A1.y - A0.y) / 0.05);
@@ -784,34 +845,36 @@ export function createApp(root, options = {}) {
   let question = null;
   let picked = -1;
   let learnSaved = null;
-  const KINDS = ['vmax', 'energy', 'phase', 'mass', 'amp'];
+  /** The five questions: two on the picture, two read off a graph, one on the rule. */
+  const KINDS = ['energy', 'slope', 'phase', 'freq', 'amp'];
   const CHOICES = {
-    vmax: ['c_vmax_eq', 'c_vmax_ends', 'c_vmax_bot', 'c_vmax_half'],
     energy: ['c_en_U', 'c_en_K', 'c_en_half', 'c_en_none'],
+    slope: ['c_sl_C', 'c_sl_A', 'c_sl_B', 'c_sl_D'],
     phase: ['c_ph_T', 'c_ph_half', 'c_ph_quarter', 'c_ph_2T'],
-    mass: ['c_m_2', 'c_m_4', 'c_m_half', 'c_m_same'],
+    freq: ['c_f_right', 'c_f_T', 'c_f_half', 'c_f_2T'],
     amp: ['c_a_same', 'c_a_2', 'c_a_half', 'c_a_sqrt'],
   };
   const MISTAKES = {
-    c_vmax_ends: 'mis_vmax_ends',
-    c_vmax_bot: 'mis_vmax_bot',
-    c_vmax_half: 'mis_vmax_half',
     c_en_K: 'mis_en_K',
     c_en_half: 'mis_en_half',
     c_en_none: 'mis_en_none',
+    c_sl_A: 'mis_sl_A',
+    c_sl_B: 'mis_sl_B',
+    c_sl_D: 'mis_sl_D',
     c_ph_half: 'mis_ph_half',
     c_ph_quarter: 'mis_ph_quarter',
     c_ph_2T: 'mis_ph_2T',
-    c_m_4: 'mis_m_4',
-    c_m_half: 'mis_m_half',
-    c_m_same: 'mis_m_same',
+    c_f_T: 'mis_f_T',
+    c_f_half: 'mis_f_half',
+    c_f_2T: 'mis_f_2T',
     c_a_2: 'mis_a_2',
     c_a_half: 'mis_a_half',
     c_a_sqrt: 'mis_a_sqrt',
   };
   /** A test scene: m, k, a run of amplitude a from `at` seconds after the release, frozen or not. */
-  function scene_({ m = DEFAULT_M, k = DEFAULT_K, a = DEFAULT_A, at = 0, frozen = false, arrow = true }) {
+  function scene_({ m = DEFAULT_M, k = DEFAULT_K, a = DEFAULT_A, at = 0, frozen = false, arrow = true, qgraph = null }) {
     cancelRuns();
+    s.qgraph = qgraph;
     s.m = m;
     s.k = k;
     s.discs = discsFor(m);
@@ -826,6 +889,7 @@ export function createApp(root, options = {}) {
     syncUI();
     syncScene();
     refresh();
+    drawQGraph();
   }
   const quiz = createQuiz({
     ui,
@@ -833,7 +897,7 @@ export function createApp(root, options = {}) {
     emit,
     audio,
     questions: KINDS.length,
-    lines: { text: 3, feedback: 3 },
+    lines: { text: 2, feedback: 3 },
     action,
     hooks: {
       enter() {
@@ -849,6 +913,8 @@ export function createApp(root, options = {}) {
         s.locked = false;
         cancelRuns();
         s.show = { arrow: true, ends: true, labels: true };
+        s.qgraph = null;
+        drawQGraph();
         s.m = learnSaved?.m ?? s.m;
         s.k = learnSaved?.k ?? s.k;
         s.discs = discsFor(s.m);
@@ -870,18 +936,26 @@ export function createApp(root, options = {}) {
         const kind = KINDS[i % KINDS.length];
         const T = period(DEFAULT_M, DEFAULT_K);
         let text = '';
-        if (kind === 'vmax') {
-          scene_({ arrow: false });
-          text = t('q_vmax');
-        } else if (kind === 'energy') {
+        if (kind === 'energy') {
           scene_({ at: 2 * T, frozen: true, arrow: false });
           text = t('q_energy');
+        } else if (kind === 'slope') {
+          // lettered points on the x–t graph: A at the top, B on the way down, C at the equilibrium going down, D at the bottom
+          const points = [
+            { t: 0.5 * T, label: 'A' },
+            { t: 0.625 * T, label: 'B' },
+            { t: 0.75 * T, label: 'C' },
+            { t: T, label: 'D' },
+          ];
+          scene_({ at: 1.5 * T, frozen: true, arrow: false, qgraph: { window: 1.5 * T, periods: false, points } });
+          text = t('q_slope');
         } else if (kind === 'phase') {
           scene_({ at: 1.25 * T, frozen: true });
           text = t('q_phase');
-        } else if (kind === 'mass') {
-          scene_({ m: 0.25, k: 25 });
-          text = t('q_mass', { m1: fmt(0.25), m2: fmt(1) });
+        } else if (kind === 'freq') {
+          // 1 kg on 100 N/m: T ≈ 0.63 s, read off a graph with a 0.2 s grid and no T marks
+          scene_({ m: 1, k: 100, at: 1.6, frozen: true, arrow: false, qgraph: { window: 1.6, periods: false } });
+          text = t('q_freq');
         } else {
           scene_({ a: 0.02 });
           text = t('q_amp', { a1: fmt(2), a2: fmt(4) });
@@ -897,7 +971,8 @@ export function createApp(root, options = {}) {
           choices: [0, 1, 2, 3],
           expected: list.indexOf(items[0]),
           tolerance: 0.5,
-          label: (j) => `<span class="sm-opt">${t(list[j])}</span>`,
+          label: (j) =>
+            `<span class="sm-opt">${t(list[j], { f1: fmt(1 / period(1, 100), 1), f0: fmt(period(1, 100), 1), f2: fmt(2 / period(1, 100), 1), f3: fmt(0.5 / period(1, 100), 1) })}</span>`,
           meta: { kind, answer: items[0] },
         };
       },
@@ -905,18 +980,13 @@ export function createApp(root, options = {}) {
         const { kind, list } = question;
         const wrong = correct ? null : list[picked];
         const note = wrong && MISTAKES[wrong] ? ` ${t(MISTAKES[wrong])}` : '';
-        if (kind === 'vmax') {
-          s.show.arrow = true;
-          syncScene();
-          refresh();
+        if (kind === 'freq') {
+          const Tq = period(1, 100);
+          s.qgraph = { ...s.qgraph, periods: true }; // the answer: the period marked on the graph
+          drawQGraph();
+          return t('why_freq', { T: fixed(Tq), f: fmt(1 / Tq, 1) }) + note;
         }
-        if (kind === 'mass') {
-          const T1 = fixed(period(0.25, 25));
-          const T2 = fixed(period(1, 25));
-          scene_({ m: 1, k: 25 });
-          flyTo(viewPose(), 0.6);
-          return t('why_mass', { T1, T2 }) + note;
-        }
+        if (kind === 'slope') return t('why_slope') + note;
         if (kind === 'amp') {
           scene_({ a: 0.04 });
           return t('why_amp', { T: fixed(period(DEFAULT_M, DEFAULT_K)) }) + note;
@@ -982,6 +1052,10 @@ export function createApp(root, options = {}) {
     const b = /** @type {HTMLElement} */ (/** @type {Element} */ (e.target).closest('button'));
     if (!b || !root.contains(b)) return;
     audio.unlock();
+    // a tap or a click on a word or the action hands the keys back to the picture (the arrow keys pull the mass);
+    // from the keyboard (detail 0) the focus stays, so the arrows still move along the row of words
+    if (e.detail > 0 && (b.dataset.example || b.dataset.spring || b.dataset.graph || b.classList.contains('pvc-act') || b.dataset.act === 'stop'))
+      root.focus({ preventScroll: true });
     if (b.dataset.view === 'front') homeView();
     if (b.dataset.example) chooseSpring(Number(b.dataset.example), s.k);
     if (b.dataset.spring) chooseSpring(s.m, Number(b.dataset.spring));

@@ -1,7 +1,8 @@
 // The apparatus, in metres (the bench top is y = 0), procedural three.js and real lab sizes: a retort stand (a heavy
-// enamelled base, a chrome rod, a boss head and a horizontal arm), a closed-coil steel extension spring hanging on the
-// arm by its top loop (30 turns of 2.2 mm wire, 22 mm across; its coils touch when it is unloaded and open up as it
-// stretches: the wire is rebuilt in place every frame, never scaled, so it keeps its round section), a hanger with a
+// enamelled base, a chrome rod, a boss head and a horizontal arm), an open-coil steel spring hanging on the arm by its
+// top loop (30 turns of 2.2 mm wire, 22 mm across, a 100 mm body unloaded; its coils open as it stretches and bunch,
+// never quite touching, as it is squeezed: the wire is rebuilt in place every frame, never scaled, so it keeps its
+// round section), a hanger with a
 // hook, a base plate and a pointer, carrying 1, 2 or 4 slotted brass masses of 250 g, and a metre rule in cm behind
 // the mass. The teak bench under it all.
 import * as THREE from 'three';
@@ -14,9 +15,12 @@ export const SPRING = {
   perTurn: 20,
   sides: 8,
 };
-SPRING.closed = SPRING.turns * 2 * SPRING.r; // the body's length with the coils touching (unloaded)
+SPRING.solid = SPRING.turns * 2 * SPRING.r; // the body's length with the coils touching
+SPRING.L0 = 0.1; // the body's length unloaded
+/** The stand, the rule and the spring are turned this much about the spring's axis (the bench is not). */
+export const YAW = THREE.MathUtils.degToRad(25);
 /** The arm the spring hangs on (its centre line, y). */
-export const ARM_Y = 0.8;
+export const ARM_Y = 0.42;
 const ARM_R = 0.0042;
 const HOOK_R = 0.0012; // the hanger's hook wire
 /** One slotted mass. */
@@ -24,7 +28,7 @@ export const DISC = { R: 0.032, h: 0.011, gap: 0.0006, kg: 0.25 };
 /** Below the hanger's hook: the rod, then the base plate the discs sit on. */
 export const HANGER = { rodTop: -0.028, plateTop: -0.078, plateH: 0.004, plateR: 0.027 };
 /** The metre rule behind the mass (left, a little back). */
-export const RULE = { x: -0.072, z: -0.026, w: 0.032, top: ARM_Y - 0.012, length: 0.72 };
+export const RULE = { x: -0.072, z: -0.026, w: 0.032, top: ARM_Y - 0.012, length: 0.4 };
 const ROD = { x: -0.104, z: -0.034, r: 0.0062 };
 
 // ── the spring's wire ───────────────────────────────────────────────────────
@@ -93,7 +97,7 @@ function createWire(material) {
   const { sides } = SPRING;
   const MAX = 29 + 6 + SPRING.turns * SPRING.perTurn + 6 + 28 + 4;
   const pts = Array.from({ length: MAX }, () => new THREE.Vector3());
-  const count = centreLine(pts, SPRING.closed);
+  const count = centreLine(pts, SPRING.L0);
   const ring = sides + 1;
   const pos = new Float32Array(count * ring * 3);
   const nor = new Float32Array(count * ring * 3);
@@ -153,7 +157,7 @@ function createWire(material) {
     geo.attributes.position.needsUpdate = true;
     geo.attributes.normal.needsUpdate = true;
   }
-  setLength(SPRING.closed);
+  setLength(SPRING.L0);
   geo.computeBoundingSphere();
   return { mesh, setLength };
 }
@@ -278,7 +282,7 @@ function ruleTexture(num) {
   grad.addColorStop(1, 'rgba(120,90,40,0.12)');
   g.fillStyle = grad;
   g.fillRect(0, 0, W, H);
-  const cm = 72; // the rule's length
+  const cm = 40; // the rule's length
   const pxCm = H / cm;
   g.fillStyle = '#1b1f24';
   for (let i = 0; i <= cm * 2; i++) {
@@ -288,7 +292,7 @@ function ruleTexture(num) {
     const len = five ? 56 : whole ? 38 : 22;
     g.fillRect(W - len, y - (five ? 2 : 1.2), len, five ? 4 : 2.4);
   }
-  g.font = '700 30px "Noto Sans Bengali", sans-serif';
+  g.font = '700 40px "Noto Sans Bengali", sans-serif';
   g.textAlign = 'left';
   g.textBaseline = 'middle';
   for (let i = 5; i < cm; i += 5) g.fillText(num(String(i)), 8, i * pxCm);
@@ -335,17 +339,16 @@ function benchTexture() {
   return t;
 }
 
-/** The backdrop: a calm slate blue at the top to a soft warm grey low down (screen space). */
+/** The backdrop: a soft blue-grey at the top to a pale blue low down (screen space). */
 export function backdropTexture() {
   const c = document.createElement('canvas');
   c.width = 4;
   c.height = 256;
   const g = /** @type {CanvasRenderingContext2D} */ (c.getContext('2d'));
   const s = g.createLinearGradient(0, 0, 0, 256);
-  s.addColorStop(0, '#34445e');
-  s.addColorStop(0.55, '#5b6c88');
-  s.addColorStop(0.9, '#93a0b6');
-  s.addColorStop(1, '#a3adbf');
+  s.addColorStop(0, '#7f9bc0');
+  s.addColorStop(0.6, '#b4c6dc');
+  s.addColorStop(1, '#d7e2ef');
   g.fillStyle = s;
   g.fillRect(0, 0, 4, 256);
   const t = new THREE.CanvasTexture(c);
@@ -379,15 +382,15 @@ export function createApparatus(M, num) {
   // the stand
   const stand = new THREE.Group();
   stand.name = 'RetortStand';
-  const base = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.024, 0.13, 1, 1, 1), mats.enamel);
-  base.position.set(ROD.x + 0.04, 0.012, ROD.z + 0.02);
-  const baseEdge = new THREE.Mesh(new THREE.BoxGeometry(0.206, 0.006, 0.136), mats.iron);
+  const base = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.02, 0.11, 1, 1, 1), mats.enamel);
+  base.position.set(ROD.x + 0.03, 0.01, ROD.z - 0.01);
+  const baseEdge = new THREE.Mesh(new THREE.BoxGeometry(0.166, 0.005, 0.116), mats.iron);
   baseEdge.position.set(base.position.x, 0.003, base.position.z);
   const rodTop = ARM_Y + 0.07;
   const rod = new THREE.Mesh(new THREE.CylinderGeometry(ROD.r, ROD.r, rodTop - 0.02, 24), mats.chrome);
   rod.position.set(ROD.x, 0.02 + (rodTop - 0.02) / 2, ROD.z);
   const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.013, 0.012, 24), mats.iron);
-  foot.position.set(ROD.x, 0.03, ROD.z);
+  foot.position.set(ROD.x, 0.026, ROD.z);
   const cap = new THREE.Mesh(new THREE.SphereGeometry(ROD.r, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), mats.chrome);
   cap.position.set(ROD.x, rodTop, ROD.z);
   // the boss head: a block round the rod with two thumbscrews, the arm out of it toward the spring
@@ -428,12 +431,17 @@ export function createApparatus(M, num) {
   // the bench
   const benchMat = new THREE.MeshStandardMaterial({ name: 'Teak', map: benchTexture(), roughness: 0.55 });
   const benchEdge = new THREE.MeshStandardMaterial({ name: 'TeakEdge', color: 0x6a3514, roughness: 0.7 });
-  const bench = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.04, 0.7), [benchEdge, benchEdge, benchMat, benchEdge, benchEdge, benchEdge]);
-  bench.position.set(0, -0.02, -0.05);
+  const bench = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.04, 0.8), [benchEdge, benchEdge, benchMat, benchEdge, benchEdge, benchEdge]);
+  bench.position.set(-0.1, -0.02, -0.2); // its front edge 0.2 m in front of the spring
   bench.name = 'Bench';
   bench.receiveShadow = true;
 
-  root.add(stand, rule, moving, bench);
+  const turned = new THREE.Group();
+  turned.name = 'Turned';
+  turned.rotation.y = YAW;
+  turned.add(stand, rule, moving);
+  root.add(turned, bench);
+  root.updateMatrixWorld(true);
   for (const m of [base, rod, boss, arm, rule, wire.mesh, ...hanger.discs, hanger.root.children[1], hanger.root.children[2]]) m.castShadow = true;
   rule.receiveShadow = true;
   base.receiveShadow = true;
@@ -444,7 +452,7 @@ export function createApparatus(M, num) {
     hanger.setCount(discs);
     hanger.root.updateMatrixWorld(true); // the arrow, the labels and the ring read its place at once
   }
-  set({ Lb: SPRING.closed + 0.1, discs: 2 });
+  set({ Lb: SPRING.L0 + 0.1, discs: 2 });
   return {
     root,
     stand,

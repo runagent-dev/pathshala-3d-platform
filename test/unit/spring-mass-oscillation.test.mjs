@@ -7,22 +7,22 @@ import * as r from '../../assets/spring-mass-oscillation/src/reading.js';
 const close = (a, b, eps = 1e-9, what = '') => assert.ok(Math.abs(a - b) < eps, `${what} ${a} ≈ ${b}`);
 
 describe('the period and the frequency', () => {
-  it('T = 2π√(m/k): 0.5 kg on 50 N/m takes about 0.63 s; f = 1/T ≈ 1.59 Hz', () => {
-    close(r.period(0.5, 50), 2 * Math.PI * 0.1, 1e-12);
-    assert.equal(r.fixed(r.period(0.5, 50)), '0.63');
-    assert.equal(r.fmt(r.frequency(0.5, 50), 2), '1.59');
-    close(r.period(0.5, 50) * r.frequency(0.5, 50), 1, 1e-12);
+  it('T = 2π√(m/k): 1 kg on 100 N/m takes about 0.63 s; f = 1/T ≈ 1.59 Hz', () => {
+    close(r.period(1, 100), 2 * Math.PI * 0.1, 1e-12);
+    assert.equal(r.fixed(r.period(1, 100)), '0.63');
+    assert.equal(r.fmt(r.frequency(1, 100), 2), '1.59');
+    close(r.period(0.5, 100) * r.frequency(0.5, 100), 1, 1e-12);
   });
   it('four times the mass doubles T; four times k halves it; the amplitude does not appear', () => {
-    close(r.period(1, 25) / r.period(0.25, 25), 2, 1e-12);
-    close(r.period(0.5, 100) / r.period(0.5, 25), 0.5, 1e-12);
+    close(r.period(1, 100) / r.period(0.25, 100), 2, 1e-12);
+    close(r.period(0.5, 400) / r.period(0.5, 100), 0.5, 1e-12);
     close(r.periodRatio(4, 1), 2, 1e-12);
     assert.equal(r.period.length, 2);
   });
-  it('the choices give periods from about 0.31 s to 1.26 s', () => {
+  it('the choices give periods from about 0.16 s to 0.63 s', () => {
     const all = r.MASSES.flatMap((m) => r.SPRINGS.map((k) => r.period(m, k)));
-    close(Math.min(...all), 2 * Math.PI * 0.05, 1e-12);
-    close(Math.max(...all), 2 * Math.PI * 0.2, 1e-12);
+    close(Math.min(...all), 2 * Math.PI * 0.025, 1e-12);
+    close(Math.max(...all), 2 * Math.PI * 0.1, 1e-12);
   });
 });
 
@@ -89,13 +89,24 @@ describe('the motion after a pull down by a', () => {
 });
 
 describe('the spring and the pull', () => {
-  it('hanging at rest stretches it by mg/k', () => {
-    close(r.staticStretch(0.5, 50), 0.098, 1e-12);
+  it('hanging at rest stretches it by mg/k, never more than about 10 cm', () => {
+    close(r.staticStretch(0.5, 100), 0.049, 1e-12);
+    for (const m of r.MASSES) for (const k of r.SPRINGS) assert.ok(r.staticStretch(m, k) <= 0.1);
   });
-  it('the pull is at most 6 cm, and never more than the static stretch', () => {
-    assert.equal(r.maxAmplitude(0.5, 50), 0.06);
-    close(r.maxAmplitude(0.25, 100), 0.0245, 1e-12);
-    for (const m of r.MASSES) for (const k of r.SPRINGS) assert.ok(r.maxAmplitude(m, k) <= r.staticStretch(m, k) + 1e-12);
+  it('the pull is at most 8 cm, at least 3 cm for every pair, and the coils never close', () => {
+    close(r.maxAmplitude(0.5, 100), 0.049 + r.SQUEEZE, 1e-12);
+    assert.equal(r.maxAmplitude(1, 100), 0.08);
+    close(r.maxAmplitude(0.25, 400), 0.006125 + r.SQUEEZE, 1e-12);
+    for (const m of r.MASSES)
+      for (const k of r.SPRINGS) {
+        assert.ok(r.maxAmplitude(m, k) >= 0.03, `${m} kg on ${k} N/m`);
+        assert.ok(r.maxAmplitude(m, k) <= r.staticStretch(m, k) + r.SQUEEZE + 1e-12);
+      }
+  });
+  it('picks a tidy step for a time axis', () => {
+    assert.equal(r.timeStep(0.7), 0.1);
+    assert.equal(r.timeStep(1.6), 0.2);
+    assert.equal(r.timeStep(2.5), 0.5);
   });
   it('numbers for sentences have no trailing zeros; readouts have fixed decimals', () => {
     assert.equal(r.fmt(0.5), '0.5');
