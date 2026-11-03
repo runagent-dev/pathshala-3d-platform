@@ -1,0 +1,113 @@
+/* A mass on a spring: the page, the colours that carry meaning (displacement / amplitude green, velocity blue,
+   acceleration slate, period crimson, frequency grape, kinetic energy amber, potential energy violet: the same on the
+   picture and in the graph, src/graph.js), the two rows of words, the graph, the note on the picture, the labels and
+   the test's answers. The rest of the panel is the kit's clean sheet (../../shared/lib/student/student.css). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.sm { --c-x: #2b8a3e; --c-v: #1c6fd9; --c-acc: #495057; --c-T: #c2255c; --c-f: #862e9c; --c-K: #b86a00; --c-U: #6741d9; }
+.sm .c-x { color: var(--c-x); }
+.sm .c-v { color: var(--c-v); }
+.sm .c-acc { color: var(--c-acc); }
+.sm .c-T { color: var(--c-T); }
+.sm .c-f { color: var(--c-f); }
+.sm .c-K { color: var(--c-K); }
+.sm .c-U { color: var(--c-U); }
+.sm .pvc-learn { gap: 8px; }
+.sm .pvc-outcome { font-size: 15px; line-height: 1.45; }
+.sm .pvc-outcome b { font-size: 1.15em; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.sm .pvc-rule { font-size: 14px; line-height: 1.45; }
+.sm .pvc-rule b { color: var(--ink); }
+.sm .pvc-rule b.c-K { color: var(--c-K); }
+.sm .pvc-rule b.c-U { color: var(--c-U); }
+
+/* the rows of words: m and k, a symbol in front */
+.sm-row { align-items: center; }
+.sm-row .sm-sym { flex: 0 0 26px; font-size: 17px; font-weight: 700; font-style: italic; color: var(--ink-2); text-align: center; font-family: Georgia, 'Times New Roman', serif; }
+.sm-row button { min-height: 40px; flex: 1 1 0; min-width: 30px; }
+.sm-row .pvc-ex-word { font-size: 15px; }
+.sm-krow button { position: relative; flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px 3px 6px; border: 0; border-radius: 6px 6px 0 0; background: none; color: var(--ink-2); line-height: 1.3; }
+.sm-krow button:hover { color: var(--ink); background: var(--soft); }
+.sm-krow .pvc-ex-word { font-weight: 600; white-space: nowrap; }
+.sm-krow button.on { color: var(--accent); }
+.sm-krow button.on::after { content: ''; position: absolute; left: 14%; right: 14%; bottom: -1px; height: 3px; border-radius: 2px 2px 0 0; background: var(--accent); }
+.sm-krow button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+/* the graph: the words in a column at its left, the canvas, a one-line legend under both */
+.sm-graph { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 6px; row-gap: 2px; align-items: stretch; }
+.sm-gwords { display: flex; flex-direction: column; justify-content: space-between; }
+.sm-gwords button { min-height: 26px; min-width: 52px; padding: 0 6px 0 4px; border: 0; border-left: 3px solid transparent; border-radius: 0 4px 4px 0; background: none; font: inherit; font-size: 13px; font-weight: 600; color: var(--ink-3); text-align: left; white-space: nowrap; }
+.sm-gwords button.on { background: var(--soft); }
+.sm-gwords button.c-x.on { color: var(--c-x); border-left-color: var(--c-x); }
+.sm-gwords button.c-v.on { color: var(--c-v); border-left-color: var(--c-v); }
+.sm-gwords button.c-acc.on { color: var(--c-acc); border-left-color: var(--c-acc); }
+.sm-gwords button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.sm-canvas { display: block; width: 100%; height: 84px; }
+.sm-legend { grid-column: 1 / -1; margin: 0; font-size: 11.5px; line-height: 1.3; color: #5b6472; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* honest time: top left of the picture */
+.sm-slow { position: absolute; left: 10px; top: 10px; z-index: 3; padding: 2px 8px; border-radius: 4px; background: rgba(255, 255, 255, 0.92); color: #1d2733; font-size: 12.5px; font-weight: 600; pointer-events: none; }
+.pvc[data-mode='quiz'] .sm-slow { opacity: 0.9; }
+
+/* labels on the picture: the words in their colour on a white chip */
+.pvc-anno-tag { --c: var(--ink); padding: 0 6px; border: 1.5px solid var(--c); border-radius: 5px; background: rgba(255, 255, 255, 0.96); color: var(--c); font-size: 13px; font-weight: 600; line-height: 1.5; white-space: nowrap; transition: none; }
+.pvc-anno-lines .k-tag { stroke: rgba(255, 255, 255, 0.85); stroke-width: 1.5; }
+
+/* the test */
+.sm .pvc-opt { font-size: 13.5px; line-height: 1.2; padding: 0 4px; }
+.sm-opt { display: block; white-space: normal; text-align: center; }
+.sm .pvc-q-text { font-size: 14.5px; }
+.sm .pvc-q-feedback { font-size: 13px; }
+
+/* a phone held upright: tighter, so the 3D keeps more than half the height */
+@container pvc (max-width: 420px) {
+  .sm .pvc-learn { gap: 4px; }
+  .sm-row button { min-height: 34px; padding-top: 2px; padding-bottom: 3px; }
+  .sm-row .pvc-ex-word { font-size: 14px; }
+  .sm .pvc-learn { gap: 2px; }
+  .sm-canvas { height: 78px; }
+  .sm-gwords button { min-height: 26px; font-size: 12.5px; }
+  .sm-legend { display: none; }
+  .sm .pvc-outcome { font-size: 13.5px; --pvc-outcome-lines: 1; }
+  .sm .pvc-rule { font-size: 12px; line-height: 1.3; --pvc-rule-lines: 3; }
+  .sm .pvc-opt { height: 36px; font-size: 13px; }
+  .sm .pvc-q-options { gap: 6px; }
+  .sm .pvc-q-text { font-size: 13px; line-height: 1.3; --pvc-q-text-min: calc(3 * 1.3em); }
+  .sm .pvc-q-feedback { font-size: 12.5px; line-height: 1.3; --pvc-q-feedback-min: calc(3 * 1.3em); }
+}
+/* short and wide (phone held sideways): the panel is beside the scene */
+@container pvc (max-height: 460px) {
+  .sm .pvc-learn { gap: 4px; }
+  .sm-row button { min-height: 34px; }
+  .sm-canvas { height: 84px; }
+  .sm-gwords button { min-height: 28px; }
+  .sm .pvc-outcome { font-size: 13.5px; }
+  .sm .pvc-rule { font-size: 12.5px; line-height: 1.35; }
+  .sm .pvc-opt { font-size: 12.5px; }
+  .sm .pvc-q-text { font-size: 13.5px; }
+  .sm .pvc-q-feedback { font-size: 12.5px; }
+  .pvc-anno-tag { font-size: 12px; }
+}
+
+/* the m and k rows: units inside each word; on a phone held upright both rows side by side, the unit once at the end */
+.sm-rows { display: grid; gap: 0; }
+.sm-row .sm-unit { display: none; flex: 0 0 auto; padding: 0 4px 0 1px; font-size: 12.5px; font-weight: 600; color: var(--ink-3); }
+@media (max-aspect-ratio: 1/1) {
+  .sm-rows { grid-template-columns: 1fr 1fr; column-gap: 8px; }
+  .sm-row button { min-height: 32px; }
+  .sm-row .sm-u { display: none; }
+  .sm-row .sm-unit { display: block; }
+  .sm-row .sm-sym { flex-basis: 16px; font-size: 16px; }
+  .sm-row button { padding-left: 1px; padding-right: 1px; }
+}
+/* a short phone held upright (390×520): the smallest panel that still holds everything */
+@media (max-aspect-ratio: 1/1) and (max-height: 600px) {
+  .sm .pvc-learn { gap: 2px; }
+  .sm-row button { min-height: 30px; }
+  .sm-gwords button { min-height: 24px; font-size: 12px; }
+  .sm-canvas { height: 72px; }
+  .sm .pvc-act { min-height: 40px; }
+  .sm .pvc-outcome { font-size: 12.5px; }
+  .sm .pvc-rule { font-size: 12px; line-height: 1.3; --pvc-rule-lines: 3; }
+}
