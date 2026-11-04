@@ -5,7 +5,7 @@
   "title": "Echo (প্রতিধ্বনি)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "book": "physics-9-10",
   "page": 201,
   "topic": "7.3.1",
@@ -13,7 +13,7 @@
   "order": 1,
   "maintainers": ["RadeenXALNW"],
   "units": "m",
-  "description": "Echo (page 201, topic 7.3.1). A class-9 student stands on flat dry ground in front of a tall sandstone cliff (খাড়া পাহাড়), on a yellow measuring tape that starts at the cliff's foot. The student is dragged (or a distance word 5, 10, 20, 35 m is tapped) and claps: a short teal sound pulse (compressions darker, rarefactions lighter; the lower part of each spherical front drawn as an upright band, with its rings on the ground and air particles moving in place) spreads to the cliff, is reflected, and the echo spreads back to the student as a sphere centred on the image of the hands behind the cliff face, slowed 20 times (said in the corner of the view). A time line in the panel shows the clap at 0, the echo at t = 2d ÷ 330 m/s and the shaded 0.1 s during which we still hear the clap: inside it the two sounds merge (গমগম), beyond it the echo is heard on its own. The result line works the sum with the student's distance; the rule grows from 'sound is a wave, so it can be reflected' to the 0.1 s and then 0.1 s × 330 m/s = 33 m, half of it 16.5 m, which is then marked on the tape. Side panels also show the book's chain 0.1 s → 33 m → 16.5 m and the distances tried. With sound on, the real clap and its echo play at the real delay. Test: five questions (what the returning sound is called, the least time gap, the cliff's distance from the time written above the student, whether an echo is heard where the student stands, what a bat learns from its echo), each wrong choice with its own note. Phone-first, Bangla and English.",
+  "description": "Echo (page 201, topic 7.3.1). A class-9 student stands on flat dry ground in front of a tall sandstone cliff (খাড়া পাহাড়), on a yellow measuring tape that starts at the cliff's foot. The student is dragged (or a distance word 5, 10, 20, 35 m is tapped) and calls out হ্যালো with both hands cupped round the mouth, as people do at a hill: a teal train of sound waves (five wavelengths with a decaying tail, compressions darker, rarefactions lighter; the lower part of each spherical front drawn as an upright band, with its rings on the ground and air particles moving in place) spreads from the mouth to the cliff, is reflected, and the echo spreads back to the student as a sphere centred on the image of the mouth behind the cliff face, slowed 20 times (said in the corner of the view). The word shows near the mouth, and fainter near the head when the echo returns. A time line in the panel draws the call as a bar of its real length (0.35 s) from 0, the echo as the same bar from t = 2d ÷ 330 m/s, and the shaded 0.1 s from the call's start: the book's rule compares the two starts. If the echo's start is inside the band the two merge (গমগম, the call sounds longer), beyond it the echo is heard on its own. The result line works the sum with the student's distance; the rule grows from 'sound is a wave, so it can be reflected' to the 0.1 s and then 0.1 s × 330 m/s = 33 m, half of it 16.5 m, which is then marked on the tape. Side panels also show the book's chain 0.1 s → 33 m → 16.5 m and the distances tried. With sound on, a synthesized human voice calls and its echo plays quieter at the real delay. Test: five questions (what the returning sound is called, the least time gap, the cliff's distance from the time written above the student, whether an echo is heard where the student stands, what a bat learns from its echo), each wrong choice with its own note. Phone-first, Bangla and English.",
   "tags": ["sound", "echo", "reflection", "wave", "speed of sound", "0.1 s", "16.5 m", "bangla"],
   "params": [
     {
@@ -46,8 +46,7 @@
   "commands": [
     { "name": "get", "payload": {} },
     { "name": "set", "payload": { "d": 25 } },
-    { "name": "set", "payload": { "clap": true } },
-    { "name": "set", "payload": { "d": 10, "clap": true, "animate": false } },
+    { "name": "set", "payload": { "d": 10, "call": true, "animate": false } },
     { "name": "set", "payload": { "tau": 0.12 } },
     { "name": "set", "payload": { "found": { "near": true, "far": true }, "animate": false } },
     { "name": "reset", "payload": {} },
@@ -61,7 +60,7 @@
       "params": { "coach": "0" },
       "setup": [
         { "command": "set", "payload": { "d": 25, "animate": false } },
-        { "command": "set", "payload": { "tau": 0.145 } }
+        { "command": "set", "payload": { "tau": 0.024 } }
       ]
     },
     "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "d": 20, "animate": false } }] }],
@@ -71,11 +70,11 @@
       "fps": 30,
       "params": { "coach": "0" },
       "script": [
-        { "at": 0.6, "command": "set", "payload": { "clap": true } },
+        { "at": 0.6, "command": "set", "payload": { "call": true } },
         { "at": 3.4, "command": "set", "payload": { "d": 30 } },
-        { "at": 4.6, "command": "set", "payload": { "clap": true } },
+        { "at": 4.6, "command": "set", "payload": { "call": true } },
         { "at": 9.8, "command": "set", "payload": { "d": 16.5 } },
-        { "at": 11, "command": "set", "payload": { "clap": true } }
+        { "at": 11, "command": "set", "payload": { "call": true } }
       ]
     }
   }
