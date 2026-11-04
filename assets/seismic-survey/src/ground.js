@@ -291,6 +291,7 @@ const WAVE_FRAG = /* glsl */ `
   uniform vec3 uC0; uniform vec3 uC1; uniform vec3 uC2; uniform vec3 uCd;
   uniform float uFace;     // 0: the cut face in front (x, y); 1: the surface (x, z)
   uniform float uOn;
+  uniform float uHot;      // 1 at the blast, 0 soon after: the new wave is still hot, then it is the teal sound wave
   varying vec3 vW;
   // a pulse: a bright crest and a faint trough behind it
   float pulse(float dr) {
@@ -308,7 +309,7 @@ const WAVE_FRAG = /* glsl */ `
       float r = distance(vW.xy, uS.xy);
       float p = pulse(r - uR) * (vW.y < 0.0 ? 1.0 : 0.0);
       float fall = 1.0 / (1.0 + r / 1600.0);
-      if (p > 0.0) { col += uCd * p; al += p * 1.3 * fall; }
+      if (p > 0.0) { col += mix(uCd, vec3(1.0, 0.62, 0.2), uHot) * p; al += p * 1.3 * fall; }
       else { al += -p * 0.3 * fall; }
       for (int k = 0; k < 3; k++) {
         float d = depthArr[k];
@@ -356,9 +357,59 @@ function waveMaterial(face) {
       uCd: { value: c(WAVE_COLOR) },
       uFace: { value: face },
       uOn: { value: 0 },
+      uHot: { value: 0 },
     },
   });
 }
+
+// ── the explosion itself, on the cut face at the charge: the white-hot core going to dull red, the crushed rock round
+// it, the cracks running out of it. u: seconds of the slowed animation since the firing ─────────────────────────────
+const CORE_FRAG = /* glsl */ `
+  uniform float uT;
+  uniform vec3 uS;
+  varying vec3 vW;
+  float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+  float noise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);
+  }
+  float fbm(vec2 p) { return 0.55 * noise(p) + 0.3 * noise(p * 2.1 + 3.7) + 0.15 * noise(p * 4.3 + 9.1); }
+  void main() {
+    if (vW.y > 0.0) discard;
+    vec2 d = vW.xy - uS.xy;
+    float r = length(d);
+    float ang = atan(d.y, d.x);
+    float rough = r + 34.0 * (fbm(d * 0.028) - 0.5);
+    float fade = 1.0 - smoothstep(2.1, 3.0, uT);
+    // the crushed zone: broken, darkened rock, reached at once and left there until the dust settles
+    float Rc = 128.0 * (1.0 - exp(-uT * 16.0));
+    float crushed = (1.0 - smoothstep(Rc * 0.62, Rc, rough)) * fade;
+    float grain = fbm(d * 0.11 + 4.0);
+    vec3 rubble = mix(vec3(0.085, 0.07, 0.06), vec3(0.34, 0.27, 0.2), smoothstep(0.34, 0.68, grain));
+    // cracks running out of it, each ragged and of its own length
+    float seam = abs(fbm(vec2(ang * 3.2, r * 0.006) + 2.0) - 0.5);
+    float reach = (150.0 + 130.0 * noise(vec2(ang * 2.4, 5.0))) * (1.0 - exp(-uT * 11.0));
+    float crack = (1.0 - smoothstep(0.012, 0.04, seam)) * (1.0 - smoothstep(reach * 0.45, reach, r)) * fade;
+    float a = max(crushed * 0.92, crack * 0.72);
+    vec3 rock = mix(vec3(0.07, 0.055, 0.05), rubble, crushed);
+    // the core: white, orange, then a dull red that dies out
+    float Rh = 26.0 + 44.0 * (1.0 - exp(-uT * 26.0));
+    float hot = exp(-uT / 0.2);
+    float ember = exp(-uT / 0.75);
+    float m = (1.0 - smoothstep(Rh * 0.5, Rh, rough)) * smoothstep(0.0, 0.02, uT);
+    vec3 fire = mix(vec3(0.5, 0.06, 0.02), vec3(1.0, 0.46, 0.09), sqrt(hot));
+    fire = mix(fire, vec3(1.0, 0.95, 0.8), hot * hot * (1.0 - smoothstep(0.0, Rh, r)));
+    fire *= 0.25 + 0.75 * ember + 0.55 * ember * fbm(d * 0.07 - uT * 1.2);
+    float e = m * (0.2 + 0.8 * ember);
+    // glowing cracks in the first moments
+    vec3 rgb = rock * a * (1.0 - e) + fire * e + vec3(1.0, 0.36, 0.06) * crack * hot * 0.3;
+    a = max(a, e);
+    if (a < 0.008 && dot(rgb, rgb) < 0.0001) discard;
+    gl_FragColor = vec4(rgb, a);
+    #include <colorspace_fragment>
+  }`;
 
 export function createGround({ anisotropy = 4 } = {}) {
   const root = new THREE.Group();
@@ -432,6 +483,27 @@ export function createGround({ anisotropy = 4 } = {}) {
     m.visible = false; // drawn only while the waves show (setWave)
     root.add(m);
   }
+
+  const coreMat = keep(
+    new THREE.ShaderMaterial({
+      vertexShader: WAVE_VERT,
+      fragmentShader: CORE_FRAG,
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.CustomBlending,
+      blendSrc: THREE.OneFactor, // bright where it burns, ordinary rock colour where it is crushed
+      blendDst: THREE.OneMinusSrcAlphaFactor,
+      uniforms: { uT: { value: 0 }, uS: { value: new THREE.Vector3(SOURCE.x, SOURCE.y, SOURCE.z) } },
+    }),
+  );
+  const core = new THREE.Mesh(keep(new THREE.PlaneGeometry(640, 320)), coreMat);
+  core.name = 'blast-core';
+  core.position.set(SOURCE.x + 150, -160, Z1 + 3.5); // from the left edge of the face, down from the surface
+  core.scale.x = 1;
+  core.renderOrder = 7;
+  core.visible = false;
+  core.userData.noExport = true;
+  root.add(core);
 
   // ── the 3D picture: the mapped boundaries; the dome's top shaded and coloured by what lies under it; gas and
   // oil in the arch on the right cut face ───────────────────────────────────────────────────────────────────
@@ -591,6 +663,14 @@ export function createGround({ anisotropy = 4 } = {}) {
     wt.visible = on;
   }
 
+  /** The explosion at the charge at s seconds of the slowed animation since the firing (over at 3 s). */
+  function setCore(s) {
+    const on = s >= 0 && s < 3;
+    core.visible = on;
+    coreMat.uniforms.uT.value = on ? s : 0;
+    waveFront.uniforms.uHot.value = on ? Math.exp(-((s / 0.3) ** 2)) : 0; // handed over to the teal wave by about 0.6 s
+  }
+
   return {
     root,
     walls,
@@ -604,6 +684,7 @@ export function createGround({ anisotropy = 4 } = {}) {
     setReveal,
     setMapped,
     setWave,
+    setCore,
     /** The point on the cut face in front, on boundary k, at x. */
     frontPoint: (k, x, target = new THREE.Vector3()) => target.set(x, boundaryY(k, x, Z1), Z1),
     /** The middle of rock layer i on the cut face (for its name). */

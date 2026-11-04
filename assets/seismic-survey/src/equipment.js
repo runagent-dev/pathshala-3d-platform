@@ -1,11 +1,12 @@
 // What stands on the ground (metres, drawn far bigger than life so a phone shows them: the panel says so): the grid
 // of geophones (a case on a steel spike pushed into the ground, a cable takeout on top, a band that lights when an
 // echo arrives), their cables to the recording truck, the shot hole on the front edge with its charge and firing
-// line, the blast's flash and dust, and the probes of the "ত্রিমাত্রিক ছবি" step (from each geophone down to the
+// line, and the probes of the "ত্রিমাত্রিক ছবি" step (from each geophone down to the
 // boundaries it mapped). Instanced where things repeat.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
+import { createBlast } from './blast.js';
 import { boundaryY, DEPTHS, FRONT, GEOPHONES, ROWS, SOURCE } from './reading.js';
 
 /** The geophone's size (m in the scene): drawn about 150 times bigger than life. */
@@ -46,7 +47,7 @@ function mergeByMaterial(group, names = {}) {
   }
 }
 
-export function createEquipment() {
+export function createEquipment({ soil }) {
   const root = new THREE.Group();
   root.name = 'equipment';
   const disposables = [];
@@ -256,50 +257,17 @@ export function createEquipment() {
   truck.scale.setScalar(TRUCK.scale);
   root.add(truck);
 
-  // ── the blast: a flash at the charge, dust thrown up from the hole ───────────────────────────────────────
-  const fx = new THREE.Group();
-  fx.name = 'blast';
-  fx.userData.noExport = true;
-  const flashMat = keep(new THREE.MeshBasicMaterial({ color: '#ffd43b', transparent: true, opacity: 0, depthWrite: false }));
-  const flash = new THREE.Mesh(keep(new THREE.SphereGeometry(1, 20, 14)), flashMat);
-  flash.position.set(SOURCE.x, SOURCE.y, FRONT + 3);
-  flash.renderOrder = 8;
-  const dustMat = keep(new THREE.MeshStandardMaterial({ color: '#b49470', roughness: 1, transparent: true, opacity: 0, depthWrite: false }));
-  const DUST = 9;
-  const dust = new THREE.InstancedMesh(keep(new THREE.IcosahedronGeometry(1, 1)), dustMat, DUST);
-  dust.renderOrder = 7;
-  const dustDirs = Array.from({ length: DUST }, (_, i) => {
-    const a = (i / DUST) * Math.PI * 2;
-    return new THREE.Vector3(Math.cos(a) * 0.5, 1 + (i % 3) * 0.3, Math.sin(a) * 0.5);
-  });
-  fx.add(flash, dust);
-  root.add(fx);
+  // ── the blast (blast.js): the column of soil, the dust, the clods, the lifted ground, the flash ─────────────────
+  const fx = createBlast({ soil });
+  root.add(fx.root, fx.light);
   const mx = new THREE.Matrix4();
   const q = new THREE.Quaternion();
   const sv = new THREE.Vector3();
   const pv = new THREE.Vector3();
-  /** The blast at time s (seconds of the slowed animation since the firing): flash, then dust settling. */
+  /** The blast at time s (seconds of the slowed animation since the firing; before it, s < 0). */
   function blast(s) {
-    const on = s >= 0 && s < 3;
-    fx.visible = on;
-    if (!on) {
-      M.charge.emissive.set('#000000');
-      charge.visible = s < 0;
-      return;
-    }
-    charge.visible = s < 0.1;
-    const fk = Math.max(0, 1 - s / 0.5);
-    flash.scale.setScalar(10 + 40 * Math.min(1, s / 0.25));
-    flashMat.opacity = 0.9 * fk;
-    const dk = Math.min(1, s / 1.2);
-    dustMat.opacity = 0.75 * Math.max(0, 1 - s / 2.8);
-    for (let i = 0; i < DUST; i++) {
-      const d = dustDirs[i];
-      pv.set(SOURCE.x + d.x * 60 * dk, d.y * 70 * dk + 6, FRONT - 14 + d.z * 40 * dk);
-      sv.setScalar(10 + 22 * dk);
-      dust.setMatrixAt(i, mx.compose(pv, q, sv));
-    }
-    dust.instanceMatrix.needsUpdate = true;
+    charge.visible = s < 0.02;
+    fx.set(s);
   }
   blast(-1);
 
@@ -352,6 +320,7 @@ export function createEquipment() {
     /** The top of geophone i (for labels and the action's ring). */
     phoneTop: (i, target = new THREE.Vector3()) => target.set(GEOPHONES[i].x, PHONE.h + LIFT + 6, GEOPHONES[i].z),
     dispose() {
+      fx.dispose();
       for (const d of disposables) d.dispose?.();
     },
   };
