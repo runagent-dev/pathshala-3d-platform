@@ -4,4 +4,4 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
 #app { position: fixed; inset: 0; }
 body.bg-transparent { background: transparent; }
 
-.pvc-rule small { color: #5b6470; }
+.pvc-rule small { color: var(--ink-3); font-size: 12.5px; }
