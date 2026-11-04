@@ -17,9 +17,10 @@ body.bg-transparent { background: transparent; }
 .pvc .c-lc { color: var(--c-lc); }
 
 /* the book's sentence: least count = pitch ÷ parts of the circular scale */
-.pvc-learn-extra { margin: 0; font-size: 13px; line-height: 1.45; color: var(--ink-2); }
+.pvc-learn-extra { display: flex; flex-direction: column; gap: 8px; }
 @container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
-  .pvc-learn-extra { font-size: 12.5px; }
+  .pvc-learn-extra { gap: 6px; }
+  .pvc-learn-extra .pvc-note { font-size: 14px; padding: 5px 10px; }
 }
 /* one order in every lab: the action (with the status) first, then the reading, the sum and the rule */
 .pvc-learn { justify-content: flex-start; }

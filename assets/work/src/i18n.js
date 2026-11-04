@@ -54,13 +54,14 @@ export const STRINGS = {
 
     // the rule line: the book's words in <b>, growing with what the student has found out
     rule_ready: 'বাক্সটিকে {s} m ঠেলে নিয়ে ছেড়ে দেওয়া হবে। দেখো, কখন কাজ হয় আর কখন হয় না।',
-    rule_push: '<b>বল প্রয়োগ করা হচ্ছে, আর বাক্সটি বলের দিকে সরছে:</b> তাই কাজ হচ্ছে, W বাড়ছে।',
-    rule_slide: 'হাত ছেড়ে দেওয়া হয়েছে: <b>এখন F বল প্রয়োগ করা হচ্ছে না।</b> বাক্সটি সরছে, কিন্তু W আর বাড়ছে না।',
-    rule_done: '<b>কাজের পরিমাণ W = Fs</b>, একক J (জুল)। পরের d = {d} m দূরত্ব অতিক্রম করার সময় F বল প্রয়োগ করা হয়নি বলে <b>F বল দ্বারা কোনো কাজ হয়নি।</b>',
-    rule_calc: '<b>W = Fs:</b> F দ্বিগুণ হলে কাজও দ্বিগুণ, s দ্বিগুণ হলেও তাই। পদার্থবিজ্ঞানের ভাষায় <b>বল কাজ করে</b>, মানুষ নয়।',
+    rule_push: '<b>বল প্রয়োগ করা হচ্ছে</b> আর বাক্সটি বলের দিকে সরছে। তাই কাজ হচ্ছে, W বাড়ছে।',
+    rule_slide: 'হাত ছেড়ে দেওয়া হয়েছে। <b>এখন F বল প্রয়োগ করা হচ্ছে না।</b> বাক্সটি সরছে, কিন্তু W আর বাড়ছে না।',
+    rule_done: 'কাজের পরিমাণ <b>W = Fs</b>, একক J (জুল)। পরের d = {d} m দূরত্বে F বল প্রয়োগ করা হয়নি, তাই ওই পথে F বলের কোনো কাজ হয়নি।',
+    rule_calc:
+      'F দ্বিগুণ হলে কাজও দ্বিগুণ। s দ্বিগুণ হলেও কাজ দ্বিগুণ।<span class="pvc-formula"><i>W</i> = <i>Fs</i></span>পদার্থবিজ্ঞানের ভাষায় <b>বল কাজ করে</b>, মানুষ নয়।',
     rule_wall_ready: 'বাক্সটি দেয়ালে ঠেকে আছে। খুব জোরে ঠেলে দেখো, কাজ হয় কি না।',
     rule_wall_push: 'জোরে বল প্রয়োগ করা হচ্ছে, কিন্তু বাক্সটি একটুও সরছে না…',
-    rule_wall_done: '<b>সরণ s = {z}, তাই W = F × {z} = {z}।</b> না সরলে কাজ হয় না, যেমন দারোয়ানের সারা দিনের পাহারা: <b>পদার্থবিজ্ঞানের ভাষায় সেটি কোনো কাজ নয়।</b>',
+    rule_wall_done: 'সরণ s = {z}, তাই W = F × {z} = {z}। না সরলে কাজ হয় না, যেমন দারোয়ানের সারা দিনের পাহারা। পদার্থবিজ্ঞানের ভাষায় সেটি <b>কোনো কাজ নয়</b>।',
 
     // labels on the picture
     l_F: 'F = {F} N',
@@ -175,15 +176,15 @@ export const STRINGS = {
     out_work: 'Work W = Fs = {F} N × {s} m = <b>{W} J</b>',
 
     rule_ready: 'The crate will be pushed {s} m and then let go. Watch when work is done, and when it is not.',
-    rule_push: '<b>A force is applied and the crate moves along it:</b> so work is being done, W grows.',
-    rule_slide: 'The hands have let go: <b>no force F is applied now.</b> The crate still moves, but W stops growing.',
-    rule_done:
-      '<b>The work done is W = Fs</b>, in J (joules). Over the next d = {d} m no force F was applied, so <b>the force F did no work there.</b>',
-    rule_calc: '<b>W = Fs:</b> twice the force, twice the work; twice the distance, the same. In physics <b>a force does work</b>, not a person.',
+    rule_push: '<b>A force is applied</b> and the crate moves along it. So work is being done, and W grows.',
+    rule_slide: 'The hands have let go. <b>No force F is applied now.</b> The crate still moves, but W stops growing.',
+    rule_done: 'The work done is <b>W = Fs</b>, in J (joules). Over the next d = {d} m no force F was applied, so the force F did no work there.',
+    rule_calc:
+      'Twice the force, twice the work. Twice the distance, twice the work.<span class="pvc-formula"><i>W</i> = <i>Fs</i></span>In physics <b>a force does work</b>, not a person.',
     rule_wall_ready: 'The crate is up against a wall. Push it very hard and see whether any work is done.',
     rule_wall_push: 'A big force is applied, but the crate does not move at all…',
     rule_wall_done:
-      '<b>Displacement s = {z}, so W = F × {z} = {z}.</b> No movement, no work, like the guard watching the gate all day: <b>in physics that is no work.</b>',
+      'Displacement s = {z}, so W = F × {z} = {z}. No movement, no work, like the guard watching the gate all day. In physics that is <b>no work</b>.',
 
     l_F: 'F = {F} N',
     l_s: 's = {s} m',

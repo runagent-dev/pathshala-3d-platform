@@ -45,16 +45,15 @@ export const STRINGS = {
     l_brake: 'ব্রেকের বল',
     l_pe: 'বিভব শক্তি {e} J',
     rule_start:
-      '<b>শক্তি হচ্ছে কাজ করার সামর্থ্য।</b> সাইকেলটি (আরোহীসহ ভর {m} kg) নিচের রাস্তায় থেমে আছে: উচ্চতা ও বেগ দুটোই শূন্য, তাই এখনো এর কাজ করার মতো শক্তি নেই। প্যাডেলে বল দিয়ে একে পাহাড়ে তোলো।',
+      '<b>শক্তি</b> হচ্ছে কাজ করার সামর্থ্য। সাইকেলটি (আরোহীসহ ভর {m} kg) নিচের রাস্তায় থেমে আছে। উচ্চতা ও বেগ দুটোই শূন্য, তাই এখনো কাজ করার মতো শক্তি নেই। প্যাডেলে বল দিয়ে একে পাহাড়ে তোলো।',
     rule_climb:
-      '<b>ধনাত্মক কাজ করা → বস্তুটিকে শক্তি দেওয়া।</b> প্যাডেলের বল চলার দিকে: আরোহী যতটুকু কাজ করছেন, সাইকেল ততটুকু শক্তি পাচ্ছে। সেই শক্তি আরোহীকে দিতে হচ্ছে, শরীরের রাসায়নিক শক্তি থেকে।',
-    rule_top:
-      'চূড়ায় সাইকেল থেমে আছে, তবু এর <b>{e} J</b> শক্তি আছে: উঁচুতে থাকার জন্য জমা <b>বিভব শক্তি</b>। এই শক্তি দিয়ে সাইকেলটি কাজ করতে পারে: ছেড়ে দিলেই গড়িয়ে নামবে।',
+      '<b>ধনাত্মক কাজ করা</b> → বস্তুটিকে শক্তি দেওয়া। প্যাডেলের বল চলার দিকে। আরোহী যতটুকু কাজ করছেন, সাইকেল ততটুকু শক্তি পাচ্ছে। এই শক্তি আসছে আরোহীর শরীরের রাসায়নিক শক্তি থেকে।',
+    rule_top: 'চূড়ায় সাইকেল থেমে আছে, তবু এর {e} J শক্তি আছে। উঁচুতে থাকার জন্য জমা এই শক্তির নাম <b>বিভব শক্তি</b>। ছেড়ে দিলেই সাইকেল গড়িয়ে নামবে, অর্থাৎ কাজ করবে।',
     rule_roll:
-      '<b>আমরা শুধু এক ধরনের শক্তিকে অন্য ধরনের শক্তিতে রূপান্তর করি।</b> নামার সময় বিভব শক্তি কমছে, গতিশক্তি ঠিক ততটুকু বাড়ছে। ঘর্ষণ ও বাতাসের বাধা ধরা হয়নি, তাই মোট শক্তি একই: {e} J।',
-    rule_flat: 'নিচে উচ্চতা শূন্য: সবটুকু শক্তি এখন <b>গতিশক্তি</b>, {e} J (বেগ প্রায় {v} m/s)। ঘর্ষণ নেই ধরেছি, তাই সাইকেল এভাবেই চলতে থাকবে। এবার ব্রেক করো।',
-    rule_brake: '<b>ঋণাত্মক কাজ করা → বস্তুটি থেকে শক্তি সরিয়ে নেওয়া।</b> ব্রেকের বল চলার উল্টো দিকে: যতটুকু কাজ, সাইকেল থেকে ততটুকু শক্তি সরে গিয়ে ব্রেকে তাপ হচ্ছে।',
-    rule_stopped: 'সাইকেল থেমেছে: {e} J শক্তি সরে গিয়ে ব্রেকে তাপ হয়েছে, হারিয়ে যায়নি। <b>শক্তির কোনো দিক নেই, এটি একটি স্কেলার। শক্তির একক J (জুল)।</b>',
+      'আমরা শুধু এক ধরনের <b>শক্তিকে অন্য ধরনের শক্তিতে</b> রূপান্তর করি। নামার সময় বিভব শক্তি কমছে, গতিশক্তি ঠিক ততটুকু বাড়ছে। ঘর্ষণ ও বাতাসের বাধা ধরা হয়নি, তাই মোট শক্তি একই থাকে: {e} J।',
+    rule_flat: 'নিচে উচ্চতা শূন্য। সবটুকু শক্তি এখন <b>গতিশক্তি</b>: {e} J (বেগ প্রায় {v} m/s)। ঘর্ষণ ধরা হয়নি, তাই সাইকেল এভাবেই চলতে থাকবে। এবার ব্রেক করো।',
+    rule_brake: '<b>ঋণাত্মক কাজ করা</b> → বস্তুটি থেকে শক্তি সরিয়ে নেওয়া। ব্রেকের বল চলার উল্টো দিকে। যতটুকু কাজ, সাইকেল থেকে ততটুকু শক্তি সরে গিয়ে ব্রেকে তাপ হচ্ছে।',
+    rule_stopped: 'সাইকেল থেমেছে। {e} J শক্তি সরে গিয়ে ব্রেকে তাপ হয়েছে, হারিয়ে যায়নি। শক্তির কোনো দিক নেই, এটি একটি <b>স্কেলার</b>। শক্তির একক J (জুল)।',
 
     q_count: 'প্রশ্ন {i} / {n}',
     q_score: 'সঠিক: {right}',
@@ -75,7 +74,7 @@ export const STRINGS = {
     c_neg: 'ঋণাত্মক কাজ করে শক্তি সরিয়ে নিচ্ছে',
     c_none: 'কোনো কাজ করছে না, শক্তি একই আছে',
     c_nowork: 'শক্তি দিচ্ছে, কিন্তু কোনো কাজ করছে না',
-    why_climb: '<b>ধনাত্মক কাজ করে শক্তি দিচ্ছে।</b> বল চলার দিকে, তাই কাজ ধনাত্মক; যতটুকু কাজ, সাইকেল ততটুকু শক্তি পায়। উঁচুতে উঠছে, তাই বিভব শক্তি বাড়ছে।',
+    why_climb: '<b>ধনাত্মক কাজ</b> করে শক্তি দিচ্ছে। বল চলার দিকে, তাই কাজ ধনাত্মক। যতটুকু কাজ, সাইকেল ততটুকু শক্তি পায়। উঁচুতে উঠছে, তাই বিভব শক্তি বাড়ছে।',
     not_c_neg: 'ঋণাত্মক কাজ হয় বল চলার উল্টো দিকে হলে, যেমন ব্রেকের বল।',
     not_c_none: 'সাইকেল উঁচুতে উঠছে, তাই এর শক্তি বাড়ছে।',
     not_c_nowork: 'বই বলছে: ধনাত্মক কাজ করা মানেই বস্তুটিকে শক্তি দেওয়া।',
@@ -85,13 +84,13 @@ export const STRINGS = {
     t_none: 'কোনো শক্তি নেই, কারণ এটি থেমে আছে',
     t_ke: 'এর সবটুকু শক্তি গতিশক্তি',
     t_lost: 'ওঠার সময় সব শক্তি খরচ হয়ে গেছে',
-    why_top: '<b>উঁচুতে থাকার জন্য জমা শক্তি (বিভব শক্তি) আছে: {e} J।</b> থেমে থাকলেও এটি কাজ করতে পারে: ছেড়ে দিলেই গড়িয়ে নামবে। শক্তি মানে কাজ করার সামর্থ্য।',
+    why_top: 'উঁচুতে থাকার জন্য জমা শক্তি, অর্থাৎ <b>বিভব শক্তি</b>: {e} J। থেমে থাকলেও এটি কাজ করতে পারে: ছেড়ে দিলেই গড়িয়ে নামবে। শক্তি মানে কাজ করার সামর্থ্য।',
     not_t_none: 'থেমে আছে বলে গতিশক্তি নেই, কিন্তু উচ্চতার জন্য শক্তি আছে।',
     not_t_ke: 'বেগ শূন্য, তাই গতিশক্তিও শূন্য।',
     not_t_lost: 'আরোহীর কাজ হারায়নি: সেটিই চূড়ায় জমা শক্তি।',
 
     q_roll: 'চূড়ায় মোট শক্তি ছিল {total} J; ঘর্ষণ নেই। ছবিতে এখনকার বিভব শক্তি দেখো। এখন গতিশক্তি কত?',
-    why_roll: '<b>{ke} J।</b> মোট শক্তি একই থাকে, তাই গতিশক্তি = {total} J − {pe} J = {ke} J।',
+    why_roll: '<b>{ke} J।</b> মোট শক্তি একই থাকে।<br>গতিশক্তি = {total} J − {pe} J = {ke} J।',
     not_r_pe: 'এটি বিভব শক্তি, গতিশক্তি নয়।',
     not_r_total: 'সবটুকু গতিশক্তি হয় একেবারে নিচে নামলে।',
     not_r_sum: 'মোট শক্তি বাড়ে না: যোগ নয়, বিয়োগ করতে হবে।',
@@ -101,13 +100,13 @@ export const STRINGS = {
     b_pos: 'ধনাত্মক কাজ করে শক্তি দিচ্ছে',
     b_gone: 'শক্তি ধ্বংস করছে, তা আর কোথাও থাকে না',
     b_pe: 'গতিশক্তিকে বিভব শক্তিতে বদলাচ্ছে',
-    why_brake: '<b>ঋণাত্মক কাজ করে শক্তি সরিয়ে নিচ্ছে।</b> ব্রেকের বল চলার উল্টো দিকে; সরানো শক্তি ব্রেকে তাপ হয়ে যায় (প্যাডগুলো গরম হয়ে ওঠে)।',
+    why_brake: '<b>ঋণাত্মক কাজ</b> করে শক্তি সরিয়ে নিচ্ছে। ব্রেকের বল চলার উল্টো দিকে। সরানো শক্তি ব্রেকে তাপ হয়ে যায় (প্যাডগুলো গরম হয়ে ওঠে)।',
     not_b_pos: 'বল চলার উল্টো দিকে, তাই কাজ ঋণাত্মক।',
     not_b_gone: 'শক্তি হারায় না: বল প্রয়োগকারী, এখানে ব্রেক, তা তাপ হিসেবে পায়।',
     not_b_pe: 'রাস্তা সমতল, সাইকেল উঁচুতে উঠছে না।',
 
     q_dir: 'ডান দিকের ঢাল বেয়ে নামলে নিচে গতিশক্তি হয় {total} J। বাম দিকের ঢাল বেয়ে নামলে কত হতো?',
-    why_dir: '<b>{total} J, একই।</b> শক্তির কোনো দিক নেই, এটি একটি স্কেলার; একই উচ্চতা থেকে যে দিকেই নামুক, একই শক্তি পায়।',
+    why_dir: '<b>{total} J, একই।</b> শক্তির কোনো দিক নেই, এটি একটি স্কেলার। একই উচ্চতা থেকে যে দিকেই নামুক, একই শক্তি পায়।',
     not_d_neg: 'শক্তির দিক নেই, তাই দিক বদলালে এর চিহ্ন বদলায় না।',
     not_d_zero: 'একই উচ্চতা থেকে নামছে, তাই একই গতিশক্তি পায়।',
     not_d_half: 'বাম দিকের ঢালও {h} m উঁচু: পুরো উচ্চতা নামে।',
@@ -164,19 +163,19 @@ export const STRINGS = {
     l_brake: 'Brake force',
     l_pe: 'Potential energy {e} J',
     rule_start:
-      '<b>Energy is the capacity to do work.</b> The bicycle (with its rider, {m} kg) is at rest on the road below: its height and speed are both zero, so it has no energy to do work yet. Pedal to take it up the hill.',
+      '<b>Energy</b> is the capacity to do work. The bicycle (with its rider, {m} kg) is at rest on the road below. Its height and speed are both zero, so it has no energy to do work yet. Pedal to take it up the hill.',
     rule_climb:
-      '<b>Positive work → giving the object energy.</b> The pedal force is along the motion: as much work as the rider does, that much energy the bicycle gets. The rider has to supply it, from the chemical energy in their body.',
+      '<b>Positive work</b> → giving the object energy. The pedal force is along the motion. As much work as the rider does, that much energy the bicycle gets. It comes from the chemical energy in the rider’s body.',
     rule_top:
-      'At the top the bicycle is at rest, yet it has <b>{e} J</b> of energy: <b>potential energy</b>, stored because it is high up. With it, the bicycle can do work: let go, and it rolls down.',
+      'At the top the bicycle is at rest, yet it has {e} J of energy. Stored because it is high up, it is called <b>potential energy</b>. Let go, and the bicycle rolls down: it can do work.',
     rule_roll:
-      '<b>We only change one kind of energy into another.</b> On the way down the potential energy falls and the kinetic energy rises by just as much. Friction and air resistance are left out, so the total stays the same: {e} J.',
+      'We only change one kind of <b>energy into another</b>. On the way down the potential energy falls and the kinetic energy rises by just as much. Friction and air resistance are left out, so the total stays the same: {e} J.',
     rule_flat:
-      'At the bottom the height is zero: all the energy is now <b>kinetic energy</b>, {e} J (speed about {v} m/s). With no friction the bicycle would keep going like this. Now brake.',
+      'At the bottom the height is zero. All the energy is now <b>kinetic energy</b>: {e} J (speed about {v} m/s). With no friction the bicycle keeps going like this. Now brake.',
     rule_brake:
-      '<b>Negative work → taking energy away from the object.</b> The brake force is against the motion: as much work as it does, that much energy leaves the bicycle and becomes heat in the brakes.',
+      '<b>Negative work</b> → taking energy away from the object. The brake force is against the motion. As much work as it does, that much energy leaves the bicycle and becomes heat in the brakes.',
     rule_stopped:
-      'The bicycle has stopped: {e} J of energy left it and became heat in the brakes; it was not lost. <b>Energy has no direction: it is a scalar. Its unit is the J (joule).</b>',
+      'The bicycle has stopped. {e} J of energy left it and became heat in the brakes: it was not lost. Energy has no direction, it is a <b>scalar</b>. Its unit is the J (joule).',
 
     q_count: 'Question {i} of {n}',
     q_score: 'Correct: {right}',
@@ -198,7 +197,7 @@ export const STRINGS = {
     c_none: 'Doing no work; the energy stays the same',
     c_nowork: 'Giving it energy, but doing no work',
     why_climb:
-      '<b>Doing positive work, giving it energy.</b> The force is along the motion, so the work is positive; as much work, that much energy. It is getting higher, so its potential energy rises.',
+      '<b>Positive work</b> gives it energy. The force is along the motion, so the work is positive. As much work, that much energy. It is getting higher, so its potential energy rises.',
     not_c_neg: 'Negative work is done by a force against the motion, like the brakes.',
     not_c_none: 'The bicycle is getting higher, so its energy is rising.',
     not_c_nowork: 'The book says: doing positive work is giving the object energy.',
@@ -209,14 +208,14 @@ export const STRINGS = {
     t_ke: 'All its energy is kinetic energy',
     t_lost: 'All the energy was used up on the way up',
     why_top:
-      '<b>It has energy stored by being high up (potential energy): {e} J.</b> Even at rest it can do work: let go, and it rolls down. Energy is the capacity to do work.',
+      'Energy stored by being high up is <b>potential energy</b>: {e} J. Even at rest it can do work: let go, and it rolls down. Energy is the capacity to do work.',
     not_t_none: 'At rest it has no kinetic energy, but it has energy from its height.',
     not_t_ke: 'Its speed is zero, so its kinetic energy is zero.',
     not_t_lost: 'The rider’s work was not lost: it is the energy stored at the top.',
 
     q_roll:
       'At the top the total energy was {total} J; there is no friction. See the potential energy now in the picture. What is the kinetic energy now?',
-    why_roll: '<b>{ke} J.</b> The total stays the same, so kinetic energy = {total} J − {pe} J = {ke} J.',
+    why_roll: '<b>{ke} J.</b> The total stays the same.<br>Kinetic energy = {total} J − {pe} J = {ke} J.',
     not_r_pe: 'That is the potential energy, not the kinetic energy.',
     not_r_total: 'It is all kinetic energy only at the very bottom.',
     not_r_sum: 'The total does not grow: subtract, don’t add.',
@@ -227,7 +226,7 @@ export const STRINGS = {
     b_gone: 'Destroying energy, so it is nowhere any more',
     b_pe: 'Turning kinetic energy into potential energy',
     why_brake:
-      '<b>Doing negative work, taking energy away.</b> The brake force is against the motion; the energy taken away becomes heat in the brakes (the pads get hot).',
+      '<b>Negative work</b> takes energy away. The brake force is against the motion. The energy taken away becomes heat in the brakes (the pads get hot).',
     not_b_pos: 'The force is against the motion, so the work is negative.',
     not_b_gone: 'Energy is not lost: whatever applies the force, here the brakes, gets it as heat.',
     not_b_pe: 'The road is flat: the bicycle is not getting higher.',

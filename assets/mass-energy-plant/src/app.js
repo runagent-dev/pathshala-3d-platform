@@ -93,7 +93,7 @@ export function createApp(root, options = {}) {
     </div>`;
   const sheetHtml = cleanSheet(t, {
     quiet: [{ act: 'home', label: 'act_home', icon: ICONS.reset }],
-    lines: { action: 1, outcome: 2, rule: 3 },
+    lines: { action: 1, outcome: 4, rule: 4 },
   }).replace('<p class="pvc-outcome"', `<div class="me-calc">${fuelHtml}</div><p class="pvc-outcome"`);
   const ui = buildStudentShell(root, t, { layout: 'side', learn: sheetHtml, learnAlign: 'start' });
   const sheet = bindCleanSheet(ui.learn);

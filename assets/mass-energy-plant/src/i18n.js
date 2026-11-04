@@ -37,13 +37,13 @@ export const STRINGS = {
     u_kg: 'kg',
     u_J: 'J',
 
-    f_E: '{emc} = {kg}<span class="me-u">&nbsp;kg</span> × ({c}<span class="me-u">&nbsp;m/s</span>)<sup>{two}</sup> = <b>{E}&nbsp;J</b>',
+    f_E: '{emc}<br>= {kg}<span class="me-u">&nbsp;kg</span> × ({c}<span class="me-u">&nbsp;m/s</span>)<sup>{two}</sup> = <b>{E}&nbsp;J</b>',
 
     out_plant: '{m} এর প্রায় {p}% ভর শক্তি হয়: <i>m</i> = {kg}&nbsp;kg',
     out_plant_full: 'পুরো {m} ভর শক্তি হলে: <i>m</i> = {kg}&nbsp;kg',
 
     rule_plant_off: 'শক্তিকেন্দ্রে ঠিক এটাই ঘটে (ভেতরটা কেটে দেখানো)। এই শক্তিতে {W}&nbsp;W বাল্ব জ্বলবে প্রায় <b>{years}</b>।',
-    rule_plant_on: '<b>তাপে পানি বাষ্প হয়, বাষ্প টারবাইন ঘোরায়, জেনারেটরে বিদ্যুৎ হয়।</b> {W}&nbsp;W বাল্ব জ্বলবে প্রায় <b>{years}</b>।',
+    rule_plant_on: 'তাপে পানি বাষ্প হয়, বাষ্প টারবাইন ঘোরায়, জেনারেটরে বিদ্যুৎ হয়। {W}&nbsp;W বাল্ব জ্বলবে প্রায় <b>{years}</b>।',
     years: '{n} বছর',
     w_thousand: '{n} হাজার',
     w_lakh: '{n} লাখ',
@@ -124,13 +124,14 @@ export const STRINGS = {
     u_kg: 'kg',
     u_J: 'J',
 
-    f_E: '{emc} = {kg}<span class="me-u">&nbsp;kg</span> × ({c}<span class="me-u">&nbsp;m/s</span>)<sup>{two}</sup> = <b>{E}&nbsp;J</b>',
+    f_E: '{emc}<br>= {kg}<span class="me-u">&nbsp;kg</span> × ({c}<span class="me-u">&nbsp;m/s</span>)<sup>{two}</sup> = <b>{E}&nbsp;J</b>',
 
     out_plant: 'About {p}% of {m} becomes energy: <i>m</i> = {kg}&nbsp;kg',
     out_plant_full: 'If all of {m} became energy: <i>m</i> = {kg}&nbsp;kg',
 
     rule_plant_off: 'A power plant does just this (shown cut open). This energy lights a {W}&nbsp;W bulb for about <b>{years}</b>.',
-    rule_plant_on: '<b>The heat makes steam, the steam turns the turbine, the generator makes electricity.</b> {W}&nbsp;W bulb: <b>{years}</b>.',
+    rule_plant_on:
+      'The heat makes steam, the steam turns the turbine, the generator makes electricity. A {W}&nbsp;W bulb would glow for about <b>{years}</b>.',
     years: '{n} years',
     w_thousand: '{n} thousand',
     w_lakh: '{n} lakh',

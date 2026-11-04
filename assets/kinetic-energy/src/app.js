@@ -96,7 +96,7 @@ export function createApp(root, options = {}) {
     </div>`;
   const sheetHtml = cleanSheet(t, {
     quiet: [{ act: 'home', label: 'act_home', icon: ICONS.reset }],
-    lines: { action: 1, outcome: 2, rule: 3 },
+    lines: { action: 1, outcome: 3, rule: 5 },
   }).replace(
     '<p class="pvc-outcome"',
     `<div class="ke-calc" role="group" aria-label="${t('calc')}">${stepper('m', 'calc_m')}${stepper('v', 'calc_v')}</div><p class="pvc-outcome"`,
@@ -542,7 +542,7 @@ export function createApp(root, options = {}) {
     const Tv = kinetic(m, v);
     // three unbreakable parts, so a narrow panel wraps it only at an "="
     const nb = (x) => `<span class="ke-nb">${x}</span>`;
-    return `<span class="ke-f">${nb(`<i>T</i> = ${frac('1', '2')}<i>mv</i><sup>2</sup>`)} ${nb(`= ${frac(N(1), N(2))} × ${N(plain(m))} kg × (${N(v)} m/s)<sup>${N(2)}</sup>`)} ${nb(`= <b>${N(plain(Tv))} J</b>`)}</span>`;
+    return `<span class="ke-f">${nb(`<i>T</i> = ${frac('1', '2')}<i>mv</i><sup>2</sup>`)}<br>${nb(`= ${frac(N(1), N(2))} × ${N(plain(m))} kg × (${N(v)} m/s)<sup>${N(2)}</sup>`)} ${nb(`= <b>${N(plain(Tv))} J</b>`)}</span>`;
   }
   /** A ratio for a sentence: exact (২, ২.২৫) or rounded with প্রায় (প্রায় ১.৬৭). */
   const rText = (x) => (ratioExact(x) ? '' : t('about')) + ratioText(x);

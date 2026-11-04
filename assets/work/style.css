@@ -19,7 +19,7 @@ body.bg-transparent { background: transparent; }
 .wk-btn svg { width: 18px; height: 18px; stroke-width: 2.4; }
 .wk-btn:hover:not(:disabled) { background: color-mix(in srgb, var(--c) 24%, #fff); }
 .wk-btn:disabled { opacity: 0.35; cursor: default; }
-.wk-val { min-width: 3em; text-align: center; font-size: 17px; font-weight: 700; color: var(--c); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.wk-val { min-width: 3em; text-align: center; font-size: 17px; font-weight: 600; color: var(--c); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .wk-step.fixed .wk-val { opacity: 0.75; }
 
 /* a warm, lightly tinted panel under the vivid scene */
@@ -33,8 +33,9 @@ body.bg-transparent { background: transparent; }
 .wk .pvc-examples[data-results] .pvc-ex-res:empty { min-height: 1.25em; }
 .wk .pvc-act-row { min-height: 46px; }
 .wk .pvc-act { min-height: 46px; }
-.wk .pvc-outcome { line-height: 1.6; min-height: 1.6em; }
-.wk .pvc-rule { font-size: 14px; line-height: 1.45; min-height: calc(var(--pvc-rule-lines, 3) * 1.45em); }
+.wk .pvc-outcome { line-height: 1.6; min-height: 1.6em; padding: 5px 10px; border-radius: 6px; background: var(--soft); text-align: center; }
+.wk .pvc-rule { margin-top: 6px; font-size: 14px; line-height: 1.55; min-height: calc(var(--pvc-rule-lines, 3) * 1.55em); }
+.wk .pvc-rule .pvc-formula { display: block; margin: 6px 0; }
 
 /* English words are longer: on a phone-wide panel the steppers show the letters F and s only (named in aria-label) */
 @container pvc-panel (max-width: 440px) {
@@ -54,7 +55,7 @@ body.bg-transparent { background: transparent; }
   .wk-calc { flex-direction: column; align-items: stretch; gap: 3px; }
   .wk-step { justify-content: space-between; }
   .wk-btn { height: 32px; }
-  .wk .pvc-rule { font-size: 12.5px; }
+  .wk .pvc-rule { font-size: 13.5px; }
 }
 
 /* the result line: W in green once it is known */
@@ -62,7 +63,7 @@ body.bg-transparent { background: transparent; }
 .wk .pvc-outcome[data-k='work'] b { color: var(--c-W); }
 
 /* labels on the picture: at once (a fading F label would outlive the push) */
-.wk .pvc-anno { transition: none; font-size: 14px; font-weight: 700; color: var(--c); border-color: color-mix(in srgb, var(--c) 45%, var(--line)); padding: 1px 7px; }
+.wk .pvc-anno { transition: none; font-size: 14px; font-weight: 600; color: var(--c); border-color: color-mix(in srgb, var(--c) 45%, var(--line)); padding: 1px 7px; }
 .wk .pvc-anno small { font-size: 0.82em; font-weight: 500; color: var(--ink-2); }
 
 /* the test: answers in words (two lines allowed), the mistake note under the worked answer; as tight as the sheet
@@ -91,7 +92,7 @@ body.bg-transparent { background: transparent; }
   .wk-val { font-size: 15.5px; min-width: 3.2em; }
   .wk-name { font-size: 13px; }
   .wk .pvc-outcome { font-size: 14.5px; }
-  .wk .pvc-rule { font-size: 13px; line-height: 1.4; }
+  .wk .pvc-rule { font-size: 14px; line-height: 1.45; }
   .wk .pvc-q-text { font-size: 14px; }
   .wk .pvc-opt { font-size: 13px; height: 38px; }
   .wk .pvc-q-feedback { font-size: 12.5px; line-height: 1.4; }

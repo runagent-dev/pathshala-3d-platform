@@ -27,7 +27,7 @@ test('spring-potential-energy: F = kx, V = ½kx², twice x gives four times V', 
   expect(await text('[data-res="F"]')).toBe('=১০ N');
   expect(await text('[data-sum="V"]')).toContain('×২০০×০.০৫২'); // ½ × k × x², x in metres
   expect(await text('[data-res="V"]')).toBe('=০.২৫ J');
-  expect(await text('.pvc-rule')).toContain('দুটো বল সমান, বিপরীত');
+  expect(await text('.pvc-rule')).toContain('দুটো বল সমান ও বিপরীত');
   expect(await text('[data-example="stretched"] .pvc-ex-res')).toBe('০.২৫ J');
   expect(s1.next).toEqual({ label: 'act_double', step: 2, to: [10] });
 

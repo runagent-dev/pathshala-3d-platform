@@ -29,7 +29,7 @@ body.bg-transparent { background: transparent; }
 @keyframes ef-flow { from { transform: translateX(0); } to { transform: translateX(17px); } }
 @media (prefers-reduced-motion: reduce) { .ef-flow.flowing .s { animation: none; } }
 .ef-flow text { font-size: 11.5px; font-weight: 600; fill: #343a40; }
-.ef-flow .val { font-weight: 700; }
+.ef-flow .val { font-weight: 600; }
 .ef-flow.narrow text { font-size: 10.5px; }
 .ef-flow.narrow text.val.in { font-size: 12px; }
 .ef-flow.narrow .row.wk .val { font-size: 11.5px; }
@@ -45,23 +45,23 @@ body.bg-transparent { background: transparent; }
 .ef-flow:not(.known) .row .val { fill: #868e96; }
 
 /* ── the formula and the book's sentence (rule line) ── */
-.ef .pvc-rule { --pvc-rule-lines: 4.4; font-size: 13.5px; line-height: 1.45; }
+.ef .pvc-rule { --pvc-rule-lines: 4.4; font-size: 14px; line-height: 1.55; }
 .ef-f { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 5px; margin-bottom: 3px; }
 .ef-eq:empty { display: none; }
 .ef-eq { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
-.ef-name { font-weight: 700; }
+.ef-name { font-weight: 600; }
 .ef .fr { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; line-height: 1.2; }
 .ef .fr > span { display: block; padding: 0 3px; white-space: nowrap; }
 .ef .fr > span:first-child { border-bottom: 1.5px solid currentColor; padding-bottom: 1px; }
 .ef-eff { font-size: 1.3em; color: var(--c-wk-text); }
-.ef-term { min-height: 24px; padding: 0 4px; border: 0; border-bottom: 2px dotted currentColor; border-radius: 4px 4px 0 0; background: none; font: inherit; font-weight: 700; cursor: pointer; }
+.ef-term { min-height: 24px; padding: 0 4px; border: 0; border-bottom: 2px dotted currentColor; border-radius: 4px 4px 0 0; background: none; font: inherit; font-weight: 600; cursor: pointer; }
 .ef-term.input { color: var(--c-in-text); }
 .ef-term.work { color: var(--c-wk-text); }
 .ef-term.waste { color: var(--c-ws-text); }
 .ef-term:hover, .ef-term:focus-visible, .ef-term.on { background: color-mix(in srgb, currentColor 13%, transparent); }
 .ef-term:focus-visible { outline: 2px solid currentColor; outline-offset: 1px; }
-.ef-say { display: block; }
-.ef-f .v { font-weight: 700; }
+.ef-say { display: block; margin-top: 4px; color: var(--ink-2); }
+.ef-f .v { font-weight: 600; }
 .ef-f .v.work { color: var(--c-wk-text); }
 .ef-f .v.input { color: var(--c-in-text); }
 .ef-f .v.waste { color: var(--c-ws-text); }
@@ -72,11 +72,11 @@ body.bg-transparent { background: transparent; }
 .ef-gauge-bar { position: relative; flex: 1 1 auto; height: 6px; border-radius: 3px; background: #e9ecef; }
 .ef-gauge-bar i { position: absolute; left: 0; top: 0; bottom: 0; width: calc(var(--k) * 100%); border-radius: 3px; background: var(--c-wk); }
 .ef-gauge-bar b { display: none; }
-.ef-gauge-h { font-weight: 700; color: var(--c-wk-text); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ef-gauge-h { font-weight: 600; color: var(--c-wk-text); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .ef-ring { position: absolute; z-index: 2; border: 3px dashed var(--c); border-radius: 14px; box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85), inset 0 0 0 2px rgba(255, 255, 255, 0.85); pointer-events: none; }
-.ef-ring::after { content: attr(data-label); position: absolute; left: 50%; bottom: calc(100% + 4px); transform: translateX(-50%); padding: 2px 8px; border: 1.5px solid #fff; border-radius: 6px; background: var(--c); color: #fff; font-size: 12.5px; font-weight: 700; white-space: nowrap; box-shadow: 0 1px 3px rgba(20, 30, 45, 0.3); }
+.ef-ring::after { content: attr(data-label); position: absolute; left: 50%; bottom: calc(100% + 4px); transform: translateX(-50%); padding: 2px 8px; border: 1.5px solid #fff; border-radius: 6px; background: var(--c); color: #fff; font-size: 12.5px; font-weight: 600; white-space: nowrap; box-shadow: 0 1px 3px rgba(20, 30, 45, 0.3); }
 /* labels: short names in their colour on the kit's solid white chip, rimmed in the same colour */
-.ef .pvc-anno { transition: none; font-size: 12.5px; font-weight: 700; padding: 2px 7px; }
+.ef .pvc-anno { transition: none; font-size: 12.5px; font-weight: 600; padding: 2px 7px; }
 .ef .pvc-anno-part { color: var(--c, #343a40); border-color: color-mix(in srgb, var(--c, #343a40) 60%, #fff); }
 
 /* ── the test ── */
@@ -105,7 +105,7 @@ body.bg-transparent { background: transparent; }
 .ef-ctl { display: flex; align-items: center; gap: 2px; }
 .ef-pm { width: 32px; height: 32px; display: grid; place-items: center; border: 1px solid #ced4da; border-radius: 16px; background: #fff; color: #1c6fd9; cursor: pointer; }
 .ef-pm:disabled { opacity: 0.35; cursor: default; }
-.ef-val { min-width: 62px; text-align: center; font-weight: 700; font-size: 14px; white-space: nowrap; }
+.ef-val { min-width: 62px; text-align: center; font-weight: 600; font-size: 14px; white-space: nowrap; }
 .ef-ex-ans { margin: 0 0 2px; }
 .ef-ex-ans small { color: #6c757d; }
 .ef-ex-lines { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
@@ -116,7 +116,7 @@ body.bg-transparent { background: transparent; }
 .c-input { color: var(--c-in-text); }
 .c-waste { color: var(--c-ws-text); }
 .c-eff { color: var(--c-wk-text); font-size: 1.2em; }
-.ef-book { display: inline-flex; align-items: center; gap: 3px; padding: 1px 8px; border-radius: 12px; background: #d3f9d8; color: #1e6b2e; font-size: 12px; font-weight: 700; }
+.ef-book { display: inline-flex; align-items: center; gap: 3px; padding: 1px 8px; border-radius: 12px; background: #d3f9d8; color: #1e6b2e; font-size: 12px; font-weight: 600; }
 .ef-book svg { width: 14px; height: 14px; }
 .ef-bad { display: block; padding: 6px 8px; border-radius: 8px; background: #fff4e6; color: #a6420c; }
 .ef-ex-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 8px 16px 12px; border-top: 1px solid #f1f3f5; }

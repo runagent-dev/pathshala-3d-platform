@@ -23,20 +23,22 @@ body.bg-transparent { background: transparent; }
 .ke-btn:hover:not(:disabled) { background: color-mix(in srgb, var(--c) 10%, #fff); }
 .ke-btn:disabled, .ke-btn.at-max { opacity: 0.35; }
 .ke-btn:disabled { cursor: default; }
-.ke-val { min-width: 4.6em; text-align: center; font-size: 17px; font-weight: 700; color: var(--c); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ke-val { min-width: 4.6em; text-align: center; font-size: 17px; font-weight: 600; color: var(--c); font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 /* the result: a line of words, then the formula with the student's numbers */
 .ke .pvc-outcome { line-height: 1.6; }
-.ke-w { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 15px; color: var(--ink-2); }
+.ke-w { display: block; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 15px; color: var(--ink-2); }
 .ke-w b { font-size: 1.08em; color: var(--c-ke-text); }
 .ke-w b.pe { color: var(--c-pe); }
 .ke-f { display: block; font-size: 16px; color: var(--ink); }
 .ke-nb { white-space: nowrap; }
 .ke-f b { color: var(--c-ke-text); font-size: 1.3em; }
+.ke .pvc-rule { font-size: 14px; line-height: 1.55; }
+.ke .pvc-rule .pvc-formula { display: block; margin: 6px 0; }
 .ke .pvc-rule i, .ke .pvc-q-text i, .ke .pvc-q-feedback i { font-size: 1.08em; line-height: 1; }
 
 /* labels on the picture */
-.ke .pvc-anno { transition: none; font-size: 14px; font-weight: 700; color: var(--c); border-color: color-mix(in srgb, var(--c) 45%, var(--line)); background: rgba(255, 255, 255, 0.94); padding: 1px 7px; }
+.ke .pvc-anno { transition: none; font-size: 14px; font-weight: 600; color: var(--c); border-color: color-mix(in srgb, var(--c) 45%, var(--line)); background: rgba(255, 255, 255, 0.94); padding: 1px 7px; }
 
 /* the test */
 .ke .pvc-q-text { font-size: 15px; }
@@ -66,7 +68,7 @@ body.bg-transparent { background: transparent; }
   .ke .pvc-outcome { font-size: 14px; line-height: 1.5; }
   .ke-w { font-size: 13.5px; }
   .ke-f { font-size: 14.5px; }
-  .ke .pvc-rule { font-size: 13px; line-height: 1.4; }
+  .ke .pvc-rule { font-size: 13.5px; line-height: 1.4; }
   .ke .pvc-q-text { font-size: 14px; }
   .ke .pvc-opt { font-size: 13px; }
   .ke .pvc-q-feedback { font-size: 12px; line-height: 1.4; }

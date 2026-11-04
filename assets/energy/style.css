@@ -9,7 +9,7 @@ body.bg-transparent { background: transparent; }
 .en { --c-pe: #6741d9; --c-ke: #e8930c; --c-ke-text: #a35f00; --c-heat: #868e96; }
 
 /* the energy bar: the full length is the 3,430 J the rider put in (a dashed outline), split into its parts */
-.en .pvc-outcome { font-size: 13px; line-height: 1.35; }
+.en .pvc-outcome { font-size: 13px; line-height: 1.4; }
 .en-meter { display: flex; flex-direction: column; gap: 5px; width: 100%; }
 .en-bar { position: relative; display: flex; height: 16px; border-radius: 4px; outline: 1.5px dashed #9aa3ad; outline-offset: 1px; background: #f3f4f6; overflow: hidden; }
 .en-bar i { display: block; height: 100%; width: 0; flex: none; }
@@ -20,14 +20,14 @@ body.bg-transparent { background: transparent; }
 .en-legend > span { white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
 .en-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; }
 .en-legend em { font-style: normal; }
-.en-legend b { font-size: 14px; font-weight: 700; }
+.en-legend b { font-size: 14px; font-weight: 600; }
 .en-legend .pe i { background: var(--c-pe); }
 .en-legend .pe b { color: var(--c-pe); }
 .en-legend .ke i { background: var(--c-ke); }
 .en-legend .ke b { color: var(--c-ke-text); }
 .en-legend .tot i { background: none; outline: 1.5px dashed #9aa3ad; }
 .en-legend .heat i { background: repeating-linear-gradient(135deg, #adb5bd 0 2px, #e9ecef 2px 4px); }
-.en .pvc-rule { font-size: 13.5px; line-height: 1.5; }
+.en .pvc-rule { font-size: 14px; line-height: 1.55; }
 
 /* labels on the view: short names with a value, in the arrow's colour on the kit's chip */
 .en .pvc-anno { transition: none; font-size: 13px; font-weight: 600; padding: 2px 7px; }
@@ -61,7 +61,7 @@ body.bg-transparent { background: transparent; }
 }
 /* short and wide (phone held sideways): the panel beside the scene */
 @container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
-  .en .pvc-rule { --pvc-rule-lines: 5; font-size: 12.5px; line-height: 1.42; }
+  .en .pvc-rule { --pvc-rule-lines: 6.4; font-size: 14px; line-height: 1.5; }
   .en .pvc-outcome { font-size: 12px; }
   .en-legend b { font-size: 12.5px; }
   .en .pvc-q-text { font-size: 13px; }

@@ -41,22 +41,23 @@ export const STRINGS = {
     out_start: 'ছিলা যত বেশি টানবে, তীর তত জোরে ছুটবে।',
     out_drawn: 'ছিলা টানা হয়েছে: <b class="pe">বাঁকা ধনুকে শক্তি জমা</b>',
     out_flying: 'তীর ছুটছে <b>{v} m/s</b> বেগে ({k} গুণ ধীরে দেখানো)',
-    out_first: 'চলন্ত তীর খড় ঠেলে ভেতরে ঢুকল: <b>তার শক্তি আছে</b>',
+    out_first: 'তীর খড়ে ঢুকল: <b>তার শক্তি আছে</b>',
     out_cmp_v: 'বেগ আগেরটির {rv} গুণ, তাই গতিশক্তি <b>{rt} গুণ</b>',
     out_cmp_m: 'ভর আগেরটির {rm} গুণ, তাই গতিশক্তি <b>{rt} গুণ</b>',
     out_cmp_both: 'ভর {rm} গুণ, বেগ {rv} গুণ: গতিশক্তি <b>{rt} গুণ</b>',
     out_cmp_same: 'আগের তীরের সমান ভর, সমান বেগ: গতিশক্তিও <b>সমান</b>',
 
-    rule_start: '<b>ছিলা টেনে ধনুক বাঁকালে তাতে শক্তি জমা হয়।</b> ছেড়ে দিলে ছিলা তীরকে ঠেলে নিয়ে যায়, অর্থাৎ কাজ করে; সেই কাজ হয় তীরের গতির শক্তি।',
+    rule_start: 'ছিলা টেনে ধনুক বাঁকালে তাতে <b>শক্তি জমা</b> হয়। ছেড়ে দিলে ছিলা তীরকে ঠেলে নিয়ে যায়, অর্থাৎ কাজ করে। সেই কাজই তীরের গতির শক্তি।',
     rule_first: 'গতির জন্য বস্তুর যে শক্তি, তাকে বলা হয় <b>গতিশক্তি</b>। চলন্ত তীর খড়কে ঠেলে ভেতরে ঢুকল, অর্থাৎ কাজ করল। এবার বেগ <i>v</i> দ্বিগুণ করে ছোড়ো।',
     rule_v2:
-      '<b>বেগ দ্বিগুণ হলে গতিশক্তি চার গুণ</b>, কারণ <i>T</i> = ½<i>mv</i><sup>2</sup>-এ <i>v</i> বর্গ হিসেবে আছে। দ্রুত তীরটি খড়েও প্রায় চার গুণ গভীরে ঢুকেছে। এবার ভর বদলে দেখো।',
-    rule_v: '<b>গতিশক্তি বাড়ে বেগের বর্গের সঙ্গে</b>: বেগ {rv} গুণ হলে গতিশক্তি {rt} গুণ। বেগ ঠিক দ্বিগুণ করেও দেখো।',
-    rule_m2: '<b>ভর দ্বিগুণ হলে গতিশক্তিও দ্বিগুণ</b>: ½<i>mv</i><sup>2</sup>-এ <i>m</i>-এর বর্গ নেই। একই বেগে ভারী তীর খড়ে দ্বিগুণ গভীরে ঢোকে।',
-    rule_m: '<b>গতিশক্তি বাড়ে ভরের সমান হারে</b>: ভর {rm} গুণ হলে গতিশক্তিও {rt} গুণ। এবার ভর দ্বিগুণ করে দেখো।',
+      'বেগ দ্বিগুণ হলে <b>গতিশক্তি চার গুণ</b> হয়, কারণ সূত্রে <i>v</i> বর্গ হিসেবে আছে:<span class="pvc-formula"><i>T</i> = ½<i>mv</i><sup>2</sup></span>দ্রুত তীরটি খড়েও প্রায় চার গুণ গভীরে ঢুকেছে। এবার ভর বদলে দেখো।',
+    rule_v: 'গতিশক্তি বাড়ে <b>বেগের বর্গের</b> সঙ্গে। বেগ {rv} গুণ হলে গতিশক্তি {rt} গুণ। বেগ ঠিক দ্বিগুণ করেও দেখো।',
+    rule_m2:
+      'ভর দ্বিগুণ হলে <b>গতিশক্তিও দ্বিগুণ</b>, কারণ সূত্রে <i>m</i>-এর বর্গ নেই:<span class="pvc-formula"><i>T</i> = ½<i>mv</i><sup>2</sup></span>একই বেগে ভারী তীর খড়ে দ্বিগুণ গভীরে ঢোকে।',
+    rule_m: 'গতিশক্তি বাড়ে <b>ভরের সমান হারে</b>। ভর {rm} গুণ হলে গতিশক্তিও {rt} গুণ। এবার ভর দ্বিগুণ করে দেখো।',
     rule_both:
-      '<b><i>T</i> = ½<i>mv</i><sup>2</sup>:</b> ভর দ্বিগুণ হলে গতিশক্তি দ্বিগুণ, কিন্তু বেগ দ্বিগুণ হলে চার গুণ। তাই কোনো বস্তুর বেগ দ্বিগুণ করতে চার গুণ শক্তি দিতে হয়।',
-    rule_mix: 'ভর আর বেগ দুটোই বদলেছে। একবারে একটা বদলে ছোড়ো, তাহলে বোঝা যাবে কোনটার জন্য কতটা বাড়ল।',
+      '<span class="pvc-formula"><i>T</i> = ½<i>mv</i><sup>2</sup></span>ভর দ্বিগুণ হলে গতিশক্তি দ্বিগুণ। কিন্তু বেগ দ্বিগুণ হলে গতিশক্তি <b>চার গুণ</b>। তাই বেগ দ্বিগুণ করতে চার গুণ শক্তি দিতে হয়।',
+    rule_mix: 'ভর আর বেগ দুটোই বদলেছে। একবারে একটা বদলে ছোড়ো। তাহলে বোঝা যাবে কোনটার জন্য কতটা বাড়ল।',
 
     l_store: 'ধনুকে শক্তি জমা',
     l_T: '<i>T</i> = {T} J',
@@ -152,25 +153,25 @@ export const STRINGS = {
     out_start: 'Draw the string further: the arrow flies faster.',
     out_drawn: 'String drawn: <b class="pe">energy stored in the bent bow</b>',
     out_flying: 'The arrow flies at <b>{v} m/s</b> (shown {k} × slower)',
-    out_first: 'The arrow pushed into the straw: <b>it has energy</b>',
+    out_first: 'The arrow went into the straw: <b>it has energy</b>',
     out_cmp_v: 'Speed {rv} × the last: kinetic energy <b>{rt} ×</b>',
     out_cmp_m: 'Mass {rm} × the last: kinetic energy <b>{rt} ×</b>',
     out_cmp_both: 'Mass {rm} ×, speed {rv} ×: kinetic energy <b>{rt} ×</b>',
     out_cmp_same: 'Same <i>m</i> and <i>v</i> as the last: <b>same</b> energy',
 
     rule_start:
-      '<b>Drawing the string bends the bow: energy is stored in it.</b> Let go, and the string does work on the arrow; that work becomes its energy of motion.',
+      'Drawing the string bends the bow, and <b>energy is stored</b> in it. Let go, and the string does work on the arrow. That work becomes the arrow’s energy of motion.',
     rule_first:
       'The energy a body has because it moves is <b>kinetic energy</b>. The arrow pushed into the straw: it did work. Now double the speed <i>v</i>.',
     rule_v2:
-      '<b>Double the speed, four times the kinetic energy</b>: <i>v</i> is squared in <i>T</i> = ½<i>mv</i><sup>2</sup>. It went about 4 times as deep. Now change the mass.',
-    rule_v: '<b>Kinetic energy grows with the square of the speed</b>: speed {rv} × gives kinetic energy {rt} ×. Try exactly double the speed too.',
+      'Double the speed and the <b>kinetic energy is four times</b>, because <i>v</i> is squared in the formula:<span class="pvc-formula"><i>T</i> = ½<i>mv</i><sup>2</sup></span>The fast arrow went about 4 times as deep into the straw. Now change the mass.',
+    rule_v: 'Kinetic energy grows with the <b>square of the speed</b>. Speed {rv} × gives kinetic energy {rt} ×. Try exactly double the speed too.',
     rule_m2:
-      '<b>Double the mass, double the kinetic energy</b>: <i>m</i> is not squared in ½<i>mv</i><sup>2</sup>. The heavy arrow went twice as deep.',
-    rule_m: '<b>Kinetic energy grows in step with the mass</b>: mass {rm} × gives kinetic energy {rt} ×. Now try double the mass.',
+      'Double the mass and the <b>kinetic energy is double</b> too, because <i>m</i> is not squared:<span class="pvc-formula"><i>T</i> = ½<i>mv</i><sup>2</sup></span>The heavy arrow went twice as deep.',
+    rule_m: 'Kinetic energy grows <b>in step with the mass</b>. Mass {rm} × gives kinetic energy {rt} ×. Now try double the mass.',
     rule_both:
-      '<b><i>T</i> = ½<i>mv</i><sup>2</sup>:</b> twice the mass, twice the energy; twice the speed, four times. Doubling a speed takes four times the energy.',
-    rule_mix: 'You changed both the mass and the speed. Change one at a time, then you can see what each one does.',
+      '<span class="pvc-formula"><i>T</i> = ½<i>mv</i><sup>2</sup></span>Twice the mass, twice the energy. But twice the speed gives <b>four times</b> the energy. So doubling a speed takes four times the energy.',
+    rule_mix: 'You changed both the mass and the speed. Change one at a time. Then you can see what each one does.',
 
     l_store: 'Energy stored in the bow',
     l_T: '<i>T</i> = {T} J',

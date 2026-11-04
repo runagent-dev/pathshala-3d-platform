@@ -63,7 +63,7 @@ export function createApp(root, options = {}) {
             <div class="pvc-result"><span class="k">${t('reading')}</span><span class="v">0</span><span class="u"></span></div>
             <div class="pvc-sum bal-sum">${term('w', 'w_long')}<i>÷</i>${term('g', 'g_long')}<i>=</i>${term('m', 'm_long')}</div>
           </div>
-          <p class="pvc-learn-extra bal-extra"></p>
+          <div class="pvc-learn-extra bal-extra"></div>
           <div class="pvc-learn-foot">
             <span class="pvc-status"><i></i><span></span></span>
           </div>`,
@@ -206,9 +206,9 @@ export function createApp(root, options = {}) {
     el.unit.textContent = t(s.unit === 'kg' ? 'unit_kg' : 'unit_g');
     el.w.textContent = N(weightOf(total).toFixed(3));
     el.m.textContent = N((total / 1000).toFixed(4));
-    el.extra.textContent = r.net
-      ? t('net_line', { tare: fmtG(s.tare), total: fmtG(total), net: fmtG(r.grams) })
-      : `${t('idea')} ${t('conv', { kg: (total / 1000).toFixed(4), g: fmtG(total) })}`;
+    el.extra.innerHTML = r.net
+      ? `<p>${t('net_line', { tare: fmtG(s.tare), total: fmtG(total), net: fmtG(r.grams) })}</p><p class="pvc-formula">${t('net_sum', { total: fmtG(total), tare: fmtG(s.tare), net: fmtG(r.grams) })}</p>`
+      : `<p>${t('idea')}</p><p class="pvc-formula">${t('conv', { kg: (total / 1000).toFixed(4), g: fmtG(total) })}</p>`;
     el.unitBtn.textContent = t('act_unit', { unit: t(s.unit === 'kg' ? 'unit_kg' : 'unit_g') });
     el.xrayBtn.textContent = t(s.xray ? 'act_xray_off' : 'act_xray');
     const status = s.locked

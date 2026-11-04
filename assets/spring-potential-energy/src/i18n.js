@@ -72,20 +72,21 @@ export const STRINGS = {
     why_half:
       '<b>{half} কেন?</b> টানার শুরুতে বল {z}, শেষে kx = {F} N; গড়ে {half}kx। কাজ = গড় বল × দূরত্ব = {half}kx × x = {half}kx<sup>{two}</sup>। এই কাজটুকুই স্প্রিংয়ে জমা থাকে।',
     why_V:
-      '<b>V = {half}kx<sup>{two}</sup> = {half} × {k} × {xm}<sup>{two}</sup> = {V} J</b>: স্প্রিংয়ে সঞ্চিত বিভব শক্তি। হাত যে কাজ করেছে তা হারায়নি, স্প্রিংয়ের ভেতর লুকিয়ে আছে; ছেড়ে দিলে স্প্রিং এই শক্তিতে কাজ করতে পারে।',
+      'V = {half}kx<sup>{two}</sup> = {half} × {k} × {xm}<sup>{two}</sup> = <b>{V} J</b>। এটি স্প্রিংয়ে সঞ্চিত বিভব শক্তি। হাত যে কাজ করেছে তা হারায়নি, স্প্রিংয়ের ভেতর জমা আছে। ছেড়ে দিলে স্প্রিং এই শক্তিতে কাজ করতে পারে।',
     why_rest: 'এখন x = {z}: হাতলটি টেনে বা চেপে দেখো।',
 
     // the rule, growing with what the student has found out (everyday words first, the book's formula last)
-    rule_rest: 'স্প্রিংটি তার <b>স্থির অবস্থায়</b>: x = {z}, বল নেই, শক্তিও জমা নেই। হাতলটি টেনে বা চেপে দেখো; সূত্রের রঙিন অক্ষর ছুঁলে ছবিতে তার অংশটি জ্বলে ওঠে।',
-    rule_rest_after: 'আবার <b>স্থির অবস্থা</b>, x = {z}: বল {z}, সঞ্চিত শক্তিও {z}। যে শক্তি জমা ছিল, স্প্রিং ফিরে আসার সময় তা হাতকে ফিরিয়ে দিয়েছে।',
+    rule_rest:
+      'স্প্রিংটি <b>স্থির অবস্থায়</b> আছে: x = {z}, কোনো বল নেই, শক্তিও জমা নেই। হাতলটি টেনে বা চেপে দেখো। সূত্রের রঙিন অক্ষর ছুঁলে ছবিতে তার অংশটি জ্বলে ওঠে।',
+    rule_rest_after: 'আবার <b>স্থির অবস্থা</b>: x = {z}, বল {z}, সঞ্চিত শক্তিও {z}। স্প্রিং ফিরে আসার সময় জমানো শক্তি হাতকে ফিরিয়ে দিয়েছে।',
     rule_stretched:
-      'হাত বাইরে টানছে (F<sub>P</sub>), স্প্রিং উল্টো দিকে ভেতরে টানছে (F<sub>S</sub>): <b>দুটো বল সমান, বিপরীত</b>। স্প্রিং সবসময় x = {z}-তে ফিরতে চায়। টানতে যে কাজ হলো, তা স্প্রিংয়ে জমা আছে।',
+      'হাত বাইরে টানছে (F<sub>P</sub>), স্প্রিং ভেতরে টানছে (F<sub>S</sub>)। <b>দুটো বল সমান ও বিপরীত।</b> স্প্রিং সবসময় x = {z}-তে ফিরতে চায়। টানতে যে কাজ হলো, তা স্প্রিংয়ে জমা আছে।',
     rule_compressed:
-      'চাপলে স্প্রিং উল্টো দিকে, বাইরে ঠেলে (F<sub>S</sub>)। হাত বা স্প্রিং কোনোটাই নড়ছে না, তবু ভেতরে শক্তি লুকিয়ে আছে: <b>এই সঞ্চিত শক্তিকে বলে বিভব শক্তি</b>।',
+      'চাপলে স্প্রিং উল্টো দিকে, অর্থাৎ বাইরে ঠেলে (F<sub>S</sub>)। হাত বা স্প্রিং কোনোটাই নড়ছে না, তবু ভেতরে শক্তি জমা আছে। এই সঞ্চিত শক্তিকে বলে <b>বিভব শক্তি</b>।',
     rule_times:
-      'x {n} গুণ ({x1} → {x2} cm): বল <b>{n} গুণ</b> ({F1} → {F2} N, তীরও {n} গুণ লম্বা), কিন্তু বিভব শক্তি <b>{nn} গুণ</b> ({V1} → {V2} J), কারণ {n} × {n} = {nn}।',
+      'x {n} গুণ ({x1} → {x2} cm): বল {n} গুণ ({F1} → {F2} N, তীরও {n} গুণ লম্বা), কিন্তু <b>বিভব শক্তি {nn} গুণ</b> ({V1} → {V2} J), কারণ {n} × {n} = {nn}।',
     rule_law:
-      '<b>স্প্রিংয়ের ধ্রুবক k, স্থির অবস্থার সাপেক্ষে x দূরত্ব: সঞ্চিত শক্তি V = {half}kx<sup>{two}</sup></b>। x দ্বিগুণ হলে শক্তি চার গুণ; শক্ত স্প্রিংয়ে (k বড়) বেশি শক্তি।',
+      'স্প্রিংয়ের ধ্রুবক k। স্থির অবস্থা থেকে x দূরত্ব সরালে সঞ্চিত শক্তি:<span class="pvc-formula"><i>V</i> = {half}<i>kx</i><sup>{two}</sup></span>x দ্বিগুণ হলে শক্তি <b>চার গুণ</b>। শক্ত স্প্রিংয়ে (k বড়) বেশি শক্তি জমে।',
 
     // labels on the picture
     l_zero: 'x = {z}',
@@ -217,21 +218,21 @@ export const STRINGS = {
     why_half:
       '<b>Why {half}?</b> The force grows from {z} to kx = {F} N as you pull, {half}kx on average. Work = average force × distance = {half}kx × x = {half}kx<sup>{two}</sup>, stored in the spring.',
     why_V:
-      '<b>V = {half}kx<sup>{two}</sup> = {half} × {k} × {xm}<sup>{two}</sup> = {V} J</b>: the energy stored in the spring. The hand’s work is not lost: let go, and the spring can do work with it.',
+      'V = {half}kx<sup>{two}</sup> = {half} × {k} × {xm}<sup>{two}</sup> = <b>{V} J</b>. This is the energy stored in the spring. The hand’s work is not lost: let go, and the spring can do work with it.',
     why_rest: 'Now x = {z}: pull the handle out or push it in.',
 
     rule_rest:
-      'The spring is <b>at rest</b>: x = {z}, no force, no stored energy. Pull or push the handle, or tap a letter of the formula to see it in the picture.',
+      'The spring is <b>at rest</b>: x = {z}, no force, no stored energy. Pull or push the handle. Tap a letter of the formula to see its part in the picture.',
     rule_rest_after:
-      '<b>At rest</b> again, x = {z}: no force and no stored energy. The energy that was stored went back into the hand as the spring came back.',
+      '<b>At rest</b> again: x = {z}, no force and no stored energy. The stored energy went back into the hand as the spring came back.',
     rule_stretched:
-      'The hand pulls out (F<sub>P</sub>), the spring pulls back in (F<sub>S</sub>): <b>equal, opposite forces</b>. The spring always heads back to x = {z}; the work of pulling is stored in it.',
+      'The hand pulls out (F<sub>P</sub>), the spring pulls back in (F<sub>S</sub>). The two forces are <b>equal and opposite</b>. The spring always heads back to x = {z}. The work of pulling is stored in it.',
     rule_compressed:
-      'Pushed in, the spring pushes back out (F<sub>S</sub>). Nothing moves, yet energy hides inside: <b>this stored energy is called potential energy</b>.',
+      'Pushed in, the spring pushes back out (F<sub>S</sub>). Nothing moves, yet energy is stored inside. This stored energy is called <b>potential energy</b>.',
     rule_times:
-      'x is {n} times ({x1} → {x2} cm): the force is <b>{n} times</b> ({F1} → {F2} N, the arrows {n} times as long), but the potential energy is <b>{nn} times</b> ({V1} → {V2} J), because {n} × {n} = {nn}.',
+      'x is {n} times ({x1} → {x2} cm): the force is {n} times ({F1} → {F2} N, the arrows {n} times as long), but the <b>potential energy is {nn} times</b> ({V1} → {V2} J), because {n} × {n} = {nn}.',
     rule_law:
-      '<b>A spring of constant k, moved x from its rest position, stores V = {half}kx<sup>{two}</sup></b>. Twice x, four times the energy; a stiffer spring (larger k) stores more.',
+      'A spring has constant k. Moved x from its rest position, it stores:<span class="pvc-formula"><i>V</i> = {half}<i>kx</i><sup>{two}</sup></span>Twice x, <b>four times</b> the energy. A stiffer spring (larger k) stores more.',
 
     l_zero: 'x = {z}',
     l_x: 'x = {x} cm',

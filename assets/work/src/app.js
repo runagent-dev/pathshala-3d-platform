@@ -102,7 +102,7 @@ export function createApp(root, options = {}) {
       ],
     },
     quiet: [{ act: 'home', label: 'act_home', icon: ICONS.reset }],
-    lines: { action: 1, outcome: 1, rule: 3 },
+    lines: { action: 1, outcome: 1, rule: 4 },
   }).replace(
     '<p class="pvc-outcome"',
     `<div class="wk-calc" role="group" aria-label="${t('calc')}">${stepper('F', 'calc_F')}${stepper('s', 'calc_s')}</div><p class="pvc-outcome"`,

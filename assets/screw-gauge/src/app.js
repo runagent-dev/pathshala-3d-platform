@@ -18,7 +18,7 @@ import { createGauge, DIM } from './gauge.js';
 import { OBJECTS, OBJECT_KINDS, createObject, randomSize } from './objects.js';
 import { read, format, roundTo, LC, PITCH, DIVISIONS, RANGE } from './reading.js';
 
-export const VERSION = '0.3.0';
+export const VERSION = '0.3.1';
 
 /** Wait (briefly) for the Bangla webfont, so the numbers on the scales are drawn with it. */
 export function loadFonts(timeout = 2500) {
@@ -66,7 +66,7 @@ export function createScrewGaugeApp(root, userOptions = {}) {
         { cls: 'cir', label: 'cir_long', op: '+' },
         { cls: 'lc', label: 'lc_long', op: '×' },
       ],
-      extra: `\n          <p class="pvc-learn-extra">${t('lc_line', { pitch: PITCH, n: DIVISIONS, lc: LC })}</p>`,
+      extra: `\n          <div class="pvc-learn-extra"><p class="pvc-note">${t('lc_line')}</p><p class="pvc-formula">${t('lc_sum', { pitch: PITCH, n: DIVISIONS, lc: LC })}</p></div>`,
     }),
   });
 
