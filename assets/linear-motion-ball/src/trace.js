@@ -9,6 +9,8 @@ export const COLORS = { path: '#1c6fd9', rim: '#0d3f86', line: '#12924f', gap: '
 const DASH = 0.018; // dash and gap of the straight line
 const GAP = 0.012;
 const OVERHANG = 0.05; // the straight line runs on a little past both ends, like a line drawn with a ruler
+const LINE_ARROW = 0.6; // where along the straight line its arrowhead sits
+const PATH_ARROWS = [0.4, 0.75]; // where along the path its direction arrows sit (fractions of its length)
 
 const up = new THREE.Vector3(0, 1, 0);
 const tmpM = new THREE.Matrix4();
@@ -29,7 +31,7 @@ function segmentMatrix(a, b, out) {
 
 /**
  * The marks of one motion. ghostGeometry: the object's shape, centred (each picture is placed at the object's
- * centre, with a darker outline so it reads on the light board). lineLift raises the straight line above the
+ * centre, with a darker outline so it reads on the light bench). lineLift raises the straight line above the
  * path (on top of a flat object's pictures). Call set(path) once per motion, then show(t) as it moves and line(k)
  * to draw the straight line; faded(true) greys it all (another example's marks, kept for comparison).
  */
@@ -47,10 +49,10 @@ export function createTrace({
   group.name = name;
 
   // faint pictures with a darker edge (it darkens where the surface turns away from the eye), so they read on the
-  // light board and against each other; still a standard material, so the GLB keeps them
+  // light bench and against each other; still a standard material, so the GLB keeps them
   const inAir = name !== 'PushTrace';
   const sceneColor = inAir ? '#70dfff' : color;
-  const sceneLine = inAir ? '#63ec9e' : COLORS.line;
+  const sceneLine = inAir ? '#17a35a' : COLORS.line;
   const rim = { rimColor: { value: new THREE.Color(inAir ? '#4bb5e8' : COLORS.rim) }, rimStrength: { value: 1 } };
   const ghostMat = new THREE.MeshStandardMaterial({
     name: `${name}Picture`,
@@ -92,8 +94,26 @@ export function createTrace({
   dashes.frustumCulled = false;
   group.add(dashes);
 
-  const gapMat = new THREE.MeshBasicMaterial({ name: `${name}Gap`, color: inAir ? '#d5b7ff' : COLORS.gap, toneMapped: false });
-  const gap = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.0022, 0.0022, 1, 8), gapMat, 3);
+  // an arrowhead on the straight line (the way the object went), where the object does not hide it
+  const lineHeadLen = lineRadius * 13;
+  const lineHead = new THREE.Mesh(new THREE.ConeGeometry(lineRadius * 5, lineHeadLen, 16).translate(0, lineHeadLen / 2, 0), lineMat);
+  lineHead.visible = false;
+  group.add(lineHead);
+
+  // arrowheads along the dotted path, pointing the way the object moves (dark, so they read on the pale pictures)
+  const pathArrowLen = 0.042;
+  const pathArrowMat = new THREE.MeshBasicMaterial({ name: `${name}Direction`, color: COLORS.path, toneMapped: false });
+  const pathArrows = PATH_ARROWS.map(() => {
+    const m = new THREE.Mesh(new THREE.ConeGeometry(0.016, pathArrowLen, 16), pathArrowMat);
+    m.visible = false;
+    m.renderOrder = 2; // over the faint pictures (they do not write depth)
+    group.add(m);
+    return m;
+  });
+  const arrowAt = []; // the time each path arrow appears
+
+  const gapMat = new THREE.MeshBasicMaterial({ name: `${name}Gap`, color: COLORS.gap, toneMapped: false });
+  const gap = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.003, 0.003, 1, 8), gapMat, 3);
   gap.count = 0;
   gap.frustumCulled = false;
   group.add(gap);
@@ -115,7 +135,24 @@ export function createTrace({
       dots.count = 0;
       dashes.count = 0;
       gap.count = 0;
+      lineHead.visible = false;
+      for (const m of pathArrows) m.visible = false;
+      arrowAt.length = 0;
       if (!path) return;
+      // the path arrows at fixed fractions of its length, along its direction there
+      const pts = path.dots.map((d) => d.p);
+      const along = [0];
+      for (let i = 1; i < pts.length; i++) along.push(along[i - 1] + pts[i].distanceTo(pts[i - 1]));
+      const total = along[along.length - 1];
+      PATH_ARROWS.forEach((f, j) => {
+        let i = 1;
+        while (i < pts.length - 1 && along[i] < f * total) i++;
+        if (total < 1e-6) return;
+        tmpD.subVectors(pts[i], pts[i - 1]).normalize();
+        pathArrows[j].position.lerpVectors(pts[i - 1], pts[i], 0.5);
+        pathArrows[j].quaternion.setFromUnitVectors(up, tmpD);
+        arrowAt[j] = path.dots[i].t;
+      });
       path.dots.slice(0, maxDots).forEach((d, i) => dots.setMatrixAt(i, tmpM.makeTranslation(d.p.x, d.p.y, d.p.z)));
       dots.instanceMatrix.needsUpdate = true;
       path.ghosts.slice(0, maxGhosts).forEach((g, i) => ghosts[i].position.copy(g.p));
@@ -132,12 +169,16 @@ export function createTrace({
       let d = 0;
       while (d < path.dots.length && d < maxDots && path.dots[d].t <= t + 1e-9) d++;
       dots.count = d;
+      pathArrows.forEach((m, j) => {
+        m.visible = arrowAt[j] != null && arrowAt[j] <= t + 1e-9;
+      });
       return n;
     },
     /** The dashed straight line through the path's ends, drawn to fraction k (0 hides it). */
     line(k) {
       if (!path || k <= 0) {
         dashes.count = 0;
+        lineHead.visible = false;
         return;
       }
       tmpD.subVectors(path.end, path.start);
@@ -158,6 +199,10 @@ export function createTrace({
       }
       dashes.count = n;
       dashes.instanceMatrix.needsUpdate = true;
+      const at = total * LINE_ARROW;
+      lineHead.position.copy(lineA).addScaledVector(tmpD, at - lineHeadLen / 2);
+      lineHead.quaternion.setFromUnitVectors(up, tmpD);
+      lineHead.visible = upto >= at;
     },
     /** A bracket from p (on the path) to its foot on the straight line, with short caps; null hides it. */
     gap(p, foot) {
@@ -188,6 +233,7 @@ export function createTrace({
       rim.rimStrength.value = on ? 0.5 : 1;
       dotMat.color.set(on ? COLORS.faded : sceneColor);
       lineMat.color.set(on ? COLORS.faded : sceneLine);
+      pathArrowMat.color.set(on ? COLORS.faded : COLORS.path);
     },
     get path() {
       return path;
@@ -206,6 +252,13 @@ export function createArrow({ color = COLORS.push, radius = 0.007 } = {}) {
   const shaft = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, 1, 12), mat);
   const headLen = radius * 5.5;
   const head = new THREE.Mesh(new THREE.ConeGeometry(radius * 2.5, headLen, 18), mat);
+  // a dark outline (the back faces of slightly bigger copies), so the arrow stands out from whatever is behind it
+  const outlineMat = new THREE.MeshBasicMaterial({ name: 'PushOutline', color: '#3a1404', side: THREE.BackSide });
+  const shaftLine = new THREE.Mesh(new THREE.CylinderGeometry(radius * 1.45, radius * 1.45, 1, 12), outlineMat);
+  const headLine = new THREE.Mesh(new THREE.ConeGeometry(radius * 2.5 + radius * 0.5, headLen + radius * 1.1, 18), outlineMat);
+  shaftLine.userData.noExport = headLine.userData.noExport = true;
+  shaft.add(shaftLine);
+  head.add(headLine);
   group.add(shaft, head);
   group.visible = false;
   const tip = new THREE.Vector3();

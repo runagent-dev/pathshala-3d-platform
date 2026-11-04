@@ -1,24 +1,24 @@
 // The physics of the drop and the throw, in metres and seconds, as pure functions (unit-tested in
-// test/unit/linear-motion.test.mjs). Axes: x to the right, y up, z toward the student; the carrom board's playing
-// surface is the square |x|, |z| ≤ BOARD.half at height BOARD.surface.
+// test/unit/linear-motion.test.mjs). Axes: x to the right, y up, z toward the student; the bench top (BENCH) is at
+// height BOARD.surface.
 //   drop:  a ball let go from rest falls freely, straight down (½·g·t²);
 //   throw: the same ball pushed sideways falls on a curve (x = v·t, y = ½·g·t²): not a straight line.
 
 export const G = 9.8; // m/s²
 
-/** A carrom board: playing area 74 cm × 74 cm, the frame 7.5 cm wide; the surface 1.6 cm above the floor. */
-export const BOARD = { half: 0.37, frame: 0.075, surface: 0.016 };
+/** The flat surface the ball lands on: its height above the floor. */
+export const BOARD = { surface: 0.016 };
 
-/** The striker (4.1 cm across), on the near base line; strobe pictures every 0.1 s; the board is powdered (μ ≈ 0.12). */
-export const STRIKER = { r: 0.0206, h: 0.0045, mu: 0.12, start: { x: 0, z: 0.255 }, step: 0.1, margin: 0.025, minDist: 0.12 };
+/** The lab bench top (x0…x1, z0…z1, 4.5 cm thick) with the stand's base on its left and a landing mat under the ball. */
+export const BENCH = { x0: -0.42, x1: 0.34, z0: -0.2, z1: 0.2, thick: 0.045, mat: { x0: -0.27, x1: 0.27, z0: -0.1, z1: 0.1 } };
 
 /**
- * A cricket ball (7.2 cm across) held over the board on a stand: its centre `height` above the surface. Strobe
+ * A cricket ball (7.2 cm across) held over the bench on a stand: its centre `height` above the surface. Strobe
  * pictures every 0.05 s; shown 4 times slower than real time (a real fall takes 0.4 s). A throw leaves at 1 m/s.
  */
 export const BALL = { r: 0.036, x: -0.2, z: 0, height: 0.8, step: 0.05, slow: 4, vx: 1 };
 
-/** The fall height of the ball's centre (from the holder until it touches the board). */
+/** The fall height of the ball's centre (from the holder until it touches the bench). */
 export const FALL = BALL.height - BALL.r;
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));

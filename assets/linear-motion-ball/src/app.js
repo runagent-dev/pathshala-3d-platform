@@ -1,5 +1,5 @@
 // Linear motion: the falling ball (book page 36, topic 2.2), student view: a cricket ball on a lab stand over a
-// carrom board. Let the ball go (ছেড়ে দাও) or throw it sideways (ছুড়ে দাও). Each motion leaves faint pictures at
+// lab bench. Let the ball go (ছেড়ে দাও) or throw it sideways (ছুড়ে দাও). Each motion leaves faint pictures at
 // equal time steps and a dotted path, then a dashed straight line is laid through its ends: the free fall lies on it
 // (সরলরৈখিক গতি, even though the ball speeds up), the sideways throw curves away from it (not linear). Then a short
 // test. Built on the shared student kit (@shared/student/…).
@@ -14,7 +14,7 @@ import { createQuiz } from '@shared/student/quiz.js';
 import { createAnnotations } from '@shared/student/annotations.js';
 import { ICONS, svg } from '@shared/student/icons.js';
 import { createI18n } from './i18n.js';
-import { createCarrom } from './carrom.js';
+import { createBench } from './bench.js';
 import { createBall, createStand } from './stand.js';
 import { COLORS, createArrow, createTrace } from './trace.js';
 import { fitPose } from './camera.js';
@@ -34,11 +34,12 @@ export const DEFAULTS = {
 
 const EXAMPLES = ['drop', 'throw'];
 // how the stand is looked at: the front view's elevation follows the stage's shape (degrees, portrait … wide: a
-// wide, short stage looks lower, so the board fills more of its height); the rotate view starts from the side
+// wide, short stage looks lower, so the stand fills more of its height); the rotate view starts from the side
 const ELEVATION = [23, 15];
+const YAW = THREE.MathUtils.degToRad(20);
 const VIEW_3D = new THREE.Vector3(0.62, 0.55, 0.9);
 // what must be in the frame
-const BOX = new THREE.Box3(new THREE.Vector3(-0.47, 0, -0.3), new THREE.Vector3(0.445, BOARD.surface + BALL.height + 0.08, 0.445));
+const BOX = new THREE.Box3(new THREE.Vector3(-0.43, -0.04, -0.2), new THREE.Vector3(0.35, BOARD.surface + BALL.height + 0.08, 0.2));
 const CHIP_ICONS = {
   drop: svg('<circle cx="12" cy="5.5" r="3"/><path d="M12 11v9.5M9 17.5l3 3 3-3"/>'),
   throw: svg('<circle cx="5.5" cy="6" r="3"/><path d="M10 6c5 0 8.6 4.6 9 13.5M16.6 17l2.4 3 2.2-3.1"/>'),
@@ -96,12 +97,11 @@ export function createApp(root, options = {}) {
   const world = new THREE.Group();
   world.name = 'LinearMotion';
   scene.add(world);
-  const carrom = createCarrom({ materials: M });
+  const bench = createBench();
   const stand = createStand({ materials: M });
   const ball = createBall();
-  world.add(carrom.root, stand.root, ball.root);
+  world.add(bench.root, stand.root, ball.root);
   ball.root.position.copy(stand.ballHome);
-  carrom.striker.visible = false; // the board is only the table the stand stands on
 
   const ballGhost = new THREE.SphereGeometry(BALL.r, 20, 14);
   const traces = {
@@ -135,7 +135,7 @@ export function createApp(root, options = {}) {
     floor.userData.noExport = true;
     scene.add(sun, sun.target, floor);
   }
-  for (const obj of [carrom.root, stand.root, ball.root])
+  for (const obj of [bench.root, stand.root, ball.root])
     obj.traverse((m) => {
       if (m instanceof THREE.Mesh && m.material && !m.material.transparent && m.material.visible !== false) m.castShadow = true;
     });
@@ -563,7 +563,8 @@ export function createApp(root, options = {}) {
     const wide = Math.min(1, Math.max(0, (stage.width / Math.max(1, stage.height) - 0.95) / 0.75)); // 0 portrait … 1 wide
     const [tall, flat] = ELEVATION;
     const e = THREE.MathUtils.degToRad(tall + (flat - tall) * wide);
-    return new THREE.Vector3(0, Math.sin(e), Math.cos(e));
+    // turned a little to the right, so the bench and the stand read as 3D (the paths stay nearly face-on)
+    return new THREE.Vector3(Math.sin(YAW) * Math.cos(e), Math.sin(e), Math.cos(YAW) * Math.cos(e));
   }
   function viewPose(view = s.view) {
     const fit = (margin) => fitPose({ box: BOX, dir: viewDir(view), camera, width: stage.width, height: stage.height, margin });
@@ -948,7 +949,7 @@ export function createApp(root, options = {}) {
         stage.invalidate();
       }
     },
-    /** The board, the stand, the ball and any marks the motions left. */
+    /** The bench, the stand, the ball and any marks the motions left. */
     exportRoot() {
       const copy = world.clone(true);
       for (const name of ['DropTrace', 'ThrowTrace']) {

@@ -1,12 +1,12 @@
-// A lab stand clamped to the carrom board's left rail that holds a cricket ball over the board, in metres. The ball
-// rests on a small trapdoor at the end of the arm: when the door swings down, the ball is let go and falls freely
-// (drop); a plunger on the arm can instead push it off sideways (throw). The floor is y = 0; the board's surface is
+// A retort stand on the bench (a heavy base plate and a rod) that holds a cricket ball over the bench, in metres. The
+// ball rests on a small trapdoor at the end of the arm: when the door swings down, the ball is let go and falls
+// freely (drop); a plunger on the arm can instead push it off sideways (throw). The floor is y = 0; the bench top is
 // BOARD.surface.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { BALL, BOARD } from './motion.js';
 
-export const POLE_X = -(BOARD.half + BOARD.frame / 2); // the stand's rod, on the middle of the left rail
+export const POLE_X = -0.34; // the stand's rod, near the left end of the bench
 const HINGE_X = BALL.x - 0.045; // the trapdoor's hinge, at the arm's end
 const PLUNGER_REST = BALL.x - BALL.r - 0.001; // the plunger's tip just touches the ball
 
@@ -38,14 +38,14 @@ export function createStand({ materials: M }) {
   const ballY = BOARD.surface + BALL.height; // centre of the ball in the holder
   const iron = new THREE.MeshPhysicalMaterial({ name: 'PaintedIron', color: 0x0c919b, roughness: 0.5, clearcoat: 0.3 });
 
-  // a clamp on the rail: a block on top, a jaw down the outside, the screw under the rail
-  const railTop = BOARD.surface + 0.022;
-  const clamp = new THREE.Mesh(new RoundedBoxGeometry(0.09, 0.024, 0.07, 3, 0.005), iron);
-  clamp.position.set(POLE_X, railTop + 0.012, 0);
-  root.add(clamp);
-  const jaw = new THREE.Mesh(new RoundedBoxGeometry(0.014, railTop + 0.024, 0.07, 2, 0.004), iron);
-  jaw.position.set(POLE_X - 0.052, (railTop + 0.024) / 2, 0);
-  root.add(jaw);
+  // a heavy base plate on the bench, the rod screwed into a boss on it
+  const basePlate = new THREE.Mesh(new RoundedBoxGeometry(0.13, 0.016, 0.2, 3, 0.005), iron);
+  basePlate.position.set(POLE_X - 0.02, BOARD.surface + 0.008, 0);
+  root.add(basePlate);
+  const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.019, 0.016, 24), iron);
+  foot.position.set(POLE_X, BOARD.surface + 0.024, 0);
+  root.add(foot);
+  const railTop = BOARD.surface + 0.032; // where the rod starts
   const poleH = ballY + 0.08 - railTop;
   const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.0075, 0.0075, poleH, 20), M.chrome);
   pole.position.set(POLE_X, railTop + poleH / 2, 0);
