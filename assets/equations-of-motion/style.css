@@ -108,3 +108,12 @@ body.bg-transparent { background: transparent; }
   .eom-sv b { font-size: 14.5px; }
   .eom-sl input[type='range'] { height: 28px; }
 }
+
+/* where the 3D view is wide enough, the graphs and their live equations stand on boards behind the road */
+.eom[data-boards='1'] .eom-graphs,
+.eom[data-boards='1'] .eom-eqs { display: none; }
+/* the narrowest side panel (800×500, 640×400): slimmer quiet buttons, so চালাও stays on one line */
+@container pvc (max-width: 290px) {
+  .eom .eom-acts .pvc-quiet { min-width: 40px; padding: 0 4px; }
+  .eom .eom-acts .pvc-quiet + .pvc-quiet { margin-left: 2px; }
+}

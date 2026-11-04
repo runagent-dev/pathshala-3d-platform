@@ -1,63 +1,96 @@
-// The track, procedural three.js, in metres (1 m on the axis = 1 unit): a long raised road deck the car drives on,
-// its front edge a white ruler band, the number line from −7 m to 10 m with a tick every metre (bigger at the
-// numbers, a small one at each half metre) and an arrowhead past 10 (the numbers themselves are drawn on the
-// figure's 2D overlay, so they keep a readable size on a phone). Under the band, on the deck's pale front face,
-// three lanes for the parts of x drawn tip to tail as outlined flat arrows: x₀ (red), ut (blue) and ½at² (green),
-// as the owner's reference stacks them under its axis, with a faint line down from 0 where they all start.
+// The road, procedural three.js, in metres (1 m on the axis = 1 unit): a dark asphalt road with a dashed centre line,
+// white edge lines and light kerbs, on a low causeway over a soft blue-grey ground. The causeway's front is a gentle
+// slope of pale concrete facing the viewer: along its top a clean white ruler strip is the number line from −7 m to
+// 10 m (a tick every metre, 0 bolder, a small one every half metre, an arrowhead past 10; the numbers are drawn on
+// the figure's 2D overlay so they keep a readable size on a phone), and under it three rows carry the parts of x drawn
+// tip to tail as thick outlined arrows: x₀ (red) from 0, ut (blue) from x₀, ½at² (green) ending at x, as the owner's
+// reference stacks them under its axis, with a faint line down from 0 where they all start.
 import * as THREE from 'three';
 import { AXIS } from './motion.js';
 
-export const DECK = { x0: -9.8, x1: 12.2, z: 1.7, band: 0.62, bottom: -2.78 };
-/** The lanes' heights (centres) on the front face, top to bottom: x₀, ut, ½at². */
-export const LANES = { x0: -1.0, ut: -1.63, half: -2.26 };
-/** Where the numbers of the axis go (the overlay projects these). */
-export const TICK_LABEL_Y = -0.43;
-export const FACE_Z = DECK.z + 0.04; // the band's and the arrows' front
+export const ROAD = { x0: -9.9, x1: 12.6, back: -1.9, front: 1.9, lane: 0.72 };
+/** The ground under the causeway, and the front slope (its angle from the ground and its length). */
+export const GROUND_Y = -2.75;
+const SLOPE_ANGLE = THREE.MathUtils.degToRad(62);
+const SLOPE_LEN = -GROUND_Y / Math.sin(SLOPE_ANGLE);
+const KERB = { w: 0.32, h: 0.14 };
+const TOP_Z = ROAD.front + KERB.w; // where the slope starts
+/** On the slope, measured down from its top edge (m): the ruler strip, the axis line, the numbers, the three rows. */
+export const SLOPE = { band: 0.78, axis: -0.1, numbers: -0.52, rows: { x0: -1.24, ut: -1.98, half: -2.72 }, len: SLOPE_LEN };
 
-const SHAFT = 0.085; // half height of an arrow's shaft
-const HEAD_L = 0.34;
-const HEAD_H = 0.21; // half height of the head
-const OUT = 0.04; // the dark outline
+const SHAFT = 0.13; // half height of an arrow's shaft
+const HEAD_L = 0.5;
+const HEAD_H = 0.3; // half height of the head
+const OUT = 0.055; // the dark outline
 
-function mergedBoxes(boxes, material) {
+function boxes(list, material) {
   const geo = new THREE.BoxGeometry(1, 1, 1);
-  const mesh = new THREE.InstancedMesh(geo, material, boxes.length);
+  const mesh = new THREE.InstancedMesh(geo, material, list.length);
   const m = new THREE.Matrix4();
-  boxes.forEach(([x, y, z, w, h, d], i) => {
+  list.forEach(([x, y, z, w, h, d], i) => {
     m.makeScale(w, h, d).setPosition(x, y, z);
     mesh.setMatrixAt(i, m);
   });
   return mesh;
 }
 
-/** A soft light grain for the asphalt (one small canvas texture). */
+function seeded(seed) {
+  let s = seed;
+  return () => {
+    s = (s * 16807) % 2147483647;
+    return s / 2147483647;
+  };
+}
+
+/** Dark asphalt with a fine grain (one small canvas texture). */
 function asphaltTexture() {
   const c = document.createElement('canvas');
   c.width = 256;
   c.height = 256;
   const ctx = c.getContext('2d');
-  ctx.fillStyle = '#5b626b';
+  ctx.fillStyle = '#41474f';
   ctx.fillRect(0, 0, 256, 256);
-  let seed = 7;
-  const rnd = () => {
-    seed = (seed * 16807) % 2147483647;
-    return seed / 2147483647;
-  };
-  for (let i = 0; i < 2600; i++) {
-    const v = 80 + Math.floor(rnd() * 50);
-    ctx.fillStyle = `rgba(${v},${v + 4},${v + 10},${0.35 + rnd() * 0.3})`;
-    ctx.fillRect(rnd() * 256, rnd() * 256, 1 + rnd() * 1.6, 1 + rnd() * 1.6);
+  const rnd = seeded(7);
+  for (let i = 0; i < 3800; i++) {
+    const v = 52 + Math.floor(rnd() * 46);
+    ctx.fillStyle = `rgba(${v},${v + 3},${v + 8},${0.35 + rnd() * 0.4})`;
+    ctx.fillRect(rnd() * 256, rnd() * 256, 1 + rnd() * 1.8, 1 + rnd() * 1.8);
   }
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.wrapS = THREE.RepeatWrapping;
   tex.wrapT = THREE.RepeatWrapping;
-  tex.repeat.set(8, 1.3);
+  tex.repeat.set(9, 1.4);
   tex.anisotropy = 8;
   return tex;
 }
 
-/** A flat arrow on the face: a shaft and a head in the quantity's colour over a dark outline; a dot when it is 0. */
+/** Pale concrete slabs for the slope: a soft grain and a joint every 2.5 m. */
+function concreteTexture() {
+  const c = document.createElement('canvas');
+  c.width = 256;
+  c.height = 128;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#aebfcd';
+  ctx.fillRect(0, 0, 256, 128);
+  const rnd = seeded(11);
+  for (let i = 0; i < 1400; i++) {
+    const v = 160 + Math.floor(rnd() * 40);
+    ctx.fillStyle = `rgba(${v - 8},${v + 4},${v + 14},0.35)`;
+    ctx.fillRect(rnd() * 256, rnd() * 128, 1 + rnd() * 2, 1 + rnd() * 2);
+  }
+  ctx.fillStyle = 'rgba(120,140,160,0.45)';
+  ctx.fillRect(0, 0, 2, 128);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set((ROAD.x1 - ROAD.x0) / 2.5, 1);
+  tex.anisotropy = 8;
+  return tex;
+}
+
+/** A thick flat arrow in the slope's plane: a shaft and a head in the quantity's colour over a dark outline; a dot when 0. */
 function flatArrow(color, outline) {
   const root = new THREE.Group();
   const fill = new THREE.MeshStandardMaterial({ color, roughness: 0.45, metalness: 0.05 });
@@ -75,12 +108,12 @@ function flatArrow(color, outline) {
   };
   const shaftO = new THREE.Mesh(box, edge);
   const shaftF = new THREE.Mesh(box, fill);
-  const headO = new THREE.Mesh(tri(HEAD_L + OUT * 2.2, HEAD_H + OUT * 1.6, 0.03), edge);
+  const headO = new THREE.Mesh(tri(HEAD_L + OUT * 2.4, HEAD_H + OUT * 1.8, 0.03), edge);
   const headF = new THREE.Mesh(tri(HEAD_L, HEAD_H, 0.03), fill);
-  headO.position.set(OUT * 1.7, 0, 0.0);
+  headO.position.set(OUT * 1.8, 0, 0.0);
   headF.position.z = 0.03;
-  const dotO = new THREE.Mesh(new THREE.CircleGeometry(0.11 + OUT, 24), edge);
-  const dotF = new THREE.Mesh(new THREE.CircleGeometry(0.11, 24), fill);
+  const dotO = new THREE.Mesh(new THREE.CircleGeometry(0.15 + OUT, 28), edge);
+  const dotF = new THREE.Mesh(new THREE.CircleGeometry(0.15, 28), fill);
   dotO.position.z = 0.031;
   dotF.position.z = 0.062;
   const head = new THREE.Group();
@@ -88,7 +121,7 @@ function flatArrow(color, outline) {
   root.add(shaftO, shaftF, head, dotO, dotF);
   return {
     root,
-    /** From x = a to x = b at height y on the face. */
+    /** From x = a to x = b at height y (on the slope). */
     set(a, b, y) {
       const len = Math.abs(b - a);
       const dir = Math.sign(b - a) || 1;
@@ -115,96 +148,111 @@ function flatArrow(color, outline) {
 export function createTrack({ colors }) {
   const root = new THREE.Group();
   root.name = 'Track';
-  const L = DECK.x1 - DECK.x0;
-  const cx = (DECK.x0 + DECK.x1) / 2;
+  const L = ROAD.x1 - ROAD.x0;
+  const cx = (ROAD.x0 + ROAD.x1) / 2;
 
-  // the deck: asphalt on top, a pale face in front, a darker plinth at the ground
-  const asphalt = new THREE.MeshStandardMaterial({ name: 'Asphalt', map: asphaltTexture(), roughness: 0.9, metalness: 0 });
-  const face = new THREE.MeshStandardMaterial({ name: 'Face', color: 0xf7f9fc, roughness: 0.85 });
-  const side = new THREE.MeshStandardMaterial({ name: 'Concrete', color: 0xaebccb, roughness: 0.9 });
-  const deck = new THREE.Mesh(new THREE.BoxGeometry(L, 0.14, DECK.z * 2), [side, side, asphalt, side, side, side]);
-  deck.position.set(cx, -0.07, 0);
-  deck.name = 'Road';
-  deck.receiveShadow = true;
-  deck.castShadow = true;
-  const body = new THREE.Mesh(new THREE.BoxGeometry(L, -DECK.bottom - 0.14, DECK.z * 2 - 0.02), [side, side, side, side, face, side]);
-  body.position.set(cx, (DECK.bottom - 0.14) / 2, 0);
-  body.name = 'Deck';
-  body.receiveShadow = true;
-  body.castShadow = true;
-  root.add(deck, body);
+  // the causeway: its cross-section (z, y) extruded along x; the front slope gets its own face below
+  const run = SLOPE_LEN * Math.cos(SLOPE_ANGLE);
+  const backZ = ROAD.back - KERB.w;
+  const prof = new THREE.Shape();
+  prof.moveTo(-(backZ - run * 0.7), GROUND_Y); // the shape's x is −z (see the rotation below)
+  prof.lineTo(-backZ, 0);
+  prof.lineTo(-TOP_Z, 0);
+  prof.lineTo(-(TOP_Z + run), GROUND_Y);
+  prof.lineTo(-(backZ - run * 0.7), GROUND_Y);
+  const causeGeo = new THREE.ExtrudeGeometry(prof, { depth: L, bevelEnabled: false });
+  causeGeo.rotateY(Math.PI / 2); // depth → +x, shape x → −z
+  causeGeo.translate(ROAD.x0, 0, 0);
+  const concrete = new THREE.MeshStandardMaterial({ name: 'Concrete', color: 0x9db1c2, roughness: 0.92 });
+  const cause = new THREE.Mesh(causeGeo, concrete);
+  cause.name = 'Causeway';
+  cause.receiveShadow = true;
+  root.add(cause);
 
-  // white lines along the road's edges, and a low kerb at the back
-  const paint = new THREE.MeshStandardMaterial({ name: 'RoadPaint', color: 0xf3f5f7, roughness: 0.6 });
-  const lines = mergedBoxes(
-    [
-      [cx, 0.004, DECK.z - 0.22, L - 0.4, 0.008, 0.1],
-      [cx, 0.004, -DECK.z + 0.25, L - 0.4, 0.008, 0.1],
-    ],
-    paint,
+  // the front slope, facing the viewer: a group whose local y runs up the slope (0 at its top edge), local z out
+  const slope = new THREE.Group();
+  slope.name = 'Slope';
+  slope.position.set(0, 0, TOP_Z);
+  slope.rotation.x = SLOPE_ANGLE - Math.PI / 2;
+  root.add(slope);
+  const face = new THREE.Mesh(
+    new THREE.PlaneGeometry(L, SLOPE_LEN),
+    new THREE.MeshStandardMaterial({ name: 'SlopeFace', map: concreteTexture(), roughness: 0.9 }),
   );
-  lines.receiveShadow = true;
-  const kerb = new THREE.Mesh(new THREE.BoxGeometry(L, 0.16, 0.18), side);
-  kerb.position.set(cx, 0.08, -DECK.z + 0.09);
-  kerb.castShadow = true;
-  kerb.receiveShadow = true;
-  root.add(lines, kerb);
+  face.position.set(cx, -SLOPE_LEN / 2, 0.004);
+  face.receiveShadow = true;
+  slope.add(face);
+  // a soft darker foot where the slope meets the ground
+  const foot = new THREE.Mesh(new THREE.PlaneGeometry(L, 0.16), new THREE.MeshStandardMaterial({ name: 'Foot', color: 0x8fa3b4, roughness: 0.9 }));
+  foot.position.set(cx, -SLOPE_LEN + 0.08, 0.006);
+  slope.add(foot);
 
-  // the ruler band at the front edge: white, the axis line with its arrowhead, the ticks
-  const white = new THREE.MeshStandardMaterial({ name: 'Ruler', color: 0xfcfcfa, roughness: 0.55 });
-  const band = new THREE.Mesh(new THREE.BoxGeometry(L, DECK.band, 0.06), white);
-  band.position.set(cx, -DECK.band / 2 + 0.005, DECK.z + 0.01);
+  // the ruler strip along the slope's top: white, the axis line with its arrowhead, the ticks
+  const white = new THREE.MeshStandardMaterial({ name: 'Ruler', color: 0xffffff, roughness: 0.5 });
+  const band = new THREE.Mesh(new THREE.BoxGeometry(L - 0.1, SLOPE.band, 0.05), white);
+  band.position.set(cx, -SLOPE.band / 2 - 0.02, 0.03);
   band.receiveShadow = true;
   band.name = 'NumberLine';
-  root.add(band);
-  const ink = new THREE.MeshStandardMaterial({ name: 'Ink', color: 0x1d2530, roughness: 0.5 });
-  const ticks = [];
-  const zF = FACE_Z + 0.003;
-  ticks.push([(DECK.x0 + 0.3 + AXIS.max + 0.75) / 2, -0.05, zF, AXIS.max + 0.75 - DECK.x0 - 0.3, 0.035, 0.008]); // the axis line
+  slope.add(band);
+  const ink = new THREE.MeshStandardMaterial({ name: 'Ink', color: 0x18202a, roughness: 0.5 });
+  const zF = 0.062;
+  const ay = SLOPE.axis;
+  const ticks = [[(ROAD.x0 + 0.35 + AXIS.max + 0.9) / 2, ay, zF, AXIS.max + 0.9 - ROAD.x0 - 0.35, 0.045, 0.006]]; // the axis line
   for (let i = AXIS.min; i <= AXIS.max; i++) {
-    ticks.push([i, -0.05 - 0.12, zF, i === 0 ? 0.05 : 0.034, 0.24, 0.008]);
-    if (i < AXIS.max) ticks.push([i + 0.5, -0.05 - 0.06, zF, 0.024, 0.12, 0.008]);
+    const big = i === 0;
+    ticks.push([i, ay - 0.13, zF, big ? 0.075 : 0.045, big ? 0.3 : 0.24, 0.006]);
+    if (i < AXIS.max) ticks.push([i + 0.5, ay - 0.07, zF, 0.03, 0.13, 0.006]);
   }
-  for (let i = AXIS.min - 2; i < AXIS.min; i++) ticks.push([i + 0.5, -0.05 - 0.06, zF, 0.024, 0.12, 0.008]);
-  root.add(mergedBoxes(ticks, ink));
-  // the arrowhead past 10
+  for (let i = AXIS.min - 2; i < AXIS.min; i++) ticks.push([i + 0.5, ay - 0.07, zF, 0.03, 0.13, 0.006]);
+  slope.add(boxes(ticks, ink));
   const hs = new THREE.Shape();
-  hs.moveTo(0, -0.11);
-  hs.lineTo(0.3, 0);
-  hs.lineTo(0, 0.11);
-  hs.lineTo(0, -0.11);
-  const headMesh = new THREE.Mesh(new THREE.ShapeGeometry(hs), ink);
-  headMesh.position.set(AXIS.max + 0.72, -0.05, zF + 0.001);
-  root.add(headMesh);
+  hs.moveTo(0, -0.14);
+  hs.lineTo(0.4, 0);
+  hs.lineTo(0, 0.14);
+  hs.lineTo(0, -0.14);
+  const arrowHead = new THREE.Mesh(new THREE.ShapeGeometry(hs), ink);
+  arrowHead.position.set(AXIS.max + 0.88, ay, zF + 0.001);
+  slope.add(arrowHead);
 
-  // thin lines between the three lanes, and a darker plinth along the bottom
-  const rule = new THREE.MeshStandardMaterial({ name: 'LaneLine', color: 0xd5dde6, roughness: 0.8 });
-  const laneTop = (LANES.x0 + LANES.ut) / 2;
-  const laneMid = (LANES.ut + LANES.half) / 2;
-  root.add(
-    mergedBoxes(
-      [
-        [cx, laneTop, DECK.z + 0.002, L - 0.02, 0.025, 0.004],
-        [cx, laneMid, DECK.z + 0.002, L - 0.02, 0.025, 0.004],
-      ],
-      rule,
-    ),
+  // a faint line down the slope from 0, where the three parts start
+  const faint = new THREE.MeshStandardMaterial({ name: 'Origin', color: 0x71879b, roughness: 0.7 });
+  const originLen = SLOPE_LEN - SLOPE.band - 0.25;
+  const origin = new THREE.Mesh(new THREE.BoxGeometry(0.035, originLen, 0.004), faint);
+  origin.position.set(0, -SLOPE.band - 0.05 - originLen / 2, 0.01);
+  slope.add(origin);
+
+  // the road on top: asphalt between two light kerbs, white edge lines, a dashed centre line
+  const asphalt = new THREE.MeshStandardMaterial({ name: 'Asphalt', map: asphaltTexture(), roughness: 0.88, metalness: 0 });
+  const road = new THREE.Mesh(new THREE.PlaneGeometry(L, ROAD.front - ROAD.back), asphalt);
+  road.rotation.x = -Math.PI / 2;
+  road.position.set(cx, 0.002, (ROAD.front + ROAD.back) / 2);
+  road.name = 'Road';
+  road.receiveShadow = true;
+  root.add(road);
+  const kerbMat = new THREE.MeshStandardMaterial({ name: 'Kerb', color: 0xe4e9ee, roughness: 0.75 });
+  const kerbs = boxes(
+    [
+      [cx, KERB.h / 2, ROAD.front + KERB.w / 2, L, KERB.h, KERB.w],
+      [cx, KERB.h / 2, ROAD.back - KERB.w / 2, L, KERB.h, KERB.w],
+    ],
+    kerbMat,
   );
-  const plinth = new THREE.Mesh(
-    new THREE.BoxGeometry(L + 0.06, 0.2, DECK.z * 2 + 0.06),
-    new THREE.MeshStandardMaterial({ name: 'Plinth', color: 0x8193a8, roughness: 0.85 }),
-  );
-  plinth.position.set(cx, DECK.bottom + 0.1, 0);
-  plinth.receiveShadow = true;
-  root.add(plinth);
+  kerbs.castShadow = true;
+  kerbs.receiveShadow = true;
+  kerbs.name = 'Kerbs';
+  root.add(kerbs);
+  const paint = new THREE.MeshStandardMaterial({ name: 'RoadPaint', color: 0xf4f6f8, roughness: 0.6 });
+  const marks = [
+    [cx, 0.006, ROAD.front - 0.2, L, 0.004, 0.11],
+    [cx, 0.006, ROAD.back + 0.2, L, 0.004, 0.11],
+  ];
+  for (let x = ROAD.x0 + 0.6; x < ROAD.x1 - 1; x += 2.4) marks.push([x + 0.7, 0.006, (ROAD.front + ROAD.back) / 2, 1.4, 0.004, 0.1]);
+  const lines = boxes(marks, paint);
+  lines.receiveShadow = true;
+  lines.name = 'RoadLines';
+  root.add(lines);
 
-  // a faint line down the face from 0, where the three parts start
-  const faint = new THREE.MeshStandardMaterial({ name: 'Origin', color: 0x9aa8b6, roughness: 0.7 });
-  const origin = new THREE.Mesh(new THREE.BoxGeometry(0.03, -DECK.bottom - DECK.band - 0.1, 0.006), faint);
-  origin.position.set(0, (DECK.bottom + 0.05 - DECK.band) / 2, DECK.z + 0.003);
-  root.add(origin);
-
-  // the three arrows
+  // the three arrows on the slope
   const arrows = {
     x0: flatArrow(colors.x0, '#3a0d0d'),
     ut: flatArrow(colors.u, '#0b2346'),
@@ -212,29 +260,35 @@ export function createTrack({ colors }) {
   };
   for (const [k, a] of Object.entries(arrows)) {
     a.root.name = `Arrow ${k}`;
-    a.root.position.z = DECK.z;
-    root.add(a.root);
+    a.root.position.z = 0.02;
+    slope.add(a.root);
   }
 
-  // the car's position on the axis: a dark blue dot on the band's top edge, as the reference's
+  // the car's position on the axis: a dark blue dot on the axis line, as the reference's
   const dot = new THREE.Mesh(
-    new THREE.SphereGeometry(0.13, 24, 16),
+    new THREE.SphereGeometry(0.17, 24, 16),
     new THREE.MeshStandardMaterial({ name: 'Dot', color: 0x1f3fd1, roughness: 0.35, emissive: 0x0a1a60, emissiveIntensity: 0.25 }),
   );
   dot.name = 'PositionDot';
-  root.add(dot);
+  slope.add(dot);
 
+  const v = new THREE.Vector3();
   return {
     root,
     dot,
+    /** A point on the slope (x along the axis, y measured down from its top edge, z out of it), in world space. */
+    onSlope(x, y, z = 0.08, out = new THREE.Vector3()) {
+      root.updateMatrixWorld();
+      return slope.localToWorld(out.copy(v.set(x, y, z)));
+    },
     /** The three parts drawn tip to tail from 0: x₀, then ut, then ½at² ending at x. */
     setParts({ x0, ut, half }) {
-      arrows.x0.set(0, x0, LANES.x0);
-      arrows.ut.set(x0, x0 + ut, LANES.ut);
-      arrows.half.set(x0 + ut, x0 + ut + half, LANES.half);
+      arrows.x0.set(0, x0, SLOPE.rows.x0);
+      arrows.ut.set(x0, x0 + ut, SLOPE.rows.ut);
+      arrows.half.set(x0 + ut, x0 + ut + half, SLOPE.rows.half);
     },
     setDot(x) {
-      dot.position.set(x, -0.02, FACE_Z + 0.02);
+      dot.position.set(x, SLOPE.axis, 0.1);
     },
   };
 }

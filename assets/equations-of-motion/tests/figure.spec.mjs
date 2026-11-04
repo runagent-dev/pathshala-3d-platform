@@ -10,6 +10,10 @@ test('equations-of-motion: sliders, run, steps, the end of the axis', async ({ p
   const fig = await openFigure(page, 'equations-of-motion');
   const frame = page.frames().find((f) => f.url().includes('/assets/equations-of-motion/'));
 
+  // the graphs stand on boards in the 3D view (the panel's small graphs are hidden)
+  await expect(frame.locator('.eom')).toHaveAttribute('data-boards', '1');
+  await expect(frame.locator('.eom-graphs')).toBeHidden();
+
   // the reference's opening: x₀ = −0.8 m, u = 1.9 m/s, a = 1.7 ms⁻², t = 0
   expect(await fig.call('get')).toMatchObject({ x0: -0.8, u: 1.9, a: 1.7, t: 0, x: -0.8, v: 1.9, phase: 'ready', end: null });
 

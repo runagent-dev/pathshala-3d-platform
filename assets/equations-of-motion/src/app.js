@@ -3,11 +3,12 @@
 // whose front edge is the number line from −7 m to 10 m, its position x marked by a dot on the axis. Four sliders set
 // x₀ (red), u (blue), a (green) and t (grey); চালাও runs the time, থামাও pauses it, the quiet buttons go back to
 // the start or one step (0.1 s) back or forward. Under the axis the three parts of x = x₀ + ut + ½at² are drawn tip
-// to tail as outlined arrows (x₀ red, ut blue, ½at² green), so x is their sum. In the panel the formula, two small
-// live graphs (x against t, a parabola; v against t, a straight line) growing as t runs, and under them the live
-// equations with the numbers filled in: x = (½a)t² + (u)t + (x₀) and v = (a)t + (u). When the car reaches an end of
-// the axis it stops, and the panel says so. Then a short tap test. Built on the shared student kit; the maths is in
-// motion.js, the car in car.js, the road and its arrows in track.js, the graphs in graphs.js.
+// to tail as thick outlined arrows on the road's front slope (x₀ red, ut blue, ½at² green), so x is their sum. Behind
+// the road two graph boards: the x–t graph (a parabola) and the v–t graph (a straight line) growing as t runs, with
+// the live equations under them, x = (½a)t² + (u)t + (x₀) and v = (a)t + (u) (on a low frame they move to the panel).
+// When the car reaches an end of the axis it stops, and the panel says so. Then a short tap test. Built on the shared
+// student kit; the maths is in motion.js, the car in car.js, the road and its arrows in track.js, the boards in
+// boards.js, the panel's fallback graphs in graphs.js.
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
 import { createTweener, ease } from '@shared/tween.js';
@@ -18,10 +19,11 @@ import { createQuiz } from '@shared/student/quiz.js';
 import { buildStudentShell } from '@shared/student/shell.js';
 import { fitPose } from './camera.js';
 import { createCar } from './car.js';
+import { createBoard } from './boards.js';
 import { createGraph } from './graphs.js';
 import { createI18n } from './i18n.js';
 import { AXIS, LIMITS, QUIZ, START, answers, fixValue, fixed, fmt, roundTo, runEnd, stateAt, stepTime, turnTime } from './motion.js';
-import { DECK, FACE_Z, LANES, TICK_LABEL_Y, createTrack } from './track.js';
+import { GROUND_Y, ROAD, SLOPE, createTrack } from './track.js';
 
 export const DEFAULTS = {
   x0: START.x0, // m
@@ -41,17 +43,20 @@ export const DEFAULTS = {
 // one colour per quantity, as the reference: x₀ red, u blue, a green, t grey (text colours ≥ 4.5 : 1 on white)
 const COLORS = { x0: '#e03131', u: '#1c6fd9', a: '#2f9e44', t: '#5c6670', x: '#1d2530', v: '#1c6fd9' };
 const TEXT = { x0: '#c92a2a', u: '#1a5fbf', a: '#2b7a3a', t: '#495057' };
-const CAR_SCALE = 0.78; // the 4.3 m sedan drawn 3.35 m long, so it sits on the axis like the reference's car
-// the opening pose: a gentle three-quarter view (lessons 42), from the right a little, from above a little
-const AZIM = 20;
+const CAR_SCALE = 0.95; // the 4.3 m sedan drawn 4.1 m long: big on a phone, and still short beside the 17 m axis
+const CAR_Z = 0.95; // it drives in the front lane, near the ruler
+// the opening pose: a gentle three-quarter view (lessons 42; milder, as the ruler and the graphs are read)
+const AZIM = 14;
 const ELEV = 13;
 const viewDir = (az, el) => {
   const A = THREE.MathUtils.degToRad(az);
   const E = THREE.MathUtils.degToRad(el);
   return new THREE.Vector3(Math.sin(A) * Math.cos(E), Math.sin(E), Math.cos(A) * Math.cos(E));
 };
-// what the camera keeps in frame: the whole axis with the car at either end, the car's roof and label, the lanes
-const FRAME = new THREE.Box3(new THREE.Vector3(-9.1, DECK.bottom + 0.15, -DECK.z), new THREE.Vector3(11.7, 1.75, DECK.z + 0.1));
+// what the camera keeps in frame (x from, x to): the whole axis with the car at either end and the axis' name
+const FRAME_X = [-9.2, 12.45];
+// the boards stand behind the road, facing the camera's side; shown where the 3D view is wide enough to read them
+const BOARD = { z: -4.4, bottom: 2.35, gap: 0.7, minHeight: 330 };
 const SVG_STEP_BACK =
   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 5v14"/><path d="M18 6l-8 6 8 6z" fill="currentColor"/></svg>';
 const SVG_STEP_FWD =
@@ -60,8 +65,8 @@ const FONT = '"Noto Sans Bengali", "Segoe UI", Roboto, Arial, sans-serif';
 
 // the light-blue setting: a seamless floor, lightest round the road and a little deeper blue far away, whose edge
 // colour is the sky's lower colour, so floor and sky meet without a line
-const SKY_TOP = '#6fa8dd';
-const SKY_LOW = '#a7caea';
+const SKY_TOP = '#7fb4e2';
+const SKY_LOW = '#cfe3f2';
 
 /** A canvas texture of a radial gradient (stops: [offset, colour]), for the floor and the soft shadow under the road. */
 function radialTexture(stops, n = 512) {
@@ -132,7 +137,7 @@ export function createApp(root, options = {}) {
   stage.addTicker((dt) => tweener.tick(dt));
   const audio = createAudio(o.sound);
 
-  // a soft light-blue sky: deeper at the top of the picture, the floor's far colour lower down
+  // a soft light-blue sky: deeper at the top of the picture, paler toward the horizon, a few faint clouds
   if (o.bg !== 'transparent') {
     const c = document.createElement('canvas');
     c.width = 512;
@@ -140,23 +145,22 @@ export function createApp(root, options = {}) {
     const g = c.getContext('2d');
     const grad = g.createLinearGradient(0, 0, 0, 256);
     grad.addColorStop(0, SKY_TOP);
-    grad.addColorStop(0.32, SKY_LOW);
+    grad.addColorStop(0.55, '#a9cdec');
     grad.addColorStop(1, SKY_LOW);
     g.fillStyle = grad;
     g.fillRect(0, 0, 512, 256);
-    // a few soft, faint clouds high up (drawn once, never moving)
     for (const [x, y, w] of [
-      [70, 22, 70],
-      [210, 40, 95],
-      [380, 18, 80],
-      [470, 52, 60],
+      [60, 40, 80],
+      [230, 70, 110],
+      [400, 34, 90],
+      [490, 96, 60],
     ])
       for (let i = 0; i < 5; i++) {
         const cx = x + (i - 2) * w * 0.32;
         const cy = y + Math.abs(i - 2) * 3;
         const r = w * (0.42 - Math.abs(i - 2) * 0.08);
         const puff = g.createRadialGradient(cx, cy, 0, cx, cy, r);
-        puff.addColorStop(0, 'rgba(255,255,255,0.32)');
+        puff.addColorStop(0, 'rgba(255,255,255,0.38)');
         puff.addColorStop(1, 'rgba(255,255,255,0)');
         g.fillStyle = puff;
         g.fillRect(cx - r, cy - r, 2 * r, 2 * r);
@@ -168,68 +172,112 @@ export function createApp(root, options = {}) {
   const world = new THREE.Group();
   world.name = 'UniformAcceleration';
   scene.add(world);
-  // the floor (unlit, so its edge is exactly the sky's lower colour), the sun's soft shadows on it, and a soft
-  // darker patch under the road so it stands on the floor
+  // the ground: soft blue-grey with a hint of teal, lightest round the road, fading far away into the sky's lower
+  // colour (unlit, so the edge matches exactly); the sun's soft shadows fall on it through a shadow catcher
   const floor = new THREE.Mesh(
-    new THREE.PlaneGeometry(150, 150),
+    new THREE.PlaneGeometry(160, 160),
     new THREE.MeshBasicMaterial({
-      name: 'Floor',
+      name: 'Ground',
       map: radialTexture([
-        [0, '#e9f2fa'],
-        [0.18, '#dbe9f6'],
-        [0.5, '#bed8ef'],
+        [0, '#dfeaec'],
+        [0.12, '#d3e3e7'],
+        [0.32, '#c4d9e1'],
+        [0.62, '#c8dfec'],
         [1, SKY_LOW],
       ]),
     }),
   );
   floor.rotation.x = -Math.PI / 2;
-  floor.position.set(1.2, DECK.bottom - 0.01, 0);
+  floor.position.set(1.2, GROUND_Y - 0.01, 2);
   const shade = new THREE.Mesh(
-    new THREE.PlaneGeometry(DECK.x1 - DECK.x0 + 5, DECK.z * 2 + 4),
+    new THREE.PlaneGeometry(ROAD.x1 - ROAD.x0 + 6, 12),
     new THREE.MeshBasicMaterial({
       map: radialTexture([
-        [0, 'rgba(40,70,100,0.34)'],
-        [0.6, 'rgba(40,70,100,0.16)'],
-        [1, 'rgba(40,70,100,0)'],
+        [0, 'rgba(40,70,95,0.26)'],
+        [0.55, 'rgba(40,70,95,0.12)'],
+        [1, 'rgba(40,70,95,0)'],
       ]),
       transparent: true,
       depthWrite: false,
     }),
   );
   shade.rotation.x = -Math.PI / 2;
-  shade.position.set((DECK.x0 + DECK.x1) / 2, DECK.bottom + 0.005, 0.4);
-  const catcher = new THREE.Mesh(new THREE.PlaneGeometry(60, 30), new THREE.ShadowMaterial({ opacity: 0.16 }));
+  shade.position.set((ROAD.x0 + ROAD.x1) / 2, GROUND_Y + 0.005, 0);
+  const catcher = new THREE.Mesh(new THREE.PlaneGeometry(70, 40), new THREE.ShadowMaterial({ opacity: 0.18 }));
   catcher.rotation.x = -Math.PI / 2;
-  catcher.position.set(1.2, DECK.bottom + 0.01, 0);
+  catcher.position.set(1.2, GROUND_Y + 0.01, -2);
   catcher.receiveShadow = true;
   for (const m of [floor, shade, catcher]) m.userData.noExport = true;
   if (o.bg !== 'transparent') scene.add(floor, shade, catcher);
-  scene.add(new THREE.HemisphereLight(0xdcecff, 0xb7c6d4, 0.55));
+  scene.add(new THREE.HemisphereLight(0xe3f0ff, 0xb4c6d2, 0.7));
 
   const track = createTrack({ colors: COLORS });
-  const car = createCar({ color: '#3f72ad' });
+  const car = createCar({ color: '#2f6db3' });
   car.root.scale.setScalar(CAR_SCALE);
   const carBody = car.root.getObjectByName('Body');
   world.add(track.root, car.root);
 
+  // the two graph boards behind the road (x–t on the left, v–t on the right)
+  const boardFont = FONT;
+  const boardColors = { x0: TEXT.x0, u: TEXT.u, a: TEXT.a };
+  const boards = {
+    x: createBoard({
+      kind: 'x',
+      num: N,
+      fmt,
+      fixed,
+      color: COLORS.x,
+      colors: boardColors,
+      font: boardFont,
+      title: {
+        name: t('graph_x'),
+        value: (v) => [
+          ['x', 'i'],
+          [` = ${N(v)} m`, 'b'],
+        ],
+      },
+    }),
+    v: createBoard({
+      kind: 'v',
+      num: N,
+      fmt,
+      fixed,
+      color: COLORS.v,
+      colors: boardColors,
+      font: boardFont,
+      title: {
+        name: t('graph_v'),
+        value: (v) => [
+          ['v', 'i'],
+          [` = ${N(v)} m/s`, 'b'],
+        ],
+      },
+    }),
+  };
+  const boardGroup = new THREE.Group();
+  boardGroup.name = 'Graphs';
+  boardGroup.add(boards.x.root, boards.v.root);
+  world.add(boardGroup);
+
   if (o.shadow && o.bg !== 'transparent') {
     stage.renderer.shadowMap.enabled = true;
     stage.renderer.shadowMap.type = THREE.VSMShadowMap;
-    const sun = new THREE.DirectionalLight(0xffffff, 1.1);
+    const sun = new THREE.DirectionalLight(0xfffaf0, 1.15);
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 1024);
-    sun.shadow.radius = 5;
+    sun.shadow.radius = 6;
+    sun.shadow.blurSamples = 12;
     sun.shadow.bias = -0.0004;
-    sun.position.set(-6, 18, 12);
-    sun.target.position.set(1, 0, 0);
-    Object.assign(sun.shadow.camera, { left: -14, right: 14, top: 7, bottom: -7, near: 5, far: 45 });
+    sun.position.set(-5, 16, 11);
+    sun.target.position.set(1.2, -1, -1);
+    Object.assign(sun.shadow.camera, { left: -14, right: 14, top: 9, bottom: -6, near: 4, far: 42 });
     scene.add(sun, sun.target);
     car.root.traverse((m) => {
       if (m.isMesh && m.name !== 'Shadow') m.castShadow = true;
     });
   } else {
-    const sun = new THREE.DirectionalLight(0xffffff, 0.9);
-    sun.position.set(-6, 18, 12);
+    const sun = new THREE.DirectionalLight(0xfffaf0, 0.95);
+    sun.position.set(-5, 16, 11);
     scene.add(sun);
   }
 
@@ -287,6 +335,7 @@ export function createApp(root, options = {}) {
   const c = (k, html) => `<span class="q-${k}">${html}</span>`;
 
   /** The time as the t slider shows it: one decimal on the 0.1 s steps, two when the car stopped in between. */
+  let lastBoards = 0;
   const tText = (x) => (Math.abs(x * 10 - Math.round(x * 10)) < 1e-6 ? fixed(x, 1) : fixed(x, 2));
   function writePanel() {
     for (const k of ['x0', 'u', 'a']) {
@@ -314,8 +363,54 @@ export function createApp(root, options = {}) {
     write(rule, html);
     rule.classList.toggle('end', Boolean(st.end));
     const preview = s.mode !== 'quiz' || s.preview;
-    graphX(s.p, st.t, st.tEnd, { preview, x: st.x });
-    graphV(s.p, st.t, st.tEnd, { preview });
+    const now = performance.now();
+    if (boardsOn && (!s.playing || now - lastBoards > 40)) {
+      lastBoards = now; // while running, the boards are redrawn at most 25 times a second
+      // in a test question the boards show the graphs' shape but not their numbers, until the answer is revealed
+      const numbers = s.mode !== 'quiz' || s.preview;
+      boards.x.update(s.p, st.t, st.tEnd, { preview, at: st.x, numbers });
+      boards.v.update(s.p, st.t, st.tEnd, { preview, numbers });
+    } else if (!boardsOn) {
+      graphX(s.p, st.t, st.tEnd, { preview, x: st.x });
+      graphV(s.p, st.t, st.tEnd, { preview });
+    }
+  }
+
+  // the graph boards: side by side behind the road (each as wide as half the road), as tall as the frame has room for,
+  // facing the camera's side; where the 3D view is too low for them (390×520), the graphs are in the panel instead
+  let boardsOn = false;
+  function layoutBoards() {
+    const w = Math.max(stage.width, 50);
+    const h = Math.max(stage.height, 50);
+    boardsOn = h >= BOARD.minHeight && w >= 300;
+    boardGroup.visible = boardsOn;
+    root.dataset.boards = boardsOn ? '1' : '0';
+    if (!boardsOn) return;
+    const azim = THREE.MathUtils.degToRad(AZIM);
+    const room = (21.5 / (w / h)) * 0.92 - 7.2; // metres of height left above the road
+    const shift = -BOARD.z * Math.tan(azim); // seen from the right, the back looks shifted
+    const left = ROAD.x0 + 0.1 - shift;
+    const right = ROAD.x1 - 0.1 - shift;
+    const bw = (right - left - BOARD.gap) / 2;
+    const bh = Math.min(10.5, Math.max(4.8, room));
+    boards.x.root.position.set(left + bw / 2, BOARD.bottom, BOARD.z);
+    boards.v.root.position.set(right - bw / 2, BOARD.bottom, BOARD.z);
+    for (const b of [boards.x, boards.v]) {
+      b.root.rotation.y = azim;
+      b.setSize(bw, bh, BOARD.bottom - GROUND_Y);
+    }
+  }
+  /** The boards' text size, so it reads at about 13 px whatever the frame (from the front view's camera). */
+  function fitBoardText() {
+    if (!boardsOn) return;
+    world.updateMatrixWorld(true);
+    for (const b of [boards.x, boards.v]) {
+      const [c0, c1] = b.corners();
+      const p0 = toScreen(c0.x, c0.y, c0.z);
+      const p1 = toScreen(c1.x, c1.y, c1.z);
+      b.setTextPx(Math.hypot(p1.x - p0.x, p1.y - p0.y), 13.5);
+    }
+    writePanel();
   }
 
   // ── the picture ─────────────────────────────────────────────────────────────
@@ -324,7 +419,7 @@ export function createApp(root, options = {}) {
   function refresh() {
     st = stateAt(s.p, s.t);
     s.t = st.t;
-    car.root.position.set(st.x, 0, 0);
+    car.root.position.set(st.x, 0, CAR_Z);
     car.spin(st.x / CAR_SCALE, s.playing ? Math.abs(st.v) / (2 * Math.PI * 0.32 * CAR_SCALE) : 0);
     track.setDot(st.x);
     track.setParts(st);
@@ -414,7 +509,7 @@ export function createApp(root, options = {}) {
     label: 'act_run',
     icon: ICONS.play,
     target: () => carBox.setFromObject(carBody),
-    pad: 6,
+    pad: 2,
     avoid: [ui.corner, ui.hint],
     pulse: Boolean(o.coach),
     onAct: () => toggle(),
@@ -434,7 +529,27 @@ export function createApp(root, options = {}) {
   function viewPose(view) {
     const w = Math.max(stage.width, 50);
     const h = Math.max(stage.height, 50);
-    const fit = (dir) => fitPose({ box: FRAME, dir, camera, width: w, height: h, margin: { top: 50, bottom: 6, side: 26 } });
+    // the points to keep in frame: the road's top, the slope's foot, the car's roof at either end (with room for its
+    // label when nothing stands above it), and the boards' corners
+    const pts = [];
+    for (const x of FRAME_X) {
+      pts.push(new THREE.Vector3(x, 0.15, ROAD.back - 0.3), new THREE.Vector3(x, 1.4, CAR_Z));
+      pts.push(track.onSlope(x, -SLOPE.len, 0));
+      if (!boardsOn) pts.push(new THREE.Vector3(x, 2.1, CAR_Z));
+    }
+    if (boardsOn) {
+      world.updateMatrixWorld(true);
+      for (const b of [boards.x, boards.v]) pts.push(...b.corners());
+    }
+    const fit = (dir) =>
+      fitPose({
+        points: pts,
+        dir,
+        camera,
+        width: w,
+        height: h,
+        margin: { top: boardsOn ? 10 : 46, bottom: 4, left: 6, right: boardsOn ? 48 : 30 },
+      });
     if (view === '3d') return fit(viewDir(38, 26));
     // the front view looks down a little more where the frame has height to spare, as long as the axis keeps its size
     const base = fit(viewDir(AZIM, ELEV));
@@ -485,7 +600,12 @@ export function createApp(root, options = {}) {
   });
   stage.onResize(() => {
     sizeOverlay();
-    if (!s.userMovedCamera) flyTo(viewPose(s.view), 0);
+    layoutBoards();
+    writePanel();
+    if (!s.userMovedCamera) {
+      flyTo(viewPose(s.view), 0);
+      if (s.view === 'front') fitBoardText();
+    }
   });
 
   // ── the 2D overlay: the axis numbers, the arrows' labels, the car's x, the line down from the dot ─────────────
@@ -535,6 +655,12 @@ export function createApp(root, options = {}) {
     const c0 = stage.canvas.getBoundingClientRect();
     return r?.width ? { left: r.left - c0.left - 4, top: r.top - c0.top - 4, right: r.right - c0.left + 4, bottom: r.bottom - c0.top + 4 } : null;
   };
+  const sv = new THREE.Vector3();
+  /** A point on the slope (x on the axis, y down from its top edge) on the screen. */
+  const slopeScreen = (x, y) => {
+    track.onSlope(x, y, 0.08, sv);
+    return toScreen(sv.x, sv.y, sv.z);
+  };
   function drawOverlay() {
     const dpr = sizeOverlay();
     const ctx = octx;
@@ -547,26 +673,38 @@ export function createApp(root, options = {}) {
     const corner = cornerBox();
     if (corner) taken.push(corner);
     // pixels per metre along the axis, at the axis' middle
-    const a0 = toScreen(1, TICK_LABEL_Y, FACE_Z);
-    const a1 = toScreen(2, TICK_LABEL_Y, FACE_Z);
+    const a0 = slopeScreen(1, SLOPE.numbers);
+    const a1 = slopeScreen(2, SLOPE.numbers);
     const ppm = Math.hypot(a1.x - a0.x, a1.y - a0.y);
-    // the numbers under the ticks, on the white band
-    const fs = Math.max(10.5, Math.min(15, ppm * 0.5));
+    // the numbers under the ticks, on the white strip: bold, 0 a little bigger
+    const fs = Math.max(13, Math.min(18, ppm * 0.56));
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.font = `600 ${fs}px ${FONT}`;
-    ctx.fillStyle = '#1d2530';
-    const every = ppm < 22 ? 2 : 1;
+    ctx.fillStyle = '#141b24';
+    const every = ppm < 19 ? 2 : 1;
     for (let i = AXIS.min; i <= AXIS.max; i++) {
       if (every === 2 && i % 2 !== 0) continue;
-      const p = toScreen(i, TICK_LABEL_Y, FACE_Z);
+      const p = slopeScreen(i, SLOPE.numbers);
       if (p.behind) continue;
+      ctx.font = `700 ${i === 0 ? fs * 1.12 : fs}px ${FONT}`;
       ctx.fillText(N(fmt(i)), p.x, p.y);
     }
-    // the axis' name past the arrowhead, if it fits
-    const pn = toScreen(AXIS.max + 1.45, -0.05, FACE_Z);
-    if (pn.x < W - 12) {
-      ctx.textAlign = 'left';
+    // the axis' name past the arrowhead
+    const pn = slopeScreen(AXIS.max + 1.05, SLOPE.numbers + 0.08);
+    ctx.textAlign = 'left';
+    const nameW = rich(
+      ctx,
+      [
+        ['x', 'i'],
+        [' (m)', ''],
+      ],
+      fs,
+      0,
+      0,
+      false,
+    );
+    if (pn.x + nameW < W - 4) {
+      ctx.fillStyle = '#141b24';
       rich(
         ctx,
         [
@@ -574,48 +712,52 @@ export function createApp(root, options = {}) {
           [' (m)', ''],
         ],
         fs,
-        pn.x - 2,
+        pn.x,
         pn.y + fs * 0.35,
         true,
       );
     }
-    // the dashed line from the dot down through the three lanes to where ½at² ends (= x)
-    const top = toScreen(st.x, -0.16, FACE_Z + 0.06);
-    const bot = toScreen(st.x, LANES.half - 0.3, FACE_Z + 0.06);
+    // the drop line: from under the car, through its dot on the axis, down past the three rows to where ½at² ends (= x)
+    const pc = toScreen(st.x, 0.02, CAR_Z + 0.5);
+    const pd = slopeScreen(st.x, SLOPE.axis);
+    const pb = slopeScreen(st.x, SLOPE.rows.half - 0.42);
     ctx.save();
-    ctx.strokeStyle = 'rgba(20,40,110,0.75)';
-    ctx.lineWidth = 1.4;
-    ctx.setLineDash([4, 3]);
+    ctx.strokeStyle = 'rgba(20,40,110,0.85)';
+    ctx.lineWidth = 1.6;
+    ctx.setLineDash([5, 4]);
     ctx.beginPath();
-    ctx.moveTo(top.x, top.y);
-    ctx.lineTo(bot.x, bot.y);
+    ctx.moveTo(pc.x, pc.y);
+    ctx.lineTo(pd.x, pd.y);
+    ctx.moveTo(pd.x, pd.y);
+    ctx.lineTo(pb.x, pb.y);
     ctx.stroke();
     ctx.restore();
     // the car's position over its roof
     if (!s.hide.car) {
-      const p = toScreen(st.x, 1.32, 0);
+      const p = toScreen(st.x, 1.26, CAR_Z);
       const pieces = [
         ['x', 'i'],
         [` = ${N(fixed(st.x, 1))} m${st.end ? ` · ${t('lbl_end')}` : ''}`, ''],
       ];
-      const size = Math.max(11.5, Math.min(14.5, ppm * 0.48));
+      const size = Math.max(12, Math.min(16, ppm * 0.5));
       const w = rich(ctx, pieces, size, 0, 0, false) + size * 0.9;
-      const h = size * 1.55;
+      const h = size * 1.6;
       const ring = action.ringBox();
       const y = ring ? Math.min(p.y, ring.top) : p.y;
       let box = { left: p.x - w / 2, top: y - h - 3, right: p.x + w / 2, bottom: y - 3 };
       const dx = Math.max(4 - box.left, Math.min(0, W - 30 - box.right)); // clear of the panel's tab on the right
       box = { ...box, left: box.left + dx, right: box.right + dx };
       if (!(corner && overlaps(box, corner))) {
-        chip(ctx, pieces, size, box, { fg: '#16306e', border: '#3557c8' });
+        chip(ctx, pieces, size, box, { fg: '#16306e', border: '#3557c8', bg: '#ffffff' });
         taken.push(box);
       }
     }
-    // the three parts' labels, each in its lane: beyond the arrow's tip, else beyond its tail, else above it
-    const size = Math.max(10.5, Math.min(14, ppm * 0.42));
+    // the three parts' labels, each in its row: beyond the arrow's tip, else beyond its tail, else above it
+    const size = Math.max(11.5, Math.min(16, ppm * 0.48));
+    const ringBox = action.ringBox();
     const lanes = [
       {
-        y: LANES.x0,
+        y: SLOPE.rows.x0,
         from: 0,
         to: st.x0,
         sym: [
@@ -626,9 +768,9 @@ export function createApp(root, options = {}) {
         fg: TEXT.x0,
         border: COLORS.x0,
       },
-      { y: LANES.ut, from: st.x0, to: st.x0 + st.ut, sym: [['ut', 'i']], v: st.ut, fg: TEXT.u, border: COLORS.u },
+      { y: SLOPE.rows.ut, from: st.x0, to: st.x0 + st.ut, sym: [['ut', 'i']], v: st.ut, fg: TEXT.u, border: COLORS.u },
       {
-        y: LANES.half,
+        y: SLOPE.rows.half,
         from: st.x0 + st.ut,
         to: st.x0 + st.ut + st.half,
         sym: [
@@ -647,20 +789,22 @@ export function createApp(root, options = {}) {
       const pieces = [...L.sym, [value, '']];
       const w = rich(ctx, pieces, size, 0, 0, false) + size * 0.9;
       const h = size * 1.5;
-      const pa = toScreen(L.from, L.y, FACE_Z + 0.06);
-      const pb = toScreen(L.to, L.y, FACE_Z + 0.06);
-      const dir = Math.sign(pb.x - pa.x) || 1;
-      const gap = 7;
+      const pa = slopeScreen(L.from, L.y);
+      const pb2 = slopeScreen(L.to, L.y);
+      const dir = Math.sign(pb2.x - pa.x) || 1;
+      const gap = 8;
       const at = (x, right) => (right ? { left: x, right: x + w } : { left: x - w, right: x });
       const spots = [
-        { ...at(pb.x + dir * (gap + 4), dir > 0), top: pb.y - h / 2, bottom: pb.y + h / 2 },
+        { ...at(pb2.x + dir * (gap + 6), dir > 0), top: pb2.y - h / 2, bottom: pb2.y + h / 2 },
         { ...at(pa.x - dir * gap, dir < 0), top: pa.y - h / 2, bottom: pa.y + h / 2 },
-        { left: (pa.x + pb.x) / 2 - w / 2, right: (pa.x + pb.x) / 2 + w / 2, top: pa.y - h - 6, bottom: pa.y - 6 },
+        { left: (pa.x + pb2.x) / 2 - w / 2, right: (pa.x + pb2.x) / 2 + w / 2, top: pa.y - h - 8, bottom: pa.y - 8 },
       ];
-      const fits = (b) => b.left >= 2 && b.right <= W - 2 && b.top >= 2 && b.bottom <= H - 2 && !taken.some((q) => overlaps(b, q));
-      const box = spots.find(fits);
+      const inside = (b) => b.left >= 2 && b.right <= W - 2 && b.top >= 2 && b.bottom <= H - 2;
+      const free = (b) => !taken.some((q) => overlaps(b, q));
+      // clear of the action's ring round the car if possible, else only clear of the other labels
+      const box = spots.find((b) => inside(b) && free(b) && !(ringBox && overlaps(b, ringBox))) ?? spots.find((b) => inside(b) && free(b));
       if (!box) continue;
-      chip(ctx, pieces, size, box, { fg: L.fg, border: L.border });
+      chip(ctx, pieces, size, box, { fg: L.fg, border: L.border, bg: '#ffffff' });
       taken.push(box);
     }
   }
@@ -859,8 +1003,10 @@ export function createApp(root, options = {}) {
   // ── start ───────────────────────────────────────────────────────────────────
   s.t = Math.max(0, Number(o.t) || 0);
   sizeOverlay();
+  layoutBoards();
   refresh();
   setView(s.view, { animate: false });
+  if (s.view === 'front') fitBoardText();
   syncUI();
   const ready = (async () => {
     if (o.mode === 'quiz') quiz.start();
