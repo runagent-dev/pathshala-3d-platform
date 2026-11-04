@@ -40,15 +40,15 @@ export const STRINGS = {
     // one short line for each step of the heat button
     out_0: '<b>কঠিন:</b> অণুগুলো নিজের নির্দিষ্ট অবস্থানে থেকে অল্প কাঁপছে।',
     out_1: '<b>কঠিন:</b> উত্তপ্ত করায় অণুগুলোর কাঁপুনি বেড়েছে।',
-    out_2: '<b>তরল:</b> অণুগুলো আন্তঃআণবিক বল ছাড়িয়ে মুক্ত হয়ে এলোমেলোভাবে ছোটাছুটি করছে।',
+    out_2: '<b>তরল:</b> অণুগুলো আন্তঃআণবিক বল ছাড়িয়ে মুক্ত হয়েছে এবং এলোমেলোভাবে ছোটাছুটি করছে।',
     out_3: '<b>তরল:</b> যত উত্তপ্ত করা হয়, অণুগুলো তত জোরে ছোটাছুটি করে।',
-    out_4: '<b>গ্যাস:</b> অণুগুলো আণবিক বন্ধন থেকে পুরোপুরি মুক্ত হয়ে গেছে।',
+    out_4: '<b>গ্যাস:</b> অণুগুলো আণবিক বন্ধন থেকে পুরোপুরি মুক্ত।',
     out_5: '<b>গ্যাস:</b> যত উত্তপ্ত করা হয়, অণুগুলো তত জোরে ছোটাছুটি করে।',
 
     eq_law: '<b>তাপশক্তি</b> = অণুগুলোর সম্মিলিত গতিশক্তি',
     eq_label: 'তাপশক্তি সমান অণুগুলোর সম্মিলিত গতিশক্তি',
-    rule_a: '<b>তাপ এক ধরনের শক্তি।</b> অণুগুলোর গতি যত বেশি হয়, গতিশক্তি তত বেশি হয়।',
-    rule_b: '<b>অণুগুলোর কম্পন বা গতির কারণে যে শক্তি পাওয়া যায়, সেটাই তাপ।</b> তাপমাত্রা বলে পদার্থের তাপীয় অবস্থা।',
+    rule_a: 'তাপ এক ধরনের <b>শক্তি।</b> অণুগুলোর গতি যত বেশি, তাদের গতিশক্তি তত বেশি।',
+    rule_b: 'অণুগুলোর কম্পন বা গতির কারণে যে শক্তি পাওয়া যায়, সেটাই <b>তাপ।</b> আর তাপমাত্রা বলে দেয় পদার্থের তাপীয় অবস্থা।',
 
     q_count: 'প্রশ্ন {i} / {n}',
     q_score: 'সঠিক: {right}',
@@ -141,9 +141,9 @@ export const STRINGS = {
 
     eq_law: '<b>Heat energy</b> = the molecules’ combined kinetic energy',
     eq_label: 'Heat energy equals the molecules’ combined kinetic energy',
-    rule_a: '<b>Heat is a kind of energy.</b> The faster the molecules move, the more kinetic energy they have.',
+    rule_a: 'Heat is a kind of <b>energy.</b> The faster the molecules move, the more kinetic energy they have.',
     rule_b:
-      '<b>The energy that comes from the vibration or motion of the molecules is heat.</b> Temperature tells the thermal state of the substance.',
+      'The energy that comes from the vibration or motion of the molecules is <b>heat.</b> Temperature tells the thermal state of the substance.',
 
     q_count: 'Question {i} of {n}',
     q_score: 'Correct: {right}',
