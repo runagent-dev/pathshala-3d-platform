@@ -652,7 +652,7 @@ export function createPrefixApp(root, userOptions = {}) {
     const i = stops.indexOf(here) + (e.key === 'ArrowRight' ? 1 : -1);
     if (stops[i]) go(stops[i].id);
   });
-  // ── the two tabs: ঘুরে দেখো (the tour) and হিসাব করো (the prefix calculator) ──
+  // ── the two tabs: ঘুরে দেখো (the tour) and ক্যালকুলেটর (the prefix calculator) ──
   const calc = createCalculator(el.calc, t, {
     onLook: (id) => {
       if (mode === 'calc') go(id); // the 3D flies to the object of about that length
