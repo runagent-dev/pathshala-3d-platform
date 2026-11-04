@@ -44,7 +44,7 @@ export const STRINGS = {
     out_mt_moving: 'ব্যারোমিটারটি নেওয়া হচ্ছে…',
 
     // the rule: the book's words, one idea at a time
-    rule_mt: '<b>বাতাসের চাপ মাপার যন্ত্রের নাম ব্যারোমিটার।</b> উঁচুতে মাথার উপরে বাতাসের স্তম্ভ ছোট, তাই বাতাসের চাপ কম, আর পারদ স্তম্ভও নিচু।',
+    rule_mt: 'বাতাসের চাপ মাপার যন্ত্রের নাম <b>ব্যারোমিটার</b>। উঁচুতে মাথার উপরে বাতাসের স্তম্ভ ছোট। তাই বাতাসের চাপ কম, পারদ স্তম্ভও নিচু।',
 
     // labels on the picture
     lbl_air: 'বাতাসের চাপ',
@@ -74,7 +74,7 @@ export const STRINGS = {
     c_mc_up: 'উঁচু হয়',
     c_mc_same: 'একই থাকে',
     c_mc_zero: 'পুরো নেমে পাত্রে চলে যায়',
-    why_mc: '<b>নিচু হয়</b>: উঁচুতে বাতাসের চাপ কম, তাই কম উঁচু স্তম্ভ ধরে রাখতে পারে।',
+    why_mc: '<b>নিচু হয়</b>। উঁচুতে বাতাসের চাপ কম, তাই কম উঁচু স্তম্ভ ধরে রাখতে পারে।',
     mis_mc_up: 'উঁচুতে বাতাসের চাপ কমে, বাড়ে না।',
     mis_mc_zero: 'উঁচুতেও বাতাস আছে, শুধু চাপ কম।',
     q_mt_read: 'স্কেল থেকে পড়ো: এই উচ্চতায় পারদ স্তম্ভ কত উঁচু?',
@@ -87,7 +87,7 @@ export const STRINGS = {
     c_mw_cold: 'ঠান্ডায় পারদ জমে যায়',
     c_mw_g: 'উঁচুতে পারদের ওজন অনেক বেশি',
     c_mw_vac: 'শূন্যতা কম টানে',
-    why_mw: '<b>মাথার উপরে বাতাস কম</b>: বাতাসের স্তম্ভ ছোট, তাই বাতাসের চাপ কম।',
+    why_mw: '<b>মাথার উপরে বাতাস কম</b>। বাতাসের স্তম্ভ ছোট, তাই বাতাসের চাপ কম।',
     mis_mw_cold: 'পারদ এখানে তরলই থাকে; স্তম্ভ নামে চাপ কমার জন্য।',
     mis_mw_g: 'কয়েক হাজার মিটারে ওজন প্রায় একই থাকে।',
     mis_mw_vac: 'শূন্যতা টানে না; বাতাসের চাপ নিচ থেকে ঠেলে।',
@@ -122,7 +122,7 @@ export const STRINGS = {
     out_mt_moving: 'Taking the barometer…',
 
     rule_mt:
-      "<b>An instrument that measures the air's pressure is a barometer.</b> Higher up there is less air overhead, so less pressure and a lower column.",
+      'An instrument that measures the air’s pressure is a <b>barometer</b>. Higher up there is less air overhead, so less pressure and a lower column.',
 
     lbl_air: "air's pressure",
     lbl_vacuum: 'vacuum',
@@ -150,7 +150,7 @@ export const STRINGS = {
     c_mc_up: 'It gets higher',
     c_mc_same: 'It stays the same',
     c_mc_zero: 'It falls into the dish',
-    why_mc: '<b>It gets lower</b>: higher up the air presses less, so it holds up a lower column.',
+    why_mc: '<b>It gets lower</b>. Higher up the air presses less, so it holds up a lower column.',
     mis_mc_up: "Higher up the air's pressure falls; it doesn't rise.",
     mis_mc_zero: 'There is air up there too, only less pressure.',
     q_mt_read: 'Read the scale: how high is the mercury column here?',
@@ -163,7 +163,7 @@ export const STRINGS = {
     c_mw_cold: 'The cold freezes the mercury',
     c_mw_g: 'Mercury weighs much more up there',
     c_mw_vac: 'The vacuum pulls less',
-    why_mw: "<b>There is less air overhead</b>: a shorter column of air, so less air's pressure.",
+    why_mw: '<b>There is less air overhead</b>. A shorter column of air means less pressure.',
     mis_mw_cold: 'The mercury stays liquid; the column falls because the pressure falls.',
     mis_mw_g: 'A few thousand metres up, weight hardly changes.',
     mis_mw_vac: "A vacuum doesn't pull; the air pushes from below.",
