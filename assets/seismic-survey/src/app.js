@@ -18,6 +18,7 @@ import { createAudio } from '@shared/student/audio.js';
 import { ICONS } from '@shared/student/icons.js';
 import { createQuiz } from '@shared/student/quiz.js';
 import { bindCleanSheet, buildStudentShell, cleanSheet } from '@shared/student/shell.js';
+import { BLAST_S } from './blast.js';
 import { fitPose } from './camera.js';
 import { createEquipment, TRUCK } from './equipment.js';
 import { createGround, ECHO_COLORS } from './ground.js';
@@ -58,12 +59,14 @@ export const DEFAULTS = {
 
 export const SLOW = 6; // the waves are shown 6 times slower than they travel
 const IMAGE_S = 4.2;
+const PRE_S = 0.6; // after the tap, the camera moves in; then the charge goes off (it is over too fast to catch)
+const FOCUS_OUT = [1.25, 2.75]; // the camera pulls back to the whole block over these seconds after the blast (as the echoes come up)
 const dirFrom = (az, el) => {
   const a = THREE.MathUtils.degToRad(az);
   const e = THREE.MathUtils.degToRad(el);
   return new THREE.Vector3(Math.sin(a) * Math.cos(e), Math.sin(e), Math.cos(a) * Math.cos(e)).normalize();
 };
-const VIEW_DIRS = { front: dirFrom(26, 30), image: dirFrom(50, 32) }; // the picture: turned toward the right face (the arch)
+const VIEW_DIRS = { front: dirFrom(26, 30), image: dirFrom(50, 32), blast: dirFrom(20, 13) }; // the picture: turned toward the right face (the arch); the blast: lower, the column against the sky
 const INK = '#2b3138';
 const DIM_X = 860; // the depth measure: on the right of the cut face, clear of the rays
 const RAY_TO = [0, 2, 4]; // the geophones of the front row the rays are drawn to (as চিত্র ৭.১৩: three rays)
@@ -148,7 +151,7 @@ export function createApp(root, options = {}) {
   scene.environmentIntensity = 0.55;
 
   const ground = createGround({ anisotropy: Math.min(8, renderer.capabilities.getMaxAnisotropy()) });
-  const gear = createEquipment();
+  const gear = createEquipment({ soil: ground.top.material });
   const model = new THREE.Group();
   model.name = 'seismic-survey';
   model.add(ground.root, gear.root);
@@ -319,6 +322,7 @@ export function createApp(root, options = {}) {
   // ── the state ───────────────────────────────────────────────────────────────────────────────────────────
   const s = {
     running: false, // the waves are travelling
+    pre: 0, // the seconds left before the charge goes off (the camera is moving in); the waves wait at 0
     done: false, // a record has been made
     wave: 0, // time since the blast, s (of the real survey; shown SLOW times slower)
     freeze: false, // the waves held still at s.wave (pictures, the test)
@@ -347,7 +351,9 @@ export function createApp(root, options = {}) {
   function applyWorld() {
     const waving = s.running || s.freeze;
     ground.setWave(V * s.wave, waving && s.image === 0);
-    gear.blast(waving ? s.wave * SLOW : s.done ? 99 : -1);
+    const blastAt = s.running && s.pre > 0 ? -1 : waving ? s.wave * SLOW : s.done ? 99 : -1;
+    gear.blast(blastAt);
+    ground.setCore(blastAt);
     // the geophones light as each echo passes them
     for (const g of GEOPHONES) {
       let best = 0;
@@ -389,6 +395,33 @@ export function createApp(root, options = {}) {
   function poseNow() {
     return fitPose({ box: frameBox, dir: dirNow(), camera, width: stage.width, height: stage.height, margin: MARGINS });
   }
+  // the close view of the blast: the column above the hole, the core, the first wave on the cut face
+  const focusBox = new THREE.Box3(new THREE.Vector3(SOURCE.x - 300, -470, FRONT - 40), new THREE.Vector3(SOURCE.x + 300, 480, FRONT));
+  const focusPose = { position: new THREE.Vector3(), target: new THREE.Vector3(), key: '' };
+  function focusPoseNow() {
+    const key = `${stage.width}x${stage.height}`;
+    if (focusPose.key !== key) {
+      const pz = fitPose({
+        box: focusBox,
+        dir: VIEW_DIRS.blast,
+        camera,
+        width: stage.width,
+        height: stage.height,
+        margin: { top: 10, bottom: 12, side: 12 },
+      });
+      focusPose.position.copy(pz.position);
+      focusPose.target.copy(pz.target);
+      focusPose.key = key;
+    }
+    return focusPose;
+  }
+  /** How close the camera is to the blast (0 … 1): a function of the state alone, so a frozen picture repeats. */
+  function focusNow() {
+    if (s.quiz || s.image > 0 || !(s.running || s.freeze)) return 0;
+    if (s.running && s.pre > 0) return ease.inOutCubic(1 - s.pre / PRE_S);
+    return 1 - ease.inOutCubic(clamp01((s.wave * SLOW - FOCUS_OUT[0]) / (FOCUS_OUT[1] - FOCUS_OUT[0])));
+  }
+  const camTarget = new THREE.Vector3();
   function applyCamera() {
     if (s.userMovedCamera) return;
     const pz = poseNow();
@@ -399,6 +432,22 @@ export function createApp(root, options = {}) {
     } else {
       camera.position.copy(pz.position);
       controls.target.copy(pz.target);
+    }
+    const f = focusNow();
+    if (f > 0) {
+      const fp = focusPoseNow();
+      camera.position.lerp(fp.position, f);
+      controls.target.lerp(fp.target, f);
+      // the jolt: a few pixels, under 0.3 s, dying fast
+      const j = s.wave * SLOW;
+      if (j > 0 && j < 0.3) {
+        const px =
+          (5 * Math.exp(-j / 0.09) * 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) * camera.position.distanceTo(controls.target)) /
+          stage.height;
+        camTarget.set(Math.sin(j * 83) * px, Math.cos(j * 61) * px, 0);
+        camera.position.add(camTarget);
+        controls.target.add(camTarget);
+      }
     }
     controls.update();
   }
@@ -459,6 +508,12 @@ export function createApp(root, options = {}) {
   // ── the waves run ───────────────────────────────────────────────────────────────────────────────────────
   stage.addTicker((dt) => {
     if (!s.running) return false;
+    if (s.pre > 0) {
+      s.pre = Math.max(0, s.pre - dt);
+      if (s.pre === 0) audio.pop?.();
+      draw();
+      return true;
+    }
     s.wave = Math.min(RECORD, s.wave + dt / SLOW);
     if (s.wave >= RECORD) finishRun();
     draw();
@@ -516,8 +571,8 @@ export function createApp(root, options = {}) {
       s.image = 0;
       s.wave = 0;
       s.running = true;
+      s.pre = PRE_S;
       s.played = Math.max(s.played, 1);
-      audio.pop?.();
       draw();
       emitChange();
     };
@@ -635,6 +690,14 @@ export function createApp(root, options = {}) {
     { dx: -70, dy: 52 },
     { dx: 70, dy: 30 },
   ];
+  const BESIDE = [
+    { dx: -12, dy: -54 },
+    { dx: -46, dy: -46 },
+    { dx: 46, dy: -46 },
+    { dx: -46, dy: 40 },
+  ];
+  let shownBlast = false;
+  const pHole = new THREE.Vector3(SOURCE.x - 125, 0, FRONT); // on the edge beside the hole, not on the blast
   const tmp = new THREE.Vector3();
   const pSource = new THREE.Vector3(SOURCE.x + 30, 82, FRONT - 22);
   const LETTERS = t('letters').split(',');
@@ -651,15 +714,27 @@ export function createApp(root, options = {}) {
     const qk = q?.kind;
     const img = s.image > 0.6;
     const learn = !q;
-    const heard = s.done || s.running;
-    label('source', learn && !img && !heard, t('l_source'), pSource, INK, ABOVE, true);
+    const heard = s.done || s.running || s.freeze;
+    // while the camera is on the blast nothing stands over it: only its name, out on the sky beside the hole
+    const blasting = focusNow() > 0.12;
+    if (shownBlast !== blasting && shown.has('source')) label('source', false);
+    shownBlast = blasting;
+    label('source', learn && !img && (!heard || blasting), t('l_source'), blasting ? pHole : pSource, INK, blasting ? BESIDE : ABOVE, true);
     label('geophone', learn && !img && !heard, t('l_geophone'), gear.phoneTop(LINE[3].i, tmp), INK, ABOVE, true);
     label('truck', learn && !img && !heard, t('l_truck'), pTruck, INK, ABOVE, true);
     // the front row's geophones, numbered as the seismogram's traces
     for (let i = 0; i < LINE.length; i++)
-      label(`g${i}`, learn && heard && !img, `<span class="ss-gnum">${N(i + 1)}</span>`, gear.phoneTop(LINE[i].i, tmp), INK, NUM_SPOTS, true);
+      label(
+        `g${i}`,
+        learn && heard && !img && !blasting,
+        `<span class="ss-gnum">${N(i + 1)}</span>`,
+        gear.phoneTop(LINE[i].i, tmp),
+        INK,
+        NUM_SPOTS,
+        true,
+      );
     for (let k = 0; k < DEPTHS.length; k++) {
-      const on = (learn && heard && !img) || qk === 'later';
+      const on = (learn && heard && !img && !blasting) || qk === 'later';
       const text = qk === 'later' ? t('l_letter', { x: LETTERS[q.letters[k]] }) : t('l_layer', { n: k + 1 });
       label(`layer${k}`, on, text, ground.frontPoint(k, 985, tmp), ECHO_COLORS[k], RIGHT, learn, depthBox);
     }
@@ -753,6 +828,7 @@ export function createApp(root, options = {}) {
     label: 'act_blast',
     target: () => {
       if (s.locked || camK < 1 || s.running || (s.imageOn && s.image < 1)) return null;
+      if (s.freeze && s.wave * SLOW < BLAST_S) return null; // nothing over the blast
       if (s.done && !s.imageOn) return ringPoint.set(0, 10, 85);
       return ringPoint.set(SOURCE.x + 10, 12, FRONT - 10);
     },
@@ -814,6 +890,7 @@ export function createApp(root, options = {}) {
     tweener.cancel('image');
     s.quiz = q;
     s.running = false;
+    s.pre = 0;
     s.freeze = q.wave != null;
     s.wave = q.wave ?? RECORD;
     s.done = q.wave == null;
@@ -1050,7 +1127,7 @@ export function createApp(root, options = {}) {
     if (s.locked) return lockedNudge();
     ++token;
     tweener.cancel('image');
-    Object.assign(s, { running: false, done: false, wave: 0, freeze: false, sel: -1, image: 0, imageOn: false, userMovedCamera: false });
+    Object.assign(s, { running: false, pre: 0, done: false, wave: 0, freeze: false, sel: -1, image: 0, imageOn: false, userMovedCamera: false });
     s.visited.clear();
     for (let k = 0; k < DEPTHS.length; k++) sheet.result(`e${k}`, '');
     clearLabels();
@@ -1068,6 +1145,7 @@ export function createApp(root, options = {}) {
       running: s.running,
       done: s.done,
       wave: +s.wave.toFixed(3),
+      focus: +focusNow().toFixed(2),
       layer: s.sel + 1,
       t: m ? m.t : null,
       depth: m ? m.d : null,

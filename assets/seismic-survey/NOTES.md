@@ -34,8 +34,9 @@ The page writes "উপরে".
   between layers ("দুই স্তরের সীমানা"), not the layers.
 - Colours: the outgoing sound is teal #0c8599 (the chapter's sound colour) and only that; the echoes of সীমানা ১, ২,
   ৩ are green #2b8a3e, purple #7048e8 and orange #d9480f (on the 3D, the tags, the words and the seismogram).
-- (১) বিস্ফোরণ ঘটাও (the badge rings the shot hole; a tap on the hole works too): a flash and dust; the wave spreads
-  down the cut face; at each boundary an echo starts back up, drawn exactly where t = √(x² + (2d)²) / v puts it; on
+- (১) বিস্ফোরণ ঘটাও (the badge rings the shot hole; a tap on the hole works too): the camera moves in on the hole for
+  0.6 s and the badge and labels leave it (only উৎস stays, beside it), then the charge goes off (see "The blast"); the
+  view pulls back to the whole block between 1.25 and 2.75 s as the echoes come up, and the wave spreads down the cut face; at each boundary an echo starts back up, drawn exactly where t = √(x² + (2d)²) / v puts it; on
   the surface each echo arrives as a growing circle and each geophone lights in the echo's colour as it passes. The
   panel's seismogram ("জিওফোনে ধারণ করা শব্দ") records the front row's six traces live; those six geophones carry
   small tags ১–৬ on the 3D while the record shows.
@@ -56,7 +57,28 @@ The page writes "উপরে".
   back (frozen waves); which of ক/খ/গ (shuffled letters on the boundaries) echoes last; the depth from t on the
   picture and v = 2500 m/s; why a grid (the 3D picture shown). Wrong choices are real mistakes, each with its note.
 
+## The blast (0.2.0)
+A buried shot-hole charge, not a movie bomb. On the slowed clock (6×), counted from the firing, `src/blast.js` above
+ground and `CORE_FRAG` in `src/ground.js` on the cut face:
+- 0–0.2 s: the core at the charge, white to orange (dull red by about 1 s), the crushed zone and cracks reach their
+  size, a flash of real light on the ground and face, the camera's jolt (5 px, under 0.3 s), the ground lifts round
+  the hole. The first wave is hot orange at birth and has turned the chapter's teal by about 0.6 s; it is the same
+  shader pulse throughout, so it starts from the core at t = 0.
+- to about 1 s: the column of soil and gas climbs; clods fly.
+- to 2.5 s: the dust ring runs out along the ground (round the back and sides, never out in front of the cut face),
+  clods fall back, the ground settles. Everything is gone by 3 s.
+Everything is a pure function of the time, and so is the camera's move, so `wave=0.08` always gives the same picture.
+A student who has turned the view keeps it: the auto-move only runs while `userMovedCamera` is false, and a drag ends it.
+The smoke's 80 puffs move in the vertex shader (one draw call, no CPU per frame); their shading is baked once into a
+picture lit from the sun's side. The point light stays in the scene at 0: adding it at the blast would recompile every
+material at the worst moment. Poster: kept (fire=1, layer=2), because the idea is the echoes and the seismogram, and
+a blast picture has neither; `wave=0.08` is the best still of the blast itself.
+
 ## Honest simplifications (said on the view or in the panel)
+- The blast is drawn much larger than life (the column about 400 m tall; a real shot-hole charge throws a few metres
+  of soil, and a well-tamped one almost none), like the equipment. The core reaches the surface for the same reason:
+  the charge is 20 m down and the core about 70 m across. The corner note says the equipment is drawn large; the
+  notes hold for the blast too.
 - One speed of sound for all the rock, v = 2500 m/s (sedimentary rock is 2000–3500 m/s), said "ধরে নেওয়া".
 - Time slowed 6× and equipment drawn far larger than life (a geophone ~65 m tall on a 2 km block): the corner note
   "ছবিতে সময় ৬ গুণ ধীর · যন্ত্র বড় করে আঁকা".
@@ -83,6 +105,15 @@ the five boundary lines are one `LineSegments`; the shot hole's two pieces are o
 while no wave shows. The GLB's rock and soil textures are JPEG (the live ones stay canvases of 512 and 1024 px); the
 GLB keeps the five rock layers with their bedding and grain. Pictures differ from 0.1.1 by under 0.05 % of pixels
 (the geophones' edges).
+
+## Weight (0.2.0, same measure, 844×390)
+| | 0.1.2 idle | 0.2.0 idle | 0.1.2 mid-blast (wave=0.08) | 0.2.0 mid-blast |
+|---|---|---|---|---|
+| draw calls | 64 | 64 | 70 | 78 |
+| triangles | 74,400 | 74,400 | 76,760 | 93,136 |
+
+The blast adds nothing while idle except the point light at intensity 0 in the materials' shaders, and it is not in
+the GLB (1.27 MB, 23,888 triangles, unchanged). Per frame on the CPU: 54 clod matrices.
 
 ## Kit gap
 - A figure cannot tell the portrait panel from the side panel by size alone (both are ~280–400 px wide). The
