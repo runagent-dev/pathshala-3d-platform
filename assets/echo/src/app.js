@@ -1,11 +1,13 @@
 // Echo (প্রতিধ্বনি, book page 201, topic 7.3.1), student view. A student stands on dry flat ground in front of a tall
 // sandstone cliff, on a measuring tape that starts at the cliff's foot. The student drags the student (or picks a
-// distance word) and claps: a short sound pulse (teal wavefronts) spreads to the cliff, is reflected, and the echo
-// spreads back from the image of the hands behind the cliff face, slowed 20 times (said in the panel). A time line in
-// the panel shows the clap at 0, the echo at t = 2d ÷ 330 and the 0.1 s band during which we still hear the clap:
-// inside it the two sounds merge, beyond it the echo is heard on its own. The rule grows with what the student finds:
-// sound is reflected → the 0.1 s → 0.1 s × 330 m/s = 33 m, half of it 16.5 m (then marked on the tape). With sound on,
-// the real clap and its echo are played at the real delay. Test: five questions. Built on the shared kit.
+// distance word) and calls out, hands cupped round the mouth, as people do at a hill: a train of sound waves (teal
+// wavefronts) spreads from the mouth to the cliff, is reflected, and the echo spreads back from the image of the mouth
+// behind the cliff face, slowed 20 times (said in the panel). A time line in the panel draws the call as a bar of its
+// real length from 0, the echo as the same bar from t = 2d ÷ 330, and the 0.1 s band from the call's start: if the
+// echo's start is inside it the two merge, beyond it the echo is heard on its own. The rule grows with what the
+// student finds: sound is reflected → the 0.1 s → 0.1 s × 330 m/s = 33 m, half of it 16.5 m (then marked on the tape).
+// With sound on, a synthesized voice calls and its echo plays at the real delay. Test: five questions. Built on the
+// shared kit.
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
 import { createTweener, ease } from '@shared/tween.js';
@@ -19,10 +21,12 @@ import { capturePointer, releasePointer } from '@shared/student/pointer.js';
 import { createI18n } from './i18n.js';
 import { fitPose } from './camera.js';
 import { CLIFF, HAZE, TAPE, createCliff, createSetting, skyTexture } from './setting.js';
-import { HANDS_Y, HANDS_Z, createListener } from './listener.js';
+import { MOUTH, createListener } from './listener.js';
 import { createPulse } from './pulse.js';
 import { createTimeline } from './timeline.js';
+import { createVoice } from './voice.js';
 import {
+  CALL,
   D_STEP,
   EXAMPLES,
   FAR_TIMES,
@@ -52,7 +56,8 @@ export const DEFAULTS = {
 };
 
 const COLORS = { ink: '#1d2733', teal: '#0b7285', time: '#c2255c' };
-const TAIL = 6; // m the echo travels past the listener before it fades
+const TAIL = 8; // m the echo's front travels past the student before it has faded (its train is 5 m long)
+const TRAIN = 5; // m: the drawn train passes the student whole before the fade begins
 const DOUBLE_TAP = 400; // ms
 const MARGIN = { top: 44, bottom: 10, side: 10 };
 const V = (x, y, z = 0) => new THREE.Vector3(x, y, z);
@@ -65,9 +70,15 @@ const viewDir = (aspect) => {
   const az = THREE.MathUtils.degToRad(19 + 11 * clamp01((aspect - 0.9) / 0.9));
   return V(Math.cos(az), ELEV, Math.sin(az)).normalize();
 };
-const FACING = -Math.PI / 2 + 0.8; // the student faces the cliff (−x), turned toward the camera so we see the face
+const FACING = -Math.PI / 2 + 0.8; // at rest the student stands turned toward the camera, so we see the face
+const CALL_FACING = -Math.PI / 2 + 0.66; // calling, they turn to the cliff (−x), still showing the hands to the camera
+const RAISE = 0.5; // s: rest → the hands at the mouth
+const LOWER = 0.6; // s: back to rest
+const WORD_SHOW = 0.05; // s (real, 1 s in the picture): how long the called word shows
 const ROW_Z = -0.5; // the air particles' row on the ground, beside the student's line
 const EAR = 0.012; // s (real): how long the "heard" ring round the head lasts
+/** The mouth's place in the call for a student d m from the cliff (the sound's source). */
+const mouthAt = (d, out) => out.set(d + Math.sin(CALL_FACING) * MOUTH.z, MOUTH.y, Math.cos(CALL_FACING) * MOUTH.z);
 const SPAN_Z = TAPE.z - TAPE.width / 2 - 0.16; // the d bar, just in front of the tape's near edge
 const MIN_FRAME = 6; // m: the view frames at least this much ground in front of the cliff
 
@@ -97,7 +108,7 @@ export function createApp(root, options = {}) {
   const tlHost = document.createElement('div');
   tlHost.className = 'ec-tl-host';
   $('.pvc-outcome').after(tlHost);
-  const timeline = createTimeline(tlHost, t, N, { gap: GAP });
+  const timeline = createTimeline(tlHost, t, N, { gap: GAP, call: CALL });
   // wide panels only (style.css): the book's chain 0.1 s → 33 m → 16.5 m as it is found, and the distances tried
   const chain = document.createElement('div');
   chain.className = 'ec-chain';
@@ -197,6 +208,7 @@ export function createApp(root, options = {}) {
   const tweener = createTweener();
   stage.addTicker((dt) => tweener.tick(dt));
   const audio = createAudio(o.sound);
+  const voice = createVoice(audio);
   /** @type {ReturnType<typeof createAction> | null} */
   let action = null;
   const listeners = new Map();
@@ -210,13 +222,13 @@ export function createApp(root, options = {}) {
     mode: 'explore',
     locked: false,
     run: 0,
-    tau: /** @type {number | null} */ (null), // real time since the clap (s); null: no clap at this distance yet
+    tau: /** @type {number | null} */ (null), // real time since the call started (s); null: no call at this distance yet
     playing: false,
-    clap: 0, // the hands: 0 apart, 1 together
+    call: 0, // the student's pose: 0 at rest, 1 calling
     frozen: false, // the pulse held at a moment by the bridge (set tau)
     found: { near: false, far: false },
     results: new Map(), // example id → its time (s)
-    tried: /** @type {number[]} */ ([]), // distances clapped at, the latest first
+    tried: /** @type {number[]} */ ([]), // distances called from, the latest first
     frameD: 0, // the distance the camera frames
     userMovedCamera: false,
     dragging: false,
@@ -229,34 +241,33 @@ export function createApp(root, options = {}) {
 
   // ── the scene from the state ────────────────────────────────────────────────
   const src = new THREE.Vector3();
-  function hands(out = src) {
-    listener.root.updateMatrixWorld();
-    return listener.root.localToWorld(out.set(0, HANDS_Y, HANDS_Z));
-  }
+  const mouth = (out = src) => mouthAt(s.d, out);
   const tmp = new THREE.Vector3();
   function syncScene() {
     listener.root.position.set(s.d, 0, 0);
     slideMark.position.set(s.d, 0.03, 0);
     slideMark.visible = s.mode === 'explore' && !s.playing;
     span.set(s.d, !!s.show.dLabel);
-    hands();
+    // the pose: the app tweens s.call; the mouth opens as the word starts
+    listener.root.rotation.y = FACING + (CALL_FACING - FACING) * s.call;
+    listener.setCall(s.call, s.call * clamp01((s.tau ?? 0) / 0.006));
+    listener.root.updateMatrixWorld(true);
+    mouth();
     // the pulse
     if (s.tau == null) pulse.hide();
     else {
       const r = V_SOUND * s.tau;
       const back = r > src.x ? r : 0;
-      const fade = clamp01(1 - (r - 2 * s.d) / TAIL);
+      const fade = clamp01(1 - (r - 2 * s.d - TRAIN) / (TAIL - TRAIN));
       pulse.set(src, r, back, 1, fade, s.d - 0.35);
     }
     const kE = s.tau == null ? -1 : (s.tau - echoTime(s.d)) / EAR;
     ear.visible = kE >= 0 && kE < 1;
     if (ear.visible) {
-      ear.position.set(s.d, listener.height - 0.1, 0);
+      listener.headAt(ear.position);
       ear.scale.setScalar(1 + 1.6 * kE);
       ear.material.opacity = 1 - kE;
     }
-    // the clap: hands together for a moment at τ = 0 (the app tweens s.clap)
-    listener.setClap(s.clap ?? 0);
     placeNumbers();
     setting.tape.mark.visible = s.found.near && s.found.far && s.mode === 'explore';
     stage.invalidate();
@@ -310,7 +321,7 @@ export function createApp(root, options = {}) {
     const d = s.d;
     // the result line
     if (s.tau == null) sheet.outcome(t('out_before', { d: N(d) }));
-    else if (!arrived()) sheet.outcome(t(V_SOUND * s.tau < hands().x ? 'out_going' : 'out_back', sumVars(d)));
+    else if (!arrived()) sheet.outcome(t(V_SOUND * s.tau < mouth().x ? 'out_going' : 'out_back', sumVars(d)));
     else sheet.outcome(`${t('out_sum', sumVars(d))} ${verdict(d)}`);
     // the rule
     const f = s.found;
@@ -359,8 +370,8 @@ export function createApp(root, options = {}) {
     // the action
     if (action) {
       const step = f.near && f.far ? '' : f.near || f.far ? 2 : 1;
-      action.set({ step, label: 'act_clap', enabled: true });
-      if (s.mode === 'explore' && !s.playing && !s.dragging) action.show('scene');
+      action.set({ step, label: 'act_call', enabled: true });
+      if (s.mode === 'explore' && !s.playing && !s.frozen && !s.dragging) action.show('scene');
       else action.hide('scene');
     }
     syncLabels();
@@ -378,7 +389,7 @@ export function createApp(root, options = {}) {
   function personBox() {
     const a = toScreen(V(s.d, 0, 0), { x: 0, y: 0 });
     const b = toScreen(V(s.d, listener.height, 0), { x: 0, y: 0 });
-    const w = Math.max(10, Math.abs(a.y - b.y) * 0.3);
+    const w = Math.max(10, Math.abs(a.y - b.y) * 0.23);
     return { left: a.x - w, right: a.x + w, top: Math.min(a.y, b.y) - 4, bottom: Math.max(a.y, b.y) + 4 };
   }
   const anno = createAnnotations({
@@ -390,8 +401,11 @@ export function createApp(root, options = {}) {
   const ABOVE = [spot(0, -28), spot(24, -30), spot(-24, -30), spot(0, -50)];
   const BELOW = [spot(0, 26), spot(20, 30), spot(-20, 30), spot(0, -28)];
   const SIDE = [spot(-30, -22), spot(30, -22), spot(-40, 0), spot(40, 0)];
+  const SPEECH = [spot(-30, -20), spot(-34, -2), spot(-26, -38), spot(30, -24), spot(30, -44)];
+  const SPEECH_BACK = [spot(30, -30), spot(-30, -34), spot(34, -12), spot(0, -52), spot(44, -46)];
   const labelState = new Map();
   const front = new THREE.Vector3();
+  const headTop = new THREE.Vector3();
   function wantLabels() {
     const want = new Map();
     if (!s.show.labels) {
@@ -420,13 +434,28 @@ export function createApp(root, options = {}) {
         color: COLORS.time,
         optional: true,
       });
+    // the word itself: near the mouth as it is called, fainter near the head when its echo comes back
+    if (s.tau != null && (s.playing || s.frozen)) {
+      const back = s.tau - echoTime(s.d);
+      if (s.tau < WORD_SHOW)
+        want.set('word', { text: t('lbl_word'), point: () => mouth(V(0, 0, 0)), spots: SPEECH, color: COLORS.teal, kind: 'word', optional: true });
+      if (back >= 0 && back < WORD_SHOW)
+        want.set('wordBack', {
+          text: t('lbl_word'),
+          point: () => listener.headAt(headTop),
+          spots: SPEECH_BACK,
+          color: COLORS.teal,
+          kind: 'wordback',
+          optional: true,
+        });
+    }
     if (s.tau != null && (s.playing || s.frozen || s.mode === 'quiz')) {
       const r = V_SOUND * s.tau;
-      hands();
+      mouth();
       if (r < src.x * 0.92 && r > 1.5)
         want.set('front', {
           text: t('lbl_sound'),
-          point: () => pulse.frontPoint('out', hands(V(0, 0, 0)), V_SOUND * (s.tau ?? 0), front),
+          point: () => pulse.frontPoint('out', mouth(V(0, 0, 0)), V_SOUND * (s.tau ?? 0), front),
           spots: ABOVE,
           color: COLORS.teal,
           optional: true,
@@ -434,7 +463,7 @@ export function createApp(root, options = {}) {
       else if (r > src.x * 1.1 && r < 2 * s.d - 1)
         want.set('front', {
           text: t('lbl_echo'),
-          point: () => pulse.frontPoint('back', hands(V(0, 0, 0)), V_SOUND * (s.tau ?? 0), front),
+          point: () => pulse.frontPoint('back', mouth(V(0, 0, 0)), V_SOUND * (s.tau ?? 0), front),
           spots: ABOVE,
           color: COLORS.teal,
           optional: true,
@@ -459,7 +488,7 @@ export function createApp(root, options = {}) {
     for (const [id, w] of want) {
       const key = `${w.text}|${w.color}`;
       if (!labelState.has(id) || !anno.has(id)) {
-        anno.add(id, { text: w.text, point: w.point, kind: 'tag', color: w.color, spots: w.spots, optional: w.optional });
+        anno.add(id, { text: w.text, point: w.point, kind: w.kind ?? 'tag', color: w.color, spots: w.spots, optional: w.optional });
         anno.update(id, {});
         labelState.set(id, key);
       } else if (labelState.get(id) !== key) {
@@ -537,15 +566,34 @@ export function createApp(root, options = {}) {
   });
 
   // ── the distance ────────────────────────────────────────────────────────────
+  /** Tweens the pose to k (0 rest, 1 calling); resolves true when it gets there. */
+  function poseTo(k, duration) {
+    const from = s.call;
+    return tweener.animate({
+      key: 'pose',
+      duration,
+      ease: ease.inOutCubic,
+      onUpdate: (x) => {
+        s.call = from + (k - from) * x;
+        syncScene();
+      },
+    }).finished;
+  }
+  /** The pose at once. */
+  function setPose(k) {
+    tweener.cancel('pose');
+    s.call = k;
+  }
   function stopRun() {
     s.run++;
     tweener.cancel('run');
-    tweener.cancel('clap');
+    voice.stop();
     s.playing = false;
     s.frozen = false;
-    s.clap = 0;
+    tweener.cancel('pose');
+    if (s.call > 0) poseTo(0, LOWER);
   }
-  /** Moves the student to d at once (a drag, a key): no clap at the new place yet. */
+  /** Moves the student to d at once (a drag, a key): no call at the new place yet. */
   function setD(d, { refit = true, animate = true } = {}) {
     const v = snapD(d);
     if (v === s.d && s.tau == null) return;
@@ -594,32 +642,32 @@ export function createApp(root, options = {}) {
       });
   }
 
-  // ── the clap ────────────────────────────────────────────────────────────────
-  /** Plays the clap at the current distance; resolves when the echo has faded (or the run was stopped). */
-  async function clap() {
+  // ── the call ────────────────────────────────────────────────────────────────
+  /**
+   * The student raises their hands, calls at the current distance and holds the call until the echo has faded (the
+   * slowed picture is shorter than the word, so the pose is held to the end), then rests. Resolves when the echo has
+   * faded (or the run was stopped).
+   */
+  async function call() {
     stopRun();
     tweener.cancel('walk');
     s.d = snapD(s.d);
     const token = s.run;
     const d = s.d;
-    s.tau = 0;
+    s.tau = null;
     s.playing = true;
     hintOff();
-    // the real sound: the clap now, its echo after the real time (merged when it is under 0.1 s)
-    audio.contact();
-    const echoMs = echoTime(d) * 1000;
-    setTimeout(() => token === s.run && audio.contact(), echoMs);
     syncScene();
     refresh();
     emitChange();
-    tweener.animate({
-      key: 'clap',
-      duration: 0.3,
-      onUpdate: (k) => {
-        s.clap = Math.sin(Math.PI * k);
-        syncScene();
-      },
-    });
+    const up = await poseTo(1, RAISE);
+    if (!up || token !== s.run) return false;
+    s.tau = 0;
+    // the real sound: the word now, its echo exactly 2d ÷ 330 s after it (merged when that is under 0.1 s)
+    voice.play(echoTime(d));
+    syncScene();
+    refresh();
+    emitChange();
     const ok = await tweener.animate({
       key: 'run',
       duration: tEnd(d) * SLOW,
@@ -632,11 +680,12 @@ export function createApp(root, options = {}) {
       },
     }).finished;
     if (!ok || token !== s.run) return false;
-    finishClap(d);
+    finishCall(d);
+    poseTo(0, LOWER);
     return true;
   }
-  /** The clap at d is over: its result is known. */
-  function finishClap(d) {
+  /** The call at d is over: its result is known. */
+  function finishCall(d) {
     s.playing = false;
     s.tau = tEnd(d);
     if (separate(d)) s.found.far = true;
@@ -647,12 +696,12 @@ export function createApp(root, options = {}) {
     refresh();
     emitChange();
   }
-  function doClap() {
+  function doCall() {
     if (s.locked) return lockedNudge();
     if (now() - lastAct < DOUBLE_TAP) return;
     lastAct = now();
     audio.unlock();
-    clap();
+    call();
   }
   action = createAction({
     stage,
@@ -660,15 +709,15 @@ export function createApp(root, options = {}) {
     host: $('.pvc-act-slot'),
     t,
     step: 1,
-    label: 'act_clap',
-    target: () => hands(V(0, 0, 0)),
+    label: 'act_call',
+    target: () => V(s.d, 1.12, 0),
     radius: 24,
     avoid: [ui.corner, ui.hint, () => anno.boxes()],
     pulse: Boolean(o.coach),
-    onAct: () => doClap(),
+    onAct: () => doCall(),
   });
 
-  // ── dragging the student; a tap on the student claps ────────────────────────
+  // ── dragging the student; a tap on the student calls ────────────────────────
   const raycaster = new THREE.Raycaster();
   const ndc = new THREE.Vector2();
   const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
@@ -718,7 +767,7 @@ export function createApp(root, options = {}) {
     drag = null;
     releasePointer(ui.canvasHost, e.pointerId);
     if (!was.moved) {
-      if (e.type === 'pointerup') doClap();
+      if (e.type === 'pointerup') doCall();
       return;
     }
     s.dragging = false;
@@ -753,7 +802,9 @@ export function createApp(root, options = {}) {
       d: s.d,
       echoTime: round(echoTime(s.d), 4),
       separate: separate(s.d),
-      clapped: s.tau != null,
+      called: s.tau != null,
+      clapped: s.tau != null, // the older name, kept for pages that read it
+      callSeconds: CALL,
       echoBack: arrived(),
       playing: s.playing,
       found: { ...s.found },
@@ -765,7 +816,7 @@ export function createApp(root, options = {}) {
   let lastEmitted = '';
   function emitChange() {
     const snap = snapshot();
-    const key = JSON.stringify([snap.d, snap.clapped, snap.echoBack, snap.playing, snap.found, snap.mode]);
+    const key = JSON.stringify([snap.d, snap.called, snap.echoBack, snap.playing, snap.found, snap.mode]);
     if (key === lastEmitted) return;
     lastEmitted = key;
     emit('change', snap);
@@ -797,6 +848,7 @@ export function createApp(root, options = {}) {
     tweener.cancel('walk');
     s.d = d;
     s.tau = tau;
+    setPose(tau == null ? 0 : 1);
     s.show = { labels: true, tape: true, dLabel: true, time: false, ...show };
     s.userMovedCamera = false;
     s.frameD = Math.max(MIN_FRAME, d);
@@ -930,6 +982,7 @@ export function createApp(root, options = {}) {
           const d = question.d;
           s.show.dLabel = true;
           s.tau = echoTime(d);
+          setPose(1);
           syncScene();
           refresh();
           const v = { ...sumVars(d) };
@@ -1013,7 +1066,7 @@ export function createApp(root, options = {}) {
       return;
     }
     if (move) setD(s.d + move * (e.shiftKey ? 5 : D_STEP));
-    else if ((k === ' ' || k === 'Enter') && !onButton) doClap();
+    else if ((k === ' ' || k === 'Enter') && !onButton) doCall();
     else if (k === 'r' || k === 'R' || k === 'Home') goHome();
     else if (k === 'Escape') hintOff();
     else return;
@@ -1044,12 +1097,15 @@ export function createApp(root, options = {}) {
       return { student: Math.round(b.bottom - b.top - 8), width: stage.width, height: stage.height };
     },
     /**
-     * d: the student's distance from the cliff (m, 4–40, in 0.5 m steps); clap: true plays the clap (animate: false
-     * lands at once on its result); tau: holds the pulse that many real seconds after a clap; found: { near, far } sets what the student has found (the rule's stage).
+     * d: the student's distance from the cliff (m, 4–40, in 0.5 m steps); call: true plays the call (animate: false
+     * lands at once on its result; clap: true is the older name for it); tau: holds the sound that many real seconds
+     * after the call's start, with the student in the calling pose; found: { near, far } sets what the student has found
+     * (the rule's stage).
      */
     async set(p = {}) {
       const animate = p.animate !== false;
-      if ((p.d != null || p.clap) && s.mode === 'quiz') quiz.stop();
+      const wantCall = Boolean(p.call || p.clap);
+      if ((p.d != null || wantCall) && s.mode === 'quiz') quiz.stop();
       if (p.found) {
         s.found = { near: Boolean(p.found.near), far: Boolean(p.found.far) };
         syncScene();
@@ -1060,19 +1116,21 @@ export function createApp(root, options = {}) {
         else setD(Number(p.d), { animate: false });
       }
       if (p.tau != null) {
-        // the pulse held at a moment (real seconds after the clap): posters, the book
+        // the sound held at a moment (real seconds after the call's start): posters, the book
         stopRun();
         s.tau = Math.max(0, Math.min(tEnd(s.d), Number(p.tau)));
+        setPose(1);
         s.frozen = true;
         syncScene();
       }
-      if (p.clap) {
+      if (wantCall) {
         if (animate) {
           lastAct = now();
-          await clap();
+          await call();
         } else {
           stopRun();
-          finishClap(s.d);
+          setPose(0);
+          finishCall(s.d);
         }
       }
       refresh();

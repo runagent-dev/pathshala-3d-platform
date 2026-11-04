@@ -1,11 +1,12 @@
-// The time line in the panel (SVG): real time after the clap, 0 to 0.25 s. A shaded crimson band from 0 to 0.1 s
-// (how long a sound stays with us), the clap at 0, the echo's mark at t = 2d ÷ 330 once it has come back, and a moving
-// crimson cursor while the slowed pulse travels. The echo's mark inside the band means the two sounds merge.
-// Drawn at the panel's own pixel width (redrawn on resize), so its words keep their real size and stay crisp. Rows,
-// top to bottom: the marks' words (হাততালি at 0, প্রতিধ্বনি at its mark), the band with the marks, the axis and its
-// numbers with the band's words between ০ and ০.১ and the unit after ০.২: nothing sits under the cursor or the marks.
+// The time line in the panel (SVG): real time after the call starts, 0 to 0.6 s. Two lanes: the call, a bar of its real
+// length from 0, and (once it has come back) the echo, the same bar starting at t = 2d ÷ 330. A strong mark at each
+// bar's start shows the two moments the book's rule compares. A shaded crimson band runs from the call's start to 0.1 s
+// (how long a sound stays with us): if the echo's start is inside it the two merge, beyond it the echo is heard apart.
+// A crimson cursor moves while the slowed picture plays. Drawn at the panel's own pixel width (redrawn on resize), so
+// its words keep their real size and stay crisp. Under the axis: the numbers, the band's words between ০ and ০.২ (the
+// band ends at their middle), the unit between ০.৪ and ০.৬.
 const NS = 'http://www.w3.org/2000/svg';
-export const T_MAX = 0.25;
+export const T_MAX = 0.6;
 
 function el(name, attrs = {}, parent = null) {
   const e = document.createElementNS(NS, name);
@@ -16,9 +17,9 @@ function el(name, attrs = {}, parent = null) {
 
 /**
  * host: the element to fill. t(key, vars), N (digits). Returns { root, set({ cursor, echo, inside }) }:
- * cursor (s or null), echo (s or null: its mark), inside (whether the echo is within 0.1 s).
+ * cursor (s or null), echo (s or null: its bar's start), inside (whether the echo's start is within 0.1 s).
  */
-export function createTimeline(host, t, N, { gap = 0.1 } = {}) {
+export function createTimeline(host, t, N, { gap = 0.1, call = 0.35 } = {}) {
   const root = document.createElement('div');
   root.className = 'ec-tl';
   const svg = el('svg', { role: 'img', 'aria-label': t('tl_aria') });
@@ -39,10 +40,11 @@ export function createTimeline(host, t, N, { gap = 0.1 } = {}) {
     const fs = compact ? 11.5 : large ? 15 : 13.5; // the words' size in px (the SVG is drawn 1:1)
     const L = 6;
     const R = W - 14;
-    const top = fs + 5; // the marks' words above the band
-    const bandH = compact ? 12 : large ? 30 : 20;
-    const Y = top + bandH; // the axis
-    const rowN = Y + fs + 5; // the numbers, the band's words (between ০ and ০.১) and the unit (after ০.২)
+    const top = 1;
+    const lane = compact ? 14 : large ? 26 : 21;
+    const laneB = top + lane + 2;
+    const Y = laneB + lane + 3; // the axis
+    const rowN = Y + fs + 5; // the numbers, the band's words and the unit
     const H = rowN + 4;
     const x = (s) => L + ((R - L) * Math.min(T_MAX, Math.max(0, s))) / T_MAX;
     svg.replaceChildren();
@@ -52,45 +54,56 @@ export function createTimeline(host, t, N, { gap = 0.1 } = {}) {
     svg.style.width = `${W}px`;
     svg.style.height = `${H}px`;
     svg.style.fontSize = `${fs}px`;
-    el('rect', { x: x(0), y: top, width: x(gap) - x(0), height: bandH, rx: 3, class: 'ec-tl-band' }, svg);
-    // the axis, ticks every 0.05 s, numbers every 0.1 s
+    el('rect', { x: x(0), y: top, width: x(gap) - x(0), height: Y - top, rx: 3, class: 'ec-tl-band' }, svg);
+    // the axis, a tick and a number every 0.1 s (every 0.2 s for the numbers)
     el('line', { x1: L, y1: Y, x2: R + 4, y2: Y, class: 'ec-tl-axis' }, svg);
     el('path', { d: `M${R + 11},${Y} l-8,-4.5 v9 z`, class: 'ec-tl-head' }, svg);
-    for (let k = 0; k <= 5; k++) {
-      const s = k * 0.05;
+    for (let k = 0; k <= 6; k++) {
+      const s = k * 0.1;
       el('line', { x1: x(s), y1: Y, x2: x(s), y2: Y + (k % 2 ? 4 : 6), class: 'ec-tl-axis' }, svg);
       if (k % 2 === 0) {
         const n = el('text', { x: x(s), y: rowN, class: 'ec-tl-num', 'text-anchor': k === 0 ? 'start' : 'middle' }, svg);
         n.textContent = N(Math.round(s * 10) / 10);
       }
     }
-    // the band's words under the band, between the ০ and the ০.১ (shrunk to fit there), the unit at the axis's end
-    const band = el('text', { x: (x(0) + x(gap)) / 2 + 3, y: rowN, class: 'ec-tl-bandtext', 'text-anchor': 'middle' }, svg);
+    // the band's words in the room between ০ and ০.২, the unit between ০.৪ and ০.৬ (each shrunk if it must)
+    const fit = (e, room) => {
+      try {
+        if (e.getComputedTextLength() > room) {
+          e.setAttribute('textLength', String(room));
+          e.setAttribute('lengthAdjust', 'spacingAndGlyphs');
+        }
+      } catch {}
+    };
+    const bandL = x(0) + fs;
+    const bandR = x(0.2) - fs * 1.2;
+    const band = el('text', { x: (bandL + bandR) / 2, y: rowN, class: 'ec-tl-bandtext', 'text-anchor': 'middle' }, svg);
     band.textContent = t('tl_band', { gap: N(gap) });
-    const room = x(gap) - x(0) - 2 * fs - 4;
-    try {
-      if (band.getComputedTextLength() > room) band.setAttribute('textLength', String(room));
-      if (band.getComputedTextLength() > room) band.setAttribute('lengthAdjust', 'spacingAndGlyphs');
-    } catch {}
-    const unit = el('text', { x: R + 12, y: rowN, class: 'ec-tl-unit', 'text-anchor': 'end' }, svg);
+    fit(band, bandR - bandL);
+    const unit = el('text', { x: x(0.5), y: rowN, class: 'ec-tl-unit', 'text-anchor': 'middle' }, svg);
     unit.textContent = t('tl_unit');
-    // the clap at 0 (ink) and its word, the echo (teal), the cursor (crimson)
-    el('rect', { x: x(0), y: top - 2, width: 4, height: bandH + 2, rx: 1.5, class: 'ec-tl-clap' }, svg);
-    const clapText = el('text', { x: x(0), y: top - 5, class: 'ec-tl-claptext', 'text-anchor': 'start' }, svg);
-    clapText.textContent = t('tl_clap');
-    const echo = el('g', { class: 'ec-tl-echo' }, svg);
-    el('rect', { x: -2.5, y: top - 2, width: 5, height: bandH + 4, rx: 1.5 }, echo);
-    const echoText = el('text', { x: 0, y: top - 5, 'text-anchor': 'start' }, svg);
-    echoText.setAttribute('class', 'ec-tl-echotext');
-    echoText.textContent = t('tl_echo');
-    const cursor = el('line', { x1: 0, y1: top - 2, x2: 0, y2: Y + 3, class: 'ec-tl-cursor' }, svg);
-    parts = { x, echo, echoText, clapText, cursor, R };
+    fit(unit, x(0.6) - x(0.4) - 2 * fs);
+    // a bar with a strong mark at its start and its word inside; the echo's is moved to its start by draw(). The call's
+    // word sits at the bar's far end, where the cursor never goes (it stops at the echo's start, 0.24 s at most)
+    const bar = (cls, word, y, parent, end = false) => {
+      const g = el('g', { class: cls }, parent);
+      el('rect', { x: 0, y, width: x(call) - x(0), height: lane, rx: 2.5, class: 'ec-tl-bar' }, g);
+      el('rect', { x: 0, y, width: 4, height: lane, class: 'ec-tl-start' }, g);
+      const textX = end ? x(call) - x(0) - 7 : 9;
+      const w = el('text', { x: textX, y: y + lane / 2 + fs * 0.36, class: 'ec-tl-word', 'text-anchor': end ? 'end' : 'start' }, g);
+      w.textContent = word;
+      return g;
+    };
+    bar('ec-tl-call', t('tl_call'), top, svg, true).setAttribute('transform', `translate(${x(0)},0)`);
+    const echo = bar('ec-tl-echo', t('tl_echo'), laneB, svg);
+    const cursor = el('line', { x1: 0, y1: top, x2: 0, y2: Y + 3, class: 'ec-tl-cursor' }, svg);
+    parts = { x, echo, cursor };
     draw();
   }
 
   function draw() {
     if (!parts) return;
-    const { x, echo, echoText, clapText, cursor, R } = parts;
+    const { x, echo, cursor } = parts;
     const { cursor: c, echo: e, inside } = state;
     cursor.style.display = c == null ? 'none' : '';
     if (c != null) {
@@ -98,20 +111,9 @@ export function createTimeline(host, t, N, { gap = 0.1 } = {}) {
       cursor.setAttribute('x2', String(x(c)));
     }
     echo.style.display = e == null ? 'none' : '';
-    echoText.style.display = e == null ? 'none' : '';
     if (e != null) {
-      const px = x(e);
-      echo.setAttribute('transform', `translate(${px},0)`);
+      echo.setAttribute('transform', `translate(${x(e)},0)`);
       echo.classList.toggle('inside', inside);
-      // the word over its mark, kept clear of হাততালি and inside the box
-      let w = 60;
-      let cw = 50;
-      try {
-        w = echoText.getComputedTextLength() || w;
-        cw = clapText.getComputedTextLength() || cw;
-      } catch {}
-      const left = Math.min(R + 12 - w, Math.max(x(0) + cw + 8, px - w / 2));
-      echoText.setAttribute('x', String(left));
     }
   }
 

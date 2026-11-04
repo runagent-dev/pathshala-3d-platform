@@ -1,38 +1,46 @@
-// The clap's sound pulse, in metres: a short burst of two wavelengths spreading from the hands at the speed of sound,
-// two compressions (সংকোচন, the chapter's teal, darker) and two rarefactions (প্রসারণ, lighter), evenly spaced. Seen
-// three ways at once, all from the same profile:
+// The start of the call as a train of waves, in metres: a voice is many waves, not a burst of two, so five wavelengths
+// spread from the mouth at the speed of sound, compressions (সংকোচন, the chapter's teal, darker) and rarefactions
+// (প্রসারণ, lighter) evenly spaced at full strength, then dying away in a decaying tail. Seen three ways at once, all
+// from the same profile:
 // - the fronts as thin spherical shells, only the part heading for the cliff (a cap of ±66°) and only their lower part,
 //   up to 2.5 m (a little over the student's head), fading at the top: upright curved bands that sweep over the
 //   ground and over the student, while the cliff above stays clear;
 // - the rings where those spheres meet the ground, at full strength, in a wide fan in front of the source;
 // - a row of air particles on the ground between the cliff and the student, each moving back and forth in place as
 //   the pulse passes (bunched at a compression, spread at a rarefaction; the movement is drawn far bigger than life).
-// The echo is the reflected wave: by the law of reflection it spreads as a sphere centred on the image of the hands
-// behind the cliff face (x = −x_hands), drawn only in front of the face. The incoming wave
+// The echo is the reflected wave: by the law of reflection it spreads as a sphere centred on the image of the mouth
+// behind the cliff face (x = −x_mouth), drawn only in front of the face. The incoming wave
 // is cut off at the face (x = 0) by clipping planes. set(...) places everything for a moment.
 import * as THREE from 'three';
 
 const CAP = 1.15; // half-angle of the drawn cap (rad): wide, so its rim is seen edge-on and outlines the front
-export const LAMBDA = 1.2; // m: the pulse's wavelength (the burst is two wavelengths long)
-const BURST = 2 * LAMBDA;
+export const LAMBDA = 1; // m: the drawn wavelength (chosen to be seen)
+export const WAVES = 5; // the wavelengths in the drawn train
+const BURST = WAVES * LAMBDA;
 const FAN = 1.25; // half-angle of the ground rings' fan (rad)
-const PARTICLE_STEP = 0.3; // m between the air particles at rest
-const PARTICLES = 150; // enough for 0 … 45 m
+const PARTICLE_STEP = 0.25; // m between the air particles at rest
+const PARTICLES = 180; // enough for 0 … 45 m
 const AMP = 0.55; // the particles' movement, drawn bigger than life (× the profile's λ/2π)
 const DARK = '#0b7285';
 const LIGHT = '#c5f6fa';
-/** The shells: a compression at λ/4 and 5λ/4 behind the leading edge, a rarefaction at 3λ/4 and 7λ/4. */
-const SHELLS = [
-  { s: 0.25 * LAMBDA, color: DARK, opacity: 0.42 },
-  { s: 0.75 * LAMBDA, color: LIGHT, opacity: 0.4 },
-  { s: 1.25 * LAMBDA, color: DARK, opacity: 0.42 },
-  { s: 1.75 * LAMBDA, color: LIGHT, opacity: 0.4 },
-];
+/** The train's strength at s m behind its leading edge: full for the first half, then a decaying tail, 0 at its end. */
+export function envelope(s) {
+  const x = s / BURST;
+  if (x <= 0 || x >= 1) return 0;
+  return x < 0.5 ? 1 : (2 - 2 * x) ** 1.5;
+}
+
+/** The shells: a compression at (k + ¼)λ behind the leading edge, a rarefaction at (k + ¾)λ, weaker along the tail. */
+const SHELLS = [];
+for (let k = 0; k < WAVES; k++) {
+  const c = (k + 0.25) * LAMBDA;
+  const r = (k + 0.75) * LAMBDA;
+  SHELLS.push({ s: c, color: DARK, opacity: 0.32 * envelope(c) }, { s: r, color: LIGHT, opacity: 0.3 * envelope(r) });
+}
 
 /** The particles' displacement (m, away from the source) at s m behind the leading edge: compression = ∂u/∂s. */
 export function displacement(s) {
-  if (s <= 0 || s >= BURST) return 0;
-  return ((AMP * LAMBDA) / (2 * Math.PI)) * (1 - Math.cos((2 * Math.PI * s) / LAMBDA));
+  return ((AMP * LAMBDA) / (2 * Math.PI)) * (1 - Math.cos((2 * Math.PI * s) / LAMBDA)) * envelope(s);
 }
 
 /** A cap of a unit sphere about +y, then turned so its axis points along ±x. */
@@ -87,6 +95,7 @@ function groundRipples() {
     uFadeBack: { value: 1 },
     uCos: { value: Math.cos(FAN) },
     uLambda: { value: LAMBDA },
+    uBurst: { value: BURST },
     uDark: { value: new THREE.Color(DARK) },
     uLight: { value: new THREE.Color('#e3fafc') },
   };
@@ -105,12 +114,14 @@ function groundRipples() {
       }`,
     fragmentShader: /* glsl */ `
       uniform vec3 uSrc; uniform float uOut; uniform float uBack; uniform float uFadeOut; uniform float uFadeBack;
-      uniform float uCos; uniform float uLambda; uniform vec3 uDark; uniform vec3 uLight;
+      uniform float uCos; uniform float uLambda; uniform float uBurst; uniform vec3 uDark; uniform vec3 uLight;
       varying vec3 vP;
-      // the compression profile s m behind the leading edge: + compression, − rarefaction (two wavelengths)
+      // the compression profile s m behind the leading edge: + compression, − rarefaction, the same envelope as in JS
       float profile(float s) {
-        if (s <= 0.0 || s >= 2.0 * uLambda) return 0.0;
-        return sin(6.2831853 * s / uLambda);
+        if (s <= 0.0 || s >= uBurst) return 0.0;
+        float x = s / uBurst;
+        float env = x < 0.5 ? 1.0 : pow(2.0 - 2.0 * x, 1.5);
+        return sin(6.2831853 * s / uLambda) * env;
       }
       float fan(float c) { return smoothstep(uCos - 0.08, uCos + 0.12, c); }
       void main() {
@@ -190,7 +201,7 @@ export function createPulse({ cliffTop, rowZ = -0.45 }) {
   }
 
   /**
-   * src: the hands (Vector3, x > 0); rOut: the outgoing front's radius (m); rBack: the echo's radius from the image
+   * src: the mouth (Vector3, x > 0); rOut: the outgoing front's radius (m); rBack: the echo's radius from the image
    * (0: none yet); fadeOut / fadeBack: 0…1; rowEnd: the particles' row runs from the cliff to here (m).
    */
   function set(src, rOut, rBack, fadeOut = 1, fadeBack = 1, rowEnd = src.x) {

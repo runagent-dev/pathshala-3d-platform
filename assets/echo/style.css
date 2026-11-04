@@ -24,10 +24,12 @@ body.bg-transparent { background: transparent; }
 .ec-tl-axis { stroke: #4a5361; stroke-width: 1.4; }
 .ec-tl-head { fill: #4a5361; }
 .ec-tl-num { fill: #2f3744; font-weight: 500; }
-.ec-tl-clap { fill: var(--ink); }
-.ec-tl-claptext { fill: var(--ink); font-weight: 600; }
-.ec-tl-echo rect { fill: var(--c-sound); stroke: #fff; stroke-width: 1; }
-.ec-tl-echotext { fill: var(--c-sound); font-weight: 700; }
+.ec-tl-call .ec-tl-bar { fill: var(--c-sound); }
+.ec-tl-call .ec-tl-word { fill: #fff; font-weight: 700; }
+.ec-tl-echo .ec-tl-bar { fill: #bfeaf1; stroke: var(--c-sound); stroke-width: 1; }
+.ec-tl-echo .ec-tl-word { fill: #084c58; font-weight: 700; }
+.ec-tl-start { fill: var(--ink); }
+.ec-tl-echo.inside .ec-tl-start { fill: var(--c-time); }
 .ec-tl-cursor { stroke: var(--c-time); stroke-width: 2.5; stroke-linecap: round; }
 
 /* the tape's numbers: upright words placed on the screen by the app, just beyond the tape's near edge */
@@ -63,6 +65,12 @@ body.bg-transparent { background: transparent; }
 
 /* honest time: the picture is slowed */
 .ec-note { position: absolute; left: 8px; top: 8px; z-index: 3; padding: 1px 7px; border-radius: 5px; background: rgba(255, 255, 255, 0.88); color: #3b4350; font-size: 12px; font-weight: 600; line-height: 1.5; pointer-events: none; white-space: nowrap; }
+
+/* the word called, near the mouth, and the same word fainter near the head when the echo returns: plain words on a
+   solid chip with no border or leader line, so they read as speech, not as a part's name */
+.pvc-anno-word, .pvc-anno-wordback { padding: 0 6px; border-radius: 5px; background: rgba(255, 255, 255, 0.94); color: #084c58; font-size: 16px; font-weight: 700; line-height: 1.4; white-space: nowrap; transition: none; }
+.pvc-anno-wordback { background: rgba(255, 255, 255, 0.72); color: #2d6470; font-size: 14px; font-weight: 600; }
+.pvc-anno-lines .k-word, .pvc-anno-lines .k-wordback { display: none; }
 
 /* labels on the picture: the words in their colour on a white chip */
 .pvc-anno-tag { --c: var(--ink); padding: 0 7px; border: 1.5px solid var(--c); border-radius: 5px; background: rgba(255, 255, 255, 0.96); color: var(--c); font-size: 13.5px; font-weight: 600; line-height: 1.5; white-space: nowrap; transition: none; }
