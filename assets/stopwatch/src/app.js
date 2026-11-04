@@ -58,7 +58,7 @@ export function createApp(root, options = {}) {
             <div class="pvc-result"><span class="k">${t('reading')}</span><span class="v">0</span><span class="u">${t('unit_s')}</span></div>
             <div class="pvc-sum sw-sum">${term('min', 'min_long')}<i>× ${N('60')} +</i>${term('sec', 'sec_long')}<i>=</i>${term('tot', 'total_long')}</div>
           </div>
-          <p class="pvc-learn-extra sw-extra"></p>
+          <div class="pvc-learn-extra sw-extra"></div>
           <div class="pvc-learn-foot">
             <span class="pvc-status"><i></i><span></span></span>
           </div>`,
@@ -169,17 +169,23 @@ export function createApp(root, options = {}) {
 
   function extraLine(r) {
     const g = s.round;
-    if (g?.result?.missed) return el.extra.replaceChildren(t('lamp_missed'));
+    const html = (...parts) => {
+      el.extra.innerHTML = parts.join('');
+    };
+    const p = (text) => `<p>${text}</p>`;
+    const formula = (text) => `<p class="pvc-formula">${text}</p>`;
+    const note = (text) => `<p class="pvc-note">${text}</p>`;
+    if (g?.result?.missed) return html(p(t('lamp_missed')));
     if (g?.result) {
-      const b = document.createElement('b');
-      b.textContent = t('lamp_result', { real: fmtS(g.real), measured: fmtS(g.result.measured), diff: fmtS(g.result.diff) });
-      return el.extra.replaceChildren(b, ` ${t('lamp_why')}`);
+      const v = { real: fmtS(g.real), measured: fmtS(g.result.measured), diff: fmtS(g.result.diff) };
+      return html(p(t('lamp_result', v)), formula(t('lamp_diff', v)), note(t('lamp_why')));
     }
-    if (g && g.phase !== 'done') return el.extra.replaceChildren(t('hint_lamp'));
+    if (g && g.phase !== 'done') return html(p(t('hint_lamp')));
     if (!s.running && r.value > 0 && !s.hidden) {
-      return el.extra.replaceChildren(t('read_line', { main: r.main, small: r.small, min: r.min, sec: fmtS(r.sec), total: fmtS(r.value) }));
+      const v = { main: r.main, small: r.small, min: r.min, sec: fmtS(r.sec), total: fmtS(r.value) };
+      return html(p(t('read_line', v)), formula(t('read_sum', v)));
     }
-    el.extra.replaceChildren(t('idea'));
+    html(p(t('idea')), note(t('idea_lc')));
   }
 
   function refresh() {
