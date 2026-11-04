@@ -45,7 +45,7 @@ export const STRINGS = {
     act_stop: 'থামাও',
 
     // the result line
-    out_rest: 'ভরটি সাম্যাবস্থায় স্থির। স্প্রিং <b>{x0} cm</b> লম্বা হয়েছে।',
+    out_rest: 'সাম্যাবস্থায় স্থির। স্প্রিং <b>{x0} cm</b> লম্বা হয়েছে।',
     out_held: 'সাম্যাবস্থা থেকে <b>{a} cm</b> {dir} সরানো হয়েছে। এবার ছেড়ে দাও।',
     dir_down: 'নিচে',
     dir_up: 'উপরে',
@@ -175,7 +175,7 @@ export const STRINGS = {
     act_let: 'Let go',
     act_stop: 'Stop',
 
-    out_rest: 'The mass rests at equilibrium. The spring has stretched <b>{x0} cm</b>.',
+    out_rest: 'At rest at equilibrium. The spring stretched <b>{x0} cm</b>.',
     out_held: 'Pulled <b>{a} cm</b> {dir} from equilibrium. Now let go.',
     dir_down: 'down',
     dir_up: 'up',

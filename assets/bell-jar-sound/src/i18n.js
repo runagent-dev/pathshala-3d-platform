@@ -59,7 +59,7 @@ export const STRINGS = {
     note: 'বিন্দুগুলো বাতাসের কণা, বৃত্তগুলো শব্দ তরঙ্গ (অনেক ধীর করে দেখানো; আসলে বাতাসে {c}&nbsp;m/s)। বেলটি প্রকৃত মাপের চেয়ে বড় করে আঁকা।',
 
     // the graph (wide panels)
-    note_short: 'বিন্দু = বাতাসের কণা, বৃত্ত = শব্দ তরঙ্গ (অনেক ধীর করে দেখানো); বেলটি বড় করে আঁকা।',
+    note_short: 'বিন্দু = বাতাসের কণা, বৃত্ত = শব্দ তরঙ্গ; ধীর করে দেখানো।',
     g_title: 'জারের বাতাস ও শব্দের জোর (মোটামুটি হিসাব)',
     g_x: 'জারে বাতাস (%)',
     g_y: 'শব্দের জোর',
@@ -183,7 +183,7 @@ export const STRINGS = {
       'Without a medium sound <b>cannot travel</b>. Sound is a mechanical wave. It needs an elastic medium, such as air, a liquid or a solid.',
     note: 'The dots stand for the air’s particles, the rings for the sound wave (shown much slowed down; in air sound travels at {c}&nbsp;m/s). The bell is drawn larger than life.',
 
-    note_short: 'Dots = air particles, rings = the sound wave (much slowed); the bell drawn larger.',
+    note_short: 'Dots = air particles, rings = the sound wave (much slowed).',
     g_title: 'Air in the jar and how loud (a rough model)',
     g_x: 'Air in the jar (%)',
     g_y: 'How loud',
