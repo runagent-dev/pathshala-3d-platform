@@ -46,10 +46,10 @@ export const STRINGS = {
     coef_area: 'β = {two}α = {v} × {ten}<sup>−{six}</sup> °C<sup>−1</sup>',
     coef_volume: 'γ = {three}α = {v} × {ten}<sup>−{six}</sup> °C<sup>−1</sup>',
     rule_length:
-      '<b>দৈর্ঘ্য প্রসারণ সহগ α = (L<sub>2</sub> − L<sub>1</sub>)/L<sub>1</sub> ÷ (T<sub>2</sub> − T<sub>1</sub>)।</b> তাপ প্রয়োগ করলে কঠিন বস্তুর দৈর্ঘ্য, প্রস্থ ও উচ্চতা তিন দিকেই সমানভাবে প্রসারিত হয়। দণ্ডের দৈর্ঘ্য {n} m ধরে।',
+      '<span class="pvc-formula"><i>α</i> = (<i>L</i><sub>2</sub> − <i>L</i><sub>1</sub>) ÷ <i>L</i><sub>1</sub>(<i>T</i><sub>2</sub> − <i>T</i><sub>1</sub>)</span><b>দৈর্ঘ্য প্রসারণ সহগ।</b> তাপ দিলে কঠিন বস্তু তিন দিকেই সমান বাড়ে। দণ্ডের দৈর্ঘ্য {n} m।',
     rule_area:
-      '<b>ক্ষেত্রফল প্রসারণ সহগ β = {two}α।</b> বাহু {n} m ধরে: ক্ষেত্রফল দুই দিকের গুণফল, তাই দুই দিকেই বাড়ে। α<sup>2</sup> সহ অংশটুকু এত ছোট যে বাদ দিলে হিসাবে ক্ষতি হয় না।',
-    rule_volume: '<b>আয়তন প্রসারণ সহগ γ = {three}α।</b> বাহু {n} m ধরে: আয়তন তিন দিকের গুণফল, তাই তিন দিকেই বাড়ে। α, β, γ তিনটির একই একক: K<sup>−1</sup>।',
+      '<b>ক্ষেত্রফল প্রসারণ সহগ</b> β = {two}α। বাহু {n} m ধরো। ক্ষেত্রফল দুই দিকের গুণফল, তাই দুই দিকেই বাড়ে। α<sup>2</sup>-এর অংশ এত ছোট যে বাদ দিলে হিসাবে ক্ষতি হয় না।',
+    rule_volume: '<b>আয়তন প্রসারণ সহগ</b> γ = {three}α। বাহু {n} m ধরো। আয়তন তিন দিকের গুণফল, তাই তিন দিকেই বাড়ে। α, β, γ তিনটির একই একক: K<sup>−1</sup>।',
     note_scale: '(ছবিতে প্রসারণ প্রায় {n} গুণ বাড়িয়ে দেখানো; সংখ্যাগুলো ঠিক।)',
     q_count: 'প্রশ্ন {i} / {n}',
     q_score: 'সঠিক: {right}',
@@ -139,11 +139,11 @@ export const STRINGS = {
     coef_area: 'β = {two}α = {v} × {ten}<sup>−{six}</sup> °C<sup>−1</sup>',
     coef_volume: 'γ = {three}α = {v} × {ten}<sup>−{six}</sup> °C<sup>−1</sup>',
     rule_length:
-      '<b>Coefficient of linear expansion α = (L<sub>2</sub> − L<sub>1</sub>)/L<sub>1</sub> ÷ (T<sub>2</sub> − T<sub>1</sub>).</b> When heated, a solid expands equally in length, width and height. The rod is {n} m long.',
+      '<span class="pvc-formula"><i>α</i> = (<i>L</i><sub>2</sub> − <i>L</i><sub>1</sub>) ÷ <i>L</i><sub>1</sub>(<i>T</i><sub>2</sub> − <i>T</i><sub>1</sub>)</span>The <b>coefficient of linear expansion.</b> Heated, a solid grows equally in all three directions. The rod is {n} m long.',
     rule_area:
-      '<b>Coefficient of area expansion β = {two}α.</b> With sides of {n} m: area is a product of two lengths, so it grows in two directions. The part with α<sup>2</sup> is so small that leaving it out does no harm.',
+      'The <b>coefficient of area expansion</b> β = {two}α. Take sides of {n} m. Area is a product of two lengths, so it grows in two directions. The α<sup>2</sup> part is so small that leaving it out does no harm.',
     rule_volume:
-      '<b>Coefficient of volume expansion γ = {three}α.</b> With sides of {n} m: volume is a product of three lengths, so it grows in three directions. α, β and γ all have the same unit: K<sup>−1</sup>.',
+      'The <b>coefficient of volume expansion</b> γ = {three}α. Take sides of {n} m. Volume is a product of three lengths, so it grows in three directions. α, β and γ all have the same unit: K<sup>−1</sup>.',
     note_scale: '(The picture shows the expansion about {n} times too big; the numbers are right.)',
     q_count: 'Question {i} of {n}',
     q_score: 'Correct: {right}',
