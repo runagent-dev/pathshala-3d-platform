@@ -158,8 +158,7 @@ export const STRINGS = {
     why_over: 'pressure gone, the melting point returns',
     none: '—',
     rule_start: 'When pressure is applied, the <b>melting point falls.</b> So two pieces of ice can be pressed into one piece.',
-    rule_hung:
-      'When pressure is applied, the <b>melting point falls.</b> The wire presses, so the ice under it melts at the ice’s own temperature.',
+    rule_hung: 'When pressure is applied, the <b>melting point falls.</b> The wire presses, so the ice under it melts at the ice’s own temperature.',
     rule_cut: 'When the pressure is removed, the <b>melting point returns</b> to its old value. Then the melted water turns to ice again.',
     rule_whole: 'Pressure lowers the melting point, and removing it brings the melting point back. So the ice was <b>never cut:</b> it is one piece.',
     note_cut: 'Time is sped up here. In reality the wire sinks very slowly.',
