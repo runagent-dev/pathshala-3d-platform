@@ -1,6 +1,6 @@
 # Equations of motion (গতির সমীকরণ)
 
-**Where it goes in the book:** Book pages 45–46, topic 2.7: গতির সমীকরণ (Equations of Motion). Next to the section text and its velocity–time graph with V = (u+v)/2.
+**Where it goes in the book:** Book pages 45–46, topic 2.7: গতির সমীকরণ (Equations of Motion). Next to the section text on uniform acceleration (v = u + at), in place of a printed picture.
 
 Interactive 3D figure for the Pathshala book.
 
@@ -27,11 +27,10 @@ To listen to it or control it from the book page, use the helper shipped in the 
 | Param | Meaning | Values | Default |
 |---|---|---|---|
 | `lang` | Language | `bn` বাংলা · `en` English | `bn` |
-| `u` | Initial velocity u (0 to 15 m/s, whole numbers) | number | `4` |
-| `a` | Acceleration a (−1.5 to 1.5 ms⁻² in steps of 0.5; negative brakes) | number | `1` |
-| `t` | Time t (1 to 10 s) | number | `6` |
-| `time` | Moment shown at the start (0 is the start; t (or more) is the end of the run) | number | `0` |
-| `view` | View | `front` · `3d` | `front` |
+| `x0` | Initial position x₀ (−5 to 5 m, steps of 0.1) | number | `-0.8` |
+| `u` | Initial velocity u (−5 to 5 m/s, steps of 0.1 (the reference's v₀)) | number | `1.9` |
+| `a` | Acceleration a (−3 to 3 ms⁻², steps of 0.1) | number | `1.7` |
+| `t` | Time t shown at the start (0 to 6 s; never past the moment the car reaches an end of the axis) | number | `0` |
 | `mode` | Start in | `explore` learn · `quiz` test | `explore` |
 | `coach` | First-use pointers | `1` · `0` | `1` |
 | `numerals` | Digits | (empty) follow language · `bn` Bangla · `latin` Latin |  |
@@ -48,11 +47,11 @@ Every figure answers `ping` with `{ asset, version }`. Send commands with `figur
 | Command | Example payload |
 |---|---|
 | `get` | `{}` |
-| `set` | `{"u":4,"a":1,"t":6}` |
+| `set` | `{"x0":-0.8,"u":1.9,"a":1.7}` |
 | `reset` | `{}` |
 | `practice` | `{}` |
 | `capture` | `{"width":800,"height":500}` |
 | `export-glb` | `{}` |
 
-Events: `ready`, `change`, `plan`, `run`, `arrive`, `view`, `dragstart`, `dragend`, `derive`, `example`, `practice-start`, `practice-result`, `practice-end`.
+Events: `ready`, `change`, `run`, `pause`, `end`, `view`, `practice-start`, `practice-result`, `practice-end`.
 <!-- /generated:bridge -->

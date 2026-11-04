@@ -1,248 +1,126 @@
-// The maths of the equations-of-motion figure (book pages 45–46, topic 2.7): v = u + at, V = (u + v)/2,
-// s = Vt = ut + ½at², v² = u² + 2as for a train with uniform acceleration, the steppers' limits (a braking train
-// stops, it never goes backwards), and the test's numbers and usual mistakes. Pure code, no browser.
+// The maths of the equations-of-motion figure (book pages 45–46, topic 2.7), as the owner's reference "Uniform
+// Acceleration in One Dimension": x = x₀ + ut + ½at² and v = u + at for a car on the number line from −7 m to 10 m,
+// the run that ends when the car reaches an end of the axis, the 0.1 s steps, and the test's numbers and usual
+// mistakes. Pure code, no browser.
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import * as m from '../../assets/equations-of-motion/src/motion.js';
 
 const close = (a, b, eps = 1e-9, what = '') => assert.ok(Math.abs(a - b) < eps, `${what} ${a} ≈ ${b}`);
 
-/** Every plan the steppers can reach. */
-function allPlans() {
-  const out = [];
-  for (let u = m.LIMITS.u.min; u <= m.LIMITS.u.max; u += m.LIMITS.u.step)
-    for (let a = m.LIMITS.a.min; a <= m.LIMITS.a.max + 1e-9; a = m.roundTo(a + m.LIMITS.a.step, 2))
-      for (let t = m.LIMITS.t.min; t <= m.LIMITS.t.max; t += m.LIMITS.t.step) if (m.valid(u, a, t)) out.push({ u, a, t });
-  return out;
-}
-
-describe('the opening example (u = 4 m/s, a = 1 m/s², t = 6 s)', () => {
-  it('ends at v = u + at = 10 m/s, with V = 7 m/s and s = 42 m', () => {
-    assert.deepEqual(m.solve(m.START), { u: 4, a: 1, t: 6, v: 10, V: 7, s: 42, ut: 24, half: 18 });
+describe('the reference opening (x₀ = −0.8 m, u = 1.9 m/s, a = 1.7 ms⁻²)', () => {
+  it('x and v at t = 2 s', () => {
+    close(m.position(-0.8, 1.9, 1.7, 2), -0.8 + 3.8 + 3.4);
+    close(m.velocity(1.9, 1.7, 2), 5.3);
+  });
+  it('the three parts add up to x', () => {
+    const p = m.parts(-0.8, 1.9, 1.7, 2);
+    close(p.x0 + p.ut + p.half, m.position(-0.8, 1.9, 1.7, 2));
+    close(p.half, 3.4);
+  });
+  it('reaches the right end of the axis (10 m) after about 2.62 s and stops there', () => {
+    const run = m.runEnd(-0.8, 1.9, 1.7);
+    assert.equal(run.end, 'right');
+    close(m.position(-0.8, 1.9, 1.7, run.t), 10, 1e-9);
+    close(run.t, 2.618, 1e-3);
+    const s = m.stateAt({ x0: -0.8, u: 1.9, a: 1.7 }, 5);
+    assert.equal(s.end, 'right');
+    assert.equal(s.x, 10);
+    close(s.t, run.t);
   });
 });
 
-describe('the equations of motion agree with each other for every plan', () => {
-  const plans = allPlans();
-  it('covers speeding up, steady and braking trains', () => {
-    assert.ok(plans.some((p) => p.a > 0) && plans.some((p) => p.a === 0) && plans.some((p) => p.a < 0));
-    assert.ok(plans.length > 300);
+describe('every slider setting', () => {
+  const values = (k) => {
+    const L = m.LIMITS[k];
+    const out = [];
+    for (let v = L.min; v <= L.max + 1e-9; v += 0.5) out.push(m.roundTo(v, 1));
+    return out;
+  };
+  it('the car stays on the axis for the whole run, and stops only at an end or at 6 s', () => {
+    let ends = 0;
+    for (const x0 of values('x0'))
+      for (const u of values('u'))
+        for (const a of values('a')) {
+          const run = m.runEnd(x0, u, a);
+          assert.ok(run.t > 0 && run.t <= m.LIMITS.t.max + 1e-12);
+          for (let k = 0; k <= 20; k++) {
+            const x = m.position(x0, u, a, (run.t * k) / 20);
+            assert.ok(x >= m.AXIS.min - 1e-9 && x <= m.AXIS.max + 1e-9, `${x0} ${u} ${a}: x = ${x}`);
+          }
+          if (run.end) {
+            ends++;
+            close(m.position(x0, u, a, run.t), m.AXIS[run.end === 'right' ? 'max' : 'min'], 1e-7);
+          } else assert.equal(run.t, m.LIMITS.t.max);
+        }
+    assert.ok(ends > 100);
   });
-  it('s = Vt = ((u + v)/2)·t = ut + ½at², and v² = u² + 2as', () => {
-    for (const p of plans) {
-      const { u, a, t, v, V, s } = m.solve(p);
-      close(v, u + a * t, 1e-9, 'v');
-      close(V, (u + v) / 2, 1e-9, 'V');
-      close(s, V * t, 1e-9, 's = Vt');
-      close(s, u * t + 0.5 * a * t * t, 1e-9, 's = ut + ½at²');
-      close(v * v, u * u + 2 * a * s, 1e-6, 'v² = u² + 2as');
-    }
-  });
-  it('the average velocity is the velocity at half the time (the book, page 46)', () => {
-    for (const p of plans) close(m.velocityAt(p.u, p.a, p.t / 2), m.averageVelocity(p.u, p.a, p.t), 1e-9);
-  });
-  it('the distance is the area under the velocity–time line: the sum of its 1-second strips', () => {
-    for (const p of plans) {
-      const marks = [0, ...m.secondMarks(p.u, p.a, p.t)];
-      let area = 0;
-      for (let k = 0; k < p.t; k++) {
-        const v0 = m.velocityAt(p.u, p.a, k);
-        const v1 = m.velocityAt(p.u, p.a, k + 1);
-        const strip = ((v0 + v1) / 2) * 1;
-        close(marks[k + 1] - marks[k], strip, 1e-9, `strip ${k}`);
-        area += strip;
-      }
-      close(area, m.distance(p.u, p.a, p.t), 1e-9);
-    }
-  });
-  it('in equal seconds the distances are not equal when it accelerates (the book, page 45), equal when a = 0', () => {
-    const marks = [0, ...m.secondMarks(4, 1, 6)];
-    const gaps = marks.slice(1).map((x, k) => m.roundTo(x - marks[k], 6));
-    assert.deepEqual(gaps, [4.5, 5.5, 6.5, 7.5, 8.5, 9.5]);
-    const steady = [0, ...m.secondMarks(6, 0, 4)];
-    assert.deepEqual(
-      steady.slice(1).map((x, k) => x - steady[k]),
-      [6, 6, 6, 6],
-    );
-  });
-  it('with no acceleration v = u and s = vt', () => {
-    for (const p of plans.filter((q) => q.a === 0)) {
-      const r = m.solve(p);
-      assert.equal(r.v, r.u);
-      close(r.s, r.v * r.t);
-    }
-  });
-});
-
-describe('the train only goes forwards', () => {
-  it('every reachable plan keeps v ≥ 0 all the way', () => {
-    for (const p of allPlans()) for (let k = 0; k <= 20; k++) assert.ok(m.velocityAt(p.u, p.a, (p.t * k) / 20) >= -1e-9);
-  });
-  it('braking from 12 m/s at 1.5 m/s² it stops after 8 s', () => {
-    assert.equal(m.stopTime(12, -1.5), 8);
-    assert.equal(m.stopTime(12, 0), Infinity);
-  });
-  it('one more second than it takes to stop is refused', () => {
-    assert.deepEqual(m.stepPlan({ u: 12, a: -1.5, t: 8 }, 't', 1), { u: 12, a: -1.5, t: 8, note: 'stops' });
-  });
-  it('a stop that is not on a whole second: the time is cut to the last whole second before it', () => {
-    close(m.stopTime(4, -1.5), 8 / 3, 1e-12);
-    const cut = m.stepPlan({ u: 4, a: -1, t: 4 }, 'a', -1);
-    assert.deepEqual(cut, { u: 4, a: -1.5, t: 2, note: 'cut' });
-    assert.ok(m.stopTime(cut.u, cut.a) > cut.t, 'it is still moving at the end: v > 0');
-    assert.equal(m.finalVelocity(cut.u, cut.a, cut.t), 1);
-    assert.deepEqual(m.stepPlan({ u: 5, a: -1.5, t: 3 }, 't', 1), { u: 5, a: -1.5, t: 3, note: 'stops' });
-    close(m.stopTime(5, -1.5), 10 / 3, 1e-12);
-  });
-  it('braking harder cuts the time to when it stops', () => {
-    assert.deepEqual(m.stepPlan({ u: 4, a: -0.5, t: 6 }, 'a', -1), { u: 4, a: -1, t: 4, note: 'cut' });
-    assert.deepEqual(m.stepPlan({ u: 4, a: -1, t: 4 }, 'u', -1), { u: 3, a: -1, t: 3, note: 'cut' });
-  });
-  it('at rest, a negative acceleration is refused (it would go backwards)', () => {
-    assert.deepEqual(m.stepPlan({ u: 0, a: 0, t: 5 }, 'a', -1), { u: 0, a: 0, t: 5, note: 'backwards' });
-    assert.deepEqual(m.stepPlan({ u: 1, a: -1, t: 1 }, 'u', -1), { u: 1, a: -1, t: 1, note: 'backwards' });
-  });
-  it('the steppers stop at the ends of their ranges', () => {
-    assert.equal(m.stepPlan({ u: 15, a: 0, t: 5 }, 'u', 1).note, 'max');
-    assert.equal(m.stepPlan({ u: 4, a: -1.5, t: 2 }, 'a', -1).note, 'min');
-    assert.equal(m.stepPlan({ u: 4, a: 1, t: 1 }, 't', -1).note, 'min');
-    assert.deepEqual(m.stepPlan({ u: 4, a: 1, t: 6 }, 'a', 1), { u: 4, a: 1.5, t: 6, note: null });
-  });
-  it('fixPlan makes any numbers allowed', () => {
-    assert.deepEqual(m.fixPlan({ u: 4.4, a: 0.7, t: 6.2 }), { u: 4, a: 0.5, t: 6 });
-    assert.deepEqual(m.fixPlan({ u: 99, a: -9, t: 99 }), { u: 15, a: -1.5, t: 10 });
-    assert.deepEqual(m.fixPlan({ u: 6, a: -1.5, t: 9 }), { u: 6, a: -1.5, t: 4 });
-    assert.deepEqual(m.fixPlan({ u: 0, a: -1, t: 3 }), { u: 0, a: 0, t: 3 });
-    assert.deepEqual(m.fixPlan({}), m.START);
-  });
-});
-
-describe('time from distance (dragging the train)', () => {
-  it('is the inverse of s(τ), speeding up, steady or braking to a stop', () => {
-    for (const [u, a, t] of [
-      [4, 1, 6],
-      [0, 1.5, 8],
-      [6, 0, 5],
-      [12, -1.5, 8],
-    ]) {
-      for (let k = 0; k <= 10; k++) {
-        const tau = (t * k) / 10;
-        close(m.timeAt(u, a, m.distanceAt(u, a, tau), t), tau, 1e-6, `${u},${a} at ${tau}`);
-      }
-      assert.equal(m.timeAt(u, a, -5, t), 0);
-      assert.equal(m.timeAt(u, a, 1e6, t), t);
-    }
-  });
-});
-
-describe('numbers', () => {
-  it('in sentences have no trailing zeros and a real minus sign', () => {
-    assert.equal(m.fmt(42), '42');
-    assert.equal(m.fmt(6.5), '6.5');
-    assert.equal(m.fmt(2.25), '2.25');
-    assert.equal(m.fmt(0.1 + 0.2), '0.3');
-    assert.equal(m.fmt(-1.5), '−1.5');
-    assert.equal(m.fmt(-0.0001), '0');
-    assert.equal(m.fixed(12.345, 1), '12.3');
-    assert.equal(m.fixed(-0.04, 1), '0.0');
-  });
-  it('the velocity axis gets a round top above the fastest velocity', () => {
-    assert.deepEqual(m.niceAxis(10), { max: 10, step: 2 });
-    assert.deepEqual(m.niceAxis(15), { max: 16, step: 4 });
-    assert.deepEqual(m.niceAxis(0), { max: 2, step: 1 });
-    assert.deepEqual(m.niceAxis(4.5), { max: 5, step: 1 });
-    for (let top = 0; top <= 30; top += 0.5) {
-      const ax = m.niceAxis(top);
-      assert.ok(ax.max >= top && ax.max / ax.step <= 6, `top ${top}`);
-    }
-  });
-});
-
-describe('the test', () => {
-  const kinds = { v: ['v'], s: ['s', 'area'], avg: ['avg', 'mid'], strip: ['strip'], zero: ['zero-s'], brake: ['brake-s', 'brake-t'] };
-  it('uses numbers a real train can have, inside the steppers’ ranges', () => {
-    for (const [set, list] of Object.entries(m.QUIZ))
-      for (const q of list) {
-        const t = q.t ?? m.stopTime(q.u, q.a);
-        assert.deepEqual(m.fixPlan({ ...q, t }), { u: q.u, a: q.a, t }, `${set} ${JSON.stringify(q)}`);
-        if (set === 'zero') assert.equal(q.a, 0);
-        if (set === 'brake') assert.ok(q.a < 0 && Number.isInteger(t), `${JSON.stringify(q)} stops after a whole number of seconds`);
-      }
-  });
-  it('has the right answers', () => {
-    assert.equal(m.answers('v', { u: 4, a: 1, t: 6 }).right, 10);
-    assert.equal(m.answers('s', { u: 4, a: 1, t: 6 }).right, 42);
-    assert.equal(m.answers('area', { u: 4, a: 1, t: 6 }).right, 42);
-    assert.equal(m.answers('avg', { u: 4, a: 1, t: 6 }).right, 7);
-    assert.equal(m.answers('mid', { u: 12, a: -1, t: 6 }).right, 9);
-    // the second second of u = 4 m/s, a = 1 ms⁻²: 4.5 m in the first, 5.5 m in the second
-    assert.deepEqual(
-      { right: m.answers('strip', { u: 4, a: 1, t: 4 }).right, first: m.answers('strip', { u: 4, a: 1, t: 4 }).first },
-      { right: 5.5, first: 4.5 },
-    );
-    assert.equal(m.answers('zero-s', { u: 6, a: 0, t: 5 }).right, 30);
-    assert.equal(m.answers('brake-s', { u: 12, a: -1.5, t: 8 }).right, 48); // 0 = 12² − 2 × 1.5 × s
-    assert.equal(m.answers('brake-t', { u: 12, a: -1.5, t: 8 }).right, 8);
-  });
-  it('always has at least three different wrong answers, none equal to the right one', () => {
-    for (const [set, list] of Object.entries(m.QUIZ))
-      for (const q of list)
-        for (const kind of kinds[set]) {
-          const { right, wrong } = m.answers(kind, { ...q, t: q.t ?? m.stopTime(q.u, q.a) });
-          const distinct = new Set(
-            Object.values(wrong)
-              .filter((w) => w >= 0 && m.fmt(w) !== m.fmt(right))
-              .map((w) => m.fmt(w)),
-          );
-          assert.ok(distinct.size >= 3, `${kind} ${JSON.stringify(q)}: ${[...distinct]}`);
+  it('the speed never passes 12 m/s on the axis (the scale of the v–t graph)', () => {
+    for (const x0 of values('x0'))
+      for (const u of values('u'))
+        for (const a of values('a')) {
+          const run = m.runEnd(x0, u, a);
+          assert.ok(Math.abs(m.velocity(u, a, run.t)) < 12);
         }
   });
 });
 
-describe('the derivation sheet: every way gives the same answer', () => {
-  it('the opening example: slope, area, fold and v² = u² + 2as', () => {
-    assert.deepEqual(m.derivation(m.START), {
-      slope: { dv: 6, a: 1, at: 6, v: 10 },
-      area: { rect: 24, tri: 18, s: 42 },
-      fold: { V: 7, s: 42 },
-      noTime: { t: 6, twoAS: 84, v2: 100, u2: 16 },
-    });
+describe('sliders and steps', () => {
+  it('a value is kept in range and on 0.1 steps', () => {
+    assert.equal(m.fixValue('x0', 7), 5);
+    assert.equal(m.fixValue('a', -3.26), -3);
+    assert.equal(m.fixValue('u', 1.94), 1.9);
+    assert.equal(m.fixValue('u', 'x'), m.START.u);
   });
-  it('agrees with solve() for every plan the steppers can reach', () => {
-    for (const p of allPlans()) {
-      const d = m.derivation(p);
-      const r = m.solve(p);
-      close(d.slope.a, p.a, 1e-6, 'slope');
-      close(d.slope.v, r.v, 1e-6, 'v');
-      close(d.area.s, r.s, 1e-6, 'area');
-      close(d.fold.s, r.s, 1e-6, 'fold');
-      close(d.noTime.v2, d.noTime.u2 + d.noTime.twoAS, 1e-6, 'v²');
-      if (p.a === 0) assert.equal(d.noTime.t, null);
-      else close(d.noTime.t, p.t, 1e-6, 't');
-    }
+  it('a step goes to the next 0.1 s, never past the run', () => {
+    assert.equal(m.stepTime(0, 1, 6), 0.1);
+    assert.equal(m.stepTime(1.23, 1, 6), 1.3);
+    assert.equal(m.stepTime(1.23, -1, 6), 1.2);
+    assert.equal(m.stepTime(1.2, -1, 6), 1.1);
+    assert.equal(m.stepTime(0, -1, 6), 0);
+    close(m.stepTime(2.6, 1, 2.618), 2.618);
+  });
+  it('the car turns back when u and a point opposite ways', () => {
+    assert.equal(m.turnTime(-3, 1.5), 2);
+    assert.equal(m.turnTime(2, 1), null);
+    assert.equal(m.turnTime(2, 0), null);
+  });
+  it('the time to reach a point', () => {
+    close(m.timeToReach(0, 2, 0, 10), 5);
+    assert.equal(m.timeToReach(0, -2, 0, 10), Number.POSITIVE_INFINITY);
+    assert.equal(m.timeToReach(0, 0, 0, 10), Number.POSITIVE_INFINITY);
+    close(m.timeToReach(0, 0, 2, 4), 2);
+  });
+  it('numbers for the panel', () => {
+    assert.equal(m.fmt(-0.8), '−0.8');
+    assert.equal(m.fixed(-0.04, 1), '0.0');
+    assert.equal(m.fixed(2.5, 2), '2.50');
   });
 });
 
-describe('the worked example (page 45): a car from rest to 60 km/hour in 1 minute', () => {
-  it('gives the book’s numbers: 16.67 m/s and 0.278 m/s²', () => {
-    const e = m.exampleNumbers(m.EXAMPLE);
-    assert.equal(e.v, 16.67);
-    assert.equal(e.a, 0.278);
-    assert.equal(e.minutes, 1);
-    assert.equal(e.s, 500); // ½at², with the exact a
-  });
-  it('the steppers stay on their steps and in range', () => {
-    assert.deepEqual(m.fixExample({ kmh: 63, t: 7 }), { kmh: 60, t: 10 });
-    assert.deepEqual(m.fixExample({ kmh: 500, t: 999 }), { kmh: 120, t: 120 });
-    assert.deepEqual(m.fixExample({}), m.EXAMPLE);
-  });
-  it('a = v/t from the rounded v, for every question the steppers can reach', () => {
-    for (let kmh = 10; kmh <= 120; kmh += 10)
-      for (let t = 10; t <= 120; t += 10) {
-        const e = m.exampleNumbers({ kmh, t });
-        close(e.v, (kmh * 1000) / 3600, 0.005, 'v');
-        assert.equal(e.a, m.roundTo(e.v / t, 3));
-        close(e.aExact * t * 3.6, kmh, 1e-9, 'reaches the speed at t');
+describe('the test', () => {
+  for (const [kind, setups] of Object.entries(m.QUIZ))
+    it(`${kind}: four different choices, the right one among them, the car on the axis`, () => {
+      for (const q of setups) {
+        const { right, choices } = m.answers(kind, q);
+        assert.equal(choices.length, 4, `${kind} ${JSON.stringify(q)}`);
+        assert.equal(new Set(choices.map((c) => c.v)).size, 4);
+        assert.equal(choices[0].v, right);
+        assert.ok(choices.slice(1).every((c) => c.why));
+        const x = m.position(q.x0, q.u, q.a, q.t);
+        assert.ok(x >= m.AXIS.min && x <= m.AXIS.max);
+        assert.ok(m.runEnd(q.x0, q.u, q.a).t >= q.t - 1e-9, 'it gets there before reaching an end');
       }
+    });
+  it('the right answers', () => {
+    assert.equal(m.answers('x', { x0: -4, u: 2, a: 1, t: 2 }).right, 2);
+    assert.equal(m.answers('v', { x0: 0, u: 4, a: -1, t: 3 }).right, 1);
+    assert.equal(m.answers('coef', { x0: -2, u: 1, a: 3, t: 0 }).right, 3);
+    assert.equal(m.answers('turn', { x0: 4, u: -3, a: 1.5, t: 0 }).right, 2);
+    assert.equal(m.answers('part', { x0: -3, u: 1, a: 2, t: 2 }).right, 4);
+  });
+  it('the part questions have a whole-metre x, so it can be read off the axis', () => {
+    for (const q of m.QUIZ.part) assert.ok(Number.isInteger(m.roundTo(m.position(q.x0, q.u, q.a, q.t), 6)));
+    for (const q of m.QUIZ.x) assert.ok(Number.isInteger(q.x0));
   });
 });

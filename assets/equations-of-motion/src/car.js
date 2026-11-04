@@ -1,9 +1,10 @@
-// The car of the book's worked example (page 45, উদাহরণ), procedural three.js, in metres: a bright red five-door
-// hatchback, 4.3 m long and 1.78 m wide (an ordinary small car), a glossy body with wheel arches, a dark windscreen,
-// side and rear glass, black bumpers, a grille, headlights and tail lights, mirrors and four wheels with silver
-// five-spoke rims. The body's centre is at x = 0, the nose at x = +NOSE; the tyres stand on the road at y = 0.
-// car.spin(distance, speed) turns the wheels for the distance gone; when they turn too fast for the eye (the run is
-// played faster than real time) the spokes fade into a grey blur disc, as on a photograph.
+// The car on the number line (as the owner's reference: a blue four-door sedan), procedural three.js, in metres:
+// 4.3 m long and 1.78 m wide as built (the figure scales it down a little, so it sits on the −7…10 m axis like the
+// reference's car), a glossy body with wheel arches, bonnet, cabin and boot, a dark windscreen, side and rear glass,
+// black bumpers, a grille, headlights and tail lights, mirrors, door handles and four wheels with silver five-spoke
+// rims. The body's centre is at x = 0, the nose at x = +NOSE; the tyres stand on the road at y = 0.
+// car.spin(distance, speed) turns the wheels for the distance gone (forwards or backwards); when they turn too fast
+// for the eye the spokes fade into a grey blur disc, as on a photograph.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
@@ -24,17 +25,17 @@ function bodyShape() {
   s.absarc(AXLES[0], 0.3, ARCH_R, Math.PI, 0, true); // front wheel arch
   s.lineTo(2.02, 0.3);
   s.quadraticCurveTo(2.12, 0.32, 2.12, 0.45);
-  s.lineTo(2.1, 0.64);
-  s.quadraticCurveTo(2.08, 0.77, 1.94, 0.8); // the nose
-  s.lineTo(0.95, 0.94); // the bonnet
-  s.lineTo(0.82, 0.97);
-  s.lineTo(-0.12, 1.4); // the windscreen
-  s.quadraticCurveTo(-0.25, 1.43, -0.45, 1.43);
-  s.lineTo(-1.3, 1.41); // the roof
-  s.quadraticCurveTo(-1.5, 1.4, -1.62, 1.33);
-  s.lineTo(-1.98, 1.08); // the rear window
-  s.lineTo(-2.06, 0.98);
-  s.quadraticCurveTo(-2.1, 0.8, -2.1, 0.6);
+  s.lineTo(2.1, 0.62);
+  s.quadraticCurveTo(2.08, 0.74, 1.94, 0.77); // the nose
+  s.lineTo(0.9, 0.9); // the bonnet
+  s.lineTo(0.78, 0.93);
+  s.lineTo(0.02, 1.33); // the windscreen
+  s.quadraticCurveTo(-0.1, 1.37, -0.3, 1.37);
+  s.lineTo(-0.95, 1.36); // the roof
+  s.quadraticCurveTo(-1.12, 1.35, -1.22, 1.29);
+  s.lineTo(-1.6, 0.98); // the rear window
+  s.lineTo(-2.0, 0.95); // the boot lid
+  s.quadraticCurveTo(-2.1, 0.93, -2.1, 0.8);
   s.lineTo(-2.1, 0.42);
   s.quadraticCurveTo(-2.1, 0.3, -2.08, 0.3);
   return s;
@@ -115,7 +116,7 @@ function contactShadow() {
   return m;
 }
 
-export function createCar({ color = '#d7262b' } = {}) {
+export function createCar({ color = '#3f72ad' } = {}) {
   const root = new THREE.Group();
   root.name = 'Car';
   const mats = {
@@ -172,53 +173,53 @@ export function createCar({ color = '#d7262b' } = {}) {
   root.add(body);
 
   // glass: windscreen and rear window on the slopes (the pillars stay red at their sides), side windows on the flanks
-  const wind = slab([0.82, 0.97], [-0.12, 1.4], W - 0.34, mats.glass);
+  const wind = slab([0.78, 0.93], [0.02, 1.33], W - 0.34, mats.glass);
   wind.name = 'Windscreen';
-  const rear = slab([-1.62, 1.33], [-1.98, 1.08], W - 0.4, mats.glass);
+  const rear = slab([-1.22, 1.29], [-1.6, 0.98], W - 0.4, mats.glass);
   rear.name = 'RearWindow';
   root.add(wind, rear);
   const sideShape = new THREE.Shape();
-  sideShape.moveTo(0.7, 1.02);
-  sideShape.lineTo(-0.06, 1.355);
-  sideShape.quadraticCurveTo(-0.2, 1.38, -0.4, 1.38);
-  sideShape.lineTo(-1.26, 1.365);
-  sideShape.quadraticCurveTo(-1.42, 1.355, -1.52, 1.29);
-  sideShape.lineTo(-1.74, 1.02);
-  sideShape.lineTo(0.7, 1.02);
+  sideShape.moveTo(0.66, 0.98);
+  sideShape.lineTo(0.05, 1.3);
+  sideShape.quadraticCurveTo(-0.08, 1.33, -0.28, 1.33);
+  sideShape.lineTo(-0.92, 1.32);
+  sideShape.quadraticCurveTo(-1.06, 1.31, -1.14, 1.25);
+  sideShape.lineTo(-1.44, 0.98);
+  sideShape.lineTo(0.66, 0.98);
   const sideGeo = new THREE.ExtrudeGeometry(sideShape, { depth: 0.012, bevelEnabled: false });
   for (const side of [1, -1]) {
     const glass = new THREE.Mesh(sideGeo, mats.glass);
     glass.position.z = side > 0 ? W / 2 - 0.004 : -W / 2 - 0.008;
     glass.name = 'SideWindows';
     // the pillar between the doors' windows
-    const pillar = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.36, 0.01), mats.trim);
-    pillar.position.set(-0.55, 1.2, side * (W / 2 + 0.01));
+    const pillar = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.34, 0.01), mats.trim);
+    pillar.position.set(-0.42, 1.16, side * (W / 2 + 0.01));
     // mirror on its stalk
     const mirror = new THREE.Mesh(new RoundedBoxGeometry(0.16, 0.11, 0.14, 2, 0.03), mats.paint);
-    mirror.position.set(0.6, 1.06, side * (W / 2 + 0.07));
+    mirror.position.set(0.58, 1.01, side * (W / 2 + 0.07));
     const handle1 = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.025, 0.02), mats.trim);
-    handle1.position.set(0.12, 0.93, side * (W / 2 + 0.005));
+    handle1.position.set(0.1, 0.9, side * (W / 2 + 0.005));
     const handle2 = handle1.clone();
-    handle2.position.x = -0.92;
+    handle2.position.x = -0.9;
     // a black sill between the arches, and the side indicator
     const sill = new THREE.Mesh(new THREE.BoxGeometry(1.78, 0.09, 0.03), mats.trim);
     sill.position.set(0, 0.33, side * (W / 2 - 0.005));
     const blink = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.03, 0.012), mats.amber);
-    blink.position.set(1.66, 0.78, side * (W / 2 + 0.003));
+    blink.position.set(1.66, 0.74, side * (W / 2 + 0.003));
     root.add(glass, pillar, mirror, handle1, handle2, sill, blink);
   }
 
   // the front: headlights, grille, bumper, number plate
   for (const side of [1, -1]) {
     const lamp = new THREE.Mesh(new RoundedBoxGeometry(0.1, 0.1, 0.36, 2, 0.035), mats.head);
-    lamp.position.set(2.06, 0.71, side * 0.56);
+    lamp.position.set(2.06, 0.68, side * 0.56);
     lamp.rotation.z = -0.25;
-    const tail = new THREE.Mesh(new RoundedBoxGeometry(0.07, 0.15, 0.3, 2, 0.03), mats.tail);
-    tail.position.set(-2.13, 0.86, side * 0.62);
+    const tail = new THREE.Mesh(new RoundedBoxGeometry(0.07, 0.13, 0.36, 2, 0.03), mats.tail);
+    tail.position.set(-2.12, 0.78, side * 0.6);
     root.add(lamp, tail);
   }
   const grille = new THREE.Mesh(new RoundedBoxGeometry(0.06, 0.13, 0.74, 2, 0.025), mats.trim);
-  grille.position.set(2.135, 0.6, 0);
+  grille.position.set(2.135, 0.57, 0);
   const bumperF = new THREE.Mesh(new RoundedBoxGeometry(0.12, 0.12, 1.66, 2, 0.04), mats.trim);
   bumperF.position.set(2.12, 0.37, 0);
   const bumperR = bumperF.clone();
@@ -226,7 +227,7 @@ export function createCar({ color = '#d7262b' } = {}) {
   const plateF = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.1, 0.44), mats.plate);
   plateF.position.set(2.185, 0.4, 0);
   const plateR = plateF.clone();
-  plateR.position.set(-2.185, 0.62, 0);
+  plateR.position.set(-2.185, 0.58, 0);
   root.add(grille, bumperF, bumperR, plateF, plateR);
 
   // the wheels
