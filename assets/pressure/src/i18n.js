@@ -50,20 +50,19 @@ export const STRINGS = {
     sum: '{F}&nbsp;{u_N} ÷ {A}&nbsp;{u_m2} = <b>{P}&nbsp;{u_Pa}</b>',
 
     // the result line
-    out_ready: 'সামনের মাটি কাটা; দুই জুতায় সমান বল <b>{F}&nbsp;{u_N}</b>',
-    out_press: 'মাটি দেবে যাচ্ছে… লাল তীর যত লম্বা, চাপ তত বেশি',
-    out_both: 'হিলের নিচে চাপ <b>{k} গুণ</b>: লাল তীরও {k} গুণ লম্বা',
-    out_heel: 'মাত্র {A}&nbsp;{u_cm2} জায়গায় পুরো বল: চাপ <b>{P}&nbsp;{u_Pa}</b>',
-    out_sneaker: '{A}&nbsp;{u_cm2} জায়গায় একই বল ছড়িয়ে: চাপ <b>{P}&nbsp;{u_Pa}</b>',
-    out_lift: 'হিলের ছাপ গভীর, কেডসের ছাপ অগভীর: চাপ <b>{k} গুণ</b>',
+    out_ready: 'সামনের মাটি কাটা। দুই জুতায় সমান বল <b>{F}&nbsp;{u_N}</b>',
+    out_press: 'মাটি দেবে যাচ্ছে… তীর যত লম্বা, চাপ তত বেশি',
+    out_both: 'হিলের নিচে চাপ <b>{k} গুণ</b>, লাল তীরও {k} গুণ লম্বা',
+    out_heel: 'মাত্র {A}&nbsp;{u_cm2} জায়গায় পুরো বল। চাপ <b>{P}&nbsp;{u_Pa}</b>',
+    out_sneaker: 'একই বল {A}&nbsp;{u_cm2} জায়গায় ছড়ানো। চাপ <b>{P}&nbsp;{u_Pa}</b>',
+    out_lift: 'হিলের নিচে চাপ <b>{k} গুণ</b>, তাই ছাপ গভীর',
 
     // the rule: the book's words, one idea at a time
-    rule_start: '<b>সমান পরিমাণ বল প্রয়োগ করলেও চাপ কিন্তু হবে ভিন্ন:</b> কতটুকু জায়গায় বল প্রয়োগ করা হচ্ছে তার উপরে চাপ নির্ভর করে।',
-    rule_stand:
-      '<b>চাপ P = F/A।</b> দুই জুতার উপর একই বল F, কিন্তু হিলের ক্ষেত্রফল A কম ({Ah}&nbsp;{u_cm2} = {Am}&nbsp;{u_m2}), তাই চাপ বেশি: মাটি বেশি দেবে যায়।',
-    rule_lift: '<b>বল প্রয়োগকারী ক্ষেত্রফল বেশি হলে চাপ কম:</b> কেডসের ক্ষেত্রফল হিলের {k} গুণ, তাই চাপ {k} ভাগের এক ভাগ। ছাপও অগভীর।',
-    rule_force: '<b>বল বাড়লে চাপও বাড়ে:</b> বল দ্বিগুণ হলে চাপ দ্বিগুণ। আর বই বলে, ক্ষেত্রফল দ্বিগুণ হলে চাপ অর্ধেক।',
-    rule_law: '<b>চাপের একক N/m<sup>2</sup> অথবা Pa (প্যাসকেল)।</b> চাপ স্কেলার রাশি, এর কোনো দিক নেই; তীর শুধু দেখায় কোথায় কত চাপ।',
+    rule_start: 'সমান পরিমাণ বল প্রয়োগ করলেও চাপ কিন্তু হবে <b>ভিন্ন</b>। চাপ নির্ভর করে কতটুকু জায়গায় বল পড়ছে তার উপর।',
+    rule_stand: 'দুই জুতার উপর একই বল F। কিন্তু হিলের ক্ষেত্রফল A কম ({Ah}&nbsp;{u_cm2} = {Am}&nbsp;{u_m2}), তাই চাপ <b>বেশি</b>। মাটিও বেশি দেবে যায়।',
+    rule_lift: '<b>বল প্রয়োগকারী ক্ষেত্রফল</b> বেশি হলে চাপ কম। কেডসের ক্ষেত্রফল হিলের {k} গুণ, তাই চাপ {k} ভাগের এক ভাগ। ছাপও অগভীর।',
+    rule_force: 'বল দ্বিগুণ হলে চাপ <b>দ্বিগুণ</b>। আর ক্ষেত্রফল দ্বিগুণ হলে চাপ অর্ধেক।',
+    rule_law: 'চাপের একক N/m<sup>2</sup> অথবা <b>Pa (প্যাসকেল)</b>। চাপ স্কেলার রাশি, এর কোনো দিক নেই। তীর শুধু দেখায় কোথায় কত চাপ।',
 
     // labels on the picture
     lbl_F: 'F = {v}&nbsp;{u_N}',
@@ -91,13 +90,15 @@ export const STRINGS = {
     q_locked: 'পরীক্ষার সময় দৃশ্যটি আটকানো থাকে। ছবি দেখে উত্তর বেছে নাও।',
 
     q_heel: 'হিলের উপর বল আর ক্ষেত্রফল ছবিতে লেখা আছে। হিলের নিচে চাপ কত?',
-    why_heel: '<b>{P}&nbsp;{u_Pa}</b>: P = F/A = {F}&nbsp;{u_N} ÷ {Am}&nbsp;{u_m2} ({Ac}&nbsp;{u_cm2} = {Am}&nbsp;{u_m2})।',
+    why_heel:
+      '<b>{P}&nbsp;{u_Pa}</b>। {Ac}&nbsp;{u_cm2} = {Am}&nbsp;{u_m2}, তাই<span class="pvc-formula"><i>P</i> = <i>F</i>/<i>A</i> = {F}&nbsp;{u_N} ÷ {Am}&nbsp;{u_m2}</span>',
     mis_heel_other: 'এটি কেডসের ক্ষেত্রফল দিয়ে ভাগ করলে হয়।',
     mis_heel_cm2: 'cm<sup>2</sup>-কে m<sup>2</sup> না করে ভাগ করা হয়েছে; {one}&nbsp;m<sup>2</sup> = {many}&nbsp;cm<sup>2</sup>।',
     mis_heel_times: 'এটি বল × ক্ষেত্রফল; চাপ হলো বল ÷ ক্ষেত্রফল।',
 
     q_force: 'কেডসের নিচে চাপ আর ক্ষেত্রফল ছবিতে লেখা আছে। কেডসের উপর বল F কত?',
-    why_force: '<b>{F}&nbsp;{u_N}</b>: বই লেখে F = PA = {P}&nbsp;{u_Pa} × {Am}&nbsp;{u_m2} ({Ac}&nbsp;{u_cm2} = {Am}&nbsp;{u_m2})।',
+    why_force:
+      '<b>{F}&nbsp;{u_N}</b>। {Ac}&nbsp;{u_cm2} = {Am}&nbsp;{u_m2}, তাই<span class="pvc-formula"><i>F</i> = <i>PA</i> = {P}&nbsp;{u_Pa} × {Am}&nbsp;{u_m2}</span>',
     mis_force_divide: 'এটি চাপ ÷ ক্ষেত্রফল; বল পেতে গুণ করতে হয়: F = PA।',
     mis_force_cm2: 'cm<sup>2</sup>-কে m<sup>2</sup> না করে গুণ করা হয়েছে।',
     mis_force_other: 'এটি হিলের ক্ষেত্রফল দিয়ে গুণ করলে হয়।',
@@ -107,7 +108,7 @@ export const STRINGS = {
     c_double: 'দ্বিগুণ হবে',
     c_same: 'একই থাকবে',
     c_four: 'চার গুণ হবে',
-    why_double: '<b>অর্ধেক হবে</b>: P = F/A; F একই, A দ্বিগুণ, তাই চাপ অর্ধেক।',
+    why_double: '<b>অর্ধেক হবে</b>। P = F/A: F একই, A দ্বিগুণ, তাই চাপ অর্ধেক।',
     mis_double: 'ক্ষেত্রফল বাড়লে চাপ বাড়ে না, কমে: A নিচে ভাগ করে।',
     mis_same: 'বল একই, কিন্তু চাপ নির্ভর করে কতটুকু জায়গায় বল পড়ছে তার উপর।',
     mis_four: 'বল বা ক্ষেত্রফল চার গুণ হয়নি; ক্ষেত্রফল শুধু দ্বিগুণ।',
@@ -117,7 +118,7 @@ export const STRINGS = {
     c_more_force: 'হিল জুতার উপর বল বেশি ছিল',
     c_sneaker_small: 'কেডসের ক্ষেত্রফল হিলের চেয়ে কম',
     c_soft_ground: 'হিলের নিচের মাটি বেশি নরম',
-    why_prints: '<b>একই বল কম জায়গায় পড়েছে</b>: হিলের ক্ষেত্রফল কম, তাই P = F/A বেশি; বেশি চাপে মাটি বেশি দেবে যায়।',
+    why_prints: '<b>একই বল কম জায়গায় পড়েছে</b>। হিলের ক্ষেত্রফল কম, তাই চাপ বেশি। বেশি চাপে মাটি বেশি দেবে যায়।',
     mis_more_force: 'দুই জুতার উপর বল সমান ছিল; তফাত ক্ষেত্রফলে।',
     mis_sneaker_small: 'উল্টো: কেডসের ক্ষেত্রফল হিলের চার গুণ।',
     mis_soft_ground: 'একই মাটি; তফাত হলো কতটুকু জায়গায় বল পড়েছে।',
@@ -170,18 +171,21 @@ export const STRINGS = {
     shoe_sneaker: 'Sneaker',
     sum: '{F}&nbsp;{u_N} ÷ {A}&nbsp;{u_m2} = <b>{P}&nbsp;{u_Pa}</b>',
 
-    out_ready: 'Clay cut away in front; on each shoe <b>{F}&nbsp;{u_N}</b>',
-    out_press: 'Sinking in… longer red arrow, more pressure',
-    out_both: 'Heel: <b>{k} times</b> the pressure, arrows {k}× as long',
-    out_heel: 'All the force on {A}&nbsp;{u_cm2}: P = <b>{P}&nbsp;{u_Pa}</b>',
-    out_sneaker: 'Spread over {A}&nbsp;{u_cm2}: P = <b>{P}&nbsp;{u_Pa}</b>',
-    out_lift: 'The deep print: <b>{k} times</b> the pressure',
+    out_ready: 'The clay is cut away in front. Each shoe carries <b>{F}&nbsp;{u_N}</b>',
+    out_press: 'Sinking in… the longer the arrow, the more pressure',
+    out_both: 'Under the heel: <b>{k} times</b> the pressure, arrows {k}× as long',
+    out_heel: 'All the force on {A}&nbsp;{u_cm2}: pressure <b>{P}&nbsp;{u_Pa}</b>',
+    out_sneaker: 'The same force over {A}&nbsp;{u_cm2}: pressure <b>{P}&nbsp;{u_Pa}</b>',
+    out_lift: 'The heel: <b>{k} times</b> the pressure, a deeper print',
 
-    rule_start: '<b>The same force, yet a different pressure:</b> pressure depends on how much area the force acts on.',
-    rule_stand: '<b>Pressure P = F/A.</b> The same F, but the heel’s A is smaller ({Ah}&nbsp;{u_cm2} = {Am}&nbsp;{u_m2}): more pressure, deeper in.',
-    rule_lift: '<b>A bigger area means less pressure:</b> the sneaker’s area is {k} times the heel’s, so its pressure is a {k}th.',
-    rule_force: '<b>More force, more pressure:</b> twice the force, twice the pressure; twice the area, half the pressure.',
-    rule_law: '<b>The unit: N/m<sup>2</sup> or Pa (pascal).</b> Pressure is a scalar, with no direction: the arrows show where and how much.',
+    rule_start: 'The same force can give a <b>different</b> pressure. It depends on how much area the force acts on.',
+    rule_stand:
+      'The same force F on both shoes. But the heel’s area A is smaller ({Ah}&nbsp;{u_cm2} = {Am}&nbsp;{u_m2}), so the pressure is <b>higher</b> and the clay sinks more.',
+    rule_lift:
+      'A bigger <b>area</b> means less pressure. The sneaker’s area is {k} times the heel’s, so its pressure is one {k}th, and its print is shallow.',
+    rule_force: 'Twice the force gives <b>twice</b> the pressure. Twice the area gives half.',
+    rule_law:
+      'The unit of pressure is N/m<sup>2</sup> or the <b>pascal (Pa)</b>. Pressure is a scalar, with no direction. The arrows only show where and how much.',
 
     lbl_F: 'F = {v}&nbsp;{u_N}',
     lbl_P: 'P = {v}&nbsp;{u_Pa}',
@@ -207,13 +211,15 @@ export const STRINGS = {
     q_locked: 'The picture is locked during the test. Pick an answer from the picture.',
 
     q_heel: 'F and A for the heel are on the picture. What is the pressure under the heel?',
-    why_heel: '<b>{P}&nbsp;{u_Pa}</b>: P = F/A = {F}&nbsp;{u_N} ÷ {Am}&nbsp;{u_m2} ({Ac}&nbsp;{u_cm2} = {Am}&nbsp;{u_m2}).',
+    why_heel:
+      '<b>{P}&nbsp;{u_Pa}</b>. {Ac}&nbsp;{u_cm2} = {Am}&nbsp;{u_m2}, so<span class="pvc-formula"><i>P</i> = <i>F</i>/<i>A</i> = {F}&nbsp;{u_N} ÷ {Am}&nbsp;{u_m2}</span>',
     mis_heel_other: 'That divides by the sneaker’s area.',
     mis_heel_cm2: 'That divides by cm<sup>2</sup> without changing to m<sup>2</sup>; {one}&nbsp;m<sup>2</sup> = {many}&nbsp;cm<sup>2</sup>.',
     mis_heel_times: 'That is force × area; pressure is force ÷ area.',
 
     q_force: 'P and A for the sneaker are on the picture. What is the force F on it?',
-    why_force: '<b>{F}&nbsp;{u_N}</b>: F = PA = {P}&nbsp;{u_Pa} × {Am}&nbsp;{u_m2} ({Ac}&nbsp;{u_cm2} = {Am}&nbsp;{u_m2}).',
+    why_force:
+      '<b>{F}&nbsp;{u_N}</b>. {Ac}&nbsp;{u_cm2} = {Am}&nbsp;{u_m2}, so<span class="pvc-formula"><i>F</i> = <i>PA</i> = {P}&nbsp;{u_Pa} × {Am}&nbsp;{u_m2}</span>',
     mis_force_divide: 'That is P ÷ A; for the force, multiply: F = PA.',
     mis_force_cm2: 'That multiplies by cm<sup>2</sup> without changing to m<sup>2</sup>.',
     mis_force_other: 'That multiplies by the heel’s area.',
@@ -223,7 +229,7 @@ export const STRINGS = {
     c_double: 'It doubles',
     c_same: 'It stays the same',
     c_four: 'It becomes four times',
-    why_double: '<b>It halves</b>: P = F/A; the same F over twice the A.',
+    why_double: '<b>It halves</b>. P = F/A: the same F over twice the A.',
     mis_double: 'More area lowers the pressure: A divides.',
     mis_same: 'The force is the same, but the area is not.',
     mis_four: 'Only the area changed, and it only doubled.',
@@ -233,7 +239,7 @@ export const STRINGS = {
     c_more_force: 'There was more force on the heel',
     c_sneaker_small: 'The sneaker’s area is smaller',
     c_soft_ground: 'The clay under the heel is softer',
-    why_prints: '<b>The same force acted on less area</b>: P = F/A is bigger under the heel, so the clay sinks deeper.',
+    why_prints: '<b>The same force acted on less area</b>. The heel’s area is smaller, so the pressure is higher and the clay sinks deeper.',
     mis_more_force: 'The force on both was the same; the area differs.',
     mis_sneaker_small: 'The other way round: the sneaker’s area is four times the heel’s.',
     mis_soft_ground: 'It is the same clay; the area differs.',
