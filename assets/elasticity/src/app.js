@@ -665,15 +665,15 @@ export function createApp(root, options = {}) {
   };
   const graph = createGraph(ui.stage, { N, text: graphText });
   const G = { x: 0, y: 0, w: 1, h: 1, side: 0 };
-  // beside the 3D the graph goes into the panel (under the sheet); on a portrait frame, or with the panel hidden, it
-  // stays a card on the 3D view
+  // beside the 3D the graph goes into the panel (under the sheet); on a portrait frame, with the panel hidden, or when
+  // the panel is too short for the sheet and the graph together (it would cover the rule), it stays a card on the 3D view
   const panelEl = /** @type {HTMLElement} */ (root.querySelector('.pvc-panel'));
   const shellEl = /** @type {HTMLElement} */ (root.querySelector('.pvc-shell'));
   function placeGraph() {
     const W = stage.width;
     const H = stage.height;
     const pr = panelEl.getBoundingClientRect();
-    const side = shellEl.dataset.panel !== 'closed' && pr.width > 0 && pr.left >= ui.stage.getBoundingClientRect().right - 2;
+    const side = shellEl.dataset.panel !== 'closed' && pr.width > 0 && pr.height >= 600 && pr.left >= ui.stage.getBoundingClientRect().right - 2;
     graph.el.classList.toggle('in-panel', side);
     if (side) {
       if (graph.el.parentElement !== panelEl) panelEl.append(graph.el);

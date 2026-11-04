@@ -8,10 +8,10 @@ body.bg-transparent { background: transparent; }
 
 .el { --c-W: #7048e8; --c-T: #c2410c; --c-x: #d0242b; --c-S: #1c5fbf; --c-e: #0b7a5a; }
 .el sub, .el sup { font-size: 0.72em; line-height: 0; }
-.el .c-W { color: var(--c-W); font-weight: 700; }
+.el .c-W { color: var(--c-W); font-weight: 600; }
 .el .pvc-outcome { font-size: 15px; line-height: 1.6; }
 .el .pvc-outcome b { font-size: 1.3em; color: var(--c-x); }
-.el .pvc-rule { font-size: 14.5px; line-height: 1.45; }
+.el .pvc-rule { font-size: 14.5px; line-height: 1.55; }
 .el-prop { display: inline-block; width: 1.05em; height: 0.66em; margin-block: -0.3em; vertical-align: -0.02em; }
 
 /* ── the stepper with L₀ and L, then the three sums ── */
@@ -26,13 +26,13 @@ body.bg-transparent { background: transparent; }
 .el-pm svg { width: 18px; height: 18px; stroke-width: 2.4; }
 .el-pm.off { color: var(--ink-3); opacity: 0.45; }
 .el-pm:focus-visible { outline: 2px solid var(--c); outline-offset: -3px; }
-.el-val { min-width: 1.6em; display: grid; place-items: center end; padding-right: 3px; font-size: 18px; font-weight: 700; color: var(--c); font-variant-numeric: tabular-nums; }
+.el-val { min-width: 1.6em; display: grid; place-items: center end; padding-right: 3px; font-size: 18px; font-weight: 600; color: var(--c); font-variant-numeric: tabular-nums; }
 .el-unit { display: grid; place-items: center start; padding: 0 8px 0 0; font-size: 13px; font-weight: 600; color: var(--c); }
 .el-len { flex: 1 1 auto; min-width: 0; font-size: 14.5px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
 .el-len b { color: var(--ink); }
 .el-sums { display: grid; grid-template-columns: auto 1fr; column-gap: 10px; row-gap: 0; font-size: 14.5px; line-height: 1.55; font-variant-numeric: tabular-nums; }
 .el-sum { display: contents; }
-.el-q { font-weight: 700; white-space: nowrap; }
+.el-q { font-weight: 600; white-space: nowrap; }
 .el-sum:nth-child(1) .el-q, .el-sum:nth-child(1) b { color: var(--c-e); }
 .el-sum:nth-child(2) .el-q, .el-sum:nth-child(2) b { color: var(--c-S); }
 .el-sum:nth-child(3) .el-q { color: var(--ink); }
@@ -54,7 +54,7 @@ body.bg-transparent { background: transparent; }
 @media (prefers-reduced-motion: reduce) { .el-now { animation: none; } }
 
 /* labels on the picture: the symbol and its number in its colour */
-.pvc-anno-force { --c: var(--ink); padding: 0 6px; border: 1.5px solid var(--c); border-radius: 5px; background: #fff; color: var(--c); font-size: 13.5px; font-weight: 700; line-height: 1.5; white-space: nowrap; transition: none; box-shadow: 0 1px 3px rgba(15, 25, 40, 0.3); }
+.pvc-anno-force { --c: var(--ink); padding: 0 6px; border: 1.5px solid var(--c); border-radius: 5px; background: #fff; color: var(--c); font-size: 13.5px; font-weight: 600; line-height: 1.5; white-space: nowrap; transition: none; box-shadow: 0 1px 3px rgba(15, 25, 40, 0.3); }
 .pvc-anno-lines .k-force { display: none; }
 
 /* the test: answers in words or numbers, room kept for the question and the worked answer */
@@ -74,13 +74,13 @@ body.bg-transparent { background: transparent; }
   .el .pvc-act { min-height: 42px; padding: 3px 14px 3px 5px; font-size: 15.5px; gap: 8px; }
   .el .pvc-act-num { width: 32px; height: 32px; font-size: 17px; }
   .el .pvc-outcome { line-height: 1.5; min-height: 1lh; }
-  .el .pvc-rule { line-height: 1.4; min-height: 3lh; }
+  .el .pvc-rule { line-height: 1.55; min-height: 3lh; }
   .el .pvc-q-ask { gap: 6px; }
   .el .pvc-q-head { min-height: 32px; }
   .el .pvc-q-head .pvc-btn { height: 34px; }
-  .el .pvc-q-text { font-size: 15px; line-height: 1.35; --pvc-q-text-min: 2lh; }
+  .el .pvc-q-text { font-size: 15px; line-height: 1.45; --pvc-q-text-min: 2lh; }
   .el .pvc-opt { height: 42px; }
-  .el .pvc-q-feedback { font-size: 13.5px; line-height: 1.4; }
+  .el .pvc-q-feedback { font-size: 13.5px; line-height: 1.45; }
 }
 @container pvc (max-width: 420px) {
   .el-top { gap: 8px; }
@@ -88,7 +88,7 @@ body.bg-transparent { background: transparent; }
   .el-len { font-size: 13.5px; }
   .el-sums { font-size: 13.5px; column-gap: 8px; }
   .el-f { display: none; }
-  .el .pvc-rule { font-size: 13px; }
+  .el .pvc-rule { font-size: 14px; }
   .el .pvc-outcome { font-size: 14px; }
 }
 /* phones that are not tall: everything a little smaller */
@@ -99,11 +99,11 @@ body.bg-transparent { background: transparent; }
   .el-ctl { height: 32px; }
   .el-pm { width: 34px; }
   .el-sums { font-size: 12.5px; line-height: 1.4; }
-  .el .pvc-outcome { font-size: 13.5px; }
-  .el .pvc-rule { font-size: 12.5px; line-height: 1.35; --pvc-rule-lines: 2; }
+  .el .pvc-outcome { font-size: 14px; }
+  .el .pvc-rule { font-size: 14px; line-height: 1.55; --pvc-rule-lines: 2; }
   .el .pvc-q-text { font-size: 13.5px; }
   .el .pvc-opt { font-size: 13px; }
-  .el .pvc-q-feedback { font-size: 12.5px; }
+  .el .pvc-q-feedback { font-size: 13.5px; }
 }
 /* short and wide (phone held sideways): the panel is beside the scene */
 @container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
@@ -114,15 +114,15 @@ body.bg-transparent { background: transparent; }
   .el-len { font-size: 13px; }
   .el-sums { font-size: 12.5px; line-height: 1.4; }
   .el-f { display: none; }
-  .el .pvc-outcome { font-size: 13.5px; line-height: 1.45; }
-  .el .pvc-rule { font-size: 12.5px; line-height: 1.35; }
+  .el .pvc-outcome { font-size: 14px; line-height: 1.5; }
+  .el .pvc-rule { font-size: 14px; line-height: 1.55; }
   .el .pvc-q-text { font-size: 13.5px; }
   .el .pvc-opt { font-size: 12.5px; height: 42px; }
-  .el .pvc-q-feedback { font-size: 12.5px; }
+  .el .pvc-q-feedback { font-size: 13.5px; }
 }
 @container pvc-panel (max-width: 330px) {
   .el-top { gap: 6px; }
-  .el-sums { font-size: 12px; column-gap: 6px; }
+  .el-sums { font-size: 12.5px; column-gap: 6px; }
   .el-calc { white-space: normal; overflow: visible; }
   .el-len { font-size: 12.5px; white-space: normal; line-height: 1.25; }
 }
@@ -130,3 +130,7 @@ body.bg-transparent { background: transparent; }
 @container pvc-panel (min-height: 300px) {
   .el-top { display: flex; }
 }
+
+/* a formula inside the rule or the worked answer sits on its own line (kit 1.6.0 .pvc-formula, as a span in a <p>) */
+.el .pvc-rule .pvc-formula, .el .pvc-outcome .pvc-formula, .el .pvc-q-feedback .pvc-formula { display: block; margin: 5px 0; padding: 3px 8px; font-size: 14.5px; line-height: 1.5; }
+.el .pvc-formula b { font-size: 1em; }
