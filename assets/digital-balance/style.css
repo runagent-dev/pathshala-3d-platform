@@ -12,11 +12,13 @@ body.bg-transparent { background: transparent; }
 .pvc .c-g { color: var(--c-g); }
 .pvc .c-m { color: var(--c-m); }
 
-.bal-extra { margin: 0; min-height: 3em; font-size: 13.5px; line-height: 1.5; color: var(--ink-2); } /* 2 lines: the 3D view keeps its size */
+.bal-extra { display: flex; flex-direction: column; gap: 8px; min-height: 92px; font-size: 14px; line-height: 1.55; color: var(--ink-2); } /* a sentence and a formula: the 3D view keeps its size */
+.bal-extra p { margin: 0; }
+.bal-extra .pvc-formula { font-size: 15px; }
 .bal-acts { display: flex; flex-wrap: wrap; gap: 6px; }
 .bal-acts .pvc-btn { height: 36px; padding: 0 12px; font-size: 14.5px; }
 @container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
-  .bal-extra { font-size: 12.5px; }
+  .bal-extra { font-size: 14px; min-height: 84px; gap: 6px; }
 }
 /* a narrow panel beside the 3D: the three buttons on one line */
 @container pvc (max-width: 330px) {
