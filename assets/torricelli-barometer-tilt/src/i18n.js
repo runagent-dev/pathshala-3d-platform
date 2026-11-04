@@ -45,7 +45,7 @@ export const STRINGS = {
 
     // the rule: the book's words, one idea at a time
     rule_tilt:
-      '<b>চাপ নির্ভর করে খাড়া উচ্চতা h-এর উপর (P = hρg),</b> নলের দৈর্ঘ্যের উপর নয়। তাই নল হেলালে পারদ নলের বেশি অংশ ভরে, কিন্তু খাড়া উচ্চতা থাকে {h}&nbsp;{u_cm}।',
+      'চাপ নির্ভর করে <b>খাড়া উচ্চতা h</b>-এর উপর, নলের দৈর্ঘ্যের উপর নয়।<span class="pvc-formula"><i>P</i> = <i>hρg</i></span>নল হেলালে পারদ নলের বেশি অংশ ভরে, কিন্তু খাড়া উচ্চতা থাকে {h}&nbsp;{u_cm}।',
 
     // labels on the picture
     lbl_air: 'বাতাসের চাপ',
@@ -70,7 +70,7 @@ export const STRINGS = {
     q_locked: 'পরীক্ষার সময় দৃশ্যটি আটকানো থাকে। ছবি দেখে উত্তর বেছে নাও।',
 
     q_tilt: 'নলটি {deg}° হেলানো। পাত্রের পারদের তল থেকে নলের পারদের উপরের তল খাড়াভাবে কত উঁচুতে? স্কেল থেকে পড়ো।',
-    why_tilt: '<b>{h}&nbsp;{u_cm}</b>: চাপ খাড়া উচ্চতার উপর নির্ভর করে; নলে পারদ {L}&nbsp;{u_cm}।',
+    why_tilt: '<b>{h}&nbsp;{u_cm}</b>। চাপ খাড়া উচ্চতার উপর নির্ভর করে। নলে পারদ {L}&nbsp;{u_cm}।',
     mis_tilt_along: 'এটি নল বরাবর পারদের দৈর্ঘ্য।',
     mis_tilt_cos: 'হেলালে বাতাসের চাপ বদলায় না, খাড়া উচ্চতাও না।',
     mis_tilt_less: 'স্কেলে পারদের তল {h}-এর দাগেই আছে।',
@@ -81,7 +81,7 @@ export const STRINGS = {
     c_tw_air: 'হেলালে বাতাসের চাপ বাড়ে',
     c_tw_light: 'হেলালে পারদ হালকা হয়',
     c_tw_vac: 'শূন্যতা পারদকে টেনে রাখে',
-    why_tw: '<b>চাপ খাড়া উচ্চতার উপর নির্ভর করে</b> (P = hρg), নলের দৈর্ঘ্যের উপর নয়।',
+    why_tw: '<b>খাড়া উচ্চতার উপর</b> চাপ নির্ভর করে (P = hρg), নলের দৈর্ঘ্যের উপর নয়।',
     mis_tw_light: 'পারদের ঘনত্ব বদলায় না।',
     mis_tw_vac: 'শূন্যতা টানে না; বাতাসের চাপ নিচ থেকে ঠেলে।',
   },
@@ -115,7 +115,7 @@ export const STRINGS = {
     out_tilting: 'Tilting the tube…',
 
     rule_tilt:
-      '<b>Pressure depends on the vertical height h (P = hρg),</b> not on the tube’s length. A tilted tube fills more of its length, but the vertical height stays {h}&nbsp;{u_cm}.',
+      'Pressure depends on the <b>vertical height h</b>, not on the tube’s length.<span class="pvc-formula"><i>P</i> = <i>hρg</i></span>A tilted tube fills more of its length, but the vertical height stays {h}&nbsp;{u_cm}.',
 
     lbl_air: "air's pressure",
     lbl_vacuum: 'vacuum',
@@ -138,7 +138,7 @@ export const STRINGS = {
     q_locked: 'The scene is locked during the test. Look at the picture and pick an answer.',
 
     q_tilt: 'The tube is tilted {deg}°. How high, straight up from the mercury in the dish, is the mercury’s top? Read the scale.',
-    why_tilt: '<b>{h}&nbsp;{u_cm}</b>: pressure depends on the vertical height; along the tube it is {L}&nbsp;{u_cm}.',
+    why_tilt: '<b>{h}&nbsp;{u_cm}</b>. Pressure depends on the vertical height. Along the tube it is {L}&nbsp;{u_cm}.',
     mis_tilt_along: 'That is the length along the tube.',
     mis_tilt_cos: 'Tilting changes neither the air’s pressure nor the height.',
     mis_tilt_less: 'On the scale the top is still at {h}.',
@@ -149,7 +149,7 @@ export const STRINGS = {
     c_tw_air: "Tilting raises the air's pressure",
     c_tw_light: 'Tilting makes mercury lighter',
     c_tw_vac: 'The vacuum pulls the mercury',
-    why_tw: "<b>Pressure depends on the vertical height</b> (P = hρg), not on the tube's length.",
+    why_tw: 'Pressure depends on the <b>vertical height</b> (P = hρg), not on the tube’s length.',
     mis_tw_light: "Mercury's density doesn't change.",
     mis_tw_vac: "A vacuum doesn't pull; the air pushes from below.",
   },
