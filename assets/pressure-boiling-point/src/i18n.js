@@ -182,7 +182,8 @@ export const STRINGS = {
     val_normal_cook: 'usual time',
     val_fast: 'is quick',
     none: '—',
-    rule_plain: 'Changing the pressure changes the <b>boiling point.</b> At the usual pressure water boils at {tb}{u_C}. Change the pressure and see.',
+    rule_plain:
+      'Changing the pressure changes the <b>boiling point.</b> At the usual pressure water boils at {tb}{u_C}. Change the pressure and see.',
     rule_mountain:
       'When the pressure is low, the <b>boiling point falls.</b> So water boils at a lower temperature and cannot get hotter. Cooking takes longer.',
     rule_cooker:
