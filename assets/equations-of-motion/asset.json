@@ -5,22 +5,23 @@
   "title": "Equations of motion (গতির সমীকরণ)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "0.4.1",
+  "version": "2.0.0",
   "book": "physics-9-10",
   "page": 45,
   "topic": "2.7",
-  "placement": "Book pages 45–46, topic 2.7: গতির সমীকরণ (Equations of Motion). Next to the section text and its velocity–time graph with V = (u+v)/2.",
+  "placement": "Book pages 45–46, topic 2.7: গতির সমীকরণ (Equations of Motion). Next to the section text on uniform acceleration (v = u + at), in place of a printed picture.",
   "order": 1,
   "maintainers": ["RadeenXALNW"],
   "units": "m",
-  "description": "The equations of motion (গতির সমীকরণ, pages 45–46, 2.7) with a commuter train on a straight double-track railway in a sunny setting. The student sets its আদি বেগ u (m/s), ত্বরণ a (ms⁻², negative to brake: a braking train stops, it never goes backwards) and the time t with three steppers, and runs it in real time with one big button (its numbered ring on the train). The camera follows the train on a 40 m stretch of track; a trip bar fills in 1-second segments and the বেগ–সময় গ্রাফ draws v = u + at while the area under it fills in the same 1-second strips: the area is the distance. One equation at a time: chips choose v = u + at, s = ut + ½at², v² = u² + 2as or s = Vt; it shows large with the student's numbers, under a plain comparison first (e.g. twice the time, ut twice but ½at² four times). Each quantity has one colour (u teal, v orange, a green, t purple, s blue, V raspberry) in the graph, the steppers, the formulas and the labels; tapping a letter lights that quantity in the graph and in a tag over the train. With s = ut + ½at² the area splits into the rectangle ut and the gold triangle ½at²; with s = Vt an imagined see-through train runs at the average velocity V = (u + v)/2 and the triangle above V folds into the gap below it (s = Vt). A button সমীকরণ কীভাবে এল opens a derivation sheet: four steps from the graph (the slope: v = u + at; the area: s = ut + ½at²; the fold: s = Vt; t taken out: v² = u² + 2as), each with a small graph with the part in use lit, one plain sentence, then the formula line by line (পরের ধাপ / আগের ধাপ) with the student's own numbers, so the same answer comes out each way. A button উদাহরণ opens the book's worked example (page 45): a car from rest reaches 60 km/hour in 1 minute, what is its acceleration? A bright red car drives off from a start line on a plain avenue (street lamps only) with a speedometer in km/hour and m/s and a clock; it plays in real time or 2× or 5× faster, a finger turns the camera round the moving car, পাশ থেকে / পেছন থেকে put it beside or behind the car, and a timeline shows any moment; below, the question with two steppers (final speed 10–120 km/hour, time 10–120 s) and the book's answer line by line: t = 1 মিনিট = 60 s, v = 60 km/hour = (60 × 1000 m)/(60 × 60 s) = 16.67 m/s, v = u + at = at, a = v/t = 0.278 m/s². Touching or dragging the graph or the bar shows any moment (to 0.1 s). Test: 5 tap questions (the final velocity or the distance by formula, the distance as the area under the graph, the average velocity or the velocity at half time read off the graph, the next second's distance after the first, and no acceleration or braking to a stop), wrong choices from real mistakes, each worked answer naming the mistake and replaying the run. Phone-first, Bangla. GLB: a short stretch of the railway (−25 to 60 m) and the two trains, in metres.",
+  "description": "The equations of motion (গতির সমীকরণ, pages 45–46, 2.7) laid out in one frame exactly as the owner's reference \"Uniform Acceleration in One Dimension\", on a soft light-blue background: at the top the formula x = x₀ + ut + ½at² with one short sentence under it (the sum of the three parts, the moment the car turns back, or that it reached an end of the axis); on the left the buttons চালাও (Run), থামাও (Pause), আবার শুরু (Reset) and the two 0.1 s time steps; in the middle four long sliders for the আদি অবস্থান x₀ (red, −5…5 m), the আদি বেগ u (blue, −5…5 m/s; the book's symbol for the reference's v₀), the ত্বরণ a (green, −3…3 ms⁻²) and the সময় t (grey, 0…6 s), steps of 0.1, each value written over its knob in its colour; on the right the x–t graph (a parabola) and the v–t graph (a straight line), growing as t runs with the moment marked, each with its live equation under it, x = (½a)t² + (u)t + (x₀) and v = (a)t + (u); and along the bottom, across the full width, a 3D strip seen from the side: a blue sedan (wheels that turn with the motion) on a dark asphalt road whose front slope carries the number line from −7 m to 10 m (bold numbers every metre), a dot at the car's position x, and under the axis the three parts drawn tip to tail as thick outlined arrows (x₀ red from 0, ut blue, ½at² green ending at x) with a dashed drop line from the car, so x is their sum. চালাও runs the time in real seconds; the car stops at an end of the axis. Portrait frames stack the same parts. Test (in the place of the sliders, from a small tab in the corner): 5 tap questions (x after t with x₀ read off the axis, v = u + at, a read from the x equation, when v = 0 from the v equation, the part ½at² read off the picture), wrong choices from real mistakes, each worked answer naming the mistake and running the car to that moment. Phone-first, Bangla. GLB: the road with its number line and the three arrows, and the car, in metres.",
   "tags": [
     "motion",
     "equations-of-motion",
     "uniform-acceleration",
+    "number-line",
+    "position-time-graph",
     "velocity-time-graph",
-    "average-velocity",
-    "train",
+    "car",
     "bangla"
   ],
   "params": [
@@ -32,31 +33,37 @@
       "default": "bn"
     },
     {
+      "name": "x0",
+      "label": "Initial position x₀",
+      "type": "number",
+      "default": "-0.8",
+      "placeholder": "m",
+      "help": "−5 to 5 m, steps of 0.1"
+    },
+    {
       "name": "u",
       "label": "Initial velocity u",
       "type": "number",
-      "default": "4",
+      "default": "1.9",
       "placeholder": "m/s",
-      "help": "0 to 15 m/s, whole numbers"
+      "help": "−5 to 5 m/s, steps of 0.1 (the reference's v₀)"
     },
     {
       "name": "a",
       "label": "Acceleration a",
       "type": "number",
-      "default": "1",
+      "default": "1.7",
       "placeholder": "ms⁻²",
-      "help": "−1.5 to 1.5 ms⁻² in steps of 0.5; negative brakes"
+      "help": "−3 to 3 ms⁻², steps of 0.1"
     },
-    { "name": "t", "label": "Time t", "type": "number", "default": "6", "placeholder": "s", "help": "1 to 10 s" },
     {
-      "name": "time",
-      "label": "Moment shown at the start",
+      "name": "t",
+      "label": "Time t shown at the start",
       "type": "number",
       "default": "0",
       "placeholder": "s",
-      "help": "0 is the start; t (or more) is the end of the run"
+      "help": "0 to 6 s; never past the moment the car reaches an end of the axis"
     },
-    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
     {
       "name": "mode",
       "label": "Start in",
@@ -78,52 +85,34 @@
   ],
   "commands": [
     { "name": "get", "payload": {} },
-    { "name": "set", "payload": { "u": 4, "a": 1, "t": 6 } },
+    { "name": "set", "payload": { "x0": -0.8, "u": 1.9, "a": 1.7 } },
+    { "name": "set", "payload": { "t": 2 } },
+    { "name": "set", "payload": { "step": 1 } },
+    { "name": "set", "payload": { "step": -1 } },
     { "name": "set", "payload": { "playing": true } },
     { "name": "set", "payload": { "playing": false } },
-    { "name": "set", "payload": { "time": 3 } },
-    { "name": "set", "payload": { "time": "end" } },
-    { "name": "set", "payload": { "u": 12, "a": -1.5, "t": 8, "time": 0 } },
-    { "name": "set", "payload": { "eq": "s2" } },
-    { "name": "set", "payload": { "hl": "a" } },
-    { "name": "set", "payload": { "derive": 2, "part": 3 } },
-    { "name": "set", "payload": { "derive": false } },
-    { "name": "set", "payload": { "example": true } },
-    { "name": "set", "payload": { "example": { "kmh": 60, "t": 60, "part": 4, "time": "end" } } },
-    { "name": "set", "payload": { "example": { "rate": 5, "view": "chase", "playing": true } } },
-    { "name": "set", "payload": { "example": false } },
+    { "name": "set", "payload": { "t": "end" } },
+    { "name": "set", "payload": { "x0": 3, "u": -2, "a": 1, "t": 0 } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "set", "payload": { "view": "front", "animate": false } },
     { "name": "reset", "payload": {} },
     { "name": "practice", "payload": {} },
     { "name": "capture", "payload": { "width": 800, "height": 500 } },
     { "name": "export-glb", "payload": {} }
   ],
-  "events": [
-    "ready",
-    "change",
-    "plan",
-    "run",
-    "arrive",
-    "view",
-    "dragstart",
-    "dragend",
-    "derive",
-    "example",
-    "practice-start",
-    "practice-result",
-    "practice-end"
-  ],
+  "events": ["ready", "change", "run", "pause", "end", "view", "practice-start", "practice-result", "practice-end"],
   "export": {
-    "poster": { "params": { "coach": "0", "time": "6" } },
-    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "time": 6, "animate": false } }] }],
+    "poster": { "params": { "coach": "0", "t": "2" } },
+    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "t": 2, "animate": false } }] }],
     "video": {
       "kind": "script",
-      "seconds": 19,
+      "seconds": 14,
       "fps": 30,
       "params": { "coach": "0" },
       "script": [
         { "at": 0.6, "command": "set", "payload": { "playing": true } },
-        { "at": 9.2, "command": "set", "payload": { "u": 12, "a": -1.5, "t": 6, "time": 0 } },
-        { "at": 9.8, "command": "set", "payload": { "playing": true } }
+        { "at": 5, "command": "set", "payload": { "x0": 4, "u": -3, "a": 1.5, "t": 0 } },
+        { "at": 5.6, "command": "set", "payload": { "playing": true } }
       ]
     }
   }

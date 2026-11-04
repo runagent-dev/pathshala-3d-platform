@@ -1,409 +1,237 @@
-/* Equations of motion: the page, one colour per quantity (u teal, v orange, a green, t purple, s blue, V raspberry,
-   the triangle ½at² gold: the same as on the picture and in the derivation sheet), the steppers, the chosen equation
-   with its tappable letters, the derivation sheet. The student view itself is ../../shared/lib/student/student.css
-   (linked first). Every text colour has at least 4.5 : 1 contrast on white. */
+/* Equations of motion: one frame, laid out as the owner's reference "Uniform Acceleration in One Dimension" (his
+   choice for this figure instead of the kit's side panel, NOTES.md 2026-11-04), on a soft light-blue background:
+     top: the formula (and one short sentence under it)       right: the x–t graph, then the v–t graph, each with
+     left: চালাও, থামাও, আবার শুরু and the two time steps            its live equation under it
+     middle: four long sliders x₀ (red), u (blue), a (green), t (grey), each value over its knob
+     bottom, the full width: the 3D strip (the car on the number line, the three parts under the axis).
+   Portrait frames stack it: formula, the two graphs side by side, sliders, buttons, the strip. The test takes the
+   place of the sliders (and the graphs) while it is open. The student view itself is
+   ../../shared/lib/student/student.css (linked first); the kit's panel is not shown. */
 html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
 #app { position: fixed; inset: 0; }
 body.bg-transparent { background: transparent; }
 
-.pvc { --c-u: #0b7285; --c-v: #c2410c; --c-a: #2b7a3a; --c-t: #6741d9; --c-s: #1c6fd9; --c-V: #c2255c; --c-tri: #8a6100; }
+.pvc {
+  --c-x0: #c92a2a; --c-u: #1a5fbf; --c-a: #2b7a3a; --c-t: #3f474f;
+  --k-x0: #e03131; --k-u: #1c6fd9; --k-a: #2f9e44; --k-t: #5c6670;
+}
+.pvc.eom { background: linear-gradient(180deg, #e4effa 0%, #d0e3f4 58%, #bdd7ee 100%); }
+.pvc.eom[data-theme='transparent'] { background: transparent; }
+.eom .q-x0 { color: var(--c-x0); }
 .eom .q-u { color: var(--c-u); }
-.eom .q-v { color: var(--c-v); }
 .eom .q-a { color: var(--c-a); }
 .eom .q-t { color: var(--c-t); }
-.eom .q-s { color: var(--c-s); }
-.eom .q-V { color: var(--c-V); }
 .eom i { font-style: italic; }
+.eom sub, .eom sup { font-size: 0.72em; line-height: 0; }
+.eom-nw { white-space: nowrap; }
+.k-x0 { --c: var(--c-x0); --k: var(--k-x0); }
+.k-u { --c: var(--c-u); --k: var(--k-u); }
+.k-a { --c: var(--c-a); --k: var(--k-a); }
+.k-t { --c: var(--c-t); --k: var(--k-t); }
 
-/* the graph, the trip bar and the railway's labels are drawn on this canvas, over the 3D */
+/* ── the frame: the kit's shell keeps its parts (the test, the hint, the turn-sideways card); its panel is not shown ── */
+.eom .pvc-shell { display: block; position: relative; height: 100%; }
+.eom .pvc-panel, .eom .pvc-panel-toggle { display: none !important; }
+.eom-frame {
+  --pad: 14px;
+  --strip: min(24.5cqw, 47cqh);
+  position: absolute;
+  inset: 0;
+  display: grid;
+  padding: 10px var(--pad) 0;
+  gap: 6px 18px;
+  grid-template-columns: minmax(96px, 11%) minmax(0, 1fr) clamp(200px, 27%, 340px);
+  grid-template-rows: auto minmax(0, 1fr) var(--strip);
+  grid-template-areas:
+    'top head graphs'
+    'btns sliders graphs'
+    'strip strip strip';
+}
+
+/* top left: the two tabs (শেখো / পরীক্ষা) and the full-screen button, small, out of the way */
+.eom-top { grid-area: top; z-index: 3; display: flex; gap: 6px; align-items: flex-start; width: max-content; }
+.eom .eom-top .pvc-tabs { width: auto; max-width: none; display: inline-grid; grid-template-columns: auto auto; border-radius: 6px; background: #fff; }
+.eom .eom-top .pvc-tabs button { height: 30px; padding: 0 11px; font-size: 14px; }
+.eom .eom-top .pvc-tabs button + button { border-top: 0; border-left: 1px solid var(--line-2); }
+.eom .eom-top .pvc-corner { position: static; display: flex; gap: 6px; }
+.eom .eom-top .pvc-corner .pvc-tool { height: 30px; width: 30px; background: #fff; }
+
+/* top: the formula, and one short sentence under it */
+.eom-head { grid-area: head; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 0; text-align: center; }
+.eom-formula { margin: 0; font-size: 22px; line-height: 1.35; color: var(--ink); white-space: nowrap; word-spacing: 0.06em; }
+.eom-formula .pvc-frac { font-size: 0.78em; }
+.eom-rule { margin: 2px 0 0; font-size: 14px; line-height: 1.45; color: var(--ink-2); }
+.eom-rule.end { color: #a33e00; }
+
+/* left: the buttons, white with a thin border, as the reference */
+.eom-btns { grid-area: btns; display: flex; flex-direction: column; justify-content: center; gap: 10px; min-height: 0; }
+.eom-b, .eom-step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid #aebccb;
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 15.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(20, 40, 70, 0.08);
+}
+.eom-b { height: 38px; padding: 0 10px; }
+.eom-b svg { width: 14px; height: 14px; color: var(--accent); }
+.eom-b:hover:not(:disabled), .eom-step:hover:not(:disabled) { border-color: var(--accent); background: #f5f9ff; }
+.eom-b:disabled { color: var(--ink-3); background: rgba(255, 255, 255, 0.6); box-shadow: none; cursor: default; }
+.eom-b:disabled svg { color: var(--ink-3); }
+.eom-b.on { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.eom-b:focus-visible, .eom-step:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.eom-steps { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.eom-step { flex-direction: column; gap: 0; height: 50px; padding: 2px 4px; }
+.eom-step svg { width: 16px; height: 16px; color: var(--ink-2); }
+.eom-step small { font-size: 12.5px; line-height: 1.25; color: var(--ink-2); }
+
+/* middle: the four long sliders, the value written over the knob in the quantity's colour, its name at the end */
+.eom-sliders { grid-area: sliders; display: flex; flex-direction: column; justify-content: space-evenly; min-width: 0; min-height: 0; }
+.eom-sl { display: grid; grid-template-columns: minmax(0, 1fr) 6.4em; align-items: end; column-gap: 12px; }
+.eom-track { position: relative; padding-top: 1.45em; min-width: 0; font-size: 15.5px; }
+.eom-val { position: absolute; left: 0; top: 0; color: var(--c); font-weight: 600; line-height: 1.4; white-space: nowrap; font-variant-numeric: tabular-nums; will-change: transform; }
+.eom-val small { font-size: 0.85em; font-weight: 500; }
+.eom-name { padding-bottom: 4px; color: var(--c); font-size: 13.5px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.eom-sl input[type='range'] { -webkit-appearance: none; appearance: none; display: block; width: 100%; height: 26px; margin: 0; background: transparent; cursor: pointer; }
+.eom-sl input[type='range']::-webkit-slider-runnable-track { height: 8px; border-radius: 4px; background: color-mix(in srgb, var(--k) 45%, #fff); }
+.eom-sl input[type='range']::-moz-range-track { height: 8px; border-radius: 4px; background: color-mix(in srgb, var(--k) 45%, #fff); }
+.k-t input[type='range']::-webkit-slider-runnable-track { background: #8d959d; }
+.k-t input[type='range']::-moz-range-track { background: #8d959d; }
+.eom-sl input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  margin-top: -7px;
+  border-radius: 50%;
+  background: var(--k);
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--k) 70%, #000), 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+.k-t input[type='range']::-webkit-slider-thumb { background: #1d2530; }
+.eom-sl input[type='range']::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--k); border: 3px solid #fff; box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--k) 70%, #000); }
+.eom-sl input[type='range']:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+
+/* right: the two graphs, plain axes on the background, each with its live equation under it */
+.eom-graphs { grid-area: graphs; display: grid; grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; min-width: 0; min-height: 0; }
+.eom-g { margin: 0; min-width: 0; min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto; }
+.eom .eom-g .pvc-graph { width: 100%; height: 100%; max-height: none; min-height: 0; overflow: visible; }
+.eom .pvc-graph .grid { stroke: rgba(50, 80, 115, 0.14); }
+.eom .pvc-graph .axis { stroke: #2a3440; }
+.eom .pvc-graph text { fill: var(--ink-3); }
+.eom .pvc-graph .eom-g-axis { stroke: #1f2933; stroke-width: 1.4; fill: none; }
+.eom .pvc-graph .eom-g-axis.fill { fill: #1f2933; stroke: none; }
+.eom .pvc-graph .eom-g-name { fill: var(--ink); font-style: italic; }
+.eom-eq { margin: 0; font-size: 16px; line-height: 1.5; color: var(--ink); text-align: center; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.eom-eq span { font-weight: 600; }
+
+/* bottom, the full width: the 3D strip; the axis numbers and the labels are drawn on the overlay canvas over it */
+.eom-strip { grid-area: strip; position: relative; margin: 0 calc(-1 * var(--pad)); min-height: 0; }
+.eom .eom-strip .pvc-stage { position: absolute; inset: 0; }
 .eom-overlay { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; }
 
-/* ── the learn sheet: steppers, the four equations, the rule, the chosen equation, the action ── */
-.eom .pvc-learn { gap: 6px; }
-.eom-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.eom-step { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.k-u { --c: var(--c-u); }
-.k-a { --c: var(--c-a); }
-.k-t { --c: var(--c-t); }
-.eom-name { font-size: 12.5px; line-height: 1.35; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.eom-name b { color: var(--c); font-size: 15px; font-style: italic; margin-right: 1px; }
-.eom-name small { color: var(--ink-3); font-size: 11.5px; }
-.eom-ctl { display: flex; align-items: stretch; height: 40px; border: 1.5px solid color-mix(in srgb, var(--c) 38%, #fff); border-radius: 9px; overflow: hidden; background: var(--panel); }
-.eom-pm { flex: none; width: 40px; border: 0; padding: 0; background: color-mix(in srgb, var(--c) 9%, #fff); display: grid; place-items: center; color: var(--c); }
-.eom-pm:hover { background: color-mix(in srgb, var(--c) 16%, #fff); }
-.eom-pm svg { width: 18px; height: 18px; stroke-width: 2.4; }
-.eom-pm.off { color: var(--ink-3); opacity: 0.45; }
-.eom-val { flex: 1; min-width: 0; display: grid; place-items: center; font-size: 19px; font-weight: 700; color: var(--c); font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* the test: in the place of the formula, the sliders and the graphs while it is open (its head beside the tabs) */
+.eom-quizbox { grid-area: 1 / 1 / 3 / 4; display: none; min-height: 0; }
+.eom[data-mode='quiz'] .eom-quizbox { display: block; }
+.eom[data-mode='quiz'] :is(.eom-head, .eom-btns, .eom-sliders, .eom-graphs) { visibility: hidden; }
+.eom .eom-quizbox .pvc-quiz { height: 100%; }
+.eom .eom-quizbox .pvc-q-ask { gap: 6px; }
+.eom .eom-quizbox .pvc-q-head { padding-left: var(--top-w, 170px); min-height: 30px; }
+.eom .eom-quizbox .pvc-q-head .pvc-btn { height: 32px; }
+.eom .eom-quizbox .pvc-q-text { font-size: 16px; line-height: 1.45; }
+.eom .eom-quizbox .pvc-q-options { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.eom .eom-quizbox .pvc-opt { height: 44px; font-size: 19px; }
+.eom .eom-quizbox .pvc-q-feedback { font-size: 14.5px; line-height: 1.5; }
+.eom .pvc-q-done { padding-top: 40px; }
 
-/* the four equations: one row of words (the chosen one underlined), each letter in its colour */
-.eom .eom-chips button { min-height: 38px; padding: 2px 2px 5px; }
-.eom .eom-chips .pvc-ex-word { font-size: 15px; font-weight: 700; color: var(--ink-2); }
-.eom .eom-chips button.on .pvc-ex-word { font-size: 15.5px; }
-.eom .eom-chips button:not(.on) i { opacity: 0.78; }
-.eom .eom-chips .pvc-ex-res { display: none; }
-
-/* the rule: the equation in plain words (or what a tapped letter means), always room for two lines */
-.eom .eom-rule { height: 2.9em; overflow: hidden; font-size: 14px; line-height: 1.45; } /* always two lines: the 3D view keeps its size */
-.eom .eom-rule b { font-style: italic; font-size: 1.08em; }
-.eom .eom-rule[data-hl='u'] b { color: var(--c-u); }
-.eom .eom-rule[data-hl='v'] b { color: var(--c-v); }
-.eom .eom-rule[data-hl='a'] b { color: var(--c-a); }
-.eom .eom-rule[data-hl='t'] b { color: var(--c-t); }
-.eom .eom-rule[data-hl='s'] b { color: var(--c-s); }
-.eom .eom-rule[data-hl='V'] b { color: var(--c-V); }
-
-/* the chosen equation, large: each letter is a button that lights its quantity in the picture */
-.eom .eom-big { display: flex; flex-wrap: nowrap; align-items: baseline; column-gap: 10px; line-height: 1.2; min-width: 0; }
-.eom-f { font-size: 26px; font-weight: 700; color: var(--ink); white-space: pre; }
-.eom-sym { display: inline-block; min-width: 24px; min-height: 32px; padding: 0; margin: 0 -3px; border: 0; border-radius: 7px; background: none; font: inherit; font-style: italic; line-height: 32px; text-align: center; cursor: pointer; text-decoration: underline dotted 2px; text-underline-offset: 5px; }
-.eom-sym:hover { background: color-mix(in srgb, currentColor 9%, transparent); }
-.eom-sym.on { background: color-mix(in srgb, currentColor 15%, #fff); text-decoration: none; box-shadow: inset 0 0 0 2px currentColor; }
-.eom-sym:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-.eom-n { flex: none; font-size: 15.5px; color: var(--ink-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
-.eom-n b { font-size: 1.3em; font-weight: 700; }
-.eom-n small { font-size: 0.9em; color: inherit; }
-
-/* the action row: the run button, and the way into the derivation sheet */
-.eom .pvc-act-row { gap: 8px; }
-.eom-derive { display: inline-flex; align-items: center; gap: 5px; flex: none; min-height: 44px; margin-left: auto; padding: 0 14px 0 10px; border: 1.5px solid var(--accent); border-radius: 999px; background: var(--panel); color: var(--accent); font-size: 15px; font-weight: 700; white-space: nowrap; }
-.eom-derive:hover { background: color-mix(in srgb, var(--accent) 8%, #fff); }
-.eom-derive:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
-.eom-derive svg { width: 16px; height: 16px; stroke-width: 2.6; }
-/* the derivation and the worked example side by side at the end of the action row */
-.eom-more { display: flex; gap: 8px; flex: none; margin-left: auto; }
-.eom-more .eom-derive { margin-left: 0; }
-/* the short label (কীভাবে এল) unless the frame is wide, so the run button and both buttons fit in one row */
-.eom-derive .l-long { display: none; }
-@container pvc (min-width: 1000px) {
-  .eom-derive .l-long { display: inline; }
-  .eom-derive .l-short { display: none; }
+/* ── middle-sized frames (800×500) ── */
+@container pvc (max-height: 560px) {
+  .eom-frame { gap: 4px 14px; padding-top: 8px; }
+  .eom-formula { font-size: 19px; }
+  .eom-rule { font-size: 13px; }
+  .eom-b { height: 32px; font-size: 14.5px; }
+  .eom-btns { gap: 7px; }
+  .eom-step { height: 42px; }
+  .eom-track { font-size: 14.5px; }
+  .eom-eq { font-size: 14.5px; }
 }
-.eom .eom-ex-open-btn svg { display: block; width: 21px; height: 21px; stroke-width: 2; }
-
-/* the test: room for two lines of question and three of worked answer, so the 3D view keeps its size; the
-   answers are short numbers, so all four fit in one row */
-.eom .pvc-q-text { min-height: 2.8em; }
-.eom .pvc-q-feedback { min-height: 4.35em; }
-.eom .pvc-q-options { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
-.eom .pvc-opt { padding: 0 4px; font-size: 18px; white-space: nowrap; }
-.eom .pvc-opt small { font-size: 12.5px; }
-
-/* phones: the turned view adds little here and its buttons would cover the railway: only full screen stays */
-@container pvc (max-width: 560px) {
-  .eom .pvc-corner .pvc-seg { display: none; }
+/* ── short landscape frames (844×390, 640×400): everything a little tighter ── */
+@container pvc (max-height: 430px) {
+  .eom-frame { --pad: 10px; --strip: min(24.5cqw, 43cqh); gap: 2px 12px; padding-top: 6px; grid-template-columns: minmax(88px, 11%) minmax(0, 1fr) clamp(180px, 27%, 300px); }
+  .eom-formula { font-size: 17px; line-height: 1.3; }
+  .eom-rule { font-size: 12.5px; line-height: 1.35; margin-top: 0; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+  .eom-b { height: 28px; font-size: 14px; gap: 5px; }
+  .eom-b svg { width: 12px; height: 12px; }
+  .eom-btns { gap: 5px; }
+  .eom-steps { gap: 5px; }
+  .eom-step { height: 38px; }
+  .eom-step svg { width: 14px; height: 14px; }
+  .eom-step small { font-size: 11.5px; }
+  .eom-track { font-size: 13.5px; padding-top: 1.35em; }
+  .eom-sl { grid-template-columns: minmax(0, 1fr) 6em; column-gap: 8px; }
+  .eom-name { font-size: 12.5px; padding-bottom: 3px; }
+  .eom-sl input[type='range'] { height: 24px; }
+  .eom-graphs { gap: 2px; }
+  .eom-eq { font-size: 13px; line-height: 1.35; }
+  .eom .eom-top .pvc-tabs button { height: 28px; padding: 0 9px; font-size: 13.5px; }
+  .eom .eom-top .pvc-corner .pvc-tool { height: 28px; width: 28px; }
+  .eom .eom-quizbox .pvc-q-ask { gap: 3px; }
+  .eom .eom-quizbox .pvc-q-head { min-height: 28px; }
+  .eom .eom-quizbox .pvc-q-head .pvc-btn { height: 28px; font-size: 14px; }
+  .eom .eom-quizbox .pvc-q-text { font-size: 14.5px; line-height: 1.4; }
+  .eom .eom-quizbox .pvc-opt { height: 36px; font-size: 16px; }
+  .eom .eom-quizbox .pvc-q-feedback { font-size: 13px; line-height: 1.4; }
 }
-/* phones and narrow columns: narrower ± so "−১.৫" fits; the derivation button without its arrow */
-@container pvc (max-width: 420px) {
-  .eom-steps { gap: 6px; }
+/* a narrow landscape frame (640×400): the names at the sliders' ends get shorter room */
+@container pvc (max-width: 700px) and (orientation: landscape) {
+  .eom-frame { grid-template-columns: 86px minmax(0, 1fr) 176px; }
+  .eom-sl { grid-template-columns: minmax(0, 1fr) 5.2em; }
   .eom-name { font-size: 12px; }
-  .eom-name small { font-size: 11px; }
-  .eom-pm { width: 36px; }
-  .eom-val { font-size: 17px; }
-  .eom .eom-chips .pvc-ex-word { font-size: 14px; }
-  .eom .eom-chips button.on .pvc-ex-word { font-size: 14.5px; }
-  .eom-f { font-size: 24px; }
-  .eom-n { font-size: 14.5px; }
-  .eom-derive { padding: 0 12px; font-size: 14.5px; }
-  .eom-derive svg { display: none; }
-  .eom-more { gap: 6px; }
-  .eom .eom-ex-open-btn { padding: 0 11px 0 8px; gap: 4px; }
-}
-/* phone embeds that are not very tall: a little smaller, so the 3D view keeps more room */
-@container pvc (max-width: 560px) and (max-height: 600px) {
-  .eom .pvc-learn { gap: 4px; }
-  .eom-ctl { height: 34px; }
-  .eom .eom-chips button { min-height: 32px; padding: 1px 2px 3px; }
-  .eom .eom-rule { font-size: 12.5px; }
-  .eom-f { font-size: 21px; }
-  .eom-sym { min-height: 26px; line-height: 26px; min-width: 24px; }
-  .eom-n { font-size: 13.5px; }
-  .eom .pvc-act-row { min-height: 40px; }
-  .eom .pvc-act { min-height: 40px; padding-top: 2px; padding-bottom: 2px; font-size: 15px; }
-  .eom .pvc-act .pvc-act-num { width: 30px; height: 30px; font-size: 16px; }
-  .eom-derive { min-height: 40px; }
-  .eom .pvc-q-text { font-size: 15px; }
-  .eom .pvc-q-feedback { font-size: 13px; }
-  .eom .pvc-opt { height: 40px; }
-}
-/* short and wide (phone held sideways): a wider panel beside the picture, the steppers one under the other */
-@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
-  .eom .pvc-learn { gap: 4px; }
-  .eom-steps { grid-template-columns: 1fr; gap: 3px; }
-  .eom-step { flex-direction: row; align-items: center; justify-content: space-between; gap: 8px; }
-  .eom-ctl { height: 32px; width: 136px; flex: none; }
-  .eom-pm { width: 38px; }
-  .eom-val { font-size: 16px; }
-  .eom .eom-chips button { min-height: 30px; padding: 0 1px 3px; }
-  .eom .eom-chips .pvc-ex-word { font-size: 13px; }
-  .eom .eom-chips button.on .pvc-ex-word { font-size: 13.5px; }
-  .eom .eom-rule { font-size: 13.5px; height: auto; min-height: 2.9em; }
-  .eom-f { font-size: 22px; }
-  .eom .eom-big { flex-wrap: wrap; } /* beside the picture: the numbers may go under the equation */
-  .eom-sym { min-height: 26px; line-height: 26px; min-width: 24px; }
-  .eom-n { font-size: 13.5px; }
-  .eom .pvc-act-row { min-height: 40px; }
-  .eom .pvc-act { min-height: 40px; padding-top: 2px; padding-bottom: 2px; font-size: 14.5px; }
-  .eom .pvc-act .pvc-act-num { width: 28px; height: 28px; font-size: 15px; }
-  .eom-derive { min-height: 40px; padding: 0 10px; font-size: 13.5px; }
-  .eom-derive svg { display: none; }
-  .eom-more { gap: 6px; }
-  .eom .eom-ex-open-btn { padding: 0 10px 0 7px; gap: 4px; }
-  .eom .pvc-q-text { min-height: 4.2em; } /* beside the picture, the panel's height does not touch the 3D view */
-  .eom .pvc-q-feedback { font-size: 13px; min-height: 7.2em; }
-  .eom .pvc-opt { font-size: 16px; height: 42px; }
-  .eom .pvc-opt small { font-size: 11.5px; }
-}
-/* a narrow panel beside the picture (small landscape embeds): the four equations in two rows, the derivation
-   button under the run button (the panel's height does not touch the 3D view there) */
-@container pvc-panel (max-width: 330px) {
-  .eom .eom-chips { display: grid; grid-template-columns: 1fr 1fr; }
-  .eom .pvc-act-row { flex-wrap: wrap; row-gap: 6px; }
-  .eom-more { flex: 1 1 100%; margin-left: 0; }
-  .eom-derive { flex: 1 1 0; justify-content: center; margin-left: 0; }
 }
 
-/* ── the derivation sheet: over the whole figure; on big frames a card on a pale veil ── */
-.eom-dv, .eom-ex { position: absolute; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; background: rgba(226, 234, 242, 0.72); }
-.eom-dv[hidden], .eom-ex[hidden] { display: none; }
-.eom-dv-card { box-sizing: border-box; display: flex; flex-direction: column; gap: 8px; width: 100%; height: 100%; padding: 8px 14px calc(10px + env(safe-area-inset-bottom, 0px)); background: #fff; overflow: hidden; }
-.eom-dv-head { display: flex; align-items: center; gap: 8px; }
-.eom-dv-head h2 { flex: 1; margin: 0; font-size: 18px; line-height: 1.3; font-weight: 700; color: var(--ink); }
-.eom-dv-x { flex: none; display: grid; place-items: center; width: 44px; height: 44px; margin-right: -8px; border: 0; border-radius: 10px; background: none; color: var(--ink-2); }
-.eom-dv-x:hover { background: var(--soft); color: var(--ink); }
-.eom-dv-x svg { width: 22px; height: 22px; }
-.eom-dv-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
-.eom-dv-tabs button { display: flex; align-items: center; justify-content: center; gap: 5px; min-width: 0; min-height: 38px; padding: 0 4px; border: 1.5px solid var(--line-2); border-radius: 999px; background: var(--panel); color: var(--ink-2); font-size: 14px; font-weight: 600; white-space: nowrap; }
-.eom-dv-tabs button b { display: inline-grid; place-items: center; flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--soft); color: var(--ink-2); font-size: 13px; }
-.eom-dv-tabs button span { overflow: hidden; text-overflow: ellipsis; }
-.eom-dv-tabs button.on { border-color: var(--accent); background: var(--accent); color: #fff; }
-.eom-dv-tabs button.on b { background: #fff; color: var(--accent); }
-.eom-dv-body { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 6px; }
-.eom-dv-fig { flex: 1 1 auto; min-height: 96px; display: flex; justify-content: center; }
-.eom-dv-fig svg { width: 100%; height: 100%; max-width: 560px; overflow: visible; fill: none; stroke: none; }
-.eom-dv-text { flex: none; display: flex; flex-direction: column; gap: 4px; }
-.eom-dv-yours { margin: 0; font-size: 12.5px; color: var(--ink-3); }
-.eom-dv-yours i { font-weight: 700; }
-.eom-dv-say { margin: 0; min-height: 2.9em; font-size: 15px; line-height: 1.45; color: var(--ink); }
-.eom-dv-lines { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 3px; min-height: calc(4 * 1.55em + 9px); font-size: 15px; }
-.eom-dv-line { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 8px; line-height: 1.55; visibility: hidden; opacity: 0; transform: translateY(4px); transition: opacity 0.3s, transform 0.3s; }
-.eom-dv-line.in { visibility: visible; opacity: 1; transform: none; }
-.eom-dv-line .f { font-size: 16.5px; font-weight: 700; color: var(--ink); white-space: nowrap; }
-.eom-dv-line .n { font-size: 14.5px; color: var(--ink-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
-.eom-dv-line.res .f { padding: 0 8px; border-radius: 7px; background: #fff6d6; box-shadow: inset 0 0 0 1.5px #f0c84a; font-size: 18px; }
-.eom-dv-line.note { display: block; font-size: 13.5px; line-height: 1.4; color: var(--ink-2); }
-.eom-dv-ok { display: inline-flex; align-items: center; gap: 3px; margin-left: 6px; color: var(--ok); font-size: 13px; font-weight: 700; }
-.eom-dv-ok svg { width: 17px; height: 17px; stroke-width: 2.6; }
-.eom-dv-foot { display: flex; align-items: center; gap: 8px; }
-.eom-dv-nav { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-width: 7.5em; min-height: 44px; padding: 0 14px; border: 1.5px solid var(--accent); border-radius: 999px; background: var(--panel); color: var(--accent); font-size: 15.5px; font-weight: 700; }
-.eom-dv-nav.primary { margin-left: auto; background: var(--accent); color: #fff; }
-.eom-dv-nav:disabled { opacity: 0.4; cursor: default; }
-.eom-dv-nav svg { width: 17px; height: 17px; stroke-width: 2.6; }
-.eom-dv-dots { display: flex; gap: 6px; margin: 0 auto; }
-.eom-dv-dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--line-2); }
-.eom-dv-dots i.on { background: var(--accent); }
-
-/* the small graph's parts, each in its quantity's colour */
-.eom-dv svg text { fill: var(--ink); font-family: inherit; font-size: 15px; font-weight: 700; paint-order: stroke; stroke: #fff; stroke-width: 3px; stroke-linejoin: round; }
-.eom-dv svg tspan { font-style: italic; }
-.eom-dv .g-card { fill: #fff; }
-.eom-dv .g-grid { stroke: #e9edf2; stroke-width: 1; }
-.eom-dv .g-axis { fill: none; stroke: var(--ink); stroke-width: 1.6; }
-.eom-dv .g-axis-head, .eom-dv .g-head { fill: var(--ink); }
-.eom-dv .g-area { fill: #edf3fa; }
-.eom-dv .g-area.on { fill: #cfe5ff; stroke: var(--c-s); stroke-width: 1.5; }
-.eom-dv .g-rect { fill: #c3ecf1; stroke: var(--c-u); stroke-width: 1.5; }
-.eom-dv .g-tri { fill: #ffe08a; stroke: #d9a300; stroke-width: 1.5; }
-.eom-dv .g-tri.minus { fill: #fff3c4; stroke-dasharray: 5 3; }
-.eom-dv .g-vt { fill: #d3e8ff; stroke: var(--c-V); stroke-width: 1.5; }
-.eom-dv .g-was { fill: none; stroke: #d9a300; stroke-width: 1.3; stroke-dasharray: 4 3; }
-.eom-dv .g-arrow { fill: none; stroke: var(--c-tri); stroke-width: 1.6; }
-.eom-dv .g-head { fill: var(--c-tri); }
-.eom-dv .g-slope { fill: #d3f0d9; }
-.eom-dv .g-t { stroke: var(--c-t); stroke-width: 3.5; stroke-linecap: round; }
-.eom-dv .g-dv { stroke: var(--c-v); stroke-width: 3.5; stroke-linecap: round; }
-.eom-dv .g-line { stroke: var(--c-v); stroke-width: 3; stroke-linecap: round; }
-.eom-dv .g-line.slope { stroke: var(--c-a); stroke-width: 3.5; }
-.eom-dv .g-V { stroke: var(--c-V); stroke-width: 2; stroke-dasharray: 7 5; }
-.eom-dv .g-mid { fill: #fff; stroke: var(--c-V); stroke-width: 2; }
-.eom-dv .g-u { fill: var(--c-u); }
-.eom-dv .g-v { fill: var(--c-v); }
-.eom-dv .l-u { fill: var(--c-u); font-style: italic; }
-.eom-dv .l-v { fill: var(--c-v); font-style: italic; }
-.eom-dv .l-V { fill: var(--c-V); font-style: italic; }
-.eom-dv .l-t { fill: var(--c-t); font-style: italic; }
-.eom-dv .l-t.gone { fill: #9aa3ad; }
-.eom-dv .g-gone { stroke: #9aa3ad; stroke-width: 2; stroke-linecap: round; }
-.eom-dv .l-o { fill: var(--ink-3); font-weight: 500; font-size: 13px; }
-.eom-dv .l-dv, .eom-dv .l-rect, .eom-dv .l-tri, .eom-dv .l-vt, .eom-dv .l-s { font-size: 16px; }
-.eom-dv .l-tri i { fill: var(--c-tri); }
-.eom-dv svg .q-u { fill: var(--c-u); }
-.eom-dv svg .q-v { fill: var(--c-v); }
-.eom-dv svg .q-a { fill: var(--c-a); }
-.eom-dv svg .q-t { fill: var(--c-t); }
-.eom-dv svg .q-s { fill: var(--c-s); }
-.eom-dv svg .q-V { fill: var(--c-V); }
-
-/* phones that are not tall: a smaller title and graph, so all the lines fit */
-@container pvc (max-height: 600px) {
-  .eom-dv-card { gap: 5px; padding-top: 4px; }
-  .eom-dv-head h2 { font-size: 16.5px; }
-  .eom-dv-tabs button { min-height: 34px; font-size: 13px; }
-  .eom-dv-say { font-size: 13.5px; }
-  .eom-dv-lines { font-size: 14px; gap: 1px; }
-  .eom-dv-line .f { font-size: 15px; }
-  .eom-dv-line.res .f { font-size: 16px; }
-  .eom-dv-line .n { font-size: 13.5px; }
-  .eom-dv-nav { min-height: 40px; }
+/* ── portrait (390×700, 390×520): stacked; formula, the graphs side by side, the sliders, the buttons, the strip ── */
+@container pvc (orientation: portrait) {
+  .eom-frame {
+    --pad: 12px;
+    --strip: 27cqw;
+    gap: 6px 10px;
+    padding-top: 8px;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto auto var(--strip);
+    grid-template-areas:
+      'top head'
+      'graphs graphs'
+      'sliders sliders'
+      'btns btns'
+      'strip strip';
+  }
+  .eom-head { align-items: flex-end; text-align: right; }
+  .eom-formula { font-size: 17px; }
+  .eom-rule { font-size: 12.5px; line-height: 1.35; }
+  .eom .eom-top .pvc-tabs button { height: 30px; padding: 0 9px; font-size: 13.5px; }
+  .eom-graphs { grid-template-rows: none; grid-template-columns: 1fr 1fr; gap: 12px; max-height: 240px; }
+  .eom-eq { font-size: 12.5px; }
+  .eom-sliders { gap: 4px; justify-content: flex-start; }
+  .eom-sl { grid-template-columns: minmax(0, 1fr) 5.6em; column-gap: 8px; }
+  .eom-track { font-size: 14px; }
+  .eom-name { font-size: 12.5px; }
+  .eom-btns { flex-direction: row; align-items: stretch; gap: 6px; }
+  .eom-b { flex: 1 1 0; height: 42px; padding: 0 4px; font-size: 14px; gap: 4px; }
+  .eom-steps { flex: none; grid-template-columns: 46px 46px; gap: 6px; }
+  .eom-step { height: 42px; }
+  .eom-quizbox { grid-area: 1 / 1 / 5 / 3; }
+  .eom .eom-quizbox .pvc-q-options { grid-template-columns: 1fr 1fr; }
 }
-/* wide and short (phone sideways, small embeds): the graph left, the words right */
-@container pvc (min-aspect-ratio: 7/5) {
-  .eom-dv-body { flex-direction: row; gap: 14px; }
-  .eom-dv-fig { flex: 1 1 48%; min-height: 0; align-items: center; }
-  .eom-dv-text { flex: 1 1 52%; min-width: 0; justify-content: center; }
-}
-/* …and short: the title, the steps and the close button in one row */
-@container pvc (min-aspect-ratio: 7/5) and (max-height: 460px) {
-  .eom-dv-card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-rows: auto minmax(0, 1fr) auto; column-gap: 12px; }
-  .eom-dv-head { display: contents; }
-  .eom-dv-head h2 { grid-column: 1; grid-row: 1; font-size: 15.5px; }
-  .eom-dv-tabs { grid-column: 2; grid-row: 1; }
-  .eom-dv-x { grid-column: 3; grid-row: 1; margin-right: -6px; }
-  .eom-dv-body, .eom-ex-body { grid-column: 1 / -1; grid-row: 2; }
-  .eom-dv-foot { grid-column: 1 / -1; grid-row: 3; }
-}
-/* big frames: a card, not the whole figure */
-@container pvc (min-width: 720px) and (min-height: 520px) {
-  .eom-dv, .eom-ex { padding: 24px; }
-  .eom-dv-card { max-width: 860px; max-height: 640px; padding: 14px 20px 16px; border-radius: 16px; box-shadow: 0 12px 40px rgba(25, 45, 70, 0.18); }
-}
-
-/* ── the worked example (উদাহরণ): the car on the road with its speedometer, then the question and the sum ── */
-.k-v { --c: var(--c-v); }
-.eom-ex-card { gap: 6px; }
-.eom-ex-body { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
-.eom-ex-scene { position: relative; flex: 1 1 auto; min-height: 150px; border-radius: 12px; overflow: hidden; background: #dff0fb; }
-.eom-ex-gl { position: absolute; inset: 0; cursor: grab; touch-action: none; }
-.eom-ex-gl:active { cursor: grabbing; }
-/* on the street: the playing speed (top right), the view (bottom right), the timeline along the bottom */
-.eom-ex-seg { position: absolute; display: flex; padding: 3px; gap: 2px; border-radius: 999px; background: rgba(255, 255, 255, 0.94); box-shadow: 0 1px 5px rgba(20, 40, 60, 0.2); }
-.eom-ex-seg button { min-width: 38px; min-height: 32px; padding: 0 10px; border: 0; border-radius: 999px; background: none; color: var(--ink-2); font-size: 14px; font-weight: 700; white-space: nowrap; }
-.eom-ex-seg button.on { background: var(--accent); color: #fff; }
-.eom-ex-seg button:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
-.eom-ex-rates { top: 8px; right: 8px; }
-.eom-ex-views { right: 8px; bottom: 50px; }
-.eom-ex-scrub { position: absolute; left: 8px; right: 8px; bottom: 6px; padding: 2px 12px 1px; border-radius: 12px; background: rgba(255, 255, 255, 0.94); box-shadow: 0 1px 5px rgba(20, 40, 60, 0.2); }
-.eom-ex-scrub input { display: block; width: 100%; height: 24px; margin: 0; background: none; appearance: none; -webkit-appearance: none; cursor: pointer; }
-.eom-ex-scrub input::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--c-t) var(--at, 0%), #dfe4ea var(--at, 0%)); }
-.eom-ex-scrub input::-moz-range-track { height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--c-t) var(--at, 0%), #dfe4ea var(--at, 0%)); }
-.eom-ex-scrub input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; margin-top: -8px; border: 3px solid #fff; border-radius: 50%; background: var(--c-t); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3); }
-.eom-ex-scrub input::-moz-range-thumb { width: 16px; height: 16px; border: 3px solid #fff; border-radius: 50%; background: var(--c-t); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3); }
-.eom-ex-scrub input:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 6px; }
-.eom-ex-ticks { display: flex; justify-content: space-between; font-size: 11.5px; line-height: 1.2; color: var(--ink-3); font-variant-numeric: tabular-nums; }
-.eom-ex-chip { position: absolute; top: 8px; padding: 3px 10px; border-radius: 999px; background: rgba(255, 255, 255, 0.92); box-shadow: 0 1px 4px rgba(20, 40, 60, 0.18); font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; pointer-events: none; }
-.eom-ex-clock { left: 8px; color: var(--c-t); }
-.eom-ex-speedo { position: absolute; left: 8px; bottom: 50px; display: flex; flex-direction: column; align-items: center; width: 104px; padding: 4px 4px 5px; border-radius: 14px; background: rgba(255, 255, 255, 0.94); box-shadow: 0 2px 8px rgba(20, 40, 60, 0.2); pointer-events: none; }
-.eom-ex-speedo svg { display: block; width: 96px; height: auto; overflow: visible; }
-.eom-ex-speedo .sp-face { fill: #fbfcfd; stroke: #dfe5eb; stroke-width: 1.5; }
-.eom-ex-speedo .sp-track { fill: none; stroke: #e6ebf0; stroke-width: 7; stroke-linecap: round; }
-.eom-ex-speedo .sp-fill { fill: none; stroke: var(--c-v); stroke-width: 7; stroke-linecap: round; }
-.eom-ex-speedo .sp-tick { stroke: #7a8592; stroke-width: 1; }
-.eom-ex-speedo .sp-tick.big { stroke: var(--ink); stroke-width: 1.8; }
-.eom-ex-speedo text { fill: var(--ink-2); font-family: inherit; }
-.eom-ex-speedo .sp-num { font-size: 8.5px; font-weight: 600; }
-.eom-ex-speedo .sp-needle { fill: #d6332e; }
-.eom-ex-speedo .sp-kmh { fill: var(--c-v); font-size: 19px; font-weight: 700; }
-.eom-ex-speedo .sp-unit { font-size: 8.5px; }
-.eom-ex-ms { margin-top: -1px; font-size: 13.5px; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
-.eom-ex-text { flex: none; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-.eom-ex-q { margin: 0; font-size: 15px; line-height: 1.45; color: var(--ink); }
-.eom-ex-q b { font-weight: 700; }
-.eom-ex-steps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.eom-ex-lines { position: relative; margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; }
-.eom-ex-line { display: flex; flex-wrap: wrap; align-items: center; column-gap: 10px; row-gap: 0; min-height: 1.6em; visibility: hidden; opacity: 0; transform: translateY(4px); transition: opacity 0.3s, transform 0.3s; }
-.eom-ex-line.in { visibility: visible; opacity: 1; transform: none; }
-.eom-ex-line .f { display: inline-flex; align-items: center; gap: 0.3em; font-size: 16.5px; font-weight: 600; color: var(--ink); white-space: nowrap; font-variant-numeric: tabular-nums; }
-.eom-ex-line .f i { font-weight: 700; }
-.eom-ex-line .n { font-size: 13px; color: var(--ink-3); white-space: nowrap; }
-.eom-ex-line.res .f { padding: 1px 8px; border-radius: 8px; background: #fff6d6; box-shadow: inset 0 0 0 1.5px #f0c84a; }
-.eom-ex-line.res .f b { font-size: 1.12em; }
-.eom-ex-hint { position: absolute; inset: 0 0 auto; padding: 8px 12px; border-radius: 10px; background: var(--soft); font-size: 14.5px; line-height: 1.5; color: var(--ink-2); }
-/* a fraction, as the book prints it: the top over a line over the bottom */
-.eom-ex .fr { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; font-size: 0.86em; line-height: 1.2; }
-.eom-ex .fr > span { padding: 0 3px; }
-.eom-ex .fr > span:first-child { border-bottom: 1.5px solid currentColor; }
-.eom-ex-run { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 18px 0 12px; border: 0; border-radius: 999px; background: var(--c-v); color: #fff; font-size: 16px; font-weight: 700; white-space: nowrap; box-shadow: 0 2px 6px rgba(194, 65, 12, 0.3); }
-.eom-ex-run svg { width: 22px; height: 22px; stroke-width: 2; }
-.eom-ex-run svg .fill { fill: currentColor; stroke: none; }
-.eom-ex-run:focus-visible { outline: 2px solid var(--c-v); outline-offset: 2px; }
-.eom-ex .eom-dv-nav.primary { margin-left: 0; }
-.eom-ex .eom-dv-dots { margin: 0 auto; }
-
-/* phones: the previous-step button as an arrow only, so the run button and the next step fit beside it; the street
-   edge to edge, the steppers in one row with their labels beside them */
-@container pvc (max-width: 560px) {
-  .eom-ex-scene { margin: 0 -14px; border-radius: 0; }
-  .eom-ex-steps { gap: 8px; }
-  .eom-ex-steps .eom-step { flex-direction: row; align-items: center; gap: 6px; }
-  .eom-ex-steps .eom-name { flex: 1 1 auto; min-width: 0; }
-  .eom-ex-steps .eom-ctl { flex: none; width: 102px; height: 36px; }
-  .eom-ex-steps .eom-pm { width: 32px; }
-  .eom-ex-steps .eom-name small { font-size: 10.5px; }
-  .eom-ex-steps .eom-val { font-size: 17px; }
-  .eom-ex-card .eom-dv-head h2 { font-size: 16.5px; }
-  .eom-ex-card .eom-dv-x { width: 40px; height: 40px; }
-  .eom-ex-prev { min-width: 44px; padding: 0; }
-  .eom-ex-prev span { display: none; }
-  .eom-ex .eom-dv-dots { display: none; }
-  .eom-ex .eom-dv-foot { justify-content: space-between; }
-  .eom-ex .eom-dv-nav.primary { min-width: 0; margin-left: auto; }
-}
-@container pvc (max-width: 420px) {
-  .eom-ex-line .f { font-size: 15px; }
-  .eom-ex-q { font-size: 13.5px; line-height: 1.4; }
-  .eom-ex-steps .eom-name .w { display: none; }
-  .eom-ex-speedo { width: 90px; }
-  .eom-ex-speedo svg { width: 82px; }
-}
-/* not tall: everything a little smaller, the speedometer too */
-@container pvc (max-height: 600px) {
-  .eom-ex-card { gap: 4px; }
-  .eom-ex-body { gap: 5px; }
-  .eom-ex-q { font-size: 13.5px; line-height: 1.4; }
-  .eom-ex-steps .eom-ctl { height: 34px; }
-  .eom-ex-lines { gap: 2px; }
-  .eom-ex-line .f { font-size: 14.5px; }
-  .eom-ex-line .n { font-size: 12px; }
-  .eom-ex-hint { font-size: 13px; padding: 6px 10px; }
-  .eom-ex-run, .eom-ex .eom-dv-nav { min-height: 40px; }
-  .eom-ex-speedo { width: 80px; padding: 2px 2px 3px; border-radius: 12px; }
-  .eom-ex-speedo svg { width: 74px; }
-  .eom-ex-ms { font-size: 12px; }
-  .eom-ex-chip { top: 6px; font-size: 13.5px; }
-  .eom-ex-seg button { min-height: 28px; padding: 0 8px; font-size: 13px; }
-  .eom-ex-speedo, .eom-ex-views { bottom: 46px; }
-  .eom-ex-ticks { font-size: 10.5px; }
-}
-/* wide: the road on the left, the question and the sum on the right */
-@container pvc (min-aspect-ratio: 7/5) {
-  .eom-ex-body { flex-direction: row; gap: 14px; }
-  .eom-ex-scene { flex: 1 1 60%; min-height: 0; }
-  .eom-ex-text { flex: 1 1 40%; justify-content: center; }
-  .eom-ex-steps .eom-step { flex-direction: row; align-items: center; justify-content: space-between; gap: 6px; }
-  .eom-ex-steps { grid-template-columns: 1fr; gap: 4px; }
-  .eom-ex-steps .eom-ctl { width: 136px; flex: none; }
-}
-@container pvc (min-aspect-ratio: 7/5) and (max-height: 460px) {
-  .eom-ex-line .f { font-size: 14px; }
-  .eom-ex-q { font-size: 13px; }
-  .eom-ex-steps .eom-ctl { height: 32px; }
-}
-@container pvc (min-width: 720px) and (min-height: 520px) {
-  .eom-ex-card { max-width: 1200px; max-height: 780px; padding: 14px 20px 16px; border-radius: 16px; box-shadow: 0 12px 40px rgba(25, 45, 70, 0.18); }
-  .eom-ex-text { flex-basis: 38%; }
-  .eom-ex-speedo { width: 132px; bottom: 54px; }
-  .eom-ex-speedo svg { width: 122px; }
-  .eom-ex-ms { font-size: 15px; }
-  .eom-ex-steps { grid-template-columns: 1fr 1fr; gap: 10px; }
-  .eom-ex-steps .eom-step { flex-direction: column; align-items: stretch; }
-  .eom-ex-steps .eom-ctl { width: auto; }
+/* a short portrait frame (390×520): the sentence under the formula gives its room to the graphs */
+@container pvc (orientation: portrait) and (max-height: 600px) {
+  .eom-rule { display: none; }
+  .eom-track { font-size: 13px; padding-top: 1.35em; }
+  .eom-sl input[type='range'] { height: 24px; }
+  .eom-sliders { gap: 2px; }
+  .eom-b, .eom-step { height: 38px; }
 }
