@@ -187,6 +187,20 @@ update(), box(), ringBox(), visible, step, enabled, dispose() }`:
 - **An animation with nothing to tap** (si-prefixes): `target: () => null` (no ring, no badge); the button is the
   play/pause or "next" control, changed with `set({ icon: ICONS.pause, label: 'act_pause', step: '' })`.
 
+### Panel typography (kit 1.6.0)
+
+Write the panel for a narrow column: short sentences, one idea per line, emphasis sparingly (weight 600, never a
+whole sentence in bold). Formulas go on their own line, not inside a sentence:
+
+```html
+<p class="pvc-formula"><i>P</i> = <i>h</i>ρ<i>g</i> = ০.২ m × ১০০০ kg m⁻³ × ৯.৮ m s⁻² = <b>১,৯৬০ Pa</b></p>
+<p class="pvc-formula">কর্মদক্ষতা = <span class="pvc-frac"><span>কাজের পরিমাণ</span><span>প্রদত্ত শক্তি</span></span> × ১০০%</p>
+<p class="pvc-note"><b>তরলের গভীরে গেলে চাপ বাড়ে।</b> উপরের তরলের ওজন থেকেই এই চাপ।</p>
+```
+
+A small live graph in the panel: an `<svg class="pvc-graph">` (or canvas) with `.axis`, `.grid` and labels in
+12 px; the curve in the quantity's colour (docs/book-notes.md), a dot for the current state.
+
 ### `quiz.js`
 `createQuiz({ ui, t, emit, audio, questions: 5, lines, hooks, action })` (`action`: a `createAction` whose marker
 hides while the test runs). Hooks: `enter()`, `leave()`,

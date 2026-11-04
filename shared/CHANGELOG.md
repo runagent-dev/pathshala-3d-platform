@@ -5,6 +5,17 @@ student kit). Every zip records it in `PACKAGE.json` as `kit`. Bump it with each
 patch for fixes, minor for additions, major when a figure has to change to keep working. Run the visual comparison
 across all figures before merging a kit change (`npm run test:visual`).
 
+## 1.6.0
+
+Panel typography, after the owner found the panels congested and hazy (bold everywhere, tight lines, grey text).
+- Crisper text: antialiased font smoothing, kerning; `--ink-2` and `--ink-3` darker (more contrast).
+- Lighter emphasis: the action, the rule's bold words, the result's number, the test's feedback lead and score
+  use weight 600 instead of 700; the result's number is 1.3em instead of 1.45em, so lines keep an even rhythm.
+- More air: the rule's line height 1.5 → 1.6, the test question 1.4 → 1.5, its feedback 1.45 → 1.55.
+- New classes for figures: `.pvc-formula` (a formula on its own line, centred on a soft band; `<i>` for symbols,
+  `<b>` for the answer, `.op` for operators), `.pvc-frac` (a stacked fraction), `.pvc-note` (a quiet card with an
+  accent bar for the book's rule or a remark), `.pvc-graph` (a small live SVG/canvas graph: axes, grid, labels).
+
 ## 1.5.0
 
 - `buildStudentShell(root, t, { layout: 'side' })` (the new standard; figures opt in one by one, the default
