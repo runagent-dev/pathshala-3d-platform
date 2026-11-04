@@ -75,7 +75,7 @@ export function createApp(root, options = {}) {
       items: T1_CHOICES.map((T) => ({ id: String(T), label: `ex_${T}` })),
     },
     quiet: [{ act: 'home', label: 'act_home', icon: ICONS.reset }],
-    lines: { action: 1, outcome: 0, rule: 3 },
+    lines: { action: 1, outcome: 0, rule: 4 },
   }).replace(/<p class="pvc-outcome"[^>]*><\/p>/, readHtml);
   const ui = buildStudentShell(root, t, { layout: 'side', learn: sheetHtml, learnAlign: 'start' });
   const sheet = bindCleanSheet(ui.learn);

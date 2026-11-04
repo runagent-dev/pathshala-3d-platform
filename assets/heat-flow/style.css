@@ -8,7 +8,7 @@ body.bg-transparent { background: transparent; }
 /* the result line: its numbers in the colour of the dashed level lines */
 .hf .pvc-outcome b { color: #1d3550; }
 /* labels on the 3D view: a little bolder, and they come and go with what they name at once */
-.hf .pvc-anno-part { font-weight: 700; font-size: 14px; padding: 1px 7px; transition: none; }
+.hf .pvc-anno-part { font-weight: 600; font-size: 14px; padding: 1px 7px; transition: none; }
 
 /* the test: answers in words (two lines allowed), room kept for the question and the worked answer */
 .hf .pvc-opt { font-size: 14.5px; line-height: 1.25; }
@@ -19,7 +19,7 @@ body.bg-transparent { background: transparent; }
 @container pvc (max-width: 560px) and (max-height: 600px) {
   .hf .pvc-q-text { font-size: 14.5px; }
   .hf .pvc-opt { font-size: 13.5px; }
-  .hf .pvc-q-feedback { font-size: 13px; }
+  .hf .pvc-q-feedback { font-size: 14px; }
 }
 
 /* a phone held upright: the 3D keeps about 55 % of the height */

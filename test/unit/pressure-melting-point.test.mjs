@@ -81,9 +81,9 @@ describe('pressure-melting-point: the words', () => {
 
   it('uses the book’s words and writes numbers in Bangla digits', () => {
     const t = createI18n('bn');
-    assert.match(t('rule_start'), /চাপ দেওয়া হলে পদার্থের গলনাঙ্ক কমে যায়/);
+    assert.match(t('rule_start').replace(/<\/?b>/g, ''), /চাপ দেওয়া হলে পদার্থের গলনাঙ্ক কমে যায়/);
     assert.match(t('out_whole'), /অখণ্ড এক টুকরো বরফই আছে/);
-    assert.match(t('rule_cut'), /চাপ সরিয়ে নিলে গলনাঙ্ক আগের মান ফিরে পায়/);
+    assert.match(t('rule_cut').replace(/<\/?b>/g, ''), /চাপ সরিয়ে নিলে গলনাঙ্ক আগের মান ফিরে পায়/);
     assert.equal(t('q_count', { i: 3, n: 5 }), 'প্রশ্ন ৩ / ৫');
     assert.equal(createI18n('en').num(12), '12');
   });

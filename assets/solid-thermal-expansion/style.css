@@ -10,15 +10,16 @@ body.bg-transparent { background: transparent; }
 .pvc .c-vol { --c: var(--c-vol); }
 
 /* the readings: one row per quantity, the chosen one tinted; then the book's formula and the coefficient */
-.pvc-outcome { display: flex; flex-direction: column; gap: 2px; line-height: 1.4; }
+.pvc-outcome { display: flex; flex-direction: column; gap: 2px; line-height: 1.5; }
 .pvc-outcome .rd { display: flex; align-items: baseline; gap: 0.45em; padding: 1px 6px; border-radius: 6px; font-size: 0.92em; }
 .pvc-outcome .rd.on { background: color-mix(in srgb, var(--c) 13%, #fff); }
-.pvc-outcome .rd i { flex: none; width: 1.1em; font-weight: 700; color: var(--c); }
+.pvc-outcome .rd i { flex: none; width: 1.1em; font-weight: 600; color: var(--c); }
 .pvc-outcome .rd b { font-size: 1.05em; color: var(--c); }
 .pvc-outcome .rd small { margin-left: auto; white-space: nowrap; }
-.pvc-outcome .fx { margin-top: 0.35em; padding: 0 6px; font-size: 1.02em; font-weight: 600; color: var(--c); }
+.pvc-outcome .fx { margin-top: 0.5em; padding: 0 6px; font-size: 1.02em; font-weight: 600; color: var(--c); }
 .pvc-outcome .cf { padding: 0 6px; font-size: 0.9em; color: var(--ink-2); }
-.pvc-rule small { color: #5b6470; }
+.pvc-rule small { color: var(--ink-3); font-size: 12.5px; }
+.pvc-rule .pvc-formula { display: block; margin: 3px 0; padding: 2px 8px; font-size: 15px; line-height: 1.5; }
 
 /* the test: one answer per row (the answers are long: 16.7 x 10^-6 per degree, a sentence), never broken inside a number */
 .pvc .nw { white-space: nowrap; }
@@ -28,13 +29,18 @@ body.bg-transparent { background: transparent; }
 
 /* portrait (the panel is below the 3D): keep the panel short so the three bodies stay big; the rule is kept to three lines */
 @media (max-aspect-ratio: 1/1) {
-  .pvc-outcome { --pvc-outcome-lines: 3.1; line-height: 1.3; gap: 1px; }
+  .pvc-outcome { --pvc-outcome-lines: 3.1; line-height: 1.5; gap: 1px; }
   .pvc-outcome .rd { font-size: 0.85em; }
   .pvc-outcome .cf, .pvc-rule small { display: none; }
   .pvc-outcome .fx { margin-top: 0.15em; }
   .pvc-q-text { font-size: 14.5px; }
-  .pvc-q-feedback { font-size: 13.5px; }
+  .pvc-q-feedback { font-size: 14px; }
   .pvc-opt { font-size: 14px; min-height: 36px; }
   .pvc-rule { display: none; }
-  .pvc-rule-x { --pvc-rule-lines: 2; font-size: 13.5px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+  .pvc-rule-x { --pvc-rule-lines: 2; font-size: 14px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+}
+
+/* a short frame (a phone held sideways): the note about the drawn size waits for a taller frame */
+@container pvc (max-height: 460px) {
+  .pvc-rule small { display: none; }
 }

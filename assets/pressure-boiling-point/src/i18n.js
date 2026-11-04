@@ -63,10 +63,10 @@ export const STRINGS = {
     none: '—',
 
     // the rule, in the book's words
-    rule_plain: '<b>চাপের কারণে স্ফুটনাঙ্কের পরিবর্তন হয়।</b> সাধারণ চাপে পানি ফুটে {tb}{u_C} তাপমাত্রায়। চাপ বদলালে দেখো কী হয়।',
-    rule_mountain: '<b>চাপ কম হলে স্ফুটনাঙ্ক কমে যায়।</b> তাই পানি কম তাপমাত্রায় ফুটতে থাকে, তাপমাত্রা বাড়ানো যায় না, রান্না করতে সময় বেশি লাগে।',
-    rule_cooker: '<b>চাপ বেশি হলে স্ফুটনাঙ্ক বেড়ে যায়।</b> বাষ্প আবদ্ধ হয়ে চাপ বাড়ায়, তাই বেশি তাপমাত্রায় পানি ফোটে, রান্নাও হয় তাড়াতাড়ি।',
-    note_gas: 'গ্যাসকে চাপ দিলে খুব বেশি শীতল না করেই তাকে তরল করা যায়। তখন যে অনেক তাপ হয়, তা সরিয়ে নিতে হয়।',
+    rule_plain: 'চাপ বদলালে <b>স্ফুটনাঙ্ক বদলায়।</b> সাধারণ চাপে পানি {tb}{u_C} তাপমাত্রায় ফোটে। চাপ বদলে দেখো কী হয়।',
+    rule_mountain: 'চাপ কম হলে <b>স্ফুটনাঙ্ক কমে যায়।</b> তাই পানি কম তাপমাত্রায় ফোটে, আর তাপমাত্রা এর বেশি বাড়ে না। রান্নায় সময় বেশি লাগে।',
+    rule_cooker: 'চাপ বেশি হলে <b>স্ফুটনাঙ্ক বেড়ে যায়।</b> বাষ্প আটকে থেকে চাপ বাড়ায়, তাই পানি বেশি তাপমাত্রায় ফোটে। রান্নাও তাড়াতাড়ি হয়।',
+    note_gas: 'গ্যাসকে চাপ দিলে খুব বেশি ঠান্ডা না করেই তরল করা যায়। তখন যে অনেক তাপ বের হয়, তা সরিয়ে নিতে হয়।',
     note_time: 'সময় দ্রুত দেখানো হচ্ছে।',
 
     // labels on the picture
@@ -182,11 +182,12 @@ export const STRINGS = {
     val_normal_cook: 'usual time',
     val_fast: 'is quick',
     none: '—',
-    rule_plain: '<b>Pressure changes the boiling point.</b> At the usual pressure water boils at {tb}{u_C}. Change the pressure and see.',
+    rule_plain:
+      'Changing the pressure changes the <b>boiling point.</b> At the usual pressure water boils at {tb}{u_C}. Change the pressure and see.',
     rule_mountain:
-      '<b>When the pressure is low, the boiling point falls.</b> So water boils at a lower temperature, it cannot be made hotter, and cooking takes longer.',
+      'When the pressure is low, the <b>boiling point falls.</b> So water boils at a lower temperature and cannot get hotter. Cooking takes longer.',
     rule_cooker:
-      '<b>When the pressure is high, the boiling point rises.</b> Trapped steam raises the pressure, so water boils at a higher temperature and cooking is quicker.',
+      'When the pressure is high, the <b>boiling point rises.</b> Trapped steam raises the pressure, so water boils at a higher temperature and cooking is quicker.',
     note_gas: 'A gas can be turned to liquid by pressure without cooling it very much. The great heat made then has to be taken away.',
     note_time: 'Time is sped up here.',
     lbl_p_low: 'Low pressure',

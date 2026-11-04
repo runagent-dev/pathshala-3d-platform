@@ -38,10 +38,10 @@ export const STRINGS = {
     out_t1: 'আয়তন বেড়ে পারদ <b>{T} {u}</b> পর্যন্ত উঠেছে',
     out_t2: 'থার্মোমিটার বের করা হয়েছে, পারদ এখনও <b>{T} {u}</b> এ',
     out_t3: 'ঝাঁকিয়ে নামানো হয়েছে, পারদ আবার <b>{T} {u}</b> এ',
-    rule_t0: '<b>জ্বর মাপার থার্মোমিটারের গোড়ায় একটা কাচের টিউবে পারদ থাকে।</b> পারদ যেন নেমে যেতে না পারে সেজন্য টিউবে সূক্ষ্ম বক্রতা তৈরি করা হয়।',
-    rule_t1: '<b>তাপ দেওয়া হলে পারদের আয়তন বেড়ে যায়</b> এবং একটা খুব সরু নল বেয়ে উঠতে থাকে। কতদূর উঠেছে সেটাই তাপমাত্রার পরিমাপ।',
-    rule_t2: 'থার্মোমিটার বের করার পর তাপমাত্রা কমে। কিন্তু <b>সরু বক্রতার জন্য পারদের কলামটুকু কমে না।</b>',
-    rule_t3: '<b>একবার প্রসারিত হয়ে উপরে উঠে গেলে তাপমাত্রা কমে যাবার পরও পারদ নেমে আসতে পারে না। ঝাঁকিয়ে নামাতে হয়।</b>',
+    rule_t0: 'জ্বর মাপার থার্মোমিটারের গোড়ায় কাচের টিউবে <b>পারদ</b> থাকে। পারদ যেন নেমে যেতে না পারে, সে জন্য টিউবে একটি সূক্ষ্ম বক্রতা থাকে।',
+    rule_t1: 'তাপ দিলে <b>পারদের আয়তন বাড়ে</b> এবং পারদ খুব সরু নল বেয়ে উঠতে থাকে। কতটা উঠেছে, সেটাই তাপমাত্রার পরিমাপ।',
+    rule_t2: 'থার্মোমিটার বের করার পর তাপমাত্রা কমে। কিন্তু সরু বক্রতার জন্য <b>পারদের কলাম নামে না।</b>',
+    rule_t3: 'একবার উঠে গেলে তাপমাত্রা কমার পরও পারদ নিজে নামতে পারে না। <b>ঝাঁকিয়ে নামাতে হয়।</b>',
     // the flask, Fig 6.06
     act_heat: 'বাল্বটি গরম করো',
     act_heat2: 'আরও গরম করো',
@@ -60,11 +60,11 @@ export const STRINGS = {
     out_f0: 'তরল <b>A</b> দাগ পর্যন্ত ভরা',
     out_f1: 'তল A থেকে <b>B</b> তে নেমেছে',
     out_f2: 'তল A পার হয়ে <b>C</b> পর্যন্ত উঠেছে',
-    rule_f0: '<b>তরলকে সব সময় কোনো পাত্রে রেখে উত্তপ্ত করতে হয়।</b> তাপ দিলে তরলের সাথে সাথে পাত্রটিরও প্রসারণ হয়।',
+    rule_f0: 'তরলকে সব সময় কোনো <b>পাত্রে</b> রেখে উত্তপ্ত করতে হয়। তাপ দিলে তরলের সঙ্গে পাত্রও প্রসারিত হয়।',
     rule_f1:
-      '<b>তরলের আগে বাল্বটির তাপমাত্রা বেড়ে যায় এবং তার প্রসারণ হয়,</b> বাল্বটি একটুখানি বড় হয়ে যায়। তাই তল B তে নেমে আসে। AB × প্রস্থচ্ছেদ = পাত্রের প্রসারণ (V<sub>B</sub>)।',
+      'তরলের আগে <b>বাল্বটি গরম হয়ে প্রসারিত হয়,</b> একটু বড় হয়ে যায়। তাই তল B-তে নেমে আসে।<span class="pvc-formula">AB × প্রস্থচ্ছেদ = পাত্রের প্রসারণ (V<sub>B</sub>)</span>',
     rule_f2:
-      '<b>তরলের প্রসারণ বেশি, তাই তল A অতিক্রম করে C পর্যন্ত ওঠে।</b> BC × প্রস্থচ্ছেদ = তরলের প্রকৃত প্রসারণ (V<sub>L</sub>)। পাত্রের প্রসারণ ধরে না নিলে আপাত প্রসারণ (V<sub>a</sub>)।',
+      '<b>তরলের প্রসারণ বেশি,</b> তাই তল A পার হয়ে C পর্যন্ত ওঠে।<span class="pvc-formula">BC × প্রস্থচ্ছেদ = তরলের প্রকৃত প্রসারণ (V<sub>L</sub>)</span>পাত্রের প্রসারণ ধরে না নিলে এটি আপাত প্রসারণ (V<sub>a</sub>)।',
     // the test
     q_count: 'প্রশ্ন {i} / {n}',
     q_score: 'সঠিক: {right}',
@@ -155,14 +155,12 @@ export const STRINGS = {
     out_t1: 'The volume grew: the mercury rose to <b>{T} {u}</b>',
     out_t2: 'Taken out: the mercury is still at <b>{T} {u}</b>',
     out_t3: 'Shaken down: the mercury is back at <b>{T} {u}</b>',
-    rule_t0:
-      '<b>A fever thermometer has mercury in a glass tube at its foot.</b> A fine bend is made in the tube so that the mercury cannot fall back.',
+    rule_t0: 'A fever thermometer has <b>mercury</b> in a glass tube at its foot. A fine bend in the tube stops the mercury falling back.',
     rule_t1:
-      '<b>When heat is given the volume of the mercury grows</b> and it climbs a very narrow tube. How far it has climbed is the measure of the temperature.',
+      'When heat is given, the <b>volume of the mercury grows</b> and it climbs a very narrow tube. How far it has climbed measures the temperature.',
     rule_t2:
-      'After the thermometer is taken out the temperature falls. But <b>because of the narrow bend the column of mercury does not shrink back.</b>',
-    rule_t3:
-      '<b>Once it has expanded and climbed, the mercury cannot come down by itself even after the temperature falls. It has to be shaken down.</b>',
+      'After the thermometer is taken out the temperature falls. But because of the narrow bend, <b>the column of mercury does not go down.</b>',
+    rule_t3: 'Once the mercury has climbed, it cannot come down by itself, even after the temperature falls. It has to be <b>shaken down.</b>',
     act_heat: 'Heat the bulb',
     act_heat2: 'Heat it more',
     lbl_vb: 'V<sub>B</sub> = {v} {u}',
@@ -180,12 +178,11 @@ export const STRINGS = {
     out_f0: 'The liquid fills up to the mark <b>A</b>',
     out_f1: 'The level has fallen from A to <b>B</b>',
     out_f2: 'The level has passed A and reached <b>C</b>',
-    rule_f0:
-      '<b>A liquid always has to be kept in a container when it is heated.</b> When heat is given, the container expands along with the liquid.',
+    rule_f0: 'A liquid always has to be heated in a <b>container.</b> When heat is given, the container expands along with the liquid.',
     rule_f1:
-      "<b>The bulb gets hot and expands before the liquid does</b>: it becomes a little bigger. So the level falls to B. AB × cross-section = the container's expansion (V<sub>B</sub>).",
+      "<b>The bulb gets hot and expands first,</b> becoming a little bigger. So the level falls to B.<span class='pvc-formula'>AB × cross-section = the container's expansion (V<sub>B</sub>)</span>",
     rule_f2:
-      "<b>The liquid expands more, so the level passes A and reaches C.</b> BC × cross-section = the liquid's real expansion (V<sub>L</sub>). Leave out the container and it is the apparent expansion (V<sub>a</sub>).",
+      "<b>The liquid expands more,</b> so the level passes A and reaches C.<span class='pvc-formula'>BC × cross-section = the liquid's real expansion (V<sub>L</sub>)</span>Leaving out the container's expansion, this is the apparent expansion (V<sub>a</sub>).",
     q_count: 'Question {i} of {n}',
     q_score: 'Correct: {right}',
     q_hint: 'Look at the picture, then pick an answer.',

@@ -7,17 +7,17 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
 body.bg-transparent { background: transparent; }
 
 .cs { --c-slope: #1c5fb8; --c-flat: #c2410c; --pvc-outcome-lines: 2; }
-.cs .pvc-outcome { font-size: 15px; line-height: 1.45; }
-.cs .pvc-rule { font-size: 14.5px; line-height: 1.45; }
+.cs .pvc-outcome { font-size: 15px; line-height: 1.6; }
+.cs .pvc-rule { font-size: 15px; line-height: 1.6; }
 .cs .pvc-rule b { color: var(--c-flat); }
 
 /* ── the readings: the temperature (the number that matters) and the state, on one line ── */
-.cs-extra { display: grid; gap: 8px; }
+.cs-extra { display: grid; gap: 10px; }
 .cs-read { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 16px; min-height: 28px; }
 .cs-read > div { display: block; }
 .cs-read dt { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); } /* read out, not shown */
 .cs-read dd { margin: 0; font-size: 15px; line-height: 1.35; font-weight: 600; color: var(--ink); }
-.cs-read dd.big { font-size: 22px; line-height: 1.2; font-weight: 800; color: var(--c-slope); font-variant-numeric: tabular-nums; }
+.cs-read dd.big { font-size: 22px; line-height: 1.2; font-weight: 600; color: var(--c-slope); font-variant-numeric: tabular-nums; }
 
 /* ── the three states and the two processes between them, the one going on lit ── */
 .cs-strip { display: flex; align-items: flex-end; justify-content: space-between; gap: 2px; padding: 6px 4px 4px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
@@ -32,9 +32,9 @@ body.bg-transparent { background: transparent; }
 .cs-strip .pr.on::after { height: 3px; }
 
 /* labels on the picture: the temperature (the number that matters) and what is in the beaker, plain chips */
-.pvc-anno-temp { padding: 0 8px; border: 2px solid #1c5fb8; border-radius: 6px; background: rgba(255, 255, 255, 0.97); color: #123a73; font-size: 15px; font-weight: 800; line-height: 1.5; white-space: nowrap; font-variant-numeric: tabular-nums; transition: none; }
-.pvc-anno-name { padding: 0 8px; border-radius: 6px; background: rgba(255, 248, 235, 0.96); color: #3b2b1d; font-size: 14px; font-weight: 700; line-height: 1.5; white-space: nowrap; transition: none; }
-.pvc-anno-cold { padding: 0 8px; border: 1.5px solid #1c5fb8; border-radius: 6px; background: #e7f1ff; color: #123a73; font-size: 13.5px; font-weight: 700; line-height: 1.5; white-space: nowrap; transition: none; }
+.pvc-anno-temp { padding: 0 8px; border: 2px solid #1c5fb8; border-radius: 6px; background: rgba(255, 255, 255, 0.97); color: #123a73; font-size: 15px; font-weight: 600; line-height: 1.5; white-space: nowrap; font-variant-numeric: tabular-nums; transition: none; }
+.pvc-anno-name { padding: 0 8px; border-radius: 6px; background: rgba(255, 248, 235, 0.96); color: #3b2b1d; font-size: 14px; font-weight: 600; line-height: 1.5; white-space: nowrap; transition: none; }
+.pvc-anno-cold { padding: 0 8px; border: 1.5px solid #1c5fb8; border-radius: 6px; background: #e7f1ff; color: #123a73; font-size: 13.5px; font-weight: 600; line-height: 1.5; white-space: nowrap; transition: none; }
 
 /* the test: answers in words */
 .cs .pvc-opt { font-size: 14.5px; line-height: 1.25; }
@@ -44,6 +44,6 @@ body.bg-transparent { background: transparent; }
 @media (max-aspect-ratio: 1/1), (max-width: 599px) {
   .cs { --pvc-rule-lines: 3; }
   .cs-strip { display: none; }
-  .cs .pvc-rule { font-size: 14px; line-height: 1.4; }
+  .cs .pvc-rule { font-size: 14px; line-height: 1.5; }
   .cs .pvc-q-text { --pvc-q-text-min: 2lh; }
 }

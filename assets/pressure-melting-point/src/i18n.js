@@ -48,10 +48,10 @@ export const STRINGS = {
     none: '—',
 
     // the rule, in the book's words, growing with the steps
-    rule_start: '<b>চাপ দেওয়া হলে পদার্থের গলনাঙ্ক কমে যায়।</b> তাই দুই টুকরা বরফকে চাপ দিয়ে এক টুকরো বরফে পরিণত করে ফেলা যায়।',
-    rule_hung: '<b>চাপ দেওয়া হলে পদার্থের গলনাঙ্ক কমে যায়।</b> তারের নিচে চাপ পড়েছে, তাই বরফের তাপমাত্রাতেই সেখানকার বরফ গলে যায়।',
-    rule_cut: '<b>চাপ সরিয়ে নিলে গলনাঙ্ক আগের মান ফিরে পায়।</b> তখন গলে যাওয়া পানি আবার বরফে পরিণত হয়।',
-    rule_whole: '<b>চাপ দিলে গলনাঙ্ক কমে, চাপ সরালে আগের মান ফিরে পায়।</b> তাই বরফটি কাটা পড়েনি, একটা বরফ খণ্ডই আছে।',
+    rule_start: 'চাপ দেওয়া হলে পদার্থের <b>গলনাঙ্ক কমে যায়।</b> তাই চাপ দিয়ে দুই টুকরো বরফকে জোড়া লাগিয়ে এক টুকরো করা যায়।',
+    rule_hung: 'চাপ দেওয়া হলে পদার্থের <b>গলনাঙ্ক কমে যায়।</b> তারের নিচে চাপ পড়েছে, তাই বরফের নিজের তাপমাত্রাতেই সেখানকার বরফ গলে যায়।',
+    rule_cut: 'চাপ সরিয়ে নিলে <b>গলনাঙ্ক আগের মান ফিরে পায়।</b> তখন গলে যাওয়া পানি আবার বরফ হয়ে যায়।',
+    rule_whole: 'চাপ দিলে গলনাঙ্ক কমে, চাপ সরালে আবার আগের মানে ফেরে। তাই বরফটি <b>কাটা পড়েনি,</b> একটি টুকরোই আছে।',
     note_cut: 'সময় দ্রুত দেখানো হচ্ছে। আসলে তারটি অনেক ধীরে নামে।',
 
     // labels on the picture
@@ -157,11 +157,10 @@ export const STRINGS = {
     why_under: 'more pressure (red arrow), so the melting point falls',
     why_over: 'pressure gone, the melting point returns',
     none: '—',
-    rule_start: '<b>When pressure is applied, the melting point of a substance falls.</b> So two pieces of ice can be pressed into one piece.',
-    rule_hung:
-      '<b>When pressure is applied, the melting point of a substance falls.</b> The wire presses, so the ice under it melts at the ice’s own temperature.',
-    rule_cut: '<b>When the pressure is removed, the melting point returns to its old value.</b> Then the melted water turns to ice again.',
-    rule_whole: '<b>Pressure lowers the melting point; when it is removed the melting point returns.</b> So the ice was never cut: it is one piece.',
+    rule_start: 'When pressure is applied, the <b>melting point falls.</b> So two pieces of ice can be pressed into one piece.',
+    rule_hung: 'When pressure is applied, the <b>melting point falls.</b> The wire presses, so the ice under it melts at the ice’s own temperature.',
+    rule_cut: 'When the pressure is removed, the <b>melting point returns</b> to its old value. Then the melted water turns to ice again.',
+    rule_whole: 'Pressure lowers the melting point, and removing it brings the melting point back. So the ice was <b>never cut:</b> it is one piece.',
     note_cut: 'Time is sped up here. In reality the wire sinks very slowly.',
     lbl_ice: 'Ice',
     lbl_whole: 'Whole ice',

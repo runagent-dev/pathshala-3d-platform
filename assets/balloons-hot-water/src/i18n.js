@@ -41,12 +41,12 @@ export const STRINGS = {
     rd_up: 'বাড়ল',
     u_C: '°C',
     u_mL: 'mL',
-    note: 'ছবিতে ফোলা প্রায় {three} গুণ বাড়িয়ে আঁকা; সংখ্যাগুলো প্রকৃত। শুরুতে দুটোতেই {v0} mL।',
+    note: 'ছবিতে ফোলা প্রায় {three} গুণ বাড়িয়ে আঁকা, সংখ্যাগুলো প্রকৃত। শুরুতে দুটোতেই {v0} mL।',
 
     // the rule (the book's words)
-    rule_0: '<b>দুটি বেলুন নাও:</b> একটিতে খানিকটা পানি ভরো আর অন্যটিতে সমান আয়তনের বাতাস। এবারে দুটোই গরম পানিতে কিছুক্ষণ ডুবিয়ে রাখো।',
+    rule_0: 'দুটি বেলুন নাও। একটিতে পানি ভরো, অন্যটিতে সমান আয়তনের <b>বাতাস</b>। এবার দুটোই কিছুক্ষণ গরম পানিতে ডুবিয়ে রাখো।',
     rule_1:
-      '<b>তাপে তরলের সেরকম প্রসারণ হয় না:</b> পানি ভরা বেলুনের আকার আগের মতোই আছে। <b>কিন্তু তাপে গ্যাসের প্রসারণ তরল থেকে অনেক বেশি:</b> বাতাস ভরা বেলুনটি অনেকখানি ফুলে উঠেছে।',
+      'তাপে তরলের তেমন প্রসারণ হয় না: পানি ভরা বেলুনের আকার আগের মতোই আছে। কিন্তু <b>তাপে গ্যাসের প্রসারণ তরলের চেয়ে অনেক বেশি।</b> বাতাস ভরা বেলুনটি অনেকখানি ফুলেছে।',
 
     // labels on the picture
     lab_air: 'বাতাস ভরা',
@@ -90,7 +90,7 @@ export const STRINGS = {
     qw_c_why: 'রবার নরম; পানির প্রসারণই খুব কম।',
 
     qp_text: 'পানি ৩০ °C থেকে {T} °C-এ গরম হলো। বাতাস ভরা বেলুনের আয়তন প্রায় কত শতাংশ বাড়ল?',
-    qp_r: '<b>প্রায় +{p}%:</b> আয়তন বাড়ার ভাগ = তাপমাত্রা বাড়া ÷ শুরুর তাপমাত্রা (কেলভিনে) = {dT} ÷ {T1} (γ<sub>P</sub> = 1/<i>T</i><sub>1</sub>)।',
+    qp_r: '<b>প্রায় +{p}%।</b> আয়তন বাড়ার ভাগ = তাপমাত্রা বাড়া ÷ শুরুর তাপমাত্রা (কেলভিনে) = {dT} ÷ {T1} (γ<sub>P</sub> = 1/<i>T</i><sub>1</sub>)।',
     qp_dt_why: 'তাপমাত্রা বাড়ার সংখ্যা শতাংশ নয়; ভাগ করতে হয় শুরুর কেলভিন তাপমাত্রা দিয়ে।',
     qp_w_why: 'ওটা পানি ভরা বেলুনের, বাতাসের নয়।',
     qp_x2_why: 'দ্বিগুণ হিসাব হয়ে গেছে।',
@@ -129,11 +129,11 @@ export const STRINGS = {
     rd_up: 'Rise',
     u_C: '°C',
     u_mL: 'mL',
-    note: 'The picture draws the swelling about {three} times too big; the numbers are real. Both start at {v0} mL.',
+    note: 'The picture draws the swelling about {three} times too big, but the numbers are real. Both start at {v0} mL.',
 
-    rule_0: '<b>Take two balloons:</b> fill one with some water and the other with the same volume of air. Now keep both in hot water for a while.',
+    rule_0: 'Take two balloons. Fill one with water and the other with the same volume of <b>air</b>. Now keep both in hot water for a while.',
     rule_1:
-      '<b>Heat does not expand a liquid that much:</b> the balloon of water is the same size as before. <b>But heat expands a gas much more than a liquid:</b> the balloon of air has swollen a lot.',
+      'Heat does not expand a liquid much: the balloon of water is the same size as before. But <b>heat expands a gas much more than a liquid.</b> The balloon of air has swollen a lot.',
 
     lab_air: 'Air',
     lab_water: 'Water',
@@ -175,7 +175,7 @@ export const STRINGS = {
     qw_c_why: 'Rubber is soft; the water itself expands very little.',
 
     qp_text: 'The water is heated from 30 °C to {T} °C. About how many percent does the balloon of air grow?',
-    qp_r: '<b>About +{p}%:</b> the rise in volume as a share = the rise in temperature ÷ the starting temperature (in kelvin) = {dT} ÷ {T1} (γ<sub>P</sub> = 1/<i>T</i><sub>1</sub>).',
+    qp_r: '<b>About +{p}%.</b> The rise in volume as a share = the rise in temperature ÷ the starting temperature (in kelvin) = {dT} ÷ {T1} (γ<sub>P</sub> = 1/<i>T</i><sub>1</sub>).',
     qp_dt_why: 'The rise in degrees is not a percentage; divide by the starting temperature in kelvin.',
     qp_w_why: 'That is the balloon of water, not the air.',
     qp_x2_why: 'That counts it twice.',

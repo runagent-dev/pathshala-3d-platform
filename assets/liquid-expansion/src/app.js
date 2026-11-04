@@ -90,7 +90,7 @@ export function createApp(root, options = {}) {
     learn: cleanSheet(t, {
       examples: { label: 'examples', items: CHIPS.map((id) => ({ id, label: `ex_${id}` })) },
       quiet: [{ act: 'home', label: 'act_home', icon: ICONS.reset }],
-      lines: { action: 1, outcome: 2, rule: 4 },
+      lines: { action: 1, outcome: 2, rule: 5 },
     }),
     learnAlign: 'start',
   });

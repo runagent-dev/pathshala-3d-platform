@@ -47,11 +47,11 @@ export const STRINGS = {
     fx: 'গ্যাসের আয়তন প্রসারণ সহগ',
 
     // the rule (the book's words), growing with what the student finds out
-    rule_0: '<b>গ্যাসের নির্দিষ্ট আকারও নেই, নির্দিষ্ট আয়তনও নেই:</b> যে পাত্রে ঢোকানো হয় তার পুরো আয়তন নিয়ে নেয়। পিস্টনের ওপর নির্দিষ্ট ওজন সব সময় সমান চাপ দেয়।',
+    rule_0: 'গ্যাসের <b>নির্দিষ্ট আকারও নেই, নির্দিষ্ট আয়তনও নেই।</b> যে পাত্রে রাখা হয়, তার পুরোটা জুড়ে ছড়িয়ে যায়। পিস্টনের ওপর নির্দিষ্ট ওজন সব সময় সমান চাপ দেয়।',
     rule_1:
-      '<b><i>PV</i> = <i>nRT</i>:</b> চাপ <i>P</i> আর পরিমাণ <i>n</i> একই, তাই তাপমাত্রা <i>T</i> বাড়লে আয়তন <i>V</i> বাড়ে। তাপ প্রয়োগ করলে বাতাসের আয়তন বেড়ে যায় (চিত্র {fig})।',
+      'চাপ <i>P</i> আর পরিমাণ <i>n</i> একই থাকলে তাপমাত্রা <i>T</i> বাড়লে আয়তন <i>V</i> বাড়ে।<span class="pvc-formula"><i>PV</i> = <i>nRT</i></span>তাপ দিলে বাতাসের আয়তন বাড়ে (চিত্র {fig})।',
     rule_2:
-      '<b>γ<sub>P</sub> = 1/<i>T</i><sub>1</sub>:</b> তাপমাত্রা যত কম, গ্যাসের প্রসারণ তত বেশি। আয়তন প্রতিবার প্রায় {dv} L বাড়ে, কিন্তু <i>V</i><sub>1</sub> ছোট হলে ভাগফল বড়।',
+      'তাপমাত্রা যত কম, গ্যাসের প্রসারণ তত বেশি।<span class="pvc-formula">γ<sub>P</sub> = 1/<i>T</i><sub>1</sub></span>আয়তন প্রতিবার প্রায় {dv} L বাড়ে, কিন্তু <i>V</i><sub>1</sub> ছোট হলে ভাগফল বড়।',
 
     // labels on the picture
     lab_T1: 'T<sub>1</sub> = {T} K',
@@ -158,11 +158,11 @@ export const STRINGS = {
     fx: 'Coefficient of volume expansion of a gas',
 
     rule_0:
-      '<b>A gas has no fixed shape and no fixed volume:</b> it takes the whole volume of the container it is put in. The fixed weight on the piston always gives the same pressure.',
+      'A gas has <b>no fixed shape and no fixed volume.</b> It spreads through the whole container it is put in. The fixed weight on the piston always gives the same pressure.',
     rule_1:
-      '<b><i>PV</i> = <i>nRT</i>:</b> the pressure <i>P</i> and the amount <i>n</i> stay the same, so when the temperature <i>T</i> rises the volume <i>V</i> rises. Heat makes the volume of the air increase (figure {fig}).',
+      'With the pressure <i>P</i> and the amount <i>n</i> the same, a rise in temperature <i>T</i> raises the volume <i>V</i>.<span class="pvc-formula"><i>PV</i> = <i>nRT</i></span>Heat makes the volume of the air increase (figure {fig}).',
     rule_2:
-      '<b>γ<sub>P</sub> = 1/<i>T</i><sub>1</sub>:</b> the lower the temperature, the more the gas expands. The volume rises by about {dv} L each time, but when <i>V</i><sub>1</sub> is smaller the ratio is bigger.',
+      'The lower the temperature, the more the gas expands.<span class="pvc-formula">γ<sub>P</sub> = 1/<i>T</i><sub>1</sub></span>The volume rises by about {dv} L each time, but when <i>V</i><sub>1</sub> is smaller the ratio is bigger.',
 
     lab_T1: 'T<sub>1</sub> = {T} K',
     lab_V1: 'V<sub>1</sub> = {V} L',

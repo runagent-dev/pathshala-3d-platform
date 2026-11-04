@@ -7,16 +7,16 @@ body.bg-transparent { background: transparent; }
 
 .sh { --c-water: #1864ab; --c-gold: #8a5a00; --c-s: #1b2a4a; }
 .sh sub, .sh sup { font-size: 0.72em; line-height: 0; }
-.sh .pvc-outcome { font-size: 14px; line-height: 1.5; }
+.sh .pvc-outcome { font-size: 15px; line-height: 1.6; }
 .sh .pvc-outcome b { font-size: 1.15em; }
-.sh .pvc-rule { font-size: 14px; line-height: 1.45; }
+.sh .pvc-rule { font-size: 15px; line-height: 1.6; }
 .sh .pvc-ex-res { font-variant-numeric: tabular-nums; }
 
 /* ── the readings of the one chosen ── */
 .sh-rd { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
 .sh-cell { min-width: 0; display: flex; flex-direction: column; justify-content: center; padding: 3px 7px; border-radius: 8px; background: #f3f5f8; box-shadow: inset 0 0 0 1px #dfe4ea; line-height: 1.2; }
-.sh-cell small { font-size: 11.5px; font-weight: 500; color: var(--ink-2); white-space: nowrap; }
-.sh-cell span { font-size: 15px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sh-cell small { font-size: 12.5px; font-weight: 500; color: var(--ink-2); white-space: nowrap; }
+.sh-cell span { font-size: 15px; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .sh-name { flex-direction: row; align-items: center; justify-content: center; gap: 7px; background: #fff; box-shadow: inset 0 0 0 2px var(--c, var(--c-water)); }
 .sh-name b { font-size: 16px; color: var(--c, var(--c-water)); }
 .sh-dot { flex: none; width: 11px; height: 11px; border-radius: 50%; background: var(--c, var(--c-water)); }
@@ -24,7 +24,7 @@ body.bg-transparent { background: transparent; }
 /* ── the formula: s = Q / m(T₂ − T₁), then the sum ── */
 .sh-eq { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 12px; }
 .sh-law { flex: none; display: flex; align-items: center; gap: 4px; padding: 3px 11px; border-radius: 10px; background: #eef4fb; box-shadow: inset 0 0 0 1.5px #bcd3ee; }
-.sh-sym { font-style: italic; font-weight: 700; font-size: 20px; line-height: 1.1; text-align: center; color: var(--c-s); white-space: nowrap; }
+.sh-sym { font-style: italic; font-weight: 600; font-size: 20px; line-height: 1.1; text-align: center; color: var(--c-s); white-space: nowrap; }
 .sh-law > .sh-sym { font-size: 26px; font-style: normal; }
 .sh-op { font-size: 21px; font-weight: 600; color: var(--ink-2); padding: 0 2px; }
 .sh-frac { display: inline-flex; flex-direction: column; align-items: stretch; }
@@ -34,14 +34,14 @@ body.bg-transparent { background: transparent; }
 .sh-sum b { color: var(--c-s); font-size: 1.12em; }
 .sh-l1, .sh-l2 { display: block; }
 .sh-l2:empty { display: none; }
-.sh-C { font-style: italic; font-weight: 700; color: var(--c-s); }
+.sh-C { font-style: italic; font-weight: 600; color: var(--c-s); }
 
 /* labels on the picture */
 .pvc-anno-tag { padding: 1px 8px; border: 1.5px solid #c8ccd2; border-radius: 6px; background: rgba(255, 255, 255, 0.96); font-size: 13.5px; font-weight: 500; line-height: 1.3; text-align: center; transition: opacity 0.25s; }
-.pvc-anno-tag b { color: var(--ink); font-weight: 700; }
-.pvc-anno-tag .sh-q { color: #b4470a; font-weight: 700; }
+.pvc-anno-tag b { color: var(--ink); font-weight: 600; }
+.pvc-anno-tag .sh-q { color: #b4470a; font-weight: 600; }
 .pvc-anno-lines .k-tag { display: none; }
-.pvc-anno-callout { background: rgba(255, 255, 255, 0.96); font-weight: 700; font-variant-numeric: tabular-nums; }
+.pvc-anno-callout { background: rgba(255, 255, 255, 0.96); font-weight: 600; font-variant-numeric: tabular-nums; }
 
 /* the test: answers in words or numbers, room kept for the question and the worked answer */
 .sh .pvc-opt { font-size: 15px; line-height: 1.25; }
@@ -63,7 +63,7 @@ body.bg-transparent { background: transparent; }
   .sh-law { padding: 1px 9px; }
   .sh-law > .sh-sym { font-size: 21px; }
   .sh-sum { font-size: 13px; line-height: 1.3; }
-  .sh .pvc-rule { font-size: 13px; line-height: 1.4; --pvc-rule-lines: 3; }
+  .sh .pvc-rule { font-size: 14px; line-height: 1.5; --pvc-rule-lines: 3; }
   .sh .pvc-examples button { min-height: 38px; padding-bottom: 4px; }
   .sh .pvc-q-options { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
   .sh .pvc-opt { height: 42px; padding: 0 3px; font-size: 13.5px; line-height: 1.2; }
@@ -86,10 +86,10 @@ body.bg-transparent { background: transparent; }
   .sh-law > .sh-sym { font-size: 20px; }
   .sh-op { font-size: 17px; }
   .sh-sum { font-size: 12.5px; line-height: 1.3; }
-  .sh .pvc-rule { font-size: 12.5px; line-height: 1.35; --pvc-rule-lines: 3; }
+  .sh .pvc-rule { font-size: 14px; line-height: 1.5; --pvc-rule-lines: 3; }
   .sh .pvc-q-text { font-size: 14px; }
   .sh .pvc-opt { font-size: 13.5px; }
-  .sh .pvc-q-feedback { font-size: 13px; }
+  .sh .pvc-q-feedback { font-size: 14px; }
   .pvc-anno-tag { font-size: 12px; padding: 0 5px; }
 }
 /* short and wide (phone held sideways): the panel is beside the scene */
@@ -104,16 +104,16 @@ body.bg-transparent { background: transparent; }
   .sh-law > .sh-sym { font-size: 20px; }
   .sh-op { font-size: 17px; }
   .sh-sum { font-size: 12.5px; line-height: 1.3; }
-  .sh .pvc-outcome { font-size: 13px; line-height: 1.4; }
-  .sh .pvc-rule { font-size: 12.5px; line-height: 1.35; }
+  .sh .pvc-outcome { font-size: 15px; line-height: 1.6; }
+  .sh .pvc-rule { font-size: 14px; line-height: 1.5; }
   .sh .pvc-q-text { font-size: 14px; }
   .sh .pvc-opt { font-size: 13px; height: 42px; }
-  .sh .pvc-q-feedback { font-size: 12.5px; }
+  .sh .pvc-q-feedback { font-size: 14px; }
   .pvc-anno-tag { font-size: 12px; padding: 0 5px; }
 }
 /* the panel beside the 3D (a size container, so a height query matches only there): room for the result line */
 @container pvc-panel (min-height: 520px) {
-  .sh .pvc-outcome { display: block; font-size: 13.5px; line-height: 1.45; }
+  .sh .pvc-outcome { display: block; font-size: 14px; line-height: 1.5; }
 }
 /* a narrow panel beside the scene: the formula smaller so each line stays whole */
 @container pvc-panel (max-width: 330px) {

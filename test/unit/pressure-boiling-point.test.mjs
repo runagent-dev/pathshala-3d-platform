@@ -94,8 +94,8 @@ describe('pressure-boiling-point: the words', () => {
 
   it('uses the book’s words and writes temperatures in Bangla digits', () => {
     const t = createI18n('bn');
-    assert.match(t('rule_mountain'), /চাপ কম হলে স্ফুটনাঙ্ক কমে যায়/);
-    assert.match(t('rule_cooker'), /চাপ বেশি হলে স্ফুটনাঙ্ক বেড়ে যায়/);
+    assert.match(t('rule_mountain').replace(/<\/?b>/g, ''), /চাপ কম হলে স্ফুটনাঙ্ক কমে যায়/);
+    assert.match(t('rule_cooker').replace(/<\/?b>/g, ''), /চাপ বেশি হলে স্ফুটনাঙ্ক বেড়ে যায়/);
     assert.equal(t('val_bp_plain', { tb: 100 }), '১০০° C');
     assert.equal(t('val_bp_other', { tb: 90 }), 'প্রায় ৯০° C');
     assert.equal(createI18n('en')('val_bp_other', { tb: 120 }), 'about 120° C');

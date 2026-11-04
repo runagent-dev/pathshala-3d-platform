@@ -31,7 +31,7 @@ test('calorimetry: the book examples end at the book temperatures', async ({ pag
   expect(done.T).toBeCloseTo(20.04, 1);
   expect(await text('.pvc-outcome')).toContain('২০°C');
   expect(await text('.pvc-outcome')).toContain('৪১,৮০০ J');
-  expect(await text('.pvc-rule')).toContain('ঠিক ততটুকু তাপ');
+  expect(await text('.pvc-rule')).toContain('ঠিক ততটাই তাপ নেয়');
   expect(await text('[data-example="ice"] .pvc-ex-res')).toBe('২০°C');
 
   // two waters: 2 L at 75 °C and 1 L at 20 °C make 3 L at 56.6 °C

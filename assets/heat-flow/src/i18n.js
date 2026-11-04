@@ -43,16 +43,16 @@ export const STRINGS = {
     out_w_levels: 'পানির উচ্চতা: বাম নলে <b>{l} সেমি</b>, ডান পাত্রে <b>{r} সেমি</b>।',
     out_w_done: 'দুই পাত্রেই পানির উচ্চতা এখন <b>{h} সেমি</b>। প্রবাহ থেমে গেছে।',
     rule_w_rest: 'দুটি পাত্রে পানির পৃষ্ঠদেশের উচ্চতা ভিন্ন। কলটি খুললে পানি কোন দিকে যাবে?',
-    rule_w_run: 'পানি <b>বেশি উচ্চতা থেকে কম উচ্চতায়</b> যাচ্ছে, কোন পাত্রে পানি বেশি তা দেখে নয়।',
-    rule_w_done: '<b>সব সময়ই বেশি উচ্চতা থেকে পানি কম উচ্চতায় প্রবাহিত হবে, যতক্ষণ না দুটি উচ্চতা সমান হয়।</b>',
+    rule_w_run: 'পানি <b>বেশি উচ্চতা থেকে কম উচ্চতায়</b> যাচ্ছে। কোন পাত্রে পানি বেশি, তা দিয়ে দিক ঠিক হয় না।',
+    rule_w_done: 'পানি সব সময় <b>বেশি উচ্চতা থেকে কম উচ্চতায়</b> বয়, যতক্ষণ না দুটি উচ্চতা সমান হয়।',
 
     // the heat view: the same picture, the book's pin and glass of water
     out_h_rest: 'আলপিনের তাপমাত্রা বেশি, তাপশক্তি অল্প। পানির তাপমাত্রা কম, তাপশক্তি অনেক বেশি।',
     out_h_run: 'আলপিনের তাপমাত্রা কমছে, পানির তাপমাত্রা সামান্য বাড়ছে।',
     out_h_done: 'দুটোর তাপমাত্রা সমান হয়েছে, তাই তাপের প্রবাহ থেমে গেছে।',
-    rule_h_rest: '<b>তাপমাত্রা তরলের উচ্চতার মতো, তাপ তরলের আয়তনের মতো।</b> তাপমাত্রা হচ্ছে পদার্থের ভেতরকার অণুগুলোর গড় গতিশক্তির একটা পরিমাপ।',
-    rule_h_run: 'তাপ <b>বেশি তাপমাত্রা থেকে কম তাপমাত্রার</b> জিনিসে যাচ্ছে: তাপের পরিমাণ কম হলেও আলপিন থেকেই।',
-    rule_h_done: '<b>সব সময়ই বেশি তাপমাত্রা থেকে তাপ কম তাপমাত্রার জিনিসে যেতে থাকবে, যতক্ষণ না দুটোর তাপমাত্রা সমান হচ্ছে।</b>',
+    rule_h_rest: '<b>তাপমাত্রা</b> তরলের উচ্চতার মতো, আর তাপ তরলের আয়তনের মতো। তাপমাত্রা হলো পদার্থের অণুগুলোর গড় গতিশক্তির একটি পরিমাপ।',
+    rule_h_run: 'তাপ <b>বেশি তাপমাত্রা থেকে কম তাপমাত্রায়</b> যাচ্ছে। আলপিনে তাপের পরিমাণ কম হলেও তাপ আলপিন থেকেই যায়।',
+    rule_h_done: 'তাপ সব সময় <b>বেশি তাপমাত্রা থেকে কম তাপমাত্রার</b> জিনিসে যায়, যতক্ষণ না দুটোর তাপমাত্রা সমান হয়।',
 
     q_count: 'প্রশ্ন {i} / {n}',
     q_score: 'সঠিক: {right}',
@@ -160,16 +160,16 @@ export const STRINGS = {
     out_w_levels: 'Height of the water: left tube <b>{l} cm</b>, right vessel <b>{r} cm</b>.',
     out_w_done: 'The water is now <b>{h} cm</b> high in both. The flow has stopped.',
     rule_w_rest: 'The water surfaces stand at different heights. Which way will the water go when the tap opens?',
-    rule_w_run: 'Water flows <b>from the greater height to the lower height</b>, not by which vessel holds more.',
-    rule_w_done: '<b>Water always flows from the greater height to the lower height, until the two heights are equal.</b>',
+    rule_w_run: 'Water flows <b>from the greater height to the lower height.</b> Which vessel holds more water does not decide the way.',
+    rule_w_done: 'Water always flows <b>from the greater height to the lower height,</b> until the two heights are equal.',
 
     out_h_rest: 'The pin: high temperature, little heat energy. The water: lower temperature, much more heat energy.',
     out_h_run: 'The pin’s temperature is falling, the water’s is rising a little.',
     out_h_done: 'The two temperatures are equal, so the flow of heat has stopped.',
     rule_h_rest:
-      '<b>Temperature is like the height of a liquid, heat is like the volume of a liquid.</b> Temperature is a measure of the average kinetic energy of the molecules inside a substance.',
-    rule_h_run: 'Heat goes <b>from the higher temperature to the lower temperature</b>: from the pin, though it has less heat.',
-    rule_h_done: '<b>Heat always goes from the higher temperature to the thing at the lower temperature, until the two temperatures are equal.</b>',
+      '<b>Temperature</b> is like the height of a liquid, and heat is like its volume. Temperature measures the average kinetic energy of the molecules in a substance.',
+    rule_h_run: 'Heat goes <b>from the higher temperature to the lower.</b> It goes from the pin, though the pin has less heat.',
+    rule_h_done: 'Heat always goes <b>from the higher temperature to the lower,</b> until the two temperatures are equal.',
 
     q_count: 'Question {i} of {n}',
     q_score: 'Correct: {right}',
