@@ -1,3 +1,5 @@
+> **Retired.** These workflows were removed: publishing now runs on a local computer (see [library-sync.md](library-sync.md)). This note is kept for the reasoning; `scripts/ci/library-*.mjs` are unused unless they come back.
+
 # Automatic library sync (CI/CD): design note
 
 > **Status: built (steps 1 to 3 of the rollout): the plan on pull requests, the publish on `prod` and by hand, the nightly drift
