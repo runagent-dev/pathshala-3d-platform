@@ -10,15 +10,23 @@ test('equations-of-motion: sliders, run, steps, the end of the axis', async ({ p
   const fig = await openFigure(page, 'equations-of-motion');
   const frame = page.frames().find((f) => f.url().includes('/assets/equations-of-motion/'));
 
-  // the graphs stand on boards in the 3D view (the panel's small graphs are hidden)
-  await expect(frame.locator('.eom')).toHaveAttribute('data-boards', '1');
-  await expect(frame.locator('.eom-graphs')).toBeHidden();
+  // one frame, as the owner's reference: formula, buttons, sliders, both graphs and the 3D strip all on screen
+  for (const sel of [
+    '.eom-formula',
+    '[data-act="run"]',
+    '[data-act="pause"]',
+    '[data-sl="t"]',
+    '[data-graph="x"]',
+    '[data-graph="v"]',
+    '.eom-strip canvas',
+  ])
+    await expect(frame.locator(sel).first()).toBeVisible();
 
   // the reference's opening: x₀ = −0.8 m, u = 1.9 m/s, a = 1.7 ms⁻², t = 0
   expect(await fig.call('get')).toMatchObject({ x0: -0.8, u: 1.9, a: 1.7, t: 0, x: -0.8, v: 1.9, phase: 'ready', end: null });
 
   // it runs in real time: after 1 s, x = −0.8 + 1.9 + 0.85 = 1.95 m and v = 3.6 m/s
-  await frame.locator('.pvc-act').click();
+  await frame.locator('[data-act="run"]').click();
   await fig.advance(1000);
   const s = await fig.call('get');
   expect(s.phase).toBe('running');
@@ -27,6 +35,12 @@ test('equations-of-motion: sliders, run, steps, the end of the axis', async ({ p
   expect(s.x).toBeCloseTo(-0.8 + 1.9 * s.t + 0.85 * s.t ** 2, 2);
   expect(s.v).toBeCloseTo(1.9 + 1.7 * s.t, 2);
   expect(s.parts.x0 + s.parts.ut + s.parts.half).toBeCloseTo(s.x, 2);
+
+  // থামাও pauses, চালাও goes on from there
+  await frame.locator('[data-act="pause"]').click();
+  expect((await fig.call('get')).phase).toBe('paused');
+  await frame.locator('[data-act="run"]').click();
+  expect((await fig.call('get')).phase).toBe('running');
 
   // it reaches the right end of the axis after about 2.62 s and stops there
   await fig.advance(3000);

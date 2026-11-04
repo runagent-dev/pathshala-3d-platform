@@ -8,15 +8,16 @@
 import * as THREE from 'three';
 import { AXIS } from './motion.js';
 
-export const ROAD = { x0: -9.9, x1: 12.6, back: -1.9, front: 1.9, lane: 0.72 };
+// the road runs well past both ends of the axis, so it leaves the picture at both sides on every frame
+export const ROAD = { x0: -24, x1: 27, back: -1.9, front: 1.9, lane: 0.72 };
 /** The ground under the causeway, and the front slope (its angle from the ground and its length). */
-export const GROUND_Y = -2.75;
+export const GROUND_Y = -3.4; // deeper than the strip shows: the slope runs out of the picture at the bottom
 const SLOPE_ANGLE = THREE.MathUtils.degToRad(62);
 const SLOPE_LEN = -GROUND_Y / Math.sin(SLOPE_ANGLE);
 const KERB = { w: 0.32, h: 0.14 };
 const TOP_Z = ROAD.front + KERB.w; // where the slope starts
 /** On the slope, measured down from its top edge (m): the ruler strip, the axis line, the numbers, the three rows. */
-export const SLOPE = { band: 0.78, axis: -0.1, numbers: -0.52, rows: { x0: -1.24, ut: -1.98, half: -2.72 }, len: SLOPE_LEN };
+export const SLOPE = { band: 0.78, axis: -0.1, numbers: -0.52, rows: { x0: -1.18, ut: -1.8, half: -2.42 }, len: SLOPE_LEN };
 
 const SHAFT = 0.13; // half height of an arrow's shaft
 const HEAD_L = 0.5;
@@ -60,27 +61,25 @@ function asphaltTexture() {
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.wrapS = THREE.RepeatWrapping;
   tex.wrapT = THREE.RepeatWrapping;
-  tex.repeat.set(9, 1.4);
+  tex.repeat.set((ROAD.x1 - ROAD.x0) / 2.5, 1.4);
   tex.anisotropy = 8;
   return tex;
 }
 
-/** Pale concrete slabs for the slope: a soft grain and a joint every 2.5 m. */
+/** Pale concrete for the slope: a soft grain, no joints (the face stays calm behind the arrows). */
 function concreteTexture() {
   const c = document.createElement('canvas');
   c.width = 256;
   c.height = 128;
   const ctx = c.getContext('2d');
-  ctx.fillStyle = '#aebfcd';
+  ctx.fillStyle = '#d3e0ea';
   ctx.fillRect(0, 0, 256, 128);
   const rnd = seeded(11);
   for (let i = 0; i < 1400; i++) {
-    const v = 160 + Math.floor(rnd() * 40);
+    const v = 196 + Math.floor(rnd() * 30);
     ctx.fillStyle = `rgba(${v - 8},${v + 4},${v + 14},0.35)`;
     ctx.fillRect(rnd() * 256, rnd() * 128, 1 + rnd() * 2, 1 + rnd() * 2);
   }
-  ctx.fillStyle = 'rgba(120,140,160,0.45)';
-  ctx.fillRect(0, 0, 2, 128);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.wrapS = THREE.RepeatWrapping;
@@ -163,7 +162,7 @@ export function createTrack({ colors }) {
   const causeGeo = new THREE.ExtrudeGeometry(prof, { depth: L, bevelEnabled: false });
   causeGeo.rotateY(Math.PI / 2); // depth → +x, shape x → −z
   causeGeo.translate(ROAD.x0, 0, 0);
-  const concrete = new THREE.MeshStandardMaterial({ name: 'Concrete', color: 0x9db1c2, roughness: 0.92 });
+  const concrete = new THREE.MeshStandardMaterial({ name: 'Concrete', color: 0xc2d2df, roughness: 0.92 });
   const cause = new THREE.Mesh(causeGeo, concrete);
   cause.name = 'Causeway';
   cause.receiveShadow = true;
@@ -183,7 +182,7 @@ export function createTrack({ colors }) {
   face.receiveShadow = true;
   slope.add(face);
   // a soft darker foot where the slope meets the ground
-  const foot = new THREE.Mesh(new THREE.PlaneGeometry(L, 0.16), new THREE.MeshStandardMaterial({ name: 'Foot', color: 0x8fa3b4, roughness: 0.9 }));
+  const foot = new THREE.Mesh(new THREE.PlaneGeometry(L, 0.16), new THREE.MeshStandardMaterial({ name: 'Foot', color: 0xb9cad7, roughness: 0.9 }));
   foot.position.set(cx, -SLOPE_LEN + 0.08, 0.006);
   slope.add(foot);
 
@@ -197,7 +196,7 @@ export function createTrack({ colors }) {
   const ink = new THREE.MeshStandardMaterial({ name: 'Ink', color: 0x18202a, roughness: 0.5 });
   const zF = 0.062;
   const ay = SLOPE.axis;
-  const ticks = [[(ROAD.x0 + 0.35 + AXIS.max + 0.9) / 2, ay, zF, AXIS.max + 0.9 - ROAD.x0 - 0.35, 0.045, 0.006]]; // the axis line
+  const ticks = [[(ROAD.x0 + 0.35 + AXIS.max + 0.9) / 2, ay, zF, AXIS.max + 0.9 - ROAD.x0 - 0.35, 0.045, 0.006]]; // the axis line, from the left edge
   for (let i = AXIS.min; i <= AXIS.max; i++) {
     const big = i === 0;
     ticks.push([i, ay - 0.13, zF, big ? 0.075 : 0.045, big ? 0.3 : 0.24, 0.006]);
@@ -216,7 +215,7 @@ export function createTrack({ colors }) {
 
   // a faint line down the slope from 0, where the three parts start
   const faint = new THREE.MeshStandardMaterial({ name: 'Origin', color: 0x71879b, roughness: 0.7 });
-  const originLen = SLOPE_LEN - SLOPE.band - 0.25;
+  const originLen = -SLOPE.rows.half + 0.4 - SLOPE.band - 0.05;
   const origin = new THREE.Mesh(new THREE.BoxGeometry(0.035, originLen, 0.004), faint);
   origin.position.set(0, -SLOPE.band - 0.05 - originLen / 2, 0.01);
   slope.add(origin);

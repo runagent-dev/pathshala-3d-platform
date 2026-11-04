@@ -43,69 +43,66 @@ street (versions 0.1–0.4, below in git history) are gone, and the figure is th
   the reference's (x₀ = −0.8 m, u = 1.9 m/s, a = 1.7 ms⁻², t = 0).
 - Physics exact: x(t) = x₀ + ut + ½at², v(t) = u + at. When the car reaches an end of the axis (−7 m or 10 m) it
   stops there (the run ends at that exact moment, e.g. 2.62 s for the opening values), its label says
-  "শেষ মাথায় থামল" and the panel's sentence says so; the t slider can't go past that moment. With u and a opposite,
+  "শেষ মাথায় থামল" and the sentence under the formula says so; the t slider can't go past that moment. With u and a opposite,
   the sentence says when the car stops for a moment and turns back (t = −u/a).
 
+## The one-frame layout: the owner's override of the kit's side panel (2026-11-04)
+The owner sent the reference again and said: **"I want exactly this layout, just the background colour a bit blue, but
+with our book's topic concept."** So, for this figure only, the kit's standard layout (`buildStudentShell(…, { layout:
+'side' })`: the panel beside the 3D, full height, with a hide tab) is not used: everything sits in one frame, as in the
+reference. The figure still builds the kit's shell (for the test, the hint and the turn-sideways card on touch phones
+held upright) and rearranges it: its panel is not shown, the tabs and the full-screen button go to the top-left corner,
+the test sheet takes the place of the sliders while it is open, and the 3D stage becomes the bottom strip. Nothing in
+`shared/` changed, and `npm run check` and the layout test pass as they are (neither checks for the side layout).
+
 ## How the figure works
-- **The 3D** (second pass, after the owner's "still it is not near proper, make it much better"): the view is filled
-  with what matters. Under a light-blue sky (a screen gradient with a few faint clouds) on a soft blue-grey ground
-  (a hint of teal, lightest round the road, fading far away into the sky's lower colour), a dark asphalt road with a
-  dashed white centre line, white edge lines and light kerbs runs along a low causeway (track.js). The causeway's
-  front is a gentle slope (62°) of pale blue-grey concrete slabs facing the viewer: along its top a clean white ruler
-  strip is the number line (the axis line with an arrowhead past 10, a tick every metre, 0 bolder, a small one every
-  half metre; the numbers, bold, at least 13 px, 0 a little bigger, and "x (m)" past the arrowhead are drawn on a 2D
-  overlay so they stay crisp; every other number only where a metre is under 19 px). Under the ruler, on the slope,
-  three rows carry the parts as thick outlined flat arrows: x₀ (red) from 0, ut (blue) from x₀, ½at² (green) ending at
-  x, a dot where a part is 0, each with a white chip "x₀ = −০.৮ m" beyond its tip (else its tail, else above it),
-  never on another chip; a faint line down from 0, and a thin dashed drop line from under the car through its dot on
-  the axis down past the three rows to where ½at² ends (= x).
-- **The graph boards** (boards.js): behind the road stand two white display boards in slim dark frames on posts,
-  turned to face the camera's side, as the reference draws its graphs beside the motion: x–t on the left (the
-  parabola), v–t on the right (the line). Each shows its name and the value now ("x = ২.৯০ m", the name dropped where
-  the board is narrow), axes named x, v and t with arrowheads and a few numbers, a light grid, the planned curve faint
-  and dashed, the part already run solid, dashed guides from the moment's dot to both axes, and under the graph the
-  live equation with its numbers in their quantities' colours, x = (½a)t² + (u)t + (x₀) and v = (a)t + (u) (the x one
-  on two lines where the board is narrow). Each face is one canvas texture, redrawn only when what it shows changes
-  (at most 25 times a second while running), its text sized from the board's width on the screen to read at about
-  13 px. The boards are as wide as half the road each and as tall as the frame has room for (4.8–10.5 m). Where the 3D
-  view is under 330 px high (390×520) they are hidden and the two graphs and equations show in the panel instead
-  (graphs.js, the old `.pvc-graph` SVGs). In a test question the boards show the curves' shape but "?" for their
-  numbers (the v equation would give a away), until the answer is revealed.
-- **The car** (car.js): a blue four-door sedan, built 4.3 m long and drawn at 0.95 (4.1 m), in the road's front lane
-  (z = 0.95 m), near the ruler: glossy paint, bonnet, cabin and boot, dark glass, pillars, mirrors, handles, grille,
-  headlights, tail lights, number plates and five-spoke rims that turn with the motion (backwards when it reverses;
-  the spokes blur at speed). It always faces +x, as the reference's (a negative velocity is the car reversing). A
-  dark blue dot on the axis line marks its x; a white chip over its roof says "x = ২.৪ m".
-- **Camera**: a gentle three-quarter view (lessons 42, the milder angle for a printed scale): 14° to the right, 13°
-  from above (up to 22° where the frame has height to spare). camera.js fits a list of real points (the road's top,
-  the slope's foot, the car's roof at either end of the axis, the boards' corners) rather than a box, and moves the
-  target sideways as well as up and down, so the far end leaves no wide margin; the right margin keeps the boards
-  clear of the corner button and the panel's tab. At 844×390 the car is about 105 px long, the ruler numbers 13 px,
-  the boards about 245 px wide; at 1280×800 the car is about 170 px; at 390×700 about 75 px. The whole axis must stay
-  in view (the reference shows it whole, and the arrows start at 0), which caps the car's size: 17 m of axis plus the
-  car at either end across a 557 px view.
-- **The panel** (kit side layout; order: tabs, sliders, action, formula, sentence): the four sliders (the value in its
-  colour over the name, the track filled in its colour up to the thumb; two by two on short frames and phones held
-  upright, names hidden on short frames); the kit's action (চালাও / থামাও / চালিয়ে যাও / আবার চালাও, its numbered
-  badge on the car until it runs) and three quiet buttons (শুরুতে ফেরাও, এক ধাপ পেছনে, এক ধাপ সামনে: 0.1 s on the
-  grid; slimmer in the narrowest panel so চালাও stays on one line); the formula (`.pvc-formula`, ½ as a stacked
-  fraction); and one sentence (`.pvc-note`): the sum "x = x₀ (লাল) + ut (নীল) + ½at² (সবুজ)" (names as well as
-  colours), the turn-back moment, or the end of the axis. With the graphs on the boards it fits without scrolling at
-  844×390.
+- **The frame** (style.css, a grid over a soft light-blue gradient, #e4effa → #bdd7ee): at the top the formula
+  x = x₀ + ut + ½at² (½ stacked) with one short sentence under it; on the left the buttons stacked, white with a thin
+  border as the reference: চালাও, থামাও (each greyed while it can't act), আবার শুরু, and the two time steps side by
+  side (an icon and a small word, পেছনে / সামনে; 0.1 s on the grid); in the middle four long sliders, x₀ red, u blue,
+  a green, t grey (darker track, black knob), each value written over its knob in its colour ("x₀ = −০.৮ m", kept
+  inside the track) and its Bangla name (আদি অবস্থান, আদি বেগ, ত্বরণ, সময়) at its right end; on the right the x–t graph
+  and under it its live equation x = (½a)t² + (u)t + (x₀), then the v–t graph with v = (a)t + (u), the numbers in
+  their quantities' colours; along the bottom, across the full width, the 3D strip. Landscape frames scale the same
+  layout down (the strip is about a quarter of the width tall, at most 43–47 % of the height); portrait frames stack
+  it: the tabs and the formula, the two graphs side by side, the sliders, the buttons in one row, the strip (on a short
+  portrait frame the sentence is dropped). Nothing scrolls; every control is at least 24 px.
+- **The sentence** under the formula: the sum "সমত্বরণে অবস্থান x তিন অংশের যোগফল: x₀ + ut + ½at²" (each part in its
+  colour), or the moment the car stops for a moment and turns back (t = −u/a), or that it reached an end of the axis
+  (in orange). At most two lines.
+- **The graphs** (graphs.js): plain axes with arrowheads on the background as the reference, named x or v and t, a few
+  small numbers and faint grid lines, the planned curve faint and dashed, the part already run solid, a dot at the
+  moment. Each SVG is drawn at its own pixel size (redrawn when its box changes), so its text keeps its size.
+- **The 3D strip** (track.js, car.js): seen from the side as the reference (straight on, 9° from above, a narrow 9°
+  field of view so it is almost free of perspective and the drop line stays upright), with a transparent background.
+  A dark asphalt road with a dashed centre line, white edge lines and light kerbs runs out of the picture at both
+  sides; its front is a gentle slope (62°) of pale blue-grey concrete that runs out of the picture at the bottom. Along
+  its top a white ruler strip is the number line (the axis line from the left edge to an arrowhead past 10, a tick
+  every metre, a small one every half metre; the numbers −7 … 10, bold, and "x (m)" are drawn on a 2D overlay so they
+  stay crisp, every other one where a metre is under 22 px). Under it three rows carry the parts as thick outlined
+  flat arrows tip to tail: x₀ (red) from 0, ut (blue) from x₀, ½at² (green) ending at x, a dot where a part is 0, each
+  with a white chip "x₀ = −০.৮ m" beyond its tip (else its tail); a faint line down from 0, and a dashed drop line from
+  under the car through its dot on the axis down to where ½at² ends (= x). The car: a blue four-door sedan, 4.1 m long,
+  glossy, with windows, lights and five-spoke rims that turn with the motion (backwards when it reverses; a blur at
+  speed); it always faces +x (a negative velocity is the car reversing). A dark blue dot on the axis marks its x, a
+  white chip over its roof says "x = ২.৪ m". The camera fits the whole axis with the car at either end into the strip;
+  the strip can't be turned by dragging (the reference's picture is fixed); `set({ view: '3d' })` still flies to a
+  three-quarter view and the corner's "শুরুর দৃশ্য" button brings it back.
 - **Behaviour**: চালাও runs the time in real seconds from where it is (from 0 after the end). A change of x₀, u or a
   while running goes back to the start of the new run; while paused it shows the same moment with the new numbers
   (as the reference). Dragging t pauses and shows that moment. Keyboard: Space runs or pauses, the arrow keys step
   the time (a focused slider moves itself), Tab reaches every control.
-- **Test** (5 tap questions, one of each kind in a random order): x after t s with x₀ read off the axis (the car's
-  label hidden); v = u + at; a read from an x equation (½a is the t² number); when v = 0 from a v equation; and the
+- **Test** (in the place of the sliders and the graphs while it is open, its head beside the tabs; 5 tap questions,
+  one of each kind in a random order): x after t s with x₀ read off the axis (the car's label hidden); v = u + at; a read from an x equation (½a is the t² number); when v = 0 from a v equation; and the
   part ½at² read off the picture (x from the axis, x₀ and ut from their chips, its own chip "?"). Wrong choices are
   real mistakes (no ½, no x₀, no a, the final velocity for the whole time, only one second, sign, multiplied, a/u,
-  the whole x, …), each named in the worked answer; the reveal runs the car to that moment.
+  the whole x, …), each named in the worked answer; the reveal runs the car to that moment. While a question is open
+  the live equations show "(?)" for their numbers (they would give the answer away) until the answer is revealed.
 - **Bridge**: set { x0, u, a } (kept in range on 0.1 steps), { t } (seconds, or 'end'), { playing }, { step: ±1 },
   { view }; get reports x0, u, a, t, x, v, parts { x0, ut, half }, tEnd, end ('left' | 'right' | null), playing,
   phase (ready | running | paused | done), mode, view; events change (at most every 0.2 s while running), run, pause,
-  end, view. The GLB is the road with its number line and the three arrows, the two graph boards, and the car where it is, in
-  metres.
+  end, view. The GLB is the road with its number line and the three arrows, and the car where it is, in metres (the
+  road is 51 m long, so it runs out of every frame; the graphs are HTML and not in it).
 
 ## Open questions
 - The book has no picture here; the lab is the owner's choice (a GeoGebra lab). x₀ and the position–time graph are
@@ -114,3 +111,5 @@ street (versions 0.1–0.4, below in git history) are gone, and the figure is th
 - The book's other equations (s = Vt, v² = u² + 2as) and its worked example are no longer shown; they were in
   version 0.4 (git history).
 - The car faces +x even when it moves left (reversing), as the reference's.
+- The layout departs from the kit's side panel on the owner's word (above); if the kit later gains a "one frame"
+  layout, this figure is its first user.
