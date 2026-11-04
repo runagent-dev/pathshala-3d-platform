@@ -98,7 +98,7 @@ export function createApp(root, options = {}) {
       ],
     },
     quiet: [{ act: 'home', label: 'act_home', icon: ICONS.reset }],
-    lines: { action: 1, outcome: 2, rule: 3 },
+    lines: { action: 1, outcome: 2, rule: 5 },
   }).replace(
     '<p class="pvc-outcome"',
     `<div class="sp-calc" role="group" aria-label="${t('calc')}">${stepper('x', 'calc_x')}${stepper('k', 'calc_k')}</div><p class="pvc-outcome"`,
