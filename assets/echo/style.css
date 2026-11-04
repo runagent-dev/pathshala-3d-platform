@@ -6,12 +6,16 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
 body.bg-transparent { background: transparent; }
 
 .ec { --c-time: #c2255c; --c-sound: #0b7285; --c-yes: #237a35; --c-no: #b02a37; }
-.ec .pvc-outcome { font-size: 15px; line-height: 1.5; }
-.ec .pvc-outcome b { font-size: 1.12em; color: var(--c-time); white-space: nowrap; }
+.ec .pvc-outcome { font-size: 15px; line-height: 1.55; }
+.ec .pvc-outcome b { font-size: 1em; color: var(--c-time); white-space: nowrap; }
 .ec .pvc-outcome b.ec-yes { font-size: 1em; color: var(--c-yes); white-space: normal; }
 .ec .pvc-outcome b.ec-no { font-size: 1em; color: var(--c-no); white-space: normal; }
-.ec .pvc-rule { font-size: 14.5px; line-height: 1.45; }
+.ec .pvc-rule { font-size: 14.5px; line-height: 1.55; }
 .ec .pvc-rule b { color: var(--ink); }
+/* a sum on its own line inside the result or the rule */
+.ec .pvc-outcome .pvc-formula, .ec .pvc-rule .pvc-formula { display: block; margin: 2px 0 6px; padding: 3px 8px; font-size: 15px; line-height: 1.5; }
+.ec .pvc-formula b { color: var(--c-time); }
+.ec-step { display: block; }
 .ec-nw { white-space: nowrap; }
 
 /* the time line: drawn 1:1 at the panel's width (timeline.js), so its words keep their size */
@@ -25,30 +29,22 @@ body.bg-transparent { background: transparent; }
 .ec-tl-head { fill: #4a5361; }
 .ec-tl-num { fill: #2f3744; font-weight: 500; }
 .ec-tl-call .ec-tl-bar { fill: var(--c-sound); }
-.ec-tl-call .ec-tl-word { fill: #fff; font-weight: 700; }
+.ec-tl-call .ec-tl-word { fill: #fff; font-weight: 600; }
 .ec-tl-echo .ec-tl-bar { fill: #bfeaf1; stroke: var(--c-sound); stroke-width: 1; }
-.ec-tl-echo .ec-tl-word { fill: #084c58; font-weight: 700; }
+.ec-tl-echo .ec-tl-word { fill: #084c58; font-weight: 600; }
 .ec-tl-start { fill: var(--ink); }
 .ec-tl-echo.inside .ec-tl-start { fill: var(--c-time); }
 .ec-tl-cursor { stroke: var(--c-time); stroke-width: 2.5; stroke-linecap: round; }
 
 /* the tape's numbers: upright words placed on the screen by the app, just beyond the tape's near edge */
 .ec-nums { position: absolute; inset: 0; z-index: 2; pointer-events: none; overflow: hidden; }
-.ec-num { position: absolute; left: 0; top: 0; padding: 0 3px; border-radius: 3px; background: rgba(255, 248, 230, 0.82); color: #1d2733; font-size: 13px; font-weight: 700; line-height: 1.25; white-space: nowrap; }
+.ec-num { position: absolute; left: 0; top: 0; padding: 0 3px; border-radius: 3px; background: rgba(255, 248, 230, 0.82); color: #1d2733; font-size: 13px; font-weight: 600; line-height: 1.25; white-space: nowrap; }
 
 @container pvc (min-height: 600px) { .ec-num { font-size: 15px; } }
 
-/* wide panels only: the book's chain (0.1 s → 33 m → 16.5 m) as it is found, and the distances tried */
-.ec-chain, .ec-tried { display: none; }
-.ec-chain { align-items: flex-start; justify-content: space-between; gap: 4px; padding: 8px 0 2px; border-top: 1px solid var(--line); }
-.ec-ch { display: flex; flex-direction: column; align-items: center; min-width: 0; text-align: center; }
-.ec-ch b { font-size: 16px; line-height: 1.3; color: var(--ink); white-space: nowrap; }
-.ec-ch b.ec-c-time { color: var(--c-time); }
-.ec-ch small { font-size: 11.5px; line-height: 1.25; color: var(--ink-2); }
-.ec-ch-op { display: flex; flex-direction: column; align-items: center; padding-top: 2px; font-size: 12px; line-height: 1.2; color: var(--ink-2); white-space: nowrap; }
-.ec-ch-op i { font-style: normal; font-size: 15px; }
-.ec-chain .ec-q { color: #9aa3ad; font-weight: 600; }
-.ec-tried { padding-top: 6px; border-top: 1px solid var(--line); min-height: calc(7 * 1.6em); font-size: 13px; }
+/* wide panels only: the distances tried */
+.ec-tried { display: none; }
+.ec-tried { padding-top: 6px; border-top: 1px solid var(--line); min-height: calc(7 * 1.6em); font-size: 14px; }
 .ec-tr-empty { margin: 0; color: var(--ink-2); line-height: 1.5; }
 .ec-tried[data-empty='false'] .ec-tr-empty { display: none; }
 .ec-tr-head { font-weight: 600; color: var(--ink-2); line-height: 1.6; }
@@ -58,7 +54,6 @@ body.bg-transparent { background: transparent; }
 .ec-tried .ec-c-time { color: var(--c-time); font-weight: 600; }
 .ec-tried .ec-yes { color: var(--c-yes); font-weight: 600; }
 .ec-tried .ec-no { color: var(--c-no); font-weight: 600; }
-@container pvc-panel (min-height: 340px) { .ec-chain { display: flex; } }
 @container pvc-panel (min-height: 420px) { .ec-tried { display: block; } }
 @container pvc-panel (max-height: 479px) { .ec-tried { min-height: calc(4 * 1.6em); } .ec-tried li:nth-child(n + 4) { display: none; } }
 @container pvc-panel (max-height: 639px) { .ec-tried li:nth-child(n + 5) { display: none; } }
@@ -68,7 +63,7 @@ body.bg-transparent { background: transparent; }
 
 /* the word called, near the mouth, and the same word fainter near the head when the echo returns: plain words on a
    solid chip with no border or leader line, so they read as speech, not as a part's name */
-.pvc-anno-word, .pvc-anno-wordback { padding: 0 6px; border-radius: 5px; background: rgba(255, 255, 255, 0.94); color: #084c58; font-size: 16px; font-weight: 700; line-height: 1.4; white-space: nowrap; transition: none; }
+.pvc-anno-word, .pvc-anno-wordback { padding: 0 6px; border-radius: 5px; background: rgba(255, 255, 255, 0.94); color: #084c58; font-size: 16px; font-weight: 600; line-height: 1.4; white-space: nowrap; transition: none; }
 .pvc-anno-wordback { background: rgba(255, 255, 255, 0.72); color: #2d6470; font-size: 14px; font-weight: 600; }
 .pvc-anno-lines .k-word, .pvc-anno-lines .k-wordback { display: none; }
 
@@ -77,10 +72,10 @@ body.bg-transparent { background: transparent; }
 .pvc-anno-lines .k-tag { stroke: rgba(255, 255, 255, 0.9); stroke-width: 1.5; }
 
 /* the test: answers in words or numbers, room kept for the question and the worked answer */
-.ec .pvc-opt { font-size: 14px; line-height: 1.2; padding: 0 4px; }
+.ec .pvc-opt { font-size: 14.5px; line-height: 1.25; padding: 0 4px; }
 .ec-opt { display: block; white-space: normal; text-align: center; }
 .ec .pvc-q-text { font-size: 15px; }
-.ec .pvc-q-feedback { font-size: 13.5px; }
+.ec .pvc-q-feedback { font-size: 14.5px; }
 
 /* a phone held upright: tighter, so the 3D keeps more than half the height */
 @container pvc (max-width: 420px) {
@@ -88,39 +83,42 @@ body.bg-transparent { background: transparent; }
   .ec .pvc-examples button { min-height: 36px; padding-top: 1px; padding-bottom: 2px; }
   .ec .pvc-examples .pvc-ex-word { font-size: 15px; }
   .ec .pvc-examples .pvc-ex-res { font-size: 12px; }
-  .ec .pvc-outcome { font-size: 13px; line-height: 1.36; min-height: calc(2 * 1.36em); }
-  .ec .pvc-rule { font-size: 12.5px; line-height: 1.36; --pvc-rule-lines: 3; }
+  .ec .pvc-outcome { font-size: 14px; line-height: 1.4; min-height: calc(3 * 1.4em); }
+  .ec .pvc-rule { font-size: 13.5px; line-height: 1.4; --pvc-rule-lines: 3; }
+  .ec .pvc-outcome .pvc-formula, .ec .pvc-rule .pvc-formula { margin: 0 0 3px; padding: 1px 6px; font-size: 14px; line-height: 1.4; }
+  .ec-step { display: inline; margin-left: 0.5em; }
   .ec .pvc-q-options { gap: 6px; }
-  .ec .pvc-opt { height: 40px; font-size: 13px; }
-  .ec .pvc-q-text { font-size: 14px; --pvc-q-text-min: calc(2 * 1.4em); }
-  .ec .pvc-q-feedback { font-size: 12.5px; --pvc-q-feedback-min: calc(3 * 1.4em); }
+  .ec .pvc-opt { height: 40px; font-size: 13.5px; }
+  .ec .pvc-q-text { font-size: 14.5px; --pvc-q-text-min: calc(2 * 1.4em); }
+  .ec .pvc-q-feedback { font-size: 13.5px; --pvc-q-feedback-min: calc(3 * 1.4em); }
 }
 /* phones that are not tall: smaller type, a smaller time line */
 @container pvc (max-width: 560px) and (max-height: 600px) {
   .ec .pvc-examples button { min-height: 36px; }
   .ec .pvc-examples .pvc-ex-word { font-size: 14px; }
-  .ec .pvc-outcome { font-size: 12px; line-height: 1.32; }
-  .ec .pvc-rule { font-size: 11.5px; line-height: 1.32; }
-  .ec .pvc-q-text { font-size: 13px; }
-  .ec .pvc-opt { font-size: 12px; height: 36px; }
-  .ec .pvc-q-feedback { font-size: 12px; }
+  .ec .pvc-outcome { font-size: 13px; line-height: 1.32; }
+  .ec .pvc-rule { font-size: 12.5px; line-height: 1.32; }
+  .ec .pvc-outcome .pvc-formula, .ec .pvc-rule .pvc-formula { padding: 0 6px; font-size: 13px; line-height: 1.32; }
+  .ec .pvc-q-text { font-size: 13.5px; }
+  .ec .pvc-opt { font-size: 12.5px; height: 36px; }
+  .ec .pvc-q-feedback { font-size: 12.5px; }
   .pvc-anno-tag { font-size: 12px; }
 }
 /* short and wide (phone held sideways): the panel is beside the scene */
 @container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
-  .ec .pvc-outcome { font-size: 13px; line-height: 1.38; }
-  .ec .pvc-rule { font-size: 12.5px; line-height: 1.35; --pvc-rule-lines: 4; }
-  .ec .pvc-q-text { font-size: 13px; }
-  .ec .pvc-opt { font-size: 12.5px; height: 44px; }
-  .ec .pvc-q-feedback { font-size: 12.5px; }
+  .ec .pvc-outcome { font-size: 14px; line-height: 1.5; min-height: 4em; }
+  .ec-step { display: block; margin-left: 0; }
+  .ec .pvc-rule { font-size: 14px; line-height: 1.5; --pvc-rule-lines: 3; }
+  .ec .pvc-outcome .pvc-formula, .ec .pvc-rule .pvc-formula { font-size: 14.5px; }
+  .ec .pvc-q-text { font-size: 14px; }
+  .ec .pvc-opt { font-size: 14px; height: 44px; }
+  .ec .pvc-q-feedback { font-size: 14px; }
   .pvc-anno-tag { font-size: 12px; }
 }
 /* a tall side panel (1280×800): bigger type, the panel filled */
 @container pvc-panel (min-height: 640px) and (min-width: 340px) {
   .ec .pvc-outcome { font-size: 16.5px; line-height: 1.5; }
-  .ec .pvc-rule { font-size: 15.5px; line-height: 1.5; }
-  .ec-ch b { font-size: 18px; }
-  .ec-ch small, .ec-ch-op { font-size: 13px; }
+  .ec .pvc-rule { font-size: 15.5px; line-height: 1.55; }
   .ec-tried { font-size: 14.5px; }
   .ec .pvc-q-text { font-size: 16.5px; }
   .ec .pvc-q-feedback { font-size: 15px; }
