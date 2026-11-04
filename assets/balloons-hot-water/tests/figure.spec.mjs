@@ -29,8 +29,8 @@ test('balloons-hot-water: air swells a lot, water hardly', async ({ page }) => {
   expect(s1.next).toEqual({ label: 'act_cool', step: 2 });
   expect(await text('[data-r="Pa"]')).toBe('+২০%');
   expect(await text('[data-r="Pw"]')).toBe('+৩%');
-  expect(await text('.pvc-rule')).toContain('তাপে তরলের সেরকম প্রসারণ হয় না');
-  expect(await text('.pvc-rule')).toContain('তাপে গ্যাসের প্রসারণ তরল থেকে অনেক বেশি');
+  expect(await text('.pvc-rule')).toContain('তাপে তরলের তেমন প্রসারণ হয় না');
+  expect(await text('.pvc-rule')).toContain('তাপে গ্যাসের প্রসারণ তরলের চেয়ে অনেক বেশি');
   expect(await text('[data-example="90"] .pvc-ex-res')).toBe('+২০%');
 
   // 70 °C: air +13 % (T₂/T₁ = 343/303), water +2 %
