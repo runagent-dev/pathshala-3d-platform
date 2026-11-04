@@ -45,7 +45,7 @@ did not change still fails the run, as before.
 ## Chromium
 
 `.github/actions/playwright` downloads Chromium once per Playwright version (Actions cache) and installs only the system libraries
-on later runs. The library publish workflow (`library-publish.yml`) goes further: it plans first and installs Chromium only when the plan
+on later runs. The library sync (now run locally) goes further: it plans first and installs Chromium only when the plan
 builds a lab, poster, model or video; when nothing is new, changed or missing it skips the publish and the check.
 
 ## Doing the same on your computer

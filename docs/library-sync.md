@@ -63,10 +63,8 @@ three.js copies instead of the shared catalog (see "The shared libraries"); `--n
 table, wait for the token in `.env.library` (never ask for it in chat), run with `--apply`, run the dry run again to confirm `unchanged`, then
 report what the Books server answered.
 
-**Automatic publishing.** A commit on the `prod` branch runs this sync in GitHub Actions (`.github/workflows/library-publish.yml`):
-the plan, the publish, then a check that everything is `unchanged`; the Books server is told, so books follow. A pull request gets
-a plan comment (`library-plan.yml`), and a nightly job fails when the library is behind `prod` (`library-drift.yml`). Removed figures are
-never withdrawn by CI. One-time setup and the rollout: [ci-library-sync.md](ci-library-sync.md#setup-once).
+**Publishing is local.** There is no publishing from GitHub Actions any more: the workflows cost CI minutes, and a local machine renders much faster. Whoever has an update runs this sync
+on their own computer (with Claude: the `library-sync` skill in the pathshalax repo). Nothing reaches the library until someone runs it, so nothing warns when the library falls behind: the dry run shows that.
 
 ## What it publishes
 
