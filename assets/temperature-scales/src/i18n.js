@@ -53,19 +53,19 @@ export const STRINGS = {
     law_label: 'কেলভিন = সেলসিয়াস + {off}',
     sum: '{c} + {off} = <b>{k}&nbsp;K</b>',
     out_drag: 'পারদের মাথা টেনে তাপমাত্রা বদলাও।',
-    out_up: '<b>{d}&nbsp;°C বেড়েছে</b> বলা আর <b>{d}&nbsp;K বেড়েছে</b> বলা একই কথা।',
-    out_down: '<b>{d}&nbsp;°C কমেছে</b> বলা আর <b>{d}&nbsp;K কমেছে</b> বলা একই কথা।',
+    out_up: 'তাপমাত্রা <b>{d}&nbsp;°C বেড়েছে</b> বলা আর <b>{d}&nbsp;K বেড়েছে</b> বলা একই কথা।',
+    out_down: 'তাপমাত্রা <b>{d}&nbsp;°C কমেছে</b> বলা আর <b>{d}&nbsp;K কমেছে</b> বলা একই কথা।',
 
     // the rule: the book's words, one idea at a time
-    rule_start: '<b>তাপমাত্রা মাপার জন্য পদার্থের যে ধর্মটি ব্যবহার করা হয়, সেটিই তাপমাত্রিক ধর্ম।</b> পারদ হচ্ছে তাপমাত্রিক পদার্থ এবং পারদের আয়তনের প্রসারণ তার তাপমাত্রিক ধর্ম।',
+    rule_start: 'তাপমাত্রা মাপতে পদার্থের যে ধর্ম ব্যবহার করা হয়, তার নাম <b>তাপমাত্রিক ধর্ম।</b> এখানে পারদ তাপমাত্রিক পদার্থ, আর পারদের আয়তনের প্রসারণ তার তাপমাত্রিক ধর্ম।',
     rule_ice:
-      '<b>বরফ গলে পানিতে পরিণত হওয়ার তাপমাত্রা:</b> {atm}&nbsp;atm বাতাসের চাপে সেলসিয়াস স্কেলে {c}&nbsp;°C, কেলভিন স্কেলে {k}&nbsp;K, ফারেনহাইট স্কেলে {f}&nbsp;°F।',
-    rule_boil: '<b>পানি ফুটতে থাকার তাপমাত্রা:</b> সেলসিয়াস স্কেলে {c}&nbsp;°C, কেলভিন স্কেলে {k}&nbsp;K, ফারেনহাইট স্কেলে {f}&nbsp;°F।',
+      '{atm}&nbsp;atm চাপে <b>বরফ গলার তাপমাত্রা:</b> সেলসিয়াস স্কেলে {c}&nbsp;°C, কেলভিন স্কেলে {k}&nbsp;K, ফারেনহাইট স্কেলে {f}&nbsp;°F।',
+    rule_boil: '<b>পানি ফোটার তাপমাত্রা:</b> সেলসিয়াস স্কেলে {c}&nbsp;°C, কেলভিন স্কেলে {k}&nbsp;K, ফারেনহাইট স্কেলে {f}&nbsp;°F।',
     rule_room:
-      '<b>সেলসিয়াস স্কেলের সাথে {off} যোগ করলেই কেলভিন স্কেল পাওয়া যায়।</b> ঘরের তাপমাত্রা {c}&nbsp;°C হলে কেলভিন স্কেলে সেটা ({c} + {off} =) {k}&nbsp;K।',
-    rule_abs: '<b>পরম শূন্য (Absolute Zero):</b> সবচেয়ে কম তাপমাত্রা; এর থেকে কম হওয়া যায় না। সেলসিয়াস স্কেলে এর মান {a}&nbsp;°C, কেলভিন স্কেলে শূন্য কেলভিন।',
+      'সেলসিয়াস স্কেলের সঙ্গে <b>{off} যোগ করলে</b> কেলভিন স্কেল পাওয়া যায়। ঘরের তাপমাত্রা {c}&nbsp;°C হলে কেলভিনে তা ({c} + {off} =) {k}&nbsp;K।',
+    rule_abs: '<b>পরম শূন্য</b> (Absolute Zero) সবচেয়ে কম তাপমাত্রা; এর চেয়ে কম হওয়া যায় না। সেলসিয়াস স্কেলে এর মান {a}&nbsp;°C, কেলভিন স্কেলে শূন্য কেলভিন।',
     rule_triple:
-      '<b>পানির ত্রৈধ বিন্দু (Triple Point):</b> {p}&nbsp;atm চাপে বরফ, পানি এবং জলীয় বাষ্প একসাথে থাকতে পারে। সেলসিয়াস স্কেলে এর মান {c}&nbsp;°C, কেলভিন স্কেলে {k}&nbsp;K।',
+      'পানির <b>ত্রৈধ বিন্দু</b> (Triple Point): {p}&nbsp;atm চাপে বরফ, পানি ও জলীয় বাষ্প একসঙ্গে থাকতে পারে। সেলসিয়াস স্কেলে এর মান {c}&nbsp;°C, কেলভিন স্কেলে {k}&nbsp;K।',
 
     hint_abs: 'পরম শূন্যের থেকে কম তাপমাত্রা হয় না।',
 
@@ -156,21 +156,21 @@ export const STRINGS = {
     law_label: 'Kelvin = Celsius + {off}',
     sum: '{c} + {off} = <b>{k}&nbsp;K</b>',
     out_drag: 'Drag the top of the mercury to change the temperature.',
-    out_up: 'Saying the temperature <b>rose by {d}&nbsp;°C</b> and saying it <b>rose by {d}&nbsp;K</b> is the same thing.',
-    out_down: 'Saying the temperature <b>fell by {d}&nbsp;°C</b> and saying it <b>fell by {d}&nbsp;K</b> is the same thing.',
+    out_up: 'Saying the temperature <b>rose by {d}&nbsp;°C</b> and saying it <b>rose by {d}&nbsp;K</b> mean the same.',
+    out_down: 'Saying the temperature <b>fell by {d}&nbsp;°C</b> and saying it <b>fell by {d}&nbsp;K</b> mean the same.',
 
     rule_start:
-      '<b>The property of a substance used to measure temperature is its thermometric property.</b> Here mercury is the thermometric substance and the expansion of its volume is its thermometric property.',
+      'The property of a substance used to measure temperature is its <b>thermometric property.</b> Here mercury is the thermometric substance, and the expansion of its volume is its thermometric property.',
     rule_ice:
-      '<b>The temperature at which ice melts into water:</b> at {atm}&nbsp;atm of air pressure it is {c}&nbsp;°C on the Celsius scale, {k}&nbsp;K on the Kelvin scale, {f}&nbsp;°F on the Fahrenheit scale.',
+      'At {atm}&nbsp;atm, the <b>melting point of ice</b> is {c}&nbsp;°C on the Celsius scale, {k}&nbsp;K on the Kelvin scale and {f}&nbsp;°F on the Fahrenheit scale.',
     rule_boil:
-      '<b>The temperature at which water boils:</b> {c}&nbsp;°C on the Celsius scale, {k}&nbsp;K on the Kelvin scale, {f}&nbsp;°F on the Fahrenheit scale.',
+      'The <b>boiling point of water</b> is {c}&nbsp;°C on the Celsius scale, {k}&nbsp;K on the Kelvin scale and {f}&nbsp;°F on the Fahrenheit scale.',
     rule_room:
-      '<b>Add {off} to the Celsius scale and you get the Kelvin scale.</b> If the room is at {c}&nbsp;°C, on the Kelvin scale it is ({c} + {off} =) {k}&nbsp;K.',
+      '<b>Add {off}</b> to the Celsius scale and you get the Kelvin scale. A room at {c}&nbsp;°C is ({c} + {off} =) {k}&nbsp;K.',
     rule_abs:
-      '<b>Absolute zero:</b> the lowest temperature; nothing can be colder. On the Celsius scale its value is {a}&nbsp;°C, on the Kelvin scale zero kelvin.',
+      '<b>Absolute zero</b> is the lowest temperature; nothing can be colder. On the Celsius scale it is {a}&nbsp;°C, on the Kelvin scale zero kelvin.',
     rule_triple:
-      '<b>The triple point of water:</b> at {p}&nbsp;atm ice, water and water vapour can exist together. On the Celsius scale its value is {c}&nbsp;°C, on the Kelvin scale {k}&nbsp;K.',
+      'The <b>triple point</b> of water: at {p}&nbsp;atm, ice, water and water vapour can exist together. It is {c}&nbsp;°C on the Celsius scale and {k}&nbsp;K on the Kelvin scale.',
 
     hint_abs: 'There is no temperature below absolute zero.',
 

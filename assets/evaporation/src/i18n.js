@@ -52,16 +52,16 @@ export const STRINGS = {
     side_right_in: 'ডানের পাত্রে',
     time_label: 'সময়',
 
-    out_start: 'দুটি পাত্রে সমান তরল। সময় চালাও: শুকিয়ে যাওয়ার নামই <b>বাষ্পায়ন</b> (Evaporation)।',
+    out_start: 'দুটি পাত্রে সমান তরল। সময় চালাও। তরল শুকিয়ে যাওয়ার নাম <b>বাষ্পায়ন</b> (Evaporation)।',
     out_run: '{side} বাষ্পায়ন বেশি, তাই তরল আগে কমে।',
     out_dry: '{side} সব তরল বাষ্পায়িত হয়ে গেছে।',
     left_dry: 'শেষ',
 
-    rule_wind: '<b>বাতাসের প্রবাহ:</b> বাতাসের প্রবাহ বেশি হলে বাষ্পায়ন বেশি হয়।',
-    rule_area: '<b>ক্ষেত্রফল:</b> উপরিভাগের ক্ষেত্রফল যত বেশি, বাষ্পায়ন তত বেশি। গ্লাসের পানি বড় থালায় ঢেলে দিলে অনেক তাড়াতাড়ি শুকিয়ে যাবে।',
-    rule_liquid: '<b>তরলের প্রকৃতি:</b> তরলের স্ফুটনাঙ্ক কম হলে বাষ্পায়ন বেশি। উদ্বায়ী তরলের বাষ্পায়ন সবচেয়ে বেশি।',
-    rule_warm: '<b>উষ্ণতা:</b> তরল এবং তরলের কাছাকাছি বাতাসের উষ্ণতা বেশি হলে বাষ্পায়ন বেশি হয়।',
-    rule_dry: '<b>বায়ুর শুষ্কতা:</b> বাতাস যত শুষ্ক হবে, তরল তত তাড়াতাড়ি বাষ্পায়ন হবে।',
+    rule_wind: '<b>বাতাসের প্রবাহ</b> বেশি হলে বাষ্পায়ন বেশি হয়।',
+    rule_area: 'উপরিভাগের <b>ক্ষেত্রফল</b> যত বেশি, বাষ্পায়ন তত বেশি। গ্লাসের পানি বড় থালায় ঢাললে অনেক তাড়াতাড়ি শুকিয়ে যায়।',
+    rule_liquid: '<b>তরলের প্রকৃতি</b> বাষ্পায়নকে প্রভাবিত করে: স্ফুটনাঙ্ক কম হলে বাষ্পায়ন বেশি। উদ্বায়ী তরলের বাষ্পায়ন সবচেয়ে বেশি।',
+    rule_warm: 'তরল আর তার কাছের বাতাসের <b>উষ্ণতা</b> বেশি হলে বাষ্পায়ন বেশি হয়।',
+    rule_dry: 'বাতাস যত <b>শুষ্ক</b>, তরল তত তাড়াতাড়ি বাষ্পায়িত হয়।',
 
     // the test
     q_count: 'প্রশ্ন {i} / {n}',
@@ -156,17 +156,17 @@ export const STRINGS = {
     side_right_in: 'In the right vessel',
     time_label: 'Time',
 
-    out_start: 'Both vessels hold the same amount. Let time pass: drying up is called <b>evaporation</b>.',
+    out_start: 'Both vessels hold the same amount. Let time pass. A liquid drying up is called <b>evaporation</b>.',
     out_run: '{side} evaporation is faster, so the liquid goes down sooner.',
     out_dry: '{side} all the liquid has evaporated.',
     left_dry: 'Dry',
 
-    rule_wind: '<b>Air flow:</b> the stronger the air flow, the more evaporation.',
+    rule_wind: 'The stronger the <b>air flow</b>, the more evaporation.',
     rule_area:
-      '<b>Area of the surface:</b> the larger the area, the more evaporation. Water from a glass poured onto a big plate dries up much sooner.',
-    rule_liquid: '<b>Kind of liquid:</b> the lower the boiling point, the more evaporation. A volatile liquid evaporates the most.',
-    rule_warm: '<b>Temperature:</b> the warmer the liquid and the air near it, the more evaporation.',
-    rule_dry: '<b>Dryness of the air:</b> the drier the air, the sooner the liquid evaporates.',
+      'The larger the <b>surface area</b>, the more evaporation. Water from a glass poured onto a big plate dries up much sooner.',
+    rule_liquid: 'The <b>kind of liquid</b> matters: the lower the boiling point, the more evaporation. A volatile liquid evaporates the most.',
+    rule_warm: 'The higher the <b>temperature</b> of the liquid and the air near it, the more evaporation.',
+    rule_dry: 'The <b>drier</b> the air, the sooner the liquid evaporates.',
 
     q_count: 'Question {i} of {n}',
     q_score: 'Correct: {right}',

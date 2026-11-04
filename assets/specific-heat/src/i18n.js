@@ -50,10 +50,10 @@ export const STRINGS = {
     out_heated: 'একই {Q} J তাপে সোনার তাপমাত্রা বাড়ল {dg} K, পানির মাত্র {dw} K।',
     out_max: 'একই {Q} J তাপে সোনা {dg} K, পানি {dw} K বাড়ল। আবার শুরু করে দেখো।',
     rule_start:
-      '<b>{one} kg পদার্থের তাপমাত্রা {one} K বাড়াতে যে পরিমাণ তাপের প্রয়োজন, সেটিই ঐ পদার্থের আপেক্ষিক তাপ।</b> একই ভরে সমান তাপ দিলে দুটো কতটা গরম হয়, দেখো।',
-    rule_one: '<b>আপেক্ষিক তাপ s = Q ÷ m(T<sub>2</sub> − T<sub>1</sub>)।</b> এর একক J kg<sup>−1</sup>K<sup>−1</sup>। এবার অন্যটির হিসাবও দেখো।',
+      '{one} kg পদার্থের তাপমাত্রা {one} K বাড়াতে যে তাপ লাগে, সেটাই ওই পদার্থের <b>আপেক্ষিক তাপ।</b> একই ভরে সমান তাপ দিলে দুটো কতটা গরম হয়, দেখো।',
+    rule_one: 'উপরের সূত্রে <b>আপেক্ষিক তাপ</b> <i>s</i> বের হয়। এর একক J kg<sup>−1</sup>K<sup>−1</sup>। এবার অন্যটির হিসাবও দেখো।',
     rule_both:
-      '<b>পানির আপেক্ষিক তাপ বেশি, সোনার কম।</b> তাই সোনাকে চট করে উত্তপ্ত করা যায়, পানিকে এত সহজে নয়। C = ms: {m} kg পানির {Cw}, সোনার {Cg} J K<sup>−1</sup>, প্রায় {x} গুণ।',
+      'পানির আপেক্ষিক তাপ বেশি, সোনার কম। তাই <b>সোনা সহজে গরম হয়,</b> পানি অত সহজে নয়। <i>C</i> = <i>ms</i>: {m} kg পানির {Cw}, সোনার {Cg} J K<sup>−1</sup>, প্রায় {x} গুণ।',
     // labels on the 3D view
     lbl_name: '<b>{name}</b> {m} kg',
     lbl_Q: 'Q = {Q} J',
@@ -155,11 +155,11 @@ export const STRINGS = {
     out_heated: 'The same {Q} J raised the gold by {dg} K, the water by only {dw} K.',
     out_max: 'The same {Q} J raised gold by {dg} K and water by {dw} K. Start again to repeat.',
     rule_start:
-      '<b>The heat needed to raise the temperature of {one} kg of a substance by {one} K is that substance’s specific heat.</b> Give both the same heat and see how hot each gets.',
+      'The heat needed to raise {one} kg of a substance by {one} K is that substance’s <b>specific heat.</b> Give both the same heat and see how hot each gets.',
     rule_one:
-      '<b>Specific heat s = Q ÷ m(T<sub>2</sub> − T<sub>1</sub>).</b> Its unit is J kg<sup>−1</sup>K<sup>−1</sup>. Now look at the other one too.',
+      'The formula above gives the <b>specific heat</b> <i>s</i>. Its unit is J kg<sup>−1</sup>K<sup>−1</sup>. Now look at the other one too.',
     rule_both:
-      '<b>Water has the larger specific heat, gold the smaller.</b> So gold heats up quickly, water not so easily. C = ms: {Cw} for {m} kg of water, {Cg} J K<sup>−1</sup> for gold, about {x} times.',
+      'Water has the larger specific heat, gold the smaller. So <b>gold heats up quickly,</b> water not so easily. <i>C</i> = <i>ms</i>: {Cw} for {m} kg of water, {Cg} J K<sup>−1</sup> for gold, about {x} times.',
     lbl_name: '<b>{name}</b> {m} kg',
     lbl_Q: 'Q = {Q} J',
     lbl_temp: '{T} °C',

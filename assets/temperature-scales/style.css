@@ -7,11 +7,11 @@ body.bg-transparent { background: transparent; }
 
 .ts { --c-C: #1c6fd9; --c-K: #237a35; --c-F: #862e9c; --c-now: #d6336c; }
 .ts sub, .ts sup { font-size: 0.72em; line-height: 0; }
-.ts .pvc-outcome { font-size: 14.5px; }
+.ts .pvc-outcome { font-size: 15px; line-height: 1.6; }
 .ts .pvc-outcome b { color: var(--ink); font-size: 1.05em; white-space: normal; }
-.ts .pvc-rule { font-size: 14.5px; line-height: 1.45; }
+.ts .pvc-rule { font-size: 15px; line-height: 1.6; }
 .ts .pvc-examples button { padding: 4px 2px 6px; }
-.ts .pvc-examples .pvc-ex-word { font-size: 13px; white-space: normal; text-align: center; line-height: 1.2; }
+.ts .pvc-examples .pvc-ex-word { font-size: 14px; white-space: normal; text-align: center; line-height: 1.2; }
 
 /* the three readings: the same temperature on the three scales, in the scales' colours */
 .ts-read { display: flex; gap: 6px; }
@@ -19,21 +19,21 @@ body.bg-transparent { background: transparent; }
 .ts-col[data-s='C'] { --c: var(--c-C); }
 .ts-col[data-s='K'] { --c: var(--c-K); }
 .ts-col[data-s='F'] { --c: var(--c-F); }
-.ts-name { font-size: 13px; font-weight: 600; color: var(--c); white-space: nowrap; }
-.ts-val { font-size: 18px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; min-height: 1.25em; }
+.ts-name { font-size: 13.5px; font-weight: 600; color: var(--c); white-space: nowrap; }
+.ts-val { font-size: 18px; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; min-height: 1.25em; }
 
 /* K = C + 273.15, then the sum with the numbers */
 .ts-eq { display: flex; align-items: center; gap: 4px 12px; flex-wrap: wrap; }
-.ts-law { flex: none; padding: 3px 11px; border-radius: 10px; background: #f3f8ee; box-shadow: inset 0 0 0 1.5px #bcd9ae; font-size: 16px; font-weight: 700; color: var(--c-K); white-space: nowrap; }
+.ts-law { flex: none; padding: 3px 11px; border-radius: 10px; background: #f3f8ee; box-shadow: inset 0 0 0 1.5px #bcd9ae; font-size: 16px; font-weight: 600; color: var(--c-K); white-space: nowrap; }
 .ts-sum { flex: 1 1 auto; min-width: 0; font-size: 15.5px; color: var(--ink-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .ts-sum b { color: var(--c-K); font-size: 1.12em; }
 
 /* labels on the picture: the temperature now in a solid chip, the fixed points in white chips, the names above */
 .pvc-anno-lines .k-title, .pvc-anno-lines .k-cur, .pvc-anno-lines .k-fix { display: none; }
 .ts .pvc-anno-cur, .ts .pvc-anno-fix, .ts .pvc-anno-title { --c: var(--ink); padding: 1px 7px; border-radius: 6px; font-size: 13.5px; line-height: 1.4; text-align: center; font-variant-numeric: tabular-nums; }
-.ts .pvc-anno-cur { background: var(--c); border: 1.5px solid #fff; color: #fff; font-weight: 700; }
+.ts .pvc-anno-cur { background: var(--c); border: 1.5px solid #fff; color: #fff; font-weight: 600; }
 .ts .pvc-anno-fix { background: rgba(255, 255, 255, 0.96); border: 1.5px solid var(--c); color: var(--c); font-weight: 600; }
-.ts .pvc-anno-title { background: rgba(255, 255, 255, 0.96); border: 1.5px solid var(--c); color: var(--c); font-weight: 700; font-size: 14px; }
+.ts .pvc-anno-title { background: rgba(255, 255, 255, 0.96); border: 1.5px solid var(--c); color: var(--c); font-weight: 600; font-size: 14px; }
 .ts .pvc-anno-part { background: rgba(255, 255, 255, 0.96); border: 1.5px solid #5b6672; color: #2b3540; font-weight: 600; font-size: 13px; padding: 1px 7px; }
 
 /* the test: numbers with units, room kept for the question and the worked answer */
@@ -52,7 +52,7 @@ body.bg-transparent { background: transparent; }
 /* a short landscape frame (a phone held sideways): the panel's readings show numbers and units only */
 .ts[data-short='1'] .ts-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .ts[data-short='1'] .ts-col { padding: 3px 4px; }
-.ts[data-short='1'] .pvc-rule { font-size: 13.5px; }
+.ts[data-short='1'] .pvc-rule { font-size: 14px; }
 .ts[data-short='1'] .pvc-learn { gap: 6px; }
 .ts[data-short='1'] .pvc-act-row { min-height: 44px; }
 .ts[data-short='1'] .pvc-act { min-height: 42px; }
@@ -63,7 +63,7 @@ body.bg-transparent { background: transparent; }
    show their numbers and units only (the scales' names are on the thermometers in the same colours) */
 .ts[data-side='0'] .pvc-learn { gap: 4px; }
 .ts[data-side='0'] .pvc-outcome { --pvc-outcome-lines: 1; font-size: 14px; }
-.ts[data-side='0'] .pvc-rule { --pvc-rule-lines: 3; font-size: 13.5px; }
+.ts[data-side='0'] .pvc-rule { --pvc-rule-lines: 3; font-size: 14px; }
 .ts[data-side='0'] .pvc-panel { gap: 6px; padding-top: 8px; }
 .ts[data-side='0'] .pvc-tabs button { height: 36px; }
 .ts[data-side='0'] .pvc-examples button { min-height: 34px; padding-bottom: 4px; }
@@ -81,5 +81,5 @@ body.bg-transparent { background: transparent; }
 .ts[data-compact='1'] .pvc-opt { height: 36px; font-size: 14px; }
 .ts[data-compact='1'] .pvc-q-ask { gap: 5px; }
 .ts[data-compact='1'] .pvc-q-text { font-size: 14.5px; }
-.ts[data-compact='1'] .pvc-q-feedback { font-size: 13px; }
+.ts[data-compact='1'] .pvc-q-feedback { font-size: 14px; }
 .ts[data-compact='1'] .pvc-panel { gap: 5px; }
