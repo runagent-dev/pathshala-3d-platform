@@ -58,11 +58,9 @@ export const STRINGS = {
 
     // the rule: the book's words, one idea at a time
     rule_start: 'তাপমাত্রা মাপতে পদার্থের যে ধর্ম ব্যবহার করা হয়, তার নাম <b>তাপমাত্রিক ধর্ম।</b> এখানে পারদ তাপমাত্রিক পদার্থ, আর পারদের আয়তনের প্রসারণ তার তাপমাত্রিক ধর্ম।',
-    rule_ice:
-      '{atm}&nbsp;atm চাপে <b>বরফ গলার তাপমাত্রা:</b> সেলসিয়াস স্কেলে {c}&nbsp;°C, কেলভিন স্কেলে {k}&nbsp;K, ফারেনহাইট স্কেলে {f}&nbsp;°F।',
+    rule_ice: '{atm}&nbsp;atm চাপে <b>বরফ গলার তাপমাত্রা:</b> সেলসিয়াস স্কেলে {c}&nbsp;°C, কেলভিন স্কেলে {k}&nbsp;K, ফারেনহাইট স্কেলে {f}&nbsp;°F।',
     rule_boil: '<b>পানি ফোটার তাপমাত্রা:</b> সেলসিয়াস স্কেলে {c}&nbsp;°C, কেলভিন স্কেলে {k}&nbsp;K, ফারেনহাইট স্কেলে {f}&nbsp;°F।',
-    rule_room:
-      'সেলসিয়াস স্কেলের সঙ্গে <b>{off} যোগ করলে</b> কেলভিন স্কেল পাওয়া যায়। ঘরের তাপমাত্রা {c}&nbsp;°C হলে কেলভিনে তা ({c} + {off} =) {k}&nbsp;K।',
+    rule_room: 'সেলসিয়াস স্কেলের সঙ্গে <b>{off} যোগ করলে</b> কেলভিন স্কেল পাওয়া যায়। ঘরের তাপমাত্রা {c}&nbsp;°C হলে কেলভিনে তা ({c} + {off} =) {k}&nbsp;K।',
     rule_abs: '<b>পরম শূন্য</b> (Absolute Zero) সবচেয়ে কম তাপমাত্রা; এর চেয়ে কম হওয়া যায় না। সেলসিয়াস স্কেলে এর মান {a}&nbsp;°C, কেলভিন স্কেলে শূন্য কেলভিন।',
     rule_triple:
       'পানির <b>ত্রৈধ বিন্দু</b> (Triple Point): {p}&nbsp;atm চাপে বরফ, পানি ও জলীয় বাষ্প একসঙ্গে থাকতে পারে। সেলসিয়াস স্কেলে এর মান {c}&nbsp;°C, কেলভিন স্কেলে {k}&nbsp;K।',
@@ -165,8 +163,7 @@ export const STRINGS = {
       'At {atm}&nbsp;atm, the <b>melting point of ice</b> is {c}&nbsp;°C on the Celsius scale, {k}&nbsp;K on the Kelvin scale and {f}&nbsp;°F on the Fahrenheit scale.',
     rule_boil:
       'The <b>boiling point of water</b> is {c}&nbsp;°C on the Celsius scale, {k}&nbsp;K on the Kelvin scale and {f}&nbsp;°F on the Fahrenheit scale.',
-    rule_room:
-      '<b>Add {off}</b> to the Celsius scale and you get the Kelvin scale. A room at {c}&nbsp;°C is ({c} + {off} =) {k}&nbsp;K.',
+    rule_room: '<b>Add {off}</b> to the Celsius scale and you get the Kelvin scale. A room at {c}&nbsp;°C is ({c} + {off} =) {k}&nbsp;K.',
     rule_abs:
       '<b>Absolute zero</b> is the lowest temperature; nothing can be colder. On the Celsius scale it is {a}&nbsp;°C, on the Kelvin scale zero kelvin.',
     rule_triple:
