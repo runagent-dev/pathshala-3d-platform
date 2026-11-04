@@ -240,7 +240,7 @@ export const STRINGS = {
     pin_bangladesh: 'বাংলাদেশ',
 
     tab_tour: 'ঘুরে দেখো',
-    tab_calc: 'হিসাব করো',
+    tab_calc: 'ক্যালকুলেটর',
     calc_from: 'যে সংখ্যা ও একক থেকে',
     calc_to: 'যে এককে চাই',
     pick_from: 'কোন একক থেকে?',
@@ -408,7 +408,7 @@ export const STRINGS = {
     pin_bangladesh: 'Bangladesh',
 
     tab_tour: 'Tour',
-    tab_calc: 'Convert',
+    tab_calc: 'Calculator',
     calc_from: 'number and unit to convert',
     calc_to: 'unit to convert to',
     pick_from: 'From which unit?',

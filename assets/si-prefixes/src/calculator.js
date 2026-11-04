@@ -1,4 +1,4 @@
-// The prefix calculator (the হিসাব করো tab): the student types a number on the keypad, picks the unit it is in and
+// The prefix calculator (the ক্যালকুলেটর tab): the student types a number on the keypad, picks the unit it is in and
 // the unit they want, and reads the answer with the working: "১ km = ১০³ ÷ ১০⁰ m = ১০³ m", then
 // "২.৫ km = ২.৫ × ১০³ m = ২,৫০০ m". The answer is exact (./convert.js moves the decimal point; no rounding).
 // It also names the tour's object nearest to that length, and the 3D flies there (onLook).

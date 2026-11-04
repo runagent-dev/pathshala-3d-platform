@@ -2,6 +2,9 @@
 
 Feedback and change requests. Newest at the top. (Written from the dashboard's Notes tab; stays out of the handoff zip.)
 
+## 2026-11-04, v0.5.1
+- The calculator's tab is now called ক্যালকুলেটর (was হিসাব করো), at the owner's request; English "Calculator".
+
 ## Prefix calculator (2026-11-04), v0.5.0
 - Owner's request: "add a converter calculator so that students can themselves check the conversion using numbers, a very proper calculator".
 - The panel now has two tabs: ঘুরে দেখো (the tour, as before) and হিসাব করো (the calculator). Opening the calculator pauses the tour. `?mode=calc` opens on it; `set { mode, value, from, to }` drives it; event `convert`.
