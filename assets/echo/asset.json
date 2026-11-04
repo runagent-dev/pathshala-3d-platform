@@ -46,9 +46,7 @@
   "commands": [
     { "name": "get", "payload": {} },
     { "name": "set", "payload": { "d": 25 } },
-    { "name": "set", "payload": { "call": true } },
     { "name": "set", "payload": { "d": 10, "call": true, "animate": false } },
-    { "name": "set", "payload": { "clap": true } },
     { "name": "set", "payload": { "tau": 0.12 } },
     { "name": "set", "payload": { "found": { "near": true, "far": true }, "animate": false } },
     { "name": "reset", "payload": {} },
