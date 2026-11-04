@@ -43,7 +43,7 @@ test('work: W = Fs while pushed, nothing more over d, nothing against the wall',
   const done = await fig.call('get');
   expect(done).toMatchObject({ phase: 'done', x: 3, sNow: 2, dNow: 1, W: 100, results: { push: 100, wall: null } });
   expect(await text('.pvc-outcome')).toBe('কাজ W = Fs = ৫০ N × ২ m = ১০০ J');
-  expect(await text('.pvc-rule')).toContain('পরের d = ১ m দূরত্ব অতিক্রম করার সময় F বল প্রয়োগ করা হয়নি বলে F বল দ্বারা কোনো কাজ হয়নি');
+  expect(await text('.pvc-rule')).toContain('পরের d = ১ m দূরত্বে F বল প্রয়োগ করা হয়নি, তাই ওই পথে F বলের কোনো কাজ হয়নি');
   expect(await text('[data-example="push"] .pvc-ex-res')).toBe('১০০ J');
   // the button now offers the wall, step ২
   expect(done.next).toEqual({ label: 'act_try_wall', step: 2, example: 'wall' });
