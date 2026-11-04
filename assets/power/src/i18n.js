@@ -46,12 +46,13 @@ export const STRINGS = {
 
     // the rule line: the book's words in <b>, growing with what the student has found out
     rule_work_ready:
-      'দুটি আদর্শ পাম্পই {m} kg পানি {h} m উপরে তুলবে, <b>একই কাজ</b>: W = mgh = {m} kg × {g} ms<sup>−2</sup> × {h} m = {W} J। কোনটি কম সময় নেয়?',
-    rule_work_run: 'পানি উঠছে (সময় {k} গুণ দ্রুত দেখানো; আদর্শ পাম্পে শক্তির অপচয় নেই)। দুটি স্টপওয়াচ দেখো: কোন ট্যাংক আগে ভরে?',
-    rule_work_done: '<b>একই কাজ</b> বড় পাম্প অর্ধেক সময়ে করল, তাই তার <b>ক্ষমতা</b> দ্বিগুণ। <b>ক্ষমতা হচ্ছে কাজ করার হার:</b> t সময়ে W কাজ হলে P = W/t।',
-    rule_time_ready: 'এবার দুটি পাম্পই <b>একই সময়</b>, {T} s করে চলবে। কোনটি বেশি পানি তোলে, মানে বেশি কাজ করে, দেখো।',
+      'দুটি আদর্শ পাম্পই {m} kg পানি {h} m উপরে তুলবে, অর্থাৎ <b>একই কাজ</b> করবে:<span class="pvc-formula"><i>W</i> = <i>mgh</i> = {m} kg × {g} m s<sup>−2</sup> × {h} m = <b>{W} J</b></span>কোনটি কম সময় নেয়?',
+    rule_work_run: 'পানি উঠছে (সময় {k} গুণ দ্রুত দেখানো, আদর্শ পাম্পে শক্তির অপচয় নেই)। দুটি স্টপওয়াচ দেখো: কোন ট্যাংক আগে ভরে?',
+    rule_work_done:
+      'বড় পাম্প <b>একই কাজ</b> অর্ধেক সময়ে করল, তাই তার ক্ষমতা দ্বিগুণ। ক্ষমতা হচ্ছে কাজ করার হার। <i>t</i> সময়ে <i>W</i> কাজ হলে:<span class="pvc-formula"><i>P</i> = <span class="pvc-frac"><span><i>W</i></span><span><i>t</i></span></span></span>',
+    rule_time_ready: 'এবার দুটি পাম্পই <b>একই সময়</b> ধরে, {T} s করে চলবে। কোনটি বেশি পানি তোলে, অর্থাৎ বেশি কাজ করে, দেখো।',
     rule_time_run: 'একই সময়ে বড় পাম্পের ট্যাংকে পানি দ্বিগুণ দ্রুত উঠছে (সময় {k} গুণ দ্রুত দেখানো)।',
-    rule_time_done: 'একই সময়ে বড় পাম্প দ্বিগুণ পানি তুলল, <b>দ্বিগুণ কাজ</b>। কাজ করা মানে শক্তির রূপান্তর, তাই <b>ক্ষমতা হচ্ছে শক্তির রূপান্তরের হার।</b>',
+    rule_time_done: 'একই সময়ে বড় পাম্প দ্বিগুণ পানি তুলল, অর্থাৎ দ্বিগুণ কাজ করল। কাজ করা মানে শক্তির রূপান্তর। তাই <b>ক্ষমতা</b> হচ্ছে শক্তির রূপান্তরের হার।',
 
     // labels on the picture
     l_h: 'h = {h} m',
@@ -144,14 +145,14 @@ export const STRINGS = {
     calc: 'Working out the power: P = W ÷ t',
 
     rule_work_ready:
-      'Both ideal pumps will lift {m} kg of water {h} m up, <b>the same work</b>: W = mgh = {m} kg × {g} ms<sup>−2</sup> × {h} m = {W} J. Which one takes less time?',
-    rule_work_run: 'The water is rising (time shown {k} times faster; ideal pumps lose no energy). Watch both stopwatches: which tank fills first?',
+      'Both ideal pumps will lift {m} kg of water {h} m up, so they do <b>the same work</b>:<span class="pvc-formula"><i>W</i> = <i>mgh</i> = {m} kg × {g} m s<sup>−2</sup> × {h} m = <b>{W} J</b></span>Which one takes less time?',
+    rule_work_run: 'The water is rising (time shown {k} times faster, ideal pumps lose no energy). Watch both stopwatches: which tank fills first?',
     rule_work_done:
-      'The big pump did <b>the same work</b> in half the time, so its <b>power</b> is twice as much. <b>Power is the rate of doing work:</b> W work in time t means P = W/t.',
+      'The big pump did <b>the same work</b> in half the time, so its power is twice as much. Power is the rate of doing work. <i>W</i> of work in time <i>t</i> gives:<span class="pvc-formula"><i>P</i> = <span class="pvc-frac"><span><i>W</i></span><span><i>t</i></span></span></span>',
     rule_time_ready: 'Now both pumps run for <b>the same time</b>, {T} s each. Which lifts more water, so does more work?',
     rule_time_run: 'In the same time, the big pump’s tank fills twice as fast (time shown {k} times faster).',
     rule_time_done:
-      'In the same time the big pump lifted twice the water: <b>twice the work</b>. Doing work means converting energy, so <b>power is the rate of converting energy.</b>',
+      'In the same time the big pump lifted twice the water: twice the work. Doing work means converting energy, so <b>power</b> is the rate of converting energy.',
 
     l_h: 'h = {h} m',
     l_time: '{t} s',

@@ -85,7 +85,7 @@ export function createApp(root, options = {}) {
       items: EXAMPLES.map((id) => ({ id, label: `ex_${id}` })),
     },
     quiet: [{ act: 'home', label: 'act_home', icon: ICONS.reset }],
-    lines: { action: 1, rule: 3 }, // the result's table keeps its own height (a header and two rows)
+    lines: { action: 1, rule: 5 }, // the result's table keeps its own height (a header and two rows)
   });
   const ui = buildStudentShell(root, t, { layout: 'side', learn: sheetHtml, learnAlign: 'start' });
   const sheet = bindCleanSheet(ui.learn);
