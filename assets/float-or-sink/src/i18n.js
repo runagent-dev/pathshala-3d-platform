@@ -76,7 +76,7 @@ export const STRINGS = {
     lbl_cm: '{v}&nbsp;{u_cm}',
     lbl_letter: '{x}',
 
-    out_start: 'তিনটি বস্তু <b>সমান আকারের</b>: পুরো ডুবলে প্রতিটির প্লবতা <b>{B}&nbsp;{u_N}</b>',
+    out_start: 'তিনটি বস্তু সমান আকারের। পুরো ডুবলে প্রতিটির প্লবতা <b>{B}&nbsp;{u_N}</b>',
     out_falling: '{name} নামছে: ওজন <b>{W}&nbsp;{u_N}</b> &gt; প্লবতা {B}&nbsp;{u_N}',
     out_rising: '{name} উঠছে: প্লবতা <b>{B}&nbsp;{u_N}</b> &gt; ওজন {W}&nbsp;{u_N}',
     out_settling: '{name} ওঠানামা করছে: প্লবতা আর ওজন সমান হওয়ার জায়গা খুঁজছে',
@@ -85,16 +85,16 @@ export const STRINGS = {
     letter_0: 'ক',
     letter_1: 'খ',
     letter_2: 'গ',
-    out_floats: '{name} <b>ভাসছে</b>: প্লবতা = ওজন = <b>{W}&nbsp;{u_N}</b>',
+    out_floats: '{name} <b>ভাসছে</b>: প্লবতা = ওজন = {W}&nbsp;{u_N}',
     out_sinks: '{name} <b>ডুবে গেল</b>: ওজন {W}&nbsp;{u_N} &gt; প্লবতা {B}&nbsp;{u_N}',
     out_stays: '{name} <b>যেখানে রাখা, সেখানেই</b>: ওজন = প্লবতা = {W}&nbsp;{u_N}',
 
-    rule_start: '<b>পানিতে ডোবানো বস্তু যতটুকু পানি সরায় (অপসারিত পানি), উপরের দিকে সেই পানির ওজনের সমান বল অনুভব করে: প্লবতা।</b> কোনটি ভাসবে, কোনটি ডুববে?',
-    rule_wood: '<b>ঠিক যে পরিমাণ পানিতে ডুবে থাকলে বস্তুর সমান ওজনের পানি অপসারণ করবে, ততটুকুই ডুববে</b>, বাকি অংশটুকু পানিতে ডুবে যাবে না।',
+    rule_start:
+      'পানিতে ডোবানো বস্তু যতটুকু পানি সরায় (অপসারিত পানি), সেই পানির ওজনের সমান একটি বল উপরের দিকে অনুভব করে। এই বলই <b>প্লবতা</b>। কোনটি ভাসবে, কোনটি ডুববে?',
+    rule_wood: 'বস্তু <b>ঠিক ততটুকুই</b> ডোবে, যতটুকু ডুবলে তার সমান ওজনের পানি অপসারণ করে। বাকি অংশ পানিতে ডোবে না।',
     rule_brick:
-      '<b>ওজন অপসারিত পানির ওজন থেকে বেশি হলে বস্তুটি পানিতে ডুবে যাবে।</b> তবে পানিতে তার ওজন সত্যিকার ওজন থেকে কম মনে হবে: {W} − {B} = {A}&nbsp;{u_N}, তলা এটুকুই ঠেলে ধরে।',
-    rule_tin:
-      '<b>ওজন অপসারিত পানির ওজনের ঠিক সমান হলে পানির ভেতরে যেখানেই রাখা হবে, সেখানেই থাকবে</b>: উপরেও ভেসে উঠবে না, নিচেও ডুবে যাবে না। (কৌটার ভেতরে মাপমতো বালু।)',
+      'ওজন অপসারিত পানির ওজনের চেয়ে বেশি হলে বস্তুটি <b>ডুবে যায়</b>। তবে পানিতে তার ওজন কম মনে হয়:<span class="pvc-formula">{W} − {B} = {A}&nbsp;{u_N}</span>তলা এটুকুই ঠেলে ধরে।',
+    rule_tin: 'ওজন অপসারিত পানির ওজনের ঠিক সমান হলে বস্তু পানির ভেতরে <b>যেখানে রাখা, সেখানেই</b> থাকে। ভেসেও ওঠে না, ডোবেও না। (কৌটার ভেতরে মাপমতো বালু।)',
     rule_drag: 'যেকোনোটি টেনে পানির ভেতরে অন্য জায়গায় নিয়ে ছেড়ে দাও: কাঠ ভেসে ওঠে, ইট ডুবে যায়, কৌটা সেখানেই থাকে।',
 
     out_block_held: '{name}: ঘনত্ব ρ = <b>{rho}&nbsp;{u_rho}</b>। পানিতে ছাড়লে কত শতাংশ ডুববে?',
@@ -102,19 +102,18 @@ export const STRINGS = {
     out_block_floats: 'V<sub>1</sub>/V = ρ/ρ<sub>w</sub> = {rho} ÷ {w} → <b>{p}%</b> ডুবে আছে',
     out_block_sinks: '{name}: ρ = {rho}&nbsp;{u_rho}, পানির চেয়ে বেশি: <b>পুরোটাই ডুবে গেল</b>',
     rule_example:
-      '<b>ভেসে থাকতে হলে ডুবন্ত অংশের সমপরিমাণ পানির ভর বস্তুর ভরের সমান হতে হবে:</b> Vρ = V<sub>1</sub>ρ<sub>w</sub>, তাই V<sub>1</sub>/V = ρ/ρ<sub>w</sub> (ρ<sub>w</sub> = {w}&nbsp;{u_rho})।',
+      'ভেসে থাকতে হলে ডুবন্ত অংশের সমপরিমাণ পানির ভর বস্তুর <b>ভরের সমান</b> হতে হবে।<span class="pvc-formula">Vρ = V<sub>1</sub>ρ<sub>w</sub>, তাই V<sub>1</sub>/V = ρ/ρ<sub>w</sub></span>এখানে ρ<sub>w</sub> = {w}&nbsp;{u_rho}।',
     rule_example_sunk:
-      '<b>V<sub>1</sub>/V = ρ/ρ<sub>w</sub> শুধু ভেসে থাকলেই খাটে।</b> ρ পানির ঘনত্বের চেয়ে বেশি হলে পুরোটা ডুবেও প্লবতা ওজনের চেয়ে কম: বস্তুটি ডুবে যায়।',
+      '<span class="pvc-formula">V<sub>1</sub>/V = ρ/ρ<sub>w</sub></span>এই সম্পর্ক <b>শুধু ভেসে থাকলেই</b> খাটে। ρ পানির ঘনত্বের চেয়ে বেশি হলে পুরোটা ডুবেও প্লবতা ওজনের চেয়ে কম, তাই বস্তুটি ডুবে যায়।',
 
-    out_sub_float: 'সাবমেরিন <b>ভাসছে</b>: ট্যাংক খালি, প্লবতা = ওজন = <b>{W}&nbsp;{u_N}</b>',
+    out_sub_float: 'সাবমেরিন <b>ভাসছে</b>: ট্যাংক খালি, প্লবতা = ওজন = {W}&nbsp;{u_N}',
     out_sub_filling: 'ট্যাংকে পানি ঢুকছে: ওজন বাড়ছে, <b>{W}&nbsp;{u_N}</b>',
-    out_sub_falling: 'ওজন <b>{W}&nbsp;{u_N}</b> &gt; প্লবতা {B}&nbsp;{u_N}: <b>নিচে নামবে</b>',
+    out_sub_falling: 'ওজন {W}&nbsp;{u_N} &gt; প্লবতা {B}&nbsp;{u_N}: <b>নিচে নামবে</b>',
     out_sub_slowing: 'ওজন = প্লবতা = <b>{W}&nbsp;{u_N}</b>: পানির বাধায় থেমে যাচ্ছে',
     out_sub_bottom: 'তলায় বসে আছে: ওজন <b>{W}&nbsp;{u_N}</b> &gt; প্লবতা {B}&nbsp;{u_N}',
-    out_sub_hover: 'ওজন = প্লবতা = <b>{W}&nbsp;{u_N}</b>: <b>যেখানে আছে, সেখানেই থেমে আছে</b>',
-    out_sub_rising: 'ওজন <b>{W}&nbsp;{u_N}</b> &lt; প্লবতা {B}&nbsp;{u_N}: <b>উপরে উঠবে</b>',
-    rule_sub:
-      '<b>পানির নিচ দিয়ে চলাচল করার জন্য সাবমেরিনে এটি করা হয়:</b> ট্যাংকে পানি নিয়ে বা বের করে দিয়ে ওজনকে প্লবতার ঠিক সমান করলে যে গভীরতায় আছে, সেখানেই থাকে।',
+    out_sub_hover: 'ওজন = প্লবতা = {W}&nbsp;{u_N}: <b>যেখানে আছে, সেখানেই থেমে আছে</b>',
+    out_sub_rising: 'ওজন {W}&nbsp;{u_N} &lt; প্লবতা {B}&nbsp;{u_N}: <b>উপরে উঠবে</b>',
+    rule_sub: 'পানির নিচে চলার জন্য সাবমেরিন ট্যাংকে পানি নেয় বা বের করে দেয়। ওজন প্লবতার ঠিক সমান হলে সে <b>যে গভীরতায় আছে</b>, সেখানেই থাকে।',
 
     hint_wait: 'একটু অপেক্ষা করো, এখনো নড়ছে।',
 
@@ -140,19 +139,19 @@ export const STRINGS = {
     mis_none: 'যার ওজন প্লবতার চেয়ে বেশি, সেটি ডুবে যায়।',
 
     q_percent: '{name}টির ঘনত্ব ρ = {rho}&nbsp;{u_rho}। পানিতে ছাড়লে এর কত শতাংশ পানিতে ডুবে থাকবে?',
-    why_percent: '<b>{p}%</b>: V<sub>1</sub>/V = ρ/ρ<sub>w</sub> = {rho} ÷ {w} = {f}, আর {f} × {h} = {p}%।',
+    why_percent: '<b>{p}%</b><span class="pvc-formula">V<sub>1</sub>/V = ρ/ρ<sub>w</sub> = {rho} ÷ {w} = {f}</span>আর {f} × {h} = {p}%।',
     mis_above: 'এটি পানির উপরের অংশ, ডুবে থাকা অংশ নয়।',
     mis_all: 'ρ পানির ঘনত্বের চেয়ে কম, তাই এটি ভাসবে; পুরোটা ডোবে না।',
     mis_noHundred: 'ভগ্নাংশকে শতাংশ করতে {h} দিয়ে গুণ করতে হয়।',
 
     q_density: 'মাপকাঠিতে দেখো, {s}&nbsp;{u_cm} উঁচু বস্তুটির কতটুকু পানিতে ডুবে আছে। বস্তুটির ঘনত্ব কত?',
-    why_density: '<b>{rho}&nbsp;{u_rho}</b>: V<sub>1</sub>/V = {d} ÷ {s} = {f}, তাই ρ = {f} × ρ<sub>w</sub>।',
+    why_density: '<b>{rho}&nbsp;{u_rho}</b><span class="pvc-formula">V<sub>1</sub>/V = {d} ÷ {s} = {f}</span>তাই ρ = {f} × ρ<sub>w</sub>।',
     mis_d_above: 'উপরে থাকা অংশ দিয়ে হিসাব করা হয়েছে; ডুবে থাকা অংশ নিতে হবে।',
     mis_d_inverse: 'ρ<sub>w</sub> ÷ (V<sub>1</sub>/V) নয়: ρ = (V<sub>1</sub>/V) × ρ<sub>w</sub>। এক-এর বেশি হলে তো ডুবে যেত।',
     mis_d_whole: 'ডুবে থাকা উচ্চতাকে পুরো উচ্চতা ({s}&nbsp;{u_cm}) দিয়ে ভাগ করতে হবে।',
 
     q_apparent: 'পাথরটি পুরো ডুবে আছে (তীরের মান ছবিতে)। পানির নিচে এর ওজন কত মনে হবে?',
-    why_apparent: '<b>{A}&nbsp;{u_N}</b>: ওজন − প্লবতা = {W} − {B} = {A}&nbsp;{u_N}; তলা এটুকুই ঠেলে ধরে।',
+    why_apparent: '<b>{A}&nbsp;{u_N}</b><span class="pvc-formula">ওজন − প্লবতা = {W} − {B} = {A}&nbsp;{u_N}</span>তলা এটুকুই ঠেলে ধরে।',
     mis_same: 'পানিতে ডুবে থাকলে ওজন সত্যিকার ওজন থেকে কম মনে হয়।',
     mis_added: 'প্লবতা উপরের দিকে, তাই যোগ নয়, বিয়োগ হবে।',
     mis_buoyancy: 'এটি তো প্লবতা; মনে হওয়া ওজন হলো ওজন − প্লবতা।',
@@ -238,26 +237,26 @@ export const STRINGS = {
     lbl_cm: '{v}&nbsp;{u_cm}',
     lbl_letter: '{x}',
 
-    out_start: 'The three bodies are <b>the same size</b>: wholly under water, each gets <b>{B}&nbsp;{u_N}</b> of buoyancy',
-    out_falling: '{name} going down: weight <b>{W}&nbsp;{u_N}</b> &gt; buoyancy {B}&nbsp;{u_N}',
-    out_rising: '{name} coming up: buoyancy <b>{B}&nbsp;{u_N}</b> &gt; weight {W}&nbsp;{u_N}',
+    out_start: 'The three bodies are the same size. Wholly under water, each gets <b>{B}&nbsp;{u_N}</b> of buoyancy',
+    out_falling: '{name} is going down: weight <b>{W}&nbsp;{u_N}</b> &gt; buoyancy {B}&nbsp;{u_N}',
+    out_rising: '{name} is coming up: buoyancy <b>{B}&nbsp;{u_N}</b> &gt; weight {W}&nbsp;{u_N}',
     out_settling: '{name} bobs: finding where buoyancy and weight are equal',
     out_held: '{name} held: let go and see what happens',
     out_placing: 'Putting the {name} under water…',
     letter_0: 'A',
     letter_1: 'B',
     letter_2: 'C',
-    out_floats: '{name} <b>floats</b>: buoyancy = weight = <b>{W}&nbsp;{u_N}</b>',
+    out_floats: '{name} <b>floats</b>: buoyancy = weight = {W}&nbsp;{u_N}',
     out_sinks: '{name} <b>sank</b>: weight {W}&nbsp;{u_N} &gt; buoyancy {B}&nbsp;{u_N}',
     out_stays: '{name} <b>stays where it was put</b>: weight = buoyancy = {W}&nbsp;{u_N}',
 
     rule_start:
-      '<b>A body in water feels an upward force equal to the weight of the water it pushes aside (the displaced water): buoyancy.</b> Which will float, which will sink?',
-    rule_wood: '<b>It sinks just so far that the water it pushes aside weighs as much as it does</b>; the rest of it stays out of the water.',
+      'A body in water feels an upward force equal to the weight of the water it pushes aside (the displaced water). This force is <b>buoyancy</b>. Which will float, which will sink?',
+    rule_wood: 'A body sinks <b>just so far</b> that the water it pushes aside weighs as much as it does. The rest stays out of the water.',
     rule_brick:
-      '<b>If its weight is more than the weight of the water it pushes aside, it sinks.</b> But under water it seems lighter than it really is: {W} − {B} = {A}&nbsp;{u_N}, all the floor has to hold up.',
+      'If its weight is more than the weight of the water it pushes aside, it <b>sinks</b>. But under water it seems lighter:<span class="pvc-formula">{W} − {B} = {A}&nbsp;{u_N}</span>That is all the floor has to hold up.',
     rule_tin:
-      '<b>If its weight equals the weight of the water it pushes aside, it stays wherever it is put under water</b>: it neither rises nor sinks. (The tin has just enough sand inside.)',
+      'If its weight equals the weight of the water it pushes aside, it <b>stays where it is put</b>. It neither rises nor sinks. (The tin has just enough sand inside.)',
     rule_drag: 'Drag any of them somewhere else under water and let go: the wood comes up, the brick sinks, the tin stays.',
 
     out_block_held: '{name}: density ρ = <b>{rho}&nbsp;{u_rho}</b>. What per cent will be under water?',
@@ -265,19 +264,19 @@ export const STRINGS = {
     out_block_floats: 'V<sub>1</sub>/V = ρ/ρ<sub>w</sub> = {rho} ÷ {w} → <b>{p}%</b> under water',
     out_block_sinks: '{name}: ρ = {rho}&nbsp;{u_rho}, more than water: <b>it sank completely</b>',
     rule_example:
-      '<b>To float, the water as big as its sunken part must have the same mass as the body:</b> Vρ = V<sub>1</sub>ρ<sub>w</sub>, so V<sub>1</sub>/V = ρ/ρ<sub>w</sub> (ρ<sub>w</sub> = {w}&nbsp;{u_rho}).',
+      'To float, the water as big as its sunken part must have the <b>same mass</b> as the body.<span class="pvc-formula">Vρ = V<sub>1</sub>ρ<sub>w</sub>, so V<sub>1</sub>/V = ρ/ρ<sub>w</sub></span>Here ρ<sub>w</sub> = {w}&nbsp;{u_rho}.',
     rule_example_sunk:
-      '<b>V<sub>1</sub>/V = ρ/ρ<sub>w</sub> holds only while it floats.</b> Denser than water, even wholly under water the buoyancy is less than the weight: it sinks.',
+      '<span class="pvc-formula">V<sub>1</sub>/V = ρ/ρ<sub>w</sub></span>This holds <b>only while it floats</b>. Denser than water, even wholly under water the buoyancy is less than the weight, so it sinks.',
 
-    out_sub_float: 'The submarine <b>floats</b>: tanks empty, buoyancy = weight = <b>{W}&nbsp;{u_N}</b>',
+    out_sub_float: 'The submarine <b>floats</b>: tanks empty, buoyancy = weight = {W}&nbsp;{u_N}',
     out_sub_filling: 'Water coming into the tanks: the weight grows, <b>{W}&nbsp;{u_N}</b>',
-    out_sub_falling: 'Weight <b>{W}&nbsp;{u_N}</b> &gt; buoyancy {B}&nbsp;{u_N}: <b>it goes down</b>',
+    out_sub_falling: 'Weight {W}&nbsp;{u_N} &gt; buoyancy {B}&nbsp;{u_N}: <b>it goes down</b>',
     out_sub_slowing: 'Weight = buoyancy = <b>{W}&nbsp;{u_N}</b>: the water slows it to a stop',
     out_sub_bottom: 'Resting on the bottom: weight <b>{W}&nbsp;{u_N}</b> &gt; buoyancy {B}&nbsp;{u_N}',
-    out_sub_hover: 'Weight = buoyancy = <b>{W}&nbsp;{u_N}</b>: <b>it stays where it is</b>',
-    out_sub_rising: 'Weight <b>{W}&nbsp;{u_N}</b> &lt; buoyancy {B}&nbsp;{u_N}: <b>it comes up</b>',
+    out_sub_hover: 'Weight = buoyancy = {W}&nbsp;{u_N}: <b>it stays where it is</b>',
+    out_sub_rising: 'Weight {W}&nbsp;{u_N} &lt; buoyancy {B}&nbsp;{u_N}: <b>it comes up</b>',
     rule_sub:
-      '<b>Submarines do this to travel under water:</b> taking water into their tanks or blowing it out, they make their weight exactly equal to the buoyancy, and then they stay at whatever depth they are.',
+      'To travel under water, a submarine takes water into its tanks or blows it out. When its weight exactly equals the buoyancy, it stays <b>at the depth it is</b>.',
 
     hint_wait: 'Wait a moment, it is still moving.',
 
@@ -304,19 +303,20 @@ export const STRINGS = {
     mis_none: 'The one heavier than the buoyancy sinks.',
 
     q_percent: 'The {name}’s density is ρ = {rho}&nbsp;{u_rho}. Dropped in water, what per cent of it will be under water?',
-    why_percent: '<b>{p}%</b>: V<sub>1</sub>/V = ρ/ρ<sub>w</sub> = {rho} ÷ {w} = {f}, and {f} × {h} = {p}%.',
+    why_percent: '<b>{p}%</b><span class="pvc-formula">V<sub>1</sub>/V = ρ/ρ<sub>w</sub> = {rho} ÷ {w} = {f}</span>And {f} × {h} = {p}%.',
     mis_above: 'That is the part above the water, not the part under it.',
     mis_all: 'ρ is less than water’s, so it floats; it is not all under.',
     mis_noHundred: 'To turn a fraction into a percentage, multiply by {h}.',
 
     q_density: 'Read the scale: how much of this {s}&nbsp;{u_cm} tall block is under water? What is its density?',
-    why_density: '<b>{rho}&nbsp;{u_rho}</b>: V<sub>1</sub>/V = {d} ÷ {s} = {f}, so ρ = {f} × ρ<sub>w</sub>.',
+    why_density: '<b>{rho}&nbsp;{u_rho}</b><span class="pvc-formula">V<sub>1</sub>/V = {d} ÷ {s} = {f}</span>So ρ = {f} × ρ<sub>w</sub>.',
     mis_d_above: 'That uses the part above the water; take the part under it.',
     mis_d_inverse: 'Not ρ<sub>w</sub> ÷ (V<sub>1</sub>/V): ρ = (V<sub>1</sub>/V) × ρ<sub>w</sub>. More than water’s, it would have sunk.',
     mis_d_whole: 'Divide the height under water by the whole height ({s}&nbsp;{u_cm}).',
 
     q_apparent: 'The stone is wholly under water (the forces are on the picture). How heavy does it seem under water?',
-    why_apparent: '<b>{A}&nbsp;{u_N}</b>: weight − buoyancy = {W} − {B} = {A}&nbsp;{u_N}; that is all the floor holds up.',
+    why_apparent:
+      '<b>{A}&nbsp;{u_N}</b><span class="pvc-formula">weight − buoyancy = {W} − {B} = {A}&nbsp;{u_N}</span>That is all the floor holds up.',
     mis_same: 'Under water a body seems lighter than its real weight.',
     mis_added: 'The buoyancy pushes up, so subtract it, don’t add it.',
     mis_buoyancy: 'That is the buoyancy itself; the weight it seems to have is weight − buoyancy.',
