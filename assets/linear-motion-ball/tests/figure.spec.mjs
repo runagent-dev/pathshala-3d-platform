@@ -12,7 +12,7 @@ test('linear-motion-ball: a drop is straight, a sideways throw is curved', async
 
   expect(await fig.call('get')).toMatchObject({ example: 'drop', phase: 'ready', ball: { onHolder: true }, runs: { drop: null, throw: null } });
 
-  // the drop: 0.4 s of real fall, shown 4 times slower, straight down onto the board
+  // the drop: 0.4 s of real fall, shown 4 times slower, straight down onto the bench
   await fig.call('set', { run: true });
   await fig.advance(800); // 0.2 s of the fall: still in the air
   const falling = await fig.call('get');

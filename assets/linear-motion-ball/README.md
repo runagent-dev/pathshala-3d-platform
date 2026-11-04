@@ -2,7 +2,7 @@
 
 **Where it goes in the book:** Book page 36, topic 2.2: সরলরৈখিক গতি (Linear Motion), next to the sentence about a ball let go from above (একটা বলকে উপর থেকে ছেড়ে দিলে…); the second of two labs (the push, the falling ball).
 
-Interactive 3D figure for the Pathshala book: a cricket ball on a lab stand over a carrom board. The student lets
+Interactive 3D figure for the Pathshala book: a cricket ball on a lab stand over a plain lab bench. The student lets
 the ball fall freely or throws it sideways; each motion leaves faint pictures at equal time steps and a dotted path,
 then a dashed straight line shows whether the path is straight (সরলরৈখিক গতি) or curved. Then a four-question test.
 Units: metres (the GLB is in metres).
