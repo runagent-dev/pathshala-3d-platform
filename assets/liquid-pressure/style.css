@@ -17,45 +17,45 @@ body.bg-transparent { background: transparent; }
 /* the result: P = hρg with the student's numbers, the pressure large and red */
 .lp .pvc-outcome { font-size: 14.5px; line-height: 1.55; min-height: 1.6em; font-variant-numeric: tabular-nums; }
 .lp .pvc-outcome b { font-size: 1.32em; line-height: 1; color: var(--c-P); white-space: nowrap; }
-.lp .pvc-rule { font-size: 14px; line-height: 1.45; }
+.lp .pvc-rule { font-size: 14px; line-height: 1.55; }
 .lp .pvc-ex-res { color: var(--c-P); font-weight: 600; }
 
 /* labels on the picture: the symbol and its number in its colour, on a solid white chip so they read on the water */
-.pvc-anno-force { --c: var(--ink); padding: 0 6px; border: 1.5px solid var(--c); border-radius: 5px; background: #fff; color: var(--c); font-size: 13.5px; font-weight: 700; line-height: 1.5; white-space: nowrap; transition: none; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25); }
-.pvc-anno-tick { padding: 0 4px; border: 0; border-radius: 4px; background: #fffaf0; color: var(--ink); font-size: 12px; font-weight: 600; line-height: 1.35; white-space: nowrap; transition: none; font-variant-numeric: tabular-nums; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2); }
+.pvc-anno-force { --c: var(--ink); padding: 0 6px; border: 1.5px solid var(--c); border-radius: 5px; background: #fff; color: var(--c); font-size: 13.5px; font-weight: 600; line-height: 1.5; white-space: nowrap; transition: none; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25); }
+.pvc-anno-tick { padding: 0 4px; border: 0; border-radius: 4px; background: #fffaf0; color: var(--ink); font-size: 12.5px; font-weight: 600; line-height: 1.35; white-space: nowrap; transition: none; font-variant-numeric: tabular-nums; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2); }
 .pvc-anno-lines .k-force, .pvc-anno-lines .k-tick { display: none; }
 
 /* the test: answers in words or numbers, room kept for the question and the worked answer */
 .lp .pvc-opt { font-size: 14px; line-height: 1.25; }
 .lp-opt { display: block; white-space: normal; text-align: center; }
-.lp .pvc-q-text { font-size: 15px; line-height: 1.4; min-height: calc(2 * 1.4em); }
+.lp .pvc-q-text { font-size: 15px; line-height: 1.45; min-height: calc(2 * 1.45em); }
 .lp .pvc-q-feedback { font-size: 14px; line-height: 1.45; min-height: calc(2 * 1.45em); }
 
 /* phones (the panel below the 3D): tighter lines, so the 3D view keeps more than half the height */
 @container pvc (max-width: 560px) {
   .lp .pvc-learn, .lp .pvc-q-ask { gap: 6px; }
-  .lp .pvc-outcome { font-size: 13px; line-height: 1.5; }
-  .lp .pvc-rule { font-size: 13px; line-height: 1.38; min-height: calc(3 * 1.38em); }
-  .lp .pvc-q-text { font-size: 14.5px; line-height: 1.4; min-height: calc(2 * 1.4em); }
+  .lp .pvc-outcome { font-size: 14px; line-height: 1.5; }
+  .lp .pvc-rule { font-size: 14px; line-height: 1.55; min-height: calc(3 * 1.55em); }
+  .lp .pvc-q-text { font-size: 14.5px; line-height: 1.45; min-height: calc(2 * 1.45em); }
   .lp .pvc-opt { height: 40px; font-size: 14px; }
-  .lp .pvc-q-feedback { font-size: 12.5px; line-height: 1.38; min-height: calc(3 * 1.38em); }
+  .lp .pvc-q-feedback { font-size: 13.5px; line-height: 1.45; min-height: calc(3 * 1.45em); }
 }
 /* phones that are not tall: everything a little smaller */
 @container pvc (max-width: 560px) and (max-height: 600px) {
-  .lp .pvc-outcome { font-size: 12.5px; line-height: 1.45; }
-  .lp .pvc-rule { font-size: 12px; line-height: 1.33; min-height: calc(3 * 1.33em); }
+  .lp .pvc-outcome { font-size: 14px; line-height: 1.5; }
+  .lp .pvc-rule { font-size: 14px; line-height: 1.55; min-height: calc(3 * 1.55em); }
   .lp .pvc-q-text { font-size: 13.5px; }
   .lp .pvc-opt { height: 38px; font-size: 13px; }
-  .lp .pvc-q-feedback { font-size: 12px; min-height: calc(3 * 1.38em); }
+  .lp .pvc-q-feedback { font-size: 13.5px; min-height: calc(3 * 1.45em); }
 }
 /* short and wide (phone held sideways): the panel is beside the scene, with room for longer lines */
 @container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
   .lp .pvc-learn, .lp .pvc-q-ask { gap: 6px; }
-  .lp .pvc-outcome { font-size: 12.5px; line-height: 1.45; min-height: calc(2 * 1.45em); }
-  .lp .pvc-rule { font-size: 12.5px; line-height: 1.35; min-height: calc(4 * 1.35em); }
-  .lp .pvc-q-text { font-size: 13.5px; min-height: calc(3 * 1.4em); }
+  .lp .pvc-outcome { font-size: 14px; line-height: 1.5; min-height: calc(2 * 1.5em); }
+  .lp .pvc-rule { font-size: 14px; line-height: 1.55; min-height: calc(4 * 1.55em); }
+  .lp .pvc-q-text { font-size: 13.5px; min-height: calc(3 * 1.45em); }
   .lp .pvc-opt { font-size: 12.5px; line-height: 1.15; height: 46px; }
-  .lp .pvc-q-feedback { font-size: 12px; line-height: 1.38; min-height: calc(5 * 1.38em); }
+  .lp .pvc-q-feedback { font-size: 13.5px; line-height: 1.45; min-height: calc(5 * 1.45em); }
 }
 /* the graph (the book's figure 5.03 for this tank): only in a tall panel beside the 3D */
 .lp .lp-graph { display: none; flex: none; width: 100%; max-width: 400px; height: 84px; margin: 2px auto 0; overflow: visible; font-family: inherit; }
@@ -67,3 +67,7 @@ body.bg-transparent { background: transparent; }
 .lp-graph .holes circle { fill: #fff; stroke: var(--c-P); stroke-width: 2; }
 .lp-graph .now { fill: var(--c-P); stroke: #fff; stroke-width: 2; }
 .lp-graph .guide { stroke: var(--c-P); stroke-width: 1; stroke-dasharray: 3 3; }
+
+/* a formula inside the rule or the worked answer sits on its own line (kit 1.6.0 .pvc-formula, as a span in a <p>) */
+.lp .pvc-rule .pvc-formula, .lp .pvc-outcome .pvc-formula, .lp .pvc-q-feedback .pvc-formula { display: block; margin: 5px 0; padding: 3px 8px; font-size: 14.5px; line-height: 1.5; }
+.lp .pvc-formula b { font-size: 1em; }

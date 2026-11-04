@@ -51,15 +51,16 @@ export const STRINGS = {
     act_home: 'শুরুতে ফেরাও',
 
     // the result: the book's P = hρg with the student's numbers
-    sum: '<i>P</i> = <i>hρg</i> = {h}&nbsp;{u_m} × {rho}&nbsp;{u_rho} × {g}&nbsp;{u_g} = <b>{P}&nbsp;{u_Pa}</b>',
+    sum: '<span class="pvc-formula"><i>P</i> = <i>hρg</i> = {h}&nbsp;{u_m} × {rho}&nbsp;{u_rho} × {g}&nbsp;{u_g} = <b>{P}&nbsp;{u_Pa}</b></span>',
     sum_label: 'চাপ = গভীরতা × ঘনত্ব × অভিকর্ষজ ত্বরণ',
 
     // the rule: the book's words, one idea at a time
-    rule_start: '<b>তরলের গভীরে গেলে চাপ অনুভব করা যায়।</b> উপরের তরলের স্তম্ভের ওজন থেকেই এই চাপ। একটি ছিদ্র খোলো, বা A পৃষ্ঠটি টেনে সরাও।',
-    rule_column: '<b>A পৃষ্ঠের উপরের তরলের আয়তন Ah,</b> ওজন বা বল F = (Ahρ)g = {F}&nbsp;{u_N}। কাজেই P = F/A = hρg। লাল তীর ছিদ্রে চাপ দেখায়।',
-    rule_depth: '<b>নির্দিষ্ট ঘনত্বের তরলে গভীরতার সাথে সাথে চাপ বাড়তে থাকে:</b> h দ্বিগুণ হলে চাপও দ্বিগুণ। গভীর ছিদ্রে লাল তীর লম্বা, পানিও জোরে বের হয়।',
+    rule_start: 'তরলের গভীরে গেলে <b>চাপ</b> অনুভব করা যায়। উপরের তরলের স্তম্ভের ওজন থেকেই এই চাপ। একটি ছিদ্র খোলো, বা A পৃষ্ঠটি টেনে সরাও।',
+    rule_column:
+      'A পৃষ্ঠের উপরের তরলের আয়তন Ah, তার ওজন <b>F = (Ahρ)g</b> = {F}&nbsp;{u_N}। কাজেই<span class="pvc-formula"><i>P</i> = <i>F</i>/<i>A</i> = <i>hρg</i></span>লাল তীর ছিদ্রে চাপ দেখায়।',
+    rule_depth: 'নির্দিষ্ট ঘনত্বের তরলে <b>গভীরতার সাথে সাথে</b> চাপ বাড়তে থাকে। h দ্বিগুণ হলে চাপও দ্বিগুণ। গভীর ছিদ্রে লাল তীর লম্বা, পানিও জোরে বের হয়।',
     rule_atm:
-      '<b>পানির বেলায় আনুমানিক প্রতি দশ মিটার গভীরতায় বাতাসের চাপের সমপরিমাণ চাপ বেড়ে যায়:</b> {ten}&nbsp;{u_m} গভীরে hρg = {P10}&nbsp;{u_Pa}, আর 1 atm = {atm}&nbsp;{u_Pa}।',
+      'পানিতে প্রতি <b>দশ মিটার</b> গভীরতায় চাপ বাড়ে প্রায় বাতাসের চাপের সমান।<span class="pvc-formula">{ten}&nbsp;{u_m} গভীরে <i>hρg</i> = {P10}&nbsp;{u_Pa}</span>আর 1 atm = {atm}&nbsp;{u_Pa}।',
 
     // the graph (the book's figure 5.03, for this tank)
     g_x: 'গভীরতা h (m)',
@@ -97,7 +98,7 @@ export const STRINGS = {
     q_locked: 'পরীক্ষার সময় দৃশ্যটি আটকানো থাকে। ছবি দেখে উত্তর বেছে নাও।',
 
     q_hole: 'চিহ্নিত ছিদ্রের গভীরতায় পানির চাপ কত? গভীরতা বাম পাশের স্কেল থেকে পড়ো।',
-    why_hole: '<b>{P}&nbsp;{u_Pa}</b>: ছিদ্রটি {h}&nbsp;{u_m} গভীরে, P = hρg = {h} × {rho} × {g}।',
+    why_hole: '<b>{P}&nbsp;{u_Pa}</b>। ছিদ্রটি {h}&nbsp;{u_m} গভীরে।<span class="pvc-formula"><i>P</i> = <i>hρg</i> = {h} × {rho} × {g}</span>',
     mis_no_g: 'এখানে g দিয়ে গুণ করা হয়নি।',
     mis_cm: 'গভীরতা মিটারে নাও: {cm}&nbsp;cm = {h}&nbsp;{u_m}।',
     mis_other: 'এটি অন্য ছিদ্রের চাপ।',
@@ -107,7 +108,7 @@ export const STRINGS = {
     c_denser: 'নিচের দিকের পানির ঘনত্ব বেশি',
     c_gravity: 'নিচের পানির উপর g বেশি',
     c_air: 'নিচে বাতাসের চাপ বেশি',
-    why_far: '<b>উপরের তরল স্তম্ভ সবচেয়ে উঁচু:</b> h সবচেয়ে বেশি, তাই P = hρg সবচেয়ে বেশি, পানি সবচেয়ে জোরে বের হয়।',
+    why_far: '<b>উপরের তরল স্তম্ভ সবচেয়ে উঁচু</b>। h সবচেয়ে বেশি, তাই চাপও সবচেয়ে বেশি। পানি সবচেয়ে জোরে বের হয়।',
     mis_denser: 'তরলকে চাপ দিয়ে সংকুচিত করা যায় না, তাই ঘনত্ব একই থাকে।',
     mis_gravity: 'g সব জায়গায় একই, {g}&nbsp;{u_g}।',
     mis_air: 'বাতাসের চাপ সব ছিদ্রে প্রায় একই; পার্থক্য পানির স্তম্ভে।',
@@ -127,7 +128,7 @@ export const STRINGS = {
     c_wall: 'ট্যাংকের দেয়ালের ধাক্কার জন্য',
     c_below: 'A-এর নিচের পানির ওজনের জন্য',
     c_hole: 'ছিদ্র বন্ধ, তাই কোনো চাপ নেই',
-    why_column: '<b>উপরের তরল স্তম্ভের ওজনের জন্য</b>: F = (Ahρ)g, তাই P = F/A = hρg। ছিদ্র বন্ধ থাকলেও এই চাপ থাকে।',
+    why_column: '<b>উপরের তরল স্তম্ভের ওজনের জন্য</b>। F = (Ahρ)g, তাই P = F/A = hρg। ছিদ্র বন্ধ থাকলেও এই চাপ থাকে।',
     mis_wall: 'দেয়াল শুধু পানিকে আটকে রাখে।',
     mis_below: 'চাপ আসে A-এর উপরের স্তম্ভ থেকে, নিচের পানি থেকে নয়।',
     mis_hole: 'ছিদ্র খুললে এই চাপই পানিকে ঠেলে বের করে।',
@@ -176,17 +177,17 @@ export const STRINGS = {
     act_unzoom: 'See it all',
     act_home: 'Back to the start',
 
-    sum: '<i>P</i> = <i>hρg</i> = {h}&nbsp;{u_m} × {rho}&nbsp;{u_rho} × {g}&nbsp;{u_g} = <b>{P}&nbsp;{u_Pa}</b>',
+    sum: '<span class="pvc-formula"><i>P</i> = <i>hρg</i> = {h}&nbsp;{u_m} × {rho}&nbsp;{u_rho} × {g}&nbsp;{u_g} = <b>{P}&nbsp;{u_Pa}</b></span>',
     sum_label: 'pressure = depth × density × acceleration due to gravity',
 
     rule_start:
-      '<b>Deep in a liquid you feel a pressure.</b> It comes from the weight of the column of liquid above. Open a hole, or drag the surface A.',
+      'Deep in a liquid you feel a <b>pressure</b>. It comes from the weight of the column of liquid above. Open a hole, or drag the surface A.',
     rule_column:
-      '<b>The liquid above A has the volume Ah,</b> its weight, the force F = (Ahρ)g = {F}&nbsp;{u_N}. So P = F/A = hρg. A red arrow shows the pressure at a hole.',
+      'The liquid above A has the volume Ah, and its weight is <b>F = (Ahρ)g</b> = {F}&nbsp;{u_N}. So<span class="pvc-formula"><i>P</i> = <i>F</i>/<i>A</i> = <i>hρg</i></span>A red arrow shows the pressure at a hole.',
     rule_depth:
-      '<b>In a liquid of a given density the pressure grows with depth:</b> twice h, twice the pressure. A deeper hole: a longer red arrow, a harder jet.',
+      'In a liquid of a given density the pressure grows <b>with depth</b>. Twice h, twice the pressure. A deeper hole has a longer red arrow and a harder jet.',
     rule_atm:
-      '<b>In water, every ten metres of depth add about the air’s pressure:</b> {ten}&nbsp;{u_m} down hρg = {P10}&nbsp;{u_Pa}; 1 atm = {atm}&nbsp;{u_Pa}.',
+      'In water, every <b>ten metres</b> of depth add about the air’s pressure.<span class="pvc-formula">{ten}&nbsp;{u_m} down, <i>hρg</i> = {P10}&nbsp;{u_Pa}</span>And 1 atm = {atm}&nbsp;{u_Pa}.',
 
     g_x: 'depth h (m)',
     g_y: 'pressure P (Pa)',
@@ -220,7 +221,7 @@ export const STRINGS = {
     q_locked: 'The picture is locked during the test. Pick an answer from the picture.',
 
     q_hole: 'What is the water’s pressure at the marked hole? Read its depth off the scale.',
-    why_hole: '<b>{P}&nbsp;{u_Pa}</b>: the hole is {h}&nbsp;{u_m} deep, P = hρg = {h} × {rho} × {g}.',
+    why_hole: '<b>{P}&nbsp;{u_Pa}</b>. The hole is {h}&nbsp;{u_m} deep.<span class="pvc-formula"><i>P</i> = <i>hρg</i> = {h} × {rho} × {g}</span>',
     mis_no_g: 'This leaves out g.',
     mis_cm: 'Take the depth in metres: {cm}&nbsp;cm = {h}&nbsp;{u_m}.',
     mis_other: 'That is another hole’s pressure.',
@@ -230,7 +231,7 @@ export const STRINGS = {
     c_denser: 'The water lower down is denser',
     c_gravity: 'A bigger g lower down',
     c_air: 'More air pressure down there',
-    why_far: '<b>The column above it is the tallest:</b> the biggest h, so the biggest P = hρg.',
+    why_far: '<b>The column above it is the tallest</b>. The biggest h gives the biggest pressure, so the jet is strongest.',
     mis_denser: 'A liquid cannot be squeezed: its density stays the same.',
     mis_gravity: 'g is the same everywhere, {g}&nbsp;{u_g}.',
     mis_air: 'The air’s pressure is about the same at every hole.',
@@ -250,7 +251,7 @@ export const STRINGS = {
     c_wall: 'The push of the tank’s wall',
     c_below: 'The weight of the water below A',
     c_hole: 'Nothing: the holes are closed',
-    why_column: '<b>The weight of the column above A</b>: F = (Ahρ)g, so P = F/A = hρg, holes closed or not.',
+    why_column: '<b>The weight of the column above A</b>. F = (Ahρ)g, so P = F/A = hρg, holes closed or not.',
     mis_wall: 'The wall only holds the water in.',
     mis_below: 'It comes from the column above A, not the water below.',
     mis_hole: 'Open a hole and this pressure pushes the water out.',
