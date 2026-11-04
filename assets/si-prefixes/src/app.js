@@ -16,6 +16,7 @@ import { ICONS } from '@shared/student/icons.js';
 import { backdropOf, createBackdrop, mixBackdrop } from './backdrop.js';
 import { createI18n, PREFIXES, SEQUENCE, STOPS } from './i18n.js';
 import { buildObject } from './objects.js';
+import { createCalculator } from './calculator.js';
 
 export const DEFAULTS = {
   lang: 'bn',
@@ -25,6 +26,7 @@ export const DEFAULTS = {
   bg: 'light',
   ladder: true, // show 10ⁿ on the stop buttons
   start: null, // a stop id to begin on, e.g. 'earth'
+  mode: 'tour', // 'tour' (the zoom) | 'calc' (the prefix calculator)
 };
 
 const ease = (u) => u * u * (3 - 2 * u);
@@ -85,7 +87,12 @@ export function createPrefixApp(root, userOptions = {}) {
       <div class="hb-scale" aria-hidden="true"><i></i><span></span></div>
     </div>
     <div class="pvc-panel hb-panel">
+      <div class="pvc-tabs hb-tabs" role="tablist">
+        <button type="button" role="tab" id="hb-tab-tour" data-mode="tour" aria-controls="hb-tour">${t('tab_tour')}</button>
+        <button type="button" role="tab" id="hb-tab-calc" data-mode="calc" aria-controls="hb-calc">${t('tab_calc')}</button>
+      </div>
       <p class="hb-live" aria-live="polite"></p>
+      <div class="hb-tour" id="hb-tour" role="tabpanel" aria-labelledby="hb-tab-tour">
       <div class="hb-cap">
         <div class="hb-head"><span class="hb-chip"></span><span class="hb-name"></span></div>
         <div class="hb-size"></div>
@@ -98,6 +105,8 @@ export function createPrefixApp(root, userOptions = {}) {
             `<button type="button" data-go="${s.id}"><b>${prefixName(s.prefix)} <em>10${sup(expOf[s.prefix])}</em></b><small>${t(`${s.id}_short`)}</small></button>`,
         ).join('')}</div></nav>
       </div>
+      </div>
+      <div class="hb-calc" id="hb-calc" role="tabpanel" aria-labelledby="hb-tab-calc" hidden></div>
     </div>`;
   const $ = (s) => root.querySelector(s);
   const el = {
@@ -115,6 +124,9 @@ export function createPrefixApp(root, userOptions = {}) {
     sci: $('.hb-sci'),
     bar: $('.hb-scale i'),
     barText: $('.hb-scale span'),
+    tabs: [...root.querySelectorAll('.hb-tabs [role="tab"]')],
+    tour: $('.hb-tour'),
+    calc: $('.hb-calc'),
   };
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
@@ -299,7 +311,7 @@ export function createPrefixApp(root, userOptions = {}) {
   let reservedFor = '';
   function reserveCaption() {
     const keyNow = `${root.clientWidth}x${root.clientHeight}`;
-    if (keyNow === reservedFor || !root.clientWidth) return;
+    if (keyNow === reservedFor || !root.clientWidth || el.tour.hidden) return;
     reservedFor = keyNow;
     el.cap.style.minHeight = '';
     let h = 0;
@@ -503,6 +515,7 @@ export function createPrefixApp(root, userOptions = {}) {
   });
   // A resize draws at once (inside the stage): frame the stop for the new shape first.
   stage.onResize(() => {
+    root.dataset.tiny = stage.height < 150 ? '1' : '0';
     if (state) {
       state = view();
       place(state);
@@ -613,6 +626,20 @@ export function createPrefixApp(root, userOptions = {}) {
   // Keyboard: ← smaller, → bigger, space play/pause (a focused button keeps its own space).
   root.tabIndex = 0;
   root.addEventListener('keydown', (e) => {
+    if (mode === 'calc') {
+      if (/** @type {Element} */ (e.target).closest('[role="tab"]') && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+        e.preventDefault();
+        setMode('tour', { focus: true });
+        return;
+      }
+      if (calc.onKey(e)) e.preventDefault();
+      return;
+    }
+    if (/** @type {Element} */ (e.target).closest('[role="tab"]') && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+      e.preventDefault();
+      setMode('calc', { focus: true });
+      return;
+    }
     if (e.key === ' ') {
       if (/** @type {Element} */ (e.target).closest('button')) return;
       e.preventDefault();
@@ -625,10 +652,43 @@ export function createPrefixApp(root, userOptions = {}) {
     const i = stops.indexOf(here) + (e.key === 'ArrowRight' ? 1 : -1);
     if (stops[i]) go(stops[i].id);
   });
+  // ── the two tabs: ঘুরে দেখো (the tour) and হিসাব করো (the prefix calculator) ──
+  const calc = createCalculator(el.calc, t, {
+    onLook: (id) => {
+      if (mode === 'calc') go(id); // the 3D flies to the object of about that length
+    },
+    onChange: (c) => emit('convert', c),
+  });
+  let mode = 'tour';
+  function setMode(m, { focus = false } = {}) {
+    const next = m === 'calc' ? 'calc' : 'tour';
+    if (next === 'calc' && playing) pause(); // the picture holds still while the student works
+    if (next !== 'calc') calc.closePicker();
+    mode = next;
+    root.dataset.mode = mode;
+    el.tour.hidden = mode !== 'tour';
+    el.calc.hidden = mode !== 'calc';
+    for (const b of el.tabs) {
+      const on = b.dataset.mode === mode;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-selected', String(on));
+      b.tabIndex = on ? 0 : -1;
+      if (on && focus) b.focus();
+    }
+    reservedFor = '';
+    reserveCaption();
+    wake();
+  }
+  root.querySelector('.hb-tabs').addEventListener('click', (e) => {
+    const b = /** @type {HTMLElement} */ (/** @type {Element} */ (e.target).closest('[data-mode]'));
+    if (b) setMode(b.dataset.mode);
+  });
+
   syncPlay();
+  setMode(o.mode);
   reserveCaption();
 
-  return {
+  const api = {
     play,
     pause,
     /** Fly to a stop and hold there (paused). { animate: false } jumps straight there. */
@@ -642,13 +702,22 @@ export function createPrefixApp(root, userOptions = {}) {
     duration: +total.toFixed(2),
     /** Back to the start, playing if it plays on load. */
     reset() {
+      setMode(o.mode);
       flight = null;
       time = startTime();
       playing = !!o.autoplay;
       syncPlay();
       wake();
     },
+    /** { mode: 'tour' | 'calc', value, from, to } (the calculator: value "2.5" or "6e24", units as prefix keys). */
+    set(p = {}) {
+      if (p.mode) setMode(p.mode);
+      if (p.value != null || p.from != null || p.to != null) calc.set(p);
+      return api.getState();
+    },
     getState: () => ({
+      mode,
+      calc: calc.getState(),
       time: +time.toFixed(2),
       duration: +total.toFixed(2),
       playing,
@@ -669,4 +738,5 @@ export function createPrefixApp(root, userOptions = {}) {
     stops: cycle.slice(),
     _internals: { stage, stops, timeline },
   };
+  return api;
 }

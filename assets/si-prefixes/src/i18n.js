@@ -70,6 +70,27 @@ export const SEQUENCE = [
   'student',
 ];
 
+/** The size each stop's caption gives (m), for the calculator's "about the size of …". */
+export const SIZES = {
+  quark: 1e-18,
+  nucleus: 1e-15,
+  atom: 1e-10,
+  dna: 2e-9,
+  rbc: 8e-6,
+  ant: 5e-3,
+  ball: 7.2e-2,
+  mango: 0.1,
+  student: 1.5,
+  bus: 12,
+  field: 105,
+  bridge: 6150,
+  earth: 1.27e7,
+  sun: 1.39e9,
+  solar: 9e12,
+  star: 4e16,
+  galaxy: 6e24,
+};
+
 export const STRINGS = {
   bn: {
     title: 'কোনটা কত বড়?',
@@ -126,7 +147,10 @@ export const STRINGS = {
     u_G: 'গিগামিটার',
     u_M: 'মেগামিটার',
     u_k: 'কিলোমিটার',
+    u_h: 'হেক্টোমিটার',
+    u_da: 'ডেকামিটার',
     u_base: 'মিটার',
+    u_d: 'ডেসিমিটার',
     u_c: 'সেন্টিমিটার',
     u_m: 'মিলিমিটার',
     u_µ: 'মাইক্রোমিটার',
@@ -214,6 +238,27 @@ export const STRINGS = {
     pin_star: 'প্রক্সিমা সেন্টরি',
     pin_star_cmp: 'তারার দূরত্ব',
     pin_bangladesh: 'বাংলাদেশ',
+
+    tab_tour: 'ঘুরে দেখো',
+    tab_calc: 'হিসাব করো',
+    calc_from: 'যে সংখ্যা ও একক থেকে',
+    calc_to: 'যে এককে চাই',
+    pick_from: 'কোন একক থেকে?',
+    pick_to: 'কোন এককে?',
+    pick_close: 'বন্ধ করো',
+    key_back: 'শেষ অঙ্কটি মুছো',
+    key_clear: 'মুছো',
+    key_clear_long: 'সব মুছে নতুন করে লেখো',
+    key_exp: '× ১০-এর ঘাত লেখো',
+    key_neg: 'ঘাতের আগে বিয়োগ চিহ্ন',
+    key_swap: 'দুটি একক অদলবদল করো',
+    key_point: 'দশমিক বিন্দু',
+    calc_same: 'দুটি একই একক: সংখ্যা বদলায় না',
+    calc_empty: 'নিচের বোতাম চেপে একটি সংখ্যা লেখো',
+    calc_then: 'তাই',
+    calc_bigger: 'বড় একক থেকে ছোট এককে: সংখ্যা বড় হয়',
+    calc_smaller: 'ছোট একক থেকে বড় এককে: সংখ্যা ছোট হয়',
+    calc_near: 'কাছাকাছি মাপের জিনিস: {name}',
   },
   en: {
     title: 'How big is it?',
@@ -270,7 +315,10 @@ export const STRINGS = {
     u_G: 'gigametres',
     u_M: 'megametres',
     u_k: 'kilometres',
+    u_h: 'hectometres',
+    u_da: 'decametres',
     u_base: 'metres',
+    u_d: 'decimetres',
     u_c: 'centimetres',
     u_m: 'millimetres',
     u_µ: 'micrometres',
@@ -358,10 +406,31 @@ export const STRINGS = {
     pin_star: 'Proxima Centauri',
     pin_star_cmp: 'star distance',
     pin_bangladesh: 'Bangladesh',
+
+    tab_tour: 'Tour',
+    tab_calc: 'Convert',
+    calc_from: 'number and unit to convert',
+    calc_to: 'unit to convert to',
+    pick_from: 'From which unit?',
+    pick_to: 'To which unit?',
+    pick_close: 'Close',
+    key_back: 'delete the last digit',
+    key_clear: 'AC',
+    key_clear_long: 'clear all',
+    key_exp: 'times ten to the power',
+    key_neg: 'minus sign for the power',
+    key_swap: 'swap the two units',
+    key_point: 'decimal point',
+    calc_same: 'the same unit: the number does not change',
+    calc_empty: 'type a number with the keys below',
+    calc_then: 'so',
+    calc_bigger: 'bigger unit to smaller unit: the number gets bigger',
+    calc_smaller: 'smaller unit to bigger unit: the number gets smaller',
+    calc_near: 'something about this size: {name}',
   },
 };
 
-const BN_DIGITS = '০১২৩৪৫৬৭৮৯';
+export const BN_DIGITS = '০১২৩৪৫৬৭৮৯';
 export const toBanglaDigits = (s) => String(s).replace(/[0-9]/g, (d) => BN_DIGITS[d]);
 
 export function createI18n(lang = 'bn') {

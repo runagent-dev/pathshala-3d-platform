@@ -5,7 +5,7 @@
   "title": "SI prefixes: how big is it? (কোনটা কত বড়?)",
   "type": "animation",
   "entry": "index.html",
-  "version": "0.4.3",
+  "version": "0.5.0",
   "book": "physics-9-10",
   "page": 17,
   "topic": "1.5.2",
@@ -13,8 +13,8 @@
   "order": 2,
   "maintainers": ["RadeenXALNW"],
   "units": "m",
-  "description": "Self-playing 3D animation, about 98 s, looping, with one object for every row of Table 1.05: from a student (1.5 m) down through a mango, cricket ball, ant, blood cell, DNA, atom and nucleus to a quark (< 10⁻¹⁸ m), then up through a bus, football field, Padma Bridge, Earth, Sun, solar system and nearest star to a galaxy (6 × 10²⁴ m, the book's value). Each stop shows the size in Bangla with its prefix and 10ⁿ m. Under the view, one strip holds the caption and the 17 stops (the rows of Table 1.05, smallest first, with 10ⁿ): tap a stop (or an object) to fly there; play continues the tour from that stop. Each stop has its own coloured backdrop, from a violet particle world through a day sky to starry space.",
-  "tags": ["SI prefix", "উপসর্গ", "powers of ten", "scale", "animation", "bangla"],
+  "description": "Self-playing 3D animation, about 98 s, looping, with one object for every row of Table 1.05: from a student (1.5 m) down through a mango, cricket ball, ant, blood cell, DNA, atom and nucleus to a quark (< 10⁻¹⁸ m), then up through a bus, football field, Padma Bridge, Earth, Sun, solar system and nearest star to a galaxy (6 × 10²⁴ m, the book's value). Each stop shows the size in Bangla with its prefix and 10ⁿ m. Under the view, one strip holds the caption and the 17 stops (the rows of Table 1.05, smallest first, with 10ⁿ): tap a stop (or an object) to fly there; play continues the tour from that stop. Each stop has its own coloured backdrop, from a violet particle world through a day sky to starry space. A second tab, হিসাব করো, is a prefix calculator: the student types a number on its keypad (×10ⁿ too), picks the unit it is in and the unit wanted (any row of Table 1.05, atto to exa, in metres), and reads the exact answer with the working (1 km = 10³ ÷ 10⁻² cm = 10⁵ cm; 2.5 km = 2.5 × 10⁵ cm = 2,50,000 cm); the 3D flies to the tour's object of about that length.",
+  "tags": ["SI prefix", "উপসর্গ", "powers of ten", "scale", "animation", "calculator", "unit conversion", "bangla"],
   "params": [
     {
       "name": "lang",
@@ -58,10 +58,18 @@
       ],
       "default": ""
     },
+    {
+      "name": "mode",
+      "label": "Open on",
+      "type": "select",
+      "options": [["tour", "the tour (ঘুরে দেখো)"], ["calc", "the calculator (হিসাব করো)"]],
+      "default": "tour"
+    },
     { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" }
   ],
   "commands": [
     { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "mode": "calc", "value": "2.5", "from": "k", "to": "c" } },
     { "name": "play", "payload": {} },
     { "name": "pause", "payload": {} },
     { "name": "goto", "payload": { "id": "earth" } },
@@ -70,7 +78,7 @@
     { "name": "reset", "payload": {} },
     { "name": "capture", "payload": { "width": 800, "height": 500 } }
   ],
-  "events": ["ready", "stop", "play", "pause", "choose"],
+  "events": ["ready", "stop", "play", "pause", "choose", "convert"],
   "export": {
     "poster": { "params": { "autoplay": "0", "start": "earth" } },
     "glb": {
