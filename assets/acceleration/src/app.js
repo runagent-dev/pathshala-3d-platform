@@ -4,7 +4,7 @@
 //    (ধনাত্মক ত্বরণ), backwards (মন্দন) or is gone (ত্বরণ নেই); the speedometer reads m/s. The panel draws the
 //    বেগ–সময় graph as it goes, each piece lettered (A, B, C…) and coloured by its kind, so the student makes the
 //    book's চিত্র ২.০৬ themselves, and works out a = (v − u) ÷ t for the piece it is on (or one they touch).
-// The bend (ত্বরণ at a steady speed) is its own lab, acceleration-bend. Then a short test. Built on the shared
+// Then a short test. Built on the shared
 // student kit (@shared/student/…); the physics is in drive.js.
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';

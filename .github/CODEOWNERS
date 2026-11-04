@@ -3,7 +3,6 @@
 # No platform owners yet: add GitHub usernames to .github/owners.json, then run npm run generate.
 
 /assets/acceleration/ @RadeenXALNW
-/assets/acceleration-bend/ @RadeenXALNW
 /assets/air-pressure/ @RadeenXALNW
 /assets/balanced-forces/ @RadeenXALNW
 /assets/balloons-hot-water/ @RadeenXALNW

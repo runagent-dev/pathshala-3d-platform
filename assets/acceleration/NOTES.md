@@ -2,6 +2,9 @@
 
 Book: physics-9-10 › 2.6 › p43 (the section runs onto p44)
 
+## 2026-11-04, v1.0.2
+- The separate bend lab (`acceleration-bend`) was removed at the owner's request; mentions of it dropped from the description.
+
 ## What the page shows
 Section ২.৬ ত্বরণ (Acceleration), text, an উদাহরণ and one picture. Text: a body moving at সমবেগ has no ত্বরণ; whenever
 the বেগ changes there is ত্বরণ: ত্বরণ হচ্ছে সময়ের সাথে বেগের পরিবর্তনের হার. As বেগ has both দিক and মান, it can change
