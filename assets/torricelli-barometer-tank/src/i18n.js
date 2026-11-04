@@ -48,8 +48,8 @@ export const STRINGS = {
     out_k_drain: 'পানি কমছে, h কমছে: ধারা <b>দুর্বল</b> হচ্ছে',
 
     // the rule: the book's words, one idea at a time
-    rule_tank1: '<b>ঢাকনা বন্ধ, তাই উপর থেকে বাতাস চাপ দিতে পারছে না;</b> বাইরের বাতাসের চাপ ছিদ্রের মুখে পানিকে আটকে রাখছে, ঠিক যেমন টরিসেলির নলে পারদকে।',
-    rule_tank2: '<b>ঢাকনা খুললে পানির উপরেও বাতাসের চাপ পড়ে,</b> তখন ছিদ্রের উপরের পানির স্তম্ভের চাপ hρg পানিকে বাইরে ঠেলে দেয়। h যত বেশি, ধারা তত জোরে।',
+    rule_tank1: 'ঢাকনা বন্ধ, তাই উপর থেকে <b>বাতাস চাপ দিতে পারছে না</b>। বাইরের বাতাসের চাপ ছিদ্রের মুখে পানিকে আটকে রাখছে, ঠিক যেমন টরিসেলির নলে পারদকে।',
+    rule_tank2: 'ঢাকনা খুললে পানির উপরেও বাতাসের চাপ পড়ে। তখন ছিদ্রের উপরের পানির স্তম্ভের চাপ <b>hρg</b> পানিকে বাইরে ঠেলে দেয়। h যত বেশি, ধারা তত জোরে।',
 
     // labels on the picture
     lbl_air: 'বাতাসের চাপ',
@@ -77,7 +77,7 @@ export const STRINGS = {
     c_tk_small: 'ছিদ্রটি খুব বেশি ছোট',
     c_tk_shallow: 'ছিদ্রের উপরে পানি খুব কম',
     c_tk_lid: 'ঢাকনা পানিকে চেপে রাখে',
-    why_tank: '<b>উপরে বাতাসের চাপ নেই</b>: বাইরের বাতাস ছিদ্রে পানি আটকে রাখে, টরিসেলির নলের মতো।',
+    why_tank: '<b>উপরে বাতাসের চাপ নেই</b>। বাইরের বাতাস ছিদ্রে পানি আটকে রাখে, টরিসেলির নলের মতো।',
     mis_tk_small: 'ঢাকনা খুললে এই ছিদ্র দিয়েই জোরে ধারা বের হয়।',
     mis_tk_shallow: 'ছিদ্রটি প্রায় {h}&nbsp;{u_m} গভীরে।',
     mis_tk_lid: 'ঢাকনা শুধু উপরের বাতাসকে আটকায়, চাপ দেয় না।',
@@ -87,7 +87,7 @@ export const STRINGS = {
     c_to_hole: 'ছিদ্রটি বড় হয়ে গেছে',
     c_to_warm: 'পানি গরম হয়ে গেছে',
     c_to_lid: 'ঢাকনা পানিকে চেপে ধরে রেখেছিল',
-    why_to: '<b>উপর থেকেও বাতাসের চাপ</b>: তখন ছিদ্রের উপরের পানির স্তম্ভের চাপ hρg পানিকে বাইরে ঠেলে দেয়।',
+    why_to: '<b>উপর থেকেও বাতাসের চাপ</b>। তখন ছিদ্রের উপরের পানির স্তম্ভের চাপ hρg পানিকে বাইরে ঠেলে দেয়।',
     mis_to_hole: 'ছিদ্র একই আছে; বদলেছে শুধু ঢাকনা।',
     mis_to_warm: 'পানির তাপমাত্রা বদলায়নি।',
     q_tk_drain: 'ঢাকনা খোলা, পানি কমছে। ধারার কী হয়?',
@@ -95,7 +95,7 @@ export const STRINGS = {
     c_td_more: 'আরও জোরে হয়',
     c_td_same: 'একই থাকে',
     c_td_stop: 'সাথে সাথে থেমে যায়',
-    why_td: '<b>দুর্বল হয়</b>: পানি কমলে h কমে, তাই ছিদ্রে চাপ hρg কমে।',
+    why_td: '<b>দুর্বল হয়</b>। পানি কমলে h কমে, তাই ছিদ্রে চাপ hρg কমে।',
     mis_td_more: 'চাপ h-এর সাথে কমে, বাড়ে না।',
     mis_td_stop: 'ছিদ্রের উপরে পানি থাকা পর্যন্ত ধারা চলে।',
   },
@@ -133,9 +133,9 @@ export const STRINGS = {
     out_k_drain: 'Less water, smaller h: the jet <b>weakens</b>',
 
     rule_tank1:
-      "<b>The lid is on, so the air cannot press from above;</b> the outside air's pressure holds the water in at the hole, just as it holds the mercury in Torricelli's tube.",
+      'The lid is on, so <b>the air cannot press from above</b>. The outside air’s pressure holds the water in at the hole, just as it holds the mercury in Torricelli’s tube.',
     rule_tank2:
-      '<b>Lid off: the air presses on the water too,</b> and the pressure hρg of the water above the hole pushes it out. The bigger h, the stronger the jet.',
+      'Lid off, the air presses on the water too. Then the pressure <b>hρg</b> of the water above the hole pushes it out. The bigger h, the stronger the jet.',
 
     lbl_air: "air's pressure",
     lbl_depth: 'h = {h}&nbsp;{u_m}',
@@ -161,7 +161,7 @@ export const STRINGS = {
     c_tk_small: 'The hole is far too small',
     c_tk_shallow: 'Too little water above it',
     c_tk_lid: 'The lid presses the water',
-    why_tank: '<b>No air pressing from above</b>: the outside air holds the water in, as in Torricelli’s tube.',
+    why_tank: '<b>No air pressing from above</b>. The outside air holds the water in, as in Torricelli’s tube.',
     mis_tk_small: 'Lid off, a strong jet comes through this same hole.',
     mis_tk_shallow: 'The hole is about {h}&nbsp;{u_m} deep.',
     mis_tk_lid: 'The lid only keeps the air off; it doesn’t press.',
@@ -171,7 +171,7 @@ export const STRINGS = {
     c_to_hole: 'The hole got bigger',
     c_to_warm: 'The water got warmer',
     c_to_lid: 'The lid was holding the water down',
-    why_to: '<b>The air presses from above too</b>: then the pressure hρg of the water above the hole pushes it out.',
+    why_to: '<b>The air presses from above too</b>. Then the pressure hρg of the water above the hole pushes it out.',
     mis_to_hole: 'The hole is the same; only the lid changed.',
     mis_to_warm: "The water's temperature didn't change.",
     q_tk_drain: 'The lid is off and the water level falls. What happens to the jet?',
@@ -179,7 +179,7 @@ export const STRINGS = {
     c_td_more: 'It gets stronger',
     c_td_same: 'It stays the same',
     c_td_stop: 'It stops at once',
-    why_td: '<b>It weakens</b>: less water, smaller h, so less pressure hρg at the hole.',
+    why_td: '<b>It weakens</b>. Less water means a smaller h, so less pressure hρg at the hole.',
     mis_td_more: "The pressure falls with h; it doesn't grow.",
     mis_td_stop: 'The jet runs as long as there is water above the hole.',
   },
