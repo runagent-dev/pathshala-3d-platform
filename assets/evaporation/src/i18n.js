@@ -162,8 +162,7 @@ export const STRINGS = {
     left_dry: 'Dry',
 
     rule_wind: 'The stronger the <b>air flow</b>, the more evaporation.',
-    rule_area:
-      'The larger the <b>surface area</b>, the more evaporation. Water from a glass poured onto a big plate dries up much sooner.',
+    rule_area: 'The larger the <b>surface area</b>, the more evaporation. Water from a glass poured onto a big plate dries up much sooner.',
     rule_liquid: 'The <b>kind of liquid</b> matters: the lower the boiling point, the more evaporation. A volatile liquid evaporates the most.',
     rule_warm: 'The higher the <b>temperature</b> of the liquid and the air near it, the more evaporation.',
     rule_dry: 'The <b>drier</b> the air, the sooner the liquid evaporates.',
