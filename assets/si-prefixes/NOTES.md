@@ -2,6 +2,15 @@
 
 Feedback and change requests. Newest at the top. (Written from the dashboard's Notes tab; stays out of the handoff zip.)
 
+## Prefix calculator (2026-11-04), v0.5.0
+- Owner's request: "add a converter calculator so that students can themselves check the conversion using numbers, a very proper calculator".
+- The panel now has two tabs: ঘুরে দেখো (the tour, as before) and হিসাব করো (the calculator). Opening the calculator pauses the tour. `?mode=calc` opens on it; `set { mode, value, from, to }` drives it; event `convert`.
+- A display with the number and its unit, then "=" the answer in the chosen unit (both units are buttons that open the list of all 17 rows of Table 1.05, each with "km = 10³ m"). An on-screen keypad (Bangla digits, ., ⌫, মুছো, ×10ⁿ, (−) for the power's sign, ⇅ to swap the units), so no phone keyboard covers the figure; a real keyboard works too (digits, Bangla digits, e, -, Backspace, Escape).
+- The working under it: the table's row for each unit (১ km = ১০³ m · ১ cm = ১০⁻² m), then তাই ১ km = ১০³ ÷ ১০⁻² cm = ১০⁵ cm, then ২.৫ km = ২.৫ × ১০⁵ cm = ২,৫০,০০০ cm (the middle step is left out when the line would be too long).
+- Exact: numbers are kept as an integer and a power of ten (src/convert.js, unit-tested), so a prefix change only moves the decimal point; up to 12 typed digits and ×10^±99. Results are written in full with Bangladeshi commas up to 13 digits / 8 zeros after the point, else as a × 10ⁿ.
+- "কাছাকাছি মাপের জিনিস: পদ্মা সেতু": the tour's object nearest in size (within 1.5 powers of ten); 0.7 s after the student stops typing, the 3D flies there.
+- Units in metres only (the figure is about length). Grams/seconds could be a later choice if the owner wants them.
+
 ## Polish pass (2026-11-01), v0.4.0
 - Layout: the 3D view on top, one strip under it at every size (never over the 3D): the caption (prefix chip, object, size in Bangla, 10ⁿ m and the note) and the controls (play/pause, then the 17 stops = the rows of Table 1.05, smallest first, each with its prefix, 10ⁿ and object). The old Table 1.05 box and the caption that sat over the picture are gone; the strip does both jobs. The caption keeps room for its tallest text, so the 3D never changes height. On short frames (≤ 460 px tall) caption and controls sit side by side in the strip. 3D share: 77 % at 390×700, 76 % at 844×390, 70 % at 800×500.
 - On the 3D view only short labels: the scale bar (on a solid chip) and the pins (বাংলাদেশ, "… এতটুকু", সূর্য, প্রক্সিমা সেন্টরি; "নিকটতম তারার দূরত্ব এতটুকু" shortened to "তারার দূরত্ব এতটুকু"). Pin dots are hollow, so the place they mark (Bangladesh) shows through. While moving, the caption says the journey and what is next, and its chip and the strip light up each prefix as it passes.

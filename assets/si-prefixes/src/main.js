@@ -5,7 +5,7 @@ import { createPrefixApp } from './app.js';
 
 const { app } = await startFigure({
   create: createPrefixApp,
-  events: ['stop', 'choose', 'play', 'pause'],
+  events: ['stop', 'choose', 'play', 'pause', 'convert'],
   commands: (a) => ({
     play: () => (a.play(), a.getState()),
     pause: () => (a.pause(), a.getState()),
