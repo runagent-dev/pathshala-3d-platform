@@ -39,8 +39,9 @@ export const STRINGS = {
 
     // the rule line: the book's words in <b>, growing with what the student has found out
     rule_bulb_ready: 'বাতির গায়ে লেখা {P} W। জ্বালালে প্রতি সেকেন্ডে কত শক্তি ব্যয় হয়, দেখো।',
-    rule_bulb_run: 'বাতিতে <b>প্রতি সেকেন্ডে {P} J</b> বিদ্যুৎশক্তি ব্যয় হচ্ছে, আলো আর তাপ হয়ে (সময় প্রকৃত)।',
-    rule_bulb_done: '<b>ক্ষমতার একক W (ওয়াট):</b> প্রতি সেকেন্ডে {one} J কাজ বা শক্তির রূপান্তর হলে ক্ষমতা {one} W। মাত্রা [P] = ML<sup>2</sup>T<sup>−3</sup>।',
+    rule_bulb_run: 'বাতিতে <b>প্রতি সেকেন্ডে {P} J</b> বিদ্যুৎশক্তি ব্যয় হচ্ছে, আলো আর তাপ হয়ে। (সময় প্রকৃত।)',
+    rule_bulb_done:
+      'ক্ষমতার একক <b>W (ওয়াট)</b>। প্রতি সেকেন্ডে {one} J কাজ বা শক্তির রূপান্তর হলে ক্ষমতা {one} W। মাত্রা:<span class="pvc-formula">[<i>P</i>] = ML<sup>2</sup>T<sup>−3</sup></span>',
 
     // labels on the picture
     l_time: '{t} s',
@@ -118,9 +119,9 @@ export const STRINGS = {
     calc: 'Working out the power: P = W ÷ t',
 
     rule_bulb_ready: 'The bulb says {P} W. Switch it on and see how much energy it uses each second.',
-    rule_bulb_run: 'The bulb uses <b>{P} J of electrical energy each second</b>, as light and heat (real time).',
+    rule_bulb_run: 'The bulb uses <b>{P} J of electrical energy each second</b>, as light and heat. (Real time.)',
     rule_bulb_done:
-      '<b>The unit of power is the W (watt):</b> {one} J of work, or of energy converted, each second is a power of {one} W. Dimension [P] = ML<sup>2</sup>T<sup>−3</sup>.',
+      'The unit of power is the <b>W (watt)</b>. {one} J of work, or of energy converted, each second is a power of {one} W. Dimension:<span class="pvc-formula">[<i>P</i>] = ML<sup>2</sup>T<sup>−3</sup></span>',
 
     l_time: '{t} s',
     l_bulb: '{P} W bulb',

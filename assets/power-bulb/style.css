@@ -18,7 +18,7 @@ body.bg-transparent { background: transparent; }
 .pw-grid .pw-ghost { visibility: hidden; }
 .pw-grid { display: grid; grid-template-columns: auto auto auto auto auto 1fr; column-gap: 7px; row-gap: 0; align-items: baseline; width: max-content; max-width: 100%; }
 .pw-grid > * { white-space: nowrap; font-variant-numeric: tabular-nums; }
-.pw-grid .pw-h { font-size: 12px; font-weight: 600; text-align: right; }
+.pw-grid .pw-h { font-size: 12.5px; font-weight: 600; text-align: right; }
 .pw-grid .pw-h.c-P { text-align: left; }
 .pw-grid .pw-name { color: var(--ink-2); font-weight: 600; }
 .pw-grid .c-W, .pw-grid .c-t { text-align: right; font-weight: 600; }
@@ -27,16 +27,18 @@ body.bg-transparent { background: transparent; }
 .pw-grid sup { font-size: 0.7em; line-height: 0; }
 
 /* labels on the picture: at once, in the colour of what they name */
-.pw .pvc-anno { transition: none; font-size: 14px; font-weight: 700; color: var(--c); border-color: color-mix(in srgb, var(--c) 45%, var(--line)); padding: 2px 7px; }
+.pw .pvc-anno { transition: none; font-size: 14px; font-weight: 600; color: var(--c); border-color: color-mix(in srgb, var(--c) 45%, var(--line)); padding: 2px 7px; }
 .pw-l { display: inline-grid; grid-template-columns: auto auto; align-items: center; column-gap: 4px; row-gap: 0; }
 .pw-l .pw-sw { width: 20px; height: 22px; display: block; }
 .pw-l .pw-l-t { color: var(--c-t); font-size: 15px; font-variant-numeric: tabular-nums; }
 .pw-l small, .pw-l .pw-l-name { grid-column: 1 / -1; }
 .pw-l .pw-l-m { color: #1864ab; font-weight: 600; font-size: 12.5px; }
-.pw-l .pw-l-E { color: var(--c-W); font-weight: 700; font-size: 14px; }
+.pw-l .pw-l-E { color: var(--c-W); font-weight: 600; font-size: 14px; }
 .pw-l .pw-l-name { color: var(--c-P); }
 .pw-l-P { color: var(--c-P); }
 
+.pw .pvc-rule { font-size: 14px; line-height: 1.55; }
+.pw .pvc-rule .pvc-formula { display: block; margin: 6px 0; }
 /* the test: answers in words (two lines allowed), the mistake note under the worked answer */
 .pw .pvc-opt { font-size: 14px; line-height: 1.25; height: auto; min-height: 44px; padding-top: 3px; padding-bottom: 3px; }
 .pw-opt { display: block; white-space: normal; text-align: center; }
@@ -54,14 +56,14 @@ body.bg-transparent { background: transparent; }
 @container pvc-panel (max-width: 340px) {
   .pw .pvc-outcome { font-size: 13.5px; }
   .pw-grid { column-gap: 5px; }
-  .pw .pvc-rule { font-size: 13px; line-height: 1.42; }
+  .pw .pvc-rule { font-size: 14px; line-height: 1.5; }
 }
 
 /* the tightest phone (390 × 520): smaller lines (the tabs, the words and the button stay the kit's) */
 @container pvc (max-width: 560px) and (max-height: 600px) {
   .pw .pvc-outcome { font-size: 13.5px; }
-  .pw-grid .pw-h { font-size: 11px; }
-  .pw .pvc-rule { font-size: 12.5px; line-height: 1.38; }
+  .pw-grid .pw-h { font-size: 12px; }
+  .pw .pvc-rule { font-size: 13.5px; line-height: 1.4; }
   .pw .pvc-q-text { font-size: 13.5px; }
   .pw .pvc-opt { font-size: 12.5px; min-height: 38px; }
   .pw .pvc-q-feedback { font-size: 12px; line-height: 1.38; }
