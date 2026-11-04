@@ -37,13 +37,13 @@ export const STRINGS = {
     chain_gen: '{n}টি',
     chain_aria: 'প্রতি ধাপে কয়টি নিউক্লিয়াস ভাঙল',
 
-    out_start: 'ছবিতে নিউক্লিয়াস লক্ষ কোটি গুণ বড়, চলে অনেক ধীরে',
+    out_start: 'ছবিতে নিউক্লিয়াস লক্ষ কোটি গুণ বড়, আর চলে অনেক ধীরে',
     out_come: 'ধীরগতির নিউট্রন ছুটে আসছে…',
     out_wobble: 'নিউট্রন ঢুকে গেল: নিউক্লিয়াস <b>অস্থিতিশীল</b>, কাঁপছে',
     out_neck: 'নিউক্লিয়াস দুই ভাগ হয়ে যাচ্ছে…',
     out_split: 'ডান পাশে ভর কম: <b>{dm}&nbsp;u</b> = {kg}&nbsp;kg',
     f_left: 'বাম পাশের ভর = {n}<span class="me-u">&nbsp;u</span> + {U}<span class="me-u">&nbsp;u</span> = <b>{L}&nbsp;u</b>',
-    f_E: '{emc} = {kg}<span class="me-u">&nbsp;kg</span> × ({c}<span class="me-u">&nbsp;m/s</span>)<sup>{two}</sup> = <b>{E}&nbsp;J</b>',
+    f_E: '{emc}<br>= {kg}<span class="me-u">&nbsp;kg</span> × ({c}<span class="me-u">&nbsp;m/s</span>)<sup>{two}</sup> = <b>{E}&nbsp;J</b>',
 
     out_chain_start: 'একটি নিউট্রন দিয়ে শুরু (ছবিতে অনেক বড়, অনেক ধীরে)',
     out_chain_run: 'ভেঙেছে <b>{n}টি</b> নিউক্লিয়াস',
@@ -51,10 +51,10 @@ export const STRINGS = {
     f_chain_start: 'প্রতিটি ভাঙনে শক্তি {e1}&nbsp;J, আর তিনটি নতুন নিউট্রন',
     f_chain: 'শক্তি = {n} × {e1}&nbsp;J = <b>{E}&nbsp;J</b>',
 
-    rule_start: '<b>ইউরেনিয়াম ২৩৫:</b> ৯২টি প্রোটন (লাল, +), ১৪৩টি নিউট্রন (ধূসর)। ধীরগতির নিউট্রন পেলে এটি পুরোপুরি অস্থিতিশীল হয়।',
-    rule_split: '<b>যেটুকু ভর কম, সেটুকুই {emc} অনুযায়ী শক্তি হয়।</b> {c2} = {cc} m<sup>{two}</sup>/s<sup>{two}</sup> অনেক বড়, তাই সামান্য ভরে অনেক শক্তি।',
-    rule_chain: 'নতুন তিনটি নিউট্রন প্রচণ্ড গতিতে ছোটে; <b>গতি কমে আসার পর</b> সেগুলো অন্য ইউরেনিয়াম ২৩৫ নিউক্লিয়াস ভাঙে।',
-    rule_chain_done: '<b>এভাবে চলতেই থাকে: একে বলে চেইন রি-অ্যাকশন (Chain Reaction)।</b> প্রতি ধাপে ভাঙে তিন গুণ।',
+    rule_start: '<b>ইউরেনিয়াম ২৩৫</b>-এ আছে ৯২টি প্রোটন (লাল, +) ও ১৪৩টি নিউট্রন (ধূসর)। ধীরগতির নিউট্রন পেলে এটি পুরোপুরি অস্থিতিশীল হয়।',
+    rule_split: 'যে ভরটুকু কম, <b>সেটুকুই শক্তি</b> হয়। {c2} = {cc} m<sup>{two}</sup>/s<sup>{two}</sup> অনেক বড়, তাই সামান্য ভরে অনেক শক্তি।',
+    rule_chain: 'নতুন তিনটি নিউট্রন প্রচণ্ড গতিতে ছোটে। <b>গতি কমে এলে</b> সেগুলো অন্য ইউরেনিয়াম ২৩৫ নিউক্লিয়াস ভাঙে।',
+    rule_chain_done: 'এভাবে চলতেই থাকে। একে বলে <b>চেইন রি-অ্যাকশন</b> (Chain Reaction)। প্রতি ধাপে ভাঙে তিন গুণ।',
 
     l_n_in: 'ধীরগতির নিউট্রন',
     l_unstable: 'অস্থিতিশীল',
@@ -145,7 +145,7 @@ export const STRINGS = {
     out_neck: 'The nucleus is splitting in two…',
     out_split: 'Right side lighter by <b>{dm}&nbsp;u</b> = {kg}&nbsp;kg',
     f_left: 'Left side = {n}<span class="me-u">&nbsp;u</span> + {U}<span class="me-u">&nbsp;u</span> = <b>{L}&nbsp;u</b>',
-    f_E: '{emc} = {kg}<span class="me-u">&nbsp;kg</span> × ({c}<span class="me-u">&nbsp;m/s</span>)<sup>{two}</sup> = <b>{E}&nbsp;J</b>',
+    f_E: '{emc}<br>= {kg}<span class="me-u">&nbsp;kg</span> × ({c}<span class="me-u">&nbsp;m/s</span>)<sup>{two}</sup> = <b>{E}&nbsp;J</b>',
 
     out_chain_start: 'One neutron starts it (far bigger, slower)',
     out_chain_run: '<b>{n}</b> nuclei split so far',
@@ -153,11 +153,11 @@ export const STRINGS = {
     f_chain_start: 'Each split gives {e1}&nbsp;J and three new neutrons',
     f_chain: 'Energy = {n} × {e1}&nbsp;J = <b>{E}&nbsp;J</b>',
 
-    rule_start: '<b>Uranium-235:</b> 92 protons (red, +), 143 neutrons (grey). A slow neutron makes it completely unstable.',
+    rule_start: '<b>Uranium-235</b> has 92 protons (red, +) and 143 neutrons (grey). A slow neutron makes it completely unstable.',
     rule_split:
-      '<b>The missing mass comes out as energy, by {emc}.</b> {c2} = {cc} m<sup>{two}</sup>/s<sup>{two}</sup> is huge: a tiny mass, a lot of energy.',
-    rule_chain: 'The three new neutrons are very fast; <b>once slowed down</b> they split other uranium-235 nuclei.',
-    rule_chain_done: '<b>And so it goes on: this is a chain reaction.</b> Each step splits three times as many.',
+      'The mass that is missing <b>becomes energy</b>. {c2} = {cc} m<sup>{two}</sup>/s<sup>{two}</sup> is huge: a tiny mass, a lot of energy.',
+    rule_chain: 'The three new neutrons are very fast. <b>Once slowed down</b>, they split other uranium-235 nuclei.',
+    rule_chain_done: 'And so it goes on. This is a <b>chain reaction</b>. Each step splits three times as many.',
 
     l_n_in: 'slow neutron',
     l_unstable: 'unstable',

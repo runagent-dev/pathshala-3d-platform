@@ -100,7 +100,7 @@ export function createApp(root, options = {}) {
       ],
     },
     quiet: [{ act: 'home', label: 'act_home', icon: ICONS.reset }],
-    lines: { action: 1, outcome: 2, rule: 3 },
+    lines: { action: 1, outcome: 4, rule: 4 },
   })
     .replace('<p class="pvc-outcome"', `<div class="me-calc">${eqHtml}</div><p class="pvc-outcome"`)
     .replace(
