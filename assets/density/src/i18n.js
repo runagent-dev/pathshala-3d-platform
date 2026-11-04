@@ -70,13 +70,12 @@ export const STRINGS = {
     out_back: 'আয়তন আবার {V}&nbsp;{u_cc}: ঘনত্ব আবার <b>{r}&nbsp;{u_gcc}</b>',
 
     // the rule: the book's words, one idea at a time
-    rule_start: '<b>ঘনত্ব হচ্ছে একক আয়তনে ভরের পরিমাণ:</b> কোনো বস্তুর ভর m এবং আয়তন V হলে তার ঘনত্ব ρ = m/V। ঘনত্বের একক kg/m<sup>3</sup> অথবা gm/cc।',
-    rule_water: '<b>পানির ঘনত্ব {w}&nbsp;{u_gcc}</b> (বইয়ের টেবিল)। যে বলের ঘনত্ব এর চেয়ে কম, সেটি পানিতে ভাসে; বেশি হলে ডুবে যায়।',
+    rule_start: '<b>ঘনত্ব</b> হচ্ছে একক আয়তনে ভরের পরিমাণ। ভর m, আয়তন V হলে ঘনত্ব ρ = m/V। একক kg/m<sup>3</sup> অথবা gm/cc।',
+    rule_water: 'পানির ঘনত্ব <b>{w}&nbsp;{u_gcc}</b> (বইয়ের টেবিল)। যে বলের ঘনত্ব এর চেয়ে কম, সেটি পানিতে ভাসে। বেশি হলে ডুবে যায়।',
     rule_same_v:
-      '<b>আয়তন সমান হলে ভর যত বেশি, ঘনত্ব তত বেশি:</b> কর্ক ({a}) &lt; কাঠ ({b}) &lt; লোহা ({c}), সব gm/cc-তে। {one}&nbsp;{u_gcc} = {k}&nbsp;{u_kgm3}।',
-    rule_box: '<b>এবার একই ভর, ভিন্ন আয়তন:</b> বাক্সের কণাগুলো একই থাকবে, তাই ভর বদলাবে না; শুধু আয়তন বদলাবে। ঘনত্বের কী হয় দেখো।',
-    rule_squeeze:
-      '<b>ভর একই থাকলে আয়তন কমলে ঘনত্ব বাড়ে:</b> আয়তন অর্ধেক হলে ঘনত্ব দ্বিগুণ। বই বলে, তাপমাত্রা বাড়লে বা কমলে আয়তন বদলায় কিন্তু ভর বদলায় না, তাই ঘনত্ব তাপমাত্রার সাথে বদলায়।',
+      'আয়তন সমান হলে ভর যত বেশি, <b>ঘনত্ব</b> তত বেশি।<span class="pvc-formula">কর্ক ({a}) &lt; কাঠ ({b}) &lt; লোহা ({c})</span>সব gm/cc-তে। {one}&nbsp;{u_gcc} = {k}&nbsp;{u_kgm3}।',
+    rule_box: 'এবার <b>একই ভর, ভিন্ন আয়তন</b>। বাক্সের কণাগুলো একই থাকে, তাই ভর বদলায় না। শুধু আয়তন বদলায়। ঘনত্বের কী হয় দেখো।',
+    rule_squeeze: 'ভর একই থাকলে আয়তন কমলে <b>ঘনত্ব</b> বাড়ে। আয়তন অর্ধেক হলে ঘনত্ব দ্বিগুণ। তাপমাত্রা বদলালে আয়তন বদলায় কিন্তু ভর বদলায় না, তাই ঘনত্বও বদলায়।',
 
     // labels on the picture
     lbl_ball: '{name}<br><span class="c-m">{m}&nbsp;{u_gm}</span>',
@@ -105,24 +104,24 @@ export const STRINGS = {
     q_locked: 'পরীক্ষার সময় দৃশ্যটি আটকানো থাকে। ছবি দেখে উত্তর বেছে নাও।',
 
     q_box: 'বাক্সের কণাগুলোর ভর m আর বাক্সের আয়তন V ছবিতে লেখা আছে। কণাগুলোর ঘনত্ব কত?',
-    why_box: '<b>{r}&nbsp;{u_gcc}</b>: ρ = m/V = {m}&nbsp;{u_gm} ÷ {V}&nbsp;{u_cc}।',
+    why_box: '<b>{r}&nbsp;{u_gcc}</b><span class="pvc-formula"><i>ρ</i> = <i>m</i>/<i>V</i> = {m}&nbsp;{u_gm} ÷ {V}&nbsp;{u_cc}</span>',
     mis_box_flip: 'এটি V ÷ m; ঘনত্ব হলো ভর ÷ আয়তন।',
     mis_box_times: 'এটি m × V; ঘনত্বে ভরকে আয়তন দিয়ে ভাগ করতে হয়।',
     mis_box_kg: 'এটি kg/m<sup>3</sup> এককে ঠিক, gm/cc এককে নয়।',
 
     q_order: 'তিনটি বল একই আকারের, একই রঙের। পানিতে কোনটি কোথায় আছে দেখো। কোন বলের ঘনত্ব সবচেয়ে বেশি?',
     c_equal: 'তিনটির ঘনত্ব সমান',
-    why_order: '<b>{x}</b>: এটি ডুবে গেছে, তাই এর ঘনত্ব পানির চেয়ে বেশি; বাকি দুটি ভাসছে।',
+    why_order: '<b>{x}</b>। এটি ডুবে গেছে, তাই এর ঘনত্ব পানির চেয়ে বেশি। বাকি দুটি ভাসছে।',
     mis_order_float: '{x} ভাসছে, তাই এর ঘনত্ব পানির চেয়ে কম।',
     mis_order_equal: 'আয়তন সমান হলেও ভর আলাদা, তাই বল তিনটি তিন জায়গায় থেমেছে।',
 
     q_sink: 'চারটি রং করা বলের ভর আর আয়তন ছবিতে লেখা আছে। কোন বলটি পানিতে ডুবে যাবে?',
-    why_sink: '<b>{x}</b>: ρ = {m}&nbsp;{u_gm} ÷ {V}&nbsp;{u_cc} = {r}&nbsp;{u_gcc}, পানির চেয়ে বেশি।',
+    why_sink: '<b>{x}</b>। ঘনত্ব পানির চেয়ে বেশি।<span class="pvc-formula"><i>ρ</i> = {m}&nbsp;{u_gm} ÷ {V}&nbsp;{u_cc} = {r}&nbsp;{u_gcc}</span>',
     mis_sink_heavy: '{x}-এর ভর সবচেয়ে বেশি, কিন্তু আয়তনও বড়: ঘনত্ব {r}&nbsp;{u_gcc}, তাই ভাসবে।',
     mis_sink_other: '{x}-এর ঘনত্ব {r}&nbsp;{u_gcc}, পানির চেয়ে কম।',
 
     q_heat: 'ছবির বাক্সের কণাগুলো গরম করায় আয়তন দ্বিগুণ হলো, ভর একই থাকল। এখন ঘনত্ব কত?',
-    why_heat: '<b>{r}&nbsp;{u_gcc}</b>: ρ = {m}&nbsp;{u_gm} ÷ {V2}&nbsp;{u_cc}; আয়তন দ্বিগুণ, তাই ঘনত্ব অর্ধেক।',
+    why_heat: '<b>{r}&nbsp;{u_gcc}</b>। আয়তন দ্বিগুণ, তাই ঘনত্ব অর্ধেক।<span class="pvc-formula"><i>ρ</i> = {m}&nbsp;{u_gm} ÷ {V2}&nbsp;{u_cc}</span>',
     mis_heat_double: 'আয়তন বাড়লে ঘনত্ব বাড়ে না, কমে: আয়তন দিয়ে ভাগ করতে হয়।',
     mis_heat_same: 'ভর একই, কিন্তু আয়তন বদলেছে, তাই ঘনত্বও বদলায়।',
     mis_heat_quarter: 'আয়তন দ্বিগুণ হয়েছে, চার গুণ নয়।',
@@ -189,15 +188,14 @@ export const STRINGS = {
     out_more: 'The same mass in more volume: <b>less</b> density',
     out_back: 'The volume is {V}&nbsp;{u_cc} again: the density is <b>{r}&nbsp;{u_gcc}</b> again',
 
-    rule_start:
-      '<b>Density is the mass per unit volume:</b> if a body’s mass is m and its volume V, its density is ρ = m/V. Density is measured in kg/m<sup>3</sup> or gm/cc.',
-    rule_water: '<b>Water’s density is {w}&nbsp;{u_gcc}</b> (the book’s table). A ball less dense than that floats in water; a denser one sinks.',
+    rule_start: '<b>Density</b> is the mass per unit volume. For a mass m and a volume V, ρ = m/V. Its unit is kg/m<sup>3</sup> or gm/cc.',
+    rule_water: 'Water’s density is <b>{w}&nbsp;{u_gcc}</b> (the book’s table). A ball less dense than that floats in water. A denser one sinks.',
     rule_same_v:
-      '<b>For the same volume, the more mass, the more density:</b> cork ({a}) &lt; wood ({b}) &lt; iron ({c}), all in gm/cc. {one}&nbsp;{u_gcc} = {k}&nbsp;{u_kgm3}.',
+      'For the same volume, the more mass, the more <b>density</b>.<span class="pvc-formula">cork ({a}) &lt; wood ({b}) &lt; iron ({c})</span>All in gm/cc. {one}&nbsp;{u_gcc} = {k}&nbsp;{u_kgm3}.',
     rule_box:
-      '<b>Now the same mass in a different volume:</b> the particles in the box stay the same, so the mass does not change; only the volume does. Watch the density.',
+      'Now <b>the same mass, a different volume</b>. The particles stay the same, so the mass does not change. Only the volume does. Watch the density.',
     rule_squeeze:
-      '<b>For the same mass, less volume means more density:</b> half the volume, twice the density. The book says: heating or cooling changes a substance’s volume but not its mass, so its density changes with temperature.',
+      'For the same mass, less volume means more <b>density</b>. Half the volume, twice the density. Temperature changes the volume but not the mass, so it changes the density too.',
 
     lbl_ball: '{name}<br><span class="c-m">{m}&nbsp;{u_gm}</span>',
     lbl_m: 'm = {m}&nbsp;{u_gm}',
@@ -224,24 +222,25 @@ export const STRINGS = {
     q_locked: 'The picture is locked during the test. Pick an answer from the picture.',
 
     q_box: 'The mass m of the particles and the volume V of the box are written on the picture. What is the particles’ density?',
-    why_box: '<b>{r}&nbsp;{u_gcc}</b>: ρ = m/V = {m}&nbsp;{u_gm} ÷ {V}&nbsp;{u_cc}.',
+    why_box: '<b>{r}&nbsp;{u_gcc}</b><span class="pvc-formula"><i>ρ</i> = <i>m</i>/<i>V</i> = {m}&nbsp;{u_gm} ÷ {V}&nbsp;{u_cc}</span>',
     mis_box_flip: 'That is V ÷ m; density is mass ÷ volume.',
     mis_box_times: 'That is m × V; density divides the mass by the volume.',
     mis_box_kg: 'That is right in kg/m<sup>3</sup>, not in gm/cc.',
 
     q_order: 'The three balls are the same size and colour. See where each one is in the water. Which ball has the greatest density?',
     c_equal: 'All three are equally dense',
-    why_order: '<b>{x}</b>: it sank, so it is denser than water; the other two float.',
+    why_order: '<b>{x}</b>. It sank, so it is denser than water. The other two float.',
     mis_order_float: '{x} floats, so it is less dense than water.',
     mis_order_equal: 'The same volume, but different masses: the three balls stopped in three places.',
 
     q_sink: 'The mass and volume of four painted balls are written on the picture. Which ball will sink in water?',
-    why_sink: '<b>{x}</b>: ρ = {m}&nbsp;{u_gm} ÷ {V}&nbsp;{u_cc} = {r}&nbsp;{u_gcc}, more than water’s.',
+    why_sink: '<b>{x}</b>. It is denser than water.<span class="pvc-formula"><i>ρ</i> = {m}&nbsp;{u_gm} ÷ {V}&nbsp;{u_cc} = {r}&nbsp;{u_gcc}</span>',
     mis_sink_heavy: '{x} has the most mass, but a big volume too: {r}&nbsp;{u_gcc}, so it floats.',
     mis_sink_other: '{x}’s density is {r}&nbsp;{u_gcc}, less than water’s.',
 
     q_heat: 'The particles in the box on the picture are heated: the volume doubles and the mass stays the same. What is the density now?',
-    why_heat: '<b>{r}&nbsp;{u_gcc}</b>: ρ = {m}&nbsp;{u_gm} ÷ {V2}&nbsp;{u_cc}; twice the volume, half the density.',
+    why_heat:
+      '<b>{r}&nbsp;{u_gcc}</b>. Twice the volume, half the density.<span class="pvc-formula"><i>ρ</i> = {m}&nbsp;{u_gm} ÷ {V2}&nbsp;{u_cc}</span>',
     mis_heat_double: 'More volume does not raise the density, it lowers it: the volume divides.',
     mis_heat_same: 'The mass is the same, but the volume changed, so the density changes too.',
     mis_heat_quarter: 'The volume doubled; it did not become four times.',
