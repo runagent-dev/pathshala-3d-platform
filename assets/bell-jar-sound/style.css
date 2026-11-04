@@ -6,9 +6,9 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
 body.bg-transparent { background: transparent; }
 
 .bj { --c-air: #5c6b7e; --c-sound: #0b7285; }
-.bj .pvc-outcome { font-size: 15px; line-height: 1.45; }
-.bj .pvc-outcome b { font-size: 1.15em; color: var(--c-sound); }
-.bj .pvc-rule { font-size: 14px; line-height: 1.45; }
+.bj .pvc-outcome { font-size: 15px; line-height: 1.5; }
+.bj .pvc-outcome b { font-size: 1.05em; color: var(--c-sound); }
+.bj .pvc-rule { font-size: 14px; line-height: 1.5; }
 .bj .pvc-rule b { color: var(--ink); }
 
 /* the two meters */
@@ -19,7 +19,7 @@ body.bg-transparent { background: transparent; }
 .bj-bar i { position: absolute; inset: 0 auto 0 0; width: 100%; border-radius: 5px; background: var(--c-air); }
 .bj-m-sound .bj-bar i { background: var(--c-sound); }
 .bj-m-v { white-space: nowrap; font-variant-numeric: tabular-nums; min-width: 7em; }
-.bj-m-v b { font-weight: 700; }
+.bj-m-v b { font-weight: 600; }
 .bj-m-sound .bj-m-v b { color: var(--c-sound); }
 .bj-meters[data-sound="none"] .bj-m-sound .bj-m-v b { color: #c2255c; }
 
@@ -27,7 +27,7 @@ body.bg-transparent { background: transparent; }
 .bj .pvc-act { white-space: nowrap; min-width: 12.9em; }
 
 /* honest picture: dots and rings stand for what can't be seen */
-.bj-note { margin: 0; font-size: 12px; line-height: 1.3; color: #5b6472; }
+.bj-note { margin: 0; font-size: 12.5px; line-height: 1.4; color: var(--ink-2); }
 
 /* the graph: in the side panel, filling the room under the rule (hidden in the panel below the 3D) */
 .bj-graph { display: none; margin: 0; }
@@ -53,44 +53,50 @@ body.bg-transparent { background: transparent; }
 .bj .pvc-opt { font-size: 14px; line-height: 1.2; padding: 0 4px; }
 .bj-opt { display: block; white-space: normal; text-align: center; }
 .bj .pvc-q-text { font-size: 15px; }
-.bj .pvc-q-feedback { font-size: 13.5px; }
+.bj .pvc-q-feedback { font-size: 14px; }
 
 /* phones held upright: tighter, so the 3D keeps more than half the height */
 @container pvc (max-width: 420px) {
   .bj .pvc-learn { gap: 6px; }
   .bj .pvc-outcome { font-size: 14px; }
-  .bj .pvc-rule { font-size: 13px; line-height: 1.4; --pvc-rule-lines: 3; }
+  .bj .pvc-rule { font-size: 14px; line-height: 1.4; --pvc-rule-lines: 3; }
   .bj-meters { font-size: 12.5px; }
   .bj .pvc-q-options { gap: 6px; }
-  .bj .pvc-opt { height: 40px; font-size: 13px; }
+  .bj .pvc-opt { height: 40px; font-size: 13.5px; }
   .bj .pvc-q-text { font-size: 14px; }
-  .bj .pvc-q-feedback { font-size: 12.5px; }
+  .bj .pvc-q-feedback { font-size: 14px; }
   .bj .pvc-q-text { --pvc-q-text-min: 2lh; }
   .bj-note-long { display: none; }
   .bj-note-short { display: inline; }
 }
 /* phones that are not tall, held upright (not the side panel, which is narrower) */
 @container pvc (min-width: 370px) and (max-width: 560px) and (max-height: 600px) {
-  .bj .pvc-outcome { font-size: 13px; line-height: 1.3; }
-  .bj .pvc-rule { font-size: 12px; line-height: 1.3; }
-  .bj-meters { font-size: 12px; line-height: 1.2; gap: 1px 8px; }
+  .bj .pvc-outcome { font-size: 13px; line-height: 1.32; }
+  .bj .pvc-rule { font-size: 12.5px; line-height: 1.32; }
+  .bj-meters { font-size: 12.5px; line-height: 1.2; gap: 1px 8px; }
   .bj-note { display: none; }
   .bj .pvc-learn { gap: 4px; }
   .bj .pvc-q-ask { gap: 4px; }
   .bj .pvc-q-head .pvc-btn { height: 30px; }
   .bj .pvc-q-options { gap: 4px; }
-  .bj .pvc-opt { font-size: 12px; height: 31px; line-height: 1.15; }
-  .bj .pvc-q-text { font-size: 12.5px; line-height: 1.3; --pvc-q-text-min: 2lh; }
-  .bj .pvc-q-feedback { font-size: 11.5px; line-height: 1.3; --pvc-q-feedback-min: 3lh; }
+  .bj .pvc-opt { font-size: 12.5px; height: 31px; line-height: 1.15; }
+  .bj .pvc-q-text { font-size: 12.5px; line-height: 1.32; --pvc-q-text-min: 2lh; }
+  .bj .pvc-q-feedback { font-size: 12.5px; line-height: 1.32; --pvc-q-feedback-min: 3lh; }
   .pvc-anno-force { font-size: 12px; }
 }
 /* short and wide (a phone held sideways): the panel is beside the scene */
 @container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
-  .bj .pvc-outcome { font-size: 13.5px; line-height: 1.4; --pvc-outcome-lines: 3; }
-  .bj .pvc-rule { font-size: 12.5px; line-height: 1.35; --pvc-rule-lines: 5; }
-  .bj .pvc-opt { font-size: 12.5px; height: 44px; }
-  .bj .pvc-q-text { font-size: 13.5px; }
-  .bj .pvc-q-feedback { font-size: 12.5px; --pvc-q-feedback-min: 4lh; }
+  .bj .pvc-learn { gap: 4px; }
+  .bj .pvc-outcome { font-size: 14px; line-height: 1.5; --pvc-outcome-lines: 2; }
+  .bj .pvc-rule { font-size: 14px; line-height: 1.5; --pvc-rule-lines: 3; }
+  .bj .pvc-opt { font-size: 13.5px; height: 44px; }
+  .bj .pvc-q-text { font-size: 14px; }
+  .bj .pvc-q-feedback { font-size: 14px; --pvc-q-feedback-min: 4lh; }
   .bj-meters { font-size: 12.5px; }
   .pvc-anno-force { font-size: 12px; }
 }
+
+/* a sum set on its own line in the panel */
+.bj span.pvc-formula { display: block; margin: 2px 0 6px; padding: 3px 8px; font-size: 15px; line-height: 1.5; }
+@container pvc (max-width: 420px) { .bj span.pvc-formula { margin: 0 0 3px; padding: 1px 6px; font-size: 14px; line-height: 1.4; } }
+@container pvc (max-height: 460px) { .bj span.pvc-formula { margin: 0 0 3px; padding: 2px 6px; font-size: 14px; line-height: 1.45; } }

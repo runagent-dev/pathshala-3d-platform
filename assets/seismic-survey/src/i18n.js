@@ -36,19 +36,19 @@ export const STRINGS = {
     seis_time: 'সময় (s)',
     seis_head: 'জিওফোনে ধারণ করা শব্দ',
 
-    out_ready: 'জিওফোনগুলো শুনছে, এখনো কোনো শব্দ আসেনি।',
+    out_ready: 'জিওফোনগুলো শুনছে। এখনো কোনো শব্দ আসেনি।',
     out_run: 'বিস্ফোরণের পর সময় <b class="ss-t">{t}&nbsp;s</b>',
     out_pick: 'রঙিন দাগে বা সীমানার নামে চাপো: কোন সীমানা কত গভীরে?',
     out_depth:
-      'সীমানা {n}: <span class="ss-nb"><i>t</i> = {t}&nbsp;s</span>, <span class="ss-nb">গভীরতা = <i>vt</i>&nbsp;÷&nbsp;{two}</span> = <span class="ss-nb">{v} × {t} ÷ {two}</span> = <b>{d}&nbsp;m</b>',
-    out_image: 'গম্বুজের চূড়া মাত্র <b>{d}&nbsp;m</b> গভীরে: চূড়ায় গ্যাস, তার নিচে তেল।',
+      'সীমানা {n}: <span class="ss-nb">গভীরতা = <i>vt</i>&nbsp;÷&nbsp;{two}</span>, <span class="ss-nb"><i>t</i> = {t}&nbsp;s</span><span class="pvc-formula">{v} × {t} ÷ {two} = <b>{d}&nbsp;m</b></span>',
+    out_image: 'গম্বুজের চূড়া মাত্র <b>{d}&nbsp;m</b> গভীরে। চূড়ায় গ্যাস, তার নিচে তেল।',
     out_mapping: '{n}টি জিওফোনের প্রতিটির নিচে তিন সীমানার গভীরতা… (চাপলে এখনই)',
 
-    rule_start: '<b>মাটির খানিকটা নিচে ছোট বিস্ফোরণ ঘটানো হয়।</b> তার শব্দ নিচের বিভিন্ন স্তরে প্রতিফলিত হয়ে উপরে ফিরে আসে।',
-    rule_run: '<b>জিওফোন প্রতিফলিত তরঙ্গকে ধারণ (Detect) করে।</b> দুই স্তরের সীমানা যত গভীরে, তার প্রতিফলন তত দেরিতে আসে।',
+    rule_start: 'মাটির খানিকটা নিচে ছোট <b>বিস্ফোরণ</b> ঘটানো হয়। তার শব্দ নিচের বিভিন্ন স্তরে প্রতিফলিত হয়ে উপরে ফিরে আসে।',
+    rule_run: '<b>জিওফোন</b> প্রতিফলিত তরঙ্গকে ধারণ (Detect) করে। দুই স্তরের সীমানা যত গভীরে, তার প্রতিফলন তত দেরিতে আসে।',
     rule_depth:
-      '<b>শব্দ নিচে গিয়ে আবার ফেরে, তাই গভীরতা = বেগ × সময় ÷ {two}।</b> শিলায় শব্দের বেগ এখানে ধরে নেওয়া <span class="ss-nb">v = {v}&nbsp;m/s</span>।',
-    rule_image: '<b>সমস্ত তথ্য বিশ্লেষণ করে মাটির নিচের ত্রিমাত্রিক ছবি:</b> এক সারি জিওফোনে শুধু একটি কাটা অংশ, পুরো গ্রিডে গোটা গম্বুজ দেখা যায়।',
+      '<span class="pvc-formula">গভীরতা = বেগ × সময় ÷ {two}</span> শব্দ নিচে গিয়ে আবার ফেরে। এখানে শিলায় শব্দের বেগ <span class="ss-nb"><b>v = {v}&nbsp;m/s</b></span> ধরা হয়েছে।',
+    rule_image: 'সমস্ত তথ্য বিশ্লেষণ করে মাটির নিচের <b>ত্রিমাত্রিক ছবি</b> পাওয়া যায়। এক সারি জিওফোনে শুধু একটি কাটা অংশ দেখা যায়, পুরো গ্রিডে গোটা গম্বুজ।',
 
     book_line:
       'বই বলছে: শব্দের উৎসটি কোথায় আছে এবং জিওফোনগুলো কোথায় আছে দুটিই জানা থাকার কারণে উৎস থেকে জিওফোনে শব্দ আসতে কতটুকু সময় লেগেছে জানতে পারলেই বিভিন্ন স্তরের দূরত্ব নিখুঁতভাবে বের করা যায়।',
@@ -161,20 +161,20 @@ export const STRINGS = {
     seis_time: 'time (s)',
     seis_head: 'Sound detected by the geophones',
 
-    out_ready: 'The geophones are listening; no sound has arrived yet.',
+    out_ready: 'The geophones are listening. No sound has arrived yet.',
     out_run: 'Time since the blast <b class="ss-t">{t}&nbsp;s</b>',
     out_pick: 'Tap a coloured blip or a boundary’s name: how deep is each boundary?',
     out_depth:
-      'Boundary {n}: <span class="ss-nb"><i>t</i> = {t}&nbsp;s</span>, <span class="ss-nb">depth = <i>vt</i>&nbsp;÷&nbsp;{two}</span> = <span class="ss-nb">{v} × {t} ÷ {two}</span> = <b>{d}&nbsp;m</b>',
-    out_image: 'The top of the dome is only <b>{d}&nbsp;m</b> deep: gas at the top, oil below it.',
+      'Boundary {n}: <span class="ss-nb">depth = <i>vt</i>&nbsp;÷&nbsp;{two}</span>, <span class="ss-nb"><i>t</i> = {t}&nbsp;s</span><span class="pvc-formula">{v} × {t} ÷ {two} = <b>{d}&nbsp;m</b></span>',
+    out_image: 'The top of the dome is only <b>{d}&nbsp;m</b> deep. Gas at the top, oil below it.',
     out_mapping: 'Under each of the {n} geophones, the depth of three boundaries… (tap to skip)',
 
-    rule_start: '<b>A small blast is set off a little below the ground.</b> Its sound reflects at the layers underground and comes back up.',
-    rule_run: '<b>Geophones detect the reflected waves.</b> The deeper the boundary between two layers, the later its echo arrives.',
+    rule_start: 'A small <b>blast</b> is set off a little below the ground. Its sound reflects at the layers underground and comes back up.',
+    rule_run: '<b>Geophones</b> detect the reflected waves. The deeper the boundary between two layers, the later its echo arrives.',
     rule_depth:
-      '<b>The sound goes down and comes back, so depth = speed × time ÷ {two}.</b> The speed of sound in the rock is taken here as <span class="ss-nb">v = {v}&nbsp;m/s</span>.',
+      '<span class="pvc-formula">depth = speed × time ÷ {two}</span> The sound goes down and comes back. The speed in the rock is taken here as <span class="ss-nb"><b>v = {v}&nbsp;m/s</b></span>.',
     rule_image:
-      '<b>All the data together give a 3D picture of the ground:</b> one line of geophones shows a single slice; the whole grid shows the whole dome.',
+      'All the data together give a <b>3D picture</b> of the ground. One line of geophones shows a single slice; the whole grid shows the whole dome.',
 
     book_line:
       'The book: because both the source and the geophones are at known places, knowing how long the sound took from the source to a geophone gives the distances of the layers exactly.',

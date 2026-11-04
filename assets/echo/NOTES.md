@@ -53,8 +53,8 @@ the book: m, s, m/s.
   it is back, the echo as the same bar from t, with a strong mark at each bar's start (the moments the rule compares)
   and the shaded "০.১ s পর্যন্ত" band from the call's start, its words under the axis; the rule grows: sound is
   reflected → the 0.1 s (and "now try further / closer") → 0.1 s × 330 m/s = 33 m, half 16.5 m (then marked crimson
-  on the tape). The times found show under the words. Side panels (844×390 and up) add the book's chain 0.1 s →
-  × 330 m/s → 33 m → ÷ 2 → 16.5 m, its steps "?" until found, and (from 800×500) a list of the distances called from
+  on the tape). The times found show under the words. Once both sides are found, the rule shows the book's sum as a formula: 0.1 s
+  × 330 m/s = 33 m, half of that 16.5 m. From 800×500 the panel adds a list of the distances called from
   with their times and "গমগম" / "আলাদা প্রতিধ্বনি".
 - With sound on, a human-like voice made in code (`src/voice.js`, no audio files): breath noise for /h/, a glottal
   source at 225 → 195 Hz, three formant resonators moving /æ/ → /l/ → /o/, an amplitude envelope dipping at the /l/;

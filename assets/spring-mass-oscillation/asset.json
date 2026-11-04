@@ -5,7 +5,7 @@
   "title": "Mass on a spring: simple harmonic motion (সরল স্পন্দন গতি)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "book": "physics-9-10",
   "page": 189,
   "topic": "7.1",

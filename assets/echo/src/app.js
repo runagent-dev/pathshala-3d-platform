@@ -109,26 +109,11 @@ export function createApp(root, options = {}) {
   tlHost.className = 'ec-tl-host';
   $('.pvc-outcome').after(tlHost);
   const timeline = createTimeline(tlHost, t, N, { gap: GAP, call: CALL });
-  // wide panels only (style.css): the book's chain 0.1 s → 33 m → 16.5 m as it is found, and the distances tried
-  const chain = document.createElement('div');
-  chain.className = 'ec-chain';
-  chain.setAttribute('role', 'img');
-  chain.setAttribute('aria-label', t('ch_aria', { gap: N(GAP), path: N(GAP_PATH), min: N(MIN_D) }).replace(/&nbsp;/g, ' '));
-  /** The chain with what is found so far: a step not yet found shows "?" (the rule says the same). */
-  function chainHTML(step) {
-    const v = (k, html) => (step >= k ? html : '<span class="ec-q">?</span>');
-    return `
-    <span class="ec-ch"><b class="ec-c-time">${v(1, `${N(GAP)}&nbsp;${t('u_s')}`)}</b><small>${t('ch_gap')}</small></span>
-    <span class="ec-ch-op">× ${N(V_SOUND)}&nbsp;${t('u_ms')}<i>→</i></span>
-    <span class="ec-ch"><b>${v(2, `${N(GAP_PATH)}&nbsp;${t('u_m')}`)}</b><small>${t('ch_path')}</small></span>
-    <span class="ec-ch-op">÷ ${N(2)}<i>→</i></span>
-    <span class="ec-ch"><b>${v(2, `${N(MIN_D)}&nbsp;${t('u_m')}`)}</b><small>${t('ch_min')}</small></span>`;
-  }
-  tlHost.after(chain);
+  // wide panels only (style.css): the distances tried
   const tried = document.createElement('div');
   tried.className = 'ec-tried';
   tried.innerHTML = `<div class="ec-tr-head">${t('tr_head')}</div><ol></ol><p class="ec-tr-empty">${t('tr_empty')}</p>`;
-  chain.after(tried);
+  tlHost.after(tried);
   const triedList = /** @type {HTMLOListElement} */ (tried.querySelector('ol'));
   // honest time: a small note in the 3D view's top-left corner (the buttons are top right)
   const note = document.createElement('div');
@@ -344,12 +329,6 @@ export function createApp(root, options = {}) {
     }
     sheet.next(s.mode === 'explore' ? next : null);
     for (const x of EXAMPLES) sheet.result(exId(x), s.results.has(exId(x)) ? `${N(s.results.get(exId(x)))} s` : '');
-    // the chain (wide panels): its first step once the 0.1 s is known, the rest once both sides are found
-    const step = f.near && f.far ? 2 : f.near || f.far ? 1 : 0;
-    if (chain.dataset.step !== String(step)) {
-      chain.dataset.step = String(step);
-      chain.innerHTML = chainHTML(step);
-    }
     const rows = s.tried
       .map((x) => {
         const sep = separate(x);

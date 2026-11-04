@@ -38,8 +38,8 @@ export const STRINGS = {
     act_resume: 'আবার চালাও',
 
     // the result line
-    out_idle_rope: 'দড়িটি স্থির। <b class="wt-g">সবুজ চিহ্ন</b>টি দড়ির একটি কণা: এটির দিকে তাকিয়ে থাকো।',
-    out_idle_spring: 'স্প্রিংটি স্থির। <b class="wt-g">সবুজ প্যাঁচ</b>টি স্প্রিংয়ের একটি কণা: এটির দিকে তাকিয়ে থাকো।',
+    out_idle_rope: 'দড়িটি স্থির। <b class="wt-g">সবুজ চিহ্ন</b>টি দড়ির একটি কণা। এটির দিকে চোখ রাখো।',
+    out_idle_spring: 'স্প্রিংটি স্থির। <b class="wt-g">সবুজ প্যাঁচ</b>টি স্প্রিংয়ের একটি কণা। এটির দিকে চোখ রাখো।',
     out_coming: 'তরঙ্গ এগিয়ে আসছে… <b class="wt-g">সবুজ কণা</b>টি এখনো স্থির।',
     out_rope: '<b>অনুপ্রস্থ তরঙ্গ</b>: <span class="wt-g">কণা ওঠে আর নামে</span>, <span class="wt-b">তরঙ্গ এগোয় ডানে</span>।',
     out_spring: '<b>অনুদৈর্ঘ্য তরঙ্গ</b>: <span class="wt-g">কণা সামনে-পেছনে নড়ে</span>, <span class="wt-b">তরঙ্গও এগোয় সেই দিকে</span>।',
@@ -47,12 +47,10 @@ export const STRINGS = {
 
     // the rule, growing
     rule_start: 'তরঙ্গ মাধ্যমের ভেতর দিয়ে এগিয়ে যায়। কিন্তু মাধ্যমের কণাগুলো কী করে? সবুজ কণাটি লক্ষ করো।',
-    rule_rope:
-      'দড়ির কণাগুলোর কম্পন তরঙ্গের বেগের দিকে ঘটে না: দড়ির ওঠা এবং নামা তরঙ্গের বেগের সাথে <b>লম্ব</b>। এরকম তরঙ্গের নাম <b>অনুপ্রস্থ তরঙ্গ</b>। পানির ঢেউ এর আরেকটি উদাহরণ।',
+    rule_rope: 'দড়ির কণাগুলো তরঙ্গের বেগের দিকে কাঁপে না। দড়ির ওঠা-নামা তরঙ্গের বেগের সাথে <b>লম্ব</b>। এরকম তরঙ্গের নাম অনুপ্রস্থ তরঙ্গ। পানির ঢেউ এর আরেকটি উদাহরণ।',
     rule_spring:
-      'স্প্রিংয়ে তরঙ্গটি <b>সংকোচন</b> এবং <b>প্রসারণের</b>; সেই সংকোচন এবং প্রসারণের দিক এবং তরঙ্গের বেগের দিক <b>একই</b>। এই ধরনের তরঙ্গের নাম <b>অনুদৈর্ঘ্য তরঙ্গ</b>। শব্দ এক ধরনের অনুদৈর্ঘ্য তরঙ্গ।',
-    rule_both:
-      'দুটিতেই কণা <b>নিজের জায়গায় কাঁপে</b>, এগিয়ে যায় তরঙ্গ (শক্তি)। কম্পন তরঙ্গের বেগের সাথে লম্ব হলে <b>অনুপ্রস্থ</b>, একই দিকে হলে <b>অনুদৈর্ঘ্য</b> তরঙ্গ।',
+      'স্প্রিংয়ে তরঙ্গটি সংকোচন আর প্রসারণের। এদের দিক আর তরঙ্গের বেগের দিক <b>একই</b>। এই ধরনের তরঙ্গের নাম অনুদৈর্ঘ্য তরঙ্গ। শব্দও এক ধরনের অনুদৈর্ঘ্য তরঙ্গ।',
+    rule_both: 'দুটিতেই কণা নিজের জায়গায় কাঁপে, এগিয়ে যায় তরঙ্গ (শক্তি)। কম্পন তরঙ্গের বেগের সাথে লম্ব হলে <b>অনুপ্রস্থ</b>, একই দিকে হলে <b>অনুদৈর্ঘ্য</b> তরঙ্গ।',
 
     // the comparison under the rule
     strip_head: 'মাধ্যমের কণাগুলো, পাশ থেকে দেখা',
@@ -95,8 +93,8 @@ export const STRINGS = {
     c1_carried: 'তরঙ্গের সাথে ডানে এগিয়ে যায়',
     c1_wavy: 'উপর-নিচে, সাথে ডানেও এগোয়',
     why_rope: '<b>নিজের জায়গায় উপর-নিচে।</b> কণাটি সাদা আংটির উপরে-নিচে ওঠা-নামা করে।',
-    mis1_along: 'সামনে-পেছনে নড়ে স্প্রিংয়ের প্যাঁচ; দড়ির কণা ওঠা-নামা করে।',
-    mis1_carried: 'ডানে এগোয় ঢেউয়ের আকার; কণাটি আংটি ছেড়ে যায় না।',
+    mis1_along: 'সামনে-পেছনে নড়ে স্প্রিংয়ের প্যাঁচ। দড়ির কণা ওঠা-নামা করে।',
+    mis1_carried: 'ডানে এগোয় ঢেউয়ের আকার। কণাটি আংটি ছেড়ে যায় না।',
     mis1_wavy: 'ঢেউয়ের আকার ডানে সরে, কণা নয়: কণাটি আংটির ঠিক উপর-নিচেই থাকে।',
 
     q_spring: 'স্প্রিংয়ে অনেকক্ষণ ধরে তরঙ্গ ডান দিকে যাচ্ছে। সবুজ প্যাঁচটি কীভাবে নড়ছে?',
@@ -105,8 +103,8 @@ export const STRINGS = {
     c2_carried: 'তরঙ্গের সাথে ডানে এগিয়ে যায়',
     c2_stuck: 'একটু ডানে সরে থেমে আছে',
     why_spring: '<b>নিজের জায়গায় সামনে-পেছনে।</b> প্যাঁচটি সাদা দাগের দুপাশে কাঁপে, তরঙ্গের দিক বরাবর।',
-    mis2_updown: 'ওঠা-নামা করে দড়ির কণা; প্যাঁচ নড়ে তরঙ্গের দিক বরাবর।',
-    mis2_carried: 'দূরে যায় তরঙ্গ, প্যাঁচ নয়; প্যাঁচটি সাদা দাগ ছাড়ে না।',
+    mis2_updown: 'ওঠা-নামা করে দড়ির কণা। প্যাঁচ নড়ে তরঙ্গের দিক বরাবর।',
+    mis2_carried: 'দূরে যায় তরঙ্গ, প্যাঁচ নয়। প্যাঁচটি সাদা দাগ ছাড়ে না।',
     mis2_stuck: 'তরঙ্গ চলতে থাকলে প্যাঁচও কাঁপতে থাকে, থামে না।',
 
     q_feature: 'থামানো স্প্রিংয়ে আংটি দেওয়া জায়গায় প্যাঁচগুলো কেমন আছে?',
@@ -117,7 +115,7 @@ export const STRINGS = {
     why_comp: '<b>সংকোচন।</b> আংটিতে প্যাঁচগুলো পাশের চেয়ে কাছাকাছি।',
     why_rare: '<b>প্রসারণ।</b> আংটিতে প্যাঁচগুলো পাশের চেয়ে দূরে দূরে।',
     mis_swap: 'আংটির ফাঁক পাশের ফাঁকের সাথে মেলাও: ঘেঁষাঘেঁষি হলে সংকোচন, দূরে দূরে হলে প্রসারণ।',
-    mis_rest: 'মাঝের প্যাঁচের সরণ এখন শূন্য হতে পারে, কিন্তু ফাঁকগুলো সমান নয়; সাম্যাবস্থায় সব ফাঁক সমান।',
+    mis_rest: 'মাঝের প্যাঁচের সরণ এখন শূন্য হতে পারে, কিন্তু ফাঁকগুলো সমান নয়। সাম্যাবস্থায় সব ফাঁক সমান।',
     mis_notyet: 'তরঙ্গ আগেই পৌঁছেছে: আরও দূরেও প্যাঁচ ঘেঁষে আর ছড়িয়ে আছে।',
 
     q_type_rope: 'সবুজ কণা আর তরঙ্গের দিক দেখো। দড়ির এই তরঙ্গটি কোন ধরনের?',
@@ -126,9 +124,9 @@ export const STRINGS = {
     c4_long: 'অনুদৈর্ঘ্য: দড়িটি অনেক লম্বা',
     c4_both: 'দুই ধরনেরই: কণা ও তরঙ্গ নড়ে',
     why_type_rope: '<b>অনুপ্রস্থ তরঙ্গ।</b> কণার ওঠা-নামা তরঙ্গের বেগের সাথে লম্ব। পানির ঢেউও এমন।',
-    mis4_moves: 'সব তরঙ্গই সামনে এগোয়; ধরন বোঝা যায় কণার কম্পনের দিক থেকে।',
+    mis4_moves: 'সব তরঙ্গই সামনে এগোয়। ধরন বোঝা যায় কণার কম্পনের দিক থেকে।',
     mis4_long: 'নাম দড়ির দৈর্ঘ্য থেকে নয়: কম্পন তরঙ্গের দিকে হলে অনুদৈর্ঘ্য, লম্ব হলে অনুপ্রস্থ।',
-    mis4_both: 'সব তরঙ্গেই কণা কাঁপে আর তরঙ্গ এগোয়; কম্পন হয় লম্ব, নয়তো একই দিকে।',
+    mis4_both: 'সব তরঙ্গেই কণা কাঁপে আর তরঙ্গ এগোয়। কম্পন হয় লম্ব, নয়তো একই দিকে।',
 
     q_type_spring: 'সবুজ প্যাঁচ আর তরঙ্গের দিক দেখো। স্প্রিংয়ের এই তরঙ্গটি কোন ধরনের?',
     c5_long: 'অনুদৈর্ঘ্য: প্যাঁচ তরঙ্গের দিকে কাঁপে',
@@ -137,7 +135,7 @@ export const STRINGS = {
     c5_both: 'দুই ধরনেরই: সংকোচন ও প্রসারণ আছে',
     why_type_spring: '<b>অনুদৈর্ঘ্য তরঙ্গ।</b> কম্পন আর তরঙ্গের বেগের দিক একই। শব্দও অনুদৈর্ঘ্য তরঙ্গ।',
     mis5_lying: 'স্প্রিং কীভাবে রাখা তা নয়, প্যাঁচ কোন দিকে কাঁপে সেটিই দেখো।',
-    mis5_round: 'প্যাঁচগুলো গোল, কিন্তু ঘোরে না; সামনে-পেছনে নড়ে।',
+    mis5_round: 'প্যাঁচগুলো গোল, কিন্তু ঘোরে না। সামনে-পেছনে নড়ে।',
     mis5_both: 'সংকোচন আর প্রসারণ মিলেই একটি অনুদৈর্ঘ্য তরঙ্গ, দুই ধরন নয়।',
   },
   en: {
@@ -167,8 +165,8 @@ export const STRINGS = {
     act_pause: 'Pause',
     act_resume: 'Play again',
 
-    out_idle_rope: 'The rope is still. The <b class="wt-g">green mark</b> is one particle of it: keep your eye on it.',
-    out_idle_spring: 'The spring is still. The <b class="wt-g">green coil</b> is one particle of it: keep your eye on it.',
+    out_idle_rope: 'The rope is still. The <b class="wt-g">green mark</b> is one particle of it. Keep your eye on it.',
+    out_idle_spring: 'The spring is still. The <b class="wt-g">green coil</b> is one particle of it. Keep your eye on it.',
     out_coming: 'The wave is coming… the <b class="wt-g">green particle</b> is still at rest.',
     out_rope: '<b>Transverse wave</b>: <span class="wt-g">the particle goes up and down</span>, <span class="wt-b">the wave moves right</span>.',
     out_spring:
@@ -177,11 +175,11 @@ export const STRINGS = {
 
     rule_start: 'A wave travels through a medium. But what do the particles of the medium do? Watch the green particle.',
     rule_rope:
-      'The rope’s particles do not vibrate in the direction of the wave’s velocity: the rope’s rise and fall is <b>at right angles</b> to it. Such a wave is a <b>transverse wave</b>. Water waves are another example.',
+      'The rope’s particles do not vibrate along the wave. Their rise and fall is <b>at right angles</b> to the wave’s velocity. This is a transverse wave. Water waves are another example.',
     rule_spring:
-      'In the spring the wave is one of <b>compressions</b> and <b>rarefactions</b>, and their direction is the <b>same</b> as the wave’s velocity. Such a wave is a <b>longitudinal wave</b>. Sound is a kind of longitudinal wave.',
+      'In the spring the wave is made of compressions and rarefactions. Their direction is the <b>same</b> as the wave’s velocity. This is a longitudinal wave. Sound is one too.',
     rule_both:
-      'In both, the particles <b>only vibrate in place</b>; the wave (energy) moves on. Vibration at right angles to the wave: <b>transverse</b>; along it: <b>longitudinal</b>.',
+      'In both, the particles vibrate in place and the wave (energy) moves on. Vibration at right angles to the wave: <b>transverse</b>. Along it: <b>longitudinal</b>.',
 
     strip_head: 'The medium’s particles, seen from the side',
     cmp_head: 'The particle’s vibration and the wave’s direction',
