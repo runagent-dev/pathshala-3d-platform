@@ -47,10 +47,10 @@ export const STRINGS = {
     out_t_turning: 'নলটি উল্টে পাত্রে ডোবানো হচ্ছে…',
     out_t_dipped: 'নলের মুখ পারদের নিচে। এবার আঙুল সরাও।',
     out_t_falling: 'পারদ নামছে…',
-    out_t_settled: 'পারদ <b>{h}&nbsp;{u_cm}</b> উঁচুতে থামল। উপরের ফাঁকা জায়গা <b>শূন্যতা</b>।',
+    out_t_settled: 'পারদ <b>{h}&nbsp;{u_cm}</b> উঁচুতে থামল। উপরের ফাঁকা জায়গা শূন্যতা।',
 
     // the rule: the book's words, one idea at a time
-    rule_t_settled: '<b>নলের উপরে বাতাস নেই, তাই উপর থেকে চাপ নেই।</b> পাত্রের পারদের উপর বাতাসের চাপই {h}&nbsp;{u_cm} পারদ স্তম্ভকে ধরে রাখে। এটিই ব্যারোমিটার।',
+    rule_t_settled: 'নলের উপরে বাতাস নেই, তাই উপর থেকে চাপ নেই। পাত্রের পারদের উপর <b>বাতাসের চাপই</b> {h}&nbsp;{u_cm} পারদ স্তম্ভকে ধরে রাখে। এটিই ব্যারোমিটার।',
 
     // labels on the picture
     lbl_air: 'বাতাসের চাপ',
@@ -83,13 +83,13 @@ export const STRINGS = {
     c_vac_pull: 'শূন্যতা, যা পারদ টেনে রাখে',
     c_vac_air: 'আঙুল সরানোর সময় ঢোকা বাতাস',
     c_vac_press: 'বাতাস, যা পারদকে নিচে চাপে',
-    why_vacuum: '<b>শূন্যতা</b>: উপর থেকে চাপ নেই; নিচের বাতাসের চাপ পারদ ধরে রাখে।',
+    why_vacuum: '<b>শূন্যতা</b>। উপর থেকে চাপ নেই, নিচের বাতাসের চাপ পারদ ধরে রাখে।',
     mis_vac_pull: 'শূন্যতা টানে না; বাতাসের চাপ নিচ থেকে ঠেলে।',
     mis_vac_air: 'নলের মুখ পারদের নিচে ছিল, বাতাস ঢুকতে পারেনি।',
     mis_vac_press: 'উপরে বাতাস থাকলে পারদ নেমে যেত, ছিদ্র করার মতো।',
 
     q_water: 'পারদের বদলে পানি দিয়ে এই পরীক্ষা করলে পানির স্তম্ভ কত উঁচু হতো?',
-    why_water: '<b>প্রায় {h}&nbsp;{u_m}</b>: পারদ {k} গুণ ঘন, তাই {hHg}&nbsp;{u_cm} × {k} ≈ {h}&nbsp;{u_m}।',
+    why_water: '<b>প্রায় {h}&nbsp;{u_m}</b>। পারদ {k} গুণ ঘন, তাই {hHg}&nbsp;{u_cm} × {k} ≈ {h}&nbsp;{u_m}।',
     mis_water_same: 'একই চাপে কম ঘন তরলের স্তম্ভ বেশি উঁচু হয়।',
     mis_water_divide: 'এখানে ভাগ করা হয়েছে; গুণ করতে হবে।',
     mis_water_tenth: 'দশমিক ভুল জায়গায় বসেছে।',
@@ -100,7 +100,7 @@ export const STRINGS = {
     c_hold_vac: 'উপরের শূন্যতার টান',
     c_hold_glass: 'কাচের নলের দেয়াল',
     c_hold_light: 'পারদ খুব হালকা বলে',
-    why_hold: '<b>বাতাসের চাপ</b>: পাত্রের পারদের উপর বাতাসের চাপ নলের নিচে পৌঁছে স্তম্ভের চাপের সমান হয়।',
+    why_hold: '<b>বাতাসের চাপ</b>। পাত্রের পারদের উপর বাতাসের চাপ নলের নিচে পৌঁছে স্তম্ভের চাপের সমান হয়।',
     mis_hold_glass: 'দেয়াল ধরে রাখলে নলের মাথায় ছিদ্র করলেও পারদ নামত না।',
     mis_hold_light: 'পারদ পানির চেয়ে {k} গুণ ঘন, খুব ভারী।',
   },
@@ -137,10 +137,10 @@ export const STRINGS = {
     out_t_turning: 'Turning the tube over into the dish…',
     out_t_dipped: 'The mouth is under the mercury. Now take the thumb away.',
     out_t_falling: 'The mercury falls…',
-    out_t_settled: 'The mercury stops <b>{h}&nbsp;{u_cm}</b> high. The empty space above is a <b>vacuum</b>.',
+    out_t_settled: 'The mercury stops <b>{h}&nbsp;{u_cm}</b> high. The empty space above is a vacuum.',
 
     rule_t_settled:
-      '<b>There is no air above the mercury, so nothing presses from above.</b> The air pressing on the mercury in the dish holds up the {h}&nbsp;{u_cm} column. This is a barometer.',
+      'There is no air above the mercury, so nothing presses from above. <b>The air pressing</b> on the mercury in the dish holds up the {h}&nbsp;{u_cm} column. This is a barometer.',
 
     lbl_air: "air's pressure",
     lbl_vacuum: 'Torricelli’s vacuum',
@@ -171,13 +171,13 @@ export const STRINGS = {
     c_vac_pull: 'A vacuum pulling the mercury up',
     c_vac_air: 'Air let in with the thumb',
     c_vac_press: 'Air pressing the mercury down',
-    why_vacuum: '<b>A vacuum</b>: nothing presses from above; the air below holds the mercury up.',
+    why_vacuum: '<b>A vacuum</b>. Nothing presses from above, and the air below holds the mercury up.',
     mis_vac_pull: 'A vacuum doesn’t pull; the air pushes from below.',
     mis_vac_air: 'The mouth was under the mercury; no air could get in.',
     mis_vac_press: 'With air above, the mercury would fall, as when pierced.',
 
     q_water: 'If this experiment used water instead of mercury, how high would the water column be?',
-    why_water: '<b>About {h}&nbsp;{u_m}</b>: mercury is {k} times as dense: {hHg}&nbsp;{u_cm} × {k} ≈ {h}&nbsp;{u_m}.',
+    why_water: '<b>About {h}&nbsp;{u_m}</b>. Mercury is {k} times as dense: {hHg}&nbsp;{u_cm} × {k} ≈ {h}&nbsp;{u_m}.',
     mis_water_same: 'The same pressure holds up a taller column of a lighter liquid.',
     mis_water_divide: 'That divides; multiply instead.',
     mis_water_tenth: 'The decimal point slipped.',
@@ -188,7 +188,7 @@ export const STRINGS = {
     c_hold_vac: 'The vacuum above pulling it',
     c_hold_glass: 'The glass walls of the tube',
     c_hold_light: 'Mercury is very light',
-    why_hold: "<b>The air's pressure</b>: the air pressing on the dish passes the pressure to the tube's foot, where it balances the column's.",
+    why_hold: '<b>The air’s pressure</b>. The air pressing on the dish passes the pressure to the tube’s foot, where it balances the column’s.',
     mis_hold_glass: 'If the walls held it, a hole at the top would not let it fall.',
     mis_hold_light: 'Mercury is {k} times as dense as water: very heavy.',
   },

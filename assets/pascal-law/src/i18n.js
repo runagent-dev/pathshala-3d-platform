@@ -82,11 +82,11 @@ export const STRINGS = {
     // the rule: the book's words, one idea at a time
     rule_law: '<b>প্যাসকেলের সূত্র:</b> একটা আবদ্ধ পাত্রে তরল বা বায়বীয় পদার্থে বাইরে থেকে চাপ দেওয়া হলে সেই চাপ সমানভাবে সঞ্চালিত হয়ে পাত্রের সংলগ্ন গায়ে লম্বভাবে কাজ করবে।',
     rule_equal:
-      '<b>চাপ সব জায়গায় সমান:</b> {s_P} = {s_F1}/{s_A1} = {s_F2}/{s_A2}। তাই {s_F2} = {s_F1}({s_A2}/{s_A1}): বড় পিস্টনে বল {k} গুণ। সমান না হলে তেল প্রবাহিত হতো। ({s_F2}, {s_W}-এর তীর ছোট মাপে আঁকা)',
-    rule_stuck: '<b>{s_F2} গাড়ির ওজনের চেয়ে কম।</b> হাতলে আরও জোরে চাপ দাও, নয়তো আরও বড় পিস্টন নাও: {s_A2}/{s_A1} যত বেশি, বল তত গুণ।',
+      'চাপ <b>সব জায়গায় সমান</b>।<span class="pvc-formula">{s_F1}/{s_A1} = {s_F2}/{s_A2}, তাই {s_F2} = {s_F1}({s_A2}/{s_A1})</span>বড় পিস্টনে বল {k} গুণ। সমান না হলে তেল প্রবাহিত হতো। ({s_F2}, {s_W}-এর তীর ছোট মাপে আঁকা)',
+    rule_stuck: '{s_F2} গাড়ির ওজনের চেয়ে <b>কম</b>। হাতলে আরও জোরে চাপ দাও, নয়তো আরও বড় পিস্টন নাও: {s_A2}/{s_A1} যত বেশি, বল তত গুণ।',
     rule_energy:
-      '<b>এটা বলবৃদ্ধিকরণ নীতি, শক্তি বাড়ে না।</b> একবার চাপে {s_F1}{s_d1} = {F}&nbsp;{u_N} × {d1}&nbsp;{u_m} = {E}&nbsp;{u_J}, আর {s_F2}{s_d2} = {F2}&nbsp;{u_N} × {d2}&nbsp;{u_m} = {E}&nbsp;{u_J}: যে শক্তি দিলে, ঠিক সেই শক্তি ফিরে পেলে।',
-    rule_use: '<b>কলকারখানা কিংবা বিমান নিয়ন্ত্রণে এই পদ্ধতি ব্যবহার করা হয়।</b> বল {k} গুণ হয়, কিন্তু বড় পিস্টন সরে হাতলের {k} ভাগের এক ভাগ: তাই অনেকবার চাপ দিতে হয়।',
+      'এটা <b>বলবৃদ্ধিকরণ নীতি</b>, শক্তি বাড়ে না। একবার চাপে:<span class="pvc-formula">{s_F1}{s_d1} = {F}&nbsp;{u_N} × {d1}&nbsp;{u_m} = {E}&nbsp;{u_J}<br>{s_F2}{s_d2} = {F2}&nbsp;{u_N} × {d2}&nbsp;{u_m} = {E}&nbsp;{u_J}</span>যে শক্তি দিলে, ঠিক সেই শক্তিই ফিরে পেলে।',
+    rule_use: '<b>কলকারখানা কিংবা বিমান নিয়ন্ত্রণে</b> এই পদ্ধতি ব্যবহার করা হয়। বল {k} গুণ হয়, কিন্তু বড় পিস্টন সরে হাতলের {k} ভাগের এক ভাগ। তাই অনেকবার চাপ দিতে হয়।',
 
     // labels on the picture
     lbl_F1: '{s_F1} = {v}&nbsp;{u_N}',
@@ -121,19 +121,19 @@ export const STRINGS = {
     q_locked: 'পরীক্ষার সময় দৃশ্যটি আটকানো থাকে। ছবি দেখে উত্তর বেছে নাও।',
 
     q_f2: 'হাতলে বল {s_F1} আর বড় পিস্টনের মাপ ছবিতে লেখা আছে। বড় পিস্টনে বল {s_F2} কত?',
-    why_f2: '<b>{F2}&nbsp;{u_N}</b>: {s_F2} = {s_F1}({s_A2}/{s_A1}) = {F}&nbsp;{u_N} × {k}।',
+    why_f2: '<b>{F2}&nbsp;{u_N}</b><span class="pvc-formula">{s_F2} = {s_F1}({s_A2}/{s_A1}) = {F}&nbsp;{u_N} × {k}</span>',
     mis_f2_same: 'চাপ সমান থাকে, বল নয়: বড় পিস্টনের প্রস্থচ্ছেদ বেশি বলে বলও বেশি।',
     mis_f2_divide: 'উল্টো হয়েছে: বড় পিস্টনে বল বাড়ে, কমে না।',
     mis_f2_add: 'যোগ নয়, গুণ: {s_F2} = {s_F1} × ({s_A2}/{s_A1})।',
 
     q_rise: 'দুই পিস্টনের প্রস্থচ্ছেদ {s_A1} আর {s_A2} ছবিতে লেখা আছে। হাতল {d} নামালে গাড়ি কতটা উঠবে?',
-    why_rise: '<b>{v}</b>: একই তেল {k} গুণ চওড়া সিলিন্ডারে ঢোকে, তাই ওঠে {k} ভাগের এক ভাগ: {d} ÷ {k}।',
+    why_rise: '<b>{v}</b>। একই তেল {k} গুণ চওড়া সিলিন্ডারে ঢোকে, তাই ওঠে {k} ভাগের এক ভাগ: {d} ÷ {k}।',
     mis_rise_same: 'দুই পিস্টন সমান সরে না।',
     mis_rise_times: 'বল বাড়ে, দূরত্ব কমে।',
     mis_rise_tenth: '{k} দিয়ে ভাগ করতে হবে।',
 
     q_p: 'ছোট পিস্টনের নিচে তেলের চাপ ছবিতে লেখা আছে। বড় পিস্টনের নিচে চাপ কত?',
-    why_p: '<b>{P}&nbsp;{u_Pa}</b>: প্যাসকেলের সূত্র: আবদ্ধ তরলে চাপ সমানভাবে সঞ্চালিত হয়, তাই দুই পিস্টনের নিচে চাপ সমান।',
+    why_p: '<b>{P}&nbsp;{u_Pa}</b>। প্যাসকেলের সূত্র অনুযায়ী আবদ্ধ তরলে চাপ সমানভাবে সঞ্চালিত হয়। তাই দুই পিস্টনের নিচে চাপ সমান।',
     mis_p_times: 'বল {k} গুণ হয়, চাপ নয়: চাপ সব জায়গায় সমান।',
     mis_p_divide: 'চাপ কমে না; বড় প্রস্থচ্ছেদে একই চাপ বেশি বল দেয়।',
     mis_p_half: 'পাইপ দিয়ে যেতে চাপ হারায় না: চাপ সমানভাবে সঞ্চালিত হয়।',
@@ -143,14 +143,14 @@ export const STRINGS = {
     c_down: 'শুধু নিচের দিকে',
     c_along: 'দেয়ালের সমান্তরালে',
     c_big: 'শুধু বড় পিস্টনের দিকে',
-    why_dir: '<b>সব দেয়ালে লম্বভাবে</b>: চাপ সমানভাবে সঞ্চালিত হয়ে পাত্রের সংলগ্ন গায়ে লম্বভাবে কাজ করে; লাল তীরগুলো দেখো।',
+    why_dir: '<b>সব দেয়ালে লম্বভাবে</b>। চাপ সমানভাবে সঞ্চালিত হয়ে পাত্রের সংলগ্ন গায়ে লম্বভাবে কাজ করে। লাল তীরগুলো দেখো।',
     mis_down: 'তরলের চাপ শুধু নিচে নয়, চারদিকে সঞ্চালিত হয়: পাশের দেয়ালেও।',
     mis_along: 'চাপ দেয়ালের গায়ে লম্বভাবে কাজ করে, গা বেয়ে নয়।',
     mis_big: 'চাপ সব দিকে সমান: ছোট পিস্টনের নিচে, পাইপে, দেয়ালে, সবখানে।',
 
     q_work: 'হাতলে বল {s_F1} দিয়ে হাতল {s_d1} নামানো হলো (ছবিতে লেখা)। বড় পিস্টন গাড়িকে কতটা শক্তি দেয়?',
     why_work:
-      '<b>{E}&nbsp;{u_J}</b>: এটা বলবৃদ্ধিকরণ নীতি, শক্তি নয়: {s_F1}{s_d1} = {F}&nbsp;{u_N} × {dm}&nbsp;{u_m} = {E}&nbsp;{u_J}, আর ঠিক এই শক্তিই ফিরে আসে।',
+      '<b>{E}&nbsp;{u_J}</b>। এটা বলবৃদ্ধিকরণ নীতি, শক্তি বাড়ে না।<span class="pvc-formula">{s_F1}{s_d1} = {F}&nbsp;{u_N} × {dm}&nbsp;{u_m} = {E}&nbsp;{u_J}</span>',
     mis_work_times: 'বল {k} গুণ হয়, শক্তি নয়: গাড়ি ওঠে {k} ভাগের এক ভাগ।',
     mis_work_divide: 'শক্তি হারায় না: যে শক্তি দিলে, ঠিক সেই পরিমাণ ফিরে পাবে।',
     mis_work_cm: 'দূরত্ব cm থেকে m করা হয়নি।',
@@ -207,13 +207,13 @@ export const STRINGS = {
     rule_law:
       '<b>Pascal’s law:</b> when pressure is applied from outside to a liquid or gas in a closed vessel, it is passed on equally and acts perpendicular to the walls of the vessel.',
     rule_equal:
-      '<b>The pressure is the same everywhere:</b> {s_P} = {s_F1}/{s_A1} = {s_F2}/{s_A2}. So {s_F2} = {s_F1}({s_A2}/{s_A1}): {k} times the force. If not, the oil would flow. ({s_F2}, {s_W} arrows to a smaller scale)',
+      'The pressure is <b>the same everywhere</b>.<span class="pvc-formula">{s_F1}/{s_A1} = {s_F2}/{s_A2}, so {s_F2} = {s_F1}({s_A2}/{s_A1})</span>The big piston gets {k} times the force. If not, the oil would flow. ({s_F2}, {s_W} arrows to a smaller scale)',
     rule_stuck:
-      '<b>{s_F2} is less than the car’s weight.</b> Push the handle harder, or take a bigger piston: the bigger {s_A2}/{s_A1}, the more times the force.',
+      '{s_F2} is <b>less</b> than the car’s weight. Push harder, or take a bigger piston: the bigger {s_A2}/{s_A1}, the more times the force.',
     rule_energy:
-      '<b>It multiplies force, not energy.</b> One push: {s_F1}{s_d1} = {F}&nbsp;{u_N} × {d1}&nbsp;{u_m} = {E}&nbsp;{u_J}, and {s_F2}{s_d2} = {F2}&nbsp;{u_N} × {d2}&nbsp;{u_m} = {E}&nbsp;{u_J}: the energy you put in is exactly what you get back.',
+      'It multiplies <b>force</b>, not energy. One push:<span class="pvc-formula">{s_F1}{s_d1} = {F}&nbsp;{u_N} × {d1}&nbsp;{u_m} = {E}&nbsp;{u_J}<br>{s_F2}{s_d2} = {F2}&nbsp;{u_N} × {d2}&nbsp;{u_m} = {E}&nbsp;{u_J}</span>The energy you put in is exactly what you get back.',
     rule_use:
-      '<b>Factories and aircraft controls use this.</b> The force is {k} times bigger, but the big piston moves one {k}th as far as the handle: so you push many times.',
+      '<b>Factories and aircraft controls</b> use this. The force is {k} times bigger, but the big piston moves one {k}th as far as the handle. So you push many times.',
 
     lbl_F1: '{s_F1} = {v}&nbsp;{u_N}',
     lbl_F2: '{s_F2} = {v}&nbsp;{u_N}',
@@ -246,19 +246,19 @@ export const STRINGS = {
     q_locked: 'The picture is locked during the test. Pick an answer from the picture.',
 
     q_f2: 'The push {s_F1} and both pistons are written on the picture. What is the force {s_F2} on the big piston?',
-    why_f2: '<b>{F2}&nbsp;{u_N}</b>: {s_F2} = {s_F1}({s_A2}/{s_A1}) = {F}&nbsp;{u_N} × {k}.',
+    why_f2: '<b>{F2}&nbsp;{u_N}</b><span class="pvc-formula">{s_F2} = {s_F1}({s_A2}/{s_A1}) = {F}&nbsp;{u_N} × {k}</span>',
     mis_f2_same: 'The pressure stays the same, not the force.',
     mis_f2_divide: 'The wrong way round: the big piston gets more force, not less.',
     mis_f2_add: 'Multiply, don’t add: {s_F2} = {s_F1} × ({s_A2}/{s_A1}).',
 
     q_rise: '{s_A1} and {s_A2} are written on the picture. If the handle goes down {d}, how far does the car rise?',
-    why_rise: '<b>{v}</b>: the same oil enters a cylinder {k} times wider, so it rises one {k}th as far: {d} ÷ {k}.',
+    why_rise: '<b>{v}</b>. The same oil enters a cylinder {k} times wider, so it rises one {k}th as far: {d} ÷ {k}.',
     mis_rise_same: 'The two pistons do not move the same.',
     mis_rise_times: 'The force grows; the distance shrinks.',
     mis_rise_tenth: 'Divide by {k}.',
 
     q_p: 'The pressure under the small piston is on the picture. What is the pressure under the big piston?',
-    why_p: '<b>{P}&nbsp;{u_Pa}</b>: Pascal’s law: the pressure is passed on equally, so it is the same under both pistons.',
+    why_p: '<b>{P}&nbsp;{u_Pa}</b>. By Pascal’s law the pressure is passed on equally, so it is the same under both pistons.',
     mis_p_times: 'The force grows {k} times, not the pressure.',
     mis_p_divide: 'The pressure does not drop.',
     mis_p_half: 'No pressure is lost in the pipe.',
@@ -268,14 +268,14 @@ export const STRINGS = {
     c_down: 'Only downwards',
     c_along: 'Along the walls',
     c_big: 'Only towards the big piston',
-    why_dir: '<b>Square to every wall</b>: passed on equally, it acts perpendicular to the walls (the red arrows).',
+    why_dir: '<b>Square to every wall</b>. Passed on equally, it acts perpendicular to the walls: see the red arrows.',
     mis_down: 'Not only down: the side walls get it too.',
     mis_along: 'It acts square to the walls, not along them.',
     mis_big: 'It is the same everywhere, in every direction.',
 
     q_work: '{s_F1} and the handle’s way down {s_d1} are on the picture. What energy does the car get?',
     why_work:
-      '<b>{E}&nbsp;{u_J}</b>: force grows, energy does not: {s_F1}{s_d1} = {F}&nbsp;{u_N} × {dm}&nbsp;{u_m} = {E}&nbsp;{u_J} comes out again.',
+      '<b>{E}&nbsp;{u_J}</b>. Force grows, energy does not.<span class="pvc-formula">{s_F1}{s_d1} = {F}&nbsp;{u_N} × {dm}&nbsp;{u_m} = {E}&nbsp;{u_J}</span>',
     mis_work_times: 'The force grows {k} times, not the energy.',
     mis_work_divide: 'No energy is lost: you get back exactly what you put in.',
     mis_work_cm: 'The distance was not changed from cm to m.',

@@ -8,20 +8,20 @@ body.bg-transparent { background: transparent; }
 
 .dn { --c-m: #a51d2d; --c-V: #d9480f; --c-rho: #1b2a4a; }
 .dn sub, .dn sup { font-size: 0.72em; line-height: 0; }
-.dn .c-m { color: var(--c-m); font-weight: 700; }
-.dn .c-V { color: var(--c-V); font-weight: 700; }
-.dn .c-rho { color: var(--c-rho); font-weight: 700; }
+.dn .c-m { color: var(--c-m); font-weight: 600; }
+.dn .c-V { color: var(--c-V); font-weight: 600; }
+.dn .c-rho { color: var(--c-rho); font-weight: 600; }
 .dn .pvc-outcome { font-size: 15px; line-height: 1.6; }
 .dn .pvc-outcome b { font-size: 1.2em; color: var(--c-rho); }
 .dn .pvc-outcome b.c-m { color: var(--c-m); }
 .dn .pvc-outcome b.c-V { color: var(--c-V); }
-.dn .pvc-rule { font-size: 14.5px; line-height: 1.45; }
+.dn .pvc-rule { font-size: 14.5px; line-height: 1.55; }
 .dn .pvc-ex-res { font-variant-numeric: tabular-nums; }
 
 /* ── the formula: ρ = m/V, then the sum ── */
 .dn-eq { display: flex; align-items: center; gap: 14px; }
 .dn-law { flex: none; display: flex; align-items: center; gap: 4px; padding: 3px 12px; border-radius: 10px; background: #fff7ef; box-shadow: inset 0 0 0 1.5px #f4cfb2; }
-.dn-sym { font-style: italic; font-weight: 700; font-size: 24px; line-height: 1.05; text-align: center; }
+.dn-sym { font-style: italic; font-weight: 600; font-size: 24px; line-height: 1.05; text-align: center; }
 .dn-law > .dn-sym { font-size: 28px; font-style: normal; }
 .dn-op { font-size: 22px; font-weight: 600; color: var(--ink-2); padding: 0 2px; }
 .dn-frac { display: inline-flex; flex-direction: column; align-items: stretch; }
@@ -36,8 +36,8 @@ body.bg-transparent { background: transparent; }
 .pvc-anno-tag, .pvc-anno-mass, .pvc-anno-volume { padding: 1px 7px; border: 1.5px solid #c8ccd2; border-radius: 6px; background: rgba(255, 255, 255, 0.95); font-size: 13.5px; font-weight: 600; line-height: 1.4; text-align: center; transition: opacity 0.25s; }
 .pvc-anno-tag { line-height: 1.25; padding: 2px 7px; }
 .pvc-anno-tag b { color: var(--ink); }
-.pvc-anno-mass { border-color: var(--c-m); color: var(--c-m); font-weight: 700; }
-.pvc-anno-volume { border-color: var(--c-V); color: var(--c-V); font-weight: 700; }
+.pvc-anno-mass { border-color: var(--c-m); color: var(--c-m); font-weight: 600; }
+.pvc-anno-volume { border-color: var(--c-V); color: var(--c-V); font-weight: 600; }
 .pvc-anno-lines .k-tag { display: none; }
 .pvc-anno-lines .k-mass { stroke: var(--c-m); fill: var(--c-m); }
 .pvc-anno-lines .k-volume { stroke: var(--c-V); fill: var(--c-V); }
@@ -54,7 +54,7 @@ body.bg-transparent { background: transparent; }
   .dn .pvc-learn { gap: 6px; }
   .dn-eq { gap: 10px; }
   .dn-sum { font-size: 14.5px; }
-  .dn .pvc-rule { font-size: 13px; line-height: 1.4; }
+  .dn .pvc-rule { font-size: 14px; line-height: 1.55; }
   .dn .pvc-outcome { display: none; }
   .dn .pvc-q-options { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
   .dn .pvc-opt { height: 46px; padding: 0 3px; font-size: 13.5px; line-height: 1.2; }
@@ -68,11 +68,11 @@ body.bg-transparent { background: transparent; }
   .dn-op { font-size: 17px; }
   .dn-sum { font-size: 13px; line-height: 1.35; }
   .dn .pvc-outcome { display: none; }
-  .dn .pvc-rule { font-size: 12.5px; line-height: 1.35; --pvc-rule-lines: 2; }
+  .dn .pvc-rule { font-size: 14px; line-height: 1.55; --pvc-rule-lines: 2; }
   .dn .pvc-q-text { font-size: 14px; }
   .dn .pvc-opt { font-size: 13.5px; }
-  .dn .pvc-q-feedback { font-size: 13px; }
-  .pvc-anno-tag, .pvc-anno-mass, .pvc-anno-volume { font-size: 12px; padding: 0 5px; }
+  .dn .pvc-q-feedback { font-size: 13.5px; }
+  .pvc-anno-tag, .pvc-anno-mass, .pvc-anno-volume { font-size: 12.5px; padding: 0 5px; }
 }
 /* short and wide (phone held sideways): the panel is beside the scene; the action may take two lines there */
 @container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
@@ -82,16 +82,16 @@ body.bg-transparent { background: transparent; }
   .dn-law > .dn-sym { font-size: 21px; }
   .dn-op { font-size: 17px; }
   .dn-sum { font-size: 13px; line-height: 1.35; }
-  .dn .pvc-outcome { font-size: 13.5px; line-height: 1.45; }
-  .dn .pvc-rule { font-size: 12.5px; line-height: 1.35; }
+  .dn .pvc-outcome { font-size: 14px; line-height: 1.5; }
+  .dn .pvc-rule { font-size: 14px; line-height: 1.55; }
   .dn .pvc-q-text { font-size: 14px; }
   .dn .pvc-opt { font-size: 13px; height: 42px; }
-  .dn .pvc-q-feedback { font-size: 12.5px; }
-  .pvc-anno-tag, .pvc-anno-mass, .pvc-anno-volume { font-size: 12px; padding: 0 5px; }
+  .dn .pvc-q-feedback { font-size: 13.5px; }
+  .pvc-anno-tag, .pvc-anno-mass, .pvc-anno-volume { font-size: 12.5px; padding: 0 5px; }
 }
 /* the panel beside the 3D (a size container, so a height query matches only there): room for the result line */
 @container pvc-panel (min-height: 300px) {
-  .dn .pvc-outcome { display: block; font-size: 13.5px; line-height: 1.45; }
+  .dn .pvc-outcome { display: block; font-size: 14px; line-height: 1.5; }
 }
 /* a narrow panel beside the scene: the sum smaller so each line stays whole */
 @container pvc-panel (max-width: 330px) {
@@ -99,4 +99,12 @@ body.bg-transparent { background: transparent; }
   .dn-law { padding: 0 6px; }
   .dn-sum { font-size: 13px; }
   .dn .pvc-examples .pvc-ex-word { font-size: 12.5px; }
+}
+
+/* a formula inside the rule or the worked answer sits on its own line (kit 1.6.0 .pvc-formula, as a span in a <p>) */
+.dn .pvc-rule .pvc-formula, .dn .pvc-outcome .pvc-formula, .dn .pvc-q-feedback .pvc-formula { display: block; margin: 5px 0; padding: 3px 8px; font-size: 14.5px; line-height: 1.5; }
+.dn .pvc-formula b { font-size: 1em; }
+/* a narrow side panel: two answers a row, so 20,000 gm/cc is not clipped */
+@container pvc-panel (max-width: 330px) {
+  .dn .pvc-q-options { grid-template-columns: 1fr 1fr; }
 }

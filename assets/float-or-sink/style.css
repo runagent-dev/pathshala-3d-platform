@@ -11,7 +11,7 @@ body.bg-transparent { background: transparent; }
 .fs sub, .fs sup { font-size: 0.72em; line-height: 0; }
 .fs .pvc-outcome { font-size: 15px; line-height: 1.5; }
 .fs .pvc-outcome b { font-size: 1.12em; color: #1864ab; }
-.fs .pvc-rule { font-size: 14.5px; line-height: 1.45; }
+.fs .pvc-rule { font-size: 14.5px; line-height: 1.55; }
 
 /* ── the row under the action: one pane per step, all in one grid cell so the row keeps its height ── */
 .fs-row { display: grid; min-height: 40px; }
@@ -27,8 +27,8 @@ body.bg-transparent { background: transparent; }
 
 .fs-mats { gap: 6px; }
 .fs-mat { flex: 1 1 0; min-width: 0; min-height: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; padding: 2px 4px; border: 1.5px solid var(--line); border-radius: 9px; background: var(--panel); color: var(--ink-2); line-height: 1.25; cursor: pointer; }
-.fs-mat span { font-size: 15px; font-weight: 700; white-space: nowrap; }
-.fs-mat small { font-size: 12px; color: var(--ink-3); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.fs-mat span { font-size: 15px; font-weight: 600; white-space: nowrap; }
+.fs-mat small { font-size: 12.5px; color: var(--ink-3); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .fs-mat:hover { background: var(--soft); }
 .fs-mat.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 9%, #fff); color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
 .fs-mat.on small { color: var(--accent); }
@@ -44,16 +44,16 @@ body.bg-transparent { background: transparent; }
 .fs-bar { position: relative; flex: 1 1 auto; min-width: 60px; max-width: 220px; height: 14px; border-radius: 7px; background: #16212e; box-shadow: inset 0 0 0 1.5px #3b4a5c; overflow: hidden; }
 .fs-bar i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: linear-gradient(#5cc4ff, #1c7ed6); }
 .fs-bar em { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: #fff; }
-.fs-gauge-v { font-size: 15px; font-weight: 700; color: #1864ab; white-space: nowrap; font-variant-numeric: tabular-nums; min-width: 4.6em; }
+.fs-gauge-v { font-size: 15px; font-weight: 600; color: #1864ab; white-space: nowrap; font-variant-numeric: tabular-nums; min-width: 4.6em; }
 
 /* the note on the stage, bottom left (over the table: the bodies hang at the top) */
 .fs-note { margin-top: -4px; font-size: 12.5px; line-height: 1.4; color: var(--ink-2); }
 .fs-note:empty { display: none; }
 
 /* labels on the picture: the force and its number in its colour; names of the bodies plain */
-.pvc-anno-force { --c: var(--ink); padding: 0 6px; border: 1.5px solid var(--c); border-radius: 5px; background: rgba(255, 255, 255, 0.95); color: var(--c); font-size: 13px; font-weight: 700; line-height: 1.5; white-space: nowrap; transition: none; }
-.pvc-anno-name { padding: 0 6px; border-radius: 5px; background: rgba(255, 248, 235, 0.92); color: #3b2b1d; font-size: 13px; font-weight: 700; line-height: 1.5; white-space: nowrap; transition: none; }
-.pvc-anno-letter { padding: 0 8px; border: 2px solid #1b1f24; border-radius: 50%; background: #fff; color: #1b1f24; font-size: 16px; font-weight: 800; line-height: 1.5; transition: none; }
+.pvc-anno-force { --c: var(--ink); padding: 0 6px; border: 1.5px solid var(--c); border-radius: 5px; background: rgba(255, 255, 255, 0.95); color: var(--c); font-size: 13px; font-weight: 600; line-height: 1.5; white-space: nowrap; transition: none; }
+.pvc-anno-name { padding: 0 6px; border-radius: 5px; background: rgba(255, 248, 235, 0.92); color: #3b2b1d; font-size: 13px; font-weight: 600; line-height: 1.5; white-space: nowrap; transition: none; }
+.pvc-anno-letter { padding: 0 8px; border: 2px solid #1b1f24; border-radius: 50%; background: #fff; color: #1b1f24; font-size: 16px; font-weight: 600; line-height: 1.5; transition: none; }
 .pvc-anno-lines .k-force, .pvc-anno-lines .k-name, .pvc-anno-lines .k-letter { display: none; }
 
 /* the test: answers in words or numbers, room kept for the question and the worked answer */
@@ -68,11 +68,11 @@ body.bg-transparent { background: transparent; }
   .fs-note { display: none; }
   .fs .pvc-q-options { gap: 6px; }
   .fs .pvc-opt { height: 40px; font-size: 13.5px; line-height: 1.2; }
-  .fs .pvc-q-text { font-size: 14.5px; --pvc-q-text-min: calc(2 * 1.4em); }
-  .fs .pvc-q-feedback { font-size: 13px; --pvc-q-feedback-min: calc(2 * 1.45em); }
+  .fs .pvc-q-text { font-size: 14.5px; --pvc-q-text-min: calc(2 * 1.45em); }
+  .fs .pvc-q-feedback { font-size: 13.5px; --pvc-q-feedback-min: calc(2 * 1.45em); }
   .fs-key { font-size: 13px; }
-  .fs .pvc-rule { font-size: 13px; line-height: 1.4; }
-  .fs .pvc-outcome { font-size: 14px; line-height: 1.45; --pvc-outcome-lines: 1; }
+  .fs .pvc-rule { font-size: 14px; line-height: 1.55; }
+  .fs .pvc-outcome { font-size: 14px; line-height: 1.5; --pvc-outcome-lines: 1; }
   .fs-mat span { font-size: 14px; }
 }
 /* phones that are not tall: the rule shorter, the row and the sheet tighter */
@@ -80,13 +80,13 @@ body.bg-transparent { background: transparent; }
   .fs-row { min-height: 34px; }
   .fs-mat { min-height: 34px; flex-direction: row; gap: 4px; }
   .fs-mat::before { display: none; }
-  .fs-mat small { font-size: 11.5px; }
+  .fs-mat small { font-size: 12.5px; }
   .fs-key { font-size: 12.5px; }
-  .fs .pvc-outcome { font-size: 13.5px; line-height: 1.4; }
-  .fs .pvc-rule { font-size: 12.5px; line-height: 1.35; --pvc-rule-lines: 3; }
+  .fs .pvc-outcome { font-size: 14px; line-height: 1.5; }
+  .fs .pvc-rule { font-size: 14px; line-height: 1.55; --pvc-rule-lines: 3; }
   .fs .pvc-q-text { font-size: 14px; --pvc-q-text-min: 2lh; }
   .fs .pvc-opt { font-size: 13.5px; }
-  .fs .pvc-q-feedback { font-size: 13px; }
+  .fs .pvc-q-feedback { font-size: 13.5px; }
 }
 /* short and wide (phone held sideways): the panel is beside the scene */
 @container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
@@ -94,11 +94,11 @@ body.bg-transparent { background: transparent; }
   .fs-mat { min-height: 34px; }
   .fs-mat::before { display: none; }
   .fs-key { font-size: 12.5px; gap: 3px; }
-  .fs .pvc-outcome { font-size: 13.5px; line-height: 1.45; }
-  .fs .pvc-rule { font-size: 12.5px; line-height: 1.35; }
+  .fs .pvc-outcome { font-size: 14px; line-height: 1.5; }
+  .fs .pvc-rule { font-size: 14px; line-height: 1.55; }
   .fs .pvc-q-text { font-size: 14px; }
   .fs .pvc-opt { font-size: 13px; height: 42px; }
-  .fs .pvc-q-feedback { font-size: 12.5px; }
+  .fs .pvc-q-feedback { font-size: 13.5px; }
 }
 /* the panel beside the 3D (a size container, so a height query matches only there) */
 @container pvc-panel (min-height: 300px) {
@@ -108,7 +108,11 @@ body.bg-transparent { background: transparent; }
   .fs-pane[data-pane='cases'] { flex-wrap: wrap; row-gap: 0; }
   .fs-mats { gap: 4px; }
   .fs-mat span { font-size: 13px; }
-  .fs-mat small { font-size: 11px; }
+  .fs-mat small { font-size: 12.5px; }
   .fs-gauge-l { font-size: 12.5px; }
   .fs .pvc-examples .pvc-ex-word { font-size: 13px; }
 }
+
+/* a formula inside the rule or the worked answer sits on its own line (kit 1.6.0 .pvc-formula, as a span in a <p>) */
+.fs .pvc-rule .pvc-formula, .fs .pvc-outcome .pvc-formula, .fs .pvc-q-feedback .pvc-formula { display: block; margin: 5px 0; padding: 3px 8px; font-size: 14.5px; line-height: 1.5; }
+.fs .pvc-formula b { font-size: 1em; }

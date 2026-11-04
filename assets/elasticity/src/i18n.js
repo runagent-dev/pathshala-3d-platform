@@ -73,15 +73,16 @@ export const STRINGS = {
     out_set_some: '{n}টি ওজন: x&nbsp;=&nbsp;<b>{x}&nbsp;{u_cm}</b> (এর {s}&nbsp;{u_cm} স্থায়ী)',
 
     // the rule: the book's words, one idea at a time
-    rule_start: '<b>বল প্রয়োগ করলে স্প্রিংয়ের দৈর্ঘ্য বাড়ে: একে বলে বিকৃতি ঘটা।</b> একটি একটি করে ওজন ঝুলিয়ে দেখো।',
-    rule_hang: '<b>ওজন W স্প্রিংকে নিচে টানে; বিকৃতির জন্য স্প্রিংয়ের ভেতরে তৈরি হয় প্রত্যয়নী বল, টান T,</b> যা ওজনকে ধরে রাখে।',
-    rule_double: '<b>বল {two}&nbsp;গুণ হলে বিকৃতিও {two}&nbsp;গুণ: পীড়ন&nbsp;{prop}&nbsp;বিকৃতি (হুকের সূত্র)।</b> তাই পীড়ন ÷ বিকৃতি প্রতিবার একই: একটি ধ্রুবক।',
-    rule_back: '<b>বলটি সরিয়ে নিলে বিকৃতির অবসান ঘটে, স্প্রিং আগের দৈর্ঘ্যে ফিরে যায়।</b> পদার্থের এই ধর্মের নাম স্থিতিস্থাপকতা।',
-    rule_limit: '<b>কতটুকু বল প্রয়োগ করা যাবে তার একটা সীমা আছে: স্থিতিস্থাপক সীমা।</b> এই স্প্রিংয়ের সীমা {F}&nbsp;{u_N}। আরও ওজন ঝুলিয়ে দেখো।',
-    rule_beyond: '<b>সীমা পার হলে বিকৃতি আর পীড়নের সমানুপাতিক নয়:</b> গ্রাফ আর সরলরেখা নয়। এবার সব ওজন খুলে দেখো।',
-    rule_set: '<b>সীমা অতিক্রম করলে পদার্থ আগের অবস্থায় ফিরতে পারে না: একটা স্থায়ী বিকৃতি ঘটে যায়।</b> বেশি বাঁকা করা রডের মতো।',
+    rule_start: 'বল প্রয়োগ করলে স্প্রিংয়ের দৈর্ঘ্য বাড়ে। একে বলে <b>বিকৃতি</b> ঘটা। একটি একটি করে ওজন ঝুলিয়ে দেখো।',
+    rule_hang: 'ওজন W স্প্রিংকে নিচে টানে। বিকৃতির জন্য স্প্রিংয়ের ভেতরে তৈরি হয় <b>প্রত্যয়নী বল</b>, টান T। এই টানই ওজনকে ধরে রাখে।',
+    rule_double:
+      'বল {two}&nbsp;গুণ হলে বিকৃতিও {two}&nbsp;গুণ। এটিই <b>হুকের সূত্র</b>।<span class="pvc-formula">পীড়ন&nbsp;{prop}&nbsp;বিকৃতি</span>তাই পীড়ন ÷ বিকৃতি প্রতিবার একই: একটি ধ্রুবক।',
+    rule_back: 'বলটি সরিয়ে নিলে বিকৃতির অবসান ঘটে, স্প্রিং আগের দৈর্ঘ্যে ফিরে যায়। পদার্থের এই ধর্মের নাম <b>স্থিতিস্থাপকতা</b>।',
+    rule_limit: 'কতটুকু বল প্রয়োগ করা যাবে তার একটা সীমা আছে: <b>স্থিতিস্থাপক সীমা</b>। এই স্প্রিংয়ের সীমা {F}&nbsp;{u_N}। আরও ওজন ঝুলিয়ে দেখো।',
+    rule_beyond: 'সীমা পার হলে বিকৃতি আর পীড়নের <b>সমানুপাতিক</b> নয়। গ্রাফ আর সরলরেখা থাকে না। এবার সব ওজন খুলে দেখো।',
+    rule_set: 'সীমা অতিক্রম করলে পদার্থ আগের অবস্থায় ফিরতে পারে না। একটা <b>স্থায়ী বিকৃতি</b> ঘটে যায়, বেশি বাঁকা করা রডের মতো।',
     rule_law:
-      '<b>হুকের সূত্র: স্থিতিস্থাপক সীমার ভেতরে পীড়ন&nbsp;{prop}&nbsp;বিকৃতি, অর্থাৎ পীড়ন = ধ্রুবক × বিকৃতি।</b> তার বা দণ্ড টানলে এই ধ্রুবকের নাম ইয়াংস মডুলাস (Y)।',
+      '<b>হুকের সূত্র:</b> স্থিতিস্থাপক সীমার ভেতরে<span class="pvc-formula">পীড়ন&nbsp;{prop}&nbsp;বিকৃতি<br>পীড়ন = ধ্রুবক × বিকৃতি</span>তার বা দণ্ড টানলে এই ধ্রুবকের নাম ইয়াংস মডুলাস (Y)।',
 
     // labels on the picture
     lbl_L0: '{L0s}&nbsp;=&nbsp;{v}&nbsp;{u_cm}',
@@ -128,25 +129,25 @@ export const STRINGS = {
 
     q_strain: 'স্কেলে স্প্রিংয়ের এখনকার দৈর্ঘ্য L পড়ো (আগের দৈর্ঘ্য {L0} cm)। বিকৃতি কত?',
     c_unit: '{v}&nbsp;{u_cm}',
-    why_strain: '<b>{e}</b>: বিকৃতি = (L − {L0s})/{L0s} = ({L} − {L0}) ÷ {L0} = {e}; দৈর্ঘ্য ÷ দৈর্ঘ্য, তাই কোনো একক নেই।',
+    why_strain: '<b>{e}</b><span class="pvc-formula">বিকৃতি = (L − {L0s})/{L0s} = ({L} − {L0}) ÷ {L0}</span>দৈর্ঘ্য ÷ দৈর্ঘ্য, তাই কোনো একক নেই।',
     mis_strain_cm: 'এটি শুধু দৈর্ঘ্য বৃদ্ধি; একে {L0s} দিয়ে ভাগ করতে হয়।',
     mis_strain_ratio: 'এটি L ÷ {L0s}; আগে L থেকে {L0s} বাদ দিতে হয়।',
     mis_strain_unit: 'বিকৃতির কোনো একক নেই, এটি একটি সংখ্যা মাত্র।',
 
     q_stress: 'স্প্রিংয়ে কয়টি ওজন ঝুলছে গুনে দেখো (প্রতিটি {W} N)। তারের প্রস্থচ্ছেদ A = {A} বর্গমিটার। পীড়ন কত?',
-    why_stress: '<b>{S}</b>: পীড়ন = F/A = {F}&nbsp;{u_N} ÷ {A}&nbsp;{u_m2} = {S}; একক প্যাসকেল (Pa)।',
+    why_stress: '<b>{S}</b><span class="pvc-formula">পীড়ন = <i>F</i>/<i>A</i> = {F}&nbsp;{u_N} ÷ {A}&nbsp;{u_m2}</span>একক প্যাসকেল (Pa)।',
     mis_stress_force: 'এটি বল F; পীড়ন হলো একক ক্ষেত্রফলে বল, F ÷ A।',
     mis_stress_mm2: 'এখানে mm<sup>2</sup> দিয়ে ভাগ করা হয়েছে; {Amm}&nbsp;{u_mm2} = {A}&nbsp;{u_m2}।',
     mis_stress_zero: 'A-তে একটি শূন্য বেশি ধরা হয়েছে; A = {A}&nbsp;{u_m2}।',
 
     q_hooke: 'একটি ওজনে স্প্রিংটি x = {x} cm লম্বা হয়েছে। স্থিতিস্থাপক সীমার ভেতরে {n}টি ওজনে x কত হবে?',
-    why_hooke: '<b>{v}&nbsp;{u_cm}</b>: সীমার ভেতরে বল {n}&nbsp;গুণ হলে বিকৃতিও {n}&nbsp;গুণ: {x} × {n} = {v}&nbsp;{u_cm}। ছবিতে দেখো।',
+    why_hooke: '<b>{v}&nbsp;{u_cm}</b>। সীমার ভেতরে বল {n}&nbsp;গুণ হলে বিকৃতিও {n}&nbsp;গুণ: {x} × {n} = {v}&nbsp;{u_cm}।',
     mis_hooke_same: 'ওজন বাড়লে বিকৃতিও বাড়ে; একই থাকে না।',
     mis_hooke_count: 'ওজনের সংখ্যা আর সেন্টিমিটার এক নয়; একটি ওজনে x = {x}&nbsp;{u_cm}।',
     mis_hooke_square: 'হুকের সূত্রে বিকৃতি বলের সমানুপাতিক, বলের বর্গের নয়।',
 
     q_limit: 'গ্রাফ দেখো। কত পীড়ন পর্যন্ত বিন্দুগুলো মূলবিন্দু থেকে একটি সরলরেখায় আছে, অর্থাৎ স্থিতিস্থাপক সীমা কোথায়?',
-    why_limit: '<b>{S}</b>: এ পর্যন্ত সরলরেখা, পীড়ন {prop} বিকৃতি; এরপর বিকৃতি হঠাৎ অনেক বেশি।',
+    why_limit: '<b>{S}</b>। এ পর্যন্ত সরলরেখা, পীড়ন {prop} বিকৃতি। এরপর বিকৃতি হঠাৎ অনেক বেশি।',
     mis_limit_top: 'এটি সবচেয়ে উঁচু বিন্দু; গ্রাফ তার আগেই বেঁকে গেছে।',
     mis_limit_after: 'এই বিন্দুটি বাঁকের পরে, সরলরেখার বাইরে; সীমা তার আগেই।',
     mis_limit_early: 'পরের বিন্দুও একই সরলরেখায়; সীমা আরও উপরে।',
@@ -156,7 +157,7 @@ export const STRINGS = {
     c_set_never: 'ওজন খুললে কোনো স্প্রিংই ফেরে না',
     c_set_hooke: 'হুকের সূত্র মেনে বিকৃতি রয়ে গেছে',
     c_set_restore: 'প্রত্যয়নী বল এখনো টেনে রেখেছে',
-    why_set: '<b>সীমা পার হয়েছিল</b>: স্থিতিস্থাপক সীমা অতিক্রম করলে পদার্থ আগের অবস্থায় ফিরতে পারে না।',
+    why_set: '<b>সীমা পার হয়েছিল</b>। স্থিতিস্থাপক সীমা অতিক্রম করলে পদার্থ আগের অবস্থায় ফিরতে পারে না।',
     mis_set_never: 'সীমার ভেতরে ওজন খুললে স্প্রিং ঠিকই ফেরে: এটাই স্থিতিস্থাপকতা।',
     mis_set_hooke: 'হুকের সূত্র শুধু সীমার ভেতরে খাটে।',
     mis_set_restore: 'ওজন নেই বলে টান T-ও নেই।',
@@ -215,18 +216,18 @@ export const STRINGS = {
     out_set: 'Weights off, yet L&nbsp;=&nbsp;<b>{L}&nbsp;{u_cm}</b>: {s}&nbsp;{u_cm} permanent strain',
     out_set_some: '{n} weights: x&nbsp;=&nbsp;<b>{x}&nbsp;{u_cm}</b> ({s}&nbsp;{u_cm} of it permanent)',
 
-    rule_start: '<b>A force makes the spring longer: this change is called strain.</b> Hang the weights one at a time.',
+    rule_start: 'A force makes the spring longer. This change is called <b>strain</b>. Hang the weights one at a time.',
     rule_hang:
-      '<b>The weight W pulls the spring down; the strain makes a restoring force inside the spring, the tension T,</b> that holds the weight up.',
+      'The weight W pulls the spring down. The strain makes a <b>restoring force</b> inside the spring, the tension T. This tension holds the weight up.',
     rule_double:
-      '<b>Twice the force, twice the strain: stress&nbsp;{prop}&nbsp;strain (Hooke’s law).</b> So stress ÷ strain is the same every time: a constant.',
-    rule_back: '<b>Take the force away and the strain is gone: the spring returns to its old length.</b> This property of a material is elasticity.',
+      'Twice the force, twice the strain. This is <b>Hooke’s law</b>.<span class="pvc-formula">stress&nbsp;{prop}&nbsp;strain</span>So stress ÷ strain is the same every time: a constant.',
+    rule_back: 'Take the force away and the strain is gone: the spring returns to its old length. This property of a material is <b>elasticity</b>.',
     rule_limit:
-      '<b>There is a limit to how much force you can apply: the elastic limit.</b> For this spring it is {F}&nbsp;{u_N}. Hang more weights and see.',
-    rule_beyond: '<b>Past the limit, strain is no longer proportional to stress:</b> the graph is no longer straight. Now take all the weights off.',
-    rule_set: '<b>Past the elastic limit a material cannot return to its old state: a permanent strain is left.</b> Like a rod bent too far.',
+      'There is a limit to how much force you can apply: the <b>elastic limit</b>. For this spring it is {F}&nbsp;{u_N}. Hang more weights and see.',
+    rule_beyond: 'Past the limit, strain is no longer <b>proportional</b> to stress. The graph is no longer straight. Now take all the weights off.',
+    rule_set: 'Past the elastic limit a material cannot return to its old state. A <b>permanent strain</b> is left, like a rod bent too far.',
     rule_law:
-      '<b>Hooke’s law: within the elastic limit stress&nbsp;{prop}&nbsp;strain, so stress = constant × strain.</b> For a stretched wire or rod this constant is Young’s modulus (Y).',
+      '<b>Hooke’s law:</b> within the elastic limit<span class="pvc-formula">stress&nbsp;{prop}&nbsp;strain<br>stress = constant × strain</span>For a stretched wire or rod this constant is Young’s modulus (Y).',
 
     lbl_L0: '{L0s}&nbsp;=&nbsp;{v}&nbsp;{u_cm}',
     lbl_x: 'x&nbsp;=&nbsp;{v}&nbsp;{u_cm}',
@@ -269,25 +270,26 @@ export const STRINGS = {
 
     q_strain: 'Read the spring’s length L on the rule now (its old length was {L0} cm). What is the strain?',
     c_unit: '{v}&nbsp;{u_cm}',
-    why_strain: '<b>{e}</b>: strain = (L − {L0s})/{L0s} = ({L} − {L0}) ÷ {L0} = {e}; length ÷ length, so no unit.',
+    why_strain: '<b>{e}</b><span class="pvc-formula">strain = (L − {L0s})/{L0s} = ({L} − {L0}) ÷ {L0}</span>Length ÷ length, so it has no unit.',
     mis_strain_cm: 'That is only the stretch; divide it by {L0s}.',
     mis_strain_ratio: 'That is L ÷ {L0s}; take {L0s} away from L first.',
     mis_strain_unit: 'Strain has no unit: it is just a number.',
 
     q_stress: 'Count the weights (each {W} N). The wire’s cross-section A = {A} square metres. The stress?',
-    why_stress: '<b>{S}</b>: stress = F/A = {F}&nbsp;{u_N} ÷ {A}&nbsp;{u_m2} = {S}; unit the pascal (Pa).',
+    why_stress:
+      '<b>{S}</b><span class="pvc-formula">stress = <i>F</i>/<i>A</i> = {F}&nbsp;{u_N} ÷ {A}&nbsp;{u_m2}</span>The unit is the pascal (Pa).',
     mis_stress_force: 'That is the force F; stress is force per unit area, F ÷ A.',
     mis_stress_mm2: 'That divides by mm<sup>2</sup>; {Amm}&nbsp;{u_mm2} = {A}&nbsp;{u_m2}.',
     mis_stress_zero: 'One zero too many in A; A = {A}&nbsp;{u_m2}.',
 
     q_hooke: 'With one weight the spring stretched x = {x} cm. Within the elastic limit, what is x with {n} weights?',
-    why_hooke: '<b>{v}&nbsp;{u_cm}</b>: within the limit, {n} times the force, {n} times the strain: {x} × {n} = {v}&nbsp;{u_cm}.',
+    why_hooke: '<b>{v}&nbsp;{u_cm}</b>. Within the limit, {n} times the force gives {n} times the strain: {x} × {n} = {v}&nbsp;{u_cm}.',
     mis_hooke_same: 'More weight means more strain; it does not stay the same.',
     mis_hooke_count: 'The number of weights is not centimetres; one weight gives x = {x}&nbsp;{u_cm}.',
     mis_hooke_square: 'By Hooke’s law strain is proportional to the force, not to its square.',
 
     q_limit: 'Up to which stress are the points on a straight line from the origin: where is the elastic limit?',
-    why_limit: '<b>{S}</b>: a straight line up to here, stress {prop} strain; then the strain jumps.',
+    why_limit: '<b>{S}</b>. A straight line up to here, stress {prop} strain. Then the strain jumps.',
     mis_limit_top: 'That is the highest point; the graph bent before it.',
     mis_limit_after: 'That point is after the bend, off the straight line; the limit comes before it.',
     mis_limit_early: 'The next points are on the same line; the limit is higher.',
@@ -297,7 +299,7 @@ export const STRINGS = {
     c_set_never: 'No spring ever comes back',
     c_set_hooke: 'Hooke’s law keeps the strain',
     c_set_restore: 'A restoring force still pulls it',
-    why_set: '<b>The limit was passed</b>: past the elastic limit a material cannot return to its old state.',
+    why_set: '<b>The limit was passed</b>. Past the elastic limit a material cannot return to its old state.',
     mis_set_never: 'Within the limit a spring does come back: that is elasticity.',
     mis_set_hooke: 'Hooke’s law holds only within the limit.',
     mis_set_restore: 'With no weight there is no tension T either.',

@@ -44,10 +44,9 @@ export const STRINGS = {
     out_straw_up: 'বাইরের বাতাসের চাপ ড্রিংকস <b>মুখে তুলে দিল</b>',
 
     // the rule: the book's words, one idea at a time
-    rule_straw0:
-      '<b>স্ট্র দিয়ে কোল্ড ড্রিংকস খাওয়ার ব্যাপারটি ঘটে বাতাসের চাপের জন্য।</b> চুমুক না দিলে মুখের ভেতরে আর বোতলে একই বাতাসের চাপ; দুটো চাপই সমান, তাই কোনো কার্যকর বল নেই।',
+    rule_straw0: 'স্ট্র দিয়ে কোল্ড ড্রিংকস খাওয়া যায় <b>বাতাসের চাপের</b> জন্য। চুমুক না দিলে মুখের ভেতরে আর বোতলে বাতাসের চাপ একই। দুটো চাপই সমান, তাই কোনো কার্যকর বল নেই।',
     rule_straw1:
-      '<b>চুমুক দিলে মুখের ভেতরে বাতাসের চাপ কমে যায়,</b> তখন তরলের উপরে বাতাসের চাপের জন্য তরলটা স্ট্র বেয়ে উপরে ওঠে। তবে যত জোরেই চুমুক দাও, কোল্ড ড্রিংকস {h}&nbsp;{u_m}-এর বেশি উঠবে না।',
+      'চুমুক দিলে মুখের ভেতরে <b>বাতাসের চাপ কমে</b> যায়। তখন তরলের উপরে বাতাসের চাপ তরলটাকে স্ট্র বেয়ে উপরে তোলে। তবে যত জোরেই চুমুক দাও, কোল্ড ড্রিংকস {h}&nbsp;{u_m}-এর বেশি উঠবে না।',
 
     // labels on the picture
     lbl_air: 'বাতাসের চাপ',
@@ -76,7 +75,7 @@ export const STRINGS = {
     c_st_noair: 'স্ট্রের ভেতরে বাতাস নেই',
     c_st_narrow: 'স্ট্র সরু, তরল ঢোকে না',
     c_st_down: 'বাতাস শুধু নিচে চাপ দেয়',
-    why_straw: '<b>দুটো চাপই সমান</b>: মুখে আর বোতলে একই চাপ, কার্যকর বল নেই।',
+    why_straw: '<b>দুটো চাপই সমান</b>। মুখে আর বোতলে একই চাপ, তাই কার্যকর বল নেই।',
     mis_st_noair: 'স্ট্রেও বাতাস আছে, তার চাপ বাইরের সমান।',
     mis_st_narrow: 'তরল স্ট্রে ঢোকে, বোতলের তলের সমান পর্যন্ত।',
     mis_st_down: 'তরলে চাপ সব দিকে যায়; চুমুক দিলেই তরল ওঠে।',
@@ -89,12 +88,12 @@ export const STRINGS = {
     c_su_pull: 'মুখ তরলকে টেনে তোলে',
     c_su_straw: 'স্ট্র নিজেই তরল টানে',
     c_su_light: 'চুমুকে তরল হালকা হয়',
-    why_su: '<b>বাইরের বাতাস ঠেলে তোলে</b>: মুখে চাপ কমে, বোতলের তরলের উপর বাতাসের চাপ বেশি থাকে।',
+    why_su: '<b>বাইরের বাতাস ঠেলে তোলে</b>। মুখে চাপ কমে, কিন্তু বোতলের তরলের উপর বাতাসের চাপ বেশি থাকে।',
     mis_su_pull: 'মুখ টানে না; মুখে শুধু চাপ কমে।',
     mis_su_straw: 'চুমুক না দিলে স্ট্রে তরল ওঠে না।',
     mis_su_light: 'তরলের ঘনত্ব বদলায় না।',
     q_st_max: 'যত জোরেই চুমুক দাও, কোল্ড ড্রিংকস স্ট্র বেয়ে সবচেয়ে বেশি কত উঁচুতে উঠতে পারে?',
-    why_st_max: '<b>প্রায় {h}&nbsp;{u_m}</b>: মুখে চাপ শূন্য হলেও বাইরের বাতাসের চাপ এর বেশি তুলতে পারে না।',
+    why_st_max: '<b>প্রায় {h}&nbsp;{u_m}</b>। মুখে চাপ শূন্য হলেও বাইরের বাতাসের চাপ এর বেশি তুলতে পারে না।',
     mis_st_same: 'এটি পারদের উচ্চতা; ড্রিংকস পারদের চেয়ে অনেক হালকা।',
     mis_st_small: 'বাতাসের চাপ এর চেয়ে অনেক উঁচু স্তম্ভ ধরে রাখতে পারে।',
   },
@@ -128,9 +127,9 @@ export const STRINGS = {
     out_straw_up: 'The outside air <b>pushed the drink up</b> to the mouth',
 
     rule_straw0:
-      "<b>A straw works because of the air's pressure.</b> Without sucking, the air in the mouth and over the drink press the same; the two pressures are equal, so there is no net force.",
+      'A straw works because of the <b>air’s pressure</b>. Without sucking, the air in the mouth and over the drink press the same. The two pressures are equal, so there is no net force.',
     rule_straw1:
-      "<b>Sucking lowers the air's pressure in the mouth,</b> and the air pressing on the drink pushes it up the straw. But however hard you suck, a cold drink never rises more than {h}&nbsp;{u_m}.",
+      'Sucking <b>lowers the air’s pressure</b> in the mouth. The air pressing on the drink then pushes it up the straw. But however hard you suck, a cold drink never rises more than {h}&nbsp;{u_m}.',
 
     lbl_air: "air's pressure",
     lbl_outside: "outside air's pressure",
@@ -157,7 +156,7 @@ export const STRINGS = {
     c_st_noair: 'No air inside the straw',
     c_st_narrow: 'Too narrow for the drink',
     c_st_down: 'Air only presses downward',
-    why_straw: '<b>Equal pressures</b>: mouth and bottle press the same, so no net force.',
+    why_straw: '<b>Equal pressures</b>. Mouth and bottle press the same, so there is no net force.',
     mis_st_noair: 'There is air in the straw too, pressing as hard as outside.',
     mis_st_narrow: 'The drink enters the straw, to the bottle’s level.',
     mis_st_down: 'Pressure in a liquid acts every way; suck and it rises.',
@@ -170,12 +169,12 @@ export const STRINGS = {
     c_su_pull: 'The mouth pulls it up',
     c_su_straw: 'The straw pulls it up',
     c_su_light: 'Sucking makes it lighter',
-    why_su: "<b>The outside air pushes it up</b>: the mouth's pressure falls, the air pressing on the drink stays.",
+    why_su: '<b>The outside air pushes it up</b>. The mouth’s pressure falls, but the air pressing on the drink stays.',
     mis_su_pull: "The mouth doesn't pull; its pressure only falls.",
     mis_su_straw: "Without sucking the drink doesn't climb.",
     mis_su_light: "The drink's density doesn't change.",
     q_st_max: 'However hard you suck, how high can a cold drink rise in a straw at most?',
-    why_st_max: "<b>About {h}&nbsp;{u_m}</b>: even with no pressure in the mouth, the outside air can't push it higher.",
+    why_st_max: '<b>About {h}&nbsp;{u_m}</b>. Even with no pressure in the mouth, the outside air can’t push it higher.',
     mis_st_same: "That is the mercury's height; the drink is much lighter than mercury.",
     mis_st_small: "The air's pressure holds up a much taller column than that.",
   },
