@@ -35,15 +35,15 @@ export const STRINGS = {
 
     // one short line per step
     out_mercury: 'পারদ ঠিক <b>{h}&nbsp;{u_cm}</b> উচ্চতায় এসে থেমে গেছে, উপরে শূন্যতা।',
-    out_rising: 'নল থেকে বাতাস সরিয়ে নিলে বাইরের বাতাসের চাপ পানিকে ঠেলে তোলে…',
+    out_rising: 'নল থেকে বাতাস সরালে বাইরের বাতাসের চাপ পানিকে ঠেলে তোলে…',
     out_water: 'একই বাতাসের চাপে পানি থামে <b>{h}&nbsp;{u_m}</b> উঁচুতে: প্রায় {n} জন মানুষের সমান!',
-    out_compare: 'পানির স্তম্ভ পারদের <b>{k} গুণ</b> উঁচু: <span class="wb-sum">{hHg}&nbsp;{u_cm} × {k} ≈ {h}&nbsp;{u_m}</span>',
+    out_compare: 'পানির স্তম্ভ পারদের <b>{k} গুণ</b> উঁচু<span class="pvc-formula">{hHg}&nbsp;{u_cm} × {k} ≈ {h}&nbsp;{u_m}</span>',
     out_straw: '{L}&nbsp;{u_m} লম্বা স্ট্রতে যত জোরেই চুমুক দাও, কোল্ড ড্রিংকস <b>{h}&nbsp;{u_m}</b>-এর বেশি ওঠে না।',
 
     // the reason, growing step by step
     rule_mercury: 'পাত্রের পারদের উপর বাতাস চাপ দিচ্ছে; নলের উপরে বাতাস নেই। তাই বাতাসের চাপই {h}&nbsp;{u_cm} পারদ স্তম্ভকে ধরে রাখে।',
-    rule_water: 'বাতাসের চাপ দুই পাত্রে সমান। সেই চাপ ধরে রাখে {hHg}&nbsp;{u_cm} পারদ, আবার {h}&nbsp;{u_m} পানি। পানি এত উঁচুতে কেন?',
-    rule_compare: '<b>পানির ঘনত্ব থেকে পারদের ঘনত্ব {k} গুণ বেশি,</b> তাই একই চাপে পানি {k} গুণ উঁচুতে ওঠে।',
+    rule_water: 'দুই পাত্রে বাতাসের চাপ সমান। সেই চাপ {hHg}&nbsp;{u_cm} পারদ ধরে রাখে, আবার {h}&nbsp;{u_m} পানিও। পানি এত উঁচুতে কেন?',
+    rule_compare: 'পানির ঘনত্ব থেকে পারদের ঘনত্ব <b>{k} গুণ</b> বেশি। তাই একই চাপে পানি {k} গুণ উঁচুতে ওঠে।',
     rule_straw: 'বাতাসের চাপ এর বেশি তুলতে পারে না, তাই উপরের {gap}&nbsp;{u_m} ফাঁকা থাকে। কোল্ড ড্রিংকসের ঘনত্ব পানির কাছাকাছি।',
 
     read_cols: 'পারদ স্তম্ভ: <b>{hg}</b> · পানির স্তম্ভ: <b>{w}</b>',
@@ -81,7 +81,7 @@ export const STRINGS = {
     q_locked: 'পরীক্ষার সময় দৃশ্যটি আটকানো থাকে। ছবি দেখে উত্তর বেছে নাও।',
 
     q_water: 'এই পরীক্ষা পারদের বদলে পানি দিয়ে করলে পানির স্তম্ভ কত উঁচু হতো?',
-    why_water: '<b>প্রায় {h}&nbsp;{u_m}</b>: পারদের ঘনত্ব পানির {k} গুণ, তাই {hHg}&nbsp;{u_cm} × {k} ≈ {h}&nbsp;{u_m}।',
+    why_water: '<b>প্রায় {h}&nbsp;{u_m}</b>। পারদের ঘনত্ব পানির {k} গুণ, তাই {hHg}&nbsp;{u_cm} × {k} ≈ {h}&nbsp;{u_m}।',
     mis_water_same: 'একই চাপে কম ঘন তরলের স্তম্ভ বেশি উঁচু হয়, সমান নয়।',
     mis_water_divide: 'এখানে ভাগ করা হয়েছে; পানি হালকা, তাই গুণ করতে হবে।',
     mis_water_tenth: 'দশমিক ভুল জায়গায় বসেছে।',
@@ -91,7 +91,7 @@ export const STRINGS = {
     c_why_wide: 'পানির নলটি বেশি চওড়া',
     c_why_more: 'পানির পাত্রে বাতাসের চাপ বেশি',
     c_why_pull: 'শূন্যতা পানিকে বেশি টানে',
-    why_why: '<b>পানির ঘনত্ব কম</b>: পারদের ঘনত্ব পানির {k} গুণ, তাই একই চাপে পানি {k} গুণ উঁচুতে ওঠে।',
+    why_why: '<b>পানির ঘনত্ব কম</b>। পারদের ঘনত্ব পানির {k} গুণ, তাই একই চাপে পানি {k} গুণ উঁচুতে ওঠে।',
     mis_why_wide: 'স্তম্ভের উচ্চতা নলের চওড়ার উপর নির্ভর করে না।',
     mis_why_more: 'দুই পাত্রে বাতাসের চাপ সমান; নীল তীর দুটোও সমান।',
     mis_why_pull: 'শূন্যতা টানে না; বাতাসের চাপ নিচ থেকে ঠেলে তোলে।',
@@ -101,12 +101,12 @@ export const STRINGS = {
     c_vac_pull: 'শূন্যতা, যা পানিকে টেনে রাখে',
     c_vac_air: 'নলে ঢুকে পড়া বাতাস',
     c_vac_press: 'বাতাস, যা পানিকে নিচে চাপে',
-    why_vac: '<b>শূন্যতা</b>: উপর থেকে কোনো চাপ নেই, তাই নিচের বাতাসের চাপ পানি ধরে রাখে।',
+    why_vac: '<b>শূন্যতা</b>। উপর থেকে কোনো চাপ নেই, তাই নিচের বাতাসের চাপ পানি ধরে রাখে।',
     mis_vac_air: 'নলের মুখ পানির নিচে, তাই বাতাস ঢুকতে পারে না।',
     mis_vac_press: 'উপরে বাতাস থাকলে সে পানিকে নিচে চাপত, পানি এত উঁচুতে থাকত না।',
 
     q_straw: '{L} m লম্বা একটা স্ট্র দিয়ে খুব জোরে চুমুক দিলে কোল্ড ড্রিংকস কত উঁচুতে উঠবে?',
-    why_straw: '<b>প্রায় {h}&nbsp;{u_m}</b>: স্ট্র যত লম্বাই হোক, বাতাসের চাপ কোল্ড ড্রিংকসকে এর বেশি তুলতে পারে না।',
+    why_straw: '<b>প্রায় {h}&nbsp;{u_m}</b>। স্ট্র যত লম্বাই হোক, বাতাসের চাপ কোল্ড ড্রিংকসকে এর বেশি তুলতে পারে না।',
     mis_straw_whole: 'জোরে চুমুক দিলে বড়জোর উপরে শূন্যতা হয়; বাতাসের চাপ {h}&nbsp;{u_m}-এর বেশি তুলতে পারে না।',
     mis_straw_mercury: '{hHg}&nbsp;{u_cm} পারদের বেলায়; কোল্ড ড্রিংকস পানির মতো, পারদের চেয়ে অনেক হালকা।',
     mis_straw_tenth: 'দশমিক ভুল জায়গায়: {hHg}&nbsp;{u_cm} × {k} ≈ {h}&nbsp;{u_m}।',
@@ -135,16 +135,16 @@ export const STRINGS = {
     step_of: 'Step {i} of {n}',
 
     out_mercury: 'The mercury stops at exactly <b>{h}&nbsp;{u_cm}</b>, with a vacuum above it.',
-    out_rising: 'Take the air out of the tube, and the air’s pressure outside pushes the water up…',
+    out_rising: 'With the air out of the tube, the outside air pushes the water up…',
     out_water: 'The same air holds the water up to <b>{h}&nbsp;{u_m}</b>: about {n} people tall!',
-    out_compare: 'The water column is <b>{k} times</b> as tall: <span class="wb-sum">{hHg}&nbsp;{u_cm} × {k} ≈ {h}&nbsp;{u_m}</span>',
+    out_compare: 'The water column is <b>{k} times</b> as tall<span class="pvc-formula">{hHg}&nbsp;{u_cm} × {k} ≈ {h}&nbsp;{u_m}</span>',
     out_straw: 'However hard you suck on a {L}&nbsp;{u_m} straw, a cold drink rises no higher than <b>{h}&nbsp;{u_m}</b>.',
 
     rule_mercury:
       'The air presses on the mercury in the dish; there is no air above it in the tube. So the air’s pressure holds up the {h}&nbsp;{u_cm} column.',
     rule_water:
       'The air presses equally on both dishes. That pressure holds up {hHg}&nbsp;{u_cm} of mercury, and also {h}&nbsp;{u_m} of water. Why is the water so tall?',
-    rule_compare: '<b>Mercury is {k} times as dense as water,</b> so the same pressure holds water {k} times as high.',
+    rule_compare: 'Mercury is <b>{k} times</b> as dense as water. So the same pressure holds water {k} times as high.',
     rule_straw: 'The air’s pressure can lift it no higher, so the top {gap}&nbsp;{u_m} stays empty. A cold drink is about as dense as water.',
 
     read_cols: 'Mercury column: <b>{hg}</b> · water column: <b>{w}</b>',
@@ -180,7 +180,7 @@ export const STRINGS = {
     q_locked: 'The scene is locked during the test. Look at the picture and pick an answer.',
 
     q_water: 'If this experiment used water instead of mercury, how tall would the water column be?',
-    why_water: '<b>About {h}&nbsp;{u_m}</b>: mercury is {k} times as dense as water, so {hHg}&nbsp;{u_cm} × {k} ≈ {h}&nbsp;{u_m}.',
+    why_water: '<b>About {h}&nbsp;{u_m}</b>. Mercury is {k} times as dense as water, so {hHg}&nbsp;{u_cm} × {k} ≈ {h}&nbsp;{u_m}.',
     mis_water_same: 'The same pressure holds up a taller column of a less dense liquid, not an equal one.',
     mis_water_divide: 'That divides; water is lighter, so multiply.',
     mis_water_tenth: 'The decimal point slipped.',
@@ -190,7 +190,7 @@ export const STRINGS = {
     c_why_wide: 'The water tube is wider',
     c_why_more: 'The air presses harder on the water dish',
     c_why_pull: 'The vacuum pulls water harder',
-    why_why: '<b>Water is less dense</b>: mercury is {k} times as dense, so the same pressure holds water {k} times as high.',
+    why_why: '<b>Water is less dense</b>. Mercury is {k} times as dense, so the same pressure holds water {k} times as high.',
     mis_why_wide: 'A column’s height does not depend on the tube’s width.',
     mis_why_more: 'The air presses equally on both dishes; the two blue arrows are equal too.',
     mis_why_pull: 'A vacuum does not pull; the air’s pressure pushes from below.',
@@ -200,12 +200,12 @@ export const STRINGS = {
     c_vac_pull: 'A vacuum that pulls the water up',
     c_vac_air: 'Air that got into the tube',
     c_vac_press: 'Air pressing the water down',
-    why_vac: '<b>A vacuum</b>: nothing presses from above, so the air’s pressure below holds the water up.',
+    why_vac: '<b>A vacuum</b>. Nothing presses from above, so the air’s pressure below holds the water up.',
     mis_vac_air: 'The tube’s mouth is under the water, so no air can get in.',
     mis_vac_press: 'Air above would press the water down; it could not stand so high.',
 
     q_straw: 'How high would a cold drink rise if you sucked very hard on a {L} m straw?',
-    why_straw: '<b>About {h}&nbsp;{u_m}</b>: however long the straw, the air’s pressure can lift a cold drink no higher.',
+    why_straw: '<b>About {h}&nbsp;{u_m}</b>. However long the straw, the air’s pressure can lift a cold drink no higher.',
     mis_straw_whole: 'Sucking hard makes at most a vacuum at the top; the air can lift no more than {h}&nbsp;{u_m}.',
     mis_straw_mercury: '{hHg}&nbsp;{u_cm} is for mercury; a cold drink is like water, far less dense.',
     mis_straw_tenth: 'The decimal point slipped: {hHg}&nbsp;{u_cm} × {k} ≈ {h}&nbsp;{u_m}.',
