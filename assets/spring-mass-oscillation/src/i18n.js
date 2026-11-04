@@ -52,10 +52,9 @@ export const STRINGS = {
     out_run: 'দোলনকাল T = <b class="c-T">{T} s</b> · কম্পাঙ্ক f = <b class="c-f">{f} Hz</b>',
 
     // the rule, growing with what the student has found
-    rule_start:
-      'টেনে ছেড়ে দিলে ভরটি সাম্যাবস্থার উপরে-নিচে a দূরত্ব পর্যন্ত দোলে: <b>সরল স্পন্দন গতি</b>।<span class="pvc-formula">প্রত্যয়নী বল <i>F</i> = −<i>kx</i></span>',
+    rule_start: 'ভরটি সাম্যাবস্থার দুপাশে a দূরত্ব পর্যন্ত দোলে: <b>সরল স্পন্দন গতি</b>।<span class="pvc-formula">প্রত্যয়নী বল <i>F</i> = −<i>kx</i></span>',
     rule_energy:
-      '<span class="pvc-formula"><i>T</i> = 2π√(<i>m</i>/<i>k</i>), <i>f</i> = {#1}/<i>T</i></span>প্রান্তে v = {#0}, সবটুকু <b class="c-U">U</b>। সাম্যাবস্থায় বেগ সবচেয়ে বেশি, সবটুকু <b class="c-K">K</b>। এবার অন্য দূরত্বে টানো।',
+      '<span class="pvc-formula"><i>T</i> = 2π√(<i>m</i>/<i>k</i>), <i>f</i> = {#1}/<i>T</i></span>প্রান্তে v = {#0}, সবটুকু <b class="c-U">U</b>। সাম্যাবস্থায় বেগ সবচেয়ে বেশি, সবটুকু <b class="c-K">K</b>।',
     rule_amp:
       '<span class="pvc-formula"><i>T</i> = 2π√(<i>m</i>/<i>k</i>)</span>সূত্রে a নেই, তাই বিস্তার বদলালেও <b>T একই ({T} s)</b>। এবার ভর m বা k বদলাও।',
     rule_mk_only: '<span class="pvc-formula"><i>T</i> = 2π√(<i>m</i>/<i>k</i>)</span>ভর বাড়লে T <b>বাড়ে</b>, k বাড়লে T কমে। এবার অন্য দূরত্বে টেনে দেখো।',
@@ -183,9 +182,9 @@ export const STRINGS = {
     out_run: 'Period T = <b class="c-T">{T} s</b> · frequency f = <b class="c-f">{f} Hz</b>',
 
     rule_start:
-      'Let go, and the mass swings a above and below equilibrium: <b>simple harmonic motion</b>.<span class="pvc-formula">restoring force <i>F</i> = −<i>kx</i></span>',
+      'The mass swings a either side of equilibrium: <b>simple harmonic motion</b>.<span class="pvc-formula">restoring force <i>F</i> = −<i>kx</i></span>',
     rule_energy:
-      '<span class="pvc-formula"><i>T</i> = 2π√(<i>m</i>/<i>k</i>), <i>f</i> = {#1}/<i>T</i></span>At the ends v = {#0}, all <b class="c-U">U</b>. At equilibrium the speed is greatest, all <b class="c-K">K</b>. Now pull to another distance.',
+      '<span class="pvc-formula"><i>T</i> = 2π√(<i>m</i>/<i>k</i>), <i>f</i> = {#1}/<i>T</i></span>At the ends v = {#0}, all <b class="c-U">U</b>. At equilibrium the speed is greatest, all <b class="c-K">K</b>.',
     rule_amp:
       '<span class="pvc-formula"><i>T</i> = 2π√(<i>m</i>/<i>k</i>)</span>There is no a in the formula, so <b>T stays {T} s</b>. Now change m or k.',
     rule_mk_only:
