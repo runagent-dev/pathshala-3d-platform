@@ -86,6 +86,7 @@ body.bg-transparent { background: transparent; }
 }
 /* short and wide (a phone held sideways): the panel is beside the scene */
 @container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
+  .bj .pvc-learn { gap: 4px; }
   .bj .pvc-outcome { font-size: 14px; line-height: 1.5; --pvc-outcome-lines: 2; }
   .bj .pvc-rule { font-size: 14px; line-height: 1.5; --pvc-rule-lines: 3; }
   .bj .pvc-opt { font-size: 13.5px; height: 44px; }
