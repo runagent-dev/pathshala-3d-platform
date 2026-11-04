@@ -80,16 +80,16 @@ export const STRINGS = {
     out_full: 'পানি বোঝাই রেখায় পৌঁছেছে: <b>আর মাল নয়</b>',
 
     // the rule: the book's words, one idea at a time
-    rule_pressure: '<b>তরলের চাপ P = hρg:</b> গভীরতা h যত বেশি, চাপ তত বেশি। দুই পাশে একই গভীরতায় চাপ সমান, কিন্তু উল্টো দিকে, তাই সেই বল কাটাকাটি হয়।',
+    rule_pressure: 'গভীরতা h যত বেশি, <b>চাপ</b> তত বেশি। দুই পাশে একই গভীরতায় চাপ সমান, কিন্তু দিক উল্টো। তাই সেই বল কাটাকাটি হয়।',
     rule_sum:
-      '<b>F = F<sub>2</sub> − F<sub>1</sub> = A(h<sub>2</sub> − h<sub>1</sub>)ρg = Ahρg।</b> জাহাজের উপরের অংশ পানির বাইরে, তাই h<sub>1</sub> = {zero}। ঊর্ধ্বমুখী এই বলকে প্লবতা বলে।',
-    rule_weight: '<b>ওজন নিচের দিকে, প্লবতা উপরের দিকে;</b> ভাসমান জাহাজে দুটো সমান। পাশে খালি জাহাজের সমান ভরের একটি নিরেট স্টিলের সিলিন্ডার নিক্তিতে ঝুলছে।',
-    rule_lower: '<b>তরলে নিমজ্জিত বস্তুর ওজন কমে যায় বলে মনে হয়:</b> সে যতটুকু তরল অপসারণ করে, সেই তরলের ওজনের সমান। সিলিন্ডার সরায় অল্প পানি।',
+      '<span class="pvc-formula"><i>F</i> = <i>F</i><sub>2</sub> − <i>F</i><sub>1</sub> = <i>A</i>(<i>h</i><sub>2</sub> − <i>h</i><sub>1</sub>)<i>ρg</i> = <i>Ahρg</i></span>জাহাজের উপরের অংশ পানির বাইরে, তাই h<sub>1</sub> = {zero}। ঊর্ধ্বমুখী এই বলকে <b>প্লবতা</b> বলে।',
+    rule_weight: 'ওজন নিচের দিকে, প্লবতা উপরের দিকে। ভাসমান জাহাজে দুটো <b>সমান</b>। পাশে খালি জাহাজের সমান ভরের একটি নিরেট স্টিলের সিলিন্ডার নিক্তিতে ঝুলছে।',
+    rule_lower: 'তরলে নিমজ্জিত বস্তুর <b>ওজন কমে</b> যায় বলে মনে হয়। কমে ঠিক ততটা, যতটা তার অপসারিত তরলের ওজন। সিলিন্ডার সরায় অল্প পানি।',
     rule_drop:
-      '<b>একই ভর, তবু সিলিন্ডার ডোবে, জাহাজ ভাসে।</b> স্টিলের ঘনত্ব {rs} kg m<sup>−3</sup>, পানির চেয়ে অনেক বেশি; ফাঁপা জাহাজ অনেক পানি সরায়, তার গড় ঘনত্ব পানির চেয়ে কম।',
+      'ভর একই, তবু সিলিন্ডার ডোবে, জাহাজ ভাসে। স্টিলের ঘনত্ব {rs} kg m<sup>−3</sup>, পানির চেয়ে অনেক বেশি। ফাঁপা জাহাজ অনেক পানি সরায়, তার <b>গড় ঘনত্ব</b> পানির চেয়ে কম।',
     rule_archimedes:
       '<b>আর্কিমিডিসের নীতি:</b> কোনো বস্তু তরলে নিমজ্জিত করলে সেটি যে পরিমাণ তরল অপসারণ করে সেইটুকু তরলের সমান ওজন বস্তুটির ওজন থেকে কমে যায়। ভাসমান জাহাজের বেলায় তা পুরো ওজন।',
-    rule_load: '<b>মাল বাড়লে ওজন বাড়ে:</b> জাহাজ আরও ডোবে, আরও পানি সরায়, প্লবতা বাড়ে, যতক্ষণ না আবার ওজনের সমান হয়।',
+    rule_load: 'মাল বাড়লে <b>ওজন</b> বাড়ে। জাহাজ আরও ডোবে, আরও পানি সরায়। প্লবতা বাড়তে থাকে, যতক্ষণ না আবার ওজনের সমান হয়।',
     rule_full: '<b>বোঝাই রেখা (প্লিমসল দাগ):</b> পানি এই দাগ ছুঁলে আর মাল তোলা নিরাপদ নয়। খালি থেকে পুরো বোঝাই: h বাড়ল, প্লবতাও ঠিক ততটা বাড়ল।',
 
     // notes on the stage
@@ -138,19 +138,19 @@ export const STRINGS = {
     c_lift: 'এই বলই জাহাজকে ভাসিয়ে রাখে',
     c_down: 'এই বল জাহাজকে নিচে ডোবায়',
     c_one_side: 'শুধু এক পাশের বল কাজ করে',
-    why_sides: '<b>কাটাকাটি হয়</b>: একই গভীরতায় দুই পাশে চাপ সমান, দিক উল্টো। জাহাজকে উপরে ঠেলে তলার চাপ।',
+    why_sides: '<b>কাটাকাটি হয়</b>। একই গভীরতায় দুই পাশে চাপ সমান, দিক উল্টো। জাহাজকে উপরে ঠেলে তলার চাপ।',
     mis_lift: 'পাশের বল পাশ থেকে ঠেলে, উপরে নয়; উপরে ঠেলে তলার বল।',
     mis_down: 'পাশের বল নিচের দিকে নয়, পাশ থেকে ভেতরের দিকে।',
     mis_one_side: 'দুই পাশেই পানি সমান গভীর, তাই দুই পাশেই সমান বল।',
 
     q_pressure: 'জাহাজের তলা পানির কত নিচে, ছবিতে লেখা আছে। তলায় পানির চাপ কত?',
-    why_pressure: '<b>{P}&nbsp;{u_Pa}</b>: P = hρg = {h} × {rho} × {g}।',
+    why_pressure: '<b>{P}&nbsp;{u_Pa}</b><span class="pvc-formula"><i>P</i> = <i>hρg</i> = {h} × {rho} × {g}</span>',
     mis_noG: 'এখানে g দিয়ে গুণ করা হয়নি; চাপ = hρg।',
     mis_deck: 'এটি জাহাজের পুরো উচ্চতা ({d}&nbsp;{u_m}) দিয়ে করা; লাগে পানির নিচের গভীরতা h।',
     mis_force: 'এটি চাপ × ক্ষেত্রফল, অর্থাৎ বল (N), চাপ নয়।',
 
     q_displaced: 'জাহাজটি যতটুকু পানি সরিয়েছে, তার আয়তন ছবিতে লেখা আছে। সেই পানির ওজন, অর্থাৎ প্লবতা কত?',
-    why_displaced: '<b>{F}&nbsp;{u_N}</b>: ওজন = Vρg = {V} × {rho} × {g}।',
+    why_displaced: '<b>{F}&nbsp;{u_N}</b><span class="pvc-formula">ওজন = <i>Vρg</i> = {V} × {rho} × {g}</span>',
     mis_mass: 'Vρ হলো পানির ভর (kg); ওজন পেতে g দিয়েও গুণ করতে হয়।',
     mis_noRho: 'ঘনত্ব ρ বাদ পড়েছে; ওজন = Vρg।',
     mis_steel: 'এখানে স্টিলের ঘনত্ব নেওয়া হয়েছে; চাই পানির ওজন, তাই পানির ঘনত্ব।',
@@ -160,7 +160,7 @@ export const STRINGS = {
     c_deeper_same: 'আরও একটু ডুববে, প্লবতা একই থাকবে',
     c_sink_all: 'জাহাজ পুরোপুরি ডুবে যাবে',
     c_rise: 'জাহাজ একটু উপরে উঠবে',
-    why_more: '<b>আরও একটু ডুববে, প্লবতা বাড়বে</b>: ওজন বাড়ে, জাহাজ ডুবে বেশি পানি সরায়, যতক্ষণ না প্লবতা আবার ওজনের সমান হয়।',
+    why_more: '<b>আরও একটু ডুববে, প্লবতা বাড়বে</b>। ওজন বাড়ে, জাহাজ ডুবে বেশি পানি সরায়। প্লবতা আবার ওজনের সমান হলে থামে।',
     mis_deeper_same: 'বেশি ডুবলে বেশি পানি সরে, তাই প্লবতাও বাড়ে।',
     mis_sink_all: 'সামান্য বেশি পানি সরালেই প্লবতা আবার ওজনের সমান হয়; জাহাজ ভেসে থাকে।',
     mis_rise: 'ওজন বাড়লে জাহাজ ওঠে না, আরও ডোবে।',
@@ -171,7 +171,7 @@ export const STRINGS = {
     c_no_push: 'পানি সিলিন্ডারকে একটুও উপরে ঠেলে না',
     c_pull_down: 'পানির চাপ সিলিন্ডারকে নিচে টেনে নেয়',
     why_steel:
-      '<b>সিলিন্ডার কম পানি সরায়</b>: স্টিলের ঘনত্ব {rs} kg m<sup>−3</sup>, পানির {rw} kg m<sup>−3</sup>। একই ভরে ফাঁপা জাহাজ অনেক বেশি পানি সরায়, তাই তার প্লবতা ওজনের সমান হয়।',
+      '<b>সিলিন্ডার কম পানি সরায়</b>। স্টিলের ঘনত্ব {rs} kg m<sup>−3</sup>, পানির {rw} kg m<sup>−3</sup>। একই ভরে ফাঁপা জাহাজ অনেক বেশি পানি সরায়, তাই তার প্লবতা ওজনের সমান হয়।',
     mis_heavier: 'দুটোর ভর সমান, তাই ওজনও সমান।',
     mis_no_push: 'পানি সিলিন্ডারকেও উপরে ঠেলে (প্লবতা), তবে তা ওজনের চেয়ে অনেক কম।',
     mis_pull_down: 'তলায় চাপ বেশি, তাই পানির মোট বল উপরের দিকে।',
@@ -243,19 +243,19 @@ export const STRINGS = {
     out_full: 'The water is at the load line: <b>no more cargo</b>',
 
     rule_pressure:
-      '<b>A liquid’s pressure P = hρg:</b> the greater the depth h, the more pressure. On the two sides the pressure at the same depth is equal but opposite, so those forces cancel.',
+      'The greater the depth h, the more <b>pressure</b>. At the same depth the two sides feel equal pressure in opposite directions, so those forces cancel.',
     rule_sum:
-      '<b>F = F<sub>2</sub> − F<sub>1</sub> = A(h<sub>2</sub> − h<sub>1</sub>)ρg = Ahρg.</b> The top of the ship is out of the water, so h<sub>1</sub> = {zero}. This upward force is called buoyancy.',
+      '<span class="pvc-formula"><i>F</i> = <i>F</i><sub>2</sub> − <i>F</i><sub>1</sub> = <i>A</i>(<i>h</i><sub>2</sub> − <i>h</i><sub>1</sub>)<i>ρg</i> = <i>Ahρg</i></span>The top of the ship is out of the water, so h<sub>1</sub> = {zero}. This upward force is called <b>buoyancy</b>.',
     rule_weight:
-      '<b>Weight acts down, buoyancy up;</b> for a floating ship they are equal. Beside it a solid steel cylinder with the empty ship’s mass hangs on a balance.',
+      'Weight acts down, buoyancy up. For a floating ship they are <b>equal</b>. Beside it, a solid steel cylinder with the empty ship’s mass hangs on a balance.',
     rule_lower:
-      '<b>A body sunk in a liquid seems to lose weight:</b> as much as the weight of the liquid it pushes aside. The cylinder pushes aside little water.',
+      'A body sunk in a liquid seems to <b>lose weight</b>, by as much as the weight of the liquid it pushes aside. The cylinder pushes aside little water.',
     rule_drop:
-      '<b>The same mass, yet the cylinder sinks and the ship floats.</b> Steel’s density, {rs} kg m<sup>−3</sup>, is far more than water’s; the hollow ship pushes aside a lot of water, so its average density is less than water’s.',
+      'The same mass, yet the cylinder sinks and the ship floats. Steel’s density, {rs} kg m<sup>−3</sup>, is far more than water’s. The hollow ship pushes aside a lot of water: its <b>average density</b> is less than water’s.',
     rule_archimedes:
       '<b>Archimedes’ principle:</b> a body immersed in a liquid loses as much weight as the weight of the liquid it pushes aside. For a floating ship that is its whole weight.',
     rule_load:
-      '<b>More cargo, more weight:</b> the ship sinks deeper and pushes aside more water, and the buoyancy grows until it equals the weight again.',
+      'More cargo means more <b>weight</b>. The ship sinks deeper and pushes aside more water. The buoyancy grows until it equals the weight again.',
     rule_full:
       '<b>The load line (Plimsoll mark):</b> once the water reaches it, loading more is unsafe. From empty to full: h grew, and the buoyancy grew just as much.',
 
@@ -303,19 +303,19 @@ export const STRINGS = {
     c_down: 'They push the ship down',
     c_one_side: 'Only one side’s force acts',
     why_sides:
-      '<b>They cancel</b>: at the same depth the pressure on the two sides is equal and opposite. What pushes the ship up is the pressure on its bottom.',
+      '<b>They cancel</b>. At the same depth the two sides feel equal, opposite pressure. What pushes the ship up is the pressure on its bottom.',
     mis_lift: 'The side forces push sideways, not up; the bottom’s force pushes up.',
     mis_down: 'The side forces do not point down; they push in from the sides.',
     mis_one_side: 'The water is equally deep on both sides, so both sides get the same force.',
 
     q_pressure: 'How deep the ship’s bottom is, is written on the picture. What is the water’s pressure on the bottom?',
-    why_pressure: '<b>{P}&nbsp;{u_Pa}</b>: P = hρg = {h} × {rho} × {g}.',
+    why_pressure: '<b>{P}&nbsp;{u_Pa}</b><span class="pvc-formula"><i>P</i> = <i>hρg</i> = {h} × {rho} × {g}</span>',
     mis_noG: 'This leaves out g; pressure = hρg.',
     mis_deck: 'This uses the ship’s whole height ({d}&nbsp;{u_m}); it takes the depth under water, h.',
     mis_force: 'This is pressure × area, a force (N), not a pressure.',
 
     q_displaced: 'The volume of water the ship pushed aside is written on the picture. What does that water weigh, that is, what is the buoyancy?',
-    why_displaced: '<b>{F}&nbsp;{u_N}</b>: weight = Vρg = {V} × {rho} × {g}.',
+    why_displaced: '<b>{F}&nbsp;{u_N}</b><span class="pvc-formula">weight = <i>Vρg</i> = {V} × {rho} × {g}</span>',
     mis_mass: 'Vρ is the water’s mass (kg); for its weight multiply by g too.',
     mis_noRho: 'The density ρ is missing; weight = Vρg.',
     mis_steel: 'This uses steel’s density; we want the water’s weight, so water’s density.',
@@ -325,8 +325,7 @@ export const STRINGS = {
     c_deeper_same: 'It sinks a little deeper; buoyancy stays the same',
     c_sink_all: 'The ship sinks completely',
     c_rise: 'The ship rises a little',
-    why_more:
-      '<b>It sinks a little deeper and the buoyancy grows</b>: the weight grows, the ship sinks and pushes aside more water, until the buoyancy equals the weight again.',
+    why_more: '<b>It sinks a little deeper and the buoyancy grows</b>. The ship pushes aside more water until the buoyancy equals the weight again.',
     mis_deeper_same: 'Deeper means more water pushed aside, so more buoyancy.',
     mis_sink_all: 'Pushing aside a little more water makes the buoyancy equal the weight again; the ship stays afloat.',
     mis_rise: 'More weight does not lift the ship; it sinks deeper.',
@@ -337,7 +336,7 @@ export const STRINGS = {
     c_no_push: 'The water does not push the cylinder up at all',
     c_pull_down: 'The water’s pressure pulls the cylinder down',
     why_steel:
-      '<b>It pushes aside less water</b>: steel’s density is {rs} kg m<sup>−3</sup>, water’s {rw} kg m<sup>−3</sup>. With the same mass the hollow ship pushes aside far more water, so its buoyancy can equal its weight.',
+      '<b>It pushes aside less water</b>. Steel’s density is {rs} kg m<sup>−3</sup>, water’s {rw} kg m<sup>−3</sup>. With the same mass the hollow ship pushes aside far more water, so its buoyancy can equal its weight.',
     mis_heavier: 'Their masses are equal, so their weights are equal too.',
     mis_no_push: 'The water pushes the cylinder up too (buoyancy), but far less than its weight.',
     mis_pull_down: 'The pressure is greater at the bottom, so the water’s total force points up.',
