@@ -155,14 +155,12 @@ export const STRINGS = {
     out_t1: 'The volume grew: the mercury rose to <b>{T} {u}</b>',
     out_t2: 'Taken out: the mercury is still at <b>{T} {u}</b>',
     out_t3: 'Shaken down: the mercury is back at <b>{T} {u}</b>',
-    rule_t0:
-      'A fever thermometer has <b>mercury</b> in a glass tube at its foot. A fine bend in the tube stops the mercury falling back.',
+    rule_t0: 'A fever thermometer has <b>mercury</b> in a glass tube at its foot. A fine bend in the tube stops the mercury falling back.',
     rule_t1:
       'When heat is given, the <b>volume of the mercury grows</b> and it climbs a very narrow tube. How far it has climbed measures the temperature.',
     rule_t2:
       'After the thermometer is taken out the temperature falls. But because of the narrow bend, <b>the column of mercury does not go down.</b>',
-    rule_t3:
-      'Once the mercury has climbed, it cannot come down by itself, even after the temperature falls. It has to be <b>shaken down.</b>',
+    rule_t3: 'Once the mercury has climbed, it cannot come down by itself, even after the temperature falls. It has to be <b>shaken down.</b>',
     act_heat: 'Heat the bulb',
     act_heat2: 'Heat it more',
     lbl_vb: 'V<sub>B</sub> = {v} {u}',
@@ -180,8 +178,7 @@ export const STRINGS = {
     out_f0: 'The liquid fills up to the mark <b>A</b>',
     out_f1: 'The level has fallen from A to <b>B</b>',
     out_f2: 'The level has passed A and reached <b>C</b>',
-    rule_f0:
-      'A liquid always has to be heated in a <b>container.</b> When heat is given, the container expands along with the liquid.',
+    rule_f0: 'A liquid always has to be heated in a <b>container.</b> When heat is given, the container expands along with the liquid.',
     rule_f1:
       "<b>The bulb gets hot and expands first,</b> becoming a little bigger. So the level falls to B.<span class='pvc-formula'>AB × cross-section = the container's expansion (V<sub>B</sub>)</span>",
     rule_f2:
