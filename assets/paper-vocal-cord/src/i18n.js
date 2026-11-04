@@ -46,7 +46,7 @@ export const STRINGS = {
 
     // the result
     out_idle: 'কাটা টুকরো দুটোর মাঝে ফুঁ দাও, দেখো কী কাঁপে।',
-    out_f: 'প্রতি সেকেন্ডে প্রায় {f} বার কাঁপে: কম্পাঙ্ক <b>{f}&nbsp;{u_hz}</b> (হার্টজ), {voice} স্বর।',
+    out_f: 'প্রতি সেকেন্ডে প্রায় {f} বার কাঁপে। কম্পাঙ্ক <b>{f}&nbsp;{u_hz}</b> (হার্টজ), {voice} স্বর।',
     voice_deep: 'মোটা',
     voice_middle: 'মাঝারি',
     voice_shrill: 'তীক্ষ্ণ',
@@ -54,11 +54,10 @@ export const STRINGS = {
       '<i class="pv-sw pv-dark"></i>সংকোচন <i class="pv-sw pv-light"></i>প্রসারণ <span class="pv-note">সময় {k} গুণ ধীর, কম্পন বড় ও λ ছোট করে দেখানো</span>',
 
     // the rule, growing
-    rule_0: '<b>ফুঁ দিলে কাগজের কাটা টুকরো দুটো ভোকাল কর্ডের মতো কাঁপে।</b> আমাদের স্বরযন্ত্রে দুটো পর্দা ঠিক এভাবে খোলে আর বন্ধ হয়।',
-    rule_1: '<b>কম্পন দিয়ে শব্দ তৈরি হয়।</b> উৎস কাঁপা টুকরো, মাধ্যম বাতাস, রিসিভার তোমার কান। বাতাসের কণা নিজের জায়গায় দোলে; সংকোচন আর প্রসারণ এগিয়ে যায়।',
-    rule_2:
-      '<b>ছোট টুকরো তাড়াতাড়ি কাঁপে: কম্পাঙ্ক বেশি, স্বর তীক্ষ্ণ।</b> ছোট টুকরোর দৈর্ঘ্য কম, তাই দ্রুত কাঁপে; লম্বা টুকরো ধীরে কাঁপে: কম্পাঙ্ক কম, স্বর মোটা। কম্পাঙ্ক বাড়লে তরঙ্গদৈর্ঘ্য ছোট হয়।',
-    rule_3: '<b>পুরুষেরা কম কম্পাঙ্কের শব্দ তৈরি করে, মেয়েরা বেশি কম্পাঙ্কের।</b> সে কারণে পুরুষের গলার স্বর মোটা, নারীর স্বর তীক্ষ্ণ, ঠিক লম্বা আর ছোট টুকরোর মতো।',
+    rule_0: 'ফুঁ দিলে কাগজের কাটা টুকরো দুটো <b>ভোকাল কর্ডের</b> মতো কাঁপে। আমাদের স্বরযন্ত্রে দুটো পর্দা ঠিক এভাবে খোলে আর বন্ধ হয়।',
+    rule_1: '<b>কম্পন</b> দিয়ে শব্দ তৈরি হয়। উৎস কাঁপা টুকরো, মাধ্যম বাতাস, রিসিভার তোমার কান। বাতাসের কণা নিজের জায়গায় দোলে, এগিয়ে যায় সংকোচন আর প্রসারণ।',
+    rule_2: 'ছোট টুকরো তাড়াতাড়ি কাঁপে: কম্পাঙ্ক বেশি, স্বর <b>তীক্ষ্ণ</b>। লম্বা টুকরো ধীরে কাঁপে: কম্পাঙ্ক কম, স্বর <b>মোটা</b>। কম্পাঙ্ক বাড়লে তরঙ্গদৈর্ঘ্য ছোট হয়।',
+    rule_3: 'পুরুষেরা কম কম্পাঙ্কের শব্দ তৈরি করে, মেয়েরা বেশি কম্পাঙ্কের। তাই পুরুষের গলার স্বর <b>মোটা</b>, নারীর স্বর <b>তীক্ষ্ণ</b>, ঠিক লম্বা আর ছোট টুকরোর মতো।',
 
     // labels on the picture
     lbl_flap: 'কাটা টুকরো',
@@ -93,10 +92,10 @@ export const STRINGS = {
     c_what_fingers: 'কাগজ ধরে রাখা ক্লিপটি',
     c_what_breath: 'ফুঁয়ের বাতাসই শব্দ তৈরি করে',
     c_what_sheet: 'পুরো কাগজটা একসাথে',
-    why_what: '<b>কাটা টুকরো দুটো</b>: এরা ভোকাল কর্ডের মতো খোলে আর বন্ধ হয়; প্রতিবার খুললে বাতাসে একটা ধাক্কা লাগে।',
+    why_what: '<b>কাটা টুকরো দুটো।</b> এরা ভোকাল কর্ডের মতো খোলে আর বন্ধ হয়। প্রতিবার খুললে বাতাসে একটা ধাক্কা লাগে।',
     mis_what_fingers: 'ক্লিপ কাগজটা স্থির ধরে রাখে, কাঁপে না।',
-    mis_what_breath: 'ফুঁ শুধু টুকরো দুটোকে ঠেলে; না কেটে ফুঁ দিলে এই শব্দ হয় না। টুকরো দুটোর কম্পনই শব্দের উৎস।',
-    mis_what_sheet: 'কাগজের বড় অংশ প্রায় স্থির থাকে; কাঁপে শুধু কাটা টুকরো দুটো, যাদের মাঝ দিয়ে বাতাস যায়।',
+    mis_what_breath: 'ফুঁ শুধু টুকরো দুটোকে ঠেলে। না কেটে ফুঁ দিলে এই শব্দ হয় না। টুকরো দুটোর কম্পনই শব্দের উৎস।',
+    mis_what_sheet: 'কাগজের বড় অংশ প্রায় স্থির থাকে। কাঁপে শুধু কাটা টুকরো দুটো, যাদের মাঝ দিয়ে বাতাস যায়।',
 
     q_bead: 'সবুজটি বাতাসের একটি কণা। শব্দ তরঙ্গ চলার সময় কণাটি কী করছে?',
     c_bead_swing: 'নিজের জায়গায় সামনে-পিছে দুলছে',
@@ -113,7 +112,7 @@ export const STRINGS = {
     c_short_down: 'কম্পাঙ্ক কমবে, স্বর মোটা হবে',
     c_short_same: 'কম্পাঙ্ক একই থাকবে, শব্দ শুধু জোরে হবে',
     c_short_mixed: 'কম্পাঙ্ক বাড়বে, স্বর মোটা হবে',
-    why_short: '<b>কম্পাঙ্ক বাড়বে, স্বর তীক্ষ্ণ হবে</b>: ছোট টুকরো কাঁপে প্রায় {fs}&nbsp;{u_hz}-এ, মাঝারিটি {fm}&nbsp;{u_hz}-এ। এখন ছোট টুকরোটি কাঁপছে।',
+    why_short: '<b>কম্পাঙ্ক বাড়বে, স্বর তীক্ষ্ণ হবে।</b> ছোট টুকরো কাঁপে প্রায় {fs}&nbsp;{u_hz}-এ, মাঝারিটি {fm}&nbsp;{u_hz}-এ। এখন ছোট টুকরোটি কাঁপছে।',
     mis_short_down: 'উল্টো হলো: ছোট টুকরো প্রতি সেকেন্ডে বেশি বার কাঁপে।',
     mis_short_same: 'বদলায় কম্পাঙ্ক: ছোট টুকরো প্রতি সেকেন্ডে বেশি বার কাঁপে।',
     mis_short_mixed: 'বেশি কম্পাঙ্কের স্বর তীক্ষ্ণ হয়, মোটা নয়।',
@@ -123,20 +122,20 @@ export const STRINGS = {
     c_widest_rare: 'একটি প্রসারণ: পাতলা বাতাসের একটি পট্টি',
     c_widest_fly: 'বাতাসের কণাগুলো, যারা দূরে উড়ে যায়',
     c_widest_both: 'একটি সংকোচন আর একটি প্রসারণ একসাথে',
-    why_widest: '<b>একটি সংকোচন</b>: টুকরো দুটো খুললে ফুঁয়ের বাতাস ফাঁক দিয়ে ঠেলে বেরোয়, সামনের বাতাস চাপা পড়ে ঘন হয়। বন্ধ হলে পাতলা বাতাস, প্রসারণ।',
+    why_widest: '<b>একটি সংকোচন।</b> টুকরো দুটো খুললে ফুঁয়ের বাতাস ফাঁক দিয়ে ঠেলে বেরোয়, সামনের বাতাস চাপা পড়ে ঘন হয়। বন্ধ হলে পাতলা বাতাস, প্রসারণ।',
     mis_widest_rare: 'প্রসারণ বেরোয় টুকরো দুটো বন্ধ হওয়ার সময়, খোলা অবস্থায় নয়।',
-    mis_widest_fly: 'কণা নিজের জায়গায় দোলে; এগিয়ে যায় শুধু সংকোচন আর প্রসারণ।',
-    mis_widest_both: 'প্রতিবার খোলায় একটি সংকোচন; প্রসারণ আসে অর্ধেক দোলনকাল পরে, বন্ধ হওয়ার সময়।',
+    mis_widest_fly: 'কণা নিজের জায়গায় দোলে। এগিয়ে যায় শুধু সংকোচন আর প্রসারণ।',
+    mis_widest_both: 'প্রতিবার খোলায় একটি সংকোচন। প্রসারণ আসে অর্ধেক দোলনকাল পরে, বন্ধ হওয়ার সময়।',
 
     q_lambda: 'ছবির কমলা দাগটি (λ) কোন দূরত্ব দেখাচ্ছে?',
     c_lambda_cc: 'পাশাপাশি দুটি সংকোচনের মাঝের দূরত্ব',
     c_lambda_cr: 'একটি সংকোচন থেকে পরের প্রসারণের দূরত্ব',
     c_lambda_amp: 'একটি কণা কতটা দূর পর্যন্ত দোলে',
     c_lambda_flap: 'কাটা টুকরোর দৈর্ঘ্য',
-    why_lambda: '<b>পাশাপাশি দুটি সংকোচনের দূরত্ব</b>: এটাই তরঙ্গদৈর্ঘ্য λ, এখানে প্রায় {lm}&nbsp;{u_m} (λ = v ÷ f = {v} ÷ {fm})।',
+    why_lambda: '<b>পাশাপাশি দুটি সংকোচনের দূরত্ব।</b> এটাই তরঙ্গদৈর্ঘ্য λ, এখানে প্রায় {lm}&nbsp;{u_m} (λ = v ÷ f = {v} ÷ {fm})।',
     mis_lambda_cr: 'সংকোচন থেকে পরের প্রসারণ মাত্র অর্ধেক λ।',
-    mis_lambda_amp: 'কণার দোলনের দূরত্ব হলো বিস্তার, তরঙ্গদৈর্ঘ্য নয়; তা অনেক ছোট।',
-    mis_lambda_flap: 'টুকরোর দৈর্ঘ্য মাত্র কয়েক মিলিমিটার; λ প্রায় এক মিটার।',
+    mis_lambda_amp: 'কণার দোলনের দূরত্ব হলো বিস্তার, তরঙ্গদৈর্ঘ্য নয়। তা অনেক ছোট।',
+    mis_lambda_flap: 'টুকরোর দৈর্ঘ্য মাত্র কয়েক মিলিমিটার। λ প্রায় এক মিটার।',
   },
   en: {
     panel_hide: 'Hide the text',
@@ -172,20 +171,20 @@ export const STRINGS = {
     act_home: 'Start again',
 
     out_idle: 'Blow between the two cut flaps and watch what vibrates.',
-    out_f: 'About {f} vibrations a second: frequency <b>{f}&nbsp;{u_hz}</b> (hertz), a {voice} voice.',
+    out_f: 'About {f} vibrations a second. Frequency <b>{f}&nbsp;{u_hz}</b> (hertz), a {voice} voice.',
     voice_deep: 'deep',
     voice_middle: 'middle',
     voice_shrill: 'shrill',
     key_line:
       '<i class="pv-sw pv-dark"></i>compression <i class="pv-sw pv-light"></i>rarefaction <span class="pv-note">time {k}× slower, swing larger, λ shorter</span>',
 
-    rule_0: '<b>Blow, and the two cut flaps vibrate like vocal cords.</b> In our larynx two membranes open and shut just like this.',
+    rule_0: 'Blow, and the two cut flaps vibrate like <b>vocal cords</b>. In our larynx two membranes open and shut just like this.',
     rule_1:
-      '<b>Sound is made by vibration.</b> The source is the vibrating flaps, the medium is the air, the receiver is your ear. Each air particle swings in its place; the compressions and rarefactions travel on.',
+      'Sound is made by <b>vibration</b>. The source is the vibrating flaps, the medium is the air, the receiver is your ear. Each air particle swings in place; the compressions and rarefactions travel on.',
     rule_2:
-      '<b>Short flaps vibrate fast: higher frequency, a shrill voice.</b> Being shorter, a short flap vibrates faster; long flaps vibrate slowly: lower frequency, a deep voice. The higher the frequency, the shorter the wavelength.',
+      'Short flaps vibrate fast: higher frequency, a <b>shrill</b> voice. Long flaps vibrate slowly: lower frequency, a <b>deep</b> voice. The higher the frequency, the shorter the wavelength.',
     rule_3:
-      '<b>Men make sound of lower frequency, women of higher frequency.</b> That is why a man’s voice is deep and a woman’s shrill, just like the long and the short flaps.',
+      'Men make sound of lower frequency, women of higher. So a man’s voice is <b>deep</b> and a woman’s <b>shrill</b>, just like the long and the short flaps.',
 
     lbl_flap: 'cut flap',
     lbl_blow: 'blow',
@@ -219,7 +218,7 @@ export const STRINGS = {
     c_what_fingers: 'The clip holding the paper',
     c_what_breath: 'The blown air itself makes the sound',
     c_what_sheet: 'The whole sheet at once',
-    why_what: '<b>The two cut flaps</b>: they open and shut like vocal cords, and each opening gives the air a push.',
+    why_what: '<b>The two cut flaps.</b> they open and shut like vocal cords, and each opening gives the air a push.',
     mis_what_fingers: 'The clip holds the paper still; it does not vibrate.',
     mis_what_breath: 'The breath only pushes the flaps; blowing on uncut paper does not make this sound. The flaps’ vibration is the source.',
     mis_what_sheet: 'Most of the sheet hardly moves; only the two cut flaps vibrate, with the air passing between them.',
@@ -241,7 +240,7 @@ export const STRINGS = {
     c_short_same: 'Frequency stays; the sound is only louder',
     c_short_mixed: 'Frequency rises; the voice gets deeper',
     why_short:
-      '<b>The frequency rises and the voice gets shriller</b>: short flaps vibrate at about {fs}&nbsp;{u_hz}, the medium ones at {fm}&nbsp;{u_hz}. The short flaps are vibrating now.',
+      '<b>The frequency rises and the voice gets shriller.</b> short flaps vibrate at about {fs}&nbsp;{u_hz}, the medium ones at {fm}&nbsp;{u_hz}. The short flaps are vibrating now.',
     mis_short_down: 'The other way round: a short flap vibrates more times a second.',
     mis_short_same: 'What changes is the frequency: a short flap vibrates more times a second.',
     mis_short_mixed: 'A higher frequency sounds shrill, not deep.',
@@ -252,7 +251,7 @@ export const STRINGS = {
     c_widest_fly: 'The air particles, which fly away',
     c_widest_both: 'A compression and a rarefaction together',
     why_widest:
-      '<b>A compression</b>: when the flaps open, the breath pushes through the gap and squeezes the air in front. When they shut, the air thins: a rarefaction.',
+      '<b>A compression.</b> when the flaps open, the breath pushes through the gap and squeezes the air in front. When they shut, the air thins: a rarefaction.',
     mis_widest_rare: 'A rarefaction leaves while the flaps shut, not while they are open.',
     mis_widest_fly: 'The particles swing in place; only the compressions and rarefactions travel.',
     mis_widest_both: 'Each opening sends one compression; the rarefaction comes half a period later, as they shut.',
@@ -263,7 +262,7 @@ export const STRINGS = {
     c_lambda_amp: 'How far one particle swings',
     c_lambda_flap: 'The length of a cut flap',
     why_lambda:
-      '<b>The distance between two neighbouring compressions</b>: that is the wavelength λ, here about {lm}&nbsp;{u_m} (λ = v ÷ f = {v} ÷ {fm}).',
+      '<b>The distance between two neighbouring compressions.</b> that is the wavelength λ, here about {lm}&nbsp;{u_m} (λ = v ÷ f = {v} ÷ {fm}).',
     mis_lambda_cr: 'From a compression to the next rarefaction is only half a λ.',
     mis_lambda_amp: 'How far a particle swings is the amplitude, not the wavelength; it is much smaller.',
     mis_lambda_flap: 'A flap is only a few millimetres long; λ is about a metre.',
