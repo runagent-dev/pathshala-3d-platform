@@ -4,10 +4,11 @@
 // plane one and back (topic 8.8.2).
 //
 // What the student sees IN the silver is traced, not faked: for each pixel of the face the shader reflects the line of sight in the
-// exact sphere and asks what it meets: the pencils (a vertical axis each), the rod under the main pencil, the cross bar, the rail and
-// the table. The image in the mirror is therefore exactly right for any eye, at the cost of one short loop on one small dish.
+// exact sphere and asks what it meets: the pencil and its rod, the row of coloured posts, the rail and the table. The image in the
+// mirror is therefore exactly right for any eye, at the cost of one short loop on one small dish. Above the table the silver gives
+// back a plain pale room: no lamp in it to be taken for an image.
 import * as THREE from 'three';
-import { MIRROR, PENCIL, sag } from './reading.js';
+import { MIRROR, PENCIL, POST, sag } from './reading.js';
 import { SHAPE } from './pencil.js';
 
 const RINGS = 14;
@@ -28,13 +29,14 @@ function faceIndex(base, flip) {
   return out;
 }
 
-const PENS = 7;
+const POSTS = 7;
 const TRACE_HEAD = /* glsl */ `
-  uniform vec3 labPen[${PENS}];   // x, z, 1 when it is there
-  uniform float labCurve;         // 1 / r
+  uniform vec3 labPencil;              // x, z, 1 when it is seen in the mirror
+  uniform vec3 labPost[${POSTS}];         // x, z, 1 when it is there
+  uniform vec3 labPostColor[${POSTS}];
+  uniform float labCurve;              // 1 / r
   uniform float labAxis;
-  uniform vec3 labBar;            // x, half length, 1 when it is there
-  uniform vec2 labRail;           // the rail's top, its half width
+  uniform vec2 labRail;                // the rail's top, its half width
   varying vec3 vLabWorld;
   const float LAB_L = ${PENCIL.toFixed(1)};
   const float LAB_R = ${SHAPE.radius.toFixed(2)};
@@ -60,53 +62,52 @@ const TRACE_BODY = /* glsl */ `
     vec2 labY = vec2(labO.y - labAxis, labO.z);
     vec3 labN = normalize(vec3(sqrt(max(0.0, 1.0 - dot(labY, labY) * labCurve * labCurve)), labY * labCurve));
     vec3 labR = reflect(normalize(labO - cameraPosition), labN);
-    vec3 labC = gl_FragColor.rgb; // the silver with the bright environment in it
-    // the bench under the line of sight
+    // bright polished silver: a plain pale room, a little lighter upward
+    vec3 labC = mix(vec3(0.74, 0.78, 0.83), vec3(0.97, 0.98, 0.99), smoothstep(0.0, 0.7, labR.y));
+    // the table and the rail under the line of sight, dark, so that what stands on them reads
     if (labR.y < 0.0) {
       float labT = (labRail.x - labO.y) / labR.y;
       vec3 labP = labO + labR * labT;
-      if (labT > 0.0 && abs(labP.z) < labRail.y) labC = mix(labC, labLin(vec3(0.78, 0.81, 0.85)), 0.95);
-      else labC = mix(labC, labLin(vec3(0.5, 0.56, 0.64)), 0.95);
+      bool labOnRail = labT > 0.0 && abs(labP.z) < labRail.y;
+      labC = labOnRail ? labLin(vec3(0.36, 0.4, 0.45)) : labLin(vec3(0.2, 0.25, 0.31));
     }
-    // the cross bar of the row
-    if (labBar.z > 0.5) {
-      vec3 labW = vec3(labBar.x, labAxis - 0.3, 0.0) - labO;
-      float labS = labW.x / labR.x;
-      if (labS > 0.0) {
-        vec3 labP = labO + labR * labS;
-        float labD = abs(labP.y - (labAxis - 0.3));
-        float labE = fwidth(labP.y) + 0.001;
-        if (abs(labP.z) < labBar.y) labC = mix(labC, labLin(vec3(0.16, 0.18, 0.2)), smoothstep(0.42 + labE, 0.42 - labE, labD));
-      }
-    }
-    // the pencils: the nearest approach of the line of sight to each vertical axis
-    for (int i = 0; i < ${PENS}; i++) {
-      if (labPen[i].z < 0.5) continue;
-      vec2 labA = vec2(labPen[i].x, labPen[i].y) - labO.xz;
-      float labQ = dot(labR.xz, labR.xz);
-      float labS = dot(labA, labR.xz) / labQ;
+    // the posts of the row: the nearest approach of the line of sight to each vertical axis
+    for (int i = 0; i < ${POSTS}; i++) {
+      if (labPost[i].z < 0.5) continue;
+      vec2 labA = labPost[i].xy - labO.xz;
+      float labS = dot(labA, labR.xz) / dot(labR.xz, labR.xz);
       if (labS <= 0.0) continue;
-      vec2 labM = labA - labR.xz * labS;
-      float labD = length(labM);
-      float labH = (labO.y + labR.y * labS - labAxis) / LAB_L;
+      float labD = length(labA - labR.xz * labS);
+      float labH = labO.y + labR.y * labS;
+      if (labH < 0.0 || labH > ${POST.top.toFixed(1)}) continue;
       float labE = fwidth(labD) + 0.002;
-      if (labH >= 0.0 && labH <= 1.0) {
-        // a pencil far off never thins away to nothing: at least a pixel and a half wide
-        float labW = max(labWidth(labH), labE * (labH < 0.9 ? 1.5 : 0.8));
-        float labK = smoothstep(labW + labE, labW - labE, labD);
-        float labV = labD / max(labW, 0.02);
-        // a stripe needs room: on a tiny pencil it would only turn it yellow
-        float labA = labW > 5.0 * labE ? labV : 1.0;
-        labC = mix(labC, labPaint(labH, labA) * (0.62 + 0.5 * sqrt(max(0.0, 1.0 - labV * labV))), labK);
-      } else if (labH < 0.0 && i == 3 && labBar.z < 0.5) {
-        // the rod the pencil stands on
-        labC = mix(labC, labLin(vec3(0.62, 0.65, 0.7)), smoothstep(0.34 + labE, 0.34 - labE, labD));
+      float labW = ${POST.radius.toFixed(1)} * clamp((${POST.top.toFixed(1)} - labH) / ${(POST.top - POST.shoulder).toFixed(1)}, 0.0, 1.0);
+      labW = max(labW, labE);
+      float labV = labD / labW;
+      labC = mix(labC, labPostColor[i] * (0.7 + 0.45 * sqrt(max(0.0, 1.0 - labV * labV))), smoothstep(labW + labE, labW - labE, labD));
+    }
+    // the pencil and the rod it stands on
+    if (labPencil.z > 0.5) {
+      vec2 labA = labPencil.xy - labO.xz;
+      float labS = dot(labA, labR.xz) / dot(labR.xz, labR.xz);
+      if (labS > 0.0) {
+        float labD = length(labA - labR.xz * labS);
+        float labH = (labO.y + labR.y * labS - labAxis) / LAB_L;
+        float labE = fwidth(labD) + 0.002;
+        if (labH >= 0.0 && labH <= 1.0) {
+          float labW = max(labWidth(labH), labE * (labH < 0.9 ? 1.5 : 0.8)); // a far pencil never thins away to nothing
+          float labV = labD / max(labW, 0.02);
+          float labA2 = labW > 5.0 * labE ? labV : 1.0; // a stripe needs room: on a tiny pencil it would only turn it yellow
+          labC = mix(labC, labPaint(labH, labA2) * (0.62 + 0.5 * sqrt(max(0.0, 1.0 - labV * labV))), smoothstep(labW + labE, labW - labE, labD));
+        } else if (labH < 0.0) {
+          labC = mix(labC, labLin(vec3(0.62, 0.65, 0.7)), smoothstep(0.34 + labE, 0.34 - labE, labD));
+        }
       }
     }
     gl_FragColor.rgb = labC;
   }`;
 
-export function createDish({ env }) {
+export function createDish() {
   const root = new THREE.Group(); // on the pins, half a glass thickness behind P
   root.name = 'convex-mirror';
   const count = PER_FACE * 2 + SEGS * 2;
@@ -145,22 +146,22 @@ export function createDish({ env }) {
     envMapIntensity: 1.8,
   });
   const edgeMat = new THREE.MeshStandardMaterial({ name: 'MirrorEdge', color: 0x58c4a0, roughness: 0.16, emissive: 0x10382c });
-  // bright polished silver. It draws after the glass (transparent queue, opacity 1), so nothing tints the coated face
+  // bright polished silver (its picture is the shader's, above). It draws after the glass, so nothing tints the coated face
   const silverMat = new THREE.MeshStandardMaterial({
     name: 'Silver',
     color: 0xffffff,
     roughness: 0.06,
     metalness: 1,
     side: THREE.DoubleSide,
-    envMap: env,
     envMapIntensity: 1.1,
     transparent: true,
   });
   const uniforms = {
-    labPen: { value: Array.from({ length: PENS }, () => new THREE.Vector3()) },
+    labPencil: { value: new THREE.Vector3() },
+    labPost: { value: Array.from({ length: POSTS }, () => new THREE.Vector3()) },
+    labPostColor: { value: Array.from({ length: POSTS }, () => new THREE.Color()) },
     labCurve: { value: 1 / 30 },
     labAxis: { value: 19 },
-    labBar: { value: new THREE.Vector3() },
     labRail: { value: new THREE.Vector2(3.2, 5.5) },
   };
   silverMat.onBeforeCompile = (shader) => {

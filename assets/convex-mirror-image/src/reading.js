@@ -17,13 +17,16 @@ export const F0 = R0 / 2;
 export const MIRROR = { half: 10, thick: 0.7 };
 /** The pencil XY stands on the axis, 6 cm tall. Where it may stand, cm from P, and where the figure starts. */
 export const PENCIL = 6;
-export const U = { min: 4, max: 75, start: 15 };
+export const U = { min: 4, max: 75, start: 10 };
 /** Rays stop before they run into the rail or off the view: this high above the axis, cm. */
 export const REACH = 13;
-/** The eye and the row of seven pencils across the bench (topic 8.8.2): x from P, and the pencils' places in z. */
+/** The eye and the row of seven tall coloured posts across the bench (topic 8.8.2): x from P, the posts' places in z, their size. */
 export const EYE_X = 66;
-export const ROW_X = 76;
-export const ROW_Z = [-36, -24, -12, 0, 12, 24, 36];
+export const ROW_X = 70;
+export const ROW_Z = [-54, -36, -18, 0, 18, 36, 54];
+export const POST = { radius: 1.5, top: 36, shoulder: 31 };
+/** Where the pencil waits behind the row, out of the way. */
+export const AWAY_X = 79;
 /** A plane mirror, as the same dish: a sphere so big that its face has no bend. */
 export const FLAT_R = 40000;
 
@@ -39,7 +42,7 @@ export function imageOf(u, f = F0, l = PENCIL) {
 /** The book's check: 1/u + 1/v − 1/f (with f < 0). Zero if the image is right. */
 export const formulaError = (u, v, f = F0) => 1 / u + 1 / v + 1 / f;
 
-/** A simple fraction for m if there is a short one (১/৩), otherwise null. */
+/** A simple fraction for m if there is a short one (1/3), otherwise null. */
 export function fraction(x, tolerance = 0.002) {
   for (let d = 2; d <= 8; d++) {
     const n = Math.round(x * d);
@@ -168,10 +171,10 @@ export function fieldOf(r, ex = EYE_X, rowX = ROW_X, half = MIRROR.half) {
   const o = reflect(d, n);
   return { rim, out: o, halfWidth: rim.y + (o.y / o.x) * (rowX - rim.x), angle: Math.atan2(o.y, o.x) / RAD };
 }
-/** How many of the row's pencils the eye sees, whole. */
-export const pencilsSeen = (r, row = ROW_Z) => {
+/** Which posts of the row the eye sees, whole. */
+export const postsSeen = (r, row = ROW_Z) => {
   const w = fieldOf(r).halfWidth;
-  return row.filter((z) => Math.abs(z) < w).length;
+  return row.filter((z) => Math.abs(z) + POST.radius < w);
 };
 
 /** A fair shuffle (the test harness seeds Math.random). */

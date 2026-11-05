@@ -14,7 +14,8 @@ import {
   miss,
   normalAtPoint,
   PENCIL,
-  pencilsSeen,
+  POST,
+  postsSeen,
   R0,
   reflect,
   sag,
@@ -119,14 +120,15 @@ test('m as a short fraction when there is one', () => {
   assert.equal(fraction(3 / 11), null); // too long to say
 });
 
-test('8.8.2: the same mirror convex shows a much wider field, and more of the row', () => {
+test('8.8.2: the same mirror convex shows a much wider field, and the whole row', () => {
   const flat = fieldOf(FLAT_R);
   const conv = fieldOf(R0);
   assert.ok(conv.angle > flat.angle * 3);
-  assert.equal(pencilsSeen(FLAT_R), 3);
-  assert.equal(pencilsSeen(R0), 7);
+  assert.equal(postsSeen(FLAT_R).length, 3);
+  assert.equal(postsSeen(R0).length, 7);
+  assert.ok(POST.radius > 1, 'posts thick enough to read in the mirror');
   // a plane mirror: the view is the mirror image of the eye through the rim
-  near(flat.halfWidth, (MIRROR.half * (66 + 76)) / 66, 0.05);
+  near(flat.halfWidth, (MIRROR.half * (66 + 70)) / 66, 0.05);
 });
 
 test('seenAt: the point of the face where an eye sees a point obeys the law', () => {

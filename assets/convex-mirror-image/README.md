@@ -27,8 +27,8 @@ To listen to it or control it from the book page, use the helper shipped in the 
 | Param | Meaning | Values | Default |
 |---|---|---|---|
 | `lang` | Language | `bn` বাংলা · `en` English | `bn` |
-| `stage` | What is shown | `see` the pencil seen in the mirror · `ray1` ray toward the centre · `ray2` parallel ray · `ray3` ray toward the focus · `image` the image X′Y′ · `move` moving the pencil · `plane` a plane mirror, from the eye · `eye` the convex mirror, from the eye · `wide` both fields of view, from above | `see` |
-| `u` | Pencil's distance from the mirror (cm) | number | `15` |
+| `stage` | What is shown | `see` the pencil and its picture in the mirror · `par` the parallel ray · `ext` extended to F · `cen` the ray toward the centre · `foc` the ray toward the focus · `image` the image X′Y′ · `move` moving the pencil · `formula` the mirror formula · `plane` a plane mirror, from the eye · `eye` the convex mirror, from the eye · `wide` both fields of view, from above | `see` |
+| `u` | Pencil's distance from the mirror (cm) | number | `10` |
 | `view` | View | `front` · `3d` | `front` |
 | `mode` | Start in | `explore` learn · `quiz` test | `explore` |
 | `coach` | The numbered ring and the hand | `1` · `0` | `1` |

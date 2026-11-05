@@ -1,13 +1,13 @@
 // The chapter's optical bench (the look of spherical-mirror-focus, copied so that the sister figures match), in centimetres: a calm
 // slate wall and lab table, an anodised aluminium rail with a printed cm scale on its sloping front, black sliding carriers. x runs
 // along the rail from the mirror's pole (0 on the scale) toward the pencil; the scale counts away from the mirror on both sides. On
-// it: the convex mirror in its ring, the book's pencil XY on a carrier, and for topic 8.8.2 a cross bar with a row of seven pencils.
+// it: the convex mirror in its ring, the book's pencil XY on a carrier, and for topic 8.8.2 a row of seven tall coloured posts.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { createStudioEnvironment } from '@shared/stage.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { createDish, createHolder } from './mirror.js';
 import { pencilParts } from './pencil.js';
-import { EYE_X, MIRROR, ROW_Z, sag } from './reading.js';
+import { EYE_X, MIRROR, POST, ROW_X, ROW_Z, sag } from './reading.js';
 
 /** The heights that matter, cm: the rail's top, the carriers' top, the principal axis, the bench's two ends. */
 export const RAIL = { top: 3.2, carrier: 5.6, axis: 19, left: -68, right: 82, front: 5.5 };
@@ -17,28 +17,34 @@ export const SCALE_POINT = { y: (STRIP.y0 + STRIP.y1) / 2, z: (STRIP.z0 + STRIP.
 
 const box = (a, b, c, d, e, f) => new THREE.Box3(new THREE.Vector3(a, b, c), new THREE.Vector3(d, e, f));
 const AXIS = RAIL.axis;
-/** Beyond these the close frames let the pencil go, and a tab at the edge says where it is. */
-export const SEE_U = 26;
-export const IMAGE_U = 24;
+/** Beyond these the frames let the pencil go, and a tab at the edge says where it is. */
+export const CAP = { see: 14, near: 13, zoom: 13, rays: 30 };
+/** The seven posts: red to violet, each one easy to name. */
+export const POST_COLORS = [0xe03131, 0xf76707, 0xf2c200, 0x2f9e44, 0x0ca678, 0x1c7ed6, 0x7048e8];
+
+/** The right end of the close frames: past the pencil while it is near; once it has gone, the farther it is the closer on P → F. */
+const closeEnd = (u) => (u <= CAP.near ? u + 3 : Math.max(5, CAP.near + 3 - (u - CAP.near) * 0.5));
 
 /**
  * What the camera shows at each moment: a box to fill, the angle to see it from. u: where the pencil stands; aspect: the view's
  * width ÷ height: on a tall view the bench frame gives up the margin round its ends, so that the mirror stays big. All read as 3D.
  */
 export const FRAMES = {
-  // the mirror's face and the pencil: seen this far round, the little pencil lies on the silver
-  see: (u) => ({ box: box(-7, AXIS - 11.5, -8.5, Math.min(u, SEE_U) + 3, AXIS + 11.5, 8.5), az: 52, el: 9 }),
-  // the plane of the rays, from O to the pencil
-  rays: (u) => ({ box: box(-33, AXIS - 6, -1, Math.max(u, 15) + 7, AXIS + 13, 1), az: 20, el: 6 }),
-  // close on the image, P and F, the pencil at the edge of the view
-  image: (u) => ({ box: box(-18, AXIS - 3.6, -1, Math.min(u, IMAGE_U) + 6, AXIS + 9.5, 1), az: 20, el: 6 }),
-  // F to the pencil, low on the rail, so that the printed scale is big
-  move: (u, aspect = 1.5) => {
+  // nearly along the axis, beside the pencil: the real pencil and the small upright one stand side by side on the silver
+  see: (u) => ({ box: box(-1, AXIS - 11.6, -10.6, Math.min(u, CAP.see), AXIS + 11.6, 10.6), az: 68, el: 5 }),
+  // the plane of the rays, close: F to the pencil
+  near: (u) => ({ box: box(-18, AXIS - 3.5, -1, closeEnd(u), AXIS + 10, 1), az: 20, el: 6 }),
+  // out to O, for the ray that goes there
+  rays: (u) => ({ box: box(-33, AXIS - 5, -1, Math.min(Math.max(u, 10), CAP.rays) + 4, AXIS + 13, 1), az: 20, el: 6 }),
+  // the image alone, as near as the pencil lets it be
+  zoom: (u) => ({ box: box(-17.5, AXIS - 2.6, -1, closeEnd(u), AXIS + 7.4, 1), az: 20, el: 6 }),
+  // the bench and its scale
+  bench: (u, aspect = 1.5) => {
     const end = Math.max(u, 22) + (aspect < 1.25 ? 3 : 5);
     return { box: box(aspect < 1.25 ? -17 : -19, 0.2, -5.5, end, AXIS + 14, 5.5), az: 27, el: 9 };
   },
   // over the bench, the eye and the row in view
-  wide: () => ({ box: box(-10, AXIS - 6, -46, 84, AXIS + 7, 46), az: 10, el: 60 }),
+  wide: () => ({ box: box(-10, AXIS - 6, -62, 76, AXIS + 7, 62), az: 10, el: 60 }),
 };
 /** The eye itself: this camera stands exactly where the eye of the cones stands. */
 export const EYE = { position: new THREE.Vector3(EYE_X, AXIS, 0), target: new THREE.Vector3(0, AXIS, 0) };
@@ -250,10 +256,10 @@ export function createSetting({ stage, shadow, t }) {
   scene.add(back);
 
   const table = new THREE.Mesh(
-    new THREE.BoxGeometry(640, 4, 150),
+    new THREE.BoxGeometry(640, 4, 200),
     new THREE.MeshStandardMaterial({ name: 'Table', color: 0x47566a, map: tableTexture(), roughness: 0.58, metalness: 0.05, envMapIntensity: 0.5 }),
   );
-  table.position.set(0, -2, 26);
+  table.position.set(0, -2, 16);
   table.receiveShadow = true;
   table.userData.noExport = true;
   scene.add(table);
@@ -276,11 +282,11 @@ export function createSetting({ stage, shadow, t }) {
   const carrier = createCarrier(mats);
   carrier.position.y = RAIL.top;
   standM.add(carrier);
-  const POST = RAIL.axis - RAIL.carrier - MIRROR.half - 1.9;
-  const post = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 1.05, POST + 0.4, 20), mats.steel);
-  post.position.y = RAIL.carrier + POST / 2;
-  post.castShadow = true;
-  standM.add(post);
+  const STEM = RAIL.axis - RAIL.carrier - MIRROR.half - 1.9;
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 1.05, STEM + 0.4, 20), mats.steel);
+  stem.position.y = RAIL.carrier + STEM / 2;
+  stem.castShadow = true;
+  standM.add(stem);
   const yoke = new THREE.Mesh(new RoundedBoxGeometry(9, 0.8, 3.4, 2, 0.12), mats.black);
   yoke.position.y = RAIL.axis - MIRROR.half - 1.55;
   yoke.castShadow = true;
@@ -290,14 +296,11 @@ export function createSetting({ stage, shadow, t }) {
   standM.add(holder);
   apparatus.add(standM);
 
-  // the silver's own bright environment, as in spherical-mirror-focus: the view keeps its calm slate
-  const pmrem = new THREE.PMREMGenerator(renderer);
-  const bright = pmrem.fromScene(createStudioEnvironment({ light: true, key: 1.3, front: 1.5 }), 0.02).texture;
-  pmrem.dispose();
-  const dish = createDish({ env: bright });
+  const dish = createDish();
   dish.root.position.set(-MIRROR.thick / 2, RAIL.axis, 0);
   dish.uniforms.labAxis.value = RAIL.axis;
   dish.uniforms.labRail.value.set(RAIL.top, RAIL.front);
+  POST_COLORS.forEach((c, i) => dish.uniforms.labPostColor.value[i].set(c));
   apparatus.add(dish.root);
 
   // the pencil XY on its carrier
@@ -316,23 +319,25 @@ export function createSetting({ stage, shadow, t }) {
   pencil.add(stand, body);
   apparatus.add(pencil);
 
-  // the cross bar and the other six pencils of the row
+  // the row of seven tall coloured posts, for topic 8.8.2: one geometry, seven colours
   const row = new THREE.Group();
-  row.name = 'pencil-row';
+  row.name = 'post-row';
   row.visible = false;
-  const barLength = -ROW_Z[0] * 2 + 3;
-  const bar = new THREE.Mesh(new RoundedBoxGeometry(0.8, 0.6, 1, 2, 0.1), mats.black);
-  bar.position.y = RAIL.axis - 0.3;
-  bar.scale.z = barLength;
-  bar.castShadow = true;
-  row.add(bar);
-  const others = ROW_Z.filter((z) => z !== 0);
-  const rowPaint = new THREE.InstancedMesh(parts.paintGeo, parts.paint, others.length);
-  const rowMetal = new THREE.InstancedMesh(parts.metalGeo, parts.metal, others.length);
-  rowPaint.castShadow = true;
-  rowPaint.frustumCulled = false;
-  rowMetal.frustumCulled = false;
-  row.add(rowPaint, rowMetal);
+  const shaft = new THREE.CylinderGeometry(POST.radius, POST.radius, POST.shoulder, 24, 1, true);
+  shaft.translate(0, POST.shoulder / 2, 0);
+  const cap = new THREE.ConeGeometry(POST.radius, POST.top - POST.shoulder, 24, 1, true);
+  cap.translate(0, POST.shoulder + (POST.top - POST.shoulder) / 2, 0);
+  const posts = new THREE.InstancedMesh(
+    mergeGeometries([shaft, cap]),
+    new THREE.MeshStandardMaterial({ name: 'Post', roughness: 0.42, metalness: 0.05 }),
+    ROW_Z.length,
+  );
+  posts.castShadow = true;
+  posts.frustumCulled = false;
+  const feet = new THREE.InstancedMesh(new THREE.CylinderGeometry(3, 3.2, 0.8, 24), mats.black, ROW_Z.length);
+  feet.frustumCulled = false;
+  POST_COLORS.forEach((c, i) => posts.setColorAt(i, new THREE.Color(c)));
+  row.add(posts, feet);
   apparatus.add(row);
 
   // the image X′Y′: a translucent ghost behind the mirror, drawn through it
@@ -341,7 +346,7 @@ export function createSetting({ stage, shadow, t }) {
     vertexColors: true,
     roughness: 0.5,
     transparent: true,
-    opacity: 0.62,
+    opacity: 0.5,
     depthTest: false,
     depthWrite: false,
     emissive: 0x7a6a4a,
@@ -375,14 +380,16 @@ export function createSetting({ stage, shadow, t }) {
     key.shadow.bias = -0.0008;
     key.shadow.normalBias = 0.05;
     key.shadow.radius = 5;
-    Object.assign(key.shadow.camera, { left: -96, right: 96, top: 60, bottom: -50, near: 20, far: 200 });
+    Object.assign(key.shadow.camera, { left: -100, right: 100, top: 80, bottom: -70, near: 20, far: 220 });
   }
   scene.add(new THREE.HemisphereLight(0xcfe0f4, 0x20262e, 1.1));
 
-  const uPen = dish.uniforms.labPen.value;
-  const uBar = dish.uniforms.labBar.value;
+  const uPencil = dish.uniforms.labPencil.value;
+  const uPost = dish.uniforms.labPost.value;
   const m = new THREE.Matrix4();
-  // what the pencil's place was last told, for the cheap test
+  const q = new THREE.Quaternion();
+  const at = new THREE.Vector3();
+  const size = new THREE.Vector3();
   let lastRow = -1;
   return {
     apparatus,
@@ -394,27 +401,29 @@ export function createSetting({ stage, shadow, t }) {
       dish.setRadius(r);
       holder.position.x = -sag(r, MIRROR.half) - MIRROR.thick / 2;
     },
-    /** The pencil at u; the row spreads from it as k goes to 1. inMirror: drawn in the silver. */
-    placePencil(u, k, inMirror = true) {
+    /** The pencil at u. inMirror: drawn in the silver. */
+    placePencil(u, inMirror = true, shown = true) {
       pencil.position.x = u;
-      uPen[3].set(u, 0, inMirror ? 1 : 0);
-      row.position.x = u;
+      pencil.visible = shown;
+      uPencil.set(u, 0, inMirror ? 1 : 0);
+    },
+    /** The row grows up from the table as k goes to 1. Where it stands on the rail it stands on the rail. */
+    placeRow(k) {
+      if (k === lastRow) return;
+      lastRow = k;
       row.visible = k > 0.001;
-      if (k !== lastRow) {
-        lastRow = k;
-        bar.scale.z = Math.max(0.01, barLength * k);
-        others.forEach((z, i) => {
-          m.makeTranslation(0, RAIL.axis, z * k);
-          rowPaint.setMatrixAt(i, m);
-          rowMetal.setMatrixAt(i, m);
-        });
-        rowPaint.instanceMatrix.needsUpdate = true;
-        rowMetal.instanceMatrix.needsUpdate = true;
-      }
       ROW_Z.forEach((z, i) => {
-        if (z !== 0) uPen[i].set(u, z * k, k > 0.001 ? 1 : 0);
+        const y = Math.abs(z) < RAIL.front + 3 ? RAIL.top : 0;
+        at.set(ROW_X, y, z);
+        size.set(1, Math.max(0.001, k * ((POST.top - y) / POST.top)), 1);
+        posts.setMatrixAt(i, m.compose(at, q, size));
+        at.y = y + 0.4;
+        size.set(1, 1, 1);
+        feet.setMatrixAt(i, m.compose(at, q, size));
+        uPost[i].set(ROW_X, z, k > 0.001 ? 1 : 0);
       });
-      uBar.set(u, (barLength / 2) * k, k > 0.5 ? 1 : 0);
+      posts.instanceMatrix.needsUpdate = true;
+      feet.instanceMatrix.needsUpdate = true;
     },
     /** The image: at v (< 0), of size m, grown to the share k from Y′ up. */
     placeImage(v, sizeM, k) {

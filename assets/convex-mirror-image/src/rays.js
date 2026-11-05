@@ -3,7 +3,8 @@
 // anti-aliased lines with a thin dark edge and small filled chevrons, at any size (the style of spherical-mirror-focus).
 import * as THREE from 'three';
 import { RAIL } from './bench.js';
-import { EYE_X, FLAT_R, fieldOf, MIRROR, R0, sag } from './reading.js';
+import { SHAPE } from './pencil.js';
+import { EYE_X, FLAT_R, fieldOf, MIRROR, PENCIL, postsSeen, R0, ROW_X, sag, U } from './reading.js';
 
 export const C = {
   ray: '#f59f00',
@@ -61,9 +62,15 @@ export function createRays({ stage, host }) {
     showO: 1,
     imageAt: null, // { x, y } X′ on the view, once found
     imageK: 0,
+    ghostK: 0, // the image's amber rim, as far as it has grown
+    size: 0, // the object's height, as a faint outline at the image's depth
+    track: 0, // the dashed range of the pencil's handle
+    trackY: -2,
+    tie: 0, // the arrow from the pencil to its picture in the silver
+    tieFrom: { x: 0, y: 0, z: 0 },
+    tieTo: { x: 0, y: 0, z: 0 },
     bars: 0, // u and v along the rail
     u: 15,
-    iv: -7.5,
     cone: 0, // the field of the mirror now
     coneFlat: 0, // and the plane mirror's, for comparison
     eye: 0,
@@ -236,8 +243,8 @@ export function createRays({ stage, host }) {
   function cone(r, color, k, fill) {
     if (k <= 0) return;
     const f = fieldOf(r);
-    // out to x = 84, or to the edge of the table across the bench
-    const t = Math.min((84 - f.rim.x) / f.out.x, (46 - f.rim.y) / f.out.y);
+    // out past the row, whatever its width
+    const t = (ROW_X + 6 - f.rim.x) / f.out.x;
     const ex = f.rim.x + f.out.x * t;
     const ez = f.rim.y + f.out.y * t;
     const path = () => {
@@ -276,6 +283,127 @@ export function createRays({ stage, host }) {
     }
     ctx.globalAlpha = 1;
   }
+  /** Where the pencil can go: a faint dashed line along the rail, with its two ends marked. */
+  function track() {
+    if (v.track <= 0) return;
+    P(U.min, v.trackY);
+    const x0 = sx;
+    const y0 = sy;
+    P(U.max, v.trackY);
+    const x1 = sx;
+    const y1 = sy;
+    const l = Math.hypot(x1 - x0, y1 - y0) || 1;
+    const nx = (-(y1 - y0) / l) * 6;
+    const ny = ((x1 - x0) / l) * 6;
+    ctx.lineCap = 'butt';
+    ctx.setLineDash([7, 6]);
+    for (const [c, wd] of [
+      ['rgba(12,16,22,0.4)', 3.4],
+      ['rgba(255,255,255,0.8)', 1.6],
+    ]) {
+      ctx.strokeStyle = c;
+      ctx.lineWidth = wd;
+      line(x0, y0, x1, y1);
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+    ctx.lineWidth = 2;
+    line(x0 - nx, y0 - ny, x0 + nx, y0 + ny);
+    ctx.stroke();
+    line(x1 - nx, y1 - ny, x1 + nx, y1 + ny);
+    ctx.stroke();
+  }
+  /** A ring round each post a mirror shows, at the level of the axis. */
+  function marks(r, color, k, radius) {
+    if (k <= 0) return;
+    ctx.globalAlpha = k;
+    for (const z of postsSeen(r)) {
+      P(ROW_X, 0, z);
+      ctx.beginPath();
+      ctx.arc(sx, sy, radius + 1.4, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(12,16,22,0.8)';
+      ctx.lineWidth = 2.8 + 1.4;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(sx, sy, radius + 1.4, 0, Math.PI * 2);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2.8;
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+  /** A pencil's shape at x, on the axis, m times the pencil's size: the rim of the image, or the object's height for comparison. */
+  function outline(x, m, k, color, width, dash = []) {
+    if (k <= 0) return;
+    const R = SHAPE.radius * m;
+    const h = (y) => y * m * k;
+    const pts = [
+      [-R, 0],
+      [-R, h(SHAPE.body)],
+      [0, h(PENCIL)],
+      [R, h(SHAPE.body)],
+      [R, 0],
+    ];
+    ctx.beginPath();
+    pts.forEach(([a, y], i) => {
+      P(x + a, y);
+      if (i) ctx.lineTo(sx, sy);
+      else ctx.moveTo(sx, sy);
+    });
+    ctx.closePath();
+    ctx.setLineDash(dash);
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  /** The curved arrow from the pencil to its picture in the silver. */
+  function tie(k) {
+    if (k <= 0) return;
+    const a = v.tieFrom;
+    const b = v.tieTo;
+    P(a.x, a.y, a.z);
+    const x0 = sx;
+    const y0 = sy;
+    P(b.x, b.y, b.z);
+    const x1 = sx;
+    const y1 = sy;
+    const mx = (x0 + x1) / 2;
+    const my = Math.max(y0, y1) + Math.abs(x1 - x0) * 0.42;
+    ctx.globalAlpha = k;
+    ctx.lineCap = 'round';
+    for (const [c, wd] of [
+      ['rgba(12,16,22,0.8)', 3.8],
+      ['#ffffff', 2.2],
+    ]) {
+      ctx.beginPath();
+      ctx.moveTo(x0, y0);
+      ctx.quadraticCurveTo(mx, my, x1, y1);
+      ctx.strokeStyle = c;
+      ctx.lineWidth = wd;
+      ctx.stroke();
+    }
+    chevronIn('#ffffff', x1, y1, x1 - mx, y1 - my);
+    ctx.globalAlpha = 1;
+  }
+  function chevronIn(color, x, y, dx, dy) {
+    const l = Math.hypot(dx, dy) || 1;
+    const ux = dx / l;
+    const uy = dy / l;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x - ux * 10 - uy * 5, y - uy * 10 + ux * 5);
+    ctx.lineTo(x - ux * 10 + uy * 5, y - uy * 10 - ux * 5);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(12,16,22,0.8)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
   /** The eye on the bench: a plain almond with its iris, seen from over the bench. */
   function eye(k) {
     if (k <= 0) return;
@@ -306,13 +434,16 @@ export function createRays({ stage, host }) {
     const cx = -v.r;
     const fx = -v.r / 2;
     if (v.axis > 0) axis(v.axis);
+    track();
     if (v.bars > 0) {
       bar(0, v.u, RAIL.top + 1.6, '#1f2933', v.bars);
-      bar(0, v.iv, RAIL.top + 1.6, C.focus, v.bars);
     }
-    cone(FLAT_R, C.plane, v.coneFlat, 0.2);
-    cone(v.r, C.ray, v.cone, 0.2);
+    cone(R0, C.ray, v.cone, 0.16);
+    cone(FLAT_R, C.plane, v.coneFlat, 0.26);
+    marks(R0, C.ray, v.cone, 11);
+    marks(FLAT_R, C.plane, v.coneFlat, 7);
     eye(v.eye);
+    tie(v.tie);
     v.rays.forEach((r, i) => {
       const k = v.keys[i];
       if (k.in <= 0) return;
@@ -329,7 +460,13 @@ export function createRays({ stage, host }) {
     dot(cx, 0, C.ink, v.showO);
     if (v.axis > 0) dot(0, 0, C.ink, v.axis, 3.6);
     dot(fx, 0, C.focus, v.showF);
-    if (v.imageAt && v.imageK > 0) dot(v.imageAt.x, v.imageAt.y, '#ffd43b', v.imageK, 3.8);
+    if (v.imageAt) {
+      outline(v.imageAt.x, 1, v.size, 'rgba(12,16,22,0.55)', 3.2, [6, 4]);
+      outline(v.imageAt.x, 1, v.size, '#ffffff', 1.7, [6, 4]);
+      outline(v.imageAt.x, v.imageAt.m, v.ghostK, 'rgba(95,52,0,0.9)', 3.6);
+      outline(v.imageAt.x, v.imageAt.m, v.ghostK, C.ray, 2);
+      if (v.imageK > 0) dot(v.imageAt.x, v.imageAt.y, '#ffd43b', v.imageK, 3.8);
+    }
   }
   stage.onResize(size);
   stage.onAfterRender(paint);
@@ -358,6 +495,7 @@ export function createRays({ stage, host }) {
   function boxes() {
     out.length = 0;
     used = 0;
+    if (v.track > 0) along({ x: U.min, y: v.trackY }, { x: U.max, y: v.trackY });
     v.rays.forEach((r, i) => {
       const k = v.keys[i];
       if (k.in >= 1) along(r.start, r.hit);

@@ -12,16 +12,9 @@ body.bg-transparent { background: transparent; }
 .lab .pvc-rule b { color: var(--ink); font-weight: 600; }
 .lab .pvc-rule .pvc-formula { display: block; margin: 6px 0 0; padding: 3px 8px; font-size: 15px; line-height: 1.5; white-space: nowrap; }
 
-/* P to F, large: where the image can be */
-.lab .pvc-rule svg.lab-zone { display: block; width: 100%; height: 88px; margin: 0 0 2px; stroke: none; }
-.lab-zone .z-axis { stroke: #868e96; stroke-width: 1.4; }
-.lab-zone .z-line { stroke: #f59f00; stroke-width: 1.8; stroke-dasharray: 6 4; }
-.lab-zone .z-mirror { stroke: #495057; stroke-width: 2.4; fill: none; }
-.lab-zone .z-image { fill: #e8590c; fill-opacity: 0.62; stroke: #a34208; stroke-width: 1; }
-.lab-zone .z-tip { fill: #ffd43b; stroke: #5f3400; stroke-width: 1.2; }
-.lab-zone text { font-size: 18px; font-weight: 600; fill: #343a40; stroke: none; }
-.lab-zone text.z-f { fill: #5a37d0; }
-.lab-zone circle.z-f { fill: #7048e8; stroke: #fff; stroke-width: 1.2; }
+/* the formula, with the student's numbers, at the end of the story */
+.lab .pvc-rule .lab-formula { display: flex; align-items: center; justify-content: center; flex-wrap: nowrap; gap: 2px; margin: 0 0 6px; padding: 4px 6px; font-size: 15px; line-height: 1.25; white-space: nowrap; }
+.lab .lab-then { margin: 0 8px; color: var(--ink-3); }
 
 /* the book's properties: only where the panel has room for them */
 .lab .lab-cap { display: none; margin: 8px 0 0; padding-top: 12px; border-top: 1px solid var(--line, #dee2e6); color: var(--ink-2); font-size: 15px; line-height: 1.6; }
@@ -37,6 +30,32 @@ body.bg-transparent { background: transparent; }
 @media (max-width: 480px) {
   .lab .pvc-anno { font-size: 12.5px; }
 }
+
+/* the book's words for this step, small, at the top of the view */
+.lab-title[hidden] { display: none; }
+.lab-title { position: absolute; left: 8px; top: 8px; z-index: 2; max-width: calc(100% - 76px); padding: 2px 8px; border-radius: 4px; background: rgba(255, 255, 255, 0.92); color: #1864ab; font-size: 13.5px; font-weight: 600; line-height: 1.4; pointer-events: none; }
+.pvc[data-mode='quiz'] .lab-title { display: none; }
+
+/* the pencil's drag handle: a white disc with a thin dark ring and arrows along the rail; it stays, smaller and calm, after the first drag */
+.lab-handle[hidden] { display: none; }
+.lab-handle { position: absolute; left: 0; top: 0; z-index: 3; width: 0; height: 0; pointer-events: none; }
+.lab-hd { position: absolute; left: -16px; top: -16px; display: grid; place-items: center; box-sizing: border-box; width: 32px; height: 32px; border: 1.5px solid #1f2933; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(10, 16, 24, 0.5); animation: lab-pulse 1.5s ease-in-out infinite; }
+.pvc .lab-hd svg { width: 22px; height: 22px; stroke: #1f2933; stroke-width: 2.2; fill: none; }
+.lab-hl { position: absolute; left: 0; top: 22px; transform: translateX(-50%); padding: 1px 7px; border-radius: 4px; background: #1864ab; color: #fff; font-size: 13px; font-weight: 600; line-height: 1.5; white-space: nowrap; }
+.lab-handle.up .lab-hl { top: -44px; }
+.lab-handle.used .lab-hl, .lab-handle.calm .lab-hl { display: none; }
+.lab-handle.used .lab-hd, .lab-handle.calm .lab-hd { left: -13px; top: -13px; width: 26px; height: 26px; animation: none; }
+.pvc .lab-handle.used .lab-hd svg, .pvc .lab-handle.calm .lab-hd svg { width: 18px; height: 18px; }
+@keyframes lab-pulse {
+  50% { transform: scale(1.14); box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.35), 0 1px 4px rgba(10, 16, 24, 0.5); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lab-hd { animation: none; }
+}
+.pvc[data-mode='quiz'] .lab-handle { display: none; }
+
+/* big letters for the points: O, F, P, X, Y and the rest */
+.lab-big { font-size: 15.5px; font-weight: 700; line-height: 1.2; }
 
 /* the note in a corner: what is drawn, not seen */
 .lab-note[hidden] { display: none; }
@@ -58,7 +77,6 @@ body.bg-transparent { background: transparent; }
   .lab .pvc-outcome { min-height: 2.7em; font-size: 15px; }
   .lab .pvc-outcome b { font-size: 16px; }
   .lab .pvc-rule { --pvc-rule-lines: 0; font-size: 14px; line-height: 20px; height: 100px; min-height: 0; overflow: hidden; }
-  .lab .pvc-rule svg.lab-zone { height: 74px; }
   .lab .pvc-q-ask { gap: 5px; }
   .lab .pvc-q-text { font-size: 14px; line-height: 1.4; }
   .lab .pvc-q-options { gap: 5px; }
@@ -70,7 +88,6 @@ body.bg-transparent { background: transparent; }
   .lab .pvc-outcome { font-size: 13.5px; min-height: 2.6em; }
   .lab .pvc-outcome b { font-size: 14.5px; }
   .lab .pvc-rule { font-size: 12.5px; line-height: 16.5px; height: 80px; }
-  .lab .pvc-rule svg.lab-zone { height: 62px; }
   .lab .pvc-q-ask { gap: 3px; }
   .lab .pvc-q-head { min-height: 0; }
   .lab .pvc-q-head .pvc-btn { height: 30px; }
@@ -93,6 +110,10 @@ body.bg-transparent { background: transparent; }
   .lab .pvc-opt { font-size: 13.5px; height: 40px; }
   .lab .pvc-q-feedback { font-size: 13.5px; line-height: 1.45; }
 }
+@container pvc-panel (max-width: 300px) {
+  .lab .pvc-rule .lab-formula { font-size: 13.5px; padding: 3px 2px; }
+  .lab .lab-then { margin: 0 3px; }
+}
 @container pvc-panel (min-height: 1px) and (max-height: 420px) {
   .lab .pvc-rule { font-size: 13.5px; line-height: 1.45; }
   .lab .pvc-learn { gap: 5px; }
@@ -103,6 +124,5 @@ body.bg-transparent { background: transparent; }
   .lab .pvc-outcome { font-size: 16px; }
   .lab .pvc-outcome b { font-size: 19px; }
   .lab .pvc-rule { font-size: 16.5px; line-height: 1.65; }
-  .lab .pvc-rule svg.lab-zone { height: 118px; }
   .lab .lab-cap { display: block; }
 }

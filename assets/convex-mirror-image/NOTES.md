@@ -19,41 +19,45 @@ smaller, between P and F, shrinking toward F as the object goes away; and that i
 প্রতিবিম্ব X′Y′, লম্ব, রিয়ার ভিউ মিরর. Added by the figure, not on the page: চোখ (the eye), পর্দা in the test (a white screen).
 
 ## How the figure works
-- One action through nine stages (`STAGES` in `src/app.js`): the pencil seen in the silver → ray (i) → ray (ii) → ray (iii) → the image grows
-  up from Y′ → the pencil moves → from the eye, a plane mirror → the same mirror goes convex → both fields of view from above. `POSE` says
-  what each stage shows; `run()` walks any jump in one order (what must go, the bench, then the light). The words দেখা · তিন রশ্মি ·
-  দূরে–কাছে · রিয়ার ভিউ jump.
+- The owner's rules for the spherical mirrors: the whole idea from the 3D alone, and one thing per tap. One action through eleven stages
+  (`STAGES` in `src/app.js`), the camera on each idea: the pencil and its small upright picture on the silver → the parallel ray (ii) alone →
+  its extension to F → ray (i), and O → ray (iii), all three meeting → the image grows up from Y′, "অবাস্তব · সোজা · ছোট" beside it → the pencil
+  moves, close on the image, with "ছোট: ৩/৫ গুণ" on it and the object's height as a dashed outline → 1/u + 1/v = 1/f with the student's numbers →
+  from the eye, a plane mirror → the same mirror convex, one tap apart → both fields of view from above. `POSE` says what each stage shows;
+  `run()` walks any jump in one order. Each move takes 1.5 s or more, with a pause after each step.
+- The pencil starts at u = 10 cm, not the book's picture's 15: with F, P and the pencil in view it gives an image of 3.6 cm, 41 px tall at 390×700.
 - **What is seen in the mirror is traced for every pixel** (`src/mirror.js`): the silver's shader reflects the line of sight in the exact
-  sphere and asks what it meets (pencils, the rod, the bar, the rail, the table). So the little upright pencil on the first step, and
-  the row in the rear-view stages, are exactly right for any eye. No render-to-texture, one short loop on one small dish.
+  sphere and asks what it meets (the pencil and rod, the posts, the rail, the table). So the little upright pencil of the first step and
+  the row in the rear-view stages are exactly right for any eye. No render-to-texture, one short loop on one small dish.
 - The rays are traced with r = d − 2(d·n)n on the exact sphere (`src/reading.js`) and drawn as vector lines on a 2D canvas over the view
   (`src/rays.js`), in the sister figure's style. The image comes from the book's 1/u + 1/v = 1/f, f = −15 cm. The unit test
-  (`test/unit/convex-mirror-image.test.mjs`) shows that the traced lines pass within 0.08 cm of that X′ at u = 15, and within 0.2 cm for
-  every u from 4 to 75 (the small difference is the sphere's own aberration: a parallel ray 6 cm from the axis crosses at 14.7 cm).
-- The insight in the panel: the parallel ray from X does not change as the pencil slides, so X′ can only move along that one line
-  down to F; that is (a) and (d) together. The panel's small live drawing (`zone()` in `app.js`) shows that line large, from P to F.
+  (`test/unit/convex-mirror-image.test.mjs`) shows that the traced lines pass within 0.2 cm of that X′ for every u from 4 to 75 (the small
+  difference is the sphere's own aberration: a parallel ray 6 cm from the axis crosses at 14.7 cm).
+- Each ray is named on itself in its own step, in the book's words with what it does; the others keep a badge (i), (ii), (iii).
+- The parallel ray from X does not change as the pencil slides, so X′ can only move along that one line down to F; that is (a) and (d) together.
+- The pencil always shows it can be moved: a ↔ disc on its rod and a dashed track of its range, a "টেনে সরাও" label and a pulse until the first
+  drag, then smaller and calm (drawn in the figure to the owner's spec until the kit has `createDragHandle`). Out of view it waits at the edge,
+  by the tab that says how far the pencil is. Close on the image, a finger anywhere moves it. Keys ← → too.
 - 8.8.2: the eye of the cones and the camera of the eye stages are the same point (x = 66 cm): the camera really stands there. The same
-  dish flattens (r = 40 000 cm) into a plane mirror and back. Seen: 3 of 7 pencils in the plane mirror, all 7 in the convex one,
-  counted from the traced rim rays (`fieldOf`, `pencilsSeen`).
-- The camera goes to each thing (`FRAMES` in `src/bench.js`): round to the mirror's face, side-on to the plane of the rays, close on the
-  image, low along the rail, at the eye, above the bench. The pencil, the source of all the rays, is always in view; past 26 cm (the
-  first step) or 24 cm (the close-up) a tab at the view's edge says where it is.
-- **The bench is the chapter's**, copied from `spherical-mirror-focus` at its round 2 (PR #358): bright silver with its own
-  studio environment, clear glass, larger scale digits, frames that fit the view's aspect. The pencil stands where its ray box stood.
+  dish flattens (r = 40 000 cm) into a plane mirror and back. Seven tall posts in seven colours stand behind the eye: 3 in the plane
+  mirror, all 7 in the convex one, counted from the traced rim rays (`fieldOf`, `postsSeen`), and ringed in the top view.
+- **The bench is the chapter's**, from `spherical-mirror-focus` (PR #358): rail, carriers, ring, dish, clear glass, scale digits. One difference, after the
+  review: the silver's brightness comes from a plain pale gradient in its shader instead of the studio environment, whose lamp showed as a white
+  streak that a student could take for an image.
 
 ## Honest notes
-- Three rays in one plane out of countless. "তিনটি রশ্মি আঁকা" says so on the view.
+- Only a few rays in one plane, out of countless: "রশ্মি কয়েকটি মাত্র" says so on the view.
 - The mirror is drawn large: 20 cm across on a 30 cm radius, as in the sister figures; lab mirrors are smaller.
 - The silver is on the front surface, so no refraction in the glass comes into it (the same note as `spherical-mirror-focus`).
 - The ghost pencil X′Y′ is drawn through the mirror: it is where the image seems to be, not a thing that stands behind it.
 - A convex mirror images depth less than height; the ghost is scaled by m in all directions (a pencil is thin, so it does not show).
-- The brightness of the silver comes from a studio environment, not from the slate room around it, as in the sister figure. The table, rail, rod, bar
-  and pencils in it are real traces; a far pencil in the mirror is kept at least 1.5 px wide, so that it does not vanish.
-- The row of pencils sits behind the eye on a cross bar; the row is not in the book.
-- Once the ghost X′Y′ is drawn, the pencil is no longer traced in the silver: from the side both would show the one image, in two places.
+- The pale room in the silver is invented; the table, rail, rod, posts and pencil in it are real traces. A far pencil in the mirror is kept at
+  least 1.5 px wide, so that it does not vanish.
+- Once the ghost is drawn, the pencil is no longer traced in the silver: from the side both would show the one image, in two places.
+- The row of posts is not in the book; the posts stand behind the eye and are much thicker than anything on a real bench, so that they read.
 
 ## Measured (844×390, software rendering, `scripts/.perf-tmp.mjs`)
-At most 44 draw calls and 24k triangles (the top view, with the row of seven pencils); ready in about 3 s. GLB 397 KB.
+At most 32 draw calls and 19k triangles (the top view, with the row of seven posts). GLB about 400 KB.
 
 ## Open questions for the book team
 - **Letters:** চিত্র ৮.১৯ calls the pole R and uses P for the point where the parallel ray lands, while p227 and the chapter's other figures say
