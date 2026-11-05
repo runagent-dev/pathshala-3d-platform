@@ -21,14 +21,34 @@ at the concave mirror's F gives a parallel beam.
 figure does not use that word.) Added by the figure, not on the page: আলোর বাক্স (ray box), স্কেল, বাল্ব (the page has বাল্বটি).
 
 ## How the figure works
-- Eight taps, one action: cut a piece from the sphere → coat its inner surface (it then goes down to the holder on the bench) →
+- Nine taps, one action: cut a piece from the sphere (it comes out big and turns once, slowly, each surface named as it comes round) →
+  coat its inner surface (it then goes down to the holder on the bench) →
   parallel light → measure f and r (the four r words live here, and on the convex measure) → widen the light → coat the outer
-  surface (the dish makes a half turn on its pins) → extend the rays behind → a bulb at F, which the student then moves off F
+  surface (the dish makes a half turn on its pins) → parallel light on it → extend the rays behind → a bulb at F, which the student then moves off F
   and back (by the action, by drag, or by the left/right keys).
 - The words গোলক · অবতল · উত্তল · টর্চ jump. `src/app.js` has one table, `POSE`, of what each stage shows, and one function, `run()`,
   which walks any jump in the same order: the light goes, the measures go, the piece moves, the mirror turns, then the light comes.
 - The camera goes to each thing (`FRAMES` in `src/bench.js`, fitted to the stage with `fitPose`): the sphere, the whole bench, the mirror
-  and F, the printed scale, close on F for the wide bundle, behind the mirror for the convex F.
+  and F, the printed scale, close on F for the wide bundle, close on the mirror steeply from the side for the half turn (75° off its axis), behind the mirror for the
+  convex F.
+- **The piece must be seen (owner, v0.3.0).** The cap faces +z, about 38° off the view, not the far edge of the ball, where it was a sliver.
+  On the sphere and in the air each surface wears a teaching colour (outer gold, inner blue, one drawing of each face, wound to show from its
+  own side only), the rim is bright, and curved lines are drawn on the side that faces the eye (`pieceLines` in `rays.js`): at r = 30 a 20 cm
+  piece has a sag of only 1.7 cm, so shading alone made it look like a flat disc. The colours go when it is a mirror, and the outer gold comes
+  back for the half turn, with the mirror's curve in gold and "বাইরের পৃষ্ঠ = উত্তল" on it, before the silver spreads over it.
+- **The pace is one table, `T` in `src/app.js`** (the owner's rule, common.md): flights 2 s, the cut 2.8, the slow turn 5, the coat 2.8, the way
+  down 3.2, the mirror turning over 3.4, five rays one after another 3.2 s each way (about 1.2 s a ray), a 1 s hold on every result. Nothing
+  advances by itself, taps do nothing while a step or a flight plays, ▶ আবার দেখো plays the finished step again, and the last action offers the
+  test. The piece turns once and stops: an endless turn would draw every frame, and the student can walk round it anyway.
+- **All the way round**: no azimuth limit, polar 5°–88°, zoom 0.6–1.6 × the step's distance. A flight goes round what it looks at, not through
+  it (from behind the bench a straight line would pass through the mirror). A drag of less than 8 px is a tap: the view does not move at all
+  until then. The kit reports its lower resolution during a slow orbit as a resize at the same CSS size: `onResize` frames the step again only when
+  the size really changed, or the first drags would be thrown away. Labels and rays are on the screen, so they hold from any side. The table and the backdrop's soft light go all the way round too.
+- **The handle** on the bulb's carrier (`src/handle.js`) has the look and names of the kit's `createDragHandle` (pull request #361, not merged
+  when this was written). When kit 1.7.0 is in, delete the file and the CSS and use the kit's. The rotate cue is always a pill, "⟲ ৩৬০°" in real text, so it
+  can't be taken for a handle on a part; "ঘুরিয়ে দেখো" beside it until the first turn, except on the tightest frame (390 × 520), where no corner has
+  room for the words. The kit's front button is the same arrow as the panel's reset, so this figure gives it a crosshair and the word সামনে (`.lab-front`);
+  that moves to the kit with #361.
 - Rays are traced on the exact sphere with r = d − 2(d·n)n (`src/reading.js`, unit-tested in `test/unit/spherical-mirror-focus.test.mjs`).
   Nothing uses f = r/2 to place a ray: the rays find F. They are drawn as vector lines on a 2D canvas over the view
   (`src/rays.js`), like the sister figures. F, O and P are marks on the axis with a drop to their number on the printed scale.
@@ -52,6 +72,7 @@ figure does not use that word.) Added by the figure, not on the page: আলো�
 - The coat is on the surface that reflects (front-surface silver, as in telescope mirrors), so that no refraction in the glass
   comes into it. The chapter's plane mirrors have the silver on the back of the glass, like household ones. The book says only
   that the coat decides the kind (p223) and which surface reflects (p228).
+- The gold and blue of the piece, its bright rim and the lines on it are teaching marks, not the glass.
 - The hollow sphere is imagined high above the bench in the first step, out of the bench's picture: a sphere of radius 30 cm round the
   axis would go through the rail. On the bench its circle is a dotted line in the plane of the rays.
 - A spherical mirror does not give an exactly parallel beam: at the rim of the bulb's light (8 cm from the axis, r = 30) the ray is
