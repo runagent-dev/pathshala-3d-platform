@@ -31,8 +31,9 @@ export const toEye = (light) => [...reflected('rose', light), ...reflected('leaf
 // a clear dark green, and the book says কুচকুচে কালো.
 export const REFLECTANCE = {
   rose: [0.74, 0.0055, 0.011],
-  leaf: [0.0045, 0.27, 0.018],
-  grey: [0.5, 0.5, 0.5],
+  leaf: [0.0045, 0.32, 0.018],
+  grey: [0.16, 0.16, 0.16], // the vase: a dark neutral glaze
+  card: [0.85, 0.85, 0.85], // white paper: gives back all the light it gets
 };
 /** The lamp through its filter, in linear red, green, blue. A filter passes one primary only. */
 export const LAMP = {

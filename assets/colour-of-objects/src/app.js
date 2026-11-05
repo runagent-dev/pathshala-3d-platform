@@ -18,7 +18,7 @@ import { createI18n } from './i18n.js';
 import { createRays } from './rays.js';
 import { absorbed, BANDS, LAMP, leaving, looks, reflected, shuffle, toEye } from './reading.js';
 import { createRose } from './rose.js';
-import { createSetting, LAYOUT } from './scene.js';
+import { createSetting, FRAMES, LAYOUT } from './scene.js';
 
 export const DEFAULTS = {
   light: 'white', // 'white' | 'red' | 'green' | 'blue'
@@ -34,8 +34,10 @@ export const DEFAULTS = {
 
 const LEARN = ['white', 'red', 'green'];
 const ALL = [...LEARN, 'blue'];
-const VIEW = { az: 15, el: 9 };
 const MARGINS = { top: 8, bottom: 6, side: 6 };
+const BOTH_MARGINS = { top: 6, bottom: 2, side: 4 };
+const ORDER = { white: ['rose', 'leaf'], red: ['leaf'], green: ['rose'], blue: [] }; // the close-ups of each light
+const WIDE = 1.2; // a view at least this wide has room for the lamp in the frame that shows the idea
 const SINGLE = 2.6; // a coloured light's band, in stripes
 const WIDTHS = (light) => BANDS.map((b) => (light === 'white' ? 1 : b === light ? SINGLE : 0));
 const CHIP = { red: '#c92a2a', green: '#237a35', blue: '#1864ab', white: '#343a40', black: '#212529' };
@@ -67,6 +69,10 @@ export function createApp(root, options = {}) {
     learnAlign: 'start',
   });
   const sheet = bindCleanSheet(ui.learn);
+  const caption = document.createElement('p');
+  caption.className = 'coo-cap';
+  caption.innerHTML = t('cap_book');
+  ui.learn.appendChild(caption);
   ui.canvasHost.setAttribute('aria-label', t('aria_stage'));
   const note = document.createElement('div');
   note.className = 'coo-note';
@@ -102,6 +108,8 @@ export function createApp(root, options = {}) {
     view: o.view === '3d' ? '3d' : 'front',
     userMovedCamera: false,
     quiz: null,
+    frame: 'full', // what the camera shows (FRAMES)
+    focus: null, // the object the close-up is on, while it is
   };
   let token = 0;
   const tweener = createTweener();
@@ -128,22 +136,39 @@ export function createApp(root, options = {}) {
     const v = rays.view;
     const k = keepsFor(light);
     v.widths.set(WIDTHS(light));
-    v.grow = on ? 1 : 0;
-    v.absorb = on ? 1 : 0;
     v.rose.on = v.leaf.on = true;
-    v.rose.keeps = k.rose;
-    v.leaf.keeps = k.leaf;
-    v.rose.out = on && k.rose ? 1 : 0;
-    v.leaf.out = on && k.leaf ? 1 : 0;
+    for (const name of ['rose', 'leaf']) {
+      const p = v[name];
+      p.grow = on ? 1 : 0;
+      p.keeps = k[name];
+      p.absorb = on && absorbed(name, light).length ? 1 : 0;
+      p.out = on && k[name] ? 1 : 0;
+      p.sight = on && !k[name] ? 1 : 0;
+    }
     s.rgb = [...LAMP[light]];
     s.filter = light === 'white' ? 0 : 1;
     if (light !== 'white') s.gel = [...LAMP[light]];
+    s.frame = on ? 'both' : 'full';
+    s.focus = null;
     applyLight();
   }
 
-  /** The light changes, the band comes or narrows, the absorbed colours sink in, and what is left leaves for the eye. */
-  async function run(light) {
-    const my = ++token;
+  const RUNS = ['out', 'light', 'hold', 'camera', 'out-rose', 'out-leaf', 'grow-rose', 'grow-leaf', 'absorb-rose', 'absorb-leaf'];
+  function stopRun() {
+    ++token;
+    for (const k of RUNS) tweener.cancel(k);
+    s.busy = false;
+    s.focus = null;
+  }
+
+  /**
+   * The story of one light, told by the camera. It looks at the lamp while the light changes and the band comes; then it goes
+   * close to each object in turn while what is absorbed sinks in and what is left leaves for the eye; then it stands back
+   * to the picture that shows the whole idea. quick: no close-ups (the test).
+   */
+  async function run(light, { quick = false, band = true } = {}) {
+    stopRun();
+    const my = token;
     const alive = () => my === token;
     const v = rays.view;
     s.busy = true;
@@ -162,67 +187,118 @@ export function createApp(root, options = {}) {
           }
         },
       }).finished;
+    const hold = (duration) => tween('hold', duration, () => {});
 
     // what was leaving stops
-    const r0 = v.rose.out;
-    const l0 = v.leaf.out;
-    if (r0 > 0 || l0 > 0) {
+    const r0 = v.rose;
+    const l0 = v.leaf;
+    const fromOut = [r0.out, l0.out, r0.sight, l0.sight];
+    if (fromOut.some((x) => x > 0)) {
       await tween('out', 0.25, (k) => {
-        v.rose.out = r0 * (1 - k);
-        v.leaf.out = l0 * (1 - k);
+        r0.out = fromOut[0] * (1 - k);
+        l0.out = fromOut[1] * (1 - k);
+        r0.sight = fromOut[2] * (1 - k);
+        l0.sight = fromOut[3] * (1 - k);
       });
       if (!alive()) return false;
     }
-    const k = keepsFor(light);
+    const keeps = keepsFor(light);
     const wantRgb = LAMP[light];
     const from = [...s.rgb];
-    const w0 = Float32Array.from(v.widths);
-    const w1 = WIDTHS(light);
-    const f0 = s.filter;
-    const f1 = light === 'white' ? 0 : 1;
-    const swap = f0 > 0 && f1 > 0 && from.join() !== wantRgb.join(); // one filter out, the next one in
-    const a0 = v.absorb;
-    if (!swap && f1 > 0) s.gel = [...wantRgb];
-    if (from.join() !== wantRgb.join()) {
-      await tween('light', 0.8, (x) => {
+    const changes = from.join() !== wantRgb.join();
+    if (!quick && (changes || r0.grow < 1 || l0.grow < 1) && s.frame !== 'full') {
+      await fly('full', 0.8);
+      if (!alive()) return false;
+    }
+    if (changes) {
+      const w0 = Float32Array.from(v.widths);
+      const w1 = WIDTHS(light);
+      const f0 = s.filter;
+      const f1 = light === 'white' ? 0 : 1;
+      const swap = f0 > 0 && f1 > 0; // one filter out, the next one in
+      const a0 = [r0.absorb, l0.absorb];
+      if (!swap && f1 > 0) s.gel = [...wantRgb];
+      await tween('light', 0.85, (x) => {
         s.rgb = from.map((c, i) => c + (wantRgb[i] - c) * x);
         if (swap) {
           s.filter = x < 0.5 ? 1 - 2 * x : 2 * x - 1;
           if (x >= 0.5) s.gel = [...wantRgb];
         } else s.filter = f0 + (f1 - f0) * x;
         for (let i = 0; i < 6; i++) v.widths[i] = w0[i] + (w1[i] - w0[i]) * x;
-        v.absorb = a0 * (1 - x);
+        r0.absorb = a0[0] * (1 - x);
+        l0.absorb = a0[1] * (1 - x);
         applyLight();
       });
       if (!alive()) return false;
     }
-    v.rose.keeps = k.rose;
-    v.leaf.keeps = k.leaf;
+    r0.keeps = keeps.rose;
+    l0.keeps = keeps.leaf;
     audio.tick();
-    if (v.grow < 1) {
-      await tween('grow', 1.1, (x) => {
-        v.grow = x;
-      });
-      if (!alive()) return false;
+    if (!band) {
+      s.busy = false;
+      draw();
+      return true;
     }
-    await tween(
-      'absorb',
-      0.55,
-      (x) => {
-        v.absorb = Math.max(v.absorb, x);
-      },
-      ease.outCubic,
+    const order = quick ? [] : ORDER[light] || [];
+    /** A band comes, unless it is there already. */
+    const come = (name, duration) => {
+      if (v[name].grow >= 1) return Promise.resolve(true);
+      return tween(`grow-${name}`, duration, (x) => {
+        v[name].grow = Math.max(v[name].grow, x);
+      });
+    };
+    // one band at a time, the first close-up's first; in the test both together
+    await Promise.all((order.length ? order.slice(0, 1) : ['rose', 'leaf']).map((n) => come(n, quick ? 0.8 : 1.1)));
+    if (!alive()) return false;
+    s.rays = true;
+    draw();
+
+    /** One object: its absorbed colours sink in, then its own colour leaves. */
+    const finish = (name, duration, key = 'out') =>
+      tween(key, duration, (x) => {
+        const p = v[name];
+        if (p.keeps) p.out = x;
+        else p.sight = x;
+      });
+    const sink = (name, duration) => {
+      if (!absorbed(name, light).length) return Promise.resolve(true);
+      return tween(`absorb-${name}`, duration, (x) => {
+        v[name].absorb = Math.max(v[name].absorb, x);
+      });
+    };
+    for (const name of order) {
+      const flying = fly(name, 0.95);
+      await Promise.all([come(name, 0.9), sink(name, 0.9)]);
+      if (!alive()) return false;
+      await flying;
+      if (!alive()) return false;
+      s.focus = name;
+      draw();
+      await finish(name, 0.75);
+      if (!alive()) return false;
+      await hold(1.1);
+      if (!alive()) return false;
+      s.focus = null;
+      draw();
+    }
+    // whatever was not looked at closely finishes on the way back
+    const rest = ['rose', 'leaf'].filter((n) => !order.includes(n));
+    const flying = quick && s.frame === 'both' ? null : fly('both', 1);
+    await Promise.all(rest.map((n) => sink(n, 0.5)));
+    if (!alive()) return false;
+    await Promise.all(
+      rest.map((n) =>
+        tween(`out-${n}`, 0.7, (x) => {
+          const p = v[n];
+          if (p.keeps) p.out = x;
+          else p.sight = x;
+        }),
+      ),
     );
     if (!alive()) return false;
-    if (k.rose || k.leaf) {
-      await tween('out', 0.95, (x) => {
-        if (k.rose) v.rose.out = x;
-        if (k.leaf) v.leaf.out = x;
-      });
-      if (!alive()) return false;
-    }
+    await flying;
+    if (!alive()) return false;
     s.busy = false;
-    s.rays = true;
     s.seen.add(light);
     audio.success();
     draw();
@@ -235,8 +311,10 @@ export function createApp(root, options = {}) {
   let camK = 1;
   const camDir = new THREE.Vector3();
   function poseNow() {
-    dirFrom(VIEW.az, VIEW.el, camDir);
-    return fitPose({ box: LAYOUT.frame, dir: camDir, camera, width: stage.width, height: stage.height, margin: MARGINS });
+    const f = FRAMES[s.frame];
+    dirFrom(f.az, f.el, camDir);
+    const box = f.wide && stage.width / stage.height >= WIDE ? f.wide : f.box;
+    return fitPose({ box, dir: camDir, camera, width: stage.width, height: stage.height, margin: s.frame === 'both' ? BOTH_MARGINS : MARGINS });
   }
   function applyCamera() {
     if (s.userMovedCamera) return;
@@ -251,13 +329,15 @@ export function createApp(root, options = {}) {
     }
     controls.update();
   }
-  function flyCamera(duration = 0.8) {
+  /** The camera goes to a frame. Its promise settles when it arrives (or a finger takes over). */
+  function fly(frame, duration = 0.8) {
     if (s.userMovedCamera) {
       s.userMovedCamera = false;
       s.view = 'front';
       syncUI();
     }
     camFrom = { position: camera.position.clone(), target: controls.target.clone() };
+    s.frame = frame;
     camK = 0;
     return tweener.animate({
       key: 'camera',
@@ -276,7 +356,7 @@ export function createApp(root, options = {}) {
     s.view = view === '3d' ? '3d' : 'front';
     s.userMovedCamera = false;
     syncUI();
-    if (animate) flyCamera(0.8);
+    if (animate) fly(s.frame, 0.8);
     else camK = 1;
     stage.invalidate();
   }
@@ -301,15 +381,15 @@ export function createApp(root, options = {}) {
   stage.onBeforeRender(() => {
     applyCamera();
     camera.updateMatrixWorld();
-    labels();
   });
 
-  // ── labels on the picture: few and short ───────────────────────────────────────────────────────────────
+  // ── labels on the picture: few and short, each pinned to what it names ───────────────────────────────────
   let action = null;
-  const anno = createAnnotations({ stage, layer: ui.annoLayer, avoid: [ui.corner, note, () => action?.ringBox()] });
+  const anno = createAnnotations({ stage, layer: ui.annoLayer, avoid: [ui.corner, note] });
   const shown = new Map();
   const pts = new Map();
-  function label(id, on, text, point, color, spots, optional = false, avoid = []) {
+  /** A label at (dx, dy) px from a world point. The key labels are never dropped: they have no spots to run out of. */
+  function label(id, on, text, point, color, dx = 0, dy = 0) {
     if (!on) {
       if (shown.has(id)) {
         anno.remove(id);
@@ -319,89 +399,84 @@ export function createApp(root, options = {}) {
     }
     if (!pts.has(id)) pts.set(id, new THREE.Vector3());
     pts.get(id).copy(point);
-    if (!shown.has(id)) {
-      anno.add(id, { text, point: () => pts.get(id), color, spots, kind: 'part', optional, avoid });
-      shown.set(id, text);
-    } else if (shown.get(id) !== text) {
+    const was = shown.get(id);
+    if (!was) {
+      anno.add(id, { text, point: () => pts.get(id), color, dx, dy, kind: 'part' });
+      shown.set(id, { text, dx, dy });
+      return;
+    }
+    // only what really moved: an update asks for a new frame, and a still figure draws nothing
+    if (Math.abs(was.dx - dx) > 0.5 || Math.abs(was.dy - dy) > 0.5) {
+      anno.update(id, { dx, dy });
+      was.dx = dx;
+      was.dy = dy;
+    }
+    if (was.text !== text) {
       anno.setText(id, text);
-      shown.set(id, text);
+      was.text = text;
     }
   }
   function clearLabels() {
     for (const id of [...shown.keys()]) anno.remove(id);
     shown.clear();
   }
-  const rayBoxes = () => rays.boxes();
-  const lineAvoid = [rayBoxes];
-  const toggle = ui.$('.pvc-panel-toggle');
-  const IN_SPOTS = [
-    { dx: 14, dy: 70 },
-    { dx: -6, dy: 78 },
-    { dx: 60, dy: 62 },
-  ];
-  const ABS_ROSE = [
-    { dx: 0, dy: -54 },
-    { dx: 0, dy: -44 },
-    { dx: -10, dy: -46 },
-    { dx: -26, dy: -40 },
-    { dx: -40, dy: -46 },
-    { dx: -58, dy: 50 },
-    { dx: -82, dy: 34 },
-  ];
-  const ABS_LEAF = [
-    { dx: -44, dy: 34 },
-    { dx: -66, dy: 52 },
-    { dx: 8, dy: 56 },
-  ];
-  const OUT_ROSE = [
-    { dx: -6, dy: -28 },
-    { dx: -6, dy: -40 },
-    { dx: -36, dy: -34 },
-    { dx: -36, dy: -46 },
-    { dx: -66, dy: -32 },
-    { dx: 26, dy: 26 },
-  ];
-  const OUT_LEAF = [
-    { dx: 26, dy: 10 },
-    { dx: 26, dy: 34 },
-    { dx: 26, dy: -16 },
-  ];
-  const BLACK_ROSE = [
-    { dx: 22, dy: -30 },
-    { dx: 44, dy: -18 },
-    { dx: 60, dy: 8 },
-  ];
-  const BLACK_LEAF = [
-    { dx: 40, dy: -48 },
-    { dx: 70, dy: -40 },
-    { dx: 0, dy: 50 },
-  ];
   const tmp = new THREE.Vector3();
-  const inAt = new THREE.Vector3();
-  const roseRim = new THREE.Vector3().copy(LAYOUT.bloomCentre).add(new THREE.Vector3(-3.4, 3.3, 1.6));
-  const roseTop = new THREE.Vector3().copy(LAYOUT.bloomCentre).add(new THREE.Vector3(2, 5.2, 0));
+  const depth = new THREE.Vector3();
+  /** The world point that is at these canvas px, at the rose's depth: a label's pin for a point of the drawing. */
+  function atPixel(x, y) {
+    depth.copy(LAYOUT.bloomCentre).project(camera);
+    return tmp.set((x / stage.width) * 2 - 1, 1 - (y / stage.height) * 2, depth.z).unproject(camera);
+  }
+  const leafMiddle = new THREE.Vector3(12.2, -10.7, 2.8);
+  const roseTop = new THREE.Vector3().copy(LAYOUT.bloomCentre).add(new THREE.Vector3(1.5, 3.6, 1));
   function labels() {
     const v = rays.view;
     const q = s.quiz;
-    const on = !s.busy && camK >= 1 && (s.rays || q?.drawn);
-    const after = on && !q?.waiting;
+    const I = rays.info;
+    const u = I.unit;
     const L = s.light;
-    inAt.lerpVectors(LAYOUT.lamp, LAYOUT.aim, 0.1);
-    const rNone = keepRose() === null;
-    const lNone = keepLeaf() === null;
-    tmp.lerpVectors(LAYOUT.bloomCentre, LAYOUT.eye, 0.7);
-    label('or', after && v.rose.out >= 1, t('l_out_red'), tmp, CHIP.red, OUT_ROSE, true, lineAvoid);
-    tmp.lerpVectors(LAYOUT.leafHit, LAYOUT.eye, 0.42);
-    label('ol', after && v.leaf.out >= 1, t('l_out_green'), tmp, CHIP.green, OUT_LEAF, true, [rayBoxes, toggle]);
-    label('ar', after && v.rose.on && v.absorb >= 1, t('l_absorb'), roseRim, CHIP.white, ABS_ROSE, true, lineAvoid);
-    label('al', after && v.leaf.on && v.absorb >= 1, t('l_absorb'), LAYOUT.leafHit, CHIP.white, ABS_LEAF, true, lineAvoid);
-    label('br', after && rNone, t('l_black'), roseTop, CHIP.black, BLACK_ROSE, true, lineAvoid);
-    label('bl', after && lNone, t('l_black'), LAYOUT.leafHit, CHIP.black, BLACK_LEAF, true, lineAvoid);
-    // last, so that the words of the idea get their places first
-    label('in', on && v.grow >= 1 && v.absorb >= 1, t(`l_${L}`), inAt, CHIP[L], IN_SPOTS, true, lineAvoid);
+    const still = camK >= 1;
+    const whole = !s.busy && still && (s.rays || q?.drawn) && !q?.waiting; // the final picture
+    const on = (name) => (whole || (still && s.focus === name)) && v[name].on;
+
+    // what ends here: at the end of the band, to the side away from the arrow
+    for (const name of ['rose', 'leaf']) {
+      const f = I[`${name}_fade`];
+      const b = I[`${name}_band`];
+      const has = on(name) && absorbed(name, L).length > 0 && v[name].absorb >= 1;
+      const reach = (name === 'rose' ? 40 : 54) * u ** 0.5;
+      label(`a-${name}`, has, t('l_absorb'), has ? atPixel(f.x, f.y) : O, CHIP.white, b.nx * reach - (b.nx < 0 ? 6 : -6), b.ny * reach);
+    }
+    // what leaves: beside the middle of the arrow, on its outer side
+    for (const name of ['rose', 'leaf']) {
+      const a = I[`${name}_out`];
+      const has = on(name) && v[name].out >= 1;
+      const side = name === 'rose' ? -1 : 1; // the rose's label above its arrow, the leaf's to the right of its own
+      const reach = 30 * u ** 0.5;
+      label(
+        `o-${name}`,
+        has,
+        t(name === 'rose' ? 'l_out_red' : 'l_out_green'),
+        has ? atPixel(a.x, a.y) : O,
+        CHIP[name === 'rose' ? 'red' : 'green'],
+        -a.uy * reach * side + (side > 0 ? 8 : -8),
+        a.ux * reach * side,
+      );
+    }
+    // what looks black: the middle of the object
+    const blackRose = on('rose') && !v.rose.keeps;
+    const blackLeaf = on('leaf') && !v.leaf.keeps;
+    label('b-rose', blackRose, t('l_black'), roseTop, CHIP.black, 34 * u, -40 * u);
+    label('b-leaf', blackLeaf, t('l_black'), leafMiddle, CHIP.black, 36 * u, 34 * u);
+    // the light, on its band
+    const b = I.leaf_band;
+    const inOn = whole && v.leaf.grow >= 1;
+    label('in', inOn, t(`l_${L}`), inOn ? atPixel(b.x, b.y) : O, CHIP[L], b.nx * 40 - 6, b.ny * 40);
+    label('card', Boolean(q?.card), t('l_card'), LAYOUT.card, CHIP.white, -6, -80);
+    anno.update(); // places them now, on this frame's drawing (it asks for no new frame)
   }
-  const keepRose = () => rays.view.rose.keeps;
-  const keepLeaf = () => rays.view.leaf.keeps;
+  const O = new THREE.Vector3();
+  stage.onAfterRender(labels);
 
   // ── moving on through the book ─────────────────────────────────────────────────────────────────────────
   function phase() {
@@ -425,8 +500,10 @@ export function createApp(root, options = {}) {
     return run(ph);
   }
   function replay() {
+    stopRun();
     settle(s.light, false);
     s.rays = false;
+    camK = 1;
     return run(s.light);
   }
   function pick(light) {
@@ -446,7 +523,7 @@ export function createApp(root, options = {}) {
     return t('out_looks', { a: colourWord(a), b: colourWord(b), ca: `coo-c-${a}`, cb: `coo-c-${b}` });
   }
   function rule() {
-    if (!s.rays && (s.busy ? s.seen.size === 0 : true)) return t('rule_start');
+    if (!s.rays) return t('rule_start');
     return t(`rule_${s.light}`);
   }
   const ACTIONS = {
@@ -477,6 +554,12 @@ export function createApp(root, options = {}) {
     stage.invalidate();
   }
 
+  const lensPoint = new THREE.Vector3();
+  function lensAt() {
+    lensPoint.copy(LAYOUT.lamp).project(camera);
+    return { x: ((lensPoint.x + 1) / 2) * stage.width, y: ((1 - lensPoint.y) / 2) * stage.height };
+  }
+
   // ── the action, and what it points at ──────────────────────────────────────────────────────────────────
   action = createAction({
     stage,
@@ -485,9 +568,24 @@ export function createApp(root, options = {}) {
     t,
     step: 1,
     label: 'act_show',
-    target: () => (s.locked || s.busy || camK < 1 ? null : LAYOUT.lamp),
-    radius: 36,
-    avoid: [ui.corner, ui.hint, note, () => anno.boxes()],
+    target: () => {
+      if (s.locked || s.busy || camK < 1) return null;
+      // only while the lamp is well inside the view: a ring half off the edge says nothing
+      const a = lensAt();
+      return a.x < 44 || a.y < 44 ? null : LAYOUT.lampBody;
+    },
+    radius: 24,
+    avoid: [
+      ui.corner,
+      ui.hint,
+      note,
+      () => anno.boxes(),
+      () => {
+        // the lens and where the bands start stay clear
+        const a = lensAt();
+        return { left: a.x - 44, top: a.y - 30, right: a.x + 70, bottom: a.y + 70 };
+      },
+    ],
     pulse: Boolean(o.coach),
     onAct: () => act(),
   });
@@ -514,67 +612,41 @@ export function createApp(root, options = {}) {
   // ── the test ────────────────────────────────────────────────────────────────────────────────────────────
   let qCurrent = null;
   let order = [];
-  let predictPair = 'leaf';
+  let pair = 'leaf'; // which object the prediction asks about; the reading question takes the other light
   const notesOf = (pairs) => new Map(pairs.map(([k, v]) => [String(k), v]));
   /** The scene of a question: this light, the drawing as far as the question allows. */
-  function quizScene(q, light, { drawn = false, rose = true, leaf = true } = {}) {
-    ++token;
-    for (const k of ['out', 'light', 'grow', 'absorb']) tweener.cancel(k);
-    s.busy = false;
+  function quizScene(q, light, { drawn = false, frame = 'full', card = false, blind = false } = {}) {
+    stopRun();
     s.rays = false;
     s.light = light;
     settle(light, false);
-    const v = rays.view;
-    v.grow = drawn ? 1 : 0;
-    v.rose.on = rose;
-    v.leaf.on = leaf;
-    s.quiz = { ...q, drawn, waiting: true };
+    s.frame = frame;
+    rays.view.rose.grow = rays.view.leaf.grow = drawn ? 1 : 0;
+    setting.card.visible = card;
+    setBlind(blind);
+    s.quiz = { ...q, drawn, card, waiting: true };
     clearLabels();
     stage.invalidate();
+  }
+  /** The lamp and the eye away: the objects alone must tell which light this is. */
+  function setBlind(on) {
+    setting.lamp.root.visible = !on;
+    rays.view.eye = !on;
   }
   /** After the answer: the picture finishes the sentence. */
   function showAnswer(q) {
     if (!s.quiz) return;
     s.quiz.waiting = false;
-    run(q.after === 'same' ? s.light : q.after);
+    setBlind(false);
+    run(q.after ?? s.light, { quick: true, band: q.band !== false });
   }
+  const OTHER = { red: 'green', green: 'red' };
   const Q = {
-    leaf() {
-      quizScene({ kind: 'leaf' }, 'white', { drawn: true, rose: false });
-      const wrong = ['all', 'red', 'none'];
-      return {
-        text: t('q_leaf'),
-        answer: 'green',
-        wrong,
-        label: (k) => t(`c_leaf_${k}`),
-        notes: notesOf(wrong.map((k) => [k, t(`n_leaf_${k}`)])),
-        reveal: t('a_leaf'),
-        after: 'same',
-      };
-    },
-    count() {
-      quizScene({ kind: 'count' }, 'white', { drawn: true, leaf: false });
-      const n = BANDS.length - reflected('rose', 'white').length;
-      const wrong = [6, 1, 0];
-      return {
-        text: t('q_rose_count'),
-        answer: n,
-        wrong,
-        label: (k) => (k === 0 ? t('c_none') : t('c_n', { n: k })),
-        notes: notesOf([
-          [6, t('n_count_all')],
-          [1, t('n_count_one')],
-          [0, t('n_count_zero')],
-        ]),
-        reveal: t('a_count', { n: absorbed('rose', 'white').length }),
-        after: 'same',
-      };
-    },
     predict() {
       quizScene({ kind: 'predict' }, 'white');
-      const obj = predictPair;
+      const obj = pair;
       const light = obj === 'leaf' ? 'red' : 'green';
-      const own = obj === 'leaf' ? 'green' : 'red';
+      const own = OTHER[light];
       const wrong = [light, own, 'white'];
       return {
         text: t(`q_predict_${obj}`),
@@ -590,38 +662,63 @@ export function createApp(root, options = {}) {
         after: light,
       };
     },
-    which() {
-      // the opposite pair to the prediction: this scene must not answer it
-      const light = predictPair === 'leaf' ? 'green' : 'red';
-      quizScene({ kind: 'which' }, light, { drawn: true });
-      const answer = light === 'green' ? 'leaf' : 'rose';
-      const other = light === 'green' ? 'rose' : 'leaf';
-      const wrong = [other, 'both', 'neither'];
+    why() {
+      const obj = pair;
+      const light = obj === 'leaf' ? 'red' : 'green';
+      quizScene({ kind: 'why' }, light, { drawn: true, frame: 'both' });
+      const wrong = ['reflect', 'other', 'none'];
       return {
-        text: t('q_which', { c: t(`c_${light}`) }),
-        answer,
+        text: t(`q_why_${obj}`),
+        answer: 'absorb',
         wrong,
-        label: (k) => t(`c_from_${k}`),
+        label: (k) => t(`c_why_${obj}_${k}`),
+        notes: notesOf(wrong.map((k) => [k, t(`n_why_${obj}_${k}`)])),
+        reveal: t(`a_why_${obj}`),
+      };
+    },
+    infer() {
+      // the other light: this scene must not repeat the one before it
+      const light = pair === 'leaf' ? 'green' : 'red';
+      quizScene({ kind: 'infer' }, light, { frame: 'plant', blind: true });
+      const wrong = [OTHER[light], 'blue', 'white'];
+      return {
+        text: t(`q_infer_${light}`),
+        answer: light,
+        wrong,
+        label: (k) => t(`c_${k}`),
         notes: notesOf([
-          [other, t(`n_which_${other}`)],
-          ['both', t('n_which_both')],
-          ['neither', t('n_which_neither')],
+          [OTHER[light], t(`n_infer_${light}`)],
+          ['blue', t('n_infer_blue')],
+          ['white', t('n_infer_white')],
         ]),
-        reveal: t(`a_which_${answer}`),
-        after: 'same',
+        reveal: t(`a_infer_${light}`),
       };
     },
     blue() {
       quizScene({ kind: 'blue' }, 'white');
-      const wrong = ['blue', 'same', 'half'];
+      const wrong = ['rose', 'leaf', 'both'];
       return {
         text: t('q_blue'),
-        answer: 'black',
+        answer: 'neither',
         wrong,
-        label: (k) => t(`c_blue_${k}`),
+        label: (k) => t(`c_from_${k}`),
         notes: notesOf(wrong.map((k) => [k, t(`n_blue_${k}`)])),
         reveal: t('a_blue'),
         after: 'blue',
+      };
+    },
+    card() {
+      quizScene({ kind: 'card' }, 'white', { card: true });
+      const wrong = ['white', 'black', 'green'];
+      return {
+        text: t('q_card'),
+        answer: 'red',
+        wrong,
+        label: (k) => t(`c_${k}`),
+        notes: notesOf(wrong.map((k) => [k, t(`n_card_${k}`)])),
+        reveal: t('a_card'),
+        after: 'red',
+        band: false,
       };
     },
   };
@@ -641,32 +738,36 @@ export function createApp(root, options = {}) {
         saved.light = s.light;
         saved.rays = s.rays;
         saved.seen = [...s.seen];
-        predictPair = Math.random() < 0.5 ? 'leaf' : 'rose';
-        order = shuffle(Object.keys(Q));
+        pair = Math.random() < 0.5 ? 'leaf' : 'rose';
+        // in this order no scene gives away a later answer
+        order = ['predict', 'why', 'infer', 'blue', 'card'];
         clearLabels();
         syncUI();
       },
       leave() {
-        ++token;
-        for (const k of ['out', 'light', 'grow', 'absorb']) tweener.cancel(k);
+        stopRun();
         s.mode = 'explore';
         s.locked = false;
         s.quiz = null;
-        s.busy = false;
+        setting.card.visible = false;
+        setBlind(false);
         s.light = saved.light;
         s.rays = saved.rays;
         s.seen = new Set(saved.seen);
         clearLabels();
+        const frame = s.rays ? 'both' : 'full';
         settle(s.light, s.rays);
         syncUI();
-        flyCamera(0.5);
+        camFrom = { position: camera.position.clone(), target: controls.target.clone() };
+        fly(frame, 0.5);
         draw();
       },
       async prepare(i, alive, say) {
         const q = Q[order[i]]();
         qCurrent = q;
         say(q.text);
-        const done = await flyCamera(0.4);
+        const frame = s.frame;
+        const done = await fly(frame, 0.4);
         if (!alive()) return null;
         if (!done) camK = 1;
         const out = [q.answer];
@@ -710,15 +811,13 @@ export function createApp(root, options = {}) {
   }
   function home() {
     if (s.locked) return lockedNudge();
-    ++token;
-    for (const k of ['out', 'light', 'grow', 'absorb']) tweener.cancel(k);
-    s.busy = false;
+    stopRun();
     s.light = 'white';
     s.rays = false;
     s.seen.clear();
     clearLabels();
     settle('white', false);
-    if (s.view === '3d') setView('front');
+    fly('full', 0.6);
     draw();
     emitChange();
   }
@@ -771,6 +870,15 @@ export function createApp(root, options = {}) {
     absorbed: absorbed(object, s.light),
     arrow: rays.view[object].on && rays.view[object].out >= 1,
   });
+  /** Where the middle of a petal and of the leaf are on the view, as fractions: for a book page that wants to point at them. */
+  function marks() {
+    camera.updateMatrixWorld();
+    const at = (p) => {
+      const n = tmp.copy(p).project(camera);
+      return [+((n.x + 1) / 2).toFixed(4), +((1 - n.y) / 2).toFixed(4)];
+    };
+    return { rose: at(LAYOUT.bloomFace), leaf: at(leafMiddle) };
+  }
   function snapshot() {
     return {
       light: s.light,
@@ -780,6 +888,8 @@ export function createApp(root, options = {}) {
       rose: part('rose'),
       leaf: part('leaf'),
       toEye: toEye(s.light),
+      frame: s.frame,
+      marks: marks(),
       roseLeaving: leaving('rose', s.light),
       leafLeaving: leaving('leaf', s.light),
       mode: s.mode,
@@ -820,11 +930,9 @@ export function createApp(root, options = {}) {
       const light = ALL.includes(p.light) ? p.light : s.light;
       if (p.light != null || p.rays != null) {
         if (animate && p.rays !== false) {
-          await run(light);
+          run(light); // the story takes its time: the answer does not wait for it
         } else {
-          ++token;
-          for (const k of ['out', 'light', 'grow', 'absorb']) tweener.cancel(k);
-          s.busy = false;
+          stopRun();
           s.light = light;
           if (p.rays != null) s.rays = Boolean(p.rays);
           if (s.rays) s.seen.add(light);

@@ -78,71 +78,63 @@ class Sheets {
 }
 
 // ── petals ───────────────────────────────────────────────────────────────────────────────────────────────────
-const PETALS = 34;
+const PETALS = 27;
+const GRID = 18; // cells to a side of one petal
 
-/** The petal's half width along its length (0 at the claw, widest past the middle, round at the top). */
-function outline(v) {
-  if (v < 0.62) return 0.16 + 0.84 * S(0, 0.62, v);
-  const x = (v - 0.62) / 0.38;
-  return Math.max(0, 1 - x * x) ** 0.62;
-}
-
+/**
+ * One petal. Its sheet is a disc (a square grid mapped onto a circle, so the grid's edge is the petal's round edge, with no
+ * point at the tip), narrowed toward the claw. The sheet is laid on a cupped curve walked up from the claw, wrapped round
+ * the bloom, and its rim rolls outward all the way round the top: the lip follows the outline, never a straight crease.
+ */
 function addPetal(sheets, p, rose) {
-  const NU = 16;
-  const NV = 18;
-  const row = (j) => 1 - (1 - j / NV) ** 1.45; // more rows near the lip, where the shape turns
-  // each column of the petal is walked from the claw up: the tangent turns as it goes, so the shape is a real curve
-  const col = new Float32Array((NV + 1) * 2);
-  let last = -1;
-  const walk = (u) => {
-    let r = p.r0;
-    let y = p.y0;
-    const au = Math.abs(u);
-    for (let j = 0; j <= NV; j++) {
-      const v = row(j);
-      col[j * 2] = r;
-      col[j * 2 + 1] = y;
-      const ds = (row(j + 1) - v) * p.length;
-      const rise = S(0, 0.32, v);
-      const lip = S(0.56, 1, v);
-      // cupped: out from the claw, up the side, in at the shoulder; then the lip rolls back, the edges most of all
-      const a = mix(p.a0, p.a1, rise) + p.lip * lip * lip + p.roll * au * au * au * S(0.34, 1, v) + p.bend * u * lip;
-      r += Math.sin(a) * ds;
-      y += Math.cos(a) * ds;
-    }
+  const STEPS = 28;
+  const prof = new Float32Array((STEPS + 1) * 2);
+  let r = p.r0;
+  let y = p.y0;
+  for (let j = 0; j <= STEPS; j++) {
+    const t = j / STEPS;
+    prof[j * 2] = r;
+    prof[j * 2 + 1] = y;
+    const a = mix(p.a0, p.a1, S(0, 0.34, t)) + p.lip * S(0.45, 1, t) ** 2;
+    r += (Math.sin(a) * p.length) / STEPS;
+    y += (Math.cos(a) * p.length) / STEPS;
+  }
+  const along = (t, k) => {
+    const f = Math.min(STEPS - 1e-4, t * STEPS);
+    const i = Math.floor(f);
+    return mix(prof[i * 2 + k], prof[(i + 1) * 2 + k], f - i);
   };
   sheets.grid(
-    NU,
-    NV,
+    GRID,
+    GRID,
     (i, j, o) => {
-      const u = -1 + (2 * i) / NU;
-      if (i !== last) {
-        walk(u);
-        last = i;
-      }
-      const v = row(j);
-      let r = col[j * 2] + p.tuck * u * S(0, 0.7, v);
-      const y = col[j * 2 + 1] + p.wave * Math.sin(u * 4.3 + p.phase) * S(0.55, 1, v) * (0.4 + Math.abs(u));
-      r += p.wave * 0.7 * Math.sin(u * 7.1 + p.phase * 2) * S(0.6, 1, v);
-      const half = (p.width * outline(v)) / Math.max(0.42, Math.abs(r));
-      const a = p.theta + u * p.wrap * Math.tanh(half / p.wrap); // wide petals wrap round, never past their limit
-      o.x = Math.max(r, 0.02) * Math.cos(a);
-      o.y = y;
-      o.z = Math.max(r, 0.02) * Math.sin(a);
-      // deep in the throat a petal is dark; toward the lip it is at full colour. The heart stays deeper: light rarely gets there
-      const throat = mix(0.12, 1, S(0.1, 0.72, v));
-      const depth = mix(0.4, 1, S(0.02, 0.6, p.k));
-      const edge = 1 - 0.26 * (1 - Math.abs(u) ** 2) * (1 - S(0.5, 1, v)); // the middle of a petal lies deeper than its edges
-      const k = throat * depth * edge * p.tone;
-      o.r = rose[0] * Math.min(1.05, k);
-      o.g = rose[1] * k;
-      o.b = rose[2] * k;
-      o.u = u * 0.5 + 0.5;
-      o.v = v;
+      const a = -1 + (2 * i) / GRID;
+      const b = -1 + (2 * j) / GRID;
+      const X = a * Math.sqrt(1 - (b * b) / 2);
+      const Y = b * Math.sqrt(1 - (a * a) / 2);
+      const py = (Y + 1) / 2; // along the petal, claw to lip
+      const rim = 1 - Math.min(1, Math.hypot(X, Y)); // 0 on the edge
+      const px = X * mix(0.34, 1.08, S(0, 0.6, py));
+      const curl = (1 - S(0, p.rimWidth, rim)) ** 2 * S(0.28, 0.72, py);
+      let rr = along(py, 0) + p.tuck * px * S(0, 0.7, py) + p.curl * curl;
+      const yy = along(py, 1) - p.curl * 0.55 * curl * curl + p.wave * Math.sin(px * 4.3 + p.phase) * S(0.5, 1, py);
+      rr += p.wave * 0.6 * Math.sin(px * 6.7 + p.phase * 2) * curl;
+      const half = (px * p.width) / Math.max(0.5, rr);
+      const t = p.theta + p.wrap * Math.tanh(half / p.wrap);
+      o.x = rr * Math.cos(t);
+      o.y = yy;
+      o.z = rr * Math.sin(t);
+      // deep in the throat a petal is dark, and the heart stays deeper; a fine lighter line runs along the lip
+      const k = mix(0.14, 1, S(0.04, 0.72, py)) * mix(0.42, 1, S(0, 0.55, p.k)) * (0.86 + 0.14 * S(0, 0.5, 1 - rim)) * p.tone;
+      const glow = (1 - S(0, 0.13, rim)) * S(0.3, 0.7, py);
+      o.r = rose[0] * Math.min(1, 0.84 * k * (1 + 0.32 * glow));
+      o.g = rose[1] * k + 0.011 * glow;
+      o.b = rose[2] * k + 0.005 * glow;
+      o.u = X * 0.5 + 0.5;
+      o.v = py;
     },
     true,
   );
-  last = -1;
 }
 
 function bloomGeometry() {
@@ -155,21 +147,21 @@ function bloomGeometry() {
       sheets,
       {
         k,
-        theta: n * GOLDEN + (rnd() - 0.5) * 0.22,
-        length: mix(3.1, 8.6, kk) * (0.96 + rnd() * 0.08),
-        width: mix(1.5, 5.1, kk ** 1.15) * (0.94 + rnd() * 0.12),
-        r0: mix(0.1, 1.35, kk),
-        y0: mix(1.5, -0.55, k ** 0.7),
-        a0: mix(0.75, 1.5, kk),
-        a1: mix(-0.1, 0.78, k ** 1.5) + (rnd() - 0.5) * 0.08,
-        lip: mix(0.6, 1.6, k) * (0.9 + rnd() * 0.25),
-        roll: mix(0.25, 1.15, k),
-        bend: (rnd() - 0.5) * 0.5,
-        wrap: mix(2.1, 1.05, kk),
-        tuck: mix(0.28, 0.5, k) * (rnd() < 0.5 ? 1 : 0.7),
-        wave: mix(0.03, 0.22, k) * (0.6 + rnd() * 0.8),
+        theta: n * GOLDEN + (rnd() - 0.5) * 0.2,
+        length: mix(4.3, 8.1, kk) * (0.97 + rnd() * 0.06),
+        width: mix(2.2, 5.2, kk) * (0.95 + rnd() * 0.1),
+        r0: mix(0.45, 1.25, kk),
+        y0: mix(1, -0.5, k ** 0.7),
+        a0: mix(0.5, 1.42, kk),
+        a1: mix(-0.04, 0.74, k ** 1.5) + (rnd() - 0.5) * 0.06,
+        lip: mix(0.3, 0.8, k),
+        curl: mix(0.26, 1.35, k ** 1.1) * (0.85 + rnd() * 0.3),
+        rimWidth: mix(0.34, 0.48, k),
+        wrap: mix(2.5, 1.12, kk),
+        tuck: mix(0.34, 0.5, k) * (rnd() < 0.5 ? 1 : 0.7),
+        wave: mix(0.02, 0.12, k) * (0.6 + rnd() * 0.8),
         phase: rnd() * 6.28,
-        tone: 0.88 + rnd() * 0.17,
+        tone: 0.92 + rnd() * 0.12,
       },
       REFLECTANCE.rose,
     );
@@ -181,8 +173,8 @@ function bloomGeometry() {
 
 /**
  * Soft shade where petals crowd each other. The vertices are counted into a coarse grid; from each one a few short rays go
- * out on its open side and add up how crowded the way is. It runs once, and takes only brightness from the colours,
- * so the reflectance ratios (and with them the black in green light) stay exact.
+ * out on its open side and add up how crowded the way is. The result is smoothed along each petal, so that it falls off
+ * softly, with no steps. It runs once, and takes only brightness from the colours, so the channel ratios stay exact.
  */
 function bakeOcclusion(g) {
   const pos = g.attributes.position;
@@ -211,7 +203,8 @@ function bakeOcclusion(g) {
     [0, 0.7, 0.7],
     [0, 0.7, -0.7],
   ];
-  const axis = new THREE.Vector3();
+  const open = new THREE.Vector3();
+  const shade = new Float32Array(pos.count);
   for (let v = 0; v < pos.count; v++) {
     const x = pos.getX(v);
     const y = pos.getY(v);
@@ -220,8 +213,8 @@ function bakeOcclusion(g) {
     let nx = nor.getX(v);
     let ny = nor.getY(v);
     let nz = nor.getZ(v);
-    axis.set(x, 1.5, z).normalize();
-    if (nx * axis.x + ny * axis.y + nz * axis.z < 0) {
+    open.set(x, 1.5, z).normalize();
+    if (nx * open.x + ny * open.y + nz * open.z < 0) {
       nx = -nx;
       ny = -ny;
       nz = -nz;
@@ -238,9 +231,39 @@ function bakeOcclusion(g) {
         if (c >= 0) crowd += grid[c] / (step * 0.8 + 0.6);
       }
     }
-    const light = Math.max(0.1, Math.exp(-crowd * 0.034));
-    col.setXYZ(v, col.getX(v) * light, col.getY(v) * light, col.getZ(v) * light);
+    shade[v] = Math.max(0.16, Math.exp(-crowd * 0.05));
   }
+  // smooth along each petal's own grid
+  const side = GRID + 1;
+  const count = side * side;
+  const blur = new Float32Array(count);
+  for (let petal = 0; petal < PETALS; petal++) {
+    const base = petal * count;
+    for (let pass = 0; pass < 4; pass++) {
+      for (let j = 0; j < side; j++)
+        for (let i = 0; i < side; i++) {
+          let sum = 0;
+          let n = 0;
+          for (const [a, b] of [
+            [0, 0],
+            [1, 0],
+            [-1, 0],
+            [0, 1],
+            [0, -1],
+          ]) {
+            const ii = i + a;
+            const jj = j + b;
+            if (ii >= 0 && jj >= 0 && ii < side && jj < side) {
+              sum += shade[base + jj * side + ii];
+              n++;
+            }
+          }
+          blur[j * side + i] = sum / n;
+        }
+      shade.set(blur, base);
+    }
+  }
+  for (let v = 0; v < pos.count; v++) col.setXYZ(v, col.getX(v) * shade[v], col.getY(v) * shade[v], col.getZ(v) * shade[v]);
 }
 
 /** Fine lines down a petal: a multiplier near white, so colour stays exactly the reflectance. */
@@ -254,7 +277,7 @@ function petalTexture() {
   g.lineCap = 'round';
   for (let i = 0; i < 44; i++) {
     const x = (i + rnd() * 0.8) * (256 / 44);
-    const fan = (x - 128) * 0.28;
+    const fan = (x - 128) * 0.22;
     g.strokeStyle = `rgba(120,120,120,${0.04 + rnd() * 0.07})`;
     g.lineWidth = 1 + rnd() * 2.4;
     g.beginPath();
@@ -269,11 +292,11 @@ function petalTexture() {
 }
 
 // ── leaves ───────────────────────────────────────────────────────────────────────────────────────────────────
-const TEETH = 17;
-/** Rows of a leaf: three to a tooth, so that every tooth has a sharp point. */
+const TEETH = 10;
+/** Rows of a leaf: five to a tooth, so that every tooth is a soft, rounded step. */
 const LEAF_ROWS = (() => {
   const rows = [];
-  for (let t = 0; t < TEETH; t++) rows.push(t / TEETH, (t + 0.45) / TEETH, (t + 0.8) / TEETH);
+  for (let t = 0; t < TEETH; t++) for (const f of [0, 0.25, 0.5, 0.72, 0.88]) rows.push((t + f) / TEETH);
   rows.push(1);
   return rows;
 })();
@@ -294,12 +317,12 @@ function addLeaflet(sheets, l, m) {
     const u = -1 + (2 * i) / NU;
     const v = LEAF_ROWS[j];
     const fr = v * TEETH - Math.floor(v * TEETH + 1e-6);
-    // the tooth: it leans forward, a sharp point at 0.8 of its length
-    const tooth = fr < 0.8 ? fr / 0.8 : 1 - (fr - 0.8) / 0.2;
-    const edge = leafOutline(v) * (1 + 0.075 * tooth * S(0, 0.16, v) * (1 - S(0.94, 1, v)));
+    // the tooth: it swells forward and rounds off into the next one
+    const tooth = fr < 0.74 ? Math.sin((fr / 0.74) * Math.PI * 0.5) : Math.cos(((fr - 0.74) / 0.26) * Math.PI * 0.5);
+    const edge = leafOutline(v) * (1 + 0.1 * tooth * S(0, 0.14, v) * (1 - S(0.93, 1, v)));
     const w = l.half * edge;
     const x = u * w;
-    const y = l.length * v + 0.09 * l.half * tooth * Math.abs(u) ** 3 * (1 - S(0.92, 1, v));
+    const y = l.length * v + 0.14 * l.half * tooth * Math.abs(u) ** 3 * (1 - S(0.92, 1, v));
     const au = Math.abs(u);
     // folded along the midrib, arched along its length, a soft quilt between the side veins, a loose edge
     let z = l.fold * au * w - l.arch * (2 * v - 1) ** 2 + l.arch;
@@ -324,8 +347,8 @@ function leafTexture() {
   const [, lg] = REFLECTANCE.leaf;
   const green = (k) => {
     const l = Math.round(255 * (lg * k) ** (1 / 2.2));
-    const r = Math.round(255 * (0.0045 * k) ** (1 / 2.2));
-    const b = Math.round(255 * (0.018 * k) ** (1 / 2.2));
+    const r = Math.round(255 * (REFLECTANCE.leaf[0] * k) ** (1 / 2.2));
+    const b = Math.round(255 * (REFLECTANCE.leaf[2] * k) ** (1 / 2.2));
     return `rgb(${r},${l},${b})`;
   };
   g.fillStyle = green(1);
@@ -428,11 +451,11 @@ export function createRose({ layout }) {
     name: 'petal',
     vertexColors: true,
     map: petalMap,
-    roughness: 0.5,
+    roughness: 0.56,
     metalness: 0,
     side: THREE.DoubleSide,
     sheen: 1,
-    sheenRoughness: 0.5,
+    sheenRoughness: 0.34,
     sheenColor: new THREE.Color(REFLECTANCE.rose[0], 0.004, 0.008),
     specularIntensity: 0.5,
     specularColor: new THREE.Color(1, 0.16, 0.18), // a soft sheen in the petal's own colour, so that green light finds nothing here
@@ -498,14 +521,11 @@ export function createRose({ layout }) {
   // thorns: curved down the stem
   const up = new THREE.Vector3(0, 1, 0);
   for (const [t, side] of [
-    [0.1, 0.4],
-    [0.2, 3.2],
-    [0.32, 1.7],
-    [0.44, 4.6],
-    [0.56, 0.9],
-    [0.68, 2.6],
-    [0.8, 5.4],
-    [0.9, 3.9],
+    [0.3, 0.2],
+    [0.46, 3],
+    [0.6, 0.9],
+    [0.74, 3.7],
+    [0.86, 5.6],
   ]) {
     const p = curve.getPointAt(t);
     const out = new THREE.Vector3(Math.cos(side), 0.0, Math.sin(side));
@@ -513,12 +533,12 @@ export function createRose({ layout }) {
     wood.grid(5, 4, (i, j, o) => {
       const a = (i / 5) * Math.PI * 2;
       const v = j / 4;
-      const r = 0.2 * (1 - v) ** 1.2;
-      const along = v * 0.72;
+      const r = 0.34 * (1 - v) ** 1.2;
+      const along = v * 1.25;
       const c = p
         .clone()
         .addScaledVector(dir, along)
-        .addScaledVector(up, -0.28 * v * v);
+        .addScaledVector(up, -0.46 * v * v);
       const side2 = new THREE.Vector3().crossVectors(dir, up).normalize();
       c.addScaledVector(side2, r * Math.cos(a)).addScaledVector(up, r * Math.sin(a));
       o.x = c.x;
@@ -553,9 +573,10 @@ export function createRose({ layout }) {
     name: 'leaf',
     vertexColors: true,
     map: leafMap,
-    roughness: 0.5,
+    roughness: 0.4,
     side: THREE.DoubleSide,
-    specularIntensity: 0.22,
+    specularIntensity: 0.55,
+    specularColor: new THREE.Color(0.03, 1, 0.1), // the blade's gloss in its own colour: nothing here for a red lamp
   });
   const leafMesh = new THREE.Mesh(leaves.geometry(), leafMat);
   leafMesh.name = 'leaves';

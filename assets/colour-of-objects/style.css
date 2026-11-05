@@ -16,12 +16,16 @@ body.bg-transparent { background: transparent; }
 .coo .pvc-rule { font-size: 14.5px; line-height: 1.55; }
 .coo .pvc-rule b { color: var(--ink); }
 
+/* the book's caption: only where the panel has room for it */
+.coo .coo-cap { display: none; margin: 8px 0 0; padding-top: 12px; border-top: 1px solid var(--line, #dee2e6); color: var(--ink-2); font-size: 15px; line-height: 1.6; }
+.coo .coo-cap b { font-weight: 600; color: #1971c2; }
+
 /* the vector drawing over the view */
 .coo-draw { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 
 /* labels on the picture: a plain white tab, a thin line, no dot */
 .coo .pvc-anno { transition: none; font-size: 13px; font-weight: 600; color: var(--c); border: 0; border-radius: 4px; background: #fff; padding: 1px 6px; box-shadow: none; white-space: nowrap; }
-.coo .pvc-anno-lines line { stroke-width: 1; stroke: rgba(255, 255, 255, 0.8) !important; }
+.coo .pvc-anno-lines line { stroke-width: 1.2; stroke: rgba(255, 255, 255, 0.9) !important; }
 .coo .pvc-anno-lines circle { display: none; }
 @media (max-width: 480px) {
   .coo .pvc-anno { font-size: 12.5px; }
@@ -88,4 +92,5 @@ body.bg-transparent { background: transparent; }
   .coo .pvc-outcome { font-size: 16px; line-height: 44px; }
   .coo .pvc-outcome b { font-size: 30px; }
   .coo .pvc-rule { font-size: 16.5px; line-height: 1.65; }
+  .coo .coo-cap { display: block; }
 }

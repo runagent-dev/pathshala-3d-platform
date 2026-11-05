@@ -13,7 +13,7 @@
   "order": 1,
   "maintainers": ["RadeenXALNW"],
   "units": "cm",
-  "description": "Interactive 3D figure for absorption (শোষণ) and the colour of objects, book page 217, under topic 8.2.1, next to চিত্র ৮.০৬. The book's red rose with its green leaves stands in a dim room under one lamp. White light comes in as a clean band of the spectrum colours; every colour except the object's own ends at the surface, and only red leaves the petal and only green leaves the leaf, toward an eye. Then the book's surprise: a filter on the lamp gives pure red light, the leaf has nothing to reflect and looks black; in green light the rose looks black. The 3D colours are light times reflectance, channel by channel. Five test questions. Offline, Bangla and English.",
+  "description": "Interactive 3D figure for absorption (শোষণ) and the colour of objects, book page 217, under topic 8.2.1, next to চিত্র ৮.০৬. The book's red rose with its green leaves stands under one lamp against a dark slate wall. White light comes in as a clean band of the spectrum colours. The camera goes close to the petal, where every colour except red ends at the surface and a red arrow leaves toward an eye, then to the leaf, where only green leaves. Then the book's surprise: a filter on the lamp gives pure red light, the leaf has nothing to reflect and looks black; in green light the rose looks black. The 3D colours are light times reflectance, channel by channel. Five test questions. Offline, Bangla and English.",
   "tags": ["light", "colour", "absorption", "reflection", "white-light", "spectrum", "rose", "bangla"],
   "params": [
     {
@@ -64,13 +64,13 @@
     "glb": [{ "name": "default" }],
     "video": {
       "kind": "script",
-      "seconds": 18,
+      "seconds": 24,
       "fps": 30,
       "params": { "coach": "0" },
       "script": [
         { "at": 1, "command": "set", "payload": { "light": "white" } },
-        { "at": 7, "command": "set", "payload": { "light": "red" } },
-        { "at": 12, "command": "set", "payload": { "light": "green" } }
+        { "at": 10.5, "command": "set", "payload": { "light": "red" } },
+        { "at": 17, "command": "set", "payload": { "light": "green" } }
       ]
     }
   }

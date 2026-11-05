@@ -32,36 +32,55 @@ test('colour-of-objects: the book in order, on one action', async ({ page }) => 
   const log = await preparePage(page);
   const fig = await openFigure(page, 'colour-of-objects');
   const act = () => fig.frame.locator('.pvc-act').first().click();
+  const settled = async () => {
+    for (let i = 0; i < 60; i++) {
+      await fig.advance(300);
+      if (!(await fig.call('get')).busy) return fig.advance(200);
+    }
+    throw new Error('the story never ended');
+  };
+  const labels = () =>
+    fig.frame.locator('.pvc-anno').evaluateAll((all) => all.filter((a) => getComputedStyle(a).visibility !== 'hidden').map((a) => a.textContent));
   expect(await fig.call('get')).toMatchObject({ light: 'white', rays: false, toEye: ['red', 'green'] });
 
   // white light: every colour comes in, only red leaves the petal and only green the leaf
+  // the camera tells it: close on the petal, close on the leaf, then the whole idea
   await act();
-  await fig.advance(3500);
+  await fig.advance(3000);
+  expect((await fig.call('get')).frame).toBe('rose');
+  await expect(fig.frame.locator('.pvc-anno', { hasText: 'শোষণ' }).first()).toBeVisible();
+  await fig.advance(3000);
+  expect((await fig.call('get')).frame).toBe('leaf');
+  await settled();
   let st = await fig.call('get');
-  expect(st).toMatchObject({ light: 'white', rays: true, busy: false });
+  expect(st).toMatchObject({ light: 'white', rays: true, busy: false, frame: 'both' });
   expect(st.band).toEqual(['violet', 'blue', 'green', 'yellow', 'orange', 'red']);
   expect(st.rose).toMatchObject({ looks: 'red', reflected: ['red'], arrow: true });
   expect(st.rose.absorbed).toEqual(['violet', 'blue', 'green', 'yellow', 'orange']);
   expect(st.leaf).toMatchObject({ looks: 'green', reflected: ['green'], arrow: true });
   await expect(fig.frame.locator('.pvc-rule')).toContainText('শোষণ');
+  expect((await labels()).sort()).toEqual(['প্রতিফলন: লাল', 'প্রতিফলন: সবুজ', 'শোষণ', 'শোষণ', 'সাদা (সব রং)'].sort());
 
   // red light: one band; the leaf gives nothing back
   await act();
-  await fig.advance(3200);
+  await settled();
   st = await fig.call('get');
   expect(st).toMatchObject({ light: 'red', band: ['red'], toEye: ['red'] });
   expect(st.rose).toMatchObject({ looks: 'red', arrow: true });
   expect(st.leaf).toMatchObject({ looks: 'black', reflected: [], arrow: false });
   await expect(fig.frame.locator('.pvc-outcome')).toContainText('কালো');
+  // the rose absorbs nothing here, so only the leaf says শোষণ
+  expect((await labels()).sort()).toEqual(['কালো দেখায়', 'প্রতিফলন: লাল', 'লাল আলো', 'শোষণ'].sort());
 
   // green light: now the rose
   await act();
-  await fig.advance(3200);
+  await settled();
   st = await fig.call('get');
   expect(st).toMatchObject({ light: 'green', band: ['green'], toEye: ['green'] });
   expect(st.rose).toMatchObject({ looks: 'black', reflected: [], arrow: false });
   expect(st.leaf).toMatchObject({ looks: 'green', arrow: true });
   await expect(fig.frame.locator('.pvc-rule')).toContainText('কুচকুচে কালো');
+  expect((await labels()).sort()).toEqual(['কালো দেখায়', 'প্রতিফলন: সবুজ', 'শোষণ', 'সবুজ আলো'].sort());
 
   await fig.call('reset');
   expect(await fig.call('get')).toMatchObject({ light: 'white', rays: false, mode: 'explore' });
@@ -74,8 +93,9 @@ test('colour-of-objects: the 3D view really turns the rose and the leaf black, a
   const log = await preparePage(page);
   const fig = await openFigure(page, 'colour-of-objects');
   await fig.advance(300);
-  // the outer petals at the bloom's lower right, and the blade of the main leaf (no band over them with rays off)
-  const at = { bloom: [0.56, 0.52], leaf: [0.66, 0.84] };
+  // the outer petals and the blade of the main leaf (no band over them with rays off), wherever the camera has them
+  const { marks } = await fig.call('get');
+  const at = { bloom: marks.rose, leaf: marks.leaf };
   const shot = async (light, rays = false) => {
     await fig.call('set', { light, rays, animate: false });
     await fig.advance(200);
@@ -117,19 +137,26 @@ test('colour-of-objects: the words choose the light, and the test gives back the
   await page.setViewportSize({ width: 844, height: 390 });
   const log = await preparePage(page);
   const fig = await openFigure(page, 'colour-of-objects');
+  const settled = async () => {
+    for (let i = 0; i < 60; i++) {
+      await fig.advance(300);
+      if (!(await fig.call('get')).busy) return fig.advance(200);
+    }
+    throw new Error('the story never ended');
+  };
   await fig.frame.locator('[data-example="green"]').click();
-  await fig.advance(3500);
-  expect(await fig.call('get')).toMatchObject({ light: 'green', rays: true });
+  await settled();
+  expect(await fig.call('get')).toMatchObject({ light: 'green', rays: true, frame: 'both' });
   // a change half way: the last one wins, and nothing is left over from the first
   await fig.frame.locator('[data-example="red"]').click();
   await fig.advance(300);
   await fig.frame.locator('[data-example="white"]').click();
-  await fig.advance(3500);
+  await settled();
   const st = await fig.call('get');
   expect(st).toMatchObject({ light: 'white', busy: false });
   expect(st.band.length).toBe(6);
   await fig.frame.locator('.pvc').first().press('ArrowRight');
-  await fig.advance(3500);
+  await settled();
   expect((await fig.call('get')).light).toBe('red');
 
   await fig.call('practice');
@@ -140,12 +167,12 @@ test('colour-of-objects: the words choose the light, and the test gives back the
     await fig.frame.locator('.pvc-opt[data-q="0"]').click();
     await fig.advance(300);
     expect(['ok', 'bad']).toContain(await fig.frame.locator('.pvc-q-feedback').getAttribute('data-tone'));
-    await fig.advance(2800);
+    await settled();
     await fig.frame.locator('[data-act="q-next"]').click();
   }
   await fig.advance(900);
   await fig.frame.locator('[data-mode="explore"]').click();
   await fig.advance(900);
-  expect(await fig.call('get')).toMatchObject({ mode: 'explore', light: 'red', rays: true, busy: false, locked: false });
+  expect(await fig.call('get')).toMatchObject({ mode: 'explore', light: 'red', rays: true, busy: false, locked: false, frame: 'both' });
   expect(log.errors).toEqual([]);
 });

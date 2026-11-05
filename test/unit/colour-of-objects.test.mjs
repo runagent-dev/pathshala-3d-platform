@@ -60,7 +60,8 @@ test('colour-of-objects: every colour in the light is either reflected or absorb
 test('colour-of-objects: the 3D colours are light × reflectance, channel by channel', () => {
   assert.deepEqual(leaving('rose', 'green'), [0, REFLECTANCE.rose[1], 0]);
   assert.deepEqual(leaving('leaf', 'red'), [REFLECTANCE.leaf[0], 0, 0]);
-  assert.deepEqual(leaving('grey', 'red'), [REFLECTANCE.grey[0], 0, 0]); // the grey stand shows the light's own colour
+  assert.deepEqual(leaving('grey', 'red'), [REFLECTANCE.grey[0], 0, 0]); // the grey vase shows the light's own colour
+  assert.deepEqual(leaving('card', 'red'), [REFLECTANCE.card[0], 0, 0]); // the test's white paper looks red in red light
   assert.deepEqual(leaving('rose', 'white'), REFLECTANCE.rose);
   for (const light of ['white', 'red', 'green', 'blue']) assert.equal(LAMP[light].length, 3);
 });

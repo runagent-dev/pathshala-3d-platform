@@ -1,15 +1,16 @@
-// The setting: a dim neutral backdrop, a grey vase on a table, and one lamp at the top left with a filter that swings in
-// front of its lens. All the light in the room is the lamp's: key, fill and the backdrop's own glow take its colour, so the
-// neutral grey things show what the light is, and nothing else tints the rose. Sizes in centimetres.
+// The setting: a fixed dark slate wall, a very dark table, a grey vase, and one lamp at the top left with a filter that swings
+// in front of its lens. The wall never changes: the lamp's beam is a narrow cone on the rose and the stand, and every light that
+// falls on them is the lamp's colour, so nothing else tints the rose and the coloured light never floods the room. Centimetres.
 import * as THREE from 'three';
 import { REFLECTANCE } from './reading.js';
 
 /** Where everything is, in one place: the camera's frame, the rays and the model all read this. */
 export const LAYOUT = {
-  bloomAt: new THREE.Vector3(3.4, 5, 0.2), // the base of the bloom
+  bloomAt: new THREE.Vector3(3.4, 4.8, 0.2), // the base of the bloom
   bloomTilt: new THREE.Vector3(0.08, 1, 0.82), // its axis: tipped toward the viewer, so the heart shows
   bloomCentre: new THREE.Vector3(3.7, 7.7, 2.4), // the sphere that the band lands on
   bloomRadius: 6.1,
+  bloomFace: new THREE.Vector3(6, 6, 5.5), // a point on the outer petals, facing the viewer
   stem: [
     new THREE.Vector3(0.7, -16, -1.2),
     new THREE.Vector3(0.9, -9, -1),
@@ -96,14 +97,26 @@ export const LAYOUT = {
       ],
     },
   ],
-  lamp: new THREE.Vector3(-16.5, 17, -3), // the lens
+  lamp: new THREE.Vector3(-16.5, 15, -3), // the lens
+  lampBody: new THREE.Vector3(-19.2, 17.6, -5.4), // on its body, clear of the lens: where the action's ring sits
   lampLooks: new THREE.Vector3(3, -1, 10), // a little toward the viewer, so that its lit lens shows
   lightFrom: new THREE.Vector3(-16.5, 17, 13), // the key light: from the lamp's side, on the face of the bloom
-  aim: new THREE.Vector3(3, -1, 2.4), // the lamp looks here, between the bloom and the leaf
-  eye: new THREE.Vector3(19, 18, 3.5),
+  aim: new THREE.Vector3(5, -1.5, 2.4), // the beam's axis: between the bloom and the leaf
+  eye: new THREE.Vector3(20.5, 15.5, 3.5),
   leafHit: new THREE.Vector3(8.2, -9.8, 2.3), // where the band lands on the leaf
   leafAxis: [new THREE.Vector3(3.9, -8.7, 1.6), new THREE.Vector3(15.8, -11.7, 2.3)], // the midrib, on which the band ends
-  frame: new THREE.Box3(new THREE.Vector3(-23, -16.4, -2), new THREE.Vector3(25, 23.5, 6)),
+  card: new THREE.Vector3(-9.5, -1, 1), // the white paper (one question of the test)
+};
+
+const box = (a, b, c, d, e, f) => new THREE.Box3(new THREE.Vector3(a, b, c), new THREE.Vector3(d, e, f));
+/** What the camera shows, by step: a box to fill, and the angle to see it from. `wide` is used when the view is landscape. */
+export const FRAMES = {
+  full: { box: box(-23, -16.4, -2, 26, 21.5, 6), az: 15, el: 9 },
+  // the idea: the rose, the leaf, where the bands end, the arrows and the eye; beside a panel the lamp fits in too
+  both: { box: box(-10.5, -16, -1, 30, 18.5, 5), wide: box(-21, -16, -1, 26, 20, 5), az: 19, el: 11 },
+  rose: { box: box(-7.5, 3, 0, 10, 16.5, 6), az: 12, el: 17 },
+  leaf: { box: box(1, -15.5, 0, 17.5, -3.5, 4), az: 9, el: 19 },
+  plant: { box: box(-9.5, -16, -1, 16.5, 14.5, 5), az: 19, el: 11 },
 };
 
 function backdropGeometry() {
@@ -111,16 +124,15 @@ function backdropGeometry() {
   const p = g.attributes.position;
   const c = new Float32Array(p.count * 3);
   const d = new THREE.Vector3();
-  const back = new THREE.Vector3(-0.1, 0.05, -1).normalize();
+  const back = new THREE.Vector3(-0.1, 0.1, -1).normalize();
   for (let i = 0; i < p.count; i++) {
     d.fromBufferAttribute(p, i).normalize();
-    // the pool of light on the wall behind the rose, falling off to a dim edge
+    // slate, a little lighter behind the rose, so that a black rose still stands out against it
     const k = Math.max(0, d.dot(back));
-    const glow = k ** 16;
-    const v = 0.03 + 0.1 * k ** 3 + 0.17 * glow;
-    c[i * 3] = v * 0.92;
+    const v = 0.016 + 0.05 * k ** 4 + 0.05 * k ** 18;
+    c[i * 3] = v * 0.86;
     c[i * 3 + 1] = v;
-    c[i * 3 + 2] = v * 1.1;
+    c[i * 3 + 2] = v * 1.2;
   }
   g.setAttribute('color', new THREE.BufferAttribute(c, 3));
   return g;
@@ -145,7 +157,7 @@ function glowTexture() {
 function createLamp() {
   const root = new THREE.Group();
   root.name = 'lamp';
-  const black = new THREE.MeshStandardMaterial({ name: 'lamp-body', color: 0x24272c, roughness: 0.46, metalness: 0.35 });
+  const black = new THREE.MeshStandardMaterial({ name: 'lamp-body', color: 0x4a505a, roughness: 0.42, metalness: 0.4 });
   const metal = new THREE.MeshStandardMaterial({ name: 'lamp-metal', color: 0x9aa1aa, roughness: 0.34, metalness: 0.85 });
   const v2 = (x, y) => new THREE.Vector2(x, y);
   // the lathe turns round Y: laid along Z afterwards
@@ -254,11 +266,16 @@ export function createSetting({ stage, shadow }) {
   back.userData.noExport = true;
   scene.add(back);
 
-  // the table and the vase: neutral grey, so they take exactly the lamp's colour
-  const grey = REFLECTANCE.grey;
+  // the table, very dark but slate like the wall (it has its own fixed tone, so that a black leaf still shows against it), and
+  // the vase, a dark neutral glaze: only a small pool of the beam shows on them
   const table = new THREE.Mesh(
     new THREE.CylinderGeometry(150, 150, 2, 64),
-    new THREE.MeshStandardMaterial({ name: 'table', color: new THREE.Color(grey[0] * 0.3, grey[1] * 0.3, grey[2] * 0.3), roughness: 0.8 }),
+    new THREE.MeshStandardMaterial({
+      name: 'table',
+      color: new THREE.Color(0.012, 0.013, 0.015),
+      emissive: new THREE.Color(0.021, 0.024, 0.029),
+      roughness: 0.74,
+    }),
   );
   table.position.y = -27;
   table.receiveShadow = true;
@@ -266,27 +283,44 @@ export function createSetting({ stage, shadow }) {
   scene.add(table);
 
   const v2 = (x, y) => new THREE.Vector2(x, y);
-  const vaseGeo = new THREE.LatheGeometry(
-    [
-      v2(0, -26),
-      v2(2.6, -26),
-      v2(3.1, -25.7),
-      v2(3.5, -23.5),
-      v2(3.3, -21),
-      v2(2.3, -18.5),
-      v2(1.45, -16.6),
-      v2(1.35, -15.2),
-      v2(1.55, -14.4),
-      v2(1.32, -14.3),
-      v2(1.1, -15),
-    ],
-    32,
+  const outline = new THREE.SplineCurve([
+    v2(0.01, -26),
+    v2(2.7, -26),
+    v2(3.45, -24.4),
+    v2(3.5, -22.6),
+    v2(2.6, -19.2),
+    v2(1.55, -16.9),
+    v2(1.32, -15.4),
+    v2(1.62, -14.3),
+  ]);
+  const vaseGeo = new THREE.LatheGeometry([...outline.getPoints(44), v2(1.5, -14.25), v2(1.16, -15)], 56);
+  const vase = new THREE.Mesh(
+    vaseGeo,
+    new THREE.MeshPhysicalMaterial({ name: 'vase', color: new THREE.Color(...REFLECTANCE.grey), roughness: 0.32, side: THREE.DoubleSide }),
   );
-  const vase = new THREE.Mesh(vaseGeo, new THREE.MeshStandardMaterial({ name: 'vase', color: new THREE.Color(...grey), roughness: 0.52 }));
   vase.name = 'stand';
   vase.position.set(0.7, 0, -1.2);
   vase.castShadow = vase.receiveShadow = true;
   scene.add(vase);
+
+  // white paper on a wire stand: only the test brings it out
+  const card = new THREE.Group();
+  card.name = 'card';
+  card.position.copy(LAYOUT.card);
+  card.rotation.y = 0.28;
+  const sheet = new THREE.Mesh(
+    new THREE.BoxGeometry(7.4, 9.6, 0.05),
+    new THREE.MeshStandardMaterial({ name: 'paper', color: new THREE.Color(...REFLECTANCE.card), roughness: 0.82 }),
+  );
+  const wire = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.1, 0.1, 22, 8),
+    new THREE.MeshStandardMaterial({ color: new THREE.Color(0.1, 0.1, 0.1), roughness: 0.4 }),
+  );
+  wire.position.set(0, -15.5, -0.1);
+  card.add(sheet, wire);
+  card.visible = false;
+  card.userData.noExport = true;
+  scene.add(card);
 
   const lamp = createLamp();
   lamp.root.position.copy(LAYOUT.lamp);
@@ -294,8 +328,8 @@ export function createSetting({ stage, shadow }) {
   lamp.root.scale.setScalar(0.8);
   scene.add(lamp.root);
 
-  // the lights: all of them the lamp's
-  const key = new THREE.DirectionalLight(0xffffff, 3);
+  // the lights: all of them the lamp's. The beam is a cone just wide enough for the rose, its leaves and the top of the stand
+  const key = new THREE.SpotLight(0xffffff, 3.3, 0, 0.6, 0.55, 0);
   key.position.copy(LAYOUT.lightFrom);
   key.target.position.copy(LAYOUT.aim);
   scene.add(key, key.target);
@@ -307,25 +341,23 @@ export function createSetting({ stage, shadow }) {
     key.shadow.bias = -0.0012;
     key.shadow.normalBias = 0.14;
     key.shadow.radius = 4;
-    Object.assign(key.shadow.camera, { left: -19, right: 19, top: 19, bottom: -19, near: 4, far: 70 });
-    key.shadow.camera.updateProjectionMatrix();
+    key.shadow.camera.near = 8;
+    key.shadow.camera.far = 70;
   }
-  const front = new THREE.DirectionalLight(0xffffff, 0.42);
+  const front = new THREE.DirectionalLight(0xffffff, 0.46);
   front.position.set(8, 6, 40);
-  const hemi = new THREE.HemisphereLight(0xffffff, 0xffffff, 0.5);
+  const hemi = new THREE.HemisphereLight(0xffffff, 0xffffff, 0.52);
   scene.add(front, hemi);
 
   return {
     lamp,
-    /** The room's light now, linear. */
+    card,
+    /** The lamp's light now, linear: it falls on what is in the beam. The wall stays as it is. */
     light([r, g, b]) {
       key.color.setRGB(r, g, b);
       front.color.setRGB(r, g, b);
       hemi.color.setRGB(r, g, b);
-      hemi.groundColor.setRGB(r * 0.55, g * 0.55, b * 0.55);
-      // a pure colour on the wall, kept as dim as the white room: the eye weighs green most, blue least
-      const k = Math.min(1, Math.max(0, (r + g + b - 1) / 2));
-      backMat.color.setRGB(r * (0.62 + 0.38 * k), g * (0.42 + 0.58 * k), b * (1.1 - 0.1 * k));
+      hemi.groundColor.setRGB(r * 0.5, g * 0.5, b * 0.5);
     },
   };
 }

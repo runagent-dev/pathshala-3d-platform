@@ -2,7 +2,7 @@
 
 **Where it goes in the book:** Book page 217, the part শোষণ under topic 8.2.1: next to চিত্র ৮.০৬ (a red rose with green leaves in white light).
 
-The red rose and green leaves of চিত্র ৮.০৬ under one lamp: white light as a band of the spectrum colours, every colour but the object's own absorbed (শোষণ) at the surface, only red and green reaching the eye; then red and green light turn the leaf and the rose black.
+The red rose and green leaves of চিত্র ৮.০৬ under one lamp: white light as a band of the spectrum colours, the camera close on the petal and the leaf where every colour but the object's own is absorbed (শোষণ) and only red and green leave for the eye; then red and green light turn the leaf and the rose black.
 
 ## Embed
 
