@@ -1,0 +1,100 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "right-angle-mirrors",
+  "title": "Two mirrors at a right angle (সমকোণে দুটি আয়না)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 234,
+  "topic": "8.8.1",
+  "placement": "Book page 234, topic 8.8.1 সাধারণ আয়না, next to চিত্র ৮.২৬ (a girl showing two fingers in a plain mirror and in two mirrors at 90°); also the উদাহরণ on page 223 with চিত্র ৮.১৫ (a left fist before mirrors AO and BO at right angles: three images).",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "Interactive 3D figure for keeping left and right in a mirror, book page 234, topic 8.8.1, next to চিত্র ৮.২৬, and the উদাহরণ on page 223 (চিত্র ৮.১৫). A realistic boy holds up a card reading বাম in his left hand before two silvered-glass mirrors on a hinge. In one flat mirror the image raises its right hand and the writing is reversed. The student folds the mirrors to 90° and three images appear, each exact, seen only through the mirrors' own frames: the two reflected once stay swapped, and the corner image, reflected twice, keeps left as left and the writing reads true. Then the book's plan: a left fist in AOB, its ghosts in A′OB, AOB′ and A′OB′, and one ray traced from the hand by both mirrors to the eye. Five test questions. Offline, Bangla and English.",
+  "tags": [
+    "light",
+    "reflection",
+    "plane-mirror",
+    "image",
+    "right-angle-mirrors",
+    "left-right",
+    "non-reversing-mirror",
+    "bangla"
+  ],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "step",
+      "label": "Step of the book",
+      "type": "select",
+      "options": [["one", "Plain mirror"], ["two", "Two mirrors"], ["top", "The fist"]],
+      "default": "one"
+    },
+    { "name": "stage", "label": "How far the step is built (0–3)", "type": "number", "default": "0" },
+    { "name": "alpha", "label": "Angle between the mirrors (90–180°, step two)", "type": "number", "default": "180" },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on the part pulses at first", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" },
+    { "name": "shadow", "label": "Soft shadow on the floor", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "step": "two", "stage": 2, "animate": false } },
+    { "name": "set", "payload": { "alpha": 120, "animate": false } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "view", "dragstart", "dragend", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": {
+      "params": { "coach": "0", "step": "two" },
+      "setup": [{ "command": "set", "payload": { "stage": 3, "animate": false } }]
+    },
+    "glb": [
+      { "name": "default", "setup": [{ "command": "set", "payload": { "step": "two", "stage": 3, "animate": false } }] }
+    ],
+    "video": {
+      "kind": "script",
+      "seconds": 20,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 0.8, "command": "set", "payload": { "stage": 1, "animate": false } },
+        { "at": 2.4, "command": "set", "payload": { "stage": 2 } },
+        { "at": 5, "command": "set", "payload": { "step": "two", "stage": 0, "animate": false } },
+        { "at": 6, "command": "set", "payload": { "alpha": 90 } },
+        { "at": 8.5, "command": "set", "payload": { "stage": 2 } },
+        { "at": 11, "command": "set", "payload": { "stage": 3 } },
+        { "at": 13.5, "command": "set", "payload": { "step": "top", "stage": 0, "animate": false } },
+        { "at": 15, "command": "set", "payload": { "stage": 1, "animate": false } },
+        { "at": 16.2, "command": "set", "payload": { "stage": 2, "animate": false } },
+        { "at": 17.4, "command": "set", "payload": { "stage": 3, "animate": false } }
+      ]
+    }
+  }
+}
