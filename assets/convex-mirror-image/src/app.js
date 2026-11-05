@@ -143,7 +143,7 @@ const UPS = [
   ['r3in', 1.6],
   ['r3out', 1.5],
   ['r3ext', 1.6],
-  ['ghost', 1.8],
+  ['ghost', 2],
   ['size', 0.6],
   ['bars', 0.6],
   ['flat', 1],
@@ -152,6 +152,20 @@ const UPS = [
   ['tie', 0.6],
 ];
 const ALL_UPS = UPS.map(([k]) => k);
+/** The hold on each result, s, and what each step starts from when it is played again. */
+const HOLD = 1;
+const PREV = {
+  par: 'see',
+  ext: 'par',
+  cen: 'ext',
+  foc: 'cen',
+  image: 'foc',
+  move: 'image',
+  formula: 'move',
+  plane: 'formula',
+  eye: 'plane',
+  wide: 'eye',
+};
 
 const MARGINS = { top: 12, bottom: 10, side: 8 };
 const INK = { dark: '#2b3a4a', ray: '#8a4f00', focus: '#5a37d0' };
@@ -197,7 +211,7 @@ export function createApp(root, options = {}) {
     layout: 'side',
     learn: cleanSheet(t, {
       examples: { label: 'ex_label', items: Object.keys(WORDS).map((id) => ({ id, label: `ex_${id}` })) },
-      quiet: [{ act: 'home', label: 'act_home', icon: ICONS.reset }],
+      quiet: [{ act: 'replay', label: 'act_replay', icon: ICONS.reset }],
       lines: { action: 1, outcome: 2, rule: 4 },
     }),
     learnAlign: 'start',
@@ -362,11 +376,11 @@ export function createApp(root, options = {}) {
     const down = {};
     for (const k of [...ALL_UPS, 'axis']) if (V[k] > goal[k]) down[k] = goal[k];
     const downKeys = Object.keys(down);
-    if (downKeys.length && !(await move(alive, downKeys, { ...V, ...down }, 0.3))) return false;
+    if (downKeys.length && !(await move(alive, downKeys, { ...V, ...down }, 0.6))) return false;
 
     const rearing = V.u !== goal.u || V.row !== goal.row || V.curve !== goal.curve;
     if (s.frame !== frame) {
-      const flown = fly(frame, rearing ? 1.8 : 1.4);
+      const flown = fly(frame, rearing ? 1.8 : 1.5);
       if (!rearing) {
         await flown;
         if (!alive()) return false;
@@ -397,8 +411,8 @@ export function createApp(root, options = {}) {
         if (!(await move(alive, [k], goal, time, k.startsWith('r') ? ease.linear : ease.inOutSine))) return false;
       }
     }
-    // a short pause, so that what came can be looked at before the next thing is offered
-    await tweener.animate({ key: 'step', duration: 0.5 }).finished;
+    // a hold on the result: nothing is offered until it has been looked at
+    await tweener.animate({ key: 'step', duration: HOLD }).finished;
     if (!alive()) return false;
     s.busy = false;
     audio.tick();
@@ -432,7 +446,7 @@ export function createApp(root, options = {}) {
     controls.update();
   }
   /** The camera goes to a frame. Its promise settles when it arrives (or a finger takes over). */
-  function fly(frame, duration = 0.8) {
+  function fly(frame, duration = 1.5) {
     if (s.userMovedCamera) {
       s.userMovedCamera = false;
       s.view = 'front';
@@ -458,7 +472,7 @@ export function createApp(root, options = {}) {
     s.view = view === '3d' ? '3d' : 'front';
     s.userMovedCamera = false;
     syncUI();
-    if (animate) fly(s.frame, 0.8);
+    if (animate) fly(s.frame, 1.5);
     else camK = 1;
     stage.invalidate();
   }
@@ -822,7 +836,7 @@ export function createApp(root, options = {}) {
       if (!s.sawNear) return 'near';
       return 'formula';
     }
-    if (s.stage === 'wide') return 'again';
+    if (s.stage === 'wide') return 'test';
     return STAGES[STAGES.indexOf(s.stage) + 1];
   }
   let lastAct = -1e9;
@@ -834,17 +848,39 @@ export function createApp(root, options = {}) {
     audio.unlock();
     const ph = phase();
     if (ph === 'busy') return;
-    if (ph === 'again') return home();
+    if (ph === 'test') return quiz.start();
     if (ph === 'far') return pencilTo(60);
     if (ph === 'near') return pencilTo(6);
     return run(ph);
   }
   function pick(word) {
     if (s.locked) return lockedNudge();
-    if (!(word in WORDS)) return;
-    if (WORD_OF[s.stage] === word && !s.busy && WORDS[word] === s.stage) return;
+    if (!(word in WORDS) || s.busy) return; // a tap while a step plays is ignored: nothing queues up
     audio.unlock();
+    if (WORD_OF[s.stage] === word) return replay(); // its own word plays the step again
+    if (word === 'see') return home();
     run(WORDS[word]);
+  }
+  /** The step that has just ended, slowly, from where it began. */
+  function replay() {
+    if (s.locked) return lockedNudge();
+    if (s.busy) return;
+    audio.unlock();
+    const name = s.stage;
+    stopRun();
+    clearLabels();
+    if (name === 'move') {
+      s.sawFar = false;
+      s.sawNear = false;
+    }
+    if (PREV[name]) {
+      s.stage = PREV[name];
+      settle(PREV[name]);
+    } else {
+      V.tie = 0;
+      apply();
+    }
+    return run(name);
   }
   const movable = () => !s.locked && !s.busy && !REAR.has(s.stage);
   /** The pencil stands here; everything follows it at once. */
@@ -858,14 +894,14 @@ export function createApp(root, options = {}) {
     apply();
     draw();
   }
-  function pencilTo(x) {
+  async function pencilTo(x) {
     const my = token;
     const from = V.u;
     s.busy = true;
     draw();
-    return tweener.animate({
+    await tweener.animate({
       key: 'pencil',
-      duration: 2.6,
+      duration: 2.5,
       ease: ease.inOutSine,
       onUpdate: (k) => {
         if (my !== token) return;
@@ -873,13 +909,14 @@ export function createApp(root, options = {}) {
         apply();
         stage.invalidate();
       },
-      onComplete: () => {
-        if (my !== token) return;
-        s.busy = false;
-        setPencil(x);
-        emitChange();
-      },
     }).finished;
+    if (my !== token) return;
+    setPencil(x);
+    await tweener.animate({ key: 'pencil', duration: HOLD }).finished;
+    if (my !== token) return;
+    s.busy = false;
+    draw();
+    emitChange();
   }
 
   // ── the panel ───────────────────────────────────────────────────────────────────────────────────────────
@@ -898,7 +935,7 @@ export function createApp(root, options = {}) {
     plane: ['act_plane', 8],
     eye: ['act_eye', ''],
     wide: ['act_wide', ''],
-    again: ['act_again', ''],
+    test: ['act_test', ''],
   };
   function mText(m) {
     const f = fraction(m);
@@ -955,7 +992,7 @@ export function createApp(root, options = {}) {
     const ph = phase();
     const nextWord = STAGES.includes(ph) ? WORD_OF[ph] : null;
     sheet.next(nextWord !== WORD_OF[s.stage] ? nextWord : null);
-    const [word, step] = ACTIONS[ph] ?? ACTIONS.again;
+    const [word, step] = ACTIONS[ph] ?? ACTIONS.test;
     const enabled = ph !== 'busy';
     const key = `${word}|${step}|${enabled}`;
     if (action && steady.act !== key) {
@@ -1232,14 +1269,14 @@ export function createApp(root, options = {}) {
         const frame = s.frame;
         s.frame = was;
         syncUI();
-        fly(frame, 0.5);
+        fly(frame, 1.5);
         draw();
       },
       async prepare(i, alive, say) {
         const q = Q[ORDER[i]]();
         qCurrent = q;
         say(q.text);
-        const done = await fly(s.frame, 0.4);
+        const done = await fly(s.frame, 1.5);
         if (!alive()) return null;
         if (!done) camK = 1;
         // the kit scores numbers: the choices are places in this list, never its words
@@ -1262,10 +1299,7 @@ export function createApp(root, options = {}) {
             Object.assign(V, q.after);
             apply();
           }
-          if (q.slideTo != null)
-            pencilTo(q.slideTo).then(() => {
-              s.busy = false;
-            });
+          if (q.slideTo != null) pencilTo(q.slideTo);
         }
         stage.invalidate();
         const chosen = picked ? q.list[picked.value] : null;
@@ -1327,7 +1361,7 @@ export function createApp(root, options = {}) {
     const act_ = b.dataset.act;
     if (act_ === 'q-next') quiz.next();
     if (act_ === 'q-again') quiz.start();
-    if (act_ === 'home') home();
+    if (act_ === 'replay') replay();
     if (act_ === 'fullscreen') {
       if (document.fullscreenElement) document.exitFullscreen?.();
       else root.requestFullscreen?.().catch(() => {});

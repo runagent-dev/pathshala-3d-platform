@@ -68,9 +68,54 @@ test(`${ID}: the whole story on one action`, async ({ page }) => {
   expect(st).toMatchObject({ stage: 'wide', frame: 'wide' });
   await expect(fig.frame.locator('.pvc-outcome')).toContainText('৭টি');
 
-  // again: back to the start, with the pencil where it began
-  st = await act();
+  // the end offers the test, and only then; it can be declined by a tap on a word
+  await expect(fig.frame.locator('.pvc-act')).toContainText('পরীক্ষা দাও');
+  st = await fig.call('get');
+  expect(st.mode).toBe('explore');
+  await fig.frame.locator('.pvc-act').first().click();
+  await fig.advance(1800);
+  expect((await fig.call('get')).mode).toBe('quiz');
+  await fig.frame.locator('[data-mode="explore"]').first().click();
+  await fig.advance(1800);
+  expect(await fig.call('get')).toMatchObject({ mode: 'explore', stage: 'wide' });
+  await fig.frame.locator('[data-example="see"]').click();
+  await settled(fig);
+  st = await fig.call('get');
   expect(st).toMatchObject({ stage: 'see', u: 10, sawFar: false, curve: 1, row: false });
+  expect(log.errors).toEqual([]);
+});
+
+test(`${ID}: nothing runs ahead of the student`, async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 800, height: 500 });
+  const log = await preparePage(page);
+  const fig = await openFigure(page, ID);
+  const action = fig.frame.locator('.pvc-act').first();
+  await action.click();
+  // a second tap, and a word, while the step plays: ignored
+  await fig.advance(600);
+  await fig.frame.locator('[data-example="rear"]').click();
+  await fig.frame.locator('[data-example="rear"]').click();
+  let st = await fig.call('get');
+  expect(st).toMatchObject({ stage: 'par', busy: true });
+  await settled(fig);
+  st = await fig.call('get');
+  expect(st).toMatchObject({ stage: 'par', busy: false, rays: 1, extended: 0 });
+  // finished: it waits, however long
+  await fig.advance(6000);
+  expect((await fig.call('get')).stage).toBe('par');
+  // the quiet button plays the step again from where it began; so does its word
+  await fig.frame.locator('[data-act="replay"]').click();
+  await fig.advance(300);
+  st = await fig.call('get');
+  expect(st).toMatchObject({ stage: 'par', busy: true, rays: 0 });
+  await settled(fig);
+  expect(await fig.call('get')).toMatchObject({ stage: 'par', busy: false, rays: 1 });
+  await fig.frame.locator('[data-example="rays"]').click();
+  await fig.advance(300);
+  expect((await fig.call('get')).busy).toBe(true);
+  await settled(fig);
+  expect(await fig.call('get')).toMatchObject({ stage: 'par', rays: 1 });
   expect(log.errors).toEqual([]);
 });
 
@@ -131,14 +176,14 @@ test(`${ID}: the bridge, the arrow keys, jumps cut short`, async ({ page }) => {
   await page.setViewportSize({ width: 800, height: 500 });
   const log = await preparePage(page);
   const fig = await openFigure(page, ID);
-  // a jump, and another before it ends
   await fig.call('set', { stage: 'image', u: 30, animate: false });
   let st = await fig.call('get');
   expect(st).toMatchObject({ stage: 'image', u: 30, v: -10, ghost: true, rays: 3 });
   expect(st.imageHeight).toBeCloseTo(2, 5);
+  // a jump across the story, cut short by the book
   await fig.frame.locator('[data-example="rear"]').click();
   await fig.advance(250);
-  await fig.frame.locator('[data-example="see"]').click();
+  await fig.call('set', { stage: 'see' });
   await settled(fig);
   st = await fig.call('get');
   expect(st).toMatchObject({ stage: 'see', rays: 0, ghost: false, u: 30, curve: 1, row: false });
@@ -166,7 +211,7 @@ test(`${ID}: the test scores right answers and wrong ones, and leaves things as 
   const fig = await openFigure(page, ID);
   await fig.call('set', { stage: 'ext', u: 22, animate: false });
   await fig.call('practice');
-  await fig.advance(900);
+  await fig.advance(1800);
   const kinds = [];
   for (let i = 0; i < 5; i++) {
     const st = await fig.call('get');
@@ -177,25 +222,25 @@ test(`${ID}: the test scores right answers and wrong ones, and leaves things as 
     await fig.advance(500);
     await expect(fig.frame.locator('.pvc-q-feedback')).toContainText('ঠিক');
     await fig.frame.locator('[data-act="q-next"]').click();
-    await fig.advance(900);
+    await fig.advance(1800);
   }
   expect(new Set(kinds).size).toBe(5);
   await expect(fig.frame.locator('.pvc-q-done')).toContainText('৫টির মধ্যে ৫টি');
 
   // again, every answer wrong
   await fig.frame.locator('[data-act="q-again"]').click();
-  await fig.advance(900);
+  await fig.advance(1800);
   for (let i = 0; i < 5; i++) {
     const st = await fig.call('get');
     await fig.frame.locator(`[data-q="${(st.question.right + 1) % 4}"]`).click();
     await fig.advance(500);
     await fig.frame.locator('[data-act="q-next"]').click();
-    await fig.advance(900);
+    await fig.advance(1800);
   }
   await expect(fig.frame.locator('.pvc-q-done')).toContainText('৫টির মধ্যে ০টি');
 
   await fig.frame.locator('[data-mode="explore"]').first().click();
-  await fig.advance(900);
+  await fig.advance(1800);
   const st = await fig.call('get');
   expect(st).toMatchObject({ mode: 'explore', locked: false, stage: 'ext', u: 22, rays: 1, question: null });
   expect(log.errors).toEqual([]);

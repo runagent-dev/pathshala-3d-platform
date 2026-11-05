@@ -24,7 +24,10 @@ smaller, between P and F, shrinking toward F as the object goes away; and that i
   its extension to F → ray (i), and O → ray (iii), all three meeting → the image grows up from Y′, "অবাস্তব · সোজা · ছোট" beside it → the pencil
   moves, close on the image, with "ছোট: ৩/৫ গুণ" on it and the object's height as a dashed outline → 1/u + 1/v = 1/f with the student's numbers →
   from the eye, a plane mirror → the same mirror convex, one tap apart → both fields of view from above. `POSE` says what each stage shows;
-  `run()` walks any jump in one order. Each move takes 1.5 s or more, with a pause after each step.
+  `run()` walks any jump in one order.
+- The owner's pace: the camera takes 1.5 s or more, objects 1.5–2.5 s, a ray segment about 1.5 s, with a 1 s hold on each result. Nothing advances by itself and taps
+  are ignored while a step plays. The quiet button (or the step's own word) plays the step again; "দেখা" goes back to the start. After the last step the action offers
+  the test ("বুঝেছ? তাহলে পরীক্ষা দাও"); the kit's পরীক্ষা tab stays where it is, for a student or teacher who wants it sooner.
 - The pencil starts at u = 10 cm, not the book's picture's 15: with F, P and the pencil in view it gives an image of 3.6 cm, 41 px tall at 390×700.
 - **What is seen in the mirror is traced for every pixel** (`src/mirror.js`): the silver's shader reflects the line of sight in the exact
   sphere and asks what it meets (the pencil and rod, the posts, the rail, the table). So the little upright pencil of the first step and

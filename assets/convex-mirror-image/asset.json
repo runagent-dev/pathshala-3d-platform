@@ -86,21 +86,21 @@
     "glb": [{ "name": "default" }],
     "video": {
       "kind": "script",
-      "seconds": 46,
+      "seconds": 58,
       "fps": 30,
       "params": { "coach": "0" },
       "script": [
         { "at": 0.8, "command": "set", "payload": { "stage": "par" } },
-        { "at": 5, "command": "set", "payload": { "stage": "ext" } },
-        { "at": 8.5, "command": "set", "payload": { "stage": "cen" } },
-        { "at": 14, "command": "set", "payload": { "stage": "foc" } },
-        { "at": 19.5, "command": "set", "payload": { "stage": "image" } },
-        { "at": 24, "command": "set", "payload": { "stage": "move" } },
-        { "at": 27, "command": "set", "payload": { "u": 30 } },
-        { "at": 29, "command": "set", "payload": { "u": 60 } },
-        { "at": 31, "command": "set", "payload": { "stage": "plane" } },
-        { "at": 37, "command": "set", "payload": { "stage": "eye" } },
-        { "at": 41, "command": "set", "payload": { "stage": "wide" } }
+        { "at": 7, "command": "set", "payload": { "stage": "ext" } },
+        { "at": 10.5, "command": "set", "payload": { "stage": "cen" } },
+        { "at": 19, "command": "set", "payload": { "stage": "foc" } },
+        { "at": 25.5, "command": "set", "payload": { "stage": "image" } },
+        { "at": 30.5, "command": "set", "payload": { "stage": "move" } },
+        { "at": 34, "command": "set", "payload": { "u": 30 } },
+        { "at": 36, "command": "set", "payload": { "u": 60 } },
+        { "at": 38, "command": "set", "payload": { "stage": "plane" } },
+        { "at": 47, "command": "set", "payload": { "stage": "eye" } },
+        { "at": 51.5, "command": "set", "payload": { "stage": "wide" } }
       ]
     }
   }
