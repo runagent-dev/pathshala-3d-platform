@@ -24,6 +24,26 @@ Latin letters and digits as the book prints them (v = u + at, s = ut + ½at², v
 Bangla digits. Units as the book: m/s for velocity (p40), ms⁻² for acceleration (p44), m, s; a number and its unit
 never part at a line break.
 
+## Version 3.1.0: deep blue (2026-11-05)
+The owner, with a screenshot of the pale frame: "can you make the thing in a deep blue background so it is vivid and
+everything looks very beautiful." The layout, the content and the behaviour are exactly 3.0.0; only the look changed,
+and this replaces every light-blue colour written below (the 2D part is in style.css only, the kit is untouched):
+- **The frame**: a vertical gradient #0b2a5b → #123d7a, a soft glow behind the formula, a faint vignette. The kit's
+  tokens are set for this figure on `.pvc.eom`; `--panel` and `--soft` stay opaque for the kit's cards, and what floats
+  on the frame (buttons, tabs, test options) is glass, rgba(255,255,255,0.08) with a thin light border.
+- **Colours**: text #f1f5ff; u #6cb6ff, a #5fd38a, t #d5dbe7, s #b79cff (one `COLORS` in app.js and `--c-*` in style.css).
+  The arrows on the slope keep fuller fills (#2a86ff, #1fb45c, `ARROWS`): the pale text colours washed out under the
+  3D lights. A chosen tab or the main test button is bright blue with dark text (white on #6cb6ff fails contrast).
+- **The strip**: the canvas is transparent, so the frame is its sky. The slope is deep blue concrete, the ruler strip dark
+  with light ticks, the numbers near-white, the chips dark (#0c2450) with bright borders, the arrows outlined in near-
+  white. The asphalt, the car and the road paint are unchanged; the kerbs are a little bluer so they don't glare. A soft
+  horizon glow sits behind the road: `.eom-strip::before`, at `--horizon`, which app.js sets from the road's far edge;
+  `capture` paints the same glow.
+- **Contrast**, measured on rendered pixels at 1280×800, 844×390 and 390×700 (learn, running, test, answered): every text
+  ≥ 4.5 : 1. A wrong or right answer on the phone needed a darker fill than a tint of its own colour.
+- `bg=transparent` keeps the light text, so it now suits a dark host page only (the parameter's help says so). The value
+  `light` keeps its name (a URL parameter), though it now means the deep blue frame.
+
 ## Version 3.0.0: the book's form, no x₀ (2026-11-05)
 The owner, looking at 2.0.0: **"here you can see why we added x₀, but in the book, is there any x₀?"** There isn't: x₀
 came with the owner's reference lab; the book writes s = ut + ½at² (with v = u + at, v² = u² + 2as, s = ((u+v)/2)t). So
@@ -80,7 +100,7 @@ the test sheet takes the place of the sliders while it is open, and the 3D stage
 `shared/` changed, and `npm run check` and the layout test pass as they are (neither checks for the side layout).
 
 ## How the figure works
-- **The frame** (style.css, a grid over a soft light-blue gradient, #e4effa → #bdd7ee): at the top the formula
+- **The frame** (style.css, a grid over the deep blue gradient, #0b2a5b → #123d7a): at the top the formula
   s = ut + ½at² (½ stacked) with one short sentence under it; on the left the buttons stacked, white with a thin
   border as the reference: চালাও, থামাও (each greyed while it can't act), আবার শুরু, and the two time steps side by
   side (an icon and a small word, পেছনে / সামনে; 0.1 s on the grid); in the middle three long sliders, u blue, a green,
@@ -94,22 +114,22 @@ the test sheet takes the place of the sliders while it is open, and the 3D stage
 - **The sentence** under the formula: the sum "সমত্বরণে অতিক্রান্ত দূরত্ব s দুই অংশের যোগফল: ut আর ½at²" (each part in
   its colour), or the moment the car stops for a moment and turns back (t = −u/a), or that s is negative, or that it
   reached an end of the axis (in orange). At most two lines.
-- **The graphs** (graphs.js): tinted plots with soft blue-grey axes with arrowheads, named s or v and t, a few small
+- **The graphs** (graphs.js): dark glass cards with light axes with arrowheads, named s or v and t, a few small
   numbers and faint grid lines, colours as under 3.0.0. In a test question the planned curve is not shown. Each SVG is
   drawn at its own pixel size (redrawn when its box changes), so its text keeps its size.
 - **The 3D strip** (track.js, car.js): seen from the side as the reference (straight on, 9° from above, a narrow 9°
   field of view so it is almost free of perspective and the drop line stays upright), with a transparent background.
   A dark asphalt road with a dashed centre line, white edge lines and light kerbs runs out of the picture at both
-  sides; its front is a gentle slope (62°) of pale blue-grey concrete that runs out of the picture at the bottom. Along
-  its top a white ruler strip is the number line (the axis line from the left edge to an arrowhead past 10, a tick
+  sides; its front is a gentle slope (62°) of deep blue concrete that runs out of the picture at the bottom. Along
+  its top a dark ruler strip is the number line (the axis line from the left edge to an arrowhead past 10, a tick
   every metre, a small one every half metre; the numbers −7 … 10, bold, and "s (m)" are drawn on a 2D overlay so they
   stay crisp, every other one where a metre is under 22 px). Under it two rows carry the parts as thick outlined
-  flat arrows tip to tail: ut (blue) from 0, ½at² (green) ending at s, a dot where a part is 0, each with a white chip
+  flat arrows tip to tail: ut (blue) from 0, ½at² (green) ending at s, a dot where a part is 0, each with a dark chip
   "ut = ৩.৮ m" beyond its tip (else its tail, and never over the other arrow); a faint line down from 0, and a dashed
   drop line from under the car through its dot on the axis down to where ½at² ends (= s). The car: a blue four-door
   sedan, 4.1 m long, glossy, with windows, lights and five-spoke rims that turn with the motion (backwards when it
   reverses; a blur at speed); it always faces +x (a negative velocity is the car reversing). A violet dot on the axis
-  marks s, a white chip over its roof says "s = ৭.২ m". The camera fits the whole axis with the car at either end into
+  marks s, a dark chip over its roof says "s = ৭.২ m". The camera fits the whole axis with the car at either end into
   the strip; the strip can't be turned by dragging (the reference's picture is fixed); `set({ view: '3d' })` still
   flies to a three-quarter view and the corner's "শুরুর দৃশ্য" button brings it back.
 - **Behaviour**: চালাও runs the time in real seconds from where it is (from 0 after the end). A change of u or a
