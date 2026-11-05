@@ -37,7 +37,7 @@ body.bg-transparent { background: transparent; }
 /* the view turns all the way round: a dark pill in a corner, nothing like the white disc on a part. After the first turn only the
    small icon stays */
 .pm2-turn { position: absolute; right: 8px; bottom: 6px; z-index: 2; display: flex; align-items: center; gap: 5px; padding: 3px 9px 3px 6px; border-radius: 13px; background: rgba(24, 36, 48, 0.78); color: #fff; font-size: 12.5px; line-height: 20px; pointer-events: none; white-space: nowrap; transition: padding 0.4s; }
-.pvc .pm2-turn svg { flex: none; width: 20px; height: 20px; stroke: #fff; stroke-width: 1.7; fill: none; }
+.pvc .pm2-turn svg { flex: none; width: 20px; height: 20px; stroke: #fff; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
 .pm2-turn b { font-weight: 700; }
 .pm2-turn.used { padding: 3px; opacity: 0.72; }
 .pm2-turn.used b, .pm2-turn.used span { display: none; }

@@ -137,7 +137,7 @@ export function createApp(root, options = {}) {
   // ── 3D ──────────────────────────────────────────────────────────────────────────────────────────────────
   const turnCue = document.createElement('div');
   turnCue.className = 'pm2-turn';
-  turnCue.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.6 9.4C19 6.9 15.8 5.4 12 5.4 6.8 5.4 2.5 8.4 2.5 12s4.3 6.6 9.5 6.6c4.2 0 7.8-2 9-4.7"/><path d="m21.8 5.4-1 4.3-4.2-1.2"/><circle cx="12" cy="12" r="1.5"/></svg><b>${t('turn_360')}</b><span>${t('view_rotate')}</span>`;
+  turnCue.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 1 0 2.4-5.5"/><path d="M4 3.5v4.6h4.6"/></svg><b>${t('turn_360')}</b><span>${t('view_rotate')}</span>`;
   ui.stage.appendChild(turnCue);
   // the candle's handle: always there while it can be moved. A finger on it is found by distance; the element lets every touch through
   const handle = document.createElement('div');
