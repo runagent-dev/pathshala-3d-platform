@@ -78,6 +78,61 @@ test('light-at-boundary: an interrupted step is not lost, and set works at once'
   expect(log.errors).toEqual([]);
 });
 
+test('light-at-boundary: every right answer scores, and a wrong one does not', async ({ page }) => {
+  test.setTimeout(240_000);
+  await page.setViewportSize({ width: 800, height: 500 });
+  const log = await preparePage(page);
+  const fig = await openFigure(page, 'light-at-boundary');
+  const play = async (wrongAt) => {
+    for (let i = 0; i < 5; i++) {
+      await fig.advance(1500);
+      const { question } = await fig.call('get');
+      const right = fig.frame.locator(`.pvc-opt[data-q="${question.right}"]`);
+      if (i === wrongAt) {
+        const other = fig.frame.locator(`.pvc-opt[data-q="${(question.right + 1) % 4}"]`);
+        await other.click();
+        await expect(other).toHaveClass(/wrong/);
+        await expect(fig.frame.locator('.pvc-q-feedback')).toContainText('হয়নি');
+      } else {
+        await right.click();
+        await expect(fig.frame.locator('.pvc-q-feedback')).toContainText('ঠিক');
+      }
+      await expect(right).toHaveClass(/right/); // the right choice is marked either way
+      await fig.advance(1200);
+      await fig.frame.locator('[data-act="q-next"]').click();
+    }
+    await fig.advance(800);
+  };
+  await fig.call('practice');
+  await play(-1);
+  await expect(fig.frame.locator('.pvc-q-result')).toContainText('৫টির মধ্যে ৫টি');
+  await fig.frame.locator('[data-act="q-again"]').click();
+  await play(2);
+  await expect(fig.frame.locator('.pvc-q-result')).toContainText('৫টির মধ্যে ৪টি');
+  expect(log.errors).toEqual([]);
+});
+
+test('light-at-boundary: the first questions do not name the media, and a step cut short by the test is not kept', async ({ page }) => {
+  test.setTimeout(240_000);
+  await page.setViewportSize({ width: 800, height: 500 });
+  const log = await preparePage(page);
+  const fig = await openFigure(page, 'light-at-boundary');
+  await fig.frame.locator('.pvc-act').first().click();
+  await fig.advance(400);
+  await fig.call('practice');
+  await fig.advance(1500);
+  await expect(fig.frame.locator('.pvc-anno', { hasText: 'মাধ্যম' })).toHaveCount(0);
+  await fig.frame.locator('[data-mode="explore"]').click();
+  await fig.advance(1200);
+  const st = await fig.call('get');
+  expect(st.show).toBe('none');
+  expect(st.seen).toEqual([]);
+  expect(st.drawn).toEqual([]);
+  expect(st.frame).toBe('start');
+  await expect(fig.frame.locator('.pvc-act').first()).toContainText('প্রতিফলন দেখো');
+  expect(log.errors).toEqual([]);
+});
+
 test('light-at-boundary: the test runs to the end and leaves the learn state as it was', async ({ page }) => {
   test.setTimeout(240_000);
   await page.setViewportSize({ width: 390, height: 700 });

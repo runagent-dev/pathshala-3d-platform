@@ -24,20 +24,27 @@ is absorbed (শোষণ).
   on a table needs no explaining.
 - **Three taps, one action** (the big button, its ring on the point where the light arrives, a tap on either). The camera
   goes to the place first (`FRAMES` in `src/scene.js`), then the part comes out of the point of arrival. What was seen
-  before dims. The result line is a sum that fills in: আলো = ? + ? + ?. The fourth tap shows all three together, the
+  before dims. The result line fills in: আলো ভাগ হয়: ? + ? + ? (a division of the light, not an equation). The fourth tap shows all three together, the
   picture of the book and the poster. The row of words goes back to any part.
 - **The rays are traced** in `src/reading.js`: the reflected ray at the same angle, the refracted ray by Snell's law with
   n = 1.5 (50° → 30.7°), each from exact 3D points. `src/rays.js` projects them through the camera and paints them on a 2D
-  canvas over the view, in the style of `reflection-laws` and `colour-of-objects`: ~2.5 px lines, a thin halo, small
-  filled chevrons. A thinner line carries less light.
-- **Absorption** is drawn the way the book draws it, a short line that goes nowhere: it dies away into orange just under
-  the surface, and a warm mark stays on the surface at the point of arrival. The book's sentence places it at the surface
+  canvas over the view, in the style of `reflection-laws` and `colour-of-objects`: thin lines with a halo, small filled
+  chevrons. A thinner line carries less light: incident 3 px, refracted 2.8, reflected 1.5, absorbed 1.2.
+- **Absorption** is not a fourth ray: a thin solid line that dies away within 2 cm, into a bright warm mark on the surface at
+  the point of arrival, labelled "তলে শোষিত". No dashes: in this chapter a dashed amber line is a ray behind a mirror and a
+  dashed slate one the normal. The book's sentence places it at the surface
   between the two media, so the beam does not fade along its way through the glass.
+- **The stand** stands behind the torch in the plane of the rays, so that nothing of it shows through the glass in any
+  view the figure opens. Its base may run off the left edge.
 - **The glass** is not `transmission`: two passes of one rounded box (back faces, then front faces) whose opacity and
   faint green rise where the surface turns from the eye, a real block's bright edges, cheap on any phone.
 - **The test** reads the picture. A new letter on each ray every time, so "রশ্মি ক" must be looked at; the wrong choices are
-  the other rays (the incoming one is the trap: it is in the first medium too). Then the first medium with the labels off,
-  another angle (the torch really moves; all three rays are traced anew at 65°) and the book's empty medium.
+  the other rays (the incoming one is the trap). The medium labels stay off until the question about the first medium has
+  been answered. Then another angle (the torch really moves; the rays are traced anew at 65°, and the student finds the
+  refracted one), and the book's empty medium, whose wrong choices are real mistakes (all absorbed, no reflection).
+- **The test's scoring:** the kit scores numbers, so the choices are places in a list (as `paper-vocal-cord`). A browser
+  test answers all five right and checks the green mark and "৫টির মধ্যে ৫টি", and answers one wrong. `get` gives
+  `question: { kind, right }` for that.
 
 ## Honest stylisation
 - A torch's light does not show as a line in clean air. The ray is drawn; a corner note says so ("রশ্মি বোঝার জন্য আঁকা").

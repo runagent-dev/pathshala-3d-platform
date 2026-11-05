@@ -190,36 +190,38 @@ function createTorch(glow) {
   return root;
 }
 
-/** The clamp stand: a base and a rod behind the block, an arm forward to a ring round the torch. It follows the torch. */
+/**
+ * The clamp stand. It stands behind the torch in the plane of the rays, so that from the opening view its rod and base are
+ * clear of the block's outline, and an arm reaches forward to a ring round the torch. It follows the torch.
+ */
 function createStand() {
   const root = new THREE.Group();
   root.name = 'stand';
   const iron = new THREE.MeshStandardMaterial({ name: 'stand-iron', color: 0x2c3138, roughness: 0.46, metalness: 0.62 });
   const steel = new THREE.MeshStandardMaterial({ name: 'stand-steel', color: 0xa9b0ba, roughness: 0.34, metalness: 0.9 });
   const base = new THREE.Mesh(new RoundedBoxGeometry(7, 0.7, 6, 2, 0.14), iron);
-  base.position.y = 0.35;
+  base.position.set(-2, 0.35, 0); // the rod near its right end: the plate stays clear of the block's outline
   base.castShadow = true;
   const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 1, 12), steel);
   rod.castShadow = true;
   const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 1, 10), steel);
-  arm.rotation.x = Math.PI / 2;
+  arm.rotation.z = Math.PI / 2;
   arm.castShadow = true;
   const boss = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.95, 0.95), iron);
   const ring = new THREE.Mesh(new THREE.TorusGeometry(1.12, 0.16, 8, 28), iron);
   root.add(base, rod, arm, boss, ring);
-  const BACK = -8;
-  root.position.z = BACK;
+  const REACH = 2.3; // from the rod to the torch
   return {
     root,
-    /** The rod stands under the point `at` on the torch, whose axis is `axis`. */
+    /** The arm holds the torch at the point `at`, whose axis is `axis`. */
     follow(at, axis) {
-      root.position.x = at.x;
-      rod.scale.y = at.y + 2;
-      rod.position.y = (at.y + 2) / 2;
-      arm.scale.y = -BACK;
-      arm.position.set(0, at.y, -BACK / 2);
+      root.position.x = at.x - REACH;
+      rod.scale.y = at.y + 0.7;
+      rod.position.y = (at.y + 0.7) / 2;
+      arm.scale.y = REACH;
+      arm.position.set(REACH / 2, at.y, 0);
       boss.position.set(0, at.y, 0);
-      ring.position.set(0, at.y, -BACK);
+      ring.position.set(REACH, at.y, 0);
       ring.quaternion.setFromUnitVectors(Z, axis);
     },
   };
@@ -300,7 +302,8 @@ export function createSetting({ stage, shadow }) {
     scene.add(mesh);
     return mesh;
   };
-  const warm = spot(0xff6a1f, 4.2); // the warm mark that absorption leaves on the surface
+  const warm = spot(0xff6a1f, 5.2); // the warm mark that absorption leaves on the surface
+  const core = spot(0xffb347, 1.9); // its bright heart
   const landing = spot(0xffc95e, 1.8); // where the refracted light comes to the bench
 
   // the big invisible target for a finger, on the point where the light arrives
@@ -335,6 +338,7 @@ export function createSetting({ stage, shadow }) {
     q.copy(torch.position).addScaledVector(dir, -5.4);
     stand.follow(q, dir);
     warm.position.set(g.hit.x, g.hit.y + 0.03, 0);
+    core.position.copy(warm.position);
     landing.position.set(g.refracted.x, 0.04, 0);
     hit.position.set(g.hit.x, g.hit.y, 0);
   };
@@ -348,7 +352,9 @@ export function createSetting({ stage, shadow }) {
     /** k: how far the warm mark has come, 0 … 1. */
     ember(k) {
       warm.visible = k > 0.01;
-      warm.material.opacity = 0.95 * k;
+      warm.material.opacity = k;
+      core.visible = warm.visible;
+      core.material.opacity = k;
     },
     landing(k) {
       landing.visible = k > 0.01;

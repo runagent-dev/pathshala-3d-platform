@@ -9,7 +9,7 @@ body.bg-transparent { background: transparent; }
 .lab .pvc-outcome b { font-size: 17px; font-weight: 600; color: var(--ink); }
 .lab[lang='en'] .pvc-outcome { font-size: 14px; white-space: normal; line-height: 1.3; }
 .lab[lang='en'] .pvc-outcome b { font-size: 14.5px; }
-.lab .lab-slot { display: inline-block; min-width: 1.5em; text-align: center; border-bottom: 2px dotted var(--ink-2); color: var(--ink-2); }
+.lab .lab-slot { display: inline-block; min-width: 1.5em; line-height: 1.15; text-align: center; border-bottom: 1.5px dotted var(--line-2, #ced4da); color: var(--ink-2); }
 
 /* the rule: the book's sentences */
 .lab .pvc-rule { font-size: 14.5px; line-height: 1.55; }
@@ -72,8 +72,9 @@ body.bg-transparent { background: transparent; }
 @container pvc-panel (min-height: 1px) {
   .lab .pvc-learn { gap: 8px; }
   .lab .pvc-examples button { min-height: 40px; }
-  .lab .pvc-outcome { font-size: 14px; }
+  .lab .pvc-outcome { font-size: 14px; line-height: 1.4; white-space: normal; }
   .lab .pvc-outcome b { font-size: 15.5px; }
+  .lab .lab-sum { display: block; white-space: nowrap; }
   .lab .pvc-rule { font-size: 14px; line-height: 1.55; height: auto; overflow: visible; }
   .lab .pvc-q-ask { gap: 6px; }
   .lab .pvc-q-head .pvc-btn { height: 36px; }

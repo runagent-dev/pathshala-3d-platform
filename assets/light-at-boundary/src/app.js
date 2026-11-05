@@ -88,6 +88,7 @@ export function createApp(root, options = {}) {
   const s = {
     seen: new Set(), // which of the three the student has seen
     focus: null, // what is being looked at: one of EVENTS, 'all', or null at the start
+    last: null, // the last focus that was finished: what the test comes back to if a step was cut short
     angle: clampAngle(o.angle),
     busy: false,
     mode: 'explore',
@@ -198,6 +199,7 @@ export function createApp(root, options = {}) {
       if (!alive()) return false;
     }
     for (const n of names) s.seen.add(n);
+    if (!s.quiz) s.last = name;
     s.busy = false;
     audio.tick();
     if (name === 'all') audio.success();
@@ -373,13 +375,13 @@ export function createApp(root, options = {}) {
       incident: along(g.lens, g.hit, 0.42).clone(),
       reflection: along(g.hit, g.reflected, 0.5).clone(),
       refraction: along(g.hit, g.refracted, 0.62).clone(),
-      absorption: along(g.hit, g.stub, 0.86).clone(),
+      absorption: along(g.hit, g.stub, 0.4).clone(),
     };
     const media = calm && (q ? q.media : true);
     label(
       'air',
       media && (f === null || f === 'all' || f === 'reflection'),
-      t('l_air'),
+      q?.empty ? t('l_empty') : t('l_air'),
       airAt(f === 'reflection' ? 6.6 : 9.4),
       INK.medium,
       SPOTS.air,
@@ -395,7 +397,14 @@ export function createApp(root, options = {}) {
       label('incident', named && f !== 'refraction' && f !== 'absorption', t('l_light'), at.incident, INK.light, SPOTS.light);
       // the one with the least room takes its place first
       for (const n of ['absorption', 'refraction', 'reflection']) {
-        label(n, named && (whole || f === n) && rays.view[n].k >= 1, t(`ex_${n}`), at[n], n === 'absorption' ? INK.warm : INK.term, SPOTS[n]);
+        label(
+          n,
+          named && (whole || f === n) && rays.view[n].k >= 1,
+          t(n === 'absorption' ? 'l_absorbed' : `ex_${n}`),
+          at[n],
+          n === 'absorption' ? INK.warm : INK.term,
+          SPOTS[n],
+        );
       }
     }
     label('surface', calm && !q && f === 'absorption', t('l_surface'), surfaceAt, INK.medium, SPOTS.surface);
@@ -519,9 +528,9 @@ export function createApp(root, options = {}) {
     return Object.fromEntries(RAYS.map((n, i) => [n, l[i]]));
   }
   /** A question that asks which ray is which: its choices are the letters on the picture. */
-  function whichRay(kind, answer) {
+  function whichRay(kind, answer, scene = { media: false }) {
     const tags = letters();
-    quizScene({ kind, tags }, { all: true });
+    quizScene({ kind, tags }, { all: true, ...scene });
     const wrong = RAYS.filter((n) => n !== answer);
     return {
       text: t(`q_${kind}`),
@@ -548,22 +557,10 @@ export function createApp(root, options = {}) {
         showMedia: true,
       };
     },
-    angle() {
-      quizScene({ kind: 'angle' }, { angle: ANGLE_TEST, frame: 'other' });
-      const wrong = ['reflection', 'refraction', 'two'];
-      return {
-        text: t('q_angle'),
-        answer: 'all',
-        wrong,
-        label: (k) => t(`c_angle_${k}`),
-        notes: notesOf(wrong.map((k) => [k, t(`n_angle_${k}`)])),
-        reveal: t('a_angle'),
-        grow: true,
-      };
-    },
+    enter: () => whichRay('enter', 'refraction', { angle: ANGLE_TEST, frame: 'other' }),
     vacuum() {
-      quizScene({ kind: 'vacuum' });
-      const wrong = ['stop', 'noreflect', 'dim'];
+      quizScene({ kind: 'vacuum', empty: true });
+      const wrong = ['stop', 'absorb', 'noreflect'];
       return {
         text: t('q_vacuum'),
         answer: 'same',
@@ -586,13 +583,14 @@ export function createApp(root, options = {}) {
     action,
     hooks: {
       enter() {
+        stopRun(); // a step cut short by the test does not count
         s.mode = 'quiz';
         s.locked = true;
-        saved.focus = s.focus;
+        saved.focus = s.last;
         saved.seen = [...s.seen];
         saved.angle = s.angle;
         // in this order no scene gives away a later answer
-        order = ['back', 'end', 'first', 'angle', 'vacuum'];
+        order = ['back', 'end', 'first', 'enter', 'vacuum'];
         clearLabels();
         syncUI();
       },
@@ -619,8 +617,17 @@ export function createApp(root, options = {}) {
         const done = await fly(s.frame, 0.4);
         if (!alive()) return null;
         if (!done) camK = 1;
-        const out = [q.answer, ...q.wrong];
-        return { choices: shuffle(out), expected: q.answer, tolerance: 1e-6, label: q.label, meta: { kind: order[i] } };
+        // the kit scores numbers: the choices are places in this list, never its words
+        const list = shuffle([q.answer, ...q.wrong]);
+        q.list = list;
+        s.quiz.right = list.indexOf(q.answer);
+        return {
+          choices: [0, 1, 2, 3],
+          expected: list.indexOf(q.answer),
+          tolerance: 0.5,
+          label: (i) => q.label(list[i]),
+          meta: { kind: order[i], answer: q.answer },
+        };
       },
       reveal(_q, correct, picked) {
         const q = qCurrent;
@@ -630,9 +637,10 @@ export function createApp(root, options = {}) {
           if (q.grow) run('all', { quick: true });
         }
         stage.invalidate();
-        const why = !correct && picked ? q.notes.get(String(picked.value)) : '';
+        const chosen = picked ? q.list[picked.value] : null;
+        const why = !correct && picked ? q.notes.get(String(chosen)) : '';
         // the note names what the student chose: alone it could be read as being about the right answer
-        return `${q.reveal}${why ? ` <span class="lab-why">${t('n_pick', { x: q.label(picked.value) })} ${why}</span>` : ''}`;
+        return `${q.reveal}${why ? ` <span class="lab-why">${t('n_pick', { x: q.label(chosen) })} ${why}</span>` : ''}`;
       },
       done() {},
     },
@@ -666,6 +674,7 @@ export function createApp(root, options = {}) {
     if (s.locked) return lockedNudge();
     stopRun();
     s.focus = null;
+    s.last = null;
     s.seen.clear();
     clearLabels();
     setAngle(START_ANGLE);
@@ -734,6 +743,7 @@ export function createApp(root, options = {}) {
       mode: s.mode,
       locked: s.locked,
       view: s.view,
+      question: s.quiz ? { kind: s.quiz.kind, right: s.quiz.right ?? null } : null, // the place of the right choice
     };
   }
   let lastEmit = '';
@@ -755,6 +765,7 @@ export function createApp(root, options = {}) {
       s.focus = show;
       for (const n of show === 'all' ? EVENTS : [show]) s.seen.add(n);
     }
+    s.last = s.focus;
     clearLabels();
     settle();
   }

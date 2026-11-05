@@ -6,8 +6,7 @@ import * as THREE from 'three';
 import { paths, START_ANGLE } from './reading.js';
 
 export const C = { ray: '#f59f00', edge: '#5f3400', glow: '#ffe36e', warm: '#e8590c' };
-const WIDTH = { incident: 3, refraction: 2.6, reflection: 2.1 };
-const NO_DASH = [];
+const WIDTH = { incident: 3, refraction: 2.8, reflection: 1.5, absorption: 1.2 };
 
 export function createRays({ stage, host }) {
   const canvas = document.createElement('canvas');
@@ -116,7 +115,7 @@ export function createRays({ stage, host }) {
     ctx.fillStyle = '#fff7d6';
     ctx.fill();
   }
-  /** The part that is absorbed: short, dying away into a warm ember at the surface. It goes nowhere. */
+  /** The part that is absorbed: a thin solid line that dies away at once into the warm mark on the surface. It goes nowhere. */
   function stub(a, b, k, alpha, shine) {
     if (k <= 0) return;
     P(a);
@@ -125,30 +124,29 @@ export function createRays({ stage, host }) {
     P(b);
     const x1 = x0 + (sx - x0) * k;
     const y1 = y0 + (sy - y0) * k;
-    const g = ctx.createLinearGradient(x0, y0, x1, y1);
-    g.addColorStop(0, C.ray);
-    g.addColorStop(0.55, C.warm);
-    g.addColorStop(1, 'rgba(232,89,12,0)');
-    if (shine > 0) {
-      ctx.globalAlpha = 0.4 * shine;
-      ctx.lineCap = 'round';
-      ctx.strokeStyle = C.glow;
-      ctx.lineWidth = 10 * unit;
+    const line = () => {
       ctx.beginPath();
       ctx.moveTo(x0, y0);
       ctx.lineTo(x1, y1);
+    };
+    ctx.lineCap = 'round';
+    if (shine > 0) {
+      line();
+      ctx.globalAlpha = 0.4 * shine;
+      ctx.strokeStyle = C.glow;
+      ctx.lineWidth = 8 * unit;
       ctx.stroke();
     }
+    const g = ctx.createLinearGradient(x0, y0, x1, y1);
+    g.addColorStop(0, C.ray);
+    g.addColorStop(0.3, C.warm);
+    g.addColorStop(1, 'rgba(232,89,12,0)');
     ctx.globalAlpha = alpha;
     ctx.lineCap = 'butt';
-    ctx.setLineDash([5 * unit, 3.5 * unit]);
     ctx.strokeStyle = g;
-    ctx.lineWidth = 2.5 * unit;
-    ctx.beginPath();
-    ctx.moveTo(x0, y0);
-    ctx.lineTo(x1, y1);
+    ctx.lineWidth = WIDTH.absorption * unit;
+    line();
     ctx.stroke();
-    ctx.setLineDash(NO_DASH);
     ctx.globalAlpha = 1;
   }
   /** The point where the light arrives: a small white-hot mark. */

@@ -12,8 +12,8 @@ export const MIN_ANGLE = 20;
 export const MAX_ANGLE = 70;
 export const TO_LENS = 14; // cm from the hole in the torch's cap to the glass
 export const OUT = 13; // how far the reflected ray is drawn
-export const STUB = 3; // how far the part that is absorbed is drawn: it ends at the surface
-const STUB_SLOPE = (14 * Math.PI) / 180; // just under the surface
+export const STUB = 1.8; // how far the part that is absorbed is drawn: it dies away at once, at the surface
+const STUB_SLOPE = (18 * Math.PI) / 180; // just under the surface
 
 const rad = (d) => (d * Math.PI) / 180;
 const deg = (r) => (r * 180) / Math.PI;
