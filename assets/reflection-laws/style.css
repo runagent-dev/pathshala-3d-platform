@@ -32,6 +32,12 @@ body.bg-transparent { background: transparent; }
   .rl .pvc-anno:has(sub) { padding: 1px 6px; font-size: 15px; }
 }
 
+/* a big view: the labels and the numbers grow with it */
+@media (min-width: 1000px) and (min-height: 640px) {
+  .rl .pvc-anno { font-size: 16px; padding: 2px 8px; }
+  .rl .pvc-anno:has(sub) { font-size: 22px; padding: 3px 10px; }
+}
+
 /* the note in a corner: what is drawn, not seen */
 .rl-note { position: absolute; left: 8px; bottom: 6px; z-index: 2; padding: 1px 6px; border-radius: 4px; background: rgba(255, 255, 255, 0.86); color: var(--ink-2); font-size: 11.5px; line-height: 1.4; pointer-events: none; white-space: nowrap; }
 .pvc[data-mode='quiz'] .rl-note { display: none; }

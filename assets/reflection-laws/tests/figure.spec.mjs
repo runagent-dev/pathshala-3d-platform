@@ -1,5 +1,6 @@
 // This figure's own behaviour, through the bridge (runs with `npm run test:figures`; dev only, never packaged): the laws
-// built in the book's order, both laws read back from the vectors, the spread on wavy water, the test.
+// built one part at a time with the camera's framings, both laws read back from the vectors, the spread on wavy water,
+// the test.
 import { expect, test } from '@playwright/test';
 import { openFigure, preparePage } from '../../../scripts/lib/export/driver.mjs';
 
@@ -10,25 +11,40 @@ test('reflection-laws: the laws, step by step', async ({ page }) => {
   const fig = await openFigure(page, 'reflection-laws');
   const act = () => fig.frame.locator('.pvc-act').first().click();
   let st = await fig.call('get');
-  expect(st).toMatchObject({ step: 'laws', law: 0, theta: 50, thetaR: 50, inPlane: true });
+  expect(st).toMatchObject({ step: 'laws', law: 0, theta: 50, thetaR: 50, inPlane: true, framing: 'wide' });
 
-  // the perpendicular, the plane, the reflected ray, in the book's order
-  for (const law of [1, 2, 3]) {
+  // one part at a time, in the book's order: the camera flies to O and each part arrives before the button is back
+  const steps = [
+    { law: 1, ms: 3200, framing: 'ray', word: 'আলোক রশ্মি' },
+    { law: 2, ms: 1700, framing: 'ray', word: 'আপতন বিন্দু' },
+    { law: 3, ms: 1700, framing: 'ray', word: 'অভিলম্ব' },
+    { law: 4, ms: 2600, framing: 'plane', word: 'সমতল' },
+    { law: 5, ms: 1700, framing: 'plane', word: 'প্রতিফলিত রশ্মি' },
+  ];
+  for (const { law, ms, framing, word } of steps) {
     await act();
-    await fig.advance(1100);
-    expect((await fig.call('get')).law).toBe(law);
+    await fig.advance(200);
+    await expect(fig.frame.locator('.pvc-act').first()).toBeDisabled();
+    await fig.advance(ms);
+    expect(await fig.call('get')).toMatchObject({ law, framing });
+    await expect(fig.frame.locator('.pvc-outcome')).toContainText(word);
+    await expect(fig.frame.locator('.pvc-act').first()).toBeEnabled();
     await fig.advance(500);
   }
+  await act();
+  await fig.advance(1900);
+  expect((await fig.call('get')).law).toBe(6);
   await expect(fig.frame.locator('.pvc-outcome')).toContainText('৫০');
+  await fig.advance(500);
 
-  // the first law: swing the plane, the reflected ray never leaves it, θr stays θi
-  await fig.frame.locator('.pvc-act').first().click();
+  // the first law: swing the plane, the camera stays, the reflected ray never leaves it, θr stays θi
+  await act();
   await fig.advance(1800);
   st = await fig.call('get');
-  expect(st.law).toBe(4);
+  expect(st).toMatchObject({ law: 7, framing: 'plane' });
   expect(st.phi).not.toBe(0);
   await expect(fig.frame.locator('.pvc-rule')).toContainText('প্রথম সূত্র');
-  for (const phi of [34, -46, 10]) {
+  for (const phi of [22, -46, 10]) {
     st = await fig.call('set', { phi });
     expect(st).toMatchObject({ phi, inPlane: true });
     expect(st.thetaR).toBeCloseTo(st.theta, 6);
@@ -38,7 +54,7 @@ test('reflection-laws: the laws, step by step', async ({ page }) => {
   await fig.advance(500);
   await act();
   await fig.advance(1600);
-  expect((await fig.call('get')).law).toBe(5);
+  expect((await fig.call('get')).law).toBe(8);
   await expect(fig.frame.locator('.pvc-rule')).toContainText('দ্বিতীয় সূত্র');
   for (const theta of [20, 35, 64, 75]) {
     st = await fig.call('set', { theta });
@@ -46,12 +62,12 @@ test('reflection-laws: the laws, step by step', async ({ page }) => {
   }
   await expect(fig.frame.locator('.pvc-outcome')).toContainText('৭৫');
 
-  // 8.2.2: parallel on still water, spread on waves
+  // 8.2.2, back on the whole lake: parallel on still water, spread on waves
   await fig.advance(500);
   await act();
-  await fig.advance(1000);
+  await fig.advance(1800);
   st = await fig.call('get');
-  expect(st).toMatchObject({ step: 'surface', waves: false });
+  expect(st).toMatchObject({ step: 'surface', waves: false, framing: 'lake' });
   expect(st.spread).toBeLessThan(0.01);
   await fig.advance(500);
   await act();
@@ -80,13 +96,13 @@ test('reflection-laws: the handle and X can be dragged, and the test gives back 
   await page.setViewportSize({ width: 844, height: 390 });
   const log = await preparePage(page);
   const fig = await openFigure(page, 'reflection-laws');
-  await fig.call('set', { law: 3, theta: 40, phi: 12, animate: false });
+  await fig.call('set', { law: 6, theta: 40, phi: 12, animate: false });
   await fig.advance(300);
   // a quick look: keys work the same two moves
   await fig.frame.locator('.pvc').first().press('ArrowUp');
-  expect((await fig.call('get')).law).toBe(4);
+  expect((await fig.call('get')).law).toBe(7);
   await fig.frame.locator('.pvc').first().press('ArrowRight');
-  expect(await fig.call('get')).toMatchObject({ law: 5, theta: 42 });
+  expect(await fig.call('get')).toMatchObject({ law: 8, theta: 42 });
   // a capture carries the drawing: the rays' amber is in the picture, not only on the screen
   const png = await fig.call('capture', { width: 422, height: 195 });
   const amber = await page.evaluate(async (src) => {
@@ -117,6 +133,6 @@ test('reflection-laws: the handle and X can be dragged, and the test gives back 
   await fig.advance(900);
   await fig.frame.locator('[data-mode="explore"]').click();
   await fig.advance(900);
-  expect(await fig.call('get')).toMatchObject({ mode: 'explore', step: 'laws', law: 5, theta: 42, waves: false });
+  expect(await fig.call('get')).toMatchObject({ mode: 'explore', step: 'laws', law: 8, theta: 42, waves: false });
   expect(log.errors).toEqual([]);
 });

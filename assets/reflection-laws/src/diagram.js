@@ -1,15 +1,18 @@
 // The drawing over the lake: the book's চিত্র ৮.০৩ as a fine vector drawing. Only the sheet is a 3D object. Everything else
 // (rays, normal, arcs, arrowheads, handles) is painted on a 2D canvas above the view, from the exact 3D points projected
 // through the camera: even anti-aliased lines of a constant width, with clean filled arrowheads, at any size. Every ray
-// comes from the vectors of reading.js, so what is drawn is the law itself.
+// comes from the vectors of reading.js, so what is drawn is the law itself. A new part wears a soft glow for a moment.
+// The magnifier of the smooth-and-rough step (loupe.js) is painted on the same canvas.
 import * as THREE from 'three';
-import { reflected, STRIP, sheetDir, stripInto, stripSpread, toLight } from './reading.js';
+import { createLoupe } from './loupe.js';
+import { reflected, toLight } from './reading.js';
 
 export const L = 100; // the length of XO and OX′
-export const SHEET = { half: 120, up: 122, down: 40 };
-export const SWING = 106; // how far along the sheet's foot its handle is
-export const ARC = 52; // the radius of the angles: well clear of O
+export const SHEET = { half: 100, up: 104, down: 18 };
+export const SWING = 100; // how far along the sheet's foot its handle is: on the ring on the water
+export const ARC = 60; // the radius of the angles: well clear of O
 
+const GLOW = '#ffe36e';
 export const C = { ray: '#f59f00', rayDark: '#5f3400', normal: '#495057', ti: '#1971c2', tr: '#2b8a3e', ink: '#212529', sheet: '#33506b' };
 
 /** The sheet's pale fill: strongest at the water, gone by its foot under the water, so it needs no lines there. */
@@ -20,9 +23,9 @@ function sheetTexture() {
   const g = c.getContext('2d');
   const r = g.createLinearGradient(0, 0, 0, 128);
   const atWater = SHEET.up / (SHEET.up + SHEET.down);
-  r.addColorStop(0, 'rgba(255,255,255,0.13)');
-  r.addColorStop(atWater, 'rgba(255,255,255,0.3)');
-  r.addColorStop(atWater + 0.01, 'rgba(225,244,255,0.2)');
+  r.addColorStop(0, 'rgba(255,255,255,0.2)');
+  r.addColorStop(atWater, 'rgba(255,255,255,0.36)');
+  r.addColorStop(atWater + 0.01, 'rgba(225,244,255,0.12)');
   r.addColorStop(1, 'rgba(225,244,255,0)');
   g.fillStyle = r;
   g.fillRect(0, 0, 4, 128);
@@ -31,7 +34,7 @@ function sheetTexture() {
   return t;
 }
 
-export function createDiagram({ scene, stage, host }) {
+export function createDiagram({ scene, stage, host, words }) {
   const root = new THREE.Group();
   root.name = 'diagram';
   root.userData.noExport = true;
@@ -144,11 +147,18 @@ export function createDiagram({ scene, stage, host }) {
     ctx.lineWidth = 1.8 * unit;
     ctx.stroke();
   }
+  /** The path once more, as a soft light under the line: the part that has just arrived. */
+  function shine(amount, width = 13) {
+    if (amount <= 0) return;
+    stroke(GLOW, width * 0.55, null, 0, NO_DASH, 0.85 * amount);
+    stroke(GLOW, width, null, 0, NO_DASH, 0.34 * amount);
+  }
   /** A ray from (a) to (b) with its arrowhead at the fraction t of the way, pointing from a to b. */
-  function ray(ax, ay, az, bx, by, bz, t = 0.5, alpha = 1) {
+  function ray(ax, ay, az, bx, by, bz, t = 0.5, alpha = 1, glow = 0) {
     count = 0;
     add(ax, ay, az);
     add(bx, by, bz);
+    shine(glow);
     stroke(C.ray, 2.5, C.rayDark, 4, NO_DASH, alpha);
     P(ax + (bx - ax) * t, ay + (by - ay) * t, az + (bz - az) * t);
     const mx = sx;
@@ -175,7 +185,8 @@ export function createDiagram({ scene, stage, host }) {
       onArc(a0 + ((a1 - a0) * i) / n, r);
       add(qx, qy, qz);
     }
-    stroke(color, 2, '#ffffff', 3.4);
+    shine(glowOf('angles'));
+    stroke(color, 2.4, '#ffffff', 3.8);
     const headAt = (a, inward) => {
       onArc(a, r);
       P(qx, qy, qz);
@@ -186,7 +197,7 @@ export function createDiagram({ scene, stage, host }) {
       return [x, y, x - sx, y - sy];
     };
     const sign = a1 > a0 ? 1 : -1;
-    if (ends === 'arrows' && Math.abs(a1 - a0) >= 26) {
+    if (ends === 'arrows' && Math.abs(a1 - a0) >= 18) {
       const [x0, y0, d0x, d0y] = headAt(a0, sign * 3);
       chevron(x0 + d0x * -2.2, y0 + d0y * -2.2, d0x, d0y, 9, color, '#ffffff');
       const [x1, y1, d1x, d1y] = headAt(a1, -sign * 3);
@@ -212,79 +223,46 @@ export function createDiagram({ scene, stage, host }) {
   const v = {
     sheet: 0, // the sheet's strength, 0 … 1
     edges: 0, // its thin edges and waterline
+    rise: 1, // how far it has risen from the water
     normal: 0, // how far the normal has grown
-    incident: false,
+    incident: 0, // how far XO has come, from X
     reflected: 0, // how far OX′ has grown
     x: false,
-    o: false,
+    o: 0, // the point of incidence, 0 … 1
     swing: false,
     rightAngle: false,
     arcs: [], // { a0, a1, r, color, ends }
     leaders: [], // { from: Vector3, to: Vector3, color }
     cands: [], // candidate rays of the test: { dir, drop }
-    strip: null, // the rough strip: { theta, strength, time }
-    focus: null, // the test on one slope: { theta, tilt }
+    loupe: null, // the magnifier: { strength, time, alpha, picks? }
+    ring: 0, // the thin circle on the water round O, 0 … 1
+    ringR: SHEET.half, // and its radius: it opens as the plane rises
+    dihedral: false, // the 90° between the sheet and the water
+    glow: { part: '', a: 0 }, // what has just arrived: 'ray', 'o', 'normal', 'plane', 'out', 'angles'
   };
-  const stripData = new Float32Array(STRIP.n * 6);
-  const stripTip = new THREE.Vector3();
-
-  function paintStrip(strength) {
-    const { x: ux, z: uz } = dirs.u;
-    const { n, gap, half } = STRIP;
-    const span = ((n - 1) / 2) * gap + half + 6;
-    // the strip of surface, enlarged: its top is the facets' profile, its foot a straight edge
-    count = 0;
-    const low = -7;
-    add(-span * ux, low, -span * uz);
-    add(-span * ux, 0, -span * uz);
-    for (let i = 0; i < n; i++) {
-      const s = (i - (n - 1) / 2) * gap;
-      const t = (stripData[i * 6] * Math.PI) / 180;
-      const dx = Math.cos(t) * half;
-      const dy = -Math.sin(t) * half;
-      add((s - dx) * ux, -dy * strength, (s - dx) * uz);
-      add((s + dx) * ux, dy * strength, (s + dx) * uz);
-    }
-    add(span * ux, 0, span * uz);
-    add(span * ux, low, span * uz);
-    trace();
-    ctx.closePath();
-    ctx.fillStyle = 'rgba(255,255,255,0.72)';
-    ctx.fill();
-    ctx.strokeStyle = C.sheet;
-    ctx.lineWidth = 1.5 * unit;
-    ctx.lineJoin = 'round';
-    ctx.stroke();
+  const glowOf = (part) => (v.glow.part === part ? v.glow.a : 0);
+  const loupe = createLoupe({ colors: C, words });
+  // the spot on the water the magnifier enlarges: under a pixel just above its rim
+  const ndc = new THREE.Vector3();
+  const spot = new THREE.Vector3();
+  const spotPx = { x: 0, y: 0 };
+  let spotOk = false;
+  function findSpot() {
+    spotPx.x = w * 0.62; // beside the tip of the mountain's image, not on it
+    spotPx.y = loupe.box.y - 20;
+    ndc.set((spotPx.x / w) * 2 - 1, 1 - (spotPx.y / h) * 2, 0.5).unproject(camera);
+    ndc.sub(camera.position);
+    spotOk = ndc.y < -1e-6;
+    if (spotOk) spot.copy(camera.position).addScaledVector(ndc, -camera.position.y / ndc.y);
+    return spotOk ? spotPx : null;
   }
-  function paintBundle() {
-    const { x: ux, z: uz } = dirs.u;
-    const { n, gap } = STRIP;
-    const a = v.strip;
-    stripInto(stripData, a.theta, a.strength, a.time);
-    paintStrip(a.strength);
-    const ds = Math.sin((a.theta * Math.PI) / 180);
-    const dy = Math.cos((a.theta * Math.PI) / 180);
-    const IN = 54;
-    const OUT = 86;
-    for (let i = 0; i < n; i++) {
-      const s = (i - (n - 1) / 2) * gap;
-      const o = i * 6;
-      const x = s * ux;
-      const z = s * uz;
-      // the facet's own normal, dashed
-      if (a.strength > 0.02) {
-        count = 0;
-        add(x, 0, z);
-        add(x + stripData[o + 1] * 56 * ux, stripData[o + 2] * 56, z + stripData[o + 1] * 56 * uz);
-        stroke('#343a40', 1.8, 'rgba(255,255,255,0.8)', 3.2, DASH_N);
-      }
-      // in, shorter and fainter, so that the eye follows the way out
-      ray(x - ds * IN * ux, dy * IN, z - ds * IN * uz, x, 0, z, 0.5, 0.62);
-      const rs = stripData[o + 3];
-      const ry = stripData[o + 4];
-      ray(x, 0, z, x + rs * OUT * ux, ry * OUT, z + rs * OUT * uz, 0.62);
-      if (i === 2) stripTip.set(x + rs * OUT * ux, ry * OUT, z + rs * OUT * uz);
-    }
+  function paintLoupe() {
+    const a = v.loupe;
+    loupe.layout(w, h);
+    const at = findSpot();
+    a.spot = at;
+    if (a.picks) loupe.paintPick(ctx, a);
+    else loupe.paint(ctx, a);
   }
   const DASH_N = [8, 6];
   const DASH_D = [3.5, 3];
@@ -296,17 +274,46 @@ export function createDiagram({ scene, stage, host }) {
     ctx.lineJoin = 'round';
     const { x: ux, z: uz } = dirs.u;
     const { half, up, down } = SHEET;
+    if (v.ring > 0) {
+      // a thin circle on the water: it shows the water as a flat floor, and the sheet's foot turns on it
+      count = 0;
+      for (let i = 0; i <= 72; i++) {
+        const a = (i / 72) * Math.PI * 2;
+        add(Math.cos(a) * v.ringR, 0, Math.sin(a) * v.ringR);
+      }
+      stroke('#ffffff', 1.2, 'rgba(10,50,70,0.45)', 2.4, NO_DASH, 0.75 * v.ring);
+    }
     if (v.edges > 0) {
       count = 0;
       add(-half * ux, 0, -half * uz);
-      add(-half * ux, up, -half * uz);
-      add(half * ux, up, half * uz);
+      add(-half * ux, up * v.rise, -half * uz);
+      add(half * ux, up * v.rise, half * uz);
       add(half * ux, 0, half * uz);
-      stroke('#ffffff', 1, null, 0, NO_DASH, 0.8 * v.edges);
+      shine(glowOf('plane'), 9);
+      stroke('#ffffff', 1.5, C.sheet, 2.6, NO_DASH, 0.9 * v.edges);
+      // its foot on the water: the line where it stands
       count = 0;
       add(-half * ux, 0, -half * uz);
       add(half * ux, 0, half * uz);
-      stroke('#ffffff', 1.3, C.sheet, 2, NO_DASH, 0.85 * v.edges);
+      shine(glowOf('plane'), 9);
+      stroke('#ffffff', 2.4, C.sheet, 4, NO_DASH, v.edges);
+    }
+    if (v.dihedral) {
+      // the 90° between the sheet and the water: from a point of its foot, one leg up the sheet, one along the water
+      const a = 34;
+      const c = 12;
+      const fx = ux * half * 0.7;
+      const fz = uz * half * 0.7;
+      count = 0;
+      add(fx, a, fz);
+      add(fx, 0, fz);
+      add(fx - uz * a, 0, fz + ux * a);
+      stroke('#ffffff', 2, C.sheet, 3.4);
+      count = 0;
+      add(fx, c, fz);
+      add(fx - uz * c, c, fz + ux * c);
+      add(fx - uz * c, 0, fz + ux * c);
+      stroke('#ffffff', 1.4, C.sheet, 2.6);
     }
     if (v.normal > 0) {
       const top = up + 6;
@@ -316,7 +323,8 @@ export function createDiagram({ scene, stage, host }) {
         count = 0;
         add(0, 0, 0);
         add(0, y, 0);
-        stroke('#343a40', 2.2, 'rgba(255,255,255,0.8)', 3.8, DASH_N);
+        shine(glowOf('normal'));
+        stroke('#2b3036', 2.6, 'rgba(255,255,255,0.9)', 4.6, DASH_N);
       }
       // under the water it fades: there it is only imagined
       count = 0;
@@ -325,7 +333,7 @@ export function createDiagram({ scene, stage, host }) {
       stroke(C.normal, 1.6, null, 0, DASH_N, 0.55);
     }
     if (v.rightAngle) {
-      const a = 7;
+      const a = 11;
       count = 0;
       add(0, a, 0);
       add(ux * a, a, uz * a);
@@ -339,22 +347,13 @@ export function createDiagram({ scene, stage, host }) {
       stroke(l.color, 1);
     }
     for (const a of v.arcs) arc(a);
-    if (v.strip) paintBundle();
-    if (v.focus) {
-      // one slope of the strip, with its own normal (the test)
-      stripInto(stripData, v.focus.theta, 1, 0);
-      stripData[2 * 6] = v.focus.tilt;
-      paintStrip(1);
-      const n = sheetDir(v.focus.tilt);
-      count = 0;
-      add(0, 0, 0);
-      add(n.s * 74 * ux, n.y * 74, n.s * 74 * uz);
-      stroke(C.normal, 2, 'rgba(255,255,255,0.75)', 3.6, DASH_N);
+    if (v.incident > 0) {
+      const k = 1 - v.incident;
+      ray(pX.x, pX.y, pX.z, pX.x * k, pX.y * k, pX.z * k, 0.5 / Math.max(0.5, v.incident), 1, glowOf('ray'));
     }
-    if (v.incident) ray(pX.x, pX.y, pX.z, 0, 0, 0);
     if (v.reflected > 0) {
       const k = v.reflected;
-      ray(0, 0, 0, pXr.x * k, pXr.y * k, pXr.z * k, 0.5 / Math.max(0.5, k));
+      ray(0, 0, 0, pXr.x * k, pXr.y * k, pXr.z * k, 0.5 / Math.max(0.5, k), 1, glowOf('out'));
     }
     for (const c of v.cands) {
       const t = c.dir;
@@ -369,7 +368,21 @@ export function createDiagram({ scene, stage, host }) {
     }
     if (v.x) dot(pX.x, pX.y, pX.z, 6, C.ray, '#ffffff');
     if (v.reflected >= 1) dot(pXr.x, pXr.y, pXr.z, 3.6, C.ray, '#ffffff');
-    if (v.o) dot(0, 0, 0, 3.6, C.ink, '#ffffff');
+    if (v.o > 0) {
+      const g = glowOf('o');
+      if (g > 0) {
+        // the point of incidence: a ring that opens round it
+        P(0, 0, 0);
+        ctx.beginPath();
+        ctx.arc(sx, sy, (10 + (1 - g) * 22) * unit, 0, Math.PI * 2);
+        ctx.strokeStyle = GLOW;
+        ctx.lineWidth = 3 * unit;
+        ctx.globalAlpha = g;
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+      dot(0, 0, 0, 3.6 + 3.4 * (g + (1 - v.o)), C.ink, '#ffffff');
+    }
     if (v.swing) {
       // the handle: at least 26 px, with a double arrow that says it turns
       P(pS.x, pS.y, pS.z);
@@ -396,6 +409,7 @@ export function createDiagram({ scene, stage, host }) {
       ctx.lineTo(x + a * 0.45, y + a * 0.5);
       ctx.stroke();
     }
+    if (v.loupe) paintLoupe();
   }
   stage.onResize(size);
   stage.onAfterRender(paint);
@@ -407,21 +421,23 @@ export function createDiagram({ scene, stage, host }) {
     pS,
     dirs,
     view: v,
-    stripTip,
+    spot,
+    /** Whether the magnifier's spot is on the water now. */
+    spotOn: () => spotOk,
     /** Everything off. */
     clear() {
       Object.assign(v, {
         sheet: 0,
         edges: 0,
         normal: 0,
-        incident: false,
+        incident: 0,
         reflected: 0,
         x: false,
-        o: false,
+        o: 0,
         swing: false,
         rightAngle: false,
-        strip: null,
-        focus: null,
+        dihedral: false,
+        loupe: null,
       });
       v.arcs.length = 0;
       v.leaders.length = 0;
@@ -441,18 +457,22 @@ export function createDiagram({ scene, stage, host }) {
       pS.set(dirs.u.x, 0, dirs.u.z).multiplyScalar(SWING);
       fill.rotation.y = -a;
     },
-    /** The sheet, faded to k. */
-    sheet(k) {
+    /** The sheet at strength k, risen from the water to the fraction rise of its height. */
+    sheet(k, rise = 1) {
       fill.visible = k > 0;
       fill.material.opacity = k;
+      fill.scale.y = Math.max(0.001, rise);
+      fill.position.y = ((SHEET.up - SHEET.down) / 2) * rise;
       v.sheet = v.edges = k;
+      v.rise = rise;
     },
-    /** The rough strip, flat at strength 0. Returns the spread of its reflected rays, degrees. */
-    setStrip(theta, strength, time) {
-      v.strip = { theta, strength, time };
-      stripInto(stripData, theta, strength, time);
-      return stripSpread(stripData);
+    /** The magnifier, flat at strength 0. Returns the spread of its reflected rays, degrees. */
+    setLoupe(strength, time, picks = null) {
+      v.loupe = { strength, time, alpha: 1, picks };
+      return loupe.trace(strength, time);
     },
+    /** The magnifier's traced rays (reading.js, loupeInto). */
+    loupeRays: loupe.rays,
     /** Draw now, over the frame just drawn. */
     paint,
   };

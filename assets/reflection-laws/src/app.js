@@ -1,8 +1,9 @@
-// Laws of reflection (প্রতিফলনের সূত্র), book p215, topic 8.2.1, চিত্র ৮.০৩: the student view. A calm mountain lake is the
-// setting; on it, a fine line drawing of the book's figure. The laws build in the book's order: the ray XO, the
-// perpendicular at O, the plane, the reflected ray OX′ with θi and θr; then the plane is swung (the first law) and X
-// is dragged (the second law). The last step is 8.2.2: parallel rays stay parallel on still water; on waves each
-// obeys the law at its own facet and they spread, and the mountain's image breaks up for the same reason.
+// Laws of reflection (প্রতিফলনের সূত্র), book p215, topic 8.2.1, চিত্র ৮.০৩: the student view. It opens on a calm mountain
+// lake, then flies close to the point O and looks down at the water from a three-quarter view, as the book draws it. The
+// laws build one part at a time, each with a moment's glow: the ray XO, the point O, the perpendicular, the upright plane,
+// the reflected ray OX′, θi and θr; then the plane is swung round the normal (the first law) and X is dragged (the second
+// law). The last step is 8.2.2, back on the whole lake: the mountain's image is crisp on still water and breaks up on
+// waves, and one magnifier shows why, with three rays traced on a cross-section of the surface.
 // The panel is the kit's clean sheet (one action, one result, one rule). A 5-question test.
 import * as THREE from 'three';
 import { createArrow } from '@shared/arrow.js';
@@ -19,11 +20,11 @@ import { fitPose } from './camera.js';
 import { ARC, C, createDiagram, L, SHEET } from './diagram.js';
 import { createI18n } from './i18n.js';
 import { createLake } from './lake.js';
-import { angleToNormal, offPlane, rad, reflected, sheetDir, sheetNormal, shuffle, toLight } from './reading.js';
+import { angleToNormal, deg, offPlane, rad, reflected, sheetNormal, shuffle, toLight } from './reading.js';
 
 export const DEFAULTS = {
   step: 'laws', // 'laws' | 'surface'
-  law: 0, // how far the laws are built: 0 the ray, 1 the normal, 2 the plane, 3 the reflected ray, 4 swung, 5 both laws
+  law: 0, // how far the laws are built: see LAW
   theta: 50, // θi, degrees
   phi: 0, // the swing of the plane, degrees
   waves: false, // the water is wavy
@@ -36,16 +37,25 @@ export const DEFAULTS = {
 };
 
 const STEPS = ['laws', 'surface'];
+// how far the laws are built, one part at a time
+const LAW = { SETTING: 0, RAY: 1, POINT: 2, NORMAL: 3, PLANE: 4, OUT: 5, ANGLES: 6, SWUNG: 7, BOTH: 8 };
 const THETA = [20, 75];
-const PHI = [-60, 34]; // the plane turns this far (it faces the view at −24°): never edge-on
-const VIEW = { az: 24, el: 8.5, planeEl: 24 };
-const FRAME = new THREE.Box3(new THREE.Vector3(-122, -36, -46), new THREE.Vector3(122, 118, 46));
+const PHI = [-78, 22]; // the plane turns this far round the normal (it faces the view at −40°): never edge-on
+const PHI_GAP = 151; // the middle of the angles the handle can't reach: past it, a finger counts from the other end
+const WIDE = { az: 24, el: 6.5, distance: 860, aim: new THREE.Vector3(-300, 16, -700) }; // the whole lake: mountain and image
+const LAKE_AIM = new THREE.Vector3(-300, -100, -700); // the same, tipped down: the mountain's image above the magnifier
+const CLOSE = { az: 40, el: 25 }; // near O, a three-quarter view down at the water, as চিত্র ৮.০৩
 const WAVE_IDLE = 20; // after this long untouched the waves rest, and the phone with them
-const TALL_TOP = 170; // on a squarish view there is height to spare: it goes to the sky, so the mountain is whole
-const MARGINS = { top: 36, bottom: 6, side: 6 };
+const MARGINS = { top: 34, bottom: 10, side: 10 };
 const CHIP_W = 96; // an angle's label on the view, px
-const CHIP_H = 88; // and how high it sits, in the scene's units: well above O
+const CHIP_H = 92; // and how high it sits, in the scene's units: well above O
+const FLY_IN = 1.5; // seconds, from the lake to O
+const FLY = 0.9; // seconds, from one close framing to the next
+const GROW = 0.8; // seconds a new part takes to arrive
+const GLOW_TIME = 0.75; // seconds it then shines before the button comes back
 const INK = C.ink;
+const RING_SMALL = 40; // the circle on the water before the plane opens it
+const RING_FAR = 860; // how near the camera is before the circle on the water starts to show
 const AMBER_TEXT = '#9a5300';
 const WATER_TEXT = '#0b4f6c';
 const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
@@ -93,12 +103,26 @@ export function createApp(root, options = {}) {
   controls.minAzimuthAngle = THREE.MathUtils.degToRad(-50);
   controls.maxAzimuthAngle = THREE.MathUtils.degToRad(80);
   const lake = createLake({ stage });
-  const dia = createDiagram({ scene: stage.scene, stage, host: ui.canvasHost });
+  const dia = createDiagram({
+    scene: stage.scene,
+    stage,
+    host: ui.canvasHost,
+    words: {
+      smooth: t('l_smooth'),
+      rough: t('l_rough'),
+      parallel: t('l_parallel'),
+      spread: t('l_spread'),
+      normal: t('l_normal'),
+      note: t('note_waves'),
+      ti: 'i',
+      tr: 'r',
+    },
+  });
 
   // ── the state ───────────────────────────────────────────────────────────────────────────────────────────
   const s = {
     step: STEPS.includes(o.step) ? o.step : 'laws',
-    law: clamp(Math.round(Number(o.law) || 0), 0, 5),
+    law: clamp(Math.round(Number(o.law) || 0), LAW.SETTING, LAW.BOTH),
     theta: clamp(Math.round(Number(o.theta) || 50), THETA[0], THETA[1]),
     phi: clamp(Math.round(Number(o.phi) || 0), PHI[0], PHI[1]),
     wavesOn: Boolean(o.waves),
@@ -107,6 +131,8 @@ export function createApp(root, options = {}) {
     spread: 0,
     idle: 0, // seconds the waves have run with nobody touching anything
     reveal: 1, // the newest part of the laws, 0 … 1 (it grows in)
+    glow: 0, // and how much it shines now, 1 … 0
+    busy: false, // a part is arriving: the button waits
     mode: 'explore',
     locked: false,
     view: o.view === '3d' ? '3d' : 'front',
@@ -125,11 +151,11 @@ export function createApp(root, options = {}) {
 
   /** What the panel's action does now. */
   function phase() {
-    if (s.step === 'laws') return s.reveal < 1 ? 'busy' : `l${s.law}`;
+    if (s.step === 'laws') return s.busy || s.reveal < 1 ? 'busy' : `l${s.law}`;
     return s.wavesOn ? 's1' : 's0';
   }
   /** X and the handle can be moved once the whole picture is built. */
-  const grabbable = () => s.step === 'laws' && s.law >= 3 && s.reveal >= 1;
+  const grabbable = () => s.step === 'laws' && s.law >= LAW.ANGLES && !s.busy;
 
   // ── what the 3D shows, from the state ──────────────────────────────────────────────────────────────────
   function applyWorld() {
@@ -138,34 +164,68 @@ export function createApp(root, options = {}) {
     dia.pose(s.theta, s.phi);
     if (s.quiz) return applyQuiz(s.quiz);
     if (s.step === 'surface') {
-      s.spread = dia.setStrip(s.theta, s.wind, s.time);
+      s.spread = dia.setLoupe(s.wind, s.time);
       return;
     }
     const k = s.reveal;
+    const part = (n) => (s.law > n ? 1 : s.law === n ? k : 0);
     const v = dia.view;
-    v.o = v.x = v.incident = true;
-    if (s.law === 1) v.normal = k;
-    else if (s.law > 1) v.normal = 1;
-    v.rightAngle = s.law === 1 && k >= 1;
-    if (s.law === 2) dia.sheet(k);
-    else if (s.law > 2) dia.sheet(1);
-    if (s.law === 3) v.reflected = k;
-    else if (s.law > 3) v.reflected = 1;
-    if (s.law >= 3 && k >= 1) {
-      v.arcs.push({ a0: -s.theta, a1: 0, r: ARC, color: C.ti, ends: 'arrows' }, { a0: 0, a1: s.theta, r: ARC, color: C.tr, ends: 'arrows' });
-      v.swing = true;
+    v.x = s.law > LAW.RAY || (s.law === LAW.RAY && k > 0);
+    v.incident = part(LAW.RAY);
+    v.o = part(LAW.POINT);
+    v.normal = part(LAW.NORMAL);
+    v.rightAngle = s.law === LAW.NORMAL && k >= 1;
+    const p = part(LAW.PLANE);
+    if (p > 0) dia.sheet(Math.min(1, p * 2), ease.outCubic(p));
+    v.ringR = RING_SMALL + (SHEET.half - RING_SMALL) * ease.outCubic(p);
+    v.dihedral = (s.law === LAW.PLANE && k >= 1) || s.law === LAW.OUT;
+    v.reflected = part(LAW.OUT);
+    const a = part(LAW.ANGLES);
+    if (a > 0) {
+      const th = s.theta * a;
+      v.arcs.push({ a0: -th, a1: 0, r: ARC, color: C.ti, ends: 'arrows' }, { a0: 0, a1: th, r: ARC, color: C.tr, ends: 'arrows' });
     }
+    v.swing = s.law >= LAW.ANGLES && k >= 1;
+    v.glow.part = GLOWS[s.law] ?? '';
+    v.glow.a = s.glow;
   }
+  const GLOWS = { [LAW.RAY]: 'ray', [LAW.POINT]: 'o', [LAW.NORMAL]: 'normal', [LAW.PLANE]: 'plane', [LAW.OUT]: 'out', [LAW.ANGLES]: 'angles' };
 
   // ── camera ─────────────────────────────────────────────────────────────────────────────────────────────
   let camFrom = null;
   let camK = 1;
   const camDir = new THREE.Vector3();
+  // what each framing must show. The ring is the whole circle the plane can turn in, so the plane stays in view as it swings
+  const ringPoints = (lo, hi, r = SHEET.half + 2) => {
+    const out = [];
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2;
+      for (const y of [lo, hi]) out.push(new THREE.Vector3(Math.cos(a) * r, y, Math.sin(a) * r));
+    }
+    return out;
+  };
+  const FRAMES = {
+    // the ray alone, near: the point where it lands and where it comes from
+    ray: [-96, 30].flatMap((x) => [-12, SHEET.up + 2].flatMap((y) => [-30, 30].map((z) => new THREE.Vector3(x, y, z)))),
+    plane: ringPoints(-8, SHEET.up + 2),
+  };
+  function poseKey() {
+    if (s.quiz) return s.quiz.kind === 'rough' ? 'lake' : 'plane';
+    if (s.step === 'surface') return 'lake';
+    if (s.law === LAW.SETTING) return 'wide';
+    return s.law < LAW.PLANE ? 'ray' : 'plane';
+  }
+  const widePose = { position: new THREE.Vector3(), target: new THREE.Vector3() };
   function poseNow() {
-    // the test on the plane looks from higher: the feet on the water tell the rays apart
-    dirFrom(VIEW.az, s.quiz?.kind === 'plane' ? VIEW.planeEl : VIEW.el, camDir);
-    FRAME.max.y = stage.width / stage.height < 1.2 ? TALL_TOP : 118;
-    return fitPose({ box: FRAME, dir: camDir, camera, width: stage.width, height: stage.height, margin: MARGINS });
+    const key = poseKey();
+    if (key === 'wide' || key === 'lake') {
+      // a fixed view: at any shape of frame the mountain and its image sit in the same part of the height
+      dirFrom(WIDE.az, WIDE.el, widePose.position).multiplyScalar(WIDE.distance);
+      widePose.target.copy(key === 'wide' ? WIDE.aim : LAKE_AIM);
+      return widePose;
+    }
+    dirFrom(CLOSE.az, CLOSE.el, camDir);
+    return fitPose({ points: FRAMES[key], dir: camDir, camera, width: stage.width, height: stage.height, margin: MARGINS });
   }
   function applyCamera() {
     if (s.userMovedCamera) return;
@@ -232,6 +292,9 @@ export function createApp(root, options = {}) {
     applyCamera();
     camera.updateMatrixWorld();
     lake.update(camera);
+    // the circle on the water belongs to the close view: it comes in as the camera does
+    dia.view.ring = s.quiz?.kind === 'rough' || s.step === 'surface' ? 0 : clamp((RING_FAR - camera.position.length()) / 300, 0, 1);
+    if (dia.view.loupe) dia.view.loupe.alpha = camK >= 1 ? 1 : camK * camK;
     labels();
   });
 
@@ -245,7 +308,7 @@ export function createApp(root, options = {}) {
     s.time += dt;
     lake.setWaves(s.wind, s.time);
     if (s.step === 'surface' && !s.quiz) {
-      s.spread = dia.setStrip(s.theta, s.wind, s.time);
+      s.spread = dia.setLoupe(s.wind, s.time);
       panel();
     }
     return true;
@@ -271,17 +334,25 @@ export function createApp(root, options = {}) {
       },
     }).finished;
   }
+  /** Any part still arriving stops where it is. */
+  function settle() {
+    ++token;
+    for (const k of ['reveal', 'glow']) tweener.cancel(k);
+    s.reveal = 1;
+    s.glow = 0;
+    s.busy = false;
+  }
   function go(step, { animate = true } = {}) {
     if (s.locked) return lockedNudge();
     if (!STEPS.includes(step)) return;
-    ++token;
-    tweener.cancel('reveal');
-    s.reveal = 1;
+    const from = poseKey();
+    settle();
     s.step = step;
     s.wavesOn = false;
     if (animate) {
       clearLabels();
       poseTween(step === 'surface' ? 50 : s.theta, step === 'surface' ? 0 : s.phi);
+      if (poseKey() !== from) flyCamera(FLY_IN);
     } else {
       s.wind = 0;
       if (step === 'surface') {
@@ -292,31 +363,47 @@ export function createApp(root, options = {}) {
     draw();
     emitChange();
   }
-  /** The next part of the laws grows in. */
-  function buildLaw(next) {
+  /** The next part of the laws: the camera goes where it is best seen, it arrives, shines a moment, and the button is back. */
+  async function buildLaw(next) {
     const my = ++token;
+    const from = poseKey();
     s.law = next;
     s.reveal = 0;
+    s.busy = true;
     audio.tick();
     draw();
-    tweener
-      .animate({
-        key: 'reveal',
-        duration: 0.9,
-        ease: ease.inOutCubic,
-        onUpdate: (k) => {
-          if (my !== token) return;
-          s.reveal = Math.min(0.999, k);
-          draw();
-        },
-      })
-      .finished.then((ok) => {
-        if (!ok || my !== token) return;
-        s.reveal = 1;
-        audio.success();
+    if (poseKey() !== from) await flyCamera(from === 'wide' || from === 'lake' ? FLY_IN : FLY);
+    if (my !== token) return;
+    const grown = await tweener.animate({
+      key: 'reveal',
+      duration: GROW,
+      ease: ease.inOutCubic,
+      onUpdate: (k) => {
+        if (my !== token) return;
+        s.reveal = Math.min(0.999, k);
         draw();
-        emitChange();
-      });
+      },
+    }).finished;
+    if (!grown || my !== token) return;
+    s.reveal = 1;
+    s.glow = 1;
+    audio.success();
+    draw();
+    const shone = await tweener.animate({
+      key: 'glow',
+      duration: GLOW_TIME,
+      ease: ease.linear,
+      onUpdate: (k) => {
+        if (my !== token) return;
+        s.glow = 1 - k;
+        draw();
+      },
+    }).finished;
+    if (!shone || my !== token) return;
+    s.glow = 0;
+    s.busy = false;
+    draw();
+    emitChange();
   }
   let lastAct = -1e9;
   function act() {
@@ -326,23 +413,21 @@ export function createApp(root, options = {}) {
     lastAct = now;
     audio.unlock();
     const ph = phase();
-    if (ph === 'l0') return buildLaw(1);
-    if (ph === 'l1') return buildLaw(2);
-    if (ph === 'l2') return buildLaw(3);
+    if (/^l[0-5]$/.test(ph)) return buildLaw(s.law + 1);
     // a tap on a drag's button shows the move, and the student can go on by hand
-    if (ph === 'l3') {
+    if (ph === 'l6') {
       const my = ++token;
-      return poseTween(s.theta, s.phi < -14 ? 22 : -46, 1.5).then((ok) => {
-        if (ok && my === token) passLaw(4);
+      return poseTween(s.theta, s.phi < -14 ? 12 : -46, 1.5).then((ok) => {
+        if (ok && my === token) passLaw(LAW.SWUNG);
       });
     }
-    if (ph === 'l4') {
+    if (ph === 'l7') {
       const my = ++token;
       return poseTween(s.theta > 42 ? 30 : 62, s.phi, 1.3).then((ok) => {
-        if (ok && my === token) passLaw(5);
+        if (ok && my === token) passLaw(LAW.BOTH);
       });
     }
-    if (ph === 'l5') return go('surface');
+    if (ph === 'l8') return go('surface');
     if (ph === 's0' || ph === 's1') return setWaves(!s.wavesOn);
   }
   function setWaves(on) {
@@ -408,8 +493,8 @@ export function createApp(root, options = {}) {
     for (let i = 1; i <= 12; i++) {
       const k = (i * L) / 12;
       add(d.light.x * k, d.light.y * k, d.light.z * k);
-      if (s.law >= 3) add(d.out.x * k, d.out.y * k, d.out.z * k);
-      if (s.law >= 1) add(0, k, 0);
+      if (s.law >= LAW.OUT) add(d.out.x * k, d.out.y * k, d.out.z * k);
+      if (s.law >= LAW.NORMAL) add(0, k, 0);
     }
     return out;
   }
@@ -469,11 +554,6 @@ export function createApp(root, options = {}) {
     { dx: -26, dy: 20 },
     { dx: 26, dy: 20 },
   ];
-  const EDGE = [
-    { dx: -6, dy: 0 },
-    { dx: -6, dy: -26 },
-    { dx: -6, dy: 26 },
-  ];
   const AT = [{ dx: 0, dy: 0 }];
   const RIGHT90 = [
     { dx: 26, dy: -12 },
@@ -484,6 +564,7 @@ export function createApp(root, options = {}) {
   const NORMAL_SPOTS = [
     { dx: 8, dy: 0 },
     { dx: -8, dy: 0 },
+    { dx: 0, dy: -16 },
   ];
   const tmp = new THREE.Vector3();
   const O = new THREE.Vector3();
@@ -513,22 +594,23 @@ export function createApp(root, options = {}) {
     const d = dia.dirs;
     const q = s.quiz;
     const law = !q && s.step === 'laws';
-    const surface = !q && s.step === 'surface';
     const settled = camK >= 1;
     const done = s.reveal >= 1;
     const u = d.u;
+    const at = (n) => law && s.law === n && done;
 
     // the book's two media, at the right of the picture as in চিত্র ৮.০৩
-    label('m1', law && settled, t('l_m1'), tmp.set(SHEET.half, 94, 0), INK, EDGE, true, mediumAvoid);
-    label('m2', law && settled, t('l_m2'), tmp.set(SHEET.half, -24, 0), WATER_TEXT, EDGE, true, mediumAvoid);
-    label('x', law && settled, t('l_x'), dia.pX, AMBER_TEXT, XSPOTS, false, chipAvoid);
-    label('o', law && s.law >= 1, t('l_o'), O, INK, BELOW, true);
-    label('op', law && s.law === 0, t('l_op'), O, INK, [{ dx: -24, dy: 20 }, ...BELOW]);
-    label('ray', law && s.law === 0 && settled, t('l_ray'), along(d.light, 62), AMBER_TEXT, LEFT, true, lineAvoid);
+    const media = law && settled && s.law >= LAW.RAY;
+    label('m1', media, t('l_m1'), tmp.set(58, 98, -8), INK, AT, true, mediumAvoid);
+    label('m2', media, t('l_m2'), tmp.set(-4, 0, 96), WATER_TEXT, AT, true, mediumAvoid);
+    label('x', law && settled && s.law >= LAW.RAY, t('l_x'), dia.pX, AMBER_TEXT, XSPOTS, false, chipAvoid);
+    label('o', law && settled && s.law > LAW.POINT, t('l_o'), O, INK, BELOW, true);
+    label('op', at(LAW.POINT), t('l_op'), O, INK, BELOW);
+    label('ray', at(LAW.RAY) && settled, t('l_ray'), along(d.light, 62), AMBER_TEXT, LEFT, true, lineAvoid);
     label(
       'lamba',
-      law && s.law >= 1 && settled && done && s.theta >= 20,
-      s.law === 1 ? t('l_lamba') : t('l_normal'),
+      law && s.law >= LAW.NORMAL && settled && done,
+      s.law === LAW.NORMAL ? t('l_lamba') : t('l_normal'),
       tmp.set(0, SHEET.up - 4, 0),
       C.normal,
       NORMAL_SPOTS,
@@ -536,11 +618,20 @@ export function createApp(root, options = {}) {
       chipAvoid,
     );
     // each name shows while the book introduces it, then leaves the picture to the law
-    label('plane', law && s.law === 2 && done, t('l_plane'), tmp.set(u.x * 92, 18, u.z * 92), C.sheet, AT, true);
-    label('inc', law && s.law === 2 && done, t('l_inc'), along(d.light, 62), AMBER_TEXT, LEFT, true, lineAvoid);
-    label('ref', law && s.law === 3 && done, t('l_ref'), along(d.out, 62), AMBER_TEXT, RIGHT, true, lineAvoid);
-    label('xp', law && s.law >= 3 && done, t('l_xp'), dia.pXr, AMBER_TEXT, XPSPOTS, false, chipAvoid);
-    const angles = law && s.law >= 3 && done && settled;
+    label('plane', at(LAW.PLANE), t('l_plane'), tmp.set(-u.x * 74, 100, -u.z * 74), C.sheet, AT, true);
+    label(
+      'r90s',
+      (at(LAW.PLANE) || at(LAW.OUT)) && settled,
+      t('l_right', { a: 90 }),
+      tmp.set(u.x * 70 - u.z * 34, 0, u.z * 70 + u.x * 34),
+      INK,
+      BELOW,
+      true,
+    );
+    label('inc', at(LAW.OUT), t('l_inc'), along(d.light, 62), AMBER_TEXT, LEFT, true, lineAvoid);
+    label('ref', at(LAW.OUT), t('l_ref'), along(d.out, 62), AMBER_TEXT, RIGHT, true, lineAvoid);
+    label('xp', law && s.law >= LAW.OUT && done, t('l_xp'), dia.pXr, AMBER_TEXT, XPSPOTS, false, chipAvoid);
+    const angles = law && s.law >= LAW.ANGLES && done && settled;
     label('ti', angles, t('l_ti', { a: s.theta }), chipPoint('ti', -1), C.ti, AT);
     label('tr', angles, t('l_tr', { a: thetaR() }), chipPoint('tr', 1), C.tr, AT);
     dia.view.leaders.length = 0;
@@ -551,17 +642,14 @@ export function createApp(root, options = {}) {
       leadR.to.copy(pts.get('tr'));
       dia.view.leaders.push(leadI, leadR);
     }
-    label('r90', law && s.law === 1 && done, t('l_right', { a: 90 }), tmp.set(u.x * 8, 9, u.z * 8), INK, RIGHT90, true);
-    const rough = s.wind > 0.5;
-    label('surf', surface && settled, rough ? t('l_rough') : t('l_smooth'), tmp.set(-u.x * 96, -11, -u.z * 96 + 6), WATER_TEXT, AT, true);
-    label('para', surface && settled, rough ? t('l_scatter') : t('l_parallel'), dia.stripTip, AMBER_TEXT, ABOVE, true);
+    label('r90', at(LAW.NORMAL), t('l_right', { a: 90 }), tmp.set(u.x * 11, 11, u.z * 11), INK, RIGHT90, true);
 
     // the test
     const qk = q?.kind;
     const drawn = qk === 'angle' || qk === 'plane' || qk === 'names' || qk === 'total';
     label('qx', drawn, t('l_x'), dia.pX, AMBER_TEXT, ABOVE);
     label('qxp', qk === 'names' || qk === 'total', t('l_xp'), dia.pXr, AMBER_TEXT, ABOVE);
-    label('qo', drawn || qk === 'rough', t('l_o'), O, INK, BELOW, true);
+    label('qo', drawn, t('l_o'), O, INK, BELOW, true);
     for (let i = 0; i < 4; i++) label(`qa${i}`, qk === 'names', q?.names?.[i] ?? '', q?.spots ? q.spots[i] : O, INK, AT);
     const b = rad((90 + s.theta) / 2);
     label(
@@ -576,9 +664,8 @@ export function createApp(root, options = {}) {
     );
     label('qr', qk === 'angle', t('l_tr_q'), arcMid(1), C.tr, [{ dx: 8, dy: -30 }], false, [lineBoxes]);
     label('qt', qk === 'total', q ? t('l_deg', { a: q.whole }) : '', tmp.set(0, ARC, 0), INK, [{ dx: 0, dy: -26 }]);
-    label('qn', qk === 'rough', t('l_normal'), q?.normalTip ?? O, C.normal, ABOVE, true);
     for (let i = 0; i < 4; i++) {
-      const on = (qk === 'plane' || qk === 'rough') && i < (q?.letters?.length ?? 0);
+      const on = qk === 'plane' && i < (q?.letters?.length ?? 0);
       label(`qc${i}`, on, on ? q.letters[i] : '', on ? q.tips[i] : O, INK, ABOVE);
     }
   }
@@ -588,7 +675,7 @@ export function createApp(root, options = {}) {
   const steady = { act: '' };
   function outcome() {
     if (s.step === 'laws') {
-      if (s.law < 3 || (s.law === 3 && s.reveal < 1)) return t(`out_l${Math.min(2, s.law)}`);
+      if (s.law < LAW.ANGLES) return t(`out_l${s.law}`);
       return t('out_angles', { a: s.theta, b: thetaR() });
     }
     return s.wind > 0.5 ? t('out_wavy') : t('out_smooth');
@@ -599,12 +686,15 @@ export function createApp(root, options = {}) {
   }
   const ACTIONS = {
     busy: ['act_wait', '', ICONS.hand],
-    l0: ['act_normal', 1, ICONS.hand],
-    l1: ['act_plane', 2, ICONS.hand],
-    l2: ['act_reflect', 3, ICONS.hand],
-    l3: ['act_swing', 4, ICONS.drag],
-    l4: ['act_tilt', 5, ICONS.drag],
-    l5: ['act_next', '', ICONS.chevR],
+    l0: ['act_ray', 1, ICONS.hand],
+    l1: ['act_point', 2, ICONS.hand],
+    l2: ['act_normal', 3, ICONS.hand],
+    l3: ['act_plane', 4, ICONS.hand],
+    l4: ['act_reflect', 5, ICONS.hand],
+    l5: ['act_angles', 6, ICONS.hand],
+    l6: ['act_swing', 7, ICONS.drag],
+    l7: ['act_tilt', 8, ICONS.drag],
+    l8: ['act_next', '', ICONS.chevR],
     s0: ['act_waves', 1, ICONS.hand],
     s1: ['act_calm', '', ICONS.hand],
   };
@@ -614,10 +704,10 @@ export function createApp(root, options = {}) {
     sheet.rule(rule());
     sheet.choose(s.step);
     const ph = phase();
-    sheet.next(ph === 'l5' ? 'surface' : null);
+    sheet.next(ph === 'l8' ? 'surface' : null);
     const [word, step, icon] = ACTIONS[ph];
     const enabled = ph !== 'busy';
-    note.textContent = s.step === 'surface' && s.wind > 0.5 ? t('note_waves') : t('note_rays');
+    note.hidden = s.step === 'surface' || s.law === LAW.SETTING; // the magnifier says it itself, and the lake has no rays
     const key = `${word}|${step}|${enabled}`;
     if (action && steady.act !== key) {
       steady.act = key;
@@ -642,9 +732,11 @@ export function createApp(root, options = {}) {
     target: () => {
       if (s.locked || camK < 1) return null;
       const ph = phase();
-      if (ph === 'l3') return ringPoint.copy(dia.pS);
-      if (ph === 'l4') return ringPoint.copy(dia.pX);
-      if (ph === 'l0' || ph === 'l1' || ph === 'l2' || ph === 's0') return ringPoint.set(0, 0, 0);
+      if (ph === 'l6') return ringPoint.copy(dia.pS);
+      if (ph === 'l7') return ringPoint.copy(dia.pX);
+      if (ph === 's0') return dia.spotOn() ? ringPoint.copy(dia.spot) : null;
+      // near O the button in the panel is enough: a ring there would cover the very part that has just arrived
+      if (ph === 'l0') return ringPoint.set(0, 0, 0);
       return null;
     },
     radius: 22,
@@ -689,6 +781,17 @@ export function createApp(root, options = {}) {
     },
     { capture: true },
   );
+  const hit = new THREE.Vector3();
+  /** The point of the water under a pixel, into hit. False above the horizon. */
+  function onWater(x, y) {
+    hit
+      .set((x / stage.width) * 2 - 1, 1 - (y / stage.height) * 2, 0.5)
+      .unproject(camera)
+      .sub(camera.position);
+    if (hit.y >= -1e-6) return false;
+    hit.multiplyScalar(-camera.position.y / hit.y).add(camera.position);
+    return true;
+  }
   const dirV = new THREE.Vector3();
   function dirPoint(theta) {
     const l = toLight(theta, s.phi);
@@ -702,8 +805,11 @@ export function createApp(root, options = {}) {
     const dy = p.y - g.y;
     g.moved = Math.max(g.moved, Math.hypot(dx, dy));
     if (g.what === 'phi') {
-      // the finger turns the sheet like a page: to the left brings the handle round toward the viewer
-      const next = clamp(Math.round(g.phi - dx * (140 / Math.max(240, stage.width))), PHI[0], PHI[1]);
+      // the handle stays under the finger, on its circle on the water
+      if (!onWater(p.x, p.y)) return;
+      let a = deg(Math.atan2(hit.z, hit.x));
+      if (a > PHI_GAP) a -= 360;
+      const next = clamp(Math.round(a), PHI[0], PHI[1]);
       if (next !== s.phi) {
         s.phi = next;
         draw();
@@ -734,8 +840,8 @@ export function createApp(root, options = {}) {
     action.show('drag');
     emit('dragend', { part: g.what });
     if (g.moved > 6) {
-      if (g.what === 'phi' && s.law === 3 && Math.abs(s.phi - g.phi) >= 6) passLaw(4);
-      if (g.what === 'theta' && s.law === 4 && Math.abs(s.theta - g.theta) >= 3) passLaw(5);
+      if (g.what === 'phi' && s.law === LAW.ANGLES && Math.abs(s.phi - g.phi) >= 6) passLaw(LAW.SWUNG);
+      if (g.what === 'theta' && s.law === LAW.SWUNG && Math.abs(s.theta - g.theta) >= 3) passLaw(LAW.BOTH);
     }
   }
   ui.canvasHost.addEventListener('pointerup', (e) => {
@@ -747,9 +853,9 @@ export function createApp(root, options = {}) {
     const quick = performance.now() - down.at < 500;
     down = null;
     if (moved > 8 || !quick || s.mode === 'quiz') return;
-    // a tap on O does what the button says, while the button is a tap
-    const a = toScreen(O);
-    if (Math.hypot(a.x - p.x, a.y - p.y) < 44 && ['l0', 'l1', 'l2', 's0', 's1'].includes(phase())) act();
+    // a tap on the marked spot does what the button says, while the button is a tap
+    const a = toScreen(s.step === 'surface' ? dia.spot : O);
+    if (Math.hypot(a.x - p.x, a.y - p.y) < 44 && /^(l[0-5]|s[01])$/.test(phase())) act();
   });
   ui.canvasHost.addEventListener('pointercancel', endDrag);
 
@@ -757,15 +863,14 @@ export function createApp(root, options = {}) {
   const LETTERS = t('letters').split(',');
   function applyQuiz(q) {
     const v = dia.view;
-    v.o = true;
+    v.ringR = SHEET.half;
     if (q.kind === 'rough') {
-      v.focus = { theta: s.theta, tilt: q.tilt };
-      v.incident = true;
-      v.x = false;
-      for (const dir of q.rays) v.cands.push({ dir, drop: false });
+      dia.setLoupe(s.wind, 0, q.picks); // it holds still while the student reads the rays
       return;
     }
-    v.incident = v.x = true;
+    v.o = 1;
+    v.incident = 1;
+    v.x = true;
     v.normal = 1;
     dia.sheet(q.kind === 'plane' ? 1 : 0.8);
     if (q.kind === 'plane') {
@@ -788,10 +893,8 @@ export function createApp(root, options = {}) {
     }
   }
   function quizScene(q, { theta = 50, phi = 0, waves = false } = {}) {
-    ++token;
+    settle();
     tweener.cancel('pose');
-    tweener.cancel('reveal');
-    s.reveal = 1;
     s.theta = theta;
     s.phi = phi;
     s.wavesOn = waves;
@@ -893,29 +996,9 @@ export function createApp(root, options = {}) {
         reveal: t('a_total', { a: 2 * theta, b: theta, two: 2 }),
       };
     }
-    // one slope of a wave, with its own normal: four rays leave it, one by the law at that slope
-    const theta = 50;
-    const tilt = -18;
-    const ray = { real: theta + 2 * tilt, flat: theta, wrong: theta - 2 * tilt, back: -30 };
+    // one slope in the magnifier, with its own normal: four rays leave it, one by the law at that slope
     const kinds = shuffle(['real', 'flat', 'wrong', 'back']);
-    // the sheet lies along x here (phi = 0): a signed angle in it is a direction in the scene
-    const dir = (a) => {
-      const d = sheetDir(a);
-      return { x: d.s, y: d.y, z: 0 };
-    };
-    const rays = kinds.map((k) => dir(ray[k]));
-    const n = dir(tilt);
-    quizScene(
-      {
-        kind,
-        tilt,
-        rays,
-        letters: kinds.map((_, k) => `<b>${LETTERS[k]}</b>`),
-        tips: rays.map((r) => new THREE.Vector3(r.x, r.y, r.z).multiplyScalar(L)),
-        normalTip: new THREE.Vector3(n.x, n.y, n.z).multiplyScalar(74),
-      },
-      { theta, phi: 0, waves: true },
-    );
+    quizScene({ kind, picks: kinds.map((k, i) => ({ kind: k, letter: LETTERS[i] })) }, { theta: 50, phi: 0, waves: true });
     const answer = kinds.indexOf('real');
     const wrong = [0, 1, 2, 3].filter((k) => k !== answer);
     return {
@@ -943,6 +1026,7 @@ export function createApp(root, options = {}) {
         Object.assign(saved, { theta: s.theta, phi: s.phi });
         // the book's order: no scene shows the answer to a later question
         order = ['names', 'angle', 'plane', 'total', 'rough'];
+        settle();
         if (s.drag) {
           controls.enabled = true;
           s.drag = null;
@@ -1012,16 +1096,15 @@ export function createApp(root, options = {}) {
   }
   function home() {
     if (s.locked) return lockedNudge();
-    ++token;
-    for (const k of ['pose', 'reveal']) tweener.cancel(k);
-    s.reveal = 1;
-    if (s.step === 'laws') s.law = 0;
+    settle();
+    tweener.cancel('pose');
+    if (s.step === 'laws') s.law = LAW.SETTING;
     s.wavesOn = false;
     s.theta = 50;
     s.phi = 0;
     clearLabels();
     if (s.view === '3d') setView('front');
-    else flyCamera(0.5);
+    else flyCamera(FLY);
     draw();
     emitChange();
   }
@@ -1061,11 +1144,11 @@ export function createApp(root, options = {}) {
       if (dTheta) {
         const was = s.theta;
         s.theta = clamp(s.theta + dTheta, THETA[0], THETA[1]);
-        if (s.law === 4 && s.theta !== was) passLaw(5);
+        if (s.law === LAW.SWUNG && s.theta !== was) passLaw(LAW.BOTH);
       }
       if (dPhi) {
         s.phi = clamp(s.phi + dPhi, PHI[0], PHI[1]);
-        if (s.law === 3) passLaw(4);
+        if (s.law === LAW.ANGLES) passLaw(LAW.SWUNG);
       }
       draw();
       emitChange();
@@ -1092,6 +1175,7 @@ export function createApp(root, options = {}) {
       wind: +s.wind.toFixed(2),
       spread: +s.spread.toFixed(1),
       resting: s.wavesOn && s.idle > WAVE_IDLE, // the waves have stopped drawing until someone touches the figure
+      framing: poseKey(), // where the camera goes: 'wide', 'ray', 'plane' or 'lake'
       mode: s.mode,
       locked: s.locked,
       view: s.view,
@@ -1128,11 +1212,11 @@ export function createApp(root, options = {}) {
       if (p.view) setView(p.view, { animate });
       if (p.step) go(p.step, { animate });
       if (p.law != null) {
-        ++token;
-        tweener.cancel('reveal');
+        const from = poseKey();
+        settle();
         s.step = 'laws';
-        s.law = clamp(Number(p.law), 0, 5);
-        s.reveal = 1;
+        s.law = clamp(Number(p.law), LAW.SETTING, LAW.BOTH);
+        if (animate && poseKey() !== from) flyCamera(from === 'wide' || from === 'lake' ? FLY_IN : FLY);
       }
       if (p.theta != null && s.step === 'laws') {
         tweener.cancel('pose');
@@ -1141,6 +1225,11 @@ export function createApp(root, options = {}) {
       if (p.phi != null) {
         tweener.cancel('pose');
         s.phi = clamp(Math.round(Number(p.phi)), PHI[0], PHI[1]);
+      }
+      if (p.glideTo) {
+        // the plane or X moves there over the seconds given, as a student's hand would (the video uses it)
+        const { theta = s.theta, phi = s.phi, seconds = 1.2 } = p.glideTo;
+        poseTween(clamp(Number(theta), THETA[0], THETA[1]), clamp(Number(phi), PHI[0], PHI[1]), Number(seconds));
       }
       if (p.waves != null) {
         if (s.step !== 'surface') go('surface', { animate: false });
@@ -1154,9 +1243,9 @@ export function createApp(root, options = {}) {
     },
     async reset() {
       quiz.stop();
-      ++token;
-      for (const k of ['pose', 'reveal']) tweener.cancel(k);
-      Object.assign(s, { step: 'laws', law: 0, theta: 50, phi: 0, wavesOn: false, wind: 0, reveal: 1, spread: 0 });
+      settle();
+      tweener.cancel('pose');
+      Object.assign(s, { step: 'laws', law: LAW.SETTING, theta: 50, phi: 0, wavesOn: false, wind: 0, spread: 0 });
       clearLabels();
       setView('front', { animate: false });
       camK = 1;
