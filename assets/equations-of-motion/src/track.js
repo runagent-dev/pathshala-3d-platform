@@ -2,9 +2,9 @@
 // white edge lines and light kerbs, on a low causeway over a soft blue-grey ground. The causeway's front is a gentle
 // slope of pale concrete facing the viewer: along its top a clean white ruler strip is the number line from −7 m to
 // 10 m (a tick every metre, 0 bolder, a small one every half metre, an arrowhead past 10; the numbers are drawn on
-// the figure's 2D overlay so they keep a readable size on a phone), and under it three rows carry the parts of x drawn
-// tip to tail as thick outlined arrows: x₀ (red) from 0, ut (blue) from x₀, ½at² (green) ending at x, as the owner's
-// reference stacks them under its axis, with a faint line down from 0 where they all start.
+// the figure's 2D overlay so they keep a readable size on a phone), and under it two rows carry the parts of s drawn
+// tip to tail as thick outlined arrows: ut (blue) from 0, ½at² (green) ending at s, with a faint line down from 0, where
+// the motion starts.
 import * as THREE from 'three';
 import { AXIS } from './motion.js';
 
@@ -16,8 +16,8 @@ const SLOPE_ANGLE = THREE.MathUtils.degToRad(62);
 const SLOPE_LEN = -GROUND_Y / Math.sin(SLOPE_ANGLE);
 const KERB = { w: 0.32, h: 0.14 };
 const TOP_Z = ROAD.front + KERB.w; // where the slope starts
-/** On the slope, measured down from its top edge (m): the ruler strip, the axis line, the numbers, the three rows. */
-export const SLOPE = { band: 0.78, axis: -0.1, numbers: -0.52, rows: { x0: -1.18, ut: -1.8, half: -2.42 }, len: SLOPE_LEN };
+/** On the slope, measured down from its top edge (m): the ruler strip, the axis line, the numbers, the two rows. */
+export const SLOPE = { band: 0.78, axis: -0.1, numbers: -0.52, rows: { ut: -1.2, half: -1.84 }, len: SLOPE_LEN };
 
 const SHAFT = 0.13; // half height of an arrow's shaft
 const HEAD_L = 0.5;
@@ -213,7 +213,7 @@ export function createTrack({ colors }) {
   arrowHead.position.set(AXIS.max + 0.88, ay, zF + 0.001);
   slope.add(arrowHead);
 
-  // a faint line down the slope from 0, where the three parts start
+  // a faint line down the slope from 0, where the two parts start
   const faint = new THREE.MeshStandardMaterial({ name: 'Origin', color: 0x71879b, roughness: 0.7 });
   const originLen = -SLOPE.rows.half + 0.4 - SLOPE.band - 0.05;
   const origin = new THREE.Mesh(new THREE.BoxGeometry(0.035, originLen, 0.004), faint);
@@ -251,9 +251,8 @@ export function createTrack({ colors }) {
   lines.name = 'RoadLines';
   root.add(lines);
 
-  // the three arrows on the slope
+  // the two arrows on the slope
   const arrows = {
-    x0: flatArrow(colors.x0, '#3a0d0d'),
     ut: flatArrow(colors.u, '#0b2346'),
     half: flatArrow(colors.a, '#0f2c15'),
   };
@@ -263,10 +262,10 @@ export function createTrack({ colors }) {
     slope.add(a.root);
   }
 
-  // the car's position on the axis: a dark blue dot on the axis line, as the reference's
+  // where the car has got to on the axis: a dot on the axis line, in the colour of s
   const dot = new THREE.Mesh(
     new THREE.SphereGeometry(0.17, 24, 16),
-    new THREE.MeshStandardMaterial({ name: 'Dot', color: 0x1f3fd1, roughness: 0.35, emissive: 0x0a1a60, emissiveIntensity: 0.25 }),
+    new THREE.MeshStandardMaterial({ name: 'Dot', color: colors.s, roughness: 0.35, emissive: colors.s, emissiveIntensity: 0.2 }),
   );
   dot.name = 'PositionDot';
   slope.add(dot);
@@ -280,14 +279,13 @@ export function createTrack({ colors }) {
       root.updateMatrixWorld();
       return slope.localToWorld(out.copy(v.set(x, y, z)));
     },
-    /** The three parts drawn tip to tail from 0: x₀, then ut, then ½at² ending at x. */
-    setParts({ x0, ut, half }) {
-      arrows.x0.set(0, x0, SLOPE.rows.x0);
-      arrows.ut.set(x0, x0 + ut, SLOPE.rows.ut);
-      arrows.half.set(x0 + ut, x0 + ut + half, SLOPE.rows.half);
+    /** The two parts drawn tip to tail from 0: ut, then ½at² ending at s. */
+    setParts({ ut, half }) {
+      arrows.ut.set(0, ut, SLOPE.rows.ut);
+      arrows.half.set(ut, ut + half, SLOPE.rows.half);
     },
-    setDot(x) {
-      dot.position.set(x, SLOPE.axis, 0.1);
+    setDot(s) {
+      dot.position.set(s, SLOPE.axis, 0.1);
     },
   };
 }
