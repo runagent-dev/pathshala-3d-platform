@@ -1,0 +1,114 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "kaleidoscope",
+  "title": "Kaleidoscope (ক্যালাইডোস্কোপ)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 221,
+  "topic": "8.3.1",
+  "placement": "Book page 221, topic 8.3.1, the নিজে করো with চিত্র ৮.১১ (three strips of glass in a triangle: a kaleidoscope); also the উদাহরণ on page 222 with চিত্র ৮.১৩ (two mirrors at 60°, a ray at 60° comes back the opposite way).",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "cm",
+  "description": "Interactive 3D figure for the নিজে করো on book pages 220–221, topic 8.3.1, চিত্র ৮.১১, and the উদাহরণ on page 222, চিত্র ৮.১৩. A real kaleidoscope: three strips of glass in a triangle, paper wrapped round them and cut open, thin paper at the far end, coloured stones, beads and broken bangle pieces inside. The camera flies to the eye and the exact pattern fills the view; the student turns it, the pieces roll, and the pattern moves. Then the light of one red stone is traced through one, two and three reflections with its images hanging beyond the glass, and the cells are numbered by reflections. One strip of glass shows why plain glass works: move the eye to a grazing angle and the image brightens, by Fresnel's numbers. Finally the book's two mirrors at 60°: a ray at 60° meets B square on and returns exactly the opposite way. Five test questions. Offline, Bangla and English.",
+  "tags": [
+    "light",
+    "reflection",
+    "plane-mirror",
+    "kaleidoscope",
+    "multiple-images",
+    "grazing-incidence",
+    "glass",
+    "bangla"
+  ],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "step",
+      "label": "Step",
+      "type": "select",
+      "options": [
+        ["pattern", "The pattern"],
+        ["why", "Reflections"],
+        ["graze", "Grazing the glass"],
+        ["two", "Two mirrors at 60°"]
+      ],
+      "default": "pattern"
+    },
+    { "name": "stage", "label": "How far the step is built (0–4)", "type": "number", "default": "0" },
+    {
+      "name": "theta",
+      "label": "The eye at the strip of glass: angle of incidence (5–86°)",
+      "type": "number",
+      "default": "18"
+    },
+    { "name": "angle", "label": "The ray on mirror A: angle of incidence (12–78°)", "type": "number", "default": "60" },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on the part pulses at first", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "step": "why", "stage": 2, "animate": false } },
+    { "name": "set", "payload": { "turn": 40, "animate": false } },
+    { "name": "set", "payload": { "theta": 83, "animate": false } },
+    { "name": "set", "payload": { "angle": 45, "animate": false } },
+    { "name": "set", "payload": { "azimuth": 135, "animate": false } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "view", "dragstart", "dragend", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": { "params": { "coach": "0", "step": "pattern", "stage": "1" } },
+    "glb": [
+      {
+        "name": "default",
+        "setup": [{ "command": "set", "payload": { "step": "pattern", "stage": 0, "animate": false } }]
+      }
+    ],
+    "video": {
+      "kind": "script",
+      "seconds": 20,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 0.8, "command": "set", "payload": { "stage": 1 } },
+        { "at": 3.4, "command": "set", "payload": { "turn": 120 } },
+        { "at": 5.6, "command": "set", "payload": { "step": "why", "stage": 1, "animate": false } },
+        { "at": 7.2, "command": "set", "payload": { "stage": 2, "animate": false } },
+        { "at": 8.8, "command": "set", "payload": { "stage": 3, "animate": false } },
+        { "at": 10.4, "command": "set", "payload": { "stage": 4, "animate": false } },
+        { "at": 12.4, "command": "set", "payload": { "step": "graze", "stage": 0, "animate": false } },
+        { "at": 13.2, "command": "set", "payload": { "theta": 83, "stage": 1, "animate": false } },
+        { "at": 15.4, "command": "set", "payload": { "step": "two", "stage": 1, "animate": false } },
+        { "at": 17.2, "command": "set", "payload": { "stage": 2, "animate": false } }
+      ]
+    }
+  }
+}
