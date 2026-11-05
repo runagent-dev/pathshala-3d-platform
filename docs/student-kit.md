@@ -269,7 +269,7 @@ gentle pulse until the first drag; then it stays, smaller and calm.
 - `label`: the first-time word from the figure's i18n (`drag_me: 'টেনে সরাও'`). `labelAt`: `'below' | 'above' | 'left' |
   'right'` (default below, or right for an upright handle; the other side when there is no room).
 - `aria`: the button's label, from the figure's i18n. `pulse`: `Boolean(o.coach)`, so tests stay still.
-- `when: () => boolean`: read after every frame, the plain way to show it only while the part can be moved. `.hide()`
+- `when: () => boolean`: read every frame, the plain way to show it only while the part can be moved. `.hide()`
   and `.show()` also work. It hides by itself during the test (`quiz: true` keeps it, for a question that needs the drag)
   and while the point is behind the camera. `update()` places it now.
 - **With a figure's own drag handler** on `ui.canvasHost`: the handle is inside the canvas host (`layer` changes that),

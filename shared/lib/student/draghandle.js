@@ -10,7 +10,7 @@
 //     label: t('drag_me'),                        // the word shown until the first drag; optional
 //     aria: t('aria_paper'),
 //     pulse: Boolean(o.coach),
-//     when: () => canDrag(),                      // read after every frame; optional
+//     when: () => canDrag(),                      // read every frame; optional
 //   });
 //   anno = createAnnotations({ …, avoid: [() => paperHandle.box()] });
 //
@@ -23,7 +23,7 @@
 // +1 for → and ↑, -1 for ← and ↓); without it the key goes on to the figure's own keydown listener.
 //
 // The handle hides during the test (`.pvc[data-mode="quiz"]`) unless `quiz: true`, and while its point is behind
-// the camera. Placed after every frame (it works with render on demand); `update()` places it at once.
+// the camera. Placed after every drawn frame (it works with render on demand); `update()` places it at once.
 import * as THREE from 'three';
 import { svg } from './icons.js';
 import { capturePointer, releasePointer } from './pointer.js';
@@ -48,7 +48,7 @@ const MOVED = 4; // px: less than this is a tap, not a drag
 
 const ARROWS = {
   line: svg('<path d="M4 12h16M8.2 7.8 4 12l4.2 4.2M15.8 7.8 20 12l-4.2 4.2"/>'),
-  turn: svg('<path d="M5 15.5a8 8 0 0 1 14 0M4.2 10.7 5 15.5l4.7-1.2M19.8 10.7 19 15.5l-4.7-1.2"/>'),
+  turn: svg('<path d="M3.5 15.5A10.5 10.5 0 0 1 20.5 15.5M3 10.8 3.5 15.5l4.3-1.1M21 10.8 20.5 15.5l-4.3-1.1"/>'),
 };
 const OTHER = { below: 'above', above: 'below', right: 'left', left: 'right' };
 const KEYS = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 };
@@ -82,7 +82,7 @@ export function createDragHandle(
 
   const el = document.createElement('button');
   el.type = 'button';
-  el.className = 'pvc-dh';
+  el.className = axis === 'turn' ? 'pvc-dh pvc-dh-turn' : 'pvc-dh';
   el.hidden = true;
   if (aria) {
     el.setAttribute('aria-label', aria);
@@ -123,6 +123,7 @@ export function createDragHandle(
   const unit = { x: 1, y: 0 }; // the direction on the screen
   let off = false;
   let shown = false;
+  let was = false; // wanted() as last placed
   let used = false;
   let px = NaN;
   let py = NaN;
@@ -203,10 +204,13 @@ export function createDragHandle(
     lineEl.style.display = on ? '' : 'none';
   }
 
+  const wanted = () => !off && (!when || when()) && (quiz || !el.closest('.pvc[data-mode="quiz"]'));
+
   function place() {
     const p = at.copy(read(point)); // a copy: the figure's point and the track's may be one reused vector
     project(p, a);
-    const on = !off && a.ok && (!when || when()) && (quiz || !el.closest('.pvc[data-mode="quiz"]'));
+    was = wanted();
+    const on = was && a.ok;
     setShown(on);
     if (!on) return setTrack(false);
     aim(p);
@@ -252,6 +256,10 @@ export function createDragHandle(
   }
 
   const remove = stage.onAfterRender(place);
+  // nothing may be drawn when a figure's state settles (render on demand): `when` and the test are looked at every frame
+  const removeTicker = stage.addTicker(() => {
+    if (wanted() !== was) place();
+  });
 
   function markUsed() {
     if (used) return;
@@ -385,6 +393,7 @@ export function createDragHandle(
     },
     dispose() {
       remove();
+      removeTicker();
       el.remove();
       lineEl?.remove();
     },
