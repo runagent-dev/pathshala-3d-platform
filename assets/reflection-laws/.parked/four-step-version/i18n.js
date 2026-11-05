@@ -1,0 +1,346 @@
+// Every string the figure shows, in Bangla and English. The Bangla is the book's: pages 214–218 of the physics book
+// for classes 9–10 (8.2 প্রতিফলন, 8.2.1 প্রতিফলনের সূত্র with চিত্র ৮.০৩, the Fresnel paragraph with চিত্র ৮.০৫, 8.2.2
+// মসৃণ এবং অমসৃণ পৃষ্ঠে প্রতিফলন with চিত্র ৮.০৭). The two laws are word for word. The page writes both "ওপর" and "উপর";
+// the laws' sentences keep the words the orchestrator's brief fixed. Use t('key') in code, t.num() for numbers.
+
+export const STRINGS = {
+  bn: {
+    panel_hide: 'লেখা লুকাও',
+    panel_show: 'লেখা দেখাও',
+    rotate_title: 'ফোনটি আড়াআড়ি ধরো',
+    rotate_body: 'পাশে ঘোরালে ছবি বড় হয়, লেখা থাকে পাশে।',
+    rotate_go: 'ঘুরিয়ে দেখো',
+    rotate_stay: 'এভাবেই দেখো',
+    title: 'প্রতিফলনের সূত্র',
+    view: 'দেখার ধরন',
+    view_front_short: 'শুরুর দৃশ্য',
+    view_rotate: 'ঘুরিয়ে দেখো',
+    fullscreen: 'পূর্ণ পর্দা',
+    tab_learn: 'শেখো',
+    tab_quiz: 'পরীক্ষা',
+    reading: 'আপতন কোণ',
+    aria_stage:
+      'পাহাড়ের কোলে শান্ত একটি হ্রদ, পানিতে পাহাড়ের প্রতিবিম্ব। পানির ওপর O বিন্দুতে একটি আলোক রশ্মি এসে পড়ছে। X বিন্দুর বৃত্ত টেনে আপতন কোণ বদলাও, পানির ওপরের চাকতি টেনে সমতল ঘোরাও।',
+
+    ex_label: 'বইয়ের ধাপ',
+    ex_events: 'তিন ঘটনা',
+    ex_laws: 'দুই সূত্র',
+    ex_amount: 'কতটুকু',
+    ex_surface: 'মসৃণ-অমসৃণ',
+
+    act_home: 'এই ধাপ আবার শুরু করো',
+    act_light: 'পানিতে আলো ফেলো',
+    act_wait: 'দেখো…',
+    act_next: 'পরের ধাপে যাও',
+    act_normal: 'লম্ব কল্পনা করো',
+    act_plane: 'সমতল কল্পনা করো',
+    act_reflect: 'প্রতিফলিত রশ্মি দেখো',
+    act_swing: 'চাকতি টেনে সমতল ঘোরাও',
+    act_tilt: 'X টেনে কোণ বদলাও',
+    act_raise: 'X টেনে আপতন কোণ বাড়াও',
+    act_waves: 'পানিতে ঢেউ তোলো',
+    act_calm: 'পানি শান্ত করো',
+
+    out_ev0: 'আলো আসছে <i>প্রথম মাধ্যম</i> বাতাস থেকে <i>দ্বিতীয় মাধ্যম</i> পানিতে।',
+    out_ev1: 'একই বিন্দু থেকে আলো তিনভাবে ভাগ হলো।',
+    out_l0: 'একটি <span class="rl-w">আলোক রশ্মি</span> পানির ওপর O বিন্দুতে এসে পড়েছে।',
+    out_l1: 'O বিন্দুতে পানির ওপর খাড়া লম্বটিই <span class="rl-w">অভিলম্ব</span>।',
+    out_l2: 'XO রশ্মি আর লম্ব মিলে একটি সমতল হলো।',
+    out_angles: '<span class="rl-a rl-ti">θ<sub>i</sub> = {a}°</span><span class="rl-a rl-tr">θ<sub>r</sub> = {b}°</span>',
+    out_amount: '<span class="rl-a rl-ti">θ<sub>i</sub> = {a}°</span> হলে প্রতিফলন প্রায় <b>{p}%</b>',
+    out_smooth: 'মসৃণ পানিতে রশ্মিগুলো <span class="rl-w">সমান্তরাল</span>ই রইল।',
+    out_wavy: 'অমসৃণ পানিতে রশ্মিগুলো ছড়িয়ে পড়ল, প্রায় <b>{d}°</b> জুড়ে।',
+
+    rule_ev0: 'যখনই এক মাধ্যম থেকে অন্য মাধ্যমে আলোকে পাঠানো হয়, তখনই আসলে তিনটি ভিন্ন ভিন্ন ঘটনা ঘটে।',
+    rule_ev1:
+      'খানিকটা আলো আবার প্রথম মাধ্যমেই ফিরে আসে: <b>প্রতিফলন</b>।<br>খানিকটা দ্বিতীয় মাধ্যমে ঢুকে যেতে পারে: <b>প্রতিসরণ</b>।<br>খানিকটা দুই মাধ্যমের মধ্যের তলে শোষিত হয়ে যায়: <b>শোষণ</b>।',
+    rule_l0: 'যখন একটা আলোক রশ্মি এক মাধ্যম থেকে অন্য মাধ্যমের ওপর একটা বিন্দুতে এসে পড়ে প্রথমেই সেই বিন্দু থেকে একটা <b>লম্ব</b> কল্পনা করে নিতে হবে।',
+    rule_l1: 'যে আলোক রশ্মিটি এসে সেই বিন্দুটিতে পড়েছে এবং যে লম্বটি কল্পনা করেছ সেই দুটি রেখাকে নিয়ে একটি <b>সমতল</b> কল্পনা করে নাও।',
+    rule_l2: 'XO হলো <b>আপতিত রশ্মি</b>, আর O হলো আপতন বিন্দু। এবার দেখো, আলো কোন পথে ফিরে আসে।',
+    rule_l3:
+      'OX′ হলো <b>প্রতিফলিত রশ্মি</b>। আপতিত রশ্মি অভিলম্বের সাথে যে কোণ করে সেটা <b>আপতন কোণ (θ<sub>i</sub>)</b>, প্রতিফলিত রশ্মি যে কোণ করে সেটা <b>প্রতিফলন কোণ (θ<sub>r</sub>)</b>।',
+    rule_l4: '<b>প্রথম সূত্র:</b> আপতন রশ্মি এবং লম্ব দিয়ে আমরা যে সমতলটি কল্পনা করে নিয়েছিলাম প্রতিফলিত রশ্মিটি সেই সমতলেই থাকবে।',
+    rule_l5:
+      '<b>প্রথম সূত্র:</b> আপতন রশ্মি এবং লম্ব দিয়ে আমরা যে সমতলটি কল্পনা করে নিয়েছিলাম প্রতিফলিত রশ্মিটি সেই সমতলেই থাকবে।<br><b>দ্বিতীয় সূত্র:</b> প্রতিফলন কোণটি হবে আপতন কোণের সমান।',
+    rule_a0: '<b>আপতন কোণ যত বেশি হবে প্রতিফলনও হবে তত বেশি।</b> পানির রেখাটি দেখো।',
+    rule_a1:
+      '<b>আপতন কোণ যত বেশি হবে প্রতিফলনও হবে তত বেশি।</b> সাধারণ কাচে মাত্র {g1}% থেকে {g2}%, পানিতে সোজা নিচে প্রায় {w}%; {h1}° কিংবা {h2}° এর কাছে অনেক বেশি।',
+    rule_s0: 'আয়না কিংবা আয়নার মতো <b>মসৃণ পৃষ্ঠে</b> আলোর সমান্তরাল রশ্মিগুলো প্রতিফলনের পরেও সমান্তরাল থাকে। তাই পানিতে পাহাড়ের স্পষ্ট প্রতিবিম্ব।',
+    rule_s1:
+      'প্রত্যেকটা রশ্মিই প্রতিফলনের সূত্র মেনে চলে, কিন্তু একেক অংশের পৃষ্ঠ একেক কোণে থাকে। তাই রশ্মিগুলো চারদিকে ছড়িয়ে পড়ে: <b>ব্যাপ্ত প্রতিফলন</b>। পাহাড়ের প্রতিবিম্বও তাই ভেঙে যায়।',
+
+    note_rays: 'রশ্মি বোঝার জন্য আঁকা',
+    note_amount: 'রশ্মি যত মোটা, আলো তত বেশি',
+
+    l_ray: 'আলোক রশ্মি',
+    l_m1: 'প্রথম মাধ্যম (বাতাস)',
+    l_m2: 'দ্বিতীয় মাধ্যম (পানি)',
+    l_reflection: 'প্রতিফলন',
+    l_refraction: 'প্রতিসরণ',
+    l_absorption: 'শোষণ',
+    l_x: 'X',
+    l_o: 'O',
+    l_op: 'আপতন বিন্দু O',
+    l_xp: 'X′',
+    l_normal: 'অভিলম্ব',
+    l_lamba: 'লম্ব (অভিলম্ব)',
+    l_plane: 'সমতল',
+    l_inc: 'আপতিত রশ্মি',
+    l_ref: 'প্রতিফলিত রশ্মি',
+    l_ti: 'θ<sub>i</sub> = {a}°',
+    l_tr: 'θ<sub>r</sub> = {a}°',
+    l_tr_q: 'θ<sub>r</sub> = ?',
+    l_pct: 'প্রতিফলন ≈ {p}%',
+    l_eye: 'চোখ',
+    l_smooth: 'মসৃণ পৃষ্ঠ',
+    l_rough: 'অমসৃণ পৃষ্ঠ',
+    l_parallel: 'সমান্তরাল',
+    l_scatter: 'ব্যাপ্ত প্রতিফলন',
+    l_surface_angle: 'পানির তলের সাথে {a}°',
+    letters: 'ক,খ,গ,ঘ',
+    l_letter: '{x}',
+
+    graph_aria: 'আপতন কোণের সঙ্গে প্রতিফলিত আলোর ভাগ: পানি আর কাচ দুটিতেই কোণ বড় হলে দ্রুত বাড়ে।',
+    g_axis: 'আপতন কোণ θ',
+    g_water: 'পানি',
+    g_glass: 'কাচ',
+    mag_aria: 'পানির পৃষ্ঠ বড় করে দেখা: প্রতিটি রশ্মি নিজের ঢালের অভিলম্বের সাথে সমান কোণে ফিরে যায়।',
+    mag_cap: 'প্রতি ঢালে θ<sub>i</sub> = θ<sub>r</sub>',
+
+    q_count: 'প্রশ্ন {i} / {n}',
+    q_score: 'সঠিক: {right}',
+    q_hint: 'উত্তরে চাপ দাও।',
+    q_right: 'ঠিক!',
+    q_wrong: 'হয়নি।',
+    q_next: 'পরের প্রশ্ন',
+    q_finish: 'ফল দেখো',
+    q_result: '{total}টির মধ্যে {right}টি সঠিক',
+    q_again: 'আবার পরীক্ষা দাও',
+    q_great: 'দারুণ! প্রতিফলনের সূত্র তোমার জানা।',
+    q_good: 'ভালো! আরেকবার শেখো দেখে নাও।',
+    q_try: 'শেখো ধাপগুলো আবার দেখে নাও।',
+    q_locked: 'পরীক্ষা চলছে। শেষে শেখোতে ফিরলে আবার টানতে পারবে।',
+
+    q_events_0: 'ছবিতে আলো পানিতে এসে তিন ভাগ হলো। কোন রেখাটি প্রতিফলন?',
+    q_events_1: 'ছবিতে আলো পানিতে এসে তিন ভাগ হলো। কোন রেখাটি প্রতিসরণ?',
+    q_events_2: 'ছবিতে আলো পানিতে এসে তিন ভাগ হলো। কোন রেখাটি শোষণ?',
+    c_letter: 'রেখা {x}',
+    c_none: 'কোনোটিই নয়',
+    n_events_0: 'প্রতিফলিত আলো প্রথম মাধ্যমেই, মানে বাতাসেই ফিরে আসে।',
+    n_events_1: 'প্রতিসরিত আলো দ্বিতীয় মাধ্যমে, মানে পানির ভেতরে চলে যায়।',
+    n_events_2: 'শোষণ হয় দুই মাধ্যমের মধ্যের তলে: ছোট্ট, মিলিয়ে যাওয়া রেখা।',
+    n_events_none: 'ছবির তিনটি রেখাই বইয়ের তিন ঘটনা।',
+    a_events_0: '<b>রেখা {x}</b>: এই আলো প্রথম মাধ্যমেই ফিরে এসেছে।',
+    a_events_1: '<b>রেখা {x}</b>: এই আলো দ্বিতীয় মাধ্যমে, পানিতে ঢুকে গেছে।',
+    a_events_2: '<b>রেখা {x}</b>: এই আলো দুই মাধ্যমের মধ্যের তলে শোষিত হয়ে যাচ্ছে।',
+
+    q_angle: 'ছবিতে আলোক রশ্মিটি পানির তলের সাথে কোণ করেছে {a}°। প্রতিফলন কোণ কত?',
+    n_angle_surface: 'পানির তল থেকে নয়, কোণ মাপতে হয় অভিলম্ব থেকে।',
+    n_angle_double: 'দুই রশ্মির মাঝের পুরো কোণ এটি; θ<sub>r</sub> তার অর্ধেক।',
+    n_angle_right: 'অভিলম্ব পানির তলের সাথে লম্ব, কিন্তু রশ্মি অভিলম্বের সাথে লম্ব নয়।',
+    a_angle: '<b>{b}°</b>: কোণ মাপা হয় অভিলম্ব থেকে, তাই θ<sub>i</sub> = {r}° − {a}° = {b}°, আর θ<sub>r</sub> = θ<sub>i</sub>।',
+
+    q_plane: 'X থেকে আলো O বিন্দুতে পড়েছে। ক, খ, গ, ঘ রশ্মির কোনটি আসল প্রতিফলিত রশ্মি?',
+    c_ray: 'রশ্মি {x}',
+    n_plane_off: 'এই রশ্মি সমান কোণে গেছে, কিন্তু সমতল ছেড়ে গেছে: প্রথম সূত্র ভাঙে।',
+    n_plane_angle: 'এই রশ্মি সমতলে আছে, কিন্তু কোণ সমান নয়: দ্বিতীয় সূত্র ভাঙে।',
+    n_plane_back: 'এই রশ্মি অভিলম্বের যে পাশে X আছে সেই পাশেই ফিরেছে; প্রতিফলিত রশ্মি যায় অন্য পাশে।',
+    a_plane: '<b>রশ্মি {x}</b>: এটি X, O আর লম্বের সমতলেই আছে, আর অভিলম্বের অন্য পাশে সমান কোণে গেছে।',
+
+    q_amount: 'ক, খ, গ তিনটি আলোক রশ্মি O বিন্দুতে পড়ছে। পানিতে কোনটির প্রতিফলন সবচেয়ে বেশি হবে?',
+    c_same: 'তিনটিতেই সমান',
+    n_amount_small: 'এর আপতন কোণ কম, তাই প্রতিফলনও কম।',
+    n_amount_same: 'প্রতিফলন আপতন কোণের ওপর নির্ভর করে: কোণ বাড়লে বাড়ে।',
+    a_amount: '<b>রশ্মি {x}</b>: এর আপতন কোণ সবচেয়ে বেশি। আপতন কোণ যত বেশি, প্রতিফলনও তত বেশি (প্রায় {p}%)।',
+
+    q_rough: 'ঢেউয়ের পানিতে সমান্তরাল রশ্মিগুলো ছড়িয়ে গেল কেন?',
+    c_rough_ok: 'পৃষ্ঠ একেক অংশে একেক কোণে',
+    c_rough_law: 'ঢেউয়ে সূত্র কাজ করে না',
+    c_rough_absorb: 'ঢেউ আলো শোষণ করে নেয়',
+    c_rough_light: 'রশ্মি সমান্তরাল আসে না',
+    n_rough_law: 'বই বলছে: প্রত্যেকটা রশ্মিই প্রতিফলনের সূত্র মেনে চলে।',
+    n_rough_absorb: 'শোষণে আলো কমে, কিন্তু রশ্মির দিক বদলায় না।',
+    n_rough_light: 'আসার পথে রশ্মিগুলো সমান্তরালই; বদলেছে পৃষ্ঠের ঢাল।',
+    a_rough: '<b>একেক অংশের পৃষ্ঠ একেক কোণে থাকে।</b> প্রতিটি রশ্মি নিজের জায়গায় সূত্র মানে, কিন্তু অভিলম্ব একেকদিকে: এটাই ব্যাপ্ত প্রতিফলন।',
+  },
+  en: {
+    panel_hide: 'Hide text',
+    panel_show: 'Show text',
+    rotate_title: 'Turn your phone sideways',
+    rotate_body: 'The picture gets bigger, with the words beside it.',
+    rotate_go: 'Turn it',
+    rotate_stay: 'Stay like this',
+    title: 'Laws of reflection',
+    view: 'View',
+    view_front_short: 'Start view',
+    view_rotate: 'Turn to look',
+    fullscreen: 'Full screen',
+    tab_learn: 'Learn',
+    tab_quiz: 'Test',
+    reading: 'Angle of incidence',
+    aria_stage:
+      'A calm lake below a mountain, the mountain mirrored in the water. A ray of light falls on the water at O. Drag the circle at X to change the angle of incidence; drag the disc on the water to turn the plane.',
+
+    ex_label: 'Steps of the book',
+    ex_events: 'Three events',
+    ex_laws: 'Two laws',
+    ex_amount: 'How much',
+    ex_surface: 'Smooth, rough',
+
+    act_home: 'Start this step again',
+    act_light: 'Shine light on the water',
+    act_wait: 'Watch…',
+    act_next: 'On to the next step',
+    act_normal: 'Imagine the perpendicular',
+    act_plane: 'Imagine the plane',
+    act_reflect: 'See the reflected ray',
+    act_swing: 'Drag the disc to turn the plane',
+    act_tilt: 'Drag X to change the angle',
+    act_raise: 'Drag X to widen the angle',
+    act_waves: 'Raise waves',
+    act_calm: 'Calm the water',
+
+    out_ev0: 'Light comes from the <i>first medium</i>, air, to the <i>second medium</i>, water.',
+    out_ev1: 'From one point the light divided in three ways.',
+    out_l0: 'A <span class="rl-w">ray of light</span> has fallen on the water at the point O.',
+    out_l1: 'The perpendicular to the water at O is the <span class="rl-w">normal</span>.',
+    out_l2: 'The ray XO and the perpendicular make a plane.',
+    out_angles: '<span class="rl-a rl-ti">θ<sub>i</sub> = {a}°</span><span class="rl-a rl-tr">θ<sub>r</sub> = {b}°</span>',
+    out_amount: 'At <span class="rl-a rl-ti">θ<sub>i</sub> = {a}°</span> about <b>{p}%</b> is reflected',
+    out_smooth: 'On smooth water the rays stayed <span class="rl-w">parallel</span>.',
+    out_wavy: 'On rough water the rays spread, over about <b>{d}°</b>.',
+
+    rule_ev0: 'Whenever light is sent from one medium to another, three different things really happen.',
+    rule_ev1:
+      'Part of the light comes back into the first medium: <b>reflection</b>.<br>Part can enter the second medium: <b>refraction</b>.<br>Part is absorbed at the surface between them: <b>absorption</b>.',
+    rule_l0: 'When a ray of light falls on one point of another medium, first imagine a <b>perpendicular</b> at that point.',
+    rule_l1: 'Take the ray that fell on the point and the perpendicular you imagined, and imagine a <b>plane</b> through the two lines.',
+    rule_l2: 'XO is the <b>incident ray</b> and O the point of incidence. Now see which way the light comes back.',
+    rule_l3:
+      'OX′ is the <b>reflected ray</b>. The incident ray’s angle with the normal is the <b>angle of incidence (θ<sub>i</sub>)</b>; the reflected ray’s is the <b>angle of reflection (θ<sub>r</sub>)</b>.',
+    rule_l4: '<b>First law:</b> the reflected ray lies in the plane we imagined through the incident ray and the perpendicular.',
+    rule_l5:
+      '<b>First law:</b> the reflected ray lies in the plane we imagined through the incident ray and the perpendicular.<br><b>Second law:</b> the angle of reflection equals the angle of incidence.',
+    rule_a0: '<b>The larger the angle of incidence, the more is reflected.</b> Look at the line for water.',
+    rule_a1:
+      '<b>The larger the angle of incidence, the more is reflected.</b> Ordinary glass reflects only {g1}% to {g2}%, water about {w}% straight down; near {h1}° or {h2}° far more.',
+    rule_s0:
+      'On a mirror or a <b>smooth surface</b> like a mirror, parallel rays stay parallel after reflection. So the mountain’s image in the water is clear.',
+    rule_s1:
+      'Every ray still obeys the laws of reflection, but each part of the surface lies at its own angle. So the rays spread all around: <b>diffuse reflection</b>. That is why the mountain’s image breaks up.',
+
+    note_rays: 'Rays drawn to explain',
+    note_amount: 'The thicker the ray, the more light',
+
+    l_ray: 'Ray of light',
+    l_m1: 'First medium (air)',
+    l_m2: 'Second medium (water)',
+    l_reflection: 'Reflection',
+    l_refraction: 'Refraction',
+    l_absorption: 'Absorption',
+    l_x: 'X',
+    l_o: 'O',
+    l_op: 'Point of incidence O',
+    l_xp: 'X′',
+    l_normal: 'Normal',
+    l_lamba: 'Perpendicular (normal)',
+    l_plane: 'Plane',
+    l_inc: 'Incident ray',
+    l_ref: 'Reflected ray',
+    l_ti: 'θ<sub>i</sub> = {a}°',
+    l_tr: 'θ<sub>r</sub> = {a}°',
+    l_tr_q: 'θ<sub>r</sub> = ?',
+    l_pct: 'Reflected ≈ {p}%',
+    l_eye: 'Eye',
+    l_smooth: 'Smooth surface',
+    l_rough: 'Rough surface',
+    l_parallel: 'Parallel',
+    l_scatter: 'Diffuse reflection',
+    l_surface_angle: '{a}° with the water',
+    letters: 'A,B,C,D',
+    l_letter: '{x}',
+
+    graph_aria: 'The share of light reflected against the angle of incidence: for water and glass it rises quickly at large angles.',
+    g_axis: 'Angle of incidence θ',
+    g_water: 'Water',
+    g_glass: 'Glass',
+    mag_aria: 'The water’s surface enlarged: each ray comes back at an equal angle to the normal of its own slope.',
+    mag_cap: 'At each slope θ<sub>i</sub> = θ<sub>r</sub>',
+
+    q_count: 'Question {i} of {n}',
+    q_score: 'Correct: {right}',
+    q_hint: 'Tap an answer.',
+    q_right: 'Right!',
+    q_wrong: 'Not quite.',
+    q_next: 'Next question',
+    q_finish: 'See the result',
+    q_result: '{right} of {total} correct',
+    q_again: 'Take the test again',
+    q_great: 'Great! You know the laws of reflection.',
+    q_good: 'Good! Look through Learn once more.',
+    q_try: 'Go through the Learn steps again.',
+    q_locked: 'The test is on. You can drag again when you return to Learn.',
+
+    q_events_0: 'The light divided in three at the water. Which line is reflection?',
+    q_events_1: 'The light divided in three at the water. Which line is refraction?',
+    q_events_2: 'The light divided in three at the water. Which line is absorption?',
+    c_letter: 'Line {x}',
+    c_none: 'None of them',
+    n_events_0: 'Reflected light comes back into the first medium, the air.',
+    n_events_1: 'Refracted light goes on into the second medium, the water.',
+    n_events_2: 'Absorption happens at the surface between the media: the short line that dies away.',
+    n_events_none: 'All three lines are the book’s three events.',
+    a_events_0: '<b>Line {x}</b>: this light came back into the first medium.',
+    a_events_1: '<b>Line {x}</b>: this light entered the second medium, the water.',
+    a_events_2: '<b>Line {x}</b>: this light is absorbed at the surface between the two media.',
+
+    q_angle: 'In the picture the ray makes {a}° with the water’s surface. What is the angle of reflection?',
+    n_angle_surface: 'Angles are measured from the normal, not from the water’s surface.',
+    n_angle_double: 'That is the whole angle between the two rays; θ<sub>r</sub> is half of it.',
+    n_angle_right: 'The normal is perpendicular to the water, but the ray is not perpendicular to the normal.',
+    a_angle: '<b>{b}°</b>: angles are measured from the normal, so θ<sub>i</sub> = {r}° − {a}° = {b}°, and θ<sub>r</sub> = θ<sub>i</sub>.',
+
+    q_plane: 'Light from X falls at O. Which of A, B, C, D is the real reflected ray?',
+    c_ray: 'Ray {x}',
+    n_plane_off: 'This ray has the equal angle but left the plane: it breaks the first law.',
+    n_plane_angle: 'This ray is in the plane but the angle is not equal: it breaks the second law.',
+    n_plane_back: 'This ray came back on X’s side of the normal; the reflected ray goes to the other side.',
+    a_plane: '<b>Ray {x}</b>: it is in the plane of X, O and the perpendicular, at an equal angle on the other side of the normal.',
+
+    q_amount: 'Rays A, B, C fall at O. On water, which one is reflected most?',
+    c_same: 'All three the same',
+    n_amount_small: 'Its angle of incidence is smaller, so less is reflected.',
+    n_amount_same: 'Reflection depends on the angle of incidence: it grows with the angle.',
+    a_amount: '<b>Ray {x}</b>: it has the largest angle of incidence. The larger the angle, the more is reflected (about {p}%).',
+
+    q_rough: 'On wavy water why did the parallel rays spread?',
+    c_rough_ok: 'Each part lies at its own angle',
+    c_rough_law: 'The laws fail on waves',
+    c_rough_absorb: 'Waves absorb the light',
+    c_rough_light: 'Rays arrive not parallel',
+    n_rough_law: 'The book says every ray still obeys the laws of reflection.',
+    n_rough_absorb: 'Absorption takes light away, but does not turn a ray.',
+    n_rough_light: 'They arrive parallel; it is the slope of the surface that changes.',
+    a_rough:
+      '<b>Each part of the surface lies at its own angle.</b> Each ray obeys the laws where it lands, but the normals point different ways: this is diffuse reflection.',
+  },
+};
+
+const BN_DIGITS = '০১২৩৪৫৬৭৮৯';
+export const toBanglaDigits = (s) => String(s).replace(/[0-9]/g, (d) => BN_DIGITS[d]);
+
+/** t(key, vars) with t.num and t.lang. Missing Bangla falls back to English, a missing key shows the key. */
+export function createI18n(lang = 'bn', { numerals = null } = {}) {
+  const code = STRINGS[lang] ? lang : 'bn';
+  const dict = { ...STRINGS.en, ...STRINGS[code] };
+  const bangla = (numerals || (code === 'bn' ? 'bn' : 'latin')) === 'bn';
+  const num = (x) => (bangla ? toBanglaDigits(x) : String(x));
+  function t(key, vars) {
+    let s = dict[key] ?? key;
+    if (vars) s = s.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? num(vars[k]) : m));
+    return s;
+  }
+  t.num = num;
+  t.lang = code;
+  return t;
+}

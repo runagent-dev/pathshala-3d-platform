@@ -1,0 +1,102 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "reflection-laws",
+  "title": "Laws of reflection (প্রতিফলনের সূত্র)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 215,
+  "topic": "8.2.1",
+  "placement": "Book page 215, topic 8.2.1 প্রতিফলনের সূত্র: next to চিত্র ৮.০৩ (the plane of incidence and the normal); the last step also serves 8.2.2 (চিত্র ৮.০৭, page 218).",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "Interactive 3D figure for the laws of reflection, book page 215, topic 8.2.1, next to চিত্র ৮.০৩. A calm mountain lake is the setting: a snow mountain mirrored exactly in the water. On it is a fine line drawing of the book's figure, built in the book's order: the ray XO, the perpendicular (অভিলম্ব) at the point of incidence O, the plane through them, the reflected ray OX′ and the angles θi and θr. The student swings the plane by a handle at the water (the reflected ray stays in it, the first law) and drags X (θr = θi live, the second law), with both laws word for word in the panel. The last step is 8.2.2: parallel rays stay parallel on still water; waves give each ray its own facet and normal, so the rays spread (ব্যাপ্ত প্রতিফলন) and the mountain's image breaks up for the same reason, from the same waves. Five test questions. Offline, Bangla and English.",
+  "tags": [
+    "light",
+    "reflection",
+    "laws-of-reflection",
+    "normal",
+    "plane-of-incidence",
+    "angle-of-incidence",
+    "diffuse-reflection",
+    "water",
+    "mountain-lake",
+    "bangla"
+  ],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "step",
+      "label": "Step of the book",
+      "type": "select",
+      "options": [["laws", "8.2.1 the two laws"], ["surface", "8.2.2 smooth and rough water"]],
+      "default": "laws"
+    },
+    { "name": "law", "label": "How far the laws are built (0–5)", "type": "number", "default": "0" },
+    { "name": "theta", "label": "Angle of incidence (degrees)", "type": "number", "default": "50" },
+    { "name": "phi", "label": "Swing of the plane (degrees)", "type": "number", "default": "0" },
+    { "name": "waves", "label": "Wavy water", "type": "boolean", "default": "0" },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on the part pulses at first", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "law": 5, "animate": false } },
+    { "name": "set", "payload": { "theta": 35 } },
+    { "name": "set", "payload": { "phi": -40 } },
+    { "name": "set", "payload": { "step": "surface", "waves": true } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "view", "dragstart", "dragend", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": { "params": { "coach": "0", "step": "laws", "law": "5", "theta": "42", "phi": "-8" } },
+    "glb": [
+      { "name": "default", "setup": [{ "command": "set", "payload": { "law": 5, "theta": 42, "animate": false } }] }
+    ],
+    "video": {
+      "kind": "script",
+      "seconds": 19,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 1, "command": "set", "payload": { "law": 1, "animate": false } },
+        { "at": 2.5, "command": "set", "payload": { "law": 2, "animate": false } },
+        { "at": 4, "command": "set", "payload": { "law": 3, "animate": false } },
+        { "at": 6, "command": "set", "payload": { "phi": -44 } },
+        { "at": 7.5, "command": "set", "payload": { "phi": 20 } },
+        { "at": 9, "command": "set", "payload": { "phi": -8, "law": 4 } },
+        { "at": 10.5, "command": "set", "payload": { "theta": 28 } },
+        { "at": 12, "command": "set", "payload": { "theta": 64, "law": 5 } },
+        { "at": 14, "command": "set", "payload": { "step": "surface", "animate": false } },
+        { "at": 15.5, "command": "set", "payload": { "waves": true } }
+      ]
+    }
+  }
+}
