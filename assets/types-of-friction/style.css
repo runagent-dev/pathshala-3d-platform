@@ -22,7 +22,7 @@ body.bg-transparent { background: transparent; }
 .tf .pvc-examples { flex-wrap: nowrap; }
 .tf .pvc-examples button { flex: 1 1 0; min-height: 40px; padding: 2px 1px 3px; }
 .tf .pvc-ex-word { font-size: 13px; line-height: 1.3; white-space: normal; }
-.tf .pvc-ex-res { font-size: 12.5px; min-height: 17px; }
+.tf .pvc-ex-res { font-size: 11.5px; min-height: 17px; }
 .tf .pvc-act-row { min-height: 42px; }
 .tf .pvc-act { min-height: 40px; padding: 3px 10px 3px 5px; font-size: 14px; }
 .tf .pvc-act-num { width: 29px; height: 29px; font-size: 17px; }
@@ -131,13 +131,13 @@ body.bg-transparent { background: transparent; }
 }
 /* the side column beside the 3D: it has height to spare, so full-size, roomy lines (also on frames as short as 844 × 390) */
 @container pvc-panel (max-width: 340px) {
-  .tf .pvc-learn { gap: 7px; }
+  .tf .pvc-learn { gap: 6px; }
   .tf .pvc-ex-word { font-size: 13px; }
-  .tf .pvc-ex-res { font-size: 12.5px; min-height: 17px; }
+  .tf .pvc-ex-res { font-size: 11px; min-height: 17px; }
   .tf .pvc-rule { font-size: 14px; line-height: 1.5; min-height: 4.5em; }
-  .tf-live { padding: 4px 9px 5px; }
+  .tf-live { padding: 3px 9px 4px; }
   .tf-live-head b { font-size: 13.5px; }
-  .tf-force-row, .tf-balance { font-size: 13px; line-height: 1.5; }
+  .tf-force-row, .tf-balance { font-size: 12.5px; line-height: 1.5; }
   .tf-net { font-size: 12.5px; }
   .tf-note { font-size: 12.5px; }
   .tf .pvc-q-text { font-size: 14px; }
