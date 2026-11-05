@@ -17,11 +17,11 @@ body.bg-transparent { background: transparent; }
 .lm-verdict { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 8px; min-height: 1.4em; font-size: 18px; line-height: 1.4; }
 .lm-path { display: inline-flex; align-items: baseline; gap: 6px; }
 .lm-path small { font-size: 14px; font-weight: 500; color: var(--ink-3); }
-.lm-path b { font-weight: 700; color: var(--c-path); }
+.lm-path b { font-weight: 600; color: var(--c-path); }
 .lm-res { display: inline-flex; align-items: baseline; gap: 8px; }
 .lm-to { font-style: normal; color: var(--ink-3); }
-.lm-kind b { font-weight: 700; }
-.lm-kind em { margin-left: 5px; font-style: normal; font-weight: 700; }
+.lm-kind b { font-weight: 600; }
+.lm-kind em { margin-left: 5px; font-style: normal; font-weight: 600; }
 .lm-verdict[data-state='rule'] .lm-path small { display: none; }
 .lm-verdict[data-state='rule'] .lm-path b { font-weight: 600; color: var(--ink); }
 .lm-verdict[data-state='rule'] .lm-kind b { color: var(--accent); }

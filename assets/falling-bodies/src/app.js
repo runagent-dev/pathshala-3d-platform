@@ -141,7 +141,7 @@ export function createApp(root, options = {}) {
             <span class="fb-k fb-v">${t('row_v')}</span>${cells('v')}<span class="fb-u">${t('u_ms')}</span>
             <span class="fb-k fb-h">${t('row_h')}</span>${cells('h')}<span class="fb-u">${t('u_cm')}</span>
           </div>
-          <p class="fb-law">${t('law')}</p>
+          <p class="pvc-formula fb-law">${t('law')}</p>
           <p class="fb-say" aria-live="polite"></p>`,
   });
 

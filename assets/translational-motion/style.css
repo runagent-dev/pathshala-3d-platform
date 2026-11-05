@@ -14,7 +14,7 @@ body.bg-transparent { background: transparent; }
 .tm-main { flex-direction: column; align-items: stretch; gap: 2px; }
 .tm-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 26px; }
 .tm-cap { font-size: 13.5px; color: var(--ink-2); }
-.tm-verdict { display: inline-flex; font-size: 14.5px; font-weight: 700; white-space: nowrap; }
+.tm-verdict { display: inline-flex; font-size: 14.5px; font-weight: 600; white-space: nowrap; }
 .tm-verdict > span { display: none; align-items: center; gap: 4px; padding: 1px 9px 1px 6px; border-radius: 5px; }
 .tm-verdict svg { width: 15px; height: 15px; stroke-width: 2.4; }
 .tm-verdict[data-state='yes'] .tm-yes { display: inline-flex; color: var(--ok); background: color-mix(in srgb, var(--ok) 11%, var(--panel)); }
@@ -25,7 +25,7 @@ body.bg-transparent { background: transparent; }
 .tm-sum i, .tm-wheel-part i { font-style: normal; font-size: 21px; line-height: 1.35; color: var(--ink-3); }
 .tm-wheel-part { display: flex; align-items: flex-start; gap: 3px; margin-left: 4px; padding-left: 6px; border-left: 1px dashed var(--line-2); }
 /* the longest text is 3 lines on a phone: the line keeps that height, so the 3D view keeps its size */
-.tm-extra { margin: 0; min-height: 4.5em; font-size: 13.5px; line-height: 1.5; color: var(--ink-2); }
+.tm-extra { margin: 0; min-height: 4.65em; font-size: 14px; line-height: 1.55; color: var(--ink-2); }
 /* চালাও, then the two contrasts from the book's sentence (the wheel, the bend) as on/off buttons; the drive button
    keeps the width of its longest label (set from src/app.js) */
 .tm-choices, .tm-acts { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 6px; }

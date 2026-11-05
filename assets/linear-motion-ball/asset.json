@@ -5,7 +5,7 @@
   "title": "Linear motion: the falling ball (সরলরৈখিক গতি: মুক্তভাবে পড়া)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "book": "physics-9-10",
   "page": 36,
   "topic": "2.2",

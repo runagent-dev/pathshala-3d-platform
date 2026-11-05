@@ -413,8 +413,8 @@ export function createApp(root, options = {}) {
       sheet.rule(t('rule_disp'));
     } else {
       sheet.outcome(
-        `<span class="sv-row"><span class="sv-def">${t('cmp_speed')}</span><span class="sv-sum">${t('cmp_speed_sum', { d: short(avg.distance), m: MINUTES, v: short(avg.speed) })}</span></span>` +
-          `<span class="sv-row"><span class="sv-def">${t('cmp_vel')}</span><span class="sv-sum">${t('cmp_vel_sum', { d: short(avg.displacement), m: MINUTES, v: short(avg.velocity), dir: dirWord(avg.dir) })}</span></span>` +
+        `<span class="sv-row"><span class="sv-def">${t('cmp_speed')}</span><span class="sv-sum pvc-formula">${t('cmp_speed_sum', { d: short(avg.distance), m: MINUTES, v: short(avg.speed) })}</span></span>` +
+          `<span class="sv-row"><span class="sv-def">${t('cmp_vel')}</span><span class="sv-sum pvc-formula">${t('cmp_vel_sum', { d: short(avg.displacement), m: MINUTES, v: short(avg.velocity), dir: dirWord(avg.dir) })}</span></span>` +
           `<small class="sv-note">${t('cmp_hour', { m: MINUTES, a: 1, b: 60 / MINUTES })}</small>`,
       );
       sheet.rule(t(s.path === 'straight' ? 'rule_compare_straight' : 'rule_compare'));

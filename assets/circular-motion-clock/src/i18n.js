@@ -19,9 +19,9 @@ export const STRINGS = {
     tab_quiz: 'পরীক্ষা',
     reading: 'দূরত্ব',
 
-    idea: 'একটি বস্তু যদি একটা <b class="c-ctr">নির্দিষ্ট বিন্দু</b> থেকে <b class="c-dist">সমদূরত্বে</b> থেকে <b class="c-path">বৃত্তাকার পথে</b> ঘুরতে থাকে, তাহলে তার গতিকে বলে <b>ঘূর্ণন গতি</b>।',
+    idea: 'একটি বস্তু যদি একটা <span class="c-ctr">নির্দিষ্ট বিন্দু</span> থেকে <span class="c-dist">সমদূরত্বে</span> থেকে <span class="c-path">বৃত্তাকার পথে</span> ঘুরতে থাকে, তাহলে তার গতিকে বলে <b>ঘূর্ণন গতি</b>।',
     dist_k: 'নির্দিষ্ট বিন্দু থেকে দূরত্ব ({u})',
-    book: 'বৈদ্যুতিক পাখা, ঘড়ির কাঁটা এগুলো ঘূর্ণন গতির উদাহরণ।',
+    book: 'বৈদ্যুতিক পাখা আর ঘড়ির কাঁটা ঘূর্ণন গতির উদাহরণ।',
     note: '(ছবিতে সময় দ্রুত চলে)',
     label_known: '{d} {u}',
     unit_cm: 'সেমি',
@@ -101,7 +101,7 @@ export const STRINGS = {
     tab_quiz: 'Test',
     reading: 'Distance',
 
-    idea: 'An object going round a <b class="c-ctr">fixed point</b> on a <b class="c-path">circular path</b>, always at the <b class="c-dist">same distance</b>, is in <b>circular motion</b>.',
+    idea: 'An object going round a <span class="c-ctr">fixed point</span> on a <span class="c-path">circular path</span>, always at the <span class="c-dist">same distance</span>, is in <b>circular motion</b>.',
     dist_k: 'Distance from the fixed point ({u})',
     book: 'An electric fan and a clock hand are examples of circular motion.',
     note: '(Time runs faster here.)',

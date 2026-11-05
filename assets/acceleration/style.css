@@ -11,7 +11,7 @@ body.bg-transparent { background: transparent; }
 .ac [data-kind='up'] { --kc: var(--t-up); }
 .ac [data-kind='down'] { --kc: var(--t-down); }
 .ac [data-kind='none'] { --kc: var(--t-none); }
-.ac .c-v { color: var(--t-v); font-weight: 700; }
+.ac .c-v { color: var(--t-v); font-weight: 600; }
 
 /* labels on the picture that stand on their own (no leader line, no dot: they sit next to what they name) */
 .pvc-anno-tag { --c: var(--accent); color: var(--c); border-color: var(--c); font-weight: 600; font-size: 14.5px; }
@@ -46,29 +46,29 @@ body.bg-transparent { background: transparent; }
 .ac .g-band { opacity: 0.09; }
 .ac .g-band.on { opacity: 0.26; }
 .ac .g-line { stroke-width: 3; stroke-linecap: round; }
-.ac .g-letter { font-weight: 700; }
+.ac .g-letter { font-weight: 600; }
 .ac .g-dot { stroke: #fff; stroke-width: 1.6; }
 .ac .g-hint { fill: var(--ink-3); font-weight: 500; }
 
 /* the sum: [C] ত্বরণ a = (v − u) m/s ÷ t s = +2.0 ms⁻² (kind) */
 .ac-sum { display: flex; align-items: center; gap: 6px; min-height: 62px; min-width: 0; }
 .ac-sum { flex-direction: column; align-items: flex-start; justify-content: center; gap: 0; }
-.ac-badge { display: grid; place-items: center; flex: none; min-width: 27px; height: 27px; padding: 0 4px; border-radius: 6px; background: var(--kc); color: #fff; font-size: 15px; font-weight: 700; }
+.ac-badge { display: grid; place-items: center; flex: none; min-width: 27px; height: 27px; padding: 0 4px; border-radius: 6px; background: var(--kc); color: #fff; font-size: 15px; font-weight: 600; }
 .ac-k { display: flex; flex-direction: column; line-height: 1.3; }
-.ac-k b { font-size: 15px; font-weight: 700; white-space: nowrap; }
+.ac-k b { font-size: 15px; font-weight: 600; white-space: nowrap; }
 .ac-sum-row { display: flex; align-items: center; gap: 6px; min-width: 0; }
-.ac-def { display: block; margin-top: 1px; font-size: 12px; line-height: 1.3; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* the book's definition */
+.ac-def { display: block; margin-top: 2px; font-size: 13px; line-height: 1.4; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* the book's definition */
 .ac-sum-row > i { font-style: normal; font-size: 19px; line-height: 1; color: var(--ink-3); }
 .ac-frac { display: inline-flex; flex-direction: column; align-items: center; font-size: 16.5px; font-weight: 600; line-height: 1.3; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .ac-num { align-self: stretch; text-align: center; padding: 0 3px 1px; border-bottom: 1.6px solid var(--ink-2); }
 .ac-den { padding: 1px 3px 0; }
 .ac-u { font-size: 0.72em; font-weight: 600; color: var(--ink-3); }
 .ac-res { display: flex; flex-direction: column; line-height: 1.3; min-width: 0; }
-.ac-res b { font-size: 19px; font-weight: 700; color: var(--kc); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ac-res b { font-size: 19px; font-weight: 600; color: var(--kc); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .ac-res b .ac-u { color: inherit; opacity: 0.85; }
-.ac-res small { font-size: 12.5px; font-weight: 700; color: var(--kc); white-space: nowrap; }
+.ac-res small { font-size: 12.5px; font-weight: 600; color: var(--kc); white-space: nowrap; }
 
-.ac-say { grid-area: say; margin: 0; min-height: 3em; font-size: 14px; line-height: 1.5; color: var(--ink-2); } /* 2 lines: the 3D view keeps its size */
+.ac-say { grid-area: say; margin: 0; min-height: 3.1em; font-size: 14px; line-height: 1.55; color: var(--ink-2); } /* 2 lines: the 3D view keeps its size */
 
 
 /* on the picture: the speedometer (top left) */
@@ -81,7 +81,7 @@ body.bg-transparent { background: transparent; }
 .ac .s-num { fill: var(--ink-2); font-size: 9px; font-weight: 600; }
 .ac .s-needle { stroke: var(--ink); stroke-width: 2.4; stroke-linecap: round; }
 .ac .s-hub { fill: var(--ink); }
-.ac-speedo-read { order: 2; font-size: 17px; font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; color: var(--t-v); }
+.ac-speedo-read { order: 2; font-size: 17px; font-weight: 600; line-height: 1.2; font-variant-numeric: tabular-nums; color: var(--t-v); }
 .ac-speedo-read span { margin-left: 3px; font-size: 11px; font-weight: 600; color: var(--ink-3); }
 .ac-speedo-name { order: 1; font-size: 13px; line-height: 1.25; color: var(--ink-3); }
 
@@ -100,7 +100,7 @@ body.bg-transparent { background: transparent; }
   background: rgba(255, 255, 255, 0.95);
   box-shadow: 0 2px 6px rgba(20, 30, 45, 0.12);
   font-size: 14.5px;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.25;
   color: var(--ink);
   touch-action: none;
@@ -133,7 +133,7 @@ body.bg-transparent { background: transparent; }
   .ac-k b { font-size: 14px; }
   .ac-frac { font-size: 15.5px; }
   .ac-res b { font-size: 17.5px; }
-  .ac-res small { font-size: 12px; }
+  .ac-res small { font-size: 12.5px; }
   .ac-sum-row { gap: 4px; }
 }
 /* phone embeds that are not very tall: a little smaller, so the 3D view keeps more room */
@@ -143,7 +143,7 @@ body.bg-transparent { background: transparent; }
   .ac .pvc-tabs button { height: 32px; }
   .ac-restart { height: 32px; }
   .ac-sum { min-height: 56px; }
-  .ac-def { font-size: 11.5px; }
+  .ac-def { font-size: 12.5px; }
   .ac-say { font-size: 13px; }
   .ac .pvc-q-head { min-height: 30px; }
   .ac .pvc-q-head .pvc-btn { height: 32px; }
@@ -159,7 +159,7 @@ body.bg-transparent { background: transparent; }
   .ac-restart { padding: 0 8px; }
   .ac-sum { min-height: 56px; }
   .ac-sum-row { gap: 4px; }
-  .ac-def { font-size: 11px; }
+  .ac-def { font-size: 12.5px; }
   .ac-k b { font-size: 13.5px; }
   .ac-frac { font-size: 14.5px; }
   .ac-res b { font-size: 16px; }
@@ -176,12 +176,12 @@ body.bg-transparent { background: transparent; }
   .ac-badge { min-width: 22px; height: 22px; font-size: 13px; padding: 0 3px; }
   .ac-k b { font-size: 12.5px; }
   .ac-sum-row > i { font-size: 16px; }
-  .ac-def { font-size: 10.5px; }
+  .ac-def { font-size: 12.5px; }
   .pvc-opt .ac-opt { font-size: 12px; line-height: 1.12; }
   .ac-frac { font-size: 13.5px; }
   .ac-num, .ac-den { padding-left: 1px; padding-right: 1px; }
   .ac-res b { font-size: 14.5px; }
-  .ac-res small { font-size: 11px; }
+  .ac-res small { font-size: 12.5px; }
 }
 /* a wide panel (book page, desktop): the graph on the left, the rest beside it */
 @container pvc-panel (min-width: 660px) {

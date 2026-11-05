@@ -36,9 +36,9 @@ export const STRINGS = {
     idea: 'চলন গতিতে বস্তুর সকল কণা একই সময় একই দিকে যেতে থাকে। গাড়িটি চালিয়ে দেখো, প্রতিটি বিন্দু কত দূর যায়।',
     idea_wheel: 'চাকার কিনারেও একটি বিন্দু আছে। গাড়ি চালিয়ে দেখো, এটি কোন পথে কত দূর যায়।',
     idea_turn: 'এবার গাড়িটি বাঁক নেবে। দেখো, প্রতিটি বিন্দু কোন দিকে কত দূর যায়।',
-    see_straight: 'সব বিন্দু একই সময় একই দিকে একই দূরত্ব অতিক্রম করেছে: সোজা এগিয়ে যাওয়া গাড়ির গতি চলন গতি।',
-    see_wheel: 'গাড়ির গায়ের সব বিন্দু একই দূরত্ব গেছে, কিন্তু চাকার বিন্দুটি ওঠা-নামা করে বেশি পথ গেছে। তাই ঘূর্ণায়মান চাকা বিবেচনায় না আনলে গাড়ির গতি চলন গতি।',
-    see_turn: 'বাঁক নেওয়ার সময় প্রতিটি বিন্দু আলাদা দূরত্ব যায়, আর একই সময় আলাদা দিকে যায়। তাই এটি চলন গতি নয়।',
+    see_straight: 'সব বিন্দু একই সময়ে একই দিকে একই দূরত্ব অতিক্রম করেছে। তাই সোজা এগিয়ে চলা গাড়ির গতি চলন গতি।',
+    see_wheel: 'গাড়ির গায়ের সব বিন্দু একই দূরত্ব গেছে। চাকার বিন্দুটি ওঠা-নামা করে বেশি পথ গেছে। তাই ঘূর্ণায়মান চাকা বাদ দিলে গাড়ির গতি চলন গতি।',
+    see_turn: 'বাঁকের সময় প্রতিটি বিন্দু আলাদা দূরত্ব যায়, দিকও আলাদা। তাই এটি চলন গতি নয়।',
 
     act_drive: 'চালাও',
     act_pause: 'থামাও',
@@ -148,10 +148,11 @@ export const STRINGS = {
     idea: 'In translational motion all the particles of a body keep moving in the same direction at the same time. Drive the car and see how far each point goes.',
     idea_wheel: 'There is a point on the edge of the wheel too. Drive the car and see which way and how far it goes.',
     idea_turn: 'Now the car takes a bend. See which way and how far each point goes.',
-    see_straight: 'Every point went the same distance in the same direction at the same time: a car going straight ahead is in translational motion.',
+    see_straight:
+      'Every point went the same distance in the same direction at the same time. So a car going straight ahead is in translational motion.',
     see_wheel:
-      'Every point of the body went the same distance, but the point on the wheel went up and down along a longer path. So, leaving out the rotating wheels, the car’s motion is translational.',
-    see_turn: 'Round a bend each point goes its own distance, and in its own direction at the same moment. So this is not translational motion.',
+      'Every point of the body went the same distance. The point on the wheel went up and down along a longer path. So, leaving out the rotating wheels, the car’s motion is translational.',
+    see_turn: 'On a bend each point goes a different distance, in a different direction. So this is not translational motion.',
 
     act_drive: 'Drive',
     act_pause: 'Stop',
