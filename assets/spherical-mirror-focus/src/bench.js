@@ -17,8 +17,8 @@ export const SCALE_POINT = { y: (STRIP.y0 + STRIP.y1) / 2, z: (STRIP.z0 + STRIP.
 export const SPHERE = { x: R0 + 7, y: 107, r: R0 };
 /** Where the cut piece comes to, from its place on the sphere: out toward the viewer and aside, clear of the hole it left. */
 export const CUT = { x: -15, z: 24 };
-/** The piece's turn, radians, about the upright through its pole: on the sphere; shown with both sides named; taking its coat; on the bench (POSE). */
-export const SPIN = { sphere: Math.PI / 2, shown: THREE.MathUtils.degToRad(14), coat: THREE.MathUtils.degToRad(-15), bench: 0 };
+/** The piece's turn, radians, about the upright through its pole: on the sphere; at rest in the air, its inner bowl about 38° off the view; on the bench. */
+export const SPIN = { sphere: Math.PI / 2, shown: THREE.MathUtils.degToRad(-18), bench: 0 };
 const CAP_ANGLE = Math.asin(MIRROR.half / R0);
 /** The piece comes down this far in front of the ring, for this share of its way, before it goes back into it. */
 const FRONT = 7;
@@ -46,8 +46,8 @@ export const FRAMES = {
   focus: (r) => ({ box: box(-3, 0.4, -6, boxAt('concave', r) + 0.5, AXIS + 14, 6), az: 35, el: 12 }),
   measure: (r) => ({ box: box(-5, 0.2, -6, boxAt('concave', r) + 0.5, AXIS + 14, 6), az: 33, el: 11 }),
   wide: (r) => ({ box: box(-3, AXIS - 13, -2, boxAt('concave', r) + 0.5, AXIS + 13, 2), az: 33, el: 9 }),
-  /** Close on the mirror, from the side: the half turn, and the bulge of the outer surface. */
-  turn: () => ({ box: box(-5, AXIS - 13, -11, 7, AXIS + 13, 11), az: 58, el: 10 }),
+  /** Close on the mirror, steeply from the side (75° off its axis, which is az 90): the half turn, and the outer surface bulging toward the light. */
+  turn: () => ({ box: box(-6, AXIS - 13, -11, 7, AXIS + 13, 11), az: 15, el: 9 }),
   convex: () => ({ box: box(-12, 0.4, -6, boxAt('convex') + 0.5, AXIS + 14, 6), az: 36, el: 12 }),
   virtual: (r) => ({ box: box(-r - 4, 0.2, -6, boxAt('convex') + 0.5, AXIS + 14, 6), az: 33, el: 11 }),
   torch: () => ({ box: box(-3, 0.4, -6, 52, AXIS + 14, 6), az: 33, el: 12 }),

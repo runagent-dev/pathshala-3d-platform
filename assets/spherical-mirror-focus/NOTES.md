@@ -21,15 +21,15 @@ at the concave mirror's F gives a parallel beam.
 figure does not use that word.) Added by the figure, not on the page: আলোর বাক্স (ray box), স্কেল, বাল্ব (the page has বাল্বটি).
 
 ## How the figure works
-- Eight taps, one action: cut a piece from the sphere (it comes out big and turns once, slowly, each surface named as it comes round) →
+- Nine taps, one action: cut a piece from the sphere (it comes out big and turns once, slowly, each surface named as it comes round) →
   coat its inner surface (it then goes down to the holder on the bench) →
   parallel light → measure f and r (the four r words live here, and on the convex measure) → widen the light → coat the outer
-  surface (the dish makes a half turn on its pins) → extend the rays behind → a bulb at F, which the student then moves off F
+  surface (the dish makes a half turn on its pins) → parallel light on it → extend the rays behind → a bulb at F, which the student then moves off F
   and back (by the action, by drag, or by the left/right keys).
 - The words গোলক · অবতল · উত্তল · টর্চ jump. `src/app.js` has one table, `POSE`, of what each stage shows, and one function, `run()`,
   which walks any jump in the same order: the light goes, the measures go, the piece moves, the mirror turns, then the light comes.
 - The camera goes to each thing (`FRAMES` in `src/bench.js`, fitted to the stage with `fitPose`): the sphere, the whole bench, the mirror
-  and F, the printed scale, close on F for the wide bundle, close on the mirror from the side for the half turn, behind the mirror for the
+  and F, the printed scale, close on F for the wide bundle, close on the mirror steeply from the side for the half turn (75° off its axis), behind the mirror for the
   convex F.
 - **The piece must be seen (owner, v0.3.0).** The cap faces +z, about 38° off the view, not the far edge of the ball, where it was a sliver.
   On the sphere and in the air each surface wears a teaching colour (outer gold, inner blue, one drawing of each face, wound to show from its
@@ -42,10 +42,13 @@ figure does not use that word.) Added by the figure, not on the page: আলো�
   test. The piece turns once and stops: an endless turn would draw every frame, and the student can walk round it anyway.
 - **All the way round**: no azimuth limit, polar 5°–88°, zoom 0.6–1.6 × the step's distance. A flight goes round what it looks at, not through
   it (from behind the bench a straight line would pass through the mirror). A drag of less than 8 px is a tap: the view does not move at all
-  until then. Labels and rays are on the screen, so they hold from any side. The table and the backdrop's soft light go all the way round too.
+  until then. The kit reports its lower resolution during a slow orbit as a resize at the same CSS size: `onResize` frames the step again only when
+  the size really changed, or the first drags would be thrown away. Labels and rays are on the screen, so they hold from any side. The table and the backdrop's soft light go all the way round too.
 - **The handle** on the bulb's carrier (`src/handle.js`) has the look and names of the kit's `createDragHandle` (pull request #361, not merged
-  when this was written). When kit 1.7.0 is in, delete the file and the CSS and use the kit's. The rotate cue is a pill in a corner, so it can't be
-  taken for a handle on a part. On the tightest frame (390 × 520) no corner has room for its word beside the key labels, so it is the 360° icon alone.
+  when this was written). When kit 1.7.0 is in, delete the file and the CSS and use the kit's. The rotate cue is always a pill, "⟲ ৩৬০°" in real text, so it
+  can't be taken for a handle on a part; "ঘুরিয়ে দেখো" beside it until the first turn, except on the tightest frame (390 × 520), where no corner has
+  room for the words. The kit's front button is the same arrow as the panel's reset, so this figure gives it a crosshair and the word সামনে (`.lab-front`);
+  that moves to the kit with #361.
 - Rays are traced on the exact sphere with r = d − 2(d·n)n (`src/reading.js`, unit-tested in `test/unit/spherical-mirror-focus.test.mjs`).
   Nothing uses f = r/2 to place a ray: the rays find F. They are drawn as vector lines on a 2D canvas over the view
   (`src/rays.js`), like the sister figures. F, O and P are marks on the axis with a drop to their number on the printed scale.

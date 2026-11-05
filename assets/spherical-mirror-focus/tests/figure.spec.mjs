@@ -14,8 +14,8 @@ const settled = async (fig) => {
 };
 
 test(`${ID}: the whole story on one action`, async ({ page }) => {
-  test.setTimeout(900_000);
-  await page.setViewportSize({ width: 800, height: 500 });
+  test.setTimeout(240_000);
+  await page.setViewportSize({ width: 480, height: 300 }); // the whole story is slow: the smallest page that holds it
   const log = await preparePage(page);
   const fig = await openFigure(page, ID);
   const act = async () => {
@@ -59,7 +59,11 @@ test(`${ID}: the whole story on one action`, async ({ page }) => {
   expect(15 - st.crossings[1]).toBeGreaterThan(0.8);
 
   st = await act();
-  expect(st).toMatchObject({ stage: 'convex', kind: 'convex', coat: 1, focusAt: -15 });
+  expect(st).toMatchObject({ stage: 'turned', kind: 'convex', coat: 1, focusAt: -15, frame: 'turn' });
+  expect(st.drawn.in).toBe(false);
+  st = await act();
+  expect(st).toMatchObject({ stage: 'convex', kind: 'convex', frame: 'convex' });
+  expect(st.drawn).toMatchObject({ in: true, out: true });
   st = await act();
   expect(st).toMatchObject({ stage: 'virtual', frame: 'virtual' });
   expect(st.drawn.ext).toBe(true);
@@ -98,7 +102,7 @@ test(`${ID}: the words jump, set works at once, keys move the part`, async ({ pa
   expect(await fig.call('get')).toMatchObject({ stage: 'torch', beam: 'parallel', mounted: true, coat: 1 });
   await fig.frame.locator('[data-example="convex"]').click();
   await settled(fig);
-  expect(await fig.call('get')).toMatchObject({ stage: 'convex', kind: 'convex', beam: null });
+  expect(await fig.call('get')).toMatchObject({ stage: 'turned', kind: 'convex', beam: null, coat: 1 });
   await fig.frame.locator('[data-example="sphere"]').click();
   await settled(fig);
   expect(await fig.call('get')).toMatchObject({ stage: 'sphere', kind: 'concave', coat: 0 });
@@ -190,6 +194,7 @@ test(`${ID}: the handle shows that the bulb moves, and the view goes all the way
 
   // the rotate cue, and no handle where nothing can be dragged
   await expect(handle).toBeHidden();
+  await expect(cue).toContainText('৩৬০°');
   await expect(cue).toContainText('ঘুরিয়ে দেখো');
   const free = await fig.frame.locator('.pvc-canvas').boundingBox();
   const at = { x: free.x + 40, y: free.y + free.height - 40 };
@@ -215,7 +220,8 @@ test(`${ID}: the handle shows that the bulb moves, and the view goes all the way
   expect(st).toMatchObject({ view: '3d', orbited: true });
   expect(Math.abs(st.az - az0)).toBeGreaterThan(20);
   await expect(fig.frame.locator('.lab-orbit-word')).toBeHidden();
-  await expect(cue).toBeVisible(); // the icon stays
+  await expect(cue).toBeVisible(); // the pill stays
+  await expect(cue).toContainText('৩৬০°');
 
   // all the way round, on a step with the bench: behind it, then back to the step's own view
   await fig.call('set', { stage: 'measure', animate: false });
@@ -230,12 +236,21 @@ test(`${ID}: the handle shows that the bulb moves, and the view goes all the way
   const front = fig.frame.locator('[data-view="front"]');
   await expect(front).toBeVisible();
   await expect(front).toHaveAttribute('aria-label', 'সামনে');
+  await expect(front).toContainText('সামনে');
   await front.click();
   await fig.advance(2400);
   st = await fig.call('get');
   expect(st.view).toBe('front');
   expect(st.az).toBeCloseTo(33, 0);
   await expect(front).toBeHidden();
+
+  // a step asked for at once brings the camera back: a turned view would be left looking at nothing
+  await fig.call('set', { az: 200 });
+  await fig.call('set', { stage: 'measure', animate: false });
+  await fig.advance(300);
+  st = await fig.call('get');
+  expect(st.view).toBe('front');
+  expect(st.az).toBeCloseTo(33, 0);
 
   // the bulb's handle: the word until the first drag, then it stays, smaller; dragged, the bulb goes
   await fig.call('set', { stage: 'torch', animate: false });
@@ -266,6 +281,47 @@ test(`${ID}: the handle shows that the bulb moves, and the view goes all the way
   await fig.call('practice');
   await fig.advance(600);
   await expect(handle).toBeHidden();
+  expect(log.errors).toEqual([]);
+});
+
+test(`${ID}: the kit lowering the resolution mid-orbit does not take the view back`, async ({ page }) => {
+  test.setTimeout(240_000);
+  await page.setViewportSize({ width: 800, height: 500 });
+  await page.addInitScript(() => Object.defineProperty(window, 'devicePixelRatio', { get: () => 2 }));
+  const log = await preparePage(page);
+  const fig = await openFigure(page, ID);
+  let st = await fig.call('get');
+  expect(st.pixelRatio).toBe(2);
+  const az0 = st.az;
+  const box = await fig.frame.locator('.pvc-canvas').boundingBox();
+  const x0 = box.x + 30;
+  const y = box.y + box.height - 40;
+  // a long, steady drag: the test clock's 50 ms frames are slow frames, so the kit steps the pixel ratio down during it
+  await page.mouse.move(x0, y);
+  await page.mouse.down();
+  for (let i = 1; i <= 45; i++) {
+    await page.mouse.move(x0 + i * 6, y);
+    await fig.advance(50);
+  }
+  st = await fig.call('get');
+  expect(st.pixelRatio).toBeLessThan(2); // the low-resolution resize really happened, at the same CSS size
+  expect(st).toMatchObject({ view: '3d', orbited: true });
+  const turned = st.az;
+  expect(Math.abs(turned - az0)).toBeGreaterThan(60);
+  // and the drag goes on from where it was
+  await page.mouse.move(x0 + 300, y);
+  await fig.advance(100);
+  await page.mouse.up();
+  await fig.advance(800);
+  st = await fig.call('get');
+  expect(st.view).toBe('3d');
+  expect(Math.abs(st.az - az0)).toBeGreaterThanOrEqual(Math.abs(turned - az0));
+  // a page that really changes size frames the step again
+  await page.setViewportSize({ width: 640, height: 400 });
+  await fig.advance(600);
+  st = await fig.call('get');
+  expect(st.view).toBe('front');
+  expect(st.az).toBeCloseTo(34, 0);
   expect(log.errors).toEqual([]);
 });
 

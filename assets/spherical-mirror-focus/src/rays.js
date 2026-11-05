@@ -435,12 +435,12 @@ export function createRays({ stage, host }) {
     ctx.lineCap = 'round';
     ctx.lineWidth = 1.5;
     ctx.strokeStyle = c.inner ? '#e4f2ff' : '#fff6da';
-    for (const th of [0, Math.PI / 4, Math.PI / 2, (3 * Math.PI) / 4])
+    for (const th of [0, Math.PI / 2])
       path(16, (f) => {
         const u = 2 * f - 1;
         on(Math.abs(u) * R, u < 0 ? th + Math.PI : th);
       });
-    for (const rho of [R / 3, (2 * R) / 3]) path(36, (f) => on(rho, f * Math.PI * 2));
+    path(36, (f) => on(R * 0.6, f * Math.PI * 2));
     ctx.globalAlpha = 1;
   }
 

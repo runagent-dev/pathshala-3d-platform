@@ -27,7 +27,7 @@ To listen to it or control it from the book page, use the helper shipped in the 
 | Param | Meaning | Values | Default |
 |---|---|---|---|
 | `lang` | Language | `bn` বাংলা · `en` English | `bn` |
-| `stage` | What is shown | `sphere` the hollow sphere · `cut` the piece cut out · `coated` the concave mirror on the bench · `rays` parallel light meets at F · `measure` f and r measured · `wide` a wide bundle · `convex` the convex mirror spreads the light · `virtual` the rays extended to F behind it · `torch` a bulb at F | `sphere` |
+| `stage` | What is shown | `sphere` the hollow sphere · `cut` the piece cut out · `coated` the concave mirror on the bench · `rays` parallel light meets at F · `measure` f and r measured · `wide` a wide bundle · `turned` the mirror turned over, its outer surface coated · `convex` the convex mirror spreads the light · `virtual` the rays extended to F behind it · `torch` a bulb at F | `sphere` |
 | `r` | Radius of the sphere (cm) | `20` 20 · `30` 30 · `40` 40 · `60` 60 | `30` |
 | `view` | View | `front` · `3d` | `front` |
 | `mode` | Start in | `explore` learn · `quiz` test | `explore` |

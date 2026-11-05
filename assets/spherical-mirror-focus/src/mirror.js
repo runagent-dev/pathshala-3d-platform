@@ -79,10 +79,12 @@ export function createDish({ env }) {
     transparent: true,
   });
   // the teaching colours: the same surfaces wound to face out, so that each is seen from its own side only
-  const tintMat = (name, color) =>
+  const tintMat = (name, color, emissiveIntensity) =>
     new THREE.MeshStandardMaterial({
       name,
       color,
+      emissive: color,
+      emissiveIntensity,
       roughness: 0.38,
       metalness: 0.05,
       transparent: true,
@@ -90,8 +92,8 @@ export function createDish({ env }) {
       depthWrite: false,
       envMapIntensity: 1.2,
     });
-  const tintA = new THREE.Mesh(of(faceIndex(0, false)), tintMat('InnerTint', 0x4dabf7));
-  const tintB = new THREE.Mesh(of(faceIndex(PER_FACE, true)), tintMat('OuterTint', 0xf7b733));
+  const tintA = new THREE.Mesh(of(faceIndex(0, false)), tintMat('InnerTint', 0x4dabf7, 0.42));
+  const tintB = new THREE.Mesh(of(faceIndex(PER_FACE, true)), tintMat('OuterTint', 0xf7b733, 0.1));
   tintA.renderOrder = tintB.renderOrder = 3;
   tintA.userData.noExport = tintB.userData.noExport = true;
   const rimLight = new THREE.Mesh(

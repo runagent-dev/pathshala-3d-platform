@@ -51,9 +51,9 @@ export const DEFAULTS = {
 };
 
 /** The story, in order. */
-export const STAGES = ['sphere', 'cut', 'coated', 'rays', 'measure', 'wide', 'convex', 'virtual', 'torch'];
+export const STAGES = ['sphere', 'cut', 'coated', 'rays', 'measure', 'wide', 'turned', 'convex', 'virtual', 'torch'];
 /** The words in the panel, and the stage each one starts at. */
-const WORDS = { sphere: 'sphere', concave: 'coated', convex: 'convex', torch: 'torch' };
+const WORDS = { sphere: 'sphere', concave: 'coated', convex: 'turned', torch: 'torch' };
 const WORD_OF = {
   sphere: 'sphere',
   cut: 'sphere',
@@ -61,6 +61,7 @@ const WORD_OF = {
   rays: 'concave',
   measure: 'concave',
   wide: 'concave',
+  turned: 'convex',
   convex: 'convex',
   virtual: 'convex',
   torch: 'torch',
@@ -75,7 +76,6 @@ const T = {
   cut: 2.8, // the piece coming out of the sphere
   look: 0.8, // its outer surface, before it turns
   show: 5, // its slow turn, from the outer surface to the inner
-  aim: 2, // its inner surface turning to the student
   coat: 2.8, // the silver spreading
   mount: 3.2, // the piece going down to the holder, or back up
   clear: 2, // the old coat going
@@ -125,6 +125,7 @@ const POSE = {
   rays: { ...REST, lamp: 1, inK: 1, outK: 1, showF: 1, star: 1 },
   measure: { ...REST, lamp: 1, inK: 1, outK: 1, showF: 1, showO: 1, marks: 1, bars: 1, circle: 1, star: 1 },
   wide: { ...REST, lamp: 1, inK: 1, outK: 1, showF: 1, half: BUNDLE.wide, crossings: 1, star: 0.25 },
+  turned: { ...REST, turn: 1, bulge: 1 },
   convex: { ...REST, turn: 1, lamp: 1, inK: 1, outK: 1 },
   virtual: { ...REST, turn: 1, lamp: 1, inK: 1, outK: 1, extK: 1, showF: 1, showO: 1, marks: 1, bars: 1, circle: 1 },
   torch: { ...REST, box: 0, bulb: 1, lit: 1, inK: 1, outK: 1, showF: 1, marks: 0, source: 'bulb' },
@@ -137,6 +138,7 @@ const FRAME_OF = {
   rays: 'focus',
   measure: 'measure',
   wide: 'wide',
+  turned: 'turn',
   convex: 'convex',
   virtual: 'virtual',
   torch: 'torch',
@@ -201,11 +203,13 @@ export function createApp(root, options = {}) {
   orbitCue.className = 'lab-orbit';
   orbitCue.setAttribute('role', 'img');
   orbitCue.setAttribute('aria-label', t('orbit_aria'));
-  orbitCue.innerHTML = `${svg(
-    `<path d="M9 7.5C5 8.6 2.5 10.2 2.5 12c0 3 5.7 5.5 12.5 5.5S27.5 15 27.5 12c0-1.8-2.5-3.4-6.5-4.5"/><path d="M6.5 14.8 9 17.800l-3.800.8"/><text x="15" y="12" text-anchor="middle" font-size="9.5" font-weight="700" fill="currentColor" stroke="none">${t.num(360)}°</text>`,
-    '0 0 30 22',
-  )}<span class="lab-orbit-word">${t('view_rotate')}</span>`;
+  orbitCue.innerHTML = `${svg('<g transform="matrix(-1 0 0 1 24 0)"><path d="M19.2 8.4a8.2 8.2 0 1 0 1 3.6"/><path d="M20.2 3.8v4.8h-4.8"/></g><circle cx="12" cy="12" r="2.2" class="fill"/>')}<span>${t.num(360)}°</span><span class="lab-orbit-word">${t('view_rotate')}</span>`;
   ui.stage.appendChild(orbitCue);
+  // the kit's front button is the same arrow as the panel's reset: here it has its own crosshair and its word (kit #361 will do this)
+  const frontBtn = ui.$('[data-view="front"]');
+  frontBtn.classList.remove('icon-only');
+  frontBtn.classList.add('lab-front');
+  frontBtn.innerHTML = `${svg('<circle cx="12" cy="12" r="6"/><path d="M12 2.5v5M12 16.5v5M2.5 12h5M16.5 12h5"/>')}<span>${t('view_front_short')}</span>`;
 
   // ── 3D ──────────────────────────────────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 22, near: 10, far: 1600, environmentIntensity: 0.8 });
@@ -431,7 +435,6 @@ export function createApp(root, options = {}) {
     // silver on the piece while it is still in the air, then down to the holder
     if (goal.coat > V.coat && goal.turn === V.turn) {
       s.beat = 'inner';
-      if (!(await move(alive, ['spin'], { spin: SPIN.coat }, T.aim))) return false;
       if (!(await move(alive, ['coat'], goal, T.coat))) return false;
       audio.tick();
       if (!(await wait(T.hold))) return false;
@@ -448,7 +451,7 @@ export function createApp(root, options = {}) {
       if (!(await move(alive, ['coat'], { coat: 0 }, Math.max(T.clear, T.fly)))) return false;
       V.source = goal.source;
       s.source = goal.source;
-      const after = { ...goal, tint: toConvex ? 1 : 0 };
+      const after = { ...goal, tint: toConvex ? 1 : 0, bulge: 0 };
       if (!(await move(alive, ['turn', 'tint', 'box', 'bulb'], after, T.turn, ease.inOutCubic))) return false;
       if (toConvex) {
         s.beat = 'outer';
@@ -609,11 +612,18 @@ export function createApp(root, options = {}) {
     controls.update();
     stage.invalidate();
   }
-  stage.onResize(() => {
-    guided();
-    if (s.view === '3d') {
-      s.view = 'front';
-      syncUI();
+  // the kit also calls this when it lowers the resolution while the view moves, at the same CSS size: that must not take a turned
+  // view back from the student. Only a page that really changed size frames the step again.
+  const framed = { width: stage.width, height: stage.height };
+  stage.onResize((width, height) => {
+    if (width !== framed.width || height !== framed.height) {
+      framed.width = width;
+      framed.height = height;
+      guided();
+      if (s.view === '3d') {
+        s.view = 'front';
+        syncUI();
+      }
     }
     draw();
   });
@@ -666,6 +676,14 @@ export function createApp(root, options = {}) {
       { dx: 40, dy: -14 },
       { dx: -40, dy: -14 },
     ],
+    rimRay: [
+      { dx: 0, dy: -30 },
+      { dx: 26, dy: -30 },
+      { dx: 40, dy: -14 },
+      { dx: 62, dy: -2 },
+      { dx: 62, dy: 14 },
+      { dx: -26, dy: -30 },
+    ],
     down: [
       { dx: 0, dy: 26 },
       { dx: 24, dy: 28 },
@@ -689,6 +707,8 @@ export function createApp(root, options = {}) {
       { dx: 84, dy: 28 },
       { dx: 96, dy: -6 },
       { dx: 96, dy: 10 },
+      { dx: 118, dy: -8 },
+      { dx: 118, dy: 24 },
     ],
     far: [
       { dx: 70, dy: -26 },
@@ -796,12 +816,14 @@ export function createApp(root, options = {}) {
     const facing = setting.innerFacing(camera.position);
     setting.faceAt(false, 5, faceP);
     label('inner', air && facing > -0.45 && (st === 'cut' || s.beat === 'inner'), t('l_inner'), faceP.x, faceP.y, faceP.z, INK.inner, SPOTS.pieceUp);
-    setting.faceAt(true, -5, faceP);
-    const seen = air ? facing < 0.45 && st === 'cut' : camK >= 1 && s.beat === 'outer';
+    setting.faceAt(true, st === 'cut' ? -9 : -5, faceP);
+    const turnedOn = !q && camK >= 1 && (s.beat === 'outer' || (st === 'turned' && calm));
+    const seen = (air && st === 'cut') || turnedOn; // at rest in the air it is the far side: the label stays, on the rim's edge
     label('outer', seen, t('l_outer'), faceP.x, faceP.y, faceP.z, INK.outer, SPOTS.pieceDown);
     const mirrored = calm && V.mount > 0.9 && named;
     const topEdge = kind === 'convex' ? -sag(V.r, MIRROR.half) : sag(V.r, MIRROR.half);
-    const mirrorName = mirrored && (st === 'coated' || st === 'rays' || st === 'convex' || st === 'virtual' || st === 'torch' || !!q);
+    const mirrorName =
+      mirrored && (st === 'coated' || st === 'rays' || st === 'turned' || st === 'convex' || st === 'virtual' || st === 'torch' || !!q);
     label('mirror', mirrorName, t(kind === 'convex' ? 'l_convex' : 'l_concave'), topEdge, AX + MIRROR.half + 1, 0, INK.dark, SPOTS.mirror);
     const lit = calm && V.outK >= 1 && V.alpha > 0.9 && V.source === 'box';
     const plate = boxAt(kind, V.r);
@@ -834,7 +856,7 @@ export function createApp(root, options = {}) {
     if (wideOn) {
       const [ex, ey] = on(rs[4], 0.13);
       const [mx, my] = on(rs[1], 0.16);
-      label('edge', true, t('l_edge'), ex, ey, 0, '#c2300e', SPOTS.up);
+      label('edge', true, t('l_edge'), ex, ey, 0, '#c2300e', SPOTS.rimRay);
       label('mid', true, t('l_mid'), mx, my, 0, INK.ray, SPOTS.down);
     } else {
       label('edge', false);
@@ -1002,9 +1024,10 @@ export function createApp(root, options = {}) {
     rays: ['act_rays', 3],
     measure: ['act_measure', 4],
     wide: ['act_wide', 5],
-    convex: ['act_convex', 6],
-    virtual: ['act_virtual', 7],
-    torch: ['act_torch', 8],
+    turned: ['act_convex', 6],
+    convex: ['act_rays', 7],
+    virtual: ['act_virtual', 8],
+    torch: ['act_torch', 9],
     bulb_in: ['act_bulb_in', ''],
     bulb_out: ['act_bulb_out', ''],
     bulb_f: ['act_bulb_f', ''],
@@ -1017,6 +1040,7 @@ export function createApp(root, options = {}) {
     if (st === 'coated') return t('out_coated');
     if (st === 'rays') return t('out_rays');
     if (st === 'wide') return t('out_wide', { a: round(exactCrossing(s.r, BUNDLE.wide / 2), 1), b: round(exactCrossing(s.r, BUNDLE.wide), 1) });
+    if (st === 'turned') return t('out_turned');
     if (st === 'convex') return t('out_convex');
     if (st === 'torch') return t(`out_${beamKind(s.r, s.bulbX)}`);
     return '';
@@ -1087,8 +1111,10 @@ export function createApp(root, options = {}) {
     else if (ph === 'measure') aim.set(V.r / 2, AX - 8, 0);
     else if (ph === 'wide')
       aim.set(boxAt('concave', V.r), AX + 2.5, 0); // the holes of the ray box
+    else if (ph === 'turned')
+      aim.set(sag(V.r, 5), AX + 5, 0); // the mirror itself, its upper half, clear of the stand
     else if (ph === 'convex')
-      aim.set(0.4, AX - 6.5, 0); // the mirror itself
+      aim.set(0, AX, 0); // where the light will land
     else if (ph === 'virtual')
       aim.set(-V.r / 2, AX, 0); // where the rays will be seen to meet
     else if (ph === 'torch')
@@ -1116,7 +1142,7 @@ export function createApp(root, options = {}) {
   const handlePoint = new THREE.Vector3();
   const trackFrom = new THREE.Vector3();
   const trackTo = new THREE.Vector3();
-  const HANDLE = { y: RAIL.top + 1.3, z: 6.4 };
+  const HANDLE = { y: RAIL.carrier + 3.4, z: 0 }; // on the stalk, close under the bulb, its track over the dark table
   handle = createBulbHandle(stage, {
     point: () => handlePoint.set(V.bulbX, HANDLE.y, HANDLE.z),
     from: () => trackFrom.set(bulbRange(s.r).min, HANDLE.y, HANDLE.z),
@@ -1519,6 +1545,7 @@ export function createApp(root, options = {}) {
       az: round(THREE.MathUtils.radToDeg(Math.atan2(camera.position.x - controls.target.x, camera.position.z - controls.target.z)), 1),
       polar: round(THREE.MathUtils.radToDeg(controls.getPolarAngle()), 1),
       orbited: s.orbited,
+      pixelRatio: stage.pixelRatio,
       mode: s.mode,
       locked: s.locked,
       view: s.view,
@@ -1537,6 +1564,12 @@ export function createApp(root, options = {}) {
   /** At once: what the book or a test asks to see. */
   function jump(name) {
     stopRun();
+    if (s.userMovedCamera) {
+      // the book asked for a step: the camera goes back to its framing, or a turned view would be left looking at nothing
+      guided();
+      s.view = 'front';
+      syncUI();
+    }
     s.stage = name;
     s.tried.clear();
     if (name === 'sphere' || name === 'cut' || name === 'coated') s.r = R0;

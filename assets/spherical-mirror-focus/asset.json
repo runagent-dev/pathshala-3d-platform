@@ -5,7 +5,7 @@
   "title": "Spherical mirrors and their focus (গোলীয় আয়না ও ফোকাস)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "book": "physics-9-10",
   "page": 223,
   "topic": "8.4",
@@ -45,6 +45,7 @@
         ["rays", "parallel light meets at F"],
         ["measure", "f and r measured"],
         ["wide", "a wide bundle"],
+        ["turned", "the mirror turned over, its outer surface coated"],
         ["convex", "the convex mirror spreads the light"],
         ["virtual", "the rays extended to F behind it"],
         ["torch", "a bulb at F"]
@@ -99,7 +100,8 @@
         { "at": 11, "command": "set", "payload": { "stage": "coated" } },
         { "at": 22, "command": "set", "payload": { "stage": "rays" } },
         { "at": 32, "command": "set", "payload": { "stage": "measure" } },
-        { "at": 38, "command": "set", "payload": { "stage": "convex" } },
+        { "at": 38, "command": "set", "payload": { "stage": "turned" } },
+        { "at": 51, "command": "set", "payload": { "stage": "convex" } },
         { "at": 62, "command": "set", "payload": { "stage": "virtual" } },
         { "at": 72, "command": "set", "payload": { "stage": "torch" } }
       ]

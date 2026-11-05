@@ -52,6 +52,7 @@ export const STRINGS = {
     out_rays: 'আলো মিলিত হলো <b>F বিন্দুতে</b>',
     out_f: '<b>f = {f} cm</b>',
     out_wide: 'মাঝের রশ্মি <b>{a} cm</b>, কিনারার <b>{b} cm</b>',
+    out_turned: 'বাইরের পৃষ্ঠ চকচকে: <b>উত্তল আয়না</b>',
     out_convex: 'আলো <b>ছড়িয়ে</b> গেল',
     out_parallel: 'বাল্ব F এ: বিম <b>সমান্তরাল</b>',
     out_spread: 'বাল্ব F এর ভেতরে: আলো <b>ছড়িয়ে যায়</b>',
@@ -63,7 +64,8 @@ export const STRINGS = {
     rule_measure:
       'P থেকে F এর দূরত্বই <b>ফোকাস দূরত্ব f</b>। r বদলে দেখো: f হয় r এর প্রায় অর্ধেক।<span class="pvc-formula lab-sum"><i>f</i> = <i>r</i>/{two} = {r}/{two} = <b>{f} cm</b></span>',
     rule_wide: 'কিনারার রশ্মি F এর একটু আগেই অক্ষ কাটে। তাই f = r/{two} কথাটি <b>প্রায় সত্যি</b>: আয়না r থেকে অনেক ছোট হলে। বেশির ভাগ আয়নায় এটা সত্যি।',
-    rule_convex: 'অন্য পৃষ্ঠে প্রলেপ দিলে আলো বাইরের উত্তল অংশ থেকে প্রতিফলিত হয়। এটি <b>উত্তল আয়না</b>, চামচের উল্টো পিঠের মতো। সমান্তরাল আলো চারদিকে ছড়িয়ে যায়।',
+    rule_turned: 'অন্য পৃষ্ঠে প্রলেপ দিলে আলো বাইরের উত্তল অংশ থেকে প্রতিফলিত হবে। এটি <b>উত্তল আয়না</b>, চামচের উল্টো পিঠের মতো।',
+    rule_convex: 'উত্তল আয়নায় পড়ে সমান্তরাল আলো মিলিত হয় না, চারদিকে <b>ছড়িয়ে যায়</b>।',
     rule_virtual:
       'রশ্মিগুলো পেছনে বাড়ালে মনে হয় এক বিন্দু থেকে ছড়িয়েছে: <b>ফোকাস বিন্দু F</b>, আয়নার পেছনে। এখানেও f হয় r এর প্রায় অর্ধেক।<span class="pvc-formula lab-sum"><i>f</i> = <i>r</i>/{two} = {r}/{two} = <b>{f} cm</b></span>',
     rule_torch: 'আলোর উৎস F এ থাকলে আলো অবতল আয়নায় প্রতিফলিত হয়ে <b>সমান্তরাল বিম</b> হয়ে বের হয়। টর্চলাইট আর সার্চলাইটে তাই বাল্ব থাকে ফোকাস বিন্দুতে।',
@@ -209,6 +211,7 @@ export const STRINGS = {
     out_rays: 'The light meets at the <b>point F</b>',
     out_f: '<b>f = {f} cm</b>',
     out_wide: 'Middle rays <b>{a} cm</b>, edge rays <b>{b} cm</b>',
+    out_turned: 'The outer surface shines: a <b>convex mirror</b>',
     out_convex: 'The light <b>spreads</b>',
     out_parallel: 'Bulb at F: the beam is <b>parallel</b>',
     out_spread: 'Bulb inside F: the light <b>spreads</b>',
@@ -223,8 +226,8 @@ export const STRINGS = {
       'The distance from P to F is the <b>focal length f</b>. Change r: f is very nearly half of r.<span class="pvc-formula lab-sum"><i>f</i> = <i>r</i>/{two} = {r}/{two} = <b>{f} cm</b></span>',
     rule_wide:
       'Edge rays cross the axis a little before F. So f = r/{two} is <b>nearly true</b>: true when the mirror is much smaller than r, as most mirrors are.',
-    rule_convex:
-      'Coat the other surface, and light reflects from the outer, convex side: a <b>convex mirror</b>, like the back of a spoon. Parallel light spreads out.',
+    rule_turned: 'Coat the other surface, and light will reflect from the outer, convex side: a <b>convex mirror</b>, like the back of a spoon.',
+    rule_convex: 'On a convex mirror parallel light does not meet: it <b>spreads out</b>.',
     rule_virtual:
       'Extended backward, the rays seem to spread from one point: the <b>focus F</b>, behind the mirror. Here too f is very nearly half of r.<span class="pvc-formula lab-sum"><i>f</i> = <i>r</i>/{two} = {r}/{two} = <b>{f} cm</b></span>',
     rule_torch:

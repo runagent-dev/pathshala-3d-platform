@@ -85,9 +85,10 @@ body.bg-transparent { background: transparent; }
   .lab .pvc-q-options { gap: 3px; }
   .lab .pvc-q-feedback { --pvc-q-feedback-min: 3lh; font-size: 12.5px; line-height: 1.32; }
 }
-/* the tightest phone again: no corner of this view has room for the word beside the key labels, so the rotate cue is its 360° icon alone */
+/* the tightest phone again: no corner of this view has room for the words beside the key labels, so the rotate cue is its pill */
 @container pvc (max-width: 420px) and (max-height: 600px) {
-  .lab-orbit { padding: 0 3px; }
+  .lab .lab-orbit { left: 5px; top: 5px; height: 26px; gap: 2px; padding: 0 5px 0 3px; font-size: 12.5px; }
+  .lab .lab-orbit svg { width: 17px; height: 17px; }
   .lab-orbit-word { display: none; }
 }
 /* the side panel beside the 3D view (280–400 px wide; only it is a container with a height) */
@@ -135,11 +136,18 @@ body.bg-transparent { background: transparent; }
 .lab-dh.used .lab-dh-word { display: none; }
 .lab-dh-track { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
 .lab-dh-track path { fill: none; stroke-linecap: butt; stroke-dasharray: 7 6; }
-.lab-dh-track .halo { stroke: rgba(20, 30, 45, 0.6); stroke-width: 3.6; }
+.lab-dh-track .halo { stroke: rgba(14, 20, 30, 0.9); stroke-width: 4.8; }
 .lab-dh-track .dash { stroke: rgba(255, 255, 255, 0.95); stroke-width: 1.8; }
 
-/* the rotate cue: a word-and-icon pill in a corner of the view (never a disc on a part: that is a handle), then the icon alone */
-.lab-orbit { position: absolute; left: 8px; top: 8px; z-index: 2; display: flex; align-items: center; gap: 4px; height: 30px; padding: 0 9px 0 6px; box-sizing: border-box; border-radius: 6px; background: rgba(255, 255, 255, 0.92); color: #1864ab; font-size: 13px; font-weight: 600; line-height: 1; white-space: nowrap; pointer-events: none; transition: opacity 0.4s; }
-.lab-orbit svg { flex: none; width: 34px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.lab-orbit.used { padding: 0 3px; opacity: 0.62; }
+/* the front view: its own crosshair and its word (the kit's button is an arrow alone; this moves to the kit with #361) */
+.lab .pvc-corner .lab-front { width: auto; gap: 4px; padding: 0 9px 0 7px; font-size: 13.5px; font-weight: 600; white-space: nowrap; }
+.lab .pvc-corner .lab-front[hidden] { display: none; }
+.lab .pvc-corner .lab-front svg { flex: none; width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+
+/* the rotate cue: always a pill "⟲ ৩৬০°" in a corner (a disc on a part is a handle), with its words until the first turn */
+.lab-orbit { position: absolute; left: 8px; top: 8px; z-index: 2; display: flex; align-items: center; gap: 4px; height: 30px; padding: 0 9px 0 6px; box-sizing: border-box; border-radius: 6px; background: rgba(255, 255, 255, 0.94); color: #1864ab; font-size: 13.5px; font-weight: 600; line-height: 1; white-space: nowrap; pointer-events: none; transition: opacity 0.4s; }
+.lab-orbit svg { flex: none; width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.lab-orbit svg .fill { fill: currentColor; stroke: none; }
+.lab-orbit-word { color: var(--ink); font-weight: 500; }
+.lab-orbit.used { opacity: 0.86; }
 .lab-orbit.used .lab-orbit-word { display: none; }
