@@ -4,36 +4,58 @@
 import { expect, test } from '@playwright/test';
 import { openFigure, preparePage } from '../../../scripts/lib/export/driver.mjs';
 
-test('hill-road-mirror: the story, step by step', async ({ page }) => {
-  test.setTimeout(300_000);
-  await page.setViewportSize({ width: 800, height: 500 });
+// few pixels and a coarse virtual frame keep this quick in software rendering: the clock still runs the real seconds
+const FRAME_MS = 50;
+
+test('hill-road-mirror: the story, step by step, at its real pace', async ({ page }) => {
+  test.setTimeout(240_000);
+  await page.setViewportSize({ width: 480, height: 300 });
   const log = await preparePage(page);
   const fig = await openFigure(page, 'hill-road-mirror');
   const act = () => fig.frame.locator('.pvc-act').first().click();
   expect(await fig.call('get')).toMatchObject({ part: 0, mirror: 'none', framing: 'far', pip: false });
 
-  // slow on purpose: each step plays, holds, and waits for the next tap
+  // slow on purpose: each step is still playing at `playing` ms, ends by `done` ms, holds, and waits for the next tap
   const steps = [
-    { part: 1, ms: 6200, framing: 'wide', word: 'পৌঁছায় না' },
-    { part: 2, ms: 6600, framing: 'close', word: 'কোণে' },
-    { part: 3, ms: 7600, framing: 'wide', word: 'দেখা যাচ্ছে' },
-    { part: 4, ms: 5300, framing: 'close', word: '৪৫' },
-    { part: 5, ms: 5600, framing: 'wide', word: 'গাড়িটি দেখছেন' },
-    { part: 6, ms: 3800, framing: 'wide', word: 'চওড়া' },
+    { part: 1, playing: 4000, done: 6400, framing: 'wide', word: 'পৌঁছায় না', windows: 1 },
+    { part: 2, playing: 4500, done: 6800, framing: 'close', word: 'কোণে', windows: 0 },
+    { part: 3, playing: 5500, done: 7800, framing: 'wide', word: 'দেখা যাচ্ছে', windows: 1 },
+    { part: 4, playing: 3500, done: 5500, framing: 'close', word: '৪৫', windows: 0 },
+    { part: 5, playing: 3500, done: 5800, framing: 'wide', word: 'গাড়িটি দেখছেন', windows: 1 },
+    { part: 6, playing: 2500, done: 4000, framing: 'wide', word: 'চওড়া', windows: 2 },
   ];
-  for (const { part, ms, framing, word } of steps) {
+  for (const { part, playing, done, framing, word, windows } of steps) {
     await act();
-    await fig.advance(200);
+    await fig.advance(200, FRAME_MS);
     await expect(fig.frame.locator('.pvc-act').first()).toBeDisabled();
     await expect(fig.frame.locator('[data-act="replay"]').first()).toBeDisabled();
-    await fig.advance(ms);
+    // no step can be rushed: a second tap now changes nothing
+    await fig.advance(playing - 200, FRAME_MS);
+    expect(await fig.call('get')).toMatchObject({ part, busy: true });
+    await fig.advance(done - playing, FRAME_MS);
     expect(await fig.call('get')).toMatchObject({ part, framing, busy: false });
     await expect(fig.frame.locator('.pvc-outcome')).toContainText(word);
     await expect(fig.frame.locator('.pvc-act').first()).toBeEnabled();
-    await fig.advance(500);
+    await expect(fig.frame.locator('.hrm-pip:not([hidden])')).toHaveCount(windows);
+    // each step ends and waits for the student: nothing moves on by itself
+    await fig.advance(1000, FRAME_MS);
+    expect(await fig.call('get')).toMatchObject({ part, busy: false });
   }
+  expect(log.errors).toEqual([]);
+});
+
+test('hill-road-mirror: the last step: both mirrors, the offer of the test, and seeing it again', async ({ page }) => {
+  test.setTimeout(180_000);
+  await page.setViewportSize({ width: 480, height: 300 });
+  const log = await preparePage(page);
+  const fig = await openFigure(page, 'hill-road-mirror');
+  await fig.call('set', { part: 5, animate: false });
+  await fig.advance(300, FRAME_MS);
+  await expect(fig.frame.locator('.hrm-offer')).toBeHidden();
+  await fig.frame.locator('.pvc-act').first().click();
+  await fig.advance(4200, FRAME_MS);
   const st = await fig.call('get');
-  expect(st).toMatchObject({ part: 6, mirror: 'convex', who: 'car', blocked: true });
+  expect(st).toMatchObject({ part: 6, mirror: 'convex', who: 'car', blocked: true, busy: false });
   expect(st.fieldAngle).toBeGreaterThan(20);
   expect(st.magnification).toBeLessThan(0.25);
   // side by side: the same bus in both mirrors, and the test is offered now, not before
@@ -42,10 +64,10 @@ test('hill-road-mirror: the story, step by step', async ({ page }) => {
 
   // the step just finished, once more: it plays from the picture before it, and nothing else moves on
   await fig.frame.locator('[data-act="replay"]').first().click();
-  await fig.advance(300);
+  await fig.advance(300, FRAME_MS);
   expect(await fig.call('get')).toMatchObject({ part: 6, busy: true });
   await expect(fig.frame.locator('.hrm-offer')).toBeHidden();
-  await fig.advance(4000);
+  await fig.advance(4200, FRAME_MS);
   expect(await fig.call('get')).toMatchObject({ part: 6, mirror: 'convex', busy: false });
 
   await fig.call('reset');

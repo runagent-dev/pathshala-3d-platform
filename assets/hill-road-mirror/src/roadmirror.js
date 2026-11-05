@@ -207,6 +207,9 @@ export function createMirror({ stage }) {
      * centre; proxy: the other vehicle, rays are followed to the plane through it.
      */
     aim(eye, aim, proxy) {
+      // only a move of the vehicles or a change of eye makes the pictures old: a camera flight or a ray growing does not
+      const same = (a, b) => a.x === b.x && a.y === b.y && a.z === b.z;
+      if (plan && same(plan.eye, eye) && same(plan.aim, aim) && same(plan.proxy, proxy)) return;
       plan = { eye, aim, proxy };
       pics.plane.stale = pics.convex.stale = true;
     },

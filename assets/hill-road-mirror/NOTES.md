@@ -80,7 +80,8 @@ drawn over the scene, so from behind the hill they show through it: they are a d
 One terrain mesh (fine at the bend, opening out to the ridges), road and rail ribbons, instanced posts, sky, mirror, and two
 draws per vehicle (body with vertex colours, glass). No textures but a 256 px detail tile and a 512 px sky, and two 512 px
 pictures of the road; rock and road paint are per pixel. Up to five passes when something moves in the last step (two
-pictures, the main view, two windows), far fewer otherwise, and none when nothing changes.
+pictures, the main view, two windows), three while only the camera or a drawing moves (the pictures are kept until a
+vehicle or the eye moves), and none when nothing changes.
 
 ## Terms (as in the book)
 পাহাড়ি রাস্তা, অদৃশ্য বাঁক, সমকোণে বাঁক, খাদ, 45° কোণে, সমতল আয়না, উত্তল আয়না, যানবাহন, নিরাপদ; from the chapter: আপতিত রশ্মি, প্রতিফলিত
