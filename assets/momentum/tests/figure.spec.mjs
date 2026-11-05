@@ -39,7 +39,7 @@ test('momentum: the run ends with the truckâ€™s car shoved metres, the bicycleâ€
   await fig.call('set', { play: true });
   await fig.advance(400);
   expect(await fig.call('get')).toMatchObject({ phase: 'moving', playing: true });
-  await fig.advance(3000);
+  await fig.advance(12000); // the run is shown 3 times slower, with a pause at the impact
   const end = await fig.call('get');
   expect(end).toMatchObject({ phase: 'done', playing: false });
   expect(end.moved.truck).toBeGreaterThan(1.5);

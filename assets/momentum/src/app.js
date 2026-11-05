@@ -18,7 +18,7 @@ import { createTweener, ease } from '@shared/tween.js';
 import { createBoldArrow } from './arrow.js';
 import { frontFit, frontPose, screenU, spherePose } from './camera.js';
 import { CAR, createCar } from './car.js';
-import { createI18n } from './i18n.js';
+import { createI18n, vec } from './i18n.js';
 import { BIKE, createCyclist, createRunner } from './people.js';
 import {
   about,
@@ -41,6 +41,9 @@ import {
 import { blobShadow, createStreet, LANES, skyTexture } from './street.js';
 import { createTruck, TRUCK } from './truck.js';
 
+const P_SYM = vec('p');
+const SLOW = 3; // the run is shown this many times slower than real
+const HOLD = 1.2; // s on the screen the run holds still at the moment of the impact
 export const DEFAULTS = {
   speed: SPEED.start, // m/s, the same for the truck and the bicycle
   dir: 'right', // 'right' | 'left': the way they go (to the right is positive)
@@ -95,8 +98,13 @@ export function createApp(root, options = {}) {
   root.dataset.ui = 'simple';
   root.lang = t.lang;
   root.tabIndex = 0;
+  // one vehicle: its name, p⃗ = m × v⃗ = … with the units, and its momentum as an arrow to scale (the truck's fills the
+  // width, the bicycle's is 125 times shorter)
   const row = (id, name) =>
-    `<tr data-row="${id}"><th scope="row">${t(name)}</th><td class="c-p"><b data-v="p"></b></td><td class="op">=</td><td class="c-m"><b data-v="m"></b></td><td class="op">×</td><td class="c-v"><b data-v="v"></b></td></tr>`;
+    `<div class="mo-eq-row" data-row="${id}"><span class="mo-eq-name">${t(name)}</span>` +
+    `<span class="mo-eq-sum"><span class="mo-eq-part"><span class="c-p mo-eq-sym">${P_SYM}</span><i>=</i><span class="mo-eq-m"><b data-v="m"></b><small>${t('u_m')}</small></span><i>×</i><span class="c-v mo-eq-v"><span class="mo-paren">(</span><b data-v="v"></b><small>${t('u_v')}</small><span class="mo-paren">)</span></span></span>` +
+    `<span class="mo-eq-part"><i>=</i><span class="c-p mo-eq-p"><b data-v="p"></b><small>${t('u_p')}</small></span></span></span>` +
+    `<span class="mo-pbar" aria-hidden="true"><span class="mo-pbar-a"><i></i><svg viewBox="0 0 10 12"><path d="M0 0L10 6L0 12z"/></svg></span>${id === 'near' ? `<small class="mo-pbar-note">${t('bar_note', { r: MASS.truck / MASS.bike })}</small>` : ''}</span></div>`;
   const ui = buildStudentShell(root, t, {
     layout: 'side',
     learnAlign: 'start',
@@ -113,15 +121,19 @@ export function createApp(root, options = {}) {
             <button class="pvc-btn primary" data-act="play">${ICONS.play}<span></span></button>
             <button class="pvc-btn" data-act="flip">${FLIP_ICON}<span>${t('act_flip')}</span></button>
           </div>
-          <table class="mo-tab">
-            <thead><tr><td class="mo-cap"><span>${t('at_hit')}</span></td><th class="c-p">${t('col_p')}<small>${t('u_p')}</small></th><td class="op">=</td><th class="c-m">${t('col_m')}<small>${t('u_m')}</small></th><td class="op">×</td><th class="c-v">${t('col_v')}<small>${t('u_v')}</small></th></tr></thead>
-            <tbody>${row('far', 'name_truck')}${row('near', 'name_bike')}</tbody>
-          </table>
-          <p class="mo-idea"><span>${t('idea')}</span><span class="mo-formula">${t('formula')}</span></p>
+          <div class="mo-eq">
+            <div class="mo-eq-head"><span class="mo-idea">${t('idea')}</span><span class="mo-formula">${t('formula')}</span><span class="mo-cap">${t('at_hit')}</span></div>
+            ${row('far', 'name_truck')}${row('near', 'name_bike')}
+          </div>
           <p class="mo-say"></p>
           <p class="mo-box"><span>${t('box_unit')}</span><span class="mo-dot" aria-hidden="true">·</span><span>${t('box_dim')}</span></p>`,
   });
   const $ = ui.$;
+  // the note that the run is slowed down, on the picture (top left; the corner buttons are top right)
+  const slowBadge = document.createElement('div');
+  slowBadge.className = 'mo-slow';
+  slowBadge.textContent = t('slow', { k: SLOW });
+  ui.stage.append(slowBadge);
   const el = {
     speed: $('.mo-step-v'),
     slower: $('[data-act="slower"]'),
@@ -130,6 +142,7 @@ export function createApp(root, options = {}) {
     cap: $('.mo-cap'),
     play: $('[data-act="play"]'),
     playLabel: $('[data-act="play"] span'),
+    rowEls: Object.fromEntries(LANE_IDS.map((id) => [id, $(`[data-row="${id}"]`)])),
     rows: Object.fromEntries(
       LANE_IDS.map((id) => [id, Object.fromEntries(['p', 'm', 'v'].map((k) => [k, $(`[data-row="${id}"] [data-v="${k}"]`)]))]),
     ),
@@ -353,7 +366,21 @@ export function createApp(root, options = {}) {
     s.plans = { far: crashPlan('truck', s.speed), near: crashPlan('bike', s.speed) };
     s.tEnd = Math.max(s.plans.far.tEnd, s.plans.near.tEnd);
   }
-  const runTime = () => (s.playing ? Math.min(s.tEnd, (now() - s.t0) / 1000) : s.t);
+  // The run is shown SLOW times slower than real (a real run lasts about 2 s, too quick to follow), and it holds
+  // still for HOLD s on the screen at the moment of the impact, so the student sees what hits what before the shove.
+  /** Run time (s) → screen time since t0 (s). */
+  const screenOf = (time) => {
+    const hit = s.plans.far.tHit;
+    return time * SLOW + (time > hit + 1e-9 ? HOLD : 0);
+  };
+  /** Screen time since t0 (s) → run time (s). */
+  const timeOf = (sc) => {
+    const hit = s.plans.far.tHit;
+    if (sc < hit * SLOW) return sc / SLOW;
+    if (sc < hit * SLOW + HOLD) return hit;
+    return (sc - HOLD) / SLOW;
+  };
+  const runTime = () => (s.playing ? Math.min(s.tEnd, timeOf((now() - s.t0) / 1000)) : s.t);
   /** A place along the lane (0 = the parked car's end that is hit, the vehicles come from below 0) → world x. */
   const sx = (v) => (s.dir > 0 ? v : CAR.length - v);
   const phaseAt = (time) => {
@@ -428,7 +455,12 @@ export function createApp(root, options = {}) {
       el.rows[id].p.textContent = F(momentum(m, v));
       el.rows[id].m.textContent = F(m);
       el.rows[id].v.textContent = N(plain(v));
+      // the momentum arrow to scale: the truck's the full width, the bicycle's 1/125 of it (never under a few px)
+      const row = el.rowEls[id];
+      row.classList.toggle('neg', v < 0);
+      row.style.setProperty('--pk', String(m / MASS.truck));
     }
+    slowBadge.hidden = s.scene !== 'run';
     el.say.innerHTML = sayLine();
     // from the impact on the vehicles slow down and stop: the table is the momentum they hit with
     el.cap.classList.toggle('on', s.scene === 'run' && (s.phase === 'crash' || s.phase === 'done'));
@@ -467,7 +499,7 @@ export function createApp(root, options = {}) {
   }
 
   // ── labels on the scene ─────────────────────────────────────────────────────
-  const anno = createAnnotations({ stage, layer: ui.annoLayer, avoid: [ui.corner, ui.hint] });
+  const anno = createAnnotations({ stage, layer: ui.annoLayer, avoid: [ui.corner, ui.hint, slowBadge] });
   const P3 = new THREE.Vector3();
   function toScreen(p) {
     P3.copy(p).project(camera);
@@ -795,7 +827,7 @@ export function createApp(root, options = {}) {
     lastPlay = now();
     if (s.playing) return;
     if (s.phase === 'done') showRunAt(0);
-    s.t0 = now() - s.t * 1000;
+    s.t0 = now() - screenOf(s.t) * 1000;
     s.playing = true;
     audio.unlock();
     if (!quiet) {
@@ -1360,7 +1392,7 @@ export function createApp(root, options = {}) {
       t,
       loupe: null,
       tweener,
-      avoid: [ui.corner, ui.hint],
+      avoid: [ui.corner, ui.hint, slowBadge],
       object: {
         label: 'coach_tap',
         candidates: () => {
