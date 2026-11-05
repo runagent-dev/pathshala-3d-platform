@@ -1,0 +1,103 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "light-spectrum",
+  "title": "Light and its spectrum (আলোর প্রকৃতি)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 212,
+  "topic": "8.1",
+  "placement": "Book page 212, topic 8.1 আলোর প্রকৃতি: next to চিত্র ৮.০১ (the spectrum and the eye's sensitivity) and the নিজে করো on page 213 (a CD in sunlight).",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "cm",
+  "description": "Interactive 3D figure for the nature of light, book page 212, topic 8.1, next to চিত্র ৮.০১ and the নিজে করো on page 213. A real CD in a stand throws sunlight on a white wall: a white patch and, past it, the whole spectrum, by the grating equation in 3D with tracks 1.6 µm apart. The student sees the disc's fine grooves, then drags a marker along the band: it names the colour, gives the wavelength, carries the wave and reads the eye's sensitivity on the book's curve (CIE V(λ)) in the panel. Past 400 nm and 700 nm the wall shows nothing, though ultraviolet and infrared light land there; a bar of all the wavelengths shows how small the visible band is. Five test questions on the picture. Offline, Bangla and English.",
+  "tags": [
+    "light",
+    "spectrum",
+    "wavelength",
+    "electromagnetic-wave",
+    "grating",
+    "cd",
+    "eye-sensitivity",
+    "ultraviolet",
+    "infrared",
+    "bangla"
+  ],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "show",
+      "label": "What is shown",
+      "type": "select",
+      "options": [
+        ["none", "the disc and the wall"],
+        ["light", "the spectrum on the wall"],
+        ["grooves", "the grooves"],
+        ["wave", "the marker and the wave"],
+        ["all", "all steps done"]
+      ],
+      "default": "none"
+    },
+    {
+      "name": "nm",
+      "label": "Wavelength on the marker (nm)",
+      "type": "number",
+      "default": "550",
+      "placeholder": "330 to 800"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on the part pulses at first", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "show": "wave", "nm": 550, "animate": false } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "view", "dragstart", "dragend", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": { "params": { "coach": "0", "show": "light" } },
+    "glb": [{ "name": "default" }],
+    "video": {
+      "kind": "script",
+      "seconds": 22,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 1, "command": "set", "payload": { "show": "light" } },
+        { "at": 6, "command": "set", "payload": { "show": "grooves" } },
+        { "at": 10, "command": "set", "payload": { "show": "wave", "nm": 450, "animate": false } },
+        { "at": 12, "command": "set", "payload": { "nm": 530 } },
+        { "at": 14, "command": "set", "payload": { "nm": 650 } },
+        { "at": 17, "command": "set", "payload": { "nm": 760 } }
+      ]
+    }
+  }
+}
