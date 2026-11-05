@@ -74,6 +74,17 @@ test('the drawing: the refracted ray bends toward the normal and ends at the bot
   }
 });
 
+test('the drawing: the pattern he sees lies on his sight line through the glass', () => {
+  for (const a of STOPS) {
+    const g = points(a);
+    assert.equal(g.under.x, -g.inside.x);
+    assert.equal(g.under.y, g.inside.y);
+    const inside = (Math.atan2(g.under.x - g.hit.x, g.hit.y - g.under.y) * 180) / Math.PI;
+    assert.ok(Math.abs(inside - refractedAngle(a)) < 1e-6, 'it leaves the glass toward his eye at the angle of incidence');
+    assert.ok(Math.abs(g.under.x) < GLASS.card, 'on the printed card');
+  }
+});
+
 test('the glass stays below the eye and within the bench', () => {
   assert.ok(planeFor(MAX_ANGLE) < EYE_Y);
   assert.ok(planeFor(MIN_ANGLE) - GLASS.thick > 3);

@@ -5,7 +5,9 @@
 
 export const SPAN = 20; // half the distance from the eye to the flower, cm
 export const EYE_Y = 46; // the height of the eye and the flower above the bench, cm
-export const GLASS = { halfX: 13, halfZ: 13, thick: 3 }; // the glass slab: 26 × 26 × 3 cm
+// The glass: 32 × 32 cm, and 4 cm thick where a real sheet would be about 1 cm, so that it reads as glass on a phone (NOTES.md).
+// card: half the side of the printed card stuck under it; gap: the rubber feet between it and the jack's plate.
+export const GLASS = { halfX: 16, halfZ: 16, thick: 4, card: 11, gap: 1.4 };
 export const N_GLASS = 1.5; // ordinary glass; air is taken as 1
 export const MIN_ANGLE = 30;
 export const MAX_ANGLE = 87;
@@ -47,7 +49,10 @@ export const exactAngle = (y) => deg(Math.atan2(SPAN, Math.max(1e-3, EYE_Y - y))
 /** The same in whole degrees, for a drag: the numbers shown stay exact. */
 export const angleFor = (y) => clampAngle(Math.round(exactAngle(y)));
 
-/** Every point of the drawing at angle theta. `inside`: where the refracted ray reaches the bottom of the slab. */
+/**
+ * Every point of the drawing at angle theta. `inside`: where the flower's refracted ray reaches the bottom of the slab.
+ * `under`: the point of the pattern the boy sees at the point of incidence, the same ray on his sight's side of the normal.
+ */
 export function points(theta) {
   const a = clampAngle(theta);
   const y = planeFor(a);
@@ -60,6 +65,7 @@ export function points(theta) {
     flower: { x: SPAN, y: EYE_Y, z: 0 },
     hit: { x: 0, y, z: 0 },
     inside: { x: -GLASS.thick * Math.tan(rad(r)), y: y - GLASS.thick, z: 0 },
+    under: { x: GLASS.thick * Math.tan(rad(r)), y: y - GLASS.thick, z: 0 },
     top: { x: 0, y: EYE_Y + 13, z: 0 }, // the top of the normal
   };
 }

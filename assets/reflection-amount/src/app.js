@@ -4,6 +4,9 @@
 // and what goes in, each as thick as the light it carries, a small picture shows what he really sees (the pattern under the glass
 // fading and the flower coming up in it, by Fresnel's equations for each pixel) and a graph in the panel follows. The panel is
 // the kit's clean sheet: one action, one result, one rule.
+//
+// The story comes first, one idea to a tap, and nothing moves on by itself: 0 the glass; 1 he looks and sees the pattern through it
+// (প্রতিসরণ); 2 the glass rises and the flower comes up in it (প্রতিফলন); 3 the two angles; 4 how much, in numbers, at each stop.
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
 import { createAction } from '@shared/student/action.js';
@@ -38,7 +41,8 @@ import {
 import { createSetting } from './scene.js';
 
 export const DEFAULTS = {
-  angle: START_ANGLE, // the angle of incidence, degrees
+  angle: START_ANGLE, // the angle of incidence, degrees (any other than the first opens the last step)
+  step: 0, // the step of the story to open at, 0 to 4
   view: 'front', // 'front' | '3d'
   mode: 'explore', // 'explore' | 'quiz'
   coach: true, // the numbered ring pulses at first
@@ -52,15 +56,25 @@ const BOOK = { low: 4, high: 5, a: 80, b: 90 }; // the book's numbers
 const MARGINS = { top: 10, bottom: 8, side: 8 };
 const LIFT_FROM = 50; // the test's question on lifting the glass starts at this angle
 const INK = { ray: '#8a4f00', ti: '#1971c2', tr: '#2b8a3e', dark: '#2b3a4a' };
-const VIEW = { az: 20, elLow: 15, elHigh: 10 }; // lower as the glass comes up, so that its top keeps reading as a mirror
+const VIEW = { az: 24, elLow: 21, elHigh: 12 }; // lower as the glass comes up, so that its top keeps reading as a mirror
+const RAISED = 85; // where the story's lift ends: the flower is plain to see
+const LAST = 4; // the last step
+const FLY = 1.9; // a camera flight, s
+const RISE = 3; // the story's lift, s
+const MOVE = 2.4; // the glass from stop to stop, s
+const HOLD = 1; // a pause on a result before the student can go on, s
+const QUIZ_MOVE = 1.2; // the camera and the glass going to a test question, s
+const TAP_SLOP = 8; // px: a finger that moves less has tapped, not turned the view
+const FAR = 340;
 const dirFrom = (az, el, out = new THREE.Vector3()) => {
   const a = THREE.MathUtils.degToRad(az);
   const e = THREE.MathUtils.degToRad(el);
   return out.set(Math.sin(a) * Math.cos(e), Math.sin(e), Math.cos(a) * Math.cos(e));
 };
-// the frame follows the glass: from its underside to above the boy's head, so that the view closes in as the glass comes up.
+// the frame follows the glass: from under the jack's plate to above the boy's head, so that the view closes in as the glass comes up.
 // The flower is whole in it; the back of the boy's head may leave the left edge.
 const FRAME = new THREE.Box3(new THREE.Vector3(-31, 0, -4), new THREE.Vector3(35, EYE_Y + 13.5, 4));
+const STORY_ARROW = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1v9M2.5 6.5 6 10l3.5-3.5"/></svg>';
 
 export function createApp(root, options = {}) {
   const o = { ...DEFAULTS, ...options };
@@ -73,12 +87,13 @@ export function createApp(root, options = {}) {
   root.tabIndex = 0;
 
   // ── the shell: the sheet of one action, one result, one rule ────────────────────────────────────────────
-  const stopId = (a) => `a${a}`;
+  // four words: the steps of the story, and in the last step the four stops, each with its percent
+  const wordId = (i) => `w${i}`;
   const ui = buildStudentShell(root, t, {
     layout: 'side',
     learn: cleanSheet(t, {
-      examples: { label: 'ex_label', results: true, items: STOPS.map((a) => ({ id: stopId(a), label: `${t.num(a)}°` })) },
-      quiet: [{ act: 'home', label: 'act_home', icon: ICONS.reset }],
+      examples: { label: 'ex_steps', results: true, items: STOPS.map((_, i) => ({ id: wordId(i), label: `w_${i}` })) },
+      quiet: [{ act: 'replay', label: 'act_replay', icon: ICONS.play }],
       lines: { action: 1, outcome: 1, rule: 4 },
     }),
     learnAlign: 'start',
@@ -96,24 +111,48 @@ export function createApp(root, options = {}) {
   note.textContent = t('note_rays');
   ui.stage.appendChild(note);
 
-  // the small picture of what he sees
+  // the picture of what he sees, with what is in it pointed out
   const eyeBox = document.createElement('figure');
-  eyeBox.className = 'ra-eye';
-  eyeBox.innerHTML = `<canvas></canvas><figcaption>${ICONS.eye}<span>${t('l_eye')}</span></figcaption>`;
+  eyeBox.className = 'ra-eye off';
+  eyeBox.innerHTML = `<div class="ra-eye-pic"><canvas></canvas><span class="ra-tag ra-tag-image" hidden>${t('l_image')}${STORY_ARROW}</span><span class="ra-tag ra-tag-pattern" hidden>${STORY_ARROW}${t('l_pattern')}</span></div><figcaption>${ICONS.eye}<span>${t('l_eye')}</span></figcaption>`;
   ui.stage.appendChild(eyeBox);
   const eyeCanvas = eyeBox.querySelector('canvas');
   const eyeCtx = eyeCanvas.getContext('2d');
+  const tagImage = /** @type {HTMLElement} */ (eyeBox.querySelector('.ra-tag-image'));
+  const tagPattern = /** @type {HTMLElement} */ (eyeBox.querySelector('.ra-tag-pattern'));
+
+  // the handle on the glass: always there while it can be moved, so that nobody has to guess. A finger on it moves the glass.
+  const handle = document.createElement('div');
+  handle.className = 'lab-handle';
+  handle.hidden = true;
+  handle.innerHTML = `<i class="lab-hd"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M12 3 7 8M12 3l5 5M12 21l-5-5M12 21l5-5"/></svg></i><span class="lab-hl">${t('l_drag')}</span>`;
+  ui.stage.appendChild(handle);
+
+  // the sign that the view turns: nothing like the handle (a dark tab in a corner, not a white disc on a part)
+  const turn = document.createElement('div');
+  turn.className = 'lab-turn';
+  turn.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 1 0 2.4-5.5"/><path d="M4 3.5v4.6h4.6"/></svg><b>${t.num(360)}°</b><span>${t('view_rotate')}</span>`;
+  ui.stage.appendChild(turn);
+  // back to the guided view: a target and its word. A plain circular arrow means one thing only: start again
+  const frontButton = ui.$('[data-view="front"]');
+  if (frontButton) {
+    frontButton.classList.remove('icon-only');
+    frontButton.classList.add('lab-front');
+    frontButton.innerHTML = `${ICONS.target}<span>${t('view_front_short')}</span>`;
+  }
 
   // ── 3D ──────────────────────────────────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 18, near: 10, far: 1200, environmentIntensity: 0.7 });
   const { camera, controls } = stage;
   camera.layers.enable(1); // the boy: not in the view from his own eye
   controls.enablePan = false;
-  controls.enableZoom = false;
-  controls.minPolarAngle = THREE.MathUtils.degToRad(55);
-  controls.maxPolarAngle = THREE.MathUtils.degToRad(84);
-  controls.minAzimuthAngle = THREE.MathUtils.degToRad(-35);
-  controls.maxAzimuthAngle = THREE.MathUtils.degToRad(55);
+  controls.enableZoom = true;
+  controls.minDistance = 70;
+  controls.maxDistance = FAR; // and further if the guided view of a narrow frame needs it: poseNow()
+  controls.minPolarAngle = THREE.MathUtils.degToRad(5);
+  controls.maxPolarAngle = THREE.MathUtils.degToRad(88); // never under the bench
+  controls.minAzimuthAngle = Number.NEGATIVE_INFINITY;
+  controls.maxAzimuthAngle = Number.POSITIVE_INFINITY;
   const setting = createSetting({ stage, shadow: Boolean(o.shadow) });
   const rays = createRays({ stage, host: ui.canvasHost });
 
@@ -121,7 +160,13 @@ export function createApp(root, options = {}) {
   const s = {
     angle: clampAngle(o.angle), // while it moves it is not a whole number; what is shown is
     seen: new Set(), // the stops the student has reached
+    stage: 0, // the step of the story
+    shot: 'start', // the guided framing
+    dragged: false, // the student has moved the glass: the handle calms down
+    beat: 0, // the angle step's names: 1 the rays, 2 the angles too
+    orbited: false, // the student has turned the view: its sign calms down
     busy: false,
+    holding: false, // the pause at the end of a move: its labels are up, taps still wait
     mode: 'explore',
     locked: false,
     view: o.view === '3d' ? '3d' : 'front',
@@ -141,33 +186,71 @@ export function createApp(root, options = {}) {
   // ── what the 3D shows, from the state ──────────────────────────────────────────────────────────────────
   const shown = () => Math.round(s.angle);
   let eyeDirty = true;
+  let eyeOn = false;
   const markPoint = new THREE.Vector3();
   function setAngle(angle) {
     s.angle = clampAngle(angle);
     const g = setting.place(s.angle);
     rays.view.geo = g;
     rays.view.r = percent(shown()) / 100;
-    markPoint.set(9, g.plane - GLASS.thick - 0.6, 11); // on the jack's plate, clear of the rays
+    markPoint.set(-3, g.plane - 1, GLASS.halfZ); // on the glass's front edge, clear of the rays and the picture
     eyeDirty = true;
-    for (const a of STOPS) if (Math.abs(s.angle - a) < 0.26 && !s.quiz) s.seen.add(a);
+    if (!s.busy) markSeen();
+  }
+  /** A stop counts when the glass rests on it, not as it goes past. */
+  function markSeen() {
+    if (s.stage === LAST && !s.quiz) for (const a of STOPS) if (Math.abs(s.angle - a) < 0.26) s.seen.add(a);
+  }
+  /** What each step has on the view when it has ended. */
+  function settle(n) {
+    const v = rays.view;
+    v.through = n === 1 || n === 2 ? 1 : 0;
+    v.flower = n >= 2 ? 1 : 0;
+    v.normal = v.arcs = n >= 3 ? 1 : 0;
+    v.refracted = n === LAST ? 1 : 0;
+    v.guide = n === 2;
+    s.beat = n === 3 ? 2 : 0;
+    showEye(n >= 1, n === 1 || n === 2);
+    eyeBox.classList.toggle('look', n === 2);
+    s.shot = ['start', 'through', 'follow', 'angle', 'follow'][n];
   }
 
   const stopRun = () => {
     ++token;
-    tweener.cancel('lift');
-    s.busy = false;
+    for (const key of ['lift', 'step', 'ray']) tweener.cancel(key);
+    s.busy = s.holding = false;
   };
-
-  /** The glass goes to an angle, at a steady speed up the jack. */
-  async function lift(to, { duration = 1.3 } = {}) {
-    stopRun();
-    const my = token;
-    s.busy = true;
-    clearAll();
-    draw();
+  /** Waits; false if something else has taken over meanwhile. */
+  const hold = async (seconds, my) => {
+    s.holding = true;
+    stage.invalidate();
+    await tweener.animate({ key: 'step', duration: seconds }).finished;
+    if (my !== token) return false;
+    s.holding = false;
+    return true;
+  };
+  /** One part of the drawing comes in, or goes. */
+  async function bring(part, to, seconds, my) {
+    const from = rays.view[part];
+    await tweener.animate({
+      key: 'ray',
+      duration: seconds,
+      ease: ease.inOutSine,
+      onUpdate: (k) => {
+        if (my !== token) return;
+        rays.view[part] = from + (to - from) * k;
+        stage.invalidate();
+      },
+    }).finished;
+    if (my !== token) return false;
+    rays.view[part] = to;
+    return true;
+  }
+  /** The glass goes to an angle at a steady speed up the jack. */
+  async function glide(to, duration, my) {
     const from = planeFor(s.angle);
     const end = planeFor(to);
-    const done = await tweener.animate({
+    await tweener.animate({
       key: 'lift',
       duration,
       ease: ease.inOutSine,
@@ -179,12 +262,96 @@ export function createApp(root, options = {}) {
     }).finished;
     if (my !== token) return false;
     setAngle(to);
-    s.busy = false;
+    markSeen();
     audio.tick();
-    if (done && !s.quiz && !nextStop(s.angle)) audio.success();
+    draw();
+    return true;
+  }
+
+  /** The glass goes to an angle, and the student has a moment on the result. */
+  async function lift(to, { duration = MOVE, pause = HOLD } = {}) {
+    stopRun();
+    const my = token;
+    s.busy = true;
+    clearAll();
+    draw();
+    if (!(await glide(to, duration, my))) return false;
+    if (pause && !(await hold(pause, my))) return false;
+    s.busy = false;
+    if (!s.quiz && !nextStop(s.angle)) audio.success();
     draw();
     emitChange();
     return true;
+  }
+
+  // ── the story: each step from where the one before it ended, and then it waits for the student ──────────
+  const RUN = {
+    async 1(my) {
+      if (s.angle !== START_ANGLE && !(await glide(START_ANGLE, MOVE, my))) return false;
+      s.shot = 'through';
+      await fly(FLY);
+      if (my !== token) return false;
+      if (!(await bring('through', 1, 2, my))) return false;
+      showEye(true, true);
+      return true;
+    },
+    async 2(my) {
+      if (s.angle !== START_ANGLE && !(await glide(START_ANGLE, MOVE, my))) return false;
+      showEye(true, true);
+      eyeBox.classList.add('look'); // the flower's image lies past the far edge from outside: it is in this picture that one sees it
+      if (!(await bring('flower', 1, 1.2, my))) return false;
+      rays.view.guide = true;
+      s.shot = 'follow';
+      fly(RISE);
+      return glide(RAISED, RISE, my);
+    },
+    async 3(my) {
+      if (s.angle !== RAISED && !(await glide(RAISED, MOVE, my))) return false;
+      rays.view.guide = false;
+      if (!(await bring('through', 0, 0.8, my))) return false;
+      s.shot = 'angle';
+      await fly(FLY);
+      if (my !== token) return false;
+      if (!(await bring('normal', 1, 1, my))) return false;
+      // two beats: first what the rays are called, then the angles between them
+      s.beat = 1;
+      if (!(await hold(1.2, my))) return false;
+      if (!(await bring('arcs', 1, 1.4, my))) return false;
+      s.beat = 2;
+      return true;
+    },
+    async 4(my) {
+      s.shot = 'follow';
+      fly(MOVE);
+      if (!(await glide(START_ANGLE, MOVE, my))) return false;
+      return bring('refracted', 1, 1, my);
+    },
+  };
+  /** Plays a step. While it plays a tap does nothing; at its end nothing moves on until the student does. */
+  async function play(n) {
+    stopRun();
+    const my = token;
+    s.busy = true;
+    if (n === LAST) s.seen.clear();
+    settle(n - 1);
+    s.stage = n;
+    clearAll();
+    draw();
+    if (!(await RUN[n](my))) return false;
+    if (!(await hold(HOLD, my))) return false;
+    settle(n);
+    s.busy = false;
+    draw();
+    emitChange();
+    return true;
+  }
+  /** A step as it stands at its end, at once (the book's commands, and coming back from the test). */
+  function jump(n, angle = n === 0 || n === 1 || n === LAST ? START_ANGLE : RAISED) {
+    stopRun();
+    s.stage = n;
+    settle(n);
+    clearAll();
+    setAngle(angle);
   }
 
   // ── camera ─────────────────────────────────────────────────────────────────────────────────────────────
@@ -194,13 +361,25 @@ export function createApp(root, options = {}) {
   function poseNow() {
     const at = s.quiz?.frameAngle ?? s.angle;
     const k = (at - MIN_ANGLE) / (MAX_ANGLE - MIN_ANGLE);
+    const side = root.clientWidth >= root.clientHeight;
     dirFrom(VIEW.az, VIEW.elLow + (VIEW.elHigh - VIEW.elLow) * k, camDir);
-    FRAME.min.y = planeFor(at) - 10;
-    // beside the panel its tab lies on the view's right edge, so the flower stays clear of it
-    FRAME.max.x = root.clientWidth >= root.clientHeight ? 39 : 35;
-    // high up the glass leaves room below: the picture from his eye goes there, under the flower
-    MARGINS.bottom = 8 + 0.2 * stage.height * k;
-    return fitPose({ box: FRAME, dir: camDir, camera, width: stage.width, height: stage.height, margin: MARGINS });
+    const shot = s.quiz ? 'follow' : s.shot;
+    const plane = planeFor(at);
+    MARGINS.bottom = 8;
+    if (shot === 'angle') {
+      // the point of incidence: the two arcs and the rays near it fill the view
+      FRAME.min.set(-22, plane - GLASS.thick - 4, -4);
+      FRAME.max.set(24, Math.max(EYE_Y + 3, plane + 16), 4);
+    } else {
+      FRAME.min.set(-31, plane - GLASS.thick - 7, -4);
+      FRAME.max.set(side ? 39 : 35, EYE_Y + 13.5, 4); // beside the panel its tab lies on the view's right edge
+      if (shot === 'through') FRAME.min.x = -27;
+      // the picture from his eye sits at the bottom right, under the flower
+      if (eyeOn && shot !== 'start') MARGINS.bottom = 8 + (side ? 0.14 : 0.1) * stage.height;
+    }
+    const pose = fitPose({ box: FRAME, dir: camDir, camera, width: stage.width, height: stage.height, margin: MARGINS });
+    controls.maxDistance = Math.max(FAR, pose.position.distanceTo(pose.target) * 1.25);
+    return pose;
   }
   function applyCamera() {
     if (s.userMovedCamera) return;
@@ -215,10 +394,11 @@ export function createApp(root, options = {}) {
     }
     controls.update();
   }
-  function fly(duration = 0.8) {
+  function fly(duration = FLY) {
     if (s.userMovedCamera) {
       s.userMovedCamera = false;
       s.view = 'front';
+      clearAll();
       syncUI();
     }
     camFrom = { position: camera.position.clone(), target: controls.target.clone() };
@@ -239,30 +419,46 @@ export function createApp(root, options = {}) {
   function setView(view, { animate = true } = {}) {
     s.view = view === '3d' ? '3d' : 'front';
     s.userMovedCamera = false;
+    clearAll();
     syncUI();
-    if (animate) fly(0.8);
+    if (animate) fly();
     else camK = 1;
     stage.invalidate();
   }
-  controls.addEventListener('start', () => {
+  // the view turns at the first real movement: a tap (under 8 px) stays a tap
+  function orbiting() {
+    if (s.userMovedCamera) return;
     s.userMovedCamera = true;
     tweener.cancel('camera');
     camK = 1;
+    clearAll(); // off the guided view a label gives way rather than cover something: see label()
+    if (!s.orbited) {
+      s.orbited = true;
+      turn.classList.add('used');
+    }
     if (s.view !== '3d') {
       s.view = '3d';
       syncUI();
       emit('view', { view: s.view });
     }
-  });
+  }
+  // the kit also calls this when it lowers the resolution of a slow phone, in the middle of a turn: only a new size is a new view
+  let sizeW = stage.width;
+  let sizeH = stage.height;
   stage.onResize(() => {
-    s.userMovedCamera = false;
-    if (s.view === '3d') {
-      s.view = 'front';
-      syncUI();
+    if (stage.width !== sizeW || stage.height !== sizeH) {
+      sizeW = stage.width;
+      sizeH = stage.height;
+      s.userMovedCamera = false;
+      if (s.view === '3d') {
+        s.view = 'front';
+        syncUI();
+      }
     }
     sizeEye();
     draw();
   });
+  turn.classList.toggle('used', !o.coach); // for pictures and tests: the small sign from the start
 
   // ── the picture from his eye: drawn into a corner of the canvas before the main pass, copied, and drawn over ──
   let eyeW = 1;
@@ -272,8 +468,6 @@ export function createApp(root, options = {}) {
     eyeBox.classList.toggle('big', eyeLarge);
     eyeBox.style.width = eyeLarge ? `${Math.round(Math.min(stage.width - 16, ((stage.height - 40) * 4) / 3))}px` : '';
     const c = eyeCanvas.getBoundingClientRect();
-    const h = ui.canvasHost.getBoundingClientRect();
-    rays.view.to = eyeLarge ? null : { x: c.left - h.left, y: c.top - h.top + c.height * 0.5 };
     eyeW = Math.max(1, Math.round(c.width));
     eyeH = Math.max(1, Math.round(c.height));
     const r = stage.pixelRatio;
@@ -286,11 +480,26 @@ export function createApp(root, options = {}) {
     sizeEye();
     stage.invalidate();
   }
+  /** The picture's place on the view, as soon as it is on: the kit would skip it while it fades in, and then nothing draws again. */
+  function eyeArea() {
+    if (!eyeOn) return null;
+    const r = eyeBox.getBoundingClientRect();
+    const h = ui.canvasHost.getBoundingClientRect();
+    return { left: r.left - h.left, top: r.top - h.top, right: r.right - h.left, bottom: r.bottom - h.top };
+  }
+  /** The picture on or off, and at its story size (the steps it is about) or its everyday size. */
+  function showEye(on, story) {
+    eyeOn = on;
+    eyeBox.classList.toggle('off', !on);
+    eyeBox.classList.toggle('story', Boolean(on && story));
+    sizeEye();
+    stage.invalidate();
+  }
   sizeEye();
   stage.onBeforeRender(() => {
     applyCamera();
     camera.updateMatrixWorld();
-    if (!eyeDirty) return;
+    if (!eyeDirty || !eyeOn) return;
     eyeDirty = false;
     setting.renderEye(s.angle, eyeW, eyeH);
     const gl = stage.canvas;
@@ -302,11 +511,13 @@ export function createApp(root, options = {}) {
   const anno = createAnnotations({
     stage,
     layer: ui.annoLayer,
-    avoid: [ui.corner, note, eyeBox, ui.$('.pvc-panel-toggle'), () => rays.boxes(), () => action?.ringBox()],
+    avoid: [ui.corner, note, turn, eyeArea, ui.$('.pvc-panel-toggle'), () => rays.boxes(), () => action?.ringBox(), () => handleBoxes()],
   });
   const on = new Map();
   const pts = new Map();
   function label(id, show, text, point, color, spots, optional = false) {
+    const free = s.userMovedCamera; // the student's own view: a label with no clear place, or whose part is behind the picture, waits
+    if (show && free && behindEye(point)) show = false;
     if (!show) {
       if (on.has(id)) {
         anno.remove(id);
@@ -318,7 +529,7 @@ export function createApp(root, options = {}) {
     pts.get(id).copy(point);
     const was = on.get(id);
     if (!was) {
-      anno.add(id, { text, point: () => pts.get(id), color, spots, kind: 'part', optional });
+      anno.add(id, { text, point: () => pts.get(id), color, spots, kind: 'part', optional: optional || free });
       on.set(id, { text });
       return;
     }
@@ -326,6 +537,12 @@ export function createApp(root, options = {}) {
       anno.setText(id, text);
       was.text = text;
     }
+  }
+  function behindEye(point) {
+    const e = eyeArea();
+    if (!e) return false;
+    const p = rays.screen(point);
+    return p.x > e.left && p.x < e.right && p.y > e.top && p.y < e.bottom;
   }
   function clearAll() {
     for (const id of [...on.keys()]) anno.remove(id);
@@ -373,6 +590,11 @@ export function createApp(root, options = {}) {
       { dx: 62, dy: -36 },
       { dx: -70, dy: 26 },
       { dx: 72, dy: -24 },
+      { dx: -84, dy: 8 },
+      { dx: -92, dy: -14 },
+      { dx: 86, dy: 20 },
+      { dx: -6, dy: -36 },
+      { dx: -8, dy: -50 },
     ],
     in: [
       { dx: 10, dy: -20 },
@@ -383,6 +605,11 @@ export function createApp(root, options = {}) {
       { dx: -56, dy: -14 },
       { dx: 44, dy: 20 },
       { dx: -30, dy: 24 },
+      { dx: 20, dy: -46 },
+      { dx: -10, dy: -60 },
+      { dx: 40, dy: -40 },
+      { dx: -74, dy: -30 },
+      { dx: 22, dy: -28 },
     ],
     ref: [
       { dx: 62, dy: 24 },
@@ -393,13 +620,40 @@ export function createApp(root, options = {}) {
       { dx: 56, dy: 40 },
       { dx: -80, dy: 28 },
       { dx: -66, dy: 50 },
+      { dx: 0, dy: 72 },
+      { dx: -34, dy: -36 },
+      { dx: 20, dy: 46 },
+      { dx: 2, dy: 80 },
     ],
     glass: [
-      { dx: -8, dy: 26 },
-      { dx: 18, dy: 28 },
-      { dx: -30, dy: 16 },
+      { dx: -26, dy: 24 },
+      { dx: -40, dy: 36 },
+      { dx: -44, dy: 12 },
+      { dx: 12, dy: 30 },
       { dx: -8, dy: 44 },
       { dx: 34, dy: 42 },
+    ],
+    pattern: [
+      { dx: 40, dy: -34 },
+      { dx: -40, dy: -34 },
+      { dx: 56, dy: -56 },
+      { dx: -56, dy: -56 },
+      { dx: 10, dy: -60 },
+    ],
+    through: [
+      { dx: 26, dy: -16 },
+      { dx: -26, dy: 22 },
+      { dx: 38, dy: -30 },
+      { dx: -38, dy: 34 },
+      { dx: 14, dy: -50 },
+      { dx: 14, dy: -66 },
+      { dx: -44, dy: -34 },
+    ],
+    reflection: [
+      { dx: 22, dy: -20 },
+      { dx: -22, dy: 22 },
+      { dx: 34, dy: -34 },
+      { dx: 44, dy: 8 },
     ],
     before: [
       { dx: 26, dy: 18 },
@@ -407,22 +661,51 @@ export function createApp(root, options = {}) {
       { dx: 34, dy: -6 },
     ],
   };
+  // after the hand-picked places, a grid: wherever the rays land on a small frame, every name finds room
+  const FALLBACK = [];
+  for (const dy of [-34, -50, -66, -82, 34, 50, 66, 82, 98]) for (const dx of [0, -8, 8, -36, 36, -66, 66, -96, 96, -126]) FALLBACK.push({ dx, dy });
+  for (const key of Object.keys(SPOTS)) if (key !== 'before') SPOTS[key].push(...FALLBACK);
   const P = new THREE.Vector3();
+  const P2 = new THREE.Vector3();
+  const P3 = new THREE.Vector3();
+  const pins = rays.view.pins;
   const mid = (a, b, f) => P.set(a.x + (b.x - a.x) * f, a.y + (b.y - a.y) * f, 0);
   function labels() {
     const q = s.quiz;
     const g = rays.view.geo;
     const a = shown();
-    const moving = s.busy || camK < 1;
+    const moving = (s.busy && !s.holding) || camK < 1;
     const plain = q && !q.named;
     const rayOn = rays.view.show;
     const half = (a * Math.PI) / 360;
-    const named = (stage.width >= 500 && stage.height > 400) || (a >= 50 && stage.height >= 300 && (t.lang === 'bn' || stage.width >= 500)); // the book's names too, where there is room for two lines
-    const angleOn = rayOn && !moving && !q?.hideAngle;
-    label('normal', rayOn && !moving && !q, t('l_normal'), P.set(g.top.x, g.top.y, 0), INK.dark, SPOTS.normal);
-    label('in', rayOn && !moving && !q, t('l_in'), mid(g.flower, g.hit, 0.3), INK.ray, SPOTS.in);
-    label('out', rayOn && !moving && (!plain || q?.showOut), t('l_out', { p: percent(a) }), mid(g.eye, g.hit, 0.3), INK.ray, SPOTS.out);
-    // the angles are read at the arcs
+    const step = q ? LAST : s.stage;
+    const still = rayOn && !moving;
+    const glassPoint = P2.set(-13, g.plane - GLASS.thick / 2, GLASS.halfZ);
+    const patternPoint = P3.set(6, g.plane, 3);
+    // the story's names, three at most to a step
+    const named = (step === 3 && (t.lang === 'bn' || stage.height > 300)) || (step === LAST && !!q && stage.width >= 500 && stage.height > 400);
+    const beat = step === 3 ? s.beat : 0; // the angle step brings its names in two beats, while it plays
+    label('glass', !moving && step <= 2, t('l_glass'), glassPoint, INK.dark, SPOTS.glass);
+    pins.length = 0;
+    if (!moving && step <= 2) pins.push(glassPoint);
+    if (!moving && step === 0) pins.push(patternPoint);
+    label('pattern', !moving && step === 0, t('l_pattern'), patternPoint, INK.dark, SPOTS.pattern);
+    label(
+      'through',
+      still && (step === 1 || step === 2) && rays.view.through >= 1,
+      t('l_through'),
+      mid(g.under, g.hit, 0.5),
+      INK.dark,
+      SPOTS.through,
+    );
+    label('reflection', still && step === 2, t('l_reflection'), mid(g.eye, g.hit, 0.72), INK.ray, SPOTS.reflection);
+    // the angle step: the two angles, the normal, the two rays
+    label('normal', beat >= 1, t('l_normal'), P.set(g.top.x, g.top.y, 0), INK.dark, SPOTS.normal);
+    label('in', beat >= 1, t('l_in'), mid(g.flower, g.hit, 0.3), INK.ray, SPOTS.in);
+    // the amounts come last, on the rays
+    const outOn = beat >= 1 || (still && step === LAST && (!plain || q?.showOut));
+    label('out', outOn, step === 3 ? t('l_out_name') : t('l_out', { p: percent(a) }), mid(g.eye, g.hit, 0.3), INK.ray, SPOTS.out);
+    const angleOn = beat >= 2 || (still && step === LAST && !q?.hideAngle);
     label(
       'ti',
       angleOn,
@@ -439,11 +722,69 @@ export function createApp(root, options = {}) {
       INK.tr,
       SPOTS.tr,
     );
-    label('ref', rayOn && !moving && !plain, t('l_ref', { p: percentIn(a) }), P.set(g.inside.x, g.inside.y, 0), INK.ray, SPOTS.ref);
-    label('glass', !moving && !q, t('l_glass'), P.set(-8, g.plane - GLASS.thick, GLASS.halfZ), INK.dark, SPOTS.glass, true);
+    label('ref', still && step === LAST && !plain, t('l_ref', { p: percentIn(a) }), P.set(g.inside.x, g.inside.y, 0), INK.ray, SPOTS.ref);
     const old = rays.view.ghost;
     label('before', Boolean(old) && !moving, t('l_before'), old ? P.set(GLASS.halfX, old.plane, GLASS.halfZ) : P, INK.dark, SPOTS.before);
+    placeHandle(); // before the labels are placed: they keep off it
     anno.update();
+    tags();
+  }
+  // inside the picture from his eye: what is in it, by how much of each there is
+  function tags() {
+    const R = percent(shown());
+    const story = eyeOn && !s.quiz && s.stage !== 3;
+    const image = story && R >= 9;
+    const pattern = story && R < 50 && !(s.busy && s.stage === 1);
+    if (tagImage.hidden === image) tagImage.hidden = !image;
+    if (tagPattern.hidden === pattern) tagPattern.hidden = !pattern;
+  }
+  const grip = { on: false, x: 0, y: 0, used: null, z: 1, up: null };
+  const gripPoint = new THREE.Vector3();
+  const trackA = new THREE.Vector3();
+  const trackB = new THREE.Vector3();
+  const track = { a: trackA, b: trackB };
+  /** The handle stands on the lower edge of the glass, on the side nearest the camera, with its range dashed under it. */
+  function placeHandle() {
+    const on = !s.locked && !s.busy && s.stage >= 2 && camK >= 1;
+    rays.view.track = on ? track : null;
+    if (on !== grip.on) {
+      grip.on = on;
+      handle.hidden = !on;
+    }
+    if (!on) return;
+    grip.z = camera.position.z >= 0 ? 1 : -1;
+    const z = GLASS.halfZ * grip.z;
+    trackA.set(-8, planeFor(MIN_ANGLE) - GLASS.thick, z);
+    trackB.set(-8, planeFor(MAX_ANGLE) - GLASS.thick, z);
+    gripPoint.set(-8, planeFor(s.angle) - GLASS.thick, z).project(camera);
+    grip.x = Math.min(stage.width - 26, Math.max(26, ((gripPoint.x + 1) / 2) * stage.width));
+    // above the note in the corner, and with its first-time word over the disc when there is no room under it
+    const noteTop = note.offsetHeight ? note.offsetHeight + 6 : 0;
+    grip.y = Math.min(stage.height - 26 - noteTop, Math.max(26, ((1 - gripPoint.y) / 2) * stage.height));
+    const up = grip.y > stage.height - 72 - noteTop;
+    if (up !== grip.up) {
+      grip.up = up;
+      handle.classList.toggle('up', up);
+    }
+    // never over the picture from his eye, from any side
+    const e = eyeArea();
+    const wide = s.dragged || !o.coach ? 20 : 44;
+    if (e && grip.x + wide > e.left && grip.x - wide < e.right && grip.y + 26 > e.top && grip.y - 26 < e.bottom)
+      grip.x = Math.max(wide, e.left - wide);
+    handle.style.transform = `translate(${grip.x}px, ${grip.y}px)`;
+    const used = s.dragged || !o.coach;
+    if (used !== grip.used) {
+      grip.used = used;
+      handle.classList.toggle('used', used);
+    }
+  }
+  function handleBoxes() {
+    if (!grip.on) return null;
+    const r = grip.used ? 16 : 22;
+    const box = { left: grip.x - r, right: grip.x + r, top: grip.y - r, bottom: grip.y + r };
+    if (grip.used) return box;
+    const top = grip.up ? grip.y - 44 : grip.y + 22;
+    return [box, { left: grip.x - 40, right: grip.x + 40, top, bottom: top + 22 }];
   }
   stage.onAfterRender(labels);
 
@@ -455,51 +796,117 @@ export function createApp(root, options = {}) {
     if (now - lastAct < 400) return;
     lastAct = now;
     audio.unlock();
-    if (s.busy) return;
+    if (s.busy) return; // a tap while something plays is ignored: nothing queues up
+    if (s.stage < LAST) return play(s.stage + 1);
+    if (testReady()) return quiz.start();
     const next = nextStop(s.angle);
-    return lift(next ?? STOPS[0]);
+    return lift(next ?? STOPS.find((a) => !s.seen.has(a)) ?? STOPS[0]);
   }
-  function pick(a) {
+  const testReady = () => s.stage === LAST && STOPS.every((a) => s.seen.has(a));
+  function pick(i) {
     if (s.locked) return lockedNudge();
+    if (s.busy) return;
     audio.unlock();
-    if (a !== shown() || s.busy) lift(a);
+    if (s.stage < LAST) {
+      if (i <= s.stage) play(i + 1); // its own word plays a step again; a word further on waits for its turn
+      return;
+    }
+    if (STOPS[i] !== shown()) lift(STOPS[i]);
+  }
+  /** The step that has just ended, slowly, from where it began. The last one has its words: there the button starts again. */
+  function replay() {
+    if (s.locked) return lockedNudge();
+    if (s.busy) return;
+    audio.unlock();
+    if (s.stage === LAST) home();
+    else if (s.stage > 0) play(s.stage);
   }
   function nudge(by) {
     if (s.locked) return lockedNudge();
-    stopRun();
+    if (s.busy || s.stage < 2) return;
     clearAll();
     setAngle(Math.round(s.angle) + by);
+    moved();
     draw();
     emitChange();
   }
+  function moved() {
+    if (s.dragged) return;
+    s.dragged = true;
+    rays.view.guide = false;
+  }
 
   // ── the panel ───────────────────────────────────────────────────────────────────────────────────────────
-  const steady = { act: '' };
+  const ACT = ['act_look', 'act_lift', 'act_angles', 'act_amount'];
+  const steady = { act: '', row: -1, quiet: '' };
   function ruleText() {
     const a = shown();
+    if (s.stage < LAST) return t(`rule_${['start', 'through', 'raise', 'angles'][s.stage]}`);
     if (a < 45) return t('rule_small', { a: BOOK.low, b: BOOK.high });
     if (a < 75) return t('rule_mid');
     if (STOPS.every((x) => s.seen.has(x))) return t('rule_end');
     return t('rule_big', { a: BOOK.a, b: BOOK.b });
   }
+  /** The row of four words: the steps, then the stops. */
+  function words() {
+    const last = s.stage === LAST;
+    const key = last ? 1 : 0;
+    if (steady.row !== key) {
+      steady.row = key;
+      ui.$('.pvc-examples')?.setAttribute('aria-label', t(last ? 'ex_label' : 'ex_steps'));
+      sheet.words.forEach((b, i) => {
+        b.querySelector('.pvc-ex-word').textContent = last ? `${t.num(STOPS[i])}°` : t(`w_${i}`);
+      });
+    }
+    sheet.words.forEach((b, i) => {
+      b.disabled = !last && i > s.stage;
+    });
+    if (last) {
+      const at = STOPS.indexOf(shown());
+      sheet.choose(at >= 0 ? wordId(at) : null);
+      const next = nextStop(s.angle);
+      sheet.next(next ? wordId(STOPS.indexOf(next)) : null);
+      STOPS.forEach((x, i) => {
+        sheet.result(wordId(i), s.seen.has(x) ? `${t.num(percent(x))}%` : '');
+      });
+      return;
+    }
+    sheet.choose(s.stage ? wordId(s.stage - 1) : null);
+    sheet.next(wordId(s.stage));
+    STOPS.forEach((_, i) => {
+      sheet.result(wordId(i), '');
+    });
+  }
   function panel() {
     const a = shown();
     graph.set(a);
     if (s.quiz) return;
-    sheet.outcome(t('out_now', { a, p: percent(a) }));
+    const last = s.stage === LAST;
+    root.dataset.story = last ? 'amount' : 'story';
+    sheet.outcome(last ? t('out_now', { a, p: percent(a) }) : t(`out_${['start', 'through', 'raise', 'angles'][s.stage]}`));
     sheet.rule(ruleText());
-    const stop = STOPS.includes(a) ? stopId(a) : null;
-    sheet.choose(stop);
-    const next = nextStop(s.angle);
-    sheet.next(next ? stopId(next) : null);
-    for (const x of STOPS) sheet.result(stopId(x), s.seen.has(x) ? `${t.num(percent(x))}%` : '');
-    const step = next ? STOPS.indexOf(next) : '';
-    const word = s.busy ? 'act_wait' : next ? 'act_lift' : 'act_down';
+    words();
+    const ready = testReady();
+    const word = s.busy ? 'act_wait' : !last ? ACT[s.stage] : ready ? 'act_test' : nextStop(s.angle) ? 'act_lift' : 'act_down';
+    const step = s.busy || last ? '' : s.stage + 1;
     const enabled = !s.busy;
     const key = `${word}|${step}|${enabled}`;
     if (action && steady.act !== key) {
       steady.act = key;
       action.set({ label: word, step, enabled });
+    }
+    const q = last ? 'act_home' : 'act_replay'; // ↺ only to start again; ▶ to see a step again
+    const quiet = ui.$('[data-act="replay"]');
+    if (quiet) {
+      quiet.hidden = s.stage === 0;
+      if (steady.quiet !== q) {
+        steady.quiet = q;
+        quiet.innerHTML = `${last ? ICONS.reset : ICONS.play}<span>${t(q)}</span>`;
+        quiet.classList.toggle('lab-worded', !last);
+        quiet.title = t(q);
+        quiet.setAttribute('aria-label', t(q));
+      }
+      quiet.disabled = s.busy;
     }
   }
   function draw() {
@@ -515,9 +922,10 @@ export function createApp(root, options = {}) {
     t,
     step: 1,
     label: 'act_lift',
-    target: () => (s.locked || s.busy || camK < 1 || s.dragging ? null : markPoint),
+    // on the glass while a tap on it is the way on; after that its handle says what it does
+    target: () => (s.locked || s.busy || camK < 1 || s.dragging || s.stage > 1 ? null : markPoint),
     radius: 26,
-    avoid: [ui.corner, ui.hint, note, eyeBox, () => anno.boxes(), () => rays.boxes()],
+    avoid: [ui.corner, ui.hint, note, turn, eyeArea, () => anno.boxes(), () => rays.boxes()],
     pulse: Boolean(o.coach),
     onAct: () => act(),
   });
@@ -537,43 +945,58 @@ export function createApp(root, options = {}) {
     return Math.max(0.5, (a.y - b.y) / 10);
   };
   const host = ui.canvasHost;
+  const nearHandle = (e) => {
+    if (!grip.on) return false;
+    const r = host.getBoundingClientRect();
+    return Math.hypot(e.clientX - r.left - grip.x, e.clientY - r.top - grip.y) <= 26;
+  };
+  let press = null; // a finger on the view: a tap, a turn of the view, or a drag of the glass
   host.addEventListener(
     'pointerdown',
     (e) => {
-      if (s.locked || !onGlass(e)) return;
+      const glass = !s.locked && onGlass(e);
+      press = { id: e.pointerId, x: e.clientX, y: e.clientY, at: performance.now(), glass, moved: false };
+      if (s.locked || s.busy || s.stage < 2 || !(glass || nearHandle(e))) return;
       controls.enabled = false;
-      s.dragging = { id: e.pointerId, y: e.clientY, x: e.clientX, plane: planeFor(s.angle), scale: pxPerCm(), moved: false, at: performance.now() };
+      s.dragging = { id: e.pointerId, plane: planeFor(s.angle), scale: pxPerCm() };
       capturePointer(host, e.pointerId);
       stage.invalidate();
     },
     { capture: true },
   );
   host.addEventListener('pointermove', (e) => {
-    const d = s.dragging;
-    if (!d || d.id !== e.pointerId || s.locked) return;
-    if (!d.moved && Math.hypot(e.clientX - d.x, e.clientY - d.y) < 7) return;
-    if (!d.moved) {
-      d.moved = true;
-      stopRun();
-      clearAll();
-      audio.unlock();
+    if (!press || press.id !== e.pointerId) return;
+    if (!press.moved && Math.hypot(e.clientX - press.x, e.clientY - press.y) < TAP_SLOP) return;
+    if (!press.moved) {
+      press.moved = true;
+      if (s.dragging) {
+        clearAll();
+        audio.unlock();
+        moved();
+      } else orbiting();
     }
-    setAngle(angleFor(d.plane + (d.y - e.clientY) / d.scale));
+    const d = s.dragging;
+    if (!d || s.locked) return;
+    setAngle(angleFor(d.plane + (press.y - e.clientY) / d.scale));
     draw();
   });
-  const endDrag = (e) => {
-    const d = s.dragging;
-    if (!d || d.id !== e.pointerId) return;
-    s.dragging = null;
-    controls.enabled = true;
-    releasePointer(host, e.pointerId);
-    if (d.moved) {
+  const endPress = (e) => {
+    if (!press || press.id !== e.pointerId) return;
+    const was = press;
+    press = null;
+    if (s.dragging) {
+      s.dragging = null;
+      controls.enabled = true;
+      releasePointer(host, e.pointerId);
+    }
+    if (was.moved) {
       emitChange();
       draw();
-    } else if (e.type === 'pointerup' && performance.now() - d.at < 600) act();
+    } else if (e.type === 'pointerup' && was.glass && !s.busy && !testReady() && performance.now() - was.at < 600) act();
   };
-  host.addEventListener('pointerup', endDrag);
-  host.addEventListener('pointercancel', endDrag);
+  host.addEventListener('pointerup', endPress);
+  host.addEventListener('pointercancel', endPress);
+  host.addEventListener('wheel', () => orbiting(), { passive: true });
 
   // ── the test ────────────────────────────────────────────────────────────────────────────────────────────
   let qCurrent = null;
@@ -582,8 +1005,10 @@ export function createApp(root, options = {}) {
   function quizScene(q, angle) {
     stopRun();
     s.quiz = { ...q, named: false };
+    settle(LAST);
+    rays.view.guide = true;
     rays.view.ghost = null;
-    setAngle(angle);
+    s.quiz.at = angle; // the glass eases there as the camera flies: see prepare
     clearAll();
     draw();
   }
@@ -616,11 +1041,11 @@ export function createApp(root, options = {}) {
       };
     },
     eye() {
-      const answer = pick1([30, 60, 85]);
+      const answer = pick1([30, 80, 87]); // pictures that plainly differ: 30° and 60° (4 % and 9 %) are not told apart by eye
       quizScene({ kind: 'eye', hideAngle: true }, answer);
       rays.view.show = false;
       showEyeLarge(true);
-      const wrong = [30, 60, 75, 85].filter((k) => k !== answer);
+      const wrong = [30, 70, 80, 87].filter((k) => k !== answer);
       return {
         text: t('q_eye'),
         answer,
@@ -648,7 +1073,7 @@ export function createApp(root, options = {}) {
       };
     },
     window() {
-      quizScene({ kind: 'window' }, 60);
+      quizScene({ kind: 'window', hideAngle: true }, 60); // it asks for the angle to the glass: the θ labels would only mislead
       const wrong = [30, 60, 90];
       return {
         text: t('q_window'),
@@ -660,7 +1085,7 @@ export function createApp(root, options = {}) {
       };
     },
   };
-  const saved = { angle: START_ANGLE, seen: [] };
+  const saved = { angle: START_ANGLE, seen: [], stage: 0 };
   const quiz = createQuiz({
     ui,
     t,
@@ -678,6 +1103,7 @@ export function createApp(root, options = {}) {
         s.locked = true;
         saved.angle = shown();
         saved.seen = [...s.seen];
+        saved.stage = s.stage;
         order = ['small', 'lift', 'eye', 'rest', 'window'];
         clearAll();
         syncUI();
@@ -690,11 +1116,10 @@ export function createApp(root, options = {}) {
         rays.view.show = true;
         rays.view.ghost = null;
         showEyeLarge(false);
+        jump(saved.stage, saved.angle);
         s.seen = new Set(saved.seen);
-        setAngle(saved.angle);
-        clearAll();
         syncUI();
-        fly(0.5);
+        fly();
         draw();
       },
       async prepare(i, alive, say) {
@@ -703,11 +1128,16 @@ export function createApp(root, options = {}) {
         const q = Q[order[i]]();
         qCurrent = q;
         say(q.text);
-        const done = await fly(0.4);
-        if (!alive()) return null;
+        stopRun();
+        const my = token;
+        s.busy = true;
+        const [done] = await Promise.all([fly(QUIZ_MOVE), glide(s.quiz.at, QUIZ_MOVE, my)]);
+        if (!alive() || my !== token) return null;
+        s.busy = false;
         if (!done) camK = 1;
+        draw();
         if (s.quiz.grow) {
-          await lift(s.quiz.grow, { duration: 1.1 });
+          await lift(s.quiz.grow, { pause: 0 });
           if (!alive()) return null;
         }
         const list = shuffle([q.answer, ...q.wrong]);
@@ -725,7 +1155,7 @@ export function createApp(root, options = {}) {
         const q = qCurrent;
         if (s.quiz) {
           s.quiz.named = true;
-          s.quiz.hideAngle = false;
+          s.quiz.hideAngle = s.quiz.kind === 'window';
           rays.view.show = true;
           showEyeLarge(false);
         }
@@ -764,11 +1194,9 @@ export function createApp(root, options = {}) {
   }
   function home() {
     if (s.locked) return lockedNudge();
-    stopRun();
     s.seen.clear();
-    clearAll();
-    setAngle(START_ANGLE);
-    fly(0.5);
+    jump(0);
+    fly();
     draw();
     emitChange();
   }
@@ -787,11 +1215,11 @@ export function createApp(root, options = {}) {
     if (b.dataset.mode === 'quiz' && s.mode !== 'quiz') quiz.start();
     if (b.dataset.mode === 'explore') quiz.stop();
     if (b.dataset.q != null) quiz.choose(Number(b.dataset.q));
-    if (b.dataset.example) pick(Number(b.dataset.example.slice(1)));
+    if (b.dataset.example) pick(sheet.words.indexOf(/** @type {HTMLElement} */ (b)));
     const a = b.dataset.act;
     if (a === 'q-next') quiz.next();
     if (a === 'q-again') quiz.start();
-    if (a === 'home') home();
+    if (a === 'replay') replay();
     if (a === 'fullscreen') {
       if (document.fullscreenElement) document.exitFullscreen?.();
       else root.requestFullscreen?.().catch(() => {});
@@ -823,11 +1251,14 @@ export function createApp(root, options = {}) {
       refractedAngle: g.refracted,
       plane: Number(g.plane.toFixed(3)),
       seen: STOPS.filter((x) => s.seen.has(x)),
+      step: s.stage,
       busy: s.busy,
       mode: s.mode,
       locked: s.locked,
       view: s.view,
       question: s.quiz ? { kind: s.quiz.kind, right: s.quiz.right ?? null } : null,
+      handle: { shown: grip.on, used: s.dragged },
+      orbited: s.orbited,
     };
   }
   let lastEmit = '';
@@ -841,7 +1272,8 @@ export function createApp(root, options = {}) {
   }
 
   // ── start ───────────────────────────────────────────────────────────────────────────────────────────────
-  setAngle(s.angle);
+  const first = THREE.MathUtils.clamp(Math.round(Number(o.step) || 0), 0, LAST);
+  jump(first > 0 ? first : s.angle !== START_ANGLE ? LAST : 0, first > 0 && o.angle === DEFAULTS.angle ? undefined : s.angle);
   syncUI();
   setView(s.view, { animate: false });
   draw();
@@ -860,8 +1292,14 @@ export function createApp(root, options = {}) {
     async set(p = {}) {
       const animate = p.animate !== false;
       if (p.view) setView(p.view, { animate });
+      if (p.step != null) {
+        const n = THREE.MathUtils.clamp(Math.round(Number(p.step)), 0, LAST);
+        if (animate && n > 0) play(n);
+        else jump(n);
+      }
       if (p.angle != null) {
         const to = Math.round(clampAngle(p.angle));
+        if (s.stage !== LAST) jump(LAST, s.angle); // the book asks for an angle: that is the last step
         if (animate) lift(to);
         else {
           stopRun();
@@ -904,7 +1342,8 @@ export function createApp(root, options = {}) {
       const r = ui.canvasHost.getBoundingClientRect();
       const c = eyeCanvas.getBoundingClientRect();
       const ratio = gl.width / r.width;
-      ctx.drawImage(eyeCanvas, x + (c.left - r.left) * ratio * k, y + (c.top - r.top) * ratio * k, c.width * ratio * k, c.height * ratio * k);
+      if (eyeOn)
+        ctx.drawImage(eyeCanvas, x + (c.left - r.left) * ratio * k, y + (c.top - r.top) * ratio * k, c.width * ratio * k, c.height * ratio * k);
       return out.toDataURL('image/png');
     },
     exportRoot: () => setting.apparatus,

@@ -7,10 +7,13 @@
 // them, with what lies under the glass (the printed paper) at the opacity 1 − R. So each pixel of the glass is exactly
 // (1 − R) × what is under it + R × what it mirrors. Everything else is then drawn over all of this, and covers whatever of the
 // mirror world lies outside the glass, because the wall fills the view. No stencil and no second pass of the scene.
+// The top is one square: a pale printed card in the middle, and round it the clear margin of the glass in its pale tint. That
+// margin mirrors the world like the rest; what lies under it is only its tint (NOTES.md, Honest stylisation).
 // R is Fresnel's for the boy's angle in the outside view (the amount the figure is about), and worked out for each pixel in the
 // boy's own view, drawn by renderEye() from his eye.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { boyGeometry } from './boy.js';
 import { createPlant } from './flower.js';
 import { EYE_Y, fresnel, GLASS, N_GLASS, points, rad, SPAN, START_ANGLE } from './reading.js';
@@ -21,6 +24,7 @@ const BENCH_LEFT = -19; // the bench ends where the boy stands
 const LINK = 22; // the jack's arms, from pin to pin
 const BASE = 1.4; // the jack's foot plate
 const PLATE = 1.2; // its top plate
+const MARGIN = '#cdeee6'; // the clear margin of the glass: a pale blue-green
 
 function backdropGeometry() {
   const g = new THREE.SphereGeometry(320, 40, 24);
@@ -67,16 +71,19 @@ function benchTexture() {
   return t;
 }
 
-/** What lies under the glass: a printed sheet with an alpona, white on indigo: fine lines, so that one sees when they fade. */
+/** What lies under the glass: a pale card printed with an alpona in indigo (fine lines, so that one sees when they fade), and round it the clear margin of the glass. */
 function paperTexture() {
   const S = 1024;
   const c = document.createElement('canvas');
   c.width = c.height = S;
   const g = c.getContext('2d');
-  g.fillStyle = '#1f2f6e';
+  g.fillStyle = MARGIN;
   g.fillRect(0, 0, S, S);
   g.translate(S / 2, S / 2);
-  g.strokeStyle = g.fillStyle = '#f4f1e6';
+  g.scale(GLASS.card / GLASS.halfX, GLASS.card / GLASS.halfX);
+  g.fillStyle = '#f3efe0';
+  g.fillRect(-512, -512, 1024, 1024);
+  g.strokeStyle = g.fillStyle = '#27408f';
   g.lineCap = 'round';
   const ring = (r, w) => {
     g.lineWidth = w;
@@ -139,9 +146,9 @@ function paperTexture() {
     each(8, () => petal(10, 58, 17, 5));
     g.restore();
   }
-  g.setTransform(1, 0, 0, 1, 0, 0);
   g.lineWidth = 8;
-  g.strokeRect(20, 20, S - 40, S - 40);
+  g.strokeRect(-492, -492, 984, 984);
+  g.setTransform(1, 0, 0, 1, 0, 0);
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
   t.anisotropy = 8;
@@ -193,7 +200,8 @@ function paperMaterial() {
         float raShift = ${GLASS.thick.toFixed(1)} * raS / sqrt(1.0 - raS * raS);
         vec2 raH = normalize(raV.xz + vec2(1e-5, 0.0));
         vec2 raUv = vMapUv + vec2(-raH.x, raH.y) * raShift / ${(GLASS.halfX * 2).toFixed(1)};
-        diffuseColor *= texture2D(map, raUv);`,
+        diffuseColor *= texture2D(map, raUv);
+        diffuseColor.rgb *= vec3(0.9, 0.98, 0.96);`,
       )
       .replace(
         '#include <opaque_fragment>',
@@ -206,11 +214,11 @@ function paperMaterial() {
   return m;
 }
 
-/** The slab's sides and bright edges: a little of the tint, and more of everything where the surface turns from the eye. */
+/** The sides of the slab: a strong blue-green, as the edge of a sheet of glass is; over the top, hardly anything. */
 function glassMaterial() {
   const m = new THREE.MeshStandardMaterial({
     name: 'glass',
-    color: new THREE.Color(0.8, 0.95, 0.92),
+    color: new THREE.Color(0.62, 0.93, 0.82),
     roughness: 0.08,
     transparent: true,
     opacity: 0.1,
@@ -221,12 +229,61 @@ function glassMaterial() {
     shader.fragmentShader = shader.fragmentShader.replace(
       '#include <opaque_fragment>',
       `#include <opaque_fragment>
-      float ra_f = pow(1.0 - saturate(abs(dot(normalize(normal), normalize(vViewPosition)))), 2.2);
-      gl_FragColor.rgb += vec3(0.32, 0.74, 0.6) * ra_f * 0.5;
-      gl_FragColor.a = clamp(gl_FragColor.a + ra_f * 0.5, 0.0, 1.0);`,
+      float ra_side = 1.0 - abs(dot(normalize(normal), normalize((viewMatrix * vec4(0.0, 1.0, 0.0, 0.0)).xyz)));
+      gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(0.42, 0.93, 0.74), ra_side * 0.7);
+      gl_FragColor.a = mix(0.05, 0.62, ra_side);`,
     );
   };
   return m;
+}
+
+/** The bright lines along the slab's edges, merged: one draw call. */
+function glassEdges() {
+  const { halfX: x, halfZ: z, thick } = GLASS;
+  const w = 0.22;
+  const bar = (sx, sy, sz, px, py, pz) => new THREE.BoxGeometry(sx, sy, sz).translate(px, py, pz);
+  const parts = [];
+  for (const y of [-w / 2, -thick + w / 2]) {
+    parts.push(bar(x * 2, w, w, 0, y, z), bar(x * 2, w, w, 0, y, -z), bar(w, w, z * 2, x, y, 0), bar(w, w, z * 2, -x, y, 0));
+  }
+  for (const [px, pz] of [
+    [-x, -z],
+    [-x, z],
+    [x, -z],
+    [x, z],
+  ])
+    parts.push(bar(w, thick, w, px, -thick / 2, pz));
+  const mesh = new THREE.Mesh(mergeGeometries(parts), new THREE.MeshBasicMaterial({ name: 'glass-edge', color: 0xb9ffe4, toneMapped: false }));
+  mesh.renderOrder = 3;
+  return mesh;
+}
+
+/** A soft highlight across the top: two pale diagonal bands, as a window lights a sheet of glass. Not in the view from his eye. */
+function glassSheen() {
+  const S = 256;
+  const c = document.createElement('canvas');
+  c.width = c.height = S;
+  const g = c.getContext('2d');
+  const band = g.createLinearGradient(0, 0, S, S);
+  band.addColorStop(0.16, 'rgba(255,255,255,0)');
+  band.addColorStop(0.3, 'rgba(255,255,255,0.62)');
+  band.addColorStop(0.42, 'rgba(255,255,255,0)');
+  band.addColorStop(0.5, 'rgba(255,255,255,0)');
+  band.addColorStop(0.56, 'rgba(255,255,255,0.36)');
+  band.addColorStop(0.63, 'rgba(255,255,255,0)');
+  g.fillStyle = band;
+  g.fillRect(0, 0, S, S);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  const mesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(GLASS.halfX * 2, GLASS.halfZ * 2).rotateX(-Math.PI / 2),
+    new THREE.MeshBasicMaterial({ name: 'glass-sheen', map: t, transparent: true, depthWrite: false, toneMapped: false }),
+  );
+  mesh.position.y = 0.04;
+  mesh.renderOrder = 3;
+  mesh.layers.set(1);
+  mesh.userData.noExport = true;
+  return mesh;
 }
 
 /** A material for a mirrored copy: lit as the real object is, cut off at the glass. */
@@ -379,13 +436,25 @@ export function createSetting({ stage, shadow }) {
   const shell = new THREE.Mesh(new RoundedBoxGeometry(GLASS.halfX * 2, GLASS.thick, GLASS.halfZ * 2, 3, 0.12), glassMaterial());
   shell.position.y = -GLASS.thick / 2 + 0.03;
   shell.renderOrder = 2;
+  // its underside, for a camera that goes low when the glass is high
   const under = new THREE.Mesh(
     new THREE.PlaneGeometry(GLASS.halfX * 2 - 0.1, GLASS.halfZ * 2 - 0.1),
-    new THREE.MeshStandardMaterial({ name: 'paper-edge', color: 0x1f2f6e, roughness: 0.8 }),
+    new THREE.MeshStandardMaterial({ name: 'glass-under', color: MARGIN, roughness: 0.3, side: THREE.DoubleSide }),
   );
   under.rotation.x = -Math.PI / 2;
   under.position.y = -GLASS.thick + 0.02;
-  slab.add(under, paper, shell);
+  // four rubber feet: a gap between the glass and the jack's plate, so that nobody takes one for the other
+  const feet = new THREE.InstancedMesh(new THREE.CylinderGeometry(1.2, 1.2, GLASS.gap, 12), bakelite, 4);
+  feet.frustumCulled = false;
+  [
+    [-10, -8],
+    [-10, 8],
+    [10, -8],
+    [10, 8],
+  ].forEach(([x, z], i) => {
+    feet.setMatrixAt(i, new THREE.Matrix4().makeTranslation(x, -GLASS.thick - GLASS.gap / 2, z));
+  });
+  slab.add(under, paper, shell, glassEdges(), glassSheen(), feet);
   apparatus.add(slab);
 
   // the world in the glass
@@ -472,7 +541,7 @@ export function createSetting({ stage, shadow }) {
     const g = points(theta);
     const y = g.plane;
     slab.position.y = y;
-    jack.set(y - GLASS.thick);
+    jack.set(y - GLASS.thick - GLASS.gap);
     world.position.y = 2 * y;
     clip.constant = y;
     paperMat.userData.fixedR.value = fresnel(g.angle);
@@ -482,7 +551,7 @@ export function createSetting({ stage, shadow }) {
     pose(boy, nod, g);
     pose(boyCopy, nod, g);
     const hh = y + 3;
-    hit.scale.set(36, hh, 34);
+    hit.scale.set(GLASS.halfX * 2 + 4, hh, GLASS.halfZ * 2 + 4);
     hit.position.set(0, hh / 2, 0);
     return g;
   };
@@ -498,7 +567,7 @@ export function createSetting({ stage, shadow }) {
       const g = points(theta);
       const dist = Math.hypot(SPAN, EYE_Y - g.plane); // to the point on the glass
       eyeCam.aspect = w / h;
-      eyeCam.fov = THREE.MathUtils.radToDeg(2 * Math.atan(Math.max(0.2, 11 / (2 * dist))));
+      eyeCam.fov = THREE.MathUtils.radToDeg(2 * Math.atan(Math.max(0.2, 13 / (2 * dist))));
       eyeCam.position.set(g.eye.x, g.eye.y, 0);
       eyeCam.lookAt(look.set(g.hit.x, g.hit.y, g.hit.z));
       eyeCam.updateProjectionMatrix();
