@@ -231,16 +231,20 @@ function makeCar(material, glassMaterial) {
     c.translate(-3.46, 1.1, y);
     parts.push(paint(c, paintC));
     // the lamps, the door line, the sill
-    parts.push(paint(box(-0.14, 0.01, 0.56, 0.66, z * 0.62 - 0.2, z * 0.62 + 0.2), '#fff3c9'));
-    parts.push(paint(box(-L - 0.015, -L + 0.08, 0.66, 0.8, z * 0.6 - 0.21, z * 0.6 + 0.21), '#d4141a'));
+    parts.push(paint(box(-0.14, 0.09, 0.5, 0.66, z * 0.66 - 0.2, z * 0.66 + 0.2), '#fff6cf'));
+    parts.push(paint(box(-L - 0.07, -L + 0.08, 0.62, 0.8, z * 0.6 - 0.23, z * 0.6 + 0.23), '#d4141a'));
     const edge = z * (W / 2 + 0.002);
     parts.push(paint(box(-3.5, -1.1, 0.36, 0.43, Math.min(edge, edge - z * 0.02), Math.max(edge, edge - z * 0.02)), '#26282c'));
     parts.push(paint(box(-2.46, -2.43, 0.44, 0.86, Math.min(edge, edge - z * 0.02), Math.max(edge, edge - z * 0.02)), '#b9bfc5'));
     // the wing mirror
     parts.push(paint(box(-1.42, -1.3, 0.96, 1.05, Math.min(z * (W / 2), z * (W / 2 + 0.17)), Math.max(z * (W / 2), z * (W / 2 + 0.17))), paintC));
   }
-  parts.push(paint(box(-0.03, 0.03, 0.3, 0.46, -W / 2 + 0.08, W / 2 - 0.08), '#2a2c30'));
-  parts.push(paint(box(-0.02, 0.02, 0.5, 0.6, -0.4, 0.4), '#3a3d42'));
+  // the face: a dark bumper, a grille between the lamps, a number plate; the same plate on the boot
+  parts.push(paint(box(0.0, 0.08, 0.3, 0.46, -W / 2 + 0.06, W / 2 - 0.06), '#22242a'));
+  parts.push(paint(box(0.0, 0.07, 0.49, 0.63, -0.42, 0.42), '#17191d'));
+  parts.push(paint(box(0.07, 0.1, 0.33, 0.43, -0.26, 0.26), '#f4f1e4'));
+  parts.push(paint(box(-L - 0.09, -L + 0.02, 0.3, 0.46, -W / 2 + 0.06, W / 2 - 0.06), '#22242a'));
+  parts.push(paint(box(-L - 0.07, -L - 0.03, 0.56, 0.66, -0.26, 0.26), '#f4f1e4'));
   wheels(parts, -0.86, 0.32, 0.22, W / 2 - 0.12);
   wheels(parts, -3.42, 0.32, 0.22, W / 2 - 0.12);
   return finish('car', parts, glass, material, glassMaterial);
@@ -251,67 +255,90 @@ function makeCng(material, glassMaterial) {
   const parts = [];
   const glass = [];
   const W = 1.34;
-  const L = 2.7;
+  const L = 2.75;
+  // the tub: a rounded nose with the windscreen frame rising from it, the seat box behind
   parts.push(
     paint(
       shell(
         [
-          [-L, 0.3, 0.1],
-          [-0.1, 0.3, 0.1],
-          [0, 0.46, 0.12],
-          [-0.28, 1.0, 0.12],
-          [-1.0, 1.02, 0.08],
-          [-L + 0.06, 1.0, 0.12],
+          [-L, 0.32, 0.14],
+          [-0.1, 0.32, 0.14],
+          [0.02, 0.56, 0.2],
+          [-0.22, 0.98, 0.16],
+          [-1.5, 0.92, 0.1],
+          [-L + 0.04, 1.02, 0.16],
         ],
         W,
+        0.12,
+        0.07,
       ),
       green,
     ),
   );
-  // the pale band, the canopy, the frame that carries it, the windscreen
-  parts.push(paint(box(-L + 0.02, -0.14, 0.7, 0.8, -W / 2 - 0.004, W / 2 + 0.004), '#e9e4c8'));
+  // the pale band, as the CNGs of Dhaka wear it
+  parts.push(paint(box(-L + 0.04, -0.2, 0.74, 0.84, -W / 2 - 0.004, W / 2 + 0.004), '#ece6c6'));
+  // the canopy: black cloth over a rounded frame, drawn down at the back
   parts.push(
     paint(
       shell(
         [
-          [-L + 0.02, 1.68, 0.1],
-          [-0.42, 1.68, 0.1],
-          [-0.3, 1.76, 0.06],
-          [-L + 0.14, 1.82, 0.14],
+          [-L - 0.02, 1.02, 0.08],
+          [-L + 0.08, 1.74, 0.32],
+          [-0.44, 1.8, 0.24],
+          [-0.3, 1.66, 0.08],
+          [-L + 0.36, 1.62, 0.2],
+          [-L + 0.26, 1.02, 0.06],
         ],
         W - 0.02,
-        0.06,
-        0.02,
+        0.08,
+        0.03,
       ),
       '#17191c',
     ),
   );
-  parts.push(paint(box(-L + 0.02, -L + 0.1, 1.0, 1.7, -W / 2 + 0.02, W / 2 - 0.02), '#2c6e45'));
   for (const z of [-1, 1]) {
-    const p = new THREE.BoxGeometry(0.05, 0.76, 0.05);
-    p.translate(-0.46, 1.32, (z * (W - 0.1)) / 2);
+    // the front posts, the windscreen frame, and the iron door grille
+    const p = new THREE.CylinderGeometry(0.025, 0.03, 0.82, 8);
+    p.rotateZ(0.18);
+    p.translate(-0.33, 1.3, (z * (W - 0.1)) / 2);
     parts.push(paint(p, '#1d2024'));
-    const q = new THREE.BoxGeometry(0.05, 0.72, 0.05);
-    q.translate(-1.72, 1.34, (z * (W - 0.06)) / 2);
+    const q = new THREE.CylinderGeometry(0.022, 0.022, 0.72, 8);
+    q.translate(-1.5, 1.32, (z * (W - 0.05)) / 2);
     parts.push(paint(q, '#1d2024'));
-    // the iron door grille
-    for (let i = 0; i < 4; i++)
-      parts.push(paint(box(-1.66 + i * 0.28, -1.63 + i * 0.28, 1.02, 1.66, (z * W) / 2 - 0.014, (z * W) / 2 + 0.014), '#30343a'));
-    parts.push(paint(box(-L - 0.012, -L + 0.03, 0.62, 0.72, z * 0.44 - 0.13, z * 0.44 + 0.13), '#ff2a14'));
+    for (let i = 0; i < 4; i++) {
+      const bar = new THREE.CylinderGeometry(0.014, 0.014, 0.66, 6);
+      bar.translate(-1.42 - i * 0.2, 1.3, (z * W) / 2);
+      parts.push(paint(bar, '#30343a'));
+    }
+    parts.push(paint(box(-L - 0.09, -L + 0.03, 0.62, 0.74, z * 0.46 - 0.13, z * 0.46 + 0.13), '#ff2a14'));
+    // the small wing mirror
+    parts.push(paint(box(-0.34, -0.28, 1.12, 1.2, Math.min(z * (W / 2), z * (W / 2 + 0.14)), Math.max(z * (W / 2), z * (W / 2 + 0.14))), '#1d2024'));
   }
-  parts.push(paint(box(-0.05, 0.0, 0.62, 0.74, -0.12, 0.12), '#fff3c9'));
-  const screen = new THREE.BoxGeometry(0.03, 0.72, W - 0.16);
-  screen.rotateZ(0.22);
-  screen.translate(-0.42, 1.32, 0);
+  // one round lamp on the nose, the bumper
+  const lamp = new THREE.CylinderGeometry(0.1, 0.1, 0.06, 14);
+  lamp.rotateZ(Math.PI / 2);
+  lamp.translate(0.05, 0.72, 0);
+  parts.push(paint(lamp, '#fff3c9'));
+  parts.push(paint(box(0.0, 0.08, 0.34, 0.42, -0.42, 0.42), '#26282c'));
+  const screen = new THREE.BoxGeometry(0.03, 0.7, W - 0.14);
+  screen.rotateZ(0.18);
+  screen.translate(-0.33, 1.32, 0);
   glass.push(screen.toNonIndexed());
-  wheels(parts, -0.42, 0.25, 0.14, 0, '#d7dade', [0]);
-  wheels(parts, -2.2, 0.25, 0.14, W / 2 - 0.02, '#d7dade');
+  // three wheels: one in front, two behind, in a mudguard
+  wheels(parts, -0.5, 0.26, 0.16, 0, '#d7dade', [0]);
+  wheels(parts, -2.2, 0.26, 0.16, W / 2 - 0.02, '#d7dade');
+  for (const z of [-1, 1]) {
+    const guard = new THREE.CylinderGeometry(0.33, 0.33, 0.18, 14, 1, false, -Math.PI / 2, Math.PI);
+    guard.rotateX(Math.PI / 2);
+    guard.translate(-2.2, 0.33, z * (W / 2 - 0.02));
+    parts.push(paint(guard, '#256f41'));
+  }
   return finish('cng', parts, glass, material, glassMaterial);
 }
 
 export function createVehicles() {
   const material = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.42, metalness: 0.12, envMapIntensity: 1.1 });
-  const glassMaterial = new THREE.MeshStandardMaterial({ color: '#16222c', roughness: 0.1, metalness: 0.65, envMapIntensity: 1.6 });
+  const glassMaterial = new THREE.MeshStandardMaterial({ color: '#101a22', roughness: 0.16, metalness: 0.3, envMapIntensity: 0.7 });
   return {
     bus: makeBus(material, glassMaterial),
     car: makeCar(material, glassMaterial),

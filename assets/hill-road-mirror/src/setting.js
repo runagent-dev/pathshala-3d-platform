@@ -114,28 +114,32 @@ export function terrainHeight(x, z) {
   const far = Math.hypot(x, z);
   const beyond = Math.max(x, z); // the road runs into the next fold of the hills, out of sight
   let h;
+  // at the bend the road is cut into the rock: a steep face right beside it, where no vehicle waits
+  const cutting = smooth(11, 8, Math.max(x, z));
+  const inner = 0.5 - 0.36 * cutting;
   if (d >= 0) {
-    const s = Math.max(0, d - H - 0.5);
-    // the rock is cut steeper at the bend itself; along the two arms the slope stays gentler than the view from above,
-    // so the hill hides the road from the drivers but not from the student
-    const c = Math.hypot(x - 3.6, z - 3.6);
+    const s = Math.max(0, d - H - inner);
+    // along the two arms the slope stays gentler than the view from above, so the hill hides the road from the drivers
+    // but not from the student
+    const c = Math.hypot(x - 3, z - 3);
     const corner = Math.exp(-(c * c) / 90);
-    const k = 0.52 + 0.75 * corner;
+    const k = 0.46 + 0.36 * corner;
     const wx = x + 5 * fbm(x * 0.04, z * 0.04, 2);
     const wz = z + 5 * fbm(x * 0.04 + 8, z * 0.04 + 3, 2);
-    const top = HILL_TOP * (0.86 + 0.5 * ridged(wx * 0.016 + 2, wz * 0.016 + 5, 3));
+    const top = HILL_TOP * (0.8 + 0.5 * ridged(wx * 0.014 + 2, wz * 0.014 + 5, 2));
     h = top * (1 - Math.exp((-k * s) / top));
-    // at the bend the road is cut into the rock: a low face right beside it, where no vehicle waits
-    h += 2.6 * smooth(0, 1.7, s) * smooth(17, 9, Math.max(x, z));
+    h += 3.6 * smooth(0, 0.7, s) * cutting;
     const rough = smooth(0.4, 6, s);
-    // gullies running down the slope, and broken rock
-    const gully = 1 - ridged(wx * 0.075 + 4, wz * 0.075 + 9, 3);
-    h += rough * (3.4 * fbm(wx * 0.09, wz * 0.09, 3) - 3.2 * gully * smooth(2, 12, s) + 1.0 * fbm(wx * 0.3, wz * 0.3, 2));
+    h += rough * (2.6 * fbm(wx * 0.07, wz * 0.07, 3) + 0.7 * fbm(wx * 0.27, wz * 0.27, 2));
+    // ledges of harder rock, wandering along the slope
+    const t = h / 3.4 + 0.7 * fbm(wx * 0.05 + 7, wz * 0.05 + 2, 2);
+    const f = t - Math.floor(t);
+    h += 0.34 * rough * 3.4 * (smooth(0.3, 0.7, f) - f);
   } else {
     const s = Math.max(0, -d - H - 0.9);
     // a narrow verge, a steep bank, then the valley
-    h = -2.2 * s * smooth(0, 3, s) - 66 * (1 - Math.exp(-s / 42));
-    h += smooth(6, 30, s) * 3.5 * fbm(x * 0.06 + 3, z * 0.06, 3);
+    h = -74 * (1 - Math.exp(-(s * smooth(0, 3, s)) / 15));
+    h += smooth(6, 30, s) * 9 * fbm(x * 0.03 + 3, z * 0.03, 4);
   }
   // the far ridges, across the valley and behind the hill
   const ridge = smooth(170, 760, far);
@@ -143,7 +147,7 @@ export function terrainHeight(x, z) {
   // the hill's own folds close over the road where it ends
   const fold = smooth(ROAD_END - 18, ROAD_END + 6, beyond);
   if (fold > 0 && far < 400) h = Math.max(h, fold * 24 * (1 + fbm(x * 0.03, z * 0.03, 2)));
-  const flat = d > -H - 0.5 && d < H + 0.5 && beyond < ROAD_END - 4;
+  const flat = d > -H - 0.5 && d < H + inner && beyond < ROAD_END - 4;
   if (flat) return -0.12;
   // a level pad for the mirror's footing
   const m = Math.hypot(x - MIRROR.x, z - MIRROR.z);
@@ -239,7 +243,7 @@ function detailTexture(renderer) {
   return t;
 }
 
-const MIST = 'vec3(0.40, 0.54, 0.68)';
+const MIST = 'vec3(0.34, 0.46, 0.59)';
 const TERRAIN_VS = /* glsl */ `
   attribute float aSide; attribute float aBroad;
   varying vec3 vN; varying vec3 vP; varying float vSide; varying float vBroad;
@@ -267,33 +271,36 @@ const TERRAIN_FS = /* glsl */ `
       + vec3(dy.r + fy.r * 0.7 - 0.85, 0.0, dy.g + fy.g * 0.7 - 0.85) * w.y
       + vec3(dz.r + fz.r * 0.7 - 0.85, dz.g + fz.g * 0.7 - 0.85, 0.0) * w.z;
     float near = 1.0 - smoothstep(60.0, 300.0, dist);
-    vec3 N = normalize(n + tn * 0.85 * near);
+    vec3 N = normalize(n + tn * 0.55 * near);
     // a broad pattern that does not repeat within the view, to break the tile
     float big = texture2D(detail, vP.xz / 47.0).b;
     float mid = texture2D(detail, vP.zx / 19.0).b;
-    // warm rock in faint layers on the steep faces, red laterite, and low scrub in clumps where the slope lets it hold:
-    // never a green setting
-    float steep = 1.0 - smoothstep(0.62, 0.86, n.y);
-    float layer = sin(vP.y * 3.4 + vBroad * 11.0 + mid * 4.0) * 0.5 + 0.5;
-    vec3 rock = mix(vec3(0.150, 0.112, 0.088), vec3(0.300, 0.222, 0.160), b * 0.8 + mid * 0.3);
-    rock = mix(rock, rock * (0.72 + 0.5 * layer), steep * near);
-    rock = mix(rock, vec3(0.255, 0.112, 0.062) * (0.7 + 0.6 * b), smoothstep(0.42, 0.62, big + vBroad * 0.6) * 0.8);
-    float hold = n.y + (mid - 0.5) * 0.5 + vBroad * 0.3;
-    float clump = smoothstep(0.42, 0.56, fy.b * 0.6 + mid * 0.5 + (big - 0.5) * 0.5);
-    float scrub = smoothstep(0.7, 0.86, hold) * clump;
-    vec3 leaf = mix(vec3(0.060, 0.082, 0.042), vec3(0.150, 0.150, 0.062), b);
-    vec3 a = mix(rock, leaf, scrub * 0.92);
+    // grey-brown rock in quiet layers on the steep faces, a little red laterite, and scrub in patches on the gentle
+    // ground: calm, so that the mirror and the rays are the brightest things in the view, and never a green setting
+    float steep = 1.0 - smoothstep(0.6, 0.84, n.y);
+    float layer = sin(vP.y * 2.6 + vBroad * 6.0 + mid * 2.0) * 0.5 + 0.5;
+    vec3 rock = mix(vec3(0.120, 0.100, 0.088), vec3(0.215, 0.178, 0.148), b * 0.7 + mid * 0.35);
+    rock *= mix(1.0, 0.8 + 0.34 * layer, steep * near);
+    rock = mix(rock, vec3(0.180, 0.096, 0.066) * (0.8 + 0.4 * b), smoothstep(0.5, 0.72, big + vBroad * 0.5) * 0.4);
+    float patchy = smoothstep(0.42, 0.56, big * 0.72 + vBroad * 0.55 + 0.1);
+    float speck = smoothstep(0.38, 0.6, fy.b * 0.7 + mid * 0.4);
+    float scrub = patchy * smoothstep(0.62, 0.8, n.y) * (0.3 + 0.7 * speck);
+    vec3 leaf = mix(vec3(0.046, 0.060, 0.038), vec3(0.098, 0.106, 0.056), b);
+    vec3 a = mix(rock, leaf, scrub * 0.86);
     // gravel and dust along the road
     float verge = 1.0 - smoothstep(0.3, 2.2, abs(vSide) - ${(H + 0.2).toFixed(2)} + (b - 0.5) * 1.6);
     a = mix(a, vec3(0.270, 0.232, 0.195) * (0.75 + 0.5 * b), verge);
     float sun = max(dot(N, uSun), 0.0);
     float sky = 0.5 + 0.5 * N.y;
-    vec3 c = a * (vec3(0.52, 0.60, 0.74) * (0.40 + 0.8 * sky) + vec3(1.0, 0.90, 0.74) * 2.1 * sun);
-    // the mist lies in the valley in soft banks and thins upward; the far ridges fade into it
-    float air = 1.0 - exp(-max(0.0, dist - 110.0) * 0.0011);
+    vec3 c = a * (vec3(0.52, 0.60, 0.74) * (0.46 + 0.8 * sky) + vec3(1.0, 0.91, 0.78) * 1.75 * sun);
+    // the valley: dark and deep below the rail, the mist gathering farther out, the far ridges fading into it
+    float past = max(0.0, -vSide - ${(H + 1).toFixed(2)});
+    float deep = smoothstep(-6.0, -40.0, vP.y);
+    c *= 1.0 - 0.45 * deep;
     float bank = 0.5 + 0.28 * sin(vP.x * 0.021 + 2.0 * sin(vP.z * 0.017)) + 0.22 * sin(vP.z * 0.029 + 2.0 * sin(vP.x * 0.013));
-    float low = smoothstep(-7.0 - 20.0 * bank, -44.0, vP.y);
-    c = mix(c, ${MIST} * (0.88 + 0.24 * bank), max(air, low));
+    float air = 1.0 - exp(-max(0.0, dist - 110.0) * 0.0011);
+    float low = deep * smoothstep(34.0, 190.0, past + bank * 40.0);
+    c = mix(c, ${MIST} * (0.86 + 0.28 * bank), max(air, low * 0.94));
     gl_FragColor = vec4(c, 1.0);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
@@ -348,10 +355,13 @@ const ROAD_FS = /* glsl */ `
       float front = dot(vP.xz - uFanO, uFanN);
       float aa = fwidth(sa) + fwidth(sb) + 0.004;
       float inside = smoothstep(-aa, aa, sa) * smoothstep(-aa, aa, -sb) * smoothstep(0.0, 0.3, front);
-      float rim = (1.0 - smoothstep(0.03, 0.08 + aa, abs(sa))) + (1.0 - smoothstep(0.03, 0.08 + aa, abs(sb)));
-      rim *= smoothstep(0.0, 0.3, front);
-      c = mix(c, vec3(1.0, 0.56, 0.05), inside * 0.3 * uFan);
-      c = mix(c, vec3(1.0, 0.72, 0.16), min(1.0, rim) * uFan * 0.95);
+      // a translucent amber, the road's paint still showing through, and a dashed outline
+      c = mix(c, vec3(0.91, 0.36, 0.0), inside * 0.62 * uFan);
+      float wa = 1.0 - smoothstep(0.05, 0.09 + aa, abs(sa));
+      float wb = 1.0 - smoothstep(0.05, 0.09 + aa, abs(sb));
+      float dashA = step(0.45, fract(dot(vP.xz - uFanA.xy, uFanA.zw) / 1.5));
+      float dashB = step(0.45, fract(dot(vP.xz - uFanB.xy, uFanB.zw) / 1.5));
+      c = mix(c, vec3(1.0, 0.86, 0.5), max(wa * dashA, wb * dashB) * uFan * smoothstep(0.0, 0.3, front));
     }
     float dist = length(vP - uCam);
     c = mix(c, ${MIST}, 1.0 - exp(-max(0.0, dist - 90.0) * 0.0013));
@@ -542,6 +552,7 @@ export function createSetting({ stage }) {
   root.add(sky, ground, roadMesh, rail, posts);
   scene.add(root);
 
+  let kept = 0;
   return {
     root,
     /** Call before a view is drawn: the mist is measured from its camera. */
@@ -558,6 +569,13 @@ export function createSetting({ stage }) {
       road.uFanO.value.set(MIRROR.x, MIRROR.z);
       road.uFanN.value.set(Math.SQRT1_2, Math.SQRT1_2);
     },
+    /** The strip is paint for the student, not a thing on the road: the drivers' views are drawn without it. */
+    fieldOff(off) {
+      if (off) {
+        kept = road.uFan.value;
+        road.uFan.value = 0;
+      } else road.uFan.value = kept;
+    },
     /** The vehicles' shadows: { x, z, length, width, heading } (radians, 0 along +x). */
     setShadow(i, x, z, length, width, heading) {
       road.uShade.value[i].set(x, z, length / 2, width / 2);
@@ -567,20 +585,37 @@ export function createSetting({ stage }) {
     exportModel() {
       const g = new THREE.Group();
       g.name = 'bend-setting';
-      const geo = terrainGeometry(3);
+      // the bend only, with a flat skirt: the far ridges are the view, not the model
+      const REACH = 120;
+      const STEP = 4;
+      const n = (2 * REACH) / STEP + 1;
+      const pos = new Float32Array(n * n * 3);
+      const index = [];
+      for (let j = 0; j < n; j++)
+        for (let i = 0; i < n; i++) {
+          const x = -REACH + i * STEP + 12;
+          const z = -REACH + j * STEP + 12;
+          const v = j * n + i;
+          pos[v * 3] = x;
+          pos[v * 3 + 1] = Math.max(-16, Math.min(24, terrainHeight(x, z)));
+          pos[v * 3 + 2] = z;
+          if (i < n - 1 && j < n - 1) index.push(v, v + n, v + 1, v + 1, v + n, v + n + 1);
+        }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      geo.setIndex(index);
+      geo.computeVertexNormals();
       const p = geo.attributes.position;
       const col = new Float32Array(p.count * 3);
-      const pale = new THREE.Color('#9fb6c8');
-      const rock = new THREE.Color('#7a5238');
+      const pale = new THREE.Color('#4f6478');
+      const rock = new THREE.Color('#6b5240');
       const k = new THREE.Color();
       for (let i = 0; i < p.count; i++) {
-        k.copy(rock).lerp(pale, smooth(-12, -60, p.getY(i)));
+        k.copy(rock).lerp(pale, smooth(-4, -16, p.getY(i)));
         col[i * 3] = k.r;
         col[i * 3 + 1] = k.g;
         col[i * 3 + 2] = k.b;
       }
-      geo.deleteAttribute('aSide');
-      geo.deleteAttribute('aBroad');
       geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
       const land = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1 }));
       land.name = 'terrain';

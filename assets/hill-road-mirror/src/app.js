@@ -2,8 +2,9 @@
 // right-angle bend with a hill between them. The bus's light stops on the rock; a mirror set at 45° at the bend turns it
 // exactly 90°, along the other road, into the driver's eye, and a small window shows what that eye sees in the mirror.
 // The angles are measured close up (θi = θr = 45°), the same path is run backwards (the bus driver sees the car, the book's
-// "both sides"), and the plane mirror is swapped for a convex one: a wider strip of road, a much smaller upright image.
-// One action, one result, one rule on the kit's clean sheet; the student drags the bus. A 5-question test.
+// "both sides"), and the last step sets the plane and convex mirrors side by side for the same bus: the strip of road
+// each shows, and the size of the image. One idea to a tap: every step plays slowly, waits, and can be seen again.
+// One action, one result, one rule on the kit's clean sheet; the student drags the bus. A 5-question test, offered at the end.
 import * as THREE from 'three';
 import { createArrow } from '@shared/arrow.js';
 import { createStage } from '@shared/stage.js';
@@ -45,7 +46,7 @@ import { createVehicles } from './vehicles.js';
 export const DEFAULTS = {
   part: 0, // how far the story is built: see PART
   mirror: 'plane', // 'plane' | 'convex'
-  bus: 17, // where the bus's nose is along the east road, m
+  bus: 13.5, // where the bus's nose is along the east road, m
   view: 'front',
   mode: 'explore',
   coach: true,
@@ -56,17 +57,20 @@ export const DEFAULTS = {
 
 const PART = { SCENE: 0, BLOCKED: 1, MIRROR: 2, RAY: 3, ANGLES: 4, BOTH: 5, COMPARE: 6 };
 const WORDS = ['bend', 'plane', 'convex'];
-const START = { car: 29, bus: 31 }; // where they are at first
-const STOP = { car: 15, bus: 17 }; // where they wait at the bend
-const BUS_RANGE = [14, 25]; // the handle stays in the view at every size
-const CNG = { x: 15, z: -LANE, length: 2.7, width: 1.34 };
+const START = { car: 25, bus: 27 }; // where they are at first
+const STOP = { car: 13, bus: 13.5 }; // where they wait at the bend
+const BUS_RANGE = [12.5, 20];
+const CNG = { x: 13.7, z: -LANE, length: 2.75, width: 1.34 };
 const HANDLE = { ahead: 1.6, z: 3.42 }; // the bus's handle: on the verge beside the bus, just behind its nose
-const WIDE = { az: 13, el: 37 };
+const WIDE = { az: 13, el: 37, elBand: 43 };
 const CLOSE = { az: 20, el: 39 };
 const MARGINS = { top: 36, bottom: 12, side: 12 };
-const FLY = 1.3; // seconds, from one framing to the next
-const GROW = 1.2; // seconds a new part takes to arrive
-const DRIVE = 2.2; // seconds the vehicles take to reach the bend
+const FLY = 1.6; // seconds, from one framing to the next
+const GROW = 1.5; // seconds a new part takes to arrive
+const DRIVE = 2.5; // seconds the vehicles take to reach the bend
+const RAY_TIME = 2.2; // seconds the light takes: about one for each leg
+const SWING = 1.6; // seconds the window takes to swing to the mirror
+const HOLD = 0.5; // seconds the result stays, after its glow, before the button comes back
 const GLOW_TIME = 0.75;
 const RAY_ANGLE = 45; // the book's angle
 const AMBER_TEXT = '#9a5300';
@@ -94,22 +98,45 @@ export function createApp(root, options = {}) {
     layout: 'side',
     learn: cleanSheet(t, {
       examples: { label: 'ex_label', items: WORDS.map((id) => ({ id, label: `ex_${id}` })) },
-      quiet: [{ act: 'home', label: 'act_home', icon: ICONS.reset }],
+      quiet: [
+        { act: 'replay', label: 'act_replay', icon: ICONS.play },
+        { act: 'home', label: 'act_home', icon: ICONS.reset },
+      ],
       lines: { action: 1, outcome: 2, rule: 3 },
     }),
     learnAlign: 'start',
   });
   const sheet = bindCleanSheet(ui.learn);
   ui.canvasHost.setAttribute('aria-label', t('aria_stage'));
+  // the corner: the cue that the view turns (a pill, not a disc: the handle moves a part, this moves the camera), and the note
+  const corner = document.createElement('div');
+  corner.className = 'hrm-corner';
+  ui.stage.appendChild(corner);
+  const orbit = document.createElement('div');
+  orbit.className = 'hrm-orbit';
+  orbit.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="12.5" rx="9" ry="3.6"/><path d="M15.2 8.6l3.6-1 .6 3.6"/><path d="M12 3.4v3M12 18.6v2"/></svg><span>${t('orbit_cue')}</span>`;
+  corner.appendChild(orbit);
   const note = document.createElement('div');
   note.className = 'hrm-note';
   note.textContent = t('note_rays');
-  ui.stage.appendChild(note);
-  const pipEl = document.createElement('div');
-  pipEl.className = 'hrm-pip';
-  pipEl.innerHTML = '<span></span>';
-  ui.stage.appendChild(pipEl);
-  const pipTitle = pipEl.firstChild;
+  corner.appendChild(note);
+  // the small windows: one driver's own eye. Their pictures are drawn in the 3D canvas, under these frames
+  const makePane = () => {
+    const el = document.createElement('div');
+    el.className = 'hrm-pip';
+    el.innerHTML = '<span></span><em></em>';
+    ui.stage.appendChild(el);
+    return { el, title: el.children[0], note: el.children[1], x: 0, y: 0, w: 1, h: 1, kind: 'plane' };
+  };
+  const panes = [makePane(), makePane()];
+  // the test is offered, gently, once the last step is done: never forced
+  const offer = document.createElement('button');
+  offer.type = 'button';
+  offer.className = 'hrm-offer';
+  offer.dataset.offer = '1';
+  offer.textContent = t('offer_test');
+  offer.hidden = true;
+  ui.learn.appendChild(offer);
   // the bus's handle, always on show when it can be dragged. It is an element, so its pulse needs no 3D frames; the touch
   // goes through it to the view, where the grab is measured (a 44 px circle at least)
   const handle = document.createElement('div');
@@ -124,11 +151,14 @@ export function createApp(root, options = {}) {
   const stage = createStage(ui.canvasHost, { fov: 27, near: 1, far: 9000, environment: 'studio-light', environmentIntensity: 0.75 });
   const { camera, controls, scene } = stage;
   controls.enablePan = false;
-  controls.enableZoom = false;
-  controls.minPolarAngle = THREE.MathUtils.degToRad(38);
-  controls.maxPolarAngle = THREE.MathUtils.degToRad(74);
-  controls.minAzimuthAngle = THREE.MathUtils.degToRad(-20);
-  controls.maxAzimuthAngle = THREE.MathUtils.degToRad(60);
+  // the whole way round, always above the ground (the hill is kept off by keepAboveGround)
+  controls.enableZoom = true;
+  controls.minPolarAngle = THREE.MathUtils.degToRad(5);
+  controls.maxPolarAngle = THREE.MathUtils.degToRad(88);
+  controls.minAzimuthAngle = Number.NEGATIVE_INFINITY;
+  controls.maxAzimuthAngle = Number.POSITIVE_INFINITY;
+  controls.minDistance = 10;
+  controls.maxDistance = 170;
   const sun = new THREE.DirectionalLight('#fff1da', 2.2);
   sun.position.set(-0.62, 0.6, 0.3);
   scene.add(sun, new THREE.HemisphereLight('#cfe3f4', '#6d5a4a', 0.7));
@@ -162,6 +192,7 @@ export function createApp(root, options = {}) {
     quiz: null,
     drag: null,
     moved: false, // the student has dragged the bus
+    orbited: false, // the student has turned the view
   };
   /** The picture for a part with nothing moving. */
   function place(part, busX = clamp(Number(o.bus) || STOP.bus, ...BUS_RANGE)) {
@@ -216,7 +247,6 @@ export function createApp(root, options = {}) {
     setting.setShadow(0, -LANE, s.carZ + CAR.length / 2, CAR.length, CAR.width, Math.PI / 2);
     setting.setShadow(1, s.busX + BUS.length / 2, LANE, BUS.length, BUS.width, 0);
     mirror.setRise(s.rise);
-    mirror.setConvex(s.kind === 'convex');
     const q = s.quiz;
     mirror.setYaw(q?.yaw ?? 0);
     const E = carEye(s.carZ);
@@ -224,7 +254,7 @@ export function createApp(root, options = {}) {
     const eye = s.who === 'car' ? E : H;
     const other = s.who === 'car' ? H : E;
     const isCar = s.who === 'car';
-    mirror.aim(eye, isCar ? { x: 1, y: 0, z: 0 } : { x: 0, y: 0, z: 1 }, other, s.kind === 'convex');
+    mirror.aim(eye, isCar ? { x: 1, y: 0, z: 0 } : { x: 0, y: 0, z: 1 }, other);
     const field = s.part === PART.COMPARE && !q && isCar ? fieldOfView(E, s.kind === 'convex') : null;
     const fanOn = field ? (s.part === PART.COMPARE && phaseReveal === 'field' ? s.reveal : 1) : 0;
     setting.setField(field, fanOn);
@@ -233,6 +263,7 @@ export function createApp(root, options = {}) {
     if (q) return applyQuiz(q, E, H);
     const v = dia.view;
     v.track = handleOn() ? TRACK : null;
+    if (s.rise > 0 && poseKey() === 'wide') v.halo = HALO;
     const from = other;
     const to = eye;
     const k = s.reveal;
@@ -261,6 +292,7 @@ export function createApp(root, options = {}) {
       const p = path(to, from);
       dia.at.set(p.P.x, p.P.y, p.P.z);
       v.path = { from, p: p.P, to, k: phaseReveal === 'path' ? k : 1, glow: phaseReveal === 'path' ? s.glow : 0 };
+      if (s.part === PART.ANGLES) nearArrows(v.path);
       if (s.part !== PART.COMPARE) v.eye = eye;
       if (s.part === PART.ANGLES) {
         const a = phaseReveal === 'angles' ? k : 1;
@@ -280,6 +312,12 @@ export function createApp(root, options = {}) {
       }
     }
   }
+  const HALO = { p: { x: MIRROR.x, y: MIRROR.y, z: MIRROR.z }, r: 17 };
+  /** Close up, a ray's arrowhead sits near the mirror, inside the frame, whatever the ray's length. */
+  function nearArrows(pa, l = 3.3) {
+    pa.tin = 1 - l / Math.hypot(pa.from.x - pa.p.x, pa.from.z - pa.p.z);
+    pa.tout = l / Math.hypot(pa.to.x - pa.p.x, pa.to.z - pa.p.z);
+  }
   /** Which part is growing now, so the rest of the picture stays whole. */
   let phaseReveal = '';
   /** The bus can be dragged, and is in the view. */
@@ -295,11 +333,14 @@ export function createApp(root, options = {}) {
   let camK = 1;
   const camDir = new THREE.Vector3();
   const R0 = V(MIRROR.x, MIRROR.y, MIRROR.z);
+  // the wide framing follows the bus's tail, so the bus stays whole wherever it is dragged
+  const BUS_LOW = V(0, 0, 3.7);
+  const BUS_HIGH = V(0, 3.3, 0);
   const FRAMES = {
     // both on their way, and the bend
     far: [V(-3, 0, START.car + 5), V(-2, 1, START.car + 5), V(-2, 3, -1), V(START.bus + 10, 0, 3.4), V(START.bus + 10, 3.2, 0.2), V(10, 0, 0)],
-    // at the bend: the car, the mirror, the bus
-    wide: [V(-3, 0, 20.5), V(-2.4, 2.9, -0.2), V(-0.4, 0, -2), V(27, 0, 3.2), V(27, 3.3, 0), V(14, 0, 18)],
+    // at the bend: the mirror, the car and the bus, nothing else
+    wide: [V(-3, 0, STOP.car + 5), V(-2.6, 3.1, -0.4), V(-0.4, 0, -1.6), BUS_LOW, BUS_HIGH],
     // the mirror and where the rays meet it
     close: [
       V(MIRROR.x - 1, 0, MIRROR.z - 0.7),
@@ -308,14 +349,8 @@ export function createApp(root, options = {}) {
       V(MIRROR.x, 1.4, MIRROR.z + 4.6),
       V(MIRROR.x + 2.8, 0, MIRROR.z + 2.8),
     ],
-    // the same, wider: the rays of the turned mirror
-    tilt: [
-      V(MIRROR.x - 8, 0, MIRROR.z - 2),
-      V(MIRROR.x - 1, 3.2, MIRROR.z - 1),
-      V(MIRROR.x + 9, 1.4, MIRROR.z),
-      V(MIRROR.x, 1.4, MIRROR.z + 10),
-      V(MIRROR.x + 8, 0, MIRROR.z + 9),
-    ],
+    // the turned mirror and its four rays: filled in by the question
+    tilt: [R0],
     // the mirror and the bus, along the east road
     road: [V(-3, 0, -2), V(-2.4, 3, 0), V(33.5, 0, 3.4), V(33.5, 3.3, 0), V(14, 0, 9)],
   };
@@ -327,8 +362,11 @@ export function createApp(root, options = {}) {
   function poseNow() {
     const key = poseKey();
     const c = key === 'close' || key === 'tilt' ? CLOSE : WIDE;
-    dirFrom(c.az, c.el, camDir);
-    return fitPose({ points: FRAMES[key], dir: camDir, camera, width: stage.width, height: stage.height, margin: MARGINS });
+    const band = windowsBelow();
+    dirFrom(c.az, band ? (c.elBand ?? c.el) : c.el, camDir);
+    BUS_LOW.x = BUS_HIGH.x = Math.min(s.busX, BUS_RANGE[1]) + BUS.length + 0.8;
+    const margin = key === 'wide' && band && pipOn() ? { ...MARGINS, bottom: panes[1].h + 14 } : MARGINS;
+    return fitPose({ points: FRAMES[key], dir: camDir, camera, width: stage.width, height: stage.height, margin });
   }
   function applyCamera() {
     if (s.userMovedCamera) return;
@@ -368,32 +406,49 @@ export function createApp(root, options = {}) {
     s.view = view === '3d' ? '3d' : 'front';
     s.userMovedCamera = false;
     syncUI();
-    if (animate) flyCamera(0.8);
+    if (animate) flyCamera(FLY);
     else camK = 1;
     stage.invalidate();
   }
-  controls.addEventListener('start', () => {
-    if (s.drag) return;
+  /** The student has really turned or zoomed the view: from here the camera is theirs, until the guided view is asked for. */
+  function turnedByHand() {
+    if (s.userMovedCamera || s.locked || s.drag) return;
     s.userMovedCamera = true;
     tweener.cancel('camera');
     camK = 1;
+    if (!s.orbited) {
+      s.orbited = true;
+      orbit.classList.add('small');
+    }
     if (s.view !== '3d') {
       s.view = '3d';
       syncUI();
       emit('view', { view: s.view });
     }
-  });
+  }
+  /** Never inside the hill or under the ground. */
+  const ABOVE = 2.5;
+  function keepAboveGround() {
+    const floor = terrainHeight(camera.position.x, camera.position.z) + ABOVE;
+    if (camera.position.y < floor) camera.position.y = floor;
+  }
 
   // ── the small window: one driver's own eye ─────────────────────────────────────────────────────────────
-  const pip = { x: 0, y: 0, w: 1, h: 1 };
+  /** Narrow frames carry the windows in a band under the scene, wide ones in the corner beside the car. */
+  const windowsBelow = () => stage.width / Math.max(1, stage.height) < 1.25;
   function layoutPip() {
-    const w = Math.round(clamp(Math.min(stage.width * 0.36, stage.height * 0.44), 118, 300));
-    const h = Math.round(w * 0.82);
-    pip.w = w;
-    pip.h = h;
-    pip.x = stage.width - w - 8;
-    pip.y = stage.height - h - 8;
-    pipEl.style.cssText = `left:${pip.x}px;top:${pip.y}px;width:${w}px;height:${h}px`;
+    const W = stage.width;
+    const H = stage.height;
+    const below = windowsBelow();
+    const w = below ? Math.min(300, Math.floor((W - 24) / 2)) : Math.round(clamp(Math.min(W * 0.29, H * 0.42), 118, 300));
+    const h = Math.round(below ? Math.min(w * 0.8, H * 0.37) : w * 0.82);
+    panes.forEach((p, i) => {
+      p.w = w;
+      p.h = h;
+      p.x = W - (2 - i) * (w + 8);
+      p.y = H - h - 8;
+      p.el.style.cssText = `left:${p.x}px;top:${p.y}px;width:${w}px;height:${h}px`;
+    });
   }
   const eyeCam = new THREE.PerspectiveCamera(30, 1, 0.25, 8000);
   const look = new THREE.Vector3();
@@ -403,9 +458,24 @@ export function createApp(root, options = {}) {
     // close up, the whole view belongs to the mirror and its angles
     return s.part >= PART.BLOCKED && s.part !== PART.MIRROR && s.part !== PART.ANGLES;
   };
+  const two = () => s.part === PART.COMPARE && !s.quiz;
+  /** One view through one driver's eye, in the window p, with that kind of mirror. */
+  function drawPane(p, kind, zoom) {
+    const R = stage.renderer;
+    const H0 = stage.height;
+    mirror.show(kind, true);
+    eyeCam.aspect = p.w / p.h;
+    eyeCam.fov = zoom;
+    eyeCam.updateProjectionMatrix();
+    R.setViewport(p.x, H0 - p.y - p.h, p.w, p.h);
+    R.setScissor(p.x, H0 - p.y - p.h, p.w, p.h);
+    R.setScissorTest(true);
+    R.render(scene, eyeCam);
+    R.setScissorTest(false);
+    R.setViewport(0, 0, stage.width, H0);
+  }
   function drawPip() {
     if (!pipOn()) return;
-    const R = stage.renderer;
     const e = eyeOf(s.who);
     const other = eyeOf(s.who === 'car' ? 'bus' : 'car');
     const hit = hillHit(e, other);
@@ -415,24 +485,20 @@ export function createApp(root, options = {}) {
     const k = ease.inOutCubic(s.pip);
     look.lerpVectors(lookHill, R0, k);
     eyeCam.position.set(e.x, e.y, e.z);
-    eyeCam.fov = THREE.MathUtils.lerp(36, 2 * THREE.MathUtils.radToDeg(Math.atan(1.12 / dist)), k * k);
-    eyeCam.aspect = pip.w / pip.h;
-    eyeCam.updateProjectionMatrix();
     eyeCam.lookAt(look);
     eyeCam.updateMatrixWorld(true);
+    const zoom = THREE.MathUtils.lerp(36, 2 * THREE.MathUtils.radToDeg(Math.atan((MIRROR.radius * 1.1) / dist)), k * k);
     setting.setViewer(eyeCam);
+    setting.fieldOff(true);
     const own = s.who === 'car' ? car : bus;
     const was = own.visible;
     own.visible = false;
-    const W0 = stage.width;
-    const H0 = stage.height;
-    R.setViewport(pip.x, H0 - pip.y - pip.h, pip.w, pip.h);
-    R.setScissor(pip.x, H0 - pip.y - pip.h, pip.w, pip.h);
-    R.setScissorTest(true);
-    R.render(scene, eyeCam);
-    R.setScissorTest(false);
-    R.setViewport(0, 0, W0, H0);
+    if (two()) {
+      drawPane(panes[0], 'plane', zoom);
+      drawPane(panes[1], 'convex', zoom);
+    } else drawPane(panes[1], s.kind, zoom);
     own.visible = was;
+    setting.fieldOff(false);
   }
   stage.onResize(() => {
     layoutPip();
@@ -444,12 +510,18 @@ export function createApp(root, options = {}) {
     draw();
   });
   const hideForMirror = [null];
+  const BOTH_KINDS = ['plane', 'convex'];
+  const ONE_KIND = ['plane'];
   stage.onBeforeRender(() => {
     applyCamera();
+    if (s.userMovedCamera) keepAboveGround();
     camera.updateMatrixWorld();
     hideForMirror[0] = s.who === 'car' ? car : bus;
-    mirror.update(hideForMirror, setting.setViewer);
+    setting.fieldOff(true);
+    mirror.update(two() ? BOTH_KINDS : ((ONE_KIND[0] = s.kind), ONE_KIND), hideForMirror, setting.setViewer);
+    setting.fieldOff(false);
     setting.setViewer(camera);
+    mirror.show(s.kind);
     placeHandle();
     labels();
   });
@@ -461,7 +533,7 @@ export function createApp(root, options = {}) {
   const busHere = () => (s.part === PART.SCENE || driving ? STOP.bus : s.busX);
   function settle() {
     ++token;
-    for (const k of ['reveal', 'glow', 'drive', 'pip', 'glide', 'rise']) tweener.cancel(k);
+    for (const k of ['reveal', 'glow', 'hold', 'drive', 'pip', 'glide', 'rise']) tweener.cancel(k);
     place(s.part, busHere());
     driving = false;
     phaseReveal = '';
@@ -497,11 +569,14 @@ export function createApp(root, options = {}) {
     if (!shone || my !== token) return false;
     s.glow = 0;
     phaseReveal = '';
-    return true;
+    draw();
+    // the result holds a moment before anything else changes
+    const held = await tweener.animate({ key: 'hold', duration: HOLD, ease: ease.linear }).finished;
+    return held && my === token;
   }
-  async function build(next) {
+  async function build(next, shownFrom = poseKey()) {
     const my = ++token;
-    const from = poseKey();
+    const from = shownFrom;
     s.part = next;
     s.busy = true;
     audio.tick();
@@ -521,7 +596,7 @@ export function createApp(root, options = {}) {
     if (next === PART.BOTH) s.pip = 1;
     draw();
     clearLabels();
-    const flight = poseKey() !== from ? flyCamera(FLY) : null;
+    const flight = poseKey() !== from || s.userMovedCamera ? flyCamera(FLY) : null;
     if (next === PART.BLOCKED) {
       const carFrom = s.carZ;
       const busFrom = s.busX;
@@ -539,7 +614,7 @@ export function createApp(root, options = {}) {
       if (flight) await flight;
       if (my !== token) return;
       if (next === PART.MIRROR) {
-        const up = await tweenValue('rise', GROW, (k) => {
+        const up = await tweenValue('rise', 1.8, (k) => {
           if (my !== token) return;
           s.rise = k;
           draw();
@@ -547,26 +622,41 @@ export function createApp(root, options = {}) {
         if (!up || my !== token) return;
         if (!(await grow('lay', my))) return;
       } else if (next === PART.RAY) {
-        if (!(await grow('path', my, 1.6))) return;
-        const turned2 = await tweenValue('pip', 1.1, (k) => {
+        if (!(await grow('path', my, RAY_TIME))) return;
+        const turned2 = await tweenValue('pip', SWING, (k) => {
           if (my !== token) return;
           s.pip = k;
           stage.invalidate();
         });
         if (!turned2 || my !== token) return;
+        const seen = await tweener.animate({ key: 'hold', duration: HOLD, ease: ease.linear }).finished;
+        if (!seen || my !== token) return;
       } else if (next === PART.ANGLES) {
-        if (!(await grow('angles', my, 1.4))) return;
+        if (!(await grow('angles', my, 1.8))) return;
       } else if (next === PART.BOTH) {
-        if (!(await grow('path', my, 1.6))) return;
+        if (!(await grow('path', my, RAY_TIME))) return;
       } else if (next === PART.COMPARE) {
-        if (!(await grow('field', my, 1.2))) return;
+        if (!(await grow('field', my, 1.8))) return;
       }
     }
     s.busy = false;
     draw();
     emitChange();
   }
-  function glideBus(to, seconds = 1.6) {
+  /** The step just finished, once more, slowly: from the picture before it. */
+  function replay() {
+    if (s.locked) return lockedNudge();
+    if (s.busy || s.part === PART.SCENE) return;
+    audio.unlock();
+    const from = poseKey();
+    const part = s.part;
+    const busX = s.busX;
+    settle();
+    clearLabels();
+    place(part - 1, busX);
+    build(part, from);
+  }
+  function glideBus(to, seconds = 2) {
     const my = ++token;
     const from = s.busX;
     return tweener
@@ -585,7 +675,7 @@ export function createApp(root, options = {}) {
   /** A word of the row: no mirror, the plane mirror, the convex mirror. */
   function choose(word) {
     if (s.locked) return lockedNudge();
-    if (!WORDS.includes(word)) return;
+    if (!WORDS.includes(word) || s.busy) return; // a step that is playing plays to its end
     const from = poseKey();
     settle();
     clearLabels();
@@ -616,7 +706,7 @@ export function createApp(root, options = {}) {
     if (ph === 'busy') return;
     if (s.part < PART.COMPARE) return build(s.part + 1);
     // a tap on a drag's button shows the move, and the student can go on by hand
-    return glideBus(s.busX > 19 ? 15 : 24);
+    return glideBus(s.busX > 16 ? 13.5 : 18.5);
   }
 
   // ── the handle ─────────────────────────────────────────────────────────────────────────────────────────
@@ -654,7 +744,11 @@ export function createApp(root, options = {}) {
 
   // ── labels on the picture ──────────────────────────────────────────────────────────────────────────────
   let action = null;
-  const anno = createAnnotations({ stage, layer: ui.annoLayer, avoid: [ui.corner, note, pipEl, handleBox, trackBoxes, () => action?.ringBox()] });
+  const anno = createAnnotations({
+    stage,
+    layer: ui.annoLayer,
+    avoid: [ui.corner, orbit, note, panes[0].el, panes[1].el, handleBox, trackBoxes, () => action?.ringBox()],
+  });
   const shown = new Map();
   const pts = new Map();
   function label(id, on, text, point, color, spots, optional = false, avoid = []) {
@@ -739,11 +833,26 @@ export function createApp(root, options = {}) {
     { dx: 36, dy: -30 },
   ];
   const AT = [{ dx: 0, dy: 0 }];
+  const ALONG = [
+    { dx: 0, dy: -30 },
+    { dx: 30, dy: -30 },
+    { dx: -30, dy: 30 },
+    { dx: 0, dy: 30 },
+    { dx: 40, dy: 22 },
+  ];
+  const ALONG2 = [
+    { dx: -44, dy: -8 },
+    { dx: -44, dy: 16 },
+    { dx: 44, dy: 8 },
+    { dx: 44, dy: -14 },
+    { dx: 0, dy: 34 },
+    { dx: -30, dy: -34 },
+  ];
   const tmp = new THREE.Vector3();
   const carTop = () => tmp.set(-LANE, 1.4, s.carZ + 2.4);
   const busTop = () => tmp.set(s.busX + 3.5, 3.1, LANE);
-  const HILL_POINT = V(19, 9, 19);
-  const VALLEY_POINT = V(-13, -6, -12);
+  const HILL_POINT = V(15, terrainHeight(15, 13) + 1, 13);
+  const VALLEY_FLOOR = -74;
   const mirrorTop = () => tmp.set(MIRROR.x, MIRROR.y + 0.95, MIRROR.z);
   function labels() {
     const q = s.quiz;
@@ -751,10 +860,12 @@ export function createApp(root, options = {}) {
     const free = !q && settled;
     const p = s.part;
     const whole = free && s.reveal >= 1;
-    label('car', free && p <= PART.BLOCKED, t('l_car'), carTop(), C.ink, UP, true, lineAvoid);
-    label('bus', free && (p <= PART.RAY || p === PART.COMPARE) && p !== PART.MIRROR, t('l_bus'), busTop(), C.ink, UP, true, lineAvoid);
-    label('hill', free && p <= PART.BLOCKED, t('l_hill'), HILL_POINT, C.ink, AT, true, lineAvoid);
-    label('valley', free && p === PART.SCENE, t('l_valley'), VALLEY_POINT, C.ink, AT, true);
+    label('car', free && p === PART.SCENE, t('l_car'), carTop(), C.ink, UP, true, lineAvoid);
+    label('bus', free && (p === PART.SCENE || p === PART.COMPARE), t('l_bus'), busTop(), C.ink, UP, true, lineAvoid);
+    // the valley floor at a fixed place in the frame, so the word always lies on what it names
+    const seesValley = free && p === PART.SCENE && onLevel(stage.width * 0.24, stage.height * 0.22, VALLEY_FLOOR);
+    label('valley', seesValley, t('l_valley'), hit, C.ink, AT, true);
+    label('hill', free && p === PART.BLOCKED, t('l_hill'), HILL_POINT, C.ink, AT, true, lineAvoid);
     label(
       'driver',
       free && (p === PART.BLOCKED || p === PART.RAY) && whole,
@@ -765,10 +876,25 @@ export function createApp(root, options = {}) {
       true,
       lineAvoid,
     );
-    const nameMirror = free && (p === PART.MIRROR || p === PART.RAY || p === PART.COMPARE) && s.rise > 0;
+    const nameMirror = free && (p === PART.MIRROR || p === PART.COMPARE || p === PART.RAY) && s.rise > 0;
     const mirrorWord =
       p === PART.MIRROR ? t('l_mirror_a', { a: RAY_ANGLE }) : p === PART.COMPARE ? t(s.kind === 'convex' ? 'l_convex' : 'l_plane') : t('l_mirror');
     label('mirror', nameMirror, mirrorWord, mirrorTop(), C.ink, UP, false, lineAvoid);
+    // the rays' names: the book's terms, on the rays themselves, once the light has run them
+    const rayNames = !q && settled && (p === PART.RAY || p === PART.ANGLES) && s.reveal >= 1;
+    const pr = dia.view.path;
+    if (rayNames && pr) {
+      const f = p === PART.ANGLES ? 3.3 : 0.5;
+      const k1 = p === PART.ANGLES ? f / Math.hypot(pr.from.x - pr.p.x, pr.from.z - pr.p.z) : f;
+      const k2 = p === PART.ANGLES ? f / Math.hypot(pr.to.x - pr.p.x, pr.to.z - pr.p.z) : f;
+      tmp.set(pr.p.x + (pr.from.x - pr.p.x) * k1, pr.p.y + (pr.from.y - pr.p.y) * k1, pr.p.z + (pr.from.z - pr.p.z) * k1);
+      label('inc', true, t('l_inc'), tmp, AMBER_TEXT, ALONG, false, lineAvoid);
+      tmp.set(pr.p.x + (pr.to.x - pr.p.x) * k2, pr.p.y + (pr.to.y - pr.p.y) * k2, pr.p.z + (pr.to.z - pr.p.z) * k2);
+      label('ref', true, t('l_ref'), tmp, AMBER_TEXT, ALONG2, false, lineAvoid);
+    } else {
+      label('inc', false);
+      label('ref', false);
+    }
     const laid = free && p === PART.MIRROR && whole && s.rise >= 1;
     label(
       'a1',
@@ -797,7 +923,7 @@ export function createApp(root, options = {}) {
     label('r1', laid, t('l_road'), tmp.set(MIRROR.x + 4, MIRROR.y, MIRROR.z), C.ink, UP.concat(DOWN), true);
     label('r2', laid, t('l_road'), tmp.set(MIRROR.x, MIRROR.y, MIRROR.z + 4), C.ink, LEFT.concat(DOWN), true);
     label('busdrv', free && p === PART.BOTH && whole, t('l_bus_driver'), tmp.copy(busEye(s.busX)), '#1864ab', UP, true, lineAvoid);
-    label('car2', free && p === PART.BOTH && whole, t('l_car'), carTop(), C.ink, UP, true, lineAvoid);
+    label('car2', free && p === PART.BOTH && whole, t('l_car'), carTop(), C.ink, UP.concat(LEFT), true, lineAvoid);
     label('cng', free && p === PART.COMPARE, t('l_cng'), tmp.set(CNG.x - 1.2, 1.9, CNG.z), C.ink, UP, true, lineAvoid);
 
     label('drag', hp.on && !s.moved, t('l_drag'), handlePoint(tmp), C.ink, SEE_HANDLE, true, lineAvoid);
@@ -838,13 +964,21 @@ export function createApp(root, options = {}) {
         lineAvoid,
       );
       dia.onArc(0, 3.1, tmp);
-      label('normal', true, t('l_normal'), tmp, C.normal, DOWN, true, lineAvoid);
-      tmp.set(MIRROR.x + 3.7, pa.p.y, MIRROR.z);
-      label('inc', true, t('l_inc'), tmp, AMBER_TEXT, UP, true, lineAvoid);
-      tmp.set(MIRROR.x, pa.p.y, MIRROR.z + 3.8);
-      label('ref', true, t('l_ref'), tmp, AMBER_TEXT, LEFT, true, lineAvoid);
+      label(
+        'normal',
+        true,
+        t('l_normal'),
+        tmp,
+        C.normal,
+        DOWN.concat(RIGHT, [
+          { dx: 60, dy: 34 },
+          { dx: -70, dy: 40 },
+        ]),
+        false,
+        lineAvoid,
+      );
     } else {
-      for (const id of ['ti', 'tr', 'normal', 'inc', 'ref']) label(id, false);
+      for (const id of ['ti', 'tr', 'normal']) label(id, false);
     }
 
     // the test
@@ -875,7 +1009,7 @@ export function createApp(root, options = {}) {
     }
     for (let i = 0; i < 4; i++) {
       const c = on && qk === 'tilt';
-      label(`qc${i}`, Boolean(c), c ? q.letters[i] : '', c ? q.tips[i] : R0, C.ink, UP.concat(DOWN), false);
+      label(`qc${i}`, Boolean(c), c ? q.letters[i] : '', c ? q.tips[i] : R0, c ? q.colors[i] : C.ink, AT, false);
     }
     label(
       'qu',
@@ -892,9 +1026,12 @@ export function createApp(root, options = {}) {
 
   // ── the panel ───────────────────────────────────────────────────────────────────────────────────────────
   const steady = { act: '' };
-  const measures = () => {
+  const wide = (w) => N(w >= 10 ? Math.round(w) : Number(w.toFixed(1)));
+  /** "About 6 times smaller": to the half at most, a number that can be read off, not a measurement. */
+  const timesSmaller = (m) => Math.round(2 / m) / 2;
+  const measures = (kind = s.kind) => {
     const E = carEye(s.carZ);
-    const convex = s.kind === 'convex';
+    const convex = kind === 'convex';
     const u = Math.abs(busEye(s.busX).x - MIRROR.x);
     const width = fieldWidthAt(fieldOfView(E, convex), s.busX);
     return { u, width, m: convex ? magnification(u, FOCAL_CONVEX) : 1, angle: fieldAngle(E, convex) };
@@ -910,9 +1047,7 @@ export function createApp(root, options = {}) {
       return `<span class="hrm-a hrm-ti">${t('out_a_i', { a: Math.round(th.thetaI) })}</span><span class="hrm-a hrm-tr">${t('out_a_r', { a: Math.round(th.thetaR) })}</span>`;
     }
     if (p === PART.BOTH) return t('out_5');
-    const { width, m } = measures();
-    const w = N(width >= 10 ? Math.round(width) : Number(width.toFixed(1)));
-    return s.kind === 'convex' ? t('out_convex', { w, k: Math.round(1 / m) }) : t('out_plane', { w });
+    return t('out_compare', { p: wide(measures('plane').width), c: wide(measures('convex').width) });
   }
   function rule() {
     const p = s.part;
@@ -934,9 +1069,29 @@ export function createApp(root, options = {}) {
     return s.kind;
   }
   function panel() {
-    pipEl.hidden = !pipOn();
-    pipTitle.textContent = t(s.who === 'car' ? 'pip_car' : 'pip_bus');
+    const on = pipOn();
+    const both = two();
+    panes[0].el.hidden = !both;
+    panes[1].el.hidden = !on;
+    if (both) {
+      panes[0].title.textContent = t('l_plane');
+      panes[1].title.textContent = t('l_convex');
+      panes[0].note.textContent = t('win_same');
+      panes[1].note.textContent = t('win_small', { k: N(timesSmaller(measures('convex').m)) });
+      panes[0].el.classList.toggle('on', s.kind === 'plane');
+      panes[1].el.classList.toggle('on', s.kind === 'convex');
+    } else {
+      panes[1].title.textContent = t(s.who === 'car' ? 'pip_car' : 'pip_bus');
+      panes[1].note.textContent = s.pip >= 1 ? t('win_zoom') : '';
+      panes[1].el.classList.remove('on');
+    }
+    panes[1].note.hidden = !panes[1].note.textContent;
+    offer.hidden = !(s.part === PART.COMPARE && !s.busy && !s.quiz);
+    root.dataset.offer = offer.hidden ? '0' : '1';
+    const canReplay = s.part > PART.SCENE && !s.busy && !s.quiz;
+    for (const b of ui.$$('[data-act="replay"]')) b.disabled = !canReplay;
     note.hidden = !(s.part === PART.BLOCKED || s.part >= PART.RAY) || Boolean(s.quiz);
+    note.textContent = t(s.part === PART.COMPARE ? 'note_zoom' : 'note_rays');
     if (s.quiz) return;
     sheet.outcome(outcome());
     sheet.rule(rule());
@@ -945,11 +1100,10 @@ export function createApp(root, options = {}) {
     sheet.next(ph === 'p1' ? 'plane' : ph === 'p5' ? 'convex' : null);
     const [key, step, icon] = ACTIONS[ph];
     const enabled = ph !== 'busy';
-    const label2 = key === 'act_mirror' ? () => t(key, { a: RAY_ANGLE }) : key;
     const k2 = `${key}|${step}|${enabled}`;
     if (action && steady.act !== k2) {
       steady.act = k2;
-      action.set({ label: label2, step, enabled, icon });
+      action.set({ label: key, step, enabled, icon });
     }
   }
   function draw() {
@@ -976,7 +1130,7 @@ export function createApp(root, options = {}) {
       return null;
     },
     radius: 22,
-    avoid: [ui.corner, ui.hint, note, pipEl, handleBox, () => anno.boxes()],
+    avoid: [ui.corner, ui.hint, orbit, note, panes[0].el, panes[1].el, handleBox, () => anno.boxes()],
     pulse: Boolean(o.coach),
     onAct: () => act(),
   });
@@ -1030,6 +1184,11 @@ export function createApp(root, options = {}) {
   );
   ui.canvasHost.addEventListener('pointermove', (e) => {
     const g = s.drag;
+    if (!g && down && e.buttons) {
+      // a tap is not a turn: only a real move of the finger hands the camera over
+      const m = hostXY(e);
+      if (Math.hypot(m.x - down.x, m.y - down.y) >= 8) turnedByHand();
+    }
     if (!g || e.pointerId !== g.id) return;
     const p = hostXY(e);
     g.moved = Math.max(g.moved, Math.hypot(p.x - g.px, p.y - g.py));
@@ -1054,7 +1213,8 @@ export function createApp(root, options = {}) {
   ui.canvasHost.addEventListener('pointerup', (e) => {
     const wasDrag = Boolean(s.drag);
     endDrag(e);
-    if (wasDrag || !down) return;
+    if (wasDrag) down = null;
+    if (!down) return;
     const p = hostXY(e);
     const moved = Math.hypot(p.x - down.x, p.y - down.y);
     const quick = performance.now() - down.at < 500;
@@ -1066,15 +1226,18 @@ export function createApp(root, options = {}) {
     if (Math.hypot(a.x - p.x, a.y - p.y) < 44) act();
   });
   ui.canvasHost.addEventListener('pointercancel', endDrag);
+  ui.canvasHost.addEventListener('wheel', turnedByHand, { passive: true });
 
   // ── the test ────────────────────────────────────────────────────────────────────────────────────────────
   const LETTERS = t('letters').split(',');
+  const QUIZ_RAYS = ['#c2255c', '#1971c2', '#2b8a3e', '#862e9c'];
   function applyQuiz(q, E, H) {
     const v = dia.view;
     if (q.kind === 'right') {
       const p = path(E, H);
       dia.at.set(p.P.x, p.P.y, p.P.z);
       v.path = { from: H, p: p.P, to: E, k: 1, glow: 0 };
+      nearArrows(v.path);
       v.normal = 1;
       v.normalLength = 2.6;
       v.arcs.push({ a0: 0, a1: q.side * 45, r: 1.95, color: C.ti, ends: 'arrows' });
@@ -1084,10 +1247,10 @@ export function createApp(root, options = {}) {
     if (q.kind === 'tilt') {
       dia.at.set(MIRROR.x, MIRROR.y, MIRROR.z);
       dia.setNormal(q.n.x, q.n.z);
-      v.path = { from: V(MIRROR.x + 11, MIRROR.y, MIRROR.z), p: R0, to: R0, k: 0.5 };
+      v.path = { from: V(MIRROR.x + 6.5, MIRROR.y, MIRROR.z), p: R0, to: R0, k: 0.5 };
       v.normal = 1;
-      v.normalLength = 3.4;
-      for (const tip of q.tips) v.rays.push({ from: R0, to: tip });
+      v.normalLength = 2.4;
+      q.tips.forEach((tip, i) => v.rays.push({ from: R0, to: tip, color: q.colors[i], edge: '#ffffff' }));
       return;
     }
     if (q.kind === 'reverse') {
@@ -1135,19 +1298,24 @@ export function createApp(root, options = {}) {
       };
     }
     if (kind === 'tilt') {
-      const delta = 15;
+      // the rays stand in order round the mirror, each its own colour with its letter at the tip
+      const delta = 20;
       const sign = Math.random() < 0.5 ? 1 : -1;
       const n = turned(NORMAL, sign * delta);
-      const d = { x: -1, y: 0, z: 0 };
+      const south = { x: 0, y: 0, z: 1 };
+      const inc = { x: 1, y: 0, z: 0 };
+      const mid = { x: n.x + inc.x, y: 0, z: n.z + inc.z };
+      const l = Math.hypot(mid.x, mid.z);
       const dir = {
-        real: reflect(d, n),
-        same: { x: 0, y: 0, z: 1 },
-        once: turned({ x: 0, y: 0, z: 1 }, sign * delta),
-        back: turned({ x: 1, y: 0, z: 0 }, -sign * 18 + 0),
+        real: reflect({ x: -1, y: 0, z: 0 }, n),
+        same: south,
+        once: turned(south, sign * delta),
+        back: { x: mid.x / l, y: 0, z: mid.z / l },
       };
-      const kinds = shuffle(['real', 'same', 'once', 'back']);
-      const tips = kinds.map((k) => V(MIRROR.x + dir[k].x * 9, MIRROR.y, MIRROR.z + dir[k].z * 9));
-      quizScene({ kind, yaw: sign * delta, delta, n, tips, letters: kinds.map((_, k) => `<b>${LETTERS[k]}</b>`) });
+      const kinds = ['real', 'same', 'once', 'back'].sort((a, b) => Math.atan2(dir[a].x, dir[a].z) - Math.atan2(dir[b].x, dir[b].z));
+      const tips = kinds.map((k) => V(MIRROR.x + dir[k].x * 5.2, MIRROR.y, MIRROR.z + dir[k].z * 5.2));
+      FRAMES.tilt = [...tips, V(MIRROR.x + 6.5, MIRROR.y, MIRROR.z), V(MIRROR.x - 1, 3.1, MIRROR.z - 0.8), V(MIRROR.x - 1, 0, MIRROR.z - 0.8)];
+      quizScene({ kind, yaw: sign * delta, delta, n, tips, colors: QUIZ_RAYS, letters: kinds.map((_, k) => `<b>${LETTERS[k]}</b>`) });
       const answer = kinds.indexOf('real');
       const wrong = [0, 1, 2, 3].filter((k) => k !== answer);
       return {
@@ -1161,23 +1329,23 @@ export function createApp(root, options = {}) {
     }
     if (kind === 'reverse') {
       quizScene({ kind, pip: true });
-      const list = ['yes', 'one', 'high', 'convex'];
+      const list = ['yes', 'convex', 'one', 'high'];
       return {
         text: t('q_reverse'),
         answer: 0,
         wrong: [1, 2, 3],
         label: (k) => t(`c_rev_${list[k]}`),
         notes: notesOf([
-          [1, t('n_rev_one')],
-          [2, t('n_rev_high')],
-          [3, t('n_rev_convex')],
+          [1, t('n_rev_convex')],
+          [2, t('n_rev_one')],
+          [3, t('n_rev_high')],
         ]),
         reveal: t('a_rev'),
       };
     }
     if (kind === 'which') {
       const kindNow = Math.random() < 0.5 ? 'convex' : 'plane';
-      const list = ['plane', 'convex', 'concave', 'glass'];
+      const list = ['plane', 'convex', 'concave', 'two'];
       quizScene({ kind, pip: true }, { kind: kindNow });
       const answer = list.indexOf(kindNow);
       const wrong = [0, 1, 2, 3].filter((k) => k !== answer);
@@ -1191,17 +1359,18 @@ export function createApp(root, options = {}) {
       };
     }
     // the mirror formula, with u read off the picture
-    const u = [16, 20, 24][Math.floor(Math.random() * 3)];
+    const u = [14, 18, 22][Math.floor(Math.random() * 3)];
     const fv = Math.abs(FOCAL_CONVEX);
     const v = imageDistance(u, FOCAL_CONVEX);
     const vs = N(Math.abs(v).toFixed(1));
+    const sign = N(imageDistance(u, fv).toFixed(1)); // f taken as positive: the mistake
     quizScene({ kind, u }, { kind: 'convex', busX: u + MIRROR.x - BUS.eyeBack });
     const list = ['behind', 'front', 'same', 'focus'];
     return {
       text: t('q_formula', { f: fv, one: 1 }),
       answer: 0,
       wrong: [1, 2, 3],
-      label: (k) => t(`c_v_${list[k]}`, { v: vs, u, f: fv }),
+      label: (k) => t(`c_v_${list[k]}`, { v: vs, u, f: fv, s: sign }),
       notes: notesOf([
         [1, t('n_v_front')],
         [2, t('n_v_same')],
@@ -1222,10 +1391,10 @@ export function createApp(root, options = {}) {
     hooks: {
       enter() {
         s.mode = 'quiz';
+        settle(); // a step that was playing ends first: what is kept is where it was going
         Object.assign(saved, { part: s.part, kind: s.kind, busX: s.busX });
         s.locked = true;
         order = ['right', 'tilt', 'reverse', 'which', 'formula'];
-        settle();
         if (s.drag) {
           controls.enabled = true;
           s.drag = null;
@@ -1242,16 +1411,19 @@ export function createApp(root, options = {}) {
         place(saved.part, saved.busX);
         s.kind = saved.part >= PART.COMPARE ? saved.kind : 'plane';
         syncUI();
-        flyCamera(0.5);
+        flyCamera(FLY);
         draw();
       },
       async prepare(i, alive, say) {
+        const from = poseKey();
         const q = prepare(i);
         qCurrent = q;
         say(q.text);
-        const done = await flyCamera(0.6);
-        if (!alive()) return null;
-        if (!done) camK = 1;
+        if (poseKey() !== from || i === 0) {
+          const done = await flyCamera(FLY);
+          if (!alive()) return null;
+          if (!done) camK = 1;
+        }
         const out = [q.answer];
         for (const w of q.wrong) if (out.length < 4 && !out.includes(w)) out.push(w);
         const choices = shuffle(out);
@@ -1272,6 +1444,8 @@ export function createApp(root, options = {}) {
     const front = ui.$('[data-view="front"]');
     if (front) front.hidden = s.view !== '3d';
     controls.enableRotate = !s.locked;
+    controls.enableZoom = !s.locked;
+    orbit.hidden = s.locked;
     root.dataset.mode = s.mode === 'quiz' ? 'quiz' : 'explore';
     for (const b of ui.$$('[data-mode]')) {
       const on = b.dataset.mode === root.dataset.mode;
@@ -1316,12 +1490,14 @@ export function createApp(root, options = {}) {
     if (b.dataset.view) setView(b.dataset.view);
     if (b.dataset.mode === 'quiz' && s.mode !== 'quiz') quiz.start();
     if (b.dataset.mode === 'explore') quiz.stop();
+    if (b.dataset.offer) quiz.start();
     if (b.dataset.q != null) quiz.choose(Number(b.dataset.q));
     if (b.dataset.example) choose(b.dataset.example);
     const a = b.dataset.act;
     if (a === 'q-next') quiz.next();
     if (a === 'q-again') quiz.start();
     if (a === 'home') home();
+    if (a === 'replay') replay();
     if (a === 'fullscreen') {
       if (document.fullscreenElement) document.exitFullscreen?.();
       else root.requestFullscreen?.().catch(() => {});
@@ -1372,6 +1548,8 @@ export function createApp(root, options = {}) {
       pip: pipOn(),
       handle: handleOn(),
       dragged: s.moved,
+      orbited: s.orbited,
+      aboveGround: +(camera.position.y - terrainHeight(camera.position.x, camera.position.z)).toFixed(2),
       question: s.quiz ? { kind: s.quiz.kind, right: qCurrent?.rightIndex ?? -1 } : null,
       busy: s.busy,
       mode: s.mode,
@@ -1409,6 +1587,16 @@ export function createApp(root, options = {}) {
     async set(p = {}) {
       const animate = p.animate !== false;
       if (p.view) setView(p.view, { animate });
+      if (p.orbit) {
+        // the view from a side, as a finger would turn it: az, el in degrees, from the target
+        turnedByHand();
+        const d = camera.position.distanceTo(controls.target);
+        dirFrom(Number(p.orbit.az) || 0, clamp(Number(p.orbit.el) || 0, 2, 85), camera.position)
+          .multiplyScalar(d)
+          .add(controls.target);
+        keepAboveGround();
+        controls.update();
+      }
       if (p.part != null) {
         const next = clamp(Math.round(Number(p.part)), PART.SCENE, PART.COMPARE);
         const from = poseKey();

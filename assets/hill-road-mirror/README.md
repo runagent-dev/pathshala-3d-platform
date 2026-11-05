@@ -29,7 +29,7 @@ To listen to it or control it from the book page, use the helper shipped in the 
 | `lang` | Language | `bn` বাংলা · `en` English | `bn` |
 | `part` | How far the story is built (0 the bend, 1 hidden by the hill, 2 mirror, 3 the ray, 4 the angles, 5 both drivers, 6 plane and convex) | number | `0` |
 | `mirror` | Mirror | `plane` plane · `convex` convex | `plane` |
-| `bus` | The bus's nose along the east road (m) | number | `17` |
+| `bus` | The bus's nose along the east road (m) | number | `13.5` |
 | `view` | View | `front` · `3d` | `front` |
 | `mode` | Start in | `explore` learn · `quiz` test | `explore` |
 | `coach` | The ring on the part pulses at first | `1` · `0` | `1` |

@@ -13,7 +13,7 @@
   "order": 1,
   "maintainers": ["RadeenXALNW"],
   "units": "m",
-  "description": "Interactive 3D figure for the mirror at a blind hill-road bend, book page 236, topic 8.8.4. A car and a bus come to a right-angle bend from two roads, a rocky hill between them and a deep valley beyond the guard rail. The bus's light stops on the rock, which a small window shows through the driver's own eye. A mirror set at 45° at the bend turns the light exactly 90°, along the other road and into the driver's eye, and the same window then shows the bus in the mirror, traced exactly. Close up the two angles are measured (θi = θr = 45°), the path is run backwards so the bus driver sees the car, and the plane mirror is swapped for a convex one: the strip of road it shows widens on the road itself, the image turns small and upright, and the CNG in the next lane comes into view. The student drags the bus. Five test questions. Offline, Bangla and English.",
+  "description": "Interactive 3D figure for the mirror at a blind hill-road bend, book page 236, topic 8.8.4. A car and a bus come to a right-angle bend from two roads, a rocky hill between them and a deep valley beyond the guard rail. The bus's light stops on the rock, which a small window shows through the driver's own eye. A mirror set at 45° at the bend turns the light exactly 90°, along the other road and into the driver's eye, and the same window then shows the bus in the mirror, traced exactly. Close up the two angles are measured (θi = θr = 45°), the path is run backwards so the bus driver sees the car, and the last step sets a plane and a convex mirror side by side for the same bus: the strip of road each shows is marked on the road, the convex mirror's image is small and upright, and the CNG in the next lane comes into view. Each step plays slowly, waits for a tap and can be seen again. The student drags the bus by its handle. Five test questions, offered at the end. Offline, Bangla and English.",
   "tags": [
     "light",
     "reflection",
@@ -46,7 +46,7 @@
       "options": [["plane", "plane"], ["convex", "convex"]],
       "default": "plane"
     },
-    { "name": "bus", "label": "The bus's nose along the east road (m)", "type": "number", "default": "17" },
+    { "name": "bus", "label": "The bus's nose along the east road (m)", "type": "number", "default": "13.5" },
     { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
     {
       "name": "mode",
@@ -69,8 +69,9 @@
     { "name": "get", "payload": {} },
     { "name": "set", "payload": { "part": 3, "animate": false } },
     { "name": "set", "payload": { "mirror": "convex" } },
-    { "name": "set", "payload": { "bus": 24 } },
-    { "name": "set", "payload": { "glideBus": { "to": 15, "seconds": 1.6 } } },
+    { "name": "set", "payload": { "bus": 18 } },
+    { "name": "set", "payload": { "glideBus": { "to": 13, "seconds": 2 } } },
+    { "name": "set", "payload": { "orbit": { "az": 190, "el": 25 } } },
     { "name": "reset", "payload": {} },
     { "name": "practice", "payload": {} },
     { "name": "capture", "payload": { "width": 800, "height": 500 } },
@@ -82,16 +83,17 @@
     "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "part": 3, "animate": false } }] }],
     "video": {
       "kind": "script",
-      "seconds": 24,
+      "seconds": 40,
       "fps": 30,
       "params": { "coach": "0" },
       "script": [
         { "at": 1, "command": "set", "payload": { "part": 1 } },
-        { "at": 6.5, "command": "set", "payload": { "part": 2 } },
-        { "at": 10, "command": "set", "payload": { "part": 3 } },
-        { "at": 14.5, "command": "set", "payload": { "part": 4 } },
-        { "at": 18, "command": "set", "payload": { "part": 6, "mirror": "convex" } },
-        { "at": 20, "command": "set", "payload": { "glideBus": { "to": 24, "seconds": 2.5 } } }
+        { "at": 8, "command": "set", "payload": { "part": 2 } },
+        { "at": 14.8, "command": "set", "payload": { "part": 3 } },
+        { "at": 22.5, "command": "set", "payload": { "part": 4 } },
+        { "at": 27.6, "command": "set", "payload": { "part": 5 } },
+        { "at": 33, "command": "set", "payload": { "part": 6 } },
+        { "at": 36.5, "command": "set", "payload": { "glideBus": { "to": 17.5, "seconds": 2.5 } } }
       ]
     }
   }

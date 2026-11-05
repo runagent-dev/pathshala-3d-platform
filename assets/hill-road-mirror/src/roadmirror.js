@@ -25,7 +25,7 @@ const FACE_VS = /* glsl */ `
   }`;
 const FACE_FS = /* glsl */ `
   uniform sampler2D tRefl; uniform mat4 uVP; uniform float uRho; uniform float uRadius;
-  uniform vec3 uRight; uniform vec3 uUp; uniform vec3 uOut; uniform vec3 uProxy; uniform vec3 uAim;
+  uniform vec3 uRight; uniform vec3 uUp; uniform vec3 uOut; uniform vec3 uProxy; uniform vec3 uAim; uniform float uTraced;
   varying vec3 vW; varying vec2 vL;
   void main() {
     vec3 N = uOut;
@@ -33,9 +33,9 @@ const FACE_FS = /* glsl */ `
     vec3 V = normalize(vW - cameraPosition);
     vec3 R = reflect(V, N);
     // the soft world the face shows from far away
-    vec3 c = mix(vec3(0.30, 0.29, 0.29), vec3(0.74, 0.86, 0.95), smoothstep(-0.8, 0.15, R.y + (vL.y * 0.42 - vL.x * 0.16) / uRadius));
+    vec3 c = mix(vec3(0.52, 0.56, 0.60), vec3(0.92, 0.98, 1.0), smoothstep(-0.8, 0.15, R.y + (vL.y * 0.42 - vL.x * 0.16) / uRadius));
     float along = dot(R, uAim);
-    if (along > 0.05) {
+    if (uTraced > 0.5 && along > 0.05) {
       vec3 H = vW + R * (dot(uProxy - vW, uAim) / along);
       vec4 q = uVP * vec4(H, 1.0);
       vec2 uv = q.xy / q.w * 0.5 + 0.5;
@@ -68,20 +68,24 @@ export function createMirror({ stage }) {
   scene.add(group);
 
   const r = MIRROR.radius;
-  const size = 512;
   const canFloat = renderer.extensions.has('EXT_color_buffer_float') || renderer.extensions.has('EXT_color_buffer_half_float');
-  const rt = new THREE.WebGLRenderTarget(size, size, {
-    type: canFloat ? THREE.HalfFloatType : THREE.UnsignedByteType,
-    depthBuffer: true,
-    samples: 0,
-  });
-  rt.texture.minFilter = THREE.LinearMipmapLinearFilter;
-  rt.texture.generateMipmaps = true;
+  // one small picture of the road for each kind of mirror: the convex step shows both at once
+  const picture = () => {
+    const rt = new THREE.WebGLRenderTarget(512, 512, {
+      type: canFloat ? THREE.HalfFloatType : THREE.UnsignedByteType,
+      depthBuffer: true,
+      samples: 0,
+    });
+    rt.texture.minFilter = THREE.LinearMipmapLinearFilter;
+    rt.texture.generateMipmaps = true;
+    return { rt, vp: new THREE.Matrix4(), stale: true };
+  };
+  const pics = { plane: picture(), convex: picture() };
   const out = new THREE.Vector3(NORMAL.x, NORMAL.y, NORMAL.z);
   const up = new THREE.Vector3(0, 1, 0);
   const right = new THREE.Vector3().crossVectors(up, out).normalize();
   const uniforms = {
-    tRefl: { value: rt.texture },
+    tRefl: { value: pics.plane.rt.texture },
     uVP: { value: new THREE.Matrix4() },
     uRho: { value: 0 },
     uRadius: { value: r },
@@ -90,6 +94,7 @@ export function createMirror({ stage }) {
     uOut: { value: out },
     uProxy: { value: new THREE.Vector3() },
     uAim: { value: new THREE.Vector3(1, 0, 0) },
+    uTraced: { value: 0 },
   };
   const faceMat = new THREE.ShaderMaterial({ vertexShader: FACE_VS, fragmentShader: FACE_FS, uniforms });
   // rings of vertices, for the bulge
@@ -145,11 +150,44 @@ export function createMirror({ stage }) {
 
   // ── the picture of the road ─────────────────────────────────────────────────────────────────────────────────
   const shot = new THREE.PerspectiveCamera(40, 1, 0.3, 6000);
-  const vp = new THREE.Matrix4();
-  let stale = true;
   let plan = null;
   const tmp = new THREE.Vector3();
   const image = new THREE.Vector3();
+  function draw(kind, hide, before) {
+    const pic = pics[kind];
+    pic.stale = false;
+    const { eye, aim } = plan;
+    const centre = tmp.set(MIRROR.x, MIRROR.y, MIRROR.z);
+    if (kind === 'convex') {
+      shot.position.copy(centre);
+      shot.fov = 66;
+      shot.near = 0.3;
+      shot.lookAt(centre.x + aim.x, centre.y + aim.y, centre.z + aim.z);
+    } else {
+      // the eye's image in the mirror: every ray the eye gets from the mirror starts here
+      const d = (eye.x - centre.x) * out.x + (eye.y - centre.y) * out.y + (eye.z - centre.z) * out.z;
+      image.set(eye.x - 2 * d * out.x, eye.y - 2 * d * out.y, eye.z - 2 * d * out.z);
+      shot.position.copy(image);
+      const dist = image.distanceTo(centre);
+      shot.fov = 2 * THREE.MathUtils.radToDeg(Math.atan((r * 1.04) / dist));
+      shot.near = Math.max(0.3, dist - r);
+      shot.lookAt(centre);
+    }
+    shot.updateProjectionMatrix();
+    shot.updateMatrixWorld(true);
+    pic.vp.multiplyMatrices(shot.projectionMatrix, shot.matrixWorldInverse);
+    before?.(shot);
+    const was = hide.map((o) => o.visible);
+    hide.forEach((o) => {
+      o.visible = false;
+    });
+    renderer.setRenderTarget(pic.rt);
+    renderer.clear();
+    renderer.render(scene, shot);
+    hide.forEach((o, i) => {
+      o.visible = was[i];
+    });
+  }
 
   return {
     group,
@@ -164,69 +202,43 @@ export function createMirror({ stage }) {
       standing.position.y = (k - 1) * (MIRROR.y + 1.2);
       group.visible = k > 0;
     },
-    setConvex(on) {
-      uniforms.uRho.value = on ? MIRROR.rho : 0;
-      stale = true;
-    },
     /**
-     * Whose eye the picture is for: eye (Vector3 or {x,y,z}), the aim (unit, level: the way the reflected ray runs from
-     * the mirror's centre), the proxy point (the other vehicle: rays are followed to the plane through it).
+     * Whose eye the pictures are for: eye {x,y,z}; aim (unit, level): the way the reflected ray runs from the mirror's
+     * centre; proxy: the other vehicle, rays are followed to the plane through it.
      */
-    aim(eye, aim, proxy, convex) {
-      plan = { eye, aim, proxy, convex };
-      stale = true;
+    aim(eye, aim, proxy) {
+      plan = { eye, aim, proxy };
+      pics.plane.stale = pics.convex.stale = true;
     },
-    touch() {
-      stale = true;
-    },
-    /** Draw the picture if it is out of date. hide: what the mirror must not see (its own driver's vehicle). */
-    update(hide, setViewer) {
-      if (!stale || !plan || !group.visible) return;
-      stale = false;
-      const { eye, aim, proxy, convex } = plan;
-      uniforms.uAim.value.set(aim.x, aim.y, aim.z);
-      uniforms.uProxy.value.set(proxy.x, proxy.y, proxy.z);
-      const centre = tmp.set(MIRROR.x, MIRROR.y, MIRROR.z);
-      if (convex) {
-        shot.position.copy(centre);
-        shot.fov = 66;
-        shot.near = 0.3;
-        shot.lookAt(centre.x + aim.x, centre.y + aim.y, centre.z + aim.z);
-      } else {
-        // the eye's image in the mirror: every ray the eye gets from the mirror starts here
-        const d = (eye.x - centre.x) * out.x + (eye.y - centre.y) * out.y + (eye.z - centre.z) * out.z;
-        image.set(eye.x - 2 * d * out.x, eye.y - 2 * d * out.y, eye.z - 2 * d * out.z);
-        shot.position.copy(image);
-        const dist = image.distanceTo(centre);
-        shot.fov = 2 * THREE.MathUtils.radToDeg(Math.atan((r * 1.04) / dist));
-        shot.near = Math.max(0.3, dist - r);
-        shot.lookAt(centre);
-      }
-      shot.updateProjectionMatrix();
-      shot.updateMatrixWorld(true);
-      vp.multiplyMatrices(shot.projectionMatrix, shot.matrixWorldInverse);
-      uniforms.uVP.value.copy(vp);
-      setViewer?.(shot);
-      const was = hide.map((o) => o.visible);
-      hide.forEach((o) => {
-        o.visible = false;
-      });
+    /** Draw the pictures of these kinds that are out of date. hide: what the mirror must not see (its driver's vehicle). */
+    update(kinds, hide, before) {
+      if (!plan || !group.visible) return;
+      const todo = kinds.filter((k) => pics[k].stale);
+      if (!todo.length) return;
+      const target = renderer.getRenderTarget();
       group.visible = false;
-      const before = renderer.getRenderTarget();
-      renderer.setRenderTarget(rt);
-      renderer.clear();
-      renderer.render(scene, shot);
-      renderer.setRenderTarget(before);
+      for (const k of todo) draw(k, hide, before);
       group.visible = true;
-      hide.forEach((o, i) => {
-        o.visible = was[i];
-      });
+      renderer.setRenderTarget(target);
+    },
+    /** Make the face that kind of mirror for the views drawn next: traced for a driver's eye, a soft sheen otherwise. */
+    show(kind, traced = false) {
+      const pic = pics[kind];
+      uniforms.uTraced.value = traced ? 1 : 0;
+      uniforms.uRho.value = kind === 'convex' ? MIRROR.rho : 0;
+      uniforms.tRefl.value = pic.rt.texture;
+      uniforms.uVP.value.copy(pic.vp);
+      if (plan) {
+        uniforms.uAim.value.set(plan.aim.x, plan.aim.y, plan.aim.z);
+        uniforms.uProxy.value.set(plan.proxy.x, plan.proxy.y, plan.proxy.z);
+      }
     },
     /** The mirror as a model for the GLB: the face as polished metal. */
     exportModel() {
       const g = group.clone(true);
       g.name = 'road-mirror';
       g.position.set(0, 0, 0);
+      g.children[0].position.y = 0;
       g.traverse((o) => {
         if (o.name === 'mirror-face') {
           o.userData.noExport = false;

@@ -9,12 +9,12 @@
 export const rad = (d) => (d * Math.PI) / 180;
 export const deg = (r) => (r * 180) / Math.PI;
 
-export const BEND = { r: 12, half: 3.2 }; // the centre line's radius, half the road's width
+export const BEND = { r: 10, half: 3.2 }; // the centre line's radius, half the road's width
 export const LANE = 1.6; // a lane's centre from the road's centre line
 export const CAR = { eyeRight: 0.36, eyeUp: 1.15, eyeBack: 1.9, length: 4.3, width: 1.75 }; // from the car's front centre
 export const BUS = { eyeRight: 0.62, eyeUp: 2.35, eyeBack: 0.75, length: 9.5, width: 2.5 };
 /** The mirror's centre: where the drivers' two lines cross. It looks along NORMAL, 45° to both roads. */
-export const MIRROR = { x: -LANE + CAR.eyeRight, y: 1.8, z: LANE - BUS.eyeRight, radius: 0.8, rho: 5 };
+export const MIRROR = { x: -LANE + CAR.eyeRight, y: 1.8, z: LANE - BUS.eyeRight, radius: 1, rho: 8 };
 export const NORMAL = { x: Math.SQRT1_2, y: 0, z: Math.SQRT1_2 };
 export const TANGENT = { x: Math.SQRT1_2, y: 0, z: -Math.SQRT1_2 }; // along the mirror's face, level
 export const FOCAL_CONVEX = -MIRROR.rho / 2; // f = r/2, negative for a convex mirror (the book's sign)
@@ -95,11 +95,6 @@ export function fieldAngle(eye, convex) {
   const { a, b } = fieldOfView(eye, convex);
   return deg(Math.acos(Math.min(1, a.dir.x * b.dir.x + a.dir.z * b.dir.z)));
 }
-/** Is the point (x, z) inside the field? */
-export function inField(field, x, z) {
-  const side = (e) => e.dir.x * (z - e.from.z) - e.dir.z * (x - e.from.x);
-  return side(field.a) * side(field.b) <= 0 && (x - MIRROR.x) * NORMAL.x + (z - MIRROR.z) * NORMAL.z > 0;
-}
 /** The width of the field at the distance x along the east road (the width of road the mirror shows), metres. */
 export function fieldWidthAt(field, x) {
   const at = (e) => e.from.z + (e.dir.z / e.dir.x) * (x - e.from.x);
@@ -114,17 +109,6 @@ export function imageDistance(u, f) {
 export function magnification(u, f) {
   return Math.abs(imageDistance(u, f) / u);
 }
-/**
- * How wide the mirror holds an object `width` metres wide, u metres from the mirror, in the eye `e` metres away, as a
- * fraction of the mirror's width seen from there.
- * Plane mirror: the image stands u behind it, its full size. Convex: v behind it (f < 0), m times the size.
- */
-export function shareOfMirror(width, u, e, convex) {
-  const v = convex ? Math.abs(imageDistance(u, FOCAL_CONVEX)) : u;
-  const size = convex ? width * magnification(u, FOCAL_CONVEX) : width;
-  return ((size / (e + v)) * e) / (2 * MIRROR.radius * Math.SQRT1_2);
-}
-
 export function shuffle(list) {
   const a = [...list];
   for (let i = a.length - 1; i > 0; i--) {

@@ -178,6 +178,7 @@ export function createDiagram({ stage, host }) {
     rays: [], // the test's candidates: { from, to }
     lines: [], // plain lines: { from, to, color, width, dash, alpha }
     track: null, // the faint range of what can be dragged: { from, to }
+    halo: null, // a ring round the mirror in the wide view: { p, r }
     leaders: [], // { from, to, color }
   };
   const q = { x: 0, y: 0, z: 0 };
@@ -219,6 +220,26 @@ export function createDiagram({ stage, host }) {
     ctx.clearRect(0, 0, w, h);
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
+    if (v.halo) {
+      // the mirror, marked in the wide view: too small there to be found by eye alone
+      P(v.halo.p);
+      const x = sx;
+      const y = sy;
+      const r = v.halo.r * unit;
+      const g = ctx.createRadialGradient(x, y, r * 0.8, x, y, r * 1.5);
+      g.addColorStop(0, 'rgba(255,240,170,0.75)');
+      g.addColorStop(1, 'rgba(255,240,170,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(x, y, r * 1.5, 0, Math.PI * 2);
+      ctx.arc(x, y, r * 0.8, 0, Math.PI * 2, true);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2.2 * unit;
+      ctx.stroke();
+    }
     if (v.track) {
       count = 0;
       add(v.track.from);
@@ -247,10 +268,9 @@ export function createDiagram({ stage, host }) {
       }
     }
     if (v.path) {
-      const { from, p, to, k, glow = 0 } = v.path;
-      const a = from;
-      ray(a, p, Math.min(1, k * 2), 0.55, glow);
-      if (k > 0.5) ray(p, to, (k - 0.5) * 2, 0.6, glow);
+      const { from, p, to, k, glow = 0, tin = 0.55, tout = 0.6 } = v.path;
+      ray(from, p, Math.min(1, k * 2), tin, glow);
+      if (k > 0.5) ray(p, to, (k - 0.5) * 2, tout, glow);
     }
     for (const l of v.lines) {
       count = 0;
@@ -258,7 +278,7 @@ export function createDiagram({ stage, host }) {
       add(l.to);
       stroke(l.color, l.width ?? 2.2, '#ffffff', (l.width ?? 2.2) + 1.6, l.dash ? DASH_N : NO_DASH, l.alpha ?? 1);
     }
-    for (const r of v.rays) ray(r.from, r.to, 1, 0.72);
+    for (const r of v.rays) ray(r.from, r.to, 1, 0.72, 0, r.color ?? C.ray, r.edge ?? C.rayDark);
     for (const a of v.arcs) arc(a);
     if (v.corner > 0) {
       const a = onArc(45, 0.72, { x: 0, y: 0, z: 0 });
@@ -308,6 +328,7 @@ export function createDiagram({ stage, host }) {
       v.rays.length = 0;
       v.lines.length = 0;
       v.track = null;
+      v.halo = null;
       v.leaders.length = 0;
     },
   };
