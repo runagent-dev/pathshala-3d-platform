@@ -34,11 +34,11 @@ export const STRINGS = {
     out_pull: '{em} <b>{rel}</b> {grav}',
 
     // the rule line: the book's words, growing with what the student has seen
-    rule_comb_0: 'চুলে ঘষলে চিরুনি ইলেকট্রন নিয়ে <b>ঋণাত্মক (−)</b> হয়; চুলে <b>ধনাত্মক (+)</b> আধান থাকে।',
+    rule_comb_0: 'চুলে ঘষলে চিরুনি ইলেকট্রন নেয়, তাই <b>ঋণাত্মক (−)</b> হয়। চুলে থাকে ধনাত্মক (+) আধান।',
     rule_comb_q: 'ইলেকট্রন চুল থেকে চিরুনিতে এসেছে: <b>চুল (+), চিরুনি (−)</b>। এবার নিরপেক্ষ কাগজের কাছে আনো।',
-    rule_comb_near: '<b>কাগজ মোট নিরপেক্ষ</b>: চিরুনির কাছে (+), দূরে (−)। তড়িৎ টান পৃথিবীর টানকে ছাড়ালে কাগজ ওঠে।',
-    rule_comb_won: 'চিরুনির অল্প একটু আধান পুরো পৃথিবীর মাধ্যাকর্ষণকে হারিয়ে দিল: <b>তড়িৎ চৌম্বক বল মাধ্যাকর্ষণ বলের তুলনায় অনেক শক্তিশালী</b> (বই বলছে {p} গুণ)।',
-    rule_comb_none: 'চিরুনিতে আধান নেই, তাই তড়িৎ বলও নেই: <b>পৃথিবীর টানে</b> টুকরোগুলো নিচেই থাকে।',
+    rule_comb_near: '<b>কাগজ মোট নিরপেক্ষ</b>। চিরুনির কাছের দিকে (+), দূরের দিকে (−)। তড়িৎ টান পৃথিবীর টানকে ছাড়ালে কাগজ ওঠে।',
+    rule_comb_won: 'চিরুনির অল্প একটু আধান পুরো পৃথিবীর মাধ্যাকর্ষণকে হারিয়ে দিল। তড়িৎ চৌম্বক বল মাধ্যাকর্ষণ বলের তুলনায় <b>অনেক শক্তিশালী</b> (বই বলছে {p} গুণ)।',
+    rule_comb_none: 'চিরুনিতে আধান নেই, তাই তড়িৎ বলও নেই। <b>পৃথিবীর টানে</b> টুকরোগুলো নিচেই থাকে।',
 
     // the four forces (the same heading in the four figures of 3.2)
     forces: 'চার মৌলিক বল (সবচেয়ে দুর্বল → সবচেয়ে শক্তিশালী)',
@@ -72,13 +72,13 @@ export const STRINGS = {
     f_em_long: 'তড়িৎ চৌম্বক বল',
     f_grav_long: 'মাধ্যাকর্ষণ বল',
     why_rise: '<b>আধানের টান বেশি</b>: চিরুনির অল্প একটু আধানের টান পুরো পৃথিবীর মাধ্যাকর্ষণকে হারিয়ে দেয়।',
-    why_low_jump: '<b>লাফিয়ে উঠবে</b>: ছবির চিরুনিতে − আধান আছে; কাছে আনলে তার টান পুরো পৃথিবীর টানের চেয়ে বেশি হয়।',
-    why_low_stay: '<b>নিচেই থাকবে</b>: ছবির চিরুনিতে কোনো − নেই, তাই টানও নেই; থাকে শুধু পৃথিবীর টান।',
+    why_low_jump: '<b>লাফিয়ে উঠবে</b>: ছবির চিরুনিতে − আধান আছে। কাছে আনলে তার টান পুরো পৃথিবীর টানের চেয়ে বেশি হয়।',
+    why_low_stay: '<b>নিচেই থাকবে</b>: ছবির চিরুনিতে কোনো − নেই, তাই টানও নেই। থাকে শুধু পৃথিবীর টান।',
     why_strength:
-      '<b>তড়িৎ চৌম্বক বল, প্রায় {p} গুণ</b>: {one}-এর পরে {n}টি শূন্য! (দুটি প্রোটনের মতো একই রকম কণার বেলায়; চিরুনির টান কাগজের ওজনের চেয়ে সামান্য বেশি মাত্র।)',
+      '<b>তড়িৎ চৌম্বক বল, প্রায় {p} গুণ</b>: {one}-এর পরে {n}টি শূন্য! (দুটি প্রোটনের মতো একই রকম কণার বেলায়। চিরুনির টান কাগজের ওজনের চেয়ে সামান্য বেশি মাত্র।)',
     // what the wrong answer missed (by the order of the choices above: 1, 2, 3)
     mis_rise_1: 'চিরুনির ভর খুব কম, তার মহাকর্ষ টান নগণ্য।',
-    mis_rise_2: 'আধান মাধ্যাকর্ষণ বন্ধ করে না; কাগজে দুটি বলই কাজ করে।',
+    mis_rise_2: 'আধান মাধ্যাকর্ষণ বন্ধ করে না। কাগজে দুটি বলই কাজ করে।',
     mis_rise_3: 'চিরুনি না নাড়ালেও কাগজ লাফিয়ে ওঠে।',
     mis_lowq_1: 'ছবির চিরুনিতে − আছে: আঁচড়ানো হয়েছে।',
     mis_lowq_2: 'কাছে আনলে আধানের টান পৃথিবীর টানের চেয়ে বেশি হয়।',
@@ -124,12 +124,13 @@ export const STRINGS = {
     out_rub: '<b>{n}</b> strokes: hair (+), comb (−)',
     out_pull: '{em} <b>{rel}</b> {grav}',
 
-    rule_comb_0: 'Rubbing transfers electrons to the comb: it becomes <b>negative (−)</b>; the hair becomes <b>positive (+)</b>.',
+    rule_comb_0: 'Rubbing moves electrons to the comb, so it becomes <b>negative (−)</b>. The hair is left positive (+).',
     rule_comb_q: 'Electrons moved from hair to comb: <b>hair (+), comb (−)</b>. Now bring it near the neutral paper.',
-    rule_comb_near: '<b>The paper stays neutral</b>: (+) nearer the comb, (−) farther away. It rises when the electric pull beats gravity.',
+    rule_comb_near:
+      '<b>The paper stays neutral</b>. Its side nearer the comb is (+), the farther side (−). It rises when the electric pull beats gravity.',
     rule_comb_won:
-      'The comb’s tiny charge beat the gravity of the whole Earth: <b>the electromagnetic force is far stronger than gravity</b> (the book says {p} times).',
-    rule_comb_none: 'No charge on the comb, so no electric force: <b>the Earth’s pull</b> keeps the bits down.',
+      'The comb’s tiny charge beat the gravity of the whole Earth. The electromagnetic force is <b>far stronger</b> than gravity (the book says {p} times).',
+    rule_comb_none: 'No charge on the comb, so no electric force. <b>The Earth’s pull</b> keeps the bits down.',
 
     forces: 'The four fundamental forces (weakest → strongest)',
     f_grav: 'gravitational',
@@ -160,10 +161,10 @@ export const STRINGS = {
     f_em_long: 'electromagnetic',
     f_grav_long: 'gravity',
     why_rise: '<b>The pull of the charge is bigger</b>: the pull of the comb’s tiny charge beats the whole Earth’s gravity.',
-    why_low_jump: '<b>They jump up</b>: the comb in the picture has − charge; close up, its pull beats the whole Earth’s.',
-    why_low_stay: '<b>They stay down</b>: no − on the comb in the picture, so no pull; only the Earth’s.',
+    why_low_jump: '<b>They jump up</b>: the comb in the picture has − charge. Close up, its pull beats the whole Earth’s.',
+    why_low_stay: '<b>They stay down</b>: no − on the comb in the picture, so no pull. Only the Earth’s.',
     why_strength:
-      '<b>Electromagnetic, about {p} times</b>: {one} and {n} zeros! (For like particles such as two protons; the comb only just beats the paper’s weight.)',
+      '<b>Electromagnetic, about {p} times</b>: {one} and {n} zeros! (For like particles such as two protons. The comb only just beats the paper’s weight.)',
     mis_rise_1: 'The comb’s gravity is negligible.',
     mis_rise_2: 'Charge does not switch gravity off.',
     mis_rise_3: 'They jump even if the comb is still.',

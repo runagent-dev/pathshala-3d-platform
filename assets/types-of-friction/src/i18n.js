@@ -30,10 +30,10 @@ export const STRINGS = {
     speeding_state: 'বেগ বাড়ছে → {v} m/s',
     slowing_state: 'বেগ কমছে → {v} m/s',
     net_force_small: 'লব্ধি বল প্রায় শূন্য',
-    rule_steady: '<b>ঠেলা = ঘর্ষণ ⇒ ত্বরণ নেই।</b> আগে থেকেই চলছিল, তাই একই বেগে চলছে। ঠেলা ছেড়ে দেখো।',
-    rule_near_steady: '<b>ঠেলা প্রায় ঘর্ষণের সমান।</b> বেগ প্রায় অপরিবর্তিত। সমান বল চলন্ত বাক্সকে থামায় না।',
-    rule_speeding: '<b>ঠেলা > ঘর্ষণ ⇒ বেগ বাড়ছে।</b> বাড়তি বল বাক্সকে গতি দেয়; এরপর কম ঠেলায় একই বেগে চলে।',
-    rule_slowing: '<b>ঠেলা < ঘর্ষণ ⇒ বেগ কমছে।</b> ঘর্ষণ চলার উল্টো দিকে; একাই বাক্সকে থামিয়ে দেবে।',
+    rule_steady: '<b>ঠেলা = ঘর্ষণ</b>, তাই ত্বরণ নেই। আগে থেকেই চলছিল, তাই একই বেগে চলছে। ঠেলা ছেড়ে দেখো।',
+    rule_near_steady: '<b>ঠেলা প্রায় ঘর্ষণের সমান</b>, তাই বেগ প্রায় একই থাকে। সমান বল চলন্ত বাক্সকে থামায় না।',
+    rule_speeding: '<b>ঠেলা > ঘর্ষণ</b>, তাই বেগ বাড়ছে। বাড়তি বল বাক্সকে গতি দেয়। এরপর কম ঠেলায়ও একই বেগে চলে।',
+    rule_slowing: '<b>ঠেলা < ঘর্ষণ</b>, তাই বেগ কমছে। ঘর্ষণ চলার উল্টো দিকে, একাই বাক্সকে থামিয়ে দেবে।',
 
     net_force: 'লব্ধি বল = ঠেলা − ঘর্ষণ = {f} নিউটন',
     l_velocity: 'বেগ {v} m/s →',
@@ -47,11 +47,11 @@ export const STRINGS = {
     box_system: 'বাক্স',
     force_explanation:
       'সমান বিপরীত বল মানে বেগ বদলায় না। স্থির বাক্স স্থিরই থাকে; চলন্ত বাক্স একই বেগে চলে। শুরুতে বেশি ঠেলা লাগে। ঠেলা ছাড়লে ঘর্ষণ থামায়। উল্লম্ব দিকে তলের বল ও ওজন সমান।',
-    static_formula: 'স্থিতি ঘর্ষণ ঠেলার সঙ্গে বাড়ে: f<sub>s</sub> ≤ μ<sub>s</sub>N। সর্বোচ্চ = {mu} × {n} = {max} নিউটন।',
-    kinetic_formula: 'পিছলে চললে গতি ঘর্ষণ: f<sub>k</sub> = μ<sub>k</sub>N = {mu} × {n} = {value} নিউটন।',
+    static_formula: 'স্থিতি ঘর্ষণ ঠেলার সঙ্গে বাড়ে। সর্বোচ্চ মান {mu} × {n} = {max} নিউটন।<span class="pvc-formula">f<sub>s</sub> ≤ μ<sub>s</sub>N</span>',
+    kinetic_formula: 'পিছলে চললে গতি ঘর্ষণ কাজ করে।<span class="pvc-formula">f<sub>k</sub> = μ<sub>k</sub>N = {mu} × {n} = {value} নিউটন</span>',
     rolling_explanation: 'চাকা গড়ায়, বাক্স তলে পিছলায় না। তাই প্রতিরোধ কম, শূন্য নয়। সংখ্যাগুলি উদাহরণ; তুলনার জন্য ট্রলির নিজস্ব ভর উপেক্ষা করা হয়েছে।',
     explain_close: 'ফিরে যাও',
-    rule_complete: '<b>সর্বোচ্চ স্থিতি ঘর্ষণ > গতি ঘর্ষণ > আবর্ত ঘর্ষণ।</b> একই বাক্সে চাকা লাগালে কম ঠেলা লাগে।',
+    rule_complete: '<span class="pvc-formula">সর্বোচ্চ স্থিতি ঘর্ষণ > গতি ঘর্ষণ > আবর্ত ঘর্ষণ</span>একই বাক্সে চাকা লাগালে কম ঠেলা লাগে।',
     title: 'ঘর্ষণের প্রকারভেদ',
     view: 'দেখার ধরন',
     view_front_short: 'সামনে',
@@ -99,14 +99,14 @@ export const STRINGS = {
     out_all: `গড়িয়ে চলতে ঘর্ষণ <b>{r}${NB}নিউটন</b>: তিনটির মধ্যে সবচেয়ে কম।`,
 
     // the rule line: the book's words in <b>, growing with what the student has found out
-    rule_rest: '<b>মানুষটিকে দিয়ে বাক্স ঠেলাও।</b> তীরের দিক ও বলের মান দেখো; প্রথমে বাক্স স্থির থাকে।',
-    rule_push: '<b>স্থিতি ঘর্ষণ:</b> ব্লক স্থির থাকলে ঘর্ষণ ঠিক ঠেলার সমান, উল্টো দিকে। যত ঠেলো, ঘর্ষণও তত বাড়ে।',
-    rule_push3: '<b>স্থিতি ঘর্ষণ ঠেলার সমান হয়েই বাড়ছে।</b> আর কতটা ঠেললে ব্লক নড়বে? আরও ঠেলো।',
-    rule_slide: '<b>গতি ঘর্ষণ:</b> বাক্স পিছলে চলছে। একই বেগে চলতে ঠেলা ও ঘর্ষণ সমান; শুরুতে বেশি ঠেলা লাগে।',
+    rule_rest: 'মানুষটিকে দিয়ে <b>বাক্স ঠেলাও</b>। তীরের দিক ও বলের মান দেখো। প্রথমে বাক্স স্থির থাকে।',
+    rule_push: '<b>স্থিতি ঘর্ষণ:</b> ব্লক স্থির থাকলে ঘর্ষণ ঠেলার ঠিক সমান, উল্টো দিকে। যত ঠেলো, ঘর্ষণও তত বাড়ে।',
+    rule_push3: 'স্থিতি ঘর্ষণ <b>ঠেলার সমান হয়েই বাড়ছে</b>। আর কতটা ঠেললে ব্লক নড়বে? আরও ঠেলো।',
+    rule_slide: '<b>গতি ঘর্ষণ:</b> বাক্স পিছলে চলছে। একই বেগে চলতে ঠেলা ও ঘর্ষণ সমান। শুরুতে বেশি ঠেলা লাগে।',
     rule_slid: '<b>ঠেলা ছাড়লে</b> গতি ঘর্ষণ বাক্স থামায়। এবার চাকা বসিয়ে একই বাক্স ঠেলে দেখো।',
     rule_wheels: '<b>চাকা লাগালে?</b> ব্লক আর তলে ঘষা খায় না, গড়িয়ে চলে। কত ঠেলা লাগবে, আন্দাজ করো।',
     rule_roll: '<b>আবর্ত ঘর্ষণ</b> পিছলানোর ঘর্ষণের চেয়ে কম। তাই চাকার ট্রলিতে একই বাক্স কম ঠেলায় চলে।',
-    rule_all: `<b><span class="nw"><i class="c-f">f<sub>s</sub></i> = <i class="c-mu">μ<sub>s</sub></i><i class="c-n">N</i></span> (সর্বোচ্চ স্থিতি ঘর্ষণ), <span class="nw"><i class="c-f">f<sub>k</sub></i> = <i class="c-mu">μ<sub>k</sub></i><i class="c-n">N</i></span> (গতি ঘর্ষণ)।</b> <i class="c-n">N</i>: তল ব্লককে যত জোরে উপরে ঠেলে (ওজনের সমান, {w}${NB}নিউটন)। <i class="c-mu">μ</i>: তল কত খসখসে। যেমন <span class="nw">{ms} × {w} = {fs}</span>, <span class="nw">{mk} × {w} = {fk}</span> নিউটন।`,
+    rule_all: `<span class="pvc-formula"><i class="c-f">f<sub>s</sub></i> = <i class="c-mu">μ<sub>s</sub></i><i class="c-n">N</i> = {ms} × {w} = <b>{fs}</b><br><i class="c-f">f<sub>k</sub></i> = <i class="c-mu">μ<sub>k</sub></i><i class="c-n">N</i> = {mk} × {w} = <b>{fk}</b> <small>নিউটন</small></span><i class="c-f">f<sub>s</sub></i> সর্বোচ্চ স্থিতি ঘর্ষণ, <i class="c-f">f<sub>k</sub></i> গতি ঘর্ষণ। <i class="c-n">N</i>: তল ব্লককে যত জোরে উপরে ঠেলে (ওজনের সমান, {w}${NB}নিউটন)। <i class="c-mu">μ</i>: তল কত খসখসে।`,
 
     // the test
     q_count: 'প্রশ্ন {i} / {n}',
@@ -184,10 +184,10 @@ export const STRINGS = {
     speeding_state: 'Speed increasing → {v} m/s',
     slowing_state: 'Speed decreasing → {v} m/s',
     net_force_small: 'Resultant is nearly zero',
-    rule_steady: '<b>Push = friction ⇒ no acceleration.</b> It was already moving, so its speed stays the same. Release the push to compare.',
-    rule_near_steady: '<b>Push nearly equals friction.</b> Speed is nearly constant. Balanced forces do not stop a moving box.',
-    rule_speeding: '<b>Push > friction ⇒ speed increases.</b> Extra force gets it moving; a smaller push then keeps its speed constant.',
-    rule_slowing: '<b>Push < friction ⇒ speed decreases.</b> Friction acts against motion and brings the box to rest.',
+    rule_steady: '<b>Push = friction</b>, so no acceleration. It was already moving, so its speed stays the same. Release the push to compare.',
+    rule_near_steady: '<b>Push nearly equals friction</b>, so the speed is nearly constant. Balanced forces do not stop a moving box.',
+    rule_speeding: '<b>Push > friction</b>, so the speed increases. Extra force gets it moving; a smaller push then keeps its speed constant.',
+    rule_slowing: '<b>Push < friction</b>, so the speed decreases. Friction acts against motion and brings the box to rest.',
 
     net_force: 'Resultant = push − friction = {f} N',
     l_velocity: 'Velocity {v} m/s →',
@@ -201,12 +201,13 @@ export const STRINGS = {
     box_system: 'Box',
     force_explanation:
       'Balanced forces mean no change in velocity. A resting box stays at rest; an already-moving box keeps the same speed. A larger push starts it; removing the push lets friction stop it. Vertically, support balances weight.',
-    static_formula: 'Static friction adapts to the push: f<sub>s</sub> ≤ μ<sub>s</sub>N. Maximum = {mu} × {n} = {max} N.',
-    kinetic_formula: 'While sliding: f<sub>k</sub> = μ<sub>k</sub>N = {mu} × {n} = {value} N.',
+    static_formula:
+      'Static friction adapts to the push. Maximum = {mu} × {n} = {max} N.<span class="pvc-formula">f<sub>s</sub> ≤ μ<sub>s</sub>N</span>',
+    kinetic_formula: 'While sliding, kinetic friction acts.<span class="pvc-formula">f<sub>k</sub> = μ<sub>k</sub>N = {mu} × {n} = {value} N</span>',
     rolling_explanation:
       'The wheels roll instead of the box sliding. Resistance is smaller, not zero. Numbers are examples; the carrier’s own mass is neglected for this comparison.',
     explain_close: 'Back to the scene',
-    rule_complete: '<b>Maximum static > kinetic > rolling friction.</b> The same box needs less push on wheels.',
+    rule_complete: '<span class="pvc-formula">Maximum static > kinetic > rolling friction</span>The same box needs less push on wheels.',
     title: 'Types of friction',
     view: 'View',
     view_front_short: 'Front',
@@ -249,17 +250,14 @@ export const STRINGS = {
     out_roll: `Rolling: friction only <b>{r}${NB}N</b>. Sliding took a push of {k}${NB}N.`,
     out_all: `Rolling friction is <b>{r}${NB}N</b>: the smallest of the three.`,
 
-    rule_rest: '<b>Let the person push the box.</b> Read the arrows and their forces; the box stays still at first.',
+    rule_rest: 'Let the person <b>push the box</b>. Read the arrows and their forces. The box stays still at first.',
     rule_push: '<b>Static friction:</b> while the block is at rest, friction is exactly equal to the push, the other way. Push more, friction grows.',
-    rule_push3: '<b>Static friction keeps equal to the push.</b> How hard must you push before the block moves? Push harder.',
-    rule_slide:
-      '<b>The block has started to move.</b> A moving block has <b>kinetic friction</b>, which is less than the maximum static friction, so less push is needed.',
-    rule_slid:
-      '<b>Kinetic friction</b> is less than the maximum static friction: a heavy thing takes more force to start, less once it moves. Now put wheels under the block.',
+    rule_push3: 'Static friction <b>keeps equal to the push</b>. How hard must you push before the block moves? Push harder.',
+    rule_slide: '<b>Kinetic friction:</b> the box is sliding. At a steady speed, push and friction are equal. It takes a bigger push to start.',
+    rule_slid: 'Let go, and <b>kinetic friction</b> stops the box. Now put wheels under it and push again.',
     rule_wheels: '<b>With wheels?</b> The block no longer rubs on the surface, it rolls. Guess how much push it needs.',
-    rule_roll:
-      '<b>Rolling friction:</b> the smallest of all. That is why suitcases and every vehicle have wheels; without wheels we would have a hard time pulling them.',
-    rule_all: `<b><span class="nw"><i class="c-f">f<sub>s</sub></i> = <i class="c-mu">μ<sub>s</sub></i><i class="c-n">N</i></span> (maximum static friction), <span class="nw"><i class="c-f">f<sub>k</sub></i> = <i class="c-mu">μ<sub>k</sub></i><i class="c-n">N</i></span> (kinetic friction).</b> <i class="c-n">N</i>: how hard the surface pushes up on the block (equal to its weight, {w}${NB}N). <i class="c-mu">μ</i>: how rough the surface is. For example <span class="nw">{ms} × {w} = {fs}</span>, <span class="nw">{mk} × {w} = {fk}</span> N (examples).`,
+    rule_roll: '<b>Rolling friction</b> is less than sliding friction, so the same box moves on a wheeled trolley with a smaller push.',
+    rule_all: `<span class="pvc-formula"><i class="c-f">f<sub>s</sub></i> = <i class="c-mu">μ<sub>s</sub></i><i class="c-n">N</i> = {ms} × {w} = <b>{fs}</b><br><i class="c-f">f<sub>k</sub></i> = <i class="c-mu">μ<sub>k</sub></i><i class="c-n">N</i> = {mk} × {w} = <b>{fk}</b> <small>N</small></span><i class="c-f">f<sub>s</sub></i> is maximum static friction, <i class="c-f">f<sub>k</sub></i> kinetic friction. <i class="c-n">N</i>: how hard the surface pushes the block up (equal to its weight, {w}${NB}N). <i class="c-mu">μ</i>: how rough the surface is.`,
 
     q_count: 'Question {i} of {n}',
     q_score: 'Correct: {right}',
@@ -297,7 +295,7 @@ export const STRINGS = {
     why_which_kinetic: '<b>Kinetic friction.</b> The block slides over the surface.',
     why_which_rolling: '<b>Rolling friction.</b> The block rolls on wheels.',
     why_load: `<b>{f}${NB}N.</b> {k} times the weight means {k} times the maximum friction: {f0} × {k} = {f}${NB}N.`,
-    why_wheels: `<b>Rolling friction is the smallest.</b> The push arrow shows only {r}${NB}N; sliding needed {k}${NB}N.`,
+    why_wheels: `<b>Rolling friction is the smallest.</b> The push arrow shows only {r}${NB}N. Sliding needed {k}${NB}N.`,
 
     not_zero: 'Friction is there because it is not moving: it holds the push exactly.',
     not_max: 'The maximum is only reached when the block is about to move. Here the push is smaller, so is the friction.',

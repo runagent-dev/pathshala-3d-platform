@@ -16,11 +16,11 @@ body.bg-transparent { background: transparent; }
 .lg .lg-qm { color: var(--c-mass); }
 .lg .lg-qd { color: var(--c-dist); }
 .lg .lg-qg { color: #3b4654; }
-.lg span.lg-qm, .lg span.lg-qd { font-weight: 700; }
+.lg span.lg-qm, .lg span.lg-qd { font-weight: 600; }
 .lg .pvc-anno-ball .lg-qm { color: var(--c-mass-on-iron); }
 
 /* a fraction written in a line, 1/4 (the font has no ¼): no break inside it */
-.lg .lg-frac { white-space: nowrap; font-weight: 700; letter-spacing: 0.04em; }
+.lg .lg-frac { white-space: nowrap; font-weight: 600; letter-spacing: 0.04em; }
 
 /* the result line: what happened, the comparison large, the exact pull only as a quiet grey note */
 .lg .pvc-outcome b { color: var(--c-g); }
@@ -29,13 +29,13 @@ body.bg-transparent { background: transparent; }
 .lg .pvc-outcome small + .lg-exact, .lg .pvc-outcome b + .lg-exact { margin-left: 0.3em; }
 
 /* the formula, last: each symbol over its word, both in the colour of what it stands for */
-.lg .lg-line { display: block; margin-top: 3px; }
+.lg .lg-line { display: block; margin-top: 8px; }
 .lg .lg-formula { display: inline-flex; flex-wrap: wrap; align-items: flex-start; gap: 0 0.42em; color: var(--ink); }
-.lg .lg-sumword { align-self: flex-start; margin-right: 0.3em; font-size: 0.92em; font-weight: 700; line-height: 1.7; color: var(--ink-2); }
+.lg .lg-sumword { align-self: flex-start; margin-right: 0.3em; font-size: 0.92em; font-weight: 600; line-height: 1.7; color: var(--ink-2); }
 .lg .lg-grp { display: inline-flex; align-items: flex-start; gap: 0 0.42em; }
 .lg .lg-term { display: inline-flex; flex-direction: column; align-items: center; }
-.lg .lg-sym { padding: 0 0.22em; border-bottom: 2.5px solid currentColor; font-size: 1.16em; font-weight: 700; line-height: 1.25; }
-.lg .lg-term small { margin-top: 2px; font-size: max(11.5px, 0.66em); font-weight: 600; line-height: 1.2; color: inherit; white-space: nowrap; }
+.lg .lg-sym { padding: 0 0.22em; border-bottom: 2.5px solid currentColor; font-size: 1.16em; font-weight: 600; line-height: 1.25; }
+.lg .lg-term small { margin-top: 2px; font-size: max(12px, 0.66em); font-weight: 600; line-height: 1.2; color: inherit; white-space: nowrap; }
 .lg .lg-op { font-size: 1.16em; font-weight: 600; line-height: 1.25; color: var(--ink-2); }
 
 /* the book's numbers (G, M, R with their powers of ten): a quiet grey line after a formula, on big frames only */
@@ -74,7 +74,7 @@ body.bg-transparent { background: transparent; }
 @container pvc (max-width: 560px) and (max-height: 600px) {
   .lg .pvc-q-text { font-size: 15px; }
   .lg .pvc-opt { font-size: 15px; }
-  .lg .pvc-q-feedback { font-size: 13px; }
+  .lg .pvc-q-feedback { font-size: 13.5px; }
 }
 /* a narrow panel (a phone, upright or sideways): the formula's "সব মিলিয়ে" on its own line, so the formula has the whole width */
 @container pvc-panel (max-width: 440px) {
@@ -99,8 +99,8 @@ body.bg-transparent { background: transparent; }
   .lg .pvc-act-row .pvc-quiet { min-height: 44px; height: 44px; }
   .lg .pvc-outcome { --pvc-outcome-lines: 2; font-size: 15px; line-height: 1.6; }
   .lg .pvc-outcome b { font-size: 1.35em; }
-  .lg .pvc-rule { --pvc-rule-lines: 3; font-size: 14px; line-height: 1.45; }
-  .lg .lg-line { margin-top: 2px; }
+  .lg .pvc-rule { --pvc-rule-lines: 3; font-size: 14px; line-height: 1.55; }
+  .lg .lg-line { margin-top: 6px; }
   /* the formula a little narrower, so it stays on one row under "সব মিলিয়ে" in both languages */
   .lg .lg-formula, .lg .lg-grp { gap: 0 0.3em; }
   .lg .lg-sym { padding: 0 0.12em; }
@@ -111,7 +111,7 @@ body.bg-transparent { background: transparent; }
   .lg .pvc-q-options { gap: 6px; }
   .lg .pvc-opt { height: 42px; font-size: 15px; }
   .lg-opt-words { font-size: 14.5px; }
-  .lg .pvc-q-feedback { font-size: 13.5px; line-height: 1.38; }
+  .lg .pvc-q-feedback { font-size: 14px; line-height: 1.45; }
 }
 /* the shortest phone (390 × 520): the test's rows a little tighter still */
 @container pvc (max-width: 560px) and (max-height: 600px) {
@@ -121,12 +121,17 @@ body.bg-transparent { background: transparent; }
   .lg .pvc-q-head .pvc-btn { height: 30px; }
   .lg .pvc-q-options { gap: 5px; }
   .lg .pvc-opt { height: 40px; }
-  .lg .pvc-q-feedback { font-size: 13px; line-height: 1.36; }
+  .lg .pvc-q-feedback { font-size: 13.5px; line-height: 1.42; }
   /* what was found stays in the result and the rule: the small words under the examples are left out here */
   .lg .pvc-examples .pvc-ex-res, .lg .pvc-examples[data-results] .pvc-ex-res:empty { display: none; }
   .lg .pvc-examples button { min-height: 38px; }
-  .lg .pvc-rule { line-height: 1.38; }
+  .lg .pvc-rule { line-height: 1.5; }
   .lg .lg-sumword { line-height: 1.25; }
-  .lg .lg-line { margin-top: 0; }
+  .lg .lg-line { margin-top: 4px; }
   .lg .lg-term small { margin-top: 1px; line-height: 1.1; }
+}
+/* the side column: the formula's terms closer together, so it stays on one row */
+@container pvc-panel (max-width: 340px) {
+  .lg .lg-formula, .lg .lg-grp { gap: 0 0.14em; }
+  .lg .lg-sym { padding: 0 0.06em; }
 }

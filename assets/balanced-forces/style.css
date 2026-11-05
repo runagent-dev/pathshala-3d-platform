@@ -8,7 +8,7 @@ body.bg-transparent { background: transparent; }
 .pvc { --c-pull: #e8590c; --c-weight: #7048e8; --c-res: #212529; }
 
 /* the learn sheet: the two examples, the state with the forces added tip to tail, the book's words, two buttons */
-.bf .pvc-learn { gap: 6px; }
+.bf .pvc-learn { gap: 8px; }
 /* one order in every lab: the examples, the buttons, the state (the readings), the book's words */
 .bf-chips { order: 0; }
 .bf-acts { order: 1; }
@@ -17,7 +17,7 @@ body.bg-transparent { background: transparent; }
 .bf-chips { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .bf-chips button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; height: 42px; padding: 2px 6px; border: 1px solid var(--line-2); border-radius: 7px; background: var(--panel); color: var(--ink-2); line-height: 1.25; }
 .bf-chips button b { font-size: 14.5px; font-weight: 600; white-space: nowrap; }
-.bf-chips button small { font-size: 12px; color: var(--ink-3); white-space: nowrap; }
+.bf-chips button small { font-size: 12.5px; color: var(--ink-3); white-space: nowrap; }
 .bf-chips button:hover { background: var(--soft); }
 .bf-chips button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
 .bf-chips button.on small { color: rgba(255, 255, 255, 0.85); }
@@ -31,16 +31,16 @@ body.bg-transparent { background: transparent; }
 .bf-sum { flex: none; width: 108px !important; height: 84px !important; border: 1px solid var(--line); border-radius: 7px; background: #fbfcfd; overflow: visible; }
 .bf-sum text { font-family: var(--font); }
 .bf-state { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.bf-word { font-size: 21px; font-weight: 700; line-height: 1.3; color: var(--ink); }
+.bf-word { font-size: 21px; font-weight: 600; line-height: 1.3; color: var(--ink); }
 .bf-word[data-state='balanced'] { color: var(--ok); }
 .bf-word[data-state='unbalanced'] { color: var(--c-res); }
 .bf-word[data-state='unbalanced']::before { content: ''; display: inline-block; width: 9px; height: 9px; margin-right: 7px; border-radius: 50%; background: var(--c-res); vertical-align: 2px; }
 .bf-word[data-state='balanced']::before { content: ''; display: inline-block; width: 9px; height: 9px; margin-right: 7px; border-radius: 50%; border: 2px solid var(--ok); box-sizing: border-box; vertical-align: 2px; }
 .bf-res { font-size: 15px; line-height: 1.4; color: var(--ink); min-height: 1.4em; }
-.bf-cap { display: flex; flex-direction: column; font-size: 12px; line-height: 1.3; color: var(--ink-3); }
+.bf-cap { display: flex; flex-direction: column; font-size: 12.5px; line-height: 1.35; color: var(--ink-3); }
 
 /* the book's words for what is happening (room for the longest, so the 3D view never changes size) */
-.bf-say { margin: 0; min-height: 4.2em; font-size: 14px; line-height: 1.4; color: var(--ink-2); }
+.bf-say { margin: 0; min-height: 4.65em; font-size: 14px; line-height: 1.55; color: var(--ink-2); }
 .bf-say sub, .bf-opt sub, .pvc-q-text sub, .pvc-q-feedback sub, .pvc-anno sub { font-size: 0.72em; line-height: 0; }
 
 .bf-acts { justify-content: flex-start; flex-wrap: nowrap; gap: 8px; }
@@ -68,7 +68,7 @@ body.bg-transparent { background: transparent; }
 @container pvc (max-width: 560px) {
   .bf-chips button { height: 40px; }
   .bf-chips button b { font-size: 14px; }
-  .bf-say { font-size: 13.5px; }
+  .bf-say { font-size: 14px; }
   /* the test as low as the learn sheet: the 3D view keeps 55 % of a phone held upright */
   .bf .pvc-q-ask { gap: 6px; }
   .bf .pvc-q-head { min-height: 32px; }
@@ -76,26 +76,30 @@ body.bg-transparent { background: transparent; }
   .bf .pvc-q-text { font-size: 15.5px; line-height: 1.35; }
   .bf .pvc-opt { height: 43px; }
   .bf .pvc-opt .bf-opt { font-size: 13px; line-height: 1.2; }
-  .bf .pvc-q-feedback { font-size: 13.5px; line-height: 1.4; }
+  .bf .pvc-q-feedback { font-size: 14px; line-height: 1.45; }
 }
 /* short phones: tighter */
 @container pvc (max-width: 560px) and (max-height: 600px) {
   .bf .pvc-learn { gap: 5px; }
   .bf-chips button { height: 38px; }
-  .bf-chips button small { font-size: 11px; }
+  .bf-chips button small { font-size: 12px; }
   .bf-read { min-height: 76px; column-gap: 10px; }
   .bf-sum { width: 96px !important; height: 76px !important; }
   .bf-word { font-size: 18px; }
   .bf-res { font-size: 14px; }
-  .bf-cap { font-size: 11.5px; }
-  .bf-say { font-size: 13px; line-height: 1.4; min-height: 4.2em; }
+  .bf-cap { font-size: 12.5px; }
+  .bf-say { font-size: 13.5px; line-height: 1.45; min-height: 4.35em; }
   .bf-acts .pvc-btn { height: 36px; font-size: 14.5px; }
   .bf .pvc-opt { height: 42px; }
   .bf .pvc-opt .bf-opt.bf-letter { font-size: 19px; }
   .bf .pvc-q-head { min-height: 32px; }
   .bf .pvc-q-head .pvc-btn { height: 32px; }
   .bf .pvc-tabs button { height: 34px; }
-  .bf .pvc-opt .bf-opt { font-size: 12.5px; line-height: 1.2; }
+  .bf .pvc-opt .bf-opt { font-size: 13px; line-height: 1.2; }
   .bf .pvc-q-text { font-size: 14.5px; line-height: 1.35; }
-  .bf .pvc-q-feedback { font-size: 13px; line-height: 1.4; }
+  .bf .pvc-q-feedback { font-size: 13.5px; line-height: 1.42; }
+}
+/* the side column beside the 3D: it has height to spare, so the book's words get full-size, roomy lines */
+@container pvc-panel (max-width: 340px) {
+  .bf-say { font-size: 14px; line-height: 1.55; min-height: 4.65em; }
 }

@@ -89,6 +89,7 @@ export function createApp(root, options = {}) {
   root.tabIndex = 0;
   const ui = buildStudentShell(root, t, {
     layout: 'side',
+    learnAlign: 'start',
     learn: `
           <div class="pvc-seg gf-stops" role="group" aria-label="${t('stop_label')}">
             ${STOPS.map((id) => `<button data-stop="${id}">${t(`stop_${id}`)}</button>`).join('')}

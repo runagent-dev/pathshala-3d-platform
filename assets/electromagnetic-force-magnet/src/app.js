@@ -62,6 +62,7 @@ export function createApp(root, options = {}) {
     .join(' <i aria-hidden="true">·</i> ');
   const ui = buildStudentShell(root, t, {
     layout: 'side',
+    learnAlign: 'start',
     learn: `${cleanSheet(t, {
       lines: { action: 1, outcome: 1, rule: 3 },
     })}
