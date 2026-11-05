@@ -163,7 +163,9 @@
 .pvc-corner .pvc-seg button { height: 36px; padding: 0 14px; font-size: 15px; }
 .pvc-corner .pvc-tool { height: 38px; width: 38px; padding: 0; justify-content: center; }
 /* back to the guided view: cross hairs and a word, so that it can't be taken for reset or for the rotate cue */
-.pvc-corner .pvc-tool.pvc-front { width: auto; padding: 0 10px 0 7px; gap: 4px; font-size: 14px; font-weight: 500; white-space: nowrap; }
+.pvc-corner .pvc-tool.pvc-front { width: auto !important; padding: 0 10px 0 7px; gap: 4px; font-size: 14px; font-weight: 500; white-space: nowrap; }
+/* a figure that added its own word before the kit had one */
+.pvc-front span + span { display: none; }
 .pvc-stage[data-ui='simple'] .pvc-hint { top: auto; bottom: 10px; transform: translate(-50%, 4px); }
 .pvc-stage[data-ui='simple'] .pvc-hint.show { transform: translate(-50%, 0); }
 .pvc[data-ui='simple'] .pvc-lens-zoom, .pvc[data-ui='simple'] .pvc-lens-pin { display: none; }
