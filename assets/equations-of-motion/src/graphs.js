@@ -42,6 +42,7 @@ export function createGraph(svg, { kind, num, colors, label }) {
     W = w;
     H = h;
     const fs = Math.max(10.5, Math.min(13, h * 0.1));
+    const ts = Math.max(12, Math.min(13.5, h * 0.12)); // the tick numbers: never small, even on a short graph
     const pad = { left: fs * 2.3, right: fs * 1.3, top: fs * 0.9, bottom: fs * 0.5 };
     px = (t) => pad.left + (t / tMax) * (W - pad.left - pad.right);
     py = (y) => pad.top + ((S.max - Math.min(S.max, Math.max(S.min, y))) / (S.max - S.min)) * (H - pad.top - pad.bottom);
@@ -53,13 +54,13 @@ export function createGraph(svg, { kind, num, colors, label }) {
     const ticks = S.ticks
       .map(
         (v) =>
-          `<path class="grid" d="M${x0} ${py(v)}H${px(tMax)}"/><path class="axis" d="M${x0 - 3} ${py(v)}h6"/><text x="${x0 - 5}" y="${py(v) + fs * 0.36}" text-anchor="end" font-size="${fs * 0.9}">${n(v)}</text>`,
+          `<path class="grid" d="M${x0} ${py(v)}H${px(tMax)}"/><path class="axis" d="M${x0 - 3} ${py(v)}h6"/><text x="${x0 - 5}" y="${py(v) + ts * 0.36}" text-anchor="end" font-size="${ts}">${n(v)}</text>`,
       )
       .join('');
     const tTicks = [2, 4, 6]
       .map(
         (t) =>
-          `<path class="grid" d="M${px(t)} ${py(S.max)}V${py(S.min)}"/><path class="axis" d="M${px(t)} ${y0 - 3}v6"/><text x="${px(t)}" y="${y0 + fs * 1.15}" text-anchor="middle" font-size="${fs * 0.9}">${n(t)}</text>`,
+          `<path class="grid" d="M${px(t)} ${py(S.max)}V${py(S.min)}"/><path class="axis" d="M${px(t)} ${y0 - 3}v6"/><text x="${px(t)}" y="${y0 + ts * 1.2}" text-anchor="middle" font-size="${ts}">${n(t)}</text>`,
       )
       .join('');
     svg.innerHTML = `<defs><linearGradient id="${paint}" gradientUnits="userSpaceOnUse" y1="0" y2="0"><stop offset="0" stop-color="${colors[0]}"/><stop offset="1" stop-color="${colors[1]}"/></linearGradient></defs>

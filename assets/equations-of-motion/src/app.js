@@ -485,17 +485,17 @@ export function createApp(root, options = {}) {
     const a1 = slopeScreen(2, SLOPE.numbers);
     const ppm = Math.hypot(a1.x - a0.x, a1.y - a0.y);
     // the numbers under the ticks: bold, 0 a little bigger; every other one where a metre is very short
-    const fs = Math.max(11, Math.min(17, ppm * 0.42));
+    const fs = Math.max(12.5, Math.min(20, ppm * 0.5));
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = INK;
+    ctx.fillStyle = '#fff';
     const every = ppm < 22 ? 2 : 1;
     for (let i = AXIS.min; i <= AXIS.max; i++) {
       if (every === 2 && i % 2 !== 0) continue;
       const p = slopeScreen(i, SLOPE.numbers);
       if (p.behind) continue;
       ctx.font = `700 ${i === 0 ? fs * 1.1 : fs}px ${FONT}`;
-      ctx.fillText(N(fmt(i)), p.x, p.y);
+      ctx.fillText(N(fmt(i)), Math.round(p.x * dpr) / dpr, Math.round(p.y * dpr) / dpr); // whole pixels: crisp digits
     }
     // the axis' name past the arrowhead
     const pn = slopeScreen(AXIS.max + 0.95, SLOPE.numbers);
