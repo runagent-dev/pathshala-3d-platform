@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 import { FLAME, HOLE_Y, imageSide, points, RAIL_BAR, U, V } from './reading.js';
 
+const WIDE = 0.12; // cm: a hole wider than this shows its own rim
 const BAR_Z = 2.2; // beside the flame, on the side away from the rays
 export const C = { ray: '#f59f00', edge: '#5f3400', glow: '#ffe36e', bar: '#f1f3f5', barEdge: '#16202b', mark: '#ffd43b' };
 
@@ -205,6 +206,54 @@ export function createDiagram({ stage, host }) {
     }
     ctx.globalAlpha = 1;
   }
+  /** The first light, a soft beam from the flame through the hole to the paper. k: its head 0 … 1, and on to 1.55 to run out. */
+  function beam(k) {
+    const n = 26;
+    const cam = camera.position;
+    const atX = (f) => -v.u + (v.u + v.v) * f;
+    ctx.lineCap = 'butt'; // the pieces meet, and never overlap into beads
+    for (let i = 0; i < n; i++) {
+      const f0 = i / n;
+      const f1 = (i + 1) / n;
+      if (f1 > k || f0 < k - 0.55) continue;
+      const x = atX(f0);
+      // behind the solid board, from where the camera stands
+      if (x > 0 && Math.abs(cam.z - (cam.z * cam.x) / (cam.x - x)) < 9) continue;
+      const fade = 1 - (k - f1) / 0.55;
+      Q({ x, y: HOLE_Y, z: 0 });
+      const x0 = sx;
+      const y0 = sy;
+      Q({ x: atX(f1), y: HOLE_Y, z: 0 });
+      ctx.globalAlpha = 0.26 * fade;
+      ctx.strokeStyle = C.glow;
+      ctx.lineWidth = 15 * unit;
+      line(x0, y0, sx, sy);
+      ctx.stroke();
+      ctx.globalAlpha = 0.9 * fade;
+      ctx.strokeStyle = '#fff3c4';
+      ctx.lineWidth = 3.4 * unit;
+      line(x0, y0, sx, sy);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+  /** The rim of a hole wide enough to have one: its real size, on the board's face. */
+  function rim() {
+    const r = v.d / 2;
+    ctx.beginPath();
+    for (let i = 0; i <= 32; i++) {
+      const a = (i / 32) * Math.PI * 2;
+      P(-0.26, HOLE_Y + r * Math.sin(a), r * Math.cos(a));
+      if (i) ctx.lineTo(sx, sy);
+      else ctx.moveTo(sx, sy);
+    }
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(255,243,196,0.9)';
+    ctx.fill();
+    ctx.strokeStyle = C.edge;
+    ctx.lineWidth = 1.6 * unit;
+    ctx.stroke();
+  }
   /** A numbered mark on the paper, for the test. */
   function mark(y) {
     P(v.v - 0.1, y, 0);
@@ -252,21 +301,9 @@ export function createDiagram({ stage, host }) {
     }
     ray(g.Y, g.O, g.Y1, v.y);
     ray(g.X, g.O, g.X1, v.x);
-    if (v.pulse >= 0) {
-      const k = v.pulse;
-      const land = { x: v.v, y: HOLE_Y, z: 0 };
-      const at = k < 0.5 ? { x: -v.u * (1 - 2 * k), y: HOLE_Y, z: 0 } : { x: land.x * (2 * k - 1), y: HOLE_Y, z: 0 };
-      Q(at);
-      ctx.beginPath();
-      ctx.arc(sx, sy, 9 * unit, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255,214,110,0.36)';
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(sx, sy, 3.6 * unit, 0, Math.PI * 2);
-      ctx.fillStyle = '#fff7d6';
-      ctx.fill();
-    }
-    if (v.point > 0) {
+    if (v.pulse >= 0) beam(v.pulse);
+    if (v.d > WIDE) rim();
+    if (v.point > 0 && v.d <= WIDE) {
       Q(g.O);
       ctx.globalAlpha = v.point;
       ctx.beginPath();
@@ -318,11 +355,25 @@ export function createDiagram({ stage, host }) {
     }
     return out;
   }
+  const flame = { left: 0, top: 0, right: 0, bottom: 0 };
+  /** The flame's place on the canvas: a label keeps off what it names. */
+  function flameBox() {
+    P(-v.u, FLAME.tip + 0.2, 0);
+    const top = sy;
+    const x = sx;
+    P(-v.u, FLAME.base - 0.2, 0);
+    const half = Math.abs(sy - top) * 0.22;
+    flame.left = x - half;
+    flame.right = x + half;
+    flame.top = top;
+    flame.bottom = sy;
+    return flame;
+  }
   /** Where a point is on the canvas now. */
   function screen(x, y, z) {
     P(x, y, z);
     return { x: sx, y: sy };
   }
 
-  return { canvas, view: v, paint, boxes, screen };
+  return { canvas, view: v, paint, boxes, flameBox, screen };
 }

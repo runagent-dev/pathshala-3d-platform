@@ -61,6 +61,7 @@ test('a point through a hole lands as a disc: the hole enlarged', () => {
 
 test('a tiny hole is sharp at every distance: its blur stays a small share of the image', () => {
   for (let v = V.min; v <= V.max; v++) assert.ok(blurShare(HOLES.tiny, U.start, v) < 0.08, `at v = ${v}`);
+  assert.ok(blurShare(HOLES.tiny, U.max, V.min) < 0.12); // the rail's extreme
   assert.ok(blurShare(HOLES.big, U.start, V.start) > 0.3);
   // farther away the share even falls a little
   assert.ok(blurShare(HOLES.tiny, 12, 27) < blurShare(HOLES.tiny, 12, 6));
@@ -72,7 +73,8 @@ test('brightness goes with (d/v)²: twice as far, a quarter as bright, and the c
   close(brightness(HOLES.big, V.start), 64);
   assert.equal(imageGain(0, 18), 0);
   assert.ok(imageGain(HOLES.tiny, V.max) > 0.5); // still seen at the far end
-  assert.ok(imageGain(HOLES.big, V.start) <= 2.4);
+  assert.ok(imageGain(HOLES.tiny, 12) > 1.5 * imageGain(HOLES.tiny, 24)); // plainly fainter, twice as far
+  assert.ok(imageGain(HOLES.big, V.start) <= 1.9);
 });
 
 test('the rail: steps of 1 cm, within its ends', () => {

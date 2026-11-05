@@ -97,6 +97,10 @@ body.bg-transparent { background: transparent; }
 .ph .ph-graph text { fill: var(--ink-2); font-size: 12px; }
 .ph .ph-graph .ph-line { stroke: #1971c2; stroke-width: 2.4; }
 .ph .ph-graph .ph-dot { fill: #f59f00; stroke: #5f3400; stroke-width: 1.4; }
+@container pvc-panel (min-height: 300px) {
+  .ph .ph-graph.on { display: block; max-height: 104px; }
+  .ph .ph-graph:not(.on) + .ph-cap { display: block; margin-top: 2px; padding-top: 8px; font-size: 13.5px; line-height: 1.5; }
+}
 @container pvc-panel (min-height: 460px) {
-  .ph .ph-graph.on { display: block; }
+  .ph .ph-graph.on { max-height: none; }
 }

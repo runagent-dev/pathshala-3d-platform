@@ -26,7 +26,7 @@ test('pinhole-camera: the steps on one action, from a dark paper to the book’s
   await act();
   await settled(fig);
   st = await fig.call('get');
-  expect(st).toMatchObject({ stage: 1, hole: 'tiny', image: true, frame: 'paper', seen: ['real'] });
+  expect(st).toMatchObject({ stage: 1, hole: 'tiny', image: true, frame: 'both', seen: ['real'] });
   await expect(rule).toContainText('বাস্তব প্রতিবিম্ব');
 
   await act();
@@ -50,9 +50,10 @@ test('pinhole-camera: the steps on one action, from a dark paper to the book’s
   await act();
   await settled(fig);
   st = await fig.call('get');
-  expect(st).toMatchObject({ stage: 5, hole: 'big', frame: 'paper' });
+  expect(st).toMatchObject({ stage: 5, hole: 'big', frame: 'big' });
   expect(st.blur).toBeCloseTo(2.4, 3);
   await expect(rule).toContainText('ঝাপসা');
+  await expect(fig.frame.locator('[data-example="sharp"]')).not.toHaveAttribute('aria-checked', 'true'); // not on a blurred image
 
   await act();
   await settled(fig);
@@ -126,11 +127,11 @@ test('pinhole-camera: an interrupted step is not lost, the words jump, and set w
   await fig.frame.locator('[data-example="real"]').click();
   await settled(fig);
   st = await fig.call('get');
-  expect(st).toMatchObject({ stage: 1, frame: 'paper' });
+  expect(st).toMatchObject({ stage: 1, frame: 'both' });
   expect(st.rays).toEqual([]);
   await fig.frame.locator('[data-example="sharp"]').click();
   await settled(fig);
-  expect(await fig.call('get')).toMatchObject({ stage: 5, hole: 'big' });
+  expect(await fig.call('get')).toMatchObject({ stage: 6, hole: 'tiny' }); // স্পষ্ট ends on the sharp image
   await fig.call('reset');
   await fig.advance(1000);
   st = await fig.call('get');
@@ -167,11 +168,28 @@ test('pinhole-camera: every right answer scores, and a wrong one does not', asyn
     return kinds;
   };
   await fig.call('practice');
-  expect(await play(-1)).toEqual(['flip', 'size', 'far', 'blur', 'real']);
+  expect(await play(-1)).toEqual(['flip', 'size', 'near', 'blur', 'real']);
   await expect(fig.frame.locator('.pvc-q-result')).toContainText('৫টির মধ্যে ৫টি');
   await fig.frame.locator('[data-act="q-again"]').click();
-  await play(2);
+  expect((await play(2))[2]).toBe('far'); // the candle's question and the paper's take turns
   await expect(fig.frame.locator('.pvc-q-result')).toContainText('৫টির মধ্যে ৪টি');
+  expect(log.errors).toEqual([]);
+});
+
+test('pinhole-camera: the flame holds still when left alone and wakes on a touch', async ({ page }) => {
+  test.setTimeout(180_000);
+  await page.setViewportSize({ width: 800, height: 500 });
+  const log = await preparePage(page);
+  const fig = await openFigure(page, 'pinhole-camera');
+  const picture = () => fig.call('capture', { width: 200, height: 125 });
+  await fig.advance(21_000);
+  const a = await picture();
+  await fig.advance(700);
+  expect(await picture()).toBe(a); // nothing moved
+  await fig.frame.locator('.pvc-canvas').first().dispatchEvent('pointerdown', { clientX: 5, clientY: 5, bubbles: true, pointerId: 3 });
+  await fig.frame.locator('.pvc-canvas').first().dispatchEvent('pointerup', { clientX: 5, clientY: 5, bubbles: true, pointerId: 3 });
+  await fig.advance(700);
+  expect(await picture()).not.toBe(a);
   expect(log.errors).toEqual([]);
 });
 

@@ -77,7 +77,7 @@
       "params": { "coach": "0", "stage": "6" },
       "setup": [{ "command": "set", "payload": { "v": 24, "animate": false } }]
     },
-    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "stage": 3, "animate": false } }] }],
+    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "stage": 1, "animate": false } }] }],
     "video": {
       "kind": "script",
       "seconds": 30,

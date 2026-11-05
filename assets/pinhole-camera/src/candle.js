@@ -6,6 +6,7 @@ import { FLAME } from './reading.js';
 
 // the flame's picture: its window in cm, round the flame's base
 const WIN = { width: 3.6, height: 6.4, below: 1 };
+export const WAX = { radius: 1.15, top: -0.25, reach: 3.6 }; // the candle's top, cm from the flame's base: what lights up
 
 /** The flame's light at x across and h above its base, cm: { r, g, b } in sRGB, 0…1. */
 function flameAt(x, h) {
@@ -74,6 +75,24 @@ vec2 flameUv(vec2 p) {
   float h = clamp(p.y / ${FLAME.length.toFixed(1)}, 0.0, 1.4);
   float sway = uFlick.z * h * h + 0.045 * sin(h * 7.0 - uFlameT * 8.0) * h;
   return vec2(((p.x - sway) / uFlick.y) / ${WIN.width.toFixed(1)} + 0.5, (p.y / uFlick.x + ${WIN.below.toFixed(1)}) / ${WIN.height.toFixed(1)});
+}`;
+
+/**
+ * What a point of the paper sees through the hole: the flame, the wick dark in it, and the top of the candle lit by the flame.
+ * On the paper they stand on their heads, so the wax points up from a flame that points down: that is what makes the image
+ * read as upside down at any size. p as in flameUv; lod: how soft the picture is read.
+ */
+export const IMAGE_AT = /* glsl */ `
+vec3 imageAt(vec2 p, float lod) {
+  vec3 c = textureLod(uFlameMap, flameUv(p), lod).rgb;
+  float soft = 0.05 + 0.05 * lod;
+  float wick = smoothstep(0.07 + soft, 0.03, abs(p.x - 0.06 * max(p.y, 0.0)));
+  c *= 1.0 - 0.8 * wick * smoothstep(-0.34 - soft, -0.26, p.y) * (1.0 - smoothstep(0.7, 0.9 + soft, p.y));
+  float side = p.x / ${WAX.radius.toFixed(2)};
+  float top = ${WAX.top.toFixed(2)} - 0.1 * side * side;
+  float wax = (1.0 - smoothstep(0.86, 1.0 + soft, abs(side))) * (1.0 - smoothstep(top - 0.06 - soft, top + 0.04, p.y));
+  float lit = (0.3 + 0.7 * exp((p.y - top) / 0.9)) * smoothstep(${(-WAX.reach).toFixed(1)}, ${(1.6 - WAX.reach).toFixed(1)}, p.y);
+  return c + vec3(1.0, 0.62, 0.28) * 0.74 * wax * lit;
 }`;
 
 function createFlame(uniforms) {
@@ -186,8 +205,8 @@ function createWick(base, top) {
 export function createCandle({ lit, uniforms, foot, glow }) {
   const root = new THREE.Group();
   root.name = 'candle';
-  const R = 1.15;
-  const height = FLAME.base - 0.25 - foot; // the flame's foot sits just above the pool
+  const R = WAX.radius;
+  const height = FLAME.base + WAX.top - foot; // the flame's foot sits just above the pool
   const top = foot + height;
 
   const brass = lit(new THREE.MeshStandardMaterial({ name: 'holder-brass', color: 0xb08d3e, roughness: 0.34, metalness: 0.92 }));

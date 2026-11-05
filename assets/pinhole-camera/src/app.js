@@ -56,9 +56,10 @@ export const DEFAULTS = {
 const LAST = 6;
 const STEPS = ['hole', 'x', 'y', 'drag', 'big', 'tiny', 'again'];
 const WORDS = ['real', 'inverted', 'bigger', 'sharp'];
-const FRAME_AT = ['start', 'paper', 'rays', 'drag', 'drag', 'paper', 'drag'];
+const FRAME_AT = ['start', 'both', 'rays', 'drag', 'drag', 'big', 'drag'];
 const NEXT_WORD = ['real', 'inverted', 'inverted', 'bigger', 'sharp', 'sharp', null];
-const WORD_AT = [null, 'real', 'inverted', 'inverted', 'bigger', 'sharp', 'sharp'];
+const WORD_AT = [null, 'real', 'inverted', 'inverted', 'bigger', null, 'sharp']; // a blurred image is not স্পষ্ট
+const IDLE_AFTER = 20; // s: the flame holds still after this long with nothing touched
 const SHOWN_V = 24; // where the action's own slide of the paper ends, cm: twice the candle's distance
 const BOARD_THIN = 0.42;
 const MARGINS = { top: 12, bottom: 12, side: 10 };
@@ -143,16 +144,26 @@ export function createApp(root, options = {}) {
     for (const fn of listeners.get(type) || []) fn(payload);
   }
 
-  // the flame breathes, 24 times a second at most: only the picture changes, so no shadow map is redrawn
+  // the flame breathes, 24 times a second at most and 12 in the test: only the picture changes, so no shadow map is redrawn.
+  // After 20 s with nothing touched it holds still, so a page left open costs nothing; any touch or key wakes it.
   let flameTime = 0;
   let flameWait = 0;
+  let idle = 0;
+  const wake = () => {
+    idle = 0;
+  };
   const still = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   setting.flick(0);
   if (!still) {
+    root.addEventListener('pointerdown', wake, { capture: true });
+    root.addEventListener('pointermove', wake, { capture: true, passive: true });
+    root.addEventListener('keydown', wake, { capture: true });
     stage.addTicker((dt) => {
+      idle += dt;
+      if (idle > IDLE_AFTER) return false;
       flameTime += dt;
       flameWait += dt;
-      if (flameWait < 1 / 24) return false;
+      if (flameWait < 1 / (s.mode === 'quiz' ? 12 : 24)) return false;
       flameWait = 0;
       setting.flick(flameTime);
       return 'camera';
@@ -241,6 +252,13 @@ export function createApp(root, options = {}) {
     });
     return alive();
   };
+  const moveCandle = async (tween, alive, to, duration) => {
+    const a = s.u;
+    await tween('paper', duration, (k) => {
+      s.u = clampU(a + (to - a) * k);
+    });
+    return alive();
+  };
 
   /** The steps, each told by the camera: it goes to the place first, and only then the new thing happens. */
   const RUN = {
@@ -253,19 +271,25 @@ export function createApp(root, options = {}) {
       v.point = 0;
       audio.pop();
       apply();
-      await tween('hole', 0.28, () => {});
+      await tween('hole', 0.3, () => {});
       if (!alive()) return;
-      // the first light goes through, and the camera goes with it to the paper
-      const going = tween('pulse', 1, (k) => (v.pulse = k), ease.linear);
-      const flying = fly('paper', 1.2);
-      await going;
+      // back to see the candle and the paper together, and only then the first light goes through
+      await fly('both', 1);
+      if (!alive()) return;
+      const going = tween('pulse', 1.5, (k) => (v.pulse = 1.55 * k), ease.linear);
+      const showing = tween(
+        'image',
+        0.7,
+        (k) => {
+          s.image = Math.max(k, 0.01);
+          draw();
+        },
+        ease.inOutSine,
+        0.92,
+      );
+      await Promise.all([going, showing]);
       if (!alive()) return;
       v.pulse = -1;
-      s.image = 0.01;
-      draw();
-      const showing = tween('image', 0.7, (k) => (s.image = k));
-      await Promise.all([flying, showing]);
-      if (!alive()) return;
       finish(1, 'real');
     },
     async x() {
@@ -323,7 +347,7 @@ export function createApp(root, options = {}) {
     async big() {
       const { alive, tween } = begin();
       const v = dia.view;
-      await fly('paper', 1);
+      await fly('big', 1);
       if (!alive()) return;
       s.bigLabel = true;
       const d = s.d;
@@ -338,6 +362,8 @@ export function createApp(root, options = {}) {
     async tiny() {
       const { alive, tween } = begin();
       const v = dia.view;
+      if (s.frame !== 'big' || camK < 1) await fly('big', 0.8);
+      if (!alive()) return;
       const d = s.d;
       await tween('hole', 0.9, (k) => {
         s.d = d + (HOLES.tiny - d) * k;
@@ -440,7 +466,7 @@ export function createApp(root, options = {}) {
   const anno = createAnnotations({
     stage,
     layer: ui.annoLayer,
-    avoid: [ui.corner, note, ui.$('.pvc-panel-toggle'), () => dia.boxes(), () => action?.ringBox()],
+    avoid: [ui.corner, note, ui.$('.pvc-panel-toggle'), () => dia.boxes(), () => dia.flameBox(), () => action?.ringBox()],
   });
   const shown = new Map();
   const pts = new Map();
@@ -496,15 +522,23 @@ export function createApp(root, options = {}) {
       { dx: 0, dy: -44 },
       { dx: 44, dy: 0 },
     ],
-    left: [
-      { dx: -16, dy: -2 },
-      { dx: -16, dy: -16 },
+    x: [
+      { dx: -16, dy: -12 },
+      { dx: -12, dy: -22 },
       { dx: 16, dy: -16 },
     ],
-    right: [
-      { dx: 16, dy: 2 },
-      { dx: 16, dy: 16 },
-      { dx: -16, dy: 16 },
+    y: [
+      { dx: -34, dy: 6 },
+      { dx: -34, dy: 24 },
+      { dx: -22, dy: 14 },
+      { dx: 34, dy: 8 },
+    ],
+    l: [
+      { dx: -14, dy: 0 },
+      { dx: -14, dy: -24 },
+      { dx: -14, dy: 24 },
+      { dx: 34, dy: -44 },
+      { dx: 36, dy: 40 },
     ],
     below: [
       { dx: 14, dy: 16 },
@@ -524,6 +558,8 @@ export function createApp(root, options = {}) {
       { dx: -22, dy: -22 },
       { dx: 22, dy: -22 },
       { dx: -30, dy: 2 },
+      { dx: -34, dy: 34 },
+      { dx: 36, dy: 34 },
     ],
     mark: [
       { dx: 18, dy: 0 },
@@ -533,6 +569,7 @@ export function createApp(root, options = {}) {
       { dx: 18, dy: 0 },
       { dx: 18, dy: -18 },
       { dx: 18, dy: 18 },
+      { dx: 54, dy: 0 },
       { dx: -44, dy: -46 },
       { dx: -44, dy: 46 },
     ],
@@ -544,26 +581,29 @@ export function createApp(root, options = {}) {
     const g = points(s.u, s.v);
     const wide = !q && f === 'drag';
     const close = !q && f === 'rays';
+    const both = !q && f === 'both';
+    const big = !q && f === 'big';
     const P = PAPER.height / 2;
     label('candle', calm && !q && f === 'start', t('l_candle'), -s.u, 8, 1.2, SPOTS.candle);
-    label('board', calm && !q && f === 'start', t('l_board'), 0, HOLE_Y + 9, 0, SPOTS.board);
-    label('paper', calm && !q && (f === 'start' || f === 'paper'), t('l_paper'), s.v, HOLE_Y + P - 2.5, 0, SPOTS.paper);
-    label('flame', calm && !q && f === 'start', t('l_flame'), -s.u, FLAME.tip - 1, 0, SPOTS.flame);
-    const holeShown = calm && (s.d > 0 || q?.hole) && (close || f === 'hole' || (q && q.kind === 'flip'));
-    label('hole', holeShown, t('l_hole'), 0, HOLE_Y, 0, SPOTS.hole);
-    const imageOn = calm && !q && f === 'paper' && s.image >= 1;
-    label('image', imageOn, t(s.d > 0.3 ? 'l_image_blur' : 'l_image'), s.v, s.d > 0.3 ? g.X1.y : g.X1.y + 0.3, 0, SPOTS.image);
+    label('board', calm && !q && (f === 'start' || both), t('l_board'), 0, HOLE_Y + 7, 0, SPOTS.board);
+    label('paper', calm && !q && f === 'start', t('l_paper'), s.v, HOLE_Y + P - 2.5, 0, SPOTS.paper);
+    label('flame', calm && !q && (f === 'start' || both), t('l_flame'), -s.u, FLAME.tip - 1, 0, SPOTS.flame);
+    const holeShown = calm && (s.d > 0 || q?.hole) && (close || big || f === 'hole' || q?.hole);
+    label('hole', holeShown, t(s.d > 0.3 ? 'l_hole_big' : 'l_hole'), 0, HOLE_Y, 0, SPOTS.hole);
+    const imageOn = calm && (both || big || q?.imageNamed) && s.image >= 1;
+    label('image', imageOn, t(s.d > 0.3 ? 'l_image_blur' : 'l_image'), s.v, g.X1.y + 0.3, 0, SPOTS.image);
 
-    const letters = calm && (close || q?.letters);
-    label('x', letters, t('l_x'), g.X.x, g.X.y, 0, SPOTS.left);
-    label('y', letters && !q, t('l_y'), g.Y.x, g.Y.y, 0, SPOTS.left);
-    label('x1', calm && ((close && dia.view.x.k >= 1) || q?.landed), t('l_x1'), g.X1.x, g.X1.y, 0, SPOTS.below);
-    label('y1', calm && close && dia.view.y.k >= 1, t('l_y1'), g.Y1.x, g.Y1.y, 0, SPOTS.above);
+    const letters = calm && (close || wide || q?.letters);
+    const landed = calm && (close || wide || big);
+    label('x', letters, t('l_x'), g.X.x, g.X.y, 0, SPOTS.x);
+    label('y', letters && !q, t('l_y'), g.Y.x, g.Y.y, 0, SPOTS.y);
+    label('x1', (landed && dia.view.x.k >= 1) || (calm && q?.landed), t('l_x1'), g.X1.x, g.X1.y, 0, SPOTS.below);
+    label('y1', landed && dia.view.y.k >= 1, t('l_y1'), g.Y1.x, g.Y1.y, 0, SPOTS.above);
 
     const measures = calm && (wide || q?.measures) && dia.view.bars >= 1;
     label('u', measures, t('l_u', { x: s.u }), -s.u / 2, 0.04, RAIL_BAR, SPOTS.bar);
     label('v', measures, t('l_v', { x: s.v }), s.v / 2, 0.04, RAIL_BAR, SPOTS.bar);
-    label('l', measures, t('l_l', { x: FLAME.length }), -s.u, HOLE_Y, -2.2, SPOTS.left);
+    label('l', measures, t('l_l', { x: FLAME.length }), -s.u, HOLE_Y, -2.2, SPOTS.l);
     label(
       'l1',
       measures && dia.view.imageLength,
@@ -609,8 +649,14 @@ export function createApp(root, options = {}) {
       goTo(3);
       RUN.drag();
     } else {
-      goTo(4);
-      RUN.big();
+      // from the blurred image back to the sharp one: স্পষ্ট is what the tiny hole gives
+      const was = s.frame;
+      s.stage = 5;
+      s.bigLabel = true;
+      s.from = { u: s.u, v: s.v };
+      settle();
+      s.frame = was;
+      RUN.tiny();
     }
   }
   function goTo(n, frame) {
@@ -665,6 +711,7 @@ export function createApp(root, options = {}) {
     }
   }
   function draw() {
+    wake();
     panel();
     stage.invalidate();
   }
@@ -675,7 +722,8 @@ export function createApp(root, options = {}) {
   function targetNow() {
     if (s.locked || s.busy || camK < 1) return null;
     const step = STEPS[s.stage];
-    if (step === 'hole' || step === 'big') return holeAt;
+    if (step === 'hole' || step === 'big' || step === 'tiny') return holeAt;
+    if (step === 'x') return aim.set(-s.u, FLAME.tip, 0);
     if (step === 'y') return aim.set(-s.u, FLAME.base, 0);
     if (step === 'drag') return aim.set(s.v, HOLE_Y - PAPER.height / 2 + 2.6, -5);
     return null;
@@ -790,6 +838,7 @@ export function createApp(root, options = {}) {
   // ── the test ────────────────────────────────────────────────────────────────────────────────────────────
   let qCurrent = null;
   let order = [];
+  let rounds = 0; // the candle's question and the paper's take turns
   const notesOf = (pairs) => new Map(pairs.map(([k, v]) => [String(k), v]));
   /** The scene of a question: everything set by hand, so that no earlier scene or step shows through. */
   function quizScene(q, scene) {
@@ -800,18 +849,18 @@ export function createApp(root, options = {}) {
     s.d = scene.d ?? HOLES.tiny;
     s.image = scene.image ? 1 : 0;
     s.thin = scene.thin ? BOARD_THIN : 1;
-    v.x.k = 0;
-    v.y.k = 0;
+    v.x.k = scene.rays ? 1 : 0;
+    v.y.k = scene.rays ? 1 : 0;
     v.x.half = false;
     v.x.shine = 0;
     v.y.shine = 0;
-    v.fan = 0;
+    v.fan = scene.rays ? 1 : 0;
     v.spread = 0;
     v.pulse = -1;
     v.bars = scene.measures ? 1 : 0;
     v.lengths = scene.measures ? 1 : 0;
     v.imageLength = Boolean(scene.imageLength);
-    v.point = scene.hole ? 1 : 0;
+    v.point = scene.hole || scene.rays ? 1 : 0;
     v.marks = [];
     s.frame = scene.frame;
     s.quiz = { ...q, measures: Boolean(scene.measures), hole: Boolean(scene.hole), letters: Boolean(scene.letters), landed: false };
@@ -821,21 +870,22 @@ export function createApp(root, options = {}) {
   const Q = {
     flip() {
       const u = 10;
-      const v = 20;
+      const v = 25;
       quizScene({ kind: 'flip' }, { u, v, hole: true, thin: true, letters: true, frame: 'rays' });
       dia.view.x.k = 1;
       dia.view.x.half = true;
-      // four evenly spaced points, so that none stands out; the letters are dealt afresh each time
+      // three heights below the hole test the line's slope; the one above is the old mistake that light bends back.
+      // The letters are dealt afresh each time
       const place = [
-        ['right', HOLE_Y - 4],
-        ['centre', HOLE_Y],
-        ['level', HOLE_Y + 4],
-        ['high', HOLE_Y + 8],
+        ['up', HOLE_Y + 4],
+        ['shallow', HOLE_Y - 2],
+        ['right', HOLE_Y - 5],
+        ['steep', HOLE_Y - 8],
       ];
       const tags = shuffle([0, 1, 2, 3]).map((i) => t(`tag_${i}`));
       dia.view.marks = place.map(([, y], i) => ({ y, tag: tags[i] }));
       const tagOf = Object.fromEntries(place.map(([k], i) => [k, tags[i]]));
-      const wrong = ['level', 'centre', 'high'];
+      const wrong = ['shallow', 'steep', 'up'];
       return {
         text: t('q_flip'),
         answer: 'right',
@@ -854,7 +904,7 @@ export function createApp(root, options = {}) {
     size() {
       const [u, v] = shuffle([
         [10, 25],
-        [12, 24],
+        [12, 27],
         [9, 27],
       ])[0];
       quizScene({ kind: 'size' }, { u, v, measures: true, frame: 'drag' });
@@ -894,8 +944,27 @@ export function createApp(root, options = {}) {
         },
       };
     },
+    near() {
+      const from = 18;
+      const to = 9;
+      quizScene({ kind: 'near' }, { u: from, v: 18, image: true, measures: true, imageLength: true, frame: 'drag' });
+      const wrong = ['small', 'same', 'upright'];
+      return {
+        text: t('q_near', { a: from, b: to }),
+        answer: 'right',
+        wrong,
+        label: (k) => t(`c_near_${k}`),
+        notes: notesOf(wrong.map((k) => [k, t(`n_near_${k}`)])),
+        reveal: t('a_near', { a: round(imageLength(from, 18), 1), b: round(imageLength(to, 18), 1) }),
+        after() {
+          const { alive, tween } = begin();
+          s.busy = false;
+          moveCandle(tween, alive, to, 1.2);
+        },
+      };
+    },
     blur() {
-      quizScene({ kind: 'blur' }, { u: U.start, v: V.start, d: HOLES.big, image: true, frame: 'paper' });
+      quizScene({ kind: 'blur' }, { u: U.start, v: V.start, d: HOLES.big, image: true, thin: true, frame: 'both' });
       const wrong = ['far', 'near', 'flicker'];
       return {
         text: t('q_blur'),
@@ -904,10 +973,14 @@ export function createApp(root, options = {}) {
         label: (k) => t(`c_blur_${k}`),
         notes: notesOf(wrong.map((k) => [k, t(`n_blur_${k}`)])),
         reveal: t('a_blur'),
+        after() {
+          s.quiz.hole = true;
+          s.quiz.imageNamed = true;
+        },
       };
     },
     real() {
-      quizScene({ kind: 'real' }, { u: U.start, v: V.start, image: true, frame: 'paper' });
+      quizScene({ kind: 'real' }, { u: U.start, v: V.start, image: true, thin: true, rays: true, frame: 'both' });
       const wrong = ['inverted', 'seems', 'white'];
       return {
         text: t('q_real'),
@@ -942,8 +1015,6 @@ export function createApp(root, options = {}) {
         saved.u = s.u;
         saved.v = s.v;
         saved.seen = [...s.seen];
-        // in this order no scene gives away a later answer
-        order = ['flip', 'size', 'far', 'blur', 'real'];
         clearLabels();
         syncUI();
       },
@@ -968,6 +1039,8 @@ export function createApp(root, options = {}) {
         draw();
       },
       async prepare(i, alive, say) {
+        // each round, also "again"; in this order no scene gives away a later answer
+        if (i === 0) order = ['flip', 'size', rounds++ % 2 ? 'far' : 'near', 'blur', 'real'];
         const q = Q[order[i]]();
         qCurrent = q;
         say(q.text);

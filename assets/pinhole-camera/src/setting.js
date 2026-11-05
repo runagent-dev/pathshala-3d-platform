@@ -5,7 +5,7 @@
 // candle, and costs no shadow map. The image on the paper is the flame's own picture read through the same straight lines.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { createCandle, FLAME_UV, flameTexture } from './candle.js';
+import { createCandle, FLAME_UV, flameTexture, IMAGE_AT, WAX } from './candle.js';
 import { BOARD, flicker, FLAME, HOLE_Y, imageGain, HOLES, PAPER, U, V } from './reading.js';
 
 const RAIL = { from: -26, to: 31, height: 1.5, width: 3.8 };
@@ -16,7 +16,7 @@ const b = new THREE.Box3();
 const f = { box: b, az: -30, el: 13 }; // the one object every call returns: this runs on every frame
 const set = (x0, y0, z0, x1, y1, z1) => b.set(b.min.set(x0, y0, z0), b.max.set(x1, y1, z1));
 /** The paper's face, seen past the board's edge: the closer the paper, the more from the side the camera has to look. */
-const paperAz = (v) => -Math.min(54, Math.max(24, THREE.MathUtils.radToDeg(Math.atan(v / 11.5))));
+const paperAz = (v) => -Math.min(38, Math.max(24, THREE.MathUtils.radToDeg(Math.atan(v / 11.5))));
 export function frameOf(name, u, v) {
   f.az = -30;
   f.el = 13;
@@ -24,15 +24,21 @@ export function frameOf(name, u, v) {
     set(-3, HOLE_Y - 5, -4, 2, HOLE_Y + 5, 4);
     f.az = -36;
     f.el = 9;
-  } else if (name === 'paper') {
-    // the image fills the view, and a little of the paper round it
-    const r = Math.max(5, (2 * v) / u + 2.2);
-    set(v - 0.2, HOLE_Y - r, -r * 0.8, v + 0.2, HOLE_Y + r, r * 0.8);
+  } else if (name === 'both') {
+    // the upright flame and the image on the paper, in one picture
+    const r = Math.max(9, (2.2 * v) / u + 3);
+    set(-u - 2.5, HOLE_Y - r, -2, v + 1, HOLE_Y + r, 2);
+    f.az = paperAz(v);
+    f.el = 8;
+  } else if (name === 'big') {
+    // the hole and the paper together: the hole widens here and the image blurs there
+    const r = Math.max(8, (2.2 * v) / u + 2.5);
+    set(-3.5, HOLE_Y - r, -3, v + 1, HOLE_Y + r, 3);
     f.az = paperAz(v);
     f.el = 8;
   } else if (name === 'rays') {
     set(-u - 2.5, HOLE_Y - 9, -2, v + 1, HOLE_Y + 9, 2);
-    f.az = -30;
+    f.az = -34;
     f.el = 10;
   } else if (name === 'drag') {
     set(-U.max - 3, 1, -3, V.max + 0.5, HOLE_Y + 13.5, PAPER.width / 2); // the whole paper, even at the end of the rail
@@ -164,6 +170,36 @@ function boardTexture() {
   return t;
 }
 
+/** The paper: white, a faint fibre, and the soft shadows of the two clips that hold it. */
+function paperTexture() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 256;
+  const g = c.getContext('2d');
+  g.fillStyle = '#ffffff';
+  g.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 900; i++) {
+    g.strokeStyle = `rgba(70,74,84,${0.012 + Math.random() * 0.03})`;
+    g.lineWidth = 0.6;
+    const x = Math.random() * 256;
+    const y = Math.random() * 256;
+    const a = Math.random() * Math.PI;
+    const l = 3 + Math.random() * 9;
+    g.beginPath();
+    g.moveTo(x, y);
+    g.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l);
+    g.stroke();
+  }
+  // nested boxes: soft on every browser
+  g.fillStyle = 'rgba(30,34,44,0.05)';
+  for (const u of [0.2, 0.8]) {
+    for (let i = 0; i < 10; i++) g.fillRect(256 * u - 34 + i, 0, 68 - 2 * i, 30 - i);
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 4;
+  return t;
+}
+
 /** The printed scale on the rail's front face: its zero under the hole, counted both ways, a long tick each 5 cm. */
 function scaleTexture(num) {
   const W = 1024;
@@ -224,7 +260,6 @@ export function createSetting({ stage, shadow, num }) {
     uM: { value: 1 }, // v/u
     uSpread: { value: 0 }, // the blur's radius, cm on the paper
     uGain: { value: 0 },
-    uRoom: { value: 1 },
   };
   const lit = makeLit(shared);
 
@@ -280,7 +315,7 @@ export function createSetting({ stage, shadow, num }) {
   const boardMat = lit(
     new THREE.MeshStandardMaterial({
       name: 'board',
-      color: 0x8d7a64,
+      color: 0x7d6c58,
       map: boardTexture(),
       roughness: 0.82,
       metalness: 0,
@@ -320,43 +355,53 @@ export function createSetting({ stage, shadow, num }) {
   // ── the white paper, clipped to a stiff back ──────────────────────────────────────────────────────────────
   const paperBase = new THREE.Group();
   paperBase.name = 'paper-carrier';
-  const paperMat = lit(new THREE.MeshStandardMaterial({ name: 'paper', color: 0xf3f1ea, roughness: 0.92, metalness: 0, envMapIntensity: 0.25 }));
-  const litCompile = paperMat.onBeforeCompile;
+  const paperMat = new THREE.MeshStandardMaterial({ name: 'paper', color: 0xf6f4ee, map: paperTexture(), roughness: 0.92, metalness: 0 });
+  // the paper is drawn by itself: the palest large thing in the room, whatever the lights do, with the image glowing on it
   paperMat.onBeforeCompile = (shader) => {
-    litCompile(shader);
     for (const k of ['uFlameMap', 'uFlick', 'uFlameT', 'uM', 'uSpread', 'uGain']) shader.uniforms[k] = shared[k];
-    shader.fragmentShader = `${FLAME_UV}\nuniform float uM;\nuniform float uSpread;\nuniform float uGain;\n${shader.fragmentShader.replace(
+    shader.vertexShader = `varying vec3 vPhWorld;\n${shader.vertexShader.replace(
+      '#include <project_vertex>',
+      `#include <project_vertex>
+      vPhWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;`,
+    )}`;
+    shader.fragmentShader = `varying vec3 vPhWorld;\n${FLAME_UV}\n${IMAGE_AT}\nuniform float uM;\nuniform float uSpread;\nuniform float uGain;\n${shader.fragmentShader.replace(
       '#include <opaque_fragment>',
       `#include <opaque_fragment>
+      vec3 paper = diffuseColor.rgb * vec3(0.335, 0.36, 0.41);
       if (uGain > 0.0) {
-        // this point of the paper looks back through the hole at one spot of the flame, a little disc of them if the hole is wide
+        // this point of the paper looks back through the hole at one spot of the candle, a little disc of them if the hole is wide
         vec2 c = vec2(-vPhWorld.z, ${HOLE_Y.toFixed(1)} - vPhWorld.y) / uM + vec2(0.0, ${(FLAME.length / 2).toFixed(1)});
         float r = uSpread / uM;
-        if (abs(c.x) < 2.2 + r && c.y > -1.2 - r && c.y < 5.4 + r) {
-        float lod = log2(max(1.0, r * 17.0)); // the taps are r/2 apart, the picture has 35 texels to the cm
-        vec3 sum = vec3(0.0);
-        vec2 S = uSpread > 0.0 ? vec2(r) : vec2(0.0);
-        ${[
-          [0, 0],
-          [0.5, 0],
-          [-0.5, 0],
-          [0, 0.5],
-          [0, -0.5],
-          [0.68, 0.68],
-          [-0.68, 0.68],
-          [0.68, -0.68],
-          [-0.68, -0.68],
-          [0.96, 0],
-          [-0.96, 0],
-          [0, 0.96],
-          [0, -0.96],
-        ]
-          .map(([x, y]) => `sum += textureLod(uFlameMap, flameUv(c + S * vec2(${x.toFixed(2)}, ${y.toFixed(2)})), lod).rgb;`)
-          .join('\n')}
-        gl_FragColor.rgb += sum / 13.0 * uGain * 2.7; // halved with the rest, just below
+        float halo = exp(-(c.x * c.x / 5.0 + (c.y - 1.7) * (c.y - 1.7) / 9.0));
+        paper *= 1.0 - 0.3 * halo * min(1.0, uGain); // the lit patch stands out from the paper round it
+        paper += vec3(0.16, 0.085, 0.025) * halo * uGain;
+        if (abs(c.x) < 2.0 + r && c.y > ${(-WAX.reach).toFixed(1)} - r && c.y < 5.4 + r) {
+          float lod = log2(max(1.0, r * 17.0)); // the taps are r/2 apart, the picture has 35 texels to the cm
+          vec3 sum = vec3(0.0);
+          vec2 S = uSpread > 0.0 ? vec2(r) : vec2(0.0);
+          ${[
+            [0, 0],
+            [0.5, 0],
+            [-0.5, 0],
+            [0, 0.5],
+            [0, -0.5],
+            [0.68, 0.68],
+            [-0.68, 0.68],
+            [0.68, -0.68],
+            [-0.68, -0.68],
+            [0.96, 0],
+            [-0.96, 0],
+            [0, 0.96],
+            [0, -0.96],
+          ]
+            .map(([x, y]) => `sum += imageAt(c + S * vec2(${x.toFixed(2)}, ${y.toFixed(2)}), lod);`)
+            .join('\n')}
+          vec3 glow = sum / 13.0 * uGain;
+          float cover = clamp(max(glow.r, max(glow.g, glow.b)) * 1.15, 0.0, 1.0);
+          paper = paper * (1.0 - 0.82 * cover) + glow * 1.5;
         }
       }
-      gl_FragColor.rgb *= 0.5; // the room's light on it: the board keeps the paper dark`,
+      gl_FragColor.rgb = paper;`,
     )}`;
   };
   paperMat.customProgramCacheKey = () => 'ph-paper';
@@ -366,8 +411,8 @@ export function createSetting({ stage, shadow, num }) {
   paper.position.set(-0.13, HOLE_Y, 0);
   paper.receiveShadow = true;
   const backing = new THREE.Mesh(
-    new RoundedBoxGeometry(0.16, PAPER.height + 0.8, PAPER.width + 0.8, 2, 0.06),
-    lit(new THREE.MeshStandardMaterial({ name: 'paper-back', color: 0x39414c, roughness: 0.7, metalness: 0.1 })),
+    new RoundedBoxGeometry(0.16, PAPER.height + 1.2, PAPER.width + 1.2, 2, 0.06),
+    lit(new THREE.MeshStandardMaterial({ name: 'paper-back', color: 0xa4acb6, roughness: 0.74, metalness: 0.05 })),
   );
   backing.name = 'paper-back';
   backing.position.y = HOLE_Y;

@@ -51,8 +51,11 @@ export const blurShare = (d, u, v, l = FLAME.length) => blurDiameter(d, u, v) / 
  * falls as 1/u², and it spreads over an area that grows as (v/u)²: u cancels, and what is left is (d/v)².
  */
 export const brightness = (d, v) => (d / HOLES.tiny) ** 2 * (V.start / v) ** 2;
-/** What the shader adds to the paper: the eye takes light roughly as its 0.4 power, kept short of a white-out. */
-export const imageGain = (d, v) => (d > 0 ? Math.min(2.4, brightness(d, v) ** 0.4) : 0);
+/**
+ * How strongly the image is drawn. A screen cannot show the true range (64 times for the big hole), so it is drawn as the 0.8
+ * power, held short of a white-out: strong enough that the same image is plainly fainter at the far end of the rail.
+ */
+export const imageGain = (d, v) => (d > 0 ? Math.min(1.9, brightness(d, v) ** 0.8) : 0);
 
 /** A candle flame's slow breathing: smooth, deterministic, a little of everything. t in seconds. */
 export function flicker(t) {
