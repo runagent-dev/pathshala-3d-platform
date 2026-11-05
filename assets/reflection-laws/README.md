@@ -28,7 +28,7 @@ To listen to it or control it from the book page, use the helper shipped in the 
 |---|---|---|---|
 | `lang` | Language | `bn` বাংলা · `en` English | `bn` |
 | `step` | Step of the book | `laws` 8.2.1 the two laws · `surface` 8.2.2 smooth and rough water | `laws` |
-| `law` | How far the laws are built (0–5) | number | `0` |
+| `law` | How far the laws are built (0 the lake, 1 ray, 2 O, 3 normal, 4 plane, 5 OX′, 6 angles, 7 swung, 8 both laws) | number | `0` |
 | `theta` | Angle of incidence (degrees) | number | `50` |
 | `phi` | Swing of the plane (degrees) | number | `0` |
 | `waves` | Wavy water | `1` · `0` | `0` |
@@ -47,7 +47,7 @@ Every figure answers `ping` with `{ asset, version }`. Send commands with `figur
 | Command | Example payload |
 |---|---|
 | `get` | `{}` |
-| `set` | `{"law":5,"animate":false}` |
+| `set` | `{"law":8,"animate":false}` |
 | `reset` | `{}` |
 | `practice` | `{}` |
 | `capture` | `{"width":800,"height":500}` |
