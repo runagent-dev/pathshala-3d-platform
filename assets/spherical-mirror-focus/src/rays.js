@@ -64,15 +64,21 @@ export function createRays({ stage, host }) {
     bars: 0, // f and r measured along the rail
     circle: 0, // the sphere's circle through the mirror, and the radius to its edge
     radiusOnly: null, // { x, y, z } the sphere in the air: its radius drawn alone
+    piece: null, // the dish while it is shown: { k, r, a, inner, x, y, z, thick }, for the curved lines on the side that faces the eye
     crossings: 0, // the small dots where rays cross the axis (the wide bundle)
     chevX: 26, // where along the rail the arrows of the incoming rays sit
     fan: 0.11, // how strongly the body of the beam is washed in
     source: 'box', // 'box' | 'bulb'
+    arcK: 0, // the mirror's curve in bright silver
+    bulge: 0, // the same curve in the outer surface's gold, for the half turn
     rimAt: Infinity, // rays this far from the axis or further are the rim rays, in their own colour
     inset: 0, // the magnifying lens on the crossings near F
     fmt: (x) => String(x), // a number for the lens
   };
   let rayColor = C.ray;
+  /** One ray after another: how far ray i of n has got when the whole bundle is at K. Each takes OVERLAP rays' share of the time. */
+  const OVERLAP = 2;
+  const nth = (K, i, n) => (K >= 1 ? 1 : K <= 0 ? 0 : Math.min(1, Math.max(0, (K * (n - 1 + OVERLAP) - i) / OVERLAP)));
 
   const line = (x0, y0, x1, y1) => {
     ctx.beginPath();
@@ -318,6 +324,17 @@ export function createRays({ stage, host }) {
     ctx.strokeStyle = C.silver;
     ctx.lineWidth = 2.4;
     ctx.stroke();
+    if (v.bulge > 0) {
+      ctx.globalAlpha = k * v.bulge;
+      curve();
+      ctx.strokeStyle = 'rgba(12,16,22,0.85)';
+      ctx.lineWidth = 7;
+      ctx.stroke();
+      curve();
+      ctx.strokeStyle = '#ffc93c';
+      ctx.lineWidth = 4.6;
+      ctx.stroke();
+    }
     ctx.globalAlpha = 1;
   }
 
@@ -362,18 +379,18 @@ export function createRays({ stage, host }) {
     if (c.cut > 0) {
       const cx = c.cos;
       const rs = c.sin;
-      const at = (a) => ({ x: -cx, y: rs * Math.cos(a), z: rs * Math.sin(a) });
+      const at = (a) => ({ x: rs * Math.sin(a), y: rs * Math.cos(a), z: cx });
       ctx.globalAlpha = c.k * c.cut;
       for (const front of [true, false]) {
         ring(at, 3.6, 'rgba(12,18,24,0.75)', [7, 5], front);
         ring(at, 2, '#ffe36e', [7, 5], front);
       }
     }
-    // the radius, from O to the edge of the piece
+    // the radius, from O to the far edge of the piece, where it shows longest
     Q(c.x, c.y, 0);
     const x0 = sx;
     const y0 = sy;
-    Q(c.x - c.r * c.cos, c.y + c.r * c.sin, 0);
+    Q(c.x - c.r * c.sin * 0.8, c.y + c.r * c.sin * 0.6, c.r * c.cos);
     ctx.globalAlpha = c.k * c.radius;
     ctx.lineCap = 'round';
     ctx.lineWidth = 3.6;
@@ -391,9 +408,46 @@ export function createRays({ stage, host }) {
     ctx.globalAlpha = 1;
   }
 
+  /** Lines drawn on the surface of the dish, like the sphere's: it is too shallow for shading alone to show that it is curved. */
+  function pieceLines(c) {
+    const ax = Math.cos(c.a);
+    const az = -Math.sin(c.a);
+    const zx = Math.sin(c.a);
+    const zz = Math.cos(c.a);
+    const off = c.thick / 2 - (c.inner ? 0 : c.thick);
+    const on = (rho, th) => {
+      const y = rho * Math.cos(th);
+      const z = rho * Math.sin(th);
+      const x = sag(c.r, rho) + off;
+      Q(c.x + ax * x + zx * z, c.y + y, c.z + az * x + zz * z);
+    };
+    const R = MIRROR.half * 0.985;
+    const path = (n, at) => {
+      ctx.beginPath();
+      for (let i = 0; i <= n; i++) {
+        at(i / n);
+        if (i) ctx.lineTo(sx, sy);
+        else ctx.moveTo(sx, sy);
+      }
+      ctx.stroke();
+    };
+    ctx.globalAlpha = 0.85 * c.k;
+    ctx.lineCap = 'round';
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = c.inner ? '#e4f2ff' : '#fff6da';
+    for (const th of [0, Math.PI / 4, Math.PI / 2, (3 * Math.PI) / 4])
+      path(16, (f) => {
+        const u = 2 * f - 1;
+        on(Math.abs(u) * R, u < 0 ? th + Math.PI : th);
+      });
+    for (const rho of [R / 3, (2 * R) / 3]) path(36, (f) => on(rho, f * Math.PI * 2));
+    ctx.globalAlpha = 1;
+  }
+
   function paint() {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);
+    if (v.piece) pieceLines(v.piece);
     if (v.radiusOnly) sphereLines(v.radiusOnly);
     if (v.axis > 0) axis(v.axis);
     circle(v.circle);
@@ -416,33 +470,37 @@ export function createRays({ stage, host }) {
         const f = v.fan * v.alpha;
         // the wash of the beam, in and out
         if (v.inK >= 1) wash(low.start, low.hit, top.hit, top.start, f * (v.outK >= 1 ? 0.6 : 1));
+        const n = rs.length;
         if (v.outK > 0) {
-          const at = (q, e) => ({ x: q.x + (e.x - q.x) * v.outK, y: q.y + (e.y - q.y) * v.outK });
-          wash(low.hit, at(low.hit, low.end), at(top.hit, top.end), top.hit, f * 1.15, true);
+          const at = (q, e, k) => ({ x: q.x + (e.x - q.x) * k, y: q.y + (e.y - q.y) * k });
+          wash(low.hit, at(low.hit, low.end, nth(v.outK, 0, n)), at(top.hit, top.end, nth(v.outK, n - 1, n)), top.hit, f * 1.15, true);
         }
         ctx.globalAlpha = v.alpha;
-        for (const r of rs) {
-          if (v.extK > 0 && r.cross != null) dashed(r.hit.x, r.hit.y, r.cross, 0, v.extK);
-        }
+        rs.forEach((r, i) => {
+          if (v.extK > 0 && r.cross != null) dashed(r.hit.x, r.hit.y, r.cross, 0, nth(v.extK, i, n));
+        });
         // the light that has arrived steps back a little: what it does next is the news
         const back = v.outK >= 1 ? 0.62 : 1;
         const gathers = v.source === 'box' && v.kind !== 'convex';
-        for (const r of rs) {
+        for (let i = 0; i < n; i++) {
+          const r = rs[i];
+          const inK = nth(v.inK, i, n);
+          const outK = nth(v.outK, i, n);
           const chev = v.source === 'box' ? Math.min(0.95, Math.max(0.05, (v.chevX - r.start.x) / (r.hit.x - r.start.x))) : 0.62;
           rayColor = Math.abs(r.h) >= v.rimAt ? C.rim : C.ray;
           ctx.globalAlpha = v.alpha * back;
-          ray(r.start.x, r.start.y, r.hit.x, r.hit.y, v.inK, chev, v.outK >= 1 ? 1.4 : 1.9);
+          ray(r.start.x, r.start.y, r.hit.x, r.hit.y, inK, chev, v.outK >= 1 ? 1.4 : 1.9);
           ctx.globalAlpha = v.alpha;
           // the arrows of the way back keep clear of the point where the rays meet
-          if (r.h === 0) ray(r.hit.x, r.hit.y, r.end.x, r.end.y, v.outK, -1);
-          else if (gathers) ray(r.hit.x, r.hit.y, r.end.x, r.end.y, v.outK, 0.17, 1.9, Math.abs(r.h) > v.r * 0.2 ? 0.86 : -1);
-          else ray(r.hit.x, r.hit.y, r.end.x, r.end.y, v.outK, 0.55);
+          if (r.h === 0) ray(r.hit.x, r.hit.y, r.end.x, r.end.y, outK, -1);
+          else if (gathers) ray(r.hit.x, r.hit.y, r.end.x, r.end.y, outK, 0.17, 1.9, Math.abs(r.h) > v.r * 0.2 ? 0.86 : -1);
+          else ray(r.hit.x, r.hit.y, r.end.x, r.end.y, outK, 0.55);
         }
         rayColor = C.ray;
         ctx.restore();
       }
     }
-    arc(v.axis);
+    arc(v.arcK);
     dot(centreAt, C.ink, v.showO);
     if (v.axis > 0) dot(0, C.ink, v.axis, 3.6);
     dot(focusAt, C.focus, v.showF);

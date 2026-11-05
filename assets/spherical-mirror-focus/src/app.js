@@ -3,19 +3,21 @@
 // mirror. Parallel light meets at F; f is measured on the printed scale and stays r/2 for every r; a wide bundle shows why that
 // is only nearly true. A half turn and a coat on the other surface make it convex: the light spreads, and only seems to come
 // from F behind the mirror. Last, a bulb at the concave mirror's F gives a parallel beam, as in a torch. One action at a time,
-// the camera going to each thing as it happens. The rays are traced (reading.js) and drawn as crisp lines over the view (rays.js).
+// the camera going to each thing as it happens, unhurried (T), and each step waits for the student: nothing moves on by itself. The
+// student can walk all the way round whatever is shown. The rays are traced (reading.js) and drawn as crisp lines over the view (rays.js).
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
 import { createAction } from '@shared/student/action.js';
 import { createAnnotations } from '@shared/student/annotations.js';
 import { createAudio } from '@shared/student/audio.js';
-import { ICONS } from '@shared/student/icons.js';
+import { ICONS, svg } from '@shared/student/icons.js';
 import { capturePointer, releasePointer } from '@shared/student/pointer.js';
 import { createQuiz } from '@shared/student/quiz.js';
 import { bindCleanSheet, buildStudentShell, cleanSheet } from '@shared/student/shell.js';
 import { createTweener, ease } from '@shared/tween.js';
-import { createSetting, CUT, FRAMES, RAIL, SCALE_POINT, SPHERE } from './bench.js';
+import { createSetting, FRAMES, RAIL, SCALE_POINT, SPHERE, SPIN } from './bench.js';
 import { fitPose } from './camera.js';
+import { createBulbHandle } from './handle.js';
 import { createI18n } from './i18n.js';
 import { createRays } from './rays.js';
 import {
@@ -65,6 +67,29 @@ const WORD_OF = {
 };
 const RADIUS_STAGES = new Set(['measure', 'virtual']);
 
+/** The pace, seconds (the owner: a lab must not be over before the student has understood it). */
+const T = {
+  fly: 2, // every camera flight
+  fade: 0.6, // the light or a measure going
+  radius: 2.2, // the mirror going to another r
+  cut: 2.8, // the piece coming out of the sphere
+  look: 0.8, // its outer surface, before it turns
+  show: 5, // its slow turn, from the outer surface to the inner
+  aim: 2, // its inner surface turning to the student
+  coat: 2.8, // the silver spreading
+  mount: 3.2, // the piece going down to the holder, or back up
+  clear: 2, // the old coat going
+  turn: 3.4, // the mirror turning over
+  slide: 2.4, // a ray box or a bulb on the rail
+  lamp: 0.6, // a lamp coming on
+  rays: 3.2, // one way of the five rays, one after another: with the way back, about 1.2 s a ray
+  widen: 2.6, // the light widening
+  mark: 1, // F, or the gold on the curve, coming
+  bars: 2, // the measures growing along the rail
+  bulb: 2.4, // the bulb moved by the action
+  hold: 1, // every result, before anything else can happen
+};
+
 const REST = {
   capOut: 1,
   mount: 1,
@@ -75,6 +100,9 @@ const REST = {
   lamp: 0,
   bulb: 0,
   lit: 0,
+  spin: SPIN.bench,
+  tint: 0,
+  bulge: 0,
   inK: 0,
   outK: 0,
   extK: 0,
@@ -91,8 +119,8 @@ const REST = {
 };
 /** What each stage shows: the end of the step that leads to it. */
 const POSE = {
-  sphere: { ...REST, capOut: 0, mount: 0, sphere: 1, coat: 0, axis: 0, box: 0 },
-  cut: { ...REST, mount: 0, sphere: 1, coat: 0, axis: 0, box: 0 },
+  sphere: { ...REST, capOut: 0, mount: 0, sphere: 1, coat: 0, axis: 0, box: 0, spin: SPIN.sphere, tint: 1 },
+  cut: { ...REST, mount: 0, sphere: 1, coat: 0, axis: 0, box: 0, spin: SPIN.shown, tint: 1 },
   coated: { ...REST },
   rays: { ...REST, lamp: 1, inK: 1, outK: 1, showF: 1, star: 1 },
   measure: { ...REST, lamp: 1, inK: 1, outK: 1, showF: 1, showO: 1, marks: 1, bars: 1, circle: 1, star: 1 },
@@ -116,7 +144,7 @@ const FRAME_OF = {
 const FIRST_FRAME = { rays: 'bench' };
 
 const MARGINS = { top: 12, bottom: 10, side: 8 };
-const INK = { dark: '#2b3a4a', ray: '#8a4f00', focus: '#5a37d0', box: '#2b3a4a' };
+const INK = { dark: '#2b3a4a', ray: '#8a4f00', focus: '#5a37d0', box: '#2b3a4a', inner: '#1864ab', outer: '#8a5a00' };
 
 const dirFrom = (az, el, out = new THREE.Vector3()) => {
   const a = THREE.MathUtils.degToRad(az);
@@ -139,7 +167,10 @@ export function createApp(root, options = {}) {
     layout: 'side',
     learn: cleanSheet(t, {
       examples: { label: 'ex_label', items: Object.keys(WORDS).map((id) => ({ id, label: `ex_${id}` })) },
-      quiet: [{ act: 'home', label: 'act_home', icon: ICONS.reset }],
+      quiet: [
+        { act: 'replay', label: 'act_again', icon: ICONS.play },
+        { act: 'home', label: 'act_home', icon: ICONS.reset },
+      ],
       lines: { action: t.lang === 'en' ? 2 : 1, outcome: 1, rule: 4 },
     }),
     learnAlign: 'start',
@@ -165,16 +196,28 @@ export function createApp(root, options = {}) {
   note.className = 'lab-note';
   note.textContent = t('note_rays');
   ui.stage.appendChild(note);
+  // the view turns all the way round: a pill in a corner says so until the first turn, then its icon stays
+  const orbitCue = document.createElement('div');
+  orbitCue.className = 'lab-orbit';
+  orbitCue.setAttribute('role', 'img');
+  orbitCue.setAttribute('aria-label', t('orbit_aria'));
+  orbitCue.innerHTML = `${svg(
+    `<path d="M9 7.5C5 8.6 2.5 10.2 2.5 12c0 3 5.7 5.5 12.5 5.5S27.5 15 27.5 12c0-1.8-2.5-3.4-6.5-4.5"/><path d="M6.5 14.8 9 17.800l-3.800.8"/><text x="15" y="12" text-anchor="middle" font-size="9.5" font-weight="700" fill="currentColor" stroke="none">${t.num(360)}°</text>`,
+    '0 0 30 22',
+  )}<span class="lab-orbit-word">${t('view_rotate')}</span>`;
+  ui.stage.appendChild(orbitCue);
 
   // ── 3D ──────────────────────────────────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 22, near: 10, far: 1600, environmentIntensity: 0.8 });
   const { camera, controls } = stage;
+  // all the way round, from high above to just over the table, never under it
   controls.enablePan = false;
-  controls.enableZoom = false;
-  controls.minPolarAngle = THREE.MathUtils.degToRad(55);
+  controls.enableZoom = true;
+  controls.enableDamping = true;
+  controls.minPolarAngle = THREE.MathUtils.degToRad(5);
   controls.maxPolarAngle = THREE.MathUtils.degToRad(88);
-  controls.minAzimuthAngle = THREE.MathUtils.degToRad(-10);
-  controls.maxAzimuthAngle = THREE.MathUtils.degToRad(80);
+  controls.minAzimuthAngle = Number.NEGATIVE_INFINITY;
+  controls.maxAzimuthAngle = Number.POSITIVE_INFINITY;
   const setting = createSetting({ stage, shadow: Boolean(o.shadow), t });
   const rays = createRays({ stage, host: ui.canvasHost });
   rays.view.fmt = (x) => t.num(round(x, 1).toFixed(1));
@@ -189,6 +232,10 @@ export function createApp(root, options = {}) {
     tried: new Set(), // which of the bulb's other places the student has seen
     source: 'box',
     busy: false,
+    holding: false, // the last second of a step: the result is shown, and nothing can be tapped yet
+    gliding: false, // the mirror going to another r
+    beat: '', // the surface named while the step plays
+    orbited: false,
     dragging: false,
     mode: 'explore',
     locked: false,
@@ -210,6 +257,8 @@ export function createApp(root, options = {}) {
   }
   const kindNow = () => (V.turn > 0.5 ? 'convex' : 'concave');
   const isRadiusStage = () => RADIUS_STAGES.has(s.stage);
+  /** Taps are ignored while this is so: no queued jumps. */
+  const playing = () => s.busy || s.gliding;
 
   // ── what the 3D shows, from V ──────────────────────────────────────────────────────────────────────────
   let traced = '';
@@ -240,16 +289,32 @@ export function createApp(root, options = {}) {
     rv.inset = V.crossings;
     rv.rimAt = V.crossings > 0 ? BUNDLE.wide * 0.8 : Infinity;
     rv.chevX = kindNow() === 'convex' ? 25 : V.r + 6;
+    rv.arcK = V.axis * Math.cos(Math.PI * V.turn) ** 2; // the bright curve is the mirror's at rest: it goes while the mirror turns
+    rv.bulge = V.bulge;
     rv.radiusOnly = V.sphere > 0.02 ? radiusLine : null;
     note.hidden = V.inK <= 0;
     radiusLine.k = V.sphere;
     radiusLine.cut = 1 - V.capOut;
     radiusLine.radius = s.stage === 'sphere' ? 1 : 1 - V.capOut;
     setting.sphere.set(V.sphere);
-    setting.placeMirror({ capOut: V.capOut, mount: V.mount, turn: V.turn, coat: V.coat, r: V.r });
+    setting.placeMirror({ capOut: V.capOut, mount: V.mount, turn: V.turn, spin: V.spin, coat: V.coat, tint: V.tint, r: V.r });
+    rv.piece = V.tint > 0.02 ? pieceNow() : null;
     setting.placeBox(V.box, boxAt('concave', V.r) + (boxAt('convex', V.r) - boxAt('concave', V.r)) * V.turn, V.half, V.lamp);
     setting.placeBulb(V.bulb, V.bulbX, V.lit);
     setting.placeStar(focusX('concave', V.r), kindNow() === 'concave' && V.outK >= 1 ? V.star * V.alpha : 0, V.half > 6 ? 7 : 9);
+  }
+  // the lines on the side of the piece that faces the eye
+  const piece = { k: 0, r: R0, a: 0, inner: false, x: 0, y: 0, z: 0, thick: MIRROR.thick };
+  function pieceNow() {
+    const p = setting.dish.root;
+    piece.k = V.tint;
+    piece.r = V.r;
+    piece.a = p.rotation.y;
+    piece.inner = setting.innerFacing(camera.position) > 0;
+    piece.x = p.position.x;
+    piece.y = p.position.y;
+    piece.z = p.position.z;
+    return piece;
   }
   // the first step's radius, from O to the edge of the piece: drawn alone, in the air
   const radiusLine = {
@@ -269,6 +334,9 @@ export function createApp(root, options = {}) {
     for (const k of RUNS) tweener.cancel(k);
     camK = 1;
     s.busy = false;
+    s.holding = false;
+    s.gliding = false;
+    s.beat = '';
   }
   /** Everything in its final place at once. */
   function settle(name) {
@@ -328,91 +396,120 @@ export function createApp(root, options = {}) {
     if (name === 'sphere' || name === 'cut' || name === 'coated') s.r = R0;
     if (goal.bulb > 0 || V.bulb > 0) s.bulbX = s.r / 2;
     const changing = goal.source !== V.source || goal.turn > 0.5 !== V.turn > 0.5 || goal.inK === 0 || s.r !== V.r;
+    const wait = (duration) => tweener.animate({ key: 'step', duration }).finished.then(alive);
+    const first = FIRST_FRAME[name] ?? FRAME_OF[name];
 
     // what goes: the light first, if it will not stay
     if (V.inK > 0 && changing) {
-      if (!(await move(alive, ['alpha'], { alpha: 0 }, 0.28))) return false;
+      if (!(await move(alive, ['alpha'], { alpha: 0 }, T.fade))) return false;
       Object.assign(V, { inK: 0, outK: 0, extK: 0, lamp: 0, lit: 0, crossings: 0, star: 0, alpha: 1 });
       apply();
     }
     const down = {};
     for (const k of ['bars', 'circle', 'marks', 'showF', 'showO', 'extK', 'crossings', 'half']) down[k] = Math.min(V[k], goal[k]);
-    if (!(await move(alive, Object.keys(down), down, 0.3))) return false;
-    if (s.r !== V.r && !(await move(alive, ['r'], { r: s.r }, 0.45))) return false;
+    if (!(await move(alive, Object.keys(down), down, T.fade))) return false;
+    if (s.r !== V.r && !(await move(alive, ['r'], { r: s.r }, T.radius))) return false;
     V.bulbX = s.bulbX;
 
     // back to the sphere: the piece goes up again, as it came
     if (goal.mount < V.mount) {
-      fly(FRAME_OF[name], 1.3);
-      if (!(await move(alive, ['mount', 'sphere', 'capOut', 'coat', 'turn', 'box', 'bulb'], goal, 1.3, ease.inOutCubic))) return false;
+      fly(FRAME_OF[name], T.mount);
+      const keys = ['mount', 'sphere', 'capOut', 'coat', 'turn', 'spin', 'tint', 'box', 'bulb'];
+      if (!(await move(alive, keys, goal, T.mount, ease.inOutCubic))) return false;
     }
-    // the piece out of the sphere
+    // the piece out of the sphere, its outer surface toward the student; or back into it
     if (goal.capOut !== V.capOut) {
-      fly('cut', 0.8);
-      if (!(await move(alive, ['capOut'], goal, 1.1, ease.inOutCubic))) return false;
+      const out = goal.capOut > V.capOut;
+      fly(out ? 'cut' : FRAME_OF[name], T.cut);
+      if (!(await move(alive, out ? ['capOut'] : ['capOut', 'spin'], goal, T.cut, ease.inOutCubic))) return false;
+    }
+    // it turns slowly, so that its curve can be seen from both sides, each named as it comes round
+    if (name === 'cut' && goal.spin !== V.spin) {
+      if (!(await wait(T.look))) return false;
+      if (!(await move(alive, ['spin'], goal, T.show))) return false;
     }
     // silver on the piece while it is still in the air, then down to the holder
-    const coatFirst = goal.coat > V.coat && goal.turn === V.turn;
-    if (coatFirst) {
-      if (!(await move(alive, ['coat'], goal, 1.3))) return false;
+    if (goal.coat > V.coat && goal.turn === V.turn) {
+      s.beat = 'inner';
+      if (!(await move(alive, ['spin'], { spin: SPIN.coat }, T.aim))) return false;
+      if (!(await move(alive, ['coat'], goal, T.coat))) return false;
       audio.tick();
+      if (!(await wait(T.hold))) return false;
+      s.beat = '';
     }
     if (goal.mount !== V.mount || goal.sphere !== V.sphere) {
-      fly(FIRST_FRAME[name] ?? FRAME_OF[name], 1.5);
-      if (!(await move(alive, ['mount', 'sphere', 'box'], goal, 1.5, ease.inOutCubic))) return false;
+      fly(first, T.mount);
+      if (!(await move(alive, ['mount', 'sphere', 'box', 'spin', 'tint'], goal, T.mount, ease.inOutCubic))) return false;
     }
-    // the half turn: the old coat goes, the other surface comes round, and the new coat spreads
-    const turning = goal.turn !== V.turn;
-    if (turning || goal.box !== V.box || goal.bulb !== V.bulb) {
-      const after = { ...goal };
-      if (turning) after.coat = 0;
-      const moved = move(alive, ['turn', 'box', 'bulb', ...(turning ? ['coat'] : [])], after, 1.3, ease.inOutCubic);
-      fly(FIRST_FRAME[name] ?? FRAME_OF[name], 1.1);
+    // the half turn: the old coat goes, the other surface comes round in its colour, named, and the new coat spreads over it
+    if (goal.turn !== V.turn) {
+      const toConvex = goal.turn > V.turn;
+      fly(toConvex ? 'turn' : first, T.fly);
+      if (!(await move(alive, ['coat'], { coat: 0 }, Math.max(T.clear, T.fly)))) return false;
       V.source = goal.source;
       s.source = goal.source;
-      if (!(await moved)) return false;
-    } else if (s.frame !== (FIRST_FRAME[name] ?? FRAME_OF[name])) {
-      fly(FIRST_FRAME[name] ?? FRAME_OF[name], 0.8);
-      if (goal.inK > V.inK || name === 'coated') await tweener.animate({ key: 'step', duration: 0.55 }).finished;
-      if (!alive()) return false;
+      const after = { ...goal, tint: toConvex ? 1 : 0 };
+      if (!(await move(alive, ['turn', 'tint', 'box', 'bulb'], after, T.turn, ease.inOutCubic))) return false;
+      if (toConvex) {
+        s.beat = 'outer';
+        if (!(await move(alive, ['bulge'], { bulge: 1 }, T.mark))) return false;
+        if (!(await wait(T.hold))) return false;
+      }
+    } else if (goal.box !== V.box || goal.bulb !== V.bulb) {
+      fly(first, T.fly);
+      V.source = goal.source;
+      s.source = goal.source;
+      if (!(await move(alive, ['box', 'bulb'], goal, T.slide, ease.inOutCubic))) return false;
     }
     if (goal.coat > V.coat) {
-      if (!(await move(alive, ['coat'], goal, 1.2))) return false;
+      if (!(await move(alive, ['coat'], goal, T.coat))) return false;
       audio.tick();
     }
-    // the light comes
+    if (!(await move(alive, ['tint', 'bulge'], goal, T.mark))) return false;
+    s.beat = '';
+    if (s.frame !== first) {
+      fly(first, T.fly);
+      if (!(await wait(T.fly))) return false;
+    }
+    // the light comes, one ray after another
     if (goal.inK > V.inK) {
-      if (goal.lamp > V.lamp) await move(alive, ['lamp'], goal, 0.3);
+      if (goal.lamp > V.lamp) await move(alive, ['lamp'], goal, T.lamp);
       if (!alive()) return false;
-      if (goal.lit > V.lit) await move(alive, ['lit'], goal, 0.35);
+      if (goal.lit > V.lit) await move(alive, ['lit'], goal, T.lamp);
       if (!alive()) return false;
-      if (!(await move(alive, ['inK'], goal, goal.source === 'bulb' ? 0.7 : 1.0, ease.linear))) return false;
-      if (FIRST_FRAME[name]) fly(FRAME_OF[name], 1.3);
-      if (!(await move(alive, ['outK'], goal, goal.source === 'bulb' ? 1.0 : 1.2, ease.linear))) return false;
+      if (!(await move(alive, ['inK'], goal, T.rays, ease.linear))) return false;
+      if (FIRST_FRAME[name]) fly(FRAME_OF[name], T.rays);
+      if (!(await move(alive, ['outK'], goal, T.rays, ease.linear))) return false;
     }
     if (goal.half > V.half) {
-      fly(FRAME_OF[name], 1.2);
-      if (!(await move(alive, ['half'], goal, 1.1))) return false;
+      fly(FRAME_OF[name], T.widen);
+      if (!(await move(alive, ['half'], goal, T.widen))) return false;
     }
     if (s.frame !== FRAME_OF[name]) {
-      fly(FRAME_OF[name], 1);
-      if (goal.extK > V.extK) await tweener.animate({ key: 'step', duration: 0.7 }).finished;
-      if (!alive()) return false;
+      fly(FRAME_OF[name], T.fly);
+      if (!(await wait(T.fly))) return false;
     }
-    if (!(await move(alive, ['extK'], goal, 1.2))) return false;
-    if (!(await move(alive, ['showF', 'star', 'lamp', 'lit'], goal, 0.5))) return false;
-    if (!(await move(alive, ['showO', 'marks', 'bars', 'circle', 'crossings'], goal, 0.9))) return false;
-    s.busy = false;
+    if (!(await move(alive, ['extK'], goal, T.rays, ease.linear))) return false;
+    if (!(await move(alive, ['showF', 'star', 'lamp', 'lit'], goal, T.mark))) return false;
+    if (!(await move(alive, ['showO', 'marks', 'bars', 'circle', 'crossings'], goal, T.bars))) return false;
+    // the result, a moment, before the student can go on
+    s.holding = true;
     audio.tick();
+    draw();
+    if (!(await wait(T.hold))) return false;
+    s.holding = false;
+    s.busy = false;
     draw();
     emitChange();
     return true;
   }
 
   // ── camera ─────────────────────────────────────────────────────────────────────────────────────────────
-  let camFrom = null;
+  // a flight goes round the point it looks at, not through it: after a free turn the student may be behind the bench
+  const camFrom = { target: new THREE.Vector3(), az: 0, el: 0, d: 1 };
   let camK = 1;
   const camDir = new THREE.Vector3();
+  const camOff = new THREE.Vector3();
   function poseNow() {
     const f = FRAMES[s.frame](V.r, stage.width / Math.max(1, stage.height));
     dirFrom(f.az, f.el, camDir);
@@ -421,24 +518,45 @@ export function createApp(root, options = {}) {
   function applyCamera() {
     if (s.userMovedCamera) return;
     const pz = poseNow();
-    if (camK < 1 && camFrom) {
+    if (camK < 1) {
       const k = ease.inOutCubic(camK);
-      camera.position.lerpVectors(camFrom.position, pz.position, k);
+      camOff.copy(pz.position).sub(pz.target);
+      const d = camOff.length();
+      const az = Math.atan2(camOff.x, camOff.z);
+      const el = Math.asin(camOff.y / d);
+      const turn = THREE.MathUtils.euclideanModulo(az - camFrom.az + Math.PI, Math.PI * 2) - Math.PI;
       controls.target.lerpVectors(camFrom.target, pz.target, k);
+      const a = camFrom.az + turn * k;
+      const e = camFrom.el + (el - camFrom.el) * k;
+      const c = Math.cos(e);
+      camera.position
+        .set(Math.sin(a) * c, Math.sin(e), Math.cos(a) * c)
+        .multiplyScalar(camFrom.d + (d - camFrom.d) * k)
+        .add(controls.target);
     } else {
       camera.position.copy(pz.position);
       controls.target.copy(pz.target);
     }
     controls.update();
   }
+  /** Back to the guided camera: the step's framing decides how far away it is. */
+  function guided() {
+    s.userMovedCamera = false;
+    controls.minDistance = 0;
+    controls.maxDistance = Number.POSITIVE_INFINITY;
+  }
   /** The camera goes to a frame. Its promise settles when it arrives (or a finger takes over). */
-  function fly(frame, duration = 0.8) {
+  function fly(frame, duration = T.fly) {
     if (s.userMovedCamera) {
-      s.userMovedCamera = false;
+      guided();
       s.view = 'front';
       syncUI();
     }
-    camFrom = { position: camera.position.clone(), target: controls.target.clone() };
+    camOff.copy(camera.position).sub(controls.target);
+    camFrom.d = camOff.length();
+    camFrom.az = Math.atan2(camOff.x, camOff.z);
+    camFrom.el = Math.asin(camOff.y / camFrom.d);
+    camFrom.target.copy(controls.target);
     s.frame = frame;
     camK = 0;
     return tweener.animate({
@@ -456,24 +574,43 @@ export function createApp(root, options = {}) {
   }
   function setView(view, { animate = true } = {}) {
     s.view = view === '3d' ? '3d' : 'front';
-    s.userMovedCamera = false;
+    guided();
     syncUI();
-    if (animate) fly(s.frame, 0.8);
+    if (animate) fly(s.frame, T.fly);
     else camK = 1;
     stage.invalidate();
   }
-  controls.addEventListener('start', () => {
+  /** A finger has really moved the view (a tap has not): from here it is the student's, within sensible distances. */
+  function takeOver() {
+    if (s.userMovedCamera) return;
     s.userMovedCamera = true;
     tweener.cancel('camera');
     camK = 1;
+    const d = camera.position.distanceTo(controls.target);
+    controls.minDistance = d * 0.6;
+    controls.maxDistance = Math.min(d * 1.6, 430); // inside the backdrop
+    if (!s.orbited) {
+      s.orbited = true;
+      orbitCue.classList.add('used');
+    }
     if (s.view !== '3d') {
       s.view = '3d';
       syncUI();
       emit('view', { view: s.view });
     }
-  });
+  }
+  /** At once: the view from this azimuth (degrees round the bench) and height, for the book and the tests. */
+  function orbitTo(az, el = 14) {
+    applyCamera();
+    takeOver();
+    const d = camera.position.distanceTo(controls.target);
+    dirFrom(az, el, camDir);
+    camera.position.copy(controls.target).addScaledVector(camDir, d);
+    controls.update();
+    stage.invalidate();
+  }
   stage.onResize(() => {
-    s.userMovedCamera = false;
+    guided();
     if (s.view === '3d') {
       s.view = 'front';
       syncUI();
@@ -487,10 +624,11 @@ export function createApp(root, options = {}) {
 
   // ── labels on the picture: few and short, each pinned to what it names ───────────────────────────────────
   let action = null;
+  let handle = null;
   const anno = createAnnotations({
     stage,
     layer: ui.annoLayer,
-    avoid: [ui.corner, note, ui.$('.pvc-panel-toggle'), () => rays.boxes(), () => action?.ringBox()],
+    avoid: [ui.corner, note, orbitCue, ui.$('.pvc-panel-toggle'), () => rays.boxes(), () => action?.ringBox(), () => handle?.box()],
   });
   const shown = new Map();
   const pts = new Map();
@@ -548,6 +686,9 @@ export function createApp(root, options = {}) {
       { dx: -34, dy: -16 },
       { dx: 34, dy: -14 },
       { dx: -44, dy: -6 },
+      { dx: 84, dy: 28 },
+      { dx: 96, dy: -6 },
+      { dx: 96, dy: 10 },
     ],
     far: [
       { dx: 70, dy: -26 },
@@ -615,6 +756,18 @@ export function createApp(root, options = {}) {
       { dx: 34, dy: -12 },
       { dx: -30, dy: 30 },
     ],
+    pieceUp: [
+      { dx: 0, dy: -46 },
+      { dx: 34, dy: -40 },
+      { dx: -34, dy: -40 },
+      { dx: 50, dy: -14 },
+    ],
+    pieceDown: [
+      { dx: 0, dy: 46 },
+      { dx: -34, dy: 40 },
+      { dx: 34, dy: 40 },
+      { dx: -50, dy: 14 },
+    ],
     pole: [
       { dx: -30, dy: 42 },
       { dx: -44, dy: 28 },
@@ -624,9 +777,10 @@ export function createApp(root, options = {}) {
     ],
   };
   const AX = RAIL.axis;
+  const faceP = new THREE.Vector3();
   function labels() {
     const q = s.quiz;
-    const calm = !s.busy && camK >= 1 && !s.userMovedCamera;
+    const calm = (!s.busy || s.holding) && camK >= 1; // they stay while the student walks round: they are on the screen, not in the scene
     const st = s.stage;
     const kind = kindNow();
     const named = !q || q.named;
@@ -636,17 +790,22 @@ export function createApp(root, options = {}) {
     label('sphere', sphereOn && st === 'sphere', t('l_sphere'), SPHERE.x + 21, SPHERE.y + 21, 0, INK.dark, SPOTS.up);
     label('o', sphereOn && st === 'sphere', t('l_o'), SPHERE.x, SPHERE.y, 0, INK.dark, SPOTS.down);
     label('rr', sphereOn && st === 'sphere', t('l_r'), SPHERE.x - 14, SPHERE.y + 3.4, 0, INK.dark, SPOTS.up, true);
-    label('cap', sphereOn && st === 'sphere', t('l_cap'), SPHERE.x - SPHERE.r, SPHERE.y + 6, 0, INK.dark, SPOTS.side);
-    const px = SPHERE.x - SPHERE.r + CUT.x;
-    label('piece', sphereOn && st === 'cut', t('l_piece'), px + 0.8, SPHERE.y - MIRROR.half + 1.4, CUT.z, INK.dark, SPOTS.down);
-    label('inner', sphereOn && st === 'cut', t('l_inner'), px + 0.6, SPHERE.y + 5, CUT.z - 1, INK.dark, SPOTS.far);
+    label('cap', sphereOn && st === 'sphere', t('l_cap'), SPHERE.x - 7, SPHERE.y + 7, SPHERE.r * 0.89, INK.dark, SPOTS.side);
+    // the two sides of the piece, each named while it can be seen (near edge-on, both)
+    const air = camK >= 1 && !q && V.mount <= 0 && V.capOut >= 1;
+    const facing = setting.innerFacing(camera.position);
+    setting.faceAt(false, 5, faceP);
+    label('inner', air && facing > -0.45 && (st === 'cut' || s.beat === 'inner'), t('l_inner'), faceP.x, faceP.y, faceP.z, INK.inner, SPOTS.pieceUp);
+    setting.faceAt(true, -5, faceP);
+    const seen = air ? facing < 0.45 && st === 'cut' : camK >= 1 && s.beat === 'outer';
+    label('outer', seen, t('l_outer'), faceP.x, faceP.y, faceP.z, INK.outer, SPOTS.pieceDown);
     const mirrored = calm && V.mount > 0.9 && named;
     const topEdge = kind === 'convex' ? -sag(V.r, MIRROR.half) : sag(V.r, MIRROR.half);
     const mirrorName = mirrored && (st === 'coated' || st === 'rays' || st === 'convex' || st === 'virtual' || st === 'torch' || !!q);
     label('mirror', mirrorName, t(kind === 'convex' ? 'l_convex' : 'l_concave'), topEdge, AX + MIRROR.half + 1, 0, INK.dark, SPOTS.mirror);
     const lit = calm && V.outK >= 1 && V.alpha > 0.9 && V.source === 'box';
     const plate = boxAt(kind, V.r);
-    label('box', calm && !q && V.box >= 1 && (st === 'coated' || lit), t('l_box'), plate - 0.2, AX + 12.2, 0, INK.dark, SPOTS.boxed);
+    label('box', calm && !q && V.box >= 1 && (st === 'coated' || lit), t('l_box'), plate - 0.2, AX + 12.2, 0, INK.dark, SPOTS.boxed, st !== 'coated');
     label('scale', calm && !q && st === 'coated', t('l_scale'), 18, SCALE_POINT.y, SCALE_POINT.z, INK.dark, SPOTS.down, true);
     const fOn = calm && V.showF >= 1 && (named || q?.showF);
     const whole = !q && (st === 'rays' || st === 'virtual' || st === 'torch');
@@ -716,7 +875,7 @@ export function createApp(root, options = {}) {
     return kind === 'parallel' ? 'again' : 'bulb_f';
   }
   function phase() {
-    if (s.busy) return 'busy';
+    if (playing()) return 'busy';
     if (s.stage === 'torch') return bulbNext();
     const i = STAGES.indexOf(s.stage);
     return STAGES[i + 1];
@@ -729,8 +888,8 @@ export function createApp(root, options = {}) {
     lastAct = now;
     audio.unlock();
     const ph = phase();
-    if (ph === 'busy') return;
-    if (ph === 'again') return home();
+    if (ph === 'busy' || camK < 1) return; // no queued jumps: a tap while anything plays, the camera included, does nothing
+    if (ph === 'again') return quiz.start(); // the end of the story: the test is offered, never forced
     if (ph === 'bulb_in') return bulbTo(s.r / 2 - s.r * 0.17);
     if (ph === 'bulb_out') return bulbTo(s.r / 2 + s.r * 0.2);
     if (ph === 'bulb_f') return bulbTo(s.r / 2);
@@ -738,24 +897,26 @@ export function createApp(root, options = {}) {
   }
   function pick(word) {
     if (s.locked) return lockedNudge();
-    if (!(word in WORDS)) return;
-    if (WORD_OF[s.stage] === word && !s.busy && WORDS[word] === s.stage) return;
+    if (!(word in WORDS) || playing() || camK < 1) return;
+    if (WORD_OF[s.stage] === word && WORDS[word] === s.stage) return;
     audio.unlock();
     run(WORDS[word]);
   }
   /** Another mirror: another sphere. The mirror, F, O and the camera all go there together. */
   function chooseR(r) {
     if (s.locked) return lockedNudge();
-    if (!RADII.includes(r) || r === s.r || !isRadiusStage() || s.busy) return;
+    if (!RADII.includes(r) || r === s.r || !isRadiusStage() || playing()) return;
     audio.tick();
     glideR(r);
   }
-  function glideR(r, duration = 0.8) {
+  function glideR(r, duration = T.radius) {
     const my = token;
     const from = V.r;
+    const story = !s.quiz;
     s.r = r;
     s.bulbX = r / 2;
     V.bulbX = r / 2;
+    s.gliding = story;
     tweener.animate({
       key: 'radius',
       duration,
@@ -772,6 +933,14 @@ export function createApp(root, options = {}) {
         apply();
         draw();
         emitChange();
+        if (!story) return;
+        // the new mirror, a moment, before anything else can happen
+        tweener.animate({ key: 'radius', duration: T.hold }).finished.then((ran) => {
+          if (ran && my === token) {
+            s.gliding = false;
+            draw();
+          }
+        });
       },
     });
     draw();
@@ -796,7 +965,7 @@ export function createApp(root, options = {}) {
     draw();
     tweener.animate({
       key: 'bulb',
-      duration: 0.9,
+      duration: T.bulb,
       ease: ease.inOutCubic,
       onUpdate: (k) => {
         if (my !== token) return;
@@ -806,15 +975,26 @@ export function createApp(root, options = {}) {
       },
       onComplete: () => {
         if (my !== token) return;
-        s.busy = false;
         setBulb(x);
         emitChange();
+        if (s.quiz) return;
+        s.holding = true;
+        draw();
+        tweener.animate({ key: 'bulb', duration: T.hold }).finished.then((ran) => {
+          if (ran && my === token) {
+            s.holding = false;
+            s.busy = false;
+            draw();
+          }
+        });
       },
     });
   }
 
   // ── the panel ───────────────────────────────────────────────────────────────────────────────────────────
   const steady = { act: '', r: -1, on: null, cap: '' };
+  const replayBtn = ui.$('[data-act="replay"]');
+  const homeBtn = ui.$('[data-act="home"]');
   const ACTIONS = {
     busy: ['act_wait', ''],
     cut: ['act_cut', 1],
@@ -828,7 +1008,7 @@ export function createApp(root, options = {}) {
     bulb_in: ['act_bulb_in', ''],
     bulb_out: ['act_bulb_out', ''],
     bulb_f: ['act_bulb_f', ''],
-    again: ['act_again', ''],
+    again: ['act_test', ''],
   };
   function outcomeNow() {
     const st = s.stage;
@@ -869,7 +1049,7 @@ export function createApp(root, options = {}) {
     }
     sheet.choose(WORD_OF[s.stage]);
     // the words wait for what they describe: while a step runs, the last ones stay
-    if (!s.busy) {
+    if (!s.busy || s.holding) {
       sheet.outcome(outcomeNow());
       sheet.rule(ruleNow());
     }
@@ -882,6 +1062,9 @@ export function createApp(root, options = {}) {
     sheet.next(nextWord !== WORD_OF[s.stage] ? nextWord : null);
     const [word, step] = ACTIONS[ph] ?? ACTIONS.again;
     const enabled = ph !== 'busy';
+    replayBtn.hidden = s.stage === 'sphere'; // the first step has nothing to play
+    replayBtn.disabled = !enabled;
+    homeBtn.disabled = !enabled;
     const key = `${word}|${step}|${enabled}`;
     if (action && steady.act !== key) {
       steady.act = key;
@@ -898,9 +1081,8 @@ export function createApp(root, options = {}) {
   function target() {
     if (s.locked || s.busy || camK < 1 || s.dragging) return null;
     const ph = phase();
-    const x0 = SPHERE.x - SPHERE.r;
-    if (ph === 'cut') aim.set(x0 + 1.4, SPHERE.y - 7.6, 0);
-    else if (ph === 'coated') aim.set(x0 + CUT.x + 0.5, SPHERE.y, CUT.z);
+    if (ph === 'cut') aim.set(SPHERE.x, SPHERE.y, SPHERE.r);
+    else if (ph === 'coated') aim.copy(setting.dish.root.position);
     else if (ph === 'rays') aim.set(boxAt('concave', V.r), AX + 3, 0);
     else if (ph === 'measure') aim.set(V.r / 2, AX - 8, 0);
     else if (ph === 'wide')
@@ -925,12 +1107,27 @@ export function createApp(root, options = {}) {
     label: 'act_cut',
     target: () => (o.coach ? target() : null), // a poster or a book page can do without the ring
     radius: 20,
-    avoid: [ui.corner, ui.hint, note, () => anno.boxes()],
+    avoid: [ui.corner, ui.hint, note, orbitCue, () => anno.boxes(), () => handle.box()],
     pulse: Boolean(o.coach),
     onAct: () => act(),
   });
 
-  // a tap on the part is the same action; a finger on the bulb moves it along the rail
+  // the bulb's handle: on the carrier's front, its track the bulb's whole range along the rail
+  const handlePoint = new THREE.Vector3();
+  const trackFrom = new THREE.Vector3();
+  const trackTo = new THREE.Vector3();
+  const HANDLE = { y: RAIL.top + 1.3, z: 6.4 };
+  handle = createBulbHandle(stage, {
+    point: () => handlePoint.set(V.bulbX, HANDLE.y, HANDLE.z),
+    from: () => trackFrom.set(bulbRange(s.r).min, HANDLE.y, HANDLE.z),
+    to: () => trackTo.set(bulbRange(s.r).max, HANDLE.y, HANDLE.z),
+    label: t('drag_me'),
+    aria: t('drag_aria'),
+    pulse: Boolean(o.coach),
+    when: () => s.stage === 'torch' && V.bulb >= 1 && !s.locked && (!s.busy || s.holding),
+  });
+
+  // a tap on the part is the same action; a finger on the bulb moves it along the rail; a finger anywhere else turns the view
   const ray = new THREE.Raycaster();
   const ndc = new THREE.Vector2();
   const pa = new THREE.Vector3();
@@ -944,18 +1141,22 @@ export function createApp(root, options = {}) {
   ui.canvasHost.addEventListener(
     'pointerdown',
     (e) => {
+      if (!e.isPrimary) takeOver(); // two fingers: the view is being zoomed
       down = { x: e.clientX, y: e.clientY, at: performance.now() };
+      controls.rotateSpeed = s.userMovedCamera ? 1 : 0; // a tap is not a turn: nothing moves until the finger has gone 8 px
       if (s.locked || s.busy || s.stage !== 'torch' || V.bulb < 1 || (e.pointerType === 'mouse' && e.button !== 0)) return;
       toNdc(e);
       ray.setFromCamera(ndc, camera);
-      if (!ray.intersectObject(setting.bulbHit, false).length) return;
+      const box = ui.canvasHost.getBoundingClientRect();
+      if (!handle.hit(e.clientX - box.left, e.clientY - box.top) && !ray.intersectObject(setting.bulbHit, false).length) return;
+      handle.markUsed();
       // the rail on the screen: how many pixels to a centimetre, and which way
       pa.set(0, AX, 0).project(camera);
       pb.set(10, AX, 0).project(camera);
       const dx = ((pb.x - pa.x) / 2) * stage.width;
       const dy = ((pa.y - pb.y) / 2) * stage.height;
       const l = Math.hypot(dx, dy) || 1;
-      drag = { id: e.pointerId, x: e.clientX, y: e.clientY, from: s.bulbX, ux: dx / l, uy: dy / l, perCm: l / 10 };
+      drag = { id: e.pointerId, x: e.clientX, y: e.clientY, from: s.bulbX, ux: dx / l, uy: dy / l, perCm: Math.max(1, l / 10) }; // end-on, the rail is short on the screen
       s.dragging = true;
       controls.enabled = false;
       capturePointer(ui.canvasHost, e.pointerId);
@@ -965,7 +1166,12 @@ export function createApp(root, options = {}) {
     },
     { capture: true },
   );
+  ui.canvasHost.addEventListener('wheel', () => takeOver(), { capture: true, passive: true });
   ui.canvasHost.addEventListener('pointermove', (e) => {
+    if (!drag && down && controls.enabled && Math.hypot(e.clientX - down.x, e.clientY - down.y) >= 8) {
+      controls.rotateSpeed = 1;
+      takeOver();
+    }
     if (!drag || e.pointerId !== drag.id) return;
     const along = (e.clientX - drag.x) * drag.ux + (e.clientY - drag.y) * drag.uy;
     setBulb(drag.from + along / drag.perCm);
@@ -1152,17 +1358,17 @@ export function createApp(root, options = {}) {
         const frame = s.frame;
         s.frame = was;
         syncUI();
-        fly(frame, 0.5);
+        fly(frame, T.fly);
         draw();
       },
       async prepare(i, alive, say) {
         const q = Q[ORDER[i]]();
         qCurrent = q;
         say(q.text);
-        const done = await fly(s.frame, 0.4);
+        const done = await fly(s.frame, T.fly);
         if (!alive()) return null;
         if (!done) camK = 1;
-        if (q.glide) glideR(q.glide, 1.3);
+        if (q.glide) glideR(q.glide, T.radius);
         // the kit scores numbers: the choices are places in this list, never its words
         const list = shuffle([q.answer, ...q.wrong]);
         q.list = list;
@@ -1183,7 +1389,7 @@ export function createApp(root, options = {}) {
             Object.assign(V, q.after);
             if (q.after.bars) V.circle = 1;
             apply();
-            if (q.frame) fly(q.frame, 0.6);
+            if (q.frame) fly(q.frame, T.fly);
           }
           if (q.bulbBack != null) {
             s.stage = 'torch';
@@ -1227,7 +1433,21 @@ export function createApp(root, options = {}) {
   }
   function home() {
     if (s.locked) return lockedNudge();
+    if (playing() || camK < 1) return;
     return run('sphere');
+  }
+  /** The step just finished, once more, from where it began: the camera cuts back, and the step plays as it did. */
+  function replay() {
+    if (s.locked) return lockedNudge();
+    const i = STAGES.indexOf(s.stage);
+    if (i < 1 || playing() || camK < 1) return;
+    const name = s.stage;
+    guided();
+    s.view = 'front';
+    syncUI();
+    s.bulbX = s.r / 2;
+    settle(STAGES[i - 1]);
+    return run(name);
   }
   const fullscreenBtn = ui.$('[data-act="fullscreen"]');
   if (fullscreenBtn && !document.fullscreenEnabled) fullscreenBtn.hidden = true;
@@ -1250,6 +1470,7 @@ export function createApp(root, options = {}) {
     if (act_ === 'q-next') quiz.next();
     if (act_ === 'q-again') quiz.start();
     if (act_ === 'home') home();
+    if (act_ === 'replay') replay();
     if (act_ === 'fullscreen') {
       if (document.fullscreenElement) document.exitFullscreen?.();
       else root.requestFullscreen?.().catch(() => {});
@@ -1261,9 +1482,12 @@ export function createApp(root, options = {}) {
     if (step) {
       e.preventDefault();
       if (s.locked) return lockedNudge();
-      if (s.busy) return;
-      if (s.stage === 'torch') setBulb(s.bulbX + step);
-      else if (isRadiusStage()) chooseR(RADII[clamp(RADII.indexOf(s.r) + step, 0, RADII.length - 1)]);
+      if (playing()) return;
+      if (s.stage === 'torch') {
+        handle.markUsed();
+        setBulb(s.bulbX + step);
+      }
+      if (isRadiusStage()) chooseR(RADII[clamp(RADII.indexOf(s.r) + step, 0, RADII.length - 1)]);
       return;
     }
     if (e.key === ' ' || e.key === 'Enter') {
@@ -1290,8 +1514,11 @@ export function createApp(root, options = {}) {
       spreads: rays.view.rays.filter((r) => r.h > 0).map((r) => round(r.slope ?? 0, 3)),
       coat: V.coat,
       mounted: V.mount >= 1,
-      busy: s.busy,
+      busy: playing(),
       frame: s.frame,
+      az: round(THREE.MathUtils.radToDeg(Math.atan2(camera.position.x - controls.target.x, camera.position.z - controls.target.z)), 1),
+      polar: round(THREE.MathUtils.radToDeg(controls.getPolarAngle()), 1),
+      orbited: s.orbited,
       mode: s.mode,
       locked: s.locked,
       view: s.view,
@@ -1350,6 +1577,7 @@ export function createApp(root, options = {}) {
         settle(s.stage);
       }
       if (p.bulb != null && s.stage === 'torch') setBulb(Number(p.bulb));
+      if (p.az != null) orbitTo(Number(p.az), p.el == null ? undefined : Number(p.el));
       if (!animate) camK = 1;
       draw();
       emitChange();
@@ -1362,6 +1590,9 @@ export function createApp(root, options = {}) {
       jump('sphere');
       setView('front', { animate: false });
       camK = 1;
+      s.orbited = false;
+      orbitCue.classList.remove('used');
+      handle.rearm();
       draw();
       emitChange();
     },

@@ -1,11 +1,12 @@
 // This figure's own behaviour, through the bridge (runs with `npm run test:figures`; dev only, never packaged): the book's story
-// on one action, f = r/2 at every r, the bulb at F, leaving the test, and the test itself.
+// on one action, f = r/2 at every r, the bulb at F, the pace (no queued taps, replay, the test offered at the end), the view all the
+// way round, leaving the test, and the test itself.
 import { expect, test } from '@playwright/test';
 import { openFigure, preparePage } from '../../../scripts/lib/export/driver.mjs';
 
 const ID = 'spherical-mirror-focus';
 const settled = async (fig) => {
-  for (let i = 0; i < 80; i++) {
+  for (let i = 0; i < 120; i++) {
     await fig.advance(300);
     if (!(await fig.call('get')).busy) return fig.advance(200);
   }
@@ -13,7 +14,7 @@ const settled = async (fig) => {
 };
 
 test(`${ID}: the whole story on one action`, async ({ page }) => {
-  test.setTimeout(420_000);
+  test.setTimeout(900_000);
   await page.setViewportSize({ width: 800, height: 500 });
   const log = await preparePage(page);
   const fig = await openFigure(page, ID);
@@ -46,7 +47,7 @@ test(`${ID}: the whole story on one action`, async ({ page }) => {
     [1, 30],
   ]) {
     await fig.frame.locator(`.lab-r[data-r="${i}"]`).click();
-    await fig.advance(1200);
+    await settled(fig);
     st = await fig.call('get');
     expect(st).toMatchObject({ r, f: r / 2, focusAt: r / 2 });
     for (const x of st.crossings) expect(Math.abs(x - r / 2)).toBeLessThan(0.65);
@@ -78,9 +79,12 @@ test(`${ID}: the whole story on one action`, async ({ page }) => {
   st = await act();
   expect(st).toMatchObject({ beam: 'parallel', bulbX: 15 });
 
-  // the last tap starts again
-  st = await act();
-  expect(st).toMatchObject({ stage: 'sphere', coat: 0, mounted: false, r: 30 });
+  // the end of the story offers the test; it is not forced
+  await expect(fig.frame.locator('.pvc-act').first()).toContainText('তাহলে পরীক্ষা দাও');
+  expect((await fig.call('get')).mode).toBe('explore');
+  await fig.frame.locator('.pvc-act').first().click();
+  await fig.advance(300);
+  expect((await fig.call('get')).mode).toBe('quiz');
   expect(log.errors).toEqual([]);
 });
 
@@ -103,7 +107,7 @@ test(`${ID}: the words jump, set works at once, keys move the part`, async ({ pa
   expect(st).toMatchObject({ stage: 'virtual', r: 40, focusAt: -20, busy: false });
   await fig.frame.locator('.pvc').first().focus();
   await page.keyboard.press('ArrowRight');
-  await fig.advance(1200);
+  await settled(fig);
   expect((await fig.call('get')).r).toBe(60);
   st = await fig.call('set', { stage: 'torch', animate: false });
   await fig.frame.locator('.pvc').first().focus();
@@ -118,16 +122,36 @@ test(`${ID}: the words jump, set works at once, keys move the part`, async ({ pa
   expect(log.errors).toEqual([]);
 });
 
-test(`${ID}: a step is cut short without harm, and the bulb is dragged along the rail`, async ({ page }) => {
+test(`${ID}: taps wait for a step to end, a step can be seen again, and the bulb is dragged along the rail`, async ({ page }) => {
   test.setTimeout(240_000);
   await page.setViewportSize({ width: 800, height: 500 });
   const log = await preparePage(page);
   const fig = await openFigure(page, ID, { params: { stage: 'coated', coach: '1' } });
   await fig.frame.locator('.pvc-act').first().click();
   await fig.advance(400);
+  // nothing jumps ahead while it plays: the words and the big button do nothing, and the button says to watch
+  await fig.frame.locator('[data-example="sphere"]').click();
+  await expect(fig.frame.locator('.pvc-act').first()).toBeDisabled();
+  await expect(fig.frame.locator('[data-act="replay"]')).toBeDisabled();
+  await fig.advance(1000);
+  expect(await fig.call('get')).toMatchObject({ stage: 'rays', busy: true });
+  await settled(fig);
+  expect(await fig.call('get')).toMatchObject({ stage: 'rays', busy: false });
+  // it never moves on by itself
+  await fig.advance(4000);
+  expect((await fig.call('get')).stage).toBe('rays');
+  // a finished step plays again, from where it began
+  await fig.frame.locator('[data-act="replay"]').click();
+  await fig.advance(400);
+  let st = await fig.call('get');
+  expect(st).toMatchObject({ stage: 'rays', busy: true });
+  expect(st.drawn.out).toBe(false);
+  await settled(fig);
+  expect((await fig.call('get')).drawn.out).toBe(true);
   await fig.frame.locator('[data-example="sphere"]').click();
   await settled(fig);
   expect(await fig.call('get')).toMatchObject({ stage: 'sphere', coat: 0 });
+  await expect(fig.frame.locator('[data-act="replay"]')).toBeHidden();
 
   await fig.call('set', { stage: 'torch', animate: false });
   await fig.advance(600);
@@ -143,7 +167,7 @@ test(`${ID}: a step is cut short without harm, and the bulb is dragged along the
   }
   await page.mouse.up();
   await fig.advance(200);
-  let st = await fig.call('get');
+  st = await fig.call('get');
   expect(st.bulbX).toBeLessThan(13);
   expect(st.beam).toBe('spread');
   await expect(fig.frame.locator('.pvc-outcome')).toContainText('ছড়িয়ে');
@@ -156,6 +180,95 @@ test(`${ID}: a step is cut short without harm, and the bulb is dragged along the
   expect(log.errors).toEqual([]);
 });
 
+test(`${ID}: the handle shows that the bulb moves, and the view goes all the way round`, async ({ page }) => {
+  test.setTimeout(240_000);
+  await page.setViewportSize({ width: 800, height: 500 });
+  const log = await preparePage(page);
+  const fig = await openFigure(page, ID, { params: { coach: '1' } });
+  const handle = fig.frame.locator('.lab-dh');
+  const cue = fig.frame.locator('.lab-orbit');
+
+  // the rotate cue, and no handle where nothing can be dragged
+  await expect(handle).toBeHidden();
+  await expect(cue).toContainText('ঘুরিয়ে দেখো');
+  const free = await fig.frame.locator('.pvc-canvas').boundingBox();
+  const at = { x: free.x + 40, y: free.y + free.height - 40 };
+  // a tap is not a turn, however slightly the finger moves
+  await page.mouse.move(at.x, at.y);
+  await page.mouse.down();
+  await page.mouse.move(at.x + 4, at.y + 2);
+  await page.mouse.up();
+  await fig.advance(300);
+  let st = await fig.call('get');
+  expect(st).toMatchObject({ view: 'front', orbited: false });
+  const az0 = st.az;
+  // a drag is
+  await page.mouse.move(at.x, at.y);
+  await page.mouse.down();
+  for (let i = 1; i <= 10; i++) {
+    await page.mouse.move(at.x + i * 30, at.y);
+    await fig.advance(40);
+  }
+  await page.mouse.up();
+  await fig.advance(800);
+  st = await fig.call('get');
+  expect(st).toMatchObject({ view: '3d', orbited: true });
+  expect(Math.abs(st.az - az0)).toBeGreaterThan(20);
+  await expect(fig.frame.locator('.lab-orbit-word')).toBeHidden();
+  await expect(cue).toBeVisible(); // the icon stays
+
+  // all the way round, on a step with the bench: behind it, then back to the step's own view
+  await fig.call('set', { stage: 'measure', animate: false });
+  st = await fig.call('set', { az: 200 });
+  await fig.advance(300);
+  st = await fig.call('get');
+  expect(Math.abs(st.az)).toBeGreaterThan(150);
+  // the camera stays over the table
+  st = await fig.call('set', { az: 200, el: -30 });
+  await fig.advance(300);
+  expect((await fig.call('get')).polar).toBeLessThanOrEqual(88.01);
+  const front = fig.frame.locator('[data-view="front"]');
+  await expect(front).toBeVisible();
+  await expect(front).toHaveAttribute('aria-label', 'সামনে');
+  await front.click();
+  await fig.advance(2400);
+  st = await fig.call('get');
+  expect(st.view).toBe('front');
+  expect(st.az).toBeCloseTo(33, 0);
+  await expect(front).toBeHidden();
+
+  // the bulb's handle: the word until the first drag, then it stays, smaller; dragged, the bulb goes
+  await fig.call('set', { stage: 'torch', animate: false });
+  await fig.advance(600);
+  await expect(handle).toBeVisible();
+  await expect(handle).toContainText('টেনে সরাও');
+  await expect(handle).toHaveClass(/pulse/);
+  const box = await handle.boundingBox();
+  expect(box.width).toBeGreaterThanOrEqual(44);
+  const cx = box.x + box.width / 2;
+  const cy = box.y + box.height / 2;
+  await page.mouse.move(cx, cy);
+  await page.mouse.down();
+  for (let i = 1; i <= 6; i++) {
+    await page.mouse.move(cx + i * 8, cy + i * 2);
+    await fig.advance(40);
+  }
+  await page.mouse.up();
+  await fig.advance(200);
+  st = await fig.call('get');
+  expect(st.bulbX).toBeGreaterThan(16);
+  expect(st.beam).toBe('closing');
+  await expect(handle).toHaveClass(/used/);
+  await expect(handle).not.toHaveClass(/pulse/);
+  await expect(fig.frame.locator('.lab-dh-word')).toBeHidden();
+  await expect(handle).toBeVisible();
+  // it hides during the test
+  await fig.call('practice');
+  await fig.advance(600);
+  await expect(handle).toBeHidden();
+  expect(log.errors).toEqual([]);
+});
+
 test(`${ID}: every right answer scores, and a wrong one does not`, async ({ page }) => {
   test.setTimeout(300_000);
   await page.setViewportSize({ width: 800, height: 500 });
@@ -163,7 +276,7 @@ test(`${ID}: every right answer scores, and a wrong one does not`, async ({ page
   const fig = await openFigure(page, ID);
   const play = async (wrongAt) => {
     for (let i = 0; i < 5; i++) {
-      await fig.advance(1500);
+      await fig.advance(2600);
       const { question } = await fig.call('get');
       const right = fig.frame.locator(`.pvc-opt[data-q="${question.right}"]`);
       if (i === wrongAt) {
@@ -176,7 +289,7 @@ test(`${ID}: every right answer scores, and a wrong one does not`, async ({ page
         await expect(fig.frame.locator('.pvc-q-feedback')).toContainText('ঠিক');
       }
       await expect(right).toHaveClass(/right/); // the right choice is marked either way
-      await fig.advance(1200);
+      await fig.advance(2600);
       await fig.frame.locator('[data-act="q-next"]').click();
     }
     await fig.advance(800);
@@ -197,18 +310,18 @@ test(`${ID}: the test leaves the learn state as it was`, async ({ page }) => {
   const fig = await openFigure(page, ID);
   await fig.call('set', { stage: 'measure', r: 40, animate: false });
   await fig.call('practice');
-  await fig.advance(1500);
+  await fig.advance(2600);
   expect((await fig.call('get')).locked).toBe(true);
   for (let i = 0; i < 5; i++) {
     await expect(fig.frame.locator('.pvc-opt')).toHaveCount(4);
     await fig.frame.locator('.pvc-opt').first().click();
-    await fig.advance(1600);
+    await fig.advance(2600);
     await fig.frame.locator('[data-act="q-next"]').click();
-    await fig.advance(1500);
+    await fig.advance(2600);
   }
   await expect(fig.frame.locator('.pvc-q-result')).toBeVisible();
   await fig.frame.locator('[data-mode="explore"]').click();
-  await fig.advance(1200);
+  await fig.advance(2400);
   expect(await fig.call('get')).toMatchObject({ locked: false, stage: 'measure', r: 40, kind: 'concave' });
   expect(log.errors).toEqual([]);
 });

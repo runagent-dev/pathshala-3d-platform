@@ -13,10 +13,12 @@ export const RAIL = { top: 3.2, carrier: 5.6, axis: 19, left: -68, right: 82, fr
 /** The scale strip on the sloping front of the rail: where it lies. */
 const STRIP = { y0: 0.55, z0: 5.5, y1: 2.35, z1: 3.3 };
 export const SCALE_POINT = { y: (STRIP.y0 + STRIP.y1) / 2, z: (STRIP.z0 + STRIP.z1) / 2 };
-/** The hollow sphere of the first step is imagined high above the bench, out of its picture. */
+/** The hollow sphere of the first step is imagined high above the bench, out of its picture. Its cap faces +z, about 38° off the view. */
 export const SPHERE = { x: R0 + 7, y: 107, r: R0 };
-/** Where the cut piece comes to, from its place on the sphere: out and toward the viewer, clear of the glass. */
-export const CUT = { x: -12, z: 20 };
+/** Where the cut piece comes to, from its place on the sphere: out toward the viewer and aside, clear of the hole it left. */
+export const CUT = { x: -15, z: 24 };
+/** The piece's turn, radians, about the upright through its pole: on the sphere; shown with both sides named; taking its coat; on the bench (POSE). */
+export const SPIN = { sphere: Math.PI / 2, shown: THREE.MathUtils.degToRad(14), coat: THREE.MathUtils.degToRad(-15), bench: 0 };
 const CAP_ANGLE = Math.asin(MIRROR.half / R0);
 /** The piece comes down this far in front of the ring, for this share of its way, before it goes back into it. */
 const FRONT = 7;
@@ -31,9 +33,11 @@ const AXIS = RAIL.axis;
  */
 export const FRAMES = {
   sphere: () => ({ box: box(7, SPHERE.y - 31, -14, 67, SPHERE.y + 31, 14), az: 34, el: 14 }),
+  /** The piece, big, a little of the hole it left at the edge of the picture. */
   cut: () => {
-    const x = SPHERE.x - SPHERE.r + CUT.x;
-    return { box: box(x - 15, SPHERE.y - 14, CUT.z - 4, x + 19, SPHERE.y + 14, CUT.z + 4), az: 44, el: 12 };
+    const x = SPHERE.x + CUT.x;
+    const z = SPHERE.r + CUT.z;
+    return { box: box(x - 12, SPHERE.y - 12.5, z - 2, x + 12, SPHERE.y + 12.5, z + 2), az: 34, el: 12 };
   },
   bench: (r, aspect = 1.5) => {
     const end = boxAt('concave', r) + (aspect < 1.25 ? 1 : 5);
@@ -42,6 +46,8 @@ export const FRAMES = {
   focus: (r) => ({ box: box(-3, 0.4, -6, boxAt('concave', r) + 0.5, AXIS + 14, 6), az: 35, el: 12 }),
   measure: (r) => ({ box: box(-5, 0.2, -6, boxAt('concave', r) + 0.5, AXIS + 14, 6), az: 33, el: 11 }),
   wide: (r) => ({ box: box(-3, AXIS - 13, -2, boxAt('concave', r) + 0.5, AXIS + 13, 2), az: 33, el: 9 }),
+  /** Close on the mirror, from the side: the half turn, and the bulge of the outer surface. */
+  turn: () => ({ box: box(-5, AXIS - 13, -11, 7, AXIS + 13, 11), az: 58, el: 10 }),
   convex: () => ({ box: box(-12, 0.4, -6, boxAt('convex') + 0.5, AXIS + 14, 6), az: 36, el: 12 }),
   virtual: (r) => ({ box: box(-r - 4, 0.2, -6, boxAt('convex') + 0.5, AXIS + 14, 6), az: 33, el: 11 }),
   torch: () => ({ box: box(-3, 0.4, -6, 52, AXIS + 14, 6), az: 33, el: 12 }),
@@ -58,7 +64,8 @@ function backdropGeometry() {
   for (let i = 0; i < p.count; i++) {
     d.fromBufferAttribute(p, i).normalize();
     // slate: lighter behind the mirror, so that its rim stands out and the rays glow
-    const k = Math.max(0, d.dot(back));
+    // the same soft light on the far side: the view goes all the way round
+    const k = Math.abs(d.dot(back));
     const v = 0.034 + 0.1 * k ** 5 + 0.05 * k ** 24;
     c[i * 3] = v * 0.84;
     c[i * 3 + 1] = v;
@@ -103,7 +110,7 @@ function tableTexture() {
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
-  t.repeat.set(5, 3);
+  t.repeat.set(7, 7);
   t.anisotropy = 4;
   return t;
 }
@@ -404,7 +411,7 @@ function createSphere(glow) {
   root.name = 'hollow-sphere';
   root.userData.noExport = true;
   const g = new THREE.SphereGeometry(SPHERE.r, 64, 40, 0, Math.PI * 2, CAP_ANGLE, Math.PI - CAP_ANGLE);
-  g.rotateZ(Math.PI / 2); // the missing cap goes from the top to −x
+  g.rotateX(Math.PI / 2); // the missing cap goes from the top to +z, toward the viewer
   const back = new THREE.Mesh(g, shellMaterial('sphere-inside', THREE.BackSide, 0.06, 0.34));
   back.renderOrder = 1;
   const front = new THREE.Mesh(g, shellMaterial('sphere', THREE.FrontSide, 0.08, 0.56));
@@ -412,8 +419,7 @@ function createSphere(glow) {
   root.add(back, front);
   const edgeMat = new THREE.MeshBasicMaterial({ name: 'CutEdge', color: 0x7fe3d0, transparent: true, opacity: 0.9, toneMapped: false });
   const edge = new THREE.Mesh(new THREE.TorusGeometry(MIRROR.half, 0.13, 8, 72), edgeMat);
-  edge.rotation.y = Math.PI / 2;
-  edge.position.x = -SPHERE.r * Math.cos(CAP_ANGLE);
+  edge.position.z = SPHERE.r * Math.cos(CAP_ANGLE);
   root.add(edge);
   // two soft window lights on the glass: what makes a pale disc read as a ball
   const light = (x, y, z, w, h, turn, strength) => {
@@ -458,10 +464,10 @@ export function createSetting({ stage, shadow, t }) {
   scene.add(back);
 
   const table = new THREE.Mesh(
-    new THREE.BoxGeometry(640, 4, 150),
+    new THREE.BoxGeometry(900, 4, 900), // far past the bench on every side: the view goes all the way round
     new THREE.MeshStandardMaterial({ name: 'Table', color: 0x47566a, map: tableTexture(), roughness: 0.58, metalness: 0.05, envMapIntensity: 0.5 }),
   );
-  table.position.set(0, -2, 26);
+  table.position.set(0, -2, 0);
   table.receiveShadow = true;
   table.userData.noExport = true;
   scene.add(table);
@@ -582,20 +588,34 @@ export function createSetting({ stage, shadow, t }) {
     bulbHit,
     sphere,
     dish,
-    /** capOut, mount (0 … 1): from the sphere to the holder; turn: the half turn; coat: the silver; r: the sphere it belongs to. */
-    placeMirror({ capOut, mount, turn, coat, r }) {
+    /** capOut, mount (0 … 1): from the sphere to the holder; turn: the half turn; spin: its turn in the air; coat: the silver; tint: the colours of its two sides; r: the sphere it belongs to. */
+    placeMirror({ capOut, mount, turn, spin, coat, tint, r }) {
       dish.setRadius(r);
-      dish.setTurn(turn);
+      dish.setTurn(turn, spin);
       dish.setCoat(coat, turn > 0.5);
-      from.set(SPHERE.x - SPHERE.r + capOut * CUT.x, SPHERE.y, capOut * CUT.z);
+      dish.setTint(tint);
+      from.set(SPHERE.x + capOut * CUT.x, SPHERE.y, SPHERE.r + capOut * CUT.z);
       // down in front of the ring, then back into it
       at.set(FRONT, RAIL.axis, 0);
       from.lerp(at, Math.min(1, mount / DOWN));
       if (mount > DOWN) from.x = FRONT * (1 - (mount - DOWN) / (1 - DOWN));
-      from.x -= MIRROR.thick / 2;
+      from.x -= (MIRROR.thick / 2) * Math.cos(spin);
+      from.z += (MIRROR.thick / 2) * Math.sin(spin);
       dish.root.position.copy(from);
       // the ring keeps round the edge of the glass, which stands in front of P or behind it
       holder.position.x = sag(r, MIRROR.half) * (1 - 2 * turn) - MIRROR.thick / 2;
+    },
+    /** The world point of the dish's inner or outer surface, at height h above its pole, on the dish as last placed. */
+    faceAt(outer, h, out) {
+      const a = dish.root.rotation.y;
+      const along = sag(dish.radius, Math.abs(h)) + MIRROR.thick / 2 - (outer ? MIRROR.thick : 0);
+      return out.copy(dish.root.position).add(at.set(Math.cos(a) * along, h, -Math.sin(a) * along));
+    },
+    /** How squarely the inner surface faces the eye: 1 straight on, −1 turned right away. */
+    innerFacing(eye) {
+      const a = dish.root.rotation.y;
+      at.copy(eye).sub(dish.root.position).normalize();
+      return Math.cos(a) * at.x - Math.sin(a) * at.z;
     },
     /** box: 1 on the rail at x, 0 slid away; half: its bundle; on: its lamp. */
     placeBox(boxK, x, half, on) {

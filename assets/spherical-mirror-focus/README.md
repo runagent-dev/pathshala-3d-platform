@@ -45,7 +45,7 @@ Every figure answers `ping` with `{ asset, version }`. Send commands with `figur
 | Command | Example payload |
 |---|---|
 | `get` | `{}` |
-| `set` | `{"stage":"measure","r":40,"animate":false}` |
+| `set` | `{"stage":"measure","r":40,"animate":false,"az":200,"el":14}` |
 | `reset` | `{}` |
 | `practice` | `{}` |
 | `capture` | `{"width":800,"height":500}` |
