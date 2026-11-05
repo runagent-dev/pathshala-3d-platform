@@ -77,6 +77,7 @@
     { "name": "set", "payload": { "turn": 40, "animate": false } },
     { "name": "set", "payload": { "theta": 83, "animate": false } },
     { "name": "set", "payload": { "angle": 45, "animate": false } },
+    { "name": "set", "payload": { "azimuth": 135, "animate": false } },
     { "name": "reset", "payload": {} },
     { "name": "practice", "payload": {} },
     { "name": "capture", "payload": { "width": 800, "height": 500 } },

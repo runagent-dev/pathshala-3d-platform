@@ -356,5 +356,15 @@ ${sh.fragmentShader}`.replace(
     lamp.rotation.y = -Math.atan2(AT.z, AT.x);
   }
 
-  return { setSite, setFloorFade, setImage, setLamp, stripGroup };
+  const places = [
+    [SITES.tube, tube.root],
+    [SITES.strip, stripGroup],
+    [SITES.two, twoGroup],
+  ];
+  /** Which places stand on the table now; null: all of them. */
+  function showSites(list) {
+    for (const [x, g] of places) g.visible = !list || list.includes(x);
+  }
+
+  return { setSite, showSites, setFloorFade, setImage, setLamp, stripGroup };
 }

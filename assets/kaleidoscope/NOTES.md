@@ -63,6 +63,13 @@ six-fold pattern that moves when the tube turns. Plain glass can do it because t
   drawing and in the labels' avoid list; the ring and the word are in the page (a CSS animation), so a figure at rest draws nothing.
   Hidden during the test. Keyboard arrows still work and count as a first drag.
 - **The tube's inside** has dark paper behind the glass, lit from the far end, so the strips read as glass with green edges.
+- **All the way round** (the owner's rule of 2026-11-06): the views of the tube, the strip and the mirrors turn a full 360°, above the
+  table only (polar 5°–88°), with pinch or wheel zoom from 0.45 to 2.2 times the guided distance. A move of less than 8 px is a tap, not an
+  orbit. The guided camera still flies to each step's framing, and the "সামনে" button returns to it. A dark ⟲ ৩৬০° pill says "ঘুরিয়ে দেখো"
+  until the first orbit and then stays as a small icon; it is nothing like the white discs of what can be dragged. Only the place in
+  use stands on the table once the camera has arrived, so nothing floats behind it from any side. Two views stay fixed on purpose:
+  the eye's view (it looks through the eyepiece, and it is the tube that turns), and the test, whose questions set up their own
+  pictures.
 - **The test**: count the reflections of a marked cell by the lines crossed; find a piece's image in the next cell (right, too near,
   too far, turned round); how many cells meet at a corner (360° ÷ 60°); which eye sees the brightest image (only that: at 12° and 38° the two faintest differ by half a percent), with each eye's line of sight drawn; the angle at
   B from the angle at A. Numbers only (the kit's quiz compares numbers); a browser test answers all five right.
@@ -89,7 +96,9 @@ six-fold pattern that moves when the tube turns. Plain glass can do it because t
   calls them প্রথম আয়না and দ্বিতীয় আয়না, because the book's A and B are points on them.
 
 ## Numbers (`perf.mjs`, 844×390, shadows on)
-Budget: 150 draw calls, 300 k triangles. Outside view 12 draws, 2.7 k triangles; the pattern 23 draws (with the small picture of the far
-end, which is drawn only while the pieces roll), 1.2 k triangles; rays 18 draws, 2.7 k; one strip 16 draws, 2.9 k; two mirrors 24 draws,
-3.2 k. Time to ready 3.6–5 s on software rendering, on a loaded machine. At rest nothing is drawn (a browser test counts it). CPU time
-per frame could not be read from `perf.mjs` here (it reports 0 on the virtual clock).
+Budget: 150 draw calls, 300 k triangles, from any side. Measured at azimuths 0°, 90°, 180° and 270° in the four outside views: worst 21 draw
+calls (two mirrors) and 2.7 k triangles (the tube with its rays). The eye's view, which is fixed, is 5 draws and 0.2 k triangles at rest,
+and 23 draws while the pieces roll, when the small picture of the far end is drawn as well. Only the place in use stands on the table
+once the camera has arrived. GLB 280 KB. Time to ready 3.6–5 s on software rendering, on a loaded machine. At rest nothing is drawn, and
+after an orbit nothing once the turning has died away, about 4 s on the test clock (browser tests count it). CPU time per frame could
+not be read from `perf.mjs` here (it reports 0 on the virtual clock).

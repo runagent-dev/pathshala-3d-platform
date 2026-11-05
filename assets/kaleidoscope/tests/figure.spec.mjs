@@ -219,6 +219,77 @@ test('kaleidoscope: every question can be answered right: five of five, and the 
   expect(log.errors).toEqual([]);
 });
 
+test('kaleidoscope: the view turns all the way round; a tap is not an orbit', async ({ page }) => {
+  test.setTimeout(200_000);
+  await page.setViewportSize({ width: 800, height: 500 });
+  await page.addInitScript(() => {
+    globalThis.__draws = 0;
+    const raf = globalThis.WebGL2RenderingContext?.prototype;
+    if (!raf) return;
+    const o = raf.clear;
+    raf.clear = function (...a) {
+      globalThis.__draws++;
+      return o.apply(this, a);
+    };
+  });
+  const log = await preparePage(page);
+  const fig = await openFigure(page, 'kaleidoscope', { params: { step: 'graze' } });
+  const f = fig.frame;
+  await fig.advance(600);
+  await expect(f.locator('.kld-orbit')).toBeVisible();
+  await expect(f.locator('.kld-orbit span')).toBeVisible();
+  const box = await f.locator('.pvc-canvas').boundingBox();
+  const x = box.x + box.width * 0.75;
+  const y = box.y + box.height * 0.25;
+  // a tap, with a small slip of the finger
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  await page.mouse.move(x + 3, y + 2);
+  await page.mouse.up();
+  await fig.advance(300);
+  expect(await fig.call('get')).toMatchObject({ view: 'front', orbited: false });
+  const az0 = (await fig.call('get')).azimuth;
+  // a real move, round and round, past where a clamp would stop it
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  for (let i = 1; i <= 5; i++) {
+    await page.mouse.move(x - i * 60, y);
+    await fig.advance(40);
+    await page.mouse.up();
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+  }
+  await page.mouse.up();
+  await fig.advance(1500);
+  let st = await fig.call('get');
+  expect(st).toMatchObject({ view: '3d', orbited: true });
+  expect(st.azimuth).not.toBe(az0);
+  await expect(f.locator('.kld-orbit span')).toBeHidden();
+  await expect(f.locator('.kld-orbit')).toBeVisible();
+  await expect(f.locator('[data-view="front"]')).toBeVisible();
+  // the view from behind works, and never goes under the table
+  st = await fig.call('set', { azimuth: 170, animate: false });
+  expect(Math.abs(st.azimuth)).toBeGreaterThan(160);
+  expect(st.polar).toBeLessThanOrEqual(88);
+  // once the turning has died away nothing is drawn
+  await fig.advance(6000);
+  const draws = () => f.evaluate(() => globalThis.__draws);
+  const a = await draws();
+  await fig.advance(2500);
+  expect(await draws()).toBe(a);
+  // "সামনে" flies back to the guided view
+  await f.locator('[data-view="front"]').click();
+  await fig.advance(2300);
+  st = await fig.call('get');
+  expect(st.view).toBe('front');
+  expect(st.azimuth).toBe(az0);
+  // the eye's view is fixed: no cue, and a drag turns the tube
+  await fig.call('set', { step: 'pattern', stage: 1, animate: false });
+  await fig.advance(400);
+  await expect(f.locator('.kld-orbit')).toBeHidden();
+  expect(log.errors).toEqual([]);
+});
+
 test('kaleidoscope: nothing is drawn while it rests', async ({ page }) => {
   test.setTimeout(120_000);
   await page.setViewportSize({ width: 800, height: 500 });

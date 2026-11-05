@@ -130,18 +130,29 @@ export function createApp(root, options = {}) {
   note.className = 'kld-note';
   note.hidden = true;
   ui.stage.appendChild(note);
+  // the view can be turned all the way round: a dark pill in a corner, nothing like the white discs of what can be dragged
+  const orbitEl = document.createElement('div');
+  orbitEl.className = 'kld-orbit';
+  orbitEl.hidden = true;
+  orbitEl.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 1 0 2.4-5.5"/><path d="M4 3.5v4.6h4.6"/></svg><b>${t.num(360)}°</b><span>${t('view_rotate')}</span>`;
+  ui.stage.appendChild(orbitEl);
 
   // ── 3D ──────────────────────────────────────────────────────────────────────────────────────────────────
   const FOV = 22;
   const stage = createStage(ui.canvasHost, { fov: FOV, near: 0.4, far: 1600, environment: 'studio-light', environmentIntensity: 0.35 });
   const { camera, controls } = stage;
   controls.enablePan = false;
-  controls.enableZoom = false;
+  controls.enableZoom = true;
+  // all the way round; never under the table. A flight and the eye's own view go beyond these
+  controls.minAzimuthAngle = Number.NEGATIVE_INFINITY;
+  controls.maxAzimuthAngle = Number.POSITIVE_INFINITY;
   function freeTurn(free) {
-    controls.minAzimuthAngle = free ? Number.NEGATIVE_INFINITY : THREE.MathUtils.degToRad(-72);
-    controls.maxAzimuthAngle = free ? Number.POSITIVE_INFINITY : THREE.MathUtils.degToRad(30);
-    controls.minPolarAngle = free ? 0 : THREE.MathUtils.degToRad(35);
-    controls.maxPolarAngle = free ? Math.PI : THREE.MathUtils.degToRad(87);
+    controls.minPolarAngle = free ? 0 : THREE.MathUtils.degToRad(5);
+    controls.maxPolarAngle = free ? Math.PI : THREE.MathUtils.degToRad(88);
+    if (free) {
+      controls.minDistance = 0;
+      controls.maxDistance = Number.POSITIVE_INFINITY;
+    }
   }
   freeTurn(false);
   const tube = createTube({ shadow: Boolean(o.shadow) });
@@ -183,6 +194,7 @@ export function createApp(root, options = {}) {
     quiz: null,
     drag: null,
     dragged: { turn: false, eye: false, lamp: false }, // a handle calms down once it has been used
+    orbited: false, // the rotate cue calms down once the student has turned the view
   };
   s.stage = clamp(Math.round(Number(o.stage) || 0), 0, TOP[s.step]);
   s.zoom = s.step === 'why' && s.stage >= 1;
@@ -536,6 +548,12 @@ export function createApp(root, options = {}) {
       controls.target.copy(pz.target);
       setFov(pz.fov);
       tube.setPeek(eyeNow);
+      // a sensible zoom round the guided view
+      if (!eyeNow) {
+        const d = pz.position.distanceTo(pz.target);
+        controls.minDistance = d * 0.45;
+        controls.maxDistance = d * 2.2;
+      }
     }
     controls.update();
   }
@@ -557,10 +575,21 @@ export function createApp(root, options = {}) {
       },
       onComplete: () => {
         camK = 1;
+        setting.showSites([siteNow()]);
         if (!s.quiz && !s.rev) rest(0.6);
         stage.invalidate();
       },
     }).finished;
+  }
+  /** Which of the three places on the table the state is about. */
+  function siteNow() {
+    if (s.quiz) return s.quiz.kind === 'graze' ? SITES.strip : s.quiz.kind === 'sixty' ? SITES.two : SITES.tube;
+    return { graze: SITES.strip, two: SITES.two }[s.step] ?? SITES.tube;
+  }
+  /** The light goes there; all stay shown for the flight, and on arrival only that place: from any side the table is clear. */
+  function toSite(settled) {
+    setting.setSite(siteNow());
+    setting.showSites(settled ? [siteNow()] : null);
   }
   /** After any change: when the state wants another frame, go there. */
   function followFrame(instant, duration = FLY) {
@@ -569,15 +598,7 @@ export function createApp(root, options = {}) {
     const first = !shownFrame;
     flyEye = key === 'eye' || shownFrame === 'eye';
     shownFrame = key;
-    setting.setSite(
-      s.quiz
-        ? s.quiz.kind === 'graze'
-          ? SITES.strip
-          : s.quiz.kind === 'sixty'
-            ? SITES.two
-            : SITES.tube
-        : ({ graze: SITES.strip, two: SITES.two }[s.step] ?? SITES.tube),
-    );
+    toSite(first || instant);
     if (first || instant) {
       tweener.cancel('camera');
       camK = 1;
@@ -591,18 +612,22 @@ export function createApp(root, options = {}) {
     else camK = 1;
     stage.invalidate();
   }
-  controls.addEventListener('start', () => {
-    if (s.drag) return;
+  /** The student has taken the view: from here on the guided framing waits, until the next step or the "সামনে" button. */
+  function beginOrbit() {
+    if (s.userMovedCamera || s.drag || !controls.enabled) return;
     s.userMovedCamera = true;
+    s.orbited = true;
     tweener.cancel('camera');
+    if (camK < 1) setting.showSites([siteNow()]);
     camK = 1;
     if (s.view !== '3d') {
       s.view = '3d';
       syncUI();
       emit('view', { view: s.view });
     }
+    syncCue();
     draw();
-  });
+  }
   stage.onResize(() => {
     s.userMovedCamera = false;
     if (s.view === '3d') {
@@ -969,7 +994,7 @@ export function createApp(root, options = {}) {
   const anno = createAnnotations({
     stage,
     layer: ui.annoLayer,
-    avoid: [ui.corner, note, panelTab, knobBox, trackBoxes, rayBoxes, () => action?.ringBox()],
+    avoid: [ui.corner, note, orbitEl, panelTab, knobBox, trackBoxes, rayBoxes, () => action?.ringBox()],
   });
   const shown = new Map();
   const used = new Map();
@@ -1146,7 +1171,14 @@ export function createApp(root, options = {}) {
     note.hidden = !(slow || rays) || Boolean(s.quiz);
     note.textContent = rays ? t('note_rays') : t('note_slow');
   }
+  function syncCue() {
+    const on = !inEye() && !s.quiz;
+    if (orbitEl.hidden === on) orbitEl.hidden = !on;
+    orbitEl.classList.toggle('used', s.orbited);
+    orbitEl.classList.toggle('fresh', !s.orbited && Boolean(o.coach));
+  }
   function panel() {
+    syncCue();
     if (s.quiz) return;
     const ph = phase();
     sheet.outcome(outcome());
@@ -1162,11 +1194,13 @@ export function createApp(root, options = {}) {
     }
     const base = `${s.step[0]}${s.stage}`;
     replayBtn.hidden = !REPLAY.has(base);
+    replayBtn.classList.toggle('kld-tight', t(word).length > 11); // beside a long action, in a narrow panel, the icon alone
     replayBtn.disabled = ph === 'busy';
     syncNote();
   }
   function draw({ instant = false, duration = FLY } = {}) {
     followFrame(instant, duration); // first: a flight that starts now makes the action wait
+    controls.enabled = !s.locked && !inEye() && !s.drag; // the eye's view is what the tube shows: it turns with the tube, not round it
     applyWorld();
     panel();
     stage.invalidate();
@@ -1191,7 +1225,7 @@ export function createApp(root, options = {}) {
     label: 'act_look',
     target: actionSpot,
     radius: 22,
-    avoid: [ui.corner, ui.hint, note, () => anno.boxes()],
+    avoid: [ui.corner, ui.hint, note, orbitEl, () => anno.boxes()],
     pulse: Boolean(o.coach),
     onAct: () => act(),
   });
@@ -1241,8 +1275,14 @@ export function createApp(root, options = {}) {
     },
     { capture: true },
   );
+  ui.canvasHost.addEventListener('wheel', beginOrbit, { passive: true });
   ui.canvasHost.addEventListener('pointermove', (e) => {
     const g = s.drag;
+    if (!g && tap?.id === e.pointerId) {
+      // a tap is not an orbit: the view is the student's only after a real move
+      const o = hostXY(e);
+      if (Math.hypot(o.x - tap.x, o.y - tap.y) >= 8) beginOrbit();
+    }
     if (!g || e.pointerId !== g.id) return;
     const p = hostXY(e);
     g.moved = Math.max(g.moved, Math.hypot(p.x - g.x, p.y - g.y));
@@ -1293,7 +1333,6 @@ export function createApp(root, options = {}) {
     if (!g || e.pointerId !== g.id) return;
     releasePointer(ui.canvasHost, e.pointerId);
     s.drag = null;
-    controls.enabled = !s.locked && !inEye();
     action.show('drag');
     emit('dragend', { part: g.kind });
     if (g.moved >= 8) s.dragged[g.kind] = true;
@@ -1371,8 +1410,9 @@ export function createApp(root, options = {}) {
     clearLabels();
     applyWorld();
     syncNote();
+    syncCue();
     shownFrame = frameKey();
-    setting.setSite(q.kind === 'graze' ? SITES.strip : q.kind === 'sixty' ? SITES.two : SITES.tube);
+    toSite(false);
     stage.invalidate();
   }
   // the kit's quiz compares numbers: every choice here is a number, and a choice's note is found by that number
@@ -1537,7 +1577,7 @@ export function createApp(root, options = {}) {
         clearLabels();
         syncUI();
         shownFrame = frameKey();
-        setting.setSite({ graze: SITES.strip, two: SITES.two }[s.step] ?? SITES.tube);
+        toSite(false);
         flyEye = true; // the drawing waits for the flight
         flyCamera(FLY);
         draw();
@@ -1570,7 +1610,8 @@ export function createApp(root, options = {}) {
     const front = ui.$('[data-view="front"]');
     if (front) front.hidden = s.view !== '3d';
     controls.enableRotate = !s.locked;
-    controls.enabled = !s.locked && !inEye();
+    controls.enableZoom = !s.locked;
+    controls.enabled = !s.locked && !inEye() && !s.drag;
     root.dataset.mode = s.mode === 'quiz' ? 'quiz' : 'explore';
     for (const b of ui.$$('[data-mode]')) {
       const on = b.dataset.mode === root.dataset.mode;
@@ -1613,6 +1654,13 @@ export function createApp(root, options = {}) {
     draw();
     syncUI();
     emitChange();
+  }
+  // "সামনে", in words: the icon alone would read as starting again
+  {
+    const front = ui.$('[data-view="front"]');
+    front.textContent = t('view_front_short');
+    front.classList.remove('icon-only');
+    front.classList.add('kld-front');
   }
   const fullscreenBtn = ui.$('[data-act="fullscreen"]');
   if (fullscreenBtn && !document.fullscreenEnabled) fullscreenBtn.hidden = true;
@@ -1720,6 +1768,9 @@ export function createApp(root, options = {}) {
       picked: s.picked ? { n: s.picked.n, light: +brightness(s.picked.centre, s.picked.crossings).toFixed(3) } : null,
       frame: shownFrame,
       testOpen: s.open,
+      orbited: s.orbited,
+      azimuth: Math.round(THREE.MathUtils.radToDeg(controls.getAzimuthalAngle())),
+      polar: Math.round(THREE.MathUtils.radToDeg(controls.getPolarAngle())),
       question: s.quiz && qCurrent ? { kind: s.quiz.kind, answer: qCurrent.label(qCurrent.answer) } : null,
       mode: s.mode,
       locked: s.locked,
@@ -1763,6 +1814,18 @@ export function createApp(root, options = {}) {
         s.zoom = s.step === 'why' && s.stage >= 1 && s.stage <= 3;
         if (s.step === 'two' && s.stage === 2) s.open = true;
       }
+      if (p.azimuth != null && !inEye()) {
+        // the view from another side, round what it looks at, for the book or a test
+        const a = rad(p.azimuth);
+        const r = Math.hypot(camera.position.x - controls.target.x, camera.position.z - controls.target.z);
+        camera.position.x = controls.target.x + r * Math.sin(a);
+        camera.position.z = controls.target.z + r * Math.cos(a);
+        controls.update();
+        s.userMovedCamera = true;
+        s.orbited = true;
+        s.view = '3d';
+        syncUI();
+      }
       if (p.theta != null) s.theta = clamp(Math.round(p.theta), STRIP.min, STRIP.max);
       if (p.angle != null) s.angle = snapWedge(p.angle);
       if (p.turn != null) {
@@ -1797,6 +1860,7 @@ export function createApp(root, options = {}) {
       stopMotion();
       s.step = 'pattern';
       s.open = false;
+      s.orbited = false;
       squareUp(false);
       restartStep();
       tube.beads.restart();
