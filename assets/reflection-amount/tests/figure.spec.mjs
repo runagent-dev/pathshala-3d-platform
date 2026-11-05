@@ -11,11 +11,14 @@ const settled = async (fig) => {
   throw new Error('the glass never stopped');
 };
 
-test('reflection-amount: the story goes one tap at a time, the numbers come last, and the test is offered at the end', async ({ page }) => {
-  test.setTimeout(420_000);
-  await page.setViewportSize({ width: 800, height: 500 });
+// Two short walks at the smallest page with a real 3D view (below 600 px the panel stacks and the view has no height): every step
+// plays at its real speed, and CI's software rendering is slow (docs/ci.md). Keep each test under a minute here.
+test('reflection-amount: the story goes one tap at a time and the numbers wait', async ({ page }) => {
+  test.setTimeout(240_000);
+  await page.setViewportSize({ width: 600, height: 300 });
   const log = await preparePage(page);
   const fig = await openFigure(page, 'reflection-amount');
+  expect((await fig.frame.locator('canvas').first().boundingBox())?.height).toBeGreaterThan(200); // a real view
   const act = fig.frame.locator('.pvc-act').first();
   const percents = fig.frame.locator('.pvc-anno', { hasText: '%' });
   let st = await fig.call('get');
@@ -30,20 +33,24 @@ test('reflection-amount: the story goes one tap at a time, the numbers come last
   await fig.frame.locator('[data-example="w2"]').click({ force: true });
   await settled(fig);
   expect((await fig.call('get')).step).toBe(1);
-  await fig.advance(4000);
+  await fig.advance(3000);
   expect((await fig.call('get')).step).toBe(1);
   await expect(fig.frame.locator('.ra-tag-pattern')).toBeVisible();
   await expect(fig.frame.locator('.ra-tag-image')).toBeHidden();
-  // the glass rises for at least two seconds, and the flower comes up in the picture from his eye
+  // the glass rises, and the flower comes up in the picture from his eye, which the panel points to
   await act.click();
   await settled(fig);
   st = await fig.call('get');
   expect(st).toMatchObject({ step: 2, angle: 85 });
   expect(st.handle.shown).toBe(true);
   await expect(fig.frame.locator('.ra-tag-image')).toBeVisible();
+  await expect(fig.frame.locator('.ra-eye')).toHaveClass(/look/);
   await expect(percents).toHaveCount(0);
-  // the angles: at most the two angles, the normal and the two rays, and still no percent
+  // the angles, in two beats: what the rays are called, then the angles
   await act.click();
+  await fig.advance(4400);
+  await expect(fig.frame.locator('.pvc-anno')).toHaveCount(3);
+  await expect(fig.frame.locator('.pvc-anno', { hasText: 'θ' })).toHaveCount(0);
   await settled(fig);
   expect((await fig.call('get')).step).toBe(3);
   await expect(fig.frame.locator('.pvc-anno', { hasText: 'অভিলম্ব' })).toHaveCount(1);
@@ -55,17 +62,26 @@ test('reflection-amount: the story goes one tap at a time, the numbers come last
   await fig.advance(800);
   st = await fig.call('get');
   expect(st).toMatchObject({ step: 2, busy: true });
-  await settled(fig);
+  expect(log.errors).toEqual([]);
+});
+
+test("reflection-amount: how much goes through the stops with Fresnel's numbers, and the test is offered at the end", async ({ page }) => {
+  test.setTimeout(240_000);
+  await page.setViewportSize({ width: 600, height: 300 });
+  const log = await preparePage(page);
+  const fig = await openFigure(page, 'reflection-amount');
+  const act = fig.frame.locator('.pvc-act').first();
+  expect((await fig.frame.locator('canvas').first().boundingBox())?.height).toBeGreaterThan(200); // a real view
+  await fig.call('set', { step: 3, animate: false });
+  await fig.advance(200);
+  // the glass goes back down past the other stops: they do not count until it rests on them
   await act.click();
   await settled(fig);
-  // how much: the glass goes back down and up through the stops, with Fresnel's numbers
-  await act.click();
-  await settled(fig);
-  st = await fig.call('get');
+  let st = await fig.call('get');
   expect(st).toMatchObject({ step: 4, angle: 30, reflected: 4, refractedShare: 96, seen: [30] });
   await expect(fig.frame.locator('.ra-graph')).toBeVisible();
   await expect(fig.frame.locator('.pvc-outcome')).toContainText('৪%');
-  await expect(percents).toHaveCount(2);
+  await expect(fig.frame.locator('.pvc-anno', { hasText: '%' })).toHaveCount(2);
   for (const [angle, reflected] of [
     [60, 9],
     [80, 39],
@@ -131,7 +147,7 @@ test('reflection-amount: set works at once, the keys step the angle, and a run c
 });
 
 test('reflection-amount: the handle lifts the glass, a tap on it is the action, and the view turns all the way round', async ({ page }) => {
-  test.setTimeout(300_000);
+  test.setTimeout(240_000);
   await page.setViewportSize({ width: 844, height: 390 });
   const log = await preparePage(page);
   const fig = await openFigure(page, 'reflection-amount', { params: { angle: '45', coach: '1' } });
@@ -186,8 +202,9 @@ test('reflection-amount: the handle lifts the glass, a tap on it is the action, 
   st = await fig.call('get');
   expect(st).toMatchObject({ view: '3d', orbited: true });
   await expect(fig.frame.locator('.lab-turn span')).toBeHidden();
-  await expect(fig.frame.locator('.lab-turn svg')).toBeVisible();
+  await expect(fig.frame.locator('.lab-turn')).toContainText('৩৬০°');
   await expect(front).toBeVisible();
+  await expect(front).toContainText('সামনে');
   // right round the back
   for (let i = 0; i < 4; i++) await turnBy(200);
   expect((await fig.call('get')).view).toBe('3d');
@@ -198,25 +215,47 @@ test('reflection-amount: the handle lifts the glass, a tap on it is the action, 
   expect(log.errors).toEqual([]);
 });
 
-// the owner: labels pinned to what they name, and never hidden: nothing may lie under the picture from his eye or the handle
-const hiddenLabels = (fig) =>
-  fig.frame.evaluate(() => {
-    const seen = (el) => el && !el.hidden && getComputedStyle(el).opacity !== '0' && el.getBoundingClientRect().width > 0;
-    const covers = [...document.querySelectorAll('.ra-eye, .lab-hd, .lab-hl')]
+// the owner: labels pinned to what they name, and never hidden: nothing may lie under the picture from his eye, the handle, the
+// panel's tab, the corner's buttons or another label, nor run off the view. The handle keeps off the picture too.
+const hiddenLabels = (fig, { mayHide = false } = {}) =>
+  fig.frame.evaluate((may) => {
+    const seen = (el) =>
+      el &&
+      !el.hidden &&
+      getComputedStyle(el).visibility !== 'hidden' &&
+      getComputedStyle(el).opacity !== '0' &&
+      el.getBoundingClientRect().width > 0;
+    const boxOf = (el) => el.getBoundingClientRect();
+    const hit = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+    const covers = [...document.querySelectorAll('.ra-eye, .lab-hd, .lab-hl, .pvc-panel-toggle, .pvc-corner, .lab-turn, .lab-note')]
       .filter(seen)
-      .map((el) => ({ name: el.className, b: el.getBoundingClientRect() }));
+      .map((el) => ({ name: el.className, b: boxOf(el) }));
+    const view = boxOf(document.querySelector('canvas'));
+    const labels = [...document.querySelectorAll('.pvc-anno')];
     const bad = [];
-    for (const el of document.querySelectorAll('.pvc-anno')) {
+    labels.forEach((el, i) => {
       if (getComputedStyle(el).visibility === 'hidden') {
-        bad.push(`${el.textContent}: not shown`);
-        continue;
+        if (!may) bad.push(`${el.textContent}: not shown`);
+        return;
       }
-      const a = el.getBoundingClientRect();
-      for (const { name, b } of covers)
-        if (a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top) bad.push(`${el.textContent} under ${name}`);
+      const a = boxOf(el);
+      if (a.left < view.left || a.right > view.right || a.top < view.top || a.bottom > view.bottom) bad.push(`${el.textContent} off the view`);
+      for (const { name, b } of covers) if (hit(a, b)) bad.push(`${el.textContent} under ${name}`);
+      for (const other of labels.slice(i + 1))
+        if (getComputedStyle(other).visibility !== 'hidden' && hit(a, boxOf(other))) bad.push(`${el.textContent} on ${other.textContent}`);
+    });
+    const disc = document.querySelector('.lab-hd');
+    const eye = document.querySelector('.ra-eye');
+    if (seen(disc) && seen(eye) && hit(boxOf(disc), boxOf(eye))) bad.push('the handle on the picture');
+    for (const el of [disc, document.querySelector('.lab-hl')]) {
+      if (!seen(el)) continue;
+      const a = boxOf(el);
+      if (a.left < view.left || a.right > view.right || a.top < view.top || a.bottom > view.bottom) bad.push(`${el.className} off the view`);
+      const n = document.querySelector('.lab-note');
+      if (seen(n) && hit(a, boxOf(n))) bad.push(`${el.className} on the note`);
     }
     return bad;
-  });
+  }, mayHide);
 
 for (const [width, height] of [
   [390, 700],
@@ -239,6 +278,21 @@ for (const [width, height] of [
       await fig.call('set', { angle, animate: false });
       await fig.advance(700);
       expect(await hiddenLabels(fig), `${angle}°`).toEqual([]);
+    }
+    // and on the student's own view, right round: a label may give way, never cover something
+    await fig.call('set', { step: 3, animate: false });
+    await fig.advance(400);
+    const box = await fig.frame.locator('canvas').first().boundingBox();
+    const at = { x: box.x + 24, y: box.y + box.height * 0.45 };
+    for (let i = 0; i < 4; i++) {
+      await page.mouse.move(at.x, at.y);
+      await page.mouse.down();
+      await fig.advance(40);
+      await page.mouse.move(at.x + box.height / 4, at.y, { steps: 2 });
+      await fig.advance(900);
+      await page.mouse.up();
+      await fig.advance(500);
+      expect(await hiddenLabels(fig, { mayHide: true }), `turned ${i + 1}`).toEqual([]);
     }
     expect(log.errors).toEqual([]);
   });
@@ -268,39 +322,43 @@ test('reflection-amount: what he sees really changes with the angle', async ({ p
   expect(log.errors).toEqual([]);
 });
 
-test('reflection-amount: every right answer scores, and a wrong one does not', async ({ page }) => {
-  test.setTimeout(300_000);
-  await page.setViewportSize({ width: 800, height: 500 });
-  const log = await preparePage(page);
-  const fig = await openFigure(page, 'reflection-amount');
-  const play = async (wrongAt) => {
-    for (let i = 0; i < 5; i++) {
-      await fig.advance(4000); // the question that lifts the glass takes its time
-      const { question } = await fig.call('get');
-      const right = fig.frame.locator(`.pvc-opt[data-q="${question.right}"]`);
-      if (i === wrongAt) {
-        const other = fig.frame.locator(`.pvc-opt[data-q="${(question.right + 1) % 4}"]`);
-        await other.click();
-        await expect(other).toHaveClass(/wrong/);
-        await expect(fig.frame.locator('.pvc-q-feedback')).toContainText('হয়নি');
-      } else {
-        await right.click();
-        await expect(fig.frame.locator('.pvc-q-feedback')).toContainText('ঠিক');
-      }
-      await expect(right).toHaveClass(/right/);
-      await fig.advance(800);
-      await fig.frame.locator('[data-act="q-next"]').click();
+/** Answers the five questions, right but for question wrongAt. */
+async function playTest(fig, wrongAt) {
+  for (let i = 0; i < 5; i++) {
+    await fig.advance(4400); // the question that lifts the glass takes its time
+    const { question } = await fig.call('get');
+    const right = fig.frame.locator(`.pvc-opt[data-q="${question.right}"]`);
+    if (i === wrongAt) {
+      const other = fig.frame.locator(`.pvc-opt[data-q="${(question.right + 1) % 4}"]`);
+      await other.click();
+      await expect(other).toHaveClass(/wrong/);
+      await expect(fig.frame.locator('.pvc-q-feedback')).toContainText('হয়নি');
+    } else {
+      await right.click();
+      await expect(fig.frame.locator('.pvc-q-feedback')).toContainText('ঠিক');
     }
+    await expect(right).toHaveClass(/right/);
     await fig.advance(800);
-  };
-  await fig.call('practice');
-  await play(-1);
-  await expect(fig.frame.locator('.pvc-q-result')).toContainText('৫টির মধ্যে ৫টি');
-  await fig.frame.locator('[data-act="q-again"]').click();
-  await play(2);
-  await expect(fig.frame.locator('.pvc-q-result')).toContainText('৫টির মধ্যে ৪টি');
-  expect(log.errors).toEqual([]);
-});
+    await fig.frame.locator('[data-act="q-next"]').click();
+  }
+  await fig.advance(800);
+}
+
+for (const { wrongAt, score, name } of [
+  { wrongAt: -1, score: '৫টির মধ্যে ৫টি', name: 'every right answer scores' },
+  { wrongAt: 2, score: '৫টির মধ্যে ৪টি', name: 'a wrong answer does not score' },
+]) {
+  test(`reflection-amount: ${name}`, async ({ page }) => {
+    test.setTimeout(240_000);
+    await page.setViewportSize({ width: 640, height: 400 }); // the answers are in the panel
+    const log = await preparePage(page);
+    const fig = await openFigure(page, 'reflection-amount');
+    await fig.call('practice');
+    await playTest(fig, wrongAt);
+    await expect(fig.frame.locator('.pvc-q-result')).toContainText(score);
+    expect(log.errors).toEqual([]);
+  });
+}
 
 test('reflection-amount: the test locks the glass and leaves the learn state as it was', async ({ page }) => {
   test.setTimeout(240_000);
@@ -323,7 +381,7 @@ test('reflection-amount: the test locks the glass and leaves the learn state as 
     await fig.frame.locator('.pvc-opt').first().click();
     await fig.advance(1200);
     await fig.frame.locator('[data-act="q-next"]').click();
-    await fig.advance(4000);
+    await fig.advance(4400);
   }
   await expect(fig.frame.locator('.pvc-q-result')).toBeVisible();
   await fig.frame.locator('[data-mode="explore"]').click();
