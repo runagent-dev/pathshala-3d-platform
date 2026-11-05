@@ -9,14 +9,14 @@ body.bg-transparent { background: transparent; }
 
 .wl { --c-W: #7048e8; --c-T: #e8590c; --c-a: #0c8599; --c-M: #a86400; --c-m: #8a5a1c; }
 .wl sub, .wl sup { font-size: 0.72em; line-height: 0; }
-.wl .c-a { color: var(--c-a); font-weight: 700; }
-.wl .c-W { color: var(--c-W); font-weight: 700; }
-.wl .c-T { color: var(--c-T); font-weight: 700; }
-.wl .c-M { color: var(--c-M); font-weight: 700; }
-.wl .c-m { color: var(--c-m); font-weight: 700; }
+.wl .c-a { color: var(--c-a); font-weight: 600; }
+.wl .c-W { color: var(--c-W); font-weight: 600; }
+.wl .c-T { color: var(--c-T); font-weight: 600; }
+.wl .c-M { color: var(--c-M); font-weight: 600; }
+.wl .c-m { color: var(--c-m); font-weight: 600; }
 .wl .pvc-examples .pvc-ex-res { font-size: 12.5px; color: var(--c-a); font-variant-numeric: tabular-nums; }
 .wl .pvc-outcome { display: none; }
-.wl .pvc-rule { font-size: 14.5px; line-height: 1.45; }
+.wl .pvc-rule { font-size: 14.5px; line-height: 1.55; }
 .wl .pvc-quiet svg { width: 21px; height: 21px; }
 
 /* ── the formula: the steppers, then the law and the sum on one line ── */
@@ -35,10 +35,10 @@ body.bg-transparent { background: transparent; }
 .wl-pm svg { width: 18px; height: 18px; stroke-width: 2.4; }
 .wl-pm.off { color: var(--ink-3); opacity: 0.45; }
 .wl-pm:focus-visible { outline: 2px solid var(--c); outline-offset: -3px; }
-.wl-val { flex: 1; min-width: 0; display: grid; place-items: center end; padding-right: 3px; font-size: 18px; font-weight: 700; color: var(--c); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.wl-val { flex: 1; min-width: 0; display: grid; place-items: center end; padding-right: 3px; font-size: 18px; font-weight: 600; color: var(--c); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .wl-unit { display: grid; place-items: center start; padding: 0 6px 0 0; font-size: 13px; font-weight: 600; color: var(--c); }
 .wl-law { display: flex; flex-wrap: wrap; align-items: center; column-gap: 3px; row-gap: 2px; padding: 4px 8px; border-radius: 10px; background: #fff7e8; box-shadow: inset 0 0 0 1.5px #f3d39b; }
-.wl-term { min-width: 28px; min-height: 30px; padding: 0 5px; border: 0; border-radius: 7px; background: none; font-size: 21px; font-style: italic; font-weight: 700; line-height: 1; cursor: pointer; }
+.wl-term { min-width: 28px; min-height: 30px; padding: 0 5px; border: 0; border-radius: 7px; background: none; font-size: 21px; font-style: italic; font-weight: 600; line-height: 1; cursor: pointer; }
 .wl-term i { font-style: italic; font-weight: 600; }
 .wl-term:hover { background: rgba(0, 0, 0, 0.05); }
 .wl-term.on { background: color-mix(in srgb, currentColor 16%, #fff); box-shadow: inset 0 0 0 2px currentColor; }
@@ -51,14 +51,14 @@ body.bg-transparent { background: transparent; }
 /* the sign rule at the end of the law; the notes under the rule; the chip on the picture (the bucket's v and t) */
 .wl-key { order: 3; margin-left: auto; padding-left: 8px; font-size: 12.5px; line-height: 1.3; color: var(--ink-2); white-space: nowrap; }
 .wl-key b { color: var(--c-a); font-size: 14px; }
-.wl-meta { margin: 0; font-size: 12.5px; line-height: 1.4; color: var(--ink-3); }
+.wl-meta { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--ink-2); }
 .wl-speed { margin: 0; min-height: 1.45em; font-size: 13px; line-height: 1.45; color: var(--ink-2); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .wl-speed b { color: #1c6fd9; }
-.wl-speed small { font-size: 0.88em; color: var(--ink-3); }
+.wl-speed small { font-size: 0.88em; color: var(--ink-2); }
 
 /* labels on the picture: the symbol and its number in the arrow's colour */
-.pvc-anno-force { --c: var(--ink); padding: 0 6px; border: 1.5px solid var(--c); border-radius: 5px; background: rgba(255, 255, 255, 0.95); color: var(--c); font-size: 13.5px; font-weight: 700; line-height: 1.5; transition: none; }
-.pvc-anno-mass { padding: 0 7px; border: 1.5px solid var(--c-M); border-radius: 5px; background: rgba(255, 249, 232, 0.96); color: var(--c-M); font-size: 13.5px; font-weight: 700; line-height: 1.5; }
+.pvc-anno-force { --c: var(--ink); padding: 0 6px; border: 1.5px solid var(--c); border-radius: 5px; background: rgba(255, 255, 255, 0.95); color: var(--c); font-size: 13.5px; font-weight: 600; line-height: 1.5; transition: none; }
+.pvc-anno-mass { padding: 0 7px; border: 1.5px solid var(--c-M); border-radius: 5px; background: rgba(255, 249, 232, 0.96); color: var(--c-M); font-size: 13.5px; font-weight: 600; line-height: 1.5; }
 .pvc-anno-lines .k-force, .pvc-anno-lines .k-mass { display: none; }
 
 /* the test: answers in words or numbers, room kept for the question and the worked answer */
@@ -104,9 +104,9 @@ body.bg-transparent { background: transparent; }
 .wl-ex[hidden] { display: none; }
 .wl-ex-card { box-sizing: border-box; display: flex; flex-direction: column; gap: 6px; width: 100%; height: 100%; padding: 8px 14px calc(10px + env(safe-area-inset-bottom, 0px)); background: #fff; overflow: hidden; }
 .wl-ex-head { display: flex; align-items: center; gap: 8px; }
-.wl-ex-head h2 { flex: 1 1 auto; margin: 0; font-size: 17px; line-height: 1.3; font-weight: 700; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wl-ex-head h2 { flex: 1 1 auto; margin: 0; font-size: 17px; line-height: 1.3; font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .wl-ex-tabs { flex: none; display: flex; padding: 3px; gap: 2px; border-radius: 999px; background: var(--soft); }
-.wl-ex-tabs button { min-height: 32px; padding: 0 11px; border: 0; border-radius: 999px; background: none; color: var(--ink-2); font-size: 13.5px; font-weight: 700; white-space: nowrap; }
+.wl-ex-tabs button { min-height: 32px; padding: 0 11px; border: 0; border-radius: 999px; background: none; color: var(--ink-2); font-size: 13.5px; font-weight: 600; white-space: nowrap; }
 .wl-ex-tabs button.on { background: var(--accent); color: #fff; }
 .wl-ex-tabs button:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
 .wl-ex-x { flex: none; display: grid; place-items: center; width: 42px; height: 42px; margin-right: -8px; border: 0; border-radius: 10px; background: none; color: var(--ink-2); }
@@ -116,7 +116,7 @@ body.bg-transparent { background: transparent; }
 .wl-ex-scene { position: relative; flex: 1 1 auto; min-height: 140px; border-radius: 12px; overflow: hidden; background: #b9cbdc; }
 .wl-ex-gl { position: absolute; inset: 0; cursor: pointer; }
 .wl-ex-anno { position: absolute; inset: 0; pointer-events: none; }
-.wl-ex-lbl { position: absolute; transform: translate(-50%, -50%); padding: 0 5px; border: 1.5px solid currentColor; border-radius: 5px; background: #fff; box-shadow: 0 1px 2px rgba(20, 30, 45, 0.18); font-size: 12.5px; font-weight: 700; line-height: 1.45; white-space: nowrap; }
+.wl-ex-lbl { position: absolute; transform: translate(-50%, -50%); padding: 0 5px; border: 1.5px solid currentColor; border-radius: 5px; background: #fff; box-shadow: 0 1px 2px rgba(20, 30, 45, 0.18); font-size: 12.5px; font-weight: 600; line-height: 1.45; white-space: nowrap; }
 .wl-ex-lbl.s1 { transform: translate(0, -50%); }
 .wl-ex-lbl.s-1 { transform: translate(-100%, -50%); }
 .wl-ex-lbl.k-T { color: var(--c-T); }
@@ -130,7 +130,7 @@ body.bg-transparent { background: transparent; }
 .wl-ex-line { display: flex; flex-wrap: wrap; align-items: center; column-gap: 10px; min-height: 1.6em; visibility: hidden; opacity: 0; transform: translateY(4px); transition: opacity 0.3s, transform 0.3s; }
 .wl-ex-line.in { visibility: visible; opacity: 1; transform: none; }
 .wl-ex-line .f { display: inline-flex; align-items: center; gap: 0.28em; font-size: 16px; font-weight: 600; color: var(--ink); white-space: nowrap; font-variant-numeric: tabular-nums; }
-.wl-ex-line .f i { font-style: italic; font-weight: 700; }
+.wl-ex-line .f i { font-style: italic; font-weight: 600; }
 .wl-ex-line .n { font-size: 12.5px; line-height: 1.35; color: var(--ink-3); }
 .wl-ex-line.res .f { padding: 1px 8px; border-radius: 8px; background: #fff6d6; box-shadow: inset 0 0 0 1.5px #f0c84a; }
 .wl-ex-hint { position: absolute; inset: 0 0 auto; padding: 8px 12px; border-radius: 10px; background: var(--soft); font-size: 14px; line-height: 1.5; color: var(--ink-2); }
@@ -138,10 +138,10 @@ body.bg-transparent { background: transparent; }
 .wl-ex .fr > span { padding: 0 3px; }
 .wl-ex .fr > span:first-child { border-bottom: 1.5px solid currentColor; }
 .wl-ex-foot { display: flex; align-items: center; gap: 8px; }
-.wl-ex-run { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 18px 0 12px; border: 0; border-radius: 999px; background: var(--c-T); color: #fff; font-size: 16px; font-weight: 700; white-space: nowrap; box-shadow: 0 2px 6px rgba(194, 65, 12, 0.3); }
+.wl-ex-run { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 18px 0 12px; border: 0; border-radius: 999px; background: var(--c-T); color: #fff; font-size: 16px; font-weight: 600; white-space: nowrap; box-shadow: 0 2px 6px rgba(194, 65, 12, 0.3); }
 .wl-ex-run svg { width: 22px; height: 22px; stroke-width: 2; }
 .wl-ex-run:focus-visible { outline: 2px solid var(--c-T); outline-offset: 2px; }
-.wl-ex-nav { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-width: 7em; min-height: 44px; padding: 0 14px; border: 1.5px solid var(--accent); border-radius: 999px; background: var(--panel); color: var(--accent); font-size: 15px; font-weight: 700; }
+.wl-ex-nav { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-width: 7em; min-height: 44px; padding: 0 14px; border: 1.5px solid var(--accent); border-radius: 999px; background: var(--panel); color: var(--accent); font-size: 15px; font-weight: 600; }
 .wl-ex-nav.primary { background: var(--accent); color: #fff; }
 .wl-ex-nav:disabled { opacity: 0.4; cursor: default; }
 .wl-ex-nav svg { width: 17px; height: 17px; stroke-width: 2.6; }

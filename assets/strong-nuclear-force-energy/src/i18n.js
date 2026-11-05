@@ -48,9 +48,9 @@ export const STRINGS = {
     // the pull scene: one line for each thing that can happen
     // energy
     say_split_go: 'একটি নিউট্রন লাগলে বড় নিউক্লিয়াস (যেমন ইউরেনিয়াম) দুই ভাগ হয়, ছিটকে বেরোয় তিনটি নিউট্রন।',
-    say_split_done: 'প্রচণ্ড বলে আটকে থাকায় নিউক্লিয়াসে অনেক শক্তি জমা থাকে; বড় নিউক্লিয়াস ভাঙলে তা বেরিয়ে আসে, যেমন রূপপুর পারমাণবিক বিদ্যুৎকেন্দ্রে।',
-    say_join_go: 'দুটি ছোট নিউক্লিয়াস তড়িৎ বিকর্ষণ ঠেলে ছুটে আসছে; {p}-এর মধ্যে এলেই সবল নিউক্লীয় বল এদের ধরে ফেলবে।',
-    say_join_done: 'ছোট নিউক্লিয়াস জোড়া দিলেও অনেক শক্তি বের হয়: সূর্যে হাইড্রোজেনের নিউক্লিয়াস জোড়া লেগে হিলিয়াম হয়, সেই শক্তিই সূর্যের আলো ও তাপ।',
+    say_split_done: 'প্রচণ্ড বলে আটকে থাকায় নিউক্লিয়াসে অনেক শক্তি জমা থাকে। বড় নিউক্লিয়াস ভাঙলে তা বেরিয়ে আসে, যেমন রূপপুর পারমাণবিক বিদ্যুৎকেন্দ্রে।',
+    say_join_go: 'দুটি ছোট নিউক্লিয়াস তড়িৎ বিকর্ষণ ঠেলে ছুটে আসছে। {p}-এর মধ্যে এলেই সবল নিউক্লীয় বল এদের ধরে ফেলবে।',
+    say_join_done: 'ছোট নিউক্লিয়াস জোড়া দিলেও অনেক শক্তি বের হয়। সূর্যে হাইড্রোজেনের নিউক্লিয়াস জোড়া লেগে হিলিয়াম হয়, সেই শক্তিই সূর্যের আলো ও তাপ।',
 
     // the four fundamental forces, weakest first, and the book's three kinds under them
     forces_title: 'চার মৌলিক বল (দুর্বল → শক্তিশালী)',
@@ -86,7 +86,7 @@ export const STRINGS = {
     opt_who_ep: 'ইলেকট্রন ও প্রোটনের মধ্যে',
     opt_who_p: 'শুধু প্রোটনদের মধ্যে',
     opt_who_n: 'শুধু নিউট্রনদের মধ্যে',
-    why_who: '<b>প্রোটন ও নিউট্রন সবার মধ্যে</b>: নিউক্লিয়াসের প্রোটন এবং নিউট্রনের নিজেদের মাঝে এই বল কাজ করে।',
+    why_who: 'এই বল কাজ করে নিউক্লিয়াসের <b>প্রোটন ও নিউট্রনের</b> নিজেদের মাঝে।',
     why_who_ep: 'ইলেকট্রন থাকে নিউক্লিয়াসের বাইরে, অনেক দূরে।',
     why_who_p: 'নিউট্রনও এই বলে টানে, টান খায়।',
     why_who_n: 'প্রোটনও এই বলে টানে, শুধু নিউট্রন নয়।',
@@ -111,7 +111,7 @@ export const STRINGS = {
     opt_nuclear: 'নিউক্লিয়ার বল',
     opt_grav: 'মহাকর্ষ বল',
     opt_none: 'কোনোটিতেই নয়',
-    why_group: '<b>ইলেকট্রো উইক</b>: তড়িৎ চৌম্বক আর দুর্বল নিউক্লীয় বলকে একই সূত্র দিয়ে ব্যাখ্যা করা গেছে।',
+    why_group: 'তড়িৎ চৌম্বক আর দুর্বল নিউক্লীয় বলকে একই সূত্র দিয়ে ব্যাখ্যা করা গেছে। একে বলে <b>ইলেকট্রো উইক</b> বল।',
     why_group_nuclear: 'নামে ‘নিউক্লীয়’ থাকলেও এটি ইলেকট্রো উইকের অংশ।',
     why_group_grav: 'মহাকর্ষকে এখনো অন্যগুলোর সাথে এক সূত্রে গাঁথা যায়নি।',
     why_group_none: 'এটি বাদ পড়েনি, তড়িৎ চৌম্বক বলের সাথে মিলে গেছে।',
@@ -159,10 +159,10 @@ export const STRINGS = {
 
     say_split_go: 'A neutron hits a big nucleus (such as uranium): it splits in two and three neutrons fly out.',
     say_split_done:
-      'Held by a huge force, a nucleus stores a lot of energy; when a big nucleus splits, it comes out, as in the Rooppur nuclear power plant.',
-    say_join_go: 'Two small nuclei rush together, against their electric repulsion; once they are within {p}, the strong nuclear force grabs them.',
+      'Held by a huge force, a nucleus stores a lot of energy. When a big nucleus splits, that energy comes out, as in the Rooppur nuclear power plant.',
+    say_join_go: 'Two small nuclei rush together against their electric repulsion. Once they are within {p}, the strong nuclear force grabs them.',
     say_join_done:
-      'Joining small nuclei also gives a lot of energy: in the Sun, hydrogen nuclei join into helium, and that energy is the Sun’s light and heat.',
+      'Joining small nuclei also gives a lot of energy. In the Sun, hydrogen nuclei join into helium, and that energy is the Sun’s light and heat.',
 
     forces_title: 'Four fundamental forces (weak → strong)',
     f_grav: 'Gravity',
@@ -196,7 +196,7 @@ export const STRINGS = {
     opt_who_ep: 'Electrons and protons',
     opt_who_p: 'Only between protons',
     opt_who_n: 'Only between neutrons',
-    why_who: '<b>All protons and neutrons</b>: it acts between the protons and neutrons of the nucleus.',
+    why_who: 'It acts between the <b>protons and neutrons</b> of the nucleus.',
     why_who_ep: 'Electrons are far outside the nucleus.',
     why_who_p: 'Neutrons pull and are pulled too.',
     why_who_n: 'Protons pull with it too.',
@@ -221,7 +221,7 @@ export const STRINGS = {
     opt_nuclear: 'Nuclear force',
     opt_grav: 'Gravitational force',
     opt_none: 'None of them',
-    why_group: '<b>Electro-weak</b>: one theory explains the electromagnetic and weak nuclear forces.',
+    why_group: 'One theory explains the electromagnetic and weak nuclear forces. Together they are the <b>electro-weak</b> force.',
     why_group_nuclear: 'The name says nuclear, but it is electro-weak.',
     why_group_grav: 'Gravity has not been joined with the others yet.',
     why_group_none: 'It joined with the electromagnetic force.',

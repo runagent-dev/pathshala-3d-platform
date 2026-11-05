@@ -19,7 +19,7 @@ body.bg-transparent { background: transparent; }
 /* the note about time, after the velocities in the result line */
 .sj .pvc-outcome small { white-space: nowrap; }
 .sj .pvc-anno { font-size: 14px; }
-.sj .pvc-anno-callout { padding: 1px 7px; font-weight: 700; }
+.sj .pvc-anno-callout { padding: 1px 7px; font-weight: 600; }
 .sj .pvc-anno-part { color: var(--ink-2); font-size: 13px; padding: 1px 6px; }
 /* in the test the locked hint sits at the top of the view, clear of the road */
 .sj[data-mode='quiz'] .pvc-stage[data-ui='simple'] .pvc-hint { top: 54px; bottom: auto; }
@@ -38,7 +38,7 @@ body.bg-transparent { background: transparent; }
   .sj .pvc-examples .pvc-ex-res { line-height: 1.25; }
   .sj .pvc-act-row { min-height: 48px; }
   .sj .pvc-outcome { --pvc-outcome-lines: 2; font-size: 15px; line-height: 1.6; }
-  .sj .pvc-rule { --pvc-rule-lines: 3; font-size: 14px; line-height: 1.42; }
+  .sj .pvc-rule { --pvc-rule-lines: 3; font-size: 14px; line-height: 1.5; }
   .sj .pvc-q-ask { gap: 6px; }
   .sj .pvc-q-head { min-height: 34px; }
   .sj .pvc-q-head .pvc-btn { height: 34px; }

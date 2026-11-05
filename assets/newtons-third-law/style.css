@@ -37,32 +37,32 @@ body.bg-transparent { background: transparent; }
  .nt .pvc-act-row .pvc-quiet > span { display: inline; }
 }
 .nt .pvc-outcome { font-size: 14px; line-height: 1.4; min-height: 2.8em; }
-.nt .pvc-rule { font-size: 13px; line-height: 1.4; min-height: 2.8em; }
+.nt .pvc-rule { font-size: 13.5px; line-height: 1.5; min-height: 3em; }
 
 /* the force-pair box: the same height for both examples and every step of the apple's lesson */
 .nt-equations { box-sizing: border-box; padding: 4px 9px; border-left: 3px solid var(--c-force); background: #fbf2e7; color: #5a3005; }
 .nt[data-example='apple'] .nt-equations { border-left-color: var(--c-grav); background: #f3effc; color: #3d2777; }
-.nt-progress { display: none; gap: 10px; list-style: none; padding: 0; margin: 0 0 3px; height: 24px; align-items: center; font-size: 12px; color: #5f6f80; }
+.nt-progress { display: none; gap: 10px; list-style: none; padding: 0; margin: 0 0 3px; height: 24px; align-items: center; font-size: 12.5px; color: #3f4f60; }
 .nt-progress li { white-space: nowrap; }
 .nt-progress b { display: inline-grid; place-items: center; width: 20px; height: 20px; border: 1px solid #9aacbc; border-radius: 50%; font-size: 12px; }
-.nt-progress [aria-current] { color: #5531a0; font-weight: 700; }
+.nt-progress [aria-current] { color: #5531a0; font-weight: 600; }
 .nt-progress [aria-current] b { background: #6741b5; color: #fff; border-color: #6741b5; }
 .nt .nt-lesson-content { --row: 24px; --cap: 1; display: flex; flex-direction: column; height: calc(2 * var(--row) + var(--cap) * 1.4 * 11px + 3px); white-space: normal; }
 .nt-pull-row { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; gap: 6px; align-items: center; height: var(--row); font-size: 13px; white-space: nowrap; }
 .nt-pull-row > span:nth-child(2) { overflow: hidden; text-overflow: ellipsis; }
 .nt-pull-row b { font-variant-numeric: tabular-nums; }
-.nt-pull-key { font-weight: 800; font-size: 17px; line-height: 1.05; text-align: center; color: var(--c-force); border-bottom: 2.5px solid currentColor; }
+.nt-pull-key { font-weight: 600; font-size: 17px; line-height: 1.05; text-align: center; color: var(--c-force); border-bottom: 2.5px solid currentColor; }
 .nt[data-example='apple'] .nt-pull-key { color: var(--c-grav); }
 .nt-pull-key.dash { border-bottom-style: dashed; }
-.nt-caption { margin: 3px 0 0; font-size: 11px; line-height: 1.4; color: #55606c; }
+.nt-caption { margin: 3px 0 0; font-size: 12px; line-height: 1.4; color: #3f4a56; }
 .nt-reasons { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .nt-reasons button { min-height: 38px; padding: 2px 6px; border: 1px solid #6d65a5; border-radius: 6px; background: #fff; color: #49376c; font: inherit; font-size: 12.5px; line-height: 1.25; }
 .nt-reasons button:hover { background: #f7f4ff; }
 .nt-reasons button[aria-pressed='true'] { background: #fff1dc; border-color: #b8791b; }
-.nt-reason-feedback { margin: 4px 0 0; min-height: 1.4em; font-size: 12px; line-height: 1.4; color: #8e4a0f; }
+.nt-reason-feedback { margin: 4px 0 0; min-height: 1.4em; font-size: 12.5px; line-height: 1.45; color: #8e4a0f; }
 .nt-simple-row { display: grid; grid-template-columns: 62px minmax(0, 1fr); gap: 6px; align-items: center; height: var(--row); font-size: 13px; }
 .nt-simple-row > span { color: #5a4f78; }
-.nt-simple-row strong { font-weight: 700; }
+.nt-simple-row strong { font-weight: 600; }
 
 /* the test: answers in words */
 .nt .pvc-opt { font-size: 13px; line-height: 1.25; white-space: normal; }
@@ -126,7 +126,7 @@ body.bg-transparent { background: transparent; }
 .nt-dialog-maths > div { white-space: nowrap; }
 .nt-dialog-maths small { display: block; font-size: 12px; line-height: 1.6; color: #526b79; }
 .nt-dialog-maths .nt-magnitude { display: flex; align-items: center; justify-content: flex-start; flex-wrap: wrap; gap: 0 18px; margin: 8px 0; }
-.nt-pair { font-weight: 700; color: #82450a; }
+.nt-pair { font-weight: 600; color: #82450a; }
 .nt[data-example='apple'] .nt-pair { color: #6741b5; }
 .nt-earth-acc { color: #155f64; }
 .nt-frac { display: inline-flex; vertical-align: middle; flex-direction: column; align-items: center; margin: 0 3px; font-size: 0.9em; line-height: 1.15; }

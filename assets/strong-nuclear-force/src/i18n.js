@@ -36,10 +36,10 @@ export const STRINGS = {
 
     // the pull scene: one line for each thing that can happen
     say_idle: 'সবল নিউক্লীয় বল সৃষ্টিজগতের সবচেয়ে শক্তিশালী বল, কিন্তু কাজ করে খুবই অল্প দূরত্বে: প্রায় {p} পর্যন্ত (কমলা দাগ)। প্রোটনটি টেনে বের করো।',
-    say_in: 'পাশের প্রোটন ও নিউট্রনগুলো সবল নিউক্লীয় বল দিয়ে একে প্রচণ্ড জোরে ভেতরে টানছে; তড়িৎ বিকর্ষণ তার কাছে খুব ছোট। ছেড়ে দিলে ফিরে যাবে।',
-    say_edge: 'কমলা দাগের কাছে, প্রায় {p} দূরে, সবল নিউক্লীয় বল দ্রুত কমে যাচ্ছে, তবু এখনো তড়িৎ বিকর্ষণের চেয়ে বড়। ছেড়ে দিলে ফিরে যাবে।',
-    say_out: 'কমলা দাগের বাইরে (প্রায় {p}-এর বেশি দূরে) সবল নিউক্লীয় বল কাজ করে না; শুধু তড়িৎ বিকর্ষণ ঠেলছে। ছেড়ে দিলে দূরে চলে যাবে।',
-    say_back: 'ফিরে এসে আবার আটকে গেল: অল্প দূরত্বে সবল নিউক্লীয় বল তড়িৎ চৌম্বক বল থেকেও একশ গুণ বেশি শক্তিশালী।',
+    say_in: 'পাশের প্রোটন ও নিউট্রনগুলো সবল নিউক্লীয় বল দিয়ে একে প্রচণ্ড জোরে ভেতরে টানছে। তড়িৎ বিকর্ষণ তার কাছে খুব ছোট। ছেড়ে দিলে ফিরে যাবে।',
+    say_edge: 'কমলা দাগের কাছে, প্রায় {p} দূরে, সবল নিউক্লীয় বল দ্রুত কমে যাচ্ছে। তবু এখনো তা তড়িৎ বিকর্ষণের চেয়ে বড়। ছেড়ে দিলে ফিরে যাবে।',
+    say_out: 'কমলা দাগের বাইরে (প্রায় {p}-এর বেশি দূরে) সবল নিউক্লীয় বল কাজ করে না। শুধু তড়িৎ বিকর্ষণ ঠেলছে। ছেড়ে দিলে দূরে চলে যাবে।',
+    say_back: 'ফিরে এসে আবার আটকে গেল। অল্প দূরত্বে সবল নিউক্লীয় বল তড়িৎ চৌম্বক বল থেকেও একশ গুণ বেশি শক্তিশালী।',
     say_away: 'পাল্লার বাইরে সবল নিউক্লীয় বল নেই, তাই অন্য প্রোটনগুলোর তড়িৎ বিকর্ষণ একে দূরে ঠেলে দিল।',
     // energy
 
@@ -78,7 +78,7 @@ export const STRINGS = {
     opt_who_ep: 'ইলেকট্রন ও প্রোটনের মধ্যে',
     opt_who_p: 'শুধু প্রোটনদের মধ্যে',
     opt_who_n: 'শুধু নিউট্রনদের মধ্যে',
-    why_who: '<b>প্রোটন ও নিউট্রন সবার মধ্যে</b>: নিউক্লিয়াসের প্রোটন এবং নিউট্রনের নিজেদের মাঝে এই বল কাজ করে।',
+    why_who: 'এই বল কাজ করে নিউক্লিয়াসের <b>প্রোটন ও নিউট্রনের</b> নিজেদের মাঝে।',
     why_who_ep: 'ইলেকট্রন থাকে নিউক্লিয়াসের বাইরে, অনেক দূরে।',
     why_who_p: 'নিউট্রনও এই বলে টানে, টান খায়।',
     why_who_n: 'প্রোটনও এই বলে টানে, শুধু নিউট্রন নয়।',
@@ -108,7 +108,7 @@ export const STRINGS = {
     opt_nuclear: 'নিউক্লিয়ার বল',
     opt_grav: 'মহাকর্ষ বল',
     opt_none: 'কোনোটিতেই নয়',
-    why_group: '<b>ইলেকট্রো উইক</b>: তড়িৎ চৌম্বক আর দুর্বল নিউক্লীয় বলকে একই সূত্র দিয়ে ব্যাখ্যা করা গেছে।',
+    why_group: 'তড়িৎ চৌম্বক আর দুর্বল নিউক্লীয় বলকে একই সূত্র দিয়ে ব্যাখ্যা করা গেছে। একে বলে <b>ইলেকট্রো উইক</b> বল।',
     why_group_nuclear: 'নামে ‘নিউক্লীয়’ থাকলেও এটি ইলেকট্রো উইকের অংশ।',
     why_group_grav: 'মহাকর্ষকে এখনো অন্যগুলোর সাথে এক সূত্রে গাঁথা যায়নি।',
     why_group_none: 'এটি বাদ পড়েনি, তড়িৎ চৌম্বক বলের সাথে মিলে গেছে।',
@@ -146,12 +146,12 @@ export const STRINGS = {
     say_idle:
       'The strong nuclear force is the strongest force in nature, but it acts only over a very short distance: about {p} (the orange line). Pull the proton out.',
     say_in:
-      'Its neighbouring protons and neutrons pull it in very hard with the strong nuclear force; the electric repulsion is tiny next to it. Let go: it comes back.',
+      'Its neighbouring protons and neutrons pull it in very hard with the strong nuclear force. The electric repulsion is tiny next to it. Let go and it comes back.',
     say_edge:
-      'Near the orange line, about {p} out, the strong nuclear force falls fast, but it is still bigger than the electric repulsion. Let go: it comes back.',
+      'Near the orange line, about {p} out, the strong nuclear force falls fast. It is still bigger than the electric repulsion. Let go and it comes back.',
     say_out:
-      'Outside the orange line (farther than about {p}) the strong nuclear force does not act; only the electric repulsion pushes. Let go: it flies away.',
-    say_back: 'It came back and stuck: at short distances the strong nuclear force is a hundred times stronger even than the electromagnetic force.',
+      'Outside the orange line (farther than about {p}) the strong nuclear force does not act. Only the electric repulsion pushes. Let go and it flies away.',
+    say_back: 'It came back and stuck. At short distances the strong nuclear force is a hundred times stronger even than the electromagnetic force.',
     say_away: 'Out of range there is no strong nuclear force, so the electric repulsion of the other protons pushed it away.',
 
     forces_title: 'Four fundamental forces (weak → strong)',
@@ -187,7 +187,7 @@ export const STRINGS = {
     opt_who_ep: 'Electrons and protons',
     opt_who_p: 'Only between protons',
     opt_who_n: 'Only between neutrons',
-    why_who: '<b>All protons and neutrons</b>: it acts between the protons and neutrons of the nucleus.',
+    why_who: 'It acts between the <b>protons and neutrons</b> of the nucleus.',
     why_who_ep: 'Electrons are far outside the nucleus.',
     why_who_p: 'Neutrons pull and are pulled too.',
     why_who_n: 'Protons pull with it too.',
@@ -217,7 +217,7 @@ export const STRINGS = {
     opt_nuclear: 'Nuclear force',
     opt_grav: 'Gravitational force',
     opt_none: 'None of them',
-    why_group: '<b>Electro-weak</b>: one theory explains the electromagnetic and weak nuclear forces.',
+    why_group: 'One theory explains the electromagnetic and weak nuclear forces. Together they are the <b>electro-weak</b> force.',
     why_group_nuclear: 'The name says nuclear, but it is electro-weak.',
     why_group_grav: 'Gravity has not been joined with the others yet.',
     why_group_none: 'It joined with the electromagnetic force.',

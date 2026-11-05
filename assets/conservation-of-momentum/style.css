@@ -21,7 +21,7 @@ body.bg-transparent { background: transparent; }
 .cm .pvc-anno { padding: 2px 7px; font-size: 13.5px; line-height: 1.3; }
 .cm .pvc-anno .tm, .cm .pvc-anno .tv { display: block; white-space: nowrap; }
 .cm .pvc-anno .tm { color: var(--ink); font-weight: 600; }
-.cm .pvc-anno .tv { color: var(--c-v); font-weight: 700; }
+.cm .pvc-anno .tv { color: var(--c-v); font-weight: 600; }
 
 /* the examples: a little picture of the two balls and their arrows, and a name */
 .cm .pvc-learn { gap: 8px; }
@@ -35,29 +35,29 @@ body.bg-transparent { background: transparent; }
 /* the book's two equations under the names of their laws: before | after, the numbers over their symbols */
 .cm-eqs { display: grid; grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr); column-gap: 3px; row-gap: 2px; align-items: start; padding: 4px 8px 5px; border-radius: 8px; background: var(--soft); }
 .cm-head, .cm-row { display: contents; }
-.cm-head span { font-size: 12px; font-weight: 600; line-height: 1.3; color: var(--ink-3); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cm-head span { font-size: 12.5px; font-weight: 600; line-height: 1.3; color: var(--ink-2); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cm-head .b { grid-column: 2 / 5; }
 .cm-head .a { grid-column: 6 / 9; }
-.cm-cap { grid-column: 1 / -1; margin: 2px 0 0; font-size: 11.5px; font-weight: 700; line-height: 1.3; }
+.cm-cap { grid-column: 1 / -1; margin: 4px 0 0; font-size: 12.5px; font-weight: 600; line-height: 1.3; }
 .cm-cap.p { color: var(--c-p-text); }
 .cm-cap.k { color: var(--c-k-small); }
 .cm-name { display: flex; flex-direction: column; justify-content: center; padding-right: 6px; min-height: 100%; }
-.cm-name b { font-size: 14px; font-weight: 700; line-height: 1.3; color: var(--c); white-space: nowrap; }
-.cm-name small { font-size: 11.5px; line-height: 1.2; color: var(--ink-3); white-space: nowrap; }
+.cm-name b { font-size: 14px; font-weight: 600; line-height: 1.3; color: var(--c); white-space: nowrap; }
+.cm-name small { font-size: 12.5px; line-height: 1.25; color: var(--ink-2); white-space: nowrap; }
 .cm-term { display: flex; flex-direction: column; align-items: center; min-width: 0; }
-.cm-term b { font-size: 18px; font-weight: 700; line-height: 1.3; color: var(--c); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.cm-term small { font-size: 12px; line-height: 1.25; color: var(--ink-3); white-space: nowrap; }
+.cm-term b { font-size: 18px; font-weight: 600; line-height: 1.3; color: var(--c); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cm-term small { font-size: 12.5px; line-height: 1.3; color: var(--ink-2); white-space: nowrap; }
 .cm-row i { font-style: normal; font-size: 18px; line-height: 1.3; color: var(--ink-3); text-align: center; }
-.cm-row i.eq { color: var(--ink-2); font-weight: 700; padding: 0 2px; }
+.cm-row i.eq { color: var(--ink-2); font-weight: 600; padding: 0 2px; }
 .cm-row.p { --c: var(--c-p-text); }
 .cm-row.k { --c: var(--c-k-text); }
 .cm-eqs:not(.done) .cm-term:nth-of-type(n + 3) b { color: var(--ink-3); }
-.cm-assume { margin: -4px 0 0; padding: 0 8px; font-size: 12px; line-height: 1.35; color: var(--c-k-small); }
+.cm-assume { margin: -2px 0 0; padding: 0 8px; font-size: 13px; line-height: 1.5; color: var(--c-k-small); }
 
 /* what is happening, in the book's words (or a hint for a moment): room for the longest, so the 3D view never
    changes size */
-.cm-say { margin: 0; min-height: calc(3 * 1.45em); font-size: 14px; line-height: 1.45; color: var(--ink-2); }
-.cm-say b { color: var(--ink); font-weight: 700; }
+.cm-say { margin: 0; min-height: calc(3 * 1.55em); font-size: 14px; line-height: 1.55; color: var(--ink-2); }
+.cm-say b { color: var(--ink); font-weight: 600; }
 .cm-say.hint { color: #7a4a00; font-weight: 600; }
 
 /* the player: play / pause and the time of the run (the collision in yellow) */
@@ -80,7 +80,7 @@ body.bg-transparent { background: transparent; }
 .cm .pvc-opt { padding: 0 4px; font-size: 18px; white-space: nowrap; }
 .cm .pvc-opt small { font-size: 11px; }
 .cm-opt { display: block; white-space: normal; font-size: 14px; line-height: 1.2; text-align: center; }
-.cm-pair { font-size: 16px; font-weight: 700; white-space: nowrap; }
+.cm-pair { font-size: 16px; font-weight: 600; white-space: nowrap; }
 .cm .pvc-q-text { font-size: 16px; }
 .cm .pvc-q-feedback { font-size: 14px; }
 

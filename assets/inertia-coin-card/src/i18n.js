@@ -75,7 +75,7 @@ export const STRINGS = {
     o_cs_coin: 'কয়েন; কার্ড প্রায় স্থির থাকে',
     o_cs_same: 'দুটোই একই দ্রুতিতে চলে',
     o_cs_none: 'কোনোটাই চলে না',
-    w_coin_speed: '<b>কার্ড</b>: টোকা লাগে কার্ডে, তাই কার্ড হঠাৎ জোরে ছোটে; কয়েন স্থির থাকতে চায়, ঘর্ষণ এত অল্প সময়ে তাকে প্রায় কিছুই দিতে পারে না (তীর দুটি দেখো)।',
+    w_coin_speed: 'টোকা লাগে <b>কার্ডে</b>, তাই কার্ড হঠাৎ জোরে ছোটে। কয়েন স্থির থাকতে চায়। এত অল্প সময়ে ঘর্ষণ তাকে প্রায় কিছুই দিতে পারে না (তীর দুটি দেখো)।',
     m_coin_speed_o_cs_coin: 'আঙুল কয়েনে লাগে না, কার্ডে লাগে।',
     m_coin_speed_o_cs_same: 'কয়েন কার্ডের সাথে যায় না: সে স্থির থাকতে চায়।',
     m_coin_speed_o_cs_none: 'টোকা লাগলে কার্ড চলবেই।',
@@ -154,7 +154,7 @@ export const STRINGS = {
     o_cs_same: 'Both move at the same speed',
     o_cs_none: 'Neither moves',
     w_coin_speed:
-      '<b>The card</b>: the flick hits the card, so it shoots off; the coin wants to stay at rest, and in so short a time friction gives it almost nothing (look at the two arrows).',
+      'The flick hits <b>the card</b>, so it shoots off. The coin wants to stay at rest. In so short a time, friction gives it almost nothing (look at the two arrows).',
     m_coin_speed_o_cs_coin: 'The finger hits the card, not the coin.',
     m_coin_speed_o_cs_same: 'The coin does not go with the card: it wants to stay at rest.',
     m_coin_speed_o_cs_none: 'A flick does move the card.',

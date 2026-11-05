@@ -14,7 +14,7 @@ body.bg-transparent { background: transparent; }
 .ns-outrow { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; }
 .ns-outrow .pvc-outcome { align-self: stretch; min-width: 0; }
 .ns-clock { flex: none; display: flex; align-items: baseline; gap: 5px; padding: 0 5px; border: 1px solid var(--line-2); border-radius: 5px; background: var(--panel); color: var(--ink-2); font-size: 11.5px; line-height: 1.25; white-space: nowrap; }
-.ns-clock b { font-size: 14px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+.ns-clock b { font-size: 14px; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
 .ns-clock.held { border-color: #c9a400; background: #fff6c4; }
 
 /* labels on the scene */
@@ -32,9 +32,9 @@ body.bg-transparent { background: transparent; }
 .ns .pvc-act-num { width: 30px; height: 30px; font-size: 17px; }
 .ns .pvc-outcome { font-size: 14px; line-height: 1.45; height: 1.45em; min-height: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ns .pvc-outcome b { font-size: 1.3em; }
-.ns .pvc-rule { font-size: 13px; line-height: 1.4; min-height: 2.8em; }
+.ns .pvc-rule { font-size: 13.5px; line-height: 1.5; min-height: 3em; }
 .ns .pvc-rule .ns-ladder { color: var(--c-vel); font-weight: 600; white-space: nowrap; }
-.ns .pvc-rule .ns-aside { font-size: 0.92em; color: var(--ink-3); white-space: nowrap; }
+.ns .pvc-rule .ns-aside { font-size: 0.92em; color: var(--ink-2); white-space: nowrap; }
 
 /* the formula box: its head (what the scene shows, and F = ma, which opens the working), then the graph and the bars */
 .ns-formula { border-left: 3px solid #238f8d; background: #eff8f6; padding: 4px 8px 5px; color: #204f5f; font-size: 13px; line-height: 1.4; box-sizing: border-box; }
@@ -61,14 +61,14 @@ body.bg-transparent { background: transparent; }
 .ns-graph-svg .g-dot { stroke: #fff; stroke-width: 1.5; }
 .ns-graph-svg .g-run { stroke: #6f93a8; stroke-width: 1.2; stroke-dasharray: 3 2; fill: none; }
 .ns-graph-svg .g-rise { stroke-width: 2.6; fill: none; }
-.ns-graph-svg .g-step, .ns-graph-svg .g-slope { font-weight: 700; }
+.ns-graph-svg .g-step, .ns-graph-svg .g-slope { font-weight: 600; }
 .ns-graph-svg .g-ring { fill: none; stroke-width: 2; }
 .ns-graph-svg .g-hint { fill: #58717d; font-style: italic; }
 
 /* the bars: name and value over a bar, how the value comes (the pieces) under it */
 .ns-formula-values { display: flex; flex-direction: column; justify-content: center; gap: 3px; min-width: 0; }
 .ns-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 6px; row-gap: 1px; align-items: center; line-height: 1.2; white-space: nowrap; }
-.ns-row-name { font-size: 12px; }
+.ns-row-name { font-size: 12.5px; }
 .ns-row-val { font-size: 12.5px; text-align: right; }
 .ns-row .ns-bar { position: relative; height: 6px; border-radius: 4px; background: #d7e8e5; overflow: hidden; }
 .ns-row .ns-bar i { position: absolute; top: 0; bottom: 0; left: 0; }
@@ -79,7 +79,7 @@ body.bg-transparent { background: transparent; }
 .ns-row-m .ns-fill { background: #6b7680; }
 .ns-row-a .ns-fill { background: #0c8599; }
 .ns-row-a .ns-row-name, .ns-row-a .ns-row-val { color: #087d72; }
-.ns-formula .ns-row small { display: inline; font-size: 10px; color: #526d79; white-space: nowrap; text-align: right; }
+.ns-formula .ns-row small { display: inline; font-size: 11px; color: #3f5864; white-space: nowrap; text-align: right; }
 
 /* the working, in its own dialog */
 .ns-math-dialog { box-sizing: border-box; width: min(530px, calc(100vw - 24px)); max-height: calc(100vh - 20px); border: 1px solid #9bbfc3; border-radius: 8px; padding: 15px; color: #214958; background: #fffdf5; font-size: 14px; line-height: 1.6; }
@@ -92,7 +92,7 @@ body.bg-transparent { background: transparent; }
 
 /* the test: answers in words */
 .ns .pvc-q-text { font-size: 14px; }
-.ns .pvc-q-feedback { font-size: 12.5px; }
+.ns .pvc-q-feedback { font-size: 13px; line-height: 1.5; }
 .ns .pvc-opt { font-size: 12.5px; line-height: 1.25; }
 .ns-opt { display: block; white-space: normal; }
 
