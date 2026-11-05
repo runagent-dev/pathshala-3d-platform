@@ -1,0 +1,77 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "colour-of-objects",
+  "title": "Why a rose looks red (শোষণ: বস্তুর রং)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 217,
+  "topic": "8.2.1",
+  "placement": "Book page 217, the part শোষণ under topic 8.2.1: next to চিত্র ৮.০৬ (a red rose with green leaves in white light).",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "cm",
+  "description": "Interactive 3D figure for absorption (শোষণ) and the colour of objects, book page 217, under topic 8.2.1, next to চিত্র ৮.০৬. The book's red rose with its green leaves stands in a dim room under one lamp. White light comes in as a clean band of the spectrum colours; every colour except the object's own ends at the surface, and only red leaves the petal and only green leaves the leaf, toward an eye. Then the book's surprise: a filter on the lamp gives pure red light, the leaf has nothing to reflect and looks black; in green light the rose looks black. The 3D colours are light times reflectance, channel by channel. Five test questions. Offline, Bangla and English.",
+  "tags": ["light", "colour", "absorption", "reflection", "white-light", "spectrum", "rose", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "light",
+      "label": "Light from the lamp",
+      "type": "select",
+      "options": [["white", "white"], ["red", "red"], ["green", "green"], ["blue", "blue"]],
+      "default": "white"
+    },
+    { "name": "rays", "label": "Draw the band and the arrows", "type": "boolean", "default": "0" },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on the part pulses at first", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "light": "red", "rays": true, "animate": false } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "view", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": { "params": { "coach": "0", "light": "white", "rays": "1" } },
+    "glb": [{ "name": "default" }],
+    "video": {
+      "kind": "script",
+      "seconds": 18,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 1, "command": "set", "payload": { "light": "white" } },
+        { "at": 7, "command": "set", "payload": { "light": "red" } },
+        { "at": 12, "command": "set", "payload": { "light": "green" } }
+      ]
+    }
+  }
+}
