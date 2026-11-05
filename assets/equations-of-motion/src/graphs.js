@@ -1,6 +1,6 @@
 // The two live graphs in the right column: s against t (a parabola, violet like the car's s) and v against t (a straight
-// line that runs from the blue of u to the green of at, because v = u + at), on a very light tinted plot with soft
-// blue-grey axes and grid, their names (s or v, t) and a few small numbers. The whole planned curve shows faint and
+// line that runs from the blue of u to the green of at, because v = u + at), on a dark glass card with light axes
+// and grid, their names (s or v, t) and a few small numbers. The whole planned curve shows faint and
 // solid, the part already run bold, and a dot in the curve's colour at the moment shown. Each SVG is drawn at its own
 // size in pixels (redrawn when its box changes), so the text keeps its size on every frame. Fixed scales, so a change
 // of u or a shows as a change of the curve: s from −7 m to 10 m (the number line), v from −12 m/s to 12 m/s (the car

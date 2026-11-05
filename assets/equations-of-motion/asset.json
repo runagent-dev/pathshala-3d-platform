@@ -5,7 +5,7 @@
   "title": "Equations of motion (গতির সমীকরণ)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "book": "physics-9-10",
   "page": 45,
   "topic": "2.7",
@@ -13,7 +13,7 @@
   "order": 1,
   "maintainers": ["RadeenXALNW"],
   "units": "m",
-  "description": "The equations of motion (গতির সমীকরণ, pages 45–46, 2.7) in the book's own form, in the one frame the owner chose (the layout of the reference \"Uniform Acceleration in One Dimension\"), on a soft light-blue background: at the top the formula s = ut + ½at² with one short sentence under it (s, the অতিক্রান্ত দূরত্ব, is the sum of the two parts ut and ½at²; or the moment the car turns back, that s is negative, or that it reached an end of the axis); on the left the buttons চালাও (Run), থামাও (Pause), আবার শুরু (Reset) and the two 0.1 s time steps; in the middle three long sliders for the আদি বেগ u (blue, −5…5 m/s), the ত্বরণ a (green, −3…3 ms⁻²) and the সময় t (grey, 0…6 s), steps of 0.1, each value written over its knob in its colour; on the right the s–t graph (a violet parabola) and the v–t graph (a straight line from the blue of u to the green of a) on very light tinted plots, the run so far bold and the rest faint, the moment marked, each with its live equation under it, s = (½a)t² + (u)t and v = (a)t + (u); and along the bottom, across the full width, a 3D strip seen from the side: a blue sedan (wheels that turn with the motion) on a dark asphalt road whose front slope carries the number line from −7 m to 10 m (bold numbers every metre), the car always starting at 0, a dot at s, and under the axis the two parts drawn tip to tail as thick outlined arrows (ut blue from 0, ½at² green ending at s) with a dashed drop line from the car, so s is their sum. চালাও runs the time in real seconds; the car stops at an end of the axis. Portrait frames stack the same parts. Test (in the place of the sliders, from a small tab in the corner): 5 tap questions (s after t, v = u + at, a read from the s equation, when v = 0 from the v equation, the part ½at² read off the picture), wrong choices from real mistakes, each worked answer naming the mistake and running the car to that moment. Phone-first, Bangla. GLB: the road with its number line and the two arrows, and the car, in metres.",
+  "description": "The equations of motion (গতির সমীকরণ, pages 45–46, 2.7) in the book's own form, in the one frame the owner chose (the layout of the reference \"Uniform Acceleration in One Dimension\"), on a rich deep blue background (near-white text, bright colours, glass buttons and graph cards): at the top the formula s = ut + ½at² with one short sentence under it (s, the অতিক্রান্ত দূরত্ব, is the sum of the two parts ut and ½at²; or the moment the car turns back, that s is negative, or that it reached an end of the axis); on the left the buttons চালাও (Run), থামাও (Pause), আবার শুরু (Reset) and the two 0.1 s time steps; in the middle three long sliders for the আদি বেগ u (blue, −5…5 m/s), the ত্বরণ a (green, −3…3 ms⁻²) and the সময় t (grey, 0…6 s), steps of 0.1, each value written over its knob in its colour; on the right the s–t graph (a violet parabola) and the v–t graph (a straight line from the blue of u to the green of a) on dark glass cards, the run so far bold and the rest faint, the moment marked, each with its live equation under it, s = (½a)t² + (u)t and v = (a)t + (u); and along the bottom, across the full width, a 3D strip seen from the side: a blue sedan (wheels that turn with the motion) on a dark asphalt road whose front slope carries the number line from −7 m to 10 m (bold numbers every metre), the car always starting at 0, a dot at s, and under the axis the two parts drawn tip to tail as thick arrows outlined in white on a deep blue slope (ut blue from 0, ½at² green ending at s) with a dashed drop line from the car, so s is their sum. চালাও runs the time in real seconds; the car stops at an end of the axis. Portrait frames stack the same parts. Test (in the place of the sliders, from a small tab in the corner): 5 tap questions (s after t, v = u + at, a read from the s equation, when v = 0 from the v equation, the part ½at² read off the picture), wrong choices from real mistakes, each worked answer naming the mistake and running the car to that moment. Phone-first, Bangla. GLB: the road with its number line and the two arrows, and the car, in metres.",
   "tags": [
     "motion",
     "equations-of-motion",
@@ -71,7 +71,14 @@
       "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
       "default": ""
     },
-    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    {
+      "name": "bg",
+      "label": "Background",
+      "type": "select",
+      "options": ["light", "transparent"],
+      "default": "light",
+      "help": "light is the deep blue frame; transparent drops it and keeps the light text, for a dark page"
+    },
     { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
     { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
   ],

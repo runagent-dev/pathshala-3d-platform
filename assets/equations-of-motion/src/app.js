@@ -1,6 +1,6 @@
 // Equations of motion (book pages 45–46, topic 2.7, গতির সমীকরণ), student view, in the one frame the owner chose (the
 // layout of the reference "Uniform Acceleration in One Dimension", reference/owner-uniform-acceleration.png) with the
-// book's content, on a soft light-blue background: the formula s = ut + ½at² at the top; on the left the buttons চালাও,
+// book's content, on a deep blue background: the formula s = ut + ½at² at the top; on the left the buttons চালাও,
 // থামাও, আবার শুরু and the two time steps; in the middle three long sliders u (blue), a (green), t (grey), each value
 // written over its knob; on the right the s–t graph (a parabola) and the v–t graph (a straight line), each with its
 // live equation under it; and along the bottom, across the whole width, the 3D strip: a blue car seen from the side on
@@ -36,9 +36,13 @@ export const DEFAULTS = {
   sound: true,
 };
 
-// one colour per quantity: u blue, a green, t grey, s violet (text colours ≥ 4.5 : 1 on the background)
-const COLORS = { u: '#1c6fd9', a: '#2f9e44', t: '#5c6670', s: '#6741d9' };
-const TEXT = { u: '#1a5fbf', a: '#2b7a3a', t: '#495057', s: '#4c2fb0' };
+// one colour per quantity: u blue, a green, t grey, s violet, bright for the deep blue (text ≥ 4.5 : 1 on the background)
+const COLORS = { u: '#6cb6ff', a: '#5fd38a', t: '#d5dbe7', s: '#b79cff' };
+/** The two arrows' fills: fuller than the text colours, so they stay vivid under the light of the 3D. */
+const ARROWS = { u: '#2a86ff', a: '#1fb45c' };
+/** What the labels on the 3D are written in (near-white) and what their chips are filled with. */
+const INK = '#f1f5ff';
+const CHIP = '#0c2450';
 const CAR_SCALE = 0.95; // the 4.3 m sedan drawn 4.1 m long
 const CAR_Z = 0.95; // it drives in the front lane, near the number line
 // the opening pose: from the side, as the reference, a little from above so the car and the road read as 3D
@@ -58,8 +62,8 @@ const SVG_STEP_FWD =
 const SVG_PLAY = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5l12 7.5-12 7.5z" class="fill"/></svg>';
 const SVG_PAUSE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14" stroke-width="3.2"/></svg>';
 const FONT = '"Noto Sans Bengali", "Segoe UI", Roboto, Arial, sans-serif';
-// the light-blue background (also painted under a capture)
-const BG = ['#e4effa', '#d0e3f4', '#bdd7ee'];
+// the deep blue background (also painted under a capture)
+const BG = ['#0b2a5b', '#123d7a'];
 
 export function createApp(root, options = {}) {
   const o = { ...DEFAULTS, ...options };
@@ -129,7 +133,7 @@ export function createApp(root, options = {}) {
   scene.add(world);
   scene.add(new THREE.HemisphereLight(0xe3f0ff, 0xb4c6d2, 0.75));
 
-  const track = createTrack({ colors: COLORS });
+  const track = createTrack({ colors: COLORS, arrows: ARROWS });
   const car = createCar({ color: '#2f6db3' });
   car.root.scale.setScalar(CAR_SCALE);
   world.add(track.root, car.root);
@@ -439,7 +443,7 @@ export function createApp(root, options = {}) {
     return w;
   }
   const overlaps = (a, b) => a.left < b.right - 1 && b.left < a.right - 1 && a.top < b.bottom - 2 && b.top < a.bottom - 2;
-  function chip(ctx, pieces, size, box, { fg, border, bg = '#ffffff' }) {
+  function chip(ctx, pieces, size, box, { fg, border, bg = CHIP }) {
     ctx.fillStyle = bg;
     ctx.strokeStyle = border;
     ctx.lineWidth = 1.5;
@@ -453,6 +457,8 @@ export function createApp(root, options = {}) {
     rich(ctx, pieces, size, box.left + size * 0.45, box.bottom - (box.bottom - box.top - size * 0.72) / 2 - size * 0.06, true);
   }
   const sv = new THREE.Vector3();
+  const stripBox = $('.eom-strip');
+  let lastHorizon = '';
   /** A point on the slope (x on the axis, y down from its top edge) on the screen. */
   const slopeScreen = (x, y) => {
     track.onSlope(x, y, 0.08, sv);
@@ -467,6 +473,9 @@ export function createApp(root, options = {}) {
     const W = stage.width;
     const H = stage.height;
     const taken = [];
+    // the glow of the horizon behind the road (style.css) follows the road's far edge
+    const horizon = `${Math.round(toScreen(0, 0, ROAD.back).y)}px`;
+    if (horizon !== lastHorizon) stripBox.style.setProperty('--horizon', (lastHorizon = horizon));
     // pixels per metre along the axis, at the axis' middle
     const a0 = slopeScreen(1, SLOPE.numbers);
     const a1 = slopeScreen(2, SLOPE.numbers);
@@ -475,7 +484,7 @@ export function createApp(root, options = {}) {
     const fs = Math.max(11, Math.min(17, ppm * 0.42));
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = '#141b24';
+    ctx.fillStyle = INK;
     const every = ppm < 22 ? 2 : 1;
     for (let i = AXIS.min; i <= AXIS.max; i++) {
       if (every === 2 && i % 2 !== 0) continue;
@@ -492,7 +501,7 @@ export function createApp(root, options = {}) {
       [' (m)', ''],
     ];
     const nameW = rich(ctx, name, fs, 0, 0, false);
-    ctx.fillStyle = '#141b24';
+    ctx.fillStyle = INK;
     rich(ctx, name, fs, Math.min(pn.x, W - nameW - 3), pn.y + fs * 0.35, true);
     // the drop line: from under the car, through its dot on the axis, down past the two rows to where ½at² ends (= s)
     const pc = toScreen(st.s, 0.02, CAR_Z + 0.5);
@@ -522,12 +531,12 @@ export function createApp(root, options = {}) {
       let box = { left: p.x - w / 2, top: p.y - h - 2, right: p.x + w / 2, bottom: p.y - 2 };
       const dx = Math.max(3 - box.left, Math.min(0, W - 3 - box.right));
       box = { ...box, left: box.left + dx, right: box.right + dx };
-      chip(ctx, pieces, size, box, { fg: TEXT.s, border: COLORS.s });
+      chip(ctx, pieces, size, box, { fg: COLORS.s, border: COLORS.s });
       taken.push(box);
     }
     // the two parts' labels, each in its row: beyond the arrow's tip, else beyond its tail, else above it
     const lanes = [
-      { y: SLOPE.rows.ut, from: 0, to: st.ut, sym: [['ut', 'i']], v: st.ut, fg: TEXT.u, border: COLORS.u },
+      { y: SLOPE.rows.ut, from: 0, to: st.ut, sym: [['ut', 'i']], v: st.ut, fg: COLORS.u, border: COLORS.u },
       {
         y: SLOPE.rows.half,
         from: st.ut,
@@ -538,7 +547,7 @@ export function createApp(root, options = {}) {
           ['2', 'sup'],
         ],
         v: st.half,
-        fg: TEXT.a,
+        fg: COLORS.a,
         border: COLORS.a,
         hidden: s.hide.half,
       },
@@ -810,7 +819,7 @@ export function createApp(root, options = {}) {
     startPractice: () => quiz.start(),
     /**
      * The 3D strip with its labels (the car on the number line and the two parts), cover-fitted to w×h, on the
-     * figure's light-blue background (or on `background`, a CSS colour; null keeps it transparent).
+     * figure's deep blue background (or on `background`, a CSS colour; null keeps it transparent).
      */
     capture({ width: w = 800, height: h = 500, background = 'theme' } = {}) {
       stage.render();
@@ -819,7 +828,8 @@ export function createApp(root, options = {}) {
       out.width = w;
       out.height = h;
       const ctx = out.getContext('2d');
-      if (background === 'theme' || background === '#ffffff') {
+      const theme = background === 'theme' || background === '#ffffff';
+      if (theme) {
         const g = ctx.createLinearGradient(0, 0, 0, h);
         BG.forEach((col, i) => g.addColorStop(i / (BG.length - 1), col));
         ctx.fillStyle = g;
@@ -832,6 +842,15 @@ export function createApp(root, options = {}) {
       const k = Math.min(w / cv.width, h / cv.height);
       const dw = cv.width * k;
       const dh = cv.height * k;
+      if (theme) {
+        // the glow of the horizon behind the road, as on the page
+        const y = (h - dh) / 2 + (toScreen(0, 0, ROAD.back).y / stage.height) * dh;
+        const g = ctx.createLinearGradient(0, y - dh * 0.3, 0, y + 1);
+        g.addColorStop(0, 'rgba(116, 176, 250, 0)');
+        g.addColorStop(1, 'rgba(150, 202, 255, 0.46)');
+        ctx.fillStyle = g;
+        ctx.fillRect(0, y - dh * 0.3, w, dh * 0.3 + 1);
+      }
       ctx.drawImage(cv, (w - dw) / 2, (h - dh) / 2, dw, dh);
       ctx.drawImage(overlay, (w - dw) / 2, (h - dh) / 2, dw, dh);
       return out.toDataURL('image/png');
