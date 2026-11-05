@@ -1,0 +1,104 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "concave-mirror-image",
+  "title": "Images in a concave mirror (অবতল আয়নায় প্রতিবিম্ব)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 230,
+  "topic": "8.6.1",
+  "placement": "Book page 230, topic 8.6.1 অবতল আয়নায় প্রতিবিম্ব: next to চিত্র ৮.২২–৮.২৫ (pages 230–233) and the table 'অবতল গোলীয় আয়নায় গঠিত প্রতিবিম্বের বৈশিষ্ট্য' (page 232); also 8.7 বিবর্ধন (page 234) and the formula 1/u + 1/v = 1/f (page 233).",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "cm",
+  "description": "Interactive 3D figure for the images in a concave mirror, book pages 229–234, topics 8.6.1 and 8.7, next to চিত্র ৮.২২–৮.২৫ and the table on page 232. The book's pencil XY stands before a concave mirror (f = 15 cm) on an optical bench: beyond F two of the book's rays really meet and a paper screen catches the real, inverted image; at F there is no image; inside F the image is virtual, upright and bigger, behind the mirror. The student drags the pencil from far to near; the book's formula 1/u + 1/v = 1/f, m = l′/l and the book's table follow live.",
+  "tags": [
+    "light",
+    "reflection",
+    "spherical mirror",
+    "concave mirror",
+    "real image",
+    "virtual image",
+    "mirror formula",
+    "magnification",
+    "optical bench",
+    "bangla"
+  ],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "stage",
+      "label": "What is shown",
+      "type": "select",
+      "options": [
+        ["start", "the pencil, the mirror, the image"],
+        ["points", "P, F and O"],
+        ["ray1", "the parallel ray"],
+        ["ray2", "the ray through F"],
+        ["screen", "the screen"],
+        ["cases", "the pencil moves"],
+        ["formula", "the formula"],
+        ["table", "the book's table"]
+      ],
+      "default": "start"
+    },
+    { "name": "u", "label": "Pencil's distance from the mirror (cm)", "type": "number", "default": "40" },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The numbered ring and the hand", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "stage": "cases", "u": 22.5, "animate": false } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "view", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": { "params": { "coach": "0", "stage": "ray2" } },
+    "glb": [{ "name": "default" }],
+    "video": {
+      "kind": "script",
+      "seconds": 45,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 1.5, "command": "set", "payload": { "stage": "points" } },
+        { "at": 4, "command": "set", "payload": { "stage": "ray1" } },
+        { "at": 9, "command": "set", "payload": { "stage": "ray2" } },
+        { "at": 15, "command": "set", "payload": { "stage": "screen" } },
+        { "at": 19, "command": "set", "payload": { "screen": 24 } },
+        { "at": 22, "command": "set", "payload": { "stage": "cases", "u": 30 } },
+        { "at": 29, "command": "set", "payload": { "u": 22.5 } },
+        { "at": 33, "command": "set", "payload": { "u": 15 } },
+        { "at": 37, "command": "set", "payload": { "u": 10 } },
+        { "at": 41, "command": "set", "payload": { "stage": "table" } }
+      ]
+    }
+  }
+}
