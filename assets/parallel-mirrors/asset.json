@@ -1,0 +1,108 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "parallel-mirrors",
+  "title": "Images in two mirrors (দুটি আয়নায় প্রতিবিম্ব)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 216,
+  "topic": "8.2.1",
+  "placement": "Book page 216, topic 8.2.1, the উদাহরণ with চিত্র ৮.০৪ (a candle between two parallel mirrors M₁ and M₂, with its images x′, x″, x‴ … in a row on both sides, d₁ d₂ d₃ d₄).",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "cm",
+  "description": "Interactive 3D figure for the উদাহরণ on book page 216, topic 8.2.1, চিত্র ৮.০৪. A lit candle x stands on a table between two parallel silvered-glass mirrors M₂ and M₁. One tap at a time the student builds the book's row: the image x′ in each mirror with d₁ and d₂ before and behind it, then the image of the image x″ with d₃ and x‴ with d₄, each with its ray traced by the law of reflection; dragging the candle moves every image to its exact place. Then the row runs on both ways, and the camera looks into M₁, where the same images stand as a real pair of mirrors shows them, each reflection a little dimmer. Any named image can be tapped to trace its light. Five test questions. Offline, Bangla and English.",
+  "tags": [
+    "light",
+    "reflection",
+    "plane-mirror",
+    "parallel-mirrors",
+    "image",
+    "multiple-images",
+    "virtual-image",
+    "bangla"
+  ],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "step",
+      "label": "Step of the book",
+      "type": "select",
+      "options": [["first", "The image"], ["second", "Its image"], ["many", "Countless"]],
+      "default": "first"
+    },
+    {
+      "name": "x",
+      "label": "Candle on the row (cm from the middle of the gap, −7 to 7)",
+      "type": "number",
+      "default": "5"
+    },
+    { "name": "stage", "label": "How far the step is built (0–3)", "type": "number", "default": "0" },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on the part pulses at first", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "x": 3, "animate": false } },
+    { "name": "set", "payload": { "step": "second", "stage": 3, "animate": false } },
+    { "name": "set", "payload": { "trace": "r2", "animate": false } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "view", "dragstart", "dragend", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": { "params": { "coach": "0", "step": "second", "stage": "3" } },
+    "glb": [
+      {
+        "name": "default",
+        "setup": [{ "command": "set", "payload": { "step": "second", "stage": 3, "animate": false } }]
+      }
+    ],
+    "video": {
+      "kind": "script",
+      "seconds": 20,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 0.8, "command": "set", "payload": { "stage": 1, "animate": false } },
+        { "at": 2.4, "command": "set", "payload": { "stage": 2, "animate": false } },
+        { "at": 4, "command": "set", "payload": { "x": -3 } },
+        { "at": 5.4, "command": "set", "payload": { "x": 5 } },
+        { "at": 6.6, "command": "set", "payload": { "step": "second", "stage": 0, "animate": false } },
+        { "at": 7.4, "command": "set", "payload": { "stage": 1, "animate": false } },
+        { "at": 8.2, "command": "set", "payload": { "trace": "r2", "animate": false } },
+        { "at": 10, "command": "set", "payload": { "stage": 2, "animate": false } },
+        { "at": 11.2, "command": "set", "payload": { "stage": 3, "animate": false } },
+        { "at": 12.6, "command": "set", "payload": { "trace": "r3", "animate": false } },
+        { "at": 14.2, "command": "set", "payload": { "step": "many", "stage": 1, "animate": false } },
+        { "at": 16.4, "command": "set", "payload": { "stage": 2, "animate": false } }
+      ]
+    }
+  }
+}

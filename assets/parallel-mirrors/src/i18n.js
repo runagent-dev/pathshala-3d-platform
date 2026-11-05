@@ -1,0 +1,298 @@
+// Every string the figure shows, in Bangla and English. The Bangla is the book's: pages 215–216 of the physics book for classes
+// 9–10 (the উদাহরণ under 8.2.1, চিত্র ৮.০৪). Use t('key') in code, t.num() for numbers. Action words go in as plain text, so they
+// carry the characters ₁ ₂; everything else uses <sub>, because the bundled font has no subscripts.
+
+export const STRINGS = {
+  bn: {
+    panel_hide: 'লেখা লুকাও',
+    panel_show: 'লেখা দেখাও',
+    rotate_title: 'ফোনটি আড়াআড়ি ধরো',
+    rotate_body: 'পাশে ঘোরালে ছবি বড় হয়, লেখা থাকে পাশে।',
+    rotate_go: 'ঘুরিয়ে দেখো',
+    rotate_stay: 'এভাবেই দেখো',
+    title: 'দুটি আয়নায় প্রতিবিম্ব',
+    view: 'দেখার ধরন',
+    view_front_short: 'শুরুর দৃশ্য',
+    view_rotate: 'ঘুরিয়ে দেখো',
+    fullscreen: 'পূর্ণ পর্দা',
+    tab_learn: 'শেখো',
+    tab_quiz: 'পরীক্ষা',
+    reading: 'দূরত্ব',
+    aria_stage:
+      'দুটি সমান্তরাল আয়না মুখোমুখি, মাঝখানে একটি জ্বলন্ত মোমবাতি। দুই পাশে এক সারিতে তার প্রতিবিম্ব। মোমবাতিকে টেনে বা বাম-ডান তীর চেপে সরাও; কোনো প্রতিবিম্বে আলতো চাপলে তার আলোর পথ দেখা যায়।',
+
+    ex_label: 'বইয়ের ধাপ',
+    ex_first: 'প্রতিবিম্ব',
+    ex_second: 'তার প্রতিবিম্ব',
+    ex_many: 'অসংখ্য',
+    act_home: 'এই ধাপ আবার শুরু করো',
+    act_wait: 'দেখো…',
+    act_r1: 'ডান আয়নায় দেখো',
+    act_l1: 'বাম আয়নায় দেখো',
+    act_drag: 'মোমবাতি টেনে সরাও',
+    act_to_second: 'এবার x′ এর প্রতিবিম্ব',
+    act_r2: 'বাম x′ এর প্রতিবিম্ব দেখো',
+    act_l2: 'ডান x′ এর প্রতিবিম্ব দেখো',
+    act_r3: 'বাম x″ এর প্রতিবিম্ব দেখো',
+    act_to_many: 'তারপর কী হয়?',
+    act_row: 'চলতে দাও',
+    act_inside: 'আয়নার ভেতরে তাকাও',
+    act_out: 'বাইরে ফিরে এসো',
+
+    out_f0: 'মোমবাতি <b>x</b> দুই আয়নার মাঝখানে',
+    out_d1: '<span class="pm2-pair">d<sub>1</sub> = <b>{a} cm</b></span><span class="pm2-pair pm2-then">M<sub>1</sub> এর সামনে ও পেছনে</span>',
+    out_d12: '<span class="pm2-pair">d<sub>1</sub> = <b>{a} cm</b></span><span class="pm2-pair">d<sub>2</sub> = <b>{b} cm</b></span>',
+    out_d3: '<span class="pm2-pair">d<sub>3</sub> = <b>{a} cm</b></span><span class="pm2-pair pm2-then">M<sub>1</sub> এর সামনে ও পেছনে</span>',
+    out_l2: 'x′ ও x″, M<sub>2</sub> থেকে <b>{a} cm</b> করে',
+    out_d34: '<span class="pm2-pair">d<sub>3</sub> = <b>{a} cm</b></span><span class="pm2-pair">d<sub>4</sub> = <b>{b} cm</b></span>',
+    out_row: 'x′, x″, x‴ … <b>অসংখ্য প্রতিবিম্ব</b>',
+    out_light: '<span class="pm2-pair">x′ <b>{a}%</b></span><span class="pm2-pair">x″ <b>{b}%</b></span><span class="pm2-pair">x‴ <b>{c}%</b></span>',
+    out_pick: '<b>{n}</b>: {chain}, <b>{k} বার</b> প্রতিফলন',
+    chain_sep: ' থেকে ',
+
+    rule_f0: 'দুটি আয়না M<sub>1</sub> ও M<sub>2</sub> মুখোমুখি, সমান্তরাল। মাঝখানে x বিন্দুতে একটি মোমবাতি।<br>মোমবাতির প্রতিবিম্ব কোথায় হবে?',
+    rule_f1: 'আয়নায় <b>প্রতিবিম্ব</b> দেখা যাবে। মোমবাতি M<sub>1</sub> এর যতটা সামনে (d<sub>1</sub>), প্রতিবিম্ব x′ ঠিক ততটা পেছনে।',
+    rule_f2: 'M<sub>2</sub> আয়নাতেও একটি প্রতিবিম্ব x′, তার ঠিক d<sub>2</sub> পেছনে। মোমবাতি সরালে কী হয়, টেনে দেখো।',
+    rule_f3: 'মোমবাতি এক আয়নার কাছে গেলে অন্যটি থেকে দূরে যায়। কিন্তু মোমবাতি আয়নার সামনে যত দূরে, x′ আয়নার পেছনে ততটাই দূরে।',
+    rule_s0: 'ঝাপসা মোমবাতিগুলো আসল নয়, প্রতিবিম্ব। M<sub>2</sub> এর পেছনের x′ থেকে যেন আলো আসছে, তাই M<sub>1</sub> আয়নার জন্য এটি একটি বস্তুর মতো।',
+    rule_s1:
+      'M<sub>1</sub> থেকে x′ এর দূরত্ব d<sub>3</sub>। তাই M<sub>1</sub> এর d<sub>3</sub> পেছনে হলো <b>প্রতিবিম্বের প্রতিবিম্ব</b> x″। আলো দুবার প্রতিফলিত হলো।',
+    rule_s2: 'M<sub>1</sub> এর পেছনের x′ও M<sub>2</sub> আয়নার জন্য বস্তু। তাই M<sub>2</sub> এর পেছনেও একটি x″, ঠিক সমান দূরে।',
+    rule_s3:
+      'M<sub>2</sub> এর পেছনের x″ থেকে M<sub>1</sub> এর দূরত্ব d<sub>4</sub>। তাই M<sub>1</sub> এর d<sub>4</sub> পেছনে x‴। x′ এ একবার, x″ এ দুবার, x‴ এ তিনবার প্রতিফলন।',
+    rule_m0: 'সেই প্রতিবিম্বের প্রতিবিম্বটিও আয়না দুটিতে দেখা যাবে, এভাবে <b>চলতেই থাকবে</b>। ঝাপসা মোমবাতিগুলো অবাস্তব: সেখানে আসলে কিছু নেই।',
+    rule_m1: 'কাজেই <b>অসংখ্য প্রতিবিম্ব</b> দেখা যাবে। প্রতি প্রতিফলনে প্রায় {a}% আলো হারায়, তাই দূরেরটি ম্লান। ছবিতে ম্লান হওয়া আসলের চেয়ে একটু বাড়িয়ে আঁকা।',
+    rule_m2: 'আসল আয়নায় এভাবেই দেখা যায়। আয়নার পেছনে আসলে কোনো মোমবাতি নেই, সবই অবাস্তব প্রতিবিম্ব। ওপরের সংখ্যা: আলো প্রায় কতটা বাকি।',
+    rule_pick: 'আলো মোমবাতি থেকে বেরিয়ে আয়নায় প্রতিফলিত হয়ে চোখে আসে। ড্যাশ রেখা দেখায়, আলো কোথা থেকে আসছে বলে মনে হয়।',
+    note_rays: 'বহু রশ্মির একটি আঁকা হয়েছে',
+
+    l_x: 'x',
+    l_candle: 'মোমবাতি x',
+    l_x1: 'x′',
+    l_x2: 'x″',
+    l_x3: 'x‴',
+    l_m1: 'আয়না M<sub>1</sub>',
+    l_m2: 'আয়না M<sub>2</sub>',
+    l_m1s: 'M<sub>1</sub>',
+    l_m2s: 'M<sub>2</sub>',
+    l_eye: 'চোখ',
+    l_d1: 'd<sub>1</sub>',
+    l_d2: 'd<sub>2</sub>',
+    l_d3: 'd<sub>3</sub>',
+    l_d4: 'd<sub>4</sub>',
+    l_cm: '{a} cm',
+    l_image: 'প্রতিবিম্ব {n} (অবাস্তব)',
+    l_q: '?',
+    l_object: 'x′ এখন বস্তু',
+    l_object2: 'x″ এখন বস্তু',
+    l_more: 'চলতেই থাকে …',
+    l_more0: '… চলতেই থাকে',
+    letters: 'ক,খ,গ,ঘ',
+
+    q_count: 'প্রশ্ন {i}/{n}',
+    q_score: 'সঠিক: {right}',
+    q_hint: 'একটি উত্তরে আলতো চাপো।',
+    q_right: 'ঠিক!',
+    q_wrong: 'ঠিক হয়নি।',
+    q_next: 'পরের প্রশ্ন',
+    q_finish: 'ফলাফল দেখো',
+    q_result: '{total} টির মধ্যে {right} টি সঠিক',
+    q_again: 'আবার পরীক্ষা দাও',
+    q_great: 'দারুণ! দুই আয়নার প্রতিবিম্ব তুমি বুঝে গেছ।',
+    q_good: 'ভালো! শেখো অংশটি আরেকবার দেখে নাও।',
+    q_try: 'শেখো অংশের ধাপগুলো আবার করো।',
+    q_locked: 'পরীক্ষা চলছে। শেখো অংশে ফিরলে আবার টানতে পারবে।',
+    n_pick: '{x} বেছেছ:',
+    c_cm: '{a} cm',
+    c_times: '{a} বার',
+
+    q_pair: 'M<sub>1</sub> থেকে মোমবাতির দূরত্ব ছবিতে লেখা। মোমবাতি x থেকে M<sub>1</sub> এর পেছনের x′ কত দূরে?',
+    n_pair_same: 'এটি শুধু আয়না পর্যন্ত দূরত্ব; প্রতিবিম্ব আয়নার ততটাই পেছনে।',
+    n_pair_gap: 'এটি দুই আয়নার মাঝের দূরত্ব, মোমবাতি আর x′ এর নয়।',
+    n_pair_other: 'এটি M<sub>2</sub> পর্যন্ত দূরত্বের দ্বিগুণ; এই x′ হয়েছে M<sub>1</sub> এ।',
+    a_pair: '<b>{g} cm</b>: x′ আয়নার ঠিক {d} cm পেছনে, তাই {d} cm + {d} cm = {g} cm।',
+
+    q_times: '“?” চিহ্নিত প্রতিবিম্বটি দেখো। এখানে আসতে আলো কতবার প্রতিফলিত হয়েছে?',
+    n_times_less: 'এটি আয়নার পেছনের সবচেয়ে কাছেরটির চেয়ে দূরে।',
+    n_times_more: 'আয়নার পেছনে সারিতে গুনে দেখো: এটি এতদূরের নয়।',
+    a_times: '<b>{k} বার</b>: আয়নার পেছনে এটি {k} নম্বর; প্রতিটি পরেরটিতে আরেকবার প্রতিফলন।',
+
+    q_spot: 'M<sub>2</sub> এর পেছনের x′ এর প্রতিবিম্ব M<sub>1</sub> এ x″ হবে। টেবিলের কোন চিহ্নে?',
+    c_spot: 'চিহ্ন {x}',
+    n_spot_d2: 'এটি M<sub>2</sub> থেকে x′ এর দূরত্ব। মাপতে হবে M<sub>1</sub> থেকে।',
+    n_spot_gap: 'এটি শুধু দুই আয়নার মাঝের দূরত্ব।',
+    n_spot_more: 'এটি বেশি দূরে: M<sub>1</sub> থেকে x′ যতটা, x″ ঠিক ততটাই।',
+    a_spot: '<b>চিহ্ন {x}</b>: x′ থেকে M<sub>1</sub> এর দূরত্ব {a} cm, তাই x″ M<sub>1</sub> এর {a} cm পেছনে।',
+
+    q_sum: 'আয়না দুটি {g} cm দূরে, d<sub>1</sub> ও d<sub>2</sub> ছবিতে লেখা। ছবির d<sub>4</sub> কত?',
+    n_sum_d3: 'এটি d<sub>3</sub>, x′ পর্যন্ত। d<sub>4</sub> মাপে পরের x″ পর্যন্ত।',
+    n_sum_three: 'আয়নার ফাঁক দুবারই ধরা হয়, তিনবার নয়; তার সাথে d<sub>1</sub>।',
+    n_sum_twice: 'd<sub>1</sub> একবারই যোগ হয়, দুবার নয়।',
+    n_sum_two: 'এটি শুধু আয়নার ফাঁকের দ্বিগুণ; এর সাথে d<sub>1</sub> যোগ করতে হবে।',
+    a_sum:
+      '<b>{a} cm</b>: x″ হলো M<sub>1</sub> এর পেছনের x′ এর প্রতিবিম্ব, M<sub>2</sub> থেকে {g} + {b} = {c} cm পেছনে। M<sub>1</sub> থেকে তাই {g} + {c} = {a} cm।',
+
+    q_dim: 'আয়নার ভেতরে তাকাও। চিহ্নিত চারটি প্রতিবিম্বের কোনটিতে সবচেয়ে কম আলো পৌঁছায়?',
+    c_image: 'প্রতিবিম্ব {x}',
+    n_dim: 'এটিতে আলো {k} বার প্রতিফলিত; আরও দূরেরটিতে প্রতিফলন বেশি, আলো কম।',
+    a_dim: '<b>প্রতিবিম্ব {x}</b>: এটি সবচেয়ে দূরে। আলো {k} বার প্রতিফলিত, বাকি থাকে প্রায় {a}%।',
+  },
+  en: {
+    panel_hide: 'Hide the text',
+    panel_show: 'Show the text',
+    rotate_title: 'Turn the phone sideways',
+    rotate_body: 'The picture is bigger that way, with the text beside it.',
+    rotate_go: 'Turn it',
+    rotate_stay: 'Stay like this',
+    title: 'Images in two mirrors',
+    view: 'View',
+    view_front_short: 'First view',
+    view_rotate: 'Turn the view',
+    fullscreen: 'Full screen',
+    tab_learn: 'Learn',
+    tab_quiz: 'Test',
+    reading: 'Distance',
+    aria_stage:
+      'Two parallel mirrors face each other with a lit candle between them, and its images stand in a row on both sides. Drag the candle or press the left and right arrows to move it; tap an image to see the path of its light.',
+
+    ex_label: 'Steps of the book',
+    ex_first: 'The image',
+    ex_second: 'Its image',
+    ex_many: 'Countless',
+    act_home: 'Start this step again',
+    act_wait: 'Watch…',
+    act_r1: 'Look in the right mirror',
+    act_l1: 'Look in the left mirror',
+    act_drag: 'Drag the candle',
+    act_to_second: 'Now the image of x′',
+    act_r2: 'Image of the left x′',
+    act_l2: 'Image of the right x′',
+    act_r3: 'Image of the left x″',
+    act_to_many: 'And then?',
+    act_row: 'Let it go on',
+    act_inside: 'Look into the mirror',
+    act_out: 'Come back out',
+
+    out_f0: 'Candle <b>x</b> between the two mirrors',
+    out_d1: '<span class="pm2-pair">d<sub>1</sub> = <b>{a} cm</b></span><span class="pm2-pair pm2-then">before and behind M<sub>1</sub></span>',
+    out_d12: '<span class="pm2-pair">d<sub>1</sub> = <b>{a} cm</b></span><span class="pm2-pair">d<sub>2</sub> = <b>{b} cm</b></span>',
+    out_d3: '<span class="pm2-pair">d<sub>3</sub> = <b>{a} cm</b></span><span class="pm2-pair pm2-then">before and behind M<sub>1</sub></span>',
+    out_l2: 'x′ and x″, <b>{a} cm</b> each from M<sub>2</sub>',
+    out_d34: '<span class="pm2-pair">d<sub>3</sub> = <b>{a} cm</b></span><span class="pm2-pair">d<sub>4</sub> = <b>{b} cm</b></span>',
+    out_row: 'x′, x″, x‴ … <b>countless images</b>',
+    out_light: '<span class="pm2-pair">x′ <b>{a}%</b></span><span class="pm2-pair">x″ <b>{b}%</b></span><span class="pm2-pair">x‴ <b>{c}%</b></span>',
+    out_pick: '<b>{n}</b>: {chain}, reflected <b>{k} times</b>',
+    chain_sep: ' then ',
+
+    rule_f0:
+      'Mirrors M<sub>1</sub> and M<sub>2</sub> face each other, parallel, with a candle at the point x between them.<br>Where will its images be?',
+    rule_f1: 'An <b>image</b> shows in the mirror. As far as the candle is in front of M<sub>1</sub> (d<sub>1</sub>), the image x′ is behind it.',
+    rule_f2: 'M<sub>2</sub> makes an image x′ too, exactly d<sub>2</sub> behind it. Drag the candle and see what happens.',
+    rule_f3: 'When the candle nears one mirror it leaves the other. But as far as the candle is in front of a mirror, x′ is behind it.',
+    rule_s0:
+      'The faint candles are not real: they are images. Light seems to come from the x′ behind M<sub>2</sub>, so to M<sub>1</sub> it is like an object.',
+    rule_s1:
+      'x′ is d<sub>3</sub> from M<sub>1</sub>, so d<sub>3</sub> behind M<sub>1</sub> stands the <b>image of the image</b>, x″. The light has been reflected twice.',
+    rule_s2: 'The x′ behind M<sub>1</sub> is an object for M<sub>2</sub> too. So an x″ stands behind M<sub>2</sub> as well, just as far.',
+    rule_s3:
+      'The x″ behind M<sub>2</sub> is d<sub>4</sub> from M<sub>1</sub>, so x‴ stands d<sub>4</sub> behind M<sub>1</sub>. x′ takes one reflection, x″ two, x‴ three.',
+    rule_m0:
+      'The image of that image shows in the two mirrors too, and so it <b>goes on</b>. The faint candles are virtual: nothing is really there.',
+    rule_m1:
+      'So <b>countless images</b> are seen. Each reflection loses about {a}% of the light, so the far ones are dim. The picture fades them a little more than real.',
+    rule_m2:
+      'This is what a real pair of mirrors shows. No candle is really behind the mirror: all are virtual images. The numbers above: about how much light is left.',
+    rule_pick: 'Light leaves the candle, reflects in the mirrors and reaches the eye. The dashes show where it seems to come from.',
+    note_rays: 'One ray of countless',
+
+    l_x: 'x',
+    l_candle: 'Candle x',
+    l_x1: 'x′',
+    l_x2: 'x″',
+    l_x3: 'x‴',
+    l_m1: 'Mirror M<sub>1</sub>',
+    l_m2: 'Mirror M<sub>2</sub>',
+    l_m1s: 'M<sub>1</sub>',
+    l_m2s: 'M<sub>2</sub>',
+    l_eye: 'Eye',
+    l_d1: 'd<sub>1</sub>',
+    l_d2: 'd<sub>2</sub>',
+    l_d3: 'd<sub>3</sub>',
+    l_d4: 'd<sub>4</sub>',
+    l_cm: '{a} cm',
+    l_image: 'Image {n} (virtual)',
+    l_q: '?',
+    l_object: 'x′ is now the object',
+    l_object2: 'x″ is now the object',
+    l_more: 'It goes on …',
+    l_more0: '… it goes on',
+    letters: 'A,B,C,D',
+
+    q_count: 'Question {i} of {n}',
+    q_score: 'Correct: {right}',
+    q_hint: 'Tap an answer.',
+    q_right: 'Right!',
+    q_wrong: 'Not quite.',
+    q_next: 'Next question',
+    q_finish: 'See the result',
+    q_result: '{right} of {total} correct',
+    q_again: 'Take the test again',
+    q_great: 'Great! You understand images in two mirrors.',
+    q_good: 'Good! Look through Learn once more.',
+    q_try: 'Go through the Learn steps again.',
+    q_locked: 'The test is on. You can drag again when you return to Learn.',
+    n_pick: 'You chose {x}:',
+    c_cm: '{a} cm',
+    c_times: '{a} times',
+
+    q_pair: 'The picture gives the distance from M<sub>1</sub> to the candle. How far is the candle x from the x′ behind M<sub>1</sub>?',
+    n_pair_same: 'That is only as far as the mirror; the image is as far again behind it.',
+    n_pair_gap: 'That is the distance between the mirrors, not between the candle and x′.',
+    n_pair_other: 'That is twice the distance to M<sub>2</sub>; this x′ is in M<sub>1</sub>.',
+    a_pair: '<b>{g} cm</b>: x′ is exactly {d} cm behind the mirror, so {d} cm + {d} cm = {g} cm.',
+
+    q_times: 'Look at the image marked “?” in the picture. How many times was the light reflected on its way here?',
+    n_times_less: 'The image nearest a mirror takes one reflection; this one is further back.',
+    n_times_more: 'Count along the row behind the mirror: it is not that far back.',
+    a_times: '<b>{k} times</b>: it is number {k} behind this mirror, and each next image takes one more reflection.',
+
+    q_spot: 'The x′ behind M<sub>2</sub> makes an image x″ in M<sub>1</sub>. Which mark on the table shows where?',
+    c_spot: 'Mark {x}',
+    n_spot_d2: 'That is how far x′ is from M<sub>2</sub>. Measure from M<sub>1</sub>.',
+    n_spot_gap: 'That is only the gap between the mirrors.',
+    n_spot_more: 'That is too far: x″ is as far from M<sub>1</sub> as x′ is, no farther.',
+    a_spot: '<b>Mark {x}</b>: x′ is d<sub>3</sub> = {a} cm from M<sub>1</sub>, so x″ is {a} cm behind M<sub>1</sub>.',
+
+    q_sum: 'The picture gives d<sub>1</sub> and d<sub>2</sub>; the mirrors are {g} cm apart. What is the d<sub>4</sub> in the picture?',
+    n_sum_d3: 'That is d<sub>3</sub>, to the first x′ behind M<sub>2</sub>. d<sub>4</sub> goes to the next one, x″.',
+    n_sum_three: 'The gap counts twice, not three times, and then d<sub>1</sub>.',
+    n_sum_twice: 'd<sub>1</sub> is added once, not twice.',
+    n_sum_two: 'That is only twice the gap; d<sub>1</sub> must be added.',
+    a_sum:
+      '<b>{a} cm</b>: x″ is the image of the x′ behind M<sub>1</sub>, {g} + {b} = {c} cm behind M<sub>2</sub>. So from M<sub>1</sub> it is {g} + {c} = {a} cm.',
+
+    q_dim: 'Look into the mirror. Which of the four marked images gets the least light?',
+    c_image: 'Image {x}',
+    n_dim: 'Its light was reflected {k} times; one further back takes more reflections and has less light.',
+    a_dim: '<b>Image {x}</b>: it is the furthest. Its light was reflected {k} times, leaving about {a}%.',
+  },
+};
+
+const BN_DIGITS = '০১২৩৪৫৬৭৮৯';
+export const toBanglaDigits = (s) => String(s).replace(/[0-9]/g, (d) => BN_DIGITS[d]);
+
+/** t(key, vars) with t.num and t.lang. Missing Bangla falls back to English, a missing key shows the key. */
+export function createI18n(lang = 'bn', { numerals = null } = {}) {
+  const code = STRINGS[lang] ? lang : 'bn';
+  const dict = { ...STRINGS.en, ...STRINGS[code] };
+  const bangla = (numerals || (code === 'bn' ? 'bn' : 'latin')) === 'bn';
+  const num = (x) => (bangla ? toBanglaDigits(x) : String(x));
+  function t(key, vars) {
+    let s = dict[key] ?? key;
+    if (vars) s = s.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? num(vars[k]) : m));
+    return s;
+  }
+  t.num = num;
+  t.lang = code;
+  return t;
+}
