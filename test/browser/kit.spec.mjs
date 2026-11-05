@@ -128,7 +128,10 @@ test('drag handle: pinned to its point, arrows along the projected way, a target
     const hits = [handle.hit(at.x + 20, at.y), handle.hit(at.x + 40, at.y)];
     const track = ui.canvasHost.querySelector('.pvc-dh-track');
     const line = track.querySelector('.dash');
-    const ends = [Number(line.getAttribute('y1')), Number(line.getAttribute('y2'))];
+    const ends = (line.getAttribute('d').match(/-?[\d.]+/g) ?? [])
+      .map(Number)
+      .filter((_, i) => i % 2)
+      .filter((_, i) => i !== 1);
 
     // labels keep off it
     const anno = createAnnotations({ stage, layer: ui.annoLayer, avoid: [() => handle.box()] });

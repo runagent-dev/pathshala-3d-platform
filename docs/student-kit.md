@@ -264,7 +264,8 @@ gentle pulse until the first drag; then it stays, smaller and calm.
   carrier, not the middle of the paper).
 - `axis`: `'x'` or `'y'` (straight arrows) or `'turn'` (a curved arrow). `direction`: the 3D direction (Vector3 or
   function), so the arrows follow it on the screen; default: along the track, or the axis.
-- `track: { from, to }`: the two ends of the range (Vector3s or functions).
+- `track: { from, to, via }`: the two ends of the range (Vector3s or functions); `via`, a point half way along a curved
+  range, bends it (an arc).
 - `label`: the first-time word from the figure's i18n (`drag_me: 'টেনে সরাও'`). `labelAt`: `'below' | 'above' | 'left' |
   'right'` (default below, or right for an upright handle; the other side when there is no room).
 - `aria`: the button's label, from the figure's i18n. `pulse`: `Boolean(o.coach)`, so tests stay still.

@@ -6,7 +6,7 @@
 //     point: () => paperFoot,                     // a Vector3, or a function returning one (it may be reused)
 //     axis: 'x',                                  // 'x' | 'y' arrows along `direction`; 'turn' a curved arrow
 //     direction: RAIL,                            // the 3D direction (or () => Vector3); default: along the track
-//     track: { from: () => railNear, to: () => railFar },   // the range, drawn faintly; optional
+//     track: { from: () => railNear, to: () => railFar },   // the range, drawn faintly; optional (`via`: a curved one)
 //     label: t('drag_me'),                        // the word shown until the first drag; optional
 //     aria: t('aria_paper'),
 //     pulse: Boolean(o.coach),
@@ -34,7 +34,7 @@ import { capturePointer, releasePointer } from './pointer.js';
  * @typedef {{ x: number, y: number, dx: number, dy: number, along: number, event: PointerEvent }} DragMove
  *   canvas pixels; dx, dy from where the drag began; along: the part of that in the handle's direction on the screen
  * @typedef {{ layer?: HTMLElement | null, point: Point, axis?: 'x' | 'y' | 'turn', direction?: Point | null,
- *             track?: { from: Point, to: Point } | null, label?: string, labelAt?: 'below' | 'above' | 'left' | 'right' | null,
+ *             track?: { from: Point, to: Point, via?: Point } | null, label?: string, labelAt?: 'below' | 'above' | 'left' | 'right' | null,
  *             aria?: string, pulse?: boolean, when?: (() => boolean) | null, quiz?: boolean,
  *             onStart?: ((drag: DragMove) => any) | null, onMove?: ((drag: DragMove) => any) | null,
  *             onEnd?: ((drag: DragMove) => any) | null, onKey?: ((dir: number, event: KeyboardEvent) => any) | null }} Options
@@ -103,8 +103,8 @@ export function createDragHandle(
     lineEl.classList.add('pvc-dh-track');
     lineEl.setAttribute('aria-hidden', 'true');
     lineEl.style.display = 'none';
-    halo = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    halo = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     halo.classList.add('halo');
     line.classList.add('dash');
     lineEl.append(halo, line);
@@ -115,8 +115,10 @@ export function createDragHandle(
   const v = new THREE.Vector3();
   const a = { x: 0, y: 0, ok: false };
   const c = { x: 0, y: 0, ok: false };
-  const e0 = { x: 0, y: 0, ok: false };
+  const e0 = { x: 0, y: 0, ok: false }; // the track's ends, and the curve's control point
   const e1 = { x: 0, y: 0, ok: false };
+  const em = { x: 0, y: 0, ok: false };
+  const at = new THREE.Vector3();
   const dir = new THREE.Vector3();
   const unit = { x: 1, y: 0 }; // the direction on the screen
   let off = false;
@@ -127,6 +129,7 @@ export function createDragHandle(
   let drawnAngle = NaN;
   let side = '';
   let trackOn = false;
+  let drawnTrack = '';
   let wordW = 0;
   let wordH = 0;
   const boxes = Array.from({ length: SAMPLES + 1 }, () => ({ left: 0, top: 0, right: 0, bottom: 0 }));
@@ -201,7 +204,7 @@ export function createDragHandle(
   }
 
   function place() {
-    const p = read(point);
+    const p = at.copy(read(point)); // a copy: the figure's point and the track's may be one reused vector
     project(p, a);
     const on = !off && a.ok && (!when || when()) && (quiz || !el.closest('.pvc[data-mode="quiz"]'));
     setShown(on);
@@ -224,20 +227,28 @@ export function createDragHandle(
     if (track) placeTrack();
   }
 
-  function setLine(l) {
-    l.setAttribute('x1', e0.x.toFixed(1));
-    l.setAttribute('y1', e0.y.toFixed(1));
-    l.setAttribute('x2', e1.x.toFixed(1));
-    l.setAttribute('y2', e1.y.toFixed(1));
-  }
-
   function placeTrack() {
     project(read(track.from), e0);
     project(read(track.to), e1);
-    setTrack(e0.ok && e1.ok);
+    let ok = e0.ok && e1.ok;
+    if (track.via) {
+      project(read(track.via), em);
+      ok = ok && em.ok;
+    } else {
+      em.x = (e0.x + e1.x) / 2;
+      em.y = (e0.y + e1.y) / 2;
+    }
+    setTrack(ok);
     if (!trackOn) return;
-    setLine(halo);
-    setLine(line);
+    // through the middle point: the curve's control point lies twice as far from the chord
+    em.x = 2 * em.x - (e0.x + e1.x) / 2;
+    em.y = 2 * em.y - (e0.y + e1.y) / 2;
+    const d = `M${e0.x.toFixed(1)} ${e0.y.toFixed(1)}Q${em.x.toFixed(1)} ${em.y.toFixed(1)} ${e1.x.toFixed(1)} ${e1.y.toFixed(1)}`;
+    if (d !== drawnTrack) {
+      drawnTrack = d;
+      halo.setAttribute('d', d);
+      line.setAttribute('d', d);
+    }
   }
 
   const remove = stage.onAfterRender(place);
@@ -360,8 +371,9 @@ export function createDragHandle(
         for (let i = 1; i <= SAMPLES; i++) {
           const f = (i - 1) / (SAMPLES - 1);
           const q = boxes[i];
-          const x = e0.x + (e1.x - e0.x) * f;
-          const y = e0.y + (e1.y - e0.y) * f;
+          const g = 1 - f;
+          const x = g * g * e0.x + 2 * g * f * em.x + f * f * e1.x;
+          const y = g * g * e0.y + 2 * g * f * em.y + f * f * e1.y;
           q.left = x - TRACK_PAD;
           q.right = x + TRACK_PAD;
           q.top = y - TRACK_PAD;
