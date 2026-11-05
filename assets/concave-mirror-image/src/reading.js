@@ -19,9 +19,9 @@ export const F0 = R0 / 2;
 export const MIRROR = { half: 10, thick: 0.7 };
 /** The pencil XY stands on the axis, 6 cm tall. Where it may stand, cm from P, and where the figure starts. It moves by half centimetres. */
 export const PENCIL = 6;
-export const U = { min: 4, max: 75, start: 40, step: 0.5 };
+export const U = { min: 4, max: 60, start: 40, step: 0.5 };
 /** The screen: where it may stand, where it comes in, where it waits when there is nothing to catch; how near counts as sharp, cm. */
-export const SCREEN = { min: 6, max: 78, enter: 36, rest: 24, sharp: 0.75 };
+export const SCREEN = { min: 6, max: 78, enter: 32, rest: 24, sharp: 0.75 };
 /** The paper of the screen, heights above the table and half its width, cm. */
 export const CARD = { bottom: 6.4, top: 19.2, half: 4.4 };
 /** The book's cases, cm: the words of the panel, in the order the action goes. */

@@ -3,7 +3,7 @@
 // the camera: even anti-aliased lines with a thin dark edge and small filled chevrons, at any size (the style of spherical-mirror-focus).
 import * as THREE from 'three';
 import { RAIL, SCALE_POINT } from './bench.js';
-import { beamOf, CARD, F0, MIRROR, PAST, R0, sag } from './reading.js';
+import { beamOf, CARD, F0, MIRROR, PAST, PENCIL, R0, sag } from './reading.js';
 
 export const C = {
   ray: '#f59f00',
@@ -72,8 +72,7 @@ export function createRays({ stage, host }) {
     kind: 'real',
     iv: 22.5,
     bars: 0, // u and v along the rail
-    zone: 'far',
-    bands: 0,
+    tracks: [], // the ranges of the drag handles now shown
     screenAt: null, // the x of the paper: the light stops there
   };
 
@@ -188,7 +187,7 @@ export function createRays({ stage, host }) {
   function beam(k) {
     if (k <= 0) return;
     const [a, b] = beamOf(v.u);
-    wash([v.u, 6, a.hit.x, a.hit.y, b.hit.x, b.hit.y], k * 0.09);
+    wash([v.u, PENCIL, a.hit.x, a.hit.y, b.hit.x, b.hit.y], k * 0.09);
     const stop = v.screenAt;
     const real = v.kind === 'real';
     const iv = v.iv;
@@ -300,30 +299,35 @@ export function createRays({ stage, host }) {
     ctx.stroke();
     ctx.globalAlpha = 1;
   }
-  /** The stretches of the rail: the one the pencil stands in is bright. Beyond F the image is real, inside F virtual. */
-  function bands(k) {
-    if (k <= 0) return;
-    const seg = (a, b, color, on) => {
-      Q(a, RAIL.top + 0.12, 3.6);
-      const x0 = sx;
-      const y0 = sy;
-      Q(b, RAIL.top + 0.12, 3.6);
-      ctx.globalAlpha = k * (on ? 1 : 0.34);
-      ctx.lineCap = 'butt';
-      ctx.lineWidth = on ? 6 : 3.5;
-      ctx.strokeStyle = 'rgba(10,14,20,0.9)';
-      line(x0, y0, sx, sy);
-      ctx.lineWidth = on ? 4 : 2;
+  /** The dashed range of a drag handle, with a stop at each end. */
+  function track({ from, to, y, z }) {
+    Q(from, y, z);
+    const x0 = sx;
+    const y0 = sy;
+    Q(to, y, z);
+    const x1 = sx;
+    const y1 = sy;
+    const l = Math.hypot(x1 - x0, y1 - y0) || 1;
+    const nx = (-(y1 - y0) / l) * 6;
+    const ny = ((x1 - x0) / l) * 6;
+    ctx.lineCap = 'butt';
+    ctx.setLineDash([7, 6]);
+    for (const [c, wd] of [
+      ['rgba(12,16,22,0.4)', 3.4],
+      ['rgba(255,255,255,0.8)', 1.6],
+    ]) {
+      ctx.strokeStyle = c;
+      ctx.lineWidth = wd;
+      line(x0, y0, x1, y1);
       ctx.stroke();
-      ctx.strokeStyle = color;
-      line(x0, y0, sx, sy);
-      ctx.stroke();
-      ctx.globalAlpha = 1;
-    };
-    const z = v.zone;
-    seg(0.8, F0 - 0.3, C.virtual, z === 'inside');
-    seg(F0 + 0.3, R0 - 0.3, C.real, z === 'between');
-    seg(R0 + 0.3, RAIL.right - 2, C.real, z === 'far');
+    }
+    ctx.setLineDash([]);
+    ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+    ctx.lineWidth = 2;
+    line(x0 - nx, y0 - ny, x0 + nx, y0 + ny);
+    ctx.stroke();
+    line(x1 - nx, y1 - ny, x1 + nx, y1 + ny);
+    ctx.stroke();
   }
 
   /** The end of a ray: at the paper, if it reaches it there. */
@@ -342,7 +346,7 @@ export function createRays({ stage, host }) {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);
     if (v.axis > 0) axis(v.axis);
-    bands(v.bands);
+    for (const k of v.tracks) track(k);
     if (v.bars > 0) {
       bar(0, v.u, RAIL.top + 1.5, '#1f2933', v.bars);
       if (Number.isFinite(v.iv)) bar(0, Math.max(X_BACK, Math.min(X_END, v.iv)), RAIL.top + 3, C.focus, v.bars);
@@ -396,6 +400,9 @@ export function createRays({ stage, host }) {
   function boxes() {
     out.length = 0;
     used = 0;
+    for (const k of v.tracks) {
+      along({ x: k.from, y: k.y - RAIL.axis }, { x: k.to, y: k.y - RAIL.axis });
+    }
     v.rays.forEach((r, i) => {
       const k = v.keys[i];
       if (!r) return;

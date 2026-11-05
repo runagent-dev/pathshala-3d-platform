@@ -59,7 +59,7 @@
       "options": [["explore", "learn"], ["quiz", "test"]],
       "default": "explore"
     },
-    { "name": "coach", "label": "The numbered ring and the hand", "type": "boolean", "default": "1" },
+    { "name": "coach", "label": "The numbered ring and the words on the handles", "type": "boolean", "default": "1" },
     {
       "name": "numerals",
       "label": "Digits",
@@ -84,7 +84,7 @@
     "glb": [{ "name": "default" }],
     "video": {
       "kind": "script",
-      "seconds": 45,
+      "seconds": 54,
       "fps": 30,
       "params": { "coach": "0" },
       "script": [
@@ -93,11 +93,11 @@
         { "at": 9, "command": "set", "payload": { "stage": "ray2" } },
         { "at": 15, "command": "set", "payload": { "stage": "screen" } },
         { "at": 19, "command": "set", "payload": { "screen": 24 } },
-        { "at": 22, "command": "set", "payload": { "stage": "cases", "u": 30 } },
-        { "at": 29, "command": "set", "payload": { "u": 22.5 } },
-        { "at": 33, "command": "set", "payload": { "u": 15 } },
-        { "at": 37, "command": "set", "payload": { "u": 10 } },
-        { "at": 41, "command": "set", "payload": { "stage": "table" } }
+        { "at": 23, "command": "set", "payload": { "stage": "cases", "u": 30 } },
+        { "at": 33, "command": "set", "payload": { "u": 22.5 } },
+        { "at": 38, "command": "set", "payload": { "u": 15 } },
+        { "at": 43, "command": "set", "payload": { "u": 10 } },
+        { "at": 48, "command": "set", "payload": { "stage": "table" } }
       ]
     }
   }

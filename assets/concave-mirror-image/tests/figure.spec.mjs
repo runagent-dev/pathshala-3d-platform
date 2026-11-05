@@ -54,7 +54,7 @@ test(`${ID}: the whole story on one action`, async ({ page }) => {
   st = await act();
   expect(st).toMatchObject({ u: 10, v: -30, m: 3, zone: 'inside', kind: 'virtual', inverted: false, second: 'radial' });
   await expect(fig.frame.locator('.pvc-anno', { hasText: 'অবাস্তব · সোজা · বড়' })).toHaveCount(1);
-  await expect(fig.frame.locator('.pvc-anno', { hasText: 'পর্দায় ছবি নেই' })).toHaveCount(1);
+  expect(st.screen).toBeNull(); // nothing to catch: the paper has gone
 
   // the formula and the table only at the end
   st = await act();
@@ -70,7 +70,17 @@ test(`${ID}: the whole story on one action`, async ({ page }) => {
   await settled(fig);
   await expect(fig.frame.locator('.lab-table tr.on td').first()).toHaveText('O তে');
 
-  st = await act();
+  // the test is offered only now, and the reset goes back to the beginning
+  await expect(fig.frame.locator('.pvc-act').first()).toContainText('পরীক্ষা দাও');
+  await fig.frame.locator('.pvc-act').first().click();
+  await fig.advance(900);
+  st = await fig.call('get');
+  expect(st).toMatchObject({ mode: 'quiz' });
+  await fig.frame.locator('[data-mode="explore"]').first().click();
+  await fig.advance(600);
+  await fig.frame.locator('[data-act="home"]').first().click();
+  await settled(fig);
+  st = await fig.call('get');
   expect(st).toMatchObject({ stage: 'start', u: 40, rays: 0, found: false });
   expect(log.errors).toEqual([]);
 });
@@ -81,9 +91,10 @@ test(`${ID}: the keys move the screen until it is sharp, and the pencil afterwar
   const log = await preparePage(page);
   const fig = await openFigure(page, ID, { params: { stage: 'screen' } });
   let st = await fig.call('get');
-  expect(st.screen.x).toBe(36);
+  expect(st.screen.x).toBe(32);
+  expect(st.grips).toEqual({ pencil: false, screen: true });
   await fig.frame.locator('.pvc').first().focus();
-  for (let i = 0; i < 12; i++) await page.keyboard.press('ArrowLeft');
+  for (let i = 0; i < 8; i++) await page.keyboard.press('ArrowLeft');
   st = await fig.call('get');
   expect(st.screen).toMatchObject({ x: 24, sharp: true });
   await expect(fig.frame.locator('.pvc-outcome')).toContainText('স্পষ্ট');
@@ -101,6 +112,55 @@ test(`${ID}: the keys move the screen until it is sharp, and the pencil afterwar
   st = await fig.call('get');
   expect(st).toMatchObject({ u: 39 });
   expect(st.formulaError).toBeCloseTo(0, 6);
+  expect(log.errors).toEqual([]);
+});
+
+test(`${ID}: a step that plays is not cut short, nothing is queued, and a finished step can be seen again`, async ({ page }) => {
+  test.setTimeout(300_000);
+  await page.setViewportSize({ width: 800, height: 500 });
+  const log = await preparePage(page);
+  const fig = await openFigure(page, ID, { params: { stage: 'ray1' } });
+  // two quick words: the first plays to its end, the second is ignored
+  await fig.frame.locator('[data-example="c2"]').click();
+  await fig.advance(300);
+  await fig.frame.locator('[data-example="c1"]').click();
+  await settled(fig);
+  let st = await fig.call('get');
+  expect(st).toMatchObject({ stage: 'cases', u: 22.5, rays: 2, image: true });
+  expect(st.screen).not.toBeNull();
+  // the same during a pencil's move, and during the hold on its result
+  await fig.frame.locator('[data-example="c4"]').click();
+  await fig.advance(200);
+  await fig.frame.locator('[data-example="c1"]').click();
+  await settled(fig);
+  st = await fig.call('get');
+  expect(st).toMatchObject({ stage: 'cases', u: 10, rays: 2, image: true, kind: 'virtual' });
+  expect(st.grips.pencil).toBe(true);
+  // the word of the case replays its move, and the pencil ends where it was
+  await fig.frame.locator('[data-example="c4"]').click();
+  await fig.advance(600);
+  expect((await fig.call('get')).busy).toBe(true);
+  await settled(fig);
+  await settled(fig);
+  expect(await fig.call('get')).toMatchObject({ u: 10, busy: false });
+  // the test started in the middle of a run leaves a whole scene behind it
+  await fig.frame.locator('[data-example="c2"]').click();
+  await fig.advance(200);
+  await fig.frame.locator('[data-mode="quiz"]').first().click();
+  await fig.advance(900);
+  expect((await fig.call('get')).grips).toEqual({ pencil: false, screen: false });
+  await fig.frame.locator('[data-mode="explore"]').first().click();
+  await fig.advance(600);
+  st = await fig.call('get');
+  expect(st).toMatchObject({ stage: 'cases', rays: 2, image: true });
+  // a story step plays again from the picture before it, and waits
+  await fig.call('set', { stage: 'ray1', animate: false });
+  await fig.frame.locator('[data-act="replay"]').first().click();
+  await fig.advance(400);
+  st = await fig.call('get');
+  expect(st).toMatchObject({ stage: 'ray1', busy: true, rays: 0 });
+  await settled(fig);
+  expect(await fig.call('get')).toMatchObject({ stage: 'ray1', rays: 1, busy: false });
   expect(log.errors).toEqual([]);
 });
 

@@ -31,7 +31,7 @@ To listen to it or control it from the book page, use the helper shipped in the 
 | `u` | Pencil's distance from the mirror (cm) | number | `40` |
 | `view` | View | `front` · `3d` | `front` |
 | `mode` | Start in | `explore` learn · `quiz` test | `explore` |
-| `coach` | The numbered ring and the hand | `1` · `0` | `1` |
+| `coach` | The numbered ring and the words on the handles | `1` · `0` | `1` |
 | `numerals` | Digits | (empty) follow language · `bn` Bangla · `latin` Latin |  |
 | `shadow` | Soft shadow | `1` · `0` | `1` |
 | `sound` | Sound | `1` · `0` | `1` |

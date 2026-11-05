@@ -17,6 +17,8 @@ const STRIP = { y0: 0.55, z0: 5.5, y1: 2.35, z1: 3.3 };
 export const SCALE_POINT = { y: (STRIP.y0 + STRIP.y1) / 2, z: (STRIP.z0 + STRIP.z1) / 2 };
 /** The pencil's rod stands at the front of its carrier, off the axis: under the pencil is where the image comes at O. */
 export const ROD_Z = 5;
+/** Where the drag handles run: the pencil's along the front of the rail, at its carrier; the screen's along its arm, behind. */
+export const TRACKS = { pencil: { y: RAIL.top + 0.1, z: 4.2 }, screen: { y: 5.95, z: -6.5 } };
 /** The foot of the screen, behind the rail. */
 const FOOT_Z = -13;
 
@@ -24,6 +26,10 @@ const box = (a, b, c, d, e, f) => new THREE.Box3(new THREE.Vector3(a, b, c), new
 const AXIS = RAIL.axis;
 /** An image this far from the mirror is left out of the frame: the bench would shrink to nothing, and a tab at the edge says where it is. */
 export const SEE_V = 62;
+/** A virtual image farther behind than this is left out too: taking it in would shrink the pencil and the mirror. */
+export const SEE_BEHIND = 42;
+/** The close frame ends just past F. */
+const F_MARK = 16;
 
 /**
  * What the camera shows at each moment: a box to fill, the angle to see it from. aspect is the view's width ÷ height: on a tall
@@ -35,18 +41,23 @@ export const FRAMES = {
     const tall = aspect < 1.25;
     return { box: box(tall ? -0.5 : -5, 1, -1.5, u + (tall ? 1.5 : 3), AXIS + 11.5, 1.5), az: tall ? 40 : 30, el: 9 };
   },
-  // the screen and the pencil, turned so that the paper can be seen
-  screen: ({ u, s, v }) => ({ box: box(Math.min(s, v) - 9, 0.2, -7, Math.max(u, s) + 4, AXIS + 8, 7), az: 40, el: 10 }),
+  // the paper and the pencil, close: the mirror goes out of the frame, the image on the paper is what counts
+  screen: ({ u, s, v }) => ({ box: box(Math.min(s, v) - 5.5, 3, -5, Math.max(u, s) + 3, AXIS + 7, 5), az: 40, el: 10 }),
+  // the mirror to the pencil, the whole scale from a little way off: the test reads it here
+  wide: ({ u }) => ({ box: box(-11, 0.2, -7, Math.max(u, 22) + 6, AXIS + 12, 7), az: 30, el: 9 }),
+  // at F and inside it: from the same side as the others, with no paper; behind the mirror the frame takes in the image while it is near
+  close: ({ u, img }) => {
+    const behind = img.kind === 'virtual' && img.behind <= SEE_BEHIND;
+    const x0 = behind ? -img.behind - 4 : -12;
+    const top = AXIS + (behind ? Math.max(12, img.length + 3) : 12);
+    return { box: box(x0, 1, -3, Math.max(u, F_MARK) + 3.5, top, 3), az: 30, el: 9 };
+  },
   // and with the image, wherever it is
   cases: ({ u, img, aspect }) => {
     const tall = aspect < 1.25;
-    const near = Math.abs(img.v) <= SEE_V;
-    const real = img.kind === 'real' && near;
-    const behind = img.kind === 'virtual' && near;
-    const x0 = behind ? Math.min(-13, -img.behind - 5) : tall ? -11 : -13;
+    const real = img.kind === 'real' && img.v <= SEE_V;
     const x1 = Math.max(u, real ? img.v : 30) + (tall ? 6 : 10);
-    const top = AXIS + (behind ? Math.max(13, Math.min(img.length, 30) + 3) : 13);
-    return { box: box(x0, 0.2, -7, x1, top, 7), az: behind ? 24 : tall ? 36 : 30, el: 9 };
+    return { box: box(tall ? -11 : -13, 0.2, -7, x1, AXIS + 13, 7), az: tall ? 36 : 30, el: 9 };
   },
 };
 

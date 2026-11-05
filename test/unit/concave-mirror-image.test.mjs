@@ -46,7 +46,7 @@ test('the book’s cases: 1/u + 1/v = 1/f and m = l′/l', () => {
 });
 
 test('the book’s table: every row', () => {
-  for (const u of [75, 40, 31]) {
+  for (const u of [60, 40, 31]) {
     const i = imageOf(u);
     assert.equal(zoneOf(u), 'far');
     assert.ok(i.kind === 'real' && i.v > F0 && i.v < R0 && i.m < 1 && i.tip < 0);
@@ -137,8 +137,10 @@ test('at F the rays leave parallel: they can never meet', () => {
 });
 
 test('how far the book’s drawn rays are from the bare law of reflection', () => {
-  // the honest number of NOTES.md: within 3° in the book's cases, and the pole and radius rays exact
-  for (const u of CASES) for (const r of twoRays(u)) assert.ok(lawError(r) < 3, `${r.name} at ${u}: ${lawError(r)}°`);
+  // the numbers of NOTES.md: within 2° in the book's cases, and the pole and radius rays exact
+  for (const u of CASES) for (const r of twoRays(u)) assert.ok(lawError(r) <= 2, `${r.name} at ${u}: ${lawError(r)}°`);
+  for (const r of twoRays(22.5)) assert.ok(lawError(r) < 1);
+  assert.ok(Math.max(...positions().flatMap((u) => twoRays(u).map((r) => lawError(r)))) < 4.2);
   near(lawError(rayOf('pole', 22.5)), 0);
   near(lawError(rayOf('radial', 10)), 0, 1e-9);
 });
