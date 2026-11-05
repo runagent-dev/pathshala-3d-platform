@@ -42,6 +42,11 @@ export function beatOf(step, stage = 0) {
 }
 /** The step a beat belongs to (the one that ended in it, or is under way). */
 export const stepOfBeat = (beat) => STEPS.find((id) => beat <= SPAN[id][1]) ?? 'book';
+/** The words a student may tap, having reached this beat: the steps finished so far and the one they lead to, never further. */
+export function openSteps(reached) {
+  const finished = STEPS.filter((id) => reached >= SPAN[id][1]).length;
+  return STEPS.slice(0, finished + 1);
+}
 /** The images that stand at a beat, in the order they came. */
 export function imagesAt(beat) {
   const out = [];

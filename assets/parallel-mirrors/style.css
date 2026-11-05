@@ -26,12 +26,16 @@ body.bg-transparent { background: transparent; }
 .pvc .pm2-hd svg { width: 22px; height: 22px; stroke: #1f2933; stroke-width: 2.2; fill: none; }
 .pm2-hl { position: absolute; left: 0; top: 22px; transform: translateX(-50%); padding: 1px 7px; border-radius: 4px; background: #1864ab; color: #fff; font-size: 13px; font-weight: 600; line-height: 1.5; white-space: nowrap; }
 .pm2-handle.up .pm2-hl { left: 22px; top: -11px; transform: none; }
+.pm2-handle.up.end .pm2-hl { left: auto; right: 22px; }
 .pm2-handle.used .pm2-hl, .pm2-handle.calm .pm2-hl { display: none; }
 .pm2-handle.used .pm2-hd, .pm2-handle.calm .pm2-hd { left: -13px; top: -13px; width: 26px; height: 26px; animation: none; }
 .pvc .pm2-handle.used .pm2-hd svg, .pvc .pm2-handle.calm .pm2-hd svg { width: 18px; height: 18px; }
 @keyframes pm2-pulse {
   50% { transform: scale(1.14); box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.35), 0 1px 4px rgba(10, 16, 24, 0.5); }
 }
+.pm2-handle.wait { opacity: 0.45; }
+.pm2-handle.wait .pm2-hl { display: none; }
+.pm2-handle.wait .pm2-hd { animation: none; }
 .pvc[data-mode='quiz'] .pm2-handle { display: none; }
 
 /* the view turns all the way round: a dark pill in a corner, nothing like the white disc on a part. After the first turn only the
@@ -39,13 +43,28 @@ body.bg-transparent { background: transparent; }
 .pm2-turn { position: absolute; right: 8px; bottom: 6px; z-index: 2; display: flex; align-items: center; gap: 5px; padding: 3px 9px 3px 6px; border-radius: 13px; background: rgba(24, 36, 48, 0.78); color: #fff; font-size: 12.5px; line-height: 20px; pointer-events: none; white-space: nowrap; transition: padding 0.4s; }
 .pvc .pm2-turn svg { flex: none; width: 20px; height: 20px; stroke: #fff; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
 .pm2-turn b { font-weight: 700; }
-.pm2-turn.used { padding: 3px; opacity: 0.72; }
-.pm2-turn.used b, .pm2-turn.used span { display: none; }
+.pm2-turn.used { padding: 3px 9px 3px 6px; opacity: 0.8; }
+.pm2-tn, .pm2-turn.used .pm2-tw, .pm2-turn.near b, .pm2-turn.near .pm2-tw { display: none; }
+.pm2-turn.near .pm2-tn { display: inline; }
 .pvc[data-mode='quiz'] .pm2-turn { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
   .pm2-hd { animation: none; }
 }
+
+/* the front view is a word with a target, never a circular arrow */
+.pm2 .pvc-corner .pm2-front { width: auto; gap: 4px; padding: 0 9px; font-size: 13.5px; font-weight: 600; white-space: nowrap; }
+.pm2 .pm2-front svg { width: 18px; height: 18px; flex: none; }
+
+/* a word not yet reached: the action leads there */
+.pm2 .pvc-examples button.pm2-shut { opacity: 0.42; cursor: default; }
+.pm2 .pvc-examples button.pm2-shut:hover { background: none; color: var(--ink-2); }
+
+/* the replay says its word where there is room: on a phone held upright and in a wide side panel */
+.pm2 .pvc-quiet span { font-size: 13.5px; font-weight: 600; white-space: nowrap; }
+.pm2 .pvc-act-row .pvc-quiet > span { display: none; }
+@container pvc (min-width: 340px) and (max-width: 420px) { .pm2 .pvc-act-row .pvc-quiet > span { display: inline; } }
+@container pvc-panel (min-width: 340px) { .pm2 .pvc-act-row .pvc-quiet > span { display: inline; } }
 
 /* the six words of the build stand in two rows of three */
 .pm2 .pvc-examples { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }

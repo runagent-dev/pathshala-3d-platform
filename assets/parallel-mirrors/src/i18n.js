@@ -28,7 +28,7 @@ export const STRINGS = {
     ex_again: 'আরও একবার',
     ex_many: 'অসংখ্য',
     ex_book: 'বইয়ের ছবি',
-    act_home: 'এই ধাপ আবার দেখো',
+    act_home: 'আবার দেখো',
     act_wait: 'দেখো…',
     act_b0: 'আয়নায় দেখো',
     act_b1: 'দ্বিতীয় আয়না আনো',
@@ -63,8 +63,8 @@ export const STRINGS = {
     rule_b5:
       'একইভাবে M<sub>2</sub> এর পেছনের x′ হলো M<sub>1</sub> এর বস্তু। M<sub>1</sub> থেকে তার দূরত্ব d<sub>3</sub>, তাই M<sub>1</sub> এর d<sub>3</sub> পেছনে আরেকটি x″।',
     rule_b6: 'এবার বাম x″ বস্তু। M<sub>1</sub> থেকে তার দূরত্ব d<sub>4</sub>, তাই M<sub>1</sub> এর d<sub>4</sub> পেছনে x‴। আলো তিনবার প্রতিফলিত হলো।',
-    rule_b7: 'এভাবে চলতেই থাকবে, <b>অসংখ্য প্রতিবিম্ব</b>। প্রতি প্রতিফলনে প্রায় {a}% আলো হারায়, তাই দূরেরটি ম্লান। ছবিতে ম্লান হওয়া একটু বাড়িয়ে আঁকা।',
-    rule_b8: 'আসল আয়নায় এভাবেই দেখা যায়। আয়নার পেছনে আসলে কোনো মোমবাতি নেই, সবই অবাস্তব প্রতিবিম্ব। ওপরের সংখ্যা: আলো প্রায় কতটা বাকি।',
+    rule_b7: 'এভাবে চলতেই থাকবে, <b>অসংখ্য প্রতিবিম্ব</b>। প্রতিটি পরেরটি একটু ম্লান (ছবিতে একটু বাড়িয়ে আঁকা)।',
+    rule_b8: 'আসল আয়নায় এভাবেই দেখা যায়, সবই অবাস্তব প্রতিবিম্ব। প্রতি প্রতিফলনে প্রায় {a}% আলো হারায়। ওপরের সংখ্যা: আলো প্রায় কতটা বাকি।',
     rule_b9: 'এই হলো বইয়ের চিত্র ৮.০৪। প্রতিটি দূরত্ব আয়নার সামনে ও পেছনে সমান। কোনো প্রতিবিম্বে চাপ দিলে তার আলোর পথ দেখা যাবে।',
     rule_pick: 'আলো মোমবাতি থেকে বেরিয়ে আয়নায় প্রতিফলিত হয়ে চোখে আসে। ড্যাশ রেখা দেখায়, আলো কোথা থেকে আসছে বলে মনে হয়।',
     note_rays: 'বহু রশ্মির একটি আঁকা হয়েছে',
@@ -90,6 +90,7 @@ export const STRINGS = {
     l_object2: 'এই x″ এখন বস্তু',
     l_drag: 'টেনে সরাও',
     turn_360: '৩৬০°',
+    turn_near: 'একটু ঘুরিয়ে দেখো',
     l_more: 'চলতেই থাকে …',
     l_more0: '… চলতেই থাকে',
     letters: 'ক,খ,গ,ঘ',
@@ -167,7 +168,7 @@ export const STRINGS = {
     ex_again: 'Once more',
     ex_many: 'Countless',
     ex_book: 'Book’s picture',
-    act_home: 'Watch this step again',
+    act_home: 'Watch again',
     act_wait: 'Watch…',
     act_b0: 'Look in the mirror',
     act_b1: 'Bring the second mirror',
@@ -203,10 +204,9 @@ export const STRINGS = {
       'In the same way the x′ behind M<sub>2</sub> is an object for M<sub>1</sub>. It is d<sub>3</sub> from M<sub>1</sub>, so another x″ stands d<sub>3</sub> behind M<sub>1</sub>.',
     rule_b6:
       'Now the left x″ is the object. It is d<sub>4</sub> from M<sub>1</sub>, so x‴ stands d<sub>4</sub> behind M<sub>1</sub>. The light is reflected three times.',
-    rule_b7:
-      'So it goes on: <b>countless images</b>. Each reflection loses about {a}% of the light, so the far ones are dim. The picture fades them a little more than real.',
+    rule_b7: 'So it goes on: <b>countless images</b>. Each next one is a little dimmer (the picture fades them a little more than real).',
     rule_b8:
-      'This is what a real pair of mirrors shows. No candle is really behind the mirror: all are virtual images. The numbers above: about how much light is left.',
+      'This is what a real pair of mirrors shows: all are virtual images. Each reflection loses about {a}% of the light. The numbers above: about how much is left.',
     rule_b9:
       'This is the book’s figure 8.04. Each distance is the same in front of a mirror and behind it. Tap an image to see the path of its light.',
     rule_pick: 'Light leaves the candle, reflects in the mirrors and reaches the eye. The dashes show where it seems to come from.',
@@ -233,6 +233,7 @@ export const STRINGS = {
     l_object2: 'This x″ is now the object',
     l_drag: 'Drag it',
     turn_360: '360°',
+    turn_near: 'Turn it a little',
     l_more: 'It goes on …',
     l_more0: '… it goes on',
     letters: 'A,B,C,D',

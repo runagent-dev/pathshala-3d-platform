@@ -18,6 +18,7 @@ import {
   M,
   NAMED,
   OBJECT_AT,
+  openSteps,
   PAIR_X,
   pairChoices,
   path,
@@ -211,6 +212,16 @@ test('steps and beats agree: every step ends where the next begins', () => {
   assert.equal(beatOf('book', 9), LAST_BEAT);
   for (const id of STEPS) assert.equal(stepOfBeat(beatOf(id, 9)), id);
   assert.equal(beatOf('nothing'), 0);
+});
+
+test('the words open one step at a time, so that nothing can jump to the crowded picture', () => {
+  assert.deepEqual(openSteps(0), ['one']);
+  assert.deepEqual(openSteps(1), ['one', 'two']);
+  assert.deepEqual(openSteps(2), ['one', 'two', 'image']);
+  assert.deepEqual(openSteps(3), ['one', 'two', 'image']); // half way through a step the next word stays shut
+  assert.deepEqual(openSteps(8), STEPS);
+  assert.deepEqual(openSteps(LAST_BEAT), STEPS);
+  for (let b = 0; b < LAST_BEAT; b++) assert.ok(openSteps(b).includes(stepOfBeat(b + 1)), `beat ${b}`);
 });
 
 test('only the newest pair of distances is at full strength, all of them only in the book’s picture', () => {

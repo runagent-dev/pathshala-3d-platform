@@ -23,6 +23,8 @@ To listen to it or control it from the book page, use the helper shipped in the 
 
 ## URL parameters
 
+Since 0.3.0 `step` takes `one`, `two`, `image`, `again`, `many`, `book` (it was `first`, `second`, `many`), and `stage` counts taps into that step.
+
 <!-- generated:params (npm run docs) -->
 | Param | Meaning | Values | Default |
 |---|---|---|---|

@@ -7,21 +7,29 @@ import { openFigure, preparePage } from '../../../scripts/lib/export/driver.mjs'
 const PLAY = [0, 5200, 6000, 6200, 7000, 6800, 6300, 7800, 2800, 2800];
 
 test('parallel-mirrors: from one mirror to the book’s whole picture, one tap at a time', async ({ page }) => {
-  test.setTimeout(420_000);
-  await page.setViewportSize({ width: 800, height: 500 });
+  test.setTimeout(200_000);
+  await page.setViewportSize({ width: 640, height: 400 });
   const log = await preparePage(page);
   const fig = await openFigure(page, 'parallel-mirrors');
+  const f = fig.frame;
+  // the stage's clock takes at most 50 ms a frame, so a played tap costs its whole length in software rendering: the taps that
+  // change most are played, the others jump to the same state
   const act = async (beat) => {
-    await fig.frame.locator('.pvc-act').first().click();
+    await f.locator('.pvc-act').first().click();
     await fig.advance(PLAY[beat]);
     return fig.call('get');
+  };
+  const jump = async (step, stage) => {
+    const after = await fig.call('set', { step, stage, animate: false });
+    await fig.advance(200);
+    return after;
   };
   let st = await fig.call('get');
   // it starts with the candle and one mirror, nothing else
   expect(st).toMatchObject({ step: 'one', beat: 0, x: 5, m2: 0, d1: 10, d2: 20, d3: 50, d4: 70, images: [], trace: null });
 
   // one image, the rule of a plane mirror, and no ray yet
-  st = await act(1);
+  st = await jump('one', 1);
   expect(st).toMatchObject({ beat: 1, phase: 'b1', m2: 0, images: [{ id: 'r1', x: 25 }], trace: null });
   await expect(fig.frame.locator('.pvc-outcome')).toContainText('১০');
   for (const x of [-7, -2, 7]) {
@@ -41,7 +49,7 @@ test('parallel-mirrors: from one mirror to the book’s whole picture, one tap a
   expect((await fig.call('get')).beat).toBe(2);
 
   // the first image is an object for the second mirror
-  st = await act(3);
+  st = await jump('image', 1);
   expect(st).toMatchObject({ step: 'image', beat: 3, trace: null });
   expect(st.images.at(-1)).toEqual({ id: 'l2', x: -55 });
   await expect(fig.frame.locator('.pvc-anno', { hasText: 'এই x′ এখন বস্তু' })).toBeVisible();
@@ -53,26 +61,29 @@ test('parallel-mirrors: from one mirror to the book’s whole picture, one tap a
   expect(st.trace.backMiss).toBeCloseTo(0, 6);
 
   // the other side: the book's d₃ and d₄
-  st = await act(5);
+  st = await jump('again', 1);
   expect(st).toMatchObject({ step: 'again', beat: 5, trace: null });
   expect(st.images.at(-1)).toEqual({ id: 'r2', x: 65 });
   await expect(fig.frame.locator('.pvc-outcome')).toContainText('৫০');
-  st = await act(6);
+  st = await jump('again', 2);
   expect(st.images.at(-1)).toEqual({ id: 'r3', x: 85 });
   await expect(fig.frame.locator('.pvc-outcome')).toContainText('৭০');
+  // from step 4 on an older pair keeps its line, not its name
+  await expect(fig.frame.locator('.pvc-anno', { hasText: 'd' })).toHaveCount(2);
 
   // it goes on, into the mirror, and only then the book's whole picture
   st = await act(7);
   expect(st).toMatchObject({ step: 'many', beat: 7, frame: 'row' });
   expect(st.images.length).toBe(12);
   await expect(fig.frame.locator('.pvc-rule')).toContainText('অসংখ্য প্রতিবিম্ব');
-  st = await act(8);
+  st = await jump('many', 2);
   expect(st).toMatchObject({ beat: 8, inside: true, frame: 'inside' });
   await expect(fig.frame.locator('.pvc-outcome')).toContainText('৮১');
-  st = await act(9);
+  st = await jump('book', 1);
   expect(st).toMatchObject({ step: 'book', beat: 9, inside: false, frame: 'book' });
   expect(st.images.map((q) => q.id)).toEqual(['r1', 'l1', 'l2', 'r2', 'r3']);
   await expect(fig.frame.locator('.pvc-anno', { hasText: 'd' })).toHaveCount(8);
+  expect(st.open).toEqual(['one', 'two', 'image', 'again', 'many', 'book']);
 
   // the test is offered only now
   await expect(fig.frame.locator('.pvc-act').first()).toContainText('পরীক্ষা দাও');
@@ -81,6 +92,31 @@ test('parallel-mirrors: from one mirror to the book’s whole picture, one tap a
   expect((await fig.call('get')).mode).toBe('quiz');
   await fig.call('reset');
   expect(await fig.call('get')).toMatchObject({ step: 'one', beat: 0, m2: 0, x: 5 });
+  expect(log.errors).toEqual([]);
+});
+
+test('parallel-mirrors: the words open as the student goes: no jump to the crowded picture', async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 640, height: 400 });
+  const log = await preparePage(page);
+  const fig = await openFigure(page, 'parallel-mirrors');
+  const f = fig.frame;
+  await fig.advance(300);
+  expect((await fig.call('get')).open).toEqual(['one']);
+  await expect(f.locator('[data-example="book"]')).toHaveAttribute('aria-disabled', 'true');
+  for (const id of ['book', 'many', 'two']) {
+    await f.locator(`[data-example="${id}"]`).click({ force: true }); // a real tap: Playwright alone would wait for aria-disabled to go
+    await fig.advance(300);
+    expect(await fig.call('get')).toMatchObject({ step: 'one', beat: 0, phase: 'b0' });
+  }
+  await f.locator('.pvc-act').first().click();
+  await fig.advance(PLAY[1]);
+  expect((await fig.call('get')).open).toEqual(['one', 'two']);
+  await expect(f.locator('[data-example="two"]')).toHaveAttribute('aria-disabled', 'false');
+  await expect(f.locator('[data-example="image"]')).toHaveAttribute('aria-disabled', 'true');
+  await f.locator('[data-example="two"]').click();
+  await fig.advance(PLAY[2]);
+  expect(await fig.call('get')).toMatchObject({ step: 'two', beat: 2, m2: 1, reached: 2 });
   expect(log.errors).toEqual([]);
 });
 
@@ -97,7 +133,7 @@ test('parallel-mirrors: taps wait while a step plays, and a word replays its ste
   expect(st).toMatchObject({ step: 'one', beat: 1, phase: 'busy', m2: 0 });
   // tapping again changes nothing, nor do the other words
   await act.click({ force: true });
-  await fig.frame.locator('[data-example="many"]').click();
+  await fig.frame.locator('[data-example="many"]').click({ force: true });
   await fig.advance(500);
   expect(await fig.call('get')).toMatchObject({ step: 'one', beat: 1, phase: 'busy' });
   await fig.advance(PLAY[1]);
@@ -181,7 +217,8 @@ test('parallel-mirrors: a tap is not a turn; the view goes all the way round and
   await fig.advance(400);
   const c = await f.locator('.pvc-canvas').boundingBox();
   const [x, y] = [c.x + 60, c.y + 70];
-  await expect(f.locator('.pm2-turn span')).toBeVisible();
+  await expect(f.locator('.pm2-tw')).toBeVisible();
+  await expect(f.locator('.pm2-turn b')).toContainText('৩৬০°');
   // a plain tap, with a finger's small slip
   await page.mouse.move(x, y);
   await page.mouse.down();
@@ -199,15 +236,23 @@ test('parallel-mirrors: a tap is not a turn; the view goes all the way round and
   await fig.advance(1200);
   st = await fig.call('get');
   expect(st).toMatchObject({ view: '3d', turned: true });
-  await expect(f.locator('.pm2-turn span')).toBeHidden();
+  // the pill keeps ⟲ ৩৬০°, never the icon alone
+  await expect(f.locator('.pm2-tw')).toBeHidden();
   await expect(f.locator('.pm2-turn svg')).toBeVisible();
+  await expect(f.locator('.pm2-turn b')).toBeVisible();
   // all the way round, and the সামনে button brings the guided view back
   for (const azimuth of [90, 180, -90]) expect((await fig.call('set', { azimuth, animate: false })).view).toBe('3d');
+  await expect(f.locator('[data-view="front"]')).toContainText('সামনে');
   await f.locator('[data-view="front"]').click();
   await fig.advance(2200);
   st = await fig.call('get');
   expect(st.view).toBe('front');
   await expect(f.locator('[data-view="front"]')).toBeHidden();
+  // looking into M₁ the camera stands between the mirrors: the pill does not promise 360°
+  await fig.call('set', { step: 'many', stage: 2, animate: false });
+  await fig.advance(300);
+  await expect(f.locator('.pm2-tn')).toBeVisible();
+  await expect(f.locator('.pm2-turn b')).toBeHidden();
   expect(log.errors).toEqual([]);
 });
 
@@ -219,7 +264,7 @@ test('parallel-mirrors: the test runs to its end and leaves the learn state as i
   await fig.call('practice');
   const f = fig.frame;
   for (let i = 0; i < 5; i++) {
-    await fig.advance(900);
+    await fig.advance(1300);
     await expect(f.locator('.pvc-opt')).toHaveCount(4);
     await f.locator('.pvc-opt').first().click();
     await fig.advance(300);
@@ -244,7 +289,7 @@ test('parallel-mirrors: every question can be answered right: five of five', asy
   const f = fig.frame;
   const kinds = [];
   for (let i = 0; i < 5; i++) {
-    await fig.advance(900);
+    await fig.advance(1300);
     await expect(f.locator('.pvc-opt')).toHaveCount(4);
     const { question } = await fig.call('get');
     kinds.push(question.kind);

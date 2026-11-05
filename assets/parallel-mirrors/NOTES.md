@@ -32,18 +32,27 @@ angle, a camera per step with smooth zooms, one element at a time, labels never 
   own flights stay 0.5 s: a question should not keep a student waiting.
   The newest thing glows amber and its label is highlighted, as in `plane-mirror-image`. A tap on any named image traces its
   light, stretch by stretch, and says the chain ("x″: M₂ থেকে M₁, ২ বার"). The action's numbered ring sits on what it is about.
+- **The words open as the student goes:** the steps finished and the one after them. A later word is dim and does nothing except make the
+  action pulse, so one tap can never jump to the crowded picture. Finished steps still replay. `step` and `stage` in the URL go anywhere
+  and count as reached. Since 0.3.0 `step` takes `one`, `two`, `image`, `again`, `many`, `book` (was `first`, `second`, `many`).
 - **Only the newest pair of distances is at full strength**; older ones are faint (about 30 %), and only the book's picture has them all.
-- **The frame takes in an image's whole range**, not where it stands now, so the view stands still while the candle is dragged.
+  From step 4 on a faint pair keeps its line, not its name (a phone had eight grey boxes there), and "এই x″ এখন বস্তু" leaves with the glow.
+  With the view turned end-on along the row, a distance too short to carry its name loses it.
+- **The frame** takes in an image's whole range up to step 3, so the view stands still while the candle is dragged. From step 4 on it takes in
+  where the images stand now, because they need every pixel of a phone, and the view follows the drag a little. Step 3 stands at −12°, so
+  that the right x′ stands clear of M₁ and the candle even at x = 7.
 - **The candle's handle** is the chapter's visible handle: a white disc with a thin dark ring and ↔ arrows, a faint dashed track
   with its ends marked, "টেনে সরাও" and a gentle pulse until the first drag, a smaller disc after that, hidden in the test. On a wide
   view the table is thin on the screen, so handle and track step down until they clear the candle's foot. Its arrows follow the row
-  on the screen, so from behind or from the side the drag still follows the finger.
+  on the screen, so from behind or from the side the drag still follows the finger. It dims while a step plays, and does not vanish.
 - **The view turns all the way round** (no azimuth limit, polar 5°–88°, zoom 0.45–1.6 of the guided distance, damping on). OrbitControls
   starts on the finger going down, so only 8 px of movement counts as taking the view: a tap leaves it alone. A dark pill in the corner
-  (⟲ ৩৬০° ঘুরিয়ে দেখো) stays until the first turn, then only its small icon; it looks nothing like the white disc on the candle.
-  The next step, or the kit's "সামনে" button, flies back round the scene, not through it. The one exception is the view into
-  M₁: the camera stands between the mirrors and looks through M₁, and beyond that glass this view has nothing to show, so
-  there it keeps to M₂'s side (azimuth −125° to −30°) and does not zoom.
+  (⟲ ৩৬০° ঘুরিয়ে দেখো) keeps its words until the first turn, then stays as ⟲ ৩৬০°; it looks nothing like the white disc on the candle.
+  The next step, or the "সামনে" button (a target and the word: the kit's is a circular arrow, so the figure replaces its inside, until
+  the kit changes), flies back round the scene, not through it. The one exception is the view into M₁: the camera stands between the
+  mirrors and looks through M₁, and beyond that glass this view has nothing to show, so there it keeps to M₂'s side (azimuth −115° to
+  −58°, every frame has images) and does not zoom, and the pill says ⟲ একটু ঘুরিয়ে দেখো instead of ৩৬০°.
+- **Icons do not look alike:** ⟲ with ৩৬০° turns the view, the target with সামনে goes back to the front, ▶ replays a step. The figure has no plain ↺.
 - **Images are exact.** `reading.js` reflects the candle in a chain of mirrors. An image in the scene is the same geometry moved
   there, with `scale.x = −1` for an odd number of reflections, so its handle and drips are mirrored too. Same clock, same
   flicker: every flame moves together.

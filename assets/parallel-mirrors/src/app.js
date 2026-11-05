@@ -36,6 +36,7 @@ import {
   M,
   NAMED,
   OBJECT_AT,
+  openSteps,
   PAIR_X,
   pairChoices,
   path,
@@ -69,13 +70,15 @@ export const DEFAULTS = {
 
 // the owner's pace: seconds, and a step always ends by waiting for the student's tap
 const PACE = { camera: 1.8, reveal: 3, withObject: 4.2, slide: 2.5, hold: 0.5, raySegment: 1.2, mirror: 2.4, fade: 0.9, bars: 1.2 };
-const QUIZ_FLIGHT = 0.5; // s: the test is not a demonstration, a question should not keep the student waiting
+const QUIZ_FLIGHT = 0.9; // s: the test is not a demonstration, a question should not keep the student waiting
 const FAINT = 0.3; // an older pair of distances
 const FLOOR_Z = 13; // cm: the candle's handle and track, on the table in front of it
 const GRIP_CLEAR = 30; // px: at least this far under the candle's foot on the screen
 // the ray the book's step shows at a beat
 const RAY_AT = { 4: 'l2' };
 const REVEALS = { 1: 'r1', 2: 'l1', 3: 'l2', 5: 'r2', 6: 'r3' };
+const FAINT_LABELS_UNTIL = 5; // from this beat on an older pair of distances keeps its line, not its name: a phone has no room
+const EDGE_ON = 26; // px: looking along the row, a distance shorter than its own name goes without the name
 const TURN_CLICK = 8; // px: a finger that moves less has tapped, it has not turned the view
 // where a distance's name sits: over its arrow, or, where two arrows meet at a mirror, a little to the outside of each
 const ON_DIM = [
@@ -121,7 +124,7 @@ export function createApp(root, options = {}) {
     layout: 'side',
     learn: cleanSheet(t, {
       examples: { label: 'ex_label', items: STEPS.map((id) => ({ id, label: `ex_${id}` })) },
-      quiet: [{ act: 'home', label: 'act_home', icon: ICONS.reset }],
+      quiet: [{ act: 'home', label: 'act_home', icon: ICONS.play }],
       lines: { action: 1, outcome: 1, rule: 4 },
     }),
     learnAlign: 'start',
@@ -137,7 +140,7 @@ export function createApp(root, options = {}) {
   // ── 3D ──────────────────────────────────────────────────────────────────────────────────────────────────
   const turnCue = document.createElement('div');
   turnCue.className = 'pm2-turn';
-  turnCue.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 1 0 2.4-5.5"/><path d="M4 3.5v4.6h4.6"/></svg><b>${t('turn_360')}</b><span>${t('view_rotate')}</span>`;
+  turnCue.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 1 0 2.4-5.5"/><path d="M4 3.5v4.6h4.6"/></svg><b>${t('turn_360')}</b><span class="pm2-tw">${t('view_rotate')}</span><span class="pm2-tn">${t('turn_near')}</span>`;
   ui.stage.appendChild(turnCue);
   // the candle's handle: always there while it can be moved. A finger on it is found by distance; the element lets every touch through
   const handle = document.createElement('div');
@@ -145,6 +148,14 @@ export function createApp(root, options = {}) {
   handle.hidden = true;
   handle.innerHTML = `<i class="pm2-hd"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h18M3 12l5-5M3 12l5 5M21 12l-5-5M21 12l-5 5"/></svg></i><span class="pm2-hl">${t('l_drag')}</span>`;
   ui.stage.appendChild(handle);
+
+  // the kit's button is a circular arrow, like the rotate cue: this one says what it does, with a target and the word
+  const front = ui.$('[data-view="front"]');
+  if (front) {
+    front.classList.remove('icon-only');
+    front.classList.add('pm2-front');
+    front.innerHTML = `${ICONS.target}<span>${t('view_front_short')}</span>`;
+  }
 
   const FOV = 20;
   const stage = createStage(ui.canvasHost, { fov: FOV, near: 2, far: 6000, environment: 'studio-light', environmentIntensity: 0.3 });
@@ -158,8 +169,8 @@ export function createApp(root, options = {}) {
    * there it stays on M₂'s side; beyond that glass this view has nothing to show.
    */
   function turnLimits(intoMirror) {
-    controls.minAzimuthAngle = intoMirror ? THREE.MathUtils.degToRad(-125) : Number.NEGATIVE_INFINITY;
-    controls.maxAzimuthAngle = intoMirror ? THREE.MathUtils.degToRad(-30) : Number.POSITIVE_INFINITY;
+    controls.minAzimuthAngle = intoMirror ? THREE.MathUtils.degToRad(-115) : Number.NEGATIVE_INFINITY;
+    controls.maxAzimuthAngle = intoMirror ? THREE.MathUtils.degToRad(-58) : Number.POSITIVE_INFINITY;
     controls.enableZoom = !intoMirror;
   }
   turnLimits(false);
@@ -177,6 +188,7 @@ export function createApp(root, options = {}) {
     step: STEPS.includes(o.step) ? o.step : 'one',
     x: snapCandle(Number.isFinite(Number(o.x)) ? Number(o.x) : CANDLE.start),
     beat: 0, // how many taps the build has had (reading.js lists them)
+    reached: 0, // the furthest beat so far: the words open up to the next step, no further
     m2: 0, // M₂ coming in, 0 … 1
     inside: 0, // the flight into M₁, 0 … 1
     newest: '', // what is growing in
@@ -200,6 +212,7 @@ export function createApp(root, options = {}) {
   function buildTo(step, stageN) {
     s.step = step;
     s.beat = beatOf(step, stageN);
+    s.reached = Math.max(s.reached, s.beat);
     s.m2 = s.beat >= 2 ? 1 : 0;
     s.inside = s.beat === 8 ? 1 : 0;
     s.trace = RAY_AT[s.beat] ?? '';
@@ -352,8 +365,9 @@ export function createApp(root, options = {}) {
     dimsShown = dimsNow();
     v.dims.push(...dimsShown);
     const object = OBJECT_AT[s.beat];
-    if (object && (s.newest || s.flash > 0)) {
-      const glow = s.newest ? 1 : s.flash;
+    const glowRest = s.beat < FAINT_LABELS_UNTIL ? 0.55 : 0; // while its label stands, the object keeps a soft glow
+    if (object && (s.newest || s.flash > 0 || glowRest > 0)) {
+      const glow = s.newest ? 1 : Math.max(s.flash, glowRest);
       v.halo = { x: imageAt(s.x, object[0], Number(object[1])), y: CANDLE.tip / 2, r: CANDLE.tip * 0.8, k: glow };
     }
     if (s.trace && !inRow() && s.rayA > 0) drawRay(s.trace, s.rayK, s.rayK < Number.POSITIVE_INFINITY);
@@ -364,6 +378,8 @@ export function createApp(root, options = {}) {
     start: { az: -25, el: 13, fov: FOV },
     one: { az: -24, el: 13, fov: FOV },
     book: { az: -20, el: 13, fov: FOV },
+    two: { az: -12, el: 13, fov: FOV }, // the right x′ stands clear of M₁ and the candle for its step
+    ray: { az: -12, el: 13, fov: FOV },
     row: { az: -26, el: 9, fov: FOV },
     inside: { pose: true, fov: 44 },
     'q-dim': { pose: true, fov: 44 },
@@ -401,12 +417,15 @@ export function createApp(root, options = {}) {
       x0 = -106;
       x1 = 136;
     } else {
-      // the frame takes in all of an image's way, so the view stands still while the student drags the candle
+      // early on the frame takes in all of an image's way, so the view stands still while the candle is dragged; from step 4
+      // on the images need every pixel of a phone, so it takes in where they stand now
+      const tight = s.quiz || s.beat >= FAINT_LABELS_UNTIL;
       for (const id of builtIds()) {
-        const a0 = imageAt(CANDLE.min, id[0], Number(id[1]));
-        const a1 = imageAt(CANDLE.max, id[0], Number(id[1]));
-        x0 = Math.min(x0, Math.min(a0, a1) - 8);
-        x1 = Math.max(x1, Math.max(a0, a1) + 8);
+        const k = Number(id[1]);
+        const a0 = imageAt(tight ? s.x : CANDLE.min, id[0], k);
+        const a1 = imageAt(tight ? s.x : CANDLE.max, id[0], k);
+        x0 = Math.min(x0, Math.min(a0, a1) - (tight ? 6 : 8));
+        x1 = Math.max(x1, Math.max(a0, a1) + (tight ? 6 : 8));
       }
       if (s.quiz?.range) {
         x0 = Math.min(x0, s.quiz.range[0]);
@@ -504,6 +523,9 @@ export function createApp(root, options = {}) {
       tweener.cancel('camera');
       flight = null;
       camK = 1;
+      s.userMovedCamera = false;
+      zoomLimits(false);
+      if (s.view === '3d' && !first) s.view = 'front';
     } else flyCamera(duration);
   }
   function setView(view, { animate = true } = {}) {
@@ -635,6 +657,7 @@ export function createApp(root, options = {}) {
     pickedTrace = false;
     s.busy = true;
     s.beat = next;
+    s.reached = Math.max(s.reached, next);
     s.step = stepOfBeat(next);
     s.flash = 1;
     const id = REVEALS[next] ?? (next === 7 ? 'row' : '');
@@ -711,6 +734,8 @@ export function createApp(root, options = {}) {
   function replay(step) {
     if (s.locked) return lockedNudge();
     if (!STEPS.includes(step) || phase() === 'busy') return;
+    // no skipping ahead: the crowded picture is earned. The action is what comes next, so it says so
+    if (!openSteps(s.reached).includes(step)) return action.flash();
     pickedTrace = false;
     clearLabels();
     if (step === 'book') return play(LAST_BEAT);
@@ -736,18 +761,24 @@ export function createApp(root, options = {}) {
 
   // ── labels on the picture: pinned to what they name ────────────────────────────────────────────────────
   let action = null;
-  const grip = { on: false, x: 0, y: 0, ux: 1, uy: 0, used: null, up: null, angle: 1e9 };
+  const grip = { on: false, free: null, x: 0, y: 0, ux: 1, uy: 0, used: null, up: null, angle: 1e9 };
   const gripPoint = new THREE.Vector3();
   const trackView = { x0: CANDLE.min, x1: CANDLE.max, z: FLOOR_Z, dy: 0 };
   const gripIcon = handle.querySelector('svg');
   /** On the table in front of the candle, or at the edge of the view when the student has turned that out of it. */
   function placeHandle() {
-    const on = canDrag() && camK >= 1 && !s.quiz;
+    // it stays through a step, dimmed, so that it does not come and go: it can be used again when the step has played
+    const on = s.beat >= 1 && !inRow() && s.inside === 0 && !s.quiz;
+    const free = on && canDrag() && camK >= 1;
     if (on !== grip.on) {
       grip.on = on;
       handle.hidden = !on;
     }
-    dia.view.track = on ? trackView : null;
+    if (free !== grip.free) {
+      grip.free = free;
+      handle.classList.toggle('wait', !free);
+    }
+    dia.view.track = free ? trackView : null;
     if (!on) return;
     // in a wide view the table is thin on the screen: the handle and its track step down, clear of the candle's foot
     gripPoint.set(s.x, 0, 0).project(camera);
@@ -777,6 +808,11 @@ export function createApp(root, options = {}) {
       grip.up = up;
       handle.classList.toggle('up', up);
     }
+    const end = grip.x > stage.width - 130; // its word then stands on the side with room
+    if (end !== grip.end) {
+      grip.end = end;
+      handle.classList.toggle('end', end);
+    }
     if (s.dragged !== grip.used) {
       grip.used = s.dragged;
       handle.classList.toggle('used', s.dragged);
@@ -787,8 +823,11 @@ export function createApp(root, options = {}) {
     if (!grip.on) return [];
     const r = grip.used ? 16 : 22;
     const box = { left: grip.x - r, right: grip.x + r, top: grip.y - r, bottom: grip.y + r };
-    if (grip.used || !o.coach) return [box];
-    if (grip.up) return [box, { left: grip.x + 18, right: grip.x + 104, top: grip.y - 12, bottom: grip.y + 12 }];
+    if (grip.used || !o.coach || !grip.free) return [box];
+    if (grip.up) {
+      const left = grip.end ? grip.x - 104 : grip.x + 18;
+      return [box, { left, right: left + 86, top: grip.y - 12, bottom: grip.y + 12 }];
+    }
     return [box, { left: grip.x - 44, right: grip.x + 44, top: grip.y + 22, bottom: grip.y + 44 }];
   };
   const panelTab = ui.$('.pvc-panel-toggle');
@@ -823,6 +862,7 @@ export function createApp(root, options = {}) {
     if (beat === 8 || (beat === 9 && s.inside > 0)) clearLabels();
   }
   const ptr = new THREE.Vector3();
+  const viewDir = new THREE.Vector3();
   const onScreen = { x: 0, y: 0 };
   /** Canvas pixels of a scene point. The object is reused: copy what you keep. */
   function toScreen(x, y, z = 0) {
@@ -830,6 +870,13 @@ export function createApp(root, options = {}) {
     onScreen.x = ((ptr.x + 1) / 2) * stage.width;
     onScreen.y = ((1 - ptr.y) / 2) * stage.height;
     return onScreen;
+  }
+  /** The ring where a dashed ray ends, in canvas pixels: the action's badge keeps off it. */
+  function aimBoxes() {
+    const a = dia.view.aim;
+    if (!a) return [];
+    const p = toScreen(a.x, a.y);
+    return [{ left: p.x - 20, top: p.y - 20, right: p.x + 20, bottom: p.y + 20 }];
   }
   /** Small boxes along the ray, in canvas pixels: labels keep off them. */
   function lineBoxes() {
@@ -943,6 +990,7 @@ export function createApp(root, options = {}) {
     const flying = s.inside > 0 && s.inside < 1;
     const ids = builtIds();
     const m2Here = q || s.m2 >= 1;
+    const alongRow = Math.abs(camera.getWorldDirection(viewDir).x) > 0.94; // the student has turned the view end-on
     if (!flying && !inRow() && !inMirror) {
       const wide = stage.width >= 480 && !(s.beat >= 3 || q);
       label('m1', wide ? t('l_m1') : t('l_m1s'), at(M.m1, GLASS.top), INK, TOP_SPOTS, lineAvoid);
@@ -952,7 +1000,12 @@ export function createApp(root, options = {}) {
     if (inMirror && settled) label('x', t('l_candle'), at(s.x, CANDLE.tip + 0.4), INK, REAL_SPOTS);
     if (inMirror && !q) {
       label('m1', t('l_m1s'), at(M.m1, 24, GLASS.halfW), INK, M_IN_SPOTS);
-      for (const k of [1, 2, 3]) label(`in${k}`, t(primes(k)), at(imageAt(s.x, 'r', k), CANDLE.tip + 0.4), INK, k === 3 ? IN_FAR : IN_SPOTS);
+      for (const k of [1, 2, 3]) {
+        // the view can be turned a little: an image that has left it takes its name along
+        const inView = toScreen(imageAt(s.x, 'r', k), CANDLE.tip + 0.4).x;
+        if (inView > 0 && inView < stage.width)
+          label(`in${k}`, t(primes(k)), at(imageAt(s.x, 'r', k), CANDLE.tip + 0.4), INK, k === 3 ? IN_FAR : IN_SPOTS);
+      }
     }
     if (!inRow() && !inMirror && !flying) {
       for (const id of ids) {
@@ -970,6 +1023,13 @@ export function createApp(root, options = {}) {
       for (const d of q ? (q.dims ?? []) : dimsShown) {
         const whole = d.k == null || d.k >= 1;
         if (!whole || (d.a ?? 1) < 0.2) continue;
+        if (d.faint && s.beat >= FAINT_LABELS_UNTIL) continue;
+        if (alongRow) {
+          const ax = toScreen(d.x0, d.y).x;
+          const ay = onScreen.y;
+          toScreen(d.x1, d.y);
+          if (Math.hypot(onScreen.x - ax, onScreen.y - ay) < EDGE_ON) continue;
+        }
         const text = s.newest && d.lit ? `<span class="pm2-new">${d.text}</span>` : d.faint ? `<span class="pm2-faint">${d.text}</span>` : d.text;
         label(d.id, text, at((d.x0 + d.x1) / 2, d.y), INK, d.spots ?? ON_DIM);
       }
@@ -978,7 +1038,7 @@ export function createApp(root, options = {}) {
         label('eye', t('l_eye'), at(e.x, e.y), SLATE, EYE_SPOTS, lineAvoid, true); // the eye is drawn: its name may step aside
       }
       const object = !q && OBJECT_AT[s.beat];
-      if (object) {
+      if (object && (s.beat < FAINT_LABELS_UNTIL || s.newest || s.flash > 0)) {
         const name = object[1] === '2' ? 'l_object2' : 'l_object';
         label('obj', t(name), at(imageAt(s.x, object[0], Number(object[1])), CANDLE.tip + 0.4), '#9a5300', ABOVE);
       }
@@ -1004,7 +1064,7 @@ export function createApp(root, options = {}) {
   }
 
   // ── the panel ───────────────────────────────────────────────────────────────────────────────────────────
-  const steady = { act: '' };
+  const steady = { act: '', open: 0, near: false };
   function outcome() {
     const d = distances(s.x);
     const a = N(num(d.d1));
@@ -1060,6 +1120,19 @@ export function createApp(root, options = {}) {
     sheet.outcome(outcome());
     sheet.rule(rule());
     sheet.choose(s.step);
+    const open = openSteps(s.reached).length;
+    if (open !== steady.open) {
+      steady.open = open;
+      sheet.words.forEach((b, i) => {
+        b.classList.toggle('pm2-shut', i >= open);
+        b.setAttribute('aria-disabled', String(i >= open));
+      });
+    }
+    const near = s.inside >= 1 && !s.quiz;
+    if (near !== steady.near) {
+      steady.near = near;
+      turnCue.classList.toggle('near', near);
+    }
     sheet.next(ph === 'busy' || s.beat >= LAST_BEAT ? null : stepOfBeat(s.beat + 1) === s.step ? null : stepOfBeat(s.beat + 1));
     const [word, step, icon] = ACTIONS[ph];
     const enabled = ph !== 'busy';
@@ -1100,7 +1173,7 @@ export function createApp(root, options = {}) {
     label: 'act_b0',
     target: actionSpot,
     radius: 20,
-    avoid: [ui.corner, ui.hint, note, turnCue, () => anno.boxes()],
+    avoid: [ui.corner, ui.hint, note, turnCue, () => anno.boxes(), aimBoxes, lineBoxes],
     pulse: Boolean(o.coach),
     onAct: () => act(),
   });
@@ -1157,7 +1230,7 @@ export function createApp(root, options = {}) {
     const p = hostXY(e);
     if (orbiting && tap?.id === e.pointerId && Math.hypot(p.x - tap.x, p.y - tap.y) >= TURN_CLICK) takeView();
     const g = s.drag;
-    if (e.pointerType === 'mouse' && !g) ui.canvasHost.style.cursor = grip.on && Math.hypot(p.x - grip.x, p.y - grip.y) <= 26 ? 'grab' : '';
+    if (e.pointerType === 'mouse' && !g) ui.canvasHost.style.cursor = grip.free && Math.hypot(p.x - grip.x, p.y - grip.y) <= 26 ? 'grab' : '';
     if (!g || e.pointerId !== g.id) return;
     const along = (p.x - g.x) * g.ux + (p.y - g.y) * g.uy;
     g.moved = Math.max(g.moved, Math.abs(along));
@@ -1559,6 +1632,8 @@ export function createApp(root, options = {}) {
       d3: +d.d3.toFixed(4),
       d4: +d.d4.toFixed(4),
       beat: s.beat,
+      reached: s.reached,
+      open: openSteps(s.reached),
       m2: s.m2,
       inside: s.inside >= 1,
       images: builtIds().map((id) => ({ id, x: +imageAt(s.x, id[0], Number(id[1])).toFixed(4) })),
@@ -1642,6 +1717,7 @@ export function createApp(root, options = {}) {
       stopMotion();
       s.x = CANDLE.start;
       pickedTrace = false;
+      s.reached = 0;
       buildTo('one', 0);
       clearLabels();
       setView('front', { animate: false });
