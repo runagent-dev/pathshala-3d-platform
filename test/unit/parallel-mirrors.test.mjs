@@ -2,6 +2,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
+  barRows,
+  barsAt,
+  beatOf,
   brightness,
   CANDLE,
   chainOf,
@@ -9,17 +12,26 @@ import {
   distances,
   GLASS,
   imageAt,
+  imagesAt,
+  isCurrentBar,
+  LAST_BEAT,
   M,
   NAMED,
+  OBJECT_AT,
+  openSteps,
   PAIR_X,
   pairChoices,
   path,
   reflect,
   reflectIn,
+  ROW_ADDS,
+  ROW_GAP,
   row,
   shuffle,
   snapCandle,
   spotChoices,
+  STEPS,
+  stepOfBeat,
   sumChoices,
   timesChoices,
   toNormal,
@@ -180,6 +192,75 @@ test('d₄ is not always the largest choice', () => {
 test('the choices are numbers, because the kit’s quiz compares numbers', () => {
   const c = pairChoices(3);
   for (const v of [c.answer, c.same, c.gap, c.other]) assert.equal(typeof v, 'number');
+});
+
+test('the build starts with no image at all and adds one thing a tap, up to the five of the book', () => {
+  assert.deepEqual(imagesAt(0), []);
+  assert.deepEqual(imagesAt(1), ['r1']);
+  assert.deepEqual(imagesAt(2), ['r1', 'l1']);
+  assert.deepEqual(imagesAt(3), ['r1', 'l1', 'l2']);
+  assert.deepEqual(imagesAt(4), imagesAt(3)); // the ray's tap adds no image
+  assert.deepEqual(imagesAt(5), ['r1', 'l1', 'l2', 'r2']);
+  assert.deepEqual(imagesAt(6), ['r1', 'l1', 'l2', 'r2', 'r3']);
+  assert.equal(imagesAt(7).length, 2 * COUNT);
+  assert.deepEqual(imagesAt(LAST_BEAT), imagesAt(6));
+});
+
+test('steps and beats agree: every step ends where the next begins', () => {
+  assert.equal(beatOf('one'), 0);
+  STEPS.slice(1).forEach((id, i) => assert.equal(beatOf(id), beatOf(STEPS[i], 9), id));
+  assert.equal(beatOf('book', 9), LAST_BEAT);
+  for (const id of STEPS) assert.equal(stepOfBeat(beatOf(id, 9)), id);
+  assert.equal(beatOf('nothing'), 0);
+});
+
+test('the words open one step at a time, so that nothing can jump to the crowded picture', () => {
+  assert.deepEqual(openSteps(0), ['one']);
+  assert.deepEqual(openSteps(1), ['one', 'two']);
+  assert.deepEqual(openSteps(2), ['one', 'two', 'image']);
+  assert.deepEqual(openSteps(3), ['one', 'two', 'image']); // half way through a step the next word stays shut
+  assert.deepEqual(openSteps(8), STEPS);
+  assert.deepEqual(openSteps(LAST_BEAT), STEPS);
+  for (let b = 0; b < LAST_BEAT; b++) assert.ok(openSteps(b).includes(stepOfBeat(b + 1)), `beat ${b}`);
+});
+
+test('only the newest pair of distances is at full strength, all of them only in the book’s picture', () => {
+  assert.deepEqual(barsAt(0), []);
+  assert.deepEqual(barsAt(1), ['d1']);
+  assert.deepEqual(barsAt(3), ['d1', 'd2', 'e']);
+  assert.deepEqual(barsAt(5), ['d1', 'd2', 'd3']);
+  assert.deepEqual(barsAt(7), []);
+  assert.deepEqual(barsAt(LAST_BEAT), ['d1', 'd2', 'd3', 'd4']);
+  for (const beat of [1, 2, 3, 5, 6]) assert.equal(barsAt(beat).filter((n) => isCurrentBar(n, beat)).length, 1);
+  assert.equal(barsAt(LAST_BEAT).filter((n) => isCurrentBar(n, LAST_BEAT)).length, 4);
+  assert.ok(barRows(LAST_BEAT) === 3 && barRows(2) === 1 && barRows(0) === 0);
+});
+
+test('each object stands before it is used, and its image is that object reflected in the other side’s mirror', () => {
+  const next = { 3: 'l2', 5: 'r2', 6: 'r3' };
+  for (const [beat, id] of Object.entries(OBJECT_AT)) {
+    assert.ok(imagesAt(Number(beat) - 1).includes(id), id);
+    const made = next[beat];
+    const mirror = made[0] === 'r' ? M.m1 : M.m2;
+    for (const x of places) near(imageAt(x, made[0], Number(made[1])), reflectIn(imageAt(x, id[0], Number(id[1])), mirror));
+  }
+});
+
+test('the book’s d₃ and d₄ are the distances of the images it names, in front of M₁ and behind it', () => {
+  for (const x of places) {
+    const d = distances(x);
+    near(M.m1 - imageAt(x, 'l', 1), d.d3);
+    near(imageAt(x, 'r', 2) - M.m1, d.d3);
+    near(M.m1 - imageAt(x, 'l', 2), d.d4);
+    near(imageAt(x, 'r', 3) - M.m1, d.d4);
+  }
+});
+
+test('the row adds only images that were not there, 0.6 s apart', () => {
+  assert.equal(ROW_GAP, 0.6);
+  assert.equal(new Set(ROW_ADDS).size, ROW_ADDS.length);
+  for (const id of ROW_ADDS) assert.ok(!imagesAt(6).includes(id) && imagesAt(7).includes(id), id);
+  assert.equal(ROW_ADDS.length + imagesAt(6).length, imagesAt(7).length);
 });
 
 test('shuffle keeps every item', () => {
