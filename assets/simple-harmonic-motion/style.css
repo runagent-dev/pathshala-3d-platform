@@ -39,8 +39,8 @@ body.bg-transparent { background: transparent; }
 .shm-stops button.on { background: #fff1d0; border-color: #cd8a19; }
 .shm-stops button:hover { border-color: currentColor; }
 .shm-stops button:focus-visible { outline: 2px solid #156fa5; outline-offset: 1px; }
-.shm-span { flex: none; display: flex; align-items: center; gap: 6px; height: 16px; font-size: 12px; line-height: 1; color: var(--ink-2); }
-.shm-span b { color: var(--ink); font-weight: 700; }
+.shm-span { flex: none; display: flex; align-items: center; gap: 6px; height: 16px; font-size: 12.5px; line-height: 1; color: var(--ink-2); }
+.shm-span b { color: var(--ink); font-weight: 600; }
 .shm-span .tx { white-space: nowrap; }
 .shm-span i { position: relative; flex: 1; height: 1.5px; background: var(--ink-3); }
 .shm-span i::before { content: ''; position: absolute; top: -4px; border: 5px solid transparent; }
@@ -48,7 +48,7 @@ body.bg-transparent { background: transparent; }
 .shm-span i:last-child::before { right: -2px; border-left: 7px solid var(--ink-3); border-right: 0; }
 
 /* the note and the buttons */
-.shm-extra { margin: 0; min-height: 2.7em; font-size: 12.5px; line-height: 1.35; color: var(--ink-2); }
+.shm-extra { margin: 0; min-height: 3em; font-size: 13.5px; line-height: 1.5; color: var(--ink-2); }
 .shm-extra b { color: #135f81; font-weight: 600; }
 .shm-acts { display: flex; gap: 6px; }
 .shm-acts .pvc-btn, .shm .pvc-learn-foot .pvc-btn { height: 38px; padding: 0 12px; font-size: 15px; }
@@ -141,7 +141,7 @@ body.bg-transparent { background: transparent; }
   .shm-state { font-size: 12.5px; }
   .shm-stops, .shm-stops button { height: 26px; }
   .shm-span { height: 14px; }
-  .shm-extra { font-size: 12px; }
+  .shm-extra { font-size: 12.5px; line-height: 1.4; }
   .sg-switch button { font-size: 12px; }
 }
 /* the graph's height follows the frame (set on the shell, so these rules measure the whole figure) */

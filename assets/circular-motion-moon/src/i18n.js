@@ -19,9 +19,9 @@ export const STRINGS = {
     tab_quiz: 'পরীক্ষা',
     reading: 'দূরত্ব',
 
-    idea: 'একটি বস্তু যদি একটা <b class="c-ctr">নির্দিষ্ট বিন্দু</b> থেকে <b class="c-dist">সমদূরত্বে</b> থেকে <b class="c-path">বৃত্তাকার পথে</b> ঘুরতে থাকে, তাহলে তার গতিকে বলে <b>ঘূর্ণন গতি</b>।',
+    idea: 'একটি বস্তু যদি একটা <span class="c-ctr">নির্দিষ্ট বিন্দু</span> থেকে <span class="c-dist">সমদূরত্বে</span> থেকে <span class="c-path">বৃত্তাকার পথে</span> ঘুরতে থাকে, তাহলে তার গতিকে বলে <b>ঘূর্ণন গতি</b>।',
     dist_k: 'পৃথিবীর কেন্দ্র থেকে দূরত্ব ({u})',
-    book: 'চাঁদকে <b>কোনো কিছু দিয়ে পৃথিবীর সাথে বেঁধে রাখা নেই</b>, তবু এটা পৃথিবীকে ঘিরে ঘুরছে, টুপ করে পড়েও যাচ্ছে না!',
+    book: 'চাঁদকে কোনো কিছু দিয়ে পৃথিবীর সাথে বেঁধে রাখা নেই। তবু এটি পৃথিবীকে ঘিরে ঘুরছে, টুপ করে পড়েও যাচ্ছে না!',
     note: '(আকার, দূরত্ব, সময় মাপমতো নয়)',
     label_known: 'প্রায় {d} {u}',
     who_moon: 'চাঁদ',
@@ -107,9 +107,9 @@ export const STRINGS = {
     tab_quiz: 'Test',
     reading: 'Distance',
 
-    idea: 'An object going round a <b class="c-ctr">fixed point</b> on a <b class="c-path">circular path</b>, always at the <b class="c-dist">same distance</b>, is in <b>circular motion</b>.',
+    idea: 'An object going round a <span class="c-ctr">fixed point</span> on a <span class="c-path">circular path</span>, always at the <span class="c-dist">same distance</span>, is in <b>circular motion</b>.',
     dist_k: "From the Earth's centre ({u})",
-    book: 'Nothing <b>ties the Moon to the Earth</b>, yet it goes round it and does not fall!',
+    book: 'Nothing ties the Moon to the Earth. Yet it keeps going round the Earth and does not fall!',
     note: '(Not to scale.)',
     label_known: 'about {d} {u}',
     who_moon: 'The Moon',

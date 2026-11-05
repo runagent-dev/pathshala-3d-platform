@@ -12,14 +12,14 @@ body.bg-transparent { background: transparent; }
 .dd button { touch-action: manipulation; }
 
 /* the two values on the map (src/values.js places them; they look like the kit's callouts): a solid white chip */
-.dd .dd-tag { padding: 1px 8px; font-size: 14px; font-weight: 700; border-width: 1.5px; box-shadow: 0 1px 3px rgba(20, 30, 45, 0.25); transition: opacity 0.2s; }
+.dd .dd-tag { padding: 1px 8px; font-size: 14px; font-weight: 600; border-width: 1.5px; box-shadow: 0 1px 3px rgba(20, 30, 45, 0.25); transition: opacity 0.2s; }
 .dd .dd-tag.s { color: var(--c-disp-ink); }
 
 /* the key: what the blue path and the orange arrow on the map are (one row of words, no boxes) */
 .dd-key { display: flex; flex-wrap: wrap; gap: 4px 14px; padding-block: 6px; border-block: 1px solid var(--line); }
 .dd-key-item { flex: 1 1 0; min-width: 0; display: flex; align-items: center; gap: 8px; margin: 0; }
 .dd-key-item > span { display: flex; flex-direction: column; min-width: 0; line-height: 1.3; }
-.dd-key-item b { font-size: 15.5px; font-weight: 700; white-space: nowrap; color: var(--c); }
+.dd-key-item b { font-size: 15.5px; font-weight: 600; white-space: nowrap; color: var(--c); }
 .dd-key-item small { font-size: 13px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* English names are longer: they may wrap */
 .dd:lang(en) .dd-key-item b { white-space: normal; }
@@ -53,7 +53,7 @@ body.bg-transparent { background: transparent; }
   .dd-key-item > span { line-height: 1.22; }
   .dd-key-item b { font-size: 15px; }
   .dd-key-item small { font-size: 12.5px; }
-  .dd-scale { font-size: 12px; line-height: 1.3; }
+  .dd-scale { font-size: 12.5px; line-height: 1.35; }
   .pvc svg.dd-sw { width: 26px; }
   .dd .pvc-learn { gap: 6px; }
   .dd .pvc-outcome { font-size: 15px; line-height: 1.55; }

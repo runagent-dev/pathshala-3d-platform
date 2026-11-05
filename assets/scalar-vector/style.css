@@ -6,7 +6,7 @@ body.bg-transparent { background: transparent; }
 .sv-north { position: absolute; right: 15px; bottom: 12px; display: flex; flex-direction: column; align-items: center; gap: 3px; color: #0b241d; font-size: 12px; font-weight: 600; pointer-events: none; }
 .sv-north i { position: relative; display: block; width: 2px; height: 22px; background: currentColor; }
 .sv-north i::before { content: ''; position: absolute; top: -4px; left: -4px; border: 5px solid transparent; border-bottom: 8px solid currentColor; border-top: 0; }
-.sv-vec { position: relative; display: inline-block; padding-top: 0.3em; font-family: 'Noto Sans Bengali', Georgia, serif; font-weight: 700; line-height: 1; }
+.sv-vec { position: relative; display: inline-block; padding-top: 0.3em; font-family: 'Noto Sans Bengali', Georgia, serif; font-weight: 600; line-height: 1; }
 .sv-vec::before { content: ''; position: absolute; left: 0; right: 0.14em; top: 0.08em; border-top: 0.08em solid currentColor; }
 .sv-vec::after { content: ''; position: absolute; right: -0.02em; top: -0.04em; border: 0.14em solid transparent; border-left: 0.25em solid currentColor; border-right: 0; }
 .sv .pvc-outcome[data-kind='scalar'] b { color: var(--c-mag); }
@@ -16,7 +16,7 @@ body.bg-transparent { background: transparent; }
 .sv .pvc-anno-lines .k-endpoint { display: none; }
 .sv .pvc-anno-reading { padding: 5px 9px; border: 0; border-left: 3px solid var(--c); border-radius: 4px; color: var(--c); background: #fffffc; max-width: 158px; line-height: 1.35; }
 .sv .pvc-anno-reading b { display: block; font-size: 13px; font-weight: 600; }
-.sv .pvc-anno-reading small { display: block; margin-top: 2px; font-size: 13px; font-weight: 700; }
+.sv .pvc-anno-reading small { display: block; margin-top: 2px; font-size: 13px; font-weight: 600; }
 .sv .pvc-anno-arrow { padding: 5px 10px; border: 0; border-radius: 5px; text-align: center; color: var(--c); background: #fff; line-height: 1.2; }
 .sv .pvc-anno-arrow b { display: block; font-size: 21px; }
 .sv .pvc-anno-arrow small { display: block; padding-top: 5px; font-size: 13px; font-weight: 600; }

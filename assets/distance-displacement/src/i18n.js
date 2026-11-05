@@ -61,10 +61,10 @@ export const STRINGS = {
     out_back: 'A-তে ফিরে এলে <i class="s">সরণ <b>{z}</b></i>, কিন্তু <i class="d">দূরত্ব <b>{sum} {u}</b></i>।',
 
     // the one rule, growing: before the first stop, after a stop, after C, back at A
-    rule_0: 'খুঁটির সংখ্যা বলে A থেকে রাস্তা ধরে কত {u}, আর <b>সরণ</b> হলো A বিন্দুর সাপেক্ষে তোমার <b>অবস্থান</b>।',
-    rule_1: '<b>দূরত্ব একটি স্কেলার রাশি</b> (শুধু মান), <b>সরণ ভেক্টর রাশি</b> (মান ও দিক): <b>তিরের দিকটি হচ্ছে সরণের দিক</b>।',
-    rule_2: '<b>দূরত্ব</b> যত চলবে তত বাড়বে, কিন্তু <b>সরণ</b> শুধু দেখে শুরু আর শেষের অবস্থান, তাই কমতেও পারে।',
-    rule_3: '<b>দূরত্ব স্কেলার রাশি</b>, <b>সরণ ভেক্টর রাশি</b>, আর <b>সরণের মান কখনো দূরত্বের চেয়ে বেশি হয় না</b>: সোজা রেখাই সবচেয়ে ছোট পথ।',
+    rule_0: 'খুঁটির সংখ্যা বলে A থেকে রাস্তা ধরে কত {u} এলে। <b>সরণ</b> হলো A বিন্দুর সাপেক্ষে তোমার অবস্থান।',
+    rule_1: 'দূরত্ব একটি স্কেলার রাশি: শুধু মান আছে। সরণ <b>ভেক্টর রাশি</b>: মান ও দিক দুটোই আছে। তিরের দিকটিই সরণের দিক।',
+    rule_2: 'যত চলবে, দূরত্ব তত বাড়বে। <b>সরণ</b> নির্ভর করে শুধু শুরু আর শেষের অবস্থানের ওপর, তাই কমতেও পারে।',
+    rule_3: 'দূরত্ব স্কেলার রাশি, সরণ ভেক্টর রাশি। সরণের মান কখনো দূরত্বের চেয়ে <b>বেশি হয় না</b>: সোজা রেখাই সবচেয়ে ছোট পথ।',
 
     q_locked: 'পরীক্ষার সময় সাইকেল নিজে চলে। ছবি দেখে উত্তর বেছে নাও।',
 
@@ -168,12 +168,13 @@ export const STRINGS = {
     out_here0: 'Here: along the way, <i class="d">distance <b>{dist} {u}</b></i>, but <i class="s">displacement <b>{z}</b></i>.',
     out_back: 'Back at A, the <i class="s">displacement is <b>{z}</b></i>, but the <i class="d">distance is <b>{sum} {u}</b></i>.',
 
-    rule_0: 'The posts’ numbers say how many {u} along the road from A, and <b>displacement</b> is your <b>position</b> with respect to point A.',
-    rule_1: '<b>Distance is a scalar</b> (just a size), <b>displacement a vector</b> (size and direction): <b>the arrow’s way is its direction</b>.',
+    rule_0: 'The post numbers say how many {u} you have come along the road from A. <b>Displacement</b> is your position with respect to point A.',
+    rule_1:
+      'Distance is a scalar: it has only a size. Displacement is a <b>vector</b>: it has a size and a direction. The arrow shows its direction.',
     rule_2:
-      'The <b>distance</b> grows as long as you ride, but the <b>displacement</b> only looks at where you started and where you are, so it can shrink.',
+      'The more you ride, the more the distance grows. <b>Displacement</b> depends only on where you started and where you are, so it can shrink.',
     rule_3:
-      '<b>Distance is a scalar</b>, <b>displacement a vector</b>, and <b>the displacement is never more than the distance</b>: a straight line is the shortest way.',
+      'Distance is a scalar, displacement a vector. The displacement is <b>never more</b> than the distance: a straight line is the shortest way.',
 
     q_locked: 'In the test the cycle moves by itself. Look at the picture and pick an answer.',
 

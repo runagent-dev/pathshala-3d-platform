@@ -47,7 +47,7 @@ export const STRINGS = {
     speed_zero: 'দ্রুতি শূন্য',
     speed_max: 'দ্রুতি সর্বোচ্চ',
     inspect_label: 'এক পর্যায়কালের পাঁচটি মুহূর্ত; ছুঁয়ে দেখো',
-    inspect_phase: '{where} দেখো — ধাপ {n}',
+    inspect_phase: '{where} দেখো, ধাপ {n}',
     speed_peak_short: 'সর্বোচ্চ',
     speed_zero_short: 'শূন্য',
     state_end: 'প্রান্তে: এক মুহূর্ত থেমে দিক বদলায়।',
@@ -65,8 +65,8 @@ export const STRINGS = {
     who_swing: 'দোলনাটি',
     who_spring: 'বস্তুটি',
 
-    idea: '<b>নীল বিন্দু: প্রতি {dt} সেকেন্ডে অবস্থান।</b> প্রান্তে ঘন, মাঝখানে দূরে — তাই মাঝখানে দ্রুতি বেশি।',
-    idea_drag: '<b>এবার ছেড়ে দাও!</b> যেখান থেকে ছাড়বে সেটিই একটি প্রান্ত: সেখানে দ্রুতি শূন্য।',
+    idea: '<b>নীল বিন্দু</b> দেখায় প্রতি {dt} সেকেন্ডের অবস্থান। প্রান্তে বিন্দুগুলো ঘন, মাঝখানে দূরে, তাই মাঝখানে দ্রুতি বেশি।',
+    idea_drag: 'এবার ছেড়ে দাও! যেখান থেকে ছাড়বে সেটিই একটি <b>প্রান্ত</b>। সেখানে দ্রুতি শূন্য।',
     coach_drag: 'টেনে ছেড়ে দাও',
 
     q_count: 'প্রশ্ন {i} / {n}',
@@ -155,7 +155,7 @@ export const STRINGS = {
     speed_zero: 'speed zero',
     speed_max: 'speed greatest',
     inspect_label: 'Tap five moments in one period',
-    inspect_phase: 'Inspect {where} — step {n}',
+    inspect_phase: 'Inspect {where}, step {n}',
     speed_peak_short: 'max',
     speed_zero_short: 'zero',
     state_end: 'At an end: it stops briefly and turns back.',
@@ -173,8 +173,8 @@ export const STRINGS = {
     who_swing: 'the swing',
     who_spring: 'the mass',
 
-    idea: '<b>Blue dots: positions every {dt} s.</b> Close near the ends, farther apart in the middle — higher speed.',
-    idea_drag: '<b>Now let go!</b> Where you let go becomes an end: the speed there is zero.',
+    idea: 'The <b>blue dots</b> show the position every {dt} s. They are close at the ends and far apart in the middle, so the speed is highest in the middle.',
+    idea_drag: 'Now let go! Where you let go becomes an <b>end</b>. The speed there is zero.',
     coach_drag: 'Pull and let go',
 
     q_count: 'Question {i} / {n}',
