@@ -1,0 +1,70 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "reflection-amount",
+  "title": "How much light is reflected (কতটুকু প্রতিফলন)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 216,
+  "topic": "8.2.1",
+  "placement": "Book page 216, topic 8.2.1, the paragraph on Fresnel's law with চিত্র ৮.০৫ (a boy sees a flower reflected; more reflection at a larger angle of incidence).",
+  "order": 2,
+  "maintainers": ["RadeenXALNW"],
+  "units": "cm",
+  "description": "Interactive 3D figure for how much light is reflected, book page 216, topic 8.2.1, চিত্র ৮.০৫. A boy, a red hibiscus at the height of his eye, and between them a slab of clear glass on a lab jack. The student lifts the glass (a tap or a drag) and the light meets it at a larger and larger angle of incidence, from 30° to 87°. The reflected ray grows and the refracted ray thins, each as thick as the light it carries, by Fresnel's equations for n = 1.5; a small picture shows what the boy really sees, the pattern under the glass fading as the flower comes up in it; a graph in the panel follows. Five test questions. Offline, Bangla and English.",
+  "tags": ["light", "reflection", "fresnel", "angle of incidence", "glass", "refraction", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    { "name": "angle", "label": "Angle of incidence (°)", "type": "number", "default": "30", "placeholder": "30 to 87" },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on the part pulses at first", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "angle": 80, "animate": false } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "view", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": { "params": { "coach": "0", "angle": "80" } },
+    "glb": [{ "name": "default" }],
+    "video": {
+      "kind": "script",
+      "seconds": 20,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 2, "command": "set", "payload": { "angle": 60 } },
+        { "at": 7, "command": "set", "payload": { "angle": 80 } },
+        { "at": 12, "command": "set", "payload": { "angle": 87 } }
+      ]
+    }
+  }
+}
