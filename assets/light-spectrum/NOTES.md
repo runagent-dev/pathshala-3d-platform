@@ -50,9 +50,11 @@ Added by the figure, not on the page: সাদা দাগ.
   looks neon, and a fade to nothing at 396 and 704 nm. Not a hue wheel.
 - **The drawing over the view** (`src/rays.js`) is a 2D canvas, from exact 3D points through the camera, in the style of
   `light-at-boundary`.
-- **The test** is on the picture: which mark has the longest wavelength, read a wavelength off the scale, which mark looks
-  brightest, what falls outside the colours (a coin toss between the two ends each time), and what in a CD divides the
-  light. The kit scores numbers, so the choices are places in a list; a browser test answers all five right and one wrong.
+- **The test** is on the picture: which lettered part of the disc has the grooves (the sunlight is off until the answer, since
+  where it falls would give it away), which mark has the longest wavelength, read a wavelength off the scale, which colour
+  looks brightest, and what falls at a black dot outside the colours (a coin toss between the two ends each time). The panel
+  teaches the fourth: the rule names the eye's peak, and the result line gives the sensitivity at every wavelength, also
+  at 390×520 where the graph is left out. The kit scores numbers, so the choices are places in a list; a browser test answers all five right and one wrong.
   `get` gives `question: { kind, right }` for that.
 
 ## Honest stylisation
@@ -60,11 +62,16 @@ Added by the figure, not on the page: সাদা দাগ.
   big (400 nm drawn as 1.7 cm), and its colour and its proportions are right: 700 nm is drawn 1.75 times as long as 400 nm.
   Only the electric part of the wave is drawn: a second, flat sine read as noise at this angle.
 - The other orders: at this slant the −1 order does not exist (the grating equation has no solution). The second order
-  does: on a real disc it would start above the first, at about 19 cm on the wall (400 nm), where the marker's infrared end
-  lies. It is left out so that one band teaches one idea, and so that "past red the wall shows nothing" stays simple. The
-  disc's sheen does include orders 1–3.
+  does: on a real disc it would start 1.4 cm above the first order's red end (400 nm lands at 15.5 cm on the wall, 700 nm of
+  the first order at 14.1 cm), so it overlaps where the marker's infrared end lies. The second order is left out so that one
+  idea reads, and the corner note says so past the two ends ("পরের ক্রমের বর্ণালী দেখানো হয়নি"); the test says "এই রঙগুলোর
+  বাইরে". The disc's sheen does include orders 1–3.
+- The white patch is the mirror image of the sliver, about 0.5 cm by 0.2 cm of real light. It is drawn about 3 cm across with
+  a soft edge, like the glare of a real patch, so that it is the brightest thing on the wall.
+- The wall is kept white by a little of its own light (the emissive part of its material), since the bench lamp meets it at
+  a slant.
 - Sunlight is not equally strong at all wavelengths, and a real grating does not send equal shares to each colour; the band
-  shows each colour at a brightness chosen so that the whole range reads.
+  shows each colour at full strength, fading out by its opacity at the two ends (never through black).
 - The two ends: the eye's sensitivity falls smoothly, and the book's 400 and 700 nm are round numbers. The figure stops
   showing colour at 396 and 704 nm so that "past the ends the wall shows nothing" is true.
 - The polycarbonate of a real disc absorbs the shortest ultraviolet, so the marker stops at 330 nm.
@@ -73,4 +80,4 @@ Added by the figure, not on the page: সাদা দাগ.
 - The figure says "দেয়াল" for a free-standing white board, because the book says দেয়াল. Is that fine?
 - The page writes অতিবেগুনী beside বেগুনি; the figure keeps both as printed.
 - Words added: সাদা দাগ; the panel's "খাঁজের দূরত্ব ১.৬ µm" is a number the book does not give.
-- Should the second নিজে করো (a TV remote seen by a phone's camera) be a figure of its own? It is left out here.
+- Should the second নিজে করো (a TV remote seen by a phone's camera) be a figure of its own? Here it is one sentence in the rule for infrared.

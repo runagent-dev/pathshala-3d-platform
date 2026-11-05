@@ -11,6 +11,7 @@ import {
   diffracted,
   DISC,
   glow,
+  hue,
   isVisible,
   kindOf,
   landing,
@@ -54,6 +55,8 @@ test("colours: the book's six in order, the two invisible kinds, and nothing pas
   assert.ok(isVisible(400) && isVisible(700) && !isVisible(399) && !isVisible(701));
   assert.equal(glow(390), 0);
   assert.equal(glow(710), 0);
+  // the band fades into the wall by its opacity: the colour itself never goes dark at the ends
+  for (const nm of [396, 400, 700, 704]) assert.ok(Math.max(...hue(nm)) > 0.99, `${nm} keeps its colour`);
   assert.deepEqual(linearColour(350), [0, 0, 0]);
   const [r, g, b] = linearColour(660);
   assert.ok(r > g && r > b, 'red is red');

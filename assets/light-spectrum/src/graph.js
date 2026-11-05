@@ -1,12 +1,12 @@
 // চিত্র ৮.০১ as a clean drawing in the panel, in real pixels: the bar of all the wavelengths with the visible band a sliver in
 // it, and the eye's sensitivity across that sliver, filled with the spectrum as in the book. A dot follows the wavelength on
 // the wall. On a low panel only one of the two shows: the curve for what the eye can see, the bar for what it cannot.
-import { BANDS, cssColour, isVisible, MIN_NM, sensitivity, VISIBLE } from './reading.js';
+import { BANDS, isVisible, MIN_NM, PEAK, pureColour, sensitivity, VISIBLE } from './reading.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 const PAD = { l: 34, r: 10, t: 6, b: 32 };
 const TALL = 190; // from this height both drawings show
-const BAR_ROOM = 72;
+const BAR_ROOM = 96;
 const FROM = -14;
 const TO = 6;
 const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
@@ -16,7 +16,7 @@ export function createGraph(t, { onScrub } = {}) {
   const svg = document.createElementNS(NS, 'svg');
   svg.setAttribute('class', 'pvc-graph lab-graph');
   svg.setAttribute('role', 'img');
-  svg.setAttribute('aria-label', t('g_aria'));
+  svg.setAttribute('aria-label', t('g_aria', { peak: PEAK }));
   let W = 320;
   let H = 120;
   let now = 550;
@@ -46,7 +46,7 @@ export function createGraph(t, { onScrub } = {}) {
   }
   function stops() {
     let s = '';
-    for (let nm = 400; nm <= 700; nm += 10) s += `<stop offset="${((nm - 400) / 300).toFixed(3)}" stop-color="${cssColour(clamp(nm, 425, 680))}"/>`;
+    for (let nm = 400; nm <= 700; nm += 10) s += `<stop offset="${((nm - 400) / 300).toFixed(3)}" stop-color="${pureColour(nm)}"/>`;
     return s;
   }
   function curveSvg() {
@@ -101,13 +101,13 @@ export function createGraph(t, { onScrub } = {}) {
     ].join('');
     // the book's scale, where there is room for a third row
     const scale =
-      H >= 100
-        ? [-14, -6, 2, 6]
+      H >= 70
+        ? `${[-14, -10, -6, -2, 2, 6]
             .map(
               (e) =>
                 `<text class="lab-exp" x="${clamp(bx(e), 14, W - 14)}" y="${y + hb + 30}" text-anchor="middle">${N(10)}<tspan dy="-4" font-size="9.5">${e < 0 ? '−' : ''}${N(Math.abs(e))}</tspan></text>`,
             )
-            .join('') + `<text x="${bx(0)}" y="${y + hb + 30}" text-anchor="middle">${t('g_m')}</text>`
+            .join('')}<text x="${W / 2}" y="${y + hb + 44}" text-anchor="middle">${t('g_m')}</text>`
         : '';
     return `<g class="lab-bar-part">
       <defs><linearGradient id="${uid}-b">${stops()}</linearGradient></defs>
@@ -124,7 +124,7 @@ export function createGraph(t, { onScrub } = {}) {
   function draw() {
     both = H >= TALL;
     svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
-    svg.innerHTML = `${barSvg()}${zoom()}${curveSvg()}`;
+    svg.innerHTML = `${zoom()}${barSvg()}${curveSvg()}`;
     place();
   }
   function place() {

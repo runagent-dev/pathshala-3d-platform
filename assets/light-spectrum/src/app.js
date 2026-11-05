@@ -32,6 +32,7 @@ import {
   nmAt,
   PITCH_NM,
   pureColour,
+  PEAK,
   sensitivity,
   shuffle,
   SPOT,
@@ -385,7 +386,7 @@ export function createApp(root, options = {}) {
   const shown = new Map();
   const pts = new Map();
   /** A label pinned to a world point. `spots` are the places it may take, best first; key labels have no `optional`. */
-  function label(id, on, text, point, color, spots) {
+  function label(id, on, text, point, color, spots, optional = false) {
     if (!on) {
       if (shown.has(id)) {
         anno.remove(id);
@@ -397,7 +398,7 @@ export function createApp(root, options = {}) {
     pts.get(id).set(point.x, point.y, point.z);
     const was = shown.get(id);
     if (!was) {
-      anno.add(id, { text, point: () => pts.get(id), color, spots, kind: 'part' });
+      anno.add(id, { text, point: () => pts.get(id), color, spots, kind: 'part', optional });
       shown.set(id, { text });
       return;
     }
@@ -410,16 +411,16 @@ export function createApp(root, options = {}) {
     for (const id of [...shown.keys()]) anno.remove(id);
     shown.clear();
   }
-  const SKYWARD = { x: SPOT.x + TO_SUN.x * 13, y: SPOT.y + TO_SUN.y * 13, z: SPOT.z + TO_SUN.z * 13 };
+  const SKYWARD = { x: SPOT.x + TO_SUN.x * 7, y: SPOT.y + TO_SUN.y * 7, z: SPOT.z + TO_SUN.z * 7 };
   const whiteAt = landing(0);
   const wallAt = wallPoint(WALL.half - 3.4, WALL.height - 2.4);
   const cdAt = { x: DISC.centre.x - DISC.side.x * 5.6, y: DISC.centre.y - 1.6, z: DISC.centre.z - DISC.side.z * 5.6 };
   const bandAt = landing(640);
   const SPOTS = {
     sun: [
-      { dx: 46, dy: 0 },
-      { dx: -46, dy: 0 },
-      { dx: 40, dy: 20 },
+      { dx: -52, dy: 0 },
+      { dx: -52, dy: 16 },
+      { dx: 46, dy: 12 },
     ],
     cd: [
       { dx: 24, dy: 18 },
@@ -469,7 +470,8 @@ export function createApp(root, options = {}) {
     const marking = !q && v.marker >= 1;
     if (marking) handle.copy(rays.scaleAt(s.nm));
     label('marker', marking, t('l_marker', { nm: t.num(s.nm), name: name(s.nm) }), handle, INK.dark, SPOTS.marker);
-    label('lambda', !q && v.wave >= 1 && !s.drag && calm, t('l_lambda'), v.bracket, INK.dark, SPOTS.lambda);
+    label('lambda', !q && v.wave >= 1 && !s.drag && calm, t('l_lambda'), v.bracket, INK.dark, SPOTS.lambda, true);
+    label('visible', calm && !q && f === 'all', t('l_visible', range()), bandAt, INK.dark, SPOTS.spectrum);
     anno.update(); // places them now, on this frame's drawing (it asks for no new frame)
   }
   stage.onAfterRender(labels);
@@ -621,13 +623,16 @@ export function createApp(root, options = {}) {
 
   // ── the panel ───────────────────────────────────────────────────────────────────────────────────────────
   const steady = { act: '' };
+  v.words = [t('ex_violet'), t('ex_red')];
   const range = () => ({ a: VISIBLE[0], b: VISIBLE[1] });
   function outcome() {
     if (s.focus === 'all') return t('out_all', range());
     if (v.marker > 0) {
       if (!isVisible(s.nm)) return t('out_hidden', { nm: s.nm, name: name(s.nm) });
       // the colour goes in after the digits are turned: they would turn inside it too
-      return `<i class="lab-swatch" style="background:${pureColour(s.nm)}"></i>${t('out_nm', { nm: s.nm, name: name(s.nm) })}`;
+      const sens = sensitivity(s.nm);
+      const value = sens < 0.005 ? '0' : sens >= 0.995 ? '1' : sens.toFixed(2);
+      return `<i class="lab-swatch" style="background:${pureColour(s.nm)}"></i>${t('out_nm', { nm: s.nm, name: name(s.nm), s: value })}`;
     }
     if (s.focus === 'grooves') return t('out_grooves', { d: PITCH_NM / 1000 });
     return s.done.has('light') ? t('out_light') : t('out_start');
@@ -637,7 +642,7 @@ export function createApp(root, options = {}) {
     if (v.marker > 0) {
       if (s.nm < VISIBLE[0]) return t('rule_uv', range());
       if (s.nm > VISIBLE[1]) return t('rule_ir', range());
-      return t('rule_colour');
+      return t('rule_colour', { peak: PEAK });
     }
     if (s.focus === 'grooves') return t('rule_grooves');
     return s.done.has('light') ? t('rule_light') : t('rule_start');
@@ -653,9 +658,10 @@ export function createApp(root, options = {}) {
     again: ['act_again', ''],
   };
   function panel() {
-    note.textContent = t(v.wave > 0 ? 'note_wave' : 'note_rays');
+    note.textContent = t(v.wave <= 0 ? 'note_rays' : isVisible(s.nm) ? 'note_wave' : 'note_beyond');
     graph.whole(s.focus === 'all' && !s.quiz);
     graph.mark(v.marker > 0);
+    v.named = v.marker > 0 && !s.quiz;
     if (s.quiz) return;
     sheet.outcome(outcome());
     sheet.rule(rule());
@@ -677,6 +683,15 @@ export function createApp(root, options = {}) {
 
   // ── the action, and what it points at ──────────────────────────────────────────────────────────────────
   const pointAt = new THREE.Vector3();
+  /** The ring never lies on the marker or on its label: while it would, only the button shows the action. */
+  function clashes(p) {
+    if (v.marker <= 0) return false;
+    const c = rays.project(p);
+    if (Math.hypot(c.x - v.handle.x, c.y - v.handle.y) < 40) return true;
+    const b = anno.box('marker');
+    const near = 30;
+    return Boolean(b) && c.x > b.left - near && c.x < b.right + near && c.y > b.top - near && c.y < b.bottom + near;
+  }
   const spotAt = new THREE.Vector3(SPOT.x, SPOT.y, SPOT.z);
   action = createAction({
     stage,
@@ -687,13 +702,18 @@ export function createApp(root, options = {}) {
     label: 'act_light',
     target: () => {
       const ph = phase();
-      if (s.locked || s.busy || camK < 1 || !STEPS.includes(ph) || ph === 'all') return null;
+      if (s.locked || s.busy || s.drag || camK < 1 || !STEPS.includes(ph) || ph === 'all') return null;
       if (ph === 'sweep' && s.frame === 'grooves') {
         const p = landing(550);
         return pointAt.set(p.x, p.y, p.z).lerp(spotAt, 0.66); // on the fan, the part in view
       }
-      const p = ph === 'sweep' ? landing(420) : ph === 'ir' ? landing(VISIBLE[1]) : ph === 'uv' ? landing(VISIBLE[0]) : SPOT;
-      return pointAt.set(p.x, p.y, p.z);
+      // the ring goes where the question is: just under the scale's 400, the empty wall past red, the empty wall before violet
+      if (ph === 'sweep') pointAt.copy(rays.scaleAt(350));
+      else if (ph === 'ir' || ph === 'uv') {
+        const p = landing(ph === 'ir' ? 780 : 350);
+        pointAt.set(p.x, p.y, p.z);
+      } else pointAt.set(SPOT.x, SPOT.y, SPOT.z);
+      return clashes(pointAt) ? null : pointAt;
     },
     radius: 22,
     avoid: [ui.corner, ui.hint, note, () => anno.boxes(), () => rays.boxes()],
@@ -710,9 +730,10 @@ export function createApp(root, options = {}) {
       avoid: [ui.corner, ui.hint],
       object: {
         label: 'coach_drag',
+        labelAt: ['right', 'below'],
         inset: { bottom: 16 },
         candidates: () => {
-          const q = rays.bandPoint(s.nm > 620 ? 620 : Math.max(480, s.nm));
+          const q = rays.bandPoint(540);
           return [{ x: q.x, y: q.y }];
         },
         grabbable: (p) => nmUnder(p.x, p.y, true) != null,
@@ -726,13 +747,14 @@ export function createApp(root, options = {}) {
   const notesOf = (pairs) => new Map(pairs.map(([k, val]) => [String(k), val]));
   const tagText = () => shuffle([0, 1, 2, 3]).map((i) => t(`tag_${i}`));
   /** The scene of a question: the wall with the light on it, nothing named. */
-  function quizScene(q, { frame = 'wall', marker = false, nm = 550, scale = false, tags = [] } = {}) {
+  function quizScene(q, { frame = 'wall', marker = false, nm = 550, scale = false, tags = [], dark = false } = {}) {
     stopRun();
     setNm(nm);
     v.beam = 1;
     v.out = 1;
     v.fan = marker || tags.length ? FAN_DIM : 1;
     v.lens = 0;
+    v.plain = marker;
     v.marker = marker ? 1 : 0;
     v.chosen = marker ? 1 : 0;
     v.wave = 0;
@@ -740,6 +762,10 @@ export function createApp(root, options = {}) {
     v.tags = tags;
     s.frame = frame;
     s.quiz = { ...q };
+    if (dark) {
+      v.beam = 0;
+      v.out = 0;
+    }
     clearLabels();
     applyMarks();
     stage.invalidate();
@@ -757,20 +783,35 @@ export function createApp(root, options = {}) {
       wrong,
       label: (k) => t('c_mark', { x: at[k] }),
       notes: notesOf(wrong.map((m) => [m, t(`n_${kind}_${m}`)])),
-      reveal: t(`a_${kind}`, { x: at[answer], peak: 555 }),
+      reveal: t(`a_${kind}`, { x: at[answer] }),
     };
   }
   const Q = {
     grooves() {
-      quizScene({ kind: 'grooves' }, { frame: 'grooves' });
-      const wrong = ['label', 'plastic', 'hole'];
+      // no light yet: where the light falls would give it away
+      const onDisc = (side, up) => ({
+        x: DISC.centre.x + DISC.side.x * side + DISC.up.x * up + DISC.normal.x * 0.06,
+        y: DISC.centre.y + DISC.side.y * side + DISC.up.y * up + DISC.normal.y * 0.06,
+        z: DISC.centre.z + DISC.side.z * side + DISC.up.z * up + DISC.normal.z * 0.06,
+      });
+      const places = {
+        data: { p: onDisc(-4.1, 0.6), dx: 30, dy: -26 },
+        hub: { p: onDisc(1, 1), dx: -30, dy: -34 },
+        hole: { p: onDisc(0, 0), dx: 34, dy: 30 },
+        rim: { p: onDisc(4.2, -4.2), dx: -26, dy: 26 },
+      };
+      const parts = Object.keys(places);
+      const letters = tagText();
+      const mark = Object.fromEntries(parts.map((id, i) => [id, letters[i]]));
+      quizScene({ kind: 'grooves' }, { frame: 'grooves', dark: true, tags: parts.map((id) => ({ ...places[id], text: mark[id] })) });
+      const wrong = ['hub', 'hole', 'rim'];
       return {
         text: t('q_grooves'),
-        answer: 'grooves',
+        answer: 'data',
         wrong,
-        label: (k) => t(`c_gr_${k}`),
-        notes: notesOf(wrong.map((k) => [k, t(`n_gr_${k}`)])),
-        reveal: t('a_grooves'),
+        label: (k) => t('c_mark', { x: mark[k] }),
+        notes: notesOf(wrong.map((k) => [k, t(`n_grooves_${k}`)])),
+        reveal: t('a_grooves', { x: mark.data }),
         lens: true,
       };
     },
@@ -781,17 +822,28 @@ export function createApp(root, options = {}) {
       const others = [nm - 100, nm - 50, nm + 50, nm + 100].filter((n) => n >= 400 && n <= 700);
       const wrong = shuffle(others).slice(0, 3);
       const low = Math.floor(nm / 100) * 100;
-      const notes = wrong.map((n) => [n, t('n_read', { step: 25 })]);
+      const notes = wrong.map((n) => [n, t(n > nm ? 'n_read_high' : 'n_read_low', { n, step: 100 })]);
       return {
         text: t('q_read'),
         answer: nm,
         wrong,
         label: (k) => t('l_nm', { nm: k }),
         notes: notesOf(notes),
-        reveal: t('a_read', { nm, low, high: low + 100 }),
+        reveal: nm === low ? t('a_read_on', { nm }) : t('a_read_mid', { nm, low, high: low + 100 }),
       };
     },
-    eye: () => byLetter('eye', ['violet', 'blue', 'green', 'red'], 'green'),
+    eye() {
+      quizScene({ kind: 'eye' }, { frame: 'light' });
+      const wrong = ['violet', 'blue', 'red'];
+      return {
+        text: t('q_eye'),
+        answer: 'green',
+        wrong,
+        label: (k) => t(`ex_${k}`),
+        notes: notesOf(wrong.map((k) => [k, t(`n_eye_${k}`)])),
+        reveal: t('a_eye', { peak: PEAK }),
+      };
+    },
     dark() {
       const side = Math.random() < 0.5 ? 'ir' : 'uv';
       quizScene({ kind: 'dark' }, { frame: 'beyond', marker: true, nm: side === 'ir' ? IR_NM : UV_NM, scale: true });
@@ -823,8 +875,8 @@ export function createApp(root, options = {}) {
         s.locked = true;
         saved.focus = cut ? null : s.focus;
         saved.done = [...s.done];
-        saved.nm = s.nm;
-        saved.touched = s.touched;
+        saved.nm = cut ? 550 : s.nm;
+        saved.touched = cut ? false : s.touched;
         // in this order no scene gives away a later answer
         order = ['grooves', 'longest', 'read', 'eye', 'dark'];
         clearLabels();
@@ -836,6 +888,7 @@ export function createApp(root, options = {}) {
         s.mode = 'explore';
         s.locked = false;
         s.quiz = null;
+        v.plain = false;
         s.focus = saved.focus;
         s.done = new Set(saved.done);
         s.touched = saved.touched;
@@ -870,7 +923,13 @@ export function createApp(root, options = {}) {
       },
       reveal(_q, correct, picked) {
         const q = qCurrent;
-        if (s.quiz && q.lens) v.lens = 1;
+        if (s.quiz && q.lens) {
+          v.beam = 1;
+          v.out = 1;
+          v.lens = 1;
+          v.tags = [];
+          applyMarks();
+        }
         stage.invalidate();
         const chosen = picked ? q.list[picked.value] : null;
         const why = !correct && picked ? q.notes.get(String(chosen)) : '';

@@ -4,17 +4,31 @@
 // that point, so it shifts as the view turns, as a real disc's does. Centimetres.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { alongWall, CD, DISC, landing, landingAt, linearColour, PITCH_NM, SLIT_HALF, SPOT, WALL, WALL_NORMAL, wallPoint } from './reading.js';
+import {
+  CD,
+  DISC,
+  glow as fadeAt,
+  hue,
+  landing,
+  landingAt,
+  linearColour,
+  PITCH_NM,
+  SLIT_HALF,
+  SPOT,
+  WALL,
+  WALL_NORMAL,
+  wallPoint,
+} from './reading.js';
 
 const box = (a, b, c, d, e, f) => new THREE.Box3(new THREE.Vector3(a, b, c), new THREE.Vector3(d, e, f));
 
 /** What the camera shows, step by step: a box to fill, and the angle to see it from. All of them read as 3D. */
 export const FRAMES = {
-  start: { box: box(-17, 3.5, -6, 20, 23.5, 6), az: 5, el: 15 },
-  light: { box: box(-17, 3.5, -6, 20, 23.5, 6), az: 5, el: 15 },
-  grooves: { box: box(2.5, 7.4, -7, 20.5, 21, 5), az: -28, el: 13 },
-  wall: { box: box(-19, 10.6, 0, -4.5, 19.4, 3.2), az: 12, el: 9 },
-  beyond: { box: box(-19, 9.4, 0, -4.5, 23.2, 3.2), az: 12, el: 9 },
+  start: { box: box(-14.2, 2, -5, 16.4, 18.6, 4.5), az: 5, el: 15 },
+  light: { box: box(-14.2, 2, -5, 16.4, 18.6, 4.5), az: 5, el: 15 },
+  grooves: { box: box(0.5, 3.8, -7, 18.5, 17.4, 5), az: -28, el: 13 },
+  wall: { box: box(-16.8, 7.9, 0, -2.2, 16, 3.2), az: 12, el: 9 },
+  beyond: { box: box(-16.8, 7, 0, -2.2, 19.2, 3.2), az: 12, el: 9 },
 };
 
 const V = (p) => new THREE.Vector3(p.x, p.y, p.z);
@@ -45,6 +59,23 @@ function glowTexture() {
   const r = g.createRadialGradient(64, 64, 1, 64, 64, 64);
   r.addColorStop(0, 'rgba(255,255,255,1)');
   r.addColorStop(0.32, 'rgba(255,255,255,0.5)');
+  r.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = r;
+  g.fillRect(0, 0, 128, 128);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+/** The white patch: a bright flat middle with a soft edge. */
+function patchTexture() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 128;
+  const g = c.getContext('2d');
+  const r = g.createRadialGradient(64, 64, 1, 64, 64, 64);
+  r.addColorStop(0, 'rgba(255,255,255,1)');
+  r.addColorStop(0.42, 'rgba(255,255,255,1)');
+  r.addColorStop(0.62, 'rgba(255,255,255,0.5)');
   r.addColorStop(1, 'rgba(255,255,255,0)');
   g.fillStyle = r;
   g.fillRect(0, 0, 128, 128);
@@ -230,7 +261,14 @@ function createWall() {
   const inward = V(WALL_NORMAL).multiplyScalar(-0.41);
   const board = new THREE.Mesh(
     new RoundedBoxGeometry(w, WALL.height, 0.8, 2, 0.1),
-    new THREE.MeshStandardMaterial({ name: 'wall', color: 0xe9ecef, roughness: 0.82, metalness: 0, envMapIntensity: 0.35 }),
+    new THREE.MeshStandardMaterial({
+      name: 'wall',
+      color: 0xffffff,
+      emissive: 0x5c6066, // it stays a white board in this dim light, whichever way it is turned from the lamp
+      roughness: 0.82,
+      metalness: 0,
+      envMapIntensity: 0.35,
+    }),
   );
   board.position.copy(V(wallPoint(0, WALL.height / 2))).add(inward);
   board.rotation.y = yaw;
@@ -265,7 +303,8 @@ function createBand() {
   const off = V(WALL_NORMAL).multiplyScalar(0.03);
   for (let i = 0; i < cols; i++) {
     const nm = from + i * step;
-    const c = linearColour(nm);
+    const c = hue(nm);
+    const fade = fadeAt(nm);
     ROWS.forEach(([k, a], j) => {
       const p = landingAt(nm, k * SLIT_HALF);
       const at = (i * ROWS.length + j) * 3;
@@ -276,7 +315,7 @@ function createBand() {
       col[q] = c[0];
       col[q + 1] = c[1];
       col[q + 2] = c[2];
-      col[q + 3] = a;
+      col[q + 3] = a * fade; // it fades into the wall at both ends, never through black
     });
     if (i < cols - 1)
       for (let j = 0; j < ROWS.length - 1; j++) {
@@ -339,7 +378,8 @@ export function createSetting({ stage, shadow }) {
   // the white reflection on the wall: the sliver, stretched by the slant of the ray
   const whiteAt = landing(0);
   const spotW = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), onWallMat(0xffffff));
-  spotW.scale.set(alongWall(landingAt(0, -SLIT_HALF)) - alongWall(landingAt(0, SLIT_HALF)) + 1.5, 1.7, 1);
+  spotW.material.map = patchTexture();
+  spotW.scale.set(3.2, 2.2, 1);
   spotW.position.copy(V(whiteAt)).addScaledVector(V(WALL_NORMAL), 0.04);
   spotW.rotation.y = THREE.MathUtils.degToRad(WALL.yaw);
   spotW.renderOrder = 4;

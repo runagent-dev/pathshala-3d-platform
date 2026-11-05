@@ -1,8 +1,8 @@
 // The drawing over the 3D view, painted on a 2D canvas from exact 3D points projected through the camera: the sunlight, its
-// plain reflection, the fan of colours, the printed scale under the spectrum, the marker, the wave on the chosen ray, and the
+// plain reflection, the fan of colours, the printed scale beside the spectrum, the marker, the wave on the chosen ray, and the
 // magnifying circle on the grooves. Nothing here is a 3D object, so every line stays even and crisp at any size.
 import * as THREE from 'three';
-import { alongWall, cssColour, isVisible, landing, MAX_NM, MIN_NM, pureColour, SPOT, TO_SUN, wallPoint } from './reading.js';
+import { alongWall, DISC, glow, isVisible, landing, MAX_NM, MIN_NM, pureColour, SPOT, TO_SUN, WALL, WALL_ALONG, wallPoint } from './reading.js';
 
 const FONT = '"Noto Sans Bengali", sans-serif';
 export const INK = { edge: '#20262e', sun: '#fffdf2', mark: '#1f2933', hidden: '#d5dde6' };
@@ -12,15 +12,26 @@ const CM_PER_NM = 0.0042; // the wave is drawn this big: 400 nm as 1.7 cm, 700 n
 const U_SCALE = alongWall(landing(550)) - 2.1; // where the scale stands on the wall, left of the band
 const U_RIGHT = alongWall(landing(550)) + 1.5; // how far the marker's line reaches
 const FAN = [];
-for (let nm = 400; nm < 700; nm += 10) FAN.push({ a: landing(nm), b: landing(nm + 10), color: cssColour(Math.max(425, Math.min(680, nm + 5))) });
+for (let nm = 400; nm < 700; nm += 10) FAN.push({ a: landing(nm), b: landing(nm + 10), color: pureColour(nm + 5), fade: glow(nm + 5) });
 const EDGES = [
-  { nm: 425, color: pureColour(425) },
-  { nm: 470, color: pureColour(470) },
-  { nm: 530, color: pureColour(530) },
-  { nm: 580, color: pureColour(580) },
-  { nm: 605, color: pureColour(605) },
-  { nm: 665, color: pureColour(665) },
+  { at: landing(425), color: pureColour(425) },
+  { at: landing(470), color: pureColour(470) },
+  { at: landing(530), color: pureColour(530) },
+  { at: landing(580), color: pureColour(580) },
+  { at: landing(605), color: pureColour(605) },
+  { at: landing(665), color: pureColour(665) },
 ];
+const WORDS = { violet: '#5f27cd', red: '#c92a2a' }; // the end words on the wall, dark enough to read on white
+/** Where each whole wavelength lands: worked out once for each, so that a frame allocates nothing. */
+const LANDED = new Map();
+const at = (nm) => {
+  let p = LANDED.get(nm);
+  if (!p) {
+    p = landing(nm);
+    LANDED.set(nm, p);
+  }
+  return p;
+};
 const WHITE_AT = landing(0);
 const SKY = { x: SPOT.x + TO_SUN.x * 60, y: SPOT.y + TO_SUN.y * 60, z: SPOT.z + TO_SUN.z * 60 };
 
@@ -63,7 +74,10 @@ export function createRays({ stage, host, t }) {
     scale: 0, // the printed scale
     marker: 0,
     lens: 0, // the magnifying circle
-    tags: [], // the test's letters: { nm, text }
+    tags: [], // the test's letters: { nm, text } on the band, or { p, dx, dy, text } on a world point
+    plain: false, // the marker is a plain dot (the test)
+    named: false, // the marker wears its label, so the number under it steps aside
+    words: null, // the two end words: [violet, red]
   };
 
   function ray(ax, ay, bx, by, width, color, edge = INK.edge) {
@@ -147,8 +161,8 @@ export function createRays({ stage, host, t }) {
     const x0 = sx;
     const y0 = sy;
     const k = v.out;
-    ctx.globalAlpha = 0.34 * v.fan;
     for (const f of FAN) {
+      ctx.globalAlpha = 0.34 * v.fan * f.fade;
       ctx.beginPath();
       ctx.moveTo(x0, y0);
       P(f.a);
@@ -161,7 +175,7 @@ export function createRays({ stage, host, t }) {
     }
     ctx.globalAlpha = v.fan;
     for (const e of EDGES) {
-      P(landing(e.nm));
+      P(e.at);
       ctx.lineCap = 'round';
       ctx.beginPath();
       ctx.moveTo(x0, y0);
@@ -178,8 +192,7 @@ export function createRays({ stage, host, t }) {
   /** The chosen ray, and on its last part the wave, standing up from the ray. */
   function chosen() {
     if (v.chosen <= 0) return;
-    const to = landing(v.nm);
-    if (!to) return;
+    const to = at(v.nm);
     const seen = isVisible(v.nm);
     const color = seen ? pureColour(v.nm) : INK.hidden;
     P(SPOT);
@@ -219,17 +232,17 @@ export function createRays({ stage, host, t }) {
     const s1 = lambda * (Math.round((WAVE_LENGTH * 0.26) / lambda) + 0.25);
     const s2 = s1 + lambda;
     const top = WAVE_AMP * 1.5;
-    const at = (s, up) => Pxyz(to.x - unit.x * s + eField.x * up, to.y - unit.y * s + eField.y * up, to.z - unit.z * s + eField.z * up);
-    at(s1, top);
+    const along = (s, up) => Pxyz(to.x - unit.x * s + eField.x * up, to.y - unit.y * s + eField.y * up, to.z - unit.z * s + eField.z * up);
+    along(s1, top);
     const ax = sx;
     const ay = sy;
-    at(s2, top);
+    along(s2, top);
     const bx = sx;
     const by = sy;
-    at(s1, WAVE_AMP * 1.04);
+    along(s1, WAVE_AMP * 1.04);
     const cx = sx;
     const cy = sy;
-    at(s2, WAVE_AMP * 1.04);
+    along(s2, WAVE_AMP * 1.04);
     ctx.globalAlpha = v.wave;
     ctx.lineCap = 'butt';
     for (const [c, wd] of [
@@ -254,8 +267,8 @@ export function createRays({ stage, host, t }) {
 
   /** The scale printed on the wall, beside the band; the part past the two ends is dashed. */
   const onScale = (nm, du = 0) => {
-    const p = wallPoint(U_SCALE + du, landing(nm).y);
-    Pxyz(p.x, p.y, p.z);
+    const u = U_SCALE + du;
+    Pxyz(WALL.at.x + WALL_ALONG.x * u, at(nm).y, WALL.at.z + WALL_ALONG.z * u);
   };
   function scale() {
     if (v.scale <= 0) return;
@@ -291,7 +304,7 @@ export function createRays({ stage, host, t }) {
       ctx.moveTo(a, b);
       ctx.lineTo(sx, sy);
       ctx.stroke();
-      if (big && !(v.marker > 0 && Math.abs(n - v.nm) < 22)) {
+      if (big && !(v.named && Math.abs(n - v.nm) < 22)) {
         const text = t.num(n);
         const wn = ctx.measureText(text).width;
         ctx.fillStyle = 'rgba(255,255,255,0.74)';
@@ -300,11 +313,26 @@ export function createRays({ stage, host, t }) {
         ctx.fillText(text, sx - 4, sy + 0.5);
       }
     }
-    onScale(700, -0.42);
     ctx.font = `600 11.5px ${FONT}`;
     ctx.fillStyle = INK.mark;
     onScale(760, -0.42);
     ctx.fillText('nm', sx - 4, sy);
+    if (v.words) {
+      // the two ends of the band, named in their own colours
+      ctx.font = `600 12.5px ${FONT}`;
+      ctx.textAlign = 'center';
+      // each steps aside while the marker's label is at that end
+      if (!(v.named && Math.abs(v.nm - 722) < 50)) {
+        ctx.fillStyle = WORDS.red;
+        onScale(722, 2.3);
+        ctx.fillText(v.words[1], sx, sy);
+      }
+      if (!(v.named && Math.abs(v.nm - 374) < 50)) {
+        ctx.fillStyle = WORDS.violet;
+        onScale(374, 2.3);
+        ctx.fillText(v.words[0], sx, sy);
+      }
+    }
     ctx.globalAlpha = 1;
   }
   function marker() {
@@ -312,8 +340,7 @@ export function createRays({ stage, host, t }) {
     onScale(v.nm);
     const ax = sx;
     const ay = sy;
-    const q = wallPoint(U_RIGHT, landing(v.nm).y);
-    Pxyz(q.x, q.y, q.z);
+    Pxyz(WALL.at.x + WALL_ALONG.x * U_RIGHT, at(v.nm).y, WALL.at.z + WALL_ALONG.z * U_RIGHT);
     ctx.globalAlpha = v.marker;
     ctx.lineCap = 'butt';
     ctx.strokeStyle = '#ffffff';
@@ -328,6 +355,20 @@ export function createRays({ stage, host, t }) {
     ctx.moveTo(ax, ay);
     ctx.lineTo(sx, sy);
     ctx.stroke();
+    v.handle.x = ax;
+    v.handle.y = ay;
+    if (v.plain) {
+      // in the test it cannot be moved: a plain black dot
+      ctx.beginPath();
+      ctx.arc(ax, ay, 6.5, 0, Math.PI * 2);
+      ctx.fillStyle = INK.mark;
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.6;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+      return;
+    }
     // the handle, a knob on the scale, with its two small arrows
     ctx.beginPath();
     ctx.arc(ax, ay, 10, 0, Math.PI * 2);
@@ -346,8 +387,6 @@ export function createRays({ stage, host, t }) {
       ctx.fill();
     }
     ctx.globalAlpha = 1;
-    v.handle.x = ax;
-    v.handle.y = ay;
   }
   v.handle = { x: 0, y: 0 };
 
@@ -358,28 +397,33 @@ export function createRays({ stage, host, t }) {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     for (const g of v.tags) {
-      const p = landing(g.nm);
-      Pxyz(p.x, p.y, p.z);
+      if (g.p) P(g.p);
+      else P(at(g.nm));
       const ax = sx;
       const ay = sy;
-      onScale(g.nm);
+      if (g.p) {
+        sx = ax + g.dx;
+        sy = ay + g.dy;
+      } else onScale(g.nm);
+      const lx = sx;
+      const ly = sy;
       ctx.strokeStyle = INK.mark;
       ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.moveTo(ax, ay);
-      ctx.lineTo(sx, sy);
+      ctx.lineTo(lx, ly);
       ctx.stroke();
       ctx.beginPath();
       ctx.arc(ax, ay, 2.6, 0, Math.PI * 2);
       ctx.fillStyle = INK.mark;
       ctx.fill();
       ctx.beginPath();
-      ctx.arc(sx, sy, 11, 0, Math.PI * 2);
+      ctx.arc(lx, ly, 11, 0, Math.PI * 2);
       ctx.fillStyle = '#ffffff';
       ctx.fill();
       ctx.stroke();
       ctx.fillStyle = INK.mark;
-      ctx.fillText(g.text, sx, sy + 0.5);
+      ctx.fillText(g.text, lx, ly + 0.5);
     }
   }
 
@@ -416,22 +460,29 @@ export function createRays({ stage, host, t }) {
     ctx.beginPath();
     ctx.arc(px, py, 7, 0, Math.PI * 2);
     ctx.stroke();
+    // the grooves run where the disc's level line runs on the screen, here at this spot
+    Pxyz(SPOT.x + DISC.side.x, SPOT.y + DISC.side.y, SPOT.z + DISC.side.z);
+    let turn = Math.atan2(sy - py, sx - px);
+    if (Math.abs(turn) > Math.PI / 2) turn += Math.PI;
+    const gap = R / 2.4;
+    const far = 9 * R; // the circles' centre, down the radius: a little curved, like the real ones
     ctx.save();
     ctx.beginPath();
     ctx.arc(cx, cy, R, 0, Math.PI * 2);
     ctx.clip();
     ctx.fillStyle = '#c9d1d9';
     ctx.fillRect(cx - R, cy - R, R * 2, R * 2);
-    const gap = R / 2.4;
+    ctx.translate(cx, cy);
+    ctx.rotate(turn);
     for (let i = -4; i <= 4; i++) {
-      // a groove: a dark furrow with one lit edge, a little curved like the real circles
+      // a groove: a dark furrow with one lit edge
       ctx.beginPath();
-      ctx.arc(cx + i * gap + 9 * R, cy, 9 * R, Math.PI * 0.86, Math.PI * 1.14);
+      ctx.arc(0, i * gap + far, far, Math.PI * 1.36, Math.PI * 1.64);
       ctx.strokeStyle = '#6d7a87';
       ctx.lineWidth = gap * 0.34;
       ctx.stroke();
       ctx.beginPath();
-      ctx.arc(cx + i * gap + 9 * R + gap * 0.26, cy, 9 * R, Math.PI * 0.86, Math.PI * 1.14);
+      ctx.arc(0, i * gap + far + gap * 0.26, far, Math.PI * 1.36, Math.PI * 1.64);
       ctx.strokeStyle = '#f4f7fa';
       ctx.lineWidth = 1.2;
       ctx.stroke();
@@ -445,39 +496,55 @@ export function createRays({ stage, host, t }) {
     ctx.strokeStyle = INK.edge;
     ctx.lineWidth = 1;
     ctx.stroke();
-    // the distance between two grooves
-    if (v.lens >= 1) {
-      const y = cy + R * 0.42;
-      const x0 = cx - gap / 2;
-      const x1 = cx + gap / 2;
-      for (const [c, wd] of [
-        ['#ffffff', 3.4],
-        [INK.mark, 1.5],
-      ]) {
-        ctx.strokeStyle = c;
-        ctx.lineWidth = wd;
-        ctx.beginPath();
-        ctx.moveTo(x0, y - 6);
-        ctx.lineTo(x0, y + 6);
-        ctx.moveTo(x0, y);
-        ctx.lineTo(x1, y);
-        ctx.moveTo(x1, y - 6);
-        ctx.lineTo(x1, y + 6);
-        ctx.stroke();
-      }
-      ctx.font = `600 12.5px ${FONT}`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      const tag = (text, x, yy) => {
-        const tw = ctx.measureText(text).width;
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(x - tw / 2 - 5, yy - 9, tw + 10, 18);
-        ctx.fillStyle = INK.mark;
-        ctx.fillText(text, x, yy + 0.5);
-      };
-      tag(t('l_pitch', { d: t.num(1.6) }), cx, y + 17.5);
-      tag(t('l_groove'), cx - gap / 2, cy - R * 0.5);
+    if (v.lens < 1) return;
+    // across the grooves, the way the colours fan out: the distance between two, and an arrow
+    const ux = -Math.sin(turn);
+    const uy = Math.cos(turn);
+    const ex = Math.cos(turn);
+    const ey = Math.sin(turn);
+    const bx = cx + ex * R * 0.46;
+    const by = cy + ey * R * 0.46;
+    const ax = cx - ex * R * 0.46;
+    const ay = cy - ey * R * 0.46;
+    const line = (x0, y0, x1, y1) => {
+      ctx.moveTo(x0, y0);
+      ctx.lineTo(x1, y1);
+    };
+    for (const [c, wd] of [
+      ['#ffffff', 3.4],
+      [INK.mark, 1.5],
+    ]) {
+      ctx.strokeStyle = c;
+      ctx.lineWidth = wd;
+      ctx.beginPath();
+      const hx = bx + ux * gap * 0.5;
+      const hy = by + uy * gap * 0.5;
+      const kx = bx - ux * gap * 0.5;
+      const ky = by - uy * gap * 0.5;
+      line(hx, hy, kx, ky);
+      line(hx - ex * 6, hy - ey * 6, hx + ex * 6, hy + ey * 6);
+      line(kx - ex * 6, ky - ey * 6, kx + ex * 6, ky + ey * 6);
+      // the arrow, up the disc: the side the colours go
+      const tx = ax - ux * R * 0.5;
+      const ty = ay - uy * R * 0.5;
+      line(ax + ux * R * 0.2, ay + uy * R * 0.2, tx, ty);
+      line(tx, ty, tx + ux * 7 + ex * 5, ty + uy * 7 + ey * 5);
+      line(tx, ty, tx + ux * 7 - ex * 5, ty + uy * 7 - ey * 5);
+      ctx.stroke();
     }
+    ctx.font = `600 12px ${FONT}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const tag = (text, x, yy) => {
+      const tw = ctx.measureText(text).width;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(x - tw / 2 - 4, yy - 8.5, tw + 8, 17);
+      ctx.fillStyle = INK.mark;
+      ctx.fillText(text, x, yy + 0.5);
+    };
+    tag(t('l_pitch', { d: t.num(1.6) }), bx, by + gap * 0.5 + 15);
+    tag(t('l_groove'), cx + ex * R * 0.36 - ux * gap * 2, cy + ey * R * 0.36 - uy * gap * 2);
+    tag(t('l_split'), cx, cy + R * 0.74);
   }
 
   function paint() {
@@ -529,7 +596,7 @@ export function createRays({ stage, host, t }) {
     if (v.scale > 0) {
       for (let k = 400; k <= 700; k += 50) {
         onScale(k);
-        put(sx - 14, sy, 16);
+        put(sx - 16, sy, 14);
       }
     }
     if (v.marker > 0) put(v.handle.x, v.handle.y, 13);
@@ -540,7 +607,7 @@ export function createRays({ stage, host, t }) {
   /** Where a wavelength's point of the band is on the canvas (a reused object). */
   const screen = { x: 0, y: 0 };
   function bandPoint(nm, up = 0) {
-    const p = landing(nm);
+    const p = at(nm);
     Pxyz(p.x, p.y + up, p.z);
     screen.x = sx;
     screen.y = sy;
@@ -549,7 +616,7 @@ export function createRays({ stage, host, t }) {
   const onRule = new THREE.Vector3();
   /** The world point of a wavelength on the scale. */
   function scaleAt(nm) {
-    const p = wallPoint(U_SCALE, landing(nm).y);
+    const p = wallPoint(U_SCALE, at(nm).y);
     return onRule.set(p.x, p.y, p.z);
   }
   /** Canvas position of a world point. */

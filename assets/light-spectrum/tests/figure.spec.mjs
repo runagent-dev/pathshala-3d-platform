@@ -73,17 +73,17 @@ test('light-spectrum: a drag on the band and the arrow keys move the marker; the
   await fig.call('set', { show: 'wave', nm: 550, animate: false });
   await fig.advance(600);
   const box = await fig.frame.locator('.lab-draw').boundingBox();
-  const at = (fx, fy) => [box.x + box.width * fx, box.y + box.height * fy];
+  const to = (fx, fy, options) => page.mouse.move(box.x + box.width * fx, box.y + box.height * fy, options);
   // a little left of the middle of the view: the band; up is a longer wavelength
-  await page.mouse.move(...at(0.42, 0.5));
+  await to(0.42, 0.5);
   await page.mouse.down();
   await fig.advance(100);
   const first = (await fig.call('get')).nm;
-  await page.mouse.move(...at(0.42, 0.3), { steps: 3 });
+  await to(0.42, 0.3, { steps: 3 });
   await fig.advance(100);
   const up = (await fig.call('get')).nm;
   expect(up).toBeGreaterThan(first);
-  await page.mouse.move(...at(0.42, 0.7), { steps: 3 });
+  await to(0.42, 0.7, { steps: 3 });
   await fig.advance(100);
   expect((await fig.call('get')).nm).toBeLessThan(first);
   await page.mouse.up();
@@ -182,5 +182,19 @@ test('light-spectrum: leaving the test restores the learn state; a step cut shor
   expect(st.done).toEqual([]);
   expect(st.show).toBe('none');
   await expect(fig.frame.locator('.pvc-act').first()).toContainText('সূর্যের আলো');
+
+  // the sweep cut short by the test: no wavelength of the half-done sweep comes back
+  await fig.call('set', { show: 'grooves', animate: false });
+  await fig.frame.locator('.pvc-act').first().click();
+  await fig.advance(2500);
+  expect((await fig.call('get')).busy).toBe(true);
+  await fig.call('practice');
+  await fig.advance(1500);
+  await fig.frame.locator('[data-mode="explore"]').click();
+  await fig.advance(1200);
+  st = await fig.call('get');
+  expect(st.nm).toBe(550);
+  expect(st.marker).toBe(false);
+  await expect(fig.frame.locator('.pvc-act').first()).toContainText('পর্যন্ত');
   expect(log.errors).toEqual([]);
 });

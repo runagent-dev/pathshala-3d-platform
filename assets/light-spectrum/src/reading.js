@@ -50,7 +50,7 @@ const CIE = [
   [0.0001, 0.00003, 0],
   [0, 0, 0],
 ];
-const PEAK = 555;
+export const PEAK = 555;
 
 /** The standard observer at λ, by straight lines between the table's rows. Outside 380 … 780 nm: nothing. */
 export function observer(nm) {
@@ -77,8 +77,8 @@ export const VISIBLE = Object.freeze([400, 700]);
 
 /** How bright the wall shows λ, 0 … 1 (on a screen). Nothing at all past the book's two ends. */
 export function glow(nm) {
-  const f = smooth(VISIBLE[0] - 4, 440, nm) * (1 - smooth(628, VISIBLE[1] + 4, nm));
-  return f ** 0.5;
+  const f = smooth(VISIBLE[0] - 4, 424, nm) * (1 - smooth(672, VISIBLE[1] + 4, nm));
+  return f ** 0.6;
 }
 
 /**
@@ -99,6 +99,12 @@ const hex = (v) =>
   Math.round(Math.min(1, Math.max(0, v)) * 255)
     .toString(16)
     .padStart(2, '0');
+/** The hue of λ at full strength, linear sRGB: on the wall it fades out by `glow`, never through black. */
+export function hue(nm) {
+  const c = linearColour(Math.min(690, Math.max(415, nm)));
+  const top = Math.max(c[0], c[1], c[2]) || 1;
+  return c.map((v) => v / top);
+}
 /** The same colour as #rrggbb. */
 export function cssColour(nm) {
   const c = linearColour(nm);
@@ -106,9 +112,8 @@ export function cssColour(nm) {
 }
 /** The colour in full strength (the ends of the spectrum too), for the words and the marks. */
 export function pureColour(nm) {
-  const c = linearColour(Math.min(690, Math.max(420, nm)));
-  const top = Math.max(c[0], c[1], c[2]) || 1;
-  return `#${hex(toSRGB(c[0] / top))}${hex(toSRGB(c[1] / top))}${hex(toSRGB(c[2] / top))}`;
+  const c = hue(nm);
+  return `#${hex(toSRGB(c[0]))}${hex(toSRGB(c[1]))}${hex(toSRGB(c[2]))}`;
 }
 
 // ── the colours' names, and the book's other kinds of light ───────────────────────────────────────────────────
@@ -154,16 +159,16 @@ const cross = (a, b) => v(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.
 
 const YAW = 40; // the disc's normal, from the camera's side toward the wall on the left
 const TILT = 8; // the disc leans back by this much
-const CENTRE = v(13.2, 14.2, 0); // the disc's centre
+const CENTRE = v(11.2, 10.6, 0); // the disc's centre
 const SPOT_R = 4.2; // where the sunlight falls, from the centre, on the upward radius: there the grooves run level
 const SUN = { yaw: 26, el: 38 }; // where the sunlight comes from
 const SLIT = 0.2; // half the width of the sunlight on the disc: a narrow sliver, level
 
 export const WALL = Object.freeze({
   yaw: 42, // how far its face is turned to the camera's right
-  at: v(-10.9, 0, -0.66), // the middle of its foot, on the bench
-  half: 6.8, // half its width
-  height: 25,
+  at: v(-9.6, 0, -0.1), // the middle of its foot, on the bench
+  half: 5.8, // half its width
+  height: 18.5,
 });
 
 /** The disc in space. `up` runs up the disc; `side` lies level in it, toward the wall. */

@@ -26,6 +26,7 @@ body.bg-transparent { background: transparent; }
 .lab-graph .lab-zoom { fill: none; stroke: var(--ink-3); stroke-width: 1; }
 .lab-graph .lab-gy { font-size: 11.5px; }
 .lab-graph text { paint-order: stroke; stroke: #fff; stroke-width: 3px; }
+.lab .lab-sens { font-size: 0.82em; color: var(--ink-2); white-space: nowrap; }
 .lab .lab-swatch { display: inline-block; width: 15px; height: 15px; margin-right: 6px; vertical-align: -2px; border-radius: 50%; border: 1px solid rgba(0, 0, 0, 0.35); }
 
 /* the rule: the book's sentences */
@@ -62,9 +63,9 @@ body.bg-transparent { background: transparent; }
   .lab .pvc-learn { gap: 4px; }
   .lab .pvc-examples button { min-height: 36px; padding: 1px 2px 3px; }
   .lab .pvc-examples .pvc-ex-word { font-size: 14px; line-height: 1.2; white-space: nowrap; }
-  .pvc.lab .lab-graph { height: 86px; }
+  .pvc.lab .lab-graph { height: 87px; }
   .lab .pvc-act-row { min-height: 46px; }
-  .lab .pvc-outcome { font-size: 15.5px; line-height: 28px; }
+  .lab .pvc-outcome { font-size: 15.5px; line-height: 28px; height: 28px; }
   .lab .pvc-outcome b { font-size: 18px; }
   .lab .pvc-rule { --pvc-rule-lines: 0; font-size: 14px; line-height: 20px; height: 60px; min-height: 0; overflow: hidden; }
   .lab .pvc-q-ask { gap: 5px; }
@@ -77,7 +78,7 @@ body.bg-transparent { background: transparent; }
 @container pvc (max-width: 420px) and (max-height: 600px) {
   .pvc.lab .lab-graph { display: none; }
   .lab .pvc-rule { font-size: 13.5px; line-height: 18px; height: 54px; }
-  .lab .pvc-outcome { font-size: 13.5px; line-height: 22px; }
+  .lab .pvc-outcome { font-size: 13.5px; line-height: 22px; height: 22px; }
   .lab .pvc-outcome b { font-size: 15px; }
   .lab .pvc-q-ask { gap: 3px; }
   .lab .pvc-q-head { min-height: 0; }
@@ -90,6 +91,7 @@ body.bg-transparent { background: transparent; }
 /* the side panel beside the 3D view (280–400 px wide; only it is a container with a height) */
 @container pvc-panel (min-height: 1px) {
   .pvc.lab .lab-graph { display: block; height: 104px; }
+  .lab .pvc-outcome { height: auto; }
   .lab .pvc-learn { gap: 8px; }
   .lab .pvc-examples button { min-height: 40px; }
   .lab .pvc-outcome { font-size: 14px; line-height: 1.4; white-space: normal; }
