@@ -485,6 +485,8 @@ export function createApp(root, options = {}) {
     draw();
   });
   stage.onBeforeRender(() => {
+    // a window with no room for the view: nothing to frame, and a point would project to infinity
+    if (stage.width < 2 || stage.height < 2) return;
     applyCamera();
     camera.updateMatrixWorld();
     // seen from high up there is no horizon: the floor runs on past the frame
