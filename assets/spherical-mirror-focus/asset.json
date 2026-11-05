@@ -1,0 +1,108 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "spherical-mirror-focus",
+  "title": "Spherical mirrors and their focus (গোলীয় আয়না ও ফোকাস)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 223,
+  "topic": "8.4",
+  "placement": "Book page 223, topic 8.4 গোলীয় আয়না (a spherical mirror is part of a hollow sphere), with the focus of a convex mirror (8.5, চিত্র ৮.১৭–৮.১৮, pages 224–225), of a concave mirror (8.6, চিত্র ৮.২১, page 228) and the torch/searchlight use (8.8.3, চিত্র ৮.২৭, page 235).",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "cm",
+  "description": "Interactive 3D figure for spherical mirrors and their focus, book pages 223–228 and 235, topics 8.4, 8.5, 8.6 and 8.8.3, next to চিত্র ৮.১৭, ৮.১৮, ৮.২১ and ৮.২৭. A piece is cut from a hollow glass sphere of radius r, silvered on its inner surface and stood on an optical bench with a printed cm scale: parallel light from a ray box meets at the focus F, and f reads r/2 on the scale for every r the student chooses, while a wide bundle shows why that is only nearly true. A half turn and a coat on the other surface make a convex mirror: the light spreads, and only seems to come from F behind it. A bulb at the concave mirror's F gives a parallel beam, as in a torch; the student can move it off F. All rays are traced on the exact sphere. Five test questions on the picture. Offline, Bangla and English.",
+  "tags": [
+    "light",
+    "reflection",
+    "spherical mirror",
+    "concave mirror",
+    "convex mirror",
+    "focus",
+    "focal length",
+    "torch",
+    "optical bench",
+    "bangla"
+  ],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "stage",
+      "label": "What is shown",
+      "type": "select",
+      "options": [
+        ["sphere", "the hollow sphere"],
+        ["cut", "the piece cut out"],
+        ["coated", "the concave mirror on the bench"],
+        ["rays", "parallel light meets at F"],
+        ["measure", "f and r measured"],
+        ["wide", "a wide bundle"],
+        ["convex", "the convex mirror spreads the light"],
+        ["virtual", "the rays extended to F behind it"],
+        ["torch", "a bulb at F"]
+      ],
+      "default": "sphere"
+    },
+    {
+      "name": "r",
+      "label": "Radius of the sphere (cm)",
+      "type": "select",
+      "options": [["20", "20"], ["30", "30"], ["40", "40"], ["60", "60"]],
+      "default": "30"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The numbered ring on the part", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "stage": "measure", "r": 40, "animate": false } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "view", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": { "params": { "coach": "0", "stage": "measure" } },
+    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "stage": "coated", "animate": false } }] }],
+    "video": {
+      "kind": "script",
+      "seconds": 30,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 0.6, "command": "set", "payload": { "stage": "cut" } },
+        { "at": 3, "command": "set", "payload": { "stage": "coated" } },
+        { "at": 8, "command": "set", "payload": { "stage": "rays" } },
+        { "at": 14, "command": "set", "payload": { "stage": "measure" } },
+        { "at": 17, "command": "set", "payload": { "stage": "convex" } },
+        { "at": 23, "command": "set", "payload": { "stage": "virtual" } },
+        { "at": 26.5, "command": "set", "payload": { "stage": "torch" } }
+      ]
+    }
+  }
+}
