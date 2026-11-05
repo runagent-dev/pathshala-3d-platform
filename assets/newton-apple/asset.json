@@ -1,0 +1,98 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "newton-apple",
+  "title": "The falling apple (মহাকর্ষ: আপেল কেন পড়ে)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 79,
+  "topic": "3.7",
+  "placement": "Book page 79, topic 3.7 মহাকর্ষ বল: next to the text on the Earth's pull F = GmM/R² = mg and g = GM/R².",
+  "order": 2,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "The falling apple (page 79, topic 3.7): an apple tree on a late-summer meadow, a young Newton reading under it, and five apples at 1 m to 5 m beside a height pole. The student lets an apple go: in slow motion it falls with the Earth's pull F on it, leaving a picture every 0.1 s, and the camera follows it down, then pulls back to show the trail. The formula F = G mM/R² is a live calculator: every symbol is a button (the apple, the arrow, the Earth from afar with R from its centre), sliders change m and h, F ÷ m stays g ≈ 9.8 ms⁻². Test tab: 5 tap questions. The two iron spheres and the cut-open Earth are the labs law-of-gravitation and law-of-gravitation-earth. Phone-first, Bangla and English.",
+  "tags": ["force", "gravitation", "weight", "g", "apple", "formula", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    { "name": "m", "label": "Apple's mass (g)", "type": "number", "default": "200", "placeholder": "100–500" },
+    { "name": "h", "label": "Height (m)", "type": "number", "default": "2", "placeholder": "1–5" },
+    {
+      "name": "t",
+      "label": "Frozen moment of the fall (s)",
+      "type": "number",
+      "default": "",
+      "placeholder": "empty: none",
+      "help": "start frozen this many seconds into the fall, for pictures"
+    },
+    {
+      "name": "steps",
+      "label": "Falls already done",
+      "type": "number",
+      "default": "0",
+      "placeholder": "0–1",
+      "help": "1 starts after one fall, with the trail"
+    },
+    {
+      "name": "sym",
+      "label": "Symbol tapped",
+      "type": "select",
+      "options": [["", "none"], "F", "G", "m", "M", "R", "g"],
+      "default": ""
+    },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The numbered ring pulses", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "m": 300, "h": 4, "animate": false } },
+    { "name": "set", "payload": { "drop": true } },
+    { "name": "set", "payload": { "sym": "R" } },
+    { "name": "set", "payload": { "t": 0.5 } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "drop", "land", "symbol", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": { "params": { "coach": "0", "t": "0.42" } },
+    "glb": [{ "name": "default" }],
+    "video": {
+      "kind": "script",
+      "seconds": 17,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 1, "command": "set", "payload": { "drop": true } },
+        { "at": 6.5, "command": "set", "payload": { "m": 400 } },
+        { "at": 8.5, "command": "set", "payload": { "drop": true } },
+        { "at": 13.5, "command": "set", "payload": { "sym": "R" } }
+      ]
+    }
+  }
+}
