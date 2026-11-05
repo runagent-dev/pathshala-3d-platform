@@ -1,0 +1,96 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "pinhole-camera",
+  "title": "Pinhole camera (পিন হোল ক্যামেরা)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 222,
+  "topic": "8.3.1",
+  "placement": "Book page 222, topic 8.3.1, the একক কাজ with চিত্র ৮.১৪ (a candle, a board with a tiny hole, a sheet of white paper).",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "cm",
+  "description": "Interactive 3D figure for the একক কাজ on book page 222, topic 8.3.1, next to চিত্র ৮.১৪. A burning candle, a board and a sheet of white paper stand on a rail with a cm scale in a dark room. The board stops the light, so the paper is dark; the student pricks a tiny hole and a real, upside-down image of the flame lands on the paper, flickering with the flame. The rays from the flame's tip and base cross at the hole; the student drags the paper (and the candle) and reads l′ = l × v/u; a bigger hole gives a brighter, blurred image; the tiny hole stays sharp at every distance. Five test questions on the picture. Offline, Bangla and English.",
+  "tags": ["light", "pinhole-camera", "real-image", "rays", "straight-line", "image", "candle", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "stage",
+      "label": "How far the story has come (0 the board whole … 6 all done)",
+      "type": "number",
+      "default": "0",
+      "placeholder": "0 to 6"
+    },
+    {
+      "name": "u",
+      "label": "Candle's distance from the board (cm)",
+      "type": "number",
+      "default": "12",
+      "placeholder": "9 to 21"
+    },
+    {
+      "name": "v",
+      "label": "Paper's distance from the board (cm)",
+      "type": "number",
+      "default": "18",
+      "placeholder": "6 to 27"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on the part pulses at first", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "stage": 3, "v": 24, "animate": false } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "view", "dragstart", "dragend", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": {
+      "params": { "coach": "0", "stage": "6" },
+      "setup": [{ "command": "set", "payload": { "v": 24, "animate": false } }]
+    },
+    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "stage": 3, "animate": false } }] }],
+    "video": {
+      "kind": "script",
+      "seconds": 30,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 1, "command": "set", "payload": { "stage": 1 } },
+        { "at": 6, "command": "set", "payload": { "stage": 2 } },
+        { "at": 10, "command": "set", "payload": { "stage": 3 } },
+        { "at": 16, "command": "set", "payload": { "stage": 4 } },
+        { "at": 20, "command": "set", "payload": { "stage": 5 } },
+        { "at": 23, "command": "set", "payload": { "stage": 6 } }
+      ]
+    }
+  }
+}
