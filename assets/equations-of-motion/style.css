@@ -4,6 +4,7 @@
      left: চালাও, থামাও, আবার শুরু and the two time steps            its live equation under it
      middle: three long sliders u (blue), a (green), t (grey), each value over its knob
      bottom, the full width: the 3D strip (the car on the number line, the two parts under the axis).
+   Blue frame, each quantity in its colour, and warm accents only on what the student presses and on the car (3.2.0).
    Portrait frames stack it: formula, the two graphs side by side, sliders, buttons, the strip. The test takes the
    place of the sliders (and the graphs) while it is open. The student view itself is
    ../../shared/lib/student/student.css (linked first); the kit's panel is not shown. */
@@ -13,7 +14,7 @@ body.bg-transparent { background: transparent; }
 
 .pvc {
   --c-u: #6cb6ff; --c-a: #5fd38a; --c-t: #d5dbe7;
-  --k-u: #6cb6ff; --k-a: #5fd38a; --k-t: #d5dbe7;
+  --k-u: #62bcff; --k-a: #4fe08e; --k-t: #f5efe3;
 }
 /* the deep blue frame: the kit's tokens for this figure (the kit's own files stay as they are). --panel and --soft stay
    opaque: the kit's cards (the turn-sideways card) stand on them; what floats on the frame is set to glass below. */
@@ -36,7 +37,14 @@ body.bg-transparent { background: transparent; }
   --glass-hi: rgba(255, 255, 255, 0.16);
   --glass-on: rgba(255, 255, 255, 0.24);
   --glass-line: rgba(255, 255, 255, 0.28);
-  --on-bright: #062047; /* text on the bright blue of a chosen tab or the main button */
+  --warm: #ffb020; /* the warm accent: every button, the chosen tab; the car's paint goes with it */
+  --warm-hi: #ffc652;
+  --warm-lo: #ff9f1c;
+  --warm-ink: #2b1700; /* text on the amber */
+  --warm-line: rgba(255, 176, 32, 0.82);
+  --warm-soft: rgba(255, 176, 32, 0.1);
+  --warm-hover: rgba(255, 176, 32, 0.24);
+  --warm-press: rgba(255, 176, 32, 0.36);
   background:
     radial-gradient(52% 34% at 45% 4%, rgba(84, 148, 240, 0.28), transparent 72%),
     radial-gradient(125% 110% at 50% 42%, transparent 58%, rgba(4, 15, 42, 0.42) 100%),
@@ -74,75 +82,86 @@ body.bg-transparent { background: transparent; }
 
 /* top left: the two tabs (শেখো / পরীক্ষা) and the full-screen button, small, out of the way */
 .eom-top { grid-area: top; z-index: 3; display: flex; gap: 6px; align-items: flex-start; width: max-content; }
-.eom .eom-top .pvc-tabs { width: auto; max-width: none; display: inline-grid; grid-template-columns: auto auto; border-color: var(--glass-line); border-radius: 6px; background: var(--glass); }
+.eom .eom-top .pvc-tabs { width: auto; max-width: none; display: inline-grid; grid-template-columns: auto auto; border-color: var(--warm-line); border-radius: 6px; background: var(--warm-soft); }
 .eom .eom-top .pvc-tabs button { height: 30px; padding: 0 11px; font-size: 14px; background: transparent; color: #fff; }
-.eom .eom-top .pvc-tabs button:hover { background: var(--glass-hi); }
-.eom .eom-top .pvc-tabs button.on { background: var(--accent); color: var(--on-bright); }
-.eom .eom-top .pvc-tabs button + button { border-top: 0; border-left: 1px solid var(--glass-line); }
+.eom .eom-top .pvc-tabs button:hover { background: var(--warm-hover); }
+.eom .eom-top .pvc-tabs button.on { background: var(--warm); color: var(--warm-ink); font-weight: 600; }
+.eom .eom-top .pvc-tabs button + button { border-top: 0; border-left: 1px solid var(--warm-line); }
 .eom .eom-top .pvc-corner { position: static; display: flex; gap: 6px; }
-.eom .eom-top .pvc-corner .pvc-tool { height: 30px; width: 30px; border-color: var(--glass-line); background: var(--glass); color: #fff; }
-.eom .eom-top .pvc-corner .pvc-tool:hover { background: var(--glass-hi); }
+.eom .eom-top .pvc-corner .pvc-tool { height: 30px; width: 30px; border-color: var(--warm-line); background: var(--warm-soft); color: #fff; }
+.eom .eom-top .pvc-corner .pvc-tool:hover { background: var(--warm-hover); }
 
 /* top: the formula, and one short sentence under it */
 .eom-head { grid-area: head; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 0; text-align: center; }
 .eom-formula { margin: 0; font-size: 22px; line-height: 1.35; color: var(--ink); white-space: nowrap; word-spacing: 0.06em; text-shadow: 0 0 14px rgba(120, 180, 255, 0.45); }
 .eom-formula .pvc-frac { font-size: 0.78em; }
+.eom-formula .pvc-frac > span:first-child { border-bottom: 2px solid #fff; }
 .eom-rule { margin: 2px 0 0; font-size: 14px; line-height: 1.45; color: var(--ink-2); }
 .eom-rule.end { color: var(--warn); }
 
-/* left: the buttons, soft translucent panels with a thin light border */
+/* left: the buttons, outlined in amber with light text; চালাও solid amber with dark text */
 .eom-btns { grid-area: btns; display: flex; flex-direction: column; justify-content: center; gap: 10px; min-height: 0; }
 .eom-b, .eom-step {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  border: 1px solid var(--glass-line);
+  border: 1.5px solid var(--warm-line);
   border-radius: 6px;
-  background: var(--glass);
+  background: var(--warm-soft);
   color: #fff;
   font-size: 15.5px;
   font-weight: 500;
   white-space: nowrap;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 2px 6px rgba(4, 15, 42, 0.25);
+  box-shadow: 0 2px 6px rgba(4, 15, 42, 0.25);
+  transition: background-color 0.12s, border-color 0.12s;
 }
 .eom-b { height: 38px; padding: 0 10px; }
-.eom-b svg { width: 14px; height: 14px; color: #fff; }
-.eom-b:hover:not(:disabled), .eom-step:hover:not(:disabled) { border-color: rgba(255, 255, 255, 0.6); background: var(--glass-hi); }
-.eom-b:active:not(:disabled), .eom-step:active:not(:disabled) { background: var(--glass-on); }
-.eom-b:disabled { color: var(--ink-3); background: rgba(255, 255, 255, 0.03); box-shadow: none; cursor: default; }
+.eom-b svg { width: 14px; height: 14px; color: var(--warm); }
+.eom-b:hover:not(:disabled), .eom-step:hover:not(:disabled) { border-color: var(--warm-hi); background: var(--warm-hover); }
+.eom-b:active:not(:disabled), .eom-step:active:not(:disabled) { background: var(--warm-press); }
+.eom-b:disabled { border-color: rgba(255, 176, 32, 0.34); color: var(--ink-3); background: transparent; box-shadow: none; cursor: default; }
 .eom-b:disabled svg { color: var(--ink-3); }
-.eom-b.on { border-color: var(--accent); color: #fff; background: rgba(108, 182, 255, 0.26); }
-.eom-b:focus-visible, .eom-step:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.eom-b[data-act='run'] { border-color: var(--warm-lo); background: linear-gradient(180deg, var(--warm-hi), var(--warm-lo)); color: var(--warm-ink); font-weight: 600; box-shadow: 0 2px 10px rgba(255, 159, 28, 0.38); }
+.eom-b[data-act='run'] svg { color: var(--warm-ink); }
+.eom-b[data-act='run']:hover:not(:disabled) { border-color: #ffd98a; background: linear-gradient(180deg, #ffd47a, var(--warm)); }
+.eom-b[data-act='run']:active:not(:disabled) { background: var(--warm-lo); }
+/* চালাও while the car runs: lit, not pressable */
+.eom-b[data-act='run'].on { border-color: var(--warm-line); background: var(--warm-hover); color: #ffe6b8; box-shadow: none; }
+.eom-b[data-act='run'].on svg { color: #ffe6b8; }
+.eom-b:focus-visible, .eom-step:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 .eom-steps { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .eom-step { flex-direction: column; gap: 0; height: 50px; padding: 2px 4px; }
-.eom-step svg { width: 16px; height: 16px; color: #fff; }
+.eom-step svg { width: 16px; height: 16px; color: var(--warm); }
 .eom-step small { font-size: 12.5px; line-height: 1.25; color: #fff; }
 
-/* middle: the three long sliders, the value written over the knob in the quantity's colour, its name at the end */
+/* middle: the three long sliders, the value written over the knob in the quantity's colour, its name at the end: a dark
+   unfilled track, the part up to the knob thick and bright (--f, the knob's place from 0 to 1, is set by app.js; the
+   stop allows for the knob's width, as the browser moves its centre only from --th/2 to 100% − --th/2) */
 .eom-sliders { grid-area: sliders; display: flex; flex-direction: column; justify-content: space-evenly; min-width: 0; min-height: 0; }
-.eom-sl { display: grid; grid-template-columns: minmax(0, 1fr) 6.4em; align-items: end; column-gap: 12px; }
+.eom-sl { --th: 26px; --rail: rgba(3, 13, 38, 0.78); display: grid; grid-template-columns: minmax(0, 1fr) 6.4em; align-items: end; column-gap: 12px; }
 .eom-track { position: relative; padding-top: 1.45em; min-width: 0; font-size: 15.5px; }
-.eom-val { position: absolute; left: 0; top: 0; color: var(--c); font-weight: 600; line-height: 1.4; white-space: nowrap; font-variant-numeric: tabular-nums; will-change: transform; }
+.eom-val { position: absolute; left: 0; top: 0; color: color-mix(in srgb, var(--c) 72%, #fff); font-weight: 600; line-height: 1.4; white-space: nowrap; font-variant-numeric: tabular-nums; will-change: transform; }
 .eom-val small { font-size: 0.85em; font-weight: 500; }
-.eom-name { padding-bottom: 4px; color: var(--c); font-size: 13.5px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.eom-sl input[type='range'] { -webkit-appearance: none; appearance: none; display: block; width: 100%; height: 26px; margin: 0; background: transparent; cursor: pointer; }
-.eom-sl input[type='range']::-webkit-slider-runnable-track { height: 8px; border-radius: 4px; background: color-mix(in srgb, var(--k) 72%, transparent); box-shadow: 0 0 9px color-mix(in srgb, var(--k) 50%, transparent); }
-.eom-sl input[type='range']::-moz-range-track { height: 8px; border-radius: 4px; background: color-mix(in srgb, var(--k) 72%, transparent); box-shadow: 0 0 9px color-mix(in srgb, var(--k) 50%, transparent); }
+.eom-name { padding-bottom: 4px; color: color-mix(in srgb, var(--c) 62%, #fff); font-weight: 500; font-size: 13.5px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.eom-sl input[type='range'] { -webkit-appearance: none; appearance: none; display: block; width: 100%; height: 28px; margin: 0; background: transparent; cursor: pointer; --stop: calc(var(--th) / 2 + (100% - var(--th)) * var(--f, 0)); }
+.eom-sl input[type='range']::-webkit-slider-runnable-track { height: 10px; border-radius: 5px; background: linear-gradient(90deg, var(--k) var(--stop), var(--rail) var(--stop)); box-shadow: inset 0 0 0 1px rgba(205, 225, 255, 0.22); }
+.eom-sl input[type='range']::-moz-range-track { height: 10px; border-radius: 5px; background: var(--rail); box-shadow: inset 0 0 0 1px rgba(205, 225, 255, 0.22); }
+.eom-sl input[type='range']::-moz-range-progress { height: 10px; border-radius: 5px; background: var(--k); }
 .eom-sl input[type='range']::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 22px;
-  height: 22px;
-  margin-top: -7px;
+  width: var(--th);
+  height: var(--th);
+  margin-top: -8px;
   border-radius: 50%;
   background: var(--k);
   border: 3px solid #fff;
-  box-shadow: 0 0 0 1.5px rgba(4, 15, 42, 0.55), 0 0 12px color-mix(in srgb, var(--k) 70%, transparent);
+  box-shadow: 0 0 0 1.5px rgba(4, 15, 42, 0.6), 0 0 14px 2px color-mix(in srgb, var(--k) 75%, transparent);
 }
 .k-t input[type='range']::-webkit-slider-thumb { background: #0b2a5b; }
-.eom-sl input[type='range']::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--k); border: 3px solid #fff; box-shadow: 0 0 0 1.5px rgba(4, 15, 42, 0.55), 0 0 12px color-mix(in srgb, var(--k) 70%, transparent); }
+.eom-sl input[type='range']::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: var(--k); border: 3px solid #fff; box-shadow: 0 0 0 1.5px rgba(4, 15, 42, 0.6), 0 0 14px 2px color-mix(in srgb, var(--k) 75%, transparent); }
 .k-t input[type='range']::-moz-range-thumb { background: #0b2a5b; }
-.eom-sl input[type='range']:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+.eom-sl input[type='range']:focus-visible { outline: 2px solid #fff; outline-offset: 2px; border-radius: 6px; }
 
 /* right: the two graphs, each a dark glass card with light axes and the bright curves, its live equation under it */
 .eom-graphs { grid-area: graphs; display: grid; grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 8px; min-width: 0; min-height: 0; }
@@ -193,19 +212,20 @@ body.bg-transparent { background: transparent; }
 .eom .eom-quizbox .pvc-opt { height: 44px; font-size: 19px; }
 .eom .eom-quizbox .pvc-q-feedback { font-size: 14.5px; line-height: 1.5; }
 .eom .pvc-q-done { padding-top: 40px; }
-/* the test on the dark frame: glass option buttons, the main button bright with dark text */
+/* the test on the dark frame: glass option buttons with an amber hover, the main button solid amber with dark text */
 .eom .eom-quizbox .pvc-opt:not(.right, .wrong) { border-color: rgba(255, 255, 255, 0.36); background: var(--glass); color: #fff; }
-.eom .eom-quizbox .pvc-opt:not(.right, .wrong):hover:not(:disabled) { border-color: var(--accent); background: var(--glass-hi); }
+.eom .eom-quizbox .pvc-opt:not(.right, .wrong):hover:not(:disabled) { border-color: var(--warm); background: var(--glass-hi); }
 .eom .eom-quizbox .pvc-opt:not(.right, .wrong):active:not(:disabled) { background: var(--glass-on); }
 .eom .eom-quizbox .pvc-opt:not(.right, .wrong):disabled { color: var(--ink-2); }
 .eom .eom-quizbox .pvc-opt.right { background: rgba(8, 44, 60, 0.66); }
 .eom .eom-quizbox .pvc-opt.wrong { background: rgba(56, 24, 56, 0.6); }
-.eom .pvc-btn { border-color: var(--glass-line); background: var(--glass); color: #fff; }
-.eom .pvc-btn:hover { background: var(--glass-hi); }
-.eom .pvc-btn.primary { border-color: var(--accent); background: var(--accent); color: var(--on-bright); }
-.eom .pvc-btn.primary:hover { background: #8cc8ff; }
+.eom .pvc-btn { border-color: var(--warm-line); background: var(--warm-soft); color: #fff; }
+.eom .pvc-btn:hover { background: var(--warm-hover); }
+.eom .pvc-btn.primary { border-color: var(--warm-lo); background: var(--warm); color: var(--warm-ink); }
+.eom .pvc-btn.primary:hover { background: var(--warm-hi); }
+.eom .pvc-btn.primary:active { background: var(--warm-lo); }
 .eom .pvc-rotate-card .pvc-btn { background: var(--soft); }
-.eom .pvc-coach-label { background: var(--accent); color: var(--on-bright); }
+.eom .pvc-coach-label { background: var(--warm); color: var(--warm-ink); }
 
 /* ── middle-sized frames (800×500) ── */
 @container pvc (max-height: 560px) {
@@ -233,7 +253,7 @@ body.bg-transparent { background: transparent; }
   .eom-track { font-size: 13.5px; padding-top: 1.35em; }
   .eom-sl { grid-template-columns: minmax(0, 1fr) 6em; column-gap: 8px; }
   .eom-name { font-size: 12.5px; padding-bottom: 3px; }
-  .eom-sl input[type='range'] { height: 24px; }
+  .eom-sl input[type='range'] { height: 26px; }
   .eom-graphs { gap: 2px; }
   .eom-eq { font-size: 13px; line-height: 1.35; }
   .eom .eom-top .pvc-tabs button { height: 28px; padding: 0 9px; font-size: 13.5px; }
@@ -283,13 +303,15 @@ body.bg-transparent { background: transparent; }
   .eom-steps { flex: none; grid-template-columns: 46px 46px; gap: 6px; }
   .eom-step { height: 42px; }
   .eom-quizbox { grid-area: 1 / 1 / 5 / 3; }
+  /* the head beside the tabs has no room for the score too: the next button must stay on the screen (the end shows it) */
+  .eom .eom-quizbox .pvc-q-score { display: none; }
   .eom .eom-quizbox .pvc-q-options { grid-template-columns: 1fr 1fr; }
 }
 /* a short portrait frame (390×520): the sentence under the formula gives its room to the graphs */
 @container pvc (orientation: portrait) and (max-height: 600px) {
   .eom-rule { display: none; }
   .eom-track { font-size: 13px; padding-top: 1.35em; }
-  .eom-sl input[type='range'] { height: 24px; }
+  .eom-sl input[type='range'] { height: 26px; }
   .eom-sliders { gap: 2px; }
   .eom-b, .eom-step { height: 38px; }
 }

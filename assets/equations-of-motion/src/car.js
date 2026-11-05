@@ -1,8 +1,9 @@
-// The car on the number line (as the owner's reference: a blue four-door sedan), procedural three.js, in metres:
+// The car on the number line (a glossy orange four-door sedan, the reference's car in a warm paint), procedural three.js, in metres:
 // 4.3 m long and 1.78 m wide as built (the figure scales it down a little, so it sits on the −7…10 m axis like the
 // reference's car), a glossy body with wheel arches, bonnet, cabin and boot, a dark windscreen, side and rear glass,
 // black bumpers, a grille, headlights and tail lights, mirrors, door handles and four wheels with silver five-spoke
-// rims. The body's centre is at x = 0, the nose at x = +NOSE; the tyres stand on the road at y = 0.
+// rims. The body's centre is at x = 0, the nose at x = +NOSE; the tyres stand on the road at y = 0. The paint deepens
+// towards the sills (vertex colours) under a clear coat; a faint warm glow lies on the road under the car.
 // car.spin(distance, speed) turns the wheels for the distance gone (forwards or backwards); when they turn too fast
 // for the eye the spokes fade into a grey blur disc, as on a photograph.
 import * as THREE from 'three';
@@ -95,6 +96,21 @@ function wheel(side, mats) {
   return { group: g, spin };
 }
 
+/** The paint's shade: full at the shoulder, deeper towards the sills, as a clear-coated orange catches the light. */
+function shadePaint(geo) {
+  const pos = geo.attributes.position;
+  const nor = geo.attributes.normal;
+  const col = new Uint8Array(pos.count * 4).fill(255); // bytes, four to a vertex as glTF wants: the GLB stays small
+  for (let i = 0; i < pos.count; i++) {
+    const k = THREE.MathUtils.smoothstep(pos.getY(i), 0.3, 0.8); // 0 at the sill, 1 from the shoulder up
+    const up = Math.max(0, nor.getY(i)); // the faces under the sky take the most light: keep them orange, not pale
+    col[i * 4] = 255 * (0.9 + 0.1 * k) * (1 - 0.04 * up);
+    col[i * 4 + 1] = 255 * (0.66 + 0.34 * k) * (1 - 0.12 * up);
+    col[i * 4 + 2] = 255 * (0.55 + 0.45 * k) * (1 - 0.55 * up);
+  }
+  geo.setAttribute('color', new THREE.BufferAttribute(col, 4, true));
+}
+
 /** A soft dark patch under the car, so it stands on the road. */
 function contactShadow() {
   const c = document.createElement('canvas');
@@ -113,14 +129,58 @@ function contactShadow() {
   m.position.y = 0.006;
   m.renderOrder = -1;
   m.name = 'Shadow';
+  m.userData.noShadow = true;
   return m;
 }
 
-export function createCar({ color = '#3f72ad' } = {}) {
+/** A faint warm glow on the road around the car (added light; only for the screen, not in the GLB). */
+function roadGlow() {
+  const c = document.createElement('canvas');
+  c.width = 128;
+  c.height = 32;
+  const ctx = c.getContext('2d');
+  ctx.setTransform(1, 0, 0, 0.25, 0, 0);
+  const g = ctx.createRadialGradient(64, 64, 8, 64, 64, 64);
+  g.addColorStop(0, 'rgba(255,150,50,0.5)');
+  g.addColorStop(0.6, 'rgba(255,130,30,0.2)');
+  g.addColorStop(1, 'rgba(255,120,20,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 128, 128);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const m = new THREE.Mesh(
+    new THREE.PlaneGeometry(7.4, 2.1),
+    new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }),
+  );
+  m.rotation.x = -Math.PI / 2;
+  m.position.y = 0.008;
+  m.renderOrder = -0.5;
+  m.name = 'Glow';
+  m.userData.noShadow = true;
+  m.userData.noExport = true;
+  return m;
+}
+
+export function createCar({ color = '#ff8a1f', env = null } = {}) {
   const root = new THREE.Group();
   root.name = 'Car';
+  // a low reflection of the pale studio: seen at a grazing angle the bonnet and the roof would otherwise wash out to pink
+  // (envMapIntensity only counts on the material's own envMap, not on the scene's environment)
+  const paint = {
+    color,
+    roughness: 0.3,
+    metalness: 0.08,
+    clearcoat: 0.4,
+    clearcoatRoughness: 0.08,
+    specularIntensity: 0.5,
+    envMap: env,
+    envMapIntensity: 0.62,
+    emissive: 0xff6a00,
+    emissiveIntensity: 0.1,
+  };
   const mats = {
-    paint: new THREE.MeshPhysicalMaterial({ name: 'Paint', color, roughness: 0.32, metalness: 0.2, clearcoat: 1, clearcoatRoughness: 0.1 }),
+    paint: new THREE.MeshPhysicalMaterial({ name: 'Paint', vertexColors: true, ...paint }),
+    mirror: new THREE.MeshPhysicalMaterial({ name: 'MirrorPaint', ...paint }),
     glass: new THREE.MeshPhysicalMaterial({
       name: 'Glass',
       color: 0x0f1720,
@@ -168,11 +228,12 @@ export function createCar({ color = '#3f72ad' } = {}) {
     curveSegments: 18,
   });
   bodyGeo.translate(0, 0, -depth / 2);
+  shadePaint(bodyGeo);
   const body = new THREE.Mesh(bodyGeo, mats.paint);
   body.name = 'Body';
   root.add(body);
 
-  // glass: windscreen and rear window on the slopes (the pillars stay red at their sides), side windows on the flanks
+  // glass: windscreen and rear window on the slopes (the pillars stay painted at their sides), side windows on the flanks
   const wind = slab([0.78, 0.93], [0.02, 1.33], W - 0.34, mats.glass);
   wind.name = 'Windscreen';
   const rear = slab([-1.22, 1.29], [-1.6, 0.98], W - 0.4, mats.glass);
@@ -195,7 +256,7 @@ export function createCar({ color = '#3f72ad' } = {}) {
     const pillar = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.34, 0.01), mats.trim);
     pillar.position.set(-0.42, 1.16, side * (W / 2 + 0.01));
     // mirror on its stalk
-    const mirror = new THREE.Mesh(new RoundedBoxGeometry(0.16, 0.11, 0.14, 2, 0.03), mats.paint);
+    const mirror = new THREE.Mesh(new RoundedBoxGeometry(0.16, 0.11, 0.14, 2, 0.03), mats.mirror);
     mirror.position.set(0.58, 1.01, side * (W / 2 + 0.07));
     const handle1 = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.025, 0.02), mats.trim);
     handle1.position.set(0.1, 0.9, side * (W / 2 + 0.005));
@@ -239,9 +300,9 @@ export function createCar({ color = '#3f72ad' } = {}) {
       root.add(w.group);
       spins.push(w.spin);
     }
-  root.add(contactShadow());
+  root.add(contactShadow(), roadGlow());
 
-  for (const m of root.children) m.castShadow = true;
+  for (const m of root.children) m.castShadow = !m.userData.noShadow;
   return {
     root,
     /** Turn the wheels for `distance` m gone; `revsPerSecond` as seen on screen fades the spokes into a blur. */

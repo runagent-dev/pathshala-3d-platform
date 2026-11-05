@@ -3,7 +3,7 @@
 // book's content, on a deep blue background: the formula s = ut + ½at² at the top; on the left the buttons চালাও,
 // থামাও, আবার শুরু and the two time steps; in the middle three long sliders u (blue), a (green), t (grey), each value
 // written over its knob; on the right the s–t graph (a parabola) and the v–t graph (a straight line), each with its
-// live equation under it; and along the bottom, across the whole width, the 3D strip: a blue car seen from the side on
+// live equation under it; and along the bottom, across the whole width, the 3D strip: an orange car seen from the side on
 // a road whose front is the number line from −7 m to 10 m, the car starting at 0, a dot at s, and under the axis the
 // two parts ut, ½at² drawn tip to tail. The owner asked for this one-frame layout for this figure instead of the kit's
 // side panel (NOTES.md, 2026-11-04); the kit's shell still gives the test, the hint and the turn-sideways card. The
@@ -134,7 +134,7 @@ export function createApp(root, options = {}) {
   scene.add(new THREE.HemisphereLight(0xe3f0ff, 0xb4c6d2, 0.75));
 
   const track = createTrack({ colors: COLORS, arrows: ARROWS });
-  const car = createCar({ color: '#2f6db3' });
+  const car = createCar({ env: scene.environment });
   car.root.scale.setScalar(CAR_SCALE);
   world.add(track.root, car.root);
 
@@ -152,7 +152,7 @@ export function createApp(root, options = {}) {
     Object.assign(sun.shadow.camera, { left: -14, right: 14, top: 5, bottom: -5, near: 4, far: 36 });
     scene.add(sun, sun.target);
     car.root.traverse((m) => {
-      if (m.isMesh && m.name !== 'Shadow') m.castShadow = true;
+      if (m.isMesh && !m.userData.noShadow) m.castShadow = true;
     });
   } else {
     const sun = new THREE.DirectionalLight(0xfffaf0, 0.95);
@@ -218,12 +218,13 @@ export function createApp(root, options = {}) {
 
   /** The value over a slider's knob: centred on it, kept inside the slider's track. */
   const placed = new Map();
+  const fills = new Map();
   function placeValue(k, frac) {
     const el = vals[k];
     const track = /** @type {HTMLElement} */ (el.parentElement);
     const tw = track.clientWidth;
     const lw = el.offsetWidth;
-    const thumb = 22; // px, as in style.css
+    const thumb = 26; // px, as in style.css
     const cx = thumb / 2 + (tw - thumb) * frac;
     const left = Math.round(Math.max(0, Math.min(tw - lw, cx - lw / 2)));
     if (placed.get(k) === left) return;
@@ -244,7 +245,10 @@ export function createApp(root, options = {}) {
     for (const k of KEYS) {
       const L = LIMITS[k];
       const v = k === 't' ? st.t : s.p[k];
-      placeValue(k, (v - L.min) / (L.max - L.min));
+      const frac = (v - L.min) / (L.max - L.min);
+      placeValue(k, frac);
+      const f = String(roundTo(frac, 3)); // the bright part of the track ends at the knob
+      if (fills.get(k) !== f) sliders[k].style.setProperty('--f', fills.set(k, f).get(k));
     }
     // in a test question the live equations hide their numbers (they would give the answer away) until the reveal
     const numbers = s.mode !== 'quiz' || s.preview;
