@@ -24,6 +24,26 @@ Latin letters and digits as the book prints them (v = u + at, s = ut + ½at², v
 Bangla digits. Units as the book: m/s for velocity (p40), ms⁻² for acceleration (p44), m, s; a number and its unit
 never part at a line break.
 
+## Version 3.2.0: warm accents (2026-11-05)
+The owner, with a screenshot of 3.1.0: "All blue is not great. The slider can be a bit more contrast; the buttons and the
+car can be orange or yellow like this so it pops a bit, yet it looks fresh." The blue frame, the layout, the content and
+the behaviour are 3.1.0; the colours of ut, ½at² and s are unchanged (the car is an object, not a quantity, so orange is
+free). Warm is only on the car and on what the student presses, and this replaces the blue car and glass buttons below:
+- **The car**: paint #ff8a1f with a light clear coat, deeper towards the sills (vertex colours). Seen at the strip's
+  grazing angle a full clear coat mirrors the pale studio and the bonnet and roof wash out to salmon, so the clear coat is
+  0.4, the paint has its own envMap at 0.62 (envMapIntensity does nothing on the scene's environment), its blue is taken
+  down on upward faces, and a little orange emissive keeps it warm. A faint added warm glow lies on the road around it
+  (not in the GLB).
+- **The buttons**: tokens --warm… in style.css. চালাও solid amber (#ffc652 → #ff9f1c, dark text #2b1700, above 9:1), lit
+  but not pressable while the car runs; the others, the full-screen button and the test's secondary buttons outlined
+  in amber with white text; the chosen tab and the test's main button solid amber with dark text; focus rings white.
+  The test's answer options stay glass (an amber hover), so the page isn't all orange.
+- **The sliders**: a near-black track, the part up to the knob 10 px thick in the quantity's colour (u blue, a green, t a
+  warm light grey), the stop set from --f by app.js so it ends under the knob at every width; a 26 px white-ringed knob with
+  a soft glow (placeValue in app.js uses the same width); values and names mixed towards white.
+- The formula's fraction bar is 2 px white.
+- Portrait test: the score moves out of the head (the end shows it), because পরের প্রশ্ন ran 15 px off a 390 px screen.
+
 ## Version 3.1.0: deep blue (2026-11-05)
 The owner, with a screenshot of the pale frame: "can you make the thing in a deep blue background so it is vivid and
 everything looks very beautiful." The layout, the content and the behaviour are exactly 3.0.0; only the look changed,
@@ -126,7 +146,7 @@ the test sheet takes the place of the sliders while it is open, and the 3D stage
   stay crisp, every other one where a metre is under 22 px). Under it two rows carry the parts as thick outlined
   flat arrows tip to tail: ut (blue) from 0, ½at² (green) ending at s, a dot where a part is 0, each with a dark chip
   "ut = ৩.৮ m" beyond its tip (else its tail, and never over the other arrow); a faint line down from 0, and a dashed
-  drop line from under the car through its dot on the axis down to where ½at² ends (= s). The car: a blue four-door
+  drop line from under the car through its dot on the axis down to where ½at² ends (= s). The car: an orange four-door
   sedan, 4.1 m long, glossy, with windows, lights and five-spoke rims that turn with the motion (backwards when it
   reverses; a blur at speed); it always faces +x (a negative velocity is the car reversing). A violet dot on the axis
   marks s, a dark chip over its roof says "s = ৭.২ m". The camera fits the whole axis with the car at either end into
