@@ -1,0 +1,90 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "light-at-boundary",
+  "title": "Reflection, refraction, absorption (প্রতিফলন, প্রতিসরণ ও শোষণ)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 214,
+  "topic": "8.2",
+  "placement": "Book page 214, topic 8.2 প্রতিফলন: next to চিত্র ৮.০২ (light going from one medium to another: reflection, refraction and absorption).",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "cm",
+  "description": "Interactive 3D figure for what happens when light goes from one medium to another, book page 214, topic 8.2, next to চিত্র ৮.০২. A block of clear glass stands on a lab bench and a small torch in a clamp stand sends one narrow ray down onto its top face. Three taps, the camera going close each time: part of the light comes back into the air (প্রতিফলন, equal angles), part goes into the glass and bends (প্রতিসরণ, Snell exact, n = 1.5), and part ends at the surface between the two media (শোষণ, a warm mark). Then all three together, because they always happen at once. Five test questions on the picture. Offline, Bangla and English.",
+  "tags": ["light", "reflection", "refraction", "absorption", "medium", "glass", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "show",
+      "label": "What is shown",
+      "type": "select",
+      "options": [
+        ["none", "the light arriving"],
+        ["reflection", "reflection"],
+        ["refraction", "refraction"],
+        ["absorption", "absorption"],
+        ["all", "all three"]
+      ],
+      "default": "none"
+    },
+    {
+      "name": "angle",
+      "label": "Angle of the light from the vertical (°)",
+      "type": "number",
+      "default": "50",
+      "placeholder": "20 to 70"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on the part pulses at first", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "show": "all", "animate": false } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "view", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": { "params": { "coach": "0", "show": "all" } },
+    "glb": [{ "name": "default" }],
+    "video": {
+      "kind": "script",
+      "seconds": 22,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 1, "command": "set", "payload": { "show": "reflection" } },
+        { "at": 6, "command": "set", "payload": { "show": "refraction" } },
+        { "at": 11, "command": "set", "payload": { "show": "absorption" } },
+        { "at": 16, "command": "set", "payload": { "show": "all" } }
+      ]
+    }
+  }
+}
