@@ -27,8 +27,7 @@ To listen to it or control it from the book page, use the helper shipped in the 
 | Param | Meaning | Values | Default |
 |---|---|---|---|
 | `lang` | Language | `bn` বাংলা · `en` English | `bn` |
-| `x0` | Initial position x₀ (−5 to 5 m, steps of 0.1) | number | `-0.8` |
-| `u` | Initial velocity u (−5 to 5 m/s, steps of 0.1 (the reference's v₀)) | number | `1.9` |
+| `u` | Initial velocity u (−5 to 5 m/s, steps of 0.1) | number | `1.9` |
 | `a` | Acceleration a (−3 to 3 ms⁻², steps of 0.1) | number | `1.7` |
 | `t` | Time t shown at the start (0 to 6 s; never past the moment the car reaches an end of the axis) | number | `0` |
 | `mode` | Start in | `explore` learn · `quiz` test | `explore` |
@@ -47,7 +46,7 @@ Every figure answers `ping` with `{ asset, version }`. Send commands with `figur
 | Command | Example payload |
 |---|---|
 | `get` | `{}` |
-| `set` | `{"x0":-0.8,"u":1.9,"a":1.7}` |
+| `set` | `{"u":1.9,"a":1.7}` |
 | `reset` | `{}` |
 | `practice` | `{}` |
 | `capture` | `{"width":800,"height":500}` |

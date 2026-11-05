@@ -1,13 +1,13 @@
-// Equations of motion (book pages 45–46, topic 2.7, গতির সমীকরণ), student view, laid out exactly as the owner's
-// reference "Uniform Acceleration in One Dimension" (reference/owner-uniform-acceleration.png), in one frame on a soft
-// light-blue background: the formula x = x₀ + ut + ½at² at the top; on the left the buttons চালাও, থামাও, আবার শুরু
-// and the two time steps; in the middle four long sliders x₀ (red), u (blue), a (green), t (grey), each value written
-// over its knob; on the right the x–t graph (a parabola) and the v–t graph (a straight line), each with its live
-// equation under it; and along the bottom, across the whole width, the 3D strip: a blue car seen from the side on a
-// road whose front is the number line from −7 m to 10 m, a dot at its position x, and under the axis the three parts
-// x₀, ut, ½at² drawn tip to tail. The owner asked for this one-frame layout for this figure instead of the kit's side
-// panel (NOTES.md, 2026-11-04); the kit's shell still gives the test, the hint and the turn-sideways card. The maths is
-// in motion.js, the car in car.js, the road and its arrows in track.js, the graphs in graphs.js.
+// Equations of motion (book pages 45–46, topic 2.7, গতির সমীকরণ), student view, in the one frame the owner chose (the
+// layout of the reference "Uniform Acceleration in One Dimension", reference/owner-uniform-acceleration.png) with the
+// book's content, on a soft light-blue background: the formula s = ut + ½at² at the top; on the left the buttons চালাও,
+// থামাও, আবার শুরু and the two time steps; in the middle three long sliders u (blue), a (green), t (grey), each value
+// written over its knob; on the right the s–t graph (a parabola) and the v–t graph (a straight line), each with its
+// live equation under it; and along the bottom, across the whole width, the 3D strip: a blue car seen from the side on
+// a road whose front is the number line from −7 m to 10 m, the car starting at 0, a dot at s, and under the axis the
+// two parts ut, ½at² drawn tip to tail. The owner asked for this one-frame layout for this figure instead of the kit's
+// side panel (NOTES.md, 2026-11-04); the kit's shell still gives the test, the hint and the turn-sideways card. The
+// maths is in motion.js, the car in car.js, the road and its arrows in track.js, the graphs in graphs.js.
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
 import { createTweener, ease } from '@shared/tween.js';
@@ -19,11 +19,10 @@ import { fitPose } from './camera.js';
 import { createCar } from './car.js';
 import { createGraph } from './graphs.js';
 import { createI18n } from './i18n.js';
-import { AXIS, LIMITS, QUIZ, START, answers, fixValue, fixed, fmt, roundTo, runEnd, stateAt, stepTime, turnTime } from './motion.js';
+import { AXIS, LIMITS, QUIZ, START, answers, distance, fixValue, fixed, fmt, roundTo, runEnd, stateAt, stepTime, turnTime } from './motion.js';
 import { ROAD, SLOPE, createTrack } from './track.js';
 
 export const DEFAULTS = {
-  x0: START.x0, // m
   u: START.u, // m/s
   a: START.a, // ms⁻²
   t: START.t, // s (kept inside the run)
@@ -37,9 +36,9 @@ export const DEFAULTS = {
   sound: true,
 };
 
-// one colour per quantity, as the reference: x₀ red, u blue, a green, t grey (text colours ≥ 4.5 : 1 on the background)
-const COLORS = { x0: '#e03131', u: '#1c6fd9', a: '#2f9e44', t: '#5c6670', x: '#1d2530', v: '#1c6fd9' };
-const TEXT = { x0: '#c92a2a', u: '#1a5fbf', a: '#2b7a3a', t: '#495057' };
+// one colour per quantity: u blue, a green, t grey, s violet (text colours ≥ 4.5 : 1 on the background)
+const COLORS = { u: '#1c6fd9', a: '#2f9e44', t: '#5c6670', s: '#6741d9' };
+const TEXT = { u: '#1a5fbf', a: '#2b7a3a', t: '#495057', s: '#4c2fb0' };
 const CAR_SCALE = 0.95; // the 4.3 m sedan drawn 4.1 m long
 const CAR_Z = 0.95; // it drives in the front lane, near the number line
 // the opening pose: from the side, as the reference, a little from above so the car and the road read as 3D
@@ -79,8 +78,8 @@ export function createApp(root, options = {}) {
 
   // ── the frame: the kit's shell (the test, the hint, the turn-sideways card), laid out as the reference ─────────
   const ui = buildStudentShell(root, t, { layout: 'side', learnAlign: 'start', learn: '' });
-  const SYM = { x0: '<i>x</i><sub>0</sub>', u: '<i>u</i>', a: '<i>a</i>', t: '<i>t</i>' };
-  const UNIT = { x0: 'u_m', u: 'u_ms', a: 'u_ms2', t: 'u_s' };
+  const SYM = { u: '<i>u</i>', a: '<i>a</i>', t: '<i>t</i>' };
+  const UNIT = { u: 'u_ms', a: 'u_ms2', t: 'u_s' };
   const slider = (k) => {
     const L = LIMITS[k];
     return `<div class="eom-sl k-${k}"><div class="eom-track"><output class="eom-val" data-val="${k}">${SYM[k]} = <span data-num="${k}"></span>&nbsp;<small>${t(UNIT[k])}</small></output><input type="range" data-sl="${k}" min="${L.min}" max="${L.max}" step="${L.step}" aria-label="${t(`aria_${k}`)}" /></div><span class="eom-name">${t(`name_${k}`)}</span></div>`;
@@ -97,11 +96,12 @@ export function createApp(root, options = {}) {
       ${button('run', SVG_PLAY, 'act_run')}${button('pause', SVG_PAUSE, 'act_pause')}${button('reset', ICONS.reset, 'act_reset')}
       <div class="eom-steps">${stepButton('back', SVG_STEP_BACK, 'step_back', 'act_back')}${stepButton('fwd', SVG_STEP_FWD, 'step_fwd', 'act_fwd')}</div>
     </div>
-    <div class="eom-sliders">${['x0', 'u', 'a', 't'].map(slider).join('')}</div>
+    <div class="eom-sliders">${['u', 'a', 't'].map(slider).join('')}</div>
     <div class="eom-quizbox"></div>
     <div class="eom-graphs">
-      <figure class="eom-g"><svg class="pvc-graph" data-graph="x" role="img" aria-label="${t('graph_x')}"></svg><figcaption class="eom-eq" data-eq="x"></figcaption></figure>
+      <figure class="eom-g"><svg class="pvc-graph" data-graph="s" role="img" aria-label="${t('graph_s')}"></svg><figcaption class="eom-eq" data-eq="s"></figcaption></figure>
       <figure class="eom-g"><svg class="pvc-graph" data-graph="v" role="img" aria-label="${t('graph_v')}"></svg><figcaption class="eom-eq" data-eq="v"></figcaption></figure>
+      <p class="eom-check" data-eq="check"></p>
     </div>
     <div class="eom-strip"></div>`;
   const shell = ui.$('.pvc-shell');
@@ -163,7 +163,7 @@ export function createApp(root, options = {}) {
 
   // ── state ───────────────────────────────────────────────────────────────────
   const s = {
-    p: { x0: fixValue('x0', o.x0), u: fixValue('u', o.u), a: fixValue('a', o.a) },
+    p: { u: fixValue('u', o.u), a: fixValue('a', o.a) },
     t: 0,
     playing: false,
     mode: 'explore',
@@ -175,13 +175,12 @@ export function createApp(root, options = {}) {
   let st = stateAt(s.p, 0);
   const phase = () => (s.playing ? 'running' : s.t <= 1e-9 ? 'ready' : s.t >= st.tEnd - 1e-9 ? 'done' : 'paused');
   const snapshot = () => ({
-    x0: s.p.x0,
     u: s.p.u,
     a: s.p.a,
     t: roundTo(st.t, 3),
-    x: roundTo(st.x, 3),
+    s: roundTo(st.s, 3),
     v: roundTo(st.v, 3),
-    parts: { x0: roundTo(st.x0, 3), ut: roundTo(st.ut, 3), half: roundTo(st.half, 3) },
+    parts: { ut: roundTo(st.ut, 3), half: roundTo(st.half, 3) },
     tEnd: roundTo(st.tEnd, 3),
     end: st.end,
     playing: s.playing,
@@ -192,14 +191,16 @@ export function createApp(root, options = {}) {
 
   // ── the controls and the graphs ─────────────────────────────────────────────
   const $ = (sel) => /** @type {HTMLElement} */ (root.querySelector(sel));
-  const KEYS = ['x0', 'u', 'a', 't'];
+  const PARAMS = ['u', 'a'];
+  const KEYS = [...PARAMS, 't'];
   const sliders = Object.fromEntries(KEYS.map((k) => [k, /** @type {HTMLInputElement} */ ($(`[data-sl="${k}"]`))]));
   const nums = Object.fromEntries(KEYS.map((k) => [k, $(`[data-num="${k}"]`)]));
   const vals = Object.fromEntries(KEYS.map((k) => [k, $(`[data-val="${k}"]`)]));
-  const graphX = createGraph($('[data-graph="x"]'), { kind: 'x', num: N, color: COLORS.x, label: 'x' });
-  const graphV = createGraph($('[data-graph="v"]'), { kind: 'v', num: N, color: COLORS.v, label: 'v' });
-  const eqX = $('[data-eq="x"]');
+  const graphS = createGraph($('[data-graph="s"]'), { kind: 's', num: N, colors: [COLORS.s, COLORS.s], label: 's' });
+  const graphV = createGraph($('[data-graph="v"]'), { kind: 'v', num: N, colors: [COLORS.u, COLORS.a], label: 'v' });
+  const eqS = $('[data-eq="s"]');
   const eqV = $('[data-eq="v"]');
+  const eqCheck = $('[data-eq="check"]');
   const rule = $('.eom-rule');
   const runBtn = /** @type {HTMLButtonElement} */ ($('[data-act="run"]'));
   const pauseBtn = /** @type {HTMLButtonElement} */ ($('[data-act="pause"]'));
@@ -230,7 +231,7 @@ export function createApp(root, options = {}) {
   const tText = (x) => (Math.abs(x * 10 - Math.round(x * 10)) < 1e-6 ? fixed(x, 1) : fixed(x, 2));
   let lastGraphs = 0;
   function writePanel(force = false) {
-    for (const k of ['x0', 'u', 'a']) {
+    for (const k of PARAMS) {
       write(nums[k], N(fixed(s.p[k], 1)));
       if (document.activeElement !== sliders[k] || sliders[k].value !== String(s.p[k])) sliders[k].value = String(s.p[k]);
     }
@@ -244,13 +245,15 @@ export function createApp(root, options = {}) {
     // in a test question the live equations hide their numbers (they would give the answer away) until the reveal
     const numbers = s.mode !== 'quiz' || s.preview;
     const q = (k, x) => c(k, numbers ? B(x) : '(?)');
-    const { x0, u, a } = s.p;
-    write(eqX, `<i>x</i> = ${q('a', a / 2)}<i>t</i><sup>2</sup> + ${q('u', u)}<i>t</i> + ${q('x0', x0)}`);
+    const { u, a } = s.p;
+    write(eqS, `<i>s</i> = ${q('a', a / 2)}<i>t</i><sup>2</sup> + ${q('u', u)}<i>t</i>`);
     write(eqV, `<i>v</i> = ${q('a', a)}<i>t</i> + ${q('u', u)}`);
+    write(eqCheck, t('check_v2', { n: numbers ? fixed(u * u + 2 * a * st.s, 2) : '?' }));
     const tt = turnTime(u, a);
     let html;
-    if (st.end) html = t(st.end === 'right' ? 'rule_end_right' : 'rule_end_left', { x: AXIS[st.end === 'right' ? 'max' : 'min'] });
+    if (st.end) html = t(st.end === 'right' ? 'rule_end_right' : 'rule_end_left', { s: AXIS[st.end === 'right' ? 'max' : 'min'] });
     else if (tt != null && tt < st.tEnd) html = t('rule_turn', { tt: fmt(tt, 2) });
+    else if (st.s < -1e-9) html = t('rule_neg');
     else html = t('rule_sum');
     write(rule, html);
     rule.classList.toggle('end', Boolean(st.end));
@@ -258,7 +261,7 @@ export function createApp(root, options = {}) {
     if (force || !s.playing || now - lastGraphs > 40) {
       lastGraphs = now; // while running, the graphs are redrawn at most 25 times a second
       const preview = s.mode !== 'quiz' || s.preview;
-      graphX(s.p, st.t, st.tEnd, { preview, x: st.x });
+      graphS(s.p, st.t, st.tEnd, { preview, y: st.s });
       graphV(s.p, st.t, st.tEnd, { preview });
     }
     const ph = phase();
@@ -273,12 +276,12 @@ export function createApp(root, options = {}) {
   function refresh() {
     st = stateAt(s.p, s.t);
     s.t = st.t;
-    car.root.position.set(st.x, 0, CAR_Z);
-    car.spin(st.x / CAR_SCALE, s.playing ? Math.abs(st.v) / (2 * Math.PI * 0.32 * CAR_SCALE) : 0);
-    track.setDot(st.x);
+    car.root.position.set(st.s, 0, CAR_Z);
+    car.spin(st.s / CAR_SCALE, s.playing ? Math.abs(st.v) / (2 * Math.PI * 0.32 * CAR_SCALE) : 0);
+    track.setDot(st.s);
     track.setParts(st);
     writePanel();
-    const key = `${s.p.x0}|${s.p.u}|${s.p.a}|${roundTo(st.t, 3)}|${s.playing}`;
+    const key = `${s.p.u}|${s.p.a}|${roundTo(st.t, 3)}|${s.playing}`;
     const now = performance.now();
     if (key !== lastKey && (!s.playing || now - lastEmit > 200)) {
       lastKey = key;
@@ -297,7 +300,7 @@ export function createApp(root, options = {}) {
       s.playing = false;
       refresh();
       audio.contact();
-      emit('end', { t: roundTo(st.t, 3), x: roundTo(st.x, 3), end: st.end });
+      emit('end', { t: roundTo(st.t, 3), s: roundTo(st.s, 3), end: st.end });
       return true;
     }
     refresh();
@@ -321,7 +324,7 @@ export function createApp(root, options = {}) {
     if (s.playing) pause();
     else play();
   }
-  /** A new x₀, u or a: while running it goes back to the start of the new run; paused, it shows the same moment. */
+  /** A new u or a: while running it goes back to the start of the new run; paused, it shows the same moment. */
   function setParam(k, v) {
     const next = fixValue(k, v);
     if (next === s.p[k]) return;
@@ -340,7 +343,7 @@ export function createApp(root, options = {}) {
   function step(dir) {
     if (s.locked) return lockedNudge();
     s.playing = false;
-    s.t = stepTime(s.t, dir, runEnd(s.p.x0, s.p.u, s.p.a).t);
+    s.t = stepTime(s.t, dir, runEnd(s.p.u, s.p.a).t);
     audio.tick();
     refresh();
   }
@@ -350,7 +353,7 @@ export function createApp(root, options = {}) {
     refresh();
   }
 
-  // ── camera: the strip shows the whole axis with the car at either end, the road and the three rows ─────────────
+  // ── camera: the strip shows the whole axis with the car at either end, the road and the two rows ───────────────
   function viewPose(view) {
     const w = Math.max(stage.width, 50);
     const h = Math.max(stage.height, 50);
@@ -407,7 +410,7 @@ export function createApp(root, options = {}) {
   });
   for (const el of [$('.eom-graphs'), $('.eom-sliders'), top]) boxes.observe(el);
 
-  // ── the 2D overlay: the axis numbers, the arrows' labels, the car's x, the line down from the dot ─────────────
+  // ── the 2D overlay: the axis numbers, the arrows' labels, the car's s, the line down from the dot ─────────────
   const v3 = new THREE.Vector3();
   function toScreen(x, y, z) {
     v3.set(x, y, z).project(camera);
@@ -485,18 +488,18 @@ export function createApp(root, options = {}) {
     const pn = slopeScreen(AXIS.max + 0.95, SLOPE.numbers);
     ctx.textAlign = 'left';
     const name = [
-      ['x', 'i'],
+      ['s', 'i'],
       [' (m)', ''],
     ];
     const nameW = rich(ctx, name, fs, 0, 0, false);
     ctx.fillStyle = '#141b24';
     rich(ctx, name, fs, Math.min(pn.x, W - nameW - 3), pn.y + fs * 0.35, true);
-    // the drop line: from under the car, through its dot on the axis, down past the three rows to where ½at² ends (= x)
-    const pc = toScreen(st.x, 0.02, CAR_Z + 0.5);
-    const pd = slopeScreen(st.x, SLOPE.axis);
-    const pb = slopeScreen(st.x, SLOPE.rows.half - 0.36);
+    // the drop line: from under the car, through its dot on the axis, down past the two rows to where ½at² ends (= s)
+    const pc = toScreen(st.s, 0.02, CAR_Z + 0.5);
+    const pd = slopeScreen(st.s, SLOPE.axis);
+    const pb = slopeScreen(st.s, SLOPE.rows.half - 0.36);
     ctx.save();
-    ctx.strokeStyle = 'rgba(20,40,110,0.8)';
+    ctx.strokeStyle = COLORS.s;
     ctx.lineWidth = 1.5;
     ctx.setLineDash([5, 4]);
     ctx.beginPath();
@@ -506,41 +509,29 @@ export function createApp(root, options = {}) {
     ctx.lineTo(pb.x, pb.y);
     ctx.stroke();
     ctx.restore();
-    // the car's position over its roof
+    // how far it has gone, over its roof
     const size = Math.max(11.5, Math.min(15, ppm * 0.36));
     if (!s.hide.car) {
-      const p = toScreen(st.x, 1.32, CAR_Z);
+      const p = toScreen(st.s, 1.32, CAR_Z);
       const pieces = [
-        ['x', 'i'],
-        [` = ${N(fixed(st.x, 1))} m${st.end ? ` · ${t('lbl_end')}` : ''}`, ''],
+        ['s', 'i'],
+        [` = ${N(fixed(st.s, 1))} m${st.end ? ` · ${t('lbl_end')}` : ''}`, ''],
       ];
       const w = rich(ctx, pieces, size, 0, 0, false) + size * 0.9;
       const h = size * 1.55;
       let box = { left: p.x - w / 2, top: p.y - h - 2, right: p.x + w / 2, bottom: p.y - 2 };
       const dx = Math.max(3 - box.left, Math.min(0, W - 3 - box.right));
       box = { ...box, left: box.left + dx, right: box.right + dx };
-      chip(ctx, pieces, size, box, { fg: '#16306e', border: '#3557c8' });
+      chip(ctx, pieces, size, box, { fg: TEXT.s, border: COLORS.s });
       taken.push(box);
     }
-    // the three parts' labels, each in its row: beyond the arrow's tip, else beyond its tail, else above it
+    // the two parts' labels, each in its row: beyond the arrow's tip, else beyond its tail, else above it
     const lanes = [
-      {
-        y: SLOPE.rows.x0,
-        from: 0,
-        to: st.x0,
-        sym: [
-          ['x', 'i'],
-          ['0', 'sub'],
-        ],
-        v: st.x0,
-        fg: TEXT.x0,
-        border: COLORS.x0,
-      },
-      { y: SLOPE.rows.ut, from: st.x0, to: st.x0 + st.ut, sym: [['ut', 'i']], v: st.ut, fg: TEXT.u, border: COLORS.u },
+      { y: SLOPE.rows.ut, from: 0, to: st.ut, sym: [['ut', 'i']], v: st.ut, fg: TEXT.u, border: COLORS.u },
       {
         y: SLOPE.rows.half,
-        from: st.x0 + st.ut,
-        to: st.x0 + st.ut + st.half,
+        from: st.ut,
+        to: st.ut + st.half,
         sym: [
           ['½', ''],
           ['at', 'i'],
@@ -552,6 +543,13 @@ export function createApp(root, options = {}) {
         hidden: s.hide.half,
       },
     ];
+    // a chip may not cover the other part's arrow (on a phone the two rows are close together)
+    const bar = Math.max(4, ppm * 0.3);
+    for (const L of lanes) {
+      const pa = slopeScreen(L.from, L.y);
+      const pb2 = slopeScreen(L.to, L.y);
+      taken.push({ left: Math.min(pa.x, pb2.x), right: Math.max(pa.x, pb2.x), top: pa.y - bar, bottom: pa.y + bar });
+    }
     for (const L of lanes) {
       const value = L.hidden ? ' = ?' : ` = ${N(fixed(L.v, 1))} m`;
       const pieces = [...L.sym, [value, '']];
@@ -609,13 +607,13 @@ export function createApp(root, options = {}) {
     runToken++;
     tweener.cancel('quiz-run');
     s.playing = false;
-    s.p = { x0: q.x0, u: q.u, a: q.a };
+    s.p = { u: q.u, a: q.a };
     s.t = time;
     s.hide = hide;
     s.preview = preview;
     refresh();
   }
-  const UNITS = { x: 'u_m', v: 'u_ms', coef: 'u_ms2', turn: 'u_s', part: 'u_m' };
+  const UNITS = { s: 'u_m', v: 'u_ms', coef: 'u_ms2', turn: 'u_s', part: 'u_m' };
   const quiz = createQuiz({
     ui,
     t,
@@ -628,7 +626,7 @@ export function createApp(root, options = {}) {
         saved = { p: { ...s.p }, t: s.t };
         s.mode = 'quiz';
         s.playing = false;
-        kinds = shuffle(['x', 'v', 'coef', 'turn', 'part']);
+        kinds = shuffle(['s', 'v', 'coef', 'turn', 'part']);
         syncUI();
       },
       leave() {
@@ -650,8 +648,8 @@ export function createApp(root, options = {}) {
         const q = pickOne(QUIZ[kind]);
         s.locked = true;
         if (kind === 'part') setScene(q, { time: q.t, hide: { half: true, car: true } });
-        else setScene(q, { time: 0, hide: { car: kind === 'x' } });
-        const P = { u: fmt(q.u), a: fmt(q.a), t: fmt(q.t), h: fmt(q.a / 2), x0: fmt(q.x0) };
+        else setScene(q, { time: 0, hide: { car: kind === 's' } });
+        const P = { u: fmt(q.u), a: fmt(q.a), t: fmt(q.t), h: fmt(q.a / 2) };
         // the question has subscripts and powers: written as HTML (the kit's say() writes plain text)
         say(' ');
         ui.$('.pvc-q-text').innerHTML = t(`q_${kind}`, P);
@@ -669,15 +667,13 @@ export function createApp(root, options = {}) {
       reveal(qq, correct, picked) {
         const { kind, q, ans } = question;
         const br = (x) => fmt(x); // the strings put the brackets round these
-        const x = q.x0 + q.u * q.t + 0.5 * q.a * q.t * q.t;
         const vars = {
           r: fmt(ans.right),
-          x0: br(q.x0),
           u: br(q.u),
           a: br(q.a),
           t: fmt(q.t),
           h: fmt(q.a / 2),
-          x: fmt(x),
+          s: fmt(distance(q.u, q.a, q.t)),
           ut: br(q.u * q.t),
           two: 2,
           z: 0,
@@ -690,9 +686,9 @@ export function createApp(root, options = {}) {
         // show it: the car runs to the moment asked about (or the label shows its value)
         s.hide = {};
         s.preview = true;
-        if (kind === 'x' || kind === 'v') runTo(q.t);
+        if (kind === 's' || kind === 'v') runTo(q.t);
         else if (kind === 'turn') runTo(-q.u / q.a);
-        else if (kind === 'coef') runTo(Math.min(2, runEnd(q.x0, q.u, q.a).t));
+        else if (kind === 'coef') runTo(Math.min(2, runEnd(q.u, q.a).t));
         else refresh();
         return html;
       },
@@ -728,7 +724,7 @@ export function createApp(root, options = {}) {
     ui.quiz.inert = !quizOn;
     writePanel(true);
   }
-  for (const k of ['x0', 'u', 'a']) sliders[k].addEventListener('input', () => setParam(k, sliders[k].value));
+  for (const k of PARAMS) sliders[k].addEventListener('input', () => setParam(k, sliders[k].value));
   sliders.t.addEventListener('input', () => setTime(sliders.t.value));
   const fullscreenBtn = ui.$('[data-act="fullscreen"]');
   if (fullscreenBtn && !document.fullscreenEnabled) fullscreenBtn.hidden = true;
@@ -788,13 +784,14 @@ export function createApp(root, options = {}) {
     },
     getState: snapshot,
     /**
-     * Change any of: x0 (m), u (m/s), a (ms⁻²): kept in range on 0.1 steps; t (s, kept inside the run; 'end' for
-     * the end); playing (true runs, false pauses); step (1 or −1: one 0.1 s step); view; animate: false jumps.
+     * Change any of: u (m/s), a (ms⁻²): kept in range on 0.1 steps; t (s, kept inside the run; 'end' for the end);
+     * playing (true runs, false pauses); step (1 or −1: one 0.1 s step); view; animate: false jumps. x0 is gone since
+     * 3.0.0: a host that still sends it is ignored (the car always starts at 0).
      */
     async set(p = {}) {
-      if (s.mode === 'quiz' && (p.x0 != null || p.u != null || p.a != null || p.t != null || p.playing || p.step)) return snapshot();
+      if (s.mode === 'quiz' && (p.u != null || p.a != null || p.t != null || p.playing || p.step)) return snapshot();
       const animate = p.animate !== false;
-      for (const k of ['x0', 'u', 'a']) if (p[k] != null) setParam(k, p[k]);
+      for (const k of PARAMS) if (p[k] != null) setParam(k, p[k]);
       if (p.t != null) setTime(p.t === 'end' ? Number.POSITIVE_INFINITY : p.t);
       if (p.step) step(Math.sign(Number(p.step)) || 1);
       if (p.playing === true && !s.playing) play();
@@ -804,7 +801,7 @@ export function createApp(root, options = {}) {
     },
     async reset() {
       quiz.stop();
-      s.p = { x0: START.x0, u: START.u, a: START.a };
+      s.p = { u: START.u, a: START.a };
       s.t = 0;
       s.playing = false;
       refresh();
@@ -812,7 +809,7 @@ export function createApp(root, options = {}) {
     },
     startPractice: () => quiz.start(),
     /**
-     * The 3D strip with its labels (the car on the number line and the three parts), cover-fitted to w×h, on the
+     * The 3D strip with its labels (the car on the number line and the two parts), cover-fitted to w×h, on the
      * figure's light-blue background (or on `background`, a CSS colour; null keeps it transparent).
      */
     capture({ width: w = 800, height: h = 500, background = 'theme' } = {}) {
