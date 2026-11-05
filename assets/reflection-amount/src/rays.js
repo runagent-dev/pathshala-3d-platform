@@ -5,13 +5,21 @@
 import * as THREE from 'three';
 import { fresnel, GLASS, points, START_ANGLE } from './reading.js';
 
-export const C = { ray: '#f59f00', edge: '#5f3400', normal: '#495057', ti: '#1971c2', tr: '#2b8a3e', glow: '#ffe36e' };
+export const C = {
+  ray: '#f59f00',
+  edge: '#5f3400',
+  normal: '#495057',
+  ti: '#1971c2',
+  tr: '#2b8a3e',
+  glow: '#ffe36e',
+  pattern: '#bfe3ff',
+  patternEdge: '#1f3a78',
+};
 const FULL = 6; // the thickness of the incoming ray, px
 const THINNEST = 1.1; // below this a line cannot be seen: a thin ray stays this wide, and fades instead (the corner note says so)
 const ARC = 8.5; // the radius of the angles, cm
 const NO_DASH = [];
 const DASH = [7, 5];
-const FINE = [4, 4];
 
 export function createRays({ stage, host }) {
   const canvas = document.createElement('canvas');
@@ -40,7 +48,21 @@ export function createRays({ stage, host }) {
     sy = ((1 - pv.y) / 2) * h;
   };
 
-  const v = { geo: points(START_ANGLE), show: true, angles: true, r: fresnel(START_ANGLE), ghost: null, to: null };
+  // through, flower, normal, arcs, refracted: how much of each is drawn, 0 to 1 (the story brings them in one at a time)
+  const v = {
+    geo: points(START_ANGLE),
+    show: true,
+    r: fresnel(START_ANGLE),
+    ghost: null,
+    through: 0,
+    flower: 0,
+    normal: 0,
+    arcs: 0,
+    refracted: 0,
+    guide: false, // the line of his eye and the flower
+    track: null, // the dashed range of the glass's handle: { a, b } in the world
+    pins: [], // small dots where labels' leaders touch the glass
+  };
   let unit = 1;
 
   function line(a, b, width, alpha, chevronAt, color = C.ray, edge = C.edge) {
@@ -91,7 +113,7 @@ export function createRays({ stage, host }) {
   }
   /** One angle, as an arc in the plane of the rays with a pale fill, from the normal down to the ray. side: −1 left, +1 right. */
   function angle(g, side, color) {
-    const a = (g.angle * Math.PI) / 180;
+    const a = (g.angle * Math.PI * v.arcs) / 180;
     const N = 18;
     ctx.beginPath();
     P(g.hit.x, g.hit.y);
@@ -139,28 +161,6 @@ export function createRays({ stage, host }) {
     ctx.globalAlpha = 1;
     ctx.setLineDash(NO_DASH);
   }
-  /** The thin dashed leader from his eye, round under the glass, to the picture of what he sees. */
-  function leader(g) {
-    P(g.eye.x, g.eye.y);
-    const x0 = sx;
-    const y0 = sy + 5;
-    const { x, y } = v.to;
-    ctx.beginPath();
-    ctx.moveTo(x0, y0);
-    ctx.quadraticCurveTo(x0 + (x - x0) * 0.42, Math.min(h - 6, Math.max(y, y0) + 54), x - 3, y);
-    ctx.setLineDash(FINE);
-    ctx.lineCap = 'butt';
-    ctx.globalAlpha = 0.85;
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 1.2;
-    ctx.stroke();
-    ctx.setLineDash(NO_DASH);
-    ctx.beginPath();
-    ctx.arc(x - 3, y, 2.4, 0, Math.PI * 2);
-    ctx.fillStyle = '#ffffff';
-    ctx.fill();
-    ctx.globalAlpha = 1;
-  }
   /** Where the glass and the light were before (a question of the test): the outline of its top, and the rays. */
   function past(g) {
     const hx = GLASS.halfX;
@@ -175,56 +175,116 @@ export function createRays({ stage, host }) {
   }
   const from = { x: 0, y: 0, z: 0 };
   const to = { x: 0, y: 0, z: 0 };
+  const end = { x: 0, y: 0, z: 0 };
+  /** end = a + (b − a) · k */
+  const toward = (a, b, k) => {
+    end.x = a.x + (b.x - a.x) * k;
+    end.y = a.y + (b.y - a.y) * k;
+    end.z = (a.z ?? 0) + ((b.z ?? 0) - (a.z ?? 0)) * k;
+    return end;
+  };
+  /**
+   * The beam from the glass to his eye while the story shows both lights in it: side by side, as wide together as the light that
+   * comes, the pale band the light of the pattern (1 − R) and the amber band the flower's (R).
+   */
+  function beam(g, a, k) {
+    const R = v.flower >= 1 ? v.r : 0;
+    const wFlower = FULL * R;
+    const wPattern = FULL * (1 - R);
+    P(g.hit.x, g.hit.y);
+    const x0 = sx;
+    const y0 = sy;
+    P(a.x, a.y);
+    const x1 = x0 + (sx - x0) * k;
+    const y1 = y0 + (sy - y0) * k;
+    const l = Math.hypot(x1 - x0, y1 - y0) || 1;
+    const nx = -(y1 - y0) / l;
+    const ny = (x1 - x0) / l;
+    ctx.lineCap = 'butt';
+    ctx.beginPath();
+    ctx.moveTo(x0, y0);
+    ctx.lineTo(x1, y1);
+    ctx.strokeStyle = C.patternEdge;
+    ctx.lineWidth = FULL + 1.5;
+    ctx.stroke();
+    const band = (off, width, color) => {
+      if (width <= 0) return;
+      ctx.beginPath();
+      ctx.moveTo(x0 + nx * off, y0 + ny * off);
+      ctx.lineTo(x1 + nx * off, y1 + ny * off);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.stroke();
+    };
+    band(wFlower / 2, wPattern, C.pattern);
+    band(-wPattern / 2, wFlower, C.ray);
+    if (k > 0.56)
+      chevron(x0 + (x1 - x0) * 0.56, y0 + (y1 - y0) * 0.56, x1 - x0, y1 - y0, R > 0.5 ? C.ray : C.pattern, R > 0.5 ? C.edge : C.patternEdge, 15.6);
+  }
 
   function paint() {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);
+    if (v.track) faint(v.track.a, v.track.b, 0.85);
     if (!v.show) return;
     const g = v.geo;
     unit = Math.max(0.9, Math.min(1.25, Math.min(w, h) / 400));
-    faint(g.eye, g.flower, 0.5); // the line of his eye and the flower: the glass rises toward it
-    if (v.to) leader(g);
+    if (v.guide) faint(g.eye, g.flower, 0.5); // the line of his eye and the flower: the glass rises toward it
     if (v.ghost) past(v.ghost);
-    // the normal
-    P(g.hit.x, g.hit.y);
-    const nx = sx;
-    const ny = sy;
-    P(g.top.x, g.top.y);
-    ctx.beginPath();
-    ctx.moveTo(nx, ny);
-    ctx.lineTo(sx, sy);
-    ctx.lineCap = 'butt';
-    ctx.strokeStyle = 'rgba(255,255,255,0.86)';
-    ctx.lineWidth = 3.6;
-    ctx.stroke();
-    ctx.setLineDash(DASH);
-    ctx.strokeStyle = C.normal;
-    ctx.lineWidth = 1.8;
-    ctx.beginPath();
-    ctx.moveTo(nx, ny);
-    ctx.lineTo(sx, sy);
-    ctx.stroke();
-    ctx.setLineDash(NO_DASH);
-    if (v.angles) {
+    if (v.normal > 0) {
+      P(g.hit.x, g.hit.y);
+      const nx = sx;
+      const ny = sy;
+      const n = toward(g.hit, g.top, v.normal);
+      P(n.x, n.y);
+      ctx.beginPath();
+      ctx.moveTo(nx, ny);
+      ctx.lineTo(sx, sy);
+      ctx.lineCap = 'butt';
+      ctx.strokeStyle = 'rgba(255,255,255,0.86)';
+      ctx.lineWidth = 3.6;
+      ctx.stroke();
+      ctx.setLineDash(DASH);
+      ctx.strokeStyle = C.normal;
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.moveTo(nx, ny);
+      ctx.lineTo(sx, sy);
+      ctx.stroke();
+      ctx.setLineDash(NO_DASH);
+    }
+    if (v.arcs > 0) {
       angle(g, 1, C.ti);
       angle(g, -1, C.tr);
     }
     const R = v.r;
-    // the light inside the slab, then what leaves the point, then what comes to it
-    line(g.hit, g.inside, widthOf(1 - R), alphaOf(1 - R), 0.8);
-    // the ray from the flower starts at the edge of its heart
-    from.x = g.flower.x + (g.hit.x - g.flower.x) * 0.16;
-    from.y = g.flower.y + (g.hit.y - g.flower.y) * 0.16;
     to.x = g.eye.x + (g.hit.x - g.eye.x) * 0.03;
     to.y = g.eye.y + (g.hit.y - g.eye.y) * 0.03;
-    line(g.hit, to, widthOf(R), alphaOf(R), 0.56);
-    line(from, g.hit, FULL, 1, 0.5);
-    P(g.hit.x, g.hit.y);
+    // the flower's ray starts at the edge of its heart
+    from.x = g.flower.x + (g.hit.x - g.flower.x) * 0.16;
+    from.y = g.flower.y + (g.hit.y - g.flower.y) * 0.16;
+    // the light of the pattern, up through the glass and on to his eye: the first half of the drawing, then the second
+    if (v.through > 0) {
+      const a = Math.min(1, v.through * 2);
+      line(g.under, toward(g.under, g.hit, a), 3.2, 1, null, C.pattern, C.patternEdge);
+      if (v.through > 0.5) beam(g, to, (v.through - 0.5) * 2);
+    } else if (v.flower >= 1) {
+      line(g.hit, to, widthOf(R), alphaOf(R), 0.56);
+    }
+    if (v.refracted > 0) line(g.hit, g.inside, widthOf(1 - R), alphaOf(1 - R) * v.refracted, 0.8);
+    if (v.flower > 0) {
+      line(from, toward(from, g.hit, v.flower), FULL, 1, v.flower > 0.5 ? 0.5 : null);
+      if (v.flower >= 1) dot(g.hit, '#fff7d6', C.edge, 3.2);
+    }
+    for (const p of v.pins) dot(p, '#ffffff', '#1f2933', 3);
+  }
+  function dot(p, fill, edge, r) {
+    P(p.x, p.y, p.z);
     ctx.beginPath();
-    ctx.arc(sx, sy, 3.2 * unit, 0, Math.PI * 2);
-    ctx.fillStyle = '#fff7d6';
+    ctx.arc(sx, sy, r * unit, 0, Math.PI * 2);
+    ctx.fillStyle = fill;
     ctx.fill();
-    ctx.strokeStyle = C.edge;
+    ctx.strokeStyle = edge;
     ctx.lineWidth = 1.1;
     ctx.stroke();
   }
@@ -257,10 +317,11 @@ export function createRays({ stage, host }) {
     used = 0;
     if (!v.show) return out;
     const g = v.geo;
-    along(g.flower, g.hit);
-    along(g.hit, g.eye);
-    along(g.hit, g.top);
-    along(g.hit, g.inside);
+    if (v.flower > 0) along(g.flower, g.hit);
+    if (v.flower > 0 || v.through > 0) along(g.hit, g.eye);
+    if (v.normal > 0) along(g.hit, g.top);
+    if (v.refracted > 0) along(g.hit, g.inside);
+    if (v.through > 0) along(g.under, g.hit);
     return out;
   }
   /** Where a world point is on the view, css px. */

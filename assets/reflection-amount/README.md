@@ -27,7 +27,8 @@ To listen to it or control it from the book page, use the helper shipped in the 
 | Param | Meaning | Values | Default |
 |---|---|---|---|
 | `lang` | Language | `bn` বাংলা · `en` English | `bn` |
-| `angle` | Angle of incidence (°) | number | `30` |
+| `step` | Open at step (0 the glass … 4 how much) | number | `0` |
+| `angle` | Angle of incidence (°); another than 30 opens step 4 | number | `30` |
 | `view` | View | `front` · `3d` | `front` |
 | `mode` | Start in | `explore` learn · `quiz` test | `explore` |
 | `coach` | The ring on the part pulses at first | `1` · `0` | `1` |
@@ -44,7 +45,7 @@ Every figure answers `ping` with `{ asset, version }`. Send commands with `figur
 | Command | Example payload |
 |---|---|
 | `get` | `{}` |
-| `set` | `{"angle":80,"animate":false}` |
+| `set` | `{"step":2,"angle":80,"animate":false}` |
 | `reset` | `{}` |
 | `practice` | `{}` |
 | `capture` | `{"width":800,"height":500}` |
