@@ -40,11 +40,17 @@ function fits(d) {
  * box: what to show; dir: unit vector from the target toward the camera; camera: its fov is used; width, height: the stage
  * in pixels; margin: { top, bottom, left, right } in pixels. Returns { position, target } (the same object every call).
  */
-export function fitPose({ box, dir, camera, width, height, margin }) {
+export function fitPose({ box, dir, camera, width, height, margin, plan = null }) {
   look.copy(dir).normalize().negate();
   right.crossVectors(look, WORLD_UP).normalize();
   up.crossVectors(right, look).normalize();
-  box.getCenter(centre);
+  // a frame on the plan is a rectangle along the mirrors, not along the world's axes: its eight corners are given
+  if (plan) centre.set(0, 0, 0);
+  else box.getCenter(centre);
+  if (plan) {
+    for (const q of plan) centre.add(q);
+    centre.multiplyScalar(1 / plan.length);
+  }
   tanV = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
   tanH = tanV * (width / Math.max(1, height));
   usable.top = Math.max(0.1, 1 - (2 * margin.top) / height);
@@ -52,15 +58,15 @@ export function fitPose({ box, dir, camera, width, height, margin }) {
   usable.left = Math.max(0.1, 1 - (2 * margin.left) / width);
   usable.right = Math.max(0.1, 1 - (2 * margin.right) / width);
   let k = 0;
-  for (const x of [box.min.x, box.max.x])
-    for (const y of [box.min.y, box.max.y])
-      for (const z of [box.min.z, box.max.z]) {
-        p.set(x, y, z).sub(centre);
-        const c = corners[k++];
-        c.x = p.dot(right);
-        c.y = p.dot(up);
-        c.z = p.dot(look);
-      }
+  const corner = (x, y, z) => {
+    p.set(x, y, z).sub(centre);
+    const c = corners[k++];
+    c.x = p.dot(right);
+    c.y = p.dot(up);
+    c.z = p.dot(look);
+  };
+  if (plan) for (const q of plan) corner(q.x, q.y, q.z);
+  else for (const x of [box.min.x, box.max.x]) for (const y of [box.min.y, box.max.y]) for (const z of [box.min.z, box.max.z]) corner(x, y, z);
   let near = 0;
   let far = 1;
   while (!fits(far) && far < 1e5) far *= 2;

@@ -240,9 +240,9 @@ const sleeve = () =>
     ],
     14,
   );
-/** The left arm's two poses: the shoulder and the elbow, as x and z turns. Down, the hand is in front of his thigh. */
+/** The left arm's two poses: the shoulder and the elbow, as x and z turns. Down, he holds the card out beside him, clear of his body. */
 const POSE = {
-  down: { s: [-0.2, 0.11], e: [-0.52, 0] },
+  down: { s: [-0.1, 0.86], e: [-0.16, 0.34] },
   up: { s: [-0.14, 1.24], e: [0, 1.74] },
 };
 const quats = (p) => ({

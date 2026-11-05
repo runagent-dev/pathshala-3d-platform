@@ -14,10 +14,12 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { boyGeometry } from './boy.js';
 import { fistGeometry } from './fist.js';
-import { BOY_AT, FIST_AT, mirrors, PLAN, planPoint, WING } from './reading.js';
+import { BOY_AT, CARD_TURN, FIST_AT, mirrors, PLAN, planPoint, WING } from './reading.js';
 
 const GHOST = 0.45; // common.md: a virtual image is a translucent ghost of about 45 %
-const CARD = { w: 0.36, h: 0.18, lift: 0.075, z: 0.05 };
+const CARD = { w: 0.36, h: 0.18, lift: 0.075, z: 0.075 };
+/** With his arm down the card sits outward of the hand and on the viewer's side of it, so that his arm never hides it. */
+const CARD_DOWN = { x: 0.1, y: 0, z: -0.13 };
 const FLOOR_TONE = { far: new THREE.Color('#d9c8b4'), near: new THREE.Color('#b99e84') };
 const PLAN_TONE = { far: new THREE.Color('#5f7387'), near: new THREE.Color('#4f6377') };
 const BACKDROP = [
@@ -45,19 +47,15 @@ function texture(c) {
   t.minFilter = THREE.LinearFilter;
   return t;
 }
-/** The film on the glass: a pale silver, stronger near the edges, and one slanting sheen. */
+/** The film on the glass: silver sends back about 90 %, so the view through it is a little darker and a hint green, with one faint sheen. */
 function glassTexture() {
   const c = document.createElement('canvas');
   c.width = 128;
   c.height = 256;
   const g = c.getContext('2d');
-  const r = g.createLinearGradient(0, 0, 0, 256);
-  r.addColorStop(0, 'rgba(226,238,242,0.3)');
-  r.addColorStop(0.6, 'rgba(208,224,230,0.2)');
-  r.addColorStop(1, 'rgba(190,206,212,0.28)');
-  g.fillStyle = r;
+  g.fillStyle = 'rgba(24,48,42,0.13)';
   g.fillRect(0, 0, 128, 256);
-  g.fillStyle = 'rgba(255,255,255,0.13)';
+  g.fillStyle = 'rgba(255,255,255,0.07)';
   for (const [y0, wide] of [
     [190, 62],
     [110, 20],
@@ -121,15 +119,22 @@ function wingParts(s) {
     box(W + rim, rim, T, (s * (W + rim)) / 2, y0 - rim / 2, T / 2),
     box(rim, h, T, s * (W + rim / 2), mid, T / 2),
   ]);
-  // one-sided: from the front the view goes through to what the mirror shows
-  const back = new THREE.PlaneGeometry(W + rim, h + 2 * rim).rotateY(Math.PI).translate((s * (W + rim)) / 2, mid, -0.004);
+  // the back, seen only from behind: painted glass, and the steel that holds it up. From the front the view goes through.
+  const panel = new THREE.PlaneGeometry(W + rim, h + 2 * rim).rotateY(Math.PI).translate((s * (W + rim)) / 2, mid, -0.004);
+  const back = tinted(panel.clone(), '#aeb8c1');
+  const brace = mergeGeometries([
+    box(0.034, h, 0.018, s * W * 0.3, mid, -0.015),
+    box(0.034, h, 0.018, s * W * 0.82, mid, -0.015),
+    box(W * 0.9, 0.034, 0.018, (s * W) / 2, y0 + h * 0.5, -0.015),
+  ]);
+  const rear = mergeGeometries([back, tinted(brace, '#7b8691')]);
   const steel = mergeGeometries([
     box(W + 0.02, 0.05, 0.13, (s * W) / 2, 0.025, 0),
     box(0.12, 0.09, 0.2, s * W * 0.82, 0.045, 0),
     box(0.12, 0.09, 0.2, s * W * 0.3, 0.045, 0),
   ]);
   const film = new THREE.PlaneGeometry(W, h).translate((s * W) / 2, mid, T + 0.0015);
-  return { edge, back, steel, film };
+  return { edge, panel, rear, steel, film };
 }
 
 export function createSetting({ stage, shadow, word }) {
@@ -196,10 +201,11 @@ ${sh.fragmentShader}`.replace(
 
   // ── the mirrors ─────────────────────────────────────────────────────────────────────────────────────────
   const edgeMat = new THREE.MeshStandardMaterial({ name: 'GlassEdge', color: '#7fd6b6', roughness: 0.16, metalness: 0, emissive: '#143c30' });
-  const backMat = new THREE.MeshStandardMaterial({ name: 'MirrorBack', color: '#c3ccd4', roughness: 0.6, metalness: 0.1 });
+  const backMat = new THREE.MeshStandardMaterial({ name: 'MirrorBack', vertexColors: true, roughness: 0.6, metalness: 0.1 });
   const steelMat = new THREE.MeshStandardMaterial({ name: 'Steel', color: '#46505c', roughness: 0.42, metalness: 0.7 });
   const filmMat = new THREE.MeshBasicMaterial({ name: 'Glass', map: glassTexture(), transparent: true, depthWrite: false, toneMapped: false });
   const wings = {};
+  const rears = {};
   const frames = {}; // one mesh per wing: its glass edges and rail, for the picture of it in the other mirror
   for (const [name, s] of [
     ['a', 1],
@@ -210,20 +216,24 @@ ${sh.fragmentShader}`.replace(
     const p = wingParts(s);
     for (const [part, geometry, material] of [
       ['Edge', p.edge, edgeMat],
-      ['Back', p.back, backMat],
       ['Rail', p.steel, steelMat],
     ]) {
       const m = new THREE.Mesh(geometry, material);
       m.name = `${g.name}-${part}`;
       g.add(m);
     }
+    const rear = new THREE.Mesh(p.rear, backMat);
+    rear.name = `${g.name}-Back`;
+    g.add(rear);
+    rears[name] = rear;
     const film = new THREE.Mesh(p.film, filmMat);
     film.name = `${g.name}-Glass`;
     film.renderOrder = 40;
     g.add(film);
     scene.add(g);
     wings[name] = g;
-    frames[name] = mergeGeometries([tinted(p.edge.clone(), '#7fd6b6'), tinted(p.steel.clone(), '#46505c')]);
+    // in the other mirror: its edge, its rail, and its painted back if the mirror looks at that
+    frames[name] = mergeGeometries([tinted(p.edge.clone(), '#7fd6b6'), tinted(p.steel.clone(), '#46505c'), tinted(p.panel.clone(), '#aeb8c1')]);
   }
   // the hinge: two steel barrels, top and bottom, and between them only the thin dark line where the glasses meet
   const hinge = new THREE.Mesh(
@@ -276,6 +286,9 @@ ${sh.fragmentShader}`.replace(
   const blobMaterial = (clip) => new THREE.MeshBasicMaterial({ map: blobMap, transparent: true, depthWrite: false, clippingPlanes: clip });
 
   const facing = Math.atan2(-BOY_AT.x, -BOY_AT.z); // he faces the hinge
+  // at 90° the card stands CARD_TURN off the square to the corner, whichever way he faces
+  const cardYaw = Math.PI + (CARD_TURN * Math.PI) / 180 - facing;
+  let yawNow = 0;
   /** One figure of the boy, with his card and the soft shadow at his feet, under an identity or a mirror's transform. */
   function boyFigure(name, clip) {
     const g = new THREE.Group();
@@ -400,6 +413,10 @@ ${sh.fragmentShader}`.replace(
     M.ab.multiplyMatrices(M.b, M.a);
     M.ba.multiplyMatrices(M.a, M.b);
     for (const key of Object.keys(M)) copies[key].group.matrix.copy(M[key]);
+    // he turns the card as the mirrors close
+    yawNow = cardYaw * Math.min(1, Math.max(0, (180 - a) / 90));
+    real.card.rotation.y = yawNow;
+    for (const c of Object.values(copies)) c.card.rotation.y = yawNow;
     for (const [key, other] of [
       ['a', 'b'],
       ['b', 'a'],
@@ -443,17 +460,19 @@ ${sh.fragmentShader}`.replace(
     setAngle(alpha);
   }
   const gripNow = new THREE.Vector3();
-  function placeCards() {
+  function placeCards(raised) {
+    const down = 1 - raised;
     gripNow.copy(made.grip);
-    gripNow.y += CARD.h / 2 + CARD.lift - 0.075;
-    gripNow.z += CARD.z;
+    gripNow.x += CARD_DOWN.x * down;
+    gripNow.y += CARD.h / 2 + CARD.lift - 0.075 + CARD_DOWN.y * down;
+    gripNow.z += CARD.z + CARD_DOWN.z * down;
     real.card.position.copy(gripNow);
     for (const c of Object.values(copies)) c.card.position.copy(gripNow);
   }
   /** The arm: 0 down, 1 raised. The geometry is shared, so every image moves with him. */
   function setArm(k) {
     made.setArm(k);
-    placeCards();
+    placeCards(k);
   }
   const mapped = new THREE.Vector3();
   const local = new THREE.Vector3();
@@ -509,7 +528,9 @@ ${sh.fragmentShader}`.replace(
       const p = list[at + i];
       na.copy(c[i]).sub(C);
       nb.copy(c[(i + 1) % 4]).sub(C);
-      nc.crossVectors(na, nb).normalize();
+      nc.crossVectors(na, nb);
+      if (nc.lengthSq() < 1e-16) nc.set(0, 0, 1);
+      nc.normalize();
       p.normal.copy(nc);
       p.constant = -nc.dot(C);
       if (p.distanceToPoint(mid) < 0) p.negate();
@@ -527,25 +548,55 @@ ${sh.fragmentShader}`.replace(
     c[3].set(0, y1, 0);
     if (m) for (const q of c) q.applyMatrix4(m);
   }
-  /** Cuts each image to what can be seen of it through the frames in front of it, from this camera. */
+  const seenBy = { a: true, b: true, ab: true, ba: true };
+  const front = (n, p) => n.x * p.x + n.z * p.z > 0.001;
+  const virtual = new THREE.Vector3();
+  /**
+   * Cuts each image to what can be seen of it through the frames in front of it, from this camera. An image shows only from the
+   * mirror's silvered side: from behind a mirror there is its back, and the student can walk all the way round.
+   */
   function updateClip(cam) {
-    if (world !== 'boy') return;
     const C = cam.position;
-    windowOf('a');
-    cone(planes.a, 0, C);
-    windowOf('b');
-    cone(planes.b, 0, C);
-    if (alpha > 179.5) return;
+    // before the first layout the camera has no place yet: a plane from it would not be a number
+    if (!Number.isFinite(C.x + C.y + C.z)) return;
+    const fa = front(spread.a.n, C);
+    const fb = front(spread.b.n, C);
+    rears.a.visible = !fa;
+    rears.b.visible = !fb;
+    if (world !== 'boy') return;
+    const flat = alpha > 179.5;
+    // a double image needs the camera's own picture in the first mirror to stand in front of the second
+    seenBy.a = fa;
+    seenBy.b = fb;
+    seenBy.ab = !flat && fb && front(spread.a.n, virtual.copy(C).applyMatrix4(M.b));
+    seenBy.ba = !flat && fa && front(spread.b.n, virtual.copy(C).applyMatrix4(M.a));
+    for (const key of Object.keys(seenBy)) copies[key].group.visible = seenBy[key];
+    frameCopies.a.visible = fa && !flat;
+    frameCopies.b.visible = fb && !flat;
+    if (fa) {
+      windowOf('a');
+      cone(planes.a, 0, C);
+    }
+    if (fb) {
+      windowOf('b');
+      cone(planes.b, 0, C);
+    }
     // the light meets a, then b: the eye looks into b, and in it finds the picture of a
-    windowOf('b');
-    cone(planes.ab, 0, C);
-    windowOf('a', M.b);
-    cone(planes.ab, 4, C);
-    windowOf('a');
-    cone(planes.ba, 0, C);
-    windowOf('b', M.a);
-    cone(planes.ba, 4, C);
+    if (seenBy.ab) {
+      windowOf('b');
+      cone(planes.ab, 0, C);
+      windowOf('a', M.b);
+      cone(planes.ab, 4, C);
+    }
+    if (seenBy.ba) {
+      windowOf('a');
+      cone(planes.ba, 0, C);
+      windowOf('b', M.a);
+      cone(planes.ba, 4, C);
+    }
   }
+  /** Whether this image of the boy can be seen from the camera now (the corner one is the two double images). */
+  const seen = (key) => (key === 'ab' ? seenBy.ab || seenBy.ba : seenBy[key]);
 
   /** For the book's GLB: the boy, his three images at 90°, the two mirrors. */
   function exportModel() {
@@ -567,6 +618,7 @@ ${sh.fragmentShader}`.replace(
       const card = new THREE.Mesh(cardGeo, paper);
       card.name = `${name}-Card`;
       card.position.copy(gripNow);
+      card.rotation.y = yawNow;
       inner.add(body, card);
       g.add(inner);
       out.add(g);
@@ -596,6 +648,7 @@ ${sh.fragmentShader}`.replace(
       const card = new THREE.Mesh(cardGeo, paper);
       card.name = `${name}-Card`;
       card.position.copy(gripNow);
+      card.rotation.y = yawNow;
       inner.add(body, card);
       unturn.add(inner);
       flip.add(unturn);
@@ -607,7 +660,7 @@ ${sh.fragmentShader}`.replace(
       const copy = g.clone(true);
       copy.name = name === 'a' ? 'Mirror AO' : 'Mirror BO';
       copy.traverse((n) => {
-        if (n.isMesh && n.material === filmMat) n.visible = false;
+        if (n.isMesh) n.visible = n.material !== filmMat;
       });
       out.add(copy);
     }
@@ -619,5 +672,5 @@ ${sh.fragmentShader}`.replace(
   setFist();
   setArm(1);
   setAngle(180);
-  return { setAngle, setArm, setWorld, setPlan, setFist, setGhost, updateClip, setFloorFade, exportModel, cardAt, cardTop, handAt, boyPoint };
+  return { setAngle, setArm, setWorld, setPlan, setFist, setGhost, updateClip, setFloorFade, exportModel, cardAt, cardTop, handAt, boyPoint, seen };
 }

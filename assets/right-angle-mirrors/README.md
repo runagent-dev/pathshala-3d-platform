@@ -28,7 +28,7 @@ To listen to it or control it from the book page, use the helper shipped in the 
 |---|---|---|---|
 | `lang` | Language | `bn` বাংলা · `en` English | `bn` |
 | `step` | Step of the book | `one` Plain mirror · `two` Two mirrors · `top` The fist | `one` |
-| `stage` | How far the step is built (0–3) | number | `0` |
+| `stage` | How far the step is built (0–4) | number | `0` |
 | `alpha` | Angle between the mirrors (90–180°, step two) | number | `180` |
 | `view` | View | `front` · `3d` | `front` |
 | `mode` | Start in | `explore` learn · `quiz` test | `explore` |

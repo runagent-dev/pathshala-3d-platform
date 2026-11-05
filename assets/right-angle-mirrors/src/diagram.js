@@ -124,19 +124,13 @@ export function createDiagram({ stage, host }) {
     P(n.x, n.y, n.z);
     chevron(mx, my, sx - mx, sy - my, 12, C.ray, C.rayDark);
   }
-  /** The polyline of a ray, grown to the fraction k of its length. */
-  function ray(points, k, lit) {
-    let total = 0;
-    const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
-    for (let i = 1; i < points.length; i++) total += dist(points[i], points[i - 1]);
-    let left = total * Math.min(1, k);
-    for (let i = 1; i < points.length && left > 0; i++) {
+  /** The polyline of a ray, each stretch grown to its own fraction ks[i]; the one growing glows. */
+  function ray(points, ks) {
+    for (let i = 1; i < points.length; i++) {
+      const q = ks[i - 1];
+      if (q <= 0) continue;
       const a = points[i - 1];
-      const b = points[i];
-      const long = dist(a, b);
-      const q = Math.min(1, left / long);
-      left -= long;
-      segment(a, lerp(a, b, q), 0.55 / Math.max(0.55, q), lit);
+      segment(a, lerp(a, points[i], q), 0.55 / Math.max(0.55, q), q < 1);
     }
   }
   /** A small eye, looking toward t: an almond with an iris, drawn in vector. */
@@ -285,7 +279,7 @@ export function createDiagram({ stage, host }) {
   // ── what is shown: a plain description the figure fills in ──────────────────────────────────────────────────
   const v = {
     axes: [], // the mirrors' lines carried on past O, dashed: { a, b, k }
-    ray: null, // { points, k, lit }
+    ray: null, // { points, ks: how far each stretch has grown }
     backs: [], // dashed: { a, b, k, lit }
     eye: null, // { x, y, z, tx, ty, tz }
     corner: null, // { a, b, r, right }
@@ -311,7 +305,7 @@ export function createDiagram({ stage, host }) {
       if (b.lit && v.flash > 0) line(b.a, e, C.glow, 11, null, 0, NO_DASH, 0.55 * v.flash);
       line(b.a, e, C.ray, 2.2, C.rayDark, 3.4, DASH_R);
     }
-    if (v.ray) ray(v.ray.points, v.ray.k, v.ray.lit);
+    if (v.ray) ray(v.ray.points, v.ray.ks);
     for (const p of v.points) dot(p[0], p[1], p[2]);
     if (v.eye) eye(v.eye);
     if (v.fold) {

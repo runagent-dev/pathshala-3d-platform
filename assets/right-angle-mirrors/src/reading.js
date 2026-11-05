@@ -24,6 +24,19 @@ export const BOY_AT = { x: -0.3, z: 1.16 };
 export const FIST_AT = { p: 0.82, q: 0.82 };
 export const PLAN_EYE = { p: 1.34, q: 0.32 };
 export const PLAN_Y = 0.24; // the height of the plan's rays
+/** The ray drawn at a readable pace, s: fist → BO, BO → AO, AO → eye, then each dashed line back, one thing at a time. */
+export const RAY_PLAY = {
+  ray: [
+    [0, 1],
+    [1.4, 2.4],
+    [2.8, 3.8],
+  ],
+  back: [
+    [4.2, 5.2],
+    [5.5, 6.5],
+  ],
+  total: 6.5,
+};
 
 /** The two mirrors for an angle α (degrees): each one's direction from the hinge and its normal toward the viewer. */
 export function mirrors(alpha) {
@@ -192,6 +205,10 @@ export function placeChoices({ p, q }) {
     { v: 'swap', p: -q, q: -p },
   ];
 }
+
+/** The card in step 2: turned about the vertical so that the real card and the corner one show about 0.87 of their width and the
+ * two at the sides about half, with their reversed writing in view (a card square to the corner would be edge-on in them). */
+export const CARD_TURN = 30;
 
 /** Fisher–Yates, on a copy. */
 export function shuffle(list) {

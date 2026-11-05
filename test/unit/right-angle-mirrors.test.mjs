@@ -22,6 +22,7 @@ import {
   placeChoices,
   planPoint,
   quarterOf,
+  RAY_PLAY,
   reflectPoint,
   reflectRay,
   round,
@@ -155,6 +156,13 @@ test('the fold handle stands on mirror A at every angle, on an arc round the hin
     near(h.x * a.n.x + h.z * a.n.z, 0);
     assert.ok(HANDLE.along < WING.w && HANDLE.y < WING.y1);
   }
+});
+
+test('the ray plays one stretch at a time, about a second each, with a pause between', () => {
+  const all = [...RAY_PLAY.ray, ...RAY_PLAY.back];
+  for (const [a, b] of all) near(b - a, 1);
+  for (let i = 1; i < all.length; i++) assert.ok(all[i][0] > all[i - 1][1]);
+  near(RAY_PLAY.total, all[all.length - 1][1]);
 });
 
 test('the fold snaps to its ends and goes in whole degrees', () => {

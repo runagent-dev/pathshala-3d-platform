@@ -8,9 +8,16 @@ test('right-angle-mirrors: the three steps', async ({ page }) => {
   await page.setViewportSize({ width: 800, height: 500 });
   const log = await preparePage(page);
   const fig = await openFigure(page, 'right-angle-mirrors');
-  const act = async (ms = 1700) => {
+  const settle = async () => {
+    for (let i = 0; i < 120; i++) {
+      await fig.advance(250);
+      if ((await fig.call('get')).phase !== 'busy') return;
+    }
+    throw new Error('still busy');
+  };
+  const act = async () => {
     await fig.frame.locator('.pvc-act').first().click();
-    await fig.advance(ms);
+    await settle();
   };
   let st = await fig.call('get');
   expect(st).toMatchObject({ step: 'one', stage: 0, arm: 0, alpha: 180, world: 'boy' });
@@ -20,12 +27,10 @@ test('right-angle-mirrors: the three steps', async ({ page }) => {
   st = await fig.call('get');
   expect(st).toMatchObject({ stage: 1, arm: 1 });
   await expect(fig.frame.locator('.pvc-outcome')).toContainText('ডান হাত');
-  await fig.advance(400);
-  await act(1200);
+  await act();
   expect((await fig.call('get')).stage).toBe(2);
   await expect(fig.frame.locator('.pvc-outcome')).toContainText('উল্টো');
-  await fig.advance(400);
-  await act(1400);
+  await act();
   expect(await fig.call('get')).toMatchObject({ step: 'two', stage: 0, alpha: 180, arm: 1 });
 
   // the fold: at an angle between, nothing is named yet; at 90° three images, and left stays left only in the corner one
@@ -33,7 +38,7 @@ test('right-angle-mirrors: the three steps', async ({ page }) => {
   expect(st).toMatchObject({ alpha: 135, stage: 0, images: [] });
   await expect(fig.frame.locator('.pvc-outcome')).toContainText('১৩৫');
   await fig.call('set', { alpha: 180, animate: false });
-  await act(2600);
+  await act();
   st = await fig.call('get');
   expect(st).toMatchObject({ stage: 1, alpha: 90 });
   expect(st.images.map((q) => [q.id, q.hand, q.reflections])).toEqual([
@@ -48,39 +53,116 @@ test('right-angle-mirrors: the three steps', async ({ page }) => {
   expect(a.z).toBeCloseTo(-0.3, 3);
   expect(b.x).toBeCloseTo(-1.16, 3);
   expect(b.z).toBeCloseTo(0.3, 3);
-  await fig.advance(400);
-  await act(1300);
+  await act();
   expect((await fig.call('get')).frame).toBe('close');
   await expect(fig.frame.locator('.pvc-rule')).toContainText('ডান-বামের পরিবর্তন হয় না');
-  await fig.advance(400);
-  await act(1300);
+  await act();
   await expect(fig.frame.locator('.pvc-outcome')).toContainText('একবার');
-  await fig.advance(400);
 
   // the book's plan
-  await act(2800);
+  await act();
   expect(await fig.call('get')).toMatchObject({ step: 'top', stage: 0, world: 'fist', alpha: 90, images: [] });
   for (const [n, quarter] of /** @type {[number, string][]} */ ([
     [1, 'A′OB'],
     [2, 'AOB′'],
     [3, 'A′OB′'],
   ])) {
-    await act(n === 3 ? 2700 : 1900);
+    await act();
     st = await fig.call('get');
     expect(st.stage).toBe(n);
     expect(st.images[n - 1].quarter).toBe(quarter);
-    await fig.advance(400);
+    expect(st.ray).toBeNull(); // the ghost alone: the ray is a tap of its own
   }
   expect(st.images.map((q) => q.hand)).toEqual(['right', 'right', 'left']);
+  await act();
+  st = await fig.call('get');
+  expect(st.stage).toBe(4);
   expect(st.ray.quarter).toBe('A′OB′');
   expect(st.ray.onGlass).toBe(true);
   expect(st.ray.miss).toBeCloseTo(0, 6);
   expect(st.ray.backMiss).toBeCloseTo(0, 6);
   for (const q of st.ray.angles) expect(q.thetaR).toBeCloseTo(q.thetaI, 6);
-  await expect(fig.frame.locator('.pvc-rule')).toContainText('প্রতিবিম্বের প্রতিবিম্ব');
+  await expect(fig.frame.locator('.pvc-rule')).toContainText('উপর-নিচ প্রতিবিম্ব');
 
   await fig.call('reset');
   expect(await fig.call('get')).toMatchObject({ step: 'one', stage: 0, arm: 0, alpha: 180 });
+  expect(log.errors).toEqual([]);
+});
+
+test('right-angle-mirrors: taps never run ahead of the student', async ({ page }) => {
+  test.setTimeout(180_000);
+  await page.setViewportSize({ width: 800, height: 500 });
+  const log = await preparePage(page);
+  const fig = await openFigure(page, 'right-angle-mirrors', { params: { step: 'two', stage: '1' } });
+  await fig.advance(800);
+  await fig.frame.locator('.ra').focus();
+  // three taps half a second apart: one idea, the zoom to the corner
+  for (let i = 0; i < 3; i++) {
+    await page.keyboard.press('Space');
+    await fig.advance(500);
+  }
+  expect(await fig.call('get')).toMatchObject({ step: 'two', stage: 2, phase: 'busy' });
+  await expect(fig.frame.locator('.pvc-act').first()).toBeDisabled();
+  // the camera takes 1.6 s, then the result stands a second more
+  await fig.advance(100);
+  expect((await fig.call('get')).phase).toBe('busy');
+  await fig.advance(2000);
+  expect((await fig.call('get')).phase).toBe('two2');
+  // a word does nothing while something plays, and the quiet button plays the last move again
+  await fig.call('set', { step: 'top', stage: 4, animate: false });
+  await fig.advance(600);
+  await fig.frame.locator('[data-act="replay"]').click();
+  await fig.advance(300);
+  let st = await fig.call('get');
+  expect(st).toMatchObject({ stage: 4, phase: 'busy' });
+  expect(st.ray).not.toBeNull();
+  await fig.advance(7600);
+  st = await fig.call('get');
+  expect(st).toMatchObject({ stage: 4, phase: 'top4' });
+  expect(st.images.length).toBe(3);
+  expect(log.errors).toEqual([]);
+});
+
+for (const params of [{ mode: 'quiz' }, { step: 'two', mode: 'quiz' }, { step: 'top', stage: '3', mode: 'quiz' }]) {
+  test(`right-angle-mirrors: opens straight in the test (${JSON.stringify(params)})`, async ({ page }) => {
+    test.setTimeout(120_000);
+    await page.setViewportSize({ width: 800, height: 500 });
+    const log = await preparePage(page);
+    const fig = await openFigure(page, 'right-angle-mirrors', { params });
+    await fig.advance(2500);
+    await expect(fig.frame.locator('.pvc-opt')).toHaveCount(4);
+    expect(log.errors).toEqual([]);
+  });
+}
+
+test('right-angle-mirrors: the view goes all the way round, and the front button brings it back', async ({ page }) => {
+  test.setTimeout(240_000);
+  await page.setViewportSize({ width: 800, height: 500 });
+  const log = await preparePage(page);
+  const fig = await openFigure(page, 'right-angle-mirrors', { params: { step: 'two', stage: '3' } });
+  await fig.advance(1200);
+  const f = fig.frame;
+  await expect(f.locator('.ra-turn')).toContainText('ঘুরিয়ে দেখো');
+  await expect(f.locator('[data-view="front"]')).toBeHidden();
+  // a tap is not a turn
+  const box = await f.locator('.pvc-canvas').boundingBox();
+  await page.mouse.click(box.x + 60, box.y + 60);
+  await fig.advance(300);
+  expect((await fig.call('get')).orbited).toBe(false);
+  // from every side, nothing breaks and the image of the far side never hangs in the air
+  for (const az of [0, 60, 120, 180, 240, 300]) {
+    const st = await fig.call('set', { turn: { az, el: 14 }, animate: false });
+    expect(st).toMatchObject({ view: '3d', orbited: true });
+    await fig.advance(300);
+    expect(log.errors).toEqual([]);
+    if (az === 180) await expect(f.locator('.pvc-anno', { hasText: 'ডান হাত' })).toHaveCount(0);
+  }
+  await expect(f.locator('.ra-turn.used')).toHaveCount(1);
+  await expect(f.locator('[data-view="front"]')).toBeVisible();
+  await expect(f.locator('[data-view="front"]')).toContainText('সামনে');
+  await f.locator('[data-view="front"]').click();
+  await fig.advance(2600);
+  expect(await fig.call('get')).toMatchObject({ view: 'front', phase: 'two3' });
   expect(log.errors).toEqual([]);
 });
 
@@ -89,7 +171,7 @@ test('right-angle-mirrors: the mirror folds under a finger, and the arrows fold 
   await page.setViewportSize({ width: 800, height: 500 });
   const log = await preparePage(page);
   const fig = await openFigure(page, 'right-angle-mirrors', { params: { step: 'two' } });
-  await fig.advance(600);
+  await fig.advance(1200);
   const stageBox = await fig.frame.locator('.pvc-canvas').boundingBox();
   // the handle shows before any drag, with its label; the ring of the action stands on it
   expect((await fig.call('get')).handle).toEqual({ shown: true, used: false });
@@ -107,7 +189,7 @@ test('right-angle-mirrors: the mirror folds under a finger, and the arrows fold 
   expect(st.alpha).toBeGreaterThan(90);
   await page.mouse.move(x - stageBox.width, y, { steps: 6 });
   await page.mouse.up();
-  await fig.advance(300);
+  await fig.advance(2600);
   st = await fig.call('get');
   expect(st).toMatchObject({ alpha: 90, stage: 1, handle: { shown: true, used: true } });
   await expect(fig.frame.locator('.pvc-anno', { hasText: 'টেনে সরাও' })).toHaveCount(0);
@@ -133,7 +215,7 @@ test('right-angle-mirrors: every question can be answered right: five of five', 
   const f = fig.frame;
   const kinds = [];
   for (let i = 0; i < 5; i++) {
-    await fig.advance(1500);
+    await fig.advance(2600);
     await expect(f.locator('.pvc-opt')).toHaveCount(4);
     const { question } = await fig.call('get');
     kinds.push(question.kind);
@@ -148,7 +230,7 @@ test('right-angle-mirrors: every question can be answered right: five of five', 
   expect(kinds).toEqual(['fold', 'times', 'hand', 'place', 'ray']);
   await expect(f.locator('.pvc-q-result')).toContainText('৫ টির মধ্যে ৫ টি');
   await f.locator('[data-mode="explore"]').click();
-  await fig.advance(900);
+  await fig.advance(2600);
   expect(await fig.call('get')).toMatchObject({ mode: 'explore', step: 'one', stage: 0 });
   expect(log.errors).toEqual([]);
 });
@@ -172,5 +254,11 @@ test('right-angle-mirrors: nothing is drawn when nothing changes', async ({ page
   const a = await fig.frame.evaluate(() => globalThis.__draws);
   await fig.advance(3000);
   expect(await fig.frame.evaluate(() => globalThis.__draws)).toBe(a);
+  // and after a turn of the view, once its damping has settled
+  await fig.call('set', { turn: { az: 200, el: 30 }, animate: false });
+  await fig.advance(3000);
+  const b = await fig.frame.evaluate(() => globalThis.__draws);
+  await fig.advance(3000);
+  expect(await fig.frame.evaluate(() => globalThis.__draws)).toBe(b);
   expect(log.errors).toEqual([]);
 });

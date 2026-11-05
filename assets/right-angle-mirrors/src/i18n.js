@@ -11,7 +11,7 @@ export const STRINGS = {
     rotate_stay: 'এভাবেই দেখো',
     title: 'সমকোণে দুটি আয়না',
     view: 'দেখার ধরন',
-    view_front_short: 'শুরুর দৃশ্য',
+    view_front_short: 'সামনে',
     view_rotate: 'ঘুরিয়ে দেখো',
     fullscreen: 'পূর্ণ পর্দা',
     tab_learn: 'শেখো',
@@ -37,7 +37,9 @@ export const STRINGS = {
     act_q1: 'A′OB তে দেখো',
     act_q2: 'AOB′ তে দেখো',
     act_q3: 'A′OB′ তে দেখো',
-    act_test: 'পরীক্ষা দাও',
+    act_ray: 'রশ্মি দেখো',
+    act_test: 'বুঝেছ? তাহলে পরীক্ষা দাও',
+    act_again: 'আবার দেখো',
 
     out_one0: 'ছেলেটির <b>বাম হাতে</b> একটি কার্ড',
     out_hands: '<span class="ra-pair">প্রকৃত <b>বাম হাত</b></span><span class="ra-pair">প্রতিবিম্বে <b>ডান হাত</b></span>',
@@ -50,6 +52,7 @@ export const STRINGS = {
     out_t1: '<span class="ra-pair">A′OB</span><span class="ra-pair">একবার: <b>ডান হাত</b></span>',
     out_t2: '<span class="ra-pair">AOB′</span><span class="ra-pair">একবার: <b>ডান হাত</b></span>',
     out_t3: '<span class="ra-pair">A′OB′</span><span class="ra-pair">দুইবার: <b>বাম হাত</b></span>',
+    out_t4: '<span class="ra-pair">আলো: <b>BO → AO → চোখ</b></span>',
 
     rule_one0: 'দৈনন্দিন জীবনে সাধারণ আয়নার ব্যবহার সবচেয়ে বেশি। ছেলেটি তার বাম হাত তুললে আয়নায় কী হয়, দেখো।',
     rule_one1: 'প্রতিবিম্বের হাতটি ছবির একই দিকে উঠেছে। কিন্তু মুখোমুখি দাঁড়ানো মানুষ হলে এটি হতো তার <b>ডান হাত</b>।',
@@ -63,6 +66,7 @@ export const STRINGS = {
     rule_t1: 'A′OB তে তোমার হাতের <b>সামনা-সামনি</b> প্রতিবিম্ব। বাম হাতের প্রতিবিম্ব ডান হাত হিসেবে এসেছে।',
     rule_t2: 'AOB′ তে হাতের <b>উপর-নিচ</b> প্রতিবিম্ব। এখানেও বাম হাতের প্রতিবিম্ব ডান হাত।',
     rule_t3: 'A′OB′ তে <b>প্রতিবিম্বের প্রতিবিম্ব</b>। একবার প্রতিফলনে বাম হাত ডান হাত হয়, কিন্তু দুইবার প্রতিফলনে বাম হাত আবার বাম হাত।',
+    rule_t4: 'হাতের আলো BO তে, তারপর AO তে প্রতিফলিত হয়ে চোখে আসে। তাই মনে হয় হাতটি A′OB′ তে, যা A′OB এর প্রতিবিম্বের <b>উপর-নিচ প্রতিবিম্ব</b>।',
 
     l_left: 'বাম হাত',
     l_right: 'ডান হাত',
@@ -78,6 +82,8 @@ export const STRINGS = {
     l_deg: '{a}°',
     l_hinge: 'কব্জা',
     l_drag: 'টেনে সরাও',
+    deg360: '{a}°',
+    turn_hint: 'ঘুরিয়ে দেখো',
     note_ray: 'বহু রশ্মির একটি আঁকা হয়েছে',
     letters: 'ক,খ,গ,ঘ',
 
@@ -96,11 +102,11 @@ export const STRINGS = {
     q_locked: 'পরীক্ষা চলছে। শেখো অংশে ফিরলে আবার ভাঁজ করতে পারবে।',
     n_pick: '{x}:',
 
-    q_fold: 'দুটি আয়নার মাঝের কোণ কত হলে প্রতিবিম্বে কার্ডের লেখা ঠিক দেখাবে?',
+    q_fold: 'দুটি আয়নার মাঝের কোণ কত হলে কোণের (সামনের) প্রতিবিম্বে লেখা ঠিক দেখাবে?',
     c_deg: '{a}°',
     n_fold_180: 'এটি তো একটিই সমতল আয়না, লেখা উল্টোই থাকে।',
     n_fold_120: 'এ কোণে মাঝখানে কোনো প্রতিবিম্ব হয় না, দুই পাশে থাকে একবার প্রতিফলনের প্রতিবিম্ব।',
-    n_fold_60: 'এ কোণে সামনের প্রতিবিম্বে আলো তিনবার প্রতিফলিত হয়, লেখা উল্টোই থাকে।',
+    n_fold_60: 'এ কোণে সামনের প্রতিবিম্বে আলো তিনবার প্রতিফলিত হয়, লেখা উল্টো থাকে।',
     a_fold: '<b>{a}°</b>: সমকোণে রাখলে সামনের প্রতিবিম্বে আলো দুইবার প্রতিফলিত হয়, তাই ডান-বাম অবিকৃত থাকে।',
 
     q_times: '“{x}” প্রতিবিম্বে আসতে আলো কতবার প্রতিফলিত হয়েছে?',
@@ -118,9 +124,11 @@ export const STRINGS = {
     c_lu: 'বাম হাতে, লেখা উল্টো',
     c_rk: 'ডান হাতে, লেখা ঠিক',
     c_ru: 'ডান হাতে, লেখা উল্টো',
-    n_hand_side: 'এটি পাশের প্রতিবিম্ব: একবার প্রতিফলনে হাত ও লেখা দুটোই বদলায়।',
-    n_hand_corner: 'এটি কোণের প্রতিবিম্ব: দুইবার প্রতিফলনে হাত ও লেখা দুটোই আগের মতো থাকে।',
-    n_hand_half: 'হাত আর লেখা একসাথে বদলায়, একটি বদলে অন্যটি ঠিক থাকে না।',
+    n_hand_side: 'পাশের প্রতিবিম্ব, একবার প্রতিফলনে হাত ও লেখা দুটোই বদলায়।',
+    n_hand_corner: 'কোণের প্রতিবিম্ব, দুইবার প্রতিফলনে হাত ও লেখা আগের মতো থাকে।',
+    n_hand_half: 'হাত আর লেখা একসাথেই বদলায়।',
+    n_hand_one: 'এটি একবার প্রতিফলনের প্রতিবিম্বের কথা।',
+    n_hand_two: 'এটি দুইবার প্রতিফলনের প্রতিবিম্বের কথা।',
     a_hand: '<b>{a}</b>: {why}',
 
     q_place: 'মুঠিটি সরানো হয়েছে। কোন চিহ্নে A′OB′ এর প্রতিবিম্ব হবে?',
@@ -145,7 +153,7 @@ export const STRINGS = {
     rotate_stay: 'Stay like this',
     title: 'Two mirrors at a right angle',
     view: 'View',
-    view_front_short: 'First view',
+    view_front_short: 'Front',
     view_rotate: 'Turn the view',
     fullscreen: 'Full screen',
     tab_learn: 'Learn',
@@ -171,7 +179,9 @@ export const STRINGS = {
     act_q1: 'Look in A′OB',
     act_q2: 'Look in AOB′',
     act_q3: 'Look in A′OB′',
-    act_test: 'Take the test',
+    act_ray: 'See the ray',
+    act_test: 'Got it? Then take the test',
+    act_again: 'See it again',
 
     out_one0: 'The boy has a card in his <b>left hand</b>',
     out_hands: '<span class="ra-pair">Real: <b>left hand</b></span><span class="ra-pair">Image: <b>right hand</b></span>',
@@ -184,6 +194,7 @@ export const STRINGS = {
     out_t1: '<span class="ra-pair">A′OB</span><span class="ra-pair">Once: <b>right hand</b></span>',
     out_t2: '<span class="ra-pair">AOB′</span><span class="ra-pair">Once: <b>right hand</b></span>',
     out_t3: '<span class="ra-pair">A′OB′</span><span class="ra-pair">Twice: <b>left hand</b></span>',
+    out_t4: '<span class="ra-pair">Light: <b>BO → AO → eye</b></span>',
 
     rule_one0: 'Plain mirrors are the ones we use most every day. See what happens in the mirror when he raises his left hand.',
     rule_one1: 'The image’s hand rises on the same side of the picture. But on a person facing him, that would be the <b>right hand</b>.',
@@ -199,6 +210,8 @@ export const STRINGS = {
     rule_t1: 'In A′OB is the <b>face-to-face</b> image of your hand. The image of the left hand comes as a right hand.',
     rule_t2: 'In AOB′ is the <b>top-to-bottom</b> image of your hand. Here too the left hand’s image is a right hand.',
     rule_t3: 'In A′OB′ is the <b>image of the image</b>. One reflection makes a left hand a right hand; two reflections make it a left hand again.',
+    rule_t4:
+      'Light from the hand is reflected by BO, then by AO, into the eye. So the hand seems to be in A′OB′, the <b>top-to-bottom image</b> of the image in A′OB.',
 
     l_left: 'Left hand',
     l_right: 'Right hand',
@@ -214,6 +227,8 @@ export const STRINGS = {
     l_deg: '{a}°',
     l_hinge: 'Hinge',
     l_drag: 'Drag it',
+    deg360: '{a}°',
+    turn_hint: 'Turn the view',
     note_ray: 'One ray of countless',
     letters: 'A,B,C,D',
 
@@ -232,7 +247,7 @@ export const STRINGS = {
     q_locked: 'The test is on. Back in Learn you can fold the mirrors again.',
     n_pick: '{x}:',
 
-    q_fold: 'At what angle between two mirrors does the card read the right way in the image?',
+    q_fold: 'At what angle between two mirrors does the card read the right way in the corner (front) image?',
     c_deg: '{a}°',
     n_fold_180: 'That is just one flat mirror; the writing stays reversed.',
     n_fold_120: 'At this angle no image stands in the middle; the ones at the sides have one reflection each.',
@@ -254,9 +269,11 @@ export const STRINGS = {
     c_lu: 'Left hand, reversed',
     c_rk: 'Right hand, right way',
     c_ru: 'Right hand, reversed',
-    n_hand_side: 'This image is at the side: one reflection changes both the hand and the writing.',
-    n_hand_corner: 'This is the corner image: two reflections leave both the hand and the writing as they were.',
-    n_hand_half: 'The hand and the writing change together, never one without the other.',
+    n_hand_side: 'an image at the side; one reflection changes both the hand and the writing.',
+    n_hand_corner: 'the corner image; two reflections leave the hand and the writing as they were.',
+    n_hand_half: 'The hand and the writing always change together.',
+    n_hand_one: 'That is true of an image reflected once.',
+    n_hand_two: 'That is true of an image reflected twice.',
     a_hand: '<b>{a}</b>: {why}',
 
     q_place: 'The fist has moved. Which mark on the floor shows the image in A′OB′?',

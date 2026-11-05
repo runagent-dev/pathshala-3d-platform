@@ -24,9 +24,15 @@ three images only that one is not swapped.
      three images → the camera zooms to the real card and the corner image: it reads বাম too, on his left hand, 2 reflections → back to
      the whole: the two at the sides, 1 reflection, right hands.
   3. হাতের মুঠি: the camera turns to the book's plan, the right way up (A left, B up, as চিত্র ৮.১৫), the mirrors low, on a calm slate
-     mat. The left fist in AOB, then its ghost in A′OB, in AOB′ and in A′OB′, each with the dashed line carried past O, and one ray traced
-     from the fist by BO and AO into an eye, with the dashed lines back to A′OB and to A′OB′ (the book's "image of an image").
+     mat, and opens on the fist's quarter alone, big. The left fist in AOB, then its ghost in A′OB, in AOB′ and in A′OB′, the view widening as
+     they come, each with the dashed line carried past O. Then a tap of its own: one ray from the fist by BO and AO into an eye, a stretch
+     at a time, then the dashed lines back to A′OB and to A′OB′ (the book's "image of an image").
   The newest thing is highlighted and its tab turns yellow, as in the sister figures.
+- **Unhurried** (the owner, 2026-11-06: a lab must not finish before the student understands). One tap, one idea; nothing advances by
+  itself. Camera flights 1.6 s (2.2 s to and from the plan, 1.2 s after a drag and in the test), the hand 2 s, the fold 2.5 s, the mirrors
+  opening 2 s, the ray 1 s a stretch (`RAY_PLAY`). The action waits ("দেখো…") through every move and flight and about 1 s more
+  (`hold`), and taps meanwhile are ignored, not queued. The quiet ▶ "আবার দেখো" plays the last move again, the step's earlier moves staying;
+  the word or ↺ restarts the step. The test is offered at the end: "বুঝেছ? তাহলে পরীক্ষা দাও". The পরীক্ষা tab is open from the start: that is the kit's.
 - **What can be moved shows itself** (the owner, 2026-11-06). One part moves, the mirror, so it carries the handle: a white disc with a thin
   dark ring and arrows along its way on the screen, a 44 px hit area (68 px by touch), a faint dashed arc for its range with a dot at each
   end, "টেনে সরাও" until the mirrors are folded by hand, and a gentle pulse until the first drag; then it stays, smaller. It is drawn in
@@ -40,11 +46,17 @@ three images only that one is not swapped.
   hinge. Depth does the rest. The picture of each mirror (its edge and rail) is drawn the same way. This is the technique of
   `parallel-mirrors`' view into M₁; the kit's renderer has no stencil buffer, so it is planes. The text proves it: the reversed
   বাম and the true বাম are the same texture under those transforms.
+- **All the way round** (the owner, 2026-11-06). The view turns 360°, 5°–88° from straight up, so never under the floor, with zoom limited round the
+  step's own distance. An image shows only from its mirror's silvered side: the camera must be in front of the mirror, and for a double
+  image the camera's own picture in the first mirror must stand in front of the second. From behind a mirror there is its back: painted
+  glass and three steel braces, one mesh, drawn only from that side (from the front the view goes through). In a view the student has
+  turned, the images' labels go, since their points may lie outside the glass: "সামনে" brings them back. Each step's guided camera still flies to its frame, and "সামনে" brings it back. The dark pill in a corner (⟲ ৩৬০° ঘুরিয়ে দেখো,
+  then a small icon) is the rotate cue, nothing like the white handle on the mirror. A tap is not a turn: it takes 8 px.
 - **Rays are traced** (`reading.js`): aimed by unfolding, then r = d − 2(d·n)n at each mirror; θi = θr, the miss at the eye and the miss at the
   image are read back from the vectors, in the unit tests and in `get`.
 - **The test** (numbers only: the kit's quiz compares numbers; a browser test answers all five right and checks ৫ টির মধ্যে ৫ টি): the
-  angle that keeps the writing; reflections read off a marked image; the marked image's hand and writing; a mark on the floor for A′OB′
-  with the fist moved; which quarter a drawn ray seems to come from. `get` carries the current question's kind and right answer.
+  angle that keeps the writing in the corner (front) image; reflections read off a marked image; the marked image's hand and writing, the
+  camera close on it; a mark on the floor for A′OB′ with the fist moved; which quarter a drawn ray seems to come from. `get` carries the current question's kind and right answer.
 - **The drawing** follows `reflection-laws`: a 2D canvas over the view, painted from exact 3D points through the camera.
 
 ## Lightweight, on purpose
@@ -62,11 +74,11 @@ three images only that one is not swapped.
   At 180° they are one flat mirror with a thin seam; the book's plain mirror has none.
 - The card is the figure's, not the book's: a white card reading বাম on both faces, so that the reversal can be seen at a glance. চিত্র
   ৮.২৬ shows fingers. His wristwatch is on his left wrist too.
+- He holds the card out beside him from the start, so that it shows from behind him as well as in the mirror.
+- In step 2 he turns the card as the mirrors close, to 30° off the view, so that the two side images show its reversed writing: a card
+  square to the corner would be edge-on in them. The real and the corner cards show about 0.87 of their width, the side ones about half.
 - He stands a little to one side of the corner so that he hides none of his images; the book's example does not say where the hand is.
-- From the view in step 2 the cards of the two side images are almost edge-on (a card facing the corner, in a mirror at 45°, faces
-  across the view), so their writing cannot be read there. The panel says only "ডান হাত" for them; step 1 shows the reversal.
-- The mirror is drawn as a pale film over what stands behind it, so the images look a little paler than the real boy. That is a look,
-  not a measure. The glass is drawn 16 mm thick so that its green edge reads on a phone; the reflecting plane is the silver at its back.
+- The mirror is drawn as a thin dark film with a hint of green over what stands behind it: real silver sends back about 90 %. The glass is drawn 16 mm thick so that its green edge reads on a phone; the reflecting plane is the silver at its back.
 - In step 3 the fist is many times life size and the low mirrors are shorter than in step 2. A ray is one of countless (a note says so).
 - The plan's ghosts are the chapter's 45 % ghost; the views of the boy are the true look, solid in the glass.
 
@@ -75,11 +87,14 @@ three images only that one is not swapped.
 সামনা-সামনি, উপর-নিচ, প্রকৃত. p223 writes উপর. Added by the figure: কার্ড, কব্জা (hinge), লেখা ঠিক / উল্টো, ঘর (a quarter of the plan, in the test).
 
 ## Numbers
-Measured at 844×390, one counted frame: three images at 90°, 28 draw calls and about 79k triangles; the plan, 19 draw calls and about 26k triangles.
-Ready in about 3.5 s. At rest nothing is drawn. The budget is 150 draw calls and 300k triangles.
+Measured at 844×390, one counted frame, from eight azimuths at two heights, at 90° and part way through the fold: the worst is 26 draw
+calls and about 79k triangles; the plan at most 19 draw calls and about 26k triangles. The budget is 150 and 300k. Ready in about 3.5 s,
+GLB 488 KB, zip 456 KB. At rest nothing is drawn, after a turn of the view too.
 
 ## Open questions
 - p234 prints "90°" with Latin-looking digits; the figure shows ৯০° through `t.num()`.
+- The পরীক্ষা tab is open from the start (the kit's), though the figure offers the test only at the end.
+- Q1 could let the student drag the angle; the kit's test is tap-only, so the question names the corner (front) image instead.
 - Sister figures' briefs list চিত্র ৮.১৫ and ৮.২৬ under `parallel-mirrors`; that figure left them out on purpose, so they live here.
 - The action's words in step 3 (A′OB তে দেখো) name a quarter; "সামনা-সামনি" and "উপর-নিচ" appear in the rule line.
 - A person's wording check of the Bangla against the book.

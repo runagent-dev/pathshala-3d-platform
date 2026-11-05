@@ -34,6 +34,7 @@ import {
   placeChoices,
   planPoint,
   quarterOf,
+  RAY_PLAY,
   shuffle,
   snapAngle,
   trace,
@@ -54,7 +55,8 @@ export const DEFAULTS = {
 };
 
 const STEPS = ['one', 'two', 'top'];
-const LAST = { one: 2, two: 3, top: 3 };
+const LAST = { one: 2, two: 3, top: 4 };
+const HOLD = 1; // s: the result stands this long before anything else can change
 const INK = C.ink;
 const KEPT = '#1864ab'; // left stays left
 const SWAP = '#b02a37'; // left became right
@@ -87,7 +89,10 @@ export function createApp(root, options = {}) {
     layout: 'side',
     learn: cleanSheet(t, {
       examples: { label: 'ex_label', items: STEPS.map((id) => ({ id, label: `ex_${id}` })) },
-      quiet: [{ act: 'home', label: 'act_home', icon: ICONS.reset }],
+      quiet: [
+        { act: 'replay', label: 'act_again', icon: ICONS.play },
+        { act: 'home', label: 'act_home', icon: ICONS.reset },
+      ],
       lines: { action: 1, outcome: 1, rule: 4 },
     }),
     learnAlign: 'start',
@@ -99,13 +104,19 @@ export function createApp(root, options = {}) {
   note.textContent = t('note_ray');
   note.hidden = true;
   ui.stage.appendChild(note);
+  // the view can be turned all the way round: a dark pill in a corner, nothing like the white handle on the mirror
+  const turnCue = document.createElement('div');
+  turnCue.className = 'ra-turn';
+  turnCue.setAttribute('aria-hidden', 'true');
+  turnCue.innerHTML = `<svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20.5 3.2v4h-4"/></svg><b>${t('deg360', { a: 360 })}</b><span>${t('turn_hint')}</span>`;
+  ui.stage.appendChild(turnCue);
 
   // ── 3D ──────────────────────────────────────────────────────────────────────────────────────────────────
   const FOV = 24;
   const stage = createStage(ui.canvasHost, { fov: FOV, near: 0.5, far: 400, environment: 'studio-light', environmentIntensity: 0.3 });
   const { camera, controls } = stage;
   controls.enablePan = false;
-  controls.enableZoom = false;
+  controls.enableZoom = true;
   const setting = createSetting({ stage, shadow: Boolean(o.shadow), word: t('card') });
   const dia = createDiagram({ stage, host: ui.canvasHost });
 
@@ -120,12 +131,14 @@ export function createApp(root, options = {}) {
     grow: 1,
     flash: 0,
     busy: false,
+    holding: false, // the result stands, a moment before the next tap
     mode: 'explore',
     locked: false,
     view: o.view === '3d' ? '3d' : 'front',
     userMovedCamera: false,
     quiz: null,
     drag: null,
+    orbited: false, // the student has turned the view: the cue on the stage settles down
     dragged: false, // the student has folded the mirrors by hand: the handle calms down and its label goes
   };
   /** The state a step's stage stands for. */
@@ -153,10 +166,10 @@ export function createApp(root, options = {}) {
   const inFist = () => (s.quiz ? s.quiz.world === 'fist' : s.step === 'top');
   /** What the panel's action does now. */
   function phase() {
-    if (s.busy || s.grow < 1) return 'busy';
+    if (s.busy || s.grow < 1 || s.holding || camK < 1) return 'busy';
     return `${s.step}${s.stage}`;
   }
-  const canFold = () => !s.locked && !s.busy && !s.quiz && s.step === 'two' && s.stage !== 2 && s.grow >= 1;
+  const canFold = () => !s.locked && !s.busy && !s.quiz && s.step === 'two' && s.stage !== 2 && s.grow >= 1 && camK >= 1;
 
   // ── what the 3D shows, from the state ──────────────────────────────────────────────────────────────────
   const shape = () => (s.quiz ? (s.quiz.alpha ?? ANGLE.right) : s.alpha);
@@ -174,15 +187,20 @@ export function createApp(root, options = {}) {
     if (s.stage < need) return 0;
     return s.newest === id ? seg(s.grow, 0, 0.7) : 1;
   }
-  function drawRay(r, k, lit, id) {
+  /** The ray; t: how far its play has gone, s (the whole of it by default). */
+  function drawRay(r, t = RAY_PLAY.total) {
     const v = dia.view;
-    v.ray = { points: r.points, k, lit };
-    const g = lit ? seg(s.grow, 0.72, 1) : 1;
+    const ks = RAY_PLAY.ray.map(([a, b]) => seg(t, a, b));
+    v.ray = { points: r.points, ks };
     r.via.forEach((q, i) => {
-      v.backs.push({ a: q.from, b: q, k: g, lit, id });
-      if (i < r.via.length - 1) v.points.push([q, 3, C.ray]);
+      const [a, b] = RAY_PLAY.back[i];
+      const k = seg(t, a, b);
+      v.backs.push({ a: q.from, b: q, k, lit: k > 0 && k < 1 });
+      if (k >= 1) v.points.push([q, 3, C.ray]);
     });
-    if (k >= 1) for (const h of r.hits) v.points.push([h, 2.8, C.ray]);
+    r.hits.forEach((h, i) => {
+      if (ks[i] >= 1) v.points.push([h, 2.8, C.ray]);
+    });
     v.points.push([r.points[0], 3, C.ray]);
     const last = r.hits[r.hits.length - 1];
     v.eye = { ...r.eye, tx: last.x, ty: last.y, tz: last.z };
@@ -210,10 +228,7 @@ export function createApp(root, options = {}) {
         applyQuiz(s.quiz);
         return;
       }
-      if (s.stage >= 3) {
-        const k = s.newest === 'ab' ? seg(s.grow, 0.1, 0.72) : 1;
-        if (k > 0) drawRay(planRay(['b', 'a']), k, s.newest === 'ab', 'ab');
-      }
+      if (s.stage >= 4) drawRay(planRay(['b', 'a']), s.newest === 'ray' ? s.grow * RAY_PLAY.total : RAY_PLAY.total);
       return;
     }
     if (s.quiz) return applyQuiz(s.quiz);
@@ -238,14 +253,42 @@ export function createApp(root, options = {}) {
     // the two mirrors, open toward the viewer
     open: { az: 6, el: 10, min: [-1.5, -0.02, 0], max: [1.5, 2.0, 1.4] },
     // the real card and the corner image
-    close: { az: 6, el: 7, min: [-1.05, 0.82, -0.2], max: [1.02, 1.84, 1.1] },
-    plan: { az: PLAN_VIEW.az, el: PLAN_VIEW.el, min: [-1.3, 0, -1.3], max: [1.3, 0.4, 1.3] },
+    // a longer lens: the card in the corner, far behind the glass, comes nearer the size of the real one
+    close: { az: 1, el: 6, fov: 13 },
+    zoom: { az: 4, el: 6, fov: 13 },
+    // the book's plan, built outward: the fist's quarter, then the upper half, then all four
+    plan0: { az: PLAN_VIEW.az, el: PLAN_VIEW.el, plan: [-0.1, 1.68, -0.1, 1.78] },
+    plan1: { az: PLAN_VIEW.az, el: PLAN_VIEW.el, plan: [-1.68, 1.68, -0.1, 1.78] },
+    plan: { az: PLAN_VIEW.az, el: PLAN_VIEW.el, plan: [-1.68, 1.68, -1.78, 1.78] },
   };
+  const planCorners = Array.from({ length: 8 }, () => new THREE.Vector3());
+  /** The eight corners of a rectangle on the plan, along the mirrors. */
+  function cornersOf([p0, p1, q0, q1]) {
+    let i = 0;
+    for (const p of [p0, p1])
+      for (const q of [q0, q1])
+        for (const y of [0, 0.4]) {
+          const c = planPoint(p, q);
+          planCorners[i++].set(c.x, y, c.z);
+        }
+    return planCorners;
+  }
+  const cardNow = new THREE.Vector3();
+  /** Grows a box round a card: the frames of `close` and of the test's zoom. */
+  function around(box, key, pad) {
+    setting.cardAt(key, cardNow);
+    box.min.x = Math.min(box.min.x, cardNow.x - pad);
+    box.max.x = Math.max(box.max.x, cardNow.x + pad);
+    box.min.y = Math.min(box.min.y, cardNow.y - pad * 0.7);
+    box.max.y = Math.max(box.max.y, cardNow.y + pad * 0.7);
+    box.min.z = Math.min(box.min.z, cardNow.z);
+    box.max.z = Math.max(box.max.z, cardNow.z);
+  }
   function frameKey() {
     if (s.quiz) return s.quiz.frame;
     if (s.step === 'one') return s.stage === 2 ? 'cards' : 'one';
     if (s.step === 'two') return s.stage === 2 ? 'close' : 'fold';
-    return 'plan';
+    return s.stage === 0 ? 'plan0' : s.stage === 1 ? 'plan1' : 'plan';
   }
   const frameId = () => frameKey();
   /** The pose for a frame; 'fold' follows the mirrors' angle between the flat view and the open one. */
@@ -268,49 +311,52 @@ export function createApp(root, options = {}) {
       f = f ?? FRAMES.open;
       az = f.az;
       el = f.el;
-      for (let i = 0; i < 3; i++) {
-        min[i] = f.min[i];
-        max[i] = f.max[i];
-      }
+      if (f.min)
+        for (let i = 0; i < 3; i++) {
+          min[i] = f.min[i];
+          max[i] = f.max[i];
+        }
     }
     lookFrom(az, el, camDir);
     FRAME.min.set(min[0], min[1], min[2]);
     FRAME.max.set(max[0], max[1], max[2]);
-    const close = key === 'cards' || key === 'close';
+    const close = key === 'cards' || key === 'close' || key === 'zoom';
     margin.top = close ? 44 : 36;
     margin.right = panelBeside() ? 34 : 8;
     margin.left = 8;
     margin.bottom = close ? 8 : 34;
-    return fitPose({ box: FRAME, dir: camDir, camera, width: stage.width, height: stage.height, margin });
-  }
-  /** Where the student may turn the view: the camera stays in front of both mirrors. */
-  function limits() {
-    const fly = camK < 1;
-    if (fly) {
-      controls.minAzimuthAngle = Number.NEGATIVE_INFINITY;
-      controls.maxAzimuthAngle = Number.POSITIVE_INFINITY;
-      controls.minPolarAngle = 0.01;
-      controls.maxPolarAngle = Math.PI / 2;
-      return;
+    if (key === 'close' || key === 'zoom') {
+      // tight round the cards: the real one and the corner one, or the marked image in the test
+      FRAME.makeEmpty();
+      if (key === 'close') {
+        around(FRAME, null, 0.21);
+        around(FRAME, 'ab', 0.21);
+      } else {
+        around(FRAME, s.quiz.key, 0.3);
+        FRAME.expandByPoint(setting.boyPoint(0, 1.56, 0, s.quiz.key, cardNow));
+        FRAME.expandByPoint(setting.boyPoint(-0.28, 1.0, 0, s.quiz.key, cardNow));
+      }
     }
-    const plan = inFist();
-    const wide = clamp(90 - (s.drag ? s.drag.from : shape()) / 2, 0, 45); // how far each mirror has swung in
-    const R = THREE.MathUtils.degToRad;
-    if (plan) {
-      // past ±180° the angle wraps: seen from there the limits are one side only
-      controls.minAzimuthAngle = R(PLAN_VIEW.az - 26);
-      controls.maxAzimuthAngle = R(PLAN_VIEW.az + 26);
-      controls.minPolarAngle = R(8);
-      controls.maxPolarAngle = R(52);
-    } else {
-      controls.minAzimuthAngle = R(-(80 - wide - 8));
-      controls.maxAzimuthAngle = R(80 - wide - 8);
-      controls.minPolarAngle = R(62);
-      controls.maxPolarAngle = R(88);
-    }
+    const plan = FRAMES[key]?.plan ? cornersOf(FRAMES[key].plan) : null;
+    lens.fov = FRAMES[key]?.fov ?? FOV;
+    const pose = fitPose({ box: FRAME, plan, dir: camDir, camera: lens, width: stage.width, height: stage.height, margin });
+    pose.fov = lens.fov;
+    return pose;
   }
+  const lens = { fov: FOV };
+  function setFov(fov) {
+    if (Math.abs(camera.fov - fov) < 1e-3) return;
+    camera.fov = fov;
+    camera.updateProjectionMatrix();
+  }
+  // the whole way round; the camera stays above the floor; the student's zoom is limited round the step's own distance
+  controls.minAzimuthAngle = Number.NEGATIVE_INFINITY;
+  controls.maxAzimuthAngle = Number.POSITIVE_INFINITY;
+  controls.minPolarAngle = THREE.MathUtils.degToRad(5);
+  controls.maxPolarAngle = THREE.MathUtils.degToRad(88);
   let camFrom = null;
   let camK = 1;
+  let flight = null;
   let shownFrame = '';
   const to = { az: 0, el: 0, r: 1 };
   const from = { az: 0, el: 0, r: 1 };
@@ -324,10 +370,13 @@ export function createApp(root, options = {}) {
     return out;
   };
   const tgtNow = new THREE.Vector3();
+  let framed = false; // the camera has had its first place
   function applyCamera() {
-    if (s.userMovedCamera) return;
+    if (s.userMovedCamera || stage.width < 2 || stage.height < 2) return;
     const pz = poseOf(frameKey());
-    limits();
+    framed = true;
+    controls.minDistance = 0;
+    controls.maxDistance = Number.POSITIVE_INFINITY;
     if (camK < 1 && camFrom) {
       // through the sphere round the target, never through the mirrors
       const k = ease.inOutCubic(camK);
@@ -339,21 +388,42 @@ export function createApp(root, options = {}) {
       const r = mix(from.r, to.r, k);
       camera.position.set(tgtNow.x + r * Math.sin(az) * Math.cos(el), tgtNow.y + r * Math.sin(el), tgtNow.z + r * Math.cos(az) * Math.cos(el));
       controls.target.copy(tgtNow);
+      setFov(mix(camFrom.fov, pz.fov, k));
     } else {
       camera.position.copy(pz.position);
       controls.target.copy(pz.target);
+      setFov(pz.fov);
     }
     controls.update();
   }
-  function flyCamera(duration = 0.9) {
+  /** The result stands a moment: taps wait, so that nothing runs ahead of the student. */
+  function hold(seconds = HOLD) {
+    s.holding = true;
+    tweener.animate({
+      key: 'hold',
+      duration: seconds,
+      ease: ease.linear,
+      onComplete: () => {
+        s.holding = false;
+        draw();
+        emitChange();
+      },
+    });
+  }
+  function flyCamera(duration = 1.6) {
     if (s.userMovedCamera) {
       s.userMovedCamera = false;
       s.view = 'front';
       syncUI();
     }
-    camFrom = { position: camera.position.clone(), target: controls.target.clone() };
+    // before the first frame there is no place to fly from
+    if (!framed) {
+      camK = 1;
+      return Promise.resolve(true);
+    }
+    camFrom = { position: camera.position.clone(), target: controls.target.clone(), fov: camera.fov };
     camK = 0;
-    return tweener.animate({
+    flight = tweener.animate({
       key: 'camera',
       duration,
       onUpdate: (k) => {
@@ -362,27 +432,29 @@ export function createApp(root, options = {}) {
       },
       onComplete: () => {
         camK = 1;
+        hold();
         stage.invalidate();
       },
     }).finished;
+    return flight;
   }
   /** After any change: when the state wants another frame, go there. */
-  function followFrame(instant, duration = 0.9) {
+  function followFrame(instant, duration = 1.6) {
     const key = frameId();
     if (key === shownFrame) return;
     const first = !shownFrame;
-    const bigTurn = (key === 'plan') !== (shownFrame === 'plan');
+    const bigTurn = key.startsWith('plan') !== shownFrame.startsWith('plan');
     shownFrame = key;
     if (first || instant) {
       tweener.cancel('camera');
       camK = 1;
-    } else flyCamera(bigTurn ? 1.5 : duration);
+    } else flyCamera(bigTurn ? 2.2 : duration);
   }
   function setView(view, { animate = true } = {}) {
     s.view = view === '3d' ? '3d' : 'front';
     s.userMovedCamera = false;
     syncUI();
-    if (animate) flyCamera(0.7);
+    if (animate) flyCamera(1.2);
     else camK = 1;
     stage.invalidate();
   }
@@ -391,6 +463,13 @@ export function createApp(root, options = {}) {
     s.userMovedCamera = true;
     tweener.cancel('camera');
     camK = 1;
+    const d = camera.position.distanceTo(controls.target);
+    controls.minDistance = d * 0.45;
+    controls.maxDistance = d * 1.7;
+    if (!s.orbited) {
+      s.orbited = true;
+      turnCue.classList.add('used');
+    }
     if (s.view !== '3d') {
       s.view = '3d';
       syncUI();
@@ -408,7 +487,9 @@ export function createApp(root, options = {}) {
   stage.onBeforeRender(() => {
     applyCamera();
     camera.updateMatrixWorld();
-    setting.setFloorFade(camera, inFist() ? 8 : 2.2);
+    // seen from high up there is no horizon: the floor runs on past the frame
+    const high = seg(camera.position.y / Math.max(1, camera.position.distanceTo(controls.target)), 0.35, 0.8);
+    setting.setFloorFade(camera, inFist() ? 8 : mix(2.2, 9, high));
     setting.updateClip(camera);
     labels();
   });
@@ -433,10 +514,11 @@ export function createApp(root, options = {}) {
   let landing = null;
   function stopMotion() {
     ++token;
-    for (const k of ['pose', 'reveal', 'flash']) tweener.cancel(k);
+    for (const k of ['pose', 'reveal', 'flash', 'hold']) tweener.cancel(k);
     landing?.();
     landing = null;
     s.busy = false;
+    s.holding = false;
     s.grow = 1;
     s.flash = 0;
     s.newest = '';
@@ -459,6 +541,7 @@ export function createApp(root, options = {}) {
         audio.success();
         s.flash = 1;
         fadeLit();
+        hold();
       }
       draw();
       emitChange();
@@ -508,6 +591,7 @@ export function createApp(root, options = {}) {
         s.newest = '';
         landing = null;
         audio.success();
+        hold();
         draw();
         emitChange();
         fadeLit();
@@ -524,23 +608,26 @@ export function createApp(root, options = {}) {
       // the mirrors open or close on the way
       const target = { alpha: s.alpha, plan: s.plan, arm: s.arm };
       Object.assign(s, before, { arm: target.arm });
-      demo(target, 1);
+      demo(target, 2);
       return;
     }
     draw({ instant: !animate });
     emitChange();
   }
   let lastAct = -1e9;
+  /** One tap, one idea: a tap while something plays, or right after one, is ignored. */
   function act() {
     if (s.locked) return lockedNudge();
     const now = performance.now();
-    if (now - lastAct < 400) return;
+    if (now - lastAct < 1000 || phase() === 'busy') return;
     lastAct = now;
     audio.unlock();
-    const ph = phase();
+    play(phase());
+  }
+  function play(ph) {
     if (ph === 'one0') {
       s.stage = 1;
-      return demo({ arm: 1 }, 1.2);
+      return demo({ arm: 1 }, 2);
     }
     if (ph === 'one1') {
       s.stage = 2;
@@ -549,7 +636,7 @@ export function createApp(root, options = {}) {
       return;
     }
     if (ph === 'one2') return go('two');
-    if (ph === 'two0') return demo({ alpha: ANGLE.right }, 2, () => (s.stage = 1));
+    if (ph === 'two0') return demo({ alpha: ANGLE.right }, 2.5, () => (s.stage = 1));
     if (ph === 'two1' || ph === 'two2') {
       s.stage += 1;
       s.flash = 1;
@@ -561,9 +648,44 @@ export function createApp(root, options = {}) {
     if (ph === 'two3') return go('top');
     if (ph === 'top0' || ph === 'top1' || ph === 'top2') {
       s.stage += 1;
-      return reveal(['b', 'a', 'ab'][s.stage - 1], s.stage === 3 ? 2.4 : 1.6);
+      return reveal(['b', 'a', 'ab'][s.stage - 1], 1.6);
     }
-    if (ph === 'top3') return quiz.start();
+    if (ph === 'top3') {
+      s.stage = 4;
+      return reveal('ray', RAY_PLAY.total);
+    }
+    if (ph === 'top4') return quiz.start();
+  }
+  /** Plays the last move again, the step's earlier moves staying as they are: the state one stage back, then the same tap. */
+  async function replay() {
+    if (s.locked) return lockedNudge();
+    if (phase() === 'busy' || s.stage === 0) return;
+    audio.unlock();
+    const step = s.step;
+    const n = s.stage;
+    const my = ++token;
+    const was = { arm: s.arm, alpha: s.alpha, plan: s.plan };
+    buildTo(step, n - 1);
+    const back = { arm: s.arm, alpha: s.alpha };
+    Object.assign(s, was, { stage: n, busy: true });
+    landing = () => buildTo(step, n);
+    draw();
+    if (back.arm !== s.arm || back.alpha !== s.alpha) {
+      await moveTo(back, 1.2);
+      if (my !== token) return;
+    }
+    s.stage = n - 1;
+    landing = null;
+    draw();
+    if (camK < 1) {
+      await flight;
+      if (my !== token) return;
+    }
+    tweener.cancel('hold');
+    s.holding = false;
+    s.busy = false;
+    lastAct = performance.now();
+    play(`${step}${n - 1}`);
   }
 
   // ── labels on the picture: pinned to what they name ────────────────────────────────────────────────────
@@ -572,6 +694,18 @@ export function createApp(root, options = {}) {
     const p = dia.handles.fold;
     return p ? [{ left: p.x - 22, top: p.y - 22, right: p.x + 22, bottom: p.y + 22 }] : [];
   };
+  /** The real card on the screen, before his hand goes up: the action's badge keeps off it. */
+  function cardBox() {
+    if (s.step !== 'one' || s.stage !== 0) return null;
+    setting.cardAt(null, pa);
+    const c = toScreen(pa.x, pa.y, pa.z);
+    const x = c.x;
+    const y = c.y;
+    const e = toScreen(pa.x + 0.22, pa.y + 0.14, pa.z);
+    const w = Math.abs(e.x - x) + 4;
+    const h = Math.abs(e.y - y) + 4;
+    return { left: x - w, top: y - h, right: x + w, bottom: y + h };
+  }
   /** Small boxes along the handle's range, in canvas pixels: labels keep off it. */
   function trackBoxes() {
     const out = [];
@@ -588,7 +722,7 @@ export function createApp(root, options = {}) {
   const anno = createAnnotations({
     stage,
     layer: ui.annoLayer,
-    avoid: [ui.corner, note, panelTab, handleBoxes, trackBoxes, () => action?.ringBox()],
+    avoid: [ui.corner, note, turnCue, panelTab, handleBoxes, trackBoxes, () => action?.ringBox()],
   });
   const shown = new Map();
   const used = new Map();
@@ -672,13 +806,12 @@ export function createApp(root, options = {}) {
     { dx: -36, dy: 22 },
     { dx: -44, dy: -8 },
   ];
-  const STACK_R = [
-    { dx: 16, dy: -26 },
-    { dx: 16, dy: -48 },
-    { dx: 30, dy: 26 },
-    { dx: 44, dy: -8 },
-    { dx: 0, dy: 40 },
-    { dx: -30, dy: 56 },
+  // down the image's own body: never over the boy in front or the corner image
+  const DOWN_BODY = [
+    { dx: 0, dy: 72 },
+    { dx: 0, dy: 98 },
+    { dx: 0, dy: 124 },
+    { dx: 0, dy: 50 },
   ];
   const DRAG_SPOTS = [
     { dx: 0, dy: 40 },
@@ -713,7 +846,7 @@ export function createApp(root, options = {}) {
     touched.clear();
     const settled = camK >= 1 && !s.busy && s.grow >= 1;
     const q = s.quiz;
-    if (inFist()) planLabels(settled);
+    if (inFist()) planLabels();
     else if (!q && settled) boyLabels();
     if (q && settled) for (const m of q.tags ?? []) label(m.id, m.text, at(m.x, m.y, m.z), m.color ?? INK, m.spots ?? ABOVE);
     for (const id of [...shown.keys()])
@@ -723,6 +856,8 @@ export function createApp(root, options = {}) {
       }
   }
   const pa = new THREE.Vector3();
+  /** An image is named in the guided views: from a view the student has turned, its point may lie outside the glass. */
+  const shows = (key) => !s.userMovedCamera && setting.seen(key);
   function boyLabels() {
     const hand = setting.cardTop;
     // the first time, the handle says what it is for
@@ -731,12 +866,15 @@ export function createApp(root, options = {}) {
       label('drag', t('l_drag'), at(h.x, h.y, h.z), INK, DRAG_SPOTS);
     }
     if (s.step === 'one') {
-      if (s.stage === 0) label('mirror', t('l_mirror'), at(0.62, 0.42, 0), INK, ON_SPOT);
+      if (s.stage === 0) {
+        label('mirror', t('l_mirror'), at(0.62, 0.42, 0), INK, ON_SPOT);
+        label('real0', t('l_left'), hand(null, pa), KEPT, ABOVE_L);
+      }
       if (s.stage >= 1) {
         const real = s.stage === 2 ? t('l_right_text') : t('l_left');
         const seen = s.stage === 2 ? t('l_wrong_text') : t('l_right');
         label(`real${s.stage}`, real, hand(null, pa), KEPT, ABOVE_L);
-        label(`i-a${s.stage}`, seen, hand('a', pa), SWAP, ABOVE_R);
+        if (shows('a') || shows('b')) label(`i-a${s.stage}`, seen, hand(shows('a') ? 'a' : 'b', pa), SWAP, ABOVE_R);
       }
       return;
     }
@@ -746,22 +884,23 @@ export function createApp(root, options = {}) {
       else label('hinge', t('l_hinge'), at(0, 0.92, 0), INK, BESIDE);
       return;
     }
-    label('deg', t('l_deg', { a: 90 }), at(0, 0.02, 0.5), INK, UNDER);
-    if (s.stage !== 2) label('real', t('l_left'), hand(null, pa), KEPT, STACK_R);
+    if (s.stage !== 2) label('deg', t('l_deg', { a: 90 }), at(0, 0.02, 0.5), INK, UNDER);
+    if (s.stage !== 2 && (setting.seen('a') || setting.seen('b'))) label('real', t('l_left'), hand(null, pa), KEPT, STACK_L);
     if (s.stage === 1) {
-      for (const key of ['a', 'b', 'ab']) label(`im-${key}`, t('l_image'), setting.boyPoint(0, 1.56, 0, key, pa), INK, ABOVE);
+      for (const key of ['a', 'b', 'ab']) if (shows(key)) label(`im-${key}`, t('l_image'), setting.boyPoint(0, 1.56, 0, key, pa), INK, ABOVE);
       return;
     }
     if (s.stage === 2) {
-      label('text-ab', t('l_right_text'), hand('ab', pa), KEPT, ABOVE_R);
+      if (shows('ab')) label('text-ab', t('l_right_text'), hand('ab', pa), KEPT, ABOVE_R);
       label('real-text', t('l_right_text'), hand(null, pa), KEPT, ABOVE_L);
       return;
     }
-    label('i-ab', t('l_hand_n', { h: t('l_left'), n: 2 }), hand('ab', pa), KEPT, STACK_L);
-    label('i-a', t('l_hand_n', { h: t('l_right'), n: 1 }), hand('a', pa), SWAP, STACK_R);
-    label('i-b', t('l_hand_n', { h: t('l_right'), n: 1 }), hand('b', pa), SWAP, STACK_L);
+    if (shows('ab')) label('i-ab', t('l_hand_n', { h: t('l_left'), n: 2 }), hand('ab', pa), KEPT, STACK_L);
+    // on the hand, not the card: the name is the hand's
+    if (shows('a')) label('i-a', t('l_hand_n', { h: t('l_right'), n: 1 }), setting.handAt('a', pa), SWAP, DOWN_BODY);
+    if (shows('b')) label('i-b', t('l_hand_n', { h: t('l_right'), n: 1 }), setting.handAt('b', pa), SWAP, DOWN_BODY);
   }
-  function planLabels(settled) {
+  function planLabels() {
     if (camK < 0.97) return;
     const w = PLAN.w + 0.1;
     const m = mirrors(ANGLE.right);
@@ -795,7 +934,7 @@ export function createApp(root, options = {}) {
       tab(`q-${im.id}`, pos[0], pos[1], highlight(im.id, text), h === 'left' ? KEPT : SWAP);
     }
     if (q) return;
-    if (dia.view.eye && settled) {
+    if (dia.view.eye) {
       const e = dia.view.eye;
       label('eye', t('l_eye'), at(e.x, e.y, e.z), SLATE, FLOOR_SPOTS, lineAvoid, true);
     }
@@ -803,6 +942,7 @@ export function createApp(root, options = {}) {
 
   // ── the panel ───────────────────────────────────────────────────────────────────────────────────────────
   const steady = { act: '' };
+  const replayBtn = ui.$('[data-act="replay"]');
   function outcome() {
     const a = Math.round(s.alpha);
     if (s.step === 'one') {
@@ -836,7 +976,8 @@ export function createApp(root, options = {}) {
     top0: ['act_q1', 1, ICONS.hand],
     top1: ['act_q2', 2, ICONS.hand],
     top2: ['act_q3', 3, ICONS.hand],
-    top3: ['act_test', '', ICONS.chevR],
+    top3: ['act_ray', 4, ICONS.hand],
+    top4: ['act_test', '', ICONS.chevR],
   };
   function panel() {
     if (s.quiz) return;
@@ -852,13 +993,15 @@ export function createApp(root, options = {}) {
       steady.act = key;
       action.set({ label: word, step, enabled, icon });
     }
-    note.hidden = !(s.step === 'top' && s.stage >= 3);
+    note.hidden = !(s.step === 'top' && s.stage >= 4);
+    replayBtn.hidden = s.stage === 0;
+    replayBtn.disabled = ph === 'busy';
   }
-  function draw({ instant = false, duration = 0.9 } = {}) {
+  function draw({ instant = false, duration = 1.6 } = {}) {
     applyWorld();
+    followFrame(instant, duration);
     panel();
     if (s.quiz) note.hidden = true;
-    followFrame(instant, duration);
     stage.invalidate();
   }
 
@@ -867,16 +1010,25 @@ export function createApp(root, options = {}) {
   function actionSpot() {
     if (s.locked || camK < 1) return null;
     const ph = phase();
-    if (ph === 'one0') return setting.handAt(null, ringPoint);
+    if (ph === 'one0') {
+      // on his hand, a little below the grip: the ring leaves the card in view
+      setting.handAt(null, ringPoint);
+      ringPoint.y -= 0.04;
+      return ringPoint;
+    }
     if (ph === 'one1') return setting.cardAt('a', ringPoint);
     if (ph === 'two0') {
       const h = handleAt(s.alpha);
       return ringPoint.set(h.x, h.y, h.z);
     }
     if (ph === 'two1') return setting.boyPoint(0, 1.2, 0, 'ab', ringPoint);
-    if (ph === 'two2') return setting.boyPoint(0, 1.2, 0, 'a', ringPoint);
+    if (ph === 'top3') {
+      const c = planPoint(FIST_AT.p, FIST_AT.q);
+      return ringPoint.set(c.x, 0.2, c.z);
+    }
+    // the mirror that makes the next image, while the view holds only the fist's side; then the last quarter
     if (ph === 'top0' || ph === 'top1' || ph === 'top2') {
-      const c = planPoint(ph === 'top1' ? FIST_AT.p : -FIST_AT.p, ph === 'top0' ? FIST_AT.q : ph === 'top1' ? -FIST_AT.q : -FIST_AT.q);
+      const c = ph === 'top0' ? planPoint(0, FIST_AT.q) : ph === 'top1' ? planPoint(FIST_AT.p, 0) : planPoint(-FIST_AT.p, -FIST_AT.q);
       return ringPoint.set(c.x, 0.2, c.z);
     }
     return null;
@@ -890,7 +1042,7 @@ export function createApp(root, options = {}) {
     label: 'act_raise',
     target: actionSpot,
     radius: 22,
-    avoid: [ui.corner, ui.hint, note, handleBoxes, () => anno.boxes()],
+    avoid: [ui.corner, ui.hint, note, turnCue, handleBoxes, cardBox, () => anno.boxes()],
     pulse: Boolean(o.coach),
     onAct: () => act(),
   });
@@ -967,7 +1119,7 @@ export function createApp(root, options = {}) {
     controls.enabled = !s.locked;
     action.show('drag');
     emit('dragend', { part: 'mirror' });
-    if (s.alpha !== g.from) flyCamera(0.7);
+    if (s.alpha !== g.from && !s.userMovedCamera) flyCamera(1.2);
     draw();
     emitChange();
   }
@@ -979,7 +1131,7 @@ export function createApp(root, options = {}) {
     tap = null;
     if (wasDrag || !q || q.id !== e.pointerId) return;
     if (Math.hypot(p.x - q.x, p.y - q.y) > 8 || performance.now() - q.at > 500) return;
-    if (s.locked || s.busy || s.grow < 1) return;
+    if (s.locked || phase() === 'busy') return;
     const ring = actionSpot();
     if (ring) {
       const c = toScreen(ring.x, ring.y, ring.z);
@@ -987,14 +1139,23 @@ export function createApp(root, options = {}) {
     }
   });
   ui.canvasHost.addEventListener('pointercancel', endDrag);
+  ui.canvasHost.addEventListener(
+    'wheel',
+    () => {
+      if (!s.locked && !s.userMovedCamera) turnedByHand();
+    },
+    { capture: true, passive: true },
+  );
 
   // ── the test ────────────────────────────────────────────────────────────────────────────────────────────
   function applyQuiz(q) {
     const v = dia.view;
     for (const m of q.spots ?? []) v.spots.push(m);
-    if (q.ray) drawRay(q.ray, 1, false, 'q');
-    if (q.ray) v.backs.length = 0; // the test asks where it seems to come from
-    if (q.ray) v.points.length = 0;
+    if (q.ray) {
+      drawRay(q.ray);
+      v.backs.length = 0; // the test asks where it seems to come from
+      v.points.length = 0;
+    }
   }
   function quizScene(q) {
     stopMotion();
@@ -1012,7 +1173,7 @@ export function createApp(root, options = {}) {
   const HANDS = ['c_lk', 'c_lu', 'c_rk', 'c_ru'];
   /** A mark on the boy's image, at his head. */
   const tagOn = (key, text) => {
-    const p = setting.boyPoint(0, 1.7, 0, key, new THREE.Vector3());
+    const p = setting.boyPoint(0, 1.54, 0, key, new THREE.Vector3());
     return { id: 'qt', text: `<b>${text}</b>`, x: p.x, y: p.y, z: p.z, spots: ABOVE };
   };
   function prepare(kind) {
@@ -1048,16 +1209,17 @@ export function createApp(root, options = {}) {
       setting.setAngle(ANGLE.right);
       const key = pick(['a', 'b', 'ab', 'ab']);
       const n = key.length;
-      quizScene({ kind, world: 'boy', alpha: ANGLE.right, frame: 'open', tags: [tagOn(key, mark)] });
+      quizScene({ kind, key, world: 'boy', alpha: ANGLE.right, frame: 'zoom', tags: [tagOn(key, mark)] });
       const answer = n === 2 ? 0 : 3;
       const wrong = [0, 1, 2, 3].filter((a) => a !== answer);
       const why = t(n === 2 ? 'n_hand_corner' : 'n_hand_side');
+      const other = t(n === 2 ? 'n_hand_one' : 'n_hand_two');
       return {
         text: t('q_hand', { x: mark }),
         answer,
         wrong,
         label: (a) => t(HANDS[a]),
-        notes: notesOf(wrong.map((a) => [a, a === 1 || a === 2 ? t('n_hand_half') : why])),
+        notes: notesOf(wrong.map((a) => [a, a === 1 || a === 2 ? t('n_hand_half') : other])),
         reveal: t('a_hand', { a: t(HANDS[answer]), why }),
       };
     }
@@ -1133,7 +1295,7 @@ export function createApp(root, options = {}) {
         clearLabels();
         syncUI();
         shownFrame = frameId();
-        flyCamera(0.6);
+        flyCamera(1.2);
         draw();
       },
       async prepare(i, alive, say) {
@@ -1141,9 +1303,7 @@ export function createApp(root, options = {}) {
         qCurrent = q;
         say(' ');
         ui.$('.pvc-q-text').innerHTML = q.text;
-        const done = await flyCamera(
-          i === 0 || s.quiz.world !== (i ? (ORDER[i - 1] === 'place' || ORDER[i - 1] === 'ray' ? 'fist' : 'boy') : 'boy') ? 1.2 : 0.5,
-        );
+        const done = await flyCamera(1.2);
         if (!alive()) return null;
         if (!done) camK = 1;
         const out = [q.answer];
@@ -1164,6 +1324,7 @@ export function createApp(root, options = {}) {
     const front = ui.$('[data-view="front"]');
     if (front) front.hidden = s.view !== '3d';
     controls.enableRotate = !s.locked;
+    controls.enableZoom = !s.locked;
     root.dataset.mode = s.mode === 'quiz' ? 'quiz' : 'explore';
     for (const b of ui.$$('[data-mode]')) {
       const on = b.dataset.mode === root.dataset.mode;
@@ -1193,6 +1354,7 @@ export function createApp(root, options = {}) {
     draw();
     emitChange();
   }
+  ui.$('[data-view="front"]')?.insertAdjacentHTML('beforeend', `<span>${t('view_front_short')}</span>`);
   const fullscreenBtn = ui.$('[data-act="fullscreen"]');
   if (fullscreenBtn && !document.fullscreenEnabled) fullscreenBtn.hidden = true;
   let lastTap = { what: '', at: 0 };
@@ -1208,11 +1370,12 @@ export function createApp(root, options = {}) {
     if (b.dataset.mode === 'quiz' && s.mode !== 'quiz') quiz.start();
     if (b.dataset.mode === 'explore') quiz.stop();
     if (b.dataset.q != null) quiz.choose(Number(b.dataset.q));
-    if (b.dataset.example) go(b.dataset.example);
+    if (b.dataset.example && phase() !== 'busy') go(b.dataset.example);
     const a = b.dataset.act;
     if (a === 'q-next') quiz.next();
     if (a === 'q-again') quiz.start();
     if (a === 'home') home();
+    if (a === 'replay') replay();
     if (a === 'fullscreen') {
       if (document.fullscreenElement) document.exitFullscreen?.();
       else root.requestFullscreen?.().catch(() => {});
@@ -1255,7 +1418,7 @@ export function createApp(root, options = {}) {
     });
   }
   function rayNow() {
-    if (!inFist() || s.quiz || s.stage < 3) return null;
+    if (!inFist() || s.quiz || s.stage < 4) return null;
     const r = planRay(['b', 'a']);
     const six = (a) => +a.toFixed(6);
     return {
@@ -1277,6 +1440,7 @@ export function createApp(root, options = {}) {
       world: inFist() ? 'fist' : 'boy',
       images: imagesNow(),
       handle: { shown: canFold(), used: s.dragged },
+      orbited: s.orbited,
       ray: rayNow(),
       frame: shownFrame,
       question: s.quiz && qCurrent ? { kind: s.quiz.kind, answer: qCurrent.label(qCurrent.answer) } : null,
@@ -1332,6 +1496,19 @@ export function createApp(root, options = {}) {
         if (a === ANGLE.right && s.stage === 0) s.stage = 1;
         if (a !== ANGLE.right && s.stage > 0) s.stage = 0;
       }
+      if (p.turn) {
+        // a view from anywhere round the figure, as a student's own drag would leave it
+        turnedByHand();
+        const a = THREE.MathUtils.degToRad(p.turn.az ?? 0);
+        const e = THREE.MathUtils.degToRad(p.turn.el ?? 12);
+        const r = camera.position.distanceTo(controls.target);
+        camera.position.set(
+          controls.target.x + r * Math.sin(a) * Math.cos(e),
+          controls.target.y + r * Math.sin(e),
+          controls.target.z + r * Math.cos(a) * Math.cos(e),
+        );
+        controls.update();
+      }
       if (!animate) camK = 1;
       draw({ instant: !animate });
       emitChange();
@@ -1342,6 +1519,8 @@ export function createApp(root, options = {}) {
       stopMotion();
       buildTo('one', 0);
       s.dragged = false;
+      s.orbited = false;
+      turnCue.classList.remove('used');
       clearLabels();
       setView('front', { animate: false });
       camK = 1;
