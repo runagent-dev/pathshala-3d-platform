@@ -34,7 +34,7 @@ export function createDiagram({ stage, host }) {
     dpr = Math.min(3, Math.max(1, window.devicePixelRatio || 1));
     canvas.width = Math.round(w * dpr);
     canvas.height = Math.round(h * dpr);
-    unit = Math.max(1, Math.min(1.2, Math.min(w, h) / 420));
+    unit = Math.max(1, Math.min(1.12, Math.min(w, h) / 460));
   }
   size();
 
@@ -65,6 +65,7 @@ export function createDiagram({ stage, host }) {
   const NO_DASH = [];
   const DASH_N = [8, 6];
   const DASH_R = [9, 6];
+  const DOTS = [2, 5];
   function stroke(color, width, halo, haloWidth, dash = NO_DASH, alpha = 1) {
     ctx.globalAlpha = alpha;
     ctx.setLineDash(dash);
@@ -131,25 +132,28 @@ export function createDiagram({ stage, host }) {
     add(ax, ay);
     add(bx, by);
     if (lit) glow();
-    stroke(C.ray, 2.3, C.rayDark, 3.5);
+    stroke(C.ray, 2.2, C.rayDark, 3.2);
     if (plain) return;
     P(ax + (bx - ax) * t, ay + (by - ay) * t);
     const mx = sx;
     const my = sy;
     P(ax + (bx - ax) * (t + 0.04), ay + (by - ay) * (t + 0.04));
-    chevron(mx, my, sx - mx, sy - my, 14, C.ray, C.rayDark);
+    chevron(mx, my, sx - mx, sy - my, 11, C.ray, null);
   }
   /** The ray a → m → e, grown to k of the way. */
   function bent(r, e, k, lit) {
     const a = r.src;
+    // the way in and the way out carry their arrowheads apart, so that two rays close together stay clean
+    const tin = 0.74;
+    const tout = 0.62;
     if (k <= 0.5) {
       const q = k * 2;
-      segment(a.x, a.y, a.x + (0 - a.x) * q, a.y + (r.m - a.y) * q, 0.6 / Math.max(0.6, q), false, lit);
+      segment(a.x, a.y, a.x + (0 - a.x) * q, a.y + (r.m - a.y) * q, tin / Math.max(tin, q), false, lit);
       return;
     }
     const q = (k - 0.5) * 2;
-    segment(a.x, a.y, 0, r.m, 0.6, false, lit);
-    segment(0, r.m, e.x * q, r.m + (e.y - r.m) * q, 0.55 / Math.max(0.55, q), false, lit);
+    segment(a.x, a.y, 0, r.m, tin, false, lit);
+    segment(0, r.m, e.x * q, r.m + (e.y - r.m) * q, tout / Math.max(tout, q), false, lit);
   }
   function dashedTo(r, k, lit) {
     const i = r.image;
@@ -157,7 +161,7 @@ export function createDiagram({ stage, host }) {
     add(0, r.m);
     add(i.x * k, r.m + (i.y - r.m) * k);
     if (lit) glow();
-    stroke(C.ray, 2.1, C.rayDark, 3.3, DASH_R);
+    stroke(C.ray, 2, C.rayDark, 3, DASH_R);
   }
   /** A thin arc at the mirror point (0, m), from the normal (angle 0, along −x) to the angle a, up positive. */
   function arc(m, r, a0, a1, color) {
@@ -236,10 +240,21 @@ export function createDiagram({ stage, host }) {
       stroke(C.bar, 2.4, '#ffffff', 4);
     }
   }
-  function handle(x, y, z, vertical, offset = 0) {
+  /** A handle at the side of a point on the screen, tied to it by a short line. */
+  function tab(px, py, dx, dy) {
+    ctx.beginPath();
+    ctx.moveTo(px, py);
+    ctx.lineTo(px + dx, py + dy);
+    ctx.strokeStyle = C.handle;
+    ctx.lineWidth = 2 * unit;
+    ctx.stroke();
+    return knob(px + dx, py + dy, true);
+  }
+  function handle(x, y, z, vertical) {
     P(x, y, z);
-    const cx = sx;
-    const cy = sy + offset;
+    return knob(sx, sy, vertical);
+  }
+  function knob(cx, cy, vertical) {
     const r = 13 * unit;
     ctx.beginPath();
     ctx.arc(cx, cy, r, 0, Math.PI * 2);
@@ -265,12 +280,13 @@ export function createDiagram({ stage, host }) {
     ctx.stroke();
     return { x: cx, y: cy };
   }
-  /** The card of the small picture round the mirror's hole, with the mirror's frame and the place of his eye's line. */
+  /** The card of the small picture round the mirror's hole: where there is no mirror, a dashed outline and the words. */
   function card(view) {
-    const { rect, top, bottom } = view;
+    const { rect, top, bottom, low, high, absent, from } = view;
     const py = rect.h / (VIEW.y1 - VIEW.y0);
     const pz = rect.w / (2 * VIEW.z);
-    const my = rect.y + (VIEW.y1 - top) * py;
+    const yOf = (y) => rect.y + (VIEW.y1 - y) * py;
+    const my = yOf(top);
     const mh = (top - bottom) * py;
     const mw = 2 * MIRROR.halfW * pz;
     const mx = rect.x + (rect.w - mw) / 2;
@@ -278,6 +294,19 @@ export function createDiagram({ stage, host }) {
     const y0 = rect.y - 21;
     const cw = rect.w + 6;
     const ch = rect.h + 24;
+    // a thin line from the mirror to the card: this is what that mirror shows
+    P(0, from, MIRROR.halfW);
+    const fx = sx;
+    const fy = sy;
+    const inside = fx > x0 + cw ? x0 + cw : fx < x0 ? x0 : fx;
+    const across = fy < y0 ? y0 : fy > y0 + ch ? y0 + ch : fy;
+    ctx.beginPath();
+    ctx.moveTo(fx, fy);
+    ctx.lineTo(inside, fx > x0 + cw || fx < x0 ? Math.min(y0 + ch - 12, Math.max(y0 + 12, fy)) : across);
+    ctx.strokeStyle = 'rgba(51,80,107,0.6)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
     ctx.beginPath();
     ctx.roundRect(x0, y0, cw, ch, 6);
     ctx.rect(mx, my, mw, mh);
@@ -288,15 +317,31 @@ export function createDiagram({ stage, host }) {
     ctx.strokeStyle = 'rgba(51,80,107,0.45)';
     ctx.lineWidth = 1;
     ctx.stroke();
+    ctx.setLineDash([4, 4]);
+    ctx.strokeStyle = 'rgba(51,80,107,0.5)';
+    ctx.strokeRect(mx - 1.5, yOf(high), mw + 3, (high - low) * py);
+    ctx.setLineDash(NO_DASH);
     ctx.strokeStyle = C.frame;
     ctx.lineWidth = 3;
     ctx.strokeRect(mx - 1.5, my - 1.5, mw + 3, mh + 3);
+    if (absent) {
+      ctx.fillStyle = 'rgba(51,80,107,0.8)';
+      ctx.font = `600 ${Math.max(10.5, Math.min(13, mw / 6))}px "Noto Sans Bengali", sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const gapT = my - 3 - yOf(high);
+      const gapB = yOf(low) - (my + mh + 3);
+      const cx = mx + mw / 2;
+      if (gapT >= 18) ctx.fillText(absent, cx, yOf(high) + gapT / 2);
+      if (gapB >= 18) ctx.fillText(absent, cx, my + mh + 3 + gapB / 2);
+    }
   }
 
   // ── what is shown: a plain description the figure fills in ──────────────────────────────────────────────────
   const v = {
     bars: null, // { d, k, z, half }: the two distance bars on the floor, grown to k
     marks: [], // upright measures: { x, y0, y1, z, color }
+    plumb: [], // dotted lines from a point down to its bar: { x, y, z }
     flash: 0, // the highlight on the newest thing, 1 … 0
     lit: '', // what it is on
     rays: null, // { head, feet, eye }
@@ -325,6 +370,12 @@ export function createDiagram({ stage, host }) {
       if (k0 > 0) floorBar(-d, -d * (1 - k0), z, half, v.lit === 'bars');
       if (k1 > 0) floorBar(0, d * k1, z, half, v.lit === 'bars');
     }
+    for (const q of v.plumb) {
+      count = 0;
+      add(q.x, q.y, 0);
+      add(q.x, 0.004, q.z);
+      stroke(C.bar, 1.3, 'rgba(255,255,255,0.75)', 2.6, DOTS, 0.8);
+    }
     for (const m of v.marks) dimension(m.x, m.y0, m.y1, m.z, m.color);
     const r = v.rays;
     if (r) {
@@ -332,7 +383,7 @@ export function createDiagram({ stage, host }) {
         for (const q of [v.head > 0 ? r.head : null, v.feet > 0 ? r.feet : null]) {
           if (!q) continue;
           count = 0;
-          add(-v.normalLen * v.normals, q.m);
+          add(-v.normalLen * v.normals * (q === r.head ? 0.62 : 1), q.m);
           add(0, q.m);
           if (v.lit === 'normal') glow(9);
           stroke(C.normal, 1.8, 'rgba(255,255,255,0.8)', 3.4, DASH_N);
@@ -349,9 +400,19 @@ export function createDiagram({ stage, host }) {
     if (v.card) card(v.card);
     for (const s of v.segs) segment(s[0], s[1], s[2], s[3], 0.5, true);
     for (const p of v.points) dot(p[0], p[1], p[2], p[3], '#ffffff');
-    spot.boy = v.drag.boy ? handle(v.drag.boy.x, 0, 0.2, false, 0) : null;
-    spot.top = v.drag.top ? handle(0, v.drag.top.y, 0.25, true, -17 * unit) : null;
-    spot.bottom = v.drag.bottom ? handle(0, v.drag.bottom.y, 0.25, true, 17 * unit) : null;
+    spot.boy = v.drag.boy ? handle(v.drag.boy.x, 0, 0.2, false) : null;
+    if (v.drag.top) {
+      // beside the mirror's corners, so that the points where the rays land stay in view
+      P(0, v.drag.top.y, MIRROR.halfW);
+      const tx = sx;
+      const ty = sy;
+      P(0, v.drag.bottom.y, MIRROR.halfW);
+      const bx = sx;
+      const by = sy;
+      const inset = Math.min(9, (by - ty - 30 * unit) / 2);
+      spot.top = tab(tx, ty, 29 * unit, inset);
+      spot.bottom = tab(bx, by, 29 * unit, -inset);
+    } else spot.top = spot.bottom = null;
   }
   stage.onResize(size);
   stage.onAfterRender(paint);
@@ -363,6 +424,7 @@ export function createDiagram({ stage, host }) {
     clear() {
       Object.assign(v, { bars: null, rays: null, head: 0, feet: 0, ext: 0, normals: 0, card: null, flash: 0, lit: '' });
       v.marks.length = 0;
+      v.plumb.length = 0;
       v.arcs.length = 0;
       v.points.length = 0;
       v.segs.length = 0;

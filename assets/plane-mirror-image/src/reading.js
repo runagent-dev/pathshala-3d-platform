@@ -17,7 +17,7 @@ export const BOY = {
   g: 0.05, // how far the eye and the toe are ahead of X, m: the top of the head is not quite over the eye
 };
 export const NORMAL = { x: -1, y: 0 }; // the mirror's normal, toward the boy
-export const DIST = { min: 0.6, max: 1.3, step: 0.05, far: 10, start: 1 };
+export const DIST = { min: 0.5, max: 2, frame: 1.3, step: 0.05, far: 10, start: 1 };
 /** How far the mirror's edges can go, m. */
 export const EDGE = { low: 0.45, high: 1.6, gap: 0.2, step: 0.01 };
 export const FULL = { top: 1.52, bottom: 0.7 }; // the mirror of the first two steps: X's perpendicular lands on it
@@ -82,6 +82,16 @@ export function neededCm(d, H = BOY.H) {
   const bottom = Math.floor(n.bottom * 100 + 1e-9) / 100;
   return { top, bottom, length: round(top - bottom) };
 }
+
+/** Whether an edge stands where it must, within a centimetre: 'low' or 'high' when it is past that, doing no work. */
+export function edgeAt(which, y, d) {
+  const n = neededCm(d);
+  const at = which === 'top' ? n.top : n.bottom;
+  if (Math.abs(y - at) <= 0.0101) return 'exact';
+  return y > at ? 'high' : 'low';
+}
+/** Whether this mirror is just the length needed. */
+export const justEnough = (top, bottom, d) => Math.abs(top - bottom - neededCm(d).length) <= 0.005;
 
 /** Who he sees: head and feet, for a mirror between these heights. */
 export function sees(d, top, bottom, H = BOY.H) {

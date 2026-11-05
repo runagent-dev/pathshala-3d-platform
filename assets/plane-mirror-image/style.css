@@ -42,6 +42,7 @@ body.bg-transparent { background: transparent; }
 /* the caption of the small picture of what he sees */
 .pm-cap { position: absolute; z-index: 2; color: #33506b; font-size: 11.5px; font-weight: 600; line-height: 18px; text-align: center; white-space: nowrap; pointer-events: none; }
 .pm-cap[hidden] { display: none; }
+.pm-same { font-size: 11px; line-height: 14px; white-space: normal; }
 
 /* the note in a corner: what is drawn, not seen */
 .pm-note { position: absolute; left: 8px; bottom: 5px; z-index: 2; padding: 1px 6px; border-radius: 4px; background: rgba(255, 255, 255, 0.86); color: var(--ink-2); font-size: 11.5px; line-height: 1.4; pointer-events: none; white-space: nowrap; }

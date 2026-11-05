@@ -28,7 +28,7 @@ test('plane-mirror-image: the three steps', async ({ page }) => {
   expect(st.stage).toBe(3);
   expect(st.d).not.toBe(1);
   expect(st.xp).toBe(st.xpImage);
-  for (const d of [0.6, 0.85, 1.3]) {
+  for (const d of [0.5, 0.85, 2]) {
     st = await fig.call('set', { d, animate: false });
     expect(st).toMatchObject({ xp: d, xpImage: d });
   }
@@ -49,7 +49,7 @@ test('plane-mirror-image: the three steps', async ({ page }) => {
   st = await fig.call('get');
   expect(st.frame).toBe('all');
   await expect(fig.frame.locator('.pvc-rule')).toContainText('অবাস্তব প্রতিবিম্ব');
-  for (const d of [0.6, 1, 1.3]) {
+  for (const d of [0.5, 1, 2]) {
     st = await fig.call('set', { d, animate: false });
     expect(st.head.thetaR).toBeCloseTo(st.head.thetaI, 6);
     expect(st.feet.thetaR).toBeCloseTo(st.feet.thetaI, 6);
@@ -81,6 +81,28 @@ test('plane-mirror-image: the three steps', async ({ page }) => {
   st = await fig.call('set', { d: 1, bottom: 0.9, animate: false });
   expect(st).toMatchObject({ seesFeet: false, seesHead: true });
   await expect(fig.frame.locator('.pvc-outcome')).toContainText('পা দেখা যাচ্ছে না');
+
+  // never "half" or "at half the eye's height" when it is not so
+  st = await fig.call('set', { d: 1, top: 1.45, bottom: 0.5, animate: false });
+  await fig.advance(1500);
+  await expect(fig.frame.locator('.pvc-rule')).toContainText('দরকারের চেয়ে বড়');
+  await expect(fig.frame.locator('.pvc-anno', { hasText: '০.৯৫ m' })).not.toContainText('অর্ধেক');
+  await fig.call('set', { top: 1.2, bottom: 0.45, animate: false });
+  await fig.advance(600);
+  await expect(fig.frame.locator('.pvc-rule')).toContainText('দরকারের চেয়ে নিচে');
+  await fig.call('set', { top: 1.6, bottom: 0.9, animate: false });
+  await fig.advance(600);
+  await expect(fig.frame.locator('.pvc-rule')).toContainText('দরকারের চেয়ে উপরে');
+
+  // the test started in the middle of a demonstration keeps what the demonstration was going to leave
+  await fig.call('set', { top: 1.3, bottom: 0.92, animate: false });
+  await fig.frame.locator('.pvc-act').first().click();
+  await fig.advance(300);
+  await fig.call('practice');
+  await fig.advance(800);
+  await fig.frame.locator('[data-mode="explore"]').click();
+  await fig.advance(800);
+  expect((await fig.call('get')).bottom).toBe(0.7);
 
   await fig.call('reset');
   expect(await fig.call('get')).toMatchObject({ step: 'distance', stage: 0, d: 1 });

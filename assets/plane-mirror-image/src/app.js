@@ -17,7 +17,25 @@ import { createTweener, ease } from '@shared/tween.js';
 import { fitPose } from './camera.js';
 import { C, createDiagram } from './diagram.js';
 import { createI18n } from './i18n.js';
-import { BOY, DIST, EDGE, FULL, imageOf, needed, neededCm, points, rays, round, SHORT, sees, shuffle, snapDistance, snapEdge } from './reading.js';
+import {
+  BOY,
+  DIST,
+  EDGE,
+  edgeAt,
+  FULL,
+  imageOf,
+  justEnough,
+  needed,
+  neededCm,
+  points,
+  rays,
+  round,
+  SHORT,
+  sees,
+  shuffle,
+  snapDistance,
+  snapEdge,
+} from './reading.js';
 import { createSetting, VIEW } from './setting.js';
 
 export const DEFAULTS = {
@@ -81,6 +99,11 @@ export function createApp(root, options = {}) {
   cap.textContent = t('cap_view');
   cap.hidden = true;
   ui.stage.appendChild(cap);
+  const same = document.createElement('div');
+  same.className = 'pm-cap pm-same';
+  same.textContent = t('cap_same');
+  same.hidden = true;
+  ui.stage.appendChild(same);
 
   // ── 3D ──────────────────────────────────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 20, near: 0.5, far: 400, environment: 'studio-light', environmentIntensity: 0.32 });
@@ -165,29 +188,42 @@ export function createApp(root, options = {}) {
   let trace = rays(s.d, s.top, s.bottom);
   /** The small picture, canvas px: beside the scene on a wide view, over it on a tall one. */
   const card = { x: 0, y: 0, w: 0, h: 0, wide: true };
+  /** Beside the panel its tab stands on the view's right edge. */
+  const panelBeside = () => root.clientWidth >= root.clientHeight && root.clientWidth >= 600;
   function placeCard() {
     const W = stage.width;
     const H = stage.height;
     card.wide = W / H >= 1.2;
     const ratio = (2 * VIEW.z) / (VIEW.y1 - VIEW.y0);
     if (card.wide) {
-      card.h = Math.round(clamp(H - 124, 96, 300));
+      card.y = 68;
+      card.h = Math.round(clamp(H - 76, 96, 280));
       card.w = Math.round(card.h * ratio);
-      // beside the panel its tab stands on the view's right edge
-      const beside = root.clientWidth >= root.clientHeight && root.clientWidth >= 600;
-      card.x = W - card.w - (beside ? 36 : 12);
-      card.y = Math.round(Math.max(76, (H - card.h) / 2 + 16));
+      card.x = W - card.w - (panelBeside() ? 36 : 10);
     } else {
-      card.h = Math.round(clamp(H * 0.3, 96, 200));
+      card.y = 28;
+      card.h = Math.round(clamp(H * 0.44, 96, 340));
       card.w = Math.round(card.h * ratio);
       card.x = 11;
-      card.y = 28;
     }
     cap.style.left = `${card.x - 3}px`;
     cap.style.top = `${card.y - 20}px`;
     cap.style.width = `${card.w + 6}px`;
+    same.style.left = `${card.x - 3}px`;
+    same.style.width = `${card.w + 6}px`;
+    same.style.top = `${card.y + card.h - 44}px`;
   }
   const BAR = { z: 0.38, half: 0.05 };
+  /** What the small picture's card draws. */
+  const cardView = () => ({
+    rect: card,
+    top: s.top,
+    bottom: s.bottom,
+    low: EDGE.low,
+    high: EDGE.high,
+    absent: s.d > 2.1 ? '' : t('l_absent'),
+    from: (s.top + s.bottom) / 2,
+  });
   function applyWorld() {
     setting.setBoy(s.d, s.H);
     setting.setMirror(s.top, s.bottom);
@@ -211,6 +247,7 @@ export function createApp(root, options = {}) {
       dots(x);
       if (s.imageK >= 1) dots(imageOf(x));
       if (s.barK > 0) v.bars = { d: -x.x, k: s.barK, ...BAR };
+      if (s.barK >= 1) v.plumb.push({ x: x.x, y: x.y, z: BAR.z }, { x: -x.x, y: x.y, z: BAR.z });
       if (s.stage === 4) {
         const k = s.lit === 'heights' ? s.grow : 1;
         v.marks.push({ x: x.x - 0.27, y0: 0, y1: s.H * k, z: 0, color: INK }, { x: -x.x + 0.27, y0: 0, y1: s.H * k, z: 0, color: INK });
@@ -250,12 +287,12 @@ export function createApp(root, options = {}) {
     if (nearby) v.points.push([trace.eye.x, trace.eye.y, 2.6, '#ffffff']);
     if (s.step === 'rays' && s.ray >= 4 && !s.busy && s.grow >= 1) v.drag.boy = { x: x.x + 0.02 };
     if (s.step === 'length') {
-      v.card = { rect: card, top: s.top, bottom: s.bottom };
+      v.card = cardView();
       if (!s.busy && !s.far) {
         v.drag.top = { y: s.top };
         v.drag.bottom = { y: s.bottom };
       }
-      if (s.d > 1.6) v.bars = { d: s.d, k: 0.5, ...BAR };
+      if (s.d > 2.1) v.bars = { d: s.d, k: 0.5, ...BAR };
       if (full) {
         v.marks.push({ x: x.x - 0.27, y0: 0, y1: s.H, z: 0, color: INK }, { x: 0, y0: s.bottom, y1: s.top, z: 0.36, color: C.bar });
       }
@@ -269,15 +306,15 @@ export function createApp(root, options = {}) {
     all: { az: -23, el: 12 },
     edges: { az: -22, el: 10 },
     half: { az: -24, el: 12 },
-    far: { az: -13, el: 7, bars: true },
+    far: { az: -50, el: 8, bars: true },
   };
   /** The frame the state wants. */
   function frameKey() {
     const q = s.quiz?.kind;
-    if (q) return { gap: 'whole', real: 'all', fix: 'edges', edge: 'pair', length: 'pair' }[q];
+    if (q) return { gap: 'whole', real: 'all', fix: 'edges', away: 'pair', length: 'pair' }[q];
     if (s.step === 'distance') return 'whole';
     if (s.step === 'rays') return s.ray >= 4 ? 'all' : 'pair';
-    if (s.d > 1.6) return 'far';
+    if (s.d > 2.1) return 'far';
     return allSeen() ? 'half' : 'edges';
   }
   let camFrom = null;
@@ -292,7 +329,7 @@ export function createApp(root, options = {}) {
     const a = THREE.MathUtils.degToRad(f.az);
     const e = THREE.MathUtils.degToRad(f.el);
     camDir.set(Math.sin(a) * Math.cos(e), Math.sin(e), Math.cos(a) * Math.cos(e));
-    const reach = key === 'half' ? Math.max(1, s.d) : Math.max(DIST.max, s.d);
+    const reach = key === 'half' ? Math.max(1, s.d) : Math.max(DIST.frame, s.d);
     const tight = key === 'pair' || key === 'edges' || key === 'far';
     const left = tight ? s.d : reach;
     const right = tight ? 0 : reach;
@@ -300,12 +337,12 @@ export function createApp(root, options = {}) {
     FRAME.min.set(-left - pad, -0.02, -0.2);
     FRAME.max.set(right + (key === 'half' ? 0.34 : pad), Math.max(1.62, s.H + 0.12), f.bars ? 0.5 : 0.3);
     margin.top = 36;
-    margin.right = 8;
+    margin.right = panelBeside() ? 34 : 8;
     margin.left = key === 'half' || s.quiz?.kind === 'length' ? 56 : 8; // the height's label stands beside his measure
     margin.bottom = f.bars ? 40 : key === 'pair' || key === 'edges' ? 28 : 36;
     if (showsCard()) {
       if (card.wide) margin.right = stage.width - card.x + 12;
-      else margin.top = card.y + card.h + 10;
+      else margin.top = card.y + card.h + 42;
     }
     return fitPose({ box: FRAME, dir: camDir, camera, width: stage.width, height: stage.height, margin });
   }
@@ -385,6 +422,7 @@ export function createApp(root, options = {}) {
   stage.onBeforeRender(() => {
     applyCamera();
     camera.updateMatrixWorld();
+    setting.setFloorFade(camera, FRAME.min.x, FRAME.max.x);
     labels();
   });
   stage.onAfterRender(() => {
@@ -412,9 +450,13 @@ export function createApp(root, options = {}) {
       },
     }).finished;
   }
+  /** What a move under way will leave behind: a stop lands on it, never half way. */
+  let landing = null;
   function stopMotion() {
     ++token;
     for (const k of ['pose', 'reveal', 'flash']) tweener.cancel(k);
+    landing?.();
+    landing = null;
     s.busy = false;
     s.grow = 1;
     s.flash = 0;
@@ -436,9 +478,11 @@ export function createApp(root, options = {}) {
     if (animate) {
       const my = ++token;
       s.busy = true;
+      landing = () => Object.assign(s, { d, top: edges.top, bottom: edges.bottom });
       moveTo({ d, top: edges.top, bottom: edges.bottom }, 0.8).then((ok) => {
         if (my !== token) return;
         s.busy = false;
+        landing = null;
         if (ok) Object.assign(s, { d, top: edges.top, bottom: edges.bottom });
         draw();
         emitChange();
@@ -451,11 +495,19 @@ export function createApp(root, options = {}) {
   function demo(target, duration, then) {
     const my = ++token;
     s.busy = true;
+    landing = () => {
+      Object.assign(s, target);
+      then?.();
+    };
     draw();
     moveTo(target, duration).then((ok) => {
       if (my !== token) return;
       s.busy = false;
-      if (ok) then?.();
+      landing = null;
+      if (ok) {
+        then?.();
+        audio.success();
+      }
       draw();
       emitChange();
     });
@@ -484,6 +536,7 @@ export function createApp(root, options = {}) {
     s.flash = 1;
     s.grow = 0;
     set(0);
+    landing = () => set(1);
     audio.tick();
     draw();
     tweener
@@ -501,6 +554,7 @@ export function createApp(root, options = {}) {
       .finished.then((ok) => {
         if (!ok || my !== token) return;
         s.grow = 1;
+        landing = null;
         set(1);
         audio.success();
         draw();
@@ -529,9 +583,8 @@ export function createApp(root, options = {}) {
       });
     }
     if (ph === 'd2') {
-      return demo({ d: s.d >= 1.1 ? 0.7 : DIST.max }, 1.3, () => {
+      return demo({ d: s.d >= 1.1 ? 0.7 : DIST.frame }, 1.3, () => {
         s.stage = 3;
-        audio.success();
       });
     }
     if (ph === 'd3') {
@@ -547,18 +600,17 @@ export function createApp(root, options = {}) {
     const n = neededCm(s.d);
     if (ph === 'l1') {
       s.edge = 'top';
-      return demo({ bottom: n.bottom }, 1, () => audio.success());
+      return demo({ bottom: n.bottom }, 1);
     }
-    if (ph === 'l2') return demo({ top: n.top }, 1, () => audio.success());
+    if (ph === 'l2') return demo({ top: n.top }, 1);
     if (ph === 'l3') {
-      return demo({ d: DIST.far, top: n.top, bottom: n.bottom }, 1.8, () => {
+      return demo({ d: DIST.far, top: n.top, bottom: n.bottom }, 2, () => {
         s.far = true;
-        audio.success();
       });
     }
     if (ph === 'l4') {
       s.far = false;
-      return demo({ d: DIST.start }, 1.4, () => audio.tick());
+      return demo({ d: DIST.start }, 1.6);
     }
   }
 
@@ -573,8 +625,10 @@ export function createApp(root, options = {}) {
     }
     return out;
   };
-  const anno = createAnnotations({ stage, layer: ui.annoLayer, avoid: [ui.corner, note, cardBox, handleBoxes, () => action?.ringBox()] });
+  const panelTab = ui.$('.pvc-panel-toggle');
+  const anno = createAnnotations({ stage, layer: ui.annoLayer, avoid: [ui.corner, note, panelTab, cardBox, handleBoxes, () => action?.ringBox()] });
   const shown = new Map();
+  const used = new Map();
   const pts = new Map();
   function label(id, on, text, point, color, spots, avoid = []) {
     if (!on) {
@@ -589,9 +643,15 @@ export function createApp(root, options = {}) {
     if (!shown.has(id)) {
       anno.add(id, { text, point: () => pts.get(id), color, spots, kind: 'part', avoid });
       shown.set(id, text);
+      used.set(id, spots);
     } else if (shown.get(id) !== text) {
       anno.setText(id, text);
       shown.set(id, text);
+    }
+    // a label that moves to another set of places (the boy walked far back) takes them at once
+    if (used.get(id) !== spots) {
+      used.set(id, spots);
+      anno.update(id, { spots, avoid });
     }
   }
   function clearLabels() {
@@ -632,6 +692,7 @@ export function createApp(root, options = {}) {
     return out;
   }
   const lineAvoid = [lineBoxes];
+  const barAvoid = [() => ['xpd', 'xppd'].map((id) => (shown.has(id) ? anno.box(id) : null))];
   // the angles sit by the geometry: the mirror's name steps round them
   const mirrorAvoid = [lineBoxes, () => ['ti', 'tr', 'ti0', 'tr0'].map((id) => (shown.has(id) ? anno.box(id) : null))];
   const v3 = new THREE.Vector3();
@@ -660,11 +721,24 @@ export function createApp(root, options = {}) {
     { dx: 18, dy: 16 },
     { dx: 30, dy: 4 },
   ];
+  // in step 1 the bars and their numbers lie under the feet: the letters stand beside them
+  const SIDE_L = [
+    { dx: -30, dy: -4 },
+    { dx: -30, dy: -22 },
+    { dx: -18, dy: 16 },
+  ];
+  const SIDE_R = [
+    { dx: -24, dy: -12 },
+    { dx: 26, dy: -20 },
+    { dx: 30, dy: -2 },
+    { dx: 22, dy: -36 },
+  ];
   const MIRROR_SPOTS = [
     { dx: 30, dy: 20 },
     { dx: -30, dy: 20 },
     { dx: 30, dy: 40 },
     { dx: -30, dy: 40 },
+    { dx: 30, dy: -24 },
   ];
   const IMAGE_SPOTS = [
     { dx: -36, dy: -4 },
@@ -674,37 +748,62 @@ export function createApp(root, options = {}) {
   ];
   const MID_SPOTS = [
     { dx: 40, dy: 0 },
+    { dx: 72, dy: 0 },
     { dx: -40, dy: 0 },
+  ];
+  const OVER_RIGHT = [
+    { dx: 36, dy: -22 },
+    { dx: 44, dy: -38 },
+    { dx: 0, dy: -30 },
+  ];
+  const GLASS_SPOTS = [
+    { dx: -34, dy: 0 },
+    { dx: -34, dy: 24 },
+    { dx: 34, dy: 30 },
+  ];
+  const EYE_FAR = [
+    { dx: 26, dy: 62 },
+    { dx: 30, dy: 36 },
+    { dx: -44, dy: 10 },
+  ];
+  const IMAGE_BESIDE = [
+    { dx: 30, dy: 0 },
+    { dx: 30, dy: 26 },
+    { dx: 30, dy: -26 },
   ];
   const IMAGE_FEET = [
     { dx: -12, dy: 26 },
     { dx: -30, dy: 26 },
     { dx: -50, dy: 8 },
     { dx: 0, dy: 40 },
+    { dx: 30, dy: 36 },
   ];
+  // in the wedge of the rays in front of his face: the leader never crosses it
   const EYE_SPOTS = [
+    { dx: 46, dy: 12 },
+    { dx: 58, dy: 20 },
+    { dx: 34, dy: -24 },
+    { dx: 44, dy: 40 },
+    { dx: 70, dy: 6 },
     { dx: -44, dy: 10 },
-    { dx: -44, dy: 28 },
-    { dx: -44, dy: -10 },
+    { dx: -44, dy: -14 },
   ];
   const BAR_SPOTS = [
-    { dx: -10, dy: 20 },
-    { dx: -10, dy: 36 },
+    { dx: -24, dy: 20 },
+    { dx: -30, dy: 36 },
+    { dx: 44, dy: 22 },
+    { dx: 60, dy: 8 },
   ];
   const BAR_SPOTS_R = [
-    { dx: 30, dy: 16 },
+    { dx: 24, dy: 24 },
     { dx: 44, dy: 26 },
+    { dx: 60, dy: 4 },
     { dx: 36, dy: -18 },
   ];
   const ON_LINE = [
     { dx: -26, dy: 22 },
     { dx: 26, dy: 24 },
     { dx: -40, dy: 4 },
-  ];
-  const OVER_LINE = [
-    { dx: -26, dy: -22 },
-    { dx: 26, dy: -24 },
-    { dx: -40, dy: -4 },
   ];
   const TI_SPOTS = [
     { dx: -24, dy: 24 },
@@ -725,6 +824,24 @@ export function createApp(root, options = {}) {
     { dx: -18, dy: -14 },
     { dx: -26, dy: -6 },
     { dx: -18, dy: -26 },
+    { dx: 14, dy: -30 },
+  ];
+  const EBOT_SPOTS = [
+    { dx: 54, dy: 18 },
+    { dx: 54, dy: 38 },
+  ];
+  const ETOP_SPOTS = [
+    { dx: 54, dy: -18 },
+    { dx: 54, dy: -38 },
+  ];
+  const AT = [{ dx: 0, dy: 0 }];
+  const HALF_SPOTS = [
+    { dx: 34, dy: 0 },
+    { dx: 34, dy: -26 },
+    { dx: -34, dy: 34 },
+    { dx: -34, dy: -40 },
+    { dx: -30, dy: -64 },
+    { dx: -30, dy: -90 },
   ];
   const REF_SPOTS = [
     { dx: 28, dy: -22 },
@@ -757,19 +874,28 @@ export function createApp(root, options = {}) {
       LEFT,
     );
     label('xp', settled && nearby && ((dist && imageOn) || wide || full || qk === 'gap'), t('l_xp'), at(-x.x, x.y), AMBER_TEXT, RIGHT);
+    label('p', settled && dist && s.barK >= 1, t('l_p'), at(0, 0, BAR.z), INK, ABOVE);
+    const bar = dist && s.barK > 0;
+    label('xpd', settled && (bar || qk === 'gap'), t('l_xpd', { a: f2(s.d) }), at(x.x / 2, 0, BAR.z), INK, BAR_SPOTS);
+    label('xppd', settled && bar && s.barK >= 1, t('l_xppd', { a: f2(s.d) }), at(-x.x / 2, 0, BAR.z), INK, BAR_SPOTS_R);
     label(
       'y',
       settled && nearby && ((dist && s.stage === 4) || ((r || l) && v.feet > 0 && trace.feet.full)),
       t('l_y'),
       at(y.x, 0),
       AMBER_TEXT,
-      UNDER_L,
+      dist ? SIDE_L : UNDER_L,
+      barAvoid,
     );
-    label('yp', settled && nearby && ((dist && s.stage === 4) || wide || full), t('l_yp'), at(-y.x, 0), AMBER_TEXT, UNDER_R);
-    label('p', settled && dist && s.barK >= 1, t('l_p'), at(0, 0, BAR.z), INK, ABOVE);
-    const bar = dist && s.barK > 0;
-    label('xpd', settled && (bar || qk === 'gap'), t('l_xpd', { a: f2(s.d) }), at(x.x / 2, 0, BAR.z), INK, BAR_SPOTS);
-    label('xppd', settled && bar && s.barK >= 1, t('l_xppd', { a: f2(s.d) }), at(-x.x / 2, 0, BAR.z), INK, BAR_SPOTS_R);
+    label(
+      'yp',
+      settled && nearby && ((dist && s.stage === 4) || wide || full),
+      t('l_yp'),
+      at(-y.x, 0),
+      AMBER_TEXT,
+      dist ? SIDE_R : UNDER_R,
+      barAvoid,
+    );
     const hText = t('l_dist', { a: short(s.H) });
     const measured = (dist && s.stage === 4 && s.grow >= 1) || qk === 'length' || (full && nearby);
     label('h0', settled && measured, hText, at(x.x - 0.27, s.H * 0.5), INK, [
@@ -781,44 +907,52 @@ export function createApp(root, options = {}) {
       { dx: 26, dy: 30 },
       { dx: 26, dy: -30 },
     ]);
+    // "half" only while it is true
     label(
       'half',
       settled && full,
-      t('l_half', { a: f2(s.top - s.bottom) }),
+      justEnough(s.top, s.bottom, s.d) ? t('l_half', { a: f2(s.top - s.bottom) }) : t('l_mirror_m', { a: f2(s.top - s.bottom) }),
       at(0, (s.top + s.bottom) / 2, 0.36),
       C.bar,
-      [
-        { dx: 34, dy: 0 },
-        { dx: -34, dy: 30 },
-      ],
+      HALF_SPOTS,
       lineAvoid,
     );
-    label('eye', settled && nearby && (r || l) && v.head > 0, t('l_eye'), at(trace.eye.x, trace.eye.y), SLATE, EYE_SPOTS);
+    const farOff = s.d > 1.6; // far back, the feet of mirror and image crowd
     const midGlass = l && !full;
+    const closeUp = s.d < 0.75; // beside him there is no room under the feet
     label(
       'mirror',
-      settled && !qk && nearby,
+      settled && !qk && nearby && !full,
       lit('mirror', t('l_mirror')),
-      at(0, midGlass ? (s.top + s.bottom) / 2 : s.bottom + 0.02),
+      at(0, dist ? 1.0 : midGlass ? (s.top + s.bottom) / 2 : farOff ? s.top + 0.02 : s.bottom + 0.02),
       SLATE,
-      midGlass ? MID_SPOTS : MIRROR_SPOTS,
+      dist ? GLASS_SPOTS : midGlass ? MID_SPOTS : farOff ? OVER_RIGHT : MIRROR_SPOTS,
       mirrorAvoid,
     );
-    label('fard', settled && l && s.d > 1.6, t('l_dist', { a: short(s.d) }), at(-s.d / 2, 0, BAR.z), INK, BAR_SPOTS);
+    label('fard', settled && l && s.d > 2.1, t('l_dist', { a: short(s.d) }), at(-s.d / 2, 0, BAR.z), INK, BAR_SPOTS);
     label(
       'image',
       settled && !qk && nearby && imageOn && (dist || wide || full),
       lit(s.lit === 'ext' ? 'ext' : 'image', t(dist ? 'l_image_0' : 'l_image')),
-      at(-y.x, dist ? s.H * 0.72 : 0),
+      at(-y.x, dist ? s.H * 0.72 : closeUp ? s.H * 0.62 : 0),
       IMAGE_COLOUR,
-      dist ? IMAGE_SPOTS : IMAGE_FEET,
+      dist ? IMAGE_SPOTS : closeUp ? IMAGE_BESIDE : IMAGE_FEET,
       lineAvoid,
     );
     // each term shows while the book introduces it
     const mids = (q0, k) => at(q0.src.x * (1 - k), q0.src.y + (q0.m - q0.src.y) * k);
     const ft = trace.feet;
     const hd = trace.head;
-    label('ray', r && s.ray === 1 && settled, lit('head', t('l_ray')), mids(hd, 0.5), AMBER_TEXT, OVER_LINE, lineAvoid);
+    label('inc1', r && s.ray === 1 && settled, lit('head', t('l_inc')), mids(hd, 0.45), AMBER_TEXT, [{ dx: 10, dy: -24 }], lineAvoid);
+    label(
+      'ref1',
+      r && s.ray === 1 && settled,
+      lit('head', t('l_ref')),
+      at(trace.eye.x * 0.4, hd.m + (trace.eye.y - hd.m) * 0.4),
+      AMBER_TEXT,
+      [{ dx: 0, dy: 28 }],
+      lineAvoid,
+    );
     label('inc', r && s.ray === 2 && settled, lit('feet', t('l_inc')), mids(ft, 0.5), AMBER_TEXT, ON_LINE, lineAvoid);
     label(
       'ref',
@@ -856,50 +990,30 @@ export function createApp(root, options = {}) {
     label('tr', arcsOn && close, t('l_tr', { a: Math.round(ft.thetaR) }), trAt, C.tr, TR_SPOTS, lineAvoid);
     label('ti0', arcsOn && !close, t('l_ti0'), tiAt, C.ti, TI_NEAR, lineAvoid);
     label('tr0', arcsOn && !close, t('l_tr0'), trAt, C.tr, TR_NEAR, lineAvoid);
+    // above the two rays, with no leader: they are too close together for a line to point at one arc
+    label('both', arcsOn && r, t('l_both', { a: Math.round(hd.thetaI) }), at(-v.normalLen * 0.5, hd.m + 0.17), INK, AT);
     label(
-      'both',
-      arcsOn && r,
-      t('l_both', { a: Math.round(hd.thetaI) }),
-      at(-v.normalLen * 0.9, hd.m),
-      INK,
-      [
-        { dx: 10, dy: -24 },
-        { dx: -10, dy: 24 },
-      ],
-      lineAvoid,
+      'eye',
+      settled && nearby && (r || l) && v.head > 0,
+      t('l_eye'),
+      at(trace.eye.x, trace.eye.y),
+      SLATE,
+      farOff ? EYE_FAR : EYE_SPOTS,
+      farOff ? [] : lineAvoid,
     );
     // the edges of the mirror, once found
     const se = sees(s.d, s.top, s.bottom);
-    label('ebot', settled && l && !full && se.feet, t('l_ebot'), at(0, s.bottom, 0.25), C.bar, [
-      { dx: 30, dy: 22 },
-      { dx: 30, dy: 44 },
-    ]);
-    label('etop', settled && l && !full && se.head, t('l_etop'), at(0, s.top, 0.25), C.bar, [
-      { dx: 30, dy: -22 },
-      { dx: 30, dy: -44 },
-    ]);
+    const atBottom = edgeAt('bottom', s.bottom, s.d);
+    const atTop = edgeAt('top', s.top, s.d);
+    label('ebot', settled && l && !full && se.feet, t(atBottom === 'exact' ? 'l_ebot' : 'l_ebot_low'), at(0, s.bottom, 0.25), C.bar, EBOT_SPOTS);
+    label('etop', settled && l && !full && se.head, t(atTop === 'exact' ? 'l_etop' : 'l_etop_high'), at(0, s.top, 0.25), C.bar, ETOP_SPOTS);
 
     // the test
     for (let i = 0; i < 4; i++) {
       const on = qk === 'real';
       label(`qc${i}`, on, on ? q.letters[i] : '', on ? q.tips[i] : at(0, 0), INK, on && q.lines[i] === 'out' ? UNDER_R : ABOVE.concat(UNDER_R));
     }
-    label('qe', qk === 'edge', q ? t('l_eye_h', { a: short(q.eye) }) : '', at(trace.eye.x, trace.eye.y), SLATE, [
-      { dx: 0, dy: -44 },
-      { dx: 40, dy: -40 },
-    ]);
-    label(
-      'qm',
-      qk === 'edge',
-      t('l_q'),
-      at(0, ft.m),
-      INK,
-      [
-        { dx: 44, dy: 8 },
-        { dx: 44, dy: -14 },
-      ],
-      lineAvoid,
-    );
+    label('qm', qk === 'away', t('l_dist', { a: f2(s.top - s.bottom) }), at(0, (s.top + s.bottom) / 2, 0.36), C.bar, HALF_SPOTS, lineAvoid);
   }
 
   // ── the panel ───────────────────────────────────────────────────────────────────────────────────────────
@@ -930,8 +1044,8 @@ export function createApp(root, options = {}) {
       if (s.top - s.bottom > n.length + 0.005) return t('rule_l2_more', { a: short(n.length) });
       return t('rule_l2', { a: f2(s.top - s.bottom) });
     }
-    if (see.feet) return t('rule_l1_feet', { a: f2(s.bottom) });
-    if (see.head) return t('rule_l1_head');
+    if (see.feet) return edgeAt('bottom', s.bottom, s.d) === 'exact' ? t('rule_l1_feet', { a: f2(s.bottom) }) : t('rule_l1_feet_low');
+    if (see.head) return edgeAt('top', s.top, s.d) === 'exact' ? t('rule_l1_head') : t('rule_l1_head_high');
     return t('rule_l0');
   }
   const ACTIONS = {
@@ -973,17 +1087,30 @@ export function createApp(root, options = {}) {
     }
     note.hidden = s.step === 'distance' || (s.step === 'rays' && s.ray === 0);
     cap.hidden = !showsCard();
+    same.hidden = !(s.step === 'length' && s.d > 2.1);
   }
   function draw({ instant = false } = {}) {
     applyWorld();
     panel();
-    if (s.quiz) cap.hidden = !showsCard();
+    if (s.quiz) {
+      cap.hidden = !showsCard();
+      same.hidden = true;
+    }
     followFrame(instant);
     stage.invalidate();
   }
 
   // ── the action, and what it points at ──────────────────────────────────────────────────────────────────
   const ringPoint = new THREE.Vector3();
+  /** The world point under a handle on the screen. */
+  function onHandle(spot, y) {
+    ringPoint.set(0, y, 0.25).project(camera);
+    if (spot) {
+      ringPoint.x = (spot.x / stage.width) * 2 - 1;
+      ringPoint.y = 1 - (spot.y / stage.height) * 2;
+    }
+    return ringPoint.unproject(camera);
+  }
   action = createAction({
     stage,
     layer: ui.coachLayer,
@@ -1001,8 +1128,8 @@ export function createApp(root, options = {}) {
       if (ph === 'r0') return ringPoint.set(trace.x.x, trace.x.y, 0);
       if (ph === 'r1') return ringPoint.set(trace.y.x, 0.06, 0);
       if (ph === 'r2' || ph === 'r3') return ringPoint.set(0, trace.feet.m, 0);
-      if (ph === 'l1') return ringPoint.set(0, s.bottom, 0.25);
-      if (ph === 'l2') return ringPoint.set(0, s.top, 0.25);
+      if (ph === 'l1') return onHandle(dia.spot.bottom, s.bottom);
+      if (ph === 'l2') return onHandle(dia.spot.top, s.top);
       return null;
     },
     radius: 24,
@@ -1016,8 +1143,9 @@ export function createApp(root, options = {}) {
     if (s.locked || s.busy || s.grow < 1) return null;
     const reach = touch ? 34 : 24;
     const near = (p) => p && Math.hypot(p.x - x, p.y - y) <= reach;
-    if (near(dia.spot.top)) return 'top';
-    if (near(dia.spot.bottom)) return 'bottom';
+    // on a short mirror the two are close: the nearer one
+    const away = (p) => (p ? Math.hypot(p.x - x, p.y - y) : Number.POSITIVE_INFINITY);
+    if (near(dia.spot.top) || near(dia.spot.bottom)) return away(dia.spot.top) <= away(dia.spot.bottom) ? 'top' : 'bottom';
     if (near(dia.spot.boy)) return 'boy';
     if (dia.view.drag.boy) {
       // on his body
@@ -1061,7 +1189,12 @@ export function createApp(root, options = {}) {
       const b = toScreen(-g.d + 0.1, 0.8);
       const tx = b.x - a.x;
       const ty = b.y - a.y;
-      const next = snapDistance(g.d - ((dx * tx + dy * ty) / Math.max(0.01, tx * tx + ty * ty)) * 0.1);
+      // past the frame the camera pulls back, so the finger is short of room: the same movement goes further
+      const F = DIST.frame;
+      const GAIN = 2.4;
+      const from = g.d > F ? F + (g.d - F) / GAIN : g.d;
+      const raw = from - ((dx * tx + dy * ty) / Math.max(0.01, tx * tx + ty * ty)) * 0.1;
+      const next = snapDistance(raw > F ? F + (raw - F) * GAIN : raw);
       if (next !== s.d) {
         s.d = next;
         draw();
@@ -1112,11 +1245,12 @@ export function createApp(root, options = {}) {
       v.segs.push([h.src.x, h.src.y, 0, h.m], [0, h.m, trace.eye.x, trace.eye.y], [0, h.m, h.image.x, h.image.y], [f.src.x, f.src.y, 0, f.m]);
     }
     if (q.kind === 'length') v.marks.push({ x: x.x - 0.27, y0: 0, y1: s.H, z: 0, color: INK });
-    if (q.kind === 'fix') v.card = { rect: card, top: s.top, bottom: s.bottom };
-    if (q.kind === 'edge') {
+    if (q.kind === 'fix') v.card = cardView();
+    if (q.kind === 'away') {
       v.rays = trace;
+      v.head = 1;
       v.feet = 1;
-      v.points.push([trace.y.x, 0, 3.6, C.ray], [0, trace.feet.m, 3.2, INK]);
+      v.marks.push({ x: 0, y0: s.bottom, y1: s.top, z: 0.36, color: C.bar });
     }
   }
   function quizScene(q, { d = DIST.start, H = BOY.H, top = FULL.top, bottom = FULL.bottom } = {}) {
@@ -1130,6 +1264,7 @@ export function createApp(root, options = {}) {
     clearLabels();
     applyWorld();
     cap.hidden = !showsCard();
+    same.hidden = true;
     shownFrame = frameKey();
     stage.invalidate();
   }
@@ -1220,23 +1355,23 @@ export function createApp(root, options = {}) {
         reveal: t(feet ? 'a_fix_feet' : 'a_fix_head'),
       };
     }
-    // the eye's height decides where the ray from the feet lands
-    const H = pick([1.2, 1.5, 1.8]);
-    const eye = round((H * BOY.eye) / BOY.H);
-    quizScene({ kind, eye }, { H, top: Math.min(EDGE.high, H + 0.05), bottom: 0.3 });
-    const answer = round(eye / 2);
-    const wrong = [eye, round(eye / 4), round((eye * 3) / 4)];
+    // the mirror he has now, and how far back he goes: the rays land on the same two points
+    const walk = pick([3, 5, 10]);
+    const n = neededCm(DIST.start);
+    quizScene({ kind }, { top: n.top, bottom: n.bottom });
+    const answer = n.length;
+    const wrong = [round(n.length * walk), BOY.H, 0.5];
     return {
-      text: t('q_edge'),
+      text: t('q_away', { a: walk }),
       answer,
       wrong,
       label: metres,
       notes: notesOf([
-        [wrong[0], t('n_edge_eye')],
-        [wrong[1], t('n_edge_small')],
-        [wrong[2], t('n_edge_big')],
+        [wrong[0], t('n_away_times', { a: walk })],
+        [wrong[1], t('n_away_full')],
+        [wrong[2], t('n_away_small')],
       ]),
-      reveal: t('a_edge', { b: short(answer), e: short(eye), two: 2 }),
+      reveal: t('a_away', { b: short(answer) }),
     };
   }
   const saved = { d: DIST.start, top: FULL.top, bottom: FULL.bottom, far: false, imageK: 1 };
@@ -1256,7 +1391,7 @@ export function createApp(root, options = {}) {
         Object.assign(saved, { d: s.d, top: s.top, bottom: s.bottom, far: s.far, imageK: s.imageK });
         s.imageK = 1;
         // the book's order: no scene shows the answer to a later question
-        order = ['gap', 'real', 'fix', 'edge', 'length'];
+        order = ['gap', 'real', 'fix', 'length', 'away'];
         if (s.drag) {
           controls.enabled = true;
           s.drag = null;

@@ -17,7 +17,7 @@ const GHOST = 0.45; // the image, common.md: a translucent ghost of about 45 %
 const UNSEEN = 0.11; // the part of it the mirror cannot show
 export const MIRROR = { halfW: 0.25, post: 0.05 };
 /** The part of the mirror's plane the small picture shows, m. */
-export const VIEW = { y0: 0.4, y1: 1.65, z: 0.31 };
+export const VIEW = { y0: 0.4, y1: 1.65, z: 0.36 };
 const SKY = [
   [0, '#9ccdee'],
   [0.34, '#cfe4f3'],
@@ -96,13 +96,56 @@ export function createSetting({ stage, shadow }) {
   }
 
   // ── the floor ───────────────────────────────────────────────────────────────────────────────────────────
-  const floorMat = new THREE.MeshStandardMaterial({ name: 'Floor', color: '#b6adb8', roughness: 0.82, metalness: 0 });
-  const floor = new THREE.Mesh(new THREE.BoxGeometry(120, 0.08, 62), floorMat);
+  // warm sand, a little deeper near the viewer; it fades out behind the scene along the view's own depth, so whatever
+  // the angle the line where it meets the sky is level
+  const FLOOR = {
+    pmFar: { value: new THREE.Color('#f8e3cf') },
+    pmNear: { value: new THREE.Color('#e7bd9a') },
+    pmView: { value: new THREE.Vector3(0, 0, -1) }, // x, z: the view's direction along the floor; y: unused
+    pmFrom: { value: new THREE.Vector3() }, // x, z of the camera
+    pmSpan: { value: new THREE.Vector4(0, 1, 0, 1) }, // near tone from, to; fade from, to (m along the view)
+  };
+  const floorMat = new THREE.MeshStandardMaterial({ name: 'Floor', color: '#ffffff', roughness: 0.9, metalness: 0, transparent: true });
+  floorMat.onBeforeCompile = (sh) => {
+    Object.assign(sh.uniforms, FLOOR);
+    sh.vertexShader = `varying vec3 pmF;\n${sh.vertexShader}`.replace(
+      '#include <project_vertex>',
+      '#include <project_vertex>\n  pmF = (modelMatrix * vec4(transformed, 1.0)).xyz;',
+    );
+    sh.fragmentShader = `varying vec3 pmF;
+uniform vec3 pmFar; uniform vec3 pmNear; uniform vec3 pmView; uniform vec3 pmFrom; uniform vec4 pmSpan;
+${sh.fragmentShader}`.replace(
+      '#include <color_fragment>',
+      `#include <color_fragment>
+  {
+    float along = dot(pmF.xz - pmFrom.xz, pmView.xz);
+    diffuseColor.rgb = mix(pmNear, pmFar, smoothstep(pmSpan.x, pmSpan.y, along));
+    diffuseColor.a = 1.0 - smoothstep(pmSpan.z, pmSpan.w, along);
+  }`,
+    );
+  };
+  floorMat.customProgramCacheKey = () => 'pm-floor-1';
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(400, 400).rotateX(-Math.PI / 2), floorMat);
   floor.name = 'Floor';
-  floor.position.set(0, -0.04, 29.4);
   floor.receiveShadow = true;
+  floor.renderOrder = -1;
   floor.userData.noExport = true;
   scene.add(floor);
+  const hx = new THREE.Vector3();
+  /** Sets the floor's tones and its fade for a camera: the fade starts just behind the farthest thing shown. */
+  function setFloorFade(cam, xmin, xmax) {
+    cam.getWorldDirection(hx);
+    hx.y = 0;
+    hx.normalize();
+    const from = cam.position;
+    const back = -0.5;
+    const along = (x, z) => (x - from.x) * hx.x + (z - from.z) * hx.z;
+    const far = Math.max(along(xmin, back), along(xmax, back));
+    const near = Math.min(along(xmin, 1), along(xmax, 1));
+    FLOOR.pmView.value.copy(hx);
+    FLOOR.pmFrom.value.set(from.x, 0, from.z);
+    FLOOR.pmSpan.value.set(near, far, far, far + 1.8);
+  }
 
   // ── the boy and his image ───────────────────────────────────────────────────────────────────────────────
   const made = boyGeometry();
@@ -309,12 +352,20 @@ ${sh.fragmentShader}`.replace(
     mirror.visible = false;
     U.pmAlpha.value = 1;
     U.pmUse.value.set(0, 0);
+    const span = FLOOR.pmSpan.value.clone();
+    const view = FLOOR.pmView.value.clone();
+    const from = FLOOR.pmFrom.value.clone();
+    setFloorFade(eyeCam, -e.x * 2, -e.x * 2);
+    FLOOR.pmSpan.value.set(0, -e.x * 2, -e.x * 2 + 0.6, -e.x * 2 + 2.4);
     R.setViewport(rect.x, H0 - rect.y - rect.h, rect.w, rect.h);
     R.setScissorTest(true);
     R.setScissor(mx, H0 - my - mh, mw, mh);
     R.render(scene, eyeCam);
     R.setScissorTest(false);
     R.setViewport(0, 0, W0, H0);
+    FLOOR.pmSpan.value.copy(span);
+    FLOOR.pmView.value.copy(view);
+    FLOOR.pmFrom.value.copy(from);
     U.pmAlpha.value = alpha;
     U.pmFaint.value = faint;
     reflected.visible = was;
@@ -353,5 +404,5 @@ ${sh.fragmentShader}`.replace(
     return g;
   }
 
-  return { setMirror, setBoy, setImage, setCuts, renderEyeView, exportModel, made, boy, mirror };
+  return { setMirror, setBoy, setImage, setCuts, setFloorFade, renderEyeView, exportModel, made, boy, mirror };
 }

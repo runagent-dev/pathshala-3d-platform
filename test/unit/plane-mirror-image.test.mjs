@@ -4,8 +4,10 @@ import { test } from 'node:test';
 import {
   BOY,
   DIST,
+  edgeAt,
   FULL,
   imageOf,
+  justEnough,
   mirrorHit,
   needed,
   neededCm,
@@ -85,6 +87,16 @@ test('a short mirror hides the feet or the head, and the rays come from what it 
   const f = rays(1, 1.45, 0.7);
   assert.ok(f.head.full && f.feet.full);
   near(seenRange(1.2, 0.95).top, r.head.src.y);
+});
+
+test('an edge is called right only when it is, and half only when the mirror is just long enough', () => {
+  assert.equal(edgeAt('bottom', 0.7, 1), 'exact');
+  assert.equal(edgeAt('bottom', 0.45, 1), 'low');
+  assert.equal(edgeAt('top', 1.45, 1), 'exact');
+  assert.equal(edgeAt('top', 1.6, 1), 'high');
+  assert.equal(justEnough(1.45, 0.7, 1), true);
+  assert.equal(justEnough(1.45, 0.5, 1), false);
+  assert.equal(justEnough(1.6, 0.7, 10), false);
 });
 
 test('a taller boy scales: eye and mirror with him', () => {

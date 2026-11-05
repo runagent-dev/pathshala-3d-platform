@@ -23,11 +23,13 @@ a camera per step, one element at a time with a highlight and its book term, key
 ## How it works
 - **Three steps, each built one thing at a time.**
   1. সমদূরত্ব (camera: the whole scene from −27°, 15° above, the floor in depth): show the image → two distance bars on
-     the floor (ticks each 25 cm, so they read as equal in depth too) → drag him, XP = X′P → measure XY and X′Y′.
+     the floor (ticks each 25 cm, so they read as equal in depth too) → drag him (0.5–2 m; past 1.3 m the camera pulls back), XP = X′P → measure XY and X′Y′.
   2. আলোর পথ (camera: boy and mirror, closer and from a milder −20°, so the arcs read): the ray from X → the ray from Y
      (আপতিত, প্রতিফলিত রশ্মি) → the normals and arcs → the camera pulls back as the rays are extended to X′ and Y′.
   3. আয়নার দৈর্ঘ্য (camera: boy and mirror's edges): the mirror starts too short; the student drags its bottom and top
-     edges until head and feet show; the camera pulls back to all three with the 1.5 m and 0.75 m measures; then 10 m.
+     edges until head and feet show; the camera pulls back to all three with the 1.5 m and 0.75 m measures; then 10 m,
+     seen from far along the floor so that boy and mirror both stay readable. "half" and "at half the eye's height" show
+     only while they are true; an edge past its place is called lower or higher than needed.
   The newest element glows amber (`dia.view.flash`) and its label is highlighted for about 3 s. Terms show while the book
   introduces them; the letters, the eye, the mirror and the image stay.
 - **The image is exact.** It is the same geometry under a group with `scale.x = −1` about the plane x = 0: that transform
@@ -35,8 +37,11 @@ a camera per step, one element at a time with a highlight and its book term, key
   casts no shadow.
 - **What he really sees** (the small picture, step 3). A second render from his eye with an off-axis frustum whose picture
   plane is the mirror, scissored to the mirror's rectangle. So the mirror keeps its size in the picture, and a too-short
-  mirror really cuts off his feet or head; at 10 m the picture does not change, which is the book's point. On the ghost
+  mirror really cuts off his feet or head; a dashed outline marks where a taller mirror could be ("আয়না নেই"). At 10 m the
+  picture does not change, which is the book's point, and the card says so ("ছবি একই থাকে"). On the ghost
   the part the eye can reach stays at 45 %, the rest falls to 11 %, cut by the exact planes through the eye and the edges.
+- **The floor** is warm sand, deeper near the viewer. A plane with no end would leave no sky in a view from above, so it
+  fades out just behind the scene along the view's own direction across the floor: that line is level at any camera angle.
 - **Rays are traced** (`reading.js`): a mirror point comes from the image construction, then `reflect` (r = d − 2(d·n)n)
   gives the way out, and `get` reads θi, θr and the miss at the eye back from that vector. With a short mirror the rays
   go by the mirror's own edge and come from the highest and lowest parts it can still show.
@@ -56,7 +61,7 @@ a camera per step, one element at a time with a highlight and its book term, key
 - The ডান-বাম box of p216 is left out to keep to one idea.
 
 ## Numbers (measured at 844×390, shadows on, in step 3 with the small picture)
-36 draw calls, 147k triangles, ready in about 2 s, GLB 671 KB, zip 447 KB. Textures: canvas gradients, 256 px at most.
+36 draw calls, 147k triangles, ready in about 2 s, GLB 671 KB, zip 450 KB. Textures: canvas gradients, 256 px at most.
 
 ## Terms (as in the book)
 আয়না, দর্পণ, প্রতিবিম্ব, অবাস্তব প্রতিবিম্ব, আলোক রশ্মি, আপতিত রশ্মি, প্রতিফলিত রশ্মি, অভিলম্ব, আপতন কোণ (θi), প্রতিফলন কোণ (θr),
@@ -66,4 +71,5 @@ p221 write উপর; the shared decision's আপতন is used (p219 prints �
 ## Open questions
 - The book's X is a point on an object; here X and Y are on a person. Good enough for চিত্র ৮.১০?
 - This figure also covers চিত্র ৮.১২, so `full-length-mirror` is not needed as its own figure.
+- The test's fifth question (he steps back; the mirror needed stays) is mine, not the book's wording.
 - A person's wording check of the Bangla against the book.
