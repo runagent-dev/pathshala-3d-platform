@@ -18,15 +18,32 @@ sides, d₁ d₂ d₃ d₄. The 90° part is optional and is left out (below). T
 angle, a camera per step with smooth zooms, one element at a time, labels never dropped.
 
 ## How it works
-- **Three steps, each built one tap at a time.**
-  1. প্রতিবিম্ব (camera: the two mirrors, then wider as images appear): x′ in M₁ with its ray and d₁ before and behind it → x′ in
-     M₂ with d₂ → the student drags the candle (x from −7 to +7 cm, whole cm) and every image follows.
-  2. তার প্রতিবিম্ব: "x′ এখন বস্তু": the x′ behind M₂ is an object for M₁, so x″ forms d₃ behind M₁, then the same the other way,
-     then x‴ at d₄: this is the whole of চিত্র ৮.০৪, and the poster.
-  3. অসংখ্য: the row runs off both edges → the camera flies into M₁ and the same images are seen as a real pair of mirrors shows
-     them, with the light left in x′, x″, x‴ (about 90 %, 81 %, 73 %).
+- **Ten beats, one tap each, in six steps (0.3.0).** The owner, on the crowded row: "It is fine but too complex. How can we start
+  a bit easily … then gradually show everything properly?" `reading.js` lists the beats (`imagesAt`, `barsAt`, `beatOf`, `stepOfBeat`).
+  1. একটি আয়না: the candle and M₁ alone → x′ fades in with d₁ before and behind it. The frame holds only these; the candle can be dragged.
+  2. দ্বিতীয় আয়না: M₂ slides in from the left (2.5 s) → its x′ and d₂; d₁ goes faint.
+  3. তার প্রতিবিম্ব: the right x′ glows, "এই x′ এখন বস্তু" → x″ on the left → the next tap traces one ray, stretch by stretch (1.2 s
+     each, candle → M₁ → M₂ → eye), then the dashes back to x″.
+  4. আরও একবার: the left x′ is an object → x″ on the right with d₃ → the left x″ is an object → x‴ with d₄.
+  5. অসংখ্য: the distances fade, the row fades in one image every 0.6 s → the camera flies into M₁.
+  6. বইয়ের ছবি: the camera comes out to the book's whole picture, with all of d₁–d₄ at full strength. Only then the action offers the test.
+  Pace (the owner's rule): camera 1.8 s or more, objects 2–3 s, about 1 s of glow before an image comes from an object, and every beat ends
+  by waiting. Taps do nothing while one plays. A step's word, or the quiet ↺, replays that step slowly from its start. The test's
+  own flights stay 0.5 s: a question should not keep a student waiting.
   The newest thing glows amber and its label is highlighted, as in `plane-mirror-image`. A tap on any named image traces its
-  light and says the chain ("x″: M₂ থেকে M₁, ২ বার"). The action's numbered ring sits on what it is about.
+  light, stretch by stretch, and says the chain ("x″: M₂ থেকে M₁, ২ বার"). The action's numbered ring sits on what it is about.
+- **Only the newest pair of distances is at full strength**; older ones are faint (about 30 %), and only the book's picture has them all.
+- **The frame takes in an image's whole range**, not where it stands now, so the view stands still while the candle is dragged.
+- **The candle's handle** is the chapter's visible handle: a white disc with a thin dark ring and ↔ arrows, a faint dashed track
+  with its ends marked, "টেনে সরাও" and a gentle pulse until the first drag, a smaller disc after that, hidden in the test. On a wide
+  view the table is thin on the screen, so handle and track step down until they clear the candle's foot. Its arrows follow the row
+  on the screen, so from behind or from the side the drag still follows the finger.
+- **The view turns all the way round** (no azimuth limit, polar 5°–88°, zoom 0.45–1.6 of the guided distance, damping on). OrbitControls
+  starts on the finger going down, so only 8 px of movement counts as taking the view: a tap leaves it alone. A dark pill in the corner
+  (⟲ ৩৬০° ঘুরিয়ে দেখো) stays until the first turn, then only its small icon; it looks nothing like the white disc on the candle.
+  The next step, or the kit's "সামনে" button, flies back round the scene, not through it. The one exception is the view into
+  M₁: the camera stands between the mirrors and looks through M₁, and beyond that glass this view has nothing to show, so
+  there it keeps to M₂'s side (azimuth −125° to −30°) and does not zoom.
 - **Images are exact.** `reading.js` reflects the candle in a chain of mirrors. An image in the scene is the same geometry moved
   there, with `scale.x = −1` for an odd number of reflections, so its handle and drips are mirrored too. Same clock, same
   flicker: every flame moves together.
@@ -40,7 +57,7 @@ angle, a camera per step with smooth zooms, one element at a time, labels never 
   image and frame is clipped to the windows in front of it, with four planes through the camera (rectangles in parallel
   planes meet in a rectangle). A dark quad of 10 % on each window does the dimming, so what is behind two windows really gets
   81 %. Six slabs, then the last window fades into the backdrop.
-- **The test** (numbers only: the kit's quiz compares `Math.abs(choice − expected)`, so strings can never score; a browser test
+- **The test** (unchanged by the new steps; numbers only: the kit's quiz compares `Math.abs(choice − expected)`, so strings can never score; a browser test
   answers all five right and checks ৫ টির মধ্যে ৫ টি): x to x′, a count of reflections read off the row, a mark on the table for
   x″, d₄ from d₁ and d₂, and, in the view into the mirror, which of four marked images has the least light. `get` carries the
   current question's kind and right answer for that test.
@@ -68,14 +85,18 @@ angle, a camera per step with smooth zooms, one element at a time, labels never 
 আয়না, প্রতিবিম্ব, প্রতিবিম্বের প্রতিবিম্ব, অসংখ্য প্রতিবিম্ব, মোমবাতি, M₁, M₂, x, x′, x″, x‴, d₁ d₂ d₃ d₄, প্রতিফলন. Added: সমান্তরাল (the caption's),
 "বস্তু" for an image acting as an object, ম্লান for dim, অবাস্তব প্রতিবিম্ব (from p220).
 
-## Numbers (844×390, shadows on, one counted frame)
-The book's row: 61 draw calls, 79k triangles. The whole row: 81 draw calls, 68k triangles. Looking into M₁: 82 draw calls,
-54k triangles. Ready in about 3 s, GLB about 200 KB. Idle, after 8 s: nothing is drawn.
+## Numbers (844×390, shadows on, one counted frame with the shadow pass, at the guided view and from eight azimuths)
+Worst draw calls: 84, looking into M₁ at −90°. Worst triangles: 79k, the book's picture. The row: 81 draw calls, 68k triangles at 90°. One
+mirror: 26 draw calls, 24k triangles. Ready in about 3 s, GLB about 200 KB. Idle, after 8 s: nothing is drawn, also after a turn.
+The backs cost nothing new: each mirror's silvered back was already a box, and the two sides share their materials.
 
 ## Open questions
 - The book's picture prints capitals (X, X′), its caption small letters (x, x′); the figure follows the caption and the brief.
 - The book names the images on both sides x′, x″; the figure does too, and the panel says which mirror.
-- The book's picture has no name for the distance of the left x″ from M₂; the figure shows it as a number while it is new.
+- **d₃ in step 3.** The brief for 0.3.0 asked for the left x″ with "its bar d₃ (… measured as the book does)". The book measures d₃ from M₁:
+  from the left x′ to M₁, and from M₁ to the right x″. The left x″ is 45 − x from M₂, which is d₃ only for x = 0, so calling
+  that bar d₃ would give d₃ two values (40 cm, then 50 cm). So step 3 shows that bar as a plain number, and the book's d₃ comes in step 4,
+  when the right x″ it ends at appears, with d₄ next. If the owner wants d₃ in step 3, the fix is to swap the sides of step 3.
 - 90 % per reflection is mine, not the book's.
 - The action words say ডান and বাম আয়না, not M₁ and M₂: the kit writes them as plain text and the bundled font has no subscripts.
 - The 90° mirrors of চিত্র ৮.১৫ and ৮.২৬ are left out: the owner made them optional and they are another idea (left and right).

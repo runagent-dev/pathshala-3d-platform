@@ -25,6 +25,52 @@ export const COUNT = 6;
 /** The ones the book names and the figure can trace a ray to. */
 export const NAMED = 3;
 
+/**
+ * The build, one tap at a time. A beat is what stands after that many taps; a step (one of the words in the panel) is a run
+ * of beats, from the state it starts in to the state it ends in.
+ *   0 the candle and M₁   1 x′ in M₁, d₁   2 M₂ comes in, its x′, d₂   3 the right x′ is an object: x″ on the left
+ *   4 one ray for that x″   5 the left x′ is an object: x″ on the right, d₃   6 the left x″ is an object: x‴, d₄
+ *   7 the row runs on   8 the view into M₁   9 the book's whole picture
+ */
+export const LAST_BEAT = 9;
+export const STEPS = ['one', 'two', 'image', 'again', 'many', 'book'];
+const SPAN = { one: [0, 1], two: [1, 2], image: [2, 4], again: [4, 6], many: [6, 8], book: [8, 9] };
+/** The beat a step starts in, or that `stage` taps into it. */
+export function beatOf(step, stage = 0) {
+  const [a, b] = SPAN[step] ?? SPAN.one;
+  return Math.min(b, a + Math.max(0, Math.round(Number(stage) || 0)));
+}
+/** The step a beat belongs to (the one that ended in it, or is under way). */
+export const stepOfBeat = (beat) => STEPS.find((id) => beat <= SPAN[id][1]) ?? 'book';
+/** The images that stand at a beat, in the order they came. */
+export function imagesAt(beat) {
+  const out = [];
+  if (beat >= 1) out.push('r1');
+  if (beat >= 2) out.push('l1');
+  if (beat >= 3) out.push('l2');
+  if (beat >= 5) out.push('r2');
+  if (beat >= 6) out.push('r3');
+  if (beat === 7 || beat === 8) for (const q of row(0)) if (!out.includes(q.id)) out.push(q.id);
+  return out;
+}
+/** The images the row adds at beat 7, one after the other along both sides. */
+export const ROW_ADDS = ['l3', 'r4', 'l4', 'r5', 'l5', 'r6', 'l6'];
+/** Seconds between two of them, and how long each takes to come in. */
+export const ROW_GAP = 0.6;
+export const ROW_FADE = 1;
+/** Each pair of distances at a beat, with the beat that drew it; `e` is the pair round M₂ that the book has no name for. */
+const BAR_FROM = { d1: 1, d2: 2, e: 3, d3: 5, d4: 6 };
+export function barsAt(beat) {
+  if (beat === 7 || beat === 8) return [];
+  return Object.keys(BAR_FROM).filter((n) => beat >= BAR_FROM[n] && !(n === 'e' && beat > 4));
+}
+/** Only the newest pair is at full strength, older ones are faint; the book's whole picture shows them all. */
+export const isCurrentBar = (name, beat) => beat === LAST_BEAT || BAR_FROM[name] === beat;
+/** How many stacked rows of distances stand at a beat. */
+export const barRows = (beat) => (beat >= 6 ? 3 : beat >= 3 ? 2 : beat >= 1 ? 1 : 0);
+/** The image that acts as an object at a beat. */
+export const OBJECT_AT = { 3: 'r1', 5: 'l1', 6: 'l2' };
+
 const planeOf = (name) => (name === 'm1' ? M.m1 : M.m2);
 /** The reflection of a point on the row in the plane at m. */
 export const reflectIn = (x, m) => 2 * m - x;

@@ -1,9 +1,10 @@
 // Images in two mirrors (দুটি আয়নায় প্রতিবিম্ব), book p215–216, the উদাহরণ under 8.2.1, চিত্র ৮.০৪: the student view. A lit candle
-// stands between two parallel silvered-glass mirrors on a table. Three steps in the book's order, one thing at a time:
-// (1) the image x′ in each mirror, with d₁ and d₂ before and behind it, and the student drags the candle; (2) each x′ is an
-// object for the other mirror: the image of the image x″, then x‴, with d₃ and d₄, the row of চিত্র ৮.০৪; (3) it goes on: the
-// row runs off both ways, and then the camera looks into M₁, where the same images are seen as a real pair of mirrors shows
-// them. Any named image can be tapped to trace its light. The panel is the kit's clean sheet. A 5-question test.
+// stands on a table, and the idea is built up one tap at a time, each tap slow enough to follow and each waiting for the next:
+// (1) one mirror and one image, as in a plane mirror; (2) a second mirror comes in, with its own image; (3) the first image is an
+// object for the second mirror: the image of the image x″, then one ray traced to it; (4) the same on the other side, x″ and
+// x‴; (5) it goes on, and the camera looks into M₁, where the same images stand as a real pair of mirrors shows them. Only then
+// comes the book's whole picture with all its distances. Any named image can be tapped to trace its light. The panel is the
+// kit's clean sheet. A 5-question test is offered at the end.
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
 import { createAction } from '@shared/student/action.js';
@@ -18,6 +19,9 @@ import { fitPose } from './camera.js';
 import { C, createDiagram } from './diagram.js';
 import { createI18n } from './i18n.js';
 import {
+  barRows,
+  barsAt,
+  beatOf,
   brightness,
   CANDLE,
   chainOf,
@@ -26,23 +30,32 @@ import {
   EYE,
   GLASS,
   imageAt,
+  imagesAt,
+  isCurrentBar,
+  LAST_BEAT,
   M,
   NAMED,
+  OBJECT_AT,
   PAIR_X,
   pairChoices,
   path,
   REFLECTANCE,
+  ROW_ADDS,
+  ROW_FADE,
+  ROW_GAP,
   row,
   shuffle,
   snapCandle,
   spotChoices,
+  STEPS,
+  stepOfBeat,
   sumChoices,
   timesChoices,
 } from './reading.js';
 import { createSetting } from './setting.js';
 
 export const DEFAULTS = {
-  step: 'first', // 'first' | 'second' | 'many'
+  step: 'one', // 'one' | 'two' | 'image' | 'again' | 'many' | 'book'
   x: CANDLE.start, // the candle on the row, cm from the middle of the gap
   stage: 0, // how far the step is built
   view: 'front', // 'front' | '3d'
@@ -54,7 +67,16 @@ export const DEFAULTS = {
   shadow: true,
 };
 
-const STEPS = ['first', 'second', 'many'];
+// the owner's pace: seconds, and a step always ends by waiting for the student's tap
+const PACE = { camera: 1.8, reveal: 3, withObject: 4.2, slide: 2.5, hold: 0.5, raySegment: 1.2, mirror: 2.4, fade: 0.9, bars: 1.2 };
+const QUIZ_FLIGHT = 0.5; // s: the test is not a demonstration, a question should not keep the student waiting
+const FAINT = 0.3; // an older pair of distances
+const FLOOR_Z = 13; // cm: the candle's handle and track, on the table in front of it
+const GRIP_CLEAR = 30; // px: at least this far under the candle's foot on the screen
+// the ray the book's step shows at a beat
+const RAY_AT = { 4: 'l2' };
+const REVEALS = { 1: 'r1', 2: 'l1', 3: 'l2', 5: 'r2', 6: 'r3' };
+const TURN_CLICK = 8; // px: a finger that moves less has tapped, it has not turned the view
 // where a distance's name sits: over its arrow, or, where two arrows meet at a mirror, a little to the outside of each
 const ON_DIM = [
   { dx: 0, dy: -13 },
@@ -113,34 +135,59 @@ export function createApp(root, options = {}) {
   ui.stage.appendChild(note);
 
   // ── 3D ──────────────────────────────────────────────────────────────────────────────────────────────────
+  const turnCue = document.createElement('div');
+  turnCue.className = 'pm2-turn';
+  turnCue.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.6 9.4C19 6.9 15.8 5.4 12 5.4 6.8 5.4 2.5 8.4 2.5 12s4.3 6.6 9.5 6.6c4.2 0 7.8-2 9-4.7"/><path d="m21.8 5.4-1 4.3-4.2-1.2"/><circle cx="12" cy="12" r="1.5"/></svg><b>${t('turn_360')}</b><span>${t('view_rotate')}</span>`;
+  ui.stage.appendChild(turnCue);
+  // the candle's handle: always there while it can be moved. A finger on it is found by distance; the element lets every touch through
+  const handle = document.createElement('div');
+  handle.className = 'pm2-handle';
+  handle.hidden = true;
+  handle.innerHTML = `<i class="pm2-hd"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h18M3 12l5-5M3 12l5 5M21 12l-5-5M21 12l-5 5"/></svg></i><span class="pm2-hl">${t('l_drag')}</span>`;
+  ui.stage.appendChild(handle);
+
   const FOV = 20;
   const stage = createStage(ui.canvasHost, { fov: FOV, near: 2, far: 6000, environment: 'studio-light', environmentIntensity: 0.3 });
   const { camera, controls } = stage;
   controls.enablePan = false;
-  controls.enableZoom = false;
-  controls.minPolarAngle = THREE.MathUtils.degToRad(50);
-  controls.maxPolarAngle = THREE.MathUtils.degToRad(87);
-  /** The student turns the view within these; a flight into the mirror goes beyond them. */
-  function freeTurn(free) {
-    controls.minAzimuthAngle = free ? Number.NEGATIVE_INFINITY : THREE.MathUtils.degToRad(-58);
-    controls.maxAzimuthAngle = free ? Number.POSITIVE_INFINITY : THREE.MathUtils.degToRad(40);
+  controls.enableZoom = true;
+  controls.minPolarAngle = THREE.MathUtils.degToRad(5);
+  controls.maxPolarAngle = THREE.MathUtils.degToRad(88); // the camera stays above the table
+  /**
+   * All the way round. The one exception is the view into M₁: the camera stands between the mirrors and looks through M₁, so
+   * there it stays on M₂'s side; beyond that glass this view has nothing to show.
+   */
+  function turnLimits(intoMirror) {
+    controls.minAzimuthAngle = intoMirror ? THREE.MathUtils.degToRad(-125) : Number.NEGATIVE_INFINITY;
+    controls.maxAzimuthAngle = intoMirror ? THREE.MathUtils.degToRad(-30) : Number.POSITIVE_INFINITY;
+    controls.enableZoom = !intoMirror;
   }
-  freeTurn(false);
+  turnLimits(false);
+  /** The guided camera goes wherever a step needs; the limits on a student's zoom are set when the student takes over. */
+  function zoomLimits(free) {
+    const d = camera.position.distanceTo(controls.target);
+    controls.minDistance = free ? d * 0.45 : 0;
+    controls.maxDistance = free ? d * 1.6 : Number.POSITIVE_INFINITY;
+  }
   const setting = createSetting({ stage, shadow: Boolean(o.shadow) });
   const dia = createDiagram({ stage, host: ui.canvasHost });
 
   // ── the state ───────────────────────────────────────────────────────────────────────────────────────────
   const s = {
-    step: STEPS.includes(o.step) ? o.step : 'first',
+    step: STEPS.includes(o.step) ? o.step : 'one',
     x: snapCandle(Number.isFinite(Number(o.x)) ? Number(o.x) : CANDLE.start),
-    first: 0, // 0 nothing yet, 1 x′ in M₁, 2 x′ in M₂, 3 the candle has moved
-    second: 0, // 0 nothing yet, 1 x″ in M₁, 2 x″ in M₂, 3 x‴ in M₁
-    many: 0, // 0 the book's row, 1 it runs on, 2 looking into M₁
+    beat: 0, // how many taps the build has had (reading.js lists them)
+    m2: 0, // M₂ coming in, 0 … 1
     inside: 0, // the flight into M₁, 0 … 1
     newest: '', // what is growing in
     grow: 1,
     flash: 0,
     trace: '', // the image whose ray is drawn
+    rayK: Number.POSITIVE_INFINITY, // how many straight stretches of it are drawn
+    rayA: 1, // an old ray fades before anything new comes
+    barA: 1, // all the distances together, into the row and back
+    dragged: false, // the student has moved the candle: the handle calms down
+    turned: false, // the student has turned the view: the corner's cue calms down
     busy: false,
     mode: 'explore',
     locked: false,
@@ -149,12 +196,16 @@ export function createApp(root, options = {}) {
     quiz: null,
     drag: null,
   };
+  /** The picture of a beat, at once, nothing moving. */
   function buildTo(step, stageN) {
-    const n = Math.round(Number(stageN) || 0);
-    s.first = step === 'first' ? clamp(n, 0, 3) : 3;
-    s.second = step === 'second' ? clamp(n, 0, 3) : step === 'many' ? 3 : 0;
-    s.many = step === 'many' ? clamp(n, 0, 2) : 0;
-    s.inside = s.many === 2 ? 1 : 0;
+    s.step = step;
+    s.beat = beatOf(step, stageN);
+    s.m2 = s.beat >= 2 ? 1 : 0;
+    s.inside = s.beat === 8 ? 1 : 0;
+    s.trace = RAY_AT[s.beat] ?? '';
+    s.rayK = Number.POSITIVE_INFINITY;
+    s.rayA = 1;
+    s.barA = 1;
   }
   buildTo(s.step, o.stage);
 
@@ -191,37 +242,36 @@ export function createApp(root, options = {}) {
   /** What the panel's action does now. */
   function phase() {
     if (s.busy || s.grow < 1) return 'busy';
-    if (s.step === 'first') return `f${s.first}`;
-    if (s.step === 'second') return `s${s.second}`;
-    return `m${s.many}`;
+    return `b${s.beat}`;
   }
-  /** The images built so far: book's row first. */
-  function builtIds() {
-    if (s.quiz) return s.quiz.show;
-    const ids = [];
-    if (s.first >= 1) ids.push('r1');
-    if (s.first >= 2) ids.push('l1');
-    if (s.second >= 1) ids.push('r2');
-    if (s.second >= 2) ids.push('l2');
-    if (s.second >= 3) ids.push('r3');
-    if (s.many >= 1) for (const q of row(0)) if (!ids.includes(q.id)) ids.push(q.id);
-    return ids;
-  }
-  const inRow = () => !s.quiz && s.step === 'many' && s.many >= 1;
-  const canDrag = () => !s.locked && !s.busy && s.grow >= 1 && s.many < 1 && !(s.step === 'first' && s.first < 2);
+  /** The images built so far: the book's row first. */
+  const builtIds = () => (s.quiz ? s.quiz.show : imagesAt(s.beat));
+  const inRow = () => !s.quiz && (s.beat === 7 || s.beat === 8);
+  let pickedTrace = false; // the student chose this ray by tapping its image
+  const canDrag = () => !s.locked && !s.busy && s.grow >= 1 && s.inside === 0 && s.beat >= 1 && !inRow();
 
   // ── what the 3D shows, from the state ──────────────────────────────────────────────────────────────────
   /** The heights of the book's three rows of distances, cm: further apart where the view is narrow and there is height. */
   const rowAt = (i) => (stage.width / stage.height < 1.25 ? 48 + i * 15 : 44 + i * 11);
+  /** How strong a pair of distances is now: only the newest at full strength, and the one before it fades as the new one comes. */
+  function barAlpha(name) {
+    if (isCurrentBar(name, s.beat)) return s.barA;
+    const was = isCurrentBar(name, s.beat - 1) && s.newest;
+    return s.barA * (was ? 1 - (1 - FAINT) * seg(s.grow, 0, 0.3) : FAINT);
+  }
   function dimsNow() {
     const g = s.grow;
     const out = [];
     const x = s.x;
-    const pair = (name, from, m, to, y, newest, drop, text) => {
-      const k0 = s.newest === newest ? seg(g, 0, 0.34) : 1;
-      const k1 = s.newest === newest ? seg(g, 0.68, 1) : 1;
-      const lit = s.newest === newest;
-      if (k0 > 0) out.push({ id: `${name}a`, x0: from, x1: m, y, k: k0, lit, drop0: drop, drop1: TOP, text, spots: ON_DIM });
+    const pair = (name, from, m, to, y, text) => {
+      const a = barAlpha(name);
+      if (a <= 0) return;
+      const lit = isCurrentBar(name, s.beat) && s.beat === barBeat(name) && s.newest !== '';
+      const late = OBJECT_AT[s.beat] ? 0.25 : 0; // an object glows on its own first
+      const k0 = lit ? seg(g, late, late + 0.3) : 1;
+      const k1 = lit ? seg(g, late + 0.3, late + 0.6) : 1;
+      const faint = a < 0.99 && s.barA >= 1;
+      if (k0 > 0) out.push({ id: `${name}a`, x0: from, x1: m, y, k: k0, lit, a, faint, drop0: TIP, drop1: TOP, text, spots: ON_DIM });
       if (k1 > 0)
         out.push({
           id: `${name}b`,
@@ -230,22 +280,28 @@ export function createApp(root, options = {}) {
           y,
           k: k1,
           lit,
+          a,
+          faint,
           drop0: TOP,
           drop1: TIP,
           text,
           spots: name === 'd1' ? DIM_R : name === 'd2' ? DIM_L : ON_DIM,
         });
     };
-    if (inRow()) return out;
     const r1 = imageAt(x, 'r', 1);
     const l1 = imageAt(x, 'l', 1);
-    if (s.first >= 1) pair('d1', x, M.m1, r1, rowAt(0), 'r1', TIP, t('l_d1'));
-    if (s.first >= 2) pair('d2', x, M.m2, l1, rowAt(0), 'l1', TIP, t('l_d2'));
-    if (s.second === 2) pair('e', r1, M.m2, imageAt(x, 'l', 2), rowAt(1), 'l2', TIP, t('l_cm', { a: N(num(r1 - M.m2)) }));
-    else if (s.second >= 1) pair('d3', l1, M.m1, imageAt(x, 'r', 2), rowAt(1), 'r2', TIP, t('l_d3'));
-    if (s.second >= 3) pair('d4', imageAt(x, 'l', 2), M.m1, imageAt(x, 'r', 3), rowAt(2), 'r3', TIP, t('l_d4'));
+    const l2 = imageAt(x, 'l', 2);
+    // on the way into the row the book's distances fade out
+    const names = s.beat === 7 && s.busy && s.grow === 0 ? barsAt(6) : barsAt(s.beat);
+    if (names.includes('d1')) pair('d1', x, M.m1, r1, rowAt(0), t('l_d1'));
+    if (names.includes('d2')) pair('d2', x, M.m2, l1, rowAt(0), t('l_d2'));
+    // the book's d₃ and d₄ are measured from M₁; round M₂ the book has no name, so the number stands there
+    if (names.includes('e')) pair('e', r1, M.m2, l2, rowAt(1), t('l_cm', { a: N(num(r1 - M.m2)) }));
+    if (names.includes('d3')) pair('d3', l1, M.m1, imageAt(x, 'r', 2), rowAt(1), t('l_d3'));
+    if (names.includes('d4')) pair('d4', l2, M.m1, imageAt(x, 'r', 3), rowAt(2), t('l_d4'));
     return out;
   }
+  const barBeat = (name) => ({ d1: 1, d2: 2, e: 3, d3: 5, d4: 6 })[name];
   let dimsShown = [];
   /** A chain of mirrors in words. */
   const chainWords = (side, k) =>
@@ -257,26 +313,35 @@ export function createApp(root, options = {}) {
     const side = id[0];
     const n = Number(id[1]);
     const r = path(s.x, side, n);
-    v.ray = { points: r.points, k, lit };
-    const g = lit ? seg(k, 0.5, 1) : 1;
+    const stretches = r.points.length - 1;
+    v.ray = { points: r.points, k, lit, a: s.rayA };
     r.via.forEach((q, i) => {
-      const last = i === r.via.length - 1;
-      v.backs.push({ x0: q.from.x, y0: q.from.y, x1: q.x, y1: q.y, k: last ? seg(s.newest ? s.grow : 1, 0.72, 0.95) : g, lit });
+      // each dashed line follows the stretch that left that mirror; the last one comes after the ray has reached the eye
+      const from = i === r.via.length - 1 ? stretches : i + 1;
+      v.backs.push({ x0: q.from.x, y0: q.from.y, x1: q.x, y1: q.y, k: seg(k, from, from + 1), lit });
     });
-    for (const h of r.hits) if (k >= 1) v.points.push([h.x, h.y, 2.6, C.ray]);
+    r.hits.forEach((h, i) => {
+      if (k >= i + 1) v.points.push([h.x, h.y, 2.6, C.ray]);
+    });
     v.points.push([s.x, CANDLE.flame, 2.8, C.ray]);
     v.eye = { x: r.eye.x, y: r.eye.y, tx: r.hits[r.hits.length - 1].x, ty: r.hits[r.hits.length - 1].y };
-    if (!lit) v.aim = { x: r.image, y: CANDLE.flame };
+    if (!lit && k >= stretches) v.aim = { x: r.image, y: CANDLE.flame };
   }
   function applyWorld() {
     setting.setCandle(s.x);
+    setting.setM2(s.quiz ? 1 : s.m2);
     // far along the row the plain candle does; x‴ keeps its detail where it is large, in the book's row and in the mirror
     setting.setDetail(inRow() && s.inside === 0 ? 3 : NAMED + 1);
     const ids = builtIds();
+    const late = OBJECT_AT[s.beat] ? 0.25 : 0;
+    const clockRow = s.grow * (ROW_ADDS.length * ROW_GAP + ROW_FADE);
     for (const q of row(0)) {
       let a = ids.includes(q.id) ? 1 : 0;
-      if (a && s.newest === q.id) a = seg(s.grow, 0.62, 1);
-      if (a && s.newest === 'row' && q.k >= 3 && !(q.id === 'r3')) a = seg(s.grow, 0.05 + (q.k - 2) * 0.13, 0.25 + (q.k - 2) * 0.13);
+      if (a && s.newest === q.id) a = seg(s.grow, late + 0.05, 1);
+      if (a && s.newest === 'row') {
+        const i = ROW_ADDS.indexOf(q.id);
+        if (i >= 0) a = seg(clockRow, i * ROW_GAP, i * ROW_GAP + ROW_FADE);
+      }
       setting.setImage(q.id, a);
     }
     setting.setInside(s.inside);
@@ -286,33 +351,31 @@ export function createApp(root, options = {}) {
     if (s.quiz) return applyQuiz(s.quiz);
     dimsShown = dimsNow();
     v.dims.push(...dimsShown);
-    if (s.trace && !inRow()) {
-      const k = s.newest === s.trace ? seg(s.grow, 0.12, 0.72) : 1;
-      if (k > 0) drawRay(s.trace, k, s.newest === s.trace);
+    const object = OBJECT_AT[s.beat];
+    if (object && (s.newest || s.flash > 0)) {
+      const glow = s.newest ? 1 : s.flash;
+      v.halo = { x: imageAt(s.x, object[0], Number(object[1])), y: CANDLE.tip / 2, r: CANDLE.tip * 0.8, k: glow };
     }
-    if (canDrag()) v.drag.candle = { x: s.x };
+    if (s.trace && !inRow() && s.rayA > 0) drawRay(s.trace, s.rayK, s.rayK < Number.POSITIVE_INFINITY);
   }
 
   // ── camera: each step frames what it is about, and flies there smoothly ────────────────────────────────
   const FRAMES = {
-    gap: { az: -22, el: 12, fov: FOV },
-    one: { az: -21, el: 12, fov: FOV },
+    start: { az: -25, el: 13, fov: FOV },
+    one: { az: -24, el: 13, fov: FOV },
     book: { az: -20, el: 13, fov: FOV },
     row: { az: -26, el: 9, fov: FOV },
     inside: { pose: true, fov: 44 },
     'q-dim': { pose: true, fov: 44 },
   };
-  function frameKey() {
-    if (s.quiz) return `q-${s.quiz.kind}`;
-    if (s.step === 'first') return s.first === 0 ? 'gap' : s.first === 1 ? 'one' : 'both';
-    if (s.step === 'second') return ['both', 'two', 'twol', 'three'][s.second];
-    return ['three', 'row', 'inside'][s.many];
-  }
-  /** The frame with what a ray adds to it: the eye. */
-  const frameId = () => (s.trace && !s.quiz ? `${frameKey()}:${s.trace[0]}` : frameKey());
+  const BEAT_FRAMES = ['start', 'one', 'both', 'two', 'ray', 'three', 'four', 'row', 'inside', 'book'];
+  const frameKey = () => (s.quiz ? `q-${s.quiz.kind}` : BEAT_FRAMES[s.beat]);
+  /** The frame with what a chosen ray adds to it: the eye. */
+  const frameId = () => (pickedTrace && s.trace && !s.quiz ? `${frameKey()}:${s.trace[0]}` : frameKey());
   let camFrom = null;
   let camK = 1;
   let shownFrame = '';
+  let flight = null; // the camera's move under way
   const FRAME = new THREE.Box3();
   const margin = { top: 36, bottom: 28, left: 8, right: 8 };
   const camDir = new THREE.Vector3();
@@ -331,33 +394,35 @@ export function createApp(root, options = {}) {
     const a = THREE.MathUtils.degToRad(f.az);
     const e = THREE.MathUtils.degToRad(f.el);
     camDir.set(Math.sin(a) * Math.cos(e), Math.sin(e), Math.cos(a) * Math.cos(e));
-    let x0 = -24;
+    let x0 = s.quiz || s.beat >= 2 ? -24 : -13; // before M₂ comes the view holds only the candle and M₁
     let x1 = 24;
     let top = GLASS.top + 4;
     if (key === 'row') {
       x0 = -106;
       x1 = 136;
     } else {
+      // the frame takes in all of an image's way, so the view stands still while the student drags the candle
       for (const id of builtIds()) {
-        const at = imageAt(s.x, id[0], Number(id[1]));
-        x0 = Math.min(x0, at - 8);
-        x1 = Math.max(x1, at + 8);
+        const a0 = imageAt(CANDLE.min, id[0], Number(id[1]));
+        const a1 = imageAt(CANDLE.max, id[0], Number(id[1]));
+        x0 = Math.min(x0, Math.min(a0, a1) - 8);
+        x1 = Math.max(x1, Math.max(a0, a1) + 8);
       }
       if (s.quiz?.range) {
         x0 = Math.min(x0, s.quiz.range[0]);
         x1 = Math.max(x1, s.quiz.range[1]);
       }
-      if (s.trace) {
+      if (s.trace && (pickedTrace || RAY_AT[s.beat]) && !s.quiz) {
         const ex = s.trace[0] === 'r' ? -EYE.x - 6 : EYE.x + 6;
         x0 = Math.min(x0, ex);
         x1 = Math.max(x1, ex);
         top = Math.max(top, EYE.y + 3);
       }
-      const rows = s.quiz ? (s.quiz.rows ?? 1) : s.second >= 3 ? 3 : s.second >= 1 ? 2 : s.first >= 1 ? 1 : 0;
+      const rows = s.quiz ? (s.quiz.rows ?? 1) : barRows(s.beat);
       if (rows) top = Math.max(top, rowAt(rows - 1) + 7);
     }
     FRAME.min.set(x0, -2, -6);
-    FRAME.max.set(x1, top, 8);
+    FRAME.max.set(x1, top, s.quiz ? 8 : FLOOR_Z + 2);
     margin.top = 40;
     margin.right = panelBeside() ? 34 : 8;
     margin.left = 8;
@@ -371,14 +436,30 @@ export function createApp(root, options = {}) {
     camera.fov = fov;
     camera.updateProjectionMatrix();
   }
+  const sphFrom = new THREE.Spherical();
+  const sphTo = new THREE.Spherical();
+  const arcV = new THREE.Vector3();
   function applyCamera() {
     if (s.userMovedCamera) return;
     const pz = poseNow();
-    freeTurn(s.inside > 0 || camK < 1);
+    turnLimits(s.inside >= 1 && camK >= 1);
     if (camK < 1 && camFrom) {
       const k = ease.inOutCubic(camK);
-      camera.position.lerpVectors(camFrom.position, pz.position, k);
       controls.target.lerpVectors(camFrom.target, pz.target, k);
+      if (camFrom.arc) {
+        // back from wherever the student turned the view: round the scene, never through it
+        sphFrom.setFromVector3(arcV.subVectors(camFrom.position, camFrom.target));
+        sphTo.setFromVector3(arcV.subVectors(pz.position, pz.target));
+        let dTheta = (sphTo.theta - sphFrom.theta) % (2 * Math.PI);
+        if (dTheta > Math.PI) dTheta -= 2 * Math.PI;
+        if (dTheta < -Math.PI) dTheta += 2 * Math.PI;
+        arcV.setFromSphericalCoords(
+          sphFrom.radius + (sphTo.radius - sphFrom.radius) * k,
+          sphFrom.phi + (sphTo.phi - sphFrom.phi) * k,
+          sphFrom.theta + dTheta * k,
+        );
+        camera.position.copy(controls.target).add(arcV);
+      } else camera.position.lerpVectors(camFrom.position, pz.position, k);
       setFov(camFrom.fov + (pz.fov - camFrom.fov) * k);
     } else {
       camera.position.copy(pz.position);
@@ -387,59 +468,91 @@ export function createApp(root, options = {}) {
     }
     controls.update();
   }
-  function flyCamera(duration = 0.9) {
-    if (s.userMovedCamera) {
+  function flyCamera(duration = PACE.camera) {
+    const arc = s.userMovedCamera;
+    if (arc) {
       s.userMovedCamera = false;
       s.view = 'front';
+      zoomLimits(false);
       syncUI();
     }
-    camFrom = { position: camera.position.clone(), target: controls.target.clone(), fov: camera.fov };
+    camFrom = { position: camera.position.clone(), target: controls.target.clone(), fov: camera.fov, arc };
     camK = 0;
-    return tweener.animate({
+    flight = tweener.animate({
       key: 'camera',
       duration,
+      ease: ease.linear,
       onUpdate: (k) => {
         camK = k;
         stage.invalidate();
       },
       onComplete: () => {
         camK = 1;
+        flight = null;
         stage.invalidate();
       },
     }).finished;
+    return flight;
   }
   /** After any change: when the state wants another frame, go there. */
-  function followFrame(instant, duration = 0.9) {
+  function followFrame(instant, duration = PACE.camera) {
     const key = frameId();
     if (key === shownFrame) return;
     const first = !shownFrame;
     shownFrame = key;
     if (first || instant) {
       tweener.cancel('camera');
+      flight = null;
       camK = 1;
     } else flyCamera(duration);
   }
   function setView(view, { animate = true } = {}) {
     s.view = view === '3d' ? '3d' : 'front';
-    s.userMovedCamera = false;
     syncUI();
-    if (animate) flyCamera(0.7);
-    else camK = 1;
+    if (animate) flyCamera();
+    else {
+      s.userMovedCamera = false;
+      zoomLimits(false);
+      camK = 1;
+    }
     stage.invalidate();
   }
-  controls.addEventListener('start', () => {
-    if (s.drag) return;
+  /** The student has taken the view: it stays where they leave it until the next step or the সামনে button. */
+  function takeView() {
+    if (s.userMovedCamera) return;
     s.userMovedCamera = true;
     tweener.cancel('camera');
+    flight = null;
     camK = 1;
+    zoomLimits(true);
+    if (!s.turned) {
+      s.turned = true;
+      turnCue.classList.add('used');
+    }
     if (s.view !== '3d') {
       s.view = '3d';
       syncUI();
       emit('view', { view: s.view });
     }
+  }
+  // a plain tap is not a turn: OrbitControls starts on the finger going down, so only movement past a few pixels takes the view
+  let orbiting = false;
+  controls.addEventListener('start', () => {
+    orbiting = !s.drag;
   });
+  controls.addEventListener('end', () => {
+    orbiting = false;
+  });
+  ui.canvasHost.addEventListener(
+    'wheel',
+    () => {
+      if (!s.locked && s.inside === 0) takeView();
+    },
+    { capture: true, passive: true },
+  );
   stage.onResize(() => {
     s.userMovedCamera = false;
+    zoomLimits(false);
     if (s.view === '3d') {
       s.view = 'front';
       syncUI();
@@ -449,6 +562,7 @@ export function createApp(root, options = {}) {
   stage.onBeforeRender(() => {
     applyCamera();
     camera.updateMatrixWorld();
+    placeHandle();
     setting.setFloorFade(camera, FRAME.min.x, FRAME.max.x);
     setting.updateClip(camera);
     labels();
@@ -474,57 +588,26 @@ export function createApp(root, options = {}) {
   let landing = null;
   function stopMotion() {
     ++token;
-    for (const k of ['pose', 'reveal', 'flash', 'inside']) tweener.cancel(k);
+    for (const k of ['pose', 'reveal', 'flash', 'inside', 'm2', 'ray', 'bars', 'hold']) tweener.cancel(k);
     landing?.();
     landing = null;
     s.busy = false;
     s.grow = 1;
     s.flash = 0;
     s.newest = '';
+    s.rayA = 1;
+    s.barA = 1;
   }
-  function go(step, { animate = true } = {}) {
-    if (s.locked) return lockedNudge();
-    if (!STEPS.includes(step)) return;
-    stopMotion();
-    const wasInside = s.inside > 0;
-    s.step = step;
-    s.trace = '';
-    if (step !== 'first') s.first = 3;
-    if (step === 'many') s.second = 3;
-    if (step !== 'many') {
-      s.many = 0;
-      s.inside = 0;
-    }
-    clearLabels();
-    if (wasInside && animate && step !== 'many') {
-      s.inside = 1;
-      leaveMirror();
-      return;
-    }
-    draw({ instant: !animate });
-    emitChange();
-  }
-  /** Runs an eased move as the action's demonstration, then what follows it. */
-  function demo(x, duration, then) {
-    const my = ++token;
-    s.busy = true;
-    landing = () => {
-      s.x = x;
-      then?.();
-    };
-    draw();
-    moveTo(x, duration).then((ok) => {
-      if (my !== token) return;
-      s.busy = false;
-      landing = null;
-      if (ok) {
-        then?.();
-        audio.success();
-      }
-      draw();
-      emitChange();
-    });
-  }
+  const run = (key, duration, fn, how = ease.linear) =>
+    tweener.animate({
+      key,
+      duration,
+      ease: how,
+      onUpdate: (k) => {
+        fn?.(k);
+        draw();
+      },
+    }).finished;
   function fadeLit() {
     tweener.animate({
       key: 'flash',
@@ -539,99 +622,102 @@ export function createApp(root, options = {}) {
       },
     });
   }
-  /** The next thing grows in, highlighted, with the ray that makes it. */
-  function reveal(id, duration = 2) {
+  /**
+   * One tap's worth, to the end, and then it waits: first the old ray fades and the camera goes to its frame, then the new thing
+   * comes in slowly. Taps do nothing while it plays. A stop (the test, a set) lands on what the beat ends in.
+   */
+  async function play(next) {
     const my = ++token;
+    const alive = () => my === token;
     tweener.cancel('flash');
-    s.newest = id;
+    const ray = RAY_AT[next];
+    const wasRay = Boolean(s.trace) && !ray;
+    pickedTrace = false;
+    s.busy = true;
+    s.beat = next;
+    s.step = stepOfBeat(next);
     s.flash = 1;
-    s.grow = 0;
-    if (id !== 'row') s.trace = id;
+    const id = REVEALS[next] ?? (next === 7 ? 'row' : '');
+    s.newest = id;
+    s.grow = id ? 0 : 1;
+    if (ray) {
+      s.trace = ray; // the eye is in the frame from the start
+      s.rayK = 0;
+      s.rayA = 1;
+    }
     landing = () => {
-      s.newest = '';
-      s.grow = 1;
+      s.busy = false;
+      s.m2 = next >= 2 ? 1 : 0;
+      s.inside = next === 8 ? 1 : 0;
+      s.trace = ray ?? '';
+      s.rayK = Number.POSITIVE_INFINITY;
+      s.barA = 1;
     };
     audio.tick();
+    clearLabelsOf(next);
+    if (s.userMovedCamera && frameId() === shownFrame) flyCamera();
+    if (next === 2) {
+      s.m2 = 0;
+      draw({ duration: PACE.slide });
+      await run('m2', PACE.slide, (k) => (s.m2 = k), ease.inOutCubic);
+    } else if (next === 8) {
+      draw({ duration: PACE.mirror });
+      await run('inside', PACE.mirror, (k) => (s.inside = k));
+    } else if (next === 9) {
+      s.barA = 0;
+      draw({ duration: PACE.mirror });
+      await run('inside', s.inside > 0 ? PACE.mirror : PACE.camera, (k) => {
+        s.inside = Math.min(s.inside, 1 - k);
+        s.barA = k;
+      });
+    } else {
+      draw();
+      if (next === 7) {
+        const bars = run('bars', PACE.bars, (k) => (s.barA = 1 - k));
+        await bars;
+      } else if (wasRay) await run('ray', PACE.fade, (k) => (s.rayA = 1 - k));
+      if (alive() && flight) await flight;
+    }
+    if (!alive()) return;
+    if (wasRay) {
+      s.trace = '';
+      s.rayA = 1;
+      s.rayK = Number.POSITIVE_INFINITY;
+    }
+    if (next === 2) await run('hold', PACE.hold);
+    if (!alive()) return;
+    if (id) {
+      const row = next === 7;
+      const seconds = row ? ROW_ADDS.length * ROW_GAP + ROW_FADE : OBJECT_AT[next] ? PACE.withObject : PACE.reveal;
+      await run('reveal', seconds, (k) => (s.grow = Math.min(0.999, k)));
+    }
+    if (!alive()) return;
+    if (ray) {
+      // straight stretch by straight stretch, then the dashed line back to where the light seems to come from
+      const stretches = path(s.x, ray[0], Number(ray[1])).points.length - 1;
+      await run('ray', (stretches + 1) * PACE.raySegment, (k) => (s.rayK = k * (stretches + 1)));
+    }
+    if (!alive()) return;
+    s.grow = 1;
+    s.newest = '';
+    landing();
+    landing = null;
+    audio.success();
     draw();
-    tweener
-      .animate({
-        key: 'reveal',
-        duration,
-        ease: ease.linear,
-        onUpdate: (k) => {
-          if (my !== token) return;
-          s.grow = Math.min(0.999, k);
-          draw();
-        },
-      })
-      .finished.then((ok) => {
-        if (!ok || my !== token) return;
-        s.grow = 1;
-        s.newest = '';
-        landing = null;
-        audio.success();
-        draw();
-        emitChange();
-        fadeLit();
-      });
+    emitChange();
+    fadeLit();
   }
-  function enterMirror() {
-    const my = ++token;
-    s.many = 2;
-    s.trace = '';
-    s.busy = true;
-    landing = () => {
-      s.inside = 1;
-    };
+  /** A step's word, or the panel's "again": back to where that step starts, and slowly through it. */
+  function replay(step) {
+    if (s.locked) return lockedNudge();
+    if (!STEPS.includes(step) || phase() === 'busy') return;
+    pickedTrace = false;
     clearLabels();
-    draw({ duration: 2.2 });
-    tweener
-      .animate({
-        key: 'inside',
-        duration: 2.2,
-        ease: ease.linear,
-        onUpdate: (k) => {
-          s.inside = k;
-          draw();
-        },
-      })
-      .finished.then((ok) => {
-        if (!ok || my !== token) return;
-        s.inside = 1;
-        s.busy = false;
-        landing = null;
-        audio.success();
-        draw();
-        emitChange();
-      });
-  }
-  function leaveMirror() {
-    const my = ++token;
-    s.busy = true;
-    if (s.many === 2) s.many = 1;
-    landing = () => {
-      s.inside = 0;
-    };
-    clearLabels();
-    draw({ duration: 1.6 });
-    tweener
-      .animate({
-        key: 'inside',
-        duration: 1.6,
-        ease: ease.linear,
-        onUpdate: (k) => {
-          s.inside = 1 - k;
-          draw();
-        },
-      })
-      .finished.then((ok) => {
-        if (!ok || my !== token) return;
-        s.inside = 0;
-        s.busy = false;
-        landing = null;
-        draw();
-        emitChange();
-      });
+    if (step === 'book') return play(LAST_BEAT);
+    tweener.cancel('flash');
+    s.flash = 0;
+    buildTo(step, 0);
+    play(s.beat + 1);
   }
   let lastAct = -1e9;
   function act() {
@@ -640,52 +726,73 @@ export function createApp(root, options = {}) {
     if (now - lastAct < 400) return;
     lastAct = now;
     audio.unlock();
-    const ph = phase();
-    if (ph === 'f0') {
-      s.first = 1;
-      return reveal('r1');
+    if (phase() === 'busy') return;
+    if (s.beat === LAST_BEAT) {
+      quiz.start();
+      return;
     }
-    if (ph === 'f1') {
-      s.first = 2;
-      return reveal('l1');
-    }
-    if (ph === 'f2') {
-      s.trace = '';
-      return demo(s.x >= 3 ? -3 : 5, 1.5, () => {
-        s.first = 3;
-      });
-    }
-    if (ph === 'f3') return go('second');
-    if (ph === 's0') {
-      s.second = 1;
-      return reveal('r2', 2.6);
-    }
-    if (ph === 's1') {
-      s.second = 2;
-      return reveal('l2', 2.6);
-    }
-    if (ph === 's2') {
-      s.second = 3;
-      return reveal('r3', 2.6);
-    }
-    if (ph === 's3') return go('many');
-    if (ph === 'm0') {
-      s.many = 1;
-      s.trace = '';
-      return reveal('row', 2.2);
-    }
-    if (ph === 'm1') return enterMirror();
-    if (ph === 'm2') return leaveMirror();
+    play(s.beat + 1);
   }
 
   // ── labels on the picture: pinned to what they name ────────────────────────────────────────────────────
   let action = null;
+  const grip = { on: false, x: 0, y: 0, ux: 1, uy: 0, used: null, up: null, angle: 1e9 };
+  const gripPoint = new THREE.Vector3();
+  const trackView = { x0: CANDLE.min, x1: CANDLE.max, z: FLOOR_Z, dy: 0 };
+  const gripIcon = handle.querySelector('svg');
+  /** On the table in front of the candle, or at the edge of the view when the student has turned that out of it. */
+  function placeHandle() {
+    const on = canDrag() && camK >= 1 && !s.quiz;
+    if (on !== grip.on) {
+      grip.on = on;
+      handle.hidden = !on;
+    }
+    dia.view.track = on ? trackView : null;
+    if (!on) return;
+    // in a wide view the table is thin on the screen: the handle and its track step down, clear of the candle's foot
+    gripPoint.set(s.x, 0, 0).project(camera);
+    const foot = ((1 - gripPoint.y) / 2) * stage.height;
+    gripPoint.set(s.x, 0.05, FLOOR_Z).project(camera);
+    const px = ((gripPoint.x + 1) / 2) * stage.width;
+    const py = ((1 - gripPoint.y) / 2) * stage.height;
+    trackView.dy = Math.max(0, foot + GRIP_CLEAR - py);
+    grip.x = Math.min(stage.width - 26, Math.max(26, px));
+    grip.y = Math.min(stage.height - 26, Math.max(26, py + trackView.dy));
+    handle.style.transform = `translate(${grip.x}px, ${grip.y}px)`;
+    // its arrows lie along the candle's way on the screen, from any side
+    gripPoint.set(s.x + 1, 0.05, FLOOR_Z).project(camera);
+    const dx = ((gripPoint.x + 1) / 2) * stage.width - px;
+    const dy = ((1 - gripPoint.y) / 2) * stage.height - py;
+    const l = Math.hypot(dx, dy) || 1;
+    grip.ux = dx / l;
+    grip.uy = dy / l;
+    grip.perCm = l;
+    const angle = Math.round((Math.atan2(dy, dx) * 180) / Math.PI / 5) * 5;
+    if (angle !== grip.angle) {
+      grip.angle = angle;
+      gripIcon.style.transform = `rotate(${angle}deg)`;
+    }
+    const up = grip.y > stage.height - 60;
+    if (up !== grip.up) {
+      grip.up = up;
+      handle.classList.toggle('up', up);
+    }
+    if (s.dragged !== grip.used) {
+      grip.used = s.dragged;
+      handle.classList.toggle('used', s.dragged);
+      handle.classList.toggle('calm', !o.coach);
+    }
+  }
   const handleBoxes = () => {
-    const p = dia.handles.candle;
-    return p ? [{ left: p.x - 18, top: p.y - 18, right: p.x + 18, bottom: p.y + 18 }] : [];
+    if (!grip.on) return [];
+    const r = grip.used ? 16 : 22;
+    const box = { left: grip.x - r, right: grip.x + r, top: grip.y - r, bottom: grip.y + r };
+    if (grip.used || !o.coach) return [box];
+    if (grip.up) return [box, { left: grip.x + 18, right: grip.x + 104, top: grip.y - 12, bottom: grip.y + 12 }];
+    return [box, { left: grip.x - 44, right: grip.x + 44, top: grip.y + 22, bottom: grip.y + 44 }];
   };
   const panelTab = ui.$('.pvc-panel-toggle');
-  const anno = createAnnotations({ stage, layer: ui.annoLayer, avoid: [ui.corner, note, panelTab, handleBoxes, () => action?.ringBox()] });
+  const anno = createAnnotations({ stage, layer: ui.annoLayer, avoid: [ui.corner, note, turnCue, panelTab, handleBoxes, () => action?.ringBox()] });
   const shown = new Map();
   const used = new Map();
   const pts = new Map();
@@ -710,6 +817,10 @@ export function createApp(root, options = {}) {
   function clearLabels() {
     for (const id of [...shown.keys()]) anno.remove(id);
     shown.clear();
+  }
+  /** The flights into and out of the mirror cross everything: the picture's labels wait for the end. */
+  function clearLabelsOf(beat) {
+    if (beat === 8 || (beat === 9 && s.inside > 0)) clearLabels();
   }
   const ptr = new THREE.Vector3();
   const onScreen = { x: 0, y: 0 };
@@ -743,13 +854,28 @@ export function createApp(root, options = {}) {
     { dx: 16, dy: 28 },
     { dx: 32, dy: 22 },
     { dx: -32, dy: 22 },
+    { dx: -48, dy: 12 },
+    { dx: 48, dy: 12 },
+    { dx: -56, dy: -6 },
+    { dx: 56, dy: -6 },
+  ];
+  // the candle's name keeps to the side away from M₁ and from x′, the handle being on the other side
+  const CANDLE_SPOTS = [
+    { dx: 0, dy: 26 },
+    { dx: -36, dy: 22 },
+    { dx: -48, dy: 12 },
+    { dx: -56, dy: -6 },
+    { dx: 36, dy: 22 },
+    { dx: 48, dy: 12 },
   ];
   // along the row the images stand in close pairs: their names take turns, by reflections
   const ROW_UNDER = [{ dx: 0, dy: 26 }];
   const ROW_LOW = [{ dx: 0, dy: 50 }];
   const ABOVE = [
-    { dx: 0, dy: -14 },
-    { dx: 0, dy: -24 },
+    { dx: 0, dy: -18 },
+    { dx: 0, dy: -36 },
+    { dx: 34, dy: -18 },
+    { dx: -34, dy: -18 },
   ];
   const TOP_SPOTS = [
     { dx: 0, dy: -15 },
@@ -816,24 +942,26 @@ export function createApp(root, options = {}) {
     const inMirror = s.inside >= 1;
     const flying = s.inside > 0 && s.inside < 1;
     const ids = builtIds();
+    const m2Here = q || s.m2 >= 1;
     if (!flying && !inRow() && !inMirror) {
-      const wide = stage.width >= 480 && !(s.second >= 1 || q);
+      const wide = stage.width >= 480 && !(s.beat >= 3 || q);
       label('m1', wide ? t('l_m1') : t('l_m1s'), at(M.m1, GLASS.top), INK, TOP_SPOTS, lineAvoid);
-      label('m2', wide ? t('l_m2') : t('l_m2s'), at(M.m2, GLASS.top), INK, TOP_SPOTS, lineAvoid);
+      if (m2Here) label('m2', wide ? t('l_m2') : t('l_m2s'), at(M.m2, GLASS.top), INK, TOP_SPOTS, lineAvoid);
     }
-    if (!inRow() && !flying && !inMirror) label('x', s.first === 0 && !q ? t('l_candle') : t('l_x'), at(s.x, 0, 4), INK, UNDER);
+    if (!inRow() && !flying && !inMirror) label('x', s.beat === 0 && !q ? t('l_candle') : t('l_x'), at(s.x, 0, 4), INK, CANDLE_SPOTS);
     if (inMirror && settled) label('x', t('l_candle'), at(s.x, CANDLE.tip + 0.4), INK, REAL_SPOTS);
     if (inMirror && !q) {
       label('m1', t('l_m1s'), at(M.m1, 24, GLASS.halfW), INK, M_IN_SPOTS);
       for (const k of [1, 2, 3]) label(`in${k}`, t(primes(k)), at(imageAt(s.x, 'r', k), CANDLE.tip + 0.4), INK, k === 3 ? IN_FAR : IN_SPOTS);
     }
-    if (settled && !inRow() && !inMirror && !flying) {
+    if (!inRow() && !inMirror && !flying) {
       for (const id of ids) {
         // in the test the picture must not name what it asks, and the answer's own mark keeps its letter
         if (Number(id[1]) > NAMED || q?.kind === 'times' || (q?.kind === 'spot' && id === 'r2')) continue;
+        if (s.newest === id && s.grow < 0.45) continue; // its name comes as it does
         const im = imageAt(s.x, id[0], Number(id[1]));
         // the first image says what it is, stepping outward, clear of the candle's own name
-        const long = s.step === 'first' && !q && id === 'r1';
+        const long = s.beat === 1 && !q && id === 'r1';
         const named = long ? t('l_image', { n: nameOf(id) }) : nameOf(id);
         const traced = s.trace === id && pickedTrace;
         const spots = long ? LONG_R : UNDER;
@@ -841,17 +969,19 @@ export function createApp(root, options = {}) {
       }
       for (const d of q ? (q.dims ?? []) : dimsShown) {
         const whole = d.k == null || d.k >= 1;
-        if (!whole) continue;
-        const text = s.newest && d.lit ? `<span class="pm2-new">${d.text}</span>` : d.text;
+        if (!whole || (d.a ?? 1) < 0.2) continue;
+        const text = s.newest && d.lit ? `<span class="pm2-new">${d.text}</span>` : d.faint ? `<span class="pm2-faint">${d.text}</span>` : d.text;
         label(d.id, text, at((d.x0 + d.x1) / 2, d.y), INK, d.spots ?? ON_DIM);
       }
-      if (s.trace && !q) {
+      if (s.trace && !q && dia.view.eye) {
         const e = dia.view.eye;
-        if (e) label('eye', t('l_eye'), at(e.x, e.y), SLATE, EYE_SPOTS, lineAvoid, true); // the eye is drawn: its name may step aside
+        label('eye', t('l_eye'), at(e.x, e.y), SLATE, EYE_SPOTS, lineAvoid, true); // the eye is drawn: its name may step aside
       }
-      if (s.newest === 'r2' && s.grow < 0.68) label('obj', t('l_object'), at(imageAt(s.x, 'l', 1), CANDLE.tip + 0.4), '#9a5300', ABOVE);
-      if (s.newest === 'l2' && s.grow < 0.68) label('obj', t('l_object'), at(imageAt(s.x, 'r', 1), CANDLE.tip + 0.4), '#9a5300', ABOVE);
-      if (s.newest === 'r3' && s.grow < 0.68) label('obj', t('l_object2'), at(imageAt(s.x, 'l', 2), CANDLE.tip + 0.4), '#9a5300', ABOVE);
+      const object = !q && OBJECT_AT[s.beat];
+      if (object) {
+        const name = object[1] === '2' ? 'l_object2' : 'l_object';
+        label('obj', t(name), at(imageAt(s.x, object[0], Number(object[1])), CANDLE.tip + 0.4), '#9a5300', ABOVE);
+      }
     }
     if (inRow() && settled && !s.busy && s.inside === 0) {
       const small = stage.width < 460;
@@ -883,49 +1013,54 @@ export function createApp(root, options = {}) {
       const k = Number(s.trace[1]);
       return t('out_pick', { n: nameOf(s.trace), k }).replace('{chain}', chainWords(s.trace[0], k));
     }
-    if (s.step === 'first') {
-      if (s.first === 0) return t('out_f0');
-      if (s.first === 1) return t('out_d1', { a });
-      return t('out_d12', { a, b });
+    switch (s.beat) {
+      case 0:
+        return t('out_b0');
+      case 1:
+        return t('out_d1', { a });
+      case 2:
+        return t('out_d12', { a, b });
+      case 3:
+        return t('out_l2', { a: N(num(imageAt(s.x, 'r', 1) - M.m2)) });
+      case 4:
+        return t('out_ray', { k: 2 });
+      case 5:
+        return t('out_d3', { a: N(num(d.d3)) });
+      case 6:
+        return t('out_d4', { a: N(num(d.d4)) });
+      case 7:
+        return t('out_row');
+      case 8:
+        return t('out_light', { a: brightness(1), b: brightness(2), c: brightness(3) });
+      default:
+        return t('out_d34', { a: N(num(d.d3)), b: N(num(d.d4)) });
     }
-    if (s.step === 'second') {
-      if (s.second === 0) return t('out_d12', { a, b });
-      if (s.second === 1) return t('out_d3', { a: N(num(d.d3)) });
-      if (s.second === 2) return t('out_l2', { a: N(num(imageAt(s.x, 'r', 1) - M.m2)) });
-      return t('out_d34', { a: N(num(d.d3)), b: N(num(d.d4)) });
-    }
-    if (s.many === 2) return t('out_light', { a: brightness(1), b: brightness(2), c: brightness(3) });
-    if (s.many === 1) return t('out_row');
-    return t('out_d34', { a: N(num(d.d3)), b: N(num(d.d4)) });
   }
   function rule() {
     if (s.trace && !s.newest && pickedTrace) return t('rule_pick');
-    if (s.step === 'first') return t(`rule_f${s.first}`);
-    if (s.step === 'second') return t(`rule_s${s.second}`);
-    return t(`rule_m${s.many}`, { a: 100 - Math.round(REFLECTANCE * 100) });
+    return t(`rule_b${s.beat}`, { a: 100 - Math.round(REFLECTANCE * 100) });
   }
+  // what the action says at each beat, and its number within its step
   const ACTIONS = {
     busy: ['act_wait', '', ICONS.hand],
-    f0: ['act_r1', 1, ICONS.hand],
-    f1: ['act_l1', 2, ICONS.hand],
-    f2: ['act_drag', 3, ICONS.drag],
-    f3: ['act_to_second', '', ICONS.chevR],
-    s0: ['act_r2', 1, ICONS.hand],
-    s1: ['act_l2', 2, ICONS.hand],
-    s2: ['act_r3', 3, ICONS.hand],
-    s3: ['act_to_many', '', ICONS.chevR],
-    m0: ['act_row', 1, ICONS.hand],
-    m1: ['act_inside', 2, ICONS.hand],
-    m2: ['act_out', '', ICONS.chevR],
+    b0: ['act_b0', 1, ICONS.hand],
+    b1: ['act_b1', '', ICONS.chevR],
+    b2: ['act_b2', 1, ICONS.hand],
+    b3: ['act_b3', 2, ICONS.hand],
+    b4: ['act_b4', 1, ICONS.hand],
+    b5: ['act_b5', 2, ICONS.hand],
+    b6: ['act_b6', 1, ICONS.hand],
+    b7: ['act_b7', 2, ICONS.hand],
+    b8: ['act_b8', '', ICONS.chevR],
+    b9: ['act_b9', '', ICONS.chevR],
   };
-  let pickedTrace = false;
   function panel() {
     if (s.quiz) return;
     const ph = phase();
     sheet.outcome(outcome());
     sheet.rule(rule());
     sheet.choose(s.step);
-    sheet.next(ph === 'f3' ? 'second' : ph === 's3' ? 'many' : null);
+    sheet.next(ph === 'busy' || s.beat >= LAST_BEAT ? null : stepOfBeat(s.beat + 1) === s.step ? null : stepOfBeat(s.beat + 1));
     const [word, step, icon] = ACTIONS[ph];
     const enabled = ph !== 'busy';
     const key = `${word}|${step}|${enabled}`;
@@ -935,7 +1070,7 @@ export function createApp(root, options = {}) {
     }
     note.hidden = !s.trace || inRow();
   }
-  function draw({ instant = false, duration = 0.9 } = {}) {
+  function draw({ instant = false, duration = PACE.camera } = {}) {
     wakeFlames();
     applyWorld();
     panel();
@@ -949,15 +1084,12 @@ export function createApp(root, options = {}) {
   /** The point the action's ring stands on now, or null. */
   function actionSpot() {
     if (s.locked || camK < 1) return null;
-    const ph = phase();
-    if (ph === 'f0') return ringPoint.set(M.m1, 16, 0);
-    if (ph === 'f1') return ringPoint.set(M.m2, 16, 0);
-    if (ph === 'f2') return ringPoint.set(s.x, 8, 0);
-    if (ph === 's0') return ringPoint.set(imageAt(s.x, 'l', 1), 9, 0);
-    if (ph === 's1') return ringPoint.set(imageAt(s.x, 'r', 1), 9, 0);
-    if (ph === 's2') return ringPoint.set(imageAt(s.x, 'l', 2), 9, 0);
-    if (ph === 'm1') return ringPoint.set(M.m1, 25, 0);
-    return null;
+    if (phase() === 'busy') return null;
+    if (s.beat === 0) return ringPoint.set(M.m1, 16, 0);
+    if (s.beat === 3) return ringPoint.set(s.x, 12, 0);
+    if (s.beat === 7) return ringPoint.set(M.m1, 25, 0);
+    const next = OBJECT_AT[s.beat + 1];
+    return next ? ringPoint.set(imageAt(s.x, next[0], Number(next[1])), 9, 0) : null;
   }
   action = createAction({
     stage,
@@ -965,10 +1097,10 @@ export function createApp(root, options = {}) {
     host: ui.$('.pvc-act-slot'),
     t,
     step: 1,
-    label: 'act_r1',
+    label: 'act_b0',
     target: actionSpot,
     radius: 20,
-    avoid: [ui.corner, ui.hint, note, () => anno.boxes()],
+    avoid: [ui.corner, ui.hint, note, turnCue, () => anno.boxes()],
     pulse: Boolean(o.coach),
     onAct: () => act(),
   });
@@ -976,8 +1108,7 @@ export function createApp(root, options = {}) {
   // ── dragging the candle, and tapping an image ──────────────────────────────────────────────────────────
   function onCandle(x, y, touch) {
     if (!canDrag()) return false;
-    const p = dia.handles.candle;
-    if (p && Math.hypot(p.x - x, p.y - y) <= (touch ? 34 : 24)) return true;
+    if (grip.on && Math.hypot(grip.x - x, grip.y - y) <= (touch ? 34 : 26)) return true; // a target of at least 44 px
     const a = { ...toScreen(s.x, 0) };
     const b = toScreen(s.x, CANDLE.tip);
     return Math.abs(x - a.x) < (touch ? 30 : 22) && y > b.y - 6 && y < a.y + 10;
@@ -1008,12 +1139,13 @@ export function createApp(root, options = {}) {
     'pointerdown',
     (e) => {
       const p = hostXY(e);
+      if (tap && tap.id !== e.pointerId && orbiting) takeView(); // a second finger: a pinch is no tap
       tap = { x: p.x, y: p.y, id: e.pointerId, at: performance.now() };
       if (!onCandle(p.x, p.y, e.pointerType === 'touch')) return;
       controls.enabled = false;
       capturePointer(ui.canvasHost, e.pointerId);
       tweener.cancel('pose');
-      s.drag = { id: e.pointerId, x: p.x, from: s.x, moved: 0 };
+      s.drag = { id: e.pointerId, x: p.x, y: p.y, from: s.x, moved: 0, ux: grip.ux, uy: grip.uy, perCm: Math.max(0.5, grip.perCm) };
       action.hide('drag');
       audio.unlock();
       emit('dragstart', { part: 'candle' });
@@ -1022,19 +1154,20 @@ export function createApp(root, options = {}) {
     { capture: true },
   );
   ui.canvasHost.addEventListener('pointermove', (e) => {
-    const g = s.drag;
-    if (!g || e.pointerId !== g.id) return;
     const p = hostXY(e);
-    const dx = p.x - g.x;
-    g.moved = Math.max(g.moved, Math.abs(dx));
-    const a = { ...toScreen(g.from, 8) };
-    const b = toScreen(g.from + 1, 8);
-    const next = snapCandle(g.from + dx / Math.max(0.5, b.x - a.x));
+    if (orbiting && tap?.id === e.pointerId && Math.hypot(p.x - tap.x, p.y - tap.y) >= TURN_CLICK) takeView();
+    const g = s.drag;
+    if (e.pointerType === 'mouse' && !g) ui.canvasHost.style.cursor = grip.on && Math.hypot(p.x - grip.x, p.y - grip.y) <= 26 ? 'grab' : '';
+    if (!g || e.pointerId !== g.id) return;
+    const along = (p.x - g.x) * g.ux + (p.y - g.y) * g.uy;
+    g.moved = Math.max(g.moved, Math.abs(along));
+    const next = snapCandle(g.from + along / g.perCm);
     if (next !== s.x) {
       s.x = next;
-      if (pickedTrace || s.first === 2) {
+      s.dragged = true;
+      if (pickedTrace) {
         pickedTrace = false;
-        s.trace = '';
+        s.trace = RAY_AT[s.beat] ?? '';
       }
       draw();
       emitChange();
@@ -1045,10 +1178,9 @@ export function createApp(root, options = {}) {
     if (!g || e.pointerId !== g.id) return;
     releasePointer(ui.canvasHost, e.pointerId);
     s.drag = null;
-    controls.enabled = !s.locked && s.inside === 0;
+    controls.enabled = true;
     action.show('drag');
     emit('dragend', { part: 'candle' });
-    if (s.step === 'first' && s.first === 2 && Math.abs(s.x - g.from) >= 1) s.first = 3;
     draw();
     emitChange();
   }
@@ -1071,12 +1203,27 @@ export function createApp(root, options = {}) {
     if (id) {
       audio.tick();
       pickedTrace = !(s.trace === id && pickedTrace);
-      s.trace = pickedTrace ? id : '';
+      s.trace = pickedTrace ? id : (RAY_AT[s.beat] ?? '');
+      s.rayK = Number.POSITIVE_INFINITY;
+      if (pickedTrace) {
+        // its chain, stretch by stretch
+        const stretches = path(s.x, id[0], Number(id[1])).points.length - 1;
+        s.rayK = 0;
+        const my = token;
+        run('ray', (stretches + 1) * PACE.raySegment, (k) => (s.rayK = k * (stretches + 1))).then((ok) => {
+          if (!ok || my !== token) return;
+          s.rayK = Number.POSITIVE_INFINITY;
+          draw();
+        });
+      } else tweener.cancel('ray');
       draw();
       emitChange();
     }
   });
-  ui.canvasHost.addEventListener('pointercancel', endDrag);
+  ui.canvasHost.addEventListener('pointercancel', (e) => {
+    tap = null;
+    endDrag(e);
+  });
 
   // ── the test ────────────────────────────────────────────────────────────────────────────────────────────
   function applyQuiz(q) {
@@ -1270,10 +1417,11 @@ export function createApp(root, options = {}) {
         s.inside = saved.inside;
         s.trace = saved.trace;
         pickedTrace = saved.picked;
+        s.rayK = Number.POSITIVE_INFINITY;
         clearLabels();
         syncUI();
         shownFrame = frameId();
-        flyCamera(0.5);
+        flyCamera(QUIZ_FLIGHT);
         draw();
       },
       async prepare(i, alive, say) {
@@ -1281,7 +1429,7 @@ export function createApp(root, options = {}) {
         qCurrent = q;
         say(' ');
         ui.$('.pvc-q-text').innerHTML = q.text;
-        const done = await flyCamera(0.5);
+        const done = await flyCamera(QUIZ_FLIGHT);
         if (!alive()) return null;
         if (!done) camK = 1;
         const out = [q.answer];
@@ -1329,15 +1477,10 @@ export function createApp(root, options = {}) {
   }
   function home() {
     if (s.locked) return lockedNudge();
-    stopMotion();
+    if (phase() === 'busy') return;
     s.x = CANDLE.start;
-    s.trace = '';
-    pickedTrace = false;
-    buildTo(s.step, 0);
-    clearLabels();
-    if (s.view === '3d') setView('front');
-    draw();
-    emitChange();
+    if (s.view === '3d') s.view = 'front';
+    replay(s.step);
   }
   const fullscreenBtn = ui.$('[data-act="fullscreen"]');
   if (fullscreenBtn && !document.fullscreenEnabled) fullscreenBtn.hidden = true;
@@ -1354,10 +1497,7 @@ export function createApp(root, options = {}) {
     if (b.dataset.mode === 'quiz' && s.mode !== 'quiz') quiz.start();
     if (b.dataset.mode === 'explore') quiz.stop();
     if (b.dataset.q != null) quiz.choose(Number(b.dataset.q));
-    if (b.dataset.example) {
-      pickedTrace = false;
-      go(b.dataset.example);
-    }
+    if (b.dataset.example) replay(b.dataset.example);
     const a = b.dataset.act;
     if (a === 'q-next') quiz.next();
     if (a === 'q-again') quiz.start();
@@ -1377,11 +1517,11 @@ export function createApp(root, options = {}) {
       const from = s.x;
       s.x = snapCandle(s.x + walk * CANDLE.step);
       if (s.x !== from) {
-        if (pickedTrace || s.first === 2) {
+        s.dragged = true;
+        if (pickedTrace) {
           pickedTrace = false;
-          s.trace = '';
+          s.trace = RAY_AT[s.beat] ?? '';
         }
-        if (s.step === 'first' && s.first === 2) s.first = 3;
         draw();
         emitChange();
       }
@@ -1418,13 +1558,14 @@ export function createApp(root, options = {}) {
       d2: +d.d2.toFixed(4),
       d3: +d.d3.toFixed(4),
       d4: +d.d4.toFixed(4),
-      first: s.first,
-      second: s.second,
-      many: s.many,
+      beat: s.beat,
+      m2: s.m2,
       inside: s.inside >= 1,
       images: builtIds().map((id) => ({ id, x: +imageAt(s.x, id[0], Number(id[1])).toFixed(4) })),
       trace: s.trace ? traced(s.trace) : null,
       frame: shownFrame,
+      handle: { shown: grip.on, used: s.dragged },
+      turned: s.turned,
       question: s.quiz && qCurrent ? { kind: s.quiz.kind, answer: qCurrent.label(qCurrent.answer) } : null,
       mode: s.mode,
       locked: s.locked,
@@ -1461,17 +1602,17 @@ export function createApp(root, options = {}) {
     async set(p = {}) {
       const animate = p.animate !== false;
       if (p.view) setView(p.view, { animate });
-      if (p.step && STEPS.includes(p.step) && p.step !== s.step) go(p.step, { animate: false });
-      if (p.stage != null) {
+      if ((p.step && STEPS.includes(p.step)) || p.stage != null) {
         stopMotion();
-        buildTo(s.step, p.stage);
-        s.trace = '';
+        buildTo(p.step && STEPS.includes(p.step) ? p.step : s.step, p.stage ?? 0);
         pickedTrace = false;
+        clearLabels();
       }
       if (p.trace !== undefined) {
         stopMotion();
-        s.trace = p.trace && SIDES[p.trace[0]] && Number(p.trace[1]) <= COUNT ? p.trace : '';
-        pickedTrace = Boolean(s.trace);
+        pickedTrace = Boolean(p.trace && SIDES[p.trace[0]] && Number(p.trace[1]) <= COUNT);
+        s.trace = pickedTrace ? p.trace : (RAY_AT[s.beat] ?? '');
+        s.rayK = Number.POSITIVE_INFINITY;
       }
       if (p.x != null) {
         stopMotion();
@@ -1481,17 +1622,27 @@ export function createApp(root, options = {}) {
       }
       if (!animate) camK = 1;
       draw({ instant: !animate });
+      if (p.azimuth != null || p.polar != null) {
+        // the view turned from outside, as a finger would turn it (the pictures and the measurements use this)
+        stage.render();
+        takeView();
+        const offset = camera.position.clone().sub(controls.target);
+        const q = new THREE.Spherical().setFromVector3(offset);
+        if (p.azimuth != null) q.theta = THREE.MathUtils.degToRad(Number(p.azimuth));
+        if (p.polar != null) q.phi = THREE.MathUtils.degToRad(Number(p.polar));
+        camera.position.copy(controls.target).add(offset.setFromSpherical(q));
+        controls.update();
+        stage.invalidate();
+      }
       emitChange();
       return snapshot();
     },
     async reset() {
       quiz.stop();
       stopMotion();
-      s.step = 'first';
       s.x = CANDLE.start;
-      s.trace = '';
       pickedTrace = false;
-      buildTo('first', 0);
+      buildTo('one', 0);
       clearLabels();
       setView('front', { animate: false });
       camK = 1;
