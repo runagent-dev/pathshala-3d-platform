@@ -121,3 +121,55 @@ test('parallel-mirrors: the test runs to its end and leaves the learn state as i
   expect(await fig.call('get')).toMatchObject({ mode: 'explore', step: 'many', many: 2, inside: true, x: 3 });
   expect(log.errors).toEqual([]);
 });
+
+test('parallel-mirrors: every question can be answered right: five of five', async ({ page }) => {
+  test.setTimeout(300_000);
+  await page.setViewportSize({ width: 800, height: 500 });
+  const log = await preparePage(page);
+  const fig = await openFigure(page, 'parallel-mirrors');
+  await fig.call('practice');
+  const f = fig.frame;
+  const kinds = [];
+  for (let i = 0; i < 5; i++) {
+    await fig.advance(900);
+    await expect(f.locator('.pvc-opt')).toHaveCount(4);
+    const { question } = await fig.call('get');
+    kinds.push(question.kind);
+    await f.locator('.pvc-opt', { hasText: question.answer }).click();
+    await fig.advance(300);
+    await expect(f.locator('.pvc-opt.right')).toHaveCount(1);
+    await expect(f.locator('.pvc-q-feedback')).toContainText('ঠিক!');
+    await fig.advance(600);
+    await f.locator('[data-act="q-next"]').click();
+  }
+  await fig.advance(600);
+  expect(kinds).toEqual(['pair', 'times', 'spot', 'sum', 'dim']);
+  await expect(f.locator('.pvc-q-result')).toContainText('৫ টির মধ্যে ৫ টি');
+  expect(log.errors).toEqual([]);
+});
+
+test('parallel-mirrors: the flames rest when nothing happens, and wake on a touch', async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 800, height: 500 });
+  await page.addInitScript(() => {
+    globalThis.__draws = 0;
+    const raf = globalThis.WebGL2RenderingContext?.prototype;
+    if (!raf) return;
+    const o = raf.clear;
+    raf.clear = function (...a) {
+      globalThis.__draws++;
+      return o.apply(this, a);
+    };
+  });
+  const log = await preparePage(page);
+  const fig = await openFigure(page, 'parallel-mirrors');
+  const draws = () => fig.frame.evaluate(() => globalThis.__draws);
+  await fig.advance(10000);
+  const a = await draws();
+  await fig.advance(3000);
+  expect(await draws()).toBe(a);
+  await fig.frame.locator('.pvc-canvas').dispatchEvent('pointerdown', { pointerId: 3, clientX: 5, clientY: 5 });
+  await fig.advance(1000);
+  expect(await draws()).toBeGreaterThan(a);
+  expect(log.errors).toEqual([]);
+});

@@ -17,7 +17,28 @@ import { createTweener, ease } from '@shared/tween.js';
 import { fitPose } from './camera.js';
 import { C, createDiagram } from './diagram.js';
 import { createI18n } from './i18n.js';
-import { brightness, CANDLE, chainOf, COUNT, distances, EYE, GLASS, imageAt, M, NAMED, path, row, shuffle, snapCandle } from './reading.js';
+import {
+  brightness,
+  CANDLE,
+  chainOf,
+  COUNT,
+  distances,
+  EYE,
+  GLASS,
+  imageAt,
+  M,
+  NAMED,
+  PAIR_X,
+  pairChoices,
+  path,
+  REFLECTANCE,
+  row,
+  shuffle,
+  snapCandle,
+  spotChoices,
+  sumChoices,
+  timesChoices,
+} from './reading.js';
 import { createSetting } from './setting.js';
 
 export const DEFAULTS = {
@@ -140,10 +161,18 @@ export function createApp(root, options = {}) {
   let token = 0;
   const tweener = createTweener();
   stage.addTicker((dt) => tweener.tick(dt));
-  // the flames: a gentle flicker, about 16 times a second is enough for it
+  // the flames: a gentle flicker, about 16 times a second is enough for it, and it rests a few seconds after the last touch,
+  // so that a figure left open draws nothing; any touch, key or change wakes it
+  const FLICKER = 8; // s
   let clock = 0;
   let since = 1;
+  let idle = 0;
+  const wakeFlames = () => {
+    idle = 0;
+  };
   stage.addTicker((dt) => {
+    idle += dt;
+    if (idle > FLICKER) return false;
     clock += dt;
     since += dt;
     if (since < 0.06) return false;
@@ -151,6 +180,8 @@ export function createApp(root, options = {}) {
     setting.tickFlames(clock);
     return 'camera';
   });
+  root.addEventListener('pointerdown', wakeFlames, { capture: true });
+  root.addEventListener('keydown', wakeFlames, { capture: true });
   const audio = createAudio(o.sound);
   const listeners = new Map();
   function emit(type, payload) {
@@ -235,9 +266,12 @@ export function createApp(root, options = {}) {
     for (const h of r.hits) if (k >= 1) v.points.push([h.x, h.y, 2.6, C.ray]);
     v.points.push([s.x, CANDLE.flame, 2.8, C.ray]);
     v.eye = { x: r.eye.x, y: r.eye.y, tx: r.hits[r.hits.length - 1].x, ty: r.hits[r.hits.length - 1].y };
+    if (!lit) v.aim = { x: r.image, y: CANDLE.flame };
   }
   function applyWorld() {
     setting.setCandle(s.x);
+    // far along the row the plain candle does; x‴ keeps its detail where it is large, in the book's row and in the mirror
+    setting.setDetail(inRow() && s.inside === 0 ? 3 : NAMED + 1);
     const ids = builtIds();
     for (const q of row(0)) {
       let a = ids.includes(q.id) ? 1 : 0;
@@ -261,11 +295,12 @@ export function createApp(root, options = {}) {
 
   // ── camera: each step frames what it is about, and flies there smoothly ────────────────────────────────
   const FRAMES = {
-    gap: { az: -25, el: 12, fov: FOV },
-    one: { az: -24, el: 12, fov: FOV },
-    book: { az: -22, el: 13, fov: FOV },
+    gap: { az: -22, el: 12, fov: FOV },
+    one: { az: -21, el: 12, fov: FOV },
+    book: { az: -20, el: 13, fov: FOV },
     row: { az: -26, el: 9, fov: FOV },
     inside: { pose: true, fov: 44 },
+    'q-dim': { pose: true, fov: 44 },
   };
   function frameKey() {
     if (s.quiz) return `q-${s.quiz.kind}`;
@@ -655,12 +690,12 @@ export function createApp(root, options = {}) {
   const used = new Map();
   const pts = new Map();
   const touched = new Set();
-  function label(id, text, point, color, spots, avoid = []) {
+  function label(id, text, point, color, spots, avoid = [], optional = false) {
     touched.add(id);
     if (!pts.has(id)) pts.set(id, new THREE.Vector3());
     pts.get(id).copy(point);
     if (!shown.has(id)) {
-      anno.add(id, { text, point: () => pts.get(id), color, spots, kind: 'part', avoid });
+      anno.add(id, { text, point: () => pts.get(id), color, spots, kind: 'part', avoid, optional });
       shown.set(id, text);
       used.set(id, spots);
     } else if (shown.get(id) !== text) {
@@ -703,11 +738,13 @@ export function createApp(root, options = {}) {
   const at = (x, y, z = 0) => v3.set(x, y, z);
   const UNDER = [
     { dx: 0, dy: 26 },
+    { dx: 0, dy: 50 },
     { dx: -16, dy: 28 },
     { dx: 16, dy: 28 },
-    { dx: 0, dy: 40 },
+    { dx: 32, dy: 22 },
+    { dx: -32, dy: 22 },
   ];
-  // far along the row x″ and x‴ stand close: their names take turns
+  // along the row the images stand in close pairs: their names take turns, by reflections
   const ROW_UNDER = [{ dx: 0, dy: 26 }];
   const ROW_LOW = [{ dx: 0, dy: 50 }];
   const ABOVE = [
@@ -718,7 +755,23 @@ export function createApp(root, options = {}) {
     { dx: 0, dy: -15 },
     { dx: 26, dy: -15 },
     { dx: -26, dy: -15 },
+    { dx: 26, dy: 12 },
+    { dx: -26, dy: 12 },
     { dx: 0, dy: -30 },
+  ];
+  const LONG_R = [
+    { dx: 40, dy: 26 },
+    { dx: 40, dy: 48 },
+    { dx: 14, dy: 50 },
+    { dx: 0, dy: 26 },
+  ];
+  const REAL_SPOTS = [
+    { dx: 0, dy: -30 },
+    { dx: -44, dy: -24 },
+    { dx: 44, dy: -24 },
+    { dx: -48, dy: 6 },
+    { dx: 48, dy: 6 },
+    { dx: 0, dy: 40 },
   ];
   const EYE_SPOTS = [
     { dx: 0, dy: -24 },
@@ -729,10 +782,24 @@ export function createApp(root, options = {}) {
   const IN_SPOTS = [
     { dx: 0, dy: -32 },
     { dx: 0, dy: -52 },
-    { dx: 16, dy: -34 },
-    { dx: -16, dy: -52 },
-    { dx: 18, dy: -54 },
+    { dx: 26, dy: -34 },
+    { dx: -26, dy: -52 },
+    { dx: 26, dy: -56 },
     { dx: 0, dy: -72 },
+    { dx: 44, dy: -30 },
+    { dx: -30, dy: -30 },
+    { dx: 48, dy: -6 },
+  ];
+  const IN_FAR = [
+    { dx: 30, dy: -52 },
+    { dx: 44, dy: -30 },
+    { dx: 58, dy: -8 },
+    { dx: 0, dy: -72 },
+  ];
+  const M_IN_SPOTS = [
+    { dx: 24, dy: 0 },
+    { dx: -24, dy: 0 },
+    { dx: 24, dy: 26 },
   ];
   const MORE_SPOTS = [
     { dx: 0, dy: -26 },
@@ -751,21 +818,26 @@ export function createApp(root, options = {}) {
     const ids = builtIds();
     if (!flying && !inRow() && !inMirror) {
       const wide = stage.width >= 480 && !(s.second >= 1 || q);
-      label('m1', wide ? t('l_m1') : t('l_m1s'), at(M.m1, GLASS.top), INK, TOP_SPOTS);
-      label('m2', wide ? t('l_m2') : t('l_m2s'), at(M.m2, GLASS.top), INK, TOP_SPOTS);
+      label('m1', wide ? t('l_m1') : t('l_m1s'), at(M.m1, GLASS.top), INK, TOP_SPOTS, lineAvoid);
+      label('m2', wide ? t('l_m2') : t('l_m2s'), at(M.m2, GLASS.top), INK, TOP_SPOTS, lineAvoid);
     }
-    if (!inRow() && !flying) label('x', s.first === 0 && !q ? t('l_candle') : t('l_x'), at(s.x, 0, 4), INK, UNDER);
+    if (!inRow() && !flying && !inMirror) label('x', s.first === 0 && !q ? t('l_candle') : t('l_x'), at(s.x, 0, 4), INK, UNDER);
+    if (inMirror && settled) label('x', t('l_candle'), at(s.x, CANDLE.tip + 0.4), INK, REAL_SPOTS);
     if (inMirror && !q) {
-      label('m1', t('l_m1s'), at(M.m1, GLASS.y1, -8), INK, [{ dx: 0, dy: -18 }]);
-      for (const k of [1, 2, 3]) label(`in${k}`, t(primes(k)), at(imageAt(s.x, 'r', k), CANDLE.tip + 0.4), INK, IN_SPOTS);
+      label('m1', t('l_m1s'), at(M.m1, 24, GLASS.halfW), INK, M_IN_SPOTS);
+      for (const k of [1, 2, 3]) label(`in${k}`, t(primes(k)), at(imageAt(s.x, 'r', k), CANDLE.tip + 0.4), INK, k === 3 ? IN_FAR : IN_SPOTS);
     }
     if (settled && !inRow() && !inMirror && !flying) {
       for (const id of ids) {
         // in the test the picture must not name what it asks, and the answer's own mark keeps its letter
         if (Number(id[1]) > NAMED || q?.kind === 'times' || (q?.kind === 'spot' && id === 'r2')) continue;
         const im = imageAt(s.x, id[0], Number(id[1]));
-        const named = s.step === 'first' && !q ? t('l_image', { n: nameOf(id) }) : nameOf(id);
-        label(`i${id}`, highlight(id, named), at(im, 0, 4), INK, UNDER, lineAvoid);
+        // the first image says what it is, stepping outward, clear of the candle's own name
+        const long = s.step === 'first' && !q && id === 'r1';
+        const named = long ? t('l_image', { n: nameOf(id) }) : nameOf(id);
+        const traced = s.trace === id && pickedTrace;
+        const spots = long ? LONG_R : UNDER;
+        label(`i${id}`, traced ? `<span class="pm2-new">${named}</span>` : highlight(id, named), at(im, 0, 4), INK, spots, lineAvoid);
       }
       for (const d of q ? (q.dims ?? []) : dimsShown) {
         const whole = d.k == null || d.k >= 1;
@@ -775,7 +847,7 @@ export function createApp(root, options = {}) {
       }
       if (s.trace && !q) {
         const e = dia.view.eye;
-        if (e) label('eye', t('l_eye'), at(e.x, e.y), SLATE, EYE_SPOTS, lineAvoid);
+        if (e) label('eye', t('l_eye'), at(e.x, e.y), SLATE, EYE_SPOTS, lineAvoid, true); // the eye is drawn: its name may step aside
       }
       if (s.newest === 'r2' && s.grow < 0.68) label('obj', t('l_object'), at(imageAt(s.x, 'l', 1), CANDLE.tip + 0.4), '#9a5300', ABOVE);
       if (s.newest === 'l2' && s.grow < 0.68) label('obj', t('l_object'), at(imageAt(s.x, 'r', 1), CANDLE.tip + 0.4), '#9a5300', ABOVE);
@@ -787,9 +859,9 @@ export function createApp(root, options = {}) {
       label('more2', small ? '…' : t('l_more0'), at(-96, CANDLE.tip + 6), INK, MORE_SPOTS);
       label('m1', t('l_m1s'), at(M.m1, GLASS.top), INK, TOP_SPOTS);
       label('m2', t('l_m2s'), at(M.m2, GLASS.top), INK, TOP_SPOTS);
-      label('x', t('l_x'), at(s.x, 0, 4), INK, UNDER);
+      label('x', t('l_x'), at(s.x, 0, 4), INK, ROW_LOW);
       for (const id of ['r1', 'r2', 'r3', 'l1', 'l2', 'l3'])
-        label(`i${id}`, nameOf(id), at(imageAt(s.x, id[0], Number(id[1])), 0, 4), INK, id[1] === '3' ? ROW_LOW : ROW_UNDER);
+        label(`i${id}`, nameOf(id), at(imageAt(s.x, id[0], Number(id[1])), 0, 4), INK, id[1] === '2' ? ROW_LOW : ROW_UNDER);
     }
     if (q) {
       for (const m of q.tags ?? []) label(m.id, m.text, at(m.x, m.y, m.z ?? 0), INK, m.spots ?? UNDER);
@@ -830,7 +902,7 @@ export function createApp(root, options = {}) {
     if (s.trace && !s.newest && pickedTrace) return t('rule_pick');
     if (s.step === 'first') return t(`rule_f${s.first}`);
     if (s.step === 'second') return t(`rule_s${s.second}`);
-    return t(`rule_m${s.many}`);
+    return t(`rule_m${s.many}`, { a: 100 - Math.round(REFLECTANCE * 100) });
   }
   const ACTIONS = {
     busy: ['act_wait', '', ICONS.hand],
@@ -864,6 +936,7 @@ export function createApp(root, options = {}) {
     note.hidden = !s.trace || inRow();
   }
   function draw({ instant = false, duration = 0.9 } = {}) {
+    wakeFlames();
     applyWorld();
     panel();
     if (s.quiz) note.hidden = true;
@@ -1016,11 +1089,13 @@ export function createApp(root, options = {}) {
     s.x = x;
     s.quiz = q;
     s.trace = '';
+    s.inside = q.inside ? 1 : 0;
     clearLabels();
     applyWorld();
     shownFrame = frameId();
     stage.invalidate();
   }
+  // the kit's quiz compares numbers: every choice here is a number, and a choice's note is found by that number
   const notesOf = (pairs) => new Map(pairs.map(([v, html]) => [String(v), html]));
   const pick = (list) => list[Math.floor(Math.random() * list.length)];
   const letters = t('letters').split(',');
@@ -1032,32 +1107,34 @@ export function createApp(root, options = {}) {
   function prepare(i) {
     const kind = order[i];
     if (kind === 'pair') {
-      const x = pick([-5, 3, 5, 7]);
+      const x = pick(PAIR_X);
       const d = distances(x);
+      const c = pairChoices(x);
       quizScene({ kind, show: ['r1'], rows: 1, dims: [dim('qd', x, M.m1, rowAt(0), t('l_cm', { a: N(num(d.d1)) }))] }, x);
-      const answer = 2 * d.d1;
-      const wrong = [d.d1, M.gap, 2 * d.d2];
+      const wrong = [c.same, c.gap, c.other];
       return {
         text: t('q_pair'),
-        answer,
+        answer: c.answer,
         wrong,
         label: cm,
         notes: notesOf([
-          [wrong[0], t('n_pair_same')],
-          [wrong[1], t('n_pair_gap')],
-          [wrong[2], t('n_pair_other')],
+          [c.same, t('n_pair_same')],
+          [c.gap, t('n_pair_gap')],
+          [c.other, t('n_pair_other')],
         ]),
-        reveal: t('a_pair', { d: num(d.d1), g: num(answer) }),
+        reveal: t('a_pair', { d: num(d.d1), g: num(c.answer) }),
       };
     }
     if (kind === 'times') {
       const side = pick(['r', 'l']);
-      const k = pick([2, 3]);
+      const k = pick([1, 2, 3, 4]);
       const x = pick([-4, 4, 6]);
       const im = imageAt(x, side, k);
-      const show = ['r1', 'r2', 'r3', 'l1', 'l2', 'l3'];
+      // the row behind the one mirror, big enough to count, and the first image behind the other
+      const other = side === 'r' ? 'l' : 'r';
+      const show = [1, 2, 3, 4].map((n) => `${side}${n}`).concat(`${other}1`);
       quizScene({ kind, show, rows: 0, tags: [{ id: 'qt', text: t('l_q'), x: im, y: 0, z: 4 }] }, x);
-      const others = [1, 2, 3, 4].filter((n) => n !== k);
+      const others = timesChoices(k).filter((n) => n !== k);
       return {
         text: t('q_times'),
         answer: k,
@@ -1070,12 +1147,7 @@ export function createApp(root, options = {}) {
     if (kind === 'spot') {
       const x = pick([-6, -4, 4, 6]);
       const d = distances(x);
-      const places = shuffle([
-        { v: 'd3', at: d.d3 },
-        { v: 'd2', at: d.d2 },
-        { v: 'gap', at: M.gap },
-        { v: 'more', at: d.d3 + M.gap },
-      ]);
+      const places = shuffle(spotChoices(x));
       const l1 = imageAt(x, 'l', 1);
       const byPlace = [...places].sort((a, b) => a.at - b.at);
       const tags = places.map((p, j) => ({
@@ -1112,6 +1184,7 @@ export function createApp(root, options = {}) {
     if (kind === 'sum') {
       const x = pick([-3, 3, 5, 7]);
       const d = distances(x);
+      const c = sumChoices(x, Math.random() < 0.5);
       quizScene(
         {
           kind,
@@ -1126,51 +1199,43 @@ export function createApp(root, options = {}) {
         },
         x,
       );
-      const answer = d.d4;
-      const wrong = [d.d3, M.gap + d.d1, 2 * M.gap];
+      const wrong = [c.d3, c.two, c.last];
       return {
         text: t('q_sum', { g: M.gap }),
-        answer,
+        answer: c.answer,
         wrong,
         label: cm,
         notes: notesOf([
-          [wrong[0], t('n_sum_d3')],
-          [wrong[1], t('n_sum_one')],
-          [wrong[2], t('n_sum_two')],
+          [c.d3, t('n_sum_d3')],
+          [c.two, t('n_sum_two')],
+          [c.last, t(`n_sum_${c.lastNote}`)],
         ]),
-        reveal: t('a_sum', { a: num(answer), g: M.gap, b: num(d.d1), c: num(M.gap + d.d1) }),
+        reveal: t('a_sum', { a: num(c.answer), g: M.gap, b: num(d.d1), c: num(M.gap + d.d1) }),
       };
     }
-    // the candle moves on the picture after the answer; nothing moves before it
-    const a = pick([3, 4, 5]);
-    const x = pick([-3, -1, 1]);
-    const d = distances(x);
-    quizScene(
-      {
-        kind,
-        show: ['l1', 'r1'],
-        rows: 1,
-        dims: [dim('qd1', x, M.m1, rowAt(0), isCm('l_d1', d.d1), FAR_R), dim('qd2', x, M.m2, rowAt(0), isCm('l_d2', d.d2), FAR_L)],
-        to: x + a,
-      },
-      x,
-    );
-    const answer = 'away';
-    const wrong = ['toward', 'double', 'stay'];
+    // in the mirror itself: which of the four marked images has the least light?
+    const x = pick([-4, 3, 5]);
+    const marks = shuffle([1, 2, 3, 4]);
+    const tags = marks.map((k, j) => ({
+      id: `qm${j}`,
+      text: `<b>${letters[j]}</b>`,
+      x: imageAt(x, 'r', k),
+      y: CANDLE.tip + 0.4,
+      spots: IN_SPOTS,
+    }));
+    quizScene({ kind, show: [], inside: true, tags }, x);
+    const answer = marks.indexOf(4);
+    const wrong = [0, 1, 2, 3].filter((j) => j !== answer);
     return {
-      text: t('q_move', { a }),
+      text: t('q_dim'),
       answer,
       wrong,
-      label: (c) => (c === 'stay' ? t('c_stay') : c === 'double' ? t('c_away', { a: 2 * a }) : t(`c_${c}`, { a })),
-      notes: notesOf([
-        ['toward', t('n_move_toward')],
-        ['double', t('n_move_double', { a })],
-        ['stay', t('n_move_stay')],
-      ]),
-      reveal: t('a_move', { a, b: num(d.d2 + a) }),
+      label: (j) => t('c_image', { x: letters[j] }),
+      notes: notesOf(wrong.map((j) => [j, t('n_dim', { k: marks[j] })])),
+      reveal: t('a_dim', { x: letters[answer], k: 4, a: brightness(4) }),
     };
   }
-  const saved = { x: CANDLE.start, inside: 0, trace: '' };
+  const saved = { x: CANDLE.start, inside: 0, trace: '', picked: false };
   const quiz = createQuiz({
     ui,
     t,
@@ -1184,10 +1249,11 @@ export function createApp(root, options = {}) {
         s.mode = 'quiz';
         s.locked = true;
         stopMotion();
-        Object.assign(saved, { x: s.x, inside: s.inside, trace: s.trace });
+        // on "take it again" the learn state is already saved, and this is the last question's scene
+        if (!s.quiz) Object.assign(saved, { x: s.x, inside: s.inside, trace: s.trace, picked: pickedTrace });
         s.inside = 0;
         pickedTrace = false;
-        order = ['pair', 'times', 'spot', 'sum', 'move'];
+        order = ['pair', 'times', 'spot', 'sum', 'dim'];
         if (s.drag) {
           controls.enabled = true;
           s.drag = null;
@@ -1203,6 +1269,7 @@ export function createApp(root, options = {}) {
         s.x = saved.x;
         s.inside = saved.inside;
         s.trace = saved.trace;
+        pickedTrace = saved.picked;
         clearLabels();
         syncUI();
         shownFrame = frameId();
@@ -1228,13 +1295,6 @@ export function createApp(root, options = {}) {
         if (s.quiz?.kind === 'spot') {
           s.quiz.show = ['l1', 'r2'];
           draw();
-        }
-        if (s.quiz?.to != null) {
-          const to = s.quiz.to;
-          const keep = s.quiz;
-          moveTo(to, 1.1).then(() => {
-            if (s.quiz === keep) draw();
-          });
         }
         return `${q.reveal}${why ? ` <span class="pm2-why">${t('n_pick', { x: q.label(picked.value) })} ${why}</span>` : ''}`;
       },
@@ -1365,6 +1425,7 @@ export function createApp(root, options = {}) {
       images: builtIds().map((id) => ({ id, x: +imageAt(s.x, id[0], Number(id[1])).toFixed(4) })),
       trace: s.trace ? traced(s.trace) : null,
       frame: shownFrame,
+      question: s.quiz && qCurrent ? { kind: s.quiz.kind, answer: qCurrent.label(qCurrent.answer) } : null,
       mode: s.mode,
       locked: s.locked,
       view: s.view,

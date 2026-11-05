@@ -40,16 +40,25 @@ angle, a camera per step with smooth zooms, one element at a time, labels never 
   image and frame is clipped to the windows in front of it, with four planes through the camera (rectangles in parallel
   planes meet in a rectangle). A dark quad of 10 % on each window does the dimming, so what is behind two windows really gets
   81 %. Six slabs, then the last window fades into the backdrop.
+- **The test** (numbers only: the kit's quiz compares `Math.abs(choice − expected)`, so strings can never score; a browser test
+  answers all five right and checks ৫ টির মধ্যে ৫ টি): x to x′, a count of reflections read off the row, a mark on the table for
+  x″, d₄ from d₁ and d₂, and, in the view into the mirror, which of four marked images has the least light. `get` carries the
+  current question's kind and right answer for that test.
 - **The drawing** follows `reflection-laws`: a 2D canvas over the view, painted from exact 3D points through the camera.
 - **The flame** is painted in a shader on a card facing the camera, and it casts the only flame light, only from the real candle:
-  no real light comes from an image. It flickers at about 16 frames a second to spare phones; the stage idles between them.
+  no real light comes from an image. An image's flame is smaller and dimmer than the real one. The flicker runs at about 16
+  frames a second and rests 8 s after the last touch or change, so a figure left open draws nothing; a touch, key or change
+  wakes it.
+- **Far candles are plain** (`farCandleGeometry`: no handle, no drips, one draw). From x⁗ on always, and x‴ too in the view of
+  the whole row, where it is about 20 px tall; x‴ keeps its detail in the book's row and in the mirror, where it is large.
 
 ## Honest simplifications
 - The images stand on the table beyond the mirrors, faded: that is where they seem to be, not where anything is. From the main
   view a real mirror would not show them in the glass (the angle is too steep), so the glass shows a soft painted sheen; the
   view into M₁ shows the true look.
-- The ghosts fade a little faster along the row than the true 90 % (86 % drawn), so that a phone shows the step. The view into
-  M₁ and the numbers use 90 %, a round figure for a silvered glass mirror; the book gives none. Say "প্রায়" in the wording.
+- The ghosts stand at 44 %, the chapter's translucent ghost, and fade a little faster along the row than the true 90 % (86 %
+  drawn), so that a phone shows the step; the panel says so. The view into M₁ and the numbers use 90 %, a round figure for a
+  silvered glass mirror; the book gives none, so the wording says "প্রায়".
 - A ray is one of countless (a note in the corner says so).
 - The glass is drawn 6 mm thick so that its green edge reads on a phone. The reflecting plane is its silver back.
 - The viewer's own head would be in a real mirror; the view leaves it out. The camera there sits at the edge of M₂.
@@ -59,14 +68,16 @@ angle, a camera per step with smooth zooms, one element at a time, labels never 
 আয়না, প্রতিবিম্ব, প্রতিবিম্বের প্রতিবিম্ব, অসংখ্য প্রতিবিম্ব, মোমবাতি, M₁, M₂, x, x′, x″, x‴, d₁ d₂ d₃ d₄, প্রতিফলন. Added: সমান্তরাল (the caption's),
 "বস্তু" for an image acting as an object, ম্লান for dim, অবাস্তব প্রতিবিম্ব (from p220).
 
-## Numbers (844×390, shadows on)
-The book's row: 61 draw calls, 114k triangles. Looking into M₁: 141 draw calls, 209k triangles. Ready in about 2.4 s.
+## Numbers (844×390, shadows on, one counted frame)
+The book's row: 61 draw calls, 79k triangles. The whole row: 81 draw calls, 68k triangles. Looking into M₁: 82 draw calls,
+54k triangles. Ready in about 3 s, GLB about 200 KB. Idle, after 8 s: nothing is drawn.
 
 ## Open questions
 - The book's picture prints capitals (X, X′), its caption small letters (x, x′); the figure follows the caption and the brief.
 - The book names the images on both sides x′, x″; the figure does too, and the panel says which mirror.
 - The book's picture has no name for the distance of the left x″ from M₂; the figure shows it as a number while it is new.
 - 90 % per reflection is mine, not the book's.
+- The action words say ডান and বাম আয়না, not M₁ and M₂: the kit writes them as plain text and the bundled font has no subscripts.
 - The 90° mirrors of চিত্র ৮.১৫ and ৮.২৬ are left out: the owner made them optional and they are another idea (left and right).
   They would suit a figure of their own.
 - A person's wording check of the Bangla against the book.

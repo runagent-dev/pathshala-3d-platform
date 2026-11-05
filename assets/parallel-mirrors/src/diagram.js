@@ -241,6 +241,7 @@ export function createDiagram({ stage, host }) {
     ray: null, // { points, k, lit }
     backs: [], // dashed: { x0, y0, x1, y1, k, lit }
     eye: null, // { x, y, tx, ty }
+    aim: null, // the image a ray is traced to: { x, y }
     points: [], // [x, y, radius, colour]
     spots: [], // the test's places on the table: [x, z]
     drag: { candle: null }, // { x }
@@ -265,6 +266,17 @@ export function createDiagram({ stage, host }) {
     }
     if (v.ray) ray(v.ray.points, v.ray.k, v.ray.lit);
     for (const p of v.points) dot(p[0], p[1], p[2], p[3]);
+    if (v.aim) {
+      P(v.aim.x, v.aim.y);
+      ctx.beginPath();
+      ctx.arc(sx, sy, 13 * unit, 0, Math.PI * 2);
+      ctx.strokeStyle = C.rayDark;
+      ctx.lineWidth = 3.8 * unit;
+      ctx.stroke();
+      ctx.strokeStyle = C.ray;
+      ctx.lineWidth = 2.3 * unit;
+      ctx.stroke();
+    }
     if (v.eye) eye(v.eye);
     if (v.drag.candle) {
       P(v.drag.candle.x, 0, 13);
@@ -279,7 +291,7 @@ export function createDiagram({ stage, host }) {
     view: v,
     handles,
     clear() {
-      Object.assign(v, { ray: null, eye: null, flash: 0 });
+      Object.assign(v, { ray: null, eye: null, aim: null, flash: 0 });
       v.dims.length = 0;
       v.backs.length = 0;
       v.points.length = 0;

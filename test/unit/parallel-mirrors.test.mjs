@@ -11,12 +11,17 @@ import {
   imageAt,
   M,
   NAMED,
+  PAIR_X,
+  pairChoices,
   path,
   reflect,
   reflectIn,
   row,
   shuffle,
   snapCandle,
+  spotChoices,
+  sumChoices,
+  timesChoices,
   toNormal,
 } from '../../assets/parallel-mirrors/src/reading.js';
 
@@ -142,6 +147,39 @@ test('each reflection leaves about 90 % of the light', () => {
   assert.equal(brightness(1), 90);
   assert.equal(brightness(2), 81);
   assert.equal(brightness(3), 73);
+});
+
+test('the test’s four choices always differ, and the right one is among them', () => {
+  const distinct = (list) => assert.equal(new Set(list).size, 4, `${list}`);
+  for (const x of PAIR_X) {
+    const c = pairChoices(x);
+    distinct([c.answer, c.same, c.gap, c.other]);
+    assert.equal(c.answer, 2 * distances(x).d1);
+  }
+  for (const x of places) {
+    distinct(spotChoices(x).map((p) => p.at));
+    assert.equal(spotChoices(x)[0].at, distances(x).d3);
+    for (const alt of [true, false]) {
+      const c = sumChoices(x, alt);
+      distinct([c.answer, c.d3, c.two, c.last]);
+    }
+  }
+  for (const k of [1, 2, 3, 4]) {
+    const list = timesChoices(k);
+    distinct(list);
+    assert.ok(list.includes(k) && list.every((n) => n >= 1));
+  }
+});
+
+test('d₄ is not always the largest choice', () => {
+  const c = sumChoices(5, false);
+  assert.ok(c.last > c.answer);
+  assert.ok(sumChoices(5, true).last > sumChoices(5, true).answer);
+});
+
+test('the choices are numbers, because the kit’s quiz compares numbers', () => {
+  const c = pairChoices(3);
+  for (const v of [c.answer, c.same, c.gap, c.other]) assert.equal(typeof v, 'number');
 });
 
 test('shuffle keeps every item', () => {

@@ -137,6 +137,34 @@ export function path(x, side, k) {
   };
 }
 
+/** The candle's places in the first test question: at these the four numbers always differ. */
+export const PAIR_X = [-6, -3, 3, 5, 7];
+/** x to x′ in M₁ (2d₁), and the mistakes: only to the mirror (d₁), the mirrors' gap, twice the distance to the wrong mirror. */
+export function pairChoices(x) {
+  const { d1, d2 } = distances(x);
+  return { answer: 2 * d1, same: d1, gap: M.gap, other: 2 * d2 };
+}
+/** The count of reflections: the answer and three neighbours, never below one. */
+export function timesChoices(k) {
+  const low = Math.max(1, k - 2);
+  return [low, low + 1, low + 2, low + 3];
+}
+/** Where x″ can be put behind M₁, cm from it: d₃, and the mistakes. */
+export function spotChoices(x) {
+  const { d2, d3 } = distances(x);
+  return [
+    { v: 'd3', at: d3 },
+    { v: 'd2', at: d2 },
+    { v: 'gap', at: M.gap },
+    { v: 'more', at: d3 + M.gap },
+  ];
+}
+/** d₄ and the mistakes; the answer is not always the largest. `alt` picks the last mistake. */
+export function sumChoices(x, alt) {
+  const { d1, d3, d4 } = distances(x);
+  return { answer: d4, d3, two: 2 * M.gap, last: alt ? 3 * M.gap : d4 + d1, lastNote: alt ? 'three' : 'twice' };
+}
+
 export function shuffle(list) {
   const a = [...list];
   for (let i = a.length - 1; i > 0; i--) {

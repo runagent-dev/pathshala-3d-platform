@@ -62,9 +62,9 @@ export function candleGeometry() {
       [2.02, 1.82],
       [1.7, 1.78],
     ],
-    30,
+    22,
   );
-  parts.push(paint(lathe(dish, 32), BRASS, 0.9, 0.34));
+  parts.push(paint(lathe(dish, 28), BRASS, 0.9, 0.34));
   // the ring handle, standing on the dish's rim
   const ring = new THREE.TorusGeometry(1.05, 0.2, 8, 20);
   ring.translate(4.9, 1.0, 0);
@@ -82,10 +82,10 @@ export function candleGeometry() {
       [0.3, 13.0],
       [0, 13.0],
     ],
-    30,
+    20,
   );
   const warm = (c, _x, y) => c.lerp(WAX_WARM, THREE.MathUtils.smoothstep(y, 9.5, 13.4) * 0.8);
-  parts.push(paint(lathe(wax, 32), WAX, 0, 0.5, warm));
+  parts.push(paint(lathe(wax, 28), WAX, 0, 0.5, warm));
   // the drips: thin beads down the side
   const drips = [
     [35, 11.6, 1.9, 0.34],
@@ -114,6 +114,45 @@ export function candleGeometry() {
   return merged;
 }
 
+/** The same candle for far along the row, where it is a few pixels wide: wax on a plain dish, no handle, no drips. */
+export function farCandleGeometry() {
+  const dish = paint(
+    lathe(
+      [
+        [0, 0],
+        [4.2, 0.1],
+        [4.42, 0.62],
+        [2.0, 0.5],
+        [2.0, 1.8],
+      ],
+      12,
+    ),
+    BRASS,
+    0.9,
+    0.34,
+  );
+  const wax = paint(
+    lathe(
+      [
+        [2.0, 1.8],
+        [1.6, 1.8],
+        [1.52, 13.2],
+        [1.2, 13.34],
+        [0, 13.0],
+      ],
+      12,
+    ),
+    WAX,
+    0,
+    0.5,
+    (c, _x, y) => c.lerp(WAX_WARM, THREE.MathUtils.smoothstep(y, 9.5, 13.4) * 0.8),
+  );
+  for (const g of [dish, wax]) g.deleteAttribute('uv');
+  const merged = mergeGeometries([dish, wax], false);
+  merged.scale(SIZE, SIZE, SIZE);
+  return merged;
+}
+
 /** The wax and brass material; `glow` (0 … 1) is the light of the flame inside the wax near the top. */
 export function candleMaterial({ glow = 1, name = 'Candle', transparent = false } = {}) {
   const m = new THREE.MeshStandardMaterial({ name, vertexColors: true, roughness: 1, metalness: 1, transparent });
@@ -138,16 +177,20 @@ export function candleMaterial({ glow = 1, name = 'Candle', transparent = false 
 }
 
 export const FLAME_CARD = 18.3; // cm across
-export const FLAME_Y = 20.35; // the card's centre above the table: the wick's tip is 3 cm below it
+const WICK_TIP = 17.3; // cm above the table
+const CARD_DROP = 3.05; // the wick's tip below the card's centre, cm
+/** The card's centre for a flame of this size: it always starts at the wick. */
+export const flameY = (size = 1) => WICK_TIP + CARD_DROP * size;
 const PAINT = 15; // the shader paints in these units, so the flame scales with the card
 const VERT = `
 #include <common>
 #include <clipping_planes_pars_vertex>
+uniform float uSize;
 varying vec2 vUv;
 void main() {
   vUv = position.xy * 2.0;
   vec4 mvPosition = modelViewMatrix * vec4(0.0, 0.0, 0.0, 1.0);
-  mvPosition.xy += position.xy * ${FLAME_CARD.toFixed(1)};
+  mvPosition.xy += position.xy * ${FLAME_CARD.toFixed(1)} * uSize;
   gl_Position = projectionMatrix * mvPosition;
   #include <clipping_planes_vertex>
 }`;
@@ -194,7 +237,7 @@ export const flameClock = { value: 0 };
 export function createFlame() {
   const material = new THREE.ShaderMaterial({
     name: 'Flame',
-    uniforms: { uTime: flameClock, uLight: { value: 1 } },
+    uniforms: { uTime: flameClock, uLight: { value: 1 }, uSize: { value: 1 } },
     vertexShader: VERT,
     fragmentShader: FRAG,
     transparent: true,

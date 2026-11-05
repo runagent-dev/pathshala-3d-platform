@@ -13,11 +13,12 @@
 // window takes 10 % of the light behind it, which is exactly what each reflection does.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { candleGeometry, candleMaterial, createFlame, FLAME_Y, flameClock, solidFlame } from './candle.js';
+import { candleGeometry, candleMaterial, createFlame, farCandleGeometry, flameClock, flameY, solidFlame } from './candle.js';
 import { CANDLE, COUNT, GLASS, M, NAMED, REFLECTANCE, row } from './reading.js';
 
-const GHOST = 0.56; // common.md: a virtual image is a translucent ghost of about 45 %; on the dark backdrop, a little more
-const FADE = 0.86; // the ghosts fade a little faster than the true 90 %, so that a phone shows the step; see NOTES.md
+const GHOST = 0.44; // common.md: a virtual image is a translucent ghost of about 45 %
+const FADE = 0.86; // the ghosts fade a little faster than the true 90 %, so that a phone shows the step; the panel says so
+const GHOST_FLAME = { size: 0.78, light: 0.74 }; // no image is a flame: smaller and dimmer than the real one
 
 function gradient(stops, w = 4, h = 256) {
   const c = document.createElement('canvas');
@@ -231,7 +232,7 @@ ${sh.fragmentShader}`.replace(
   // ── the mirrors ─────────────────────────────────────────────────────────────────────────────────────────
   const parts = mirrorParts();
   const edgeMat = new THREE.MeshStandardMaterial({ name: 'GlassEdge', color: '#58c4a0', roughness: 0.16, metalness: 0, emissive: '#10382c' });
-  const backMat = new THREE.MeshStandardMaterial({ name: 'MirrorBack', color: '#8d97a3', roughness: 0.6, metalness: 0.3 });
+  const backMat = new THREE.MeshStandardMaterial({ name: 'MirrorBack', color: '#b9c2cc', roughness: 0.42, metalness: 0.55 });
   const steelMat = new THREE.MeshStandardMaterial({ name: 'Steel', color: '#46505c', roughness: 0.42, metalness: 0.7 });
   const glassMap = glassTexture();
   const glassFront = new THREE.PlaneGeometry(2 * GLASS.halfW, GLASS.y1 - GLASS.y0)
@@ -275,7 +276,7 @@ ${sh.fragmentShader}`.replace(
   body.castShadow = true;
   body.receiveShadow = true;
   const realFlame = createFlame();
-  realFlame.position.y = FLAME_Y;
+  realFlame.position.y = flameY();
   realFlame.renderOrder = 61;
   real.add(body, realFlame);
   scene.add(real);
@@ -299,14 +300,13 @@ ${sh.fragmentShader}`.replace(
     const col = new THREE.Mesh(geometry, mat);
     const flame = createFlame();
     flame.material.clippingPlanes = clip;
-    flame.position.y = FLAME_Y;
     const order = 30 - 3 * im.k;
     pre.renderOrder = order;
     col.renderOrder = order + 1;
     flame.renderOrder = order + 2;
     g.add(pre, col, flame);
     scene.add(g);
-    images.set(im.id, { ...im, group: g, mat, flame, alpha: 0 });
+    images.set(im.id, { ...im, group: g, mat, flame, pre, col, alpha: 0 });
   }
 
   // ── what the view into M₁ needs: the pictures of the two mirrors, and what each reflection takes ───────────
@@ -359,7 +359,11 @@ ${sh.fragmentShader}`.replace(
       const on = inside > 0.5 ? solid : ghost;
       im.group.visible = on > 0.004;
       im.mat.opacity = on;
-      im.flame.material.uniforms.uLight.value = inside > 0.5 ? solid : Math.min(1, im.alpha * a * (0.88 * FADE ** (im.k - 1)));
+      const u = im.flame.material.uniforms;
+      const size = inside > 0.5 ? 1 : GHOST_FLAME.size;
+      u.uSize.value = size;
+      im.flame.position.y = flameY(size);
+      u.uLight.value = inside > 0.5 ? solid : Math.min(1, im.alpha * a * GHOST_FLAME.light * FADE ** (im.k - 1));
     }
   }
   function setCandle(x) {
@@ -367,6 +371,16 @@ ${sh.fragmentShader}`.replace(
     flameLight.position.set(x, 21, 0);
     for (const q of row(x)) images.get(q.id).group.position.x = q.x;
     for (const im of images.values()) im.group.scale.x = im.flipped ? -1 : 1;
+  }
+  const farGeometry = farCandleGeometry();
+  /** The plain candle from this image on along the row. */
+  function setDetail(from) {
+    for (const im of images.values()) {
+      const far = im.k >= from;
+      im.col.geometry = far ? farGeometry : geometry;
+      im.pre.geometry = far ? farGeometry : geometry;
+      im.pre.visible = !far; // a shape this small has no limbs to show through
+    }
   }
   /** How far each image has come, 0 … 1, by id. */
   function setImage(id, a) {
@@ -452,7 +466,7 @@ ${sh.fragmentShader}`.replace(
       const m = new THREE.Mesh(plain, material);
       m.name = `${name}-Body`;
       const f = solidFlame();
-      f.position.y = 17.3;
+      f.position.y = flameY(0);
       f.scale.setScalar(1.22);
       if (opacity < 1) {
         f.material = f.material.clone();
@@ -483,5 +497,5 @@ ${sh.fragmentShader}`.replace(
 
   setCandle(CANDLE.start);
   setInside(0);
-  return { setCandle, setImage, setInside, updateClip, tickFlames, setFloorFade, exportModel, real, m1, m2 };
+  return { setCandle, setImage, setInside, setDetail, updateClip, tickFlames, setFloorFade, exportModel, real, m1, m2 };
 }
