@@ -52,6 +52,8 @@ angle, a camera per step with smooth zooms, one element at a time, labels never 
   the kit changes), flies back round the scene, not through it. The one exception is the view into M₁: the camera stands between the
   mirrors and looks through M₁, and beyond that glass this view has nothing to show, so there it keeps to M₂'s side (azimuth −115° to
   −58°, every frame has images) and does not zoom, and the pill says ⟲ একটু ঘুরিয়ে দেখো instead of ৩৬০°.
+- **A resize frames the view again only if the stage's CSS size changed.** The kit lowers its pixel ratio while frames come slowly and reports
+  that as a resize; taken at face value it threw the student's turn away, on the slow phones that need it most. A browser test holds this.
 - **Icons do not look alike:** ⟲ with ৩৬০° turns the view, the target with সামনে goes back to the front, ▶ replays a step. The figure has no plain ↺.
 - **Images are exact.** `reading.js` reflects the candle in a chain of mirrors. An image in the scene is the same geometry moved
   there, with `scale.x = −1` for an odd number of reflections, so its handle and drips are mirrored too. Same clock, same

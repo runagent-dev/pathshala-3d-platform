@@ -256,6 +256,42 @@ test('parallel-mirrors: a tap is not a turn; the view goes all the way round and
   expect(log.errors).toEqual([]);
 });
 
+test.describe('on a sharp screen', () => {
+  test.use({ deviceScaleFactor: 2 });
+  test('parallel-mirrors: the kit lowering the resolution mid-turn leaves the student’s view alone', async ({ page }) => {
+    test.setTimeout(120_000);
+    await page.setViewportSize({ width: 640, height: 400 });
+    const log = await preparePage(page);
+    const fig = await openFigure(page, 'parallel-mirrors');
+    await fig.advance(300);
+    const start = await fig.call('get');
+    expect(start.pixelRatio).toBe(2);
+    const c = await fig.frame.locator('.pvc-canvas').boundingBox();
+    const [x, y] = [c.x + 40, c.y + 60];
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    // 50 ms a frame is slow to the stage: after 30 frames in a row it steps the pixel ratio down and reports a resize
+    for (let i = 1; i <= 40; i++) {
+      await page.mouse.move(x + i * 3, y);
+      await fig.advance(50);
+    }
+    await page.mouse.up();
+    await fig.advance(800);
+    const st = await fig.call('get');
+    expect(st.pixelRatio).toBeLessThan(2);
+    expect(st).toMatchObject({ view: '3d', turned: true });
+    expect(Math.abs(st.azimuth - start.azimuth)).toBeGreaterThan(30); // all forty moves of the finger counted
+    // the view stays where the student left it, also with the flames still drawing (the damping may glide a degree or two)
+    await fig.advance(1000);
+    expect(Math.abs((await fig.call('get')).azimuth - st.azimuth)).toBeLessThan(3);
+    // a real change of size does frame it again
+    await page.setViewportSize({ width: 800, height: 500 });
+    await fig.advance(400);
+    expect(await fig.call('get')).toMatchObject({ view: 'front' });
+    expect(log.errors).toEqual([]);
+  });
+});
+
 test('parallel-mirrors: the test runs to its end and leaves the learn state as it was', async ({ page }) => {
   test.setTimeout(300_000);
   await page.setViewportSize({ width: 390, height: 700 });

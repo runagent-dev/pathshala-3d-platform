@@ -572,7 +572,13 @@ export function createApp(root, options = {}) {
     },
     { capture: true, passive: true },
   );
-  stage.onResize(() => {
+  // the stage also says "resize" when it only lowers its pixel ratio, in the middle of a student's turn: that changes nothing here
+  let viewW = stage.width;
+  let viewH = stage.height;
+  stage.onResize((w, h) => {
+    if (w === viewW && h === viewH) return;
+    viewW = w;
+    viewH = h;
     s.userMovedCamera = false;
     zoomLimits(false);
     if (s.view === '3d') {
@@ -1641,6 +1647,8 @@ export function createApp(root, options = {}) {
       frame: shownFrame,
       handle: { shown: grip.on, used: s.dragged },
       turned: s.turned,
+      azimuth: +THREE.MathUtils.radToDeg(controls.getAzimuthalAngle()).toFixed(1),
+      pixelRatio: stage.pixelRatio,
       question: s.quiz && qCurrent ? { kind: s.quiz.kind, answer: qCurrent.label(qCurrent.answer) } : null,
       mode: s.mode,
       locked: s.locked,
