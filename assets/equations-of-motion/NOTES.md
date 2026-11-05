@@ -24,6 +24,12 @@ Latin letters and digits as the book prints them (v = u + at, s = ut + ½at², v
 Bangla digits. Units as the book: m/s for velocity (p40), ms⁻² for acceleration (p44), m, s; a number and its unit
 never part at a line break.
 
+## Version 3.2.1: calmer sliders, clearer numbers (2026-11-05)
+The owner on 3.2.0: "don't add that much glow on the sliders, and the numbers should be a bit clearer." No glow on the
+sliders, only a small dark shadow under the knob. Numbers are plain white and larger: slider values 16–17 px (the letter
+keeps its colour), graph ticks 12–13.5 px at weight 500, the equations under the graphs and the v² line larger, the axis
+digits up to 20 px on whole pixels. The chips on the strip are unchanged; the longest equations still fit on all six frames.
+
 ## Version 3.2.0: warm accents (2026-11-05)
 The owner, with a screenshot of 3.1.0: "All blue is not great. The slider can be a bit more contrast; the buttons and the
 car can be orange or yellow like this so it pops a bit, yet it looks fresh." The blue frame, the layout, the content and
@@ -39,10 +45,9 @@ free). Warm is only on the car and on what the student presses, and this replace
   in amber with white text; the chosen tab and the test's main button solid amber with dark text; focus rings white.
   The test's answer options stay glass (an amber hover), so the page isn't all orange.
 - **The sliders**: a near-black track, the part up to the knob 10 px thick in the quantity's colour (u blue, a green, t a
-  warm light grey), the stop set from --f by app.js so it ends under the knob at every width; a 26 px white-ringed knob with
-  a soft glow (placeValue in app.js uses the same width); values and names mixed towards white.
+  warm light grey), the stop set from --f by app.js so it ends under the knob at every width; a 26 px white-ringed knob
+  (placeValue in app.js uses the same width); values and names mixed towards white.
 - The formula's fraction bar is 2 px white.
-- Portrait test: the score moves out of the head (the end shows it), because পরের প্রশ্ন ran 15 px off a 390 px screen.
 
 ## Version 3.1.0: deep blue (2026-11-05)
 The owner, with a screenshot of the pale frame: "can you make the thing in a deep blue background so it is vivid and
