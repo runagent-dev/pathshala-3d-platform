@@ -294,7 +294,7 @@ export function createPole({ x, z, N, unit = 'm' }) {
   staff.position.set(x, H / 2, z);
   staff.castShadow = true;
   root.add(staff);
-  const plateGeo = new THREE.BoxGeometry(0.36, 0.17, 0.012);
+  const plateGeo = new THREE.BoxGeometry(0.42, 0.21, 0.012);
   const plateMat = new THREE.MeshStandardMaterial({ name: 'Plate', color: '#fbfaf5', emissive: '#fbfaf5', emissiveIntensity: 0.35, roughness: 0.55 });
   const tickMat = new THREE.MeshStandardMaterial({ name: 'Tick', color: '#20262e', roughness: 0.6 });
   const tickGeo = new THREE.BoxGeometry(0.11, 0.012, 0.07);
@@ -305,10 +305,10 @@ export function createPole({ x, z, N, unit = 'm' }) {
   ticks.name = 'Ticks';
   const m = new THREE.Matrix4();
   for (let h = 1; h <= 5; h++) {
-    plates.setMatrixAt(h - 1, m.makeTranslation(x + 0.24, h, z + 0.03));
+    plates.setMatrixAt(h - 1, m.makeTranslation(x + 0.27, h, z + 0.03));
     ticks.setMatrixAt(h - 1, m.makeTranslation(x, h, z));
-    const text = textMesh(`${N(String(h))} ${unit}`, 0.125, { color: '#20262e', weight: 700 });
-    text.position.set(x + 0.24, h, z + 0.038);
+    const text = textMesh(`${N(String(h))} ${unit}`, 0.16, { color: '#20262e', weight: 700 });
+    text.position.set(x + 0.27, h, z + 0.038);
     root.add(text);
   }
   root.add(plates, ticks);

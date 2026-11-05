@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
+  BOOK_G,
   EARTH,
   G,
   HEIGHT,
@@ -20,6 +21,7 @@ import {
   sci,
   strobeGaps,
   strobeHeights,
+  weight,
   weightChoices,
 } from '../../assets/newton-apple/src/reading.js';
 
@@ -36,7 +38,16 @@ test('newton-apple: the book numbers give g of about 9.8', () => {
 test('newton-apple: F is proportional to m, and F ÷ m is g whatever the mass', () => {
   near(pull(0.4) / pull(0.2), 2);
   for (let m = MASS.min; m <= MASS.max + 1e-9; m += MASS.step) near(pull(m) / m, gravity(), 1e-12);
-  assert.equal(roundTo(pull(0.2), 2), 1.97);
+});
+
+test('newton-apple: the numbers shown agree: F to two decimals, divided by m, is exactly 9.8 at every slider stop', () => {
+  assert.equal(BOOK_G, 9.8);
+  assert.equal(roundTo(gravity(), 1), BOOK_G);
+  assert.equal(roundTo(weight(0.2), 2), 1.96);
+  for (let i = 0; i <= 8; i++) {
+    const m = roundTo(MASS.min + i * MASS.step, 2);
+    assert.equal(roundTo(roundTo(weight(m), 2) / m, 6), 9.8);
+  }
 });
 
 test('newton-apple: the pull falls with the square of the distance from the centre', () => {
@@ -50,18 +61,18 @@ test('newton-apple: a height of a few metres hardly changes g (the book: not wor
 });
 
 test('newton-apple: time and speed of the fall', () => {
-  near(fallTime(3), Math.sqrt(6 / gravity()));
+  near(fallTime(3), Math.sqrt(6 / 9.8));
   assert.equal(roundTo(fallTime(3), 2), 0.78);
   assert.equal(roundTo(landingSpeed(3), 1), 7.7);
-  near(landingSpeed(3), gravity() * fallTime(3));
+  near(landingSpeed(3), 9.8 * fallTime(3));
   assert.equal(roundTo(fallTime(5), 2), 1.01);
 });
 
 test('newton-apple: fallAt runs from the branch to the ground and stays there', () => {
   assert.deepEqual(fallAt(0, 3), { t: 0, y: 3, v: 0, landed: false });
   const mid = fallAt(0.4, 3);
-  near(mid.y, 3 - 0.5 * gravity() * 0.16);
-  near(mid.v, gravity() * 0.4);
+  near(mid.y, 3 - 0.5 * 9.8 * 0.16);
+  near(mid.v, 9.8 * 0.4);
   const end = fallAt(9, 3);
   assert.equal(end.landed, true);
   assert.equal(end.y, 0);
@@ -73,12 +84,12 @@ test('newton-apple: the strobe gaps grow by g dt² each time', () => {
   assert.equal(ys.length, 11);
   assert.equal(ys[0], 5);
   const gaps = strobeGaps(ys);
-  for (let i = 1; i < gaps.length; i++) near(gaps[i] - gaps[i - 1], gravity() * 0.01, 1e-9);
+  for (let i = 1; i < gaps.length; i++) near(gaps[i] - gaps[i - 1], 9.8 * 0.01, 1e-9);
   assert.equal(strobeHeights(3, 0.25).length, 3);
 });
 
 test('newton-apple: the Earth hardly accelerates (the same F on a huge mass)', () => {
-  near(earthAcceleration(0.2), pull(0.2) / EARTH.M);
+  near(earthAcceleration(0.2), weight(0.2) / EARTH.M);
   const { m, e } = sci(earthAcceleration(0.2), 1);
   assert.equal(e, -25);
   assert.equal(m, '3.3');
@@ -101,6 +112,6 @@ test('newton-apple: the weight question has four different answers, the right on
   for (const m of [0.15, 0.25, 0.3, 0.4]) {
     const list = weightChoices(m);
     assert.equal(new Set(list).size, 4);
-    near(list[0], roundTo(m * gravity(), 2));
+    near(list[0], roundTo(m * 9.8, 2));
   }
 });

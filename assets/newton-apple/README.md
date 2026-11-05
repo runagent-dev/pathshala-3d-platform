@@ -28,7 +28,7 @@ To listen to it or control it from the book page, use the helper shipped in the 
 |---|---|---|---|
 | `lang` | Language | `bn` বাংলা · `en` English | `bn` |
 | `m` | Apple's mass (g) | number | `200` |
-| `h` | Height (m) | number | `3` |
+| `h` | Height (m) | number | `2` |
 | `t` | Frozen moment of the fall (s) (start frozen this many seconds into the fall, for pictures) | number |  |
 | `steps` | Falls already done (1 starts after one fall, with the trail) | number | `0` |
 | `sym` | Symbol tapped | (empty) none · `F` · `G` · `m` · `M` · `R` · `g` |  |

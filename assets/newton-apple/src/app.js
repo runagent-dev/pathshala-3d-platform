@@ -19,6 +19,7 @@ import { createGlobe } from './globe.js';
 import { createI18n } from './i18n.js';
 import { createPerson } from './person.js';
 import {
+  BOOK_G,
   EARTH,
   HEIGHT,
   MASS,
@@ -29,10 +30,10 @@ import {
   fallTime,
   gravity,
   groupBD,
-  pull,
   roundTo,
   sci,
   strobeHeights,
+  weight,
   weightChoices,
 } from './reading.js';
 import { createMeadow, createPole } from './setting.js';
@@ -40,7 +41,7 @@ import { APPLE_BOTTOM, APPLE_TOP, FALL_Z, SPOTS, TRUNK, createAppleKit, createTr
 
 export const DEFAULTS = {
   m: 200, // g
-  h: 3, // m
+  h: 2, // m
   t: null, // a moment of the fall (s) to start frozen at (for pictures)
   steps: 0, // 1: start after one fall
   sym: '', // a symbol of the formula to start on
@@ -62,12 +63,14 @@ const SLOW = 5; // the fall is shown this many times slower than life
 const DRAWN = 2.5; // the apples are drawn this many times bigger than life
 const F_ARROW = 0.25; // metres of arrow for each newton
 const DOUBLE_TAP = 450; // ms
-const AZ = THREE.MathUtils.degToRad(22);
+const TAP_MOVE = 8; // px: a finger that moves further is turning the view
+const TAP_MS = 500;
+const AZ = THREE.MathUtils.degToRad(32); // this side, the reader, the apple and the pole stand close together on the screen
 const EL = THREE.MathUtils.degToRad(6);
 const VIEW_DIR = new THREE.Vector3(Math.sin(AZ) * Math.cos(EL), Math.sin(EL), Math.cos(AZ) * Math.cos(EL));
 const GLOBE_DIR = new THREE.Vector3(0.26, 0.3, 0.92).normalize();
 const SPACE = '#070c22';
-const g0Value = gravity();
+const INK_LINE = '#20262e';
 
 const drawnRadius = (m) => DRAWN * appleRadius(m);
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
@@ -94,10 +97,12 @@ export function createApp(root, options = {}) {
     Gu: `Nm<sup>${N('2')}</sup>kg<sup>${MINUS}${N('2')}</sup>`,
     Gv: pow10('6.67', -11),
   };
+  SYM.Rplain = '<i>R</i>';
+  SYM.GMR = `${SYM.G}${SYM.M}/${SYM.R}<sup>${N('2')}</sup>`;
   SYM.law = `${SYM.G}${SYM.m}${SYM.M}/${SYM.R}<sup>${N('2')}</sup> = ${SYM.m}${SYM.g}`;
 
   const chip = (sym, label, cls, extra = '') =>
-    `<button type="button" class="na-chip ${cls}" data-sym="${sym}" aria-label="${t(`aria_${sym}`)}" aria-pressed="false"><span class="na-sym">${label}</span><small data-val="${sym}"></small></button>${extra}`;
+    `<button type="button" class="na-chip ${cls}" data-sym="${sym}" aria-label="${t(`aria_${sym}`)}" aria-pressed="false"><span class="na-sym">${label}</span><small data-val="${sym}"></small><small class="na-unit" data-unit="${sym}"></small></button>${extra}`;
   const formulaHtml = `
     <div class="na-fml" role="group" aria-label="${t('aria_formula')}">
       ${chip('F', '<i>F</i>', 'k-F')}
@@ -121,7 +126,7 @@ export function createApp(root, options = {}) {
 
   /** Two small graphs for tall panels: F grows with m, g does not. The dot is the student's apple. */
   const G_W = 150;
-  const G_H = 92;
+  const G_H = 97;
   const X0 = 32;
   const X1 = 144;
   const Y0 = 8;
@@ -135,10 +140,10 @@ export function createApp(root, options = {}) {
         <circle class="na-gd" r="5" cx="${gx(0.2)}" cy="${gy(line(0.2), top)}"/>
         <text x="${X0 - 4}" y="${Y0 + 8}" text-anchor="end">${N(ticks)}</text><text x="${X0 - 4}" y="${Y1 + 3}" text-anchor="end">${N('0')}</text>
         <text x="${gx(0.5)}" y="${Y1 + 13}" text-anchor="end">${N('0.5')}</text><text x="${X0}" y="${Y1 + 13}" text-anchor="middle">${N('0')}</text>
-        <text x="${(X0 + X1) / 2}" y="${G_H - 2}" text-anchor="middle">m (kg)</text>
+        <text x="${(X0 + X1) / 2}" y="${G_H - 6}" text-anchor="middle">m (kg)</text>
         <text x="${X0 + 6}" y="${Y0 + 3}">${yLabel}</text>
       </svg>`;
-  const graphsHtml = `<div class="na-graphs">${graph('F', 5, `F (${t('newton')})`, (m) => pull(m), '5')}${graph('g', 15, `g (ms<tspan dy="-3" font-size="9">${MINUS}${N('2')}</tspan>)`, () => g0Value, '15')}</div>`;
+  const graphsHtml = `<div class="na-graphs">${graph('F', 5, `F (${t('newton')})`, (m) => weight(m), '5')}${graph('g', 15, `g (ms<tspan dy="-3" font-size="9">${MINUS}${N('2')}</tspan>)`, () => BOOK_G, '15')}</div>`;
 
   root.classList.add('pvc', 'na');
   root.dataset.theme = o.bg;
@@ -280,11 +285,12 @@ export function createApp(root, options = {}) {
         g.visible = true;
       },
       hide: () => (g.visible = false),
+      color: (c) => mat.color.set(c),
     };
   }
   const RLine = measure('RFromCentre', DIST);
-  const lineA = measure('LineA', '#20262e');
-  const lineC = measure('LineC', '#20262e');
+  const lineA = measure('LineA', INK_LINE);
+  const lineC = measure('LineC', INK_LINE);
   const centreDot = new THREE.Mesh(
     new THREE.SphereGeometry(0.03, 16, 12),
     new THREE.MeshBasicMaterial({ color: '#ffffff', depthTest: false, depthWrite: false, toneMapped: false }),
@@ -323,13 +329,13 @@ export function createApp(root, options = {}) {
   // ── state ───────────────────────────────────────────────────────────────────
   const s = {
     m: clamp(Number(o.m) || 200, MASS.min * 1000, MASS.max * 1000) / 1000, // kg
-    h: clamp(Math.round(Number(o.h) || 3), HEIGHT.min, HEIGHT.max),
+    h: clamp(Math.round(Number(o.h) || 2), HEIGHT.min, HEIGHT.max),
     phase: 'hang', // 'hang' | 'fall' | 'landed'
     t: 0, // seconds of the fall (real seconds, the picture runs SLOW times slower)
     paused: false,
     sym: null, // the symbol tapped
     place: 'meadow', // 'meadow' | 'globe'
-    shot: 'tree', // 'tree' | 'close' | 'globe'
+    shot: 'open', // 'open' (reader, apple, pole) | 'tree' (the whole trail) | 'close' | 'race' | 'globe'
     runs: [], // the falls so far: { m, h, t }
     follow: null, // the camera's glide down with the apple
     mode: 'explore',
@@ -343,10 +349,10 @@ export function createApp(root, options = {}) {
   const now = () => performance.now();
   let token = 0;
   let lastAct = Number.NEGATIVE_INFINITY;
-  const g0 = gravity();
+  const g0 = BOOK_G;
   const heroIndex = () => s.h - HEIGHT.min;
   const hero = () => apples[heroIndex()];
-  const F = () => pull(s.m);
+  const F = () => weight(s.m);
 
   // ── the apples ──────────────────────────────────────────────────────────────
   /** Hangs an apple of radius r at height h (its lowest point) from a twig's end. */
@@ -388,8 +394,7 @@ export function createApp(root, options = {}) {
     ghosts.instanceMatrix.needsUpdate = true;
     // the pull on the falling apple: its length is the student's F; it stops when the apple is on the ground
     const showArrow = s.phase !== 'landed' && (!q || q.arrow);
-    const yBottom = a.root.position.y - r * APPLE_BOTTOM;
-    if (showArrow) fArrow.set(placeFall.p.set(a.spot.x, yBottom, a.spot.z), DOWN, Math.max(0.1, F() * F_ARROW));
+    if (showArrow) fArrow.set(placeFall.p.set(a.spot.x, a.root.position.y, a.spot.z), DOWN, Math.max(0.1, F() * F_ARROW));
     else fArrow.hide();
     fArrow.root.visible = showArrow;
     // the height: on the pole, and dashes from the apple's start to it
@@ -404,7 +409,7 @@ export function createApp(root, options = {}) {
       dashes.setMatrixAt(i, m.compose(placeFall.p.set(x0 + (i + 0.5) * ((x1 - x0) / n), s.h, a.spot.z), placeFall.q0, placeFall.one));
     dashes.instanceMatrix.needsUpdate = true;
     landing.position.set(a.spot.x, 0.012, a.spot.z);
-    landing.visible = s.phase === 'hang';
+    landing.visible = s.phase === 'hang' && !q;
   }
   placeFall.m = new THREE.Matrix4();
   placeFall.p = new THREE.Vector3();
@@ -416,34 +421,50 @@ export function createApp(root, options = {}) {
   // ── the camera ──────────────────────────────────────────────────────────────
   const box = new THREE.Box3();
   const MARGIN = { top: 54, bottom: 10, side: 8 };
-  function treePose() {
-    const top = Math.max(3.5, s.h + 0.62);
-    box.min.set(-1.85, -0.06, -0.2);
-    box.max.set(2.62, top, 1.1);
-    return fitPose({ box, dir: VIEW_DIR, camera, width: stage.width, height: stage.height, margin: MARGIN });
+  const fit = (margin = MARGIN, dir = VIEW_DIR) => fitPose({ box, dir, camera, width: stage.width, height: stage.height, margin });
+  /** The opening: the apple and the pole, big; the reader too for the low apples; a higher apple's own part of the tree. */
+  function openPose() {
+    const a = hero().spot;
+    const low = s.h <= 2;
+    box.min.set(low ? -1.0 : a.x - 0.7, low ? -0.05 : s.h - 1.9, low ? -0.3 : a.z - 0.1);
+    box.max.set(pole.x + 0.5, s.h + 0.42, a.z + 0.1);
+    return fit({ top: 26, bottom: 8, side: 6 });
   }
+  /** After a fall: the whole trail, from the branch to the grass. */
+  function treePose() {
+    const a = hero().spot;
+    box.min.set(Math.min(-1.0, a.x - 1.2), -0.06, -0.2);
+    box.max.set(pole.x + 0.55, Math.max(2.5, s.h + 0.5), a.z + 0.1);
+    return fit();
+  }
+  /** The apple and its arrow, filling the view. */
   function closePose() {
     const a = hero().spot;
     const L = F() * F_ARROW;
-    const y1 = s.h + 0.55;
-    const y0 = Math.max(-0.05, s.h - Math.max(0.75, L + 0.05));
-    box.min.set(a.x - 0.8, y0, a.z - 0.1);
-    box.max.set(a.x + 0.9, y1, a.z + 0.1);
-    return fitPose({ box, dir: VIEW_DIR, camera, width: stage.width, height: stage.height, margin: MARGIN });
+    box.min.set(a.x - 0.6, Math.max(-0.05, s.h - Math.max(0.45, L - 0.05)), a.z - 0.1);
+    box.max.set(a.x + 0.75, s.h + 0.5, a.z + 0.1);
+    return fit();
   }
-  /** The window that rides down with the apple: its pose at y = 1.3 m, then moved by the apple's height. */
-  const followBase = { key: '', pose: null, y: 1.3 };
+  /** The test's two apples, against the meadow. */
+  function racePose() {
+    box.min.set(tree.twinSpur.x - 0.55, -0.05, FALL_Z - 0.1);
+    box.max.set(hero().spot.x + 0.55, 1.5, FALL_Z + 0.1);
+    return fit();
+  }
+  /** The window that rides down with the apple (about 1.1 m tall): its pose near the ground, then moved by the apple's height. */
+  const followBase = { key: '', pose: null, y: 0.8 };
   function followPose(y) {
     const a = hero().spot;
-    const key = `${stage.width}x${stage.height}x${a.x}`;
+    const H = Math.max(1.1, F() * F_ARROW + 0.62);
+    const key = `${stage.width}x${stage.height}x${a.x}x${H}`;
     if (followBase.key !== key) {
-      followBase.y = stage.height < 300 ? 1.05 : 1.3; // the apple rides this high in the window
-      box.min.set(a.x - 0.72, 0.0, a.z - 0.1);
-      box.max.set(a.x + 0.72, stage.height < 300 ? 1.6 : 2.0, a.z + 0.1);
-      followBase.pose = fitPose({ box, dir: VIEW_DIR, camera, width: stage.width, height: stage.height, margin: { top: 54, bottom: 12, side: 8 } });
+      followBase.y = H - 0.36; // the apple rides this high in the window, its arrow below it
+      box.min.set(a.x - 0.5, 0.0, a.z - 0.1);
+      box.max.set(a.x + 0.5, H, a.z + 0.1);
+      followBase.pose = fit({ top: 30, bottom: 10, side: 8 });
       followBase.key = key;
     }
-    const dy = Math.max(0, y - followBase.y);
+    const dy = Math.max(0, y + drawnRadius(s.m) * APPLE_BOTTOM - followBase.y);
     follow.position.copy(followBase.pose.position).setY(followBase.pose.position.y + dy);
     follow.target.copy(followBase.pose.target).setY(followBase.pose.target.y + dy);
     return follow;
@@ -452,9 +473,10 @@ export function createApp(root, options = {}) {
   function globePose() {
     box.min.set(-1.05, -1.05, -1);
     box.max.set(1.05, 1.5, 1);
-    return fitPose({ box, dir: GLOBE_DIR, camera, width: stage.width, height: stage.height, margin: { top: 44, bottom: 10, side: 8 } });
+    return fit({ top: 44, bottom: 10, side: 8 }, GLOBE_DIR);
   }
-  const poseFor = (shot = s.shot) => (shot === 'globe' ? globePose() : shot === 'close' ? closePose() : treePose());
+  const POSES = { open: openPose, tree: treePose, close: closePose, race: racePose, globe: globePose };
+  const poseFor = (shot = s.shot) => POSES[shot]();
   function jump({ position, target }) {
     tweener.cancel('camera');
     camera.position.copy(position);
@@ -477,6 +499,7 @@ export function createApp(root, options = {}) {
         camera.position.lerpVectors(p0, p1, k);
         controls.target.lerpVectors(t0, t1, k);
         controls.update();
+        labelsFor(); // which side a label takes depends on where things are on the screen
         stage.invalidate();
       },
     }).finished;
@@ -547,13 +570,13 @@ export function createApp(root, options = {}) {
   }
   const spaceColor = new THREE.Color(SPACE);
 
-  // the view opens three-quarter; dragging turns it, and the hidden "first view" button comes back
-  controls.addEventListener('start', () => {
+  /** The student has turned the view: the figure leaves the camera alone until "first view". */
+  function cameraTaken() {
     s.userMovedCamera = true;
     s.follow = null;
     tweener.cancel('camera');
     syncControls();
-  });
+  }
   stage.onResize(() => {
     followBase.key = '';
     if (!s.userMovedCamera && !s.follow) jump(poseFor());
@@ -571,6 +594,7 @@ export function createApp(root, options = {}) {
     const lines = q?.lines;
     centreDot.visible = true;
     if (lines) {
+      RLine.color(q.shown ? DIST : INK_LINE); // three lines alike until the answer is out
       RLine.set(gA.set(0, 0, 0), gTip);
       lineA.set(gA.set(0.09, 1, 0), gB.set(0.09, gTip.y, 0));
       lineC.set(gA.set(-0.09, -1, 0), gB.set(-0.09, 1, 0));
@@ -580,26 +604,24 @@ export function createApp(root, options = {}) {
     }
     lineA.hide();
     lineC.hide();
-    if (s.sym === 'R' || s.sym === 'M' || q) RLine.set(gA.set(0, 0, 0), gTip);
+    RLine.color(DIST);
+    if (!q && (s.sym === 'R' || s.sym === 'M')) RLine.set(gA.set(0, 0, 0), gTip);
     else RLine.hide();
     const L = 0.34;
     gArrowA.set(gA.set(0, 1 - 0.02, 0).add(OFF), DOWN, L);
-    gArrowE.set(gA.set(0, 0.02, 0).add(OFF), UP, L);
+    if (!q?.pair || q.shown) gArrowE.set(gA.set(0, 0.02, 0).add(OFF), UP, L);
+    else gArrowE.hide();
   }
 
   // ── labels on the 3D view ───────────────────────────────────────────────────
   const bb = new THREE.Box3();
-  const boxOut = { left: 0, top: 0, right: 0, bottom: 0 };
-  function boxOf(obj) {
-    if (!obj.root.visible) return null;
-    bb.setFromObject(obj.root);
-    if (bb.isEmpty()) return null;
-    const out = boxOut;
-    out.left = out.top = Infinity;
-    out.right = out.bottom = -Infinity;
-    for (const x of [bb.min.x, bb.max.x])
-      for (const y of [bb.min.y, bb.max.y])
-        for (const z of [bb.min.z, bb.max.z]) {
+  /** A box in the scene as a box on the view (canvas pixels), written into `out`. */
+  function projected(b3, out) {
+    out.left = out.top = Number.POSITIVE_INFINITY;
+    out.right = out.bottom = Number.NEGATIVE_INFINITY;
+    for (const x of [b3.min.x, b3.max.x])
+      for (const y of [b3.min.y, b3.max.y])
+        for (const z of [b3.min.z, b3.max.z]) {
           const c = tmp.set(x, y, z).project(camera);
           const sx = (c.x * 0.5 + 0.5) * stage.width;
           const sy = (-c.y * 0.5 + 0.5) * stage.height;
@@ -610,14 +632,33 @@ export function createApp(root, options = {}) {
         }
     return out;
   }
+  const arrowOut = { left: 0, top: 0, right: 0, bottom: 0 };
+  function arrowBox() {
+    if (!fArrow.root.visible) return null;
+    bb.setFromObject(fArrow.root);
+    return bb.isEmpty() ? null : projected(bb, arrowOut);
+  }
+  // the reader and the pole's number plates stay clear of the labels that move with the apple
+  const readerBox = new THREE.Box3().setFromObject(reader.root);
+  const plateBox = new THREE.Box3(new THREE.Vector3(pole.x - 0.03, 0, pole.z - 0.02), new THREE.Vector3(pole.x + 0.5, 5.4, pole.z + 0.04));
+  const readerOut = { left: 0, top: 0, right: 0, bottom: 0 };
+  const plateOut = { left: 0, top: 0, right: 0, bottom: 0 };
+  const keepClear = [
+    () => (s.place === 'meadow' ? projected(readerBox, readerOut) : null),
+    () => (s.place === 'meadow' ? projected(plateBox, plateOut) : null),
+  ];
   const tmp = new THREE.Vector3();
   const anno = createAnnotations({
     stage,
     layer: ui.annoLayer,
-    avoid: [ui.corner, note, () => action?.ringBox(), () => action?.box(), () => boxOf(fArrow)],
+    avoid: [ui.corner, note, ui.$('.pvc-panel-toggle'), () => action?.ringBox(), () => action?.box(), () => arrowBox()],
   });
   const labelText = new Map();
+  const labelSpots = new Map();
   function label(id, opts) {
+    const spotsKey = JSON.stringify(opts.spots);
+    if (labelSpots.get(id) !== spotsKey && anno.has(id)) anno.update(id, { spots: opts.spots });
+    labelSpots.set(id, spotsKey);
     if (labelText.get(id) === opts.text && anno.has(id)) return;
     if (anno.has(id) && labelText.has(id)) anno.update(id, { text: opts.text });
     else anno.add(id, opts);
@@ -629,13 +670,12 @@ export function createApp(root, options = {}) {
       labelText.delete(id);
     }
   }
-  const LABELS = ['m', 'F', 'h', 'tv', 'every', 'M', 'R', 'centre', 'onE', 'onA', 'tree', 'a', 'b', 'c', 'twin'];
+  const LABELS = ['m', 'F', 'h', 'tv', 'M', 'R', 'centre', 'onE', 'onA', 'tree', 'a', 'b', 'c', 'twin', 'ask'];
   const pts = {
     m: new THREE.Vector3(),
     F: new THREE.Vector3(),
     h: new THREE.Vector3(),
     tv: new THREE.Vector3(),
-    every: new THREE.Vector3(),
     R: new THREE.Vector3(),
     onE: new THREE.Vector3(),
     onA: new THREE.Vector3(),
@@ -645,11 +685,29 @@ export function createApp(root, options = {}) {
     c: new THREE.Vector3(),
     twin: new THREE.Vector3(),
   };
+  const RIGHT_F = [
+    { dx: 62, dy: 36 },
+    { dx: 62, dy: 0 },
+    { dx: 62, dy: 58 },
+    { dx: -66, dy: 36 },
+    { dx: -66, dy: 0 },
+    { dx: 62, dy: -30 },
+    { dx: 122, dy: 10 },
+  ];
+  const LEFT_F = [
+    { dx: -66, dy: 36 },
+    { dx: -66, dy: 0 },
+    { dx: -66, dy: 58 },
+    { dx: 62, dy: 36 },
+    { dx: 62, dy: 0 },
+    { dx: -66, dy: -30 },
+  ];
+  const sxOf = (x, y, z) => (tmp.set(x, y, z).project(camera).x * 0.5 + 0.5) * stage.width;
   function labelsFor() {
     const q = s.quiz;
-    const r = drawnRadius(s.m);
     if (s.place === 'globe') {
-      unlabel('m', 'F', 'h', 'tv', 'every', 'twin');
+      unlabel('m', 'F', 'h', 'tv', 'twin');
+      if (!q?.lines) unlabel('a', 'b', 'c');
       label('centre', {
         text: t('l_centre'),
         point: () => pts.centre,
@@ -661,23 +719,52 @@ export function createApp(root, options = {}) {
         ],
       });
       if (q?.lines) {
-        unlabel('M', 'R', 'onE', 'onA', 'tree');
+        unlabel('M', 'R', 'onE', 'onA', 'tree', 'ask');
         const letter = (id, key, p, spots) => label(id, { text: t(key), point: () => p, kind: 'flat', spots });
         letter('a', 'l_a', pts.a.set(0.09, (1 + gTip.y) / 2, 0), [{ dx: 26, dy: 0 }]);
         label('b', { text: t('l_b'), point: () => pts.R.set(0, 0.5, 0), kind: 'flat', spots: [{ dx: 24, dy: 0 }] });
         label('c', { text: t('l_c'), point: () => pts.c.set(-0.09, -0.55, 0), kind: 'flat', spots: [{ dx: -24, dy: 0 }] });
         return;
       }
-      unlabel('a', 'b', 'c');
       label('tree', {
         text: t('l_tree'),
-        point: () => gTip,
+        point: () => pts.a.set(-0.2, 1.33, 0),
         kind: 'part',
         spots: [
+          { dx: -74, dy: -30 },
           { dx: 70, dy: -34 },
-          { dx: -80, dy: -30 },
         ],
       });
+      label('onA', {
+        text: t('l_on_apple', { F: SYM.F }),
+        point: () => pts.onA.set(0, 0.8, 0).add(OFF),
+        kind: 'part',
+        color: GRAVITY,
+        spots: [
+          { dx: 80, dy: -8 },
+          { dx: 84, dy: 12 },
+        ],
+      });
+      if (q?.pair && !q.shown) {
+        unlabel('R', 'M', 'onE');
+        label('ask', { text: '?', point: () => pts.onE.set(0, 0.2, 0).add(OFF), kind: 'flat', color: GRAVITY, spots: [{ dx: 0, dy: 0 }] });
+        return;
+      }
+      unlabel('ask');
+      label('onE', {
+        text: t('l_on_earth', { F: SYM.F }),
+        point: () => pts.onE.set(0, 0.2, 0).add(OFF),
+        kind: 'part',
+        color: GRAVITY,
+        spots: [
+          { dx: 84, dy: 8 },
+          { dx: 84, dy: -14 },
+        ],
+      });
+      if (q) {
+        unlabel('R', 'M');
+        return;
+      }
       label('R', {
         text: t('l_R', { R: SYM.R, v: groupBD(EARTH.R / 1000) }),
         point: () => pts.R.copy(gTip).multiplyScalar(0.55),
@@ -689,69 +776,54 @@ export function createApp(root, options = {}) {
         ],
       });
       label('M', { text: t('l_M', { M: SYM.M }), point: () => pts.M.set(0.55, -0.62, 0.5), kind: 'flat', color: MASS_C, spots: [{ dx: 0, dy: 0 }] });
-      label('onA', {
-        text: t('l_on_apple', { F: SYM.F }),
-        point: () => pts.onA.set(0, 0.8, 0).add(OFF),
-        kind: 'flat',
-        color: GRAVITY,
-        spots: [
-          { dx: 78, dy: 0 },
-          { dx: 84, dy: 12 },
-        ],
-      });
-      label('onE', {
-        text: t('l_on_earth', { F: SYM.F }),
-        point: () => pts.onE.set(0, 0.2, 0).add(OFF),
-        kind: 'flat',
-        color: GRAVITY,
-        spots: [
-          { dx: 84, dy: 0 },
-          { dx: 84, dy: -14 },
-        ],
-      });
       return;
     }
-    unlabel('M', 'R', 'centre', 'onE', 'onA', 'tree', 'a', 'b', 'c');
-    if (!q || q.showMass)
+    unlabel('M', 'R', 'centre', 'onE', 'onA', 'tree', 'a', 'b', 'c', 'ask');
+    if ((!q || q.showMass) && s.phase !== 'landed')
       label('m', {
         text: t('l_m', { m: SYM.m, v: String(Math.round(s.m * 1000)) }),
         point: () => pts.m.copy(hero().root.position).add(tmp.set(-drawnRadius(s.m), 0, 0)),
         kind: 'part',
         color: MASS_C,
+        avoid: keepClear,
         spots: [
-          { dx: -62, dy: -26 },
-          { dx: -66, dy: 12 },
-          { dx: 62, dy: -30 },
-          { dx: 60, dy: 26 },
+          ...(q?.twin ? [{ dx: 70, dy: -32 }] : []),
+          { dx: -78, dy: -34 },
+          ...(s.phase === 'fall' ? [] : [{ dx: -82, dy: 12 }]),
+          { dx: -78, dy: -58 },
+          { dx: 76, dy: -36 },
+          { dx: 76, dy: 30 },
         ],
       });
     else unlabel('m');
+    // is there room between the arrow and the pole for the F label?
+    const appleX = sxOf(hero().spot.x, hero().root.position.y, hero().spot.z);
+    const besidePole = sxOf(pole.x, hero().root.position.y, pole.z) - appleX > 136;
     if (fArrow.root.visible && (!q || q.showF)) {
       label('F', {
         text: t('l_F', { F: SYM.F, v: plain(F(), 2) }),
-        point: () => pts.F.copy(heroCentre).setY(Math.max(0.1, heroCentre.y - r * APPLE_BOTTOM - F() * F_ARROW * 0.55)),
+        point: () => pts.F.copy(heroCentre).setY(Math.max(0.1, heroCentre.y - F() * F_ARROW * 0.45)),
         kind: 'flat',
         color: GRAVITY,
-        spots: [
-          { dx: 72, dy: 26 },
-          { dx: 72, dy: 46 },
-          { dx: 72, dy: 6 },
-          { dx: -72, dy: 26 },
-        ],
+        avoid: keepClear,
+        spots: besidePole ? RIGHT_F : LEFT_F,
       });
     } else unlabel('F');
-    if (!q || q.height)
+    if ((!q || q.height) && !s.follow && s.shot !== 'close')
       label('h', {
         text: t('l_h', { h: SYM.h, v: String(s.h) }),
-        point: () => pts.h.set(pole.x, s.h, pole.z),
+        point: () => pts.h.set(pole.x, s.h - 0.5, pole.z),
         kind: 'flat',
         color: HEIGHT_C,
         spots: [
-          { dx: -36, dy: -17 },
-          { dx: 46, dy: -20 },
-          { dx: -36, dy: -48 },
-          { dx: -36, dy: 19 },
-          { dx: 46, dy: 22 },
+          { dx: 46, dy: 0 },
+          { dx: 46, dy: -24 },
+          { dx: 46, dy: 24 },
+          { dx: -46, dy: 0 },
+          { dx: -46, dy: -28 },
+          { dx: -46, dy: 28 },
+          { dx: -46, dy: -56 },
+          { dx: -46, dy: 56 },
         ],
       });
     else unlabel('h');
@@ -761,26 +833,25 @@ export function createApp(root, options = {}) {
         text: t('l_tv', { t: fixed(f.t, 2), v: fixed(f.v, 1) }),
         point: () => pts.tv.copy(hero().root.position),
         kind: 'flat',
-        spots: [
-          { dx: 76, dy: -24 },
-          { dx: -76, dy: -24 },
-          { dx: 76, dy: -44 },
-          { dx: -76, dy: 26 },
-        ],
+        avoid: keepClear,
+        spots:
+          s.phase === 'landed'
+            ? [
+                { dx: 86, dy: -26 },
+                { dx: -86, dy: -62 },
+                { dx: 86, dy: -66 },
+                { dx: -86, dy: -92 },
+                { dx: 86, dy: -92 },
+              ]
+            : [
+                { dx: -86, dy: 8 },
+                { dx: 86, dy: -24 },
+                { dx: -86, dy: -24 },
+                { dx: 86, dy: 26 },
+                { dx: -86, dy: 36 },
+              ],
       });
     } else unlabel('tv');
-    if (s.phase === 'landed' && s.shot === 'tree' && s.quiz?.every !== false)
-      label('every', {
-        text: t('l_every', { dt: plain(STROBE, 1) }),
-        point: () => pts.every.set(hero().spot.x, s.h * 0.62, hero().spot.z),
-        kind: 'flat',
-        spots: [
-          { dx: -84, dy: 0 },
-          { dx: -84, dy: 24 },
-          { dx: -84, dy: -24 },
-        ],
-      });
-    else unlabel('every');
     if (q?.twin)
       label('twin', {
         text: t('l_m', { m: SYM.m, v: String(Math.round(q.twin * 1000)) }),
@@ -798,6 +869,7 @@ export function createApp(root, options = {}) {
   // ── the panel ───────────────────────────────────────────────────────────────
   const fml = ui.$('.na-fml');
   const val = (id) => ui.$(`[data-val="${id}"]`);
+  const unit = (id) => ui.$(`[data-unit="${id}"]`);
   const sl = (id) => ui.$(`[data-sl="${id}"]`);
   const fkLabel = fml.querySelector('.k-F .na-sym');
   const fieldText = new Map();
@@ -838,9 +910,11 @@ export function createApp(root, options = {}) {
     return t('rule_fell', vars);
   }
   function outcome() {
+    const g = `<button type="button" class="na-gbtn" data-sym="g" aria-label="${t('aria_g')}"><i>g</i></button>`;
+    if (s.place === 'globe') return t('out_gm', { ...SYM, g, exact: fixed(gravity(), 2), v: plain(g0, 1) }); // the one place the 9.83 shows
     return t('out_g_sum', {
       ...SYM,
-      g: `<button type="button" class="na-gbtn" data-sym="g" aria-label="${t('aria_g')}"><i>g</i></button>`,
+      g,
       Fv: fixed(F(), 2),
       mv: fixed(s.m, 2),
       v: plain(g0, 1),
@@ -850,11 +924,16 @@ export function createApp(root, options = {}) {
     const isG = s.sym === 'g';
     fml.classList.toggle('is-g', isG);
     html(fkLabel, isG ? '<i>g</i>' : '<i>F</i>');
-    html(val('F'), isG ? `${N(fixed(g0, 2))} ${SYM.ms2}` : `${N(fixed(F(), 2))} ${t('newton')}`);
+    html(val('F'), N(isG ? fixed(g0, 1) : fixed(F(), 2)));
     html(val('G'), pow10('6.67', -11));
-    html(val('m'), `${N(fixed(s.m, 2))} kg`);
-    html(val('M'), `${pow10('5.98', 24)}<span class="na-u"> kg</span>`);
-    html(val('R'), `(${pow10('6.37', 6)}<span class="na-u"> m</span>)<sup>${N('2')}</sup>`);
+    html(val('m'), N(fixed(s.m, 2)));
+    html(val('M'), pow10('5.98', 24));
+    html(val('R'), `(${pow10('6.37', 6)})<sup>${N('2')}</sup>`);
+    html(unit('F'), isG ? SYM.ms2 : t('newton'));
+    html(unit('G'), SYM.Gu);
+    html(unit('m'), 'kg');
+    html(unit('M'), 'kg');
+    html(unit('R'), `m<sup>${N('2')}</sup>`);
     for (const b of ui.$$('.na-chip')) {
       const on = b.dataset.sym === s.sym || (isG && b.dataset.sym === 'F');
       b.classList.toggle('on', on);
@@ -878,16 +957,20 @@ export function createApp(root, options = {}) {
     dotF.setAttribute('cx', String(gx(s.m)));
     dotF.setAttribute('cy', String(gy(F(), 5)));
     ui.$('[data-graph="g"] .na-gd').setAttribute('cx', String(gx(s.m)));
-    html(note, s.place === 'globe' ? t('note_globe') : t('note_meadow', { k: String(DRAWN), slow: String(SLOW) }));
+    const trail = s.place === 'meadow' && s.phase !== 'hang' && !s.quiz ? `<br>${t('l_every', { dt: plain(STROBE, 1) })}` : '';
+    html(note, (s.place === 'globe' ? t('note_globe') : t('note_meadow', { k: String(DRAWN), slow: String(SLOW) })) + trail);
     placeFall();
     if (s.place === 'globe') placeGlobe();
-    labelsFor();
+    // the ring first: the labels read where it is now
     action?.set({
       step: s.runs.length ? (s.runs.length < 3 ? String(s.runs.length + 1) : '') : '1',
       label: () => t(s.phase === 'fall' ? 'act_falling' : s.phase === 'landed' ? 'act_again' : 'act_drop'),
       enabled: s.phase !== 'fall',
     });
     action?.refresh();
+    action?.update();
+    labelsFor();
+    anno.update();
     stage.invalidate();
   }
   function snapshot() {
@@ -953,15 +1036,16 @@ export function createApp(root, options = {}) {
     s.h = v;
     followBase.key = '';
     hangAll();
-    if (s.place === 'meadow') goShot('tree');
+    if (s.place === 'meadow') goShot('open');
     refresh();
     emitChange();
     return true;
   }
   function setSymbol(sym, { animate = true } = {}) {
     if (s.locked) return lockedNudge();
+    fml.classList.remove('pulse');
     s.sym = s.sym === sym ? null : sym;
-    const shot = s.sym === 'M' || s.sym === 'R' ? 'globe' : s.sym === 'F' || s.sym === 'm' ? 'close' : 'tree';
+    const shot = s.sym === 'M' || s.sym === 'R' ? 'globe' : s.sym === 'F' || s.sym === 'm' ? 'close' : 'open';
     if (s.phase === 'fall' || (s.phase === 'landed' && (s.sym === 'F' || s.sym === 'm'))) rearm();
     goShot(shot, { animate });
     refresh();
@@ -1006,7 +1090,7 @@ export function createApp(root, options = {}) {
     rearm();
     const my = token;
     s.sym = null;
-    if (s.place === 'globe') await goShot('tree', { animate });
+    if (s.place === 'globe') await goShot('open', { animate });
     if (my !== token) return;
     s.phase = 'fall';
     s.t = 0;
@@ -1034,9 +1118,9 @@ export function createApp(root, options = {}) {
   function home({ quiet = false } = {}) {
     if (s.locked && !quiet) return lockedNudge();
     rearm();
-    Object.assign(s, { m: 0.2, h: 3, sym: null, runs: [] });
+    Object.assign(s, { m: 0.2, h: 2, sym: null, runs: [] });
     followBase.key = '';
-    goShot('tree', { animate: !quiet });
+    goShot('open', { animate: !quiet });
     refresh();
     emitChange();
     return true;
@@ -1069,11 +1153,7 @@ export function createApp(root, options = {}) {
   const actionAt = new THREE.Vector3();
   function ringTarget() {
     if (s.mode === 'quiz' || s.place !== 'meadow' || s.phase === 'fall') return null;
-    if (s.phase === 'landed') {
-      const q = hero();
-      return actionAt.set(q.spot.x, q.spot.h + drawnRadius(s.m) * APPLE_BOTTOM, q.spot.z);
-    }
-    return actionAt.copy(hero().root.position);
+    return actionAt.copy(hero().root.position); // on the branch, or on the grass after a fall
   }
   action = createAction({
     stage,
@@ -1084,7 +1164,7 @@ export function createApp(root, options = {}) {
     label: () => t('act_drop'),
     target: () => ringTarget(),
     worldRadius: 0.17,
-    avoid: [ui.corner, note, () => [...labelText.keys()].map((id) => anno.box(id)), () => boxOf(fArrow)],
+    avoid: [ui.corner, note, () => [...labelText.keys()].map((id) => anno.box(id)), () => arrowBox()],
     pulse: Boolean(o.coach),
     onAct: () => {
       audio.unlock();
@@ -1108,26 +1188,46 @@ export function createApp(root, options = {}) {
     }
     return null;
   }
+  /** Lets that apple go; it first becomes the chosen one. */
+  function letGo(a) {
+    if (s.phase === 'fall') return;
+    if (a.spot.h !== s.h) {
+      rearm();
+      s.h = a.spot.h;
+      followBase.key = '';
+      hangAll();
+    }
+    lastAct = Number.NEGATIVE_INFINITY;
+    doAction();
+  }
+  // a tap on an apple lets it go when the finger comes up; a drag turns the view, wherever it starts
+  let press = null;
   ui.canvasHost.addEventListener(
     'pointerdown',
     (e) => {
       audio.unlock();
-      const a = pick(e);
-      if (!a) return;
-      e.stopPropagation();
-      e.preventDefault();
-      if (s.phase === 'fall') return;
-      if (a.spot.h !== s.h) {
-        s.h = a.spot.h;
-        rearm();
-        followBase.key = '';
-        hangAll();
-      }
-      lastAct = Number.NEGATIVE_INFINITY;
-      doAction();
+      press = { id: e.pointerId, x: e.clientX, y: e.clientY, at: now(), apple: pick(e), moved: false };
     },
     true,
   );
+  window.addEventListener(
+    'pointermove',
+    (e) => {
+      if (!press || press.moved || e.pointerId !== press.id) return;
+      if (Math.hypot(e.clientX - press.x, e.clientY - press.y) <= TAP_MOVE) return;
+      press.moved = true;
+      if (controls.enableRotate) cameraTaken();
+    },
+    true,
+  );
+  const endPress = (e) => {
+    if (!press || e.pointerId !== press.id) return;
+    const p = press;
+    press = null;
+    if (e.type === 'pointerup' && !p.moved && p.apple && now() - p.at <= TAP_MS) letGo(p.apple);
+  };
+  window.addEventListener('pointerup', endPress, true);
+  window.addEventListener('pointercancel', endPress, true);
   let hoverQueued = false;
   ui.canvasHost.addEventListener('pointermove', (e) => {
     if (e.pointerType !== 'mouse' || hoverQueued) return;
@@ -1173,7 +1273,7 @@ export function createApp(root, options = {}) {
   const KINDS = ['gap', 'weight', 'radius', 'race', 'pair'];
 
   /** A question's picture, nothing left from before. */
-  async function setQuizScene(sc, { m = 0.2, h = 3, shot = 'tree', phase = 'hang' } = {}) {
+  async function setQuizScene(sc, { m = 0.2, h = 2, shot = 'open', phase = 'hang' } = {}) {
     rearm();
     s.sym = null;
     s.quiz = sc;
@@ -1250,14 +1350,14 @@ export function createApp(root, options = {}) {
         s.quiz = null;
         twin.root.visible = false;
         unlabel(...LABELS);
-        Object.assign(s, learnSaved || { m: 0.2, h: 3, runs: [] });
+        Object.assign(s, learnSaved || { m: 0.2, h: 2, runs: [] });
         s.sym = null;
         hangAll();
         syncUI();
         if (s.place !== 'meadow') setPlace('meadow');
-        s.shot = 'tree';
+        s.shot = 'open';
         s.userMovedCamera = false;
-        jump(treePose());
+        jump(openPose());
         refresh();
         emitChange();
       },
@@ -1269,26 +1369,22 @@ export function createApp(root, options = {}) {
         };
         const order = shuffle([0, 1, 2, 3]);
         if (kind === 'gap') {
-          await setQuizScene({ every: false, arrow: false, height: false }, { h: 5, phase: 'landed' });
+          await setQuizScene({ arrow: false, height: false }, { h: 4, shot: 'tree', phase: 'landed' });
           if (!alive()) return null;
-          const keys = ['gap_v', 'gap_F', 'gap_m', 'gap_a'];
+          const keys = ['gap_g', 'gap_v', 'gap_d', 'gap_p'];
+          const vars = { ...SYM, dt: plain(STROBE, 1) };
           question = { kind, keys, order };
-          ask(t('q_gap'));
-          return { choices: order, expected: 0, tolerance: 0.5, label: (j) => optText(t(keys[j])), meta: { kind, answer: 'speed' } };
+          ask(t('q_gap', vars));
+          return { choices: order, expected: 0, tolerance: 0.5, label: (j) => optText(t(keys[j], vars)), meta: { kind, answer: 'g' } };
         }
         if (kind === 'weight') {
           const m = [0.15, 0.25, 0.3, 0.4][Math.floor(Math.random() * 4)];
-          await setQuizScene({ arrow: false, showMass: true, height: false }, { m, shot: 'close' });
+          await setQuizScene({ arrow: false, showMass: true, height: false }, { m, h: 1, shot: 'close' });
           if (!alive()) return null;
           const list = weightChoices(m);
           question = { kind, list, order, m };
           ask(t('q_weight'));
-          const words = [
-            `${N(plain(list[0], 2))} ${t('newton')}`,
-            `${N(groupBD(list[1]))} ${t('newton')}`,
-            `${N(plain(list[2], 2))} ${t('newton')}`,
-            `${N(plain(list[3], 1))} ${t('newton')}`,
-          ];
+          const words = list.map((v) => `${N(plain(v, 2))} ${t('newton')}`);
           return { choices: order, expected: 0, tolerance: 0.5, label: (j) => optText(words[j]), meta: { kind, answer: list[0] } };
         }
         if (kind === 'radius') {
@@ -1300,7 +1396,7 @@ export function createApp(root, options = {}) {
           return { choices: order, expected: 0, tolerance: 0.5, label: (j) => optText(t(keys[j])), meta: { kind, answer: 'centre' } };
         }
         if (kind === 'race') {
-          await setQuizScene({ arrow: false, showMass: true, height: false, twin: 0.1 }, { m: 0.5 });
+          await setQuizScene({ arrow: false, showMass: true, height: false, twin: 0.1 }, { m: 0.5, h: 1, shot: 'race' });
           placeTwin(0.1);
           refresh();
           if (!alive()) return null;
@@ -1309,40 +1405,42 @@ export function createApp(root, options = {}) {
           ask(t('q_race'));
           return { choices: order, expected: 0, tolerance: 0.5, label: (j) => optText(words[j]), meta: { kind, answer: 'together' } };
         }
-        await setQuizScene({ arrow: true, showMass: true, showF: true, height: false }, { m: 0.3, shot: 'close' });
+        await setQuizScene({ pair: true }, { shot: 'globe' });
         if (!alive()) return null;
-        const v = plain(pull(0.3), 2);
-        const words = [t('pair_same', { v }), t('pair_less', { zero: '0' }), t('pair_none'), t('pair_more')];
-        question = { kind: 'pair', v, order };
-        ask(t('q_pair'));
-        return { choices: order, expected: 0, tolerance: 0.5, label: (j) => optText(words[j]), meta: { kind: 'pair', answer: 'same' } };
+        const keys = ['pair_same', 'pair_half', 'pair_less', 'pair_more'];
+        question = { kind: 'pair', order };
+        ask(t('q_pair', SYM));
+        return { choices: order, expected: 0, tolerance: 0.5, label: (j) => optText(t(keys[j], SYM)), meta: { kind: 'pair', answer: 'same' } };
       },
       reveal(_q, correct) {
         const q = question;
         const wrong = correct ? null : q.order[picked];
         const mistake = (map, vars = {}) => (wrong != null && map[wrong] ? ` ${t(map[wrong], { ...SYM, ...vars })}` : '');
         if (q.kind === 'gap') {
-          s.quiz = { ...s.quiz, arrow: false, every: true };
-          refresh();
-          return t('why_gap', { dt: plain(STROBE, 1) }) + mistake({ 1: 'not_gap_F', 2: 'not_gap_m', 3: 'not_gap_a' });
+          const vars = { ...SYM, dt: plain(STROBE, 1) };
+          return t('why_gap', vars) + mistake({ 1: 'not_gap_v', 2: 'not_gap_d', 3: 'not_gap_p' });
         }
         if (q.kind === 'weight') {
           s.quiz = { ...s.quiz, arrow: true, showF: true };
           refresh();
-          const grams = String(Math.round(q.m * 1000));
           return (
-            t('why_weight', { ...SYM, v: plain(q.list[0], 2), kg: plain(q.m, 2), gv: plain(g0, 2) }) +
-            mistake({ 1: 'not_w_g', 2: 'not_w_m', 3: 'not_w_gv' }, { g0: grams, kg: plain(q.m, 2) })
+            t('why_weight', { ...SYM, v: plain(q.list[0], 2), kg: plain(q.m, 2), gv: plain(g0, 1) }) +
+            mistake({ 1: 'not_w_g', 2: 'not_w_m', 3: 'not_w_gv' })
           );
         }
-        if (q.kind === 'radius')
+        if (q.kind === 'radius') {
+          s.quiz = { ...s.quiz, shown: true };
+          refresh();
           return t('why_radius', { ...SYM, km: groupBD(EARTH.R / 1000) }) + mistake({ 1: 'not_rad_a', 2: 'not_rad_c', 3: 'not_rad_ab' });
+        }
         if (q.kind === 'race') {
           s.race = 1e-6;
           stage.invalidate();
           return t('why_race', SYM) + mistake({ 1: 'not_race_heavy', 2: 'not_race_light', 3: 'not_race_heavy' });
         }
-        return t('why_pair', { v: q.v }) + mistake({ 1: 'not_pair_less', 2: 'not_pair_none', 3: 'not_pair_more' });
+        s.quiz = { ...s.quiz, shown: true };
+        refresh();
+        return t('why_pair', SYM) + mistake({ 1: 'not_pair_half', 2: 'not_pair_less', 3: 'not_pair_more' });
       },
       done() {
         s.locked = false;
@@ -1432,7 +1530,8 @@ export function createApp(root, options = {}) {
   hangAll();
   syncUI();
   refresh();
-  jump(treePose());
+  jump(poseFor());
+  if (o.coach) fml.classList.add('pulse');
   if (o.t != null && o.t !== '' && Number.isFinite(Number(o.t))) freezeAt(Number(o.t));
   else if (Number(o.steps) >= 1) applyDrop();
   if (o.sym) setSymbol(o.sym, { animate: false });
@@ -1481,13 +1580,13 @@ export function createApp(root, options = {}) {
           s.h = clamp(Math.round(Number(p.h)), HEIGHT.min, HEIGHT.max);
           followBase.key = '';
           hangAll();
-          s.shot = 'tree';
+          s.shot = 'open';
         }
       }
       if (p.sym !== undefined) {
         if (p.sym === null) {
           s.sym = null;
-          await goShot('tree', { animate });
+          await goShot('open', { animate });
         } else if (p.sym !== s.sym) setSymbol(p.sym, { animate });
       }
       if (p.t != null) freezeAt(Number(p.t));
@@ -1504,9 +1603,9 @@ export function createApp(root, options = {}) {
       s.userMovedCamera = false;
       home({ quiet: true });
       setPlace('meadow');
-      s.shot = 'tree';
+      s.shot = 'open';
       syncControls();
-      jump(treePose());
+      jump(openPose());
       refresh();
       emitChange();
     },

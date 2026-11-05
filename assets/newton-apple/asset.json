@@ -24,7 +24,7 @@
       "default": "bn"
     },
     { "name": "m", "label": "Apple's mass (g)", "type": "number", "default": "200", "placeholder": "100–500" },
-    { "name": "h", "label": "Height (m)", "type": "number", "default": "3", "placeholder": "1–5" },
+    { "name": "h", "label": "Height (m)", "type": "number", "default": "2", "placeholder": "1–5" },
     {
       "name": "t",
       "label": "Frozen moment of the fall (s)",
@@ -80,18 +80,18 @@
   ],
   "events": ["ready", "change", "drop", "land", "symbol", "practice-start", "practice-result", "practice-end"],
   "export": {
-    "poster": { "params": { "coach": "0", "t": "0.55" } },
+    "poster": { "params": { "coach": "0", "t": "0.42" } },
     "glb": [{ "name": "default" }],
     "video": {
       "kind": "script",
-      "seconds": 18,
+      "seconds": 17,
       "fps": 30,
       "params": { "coach": "0" },
       "script": [
         { "at": 1, "command": "set", "payload": { "drop": true } },
-        { "at": 7.5, "command": "set", "payload": { "m": 400 } },
-        { "at": 9.5, "command": "set", "payload": { "drop": true } },
-        { "at": 15.5, "command": "set", "payload": { "sym": "R" } }
+        { "at": 6.5, "command": "set", "payload": { "m": 400 } },
+        { "at": 8.5, "command": "set", "payload": { "drop": true } },
+        { "at": 13.5, "command": "set", "payload": { "sym": "R" } }
       ]
     }
   }

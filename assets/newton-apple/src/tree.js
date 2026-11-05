@@ -27,7 +27,7 @@ export const SPOTS = [1, 2, 3, 4, 5].map((h) => ({ h, x: 0.72 + (h - 1) * 0.27, 
 const v = (x, y, z) => new THREE.Vector3(x, y, z);
 
 /** A tapered tube along points; radius(s), s 0…1; flare(s, angle) is a factor on it (the trunk's roots and lobes). */
-function tube(points, radius, { radial = 7, per = 4.5, flare = null, barkScale = 1.4 } = {}) {
+function tube(points, radius, { radial = 7, per = 3.5, flare = null, barkScale = 1.4 } = {}) {
   const curve = new THREE.CatmullRomCurve3(points, false, 'catmullrom', 0.5);
   const len = curve.getLength();
   const rows = Math.max(3, Math.ceil(len * per));
@@ -70,7 +70,7 @@ function tube(points, radius, { radial = 7, per = 4.5, flare = null, barkScale =
 
 /** Grey-brown bark with long fissures, as colour and bump. */
 function barkTextures() {
-  const size = 512;
+  const size = 256;
   const c = document.createElement('canvas');
   c.width = size;
   c.height = size;
@@ -78,16 +78,16 @@ function barkTextures() {
   const rand = rng(11);
   g.fillStyle = '#6f5f50';
   g.fillRect(0, 0, size, size);
-  for (let i = 0; i < 1500; i++) {
+  for (let i = 0; i < 700; i++) {
     const x = rand() * size;
     const y = rand() * size;
     const dark = rand() < 0.55;
-    const l = 24 + rand() * 90;
+    const l = 12 + rand() * 45;
     g.strokeStyle = dark ? `rgba(38,29,23,${0.25 + rand() * 0.45})` : `rgba(165,148,130,${0.12 + rand() * 0.3})`;
-    g.lineWidth = 1 + rand() * (dark ? 4.5 : 3);
+    g.lineWidth = 0.6 + rand() * (dark ? 2.4 : 1.6);
     g.beginPath();
     g.moveTo(x, y);
-    g.bezierCurveTo(x + rand() * 12 - 6, y + l * 0.33, x + rand() * 12 - 6, y + l * 0.66, x + rand() * 16 - 8, y + l);
+    g.bezierCurveTo(x + rand() * 6 - 3, y + l * 0.33, x + rand() * 6 - 3, y + l * 0.66, x + rand() * 8 - 4, y + l);
     g.stroke();
   }
   const t = new THREE.CanvasTexture(c);
@@ -146,8 +146,8 @@ function leafTexture() {
 
 /** The apple's skin: deep red with a yellow-green shoulder round the stem, streaks and pale lenticels. */
 function appleSkin() {
-  const w = 512;
-  const h = 256;
+  const w = 256;
+  const h = 128;
   const c = document.createElement('canvas');
   c.width = w;
   c.height = h;
@@ -163,18 +163,18 @@ function appleSkin() {
   grad.addColorStop(1, '#b28a38');
   g.fillStyle = grad;
   g.fillRect(0, 0, w, h);
-  for (let i = 0; i < 360; i++) {
+  for (let i = 0; i < 180; i++) {
     const x = rand() * w;
     const y = rand() * h * 0.5;
     g.strokeStyle = rand() < 0.5 ? `rgba(226,170,70,${0.05 + rand() * 0.16})` : `rgba(90,6,16,${0.08 + rand() * 0.2})`;
-    g.lineWidth = 1 + rand() * 3;
+    g.lineWidth = 0.6 + rand() * 1.5;
     g.beginPath();
     g.moveTo(x, y);
-    g.lineTo(x + rand() * 8 - 4, y + 34 + rand() * 90);
+    g.lineTo(x + rand() * 4 - 2, y + 17 + rand() * 45);
     g.stroke();
   }
   g.fillStyle = 'rgba(250,226,190,0.5)';
-  for (let i = 0; i < 240; i++) g.fillRect(rand() * w, 20 + rand() * (h - 40), 1.5, 1.5);
+  for (let i = 0; i < 90; i++) g.fillRect(rand() * w, 10 + rand() * (h - 20), 1, 1);
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
   t.wrapS = THREE.RepeatWrapping;
@@ -274,9 +274,10 @@ export function createTree({ apples }) {
     limb([v(tx + 0.2, 2.6, tz + 0.06), v(-0.7, 3.42, -0.15), v(0.15, 4.0, 0.22), v(0.98, 4.34, 0.68), ...end(3)], 0.12),
     limb([v(tx + 0.2, 2.62, tz + 0.04), v(-0.85, 3.7, -0.28), v(-0.05, 4.62, 0.05), v(1.0, 5.12, 0.5), ...end(4)], 0.12),
   ];
-  // a side twig on the third bough, for the test's second apple
-  const twinAt = bough[2].getPointAt(0.8);
-  const twinSpur = { x: twinAt.x, z: twinAt.z, y: twinAt.y };
+  // a side twig on the lowest bough, bare against the meadow, for the test's second apple
+  const twinSpur = { x: 0.26, y: 1.26, z: FALL_Z };
+  const twigFrom = bough[0].getPointAt(0.74);
+  limb([twigFrom, v(0.2, 1.42, 0.75), v(twinSpur.x - 0.02, twinSpur.y + 0.05, twinSpur.z - 0.02), v(twinSpur.x, twinSpur.y, twinSpur.z)], 0.02);
 
   // the rest of the crown, spreading to the left, the back and the top
   const fork = v(tx + 0.2, 2.62, tz + 0.05);
