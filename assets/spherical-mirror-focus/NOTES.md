@@ -37,7 +37,13 @@ figure does not use that word.) Added by the figure, not on the page: আলো�
   mirror, counting away on both sides, unsigned; "behind" is said in words); black carriers with a thumb screw and brass
   pointer; a ring on a post; the dish on two pins. Axis height 19 cm, rail top 3.2 cm, mirror half-width 10 cm.
 - The dish is one object with two faces, each the exact sphere of radius r, rewritten in place when r changes. The silver is a
-  second drawing of a face whose triangles run from the middle out: more of them drawn = the coat spreading.
+  second drawing of a face whose triangles run from the middle out: more of them drawn = the coat spreading. It reflects a bright
+  studio of its own (`createStudioEnvironment({ light: true })`, one PMREM at start), because a polished mirror in the slate room
+  looked dark, and it draws after the glass, so the glass does not tint it. Bare glass is mostly see-through, its green at the edge.
+- The ray box stands just past O (`boxAt` in `reading.js`, x = r + 12; 30 cm for the convex mirror) and rides along the rail when r
+  changes, so that the source of the light stays in view in every step that uses it. The frames end at its plate.
+- The wide bundle's point is too small for the view: 6 mm between the crossings is about 25 px. So a round lens drawn on the vector
+  layer (`lens()` in `rays.js`) shows them true to scale, with the rim rays in their own colour.
 
 ## Honest notes
 - Only five rays in one plane are drawn, out of countless. "কয়েকটি রশ্মি আঁকা" says so on the view.
@@ -46,8 +52,8 @@ figure does not use that word.) Added by the figure, not on the page: আলো�
 - The coat is on the surface that reflects (front-surface silver, as in telescope mirrors), so that no refraction in the glass
   comes into it. The chapter's plane mirrors have the silver on the back of the glass, like household ones. The book says only
   that the coat decides the kind (p223) and which surface reflects (p228).
-- The hollow sphere floats above the bench in the first step ("কল্পনা"): a sphere of radius 30 cm round the axis would go through the
-  rail. On the bench its circle is a dotted line in the plane of the rays.
+- The hollow sphere is imagined high above the bench in the first step, out of the bench's picture: a sphere of radius 30 cm round the
+  axis would go through the rail. On the bench its circle is a dotted line in the plane of the rays.
 - A spherical mirror does not give an exactly parallel beam: at the rim of the bulb's light (8 cm from the axis, r = 30) the ray is
   about 1° off. The figure shows it as traced; real torches use a parabola, which the book does not mention (not in the panel).
 - The bulb's direct light (the part not going to the mirror) is not drawn.

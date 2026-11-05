@@ -15,8 +15,8 @@ export const RADII = [20, 30, 40, 60];
 export const R0 = 30;
 /** The mirror: half its width and the thickness of the glass, cm. */
 export const MIRROR = { half: 10, thick: 0.7 };
-/** The ray box's hole plate on the rail, cm. */
-export const BOX_X = 66;
+/** The ray box's hole plate on the rail, cm: it stands just past O in front of a concave mirror, so that the source stays in view. */
+export const boxAt = (kind, r) => (kind === 'convex' ? 30 : r + 12);
 /** The bundles of parallel rays: half their height, cm. The narrow one is what the book's picture draws. */
 export const BUNDLE = { narrow: 5, wide: 9.6, count: 5 };
 /** Rays stop before they would run into the rail: at this height above or below the axis, cm. */
@@ -64,13 +64,13 @@ function endOf(p, u, xEnd, reach = REACH) {
 }
 
 /** One ray parallel to the axis at height h, from the ray box to the mirror and away. */
-export function parallelRay(kind, r, h, { from = BOX_X, xEnd = null } = {}) {
+export function parallelRay(kind, r, h, { from = boxAt(kind, r), xEnd = null } = {}) {
   const hit = surface(kind, r, h);
   const d = { x: -1, y: 0 };
   const n = normalAt(kind, r, h);
   const u = reflect(d, n);
   const cross = h === 0 ? focusX(kind, r) : axisCrossing(hit, u);
-  const end = endOf(hit, u, xEnd ?? (kind === 'convex' ? 30 : Math.min(from - 4, r * 0.96)));
+  const end = endOf(hit, u, xEnd ?? (kind === 'convex' ? from - 3 : r * 0.96));
   return { h, start: { x: from, y: h }, hit, end, dir: u, cross, ...angles(d, n, u) };
 }
 /** Heights of the rays in a bundle of half-height `half`. */

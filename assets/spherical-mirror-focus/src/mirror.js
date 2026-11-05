@@ -25,7 +25,8 @@ function faceIndex(base, flip) {
   return out;
 }
 
-export function createDish() {
+/** env: a bright studio reflection for the silver alone (a slate room would make a polished mirror look dark). */
+export function createDish({ env }) {
   const root = new THREE.Group(); // the pivot: on the pins, half a glass thickness behind P
   root.name = 'spherical-mirror';
   const count = PER_FACE * 2 + SEGS * 2;
@@ -51,25 +52,29 @@ export function createDish() {
     rim.push(r0 + s, r0 + n, r0 + SEGS + s, r0 + n, r0 + SEGS + n, r0 + SEGS + s);
   }
 
+  // clear glass: mostly see-through, a pale tint, its green only at the ground edge
   const glassMat = new THREE.MeshStandardMaterial({
     name: 'MirrorGlass',
-    color: 0xa8e0d2,
-    roughness: 0.1,
+    color: 0xdff3ee,
+    roughness: 0.08,
     metalness: 0,
     transparent: true,
-    opacity: 0.4,
+    opacity: 0.2,
     side: THREE.DoubleSide,
     depthWrite: false,
-    envMapIntensity: 1.6,
+    envMapIntensity: 1.8,
   });
   const edgeMat = new THREE.MeshStandardMaterial({ name: 'MirrorEdge', color: 0x58c4a0, roughness: 0.16, emissive: 0x10382c });
+  // bright polished silver. It draws after the glass (transparent queue, opacity 1), so nothing tints the coated face
   const silverMat = new THREE.MeshStandardMaterial({
     name: 'Silver',
-    color: 0xeef2f6,
-    roughness: 0.1,
+    color: 0xffffff,
+    roughness: 0.06,
     metalness: 1,
     side: THREE.DoubleSide,
+    envMap: env,
     envMapIntensity: 1.1,
+    transparent: true,
   });
   const faces = new THREE.Mesh(of([...a, ...b]), glassMat);
   faces.renderOrder = 3;
@@ -77,6 +82,7 @@ export function createDish() {
   const coatA = new THREE.Mesh(of(a), silverMat);
   const coatB = new THREE.Mesh(of(b), silverMat);
   for (const m of [edge, coatA, coatB]) m.castShadow = true;
+  coatA.renderOrder = coatB.renderOrder = 4;
   // everything in one holder, whose origin is the pivot
   const body = new THREE.Group();
   body.position.x = MIRROR.thick / 2;

@@ -4,16 +4,19 @@
 // the mirror on both sides. Only what the idea needs stands on it: the mirror, a ray box or a bulb.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { createStudioEnvironment } from '@shared/stage.js';
 import { createDish, createHolder } from './mirror.js';
-import { BOX_X, BUNDLE, heights, MIRROR, R0, sag } from './reading.js';
+import { boxAt, BUNDLE, heights, MIRROR, R0, sag } from './reading.js';
 
 /** The heights that matter, cm: the rail's top, the carriers' top, the principal axis, the bench's two ends. */
 export const RAIL = { top: 3.2, carrier: 5.6, axis: 19, left: -68, right: 82, front: 5.5 };
 /** The scale strip on the sloping front of the rail: where it lies. */
 const STRIP = { y0: 0.55, z0: 5.5, y1: 2.35, z1: 3.3 };
 export const SCALE_POINT = { y: (STRIP.y0 + STRIP.y1) / 2, z: (STRIP.z0 + STRIP.z1) / 2 };
-/** The hollow sphere of the first step floats above the rail, its cap just over the mirror's holder. */
-export const SPHERE = { x: R0 + 7, y: 67, r: R0 };
+/** The hollow sphere of the first step is imagined high above the bench, out of its picture. */
+export const SPHERE = { x: R0 + 7, y: 107, r: R0 };
+/** Where the cut piece comes to, from its place on the sphere: out and toward the viewer, clear of the glass. */
+export const CUT = { x: -12, z: 20 };
 const CAP_ANGLE = Math.asin(MIRROR.half / R0);
 /** The piece comes down this far in front of the ring, for this share of its way, before it goes back into it. */
 const FRONT = 7;
@@ -22,17 +25,28 @@ const DOWN = 0.76;
 const box = (a, b, c, d, e, f) => new THREE.Box3(new THREE.Vector3(a, b, c), new THREE.Vector3(d, e, f));
 const AXIS = RAIL.axis;
 
-/** What the camera shows at each moment: a box to fill, the angle to see it from. r is the mirror's radius. All read as 3D. */
+/**
+ * What the camera shows at each moment: a box to fill, the angle to see it from. r is the mirror's radius, aspect the view's
+ * width ÷ height: on a tall view the bench frame gives up the margin round its ends, so that the mirror stays big. All read as 3D.
+ */
 export const FRAMES = {
-  sphere: () => ({ box: box(7, 36, -14, 67, 98, 14), az: 32, el: 8 }),
-  cut: () => ({ box: box(-3, 36, -14, 67, 98, 14), az: 32, el: 8 }),
-  bench: () => ({ box: box(-12, 0, -11, BOX_X + 6, AXIS + 13, 9), az: 34, el: 13 }),
-  focus: (r) => ({ box: box(-3, 0.4, -6, r + 5, AXIS + 12.6, 6), az: 35, el: 12 }),
-  measure: (r) => ({ box: box(-5, 0.2, -6, r + 6, AXIS + 12.6, 6), az: 33, el: 11 }),
-  wide: (r) => ({ box: box(r * 0.04, AXIS - 7.6, -1, r * 0.64, AXIS + 7.6, 1), az: 30, el: 9 }),
-  convex: () => ({ box: box(-12, 0.4, -6, 29, AXIS + 14, 6), az: 36, el: 12 }),
-  virtual: (r) => ({ box: box(-r - 4, 0.2, -6, 25, AXIS + 14, 6), az: 33, el: 11 }),
-  torch: () => ({ box: box(-3, 0.4, -6, 52, AXIS + 12.6, 6), az: 33, el: 12 }),
+  sphere: () => ({ box: box(7, SPHERE.y - 31, -14, 67, SPHERE.y + 31, 14), az: 34, el: 14 }),
+  cut: () => {
+    const x = SPHERE.x - SPHERE.r + CUT.x;
+    return { box: box(x - 15, SPHERE.y - 14, CUT.z - 4, x + 19, SPHERE.y + 14, CUT.z + 4), az: 44, el: 12 };
+  },
+  bench: (r, aspect = 1.5) => {
+    const end = boxAt('concave', r) + (aspect < 1.25 ? 1 : 5);
+    return { box: box(aspect < 1.25 ? -11 : -13, 0.2, -7, end, AXIS + 13, 7), az: 30, el: 9 };
+  },
+  focus: (r) => ({ box: box(-3, 0.4, -6, boxAt('concave', r) + 0.5, AXIS + 14, 6), az: 35, el: 12 }),
+  measure: (r) => ({ box: box(-5, 0.2, -6, boxAt('concave', r) + 0.5, AXIS + 14, 6), az: 33, el: 11 }),
+  wide: (r) => ({ box: box(-3, AXIS - 13, -2, boxAt('concave', r) + 0.5, AXIS + 13, 2), az: 33, el: 9 }),
+  convex: () => ({ box: box(-12, 0.4, -6, boxAt('convex') + 0.5, AXIS + 14, 6), az: 36, el: 12 }),
+  virtual: (r) => ({ box: box(-r - 4, 0.2, -6, boxAt('convex') + 0.5, AXIS + 14, 6), az: 33, el: 11 }),
+  torch: () => ({ box: box(-3, 0.4, -6, 52, AXIS + 14, 6), az: 33, el: 12 }),
+  /** O and its number on the printed scale, seen from higher up: the test reads the scale here. */
+  scale: (r) => ({ box: box(r - 15, 0, -2, r + 11, AXIS + 3, 6.5), az: 16, el: 22 }),
 };
 
 function backdropGeometry() {
@@ -118,17 +132,17 @@ function scaleTexture(t) {
       const x = x0 + dir * i * px;
       const major = i % 10 === 0;
       const mid = i % 5 === 0;
-      g.lineWidth = major ? 3 : 2;
+      g.lineWidth = major ? 3.5 : 2;
       g.beginPath();
-      g.moveTo(x, y0 + 4);
-      g.lineTo(x, y0 + (major ? 56 : mid ? 40 : 26));
+      g.moveTo(x, y0 + 3);
+      g.lineTo(x, y0 + (major ? 40 : mid ? 28 : 18));
       g.stroke();
       if (major) {
         // the strip has more pixels to a centimetre across than along: the digits are drawn narrow to come out true
         g.save();
-        g.translate(x, y0 + 118);
-        g.scale(0.5, 1);
-        g.font = '600 62px "Noto Sans Bengali", sans-serif';
+        g.translate(x, y0 + 116);
+        g.scale(0.6, 1);
+        g.font = '700 84px "Noto Sans Bengali", sans-serif';
         g.textAlign = i === 0 ? (dir > 0 ? 'left' : 'right') : 'center';
         g.fillText(t.num(i), 0, 0);
         g.restore();
@@ -285,7 +299,7 @@ function createRayBox({ black, steel, paint, glow }) {
       });
       holes.instanceMatrix.needsUpdate = true;
       litMat.color.set(0x4a4436).lerp(COLOR_LIT, on);
-      halo.material.opacity = 0.75 * on;
+      halo.material.opacity = 0.42 * on;
       halo.visible = on > 0.01;
       halo.scale.set(11, half * 2 + 10, 1);
     },
@@ -384,8 +398,8 @@ function shellMaterial(name, side, base, rim) {
   return m;
 }
 
-/** The hollow glass sphere with the cap taken out: the piece the mirror is cut from. Its cut edge is a thin bright ring. */
-function createSphere() {
+/** The hollow glass sphere with the cap taken out: the piece the mirror is cut from. Its lines of latitude are drawn over it (rays.js). */
+function createSphere(glow) {
   const root = new THREE.Group();
   root.name = 'hollow-sphere';
   root.userData.noExport = true;
@@ -401,6 +415,27 @@ function createSphere() {
   edge.rotation.y = Math.PI / 2;
   edge.position.x = -SPHERE.r * Math.cos(CAP_ANGLE);
   root.add(edge);
+  // two soft window lights on the glass: what makes a pale disc read as a ball
+  const light = (x, y, z, w, h, turn, strength) => {
+    const m = new THREE.SpriteMaterial({
+      map: glow,
+      color: 0xeaf6ff,
+      blending: THREE.AdditiveBlending,
+      transparent: true,
+      depthWrite: false,
+      depthTest: false,
+      toneMapped: false,
+      opacity: strength,
+      rotation: turn,
+    });
+    const sprite = new THREE.Sprite(m);
+    sprite.position.set(x, y, z);
+    sprite.scale.set(w, h, 1);
+    sprite.renderOrder = 3;
+    root.add(sprite);
+    return { m, strength };
+  };
+  const lights = [light(4, 18, 19, 25, 13, -0.55, 0.62), light(13, -19, 13, 13, 6, -0.7, 0.22)];
   return {
     root,
     set(k) {
@@ -408,6 +443,7 @@ function createSphere() {
       back.material.userData.fade.value = k;
       front.material.userData.fade.value = k;
       edgeMat.opacity = 0.9 * k;
+      for (const l of lights) l.m.opacity = l.strength * k;
     },
   };
 }
@@ -465,10 +501,14 @@ export function createSetting({ stage, shadow, t }) {
   stand.add(holder);
   apparatus.add(stand);
 
-  const dish = createDish();
+  // the silver reflects a bright studio of its own: in the slate room a polished mirror would look dark
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const bright = pmrem.fromScene(createStudioEnvironment({ light: true, key: 1.3, front: 1.5 }), 0.02).texture;
+  pmrem.dispose();
+  const dish = createDish({ env: bright });
   apparatus.add(dish.root);
 
-  const sphere = createSphere();
+  const sphere = createSphere(glow);
   sphere.root.position.set(SPHERE.x, SPHERE.y, 0);
   scene.add(sphere.root);
 
@@ -478,7 +518,6 @@ export function createSetting({ stage, shadow, t }) {
   rayBox.root.position.set(0, RAIL.axis, 0);
   boxCarrier.position.set(4.25, RAIL.top, 0);
   boxRoot.add(rayBox.root, boxCarrier);
-  boxRoot.position.x = BOX_X;
   apparatus.add(boxRoot);
 
   const bulbRoot = new THREE.Group();
@@ -548,7 +587,7 @@ export function createSetting({ stage, shadow, t }) {
       dish.setRadius(r);
       dish.setTurn(turn);
       dish.setCoat(coat, turn > 0.5);
-      from.set(SPHERE.x - SPHERE.r - capOut * 8, SPHERE.y, 0);
+      from.set(SPHERE.x - SPHERE.r + capOut * CUT.x, SPHERE.y, capOut * CUT.z);
       // down in front of the ring, then back into it
       at.set(FRONT, RAIL.axis, 0);
       from.lerp(at, Math.min(1, mount / DOWN));
@@ -558,10 +597,10 @@ export function createSetting({ stage, shadow, t }) {
       // the ring keeps round the edge of the glass, which stands in front of P or behind it
       holder.position.x = sag(r, MIRROR.half) * (1 - 2 * turn) - MIRROR.thick / 2;
     },
-    /** box: 1 on the rail, 0 slid away; half: its bundle; on: its lamp. */
-    placeBox(boxK, half, on) {
+    /** box: 1 on the rail at x, 0 slid away; half: its bundle; on: its lamp. */
+    placeBox(boxK, x, half, on) {
       boxRoot.visible = boxK > 0.01;
-      boxRoot.position.x = BOX_X + (1 - boxK) * 70;
+      boxRoot.position.x = x + (1 - boxK) * 70;
       rayBox.set(half, on);
     },
     /** k: 0 away to the right, 1 at x; on: lit. */

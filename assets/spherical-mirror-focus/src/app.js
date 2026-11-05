@@ -14,12 +14,12 @@ import { capturePointer, releasePointer } from '@shared/student/pointer.js';
 import { createQuiz } from '@shared/student/quiz.js';
 import { bindCleanSheet, buildStudentShell, cleanSheet } from '@shared/student/shell.js';
 import { createTweener, ease } from '@shared/tween.js';
-import { createSetting, FRAMES, RAIL, SCALE_POINT, SPHERE } from './bench.js';
+import { createSetting, CUT, FRAMES, RAIL, SCALE_POINT, SPHERE } from './bench.js';
 import { fitPose } from './camera.js';
 import { createI18n } from './i18n.js';
 import { createRays } from './rays.js';
 import {
-  BOX_X,
+  boxAt,
   beamKind,
   bulbBundle,
   bulbRange,
@@ -96,7 +96,7 @@ const POSE = {
   coated: { ...REST },
   rays: { ...REST, lamp: 1, inK: 1, outK: 1, showF: 1, star: 1 },
   measure: { ...REST, lamp: 1, inK: 1, outK: 1, showF: 1, showO: 1, marks: 1, bars: 1, circle: 1, star: 1 },
-  wide: { ...REST, lamp: 1, inK: 1, outK: 1, showF: 1, half: BUNDLE.wide, crossings: 1, star: 0.5 },
+  wide: { ...REST, lamp: 1, inK: 1, outK: 1, showF: 1, half: BUNDLE.wide, crossings: 1, star: 0.25 },
   convex: { ...REST, turn: 1, lamp: 1, inK: 1, outK: 1 },
   virtual: { ...REST, turn: 1, lamp: 1, inK: 1, outK: 1, extK: 1, showF: 1, showO: 1, marks: 1, bars: 1, circle: 1 },
   torch: { ...REST, box: 0, bulb: 1, lit: 1, inK: 1, outK: 1, showF: 1, marks: 0, source: 'bulb' },
@@ -140,7 +140,7 @@ export function createApp(root, options = {}) {
     learn: cleanSheet(t, {
       examples: { label: 'ex_label', items: Object.keys(WORDS).map((id) => ({ id, label: `ex_${id}` })) },
       quiet: [{ act: 'home', label: 'act_home', icon: ICONS.reset }],
-      lines: { action: 1, outcome: 1, rule: 4 },
+      lines: { action: t.lang === 'en' ? 2 : 1, outcome: 1, rule: 4 },
     }),
     learnAlign: 'start',
   });
@@ -177,6 +177,7 @@ export function createApp(root, options = {}) {
   controls.maxAzimuthAngle = THREE.MathUtils.degToRad(80);
   const setting = createSetting({ stage, shadow: Boolean(o.shadow), t });
   const rays = createRays({ stage, host: ui.canvasHost });
+  rays.view.fmt = (x) => t.num(round(x, 1).toFixed(1));
 
   // ── the state ───────────────────────────────────────────────────────────────────────────────────────────
   const start = STAGES.includes(o.stage) ? o.stage : 'sphere';
@@ -236,19 +237,31 @@ export function createApp(root, options = {}) {
     rv.showO = V.showO;
     rv.bars = V.bars;
     rv.circle = V.circle;
-    rv.crossings = V.crossings;
-    rv.chevX = Math.max(18, Math.min(44, V.r * 0.96 + 2));
+    rv.inset = V.crossings;
+    rv.rimAt = V.crossings > 0 ? BUNDLE.wide * 0.8 : Infinity;
+    rv.chevX = kindNow() === 'convex' ? 25 : V.r + 6;
     rv.radiusOnly = V.sphere > 0.02 ? radiusLine : null;
     note.hidden = V.inK <= 0;
     radiusLine.k = V.sphere;
+    radiusLine.cut = 1 - V.capOut;
+    radiusLine.radius = s.stage === 'sphere' ? 1 : 1 - V.capOut;
     setting.sphere.set(V.sphere);
     setting.placeMirror({ capOut: V.capOut, mount: V.mount, turn: V.turn, coat: V.coat, r: V.r });
-    setting.placeBox(V.box, V.half, V.lamp);
+    setting.placeBox(V.box, boxAt('concave', V.r) + (boxAt('convex', V.r) - boxAt('concave', V.r)) * V.turn, V.half, V.lamp);
     setting.placeBulb(V.bulb, V.bulbX, V.lit);
     setting.placeStar(focusX('concave', V.r), kindNow() === 'concave' && V.outK >= 1 ? V.star * V.alpha : 0, V.half > 6 ? 7 : 9);
   }
   // the first step's radius, from O to the edge of the piece: drawn alone, in the air
-  const radiusLine = { x: SPHERE.x, y: SPHERE.y, r: SPHERE.r, cos: Math.sqrt(1 - (MIRROR.half / SPHERE.r) ** 2), sin: MIRROR.half / SPHERE.r, k: 1 };
+  const radiusLine = {
+    x: SPHERE.x,
+    y: SPHERE.y,
+    r: SPHERE.r,
+    cos: Math.sqrt(1 - (MIRROR.half / SPHERE.r) ** 2),
+    sin: MIRROR.half / SPHERE.r,
+    k: 1,
+    cut: 1,
+    radius: 1,
+  };
 
   const RUNS = ['step', 'camera', 'radius', 'bulb'];
   function stopRun() {
@@ -401,7 +414,7 @@ export function createApp(root, options = {}) {
   let camK = 1;
   const camDir = new THREE.Vector3();
   function poseNow() {
-    const f = FRAMES[s.frame](V.r);
+    const f = FRAMES[s.frame](V.r, stage.width / Math.max(1, stage.height));
     dirFrom(f.az, f.el, camDir);
     return fitPose({ box: f.box, dir: camDir, camera, width: stage.width, height: stage.height, margin: MARGINS });
   }
@@ -530,11 +543,22 @@ export function createApp(root, options = {}) {
       { dx: -22, dy: -14 },
     ],
     mirror: [
-      { dx: -6, dy: -40 },
-      { dx: 18, dy: -40 },
-      { dx: -30, dy: -30 },
-      { dx: 30, dy: -24 },
+      { dx: -8, dy: -22 },
+      { dx: 22, dy: -20 },
+      { dx: -34, dy: -16 },
+      { dx: 34, dy: -14 },
+      { dx: -44, dy: -6 },
+    ],
+    far: [
+      { dx: 70, dy: -26 },
+      { dx: 60, dy: -40 },
+      { dx: -60, dy: -40 },
+    ],
+    boxed: [
+      { dx: -30, dy: -16 },
       { dx: -44, dy: -8 },
+      { dx: -24, dy: 30 },
+      { dx: -40, dy: 16 },
     ],
     conv: [
       { dx: -14, dy: 26 },
@@ -547,9 +571,10 @@ export function createApp(root, options = {}) {
       { dx: 6, dy: 40 },
     ],
     barF: [
-      { dx: 0, dy: 8 },
-      { dx: -16, dy: 14 },
       { dx: 0, dy: 0 },
+      { dx: 0, dy: 16 },
+      { dx: -16, dy: 18 },
+      { dx: 16, dy: 18 },
     ],
     barR: [
       { dx: 10, dy: -12 },
@@ -572,11 +597,11 @@ export function createApp(root, options = {}) {
       { dx: -30, dy: 42 },
     ],
     high: [
-      { dx: 0, dy: -46 },
-      { dx: 22, dy: -46 },
-      { dx: -22, dy: -46 },
-      { dx: 0, dy: -36 },
-      { dx: 0, dy: 32 },
+      { dx: 0, dy: -30 },
+      { dx: 0, dy: -24 },
+      { dx: 10, dy: -38 },
+      { dx: -10, dy: -38 },
+      { dx: 0, dy: 30 },
     ],
     side: [
       { dx: -30, dy: -18 },
@@ -584,11 +609,18 @@ export function createApp(root, options = {}) {
       { dx: -34, dy: 14 },
       { dx: 34, dy: 14 },
     ],
+    poleBack: [
+      { dx: 26, dy: -32 },
+      { dx: 30, dy: 22 },
+      { dx: 34, dy: -12 },
+      { dx: -30, dy: 30 },
+    ],
     pole: [
-      { dx: -36, dy: 22 },
-      { dx: -30, dy: 34 },
-      { dx: 24, dy: 40 },
-      { dx: -44, dy: -6 },
+      { dx: -30, dy: 42 },
+      { dx: -44, dy: 28 },
+      { dx: -24, dy: 56 },
+      { dx: -44, dy: -8 },
+      { dx: 26, dy: 58 },
     ],
   };
   const AX = RAIL.axis;
@@ -602,16 +634,20 @@ export function createApp(root, options = {}) {
     const cx = kind === 'convex' ? -V.r : V.r;
     const sphereOn = calm && V.sphere > 0.5 && !q;
     label('sphere', sphereOn && st === 'sphere', t('l_sphere'), SPHERE.x + 21, SPHERE.y + 21, 0, INK.dark, SPOTS.up);
-    label('o', sphereOn, t('l_o'), SPHERE.x, SPHERE.y, 0, INK.dark, SPOTS.down);
+    label('o', sphereOn && st === 'sphere', t('l_o'), SPHERE.x, SPHERE.y, 0, INK.dark, SPOTS.down);
     label('rr', sphereOn && st === 'sphere', t('l_r'), SPHERE.x - 14, SPHERE.y + 3.4, 0, INK.dark, SPOTS.up, true);
     label('cap', sphereOn && st === 'sphere', t('l_cap'), SPHERE.x - SPHERE.r, SPHERE.y + 6, 0, INK.dark, SPOTS.side);
+    const px = SPHERE.x - SPHERE.r + CUT.x;
+    label('piece', sphereOn && st === 'cut', t('l_piece'), px + 0.8, SPHERE.y - MIRROR.half + 1.4, CUT.z, INK.dark, SPOTS.down);
+    label('inner', sphereOn && st === 'cut', t('l_inner'), px + 0.6, SPHERE.y + 5, CUT.z - 1, INK.dark, SPOTS.far);
     const mirrored = calm && V.mount > 0.9 && named;
     const topEdge = kind === 'convex' ? -sag(V.r, MIRROR.half) : sag(V.r, MIRROR.half);
     const mirrorName = mirrored && (st === 'coated' || st === 'rays' || st === 'convex' || st === 'virtual' || st === 'torch' || !!q);
     label('mirror', mirrorName, t(kind === 'convex' ? 'l_convex' : 'l_concave'), topEdge, AX + MIRROR.half + 1, 0, INK.dark, SPOTS.mirror);
     const lit = calm && V.outK >= 1 && V.alpha > 0.9 && V.source === 'box';
-    label('box', calm && !q && st === 'coated', t('l_box'), BOX_X - 0.2, AX + 12.4, 0, INK.dark, SPOTS.up);
-    label('scale', calm && !q && st === 'coated', t('l_scale'), 30, SCALE_POINT.y, SCALE_POINT.z, INK.dark, SPOTS.down, true);
+    const plate = boxAt(kind, V.r);
+    label('box', calm && !q && V.box >= 1 && (st === 'coated' || lit), t('l_box'), plate - 0.2, AX + 12.2, 0, INK.dark, SPOTS.boxed);
+    label('scale', calm && !q && st === 'coated', t('l_scale'), 18, SCALE_POINT.y, SCALE_POINT.z, INK.dark, SPOTS.down, true);
     const fOn = calm && V.showF >= 1 && (named || q?.showF);
     const whole = !q && (st === 'rays' || st === 'virtual' || st === 'torch');
     label('f', fOn, whole ? t('l_f') : t('l_f_short'), fx, AX, 0, INK.focus, st === 'rays' ? SPOTS.high : st === 'virtual' ? SPOTS.up : SPOTS.down);
@@ -620,7 +656,7 @@ export function createApp(root, options = {}) {
       'parallel',
       lit && !q && (st === 'rays' || st === 'convex'),
       t('l_parallel'),
-      Math.max(fx, 0) + (st === 'convex' ? 18 : V.r * 0.92),
+      plate - (st === 'convex' ? 5 : 7),
       AX + fanTop,
       0,
       INK.ray,
@@ -628,6 +664,29 @@ export function createApp(root, options = {}) {
       true,
     );
     label('oo', calm && V.showO >= 1 && (named || q?.showO), t('l_o'), cx, AX, 0, INK.dark, kind === 'convex' && !q ? SPOTS.down : SPOTS.up);
+    // the book's two words, each pinned to the lowest ray on its side of F
+    label('conv', lit && !q && st === 'rays', t('l_conv'), V.r * 0.25, AX - BUNDLE.narrow * 0.5, 0, INK.ray, SPOTS.conv);
+    label('div', lit && !q && st === 'rays', t('l_div'), V.r * 0.75, AX - BUNDLE.narrow * 0.5, 0, INK.ray, SPOTS.div);
+    label('spread', lit && !q && st === 'convex', t('l_spread'), 12, AX + 8, 0, INK.ray, SPOTS.up, true);
+    // the two kinds of ray, each pinned to its own line
+    const rs = rays.view.rays;
+    const wideOn = calm && !q && st === 'wide' && rs.length === BUNDLE.count && V.crossings >= 1;
+    const on = (ray, k) => [ray.hit.x + (ray.end.x - ray.hit.x) * k, AX + ray.hit.y + (ray.end.y - ray.hit.y) * k];
+    if (wideOn) {
+      const [ex, ey] = on(rs[4], 0.13);
+      const [mx, my] = on(rs[1], 0.16);
+      label('edge', true, t('l_edge'), ex, ey, 0, '#c2300e', SPOTS.up);
+      label('mid', true, t('l_mid'), mx, my, 0, INK.ray, SPOTS.down);
+    } else {
+      label('edge', false);
+      label('mid', false);
+    }
+    label('bulb', calm && V.bulb >= 1 && named && !s.quiz, t('l_bulb'), V.bulbX, AX + 1.3, 0, INK.dark, SPOTS.up);
+    const beam = calm && V.source === 'bulb' && V.outK >= 1 && !q && beamKind(V.r, s.bulbX) === 'parallel';
+    label('beam', beam, t('l_beam'), 37, AX + 6.8, 0, INK.ray, SPOTS.up, true);
+    const barsOn = calm && V.bars >= 1 && named;
+    label('barf', barsOn, t('l_bar_f', { f: round(V.r / 2, 1) }), fx * 0.46, RAIL.top + 2.2, 0, INK.focus, SPOTS.barF);
+    label('barr', barsOn, t('l_bar_r', { r: V.r }), cx * (kind === 'convex' ? 0.62 : 0.88), RAIL.top + 5.2, 0, '#212529', SPOTS.barR);
     label(
       'p',
       calm && V.axis >= 1 && named && V.outK >= 1 && !s.quiz && st !== 'wide',
@@ -636,21 +695,9 @@ export function createApp(root, options = {}) {
       AX,
       0,
       INK.dark,
-      SPOTS.pole,
+      kind === 'convex' ? SPOTS.poleBack : SPOTS.pole,
       true,
     );
-    // the book's two words, each pinned to the lowest ray on its side of F
-    label('conv', lit && !q && st === 'rays', t('l_conv'), V.r * 0.25, AX - BUNDLE.narrow * 0.5, 0, INK.ray, SPOTS.conv);
-    label('div', lit && !q && st === 'rays', t('l_div'), V.r * 0.75, AX - BUNDLE.narrow * 0.5, 0, INK.ray, SPOTS.div);
-    label('spread', lit && !q && st === 'convex', t('l_spread'), 15, AX + 10, 0, INK.ray, SPOTS.up, true);
-    label('edge', calm && !q && st === 'wide', t('l_edge'), exactCrossing(V.r, BUNDLE.wide), AX, 0, INK.ray, SPOTS.edge);
-    label('mid', calm && !q && st === 'wide', t('l_mid'), exactCrossing(V.r, BUNDLE.wide / 2), AX, 0, INK.ray, SPOTS.up, true);
-    label('bulb', calm && V.bulb >= 1 && named && !s.quiz, t('l_bulb'), V.bulbX, AX + 1.3, 0, INK.dark, SPOTS.up);
-    const beam = calm && V.source === 'bulb' && V.outK >= 1 && !q && beamKind(V.r, s.bulbX) === 'parallel';
-    label('beam', beam, t('l_beam'), 37, AX + 6.8, 0, INK.ray, SPOTS.up);
-    const barsOn = calm && V.bars >= 1 && named;
-    label('barf', barsOn, t('l_bar_f', { f: round(V.r / 2, 1) }), fx * 0.46, RAIL.top + 2.2, 0, INK.focus, SPOTS.barF);
-    label('barr', barsOn, t('l_bar_r', { r: V.r }), cx * (kind === 'convex' ? 0.62 : 0.88), RAIL.top + 5.2, 0, '#212529', SPOTS.barR);
     // the test's letters on the axis
     for (let i = 0; i < 4; i++) {
       const on = calm && !!q?.points && !q.named;
@@ -851,12 +898,19 @@ export function createApp(root, options = {}) {
   function target() {
     if (s.locked || s.busy || camK < 1 || s.dragging) return null;
     const ph = phase();
-    const cap = SPHERE.x - SPHERE.r - V.capOut * 8;
-    if (ph === 'cut') aim.set(cap + 1.5, SPHERE.y - 9, 0);
-    else if (ph === 'coated') aim.set(cap + 0.6, SPHERE.y, 0);
-    else if (ph === 'rays') aim.set(BOX_X, AX + 3, 0);
+    const x0 = SPHERE.x - SPHERE.r;
+    if (ph === 'cut') aim.set(x0 + 1.4, SPHERE.y - 7.6, 0);
+    else if (ph === 'coated') aim.set(x0 + CUT.x + 0.5, SPHERE.y, CUT.z);
+    else if (ph === 'rays') aim.set(boxAt('concave', V.r), AX + 3, 0);
     else if (ph === 'measure') aim.set(V.r / 2, AX - 8, 0);
-    else if (ph === 'wide' || ph === 'convex' || ph === 'virtual' || ph === 'torch') aim.set(0, AX + 7.4, 0);
+    else if (ph === 'wide')
+      aim.set(boxAt('concave', V.r), AX + 2.5, 0); // the holes of the ray box
+    else if (ph === 'convex')
+      aim.set(0.4, AX - 6.5, 0); // the mirror itself
+    else if (ph === 'virtual')
+      aim.set(-V.r / 2, AX, 0); // where the rays will be seen to meet
+    else if (ph === 'torch')
+      aim.set(Math.min(V.r / 2, 18), AX, 0); // the concave mirror's F
     else if (ph === 'bulb_in' || ph === 'bulb_out' || ph === 'bulb_f') aim.set(V.bulbX, AX, 0);
     else return null;
     setting.hit.position.copy(aim);
@@ -985,7 +1039,7 @@ export function createApp(root, options = {}) {
     },
     fromO() {
       const r = shuffle([20, 40, 60])[0];
-      quizScene({ kind: 'fromO', showO: true }, 'coated', { r, frame: 'measure', change: { showO: 1, marks: 1 } });
+      quizScene({ kind: 'fromO', showO: true }, 'coated', { r, frame: 'scale', change: { showO: 1, marks: 1 } });
       const answer = r / 2;
       const wrong = [r, r * 2, r / 4];
       return {
@@ -1000,12 +1054,13 @@ export function createApp(root, options = {}) {
         ]),
         reveal: t('a_from_o', { r, f: answer, two: 2 }),
         after: { showF: 1, bars: 1 },
+        frame: 'measure',
       };
     },
     letters() {
       const r = 30;
       const spots = shuffle([-r / 2, -r, 0, r / 2]);
-      quizScene({ kind: 'letters', points: spots }, 'virtual', { r, change: { extK: 1 } });
+      quizScene({ kind: 'letters', points: spots }, 'virtual', { r, change: { extK: 0 } });
       const tagOf = (x) => t(`tag_${spots.indexOf(x)}`);
       const answer = -r / 2;
       const wrong = [-r, 0, r / 2];
@@ -1020,7 +1075,7 @@ export function createApp(root, options = {}) {
           [r / 2, t('n_letters_front')],
         ]),
         reveal: t('a_letters', { x: tagOf(answer) }),
-        after: { showF: 1, showO: 1 },
+        after: { showF: 1, showO: 1, extK: 1 },
       };
     },
     bulb() {
@@ -1046,20 +1101,17 @@ export function createApp(root, options = {}) {
       };
     },
     plane() {
-      const r = 60;
-      quizScene({ kind: 'plane' }, 'rays', { r, frame: 'focus', change: { showF: 1 } });
-      const wrong = ['zero', 'r', 'f'];
+      // the picture does it: the mirror flattens from r = 20 to r = 60, and F runs along the scale
+      quizScene({ kind: 'plane', showF: true }, 'rays', { r: 20, frame: 'focus', change: { showF: 1 } });
+      const wrong = ['p', 'o', 'behind'];
       return {
-        text: t('q_plane', { r }),
-        answer: 'inf',
+        text: t('q_plane'),
+        answer: 'far',
         wrong,
-        label: (k) => (k === 'inf' || k === 'zero' ? t(`c_plane_${k}`) : t('c_cm', { x: k === 'r' ? r : r / 2 })),
-        notes: notesOf([
-          ['zero', t('n_plane_zero')],
-          ['r', t('n_plane_same')],
-          ['f', t('n_plane_same')],
-        ]),
+        label: (k) => t(`c_plane_${k}`),
+        notes: notesOf(wrong.map((k) => [k, t(`n_plane_${k}`)])),
         reveal: t('a_plane', { two: 2 }),
+        glide: 60,
       };
     },
   };
@@ -1110,6 +1162,7 @@ export function createApp(root, options = {}) {
         const done = await fly(s.frame, 0.4);
         if (!alive()) return null;
         if (!done) camK = 1;
+        if (q.glide) glideR(q.glide, 1.3);
         // the kit scores numbers: the choices are places in this list, never its words
         const list = shuffle([q.answer, ...q.wrong]);
         q.list = list;
@@ -1130,6 +1183,7 @@ export function createApp(root, options = {}) {
             Object.assign(V, q.after);
             if (q.after.bars) V.circle = 1;
             apply();
+            if (q.frame) fly(q.frame, 0.6);
           }
           if (q.bulbBack != null) {
             s.stage = 'torch';

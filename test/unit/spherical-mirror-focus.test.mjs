@@ -4,6 +4,7 @@ import { test } from 'node:test';
 import {
   BULB_H,
   beamKind,
+  boxAt,
   beamSpread,
   bulbBundle,
   bulbRay,
@@ -105,6 +106,14 @@ test('moved off F the beam is not parallel: nearer the mirror it spreads, beyond
   assert.equal(beamKind(30, 10), 'spread');
   assert.ok(beamSpread(30, 22) < -4);
   assert.equal(beamKind(30, 22), 'closing');
+});
+
+test('the ray box stands past O, and the light starts from its plate', () => {
+  for (const r of RADII) {
+    assert.ok(boxAt('concave', r) > r);
+    near(parallelRay('concave', r, 3).start.x, boxAt('concave', r));
+    near(parallelRay('convex', r, 3).start.x, boxAt('convex', r));
+  }
 });
 
 test('sag: the mirror is nearly flat when r is large (a plane mirror is one with f = ∞)', () => {

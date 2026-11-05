@@ -7,6 +7,7 @@ import { MIRROR, sag } from './reading.js';
 
 export const C = {
   ray: '#f59f00',
+  rim: '#ff5a36', // the rim rays of the wide bundle
   edge: '#5f3400',
   glow: '#ffe36e',
   focus: '#7048e8',
@@ -67,7 +68,11 @@ export function createRays({ stage, host }) {
     chevX: 26, // where along the rail the arrows of the incoming rays sit
     fan: 0.11, // how strongly the body of the beam is washed in
     source: 'box', // 'box' | 'bulb'
+    rimAt: Infinity, // rays this far from the axis or further are the rim rays, in their own colour
+    inset: 0, // the magnifying lens on the crossings near F
+    fmt: (x) => String(x), // a number for the lens
   };
+  let rayColor = C.ray;
 
   const line = (x0, y0, x1, y1) => {
     ctx.beginPath();
@@ -90,7 +95,7 @@ export function createRays({ stage, host }) {
     ctx.lineTo(x - ux * n, y - uy * n);
     ctx.lineTo(x - ux * b + uy * c, y - uy * b - ux * c);
     ctx.closePath();
-    ctx.fillStyle = C.ray;
+    ctx.fillStyle = rayColor;
     ctx.fill();
     ctx.strokeStyle = C.edge;
     ctx.lineWidth = 0.9;
@@ -115,7 +120,7 @@ export function createRays({ stage, host }) {
     ctx.lineWidth = width + 1.3;
     ctx.stroke();
     line(x0, y0, x1, y1);
-    ctx.strokeStyle = C.ray;
+    ctx.strokeStyle = rayColor;
     ctx.lineWidth = width;
     ctx.stroke();
     if (at >= 0 && k >= at) chevron(x0 + dx * at, y0 + dy * at, dx, dy);
@@ -316,32 +321,80 @@ export function createRays({ stage, host }) {
     ctx.globalAlpha = 1;
   }
 
+  const toEye = new THREE.Vector3();
+  /** The hollow sphere's lines of latitude and longitude, the cut round the piece, and the radius. The far halves are fainter. */
+  function sphereLines(c) {
+    const ring = (at, width, color, dash, front) => {
+      ctx.beginPath();
+      let on = false;
+      for (let i = 0; i <= 72; i++) {
+        const a = (i / 72) * Math.PI * 2;
+        const q = at(a);
+        toEye.set(q.x * c.r, q.y * c.r, q.z * c.r);
+        const facing = toEye.x * (camera.position.x - c.x) + toEye.y * (camera.position.y - c.y) + toEye.z * camera.position.z > c.r * c.r;
+        if (facing !== front) {
+          on = false;
+          continue;
+        }
+        Q(c.x + toEye.x, c.y + toEye.y, toEye.z);
+        if (on) ctx.lineTo(sx, sy);
+        else ctx.moveTo(sx, sy);
+        on = true;
+      }
+      ctx.lineWidth = width;
+      ctx.strokeStyle = color;
+      ctx.setLineDash(dash);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    };
+    const greats = [
+      (a) => ({ x: Math.cos(a), y: 0, z: Math.sin(a) }), // the equator
+      (a) => ({ x: Math.cos(a), y: Math.sin(a), z: 0 }), // a meridian through the piece
+      (a) => ({ x: 0, y: Math.sin(a), z: Math.cos(a) }), // the one across it
+      (a) => ({ x: 0.5 * Math.cos(a) * 1.73, y: 0.5, z: 0.5 * Math.sin(a) * 1.73 }), // two parallels
+      (a) => ({ x: 0.5 * Math.cos(a) * 1.73, y: -0.5, z: 0.5 * Math.sin(a) * 1.73 }),
+    ];
+    ctx.lineCap = 'butt';
+    ctx.globalAlpha = c.k;
+    for (const at of greats) ring(at, 1, 'rgba(226,240,248,0.13)', [], false);
+    for (const at of greats) ring(at, 1.15, 'rgba(226,240,248,0.34)', [], true);
+    // the line of the cut, until the piece is out
+    if (c.cut > 0) {
+      const cx = c.cos;
+      const rs = c.sin;
+      const at = (a) => ({ x: -cx, y: rs * Math.cos(a), z: rs * Math.sin(a) });
+      ctx.globalAlpha = c.k * c.cut;
+      for (const front of [true, false]) {
+        ring(at, 3.6, 'rgba(12,18,24,0.75)', [7, 5], front);
+        ring(at, 2, '#ffe36e', [7, 5], front);
+      }
+    }
+    // the radius, from O to the edge of the piece
+    Q(c.x, c.y, 0);
+    const x0 = sx;
+    const y0 = sy;
+    Q(c.x - c.r * c.cos, c.y + c.r * c.sin, 0);
+    ctx.globalAlpha = c.k * c.radius;
+    ctx.lineCap = 'round';
+    ctx.lineWidth = 3.6;
+    ctx.strokeStyle = 'rgba(16,20,26,0.8)';
+    line(x0, y0, sx, sy);
+    ctx.stroke();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = C.ink;
+    line(x0, y0, sx, sy);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(x0, y0, 4.6, 0, Math.PI * 2);
+    ctx.fillStyle = C.ink;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+
   function paint() {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);
-    if (v.radiusOnly) {
-      const c = v.radiusOnly;
-      const rr = c.r;
-      Q(c.x, c.y, 0);
-      const x0 = sx;
-      const y0 = sy;
-      Q(c.x - rr * c.cos, c.y + rr * c.sin, 0);
-      ctx.globalAlpha = c.k;
-      ctx.lineCap = 'round';
-      ctx.lineWidth = 3.6;
-      ctx.strokeStyle = 'rgba(16,20,26,0.8)';
-      line(x0, y0, sx, sy);
-      ctx.stroke();
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = C.ink;
-      line(x0, y0, sx, sy);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(x0, y0, 4.6, 0, Math.PI * 2);
-      ctx.fillStyle = C.ink;
-      ctx.fill();
-      ctx.globalAlpha = 1;
-    }
+    if (v.radiusOnly) sphereLines(v.radiusOnly);
     if (v.axis > 0) axis(v.axis);
     circle(v.circle);
     const focusAt = v.kind === 'convex' ? -v.r / 2 : v.r / 2;
@@ -376,6 +429,7 @@ export function createRays({ stage, host }) {
         const gathers = v.source === 'box' && v.kind !== 'convex';
         for (const r of rs) {
           const chev = v.source === 'box' ? Math.min(0.95, Math.max(0.05, (v.chevX - r.start.x) / (r.hit.x - r.start.x))) : 0.62;
+          rayColor = Math.abs(r.h) >= v.rimAt ? C.rim : C.ray;
           ctx.globalAlpha = v.alpha * back;
           ray(r.start.x, r.start.y, r.hit.x, r.hit.y, v.inK, chev, v.outK >= 1 ? 1.4 : 1.9);
           ctx.globalAlpha = v.alpha;
@@ -384,28 +438,110 @@ export function createRays({ stage, host }) {
           else if (gathers) ray(r.hit.x, r.hit.y, r.end.x, r.end.y, v.outK, 0.17, 1.9, Math.abs(r.h) > v.r * 0.2 ? 0.86 : -1);
           else ray(r.hit.x, r.hit.y, r.end.x, r.end.y, v.outK, 0.55);
         }
+        rayColor = C.ray;
         ctx.restore();
       }
-    }
-    if (v.crossings > 0) {
-      ctx.globalAlpha = v.crossings;
-      for (const r of rs) {
-        if (r.cross == null || r.h <= 0) continue;
-        P(r.cross, 0);
-        ctx.beginPath();
-        ctx.arc(sx, sy, 3.4, 0, Math.PI * 2);
-        ctx.fillStyle = '#fff7d6';
-        ctx.fill();
-        ctx.strokeStyle = C.edge;
-        ctx.lineWidth = 1.1;
-        ctx.stroke();
-      }
-      ctx.globalAlpha = 1;
     }
     arc(v.axis);
     dot(centreAt, C.ink, v.showO);
     if (v.axis > 0) dot(0, C.ink, v.axis, 3.6);
     dot(focusAt, C.focus, v.showF);
+    if (v.inset > 0) lens(v.inset);
+  }
+
+  /** The bottom right of the view: a round lens on the place near F where the rays cross the axis, true to scale, drawn exactly. */
+  function lensBox() {
+    const R = Math.max(50, Math.min(92, Math.min(w, h) * 0.215));
+    return { R, x: w - R - 10, y: h - R - 10 };
+  }
+  function lens(k) {
+    const { R, x: cx, y: cy } = lensBox();
+    const rs = v.rays.filter((r) => r.h > 0 && r.cross != null);
+    if (!rs.length) return;
+    const f = v.r / 2;
+    const a = Math.min(...rs.map((r) => r.cross));
+    const mid = (a + f) / 2;
+    const scale = (R * 1.14) / Math.max(f - a, 0.1);
+    const ax = cy - R * 0.08; // the axis, a little above the middle: the numbers go under it
+    const X = (x) => cx + (x - mid) * scale;
+    // the small ring round F and the two lines from it to the lens
+    P(f, 0);
+    const fx = sx;
+    const fy = sy;
+    const sr = 13;
+    const l = Math.hypot(cx - fx, cy - fy) || 1;
+    const nx = -(cy - fy) / l;
+    const ny = (cx - fx) / l;
+    ctx.globalAlpha = k;
+    ctx.lineWidth = 1.2;
+    ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+    for (const s of [1, -1]) {
+      ctx.beginPath();
+      ctx.moveTo(fx + nx * s * sr, fy + ny * s * sr);
+      ctx.lineTo(cx + nx * s * R, cy + ny * s * R);
+      ctx.stroke();
+    }
+    ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    ctx.arc(fx, fy, sr, 0, Math.PI * 2);
+    ctx.stroke();
+    // inside the lens
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.fillStyle = '#1b2531';
+    ctx.fill();
+    ctx.clip();
+    ctx.setLineDash([9, 3, 2, 3]);
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = C.axis;
+    line(cx - R, ax, cx + R, ax);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.lineCap = 'butt';
+    for (const r of rs) {
+      const color = r.h >= v.rimAt ? C.rim : C.ray;
+      const m = r.dir.y / r.dir.x;
+      const x0 = X(r.cross);
+      for (const s of [1, -1]) {
+        line(x0 - 3 * R, ax - s * m * -3 * R, x0 + 3 * R, ax - s * m * 3 * R);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+    }
+    const mark = (x, color, radius) => {
+      ctx.beginPath();
+      ctx.arc(X(x), ax, radius, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.4;
+      ctx.stroke();
+    };
+    const num = R < 62 ? 11 : 12.5;
+    ctx.font = `600 ${num}px "Noto Sans Bengali", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    const tag = (text, x, y, color) => {
+      const wd = ctx.measureText(text).width + 8;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(x - wd / 2, y, wd, num + 5);
+      ctx.fillStyle = color;
+      ctx.fillText(text, x, y + 1);
+    };
+    for (const r of rs) mark(r.cross, r.h >= v.rimAt ? C.rim : C.ray, 4);
+    mark(f, C.focus, 4.6);
+    const tagY = ax + R * 0.32;
+    for (const r of rs) tag(v.fmt(r.cross), X(r.cross), tagY, r.h >= v.rimAt ? '#c2300e' : '#8a4f00');
+    tag('F', X(f), ax - R * 0.5, '#5a37d0');
+    ctx.restore();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
   }
   stage.onResize(size);
   stage.onAfterRender(paint);
@@ -431,9 +567,32 @@ export function createRays({ stage, host }) {
       out.push(r);
     }
   }
+  const end = (x, y) => {
+    Q(x, y, 0);
+    const r = pool[used++];
+    r.left = sx - 6;
+    r.right = sx + 6;
+    r.top = sy - 8;
+    r.bottom = sy + 8;
+    out.push(r);
+  };
+  const lensRect = { left: 0, top: 0, right: 0, bottom: 0 };
   function boxes() {
     out.length = 0;
     used = 0;
+    if (v.bars > 0) {
+      // the ends of the two measures: a label keeps off their ticks
+      const f = v.kind === 'convex' ? -v.r / 2 : v.r / 2;
+      end(0, RAIL.top + 2.2);
+      end(f, RAIL.top + 2.2);
+      end(0, RAIL.top + 5.2);
+      end(f * 2, RAIL.top + 5.2);
+    }
+    if (v.inset > 0) {
+      const { R, x, y } = lensBox();
+      Object.assign(lensRect, { left: x - R, top: y - R, right: x + R, bottom: y + R });
+      out.push(lensRect);
+    }
     const rs = v.rays;
     if (!rs.length || v.alpha <= 0) return out;
     // the outermost and middle rays are enough: a label never sits inside the fan either

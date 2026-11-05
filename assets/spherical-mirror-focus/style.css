@@ -21,6 +21,9 @@ body.bg-transparent { background: transparent; }
 .lab .lab-r-f { margin-left: auto; padding-left: 6px; }
 .lab .lab-r-f b { font-size: 17px; font-weight: 600; color: #5a37d0; }
 
+/* the big button keeps one width, whatever it says */
+.lab .pvc-act-slot .pvc-act { width: 100%; }
+
 /* the rule: the book's sentences, its formula on a line of its own */
 .lab .pvc-rule { font-size: 14.5px; line-height: 1.55; }
 .lab .pvc-rule b { color: var(--ink); font-weight: 600; }
@@ -72,7 +75,7 @@ body.bg-transparent { background: transparent; }
   .lab .lab-r { height: 34px; min-width: 36px; }
   .lab .pvc-outcome { font-size: 14px; }
   .lab .pvc-outcome b { font-size: 15px; }
-  .lab .pvc-rule { font-size: 12.5px; line-height: 16.5px; height: 84px; }
+  .lab .pvc-rule { font-size: 13.5px; line-height: 18px; height: 90px; }
   .lab .pvc-rule .pvc-formula { margin-top: 2px; padding: 1px 6px; font-size: 13px; }
   .lab .pvc-q-ask { gap: 3px; }
   .lab .pvc-q-head { min-height: 0; }

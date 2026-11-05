@@ -88,7 +88,7 @@
   "events": ["ready", "change", "view", "practice-start", "practice-result", "practice-end"],
   "export": {
     "poster": { "params": { "coach": "0", "stage": "measure" } },
-    "glb": [{ "name": "default" }],
+    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "stage": "coated", "animate": false } }] }],
     "video": {
       "kind": "script",
       "seconds": 30,
