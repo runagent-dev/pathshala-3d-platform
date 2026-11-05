@@ -1,0 +1,121 @@
+/* Mirror at a hill-road bend (পাহাড়ি রাস্তার অদৃশ্য বাঁক): the page, the colours of the terms, the small window, and the
+   labels. The panel is the kit's clean sheet (../../shared/lib/student/student.css). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.hrm { --c-ti: #1971c2; --c-tr: #2b8a3e; }
+.hrm sub { font-size: 0.72em; line-height: 0; }
+
+/* the result line */
+.hrm .pvc-outcome { font-size: 15px; line-height: 1.5; min-height: 2lh; }
+.hrm .pvc-outcome b { font-size: 1.12em; }
+.hrm .hrm-a { display: inline-block; margin-right: 20px; font-size: 24px; font-weight: 600; line-height: 1.3; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.hrm .hrm-ti { color: var(--c-ti); }
+.hrm .hrm-tr { color: var(--c-tr); }
+
+/* the rule: the book's sentences */
+.hrm .pvc-rule { font-size: 14.5px; line-height: 1.55; }
+.hrm .pvc-rule b { color: var(--ink); }
+
+/* the vector drawing over the view */
+.hrm-draw { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+
+/* the small window: what one driver sees. The picture itself is drawn in the 3D canvas beneath this frame */
+.hrm-pip { position: absolute; z-index: 2; box-sizing: border-box; border: 3px solid #fff; border-radius: 3px; box-shadow: 0 0 0 1px rgba(33, 37, 41, 0.55), 0 2px 8px rgba(0, 0, 0, 0.25); pointer-events: none; }
+.hrm-pip[hidden] { display: none; }
+.hrm-pip span { position: absolute; left: -3px; top: -3px; padding: 0 7px 2px 6px; border-radius: 0 0 4px 0; background: #fff; color: var(--ink); font-size: 12px; font-weight: 600; line-height: 1.5; white-space: nowrap; }
+
+/* the handle of what can be dragged: a white disc with a thin dark ring, arrows along the way it goes, a gentle pulse until
+   the first drag, then smaller and calm. Touches go through it to the view, where the grab has a 44 px circle at least */
+.hrm-handle { position: absolute; left: 0; top: 0; width: 0; height: 0; visibility: hidden; pointer-events: none; }
+.hrm-handle.in { visibility: visible; }
+.hrm-handle svg { position: absolute; left: -15px; top: -15px; width: 30px; height: 30px; box-sizing: border-box; border: 1.5px solid #212529; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4); }
+.hrm-handle path { fill: none; stroke: #212529; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.hrm-handle::before { content: ''; position: absolute; left: -15px; top: -15px; width: 30px; height: 30px; border-radius: 50%; box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9); animation: hrm-pulse 1.8s ease-out infinite; }
+.hrm-handle.calm::before, .hrm-handle.still::before { display: none; }
+.hrm-handle.calm svg { left: -12px; top: -12px; width: 24px; height: 24px; }
+@keyframes hrm-pulse { from { transform: scale(1); opacity: 0.9; } to { transform: scale(1.75); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .hrm-handle::before { animation: none; opacity: 0; } }
+.pvc[data-mode='quiz'] .hrm-handle { display: none; }
+
+/* labels on the picture: a plain white tab, a thin line, no dot */
+.hrm .pvc-anno { transition: none; font-size: 13px; font-weight: 600; color: var(--c); border: 0; border-radius: 4px; background: #fff; padding: 1px 6px; box-shadow: none; white-space: nowrap; }
+.hrm .pvc-anno:has(sub) { padding: 2px 8px; font-size: 16px; line-height: 1.3; }
+.hrm .pvc-anno-lines line { stroke-width: 1; }
+.hrm .pvc-anno-lines circle { display: none; }
+
+@media (max-width: 480px) {
+  .hrm .pvc-anno { font-size: 12.5px; }
+  .hrm .pvc-anno:has(sub) { padding: 1px 6px; font-size: 15px; }
+}
+@media (min-width: 1000px) and (min-height: 640px) {
+  .hrm .pvc-anno { font-size: 16px; padding: 2px 8px; }
+  .hrm .pvc-anno:has(sub) { font-size: 21px; padding: 3px 10px; }
+  .hrm-pip span { font-size: 15px; }
+}
+
+/* the note in a corner: what is drawn, not seen */
+.hrm-note { position: absolute; left: 8px; bottom: 6px; z-index: 2; padding: 1px 6px; border-radius: 4px; background: rgba(255, 255, 255, 0.86); color: var(--ink-2); font-size: 11.5px; line-height: 1.4; pointer-events: none; white-space: nowrap; }
+.hrm-note[hidden] { display: none; }
+.pvc[data-mode='quiz'] .hrm-note { display: none; }
+
+/* the test */
+.hrm .pvc-q-text { font-size: 15px; }
+.hrm .pvc-q-feedback { font-size: 14px; line-height: 1.5; }
+.hrm-why { color: var(--ink-2); }
+
+/* phones held upright */
+@container pvc (max-width: 420px) {
+  .hrm .pvc-learn { gap: 4px; }
+  .hrm .pvc-examples button { min-height: 36px; padding: 1px 2px 3px; }
+  .hrm .pvc-examples .pvc-ex-word { font-size: 14px; line-height: 1.2; white-space: nowrap; }
+  .hrm .pvc-act-row { min-height: 46px; }
+  .hrm .pvc-outcome { font-size: 14px; line-height: 20px; min-height: 40px; }
+  .hrm .hrm-a { font-size: 21px; line-height: 30px; }
+  .hrm .pvc-rule { --pvc-rule-lines: 0; font-size: 13.5px; line-height: 19px; height: 76px; min-height: 0; overflow: hidden; }
+  .hrm .pvc-q-ask { gap: 5px; }
+  .hrm .pvc-q-text { --pvc-q-text-min: 2lh; font-size: 14px; line-height: 1.4; }
+  .hrm .pvc-q-options { gap: 5px; }
+  .hrm .pvc-opt { height: 40px; font-size: 13.5px; }
+  .hrm .pvc-q-feedback { --pvc-q-feedback-min: 3lh; font-size: 13.5px; line-height: 1.4; }
+}
+/* the tightest phone (390 × 520) */
+@container pvc (max-width: 420px) and (max-height: 600px) {
+  .hrm .pvc-rule { font-size: 12.5px; line-height: 16.5px; height: 50px; }
+  .hrm .pvc-outcome { font-size: 13px; line-height: 18px; min-height: 36px; }
+  .hrm .hrm-a { font-size: 18px; line-height: 26px; }
+  .hrm .pvc-q-ask { gap: 3px; }
+  .hrm .pvc-q-head { min-height: 0; }
+  .hrm .pvc-q-head .pvc-btn { height: 30px; }
+  .hrm .pvc-q-text { font-size: 12.5px; line-height: 1.32; }
+  .hrm .pvc-opt { height: 31px; font-size: 12.5px; }
+  .hrm .pvc-q-options { gap: 3px; }
+  .hrm .pvc-q-feedback { --pvc-q-feedback-min: 3lh; font-size: 12.5px; line-height: 1.32; }
+}
+/* the side panel beside the 3D view (280–400 px wide; only it is a container with a height) */
+@container pvc-panel (min-height: 1px) {
+  .hrm { --pvc-act-lines: 2; }
+  .hrm .pvc-learn { gap: 8px; }
+  .hrm .pvc-examples button { min-height: 40px; }
+  .hrm .pvc-outcome { font-size: 14.5px; line-height: 1.5; min-height: 2lh; }
+  .hrm .hrm-a { font-size: 23px; line-height: 1.35; margin-right: 14px; }
+  .hrm .pvc-rule { font-size: 14px; line-height: 1.55; height: auto; overflow: visible; }
+  .hrm .pvc-q-ask { gap: 6px; }
+  .hrm .pvc-q-head .pvc-btn { height: 36px; }
+  .hrm .pvc-q-text { font-size: 14px; }
+  .hrm .pvc-q-options { gap: 5px; }
+  .hrm .pvc-opt { font-size: 13px; height: 40px; line-height: 1.2; padding: 1px 4px; }
+  .hrm .pvc-q-feedback { font-size: 13.5px; line-height: 1.45; }
+}
+@container pvc-panel (min-height: 1px) and (max-height: 420px) {
+  .hrm .pvc-rule { font-size: 13.5px; line-height: 1.45; }
+  .hrm .pvc-learn { gap: 5px; }
+}
+/* a tall side panel (1280 × 800): larger, the book's size */
+@container pvc-panel (min-height: 620px) {
+  .hrm .pvc-learn { gap: 14px; }
+  .hrm .pvc-outcome { font-size: 16px; }
+  .hrm .hrm-a { font-size: 30px; }
+  .hrm .pvc-rule { font-size: 16.5px; line-height: 1.65; }
+}
