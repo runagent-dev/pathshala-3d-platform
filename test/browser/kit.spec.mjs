@@ -238,6 +238,58 @@ test('drag handle: without callbacks the pointer goes on to the handler on the c
   expect(errors).toEqual([]);
 });
 
+test('rotate cue: a full orbit; a tap is not a turn, a move of 8 px is; the word goes and the icon stays', async ({ page }) => {
+  const errors = await openKit(page, { width: 844, height: 390 });
+  await shellWithStage(page);
+  const r = await page.evaluate(() => {
+    const { createRotateCue } = /** @type {any} */ (window).kit;
+    const { root, ui, stage } = /** @type {any} */ (window).t;
+    const { controls } = stage;
+    controls.minAzimuthAngle = -1;
+    controls.maxAzimuthAngle = 1;
+    controls.enableZoom = false;
+    let turns = 0;
+    const cue = createRotateCue(stage, { layer: ui.stage, label: 'turn me', onTurn: () => turns++ });
+    const orbit = [
+      controls.minAzimuthAngle,
+      controls.maxAzimuthAngle,
+      Math.round((controls.maxPolarAngle * 180) / Math.PI),
+      controls.enableZoom,
+      controls.enableDamping,
+    ];
+    const word = () => getComputedStyle(cue.el.querySelector('.pvc-rc-word')).display !== 'none';
+    const at = { pointerId: 5, clientX: 100, clientY: 100, bubbles: true };
+    const host = ui.canvasHost;
+    host.dispatchEvent(new PointerEvent('pointerdown', at));
+    host.dispatchEvent(new PointerEvent('pointermove', { ...at, clientX: 106 }));
+    host.dispatchEvent(new PointerEvent('pointerup', at));
+    const tap = { turns, word: word(), held: cue.held };
+    host.dispatchEvent(new PointerEvent('pointerdown', at));
+    host.dispatchEvent(new PointerEvent('pointermove', { ...at, clientX: 120 }));
+    host.dispatchEvent(new PointerEvent('pointermove', { ...at, clientX: 150 }));
+    host.dispatchEvent(new PointerEvent('pointerup', at));
+    const d = stage.camera.position.distanceTo(controls.target);
+    const held = { turns, word: word(), held: cue.held, near: controls.minDistance / d, far: controls.maxDistance / d };
+    cue.home();
+    const home = { held: cue.held, near: controls.minDistance, far: controls.maxDistance };
+    root.dataset.mode = 'quiz';
+    const inTest = getComputedStyle(cue.el).display;
+    delete root.dataset.mode;
+    const wheelFirst = turns;
+    host.dispatchEvent(new WheelEvent('wheel', { bubbles: true }));
+    return { orbit, tap, held, home, inTest, wheel: turns - wheelFirst };
+  });
+  expect(r.orbit).toEqual([Number.NEGATIVE_INFINITY, null, 88, true, true].map((x) => (x === null ? Number.POSITIVE_INFINITY : x)));
+  expect(r.tap).toEqual({ turns: 0, word: true, held: false });
+  expect(r.held).toMatchObject({ turns: 1, word: false, held: true });
+  expect(r.held.near).toBeCloseTo(0.6, 5);
+  expect(r.held.far).toBeCloseTo(1.8, 5);
+  expect(r.home).toEqual({ held: false, near: 0, far: Number.POSITIVE_INFINITY });
+  expect(r.inTest).toBe('none');
+  expect(r.wheel).toBe(1);
+  expect(errors).toEqual([]);
+});
+
 test('annotations: setText and update change a label in place; spots keep labels clear of each other', async ({ page }) => {
   const errors = await openKit(page);
   await shellWithStage(page);

@@ -281,6 +281,17 @@ gentle pulse until the first drag; then it stays, smaller and calm.
   word, points along the track; empty while hidden; the arrays are reused, so don't keep them).
 - `rearm()`: the first-time look again (after a reset). Under `prefers-reduced-motion` there is no pulse.
 
+### `rotatecue.js` (the view turns all the way round, kit 1.7.0)
+`createRotateCue(stage, options)` → `{ el, held, markUsed, rearm, home, dispose }`. A small orbit icon in a corner of the
+stage with a word until the first turn, then only the icon, which stays. It sets up the orbit too: no azimuth limits,
+`polar` (degrees, default `[5, 88]`, so the camera stays above the table), zoom and damping on.
+- `label`: the word from the figure's i18n (`rotate_me: 'ঘুরিয়ে দেখো'`). `compact: !o.coach`: only the icon from the start.
+- `onTurn`: called when the student really turns the view: 8 px of movement or the wheel, never a bare tap (OrbitControls
+  says `start` on a tap). Use it instead of a `start` listener: the figure stops guiding the camera there.
+- `zoom: [0.6, 1.8]`: how far in and out, as parts of the distance when the student took over. These limits hold only
+  while the student has the view: call `home()` when the guided camera takes over, so no flight is clamped.
+- `layer` (default the stage), `at: 'top-left' | 'bottom-right'`. Put `el` in the avoid lists. Hidden during the test.
+
 ### `pointer.js`
 `capturePointer(el, pointerId)` → `true` if captured, and `releasePointer(el, pointerId)`: pointer capture that never
 throws. `setPointerCapture` throws for a synthetic pointer (tests, the bridge) or one already lifted, which would
