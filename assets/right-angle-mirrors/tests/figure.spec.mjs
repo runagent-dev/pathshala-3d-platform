@@ -89,6 +89,55 @@ test('right-angle-mirrors: the three steps', async ({ page }) => {
   expect(log.errors).toEqual([]);
 });
 
+for (const [width, height] of [
+  [390, 700],
+  [390, 520],
+  [844, 390],
+  [640, 400],
+  [800, 500],
+  [1280, 800],
+]) {
+  test(`right-angle-mirrors: the action stays on one line at ${width}×${height}`, async ({ page }) => {
+    test.setTimeout(180_000);
+    await page.setViewportSize({ width, height });
+    const log = await preparePage(page);
+    const fig = await openFigure(page, 'right-angle-mirrors');
+    const f = fig.frame;
+    const rows = new Set();
+    for (const [step, stage] of /** @type {[string, number][]} */ ([
+      ['one', 0],
+      ['one', 1],
+      ['one', 2],
+      ['two', 0],
+      ['two', 1],
+      ['two', 2],
+      ['two', 3],
+      ['top', 0],
+      ['top', 1],
+      ['top', 2],
+      ['top', 3],
+      ['top', 4],
+    ])) {
+      await fig.call('set', { step, stage, animate: false });
+      await fig.advance(100);
+      const m = await f
+        .locator('.pvc-act-text')
+        .first()
+        .evaluate((el) => {
+          const r = document.createRange();
+          r.selectNodeContents(el);
+          const lines = new Set([...r.getClientRects()].map((q) => Math.round(q.top / 8)));
+          return { lines: lines.size, wide: el.scrollWidth - el.clientWidth };
+        });
+      expect(m.lines, `${step}${stage} is one line`).toBe(1);
+      expect(m.wide, `${step}${stage} fits`).toBeLessThanOrEqual(1); // a pixel of rounding
+      rows.add(Math.round((await f.locator('.pvc-act-row').boundingBox()).height));
+    }
+    expect([...rows].length, `the row keeps its height: ${[...rows]}`).toBe(1);
+    expect(log.errors).toEqual([]);
+  });
+}
+
 test('right-angle-mirrors: taps never run ahead of the student', async ({ page }) => {
   test.setTimeout(180_000);
   await page.setViewportSize({ width: 800, height: 500 });

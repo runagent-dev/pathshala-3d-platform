@@ -32,6 +32,13 @@ body.bg-transparent { background: transparent; }
 .ra .pvc-act-row { gap: 4px; }
 .ra .pvc-act-row .pvc-quiet[hidden] { display: none; }
 .ra .pvc-act-row .pvc-quiet + .pvc-quiet { margin-left: 0; }
+/* one line always: the row keeps its height, and the 3D view beside or above it never moves */
+.ra .pvc-act-text { white-space: nowrap; overflow-wrap: normal; }
+@container pvc-panel (max-width: 440px) {
+  .ra .pvc-act { gap: 6px; padding-right: 10px; font-size: 15.5px; }
+  .ra .pvc-act-row { gap: 0; }
+  .ra .pvc-act-row .pvc-quiet { min-width: 38px; }
+}
 @container pvc-panel (min-width: 340px) {
   .ra .pvc-act-row [data-act='replay'] > span { display: inline; font-size: 13px; }
   .ra .pvc-act-row [data-act='replay'] { padding: 0 4px; }
