@@ -123,7 +123,7 @@ test('reflection-amount: what he sees really changes with the angle', async ({ p
     await fig.call('set', { angle, animate: false });
     await fig.advance(300);
     return fig.frame.evaluate(() => {
-      const c = document.querySelector('.ra-eye canvas');
+      const c = /** @type {HTMLCanvasElement} */ (document.querySelector('.ra-eye canvas'));
       const g = c.getContext('2d');
       const d = g.getImageData(c.width * 0.42, c.height * 0.45, c.width * 0.16, c.height * 0.16).data;
       let sum = 0;

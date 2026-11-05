@@ -23,11 +23,11 @@ How much light a surface reflects depends on the angle: glass gives back 4–5 %
   The glass lies on a scissor jack between them and goes up toward the line from one to the other, so the light always meets it
   at the same point, half way, and tan θ = 20 cm ÷ depth under the line (`src/reading.js`). Moving the eye and the flower down
   is the same thing, but a real flower cannot move and an eye alone would have to travel over a metre to reach 85°.
-- **One action** (`কাচ ওপরে তোলো`, its ring on the jack, a tap on the glass or the jack): 30° → 60° → 80° → 87°, then down again.
+- **One action** (`কাচ ওপরে তোলো`, its ring on the jack's plate, a tap on the glass or the jack): 30° → 60° → 80° → 87°, then down again.
   The row of words goes to any stop and collects each stop's percent. A drag on the glass lifts it by hand, in whole degrees; arrow keys
   step it by 1° (Shift: 5°). The camera closes in as the glass rises (the frame follows it) and drops a little, so the subject stays large.
-- **The rays are thick in proportion to the light they carry** (`src/rays.js`): 4 px comes in and splits into R and 1 − R (thin
-  lines stop at 0.9 px). Crisp vector lines over the view from exact 3D points, like `reflection-laws` and `light-at-boundary`.
+- **The rays are thick in proportion to the light they carry** (`src/rays.js`): 6 px comes in and splits into R and 1 − R. A ray under
+  about 18 % stops at 1.1 px and fades instead (opacity down to 0.5), and the corner note says thin rays are drawn thicker than true. Crisp vector lines over the view from exact 3D points, like `reflection-laws` and `light-at-boundary`.
   The numbers are `percent()`, Fresnel for unpolarised light and n = 1.5: 4 % at 30°, 9 % at 60°, 39 % at 80°, 74 % at 87°.
 - **What he sees** is the picture in the corner: a real second pass from his eye, looking at the point of incidence. There R
   is worked out for each pixel by the same equations, in the shader, so near the far edge the glass is more of a mirror than near him,
@@ -39,8 +39,10 @@ How much light a surface reflects depends on the angle: glass gives back 4–5 %
   glass's plane is not reflected. A cost of about 20 more draw calls.
 - **The paper's parallax:** the paper really lies under the 3 cm slab, so the shader moves it by the refracted ray's path (Snell).
 - **The graph** in the panel is the same function, drawn at its real pixel size so its words stay 12 px. It is not shown at 390×520.
-- **The test:** the book's 4–5 % read at the scene's small angle; the glass rises in front of the student (both grew); the
-  picture from his eye alone, with rays and angles hidden until the answer; where the rest goes; the book's window. The kit scores numbers,
+- **The faint dashed line** from the eye to the flower is the line the glass rises toward; a thin dashed leader joins his eye to the picture `ছেলেটি যা দেখছে`.
+- **The test:** the amount at the scene's small angle (four single numbers); the glass rises with a dashed outline and rays of where it was (`আগে`) staying on the view (both grew);
+  the picture from his eye alone, large, at 30°, 60° or 85° at random; the percent that goes in, read off the reflected ray's label at 60°, 80° or 87°; and the window, as an
+  angle to the glass (5°, 30°, 60°, 90°: the trap is that 90° to the glass is 0° from the normal). The kit scores numbers,
   so the choices are places in a list. A browser test answers all five right, and one wrong.
 
 ## Honest stylisation

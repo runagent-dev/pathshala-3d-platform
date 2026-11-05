@@ -50,6 +50,7 @@ export const DEFAULTS = {
 
 const BOOK = { low: 4, high: 5, a: 80, b: 90 }; // the book's numbers
 const MARGINS = { top: 10, bottom: 8, side: 8 };
+const LIFT_FROM = 50; // the test's question on lifting the glass starts at this angle
 const INK = { ray: '#8a4f00', ti: '#1971c2', tr: '#2b8a3e', dark: '#2b3a4a' };
 const VIEW = { az: 20, elLow: 15, elHigh: 10 }; // lower as the glass comes up, so that its top keeps reading as a mirror
 const dirFrom = (az, el, out = new THREE.Vector3()) => {
@@ -57,8 +58,9 @@ const dirFrom = (az, el, out = new THREE.Vector3()) => {
   const e = THREE.MathUtils.degToRad(el);
   return out.set(Math.sin(a) * Math.cos(e), Math.sin(e), Math.cos(a) * Math.cos(e));
 };
-// the frame follows the glass: from its underside to above the boy's head, so that the view closes in as the glass comes up
-const FRAME = new THREE.Box3(new THREE.Vector3(-37, 0, -4), new THREE.Vector3(30, EYE_Y + 15, 4));
+// the frame follows the glass: from its underside to above the boy's head, so that the view closes in as the glass comes up.
+// The flower is whole in it; the back of the boy's head may leave the left edge.
+const FRAME = new THREE.Box3(new THREE.Vector3(-31, 0, -4), new THREE.Vector3(35, EYE_Y + 13.5, 4));
 
 export function createApp(root, options = {}) {
   const o = { ...DEFAULTS, ...options };
@@ -145,7 +147,7 @@ export function createApp(root, options = {}) {
     const g = setting.place(s.angle);
     rays.view.geo = g;
     rays.view.r = percent(shown()) / 100;
-    markPoint.set(0, g.plane - GLASS.thick - 0.6, 11);
+    markPoint.set(9, g.plane - GLASS.thick - 0.6, 11); // on the jack's plate, clear of the rays
     eyeDirty = true;
     for (const a of STOPS) if (Math.abs(s.angle - a) < 0.26 && !s.quiz) s.seen.add(a);
   }
@@ -190,9 +192,14 @@ export function createApp(root, options = {}) {
   let camK = 1;
   const camDir = new THREE.Vector3();
   function poseNow() {
-    const k = (s.angle - MIN_ANGLE) / (MAX_ANGLE - MIN_ANGLE);
+    const at = s.quiz?.frameAngle ?? s.angle;
+    const k = (at - MIN_ANGLE) / (MAX_ANGLE - MIN_ANGLE);
     dirFrom(VIEW.az, VIEW.elLow + (VIEW.elHigh - VIEW.elLow) * k, camDir);
-    FRAME.min.y = planeFor(s.angle) - 13;
+    FRAME.min.y = planeFor(at) - 10;
+    // beside the panel its tab lies on the view's right edge, so the flower stays clear of it
+    FRAME.max.x = root.clientWidth >= root.clientHeight ? 39 : 35;
+    // high up the glass leaves room below: the picture from his eye goes there, under the flower
+    MARGINS.bottom = 8 + 0.2 * stage.height * k;
     return fitPose({ box: FRAME, dir: camDir, camera, width: stage.width, height: stage.height, margin: MARGINS });
   }
   function applyCamera() {
@@ -260,14 +267,24 @@ export function createApp(root, options = {}) {
   // ── the picture from his eye: drawn into a corner of the canvas before the main pass, copied, and drawn over ──
   let eyeW = 1;
   let eyeH = 1;
+  let eyeLarge = false; // the test's question that is read off this picture alone
   function sizeEye() {
+    eyeBox.classList.toggle('big', eyeLarge);
+    eyeBox.style.width = eyeLarge ? `${Math.round(Math.min(stage.width - 16, ((stage.height - 40) * 4) / 3))}px` : '';
     const c = eyeCanvas.getBoundingClientRect();
+    const h = ui.canvasHost.getBoundingClientRect();
+    rays.view.to = eyeLarge ? null : { x: c.left - h.left, y: c.top - h.top + c.height * 0.5 };
     eyeW = Math.max(1, Math.round(c.width));
     eyeH = Math.max(1, Math.round(c.height));
     const r = stage.pixelRatio;
     eyeCanvas.width = Math.round(eyeW * r);
     eyeCanvas.height = Math.round(eyeH * r);
     eyeDirty = true;
+  }
+  function showEyeLarge(on) {
+    eyeLarge = on;
+    sizeEye();
+    stage.invalidate();
   }
   sizeEye();
   stage.onBeforeRender(() => {
@@ -336,6 +353,8 @@ export function createApp(root, options = {}) {
       { dx: -40, dy: -62 },
       { dx: -26, dy: -84 },
       { dx: -26, dy: -112 },
+      { dx: -66, dy: -14 },
+      { dx: -72, dy: -44 },
     ],
     normal: [
       { dx: 0, dy: -14 },
@@ -350,6 +369,10 @@ export function createApp(root, options = {}) {
       { dx: -46, dy: 16 },
       { dx: -56, dy: -6 },
       { dx: 44, dy: -18 },
+      { dx: -58, dy: 36 },
+      { dx: 62, dy: -36 },
+      { dx: -70, dy: 26 },
+      { dx: 72, dy: -24 },
     ],
     in: [
       { dx: 10, dy: -20 },
@@ -368,16 +391,20 @@ export function createApp(root, options = {}) {
       { dx: -74, dy: 4 },
       { dx: -56, dy: 36 },
       { dx: 56, dy: 40 },
+      { dx: -80, dy: 28 },
+      { dx: -66, dy: 50 },
     ],
     glass: [
-      { dx: -26, dy: 14 },
-      { dx: -34, dy: -8 },
-      { dx: 24, dy: 20 },
-      { dx: -22, dy: 36 },
-      { dx: 44, dy: 36 },
-      { dx: -48, dy: 30 },
-      { dx: -62, dy: 0 },
-      { dx: -8, dy: 46 },
+      { dx: -8, dy: 26 },
+      { dx: 18, dy: 28 },
+      { dx: -30, dy: 16 },
+      { dx: -8, dy: 44 },
+      { dx: 34, dy: 42 },
+    ],
+    before: [
+      { dx: 26, dy: 18 },
+      { dx: -26, dy: 18 },
+      { dx: 34, dy: -6 },
     ],
   };
   const P = new THREE.Vector3();
@@ -390,35 +417,32 @@ export function createApp(root, options = {}) {
     const plain = q && !q.named;
     const rayOn = rays.view.show;
     const half = (a * Math.PI) / 360;
+    const named = (stage.width >= 500 && stage.height > 400) || (a >= 50 && stage.height >= 300 && (t.lang === 'bn' || stage.width >= 500)); // the book's names too, where there is room for two lines
+    const angleOn = rayOn && !moving && !q?.hideAngle;
     label('normal', rayOn && !moving && !q, t('l_normal'), P.set(g.top.x, g.top.y, 0), INK.dark, SPOTS.normal);
     label('in', rayOn && !moving && !q, t('l_in'), mid(g.flower, g.hit, 0.3), INK.ray, SPOTS.in);
-    label('out', rayOn && !moving && !plain, q ? t('l_out_q') : t('l_out', { p: percent(a) }), mid(g.eye, g.hit, 0.3), INK.ray, SPOTS.out);
+    label('out', rayOn && !moving && (!plain || q?.showOut), t('l_out', { p: percent(a) }), mid(g.eye, g.hit, 0.3), INK.ray, SPOTS.out);
     // the angles are read at the arcs
     label(
       'ti',
-      rayOn && !moving && !q?.hideAngle,
-      t('l_ti', { a }),
+      angleOn,
+      t(named ? 'l_ti_long' : 'l_ti', { a }),
       P.set(g.hit.x + 9 * Math.sin(half), g.hit.y + 9 * Math.cos(half), 0),
       INK.ti,
       SPOTS.ti,
     );
     label(
       'tr',
-      rayOn && !moving && !q?.hideAngle,
-      t('l_tr', { a }),
+      angleOn,
+      t(named ? 'l_tr_long' : 'l_tr', { a }),
       P.set(g.hit.x - 9 * Math.sin(half), g.hit.y + 9 * Math.cos(half), 0),
       INK.tr,
       SPOTS.tr,
     );
-    label(
-      'ref',
-      rayOn && !moving && !plain,
-      q ? t('l_ref_q') : t('l_ref', { p: percentIn(a) }),
-      P.set(g.inside.x, g.inside.y, 0),
-      INK.ray,
-      SPOTS.ref,
-    );
-    label('glass', !moving && !q, t('l_glass'), P.set(-GLASS.halfX + 1.5, g.plane - GLASS.thick / 2, GLASS.halfZ), INK.dark, SPOTS.glass, true);
+    label('ref', rayOn && !moving && !plain, t('l_ref', { p: percentIn(a) }), P.set(g.inside.x, g.inside.y, 0), INK.ray, SPOTS.ref);
+    label('glass', !moving && !q, t('l_glass'), P.set(-8, g.plane - GLASS.thick, GLASS.halfZ), INK.dark, SPOTS.glass, true);
+    const old = rays.view.ghost;
+    label('before', Boolean(old) && !moving, t('l_before'), old ? P.set(GLASS.halfX, old.plane, GLASS.halfZ) : P, INK.dark, SPOTS.before);
     anno.update();
   }
   stage.onAfterRender(labels);
@@ -557,27 +581,29 @@ export function createApp(root, options = {}) {
   const notesOf = (pairs) => new Map(pairs.map(([k, v]) => [String(k), v]));
   function quizScene(q, angle) {
     stopRun();
-    setAngle(angle);
     s.quiz = { ...q, named: false };
+    rays.view.ghost = null;
+    setAngle(angle);
     clearAll();
     draw();
   }
+  const pick1 = (list) => shuffle(list)[0];
   const Q = {
     small() {
       quizScene({ kind: 'small' }, 30);
-      const wrong = ['half', 'most', 'all'];
-      const value = { low: { a: BOOK.low, b: BOOK.high }, half: { a: 50 }, most: { a: 95 }, all: { a: 100 } };
+      const wrong = [20, 50, 95];
       return {
         text: t('q_small'),
-        answer: 'low',
+        answer: BOOK.low,
         wrong,
-        label: (k) => t(`c_small_${k}`, value[k]),
-        notes: notesOf(wrong.map((k) => [k, t(`n_small_${k}`)])),
+        label: (k) => t('c_pct_about', { a: k }),
+        notes: notesOf(wrong.map((k) => [k, t(`n_small_${k}`, { big: 70 })])),
         reveal: t('a_small', { a: BOOK.low, b: BOOK.high }),
       };
     },
     lift() {
-      quizScene({ kind: 'lift', named: false, hideAngle: true }, 50);
+      quizScene({ kind: 'lift', hideAngle: true, frameAngle: LIFT_FROM }, LIFT_FROM);
+      rays.view.ghost = points(LIFT_FROM);
       s.quiz.grow = 76;
       const wrong = ['lessR', 'lessA', 'none'];
       return {
@@ -590,40 +616,47 @@ export function createApp(root, options = {}) {
       };
     },
     eye() {
-      quizScene({ kind: 'eye', hideAngle: true }, 85);
+      const answer = pick1([30, 60, 85]);
+      quizScene({ kind: 'eye', hideAngle: true }, answer);
       rays.view.show = false;
-      const wrong = [30, 45, 60];
+      showEyeLarge(true);
+      const wrong = [30, 60, 75, 85].filter((k) => k !== answer);
       return {
         text: t('q_eye'),
-        answer: 85,
+        answer,
         wrong,
         label: (k) => t('c_deg', { a: k }),
-        notes: notesOf(wrong.map((k) => [k, t('n_eye')])),
-        reveal: t('a_eye', { a: 85, b: BOOK.b }),
+        notes: notesOf(wrong.map((k) => [k, t(k > answer ? 'n_eye_more' : 'n_eye_less')])),
+        reveal: t(`a_eye_${answer}`, { a: answer, p: percent(answer) }),
       };
     },
     rest() {
-      quizScene({ kind: 'rest' }, 80);
-      const wrong = ['back', 'eye', 'gone'];
+      const angle = pick1([60, 80, 87]);
+      const p = percent(angle);
+      quizScene({ kind: 'rest', showOut: true }, angle);
       return {
-        text: t('q_rest', { p: percent(80) }),
-        answer: 'in',
-        wrong,
-        label: (k) => t(`c_rest_${k}`),
-        notes: notesOf(wrong.map((k) => [k, t(`n_rest_${k}`)])),
-        reveal: t('a_rest'),
+        text: t('q_rest'),
+        answer: 100 - p,
+        wrong: [p, 100, BOOK.low],
+        label: (k) => t('c_pct', { a: k }),
+        notes: notesOf([
+          [p, t('n_rest_same')],
+          [100, t('n_rest_all')],
+          [BOOK.low, t('n_rest_small', { a: BOOK.low })],
+        ]),
+        reveal: t('a_rest', { p, q: 100 - p, all: 100 }),
       };
     },
     window() {
       quizScene({ kind: 'window' }, 60);
-      const wrong = ['front', 'near', 'same'];
+      const wrong = [30, 60, 90];
       return {
         text: t('q_window'),
-        answer: 'side',
+        answer: 5,
         wrong,
-        label: (k) => t(`c_window_${k}`),
-        notes: notesOf(wrong.map((k) => [k, t(`n_window_${k}`, { a: BOOK.low, b: BOOK.high })])),
-        reveal: t('a_window', { a: BOOK.b }),
+        label: (k) => t('c_sight', { a: k }),
+        notes: notesOf(wrong.map((k) => [k, t(`n_window_${k}`, { a: 90 - k, p: percent(90 - k) })])),
+        reveal: t('a_window', { a: 5, b: 85 }),
       };
     },
   };
@@ -655,6 +688,8 @@ export function createApp(root, options = {}) {
         s.locked = false;
         s.quiz = null;
         rays.view.show = true;
+        rays.view.ghost = null;
+        showEyeLarge(false);
         s.seen = new Set(saved.seen);
         setAngle(saved.angle);
         clearAll();
@@ -664,6 +699,7 @@ export function createApp(root, options = {}) {
       },
       async prepare(i, alive, say) {
         rays.view.show = true;
+        showEyeLarge(false);
         const q = Q[order[i]]();
         qCurrent = q;
         say(q.text);
@@ -691,6 +727,7 @@ export function createApp(root, options = {}) {
           s.quiz.named = true;
           s.quiz.hideAngle = false;
           rays.view.show = true;
+          showEyeLarge(false);
         }
         stage.invalidate();
         const chosen = picked ? q.list[picked.value] : null;

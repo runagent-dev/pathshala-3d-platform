@@ -3,14 +3,15 @@
 // camera: even anti-aliased lines with a thin halo and small filled chevrons, at any size. The thickness of a ray is in
 // proportion to the light it carries: the incoming ray splits into the reflected and the refracted ray, and they add up to it.
 import * as THREE from 'three';
-import { fresnel, points, START_ANGLE } from './reading.js';
+import { fresnel, GLASS, points, START_ANGLE } from './reading.js';
 
 export const C = { ray: '#f59f00', edge: '#5f3400', normal: '#495057', ti: '#1971c2', tr: '#2b8a3e', glow: '#ffe36e' };
-const FULL = 4; // the thickness of the incoming ray, px
-const THINNEST = 0.9;
+const FULL = 6; // the thickness of the incoming ray, px
+const THINNEST = 1.1; // below this a line cannot be seen: a thin ray stays this wide, and fades instead (the corner note says so)
 const ARC = 8.5; // the radius of the angles, cm
 const NO_DASH = [];
 const DASH = [7, 5];
+const FINE = [4, 4];
 
 export function createRays({ stage, host }) {
   const canvas = document.createElement('canvas');
@@ -39,7 +40,7 @@ export function createRays({ stage, host }) {
     sy = ((1 - pv.y) / 2) * h;
   };
 
-  const v = { geo: points(START_ANGLE), show: true, angles: true, r: fresnel(START_ANGLE), shine: 0 };
+  const v = { geo: points(START_ANGLE), show: true, angles: true, r: fresnel(START_ANGLE), ghost: null, to: null };
   let unit = 1;
 
   function line(a, b, width, alpha, chevronAt, color = C.ray, edge = C.edge) {
@@ -119,6 +120,59 @@ export function createRays({ stage, host }) {
     ctx.lineWidth = 2;
     ctx.stroke();
   }
+  /** A thin ray of the given share of the light: as wide as it is, or the thinnest line, fainter by what is missing. */
+  const widthOf = (share) => Math.max(THINNEST, FULL * share);
+  const alphaOf = (share) => Math.min(1, Math.max(0.5, (FULL * share) / THINNEST));
+  /** A faint dashed line between two world points. */
+  function faint(a, b, alpha, dash = DASH) {
+    P(a.x, a.y, a.z);
+    ctx.beginPath();
+    ctx.moveTo(sx, sy);
+    P(b.x, b.y, b.z);
+    ctx.lineTo(sx, sy);
+    ctx.setLineDash(dash);
+    ctx.lineCap = 'butt';
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1.3;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.setLineDash(NO_DASH);
+  }
+  /** The thin dashed leader from his eye, round under the glass, to the picture of what he sees. */
+  function leader(g) {
+    P(g.eye.x, g.eye.y);
+    const x0 = sx;
+    const y0 = sy + 5;
+    const { x, y } = v.to;
+    ctx.beginPath();
+    ctx.moveTo(x0, y0);
+    ctx.quadraticCurveTo(x0 + (x - x0) * 0.42, Math.min(h - 6, Math.max(y, y0) + 54), x - 3, y);
+    ctx.setLineDash(FINE);
+    ctx.lineCap = 'butt';
+    ctx.globalAlpha = 0.85;
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+    ctx.setLineDash(NO_DASH);
+    ctx.beginPath();
+    ctx.arc(x - 3, y, 2.4, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+  /** Where the glass and the light were before (a question of the test): the outline of its top, and the rays. */
+  function past(g) {
+    const hx = GLASS.halfX;
+    const hz = GLASS.halfZ;
+    const y = g.plane;
+    faint({ x: -hx, y, z: hz }, { x: hx, y, z: hz }, 0.9);
+    faint({ x: hx, y, z: hz }, { x: hx, y, z: -hz }, 0.9);
+    faint({ x: hx, y, z: -hz }, { x: -hx, y, z: -hz }, 0.9);
+    faint({ x: -hx, y, z: -hz }, { x: -hx, y, z: hz }, 0.9);
+    faint(g.flower, g.hit, 0.7);
+    faint(g.hit, g.eye, 0.7);
+  }
   const from = { x: 0, y: 0, z: 0 };
   const to = { x: 0, y: 0, z: 0 };
 
@@ -128,6 +182,9 @@ export function createRays({ stage, host }) {
     if (!v.show) return;
     const g = v.geo;
     unit = Math.max(0.9, Math.min(1.25, Math.min(w, h) / 400));
+    faint(g.eye, g.flower, 0.5); // the line of his eye and the flower: the glass rises toward it
+    if (v.to) leader(g);
+    if (v.ghost) past(v.ghost);
     // the normal
     P(g.hit.x, g.hit.y);
     const nx = sx;
@@ -154,13 +211,13 @@ export function createRays({ stage, host }) {
     }
     const R = v.r;
     // the light inside the slab, then what leaves the point, then what comes to it
-    line(g.hit, g.inside, Math.max(THINNEST, FULL * (1 - R)), 0.95, 0.8);
+    line(g.hit, g.inside, widthOf(1 - R), alphaOf(1 - R), 0.8);
     // the ray from the flower starts at the edge of its heart
     from.x = g.flower.x + (g.hit.x - g.flower.x) * 0.16;
     from.y = g.flower.y + (g.hit.y - g.flower.y) * 0.16;
     to.x = g.eye.x + (g.hit.x - g.eye.x) * 0.03;
     to.y = g.eye.y + (g.hit.y - g.eye.y) * 0.03;
-    line(g.hit, to, Math.max(THINNEST, FULL * R), Math.min(1, 0.62 + R * 1.2), 0.56);
+    line(g.hit, to, widthOf(R), alphaOf(R), 0.56);
     line(from, g.hit, FULL, 1, 0.5);
     P(g.hit.x, g.hit.y);
     ctx.beginPath();
@@ -203,6 +260,7 @@ export function createRays({ stage, host }) {
     along(g.flower, g.hit);
     along(g.hit, g.eye);
     along(g.hit, g.top);
+    along(g.hit, g.inside);
     return out;
   }
   /** Where a world point is on the view, css px. */
