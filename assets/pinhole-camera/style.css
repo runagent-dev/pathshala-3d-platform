@@ -1,0 +1,106 @@
+/* The pinhole camera: the page, the result line, and the labels on the view, kept like the captions of a fine line drawing.
+   The panel is the kit's clean sheet (../../shared/lib/student/student.css). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+/* the result line */
+.ph .pvc-outcome { font-size: 15.5px; line-height: 1.5; min-height: 2.2em; }
+.ph .pvc-outcome b { font-size: 18px; font-weight: 600; color: var(--ink); }
+.ph .pvc-outcome .pvc-frac { margin: 0 0.25em; font-size: 12.5px; }
+
+/* the rule: the book's sentences */
+.ph .pvc-rule { font-size: 14.5px; line-height: 1.55; }
+.ph .pvc-rule b { color: var(--ink); }
+
+/* the book's caption: only where the panel has room for it */
+.ph .ph-cap { display: none; margin: 8px 0 0; padding-top: 12px; border-top: 1px solid var(--line, #dee2e6); color: var(--ink-2); font-size: 15px; line-height: 1.6; }
+.ph .ph-cap b { font-weight: 600; color: #1971c2; }
+
+/* the vector drawing over the view */
+.ph-draw { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+
+/* labels on the picture: a plain white tab, a thin line, no dot */
+.ph .pvc-anno { transition: none; font-size: 13px; font-weight: 600; color: var(--c); border: 0; border-radius: 4px; background: #fff; padding: 1px 6px; box-shadow: none; white-space: nowrap; }
+.ph .pvc-anno-lines line { stroke-width: 1.2; stroke: rgba(255, 255, 255, 0.9) !important; }
+.ph .pvc-anno-lines circle { display: none; }
+@media (max-width: 480px) {
+  .ph .pvc-anno { font-size: 12.5px; }
+}
+
+/* the note in a corner: what is drawn, not seen */
+.ph-note { position: absolute; left: 8px; bottom: 6px; z-index: 2; padding: 1px 6px; border-radius: 4px; background: rgba(255, 255, 255, 0.86); color: var(--ink-2); font-size: 11.5px; line-height: 1.4; pointer-events: none; white-space: nowrap; }
+.pvc[data-mode='quiz'] .ph-note { display: none; }
+
+/* the test */
+.ph .pvc-opt { padding: 0 3px; }
+.ph .pvc-q-text { font-size: 15px; }
+.ph .pvc-q-feedback { font-size: 14px; line-height: 1.5; }
+.ph-why { color: var(--ink-2); }
+
+/* phones held upright */
+@container pvc (max-width: 420px) {
+  .ph .pvc-learn { gap: 4px; }
+  .ph .pvc-examples button { min-height: 36px; padding: 1px 2px 3px; }
+  .ph .pvc-examples .pvc-ex-word { font-size: 14px; line-height: 1.2; white-space: nowrap; }
+  .ph .pvc-act-row { min-height: 46px; }
+  .ph .pvc-outcome { font-size: 15px; line-height: 28px; min-height: 0; height: 40px; }
+  .ph .pvc-rule { --pvc-rule-lines: 0; font-size: 14.5px; line-height: 21px; height: 86px; min-height: 0; overflow: hidden; }
+  .ph .pvc-q-ask { gap: 5px; }
+  .ph .pvc-q-text { font-size: 14px; line-height: 1.4; }
+  .ph .pvc-q-options { gap: 5px; }
+  .ph .pvc-opt { height: 40px; font-size: 13.5px; }
+  .ph .pvc-q-feedback { --pvc-q-feedback-min: 4lh; font-size: 13.5px; line-height: 1.4; }
+}
+/* the tightest phone (390 × 520) */
+@container pvc (max-width: 420px) and (max-height: 600px) {
+  .ph .pvc-rule { font-size: 12.5px; line-height: 16.5px; height: 68px; }
+  .ph .pvc-outcome { font-size: 13.5px; line-height: 22px; height: 34px; }
+  .ph .pvc-outcome b { font-size: 15px; }
+  .ph .pvc-q-ask { gap: 3px; }
+  .ph .pvc-q-head { min-height: 0; }
+  .ph .pvc-q-head .pvc-btn { height: 30px; }
+  .ph .pvc-q-text { font-size: 12.5px; line-height: 1.32; }
+  .ph .pvc-opt { height: 31px; font-size: 12.5px; }
+  .ph .pvc-q-options { gap: 3px; }
+  .ph .pvc-q-feedback { --pvc-q-feedback-min: 3lh; font-size: 12.5px; line-height: 1.32; }
+}
+/* the side panel beside the 3D view (280–400 px wide; only it is a container with a height) */
+@container pvc-panel (min-height: 1px) {
+  .ph .pvc-learn { gap: 8px; }
+  .ph .pvc-examples button { min-height: 40px; }
+  .ph .pvc-outcome { font-size: 14px; line-height: 1.4; }
+  .ph .pvc-outcome b { font-size: 15.5px; }
+  .ph .pvc-rule { font-size: 14px; line-height: 1.55; height: auto; overflow: visible; }
+  .ph .pvc-q-ask { gap: 6px; }
+  .ph .pvc-q-head .pvc-btn { height: 36px; }
+  .ph .pvc-q-text { font-size: 14px; }
+  .ph .pvc-q-options { gap: 5px; }
+  .ph .pvc-opt { font-size: 13.5px; height: 40px; }
+  .ph .pvc-q-feedback { font-size: 13.5px; line-height: 1.45; }
+}
+@container pvc-panel (min-height: 1px) and (max-height: 420px) {
+  .ph .pvc-rule { font-size: 13.5px; line-height: 1.45; }
+  .ph .pvc-learn { gap: 5px; }
+}
+/* a tall side panel (1280 × 800): larger, the book's size */
+@container pvc-panel (min-height: 620px) {
+  .ph .pvc-learn { gap: 14px; }
+  .ph .pvc-outcome { font-size: 16px; }
+  .ph .pvc-outcome b { font-size: 19px; }
+  .ph .pvc-rule { font-size: 16.5px; line-height: 1.65; }
+  .ph .ph-cap { display: block; }
+}
+
+/* the graph: only in a side panel with room for it */
+.ph .ph-graph { display: none; width: 100%; max-width: 320px; height: auto; margin: 2px 0 0; }
+.ph .ph-graph text { fill: var(--ink-2); font-size: 12px; }
+.ph .ph-graph .ph-line { stroke: #1971c2; stroke-width: 2.4; }
+.ph .ph-graph .ph-dot { fill: #f59f00; stroke: #5f3400; stroke-width: 1.4; }
+@container pvc-panel (min-height: 300px) {
+  .ph .ph-graph.on { display: block; max-height: 104px; }
+  .ph .ph-graph:not(.on) + .ph-cap { display: block; margin-top: 2px; padding-top: 8px; font-size: 13.5px; line-height: 1.5; }
+}
+@container pvc-panel (min-height: 460px) {
+  .ph .ph-graph.on { max-height: none; }
+}
