@@ -162,6 +162,8 @@
 .pvc-corner .pvc-seg { box-shadow: 0 1px 2px rgba(20, 30, 45, 0.06); }
 .pvc-corner .pvc-seg button { height: 36px; padding: 0 14px; font-size: 15px; }
 .pvc-corner .pvc-tool { height: 38px; width: 38px; padding: 0; justify-content: center; }
+/* back to the guided view: cross hairs and a word, so that it can't be taken for reset or for the rotate cue */
+.pvc-corner .pvc-tool.pvc-front { width: auto; padding: 0 10px 0 7px; gap: 4px; font-size: 14px; font-weight: 500; white-space: nowrap; }
 .pvc-stage[data-ui='simple'] .pvc-hint { top: auto; bottom: 10px; transform: translate(-50%, 4px); }
 .pvc-stage[data-ui='simple'] .pvc-hint.show { transform: translate(-50%, 0); }
 .pvc[data-ui='simple'] .pvc-lens-zoom, .pvc[data-ui='simple'] .pvc-lens-pin { display: none; }
@@ -330,8 +332,9 @@
 .pvc-rc[hidden] { display: none; }
 .pvc-rc-top-left { left: 8px; top: 8px; }
 .pvc-rc-bottom-right { right: 8px; bottom: 8px; }
+.pvc-rc-deg { font-weight: 600; }
 .pvc .pvc-rc svg { display: block; flex: none; width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.1; stroke-linecap: round; stroke-linejoin: round; }
-.pvc-rc.used { padding: 3px; opacity: 0.66; }
+.pvc-rc.used { padding: 3px 8px 3px 5px; opacity: 0.78; }
 .pvc-rc.used .pvc-rc-word { display: none; }
 .pvc-rc.pulse svg { animation: pvc-rc-rock 2.6s ease-in-out infinite; }
 @keyframes pvc-rc-rock { 0%, 60%, 100% { transform: rotate(0deg); } 30% { transform: rotate(-38deg); } }

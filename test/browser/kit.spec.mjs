@@ -250,7 +250,7 @@ test('rotate cue: a full orbit; a tap is not a turn, a move of 8 px is; the word
     controls.enableZoom = false;
     let turns = 0;
     let canTurn = true;
-    const cue = createRotateCue(stage, { layer: ui.stage, label: 'turn me', onTurn: () => turns++, when: () => canTurn });
+    const cue = createRotateCue(stage, { layer: ui.stage, short: '৩৬০°', label: 'turn me', onTurn: () => turns++, when: () => canTurn });
     const orbit = [
       controls.minAzimuthAngle,
       controls.maxAzimuthAngle,
@@ -270,6 +270,7 @@ test('rotate cue: a full orbit; a tap is not a turn, a move of 8 px is; the word
     host.dispatchEvent(new PointerEvent('pointermove', { ...at, clientX: 150 }));
     host.dispatchEvent(new PointerEvent('pointerup', at));
     const d = stage.camera.position.distanceTo(controls.target);
+    const small = cue.el.textContent.includes('৩৬০°') && getComputedStyle(cue.el.querySelector('.pvc-rc-deg')).display !== 'none';
     const held = { turns, word: word(), held: cue.held, near: controls.minDistance / d, far: controls.maxDistance / d };
     cue.home();
     const home = { held: cue.held, near: controls.minDistance, far: controls.maxDistance };
@@ -281,17 +282,40 @@ test('rotate cue: a full orbit; a tap is not a turn, a move of 8 px is; the word
     canTurn = false;
     await new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)));
     const hidden = getComputedStyle(cue.el).display;
-    return { orbit, tap, held, home, inTest, wheel: turns - wheelFirst, hidden };
+    return { orbit, tap, held, small, home, inTest, wheel: turns - wheelFirst, hidden };
   });
   expect(r.orbit).toEqual([Number.NEGATIVE_INFINITY, null, 88, true, true].map((x) => (x === null ? Number.POSITIVE_INFINITY : x)));
   expect(r.tap).toEqual({ turns: 0, word: true, held: false });
   expect(r.held).toMatchObject({ turns: 1, word: false, held: true });
+  expect(r.small).toBe(true); // never the arrow alone
   expect(r.held.near).toBeCloseTo(0.6, 5);
   expect(r.held.far).toBeCloseTo(1.8, 5);
   expect(r.home).toEqual({ held: false, near: 0, far: Number.POSITIVE_INFINITY });
   expect(r.inTest).toBe('none');
   expect(r.wheel).toBe(1);
   expect(r.hidden).toBe('none');
+  expect(errors).toEqual([]);
+});
+
+test('front view button (side layout): cross hairs and a word, not a circular arrow', async ({ page }) => {
+  const errors = await openKit(page, { width: 844, height: 390 });
+  await shellWithStage(page, { layout: 'side' });
+  const r = await page.evaluate(() => {
+    const { ICONS } = /** @type {any} */ (window).kit;
+    const { ui } = /** @type {any} */ (window).t;
+    const b = ui.$('[data-view="front"]');
+    b.hidden = false;
+    return {
+      word: b.textContent.trim(),
+      same: b.querySelector('svg').outerHTML === ICONS.reset,
+      front: b.innerHTML.includes('M12 2.5v4'),
+      wide: b.getBoundingClientRect().width,
+    };
+  });
+  expect(r.word).toBe('view_front_short');
+  expect(r.same).toBe(false);
+  expect(r.front).toBe(true);
+  expect(r.wide).toBeGreaterThan(38);
   expect(errors).toEqual([]);
 });
 

@@ -282,10 +282,11 @@ gentle pulse until the first drag; then it stays, smaller and calm.
 - `rearm()`: the first-time look again (after a reset). Under `prefers-reduced-motion` there is no pulse.
 
 ### `rotatecue.js` (the view turns all the way round, kit 1.7.0)
-`createRotateCue(stage, options)` → `{ el, held, markUsed, rearm, home, dispose }`. A dark pill in a corner of the stage with
-a circular arrow and words until the first turn, then only the arrow, which stays. It sets up the orbit too: no azimuth limits,
+`createRotateCue(stage, options)` → `{ el, held, markUsed, rearm, home, dispose }`. A dark pill in a corner of the stage: "⟲ ৩৬০°
+ঘুরিয়ে দেখো" until the first turn, then "⟲ ৩৬০°", which stays. Never the arrow alone: a plain circular arrow means reset. It sets up the orbit too: no azimuth limits,
 `polar` (degrees, default `[5, 88]`, so the camera stays above the table), zoom and damping on.
-- `label`: the words from the figure's i18n (`rotate_me: '৩৬০° ঘুরিয়ে দেখো'`). `compact: true`: only the arrow from the start.
+- `short`: always shown beside the arrow (`` `${t.num(360)}°` ``). `label`: the words after it (`rotate_me: 'ঘুরিয়ে দেখো'`).
+  `compact: true`: no words from the start.
   `pulse: Boolean(o.coach)`: the arrow rocks gently until the first turn. `when: () => boolean`: read every frame; no
   badge where the camera cannot turn.
 - `onTurn`: called when the student really turns the view: 8 px of movement or the wheel, never a bare tap (OrbitControls

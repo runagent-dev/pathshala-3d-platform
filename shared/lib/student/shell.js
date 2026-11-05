@@ -147,7 +147,7 @@ export function bindCleanSheet(learn) {
 export function buildStudentShell(root, t, { learn = '', learnAlign = 'spread', layout = 'stack' } = {}) {
   const side = layout === 'side';
   const viewButtons = side
-    ? `<button class="pvc-tool icon-only" data-view="front" hidden title="${t('view_front_short')}" aria-label="${t('view_front_short')}">${ICONS.reset}</button>`
+    ? `<button class="pvc-tool pvc-front" data-view="front" hidden title="${t('view_front_short')}" aria-label="${t('view_front_short')}">${ICONS.front}<span>${t('view_front_short')}</span></button>`
     : `<div class="pvc-seg" role="group" aria-label="${t('view')}">
           <button data-view="front">${t('view_front_short')}</button>
           <button data-view="3d">${t('view_rotate')}</button>

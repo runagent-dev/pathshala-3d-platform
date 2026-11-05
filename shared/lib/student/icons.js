@@ -28,7 +28,9 @@ export const ICONS = {
   check: svg('<path d="M5 12.5l4.5 4.5L19 7.5"/>'),
   // the bundled Noto Sans Bengali has no ✓ ✗ → glyphs: use check, close and arrowR in the student's text
   arrowR: svg('<path d="M4 12h15M13.5 6.5L19 12l-5.5 5.5"/>'),
-  // the view turned all the way round: a circular arrow (createRotateCue)
+  // the front view (the kit's সামনে button): cross hairs, because a circular arrow means reset here
+  front: svg('<circle cx="12" cy="12" r="6.5"/><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4"/><circle cx="12" cy="12" r="1.7" class="fill"/>'),
+  // the view turned all the way round: a circular arrow (createRotateCue, always with ৩৬০°: a plain arrow means reset)
   orbit: svg('<path d="M4.5 12a7.5 7.5 0 1 0 2.4-5.5"/><path d="M4 3.5v4.6h4.6"/>'),
   // a part dragged sideways (for an action whose part the student drags: createAction({ icon: ICONS.drag }))
   drag: svg('<path d="M3.5 12h17M7 8.5 3.5 12 7 15.5M17 8.5l3.5 3.5-3.5 3.5"/><circle cx="12" cy="12" r="2.2" class="fill"/>'),

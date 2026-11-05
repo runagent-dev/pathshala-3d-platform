@@ -1,9 +1,11 @@
-// The view can be turned all the way round, and the student is told so: a dark pill in a corner of the stage with a circular
-// arrow and words, until the first turn; then only the arrow, which stays. It looks nothing like a white drag handle.
+// The view can be turned all the way round, and the student is told so: a dark pill in a corner of the stage, "⟲ ৩৬০° ঘুরিয়ে
+// দেখো" until the first turn, then "⟲ ৩৬০°", which stays. Never the arrow alone: a plain circular arrow means reset. It
+// looks nothing like a white drag handle.
 //
 //   const rotate = createRotateCue(stage, {
 //     layer: ui.stage,                       // where the badge goes (default: the canvas host's parent)
-//     label: t('rotate_me'),                 // the words, shown until the first turn: '৩৬০° ঘুরিয়ে দেখো'
+//     short: `${t.num(360)}°`,               // always shown, beside the arrow
+//     label: t('rotate_me'),                 // the words after it, until the first turn: 'ঘুরিয়ে দেখো'
 //     pulse: Boolean(o.coach),               // the arrow rocks gently until the first turn
 //     when: () => canTurn(),                 // read every frame: no badge where the camera cannot turn
 //     polar: [5, 88],                        // degrees from straight overhead: the camera stays above the table
@@ -16,11 +18,11 @@
 // It also sets the orbit up: no azimuth limits, the polar limits, zoom on, damping on. OrbitControls says `start` on a bare
 // tap too, so `onTurn` waits for 8 px of movement (or the wheel). Zoom limits apply only while the student holds the
 // view, so a guided flight is never clamped by them. Hidden during the test (`.pvc[data-mode="quiz"]`). `compact: true` starts
-// with the arrow alone.
+// without the words.
 import { ICONS } from './icons.js';
 
 /**
- * @typedef {{ layer?: HTMLElement | null, label?: string, compact?: boolean, pulse?: boolean, polar?: [number, number],
+ * @typedef {{ layer?: HTMLElement | null, short?: string, label?: string, compact?: boolean, pulse?: boolean, polar?: [number, number],
  *             zoom?: [number, number], onTurn?: (() => any) | null, when?: (() => boolean) | null,
  *             at?: 'top-left' | 'bottom-right' }} Options
  */
@@ -34,7 +36,18 @@ const RAD = Math.PI / 180;
  */
 export function createRotateCue(
   stage,
-  { layer = null, label = '', compact = false, pulse = false, polar = [5, 88], zoom = [0.6, 1.8], onTurn = null, when = null, at = 'top-left' } = {},
+  {
+    layer = null,
+    short = '360°',
+    label = '',
+    compact = false,
+    pulse = false,
+    polar = [5, 88],
+    zoom = [0.6, 1.8],
+    onTurn = null,
+    when = null,
+    at = 'top-left',
+  } = {},
 ) {
   const { controls, camera, canvas } = stage;
   controls.minAzimuthAngle = Number.NEGATIVE_INFINITY;
@@ -47,7 +60,8 @@ export function createRotateCue(
   const host = canvas.parentElement;
   const el = document.createElement('div');
   el.className = `pvc-rc pvc-rc-${at}`;
-  el.innerHTML = `${ICONS.orbit}${label ? '<span class="pvc-rc-word"></span>' : ''}`;
+  el.innerHTML = `${ICONS.orbit}<b class="pvc-rc-deg"></b>${label ? '<span class="pvc-rc-word"></span>' : ''}`;
+  el.querySelector('.pvc-rc-deg').textContent = short;
   el.setAttribute('aria-hidden', 'true'); // the stage's own label says it; the badge only shows it
   el.classList.toggle('pulse', pulse);
   const word = el.querySelector('.pvc-rc-word');
@@ -108,7 +122,7 @@ export function createRotateCue(
     get held() {
       return held;
     },
-    /** Only the icon from now on. A turn does it. */
+    /** No words from now on. A turn does it. */
     markUsed,
     /** The word again (the figure was reset). */
     rearm() {
