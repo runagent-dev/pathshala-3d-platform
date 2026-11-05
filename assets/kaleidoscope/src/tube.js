@@ -15,6 +15,8 @@ const { L, s: SIDE, r: R } = TUBE;
 const T = 0.22; // the glass
 const P = 0.07; // the paper round it
 const BEAD_X = L - 0.2; // the bodies lie on the paper
+const EXPOSE = 1.45; // the eye opens up in a dark tube: the same ratios between the cells, a brighter whole
+const OVER = 1.2; // a piece is drawn this much larger than the round body that rolls: glass lies a little over glass
 const SPIN = [0, (-2 * Math.PI) / 3, (2 * Math.PI) / 3]; // from the bottom wall to each wall, about the axis
 export const AXIS_Y = R + T + P + 0.03; // the height of the axis over the table: the tube lies on its paper
 const RT_HALF = SIDE * 0.52; // half the square of the far end's picture
@@ -79,6 +81,42 @@ function tissueTexture() {
   t.minFilter = THREE.LinearFilter;
   return t;
 }
+/**
+ * The far end as the eye sees it, with the light coming through: warm in the middle, with soft blots where the thin paper is
+ * thicker. Only for the small picture.
+ */
+function backlightTexture() {
+  const c = document.createElement('canvas');
+  c.width = 256;
+  c.height = 256;
+  const g = c.getContext('2d');
+  const r = g.createRadialGradient(128, 118, 6, 128, 128, 170);
+  r.addColorStop(0, '#fffbe9');
+  r.addColorStop(0.5, '#ffedc4');
+  r.addColorStop(1, '#f6c98a');
+  g.fillStyle = r;
+  g.fillRect(0, 0, 256, 256);
+  let seed = 23;
+  const rnd = () => {
+    seed = (seed * 16807) % 2147483647;
+    return seed / 2147483647;
+  };
+  for (const tint of ['255,150,120', '150,210,235', '255,205,110', '215,165,235', '150,225,190', '255,150,120']) {
+    const x = rnd() * 256;
+    const y = rnd() * 256;
+    const q = 50 + rnd() * 50;
+    const b = g.createRadialGradient(x, y, 2, x, y, q);
+    b.addColorStop(0, `rgba(${tint},0.42)`);
+    b.addColorStop(1, `rgba(${tint},0)`);
+    g.fillStyle = b;
+    g.fillRect(0, 0, 256, 256);
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.generateMipmaps = false;
+  t.minFilter = THREE.LinearFilter;
+  return t;
+}
 /** A round soft spot: the colour a piece of glass throws on the paper. */
 function glowTexture() {
   const c = document.createElement('canvas');
@@ -86,8 +124,8 @@ function glowTexture() {
   c.height = 64;
   const g = c.getContext('2d');
   const r = g.createRadialGradient(32, 32, 2, 32, 32, 32);
-  r.addColorStop(0, 'rgba(255,255,255,0.6)');
-  r.addColorStop(0.6, 'rgba(255,255,255,0.34)');
+  r.addColorStop(0, 'rgba(255,255,255,0.5)');
+  r.addColorStop(0.6, 'rgba(255,255,255,0.26)');
   r.addColorStop(1, 'rgba(255,255,255,0)');
   g.fillStyle = r;
   g.fillRect(0, 0, 64, 64);
@@ -97,28 +135,27 @@ function glowTexture() {
   return t;
 }
 
-// The bodies are coloured glass with light behind them. Their shading is baked: bright through the middle, dark toward the rim,
-// with a small white glint; a basic material then needs no lights, here or in the small picture.
-function bake(geo, glintDir) {
+// The bodies are coloured glass with light behind them, so they do not shine: they filter. What comes through a piece is the
+// light behind it times its colour, raised to how much glass the light crosses (Beer–Lambert): pale and soft at the thin rim,
+// deep where it is thick, and a little clearer in the very middle, where a rounded piece gathers the light. So a piece needs
+// no lights and no white highlights, and where two pieces overlap their colours multiply, as real glass does.
+function bake(geo) {
   const nor = geo.attributes.normal;
   const n = nor.count;
-  const col = new Float32Array(n * 3);
-  const glint = new Float32Array(n);
+  const thick = new Float32Array(n);
   const v = new THREE.Vector3();
+  const step = (a, b, x) => {
+    const k = Math.min(1, Math.max(0, (x - a) / (b - a)));
+    return k * k * (3 - 2 * k);
+  };
   for (let i = 0; i < n; i++) {
     v.fromBufferAttribute(nor, i);
-    const face = Math.max(0, -v.x);
-    const f = 0.42 + 0.78 * face ** 1.4;
-    col[i * 3] = f;
-    col[i * 3 + 1] = f;
-    col[i * 3 + 2] = f;
-    glint[i] = Math.min(0.9, Math.max(0, v.dot(glintDir)) ** 16 * 1.2);
+    const f = Math.max(0, -v.x);
+    thick[i] = 0.08 + 0.92 * step(0, 0.5, f) - 0.5 * step(0.55, 1, f);
   }
-  geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
-  geo.setAttribute('aGlint', new THREE.BufferAttribute(glint, 1));
+  geo.setAttribute('aThick', new THREE.BufferAttribute(thick, 1));
   return geo;
 }
-const GLINT = new THREE.Vector3(-0.72, 0.5, -0.48).normalize();
 function stoneGeometry() {
   const g = new THREE.IcosahedronGeometry(1, 1);
   const pos = g.attributes.position;
@@ -132,31 +169,42 @@ function stoneGeometry() {
     pos.setXYZ(i, x * k * 0.5, y * k, z * k);
   }
   g.computeVertexNormals();
-  return bake(g, GLINT);
+  return bake(g);
 }
 function beadGeometry() {
-  return bake(new THREE.TorusGeometry(0.64, 0.36, 8, 16).rotateY(Math.PI / 2), GLINT);
+  return bake(new THREE.TorusGeometry(0.66, 0.34, 10, 20).rotateY(Math.PI / 2));
 }
 function bangleGeometry() {
   const arc = 1.5;
   const R0 = 1.5;
-  const g = new THREE.TorusGeometry(R0, 0.2, 6, 12, arc).rotateZ(-arc / 2 + Math.PI / 2).translate(0, -R0 * Math.cos(arc / 4), 0);
+  const g = new THREE.TorusGeometry(R0, 0.22, 8, 16, arc).rotateZ(-arc / 2 + Math.PI / 2).translate(0, -R0 * Math.cos(arc / 4), 0);
   g.rotateY(Math.PI / 2);
-  return bake(g, GLINT);
+  return bake(g);
 }
 function glassMaterial() {
-  const m = new THREE.MeshBasicMaterial({ name: 'ColouredGlass', vertexColors: true });
+  const m = new THREE.MeshBasicMaterial({
+    name: 'ColouredGlass',
+    transparent: true,
+    depthWrite: false,
+    toneMapped: false,
+    blending: THREE.CustomBlending,
+    blendEquation: THREE.AddEquation,
+    blendSrc: THREE.DstColorFactor, // what is behind × what the glass lets through
+    blendDst: THREE.ZeroFactor,
+    blendSrcAlpha: THREE.ZeroFactor,
+    blendDstAlpha: THREE.OneFactor,
+  });
   m.onBeforeCompile = (sh) => {
-    sh.vertexShader = `attribute float aGlint;\nvarying float vGlint;\n${sh.vertexShader}`.replace(
+    sh.vertexShader = `attribute float aThick;\nvarying float vThick;\n${sh.vertexShader}`.replace(
       '#include <begin_vertex>',
-      '#include <begin_vertex>\n  vGlint = aGlint;',
+      '#include <begin_vertex>\n  vThick = aThick;',
     );
-    sh.fragmentShader = `varying float vGlint;\n${sh.fragmentShader}`.replace(
+    sh.fragmentShader = `varying float vThick;\n${sh.fragmentShader}`.replace(
       '#include <color_fragment>',
-      '#include <color_fragment>\n  diffuseColor.rgb = mix(diffuseColor.rgb, vec3(1.0), vGlint);',
+      '#include <color_fragment>\n  diffuseColor.rgb = pow(max(diffuseColor.rgb, vec3(0.012)), vec3(max(vThick, 0.0)));',
     );
   };
-  m.customProgramCacheKey = () => 'kld-glass-1';
+  m.customProgramCacheKey = () => 'kld-glass-2';
   return m;
 }
 
@@ -189,13 +237,33 @@ export function createTube({ shadow }) {
       roughness: 0.06,
       metalness: 0.1,
       transparent: true,
-      opacity: 0.2,
-      envMapIntensity: 2.2,
+      opacity: 0.13,
+      envMapIntensity: 2.4,
       depthWrite: false,
     }),
   );
   glass.name = 'GlassStrips';
   glass.renderOrder = 20;
+  // the dark paper behind the glass, as a real one has it, lit from the far end: the strips read as glass, not as cardboard
+  const backing = mergeGeometries(
+    [0, 2].map((j) => new THREE.BoxGeometry(L, 0.012, sideOut * 0.97, 10, 1, 1).translate(L / 2, -(outer - 0.008), 0).rotateX(SPIN[j])),
+  );
+  {
+    const pos = backing.attributes.position;
+    const col = new Float32Array(pos.count * 3);
+    const near = new THREE.Color('#12171c');
+    const far = new THREE.Color('#4f6068');
+    const c = new THREE.Color();
+    for (let i = 0; i < pos.count; i++) {
+      c.lerpColors(near, far, (pos.getX(i) / L) ** 2.2);
+      col[i * 3] = c.r;
+      col[i * 3 + 1] = c.g;
+      col[i * 3 + 2] = c.b;
+    }
+    backing.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  }
+  const liner = new THREE.Mesh(backing, new THREE.MeshStandardMaterial({ name: 'DarkBacking', vertexColors: true, roughness: 0.42, metalness: 0.1 }));
+  liner.name = 'DarkBacking';
   // the bare edges of the glass, faint green
   const rims = [];
   for (let j = 0; j < 3; j++) {
@@ -238,7 +306,7 @@ export function createTube({ shadow }) {
   end.computeVertexNormals();
   const tissue = new THREE.Mesh(end, new THREE.MeshBasicMaterial({ name: 'ThinPaper', map: tissueMap, side: THREE.DoubleSide, toneMapped: false }));
   tissue.name = 'ThinPaper';
-  body.add(wrap, edge, tape, tissue, glass);
+  body.add(wrap, liner, edge, tape, tissue, glass);
 
   // ── the bodies ──────────────────────────────────────────────────────────────────────────────────────────────
   const beads = createBeads();
@@ -260,14 +328,35 @@ export function createTube({ shadow }) {
   const cellScene = new THREE.Scene();
   const paperQuad = new THREE.Mesh(
     new THREE.PlaneGeometry(RT_HALF * 2.4, RT_HALF * 2.4).rotateY(-Math.PI / 2).translate(L + 0.3, RT_MID, 0),
-    new THREE.MeshBasicMaterial({ map: tissueMap, toneMapped: false }),
+    new THREE.MeshBasicMaterial({ map: backlightTexture(), toneMapped: false }),
   );
+  paperQuad.renderOrder = -2;
   cellScene.add(paperQuad);
+  // the join of two strips: a faint dark line along each edge of the cell, so it comes out in every cell, exactly on the seams
+  {
+    const shape = new THREE.Shape(CORNERS.map((c) => new THREE.Vector2(c[0] * 1.03, c[1] * 1.03)));
+    shape.holes.push(new THREE.Path(CORNERS.map((c) => new THREE.Vector2(c[0] * 0.982, c[1] * 0.982))));
+    const seam = new THREE.Mesh(
+      new THREE.ShapeGeometry(shape).rotateY(-Math.PI / 2).translate(L - 0.6, 0, 0),
+      new THREE.MeshBasicMaterial({
+        color: '#33261a',
+        transparent: true,
+        opacity: 0.32,
+        side: THREE.DoubleSide,
+        depthTest: false,
+        depthWrite: false,
+        toneMapped: false,
+      }),
+    );
+    seam.renderOrder = 5;
+    cellScene.add(seam);
+  }
   for (const p of parts) {
     const copy = new THREE.InstancedMesh(p.mesh.geometry, glassBody, p.ids.length);
     copy.instanceMatrix = p.mesh.instanceMatrix;
     copy.instanceColor = p.mesh.instanceColor;
     copy.frustumCulled = false;
+    copy.renderOrder = 2; // over the soft colour they throw on the paper
     cellScene.add(copy);
   }
   const glows = new THREE.InstancedMesh(
@@ -304,7 +393,7 @@ export function createTube({ shadow }) {
         const a = beads.angle[id];
         const c = Math.cos(a);
         const n = Math.sin(a);
-        const r = beads.radius[id];
+        const r = beads.radius[id] * OVER;
         // turned about the axis, sizes in cm; the tube's u is z, its v is y
         e[0] = r;
         e[1] = 0;
@@ -324,7 +413,7 @@ export function createTube({ shadow }) {
     }
     mx.identity();
     for (let i = 0; i < PIECES.length; i++) {
-      const r = beads.radius[i] * 1.28;
+      const r = beads.radius[i] * 1.75;
       e[0] = r;
       e[5] = r;
       e[10] = r;
@@ -343,7 +432,7 @@ export function createTube({ shadow }) {
       target.setSize(size, size);
       dirty = true;
     }
-    if (!dirty || !lat.visible) return;
+    if (!dirty || !(lat.visible || ghostOn)) return;
     dirty = false;
     const before = renderer.getRenderTarget();
     renderer.setRenderTarget(target);
@@ -369,7 +458,7 @@ export function createTube({ shadow }) {
         const w = uvOf(CORNERS[c.corners[q]]);
         uv[at * 2] = w[0];
         uv[at * 2 + 1] = w[1];
-        const b = brightness(v, c.crossings);
+        const b = EXPOSE * brightness(v, c.crossings);
         col[at * 3] = b;
         col[at * 3 + 1] = b;
         col[at * 3 + 2] = b;
@@ -425,24 +514,32 @@ export function createTube({ shadow }) {
     depthWrite: false,
     toneMapped: false,
   });
-  let ghost = null;
-  /** The cells to hang beside the tube, in order; show(k) shows the first k. */
+  let ghosts = [];
+  let ghostOn = false;
+  /** The cells to hang beside the tube, in order. */
   function setGhosts(list) {
-    ghost = mesh(list, ghostMat);
-    ghost.name = 'CellGhosts';
-    ghost.geometry.setDrawRange(0, 0);
-    ghost.renderOrder = 15;
-    ghost.visible = false;
-    root.add(ghost);
+    ghosts = list.map((c, i) => {
+      const m = mesh([c], ghostMat.clone());
+      m.name = `CellGhost${i + 1}`;
+      m.renderOrder = 15;
+      m.visible = false;
+      root.add(m);
+      return m;
+    });
   }
-  function showGhosts(k) {
-    if (!ghost) return;
-    ghost.visible = k > 0;
-    ghost.geometry.setDrawRange(0, 3 * k);
-    if (k > 0) lat.visible = true; // keeps the small picture drawn; the cells themselves stay clear
+  /** How far each hanging cell has come, 0 … 1. */
+  function showGhosts(levels) {
+    ghostOn = false;
+    ghosts.forEach((m, i) => {
+      const a = levels[i] ?? 0;
+      m.visible = a > 0;
+      m.material.opacity = 0.78 * a;
+      if (a > 0) ghostOn = true;
+    });
   }
 
   let peek = 0;
+  let mask = 0;
   /** 0 the tube from outside, 1 the eye at the tube, everything seen is the reflected view. */
   function setPeek(k) {
     peek = k;
@@ -450,9 +547,9 @@ export function createTube({ shadow }) {
     latMat.opacity = a;
     darkMat.opacity = a;
     dark.visible = a > 0;
-    lat.visible = a > 0 || Boolean(ghost?.visible);
-    lat.material.visible = a > 0;
+    lat.visible = a > 0;
     body.visible = a < 1;
+    mask = a;
   }
   function setPhi(phi) {
     root.rotation.x = phi;
@@ -472,9 +569,9 @@ export function createTube({ shadow }) {
     for (const p of c.children)
       if (p.isInstancedMesh) {
         const g = p.geometry.clone();
-        g.deleteAttribute('aGlint');
+        g.deleteAttribute('aThick');
         p.geometry = g;
-        p.material = new THREE.MeshStandardMaterial({ name: `${p.name}-glass`, vertexColors: true, roughness: 0.25 });
+        p.material = new THREE.MeshStandardMaterial({ name: `${p.name}-glass`, roughness: 0.25 });
       }
     out.add(c);
     return out;
@@ -496,6 +593,9 @@ export function createTube({ shadow }) {
     exportModel,
     get peek() {
       return peek;
+    },
+    get mask() {
+      return mask;
     },
   };
 }

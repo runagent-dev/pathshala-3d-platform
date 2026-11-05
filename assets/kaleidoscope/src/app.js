@@ -33,6 +33,7 @@ import {
   stripAngle,
   stripView,
   traceWedge,
+  thirdAngle,
   TUBE,
   WEDGE,
   wedgeAngle,
@@ -89,9 +90,15 @@ const AT = {
   down: toward(90),
 };
 const THIRD = (2 * Math.PI) / 3;
+const NO_GHOSTS = [0, 0, 0];
 const TURN_START = 0.7; // where the turning handle starts on its ring, radians clockwise from the top
 const rad = (d) => (d * Math.PI) / 180;
 const TILT = { az: -44, el: 20 };
+// how long things take, seconds: slow enough to follow (the owner: a lab must not finish before the student understands)
+const FLY = 1.5; // a camera flight
+const SEGMENT = 1.2; // a stretch of a ray
+const FADE = 1; // something coming in
+const HOLD = 1; // a look at the result before anything else can change
 
 export function createApp(root, options = {}) {
   const o = { ...DEFAULTS, ...options };
@@ -109,8 +116,11 @@ export function createApp(root, options = {}) {
     layout: 'side',
     learn: cleanSheet(t, {
       examples: { label: 'ex_label', items: STEPS.map((id) => ({ id, label: `ex_${id}` })) },
-      quiet: [{ act: 'home', label: 'act_home', icon: ICONS.reset }],
-      lines: { action: 1, outcome: 1, rule: 4 },
+      quiet: [
+        { act: 'replay', label: 'act_replay', icon: ICONS.play },
+        { act: 'home', label: 'act_home', icon: ICONS.reset },
+      ],
+      lines: { action: 2, outcome: 1, rule: 4 },
     }),
     learnAlign: 'start',
   });
@@ -156,8 +166,13 @@ export function createApp(root, options = {}) {
     turned: 0, // how far the student has turned it, degrees
     theta: clamp(Math.round(Number(o.theta) || DEFAULTS.theta), STRIP.min, STRIP.max),
     angle: snapWedge(Number(o.angle) || WEDGE.start),
-    newest: 0, // the reflection growing in
-    grow: 1,
+    newest: 0, // the reflection being shown
+    rev: null, // what is playing: its plan, in seconds
+    time: 0, // how far it has played
+    resting: false, // a short look at the result: the action waits
+    zoom: false, // the view is close on the far end
+    ring: 3, // how many rings of numbered cells have come in, 0 … 3
+    open: false, // the test is offered once the last step is done
     flash: 0,
     picked: null, // the cell tapped in the eye's view
     busy: false,
@@ -170,6 +185,8 @@ export function createApp(root, options = {}) {
     dragged: { turn: false, eye: false, lamp: false }, // a handle calms down once it has been used
   };
   s.stage = clamp(Math.round(Number(o.stage) || 0), 0, TOP[s.step]);
+  s.zoom = s.step === 'why' && s.stage >= 1;
+  s.open = o.mode === 'quiz' || (s.step === 'two' && s.stage === 2);
 
   let token = 0;
   const tweener = createTweener();
@@ -188,10 +205,12 @@ export function createApp(root, options = {}) {
   }
 
   const inEye = () => (s.quiz ? s.quiz.eye : (s.step === 'pattern' && s.stage >= 1) || (s.step === 'why' && s.stage === 4));
-  const phase = () => (s.busy || s.grow < 1 ? 'busy' : `${s.step[0]}${s.stage}`);
-  const canTurn = () => !s.locked && !s.busy && s.step === 'pattern' && s.stage >= 1;
-  const canEye = () => !s.locked && !s.busy && s.step === 'graze';
-  const canLamp = () => !s.locked && !s.busy && s.step === 'two' && s.stage === 2;
+  /** Nothing is playing or flying: taps count. While something plays they are ignored, never queued. */
+  const calm = () => !s.locked && !s.busy && !s.rev && !s.resting && camK >= 1;
+  const phase = () => (s.busy || s.rev || s.resting || camK < 1 ? 'busy' : `${s.step[0]}${s.stage}`);
+  const canTurn = () => calm() && s.step === 'pattern' && s.stage >= 1;
+  const canEye = () => calm() && s.step === 'graze';
+  const canLamp = () => calm() && s.step === 'two' && s.stage === 2;
 
   // ── the pull on the pieces, and turning ─────────────────────────────────────────────────────────────────
   function setPhi(phi) {
@@ -244,60 +263,70 @@ export function createApp(root, options = {}) {
     const l = Math.hypot(...d) || 1;
     return [d[0] / l, d[1] / l, d[2] / l];
   };
-  const realCell = { verts: CORNERS, color: '#ffffff', width: 2.2, halo: 'rgba(15,20,28,0.65)' };
-  /** Rays through the tube for the images built so far. */
+  const realCell = { verts: CORNERS, color: '#ffffff', width: 1.6, halo: 'rgba(15,20,28,0.55)' };
+  /** How far each part of the newest path has come: the ray, stretch by stretch; the dashed line; then its cell. */
+  function pathProgress() {
+    const q = s.rev;
+    if (q?.kind !== 'ray') return { ray: 1, back: 1, cell: 1 };
+    const t0 = q.lead;
+    const t1 = t0 + q.ray;
+    const t2 = t1 + q.back;
+    const t3 = t2 + FLY;
+    return { ray: seg(s.time, t0, t1), back: seg(s.time, t1, t2), cell: seg(s.time, t3, t3 + q.cell) };
+  }
+  /** The ray through the tube for the newest image, and the cells of the images built so far. */
   function drawPaths() {
     const v = dia.view;
     const n = s.stage;
     const p = bead();
     v.dots.push([...toWorld(L, p[0], p[1]), 3.4, C.ray]);
+    if (n < 1) return;
+    const g = pathProgress();
     for (let k = 1; k <= n; k++) {
       const c = CHAIN[k - 1];
       const r = path(p, c.word);
-      const lit = k === s.newest ? s.flash : 0;
-      const g = k === s.newest ? s.grow : 1;
-      const last = r.points.length - 1;
-      // the newest path whole, the older ones thin
+      const a = k === n ? g.cell : 1;
       if (k === n) {
-        v.rays.push({ points: r.points.map(pt3), k: seg(g, 0.1, 0.72), lit, width: 2.4 });
+        v.rays.push({ points: r.points.map(pt3), k: g.ray, lit: s.flash, width: 2.4 });
         const first = r.fromEye[0];
-        const back = toWorld(first.x, first.p[0], first.p[1]);
-        v.backs.push([back, toWorld(L, r.image[0], r.image[1]), seg(g, 0.74, 0.96)]);
-        if (g >= 0.72) for (const h of r.hits) v.dots.push([...toWorld(h.x, h.p[0], h.p[1]), 2.6, C.ray]);
-        v.eyes.push({ at: pt3(r.points[last]), look: toWorld(L / 2, 0, 0) });
+        v.backs.push([toWorld(first.x, first.p[0], first.p[1]), toWorld(L, r.image[0], r.image[1]), g.back]);
+        if (g.ray >= 1) for (const h of r.hits) v.dots.push([...toWorld(h.x, h.p[0], h.p[1]), 2.6, C.ray]);
+        if (!s.zoom) v.eyes.push({ at: pt3(r.points[r.points.length - 1]), look: toWorld(L / 2, 0, 0) });
       }
-      if (g >= 0.74) {
+      if (a > 0) {
         const color = C.order[k];
-        v.cells.push({ verts: c.verts, color, width: 2, halo: 'rgba(255,255,255,0.8)' });
-        v.rings.push({ at: r.image, r: 11, color });
+        v.cells.push({ verts: c.verts, color, width: 2, alpha: a, halo: a >= 1 ? 'rgba(255,255,255,0.8)' : null });
+        if (a >= 1) v.rings.push({ at: r.image, r: 11, color });
       }
     }
   }
   function drawGraze() {
     const v = dia.view;
     const q = stripView(s.theta);
-    const lit = 0;
     const toW = (a) => stripWorld(a[0], a[1]);
     const hit = toW(q.hit);
     const eye = toW(q.eye);
     const up = unit(hit, stripWorld(q.hit[0], 9));
-    const norm = [hit, stripWorld(q.hit[0], 8.5)];
+    const norm = [hit, stripWorld(q.hit[0], 5.2)];
     v.normals.push(norm);
     const from = unit(hit, toW(q.bead));
     const to = unit(hit, eye);
     v.arcs.push({ at: hit, from: up, to: from, r: 2.9, color: C.thetaI }, { at: hit, from: up, to, r: 3.6, color: C.thetaR });
     // the light into the glass and on through it, thinner as more is reflected
     const through = 1 - q.reflected;
-    v.rays.push({ points: [toW(q.bead), hit], width: 5, lit });
-    v.rays.push({ points: [hit, eye], width: Math.max(0.9, 5 * q.reflected), lit });
-    v.rays.push({ points: [hit, toW(q.back), toW(q.away)], width: Math.max(0.9, 5 * through), lit });
+    v.rays.push({ points: [toW(q.bead), hit], width: 5 });
+    v.rays.push({ points: [hit, eye], width: Math.max(0.9, 5 * q.reflected) });
+    v.rays.push({ points: [hit, toW(q.back), toW(q.away)], width: Math.max(0.9, 5 * through) });
     v.backs.push([hit, toW(q.image), 1]);
     v.dots.push([...hit, 2.8, C.ray]);
     v.eyes.push({ at: eye, look: hit });
     if (!s.quiz && canEye()) v.grip = lineGrip(gripOnStrip, s.theta, STRIP.min, STRIP.max, s.dragged.eye);
   }
-  /** The ray between the mirrors, as far as `upto` hits; arcs and normals at A and at B. */
-  function drawWedge(theta, stageN, g) {
+  /**
+   * The ray between the mirrors. `lit`: how far the ray to B has come, 0 … 1. `angles`: its angles are drawn (they come after
+   * the ray). `back`: how far the way back from B has come, or null; the right angle at B comes first.
+   */
+  function drawWedge(theta, { ray, angles, back }) {
     const v = dia.view;
     const r = traceWedge(theta);
     const pts = r.points.map((q) => wedgeWorld(q[0], q[1]));
@@ -306,29 +335,44 @@ export function createApp(root, options = {}) {
     // the corner of the two mirrors
     const V = wedgeWorld(0, 0);
     v.arcs.push({ at: V, from: unit(V, wedgeWorld(-5, 0)), to: unit(V, wedgeWorld(-2.5, 4.33)), r: 2.2, color: INK });
-    if (stageN < 1) return;
+    if (ray <= 0) return;
+    v.rays.push({ points: pts.slice(0, 3), k: ray, lit: back == null ? s.flash : 0, width: 2.5 });
+    if (back != null && back > 0) v.rays.push({ points: pts.slice(2), k: back, lit: s.flash, width: 3 });
+    if (ray >= 1) v.dots.push([...A, 2.8, C.ray]);
+    if (!angles) return;
     v.normals.push([A, wedgeWorld(a.point[0], 7)]);
     const up = unit(A, wedgeWorld(a.point[0], a.point[1] + 5));
     const inward = unit(A, pts[0]);
     const out = unit(A, pts[2]);
     v.arcs.push({ at: A, from: up, to: inward, r: 2.5, color: C.thetaI }, { at: A, from: up, to: out, r: 3, color: C.thetaR });
     v.arcs.push({ at: A, from: out, to: unit(A, V), r: 1.9, color: INK });
-    v.rays.push({ points: stageN >= 2 ? pts : pts.slice(0, 3), k: g, lit: s.flash, width: 2.5 });
     const b = r.hits[1];
-    if (b?.mirror === 'B' && g >= 1) {
+    if (b?.mirror === 'B') {
       const B = pts[2];
       const n = [-Math.sqrt(3) / 2, -0.5];
       v.normals.push([B, wedgeWorld(b.point[0] + n[0] * 5, b.point[1] + n[1] * 5)]);
       v.dots.push([...B, 2.8, C.ray]);
+      if (back != null && atB(theta) === 0) v.squares.push({ at: B, a: unit(B, A), b: unit(B, V), r: 1 });
     }
-    v.dots.push([...A, 2.8, C.ray]);
+  }
+  /** The two-mirror picture at this moment. */
+  function wedgeNow() {
+    const q = s.rev;
+    if (q?.kind === 'shine') return { ray: seg(s.time, 0, q.ray), angles: s.time >= q.ray, back: null };
+    if (q?.kind === 'return') return { ray: 1, angles: true, back: seg(s.time, q.mark, q.mark + q.ray) };
+    if (s.stage === 0) return { ray: 0, angles: false, back: null };
+    return { ray: 1, angles: true, back: s.stage === 2 ? 1 : null };
   }
   function applyWorld() {
     dia.clear();
     const v = dia.view;
     setting.setImage(s.quiz?.kind === 'graze' ? 0.3 : stripView(s.theta).reflected);
     setting.setLamp(s.quiz?.kind === 'sixty' ? s.quiz.theta : s.angle);
-    tube.showGhosts(!s.quiz && s.step === 'why' && s.stage <= 3 ? (s.newest && s.grow < 0.74 ? s.stage - 1 : s.stage) : 0);
+    {
+      const on = !s.quiz && s.step === 'why' && s.stage <= 3;
+      const a = on && s.stage >= 1 ? pathProgress().cell : 0;
+      tube.showGhosts(on ? [1, 2, 3].map((k) => (k < s.stage ? 1 : k === s.stage ? a : 0)) : NO_GHOSTS);
+    }
     if (s.quiz) return applyQuiz(s.quiz);
     if (s.step === 'pattern' && s.stage >= 1) {
       v.cells.push(realCell);
@@ -338,14 +382,23 @@ export function createApp(root, options = {}) {
       if (s.stage <= 3) drawPaths();
       else {
         v.cells.push(realCell);
-        for (const c of numbered) v.cells.push(c.line);
-        for (const c of numbered) if (c.chip) v.chips.push(c.chip);
+        // the rings come in one after another
+        for (const c of numbered) {
+          const a = clamp(s.ring - (Math.min(c.cell.n, 3) - 1), 0, 1);
+          if (a <= 0) continue;
+          c.line.alpha = a;
+          v.cells.push(c.line);
+          if (c.chip) {
+            c.chip.alpha = a;
+            v.chips.push(c.chip);
+          }
+        }
         if (s.picked) v.cells.push({ verts: s.picked.verts, color: C.glow, width: 3, halo: 'rgba(15,20,28,0.7)' });
       }
     }
     if (s.step === 'graze') drawGraze();
     if (s.step === 'two') {
-      drawWedge(s.angle, s.stage, s.stage === 1 && s.grow < 1 ? s.grow : 1);
+      drawWedge(s.angle, wedgeNow());
       if (canLamp()) v.grip = lineGrip(gripOnWedge, s.angle, WEDGE.min, WEDGE.max, s.dragged.lamp);
     }
   }
@@ -384,11 +437,13 @@ export function createApp(root, options = {}) {
   // ── camera: each step frames what it is about, and flies there smoothly ────────────────────────────────
   const FRAMES = {
     pattern: { box: [X0 - 2, 0, -3, -X0 + 1, 4.8, 3.2], az: -42, el: 17 },
-    why0: { box: [X0 - 2.6, 0, -3, -X0 + 0.6, 5, 3.4], ...TILT },
-    why1: { box: [X0 - 2.6, 0, -3, -X0 + 0.6, 5.2, 4.8], ...TILT },
-    why2: { box: [X0 - 2.6, 0, -3, -X0 + 0.6, 5.2, 6.6], ...TILT },
-    why3: { box: [X0 - 2.6, 0, -3, -X0 + 0.6, 5.6, 8.8], ...TILT },
-    graze: { box: [SITES.strip - 9.2, 0, -1.8, SITES.strip + 12.8, 5.2, 10.2], az: -12, el: 52 },
+    why: { box: [X0 - 2.6, 0, -3, -X0 + 0.6, 5, 3.4], ...TILT },
+    // the far end and the cells beyond it, with the eye off the view: first the whole path, then close on what it made
+    far1: { box: [-X0 - 5.6, 0, -2.6, -X0 + 0.5, 5, 4.9], ...TILT },
+    far2: { box: [-X0 - 5.6, 0, -2.6, -X0 + 0.5, 5, 6.7], ...TILT },
+    far3: { box: [-X0 - 5.6, 0, -2.6, -X0 + 0.5, 5, 8.7], ...TILT },
+    // the bead, the point on the glass and the way the eye moves; the strip runs off the right edge
+    graze: { box: [SITES.strip - 9.6, 0, -1.3, SITES.strip + 8.4, 4.6, 7.7], az: -12, el: 52 },
     two: { box: wedgeBox(), az: 4, el: 70 },
   };
   /** All that the two-mirror view must show: the mirrors and the ray box anywhere on its arc. */
@@ -410,20 +465,21 @@ export function createApp(root, options = {}) {
   function frameKey() {
     if (s.quiz) return s.quiz.eye ? 'eye' : s.quiz.kind === 'graze' ? 'graze' : 'two';
     if (inEye()) return 'eye';
-    if (s.step === 'why') return `why${Math.max(0, s.stage)}`;
+    if (s.step === 'why') return s.zoom ? `far${s.stage}` : 'why';
     return s.step;
   }
   let camFrom = null;
   let camK = 1;
   let shownFrame = '';
   let eyeFrom = 0;
+  let flyEye = false; // the flight goes to or from the eye: the drawing waits for it
   const FRAME = new THREE.Box3();
   const margin = { top: 34, bottom: 26, left: 8, right: 8 };
   const camDir = new THREE.Vector3();
   const eyePose = { position: new THREE.Vector3(), target: new THREE.Vector3(), fov: 40 };
   const panelBeside = () => root.clientWidth >= root.clientHeight && root.clientWidth >= 600;
-  /** How large a cell is on the screen, px of its side: big enough to read, and the window always fills the view. */
-  const cellPx = () => Math.max(Math.min(stage.width, stage.height) / 3.2, Math.max(stage.width, stage.height) / 5);
+  /** How large a cell is on the screen, px of its side: the eyepiece shows the middle cell and three rings of its images. */
+  const cellPx = () => Math.min(stage.width, stage.height) / 4.2;
   function eyeFov() {
     const distance = L + EYE;
     return 2 * THREE.MathUtils.radToDeg(Math.atan(((stage.height / 2 / cellPx()) * SIDE) / distance));
@@ -439,6 +495,8 @@ export function createApp(root, options = {}) {
       return eyePose;
     }
     const f = FRAMES[key];
+    // close on the bead while the eye is near it; the view widens only as far as the eye goes
+    if (key === 'graze') f.box[3] = SITES.strip + (s.quiz ? 8.4 : Math.max(2.4, stripView(s.theta).eye[0] + 2.8));
     const a = THREE.MathUtils.degToRad(f.az);
     const e = THREE.MathUtils.degToRad(f.el);
     camDir.set(Math.sin(a) * Math.cos(e), Math.sin(e), Math.cos(a) * Math.cos(e));
@@ -481,7 +539,7 @@ export function createApp(root, options = {}) {
     }
     controls.update();
   }
-  function flyCamera(duration = 0.9) {
+  function flyCamera(duration = FLY) {
     if (s.userMovedCamera) {
       s.userMovedCamera = false;
       s.view = 'front';
@@ -499,16 +557,17 @@ export function createApp(root, options = {}) {
       },
       onComplete: () => {
         camK = 1;
+        if (!s.quiz && !s.rev) rest(0.6);
         stage.invalidate();
       },
     }).finished;
   }
   /** After any change: when the state wants another frame, go there. */
-  function followFrame(instant, duration = 0.9) {
+  function followFrame(instant, duration = FLY) {
     const key = frameKey();
     if (key === shownFrame) return;
     const first = !shownFrame;
-    const toOrFromEye = key === 'eye' || shownFrame === 'eye';
+    flyEye = key === 'eye' || shownFrame === 'eye';
     shownFrame = key;
     setting.setSite(
       s.quiz
@@ -522,13 +581,13 @@ export function createApp(root, options = {}) {
     if (first || instant) {
       tweener.cancel('camera');
       camK = 1;
-    } else flyCamera(toOrFromEye ? 1.5 : duration);
+    } else flyCamera(duration);
   }
   function setView(view, { animate = true } = {}) {
     s.view = view === '3d' ? '3d' : 'front';
     s.userMovedCamera = false;
     syncUI();
-    if (animate) flyCamera(0.7);
+    if (animate) flyCamera(FLY);
     else camK = 1;
     stage.invalidate();
   }
@@ -542,6 +601,7 @@ export function createApp(root, options = {}) {
       syncUI();
       emit('view', { view: s.view });
     }
+    draw();
   });
   stage.onResize(() => {
     s.userMovedCamera = false;
@@ -556,7 +616,8 @@ export function createApp(root, options = {}) {
     camera.updateMatrixWorld();
     setting.setFloorFade(camera, FRAME);
     tube.renderCell(stage.renderer, rtSize());
-    dia.view.hide = camK < 1;
+    dia.view.hide = camK < 1 && flyEye;
+    dia.view.mask = tube.mask;
     labels();
   });
   /** The small picture: a power of two, about as sharp as a cell on this screen, at most 1024. */
@@ -567,11 +628,62 @@ export function createApp(root, options = {}) {
   // ── moving on ─────────────────────────────────────────────────────────────────────────────────────────
   function stopMotion() {
     ++token;
-    for (const k of ['turn', 'reveal', 'flash', 'angle']) tweener.cancel(k);
+    for (const k of ['turn', 'reveal', 'flash', 'angle', 'rest']) tweener.cancel(k);
     s.busy = false;
-    s.grow = 1;
+    s.rev = null;
+    s.time = 0;
+    s.resting = false;
+    s.ring = 3;
     s.flash = 0;
     s.newest = 0;
+  }
+  /** A short look at the result: the action waits, then wakes. */
+  function rest(seconds = HOLD) {
+    const my = token;
+    s.resting = true;
+    tweener
+      .animate({
+        key: 'rest',
+        duration: seconds,
+      })
+      .finished.then((ok) => {
+        if (!ok || my !== token) return;
+        s.resting = false;
+        draw();
+        emitChange();
+      });
+  }
+  /** Plays a plan in seconds, nothing else can start meanwhile; it ends and waits for the next tap. */
+  function play(plan, end) {
+    const my = ++token;
+    tweener.cancel('flash');
+    s.rev = plan;
+    s.time = 0;
+    s.flash = 1;
+    audio.tick();
+    draw();
+    tweener
+      .animate({
+        key: 'reveal',
+        duration: plan.total,
+        ease: ease.linear,
+        onUpdate: (k) => {
+          if (my !== token) return;
+          s.time = k * plan.total;
+          plan.tick?.();
+          draw();
+        },
+      })
+      .finished.then((ok) => {
+        if (!ok || my !== token) return;
+        s.rev = null;
+        s.time = 0;
+        end?.();
+        audio.success();
+        draw();
+        emitChange();
+        fadeLit();
+      });
   }
   function go(step, { animate = true } = {}) {
     if (s.locked) return lockedNudge();
@@ -582,6 +694,7 @@ export function createApp(root, options = {}) {
     const change = () => {
       s.step = step;
       s.stage = 0;
+      s.zoom = false;
       clearLabels();
       draw({ instant: !animate });
       emitChange();
@@ -614,34 +727,55 @@ export function createApp(root, options = {}) {
       },
     });
   }
-  /** The next thing grows in, highlighted, while the camera makes room for it. */
-  function reveal(n, duration = 2.1) {
-    const my = ++token;
-    tweener.cancel('flash');
+  /** The light of the red stone along its path: the whole tube first, a stretch at a time; then close on the cell it made. */
+  function reveal(n) {
+    const lead = s.zoom ? FLY : 0;
+    s.zoom = false;
     s.newest = n;
-    s.flash = 1;
-    s.grow = 0;
-    audio.tick();
-    draw();
-    tweener
-      .animate({
-        key: 'reveal',
-        duration,
-        ease: ease.linear,
-        onUpdate: (k) => {
-          if (my !== token) return;
-          s.grow = Math.min(0.999, k);
-          draw();
+    const ray = SEGMENT * (n + 1);
+    const plan = {
+      kind: 'ray',
+      lead,
+      ray,
+      back: FADE,
+      cell: FADE,
+      total: lead + ray + FADE + FLY + FADE + HOLD,
+      tick() {
+        if (!s.zoom && s.time >= lead + ray + FADE) s.zoom = true;
+      },
+    };
+    play(plan);
+  }
+  /** The numbered cells, ring by ring. */
+  function ringsIn() {
+    s.ring = 0;
+    const lead = camK < 1 || frameKey() !== shownFrame ? FLY : 0;
+    play(
+      {
+        kind: 'rings',
+        lead,
+        total: lead + 3 * FADE + HOLD,
+        tick() {
+          s.ring = Math.min(3, Math.max(0, (s.time - lead) / FADE));
         },
-      })
-      .finished.then((ok) => {
-        if (!ok || my !== token) return;
-        s.grow = 1;
-        audio.success();
-        draw();
-        emitChange();
-        fadeLit();
-      });
+      },
+      () => {
+        s.ring = 3;
+      },
+    );
+  }
+  function shine() {
+    s.stage = 1;
+    const ray = SEGMENT * 2;
+    play({ kind: 'shine', ray, total: ray + FADE + HOLD });
+  }
+  function comeBack() {
+    s.stage = 2;
+    const ray = SEGMENT * (traceWedge(s.angle).points.length - 3);
+    play({ kind: 'return', mark: FADE, ray, total: FADE + ray + HOLD }, () => {
+      s.open = true;
+      syncUI();
+    });
   }
   /** A demonstration of a turn or a slide, then the next stage. */
   function turnDemo() {
@@ -666,31 +800,35 @@ export function createApp(root, options = {}) {
         s.busy = false;
         s.stage = 2;
         audio.success();
+        rest();
         draw();
         emitChange();
       });
   }
-  function grazeDemo() {
+  /** The eye comes down to the glass. On a replay it first goes back up. */
+  function grazeDemo(again = false) {
     const my = ++token;
     s.busy = true;
-    const from = s.theta;
-    const to = 83;
-    draw();
-    tweener
-      .animate({
+    const slide = (from, to, duration) =>
+      tweener.animate({
         key: 'turn',
-        duration: 2.6,
+        duration,
         ease: ease.inOutCubic,
         onUpdate: (k) => {
           s.theta = Math.round(from + (to - from) * k);
           draw();
         },
-      })
-      .finished.then((ok) => {
+      }).finished;
+    draw();
+    const first = again ? slide(s.theta, DEFAULTS.theta, FLY) : Promise.resolve(true);
+    first
+      .then((ok) => (ok && my === token ? slide(s.theta, 83, 3) : false))
+      .then((ok) => {
         if (!ok || my !== token) return;
         s.busy = false;
         s.stage = 1;
         audio.success();
+        rest();
         draw();
         emitChange();
       });
@@ -706,7 +844,7 @@ export function createApp(root, options = {}) {
     if (ph === 'p0') {
       s.stage = 1;
       s.turned = 0;
-      draw({ duration: 1.5 });
+      draw();
       return emitChange();
     }
     if (ph === 'p1') return turnDemo();
@@ -718,49 +856,39 @@ export function createApp(root, options = {}) {
     if (ph === 'w3') {
       s.stage = 4;
       s.newest = 0;
-      draw({ duration: 1.5 });
+      s.zoom = false;
+      s.ring = 0;
+      draw();
+      ringsIn();
       return emitChange();
     }
     if (ph === 'w4') return go('graze');
     if (ph === 'g0') return grazeDemo();
     if (ph === 'g1') return go('two');
     if (ph === 't0') {
-      const my = ++token;
       s.angle = WEDGE.start;
-      s.stage = 1;
-      s.grow = 0;
-      s.flash = 1;
-      audio.tick();
-      draw();
-      tweener
-        .animate({
-          key: 'reveal',
-          duration: 1.5,
-          ease: ease.linear,
-          onUpdate: (k) => {
-            if (my !== token) return;
-            s.grow = Math.min(0.999, k);
-            draw();
-          },
-        })
-        .finished.then((ok) => {
-          if (!ok || my !== token) return;
-          s.grow = 1;
-          audio.success();
-          draw();
-          emitChange();
-          fadeLit();
-        });
-      return;
+      return shine();
     }
-    if (ph === 't1') {
-      s.stage = 2;
-      audio.tick();
-      draw();
-      emitChange();
-      return fadeLit();
-    }
+    if (ph === 't1') return comeBack();
     if (ph === 't2') quiz.start();
+  }
+  /** The last thing shown, once more, slowly. */
+  const REPLAY = new Set(['p2', 'w1', 'w2', 'w3', 'w4', 'g1', 't1', 't2']);
+  function replay() {
+    if (s.locked) return lockedNudge();
+    const ph = phase();
+    if (!REPLAY.has(ph)) return;
+    audio.unlock();
+    if (ph === 'p2') return turnDemo();
+    if (ph === 'w4') {
+      s.picked = null;
+      return ringsIn();
+    }
+    if (ph[0] === 'w') return reveal(s.stage);
+    if (ph === 'g1') return grazeDemo(true);
+    s.angle = WEDGE.start;
+    if (ph === 't1') return shine();
+    comeBack();
   }
 
   // ── labels on the picture: pinned to what they name ────────────────────────────────────────────────────
@@ -822,8 +950,7 @@ export function createApp(root, options = {}) {
   /** Small boxes along the rays drawn now, in canvas pixels: labels keep off them. */
   function rayBoxes() {
     const out = [];
-    for (const r of dia.view.rays) {
-      const p = r.points;
+    const along = (p) => {
       for (let i = 1; i < p.length; i++)
         for (let q = 0; q <= 8; q++) {
           const k = q / 8;
@@ -832,9 +959,11 @@ export function createApp(root, options = {}) {
             .project(camera);
           const x = ((onScreen.x + 1) / 2) * stage.width;
           const y = ((1 - onScreen.y) / 2) * stage.height;
-          out.push({ left: x - 5, top: y - 5, right: x + 5, bottom: y + 5 });
+          out.push({ left: x - 6, top: y - 6, right: x + 6, bottom: y + 6 });
         }
-    }
+    };
+    for (const r of dia.view.rays) along(r.points);
+    for (const q of dia.view.normals) along(q);
     return out;
   }
   const anno = createAnnotations({
@@ -912,25 +1041,22 @@ export function createApp(root, options = {}) {
       } else if (s.step === 'why' && s.stage <= 3) {
         const p = bead();
         label('stone', t('l_stone'), atTube(L, p[0], p[1]), INK, BELOW);
-        if (s.stage >= 1 && !(s.newest && s.grow < 0.72)) {
+        if (s.stage >= 1 && !s.zoom) label('eye', t('l_eye'), atTube(-EYE, 0, 0), INK, BELOW);
+        if (s.stage >= 1 && pathProgress().cell >= 1) {
           const r = path(p, CHAIN[s.stage - 1].word);
-          label('eye', t('l_eye'), atTube(-EYE, 0, 0), INK, BELOW);
-          if (!(s.newest && s.grow < 0.96)) {
-            const lit = s.newest && s.flash > 0;
-            const text = t('l_times', { n: s.stage });
-            label('times', lit ? `<span class="kld-new">${text}</span>` : text, atTube(L, r.image[0], r.image[1]), C.order[s.stage], AROUND);
-          }
+          const text = t('l_times', { n: s.stage });
+          const lit = s.rev || s.flash > 0;
+          label('times', lit ? `<span class="kld-new">${text}</span>` : text, atTube(L, r.image[0], r.image[1]), C.order[s.stage], AT.upRight);
         }
       } else if (s.step === 'graze') {
         const q = stripView(s.theta);
         const w = (a, b, y) => at(...stripWorld(a, b, y));
-        label('strip', t('l_glass'), w(STRIP.half * 0.6, 0, 5.4), INK, AT.up);
-        label('bead', t('l_bead'), w(q.bead[0], q.bead[1], STRIP.ray + 0.5), INK, AT.downLeft);
+        label('strip', t('l_glass'), w(4.5, 0, 5.1), INK, AT.up);
+        label('bead', t('l_bead'), w(q.bead[0] - 0.3, q.bead[1], STRIP.ray + 0.2), INK, AT.left);
         label('image', t('l_image'), w(q.image[0], q.image[1], STRIP.ray + 0.5), INK, AT.upLeft);
-        label('normal', t('l_normal'), w(q.hit[0], 8.3), '#343a40', AT.down);
+        label('normal', t('l_normal'), w(q.hit[0], 5.2), '#343a40', AT.down);
         label('ti', `θ<sub>i</sub> = ${N(s.theta)}°`, w(q.hit[0], 3), C.thetaI, AT.right);
-        label('eye', t('l_eye'), w(q.eye[0], q.eye[1]), INK, AT.upRight, [], true); // the eye is drawn: its name may step aside
-      } else if (s.step === 'two') wedgeLabels(s.angle, s.stage);
+      } else if (s.step === 'two') wedgeLabels(s.angle, wedgeNow().angles);
     }
     for (const id of [...shown.keys()])
       if (!touched.has(id)) {
@@ -938,26 +1064,30 @@ export function createApp(root, options = {}) {
         shown.delete(id);
       }
   }
-  function wedgeLabels(theta, st) {
+  /** The mirrors and their corner; with `angles`, the book's points A and B on them and what the page marks. */
+  function wedgeLabels(theta, angles, question = false) {
     const w = (a, b, y = WEDGE.ray) => at(...wedgeWorld(a, b, y));
-    const r = traceWedge(theta);
-    label('ma', t('l_mirror_a'), w(-WEDGE.arm * 0.9, 0, 5.6), INK, AT.right);
-    label('mb', t('l_mirror_b'), w(-WEDGE.arm * 0.45, WEDGE.arm * 0.78, 5.6), INK, AT.left);
+    label('ma', t('l_first'), w(-WEDGE.arm * 0.9, 0, 5.6), INK, AT.right);
+    label('mb', t('l_second'), w(-WEDGE.arm * 0.45, WEDGE.arm * 0.78, 5.6), INK, AT.left);
     label('tw', `${N(60)}°`, w(-1.7, 1.3), INK, AT.up);
-    if (st >= 1) {
-      const a = r.hits[0].point;
-      label('ti', `θ<sub>i</sub> = ${N(theta)}°`, w(a[0] - 2.2, 3.4), C.thetaI, AT.downLeft);
-      label('tr', `θ<sub>r</sub> = ${N(theta)}°`, w(a[0] + 2.2, 3.4), C.thetaR, AT.left);
-      label('up', `${N(aboveA(theta))}°`, w(a[0] + 4, 0.9), INK, AT.upRight);
-      if (r.hits[1]?.mirror === 'B') {
-        const b = r.hits[1].point;
-        label('tb', atB(theta) === 0 ? `${N(90)}°` : `${N(atB(theta))}°`, w(b[0] - 0.8, b[1] - 1.5), atB(theta) === 0 ? INK : C.thetaI, AT.upLeft);
-      }
+    if (!angles) return;
+    const r = traceWedge(theta);
+    const a = r.hits[0].point;
+    // A and B stand on the mirrors, with their leaders going outward, away from the rays
+    label('pa', '<b>A</b>', w(a[0], 0), INK, AT.right);
+    label('ti', `θ<sub>i</sub> = ${N(theta)}°`, w(a[0] - 1.1, 2.3), C.thetaI, AT.downLeft);
+    label('up', `${N(aboveA(theta))}°`, w(a[0] + 1.7, 0.15), INK, AT.upRight);
+    const hit = r.hits[1];
+    if (hit?.mirror === 'B') {
+      const b = hit.point;
+      const text = question ? '<b>B</b> ?' : atB(theta) === 0 ? `<b>B</b> ${N(90)}°` : `<b>B</b> θ<sub>i</sub> = ${N(atB(theta))}°`;
+      label('pb', text, w(b[0], b[1]), atB(theta) === 0 && !question ? INK : C.thetaI, AT.upLeft);
     }
   }
 
   // ── the panel ───────────────────────────────────────────────────────────────────────────────────────────
   const steady = { act: '' };
+  const replayBtn = ui.$('[data-act="replay"]');
   const counts = [0, 1, 2, 3].map((n) => cells.filter((c) => c.n === n).length);
   function outcome() {
     if (s.step === 'pattern') {
@@ -972,11 +1102,14 @@ export function createApp(root, options = {}) {
         if (s.picked.n === 0) return t('out_real');
         return t('out_cell', { n: s.picked.n });
       }
-      return t('out_w4', { a: counts[1], b: counts[2], c: counts[3] });
+      // the count grows with the rings
+      let line = '';
+      for (let k = 1; k <= 3; k++) if (s.ring >= k - 0.5) line += t('out_ring', { k, a: counts[k] });
+      return line || ' ';
     }
     if (s.step === 'graze') return t('out_g', { a: s.theta, b: percent(s.theta) });
     if (s.stage === 0) return t('out_t0', { a: 60 });
-    if (s.stage === 1) return t('out_t1', { a: s.angle });
+    if (s.stage === 1 || s.rev?.kind === 'return') return t('out_t1', { a: s.angle });
     return t(atB(s.angle) === 0 ? 'out_t2' : 'out_t3', { a: atB(s.angle) });
   }
   const tubeAngle = () => Math.round((Math.acos((2 * R) / Math.hypot(L + EYE, 2 * R)) * 180) / Math.PI);
@@ -985,8 +1118,11 @@ export function createApp(root, options = {}) {
     if (s.step === 'why') return t(`rule_w${s.stage}`);
     if (s.step === 'graze') return t(`rule_g${s.stage}`, { a: tubeAngle() });
     if (s.stage === 0) return t('rule_t0', { a: s.angle });
-    if (s.stage === 1) return t('rule_t1', { b: aboveA(s.angle), c: 60, d: 90 });
-    return t(atB(s.angle) === 0 ? 'rule_t2' : 'rule_t3', { a: 60 });
+    if (s.stage === 1 || s.rev?.kind === 'return') {
+      const d = thirdAngle(s.angle);
+      return t(d === 90 ? 'rule_t1' : 'rule_t1b', { b: aboveA(s.angle), c: 60, d });
+    }
+    return `${t(atB(s.angle) === 0 ? 'rule_t2' : 'rule_t3', { a: 60 })} ${t('rule_ready')}`;
   }
   const ACTIONS = {
     busy: ['act_wait', '', ICONS.hand],
@@ -1024,12 +1160,15 @@ export function createApp(root, options = {}) {
       steady.act = key;
       action.set({ label: word, step, enabled, icon });
     }
+    const base = `${s.step[0]}${s.stage}`;
+    replayBtn.hidden = !REPLAY.has(base);
+    replayBtn.disabled = ph === 'busy';
     syncNote();
   }
-  function draw({ instant = false, duration = 0.9 } = {}) {
+  function draw({ instant = false, duration = FLY } = {}) {
+    followFrame(instant, duration); // first: a flight that starts now makes the action wait
     applyWorld();
     panel();
-    followFrame(instant, duration);
     stage.invalidate();
   }
 
@@ -1170,7 +1309,7 @@ export function createApp(root, options = {}) {
     tap = null;
     if (wasDrag || !q || q.id !== e.pointerId) return;
     if (Math.hypot(p.x - q.x, p.y - q.y) > 8 || performance.now() - q.at > 500) return;
-    if (s.locked || s.busy || s.grow < 1) return;
+    if (!calm()) return;
     const ring = actionSpot();
     if (ring) {
       ptr.copy(ring).project(camera);
@@ -1202,38 +1341,27 @@ export function createApp(root, options = {}) {
       return;
     }
     if (q.kind === 'graze') {
+      // each eye's line of sight, all alike: the picture does not say which is brightest
       for (const m of q.eyes) {
         const e = stripView(m.theta);
+        v.rays.push({ points: [stripWorld(e.bead[0], e.bead[1]), stripWorld(e.hit[0], 0), stripWorld(e.eye[0], e.eye[1])], width: 1.7 });
         v.eyes.push({ at: stripWorld(e.eye[0], e.eye[1]), look: stripWorld(e.hit[0], 0) });
       }
       return;
     }
-    if (q.kind === 'sixty') {
-      drawWedge(q.theta, 1, 1);
-      v.rays[0].points = v.rays[0].points.slice(0, 3);
-    }
+    if (q.kind === 'sixty') drawWedge(q.theta, { ray: 1, angles: true, back: null });
   }
   function quizLabels(q) {
     if (q.kind === 'graze') {
       for (const m of q.eyes) {
         const e = stripView(m.theta);
-        label(m.id, `<b>${m.letter}</b>`, at(...stripWorld(e.eye[0], e.eye[1])), INK, AROUND);
+        label(m.id, `<b>${m.letter}</b>`, at(...stripWorld(e.eye[0], e.eye[1])), INK, AT.upRight);
       }
       const b = stripView(30);
-      label('bead', t('l_bead'), at(...stripWorld(b.bead[0], b.bead[1], STRIP.ray + 0.5)), INK, BELOW);
-      label('image', t('l_image'), at(...stripWorld(b.image[0], b.image[1], STRIP.ray + 0.5)), INK, ABOVE);
+      label('bead', t('l_bead'), at(...stripWorld(b.bead[0] - 0.3, b.bead[1], STRIP.ray + 0.2)), INK, AT.left);
+      label('image', t('l_image'), at(...stripWorld(b.image[0], b.image[1], STRIP.ray + 0.5)), INK, AT.upLeft);
     }
-    if (q.kind === 'sixty') {
-      const r = traceWedge(q.theta);
-      const a = r.hits[0].point;
-      const w = (x, y, h = WEDGE.ray) => at(...wedgeWorld(x, y, h));
-      label('ma', t('l_mirror_a'), w(-WEDGE.arm * 0.9, 0, 5.6), INK, ABOVE);
-      label('mb', t('l_mirror_b'), w(-WEDGE.arm * 0.45, WEDGE.arm * 0.78, 5.6), INK, ABOVE);
-      label('tw', `${N(60)}°`, w(-1.7, 1.3), INK, AROUND);
-      label('ti', `θ<sub>i</sub> = ${N(q.theta)}°`, w(a[0] - 2.2, 3.4), C.thetaI, AROUND);
-      const b = r.hits[1].point;
-      label('tb', '?', w(b[0] - 0.8, b[1] - 1.5), C.thetaI, AROUND);
-    }
+    if (q.kind === 'sixty') wedgeLabels(q.theta, true, true);
   }
   function quizScene(q) {
     stopMotion();
@@ -1257,8 +1385,10 @@ export function createApp(root, options = {}) {
   function prepare(i) {
     const kind = order[i];
     if (kind === 'count') {
-      const n = pick([2, 3, 4]);
-      const c = pick(cells.filter((x) => x.n === n && Math.hypot(...x.centre) < 8));
+      // what the eyepiece shows: a cell wholly inside its circle
+      const inside = cells.filter((x) => x.n >= 2 && x.verts.every((q) => Math.hypot(...q) < 7.6));
+      const c = pick(inside);
+      const n = c.n;
       quizScene({
         kind,
         eye: true,
@@ -1345,20 +1475,20 @@ export function createApp(root, options = {}) {
       };
     }
     if (kind === 'graze') {
-      const bright = Math.random() < 0.5;
-      const angles = shuffle([12, 38, 62, 84]);
+      // well apart in brightness: 4 %, 5 % and 12 % against 46 %; which is faintest would be a question about half a percent
+      const angles = shuffle([20, 45, 65, 82]);
       const list = angles.map((theta, q) => ({ id: `e${q}`, theta, letter: letters[q] }));
       quizScene({ kind, eyes: list });
-      const best = bright ? Math.max(...angles) : Math.min(...angles);
+      const best = Math.max(...angles);
       const answer = angles.indexOf(best);
       const wrong = [0, 1, 2, 3].filter((q) => q !== answer);
       return {
-        text: t(bright ? 'q_graze_bright' : 'q_graze_faint'),
+        text: t('q_graze_bright'),
         answer,
         wrong,
         label: (q) => t('c_eye', { x: letters[q] }),
         notes: notesOf(wrong.map((q) => [q, t('n_graze', { a: angles[q], b: percent(angles[q]) })])),
-        reveal: t(bright ? 'a_graze_bright' : 'a_graze_faint', { x: letters[answer], a: best, b: percent(best) }),
+        reveal: t('a_graze_bright', { x: letters[answer], a: best, b: percent(best) }),
       };
     }
     const theta = pick([20, 40, 50, 70]);
@@ -1390,6 +1520,7 @@ export function createApp(root, options = {}) {
       enter() {
         s.mode = 'quiz';
         s.locked = true;
+        s.open = true;
         stopMotion();
         order = ['count', 'spot', 'corner', 'graze', 'sixty'];
         if (s.drag) {
@@ -1407,15 +1538,18 @@ export function createApp(root, options = {}) {
         syncUI();
         shownFrame = frameKey();
         setting.setSite({ graze: SITES.strip, two: SITES.two }[s.step] ?? SITES.tube);
-        flyCamera(0.5);
+        flyEye = true; // the drawing waits for the flight
+        flyCamera(FLY);
         draw();
       },
       async prepare(i, alive, say) {
+        const before = shownFrame;
         const q = prepare(i);
         qCurrent = q;
         say(' ');
         ui.$('.pvc-q-text').innerHTML = q.text;
-        const done = await flyCamera(0.6);
+        flyEye = true;
+        const done = await flyCamera(shownFrame === before ? 0.01 : FLY);
         if (!alive()) return null;
         if (!done) camK = 1;
         const out = [q.answer];
@@ -1443,6 +1577,10 @@ export function createApp(root, options = {}) {
       b.classList.toggle('on', on);
       b.setAttribute('aria-selected', String(on));
     }
+    // the test comes after the last step: until then its tab is quiet, and a tap on it says what comes first
+    const tab = ui.$('[data-mode="quiz"]');
+    tab.classList.toggle('kld-later', !s.open);
+    tab.setAttribute('aria-disabled', String(!s.open));
     ui.learn.inert = s.mode === 'quiz';
     ui.quiz.inert = s.mode !== 'quiz';
   }
@@ -1461,6 +1599,7 @@ export function createApp(root, options = {}) {
     s.stage = 0;
     s.turned = 0;
     s.picked = null;
+    s.zoom = false;
     if (s.step === 'graze') s.theta = DEFAULTS.theta;
     if (s.step === 'two') s.angle = WEDGE.start;
   }
@@ -1487,7 +1626,10 @@ export function createApp(root, options = {}) {
     if (what && what === lastTap.what && now - lastTap.at < 120) return;
     lastTap = { what, at: now };
     if (b.dataset.view) setView(b.dataset.view);
-    if (b.dataset.mode === 'quiz' && s.mode !== 'quiz') quiz.start();
+    if (b.dataset.mode === 'quiz' && s.mode !== 'quiz') {
+      if (s.open) quiz.start();
+      else hint(t('q_later'));
+    }
     if (b.dataset.mode === 'explore') quiz.stop();
     if (b.dataset.q != null) quiz.choose(Number(b.dataset.q));
     if (b.dataset.example && b.dataset.example !== s.step) go(b.dataset.example);
@@ -1495,6 +1637,7 @@ export function createApp(root, options = {}) {
     if (a === 'q-next') quiz.next();
     if (a === 'q-again') quiz.start();
     if (a === 'home') home();
+    if (a === 'replay') replay();
     if (a === 'fullscreen') {
       if (document.fullscreenElement) document.exitFullscreen?.();
       else root.requestFullscreen?.().catch(() => {});
@@ -1507,6 +1650,7 @@ export function createApp(root, options = {}) {
       e.preventDefault();
       if (s.locked) return lockedNudge();
       if (canTurn()) {
+        s.resting = false;
         const from = s.phi;
         const to = from + walk * rad(20);
         tweener.animate({
@@ -1575,6 +1719,7 @@ export function createApp(root, options = {}) {
       trace: traced,
       picked: s.picked ? { n: s.picked.n, light: +brightness(s.picked.centre, s.picked.crossings).toFixed(3) } : null,
       frame: shownFrame,
+      testOpen: s.open,
       question: s.quiz && qCurrent ? { kind: s.quiz.kind, answer: qCurrent.label(qCurrent.answer) } : null,
       mode: s.mode,
       locked: s.locked,
@@ -1615,6 +1760,8 @@ export function createApp(root, options = {}) {
         stopMotion();
         s.stage = clamp(Math.round(p.stage), 0, TOP[s.step]);
         if (s.stage === 0) restartStep();
+        s.zoom = s.step === 'why' && s.stage >= 1 && s.stage <= 3;
+        if (s.step === 'two' && s.stage === 2) s.open = true;
       }
       if (p.theta != null) s.theta = clamp(Math.round(p.theta), STRIP.min, STRIP.max);
       if (p.angle != null) s.angle = snapWedge(p.angle);
@@ -1635,7 +1782,11 @@ export function createApp(root, options = {}) {
         s.turned += p.turn;
         if (s.step === 'pattern' && s.stage === 1 && Math.abs(s.turned) >= 20) s.stage = 2;
       }
-      if (!animate) camK = 1;
+      if (!animate) {
+        camK = 1;
+        s.resting = false;
+        tweener.cancel('rest');
+      }
       draw({ instant: !animate });
       syncUI();
       emitChange();
@@ -1645,6 +1796,7 @@ export function createApp(root, options = {}) {
       quiz.stop();
       stopMotion();
       s.step = 'pattern';
+      s.open = false;
       squareUp(false);
       restartStep();
       tube.beads.restart();

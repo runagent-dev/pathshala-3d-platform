@@ -14,25 +14,31 @@ test('kaleidoscope: the pattern, and turning it', async ({ page }) => {
   };
   let st = await fig.call('get');
   expect(st).toMatchObject({ step: 'pattern', stage: 0, eye: false, cells: { total: 100, one: 3, two: 6, three: 9 } });
-  await act(2000);
+  // a tap during the flight is ignored: nothing is queued or skipped
+  await fig.frame.locator('.pvc-act').first().click();
+  await fig.advance(700);
+  await expect(fig.frame.locator('.pvc-act').first()).toBeDisabled();
+  expect((await fig.call('get')).phase).toBe('busy');
+  await fig.advance(1500);
   st = await fig.call('get');
-  expect(st).toMatchObject({ stage: 1, eye: true, peek: 1 });
+  expect(st).toMatchObject({ stage: 1, eye: true, peek: 1, turned: 0, testOpen: false });
   await expect(fig.frame.locator('.pvc-outcome')).toContainText('৯');
   const before = st.beads.stone;
   // the shown action turns it a third of a turn; the pieces roll, and come to rest
-  await act(2800);
+  await act(3600);
   st = await fig.call('get');
   expect(st.stage).toBe(2);
   expect(st.turned).toBe(120);
+  await fig.advance(300);
   await fig.advance(6500);
   st = await fig.call('get');
   expect(st.beads.settled).toBe(true);
   expect(st.beads.stone).not.toEqual(before);
   await expect(fig.frame.locator('.pvc-rule')).toContainText('নড়ে');
   // the next word leaves the eye: the tube squares up and shows its open side again
-  await act(2600);
+  await act(3000);
   st = await fig.call('get');
-  expect(st).toMatchObject({ step: 'why', stage: 0, eye: false, phi: 0, peek: 0 });
+  expect(st).toMatchObject({ step: 'why', stage: 0, eye: false, phi: 0, peek: 0, phase: 'w0' });
   expect(log.errors).toEqual([]);
 });
 
@@ -64,7 +70,7 @@ test('kaleidoscope: a drag turns it, by touch of the view', async ({ page }) => 
   await expect(fig.frame.locator('.kld-grip')).toBeVisible();
   await expect(fig.frame.locator('.kld-grip-tag')).toBeHidden();
   await fig.call('practice');
-  await fig.advance(900);
+  await fig.advance(1700);
   await expect(fig.frame.locator('.kld-grip')).toBeHidden();
   expect(log.errors).toEqual([]);
 });
@@ -78,19 +84,29 @@ test('kaleidoscope: the rays, one reflection at a time, and the cells', async ({
     await fig.frame.locator('.pvc-act').first().click();
     await fig.advance(ms);
   };
-  for (const n of [1, 2, 3]) {
-    await act(2400);
+  // each stretch of a ray takes 1.2 s; then the dashed line, the flight in, the cell, and a look at it
+  for (const [n, ms] of [
+    [1, 7100],
+    [2, 9700],
+    [3, 10900],
+  ]) {
+    await fig.frame.locator('.pvc-act').first().click();
+    await fig.advance(1000);
+    await expect(fig.frame.locator('.pvc-act').first()).toBeDisabled();
+    await fig.advance(ms - 1000);
     const st = await fig.call('get');
     expect(st.stage).toBe(n);
+    expect(st.phase).toBe(`w${n}`);
     expect(st.trace.reflections).toBe(n);
     expect(st.trace.hits).toHaveLength(n);
     for (const h of st.trace.hits) expect(h.theta).toBeGreaterThan(60);
     await expect(fig.frame.locator('.pvc-outcome')).toContainText(['১', '২', '৩'][n - 1]);
     await fig.advance(500);
   }
-  await act(2100);
+  await act(6000);
   let st = await fig.call('get');
-  expect(st).toMatchObject({ stage: 4, eye: true });
+  expect(st).toMatchObject({ stage: 4, eye: true, phase: 'w4' });
+  await expect(fig.frame.locator('.pvc-outcome')).toContainText('৩ বার');
   // a tap on the middle cell, then on a cell beside it
   const box = await fig.frame.locator('.pvc-canvas').boundingBox();
   await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
@@ -115,9 +131,9 @@ test('kaleidoscope: one strip: more light as the eye grazes the glass', async ({
   let st = await fig.call('get');
   expect(st).toMatchObject({ step: 'graze', theta: 18, reflected: 4 });
   await fig.frame.locator('.pvc-act').first().click();
-  await fig.advance(3000);
+  await fig.advance(4300);
   st = await fig.call('get');
-  expect(st).toMatchObject({ stage: 1, theta: 83, reflected: 51 });
+  expect(st).toMatchObject({ stage: 1, theta: 83, reflected: 51, phase: 'g1' });
   await expect(fig.frame.locator('.pvc-rule')).toContainText('ঘেঁষে');
   for (const [theta, reflected] of [
     [30, 4],
@@ -139,17 +155,36 @@ test('kaleidoscope: চিত্র ৮.১৩, a ray at 60° comes straight bac
     await fig.frame.locator('.pvc-act').first().click();
     await fig.advance(ms);
   };
-  await act(1900);
+  await expect(fig.frame.locator('[data-mode="quiz"]')).toHaveAttribute('aria-disabled', 'true');
+  await act(4600);
   let st = await fig.call('get');
-  expect(st).toMatchObject({ step: 'two', stage: 1, angle: 60, atB: 0, back: true });
+  expect(st).toMatchObject({ step: 'two', stage: 1, angle: 60, atB: 0, back: true, phase: 't1' });
   await fig.advance(500);
-  await act(500);
+  // the way back takes its time, and the result is said only when it is there
+  await act(2000);
   st = await fig.call('get');
-  expect(st.stage).toBe(2);
+  expect(st).toMatchObject({ stage: 2, phase: 'busy' });
+  await expect(fig.frame.locator('.pvc-outcome')).not.toContainText('ঠিক বিপরীত দিকে');
+  await fig.advance(2800);
+  st = await fig.call('get');
+  expect(st).toMatchObject({ stage: 2, phase: 't2', testOpen: true });
   await expect(fig.frame.locator('.pvc-outcome')).toContainText('ঠিক বিপরীত দিকে');
+  await expect(fig.frame.locator('.pvc-rule')).toContainText('বুঝেছ');
+  await expect(fig.frame.locator('[data-mode="quiz"]')).toHaveAttribute('aria-disabled', 'false');
+  // a replay shows it once more
+  await fig.advance(1900);
+  await fig.frame.locator('[data-act="replay"]').click();
+  await fig.advance(600);
+  expect((await fig.call('get')).phase).toBe('busy');
+  await fig.advance(4200);
+  expect((await fig.call('get')).phase).toBe('t2');
   st = await fig.call('set', { angle: 45, animate: false });
   expect(st).toMatchObject({ atB: 15, back: false });
   await expect(fig.frame.locator('.pvc-outcome')).toContainText('১৫');
+  // at another angle the triangle's third angle is not 90°, and the panel says so
+  await fig.call('set', { step: 'two', stage: 1, angle: 45, animate: false });
+  await expect(fig.frame.locator('.pvc-rule')).toContainText('৭৫');
+  await expect(fig.frame.locator('.pvc-rule')).not.toContainText('লম্বভাবে</b>');
   expect(log.errors).toEqual([]);
 });
 
@@ -162,7 +197,7 @@ test('kaleidoscope: every question can be answered right: five of five, and the 
   const f = fig.frame;
   const kinds = [];
   for (let i = 0; i < 5; i++) {
-    await fig.advance(1000);
+    await fig.advance(1800);
     await expect(f.locator('.pvc-opt')).toHaveCount(4);
     const { question } = await fig.call('get');
     kinds.push(question.kind);
@@ -177,7 +212,7 @@ test('kaleidoscope: every question can be answered right: five of five, and the 
   expect(kinds).toEqual(['count', 'spot', 'corner', 'graze', 'sixty']);
   await expect(f.locator('.pvc-q-result')).toContainText('৫ টির মধ্যে ৫ টি');
   await f.locator('[data-mode="explore"]').click();
-  await fig.advance(900);
+  await fig.advance(2400);
   expect(await fig.call('get')).toMatchObject({ mode: 'explore', step: 'why', stage: 2, eye: false, locked: false });
   await fig.call('reset');
   expect(await fig.call('get')).toMatchObject({ step: 'pattern', stage: 0, eye: false, phi: 0 });

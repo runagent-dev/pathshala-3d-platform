@@ -17,7 +17,7 @@ export const C = {
   order: ['#ffffff', '#0c8599', '#c2255c', '#5f3dc4'],
 };
 
-export const TURN_RING = 0.37; // the turning handle's ring, as a share of the view's smaller side
+export const EYE_RING = 0.46; // the round end of the tube, and the turning handle on its rim, as a share of the view's smaller side
 
 export function createDiagram({ stage, host, tube, font }) {
   const canvas = document.createElement('canvas');
@@ -28,12 +28,15 @@ export function createDiagram({ stage, host, tube, font }) {
   let w = 1;
   let h = 1;
   let unit = 1;
+  let soft = null;
+  let rimFor = 0;
   function size() {
     w = stage.width;
     h = stage.height;
     dpr = Math.min(3, Math.max(1, window.devicePixelRatio || 1));
     canvas.width = Math.round(w * dpr);
     canvas.height = Math.round(h * dpr);
+    rimFor = 0;
     unit = Math.max(1, Math.min(1.12, Math.min(w, h) / 460));
   }
   size();
@@ -138,19 +141,15 @@ export function createDiagram({ stage, host, tube, font }) {
     P(a[0] + (b[0] - a[0]) * (t + 0.03), a[1] + (b[1] - a[1]) * (t + 0.03), a[2] + (b[2] - a[2]) * (t + 0.03));
     chevron(mx, my, sx - mx, sy - my, 9 + width, C.ray, C.rayDark);
   }
-  /** A ray through several points, grown to the fraction k of its length. */
+  /** A ray through several points, grown to the fraction k of its stretches. */
   function ray(r) {
     const p = r.points;
-    let total = 0;
-    for (let i = 1; i < p.length; i++) total += Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1], p[i][2] - p[i - 1][2]);
-    let left = total * Math.min(1, r.k ?? 1);
+    // each stretch takes the same time, however long it is: the student follows it bounce by bounce
+    let left = (p.length - 1) * Math.min(1, r.k ?? 1);
     for (let i = 1; i < p.length && left > 0; i++) {
-      const a = p[i - 1];
-      const b = p[i];
-      const long = Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]);
-      const q = Math.min(1, left / long);
-      left -= long;
-      segment(a, b, q, 0.56, r.width ?? 2.3, r.lit ?? 0);
+      const q = Math.min(1, left);
+      left -= 1;
+      segment(p[i - 1], p[i], q, 0.56, r.width ?? 2.3, r.lit ?? 0);
     }
   }
   /** An angle between two directions at a point, a thin arc with a soft fill. */
@@ -213,6 +212,7 @@ export function createDiagram({ stage, host, tube, font }) {
     const x = sx;
     const y = sy;
     const r = (q.r ?? 12) * unit;
+    ctx.globalAlpha = q.alpha ?? 1;
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
     ctx.fillStyle = q.fill ?? '#ffffff';
@@ -225,6 +225,59 @@ export function createDiagram({ stage, host, tube, font }) {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(q.text, x, y + 1);
+    ctx.globalAlpha = 1;
+  }
+  /** The round end of the tube round what the eye sees: dark outside, a rim, and the edge of the view falling off softly. */
+  function eyepiece(alpha) {
+    const R = Math.min(w, h) * EYE_RING;
+    const cx = w / 2;
+    const cy = h / 2;
+    if (rimFor !== R) {
+      rimFor = R;
+      soft = ctx.createRadialGradient(cx, cy, R * 0.72, cx, cy, R);
+      soft.addColorStop(0, 'rgba(8,10,16,0)');
+      soft.addColorStop(0.7, 'rgba(8,10,16,0.1)');
+      soft.addColorStop(1, 'rgba(8,10,16,0.5)');
+    }
+    ctx.globalAlpha = alpha;
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.fillStyle = soft;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.rect(0, 0, w, h);
+    ctx.arc(cx, cy, R, 0, Math.PI * 2, true);
+    ctx.fillStyle = '#0b0f15';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(cx, cy, R + 4 * unit, 0, Math.PI * 2);
+    ctx.strokeStyle = '#3d444d';
+    ctx.lineWidth = 8 * unit;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(cx, cy, R + 8 * unit, 0, Math.PI * 2);
+    ctx.strokeStyle = '#6b7480';
+    ctx.lineWidth = 1 * unit;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+  /** The mark of a right angle at a point: two short sides of a square, along two directions. */
+  function square(q) {
+    const [x, y, z] = q.at;
+    const d = q.r;
+    ctx.beginPath();
+    P(x + q.a[0] * d, y + q.a[1] * d, z + q.a[2] * d);
+    ctx.moveTo(sx, sy);
+    P(x + (q.a[0] + q.b[0]) * d, y + (q.a[1] + q.b[1]) * d, z + (q.a[2] + q.b[2]) * d);
+    ctx.lineTo(sx, sy);
+    P(x + q.b[0] * d, y + q.b[1] * d, z + q.b[2] * d);
+    ctx.lineTo(sx, sy);
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 4 * unit;
+    ctx.stroke();
+    ctx.strokeStyle = C.ink;
+    ctx.lineWidth = 2 * unit;
+    ctx.stroke();
   }
   /** A ring round a point of the tube's end plane. */
   function ring(q) {
@@ -283,7 +336,7 @@ export function createDiagram({ stage, host, tube, font }) {
     ctx.lineCap = 'butt';
     ctx.beginPath();
     if (q.turn) {
-      const R = Math.min(w, h) * TURN_RING;
+      const R = Math.min(w, h) * EYE_RING + 4 * unit;
       ctx.arc(w / 2, h / 2, R, 0, Math.PI * 2);
       x = w / 2 + R * Math.sin(q.angle);
       y = h / 2 - R * Math.cos(q.angle);
@@ -368,6 +421,8 @@ export function createDiagram({ stage, host, tube, font }) {
     dots: [],
     chips: [],
     eyes: [],
+    squares: [], // right angles: { at, a, b, r }
+    mask: 0, // how far the eyepiece has closed round the view
     grip: null, // what can be dragged now
     hide: false, // while the camera flies
   };
@@ -380,10 +435,15 @@ export function createDiagram({ stage, host, tube, font }) {
     ctx.lineJoin = 'round';
     handles.knob = null;
     gripBoxes.length = 0;
-    if (v.hide) return;
+    if (v.hide) {
+      if (v.mask > 0) eyepiece(v.mask);
+      return;
+    }
     for (const q of v.cells) cell(q);
+    if (v.mask > 0) eyepiece(v.mask);
     for (const q of v.normals) line(q[0], q[1], C.normal, 1.7, '#ffffff', 3.4, DASH_N);
     for (const q of v.arcs) arc(q);
+    for (const q of v.squares) square(q);
     for (const q of v.backs) {
       at(q[0]);
       const x0 = sx;
@@ -407,7 +467,7 @@ export function createDiagram({ stage, host, tube, font }) {
     view: v,
     handles,
     clear() {
-      for (const k of ['cells', 'rings', 'normals', 'backs', 'arcs', 'rays', 'dots', 'chips', 'eyes']) v[k].length = 0;
+      for (const k of ['cells', 'rings', 'normals', 'backs', 'arcs', 'squares', 'rays', 'dots', 'chips', 'eyes']) v[k].length = 0;
       v.grip = null;
     },
     paint,

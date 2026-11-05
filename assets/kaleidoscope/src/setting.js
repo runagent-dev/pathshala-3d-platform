@@ -237,7 +237,7 @@ ${sh.fragmentShader}`.replace(
   clips.castShadow = shadow;
   paneEdge.castShadow = shadow;
   stripGroup.add(paneEdge, clips, pane);
-  const stone = new THREE.IcosahedronGeometry(0.46, 1);
+  const stone = new THREE.IcosahedronGeometry(0.42, 1);
   const pin = new THREE.CylinderGeometry(0.07, 0.07, ray, 8).translate(0, ray / 2, 0);
   const foot = new THREE.CylinderGeometry(0.5, 0.58, 0.16, 20).translate(0, 0.08, 0);
   const stoneMat = new THREE.MeshStandardMaterial({ name: 'RedStone', color: '#e0203a', roughness: 0.2, flatShading: true, emissive: '#5a0512' });

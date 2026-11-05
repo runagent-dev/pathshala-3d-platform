@@ -191,7 +191,7 @@ export function path(p, word) {
 // ── one strip of glass, seen at any angle (the student moves the eye) ───────────────────────────────────────────────────
 // The plane of the picture: a along the strip, b out of it, the glass's front at b = 0. The bead stands at (a0, b0) and the
 // eye always lies on a straight line from the image through the glass, as it must, a fixed way from the glass along it.
-export const STRIP = { half: 9, height: 4.6, thick: 0.4, a0: -8, b0: 1.1, reach: 8, min: 5, max: 84, ray: 2.4 };
+export const STRIP = { half: 9, height: 4.6, thick: 0.4, a0: -6.5, b0: 0.7, reach: 6, min: 5, max: 84, ray: 2.4 };
 export function stripView(theta) {
   const { a0, b0, reach } = STRIP;
   const t = rad(theta);
@@ -262,6 +262,8 @@ export function traceWedge(theta) {
 export const atB = (theta) => Math.abs(60 - theta);
 /** The angle of the ray above mirror A after it leaves A. */
 export const aboveA = (theta) => 90 - theta;
+/** The third angle of the triangle of the corner and the two hits: 180° − 60° − (90° − θ). It is 90° only at θ = 60°. */
+export const thirdAngle = (theta) => 30 + theta;
 export const snapWedge = (a) => Math.min(WEDGE.max, Math.max(WEDGE.min, Math.round(a)));
 /** The θ a finger at (a, b) asks for: the source moves on its arc round the hit on A. */
 export const wedgeAngle = (a, b) => snapWedge(deg(Math.atan2(AT_A[0] - a, Math.max(0.01, b))));

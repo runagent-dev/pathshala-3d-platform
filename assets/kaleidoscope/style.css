@@ -103,3 +103,12 @@ body.bg-transparent { background: transparent; }
 .kld-grip-tag { position: absolute; left: 0; bottom: 21px; transform: translateX(-50%); padding: 1px 7px; border-radius: 4px; background: #fff; color: #212529; font-size: 13px; font-weight: 600; line-height: 1.45; white-space: nowrap; }
 .kld-grip-tag[hidden] { display: none; }
 .kld-grip.low .kld-grip-tag { bottom: auto; top: 21px; }
+
+/* the test comes after the last step: until then its tab is there, and quiet */
+.kld .pvc-tabs button.kld-later { color: var(--ink-3); opacity: 0.6; }
+
+/* "আবার দেখো" stays a word wherever it fits */
+.kld .pvc-act-row [data-act='replay'] > span { display: inline; font-size: 13px; }
+.kld .pvc-act-row [data-act='replay'] { padding: 0 2px; gap: 3px; margin-left: auto; }
+.kld .pvc-act-row [data-act='replay'] + [data-act='home'] { margin-left: 0; }
+.kld .pvc-act-row [data-act='replay'][hidden] { display: none; }
