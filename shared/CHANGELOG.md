@@ -21,6 +21,9 @@ student really turned the view: 8 px of movement or the wheel, never a bare tap.
 The front-view button of `layout: 'side'` is now cross hairs (`ICONS.front`) with the figure's `view_front_short` word
 beside it, instead of a circular arrow alone, which could be taken for reset. Reset stays the only plain ↺.
 
+`cleanSheet(t, { tight: true })` tightens the action row in a narrow side panel, so that a short verb stays on one line beside
+two quiet buttons. No figure changes without opting in.
+
 ## 1.6.0
 
 Panel typography, after the owner found the panels congested and hazy (bold everywhere, tight lines, grey text).

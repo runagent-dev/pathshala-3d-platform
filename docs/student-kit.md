@@ -201,6 +201,9 @@ whole sentence in bold). Formulas go on their own line, not inside a sentence:
 A small live graph in the panel: an `<svg class="pvc-graph">` (or canvas) with `.axis`, `.grid` and labels in
 12 px; the curve in the quantity's colour (docs/book-notes.md), a dot for the current state.
 
+`cleanSheet(t, { tight: true })`: in a side panel 300 px wide or less, the action row tightens (smaller badge and quiet buttons, no
+hand in the pill), so a short verb stays on one line beside two quiet buttons. Figures opt in; the default does not change.
+
 ### `quiz.js`
 `createQuiz({ ui, t, emit, audio, questions: 5, lines, hooks, action })` (`action`: a `createAction` whose marker
 hides while the test runs). Hooks: `enter()`, `leave()`,

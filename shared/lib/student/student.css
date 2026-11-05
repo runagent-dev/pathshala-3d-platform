@@ -404,6 +404,14 @@
   .pvc-q-score { display: none; }
   .pvc-q-head .pvc-btn { padding: 0 10px; font-size: 14.5px; }
 }
+/* cleanSheet({ tight: true }) in a narrow side panel: room for a one-line verb beside two quiet buttons */
+@container pvc-panel (max-width: 300px) {
+  .pvc-act-row[data-tight] { gap: 3px; }
+  .pvc .pvc-act-row[data-tight] .pvc-quiet { min-width: 36px; }
+  .pvc .pvc-act-row[data-tight] .pvc-act { gap: 6px; padding: 5px 12px 5px 5px; }
+  .pvc-act-row[data-tight] .pvc-act-icon { display: none; }
+  .pvc .pvc-act-row[data-tight] .pvc-act .pvc-act-num { width: 30px; height: 30px; font-size: 16px; }
+}
 /* the clean sheet in a phone-wide panel: quiet buttons show only their icon; a tighter pill */
 @container pvc-panel (max-width: 440px) {
   .pvc-act-row .pvc-quiet > span { display: none; }
