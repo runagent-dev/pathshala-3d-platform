@@ -83,6 +83,7 @@ export function createApp(root, options = {}) {
   root.tabIndex = 0;
   const ui = buildStudentShell(root, t, {
     layout: 'side',
+    learnAlign: 'start',
     learn: cleanSheet(t, { lines: { action: 1, outcome: 1, rule: 3 } }),
   });
   const sheet = bindCleanSheet(ui.learn);

@@ -34,11 +34,11 @@ export const STRINGS = {
 
     // the rule line: the book's words, growing with what the student has seen
     rule_mag_0: 'এটি তামার তারের কুণ্ডলী (কয়েল), এখনো চুম্বক নয়। তারে <b>তড়িৎ</b> চালালে কী হয়, দেখো।',
-    rule_mag_on: 'তড়িৎ চলতেই কয়েলটি চুম্বক হয়ে গেল: <b>তড়িৎ আর চুম্বকের বল আসলে একই বল</b>। বিপরীত মেরু পরস্পরকে আকর্ষণ করে।',
-    rule_mag_repel: '<b>সমমেরু পরস্পরকে বিকর্ষণ করে।</b> দূরে সরলে বল কমে, কিন্তু কখনো শূন্য হয় না: <b>এই বলের পাল্লা অসীম।</b>',
-    rule_mag_far: 'এত দূর থেকেও কয়েল চুম্বকটিকে টেনে আনল: বল কমে, কিন্তু শূন্য হয় না। <b>এই বলের পাল্লা অসীম।</b>',
-    rule_mag_off: 'সুইচ খোলা, তড়িৎ নেই, তাই কয়েলটি আর চুম্বক নয়: <b>তড়িৎ চললে তবেই এই চৌম্বক বল</b>।',
-    rule_law: '<b>তড়িৎ বল ও চৌম্বক বল মিলে তড়িৎ চৌম্বক বল</b> (বিদ্যুৎ চৌম্বকীয় বল): মাধ্যাকর্ষণের তুলনায় অনেক শক্তিশালী (বই বলছে {p} গুণ), <b>পাল্লা অসীম</b>।',
+    rule_mag_on: 'তড়িৎ চলতেই কয়েলটি চুম্বক হয়ে গেল: তড়িৎ আর চুম্বকের বল আসলে <b>একই বল</b>। বিপরীত মেরু পরস্পরকে আকর্ষণ করে।',
+    rule_mag_repel: 'সমমেরু পরস্পরকে বিকর্ষণ করে। দূরে সরলে বল কমে, কিন্তু কখনো শূন্য হয় না: এই বলের <b>পাল্লা অসীম</b>।',
+    rule_mag_far: 'এত দূর থেকেও কয়েল চুম্বকটিকে টেনে আনল। বল কমে, কিন্তু শূন্য হয় না: এই বলের <b>পাল্লা অসীম</b>।',
+    rule_mag_off: 'সুইচ খোলা, তড়িৎ নেই, তাই কয়েলটি আর চুম্বক নয়। <b>তড়িৎ চললে তবেই</b> এই চৌম্বক বল।',
+    rule_law: 'তড়িৎ বল ও চৌম্বক বল মিলে <b>তড়িৎ চৌম্বক বল</b> (বিদ্যুৎ চৌম্বকীয় বল)। এটি মাধ্যাকর্ষণের তুলনায় অনেক শক্তিশালী (বই বলছে {p} গুণ), পাল্লা অসীম।',
 
     // the four forces (the same heading in the four figures of 3.2)
     forces: 'চার মৌলিক বল (সবচেয়ে দুর্বল → সবচেয়ে শক্তিশালী)',
@@ -82,7 +82,7 @@ export const STRINGS = {
     opt_far_touch: 'না: শুধু ছুঁয়ে থাকলে টানে',
     opt_far_more: 'হ্যাঁ: দূরে গেলে টান আরও বাড়ে',
     why_poles_rep: '<b>সমমেরু, তাই বিকর্ষণ</b>: মুখোমুখি দুটিই {p} মেরু, আর সমমেরু পরস্পরকে বিকর্ষণ করে।',
-    why_poles_att: '<b>বিপরীত মেরু, তাই আকর্ষণ</b>: কয়েলের {a} মেরুর মুখোমুখি চুম্বকের {b} মেরু; বিপরীত মেরু আকর্ষণ করে।',
+    why_poles_att: '<b>বিপরীত মেরু, তাই আকর্ষণ</b>: কয়েলের {a} মেরুর মুখোমুখি চুম্বকের {b} মেরু। বিপরীত মেরু আকর্ষণ করে।',
     why_off: '<b>স্থির থাকবে</b>: তারের কুণ্ডলী চুম্বক হয় শুধু তড়িৎ চললে। সুইচ চালু করলে তবেই টানবে।',
     why_strength: '<b>তড়িৎ চৌম্বক বল, প্রায় {p} গুণ</b>: {one}-এর পরে {n}টি শূন্য! (দুটি প্রোটনের মতো একই রকম কণার বেলায়।)',
     why_range: '<b>হ্যাঁ: বল কম, কিন্তু শূন্য নয়</b>: দূরত্ব বাড়লে বল কমে, কিন্তু কখনো শূন্য হয় না। এই বলের পাল্লা অসীম।',
@@ -90,7 +90,7 @@ export const STRINGS = {
     mis_poles_1: 'নিয়মটি উল্টো হয়ে গেছে।',
     mis_poles_2: 'মেরুর অক্ষর একই হলে সমমেরু।',
     mis_poles_3: 'মেরুর অক্ষর একই হলে সমমেরু।',
-    mis_off_1: 'কয়েলে লোহা নেই; তড়িৎ না চললে এটি চুম্বক নয়।',
+    mis_off_1: 'কয়েলে লোহা নেই। তড়িৎ না চললে এটি চুম্বক নয়।',
     mis_off_2: 'তামা চুম্বকে আকৃষ্ট হয় না।',
     mis_off_3: 'তড়িৎ না থাকলে চৌম্বক বলই নেই।',
     mis_range_1: 'বল কমে, কিন্তু কোনো দূরত্বে শূন্য হয় না।',
@@ -134,12 +134,12 @@ export const STRINGS = {
     out_turn: 'Turning the magnet…',
 
     rule_mag_0: 'This is a coil of copper wire, not a magnet yet. See what an electric <b>current</b> in the wire does.',
-    rule_mag_on: 'With the current on, the coil became a magnet: <b>electric and magnetic forces are really one force</b>. Unlike poles attract.',
-    rule_mag_repel: '<b>Like poles repel each other.</b> Farther away the force is smaller, but never zero: <b>its range is infinite.</b>',
-    rule_mag_far: 'Even from this far the coil pulled the magnet back: smaller, but never zero. <b>Its range is infinite.</b>',
-    rule_mag_off: 'The switch is open, no current, so the coil is no magnet now: <b>no current, no magnetic force here</b>.',
+    rule_mag_on: 'With the current on, the coil became a magnet: electric and magnetic forces are really <b>one force</b>. Unlike poles attract.',
+    rule_mag_repel: 'Like poles repel each other. Farther away the force is smaller, but never zero: its <b>range is infinite</b>.',
+    rule_mag_far: 'Even from this far the coil pulled the magnet back. The force is smaller, but never zero: its <b>range is infinite</b>.',
+    rule_mag_off: 'The switch is open, no current, so the coil is no magnet now. <b>No current</b>, no magnetic force here.',
     rule_law:
-      '<b>Electric and magnetic forces together are the electromagnetic force</b>; far stronger than gravity (the book says {p} times); <b>infinite range</b>.',
+      'Electric and magnetic forces together are the <b>electromagnetic force</b>. It is far stronger than gravity (the book says {p} times), with infinite range.',
 
     forces: 'The four fundamental forces (weakest → strongest)',
     f_grav: 'gravitational',
@@ -179,7 +179,7 @@ export const STRINGS = {
     opt_far_touch: 'no: it pulls only when touching',
     opt_far_more: 'yes: farther away it pulls harder',
     why_poles_rep: '<b>Like poles, so repulsion</b>: both facing ends are {p} poles, and like poles repel each other.',
-    why_poles_att: '<b>Unlike poles, so attraction</b>: the coil’s {a} pole faces the magnet’s {b} pole; unlike poles attract.',
+    why_poles_att: '<b>Unlike poles, so attraction</b>: the coil’s {a} pole faces the magnet’s {b} pole. Unlike poles attract.',
     why_off: '<b>It stays</b>: a coil of wire is a magnet only while a current flows. Only when the switch is on will it pull.',
     why_strength: '<b>Electromagnetic, about {p} times</b>: {one} and {n} zeros! (For like particles such as two protons.)',
     why_range: '<b>Yes: small, but not zero</b>: farther away it is smaller, but never zero. Its range is infinite.',

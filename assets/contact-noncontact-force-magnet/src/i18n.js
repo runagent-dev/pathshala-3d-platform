@@ -35,9 +35,9 @@ export const STRINGS = {
     end_magnet: 'পেরেকটি ছুটে গিয়ে চুম্বকে লেগে গেছে।',
 
     // the one rule: the book's definition of force first, then the two kinds as the student finds them
-    rule_start: '<b>বল</b>: যার প্রয়োগের কারণে <b>স্থির বস্তু চলতে শুরু করে</b> আর <b>গতিশীল বস্তুর বেগের পরিবর্তন হয়</b>। দেখো, কোন বল বস্তুকে ছুঁয়ে কাজ করে।',
-    kinds_noncontact: `${NONCONTACT} প্রয়োগ করতে <b>স্পর্শ করতে হয় না</b>, দূর থেকেই কাজ করে।`,
-    eff_start: 'এখানে বলের প্রয়োগে <b>স্থির বস্তু চলতে শুরু করল</b>।',
+    rule_start: 'যার প্রয়োগের কারণে স্থির বস্তু চলতে শুরু করে আর গতিশীল বস্তুর বেগের পরিবর্তন হয়, সেটাই <b>বল</b>। দেখো, এই বল বস্তুকে ছোঁয় কি না।',
+    kinds_noncontact: `${NONCONTACT} প্রয়োগ করতে স্পর্শ করতে হয় না, দূর থেকেই কাজ করে।`,
+    eff_start: 'এখানে বলের প্রয়োগে স্থির বস্তু চলতে শুরু করল।',
 
     // in the 3D view: the tag at the contact patch or the gap, the force's name beside its arrow; in the panel's
     // action row: how time is shown
@@ -58,9 +58,9 @@ export const STRINGS = {
     k_comb_hand: 'স্পর্শ বল: হাত চিরুনি ধরে আছে',
     k_comb_touch: 'স্পর্শ বল: কাগজ চিরুনিতে লেগে যায়',
     k_comb_light: 'অস্পর্শ বল: কাগজ খুব হালকা',
-    why_comb: '<b>অস্পর্শ বল</b>: ছবিতে দেখো, চিরুনি আর কাগজের মাঝে {d} cm ফাঁক; চিরুনি ছোঁয়ার আগেই কাগজ উঠতে শুরু করে।',
-    miss_k_comb_hand: '<b>অস্পর্শ বল</b>: হাত ছোঁয় চিরুনিকে, কাগজকে নয়; ছবিতে দেখো, কাগজ {d} cm ফাঁক থেকেই উঠতে শুরু করে।',
-    miss_k_comb_touch: '<b>অস্পর্শ বল</b>: কাগজ লেগে যায় পরে; ছবিতে দেখো, ওঠা শুরু হয় {d} cm ফাঁক থেকে, ছোঁয়ার আগেই।',
+    why_comb: '<b>অস্পর্শ বল</b>: ছবিতে দেখো, চিরুনি আর কাগজের মাঝে {d} cm ফাঁক। চিরুনি ছোঁয়ার আগেই কাগজ উঠতে শুরু করে।',
+    miss_k_comb_hand: '<b>অস্পর্শ বল</b>: হাত ছোঁয় চিরুনিকে, কাগজকে নয়। ছবিতে দেখো, কাগজ {d} cm ফাঁক থেকেই উঠতে শুরু করে।',
+    miss_k_comb_touch: '<b>অস্পর্শ বল</b>: কাগজ লেগে যায় পরে। ছবিতে দেখো, ওঠা শুরু হয় {d} cm ফাঁক থেকে, ছোঁয়ার আগেই।',
     miss_k_comb_light: '<b>অস্পর্শ বল</b> ঠিকই, তবে হালকা বলে নয়: চিরুনি কাগজকে না ছুঁয়ে, {d} cm ফাঁক থেকে টানে।',
     q_eff: 'পেরেকটি চুম্বকের দিকে ছুটছে। চুম্বকের আকর্ষণ পেরেকটির কী করছে?',
     eff_faster: 'বেগ বাড়াচ্ছে',
@@ -68,18 +68,18 @@ export const STRINGS = {
     eff_same: 'বেগ একই রাখছে',
     eff_nothing: 'কিছুই করছে না',
     why_eff: '<b>বেগ বাড়াচ্ছে</b>: আকর্ষণ পেরেকের চলার দিকেই, তাই স্থির পেরেক চলতে শুরু করে আর ক্রমেই দ্রুত হয়। এটাই বলের কাজ।',
-    miss_eff_slower: '<b>বেগ বাড়াচ্ছে</b>: আকর্ষণ পেরেকের চলার দিকেই, তাই বেগ কমে না, বাড়ে; দেখো, পেরেক ক্রমেই দ্রুত ছুটে চুম্বকে লাগে।',
-    miss_eff_same: '<b>বেগ বাড়াচ্ছে</b>: পেরেকটি স্থির ছিল, এখন চলছে আর ক্রমেই দ্রুত হচ্ছে; বেগ একই থাকে না।',
-    miss_eff_nothing: '<b>বেগ বাড়াচ্ছে</b>: না ছুঁয়েও চুম্বক টানে; তাই স্থির পেরেক চলতে শুরু করে, ক্রমেই দ্রুত হয়।',
+    miss_eff_slower: '<b>বেগ বাড়াচ্ছে</b>: আকর্ষণ পেরেকের চলার দিকেই, তাই বেগ কমে না, বাড়ে। দেখো, পেরেক ক্রমেই দ্রুত ছুটে চুম্বকে লাগে।',
+    miss_eff_same: '<b>বেগ বাড়াচ্ছে</b>: পেরেকটি স্থির ছিল, এখন চলছে আর ক্রমেই দ্রুত হচ্ছে। বেগ একই থাকে না।',
+    miss_eff_nothing: '<b>বেগ বাড়াচ্ছে</b>: না ছুঁয়েও চুম্বক টানে। তাই স্থির পেরেক চলতে শুরু করে, ক্রমেই দ্রুত হয়।',
 
     q_magnet: 'চুম্বকটি কাছে আনা হয়েছে, পেরেকটি তার দিকে ছুটছে। চুম্বকের এই টান কোন ধরনের বল?',
     k_magnet_ok: 'অস্পর্শ বল: না ছুঁয়েই পেরেক টানে',
     k_magnet_hand: 'স্পর্শ বল: হাত চুম্বক ধরে আছে',
     k_magnet_table: 'স্পর্শ বল: পেরেক টেবিল ছুঁয়ে আছে',
     k_magnet_small: 'অস্পর্শ বল: পেরেকটি খুব ছোট',
-    why_magnet: '<b>অস্পর্শ বল</b>: ছবিতে দেখো, পেরেক আর চুম্বকের মাঝে {d} cm ফাঁক, কিছুই ছুঁয়ে নেই; তবু চুম্বক পেরেক টানে।',
-    miss_k_magnet_hand: '<b>অস্পর্শ বল</b>: হাত ছোঁয় চুম্বককে, পেরেককে নয়; ছবিতে দেখো, পেরেক আর চুম্বকের মাঝে {d} cm ফাঁক।',
-    miss_k_magnet_table: '<b>অস্পর্শ বল</b>: টেবিল পেরেককে চুম্বকের দিকে টানে না; টানে চুম্বক, {d} cm ফাঁক থেকে, না ছুঁয়ে।',
+    why_magnet: '<b>অস্পর্শ বল</b>: ছবিতে দেখো, পেরেক আর চুম্বকের মাঝে {d} cm ফাঁক, কিছুই ছুঁয়ে নেই। তবু চুম্বক পেরেক টানে।',
+    miss_k_magnet_hand: '<b>অস্পর্শ বল</b>: হাত ছোঁয় চুম্বককে, পেরেককে নয়। ছবিতে দেখো, পেরেক আর চুম্বকের মাঝে {d} cm ফাঁক।',
+    miss_k_magnet_table: '<b>অস্পর্শ বল</b>: টেবিল পেরেককে চুম্বকের দিকে টানে না। টানে চুম্বক, {d} cm ফাঁক থেকে, না ছুঁয়ে।',
     miss_k_magnet_small: '<b>অস্পর্শ বল</b> ঠিকই, তবে ছোট বলে নয়: চুম্বক পেরেককে না ছুঁয়ে, {d} cm ফাঁক থেকে টানে।',
 
     q_count: 'প্রশ্ন {i} / {n}',
@@ -120,9 +120,9 @@ export const STRINGS = {
     end_magnet: 'The nail rushed onto the magnet.',
 
     rule_start:
-      'A <b>force</b> is what makes <b>a body at rest start moving</b> and <b>changes the velocity of a moving body</b>. See which force acts by touching.',
-    kinds_noncontact: `A ${NONCONTACT_EN} needs <b>no touching</b>: it acts from a distance.`,
-    eff_start: 'Here the force makes <b>a body at rest start moving</b>.',
+      'A <b>force</b> is what makes a body at rest start moving and changes the velocity of a moving body. See whether this force touches the body.',
+    kinds_noncontact: `A ${NONCONTACT_EN} needs no touching: it acts from a distance.`,
+    eff_start: 'Here the force makes a body at rest start moving.',
 
     tag_contact: 'Touching: contact force',
     tag_noncontact: 'Not touching: non-contact force',
@@ -140,9 +140,9 @@ export const STRINGS = {
     k_comb_hand: 'Contact: the hand holds the comb',
     k_comb_touch: 'Contact: the paper sticks to the comb',
     k_comb_light: 'Non-contact: the paper is very light',
-    why_comb: '<b>Non-contact force</b>: look, a gap of {d} cm between the comb and the paper; the paper starts to rise before it touches the comb.',
-    miss_k_comb_hand: '<b>Non-contact force</b>: the hand touches the comb, not the paper; look, the paper rises across a {d} cm gap.',
-    miss_k_comb_touch: '<b>Non-contact force</b>: the paper sticks later; look, it starts to rise across a {d} cm gap, before touching.',
+    why_comb: '<b>Non-contact force</b>: look, a gap of {d} cm between the comb and the paper. The paper starts to rise before it touches the comb.',
+    miss_k_comb_hand: '<b>Non-contact force</b>: the hand touches the comb, not the paper. Look, the paper rises across a {d} cm gap.',
+    miss_k_comb_touch: '<b>Non-contact force</b>: the paper sticks later. Look, it starts to rise across a {d} cm gap, before touching.',
     miss_k_comb_light: '<b>Non-contact force</b>, but not because the paper is light: the comb pulls it across a {d} cm gap.',
     q_eff: 'The nail rushes toward the magnet. What is the magnet’s pull doing to it?',
     eff_faster: 'Increasing its velocity',
@@ -151,8 +151,8 @@ export const STRINGS = {
     eff_nothing: 'Nothing',
     why_eff:
       '<b>Increasing its velocity</b>: the pull is in the direction the nail moves, so the nail at rest starts moving and speeds up. That is what a force does.',
-    miss_eff_slower: '<b>Increasing its velocity</b>: the pull is in the direction the nail moves, so it speeds up; watch it rush onto the magnet.',
-    miss_eff_same: '<b>Increasing its velocity</b>: the nail was at rest, now it moves, faster and faster; its velocity does not stay the same.',
+    miss_eff_slower: '<b>Increasing its velocity</b>: the pull is in the direction the nail moves, so it speeds up. Watch it rush onto the magnet.',
+    miss_eff_same: '<b>Increasing its velocity</b>: the nail was at rest, now it moves, faster and faster. Its velocity does not stay the same.',
     miss_eff_nothing: '<b>Increasing its velocity</b>: the magnet pulls without touching, so the nail starts moving and speeds up.',
 
     q_magnet: 'The magnet has been brought near and the nail rushes toward it. What kind of force is the magnet’s pull?',
@@ -160,9 +160,9 @@ export const STRINGS = {
     k_magnet_hand: 'Contact: the hand holds the magnet',
     k_magnet_table: 'Contact: the nail touches the table',
     k_magnet_small: 'Non-contact: the nail is very small',
-    why_magnet: '<b>Non-contact force</b>: look, a gap of {d} cm between the nail and the magnet, nothing touching; yet the magnet pulls the nail.',
-    miss_k_magnet_hand: '<b>Non-contact force</b>: the hand touches the magnet, not the nail; look, a {d} cm gap between the nail and the magnet.',
-    miss_k_magnet_table: '<b>Non-contact force</b>: the table does not pull the nail toward the magnet; the magnet does, across a {d} cm gap.',
+    why_magnet: '<b>Non-contact force</b>: look, a gap of {d} cm between the nail and the magnet, nothing touching. Yet the magnet pulls the nail.',
+    miss_k_magnet_hand: '<b>Non-contact force</b>: the hand touches the magnet, not the nail. Look, a {d} cm gap between the nail and the magnet.',
+    miss_k_magnet_table: '<b>Non-contact force</b>: the table does not pull the nail toward the magnet. The magnet does, across a {d} cm gap.',
     miss_k_magnet_small: '<b>Non-contact force</b>, but not because the nail is small: the magnet pulls it across a {d} cm gap.',
 
     q_count: 'Question {i} / {n}',

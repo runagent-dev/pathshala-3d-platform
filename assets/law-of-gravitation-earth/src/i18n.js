@@ -59,9 +59,9 @@ export const STRINGS = {
     out_weight2: '{kg} kg বাটখারার ওজন প্রায় <b>{w} নিউটন</b> <small>({one} kg-এর {two} গুণ)</small>',
 
     // the rule line: one short idea; the quantity just changed in its colour
-    rule_earth0: 'পৃথিবী বাটখারাকে নিজের কেন্দ্রের দিকে টানে: এই টানকেই আমরা <b>ওজন</b> বলি।',
-    rule_earth1: '<b>দূরত্ব {R} মাপা হয় পৃথিবীর কেন্দ্র থেকে</b> (প্রায় {km} km), পৃষ্ঠ থেকে নয়: পৃথিবীর সব ভর যেন কেন্দ্রে জমা।',
-    rule_earth2: '<b>তাই প্রতি {one} kg-এ টান একই: {gv} নিউটন।</b> ছেড়ে দিলে ত্বরণ {g} = {gv} {ms2}।',
+    rule_earth0: 'পৃথিবী বাটখারাকে নিজের কেন্দ্রের দিকে টানে। এই টানকেই আমরা <b>ওজন</b> বলি।',
+    rule_earth1: 'দূরত্ব {R} মাপা হয় <b>পৃথিবীর কেন্দ্র থেকে</b> (প্রায় {km} km), পৃষ্ঠ থেকে নয়। পৃথিবীর সব ভর যেন কেন্দ্রে জমা।',
+    rule_earth2: 'তাই প্রতি {one} kg-এ টান একই: <b>{gv} নিউটন</b>। ছেড়ে দিলে ত্বরণ {g} = {gv} {ms2}।',
 
     // the formula: last, each symbol with the word for what the student changed, in the same colour
     cap_pull: 'টান (বল)',
@@ -77,8 +77,8 @@ export const STRINGS = {
     pair_less: 'হ্যাঁ, তবে অনেক কম জোরে',
     pair_none: 'না, ছোট জিনিস বড়কে টানে না',
     pair_more: 'হ্যাঁ, আরও বেশি জোরে',
-    why_pair: '<b>হ্যাঁ, সমান জোরে</b>: দুটি ভর একে অপরকে সমান জোরে, উল্টো দিকে টানে। ছবিতে দেখো, দুটি তীর সমান লম্বা; পৃথিবীর ভর অনেক বেশি বলে সে প্রায় নড়ে না।',
-    not_pair_less: 'টান কম নয়, সমান; পৃথিবী কম নড়ে, কারণ তার ভর অনেক বেশি।',
+    why_pair: '<b>হ্যাঁ, সমান জোরে</b>: দুটি ভর একে অপরকে সমান জোরে, উল্টো দিকে টানে। ছবিতে দেখো, দুটি তীর সমান লম্বা। পৃথিবীর ভর অনেক বেশি বলে সে প্রায় নড়ে না।',
+    not_pair_less: 'টান কম নয়, সমান। পৃথিবী কম নড়ে, কারণ তার ভর অনেক বেশি।',
     not_pair_none: 'যেকোনো দুটি ভর একে অপরকে টানে, ছোট-বড় সবাই।',
     not_pair_more: 'বেশি নয়: দুটি টান সমান, তীর দুটিও সমান লম্বা।',
 
@@ -101,8 +101,8 @@ export const STRINGS = {
     q_radius: 'বাটখারাটি মাটি থেকে {h} m উপরে। হিসাবে দূরত্ব {R} কত ধরবে?',
     why_radius: '<b>প্রায় {km} km:</b> {R} মাপা হয় পৃথিবীর কেন্দ্র থেকে। মাটি থেকে {h} m উপরে হলেও তা প্রায় পৃথিবীর ব্যাসার্ধ।',
     not_rad_height: 'মাটি থেকে দূরত্ব নয়: কেন্দ্র থেকে।',
-    not_rad_diam: 'এটি পৃথিবীর ব্যাস; {R} মাপা হয় কেন্দ্র থেকে, মানে ব্যাসার্ধ।',
-    not_rad_km: '{m} m মানে মাত্র {kmm} km; ব্যাসার্ধ {km} km।',
+    not_rad_diam: 'এটি পৃথিবীর ব্যাস। {R} মাপা হয় কেন্দ্র থেকে, মানে ব্যাসার্ধ।',
+    not_rad_km: '{m} m মানে মাত্র {kmm} km। ব্যাসার্ধ {km} km।',
 
     q_h: 'ছবিতে {kg} kg বাটখারাটি পৃথিবীর কেন্দ্র থেকে {two}{R} দূরে। পৃষ্ঠে এর ওজন {w0} নিউটন; এখানে কত?',
     why_h: '<b>প্রায় {ans} নিউটন:</b> দূরত্ব {two} গুণ, তাই টান {four} ভাগের {one} ভাগ: {w0} ÷ {four} = প্রায় {ans}।',
@@ -152,10 +152,10 @@ export const STRINGS = {
     out_weight: 'The {kg} kg weight weighs about <b>{w} N</b>',
     out_weight2: '{kg} kg weighs about <b>{w} N</b> <small>({two} times {one} kg)</small>',
 
-    rule_earth0: 'The Earth pulls the weight towards its own centre: we call this pull its <b>weight</b>.',
+    rule_earth0: 'The Earth pulls the weight towards its own centre. We call this pull its <b>weight</b>.',
     rule_earth1:
-      '<b>The distance {R} is measured from the Earth’s centre</b> (about {km} km), not from the surface: the Earth pulls as if all its mass were at its centre.',
-    rule_earth2: '<b>So the pull on each {one} kg is the same: {gv} N.</b> Let go, and the acceleration is {g} = {gv} {ms2}.',
+      'The distance {R} is measured <b>from the Earth’s centre</b> (about {km} km), not from the surface. The Earth pulls as if all its mass were at its centre.',
+    rule_earth2: 'So the pull on each {one} kg is the same: <b>{gv} N</b>. Let go, and the acceleration is {g} = {gv} {ms2}.',
 
     cap_pull: 'pull',
     cap_G: 'constant',
@@ -170,8 +170,8 @@ export const STRINGS = {
     pair_none: 'No, a small thing does not pull a big one',
     pair_more: 'Yes, even harder',
     why_pair:
-      '<b>Yes, just as hard</b>: two masses pull each other equally hard, in opposite directions. Look, the two arrows are equally long; the Earth hardly moves because its mass is so large.',
-    not_pair_less: 'The pull is not smaller but equal; the Earth moves less because its mass is so large.',
+      '<b>Yes, just as hard</b>: two masses pull each other equally hard, in opposite directions. Look, the two arrows are equally long. The Earth hardly moves because its mass is so large.',
+    not_pair_less: 'The pull is not smaller but equal. The Earth moves less because its mass is so large.',
     not_pair_none: 'Any two masses pull each other, small or big.',
     not_pair_more: 'Not harder: the two pulls are equal, and so are the arrows.',
 
@@ -193,7 +193,7 @@ export const STRINGS = {
     why_radius: '<b>About {km} km:</b> {R} is from the Earth’s centre; {h} m up is still about the Earth’s radius.',
     not_rad_height: 'Not from the ground: from the centre.',
     not_rad_diam: 'That is the diameter; {R} is from the centre, the radius.',
-    not_rad_km: '{m} m is only {kmm} km; the radius is {km} km.',
+    not_rad_km: '{m} m is only {kmm} km. The radius is {km} km.',
 
     q_h: 'The {kg} kg weight is {two}{R} from the Earth’s centre. At the surface it weighs {w0} N; here?',
     why_h: '<b>About {ans} N:</b> distance {two} times, pull {one}/{four}: {w0} ÷ {four} = about {ans}.',

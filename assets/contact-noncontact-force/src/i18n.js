@@ -32,12 +32,12 @@ export const STRINGS = {
     rest_push: 'কোনো কিছুকে ধাক্কা দেওয়া: ট্রলির বাক্সটি এখন স্থির।',
     pre_push: 'হাত দুটি বাক্সে লাগছে… বাক্স এখনো স্থির।',
     out_push: `হাত বাক্সটিকে ছুঁয়ে ধাক্কা দিচ্ছে: ${CONTACT}`,
-    end_push: 'হাত সরে গেছে; ধাক্কা আর নেই, ট্রলি গড়িয়ে থেমেছে।',
+    end_push: 'হাত সরে গেছে, ধাক্কা শেষ। ট্রলি গড়িয়ে থেমে গেছে।',
 
     // the one rule: the book's definition of force first, then the two kinds as the student finds them
-    rule_start: '<b>বল</b>: যার প্রয়োগের কারণে <b>স্থির বস্তু চলতে শুরু করে</b> আর <b>গতিশীল বস্তুর বেগের পরিবর্তন হয়</b>। দেখো, কোন বল বস্তুকে ছুঁয়ে কাজ করে।',
-    kinds_contact: `${CONTACT} প্রয়োগ করতে হলে বস্তুকে <b>স্পর্শ করতে হয়</b>।`,
-    eff_start: 'এখানে বলের প্রয়োগে <b>স্থির বস্তু চলতে শুরু করল</b>।',
+    rule_start: 'যার প্রয়োগের কারণে স্থির বস্তু চলতে শুরু করে আর গতিশীল বস্তুর বেগের পরিবর্তন হয়, সেটাই <b>বল</b>। দেখো, এই বল বস্তুকে ছোঁয় কি না।',
+    kinds_contact: `${CONTACT} প্রয়োগ করতে হলে বস্তুকে স্পর্শ করতে হয়।`,
+    eff_start: 'এখানে বলের প্রয়োগে স্থির বস্তু চলতে শুরু করল।',
 
     // in the 3D view: the tag at the contact patch or the gap, the force's name beside its arrow; in the panel's
     // action row: how time is shown
@@ -61,7 +61,7 @@ export const STRINGS = {
     why_rope: '<b>স্পর্শ বল</b>: ছবিতে দেখো, দড়ি গাড়ির আংটা ছুঁয়ে আছে। মানুষটি গাড়ি না ছুঁলেও দড়ি ছুঁয়ে টানে, ক্রেনের তারের মতো।',
     miss_k_rope_person: '<b>স্পর্শ বল</b>: মানুষটি গাড়ি ছোঁয়নি ঠিকই, কিন্তু ছবিতে দেখো, দড়ি গাড়ির আংটা ছুঁয়ে টানছে।',
     miss_k_rope_wheels: '<b>স্পর্শ বল</b>, তবে চাকার জন্য নয়: টান আসে দড়ি থেকে, আর দড়ি গাড়ির আংটা ছুঁয়ে আছে (ছবিতে দেখো)।',
-    miss_k_rope_far: '<b>স্পর্শ বল</b>: মানুষটি দূরে, কিন্তু দড়ি দূর থেকে টানে না; ছবিতে দেখো, দড়ির মাথা গাড়ির আংটা ছুঁয়ে টানছে।',
+    miss_k_rope_far: '<b>স্পর্শ বল</b>: মানুষটি দূরে, কিন্তু দড়ি দূর থেকে টানে না। ছবিতে দেখো, দড়ির মাথা গাড়ির আংটা ছুঁয়ে টানছে।',
     eff_faster: 'বেগ বাড়াচ্ছে',
     eff_slower: 'বেগ কমাচ্ছে',
     eff_same: 'বেগ একই রাখছে',
@@ -75,12 +75,12 @@ export const STRINGS = {
     why_push: '<b>স্পর্শ বল</b>: ছবিতে দেখো, হাতের তালু বাক্সটিকে ছুঁয়ে আছে। ছুঁয়ে থেকেই হাত বাক্সটিকে ঠেলে চালায়।',
     miss_k_push_unseen: '<b>স্পর্শ বল</b>: বল চোখে দেখা যায় না ঠিকই, কিন্তু ছবিতে দেখো, হাতের তালু বাক্সটিকে ছুঁয়ে ঠেলছে।',
     miss_k_push_wheels: '<b>স্পর্শ বল</b>, তবে চাকার জন্য নয়: ধাক্কা আসে হাত থেকে, আর হাত বাক্সটিকে ছুঁয়ে আছে (ছবিতে দেখো)।',
-    miss_k_push_self: '<b>স্পর্শ বল</b>: বাক্সটি স্থির ছিল, নিজে চলতে শুরু করেনি; ছবিতে দেখো, হাত তাকে ছুঁয়ে ঠেলছে, তাই চলছে।',
+    miss_k_push_self: '<b>স্পর্শ বল</b>: বাক্সটি স্থির ছিল, নিজে চলতে শুরু করেনি। ছবিতে দেখো, হাত তাকে ছুঁয়ে ঠেলছে, তাই চলছে।',
     q_eff: 'হাত দুটি ট্রলিটিকে ঠেলছে। এই ধাক্কা ট্রলিটির কী করছে?',
     why_eff: '<b>বেগ বাড়াচ্ছে</b>: ধাক্কা ট্রলির চলার দিকেই, তাই স্থির ট্রলি চলতে শুরু করে আর ক্রমেই দ্রুত হয়। এটাই বলের কাজ।',
-    miss_eff_slower: '<b>বেগ বাড়াচ্ছে</b>: ধাক্কা ট্রলির চলার দিকেই, তাই বেগ কমে না, বাড়ে; দেখো, হাত ঠেলতে থাকলে ট্রলি ক্রমেই দ্রুত চলে।',
-    miss_eff_same: '<b>বেগ বাড়াচ্ছে</b>: ট্রলিটি স্থির ছিল, এখন চলছে আর ক্রমেই দ্রুত হচ্ছে; বেগ একই থাকে না।',
-    miss_eff_nothing: '<b>বেগ বাড়াচ্ছে</b>: হাত না ঠেললে ট্রলি স্থিরই থাকত; ধাক্কার জন্যই স্থির ট্রলি চলতে শুরু করে, ক্রমেই দ্রুত হয়।',
+    miss_eff_slower: '<b>বেগ বাড়াচ্ছে</b>: ধাক্কা ট্রলির চলার দিকেই, তাই বেগ কমে না, বাড়ে। দেখো, হাত ঠেলতে থাকলে ট্রলি ক্রমেই দ্রুত চলে।',
+    miss_eff_same: '<b>বেগ বাড়াচ্ছে</b>: ট্রলিটি স্থির ছিল, এখন চলছে আর ক্রমেই দ্রুত হচ্ছে। বেগ একই থাকে না।',
+    miss_eff_nothing: '<b>বেগ বাড়াচ্ছে</b>: হাত না ঠেললে ট্রলি স্থিরই থাকত। ধাক্কার জন্যই স্থির ট্রলি চলতে শুরু করে, ক্রমেই দ্রুত হয়।',
 
     q_count: 'প্রশ্ন {i} / {n}',
     q_score: 'সঠিক: {right}',
@@ -117,12 +117,12 @@ export const STRINGS = {
     rest_push: 'Pushing something: the carton on the trolley is at rest.',
     pre_push: 'The hands reach the carton… it is still at rest.',
     out_push: `The hands touch the carton and push it: ${CONTACT_EN}`,
-    end_push: 'The hands have let go; the push is over and the trolley rolled to a stop.',
+    end_push: 'The hands have let go and the push is over. The trolley rolled to a stop.',
 
     rule_start:
-      'A <b>force</b> is what makes <b>a body at rest start moving</b> and <b>changes the velocity of a moving body</b>. See which force acts by touching.',
-    kinds_contact: `A ${CONTACT_EN} can only be applied by <b>touching</b> the body.`,
-    eff_start: 'Here the force makes <b>a body at rest start moving</b>.',
+      'A <b>force</b> is what makes a body at rest start moving and changes the velocity of a moving body. See whether this force touches the body.',
+    kinds_contact: `A ${CONTACT_EN} can only be applied by touching the body.`,
+    eff_start: 'Here the force makes a body at rest start moving.',
 
     tag_contact: 'Touching: contact force',
     tag_noncontact: 'Not touching: non-contact force',
@@ -145,7 +145,7 @@ export const STRINGS = {
     miss_k_rope_person: '<b>Contact force</b>: true, the person does not touch the cart, but look: the rope touches its ring and pulls.',
     miss_k_rope_wheels: '<b>Contact force</b>, but not because of the wheels: the pull comes from the rope, which touches the cart’s ring (look).',
     miss_k_rope_far:
-      '<b>Contact force</b>: the person is far, but a rope does not pull from a distance; look, its end touches the cart’s ring and pulls.',
+      '<b>Contact force</b>: the person is far, but a rope does not pull from a distance. Look, its end touches the cart’s ring and pulls.',
     eff_faster: 'Increasing its velocity',
     eff_slower: 'Decreasing its velocity',
     eff_same: 'Keeping its velocity the same',
@@ -159,14 +159,14 @@ export const STRINGS = {
     why_push: '<b>Contact force</b>: look, the palms touch the carton. The hands push it along by touching it.',
     miss_k_push_unseen: '<b>Contact force</b>: true, a force cannot be seen, but look: the palms touch the carton and push it.',
     miss_k_push_wheels: '<b>Contact force</b>, but not because of the wheels: the push comes from the hands, which touch the carton (look).',
-    miss_k_push_self: '<b>Contact force</b>: the carton was at rest and did not start by itself; look, the hands touch it and push it.',
+    miss_k_push_self: '<b>Contact force</b>: the carton was at rest and did not start by itself. Look, the hands touch it and push it.',
     q_eff: 'The hands are pushing the trolley. What is the push doing to it?',
     why_eff:
       '<b>Increasing its velocity</b>: the push is in the direction the trolley moves, so the trolley at rest starts moving and speeds up. That is what a force does.',
     miss_eff_slower:
-      '<b>Increasing its velocity</b>: the push is in the direction the trolley moves, so it speeds up; watch it go faster while the hands push.',
-    miss_eff_same: '<b>Increasing its velocity</b>: the trolley was at rest, now it moves, faster and faster; its velocity does not stay the same.',
-    miss_eff_nothing: '<b>Increasing its velocity</b>: without the push the trolley would stay at rest; the push makes it start moving and speed up.',
+      '<b>Increasing its velocity</b>: the push is in the direction the trolley moves, so it speeds up. Watch it go faster while the hands push.',
+    miss_eff_same: '<b>Increasing its velocity</b>: the trolley was at rest, now it moves, faster and faster. Its velocity does not stay the same.',
+    miss_eff_nothing: '<b>Increasing its velocity</b>: without the push the trolley would stay at rest. The push makes it start moving and speed up.',
 
     q_count: 'Question {i} / {n}',
     q_score: 'Right: {right}',

@@ -65,7 +65,7 @@ export function createApp(root, options = {}) {
     r: '<i class="lg-qd">r</i>',
     g: '<i class="lg-qf">g</i>',
     R2: '<i class="lg-qd">R</i><sup class="lg-qd">2</sup>',
-    ms2: `ms<sup>${MINUS}2</sup>`,
+    ms2: `m s<sup>${MINUS}2</sup>`,
     four: '4',
     one: '1',
     two: '2',
@@ -102,6 +102,7 @@ export function createApp(root, options = {}) {
   root.tabIndex = 0;
   const ui = buildStudentShell(root, t, {
     layout: 'side',
+    learnAlign: 'start',
     learn: cleanSheet(t, {
       quiet: [{ act: 'home', label: 'act_home', icon: ICONS.reset }],
       lines: { action: 2, outcome: 1, rule: 3 },
