@@ -7,6 +7,6 @@ the builders of the next figures. It is a snapshot of a working version, with th
 - **8.2 তিন ঘটনা (চিত্র ৮.০২):** `four-step-version/app.js` (`shine`, the `events` branch of `applyWorld`, the `events` test
   question), `diagram.js` (`drawRefracted`, `drawAbsorbed`), the `rule_ev*` strings in `i18n.js`.
 - **চিত্র ৮.০৫ (Fresnel):** `app.js` (the `amount` branch; `elNow`, which lowers the view with θi so the water really turns
-  into a mirror), `panelparts.js` (`fresnelGraph`, water and glass), the `rule_a*` strings. `src/reading.js` keeps `fresnel`,
-  `snell` and `refracted`, unit-tested, and `src/lake.js` keeps the exact Fresnel water, so these can be imported as they are.
+  into a mirror), `panelparts.js` (`fresnelGraph`, water and glass), the `rule_a*` strings. `four-step-version/reading.js` keeps
+  `fresnel`, `percent`, `snell` and `refracted`, and `src/lake.js` keeps the exact Fresnel water.
 - **The magnifier on wavy water:** `panelparts.js` (`createMagnifier`), a live section through the same waves.

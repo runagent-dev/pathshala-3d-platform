@@ -1,11 +1,10 @@
 // The optics of the figure, pure functions (unit-tested in test/unit/reflection-laws.test.mjs): the law of reflection
-// as a vector formula, Snell's law, the exact Fresnel reflectance of unpolarised light, and the waves on the lake.
-// Directions are plain { x, y, z } in the scene's axes: y is up, the water is the plane y = 0, O is the origin.
+// as a vector formula, the waves of the picture, and the magnified rough strip of the diagram. Directions are plain
+// { x, y, z } in the scene's axes: y is up, the water is the plane y = 0, O is the origin.
 
-export const N_WATER = 1.33; // refractive index of water (air: 1), used for প্রতিসরণ and the Fresnel numbers
-export const N_GLASS = 1.5; // the book's glass, for checking its 4–5 %
+export const N_WATER = 1.33; // refractive index of water, for how much the lake mirrors
 
-export const TAU = Math.PI * 2;
+const TAU = Math.PI * 2;
 const RAD = Math.PI / 180;
 export const rad = (d) => d * RAD;
 export const deg = (r) => r / RAD;
@@ -13,7 +12,7 @@ export const deg = (r) => r / RAD;
 /** Unit vector along the sheet (the plane of incidence) on the water: phi = 0 is along +x. */
 export const along = (phi) => ({ x: Math.cos(rad(phi)), y: 0, z: Math.sin(rad(phi)) });
 
-/** Unit vector from O toward the light (toward X): theta from the normal, on the −along side of the sheet. */
+/** Unit vector from O toward X: theta from the normal, on the −along side of the sheet. */
 export function toLight(theta, phi) {
   const u = along(phi);
   const s = Math.sin(rad(theta));
@@ -22,10 +21,6 @@ export function toLight(theta, phi) {
 }
 
 export const dot = (a, b) => a.x * b.x + a.y * b.y + a.z * b.z;
-export function normalize(a) {
-  const l = Math.hypot(a.x, a.y, a.z) || 1;
-  return { x: a.x / l, y: a.y / l, z: a.z / l };
-}
 
 /** The law of reflection: d is the direction the light travels, n a unit normal. r = d − 2 (d·n) n. */
 export function reflect(d, n) {
@@ -51,117 +46,65 @@ export function reflected(theta, phi) {
   return reflect({ x: -l.x, y: -l.y, z: -l.z }, { x: 0, y: 1, z: 0 });
 }
 
-/** Snell's law: the angle in the water (degrees), n sin(out) = sin(in). */
-export const snell = (theta, n = N_WATER) => deg(Math.asin(Math.sin(rad(theta)) / n));
+/** In the sheet, the direction at signed angle a (degrees) from the normal, + toward +along: { s, y }. */
+export const sheetDir = (a) => ({ s: Math.sin(rad(a)), y: Math.cos(rad(a)) });
 
-/** The refracted ray's direction from O, into the water, in the sheet. */
-export function refracted(theta, phi, n = N_WATER) {
-  const u = along(phi);
-  const a = rad(snell(theta, n));
-  return { x: u.x * Math.sin(a), y: -Math.cos(a), z: u.z * Math.sin(a) };
-}
-
-/** Fresnel: the fraction of unpolarised light reflected from air into a medium of index n at incidence theta (deg). */
-export function fresnel(theta, n = N_WATER) {
-  if (theta >= 90) return 1;
-  const c = Math.cos(rad(theta));
-  const ct = Math.sqrt(1 - (1 - c * c) / (n * n));
-  const rs = (c - n * ct) / (c + n * ct);
-  const rp = (ct - n * c) / (ct + n * c);
-  return (rs * rs + rp * rp) / 2;
-}
-/** The reflected share as a whole percent, as the panel says it (প্রায়). */
-export const percent = (theta, n = N_WATER) => Math.round(fresnel(theta, n) * 100);
-
-// ── the waves ────────────────────────────────────────────────────────────────────────────────────────────────
-// Eight sine waves, the same ones in this file (for the rays) and in the water's shader (for the picture): what
-// breaks up the mountain's reflection is what scatters the rays. Slope a·k of each; the slopes add up to about 0.11
-// (rms), peaks near 0.3, which is about ±17° at the steepest: strong ripples, seen from close.
+// ── the waves of the picture ─────────────────────────────────────────────────────────────────────────────────
+// Eight sine waves for the water's shader, crossing each other (10° to 170°), so no two crests line up. The slopes add up
+// to about 0.045 rms: real ripples on a lake, which smear the mirror image into a long shimmering streak.
 const SPEC = [
-  [46, 0.07, 96],
-  [31, 0.07, 122],
-  [22, 0.065, 74],
-  [15, 0.06, 138],
-  [10.5, 0.05, 58],
-  [7.5, 0.045, 112],
-  [5.2, 0.04, 150],
-  [3.6, 0.035, 86],
+  [52, 0.024, 74],
+  [37, 0.024, 118],
+  [26, 0.024, 38],
+  [18, 0.022, 146],
+  [12.5, 0.022, 12],
+  [8.7, 0.02, 96],
+  [6, 0.018, 168],
+  [4.1, 0.016, 58],
 ];
 const G = 26; // the waves' speed is sqrt(g/k): this g suits the scene's scale and keeps them calm to watch
-/** Each wave: { kx, kz, w, a }: wave vector, angular speed, height. */
+/** Each wave: { kx, kz, w, a, slope }: wave vector, angular speed, height, steepness. */
 export const WAVES = SPEC.map(([length, slope, dir]) => {
   const k = TAU / length;
-  return { kx: k * Math.cos(rad(dir)), kz: k * Math.sin(rad(dir)), w: Math.sqrt(G * k), a: slope / k };
+  return { kx: k * Math.cos(rad(dir)), kz: k * Math.sin(rad(dir)), w: Math.sqrt(G * k), a: slope / k, slope };
 });
+/** The root-mean-square slope of the water: sqrt(Σ slope² / 2). */
+export const rmsSlope = (waves = WAVES) => Math.sqrt(waves.reduce((s, w) => s + w.slope * w.slope, 0) / 2);
 
-/** The slope of the water (dh/dx, dh/dz) at x, z at time t, with the waves at strength wind (0 … 1); out is reused. */
-export function slopeAt(x, z, t, wind, out = { x: 0, z: 0 }) {
-  let sx = 0;
-  let sz = 0;
-  for (const w of WAVES) {
-    const c = w.a * Math.cos(w.kx * x + w.kz * z - w.w * t);
-    sx += w.kx * c;
-    sz += w.kz * c;
-  }
-  out.x = sx * wind;
-  out.z = sz * wind;
-  return out;
-}
-/** The height of the water at x, z. */
-export function heightAt(x, z, t, wind) {
-  let h = 0;
-  for (const w of WAVES) h += w.a * Math.sin(w.kx * x + w.kz * z - w.w * t);
-  return h * wind;
-}
-/** The unit normal of the little facet of water at x, z. */
-export function facetNormal(x, z, t, wind) {
-  const s = slopeAt(x, z, t, wind);
-  return normalize({ x: -s.x, y: 1, z: -s.z });
-}
-/**
- * One ray of a parallel bundle reflected at its own facet: { n, r, i } with the facet's normal, the reflected
- * direction and the angle of incidence there (the same angle comes back: the law holds at every facet). A rare facet
- * that would send the light down into the water is eased flat (the ray would only strike the next wave).
- */
-export function facetReflect(d, x, z, t, wind) {
-  let k = wind;
-  for (let i = 0; i < 6; i++) {
-    const n = facetNormal(x, z, t, k);
-    const r = reflect(d, n);
-    if (r.y > 0.08 || i === 5) return { n, r, i: angleToNormal(d, n) };
-    k *= 0.6;
-  }
-  return null;
-}
+// ── the rough strip of the diagram ───────────────────────────────────────────────────────────────────────────
+// চিত্র ৮.০৭ made solid: a little strip of surface, enlarged, where five parallel rays land on five facets. The tilts
+// are far larger than the waves' (said on the view), so that the spread can be seen; the law is the same at each.
+export const STRIP = { n: 5, gap: 20, half: 7.5, tilts: [-32, -18, -4, 8, 16], sway: 2.5 };
 
 /**
- * facetReflect without making objects, for the rays redrawn every frame: d is (dx, dy, dz), the result goes into out
- * as { nx, ny, nz, rx, ry, rz }.
+ * One facet of the strip, as a flat array of 6 numbers per facet in the sheet (s along it, y up): tilt in degrees (+ leans
+ * toward +s), then the facet's normal (ns, ny), then the reflected ray (rs, rv), then the angle of incidence there. The
+ * rays fall at theta from the −s side. strength: 0 flat … 1 rough; time gives the facets a slow sway. out is reused.
  */
-export function facetInto(out, dx, dy, dz, x, z, t, wind) {
-  let hx = 0;
-  let hz = 0;
-  for (const w of WAVES) {
-    const c = w.a * Math.cos(w.kx * x + w.kz * z - w.w * t);
-    hx += w.kx * c;
-    hz += w.kz * c;
-  }
-  let k = wind;
-  for (let i = 0; i < 6; i++) {
-    const nx0 = -hx * k;
-    const nz0 = -hz * k;
-    const l = Math.sqrt(nx0 * nx0 + 1 + nz0 * nz0);
-    out.nx = nx0 / l;
-    out.ny = 1 / l;
-    out.nz = nz0 / l;
-    const q = 2 * (dx * out.nx + dy * out.ny + dz * out.nz);
-    out.rx = dx - q * out.nx;
-    out.ry = dy - q * out.ny;
-    out.rz = dz - q * out.nz;
-    if (out.ry > 0.08) break;
-    k *= 0.6;
+export function stripInto(out, theta, strength, time = 0) {
+  const ds = Math.sin(rad(theta));
+  const dy = -Math.cos(rad(theta));
+  for (let i = 0; i < STRIP.n; i++) {
+    const tilt = (STRIP.tilts[i] + STRIP.sway * Math.sin(time * 0.9 + i * 1.7)) * strength;
+    const ns = Math.sin(rad(tilt));
+    const ny = Math.cos(rad(tilt));
+    const k = 2 * (ds * ns + dy * ny);
+    const o = i * 6;
+    out[o] = tilt;
+    out[o + 1] = ns;
+    out[o + 2] = ny;
+    out[o + 3] = ds - k * ns;
+    out[o + 4] = dy - k * ny;
+    out[o + 5] = deg(Math.acos(Math.min(1, Math.abs(ds * ns + dy * ny))));
   }
   return out;
+}
+/** The widest angle between two reflected rays of the strip, degrees. */
+export function stripSpread(strip) {
+  let c = 1;
+  for (let i = 0; i < STRIP.n; i++)
+    for (let j = 0; j < i; j++) c = Math.min(c, strip[i * 6 + 3] * strip[j * 6 + 3] + strip[i * 6 + 4] * strip[j * 6 + 4]);
+  return deg(Math.acos(Math.max(-1, c)));
 }
 
 /** Fisher–Yates on a copy. */

@@ -19,7 +19,7 @@ import { fitPose } from './camera.js';
 import { ARC, C, createDiagram, L, SHEET } from './diagram.js';
 import { createI18n } from './i18n.js';
 import { createLake } from './lake.js';
-import { angleToNormal, offPlane, rad, reflected, sheetNormal, shuffle, toLight } from './reading.js';
+import { angleToNormal, offPlane, rad, reflected, sheetDir, sheetNormal, shuffle, toLight } from './reading.js';
 
 export const DEFAULTS = {
   step: 'laws', // 'laws' | 'surface'
@@ -36,10 +36,11 @@ export const DEFAULTS = {
 };
 
 const STEPS = ['laws', 'surface'];
-const THETA = [15, 75];
+const THETA = [20, 75];
 const PHI = [-60, 34]; // the plane turns this far (it faces the view at −24°): never edge-on
 const VIEW = { az: 24, el: 8.5, planeEl: 24 };
 const FRAME = new THREE.Box3(new THREE.Vector3(-122, -36, -46), new THREE.Vector3(122, 118, 46));
+const WAVE_IDLE = 20; // after this long untouched the waves rest, and the phone with them
 const TALL_TOP = 170; // on a squarish view there is height to spare: it goes to the sky, so the mountain is whole
 const MARGINS = { top: 36, bottom: 6, side: 6 };
 const CHIP_W = 96; // an angle's label on the view, px
@@ -92,7 +93,7 @@ export function createApp(root, options = {}) {
   controls.minAzimuthAngle = THREE.MathUtils.degToRad(-50);
   controls.maxAzimuthAngle = THREE.MathUtils.degToRad(80);
   const lake = createLake({ stage });
-  const dia = createDiagram({ scene: stage.scene });
+  const dia = createDiagram({ scene: stage.scene, stage, host: ui.canvasHost });
 
   // ── the state ───────────────────────────────────────────────────────────────────────────────────────────
   const s = {
@@ -104,6 +105,7 @@ export function createApp(root, options = {}) {
     wind: o.waves ? 1 : 0, // the waves' strength now, 0 … 1
     time: 2.4, // the waves' clock
     spread: 0,
+    idle: 0, // seconds the waves have run with nobody touching anything
     reveal: 1, // the newest part of the laws, 0 … 1 (it grows in)
     mode: 'explore',
     locked: false,
@@ -136,22 +138,22 @@ export function createApp(root, options = {}) {
     dia.pose(s.theta, s.phi);
     if (s.quiz) return applyQuiz(s.quiz);
     if (s.step === 'surface') {
-      s.spread = dia.drawBundle(s.time, s.wind);
+      s.spread = dia.setStrip(s.theta, s.wind, s.time);
       return;
     }
     const k = s.reveal;
-    dia.showO(true);
-    dia.drawIncident();
-    if (s.law === 1) dia.drawNormal(k);
-    else if (s.law > 1) dia.drawNormal();
-    if (s.law === 1 && k >= 1) dia.drawRightAngle();
+    const v = dia.view;
+    v.o = v.x = v.incident = true;
+    if (s.law === 1) v.normal = k;
+    else if (s.law > 1) v.normal = 1;
+    v.rightAngle = s.law === 1 && k >= 1;
     if (s.law === 2) dia.sheet(k);
     else if (s.law > 2) dia.sheet(1);
-    if (s.law === 3) dia.drawReflected(k);
-    else if (s.law > 3) dia.drawReflected();
+    if (s.law === 3) v.reflected = k;
+    else if (s.law > 3) v.reflected = 1;
     if (s.law >= 3 && k >= 1) {
-      dia.drawAngles(s.theta);
-      dia.showSwing(true);
+      v.arcs.push({ a0: -s.theta, a1: 0, r: ARC, color: C.ti, ends: 'arrows' }, { a0: 0, a1: s.theta, r: ARC, color: C.tr, ends: 'arrows' });
+      v.swing = true;
     }
   }
 
@@ -238,14 +240,21 @@ export function createApp(root, options = {}) {
     const want = s.wavesOn ? 1 : 0;
     if (s.wind === want && want === 0) return false;
     if (s.wind !== want) s.wind = want > s.wind ? Math.min(1, s.wind + dt / 1.4) : Math.max(0, s.wind - dt / 1.1);
+    else if (s.idle > WAVE_IDLE) return false;
+    s.idle += dt;
     s.time += dt;
     lake.setWaves(s.wind, s.time);
-    if (s.step === 'surface' || s.quiz?.kind === 'rough') {
-      s.spread = dia.drawBundle(s.time, s.wind);
+    if (s.step === 'surface' && !s.quiz) {
+      s.spread = dia.setStrip(s.theta, s.wind, s.time);
       panel();
     }
     return true;
   });
+  const wake = () => {
+    s.idle = 0;
+  };
+  root.addEventListener('pointerdown', wake, { capture: true });
+  root.addEventListener('keydown', wake, { capture: true });
 
   // ── moving on through the book ─────────────────────────────────────────────────────────────────────────
   function poseTween(theta, phi, duration = 0.7) {
@@ -338,6 +347,7 @@ export function createApp(root, options = {}) {
   }
   function setWaves(on) {
     s.wavesOn = on;
+    s.idle = 0;
     audio.tick();
     draw();
     emitChange();
@@ -412,7 +422,16 @@ export function createApp(root, options = {}) {
   const lineAvoid = [lineBoxes, chipBoxes];
   const chipAvoid = [chipBoxes];
   /** The media's names matter least: they give way to the letters. */
-  const mediumAvoid = [lineBoxes, chipBoxes, () => ['xp', 'op', 'o'].map((id) => (shown.has(id) ? anno.box(id) : null))];
+  const mediumAvoid = [
+    lineBoxes,
+    chipBoxes,
+    () => ['xp', 'op', 'o'].map((id) => (shown.has(id) ? anno.box(id) : null)),
+    () => {
+      if (!dia.view.swing) return null;
+      const a = toScreen(dia.pS);
+      return { left: a.x - 20, top: a.y - 20, right: a.x + 20, bottom: a.y + 20 };
+    },
+  ];
   const LEFT = [
     { dx: -44, dy: -10 },
     { dx: -44, dy: 16 },
@@ -431,8 +450,20 @@ export function createApp(root, options = {}) {
     { dx: -28, dy: 10 },
   ];
   // X wears the action's ring when it is the part to drag: its letter sits beyond the ring
-  const XSPOTS = [...ABOVE, { dx: -44, dy: -6 }, { dx: 0, dy: -44 }, { dx: -40, dy: -32 }, { dx: -44, dy: 22 }];
-  const XPSPOTS = [...ABOVE, { dx: 44, dy: -6 }, { dx: 44, dy: 22 }, { dx: 0, dy: 30 }];
+  const XSPOTS = [
+    { dx: -22, dy: -14 },
+    { dx: -26, dy: 8 },
+    { dx: -44, dy: -6 },
+    { dx: -44, dy: 22 },
+    { dx: -40, dy: -32 },
+  ];
+  const XPSPOTS = [
+    { dx: 22, dy: -14 },
+    { dx: 26, dy: 8 },
+    { dx: 44, dy: -6 },
+    { dx: 44, dy: 22 },
+    { dx: 40, dy: -32 },
+  ];
   const BELOW = [
     { dx: 0, dy: 22 },
     { dx: -26, dy: 20 },
@@ -444,6 +475,12 @@ export function createApp(root, options = {}) {
     { dx: -6, dy: 26 },
   ];
   const AT = [{ dx: 0, dy: 0 }];
+  const RIGHT90 = [
+    { dx: 26, dy: -12 },
+    { dx: 26, dy: 12 },
+  ];
+  const leadI = { from: new THREE.Vector3(), to: new THREE.Vector3(), color: C.ti };
+  const leadR = { from: new THREE.Vector3(), to: new THREE.Vector3(), color: C.tr };
   const NORMAL_SPOTS = [
     { dx: 8, dy: 0 },
     { dx: -8, dy: 0 },
@@ -506,21 +543,26 @@ export function createApp(root, options = {}) {
     const angles = law && s.law >= 3 && done && settled;
     label('ti', angles, t('l_ti', { a: s.theta }), chipPoint('ti', -1), C.ti, AT);
     label('tr', angles, t('l_tr', { a: thetaR() }), chipPoint('tr', 1), C.tr, AT);
+    dia.view.leaders.length = 0;
     if (angles) {
-      dia.drawLeader(0, arcMid(-1), pts.get('ti'));
-      dia.drawLeader(1, arcMid(1), pts.get('tr'));
+      leadI.from.copy(arcMid(-1));
+      leadI.to.copy(pts.get('ti'));
+      leadR.from.copy(arcMid(1));
+      leadR.to.copy(pts.get('tr'));
+      dia.view.leaders.push(leadI, leadR);
     }
+    label('r90', law && s.law === 1 && done, t('l_right', { a: 90 }), tmp.set(u.x * 8, 9, u.z * 8), INK, RIGHT90, true);
     const rough = s.wind > 0.5;
-    label('surf', surface && settled, rough ? t('l_rough') : t('l_smooth'), tmp.set(-u.x * 76, -8, -u.z * 76 + 20), WATER_TEXT, AT, true);
-    label('para', surface && settled, rough ? t('l_scatter') : t('l_parallel'), along(d.out, 100), AMBER_TEXT, ABOVE, true);
+    label('surf', surface && settled, rough ? t('l_rough') : t('l_smooth'), tmp.set(-u.x * 96, -11, -u.z * 96 + 6), WATER_TEXT, AT, true);
+    label('para', surface && settled, rough ? t('l_scatter') : t('l_parallel'), dia.stripTip, AMBER_TEXT, ABOVE, true);
 
     // the test
     const qk = q?.kind;
-    const drawn = qk === 'angle' || qk === 'plane' || qk === 'names' || qk === 'widen';
+    const drawn = qk === 'angle' || qk === 'plane' || qk === 'names' || qk === 'total';
     label('qx', drawn, t('l_x'), dia.pX, AMBER_TEXT, ABOVE);
-    label('qxp', qk === 'names' || qk === 'widen', t('l_xp'), dia.pXr, AMBER_TEXT, ABOVE);
-    label('qo', drawn, t('l_o'), O, INK, BELOW, true);
-    for (let i = 0; i < 3; i++) label(`qa${i}`, qk === 'names', q?.names?.[i] ?? '', q?.spots ? q.spots[i] : O, INK, AT);
+    label('qxp', qk === 'names' || qk === 'total', t('l_xp'), dia.pXr, AMBER_TEXT, ABOVE);
+    label('qo', drawn || qk === 'rough', t('l_o'), O, INK, BELOW, true);
+    for (let i = 0; i < 4; i++) label(`qa${i}`, qk === 'names', q?.names?.[i] ?? '', q?.spots ? q.spots[i] : O, INK, AT);
     const b = rad((90 + s.theta) / 2);
     label(
       'qs',
@@ -533,10 +575,11 @@ export function createApp(root, options = {}) {
       [lineBoxes],
     );
     label('qr', qk === 'angle', t('l_tr_q'), arcMid(1), C.tr, [{ dx: 8, dy: -30 }], false, [lineBoxes]);
-    label('qt', qk === 'widen', q ? t('l_ti', { a: q.theta }) : '', arcMid(-1), C.ti, [{ dx: -8, dy: -30 }]);
+    label('qt', qk === 'total', q ? t('l_deg', { a: q.whole }) : '', tmp.set(0, ARC, 0), INK, [{ dx: 0, dy: -26 }]);
+    label('qn', qk === 'rough', t('l_normal'), q?.normalTip ?? O, C.normal, ABOVE, true);
     for (let i = 0; i < 4; i++) {
-      const on = qk === 'plane' && i < (q?.letters?.length ?? 0);
-      label(`qc${i}`, on, on ? q.letters[i] : '', dia.cands[i].tip, INK, ABOVE);
+      const on = (qk === 'plane' || qk === 'rough') && i < (q?.letters?.length ?? 0);
+      label(`qc${i}`, on, on ? q.letters[i] : '', on ? q.tips[i] : O, INK, ABOVE);
     }
   }
   const thetaR = () => Math.round(angleToNormal(reflected(s.theta, s.phi), { x: 0, y: 1, z: 0 }));
@@ -574,6 +617,7 @@ export function createApp(root, options = {}) {
     sheet.next(ph === 'l5' ? 'surface' : null);
     const [word, step, icon] = ACTIONS[ph];
     const enabled = ph !== 'busy';
+    note.textContent = s.step === 'surface' && s.wind > 0.5 ? t('note_waves') : t('note_rays');
     const key = `${word}|${step}|${enabled}`;
     if (action && steady.act !== key) {
       steady.act = key;
@@ -712,28 +756,35 @@ export function createApp(root, options = {}) {
   // ── the test ────────────────────────────────────────────────────────────────────────────────────────────
   const LETTERS = t('letters').split(',');
   function applyQuiz(q) {
-    dia.showO(true);
+    const v = dia.view;
+    v.o = true;
     if (q.kind === 'rough') {
-      s.spread = dia.drawBundle(s.time, s.wind);
+      v.focus = { theta: s.theta, tilt: q.tilt };
+      v.incident = true;
+      v.x = false;
+      for (const dir of q.rays) v.cands.push({ dir, drop: false });
       return;
     }
-    dia.drawIncident();
-    dia.drawNormal();
+    v.incident = v.x = true;
+    v.normal = 1;
     dia.sheet(q.kind === 'plane' ? 1 : 0.8);
     if (q.kind === 'plane') {
-      q.rays.forEach((r, i) => dia.candidate(i, r));
+      for (const dir of q.rays) v.cands.push({ dir, drop: true });
       return;
     }
-    dia.drawReflected();
+    v.reflected = 1;
+    const th = s.theta;
+    const arc = (a0, a1, r) => v.arcs.push({ a0, a1, r, color: C.ink, ends: 'ticks' });
     if (q.kind === 'names') {
-      dia.drawQuizArc(0, 0, s.theta, ARC, -1);
-      dia.drawQuizArc(1, s.theta, 90, ARC * 1.32, -1);
-      dia.drawQuizArc(2, 0, s.theta, ARC, 1);
+      arc(-th, 0, ARC);
+      arc(-90, -th, ARC * 1.32);
+      arc(0, th, ARC);
+      arc(th, 90, ARC * 1.32);
     } else if (q.kind === 'angle') {
-      dia.drawQuizArc(0, s.theta, 90, ARC, -1);
-      dia.drawQuizArc(1, 0, s.theta, ARC, 1);
-    } else if (q.kind === 'widen') {
-      dia.drawAngles(s.theta);
+      arc(-90, -th, ARC);
+      arc(0, th, ARC);
+    } else if (q.kind === 'total') {
+      arc(-th, th, ARC);
     }
   }
   function quizScene(q, { theta = 50, phi = 0, waves = false } = {}) {
@@ -745,6 +796,7 @@ export function createApp(root, options = {}) {
     s.phi = phi;
     s.wavesOn = waves;
     s.wind = waves ? 1 : 0;
+    s.idle = 0;
     s.quiz = q;
     clearLabels();
     applyWorld();
@@ -756,22 +808,27 @@ export function createApp(root, options = {}) {
   function prepare(i) {
     const kind = order[i];
     if (kind === 'names') {
-      // three arcs carry the letters ক, খ, গ in a shuffled order; the book's name of one is asked
+      // four arcs carry the letters ক, খ, গ, ঘ in a shuffled order; the book's name of one is asked
       const theta = 46;
-      const arcs = ['i', 'surface', 'r'];
-      const letters = shuffle([0, 1, 2]);
+      const arcs = ['i', 'surfaceX', 'r', 'surfaceR'];
+      const letters = shuffle([0, 1, 2, 3]);
       const asked = Math.random() < 0.5 ? 'i' : 'r';
-      const point = (a, r, side) => new THREE.Vector3(side * Math.sin(rad(a)) * r, Math.cos(rad(a)) * r, 0);
-      const spots = [point(theta / 2, ARC * 1.26, -1), point((theta + 90) / 2, ARC * 1.58, -1), point(theta / 2, ARC * 1.26, 1)];
+      const point = (a, r) => new THREE.Vector3(Math.sin(rad(a)) * r, Math.cos(rad(a)) * r, 0);
+      const spots = [
+        point(-theta / 2, ARC * 1.28),
+        point(-(theta + 90) / 2, ARC * 1.62),
+        point(theta / 2, ARC * 1.28),
+        point((theta + 90) / 2, ARC * 1.62),
+      ];
       quizScene({ kind, names: letters.map((k) => `<b>${LETTERS[k]}</b>`), spots }, { theta });
       const answer = letters[arcs.indexOf(asked)];
       const others = arcs.filter((a) => a !== asked);
       return {
         text: t(`q_names_${asked}`),
         answer,
-        wrong: [...others.map((a) => letters[arcs.indexOf(a)]), 3],
-        label: (k) => (k === 3 ? t('c_none') : t('c_arc', { x: LETTERS[k] })),
-        notes: notesOf([...others.map((a) => [letters[arcs.indexOf(a)], t(`n_names_${a}`)]), [3, t('n_names_none')]]),
+        wrong: others.map((a) => letters[arcs.indexOf(a)]),
+        label: (k) => t('c_arc', { x: LETTERS[k] }),
+        notes: notesOf(others.map((a) => [letters[arcs.indexOf(a)], t(`n_names_${a.replace(/[XR]$/, '')}`)])),
         reveal: t(`a_names_${asked}`, { x: LETTERS[answer] }),
       };
     }
@@ -781,7 +838,7 @@ export function createApp(root, options = {}) {
       quizScene({ kind, alpha }, { theta });
       const wrong = [alpha, 2 * theta, 90];
       return {
-        text: t('q_angle', { a: alpha }),
+        text: t('q_angle'),
         answer: theta,
         wrong,
         label: (x) => `${N(x)}°`,
@@ -804,7 +861,9 @@ export function createApp(root, options = {}) {
         back: toLight(theta - 22, phi),
       };
       const kinds = shuffle(['real', 'off', 'angle', 'back']);
-      quizScene({ kind, rays: kinds.map((k) => ray[k]), letters: kinds.map((_, k) => `<b>${LETTERS[k]}</b>`) }, { theta, phi });
+      const rays = kinds.map((k) => ray[k]);
+      const tips = rays.map((r) => new THREE.Vector3(r.x, r.y, r.z).multiplyScalar(L));
+      quizScene({ kind, rays, tips, letters: kinds.map((_, k) => `<b>${LETTERS[k]}</b>`) }, { theta, phi });
       const answer = kinds.indexOf('real');
       const wrong = [0, 1, 2, 3].filter((k) => k !== answer);
       return {
@@ -816,38 +875,56 @@ export function createApp(root, options = {}) {
         reveal: t('a_plane', { x: LETTERS[answer] }),
       };
     }
-    if (kind === 'widen') {
-      // θi grows: θr grows with it, so the angle between the rays grows twice as much
-      const d = [10, 15, 20][Math.floor(Math.random() * 3)];
-      const theta = 35;
-      quizScene({ kind, theta }, { theta });
-      const wrong = [d, 0, 4 * d];
+    if (kind === 'total') {
+      // the picture gives the whole angle between the rays: the normal halves it
+      const theta = [40, 35, 25][Math.floor(Math.random() * 3)];
+      quizScene({ kind, whole: 2 * theta }, { theta });
+      const wrong = [2 * theta, 90 - theta, 90 - 2 * theta];
       return {
-        text: t('q_widen', { d }),
-        answer: 2 * d,
+        text: t('q_total'),
+        answer: theta,
         wrong,
         label: (x) => `${N(x)}°`,
         notes: notesOf([
-          [wrong[0], t('n_widen_one')],
-          [wrong[1], t('n_widen_none')],
-          [wrong[2], t('n_widen_four')],
+          [wrong[0], t('n_total_whole')],
+          [wrong[1], t('n_total_surface')],
+          [wrong[2], t('n_total_rest')],
         ]),
-        reveal: t('a_widen', { d, two: 2, e: 2 * d }),
+        reveal: t('a_total', { a: 2 * theta, b: theta, two: 2 }),
       };
     }
-    quizScene({ kind }, { theta: 50, waves: true });
-    const words = [t('c_rough_ok'), t('c_rough_law'), t('c_rough_absorb'), t('c_rough_light')];
+    // one slope of a wave, with its own normal: four rays leave it, one by the law at that slope
+    const theta = 50;
+    const tilt = -18;
+    const ray = { real: theta + 2 * tilt, flat: theta, wrong: theta - 2 * tilt, back: -30 };
+    const kinds = shuffle(['real', 'flat', 'wrong', 'back']);
+    // the sheet lies along x here (phi = 0): a signed angle in it is a direction in the scene
+    const dir = (a) => {
+      const d = sheetDir(a);
+      return { x: d.s, y: d.y, z: 0 };
+    };
+    const rays = kinds.map((k) => dir(ray[k]));
+    const n = dir(tilt);
+    quizScene(
+      {
+        kind,
+        tilt,
+        rays,
+        letters: kinds.map((_, k) => `<b>${LETTERS[k]}</b>`),
+        tips: rays.map((r) => new THREE.Vector3(r.x, r.y, r.z).multiplyScalar(L)),
+        normalTip: new THREE.Vector3(n.x, n.y, n.z).multiplyScalar(74),
+      },
+      { theta, phi: 0, waves: true },
+    );
+    const answer = kinds.indexOf('real');
+    const wrong = [0, 1, 2, 3].filter((k) => k !== answer);
     return {
       text: t('q_rough'),
-      answer: 0,
-      wrong: [1, 2, 3],
-      label: (x) => words[x],
-      notes: notesOf([
-        [1, t('n_rough_law')],
-        [2, t('n_rough_absorb')],
-        [3, t('n_rough_light')],
-      ]),
-      reveal: t('a_rough'),
+      answer,
+      wrong,
+      label: (k) => t('c_ray', { x: LETTERS[k] }),
+      notes: notesOf(wrong.map((k) => [k, t(`n_rough_${kinds[k]}`)])),
+      reveal: t('a_rough', { x: LETTERS[answer] }),
     };
   }
   const saved = { theta: 50, phi: 0 };
@@ -865,7 +942,7 @@ export function createApp(root, options = {}) {
         s.locked = true;
         Object.assign(saved, { theta: s.theta, phi: s.phi });
         // the book's order: no scene shows the answer to a later question
-        order = ['names', 'angle', 'plane', 'widen', 'rough'];
+        order = ['names', 'angle', 'plane', 'total', 'rough'];
         if (s.drag) {
           controls.enabled = true;
           s.drag = null;
@@ -901,7 +978,8 @@ export function createApp(root, options = {}) {
       reveal(_q, correct, picked) {
         const q = qCurrent;
         const why = !correct && picked ? q.notes.get(String(picked.value)) : '';
-        return `${q.reveal}${why ? ` <span class="rl-why">${why}</span>` : ''}`;
+        // the note names what the student chose: alone it could be read as being about the right answer
+        return `${q.reveal}${why ? ` <span class="rl-why">${t('n_pick', { x: q.label(picked.value) })} ${why}</span>` : ''}`;
       },
       done() {},
     },
@@ -1013,6 +1091,7 @@ export function createApp(root, options = {}) {
       waves: s.wavesOn,
       wind: +s.wind.toFixed(2),
       spread: +s.spread.toFixed(1),
+      resting: s.wavesOn && s.idle > WAVE_IDLE, // the waves have stopped drawing until someone touches the figure
       mode: s.mode,
       locked: s.locked,
       view: s.view,
@@ -1055,7 +1134,7 @@ export function createApp(root, options = {}) {
         s.law = clamp(Number(p.law), 0, 5);
         s.reveal = 1;
       }
-      if (p.theta != null) {
+      if (p.theta != null && s.step === 'laws') {
         tweener.cancel('pose');
         s.theta = clamp(Math.round(Number(p.theta)), THETA[0], THETA[1]);
       }
@@ -1085,8 +1164,24 @@ export function createApp(root, options = {}) {
       emitChange();
     },
     startPractice: () => quiz.start(),
-    capture(opts = {}) {
-      return stage.capture(opts);
+    /** The view with its drawing on it, cover-fitted to the size asked for (background: null keeps it transparent). */
+    capture({ width = 800, height = 500, background = '#ffffff' } = {}) {
+      stage.render();
+      const out = document.createElement('canvas');
+      out.width = width;
+      out.height = height;
+      const ctx = out.getContext('2d');
+      if (background) {
+        ctx.fillStyle = background;
+        ctx.fillRect(0, 0, width, height);
+      }
+      const gl = stage.canvas;
+      const k = Math.max(width / gl.width, height / gl.height);
+      const x = (width - gl.width * k) / 2;
+      const y = (height - gl.height * k) / 2;
+      ctx.drawImage(gl, x, y, gl.width * k, gl.height * k);
+      ctx.drawImage(dia.canvas, x, y, gl.width * k, gl.height * k);
+      return out.toDataURL('image/png');
     },
     exportRoot() {
       // the mountain lake, with the book's picture on it: XO, the normal, OX′

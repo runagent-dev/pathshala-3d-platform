@@ -58,8 +58,14 @@ test('reflection-laws: the laws, step by step', async ({ page }) => {
   await fig.advance(2000);
   st = await fig.call('get');
   expect(st.wind).toBe(1);
-  expect(st.spread).toBeGreaterThan(8);
-  await fig.advance(500);
+  expect(st.spread).toBeGreaterThan(70);
+  // left alone, the waves rest (a phone stops drawing), and a touch wakes them
+  await fig.advance(21_000);
+  expect((await fig.call('get')).resting).toBe(true);
+  await fig.frame.locator('.pvc-canvas').first().dispatchEvent('pointerdown', { bubbles: true, pointerId: 3, clientX: 5, clientY: 5 });
+  await fig.frame.locator('.pvc-canvas').first().dispatchEvent('pointerup', { bubbles: true, pointerId: 3, clientX: 5, clientY: 5 });
+  await fig.advance(100);
+  expect((await fig.call('get')).resting).toBe(false);
   await act();
   await fig.advance(1500);
   expect(await fig.call('get')).toMatchObject({ waves: false, wind: 0 });
@@ -81,6 +87,23 @@ test('reflection-laws: the handle and X can be dragged, and the test gives back 
   expect((await fig.call('get')).law).toBe(4);
   await fig.frame.locator('.pvc').first().press('ArrowRight');
   expect(await fig.call('get')).toMatchObject({ law: 5, theta: 42 });
+  // a capture carries the drawing: the rays' amber is in the picture, not only on the screen
+  const png = await fig.call('capture', { width: 422, height: 195 });
+  const amber = await page.evaluate(async (src) => {
+    const img = new Image();
+    img.src = src;
+    await img.decode();
+    const c = document.createElement('canvas');
+    c.width = img.width;
+    c.height = img.height;
+    const g = c.getContext('2d');
+    g.drawImage(img, 0, 0);
+    const d = g.getImageData(0, 0, c.width, c.height).data;
+    let n = 0;
+    for (let i = 0; i < d.length; i += 4) if (d[i] > 200 && d[i + 1] > 120 && d[i + 1] < 190 && d[i + 2] < 90) n++;
+    return n;
+  }, png);
+  expect(amber).toBeGreaterThan(40);
   await fig.call('practice');
   await fig.advance(1500);
   expect(await fig.call('get')).toMatchObject({ mode: 'quiz', locked: true });

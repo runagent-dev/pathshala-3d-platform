@@ -100,14 +100,14 @@ export function terrainHeight(x, z) {
   const dz = (wz - MASSIF.z) / 760;
   const m = Math.exp(-(dx * dx + dz * dz) * 1.25); // the mountain's mass
   const ridges = ridged(wx * 0.00105 + 3.1, wz * 0.00105 + 7.7, 7);
-  const massif = m * (78 + 345 * m * (0.42 + 0.78 * ridges));
+  const massif = m * (74 + 312 * m * (0.42 + 0.78 * ridges));
   const hills = (24 + 150 * Math.max(0, ridged(wx * 0.0011 + 9, wz * 0.0011 + 2, 4))) * smooth(120, 1300, past);
   const land = smooth(0, 420, past) * (massif * smooth(-20, 600, past) + hills) + 6 + 0.012 * past + 6 * fbm(x * 0.012, z * 0.012, 2);
   return past > 0 ? land : -Math.min(30, 2 - past * 0.04);
 }
 
 // ── the terrain mesh ────────────────────────────────────────────────────────────────────────────────────────────
-const GRID = { w: 300, h: 190 };
+const GRID = { w: 236, h: 150 };
 const warp = (s, c, lo, hi, b) => {
   const t = 2 * s - 1;
   const k = Math.sinh(b * t) / Math.sinh(b);
@@ -157,6 +157,10 @@ function terrainGeometry({ H, X, Z }, step = 1) {
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  // a broad noise that never repeats: it moves the snow line and breaks up the lying snow
+  const broad = new Float32Array((nx + 1) * (nz + 1));
+  for (let v = 0; v < broad.length; v++) broad[v] = fbm(pos[v * 3] * 0.0042 + 11, pos[v * 3 + 2] * 0.0042 + 4, 3);
+  g.setAttribute('broad', new THREE.BufferAttribute(broad, 1));
   g.setIndex(index);
   g.computeVertexNormals();
   return g;
@@ -324,27 +328,41 @@ function skyTexture() {
 }
 
 const TERRAIN_VS = /* glsl */ `
-  varying vec2 vUv; varying vec3 vN; varying vec3 vP;
+  attribute float broad;
+  varying vec2 vUv; varying vec3 vN; varying vec3 vP; varying float vBroad;
   void main() {
-    vUv = uv; vN = normal; vP = position;
+    vUv = uv; vN = normal; vP = position; vBroad = broad;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
   }`;
 // lit in the mesh's own coordinates, so the mirrored copy is lit exactly as the real one
 const TERRAIN_FS = /* glsl */ `
   uniform sampler2D map; uniform sampler2D detail; uniform vec3 uSun;
-  varying vec2 vUv; varying vec3 vN; varying vec3 vP;
+  varying vec2 vUv; varying vec3 vN; varying vec3 vP; varying float vBroad;
   void main() {
     if (vP.y < 0.0) discard; // only what stands above the water is seen, or mirrored
-    vec4 d1 = texture2D(detail, vP.xz / 330.0);
-    vec4 d2 = texture2D(detail, vP.xz / 97.0 + 0.37);
-    float rock = smoothstep(90.0, 210.0, vP.y); // the fine relief belongs to the mountain, not the forest
     vec3 n = normalize(vN);
-    vec3 N = normalize(n + vec3((d1.r - 0.5) * 1.5 + (d2.r - 0.5) * 0.9, 0.0, (d1.g - 0.5) * 1.5 + (d2.g - 0.5) * 0.9) * (0.28 + 0.72 * rock));
+    // the detail is laid on from the side the slope faces, so steep faces are not combed by a map laid from above
+    vec3 w = pow(abs(n), vec3(5.0));
+    w /= w.x + w.y + w.z;
+    vec4 dx = texture2D(detail, vP.zy / 150.0);
+    vec4 dy = texture2D(detail, vP.xz / 150.0);
+    vec4 dz = texture2D(detail, vP.xy / 150.0);
+    // and a finer layer on the same three sides, turned so that the two tiles never line up
+    vec4 fx = texture2D(detail, vec2(vP.z * 0.8 - vP.y * 0.6, vP.z * 0.6 + vP.y * 0.8) / 53.0);
+    vec4 fy = texture2D(detail, vec2(vP.x * 0.8 - vP.z * 0.6, vP.x * 0.6 + vP.z * 0.8) / 53.0);
+    vec4 fz = texture2D(detail, vec2(vP.x * 0.8 - vP.y * 0.6, vP.x * 0.6 + vP.y * 0.8) / 53.0);
+    float b = (dx.b * 0.65 + fx.b * 0.35) * w.x + (dy.b * 0.65 + fy.b * 0.35) * w.y + (dz.b * 0.65 + fz.b * 0.35) * w.z;
+    vec3 tn = vec3(0.0, dx.r + fx.r * 0.6 - 0.8, dx.g + fx.g * 0.6 - 0.8) * w.x
+      + vec3(dy.r + fy.r * 0.6 - 0.8, 0.0, dy.g + fy.g * 0.6 - 0.8) * w.y
+      + vec3(dz.r + fz.r * 0.6 - 0.8, dz.g + fz.g * 0.6 - 0.8, 0.0) * w.z;
+    float rock = smoothstep(90.0, 210.0, vP.y); // the fine relief belongs to the mountain, not the forest
+    vec3 N = normalize(n + tn * (0.2 + 0.7 * rock));
     vec3 a = texture2D(map, vUv).rgb;
-    a *= 0.72 + 0.56 * mix(d2.b, d1.b, 0.5);
-    // snow lies above a broken line, and only where it can hold: sharp edges, at any size
-    float h = vP.y + (d1.b - 0.5) * 120.0 + (d2.b - 0.5) * 46.0;
-    float snow = smoothstep(196.0, 206.0, h) * smoothstep(0.42, 0.56, N.y + (d2.b - 0.5) * 0.3);
+    a *= 0.88 + 0.24 * b + 0.3 * vBroad;
+    // snow lies above a broken line, and only where the slope can hold it: rock shows on the steep ridges
+    float h = vP.y + vBroad * 130.0 + (b - 0.5) * 60.0;
+    float hold = n.y + (b - 0.5) * 0.34 + vBroad * 0.3;
+    float snow = smoothstep(222.0, 229.0, h) * smoothstep(0.57, 0.63, hold);
     a = mix(a, vec3(0.92, 0.94, 0.98), snow);
     float sun = max(dot(N, uSun), 0.0);
     float sky = 0.5 + 0.5 * N.y;
@@ -415,12 +433,13 @@ const WATER_FS = /* glsl */ `
       // blurred (a tilt of the water moves the image along the view far more than across it: the long streaks)
       float r = sqrt(lost);
       vec2 along = normalize(V.xz);
-      float lod = clamp(log2(1.0 + r * 40.0), 0.0, 4.0);
+      float lod = clamp(log2(1.0 + r * 12.0), 0.0, 1.6);
       sum = vec3(0.0);
-      sum += look(V, normalize(N + vec3(along.x, 0.0, along.y) * r * 0.5), lod) * 0.3;
-      sum += look(V, normalize(N - vec3(along.x, 0.0, along.y) * r * 0.5), lod) * 0.3;
-      sum += look(V, normalize(N + vec3(along.x, 0.0, along.y) * r * 1.4), lod) * 0.2;
-      sum += look(V, normalize(N - vec3(along.x, 0.0, along.y) * r * 1.4), lod) * 0.2;
+      vec3 t = vec3(along.x, 0.0, along.y) * r;
+      sum += look(V, normalize(N + t * 0.2), lod) * 0.28;
+      sum += look(V, normalize(N - t * 0.2), lod) * 0.3;
+      sum += look(V, normalize(N + t * 0.6), lod) * 0.24; // toward the viewer: the ray stays low, on the dark shore
+      sum += look(V, normalize(N - t * 0.7), lod) * 0.18;
     } else {
       sum = look(V, N, 0.0);
     }
@@ -495,7 +514,8 @@ export function createLake({ stage }) {
   const mirrorScene = new THREE.Scene();
   const mirror = new THREE.Group();
   mirror.scale.y = -1;
-  const mGround = new THREE.Mesh(geo, groundMat);
+  // half the mesh in each direction: it is seen on a slant, in a mirror, and it keeps every frame under the budget
+  const mGround = new THREE.Mesh(terrainGeometry(heights, 2), groundMat);
   mGround.frustumCulled = false;
   const mSky = new THREE.Mesh(skyGeo, skyMat);
   mSky.renderOrder = -10;
@@ -503,7 +523,9 @@ export function createLake({ stage }) {
   mirrorScene.add(mirror);
 
   const size = new THREE.Vector2();
-  const rt = new THREE.WebGLRenderTarget(4, 4, { type: THREE.HalfFloatType, depthBuffer: true, samples: 0 });
+  // half-float keeps the sky smooth in the mirror; a phone that cannot draw to it falls back to ordinary bytes
+  const canFloat = renderer.extensions.has('EXT_color_buffer_float') || renderer.extensions.has('EXT_color_buffer_half_float');
+  const rt = new THREE.WebGLRenderTarget(4, 4, { type: canFloat ? THREE.HalfFloatType : THREE.UnsignedByteType, depthBuffer: true, samples: 0 });
   rt.texture.minFilter = THREE.LinearMipmapLinearFilter;
   rt.texture.generateMipmaps = true;
 
