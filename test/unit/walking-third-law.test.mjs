@@ -196,7 +196,7 @@ describe('walking: every string, both languages', () => {
     const plain = (k) => t(k).replace(/<[^>]+>/g, '');
     assert.ok(plain('rule_start').includes('কেউ আমাদের ধাক্কা দেয় না'));
     assert.ok(plain('rule_hard').includes('শক্ত মাটিতে পা আটকে থাকে'));
-    assert.ok(plain('rule_hard').includes('পা মাটিকে পেছনে, মাটি আমাদের সামনে ধাক্কা দেয়'));
+    assert.ok(plain('rule_hard').includes('পা মাটিকে পেছনে ধাক্কা দেয়') && plain('rule_hard').includes('মাটি আমাদের সামনে ধাক্কা দেয়'));
     assert.ok(plain('rule_sand').includes('বালু সরে যায়'));
     assert.ok(plain('rule_slip').includes('ঘর্ষণ খুব কম') && plain('rule_slip').includes('প্রায়'), 'slip: "almost", as the result shows 20 N');
     assert.ok(plain('rule_book').includes('বল প্রয়োগ করলে বিপরীত এবং সমান বল পাওয়া যায়'));

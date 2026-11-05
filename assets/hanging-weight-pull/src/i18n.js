@@ -59,11 +59,11 @@ export const STRINGS = {
     law_label: 'বালতির জন্য নিউটনের দ্বিতীয় গতিসূত্র: T − Mg = Ma',
 
     // the rule: the book's words, one idea at a time
-    rule_start: '<b>একটি সুতায় একটি মাত্র টান বল কাজ করে:</b> লোকটির হাতে আর বালতিতে দড়ির টান একই, T।',
-    rule_still: '<b>T = Mg হলে লব্ধি বল শূন্য:</b> বালতির ত্বরণ নেই, তাই হাতে ধরা বালতি স্থির থাকে।',
-    rule_one_rope: '<b>টান বল সব সময় সুতা বরাবর, বস্তু থেকে দূরের দিকে:</b> বালতিতে উপরে, হাতে কপিকলের দিকে। কপিকল শুধু দিক বদলায়।',
-    rule_down: '<b>উপরের দিক ধনাত্মক:</b> T &lt; Mg হলে a ঋণাত্মক, ত্বরণ নিচের দিকে। বই লেখে T − Mg = M(−a)।',
-    rule_mass: '<b>একই টানে ভর বেশি হলে ত্বরণ কম:</b> লব্ধি বল (T − Mg) কমে, আর তাকে ভাগ করতে হয় বেশি ভর দিয়ে।',
+    rule_start: 'একটি সুতায় <b>একটি মাত্র টান বল</b> কাজ করে। লোকটির হাতে আর বালতিতে দড়ির টান একই, T।',
+    rule_still: 'T = Mg হলে <b>লব্ধি বল শূন্য</b>। বালতির ত্বরণ নেই, তাই হাতে ধরা বালতি স্থির থাকে।',
+    rule_one_rope: 'টান বল সব সময় <b>সুতা বরাবর, বস্তু থেকে দূরের দিকে</b> কাজ করে। বালতিতে উপরে, হাতে কপিকলের দিকে। কপিকল শুধু দিক বদলায়।',
+    rule_down: '<b>উপরের দিক ধনাত্মক।</b> T &lt; Mg হলে a ঋণাত্মক, অর্থাৎ ত্বরণ নিচের দিকে। বইয়ে লেখা হয় T − Mg = M(−a)।',
+    rule_mass: 'একই টানে ভর বেশি হলে <b>ত্বরণ কম</b>। লব্ধি বল (T − Mg) কমে, আর তাকে ভাগ করতে হয় বেশি ভর দিয়ে।',
     rule_law:
       '<b>নিউটনের দ্বিতীয় গতিসূত্র:</b> বাম দিকে বলগুলোর যোগফল, ডান দিকে ভর × ত্বরণ: <span class="c-T">T</span> − <span class="c-W">Mg</span> = <span class="c-M">M</span><span class="c-a">a</span>। বইয়ের ছবিগুলো দেখো: বইয়ের উদাহরণ।',
 
@@ -220,12 +220,12 @@ export const STRINGS = {
     more_M: 'More water',
     law_label: 'Newton’s second law for the bucket: T − Mg = Ma',
 
-    rule_start: '<b>One string carries one tension:</b> the rope pulls the man’s hands and the bucket with the same T.',
-    rule_still: '<b>T = Mg: the resultant force is zero.</b> No acceleration, so a bucket held still stays still.',
+    rule_start: 'One string carries <b>one tension</b>. The rope pulls the man’s hands and the bucket with the same T.',
+    rule_still: 'When T = Mg, the <b>resultant force is zero</b>. There is no acceleration, so a bucket held still stays still.',
     rule_one_rope:
-      '<b>Tension always acts along the string, away from the body:</b> up on the bucket, towards the pulley on the hands. The pulley only turns it.',
-    rule_down: '<b>Up is positive:</b> if T &lt; Mg, a is negative: the acceleration is downward. The book writes T − Mg = M(−a).',
-    rule_mass: '<b>The same pull with more mass gives less acceleration:</b> the resultant (T − Mg) shrinks and is shared by more mass.',
+      'Tension always acts <b>along the string, away from the body</b>: up on the bucket, towards the pulley on the hands. The pulley only turns it.',
+    rule_down: '<b>Up is positive.</b> If T &lt; Mg, a is negative, so the acceleration points down. The book writes T − Mg = M(−a).',
+    rule_mass: 'The same pull on more mass gives <b>less acceleration</b>. The resultant (T − Mg) shrinks and is shared by more mass.',
     rule_law:
       '<b>Newton’s second law:</b> the sum of the forces on the left, mass × acceleration on the right: <span class="c-T">T</span> − <span class="c-W">Mg</span> = <span class="c-M">M</span><span class="c-a">a</span>. See the book’s pictures: Book example.',
 

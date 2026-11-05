@@ -17,11 +17,11 @@ body.bg-transparent { background: transparent; }
 /* on the stage: the honest note about the imagined floor, top left (the buttons are top right) */
 .nf-badge { position: absolute; left: 10px; top: 10px; z-index: 5; max-width: calc(100% - 240px); padding: 4px 9px; border-radius: 6px; border: 1px solid color-mix(in srgb, var(--c-none) 45%, var(--line)); background: rgba(255, 255, 255, 0.94); color: var(--c-none); font-size: 13px; font-weight: 600; line-height: 1.4; pointer-events: none; }
 .nf-badge b, .nf-badge span { white-space: nowrap; font-weight: 600; }
-.nf-badge b { font-weight: 700; }
+.nf-badge b { font-weight: 600; }
 /* in the test the locked hint sits at the top of the view, clear of the scene's answers (paths, letters) */
 .nf[data-mode='quiz'] .pvc-stage[data-ui='simple'] .pvc-hint { top: 54px; bottom: auto; }
 /* labels come and go with what they name, at once (a fading ধাক্কা label would outlive the push) */
-.nf-label { --c: var(--accent); font-size: 14px; font-weight: 700; padding: 1px 7px; transition: none; }
+.nf-label { --c: var(--accent); font-size: 14px; font-weight: 600; padding: 1px 7px; transition: none; }
 .nf .pvc-anno-part.nf-label { color: var(--c); border-color: color-mix(in srgb, var(--c) 50%, var(--line)); }
 
 /* the test: answers in words (two lines allowed), room kept for the question and the worked answer */

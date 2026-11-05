@@ -23,25 +23,25 @@ body.bg-transparent { background: transparent; }
 .snf-read { display: flex; align-items: center; gap: 8px 12px; min-height: 40px; } /* two lines of the equation */
 .snf-dist { display: flex; align-items: baseline; gap: 8px; white-space: nowrap; }
 .snf-dist .k { font-size: 15px; font-weight: 500; color: var(--ink-2); }
-.snf-dist .v { min-width: 1.9em; font-size: 28px; font-weight: 700; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.snf-dist .v { min-width: 1.9em; font-size: 28px; font-weight: 600; line-height: 1.15; font-variant-numeric: tabular-nums; }
 .snf-dist .u { font-size: 16px; font-weight: 500; color: var(--ink-2); }
 .snf-again { margin-left: auto; height: 36px; flex: none; }
 .snf-again svg { color: var(--accent); }
 
 /* the book's sentence for what is happening: room for the longest, so the 3D view keeps its size */
-.snf-say { margin: 0; min-height: calc(3 * 1.45em); font-size: 14.5px; line-height: 1.45; color: var(--ink-2); }
+.snf-say { margin: 0; min-height: calc(3 * 1.55em); font-size: 14.5px; line-height: 1.55; color: var(--ink-2); }
 /* the small print: what the balls are and what is symbolic (or slowed down); one line, two in a narrow panel */
-.snf-key { margin: 0; min-height: 1.4em; font-size: 12.5px; line-height: 1.4; color: var(--ink-3); }
+.snf-key { margin: 0; min-height: 1.4em; font-size: 12.5px; line-height: 1.45; color: var(--ink-2); }
 .snf-legend { margin-right: 10px; color: var(--ink-2); }
 .snf-legend > span { display: inline-flex; align-items: center; gap: 4px; margin-right: 8px; white-space: nowrap; vertical-align: top; }
-.snf-legend .dot { display: inline-grid; place-items: center; width: 14px; height: 14px; border-radius: 50%; font-style: normal; font-size: 12.5px; font-weight: 700; line-height: 1; color: #fff; }
+.snf-legend .dot { display: inline-grid; place-items: center; width: 14px; height: 14px; border-radius: 50%; font-style: normal; font-size: 12.5px; font-weight: 600; line-height: 1; color: #fff; }
 .snf-legend .dot.p { background: var(--c-proton); }
 .snf-legend .dot.n { background: var(--c-neutron); }
 .snf-legend .dot { vertical-align: -2px; }
 
 /* the four fundamental forces, weakest first; the middle two make the electro-weak force */
 .snf-forces { display: flex; flex-direction: column; gap: 3px; }
-.snf-ft { font-size: 12.5px; line-height: 1.3; color: var(--ink-3); }
+.snf-ft { font-size: 12.5px; line-height: 1.3; color: var(--ink-2); }
 .snf-fl { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0 3px; }
 .snf-fl .f { --c: var(--ink-2); display: inline-flex; align-items: baseline; gap: 4px; height: 26px; padding: 0 6px; border-radius: 5px; border: 1px solid color-mix(in srgb, var(--c) 50%, transparent); background: color-mix(in srgb, var(--c) 7%, var(--panel)); color: var(--c); font-size: 13px; font-weight: 600; line-height: 24px; white-space: nowrap; }
 .snf-fl .f.grav { --c: var(--c-grav); }
@@ -49,8 +49,8 @@ body.bg-transparent { background: transparent; }
 .snf-fl .f.em { --c: var(--c-electric); }
 .snf-fl .f.strong { --c: var(--c-strong); }
 .snf-fl .f.on { background: var(--c); border-color: var(--c); color: #fff; }
-.snf-fl .f small { font-size: 11px; font-weight: 500; }
-.snf-fl .lt { font-style: normal; font-size: 13px; line-height: 26px; color: var(--ink-3); }
+.snf-fl .f small { font-size: 12px; font-weight: 500; }
+.snf-fl .lt { font-style: normal; font-size: 13px; line-height: 26px; color: var(--ink-2); }
 /* each group gets a bracket naming the book's three kinds: মহাকর্ষ | ইলেকট্রো উইক | নিউক্লিয়ার বল */
 .snf-fl .grp { position: relative; display: inline-flex; gap: 3px; padding-bottom: 16px; }
 .snf-fl .grp::after { content: ''; position: absolute; left: 16px; right: 4px; top: 29px; height: 5px; border: 1.5px solid var(--ink-3); border-top: 0; border-radius: 0 0 4px 4px; }
@@ -67,7 +67,7 @@ body.bg-transparent { background: transparent; }
 .snf[data-theme='transparent'] .snf-tag-lines line:not([style*='stroke']) { stroke: #6b7682; filter: none; }
 .snf-tag { position: absolute; left: 0; top: 0; padding: 1px 8px; border-radius: 5px; border: 1px solid var(--line-2); background: #fff; box-shadow: 0 1px 3px rgba(8, 6, 28, 0.45); font-size: 13.5px; font-weight: 600; line-height: 1.5; color: var(--ink); white-space: nowrap; visibility: hidden; will-change: transform; }
 .snf-tag[style*='--c'] { color: var(--c); border-color: var(--c); }
-.snf-tag.snf-energy { padding: 1px 10px; border-width: 1.5px; background: #fff8e1; font-size: 15.5px; font-weight: 700; }
+.snf-tag.snf-energy { padding: 1px 10px; border-width: 1.5px; background: #fff8e1; font-size: 15.5px; font-weight: 600; }
 /* the scale's numbers and unit, on the page under the 3D ticks */
 .snf-scale { position: absolute; inset: 0; pointer-events: none; }
 .snf-scale span { position: absolute; left: 0; top: 0; padding: 0 3px; border-radius: 3px; background: #fff; box-shadow: 0 1px 2px rgba(8, 6, 28, 0.4); font-size: 13px; font-weight: 600; line-height: 1.3; color: var(--ink); white-space: nowrap; }

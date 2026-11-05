@@ -47,19 +47,17 @@ export const STRINGS = {
     out_end_real: 'গাড়ির বেগ {a} থেকে প্রায় {b} km/h: পরিবর্তন <b>প্রায় {c} km/h</b> (≈ {k}u)',
 
     // the rule line: the book's words in <b>, growing with what the student has found
-    rule_ke_1: `<b>গতিশক্তি ${S.ke}: এর মাঝে বেগের বর্গ রয়েছে।</b> একটি ঘনক = {v} km/h বেগে গাড়িটির গতিশক্তি। বেগ বাড়ালে কী হয়?`,
-    rule_ke_2: '<b>বেগ দ্বিগুণ করা হলে গতিশক্তি চার গুণ বেড়ে যায়:</b> {a} থেকে {v} km/h, তাই {n0}টি থেকে {n}টি ঘনক। এই শক্তি নিয়েই গাড়িটি সংঘর্ষে যাবে।',
-    rule_ke_3: '<b>গতিশক্তির মাঝে বেগের বর্গ রয়েছে:</b> বেগ তিন গুণ ({a} থেকে {v} km/h), তাই গতিশক্তি নয় গুণ ({n}টি ঘনক)। এই শক্তি নিয়েই গাড়িটি সংঘর্ষে যাবে।',
-    rule_approach: `ডান দিক ধনাত্মক (+) ধরে: <b>ট্রাকের বেগ u হলে গাড়ির বেগ −u।</b> ছোট গাড়ির ভর ${S.m2} ট্রাকের ভর ${S.m1} এর তুলনায় অনেক কম।`,
-    rule_contact: '<b>সংঘর্ষে এই শক্তির কারণেই গাড়ি ক্ষতিগ্রস্ত হয় এবং আরোহীরা আঘাত পায়।</b> দেখো, কার বেগ বদলাচ্ছে।',
-    rule_end: `<b>ট্রাকটি একই বেগে যেতে থাকে; ছোট গাড়ির বেগ −u থেকে 3u:</b> পরিবর্তন 3u − (−u) = 4u (${S.m2} ≈ {z} ধরে; গতিশক্তি ছাড়া অন্য শক্তির আদান প্রদান ধরা হয়নি, যা আসলে ঠিক নয়)।`,
-    rule_end_real: `<b>আসল ভর নিলেও প্রায় একই:</b> ট্রাকের বেগ প্রায় {a}u, গাড়ির প্রায় {b}u; গাড়ির বেগের পরিবর্তন প্রায় {c}u, ট্রাকের মাত্র {d}u।`,
-    rule_more:
-      '<b>বেগ {a} থেকে {b} km/h, গতিশক্তি {m}টি থেকে {n}টি ঘনক:</b> গাড়িটি আরও বেশি দুমড়ে গেল। <b>দুর্ঘটনার সময় ক্ষতি কমানোর সবচেয়ে সহজ উপায় হচ্ছে গতি কম রাখা।</b>',
-    rule_less:
-      '<b>বেগ {a} থেকে {b} km/h, গতিশক্তি {m}টি থেকে {n}টি ঘনক:</b> গাড়িটি কম দুমড়েছে। <b>দুর্ঘটনার সময় ক্ষতি কমানোর সবচেয়ে সহজ উপায় হচ্ছে গতি কম রাখা।</b>',
+    rule_ke_1: `গতিশক্তি ${S.ke}, অর্থাৎ এর মাঝে <b>বেগের বর্গ</b> রয়েছে। একটি ঘনক = {v} km/h বেগে গাড়িটির গতিশক্তি। বেগ বাড়ালে কী হয়?`,
+    rule_ke_2: 'বেগ দ্বিগুণ করলে <b>গতিশক্তি চার গুণ</b> হয়। {a} থেকে {v} km/h, তাই {n0}টি থেকে {n}টি ঘনক। এই শক্তি নিয়েই গাড়িটি সংঘর্ষে যাবে।',
+    rule_ke_3: 'গতিশক্তির মাঝে বেগের বর্গ আছে। বেগ তিন গুণ ({a} থেকে {v} km/h), তাই <b>গতিশক্তি নয় গুণ</b> ({n}টি ঘনক)। এই শক্তি নিয়েই গাড়িটি সংঘর্ষে যাবে।',
+    rule_approach: `ডান দিক ধনাত্মক (+) ধরলে ট্রাকের বেগ u হলে <b>গাড়ির বেগ −u</b>। ছোট গাড়ির ভর ${S.m2} ট্রাকের ভর ${S.m1}-এর তুলনায় অনেক কম।`,
+    rule_contact: 'সংঘর্ষে এই শক্তির কারণেই <b>গাড়ি ক্ষতিগ্রস্ত</b> হয় এবং আরোহীরা আঘাত পায়। দেখো, কার বেগ বদলাচ্ছে।',
+    rule_end: `ট্রাক একই বেগে যেতে থাকে। ছোট গাড়ির বেগ −u থেকে 3u হয়, অর্থাৎ <b>পরিবর্তন 3u − (−u) = 4u</b>। (এখানে ${S.m2} ≈ {z} ধরা হয়েছে এবং গতিশক্তি ছাড়া অন্য শক্তির আদান-প্রদান ধরা হয়নি, যা আসলে ঠিক নয়।)`,
+    rule_end_real: `আসল ভর নিলেও <b>প্রায় একই ফল</b> পাওয়া যায়। ট্রাকের বেগ প্রায় {a}u, গাড়ির প্রায় {b}u। গাড়ির বেগ বদলায় প্রায় {c}u, ট্রাকের মাত্র {d}u।`,
+    rule_more: 'বেগ {a} থেকে {b} km/h, গতিশক্তি {m}টি থেকে {n}টি ঘনক। গাড়িটি আরও বেশি দুমড়ে গেল। দুর্ঘটনায় ক্ষতি কমানোর সবচেয়ে সহজ উপায় হলো <b>গতি কম রাখা</b>।',
+    rule_less: 'বেগ {a} থেকে {b} km/h, গতিশক্তি {m}টি থেকে {n}টি ঘনক। গাড়িটি কম দুমড়েছে। দুর্ঘটনায় ক্ষতি কমানোর সবচেয়ে সহজ উপায় হলো <b>গতি কম রাখা</b>।',
     rule_final:
-      '<b>আমাদের দেশের বেশির ভাগ দুর্ঘটনা হয় গাড়ির বেগ বেশি রাখার কারণে।</b> তখন নিয়ন্ত্রণ করাও কঠিন, আর সংঘর্ষে অনেক শক্তি ব্যয় হয়। নিরাপদ ভ্রমণের উপায়: গতি কম রাখা।',
+      'আমাদের দেশের বেশির ভাগ দুর্ঘটনা হয় গাড়ির বেগ বেশি রাখার কারণে। তখন নিয়ন্ত্রণ করাও কঠিন, আর সংঘর্ষে অনেক শক্তি ব্যয় হয়। নিরাপদ ভ্রমণের উপায়: <b>গতি কম রাখা</b>।',
 
     // labels on the scene
     l_ke: 'গাড়ির গতিশক্তি',
@@ -177,21 +175,21 @@ export const STRINGS = {
     out_end: 'Car’s velocity {a} to {b} km/h: a change of <b>{c} km/h</b> (= 4u)',
     out_end_real: 'Car’s velocity {a} to about {b} km/h: a change of <b>about {c} km/h</b> (≈ {k}u)',
 
-    rule_ke_1: `<b>Kinetic energy is ${S.ke}: it has the square of the velocity.</b> One cube = the car’s kinetic energy at {v} km/h. What happens at a higher speed?`,
+    rule_ke_1: `Kinetic energy is ${S.ke}, so it depends on the <b>square of the velocity</b>. One cube = the car’s kinetic energy at {v} km/h. What happens at a higher speed?`,
     rule_ke_2:
-      '<b>Double the velocity and the kinetic energy becomes four times:</b> {a} to {v} km/h, so {n0} to {n} cubes. The car takes this energy into the crash.',
+      'Double the velocity and the <b>kinetic energy becomes four times</b>: {a} to {v} km/h, so {n0} to {n} cubes. The car takes this energy into the crash.',
     rule_ke_3:
-      '<b>Kinetic energy has the square of the velocity:</b> three times the velocity ({a} to {v} km/h), so nine times the energy ({n} cubes). The car takes this energy into the crash.',
-    rule_approach: `Taking the right as positive (+): <b>if the truck’s velocity is u, the car’s is −u.</b> The small car’s mass ${S.m2} is much smaller than the truck’s mass ${S.m1}.`,
-    rule_contact: '<b>In a crash this energy is what damages the car and hurts the passengers.</b> Watch whose velocity changes.',
-    rule_end: `<b>The truck goes on at the same velocity; the car’s goes from −u to 3u:</b> a change of 3u − (−u) = 4u (taking ${S.m2} ≈ {z}, and no energy but kinetic energy changing hands, which is not really true).`,
-    rule_end_real: `<b>With real masses it is almost the same:</b> the truck’s velocity about {a}u, the car’s about {b}u; the car’s velocity changes by about {c}u, the truck’s by only {d}u.`,
+      'Kinetic energy depends on the square of the velocity. Three times the velocity ({a} to {v} km/h) gives <b>nine times the energy</b> ({n} cubes). The car takes this energy into the crash.',
+    rule_approach: `With the right as positive (+), if the truck’s velocity is u, <b>the car’s is −u</b>. The small car’s mass ${S.m2} is much smaller than the truck’s mass ${S.m1}.`,
+    rule_contact: 'In a crash this energy <b>damages the car</b> and hurts the passengers. Watch whose velocity changes.',
+    rule_end: `The truck goes on at the same velocity. The car’s goes from −u to 3u, a <b>change of 3u − (−u) = 4u</b>. (This takes ${S.m2} ≈ {z} and no energy but kinetic energy changing hands, which is not really true.)`,
+    rule_end_real: `With real masses the result is <b>almost the same</b>. The truck’s velocity is about {a}u, the car’s about {b}u. The car’s velocity changes by about {c}u, the truck’s by only {d}u.`,
     rule_more:
-      '<b>From {a} to {b} km/h, kinetic energy {m} to {n} cubes:</b> the car is crushed much more. <b>The simplest way to reduce the damage in an accident is to keep the speed low.</b>',
+      'From {a} to {b} km/h, kinetic energy {m} to {n} cubes. The car is crushed much more. The simplest way to reduce the damage in an accident is to <b>keep the speed low</b>.',
     rule_less:
-      '<b>From {a} to {b} km/h, kinetic energy {m} to {n} cubes:</b> the car is crushed less. <b>The simplest way to reduce the damage in an accident is to keep the speed low.</b>',
+      'From {a} to {b} km/h, kinetic energy {m} to {n} cubes. The car is crushed less. The simplest way to reduce the damage in an accident is to <b>keep the speed low</b>.',
     rule_final:
-      '<b>Most accidents in our country happen because vehicles go too fast.</b> Then they are hard to control, and a lot of energy is spent in the crash. The way to a safe journey: keep the speed low.',
+      'Most accidents in our country happen because vehicles go too fast. Then they are hard to control, and a lot of energy is spent in the crash. The way to a safe journey: <b>keep the speed low</b>.',
 
     l_ke: 'the car’s kinetic energy',
     l_u: 'u',

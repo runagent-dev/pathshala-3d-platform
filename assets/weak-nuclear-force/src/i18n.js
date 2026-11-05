@@ -31,14 +31,14 @@ export const STRINGS = {
 
     // what the panel says, for each thing on the screen
     idea_nucleus:
-      'তেজস্ক্রিয় নিউক্লিয়াস থেকে যে <b class="c-e">বিটা (β) রশ্মি বা ইলেকট্রন</b> বের হয়, সেটার কারণ <b class="c-weak">দুর্বল নিউক্লীয় বল</b>। নিউক্লিয়াসে চাপ দিয়ে দেখো।',
+      'তেজস্ক্রিয় নিউক্লিয়াস থেকে যে <span class="c-e">বিটা (β) রশ্মি বা ইলেকট্রন</span> বের হয়, তার কারণ <b class="c-weak">দুর্বল নিউক্লীয় বল</b>। নিউক্লিয়াসে চাপ দিয়ে দেখো।',
     idea_change: 'নিউক্লিয়াসের ভেতরে <b class="c-weak">দুর্বল নিউক্লীয় বল</b> কাজ করছে: একটি নিউট্রন বদলে যাচ্ছে…',
     idea_done:
-      '<b class="c-weak">দুর্বল নিউক্লীয় বলের</b> কারণে একটি নিউট্রন প্রোটন হয়ে গেল (প্রোটন <b class="c-p wn-nw">{p0} → {p1}</b>, নিউট্রন <b class="c-n wn-nw">{n0} → {n1}</b>), আর একটি <b class="c-e">ইলেকট্রন</b> বেরিয়ে এল: এটাই বিটা (β) রশ্মি।',
+      '<b class="c-weak">দুর্বল নিউক্লীয় বলের</b> কারণে একটি নিউট্রন প্রোটন হয়ে গেল (প্রোটন <span class="c-p wn-nw">{p0} → {p1}</span>, নিউট্রন <span class="c-n wn-nw">{n0} → {n1}</span>)। একটি <span class="c-e">ইলেকট্রন</span> বেরিয়ে এল। এটাই বিটা (β) রশ্মি।',
     idea_atom:
-      'পরমাণুর মাপ প্রায় {atom}। ইলেকট্রনকে টানে তড়িৎ চৌম্বক বল, যা যেকোনো দূরত্ব থেকে কাজ করে; কিন্তু <b class="c-weak">দুর্বল নিউক্লীয় বলের</b> পাল্লা এর দশ কোটি ভাগের এক ভাগ ({r})।',
+      'পরমাণুর মাপ প্রায় {atom}। ইলেকট্রনকে টানে তড়িৎ চৌম্বক বল, যা যেকোনো দূরত্ব থেকে কাজ করে। কিন্তু <b class="c-weak">দুর্বল নিউক্লীয় বলের</b> পাল্লা এর দশ কোটি ভাগের এক ভাগ ({r})।',
     idea_reach:
-      '<b class="c-weak">দুর্বল নিউক্লীয় বল</b> কাজ করে মাত্র {r} দূরত্বে; এই গোলকের বাইরে এটি কাজ করে না। নিউট্রন একটি ফুটবলের সমান হলে এই পাল্লা হতো একটি বালুকণার মতো।',
+      '<b class="c-weak">দুর্বল নিউক্লীয় বল</b> কাজ করে মাত্র {r} দূরত্বে। এই গোলকের বাইরে এটি কাজ করে না। নিউট্রন একটি ফুটবলের সমান হলে এই পাল্লা হতো একটি বালুকণার মতো।',
 
     // the four forces (forces.json: weakest first; the heading as in the other three force figures)
     forces_title: 'চার মৌলিক বল (সবচেয়ে দুর্বল → সবচেয়ে শক্তিশালী)',
@@ -67,8 +67,8 @@ export const STRINGS = {
     label_atom_size: 'পরমাণু: প্রায় {s}',
     label_unknown: '?',
     note_base: 'ছবি প্রতীকী',
-    note_slow: 'ছবি প্রতীকী; সময় অনেক ধীর করে দেখানো',
-    note_atom: 'ছবি প্রতীকী; নিউক্লিয়াস আর ইলেকট্রন বড় করে আঁকা',
+    note_slow: 'ছবি প্রতীকী, সময় অনেক ধীর করে দেখানো',
+    note_atom: 'ছবি প্রতীকী, নিউক্লিয়াস আর ইলেকট্রন বড় করে আঁকা',
     note_reach: 'একটি নিউট্রনের ভেতরে (ছবি প্রতীকী)',
     scale_label: 'মাপকাঠি',
     scale_of_neutron: 'নিউট্রনের {n} ভাগের এক ভাগ',
@@ -179,14 +179,14 @@ export const STRINGS = {
     act_again: 'Show again',
 
     idea_nucleus:
-      'The <b class="c-e">beta (β) ray, or electron,</b> that comes out of a radioactive nucleus is caused by the <b class="c-weak">weak nuclear force</b>. Tap the nucleus to see it.',
+      'The <span class="c-e">beta (β) ray, or electron,</span> that comes out of a radioactive nucleus is caused by the <b class="c-weak">weak nuclear force</b>. Tap the nucleus to see it.',
     idea_change: 'Inside the nucleus the <b class="c-weak">weak nuclear force</b> is acting: a neutron is changing…',
     idea_done:
-      'Because of the <b class="c-weak">weak nuclear force</b> a neutron became a proton (protons <b class="c-p wn-nw">{p0} → {p1}</b>, neutrons <b class="c-n wn-nw">{n0} → {n1}</b>), and an <b class="c-e">electron</b> came out: that is the beta (β) ray.',
+      'Because of the <b class="c-weak">weak nuclear force</b> a neutron became a proton (protons <span class="c-p wn-nw">{p0} → {p1}</span>, neutrons <span class="c-n wn-nw">{n0} → {n1}</span>). An <span class="c-e">electron</span> came out. That is the beta (β) ray.',
     idea_atom:
-      'An atom is about {atom} across. The electromagnetic force pulls the electrons and acts from any distance; but the range of the <b class="c-weak">weak nuclear force</b> is a hundred millionth of this ({r}).',
+      'An atom is about {atom} across. The electromagnetic force pulls the electrons and acts from any distance. But the range of the <b class="c-weak">weak nuclear force</b> is a hundred millionth of this ({r}).',
     idea_reach:
-      'The <b class="c-weak">weak nuclear force</b> acts only up to {r}; outside this sphere it does not act. If a neutron were the size of a football, this range would be like a grain of sand.',
+      'The <b class="c-weak">weak nuclear force</b> acts only up to {r}. Outside this sphere it does not act. If a neutron were the size of a football, this range would be like a grain of sand.',
 
     forces_title: 'The four fundamental forces (weakest → strongest)',
     f_gravity: 'Gravity',
@@ -214,8 +214,8 @@ export const STRINGS = {
     label_atom_size: 'Atom: about {s}',
     label_unknown: '?',
     note_base: 'Symbolic picture',
-    note_slow: 'Symbolic picture; time slowed down a great deal',
-    note_atom: 'Symbolic picture; nucleus and electrons drawn much bigger',
+    note_slow: 'Symbolic picture, time slowed down a great deal',
+    note_atom: 'Symbolic picture, nucleus and electrons drawn much bigger',
     note_reach: 'Inside a neutron (symbolic picture)',
     scale_label: 'Scale',
     scale_of_neutron: 'one {n}th of a neutron',

@@ -78,13 +78,13 @@ test('newtons-second-law: F = ma for the handcart, and the direction of the chan
   expect(await fig.call('get')).toMatchObject({ example: 'force', phase: 'push', force: 200, acceleration: 2 });
   await fig.advance(2200);
   expect((await fig.call('get')).results).toMatchObject({ base: 1, force: 2 });
-  expect(await text('.pvc-rule')).toContain('বল দ্বিগুণ, ত্বরণও দ্বিগুণ');
+  expect(await text('.pvc-rule')).toContain('বল দ্বিগুণ হলে ত্বরণও দ্বিগুণ');
 
   // double the mass, jumping to the end: 0.5 ms⁻²
   await fig.call('set', { example: 'mass', push: true, animate: false });
   const mass = await fig.call('get');
   expect(mass).toMatchObject({ example: 'mass', phase: 'stopped', mass: 200, results: { mass: 0.5 } });
-  expect(await text('.pvc-rule')).toContain('ভর দ্বিগুণ, ত্বরণ অর্ধেক');
+  expect(await text('.pvc-rule')).toContain('ভর দ্বিগুণ হলে ত্বরণ অর্ধেক');
 
   // the force backward: from 2 m/s to rest in 2 s, a = −1; the momentum changes in the direction of the force
   await fig.call('set', { example: 'back', animate: false });
@@ -93,7 +93,7 @@ test('newtons-second-law: F = ma for the handcart, and the direction of the chan
   expect(brake.phase).toBe('brake');
   expect(brake.force).toBe(-100);
   expect(brake.acceleration).toBe(-1);
-  expect(await text('.pvc-rule')).toContain('বল বাম দিকে, গাড়ি চলছে ডান দিকে');
+  expect(await text('.pvc-rule')).toContain('বল বাম দিকে, গাড়ি ডান দিকে চলছে');
   expect(await text('.pvc-anno-layer')).toContain('ভরবেগের পরিবর্তন'); // the green arrow, the way of the force
   await fig.advance(1800);
   const back = await fig.call('get');

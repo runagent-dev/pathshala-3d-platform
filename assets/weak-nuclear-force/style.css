@@ -18,8 +18,8 @@ body.bg-transparent { background: transparent; }
 .wn-pow sup { font-size: 0.74em; line-height: 0; vertical-align: 0.5em; margin-left: 0.04em; }
 
 /* what is on the screen, in the book's words (room for its longest version: the 3D view keeps its size) */
-.wn-idea { margin: 0; min-height: 4.5em; font-size: 14px; line-height: 1.5; color: var(--ink-2); }
-.wn-idea b { font-weight: 700; }
+.wn-idea { margin: 0; min-height: 4.65em; font-size: 14px; line-height: 1.55; color: var(--ink-2); }
+.wn-idea b { font-weight: 600; }
 
 /* the four fundamental forces, weakest first; the weak force filled in */
 .wn-forces { display: flex; flex-direction: column; gap: 4px; }
@@ -28,7 +28,7 @@ body.bg-transparent { background: transparent; }
 .wn-ladder { display: flex; gap: 4px; margin: 0; padding: 0; list-style: none; }
 .wn-f { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2px 3px; border: 1.5px solid color-mix(in srgb, var(--c) 50%, var(--line)); border-radius: 6px; text-align: center; }
 /* a long name may take two lines rather than overflow its box (English "Electromagnetic") */
-.wn-f b { font-size: 12.5px; font-weight: 700; color: var(--c); line-height: 1.3; overflow-wrap: anywhere; hyphens: manual; }
+.wn-f b { font-size: 12.5px; font-weight: 600; color: var(--c); line-height: 1.3; overflow-wrap: anywhere; hyphens: manual; }
 .wn-f small { font-size: 12px; color: var(--ink-2); line-height: 1.35; white-space: nowrap; }
 .wn-f small .wn-pow sup { font-size: 0.8em; }
 .wn-f.on { flex-grow: 1.3; background: var(--c); border-color: var(--c); }
@@ -39,8 +39,8 @@ body.bg-transparent { background: transparent; }
   .wn-f { padding: 1px 4px; }
   .wn-f b, .wn-f small { line-height: 1.25; }
 }
-.wn-strength { margin: 0; font-size: 13px; line-height: 1.45; color: var(--ink-2); }
-.wn-strength b { font-weight: 700; }
+.wn-strength { margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--ink-2); }
+.wn-strength b { font-weight: 600; }
 
 /* the zoom's three stops (one row, the width of the panel), then the β button (the reach chip has a short name for
    small panels) */
@@ -62,7 +62,7 @@ body.bg-transparent { background: transparent; }
 .wn-scale span { padding: 0 3px; border-radius: 3px; background: rgb(255 255 255 / 0.72); }
 .wn-scale { position: absolute; left: 14px; bottom: 10px; z-index: 3; display: flex; flex-direction: column; align-items: flex-start; gap: 0; pointer-events: none; font-size: 13px; line-height: 1.5; color: var(--ink-2); }
 .wn-scale i { display: block; height: 7px; border: 2px solid var(--ink); border-top: 0; }
-.wn-scale em { font-style: normal; color: var(--ink-3); }
+.wn-scale em { font-style: normal; color: var(--ink-2); }
 .wn-inside { position: absolute; inset: 0; opacity: 0; pointer-events: none; background: radial-gradient(circle at 50% 55%, #f1f3f5 0%, #e3e6ea 60%, #d3d8dd 100%); }
 .wn .pvc-anno-callout { font-size: 14px; padding: 1px 8px; line-height: 1.35; text-align: center; }
 .wn .wn-measure { visibility: hidden; transform: none; }

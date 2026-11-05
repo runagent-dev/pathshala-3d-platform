@@ -61,7 +61,7 @@ test('walking-third-law: push, hold, F and −F, three grounds, the rule grows, 
   await expect(frame.locator('.pvc-outcome')).toContainText('পা মাটিকে ধাক্কা দিল, মাটি মানুষটিকে ধাক্কা দিল');
   await expect(frame.locator('.pvc-outcome b')).toHaveText('১০০ নিউটন');
   await expect(frame.locator('[data-example="hard"] .pvc-ex-res')).toHaveText('১০০ নিউটন');
-  await expect(frame.locator('.pvc-rule')).toContainText('পা মাটিকে পেছনে, মাটি আমাদের সামনে ধাক্কা দেয়');
+  await expect(frame.locator('.pvc-rule')).toContainText('মাটি আমাদের সামনে ধাক্কা দেয়');
   // the action now goes on to the sand, step 2; the ring is gone
   expect(st.next).toEqual({ ground: 'sand', step: 2 });
   await expect(frame.locator('.pvc-act')).toContainText('বালুতে পা দিয়ে ধাক্কা দাও');

@@ -80,10 +80,10 @@ export const STRINGS = {
 
     // the one rule, one short sentence per idea: the puzzle, what each ground shows, and the book's sentence last
     rule_start: `হাঁটার সময় ${B('কেউ আমাদের ধাক্কা দেয় না')}, তবু আমরা এগোই। কীভাবে?`,
-    rule_hard: `শক্ত মাটিতে পা আটকে থাকে। ${B('পা মাটিকে পেছনে, মাটি আমাদের সামনে ধাক্কা দেয়।')}`,
+    rule_hard: `শক্ত মাটিতে পা আটকে থাকে। পা মাটিকে পেছনে ধাক্কা দেয়, আর ${B('মাটি আমাদের সামনে ধাক্কা দেয়')}।`,
     rule_sand: `${B('বালু সরে যায়')}, তাই পা বেশি ধাক্কা দিতে পারে না। ধাক্কা কম, তাই মাটির ধাক্কাও কম।`,
     rule_slip: `${B('ঘর্ষণ খুব কম')}, তাই পা পিছলে যায়। মাটিকে প্রায় ধাক্কা দিতে না পারলে মাটিও প্রায় ধাক্কা দেয় না।`,
-    rule_book: `${B('বল প্রয়োগ করলে বিপরীত এবং সমান বল পাওয়া যায়')}: এটাই নিউটনের তৃতীয় সূত্র।`,
+    rule_book: `বল প্রয়োগ করলে বিপরীত এবং সমান বল পাওয়া যায়। এটাই ${B('নিউটনের তৃতীয় সূত্র')}।`,
 
     // in the 3D view, short labels only: the two pushes with their size (the symbols F and −F join them at the last
     // step) and the start line; how time is shown goes in the timeline's head in the panel
@@ -227,10 +227,10 @@ export const STRINGS = {
     out_slip: `The foot slipped. Both pushes are equal, but very small, for example ${B('{n} N')}.`,
 
     rule_start: `Nobody pushes us when we walk, yet we ${B('move forward')}. How?`,
-    rule_hard: `On firm ground the foot grips. ${B('The foot pushes the ground backward, the ground pushes us forward.')}`,
+    rule_hard: `On firm ground the foot grips. The foot pushes the ground backward, and ${B('the ground pushes us forward')}.`,
     rule_sand: `${B('Sand gives way')}, so the foot cannot push hard. A small push means a small push back.`,
     rule_slip: `${B('Friction is very small')}, so the foot slips. If we can hardly push the ground, it hardly pushes us.`,
-    rule_book: `${B('Apply a force and you get an opposite and equal force')}: that is Newton’s third law.`,
+    rule_book: `Apply a force and you get an opposite and equal force. That is ${B('Newton’s third law')}.`,
 
     l_f: 'Foot’s push {n} N',
     l_mf: 'Ground’s push {n} N',
