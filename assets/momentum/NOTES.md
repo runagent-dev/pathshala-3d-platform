@@ -55,7 +55,14 @@ locked hint "পরীক্ষার সময় … বদলানো যা
   আরোহীসহ সাইকেল (Bangladeshi commas from 1,000 up: ৫০,০০০; the numbers stay under 1,00,000); from the impact on its
   corner says "আঘাতের মুহূর্তে" (the vehicles have stopped by then); one line that says what it means now; the actions
   উল্টো দিকে and চালাও; and the book's box (ভরবেগের একক kg m/s · মাত্রা [p] = MLT<sup>−1</sup>).
-- **The run, in real time** (a tap on the truck or bicycle, চালাও, Space or Enter): both go at v⃗ over the 5 m gap
+- **Slower, with a pause at the impact (0.4.0)**: the owner found the run too quick to follow. It is now shown 3 times
+  slower than real (badge "৩ গুণ ধীরে দেখানো", top left) and holds still for 1.2 s on the screen at the moment of the
+  impact, so the student sees what hits what before the shove. The panel's table became a card: "ভরবেগ = ভর × বেগ,
+  p⃗ = mv⃗" on top (a small "আঘাতের মুহূর্তে" tag on its corner from the impact on), then per vehicle its name, a green
+  momentum arrow to one scale (the truck's fills the width, the bicycle's would be 1/125 of it, 2 px, so it gets a short tail anyway and says "ট্রাকের ১/১২৫ ভাগ"; both point the way they go)
+  and the sum with units "p⃗ = ১০,০০০ kg × ৮ m/s = ৮০,০০০ kg m/s" (on a short side panel the units stay on the result
+  only). The timings below are of the run itself, before the slowing.
+- **The run** (formerly in real time) (a tap on the truck or bicycle, চালাও, Space or Enter): both go at v⃗ over the 5 m gap
   (1 s at 5 m/s), then the crash; the arrows fade at the impact (gone before the end, even at 1 m/s). Afterwards a
   dimension line in the middle lane carries "প্রায় ২ m" (the truck's car), and the bicycle's car says beside itself
   "সরেছে প্রায় ১ cm" ("প্রায় সরেনি (১ cm-এর কম)" below half a centimetre). The truck's brake lights come on at the
