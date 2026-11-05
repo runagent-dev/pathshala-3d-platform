@@ -1,10 +1,11 @@
-// The view can be turned all the way round, and the student is told so: a small ⟲ badge in a corner of the stage with a
-// word, until the first turn; then only the icon, which stays. It looks nothing like a drag handle, which moves a part.
+// The view can be turned all the way round, and the student is told so: a dark pill in a corner of the stage with a circular
+// arrow and words, until the first turn; then only the arrow, which stays. It looks nothing like a white drag handle.
 //
 //   const rotate = createRotateCue(stage, {
 //     layer: ui.stage,                       // where the badge goes (default: the canvas host's parent)
-//     label: t('rotate_me'),                 // the word, shown until the first turn
-//     compact: !o.coach,                     // only the icon from the start (tests, posters)
+//     label: t('rotate_me'),                 // the words, shown until the first turn: '৩৬০° ঘুরিয়ে দেখো'
+//     pulse: Boolean(o.coach),               // the arrow rocks gently until the first turn
+//     when: () => canTurn(),                 // read every frame: no badge where the camera cannot turn
 //     polar: [5, 88],                        // degrees from straight overhead: the camera stays above the table
 //     zoom: [0.6, 1.8],                      // how far in and out, as a part of the distance when the student took over
 //     onTurn: () => turnedByHand(),          // the figure stops guiding the camera
@@ -14,12 +15,14 @@
 //
 // It also sets the orbit up: no azimuth limits, the polar limits, zoom on, damping on. OrbitControls says `start` on a bare
 // tap too, so `onTurn` waits for 8 px of movement (or the wheel). Zoom limits apply only while the student holds the
-// view, so a guided flight is never clamped by them. Hidden during the test (`.pvc[data-mode="quiz"]`).
+// view, so a guided flight is never clamped by them. Hidden during the test (`.pvc[data-mode="quiz"]`). `compact: true` starts
+// with the arrow alone.
 import { ICONS } from './icons.js';
 
 /**
- * @typedef {{ layer?: HTMLElement | null, label?: string, compact?: boolean, polar?: [number, number],
- *             zoom?: [number, number], onTurn?: (() => any) | null, at?: 'top-left' | 'bottom-right' }} Options
+ * @typedef {{ layer?: HTMLElement | null, label?: string, compact?: boolean, pulse?: boolean, polar?: [number, number],
+ *             zoom?: [number, number], onTurn?: (() => any) | null, when?: (() => boolean) | null,
+ *             at?: 'top-left' | 'bottom-right' }} Options
  */
 
 const TURN_PX = 8; // a press that moves less is a tap, not a turn of the view
@@ -31,7 +34,7 @@ const RAD = Math.PI / 180;
  */
 export function createRotateCue(
   stage,
-  { layer = null, label = '', compact = false, polar = [5, 88], zoom = [0.6, 1.8], onTurn = null, at = 'top-left' } = {},
+  { layer = null, label = '', compact = false, pulse = false, polar = [5, 88], zoom = [0.6, 1.8], onTurn = null, when = null, at = 'top-left' } = {},
 ) {
   const { controls, camera, canvas } = stage;
   controls.minAzimuthAngle = Number.NEGATIVE_INFINITY;
@@ -46,6 +49,7 @@ export function createRotateCue(
   el.className = `pvc-rc pvc-rc-${at}`;
   el.innerHTML = `${ICONS.orbit}${label ? '<span class="pvc-rc-word"></span>' : ''}`;
   el.setAttribute('aria-hidden', 'true'); // the stage's own label says it; the badge only shows it
+  el.classList.toggle('pulse', pulse);
   const word = el.querySelector('.pvc-rc-word');
   if (word) word.textContent = label;
   (layer || host.parentElement).appendChild(el);
@@ -58,6 +62,7 @@ export function createRotateCue(
     if (used) return;
     used = true;
     el.classList.add('used');
+    el.classList.remove('pulse');
   }
   if (compact) markUsed();
 
@@ -89,6 +94,12 @@ export function createRotateCue(
   host.addEventListener('pointerup', up);
   host.addEventListener('pointercancel', up);
   host.addEventListener('wheel', wheel, { capture: true, passive: true });
+  const removeTicker = when
+    ? stage.addTicker(() => {
+        const off = !when();
+        if (off !== el.hidden) el.hidden = off;
+      })
+    : null;
 
   return {
     /** The badge, for avoid lists. */
@@ -103,6 +114,7 @@ export function createRotateCue(
     rearm() {
       used = false;
       el.classList.remove('used');
+      el.classList.toggle('pulse', pulse);
     },
     /** The guided camera took over: the zoom limits go, so that no flight is clamped. */
     home() {
@@ -111,6 +123,7 @@ export function createRotateCue(
       controls.maxDistance = Number.POSITIVE_INFINITY;
     },
     dispose() {
+      removeTicker?.();
       el.remove();
       host.removeEventListener('pointerdown', down, { capture: true });
       host.removeEventListener('pointermove', move);

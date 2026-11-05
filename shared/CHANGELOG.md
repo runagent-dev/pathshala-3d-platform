@@ -14,8 +14,8 @@ first-time word and a gentle pulse until the first drag, then smaller and calm. 
 (`hit`, `markUsed`) or alone (`onStart`, `onMove`, `onEnd`, `onKey`). Hides in the test; `box()` for avoid lists. No
 figure changes without opting in.
 
-`createRotateCue(stage, options)` in `student/rotatecue.js`: a corner badge with a word until the first turn, then a small
-icon that stays. It sets up a full orbit (no azimuth limits, polar limits, zoom, damping) and tells the figure when the
+`createRotateCue(stage, options)` in `student/rotatecue.js`: a dark corner pill with a circular arrow and words until the
+first turn, then a small arrow that stays. It sets up a full orbit (no azimuth limits, polar limits, zoom, damping) and tells the figure when the
 student really turned the view: 8 px of movement or the wheel, never a bare tap. New icon `ICONS.orbit`.
 
 ## 1.6.0

@@ -241,7 +241,7 @@ test('drag handle: without callbacks the pointer goes on to the handler on the c
 test('rotate cue: a full orbit; a tap is not a turn, a move of 8 px is; the word goes and the icon stays', async ({ page }) => {
   const errors = await openKit(page, { width: 844, height: 390 });
   await shellWithStage(page);
-  const r = await page.evaluate(() => {
+  const r = await page.evaluate(async () => {
     const { createRotateCue } = /** @type {any} */ (window).kit;
     const { root, ui, stage } = /** @type {any} */ (window).t;
     const { controls } = stage;
@@ -249,7 +249,8 @@ test('rotate cue: a full orbit; a tap is not a turn, a move of 8 px is; the word
     controls.maxAzimuthAngle = 1;
     controls.enableZoom = false;
     let turns = 0;
-    const cue = createRotateCue(stage, { layer: ui.stage, label: 'turn me', onTurn: () => turns++ });
+    let canTurn = true;
+    const cue = createRotateCue(stage, { layer: ui.stage, label: 'turn me', onTurn: () => turns++, when: () => canTurn });
     const orbit = [
       controls.minAzimuthAngle,
       controls.maxAzimuthAngle,
@@ -277,7 +278,10 @@ test('rotate cue: a full orbit; a tap is not a turn, a move of 8 px is; the word
     delete root.dataset.mode;
     const wheelFirst = turns;
     host.dispatchEvent(new WheelEvent('wheel', { bubbles: true }));
-    return { orbit, tap, held, home, inTest, wheel: turns - wheelFirst };
+    canTurn = false;
+    await new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)));
+    const hidden = getComputedStyle(cue.el).display;
+    return { orbit, tap, held, home, inTest, wheel: turns - wheelFirst, hidden };
   });
   expect(r.orbit).toEqual([Number.NEGATIVE_INFINITY, null, 88, true, true].map((x) => (x === null ? Number.POSITIVE_INFINITY : x)));
   expect(r.tap).toEqual({ turns: 0, word: true, held: false });
@@ -287,6 +291,7 @@ test('rotate cue: a full orbit; a tap is not a turn, a move of 8 px is; the word
   expect(r.home).toEqual({ held: false, near: 0, far: Number.POSITIVE_INFINITY });
   expect(r.inTest).toBe('none');
   expect(r.wheel).toBe(1);
+  expect(r.hidden).toBe('none');
   expect(errors).toEqual([]);
 });
 

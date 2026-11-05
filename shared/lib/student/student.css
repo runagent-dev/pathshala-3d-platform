@@ -325,15 +325,18 @@
 .pvc-dh-track .dash { stroke: rgba(255, 255, 255, 0.95); stroke-width: 1.8; stroke-dasharray: 7 6; stroke-linecap: butt; }
 @keyframes pvc-dh-pulse { 0% { transform: scale(1); opacity: 0.9; } 70%, 100% { transform: scale(1.5); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .pvc-dh.pulse .pvc-dh-disc::after { animation: none; opacity: 0; } .pvc-dh-disc, .pvc .pvc-dh-disc svg { transition: none; } }
-/* the view turns all the way round (createRotateCue): a badge in a corner, an accent pill until the first turn, then a small icon */
-.pvc-rc { position: absolute; z-index: 3; display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px 3px 6px; border-radius: 999px; background: var(--panel); border: 1px solid var(--accent); color: var(--accent); font-size: 13px; font-weight: 600; line-height: 1.4; white-space: nowrap; pointer-events: none; box-shadow: 0 1px 3px rgba(20, 30, 45, 0.25); transition: opacity 0.3s; }
-.pvc-rc-top-left { left: 10px; top: 10px; }
-.pvc-rc-bottom-right { right: 10px; bottom: 10px; }
-.pvc .pvc-rc svg { display: block; flex: none; width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.pvc .pvc-rc svg .fill { fill: currentColor; stroke: none; }
-.pvc-rc.used { padding: 3px; opacity: 0.72; border-color: var(--line-2); color: var(--ink-3); box-shadow: none; }
+/* the view turns all the way round (createRotateCue): a dark pill in a corner, with words until the first turn, then a small arrow */
+.pvc-rc { position: absolute; z-index: 3; display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px 3px 6px; border-radius: 999px; background: rgba(18, 26, 36, 0.76); color: #fff; font-size: 12.5px; font-weight: 600; line-height: 1.4; white-space: nowrap; pointer-events: none; transition: opacity 0.3s; }
+.pvc-rc[hidden] { display: none; }
+.pvc-rc-top-left { left: 8px; top: 8px; }
+.pvc-rc-bottom-right { right: 8px; bottom: 8px; }
+.pvc .pvc-rc svg { display: block; flex: none; width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.1; stroke-linecap: round; stroke-linejoin: round; }
+.pvc-rc.used { padding: 3px; opacity: 0.66; }
 .pvc-rc.used .pvc-rc-word { display: none; }
+.pvc-rc.pulse svg { animation: pvc-rc-rock 2.6s ease-in-out infinite; }
+@keyframes pvc-rc-rock { 0%, 60%, 100% { transform: rotate(0deg); } 30% { transform: rotate(-38deg); } }
 .pvc[data-mode='quiz'] .pvc-rc { display: none; }
+@media (prefers-reduced-motion: reduce) { .pvc-rc.pulse svg { animation: none; } }
 /* quiet secondary actions (back to the start, …): words and an icon, no box */
 .pvc .pvc-quiet { display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex: none; min-width: 44px; min-height: 44px; padding: 0 8px; border: 0; border-radius: 8px; background: none; color: var(--ink-3); font-size: 14.5px; font-weight: 500; white-space: nowrap; }
 .pvc .pvc-quiet:hover { color: var(--ink); background: var(--soft); }
