@@ -59,6 +59,56 @@ export function createStudioEnvironment({ key = 1, front = 1, light = false } = 
   return scene;
 }
 
+/**
+ * Runs fn with the given objects shown (each one, everything inside it and everything above it), then puts every
+ * `visible` back as it was. Nothing is drawn in between, so no one ever sees them: it is for preparing hidden parts
+ * (compiling their shaders, measuring them, exporting them) without a flash.
+ * @template T
+ * @param {THREE.Object3D | null | undefined | Array<THREE.Object3D | null | undefined>} objects
+ * @param {() => T} fn
+ * @returns {T}
+ */
+export function withShown(objects, fn) {
+  /** @type {Array<[THREE.Object3D, boolean]>} */
+  const saved = [];
+  const seen = new Set();
+  /** @param {THREE.Object3D} o */
+  const show = (o) => {
+    if (seen.has(o)) return;
+    seen.add(o);
+    saved.push([o, o.visible]);
+    o.visible = true;
+  };
+  for (const root of [objects].flat()) {
+    if (!root) continue;
+    root.traverse(show);
+    for (let p = root.parent; p; p = p.parent) show(p);
+  }
+  try {
+    return fn();
+  } finally {
+    for (let i = saved.length - 1; i >= 0; i--) saved[i][0].visible = saved[i][1];
+  }
+}
+
+/**
+ * @typedef {object} WarmUpTarget a render target the figure draws into (a mirror, a small picture) and what it draws there
+ * @property {THREE.WebGLRenderTarget} target
+ * @property {THREE.Object3D} [scene] what is drawn into it (default the stage's scene)
+ * @property {THREE.Camera} [camera] the camera it is drawn with (default the stage's camera)
+ */
+/**
+ * @typedef {object} WarmUpOptions
+ * @property {THREE.Object3D | Array<THREE.Object3D | null | undefined>} [show] hidden parts to show for the compile (and
+ *   put back at once), so that lights or parts that only appear in a later step are compiled as they will be drawn
+ * @property {THREE.Object3D[]} [objects] parts not (yet) in the scene, compiled as if they were in it
+ * @property {WarmUpTarget[]} [targets] render targets the figure draws into, compiled with their own output (linear
+ *   colour, no tone mapping) as three.js does for a render target
+ * @property {boolean} [shadows] also draw the shadow maps once with the shown parts in them, so the shadow pass has its
+ *   shaders too (default: when a shown part casts a shadow and shadows are on). Only the maps are drawn, never the
+ *   canvas, and they are drawn again as they really are before the next frame.
+ */
+
 export function createStage(container, options = {}) {
   const {
     fov = 30,
@@ -71,6 +121,7 @@ export function createStage(container, options = {}) {
     environmentIntensity = 1,
     shadows = 'on-change', // 'on-change': shadow maps follow the scene, not the camera; 'always': every frame
     adaptive = true, // lower the pixel ratio (not below 1) when frames keep coming slowly
+    warmUp: autoWarm = true, // compile every material in the scene in the background once the first frame is drawn
   } = options;
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
@@ -160,6 +211,231 @@ export function createStage(container, options = {}) {
     sceneDirty = false;
     renderer.render(scene, camera);
     for (const fn of after) fn();
+    if (!drawnOnce) {
+      // the figure has built its scene and the first frame is up (three settles some of its state, such as the shadow
+      // type, in that frame): warm-ups start now, the whole scene first unless the figure turned it off
+      drawnOnce = true;
+      firstFrame();
+      if (autoWarm && !asked) warmUp();
+    }
+  }
+
+  // ── compiling ahead: three.js compiles a material's shader the first time it is drawn, which on a slow phone is a
+  // freeze of a few hundred milliseconds the first time a step shows new parts. warmUp() does it ahead, in the background:
+  // - renderer.compileAsync for the scene, the figure's render targets and parts not yet in the scene (with the
+  //   KHR_parallel_shader_compile extension the browser compiles them off the main thread);
+  // - materials with their own clipping planes are drawn once instead, as copies into a hidden 1×1 target, one at a
+  //   time: three's compile() keys them by the clipping state the last frame left behind, not by their own planes;
+  // - the shadow maps once, when a hidden part that casts a shadow was shown for it;
+  // - each program's first use (its uniform locations), one at a time.
+  // Nothing is drawn to the canvas, and every `visible` the figure set is back before the next frame.
+  const idle = () => new Promise((r) => setTimeout(r, 0));
+  let drawnOnce = false;
+  let asked = false; // the figure asked for a warm-up before the first frame: that one covers the whole scene
+  /** @type {() => void} */
+  let firstFrame = () => {};
+  /** @type {Promise<unknown>} every warm-up waits for the first frame, then for the one before it */
+  let warming = new Promise((r) => (firstFrame = () => r(undefined))).then(idle);
+  /** @param {THREE.Material | THREE.Material[] | null | undefined} m */
+  const clipped = (m) => renderer.localClippingEnabled && [m].flat().some((x) => (x?.clippingPlanes?.length ?? 0) > 0);
+  /** @param {THREE.Object3D} o */
+  const drawable = (o) => {
+    const m = /** @type {THREE.Mesh} */ (o);
+    return (
+      Boolean(m.material) && Boolean(m.isMesh || /** @type {any} */ (o).isLine || /** @type {any} */ (o).isPoints || /** @type {any} */ (o).isSprite)
+    );
+  };
+  /**
+   * The parts under root: those compiled ahead, and those with their own clipping planes, which are drawn instead.
+   * @param {THREE.Object3D} root
+   */
+  function split(root) {
+    /** @type {THREE.Mesh[]} */
+    const parts = [];
+    /** @type {THREE.Mesh[]} */
+    const clips = [];
+    root.traverse((o) => {
+      if (!drawable(o)) return;
+      const m = /** @type {THREE.Mesh} */ (o);
+      (clipped(m.material) ? clips : parts).push(m);
+    });
+    return { parts, clips };
+  }
+  /**
+   * renderer.compileAsync for each of these parts under root, one part per call (the others' materials are taken off
+   * for the call), with a pause after each one that made a new program: compiling a whole scene in one go is itself a
+   * long task on a slow phone. `into` is the scene that lights them (default root), `rt` the target they are drawn into.
+   * @param {THREE.Object3D} root @param {THREE.Mesh[]} parts @param {THREE.Camera} cam
+   * @param {THREE.WebGLRenderTarget | null} rt @param {THREE.Object3D | null} into @param {THREE.Object3D[]} shown
+   * @param {Promise<unknown>[]} jobs
+   */
+  async function compileParts(root, parts, cam, rt, into, shown, jobs) {
+    /** @type {THREE.Mesh[]} */
+    const all = [];
+    root.traverse((o) => {
+      if (drawable(o)) all.push(/** @type {THREE.Mesh} */ (o));
+    });
+    const mats = all.map((m) => m.material);
+    let since = 0;
+    for (const part of parts) {
+      if (!running) return;
+      const count = renderer.info.programs?.length ?? 0;
+      withShown(shown, () => {
+        // compile() skips an object without a material: the others' are taken off for this call only
+        for (const m of all) if (m !== part) m.material = /** @type {any} */ (null);
+        const before = renderer.getRenderTarget();
+        try {
+          if (rt) renderer.setRenderTarget(rt);
+          const target = /** @type {THREE.Scene | null} */ (into);
+          if (typeof renderer.compileAsync === 'function') jobs.push(renderer.compileAsync(root, cam, target));
+          else renderer.compile(root, cam, target);
+        } finally {
+          if (rt) renderer.setRenderTarget(before);
+          all.forEach((m, i) => (m.material = mats[i]));
+        }
+      });
+      // a pause after a new program, and every few parts anyway (a part already compiled still costs a little)
+      if ((renderer.info.programs?.length ?? 0) > count || ++since >= 8) {
+        since = 0;
+        await idle();
+      }
+    }
+  }
+  /**
+   * A small scene of copies (sharing geometry and material) of the clipped parts and of the lights shining now, to be
+   * drawn into a 1×1 target. `canvas`: drawn as on the canvas (sRGB, tone mapped) rather than as into a render target.
+   * @param {THREE.Mesh[]} meshes @param {THREE.Object3D} from @param {THREE.Camera} cam @param {boolean} canvas
+   */
+  function copies(meshes, from, cam, canvas) {
+    if (!meshes.length) return null;
+    const s = new THREE.Scene();
+    const src = /** @type {THREE.Scene} */ (from);
+    s.environment = src.environment ?? null;
+    s.environmentIntensity = src.environmentIntensity ?? 1;
+    s.fog = src.fog ?? null;
+    from.traverseVisible((o) => {
+      if (/** @type {THREE.Light} */ (o).isLight) s.add(o.clone(false));
+    });
+    /** @type {THREE.Object3D[]} */
+    const parts = [];
+    for (const m of new Set(meshes)) {
+      try {
+        const c = m.clone(false);
+        c.visible = true;
+        c.frustumCulled = false;
+        c.matrixAutoUpdate = false;
+        c.matrix.copy(m.matrixWorld);
+        c.matrixWorld.copy(m.matrixWorld);
+        parts.push(c);
+      } catch {
+        // a part that cannot be copied is compiled the first time it is drawn, as before
+      }
+    }
+    const target = new THREE.WebGLRenderTarget(1, 1);
+    if (canvas) {
+      // three gives a render target marked like this the canvas's colour space and tone mapping: the canvas's shaders
+      /** @type {any} */ (target).isXRRenderTarget = true;
+      target.texture.colorSpace = renderer.outputColorSpace;
+    }
+    return { scene: s, parts, cam, target };
+  }
+  /** Draws each copy alone into its 1×1 target, one per task. @param {ReturnType<typeof copies>} job */
+  async function draw(job) {
+    if (!job) return;
+    const { scene: s, parts, cam, target } = job;
+    const before = renderer.getRenderTarget();
+    const autoClear = renderer.autoClear;
+    try {
+      for (const c of parts) {
+        if (!running) return;
+        s.add(c);
+        renderer.setRenderTarget(target);
+        renderer.autoClear = true;
+        renderer.render(s, cam);
+        renderer.autoClear = autoClear;
+        renderer.setRenderTarget(before);
+        s.remove(c);
+        await idle();
+      }
+    } finally {
+      renderer.autoClear = autoClear;
+      renderer.setRenderTarget(before);
+      target.dispose();
+      s.traverse((o) => /** @type {THREE.Light} */ (o).dispose?.());
+    }
+  }
+  function shadowPass() {
+    /** @type {THREE.Light[]} */
+    const lights = [];
+    scene.traverseVisible((o) => {
+      const light = /** @type {THREE.Light} */ (o);
+      if (light.isLight && light.castShadow && light.layers.test(camera.layers)) lights.push(light);
+    });
+    if (!lights.length) return;
+    // shadow maps only, never the canvas; the next frame draws them again as they really are
+    scene.updateMatrixWorld();
+    renderer.shadowMap.needsUpdate = true;
+    renderer.shadowMap.render(lights, scene, camera);
+    renderer.shadowMap.needsUpdate = false;
+    sceneDirty = true;
+  }
+  /** @type {WeakSet<object>} */
+  const used = new WeakSet();
+  /**
+   * A program's first use (its uniform and attribute locations) waits for the browser to finish it. With the
+   * KHR_parallel_shader_compile extension compileAsync has already waited off the main thread and this is quick; without
+   * it the browser compiles only when asked, so ask now, one program per task, while the student is still reading.
+   */
+  async function firstUse() {
+    for (const p of /** @type {any[]} */ (renderer.info.programs ?? [])) {
+      if (!running) return;
+      if (used.has(p)) continue;
+      used.add(p);
+      p.getUniforms?.();
+      await idle();
+    }
+  }
+  /** @param {WarmUpOptions} opts */
+  async function warmOnce(opts) {
+    if (!running) return;
+    const shown = [opts.show].flat().filter((o) => o != null);
+    /** @type {Promise<unknown>[]} */
+    const jobs = [];
+    /** @type {Array<ReturnType<typeof copies>>} */
+    const drawn = [];
+    let casts = false;
+    withShown(shown, () => {
+      scene.updateMatrixWorld();
+      for (const o of opts.objects ?? []) o.updateMatrixWorld();
+      for (const { scene: sc } of opts.targets ?? []) sc?.updateMatrixWorld();
+      for (const o of shown) o.traverse((n) => (casts ||= /** @type {THREE.Mesh} */ (n).isMesh && n.castShadow));
+    });
+    const main = split(scene);
+    const extra = (opts.objects ?? []).map((o) => ({ root: o, ...split(o) }));
+    const targets = (opts.targets ?? []).map(({ target, scene: s = scene, camera: c = camera }) => ({ target, s, c, ...split(s) }));
+    await compileParts(scene, main.parts, camera, null, null, shown, jobs);
+    for (const x of extra) await compileParts(x.root, x.parts, camera, null, scene, shown, jobs);
+    for (const t of targets) await compileParts(t.s, t.parts, t.c, t.target, null, shown, jobs);
+    withShown(shown, () => {
+      drawn.push(copies([...main.clips, ...extra.flatMap((x) => x.clips)], scene, camera, true));
+      for (const t of targets) drawn.push(copies(t.clips, t.s, t.c, false));
+    });
+    await Promise.all(jobs);
+    for (const job of drawn) await draw(job);
+    if (!running) return;
+    if ((opts.shadows ?? casts) && renderer.shadowMap.enabled) withShown(shown, shadowPass);
+    await firstUse();
+  }
+  /**
+   * Compiles the scene's materials ahead, so the first time a part is drawn costs nothing.
+   * @param {WarmUpOptions} [opts]
+   * @returns {Promise<void>}
+   */
+  function warmUp(opts = {}) {
+    if (!drawnOnce) asked = true;
+    const next = warming.then(() => warmOnce(opts)).catch((e) => console.warn('stage.warmUp', e));
+    warming = next;
+    return next;
   }
   /** @param {THREE.Object3D} o */
   function applyShadowBox(o) {
@@ -266,6 +542,14 @@ export function createStage(container, options = {}) {
     },
     /** Draw now (shadows included). */
     render: renderAll,
+    /**
+     * Compile shaders ahead, in the background (the stage already does this once for the whole scene after the first
+     * frame): `show` hidden parts of later steps, `targets` a figure's own render targets ({ target, scene, camera }),
+     * `objects` parts not yet in the scene. Draws nothing; resolves when the shaders are ready.
+     */
+    warmUp,
+    /** Runs fn with the given hidden objects shown, then hides them again; nothing is drawn in between. */
+    withShown,
     /** PNG data URL of the current view, cover-fitted to w×h, on white (background: null keeps it transparent). */
     capture({ width: w = 800, height: h = 500, background = '#ffffff' } = {}) {
       renderAll();

@@ -5,6 +5,31 @@ student kit). Every zip records it in `PACKAGE.json` as `kit`. Bump it with each
 patch for fixes, minor for additions, major when a figure has to change to keep working. Run the visual comparison
 across all figures before merging a kit change (`npm run test:visual`).
 
+## 1.9.0
+
+The stage compiles shaders ahead, after an audit of the chapter 8 figures on an emulated slow phone (CPU 6× slower)
+found one real stall: three.js compiles a material's shader the first time it is drawn, so the first tap of a step that
+shows new parts froze for 0.3–1 s (right-angle-mirrors at the first fold, kaleidoscope at its first pattern,
+hill-road-mirror when the road mirror rises).
+- Once the first frame is drawn, the stage compiles every material in the scene in the background
+  (`renderer.compileAsync`, one part per task, so the compiling is never one long task; `renderer.compile` where there
+  is no compileAsync), then makes each program's first use (its uniform locations) one at a time. `createStage(…,
+  { warmUp: false })` turns this off.
+- `stage.warmUp({ show, targets, objects, shadows })` for what that pass cannot see: `show` hidden parts (and lamps) of
+  later steps, shown for the compile and put back at once; `targets` the figure's own render targets
+  (`{ target, scene, camera }`: a mirror, a small picture), compiled with a render target's output; `objects` parts not
+  yet in the scene; `shadows` the shadow maps drawn once with the shown parts. Returns a promise; never delays `ready`.
+- Parts whose material has its own clipping planes are drawn once instead, as copies into a hidden 1×1 target with the
+  canvas's colour space and tone mapping: three's compile keys them by the clipping state the last frame left behind.
+- `withShown(objects, fn)` (also `stage.withShown`): runs fn with hidden objects shown (with everything inside and
+  above them), then puts every `visible` back; nothing is drawn in between.
+Nothing is drawn to the canvas and no picture changes. Without the KHR_parallel_shader_compile extension (software
+WebGL, some old phones) the browser compiles only when a program is first used, so the warm-up's first-use pass is where
+the waiting happens: in the seconds after load, while the student reads, instead of on a tap.
+
+The how-to row (`howto.js`): in the tightest frames (390×520, a short landscape side panel) `tap` items keep their
+words like `drag` items, as a bare hand icon with no words means nothing to a student (parallel-mirrors at 844×390).
+
 ## 1.8.0
 
 `createHowTo(ui, t, items, options)` in `student/howto.js`, after the owner found that students cannot tell what the white
