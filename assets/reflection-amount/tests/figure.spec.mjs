@@ -245,6 +245,18 @@ test('reflection-amount: the handle lifts the glass, a tap on it is the action, 
 
 // the owner: labels pinned to what they name, and never hidden: nothing may lie under the picture from his eye, the handle, the
 // panel's tab, the corner's buttons or another label, nor run off the view. The handle keeps off the picture too.
+/** After a step changes the panel's height: the view's new size arrives in real time (a resize observer), then a frame. */
+const resized = async (page, fig) => {
+  await fig.advance(250);
+  const size = () => fig.frame.evaluate(() => document.querySelector('canvas').height);
+  for (let i = 0, was = await size(); i < 20; i++) {
+    await page.waitForTimeout(60);
+    await fig.advance(50);
+    const now = await size();
+    if (now === was && i >= 1) break;
+    was = now;
+  }
+};
 const hiddenLabels = (fig, { mayHide = false } = {}) =>
   fig.frame.evaluate((may) => {
     const seen = (el) =>
@@ -298,13 +310,13 @@ for (const [width, height] of [
     const fig = await open(page, { coach: '1' });
     for (const step of [0, 1, 2, 3]) {
       await fig.call('set', { step, animate: false });
-      await fig.advance(250);
+      await resized(page, fig);
       expect(await hiddenLabels(fig), `step ${step}`).toEqual([]);
     }
     for (const angle of [30, 60, 80, 87]) {
       await fig.call('set', { step: 4, animate: false });
       await fig.call('set', { angle, animate: false });
-      await fig.advance(250);
+      await resized(page, fig);
       expect(await hiddenLabels(fig), `${angle}°`).toEqual([]);
     }
     // and on the student's own view, right round: a label may give way, never cover something
