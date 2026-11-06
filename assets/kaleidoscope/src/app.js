@@ -10,6 +10,7 @@ import { createAction } from '@shared/student/action.js';
 import { createAnnotations } from '@shared/student/annotations.js';
 import { createAudio } from '@shared/student/audio.js';
 import { createDragHandle } from '@shared/student/draghandle.js';
+import { createHowTo } from '@shared/student/howto.js';
 import { ICONS } from '@shared/student/icons.js';
 import { capturePointer, releasePointer } from '@shared/student/pointer.js';
 import { createQuiz } from '@shared/student/quiz.js';
@@ -946,6 +947,21 @@ export function createApp(root, options = {}) {
   );
   const lampHandle = curveHandle(gripOnWedge, () => s.angle, WEDGE.min, WEDGE.max, 45, t('aria_lamp'), canLamp);
   const handleOf = { turn: turnHandle, eye: eyeHandle, lamp: lampHandle };
+  // how to use, in the panel: the rotate pill, the সামনে button, and the one thing this step lets the student move or tap,
+  // drawn as on the view. Each of those belongs to one step only, so the items that do not apply are taken out (collapse)
+  createHowTo(
+    ui,
+    t,
+    [
+      { kind: 'orbit', cue: rotate },
+      { kind: 'front' },
+      { kind: 'drag', axis: 'turn', text: t('howto_turn'), handle: turnHandle, when: () => !s.locked && s.step === 'pattern' && s.stage >= 1 },
+      { kind: 'drag', axis: 'x', text: t('howto_eye'), handle: eyeHandle, when: () => !s.locked && s.step === 'graze' },
+      { kind: 'drag', axis: 'x', text: t('howto_lamp'), handle: lampHandle, when: () => !s.locked && s.step === 'two' && s.stage === 2 },
+      { kind: 'tap', text: t('howto_tap'), when: () => !s.locked && s.step === 'why' && s.stage === 4 },
+    ],
+    { stage, collapse: true },
+  );
   const trackBoxes = () => dia.handles.track;
   const onScreen = new THREE.Vector3();
   /** Small boxes along the rays drawn now, in canvas pixels: labels keep off them. */
