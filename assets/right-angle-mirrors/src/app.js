@@ -937,7 +937,8 @@ export function createApp(root, options = {}) {
   function outcome() {
     const a = Math.round(s.alpha);
     if (s.step === 'one') {
-      if (s.stage === 0 || s.arm < 1) return t('out_one0');
+      if (s.stage === 0) return ''; // the first screen: only the calm words below
+      if (s.arm < 1) return t('out_one0');
       return t(s.stage === 1 ? 'out_hands' : 'out_text');
     }
     if (s.step === 'two') {
@@ -948,6 +949,9 @@ export function createApp(root, options = {}) {
     return t(`out_t${s.stage}`);
   }
   function rule() {
+    // the first screen: a calm scene in everyday words, shorter where the panel is smallest (style.css picks one)
+    if (s.step === 'one' && s.stage === 0)
+      return `<span class="ra-intro">${t('intro')}</span><span class="ra-intro-short">${t('intro_short')}</span>`;
     if (s.step === 'one') return t(`rule_one${s.stage}`);
     if (s.step === 'two') {
       if (s.stage === 0) return s.alpha < ANGLE.flat ? t('rule_fold', { a: 90 }) : t('rule_two0');
