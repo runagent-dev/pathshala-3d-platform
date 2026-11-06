@@ -323,6 +323,9 @@ createHowTo(ui, t, [
 - A tap on an item points at its control: a drag item calls `handle.flash()` (one pulse on the 3D view), orbit calls
   `cue.wiggle()`, front flashes the সামনে button when it shows. Each item is a button (keyboard, `aria-label` from its
   words); the row is a group named `t('howto_label')`.
+- Suggested words (the miniature already shows the control's own word, so the caption says what it does without
+  repeating it): `howto_orbit: 'ঘুরিয়ে দেখো'` (Turn the view), `howto_front: 'শুরুর দৃশ্যে ফেরো'` (Back to the start view,
+  not "সামনে ফেরো" beside a button that already says সামনে), and for a drag the verb and the part: `'টেনে কাগজ সরাও'`.
 - The kit holds no Bangla: the default words are the figure's keys `howto_orbit`, `howto_front`, `howto_tap`,
   `howto_label` (a missing key: orbit falls back to `rotate_me`, the others show only the miniature).
 - `when` per item (read every frame with `stage`, or on `update()`): an item that does not apply in this step is hidden
