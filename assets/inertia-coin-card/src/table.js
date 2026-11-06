@@ -3,33 +3,24 @@
 // the card. setState(s) places the card, the coin and the finger from ./motion.js (sampleAt('coin', t)).
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { textMesh } from '@shared/student/materials.js';
 import { TABLE } from './motion.js';
-import { cardTexture, tableTexture, wallTexture } from './textures.js';
+import { cardTexture } from './textures.js';
 
 export function createTable({ t }) {
   const { glass: G, card: C, coin: K } = TABLE;
   const root = new THREE.Group();
   root.name = 'CoinAndCard';
 
-  // a wooden table top (the card, the coin and the glass stand out on its warm brown), against a plastered wall
-  const woodMap = tableTexture();
-  woodMap.repeat.set(1.4 / 0.5, 0.8 / 0.5);
-  const wood = new THREE.MeshStandardMaterial({ name: 'TableTop', map: woodMap, roughness: 0.6 });
-  const board = new THREE.Mesh(new RoundedBoxGeometry(1.4, 0.03, 0.8, 2, 0.006), wood);
+  // a plain table top in a light sand colour, no grain: the white card, the steel coin, the clear glass (its darker
+  // rim) and the hand all stand out on it, and it stands out on the deep-blue backdrop (textures.js, set in app.js)
+  const top = new THREE.MeshStandardMaterial({ name: 'TableTop', color: 0xbca27a, roughness: 0.85, metalness: 0 });
+  const board = new THREE.Mesh(new RoundedBoxGeometry(1.4, 0.03, 0.8, 2, 0.006), top);
   board.name = 'Table';
   board.position.set(0.18, -0.015, 0.2);
   board.receiveShadow = true;
   root.add(board);
-  const wall = new THREE.Mesh(
-    new THREE.PlaneGeometry(2.4, 1.2),
-    new THREE.MeshStandardMaterial({ name: 'Wall', map: wallTexture(), roughness: 0.95 }),
-  );
-  wall.name = 'Wall';
-  wall.rotation.y = Math.PI; // it faces the camera (which looks along +z)
-  wall.position.set(0.18, 0.5, 0.62);
-  wall.userData.noExport = true;
-  root.add(wall);
 
   // the glass: one turned outline (outside, rim, inside, thick base), see-through
   const r0 = G.r - 0.004;
@@ -55,19 +46,38 @@ export function createTable({ t }) {
   cup.name = 'Glass';
   cup.renderOrder = 3;
   root.add(cup);
-  const rimMat = new THREE.MeshStandardMaterial({ name: 'GlassRim', color: 0x8fb4c8, roughness: 0.2, transparent: true, opacity: 0.75 });
-  const rim = new THREE.Mesh(new THREE.TorusGeometry(G.r - G.wall / 2, G.wall / 2 + 0.0004, 8, 48).rotateX(Math.PI / 2), rimMat);
-  rim.position.y = G.h;
-  rim.name = 'GlassRim';
-  root.add(rim);
-  const base = new THREE.Mesh(new THREE.CylinderGeometry(r0 - G.wall, r0, G.base, 40), rimMat);
-  base.position.y = G.base / 2;
-  base.name = 'GlassBase';
-  root.add(base);
+  // the rim and the base in a darker blue-grey, so the clear glass shows its edges on the pale table and on the blue
+  const rimMat = new THREE.MeshStandardMaterial({ name: 'GlassRim', color: 0x58798e, roughness: 0.2, transparent: true, opacity: 0.85 });
+  // (one mesh, one draw)
+  const rim = mergeGeometries([
+    new THREE.TorusGeometry(G.r - G.wall / 2, G.wall / 2 + 0.0004, 8, 48).rotateX(Math.PI / 2).translate(0, G.h, 0),
+    new THREE.CylinderGeometry(r0 - G.wall, r0, G.base, 40).translate(0, G.base / 2, 0),
+  ]);
+  const edges = new THREE.Mesh(rim, rimMat);
+  edges.name = 'GlassRim';
+  root.add(edges);
+  // a soft contact shadow under the glass (one ring, darkest at the foot, fading out; no texture): the clear glass
+  // casts no shadow of its own
+  const shade = new THREE.RingGeometry(0, r0 * 1.6, 32, 4).rotateX(-Math.PI / 2);
+  const pos = shade.attributes.position;
+  const rgba = new Float32Array(pos.count * 4);
+  for (let i = 0; i < pos.count; i++) {
+    const r = Math.hypot(pos.getX(i), pos.getZ(i));
+    rgba[i * 4 + 3] = r <= r0 * 1.02 ? 0.3 : Math.max(0, 0.3 * (1 - (r - r0) / (r0 * 0.6)) ** 2);
+  }
+  shade.setAttribute('color', new THREE.BufferAttribute(rgba, 4));
+  const contact = new THREE.Mesh(
+    shade,
+    new THREE.MeshBasicMaterial({ name: 'ContactShadow', vertexColors: true, transparent: true, depthWrite: false }),
+  );
+  contact.position.y = 0.0004;
+  contact.name = 'ContactShadow';
+  contact.userData.noExport = true;
+  root.add(contact);
 
-  // the card (a stiff ruled index card: printed top, plain cream edges) and the coin (৫ টাকা, steel: a raised rim,
+  // the card (a stiff ruled index card: printed white top, plain off-white edges) and the coin (৫ টাকা, steel: a raised rim,
   // a reeded edge and the figure 5 standing up from the face)
-  const edge = new THREE.MeshStandardMaterial({ name: 'CardEdge', color: 0xeadcb2, roughness: 0.9 });
+  const edge = new THREE.MeshStandardMaterial({ name: 'CardEdge', color: 0xe4e2da, roughness: 0.9 });
   const face = new THREE.MeshStandardMaterial({ name: 'Card', map: cardTexture(), roughness: 0.85 });
   const card = new THREE.Mesh(new THREE.BoxGeometry(C.w, C.th, C.d), [edge, edge, face, edge, edge, edge]);
   card.name = 'Card';
@@ -99,7 +109,7 @@ export function createTable({ t }) {
 
   // the hand that flicks the card, coming in from the right of the picture: the forefinger out (three phalanges, a
   // nail, knuckle creases), the other three fingers curled under the palm, the thumb along the side, a wrist and a
-  // white shirt cuff (so it reads as a hand against the wooden table)
+  // white shirt cuff (darker than the sand table, so it reads as a hand on it)
   const skin = new THREE.MeshStandardMaterial({ name: 'Skin', color: 0xa86f47, roughness: 0.6 });
   const crease = new THREE.MeshStandardMaterial({ name: 'Crease', color: 0x8a5634, roughness: 0.7 });
   const hand = new THREE.Group();

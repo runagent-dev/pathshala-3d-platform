@@ -14,6 +14,7 @@ import { createQuiz } from '@shared/student/quiz.js';
 import { ICONS } from '@shared/student/icons.js';
 import { createI18n } from './i18n.js';
 import { createTable } from './table.js';
+import { backdropTexture } from './textures.js';
 import { createArrow, createTags } from './marks.js';
 import { EVENTS, TABLE, clamp, sampleAt, simulate } from './motion.js';
 
@@ -73,8 +74,8 @@ export function createApp(root, options = {}) {
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 28, near: 0.02, far: 120, environment: 'studio-light' });
   const { camera, controls, scene } = stage;
-  // round the table: the warm room (only seen past the wall when turned)
-  if (o.bg !== 'transparent') scene.background = new THREE.Color(0xc8955c);
+  // round the table: a calm deep-blue gradient (the same from every angle; capture paints it too)
+  if (o.bg !== 'transparent') scene.background = backdropTexture();
   controls.enablePan = false;
   controls.minDistance = 0.15;
   controls.maxDistance = 30;
@@ -100,7 +101,7 @@ export function createApp(root, options = {}) {
     sun.shadow.normalBias = 0.01;
     const solid = (m) => m instanceof THREE.Mesh && m.material?.visible !== false && !m.material?.transparent;
     table.root.traverse((m) => {
-      if (solid(m) && m.name !== 'Wall') m.castShadow = true;
+      if (solid(m)) m.castShadow = true;
     });
   }
 

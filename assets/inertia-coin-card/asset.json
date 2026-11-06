@@ -5,7 +5,7 @@
   "title": "Inertia: the coin and the card (জড়তা: কয়েন ও কার্ড)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "book": "physics-9-10",
   "page": 64,
   "topic": "3.1.1",
@@ -13,7 +13,7 @@
   "order": 3,
   "maintainers": ["RadeenXALNW"],
   "units": "m",
-  "description": "Interactive 3D figure for inertia of rest (স্থিতি জড়তা), book pages 64–65, topic 3.1.1: the classic coin-and-card trick. A card lies on a glass on a wooden table with a ৫ টাকা coin on it; the student taps the card and a finger flicks it hard (shown 10x slower, said in the panel). The card shoots away at 2.2 m/s; friction (μ = 0.25) acts on the coin only while the card slides under it (a few hundredths of a second), so the coin gets only a few cm/s, stays where it was and drops straight into the glass. A white-rimmed blue arrow on the card and an orange one on the coin show each one's speed along the table; the panel gives both speeds in m/s and the book's explanation; labels say what each does while it is true. Test tab: 3 questions (what the coin does, which inertia it is and why, which one moves fast just after the flick); after each answer the scene plays on and shows it. Phone-first, Bangla.",
+  "description": "Interactive 3D figure for inertia of rest (স্থিতি জড়তা), book pages 64–65, topic 3.1.1: the classic coin-and-card trick. A card lies on a glass on a plain sand-coloured table, against a calm deep-blue backdrop, with a ৫ টাকা coin on it; the student taps the card and a finger flicks it hard (shown 10x slower, said in the panel). The card shoots away at 2.2 m/s; friction (μ = 0.25) acts on the coin only while the card slides under it (a few hundredths of a second), so the coin gets only a few cm/s, stays where it was and drops straight into the glass. A white-rimmed blue arrow on the card and an orange one on the coin show each one's speed along the table; the panel gives both speeds in m/s and the book's explanation; labels say what each does while it is true. Test tab: 3 questions (what the coin does, which inertia it is and why, which one moves fast just after the flick); after each answer the scene plays on and shows it. Phone-first, Bangla.",
   "tags": ["force", "newtons-laws", "inertia", "inertia-of-rest", "coin-and-card", "bangla"],
   "params": [
     {

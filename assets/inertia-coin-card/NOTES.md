@@ -30,7 +30,7 @@ the next; the figure uses ওপরের throughout (the book's own form here, 
 is "ছেলেটি / সে" everywhere (the book's "সে"); the book's general sentences keep "আমরা".
 
 ## How the figure works
-- A card on a glass on a wooden table, a ৫ টাকা coin on the card. A tap on the view (or the action) plays it: a finger
+- A white card on a glass on a plain table, a ৫ টাকা coin on the card. A tap on the view (or the action) plays it: a finger
   flicks the card (2.2 m/s), shown 10 times slower (said in the panel). The card shoots off; friction (μ = 0.25) acts
   on the coin only while the card slides under it (≈ 25 ms), so the coin gets only ≈ 7 cm/s and falls straight into
   the glass, bounces once and rests on the bottom.
@@ -38,6 +38,15 @@ is "ছেলেটি / সে" everywhere (the book's "সে"); the book's ge
   speeds in m/s and why (স্থিতি জড়তা); labels say what each does while it is true (হঠাৎ সরে যায় / স্থির থাকতে চায় /
   সোজা নিচে পড়ে).
 - ← → step through the event, Space plays or pauses, F/V views. The lab starts from the front; a drag turns it.
+
+## Look
+A calm deep-blue gradient backdrop (`#0b2a5b` → `#123d7a`, as in equations-of-motion, newtons-second-law and
+torricelli-barometer-straw; one 4 × 256 canvas as the scene background, so it fills every orbit angle with no edges)
+and a plain light-sand table top with no grain. On it the white card, the steel coin and the clear glass stand out:
+the glass has a darker blue-grey rim and base and a soft contact shadow (vertex-faded ring, no texture). The hand is
+darker skin with a white cuff, never the table's colour. Labels are white chips with a coloured edge; their leader
+lines sit on a white halo so they read on the table and the blue alike. Until 1.1.0 the setting was an ochre
+plastered wall and a brown wooden table (the glass, the card and the hand melted into it).
 
 ## The test
 3 questions, shuffled: what happens to the coin if the card is flicked (asked before the flick), which inertia it is
