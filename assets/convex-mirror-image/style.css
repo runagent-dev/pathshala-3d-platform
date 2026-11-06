@@ -129,3 +129,16 @@ body.bg-transparent { background: transparent; }
   .lab .lab-lead .lab-long { display: inline; }
   .lab .lab-lead .lab-short { display: none; }
 }
+
+/* the how-to row (createHowTo, kit 1.8.0): 8 px of air above and below it where the sheet's gap is tight */
+@container pvc (max-width: 420px) {
+  .lab .pvc-howto { margin: 4px 0; row-gap: 0; }
+  .pvc.lab .pvc-howto-item { min-height: 28px; }
+}
+/* the side panel is a pvc container too: its own gap is enough, except in a short one (a phone held sideways) */
+@container pvc-panel (min-height: 1px) {
+  .lab .pvc-howto { margin: 0; }
+}
+@container pvc-panel (min-height: 1px) and (max-height: 420px) {
+  .lab .pvc-howto { margin: 3px 0; }
+}

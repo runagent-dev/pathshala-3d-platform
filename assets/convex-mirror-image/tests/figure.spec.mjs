@@ -156,7 +156,7 @@ test(`${ID}: the drag handle shows what can be moved`, async ({ page }) => {
   const log = await preparePage(page);
   const fig = await openFigure(page, ID, { params: { coach: '1' } });
   await fig.advance(600);
-  const handle = fig.frame.locator('.pvc-dh-disc');
+  const handle = fig.frame.locator('.pvc-dh .pvc-dh-disc');
   let st = await fig.call('get');
   expect(st.handle).toEqual({ shown: true, used: false });
   await expect(fig.frame.locator('.pvc-dh-word')).toBeVisible();

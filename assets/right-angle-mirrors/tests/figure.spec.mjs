@@ -231,8 +231,8 @@ test('right-angle-mirrors: the view goes all the way round, and the front button
     if (az === 180) await expect(f.locator('.pvc-anno', { hasText: 'ডান হাত' })).toHaveCount(0);
   }
   await expect(f.locator('.pvc-rc.used')).toHaveCount(1);
-  await expect(f.locator('.pvc-rc-deg')).toHaveText('৩৬০°');
-  await expect(f.locator('.pvc-rc-deg')).toBeVisible(); // never the arrow alone
+  await expect(f.locator('.pvc-rc .pvc-rc-deg')).toHaveText('৩৬০°');
+  await expect(f.locator('.pvc-rc .pvc-rc-deg')).toBeVisible(); // never the arrow alone
   await expect(f.locator('[data-view="front"]')).toBeVisible();
   await expect(f.locator('[data-view="front"]')).toContainText('সামনে');
   await f.locator('[data-view="front"]').click();

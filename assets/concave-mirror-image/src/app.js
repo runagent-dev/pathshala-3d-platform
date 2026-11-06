@@ -10,6 +10,7 @@ import { createAction } from '@shared/student/action.js';
 import { createAnnotations } from '@shared/student/annotations.js';
 import { createAudio } from '@shared/student/audio.js';
 import { createDragHandle } from '@shared/student/draghandle.js';
+import { createHowTo } from '@shared/student/howto.js';
 import { ICONS } from '@shared/student/icons.js';
 import { capturePointer, releasePointer } from '@shared/student/pointer.js';
 import { createQuiz } from '@shared/student/quiz.js';
@@ -545,6 +546,25 @@ export function createApp(root, options = {}) {
     pulse: Boolean(o.coach),
     when: () => !s.busy && !s.quiz && screenMovable(),
   });
+  // how to use, in the panel: the rotate pill, the সামনে button and the two discs, drawn as on the view; an item whose part
+  // cannot be moved in this step keeps its place unseen, so the panel does not jump
+  createHowTo(
+    ui,
+    t,
+    [
+      { kind: 'orbit', cue: rotate },
+      { kind: 'front' },
+      {
+        kind: 'drag',
+        axis: 'x',
+        text: t('howto_screen'),
+        handle: screenHandle,
+        when: () => !s.locked && (s.stage === 'screen' || (FREE.has(s.stage) && V.paper >= 1 && V.screen >= 1)),
+      },
+      { kind: 'drag', axis: 'x', text: t('howto_pencil'), handle: pencilHandle, when: () => !s.locked && FREE.has(s.stage) },
+    ],
+    { stage },
+  );
   const anno = createAnnotations({
     stage,
     layer: ui.annoLayer,

@@ -32,6 +32,7 @@ The bus shows that it can be moved whenever it is in view: the kit's `createDrag
 for its range (nose 12.5–20 m along the east road; the wide framing follows its tail, so
 it stays whole), the word "টেনে সরাও" and a gentle pulse until the first drag, then smaller and calm. Hidden in the close-ups
 and the test. The test tab stays usable (the kit's shell), but is quiet until the offer appears.
+- **How to use** (v0.2.0, kit 1.8.0 `createHowTo`): under the action, the same ⟲ ৩৬০° pill and সামনে button as on the view, with a few words, and the bus's white disc ("টেনে বাস সরাও"), unseen but in place until the bus can be moved. Tapping an item points at its control on the view.
 
 ## The exactness (for the reviewer)
 - **The plan is built so that 45° is exact, not nearly.** The road is rounded (radius 10 m), so the two drivers' straight-

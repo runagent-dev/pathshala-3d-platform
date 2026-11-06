@@ -12,6 +12,7 @@ import { createAction } from '@shared/student/action.js';
 import { createAnnotations } from '@shared/student/annotations.js';
 import { createAudio } from '@shared/student/audio.js';
 import { createDragHandle } from '@shared/student/draghandle.js';
+import { createHowTo } from '@shared/student/howto.js';
 import { ICONS } from '@shared/student/icons.js';
 import { capturePointer, releasePointer } from '@shared/student/pointer.js';
 import { createQuiz } from '@shared/student/quiz.js';
@@ -709,6 +710,24 @@ export function createApp(root, options = {}) {
     pulse: Boolean(o.coach),
     when: () => handleOn() && camK >= 1,
   });
+  // how to use, in the panel: the rotate pill, the সামনে button and the bus's disc, drawn as on the view; the bus's item
+  // keeps its place unseen until the bus can be moved, so the panel does not jump
+  createHowTo(
+    ui,
+    t,
+    [
+      { kind: 'orbit', cue: rotate },
+      { kind: 'front' },
+      {
+        kind: 'drag',
+        axis: 'x',
+        text: t('howto_bus'),
+        handle: busHandle,
+        when: () => !s.locked && !s.quiz && s.part >= PART.BLOCKED && poseKey() === 'wide',
+      },
+    ],
+    { stage },
+  );
 
   // ── labels on the picture ──────────────────────────────────────────────────────────────────────────────
   let action = null;

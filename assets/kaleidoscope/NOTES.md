@@ -74,6 +74,7 @@ six-fold pattern that moves when the tube turns. Plain glass can do it because t
 - **The test**: count the reflections of a marked cell by the lines crossed; find a piece's image in the next cell (right, too near,
   too far, turned round); how many cells meet at a corner (360° ÷ 60°); which eye sees the brightest image (only that: at 12° and 38° the two faintest differ by half a percent), with each eye's line of sight drawn; the angle at
   B from the angle at A. Numbers only (the kit's quiz compares numbers); a browser test answers all five right.
+- **How to use** (v0.2.0, kit 1.8.0 `createHowTo`): under the action, the same ⟲ ৩৬০° pill and সামনে button as on the view, with a few words, and the one thing each step lets the student move or tap: the tube's turn ("টেনে নল ঘোরাও"), the eye ("টেনে চোখ সরাও"), the light source ("টেনে আলোর উৎস সরাও") or a cell ("ঘরে টোকা দাও"); they belong to different steps, so the others are taken out. Tapping an item points at its control on the view.
 
 ## Honest simplifications
 - The panel's percentages (step 3) are for one surface, as `reflection-amount` shows them; the brightness of the cells uses both

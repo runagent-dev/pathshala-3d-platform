@@ -218,7 +218,7 @@ test('parallel-mirrors: a tap is not a turn; the view goes all the way round and
   const c = await f.locator('.pvc-canvas').boundingBox();
   const [x, y] = [c.x + 60, c.y + 70];
   await expect(f.locator('.pvc-rc-word')).toBeVisible();
-  await expect(f.locator('.pvc-rc-deg')).toContainText('৩৬০°');
+  await expect(f.locator('.pvc-rc .pvc-rc-deg')).toContainText('৩৬০°');
   // a plain tap, with a finger's small slip
   await page.mouse.move(x, y);
   await page.mouse.down();
@@ -239,7 +239,7 @@ test('parallel-mirrors: a tap is not a turn; the view goes all the way round and
   // the pill keeps ⟲ ৩৬০°, never the icon alone
   await expect(f.locator('.pvc-rc-word')).toBeHidden();
   await expect(f.locator('.pvc-rc svg')).toBeVisible();
-  await expect(f.locator('.pvc-rc-deg')).toBeVisible();
+  await expect(f.locator('.pvc-rc .pvc-rc-deg')).toBeVisible();
   // all the way round, and the সামনে button brings the guided view back
   for (const azimuth of [90, 180, -90]) expect((await fig.call('set', { azimuth, animate: false })).view).toBe('3d');
   await expect(f.locator('[data-view="front"]')).toContainText('সামনে');

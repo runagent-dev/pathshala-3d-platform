@@ -275,7 +275,7 @@ test('kaleidoscope: the view turns all the way round; a tap is not an orbit', as
   expect(st.azimuth).not.toBe(az0);
   await expect(f.locator('.pvc-rc-word')).toBeHidden();
   await expect(f.locator('.pvc-rc')).toBeVisible();
-  await expect(f.locator('.pvc-rc-deg')).toHaveText('৩৬০°');
+  await expect(f.locator('.pvc-rc .pvc-rc-deg')).toHaveText('৩৬০°');
   await expect(f.locator('[data-view="front"]')).toBeVisible();
   // the view from behind works, and never goes under the table
   st = await fig.call('set', { azimuth: 170, animate: false });
