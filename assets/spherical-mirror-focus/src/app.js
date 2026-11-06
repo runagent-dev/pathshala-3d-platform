@@ -10,6 +10,7 @@ import { createStage } from '@shared/stage.js';
 import { createAction } from '@shared/student/action.js';
 import { createAnnotations } from '@shared/student/annotations.js';
 import { createAudio } from '@shared/student/audio.js';
+import { createHowTo } from '@shared/student/howto.js';
 import { createDragHandle } from '@shared/student/draghandle.js';
 import { ICONS } from '@shared/student/icons.js';
 import { capturePointer, releasePointer } from '@shared/student/pointer.js';
@@ -1162,6 +1163,19 @@ export function createApp(root, options = {}) {
     pulse: Boolean(o.coach),
     when: () => s.stage === 'torch' && V.bulb >= 1 && !s.locked && (!s.busy || s.holding),
   });
+
+  // ── how to use, in the panel: the same icons as on the view, with a few words (kit createHowTo) ──────────
+  createHowTo(
+    ui,
+    t,
+    [
+      { kind: 'orbit', cue: rotate },
+      { kind: 'front' },
+      // last: the bulb can be moved only in the torch step; before that it keeps its place unseen
+      { kind: 'drag', axis: 'x', text: t('howto_bulb'), aria: t('aria_howto_bulb'), handle, when: () => s.stage === 'torch' && V.bulb >= 1 },
+    ],
+    { stage },
+  );
 
   // a tap on the part is the same action; a finger on the bulb moves it along the rail; a finger anywhere else turns the view
   const ray = new THREE.Raycaster();
