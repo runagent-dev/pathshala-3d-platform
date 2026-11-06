@@ -45,6 +45,7 @@ is absorbed (শোষণ).
 - **The test's scoring:** the kit scores numbers, so the choices are places in a list (as `paper-vocal-cord`). A browser
   test answers all five right and checks the green mark and "৫টির মধ্যে ৫টি", and answers one wrong. `get` gives
   `question: { kind, right }` for that.
+- **How to use** (v0.3.0, kit 1.8.0 `createHowTo`): under the action, the same icons as on the view, with a few words: the ⟲ ৩৬০° pill and the সামনে button (nothing here is dragged; the tap on the point of arrival is the action itself, which already carries its ring on the view). Tapping an item points at its control on the view.
 
 ## Honest stylisation
 - A torch's light does not show as a line in clean air. The ray is drawn; a corner note says so ("রশ্মি বোঝার জন্য আঁকা").
