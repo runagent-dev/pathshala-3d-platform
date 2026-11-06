@@ -7,9 +7,9 @@
 import { expect, test } from '@playwright/test';
 import { openFigure, preparePage } from '../../../scripts/lib/export/driver.mjs';
 
-test('efficiency: the book example, where the energy goes, the worked example', async ({ page }) => {
-  test.setTimeout(600_000); // software 3D on a busy machine: minutes of real time for about a minute of virtual time
-  await page.setViewportSize({ width: 800, height: 500 });
+test('efficiency: the book example and where the energy goes', async ({ page }) => {
+  test.setTimeout(300_000);
+  await page.setViewportSize({ width: 640, height: 400 });
   const log = await preparePage(page);
   const fig = await openFigure(page, 'efficiency');
   const text = async (sel) => (await fig.frame.locator(sel).first().textContent()).replace(/ /g, ' ');
@@ -59,6 +59,16 @@ test('efficiency: the book example, where the energy goes, the worked example', 
   await fig.call('set', { cond: 'oiled', phase: 'done' });
   expect(await fig.call('get')).toMatchObject({ efficiency: 70, energy: { input: 14000, waste: 4200 } });
 
+  expect(log.errors).toEqual([]);
+});
+
+test('efficiency: the worked example', async ({ page }) => {
+  test.setTimeout(300_000);
+  await page.setViewportSize({ width: 640, height: 400 });
+  const log = await preparePage(page);
+  const fig = await openFigure(page, 'efficiency');
+  const text = async (sel) => (await fig.frame.locator(sel).first().textContent()).replace(/ /g, ' ');
+
   // the worked example: the book's numbers, then too little time, then a run of its own numbers
   await fig.frame.locator('[data-act="example"]').click();
   expect((await fig.call('get')).example).toMatchObject({ open: true, work: 9800, input: 15000, waste: 5200, eff: 65.3, book: true });
@@ -75,6 +85,16 @@ test('efficiency: the book example, where the energy goes, the worked example', 
   expect(own).toMatchObject({ cond: 'custom', phase: 'run', run: { P: 1000, t: 20, m: 100, h: 10 }, example: { open: false } });
   await fig.advance(21000);
   expect(await fig.call('get')).toMatchObject({ phase: 'done', efficiency: 49 });
+
+  expect(log.errors).toEqual([]);
+});
+
+test('efficiency: the test, then reset', async ({ page }) => {
+  test.setTimeout(300_000);
+  await page.setViewportSize({ width: 640, height: 400 });
+  const log = await preparePage(page);
+  const fig = await openFigure(page, 'efficiency');
+  const text = async (sel) => (await fig.frame.locator(sel).first().textContent()).replace(/ /g, ' ');
 
   // the test: five questions, each with four choices and a worked answer
   await fig.call('practice');
