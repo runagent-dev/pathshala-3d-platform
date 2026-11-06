@@ -175,3 +175,27 @@ body.bg-transparent { background: transparent; }
   .lab .lab-lead .lab-long { display: inline; }
   .lab .lab-lead .lab-short { display: none; }
 }
+/* the how-to row (createHowTo): 8 px of air above and below where the sheet's gap is tight, its lines close together */
+@container pvc (max-width: 420px) {
+  .lab .pvc-howto { margin: 5px 0; row-gap: 0; }
+  .pvc.lab .pvc-howto-item { min-height: 28px; }
+}
+/* the side panel is a narrow container too: no extra margin there, but where its gap is tight */
+@container pvc-panel (min-height: 1px) {
+  .lab .pvc-howto { margin: 0; }
+}
+@container pvc-panel (min-height: 1px) and (max-height: 420px) {
+  .lab .pvc-howto { margin: 4px 0; }
+}
+@container pvc-panel (min-height: 421px) and (max-height: 619px) {
+  .lab .pvc-howto { margin: 2px 0; }
+}
+/* a short side panel at the last step: as on an upright phone, the action says what comes next, and the how-to row fits */
+@container pvc-panel (min-height: 1px) and (max-height: 420px) {
+  .lab[data-story='amount'] .lab-lead { display: none; }
+}
+/* the tightest phone (390 × 520) in the angles step: four names on a short view, which the how-to row makes shorter still;
+   the action already asks what the lead says ("কতটুকু প্রতিফলন?"), so the lead gives the view its room */
+@container pvc (max-width: 420px) and (max-height: 600px) {
+  .lab[data-ra-step='3'] .lab-lead { display: none; }
+}

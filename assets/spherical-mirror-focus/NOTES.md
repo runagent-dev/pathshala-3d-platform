@@ -63,6 +63,7 @@ figure does not use that word.) Added by the figure, not on the page: আলো�
   changes, so that the source of the light stays in view in every step that uses it. The frames end at its plate.
 - The wide bundle's point is too small for the view: 6 mm between the crossings is about 25 px. So a round lens drawn on the vector
   layer (`lens()` in `rays.js`) shows them true to scale, with the rim rays in their own colour.
+- **How to use** (v0.4.0, kit 1.8.0 `createHowTo`): under the action, the same icons as on the view, with a few words: the ⟲ ৩৬০° pill, the সামনে button and the bulb's ↔ disc ("টেনে বাল্ব সরাও", in the torch step, in its place before that). Tapping an item points at its control on the view.
 
 ## Honest notes
 - Only five rays in one plane are drawn, out of countless. "কয়েকটি রশ্মি আঁকা" says so on the view.

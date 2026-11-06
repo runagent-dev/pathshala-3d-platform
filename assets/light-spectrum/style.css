@@ -119,3 +119,22 @@ body.bg-transparent { background: transparent; }
   .lab .pvc-rule { font-size: 16.5px; line-height: 1.65; }
   .lab .lab-cap { display: block; }
 }
+/* the how-to row (createHowTo): 8 px of air above and below where the sheet's gap is tight, its lines close together */
+@container pvc (max-width: 420px) {
+  .lab .pvc-howto { margin: 4px 0; row-gap: 0; }
+  .pvc.lab .pvc-howto-item { min-height: 28px; }
+}
+/* the side panel is a narrow container too: no extra margin there, but where its gap is tight */
+@container pvc-panel (min-height: 1px) {
+  .lab .pvc-howto { margin: 0; }
+}
+@container pvc-panel (min-height: 1px) and (max-height: 420px) {
+  .lab .pvc-howto { margin: 3px 0; }
+}
+/* a short side panel (a phone held sideways): room for the how-to row, the graph a little lower */
+@container pvc-panel (min-height: 1px) and (max-height: 420px) {
+  .lab .pvc-learn { gap: 4px; }
+  .lab .pvc-howto { margin: 4px 0; }
+  .lab .pvc-examples button { min-height: 36px; }
+  .pvc.lab .lab-graph { height: 88px; }
+}

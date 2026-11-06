@@ -46,6 +46,7 @@ a camera per step, one element at a time with a highlight and its book term, key
   gives the way out, and `get` reads θi, θr and the miss at the eye back from that vector. With a short mirror the rays
   go by the mirror's own edge and come from the highest and lowest parts it can still show.
 - **The drawing** follows `reflection-laws`: a 2D canvas over the view, painted from exact 3D points through the camera.
+- **How to use** (v0.3.0, kit 1.8.0 `createHowTo`): under the action, the same icons as on the view, with a few words: the ⟲ ৩৬০° pill, the সামনে button, and the drag of this step: the boy's ↔ disc ("টেনে ছেলেটিকে সরাও") in the first two steps (unseen in its place until he can be dragged), the mirror edges' ↕ discs ("টেনে আয়নার প্রান্ত সরাও", tapping pulses both) in the third. The other step's item is taken out, so no empty line. Tapping an item points at its control on the view.
 
 ## Honest simplifications
 - X is the top of his head, Y the toe directly under his eye. The rule "half your height" is exact for points on the

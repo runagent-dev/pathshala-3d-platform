@@ -3,6 +3,9 @@
 
 export const STRINGS = {
   bn: {
+    howto_label: 'কীভাবে নাড়াবে',
+    howto_orbit: 'ঘুরিয়ে দেখো',
+    howto_front: 'শুরুর দৃশ্যে ফেরো',
     act_replay: 'আবার দেখো',
     act_test: 'বুঝেছ? তাহলে পরীক্ষা দাও',
     rotate_me: 'ঘুরিয়ে দেখো',
@@ -100,6 +103,9 @@ export const STRINGS = {
     n_vacuum_noreflect: 'কাচের তলই আলো ফিরিয়ে দেয়, বাতাস লাগে না।',
   },
   en: {
+    howto_label: 'How to use it',
+    howto_orbit: 'Turn the view',
+    howto_front: 'Back to the start view',
     act_replay: 'See it again',
     act_test: 'Got it? Then take the test',
     rotate_me: 'Turn it',

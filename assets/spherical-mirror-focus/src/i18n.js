@@ -3,6 +3,11 @@
 
 export const STRINGS = {
   bn: {
+    howto_label: 'কীভাবে নাড়াবে',
+    howto_orbit: 'ঘুরিয়ে দেখো',
+    howto_front: 'শুরুর দৃশ্যে ফেরো',
+    howto_bulb: 'টেনে বাল্ব সরাও',
+    aria_howto_bulb: 'টেনে বাল্ব সরাও: ছবিতে বাল্বের সাদা চাকতিটি দেখাও',
     panel_hide: 'লেখা লুকাও',
     panel_show: 'লেখা দেখাও',
     rotate_title: 'ফোনটি আড়াআড়ি ধরো',
@@ -173,6 +178,11 @@ export const STRINGS = {
     n_plane_behind: 'F এই অবতল আয়নার সামনে থেকে শুধু দূরে সরছে; পেছনে যায় না।',
   },
   en: {
+    howto_label: 'How to use it',
+    howto_orbit: 'Turn the view',
+    howto_front: 'Back to the start view',
+    howto_bulb: 'Drag the bulb',
+    aria_howto_bulb: 'Drag the bulb: show the bulb’s white disc on the picture',
     panel_hide: 'Hide text',
     panel_show: 'Show text',
     rotate_title: 'Turn your phone sideways',

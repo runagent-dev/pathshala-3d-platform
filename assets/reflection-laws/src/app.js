@@ -11,6 +11,7 @@ import { createStage } from '@shared/stage.js';
 import { createAction } from '@shared/student/action.js';
 import { createAnnotations } from '@shared/student/annotations.js';
 import { createDragHandle } from '@shared/student/draghandle.js';
+import { createHowTo } from '@shared/student/howto.js';
 import { createAudio } from '@shared/student/audio.js';
 import { ICONS } from '@shared/student/icons.js';
 import { capturePointer, releasePointer } from '@shared/student/pointer.js';
@@ -504,6 +505,21 @@ export function createApp(root, options = {}) {
     pulse: Boolean(o.coach),
     when: () => !s.locked && grabbable(),
   });
+
+  // ── how to use, in the panel: the same icons as on the view, with a few words (kit createHowTo) ──────────
+  // the two handles come with the laws (when they can be dragged); before that they keep their place unseen
+  const lawsShown = () => s.step === 'laws' && s.law >= LAW.ANGLES;
+  createHowTo(
+    ui,
+    t,
+    [
+      { kind: 'orbit', cue: rotate },
+      { kind: 'front' },
+      { kind: 'drag', axis: 'x', text: t('howto_x'), aria: t('aria_howto_x'), handle: xHandle, when: lawsShown },
+      { kind: 'drag', axis: 'turn', text: t('howto_swing'), aria: t('aria_howto_swing'), handle: swingHandle, when: lawsShown },
+    ],
+    { stage },
+  );
   const anno = createAnnotations({
     stage,
     layer: ui.annoLayer,

@@ -181,7 +181,7 @@ test('reflection-amount: the handle lifts the glass, a tap on it is the action, 
   const fig = await open(page, { angle: '45', coach: '1' });
   const spot = async () => {
     await fig.advance(200);
-    const r = await fig.frame.locator('.pvc-dh-disc').boundingBox();
+    const r = await fig.frame.locator('.pvc-dh .pvc-dh-disc').boundingBox();
     return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
   };
   await expect(fig.frame.locator('.pvc-dh-word')).toBeVisible();
@@ -245,6 +245,18 @@ test('reflection-amount: the handle lifts the glass, a tap on it is the action, 
 
 // the owner: labels pinned to what they name, and never hidden: nothing may lie under the picture from his eye, the handle, the
 // panel's tab, the corner's buttons or another label, nor run off the view. The handle keeps off the picture too.
+/** After a step changes the panel's height: the view's new size arrives in real time (a resize observer), then a frame. */
+const resized = async (page, fig) => {
+  await fig.advance(250);
+  const size = () => fig.frame.evaluate(() => document.querySelector('canvas').height);
+  for (let i = 0, was = await size(); i < 20; i++) {
+    await page.waitForTimeout(60);
+    await fig.advance(50);
+    const now = await size();
+    if (now === was && i >= 1) break;
+    was = now;
+  }
+};
 const hiddenLabels = (fig, { mayHide = false } = {}) =>
   fig.frame.evaluate((may) => {
     const seen = (el) =>
@@ -255,7 +267,7 @@ const hiddenLabels = (fig, { mayHide = false } = {}) =>
       el.getBoundingClientRect().width > 0;
     const boxOf = (el) => el.getBoundingClientRect();
     const hit = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
-    const covers = [...document.querySelectorAll('.ra-eye, .pvc-dh-disc, .pvc-dh-word, .pvc-panel-toggle, .pvc-corner, .pvc-rc, .lab-note')]
+    const covers = [...document.querySelectorAll('.ra-eye, .pvc-dh .pvc-dh-disc, .pvc-dh-word, .pvc-panel-toggle, .pvc-corner, .pvc-rc, .lab-note')]
       .filter(seen)
       .map((el) => ({ name: el.className, b: boxOf(el) }));
     const view = boxOf(document.querySelector('canvas'));
@@ -272,7 +284,7 @@ const hiddenLabels = (fig, { mayHide = false } = {}) =>
       for (const other of labels.slice(i + 1))
         if (getComputedStyle(other).visibility !== 'hidden' && hit(a, boxOf(other))) bad.push(`${el.textContent} on ${other.textContent}`);
     });
-    const disc = document.querySelector('.pvc-dh-disc');
+    const disc = document.querySelector('.pvc-dh .pvc-dh-disc'); // the handle on the view, not its miniature in the panel
     const eye = document.querySelector('.ra-eye');
     if (seen(disc) && seen(eye) && hit(boxOf(disc), boxOf(eye))) bad.push('the handle on the picture');
     for (const el of [disc, document.querySelector('.pvc-dh-word')]) {
@@ -298,13 +310,13 @@ for (const [width, height] of [
     const fig = await open(page, { coach: '1' });
     for (const step of [0, 1, 2, 3]) {
       await fig.call('set', { step, animate: false });
-      await fig.advance(250);
+      await resized(page, fig);
       expect(await hiddenLabels(fig), `step ${step}`).toEqual([]);
     }
     for (const angle of [30, 60, 80, 87]) {
       await fig.call('set', { step: 4, animate: false });
       await fig.call('set', { angle, animate: false });
-      await fig.advance(250);
+      await resized(page, fig);
       expect(await hiddenLabels(fig), `${angle}°`).toEqual([]);
     }
     // and on the student's own view, right round: a label may give way, never cover something

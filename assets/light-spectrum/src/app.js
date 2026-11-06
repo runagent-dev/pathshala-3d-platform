@@ -9,6 +9,7 @@ import { createStage } from '@shared/stage.js';
 import { createAction } from '@shared/student/action.js';
 import { createAnnotations } from '@shared/student/annotations.js';
 import { createDragHandle } from '@shared/student/draghandle.js';
+import { createHowTo } from '@shared/student/howto.js';
 import { createAudio } from '@shared/student/audio.js';
 import { createCoach } from '@shared/student/coach.js';
 import { ICONS } from '@shared/student/icons.js';
@@ -405,6 +406,19 @@ export function createApp(root, options = {}) {
     pulse: Boolean(o.coach),
     when: () => !s.locked && s.done.has('light') && (!s.busy || Boolean(s.drag)),
   });
+
+  // ── how to use, in the panel: the same icons as on the view, with a few words (kit createHowTo) ──────────
+  createHowTo(
+    ui,
+    t,
+    [
+      { kind: 'orbit', cue: rotate },
+      { kind: 'front' },
+      // last: before the light is on the scale it keeps its place unseen, so the panel keeps its height
+      { kind: 'drag', axis: 'y', text: t('howto_marker'), aria: t('aria_howto_marker'), handle: markerHandle, when: () => s.done.has('light') },
+    ],
+    { stage },
+  );
   const anno = createAnnotations({
     stage,
     layer: ui.annoLayer,

@@ -56,6 +56,7 @@ Added by the figure, not on the page: সাদা দাগ.
   teaches the fourth: the rule names the eye's peak, and the result line gives the sensitivity at every wavelength, also
   at 390×520 where the graph is left out. The kit scores numbers, so the choices are places in a list; a browser test answers all five right and one wrong.
   `get` gives `question: { kind, right }` for that.
+- **How to use** (v0.3.0, kit 1.8.0 `createHowTo`): under the action, the same icons as on the view, with a few words: the ⟲ ৩৬০° pill, the সামনে button and the marker's ↕ disc ("টেনে রং বদলাও", from the light step on, in its place before that). The caption is short so that the row is one line in a side panel; a phone held sideways has a slightly lower graph (88 px) to make room. Tapping an item points at its control on the view.
 
 ## Honest stylisation
 - Rays and the wave are drawn; the corner note says so. A beam is not seen in clean air. The wave is about 40 000 times too

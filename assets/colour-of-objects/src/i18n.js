@@ -3,6 +3,9 @@
 
 export const STRINGS = {
   bn: {
+    howto_label: 'কীভাবে নাড়াবে',
+    howto_orbit: 'ঘুরিয়ে দেখো',
+    howto_front: 'শুরুর দৃশ্যে ফেরো',
     act_replay: 'আবার দেখো',
     act_test: 'বুঝেছ? তাহলে পরীক্ষা দাও',
     rotate_me: 'ঘুরিয়ে দেখো',
@@ -120,6 +123,9 @@ export const STRINGS = {
     a_predict_rose: '<b>কালো</b>: গোলাপ সবুজ আলো পুরোপুরি শোষণ করে নেয়, কোনো রঙের আলো প্রতিফলিত হয় না।',
   },
   en: {
+    howto_label: 'How to use it',
+    howto_orbit: 'Turn the view',
+    howto_front: 'Back to the start view',
     act_replay: 'See it again',
     act_test: 'Got it? Then take the test',
     rotate_me: 'Turn it',

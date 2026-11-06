@@ -9,6 +9,7 @@ import { createStage } from '@shared/stage.js';
 import { createAction } from '@shared/student/action.js';
 import { createAnnotations } from '@shared/student/annotations.js';
 import { createAudio } from '@shared/student/audio.js';
+import { createHowTo } from '@shared/student/howto.js';
 import { ICONS } from '@shared/student/icons.js';
 import { createQuiz } from '@shared/student/quiz.js';
 import { createRotateCue } from '@shared/student/rotatecue.js';
@@ -384,6 +385,9 @@ export function createApp(root, options = {}) {
     at: 'bottom-right',
     onTurn: turnedByHand,
   });
+
+  // ── how to use, in the panel: the same icons as on the view, with a few words (kit createHowTo) ──────────
+  createHowTo(ui, t, [{ kind: 'orbit', cue: rotate }, { kind: 'front' }], { stage });
   // the stage also calls this when it lowers its resolution mid-turn: a view the student has turned stays theirs
   stage.onResize(() => {
     draw();
