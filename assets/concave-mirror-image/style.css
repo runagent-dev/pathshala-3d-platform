@@ -7,6 +7,14 @@ body.bg-transparent { background: transparent; }
 .lab .pvc-outcome { margin: 0; font-size: 16px; line-height: 1.35; }
 .lab .pvc-outcome b { font-size: 17px; font-weight: 600; color: var(--ink); }
 
+/* the line before the action: what the next tap will show; on the first screen, a calm card that sets the scene */
+.lab .lab-lead { margin: 0; color: var(--ink-2); font-size: 14.5px; line-height: 1.55; }
+.lab .lab-lead:empty { display: none; }
+.lab .lab-lead.pvc-note { font-size: 15px; line-height: 1.6; }
+.lab .lab-lead .lab-short { display: none; }
+.lab .pvc-learn.lab-calm .pvc-outcome,
+.lab .pvc-learn.lab-calm .pvc-rule { display: none; }
+
 /* the rule: the book's sentences, one idea at a time */
 .lab .pvc-rule { font-size: 14.5px; line-height: 1.55; }
 .lab .pvc-rule b { color: var(--ink); font-weight: 600; }
@@ -70,7 +78,7 @@ body.bg-transparent { background: transparent; }
   .lab .lab-table td, .lab .lab-table th { padding: 1px 2px; white-space: nowrap; }
   .lab .pvc-rule .pvc-formula { padding: 1px 8px; }
   .lab .pvc-outcome b { font-size: 16px; }
-  .lab .pvc-rule { --pvc-rule-lines: 0; font-size: 14px; line-height: 20px; height: 100px; min-height: 0; overflow: hidden; }
+  .lab .pvc-rule { --pvc-rule-lines: 0; font-size: 14px; line-height: 20px; height: 80px; min-height: 0; overflow: hidden; }
   .lab .pvc-q-ask { gap: 5px; }
   .lab .pvc-q-text { font-size: 14px; line-height: 1.4; }
   .lab .pvc-q-options { gap: 5px; }
@@ -85,7 +93,7 @@ body.bg-transparent { background: transparent; }
   .lab .pvc-rule .pvc-frac { font-size: 12.5px; }
   .lab .pvc-rule .pvc-formula { font-size: 13px; line-height: 1.3; margin-top: 2px; }
   .lab .pvc-outcome b { font-size: 14.5px; }
-  .lab .pvc-rule { font-size: 12.5px; line-height: 16.5px; height: 80px; }
+  .lab .pvc-rule { font-size: 12.5px; line-height: 16.5px; height: 66px; }
   .lab .pvc-q-ask { gap: 3px; }
   .lab .pvc-q-head { min-height: 0; }
   .lab .pvc-q-head .pvc-btn { height: 30px; }
@@ -126,4 +134,14 @@ body.bg-transparent { background: transparent; }
   .lab .pvc-outcome b { font-size: 19px; }
   .lab .pvc-rule { font-size: 16.5px; line-height: 1.65; }
   .lab .lab-cap { display: block; }
+}
+/* the tightest phone: the shorter calm words on the first screen */
+@container pvc (max-width: 420px) and (max-height: 600px) {
+  .lab .lab-lead .lab-long { display: none; }
+  .lab .lab-lead .lab-short { display: inline; }
+}
+/* the side panel has room for the whole calm start */
+@container pvc-panel (min-height: 1px) {
+  .lab .lab-lead .lab-long { display: inline; }
+  .lab .lab-lead .lab-short { display: none; }
 }

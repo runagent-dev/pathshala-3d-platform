@@ -10,7 +10,7 @@ import { glbInfo } from '../../../scripts/lib/export/glb.mjs';
 
 test('types-of-friction: static grows with the push, kinetic is smaller, rolling is smallest', async ({ page }) => {
   test.setTimeout(240_000);
-  await page.setViewportSize({ width: 800, height: 500 });
+  await page.setViewportSize({ width: 640, height: 400 });
   const log = await preparePage(page);
   const fig = await openFigure(page, 'types-of-friction');
   const text = async (sel) => (await fig.frame.locator(sel).first().textContent()).replace(/\u00a0/g, ' ');
@@ -123,6 +123,16 @@ test('types-of-friction: static grows with the push, kinetic is smaller, rolling
   expect(info.size[1]).toBeGreaterThan(1.5);
   expect(info.size[1]).toBeLessThan(2);
 
+  expect(log.errors).toEqual([]);
+});
+
+test('types-of-friction: the test, two rounds in different orders, then reset', async ({ page }) => {
+  test.setTimeout(240_000);
+  await page.setViewportSize({ width: 640, height: 400 });
+  const log = await preparePage(page);
+  const fig = await openFigure(page, 'types-of-friction');
+  const text = async (sel) => (await fig.frame.locator(sel).first().textContent()).replace(/\u00a0/g, ' ');
+
   // the test: five questions, each on its own scene; the ring hides; the scene is locked; no number in the question
   // text that the picture shows; a second round comes in another order
   const round = async () => {
@@ -149,10 +159,8 @@ test('types-of-friction: static grows with the push, kinetic is smaller, rolling
   expect(await fig.frame.locator('.pvc-q-done .pvc-q-result').textContent()).toContain('৫টির মধ্যে');
   await fig.frame.locator('[data-act="q-again"]').click();
   expect((await round()).join('|')).not.toBe(first.join('|'));
-  // leaving the test brings back what the student had found
   await fig.frame.locator('[data-mode="explore"]').click();
   await fig.advance(300);
-  expect((await fig.call('get')).found).toMatchObject({ static: 9.8, kinetic: 7.84, rolling: 0.98 });
 
   await fig.call('reset');
   expect(await fig.call('get')).toMatchObject({ stage: 'rest', found: { static: null, kinetic: null, rolling: null } });

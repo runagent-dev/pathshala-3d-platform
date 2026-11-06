@@ -178,7 +178,7 @@ test('kaleidoscope: চিত্র ৮.১৩, a ray at 60° comes straight bac
   st = await fig.call('get');
   expect(st).toMatchObject({ stage: 2, phase: 't2', testOpen: true });
   await expect(fig.frame.locator('.pvc-outcome')).toContainText('ঠিক বিপরীত দিকে');
-  await expect(fig.frame.locator('.pvc-rule')).toContainText('বুঝেছ');
+  await expect(fig.frame.locator('.lab-lead')).toContainText('বুঝেছ');
   await expect(fig.frame.locator('[data-mode="quiz"]')).toHaveAttribute('aria-disabled', 'false');
   // a replay shows it once more
   await fig.advance(1900);

@@ -128,6 +128,10 @@ export function createApp(root, options = {}) {
     learnAlign: 'start',
   });
   const sheet = bindCleanSheet(ui.learn);
+  // the line before the action: what the next tap will show (on the first screen, a few calm words that set the scene)
+  const lead = document.createElement('p');
+  lead.className = 'lab-lead';
+  ui.$('.pvc-act-row').before(lead);
   ui.canvasHost.setAttribute('aria-label', t('aria_stage'));
   const note = document.createElement('div');
   note.className = 'kld-note';
@@ -1094,12 +1098,12 @@ export function createApp(root, options = {}) {
   }
 
   // ── the panel ───────────────────────────────────────────────────────────────────────────────────────────
-  const steady = { act: '' };
+  const steady = { act: '', lead: '' };
   const replayBtn = ui.$('[data-act="replay"]');
   const counts = [0, 1, 2, 3].map((n) => cells.filter((c) => c.n === n).length);
   function outcome() {
     if (s.step === 'pattern') {
-      if (s.stage === 0) return t('out_p0');
+      if (s.stage === 0) return ''; // the first screen: only the calm words above the action
       if (s.stage === 1 && s.turned === 0) return t('out_p1', { a: tube.beads.count });
       return t('out_p2', { a: Math.abs(Math.round(s.turned)) });
     }
@@ -1122,6 +1126,7 @@ export function createApp(root, options = {}) {
   }
   const tubeAngle = () => Math.round((Math.acos((2 * R) / Math.hypot(L + EYE, 2 * R)) * 180) / Math.PI);
   function rule() {
+    if (s.step === 'pattern' && s.stage === 0) return ''; // the first screen: only the calm words above the action
     if (s.step === 'pattern') return t(`rule_p${s.stage === 1 && s.turned ? 2 : s.stage}`);
     if (s.step === 'why') return t(`rule_w${s.stage}`);
     if (s.step === 'graze') return t(`rule_g${s.stage}`, { a: tubeAngle() });
@@ -1130,7 +1135,7 @@ export function createApp(root, options = {}) {
       const d = thirdAngle(s.angle);
       return t(d === 90 ? 'rule_t1' : 'rule_t1b', { b: aboveA(s.angle), c: 60, d });
     }
-    return `${t(atB(s.angle) === 0 ? 'rule_t2' : 'rule_t3', { a: 60 })} ${t('rule_ready')}`;
+    return t(atB(s.angle) === 0 ? 'rule_t2' : 'rule_t3', { a: 60 });
   }
   const ACTIONS = {
     busy: ['act_wait', '', ICONS.hand],
@@ -1159,6 +1164,19 @@ export function createApp(root, options = {}) {
     const ph = phase();
     sheet.outcome(outcome());
     sheet.rule(rule());
+    // the line before the action: what the next tap will show; on the first screen, a few calm words that set the scene
+    const calm = s.step === 'pattern' && s.stage === 0;
+    const leadHtml = calm
+      ? `<span class="lab-long">${t('intro')}</span><span class="lab-short">${t('intro_short')}</span>`
+      : ph === 'busy'
+        ? steady.lead
+        : t(`lead_${ph}`);
+    if (steady.lead !== leadHtml) {
+      steady.lead = leadHtml;
+      lead.innerHTML = leadHtml;
+      lead.classList.toggle('pvc-note', calm);
+      ui.learn.classList.toggle('lab-calm', calm);
+    }
     sheet.choose(s.step);
     sheet.next({ p2: 'why', w4: 'graze', g1: 'two' }[ph] ?? null);
     const [word, step, icon] = ACTIONS[ph];

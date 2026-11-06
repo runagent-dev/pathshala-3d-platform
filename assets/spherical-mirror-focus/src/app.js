@@ -192,6 +192,10 @@ export function createApp(root, options = {}) {
   place.appendChild(radii);
   const radiusButtons = [...radii.querySelectorAll('.lab-r')];
   const radiusF = radii.querySelector('.lab-r-f');
+  // the line before the action: what the next tap will show (on the first screen, a few calm words that set the scene)
+  const lead = document.createElement('p');
+  lead.className = 'lab-lead';
+  ui.$('.pvc-act-row').before(lead);
   const caption = document.createElement('p');
   caption.className = 'lab-cap';
   ui.learn.appendChild(caption);
@@ -1003,7 +1007,7 @@ export function createApp(root, options = {}) {
   }
 
   // ── the panel ───────────────────────────────────────────────────────────────────────────────────────────
-  const steady = { act: '', r: -1, on: null, cap: '' };
+  const steady = { act: '', r: -1, on: null, cap: '', lead: '' };
   const replayBtn = ui.$('[data-act="replay"]');
   const homeBtn = ui.$('[data-act="home"]');
   const ACTIONS = {
@@ -1024,7 +1028,7 @@ export function createApp(root, options = {}) {
   };
   function outcomeNow() {
     const st = s.stage;
-    if (st === 'sphere') return t('out_sphere', { r: R0 });
+    if (st === 'sphere') return ''; // the first screen: no number yet
     if (st === 'cut') return t('out_cut');
     if (st === 'coated') return t('out_coated');
     if (st === 'rays') return t('out_rays');
@@ -1036,6 +1040,7 @@ export function createApp(root, options = {}) {
   }
   function ruleNow() {
     const st = s.stage;
+    if (st === 'sphere') return ''; // the first screen: only the calm words above the action
     if (st === 'torch') {
       const k = beamKind(s.r, s.bulbX);
       return t(k === 'parallel' ? 'rule_torch' : `rule_torch_${k}`);
@@ -1065,6 +1070,19 @@ export function createApp(root, options = {}) {
     if (!s.busy || s.holding) {
       sheet.outcome(outcomeNow());
       sheet.rule(ruleNow());
+      const calm = s.stage === 'sphere';
+      const ph = phase();
+      const html = calm
+        ? `<span class="lab-long">${t('intro')}</span><span class="lab-short">${t('intro_short')}</span>`
+        : ph === 'busy'
+          ? steady.lead
+          : t(`lead_${ACTIONS[ph] ? ph : 'again'}`);
+      if (steady.lead !== html) {
+        steady.lead = html;
+        lead.innerHTML = html;
+        lead.classList.toggle('pvc-note', calm);
+        ui.learn.classList.toggle('lab-calm', calm);
+      }
     }
     if (steady.cap !== WORD_OF[s.stage]) {
       steady.cap = WORD_OF[s.stage];

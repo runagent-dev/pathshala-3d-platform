@@ -19,6 +19,7 @@ smaller, between P and F, shrinking toward F as the object goes away; and that i
 প্রতিবিম্ব X′Y′, লম্ব, রিয়ার ভিউ মিরর. Added by the figure, not on the page: চোখ (the eye), পর্দা in the test (a white screen).
 
 ## How the figure works
+- **A calm start (the owner, after chapter 8: "start simpler, with some lines of explanation in the white panel").** The first screen shows only a few warm everyday sentences in a `.pvc-note` card (`intro`; `intro_short` on the 390 × 520 phone) and the action: no term and no number yet. After that, one plain line above the action says what the next tap will show (`lead_*`), and the rule below says what it meant, the book's term last and in bold.
 - The owner's rules for the spherical mirrors: the whole idea from the 3D alone, and one thing per tap. One action through eleven stages
   (`STAGES` in `src/app.js`), the camera on each idea: the pencil and its small upright picture on the silver → the parallel ray (ii) alone →
   its extension to F → ray (i), and O → ray (iii), all three meeting → the image grows up from Y′, "অবাস্তব · সোজা · ছোট" beside it → the pencil
