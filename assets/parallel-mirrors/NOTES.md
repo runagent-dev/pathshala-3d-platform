@@ -79,6 +79,7 @@ angle, a camera per step with smooth zooms, one element at a time, labels never 
   wakes it.
 - **Far candles are plain** (`farCandleGeometry`: no handle, no drips, one draw). From x⁗ on always, and x‴ too in the view of
   the whole row, where it is about 20 px tall; x‴ keeps its detail in the book's row and in the mirror, where it is large.
+- **How to use** (v0.4.0, kit 1.8.0 `createHowTo`): under the action, the same ⟲ ৩৬০° pill and সামনে button as on the view, with a few words, and a hand for tapping an image to see its light's path ("প্রতিবিম্বে টোকা দাও") and the candle's white disc ("টেনে মোমবাতি সরাও"), unseen but in place while the row grows. Tapping an item points at its control on the view.
 
 ## Honest simplifications
 - The images stand on the table beyond the mirrors, faded: that is where they seem to be, not where anything is. From the main
