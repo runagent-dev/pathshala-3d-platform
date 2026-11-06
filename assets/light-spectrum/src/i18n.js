@@ -30,6 +30,11 @@ const COMMON_BN = {
 
 export const STRINGS = {
   bn: {
+    howto_label: 'কীভাবে নাড়াবে',
+    howto_orbit: 'ঘুরিয়ে দেখো',
+    howto_front: 'শুরুর দৃশ্যে ফেরো',
+    howto_marker: 'টেনে রং বদলাও',
+    aria_howto_marker: 'টেনে রং বদলাও (তরঙ্গদৈর্ঘ্য): ছবিতে স্কেলের দাগের সাদা চাকতিটি দেখাও',
     act_replay: 'আবার দেখো',
     act_test: 'বুঝেছ? তাহলে পরীক্ষা দাও',
     rotate_me: 'ঘুরিয়ে দেখো',
@@ -136,6 +141,11 @@ export const STRINGS = {
     n_eye_red: 'লালের দিকে সংবেদনশীলতা দ্রুত কমে যায়।',
   },
   en: {
+    howto_label: 'How to use it',
+    howto_orbit: 'Turn the view',
+    howto_front: 'Back to the start view',
+    howto_marker: 'Drag to change the colour',
+    aria_howto_marker: 'Drag to change the colour (the wavelength): show the marker’s white disc on the picture',
     act_replay: 'See it again',
     act_test: 'Got it? Then take the test',
     rotate_me: 'Turn it',
