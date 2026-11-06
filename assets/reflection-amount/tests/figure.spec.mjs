@@ -181,7 +181,7 @@ test('reflection-amount: the handle lifts the glass, a tap on it is the action, 
   const fig = await open(page, { angle: '45', coach: '1' });
   const spot = async () => {
     await fig.advance(200);
-    const r = await fig.frame.locator('.pvc-dh-disc').boundingBox();
+    const r = await fig.frame.locator('.pvc-dh .pvc-dh-disc').boundingBox();
     return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
   };
   await expect(fig.frame.locator('.pvc-dh-word')).toBeVisible();
@@ -255,7 +255,7 @@ const hiddenLabels = (fig, { mayHide = false } = {}) =>
       el.getBoundingClientRect().width > 0;
     const boxOf = (el) => el.getBoundingClientRect();
     const hit = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
-    const covers = [...document.querySelectorAll('.ra-eye, .pvc-dh-disc, .pvc-dh-word, .pvc-panel-toggle, .pvc-corner, .pvc-rc, .lab-note')]
+    const covers = [...document.querySelectorAll('.ra-eye, .pvc-dh .pvc-dh-disc, .pvc-dh-word, .pvc-panel-toggle, .pvc-corner, .pvc-rc, .lab-note')]
       .filter(seen)
       .map((el) => ({ name: el.className, b: boxOf(el) }));
     const view = boxOf(document.querySelector('canvas'));
@@ -272,7 +272,7 @@ const hiddenLabels = (fig, { mayHide = false } = {}) =>
       for (const other of labels.slice(i + 1))
         if (getComputedStyle(other).visibility !== 'hidden' && hit(a, boxOf(other))) bad.push(`${el.textContent} on ${other.textContent}`);
     });
-    const disc = document.querySelector('.pvc-dh-disc');
+    const disc = document.querySelector('.pvc-dh .pvc-dh-disc'); // the handle on the view, not its miniature in the panel
     const eye = document.querySelector('.ra-eye');
     if (seen(disc) && seen(eye) && hit(boxOf(disc), boxOf(eye))) bad.push('the handle on the picture');
     for (const el of [disc, document.querySelector('.pvc-dh-word')]) {

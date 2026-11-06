@@ -733,8 +733,8 @@ export function createApp(root, options = {}) {
     trackB.set(-8, planeFor(MAX_ANGLE) - GLASS.thick, z);
     gripPoint.set(-8, planeFor(s.angle) - GLASS.thick, z).project(camera);
     let x = Math.min(stage.width - 26, Math.max(26, ((gripPoint.x + 1) / 2) * stage.width));
-    // above the note in the corner
-    const noteTop = note.offsetHeight ? note.offsetHeight + 6 : 0;
+    // above the note in the corner, with the first-time word under the disc (an upright view is shorter with the how-to row)
+    const noteTop = note.offsetHeight ? note.offsetHeight + 6 + (o.coach && !s.dragged ? 24 : 0) : 0;
     const y = Math.min(stage.height - 26 - noteTop, Math.max(26, ((1 - gripPoint.y) / 2) * stage.height));
     // never over the picture from his eye, from any side
     const e = eyeArea();
@@ -865,6 +865,7 @@ export function createApp(root, options = {}) {
     if (s.quiz) return;
     const last = s.stage === LAST;
     root.dataset.story = last ? 'amount' : 'story';
+    root.dataset.raStep = String(s.stage); // the tightest phone drops the lead in the angles step (style.css)
     sheet.outcome(last ? t('out_now', { a, p: percent(a) }) : s.stage ? t(`out_${['', 'through', 'raise', 'angles'][s.stage]}`) : '');
     sheet.rule(ruleText());
     words();
