@@ -1051,6 +1051,8 @@ export function createApp(root, options = {}) {
   }
   function rule() {
     if (s.trace && !s.newest && pickedTrace) return t('rule_pick');
+    // the first screen: a calm scene in everyday words, shorter where the panel is smallest (style.css picks one)
+    if (s.beat === 0) return `<span class="pm2-intro">${t('intro')}</span><span class="pm2-intro-short">${t('intro_short')}</span>`;
     return t(`rule_b${s.beat}`, { a: 100 - Math.round(REFLECTANCE * 100) });
   }
   // what the action says at each beat, and its number within its step

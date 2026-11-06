@@ -13,8 +13,11 @@ body.bg-transparent { background: transparent; }
 .pm2 .pm2-then { font-size: 14px; color: var(--ink-2); }
 
 /* the rule */
-.pm2 .pvc-rule { font-size: 14.5px; line-height: 1.55; }
+.pm2 .pvc-rule { font-size: 14.5px; line-height: 1.6; }
 .pm2 .pvc-rule b { color: var(--ink); }
+/* the first screen's calm words: the short version only where the panel is smallest (390 × 520) */
+.pm2 .pm2-intro-short { display: none; }
+.pm2 .pvc-outcome:empty { min-height: 0; }
 
 /* the vector drawing over the view */
 .pm2-draw { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
@@ -68,7 +71,7 @@ body.bg-transparent { background: transparent; }
   .pm2 .pm2-pair { font-size: 15px; }
   .pm2 .pm2-pair b { font-size: 21px; }
   .pm2 .pm2-then { font-size: 13px; }
-  .pm2 .pvc-rule { --pvc-rule-lines: 0; font-size: 13.5px; line-height: 19px; height: 58px; min-height: 0; overflow: hidden; }
+  .pm2 .pvc-rule { --pvc-rule-lines: 0; font-size: 13.5px; line-height: 21px; height: 84px; min-height: 0; overflow: hidden; }
   .pm2 .pvc-q-ask { gap: 5px; }
   .pm2 .pvc-q-text { font-size: 14px; line-height: 1.4; }
   .pm2 .pvc-q-options { gap: 5px; }
@@ -77,7 +80,9 @@ body.bg-transparent { background: transparent; }
 }
 /* the tightest phone (390 × 520) */
 @container pvc (max-width: 420px) and (max-height: 600px) {
-  .pm2 .pvc-rule { font-size: 12.5px; line-height: 16.5px; height: 50px; }
+  .pm2 .pvc-rule { font-size: 12.5px; line-height: 19.5px; height: 59px; }
+  .pm2 .pm2-intro { display: none; }
+  .pm2 .pm2-intro-short { display: inline; }
   .pm2 .pvc-outcome { font-size: 13px; line-height: 20px; min-height: 26px; }
   .pm2 .pm2-pair b { font-size: 18px; }
   .pm2 .pvc-q-ask { gap: 3px; }
@@ -95,7 +100,9 @@ body.bg-transparent { background: transparent; }
   .pm2 .pvc-outcome { font-size: 14.5px; line-height: 1.45; min-height: 1.6lh; }
   .pm2 .pm2-pair { margin-right: 14px; font-size: 15px; }
   .pm2 .pm2-pair b { font-size: 22px; }
-  .pm2 .pvc-rule { font-size: 14px; line-height: 1.55; height: auto; overflow: visible; }
+  .pm2 .pvc-rule { font-size: 14px; line-height: 1.6; height: auto; overflow: visible; }
+  .pm2 .pm2-intro { display: inline; }
+  .pm2 .pm2-intro-short { display: none; }
   .pm2 .pvc-q-ask { gap: 6px; }
   .pm2 .pvc-q-head .pvc-btn { height: 36px; }
   .pm2 .pvc-q-text { font-size: 14px; }
@@ -104,7 +111,7 @@ body.bg-transparent { background: transparent; }
   .pm2 .pvc-q-feedback { font-size: 13.5px; line-height: 1.45; }
 }
 @container pvc-panel (min-height: 1px) and (max-height: 420px) {
-  .pm2 .pvc-rule { font-size: 13.5px; line-height: 1.45; }
+  .pm2 .pvc-rule { font-size: 13.5px; line-height: 1.55; }
   .pm2 .pvc-learn { gap: 5px; }
 }
 /* a tall side panel (1280 × 800): larger, the book's size */
