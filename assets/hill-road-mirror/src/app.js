@@ -992,7 +992,7 @@ export function createApp(root, options = {}) {
   };
   function outcome() {
     const p = s.part;
-    if (p === PART.SCENE) return t('out_0');
+    if (p === PART.SCENE) return ''; // the first screen: only the calm words below
     if (p === PART.BLOCKED) return t('out_1');
     if (p === PART.MIRROR) return t('out_2', { a: RAY_ANGLE });
     if (p === PART.RAY) return t('out_3');
@@ -1006,6 +1006,8 @@ export function createApp(root, options = {}) {
   function rule() {
     const p = s.part;
     if (p === PART.COMPARE) return t(s.kind === 'convex' ? 'rule_convex' : 'rule_plane');
+    // the first screen: a calm scene in everyday words, shorter where the panel is smallest (style.css picks one)
+    if (p === PART.SCENE) return `<span class="hrm-intro">${t('intro')}</span><span class="hrm-intro-short">${t('intro_short')}</span>`;
     return t(`rule_${p}`, { a: RAY_ANGLE, r: 90 });
   }
   const ACTIONS = {
