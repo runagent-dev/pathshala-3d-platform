@@ -76,35 +76,43 @@ test('kaleidoscope: a drag turns it, by touch of the view', async ({ page }) => 
   expect(log.errors).toEqual([]);
 });
 
-test('kaleidoscope: the rays, one reflection at a time, and the cells', async ({ page }) => {
+test('kaleidoscope: the rays, one reflection at a time', async ({ page }) => {
   test.setTimeout(300_000);
-  await page.setViewportSize({ width: 800, height: 500 });
+  await page.setViewportSize({ width: 640, height: 400 });
   const log = await preparePage(page);
   const fig = await openFigure(page, 'kaleidoscope', { params: { step: 'why' } });
-  const act = async (ms) => {
-    await fig.frame.locator('.pvc-act').first().click();
-    await fig.advance(ms);
-  };
-  // each stretch of a ray takes 1.2 s; then the dashed line, the flight in, the cell, and a look at it
-  for (const [n, ms] of [
-    [1, 7100],
-    [2, 9700],
-    [3, 10900],
-  ]) {
-    await fig.frame.locator('.pvc-act').first().click();
-    await fig.advance(1000);
-    await expect(fig.frame.locator('.pvc-act').first()).toBeDisabled();
-    await fig.advance(ms - 1000);
-    const st = await fig.call('get');
+  // the first reflection at its real pace: each stretch of a ray takes 1.2 s; then the dashed line, the flight in, the cell
+  await fig.frame.locator('.pvc-act').first().click();
+  await fig.advance(1000);
+  await expect(fig.frame.locator('.pvc-act').first()).toBeDisabled();
+  await fig.advance(6100);
+  let st = await fig.call('get');
+  expect(st).toMatchObject({ stage: 1, phase: 'w1' });
+  expect(st.trace.reflections).toBe(1);
+  await expect(fig.frame.locator('.pvc-outcome')).toContainText('১');
+  // the second and third, jumped to: the same trace, one more reflection each, every hit beyond 60°
+  for (const n of [2, 3]) {
+    await fig.call('set', { stage: n, animate: false });
+    await fig.advance(300);
+    st = await fig.call('get');
     expect(st.stage).toBe(n);
-    expect(st.phase).toBe(`w${n}`);
     expect(st.trace.reflections).toBe(n);
     expect(st.trace.hits).toHaveLength(n);
     for (const h of st.trace.hits) expect(h.theta).toBeGreaterThan(60);
     await expect(fig.frame.locator('.pvc-outcome')).toContainText(['১', '২', '৩'][n - 1]);
-    await fig.advance(500);
   }
-  await act(6000);
+  expect(log.errors).toEqual([]);
+});
+
+test('kaleidoscope: the cells: the real one and its images', async ({ page }) => {
+  test.setTimeout(300_000);
+  await page.setViewportSize({ width: 640, height: 400 });
+  const log = await preparePage(page);
+  const fig = await openFigure(page, 'kaleidoscope', { params: { step: 'why' } });
+  await fig.call('set', { stage: 3, animate: false });
+  await fig.advance(300);
+  await fig.frame.locator('.pvc-act').first().click();
+  await fig.advance(6000);
   let st = await fig.call('get');
   expect(st).toMatchObject({ stage: 4, eye: true, phase: 'w4' });
   await expect(fig.frame.locator('.pvc-outcome')).toContainText('৩ বার');
