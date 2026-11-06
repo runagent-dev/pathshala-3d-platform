@@ -26,8 +26,8 @@ The postMessage protocol: see `docs/bridge-protocol.md`. Figures normally use `c
 
 ### `stage.js`
 `createStage(container, { fov, near, far, environment: 'studio' | 'studio-light' | 'room' | false, exposure, shadows,
-adaptive })` returns `{ renderer, scene, camera, controls, canvas, width, height, pixelRatio, invalidate(), addTicker(fn), onBeforeRender(fn),
-onAfterRender(fn), onResize(fn), render(), capture({ width, height, background }), dispose() }`.
+adaptive, warmUp })` returns `{ renderer, scene, camera, controls, canvas, width, height, pixelRatio, invalidate(), addTicker(fn), onBeforeRender(fn),
+onAfterRender(fn), onResize(fn), render(), capture({ width, height, background }), warmUp(options), withShown(objects, fn), dispose() }`.
 It renders on demand: call `invalidate()` after changing the scene; a ticker `fn(dt, now)` returning `true` keeps it
 drawing while something moves (`dt` is capped at 50 ms).
 Since kit 1.4.0 it also keeps phones smooth without taking anything out of the picture: shadow maps are drawn again
@@ -37,6 +37,26 @@ only the camera moves (`shadows: 'always'` restores every frame; a ticker that o
 page is hidden; and when frames keep coming slower than about 40 a second the pixel ratio steps down by a quarter,
 never below 1 (`adaptive: false` turns this off; `stage.pixelRatio` is the one in use). So: if you move a part that
 casts a shadow, call `invalidate()` (or return `true` from a ticker), as before.
+
+**Shaders compiled ahead (kit 1.9.0).** three.js compiles a material's shader the first time it is drawn: on a slow
+phone that is a freeze of a few hundred milliseconds the first time a step shows new parts. So once the first frame is
+drawn the stage compiles every material in the scene in the background (`renderer.compileAsync`, one part per task),
+then uses each new program once (its uniform locations), one per task; it never draws the canvas and never delays
+`ready` (`warmUp: false` turns it off). Hidden parts are compiled too, but as they would be drawn now: tell the stage
+about what that cannot see, once the figure has built its scene:
+```js
+stage.warmUp({
+  show: [laterParts, laterLamp], // hidden parts (and lamps) of later steps: shown for the compile, put back at once
+  targets: [{ target: mirrorTarget, scene, camera: mirrorCamera }], // what the figure draws into its own render targets
+  objects: [notYetAdded], // parts made at load but added to the scene later
+}); // → a promise, resolved when the shaders are ready; calls queue after the first frame
+```
+Parts whose material has its own `clippingPlanes` are drawn once instead, as copies into a hidden 1×1 target (three's
+compile would key them by the clipping state of the last frame). Make the parts of later steps at load (hidden), not on
+the step's first tap, so the warm-up can find them. `withShown(objects, fn)` (exported from `stage.js` and on the
+stage) runs fn with hidden objects shown, with everything inside and above them, then puts every `visible` back without
+a frame in between: use it to export or measure hidden parts. To check a figure, count
+`stage.renderer.info.programs.length` before and after each step's first open: it should not grow.
 
 ### `tween.js`
 `createTweener()` → `{ animate({ duration, ease, key, delay, onUpdate(k, p), onComplete }), tick(dt), cancel(key), busy }`.
@@ -332,7 +352,8 @@ createHowTo(ui, t, [
   but **keeps its place**, so the panel keeps its height; put such items last. `collapse: true` takes them out instead.
   `when` on the options hides the whole row. Always hidden in the test.
 - Size: icons 20–22 px, words 13.5 px in `--ink-2`; the row wraps to a second line rather than squeezing. In the
-  tightest frames (a panel ≤ 560 × 600: a 390 × 520 phone, a phone held sideways) only the drag item keeps its words.
+  tightest frames (a panel ≤ 560 × 600: a 390 × 520 phone, a phone held sideways) only drag and tap items keep their
+  words (kit 1.9.0: a bare hand icon says nothing to a student).
   `after` places the row after another element instead of the action row.
 
 ### `pointer.js`

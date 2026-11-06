@@ -162,6 +162,9 @@ export function createApp(root, options = {}) {
     [1.5 * SIDE, R],
   ].map((q) => cellAt(cells, q));
   tube.setGhosts(CHAIN);
+  // the small picture of the far end is drawn into its own target from the first pattern on: compile it ahead (in the
+  // background), so the first tap of a step costs no shader compiling
+  stage.warmUp({ targets: [tube.warmTarget] });
 
   // ── the state ───────────────────────────────────────────────────────────────────────────────────────────
   const s = {

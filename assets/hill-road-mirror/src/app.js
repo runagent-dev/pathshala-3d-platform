@@ -157,6 +157,8 @@ export function createApp(root, options = {}) {
   cng.position.set(CNG.x, 0, CNG.z);
   setting.setShadow(2, CNG.x - CNG.length / 2, CNG.z, CNG.length, CNG.width, 0);
   const mirror = createMirror({ stage });
+  // the mirror rises at part 2 and draws the road into its own picture from then on: compile both ahead (in the background)
+  stage.warmUp({ targets: [mirror.warmTarget] });
   const dia = createDiagram({ stage, host: ui.canvasHost });
 
   // ── the state ───────────────────────────────────────────────────────────────────────────────────────────

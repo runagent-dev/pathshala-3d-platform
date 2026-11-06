@@ -1279,3 +1279,130 @@ test('stage: shadows follow the scene, not the camera; nothing is drawn while th
   expect((await take()).length).toBeGreaterThan(0);
   expect(errors).toEqual([]);
 });
+
+test('stage: warmUp compiles hidden parts, clipped parts and a render target ahead, without drawing the canvas', async ({ page }) => {
+  const errors = await openKit(page);
+  await shellWithStage(page);
+  const frames = () => page.evaluate(() => new Promise((ok) => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(ok)))));
+  await page.evaluate(() => {
+    const { THREE, stage } = /** @type {any} */ (window).t;
+    const { scene, renderer } = stage;
+    renderer.localClippingEnabled = true;
+    scene.add(new THREE.AmbientLight('#ffffff', 0.5), new THREE.DirectionalLight('#ffffff', 1));
+    scene.add(new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({ color: '#4477aa' })));
+    // a later step: its own material, its own lamp, and a part cut by clipping planes (as a mirror's image is)
+    const later = new THREE.Group();
+    later.visible = false;
+    const lamp = new THREE.PointLight('#ffeeaa', 3);
+    lamp.position.set(1, 2, 2);
+    const ball = new THREE.Mesh(new THREE.SphereGeometry(0.5), new THREE.MeshPhysicalMaterial({ color: '#cc3333', clearcoat: 1 }));
+    ball.position.x = 1.5;
+    const quiet = new THREE.Mesh(new THREE.SphereGeometry(0.2), new THREE.MeshBasicMaterial());
+    quiet.visible = false; // hidden inside the hidden group: it stays hidden after the warm-up
+    const planes = [new THREE.Plane(new THREE.Vector3(1, 0, 0), 0), new THREE.Plane(new THREE.Vector3(0, 1, 0), 0.2)];
+    const cut = new THREE.Mesh(new THREE.TorusGeometry(0.6, 0.2), new THREE.MeshStandardMaterial({ color: '#33aa55', clippingPlanes: planes }));
+    cut.position.x = -1.5;
+    later.add(lamp, ball, quiet, cut);
+    scene.add(later);
+    // a small picture the figure draws into its own target, with its own scene and camera
+    const target = new THREE.WebGLRenderTarget(64, 64);
+    const pic = new THREE.Scene();
+    pic.add(new THREE.HemisphereLight('#ffffff', '#334455', 1));
+    pic.add(new THREE.Mesh(new THREE.ConeGeometry(0.5, 1), new THREE.MeshLambertMaterial({ color: '#aa8833' })));
+    const picCam = new THREE.PerspectiveCamera(40, 1, 0.1, 20);
+    picCam.position.set(0, 0, 4);
+    picCam.updateMatrixWorld();
+    Object.assign(/** @type {any} */ (window).t, { later, quiet, target, pic, picCam });
+    const log = [];
+    const draw = renderer.render.bind(renderer);
+    renderer.render = (s, c) => (log.push(renderer.getRenderTarget() === null ? 'canvas' : 'target'), draw(s, c));
+    /** @type {any} */ (window).t.log = log;
+    stage.invalidate();
+  });
+  await frames();
+  const r = await page.evaluate(async () => {
+    const { stage, later, quiet, target, pic, picCam, log } = /** @type {any} */ (window).t;
+    const { renderer } = stage;
+    const programs = () => renderer.info.programs.length;
+    const before = stage.capture({ width: 120, height: 80 });
+    log.splice(0);
+    // withShown: shows the part, all inside it and above it, for the call only
+    const inside = stage.withShown(later, () => [later.visible, quiet.visible]);
+    const back = [later.visible, quiet.visible];
+    const n0 = programs();
+    await stage.warmUp({ show: later, targets: [{ target, scene: pic, camera: picCam }] });
+    const warmed = programs();
+    const drawnByWarmUp = log.splice(0);
+    const after = stage.capture({ width: 120, height: 80 });
+    log.splice(0);
+    // now the later step: shown, drawn on the canvas and into the target, compiles nothing new
+    later.visible = true;
+    stage.render();
+    renderer.setRenderTarget(target);
+    renderer.render(pic, picCam);
+    renderer.setRenderTarget(null);
+    return {
+      inside,
+      back,
+      n0,
+      warmed,
+      used: programs(),
+      drawnByWarmUp,
+      same: before === after,
+      stillHidden: [later.visible === true, quiet.visible],
+    };
+  });
+  expect(r.inside).toEqual([true, true]);
+  expect(r.back).toEqual([false, false]);
+  expect(r.warmed).toBeGreaterThan(r.n0); // the physical ball, the lamp's light count, the clipped torus, the cone in the target
+  expect(r.used).toBe(r.warmed); // nothing compiled when the step opens
+  expect(r.drawnByWarmUp).not.toContain('canvas'); // the clipped part was drawn into a hidden target only
+  expect(r.same).toBe(true); // the picture did not change
+  expect(r.stillHidden).toEqual([true, false]);
+  expect(errors).toEqual([]);
+});
+
+for (const viewport of [
+  { width: 390, height: 520 },
+  { width: 844, height: 390 },
+]) {
+  test(`how-to row, tightest frame ${viewport.width}×${viewport.height}: drag and tap items keep their words, the others show the icon`, async ({
+    page,
+  }) => {
+    const errors = await openKit(page, viewport);
+    await shellWithStage(page, {
+      layout: 'side',
+      learn: '<div class="pvc-act-row"><button class="pvc-quiet">x</button></div><p class="after">after</p>',
+    });
+    const r = await page.evaluate(async () => {
+      const { THREE, createDragHandle, createRotateCue, createHowTo } = /** @type {any} */ (window).kit;
+      const { ui, stage } = /** @type {any} */ (window).t;
+      const words = { howto_orbit: 'turn the view', howto_front: 'front view', view_front_short: 'Front', howto_label: 'How to use it' };
+      const t = Object.assign((/** @type {string} */ k) => words[k] ?? k, { num: (/** @type {number} */ x) => `n${x}` });
+      const handle = createDragHandle(stage, { point: new THREE.Vector3(0, 0, 0), axis: 'x', label: 'drag me', onMove: () => {} });
+      const cue = createRotateCue(stage, { layer: ui.stage, short: 'n360°', label: 'turn me' });
+      const howto = createHowTo(
+        ui,
+        t,
+        [
+          { kind: 'orbit', cue },
+          { kind: 'front' },
+          { kind: 'drag', axis: 'x', text: 'drag the paper', handle },
+          { kind: 'tap', text: 'tap the flame' },
+        ],
+        { stage },
+      );
+      stage.invalidate();
+      await new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)));
+      const shown = howto.buttons.map((/** @type {HTMLElement} */ b) => {
+        const w = b.querySelector('.pvc-howto-word');
+        return w ? getComputedStyle(w).display !== 'none' && w.getBoundingClientRect().width > 0 : null;
+      });
+      const panel = ui.learn.getBoundingClientRect();
+      return { shown, panel: [Math.round(panel.width), Math.round(panel.height)] };
+    });
+    // orbit: the pill; front: its miniature with "Front"; drag and tap: the icon and the words
+    expect(r.shown, JSON.stringify(r.panel)).toEqual([false, false, true, true]);
+    expect(errors).toEqual([]);
+  });
+}

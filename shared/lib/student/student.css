@@ -378,10 +378,11 @@
 .pvc .pvc-howto-front svg { width: 14px; height: 14px; }
 .pvc-howto-tap { color: var(--ink); }
 .pvc .pvc-howto-tap svg { width: 18px; height: 21px; }
-/* the tightest phone frame (390 × 520): the icons, and words for the drag only */
+/* the tightest frames (390 × 520, a short landscape side panel): the icons, with words for drag and tap items only (a
+   bare hand says nothing) */
 @container pvc (max-width: 560px) and (max-height: 600px) {
   .pvc-howto { gap: 0 4px; }
-  .pvc-howto-item:not(.pvc-howto-drag) .pvc-howto-word { display: none; }
+  .pvc-howto-item:not(.pvc-howto-drag):not(.pvc-howto-tap) .pvc-howto-word { display: none; }
   .pvc .pvc-howto-item { gap: 5px; min-height: 28px; padding: 2px 1px; }
 }
 /* quiet secondary actions (back to the start, …): words and an icon, no box */
