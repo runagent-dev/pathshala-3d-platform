@@ -13,8 +13,8 @@ const settled = async (fig) => {
 };
 
 test(`${ID}: the whole story on one action`, async ({ page }) => {
-  test.setTimeout(420_000);
-  await page.setViewportSize({ width: 800, height: 500 });
+  test.setTimeout(280_000);
+  await page.setViewportSize({ width: 600, height: 300 }); // every step really plays: few pixels, so that CI stays inside its limit
   const log = await preparePage(page);
   const fig = await openFigure(page, ID);
   const act = async () => {
@@ -43,8 +43,23 @@ test(`${ID}: the whole story on one action`, async ({ page }) => {
   st = await act();
   expect(st).toMatchObject({ stage: 'image', ghost: true, frame: 'near' });
   await expect(fig.frame.locator('.pvc-anno', { hasText: 'অবাস্তব · সোজা · ছোট' })).toHaveCount(1);
+  expect(log.errors).toEqual([]);
+});
 
-  st = await act();
+test(`${ID}: the story from the image to the end, on one action`, async ({ page }) => {
+  test.setTimeout(280_000);
+  await page.setViewportSize({ width: 600, height: 300 });
+  const log = await preparePage(page);
+  const fig = await openFigure(page, ID);
+  const act = async () => {
+    await fig.frame.locator('.pvc-act').first().click();
+    await settled(fig);
+    return fig.call('get');
+  };
+  await fig.call('set', { stage: 'image', animate: false });
+  await fig.advance(600);
+
+  let st = await act();
   expect(st).toMatchObject({ stage: 'move', frame: 'zoom' });
   await expect(fig.frame.locator('.pvc-anno', { hasText: 'ছোট: ৩/৫ গুণ' })).toHaveCount(1);
   await expect(fig.frame.locator('.pvc-outcome')).toContainText('আয়নার পেছনে');
@@ -86,8 +101,8 @@ test(`${ID}: the whole story on one action`, async ({ page }) => {
 });
 
 test(`${ID}: nothing runs ahead of the student`, async ({ page }) => {
-  test.setTimeout(120_000);
-  await page.setViewportSize({ width: 800, height: 500 });
+  test.setTimeout(200_000); // the steps must really play here, so they can't be skipped
+  await page.setViewportSize({ width: 640, height: 400 });
   const log = await preparePage(page);
   const fig = await openFigure(page, ID);
   const action = fig.frame.locator('.pvc-act').first();
