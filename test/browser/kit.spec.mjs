@@ -1,7 +1,7 @@
 // The student kit's options, tried on their own (test/kit.html, no figure): the quiz's reserved lines and the picked
 // choice, the শেখো sheet's alignment, labels changed in place and placed clear of each other, the coach's label,
 // pointer capture that never throws, the 3D arrow and thick lines in GLB exports, the action button and its marker on
-// the 3D view, and the clean শেখো sheet (one action, one result, one rule).
+// the 3D view, the clean শেখো sheet (one action, one result, one rule) and the drag handle.
 import { expect, test } from '@playwright/test';
 
 async function openKit(page, viewport = { width: 390, height: 700 }) {
@@ -78,8 +78,8 @@ test('quiz: lines keep room for the question and the answer; reveal gets the pic
       learnJustify: getComputedStyle(ui.learn).justifyContent,
     };
   });
-  // without the option nothing changes: no room kept for the question, one line for the answer (15px × 1.45)
-  expect(r.before).toEqual({ text: 'auto', feedback: '21.75px' });
+  // without the option nothing changes: no room kept for the question, one line for the answer (15px × 1.55)
+  expect(r.before).toEqual({ text: 'auto', feedback: '23.25px' });
   expect(r.second.lines).toBe(2);
   expect(r.first.text).toBeCloseTo(2 * r.lineHeight, 0);
   expect(r.second.sheet).toBe(r.first.sheet);
@@ -88,6 +88,234 @@ test('quiz: lines keep room for the question and the answer; reveal gets the pic
     { correct: true, index: 2, value: 30 },
   ]);
   expect(r.learnJustify).toBe('flex-start');
+  expect(errors).toEqual([]);
+});
+
+test('drag handle: pinned to its point, arrows along the projected way, a target, a word until the first drag', async ({ page }) => {
+  const errors = await openKit(page, { width: 844, height: 390 });
+  await shellWithStage(page);
+  const r = await page.evaluate(async () => {
+    const { createDragHandle, createAnnotations } = /** @type {any} */ (window).kit;
+    const { THREE, root, ui, stage } = /** @type {any} */ (window).t;
+    const frame = () => new Promise((done) => requestAnimationFrame(() => done(undefined)));
+    const P = new THREE.Vector3(1, 0, 0);
+    const moves = [];
+    const keys = [];
+    let canMove = true;
+    const handle = createDragHandle(stage, {
+      point: () => P,
+      axis: 'y',
+      direction: new THREE.Vector3(0, 1, 0),
+      track: { from: new THREE.Vector3(1, -2, 0), to: new THREE.Vector3(1, 2, 0) },
+      label: 'drag me',
+      aria: 'the part',
+      pulse: true,
+      when: () => canMove,
+      onMove: (m) => moves.push(m.along),
+      onKey: (dir) => keys.push(dir),
+    });
+    stage.render();
+    await frame();
+    const el = handle.el;
+    const box = el.getBoundingClientRect();
+    const host = ui.canvasHost.getBoundingClientRect();
+    const at = { x: box.left + box.width / 2 - host.left, y: box.top + box.height / 2 - host.top };
+    const v = P.clone().project(stage.camera);
+    const want = { x: (v.x * 0.5 + 0.5) * stage.width, y: (-v.y * 0.5 + 0.5) * stage.height };
+    const glyph = el.querySelector('svg').style.transform;
+    const inHost = ui.canvasHost.contains(el);
+    const first = { word: el.querySelector('.pvc-dh-word')?.textContent, pulse: el.classList.contains('pulse'), boxes: handle.box().length };
+    const hits = [handle.hit(at.x + 20, at.y), handle.hit(at.x + 40, at.y)];
+    const track = ui.canvasHost.querySelector('.pvc-dh-track');
+    const line = track.querySelector('.dash');
+    const ends = (line.getAttribute('d').match(/-?[\d.]+/g) ?? [])
+      .map(Number)
+      .filter((_, i) => i % 2)
+      .filter((_, i) => i !== 1);
+
+    // labels keep off it
+    const anno = createAnnotations({ stage, layer: ui.annoLayer, avoid: [() => handle.box()] });
+    anno.add('a', {
+      text: 'A',
+      point: () => P,
+      spots: [
+        { dx: 0, dy: 0 },
+        { dx: 0, dy: -70 }, // still on the track
+        { dx: 130, dy: 0 },
+      ],
+    });
+    stage.render();
+    const label = anno.box('a');
+    const clear = label.left > at.x + 17;
+    anno.clear();
+
+    // the drag goes through the callbacks; moving marks it used, and it stays, smaller
+    const start = { clientX: box.left + 23, clientY: box.top + 23, pointerId: 7, bubbles: true };
+    el.dispatchEvent(new PointerEvent('pointerdown', start));
+    el.dispatchEvent(new PointerEvent('pointermove', { ...start, clientY: start.clientY - 30 }));
+    el.dispatchEvent(new PointerEvent('pointerup', { ...start, clientY: start.clientY - 30 }));
+    await frame();
+    const used = { word: el.querySelector('.pvc-dh-word'), pulse: el.classList.contains('pulse'), shown: !el.hidden };
+    el.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, cancelable: true }));
+    el.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true, cancelable: true }));
+
+    // hidden: by the figure, by when(), in the test; the target goes with it
+    canMove = false;
+    stage.render();
+    const hiddenWhen = el.hidden && !handle.hit(at.x, at.y) && handle.box().length === 0;
+    canMove = true;
+    stage.render();
+    handle.hide();
+    const hiddenHide = el.hidden;
+    handle.show();
+    root.dataset.mode = 'quiz';
+    stage.render();
+    const hiddenQuiz = el.hidden;
+    delete root.dataset.mode;
+    stage.render();
+    const back = !el.hidden;
+    handle.rearm();
+    const again = Boolean(el.querySelector('.pvc-dh-word')) && !el.classList.contains('used');
+    handle.dispose();
+    return {
+      at,
+      want,
+      glyph,
+      inHost,
+      first,
+      hits,
+      ends,
+      clear,
+      moves,
+      used,
+      keys,
+      hiddenWhen,
+      hiddenHide,
+      hiddenQuiz,
+      back,
+      again,
+      size: [box.width, box.height],
+      gone: !ui.canvasHost.querySelector('.pvc-dh, .pvc-dh-track'),
+    };
+  });
+  expect(Math.abs(r.at.x - r.want.x)).toBeLessThan(1);
+  expect(Math.abs(r.at.y - r.want.y)).toBeLessThan(1);
+  expect(r.size[0]).toBeGreaterThanOrEqual(44);
+  expect(r.inHost).toBe(true); // so its pointer events reach a figure's handler on the canvas host
+  expect(r.glyph).toBe('rotate(-90deg)'); // up on the screen
+  expect(r.first).toEqual({ word: 'drag me', pulse: true, boxes: 6 });
+  expect(r.hits).toEqual([true, false]);
+  expect(r.ends[0]).toBeGreaterThan(r.want.y);
+  expect(r.ends[1]).toBeLessThan(r.want.y);
+  expect(r.clear).toBe(true);
+  expect(r.moves).toEqual([30]);
+  expect(r.used).toEqual({ word: null, pulse: false, shown: true });
+  expect(r.keys).toEqual([1, -1]);
+  expect([r.hiddenWhen, r.hiddenHide, r.hiddenQuiz, r.back, r.again, r.gone]).toEqual([true, true, true, true, true, true]);
+  expect(errors).toEqual([]);
+});
+
+test('drag handle: without callbacks the pointer goes on to the handler on the canvas host', async ({ page }) => {
+  const errors = await openKit(page, { width: 844, height: 390 });
+  await shellWithStage(page);
+  const r = await page.evaluate(async () => {
+    const { createDragHandle } = /** @type {any} */ (window).kit;
+    const { THREE, ui, stage } = /** @type {any} */ (window).t;
+    const seen = [];
+    for (const kind of ['pointerdown', 'pointermove', 'pointerup']) {
+      ui.canvasHost.addEventListener(kind, () => seen.push(kind), { capture: true });
+    }
+    const handle = createDragHandle(stage, { point: new THREE.Vector3(0, 0, 0), track: null });
+    stage.render();
+    const box = handle.el.getBoundingClientRect();
+    const start = { clientX: box.left + 23, clientY: box.top + 23, pointerId: 3, bubbles: true };
+    for (const kind of ['pointerdown', 'pointermove', 'pointerup']) handle.el.dispatchEvent(new PointerEvent(kind, start));
+    const glyph = handle.el.querySelector('svg').style.transform;
+    return { seen, glyph };
+  });
+  expect(r.seen).toEqual(['pointerdown', 'pointermove', 'pointerup']);
+  expect(r.glyph).toBe('rotate(0deg)');
+  expect(errors).toEqual([]);
+});
+
+test('rotate cue: a full orbit; a tap is not a turn, a move of 8 px is; the word goes and the icon stays', async ({ page }) => {
+  const errors = await openKit(page, { width: 844, height: 390 });
+  await shellWithStage(page);
+  const r = await page.evaluate(async () => {
+    const { createRotateCue } = /** @type {any} */ (window).kit;
+    const { root, ui, stage } = /** @type {any} */ (window).t;
+    const { controls } = stage;
+    controls.minAzimuthAngle = -1;
+    controls.maxAzimuthAngle = 1;
+    controls.enableZoom = false;
+    let turns = 0;
+    let canTurn = true;
+    const cue = createRotateCue(stage, { layer: ui.stage, short: '৩৬০°', label: 'turn me', onTurn: () => turns++, when: () => canTurn });
+    const orbit = [
+      controls.minAzimuthAngle,
+      controls.maxAzimuthAngle,
+      Math.round((controls.maxPolarAngle * 180) / Math.PI),
+      controls.enableZoom,
+      controls.enableDamping,
+    ];
+    const word = () => getComputedStyle(cue.el.querySelector('.pvc-rc-word')).display !== 'none';
+    const at = { pointerId: 5, clientX: 100, clientY: 100, bubbles: true };
+    const host = ui.canvasHost;
+    host.dispatchEvent(new PointerEvent('pointerdown', at));
+    host.dispatchEvent(new PointerEvent('pointermove', { ...at, clientX: 106 }));
+    host.dispatchEvent(new PointerEvent('pointerup', at));
+    const tap = { turns, word: word(), held: cue.held };
+    host.dispatchEvent(new PointerEvent('pointerdown', at));
+    host.dispatchEvent(new PointerEvent('pointermove', { ...at, clientX: 120 }));
+    host.dispatchEvent(new PointerEvent('pointermove', { ...at, clientX: 150 }));
+    host.dispatchEvent(new PointerEvent('pointerup', at));
+    const d = stage.camera.position.distanceTo(controls.target);
+    const small = cue.el.textContent.includes('৩৬০°') && getComputedStyle(cue.el.querySelector('.pvc-rc-deg')).display !== 'none';
+    const held = { turns, word: word(), held: cue.held, near: controls.minDistance / d, far: controls.maxDistance / d };
+    cue.home();
+    const home = { held: cue.held, near: controls.minDistance, far: controls.maxDistance };
+    root.dataset.mode = 'quiz';
+    const inTest = getComputedStyle(cue.el).display;
+    delete root.dataset.mode;
+    const wheelFirst = turns;
+    host.dispatchEvent(new WheelEvent('wheel', { bubbles: true }));
+    canTurn = false;
+    await new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)));
+    const hidden = getComputedStyle(cue.el).display;
+    return { orbit, tap, held, small, home, inTest, wheel: turns - wheelFirst, hidden };
+  });
+  expect(r.orbit).toEqual([Number.NEGATIVE_INFINITY, null, 88, true, true].map((x) => (x === null ? Number.POSITIVE_INFINITY : x)));
+  expect(r.tap).toEqual({ turns: 0, word: true, held: false });
+  expect(r.held).toMatchObject({ turns: 1, word: false, held: true });
+  expect(r.small).toBe(true); // never the arrow alone
+  expect(r.held.near).toBeCloseTo(0.6, 5);
+  expect(r.held.far).toBeCloseTo(1.8, 5);
+  expect(r.home).toEqual({ held: false, near: 0, far: Number.POSITIVE_INFINITY });
+  expect(r.inTest).toBe('none');
+  expect(r.wheel).toBe(1);
+  expect(r.hidden).toBe('none');
+  expect(errors).toEqual([]);
+});
+
+test('front view button (side layout): cross hairs and a word, not a circular arrow', async ({ page }) => {
+  const errors = await openKit(page, { width: 844, height: 390 });
+  await shellWithStage(page, { layout: 'side' });
+  const r = await page.evaluate(() => {
+    const { ICONS } = /** @type {any} */ (window).kit;
+    const { ui } = /** @type {any} */ (window).t;
+    const b = ui.$('[data-view="front"]');
+    b.hidden = false;
+    return {
+      word: b.textContent.trim(),
+      same: b.querySelector('svg').outerHTML === ICONS.reset,
+      front: b.innerHTML.includes('M12 2.5v4'),
+      wide: b.getBoundingClientRect().width,
+    };
+  });
+  expect(r.word).toBe('view_front_short');
+  expect(r.same).toBe(false);
+  expect(r.front).toBe(true);
+  expect(r.wide).toBeGreaterThan(38);
   expect(errors).toEqual([]);
 });
 

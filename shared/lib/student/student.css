@@ -162,6 +162,10 @@
 .pvc-corner .pvc-seg { box-shadow: 0 1px 2px rgba(20, 30, 45, 0.06); }
 .pvc-corner .pvc-seg button { height: 36px; padding: 0 14px; font-size: 15px; }
 .pvc-corner .pvc-tool { height: 38px; width: 38px; padding: 0; justify-content: center; }
+/* back to the guided view: cross hairs and a word, so that it can't be taken for reset or for the rotate cue */
+.pvc-corner .pvc-tool.pvc-front { width: auto !important; padding: 0 10px 0 7px; gap: 4px; font-size: 14px; font-weight: 500; white-space: nowrap; }
+/* a figure that added its own word before the kit had one */
+.pvc-front span + span { display: none; }
 .pvc-stage[data-ui='simple'] .pvc-hint { top: auto; bottom: 10px; transform: translate(-50%, 4px); }
 .pvc-stage[data-ui='simple'] .pvc-hint.show { transform: translate(-50%, 0); }
 .pvc[data-ui='simple'] .pvc-lens-zoom, .pvc[data-ui='simple'] .pvc-lens-pin { display: none; }
@@ -302,6 +306,42 @@
   .pvc .pvc-act-marker.in:not(.still) .pvc-act-ring, .pvc-act.live:not(.still) .pvc-act-num::after, .pvc-act-marker.in:not(.still) .pvc-act-badge .pvc-act-num::after { animation: none; }
   .pvc-act.flash, .pvc-act-marker.flash .pvc-act-num { animation: none; outline: 3px solid var(--ink); outline-offset: 2px; }
 }
+/* a visible handle on a part the student can drag (createDragHandle): a 46 px target round a white 30 px disc */
+.pvc .pvc-dh { position: absolute; left: 0; top: 0; z-index: 2; display: grid; place-items: center; width: 46px; height: 46px; padding: 0; border: 0; border-radius: 50%; background: none; cursor: grab; touch-action: none; will-change: transform; }
+.pvc .pvc-dh[hidden] { display: none; }
+.pvc .pvc-dh:active { cursor: grabbing; }
+.pvc-dh-disc { position: relative; display: grid; place-items: center; width: 30px; height: 30px; box-sizing: border-box; border-radius: 50%; background: #fff; border: 1.5px solid #1d2733; color: #1d2733; box-shadow: 0 1px 4px rgba(20, 30, 45, 0.4); transition: width 0.25s, height 0.25s; }
+.pvc .pvc-dh-disc svg { display: block; width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; transition: width 0.25s, height 0.25s; }
+.pvc .pvc-dh:focus-visible .pvc-dh-disc { outline: 3px solid var(--accent); outline-offset: 2px; }
+.pvc-dh.pulse .pvc-dh-disc::after { content: ''; position: absolute; inset: -2px; border-radius: 50%; border: 2px solid #fff; animation: pvc-dh-pulse 1.8s ease-out infinite; pointer-events: none; }
+.pvc .pvc-dh-turn svg { width: 22px; height: 22px; stroke-width: 2.2; }
+.pvc-dh.used .pvc-dh-disc { width: 24px; height: 24px; box-shadow: 0 1px 2px rgba(20, 30, 45, 0.3); }
+.pvc .pvc-dh.used .pvc-dh-disc svg { width: 16px; height: 16px; }
+.pvc-dh-word { position: absolute; padding: 1px 8px; border-radius: 4px; background: var(--panel); border: 1px solid var(--line-2); color: var(--ink); font-size: 13px; font-weight: 500; line-height: 1.5; white-space: nowrap; pointer-events: none; }
+.pvc-dh-word, .pvc-dh-word[data-side='below'] { top: 100%; left: 50%; transform: translateX(-50%); }
+.pvc-dh-word[data-side='above'] { top: auto; bottom: 100%; left: 50%; transform: translateX(-50%); }
+.pvc-dh-word[data-side='right'] { top: 50%; left: 100%; transform: translateY(-50%); }
+.pvc-dh-word[data-side='left'] { top: 50%; left: auto; right: 100%; transform: translateY(-50%); }
+/* the range: a thin dashed line, light with a dark edge so it shows on any setting */
+.pvc-dh-track { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.pvc-dh-track path { fill: none; stroke-linecap: round; }
+.pvc-dh-track .halo { stroke: rgba(20, 30, 45, 0.6); stroke-width: 3.6; stroke-dasharray: 7 6; stroke-linecap: butt; }
+.pvc-dh-track .dash { stroke: rgba(255, 255, 255, 0.95); stroke-width: 1.8; stroke-dasharray: 7 6; stroke-linecap: butt; }
+@keyframes pvc-dh-pulse { 0% { transform: scale(1); opacity: 0.9; } 70%, 100% { transform: scale(1.5); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .pvc-dh.pulse .pvc-dh-disc::after { animation: none; opacity: 0; } .pvc-dh-disc, .pvc .pvc-dh-disc svg { transition: none; } }
+/* the view turns all the way round (createRotateCue): a dark pill in a corner, with words until the first turn, then a small arrow */
+.pvc-rc { position: absolute; z-index: 3; display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px 3px 6px; border-radius: 999px; background: rgba(18, 26, 36, 0.76); color: #fff; font-size: 12.5px; font-weight: 600; line-height: 1.4; white-space: nowrap; pointer-events: none; transition: opacity 0.3s; }
+.pvc-rc[hidden] { display: none; }
+.pvc-rc-top-left { left: 8px; top: 8px; }
+.pvc-rc-bottom-right { right: 8px; bottom: 8px; }
+.pvc-rc-deg { font-weight: 600; }
+.pvc .pvc-rc svg { display: block; flex: none; width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.1; stroke-linecap: round; stroke-linejoin: round; }
+.pvc-rc.used { padding: 3px 8px 3px 5px; opacity: 0.78; }
+.pvc-rc.used .pvc-rc-word { display: none; }
+.pvc-rc.pulse svg { animation: pvc-rc-rock 2.6s ease-in-out infinite; }
+@keyframes pvc-rc-rock { 0%, 60%, 100% { transform: rotate(0deg); } 30% { transform: rotate(-38deg); } }
+.pvc[data-mode='quiz'] .pvc-rc { display: none; }
+@media (prefers-reduced-motion: reduce) { .pvc-rc.pulse svg { animation: none; } }
 /* quiet secondary actions (back to the start, …): words and an icon, no box */
 .pvc .pvc-quiet { display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex: none; min-width: 44px; min-height: 44px; padding: 0 8px; border: 0; border-radius: 8px; background: none; color: var(--ink-3); font-size: 14.5px; font-weight: 500; white-space: nowrap; }
 .pvc .pvc-quiet:hover { color: var(--ink); background: var(--soft); }
@@ -363,6 +403,14 @@
 @container pvc-panel (max-width: 290px) {
   .pvc-q-score { display: none; }
   .pvc-q-head .pvc-btn { padding: 0 10px; font-size: 14.5px; }
+}
+/* cleanSheet({ tight: true }) in a narrow side panel: room for a one-line verb beside two quiet buttons */
+@container pvc-panel (max-width: 300px) {
+  .pvc-act-row[data-tight] { gap: 3px; }
+  .pvc .pvc-act-row[data-tight] .pvc-quiet { min-width: 36px; }
+  .pvc .pvc-act-row[data-tight] .pvc-act { gap: 6px; padding: 5px 12px 5px 5px; }
+  .pvc-act-row[data-tight] .pvc-act-icon { display: none; }
+  .pvc .pvc-act-row[data-tight] .pvc-act .pvc-act-num { width: 30px; height: 30px; font-size: 16px; }
 }
 /* the clean sheet in a phone-wide panel: quiet buttons show only their icon; a tighter pill */
 @container pvc-panel (max-width: 440px) {

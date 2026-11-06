@@ -27,8 +27,10 @@
     import { createAction } from '@shared/student/action.js';
     import { createAnnotations } from '@shared/student/annotations.js';
     import { createCoach } from '@shared/student/coach.js';
+    import { createDragHandle } from '@shared/student/draghandle.js';
     import { createLoupe } from '@shared/student/loupe.js';
     import { capturePointer, releasePointer } from '@shared/student/pointer.js';
+    import { createRotateCue } from '@shared/student/rotatecue.js';
     import { createQuiz } from '@shared/student/quiz.js';
     import { ICONS } from '@shared/student/icons.js';
     import { bindCleanSheet, buildStudentShell, cleanSheet } from '@shared/student/shell.js';
@@ -45,6 +47,8 @@
       createAction,
       createAnnotations,
       createCoach,
+      createDragHandle,
+      createRotateCue,
       createLoupe,
       capturePointer,
       releasePointer,

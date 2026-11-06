@@ -201,6 +201,9 @@ whole sentence in bold). Formulas go on their own line, not inside a sentence:
 A small live graph in the panel: an `<svg class="pvc-graph">` (or canvas) with `.axis`, `.grid` and labels in
 12 px; the curve in the quantity's colour (docs/book-notes.md), a dot for the current state.
 
+`cleanSheet(t, { tight: true })`: in a side panel 300 px wide or less, the action row tightens (smaller badge and quiet buttons, no
+hand in the pill), so a short verb stays on one line beside two quiet buttons. Figures opt in; the default does not change.
+
 ### `quiz.js`
 `createQuiz({ ui, t, emit, audio, questions: 5, lines, hooks, action })` (`action`: a `createAction` whose marker
 hides while the test runs). Hooks: `enter()`, `leave()`,
@@ -254,6 +257,46 @@ image files). `textMesh(text, height, { color, weight, align })` for labels draw
   Labels without `spots` go exactly where `dx, dy` say, as before.
 - `box(id)` → the label's box as last drawn (canvas pixels), for a figure's own placement; `boxes()` → the boxes of
   every label shown (e.g. `createAction({ avoid: [() => anno.boxes()] })`).
+
+### `draghandle.js` (show what can be moved, kit 1.7.0)
+`createDragHandle(stage, options)` → `{ el, show, hide, update, visible, hit, markUsed, rearm, box, dispose }`. Every
+part a student can drag carries one: without it nothing says the part moves. A white 30 px disc pinned to a 3D point,
+with arrows along the way the part goes, inside a 46 px target; a faint dashed track for the range; a word and a
+gentle pulse until the first drag; then it stays, smaller and calm.
+- `point`: a Vector3 or `() => Vector3`, where the disc sits: on the part, at a spot that stays clear of it (the foot of a
+  carrier, not the middle of the paper).
+- `axis`: `'x'` or `'y'` (straight arrows) or `'turn'` (a curved arrow). `direction`: the 3D direction (Vector3 or
+  function), so the arrows follow it on the screen; default: along the track, or the axis.
+- `track: { from, to, via }`: the two ends of the range (Vector3s or functions); `via`, a point half way along a curved
+  range, bends it (an arc).
+- `label`: the first-time word from the figure's i18n (`drag_me: 'টেনে সরাও'`). `labelAt`: `'below' | 'above' | 'left' |
+  'right'` (default below, or right for an upright handle; the other side when there is no room).
+- `aria`: the button's label, from the figure's i18n. `pulse`: `Boolean(o.coach)`, so tests stay still.
+- `when: () => boolean`: read every frame, the plain way to show it only while the part can be moved. `.hide()`
+  and `.show()` also work. It hides by itself during the test (`quiz: true` keeps it, for a question that needs the drag)
+  and while the point is behind the camera. `update()` places it now.
+- **With a figure's own drag handler** on `ui.canvasHost`: the handle is inside the canvas host (`layer` changes that),
+  so its pointer events reach the handler. Add `if (handle.hit(x, y)) return 'paper'` to the picking (canvas pixels, the
+  whole target) and call `handle.markUsed()` when a drag starts; the keyboard stays with the figure's `keydown` listener.
+- **On its own**: `onStart`, `onMove`, `onEnd` get `{ x, y, dx, dy, along, event }` (`along`: pixels moved along the
+  handle's direction on the screen); `onKey(dir, event)` gets +1 for → ↑ and -1 for ← ↓. The first drag or key press marks it used.
+- `box()` → boxes in canvas pixels for avoid lists: `createAnnotations({ avoid: [() => handle.box()] })` (the handle, its
+  word, points along the track; empty while hidden; the arrays are reused, so don't keep them).
+- `rearm()`: the first-time look again (after a reset). Under `prefers-reduced-motion` there is no pulse.
+
+### `rotatecue.js` (the view turns all the way round, kit 1.7.0)
+`createRotateCue(stage, options)` → `{ el, held, markUsed, rearm, home, dispose }`. A dark pill in a corner of the stage: "⟲ ৩৬০°
+ঘুরিয়ে দেখো" until the first turn, then "⟲ ৩৬০°", which stays. Never the arrow alone: a plain circular arrow means reset. It sets up the orbit too: no azimuth limits,
+`polar` (degrees, default `[5, 88]`, so the camera stays above the table), zoom and damping on.
+- `short`: always shown beside the arrow (`` `${t.num(360)}°` ``). `label`: the words after it (`rotate_me: 'ঘুরিয়ে দেখো'`).
+  `compact: true`: no words from the start.
+  `pulse: Boolean(o.coach)`: the arrow rocks gently until the first turn. `when: () => boolean`: read every frame; no
+  badge where the camera cannot turn.
+- `onTurn`: called when the student really turns the view: 8 px of movement or the wheel, never a bare tap (OrbitControls
+  says `start` on a tap). Use it instead of a `start` listener: the figure stops guiding the camera there.
+- `zoom: [0.6, 1.8]`: how far in and out, as parts of the distance when the student took over. These limits hold only
+  while the student has the view: call `home()` when the guided camera takes over, so no flight is clamped.
+- `layer` (default the stage), `at: 'top-left' | 'bottom-right'`. Put `el` in the avoid lists. Hidden during the test.
 
 ### `pointer.js`
 `capturePointer(el, pointerId)` → `true` if captured, and `releasePointer(el, pointerId)`: pointer capture that never

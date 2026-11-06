@@ -44,9 +44,10 @@ export function learnSheet(t, { terms, extra = '', button = true }) {
  * @param {(key: string, vars?: object) => string} t
  * @param {{ examples?: { label?: string, items: Array<{ id: string, label: string }>, results?: boolean },
  *           quiet?: Array<{ act: string, label: string, icon?: string }>,
+ *           tight?: boolean,
  *           lines?: { action?: number, outcome?: number, rule?: number } }} [options]
  */
-export function cleanSheet(t, { examples, quiet = [], lines = {} } = {}) {
+export function cleanSheet(t, { examples, quiet = [], lines = {}, tight = false } = {}) {
   const words = examples
     ? `<div class="pvc-examples" role="radiogroup"${examples.label ? ` aria-label="${t(examples.label)}"` : ''}${examples.results ? ' data-results' : ''}>${examples.items
         .map(
@@ -65,7 +66,7 @@ export function cleanSheet(t, { examples, quiet = [], lines = {} } = {}) {
   const room = (name, n) => (n > 0 ? ` style="--pvc-${name}-room: ${n}"` : '');
   return `
           ${words}
-          <div class="pvc-act-row"${room('act', lines.action)}><div class="pvc-act-slot"></div>${extra}</div>
+          <div class="pvc-act-row"${room('act', lines.action)}${tight ? ' data-tight' : ''}><div class="pvc-act-slot"></div>${extra}</div>
           <p class="pvc-outcome"${room('outcome', lines.outcome)}></p>
           <p class="pvc-rule"${room('rule', lines.rule)}></p>`;
 }
@@ -147,7 +148,7 @@ export function bindCleanSheet(learn) {
 export function buildStudentShell(root, t, { learn = '', learnAlign = 'spread', layout = 'stack' } = {}) {
   const side = layout === 'side';
   const viewButtons = side
-    ? `<button class="pvc-tool icon-only" data-view="front" hidden title="${t('view_front_short')}" aria-label="${t('view_front_short')}">${ICONS.reset}</button>`
+    ? `<button class="pvc-tool pvc-front" data-view="front" hidden title="${t('view_front_short')}" aria-label="${t('view_front_short')}">${ICONS.front}<span>${t('view_front_short')}</span></button>`
     : `<div class="pvc-seg" role="group" aria-label="${t('view')}">
           <button data-view="front">${t('view_front_short')}</button>
           <button data-view="3d">${t('view_rotate')}</button>

@@ -5,6 +5,25 @@ student kit). Every zip records it in `PACKAGE.json` as `kit`. Bump it with each
 patch for fixes, minor for additions, major when a figure has to change to keep working. Run the visual comparison
 across all figures before merging a kit change (`npm run test:visual`).
 
+## 1.7.0
+
+`createDragHandle(stage, options)` in `student/draghandle.js`, after the owner found nothing in a figure says a part can be
+moved ("unless they drag, they can't know they can play with it"). A white disc pinned to a 3D point, with arrows that
+follow the projected direction (or a curved arrow for turning), a 46 px target, a faint dashed track for the range, a
+first-time word and a gentle pulse until the first drag, then smaller and calm. Works with a figure's own drag handler
+(`hit`, `markUsed`) or alone (`onStart`, `onMove`, `onEnd`, `onKey`). Hides in the test; `box()` for avoid lists. No
+figure changes without opting in.
+
+`createRotateCue(stage, options)` in `student/rotatecue.js`: a dark corner pill, "⟲ ৩৬০° ঘুরিয়ে দেখো" until the first
+turn, then "⟲ ৩৬০°", which stays. It sets up a full orbit (no azimuth limits, polar limits, zoom, damping) and tells the figure when the
+student really turned the view: 8 px of movement or the wheel, never a bare tap. New icon `ICONS.orbit`.
+
+The front-view button of `layout: 'side'` is now cross hairs (`ICONS.front`) with the figure's `view_front_short` word
+beside it, instead of a circular arrow alone, which could be taken for reset. Reset stays the only plain ↺.
+
+`cleanSheet(t, { tight: true })` tightens the action row in a narrow side panel, so that a short verb stays on one line beside
+two quiet buttons. No figure changes without opting in.
+
 ## 1.6.0
 
 Panel typography, after the owner found the panels congested and hazy (bold everywhere, tight lines, grey text).
