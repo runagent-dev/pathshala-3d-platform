@@ -242,12 +242,13 @@ export function createApp(root, options = {}) {
     table.setState(sample);
     table.root.updateMatrixWorld(true);
     const { card: C, coin: K } = TABLE;
-    feetPoint.set(sample.cardX + C.w / 2 + 0.003, sample.cardY, -C.d / 2 - 0.004);
+    // (the card as shown: past the tabletop's edge it falls on, see table.js)
+    feetPoint.set(sample.cardX + C.w / 2 + 0.003, table.card.position.y, -C.d / 2 - 0.004);
     A.lower.group.position.copy(feetPoint);
     upperPoint.set(sample.coinX + K.r + 0.003, sample.coinY, -0.02);
     A.upper.group.position.copy(upperPoint);
     const k = s.helpers ? ARROW.scale : 0;
-    A.lower.set(sample.lowerV, k);
+    A.lower.set(sample.lowerV, table.card.visible ? k : 0);
     A.upper.set(sample.upperV, k);
     aimSun(0, 1, { left: -0.32, right: 0.32, top: 0.32, bottom: -0.32, near: 0.4, far: 2.2 });
     A.lower.group.updateMatrixWorld(true);
