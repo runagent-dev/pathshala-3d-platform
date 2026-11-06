@@ -53,8 +53,10 @@ export function createLapStrip(host, label) {
           bars.push({ el, left });
         }
       }
-      // the tape moves so that "now" is at the right end
-      const shift = width - 2 - (now - first) * px;
+      // the tape moves so that "now" is at the right end, by whole device pixels: it is a layer of its own, and at a fraction
+      // of a pixel the picture would depend on where the compositor happened to draw it last
+      const dpr = window.devicePixelRatio || 1;
+      const shift = Math.round((width - 2 - (now - first) * px) * dpr) / dpr;
       tape.style.transform = `translateX(${shift}px)`;
       // a bar reaching the left end fades and goes, never cut in half
       for (const bar of bars) {
