@@ -1099,7 +1099,7 @@ export function createApp(root, options = {}) {
   const counts = [0, 1, 2, 3].map((n) => cells.filter((c) => c.n === n).length);
   function outcome() {
     if (s.step === 'pattern') {
-      if (s.stage === 0) return t('out_p0');
+      if (s.stage === 0) return ''; // the first screen: only the calm words below
       if (s.stage === 1 && s.turned === 0) return t('out_p1', { a: tube.beads.count });
       return t('out_p2', { a: Math.abs(Math.round(s.turned)) });
     }
@@ -1122,6 +1122,9 @@ export function createApp(root, options = {}) {
   }
   const tubeAngle = () => Math.round((Math.acos((2 * R) / Math.hypot(L + EYE, 2 * R)) * 180) / Math.PI);
   function rule() {
+    // the first screen: a calm scene in everyday words, shorter where the panel is smallest (style.css picks one)
+    if (s.step === 'pattern' && s.stage === 0)
+      return `<span class="kld-intro">${t('intro')}</span><span class="kld-intro-short">${t('intro_short')}</span>`;
     if (s.step === 'pattern') return t(`rule_p${s.stage === 1 && s.turned ? 2 : s.stage}`);
     if (s.step === 'why') return t(`rule_w${s.stage}`);
     if (s.step === 'graze') return t(`rule_g${s.stage}`, { a: tubeAngle() });

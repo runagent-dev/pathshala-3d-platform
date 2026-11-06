@@ -12,8 +12,11 @@ body.bg-transparent { background: transparent; }
 .kld .kld-pair { display: inline-block; margin-right: 12px; white-space: nowrap; }
 
 /* the rule */
-.kld .pvc-rule { font-size: 14.5px; line-height: 1.55; }
+.kld .pvc-rule { font-size: 14.5px; line-height: 1.6; }
 .kld .pvc-rule b { color: var(--ink); }
+/* the first screen's calm words: the short version only where the panel is smallest (390 × 520) */
+.kld .kld-intro-short { display: none; }
+.kld .pvc-outcome:empty { min-height: 0; }
 
 /* the vector drawing over the view */
 .kld-draw { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
@@ -44,7 +47,7 @@ body.bg-transparent { background: transparent; }
   .kld .pvc-examples .pvc-ex-word { font-size: 14px; line-height: 1.2; white-space: nowrap; }
   .kld .pvc-act-row { min-height: 46px; }
   .kld .pvc-outcome { font-size: 14px; line-height: 22px; min-height: 30px; }
-  .kld .pvc-rule { --pvc-rule-lines: 0; font-size: 13.5px; line-height: 19px; height: 76px; min-height: 0; overflow: hidden; }
+  .kld .pvc-rule { --pvc-rule-lines: 0; font-size: 13.5px; line-height: 21px; height: 84px; min-height: 0; overflow: hidden; }
   .kld .pvc-q-ask { gap: 5px; }
   .kld .pvc-q-text { font-size: 14px; line-height: 1.4; }
   .kld .pvc-q-options { gap: 5px; }
@@ -53,7 +56,9 @@ body.bg-transparent { background: transparent; }
 }
 /* the tightest phone (390 × 520) */
 @container pvc (max-width: 420px) and (max-height: 600px) {
-  .kld .pvc-rule { font-size: 12.5px; line-height: 16.5px; height: 50px; }
+  .kld .pvc-rule { font-size: 12.5px; line-height: 19.5px; height: 59px; }
+  .kld .kld-intro { display: none; }
+  .kld .kld-intro-short { display: inline; }
   .kld .pvc-outcome { font-size: 13px; line-height: 20px; min-height: 26px; }
   .kld .pvc-q-ask { gap: 3px; }
   .kld .pvc-q-head { min-height: 0; }
@@ -68,7 +73,9 @@ body.bg-transparent { background: transparent; }
   .kld .pvc-learn { gap: 8px; }
   .kld .pvc-examples button { min-height: 40px; }
   .kld .pvc-outcome { font-size: 14.5px; line-height: 1.45; min-height: 1.6lh; }
-  .kld .pvc-rule { font-size: 14px; line-height: 1.55; height: auto; overflow: visible; }
+  .kld .pvc-rule { font-size: 14px; line-height: 1.6; height: auto; overflow: visible; }
+  .kld .kld-intro { display: inline; }
+  .kld .kld-intro-short { display: none; }
   .kld .pvc-q-ask { gap: 6px; }
   .kld .pvc-q-head .pvc-btn { height: 36px; }
   .kld .pvc-q-text { font-size: 14px; }
@@ -77,7 +84,7 @@ body.bg-transparent { background: transparent; }
   .kld .pvc-q-feedback { font-size: 13.5px; line-height: 1.45; }
 }
 @container pvc-panel (min-height: 1px) and (max-height: 420px) {
-  .kld .pvc-rule { font-size: 13.5px; line-height: 1.45; }
+  .kld .pvc-rule { font-size: 13.5px; line-height: 1.55; }
   .kld .pvc-learn { gap: 5px; }
 }
 /* a tall side panel (1280 × 800): larger, the book's size */

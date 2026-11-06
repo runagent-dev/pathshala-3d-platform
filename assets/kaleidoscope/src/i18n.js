@@ -62,7 +62,6 @@ export const STRINGS = {
     l_deg: '{a}°',
     l_q: '?',
 
-    out_p0: 'তিনটি <b>কাচের টুকরো</b>, ভেতরে অল্প কয়েকটি রঙিন টুকরো',
     out_p1: 'আসল টুকরো <b>{a}</b> টি, বাকি সবই <b>প্রতিবিম্ব</b>',
     out_p2: 'ঘোরানো হলো <b>{a}°</b>, নকশা <b>নড়ছে</b>',
     out_w0: 'লাল পাথরের আলো কোন পথে চোখে আসে?',
@@ -76,17 +75,19 @@ export const STRINGS = {
     out_t2: 'B তে আপতন কোণ <b>{a}°</b>: রশ্মি <b>ঠিক বিপরীত দিকে</b> ফেরে',
     out_t3: 'B তে আপতন কোণ <b>{a}°</b>: রশ্মি অন্য পথে যায়',
 
-    rule_p0: 'তিনটি কাচের টুকরো <b>ত্রিভুজাকৃতিভাবে</b> জোড়া, ওপরে কাগজের মোড়ক। এক পাশে পাতলা কাগজ, ভেতরে রঙিন পাথর, পুঁতি আর ভাঙা চুড়ি। অন্য পাশ দিয়ে দেখো।',
-    rule_p1: 'এটাই <b>অপূর্ব নকশা</b>। মাঝের একটি ত্রিভুজ ঘরই আসল, চারপাশের সব ঘর তার প্রতিবিম্ব। চোখে লাগিয়ে রেখে এটা ঘোরাও।',
+    intro:
+      'এটি একটি খেলনা নল, নাম ক্যালাইডোস্কোপ। ভেতরে কয়েকটি রঙিন পাথর, পুঁতি আর ভাঙা চুড়ির টুকরো। এক পাশে চোখ রাখলে সুন্দর নকশা দেখা যায়। চলো দেখি, এত নকশা আসে কোথা থেকে।',
+    intro_short: 'একটি খেলনা নল, ভেতরে কয়েকটি রঙিন টুকরো। চোখ রাখলে সুন্দর নকশা দেখা যায়। চলো দেখি, এত নকশা আসে কোথা থেকে।',
+    rule_p1: 'এটাই <b>অপূর্ব নকশা</b>। নলের ভেতরে তিনটি কাচের টুকরো ত্রিভুজের মতো জোড়া। মাঝের একটি ঘরই আসল, চারপাশের সব ঘর তার প্রতিবিম্ব। এবার নলটা ঘোরাও।',
     rule_p2: 'ঘোরালে ভেতরের টুকরোগুলো গড়িয়ে যায়। সব প্রতিবিম্ব একসাথে বদলায়, তাই <b>নকশাটি নড়ে</b>।',
-    rule_w0: 'আলো সোজা চোখে আসতে পারে। আবার কাচে লেগে ফিরেও আসতে পারে। পথগুলো একে একে দেখো।',
+    rule_w0: 'এবার দেখি, একটি লাল পাথরের আলো কোন পথে চোখে আসে। আলো সোজা আসতে পারে, আবার কাচে লেগে ফিরেও আসতে পারে।',
     rule_w1: 'আলো একবার কাচে লেগে চোখে এল। চোখের মনে হয়, আলো আসছে কাচের ওপাশের <b>প্রতিবিম্ব</b> থেকে।',
     rule_w2: 'এবার আলো দুই বার কাচে লাগল। প্রথম প্রতিবিম্বটি বস্তুর মতো কাজ করে: এটাই <b>প্রতিফলনের প্রতিফলন</b>।',
     rule_w3: 'তিন বার: প্রতিফলনের প্রতিফলন <b>এবং তার প্রতিফলন</b>। এভাবে চলতেই থাকে, আর ঘরগুলো চারদিকে ভরে যায়।',
     rule_w4: 'ঘরের সংখ্যাটি বলছে কত বার প্রতিফলন হয়েছে। যে ঘর যত দূরে, প্রতিফলন তত বেশি, আলো তত কম। কোনো ঘরে আলতো চাপ দাও।',
-    rule_g0: 'সাধারণ স্বচ্ছ কাচে সোজা তাকালে <b>প্রতিফলন হয় খুব কম</b>, প্রতিবিম্ব প্রায় দেখাই যায় না।',
-    rule_g1: 'ক্যালাইডোস্কোপ <b>কাচ ঘেঁষে</b> দেখা হয়: আপতন কোণ অনেক বেশি, তাই প্রতিফলনটুকু অনেক বেশি। টিউবে এই কোণ প্রায় {a}°। চোখ টেনে দেখো।',
-    rule_t0: 'প্রথম আয়নায় {a}° কোণে আলো ফেলা হবে। রশ্মি কোন দিকে যাবে?',
+    rule_g0: 'জানালার কাচে সোজা তাকালে নিজের ছবি প্রায় দেখাই যায় না। স্বচ্ছ কাচে সোজা তাকালে <b>প্রতিফলন হয় খুব কম</b>।',
+    rule_g1: 'চোখ কাচ ঘেঁষে নিলে ছবি ঝকঝকে হয়: আপতন কোণ বড়, তাই প্রতিফলনও বেশি। ক্যালাইডোস্কোপ এভাবে <b>কাচ ঘেঁষে</b> দেখা হয়, টিউবে কোণ প্রায় {a}°।',
+    rule_t0: 'এবার কাচের বদলে দুটি আয়না, একে অপরের সাথে কোণ করে রাখা। প্রথম আয়নায় {a}° কোণে আলো ফেলা হবে। রশ্মি কোন দিকে যাবে?',
     rule_t1: 'রশ্মি প্রথম আয়নার সাথে {b}° কোণ করে। দুই আয়নার মাঝের কোণ {c}°। তাই ত্রিভুজের তৃতীয় কোণ {d}°: রশ্মি B তে <b>লম্বভাবে</b> পড়ে।',
     rule_t1b: 'রশ্মি প্রথম আয়নার সাথে {b}° কোণ করে। দুই আয়নার মাঝের কোণ {c}°। তাই ত্রিভুজের তৃতীয় কোণ {d}°, ৯০° নয়: রশ্মি B তে লম্বভাবে পড়ে না।',
     rule_t2: 'লম্বভাবে পড়া রশ্মি একই পথে ফেরে। তাই রশ্মিটি <b>ঠিক বিপরীত দিকে</b> প্রতিফলিত হয়। উৎস টেনে কোণ বদলাও।',
@@ -206,7 +207,6 @@ export const STRINGS = {
     l_deg: '{a}°',
     l_q: '?',
 
-    out_p0: 'Three <b>strips of glass</b>, a few coloured pieces inside',
     out_p1: '<b>{a}</b> real pieces, all the rest are <b>images</b>',
     out_p2: 'Turned <b>{a}°</b>: the pattern <b>moves</b>',
     out_w0: 'How does the red stone’s light reach the eye?',
@@ -220,20 +220,22 @@ export const STRINGS = {
     out_t2: 'At B the angle of incidence is <b>{a}°</b>: the ray goes <b>exactly back</b>',
     out_t3: 'At B the angle of incidence is <b>{a}°</b>: the ray goes another way',
 
-    rule_p0:
-      'Three strips of glass joined <b>in a triangle</b>, paper wrapped round. Thin paper at one end, with coloured stones, beads and broken bangles inside. Look in from the other end.',
+    intro:
+      'This is a toy tube called a kaleidoscope. Inside are a few coloured stones, beads and bits of broken bangles. Put your eye to one end and you see a lovely pattern. Let us find where it comes from.',
+    intro_short: 'A toy tube with a few coloured pieces inside. Look in and you see a lovely pattern. Let us find where it comes from.',
     rule_p1:
-      'This is the <b>wonderful pattern</b>. Only the one triangle in the middle is real; every cell round it is its image. Keep your eye there and turn it.',
+      'This is the <b>wonderful pattern</b>. Inside, three strips of glass are joined in a triangle. Only the middle cell is real; every cell round it is its image. Now turn the tube.',
     rule_p2: 'Turning rolls the pieces inside. All the images change together, so <b>the pattern moves</b>.',
-    rule_w0: 'Light can come straight to the eye. It can also strike the glass and come back. See the paths one by one.',
+    rule_w0: 'Now let us see how the light of one red stone reaches the eye. It can come straight, or strike the glass and come back.',
     rule_w1: 'The light struck the glass once and came to the eye. To the eye it seems to come from an <b>image</b> beyond the glass.',
     rule_w2: 'Now the light struck the glass twice. The first image acts as an object: this is the <b>reflection of the reflection</b>.',
     rule_w3: 'Three times: the reflection of the reflection <b>and its reflection</b>. It goes on, and the cells fill all round.',
     rule_w4: 'The number in a cell says how many reflections made it. The farther the cell, the more reflections and the less light. Tap any cell.',
-    rule_g0: 'Looking straight at plain clear glass, <b>very little is reflected</b>, and the image hardly shows.',
+    rule_g0: 'Look straight at a window and you hardly see yourself. Looking straight at clear glass, <b>very little is reflected</b>.',
     rule_g1:
-      'A kaleidoscope is looked into <b>grazing the glass</b>: the angle of incidence is very large, so much more is reflected. In the tube it is about {a}°. Drag the eye.',
-    rule_t0: 'The light will fall on the first mirror at {a}°. Which way will the ray go?',
+      'With the eye grazing the glass the picture turns bright: the angle of incidence is large, so more is reflected. A kaleidoscope is looked into <b>grazing the glass</b>, at about {a}° in the tube.',
+    rule_t0:
+      'Now two mirrors instead of glass, set at an angle to each other. The light will fall on the first mirror at {a}°. Which way will the ray go?',
     rule_t1:
       'The ray makes {b}° with the first mirror. The mirrors are {c}° apart. So the triangle’s third angle is {d}°: the ray meets B <b>square on</b>.',
     rule_t1b:
