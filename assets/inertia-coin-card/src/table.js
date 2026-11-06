@@ -3,33 +3,116 @@
 // the card. setState(s) places the card, the coin and the finger from ./motion.js (sampleAt('coin', t)).
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { textMesh } from '@shared/student/materials.js';
-import { TABLE } from './motion.js';
-import { cardTexture, tableTexture, wallTexture } from './textures.js';
+import { TABLE, simulate } from './motion.js';
+import { cardTexture } from './textures.js';
+
+/** The tabletop, m: x from x0 to x1 (the card flies towards +x), z from z0 (the camera's side) to z1; corner radius, thickness. */
+export const SLAB = { x0: -0.13, x1: 0.15, z0: -0.06, z1: 0.17, r: 0.04, th: 0.022 };
+
+/** Where the event has the card come down to table height, and how fast it moves along x then (m, m/s). */
+const LAND = (() => {
+  const T = simulate('coin');
+  const i = T.cardY.findIndex((y, k) => k > 0 && T.cardX[k] > 0.05 && y <= TABLE.card.th / 2 + 1e-4);
+  return { x: T.cardX[i], v: Math.max(0.5, T.cardV[i]) };
+})();
+
+/** A rounded rectangle in the (x, y) plane, y standing for z after the slab's turn. */
+function roundedRect(x0, x1, y0, y1, r) {
+  const s = new THREE.Shape();
+  s.moveTo(x0 + r, y0);
+  s.lineTo(x1 - r, y0);
+  s.quadraticCurveTo(x1, y0, x1, y0 + r);
+  s.lineTo(x1, y1 - r);
+  s.quadraticCurveTo(x1, y1, x1 - r, y1);
+  s.lineTo(x0 + r, y1);
+  s.quadraticCurveTo(x0, y1, x0, y1 - r);
+  s.lineTo(x0, y0 + r);
+  s.quadraticCurveTo(x0, y0, x0 + r, y0);
+  return s;
+}
+
+/** Points round a rounded rectangle grown by `grow` m (the same count and order for any grow). */
+function outline({ x0, x1, z0, z1, r }, grow, per = 6) {
+  const pts = [];
+  const corners = [
+    [x1 - r, z0 + r, -Math.PI / 2],
+    [x1 - r, z1 - r, 0],
+    [x0 + r, z1 - r, Math.PI / 2],
+    [x0 + r, z0 + r, Math.PI],
+  ];
+  for (const [cx, cz, a0] of corners) {
+    for (let k = 0; k <= per; k++) {
+      const a = a0 + (k / per) * (Math.PI / 2);
+      pts.push([cx + Math.cos(a) * (r + grow), cz + Math.sin(a) * (r + grow)]);
+    }
+  }
+  return pts;
+}
+
+/** A soft shadow under the slab at height y: dark (alpha) under it, fading out over `spread` m beyond its edge. */
+function slabShadow(slab, y, spread, alpha) {
+  const inner = outline(slab, -0.02);
+  const outer = outline(slab, spread);
+  const cx = (slab.x0 + slab.x1) / 2;
+  const cz = (slab.z0 + slab.z1) / 2;
+  const P = [];
+  const A = [];
+  const put = ([x, z], a) => {
+    P.push(x, y, z);
+    A.push(0, 0, 0, a);
+  };
+  for (let i = 0; i < inner.length; i++) {
+    const j = (i + 1) % inner.length;
+    put([cx, cz], alpha);
+    put(inner[j], alpha);
+    put(inner[i], alpha);
+    put(inner[i], alpha);
+    put(inner[j], alpha);
+    put(outer[i], 0);
+    put(outer[i], 0);
+    put(inner[j], alpha);
+    put(outer[j], 0);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3));
+  g.setAttribute('color', new THREE.Float32BufferAttribute(A, 4));
+  return g;
+}
 
 export function createTable({ t }) {
   const { glass: G, card: C, coin: K } = TABLE;
   const root = new THREE.Group();
   root.name = 'CoinAndCard';
 
-  // a wooden table top (the card, the coin and the glass stand out on its warm brown), against a plastered wall
-  const woodMap = tableTexture();
-  woodMap.repeat.set(1.4 / 0.5, 0.8 / 0.5);
-  const wood = new THREE.MeshStandardMaterial({ name: 'TableTop', map: woodMap, roughness: 0.6 });
-  const board = new THREE.Mesh(new RoundedBoxGeometry(1.4, 0.03, 0.8, 2, 0.006), wood);
+  // a small tabletop that sits in the deep-blue backdrop (textures.js, set in app.js): a rounded slab, light sand on
+  // top and a darker band round its edge (vertex colours, one draw), with a soft shadow under it. The white card,
+  // the steel coin, the clear glass (its darker rim) and the hand all stand out on the sand, and the slab on the blue.
+  const slab = new THREE.ExtrudeGeometry(roundedRect(SLAB.x0, SLAB.x1, SLAB.z0, SLAB.z1, SLAB.r), {
+    depth: SLAB.th - 0.008,
+    bevelEnabled: true,
+    bevelThickness: 0.004,
+    bevelSize: 0.004,
+    bevelSegments: 2,
+    curveSegments: 8,
+  })
+    .rotateX(Math.PI / 2) // the shape's (x, y) becomes (x, z); it extrudes downwards
+    .translate(0, -0.004, 0); // its top (with the bevel) at y = 0
+  slab.clearGroups();
+  const sand = new THREE.Color(0xbca27a);
+  const band = new THREE.Color(0x8a724f);
+  const n = slab.attributes.normal;
+  const tint = new Float32Array(n.count * 3);
+  for (let i = 0; i < n.count; i++) {
+    const c = n.getY(i) > 0.9 ? sand : band;
+    c.toArray(tint, i * 3);
+  }
+  slab.setAttribute('color', new THREE.BufferAttribute(tint, 3));
+  const board = new THREE.Mesh(slab, new THREE.MeshStandardMaterial({ name: 'TableTop', vertexColors: true, roughness: 0.85, metalness: 0 }));
   board.name = 'Table';
-  board.position.set(0.18, -0.015, 0.2);
   board.receiveShadow = true;
   root.add(board);
-  const wall = new THREE.Mesh(
-    new THREE.PlaneGeometry(2.4, 1.2),
-    new THREE.MeshStandardMaterial({ name: 'Wall', map: wallTexture(), roughness: 0.95 }),
-  );
-  wall.name = 'Wall';
-  wall.rotation.y = Math.PI; // it faces the camera (which looks along +z)
-  wall.position.set(0.18, 0.5, 0.62);
-  wall.userData.noExport = true;
-  root.add(wall);
 
   // the glass: one turned outline (outside, rim, inside, thick base), see-through
   const r0 = G.r - 0.004;
@@ -55,19 +138,39 @@ export function createTable({ t }) {
   cup.name = 'Glass';
   cup.renderOrder = 3;
   root.add(cup);
-  const rimMat = new THREE.MeshStandardMaterial({ name: 'GlassRim', color: 0x8fb4c8, roughness: 0.2, transparent: true, opacity: 0.75 });
-  const rim = new THREE.Mesh(new THREE.TorusGeometry(G.r - G.wall / 2, G.wall / 2 + 0.0004, 8, 48).rotateX(Math.PI / 2), rimMat);
-  rim.position.y = G.h;
-  rim.name = 'GlassRim';
-  root.add(rim);
-  const base = new THREE.Mesh(new THREE.CylinderGeometry(r0 - G.wall, r0, G.base, 40), rimMat);
-  base.position.y = G.base / 2;
-  base.name = 'GlassBase';
-  root.add(base);
+  // the rim and the base in a darker blue-grey, so the clear glass shows its edges on the pale table and on the blue
+  const rimMat = new THREE.MeshStandardMaterial({ name: 'GlassRim', color: 0x58798e, roughness: 0.2, transparent: true, opacity: 0.85 });
+  // (one mesh, one draw)
+  const rim = mergeGeometries([
+    new THREE.TorusGeometry(G.r - G.wall / 2, G.wall / 2 + 0.0004, 8, 48).rotateX(Math.PI / 2).translate(0, G.h, 0),
+    new THREE.CylinderGeometry(r0 - G.wall, r0, G.base, 40).translate(0, G.base / 2, 0),
+  ]);
+  const edges = new THREE.Mesh(rim, rimMat);
+  edges.name = 'GlassRim';
+  root.add(edges);
+  // the soft shadows, one mesh (black, the alpha fading out; no texture): a contact shadow at the glass's foot (the
+  // clear glass casts none of its own) and a wide one under the tabletop, seen against the blue
+  const foot = new THREE.RingGeometry(0, r0 * 1.6, 32, 4).rotateX(-Math.PI / 2).translate(0, 0.0004, 0);
+  foot.deleteAttribute('normal');
+  foot.deleteAttribute('uv');
+  const pos = foot.attributes.position;
+  const footAlpha = new Float32Array(pos.count * 4);
+  for (let i = 0; i < pos.count; i++) {
+    const r = Math.hypot(pos.getX(i), pos.getZ(i));
+    footAlpha[i * 4 + 3] = r <= r0 * 1.02 ? 0.3 : Math.max(0, 0.3 * (1 - (r - r0) / (r0 * 0.6)) ** 2);
+  }
+  foot.setAttribute('color', new THREE.BufferAttribute(footAlpha, 4));
+  const shade = new THREE.Mesh(
+    mergeGeometries([foot.toNonIndexed(), slabShadow(SLAB, -0.07, 0.07, 0.4)]),
+    new THREE.MeshBasicMaterial({ name: 'SoftShadow', vertexColors: true, transparent: true, depthWrite: false }),
+  );
+  shade.name = 'SoftShadow';
+  shade.userData.noExport = true;
+  root.add(shade);
 
-  // the card (a stiff ruled index card: printed top, plain cream edges) and the coin (৫ টাকা, steel: a raised rim,
+  // the card (a stiff ruled index card: printed white top, plain off-white edges) and the coin (৫ টাকা, steel: a raised rim,
   // a reeded edge and the figure 5 standing up from the face)
-  const edge = new THREE.MeshStandardMaterial({ name: 'CardEdge', color: 0xeadcb2, roughness: 0.9 });
+  const edge = new THREE.MeshStandardMaterial({ name: 'CardEdge', color: 0xe4e2da, roughness: 0.9 });
   const face = new THREE.MeshStandardMaterial({ name: 'Card', map: cardTexture(), roughness: 0.85 });
   const card = new THREE.Mesh(new THREE.BoxGeometry(C.w, C.th, C.d), [edge, edge, face, edge, edge, edge]);
   card.name = 'Card';
@@ -99,7 +202,7 @@ export function createTable({ t }) {
 
   // the hand that flicks the card, coming in from the right of the picture: the forefinger out (three phalanges, a
   // nail, knuckle creases), the other three fingers curled under the palm, the thumb along the side, a wrist and a
-  // white shirt cuff (so it reads as a hand against the wooden table)
+  // white shirt cuff (darker than the sand table, so it reads as a hand on it)
   const skin = new THREE.MeshStandardMaterial({ name: 'Skin', color: 0xa86f47, roughness: 0.6 });
   const crease = new THREE.MeshStandardMaterial({ name: 'Crease', color: 0x8a5634, roughness: 0.7 });
   const hand = new THREE.Group();
@@ -170,7 +273,12 @@ export function createTable({ t }) {
     glass: cup,
     /** Place the card, the coin and the finger (a sample of the coin event). */
     setState(s) {
-      card.position.set(s.cardX, s.cardY, 0);
+      // past the tabletop's edge there is nothing under the card: where the event has it land on the (old, wide)
+      // table, it keeps falling instead, and goes once it is well below the slab (the motion itself is unchanged)
+      let y = s.cardY;
+      if (s.cardX > LAND.x && s.cardX - C.w / 2 > SLAB.x1) y -= 4.9 * ((s.cardX - LAND.x) / LAND.v) ** 2;
+      card.visible = y > -0.15;
+      card.position.set(s.cardX, y, 0);
       card.rotation.z = -s.cardTilt; // its front edge dips as it falls
       coin.position.set(s.coinX, s.coinY, 0);
       hand.position.set(s.finger, TABLE.glass.h + C.th / 2, 0);

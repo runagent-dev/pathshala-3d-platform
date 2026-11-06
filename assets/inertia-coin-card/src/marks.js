@@ -3,7 +3,7 @@
 //   createTags: two-line labels ("which part" / "what it does") pinned to 3D points, placed in screen space each
 //   frame: several spots round the point are tried and the one that covers least of the obstacles (the passenger,
 //   the arrows, the corner buttons, the other label) wins; it keeps its spot while that stays good, so labels do
-//   not jump about. A short leader line joins the label to its point.
+//   not jump about. A short leader line (on a white halo) joins the label to its point.
 import * as THREE from 'three';
 import { createBoldArrow } from './arrow.js';
 
@@ -72,13 +72,16 @@ export function createTags({ stage, layer, obstacles }) {
     el.style.setProperty('--ci', ink);
     el.hidden = true;
     layer.append(el);
+    // the leader line, on a white halo so it reads on the pale table and the deep-blue backdrop alike
+    const halo = document.createElementNS(SVG, 'line');
+    halo.classList.add('in-tag-halo');
     const line = document.createElementNS(SVG, 'line');
     line.setAttribute('stroke', color);
     const dot = document.createElementNS(SVG, 'circle');
     dot.setAttribute('r', '3.5');
     dot.setAttribute('fill', color);
-    svg.append(line, dot);
-    tags.set(id, { el, line, dot, prefer, optional, html: '', anchor: null, last: -1, w: 0, h: 0, box: null, w8: {} });
+    svg.append(halo, line, dot);
+    tags.set(id, { el, halo, line, dot, prefer, optional, html: '', anchor: null, last: -1, w: 0, h: 0, box: null, w8: {} });
   }
 
   /** Show tag `id` with this HTML at the 3D point anchor() (or hide it: html null). */
@@ -140,7 +143,7 @@ export function createTags({ stage, layer, obstacles }) {
     for (const it of tags.values()) {
       if (!it.anchor) {
         it.box = null;
-        write(it, 'lineVis', 'hidden', (x) => (it.line.style.visibility = it.dot.style.visibility = x));
+        write(it, 'lineVis', 'hidden', (x) => (it.halo.style.visibility = it.line.style.visibility = it.dot.style.visibility = x));
         continue;
       }
       v.copy(it.anchor()).project(stage.camera);
@@ -183,14 +186,16 @@ export function createTags({ stage, layer, obstacles }) {
       const ex = Math.min(Math.max(p.x, box.x), box.x + box.w);
       const ey = Math.min(Math.max(p.y, box.y), box.y + box.h);
       write(it, 'line', `${r1(p.x)} ${r1(p.y)} ${r1(ex)} ${r1(ey)}`, () => {
-        it.line.setAttribute('x1', r1(p.x));
-        it.line.setAttribute('y1', r1(p.y));
-        it.line.setAttribute('x2', r1(ex));
-        it.line.setAttribute('y2', r1(ey));
+        for (const l of [it.halo, it.line]) {
+          l.setAttribute('x1', r1(p.x));
+          l.setAttribute('y1', r1(p.y));
+          l.setAttribute('x2', r1(ex));
+          l.setAttribute('y2', r1(ey));
+        }
         it.dot.setAttribute('cx', r1(p.x));
         it.dot.setAttribute('cy', r1(p.y));
       });
-      write(it, 'lineVis', vis, (x) => (it.line.style.visibility = it.dot.style.visibility = x));
+      write(it, 'lineVis', vis, (x) => (it.halo.style.visibility = it.line.style.visibility = it.dot.style.visibility = x));
     }
   }
   stage.onAfterRender(update);
