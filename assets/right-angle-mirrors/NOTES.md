@@ -15,6 +15,7 @@ One reflection swaps left and right. Two mirrors at 90° reflect twice, so the i
 three images only that one is not swapped.
 
 ## How it works
+- **A calm start (the owner, after chapter 8: "start simpler, with some lines of explanation in the white panel").** The first screen shows only a few warm everyday sentences in a `.pvc-note` card (`intro`; `intro_short` on the 390 × 520 phone) and the action: no term and no number yet. After that, one plain line above the action says what the next tap will show (`lead_*`), and the rule below says what it meant, the book's term last and in bold. Same layout and classes as the spherical-mirror figures (`.lab-lead`, `.lab-calm`).
 - **Three steps, each built one tap at a time.**
   1. সাধারণ আয়না (camera from 31° to the side): he raises his left hand; the image's hand rises on the same side of the picture, and
      that is a right hand (`বাম হাত` / `ডান হাত`) → the camera zooms to the two cards: the real one reads বাম, the one in the mirror is reversed.

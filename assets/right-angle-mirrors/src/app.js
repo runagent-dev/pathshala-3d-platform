@@ -100,6 +100,10 @@ export function createApp(root, options = {}) {
     learnAlign: 'start',
   });
   const sheet = bindCleanSheet(ui.learn);
+  // the line before the action: what the next tap will show (on the first screen, a few calm words that set the scene)
+  const lead = document.createElement('p');
+  lead.className = 'lab-lead';
+  ui.$('.pvc-act-row').before(lead);
   ui.canvasHost.setAttribute('aria-label', t('aria_stage'));
   const note = document.createElement('div');
   note.className = 'ra-note';
@@ -932,12 +936,12 @@ export function createApp(root, options = {}) {
   }
 
   // ── the panel ───────────────────────────────────────────────────────────────────────────────────────────
-  const steady = { act: '' };
+  const steady = { act: '', lead: '' };
   const replayBtn = ui.$('[data-act="replay"]');
   function outcome() {
     const a = Math.round(s.alpha);
     if (s.step === 'one') {
-      if (s.stage === 0) return ''; // the first screen: only the calm words below
+      if (s.stage === 0) return ''; // the first screen: only the calm words above the action
       if (s.arm < 1) return t('out_one0');
       return t(s.stage === 1 ? 'out_hands' : 'out_text');
     }
@@ -949,9 +953,7 @@ export function createApp(root, options = {}) {
     return t(`out_t${s.stage}`);
   }
   function rule() {
-    // the first screen: a calm scene in everyday words, shorter where the panel is smallest (style.css picks one)
-    if (s.step === 'one' && s.stage === 0)
-      return `<span class="ra-intro">${t('intro')}</span><span class="ra-intro-short">${t('intro_short')}</span>`;
+    if (s.step === 'one' && s.stage === 0) return ''; // the first screen: only the calm words above the action
     if (s.step === 'one') return t(`rule_one${s.stage}`);
     if (s.step === 'two') {
       if (s.stage === 0) return s.alpha < ANGLE.flat ? t('rule_fold', { a: 90 }) : t('rule_two0');
@@ -979,6 +981,19 @@ export function createApp(root, options = {}) {
     const ph = phase();
     sheet.outcome(outcome());
     sheet.rule(rule());
+    // the line before the action: what the next tap will show; on the first screen, a few calm words that set the scene
+    const calm = s.step === 'one' && s.stage === 0;
+    const leadHtml = calm
+      ? `<span class="lab-long">${t('intro')}</span><span class="lab-short">${t('intro_short')}</span>`
+      : ph === 'busy'
+        ? steady.lead
+        : t(`lead_${ph}`);
+    if (steady.lead !== leadHtml) {
+      steady.lead = leadHtml;
+      lead.innerHTML = leadHtml;
+      lead.classList.toggle('pvc-note', calm);
+      ui.learn.classList.toggle('lab-calm', calm);
+    }
     sheet.choose(s.step);
     sheet.next(ph === 'one2' ? 'two' : ph === 'two3' ? 'top' : null);
     const [word, step, icon] = ACTIONS[ph];
