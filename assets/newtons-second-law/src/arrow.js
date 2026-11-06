@@ -1,6 +1,5 @@
 // The arrows on the scene: a bold core in flat colour inside a white outline, drawn over the scenery (no depth test),
-// so a dark force arrow never melts into a dark corner and a teal or blue one stays clear over the cement and the
-// sand-coloured walls. One material per colour is shared by every arrow of that colour.
+// so a dark force arrow or a teal or blue one stays clear over the blue floor and the deep blue backdrop. One material per colour is shared by every arrow of that colour.
 import * as THREE from 'three';
 import { createArrow } from '@shared/arrow.js';
 const UP = new THREE.Vector3(0, 1, 0);

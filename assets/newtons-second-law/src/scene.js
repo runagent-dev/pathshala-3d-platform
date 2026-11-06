@@ -1,9 +1,9 @@
 // The setting and the people round the handcart, in metres:
-//  - createFloor(): a rice godown (চালের গুদাম): a smooth, polished cement floor (warm grey, mottled, saw-cut joints),
-//    the lane painted on it (yellow edges, a white line across it every metre), and at its far end a low pile of rice
-//    sacks that stops the rolling cart (BUFFER_X). Round it, the room: sand-coloured lime-washed walls over a brown
-//    dado and nothing else (only the main objects). Warm neutrals only, so every arrow (dark, teal, blue, green, orange) stands out against it.
-//    Everything that never moves is merged into a few meshes, one per material.
+//  - createFloor(): a calm floor in a light blue-slate, one round mesh in vertex colours whose edge fades out (its
+//    alpha) into the deep blue backdrop (presentation.js), so there is no horizon line or box edge from any side; the
+//    lane painted on it (soft amber edges, a light line across it every metre), and at its far end a low pile of rice
+//    sacks that stops the rolling cart (BUFFER_X). Nothing else: no room, no textures (the owner: only the main objects).
+//    The lines are merged into one mesh.
 //  - createMarks(): the marks the cart's front leaves on the floor every second (thin dark bars across the lane).
 //  - createRig(): one handcart with up to two people behind it (who push) and one in front of it (who pushes back),
 //    placed from the run of physics.js by place(plan, t).
@@ -13,163 +13,86 @@ import { CART, createCart, createSack, SACK } from './cart.js';
 import { createPerson } from './person.js';
 import { BUFFER_X, CATCH_X, catcherAt, pusherAt, runAt, START_X } from './physics.js';
 
-export const FLOOR = { x0: -9, x1: 13, z0: -2.6, z1: 7, lane: 0.62 };
-const WALL_H = 4.4;
+export const FLOOR = { cx: 1.6, lane: 0.62 };
+const FLOOR_R = [0, 4, 8, 10.5, 13, 15.5, 18, 21]; // m: the rings of the round floor (finer where it fades)
+const FLOOR_SOLID = 8; // m from the centre: the floor is solid to here, then fades out by FLOOR_GONE
+const FLOOR_GONE = 20;
+const FLOOR_STRETCH = 1.5; // the floor is longer along the lane (x) than across it
+const FLOOR_IN = new THREE.Color('#3d5c8a'); // a lighter blue-slate in the middle, where the cart runs
+const FLOOR_OUT = new THREE.Color('#2e4c7a');
 const HIP_BACK = 0.5; // a pusher's hips are this far behind his hands (leaning in)
 export const PUSHER_Z = { 1: [0], 2: [-0.27, 0.27] };
 
-/** A seeded random number generator (the same room every time). */
-function rng(seed) {
-  let s = seed >>> 0;
-  return () => (s = (s * 1664525 + 1013904223) >>> 0) / 4294967296;
-}
-
-/** A canvas texture, repeating, in sRGB. */
-function canvasTexture(w, h, draw) {
-  const c = document.createElement('canvas');
-  c.width = w;
-  c.height = h;
-  draw(c.getContext('2d'), w, h);
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-  tex.anisotropy = 8;
-  return tex;
-}
-
-/** Soft blotches that tile seamlessly (each drawn again across the edges). */
-function blotches(ctx, w, h, rnd, n, rgb, alpha, rMin, rMax) {
-  for (let i = 0; i < n; i++) {
-    const x = rnd() * w;
-    const y = rnd() * h;
-    const r = rMin + rnd() * (rMax - rMin);
-    const a = alpha * (0.4 + rnd() * 0.6);
-    for (const dx of [-w, 0, w])
-      for (const dy of [-h, 0, h]) {
-        const g = ctx.createRadialGradient(x + dx, y + dy, 0, x + dx, y + dy, r);
-        g.addColorStop(0, `rgba(${rgb},${a})`);
-        g.addColorStop(1, `rgba(${rgb},0)`);
-        ctx.fillStyle = g;
-        ctx.fillRect(x + dx - r, y + dy - r, 2 * r, 2 * r);
-      }
-  }
-}
-
-/** Polished cement: warm grey, mottled, with faint trowel arcs; one tile is 2 m × 2 m. */
-function cementTexture() {
-  const rnd = rng(5);
-  return canvasTexture(512, 512, (ctx, w, h) => {
-    ctx.fillStyle = '#968b7c';
-    ctx.fillRect(0, 0, w, h);
-    blotches(ctx, w, h, rnd, 40, '120,108,94', 0.22, 30, 110);
-    blotches(ctx, w, h, rnd, 30, '196,186,170', 0.2, 20, 90);
-    ctx.lineWidth = 1;
-    for (let i = 0; i < 90; i++) {
-      const x = rnd() * w;
-      const y = rnd() * h;
-      const r = 20 + rnd() * 60;
-      const a0 = rnd() * Math.PI * 2;
-      ctx.strokeStyle = `rgba(${rnd() < 0.5 ? '230,222,206' : '104,94,82'},${0.05 + rnd() * 0.07})`;
-      for (const dx of [-w, 0, w])
-        for (const dy of [-h, 0, h]) {
-          ctx.beginPath();
-          ctx.arc(x + dx, y + dy, r, a0, a0 + 0.6 + rnd() * 0.8);
-          ctx.stroke();
-        }
-    }
-    for (let i = 0; i < 1400; i++) {
-      ctx.fillStyle = `rgba(${rnd() < 0.5 ? '70,62,54' : '235,228,214'},${0.08 + rnd() * 0.14})`;
-      ctx.fillRect(rnd() * w, rnd() * h, 1 + rnd() * 1.5, 1 + rnd() * 1.5);
-    }
-  });
-}
-
-/** Lime-washed plaster: sand above, a brown dado below with a dark line on top; one tile is 2.2 m wide, the full height. */
-function wallTexture() {
-  const rnd = rng(9);
-  return canvasTexture(256, 512, (ctx, w, h) => {
-    const dado = h * (1 - 1.05 / WALL_H); // y (px) of the dado's top
-    ctx.fillStyle = '#d3b47f';
-    ctx.fillRect(0, 0, w, dado);
-    blotches(ctx, w, h, rnd, 26, '178,140,86', 0.2, 14, 60);
-    blotches(ctx, w, h, rnd, 18, '236,214,170', 0.25, 10, 50);
-    // a damp shadow over the dado, faint streaks down from the windows
-    const damp = ctx.createLinearGradient(0, dado - 50, 0, dado);
-    damp.addColorStop(0, 'rgba(150,112,70,0)');
-    damp.addColorStop(1, 'rgba(150,112,70,0.28)');
-    ctx.fillStyle = damp;
-    ctx.fillRect(0, dado - 50, w, 50);
-    for (let i = 0; i < 10; i++) {
-      ctx.fillStyle = `rgba(160,124,80,${0.05 + rnd() * 0.06})`;
-      ctx.fillRect(rnd() * w, h * 0.22, 2 + rnd() * 5, h * (0.2 + rnd() * 0.3));
-    }
-    ctx.fillStyle = '#8c745c';
-    ctx.fillRect(0, dado, w, h - dado);
-    blotches(ctx, w, h, rnd, 14, '110,88,66', 0.25, 10, 34);
-    for (let i = 0; i < 260; i++) {
-      ctx.fillStyle = `rgba(${rnd() < 0.5 ? '90,70,52' : '200,170,130'},${0.1 + rnd() * 0.15})`;
-      ctx.fillRect(rnd() * w, dado + rnd() * (h - dado), 1 + rnd() * 2, 1);
-    }
-    ctx.fillStyle = '#5d4a3a';
-    ctx.fillRect(0, dado - 3, w, 4);
-  });
-}
-
-/** A geometry painted one colour (a vertex colour), with position/normal/uv only, non-indexed, moved by `m`. */
-function paint(geo, color, m = null) {
+/** A geometry painted one colour (a vertex colour), with position/normal/uv only, non-indexed. */
+function paint(geo, color) {
   const g = geo.index ? geo.toNonIndexed() : geo;
   for (const name of Object.keys(g.attributes)) if (!['position', 'normal', 'uv'].includes(name)) g.deleteAttribute(name);
-  if (m) g.applyMatrix4(m);
   const c = new THREE.Color(color);
   const rgb = new Float32Array(g.attributes.position.count * 3);
   for (let i = 0; i < rgb.length; i += 3) c.toArray(rgb, i);
   g.setAttribute('color', new THREE.BufferAttribute(rgb, 3));
   return g;
 }
-const box = (w, h, d, x, y, z, color) => paint(new THREE.BoxGeometry(w, h, d).translate(x, y, z), color);
-/** A plane whose uv runs in tiles of `tile` m (so a repeating texture keeps its scale on any size). */
-function tiledPlane(w, h, tile) {
-  const g = new THREE.PlaneGeometry(w, h);
-  const uv = g.attributes.uv;
-  for (let i = 0; i < uv.count; i++) uv.setXY(i, (uv.getX(i) * w) / tile[0], (uv.getY(i) * h) / tile[1]);
+
+/** The round floor: rings of vertices, each with a colour and an alpha (1 in the middle, 0 at the edge). */
+function floorGeometry() {
+  const seg = 32;
+  const pos = [];
+  const col = [];
+  const idx = [];
+  const c = new THREE.Color();
+  for (const r of FLOOR_R)
+    for (let i = 0; i < seg; i++) {
+      const a = (i / seg) * Math.PI * 2;
+      pos.push(FLOOR.cx + Math.cos(a) * r * FLOOR_STRETCH, 0, Math.sin(a) * r);
+      const k = THREE.MathUtils.smoothstep(r, FLOOR_SOLID, FLOOR_GONE);
+      c.lerpColors(FLOOR_IN, FLOOR_OUT, Math.min(1, r / FLOOR_SOLID));
+      col.push(c.r, c.g, c.b, 1 - k);
+    }
+  for (let j = 0; j < FLOOR_R.length - 1; j++)
+    for (let i = 0; i < seg; i++) {
+      const a = j * seg + i;
+      const b = j * seg + ((i + 1) % seg);
+      idx.push(a, b, a + seg, b, b + seg, a + seg); // counter-clockwise from above
+    }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  const up = pos.map((_, i) => (i % 3 === 1 ? 1 : 0));
+  g.setAttribute('normal', new THREE.Float32BufferAttribute(up, 3));
+  g.setAttribute('color', new THREE.Float32BufferAttribute(col, 4));
+  g.setIndex(idx);
   return g;
 }
-function merged(geos, material, name) {
-  const mesh = new THREE.Mesh(mergeGeometries(geos, false), material);
-  for (const g of geos) g.dispose();
-  mesh.name = name;
-  return mesh;
-}
 
-/** The godown: the floor with the lane, the room round it, and the sacks at the end of the lane. */
+/** The floor with the lane, and the sacks at the end of the lane. */
 export function createFloor(cartM) {
   const group = new THREE.Group();
   group.name = 'Floor';
-  const room = new THREE.Group();
-  room.name = 'Godown';
-  room.userData.noExport = true; // the GLB carries the floor, the lane and the cart, not the room
-  const W = FLOOR.x1 - FLOOR.x0;
-  const D = FLOOR.z1 - FLOOR.z0;
 
-  const floorMat = new THREE.MeshStandardMaterial({ name: 'PolishedCement', map: cementTexture(), roughness: 0.38, metalness: 0 });
-  const floor = new THREE.Mesh(tiledPlane(W, D, [2, 2]), floorMat);
+  // its edge fades into the backdrop (alpha), drawn first of the see-through things and writing no depth, so the
+  // lines and marks on it and the shadows it takes stay as they are
+  const floorMat = new THREE.MeshStandardMaterial({
+    name: 'Floor',
+    vertexColors: true,
+    transparent: true,
+    depthWrite: false,
+    roughness: 0.82,
+    metalness: 0,
+  });
+  const floor = new THREE.Mesh(floorGeometry(), floorMat);
   floor.name = 'SmoothFloor';
-  floor.rotation.x = -Math.PI / 2;
-  floor.position.set((FLOOR.x0 + FLOOR.x1) / 2, 0, (FLOOR.z0 + FLOOR.z1) / 2);
+  floor.renderOrder = -1;
   floor.receiveShadow = true;
-  floor.userData.noExport = true; // the GLB carries the cart, its people, the lane and the sacks, not the whole floor
+  floor.userData.noExport = true; // the GLB carries the lane on it, the sacks, the cart and its people (as before)
   group.add(floor);
 
-  // painted on the floor (just above it): saw-cut joints every 2 m, the lane's yellow edges, a white line each metre
+  // painted on the floor (just above it): the lane's amber edges, a light line across it each metre
   const flat = (x0, x1, z0, z1, color, y = 0.0015) =>
     paint(new THREE.PlaneGeometry(x1 - x0, z1 - z0).rotateX(-Math.PI / 2).translate((x0 + x1) / 2, y, (z0 + z1) / 2), color);
   const lines = [];
-  const joints = [];
-  for (let x = Math.ceil(FLOOR.x0 / 2) * 2 + 1; x < FLOOR.x1; x += 2) joints.push(flat(x - 0.007, x + 0.007, FLOOR.z0, FLOOR.z1, '#6c6255', 0.001));
-  for (let z = FLOOR.z0 + 1.6; z < FLOOR.z1; z += 2) joints.push(flat(FLOOR.x0, FLOOR.x1, z - 0.007, z + 0.007, '#6c6255', 0.001));
-  for (const z of [-FLOOR.lane, FLOOR.lane]) lines.push(flat(-2.6, BUFFER_X, z - 0.035, z + 0.035, '#f2b705'));
+  for (const z of [-FLOOR.lane, FLOOR.lane]) lines.push(flat(-2.6, BUFFER_X, z - 0.035, z + 0.035, '#f6c453'));
   for (let x = START_X; x <= BUFFER_X - 0.3; x += 1)
-    lines.push(flat(x - 0.014, x + 0.014, -FLOOR.lane + 0.035, FLOOR.lane - 0.035, '#f3eee4', 0.002));
+    lines.push(flat(x - 0.014, x + 0.014, -FLOOR.lane + 0.035, FLOOR.lane - 0.035, '#e8f0fa', 0.002));
   const lineMat = new THREE.MeshStandardMaterial({
     name: 'FloorPaint',
     vertexColors: true,
@@ -178,33 +101,11 @@ export function createFloor(cartM) {
     polygonOffset: true,
     polygonOffsetFactor: -1,
   });
-  const laneLines = merged(lines, lineMat, 'LaneLines');
+  const laneLines = new THREE.Mesh(mergeGeometries(lines, false), lineMat);
+  for (const g of lines) g.dispose();
+  laneLines.name = 'LaneLines';
   laneLines.receiveShadow = true;
   group.add(laneLines);
-  const jointLines = merged(joints, lineMat, 'FloorJoints');
-  jointLines.receiveShadow = true;
-  room.add(jointLines);
-
-  // the walls: the back wall and the two ends, one mesh (the texture tiles every 2.2 m)
-  const wallMat = new THREE.MeshStandardMaterial({ name: 'LimeWash', map: wallTexture(), roughness: 0.92, metalness: 0 });
-  const back = tiledPlane(W, WALL_H, [2.2, WALL_H]).translate((FLOOR.x0 + FLOOR.x1) / 2, WALL_H / 2, FLOOR.z0);
-  const left = tiledPlane(D, WALL_H, [2.2, WALL_H])
-    .rotateY(Math.PI / 2)
-    .translate(FLOOR.x0, WALL_H / 2, (FLOOR.z0 + FLOOR.z1) / 2);
-  const right = tiledPlane(D, WALL_H, [2.2, WALL_H])
-    .rotateY(-Math.PI / 2)
-    .translate(FLOOR.x1, WALL_H / 2, (FLOOR.z0 + FLOOR.z1) / 2);
-  room.add(merged([back, left, right], wallMat, 'Walls'));
-
-  // the painted and plain parts of the room, one mesh in vertex colours
-  const parts = [];
-  const zw = FLOOR.z0;
-  // a dark skirting along the back wall
-  parts.push(box(W, 0.1, 0.03, (FLOOR.x0 + FLOOR.x1) / 2, 0.05, zw + 0.015, '#4a3d33'));
-  // nothing else against the wall (the owner: only the main objects): no pillars, windows, sacks on pallets or scale
-  const roomPaint = new THREE.MeshStandardMaterial({ name: 'GodownPaint', vertexColors: true, roughness: 0.78, metalness: 0 });
-  room.add(merged(parts, roomPaint, 'GodownParts'));
-  group.add(room);
 
   // the pile of sacks at the end of the floor: two on the floor, one on top
   const pile = new THREE.Group();
@@ -225,7 +126,6 @@ export function createFloor(cartM) {
   return {
     group,
     floor,
-    room,
     pile,
     /** The front sacks give way by `d` m as they stop the cart. */
     squash(d) {
@@ -239,7 +139,7 @@ export function createFloor(cartM) {
 /** The marks the cart's front leaves on the floor every second: up to `max` thin bars across the lane. */
 export function createMarks(max = 12) {
   const geo = new THREE.BoxGeometry(0.03, 0.004, 2 * FLOOR.lane - 0.12);
-  const m = new THREE.MeshBasicMaterial({ color: '#3a4350', toneMapped: false, polygonOffset: true, polygonOffsetFactor: -2 });
+  const m = new THREE.MeshBasicMaterial({ color: '#17233a', toneMapped: false, polygonOffset: true, polygonOffsetFactor: -2 });
   const mesh = new THREE.InstancedMesh(geo, m, max);
   mesh.name = 'SecondMarks';
   mesh.count = 0;

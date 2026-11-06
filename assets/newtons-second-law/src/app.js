@@ -77,6 +77,8 @@ export const COLORS = {
   mass: '#495057',
   net: '#203345',
 };
+/** The velocity's arrows on the view: a lighter blue than its text, so they never melt into the blue backdrop. */
+const VEL_ARROW = '#4dabf7';
 const F_SCALE = 0.0077; // m of arrow per newton (100 N: 0.77 m)
 const A_SCALE = 0.7; // m of arrow per ms⁻² (2 ms⁻²: 1.4 m)
 const A_GAP = 0.78; // m between the force's arrow and the acceleration's over it (room for the force's label between them)
@@ -125,26 +127,50 @@ export function createApp(root, options = {}) {
   const liveFormula = document.createElement('div');
   liveFormula.className = 'ns-formula';
   // its head: what the scene shows (the force diagram, friction, the speed) and F = ma, which opens the working;
-  // under it the বেগ–সময় গ্রাফ (its steepness is a) beside the force, the mass and the acceleration now, each with a bar
+  // under it the বেগ–সময় গ্রাফ (its steepness is a) over the whole width, and the force, the mass and the acceleration
+  // now side by side under it, each with a bar
   liveFormula.innerHTML = `<div class="ns-formula-head"><div class="ns-extras"><button type="button" data-act="diagram" aria-pressed="false"></button><button type="button" data-act="friction" aria-pressed="false"></button><button type="button" data-act="speed" aria-pressed="false"></button></div><button type="button" class="ns-maths" data-act="maths" aria-label="${t('formula_title')}"><b>${t('formula_main')}</b> <span>${t('formula_open')}</span></button></div><div class="ns-formula-body"><div class="ns-graph"></div><div class="ns-formula-values"></div></div>`;
   const extras = liveFormula.querySelector('.ns-extras');
   const formulaValues = liveFormula.querySelector('.ns-formula-values');
-  const graph = createGraph(liveFormula.querySelector('.ns-graph'), { t, N, colors: { acc: COLORS.acc, accText: COLORS.accText, vel: COLORS.vel } });
+  // the run's clock (t, and that time is slowed)
+  const note = document.createElement('div');
+  note.className = 'ns-clock';
+  note.setAttribute('aria-live', 'off');
+  // the run's clock sits in the graph's top right corner, over its time axis (no line of its own in the panel)
+  liveFormula.querySelector('.ns-graph').append(note);
+  const graph = createGraph(liveFormula.querySelector('.ns-graph'), {
+    t,
+    N,
+    colors: { acc: COLORS.acc, accText: COLORS.accText, vel: COLORS.vel },
+    corner: note,
+  });
   ui.$('.pvc-rule').before(liveFormula);
+  /** The three bars side by side: a name and its value on one line; if all three do not fit, the symbol alone (F, m, a). */
+  const fitBars = () => {
+    liveFormula.classList.remove('ns-tight');
+    const cut = (e) => e.scrollWidth > e.clientWidth + 1; // a name or value cut short (…) or out of the box
+    liveFormula.classList.toggle('ns-tight', cut(formulaValues) || [...formulaValues.querySelectorAll('.ns-row-name, .ns-row-val')].some(cut));
+  };
+  if (typeof ResizeObserver !== 'undefined') new ResizeObserver(fitBars).observe(liveFormula);
+  // the panel beside the 3D (landscape) or under it (portrait): beside, the formula box takes the panel's free height
+  // and a tall panel also shows how each value comes under its bar (style.css, .ns-side)
+  const panelEl = root.querySelector('.pvc-panel');
+  const markSide = () => {
+    if (!panelEl) return;
+    root.classList.toggle('ns-side', panelEl.getBoundingClientRect().left > root.getBoundingClientRect().left + 20);
+  };
+  markSide();
+  if (typeof ResizeObserver !== 'undefined') new ResizeObserver(markSide).observe(root);
   const mathDialog = document.createElement('dialog');
   mathDialog.className = 'ns-math-dialog';
   mathDialog.setAttribute('aria-label', t('formula_title'));
   root.append(mathDialog);
   let mathResume = false;
   const outcomeEl = ui.$('.pvc-outcome');
-  // the run's clock (t, and that time is slowed): in the panel, a small line under the result line (never on the view)
-  const note = document.createElement('div');
-  note.className = 'ns-clock';
-  note.setAttribute('aria-live', 'off');
   const outRow = document.createElement('div');
   outRow.className = 'ns-outrow';
   outcomeEl.before(outRow);
-  outRow.append(outcomeEl, note);
+  outRow.append(outcomeEl);
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 26, near: 0.05, far: 120, environment: 'studio-light' });
@@ -171,7 +197,7 @@ export function createApp(root, options = {}) {
   const arrows = {
     F: arrow(COLORS.net, 'ForceArrow'),
     a: arrow(COLORS.acc, 'AccelerationArrow'),
-    v: arrow(COLORS.vel, 'VelocityArrow'),
+    v: arrow(VEL_ARROW, 'VelocityArrow'),
     dp: arrow(COLORS.mom, 'MomentumChangeArrow'),
     FB: arrow(COLORS.net, 'ForceArrowB'),
     aB: arrow(COLORS.acc, 'AccelerationArrowB'),
@@ -181,7 +207,7 @@ export function createApp(root, options = {}) {
     world.add(a.root);
   }
   // the velocity stamped on the floor at each whole second of the measured push (faint copies of the blue arrow)
-  const ghosts = [0, 1, 2].map((i) => createVector(COLORS.vel, `VelocityStamp${i}`, '#ffffff', 0.5));
+  const ghosts = [0, 1, 2].map((i) => createVector(VEL_ARROW, `VelocityStamp${i}`, '#ffffff', 0.6));
   for (const g of ghosts) {
     g.root.userData.noExport = true;
     world.add(g.root);
@@ -194,13 +220,13 @@ export function createApp(root, options = {}) {
   const audio = createAudio(o.sound);
 
   // Soft shadows on the floor from the carts, the people and the pile of sacks only (the parts whose shadows are
-  // seen; the room casts none), in a box fitted to the lane: it runs from behind the pushers at the start to the pile
+  // seen), in a box fitted to the lane: it runs from behind the pushers at the start to the pile
   // at its end, and from the cart's far side to in front of it (where the people's shadows fall).
   if (o.shadow && o.bg !== 'transparent') {
     stage.renderer.shadowMap.enabled = true;
     stage.renderer.shadowMap.type = THREE.PCFShadowMap;
-    // daylight from the high windows in the back wall: the shadows fall forward, toward the viewer, where they show
-    const sun = new THREE.DirectionalLight(0xfff4e2, 1.15);
+    // a light high behind the lane: the shadows fall forward, toward the viewer, where they show
+    const sun = new THREE.DirectionalLight(0xfff8ee, 1.15);
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 512);
     sun.position.set(1.75, 7, -2.9);
@@ -578,13 +604,39 @@ export function createApp(root, options = {}) {
     b.max.set(f + 0.02, Math.max(CART.rail.y, target.cart.top()), CART.wheelZ + 0.04);
     return b;
   }
+  const segPts = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
+  /**
+   * An arrow's box on the screen: its tail to its tip, widened by its head (its 3D box, projected, is far taller than
+   * the arrow looks when the arrow lies along the lane, and kept every label off a wide band round it).
+   */
+  function arrowBox(a) {
+    const [p, q, r] = segPts; // (the arrows hang in the world group, which is not moved)
+    p.copy(a.root.position).project(camera);
+    q.copy(a.tip).project(camera);
+    // the head's outline is 0.118 m round the axis: that far up from the tip, on the screen, is how far the arrow
+    // reaches across its line; along it, the outline goes a few pixels past the tail and the tip
+    r.copy(a.tip).setY(a.tip.y + 0.12);
+    r.project(camera);
+    const w = stage.width / 2;
+    const h = stage.height / 2;
+    const across = Math.max(6, Math.hypot((r.x - q.x) * w, (r.y - q.y) * h));
+    const xs = [(p.x + 1) * w, (q.x + 1) * w];
+    const ys = [(1 - p.y) * h, (1 - q.y) * h];
+    // a mostly level arrow: across is up and down, a mostly upright one: left and right
+    const level = Math.abs(xs[1] - xs[0]) >= Math.abs(ys[1] - ys[0]);
+    const padX = level ? 8 : across;
+    const padY = level ? across : 8;
+    return { left: Math.min(...xs) - padX, right: Math.max(...xs) + padX, top: Math.min(...ys) - padY, bottom: Math.max(...ys) + padY };
+  }
   /** What no label may cover: the arrows, the cart, the people. */
   function sceneBlockers() {
     const out = [];
-    for (const a of [...Object.values(arrows), ...ghosts, ...(diagram.root.visible ? Object.values(diagram.arrows) : [])]) {
-      const b = a.root.visible ? screenBox(a.root) : null;
-      if (b) out.push(b);
-    }
+    for (const a of [...Object.values(arrows), ...ghosts]) if (a.root.visible) out.push(arrowBox(a));
+    if (diagram.root.visible)
+      for (const a of Object.values(diagram.arrows)) {
+        const b = a.root.visible ? screenBox(a.root) : null;
+        if (b) out.push(b);
+      }
     out.push(projectBox(cartBox(rig, 0)));
     if (rigB.root.visible) out.push(projectBox(cartBox(rigB, 1)));
     for (const p of [...rig.people, ...(rigB.root.visible ? rigB.people : [])]) {
@@ -1078,8 +1130,9 @@ export function createApp(root, options = {}) {
     for (const x of cuts) if (x > 0.01 && x < k - 0.01) html += `<i class="ns-mark" style="left:${pc(x)}"></i>`;
     return `<span class="ns-bar" aria-hidden="true">${html}</span>`;
   };
+  // the name is a word and the symbol (বল F): when the three bars are too wide for the box only the symbol shows
   const row = (kind, name, value, sub, track) =>
-    `<div class="ns-row ns-row-${kind}"><span class="ns-row-name">${name}</span><span class="ns-row-val">${value}</span>${track}<small>${sub}</small></div>`;
+    `<div class="ns-row ns-row-${kind}"><span class="ns-row-name"><span class="ns-word">${name.slice(0, name.lastIndexOf(' ') + 1)}</span>${name.slice(name.lastIndexOf(' ') + 1)}</span><span class="ns-row-val">${value}</span>${track}<small>${sub}</small></div>`;
   const F_FULL = 200; // N, kg and ms⁻² at a full bar: the biggest force, mass and acceleration of the examples
   const M_FULL = 200;
   const A_FULL = 2;
@@ -1126,10 +1179,11 @@ export function createApp(root, options = {}) {
         '',
         bar(mass / M_FULL, { cuts: Array.from({ length: sacks }, (_, i) => (CART_MASS + i * SACK_MASS) / M_FULL) }),
       ) +
-      row('a', t('row_a'), t('row_a_val', vars), t(liveFormula.clientWidth < 330 ? 'sum_div_short' : 'sum_div', vars), bar(Math.abs(r.a) / A_FULL));
+      row('a', t('row_a'), t('row_a_val', vars), t(liveFormula.clientWidth < 520 ? 'sum_div_short' : 'sum_div', vars), bar(Math.abs(r.a) / A_FULL));
     if (html !== lastFormula) {
       formulaValues.innerHTML = html;
       lastFormula = html;
+      fitBars();
     }
     drawGraph();
     const d = extras.querySelector('[data-act="diagram"]');

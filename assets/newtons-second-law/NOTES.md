@@ -56,7 +56,7 @@ acceleration; a force against the motion makes the momentum change backward (the
 
 ## How the figure works
 
-- **Scene** (real size, metres, real time): a smooth, polished floor (said on the view: "মসৃণ মেঝে: ঘর্ষণ নেই ধরা
+- **Scene** (real size, metres, real time): a smooth floor in a light blue-slate on a deep-blue backdrop (said on the view: "মসৃণ মেঝে: ঘর্ষণ নেই ধরা
   হয়েছে"), a wooden handcart (ঠেলাগাড়ি: a 1.3 m plank bed on four rubber wheels, handles to a crossbar, a front rail),
   100 kg empty, rice sacks of 50 kg, people built from simple shapes (the person of `contact-noncontact-force`), a pile
   of sacks at the end of the floor that stops the rolling cart.
@@ -204,3 +204,52 @@ the result line in the panel. Kit 1.5.0 puts the panel beside the 3D, so the rul
 (from 720 and 1000 px) and for the old short-and-wide layout are gone; 390×700 keeps 55 % for the 3D.
 No সামনে / ঘুরিয়ে দেখো buttons (kit): the lab starts from the front, a drag turns it, and the small "front" icon
 then brings it back.
+
+## A calm blue setting (0.7.0)
+The owner, with a screenshot: "the whole scene is covered with unimportant scenario. Rather the same colour or a bit
+blue colour", like `equations-of-motion`. The godown is gone: no walls, no dado, no mottled cement with saw-cut
+joints. Behind everything a deep-blue gradient (`#0b2a5b` → `#123d7a` → `#1d5291`, one 2×128 canvas as the scene's
+background); under the cart a plain floor in a lighter blue-slate, one round mesh (longer along the lane) in vertex
+colours whose alpha fades out from 8 m to 20 m from the lane's middle, so it melts into the backdrop with no horizon
+line or box edge from any side, and still takes the soft shadows of the cart, the people and the sacks. The lane's
+edges are a soft amber and its metre lines a light blue-white; the second marks are dark navy. The velocity's arrows
+on the view are a lighter blue (`#4dabf7`, white outline; its text keeps the darker blue); the other arrows, the
+chips, the diagram's dot (dark, ringed in white) and the magnifier's ring read on the blue as they were. Lights:
+a white key, a cool sky/ground fill. `capture` paints the backdrop (white or no `background` asked: the backdrop;
+null: transparent; another colour: that colour behind the fading floor); the GLB carries the lane, the sacks, the
+cart and its people as before (not the fading floor, which would make it 63 m wide, nor the backdrop). Same steps, text, pace, physics and test.
+
+Numbers (headless Chromium, software GL, shadows on, 844×390, one captured frame; textures and their memory counted
+at the WebGL calls, RGBA8):
+
+| | opening, before | opening, after | mid-run (t = 1.5 s), before | mid-run, after |
+|---|---|---|---|---|
+| draw calls | 84 | 78 | 118 | 112 |
+| triangles | 53,412 | 54,212 | 55,252 | 56,052 |
+| textures | 13 | 11 | 13 | 11 |
+| texture memory | 13.5 MB | 11.5 MB | 13.5 MB | 11.5 MB |
+
+The round floor's 448 triangles (32 segments × 7 rings, so the fade is smooth) replace the plane, the walls and the
+joints, hence the few hundred more; meshes in the setting 5 → 2 (floor, lane lines), materials 4 → 2, canvas
+textures 3 → 1 (a 2×128 backdrop instead of the 512² cement, the 256×512 wall and the 4×256 backdrop).
+
+### A proper graph (0.7.0, same pull request)
+The owner: "the graph is not visible. The graph should be very proper, big enough." The বেগ–সময় গ্রাফ was a strip of
+about 150 × 50 px beside the bars, hidden at 390 × 520, 640 × 400, 800 × 500 and 844 × 390 (a rule for short frames
+also matched the low side panels). Now it has the full width of the formula box and the F, m and a bars sit side by
+side under it (name and value over each bar; a tall side panel also shows how each value comes under its bar). Beside
+the 3D the formula box takes the panel's free height (up to 500 px) and the graph grows into it; under the 3D it has
+a fixed height. The svg is drawn again in real pixels whenever its box changes (a ResizeObserver): numbers and tags
+13–16 px (Bangla digits are small for their size), the axes' names and the title the same, the line 3–5 px. The run's
+clock moved from its own line under the result line into the graph's top right corner (over the time axis), which
+gives the graph that line's height; the graph's name stays clear of it.
+
+Graph height (px), mid-run: 1280 × 800: 420; 800 × 500: 147; 640 × 400: 102; 844 × 390: 92; 390 × 700: 100;
+390 × 520: 84 (it shows there now, and the 3D keeps 181 px). Under the 3D the panel is taller, so the 3D view's share
+fell (390 × 700: 317 px, about 45 %, from about 55 %). Nothing scrolls at the six sizes. What the graph shows, how it
+draws, the faint lines of the examples tried with their tags, the steps and the panel's words are the same.
+
+The force's label (লব্ধি বল F = …) and the velocity's were missing at 1280 × 800 mid-run: each arrow kept labels off
+its projected 3D box, which for an arrow lying along the lane is far taller than the arrow looks (70 px for a 32 px
+head), so every spot beside it was refused. An arrow now keeps labels off its tail-to-tip line widened by its head on
+the screen; both labels show at every size.
