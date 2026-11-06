@@ -19,7 +19,7 @@ import { createTweener, ease } from '@shared/tween.js';
 import { createAir } from './air.js';
 import { boldArrow } from './arrows.js';
 import { fitPose } from './camera.js';
-import { createGlass, DRINK_Y, LIPS, REST_U, STRAW, STRAW_END } from './glass.js';
+import { createGlass, DRINK_Y, PATH, REST_U, STRAW, STRAW_END } from './glass.js';
 import { createI18n } from './i18n.js';
 import { H_WATER, STEPS, toCm, waterChoices } from './reading.js';
 import { backdrop, createTable } from './setting.js';
@@ -63,8 +63,6 @@ const OUT_AT = [
   [0.027, 0.006],
   [-0.004, -0.021],
 ];
-/** The mouth's arrows, in the mouth's own frame: they point at the straw's end, from inside the mouth (degrees off the straw). */
-const MOUTH_AT = [0, -32, 32];
 
 export function createApp(root, options = {}) {
   const o = { ...DEFAULTS, ...options };
@@ -129,19 +127,13 @@ export function createApp(root, options = {}) {
 
   // ── the arrows: the outside air on the drink, the air in the mouth, the net push up the straw ──
   const outArrows = OUT_AT.map((_, i) => boldArrow(`AirOnDrink${i}`, COLORS.outside, ARROW_R));
-  const mouthArrows = MOUTH_AT.map((_, i) => boldArrow(`AirInMouth${i}`, COLORS.mouth, ARROW_R, { order: 36 }));
+  // the air in the mouth presses, through the straw, on the top of the drink in it: one arrow, always on that top
+  const mouthArrow = boldArrow('AirInMouth', COLORS.mouth, ARROW_R, { order: 36 });
   const net = boldArrow('NetForce', COLORS.net, ARROW_R * 1.25, { order: 42 });
-  for (const a of [...outArrows, ...mouthArrows, net]) scene.add(a.root);
-  // the mouth's arrows in the world: each points at the straw's end, from inside the mouth
-  // (the side ones land a little above and below the opening, so their heads stay apart on a small screen)
-  const intoStraw = STRAW_END.clone().sub(LIPS).normalize().negate(); // from the mouth's inside toward the lips
-  const across = V(-intoStraw.y, intoStraw.x, 0);
-  const mouthDirs = MOUTH_AT.map((deg) => intoStraw.clone().applyAxisAngle(V(0, 0, 1), THREE.MathUtils.degToRad(deg)));
-  const mouthTips = MOUTH_AT.map((deg) =>
-    STRAW_END.clone()
-      .addScaledVector(intoStraw, -0.003)
-      .addScaledVector(across, -Math.sign(deg) * 0.0058),
-  );
+  for (const a of [...outArrows, mouthArrow, net]) scene.add(a.root);
+  const TOP = V(0, 0, 0);
+  const ALONG = V(0, 0, 0);
+  const BACK = V(0, 0, 0);
 
   const tweener = createTweener();
   stage.addTicker((dt) => tweener.tick(dt));
@@ -194,17 +186,22 @@ export function createApp(root, options = {}) {
       a.set(P0, DOWN, len);
       a.scale(k);
     });
-    // the mouth's air: shorter as it thins out, and only the middle arrow stays
-    mouthArrows.forEach((a, i) => {
+    // the mouth's air: down the straw onto the top of the drink in it (beside the outside air's arrows while nothing
+    // rises, in the mouth at the straw's end once the drink is up), the same length as the outside air's, shorter after sucking
+    {
       const len = LA * v.arrows * (1 - 0.55 * v.thin);
-      const fade = i === 0 ? 1 : 1 - Math.min(1, v.thin * 1.6);
-      a.root.visible = close && len > 1e-4 && fade > 0.02;
-      if (!a.root.visible) return;
-      P0.copy(mouthTips[i]).addScaledVector(mouthDirs[i], -len);
-      a.set(P0, mouthDirs[i], len);
-      a.setOpacity(fade);
-      a.scale(k);
-    });
+      mouthArrow.root.visible = close && len > 1e-4;
+      if (mouthArrow.root.visible) {
+        const u = REST_U + (1 - REST_U) * v.rise;
+        PATH.getPoint(u, TOP);
+        PATH.getTangent(u, ALONG); // up the straw, toward the mouth
+        TOP.addScaledVector(ALONG, 0.0012);
+        BACK.copy(ALONG).negate();
+        P0.copy(TOP).addScaledVector(ALONG, len);
+        mouthArrow.set(P0, BACK, len);
+        mouthArrow.scale(k);
+      }
+    }
     // the net push: up the straw, beside it
     const nl = NET_LEN * v.net;
     net.root.visible = close && nl > 1e-4;
@@ -229,7 +226,7 @@ export function createApp(root, options = {}) {
     toScreen(a.tip, A1);
     return { left: Math.min(A0.x, A1.x) - 6, top: Math.min(A0.y, A1.y) - 6, right: Math.max(A0.x, A1.x) + 6, bottom: Math.max(A0.y, A1.y) + 6 };
   };
-  const arrowBoxes = () => [...outArrows, ...mouthArrows, net].filter((a) => a.root.visible).map(arrowBox);
+  const arrowBoxes = () => [...outArrows, mouthArrow, net].filter((a) => a.root.visible).map(arrowBox);
   /** @type {HTMLElement | null} */
   let rotateEl = null;
   const anno = createAnnotations({
@@ -249,6 +246,8 @@ export function createApp(root, options = {}) {
   const ABOVE = [spot(0, -20), spot(18, -20), spot(-18, -20), spot(0, -36)];
   const BELOW = [spot(0, 22), spot(-20, 22), spot(20, 22)];
   const mouthTop = V(-0.045, 0.024, 0);
+  const BY_STRAW = [...RIGHT_OF, ...ABOVE];
+  const UNDER_MOUTH = [...BELOW, ...LEFT_OF];
   const LABELS = {
     outside: {
       text: () => t('lbl_outside'),
@@ -260,9 +259,17 @@ export function createApp(root, options = {}) {
     mouth: {
       text: () => t('lbl_mouth'),
       point: () => glass.mouth.localToWorld(tmp.copy(mouthTop)).clone(),
-      color: COLORS.mouth,
+      color: COLORS.ink,
       spots: [...ABOVE, ...LEFT_OF],
       show: () => near(),
+    },
+    mouthAir: {
+      text: () => t('lbl_mouth_air'),
+      point: () => mouthArrow.root.position.clone(),
+      color: COLORS.mouth,
+      // beside the straw while nothing rises; under the mouth once the drink is up, so it hides none of the mouth
+      spots: () => (s.v.rise > 0.5 ? UNDER_MOUTH : BY_STRAW),
+      show: () => near() && s.v.arrows > 0.5 && !s.busy,
     },
     net: {
       text: () => t('lbl_net'),
@@ -293,11 +300,16 @@ export function createApp(root, options = {}) {
       show: () => s.v.far > 0.95,
     },
   };
+  const placed = new Map(); // which list of places each label was put with
   function syncLabels() {
     for (const [id, L] of Object.entries(LABELS)) {
       const want = L.show();
-      if (want && !anno.has(id)) anno.add(id, { text: L.text(), point: L.point, kind: 'force', color: L.color, spots: L.spots });
-      else if (!want && anno.has(id)) anno.remove(id);
+      const spots = typeof L.spots === 'function' ? L.spots() : L.spots;
+      if (want && anno.has(id) && placed.get(id) !== spots) anno.remove(id); // other places now: put it again
+      if (want && !anno.has(id)) {
+        anno.add(id, { text: L.text(), point: L.point, kind: 'force', color: L.color, spots });
+        placed.set(id, spots);
+      } else if (!want && anno.has(id)) anno.remove(id);
     }
   }
 

@@ -24,10 +24,12 @@ are the main object, there is no face, and the air's push is made visible.
   particles are spaced a little wider in space so the two crowds look equally close on the screen (the glass is seen
   through its whole depth, the mouth only through its thin section).
 - **Three steps**, one tap each, slow (seconds), the step words (চুমুক ছাড়া / চুমুক দিলে / কত উঁচু?) to jump:
-  ① the arrows come in: four cyan ones on the drink (the outside air), three violet ones in the mouth, all the same
-  length; no net force, the drink stays level with the glass. ② চুমুক দাও: two in three of the mouth's particles go
-  back into the throat, its arrows get shorter and only one stays; a green arrow up the straw (কার্যকর বল) appears and
-  the drink rises to the mouth. ③ সবচেয়ে উঁচুতে কত?: the camera pulls back while the glass grows four times; a 10.5 m
+  ① the arrows come in: four cyan ones on the drink (the outside air) and one violet one (মুখের বাতাস) down the straw
+  onto the top of the drink in it, all the same length; no net force, the drink stays level with the glass. ② চুমুক
+  দাও: two in three of the mouth's particles go back into the throat and the violet arrow gets shorter; a green arrow
+  up the straw (কার্যকর বল) appears and the drink rises to the mouth, the violet arrow riding on its top. (One violet
+  arrow, not three: the air in the mouth presses on the drink's top in the straw, and three arrows crossed into a
+  tangle on a phone.) ③ সবচেয়ে উঁচুতে কত?: the camera pulls back while the glass grows four times; a 10.5 m
   straw (the book's) beside a person (1.6 m) and a scale in metres; the drink rises and stops at 10.3 m.
 - **The panel:** the first screen is a calm card (a few everyday sentences, no term yet) and the action; after it, per
   step one lead-in line, the result and the rule with the book's term in bold. The kit's how-to row: turn the view,

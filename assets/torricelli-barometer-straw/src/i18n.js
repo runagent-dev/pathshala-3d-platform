@@ -71,6 +71,7 @@ export const STRINGS = {
     // labels on the picture (short)
     lbl_outside: 'বাইরের বাতাস',
     lbl_mouth: 'মুখের ভেতর',
+    lbl_mouth_air: 'মুখের বাতাস',
     lbl_net: 'কার্যকর বল',
     lbl_max: '{h} {u_m}',
     lbl_five: '{h} {u_m}',
@@ -182,6 +183,7 @@ export const STRINGS = {
 
     lbl_outside: 'outside air',
     lbl_mouth: 'inside the mouth',
+    lbl_mouth_air: 'air in the mouth',
     lbl_net: 'net force',
     lbl_max: '{h} {u_m}',
     lbl_five: '{h} {u_m}',
