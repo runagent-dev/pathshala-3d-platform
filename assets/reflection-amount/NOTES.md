@@ -19,6 +19,7 @@ How much light a surface reflects depends on the angle: glass gives back 4–5 %
 নকশা, জবা (screen-reader text only).
 
 ## How the figure works
+- **A calm start (the owner, after chapter 8: "start simpler, with some lines of explanation in the white panel").** The first screen shows only a few warm everyday sentences in a `.pvc-note` card (`intro`; `intro_short` on the 390 × 520 phone) and the action: no term and no number yet. After that, one plain line above the action says what the next tap will show (`lead_*`), and the rule below says what it meant, the book's term last and in bold.
 - **The book's picture, with one thing that moves.** The eye and the flower stay where they are, at one height, 40 cm apart.
   The glass lies on a scissor jack between them and goes up toward the line from one to the other, so the light always meets it
   at the same point, half way, and tan θ = 20 cm ÷ depth under the line (`src/reading.js`). Moving the eye and the flower down
