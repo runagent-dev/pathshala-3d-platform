@@ -77,6 +77,8 @@ export const COLORS = {
   mass: '#495057',
   net: '#203345',
 };
+/** The velocity's arrows on the view: a lighter blue than its text, so they never melt into the blue backdrop. */
+const VEL_ARROW = '#4dabf7';
 const F_SCALE = 0.0077; // m of arrow per newton (100 N: 0.77 m)
 const A_SCALE = 0.7; // m of arrow per ms⁻² (2 ms⁻²: 1.4 m)
 const A_GAP = 0.78; // m between the force's arrow and the acceleration's over it (room for the force's label between them)
@@ -171,7 +173,7 @@ export function createApp(root, options = {}) {
   const arrows = {
     F: arrow(COLORS.net, 'ForceArrow'),
     a: arrow(COLORS.acc, 'AccelerationArrow'),
-    v: arrow(COLORS.vel, 'VelocityArrow'),
+    v: arrow(VEL_ARROW, 'VelocityArrow'),
     dp: arrow(COLORS.mom, 'MomentumChangeArrow'),
     FB: arrow(COLORS.net, 'ForceArrowB'),
     aB: arrow(COLORS.acc, 'AccelerationArrowB'),
@@ -181,7 +183,7 @@ export function createApp(root, options = {}) {
     world.add(a.root);
   }
   // the velocity stamped on the floor at each whole second of the measured push (faint copies of the blue arrow)
-  const ghosts = [0, 1, 2].map((i) => createVector(COLORS.vel, `VelocityStamp${i}`, '#ffffff', 0.5));
+  const ghosts = [0, 1, 2].map((i) => createVector(VEL_ARROW, `VelocityStamp${i}`, '#ffffff', 0.6));
   for (const g of ghosts) {
     g.root.userData.noExport = true;
     world.add(g.root);
@@ -194,13 +196,13 @@ export function createApp(root, options = {}) {
   const audio = createAudio(o.sound);
 
   // Soft shadows on the floor from the carts, the people and the pile of sacks only (the parts whose shadows are
-  // seen; the room casts none), in a box fitted to the lane: it runs from behind the pushers at the start to the pile
+  // seen), in a box fitted to the lane: it runs from behind the pushers at the start to the pile
   // at its end, and from the cart's far side to in front of it (where the people's shadows fall).
   if (o.shadow && o.bg !== 'transparent') {
     stage.renderer.shadowMap.enabled = true;
     stage.renderer.shadowMap.type = THREE.PCFShadowMap;
-    // daylight from the high windows in the back wall: the shadows fall forward, toward the viewer, where they show
-    const sun = new THREE.DirectionalLight(0xfff4e2, 1.15);
+    // a light high behind the lane: the shadows fall forward, toward the viewer, where they show
+    const sun = new THREE.DirectionalLight(0xfff8ee, 1.15);
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 512);
     sun.position.set(1.75, 7, -2.9);

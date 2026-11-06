@@ -8,7 +8,7 @@ export function createForceDiagram() {
   const root = new THREE.Group();
   root.name = 'LiveFreeBodyDiagram';
   root.visible = false;
-  // the body as a dot: dark, ringed in white (it sits over the sand-coloured wall)
+  // the body as a dot: dark, ringed in white (it sits over the deep blue backdrop)
   const ring = new THREE.Mesh(
     new THREE.SphereGeometry(0.085, 16, 10),
     new THREE.MeshBasicMaterial({ color: '#ffffff', depthTest: false, toneMapped: false }),
