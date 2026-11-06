@@ -78,6 +78,7 @@ about 155 px tall: there it stays 240 px across and overlaps the lower part of t
   when idle; 67k triangles and 3 to 5 draw calls a frame, 85k when the camera moves, about 200k across a capture call
   while waves run. Ready in about 750 ms on the software renderer. CPU time per frame is not measured on a real phone. Re-measured at v0.2.0 with the magnifier: 5 draw calls and 67k triangles for a still frame, 9 and 202k across a frame and
 capture with waves running. The magnifier and the drawing are 2D canvas work, and they draw only when a frame does.
+- **How to use** (v0.4.0, kit 1.8.0 `createHowTo`): under the action, the same icons as on the view, with a few words: the ⟲ ৩৬০° pill, the সামনে button, X's ↔ disc ("টেনে X সরাও") and the plane's ⟲ disc ("টেনে সমতল ঘোরাও"), the last two from the angles on (law 6), in their place before that. Tapping an item points at its control on the view.
 
 ## Honesty
 - "রশ্মি বোঝার জন্য আঁকা": rays are not visible and are drawn far larger than the lake's scale.

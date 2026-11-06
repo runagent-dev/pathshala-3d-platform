@@ -4,6 +4,13 @@
 
 export const STRINGS = {
   bn: {
+    howto_label: 'কীভাবে নাড়াবে',
+    howto_orbit: 'ঘুরিয়ে দেখো',
+    howto_front: 'শুরুর দৃশ্যে ফেরো',
+    howto_x: 'টেনে X সরাও',
+    aria_howto_x: 'টেনে X সরাও: ছবিতে X বিন্দুর সাদা চাকতিটি দেখাও',
+    howto_swing: 'টেনে সমতল ঘোরাও',
+    aria_howto_swing: 'টেনে সমতল ঘোরাও: ছবিতে পানির ওপরের বৃত্তের সাদা চাকতিটি দেখাও',
     act_replay: 'আবার দেখো',
     act_test: 'বুঝেছ? তাহলে পরীক্ষা দাও',
     rotate_me: 'ঘুরিয়ে দেখো',
@@ -144,6 +151,13 @@ export const STRINGS = {
     a_plane: '<b>রশ্মি {x}</b>: এটি X, O আর লম্বের সমতলেই আছে, আর অভিলম্বের অন্য পাশে সমান কোণে গেছে।',
   },
   en: {
+    howto_label: 'How to use it',
+    howto_orbit: 'Turn the view',
+    howto_front: 'Back to the start view',
+    howto_x: 'Drag X',
+    aria_howto_x: 'Drag X: show the white disc at X on the picture',
+    howto_swing: 'Drag to turn the plane',
+    aria_howto_swing: 'Drag to turn the plane: show the white disc on the ring on the water',
     act_replay: 'See it again',
     act_test: 'Got it? Then take the test',
     rotate_me: 'Turn it',
