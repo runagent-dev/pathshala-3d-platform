@@ -60,6 +60,7 @@ Colours of the band: বেগুনি নীল সবুজ হলুদ ক�
   read from the objects (the other colour, with the lamp out of the frame), where light reaches the eye from in blue light, and
   white paper in red light. Each finishes the picture after the answer. Only one answer is "black". The first-round questions
   on counting the stripes were dropped: that answer depended on the drawing, not the physics.
+- **How to use** (v0.3.0, kit 1.8.0 `createHowTo`): under the action, the same icons as on the view, with a few words: the ⟲ ৩৬০° pill and the সামনে button (nothing here is dragged; the tap on the lamp is the action itself, which already carries its ring on the view). Tapping an item points at its control on the view.
 
 ## Honesty (also said on the view: "রং ও রশ্মি বোঝার জন্য আলাদা করে আঁকা")
 - In white light the colours are mixed, not side by side; six stripes stand for countless wavelengths.

@@ -94,3 +94,15 @@ body.bg-transparent { background: transparent; }
   .coo .pvc-rule { font-size: 16.5px; line-height: 1.65; }
   .coo .coo-cap { display: block; }
 }
+/* the how-to row (createHowTo): 8 px of air above and below where the sheet's gap is tight, its lines close together */
+@container pvc (max-width: 420px) {
+  .coo .pvc-howto { margin: 4px 0; row-gap: 0; }
+  .pvc.coo .pvc-howto-item { min-height: 28px; }
+}
+/* the side panel is a narrow container too: no extra margin there, but where its gap is tight */
+@container pvc-panel (min-height: 1px) {
+  .coo .pvc-howto { margin: 0; }
+}
+@container pvc-panel (min-height: 1px) and (max-height: 420px) {
+  .coo .pvc-howto { margin: 3px 0; }
+}
