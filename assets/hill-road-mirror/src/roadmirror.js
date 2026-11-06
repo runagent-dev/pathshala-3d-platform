@@ -193,6 +193,8 @@ export function createMirror({ stage }) {
     group,
     standing,
     face,
+    /** The road's picture for the stage's warm-up: the scene as the mirror's camera draws it into its target. */
+    warmTarget: { target: pics.plane.rt, camera: shot },
     /** The wrongly set mirror of the test: degrees off 45° (the ray tracing uses reading.js with the same yaw). */
     setYaw(a) {
       head.rotation.y = Math.atan2(NORMAL.x, NORMAL.z) + THREE.MathUtils.degToRad(a);

@@ -563,6 +563,9 @@ export function createTube({ shadow }) {
     const out = new THREE.Group();
     out.name = 'kaleidoscope';
     const c = body.clone(true);
+    // the whole tube whatever the step: in the eye's view the body is hidden (only the end is seen), and the exporter
+    // leaves hidden parts out
+    c.visible = true;
     c.traverse((n) => {
       if (n.isMesh) n.castShadow = n.receiveShadow = false;
     });
@@ -586,6 +589,8 @@ export function createTube({ shadow }) {
     cells,
     syncBeads,
     renderCell,
+    /** The small picture's render target, for the stage's warm-up: compiled ahead with what is drawn into it. */
+    warmTarget: { target, scene: cellScene, camera: cellCam },
     setPeek,
     setPhi,
     setGhosts,

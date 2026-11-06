@@ -354,3 +354,28 @@ test('kaleidoscope: nothing is drawn while it rests', async ({ page }) => {
   expect(await draws()).toBe(a);
   expect(log.errors).toEqual([]);
 });
+
+test('kaleidoscope: the GLB is the whole tube, whatever the step (even in the eye view, where the body is hidden)', async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 600, height: 300 });
+  const log = await preparePage(page);
+  const fig = await openFigure(page, 'kaleidoscope');
+  await fig.advance(600);
+  /** The meshes in the GLB and its size. */
+  const glb = async () => {
+    const out = await fig.call('export-glb');
+    const bytes = Buffer.from(out.base64, 'base64');
+    const json = JSON.parse(bytes.subarray(20, 20 + bytes.readUInt32LE(12)).toString());
+    return { bytes: bytes.length, meshes: (json.meshes ?? []).length, nodes: (json.nodes ?? []).map((n) => n.name).sort() };
+  };
+  const outside = await glb();
+  expect(outside.meshes).toBeGreaterThan(3);
+  await fig.call('set', { step: 'pattern', stage: 1, animate: false });
+  await fig.advance(600);
+  expect((await fig.call('get')).eye).toBe(true);
+  const inEye = await glb();
+  expect(inEye.bytes).toBeGreaterThan(10_000);
+  expect(inEye.nodes).toEqual(outside.nodes);
+  expect(Math.abs(inEye.bytes - outside.bytes)).toBeLessThan(outside.bytes * 0.02);
+  expect(log.errors).toEqual([]);
+});
