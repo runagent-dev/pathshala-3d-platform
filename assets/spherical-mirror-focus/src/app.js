@@ -10,14 +10,15 @@ import { createStage } from '@shared/stage.js';
 import { createAction } from '@shared/student/action.js';
 import { createAnnotations } from '@shared/student/annotations.js';
 import { createAudio } from '@shared/student/audio.js';
-import { ICONS, svg } from '@shared/student/icons.js';
+import { createDragHandle } from '@shared/student/draghandle.js';
+import { ICONS } from '@shared/student/icons.js';
 import { capturePointer, releasePointer } from '@shared/student/pointer.js';
 import { createQuiz } from '@shared/student/quiz.js';
+import { createRotateCue } from '@shared/student/rotatecue.js';
 import { bindCleanSheet, buildStudentShell, cleanSheet } from '@shared/student/shell.js';
 import { createTweener, ease } from '@shared/tween.js';
 import { createSetting, FRAMES, RAIL, SCALE_POINT, SPHERE, SPIN } from './bench.js';
 import { fitPose } from './camera.js';
-import { createBulbHandle } from './handle.js';
 import { createI18n } from './i18n.js';
 import { createRays } from './rays.js';
 import {
@@ -173,6 +174,7 @@ export function createApp(root, options = {}) {
         { act: 'replay', label: 'act_again', icon: ICONS.play },
         { act: 'home', label: 'act_home', icon: ICONS.reset },
       ],
+      tight: true,
       lines: { action: t.lang === 'en' ? 2 : 1, outcome: 1, rule: 4 },
     }),
     learnAlign: 'start',
@@ -198,30 +200,10 @@ export function createApp(root, options = {}) {
   note.className = 'lab-note';
   note.textContent = t('note_rays');
   ui.stage.appendChild(note);
-  // the view turns all the way round: a pill in a corner says so until the first turn, then its icon stays
-  const orbitCue = document.createElement('div');
-  orbitCue.className = 'lab-orbit';
-  orbitCue.setAttribute('role', 'img');
-  orbitCue.setAttribute('aria-label', t('orbit_aria'));
-  orbitCue.innerHTML = `${svg('<g transform="matrix(-1 0 0 1 24 0)"><path d="M19.2 8.4a8.2 8.2 0 1 0 1 3.6"/><path d="M20.2 3.8v4.8h-4.8"/></g><circle cx="12" cy="12" r="2.2" class="fill"/>')}<span>${t.num(360)}°</span><span class="lab-orbit-word">${t('view_rotate')}</span>`;
-  ui.stage.appendChild(orbitCue);
-  // the kit's front button is the same arrow as the panel's reset: here it has its own crosshair and its word (kit #361 will do this)
-  const frontBtn = ui.$('[data-view="front"]');
-  frontBtn.classList.remove('icon-only');
-  frontBtn.classList.add('lab-front');
-  frontBtn.innerHTML = `${svg('<circle cx="12" cy="12" r="6"/><path d="M12 2.5v5M12 16.5v5M2.5 12h5M16.5 12h5"/>')}<span>${t('view_front_short')}</span>`;
-
   // ── 3D ──────────────────────────────────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 22, near: 10, far: 1600, environmentIntensity: 0.8 });
   const { camera, controls } = stage;
-  // all the way round, from high above to just over the table, never under it
   controls.enablePan = false;
-  controls.enableZoom = true;
-  controls.enableDamping = true;
-  controls.minPolarAngle = THREE.MathUtils.degToRad(5);
-  controls.maxPolarAngle = THREE.MathUtils.degToRad(88);
-  controls.minAzimuthAngle = Number.NEGATIVE_INFINITY;
-  controls.maxAzimuthAngle = Number.POSITIVE_INFINITY;
   const setting = createSetting({ stage, shadow: Boolean(o.shadow), t });
   const rays = createRays({ stage, host: ui.canvasHost });
   rays.view.fmt = (x) => t.num(round(x, 1).toFixed(1));
@@ -545,8 +527,7 @@ export function createApp(root, options = {}) {
   /** Back to the guided camera: the step's framing decides how far away it is. */
   function guided() {
     s.userMovedCamera = false;
-    controls.minDistance = 0;
-    controls.maxDistance = Number.POSITIVE_INFINITY;
+    rotate.home();
   }
   /** The camera goes to a frame. Its promise settles when it arrives (or a finger takes over). */
   function fly(frame, duration = T.fly) {
@@ -589,19 +570,27 @@ export function createApp(root, options = {}) {
     s.userMovedCamera = true;
     tweener.cancel('camera');
     camK = 1;
-    const d = camera.position.distanceTo(controls.target);
-    controls.minDistance = d * 0.6;
-    controls.maxDistance = Math.min(d * 1.6, 430); // inside the backdrop
-    if (!s.orbited) {
-      s.orbited = true;
-      orbitCue.classList.add('used');
-    }
+    controls.maxDistance = Math.min(controls.maxDistance, 430); // inside the backdrop
+    s.orbited = true;
+    rotate.markUsed();
     if (s.view !== '3d') {
       s.view = '3d';
       syncUI();
       emit('view', { view: s.view });
     }
   }
+  // all the way round, from high above to just over the table, never under it
+  const rotate = createRotateCue(stage, {
+    layer: ui.stage,
+    short: `${t.num(360)}°`,
+    label: t('view_rotate'),
+    pulse: Boolean(o.coach),
+    zoom: [0.6, 1.6],
+    onTurn: () => {
+      controls.rotateSpeed = 1;
+      takeOver();
+    },
+  });
   /** At once: the view from this azimuth (degrees round the bench) and height, for the book and the tests. */
   function orbitTo(az, el = 14) {
     applyCamera();
@@ -638,7 +627,7 @@ export function createApp(root, options = {}) {
   const anno = createAnnotations({
     stage,
     layer: ui.annoLayer,
-    avoid: [ui.corner, note, orbitCue, ui.$('.pvc-panel-toggle'), () => rays.boxes(), () => action?.ringBox(), () => handle?.box()],
+    avoid: [ui.corner, note, rotate.el, ui.$('.pvc-panel-toggle'), () => rays.boxes(), () => action?.ringBox(), () => handle?.box()],
   });
   const shown = new Map();
   const pts = new Map();
@@ -1133,7 +1122,7 @@ export function createApp(root, options = {}) {
     label: 'act_cut',
     target: () => (o.coach ? target() : null), // a poster or a book page can do without the ring
     radius: 20,
-    avoid: [ui.corner, ui.hint, note, orbitCue, () => anno.boxes(), () => handle.box()],
+    avoid: [ui.corner, ui.hint, note, rotate.el, () => anno.boxes(), () => handle.box()],
     pulse: Boolean(o.coach),
     onAct: () => act(),
   });
@@ -1143,10 +1132,13 @@ export function createApp(root, options = {}) {
   const trackFrom = new THREE.Vector3();
   const trackTo = new THREE.Vector3();
   const HANDLE = { y: RAIL.carrier + 3.4, z: 0 }; // on the stalk, close under the bulb, its track over the dark table
-  handle = createBulbHandle(stage, {
+  handle = createDragHandle(stage, {
     point: () => handlePoint.set(V.bulbX, HANDLE.y, HANDLE.z),
-    from: () => trackFrom.set(bulbRange(s.r).min, HANDLE.y, HANDLE.z),
-    to: () => trackTo.set(bulbRange(s.r).max, HANDLE.y, HANDLE.z),
+    axis: 'x',
+    track: {
+      from: () => trackFrom.set(bulbRange(s.r).min, HANDLE.y, HANDLE.z),
+      to: () => trackTo.set(bulbRange(s.r).max, HANDLE.y, HANDLE.z),
+    },
     label: t('drag_me'),
     aria: t('drag_aria'),
     pulse: Boolean(o.coach),
@@ -1167,7 +1159,6 @@ export function createApp(root, options = {}) {
   ui.canvasHost.addEventListener(
     'pointerdown',
     (e) => {
-      if (!e.isPrimary) takeOver(); // two fingers: the view is being zoomed
       down = { x: e.clientX, y: e.clientY, at: performance.now() };
       controls.rotateSpeed = s.userMovedCamera ? 1 : 0; // a tap is not a turn: nothing moves until the finger has gone 8 px
       if (s.locked || s.busy || s.stage !== 'torch' || V.bulb < 1 || (e.pointerType === 'mouse' && e.button !== 0)) return;
@@ -1192,12 +1183,7 @@ export function createApp(root, options = {}) {
     },
     { capture: true },
   );
-  ui.canvasHost.addEventListener('wheel', () => takeOver(), { capture: true, passive: true });
   ui.canvasHost.addEventListener('pointermove', (e) => {
-    if (!drag && down && controls.enabled && Math.hypot(e.clientX - down.x, e.clientY - down.y) >= 8) {
-      controls.rotateSpeed = 1;
-      takeOver();
-    }
     if (!drag || e.pointerId !== drag.id) return;
     const along = (e.clientX - drag.x) * drag.ux + (e.clientY - drag.y) * drag.uy;
     setBulb(drag.from + along / drag.perCm);
@@ -1624,7 +1610,7 @@ export function createApp(root, options = {}) {
       setView('front', { animate: false });
       camK = 1;
       s.orbited = false;
-      orbitCue.classList.remove('used');
+      rotate.rearm();
       handle.rearm();
       draw();
       emitChange();

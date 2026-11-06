@@ -215,7 +215,7 @@ test('right-angle-mirrors: the view goes all the way round, and the front button
   const fig = await openFigure(page, 'right-angle-mirrors', { params: { step: 'two', stage: '3' } });
   await fig.advance(1200);
   const f = fig.frame;
-  await expect(f.locator('.ra-turn')).toContainText('ঘুরিয়ে দেখো');
+  await expect(f.locator('.pvc-rc')).toContainText('ঘুরিয়ে দেখো');
   await expect(f.locator('[data-view="front"]')).toBeHidden();
   // a tap is not a turn
   const box = await f.locator('.pvc-canvas').boundingBox();
@@ -230,13 +230,42 @@ test('right-angle-mirrors: the view goes all the way round, and the front button
     expect(log.errors).toEqual([]);
     if (az === 180) await expect(f.locator('.pvc-anno', { hasText: 'ডান হাত' })).toHaveCount(0);
   }
-  await expect(f.locator('.ra-turn.used')).toHaveCount(1);
+  await expect(f.locator('.pvc-rc.used')).toHaveCount(1);
+  await expect(f.locator('.pvc-rc-deg')).toHaveText('৩৬০°');
+  await expect(f.locator('.pvc-rc-deg')).toBeVisible(); // never the arrow alone
   await expect(f.locator('[data-view="front"]')).toBeVisible();
   await expect(f.locator('[data-view="front"]')).toContainText('সামনে');
   await f.locator('[data-view="front"]').click();
   await fig.advance(2600);
   expect(await fig.call('get')).toMatchObject({ view: 'front', phase: 'two3' });
   expect(log.errors).toEqual([]);
+});
+
+test('right-angle-mirrors: a lower render resolution leaves the view where the student turned it', async ({ browser }) => {
+  test.setTimeout(120_000);
+  const page = await browser.newPage({ viewport: { width: 640, height: 400 }, deviceScaleFactor: 2 });
+  const log = await preparePage(page);
+  const fig = await openFigure(page, 'right-angle-mirrors', { params: { step: 'two', stage: '3' } });
+  await fig.advance(1200);
+  const canvas = fig.frame.locator('.pvc-canvas canvas').first();
+  const ratio = () => canvas.evaluate((c) => c.width / c.clientWidth);
+  expect(await ratio()).toBe(2);
+  const box = await canvas.boundingBox();
+  const x = box.x + 30;
+  const y = box.y + 30;
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  // slow frames while the view turns: the stage lowers its resolution, and tells the figure through onResize
+  for (let i = 1; i <= 60 && (await ratio()) === 2; i++) {
+    await page.mouse.move(x + (i % 20) * 6, y);
+    await fig.advance(40, 40);
+  }
+  await page.mouse.up();
+  expect(await ratio()).toBeLessThan(2);
+  await fig.advance(600);
+  expect(await fig.call('get')).toMatchObject({ view: '3d', orbited: true });
+  expect(log.errors).toEqual([]);
+  await page.close();
 });
 
 test('right-angle-mirrors: the mirror folds under a finger, and the arrows fold it too', async ({ page }) => {
@@ -248,7 +277,7 @@ test('right-angle-mirrors: the mirror folds under a finger, and the arrows fold 
   const stageBox = await fig.frame.locator('.pvc-canvas').boundingBox();
   // the handle shows before any drag, with its label; the ring of the action stands on it
   expect((await fig.call('get')).handle).toEqual({ shown: true, used: false });
-  await expect(fig.frame.locator('.pvc-anno', { hasText: 'টেনে সরাও' })).toBeVisible();
+  await expect(fig.frame.locator('.pvc-dh:not([hidden]) .pvc-dh-word')).toHaveText('টেনে সরাও');
   const ring = await fig.frame.locator('.pvc-act-under .pvc-act-ring').boundingBox();
   const x = ring.x + ring.width / 2;
   const y = ring.y + ring.height / 2;

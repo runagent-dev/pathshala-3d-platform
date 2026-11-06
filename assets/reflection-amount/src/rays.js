@@ -60,7 +60,6 @@ export function createRays({ stage, host }) {
     arcs: 0,
     refracted: 0,
     guide: false, // the line of his eye and the flower
-    track: null, // the dashed range of the glass's handle: { a, b } in the world
     pins: [], // small dots where labels' leaders touch the glass
   };
   let unit = 1;
@@ -161,27 +160,6 @@ export function createRays({ stage, host }) {
     ctx.globalAlpha = 1;
     ctx.setLineDash(NO_DASH);
   }
-  /** The handle's range: white dashes with a dark edge, so that they show on the shirt as on the wall. */
-  function track(a, b) {
-    P(a.x, a.y, a.z);
-    const x0 = sx;
-    const y0 = sy;
-    P(b.x, b.y, b.z);
-    ctx.lineCap = 'butt';
-    ctx.setLineDash(DASH);
-    for (const [color, width] of [
-      ['rgba(20, 28, 38, 0.8)', 3.4],
-      ['#ffffff', 1.5],
-    ]) {
-      ctx.beginPath();
-      ctx.moveTo(x0, y0);
-      ctx.lineTo(sx, sy);
-      ctx.strokeStyle = color;
-      ctx.lineWidth = width;
-      ctx.stroke();
-    }
-    ctx.setLineDash(NO_DASH);
-  }
   /** Where the glass and the light were before (a question of the test): the outline of its top, and the rays. */
   function past(g) {
     const hx = GLASS.halfX;
@@ -246,7 +224,6 @@ export function createRays({ stage, host }) {
   function paint() {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);
-    if (v.track) track(v.track.a, v.track.b);
     if (!v.show) return;
     const g = v.geo;
     unit = Math.max(0.9, Math.min(1.25, Math.min(w, h) / 400));

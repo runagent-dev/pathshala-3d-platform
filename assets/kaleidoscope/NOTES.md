@@ -57,16 +57,16 @@ six-fold pattern that moves when the tube turns. Plain glass can do it because t
   follow; a corner note says so.
 - **On leaving the eye** the tube squares up to the nearest third of a turn, and the frame is reset (the triangle maps to itself, the
   pieces are turned with it, so nothing jumps).
-- **What can be moved shows** (the owner's rule of 2026-11-06, drawn here until the kit's `createDragHandle` lands): a white disc
-  with a thin dark ring and arrows along the way it moves (a round arrow for turning), a 44 px hit area, a faint dashed track of its
-  range, the word "ঘোরাও" / "টেনে সরাও" and a gentle ring until the first drag, then smaller and calm. Disc and track are on the 2D
-  drawing and in the labels' avoid list; the ring and the word are in the page (a CSS animation), so a figure at rest draws nothing.
-  Hidden during the test. Keyboard arrows still work and count as a first drag.
+- **What can be moved shows** (the owner's rule of 2026-11-06): the kit's `createDragHandle`, one each for turning the tube, the eye and
+  the ray box, with the word "ঘোরাও" / "টেনে সরাও" until the first drag. The eye's and the box's tracks are the kit's, as a curve through
+  a middle point. The tube's range is a whole circle, which the kit's open track cannot draw, so that ring stays on the 2D drawing, with
+  the kit's dashes. Hidden during the test. Keyboard arrows still work and count as a first drag.
 - **The tube's inside** has dark paper behind the glass, lit from the far end, so the strips read as glass with green edges.
 - **All the way round** (the owner's rule of 2026-11-06): the views of the tube, the strip and the mirrors turn a full 360°, above the
   table only (polar 5°–88°), with pinch or wheel zoom from 0.45 to 2.2 times the guided distance. A move of less than 8 px is a tap, not an
-  orbit. The guided camera still flies to each step's framing, and the "সামনে" button returns to it. A dark ⟲ ৩৬০° pill says "ঘুরিয়ে দেখো"
-  until the first orbit and then stays as a small icon; it is nothing like the white discs of what can be dragged. Only the place in
+  orbit. The guided camera still flies to each step's framing, and the "সামনে" button returns to it. The kit's rotate cue, a dark ⟲ ৩৬০° pill, says "ঘুরিয়ে দেখো"
+  until the first orbit and then stays as ⟲ ৩৬০°; it is nothing like the white discs of what can be dragged. A resize never takes a
+  turned view away (the kit reports its lower resolution as a resize, and a browser test holds this); an unturned view fits again. Only the place in
   use stands on the table once the camera has arrived, so nothing floats behind it from any side. Two views stay fixed on purpose:
   the eye's view (it looks through the eyepiece, and it is the tube that turns), and the test, whose questions set up their own
   pictures.

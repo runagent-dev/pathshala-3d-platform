@@ -42,6 +42,9 @@ export const STRINGS = {
     act_quiz: 'পরীক্ষা দাও',
 
     l_turn: 'ঘোরাও',
+    aria_turn: 'নলটি ঘোরাও',
+    aria_eye: 'চোখ কাচের দিকে সরাও',
+    aria_lamp: 'আলোর উৎস সরাও',
     l_drag: 'টেনে সরাও',
     l_glass: 'কাচের টুকরো',
     l_pieces: 'পুঁতি, পাথর, চুড়ি',
@@ -183,6 +186,9 @@ export const STRINGS = {
     act_quiz: 'Take the test',
 
     l_turn: 'turn',
+    aria_turn: 'Turn the tube',
+    aria_eye: 'Move the eye round the glass',
+    aria_lamp: 'Move the light source',
     l_drag: 'drag',
     l_glass: 'strip of glass',
     l_pieces: 'beads, stones, bangles',

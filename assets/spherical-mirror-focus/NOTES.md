@@ -44,11 +44,9 @@ figure does not use that word.) Added by the figure, not on the page: আলো�
   it (from behind the bench a straight line would pass through the mirror). A drag of less than 8 px is a tap: the view does not move at all
   until then. The kit reports its lower resolution during a slow orbit as a resize at the same CSS size: `onResize` frames the step again only when
   the size really changed, or the first drags would be thrown away. Labels and rays are on the screen, so they hold from any side. The table and the backdrop's soft light go all the way round too.
-- **The handle** on the bulb's carrier (`src/handle.js`) has the look and names of the kit's `createDragHandle` (pull request #361, not merged
-  when this was written). When kit 1.7.0 is in, delete the file and the CSS and use the kit's. The rotate cue is always a pill, "⟲ ৩৬০°" in real text, so it
-  can't be taken for a handle on a part; "ঘুরিয়ে দেখো" beside it until the first turn, except on the tightest frame (390 × 520), where no corner has
-  room for the words. The kit's front button is the same arrow as the panel's reset, so this figure gives it a crosshair and the word সামনে (`.lab-front`);
-  that moves to the kit with #361.
+- **The handle** on the bulb's carrier is the kit's `createDragHandle`. The rotate cue is the kit's pill, always "⟲ ৩৬০°", so it can't be taken for a
+  handle on a part; "ঘুরিয়ে দেখো" beside it until the first turn, except on the tightest frame (390 × 520), where no corner has room for the words. The
+  front button is the kit's: its target and the word সামনে.
 - Rays are traced on the exact sphere with r = d − 2(d·n)n (`src/reading.js`, unit-tested in `test/unit/spherical-mirror-focus.test.mjs`).
   Nothing uses f = r/2 to place a ray: the rays find F. They are drawn as vector lines on a 2D canvas over the view
   (`src/rays.js`), like the sister figures. F, O and P are marks on the axis with a drop to their number on the printed scale.
