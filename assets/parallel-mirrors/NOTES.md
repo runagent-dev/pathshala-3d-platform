@@ -18,6 +18,7 @@ sides, d₁ d₂ d₃ d₄. The 90° part is optional and is left out (below). T
 angle, a camera per step with smooth zooms, one element at a time, labels never dropped.
 
 ## How it works
+- **A calm start (the owner, after chapter 8: "start simpler, with some lines of explanation in the white panel").** The first screen shows only a few warm everyday sentences in a `.pvc-note` card (`intro`; `intro_short` on the 390 × 520 phone) and the action: no term and no number yet. After that, one plain line above the action says what the next tap will show (`lead_*`), and the rule below says what it meant, the book's term last and in bold. Same layout and classes as the spherical-mirror figures (`.lab-lead`, `.lab-calm`).
 - **Ten beats, one tap each, in six steps (0.3.0).** The owner, on the crowded row: "It is fine but too complex. How can we start
   a bit easily … then gradually show everything properly?" `reading.js` lists the beats (`imagesAt`, `barsAt`, `beatOf`, `stepOfBeat`).
   1. একটি আয়না: the candle and M₁ alone → x′ fades in with d₁ before and behind it. The frame holds only these; the candle can be dragged.

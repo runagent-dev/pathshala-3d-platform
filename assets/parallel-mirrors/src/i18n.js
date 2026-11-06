@@ -57,15 +57,23 @@ export const STRINGS = {
     intro:
       'টেবিলে একটি জ্বলন্ত মোমবাতি আর একটি আয়না। ঘরের আয়নায় যেমন নিজের মুখ দেখি, মোমবাতিটাও তেমনি আয়নায় দেখা যাবে। তারপর মুখোমুখি আরেকটি আয়না আনলে কী হয়, ধীরে ধীরে দেখব।',
     intro_short: 'একটি মোমবাতি আর একটি আয়না। আয়নায় মোমবাতিটা দেখা যাবে। পরে আরেকটি আয়না আনলে কী হয়, ধীরে ধীরে দেখব।',
-    rule_b1: 'আয়নার পেছনে মোমবাতির <b>প্রতিবিম্ব</b> x′। মোমবাতি সামনে যত দূরে, এটি পেছনে ঠিক তত দূরে (d<sub>1</sub>)। মোমবাতি টেনে সরিয়ে দেখো।',
-    rule_b2:
-      'উল্টো দিকে এল আরেকটি আয়না, M<sub>2</sub>। মোমবাতি এতেও দেখা যায়: M<sub>2</sub> এর d<sub>2</sub> পেছনে আরেকটি x′।<br>এবার ডান দিকের x′ কে একটি মোমবাতি ভাবি।',
-    rule_b3: 'ডান x′ থেকে যেন আলো আসছে, তাই M<sub>2</sub> একেও দেখায়। M<sub>2</sub> এর পেছনে এল <b>প্রতিবিম্বের প্রতিবিম্ব</b> x″।',
-    rule_b4: 'আলো মোমবাতি থেকে M<sub>1</sub> এ, সেখান থেকে M<sub>2</sub> এ, তারপর চোখে। চোখ ভাবে আলো আসছে ড্যাশ রেখা ধরে, x″ থেকে।<br>এবার বাম দিকেও একই কাজ।',
+    lead_b1: 'এবার মুখোমুখি আরেকটি আয়না আনি।',
+    lead_b2: 'এবার ডান দিকের x′ কে একটি মোমবাতি ভাবি।',
+    lead_b3: 'আলো আসলে কোন পথে চোখে আসে, দেখি।',
+    lead_b4: 'এবার বাম দিকেও একই কাজ করি।',
+    lead_b5: 'এবার বাম x″ কে বস্তু ধরে আরেক ধাপ যাই।',
+    lead_b6: 'এভাবে চলতে দিলে কী হয়, দেখি।',
+    lead_b7: 'এবার আসল আয়নার ভেতরে তাকিয়ে দেখি।',
+    lead_b8: 'শেষে বইয়ের পুরো ছবিটা একসাথে দেখি।',
+    lead_b9: 'সব ধাপ দেখা হলো। চাইলে আবার দেখো।',
+    rule_b1: 'আয়নার পেছনে আরেকটি মোমবাতি, x′। মোমবাতি সামনে যত দূরে (d<sub>1</sub>), এটি পেছনে ঠিক তত দূরে। এটি মোমবাতির <b>প্রতিবিম্ব</b>।',
+    rule_b2: 'উল্টো দিকে এল আরেকটি আয়না, M<sub>2</sub>। মোমবাতি এতেও দেখা যায়: M<sub>2</sub> এর d<sub>2</sub> পেছনে আরেকটি x′।',
+    rule_b3: 'ডান x′ থেকে যেন আলো আসছে, তাই M<sub>2</sub> একেও দেখায়। M<sub>2</sub> এর পেছনের x″ হলো <b>প্রতিবিম্বের প্রতিবিম্ব</b>।',
+    rule_b4: 'আলো মোমবাতি থেকে M<sub>1</sub> এ, সেখান থেকে M<sub>2</sub> এ, তারপর চোখে। চোখ ভাবে আলো আসছে ড্যাশ রেখা ধরে, x″ থেকে।',
     rule_b5: 'বাম x′ এবার M<sub>1</sub> এর সামনে একটি বস্তু। M<sub>1</sub> থেকে এটি d<sub>3</sub> দূরে, তাই M<sub>1</sub> এর d<sub>3</sub> পেছনে আরেকটি x″।',
     rule_b6: 'এবার বাম x″ বস্তু। M<sub>1</sub> থেকে এটি d<sub>4</sub> দূরে, তাই M<sub>1</sub> এর d<sub>4</sub> পেছনে x‴। এখানে আলো তিনবার প্রতিফলিত হলো।',
-    rule_b7: 'প্রতিটি প্রতিবিম্ব অন্য আয়নার বস্তু হয়, তাই এটি থামে না: <b>অসংখ্য প্রতিবিম্ব</b>। প্রতিটি পরেরটি একটু ম্লান (ছবিতে একটু বাড়িয়ে আঁকা)।',
-    rule_b8: 'আসল আয়নায় তাকালে এমন সারিই দেখা যায়। সবই <b>অবাস্তব প্রতিবিম্ব</b>। প্রতি প্রতিফলনে প্রায় {a}% আলো হারায়; ওপরের সংখ্যা বলে কতটা বাকি।',
+    rule_b7: 'প্রতিটি প্রতিবিম্ব অন্য আয়নার বস্তু হয়, তাই এটি থামে না। প্রতিটি পরেরটি একটু ম্লান (ছবিতে একটু বাড়িয়ে আঁকা)। এরা <b>অসংখ্য প্রতিবিম্ব</b>।',
+    rule_b8: 'আসল আয়নায় তাকালে এমন সারিই দেখা যায়। প্রতি প্রতিফলনে প্রায় {a}% আলো হারায়; ওপরের সংখ্যা বলে কতটা বাকি। এরা সবাই <b>অবাস্তব প্রতিবিম্ব</b>।',
     rule_b9: 'এই হলো বইয়ের চিত্র ৮.০৪। প্রতিটি দূরত্ব আয়নার সামনে ও পেছনে সমান। কোনো প্রতিবিম্বে চাপ দিলে তার আলোর পথ দেখা যাবে।',
     rule_pick: 'আলো মোমবাতি থেকে বেরিয়ে আয়নায় প্রতিফলিত হয়ে চোখে আসে। ড্যাশ রেখা দেখায়, আলো কোথা থেকে আসছে বলে মনে হয়।',
     note_rays: 'বহু রশ্মির একটি আঁকা হয়েছে',
@@ -197,21 +205,29 @@ export const STRINGS = {
     intro:
       'A lit candle and a mirror on a table. Just as you see your face in a mirror at home, you will see the candle in this one. Then we bring a second mirror opposite it and slowly see what happens.',
     intro_short: 'A candle and a mirror. You will see the candle in the mirror. Then we bring a second mirror and slowly see what happens.',
+    lead_b1: 'Now let us bring a second mirror opposite.',
+    lead_b2: 'Now think of the right x′ as a candle.',
+    lead_b3: 'Let us see which way the light really reaches the eye.',
+    lead_b4: 'Now the same on the left.',
+    lead_b5: 'Now take the left x″ as the object, one step further.',
+    lead_b6: 'Let us see what happens if it goes on.',
+    lead_b7: 'Now let us look into a real mirror.',
+    lead_b8: 'Last, the book’s whole picture at once.',
+    lead_b9: 'All the steps are done. Watch again if you like.',
     rule_b1:
-      'Behind the mirror stands the candle’s <b>image</b>, x′. It is as far behind the mirror as the candle is in front (d<sub>1</sub>). Drag the candle and see.',
-    rule_b2:
-      'A second mirror, M<sub>2</sub>, comes in opposite. The candle shows in it too: another x′, d<sub>2</sub> behind M<sub>2</sub>.<br>Now think of the right x′ as a candle.',
-    rule_b3: 'Light seems to come from the right x′, so M<sub>2</sub> shows it too. Behind M<sub>2</sub> stands the <b>image of the image</b>, x″.',
+      'Behind the mirror stands another candle, x′. It is as far behind (d<sub>1</sub>) as the candle is in front. It is the candle’s <b>image</b>.',
+    rule_b2: 'A second mirror, M<sub>2</sub>, comes in opposite. The candle shows in it too: another x′, d<sub>2</sub> behind M<sub>2</sub>.',
+    rule_b3: 'Light seems to come from the right x′, so M<sub>2</sub> shows it too. The x″ behind M<sub>2</sub> is the <b>image of the image</b>.',
     rule_b4:
-      'Light goes from the candle to M<sub>1</sub>, then to M<sub>2</sub>, then to the eye. The eye thinks it comes along the dashes, from x″.<br>Now the same on the left.',
+      'Light goes from the candle to M<sub>1</sub>, then to M<sub>2</sub>, then to the eye. The eye thinks it comes along the dashes, from x″.',
     rule_b5:
       'The left x′ is now an object in front of M<sub>1</sub>. It is d<sub>3</sub> from M<sub>1</sub>, so another x″ stands d<sub>3</sub> behind M<sub>1</sub>.',
     rule_b6:
       'Now the left x″ is the object. It is d<sub>4</sub> from M<sub>1</sub>, so x‴ stands d<sub>4</sub> behind M<sub>1</sub>. Here the light is reflected three times.',
     rule_b7:
-      'Each image is an object for the other mirror, so it never stops: <b>countless images</b>. Each next one is a little dimmer (the picture fades them a little more than real).',
+      'Each image is an object for the other mirror, so it never stops. Each next one is a little dimmer (the picture fades them a little more than real). These are <b>countless images</b>.',
     rule_b8:
-      'Look into a real mirror and you see just such a row. All are <b>virtual images</b>. Each reflection loses about {a}% of the light; the numbers above say how much is left.',
+      'Look into a real mirror and you see just such a row. Each reflection loses about {a}% of the light; the numbers above say how much is left. All are <b>virtual images</b>.',
     rule_b9:
       'This is the book’s figure 8.04. Each distance is the same in front of a mirror and behind it. Tap an image to see the path of its light.',
     rule_pick: 'Light leaves the candle, reflects in the mirrors and reaches the eye. The dashes show where it seems to come from.',

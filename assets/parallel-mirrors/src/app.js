@@ -132,6 +132,10 @@ export function createApp(root, options = {}) {
     learnAlign: 'start',
   });
   const sheet = bindCleanSheet(ui.learn);
+  // the line before the action: what the next tap will show (on the first screen, a few calm words that set the scene)
+  const lead = document.createElement('p');
+  lead.className = 'lab-lead';
+  ui.$('.pvc-act-row').before(lead);
   ui.canvasHost.setAttribute('aria-label', t('aria_stage'));
   const note = document.createElement('div');
   note.className = 'pm2-note';
@@ -1017,7 +1021,7 @@ export function createApp(root, options = {}) {
   }
 
   // ── the panel ───────────────────────────────────────────────────────────────────────────────────────────
-  const steady = { act: '', open: 0 };
+  const steady = { act: '', open: 0, lead: '' };
   function outcome() {
     const d = distances(s.x);
     const a = N(num(d.d1));
@@ -1051,8 +1055,7 @@ export function createApp(root, options = {}) {
   }
   function rule() {
     if (s.trace && !s.newest && pickedTrace) return t('rule_pick');
-    // the first screen: a calm scene in everyday words, shorter where the panel is smallest (style.css picks one)
-    if (s.beat === 0) return `<span class="pm2-intro">${t('intro')}</span><span class="pm2-intro-short">${t('intro_short')}</span>`;
+    if (s.beat === 0) return ''; // the first screen: only the calm words above the action
     return t(`rule_b${s.beat}`, { a: 100 - Math.round(REFLECTANCE * 100) });
   }
   // what the action says at each beat, and its number within its step
@@ -1074,6 +1077,19 @@ export function createApp(root, options = {}) {
     const ph = phase();
     sheet.outcome(outcome());
     sheet.rule(rule());
+    // the line before the action: what the next tap will show; on the first screen, a few calm words that set the scene
+    const calm = s.beat === 0;
+    const leadHtml = calm
+      ? `<span class="lab-long">${t('intro')}</span><span class="lab-short">${t('intro_short')}</span>`
+      : ph === 'busy'
+        ? steady.lead
+        : t(`lead_${ph}`);
+    if (steady.lead !== leadHtml) {
+      steady.lead = leadHtml;
+      lead.innerHTML = leadHtml;
+      lead.classList.toggle('pvc-note', calm);
+      ui.learn.classList.toggle('lab-calm', calm);
+    }
     sheet.choose(s.step);
     const open = openSteps(s.reached).length;
     if (open !== steady.open) {
