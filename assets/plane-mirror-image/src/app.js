@@ -9,6 +9,7 @@ import { createStage } from '@shared/stage.js';
 import { createAction } from '@shared/student/action.js';
 import { createAnnotations } from '@shared/student/annotations.js';
 import { createDragHandle } from '@shared/student/draghandle.js';
+import { createHowTo } from '@shared/student/howto.js';
 import { createAudio } from '@shared/student/audio.js';
 import { ICONS } from '@shared/student/icons.js';
 import { capturePointer, releasePointer } from '@shared/student/pointer.js';
@@ -680,6 +681,29 @@ export function createApp(root, options = {}) {
     aria: t('aria_drag_bottom'),
     pulse: Boolean(o.coach),
     when: () => canMove('bottom'),
+  });
+
+  // ── how to use, in the panel: the same icons as on the view, with a few words (kit createHowTo) ──────────
+  // the boy moves in the first two steps, the mirror's edges in the third: each step shows only its own item (the
+  // other is taken out, so no empty line); the boy's keeps its place, unseen, until he can be dragged in his step
+  const edges = { flash: () => (topHandle.flash(), bottomHandle.flash()) };
+  const boyNow = () => (s.step === 'distance' && s.stage >= 2) || (s.step === 'rays' && s.ray >= 4);
+  const howto = createHowTo(
+    ui,
+    t,
+    [
+      { kind: 'orbit', cue: rotate },
+      { kind: 'front' },
+      { kind: 'drag', axis: 'x', text: t('howto_boy'), aria: t('aria_howto_boy'), handle: boyHandle, when: () => s.step !== 'length' },
+      { kind: 'drag', axis: 'y', text: t('howto_edges'), aria: t('aria_howto_edges'), handle: edges, when: () => s.step === 'length' },
+    ],
+    { stage, collapse: true },
+  );
+  // in the boy's steps, before he can be dragged: his item unseen in its place (`visibility`, so not focusable either)
+  const boyItem = howto.buttons[2];
+  stage.addTicker(() => {
+    const wait = s.step !== 'length' && !boyNow();
+    if (boyItem.classList.contains('pm-wait') !== wait) boyItem.classList.toggle('pm-wait', wait);
   });
   const cardBox = () => (showsCard() ? { left: card.x - 8, top: card.y - 26, right: card.x + card.w + 8, bottom: card.y + card.h + 8 } : null);
   const panelTab = ui.$('.pvc-panel-toggle');

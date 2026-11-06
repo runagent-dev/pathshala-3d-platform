@@ -3,6 +3,13 @@
 
 export const STRINGS = {
   bn: {
+    howto_label: 'কীভাবে নাড়াবে',
+    howto_orbit: 'ঘুরিয়ে দেখো',
+    howto_front: 'শুরুর দৃশ্যে ফেরো',
+    howto_boy: 'টেনে ছেলেটিকে সরাও',
+    aria_howto_boy: 'টেনে ছেলেটিকে সরাও: ছবিতে ছেলেটির পায়ের কাছের সাদা চাকতিটি দেখাও',
+    howto_edges: 'টেনে আয়নার প্রান্ত সরাও',
+    aria_howto_edges: 'টেনে আয়নার প্রান্ত সরাও: ছবিতে আয়নার পাশের দুটি সাদা চাকতি দেখাও',
     act_replay: 'আবার দেখো',
     act_test: 'বুঝেছ? তাহলে পরীক্ষা দাও',
     rotate_me: 'ঘুরিয়ে দেখো',
@@ -171,6 +178,13 @@ export const STRINGS = {
   },
 
   en: {
+    howto_label: 'How to use it',
+    howto_orbit: 'Turn the view',
+    howto_front: 'Back to the start view',
+    howto_boy: 'Drag the boy',
+    aria_howto_boy: 'Drag the boy: show the white disc at his feet on the picture',
+    howto_edges: 'Drag the mirror’s edges',
+    aria_howto_edges: 'Drag the mirror’s edges: show the two white discs beside the mirror',
     act_replay: 'See it again',
     act_test: 'Got it? Then take the test',
     rotate_me: 'Turn it',
