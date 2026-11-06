@@ -17,9 +17,13 @@ body.bg-transparent { background: transparent; }
 /* the rule: the book's sentences */
 .hrm .pvc-rule { font-size: 14.5px; line-height: 1.6; }
 .hrm .pvc-rule b { color: var(--ink); }
-/* the first screen's calm words: the short version only where the panel is smallest (390 × 520) */
-.hrm .hrm-intro-short { display: none; }
-.hrm .pvc-outcome:empty { min-height: 0; }
+/* the line before the action: what the next tap will show; on the first screen, a calm card that sets the scene */
+.hrm .lab-lead { margin: 0; color: var(--ink-2); font-size: 14.5px; line-height: 1.55; }
+.hrm .lab-lead:empty { display: none; }
+.hrm .lab-lead.pvc-note { font-size: 15px; line-height: 1.6; }
+.hrm .lab-lead .lab-short { display: none; }
+.hrm .pvc-learn.lab-calm .pvc-outcome,
+.hrm .pvc-learn.lab-calm .pvc-rule { display: none; }
 
 /* the vector drawing over the view */
 .hrm-draw { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
@@ -88,8 +92,6 @@ body.bg-transparent { background: transparent; }
 @container pvc (max-width: 420px) and (max-height: 600px) {
   .hrm .pvc-rule { font-size: 12.5px; line-height: 19.5px; height: 78px; }
   .hrm[data-offer='1'] .pvc-rule { height: 39px; }
-  .hrm .hrm-intro { display: none; }
-  .hrm .hrm-intro-short { display: inline; }
   .hrm-offer { min-height: 24px; font-size: 13px; }
   .hrm .pvc-outcome { font-size: 13px; line-height: 18px; min-height: 36px; }
   .hrm .hrm-a { font-size: 18px; line-height: 26px; }
@@ -111,8 +113,6 @@ body.bg-transparent { background: transparent; }
   .hrm .pvc-outcome { font-size: 14.5px; line-height: 1.5; min-height: 2lh; }
   .hrm .hrm-a { font-size: 23px; line-height: 1.35; margin-right: 14px; }
   .hrm .pvc-rule { font-size: 14px; line-height: 1.6; height: auto; overflow: visible; }
-  .hrm .hrm-intro { display: inline; }
-  .hrm .hrm-intro-short { display: none; }
   .hrm[data-offer='1'] .pvc-rule { height: auto; }
   .hrm-offer { min-height: 34px; font-size: 14px; }
   .hrm .pvc-q-ask { gap: 6px; }
@@ -132,4 +132,14 @@ body.bg-transparent { background: transparent; }
   .hrm .pvc-outcome { font-size: 16px; }
   .hrm .hrm-a { font-size: 30px; }
   .hrm .pvc-rule { font-size: 16.5px; line-height: 1.65; }
+}
+/* the tightest phone: the shorter calm words on the first screen */
+@container pvc (max-width: 420px) and (max-height: 600px) {
+  .hrm .lab-lead .lab-long { display: none; }
+  .hrm .lab-lead .lab-short { display: inline; }
+}
+/* the side panel has room for the whole calm start */
+@container pvc-panel (min-height: 1px) {
+  .hrm .lab-lead .lab-long { display: inline; }
+  .hrm .lab-lead .lab-short { display: none; }
 }

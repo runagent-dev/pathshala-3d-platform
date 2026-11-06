@@ -13,6 +13,7 @@ A mirror at 45° at a blind bend turns light through exactly 90°, along the oth
 sees what the hill hides. A convex mirror shows a much wider strip of road, with a smaller upright image.
 
 ## How the figure works
+- **A calm start (the owner, after chapter 8: "start simpler, with some lines of explanation in the white panel").** The first screen shows only a few warm everyday sentences in a `.pvc-note` card (`intro`; `intro_short` on the 390 × 520 phone) and the action: no term and no number yet. After that, one plain line above the action says what the next tap will show (`lead_*`), and the rule below says what it meant, the book's term last and in bold. Same layout and classes as the spherical-mirror figures (`.lab-lead`, `.lab-calm`).
 Seven steps on the clean sheet, one element to a tap, with a camera for each idea. Every step plays slowly (camera 1.6 s,
 objects about 2 s, about a second for each leg of the ray, a hold on the result), then waits; taps during a step are ignored;
 the quiet "আবার দেখো" button plays the step just finished again from the picture before it.

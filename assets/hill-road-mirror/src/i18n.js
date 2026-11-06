@@ -48,13 +48,19 @@ export const STRINGS = {
 
     intro: 'এটি একটি পাহাড়ি রাস্তা: এক পাশে উঁচু পাহাড়, অন্য পাশে গভীর খাদ। বাঁকের ওপাশ থেকে কী আসছে, চালক দেখতে পান না। একটি আয়না কীভাবে সাহায্য করে, চলো ধীরে ধীরে দেখি।',
     intro_short: 'পাহাড়ি রাস্তার বাঁকে ওপাশের গাড়ি দেখা যায় না। একটি আয়না কীভাবে সাহায্য করে, চলো ধীরে ধীরে দেখি।',
-    rule_1: 'আলো সোজা চলে, পাহাড় পার হতে পারে না। তাই প্রায় <b>সমকোণে বাঁক</b> নেওয়ার সময় অন্য রাস্তায় কী আসছে, জানার উপায় থাকে না।',
-    rule_2: 'বাঁকে একটি বড় আয়না বসানো হলো, দুই রাস্তার সাথেই <b>{a}° কোণে</b>। চালক সোজা তাকালেই আয়নাটি দেখেন।',
+    lead_p1: 'এবার বাঁকে একটি বড় আয়না বসাই।',
+    lead_p2: 'বাসের আলো কোন পথে চলে, দেখি।',
+    lead_p3: 'আলো আয়নায় কোন কোণে পড়ে আর ফেরে, মেপে দেখি।',
+    lead_p4: 'এবার উল্টো দিক থেকে, বাসচালকের চোখে দেখি।',
+    lead_p5: 'এবার সমতলের বদলে একটি উত্তল আয়না বসাই।',
+    lead_p6: 'বাসটি টেনে সরাও: কোন আয়নায় বেশি দেখা যায়?',
+    rule_1: 'আলো সোজা চলে, পাহাড় পার হতে পারে না। তাই ওপাশে কী আসছে, জানার উপায় থাকে না। এখানে রাস্তার বাঁকটি প্রায় <b>সমকোণে</b>।',
+    rule_2: 'বাঁকে একটি বড় আয়না বসানো হলো। চালক সোজা তাকালেই আয়নাটি দেখেন। দুই রাস্তার সাথেই এর কোণ <b>{a}°</b>।',
     rule_3: 'বাসের আলো এক রাস্তা ধরে এসে আয়নায় পড়ে, তারপর অন্য রাস্তা ধরে চালকের চোখে আসে। ছোট জানালায় দেখো, চালক আয়নায় কী দেখছেন।',
-    rule_4: 'আলো আয়নায় যে কোণে পড়ে, ঠিক সেই কোণেই ফেরে: <b>আপতন কোণ</b> θ<sub>i</sub> = প্রতিফলন কোণ θ<sub>r</sub>। তাই আলো ঠিক {r}° ঘুরে যায়, বাঁকের সমান।',
-    rule_5: 'তখন রাস্তার <b>দুই পাশের সব যানবাহনই</b> অন্য পাশে কী আছে দেখতে পায়, আর গাড়ি চালানো নিরাপদ হয়।<br>এবার সমতলের বদলে একটি উত্তল আয়না বসিয়ে দেখি।',
-    rule_plane: 'প্রতিবিম্ব বস্তুর সমান। রাস্তার <b>রং করা অংশটুকুই</b> আয়নায় আসে: সিএনজি বাদ পড়ে।',
-    rule_convex: 'প্রতিবিম্ব সোজা ও ছোট। রাস্তার <b>রং করা অংশটুকুই</b> আয়নায় আসে, সে অংশ চওড়া: সিএনজিও আছে।',
+    rule_4: 'আলো আয়নায় যে কোণে পড়ে, ঠিক সেই কোণেই ফেরে, তাই ঠিক {r}° ঘুরে যায়, বাঁকের সমান। একেই বলে <b>আপতন কোণ = প্রতিফলন কোণ</b>।',
+    rule_5: 'আলো উল্টো পথেও চলে। তখন রাস্তার দুই পাশের সব যানবাহনই অন্য পাশে কী আছে দেখতে পায়, আর গাড়ি চালানো নিরাপদ হয়।',
+    rule_plane: 'রাস্তার রং করা অংশটুকুই আয়নায় আসে, তাই সিএনজি বাদ পড়ে। সমতল আয়নায় প্রতিবিম্ব <b>বস্তুর সমান</b>।',
+    rule_convex: 'রাস্তার রং করা অংশটুকুই আয়নায় আসে; সে অংশ চওড়া, তাই সিএনজিও আছে। উত্তল আয়নায় প্রতিবিম্ব <b>সোজা ও ছোট</b>।',
 
     l_car: 'গাড়ি',
     l_bus: 'বাস',
@@ -196,19 +202,24 @@ export const STRINGS = {
     intro:
       'This is a hill road: a high hill on one side, a deep valley on the other. A driver cannot see what is coming round the bend. Let us slowly see how a mirror helps.',
     intro_short: 'At a bend in a hill road you cannot see what is coming. Let us slowly see how a mirror helps.',
+    lead_p1: 'Now let us set a large mirror at the bend.',
+    lead_p2: 'Let us see which way the bus’s light goes.',
+    lead_p3: 'Let us measure the angles at which light meets and leaves the mirror.',
+    lead_p4: 'Now from the other side, through the bus driver’s eyes.',
+    lead_p5: 'Now a convex mirror in place of the plane one.',
+    lead_p6: 'Drag the bus: which mirror shows more?',
     rule_1:
-      'Light goes straight; it cannot cross the hill. So at a nearly <b>right-angle bend</b> there is no way to know what is coming along the other road.',
-    rule_2: 'A large mirror is set at the bend, <b>at {a}°</b> to both roads. Each driver sees it straight ahead.',
+      'Light goes straight; it cannot cross the hill. So there is no way to know what is coming. Here the road bends at nearly a <b>right angle</b>.',
+    rule_2: 'A large mirror is set at the bend. Each driver sees it straight ahead. It stands to both roads <b>at {a}°</b>.',
     rule_3:
       "The bus's light comes along one road, strikes the mirror and goes along the other into the driver's eye. The small window shows what the driver sees.",
     rule_4:
-      'Light leaves the mirror at the same angle it strikes it: the <b>angle of incidence</b> θ<sub>i</sub> = the angle of reflection θ<sub>r</sub>. So it turns exactly {r}°, like the bend.',
-    rule_5:
-      'Then <b>vehicles on both sides</b> can see what is on the other side, and driving becomes safe.<br>Now let us set a convex mirror in place of the plane one.',
+      'Light leaves the mirror at the same angle it strikes it, so it turns exactly {r}°, like the bend. This is <b>angle of incidence = angle of reflection</b>.',
+    rule_5: 'Light goes the other way too. Then vehicles on both sides can see what is on the other side, and driving becomes safe.',
     rule_plane:
-      'A plane mirror gives an image the size of the object, but little room. Only the <b>coloured part of the road</b> reaches it: the CNG in the next lane is left out.',
+      'Only the coloured part of the road reaches the mirror, so the CNG is left out. In a plane mirror the image is <b>the size of the object</b>.',
     rule_convex:
-      'In a <b>convex mirror</b> the image is upright and small. Only the <b>coloured part of the road</b> reaches it, and that part is far wider: the CNG shows too.',
+      'Only the coloured part of the road reaches the mirror, but it is far wider: the CNG shows too. In a convex mirror the image is <b>upright and small</b>.',
 
     l_car: 'Car',
     l_bus: 'Bus',
