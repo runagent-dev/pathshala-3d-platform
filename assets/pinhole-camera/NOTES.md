@@ -46,6 +46,9 @@ figures use them. Added by the figure, not on the page: শিখার ডগ�
   flame (on a layer the camera does not draw).
 - **The drawing** (`diagram.js`) follows the chapter: a 2D canvas over the view, painted from exact 3D points through the camera.
 - **The panel graph** (only where the side panel has room): l′ against v, a straight line through zero whose slope changes with u.
+- **How to use** (v0.3.0, kit 1.8.0 `createHowTo`): under the action, the same ⟲ ৩৬০° pill, সামনে button and the paper's white
+  disc as on the view, with a few words; tapping the disc's item pulses the paper's handle. The paper's item comes from step 4
+  (when it can be dragged) and keeps its place before that, so the panel does not jump.
 
 ## Honest simplifications
 - Rays are drawn; a few chosen lines out of countless. The corner note says so.

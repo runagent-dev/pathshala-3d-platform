@@ -50,6 +50,18 @@ const ARROWS = {
   line: svg('<path d="M4 12h16M8.2 7.8 4 12l4.2 4.2M15.8 7.8 20 12l-4.2 4.2"/>'),
   turn: svg('<path d="M3.5 15.5A10.5 10.5 0 0 1 20.5 15.5M3 10.8 3.5 15.5l4.3-1.1M21 10.8 20.5 15.5l-4.3-1.1"/>'),
 };
+
+/**
+ * The handle's white disc with its arrows: the one source for the handle on the 3D view and for its miniature in the
+ * panel (createHowTo in ./howto.js), so the two never drift apart. 'x' arrows lie flat, 'y' stand up (the handle
+ * itself turns them to the projected direction), 'turn' is the curved arrow.
+ * @param {'x' | 'y' | 'turn'} [axis]
+ */
+export function dragDisc(axis = 'x') {
+  const glyph = axis === 'turn' ? ARROWS.turn : ARROWS.line;
+  const up = axis === 'y' ? ' style="transform: rotate(90deg)"' : '';
+  return `<span class="pvc-dh-disc">${up ? glyph.replace('<svg', `<svg${up}`) : glyph}</span>`;
+}
 const OTHER = { below: 'above', above: 'below', right: 'left', left: 'right' };
 const KEYS = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 };
 
@@ -88,7 +100,7 @@ export function createDragHandle(
     el.setAttribute('aria-label', aria);
     el.title = aria;
   }
-  el.innerHTML = `<span class="pvc-dh-disc">${axis === 'turn' ? ARROWS.turn : ARROWS.line}</span>${label ? '<span class="pvc-dh-word"></span>' : ''}`;
+  el.innerHTML = `${dragDisc(axis === 'turn' ? 'turn' : 'x')}${label ? '<span class="pvc-dh-word"></span>' : ''}`;
   const disc = /** @type {HTMLElement} */ (el.firstElementChild);
   const glyph = /** @type {SVGElement} */ (disc.firstElementChild);
   const word = /** @type {HTMLElement | null} */ (el.querySelector('.pvc-dh-word'));
@@ -310,6 +322,9 @@ export function createDragHandle(
   el.addEventListener('pointercancel', end);
   // a mouse press must not take the keyboard's focus: Space and Enter stay the figure's
   el.addEventListener('mousedown', (e) => e.preventDefault());
+  el.addEventListener('animationend', (e) => {
+    if (/** @type {AnimationEvent} */ (e).animationName === 'pvc-dh-flash') el.classList.remove('flash');
+  });
   el.addEventListener('keydown', (e) => {
     const step = KEYS[e.key];
     if (!step || !onKey) return;
@@ -341,6 +356,13 @@ export function createDragHandle(
     hit: (/** @type {number} */ x, /** @type {number} */ y) => shown && Math.abs(x - px) <= HIT / 2 && Math.abs(y - py) <= HIT / 2,
     /** The first drag happened: no word and no pulse any more, a smaller disc. Dragging through the handle does it. */
     markUsed,
+    /** One clear pulse now, even after the first drag (the panel's how-to row points the student at this handle). */
+    flash() {
+      if (!shown) return; // hidden now: it would play later, out of the blue
+      el.classList.remove('flash');
+      el.getBoundingClientRect(); // a reflow: the animation starts again on a second tap
+      el.classList.add('flash');
+    },
     /** Back to the first-time look (the figure was reset). */
     rearm() {
       used = false;
