@@ -48,6 +48,7 @@ smaller, between P and F, shrinking toward F as the object goes away; and that i
 - **The bench is the chapter's**, from `spherical-mirror-focus` (PR #358): rail, carriers, ring, dish, clear glass, scale digits. One difference, after the
   review: the silver's brightness comes from a plain pale gradient in its shader instead of the studio environment, whose lamp showed as a white
   streak that a student could take for an image.
+- **How to use** (v0.2.0, kit 1.8.0 `createHowTo`): under the action, the same ⟲ ৩৬০° pill and সামনে button as on the view, with a few words, and the pencil's white disc ("টেনে পেনসিল সরাও"); its item keeps its place unseen in the steps behind the mirror. Tapping an item points at its control on the view.
 
 ## Honest notes
 - Only a few rays in one plane, out of countless: "রশ্মি কয়েকটি মাত্র" says so on the view.
