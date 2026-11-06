@@ -7,24 +7,38 @@ import { openFigure, preparePage } from '../../../scripts/lib/export/driver.mjs'
 // few pixels and a coarse virtual frame keep this quick in software rendering: the clock still runs the real seconds
 const FRAME_MS = 50;
 
+// slow on purpose: each step is still playing at `playing` ms, ends by `done` ms, holds, and waits for the next tap
+const STEPS = [
+  { part: 1, playing: 4000, done: 6400, framing: 'wide', word: 'পৌঁছায় না', windows: 1 },
+  { part: 2, playing: 4500, done: 6800, framing: 'close', word: 'কোণে', windows: 0 },
+  { part: 3, playing: 5500, done: 7800, framing: 'wide', word: 'দেখা যাচ্ছে', windows: 1 },
+  { part: 4, playing: 3500, done: 5500, framing: 'close', word: '৪৫', windows: 0 },
+  { part: 5, playing: 3500, done: 5800, framing: 'wide', word: 'গাড়িটি দেখছেন', windows: 1 },
+  { part: 6, playing: 2500, done: 4000, framing: 'wide', word: 'চওড়া', windows: 2 },
+];
+/** What every step shows when it has played: its framing, its words, its mirror windows, and the action ready again. */
+async function expectSettled(fig, { part, framing, word, windows }) {
+  expect(await fig.call('get')).toMatchObject({ part, framing, busy: false });
+  await expect(fig.frame.locator('.pvc-outcome')).toContainText(word);
+  await expect(fig.frame.locator('.pvc-act').first()).toBeEnabled();
+  await expect(fig.frame.locator('.hrm-pip:not([hidden])')).toHaveCount(windows);
+  // each step ends and waits for the student: nothing moves on by itself
+  await fig.advance(1000, FRAME_MS);
+  expect(await fig.call('get')).toMatchObject({ part, busy: false });
+}
+
+// the first two steps played at their real pace (the pacing itself); the later ones are reached directly in the next test,
+// so that neither test runs for minutes on CI's software rendering
 test('hill-road-mirror: the story, step by step, at its real pace', async ({ page }) => {
-  test.setTimeout(240_000);
+  test.setTimeout(180_000);
   await page.setViewportSize({ width: 600, height: 300 }); // narrower than 600 px the panel stacks and the 3D view has no height
   const log = await preparePage(page);
   const fig = await openFigure(page, 'hill-road-mirror');
   const act = () => fig.frame.locator('.pvc-act').first().click();
   expect(await fig.call('get')).toMatchObject({ part: 0, mirror: 'none', framing: 'far', pip: false });
 
-  // slow on purpose: each step is still playing at `playing` ms, ends by `done` ms, holds, and waits for the next tap
-  const steps = [
-    { part: 1, playing: 4000, done: 6400, framing: 'wide', word: 'পৌঁছায় না', windows: 1 },
-    { part: 2, playing: 4500, done: 6800, framing: 'close', word: 'কোণে', windows: 0 },
-    { part: 3, playing: 5500, done: 7800, framing: 'wide', word: 'দেখা যাচ্ছে', windows: 1 },
-    { part: 4, playing: 3500, done: 5500, framing: 'close', word: '৪৫', windows: 0 },
-    { part: 5, playing: 3500, done: 5800, framing: 'wide', word: 'গাড়িটি দেখছেন', windows: 1 },
-    { part: 6, playing: 2500, done: 4000, framing: 'wide', word: 'চওড়া', windows: 2 },
-  ];
-  for (const { part, playing, done, framing, word, windows } of steps) {
+  for (const step of STEPS.slice(0, 2)) {
+    const { part, playing, done } = step;
     await act();
     await fig.advance(200, FRAME_MS);
     await expect(fig.frame.locator('.pvc-act').first()).toBeDisabled();
@@ -33,13 +47,20 @@ test('hill-road-mirror: the story, step by step, at its real pace', async ({ pag
     await fig.advance(playing - 200, FRAME_MS);
     expect(await fig.call('get')).toMatchObject({ part, busy: true });
     await fig.advance(done - playing, FRAME_MS);
-    expect(await fig.call('get')).toMatchObject({ part, framing, busy: false });
-    await expect(fig.frame.locator('.pvc-outcome')).toContainText(word);
-    await expect(fig.frame.locator('.pvc-act').first()).toBeEnabled();
-    await expect(fig.frame.locator('.hrm-pip:not([hidden])')).toHaveCount(windows);
-    // each step ends and waits for the student: nothing moves on by itself
-    await fig.advance(1000, FRAME_MS);
-    expect(await fig.call('get')).toMatchObject({ part, busy: false });
+    await expectSettled(fig, step);
+  }
+  expect(log.errors).toEqual([]);
+});
+
+test('hill-road-mirror: the later steps, each as it stands when it has played', async ({ page }) => {
+  test.setTimeout(180_000);
+  await page.setViewportSize({ width: 600, height: 300 });
+  const log = await preparePage(page);
+  const fig = await openFigure(page, 'hill-road-mirror');
+  for (const step of STEPS.slice(2)) {
+    await fig.call('set', { part: step.part, animate: false });
+    await fig.advance(300, FRAME_MS);
+    await expectSettled(fig, step);
   }
   expect(log.errors).toEqual([]);
 });
